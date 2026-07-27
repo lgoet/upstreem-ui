@@ -1,10 +1,49 @@
-# Upstreem Chart-Komponenten — Styleguide
+# Upstreem UI-Komponenten — Styleguide
 
-Extrahiert aus: `visibility_chart.html`, `citations_combo_chart.html`, `citations_overview_chart.html`, `quick_actions.html`, `topcitations_dashboard.html`, `url_classification.html`, `url_type_chip.html`.
+Gilt für alle Tabellen- und Chart-Komponenten des Upstreem-UI-Systems. Root-Klasse aller Komponenten: **`.up-root`** (Core, `core.css`/`core.js`). Komponentenspezifische Präfixe: `uut-` (URLs Table), `udt-` (Domains Table), weitere folgen. Chart-Komponenten aus der Pre-Core-Ära (`vc-`/`cc-`/`uc-`-Präfixe) sind noch nicht migriert und in `to-migrate/` abgelegt.
 
-Die ersten drei (Visibility, Citations Combo, Citations Overview) teilen sich **ein Design-System** — praktisch identische Werte, nur andere Klassen-Präfixe (`vc-`/`vot-`/`vt-`, `cc-`/`ccd-`, `uc-`). Das ist unten als *"Standard"* dokumentiert. `quick_actions.html` (Mira-Familie, Präfix `am-`) ist ein **verwandtes, aber eigenständiges** System — an den Stellen, wo es abweicht, ist das vermerkt.
+> **Hinweis:** Abschnitte 1–11 dokumentieren das Design-System (Farben, Typo, Spacing). Abschnitte 12–25 dokumentieren Verhalten und Implementierungsmuster. Abschnitt 0 (direkt unten) listet die `window.UpstreemCore` API.
 
-⚠️ **Ein Fund beim Schreiben dieses Guides:** `citations_overview_chart.html` hat noch die *alten* Switch-Werte (`--uc-switch-bg: #242424` im Dark Mode, aktiver Button-BG `#1a1a1a`) — die wurden in Visibility/Combo längst auf `rgba(42,42,42,0.6)` bzw. `#121212` korrigiert, aber nie in die Overview-Komponente zurückportiert. Unten steht der **korrigierte** Wert als Standard; sag Bescheid, falls ich das in der Overview-Datei nachziehen soll.
+---
+
+## 0. Core-Architektur (`window.UpstreemCore`)
+
+`core.js` stellt `window.UpstreemCore` bereit. Jede Komponente importiert daraus per Destructuring:
+
+```js
+var UC = window.UpstreemCore;
+var fmtTotal = UC.fmtTotal, isYes = UC.isYes, highlight = UC.highlight,
+    esc = UC.esc, citeName = UC.citeName, tint = UC.tint, fmtDate = UC.fmtDate,
+    foldDiacritics = UC.foldDiacritics, germanExpand = UC.germanExpand,
+    resolveBubbleFn = UC.resolveBubbleFn, toNum = UC.toNum, fmt1 = UC.fmt1, fmtInt = UC.fmtInt,
+    CITE_COLOR = UC.CITE_COLOR, CITE_ALIAS = UC.CITE_ALIAS, ALL_CITATION_TYPES = UC.ALL_CITATION_TYPES,
+    URL_TYPE = UC.URL_TYPE, ALL_URL_TYPES = UC.ALL_URL_TYPES,
+    OTHER_LIGHT = UC.OTHER_LIGHT, OTHER_DARK = UC.OTHER_DARK, CHIP_BG_DARK = UC.CHIP_BG_DARK,
+    MONTHS = UC.MONTHS, DEBOUNCE = UC.DEBOUNCE, MIN = UC.MIN, SORT_DEBOUNCE = UC.SORT_DEBOUNCE,
+    PAGE_SIZES = UC.PAGE_SIZES, DEFAULT_PAGE_SIZE = UC.DEFAULT_PAGE_SIZE,
+    TREND_UP = UC.TREND_UP, TREND_DOWN = UC.TREND_DOWN,
+    CHECK_SVG = UC.CHECK_SVG, COPY_SVG = UC.COPY_SVG, GOTO_SVG = UC.GOTO_SVG,
+    DONE_SVG = UC.DONE_SVG, EXT_SVG = UC.EXT_SVG,
+    makeTooltips = UC.makeTooltips, makeFire = UC.makeFire,
+    makePortal = UC.makePortal, placeMenu = UC.placeMenu, makeSticky = UC.makeSticky;
+```
+
+**Subsysteme** (alle als Factory/Utility, nicht als Klassen):
+
+| Funktion | Aufrufsignatur | Was es liefert |
+|---|---|---|
+| `makeTooltips(root, getIsDark)` | einmal im Init | `{showTip, showTipText, showTipWide, hideTip, el}` |
+| `makeFire(root, {label, eventPrefix})` | einmal im Init | `fire(attr, fallbackName, payload)` |
+| `makePortal(root, menuEls[], instanceId)` | einmal im Init | `{portalLayer, syncPortalTheme}` |
+| `placeMenu(menu, btn, opts?)` | beim Öffnen eines Dropdowns | — (positioniert in-place) |
+| `makeSticky(root, headEl)` | einmal im Init | `{applySticky, syncTheadOffset}` |
+
+**Persistenz-Stores:** `window.UpstreemCore.STORE` zeigt auf `window.__uutStore` (URLs-Table-spezifisch). Jede neue Komponente legt ihren eigenen Store an:
+```js
+var STORE = (window.__udtStore = window.__udtStore || {});
+var LOADING_EXPLICIT = (window.__udtLoadingExplicit = window.__udtLoadingExplicit || {});
+```
+`UpstreemCore.STORE` **nicht** für andere Komponenten nutzen — das würde den URLs-Table-State überschreiben.
 
 ---
 
@@ -663,6 +702,18 @@ Die Farben müssen **literal** gesetzt werden, nicht über `var(--vc-text)`: Der
 an `<body>` und damit außerhalb des Komponenten-Roots, wo die CSS-Variablen nicht definiert
 sind. Genau daran ist der Explainer-Tooltip einmal unsichtbar geblieben.
 
+**JS-Nutzungsmuster (Tabellen-Komponenten):**
+```js
+var _tips = UpstreemCore.makeTooltips(root, function(){ return isDark; });
+var showTip = _tips.showTip, showTipText = _tips.showTipText,
+    showTipWide = _tips.showTipWide, hideTip = _tips.hideTip;
+/* showTip(el)               -> liest data-tip-Attribut
+   showTipText(el, text)     -> zeigt beliebigen Text
+   showTipWide(el, text)     -> breiter Tooltip (für truncated Titel)
+   hideTip()                 -> sofort ausblenden */
+```
+`makeTooltips` installiert auch `[data-tip]`- und `[data-brandtip]`-Hover-Handler am Root automatisch.
+
 **B) Line-Chart-Datenpunkt-Tooltip** (folgt dem Cursor, größer, mit Zeilen)
 - Radius **16px**, Padding `10px 12px`
 - Light Mode: `background:#ffffff; border:1px solid #e0e2e6; box-shadow:0 4px 14px rgba(0,0,0,.10)`
@@ -896,7 +947,9 @@ Chart.js setzt `touch-action:none` auf den Canvas, was natives Scrollen blockier
 
 ---
 
-## 12. Abweichendes System: `quick_actions.html` (Mira-Familie, Präfix `am-`)
+## 12. Historische Referenz: `quick_actions.html` (Mira-Familie, Präfix `am-`, noch NICHT migriert)
+
+> Dieser Abschnitt dokumentiert eine Komponente aus der Pre-Core-Ära, die noch in `to-migrate/` liegt und noch kein `core.js`/`core.css` nutzt. Dient als Referenz beim zukünftigen Umbau, gilt nicht für neue Tabellen-Komponenten.
 
 Verwandt, aber mit eigenen Werten — falls du dort auch mal was anpasst:
 - Border: `#e5e7eb` (statt `#e0e2e6`)
@@ -920,20 +973,14 @@ Parameter, nie ein Objekt, nie ein Array. Die Bubble-Seite zieht die Werte per
 Regex aus diesem String. Dasselbe Format wie bei `miraAction` und dem Export-Popup.
 
 ```js
-function fire(attr, fallbackName, payload){
-  var fnName = root.getAttribute(attr) || fallbackName;
-  var fn = resolveBubbleFn(fnName);
-  var json; try { json = JSON.stringify(payload); } catch(e){ json = ""; }
-  if (typeof fn === "function"){ try { fn(json); } catch(e){} }
-  else {
-    console.warn("[komponente] " + fnName + " not found on window/parent/top or any reachable " +
-      "iframe — this action reached no Bubble workflow. Check the Toolbox element's name.");
-  }
-  try { root.dispatchEvent(new CustomEvent(PREFIX + "-" + fallbackName, { detail: payload, bubbles: true })); } catch(e){}
-}
+/* Im Init einmal aufrufen — gibt eine fire()-Funktion zurück. */
+var fire = UpstreemCore.makeFire(root, { label: "udt", eventPrefix: "udt-" });
+
+/* Danach pro Event einfach: */
+fire("data-sort-fn", "udtSort", { sort_field: "share", sort_dir: "desc" });
 ```
 
-Drei Dinge daran sind Pflicht:
+`makeFire` übernimmt die Funktionssuche über iframe-Grenzen, das `console.warn` beim Fehlen und das DOM-`CustomEvent`. Drei Dinge sind Pflicht:
 
 1. **Funktionsname kommt aus einem `data-*-fn`-Attribut**, mit dem Standardnamen als
    Fallback. So kann dieselbe Komponente mehrfach auf einer Seite liegen
@@ -1191,21 +1238,26 @@ der eigenen Komponente), werden die Menüs beim Init aus dem DOM der Komponente
 herausgelöst und in einen eigenen Layer an `document.body` gehängt:
 
 ```js
-var portalLayer = document.createElement("div");
-portalLayer.className = "<pfx>-root <pfx>-portal";     // trägt die CSS-Variablen + Theme
+/* Im Init einmal aufrufen. makePortal übernimmt das Erstellen des Layers und das Verschieben
+   der Menü-Elemente. Als Rückgabe: portalLayer (DOM-Referenz) + syncPortalTheme (Funktion). */
+var _portal = UpstreemCore.makePortal(root, [elSortMenu, elFilterMenu, elColsMenu, elMentMenu], instanceId);
+var portalLayer = _portal.portalLayer, syncPortalTheme = _portal.syncPortalTheme;
+syncPortalTheme();   /* sofort aufrufen — sonst fehlt Theme beim initialen Dark-Load */
+```
+
+**Was `makePortal` intern tut:**
+```js
+portalLayer.className = "up-root up-portal";   /* IMMER so — nicht komponentenspezifisch */
 document.body.appendChild(portalLayer);
-[elSortMenu, elFilterMenu, elColsMenu, elMentMenu].forEach(m => m && portalLayer.appendChild(m));
+menuEls.forEach(function(m){ if (m) portalLayer.appendChild(m); });
 ```
 
 Regeln dazu (alle Pflicht, sonst bricht Theme/Events):
 
-- **CSS:** `.<pfx>-portal { display: contents; }` — der Layer malt nichts, die fixed-Menüs
-  stacken auf Body-Ebene. Die Klasse `<pfx>-root` am Layer sorgt dafür, dass die
-  CSS-Variablen (`--vc-*`) und die Dark-Mode-Regeln (`.<pfx>-root[data-theme="dark"] …`)
-  auch im Portal gelten.
-- **Theme spiegeln:** `syncPortalTheme()` setzt `data-theme` am Portal gleich dem Root.
-  **Direkt nach dem Erstellen einmal aufrufen** (sonst fehlt beim initialen Dark-Load das
-  Theme) und bei jedem Theme-Wechsel.
+- **CSS:** `.up-portal { display: contents; }` kommt aus **`core.css`** — der Layer malt nichts,
+  fixed-Menüs stacken auf Body-Ebene. Die Klasse `.up-root` am Layer sorgt dafür, dass
+  CSS-Variablen (`--vc-*`) und Dark-Mode-Regeln (`.up-root[data-theme="dark"] …`) im Portal gelten.
+- **Theme spiegeln:** `syncPortalTheme()` bei jedem Theme-Wechsel aufrufen (und direkt nach dem Erstellen).
 - **Sichtbarkeit:** Weil das Menü nicht mehr im Pop liegt, greift `.pop.is-open .menu`
   nicht. Stattdessen togglet eine Klasse **am Menü selbst**: `.<pfx>-…-menu.is-shown`.
 - **Events:** Der zentrale Click-Handler läuft auf `document` mit einem Ownership-Guard,
@@ -1214,10 +1266,10 @@ Regeln dazu (alle Pflicht, sonst bricht Theme/Events):
   function ownsTarget(tg){ return root.contains(tg)
       || elFilterMenu.contains(tg) || elMentMenu.contains(tg)
       || elSortMenu.contains(tg)   || elColsMenu.contains(tg); }
-  document.addEventListener("click", e => { if (!ownsTarget(e.target)) return; /* … */ });
+  document.addEventListener("click", function(e){ if (!ownsTarget(e.target)) return; /* … */ });
   ```
 - **Init-Selektoren ausschließen:** `initAll`/`rootsWithId` dürfen den Portal nicht als
-  Tabelle initialisieren → Selektor `.<pfx>-root:not(.<pfx>-portal)`.
+  Tabelle initialisieren → Selektor `.up-root:not(.up-portal)` (fest so, kein `<pfx>`).
 - **Menü finden:** `menuOf(pop)` liefert die gecachte Referenz statt `pop.querySelector`.
 
 ## 15. Multi-Select-Dropdown mit Suche (Mentioned Brands)
@@ -1310,6 +1362,16 @@ Regel: **sichtbar nur, wenn manche (nicht alle) aktiv sind** (`0 < aktiv < gesam
 aktive Anzahl. Basiert auf der **User-Auswahl** (`state.cols`), nicht auf responsivem
 Ausblenden. Update in allen Pfaden aufrufen (Toggle, Select-all, Reset, Render).
 
+**JS-Nutzungsmuster:**
+```js
+var _sticky = UpstreemCore.makeSticky(root, elHead);   /* elHead = .up-head Element */
+function applySticky(){ _sticky.applySticky(); }
+function syncTheadOffset(){ _sticky.syncTheadOffset(); }
+window.addEventListener("resize", applySticky);
+applySticky();   /* einmal sofort */
+/* syncTheadOffset() nach jeder Kopfhöhen-Änderung aufrufen */
+```
+
 ## 20. Sticky-Header — Ergänzungen
 
 - **Seiten-Hintergrund als eigene Variable:** `--<pfx>-surface` (Light `#ffffff`, Dark
@@ -1341,6 +1403,14 @@ Ausblenden. Update in allen Pfaden aufrufen (Toggle, Select-all, Reset, Render).
 - **Rest (Query, Sort, Filter, Page, Auswahl) → In-Memory-STORE** (`window.__<pfx>Store`),
   überlebt innerhalb der Session, nicht über Reload. Bewusst so: fachliche Auswahl soll bei
   Reload nicht „kleben", Anzeige-Vorlieben schon.
+
+> ⚠️ **STORE-Falle:** `UpstreemCore.STORE` zeigt auf `window.__uutStore` — URLs-Table-spezifisch!
+> Neue Komponenten **dürfen `UpstreemCore.STORE` nicht verwenden**, sonst teilen sie sich den State
+> mit der URLs-Tabelle. Immer einen eigenen Store anlegen:
+> ```js
+> var STORE = (window.__udtStore = window.__udtStore || {});
+> var LOADING_EXPLICIT = (window.__udtLoadingExplicit = window.__udtLoadingExplicit || {});
+> ```
 
 ## 23. Numerik & Ausrichtung
 
