@@ -1230,22 +1230,27 @@
     return {
       __ctrlId: myCtrlId,
       reset: function(){
-        /* Restore + actually notify Bubble, the same way the in-dropdown Reset button and the
-           Sort dropdown do — so the external "reset this instance" Run JavaScript step visibly
-           puts sort back to Visibility Descending and companies back to the default set, instead
-           of only clearing local flags ahead of a fill that may never come. */
+        /* Local state + UI only — deliberately does NOT fire bubble_fn_votSortTable /
+           bubble_fn_votSubmitCompanies. Those are the same Toolbox events the Sort dropdown and
+           the in-dropdown Companies Reset/Apply use, and this component's Bubble side wires its
+           own "on this event" workflow to each of them (which ends in its own Set-Loading-No step,
+           among other things). resetVisibilityChart() is also called ahead of a fresh data load
+           (e.g. a page-load/slidein-open workflow that still has its own loading state in flight),
+           and firing those events from here re-triggered those side-effect workflows mid-load —
+           each one flipping loading back off and replaying the chart's entrance animation. Puts
+           sort back to Visibility Descending and companies back to the default set so the dropdowns
+           read correctly right away; if the caller also wants Bubble to refetch with those
+           defaults, that's a separate, explicit step in their own workflow now. */
         sortField = "visibility";
         sortDir = "desc";
         SORT_STORE[instanceId] = { field: sortField, dir: sortDir };
         populateSort();
-        fireSort();
 
         var initIds = INIT_COMPANIES[instanceId] || activeCompanyIds();
         filterSel = {};
         initIds.forEach(function(id){ filterSel[id] = true; });
         populateFilter();
-        fireCompaniesSubmit();
-        delete USER_FILTERED[instanceId];   // after fireCompaniesSubmit, which would set it
+        delete USER_FILTERED[instanceId];
         delete INIT_COMPANIES[instanceId];  // next fill re-captures it fresh, like a first load
         syncFilterBadge();
         return true;
