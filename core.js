@@ -204,7 +204,18 @@
 
   /* Body-portal for dropdown menus: position:sticky / Bubble wrappers form stacking contexts that
      trap fixed menus; moving them under a display:contents layer on <body> frees them. Returns the
-     layer + a theme mirror that must be called on every theme change (and once at creation). */
+     layer + a theme mirror that must be called on every theme change (and once at creation).
+
+     Also owns keeping an OPEN portaled menu glued to its trigger while the page scrolls. A
+     position:fixed menu (which is what placeMenu produces) doesn't move on its own when an
+     ancestor scrolls — without this, every portaled dropdown across every component either drifted
+     from its trigger or stayed frozen on screen, and each component that remembered to wire its own
+     scroll listener did so slightly differently (unthrottled vs rAF-batched), so the same dropdown
+     felt "sticky" in one component and "detached" in another for no product reason. One shared,
+     rAF-throttled listener here means every component gets identical behaviour for free just by
+     calling makePortal/placeMenu — nothing left for a future migration to remember or get slightly
+     wrong. Relies on placeMenu() stamping menu.__upBtn with its trigger on every call, and on the
+     is-shown class every component already toggles to mark a portaled menu as currently open. */
   function makePortal(root, menuEls, instanceId){
     if (instanceId){                                  // clear a stale portal from a prior (re-injected) mount
       var old = document.querySelectorAll(".up-portal");
@@ -225,14 +236,32 @@
       else portalLayer.removeAttribute("data-theme");
     }
     syncPortalTheme();
+
+    var repositionRaf = null;
+    function repositionShownMenus(){
+      repositionRaf = null;
+      (menuEls || []).forEach(function(m){
+        if (m && m.__upBtn && m.classList.contains("is-shown")) placeMenu(m, m.__upBtn);
+      });
+    }
+    function scheduleReposition(){
+      if (repositionRaf) return;
+      repositionRaf = requestAnimationFrame(repositionShownMenus);
+    }
+    window.addEventListener("scroll", scheduleReposition, true);
+    window.addEventListener("resize", scheduleReposition);
+
     return { portalLayer: portalLayer, syncPortalTheme: syncPortalTheme };
   }
 
   /* Position a dropdown menu against its trigger: right-aligned, kept inside the viewport, flips
      above when there's more room, and caps max-height to the available space. Pure geometry — the
-     component still decides which menu/trigger and when. */
+     component still decides which menu/trigger and when. Remembers the trigger on the menu element
+     itself so makePortal's scroll/resize listener can re-call this with the right button without
+     the component having to track that separately. */
   function placeMenu(menu, btn, opts){
     if (!menu || !btn) return;
+    menu.__upBtn = btn;
     opts = opts || {};
     var GAP = opts.gap != null ? opts.gap : 4, EDGE = opts.edge != null ? opts.edge : 8;
     menu.style.maxHeight = "";                    // measure natural size first

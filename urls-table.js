@@ -2,6 +2,21 @@
 (function(){
   "use strict";
 
+  /* Bubble's own RunJS "kick" polling can call window.setUrlsTableLoading/renderUrlsTable before
+     core.js has finished loading and uutRun() has assigned the real functions — without this,
+     that call throws "is not a function" and is lost. Stub them as immediate, synchronous
+     queueing functions right away; uutRun() drains the queue (in original order) once the real
+     implementations are assigned. window.__uutBootStubbed guards against re-stubbing over a
+     real implementation if this script tag executes more than once on the page. */
+  var __uutBootQueue = window.__uutBootQueue = window.__uutBootQueue || [];
+  if (!window.__uutBootStubbed){
+    window.__uutBootStubbed = true;
+    window.renderUrlsTable = function(){ __uutBootQueue.push(["renderUrlsTable", arguments]); };
+    window.setUrlsTableLoading = function(){ __uutBootQueue.push(["setUrlsTableLoading", arguments]); };
+    window.setUrlsTableBrands = function(){ __uutBootQueue.push(["setUrlsTableBrands", arguments]); };
+    window.resetUrlsTable = function(){ __uutBootQueue.push(["resetUrlsTable", arguments]); };
+  }
+
   /* Bubble injects this component's <script> tags via jQuery .html(), which does not guarantee
      external scripts execute in DOM order — urls-table.js can start running before core.js has
      finished loading. A one-shot check-and-bail here meant a slow core.js load permanently
@@ -1048,12 +1063,6 @@
       menu.style.position = ""; menu.style.top = ""; menu.style.left = "";
       menu.style.right = ""; menu.style.maxHeight = ""; menu.style.zIndex = "";
     }
-    function repositionOpenMenu(){
-      [elSort, elFilter, elCols, elMent].forEach(function(p){
-        if (p && p.classList.contains("is-open")) placeMenu(p);
-      });
-    }
-
     function closePops(except){
       [elSort, elFilter, elCols, elMent].forEach(function(p){
         if (!p || p === except) return;
@@ -1433,7 +1442,6 @@
       }).observe(root);
     }
     window.addEventListener("resize", applyResponsive);
-    window.addEventListener("resize", repositionOpenMenu);
 
     /* Sticky header. Default on at >=1000px page width (off via data-sticky="no"); the column
        header sits right below the component head, its offset measured from the head's height.
@@ -1445,8 +1453,8 @@
     function applySticky(){ _sticky.applySticky(); }
     window.addEventListener("resize", applySticky);
     applySticky();
-    /* capture so scrolls in ANY ancestor (Bubble group, page) keep the menu pinned */
-    window.addEventListener("scroll", repositionOpenMenu, true);
+    /* scroll-repositioning for the portaled dropdowns is handled centrally by
+       UpstreemCore.makePortal — see core.js */
 
     /* Count of the user-kept columns, shown on the gear button when the user has switched at least
        one off. Uses state.cols (the user's choice), NOT the responsive/effective set, so shrinking
@@ -1592,6 +1600,12 @@
   window.setUrlsTableLoading = doLoading;
   window.setUrlsTableBrands = doBrands;
   window.resetUrlsTable = doReset;
+  if (__uutBootQueue.length){
+    var __uutQueued = __uutBootQueue.splice(0, __uutBootQueue.length);
+    __uutQueued.forEach(function(entry){
+      try { window[entry[0]].apply(null, entry[1]); } catch(e){}
+    });
+  }
   window.__uutResolveLocal = function(id){ return rootsWithId(id).length > 0; };
 
   /* ================= forwarder on parent AND top (nested reusables) ================= */

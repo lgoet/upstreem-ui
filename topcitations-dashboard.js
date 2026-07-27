@@ -861,44 +861,54 @@
       document.body.appendChild(tipEl);
       window.__tcdTipEl = tipEl;
     }
+    /* tipTimer/tipBtn must be shared across EVERY topcitations-dashboard root on the page —
+       they all bind to the same singleton tipEl above. Keeping them as per-root closure state
+       (as this used to) meant each other, idle root's own near-always-null tipBtn lost the
+       mousemove/scroll safety-net race against whichever root was actually being hovered and
+       hid its tooltip out from under it whenever 2+ instances shared a page. */
+    var tipState = window.__tcdTipState || (window.__tcdTipState = { timer: null, btn: null });
+    var hideTip = function(){ clearTimeout(tipState.timer); tipState.timer = null; tipState.btn = null; tipEl.classList.remove("show"); };
+    var showTip = function(btn){
+      if (!btn || !document.contains(btn)) return;
+      var txt = btn.getAttribute("data-tip"); if (!txt) return;
+      var dark2 = (btn.closest(".tcd-root") || root).getAttribute("data-theme") === "dark";
+      tipEl.style.background = dark2 ? "#f0f0f0" : "#1f1f1b";
+      tipEl.style.color = dark2 ? "#1f1f1b" : "#ffffff";
+      tipEl.textContent = txt;
+      tipEl.classList.add("show");
+      var br = btn.getBoundingClientRect();
+      var tw = tipEl.offsetWidth, vw = window.innerWidth || document.documentElement.clientWidth;
+      var left = br.left + br.width / 2 - tw / 2;
+      left = Math.max(6, Math.min(left, vw - tw - 6));
+      tipEl.style.left = left + "px";
+      tipEl.style.top = (br.bottom + 8) + "px";
+    };
     if (!root.__tcdTipBound){
       root.__tcdTipBound = true;
-      var tipTimer = null, tipBtn = null;
-      var hideTip = function(){ clearTimeout(tipTimer); tipBtn = null; tipEl.classList.remove("show"); };
-      var showTip = function(btn){
-        if (!btn || !document.contains(btn)) return;
-        var txt = btn.getAttribute("data-tip"); if (!txt) return;
-        var dark2 = (btn.closest(".tcd-root") || root).getAttribute("data-theme") === "dark";
-        tipEl.style.background = dark2 ? "#f0f0f0" : "#1f1f1b";
-        tipEl.style.color = dark2 ? "#1f1f1b" : "#ffffff";
-        tipEl.textContent = txt;
-        tipEl.classList.add("show");
-        var br = btn.getBoundingClientRect();
-        var tw = tipEl.offsetWidth, vw = window.innerWidth || document.documentElement.clientWidth;
-        var left = br.left + br.width / 2 - tw / 2;
-        left = Math.max(6, Math.min(left, vw - tw - 6));
-        tipEl.style.left = left + "px";
-        tipEl.style.top = (br.bottom + 8) + "px";
-      };
       root.addEventListener("mouseover", function(e){
         var btn = e.target.closest("[data-tip]");
-        if (!btn || !root.contains(btn) || btn === tipBtn) return;
-        tipBtn = btn;
-        clearTimeout(tipTimer);
-        tipTimer = setTimeout(function(){ showTip(btn); }, 60);
+        if (!btn || !root.contains(btn) || btn === tipState.btn) return;
+        tipState.btn = btn;
+        clearTimeout(tipState.timer);
+        tipState.timer = setTimeout(function(){ showTip(btn); }, 60);
       });
       root.addEventListener("mouseout", function(e){
         var btn = e.target.closest("[data-tip]");
         if (!btn) return;
         if (e.relatedTarget && btn.contains(e.relatedTarget)) return;
-        hideTip();
+        if (btn === tipState.btn) hideTip();
       });
       root.addEventListener("mousedown", hideTip);
+    }
+    /* The mousemove/scroll/blur safety-net only needs to run once globally — it operates on the
+       shared tipState/tipEl above regardless of which root's closure it was bound from. */
+    if (!window.__tcdTipGlobalBound){
+      window.__tcdTipGlobalBound = true;
       document.addEventListener("mousemove", function(){
-        if (!tipEl.classList.contains("show") && !tipTimer) return;
-        if (!tipBtn || !document.contains(tipBtn)){ hideTip(); return; }
+        if (!tipEl.classList.contains("show") && !tipState.timer) return;
+        if (!tipState.btn || !document.contains(tipState.btn)){ hideTip(); return; }
         var stillHovered = false;
-        try { stillHovered = tipBtn.matches(":hover"); } catch(err){ stillHovered = true; }
+        try { stillHovered = tipState.btn.matches(":hover"); } catch(err){ stillHovered = true; }
         if (!stillHovered) hideTip();
       });
       window.addEventListener("scroll", hideTip, true);

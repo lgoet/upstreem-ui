@@ -2,6 +2,21 @@
 (function(){
   "use strict";
 
+  /* Bubble's own RunJS "kick" polling can call window.setDomainsTableLoading/renderDomainsTable
+     before core.js has finished loading and udtRun() has assigned the real functions — without
+     this, that call throws "is not a function" and is lost. Stub them as immediate, synchronous
+     queueing functions right away; udtRun() drains the queue (in original order) once the real
+     implementations are assigned. window.__udtBootStubbed guards against re-stubbing over a
+     real implementation if this script tag executes more than once on the page. */
+  var __udtBootQueue = window.__udtBootQueue = window.__udtBootQueue || [];
+  if (!window.__udtBootStubbed){
+    window.__udtBootStubbed = true;
+    window.renderDomainsTable = function(){ __udtBootQueue.push(["renderDomainsTable", arguments]); };
+    window.setDomainsTableLoading = function(){ __udtBootQueue.push(["setDomainsTableLoading", arguments]); };
+    window.setDomainsTableBrands = function(){ __udtBootQueue.push(["setDomainsTableBrands", arguments]); };
+    window.resetDomainsTable = function(){ __udtBootQueue.push(["resetDomainsTable", arguments]); };
+  }
+
   /* Bubble injects this component's <script> tags via jQuery .html(), which does not guarantee
      external scripts execute in DOM order — domains-table.js can start running before core.js has
      finished loading. Retry briefly instead of bailing forever on the first check: covers the
@@ -861,11 +876,6 @@
       if (!pop) return;
       UpstreemCore.placeMenu(menuOf(pop), pop.querySelector(BTN_SEL));
     }
-    function repositionOpenMenu(){
-      [elSort, elFilter, elCols, elMent].forEach(function(p){
-        if (p && p.classList.contains("is-open")) placeMenu(p);
-      });
-    }
     function closePops(except){
       [elSort, elFilter, elCols, elMent].forEach(function(p){
         if (!p || p === except) return;
@@ -1204,7 +1214,6 @@
       }).observe(root);
     }
     window.addEventListener("resize", applyResponsive);
-    window.addEventListener("resize", repositionOpenMenu);
 
     /* sticky header machinery (core) */
     var _sticky = UpstreemCore.makeSticky(root, elHead);
@@ -1212,7 +1221,8 @@
     function applySticky(){ _sticky.applySticky(); }
     window.addEventListener("resize", applySticky);
     applySticky();
-    window.addEventListener("scroll", repositionOpenMenu, true);
+    /* scroll-repositioning for the portaled dropdowns is handled centrally by
+       UpstreemCore.makePortal — see core.js */
 
     function syncColsBadge(){
       var badge = root.querySelector(".udt-cols-badge");
@@ -1343,6 +1353,12 @@
   window.setDomainsTableLoading = doLoading;
   window.setDomainsTableBrands = doBrands;
   window.resetDomainsTable = doReset;
+  if (__udtBootQueue.length){
+    var __udtQueued = __udtBootQueue.splice(0, __udtBootQueue.length);
+    __udtQueued.forEach(function(entry){
+      try { window[entry[0]].apply(null, entry[1]); } catch(e){}
+    });
+  }
   window.__udtResolveLocal = function(id){ return rootsWithId(id).length > 0; };
 
   /* ================= forwarder on parent AND top (nested reusables) ================= */
