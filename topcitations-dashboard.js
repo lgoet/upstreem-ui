@@ -1211,21 +1211,9 @@
   else initAll();
   [30, 100, 250, 500, 1000, 1800].forEach(function(ms){ setTimeout(initAll, ms); });
 
-  if (window.MutationObserver && !window.__tcdObs){
-    window.__tcdObs = new MutationObserver(function(muts){
-      var found = false;
-      for (var i = 0; i < muts.length; i++){
-        var added = muts[i].addedNodes;
-        for (var j = 0; j < added.length; j++){
-          var n = added[j];
-          if (n.nodeType === 1 && (n.classList && n.classList.contains("tcd-root") || (n.querySelector && n.querySelector(".tcd-root")))){ found = true; break; }
-        }
-        if (found) break;
-      }
-      if (found) initAll();
-    });
-    window.__tcdObs.observe(document.body, { childList: true, subtree: true });
-  }
+  /* shared page-level watcher (core) — see UC.watchRoots for why this replaced a
+     private-to-this-component MutationObserver */
+  UC.watchRoots("tcd-root", initAll);
   window.addEventListener("resize", function(){
     var roots = document.querySelectorAll(".tcd-root:not(.up-portal)");
     for (var i = 0; i < roots.length; i++){

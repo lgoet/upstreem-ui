@@ -837,21 +837,26 @@
     var gotoBtn = root.querySelector(".vot-goto");
     var exportBtn = root.querySelector(".vot-export");
 
-    /* ---------- popovers: Sort stays non-portaled (untouched); Companies is portaled (core) ---------- */
+    /* ---------- popovers: both Sort and Companies go through the shared body-portal (core) ---------- */
     var sortWrap = root.querySelector(".vot-sort");
     var filterWrap = root.querySelector(".vot-filter");
     var filterBtn = root.querySelector(".vot-filter-btn");
     var filterMenu = root.querySelector(".up-ment-menu");
+    var sortBtn = root.querySelector(".vot-sort-btn");
     var sortMenu = root.querySelector(".vot-sort-menu");
-    /* body-portal for the Companies dropdown only (core) — Sort keeps its original
-       position:absolute popover, untouched per the migration scope. */
-    var _portal = UpstreemCore.makePortal(root, [filterMenu], instanceId);
+    /* Sort used to stay on the old, pre-Core position:absolute popover (a scope-limited exception
+       from the original migration) while Companies got the shared portal treatment — that split
+       is exactly what made the two dropdowns behave differently (z-index level, scroll-tracking).
+       Both now go through the same makePortal/placeMenu path as every dropdown in every other
+       component, so they're identical: same z-index, same scroll behaviour, same clip-safety. */
+    var _portal = UpstreemCore.makePortal(root, [filterMenu, sortMenu], instanceId);
     var portalLayer = _portal.portalLayer, syncPortalTheme = _portal.syncPortalTheme;
 
     function setPopOpen(pop, open){
       if (!pop) return;
       var isFilter = pop === filterWrap;
       var menu = isFilter ? filterMenu : sortMenu;
+      var btn = isFilter ? filterBtn : sortBtn;
       if (!open && menu && menu.contains(document.activeElement)){
         var opener = pop.querySelector(".vot-sort-btn, .vot-filter-btn");
         try { opener ? opener.focus({ preventScroll: true }) : document.activeElement.blur(); }
@@ -860,10 +865,8 @@
       pop.classList.toggle("is-open", !!open);
       if (menu){
         menu.setAttribute("aria-hidden", open ? "false" : "true");
-        if (isFilter){
-          menu.classList.toggle("is-shown", !!open);
-          if (open) UpstreemCore.placeMenu(menu, filterBtn);
-        }
+        menu.classList.toggle("is-shown", !!open);
+        if (open) UpstreemCore.placeMenu(menu, btn);
       }
     }
     function closePops(except){
@@ -1084,7 +1087,6 @@
     /* ---- sort dropdown (Visibility default | Ranking | Sentiment) → fires sort_table (new RPC) ---- */
     var SORT_LABELS = [["visibility","Visibility"],["ranking","Ranking"],["sentiment","Sentiment"]];
     var SORT_OUT_FIELD = { visibility: "visibility", ranking: "rank", sentiment: "sentiment" };
-    var sortBtn = root.querySelector(".vot-sort-btn");
     function fireSort(){
       var fnName = root.getAttribute("data-sort-fn") || "bubble_fn_votSortTable";
       var fn = resolveBubbleFn(fnName);
@@ -1109,7 +1111,9 @@
     populateSort();
     if (sortWrap && !sortWrap.__votOutsideBound){
       sortWrap.__votOutsideBound = true;
-      document.addEventListener("click", function(e){ if (sortWrap && !sortWrap.contains(e.target)) setPopOpen(sortWrap, false); });
+      document.addEventListener("click", function(e){
+        if (sortWrap && !sortWrap.contains(e.target) && !sortMenu.contains(e.target)) setPopOpen(sortWrap, false);
+      });
     }
 
     if (!root.__votDelegated){
@@ -1372,24 +1376,9 @@
     return ctrl;
   }
   function initAll(){ var roots = document.querySelectorAll(".vot-root:not(.up-portal)"); for (var i=0;i<roots.length;i++) initRoot(roots[i]); }
-  if (window.MutationObserver && !window.__votRootWatcher){
-    window.__votRootWatcher = new MutationObserver(function(muts){
-      for (var i = 0; i < muts.length; i++){
-        var added = muts[i].addedNodes;
-        for (var j = 0; j < added.length; j++){
-          var n = added[j];
-          if (n.nodeType !== 1) continue;
-          if (n.classList && n.classList.contains("vot-root")) initRoot(n);
-          if (n.querySelectorAll){
-            var found = n.querySelectorAll(".vot-root");
-            for (var k = 0; k < found.length; k++) initRoot(found[k]);
-          }
-        }
-      }
-    });
-    window.__votRootWatcher.observe(document.body, { childList: true, subtree: true });
-    setInterval(initAll, 1500);
-  }
+  /* shared page-level watcher (core) — see UC.watchRoots for why this replaced a
+     private-to-this-component MutationObserver + setInterval pair */
+  UC.watchRoots("vot-root", initAll);
   function rootsWithId(id){
     id = id || "default";
     var out = [], roots = document.querySelectorAll(".vot-root:not(.up-portal)");

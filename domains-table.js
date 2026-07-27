@@ -1407,19 +1407,9 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initAll);
   else initAll();
   [30, 100, 250, 500, 1000, 1800].forEach(function(ms){ setTimeout(initAll, ms); });
-  if (window.MutationObserver && !window.__udtObs){
-    window.__udtObs = new MutationObserver(function(muts){
-      for (var i = 0; i < muts.length; i++){
-        var added = muts[i].addedNodes;
-        for (var j = 0; j < added.length; j++){
-          var n = added[j];
-          if (n.nodeType === 1 && ((n.classList && n.classList.contains("udt-root")) || (n.querySelector && n.querySelector(".udt-root")))){ initAll(); return; }
-        }
-      }
-    });
-    window.__udtObs.observe(document.body, { childList: true, subtree: true });
-    setInterval(initAll, 1500);   // cheap no-op once initialised; catches late Bubble rebuilds
-  }
+  /* shared page-level watcher (core) — see UC.watchRoots for why this replaced a
+     private-to-this-component MutationObserver + setInterval pair */
+  UC.watchRoots("udt-root", initAll);
   } // end udtRun
 
   udtBoot(50); // retry for ~5s before giving up on core.js

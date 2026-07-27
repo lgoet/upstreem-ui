@@ -320,6 +320,51 @@
     return { applySticky: applySticky, syncTheadOffset: syncTheadOffset };
   }
 
+  /* Bubble re-injects a component's whole markup block (script tags included) whenever the
+     reusable it lives in re-renders, so every component needs some way to notice "my root just
+     reappeared in the DOM" and re-run its init. Each of the four components used to set this up
+     independently: its own document.body MutationObserver (childList+subtree — i.e. "wake up on
+     ANY DOM change anywhere on the page") plus its own setInterval(initAll, 1500) heartbeat. On a
+     page that places two or more of these components that's 2-4 separate whole-page observers and
+     timers all doing redundant work forever, and every one of them re-fires on totally unrelated
+     DOM churn elsewhere on the page (another reusable's appear animation, a repeating group
+     re-rendering, Mira's own UI) — exactly the kind of background tax that shows up as animations
+     feeling slightly less smooth than a plain standalone HTML embed had. One shared observer/timer
+     pair here does the same job for every registered component at once. */
+  var __rootWatchers = [];
+  var __rootWatcherObs = null, __rootWatcherIv = null;
+  function watchRoots(rootSelector, onRootsFound){
+    for (var e = 0; e < __rootWatchers.length; e++){
+      if (__rootWatchers[e].selector === rootSelector) return;   // already registered — a component's boot can run more than once per page
+    }
+    __rootWatchers.push({ selector: rootSelector, onFound: onRootsFound });
+    if (!__rootWatcherObs && window.MutationObserver){
+      __rootWatcherObs = new MutationObserver(function(muts){
+        var hit = {};
+        for (var i = 0; i < muts.length; i++){
+          var added = muts[i].addedNodes;
+          for (var j = 0; j < added.length; j++){
+            var n = added[j];
+            if (n.nodeType !== 1) continue;
+            for (var w = 0; w < __rootWatchers.length; w++){
+              var watcher = __rootWatchers[w];
+              if (hit[w]) continue;
+              if ((n.classList && n.classList.contains(watcher.selector)) ||
+                  (n.querySelector && n.querySelector("." + watcher.selector))) hit[w] = true;
+            }
+          }
+        }
+        for (var k = 0; k < __rootWatchers.length; k++){ if (hit[k]) try { __rootWatchers[k].onFound(); } catch(e){} }
+      });
+      __rootWatcherObs.observe(document.body, { childList: true, subtree: true });
+    }
+    if (!__rootWatcherIv){
+      __rootWatcherIv = setInterval(function(){
+        for (var i = 0; i < __rootWatchers.length; i++){ try { __rootWatchers[i].onFound(); } catch(e){} }
+      }, 1500);
+    }
+  }
+
   window.UpstreemCore = {
     CITE_COLOR: CITE_COLOR,
     CITE_ALIAS: CITE_ALIAS,
@@ -361,6 +406,7 @@
     makeFire: makeFire,
     makePortal: makePortal,
     placeMenu: placeMenu,
-    makeSticky: makeSticky
+    makeSticky: makeSticky,
+    watchRoots: watchRoots
   };
 })();
