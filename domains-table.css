@@ -1,0 +1,115 @@
+/* upstreem domains-table.css — component-specific styling (udt-).
+   Shared base lives in core.css. Loaded after core.css.
+   Almost everything a table needs (toolbar, search, filter/sort/cols dropdown mechanics,
+   pagination, sticky header, tooltip/explainer base, .up-pages subtext) is already generic
+   in core.css under .up-* — this file only carries domains-table's own visuals under .udt-*. */
+
+/* ---------- brand mentioned toggle (mirrors urls-table's uut-brand-toggle) ---------- */
+.udt-brand-toggle { display: none; align-items: center; justify-content: space-between; gap: 10px; height: 32px; padding: 0 8px; border-radius: 8px;
+  background: transparent; border: 0; cursor: pointer; flex: 0 0 auto; }
+.udt-brand-toggle.is-visible { display: inline-flex; }
+.udt-brand-toggle:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
+.udt-brand-toggle.is-yes, .udt-brand-toggle.is-no { background: var(--vc-heading-bg); }
+.udt-brand-toggle-lbl { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.udt-brand-check { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #fff; }
+.udt-brand-check svg { width: 11px; height: 11px; display: none; }
+.udt-brand-toggle.is-yes .udt-brand-check, .udt-brand-toggle.is-no .udt-brand-check { background: var(--vc-text); border-color: var(--vc-text); }
+.up-root[data-theme="dark"] .udt-brand-toggle.is-yes .udt-brand-check, .up-root[data-theme="dark"] .udt-brand-toggle.is-no .udt-brand-check { color: #1f1f1b; }
+.udt-brand-toggle.is-yes .udt-brand-check .udt-brand-check-yes { display: block; }
+.udt-brand-toggle.is-no .udt-brand-check .udt-brand-check-no { display: block; }
+.udt-brand-logo { width: 16px; height: 16px; border-radius: 4px; flex: 0 0 auto; display: block; object-fit: cover; }
+.udt-brand-label { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
+
+/* ---------- domain cell: favicon/logo box + name + "N pages" (core's .up-pages) ---------- */
+.udt-logo-box { width: 24px; height: 24px; border-radius: 8px; background: var(--vt-logo-bg); padding: 1px; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center; position: relative; }
+.udt-logo-box img { width: 22px; height: 22px; border-radius: 7px; object-fit: cover; display: block; }
+/* Letter fallback: a broken/missing favicon used to leave an empty square, which reads as a
+   loading glitch. The initial keeps every row visually complete. */
+.udt-logo-ltr { font-size: 11px; font-weight: 600; color: var(--vc-muted); line-height: 1; text-transform: uppercase; }
+.udt-logo-box.has-img .udt-logo-ltr { display: none; }
+
+/* go-to arrow, revealed on row hover with a delay — same behaviour as urls-table */
+.udt-row-goto { margin-left: auto; width: 16px; height: 16px; flex: 0 0 auto; color: var(--vc-third);
+  opacity: 0; transform: translateX(-3px); transition: opacity .18s ease, transform .18s ease; transition-delay: 0ms; }
+.udt-row-goto svg { width: 16px; height: 16px; display: block; }
+.up-row:hover .udt-row-goto { opacity: 1; transform: translateX(0); transition-delay: 220ms; }
+.up-root.is-vnarrow .udt-row-goto { display: none; }
+
+.udt-dom-wrap { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.udt-dom-title { font-size: 13.5px; font-weight: 500; color: var(--vc-text); letter-spacing: -0.01em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------- share / used / last-seen typography ---------- */
+.udt-num { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; flex: 0 0 auto; font-variant-numeric: tabular-nums; }
+.udt-used { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.udt-date { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
+
+/* ---------- citation-type chip (single palette — domains have no url-type dimension) ---------- */
+.udt-tag { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 7px;
+  font-size: 12px; font-weight: 600; white-space: nowrap; max-width: 100%; overflow: hidden; }
+.udt-tag-lbl { overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------- share trend chip ---------- */
+.udt-trend { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; flex: 0 0 auto; font-variant-numeric: tabular-nums; }
+.udt-trend svg { width: 16px; height: 16px; display: block; }
+.udt-trend.pos { color: var(--vt-up); }
+.udt-trend.neg { color: var(--vt-down); }
+
+/* ---------- row actions ---------- */
+.udt-actions { display: inline-flex; align-items: center; gap: 2px; flex: 0 0 auto; }
+.udt-td-actions { overflow: hidden; }
+.udt-actbtn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border: 0; border-radius: 7px;
+  background: transparent; color: var(--vc-third); cursor: pointer; padding: 0; flex: 0 0 auto;
+}
+.udt-actbtn:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
+.udt-actbtn svg { width: 15px; height: 15px; display: block; }
+.udt-actbtn.is-done { color: var(--vt-up); }
+.udt-actbtn svg.up-ic-done { display: none; }
+.udt-actbtn.is-done svg.up-ic-copy { display: none; }
+.udt-actbtn.is-done svg.up-ic-done { display: block; }
+
+/* ---------- column info / explainer visuals (panel + tooltip shell are core.css's .up-explain) ---------- */
+.udt-explain-vis {
+  background: #ffffff; border-radius: 9px; padding: 11px 12px;
+  display: flex; flex-direction: column; gap: 7px; align-items: flex-start;
+  margin-bottom: 9px; min-height: 46px; justify-content: center;
+}
+.udt-explain-h { font-size: 14.5px; font-weight: 600; line-height: 1.2; padding: 0 3px; margin-bottom: 4px; color: #ffffff; }
+.udt-explain-t { font-size: 13.5px; font-weight: 400; line-height: 1.5; padding: 0 3px; color: rgba(255,255,255,0.68); }
+.udt-explain-chip { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 7px;
+  font-size: 11px; font-weight: 600; white-space: nowrap; }
+.udt-explain-row { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 500; color: #1f1f1b; }
+.udt-explain-row svg { width: 14px; height: 14px; display: block; }
+.udt-explain-up { color: #2ea84a; }
+.udt-explain-down { color: #b0200c; }
+.up-explain[data-theme="dark"] .udt-explain-h { color: #1f1f1b; }
+.up-explain[data-theme="dark"] .udt-explain-t { color: rgba(31,31,27,0.66); }
+.up-explain[data-theme="dark"] .udt-explain-vis { background: #1b1b1b; }
+.up-explain[data-theme="dark"] .udt-explain-row { color: #f0f0f0; }
+.up-explain[data-theme="dark"] .udt-explain-up { color: #6ee7b7; }
+.up-explain[data-theme="dark"] .udt-explain-down { color: #fca5a5; }
+
+/* ---------- active-columns count badge (mirrors urls-table's uut-cols-badge) ---------- */
+.udt-cols-badge {
+  position: absolute; top: -3px; right: -3px; z-index: 2;
+  min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
+  background: var(--vc-text); color: #e0e0e0;
+  font-family: inherit; font-size: 10px; font-weight: 600; line-height: 1;
+  display: none; align-items: center; justify-content: center;
+  font-variant-numeric: tabular-nums; pointer-events: none;
+}
+.up-root[data-theme="dark"] .udt-cols-badge { color: #1f1f1b; }
+.udt-cols-badge.is-visible { display: inline-flex; }
+
+/* ---------- progressive disclosure by width ----------
+   The generic w2 (.up-ment) / w1 (.up-sort) / w0 (.up-cols, .up-export) tier rules already live
+   in core.css. Only the brand-toggle's w3 rule is component-specific, since the class itself is. */
+.up-root.is-w3 .udt-brand-toggle { display: none !important; }
+
+/* table: same idea, dropping cell content before dropping whole columns.
+   Actions and "N pages" (.up-pages, core.css is-t1) use the shared tier classes already. */
+.up-root.is-t2 .udt-td-actions, .up-root.is-t2 .udt-th-actions { display: none !important; }
+.up-root.is-t0 .udt-trend { display: none; }
