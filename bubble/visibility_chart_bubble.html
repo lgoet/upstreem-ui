@@ -1,0 +1,133 @@
+<!--
+  UPSTREEM — VISIBILITY CHART
+
+  Dashboard widget: a Chart.js line chart ("Visibility over Time", up to 7 companies) side by
+  side with a "Top Brands" table (Visibility / Ranking / Sentiment). No pagination, no column
+  hiding, no row-height control — this is a dashboard component, not a data table.
+
+  ── Bubble dynamic values on the root element ────────────────────────────────
+  data-instance   = "ROOTID_[dynamic id]"   unique per placement
+  data-isdark     = "yes" / "no"
+  data-processing  = "yes" / "no"   loading state, source 1 (ORed together)
+  data-processing2 = "yes" / "no"   loading state, source 2 (ORed together)
+
+  ── Event names must be unique per placement ─────────────────────────────────
+  data-gran-fn="bubble_fn_votGranularity_[dynamic id]"
+  data-rowclick-fn="bubble_fn_votRowClick_[dynamic id]"
+  data-goto-fn="bubble_fn_votGoTo_[dynamic id]"
+  data-sort-fn="bubble_fn_votSortTable_[dynamic id]"
+  data-submit-fn="bubble_fn_votSubmitCompanies_[dynamic id]"
+  data-export-fn="bubble_fn_votExportTable_[dynamic id]"
+
+  Every one fires a single RAW value — NOT JSON — via fn(value):
+    gran      "day" | "week" | "month"
+    rowclick  the clicked row's company_id, as a string
+    goto      the instanceId, as a string
+    sort      "<field>_<dir>", field via {visibility:"visibility", ranking:"rank", sentiment:"sentiment"}
+              e.g. "rank_asc", "visibility_desc"
+    submit    comma-joined company-id string, e.g. "12,47,90" — must be Bubble type "text",
+              NOT "list of texts"
+    export    the instanceId, as a string
+
+  ── Filling the component ─────────────────────────────────────────────────────
+  window.renderVisibilityChart({
+    instanceId: "...",
+    series: [{ company_id, day, visibility_pct }, ...],   // omit/empty to keep last-known series
+    companies: [{ company_id, name, color, favicon_url, visibility_window_pct }, ...],
+    filterCompanies: [{ company_id, name, color, favicon_url }, ...],  // full list for the Companies dropdown
+    table: [{ company_id, name, logo_url, position,
+               visibility_pct, visibility_delta_pct,
+               avg_rank, avg_rank_delta,
+               sentiment, sentiment_delta }, ...],
+    totalCount: 42,
+    granularity: "day" | "week" | "month"     // optional, only applied before the user picks one
+  });
+  window.setVisibilityChartLoading("INSTANCE_ID", "yes" | "no");
+  window.resetVisibilityChart("INSTANCE_ID");    // resets sort + Companies filter to defaults
+-->
+<div class="up-root vot-root"
+     data-instance="INSTANCE_ID"
+     data-isdark="IS_DARK"
+     data-processing="IS_PROCESSING"
+     data-processing2="IS_PROCESSING_2"
+     data-gran-fn="bubble_fn_votGranularity"
+     data-rowclick-fn="bubble_fn_votRowClick"
+     data-goto-fn="bubble_fn_votGoTo"
+     data-sort-fn="bubble_fn_votSortTable"
+     data-submit-fn="bubble_fn_votSubmitCompanies"
+     data-export-fn="bubble_fn_votExportTable">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@main/core.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@main/visibility-chart.css">
+
+  <div class="vot-unit vot-unit-left">
+    <div class="vot-head">
+      <div class="vot-heading">Visibility over Time</div>
+      <div class="vot-head-tools">
+        <div class="vc-gran" role="tablist" aria-label="Granularity">
+          <button class="vc-gran-btn is-active" data-gran="day" type="button" role="tab">Day</button>
+          <button class="vc-gran-btn" data-gran="week" type="button" role="tab">Week</button>
+          <button class="vc-gran-btn" data-gran="month" type="button" role="tab">Month</button>
+        </div>
+        <button class="vot-maximize vot-max-top vot-iconbtn" type="button" data-tip="Minimize" aria-label="Minimize">
+          <svg class="ic-max" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline>
+            <line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line>
+          </svg>
+          <svg class="ic-min" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 14 10 14 10 20"></polyline><polyline points="20 10 14 10 14 4"></polyline>
+            <line x1="14" y1="10" x2="21" y2="3"></line><line x1="3" y1="21" x2="10" y2="14"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="vot-box vot-box-left">
+      <div class="vot-panel-body">
+        <div class="vc-line-wrap"><canvas class="vc-line-canvas"></canvas></div>
+        <div class="vc-legend"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="vot-unit vot-unit-right">
+    <div class="vot-head">
+      <div class="vot-heading vot-heading-right"><span class="vot-head-label">Top Brands</span><span class="vot-head-sep"></span><span class="vot-head-count"></span></div>
+      <div class="vot-head-tools">
+        <div class="vot-sort">
+          <button class="vot-sort-btn vot-iconbtn" type="button" data-tip="Sort" aria-label="Sort">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+          </button>
+          <div class="vot-sort-menu" role="menu" aria-hidden="true"></div>
+        </div>
+        <div class="vot-filter">
+          <button class="vot-filter-btn vot-iconbtn" type="button" data-tip="Filter brands" aria-label="Filter">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+            <span class="vot-filter-badge"></span>
+          </button>
+          <div class="up-ment-menu" role="menu" aria-hidden="true"></div>
+        </div>
+        <button class="vot-export vot-iconbtn" type="button" data-tip="Export" aria-label="Export">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+        <button class="vot-maximize vot-max-right vot-iconbtn" type="button" data-tip="Maximize" aria-label="Maximize">
+          <svg class="ic-max" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline>
+            <line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line>
+          </svg>
+          <svg class="ic-min" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 14 10 14 10 20"></polyline><polyline points="20 10 14 10 14 4"></polyline>
+            <line x1="14" y1="10" x2="21" y2="3"></line><line x1="3" y1="21" x2="10" y2="14"></line>
+          </svg>
+        </button>
+        <button class="vot-goto vot-iconbtn" type="button" data-tip="Open" aria-label="Open">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+        </button>
+      </div>
+    </div>
+    <div class="vot-box vot-box-right">
+      <div class="vt-table"></div>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@main/core.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@main/visibility-chart.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@main/visibility-chart-watermark.js"></script>
