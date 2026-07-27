@@ -1532,12 +1532,17 @@
     root.__uutController = ctrl;
     return ctrl;
   }
+  /* .uut-root (not the shared .up-root) is the init selector: once another .up-root-based
+     component sits on the same page, matching on .up-root alone would make this script also
+     try to initialize the OTHER component's roots (and vice versa) — same shared CSS-variable
+     class, different JS. .up-root still carries the theming/variables; .uut-root marks "this
+     root belongs to urls-table.js" specifically. */
   function initAll(){
-    var roots = document.querySelectorAll(".up-root:not(.up-portal)");
+    var roots = document.querySelectorAll(".uut-root:not(.up-portal)");
     for (var i = 0; i < roots.length; i++) initRoot(roots[i]);
   }
   function rootsWithId(id){
-    var out = [], roots = document.querySelectorAll(".up-root:not(.up-portal)");
+    var out = [], roots = document.querySelectorAll(".uut-root:not(.up-portal)");
     for (var i = 0; i < roots.length; i++){
       if (roots[i].getAttribute("data-instance") === id) out.push(roots[i]);
     }
@@ -1555,7 +1560,7 @@
 
   function doRender(params){
     var id = params && params.instanceId;
-    var ctrl = id ? resolve(id) : initRoot(document.querySelector(".up-root"));
+    var ctrl = id ? resolve(id) : initRoot(document.querySelector(".uut-root"));
     if (!ctrl) return false;
     ctrl.update(params);
     return true;
@@ -1570,7 +1575,7 @@
     var list = brands;
     if (typeof list === "string"){ try { list = JSON.parse(list); } catch(e){ list = []; } }
     if (!Array.isArray(list)) list = [];
-    var ctrl = id ? resolve(id) : initRoot(document.querySelector(".up-root"));
+    var ctrl = id ? resolve(id) : initRoot(document.querySelector(".uut-root"));
     if (!ctrl) return false;
     ctrl.update({ brands: list });
     return true;
@@ -1633,7 +1638,7 @@
         var added = muts[i].addedNodes;
         for (var j = 0; j < added.length; j++){
           var n = added[j];
-          if (n.nodeType === 1 && ((n.classList && n.classList.contains("up-root")) || (n.querySelector && n.querySelector(".up-root")))){ initAll(); return; }
+          if (n.nodeType === 1 && ((n.classList && n.classList.contains("uut-root")) || (n.querySelector && n.querySelector(".uut-root")))){ initAll(); return; }
         }
       }
     });

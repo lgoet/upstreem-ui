@@ -569,6 +569,8 @@
     .up-hl { background: rgba(255, 214, 10, 0.38); color: inherit; border-radius: 3px; padding: 0 1px; }
     .up-root[data-theme="dark"] .up-hl { background: rgba(255, 214, 10, 0.26); }
     .up-pages { font-size: 12px; font-weight: 400; color: var(--vc-third); white-space: nowrap; flex: 0 0 auto; }
+    /* Compact row mode hides the subtext line, same idea as urls-table's uut-url-sub. */
+    .up-root.is-dense .up-pages { display: none; }
 
     
 
