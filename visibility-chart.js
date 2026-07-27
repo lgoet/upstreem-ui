@@ -630,9 +630,13 @@
       }
       return tableHeadHtml() + '<div class="vt-tbody">' + rows + '</div>';
     }
+    var tableEmptyGraceTimer = null;
     function renderTableSide(){
       if (root.__votController && root.__votController.__ctrlId !== myCtrlId){ return; }
-      if (state.loading || !state.hasTable){ tableEl.innerHTML = tableSkeletonHtml(); }
+      if (state.loading || !state.hasTable){
+        if (tableEmptyGraceTimer){ clearTimeout(tableEmptyGraceTimer); tableEmptyGraceTimer = null; }
+        tableEl.innerHTML = tableSkeletonHtml();
+      }
       else { renderTable(); }
     }
     function renderLineSide(){
@@ -702,7 +706,22 @@
     function renderTable(){
       var rows = Array.isArray(state.tableRows) ? state.tableRows : [];
       var head = tableHeadHtml();
-      if (!rows.length){ tableEl.innerHTML = head + '<div class="vt-empty">No data</div>'; return; }
+      if (!rows.length){
+        /* An empty tableRows delivery can be an interim "clearing" step before the real data
+           lands a moment later — showing "No data" immediately for that interim state flashes an
+           empty placeholder that's gone a beat later. Give a short grace window for a follow-up
+           render before committing to the empty view. */
+        if (!tableEmptyGraceTimer){
+          tableEl.innerHTML = tableSkeletonHtml();
+          tableEmptyGraceTimer = setTimeout(function(){
+            tableEmptyGraceTimer = null;
+            if (state.loading || !state.hasTable || (Array.isArray(state.tableRows) && state.tableRows.length)) return;
+            tableEl.innerHTML = head + '<div class="vt-empty">No data</div>';
+          }, 3000);   // matches this same file's line-chart __votNoDataT grace window
+        }
+        return;
+      }
+      if (tableEmptyGraceTimer){ clearTimeout(tableEmptyGraceTimer); tableEmptyGraceTimer = null; }
       var body = rows.map(function(r, i){
         var pos = (r.position != null) ? Number(r.position) : null;
         var isLast = (i === rows.length - 1);

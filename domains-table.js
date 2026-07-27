@@ -260,25 +260,45 @@
         '</div>' +
       '</div>';
     }
+    var emptyGraceTimer = null;
+    function clearEmptyGrace(){ if (emptyGraceTimer){ clearTimeout(emptyGraceTimer); emptyGraceTimer = null; } }
+    function renderEmptyState(filtered){
+      elTbody.innerHTML = '<div class="up-empty">' +
+        '<div class="up-empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' +
+          '<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>' +
+        '<div class="up-empty-h">' + (filtered ? "No matching domains" : "No domains yet") + '</div>' +
+        '<div class="up-empty-t">' + (filtered
+          ? "Nothing matches the current search and filters."
+          : "Domains appear here once your prompts have been run.") + '</div>' +
+        (filtered ? '<button class="up-empty-btn" type="button" data-clearall>Clear filters</button>' : "") +
+      '</div>';
+    }
     function renderTable(){
       // skeleton matches the CURRENT page size, so the table doesn't visibly resize when data lands
-      if (state.loading || !state.hasData){ elTbody.innerHTML = skeletonRows(state.pageSize); return; }
+      if (state.loading || !state.hasData){ clearEmptyGrace(); elTbody.innerHTML = skeletonRows(state.pageSize); return; }
       if (!state.rows.length){
         var filtered = !!state.query ||
           Object.keys(state.appliedSel).some(function(k){ return state.appliedSel[k]; }) ||
           !!state.brandMentioned ||
           Object.keys(state.mentionApplied).some(function(k){ return state.mentionApplied[k]; });
-        elTbody.innerHTML = '<div class="up-empty">' +
-          '<div class="up-empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' +
-            '<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>' +
-          '<div class="up-empty-h">' + (filtered ? "No matching domains" : "No domains yet") + '</div>' +
-          '<div class="up-empty-t">' + (filtered
-            ? "Nothing matches the current search and filters."
-            : "Domains appear here once your prompts have been run.") + '</div>' +
-          (filtered ? '<button class="up-empty-btn" type="button" data-clearall>Clear filters</button>' : "") +
-        '</div>';
+        if (filtered){ clearEmptyGrace(); renderEmptyState(true); return; }
+        /* An unfiltered empty result can be an interim "clearing" step before the real data lands
+           a moment later (e.g. a workflow that clears the table before kicking off a new query) —
+           showing "No domains yet" immediately for that interim state flashes an empty placeholder
+           that's gone a beat later. Give a short grace window for a follow-up call before
+           committing to the empty view; any subsequent render() (loading again, or real rows)
+           cancels it via clearEmptyGrace() above. */
+        if (!emptyGraceTimer){
+          elTbody.innerHTML = skeletonRows(state.pageSize);
+          emptyGraceTimer = setTimeout(function(){
+            emptyGraceTimer = null;
+            if (state.loading || !state.hasData || state.rows.length) return;   // state moved on already
+            renderEmptyState(false);
+          }, 3000);   // matches the line-chart's established __votNoDataT grace window (visibility-chart.js)
+        }
         return;
       }
+      clearEmptyGrace();
       elTbody.innerHTML = state.rows.map(rowHtml).join("");
     }
     function renderCount(){

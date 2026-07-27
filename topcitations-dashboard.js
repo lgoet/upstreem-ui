@@ -550,9 +550,12 @@
         return (it.rawKey != null && selSet[it.rawKey]) ? it : { name: it.name, share: it.share, color: grey, rawKey: it.rawKey };
       });
     }
+    var chartEmptyGraceTimer = null;
+    function chartIsEmpty(){ return !state.prepped.length || state.prepped.every(function(x){ return !(Number(x.share) > 0); }); }
     function renderChartSide(){
       if (root.__tcdController && root.__tcdController.__ctrlId !== myCtrlId) return;
       if (state.loading || state.optimisticLoading || !state.hasChart){
+        if (chartEmptyGraceTimer){ clearTimeout(chartEmptyGraceTimer); chartEmptyGraceTimer = null; }
         destroyChart();
         if (topTotal) topTotal.style.display = "none";
         body.innerHTML = chartSkeletonHtml();
@@ -560,6 +563,24 @@
         return;
       }
       state.prepped = applySelectionDim(prepData(state.mode, activeBreakdown(), isDark));
+      if (chartIsEmpty()){
+        /* Same interim-"clearing" flash risk as the table side — give a short grace window before
+           committing to "No data" in case a real breakdown lands a moment later. */
+        if (!chartEmptyGraceTimer){
+          body.innerHTML = chartSkeletonHtml();
+          chartEmptyGraceTimer = setTimeout(function(){
+            chartEmptyGraceTimer = null;
+            if (root.__tcdController && root.__tcdController.__ctrlId !== myCtrlId) return;
+            if (state.loading || state.optimisticLoading || !state.hasChart || !chartIsEmpty()) return;
+            if (state.chartMode === "bar"){ if (topTotal) topTotal.style.display = "flex"; renderBars(); }
+            else { if (topTotal) topTotal.style.display = "none"; renderDoughnut(); }
+            syncChartSwitch();
+          }, 3000);   // matches visibility-chart's established __votNoDataT grace window
+        }
+        syncChartSwitch();
+        return;
+      }
+      if (chartEmptyGraceTimer){ clearTimeout(chartEmptyGraceTimer); chartEmptyGraceTimer = null; }
       if (state.chartMode === "bar"){ if (topTotal) topTotal.style.display = "flex"; renderBars(); }
       else { if (topTotal) topTotal.style.display = "none"; renderDoughnut(); }
       syncChartSwitch();
@@ -610,10 +631,26 @@
       tableEl.classList.toggle("tct-hide-type", stacked && rootW > 0 && rootW < 500);
       checkTrendFit();
     }
+    var tableEmptyGraceTimer = null;
     function renderTable(){
       var rows = activeRows();
       var head = tableHeadHtml(state.mode);
-      if (!rows.length){ tableEl.innerHTML = head + '<div class="tct-empty">No data</div>'; return; }
+      if (!rows.length){
+        /* An empty top_domains/top_urls delivery can be an interim "clearing" step before the
+           real data lands a moment later — showing "No data" immediately for that interim state
+           flashes an empty placeholder that's gone a beat later. Give a short grace window for a
+           follow-up render before committing to the empty view. */
+        if (!tableEmptyGraceTimer){
+          tableEl.innerHTML = tableSkeletonHtml();
+          tableEmptyGraceTimer = setTimeout(function(){
+            tableEmptyGraceTimer = null;
+            if (state.loading || state.optimisticLoading || !state.hasTable || activeRows().length) return;
+            tableEl.innerHTML = head + '<div class="tct-empty">No data</div>';
+          }, 3000);   // matches visibility-chart's established __votNoDataT grace window
+        }
+        return;
+      }
+      if (tableEmptyGraceTimer){ clearTimeout(tableEmptyGraceTimer); tableEmptyGraceTimer = null; }
       var body2 = rows.map(function(r, i){
         var pos = i + 1;
         var isUrl = state.mode === "url";
@@ -656,7 +693,10 @@
     }
     function renderTableSide(){
       if (root.__tcdController && root.__tcdController.__ctrlId !== myCtrlId) return;
-      if (state.loading || state.optimisticLoading || !state.hasTable){ tableEl.innerHTML = tableSkeletonHtml(); }
+      if (state.loading || state.optimisticLoading || !state.hasTable){
+        if (tableEmptyGraceTimer){ clearTimeout(tableEmptyGraceTimer); tableEmptyGraceTimer = null; }
+        tableEl.innerHTML = tableSkeletonHtml();
+      }
       else { renderTable(); }
     }
 

@@ -499,8 +499,13 @@ Genug Platz unter dem Trigger      -> Menü klappt nach unten auf
 Zu wenig Platz unten, mehr oben    -> Menü klappt nach oben auf (Flip)
 Reicht in keine Richtung ganz      -> verbleibender Platz wird max-height, Liste scrollt
 ```
-Rechtsbündig am Trigger, im Viewport gehalten (Rand 8px), `z-index` auf
-Tooltip-Ebene (`2147483002`). Gap zwischen Trigger und Menü: **4px** (`GAP = 4`).
+Rechtsbündig am Trigger, im Viewport gehalten (Rand 8px), `z-index: 9999` — hoch
+genug für normalen Seiteninhalt, aber bewusst NICHT auf Tooltip-Ebene
+(`2147483000`/`2147483001`): der Body-Portal allein reicht schon, um Clipping/
+Stacking-Context-Fallen zu entkommen (siehe Abschnitt 14); ein extrem hoher
+z-index zusätzlich hat Menüs über Seiten-Chrome gelegt, die eigentlich darüber
+liegen sollte (Sticky-Nav, Bubble-eigene Overlays) — genau das, was die Migration
+eigentlich vereinheitlichen sollte. Gap zwischen Trigger und Menü: **4px** (`GAP = 4`).
 Keine erzwungene Mindesthöhe — die `max-height` ist der real verfügbare Platz, damit
 ein nach oben geklapptes Menü nie nach unten über den Button hinausschießt; ist wenig
 Platz, scrollt die Liste. Bei `scroll` (Capture, um Scrolls in **jedem** Vorfahren zu
@@ -929,7 +934,7 @@ aber den Gruppen-Scroll (Tabelle scrollt dann im eigenen Bereich). Wenn ein Layo
 internen Scroll verträgt, ist das der einfachere Weg.
 
 `z-index`: Kopf 6 > Spaltenkopf 5 > Zeilen, alle weit unter den `position:fixed`-Dropdowns
-(`2147483002`), damit Menüs alles überlagern.
+(`9999`), damit Menüs alles überlagern.
 
 
 ### Weiteres

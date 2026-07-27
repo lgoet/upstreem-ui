@@ -282,7 +282,13 @@
     menu.style.left = Math.round(left) + "px";
     menu.style.right = "auto";
     menu.style.maxHeight = Math.max(0, Math.round(maxH)) + "px";
-    menu.style.zIndex = "2147483002";
+    /* Deliberately NOT the near-max value used for tooltips (2147483000/2147483001) — a dropdown
+       menu only needs to clear ordinary page content, not out-rank every Bubble-native overlay on
+       the page (a sticky nav, a floating widget). Appending to <body> already escapes clipping and
+       stacking-context traps (the actual point of the portal); an extreme z-index on top of that
+       was making menus render above page chrome they had no business covering. 9999 clears normal
+       content with a wide margin while leaving room for anything the page itself elevates. */
+    menu.style.zIndex = "9999";
   }
 
   /* Sticky header machinery: pins the toolbar + column header at data-sticky-top on wide screens,
