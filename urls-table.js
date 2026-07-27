@@ -232,9 +232,11 @@
         if (logo.indexOf("//") === 0) logo = "https:" + logo;
         var initial = nm.charAt(0) || "?";
         return '<span class="uut-stack-item' + (logo ? " has-img" : "") + '" data-brandtip="' + esc(nm) + '">' +
-                 '<span class="uut-stack-ltr">' + esc(initial) + '</span>' +
-                 (logo ? '<img src="' + esc(logo) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
-                         ' onerror="this.parentNode.classList.remove(\'has-img\'); this.remove()"/>' : "") +
+                 '<span class="uut-stack-vis">' +
+                   '<span class="uut-stack-ltr">' + esc(initial) + '</span>' +
+                   (logo ? '<img src="' + esc(logo) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
+                           ' onerror="this.closest(\'.uut-stack-item\').classList.remove(\'has-img\'); this.remove()"/>' : "") +
+                 '</span>' +
                '</span>';
       }).join("");
       if (rest > 0) html += '<span class="uut-stack-more">+' + rest + '</span>';
