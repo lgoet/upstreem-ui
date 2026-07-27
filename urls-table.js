@@ -17,7 +17,6 @@
   }
 
   function uutRun(){
-  try { if (window.console && console.log) console.log("%cUPSTREEM urls-table","font-weight:bold;color:#2ea84a","build 2026-07-26-ROBUST — Dropdown->uutBrand{brand_mentioned}, Toggle->uutMentioned{brands}"); } catch(e){}
   var UC = window.UpstreemCore;
   var CITE_COLOR = UC.CITE_COLOR, CITE_ALIAS = UC.CITE_ALIAS, ALL_CITATION_TYPES = UC.ALL_CITATION_TYPES, URL_TYPE = UC.URL_TYPE, ALL_URL_TYPES = UC.ALL_URL_TYPES, OTHER_LIGHT = UC.OTHER_LIGHT, OTHER_DARK = UC.OTHER_DARK, CHIP_BG_DARK = UC.CHIP_BG_DARK, MONTHS = UC.MONTHS, DEBOUNCE = UC.DEBOUNCE, MIN = UC.MIN, SORT_DEBOUNCE = UC.SORT_DEBOUNCE, PAGE_SIZES = UC.PAGE_SIZES, DEFAULT_PAGE_SIZE = UC.DEFAULT_PAGE_SIZE, fmtTotal = UC.fmtTotal, isYes = UC.isYes, highlight = UC.highlight, esc = UC.esc, citeName = UC.citeName, tint = UC.tint, toNum = UC.toNum, fmt1 = UC.fmt1, fmtInt = UC.fmtInt, fmtDate = UC.fmtDate, foldDiacritics = UC.foldDiacritics, germanExpand = UC.germanExpand, resolveBubbleFn = UC.resolveBubbleFn, TREND_UP = UC.TREND_UP, TREND_DOWN = UC.TREND_DOWN, CHECK_SVG = UC.CHECK_SVG, COPY_SVG = UC.COPY_SVG, GOTO_SVG = UC.GOTO_SVG, DONE_SVG = UC.DONE_SVG, EXT_SVG = UC.EXT_SVG, STORE = UC.STORE, LOADING_EXPLICIT = UC.LOADING_EXPLICIT;
 
@@ -85,7 +84,7 @@
     var elMent      = root.querySelector(".up-ment");
     var elMentMenu  = root.querySelector(".up-ment-menu");
     var mentQuery = "";   // transient brand-search query inside the mentioned dropdown
-    elMentMenu.addEventListener("input", function(e){
+    if (elMentMenu) elMentMenu.addEventListener("input", function(e){
       if (e.target && e.target.classList && e.target.classList.contains("up-ment-search")) applyMentFilter();
     });
     var elMentLbl   = root.querySelector(".up-ment-lbl");
@@ -397,6 +396,7 @@
 
     /* ---------------- sort dropdown ---------------- */
     function populateSort(){
+      if (!elSortMenu) return;   // a stale/incomplete root copy may be missing this markup
       var html = '<div class="up-pop-head">Sort by</div>';
       html += SORT_FIELDS.map(function(f){
         return '<div class="up-pop-opt' + (f.key === state.sortField ? " is-active" : "") + '" data-sortfield="' + f.key + '">' +
@@ -413,6 +413,7 @@
 
     /* ---------------- citation type filter ---------------- */
     function populateFilter(){
+      if (!elFilterMenu) return;   // a stale/incomplete root copy may be missing this markup
       /* Two dimensions in one dropdown, exactly like the TopCitations URL mode: a URL has both a
          citation type (what kind of source) and a url type (what kind of page). Each keeps its own
          selection, so switching the tab back and forth doesn't lose anything. */
@@ -602,6 +603,7 @@
       });
     }
     function populateCols(){
+      if (!elColsMenu) return;   // a stale/incomplete root copy may be missing this markup
       var vis = visibleCols();
       var off = COLUMNS.length - vis.length;
       var head = '<div class="up-pop-head up-pop-head-row">' +
@@ -719,6 +721,7 @@
        The quick "Brand X mentioned" toggle next to it stays: that one is the single-click path for
        the user's own brand. This is the broader filter for any combination of tracked brands. */
     function populateMent(){
+      if (!elMentMenu) return;   // a stale/incomplete root copy may be missing this markup
       var list = state.brands || [];
       var selCount = Object.keys(state.mentionSel).filter(function(k){ return state.mentionSel[k]; }).length;
       var head = '<div class="up-filter-head">' +
@@ -754,6 +757,7 @@
       applyMentFilter();
     }
     function applyMentFilter(){
+      if (!elMentMenu) return;   // a stale/incomplete root copy may be missing this markup
       var inp = elMentMenu.querySelector(".up-ment-search");
       if (inp) mentQuery = inp.value;
       var q = (mentQuery || "").trim().toLowerCase();
@@ -769,6 +773,7 @@
     }
     /* Refresh only the dropdown's head (Reset / Select all) after an in-place (de)select. */
     function syncMentHead(){
+      if (!elMentMenu) return;   // a stale/incomplete root copy may be missing this markup
       var head = elMentMenu.querySelector(".up-filter-head");
       if (!head) return;
       var list = state.brands || [];
@@ -779,6 +784,7 @@
            : (list.length ? '<button class="up-pop-action" type="button" data-mentall>Select all</button>' : ""));
     }
     function syncMentLabel(){
+      if (!elMent || !elMentLbl) return;   // a stale/incomplete root copy may be missing this markup
       var keys = Object.keys(state.mentionApplied).filter(function(k){ return state.mentionApplied[k]; });
       elMent.classList.toggle("is-active", !!keys.length);
       var lbl;
@@ -1319,11 +1325,13 @@
       if (d) fire("data-rowclick-fn", "uutRowClick", { url: d });
     });
 
-    elSearchIn.addEventListener("input", onSearchInput);
-    elSearchIn.addEventListener("keydown", function(e){
-      if (e.key === "Escape"){ e.stopPropagation(); toggleSearch(); }
-      if (e.key === "Enter"){ clearTimeout(debTimer); if (state.query.length >= MIN || !state.query.length) runSearch(); }
-    });
+    if (elSearchIn){
+      elSearchIn.addEventListener("input", onSearchInput);
+      elSearchIn.addEventListener("keydown", function(e){
+        if (e.key === "Escape"){ e.stopPropagation(); toggleSearch(); }
+        if (e.key === "Enter"){ clearTimeout(debTimer); if (state.query.length >= MIN || !state.query.length) runSearch(); }
+      });
+    }
     document.addEventListener("click", function(e){
       if (e.__uutInside) return;          // handled by the root listener above
       if (root.contains(e.target)) return;

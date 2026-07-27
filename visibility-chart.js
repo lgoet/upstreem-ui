@@ -2,6 +2,27 @@
 (function(){
   "use strict";
 
+  /* window.renderVisibilityChart / setVisibilityChartLoading / resetVisibilityChart only become
+     the real implementations once votRun() finishes below (after the core.js wait). Bubble's own
+     "Run Javascript" steps typically poll for these by name in a loop and call whichever one they
+     find first — if a "loading" call and a "render with data" call are both still polling while
+     core.js is slow to arrive, whichever poll happens to land first wins, independent of which
+     Bubble workflow step actually ran first. That's exactly what made loading state unreliable: a
+     "data has arrived" render could beat a "start loading" call that was issued earlier, dropping
+     the loading state or leaving it to flip back and forth (each flip re-triggering the chart's
+     entrance animation) once the delayed call finally landed. Defining thin stub functions here,
+     before any waiting happens, means Bubble's poll always finds a callable function on its very
+     first try, so calls land in a queue in the exact order Bubble invoked them and get replayed in
+     that same order once the real implementations are ready — no more race between independent
+     polling loops. */
+  var __votBootQueue = window.__votBootQueue = window.__votBootQueue || [];
+  if (!window.__votBootStubbed){
+    window.__votBootStubbed = true;
+    window.renderVisibilityChart = function(){ __votBootQueue.push(["renderVisibilityChart", arguments]); };
+    window.setVisibilityChartLoading = function(){ __votBootQueue.push(["setVisibilityChartLoading", arguments]); };
+    window.resetVisibilityChart = function(){ __votBootQueue.push(["resetVisibilityChart", arguments]); };
+  }
+
   /* Bubble injects this component's <script> tags via jQuery .html(), which does not guarantee
      external scripts execute in DOM order — visibility-chart.js can start running before core.js
      has finished loading. Retry briefly instead of bailing forever, same pattern/reasoning as
@@ -16,7 +37,6 @@
   }
 
   function votRun(){
-  try { if (window.console && console.log) console.log("%cUPSTREEM visibility-chart","font-weight:bold;color:#2ea84a","build 2026-07-27"); } catch(e){}
   var UC = window.UpstreemCore;
   var esc = UC.esc, isYes = UC.isYes, resolveBubbleFn = UC.resolveBubbleFn, fmt1 = UC.fmt1, CHECK_SVG = UC.CHECK_SVG;
 
@@ -1444,6 +1464,16 @@
     }
     return did;
   };
+
+  /* Replay whatever Bubble called against the stub functions above while this script was still
+     waiting on core.js, in the exact order those calls arrived — see the comment by the stub
+     definitions for why this is what actually fixes the loading-state race. */
+  if (__votBootQueue.length){
+    var __votQueued = __votBootQueue.splice(0, __votBootQueue.length);
+    __votQueued.forEach(function(entry){
+      try { window[entry[0]].apply(null, entry[1]); } catch(e){}
+    });
+  }
 
   /* ================= forwarder on parent AND top (nested reusables) ================= */
   (function exposeUpward(){
