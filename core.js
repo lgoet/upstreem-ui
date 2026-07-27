@@ -175,13 +175,10 @@
       var bt = e.target.closest("[data-brandtip]");
       if (bt && root.contains(bt)) showTipText(bt, bt.getAttribute("data-brandtip"));
     });
-    root.addEventListener("mouseout", function(e){
-      var tipEl = e.target.closest("[data-tip]") || e.target.closest("[data-brandtip]");
-      if (!tipEl) return;
-      var to = e.relatedTarget;
-      if (to && tipEl.contains(to)) return;
-      hideTip();
-    });
+    root.addEventListener("mouseleave", function(e){
+      var t = e.target;
+      if (t && (t.hasAttribute("data-tip") || t.hasAttribute("data-brandtip"))) hideTip();
+    }, true);
     return { showTip: showTip, showTipText: showTipText, showTipWide: showTipWide, hideTip: hideTip, el: tip };
   }
 
