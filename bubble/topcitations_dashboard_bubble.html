@@ -1,0 +1,134 @@
+<!--
+  UPSTREEM — TOP CITATIONS DASHBOARD
+
+  LEFT = Citation Type / URL Type doughnut-or-bar chart, RIGHT = Top Domains / Top URLs table.
+
+  ── Bubble dynamic values on the root element ────────────────────────────────
+  data-instance   = "ROOTID_[dynamic id]"   unique per placement
+  data-isdark     = "yes" / "no"
+  data-processing  = "yes" / "no"   loading state, source 1 (ORed together)
+  data-processing2 = "yes" / "no"   loading state, source 2 (ORed together)
+
+  ── Event names must be unique per placement ─────────────────────────────────
+  data-mode-fn="bubble_fn_tcdMode_[dynamic id]"
+  data-rowclick-fn="bubble_fn_tcdRowClick_[dynamic id]"
+  data-goto-fn="bubble_fn_tcdGoTo_[dynamic id]"
+  data-export-fn="bubble_fn_tcdExportTable_[dynamic id]"
+  data-types-fn="bubble_fn_tcdApplyTypeFilter_[dynamic id]"
+  data-dimension-fn="bubble_fn_tcdFilterDimension_[dynamic id]"
+  data-brand-fn="bubble_fn_tcdBrandMentioned_[dynamic id]"
+
+  Every one fires via fn(value, instanceId) — TWO arguments, unlike the single-argument events on
+  urls-table/domains-table/visibility-chart — except Go-To and Export, which are single-argument
+  (just the instanceId):
+    mode      fn(mode, instanceId)         mode: "domain" | "url"
+    rowclick  fn(id, instanceId)           id = domain string, or url/title string in url mode
+    goto      fn(instanceId)
+    export    fn(instanceId)
+    types     fn(combined, instanceId)     combined = "<citationIds>;<urlIds>", each side comma-
+                                            joined, e.g. "Editorial,Competition;guide,review" —
+                                            MUST be Bubble type "text", NOT "list of texts" (a list
+                                            field auto-splits on comma and breaks this delimiter
+                                            scheme). On the Bubble side: value:split by ";" -> item
+                                            #1 = citation types, item #2 = url types, each further
+                                            :split by "," for a clean list of texts.
+    dimension fn(dimension, instanceId)    dimension: "citation_type" | "url_type"
+    brand     fn(brandMentioned, instanceId)   ""  |  "yes"  |  "no"
+
+  ── Filling the component ─────────────────────────────────────────────────────
+  window.renderTopCitations({
+    instanceId: "...",
+    mode: "domain" | "url",                 // which list/chart is active
+    totalCountDomain: 42,                    // shown next to "Top Domains" while in domain mode
+    totalCountUrl: 128,                      // shown next to "Top URLs" while in url mode
+    citations_total: 15899,
+    top_domains: [{ domain, favicon, share_pct, share_delta_pct, used_total, citation_type }, ...],
+    top_urls: [{ url, title, favicon, global_share_pct, share_delta_pct, used_total, url_type }, ...],
+    // the API reuses THIS SAME field for both dimensions: citation-type slices in domain mode,
+    // url-type slices in url mode — there is no separate url_types_breakdown field in practice.
+    types_breakdown: [{ type, share_pct }, ...],
+    brand: { id: "...", name: "ADAC", logo: "https://..." },   // for the "ADAC mentioned?" toggle
+    filterTypeSel: [...], filterUrlTypeSel: [...],             // optional, pre-check on first load
+    filterDimension: "citation_type", brandMentioned: ""       // "" | "yes" | "no"
+  });
+  window.setTopCitationsLoading("INSTANCE_ID", "yes" | "no");
+  window.resetTopCitations("INSTANCE_ID");    // resets every filter (Brand Mentioned, both type
+                                               // selections, filter dimension) — does NOT fire any
+                                               // of the events above or request new data
+-->
+<div class="up-root tcd-root"
+     data-instance="INSTANCE_ID"
+     data-isdark="IS_DARK"
+     data-processing="IS_PROCESSING"
+     data-processing2="IS_PROCESSING_2"
+     data-mode-fn="bubble_fn_tcdMode"
+     data-rowclick-fn="bubble_fn_tcdRowClick"
+     data-goto-fn="bubble_fn_tcdGoTo"
+     data-export-fn="bubble_fn_tcdExportTable"
+     data-types-fn="bubble_fn_tcdApplyTypeFilter"
+     data-dimension-fn="bubble_fn_tcdFilterDimension"
+     data-brand-fn="bubble_fn_tcdBrandMentioned">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@main/core.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@main/topcitations-dashboard.css">
+
+  <div class="tcd-unit tcd-unit-left">
+    <div class="tcd-head">
+      <div class="tcd-mode" role="tablist" aria-label="Mode">
+        <button class="tcd-mode-btn is-active" data-mode="domain" type="button" role="tab">Domains</button>
+        <button class="tcd-mode-btn" data-mode="url" type="button" role="tab">URLs</button>
+      </div>
+      <div class="tcd-head-tools">
+        <div class="tcl-seg" role="tablist" aria-label="Chart type">
+          <button class="tcl-seg-btn is-active" data-chart="doughnut" role="tab" aria-selected="true" data-tip="Doughnut" aria-label="Doughnut">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+          </button>
+          <button class="tcl-seg-btn" data-chart="bar" role="tab" aria-selected="false" data-tip="Bars" aria-label="Bars">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="9" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="tcd-box">
+      <div class="tcd-panel-body">
+        <div class="tcl-top-total"><span class="n">0</span><span class="lbl">Citations</span></div>
+        <div class="tcl-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tcd-unit tcd-unit-right">
+    <div class="tcd-head">
+      <div class="tcd-heading tcd-heading-right"><span class="tcd-head-label">Top Domains</span><span class="tcd-head-sep"></span><span class="tcd-head-count"></span></div>
+      <div class="tcd-head-tools">
+        <button class="tcd-brand-toggle" type="button" data-tip="Filter by brand mention">
+          <span class="tcd-brand-toggle-lbl">
+            <img class="tcd-brand-logo" src="" style="display:none"/>
+            <span class="tcd-brand-label"></span>
+          </span>
+          <span class="tcd-brand-check">
+            <svg class="tcd-brand-check-yes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <svg class="tcd-brand-check-no" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </span>
+        </button>
+        <div class="tcd-filter">
+          <button class="tcd-filter-btn tcd-iconbtn" type="button" data-tip="Filter" aria-label="Filter">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+            <span class="tcd-filter-badge"></span>
+          </button>
+          <div class="up-filter-menu" role="menu" aria-hidden="true"></div>
+        </div>
+        <button class="tcd-export tcd-iconbtn" type="button" data-tip="Export" aria-label="Export">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+        <button class="tcd-goto tcd-iconbtn" type="button" data-tip="Open" aria-label="Open">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+        </button>
+      </div>
+    </div>
+    <div class="tcd-box">
+      <div class="tct-table"></div>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@main/core.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@main/topcitations-dashboard.js"></script>

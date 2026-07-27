@@ -1,0 +1,232 @@
+/* upstreem topcitations-dashboard.css — component-specific styling (tcd-/tcl-/tct-).
+   Shared base lives in core.css. Loaded after core.css.
+   Straight migration of the pre-Core inline <style> block — visuals are unchanged from the
+   original component. Reuse decisions verified byte-by-byte against core.css before deciding,
+   not assumed from name similarity:
+
+   - .up-filter-menu / .up-filter-dim / .up-filter-dim-btn / .up-filter-head / .up-filter-title /
+     .up-filter-reset / .up-filter-list / .up-filter-item / .up-filter-check / .up-filter-submit
+     ARE reused — urls-table.js already implements this exact "Citation Type / URL Type" two-
+     dimension filter dropdown (a URL has both dimensions, same as this component), and its shared
+     shell in core.css is byte-identical to this component's own .tcd-filter-menu/.tcd-filter-dim*.
+   - .up-iconbtn is deliberately NOT reused for .tcd-iconbtn despite looking like a match at a
+     glance: .up-iconbtn's :hover adds a background (var(--vc-heading-bg)), .tcd-iconbtn's hover
+     only changes the icon colour. Same reasoning as visibility-chart.css keeping .vot-iconbtn
+     separate — kept apart rather than risk an unintended visual change.
+   - .up-tip is NOT reused for .tcd-tip: .tcd-tip's JS has a show delay and a mousemove-based
+     still-hovered safety net that the shared handler lacks (same reasoning as .vot-tip).
+   - .tct-tag/.tct-tag-dot/.tct-tag-lbl stay local (not switched to the near-identical
+     .up-filter-tag) because the source already reuses this ONE local class for both the table
+     cells AND the filter dropdown's chip — introducing a second, parallel chip class for only the
+     dropdown instance would fragment styling that's intentionally unified today. */
+
+/* ---------- root layout: side-by-side chart + table, core.css's .up-root is column-flex ---------- */
+.up-root.tcd-root { flex-direction: row; align-items: stretch; gap: 16px; }
+.tcd-root.is-max, .tcd-root.is-narrow { flex-direction: column; gap: 32px; }
+
+/* ---------- two units: each = header + bordered box ---------- */
+.tcd-unit { display: flex; flex-direction: column; min-width: 0; }
+.tcd-unit-left  { flex: 0 0 35%; max-width: 35%; }
+.tcd-unit-right { flex: 1 1 65%; max-width: 65%; }
+.tcd-root.is-max .tcd-unit, .tcd-root.is-narrow .tcd-unit { flex: 0 0 auto; width: 100%; max-width: 100%; }
+.tcd-head { display: flex; align-items: center; height: 32px; margin-bottom: 16px; padding: 0; }
+.tcd-unit-left .tcd-head { padding-right: 0; }
+.tcd-root.is-max .tcd-unit-left .tcd-head, .tcd-root.is-narrow .tcd-unit-left .tcd-head { padding-right: 0; }
+.tcd-heading { font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tcd-head-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; flex: 0 0 auto; }
+.tcd-box {
+  flex: 1 1 auto; min-height: 0; height: 430px;   /* 45px table head + 7×55px rows, fits exactly */
+  border: 1px solid var(--vc-border); background: var(--vc-bg); overflow: hidden;
+  display: flex; flex-direction: column; position: relative; transition: background 200ms ease;
+  border-radius: 16px;
+}
+.tcd-root.is-max .tcd-box, .tcd-root.is-narrow .tcd-box { height: 430px; }
+.tcd-panel-body { flex: 1 1 auto; min-height: 0; padding: 16px; position: relative; display: flex; flex-direction: column; transition: opacity 200ms ease; }
+
+/* ---------- icon buttons (32x32) — local, see file header for why ---------- */
+.tcd-iconbtn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border: 0; border-radius: 8px;
+  background: transparent; color: #6f6f6f; cursor: pointer; padding: 0; flex: 0 0 auto; position: relative;
+}
+.up-root[data-theme="dark"] .tcd-iconbtn { color: #a0a0a0; }
+.tcd-iconbtn:hover { color: var(--vc-text); }
+.up-root[data-theme="dark"] .tcd-iconbtn:hover { color: var(--vc-text); }
+.tcd-iconbtn svg { width: 16px; height: 16px; display: block; }
+
+/* dark button tooltip (own implementation — see file header) */
+.tcd-tip {
+  position: fixed; z-index: 2147483000; box-sizing: border-box;
+  height: 24px; display: inline-flex; align-items: center;
+  padding: 0 9px; border-radius: 6px;
+  font-family: Geist, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 12px; font-weight: 500; line-height: 1; white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+  opacity: 0; transform: translateY(4px); pointer-events: none;
+  transition: opacity .14s ease, transform .14s ease;
+}
+.tcd-tip.show { opacity: 1; transform: translateY(0); }
+
+/* Go-To: primary-font-color bg */
+.tcd-goto { background: var(--vc-text) !important; color: #e0e0e0; }
+.up-root[data-theme="dark"] .tcd-goto { color: #1f1f1b; }
+.tcd-goto:hover { background: #585855 !important; color: #e0e0e0; }
+.up-root[data-theme="dark"] .tcd-goto:hover { background: #a0a0a0 !important; color: #1f1f1b; }
+
+/* ---------- mode switcher (Domains / URLs) — replaces the left heading ---------- */
+.tcd-mode { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-bg); border-radius: 8px; border: 0; height: 32px; flex: 0 0 auto; }
+.tcd-mode-btn { height: 32px; padding: 0 12px; border: 1px solid transparent; border-radius: 8px; background: transparent;
+  color: var(--vc-muted); cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center; }
+.tcd-mode-btn:hover { color: var(--vc-text); }
+.tcd-mode-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
+.up-root[data-theme="dark"] .tcd-mode-btn.is-active { background: #121212; border-color: #353535; }
+
+/* right heading with total-count */
+.tcd-heading-right { display: flex; align-items: center; }
+.tcd-head-sep { width: 4px; height: 4px; border-radius: 50%; background: var(--vc-muted); margin: 0 8px; flex: 0 0 auto; display: none; }
+.tcd-head-count { font-size: 14px; font-weight: 500; color: var(--vc-muted); display: none; }
+.tcd-head-count.is-sk { width: 28px; height: 14px; border-radius: 4px; background: var(--vc-sk); animation: tcdpulse 1.2s ease-in-out infinite; }
+.tcd-heading-right.has-count .tcd-head-sep, .tcd-heading-right.has-count .tcd-head-count { display: block; }
+
+/* ================= LEFT: doughnut/bar chart ================= */
+.tcl-seg { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-bg); border-radius: 8px; border: 0; height: 32px; flex: 0 0 auto; }
+.tcl-seg-btn { height: 32px; padding: 0 10px; border: 1px solid transparent; border-radius: 8px; background: transparent;
+  color: var(--vc-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.tcl-seg-btn svg { width: 16px; height: 16px; color: var(--vc-muted); display: block; }
+.tcl-seg-btn:hover, .tcl-seg-btn:hover svg { color: var(--vc-text); }
+.tcl-seg-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
+.tcl-seg-btn.is-active svg { color: var(--vc-text); }
+.up-root[data-theme="dark"] .tcl-seg-btn.is-active { background: #121212; border-color: #353535; }
+
+.tcl-top-total { display: none; align-items: baseline; gap: 6px; margin-right: auto; margin-bottom: 12px; }
+.tcl-top-total .n { font-size: 16px; font-weight: 500; color: var(--vc-text); line-height: 1; }
+.tcl-top-total .lbl { font-size: 12px; font-weight: 400; color: var(--vc-third); }
+
+.tcl-body { width: 100%; position: relative; flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+.tcl-body > .tcl-bars, .tcl-body > .tcl-donut-layout, .tcl-body > .tcl-skeleton, .tcl-body > .tcl-empty { margin-top: auto; margin-bottom: auto; }
+
+.tcl-donut-layout { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 28px; width: 100%; }
+.tcl-donut-wrap { position: relative; flex: 0 0 auto; width: min(52%, 200px); aspect-ratio: 1 / 1; }
+.tcl-donut-wrap canvas { width: 100% !important; height: 100% !important; }
+.tcl-donut-layout.is-collapsed .tcl-donut-wrap { width: min(75%, 220px); }
+.tcl-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+.tcl-center .n { font-size: 22px; font-weight: 500; color: var(--vc-text); line-height: 1; }
+.tcl-center .lbl { font-size: 14px; font-weight: 400; color: var(--vc-third); margin-top: 8px; line-height: 1; }
+.tcl-legend { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.tcl-legend-row { display: flex; align-items: center; gap: 10px; }
+.tcl-legend-chip { width: 12px; height: 12px; border-radius: 4px; flex: 0 0 auto; }
+.tcl-legend-name { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; flex: 1 1 auto; min-width: 0; }
+.tcl-legend-pct { font-size: 12px; font-weight: 500; color: var(--vc-muted); white-space: nowrap; flex: 0 0 auto; }
+.tcl-donut-layout.is-collapsed { flex-direction: column; gap: 18px; }
+.tcl-donut-layout.is-collapsed .tcl-legend { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 10px 16px; }
+
+.tcl-bars { display: flex; flex-direction: column; gap: 0; width: 100%; }
+.tcl-bar-row { display: flex; align-items: center; padding: 5px 0; }
+.tcl-bar-track { flex: 1; height: 32px; background: var(--vc-heading-bg); border-radius: 8px; overflow: visible; position: relative; min-width: 0; }
+.tcl-bar-fill { height: 100%; border-radius: 8px; transition: width .5s cubic-bezier(.4,0,.2,1);
+  display: flex; align-items: center; justify-content: space-between; padding: 0 10px; min-width: 0; gap: 8px; overflow: hidden; }
+.tcl-bar-name { font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: opacity .18s ease; }
+.tcl-bar-pct { font-size: 11px; font-weight: 600; white-space: nowrap; flex: 0 0 auto; transition: opacity .18s ease; }
+.tcl-bar-outside { position: absolute; top: 50%; transform: translateY(-50%); left: 0; pointer-events: none;
+  display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; transition: opacity .18s ease; }
+.tcl-bar-name-out { font-size: 11px; font-weight: 600; }
+.tcl-bar-pct-out { font-size: 11px; font-weight: 600; }
+.tcl-empty { font-size: 13px; color: var(--vc-muted); text-align: center; padding: 40px 0; }
+
+.tcl-skeleton { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 28px; width: 100%; pointer-events: none; }
+.tcl-sk-chart { flex: 0 0 auto; width: min(52%, 180px); aspect-ratio: 1; }
+.tcl-sk-chart svg { width: 100%; height: 100%; display: block; }
+.tcl-sk-ring { stroke: var(--vc-sk); }
+.tcl-sk-g0 { stop-color: var(--vc-sk); } .tcl-sk-g1 { stop-color: #ffffff; }
+.up-root[data-theme="dark"] .tcl-sk-g1 { stop-color: #555555; }
+.tcl-sk-legend { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.tcl-sk-row { display: flex; align-items: center; gap: 10px; }
+.tcl-sk-dot { width: 12px; height: 12px; border-radius: 4px; background: var(--vc-sk); flex: 0 0 auto; position: relative; overflow: hidden; }
+.tcl-sk-lbl { height: 10px; background: var(--vc-sk); border-radius: 5px; position: relative; overflow: hidden; }
+.tcl-sk-pct { height: 10px; background: var(--vc-sk); border-radius: 5px; flex: 0 0 auto; position: relative; overflow: hidden; }
+.tcl-sk-dot::after, .tcl-sk-lbl::after, .tcl-sk-pct::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.14) 50%, rgba(255,255,255,0) 100%);
+  transform: translateX(-100%); animation: tcd-shimmer 1200ms linear infinite; }
+@keyframes tcd-shimmer { 100% { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce){ .tcl-sk-dot::after,.tcl-sk-lbl::after,.tcl-sk-pct::after{ animation:none; } }
+
+/* ================= RIGHT: Top Domains/URLs table ================= */
+.tct-table { width: 100%; height: 100%; display: flex; flex-direction: column; background: var(--vc-bg); overflow: hidden; }
+.tct-thead, .tct-row { display: grid; grid-template-columns: 44px minmax(120px,1fr) 18% 20% 16%; align-items: center; }
+.tct-table.tct-hide-used .tct-th-used, .tct-table.tct-hide-used .tct-td-used { display: none; }
+.tct-table.tct-hide-used .tct-thead, .tct-table.tct-hide-used .tct-row { grid-template-columns: 44px minmax(120px,1fr) 22% 24%; }
+.tct-table.tct-hide-type .tct-th-type, .tct-table.tct-hide-type .tct-td-type { display: none; }
+.tct-table.tct-hide-type.tct-hide-used .tct-thead, .tct-table.tct-hide-type.tct-hide-used .tct-row { grid-template-columns: 44px minmax(120px,1fr) 30%; }
+.tct-table.tct-hide-trend .tct-trend { display: none; }
+.tct-thead { height: 45px; flex: 0 0 45px; background: var(--vt-head-bg); }
+.tct-th { font-size: 12px; font-weight: 400; color: var(--vc-muted); padding: 0 16px 0 8px; height: 100%;
+  display: flex; align-items: center; border-right: 1px solid var(--vc-border); border-bottom: 1px solid var(--vc-border); }
+.tct-th-idx { justify-content: center; padding: 0; }
+.tct-th-idx svg { width: 12px; height: 12px; color: var(--vc-third); display: block; }
+.tct-th:last-child { border-right: none; }
+.tct-tbody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.tct-row { height: 55px; flex: 0 0 55px; cursor: pointer; transition: background 120ms ease; }
+.tct-row:hover, .tct-row.is-hl { background: var(--vt-row-hover); }
+.tct-td { height: 100%; display: flex; align-items: center; gap: 12px; padding: 0 16px 0 8px; min-width: 0;
+  border-right: 1px solid var(--vc-border); border-bottom: 1px solid var(--vc-border); }
+.tct-td:last-child { border-right: none; }
+.tct-td-idx { justify-content: center; padding: 0; gap: 0; font-size: 13px; font-weight: 500; color: var(--vc-third); }
+.tct-logo-box { width: 24px; height: 24px; border-radius: 8px; background: var(--vt-logo-bg); padding: 1px; flex: 0 0 auto; display: block; }
+.tct-logo-box img { width: 22px; height: 22px; border-radius: 7px; object-fit: cover; display: block; }
+.tct-name { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.tct-row-goto { margin-left: auto; width: 16px; height: 16px; flex: 0 0 auto; color: var(--vc-third);
+  opacity: 0; transform: translateX(-3px); transition: opacity .18s ease, transform .18s ease; transition-delay: 0ms; }
+.tct-row-goto svg { width: 16px; height: 16px; display: block; }
+.tct-row:hover .tct-row-goto { opacity: 1; transform: translateX(0); transition-delay: 220ms; }
+.tcd-root.is-narrow-cell .tct-row-goto { display: none; }
+.tct-num { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; flex: 0 0 auto; }
+.tct-used { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
+.tct-tag { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 7px;
+  font-size: 12px; font-weight: 600; white-space: nowrap; max-width: 100%; overflow: hidden; }
+.tct-tag-dot { width: 6px; height: 6px; border-radius: 999px; flex: 0 0 auto; }
+.tct-tag-lbl { overflow: hidden; text-overflow: ellipsis; }
+.tct-trend { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; flex: 0 0 auto; }
+.tct-trend svg { width: 16px; height: 16px; display: block; }
+.tct-trend.pos { color: var(--vt-up); }
+.tct-trend.neg { color: var(--vt-down); }
+.tct-empty { padding: 24px; text-align: center; color: var(--vc-muted); font-size: 13px; }
+.tct-row.tct-tsk { cursor: default; }
+.tct-row.tct-tsk:hover { background: transparent; }
+.tct-tsk-bar { display: inline-block; height: 12px; border-radius: 4px; background: var(--vc-sk); animation: tcdpulse 1.2s ease-in-out infinite; }
+.tct-tsk-logo { display: inline-block; width: 24px; height: 24px; border-radius: 8px; background: var(--vc-sk); animation: tcdpulse 1.2s ease-in-out infinite; flex: 0 0 auto; }
+@keyframes tcdpulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
+
+/* ================= filter (fader) dropdown — trigger + badge stay local; the panel itself
+   (menu shell, dimension switch, head/list/item/check/submit) reuses core.css's shared
+   .up-filter-* classes, see file header. ================= */
+.tcd-filter { position: relative; flex: 0 0 auto; }
+.tcd-filter-badge {
+  position: absolute; top: -3px; right: -3px; z-index: 2;
+  min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
+  background: var(--vc-text); color: #e0e0e0;
+  font-family: inherit; font-size: 10px; font-weight: 600; line-height: 1;
+  display: none; align-items: center; justify-content: center;
+  font-variant-numeric: tabular-nums; pointer-events: none;
+}
+.up-root[data-theme="dark"] .tcd-filter-badge { color: #1f1f1b; }
+.tcd-filter-badge.is-visible { display: inline-flex; }
+.tcd-filter.is-open .tcd-filter-btn { color: var(--vc-text); background: var(--vc-heading-bg); }
+
+/* "Brand mentioned?" — its own toolbar element, left of the filter button */
+.tcd-brand-toggle { display: none; align-items: center; justify-content: space-between; gap: 10px; height: 32px; padding: 0 8px; border-radius: 8px;
+  background: transparent; border: 0; cursor: pointer; flex: 0 0 auto; }
+.tcd-brand-toggle.is-visible { display: inline-flex; }
+.tcd-root.tcd-hide-brand .tcd-brand-toggle { display: none !important; }
+.tcd-brand-toggle:hover { background: var(--vc-heading-bg); }
+.tcd-brand-toggle.is-yes, .tcd-brand-toggle.is-no { background: var(--vc-heading-bg); }
+.tcd-brand-toggle-lbl { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.tcd-brand-check { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #fff; }
+.tcd-brand-check svg { width: 11px; height: 11px; display: none; }
+.tcd-brand-toggle.is-yes .tcd-brand-check, .tcd-brand-toggle.is-no .tcd-brand-check { background: var(--vc-text); border-color: var(--vc-text); }
+.up-root[data-theme="dark"] .tcd-brand-toggle.is-yes .tcd-brand-check, .up-root[data-theme="dark"] .tcd-brand-toggle.is-no .tcd-brand-check { color: #1f1f1b; }
+.tcd-brand-toggle.is-yes .tcd-brand-check .tcd-brand-check-yes { display: block; }
+.tcd-brand-toggle.is-no .tcd-brand-check .tcd-brand-check-no { display: block; }
+.tcd-brand-logo { width: 16px; height: 16px; border-radius: 4px; flex: 0 0 auto; display: block; object-fit: cover; }
+.tcd-brand-label { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
