@@ -1,0 +1,191 @@
+<!--
+  UPSTREEM — DOMAINS TABLE (standalone, Citations main page)
+
+  Table only. The chart lives in its own component; this is the bigger, full-width
+  Top-Domains table with its own toolbar.
+
+  ── Bubble dynamic values on the root element ────────────────────────────────
+  data-instance        = "ROOTID_[dynamic id]"   unique per placement
+  data-isdark          = "yes" / "no"
+  data-brand-name      = the brand's display name (for the "X mentioned" toggle)
+  data-brand-logo      = the brand's logo url (optional)
+  data-export-instance = the instanceId of the EXPORT POPUP component you place on
+                         the same page (e.g. "export_citations"). Clicking Export here
+                         calls window.upstreemExportOpen(thatId) — see "Export" below.
+  data-sticky-top      = px offset from the top at which the sticky header pins
+                         (= height of your page's topbar, e.g. "171"). Desktop only
+                         (>=1000px page width). Set "no" on data-sticky to disable.
+
+  ── Event names must be unique per placement ─────────────────────────────────
+  data-search-fn="bubble_fn_uutSearch_[dynamic id]"
+  data-sort-fn="bubble_fn_uutSort_[dynamic id]"
+  data-filter-fn="bubble_fn_uutFilter_[dynamic id]"
+  data-brand-fn="bubble_fn_uutBrand_[dynamic id]"
+  data-rowclick-fn="bubble_fn_uutRowClick_[dynamic id]"
+  data-page-fn="bubble_fn_uutPage_[dynamic id]"
+  data-mentioned-fn="bubble_fn_uutMentioned_[dynamic id]"
+
+  Every one fires ONE JSON string (same shape as Mira's miraAction and the export
+  popup), values pulled out on the Bubble side by regex. All of them are SERVER-side:
+  they tell Bubble to re-run the RPC — this component never filters or sorts locally.
+
+    search   {"query":"nike","query_folded":"nike","query_de":"nike","requestId":"uut_…"}
+    sort     {"sort_field":"share","sort_dir":"desc"}
+    filter   {"citation_types":"Editorial,Competition","url_types":"Article,Forum"}
+    brand    {"brand_mentioned":"yes"}          "yes" | "no" | ""  (empty = off)
+    rowclick {"url":"https://youtube.com/watch?v=…"}
+    page      {"limit":25,"offset":50,"page":3}   -> p_limit / p_offset in your RPC
+    mentioned {"brands":"id1,id2"}                -> multi-brand mention filter
+
+  Regex, as everywhere else:
+    (?<="query":")[^"]*        (?<="query_folded":")[^"]*   (?<="query_de":")[^"]*
+    (?<="requestId":")[^"]*    (?<="sort_field":")[^"]*     (?<="sort_dir":")[^"]*
+    (?<="citation_types":")[^"]*                            (?<="url_types":")[^"]*
+    (?<="brand_mentioned":")[^"]*                           (?<="brands":")[^"]*
+    (?<="url":")[^"]*
+    (?<="limit":)[0-9]+        (?<="offset":)[0-9]+         (?<="page":)[0-9]+
+
+  ── Export ───────────────────────────────────────────────────────────────────
+  Place the export popup component anywhere on the same page and give it an
+  instanceId, e.g. "export_citations". Put that same string in data-export-instance
+  here. The Export button then just calls upstreemExportOpen() on it — no second
+  popup, no duplicated markup. If the id doesn't match anything, the button logs a
+  warning naming the id it looked for rather than doing nothing silently.
+
+  ── Filling the table ────────────────────────────────────────────────────────
+  window.renderUrlsTable({ instanceId: "...", rows: [...], totalCount: 123 });
+  window.setUrlsTableLoading("INSTANCE_ID", "yes" | "no");
+
+  Row fields (straight from your RPC, no renaming needed):
+    domain, favicon, share_pct, share_delta_pct, urls_count, last_used_at,
+    citation_type, runs_with_domain
+  "Used" reads runs_with_domain (falling back to used_total / used / total_used) —
+  NOT total_count, which is the same grand total on every row.
+-->
+<div class="up-root"
+     data-instance="INSTANCE_ID"
+     data-isdark="IS_DARK"
+     data-brand-name="BRAND_NAME"
+     data-brand-logo="BRAND_LOGO"
+     data-export-instance="EXPORT_INSTANCE_ID"
+     data-sticky-top="171"
+     data-search-fn="bubble_fn_uutSearch"
+     data-sort-fn="bubble_fn_uutSort"
+     data-filter-fn="bubble_fn_uutFilter"
+     data-brand-fn="bubble_fn_uutBrand"
+     data-rowclick-fn="bubble_fn_uutRowClick"
+     data-page-fn="bubble_fn_uutPage"
+     data-mentioned-fn="bubble_fn_uutMentioned">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@main/core.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@main/urls-table.css">
+
+  <div class="up-head">
+    <div class="up-heading"><span class="up-head-label">URLs</span><span class="up-head-sep"></span><span class="up-head-count"></span></div>
+    <div class="up-head-tools">
+      <button class="uut-brand-toggle" type="button" data-tip="Filter by brand mention">
+        <span class="uut-brand-toggle-lbl">
+          <img class="uut-brand-logo" src="" style="display:none" alt=""/>
+          <span class="uut-brand-label"></span>
+        </span>
+        <span class="uut-brand-check">
+          <svg class="uut-brand-check-yes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <svg class="uut-brand-check-no" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </span>
+      </button>
+
+      <div class="up-ment">
+        <button class="up-ment-btn" type="button" aria-haspopup="menu" aria-expanded="false">
+          <span class="up-ment-lbl">All Brands</span>
+          <svg class="up-ment-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          <svg class="up-ment-clear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <div class="up-ment-menu" role="menu" aria-hidden="true"></div>
+      </div>
+
+      <div class="up-filter">
+        <button class="up-filter-btn" type="button" aria-haspopup="menu" aria-expanded="false">
+          <span class="up-filter-btn-lbl">All Types</span>
+          <svg class="up-filter-btn-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          <svg class="up-filter-btn-clear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <div class="up-filter-menu" role="menu" aria-hidden="true"></div>
+      </div>
+
+      <div class="up-sort">
+        <button class="up-sort-btn up-iconbtn" type="button" data-tip="Sort" aria-label="Sort">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+        </button>
+        <div class="up-sort-menu" role="menu" aria-hidden="true"></div>
+      </div>
+
+      <div class="up-search">
+        <button class="up-search-btn up-iconbtn" type="button" data-tip="Search" aria-label="Search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+        <div class="up-search-box">
+          <input class="up-search-input" type="text" placeholder="Type in url..." autocomplete="off" spellcheck="false" aria-label="Search URLs"/>
+          <button class="up-search-clear" type="button" aria-label="Clear search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="up-cols">
+        <button class="up-cols-btn up-iconbtn" type="button" data-tip="Table Settings" aria-label="Table settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+        <span class="uut-cols-badge"></span>
+        <div class="up-cols-menu" role="menu" aria-hidden="true"></div>
+      </div>
+
+      <button class="up-export" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Export</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="up-box">
+    <div class="up-table">
+      <div class="up-thead">
+        <div class="up-th up-th-domain">URL<span class="up-grip" data-grip="domain"></span></div>
+        <div class="up-th up-th-share is-sortable" data-sortcol="share">
+          <span class="up-th-txt">Share</span>
+          <span class="up-th-info" data-explain="share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span>
+          <span class="up-thsort" data-for="share">
+            <svg class="up-thsort-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+            <svg class="up-thsort-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+          
+        </div>
+        <div class="up-th up-th-type">Type<span class="up-th-info" data-explain="type"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div>
+        <div class="up-th up-th-ment">
+          <img class="uut-th-brandlogo" src="" alt="" style="display:none"/>
+          <span class="up-th-mentlbl">mentioned?</span>
+          
+        </div>
+        <div class="up-th up-th-brands">Brands mentioned<span class="up-th-info" data-explain="brands"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div>
+        <div class="up-th up-th-lastseen is-sortable" data-sortcol="last_seen">
+          <span class="up-th-txt">Last Seen</span>
+          <span class="up-thsort" data-for="last_seen">
+            <svg class="up-thsort-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+            <svg class="up-thsort-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+          
+        </div>
+        <div class="up-th uut-th-actions">Actions</div>
+      </div>
+      <div class="up-tbody"></div>
+    </div>
+  </div>
+
+  <div class="up-foot">
+    <div class="up-pagesize">
+      <span class="up-pagesize-lbl">Rows per page</span>
+      <div class="up-pagesize-seg" role="group" aria-label="Rows per page"></div>
+    </div>
+    <div class="up-pager"></div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@main/core.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@main/urls-table.js"></script>
