@@ -1,0 +1,2052 @@
+<!--
+  UPSTREEM VISIBILITY CHART
+
+  data-instance="ROOTID_[dynamic id]"  -- must be unique across every placement
+  that can exist on the page at the same time (e.g. one on a Dashboard, one
+  inside a Company popup).
+
+  EVENT NAMES MUST BE UNIQUE PER PLACEMENT OF THIS REUSABLE, same reasoning
+  as the instance id above: if two placements share one bubble_fn_* name,
+  Bubble can only ever wire ONE workflow to it, and whichever placement
+  calls it, the SAME (wrong, for one of them) workflow fires. Give every
+  placement its own suffix, built the same way as the instance id:
+
+  data-gran-fn="bubble_fn_votGranularity_[dynamic id]"
+  data-rowclick-fn="bubble_fn_votRowClick_[dynamic id]"
+  data-goto-fn="bubble_fn_votGoTo_[dynamic id]"
+  data-sort-fn="bubble_fn_votSortTable_[dynamic id]"
+  data-submit-fn="bubble_fn_votSubmitCompanies_[dynamic id]"
+  data-export-fn="bubble_fn_votExportTable_[dynamic id]"
+
+  On the Bubble side, place a separate Toolbox "Javascript to Bubble"
+  element for each of the six INSIDE EACH reusable that contains this
+  chart, with the matching dynamic name for that placement. The suffix can
+  be a hardcoded string (fine if this reusable is only ever placed once per
+  page) or a real dynamic expression (needed if it can appear more than
+  once at a time). Whatever ends up in these attributes must match the full
+  generated name on the Toolbox element exactly, character for character.
+-->
+<div class="vot-root" data-instance="INSTANCE_ID" data-isdark="IS_DARK" data-processing="IS_PROCESSING" data-processing2="IS_PROCESSING_2" data-gran-fn="bubble_fn_votGranularity" data-rowclick-fn="bubble_fn_votRowClick" data-goto-fn="bubble_fn_votGoTo" data-sort-fn="bubble_fn_votSortTable" data-submit-fn="bubble_fn_votSubmitCompanies" data-export-fn="bubble_fn_votExportTable">
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap");
+
+    /* ---------- combo layout ---------- */
+    .vot-root {
+      --vc-text: #1f1f1b; --vc-muted: #6f737c; --vc-border: #e0e2e6;
+      --vc-bg: #ffffff; --vc-topbar-bg: #ffffff; --vc-heading-bg: #f5f5f5; --vc-sk: #e8e8e8;
+      --vc-switch-bg: #f5f5f5; --vc-switch-border: #e0e2e6;
+      --vc-primary: #14b8a6; --vc-third: #9e9e9e;
+      --vt-head-bg: rgba(245,245,245,0.3); --vt-logo-bg: #ffffff; --vt-row-hover: rgba(245,245,245,0.75);
+      --vt-up: #2ea84a; --vt-down: #b0200c;
+      display: flex; flex-direction: row; align-items: stretch; position: relative; gap: 16px;
+      font-family: Geist, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      color: var(--vc-text); width: 100%; box-sizing: border-box; -webkit-font-smoothing: antialiased;
+    }
+    .vot-root * { box-sizing: border-box; }
+    .vot-root[data-theme="dark"] {
+      --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #353535;
+      --vc-bg: #1b1b1b; --vc-topbar-bg: #121212; --vc-heading-bg: rgba(42,42,42,0.6); --vc-sk: #3a3a3a;
+      --vc-switch-bg: rgba(42,42,42,0.6); --vc-switch-border: #353535; --vc-third: #808080;
+      --vt-head-bg: #121212; --vt-logo-bg: #e0e0e0; --vt-row-hover: rgba(42,42,42,0.6);
+      --vt-up: #60d25d; --vt-down: #d25d5d;
+    }
+
+    /* ---------- two units: each = header + bordered chart-box ---------- */
+    .vot-unit { display: flex; flex-direction: column; min-width: 0; }
+    .vot-unit-left  { flex: 1 1 50%; max-width: 50%; }
+    .vot-unit-right { flex: 1 1 50%; max-width: 50%; }
+
+    .vot-head { display: flex; align-items: center; height: 32px; margin-bottom: 16px; padding: 0; }
+    .vot-unit-left .vot-head { padding-right: 0; }
+    .vot-heading { font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .vot-head-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; flex: 0 0 auto; }
+
+    .vot-iconbtn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border: 0; border-radius: 8px;
+      background: transparent; color: #6f6f6f; cursor: pointer; padding: 0; flex: 0 0 auto;
+    }
+    .vot-root[data-theme="dark"] .vot-iconbtn { color: #a0a0a0; }
+    .vot-iconbtn:hover { color: var(--vc-text); }
+    .vot-root[data-theme="dark"] .vot-iconbtn:hover { color: var(--vc-text); }
+    .vot-iconbtn svg { width: 16px; height: 16px; display: block; }
+
+    .vot-box {
+      flex: 1 1 auto; min-height: 0; height: 427px;
+      border: 1px solid var(--vc-border); background: var(--vc-bg); overflow: hidden;
+      display: flex; flex-direction: column;
+      transition: height 200ms ease, opacity 200ms ease;
+    }
+    /* both boxes full-bordered, separated by the root's 8px gap */
+    .vot-box-left  { border-radius: 16px; }
+    .vot-box-right { border-radius: 16px; }
+    .vot-panel-body { flex: 1 1 auto; min-height: 0; padding: 16px; position: relative; display: flex; flex-direction: column; transition: opacity 200ms ease; }
+    .vot-box-left .vot-panel-body { padding-top: 24px; }   /* extra breathing room above the line chart */
+
+    /* ---------- maximize / auto-stack: two separate stacked containers ---------- */
+    .vot-root.is-max, .vot-root.is-narrow { flex-direction: column; gap: 32px; }
+    .vot-root.is-max .vot-unit, .vot-root.is-narrow .vot-unit { flex: 0 0 auto; width: 100%; max-width: 100%; }
+    .vot-root.is-max .vot-box-left, .vot-root.is-narrow .vot-box-left { height: 427px; }
+    .vot-root.is-max .vot-box-right, .vot-root.is-narrow .vot-box-right { height: 427px; }
+    .vot-root.is-narrow .vot-max-right { display: none; }
+    .vot-root.is-narrow .vot-max-top { display: none; }
+    .vot-root.is-max .vot-unit-left .vot-head, .vot-root.is-narrow .vot-unit-left .vot-head { padding-right: 0; }
+
+    /* ---------- hide (collapse both boxes → just the 32px header rows) ---------- */
+    .vot-root.is-hidden-view .vot-box { height: 0 !important; opacity: 0; border-width: 0; }
+    .vot-root.is-hidden-view .vot-panel-body { opacity: 0; }
+    .vot-root.is-hidden-view .vot-head { margin-bottom: 0; }
+    .vot-root.is-hidden-view .vot-unit-left { margin-bottom: 0; }
+    /* grey out the (now inactive) controls; the Hide/Show toggle stays active */
+    .vot-root.is-hidden-view .vc-gran,
+    .vot-root.is-hidden-view .vt-seg,
+    .vot-root.is-hidden-view .vot-filter,
+    .vot-root.is-hidden-view .vot-maximize { opacity: 0.4; pointer-events: none; }
+
+    /* maximize icon swap */
+    .vot-maximize .ic-min { display: none; }
+    .vot-root.is-max .vot-maximize .ic-max { display: none; }
+    .vot-root.is-max .vot-maximize .ic-min { display: block; }
+    /* maximize sits top-right next to the switcher once maximized; the right-panel one is used in row mode */
+    .vot-max-top { display: none; }
+    .vot-root.is-max .vot-max-top { display: inline-flex; }
+    .vot-root.is-max .vot-max-right { display: none; }
+    /* hide/show icon swap */
+    .vot-hide .ic-show { display: none; }
+    .vot-root.is-hidden-view .vot-hide .ic-hide { display: none; }
+    .vot-root.is-hidden-view .vot-hide .ic-show { display: block; }
+
+    /* ---------- filter dropdown ---------- */
+    .vot-filter { position: relative; flex: 0 0 auto; }
+    /* selected-company count badge, sits on the top-right corner of the fader button */
+    .vot-filter-badge {
+      position: absolute; top: -3px; right: -3px; z-index: 2;
+      min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
+      background: var(--vc-text); color: #e0e0e0;
+      font-family: inherit; font-size: 10px; font-weight: 600; line-height: 1;
+      display: none; align-items: center; justify-content: center;
+      font-variant-numeric: tabular-nums; pointer-events: none;
+    }
+    .vot-root[data-theme="dark"] .vot-filter-badge { color: #1f1f1b; }
+    .vot-filter-badge.is-visible { display: inline-flex; }
+    .vot-filter-menu {
+      position: absolute; top: calc(100% + 6px); right: 0; z-index: 60;
+      min-width: 440px; max-width: 560px; max-height: 360px;
+      background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 12px;
+      box-shadow: 0 10px 28px rgba(0,0,0,.14); padding: 6px;
+      display: flex; flex-direction: column;
+      opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none; transition: opacity 140ms ease, transform 140ms ease;
+    }
+    .vot-root.is-narrow .vot-filter-menu { min-width: 220px; max-width: 280px; }
+    .vot-filter.is-open .vot-filter-menu { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+    .vot-root[data-theme="dark"] .vot-filter-menu { background: #151515; }
+    .vot-filter.is-open .vot-filter-btn { color: var(--vc-text); background: var(--vc-heading-bg); }
+    .vot-filter-head { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 4px 9px 6px; margin-bottom: 4px; }
+    .vot-filter-title { font-size: 11px; font-weight: 600; color: var(--vc-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .vot-filter-head-actions { display: flex; align-items: center; gap: 10px; }
+    .vot-filter-count { font-size: 11px; font-weight: 600; color: var(--vc-muted); font-variant-numeric: tabular-nums; }
+    .vot-filter-reset, .vot-filter-toggle { border: 0; background: transparent; color: var(--vc-muted); font-family: inherit; font-size: 11px; font-weight: 500; cursor: pointer; padding: 2px 4px; border-radius: 6px; }
+    .vot-filter-reset:hover, .vot-filter-toggle:hover { color: var(--vc-text); background: transparent; }
+    .vot-filter-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 0 6px; align-content: start; }
+    .vot-root.is-narrow .vot-filter-list { grid-template-columns: 1fr; }
+    .vot-filter-item { display: flex; align-items: center; gap: 10px; padding: 7px 9px; border-radius: 8px; cursor: pointer; font-size: 13px; color: var(--vc-text); min-width: 0; }
+    .vot-filter-item:hover { background: var(--vc-heading-bg); }
+    .vot-filter-item.is-disabled { opacity: .4; cursor: default; }
+    .vot-filter-check { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #fff; }
+    .vot-filter-check svg { width: 11px; height: 11px; display: none; }
+    .vot-filter-item.is-checked .vot-filter-check { background: var(--vc-text); border-color: var(--vc-text); }
+    .vot-root[data-theme="dark"] .vot-filter-item.is-checked .vot-filter-check { color: #1f1f1b; }
+    .vot-filter-item.is-checked .vot-filter-check svg { display: block; }
+    .vot-filter-logo-box { width: 20px; height: 20px; border-radius: 6px; background: var(--vt-logo-bg); padding: 1px; flex: 0 0 auto; display: block; }
+    .vot-filter-logo-box img { width: 18px; height: 18px; border-radius: 5px; object-fit: cover; display: block; }
+    .vot-filter-dot { width: 10px; height: 10px; min-width: 10px; border-radius: 3px; flex: 0 0 auto; }
+    .vot-filter-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .vot-filter-empty { padding: 10px; font-size: 12px; color: var(--vc-muted); text-align: center; }
+    @keyframes votpulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
+
+    /* right heading with total-count */
+    .vot-heading-right { display: flex; align-items: center; }
+    .vot-head-sep { width: 4px; height: 4px; border-radius: 50%; background: var(--vc-muted); margin: 0 8px; flex: 0 0 auto; display: none; }
+    .vot-head-count { font-size: 14px; font-weight: 500; color: var(--vc-muted); display: none; }
+    .vot-heading-right.has-count .vot-head-sep, .vot-heading-right.has-count .vot-head-count { display: block; }
+
+    /* sort dropdown (Opportunities uo-pop style) */
+    .vot-sort { position: relative; flex: 0 0 auto; }
+    .vot-sort-menu { position: absolute; top: calc(100% + 8px); right: 0; z-index: 60; width: 220px;
+      background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 14px; box-shadow: 0 10px 28px rgba(0,0,0,.14); padding: 8px;
+      opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none; transition: opacity 140ms ease, transform 140ms ease; }
+    .vot-sort.is-open .vot-sort-menu { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+    .vot-root[data-theme="dark"] .vot-sort-menu { background: #151515; }
+    .vot-sort.is-open .vot-sort-btn { color: var(--vc-text); background: var(--vc-heading-bg); }
+    .vot-pop-head { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--vc-muted); padding: 4px 10px 8px; }
+    .vot-pop-opt { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; border-radius: 9px; cursor: pointer; font-size: 13.5px; font-weight: 500; color: var(--vc-text); }
+    .vot-pop-opt:hover { background: var(--vc-heading-bg); }
+    .vot-pop-opt .vot-check { width: 16px; height: 16px; color: var(--vc-text); opacity: 0; flex: 0 0 auto; }
+    .vot-pop-opt.is-active .vot-check { opacity: 1; }
+    .vot-pop-div { height: 1px; background: var(--vc-border); margin: 7px 4px; }
+    .vot-pop-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; border-radius: 9px; }
+    .vot-pop-row:hover { background: var(--vc-heading-bg); }
+    .vot-pop-label { font-size: 13.5px; font-weight: 500; color: var(--vc-text); }
+    .vot-switch { width: 38px; height: 22px; border-radius: 999px; background: var(--vc-border); position: relative; flex: 0 0 auto; transition: background 160ms ease; cursor: pointer; }
+    .vot-root[data-theme="dark"] .vot-switch { background: rgba(42,42,42,0.6); }
+    .vot-switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 999px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.2); transition: transform 160ms ease; }
+    .vot-switch.is-on { background: var(--vc-text); }
+    .vot-switch.is-on::after { transform: translateX(16px); }
+    .vot-root[data-theme="dark"] .vot-switch::after { background: #e0e0e0; }
+    .vot-root[data-theme="dark"] .vot-switch.is-on { background: var(--vc-text); }
+    .vot-root[data-theme="dark"] .vot-switch.is-on::after { background: #1f1f1b; }
+
+    /* filter submit button */
+    .vot-filter-submit { flex: 0 0 auto; display: block; width: 100%; margin-top: 6px; height: 34px; border: 0; border-radius: 9px; background: var(--vc-text); color: #fff; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .vot-root[data-theme="dark"] .vot-filter-submit { color: #1f1f1b; }
+
+    /* Go-To button: primary FONT color as bg, icon = the other theme's primary font color */
+    .vot-goto { background: var(--vc-text) !important; color: #e0e0e0; }
+    .vot-root[data-theme="dark"] .vot-goto { color: #1f1f1b; }
+    /* hover for ALL primary-colour buttons: only the bg changes */
+    .vot-goto:hover, .vot-filter-submit:hover { background: #585855 !important; }
+    .vot-root[data-theme="dark"] .vot-goto:hover, .vot-root[data-theme="dark"] .vot-filter-submit:hover { background: #a0a0a0 !important; }
+    .vot-goto:hover { color: #e0e0e0; }
+    .vot-root[data-theme="dark"] .vot-goto:hover { color: #1f1f1b; }
+
+    /* dark button tooltip (~24px, 12px text, dark bg in light mode) */
+    .vot-tip {
+      position: fixed; z-index: 2147483000; box-sizing: border-box;
+      height: 24px; display: inline-flex; align-items: center;
+      padding: 0 9px; border-radius: 6px;
+      font-family: Geist, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      font-size: 12px; font-weight: 500; line-height: 1; white-space: nowrap;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+      opacity: 0; transform: translateY(4px); pointer-events: none;
+      transition: opacity .14s ease, transform .14s ease;
+    }
+    .vot-tip.show { opacity: 1; transform: translateY(0); }
+
+    /* row hover → clickable go-to icon at the far right of the Brand cell */
+    .vt-td-brand { position: relative; }
+    .vt-row-goto { margin-left: auto; width: 16px; height: 16px; flex: 0 0 auto; color: var(--vc-third);
+      opacity: 0; transform: translateX(-3px); transition: opacity .18s ease, transform .18s ease; transition-delay: 0ms; }
+    .vt-row-goto svg { width: 16px; height: 16px; display: block; }
+    .vt-row:hover .vt-row-goto { opacity: 1; transform: translateX(0); transition-delay: 220ms; }
+    /* hide it when the brand cell is too narrow */
+    .vot-root.is-narrow-cell .vt-row-goto { display: none; }
+
+    /* granularity switcher (in the header) */
+    .vc-gran { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-bg); border-radius: 8px; border: 0; height: 32px; flex: 0 0 auto; }
+    .vc-gran-btn { height: 32px; padding: 0 12px; border: 1px solid transparent; border-radius: 8px; background: transparent;
+      color: var(--vc-muted); cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1;
+      display: inline-flex; align-items: center; justify-content: center; }
+    .vc-gran-btn:hover { color: var(--vc-text); }
+    .vc-gran-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
+    .vot-root[data-theme="dark"] .vc-gran-btn.is-active { background: #121212; border-color: #353535; }
+    .vc-gran-btn.is-disabled { opacity: 0.4; pointer-events: none; cursor: default; }
+
+    .vc-line-wrap { position: relative; flex: 1 1 auto; min-height: 0; width: 100%; }
+    .vc-line-canvas { display: block; width: 100% !important; height: 100% !important; }
+    .vc-line-empty { position:absolute; left:0; right:0; top:58%; transform:translateY(-50%); display:flex; align-items:center; justify-content:center; font-size:13px; color: var(--vc-muted); }
+
+    .vc-line-sk { position:absolute; inset:0; pointer-events:none; --shimmer:.14; }
+    .vc-line-sk .sk-linechart { width:100%; height:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:6px; padding:32px; }
+    .vc-line-sk .sk-lc-grid { flex:1; position:relative; display:flex; flex-direction:column; justify-content:space-between; }
+    .vc-line-sk .sk-lc-hline { height:1px; background:var(--vc-sk); border-radius:1px; position:relative; overflow:hidden; }
+    .vc-line-sk .sk-lc-hline::after { content:""; position:absolute; inset:0; background:linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,var(--shimmer)) 50%, rgba(255,255,255,0) 100%); transform:translateX(-100%); animation:vc-skt 1200ms linear infinite; }
+    .vc-line-sk .sk-lc-svg { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+    .vc-line-sk .sk-lc-astop0 { stop-color:var(--vc-sk); stop-opacity:.5; }
+    .vc-line-sk .sk-lc-astop1 { stop-color:var(--vc-sk); stop-opacity:0; }
+    .vc-line-sk .sk-lc-stroke { fill:none; stroke:var(--vc-sk); stroke-width:1.875; stroke-linecap:round; }
+    .vc-line-sk .sk-lc-shimmer-path { stroke-dasharray:1000; stroke-dashoffset:1000; animation:vc-skt-path 1200ms linear infinite; stroke:rgba(255,255,255,var(--shimmer)); fill:none; stroke-width:2.25; stroke-linecap:round; }
+    .vc-line-sk .sk-lc-xaxis { display:flex; justify-content:space-between; flex-shrink:0; padding:0 1px; }
+    .vc-line-sk .sk-lc-xlabel { height:8px; width:24px; background:var(--vc-sk); border-radius:4px; position:relative; overflow:hidden; }
+    .vc-line-sk .sk-lc-xlabel::after { content:""; position:absolute; inset:0; background:linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,var(--shimmer)) 50%, rgba(255,255,255,0) 100%); transform:translateX(-100%); animation:vc-skt 1200ms linear infinite; }
+    @keyframes vc-skt { 100% { transform:translateX(100%); } }
+    @keyframes vc-skt-path { 0% { stroke-dashoffset:1000; } 100% { stroke-dashoffset:-1000; } }
+    @media (prefers-reduced-motion: reduce){ .vc-line-sk .sk-lc-hline::after,.vc-line-sk .sk-lc-xlabel::after,.vc-line-sk .sk-lc-shimmer-path{ animation:none; } }
+
+    /* ---------- line legend (balanced rows, same styling/behaviour as the provided component) ---------- */
+    .vc-legend { width:100%; height:auto; box-sizing:border-box; overflow:visible; --up-column-gap:16px; margin-top:12px; flex:0 0 auto; }
+    .vc-legend.is-hidden { display:none; }
+    .vc-legend .up-company-rows { width:100%; height:auto; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; row-gap:8px; box-sizing:border-box; }
+    .vc-legend .up-company-row { width:100%; min-height:24px; display:flex; align-items:center; justify-content:center; column-gap:var(--up-column-gap,16px); box-sizing:border-box; overflow:hidden; min-width:0; }
+    .vc-legend .up-company-item { height:24px; padding:2px 8px; border:0; background:transparent; display:inline-flex; align-items:center; justify-content:flex-start; flex:0 1 auto; min-width:0; box-sizing:border-box; white-space:nowrap; }
+    .vc-legend .up-company-color { width:10px; height:10px; min-width:10px; min-height:10px; border-radius:4px; flex:0 0 auto; }
+    .vc-legend .up-company-favicon { width:16px; height:16px; min-width:16px; min-height:16px; border-radius:4px; object-fit:cover; display:block; flex:0 0 auto; }
+    .vc-legend .up-company-name { font-family:Geist, Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size:12px; font-weight:500; line-height:16px; color:var(--vc-text); white-space:nowrap; max-width:150px; overflow:hidden; text-overflow:ellipsis; flex:1 1 auto; min-width:0; }
+    .vot-root.is-narrow .vc-legend .up-company-name { max-width: 90px; }
+    .vc-legend .up-company-inner-gap { width:8px; height:1px; flex:0 0 8px; }
+    .vc-legend .up-company-measure { position:absolute; left:-99999px; top:-99999px; visibility:hidden; pointer-events:none; display:flex; column-gap:var(--up-column-gap,16px); width:auto; height:auto; overflow:visible; }
+
+    /* hide the doughnut (right) legend below page width 500 */
+    .vot-root.vc-narrow-page .vt-legend { display: none !important; }
+
+    /* ---------- Top Brands table ---------- */
+    .vt-table { width: 100%; height: 100%; display: flex; flex-direction: column; background: var(--vc-bg); overflow: hidden; }
+    .vt-thead, .vt-row { display: grid; grid-template-columns: 44px minmax(120px,1fr) 22% 20% 20%; align-items: center; }
+
+    /* progressive responsive degradation as the table narrows: trend chips go first, then the
+       Sentiment column, then the Ranking column — Brand + Visibility are always kept, and Brand
+       never drops below 120px since that's where the company names live and need the most room. */
+    .vt-table.vt-hide-trend .vt-trend { display: none; }
+    .vt-table.vt-hide-sentiment .vt-th-sentiment,
+    .vt-table.vt-hide-sentiment .vt-td-sentiment { display: none; }
+    .vt-table.vt-hide-sentiment .vt-thead,
+    .vt-table.vt-hide-sentiment .vt-row { grid-template-columns: 44px minmax(120px,1fr) 26% 24%; }
+    .vt-table.vt-hide-rank .vt-th-ranking,
+    .vt-table.vt-hide-rank .vt-td-ranking { display: none; }
+    .vt-table.vt-hide-rank .vt-thead,
+    .vt-table.vt-hide-rank .vt-row { grid-template-columns: 44px minmax(120px,1fr) 32%; }
+    .vt-thead { height: 45px; flex: 0 0 45px; background: var(--vt-head-bg); }
+    .vt-th { font-size: 12px; font-weight: 400; color: var(--vc-muted); padding: 0 16px 0 8px; height: 100%;
+      display: flex; align-items: center; border-right: 1px solid var(--vc-border); border-bottom: 1px solid var(--vc-border); }
+    .vt-th-idx { justify-content: center; padding: 0; }
+    .vt-th-idx svg { width: 12px; height: 12px; color: var(--vc-third); display: block; }
+    .vt-th:last-child { border-right: none; }
+    .vt-tbody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+    .vt-row { height: 55px; flex: 0 0 55px; cursor: pointer; transition: background 120ms ease; }
+    .vt-row:hover, .vt-row.is-hl { background: var(--vt-row-hover); }
+    .vt-row.vt-gap { flex: 0 0 50px; height: 50px; margin-top: 4px; border-top: 1px solid var(--vc-border); }
+    .vt-td { height: 100%; display: flex; align-items: center; gap: 12px; padding: 0 16px 0 8px; min-width: 0;
+      border-right: 1px solid var(--vc-border); border-bottom: 1px solid var(--vc-border); }
+    .vt-td:last-child { border-right: none; }
+    .vt-td-idx { justify-content: center; padding: 0; gap: 0; font-size: 13px; font-weight: 500; color: var(--vc-third); }
+    /* brand */
+    .vt-logo-box { width: 24px; height: 24px; border-radius: 8px; background: var(--vt-logo-bg); padding: 1px; flex: 0 0 auto; display: block; }
+    .vt-logo-box img { width: 22px; height: 22px; border-radius: 7px; object-fit: cover; display: block; }
+    .vt-brand-name { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+    /* numbers */
+    .vt-num { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; flex: 0 0 auto; }
+    .vt-rank-group { display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; }
+    .vt-hash { width: 12px; height: 12px; color: var(--vc-third); flex: 0 0 auto; display: block; }
+    /* trend chip */
+    .vt-trend { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; flex: 0 0 auto; }
+    .vt-trend svg { width: 16px; height: 16px; display: block; }
+    .vt-trend.pos { color: var(--vt-up); }
+    .vt-trend.neg { color: var(--vt-down); }
+    /* sentiment */
+    .vt-sent { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 6px; border: 1px solid var(--vc-border); border-radius: 6px; flex: 0 0 auto; }
+    .vt-sent-dot { width: 6px; height: 6px; border-radius: 2px; flex: 0 0 auto; }
+    .vt-sent-val { font-size: 13px; font-weight: 500; color: var(--vc-text); }
+    .vt-empty { padding: 24px; text-align: center; color: var(--vc-muted); font-size: 13px; }
+    .vt-row.vt-tsk { cursor: default; }
+    .vt-row.vt-tsk:hover { background: transparent; }
+    .vt-tsk-bar { display: inline-block; height: 12px; border-radius: 4px; background: var(--vc-sk); animation: votpulse 1.2s ease-in-out infinite; }
+    .vt-tsk-logo { display: inline-block; width: 24px; height: 24px; border-radius: 8px; background: var(--vc-sk); animation: votpulse 1.2s ease-in-out infinite; flex: 0 0 auto; }
+  </style>
+
+  <div class="vot-unit vot-unit-left">
+    <div class="vot-head">
+      <div class="vot-heading">Visibility over Time</div>
+      <div class="vot-head-tools">
+        <div class="vc-gran" role="tablist" aria-label="Granularity">
+          <button class="vc-gran-btn is-active" data-gran="day" type="button" role="tab">Day</button>
+          <button class="vc-gran-btn" data-gran="week" type="button" role="tab">Week</button>
+          <button class="vc-gran-btn" data-gran="month" type="button" role="tab">Month</button>
+        </div>
+        <button class="vot-maximize vot-max-top vot-iconbtn" type="button" data-tip="Minimize" aria-label="Minimize">
+          <svg class="ic-max" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline>
+            <line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line>
+          </svg>
+          <svg class="ic-min" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 14 10 14 10 20"></polyline><polyline points="20 10 14 10 14 4"></polyline>
+            <line x1="14" y1="10" x2="21" y2="3"></line><line x1="3" y1="21" x2="10" y2="14"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="vot-box vot-box-left">
+      <div class="vot-panel-body">
+        <div class="vc-line-wrap"><canvas class="vc-line-canvas"></canvas></div>
+        <div class="vc-legend"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="vot-unit vot-unit-right">
+    <div class="vot-head">
+      <div class="vot-heading vot-heading-right"><span class="vot-head-label">Top Brands</span><span class="vot-head-sep"></span><span class="vot-head-count"></span></div>
+      <div class="vot-head-tools">
+        <div class="vot-sort">
+          <button class="vot-sort-btn vot-iconbtn" type="button" data-tip="Sort" aria-label="Sort">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+          </button>
+          <div class="vot-sort-menu" role="menu" aria-hidden="true"></div>
+        </div>
+        <div class="vot-filter">
+          <button class="vot-filter-btn vot-iconbtn" type="button" data-tip="Filter brands" aria-label="Filter">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+            <span class="vot-filter-badge"></span>
+          </button>
+          <div class="vot-filter-menu" role="menu" aria-hidden="true"></div>
+        </div>
+        <button class="vot-export vot-iconbtn" type="button" data-tip="Export" aria-label="Export">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+        <button class="vot-maximize vot-max-right vot-iconbtn" type="button" data-tip="Maximize" aria-label="Maximize">
+          <svg class="ic-max" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline>
+            <line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line>
+          </svg>
+          <svg class="ic-min" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 14 10 14 10 20"></polyline><polyline points="20 10 14 10 14 4"></polyline>
+            <line x1="14" y1="10" x2="21" y2="3"></line><line x1="3" y1="21" x2="10" y2="14"></line>
+          </svg>
+        </button>
+        <button class="vot-goto vot-iconbtn" type="button" data-tip="Open" aria-label="Open">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+        </button>
+      </div>
+    </div>
+    <div class="vot-box vot-box-right">
+      <div class="vt-table"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ================= Chart.js loader (SHARED across ALL upstreem components on the page) ================= */
+  function loadChartJs(){
+    if (window.Chart) return Promise.resolve();
+    if (window.__upstreemChartJs) return window.__upstreemChartJs;
+    window.__upstreemChartJs = new Promise(function(res, rej){
+      // if a Chart.js script is already present (e.g. from another upstreem component on this
+      // same page), wait for IT instead of loading a second copy — loading Chart.js twice breaks
+      // existing chart instances (each load overwrites window.Chart with a fresh module/registry)
+      var existing = document.querySelector('script[data-upstreem-chartjs], script[data-ccchart], script[src*="chart.umd"], script[src*="chart.js@"], script[src*="chart.local"]');
+      if (existing){
+        var iv = setInterval(function(){ if (window.Chart){ clearInterval(iv); res(); } }, 40);
+        setTimeout(function(){ clearInterval(iv); if (window.Chart) res(); else rej(new Error("chartjs timeout")); }, 10000);
+        return;
+      }
+      var s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js";
+      s.setAttribute("data-upstreem-chartjs", "1");
+      s.onload = function(){ res(); };
+      s.onerror = rej;
+      document.head.appendChild(s);
+    });
+    return window.__upstreemChartJs;
+  }
+
+  /* ================= colours (identical to the citations element) ================= */
+
+  /* ================= helpers ================= */
+  function isYes(v){ return /^(1|true|yes|y)$/i.test(String(v == null ? "" : v).trim()); }
+  /* Outbound event lookup: window/parent/top first (covers the common case with zero extra
+     cost), then fall back to a full BFS over every iframe reachable from window.top. Needed
+     when the receiving Toolbox "Javascript to Bubble" element sits deeper than one level above
+     this component's own iframe (e.g. this reusable placed on another reusable). */
+  function resolveBubbleFn(fnName){
+    var fn = window[fnName] || (window.parent && window.parent[fnName]) || (window.top && window.top[fnName]);
+    if (typeof fn === "function") return fn;
+    var start; try { start = window.top || window.parent || window; } catch(e){ start = window; }
+    var queue = [start], seen = [];
+    while (queue.length){
+      var win = queue.shift();
+      if (seen.indexOf(win) !== -1) continue;
+      seen.push(win);
+      try { if (typeof win[fnName] === "function") return win[fnName]; } catch(e){}
+      var frames; try { frames = win.document.querySelectorAll("iframe"); } catch(e){ continue; }
+      for (var i = 0; i < frames.length; i++){
+        var cw; try { cw = frames[i].contentWindow; } catch(e){ cw = null; }
+        if (cw && seen.indexOf(cw) === -1) queue.push(cw);
+      }
+    }
+    return null;
+  }
+  function esc(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
+  function truncate(s, n){ s = String(s==null?"":s); return s.length > n ? s.slice(0, n-1) + "…" : s; }
+  var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var MONTHS_DE = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  function dateFmt(day){
+    var m = String(day||"").match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!m) return String(day||"");
+    return parseInt(m[3],10) + " " + MONTHS[parseInt(m[2],10)-1] + " " + m[1];
+  }
+  // tooltip title: same rule as the x-axis label — in month mode show only the month name
+  function dateFmtTitle(day, gran){
+    var m = String(day||"").match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!m) return String(day||"");
+    if (gran === "month") return MONTHS_DE[parseInt(m[2],10) - 1] || dateFmt(day);
+    return dateFmt(day);
+  }
+
+
+  /* ================= doughnut plugins ================= */
+  var RING_PX = 12, SEG_GAP = 6, CORNER = 4, HOVER = 12;
+  var ringWidthPlugin = {
+    id: "ucRingWidth",
+    beforeDatasetDraw: function(chart, args){
+      var meta = chart.getDatasetMeta(args.index);
+      meta.data.forEach(function(arc){ arc.innerRadius = Math.max(1, arc.outerRadius - RING_PX); });
+    }
+  };
+  var constantGapPlugin = {
+    id: "ucConstantGap",
+    beforeDatasetDraw: function(chart, args){
+      var meta = chart.getDatasetMeta(args.index);
+      if (!meta || !meta.data || !meta.data.length) return;
+      var r = (meta.data[0] && meta.data[0].outerRadius) || 100;
+      var gap = SEG_GAP / r, N = meta.data.length;
+      var available = (Math.PI*2) - gap*N;
+      var total = meta.total || chart.data.datasets[args.index].data.reduce(function(a,b){return a+Number(b||0);},0);
+      var cur = -Math.PI/2;
+      meta.data.forEach(function(arc, i){
+        var value = chart.data.datasets[args.index].data[i];
+        var frac = total>0 ? (value/total) : 0;
+        var span = frac*available;
+        arc.startAngle = cur + gap/2;
+        arc.endAngle = cur + span + gap/2;
+        arc.circumference = span;
+        cur += span + gap;
+      });
+    }
+  };
+
+  /* ================= doughnut tooltip ================= */
+
+  /* ================= line chart plugins + tooltip ================= */
+  var LINE_TENSION = 0.3, LINE_WIDTH = 1.5, LINE_POINT_HOVER = 4, LINE_POINT_HIT = 6, LINE_POINT_BORDER = 1.4;
+  var X_MAX_TICKS = 7, Y_PAD = 1.15;
+
+  var hoverLinePlugin = {
+    id: "ccHoverLine",
+    afterDatasetsDraw: function(chart){
+      var act = chart.tooltip && chart.tooltip.getActiveElements ? chart.tooltip.getActiveElements() : [];
+      if (!act || !act.length) return;
+      var x = act[0].element.x, ca = chart.chartArea, ctx = chart.ctx;
+      ctx.save();
+      ctx.beginPath(); ctx.moveTo(x, ca.top); ctx.lineTo(x, ca.bottom);
+      ctx.lineWidth = 1; ctx.strokeStyle = chart.$ccHoverLineColor || "rgba(0,0,0,0.12)";
+      ctx.stroke(); ctx.restore();
+    }
+  };
+  // dashed horizontal grid at every y tick, drawn behind the lines
+  var dashedYGridPlugin = {
+    id: "ccDashedYGrid",
+    beforeDatasetsDraw: function(chart){
+      var y = chart.scales.y, ca = chart.chartArea, ctx = chart.ctx;
+      if (!y || !ca) return;
+      var ticks = (y.getTicks && y.getTicks()) || y.ticks || [];
+      if (!ticks.length) return;
+      ctx.save();
+      ctx.setLineDash([6,6]); ctx.lineWidth = 1; ctx.strokeStyle = chart.$ccGridColor || "rgba(0,0,0,0.08)";
+      ticks.forEach(function(t){
+        if (t.value <= 0) return;   // no gridline on the zero line
+        var yp = y.getPixelForValue(t.value);
+        if (yp == null || isNaN(yp)) return;
+        if (yp < ca.top - 0.5 || yp > ca.bottom + 0.5) return;
+        ctx.beginPath(); ctx.moveTo(ca.left, Math.round(yp) + 0.5); ctx.lineTo(ca.right, Math.round(yp) + 0.5); ctx.stroke();
+      });
+      ctx.restore();
+    }
+  };
+
+  // index-mode tooltip: shows ALL series at the hovered day, with a date header + favicon rows
+  function makeLineTooltip(wrap){
+    var pos = { x:null, y:null }, target = { x:0, y:0 }, running = false, visible = false, raf = null;
+    var FOLLOW = 0.18;   // per-frame easing toward the target (smooth follow, ~280ms feel)
+    function loop(){
+      var el = wrap.querySelector(".vc-line-tt");
+      if (pos.x == null){ pos.x = target.x; pos.y = target.y; }
+      pos.x += (target.x - pos.x) * FOLLOW;
+      pos.y += (target.y - pos.y) * FOLLOW;
+      if (el) el.style.transform = "translate3d(" + pos.x + "px," + pos.y + "px,0)";
+      var dx = Math.abs(target.x - pos.x), dy = Math.abs(target.y - pos.y);
+      if (visible || dx > 0.4 || dy > 0.4){ raf = requestAnimationFrame(loop); }
+      else { running = false; }
+    }
+    return function(context){
+      var chart = context.chart, tooltip = context.tooltip;
+      var el = wrap.querySelector(".vc-line-tt");
+      if (!el){
+        el = document.createElement("div");
+        el.className = "vc-line-tt";
+        el.style.cssText = "position:absolute;left:0;top:0;pointer-events:none;z-index:9999;opacity:0;transform:translate3d(0,0,0);transition:opacity 120ms ease;";
+        wrap.appendChild(el);
+      }
+      if (tooltip.opacity === 0){ el.style.opacity = "0"; visible = false; pos.x = null; pos.y = null; return; }
+      var dps = (tooltip.dataPoints || []).filter(function(dp){ return dp && dp.parsed && dp.parsed.y != null; });
+      if (!dps.length){ el.style.opacity = "0"; visible = false; pos.x = null; pos.y = null; return; }
+      var themeRoot = chart.canvas.closest(".vot-root");
+      var dark = !!(themeRoot && themeRoot.getAttribute("data-theme") === "dark");
+      var boxBg = dark ? "#121212" : "#ffffff";
+      var boxBorder = dark ? "" : "border:1px solid #e0e2e6;";
+      var boxShadow = dark ? "box-shadow:0 4px 14px rgba(0,0,0,.25);" : "box-shadow:0 4px 14px rgba(0,0,0,.10);";
+      var textColor = dark ? "#e6e6e6" : "#1f1f1b";
+      var mutedColor = dark ? "#8a8a8a" : "#6f737c";
+      var idx = dps[0].dataIndex;
+      var dayLabel = chart.data.labels[idx];
+      dps = dps.slice().sort(function(a,b){ return b.parsed.y - a.parsed.y; });
+      var ff = "Geist,system-ui,-apple-system,Segoe UI,Roboto,Arial";
+      var rows = dps.map(function(dp){
+        var ds = dp.dataset;
+        var icon = ds.__favicon
+          ? '<img src="' + esc(ds.__favicon) + '" width="16" height="16" style="border-radius:4px;display:block;object-fit:cover" onerror="this.style.visibility=\'hidden\'"/>'
+          : '<span style="width:16px;height:16px;border-radius:4px;background:' + ds.__baseColor + ';display:block"></span>';
+        var name = truncate(ds.label, 32);
+        var vy = Number(dp.parsed.y) || 0, vr = Math.round(vy);
+        var val = (vy > 0 && vr === 0) ? "<1%" : (vr + "%");
+        return '<div style="display:flex;align-items:center;gap:8px;margin-top:8px">' +
+            '<span style="flex:0 0 16px;display:flex">' + icon + '</span>' +
+            '<span style="flex:1 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:' + textColor + '">' + esc(name) + '</span>' +
+            '<span style="flex:0 0 auto;margin-left:77px;color:' + textColor + ';font-weight:500">' + val + '</span>' +
+          '</div>';
+      }).join("");
+      el.innerHTML =
+        '<div style="background:' + boxBg + ';color:' + textColor + ';' + boxBorder + 'border-radius:16px;padding:10px 12px;font-family:' + ff + ';font-size:13px;line-height:1.35;' + boxShadow + 'white-space:nowrap;min-width:220px;">' +
+          '<div style="color:' + mutedColor + ';font-size:11px">' + esc(dateFmtTitle(dayLabel, chart.__curGran)) + '</div>' +
+          rows +
+        '</div>';
+      var cx = chart.canvas.offsetLeft, cy = chart.canvas.offsetTop, ca = chart.chartArea;
+      var caretX = cx + (tooltip.caretX != null ? tooltip.caretX : dps[0].element.x), m = 16;
+      el.style.left = "0px"; el.style.top = "0px";
+      var rect = el.getBoundingClientRect();
+      var tx = (caretX + rect.width + m > cx + ca.right) ? (caretX - rect.width - m) : (caretX + m);
+      tx = Math.max(cx + ca.left, Math.min(tx, cx + ca.right - rect.width));
+      var ty = Math.max(cy + ca.top, Math.min(cy + ca.top + 8, cy + ca.bottom - rect.height));
+      target.x = tx; target.y = ty;
+      if (pos.x == null){ pos.x = tx; pos.y = ty; el.style.transform = "translate3d("+tx+"px,"+ty+"px,0)"; }
+      el.style.opacity = "1"; visible = true;
+      if (!running){ running = true; raf = requestAnimationFrame(loop); }
+    };
+  }
+
+  /* ================= data prep ================= */
+
+  function buildLineDatasets(series, companies){
+    series = Array.isArray(series) ? series : [];
+    companies = Array.isArray(companies) ? companies : [];
+    var metaMap = {};
+    companies.forEach(function(c){
+      if (!c || c.company_id == null) return;
+      metaMap[String(c.company_id)] = {
+        color: c.color || null,
+        favicon: c.favicon_url || c.favicon || "",
+        name: c.name != null ? String(c.name) : String(c.company_id),
+        global_share: (c.visibility_window_pct != null ? Number(c.visibility_window_pct) : null)
+      };
+    });
+    var byId = {}, daySet = {};
+    series.forEach(function(p){
+      if (!p) return;
+      var raw = (p.company_id != null) ? p.company_id : (p.id != null) ? p.id : "";
+      var id = String(raw);
+      if (!id) return;
+      var day = String(p.day);
+      daySet[day] = true;
+      var v = (p.visibility_pct != null) ? Number(p.visibility_pct) : (p.share_pct != null ? Number(p.share_pct) : 0);
+      (byId[id] = byId[id] || {})[day] = v || 0;
+    });
+    var labels = Object.keys(daySet).sort();
+    var ids = Object.keys(byId);
+    ids.forEach(function(id){
+      if (!metaMap[id]) metaMap[id] = { color:null, favicon:"", name:id, global_share:null };
+      if (metaMap[id].global_share == null){
+        var vals = labels.map(function(d){ return byId[id][d]; }).filter(function(v){ return v != null; });
+        metaMap[id].global_share = vals.length ? (vals.reduce(function(a,b){ return a+b; },0)/vals.length) : 0;
+      }
+    });
+    ids.sort(function(a,b){ return (metaMap[b].global_share||0) - (metaMap[a].global_share||0); });
+    ids = ids.slice(0, 7);
+    var PALETTE = ["#14b8a6","#0ea5e9","#6366f1","#d946ef","#f97316","#f43f5e","#64748b"];
+    var globalMax = 0;
+    var datasets = ids.map(function(id, i){
+      var data = labels.map(function(d){ var v = byId[id][d]; if (v != null && v > globalMax) globalMax = v; return v != null ? v : null; });
+      var col = metaMap[id].color || PALETTE[i % PALETTE.length];
+      return {
+        label: metaMap[id].name,
+        __id: id,
+        __globalShare: metaMap[id].global_share,
+        __favicon: metaMap[id].favicon,
+        __baseColor: col,
+        data: data,
+        borderColor: col
+      };
+    });
+    return { labels: labels, datasets: datasets, globalMax: globalMax };
+  }
+
+  /* ================= skeletons ================= */
+  function lineSkeletonHtml(){
+    var hlines = new Array(4).join("x").split("x").map(function(){ return '<div class="sk-lc-hline"></div>'; }).join("");
+    var xlabels = new Array(6).join("x").split("x").map(function(){ return '<div class="sk-lc-xlabel"></div>'; }).join("");
+    var d = "M0,125 C60,115 100,70 150,58 C200,46 230,90 280,74 C330,58 390,22 460,14";
+    var agId = 'vc-sk-ag-' + Math.random().toString(36).slice(2);
+    return '<div class="vc-line-sk"><div class="sk-linechart">' +
+      '<div class="sk-lc-grid">' + hlines +
+        '<svg class="sk-lc-svg" viewBox="0 0 460 160" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">' +
+          '<defs><linearGradient id="' + agId + '" x1="0" y1="0" x2="0" y2="1"><stop class="sk-lc-astop0" offset="0%"/><stop class="sk-lc-astop1" offset="100%"/></linearGradient></defs>' +
+          '<path d="' + d + ' L460,160 L0,160 Z" fill="url(#' + agId + ')"/>' +
+          '<path class="sk-lc-stroke" d="' + d + '"/>' +
+          '<path class="sk-lc-shimmer-path" d="' + d + '"/>' +
+        '</svg>' +
+      '</div>' +
+      '<div class="sk-lc-xaxis">' + xlabels + '</div>' +
+    '</div></div>';
+  }
+
+  /* ================= line legend (balanced rows — same algorithm as the provided component) ================= */
+  var LEG_MIN_GAP = 8, LEG_MAX_GAP = 16;
+  function legGetColumnGap(w){ return Math.max(LEG_MIN_GAP, Math.min(LEG_MAX_GAP, Math.floor(w * 0.025))); }
+  function legNormalizeUrl(url){ if (!url) return ""; if (url.indexOf("//") === 0) return "https:" + url; return url; }
+  function legItemHtml(c, measure){
+    return '<div class="up-company-item' + (measure ? ' up-measure-item' : '') + '" data-company-id="' + esc(c.company_id) + '">' +
+        '<span class="up-company-color" style="background:' + esc(c.color || "#999999") + '"></span>' +
+        '<span class="up-company-inner-gap"></span>' +
+        (c.favicon_url ? '<img class="up-company-favicon" src="' + esc(legNormalizeUrl(c.favicon_url)) + '" alt="" onerror="this.style.visibility=\'hidden\'">' : '<span class="up-company-favicon" style="visibility:hidden"></span>') +
+        '<span class="up-company-inner-gap"></span>' +
+        '<span class="up-company-name">' + esc(c.name) + '</span>' +
+      '</div>';
+  }
+  function legRowWidth(widths, start, end, gap){ var total = 0; for (var i = start; i < end; i++){ total += widths[i]; if (i > start) total += gap; } return total; }
+  function legGreedyRowCount(widths, cw, gap){
+    var rows = 1, cur = 0;
+    for (var i = 0; i < widths.length; i++){
+      var next = cur === 0 ? widths[i] : cur + gap + widths[i];
+      if (cur > 0 && next > cw){ rows++; cur = widths[i]; } else { cur = next; }
+    }
+    return rows;
+  }
+  function legBalancedBreaks(widths, rowCount, cw, gap){
+    var n = widths.length;
+    if (rowCount <= 1 || n <= 1) return [];
+    var dp = [], prev = [];
+    for (var r = 0; r <= rowCount; r++){ dp.push(new Array(n + 1).fill(Infinity)); prev.push(new Array(n + 1).fill(-1)); }
+    dp[0][0] = 0;
+    for (var r2 = 1; r2 <= rowCount; r2++){
+      for (var i = 1; i <= n; i++){
+        for (var k = r2 - 1; k < i; k++){
+          var w = legRowWidth(widths, k, i, gap);
+          if (w > cw) continue;
+          var score = Math.max(dp[r2 - 1][k], w);
+          if (score < dp[r2][i]){ dp[r2][i] = score; prev[r2][i] = k; }
+        }
+      }
+    }
+    if (!isFinite(dp[rowCount][n])) return [];
+    var breaks = [], ii = n;
+    for (var r3 = rowCount; r3 > 1; r3--){ var kk = prev[r3][ii]; if (kk <= 0) break; breaks.unshift(kk); ii = kk; }
+    return breaks;
+  }
+  function getPageWidth(){
+    try { if (window.top && window.top.innerWidth) return window.top.innerWidth; } catch(e){}
+    return window.innerWidth || document.documentElement.clientWidth || 0;
+  }
+
+  /* ================= controller ================= */
+  function makeController(root){
+    var tableEl = root.querySelector(".vt-table");
+    var lineWrap = root.querySelector(".vc-line-wrap");
+    var lineCanvas = root.querySelector(".vc-line-canvas");
+    var legendEl = root.querySelector(".vc-legend");
+    if (!tableEl || !lineWrap || !lineCanvas){
+      return null;
+    }
+
+    var instanceId = root.getAttribute("data-instance") || "default";
+    var myCtrlId = "cc_" + Math.random().toString(36).slice(2) + "_" + Date.now();
+    var isDark = isYes(root.getAttribute("data-isdark"));
+    if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
+    function readProcessing(){
+      var a = root.getAttribute("data-processing");
+      var b = root.getAttribute("data-processing2");
+      var pa = (a === "IS_PROCESSING" || a == null) ? false : isYes(a);
+      var pb = (b === "IS_PROCESSING_2" || b == null) ? false : isYes(b);
+      return pa || pb;
+    }
+    /* Once setVisibilityChartLoading() has been called for this instance, THAT is the only thing
+       that may change the loading state — the data-processing attributes are ignored from then on,
+       for good. Without this the two mechanisms fought each other: an explicit "yes" was silently
+       reset the moment any payload arrived, because update() re-read the (empty) attributes at the
+       end and concluded "not loading". On a dashboard where components fetch one after another,
+       that made whichever component got its data first render immediately while everything around
+       it was still loading — there was no way to hold it back. Window-level so it survives the
+       element rebuilds Bubble does. */
+    var LOADING_EXPLICIT = (window.__votLoadingExplicit = window.__votLoadingExplicit || {});
+    function isLoading(){
+      return LOADING_EXPLICIT[instanceId] ? !!state.loading : readProcessing();
+    }
+
+    var state = {
+      // After a rebuild, start from the last EXPLICITLY set loading state (kept in the cache) rather
+      // than re-reading the attributes — otherwise the component would flash its data for the moment
+      // between being rebuilt and applyCache() restoring the real state.
+      loading: LOADING_EXPLICIT[instanceId]
+        ? !!(window.__votCache && window.__votCache[instanceId] && window.__votCache[instanceId].loading)
+        : readProcessing(),
+      hasLine: false, hasTable: false,
+      series: [], companies: [], tableRows: [], filterCompanies: [], totalCount: null
+    };
+    var chartInstance = null, lineChart = null;
+    var SORT_STORE = (window.__votSort = window.__votSort || {});
+    var sortField = (SORT_STORE[instanceId] && SORT_STORE[instanceId].field) || "visibility";
+    var sortDir = (SORT_STORE[instanceId] && SORT_STORE[instanceId].dir) || "desc";
+
+    // ---- granularity (day/week/month) — controller-level so renderLine + update can use it ----
+    var GRAN_STORE = (window.__votGran = window.__votGran || {});
+    var GRAN_PICKED = (window.__votGranPicked = window.__votGranPicked || {});
+    // the set of company_ids that were active on this instanceId's FIRST ever load — captured once,
+    // survives rebuilds, and is what the filter dropdown's "Reset" button restores to.
+    var INIT_COMPANIES = (window.__votInitCompanies = window.__votInitCompanies || {});
+    var curGran = (GRAN_STORE[instanceId] === "week" || GRAN_STORE[instanceId] === "month") ? GRAN_STORE[instanceId] : "day";
+    function seriesRangeDays(){
+      var days = [];
+      (state.series || []).forEach(function(p){ if (p && p.day != null) days.push(String(p.day)); });
+      if (!days.length) return 0;
+      days.sort();
+      var a = Date.parse(days[0]), b = Date.parse(days[days.length - 1]);
+      if (isNaN(a) || isNaN(b)) return days.length;
+      return Math.round((b - a) / 86400000) + 1;
+    }
+    function normGran(v){
+      v = String(v == null ? "" : v).toLowerCase().trim();
+      if (v.indexOf("month") === 0 || v === "mon" || v === "m") return "month";
+      if (v.indexOf("week") === 0 || v === "w") return "week";
+      if (v.indexOf("day") === 0 || v === "daily" || v === "d") return "day";
+      return null;
+    }
+    function inferGran(series){
+      var seen = {};
+      (series || []).forEach(function(p){ if (p && p.day != null) seen[String(p.day)] = 1; });
+      var arr = Object.keys(seen).sort();
+      if (arr.length < 2) return null;                 // can't tell from a single point
+      var gaps = [];
+      for (var i = 1; i < arr.length; i++){
+        var a = Date.parse(arr[i - 1]), b = Date.parse(arr[i]);
+        if (!isNaN(a) && !isNaN(b)) gaps.push((b - a) / 86400000);
+      }
+      if (!gaps.length) return null;
+      gaps.sort(function(x, y){ return x - y; });
+      var med = gaps[Math.floor(gaps.length / 2)];     // median spacing in days
+      if (med >= 20) return "month";
+      if (med >= 4) return "week";
+      return "day";
+    }
+    function granBtnsLive(){ return Array.prototype.slice.call(root.querySelectorAll(".vc-gran-btn")); }
+    function syncGranActive(){ granBtnsLive().forEach(function(bn){ bn.classList.toggle("is-active", bn.getAttribute("data-gran") === curGran); }); }
+    function applyGranAvailability(){
+      var r = seriesRangeDays();
+      var btns = granBtnsLive();
+      btns.forEach(function(bn){
+        var g = bn.getAttribute("data-gran");
+        var dis = (g === "week" && r > 0 && r < 8) || (g === "month" && r > 0 && r < 31);   // week needs ≥8 days, month ≥31
+        bn.classList.toggle("is-disabled", dis);
+        if (dis) bn.setAttribute("aria-disabled", "true"); else bn.removeAttribute("aria-disabled");
+      });
+      var activeBtn = btns.filter(function(bn){ return bn.getAttribute("data-gran") === curGran; })[0];
+      if (activeBtn && activeBtn.classList.contains("is-disabled")){ curGran = "day"; GRAN_STORE[instanceId] = "day"; syncGranActive(); }
+    }
+
+    function themeColors(){
+      return isDark
+        ? { text:"#e0e0e0", muted:"#a0a0a0", border:"#353535", bg:"#1b1b1b" }
+        : { text:"#1f1f1b", muted:"#6f737c", border:"#e0e2e6", bg:"#ffffff" };
+    }
+    function setHeading(){ /* headings are static ("Visibility over Time" / "Top Brands") */ }
+    function syncTheme(){
+      if (isDark){ root.setAttribute("data-theme","dark"); }
+      else { root.removeAttribute("data-theme"); }
+    }
+
+
+    /* ---------- line legend ---------- */
+    var legendCompanies = [];
+    function buildLegendCompanies(datasets){
+      return (datasets || []).map(function(ds){
+        return { company_id: ds.__id, name: ds.label, color: ds.__baseColor, favicon_url: ds.__favicon };
+      });
+    }
+    function legendLayout(){
+      if (!legendEl) return;
+      if (getPageWidth() < 500){ legendEl.classList.add("is-hidden"); return; }  // hide below page width 500
+      legendEl.classList.remove("is-hidden");
+      var rowsC = legendEl.querySelector(".up-company-rows");
+      var measure = Array.prototype.slice.call(legendEl.querySelectorAll(".up-measure-item"));
+      if (!rowsC || !measure.length) return;
+      var cw = legendEl.clientWidth;
+      if (!cw){ setTimeout(legendLayout, 100); return; }
+      var gap = legGetColumnGap(cw);
+      legendEl.style.setProperty("--up-column-gap", gap + "px");
+      var widths = measure.map(function(it){ return it.getBoundingClientRect().width; });
+      var rowCount = legGreedyRowCount(widths, cw, gap);
+      rowCount = Math.max(1, Math.min(rowCount, legendCompanies.length, 2));   // never more than 2 rows
+      var breaks = legBalancedBreaks(widths, rowCount, cw, gap);
+      // if 2 balanced rows don't fit (items too wide even truncated), split evenly at the midpoint
+      if (rowCount === 2 && !breaks.length) breaks = [Math.ceil(legendCompanies.length / 2)];
+      var rows = [], start = 0;
+      for (var b = 0; b < breaks.length; b++){ rows.push(legendCompanies.slice(start, breaks[b])); start = breaks[b]; }
+      rows.push(legendCompanies.slice(start));
+      rowsC.innerHTML = rows.map(function(row){
+        return '<div class="up-company-row">' + row.map(function(c){ return legItemHtml(c, false); }).join("") + '</div>';
+      }).join("");
+    }
+    function renderLegend(datasets){
+      if (!legendEl) return;
+      legendCompanies = buildLegendCompanies(datasets);
+      if (!legendCompanies.length){ legendEl.innerHTML = ""; return; }
+      legendEl.innerHTML =
+        '<div class="up-company-measure">' + legendCompanies.map(function(c){ return legItemHtml(c, true); }).join("") + '</div>' +
+        '<div class="up-company-rows"></div>';
+      legendLayout();
+    }
+    function clearLegend(){ if (legendEl){ legendCompanies = []; legendEl.innerHTML = ""; } }
+
+    // highlight one series on legend hover: active stays coloured, all others (lines + legend) dim
+    function applyHighlight(id){
+      if (lineChart && lineChart.__activeId !== id){
+        lineChart.__activeId = id;
+        var dim = isDark ? "rgba(160,160,160,0.20)" : "rgba(120,123,124,0.22)";
+        lineChart.data.datasets.forEach(function(ds){
+          ds.borderColor = (id == null || ds.__id === id) ? ds.__baseColor : dim;
+        });
+        lineChart.update("none");
+      }
+      if (legendEl){
+        var items = legendEl.querySelectorAll(".up-company-item");
+        for (var i=0;i<items.length;i++){
+          var cid = items[i].getAttribute("data-company-id");
+          items[i].style.opacity = (id == null || cid === id) ? "1" : "0.35";
+        }
+      }
+    }
+    // bind legend hover once (rows are re-rendered on resize, so use delegation)
+    if (legendEl && legendEl.getAttribute("data-vc-hoverbound") !== "1"){
+      legendEl.setAttribute("data-vc-hoverbound", "1");
+      legendEl.addEventListener("mouseover", function(e){
+        var it = e.target && e.target.closest ? e.target.closest(".up-company-item") : null;
+        if (it) applyHighlight(it.getAttribute("data-company-id"));
+      });
+      legendEl.addEventListener("mouseleave", function(){ applyHighlight(null); });
+    }
+
+    /* ---------- line render ---------- */
+    function destroyLine(){
+      if (lineChart){ try { lineChart.destroy(); } catch(e){} lineChart = null; }
+      if (window.Chart && window.Chart.getChart){ var ex = window.Chart.getChart(lineCanvas); if (ex) try{ ex.destroy(); }catch(e){} }
+    }
+    function clearLineExtras(){ var sk = lineWrap.querySelector(".vc-line-sk"); if (sk) sk.remove(); var em = lineWrap.querySelector(".vc-line-empty"); if (em) em.remove(); }
+    function showLineSkeleton(){ destroyLine(); clearLineExtras(); clearLegend(); lineWrap.insertAdjacentHTML("beforeend", lineSkeletonHtml()); }
+
+    function renderLine(){
+      if (root.__votController && root.__votController.__ctrlId !== myCtrlId){
+        return;
+      }
+      clearLineExtras();
+      var built = buildLineDatasets(state.series, state.companies || []);
+      if (!built.datasets.length){
+        destroyLine(); clearLegend();
+        lineWrap.insertAdjacentHTML("beforeend", '<div class="vc-line-empty">No data</div>');
+        return;
+      }
+      var visDs = built.datasets;
+      renderLegend(visDs);
+      var chartJsWarDa = !!window.Chart;
+      loadChartJs().then(function(){
+        if (root.__votController && root.__votController.__ctrlId !== myCtrlId){
+          return;
+        }
+        if (!lineCanvas) return;
+        destroyLine();
+        var tc = themeColors();
+        var ctx = lineCanvas.getContext("2d");
+        window.Chart.defaults.color = tc.muted;
+        window.Chart.defaults.font = { family: "Geist, system-ui, -apple-system, Segoe UI, Roboto, Arial", size: 12 };
+        var single = built.labels.length <= 1;   // single-day range → show the values as points
+        visDs.forEach(function(ds){
+          ds.borderWidth = LINE_WIDTH; ds.fill = false; ds.cubicInterpolationMode = "monotone"; ds.tension = LINE_TENSION;
+          ds.pointRadius = single ? 4 : 0; ds.pointHoverRadius = LINE_POINT_HOVER; ds.pointHitRadius = LINE_POINT_HIT;
+          ds.pointBorderWidth = LINE_POINT_BORDER; ds.pointBackgroundColor = tc.bg; ds.pointBorderColor = ds.__baseColor;
+          ds.pointHoverBackgroundColor = tc.bg; ds.pointHoverBorderColor = ds.__baseColor;
+          if (single){ ds.pointBackgroundColor = ds.__baseColor; }
+          ds.spanGaps = true; ds.clip = 8;
+        });
+        var visMax = 0; visDs.forEach(function(ds){ (ds.data || []).forEach(function(v){ if (v != null && v > visMax) visMax = v; }); });
+        var yMax = visMax * Y_PAD; if (yMax <= 0) yMax = 1; if (yMax > 100) yMax = 100;
+        var labels = built.labels;
+        try {
+          lineChart = new window.Chart(ctx, {
+            type: "line",
+            data: { labels: labels, datasets: visDs },
+            plugins: [hoverLinePlugin, dashedYGridPlugin],
+            options: {
+              responsive: true, maintainAspectRatio: false,
+              animation: { duration: 600, easing: "easeOutQuart" },
+              interaction: { mode: "index", intersect: false },
+              layout: { padding: { top: 8, right: 2, bottom: 0, left: 0 } },
+              plugins: { legend: { display:false }, tooltip: { enabled:false, external: makeLineTooltip(lineWrap) } },
+              scales: {
+                x: { grid: { display:false }, offset: single, border: { display:true, color: tc.border, width:1 },
+                     ticks: { autoSkip:true, maxTicksLimit:X_MAX_TICKS, maxRotation:0, color: tc.muted,
+                              callback: function(v, i){
+                                var lab = String(labels[i] || "");
+                                if (curGran === "month"){
+                                  var m = lab.match(/^(\d{4})-(\d{2})/);
+                                  if (m) return MONTHS_DE[parseInt(m[2],10) - 1] || lab;
+                                }
+                                return lab.slice(5);   // day / week → "MM-DD"
+                              } } },
+                y: { min:0, max:yMax, beginAtZero:true,
+                     afterBuildTicks: function(scale){ var m = scale.max || 1; scale.ticks = [{value:0},{value:m/3},{value:2*m/3},{value:m}]; },
+                     ticks: { color: tc.muted, callback: function(v){ return Math.round(v) + "%"; } },
+                     grid: { display:false }, border: { display:false } }
+              },
+              elements: { point: { radius: 0 } }
+            }
+          });
+          lineChart.$ccGridColor = tc.border;
+          lineChart.$ccHoverLineColor = tc.border;
+          lineChart.__curGran = curGran;   // let the shared tooltip formatter know the active granularity
+        } catch(err){
+        }
+      }).catch(function(err){
+      });
+    }
+
+    /* ---------- render (two independent halves) ---------- */
+    // Skeleton shows while loading (processing=yes) OR until the first data has arrived.
+    function tableHeadHtml(){
+      return '<div class="vt-thead">' +
+        '<div class="vt-th vt-th-idx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg></div>' +
+        '<div class="vt-th">Brand</div>' +
+        '<div class="vt-th vt-th-visibility">Visibility</div>' +
+        '<div class="vt-th vt-th-ranking">Ranking</div>' +
+        '<div class="vt-th vt-th-sentiment">Sentiment</div></div>';
+    }
+    function tableSkeletonHtml(){
+      var rows = "";
+      for (var i = 0; i < 7; i++){
+        rows += '<div class="vt-row vt-tsk">' +
+          '<div class="vt-td vt-td-idx"><span class="vt-tsk-bar" style="width:12px"></span></div>' +
+          '<div class="vt-td"><span class="vt-tsk-logo"></span><span class="vt-tsk-bar" style="width:' + (70 + (i % 3) * 18) + 'px"></span></div>' +
+          '<div class="vt-td"><span class="vt-tsk-bar" style="width:46px"></span></div>' +
+          '<div class="vt-td"><span class="vt-tsk-bar" style="width:52px"></span></div>' +
+          '<div class="vt-td"><span class="vt-tsk-bar" style="width:56px"></span></div>' +
+        '</div>';
+      }
+      return tableHeadHtml() + '<div class="vt-tbody">' + rows + '</div>';
+    }
+    function renderTableSide(){
+      if (root.__votController && root.__votController.__ctrlId !== myCtrlId){ return; }
+      if (state.loading || !state.hasTable){ tableEl.innerHTML = tableSkeletonHtml(); }
+      else { renderTable(); }
+    }
+    function renderLineSide(){
+      if (root.__votController && root.__votController.__ctrlId !== myCtrlId){
+        return;
+      }
+      if (state.loading || !state.hasLine || state.linePending){
+        showLineSkeleton(); return;
+      }
+      renderLine();
+      verifyLineRendered();
+    }
+    /* renderLine() finishes asynchronously (it waits on loadChartJs()), and that callback bails out
+       if this controller was replaced mid-flight — which is routine while Bubble is still settling
+       the page on first load. The table has no async step, so it appears while the chart silently
+       does not, and nothing re-triggers it until some interaction forces another render. This
+       verifies the chart instance actually exists shortly after we asked for it, and re-renders if
+       it doesn't. Bounded and self-cancelling, so it costs nothing once the chart is up. */
+    function verifyLineRendered(){
+      clearTimeout(root.__votLineVerifyT);
+      var attempts = 0;
+      function check(){
+        if (root.__votController && root.__votController.__ctrlId !== myCtrlId) return;   // superseded
+        if (state.loading || !state.hasLine || state.linePending) return;                  // skeleton is correct now
+        var alive = false;
+        try { alive = !!(window.Chart && window.Chart.getChart && lineCanvas && window.Chart.getChart(lineCanvas)); } catch(e){}
+        // "No data" is a legitimate rendered outcome too — don't fight it
+        if (alive || lineWrap.querySelector(".vc-line-empty")){
+          return;
+        }
+        if (attempts++ >= 12) return;
+        renderLine();
+        root.__votLineVerifyT = setTimeout(check, 250);
+      }
+      // Deliberately NOT immediate: renderLine() may still be legitimately waiting on the first
+      // Chart.js download. Checking right away would see "no chart yet" and kick off a redundant
+      // second render of the same data. 400ms is past a cached/local load but well before a user
+      // would notice a missing chart.
+      root.__votLineVerifyT = setTimeout(check, 400);
+    }
+    function render(){
+      if (root.__votController && root.__votController.__ctrlId !== myCtrlId) return;
+      syncTheme();
+      setHeading();
+      setHeadCount();
+      renderTableSide();
+      renderLineSide();
+      syncGranActive();   // fresh markup ships with is-active hardcoded on Day — always re-apply
+      syncFilterBadge();
+    }
+
+    /* ---------- Top Brands table ---------- */
+    var TREND_UP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>';
+    var TREND_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="7" x2="17" y2="17"></line><polyline points="17 7 17 17 7 17"></polyline></svg>';
+    var HASH_ICON = '<svg class="vt-hash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>';
+    function fmt1(v){ if (v == null || v === "" || !isFinite(Number(v))) return "–"; return (Math.round(Number(v) * 10) / 10).toFixed(1); }
+    // trend chip. `inverted` (ranking): a DOWN move is the positive/green one. `suffix` e.g. "%".
+    function trendChip(delta, decimals, inverted, suffix){
+      if (delta == null || delta === "") return "";
+      var d = Number(delta);
+      if (!isFinite(d)) return "";
+      var shown = decimals ? Math.round(Math.abs(d) * 10) / 10 : Math.round(Math.abs(d));
+      if (shown === 0) return "";                                  // rounded to 0 → no trend shown
+      var goingUp = d > 0;
+      var positive = inverted ? !goingUp : goingUp;               // is this a "good" move?
+      var cls = positive ? "pos" : "neg";
+      var icon = goingUp ? TREND_UP : TREND_DOWN;
+      var txt = (decimals ? shown.toFixed(1) : String(shown)) + (suffix || "");
+      return '<span class="vt-trend ' + cls + '">' + icon + txt + '</span>';
+    }
+    function sentColor(v){
+      v = Number(v);
+      if (v <= 25) return "#D25D5D";
+      if (v <= 40) return "#D2865D";
+      if (v <= 60) return "#9E9E9E";
+      if (v <= 75) return "#9FD25D";
+      return "#60D25D";
+    }
+    var SORT_FIELDS = { visibility: "visibility_pct", ranking: "avg_rank", sentiment: "sentiment" };
+    var ROW_GOTO = '<span class="vt-row-goto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg></span>';
+    function renderTable(){
+      // rows arrive already sorted (incl. position) from the RPC — no client-side sorting
+      var rows = Array.isArray(state.tableRows) ? state.tableRows : [];
+      var head = tableHeadHtml();
+      if (!rows.length){ tableEl.innerHTML = head + '<div class="vt-empty">No data</div>'; return; }
+      var body = rows.map(function(r, i){
+        var pos = (r.position != null) ? Number(r.position) : null;
+        var prevPos = (i > 0 && rows[i-1].position != null) ? Number(rows[i-1].position) : null;
+        // last row is the own brand pushed out of the top group (position > 7) → gap + top border
+        var isLast = (i === rows.length - 1);
+        var gap = (isLast && pos != null && pos > 7) ? " vt-gap" : "";
+        var logo = r.logo_url
+          ? '<span class="vt-logo-box"><img src="' + esc(r.logo_url) + '" onerror="this.style.visibility=\'hidden\'"/></span>'
+          : '<span class="vt-logo-box"></span>';
+        var visNull = (r.visibility_pct == null || r.visibility_pct === "");
+        var vis = '<span class="vt-num">' + (visNull ? "–" : (Math.round(Number(r.visibility_pct) || 0) + "%")) + '</span>' + trendChip(r.visibility_delta_pct, false, false, "%");
+        var rank = '<span class="vt-rank-group">' + HASH_ICON + '<span class="vt-num">' + fmt1(r.avg_rank) + '</span></span>' + trendChip(r.avg_rank_delta, true, true);
+        var sentNull = (r.sentiment == null || r.sentiment === "" || !isFinite(Number(r.sentiment)));
+        var sc = sentNull ? "#9E9E9E" : sentColor(r.sentiment);
+        var sent = '<span class="vt-sent"><span class="vt-sent-dot" style="background:' + sc + '"></span><span class="vt-sent-val">' + (sentNull ? "–" : Math.round(Number(r.sentiment))) + '</span></span>' + trendChip(r.sentiment_delta, true, false);
+        return '<div class="vt-row' + gap + '" data-id="' + esc(String(r.company_id == null ? "" : r.company_id)) + '">' +
+          '<div class="vt-td vt-td-idx">' + (pos != null ? pos : "") + '</div>' +
+          '<div class="vt-td vt-td-brand">' + logo + '<span class="vt-brand-name">' + esc(r.name == null ? "" : r.name) + '</span>' + ROW_GOTO + '</div>' +
+          '<div class="vt-td vt-td-visibility">' + vis + '</div>' +
+          '<div class="vt-td vt-td-ranking">' + rank + '</div>' +
+          '<div class="vt-td vt-td-sentiment">' + sent + '</div></div>';
+      }).join("");
+      tableEl.innerHTML = head + '<div class="vt-tbody">' + body + '</div>';
+      Array.prototype.slice.call(tableEl.querySelectorAll(".vt-row")).forEach(function(row){
+        var id = row.getAttribute("data-id");
+        row.addEventListener("mouseenter", function(){ applyHighlight(id); });
+        row.addEventListener("mouseleave", function(){ applyHighlight(null); });
+        row.addEventListener("click", function(){
+          var fnName = root.getAttribute("data-rowclick-fn") || "bubble_fn_votRowClick";
+          var fn = resolveBubbleFn(fnName);
+          if (typeof fn === "function"){ try { fn(id); } catch(e){} }
+        });
+      });
+      checkBrandWidth();
+    }
+    function checkTrendFit(){
+      if (checkTrendFit.__busy) return;   // guard against any re-entrant call while we're mid-measurement
+      checkTrendFit.__busy = true;
+      // measure with trends temporarily shown, so we get their TRUE rendered position
+      var hadHide = tableEl.classList.contains("vt-hide-trend");
+      if (hadHide) tableEl.classList.remove("vt-hide-trend");
+      var cells = tableEl.querySelectorAll(".vt-td-visibility, .vt-td-ranking, .vt-td-sentiment");
+      var tooTight = false;
+      for (var i = 0; i < cells.length; i++){
+        var c = cells[i];
+        if (getComputedStyle(c).display === "none") continue;   // that column is already hidden — irrelevant
+        var trend = c.querySelector(".vt-trend");
+        if (!trend) continue;   // no chip rendered in this cell (delta was 0/null) — nothing to measure
+        var cRect = c.getBoundingClientRect();
+        var tRect = trend.getBoundingClientRect();
+        var clearance = cRect.right - tRect.right;   // gap between the chip and the cell's actual right border
+        if (clearance < 8){ tooTight = true; break; }
+      }
+      tableEl.classList.toggle("vt-hide-trend", tooTight);
+      checkTrendFit.__busy = false;
+    }
+    function checkBrandWidth(){
+      // only reveal the row hover go-to icon when the Brand column is wide enough
+      var w = tableEl ? tableEl.clientWidth : 0;
+      root.classList.toggle("is-narrow-cell", w > 0 && w < 380);
+      if (!w) return;
+      // Sentiment/Ranking columns only ever disappear once already stacked (mobile layout) AND the
+      // overall element width is below the given threshold — never while still side-by-side.
+      var stacked = root.classList.contains("is-narrow");
+      var rootW = root.clientWidth || 0;
+      tableEl.classList.toggle("vt-hide-sentiment", stacked && rootW > 0 && rootW < 700);
+      tableEl.classList.toggle("vt-hide-rank", stacked && rootW > 0 && rootW < 500);
+      // trend chips: purely based on whether they actually still fit (8px clearance rule) —
+      // checked last so it correctly accounts for whichever columns are already hidden above.
+      checkTrendFit();
+    }
+    function setHeadCount(){
+      var hr = root.querySelector(".vot-heading-right");
+      var cn = root.querySelector(".vot-head-count");
+      if (!hr || !cn) return;
+      if (state.totalCount != null && state.totalCount !== ""){ cn.textContent = state.totalCount; hr.classList.add("has-count"); }
+      else { hr.classList.remove("has-count"); }
+    }
+
+    var inner = root;
+    var gotoBtn = root.querySelector(".vot-goto");
+    var exportBtn = root.querySelector(".vot-export");
+    // only one dropdown open at a time
+    /* Open/close a dropdown while keeping aria-hidden in sync AND never hiding a focused element
+       from assistive tech (see closePops for the full reasoning). */
+    function setPopOpen(pop, open){
+      if (!pop) return;
+      var menu = pop.querySelector(".vot-sort-menu, .vot-filter-menu");
+      if (!open && menu && menu.contains(document.activeElement)){
+        var opener = pop.querySelector(".vot-sort-btn, .vot-filter-btn");
+        try { opener ? opener.focus({ preventScroll: true }) : document.activeElement.blur(); }
+        catch(e){ try { document.activeElement.blur(); } catch(e2){} }
+      }
+      pop.classList.toggle("is-open", !!open);
+      if (menu) menu.setAttribute("aria-hidden", open ? "false" : "true");
+    }
+    function closePops(except){
+      var s = root.querySelector(".vot-sort"), f = root.querySelector(".vot-filter");
+      [s, f].forEach(function(pop){
+        if (!pop || pop === except || !pop.classList.contains("is-open")) return;
+        var menu = pop.querySelector(".vot-sort-menu, .vot-filter-menu");
+        // Never leave focus inside something we're about to hide from the accessibility tree —
+        // that's exactly what the "Blocked aria-hidden on an element because its descendant
+        // retained focus" console warning reports. Move focus back to the button that opened it
+        // BEFORE the menu is marked hidden.
+        if (menu && menu.contains(document.activeElement)){
+          var opener = pop.querySelector(".vot-sort-btn, .vot-filter-btn");
+          try { opener ? opener.focus({ preventScroll: true }) : document.activeElement.blur(); }
+          catch(e){ try { document.activeElement.blur(); } catch(e2){} }
+        }
+        pop.classList.remove("is-open");
+        if (menu) menu.setAttribute("aria-hidden", "true");
+      });
+    }
+
+    // Mira-style button tooltip — appended to <body> with position:fixed so no Bubble parent
+    // with overflow:hidden can clip it. Colours are set explicitly (not via inherited CSS vars).
+    if (!root.__votTip){
+      var tipEl = document.createElement("div"); tipEl.className = "vot-tip"; document.body.appendChild(tipEl);
+      root.__votTip = tipEl;
+      var tipTimer = null, tipSuppressed = false;
+      var themeTip = function(){
+        var dark = root.getAttribute("data-theme") === "dark";
+        // dark tooltip in light mode; inverted (light) in dark mode for contrast
+        tipEl.style.background = dark ? "#f0f0f0" : "#1f1f1b";
+        tipEl.style.color = dark ? "#1f1f1b" : "#ffffff";
+      };
+      var showTip = function(btn){
+        if (tipSuppressed) return;
+        var txt = btn.getAttribute("data-tip"); if (!txt) return;
+        tipEl.textContent = txt; themeTip();
+        tipEl.classList.add("show");
+        var br = btn.getBoundingClientRect();
+        var tw = tipEl.offsetWidth, vw = window.innerWidth || document.documentElement.clientWidth;
+        var left = br.left + br.width / 2 - tw / 2;
+        left = Math.max(6, Math.min(left, vw - tw - 6));
+        tipEl.style.left = left + "px";
+        tipEl.style.top = (br.bottom + 8) + "px";
+      };
+      var hideTip = function(){ clearTimeout(tipTimer); tipEl.classList.remove("show"); };
+      Array.prototype.slice.call(root.querySelectorAll("[data-tip]")).forEach(function(btn){
+        btn.addEventListener("mouseenter", function(){ tipSuppressed = false; clearTimeout(tipTimer); tipTimer = setTimeout(function(){ showTip(btn); }, 60); });
+        btn.addEventListener("mouseleave", function(){ tipSuppressed = false; hideTip(); });
+        // click / press → hide immediately and don't let it pop back while the pointer stays on the button
+        btn.addEventListener("mousedown", function(){ tipSuppressed = true; hideTip(); });
+        btn.addEventListener("click", function(){ tipSuppressed = true; hideTip(); });
+      });
+    }
+
+    // line-chart granularity switcher — fires a Run-JS / JavaScript-to-Bubble event on change.
+    // The chart itself does nothing with it; the workflow re-fetches the timeseries at the new
+    // granularity and re-sends the payload (same response shape, date key stays "day").
+    if (granBtnsLive().length){
+      syncGranActive();
+      applyGranAvailability();
+    }
+
+    // ---- filter dropdown: hide/show individual domains/urls in the line chart ----
+    var filterWrap = root.querySelector(".vot-filter");
+    var filterBtn = root.querySelector(".vot-filter-btn");
+    var filterMenu = root.querySelector(".vot-filter-menu");
+    // fader dropdown is fed by the full company list (payload `filterCompanies`); selecting/deselecting
+    // builds a working set and the Submit button fires submit_companies (→ new RPC / new data)
+    var filterSel = {};        // company_id -> selected (local working copy until submit)
+    // Badge on the fader button: shows how many companies are currently active, but only when
+    // that's fewer than the full available list (i.e. an actual filter is in effect).
+    // Counted from the SERIES — that's the exact set the chart plots — so the badge can never
+    // disagree with what's on screen, even if a payload arrives with a stale/missing `companies`.
+    function syncFilterBadge(){
+      var badge = root.querySelector(".vot-filter-badge");
+      if (!badge) return;
+      var active = activeCompanyIds().length;
+      // Only ever means "a company filter is applied" — never "this is how many lines happen to be
+      // plotted". The default view is not a filter, whichever companies the RPC picked for it.
+      var show = !!USER_FILTERED[instanceId] && active > 0;
+      badge.textContent = show ? String(active) : "";
+      badge.classList.toggle("is-visible", show);
+    }
+    /* Which companies are currently SELECTED. Deliberately reads `companies` (the set the workflow
+       was told to plot) and only falls back to the series — the series contains one entry per
+       actual data point, so a company that is selected but happens to have NO data in the chosen
+       date range simply isn't in there. Deriving the selection from the series therefore read that
+       company as "deselected": after a date-range switch the badge lit up and Reset appeared even
+       though the user had never touched the filter. Both the checkboxes and the badge go through
+       here so they can never drift apart. */
+    function activeCompanyIds(){
+      var ids = [], seen = {};
+      (state.companies || []).forEach(function(c){
+        if (!c || c.company_id == null) return;
+        var id = String(c.company_id);
+        if (!seen[id]){ seen[id] = true; ids.push(id); }
+      });
+      if (ids.length) return ids;
+      (state.series || []).forEach(function(p){
+        if (!p) return;
+        var raw = (p.company_id != null) ? p.company_id : p.id;
+        if (raw == null) return;
+        var id = String(raw);
+        if (!seen[id]){ seen[id] = true; ids.push(id); }
+      });
+      return ids;
+    }
+    function seedFilterSelection(){
+      filterSel = {};
+      var activeIds = {};
+      activeCompanyIds().forEach(function(id){ activeIds[id] = true; });
+      (state.filterCompanies || []).forEach(function(c){
+        if (!c || c.company_id == null) return;
+        filterSel[String(c.company_id)] = !!activeIds[String(c.company_id)];
+      });
+    }
+    var MAX_FILTER_SEL = 7;
+    /* Whether the USER has applied a company filter. Set only in fireCompaniesSubmit() (the one
+       place a filter is actually applied) and cleared by Reset — window-level so it survives the
+       element rebuilds Bubble does.
+
+       This replaces comparing the current company set against a snapshot taken on first load. That
+       comparison was wrong because the RPC returns the top 7 companies BY VISIBILITY FOR THE CHOSEN
+       PERIOD — switching the date range legitimately swaps which companies are in that top 7 (e.g.
+       a company with 0% over 7 days drops out in favour of another over 30 days). The set then
+       differed from the first-load snapshot and the badge lit up as if the user had filtered, even
+       though they never touched it. A changed default selection is not a filter. */
+    var USER_FILTERED = (window.__votUserFiltered = window.__votUserFiltered || {});
+    function isAtInitialSelection(){
+      if (USER_FILTERED[instanceId]) return false;   // a filter is applied → Reset is meaningful
+      // Otherwise: are the checkboxes still exactly what's currently plotted?
+      var plotted = {}, n = 0;
+      activeCompanyIds().forEach(function(id){ plotted[id] = true; n++; });
+      var current = Object.keys(filterSel).filter(function(k){ return filterSel[k]; });
+      if (current.length !== n) return false;
+      return current.every(function(id){ return plotted[id]; });
+    }
+    function populateFilter(){
+      if (!filterMenu) return;
+      var list = state.filterCompanies || [];
+      if (!list.length){ filterMenu.innerHTML = '<div class="vot-filter-empty">No companies</div>'; return; }
+      var selCount = list.reduce(function(n, c){ return n + (filterSel[String(c.company_id)] ? 1 : 0); }, 0);
+      var atMax = selCount >= MAX_FILTER_SEL;
+      var allSelected = list.length > 0 && selCount === list.length;   // fewer than 7 available, but all of them ticked
+      var showDeselectAll = atMax || allSelected;
+      var showReset = !isAtInitialSelection();   // Reset would be a no-op right at the initial state
+      var head = '<div class="vot-filter-head"><span class="vot-filter-title">Companies</span>' +
+        '<span class="vot-filter-head-actions">' +
+          (showReset ? '<button class="vot-filter-reset" type="button">Reset</button>' : '') +
+          (showDeselectAll ? '<button class="vot-filter-toggle" type="button">Deselect all</button>' : '') +
+          // Always visible — it's a plain status readout, so there's no reason to hide it just
+          // because the Deselect-all button happens to be showing. Denominator is how many
+          // companies exist, capped at the 7 that can actually be plotted at once.
+          '<span class="vot-filter-count">' + selCount + '/' + Math.min(list.length, MAX_FILTER_SEL) + '</span>' +
+        '</span></div>';
+      var items = list.map(function(c){
+        var id = String(c.company_id);
+        var checked = !!filterSel[id];
+        var disabled = !checked && atMax;   // can't check a new one once 7 are already selected
+        var fav = c.favicon_url || c.logo_url || c.favicon || c.logo || "";
+        var icon = fav
+          ? '<span class="vot-filter-logo-box"><img src="' + esc(fav) + '" onerror="this.parentNode.style.visibility=\'hidden\'"/></span>'
+          : '<span class="vot-filter-dot" style="background:' + (c.color || "#9e9e9e") + '"></span>';
+        return '<div class="vot-filter-item ' + (checked ? "is-checked" : "") + (disabled ? " is-disabled" : "") + '" data-id="' + esc(id) + '" style="--vc-fltclr:' + (c.color || "#14b8a6") + '" title="' + esc(c.name || id) + '">' +
+          '<span class="vot-filter-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>' +
+          icon + '<span class="vot-filter-name">' + esc(c.name || id) + '</span></div>';
+      }).join("");
+      filterMenu.innerHTML = head + '<div class="vot-filter-list">' + items + '</div>' + '<button class="vot-filter-submit" type="button">Apply</button>';
+
+      var resetBtn = filterMenu.querySelector(".vot-filter-reset");
+      if (resetBtn) resetBtn.addEventListener("click", function(ev){
+        ev.stopPropagation();
+        // Reset = back to the RPC's own default selection for the CURRENT period, not to a set
+        // frozen at page load (which may no longer be the default after a date-range change).
+        var initIds = INIT_COMPANIES[instanceId] || activeCompanyIds();
+        filterSel = {};
+        initIds.forEach(function(id){ filterSel[id] = true; });
+        populateFilter();
+        fireCompaniesSubmit();   // restores AND applies immediately
+        delete USER_FILTERED[instanceId];   // after fireCompaniesSubmit, which would set it
+      });
+      var toggleBtn = filterMenu.querySelector(".vot-filter-toggle");
+      if (toggleBtn) toggleBtn.addEventListener("click", function(ev){
+        ev.stopPropagation();
+        filterSel = {};   // "Deselect all" only — selecting past the cap isn't offered
+        populateFilter();
+      });
+      Array.prototype.slice.call(filterMenu.querySelectorAll(".vot-filter-item")).forEach(function(it){
+        it.addEventListener("click", function(ev){
+          ev.stopPropagation();
+          var id = it.getAttribute("data-id");
+          var willCheck = !filterSel[id];
+          if (willCheck){
+            var count = list.reduce(function(n, c){ return n + (filterSel[String(c.company_id)] ? 1 : 0); }, 0);
+            if (count >= MAX_FILTER_SEL) return;   // at the cap — ignore attempts to select more
+          }
+          filterSel[id] = willCheck;
+          populateFilter();
+        });
+      });
+      var submit = filterMenu.querySelector(".vot-filter-submit");
+      if (submit) submit.addEventListener("click", function(ev){ ev.stopPropagation(); fireCompaniesSubmit(); });
+    }
+    // one plain-text value, comma-joined — e.g. "1712x123,1712x456,1712x789"
+    // IMPORTANT on the Bubble side: mark this Value as plain TEXT, NOT "list of texts" — a
+    // "list" field auto-splits on comma internally and mangles the payload. In Bubble use
+    // value:split by "," to turn it into a proper list of company ids.
+    function fireCompaniesSubmit(){
+      var ids = Object.keys(filterSel).filter(function(k){ return filterSel[k]; });
+      USER_FILTERED[instanceId] = true;   // the one place a filter is actually applied
+      var payload = ids.join(",");
+      var fnName = root.getAttribute("data-submit-fn") || "bubble_fn_votSubmitCompanies";
+      var fn = resolveBubbleFn(fnName);
+      if (typeof fn === "function"){ try { fn(payload); } catch(e){} }
+      if (filterWrap) setPopOpen(filterWrap, false);
+    }
+    if (filterWrap && !filterWrap.__votOutsideBound){
+      filterWrap.__votOutsideBound = true;
+      document.addEventListener("click", function(e){ if (filterWrap && !filterWrap.contains(e.target)) setPopOpen(filterWrap, false); });
+    }
+    seedFilterSelection(); populateFilter();
+
+    // ---- sort dropdown (Visibility default | Ranking | Sentiment) → fires sort_table (new RPC) ----
+    var SORT_LABELS = [["visibility","Visibility"],["ranking","Ranking"],["sentiment","Sentiment"]];
+    var SORT_OUT_FIELD = { visibility: "visibility", ranking: "rank", sentiment: "sentiment" };
+    var sortWrap = root.querySelector(".vot-sort");
+    var sortBtn = root.querySelector(".vot-sort-btn");
+    var sortMenu = root.querySelector(".vot-sort-menu");
+    function fireSort(){
+      var fnName = root.getAttribute("data-sort-fn") || "bubble_fn_votSortTable";
+      var fn = resolveBubbleFn(fnName);
+      var outField = SORT_OUT_FIELD[sortField] || sortField;
+      if (typeof fn === "function"){ try { fn(outField + "_" + sortDir); } catch(e){} }
+    }
+    function populateSort(){
+      if (!sortMenu) return;
+      var opts = SORT_LABELS.map(function(o){
+        return '<div class="vot-pop-opt ' + (sortField === o[0] ? "is-active" : "") + '" data-field="' + o[0] + '">' + o[1] +
+          '<svg class="vot-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>';
+      }).join("");
+      sortMenu.innerHTML = '<div class="vot-pop-head">Sort by</div>' + opts +
+        '<div class="vot-pop-div"></div>' +
+        '<div class="vot-pop-row"><span class="vot-pop-label">Descending</span><span class="vot-switch ' + (sortDir === "desc" ? "is-on" : "") + '"></span></div>';
+      Array.prototype.slice.call(sortMenu.querySelectorAll(".vot-pop-opt")).forEach(function(op){
+        op.addEventListener("click", function(e){ e.stopPropagation(); sortField = op.getAttribute("data-field"); SORT_STORE[instanceId] = { field: sortField, dir: sortDir }; populateSort(); fireSort(); });
+      });
+      var sw = sortMenu.querySelector(".vot-switch");
+      if (sw) sw.addEventListener("click", function(e){ e.stopPropagation(); sortDir = (sortDir === "desc" ? "asc" : "desc"); SORT_STORE[instanceId] = { field: sortField, dir: sortDir }; populateSort(); fireSort(); });
+    }
+    populateSort();
+    if (sortWrap && !sortWrap.__votOutsideBound){
+      sortWrap.__votOutsideBound = true;
+      document.addEventListener("click", function(e){ if (sortWrap && !sortWrap.contains(e.target)) setPopOpen(sortWrap, false); });
+    }
+
+    /* ---- one delegated click handler for every toolbar/switcher button ----
+       e.target.closest() reads whichever button is in the live DOM at click time, so this can't go
+       stale when Bubble replaces/rebuilds the element (an attribute-based "already bound" guard
+       gets serialised into the rebuilt markup and would silently skip binding altogether). */
+    if (!root.__votDelegated){
+      root.__votDelegated = true;
+      root.addEventListener("click", function(e){
+        var granBtn = e.target.closest(".vc-gran-btn");
+        if (granBtn){
+          if (granBtn.classList.contains("is-disabled")) return;   // not selectable for the current range
+          var g = granBtn.getAttribute("data-gran");
+          if (g === curGran) return;   // clicking the already-selected granularity fires nothing
+          curGran = g; GRAN_STORE[instanceId] = g; GRAN_PICKED[instanceId] = true; syncGranActive();
+          var gFnName = root.getAttribute("data-gran-fn") || "bubble_fn_votGranularity";
+          var gFn = resolveBubbleFn(gFnName);
+          if (typeof gFn === "function"){ try { gFn(g); } catch(err){} }
+          return;
+        }
+        if (e.target.closest(".vot-maximize")){
+          root.classList.toggle("is-max");
+          setTimeout(function(){
+            try { if (chartInstance) chartInstance.resize(); } catch(err){}
+            try { if (lineChart) lineChart.resize(); } catch(err){}
+          }, 60);
+          return;
+        }
+        if (e.target.closest(".vot-goto")){
+          var goFnName = root.getAttribute("data-goto-fn") || "bubble_fn_votGoTo";
+          var goFn = resolveBubbleFn(goFnName);
+          if (typeof goFn === "function"){ try { goFn(instanceId); } catch(err){} }
+          return;
+        }
+        if (e.target.closest(".vot-export")){
+          var exFnName = root.getAttribute("data-export-fn") || "bubble_fn_votExportTable";
+          var exFn = resolveBubbleFn(exFnName);
+          if (typeof exFn === "function"){ try { exFn(instanceId); } catch(err){} }
+          return;
+        }
+        if (e.target.closest(".vot-filter-btn")){
+          e.stopPropagation();
+          var fWrap = root.querySelector(".vot-filter");
+          if (!fWrap) return;
+          var willOpenF = !fWrap.classList.contains("is-open");
+          closePops(fWrap);
+          // re-seed the working selection from the current company list every time it opens,
+          // so it always reflects which companies are actually active right now
+          if (willOpenF){ seedFilterSelection(); populateFilter(); }
+          setPopOpen(fWrap, willOpenF);
+          return;
+        }
+        if (e.target.closest(".vot-sort-btn")){
+          e.stopPropagation();
+          var sWrap = root.querySelector(".vot-sort");
+          if (!sWrap) return;
+          var willOpenS = !sWrap.classList.contains("is-open");
+          closePops(sWrap);
+          setPopOpen(sWrap, willOpenS);
+          return;
+        }
+      });
+    }
+
+    // responsive: force the stacked layout (and hide the maximize button) when too narrow;
+    // hide the doughnut legend below page width 500
+    var NARROW_STACK = 880;
+    function applyResponsive(){
+      if (inner){
+        var w = inner.clientWidth || root.clientWidth || 0;
+        if (w){ if (w < NARROW_STACK) root.classList.add("is-narrow"); else root.classList.remove("is-narrow"); }
+      }
+      root.classList.toggle("vc-narrow-page", getPageWidth() < 500);
+      checkBrandWidth();
+      clearTimeout(root.__votRespT);
+      root.__votRespT = setTimeout(function(){
+        try { if (chartInstance) chartInstance.resize(); } catch(e){}
+        try { if (lineChart) lineChart.resize(); } catch(e){}
+      }, 60);
+    }
+
+    if (window.MutationObserver){
+      /* isDark/loading were first read when this controller was built — several hundred lines and
+         a full DOM build earlier. If Bubble resolved data-isdark (or data-processing) in that
+         window, the change happened BEFORE this observer existed and would be silently lost, and
+         the component would stay on the wrong theme until the first payload carrying isDark
+         arrived. Running the same reconcile once, immediately after attaching, closes that gap. */
+      var syncFromAttrs = function(){
+        var wantProc = readProcessing();
+        var wantDark = isYes(root.getAttribute("data-isdark"));
+        var changed = false;
+        if (wantDark !== isDark){
+          isDark = wantDark;
+          if (isDark){ root.setAttribute("data-theme","dark"); }
+          else { root.removeAttribute("data-theme"); }
+          changed = true;
+        }
+        if (!LOADING_EXPLICIT[instanceId] && wantProc !== state.loading){
+          // Loading turning ON = a new fetch started = the chart values we're holding now belong to
+          // the previous filter state. Drop them from the cache so an element rebuild during this
+          // fetch can't replay them (see cacheLoading() for the full reasoning). This mirrors the
+          // explicit setVisibilityChartLoading() path — the processing ATTRIBUTES are the other way
+          // a fetch is signalled, and both need to invalidate.
+          if (wantProc && !state.loading) cacheInvalidateSeries(instanceId);
+          state.loading = wantProc; changed = true;
+        }
+        if (changed) render();
+      };
+      new MutationObserver(syncFromAttrs).observe(root, { attributes:true, attributeFilter:["data-processing","data-processing2","data-isdark"] });
+      syncFromAttrs();
+    }
+
+    if (window.ResizeObserver){
+      new ResizeObserver(function(){
+        if (root.__votRaf) return;
+        root.__votRaf = requestAnimationFrame(function(){ root.__votRaf = null; applyResponsive(); });
+      }).observe(tableEl.parentElement || tableEl);   // observe the box, not the table itself — toggling
+                                                          // trend/column classes on the table must never
+                                                          // be able to re-trigger this same observer
+      new ResizeObserver(function(){
+        if (root.__votRespRaf) return;
+        root.__votRespRaf = requestAnimationFrame(function(){ root.__votRespRaf = null; applyResponsive(); });
+      }).observe(inner || root);
+      if (legendEl){
+        new ResizeObserver(function(){
+          if (root.__votLegRaf) return;
+          root.__votLegRaf = requestAnimationFrame(function(){ root.__votLegRaf = null; legendLayout(); });
+        }).observe(legendEl);
+      }
+    }
+    // page-width breakpoint (hide legends < 500 / force stack) also reacts to window resizes
+    window.addEventListener("resize", function(){
+      if (root.__votWinRaf) return;
+      root.__votWinRaf = requestAnimationFrame(function(){ root.__votWinRaf = null; legendLayout(); applyResponsive(); });
+    });
+
+    applyResponsive();
+    render();
+
+    return {
+      __ctrlId: myCtrlId,
+      /*
+        External Run JavaScript reset:
+        window.resetVisibilityChart("YOUR_INSTANCE_ID");
+        Resets sort to Visibility Descending and forgets this instance's
+        "initial companies" snapshot, so the NEXT payload that arrives is
+        treated exactly like a fresh page load (re-captures INIT_COMPANIES,
+        re-seeds the filter dropdown from whatever that payload contains).
+        Does not itself fire bubble_fn_votSortTable / bubble_fn_votSubmitCompanies
+        or request new data — it only clears local state ahead of the next fill.
+      */
+      reset: function(){
+        sortField = "visibility";
+        sortDir = "desc";
+        SORT_STORE[instanceId] = { field: sortField, dir: sortDir };
+        populateSort();
+        delete INIT_COMPANIES[instanceId];
+        delete USER_FILTERED[instanceId];   // back to "no filter applied"
+        filterSel = {};
+        syncFilterBadge();
+        return true;
+      },
+      update: function(params){
+        params = params || {};
+        if (params.isDark != null){
+          isDark = isYes(params.isDark);
+          if (isDark){ root.setAttribute("data-theme","dark"); }
+          else { root.removeAttribute("data-theme"); }
+        }
+        if (params.companies != null){
+          state.companies = Array.isArray(params.companies) ? params.companies : [];
+          // capture the first-ever active set for this instance, once — this is what "Reset" restores
+          if (!INIT_COMPANIES.hasOwnProperty(instanceId) && state.companies.length){
+            INIT_COMPANIES[instanceId] = state.companies.map(function(c){ return String(c.company_id); });
+          }
+          // re-seed the dropdown whenever the active set changes, not only when the full company
+          // list (filterCompanies) changes — otherwise the checkboxes/badge go stale after a filter
+          // is applied and the element gets rebuilt with the new (smaller) active set.
+          seedFilterSelection(); populateFilter();
+        }
+        if (params.filterCompanies != null){
+          state.filterCompanies = Array.isArray(params.filterCompanies) ? params.filterCompanies : [];
+          seedFilterSelection(); populateFilter();
+        }
+        var __tc = (params.totalCount != null) ? params.totalCount : (params.total_count != null) ? params.total_count : params.companiesTotal;
+        if (__tc != null) state.totalCount = __tc;
+        // table rows accept `table`, `brands`, or `rows`
+        var __tbl = (params.table != null) ? params.table : (params.brands != null) ? params.brands : params.rows;
+        if (__tbl != null){ state.tableRows = Array.isArray(__tbl) ? __tbl : []; state.hasTable = true; }
+        if (params.series != null){
+          var __arr = Array.isArray(params.series) ? params.series : [];
+          if (__arr.length){
+            state.series = __arr; state.hasLine = true; state.linePending = false; state.noDataConfirmed = false;
+            clearTimeout(root.__votPendingT); clearTimeout(root.__votNoDataT);
+            applyGranAvailability(); seedFilterSelection(); populateFilter();
+          }
+          else {
+            // An EMPTY series is ambiguous: it means either "the chart RPC is still running / this
+            // payload simply doesn't carry chart data" or "there genuinely is nothing to plot". The
+            // component cannot tell those apart from the payload alone, and guessing either way is
+            // what produced both failure modes seen here: guessing "no data" showed a permanent
+            // "No data" on page load while the chart RPC was still in flight, and guessing "pending"
+            // left the skeleton latched forever. So: never conclude anything immediately. Keep
+            // showing whatever is correct right now (skeleton if we've never had data, existing
+            // lines if we have) and only commit to "No data" after a grace period during which
+            // nothing is loading and no real series turned up.
+            state.linePending = !state.hasLine ? false : (isLoading() ? true : state.linePending);
+            clearTimeout(root.__votNoDataT);
+            root.__votNoDataT = setTimeout(function(){
+              if (state.hasLine && (state.series || []).length) return;   // real data arrived meanwhile
+              if (isLoading()) return;                                     // still fetching → keep waiting
+              state.hasLine = true; state.series = []; state.linePending = false; state.noDataConfirmed = true;
+              render();
+            }, 3000);
+            if (state.hasLine && isLoading()){
+              clearTimeout(root.__votPendingT);
+              root.__votPendingT = setTimeout(function(){
+                if (!state.linePending) return;
+                state.linePending = false;
+                render();
+              }, 2500);
+            }
+          }
+        }
+        // Keep the switcher in sync with the data on the FIRST load: an explicit payload
+        // `granularity`/`gran` wins, otherwise infer it from the spacing between data points.
+        // Once the user has clicked a granularity themselves, the client is fully authoritative —
+        // NOTHING coming back from the workflow (explicit or inferred) may touch curGran anymore,
+        // full stop. An interim "still loading" call can otherwise carry a stale/explicit value
+        // (e.g. a granularity captured from a Bubble state before it was updated) and visibly snap
+        // the switcher back mid-load — exactly the bug this guards against.
+        var __proc = readProcessing();
+        if (!GRAN_PICKED[instanceId]){
+          var __explicit = normGran(params.granularity != null ? params.granularity : params.gran);
+          var __resolved = __explicit || ((!__proc && params.series != null) ? inferGran(state.series) : null);
+          if (__resolved && __resolved !== curGran){ curGran = __resolved; GRAN_STORE[instanceId] = __resolved; }
+        }
+        syncGranActive();
+        // NEVER clobber an explicitly-set loading state here — see LOADING_EXPLICIT above. Only
+        // fall back to the attributes when nobody has taken explicit control.
+        if (!LOADING_EXPLICIT[instanceId]) state.loading = __proc;
+        render();
+      },
+      setLoading: function(on){
+        // Explicit control from now on: this instance's loading state is owned by this call only.
+        LOADING_EXPLICIT[instanceId] = true;
+        state.loading = isYes(on);
+        render();
+      }
+    };
+  }
+
+  /* ================= root resolution + owner-guard ================= */
+  // Global cache (on window, survives element re-renders / script re-runs): the last payload and
+  // loading state per instance id. A fresh controller re-applies it immediately, so a Bubble
+  // re-render of the element can never leave the chart stuck on the (empty) skeleton.
+  var CACHE = (window.__votCache = window.__votCache || {});
+  function cacheData(id, params){
+    if (!id) return;
+    CACHE[id] = CACHE[id] || {};
+    // MERGE field-by-field rather than replacing the whole params object — a later partial payload
+    // (e.g. a quick loading-signal call that only carries instanceId/granularity) must not wipe out
+    // fields like companies/series that a fresh controller would need to replay after a rebuild.
+    CACHE[id].params = CACHE[id].params || {};
+    for (var k in params){ if (params.hasOwnProperty(k) && params[k] !== undefined) CACHE[id].params[k] = params[k]; }
+    if (params && params.series !== undefined){
+    }
+  }
+  function cacheInvalidateSeries(id){
+    if (!id || !CACHE[id] || !CACHE[id].params) return;
+    if (CACHE[id].params.series === undefined) return;
+    delete CACHE[id].params.series;
+  }
+  function cacheLoading(id, v){
+    if (!id) return;
+    CACHE[id] = CACHE[id] || {};
+    var nowLoading = isYes(v);
+    // A fetch starting makes whatever chart values we're holding stale BY DEFINITION — they belong
+    // to the previous filter/date-range state. cacheData() merges field-by-field (so that a partial
+    // payload can't wipe fields a rebuilt controller still needs), and that merge is exactly what
+    // kept an old `series` alive here: switching the date range sends table data first, the old
+    // series survived the merge, and the next element rebuild replayed it — so the chart rendered
+    // the PREVIOUS range's values and looked permanently one step behind. Dropping the cached
+    // series the moment loading starts means a rebuild during a fetch shows the skeleton (correct)
+    // instead of stale lines, and the real values render as soon as they arrive.
+    if (nowLoading) cacheInvalidateSeries(id);
+    CACHE[id].loading = nowLoading;
+  }
+  function applyCache(root, ctrl){
+    var id = root.getAttribute("data-instance");
+    if (!id || !CACHE[id]) return;
+    try {
+      if (CACHE[id].params != null){
+        ctrl.update(CACHE[id].params);
+      }
+    } catch(e){}
+    try { if (CACHE[id].loading != null) ctrl.setLoading(CACHE[id].loading); } catch(e){}
+  }
+  function initRoot(root){
+    if (root.__votController) return root.__votController;
+    if (root.__votBuilding) return null;
+    var id = root.getAttribute("data-instance") || "default";
+    if (id === "INSTANCE_ID") return null;
+    root.__votBuilding = true;
+    var ctrl = makeController(root);
+    root.__votBuilding = false;
+    if (!ctrl) return null;
+    if (root.__votController) return root.__votController;
+    root.__votController = ctrl; root.__votId = id;
+    if (root.__votPendingParams != null){ try { ctrl.update(root.__votPendingParams); } catch(e){} root.__votPendingParams = null; }
+    if (root.__votPendingLoading != null){ try { ctrl.setLoading(root.__votPendingLoading); } catch(e){} root.__votPendingLoading = null; }
+    applyCache(root, ctrl);   // re-fill a freshly built controller from the last known payload
+    return ctrl;
+  }
+  function initAll(){ var roots = document.querySelectorAll(".vot-root"); for (var i=0;i<roots.length;i++) initRoot(roots[i]); }
+  // Persistent watcher for the element being torn down and rebuilt by Bubble at any point in the
+  // page's lifetime — not just during the first ~2s after this script loads. Without this, a root
+  // rebuilt later never gets a controller again (no render, no events, nothing) until the user
+  // happens to click it, and a programmatic click doesn't even trigger that fallback.
+  if (window.MutationObserver && !window.__votRootWatcher){
+    window.__votRootWatcher = new MutationObserver(function(muts){
+      for (var i = 0; i < muts.length; i++){
+        var added = muts[i].addedNodes;
+        for (var j = 0; j < added.length; j++){
+          var n = added[j];
+          if (n.nodeType !== 1) continue;
+          if (n.classList && n.classList.contains("vot-root")) initRoot(n);
+          if (n.querySelectorAll){
+            var found = n.querySelectorAll(".vot-root");
+            for (var k = 0; k < found.length; k++) initRoot(found[k]);
+          }
+        }
+      }
+    });
+    window.__votRootWatcher.observe(document.body, { childList: true, subtree: true });
+    setInterval(initAll, 1500);   // belt-and-suspenders: cheap no-op for already-initialized roots
+  }
+  function rootsWithId(id){
+    id = id || "default";
+    var out = [], roots = document.querySelectorAll(".vot-root");
+    for (var i=0;i<roots.length;i++){ if ((roots[i].getAttribute("data-instance")||"default") === id) out.push(roots[i]); }
+    return out;
+  }
+  function resolve(id){ var r = rootsWithId(id); return r.length ? initRoot(r[0]) : null; }
+  function stashRetryRoot(target, kind, a){
+    if (kind === "update") target.__votPendingParams = a;
+    if (kind === "loading") target.__votPendingLoading = isYes(a);
+    var tries = 0;
+    (function retry(){
+      var ctrl = initRoot(target);
+      if (ctrl){
+        if (target.__votPendingParams != null){ ctrl.update(target.__votPendingParams); target.__votPendingParams = null; }
+        if (target.__votPendingLoading != null){ ctrl.setLoading(target.__votPendingLoading); target.__votPendingLoading = null; }
+        return;
+      }
+      if (tries++ < 40) setTimeout(retry, 100);
+    })();
+  }
+  // deliver to EVERY root that carries the id (a reusable embedded N times shares one iframe,
+  // so several .vot-root copies have the same instance id — all of them must fill, not just the first)
+  function doRender(params){
+    params = params || {};
+    var id = params.instanceId || "default";
+    cacheData(id, params);   // remember for any (re)built controller with this id
+    var roots = rootsWithId(id);
+    if (!roots.length) return false;   // not in this frame; the forwarder reaches the others
+    var any = false;
+    roots.forEach(function(root){
+      var ctrl = initRoot(root);
+      if (ctrl){ ctrl.update(params); any = true; }
+      else stashRetryRoot(root, "update", params);
+    });
+    return any;
+  }
+  function doLoading(id, loading){
+    id = id || "default";
+    cacheLoading(id, loading);
+    var roots = rootsWithId(id);
+    if (!roots.length) return false;
+    roots.forEach(function(root){
+      var ctrl = initRoot(root);
+      if (ctrl) ctrl.setLoading(loading);
+      else stashRetryRoot(root, "loading", loading);
+    });
+    return true;
+  }
+
+
+  window.renderVisibilityChart = doRender;
+  window.setVisibilityChartLoading = function(id, l){ return doLoading(id, l); };
+  window.__votResolveLocal = function(id){ return rootsWithId(id).length > 0; };
+  /* On-demand only — not automatic logging, so it doesn't reintroduce the console noise that was
+     deliberately removed. Call this the moment a theme toggle visually fails to update the chart,
+     to see exactly which piece is out of sync: the attribute Bubble actually set, the CSS state
+     that follows from it, and the closure variable the chart itself is rendering from. */
+  window.votThemeDebug = function(id){
+    var roots = rootsWithId(String(id || "").trim());
+    if (!roots.length){ console.log("[VOT] keine Instanz mit id", id, "gefunden"); return; }
+    roots.forEach(function(root){
+      var ctrl = root.__votController;
+      var canvas = root.querySelector(".vc-line-canvas");
+      var chart = null;
+      try { chart = (window.Chart && window.Chart.getChart && canvas) ? window.Chart.getChart(canvas) : null; } catch(e){}
+      console.log("[VOT] Instanz", root.getAttribute("data-instance"), {
+        "data-isdark Attribut": root.getAttribute("data-isdark"),
+        "data-theme Attribut (davon abgeleitet)": root.getAttribute("data-theme"),
+        "Controller-Id": ctrl ? ctrl.__ctrlId : null,
+        "Chart-Instanz vorhanden": !!chart,
+        "Chart Tick-Farbe (was tatsaechlich gerendert ist)": chart ? chart.options.scales.x.ticks.color : null
+      });
+    });
+  };
+  /*
+    Bubble Toolbox → Run JavaScript
+    Reset sort (Visibility Descending) and forget this instance's "initial
+    companies" snapshot, so the next payload fill behaves like a fresh page
+    load. Does not fire any bubble_fn_* callback or request new data itself.
+    window.resetVisibilityChart("YOUR_INSTANCE_ID");
+  */
+  window.resetVisibilityChart = function(instanceId){
+    var id = String(instanceId || "").trim();
+    if (!id) return false;
+    var roots = rootsWithId(id);
+    var did = false;
+    for (var i = 0; i < roots.length; i++){
+      var ctrl = roots[i].__votController;
+      if (ctrl && typeof ctrl.reset === "function"){ try { ctrl.reset(); did = true; } catch(e){} }
+    }
+    return did;
+  };
+
+  /* ================= forwarder on parent AND top (nested reusables) ================= */
+  (function exposeUpward(){
+    var targets = [];
+    try { if (window.parent && window.parent !== window) targets.push(window.parent); } catch(e){}
+    try { if (window.top && window.top !== window && targets.indexOf(window.top) === -1) targets.push(window.top); } catch(e){}
+    if (!targets.length) return;
+    function makeDeliver(w){
+      return function(fnName, id, arg1, arg2){
+        var queue = [w], seen = [];
+        while (queue.length){
+          var win = queue.shift(), ifr;
+          try { ifr = win.document.querySelectorAll("iframe"); } catch(e){ continue; }
+          for (var i=0;i<ifr.length;i++){ var cw; try { cw = ifr[i].contentWindow; } catch(e){ cw = null; } if (!cw || seen.indexOf(cw) !== -1) continue; seen.push(cw); queue.push(cw); }
+        }
+        // deliver to EVERY frame that owns the id (a reusable can live in several iframes)
+        var delivered = false;
+        for (var a=0;a<seen.length;a++){ try { var c = seen[a]; if (c && typeof c[fnName] === "function" && c.__votResolveLocal && c.__votResolveLocal(id)){ c[fnName](arg1, arg2); delivered = true; } } catch(e){} }
+        if (delivered) return true;
+        for (var b2=0;b2<seen.length;b2++){ try { var c2 = seen[b2]; if (c2 && typeof c2[fnName] === "function") return c2[fnName](arg1, arg2); } catch(e){} }
+        return false;
+      };
+    }
+    for (var t=0;t<targets.length;t++){
+      (function(w){
+        try {
+          var deliver = makeDeliver(w);
+          w.renderVisibilityChart = function(params){ params = params || {}; return deliver("renderVisibilityChart", params.instanceId || "default", params); };
+          w.setVisibilityChartLoading = function(id, l){ return deliver("setVisibilityChartLoading", id || "default", id, l); };
+          w.resetVisibilityChart = function(id){ return deliver("resetVisibilityChart", id || "default", id); };
+        } catch(e){}
+      })(targets[t]);
+    }
+  })();
+
+  /* ================= scroll fix ================= */
+  // Something inside the chart (Chart.js sets touch-action:none on the canvas; other regions can
+  // trap the wheel too) stops the wheel from reaching the app's scroll container. Catch the wheel
+  // and forward it to the correct scroll container.
+  //
+  // IMPORTANT: walk up from the ACTUAL wheel-event target first (e.target, not the .vot-root the
+  // listener happens to be attached to), looking for the nearest scrollable ancestor. Only if
+  // nothing scrollable is found before reaching #main do we fall back to #main / the page. This
+  // matters both for a Bubble popup this chart might sit inside (scroll the popup, not the page
+  // behind it) AND for the chart's OWN internal scrollable bits — e.g. the company filter dropdown
+  // list — which must scroll themselves rather than have their wheel events hijacked up to #main.
+  function __votScrollTarget(fromEl){
+    var doc = document;
+    var node = fromEl;
+    while (node && node.nodeType === 1 && node !== doc.body && node !== doc.documentElement){
+      try {
+        var oy = getComputedStyle(node).overflowY;
+        if ((oy === "auto" || oy === "scroll") && node.scrollHeight > node.clientHeight + 2) return node;
+      } catch(e){}
+      node = node.parentNode;
+    }
+    var byId = doc.getElementById("main");
+    if (byId && byId.scrollHeight > byId.clientHeight + 2) return byId;
+    var se = doc.scrollingElement || doc.documentElement;
+    if (se && se.scrollHeight > se.clientHeight + 2) return se;
+    return byId || null;
+  }
+  function __votForwardWheel(e){
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;   // let horizontal gestures be
+    var t = __votScrollTarget(e.target);
+    if (t){ if (e.cancelable) e.preventDefault(); t.scrollTop += e.deltaY; return; }
+    try { if (window.parent && window.parent !== window) window.parent.scrollBy(0, e.deltaY); } catch(ex){}
+    try { window.scrollBy(0, e.deltaY); } catch(ex){}
+  }
+  function __votAttachWheel(){
+    var roots = document.querySelectorAll(".vot-root");
+    for (var i = 0; i < roots.length; i++){ if (!roots[i].__votWheel){ roots[i].__votWheel = true; roots[i].addEventListener("wheel", __votForwardWheel, { passive: false }); } }
+  }
+  // guard against this whole block running more than once if the embed is duplicated on the page
+  if (!window.__votWheelFixInstalled){
+    window.__votWheelFixInstalled = true;
+    __votAttachWheel();
+    setInterval(__votAttachWheel, 800);
+  }
+
+  /* ================= init ================= */
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initAll);
+  else initAll();
+  [30, 100, 250, 500, 1000, 1800].forEach(function(ms){ setTimeout(initAll, ms); });
+  document.addEventListener("pointerdown", function(e){
+    var r = e.target && e.target.closest ? e.target.closest(".vot-root") : null;
+    if (r && !r.__votController) initRoot(r);
+  }, true);
+})();
+</script>
+
+<!-- === UPSTREEM WATERMARK (line chart, same as the provided chart) === -->
+<script>
+(function () {
+  var CFG = { wrapClass: 'vc-line-wrap', width: 150, opacity: 0.05, pos: { top: '47%', left: '50%' }, force: null };
+  function pickColor(el) {
+    if (CFG.force === 'dark') return '#fff';
+    if (CFG.force === 'light') return '#000';
+    var node = el;
+    while (node) {
+      var bg = getComputedStyle(node).backgroundColor;
+      var m = bg.match(/rgba?\(([^)]+)\)/);
+      if (m) {
+        var p = m[1].split(',').map(function(s){ return parseFloat(s); });
+        var a = p[3] == null ? 1 : p[3];
+        if (a > 0) { var lum = (0.299*p[0] + 0.587*p[1] + 0.114*p[2]); return lum < 128 ? '#fff' : '#000'; }
+      }
+      node = node.parentElement;
+    }
+    return '#000';
+  }
+  function inject() {
+    var wraps = document.querySelectorAll('.' + CFG.wrapClass);
+    for (var k = 0; k < wraps.length; k++) {
+      var wrap = wraps[k];
+      if (wrap.querySelector('.upstreem-watermark')) continue;
+      if (getComputedStyle(wrap).position === 'static') wrap.style.position = 'relative';
+      var color = pickColor(wrap);
+      var h = CFG.width * (184 / 707);
+      var wm = document.createElement('div');
+      wm.className = 'upstreem-watermark';
+      wm.style.cssText = 'position:absolute;top:' + CFG.pos.top + ';left:' + CFG.pos.left + ';transform:translate(-50%,-50%);width:' + CFG.width + 'px;height:' + h + 'px;opacity:' + CFG.opacity + ';color:' + color + ';pointer-events:none;z-index:2;';
+      // The mask id MUST be unique per injected watermark: several copies of this component can
+      // live on one page (dashboard + reusables), and duplicate ids make every SVG resolve
+      // url(#...) to the FIRST match. When that one isn't usable the mask silently fails and the
+      // rect paints unmasked — which is the grey box that showed up on every instance but the first.
+      var wmMaskId = 'vc-wm-mask-' + Math.random().toString(36).slice(2) + '-' + Date.now();
+      wm.innerHTML =
+        '<svg viewBox="0 0 707 184" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="display:block">' +
+          '<defs><mask id="' + wmMaskId + '">' +
+            '<path fill="#fff" d="M195.928 128.536C190.979 128.536 186.669 127.512 183 125.464C179.331 123.331 176.472 120.173 174.424 115.992C172.461 111.811 171.48 106.52 171.48 100.12V63.512H184.28V98.84C184.28 104.984 185.56 109.677 188.12 112.92C190.765 116.077 194.605 117.656 199.64 117.656C203.139 117.656 206.211 116.845 208.856 115.224C211.501 113.517 213.592 111.085 215.128 107.928C216.749 104.685 217.56 100.845 217.56 96.408V63.512H230.36V127H219.224L218.072 117.016H217.56C215.427 120.429 212.568 123.203 208.984 125.336C205.4 127.469 201.048 128.536 195.928 128.536ZM241.26 152.6V63.512H252.012L252.908 75.416H253.42C255.297 72.4293 257.431 69.9547 259.82 67.992C262.295 66.0293 265.068 64.536 268.14 63.512C271.212 62.488 274.497 61.976 277.996 61.976C284.055 61.976 289.303 63.4267 293.74 66.328C298.263 69.2293 301.719 73.1973 304.108 78.232C306.583 83.2667 307.82 88.9413 307.82 95.256C307.82 101.571 306.583 107.245 304.108 112.28C301.719 117.315 298.22 121.283 293.612 124.184C289.004 127.085 283.415 128.536 276.844 128.536C271.212 128.536 266.519 127.384 262.764 125.08C259.009 122.776 256.108 120.173 254.06 117.272V152.6H241.26ZM274.54 117.656C278.721 117.656 282.305 116.717 285.292 114.84C288.364 112.963 290.711 110.36 292.332 107.032C294.039 103.704 294.892 99.7787 294.892 95.256C294.892 90.8187 294.039 86.936 292.332 83.608C290.711 80.1947 288.364 77.5493 285.292 75.672C282.305 73.7947 278.721 72.856 274.54 72.856C270.444 72.856 266.86 73.7947 263.788 75.672C260.716 77.5493 258.327 80.1947 256.62 83.608C254.999 86.936 254.188 90.8187 254.188 95.256C254.188 99.7787 254.999 103.704 256.62 107.032C258.327 110.36 260.716 112.963 263.788 114.84C266.86 116.717 270.444 117.656 274.54 117.656ZM341.336 128.536C336.131 128.536 331.48 127.64 327.384 125.848C323.288 124.056 319.96 121.581 317.4 118.424C314.925 115.181 313.432 111.384 312.92 107.032H325.848C326.36 108.995 327.171 110.872 328.28 112.664C329.475 114.456 331.139 115.949 333.272 117.144C335.491 118.253 338.179 118.808 341.336 118.808C344.152 118.808 346.456 118.424 348.248 117.656C350.125 116.803 351.491 115.693 352.344 114.328C353.283 112.963 353.752 111.469 353.752 109.848C353.752 107.885 353.112 106.307 351.832 105.112C350.637 103.832 348.888 102.765 346.584 101.912C344.365 100.973 341.677 100.077 338.52 99.224C335.875 98.456 333.187 97.6453 330.456 96.792C327.725 95.8533 325.251 94.744 323.032 93.464C320.813 92.184 319.021 90.52 317.656 88.472C316.291 86.3387 315.608 83.736 315.608 80.664C315.608 77.1653 316.547 74.008 318.424 71.192C320.387 68.376 323.16 66.1573 326.744 64.536C330.328 62.8293 334.595 61.976 339.544 61.976C346.541 61.976 352.216 63.6827 356.568 67.096C361.005 70.424 363.608 75.2453 364.376 81.56H351.96C351.619 78.4027 350.339 75.9707 348.12 74.264C345.987 72.5573 343.085 71.704 339.416 71.704C335.832 71.704 333.059 72.472 331.096 74.008C329.219 75.544 328.28 77.464 328.28 79.768C328.28 81.304 328.792 82.584 329.816 83.608C330.84 84.632 332.419 85.528 334.552 86.296C336.771 86.9787 339.501 87.832 342.744 88.856C346.84 90.0507 350.68 91.3733 354.264 92.824C357.933 94.2747 360.877 96.1947 363.096 98.584C365.4 100.888 366.552 104.088 366.552 108.184C366.637 112.109 365.613 115.608 363.48 118.68C361.432 121.752 358.531 124.184 354.776 125.976C351.021 127.683 346.541 128.536 341.336 128.536ZM397.988 127C393.977 127 390.436 126.36 387.364 125.08C384.377 123.8 382.073 121.667 380.452 118.68C378.916 115.693 378.148 111.64 378.148 106.52V73.112H367.14V63.512H378.148L379.556 47.64H390.948V63.512H408.996V73.112H390.948V106.648C390.948 110.659 391.673 113.347 393.124 114.712C394.66 116.077 397.305 116.76 401.06 116.76H408.228V127H397.988ZM414.745 127V63.512H425.881L427.033 77.336H427.545C429.593 72.8133 431.641 69.4853 433.689 67.352C435.822 65.1333 438.254 63.6827 440.985 63C443.801 62.3173 447.129 61.976 450.969 61.976V75.416H447.641C444.313 75.416 441.369 75.8427 438.809 76.696C436.334 77.464 434.244 78.6587 432.537 80.28C430.916 81.9013 429.678 83.992 428.825 86.552C427.972 89.0267 427.545 91.9707 427.545 95.384V127H414.745ZM484.822 128.536C478.593 128.536 473.089 127.171 468.31 124.44C463.531 121.624 459.777 117.741 457.046 112.792C454.315 107.843 452.95 102.04 452.95 95.384C452.95 88.728 454.273 82.9253 456.918 77.976C459.649 72.9413 463.403 69.016 468.182 66.2C473.046 63.384 478.635 61.976 484.95 61.976C491.265 61.976 496.683 63.384 501.206 66.2C505.729 68.9307 509.227 72.5573 511.702 77.08C514.262 81.6027 515.542 86.6373 515.542 92.184C515.542 93.0373 515.542 93.976 515.542 95C515.542 96.024 515.457 97.0907 515.286 98.2H462.294V89.24H502.742C502.486 83.7787 500.694 79.5547 497.366 76.568C494.038 73.496 489.857 71.96 484.822 71.96C481.409 71.96 478.209 72.728 475.222 74.264C472.321 75.8 469.974 78.104 468.182 81.176C466.39 84.248 465.494 88.1307 465.494 92.824V96.408C465.494 101.101 466.39 105.069 468.182 108.312C469.974 111.469 472.321 113.859 475.222 115.48C478.209 117.101 481.366 117.912 484.694 117.912C488.79 117.912 492.161 117.016 494.806 115.224C497.537 113.347 499.542 110.829 500.822 107.672H513.75C512.555 111.683 510.635 115.267 507.99 118.424C505.345 121.496 502.059 123.971 498.134 125.848C494.294 127.64 489.857 128.536 484.822 128.536ZM553.197 128.536C546.968 128.536 541.464 127.171 536.685 124.44C531.906 121.624 528.152 117.741 525.421 112.792C522.69 107.843 521.325 102.04 521.325 95.384C521.325 88.728 522.648 82.9253 525.293 77.976C528.024 72.9413 531.778 69.016 536.557 66.2C541.421 63.384 547.01 61.976 553.325 61.976C559.64 61.976 565.058 63.384 569.581 66.2C574.104 68.9307 577.602 72.5573 580.077 77.08C582.637 81.6027 583.917 86.6373 583.917 92.184C583.917 93.0373 583.917 93.976 583.917 95C583.917 96.024 583.832 97.0907 583.661 98.2H530.669V89.24H571.117C570.861 83.7787 569.069 79.5547 565.741 76.568C562.413 73.496 558.232 71.96 553.197 71.96C549.784 71.96 546.584 72.728 543.597 74.264C540.696 75.8 538.349 78.104 536.557 81.176C534.765 84.248 533.869 88.1307 533.869 92.824V96.408C533.869 101.101 534.765 105.069 536.557 108.312C538.349 111.469 540.696 113.859 543.597 115.48C546.584 117.101 549.741 117.912 553.069 117.912C557.165 117.912 560.536 117.016 563.181 115.224C565.912 113.347 567.917 110.829 569.197 107.672H582.125C580.93 111.683 579.01 115.267 576.365 118.424C573.72 121.496 570.434 123.971 566.509 125.848C562.669 127.64 558.232 128.536 553.197 128.536ZM591.62 127V63.512H602.884L604.036 74.008H604.548C606.596 69.9973 609.369 67.0107 612.868 65.048C616.452 63 620.377 61.976 624.644 61.976C627.972 61.976 630.959 62.4453 633.604 63.384C636.335 64.3227 638.681 65.7307 640.644 67.608C642.607 69.4853 644.228 71.8747 645.508 74.776H646.02C648.324 70.5947 651.268 67.4373 654.852 65.304C658.436 63.0853 662.873 61.976 668.164 61.976C672.943 61.976 677.081 63.0427 680.58 65.176C684.164 67.224 686.98 70.3387 689.028 74.52C691.076 78.7013 692.1 83.992 692.1 90.392V127H679.428V91.672C679.428 85.528 678.191 80.8773 675.716 77.72C673.241 74.4773 669.487 72.856 664.452 72.856C661.209 72.856 658.393 73.5387 656.004 74.904C653.615 76.184 651.695 78.232 650.244 81.048C648.879 83.7787 648.196 87.32 648.196 91.672V127H635.524V91.672C635.524 85.528 634.287 80.8773 631.812 77.72C629.337 74.4773 625.711 72.856 620.932 72.856C618.031 72.856 615.343 73.7093 612.868 75.416C610.393 77.0373 608.345 79.4267 606.724 82.584C605.188 85.7413 604.42 89.5813 604.42 94.104V127H591.62Z"/>' +
+            '<rect x="4" y="32" width="120" height="120" rx="28" fill="#fff"/>' +
+            '<path fill="#000" d="M83.7971 91.7952C83.7971 98.5594 85.6493 101.942 89.3538 101.942C92.5789 101.942 96.1744 100.053 100.14 96.2765C103.67 92.838 106.765 88.554 109.423 83.4245C111.384 83.2554 112.365 84.2982 112.365 86.5529C112.365 88.4694 111.45 91.4006 109.619 95.3464C107.833 99.2922 106.089 102.703 104.39 105.577C102.69 108.452 100.794 111.271 98.7019 114.033C96.6102 116.795 94.3876 119.275 92.0341 121.473C86.7607 126.321 81.618 128.745 76.606 128.745C69.0227 128.745 63.9672 125.25 61.4394 118.26C56.6454 122.883 51.5899 126.067 46.2729 127.815C44.4424 128.435 42.394 128.745 40.1277 128.745C37.9051 128.745 35.6824 128.238 33.4597 127.223C31.2806 126.152 29.4066 124.63 27.8376 122.657C24.6125 118.599 23 113.018 23 105.916C23 97.9675 25.0919 89.625 29.2758 80.8878C32.7624 73.6163 37.2078 67.1903 42.612 61.6098C47.5803 56.5366 51.5899 54 54.6407 54C56.2967 54 58.1708 55.6911 60.2628 59.0732C55.9917 62.9626 52.309 67.9231 49.2146 73.9545C45.7716 80.6624 44.0502 86.722 44.0502 92.1334C44.0502 98.6722 46.1639 101.942 50.3914 101.942C54.5753 101.942 57.8657 101.011 60.2628 99.1513C61.9624 90.3578 65.7759 81.2824 71.703 71.9252C77.5866 62.6244 82.969 56.7903 87.8502 54.4228C89.4192 53.69 91.5547 54.6482 94.2568 57.2976C94.9105 57.9176 95.4117 58.4531 95.7604 58.9041C92.0559 63.019 89.0487 68.5995 86.7389 75.6455C84.7776 81.6207 83.7971 87.0039 83.7971 91.7952Z"/>' +
+          '</mask></defs>' +
+          '<rect width="707" height="184" fill="currentColor" mask="url(#' + wmMaskId + ')"/>' +
+        '</svg>';
+      wrap.appendChild(wm);
+    }
+  }
+  // Multiple instances of this component can exist on the same page (dashboard + a reusable used
+  // elsewhere), and they don't all appear in the DOM at the same moment — a popup/group that becomes
+  // visible later will render its `.vc-line-wrap` after this script has already run. A fixed-count
+  // retry loop that stops as soon as ANY wrap is found (as before) permanently misses those late
+  // arrivals. Fix: inject() is idempotent (skips wraps that already have a watermark), so it's safe
+  // to keep re-running it — via a persistent MutationObserver plus a long-lived interval fallback —
+  // instead of stopping after the first successful pass.
+  inject();
+  try {
+    var mo = new MutationObserver(function(){ inject(); });
+    mo.observe(document.body, { childList: true, subtree: true });
+  } catch (e) {}
+  var ticks = 0;
+  var t = setInterval(function () { inject(); if (++ticks > 400) clearInterval(t); }, 300);  // ~2 min safety net
+})();
+</script>
+<!-- === /UPSTREEM WATERMARK === -->
