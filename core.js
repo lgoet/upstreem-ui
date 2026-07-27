@@ -39,9 +39,9 @@
   /* Sort coalescing window. Shorter than search: a click is a deliberate act, so the result
      has to feel immediate, but it is long enough to swallow a burst of clicks. */
   var SORT_DEBOUNCE = 250;
-  var PAGE_SIZES = [10, 25, 50, 100];
+  var PAGE_SIZES = [15, 25, 50, 100];
 
-  var DEFAULT_PAGE_SIZE = 10;
+  var DEFAULT_PAGE_SIZE = 15;
   /* Compact count format shared with the other components: 1.23k / 12.3k / 1.2m */
   function fmtTotal(n){
     n = Number(n) || 0;

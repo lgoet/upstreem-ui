@@ -111,10 +111,10 @@
       widths: readWidths(),
       brands: saved.brands || [],              // full list; persisted so a Bubble re-render keeps them
       mentionSel: saved.mentionSel || {},      // live checkbox state
-      mentionApplied: saved.mentionApplied || {},
-      dense: readDense()                       // compact row mode — localStorage
+      mentionApplied: saved.mentionApplied || {}
     };
-    root.classList.toggle("is-dense", state.dense);   // apply the saved row mode on load
+    // Domains table has no row-height toggle — always compact, matching the pre-migration spec.
+    root.classList.add("is-dense");
     /* Column visibility is a per-user display preference, not app data — localStorage, keyed by
        instance so two placements can differ. Wrapped because Bubble can run inside contexts where
        storage access throws (private mode, blocked third-party cookies). */
@@ -134,10 +134,6 @@
     function writeCols(){
       try { window.localStorage.setItem(colsKey(), JSON.stringify(state.cols)); } catch(e){}
     }
-    /* Row-height mode is a display preference too -> localStorage, survives reloads. */
-    function denseKey(){ return "udt_dense__" + instanceId; }
-    function readDense(){ try { return window.localStorage.getItem(denseKey()) === "1"; } catch(e){ return false; } }
-    function writeDense(){ try { window.localStorage.setItem(denseKey(), state.dense ? "1" : "0"); } catch(e){} }
     function visibleCols(){ return COLUMNS.filter(function(c){ return state.cols[c.key] !== false; }); }
     var debTimer = null, latestReqId = null, sortTimer = null;
 
@@ -499,8 +495,6 @@
         '<span>Columns</span>' +
         '<button class="up-pop-action' + (off >= 2 ? "" : " is-hidden") + '" type="button" data-colsall>Select all</button>' +
       '</div>';
-      var COMFY_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/></svg>';
-      var COMPACT_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>';
       elColsMenu.innerHTML = head +
         COLUMNS.map(function(c){
           var on = state.cols[c.key] !== false;
@@ -509,18 +503,7 @@
                    '<span class="up-pop-label">' + esc(c.label) + '</span>' +
                    '<span class="up-switch' + (on ? " is-on" : "") + '" role="switch"></span>' +
                  '</div>';
-        }).join("") +
-        '<div class="up-pop-div"></div>' +
-        '<div class="up-pop-sub">Row height</div>' +
-        '<div class="up-dense">' +
-          '<button class="up-dense-btn' + (!state.dense ? " is-active" : "") + '" type="button" data-dense="0">' + COMFY_SVG + 'Comfortable</button>' +
-          '<button class="up-dense-btn' + (state.dense ? " is-active" : "") + '" type="button" data-dense="1">' + COMPACT_SVG + 'Compact</button>' +
-        '</div>';
-    }
-    function setDense(on){
-      state.dense = !!on;
-      root.classList.toggle("is-dense", state.dense);
-      writeDense(); populateCols();
+        }).join("");
     }
     function selectAllCols(){
       COLUMNS.forEach(function(c){ state.cols[c.key] = true; });
@@ -1007,8 +990,6 @@
         setPopOpen(elCols, openC);
         return;
       }
-      var denseBtn = e.target.closest("[data-dense]");
-      if (denseBtn){ setDense(denseBtn.getAttribute("data-dense") === "1"); return; }
       if (e.target.closest("[data-colsall]")){ selectAllCols(); return; }
       var colRow = e.target.closest("[data-col]");
       if (colRow){ toggleCol(colRow.getAttribute("data-col")); return; }
