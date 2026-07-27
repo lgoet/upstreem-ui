@@ -485,77 +485,105 @@
           return;
         }
         if (!lineCanvas) return;
-        /* Chart.js reads the canvas's live layout to compute where the entrance animation starts
-           from. When Chart.js was already loaded (cached from a prior mount on the page), this
-           .then() runs as an immediate microtask — before the browser has laid out a freshly
-           re-inserted widget (e.g. navigating back to the dashboard rebuilds the whole DOM subtree)
-           — so the canvas can still report a stale/zero rect and the line animates in from the
-           wrong origin (top-left) instead of growing up from the baseline like a normal re-render.
-           Waiting two animation frames gives layout a chance to settle first, so the entrance looks
-           the same whether this is a filter change or a fresh mount. */
-        requestAnimationFrame(function(){
-        requestAnimationFrame(function(){
-        if (root.__votController && root.__votController.__ctrlId !== myCtrlId){
-          return;
-        }
-        if (!lineCanvas || !lineCanvas.isConnected) return;
-        destroyLine();
-        var tc = themeColors();
-        var ctx = lineCanvas.getContext("2d");
-        window.Chart.defaults.color = tc.muted;
-        window.Chart.defaults.font = { family: "Geist, system-ui, -apple-system, Segoe UI, Roboto, Arial", size: 12 };
-        var single = built.labels.length <= 1;
-        visDs.forEach(function(ds){
-          ds.borderWidth = LINE_WIDTH; ds.fill = false; ds.cubicInterpolationMode = "monotone"; ds.tension = LINE_TENSION;
-          ds.pointRadius = single ? 4 : 0; ds.pointHoverRadius = LINE_POINT_HOVER; ds.pointHitRadius = LINE_POINT_HIT;
-          ds.pointBorderWidth = LINE_POINT_BORDER; ds.pointBackgroundColor = tc.bg; ds.pointBorderColor = ds.__baseColor;
-          ds.pointHoverBackgroundColor = tc.bg; ds.pointHoverBorderColor = ds.__baseColor;
-          if (single){ ds.pointBackgroundColor = ds.__baseColor; }
-          ds.spanGaps = true; ds.clip = 8;
-        });
-        var visMax = 0; visDs.forEach(function(ds){ (ds.data || []).forEach(function(v){ if (v != null && v > visMax) visMax = v; }); });
-        var yMax = visMax * Y_PAD; if (yMax <= 0) yMax = 1; if (yMax > 100) yMax = 100;
-        var labels = built.labels;
-        try {
-          lineChart = new window.Chart(ctx, {
-            type: "line",
-            data: { labels: labels, datasets: visDs },
-            plugins: [hoverLinePlugin, dashedYGridPlugin],
-            options: {
-              responsive: true, maintainAspectRatio: false,
-              animation: { duration: 600, easing: "easeOutQuart" },
-              /* named transition used by applyHighlight()'s update("highlight") — a smooth 200ms
-                 fade for the row/legend cross-highlight, separate from the slower initial draw-in. */
-              transitions: { highlight: { animation: { duration: 200, easing: "easeOutQuad" } } },
-              interaction: { mode: "index", intersect: false },
-              layout: { padding: { top: 8, right: 2, bottom: 0, left: 0 } },
-              plugins: { legend: { display:false }, tooltip: { enabled:false, external: makeLineTooltip(lineWrap) } },
-              scales: {
-                x: { grid: { display:false }, offset: single, border: { display:true, color: tc.border, width:1 },
-                     ticks: { autoSkip:true, maxTicksLimit:X_MAX_TICKS, maxRotation:0, color: tc.muted,
-                              callback: function(v, i){
-                                var lab = String(labels[i] || "");
-                                if (curGran === "month"){
-                                  var m = lab.match(/^(\d{4})-(\d{2})/);
-                                  if (m) return MONTHS_DE[parseInt(m[2],10) - 1] || lab;
-                                }
-                                return lab.slice(5);
-                              } } },
-                y: { min:0, max:yMax, beginAtZero:true,
-                     afterBuildTicks: function(scale){ var m = scale.max || 1; scale.ticks = [{value:0},{value:m/3},{value:2*m/3},{value:m}]; },
-                     ticks: { color: tc.muted, callback: function(v){ return Math.round(v) + "%"; } },
-                     grid: { display:false }, border: { display:false } }
-              },
-              elements: { point: { radius: 0 } }
-            }
+
+        function buildChart(){
+          if (root.__votController && root.__votController.__ctrlId !== myCtrlId){
+            return;
+          }
+          if (!lineCanvas || !lineCanvas.isConnected) return;
+          destroyLine();
+          var tc = themeColors();
+          var ctx = lineCanvas.getContext("2d");
+          window.Chart.defaults.color = tc.muted;
+          window.Chart.defaults.font = { family: "Geist, system-ui, -apple-system, Segoe UI, Roboto, Arial", size: 12 };
+          var single = built.labels.length <= 1;
+          visDs.forEach(function(ds){
+            ds.borderWidth = LINE_WIDTH; ds.fill = false; ds.cubicInterpolationMode = "monotone"; ds.tension = LINE_TENSION;
+            ds.pointRadius = single ? 4 : 0; ds.pointHoverRadius = LINE_POINT_HOVER; ds.pointHitRadius = LINE_POINT_HIT;
+            ds.pointBorderWidth = LINE_POINT_BORDER; ds.pointBackgroundColor = tc.bg; ds.pointBorderColor = ds.__baseColor;
+            ds.pointHoverBackgroundColor = tc.bg; ds.pointHoverBorderColor = ds.__baseColor;
+            if (single){ ds.pointBackgroundColor = ds.__baseColor; }
+            ds.spanGaps = true; ds.clip = 8;
           });
-          lineChart.$ccGridColor = tc.border;
-          lineChart.$ccHoverLineColor = tc.border;
-          lineChart.__curGran = curGran;
-        } catch(err){
+          var visMax = 0; visDs.forEach(function(ds){ (ds.data || []).forEach(function(v){ if (v != null && v > visMax) visMax = v; }); });
+          var yMax = visMax * Y_PAD; if (yMax <= 0) yMax = 1; if (yMax > 100) yMax = 100;
+          var labels = built.labels;
+          try {
+            lineChart = new window.Chart(ctx, {
+              type: "line",
+              data: { labels: labels, datasets: visDs },
+              plugins: [hoverLinePlugin, dashedYGridPlugin],
+              options: {
+                responsive: true, maintainAspectRatio: false,
+                animation: { duration: 600, easing: "easeOutQuart" },
+                /* named transition used by applyHighlight()'s update("highlight") — a smooth 200ms
+                   fade for the row/legend cross-highlight, separate from the slower initial draw-in. */
+                transitions: { highlight: { animation: { duration: 200, easing: "easeOutQuad" } } },
+                interaction: { mode: "index", intersect: false },
+                layout: { padding: { top: 8, right: 2, bottom: 0, left: 0 } },
+                plugins: { legend: { display:false }, tooltip: { enabled:false, external: makeLineTooltip(lineWrap) } },
+                scales: {
+                  x: { grid: { display:false }, offset: single, border: { display:true, color: tc.border, width:1 },
+                       ticks: { autoSkip:true, maxTicksLimit:X_MAX_TICKS, maxRotation:0, color: tc.muted,
+                                callback: function(v, i){
+                                  var lab = String(labels[i] || "");
+                                  if (curGran === "month"){
+                                    var m = lab.match(/^(\d{4})-(\d{2})/);
+                                    if (m) return MONTHS_DE[parseInt(m[2],10) - 1] || lab;
+                                  }
+                                  return lab.slice(5);
+                                } } },
+                  y: { min:0, max:yMax, beginAtZero:true,
+                       afterBuildTicks: function(scale){ var m = scale.max || 1; scale.ticks = [{value:0},{value:m/3},{value:2*m/3},{value:m}]; },
+                       ticks: { color: tc.muted, callback: function(v){ return Math.round(v) + "%"; } },
+                       grid: { display:false }, border: { display:false } }
+                },
+                elements: { point: { radius: 0 } }
+              }
+            });
+            lineChart.$ccGridColor = tc.border;
+            lineChart.$ccHoverLineColor = tc.border;
+            lineChart.__curGran = curGran;
+          } catch(err){
+          }
         }
-        });
-        });
+
+        /* Chart.js reads the canvas's live layout to compute where the entrance animation starts
+           from, so it needs a container with real, settled dimensions at creation time — not just
+           "attached to the DOM". Two situations defeat that:
+           1) Chart.js was already loaded (cached from a prior mount) and this .then() runs as an
+              immediate microtask, before the browser has laid out a freshly re-inserted widget
+              (e.g. navigating back to a dashboard that rebuilds the DOM subtree) — a short wait
+              fixes this, since the container genuinely has a size once layout catches up.
+           2) The root is fed data while sitting inside a Bubble element that's hidden via
+              display:none (a popup/group not yet shown) — the container reports 0x0 no matter how
+              long you wait, since display:none never gets a box. Building the chart against that
+              collapsed geometry, then having Chart.js's own resize observer redraw it once the
+              group becomes visible, replays as the points flying in from that collapsed (0,0)
+              corner instead of growing up from the baseline.
+           Deliberately setInterval, not requestAnimationFrame or ResizeObserver: both of those are
+           tied to the rendering/compositor pipeline, which browsers pause or heavily throttle for a
+           backgrounded or inactive tab — exactly when a Bubble popup is likely to sit hidden for a
+           while before the user opens it, so either would risk stalling indefinitely. setInterval
+           keeps ticking (throttled, but not paused) regardless of tab visibility, matching this
+           file's other wait-for-Bubble-to-catch-up loops (initAll's retry cascade, the watermark's
+           injection interval). */
+        if (lineWrap.clientWidth > 0 && lineWrap.clientHeight > 0){
+          buildChart();
+        } else {
+          var __sizeTicks = 0;
+          var __sizeIv = setInterval(function(){
+            if (root.__votController && root.__votController.__ctrlId !== myCtrlId){
+              clearInterval(__sizeIv); return;
+            }
+            if (!lineCanvas || !lineCanvas.isConnected){ clearInterval(__sizeIv); return; }
+            var sized = lineWrap.clientWidth > 0 && lineWrap.clientHeight > 0;
+            if (sized || ++__sizeTicks > 600){   // ~2 min cap — give up and build anyway past that
+              clearInterval(__sizeIv);
+              buildChart();
+            }
+          }, 200);
+        }
       }).catch(function(err){
       });
     }
@@ -1182,13 +1210,23 @@
     return {
       __ctrlId: myCtrlId,
       reset: function(){
+        /* Restore + actually notify Bubble, the same way the in-dropdown Reset button and the
+           Sort dropdown do — so the external "reset this instance" Run JavaScript step visibly
+           puts sort back to Visibility Descending and companies back to the default set, instead
+           of only clearing local flags ahead of a fill that may never come. */
         sortField = "visibility";
         sortDir = "desc";
         SORT_STORE[instanceId] = { field: sortField, dir: sortDir };
         populateSort();
-        delete INIT_COMPANIES[instanceId];
-        delete USER_FILTERED[instanceId];
+        fireSort();
+
+        var initIds = INIT_COMPANIES[instanceId] || activeCompanyIds();
         filterSel = {};
+        initIds.forEach(function(id){ filterSel[id] = true; });
+        populateFilter();
+        fireCompaniesSubmit();
+        delete USER_FILTERED[instanceId];   // after fireCompaniesSubmit, which would set it
+        delete INIT_COMPANIES[instanceId];  // next fill re-captures it fresh, like a first load
         syncFilterBadge();
         return true;
       },
