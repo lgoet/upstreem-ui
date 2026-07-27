@@ -499,7 +499,12 @@
     .up-th-sub { font-size: 11px; font-weight: 500; color: var(--vc-text); }
 
     .up-tbody { display: flex; flex-direction: column; }
-    .up-row { height: 72px; flex: 0 0 72px; cursor: pointer; transition: background 120ms ease, height .2s ease, flex-basis .2s ease; }
+    /* height/flex-basis deliberately don't transition: with 50-100 rows on screen, animating them
+       forces a synchronous layout reflow on every row simultaneously, which visibly stalls the
+       page for a couple of seconds on Comfortable/Compact toggle before the rows "jump" to their
+       final height at once. A settings toggle snapping instantly is normal UX; only per-row hover
+       (background) stays smooth since it only ever affects one row at a time. */
+    .up-row { height: 72px; flex: 0 0 72px; cursor: pointer; transition: background 120ms ease; }
     /* Compact row mode: shorter rows, first column shows only the title (URL sub-line hidden). */
     .up-root.is-dense .up-row { height: 55px; flex: 0 0 55px; }
     
