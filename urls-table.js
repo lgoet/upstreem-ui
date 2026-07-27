@@ -2,7 +2,21 @@
 (function(){
   "use strict";
 
-  if (!window.UpstreemCore){ if(window.console) console.error("UpstreemCore (core.js) not loaded"); return; }
+  /* Bubble injects this component's <script> tags via jQuery .html(), which does not guarantee
+     external scripts execute in DOM order — urls-table.js can start running before core.js has
+     finished loading. A one-shot check-and-bail here meant a slow core.js load permanently
+     killed the whole component (no retry ever happened). Retry briefly instead: covers the
+     normal race (core.js finishes a beat later) without masking a genuinely missing core.js. */
+  function uutBoot(triesLeft){
+    if (!window.UpstreemCore){
+      if (triesLeft > 0){ setTimeout(function(){ uutBoot(triesLeft - 1); }, 100); return; }
+      if (window.console) console.error("UpstreemCore (core.js) not loaded");
+      return;
+    }
+    uutRun();
+  }
+
+  function uutRun(){
   try { if (window.console && console.log) console.log("%cUPSTREEM urls-table","font-weight:bold;color:#2ea84a","build 2026-07-26-ROBUST — Dropdown->uutBrand{brand_mentioned}, Toggle->uutMentioned{brands}"); } catch(e){}
   var UC = window.UpstreemCore;
   var CITE_COLOR = UC.CITE_COLOR, CITE_ALIAS = UC.CITE_ALIAS, ALL_CITATION_TYPES = UC.ALL_CITATION_TYPES, URL_TYPE = UC.URL_TYPE, ALL_URL_TYPES = UC.ALL_URL_TYPES, OTHER_LIGHT = UC.OTHER_LIGHT, OTHER_DARK = UC.OTHER_DARK, CHIP_BG_DARK = UC.CHIP_BG_DARK, MONTHS = UC.MONTHS, DEBOUNCE = UC.DEBOUNCE, MIN = UC.MIN, SORT_DEBOUNCE = UC.SORT_DEBOUNCE, PAGE_SIZES = UC.PAGE_SIZES, DEFAULT_PAGE_SIZE = UC.DEFAULT_PAGE_SIZE, fmtTotal = UC.fmtTotal, isYes = UC.isYes, highlight = UC.highlight, esc = UC.esc, citeName = UC.citeName, tint = UC.tint, toNum = UC.toNum, fmt1 = UC.fmt1, fmtInt = UC.fmtInt, fmtDate = UC.fmtDate, foldDiacritics = UC.foldDiacritics, germanExpand = UC.germanExpand, resolveBubbleFn = UC.resolveBubbleFn, TREND_UP = UC.TREND_UP, TREND_DOWN = UC.TREND_DOWN, CHECK_SVG = UC.CHECK_SVG, COPY_SVG = UC.COPY_SVG, GOTO_SVG = UC.GOTO_SVG, DONE_SVG = UC.DONE_SVG, EXT_SVG = UC.EXT_SVG, STORE = UC.STORE, LOADING_EXPLICIT = UC.LOADING_EXPLICIT;
@@ -1626,4 +1640,7 @@
     window.__uutObs.observe(document.body, { childList: true, subtree: true });
     setInterval(initAll, 1500);   // cheap no-op once initialised; catches late Bubble rebuilds
   }
+  } // end uutRun
+
+  uutBoot(50); // retry for ~5s before giving up on core.js
 })();
