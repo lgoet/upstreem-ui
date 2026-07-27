@@ -435,7 +435,7 @@
         lineChart.data.datasets.forEach(function(ds){
           ds.borderColor = (id == null || ds.__id === id) ? ds.__baseColor : dim;
         });
-        lineChart.update("none");
+        lineChart.update("highlight");
       }
       if (legendEl){
         var items = legendEl.querySelectorAll(".up-company-item");
@@ -458,6 +458,11 @@
     function destroyLine(){
       if (lineChart){ try { lineChart.destroy(); } catch(e){} lineChart = null; }
       if (window.Chart && window.Chart.getChart){ var ex = window.Chart.getChart(lineCanvas); if (ex) try{ ex.destroy(); }catch(e){} }
+      /* The external tooltip is a plain DOM element outside Chart.js's own lifecycle — destroying
+         the chart stops the callback that would otherwise set its opacity back to 0, so a tooltip
+         left visible from a hover right before a reload/skeleton would stay stuck on screen. */
+      var tt = lineWrap.querySelector(".vc-line-tt");
+      if (tt) tt.style.opacity = "0";
     }
     function clearLineExtras(){ var sk = lineWrap.querySelector(".vc-line-sk"); if (sk) sk.remove(); var em = lineWrap.querySelector(".vc-line-empty"); if (em) em.remove(); }
     function showLineSkeleton(){ destroyLine(); clearLineExtras(); clearLegend(); lineWrap.insertAdjacentHTML("beforeend", lineSkeletonHtml()); }
@@ -480,6 +485,20 @@
           return;
         }
         if (!lineCanvas) return;
+        /* Chart.js reads the canvas's live layout to compute where the entrance animation starts
+           from. When Chart.js was already loaded (cached from a prior mount on the page), this
+           .then() runs as an immediate microtask — before the browser has laid out a freshly
+           re-inserted widget (e.g. navigating back to the dashboard rebuilds the whole DOM subtree)
+           — so the canvas can still report a stale/zero rect and the line animates in from the
+           wrong origin (top-left) instead of growing up from the baseline like a normal re-render.
+           Waiting two animation frames gives layout a chance to settle first, so the entrance looks
+           the same whether this is a filter change or a fresh mount. */
+        requestAnimationFrame(function(){
+        requestAnimationFrame(function(){
+        if (root.__votController && root.__votController.__ctrlId !== myCtrlId){
+          return;
+        }
+        if (!lineCanvas || !lineCanvas.isConnected) return;
         destroyLine();
         var tc = themeColors();
         var ctx = lineCanvas.getContext("2d");
@@ -505,6 +524,9 @@
             options: {
               responsive: true, maintainAspectRatio: false,
               animation: { duration: 600, easing: "easeOutQuart" },
+              /* named transition used by applyHighlight()'s update("highlight") — a smooth 200ms
+                 fade for the row/legend cross-highlight, separate from the slower initial draw-in. */
+              transitions: { highlight: { animation: { duration: 200, easing: "easeOutQuad" } } },
               interaction: { mode: "index", intersect: false },
               layout: { padding: { top: 8, right: 2, bottom: 0, left: 0 } },
               plugins: { legend: { display:false }, tooltip: { enabled:false, external: makeLineTooltip(lineWrap) } },
@@ -532,6 +554,8 @@
           lineChart.__curGran = curGran;
         } catch(err){
         }
+        });
+        });
       }).catch(function(err){
       });
     }
@@ -851,7 +875,11 @@
       var badge = root.querySelector(".vot-filter-badge");
       if (!badge) return;
       var active = activeCompanyIds().length;
-      var show = !!USER_FILTERED[instanceId] && active > 0;
+      /* Only a real filter — fewer than the max selectable — should light up the badge. At the
+         full default (7, or all available companies if fewer exist), showing the count would just
+         restate what's already obvious from the chart. */
+      var maxSelectable = Math.min((state.filterCompanies || []).length, MAX_FILTER_SEL);
+      var show = !!USER_FILTERED[instanceId] && active > 0 && active < maxSelectable;
       badge.textContent = show ? String(active) : "";
       badge.classList.toggle("is-visible", show);
     }
@@ -884,12 +912,17 @@
     var MAX_FILTER_SEL = 7;
     var USER_FILTERED = (window.__votUserFiltered = window.__votUserFiltered || {});
     function isAtInitialSelection(){
-      if (USER_FILTERED[instanceId]) return false;
-      var plotted = {}, n = 0;
-      activeCompanyIds().forEach(function(id){ plotted[id] = true; n++; });
+      /* Compare against what Reset would actually restore (same fallback it uses) — not just
+         whatever's currently plotted — so Reset only shows when clicking it would change anything.
+         Deliberately not gated on USER_FILTERED: once the draft matches that target again (e.g.
+         Deselect all + Apply landed back on the default set), Reset would be a no-op and has no
+         business being offered, regardless of whether a filter was applied at some point before. */
+      var target = {}, n = 0;
+      var initIds = INIT_COMPANIES[instanceId] || activeCompanyIds();
+      initIds.forEach(function(id){ target[id] = true; n++; });
       var current = Object.keys(filterSel).filter(function(k){ return filterSel[k]; });
       if (current.length !== n) return false;
-      return current.every(function(id){ return plotted[id]; });
+      return current.every(function(id){ return target[id]; });
     }
     function applyFilterSearch(){
       var inp = filterMenu.querySelector(".up-ment-search");
