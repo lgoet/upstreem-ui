@@ -1,0 +1,533 @@
+/* upstreem urls-table.css — component-specific styling (uut-).
+   Shared base lives in core.css. Loaded after core.css. */
+
+/* component-specific (uut-) — der geteilte Teil liegt in core.css */
+/* ---------- toolbar ---------- */
+    
+    
+    /* separator + count exactly as in the other components: 4px dot, 8px gap either side */
+    
+    
+    
+    
+    
+
+    
+    
+    /* the dark base rule above is more specific than .up-iconbtn:hover, so the hover colour
+       needs its own dark rule or it never turns primary in dark mode. */
+    
+    
+    
+
+    /* export: a real filled button, identical to the one in the export popup component */
+    
+    
+    
+
+    /* ---------- search (slides out from the magnifier) ---------- */
+    
+    /* Magnifier stays on the left; when opened, the box grows to its right and, because the tools
+       are right-aligned, the whole search shifts left. Active = primary color, no background. */
+    
+    
+    
+    /* No box/border — just free text like Notion's in-table search. */
+    
+    
+    /* Active (open) search reads a touch larger/bolder — applies to typed text and placeholder. */
+    
+    /* The clear button's slot is ALWAYS reserved (visibility, not display), so text never shifts
+       when the x appears. */
+    
+    
+    
+    
+    /* Mobile: an open search takes over the toolbar row. Below MOBILE_SEARCH_MAX the other
+       tools hide so the field spans from the heading to the right edge; they return on close. */
+    
+    
+    
+    
+                 /* search owns the whole row */
+      /* far-right X closes/resets search */
+
+    /* ---------- column info icon + explainer tooltip ---------- */
+    .uut-th-brandlogo { width: 16px; height: 16px; border-radius: 4px; flex: 0 0 auto; object-fit: cover; margin-right: 5px; }
+    
+    
+    
+    /* Appended to <body>, so it sits OUTSIDE .up-root — the component's CSS variables do not
+       reach here and every colour has to be literal. Using var(--vc-text) was exactly why the
+       dark panel rendered with no background at all. */
+    
+    
+    
+    /* caret, positioned per-instance so it always points at the info icon that opened it */
+    
+    /* flipped above the header when there is no room below */
+    
+    /* the visual sits in its own light panel on top; explanation below it on the dark ground */
+    .uut-explain-vis {
+      background: #ffffff; border-radius: 9px; padding: 11px 12px;
+      display: flex; flex-direction: column; gap: 7px; align-items: flex-start;
+      margin-bottom: 9px; min-height: 46px; justify-content: center;
+    }
+    .uut-explain-h { font-size: 14.5px; font-weight: 600; line-height: 1.2; padding: 0 3px; margin-bottom: 4px; color: #ffffff; }
+    .uut-explain-t { font-size: 13.5px; font-weight: 400; line-height: 1.5; padding: 0 3px; color: rgba(255,255,255,0.68); }
+    /* dark mode inverts the whole card; the inner panel stays a light surface either way */
+    .uut-explain-chip { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 7px;
+      font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .uut-explain-row { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 500; color: #1f1f1b; }
+    .uut-explain-row svg { width: 14px; height: 14px; display: block; }
+    .uut-explain-dot { width: 26px; height: 26px; border-radius: 999px; background: #e8e8e8;
+      border: 1px solid #d9dde3; box-shadow: 0 0 0 2px #ffffff; display: inline-flex;
+      align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: #6f737c; }
+    .uut-explain-more { background: #f0f0f0; }
+    .uut-explain-up { color: #2ea84a; }
+    .uut-explain-down { color: #b0200c; }
+    /* dark mode inverts the whole card: light ground + dark text, and a dark inner panel with the
+       dark-mode metric colours. */
+    
+    
+    
+    .up-explain[data-theme="dark"] .uut-explain-h { color: #1f1f1b; }
+    .up-explain[data-theme="dark"] .uut-explain-t { color: rgba(31,31,27,0.66); }
+    .up-explain[data-theme="dark"] .uut-explain-vis { background: #1b1b1b; }
+    .up-explain[data-theme="dark"] .uut-explain-row { color: #f0f0f0; }
+    .up-explain[data-theme="dark"] .uut-explain-up { color: #6ee7b7; }
+    .up-explain[data-theme="dark"] .uut-explain-down { color: #fca5a5; }
+    .up-explain[data-theme="dark"] .uut-explain-dot { background: #3a3a3a; border-color: #4a4a4a; box-shadow: 0 0 0 2px #1b1b1b; color: #b8b8b8; }
+    .up-explain[data-theme="dark"] .uut-explain-more { background: #2c2c2c; }
+
+    /* ---------- pagination ---------- */
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    /* :hover:not(:disabled) is (0,3,0) and outranks .is-active (0,2,0) — without excluding the
+       active page here, hovering the page you are already on lightened it back up. */
+    
+    
+    
+    
+    
+    
+
+    /* ---------- filter dropdown (citation types) ---------- */
+    
+    /* a labelled control rather than a bare icon: the active selection has to be readable
+       without opening the menu */
+    
+    /* Same hover/open treatment as every other dropdown trigger in the app: background goes to
+       --vc-heading-bg, text to --vc-text, and the border is NOT re-coloured on open. */
+    
+    
+    
+    
+    /* An applied filter wears the same face as an open dropdown: border in --vc-hover-border,
+       label in --vc-text, background still transparent. "This control is doing something" and
+       "this control is open" are the same visual weight on purpose — both mean "look here". */
+    
+    
+    /* Hovering an ACTIVE trigger swaps the chevron for an x: the shortcut out of the filter,
+       without opening the menu to reach Reset. Inactive triggers keep their chevron. */
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    /* Fixed height so the row doesn't grow when the Reset button appears — otherwise the whole
+       menu jumps a few pixels the moment you tick the first item. */
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    /* the dropdown shows the SAME chip the table uses — identical to TopCitations, so a type
+       looks the same wherever it appears */
+    
+    
+    
+    
+    
+    
+
+    /* ---------- mentioned brands filter (multi-select) ---------- */
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+       /* carries the theme + CSS vars to the portaled menus */
+    /* Brand search inside the dropdown, plus a capped list so ~10.5 rows show and the 11th peeks. */
+    
+    
+    
+    
+    
+    
+    
+    
+    
+       /* ~10.5 rows -> the 11th peeks and signals scrolling */
+    
+
+    /* ---------- column visibility (gear) ---------- */
+    
+    /* Touch devices: 16px stops iOS from zooming into the search field on focus, and hover
+       tooltips make no sense (a tap leaves them stuck on screen). */
+    
+    /* active-columns count badge on the columns (gear) button — same styling as the combo chart's
+       visible-series badge over its fader button. */
+    .uut-cols-badge {
+      position: absolute; top: -3px; right: -3px; z-index: 2;
+      min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
+      background: var(--vc-text); color: #e0e0e0;
+      font-family: inherit; font-size: 10px; font-weight: 600; line-height: 1;
+      display: none; align-items: center; justify-content: center;
+      font-variant-numeric: tabular-nums; pointer-events: none;
+    }
+    .up-root[data-theme="dark"] .uut-cols-badge { color: #1f1f1b; }
+    .uut-cols-badge.is-visible { display: inline-flex; }
+    
+    
+    
+    /* icon buttons have no border, so their open state is the background */
+    
+    /* a column that is the last one left can't be switched off — an empty table helps nobody */
+    
+
+    /* ---------- sort dropdown ---------- */
+    
+    
+    
+    
+    
+       /* reserve the Select-all button height up front so nothing resizes */
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    /* dark base .up-switch rule out-specifies .up-switch.is-on, so the ON track needs an
+       explicit dark rule — otherwise it stays the dark off-colour. */
+    
+    
+    
+    
+
+    /* ---------- brand mentioned toggle ---------- */
+    .uut-brand-toggle { display: none; align-items: center; justify-content: space-between; gap: 10px; height: 32px; padding: 0 8px; border-radius: 8px;
+      background: transparent; border: 0; cursor: pointer; flex: 0 0 auto; }
+    .uut-brand-toggle.is-visible { display: inline-flex; }
+    .uut-brand-toggle:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
+    .uut-brand-toggle.is-yes, .uut-brand-toggle.is-no { background: var(--vc-heading-bg); }
+    .uut-brand-toggle-lbl { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+    .uut-brand-check { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #fff; }
+    .uut-brand-check svg { width: 11px; height: 11px; display: none; }
+    .uut-brand-toggle.is-yes .uut-brand-check, .uut-brand-toggle.is-no .uut-brand-check { background: var(--vc-text); border-color: var(--vc-text); }
+    .up-root[data-theme="dark"] .uut-brand-toggle.is-yes .uut-brand-check, .up-root[data-theme="dark"] .uut-brand-toggle.is-no .uut-brand-check { color: #1f1f1b; }
+    .uut-brand-toggle.is-yes .uut-brand-check .uut-brand-check-yes { display: block; }
+    .uut-brand-toggle.is-no .uut-brand-check .uut-brand-check-no { display: block; }
+    .uut-brand-logo { width: 16px; height: 16px; border-radius: 4px; flex: 0 0 auto; display: block; object-fit: cover; }
+    .uut-brand-label { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
+
+    /* ---------- table ---------- */
+    
+    /* ---------- sticky header (default on >=1000px page width, off via data-sticky="no") ----------
+       Both the component head and the column header stick to the scrolling ancestor. overflow:hidden
+       on .up-box would trap the column header, so in sticky mode it becomes visible and the visible
+       border moves onto the header and body (see below). Backgrounds must be OPAQUE or rows bleed
+       through while scrolling underneath. */
+    
+    /* Rows scroll up past the pinned header; without this they'd show behind a transparent page
+       topbar. This opaque strip covers everything from the header up to the top of the viewport. */
+    
+    /* In sticky mode the box's visible border is dropped (kept transparent so layout doesn't
+       shift) and drawn on the header and body instead. Both span the full width and align exactly,
+       so there's no 1px offset between a header sitting inside the box border and the box's own
+       border — that offset was what left a doubled corner and a missing straight top edge. */
+    
+    
+    
+    /* The rounded top corners are transparent by nature, so the body's straight side border shows
+       through them as it scrolls behind the pinned header (the little vertical stub). These two
+       corner pieces fill ONLY the triangle outside the radius with the page background, hiding that
+       border while leaving the rounded corner itself (inside the radius) untouched. Absolute takes
+       them out of the header's grid flow. */
+    
+    
+    
+    
+    
+    /* Column widths per spec. The percentages are MINIMUMS; the 1fr maxima let the
+       flexible columns absorb the leftover space. Actions is fixed-width but allowed
+       to grow, never to shrink below 120px. */
+    
+    
+    
+    
+    
+    /* ---------- column resizing ---------- */
+    
+    
+    
+    
+    
+    
+    
+    
+
+    /* header sorter: two 14px chevrons stacked, pulled together by 2px each */
+    
+    
+    
+    
+    
+    
+    /* the sub-label that appears when a column is sorted by its secondary key (Share → Trend) */
+    
+
+    
+    
+    /* Compact row mode: shorter rows, first column shows only the title (URL sub-line hidden). */
+    
+    .up-root.is-dense .uut-url-sub { display: none; }
+    /* Compact mode shrinks the mentioned-brand logos ~20% and scales every gap/shift to match. */
+    .up-root.is-dense .uut-stack-item { width: 28.16px; height: 28.16px; flex: 0 0 28.16px; box-shadow: 0 0 0 1.76px var(--vc-bg); }
+    .up-root.is-dense .up-row:hover .uut-stack-item { box-shadow: 0 0 0 1.76px var(--vt-row-hover-solid, var(--vc-bg)); }
+    .up-root.is-dense .uut-stack-item img { width: 21.12px; height: 21.12px; }
+    .up-root.is-dense .uut-stack-ltr { font-size: 9.68px; }
+    .up-root.is-dense .uut-stack-item + .uut-stack-item { margin-left: -5.28px; }
+    .up-root.is-dense .uut-stack-more { margin-left: 7.04px; }
+    .up-root.is-dense .uut-stack-item:hover { transform: translateX(7.04px) translateY(-3px); }
+    .up-root.is-dense .uut-stack-item:first-child:hover { transform: translateY(-3px); }
+    .up-root.is-dense .uut-stack-item:hover ~ .uut-stack-item,
+    .up-root.is-dense .uut-stack-item:hover ~ .uut-stack-more { transform: translateX(14.08px); }
+    .up-root.is-dense .uut-stack-item:first-child:hover ~ .uut-stack-item,
+    .up-root.is-dense .uut-stack-item:first-child:hover ~ .uut-stack-more { transform: translateX(7.04px); }
+    .up-root.is-dense .uut-stack-item:hover::before { top: -8.8px; right: -11px; bottom: -12.1px; left: -17.6px; }
+    .up-root.is-dense .uut-td-brands .up-tsk-logo { width: 21.12px; height: 21.12px; }   /* skeleton brand logo matches compact size */
+    
+    
+    
+    
+
+    .uut-logo-box { width: 24px; height: 24px; border-radius: 8px; background: var(--vt-logo-bg); padding: 1px; flex: 0 0 auto;
+      display: inline-flex; align-items: center; justify-content: center; position: relative; }
+    .uut-logo-box img { width: 22px; height: 22px; border-radius: 7px; object-fit: cover; display: block; }
+    /* Letter fallback: a broken/missing favicon used to leave an empty square, which reads as a
+       loading glitch. The initial keeps every row visually complete. */
+    .uut-logo-ltr { font-size: 11px; font-weight: 600; color: var(--vc-muted); line-height: 1; text-transform: uppercase; }
+    .uut-logo-box.has-img .uut-logo-ltr { display: none; }
+
+    /* go-to arrow, revealed on row hover with a delay — same behaviour as the other tables */
+    .uut-row-goto { margin-left: auto; width: 16px; height: 16px; flex: 0 0 auto; color: var(--vc-third);
+      opacity: 0; transform: translateX(-3px); transition: opacity .18s ease, transform .18s ease; transition-delay: 0ms; }
+    .uut-row-goto svg { width: 16px; height: 16px; display: block; }
+    .up-row:hover .uut-row-goto { opacity: 1; transform: translateX(0); transition-delay: 220ms; }
+    .up-root.is-vnarrow .uut-row-goto { display: none; }
+    /* URL cell: title on top, url underneath — same treatment as the Quick Actions result rows */
+    .uut-url-wrap { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+    .uut-url-title { font-size: 13.5px; font-weight: 500; color: var(--vc-text); letter-spacing: -0.01em;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .uut-url-sub { font-size: 12px; color: var(--vc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Mentioned? cell */
+    .uut-ment-cell { display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; font-weight: 500; }
+    .uut-ment-cell svg { width: 16px; height: 16px; display: block; flex: 0 0 auto; }
+    .uut-ment-cell.is-yes { color: var(--vt-up); }
+    .uut-ment-cell.is-no { color: var(--vt-down); }
+
+    /* ---------- brand stack ----------
+       Overlapping 32px circles. The 4px visual gap between them is a ring in the ROW's background
+       colour, not a real gap: with a negative margin the neighbour would otherwise touch. The ring
+       has to follow the row's hover colour too, hence the two overrides below. */
+    /* The cell clips: with a negative-margin stack plus the hover spread, a narrow column would
+       otherwise let logos spill over the column border and sit on top of the neighbouring cell. */
+    .uut-td-brands { overflow: hidden; }
+    .uut-stack { display: inline-flex; align-items: center; min-width: 0; max-width: 100%; }
+    .uut-stack-item {
+      width: 32px; height: 32px; flex: 0 0 32px; border-radius: 999px;
+      background: var(--vt-logo-bg); box-shadow: 0 0 0 2px var(--vc-bg);
+      border: 1px solid var(--vc-border);
+      display: inline-flex; align-items: center; justify-content: center;
+      position: relative; cursor: default;
+      transition: transform .16s ease, width .2s ease, height .2s ease, flex-basis .2s ease, margin-left .2s ease;
+    }
+    .uut-stack-item + .uut-stack-item { margin-left: -6px; }
+    /* only the gap-ring follows the row hover colour; the circle fill stays the (light-in-dark) logo bg */
+    .up-row:hover .uut-stack-item { box-shadow: 0 0 0 2px var(--vt-row-hover-solid, var(--vc-bg)); }
+    .uut-stack-item img { width: 24px; height: 24px; border-radius: 999px; object-fit: contain; display: block; transition: width .2s ease, height .2s ease; }
+    .uut-stack-ltr { font-size: 11px; font-weight: 600; color: var(--vc-muted); line-height: 1; text-transform: uppercase; transition: font-size .2s ease; }
+    .uut-stack-item.has-img .uut-stack-ltr { display: none; }
+    /* plain text, no circle: the overflow count is a label, not another brand */
+    .uut-stack-more {
+      margin-left: 8px; flex: 0 0 auto;
+      font-size: 12px; font-weight: 500; color: var(--vc-muted); white-space: nowrap;
+      transition: transform .16s ease, margin-left .2s ease;
+    }
+    /* Hovering a logo lifts it, brings it to front, and opens a gap on both sides — created by
+       shifting the hovered item and everything AFTER it to the right. Items BEFORE it never move
+       (so the first brand can't drift left). Following items shift twice as far so their gaps to
+       each other stay at the default: they don't squash together.
+       The ::before is a hover-only, enlarged hit area: it covers the item's pre-shift footprint so
+       moving right/up can't pull the item out from under the cursor — that's what caused the
+       hover/un-hover flicker loop. It only exists while hovered, so it never steals a neighbour's
+       hover. */
+    .uut-stack-item:hover { transform: translateX(8px) translateY(-3px); z-index: 3; }
+    .uut-stack-item:first-child:hover { transform: translateY(-3px); }
+    .uut-stack-item:hover ~ .uut-stack-item,
+    .uut-stack-item:hover ~ .uut-stack-more { transform: translateX(16px); }
+    .uut-stack-item:first-child:hover ~ .uut-stack-item,
+    .uut-stack-item:first-child:hover ~ .uut-stack-more { transform: translateX(8px); }
+    .uut-stack-item:hover::before { content: ""; position: absolute; top: -10px; right: -12px; bottom: -14px; left: -20px; }
+    
+    
+    
+    
+    .uut-num { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; flex: 0 0 auto; font-variant-numeric: tabular-nums; }
+    .uut-used { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .uut-date { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
+    .uut-tag { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 7px;
+      font-size: 12px; font-weight: 600; white-space: nowrap; max-width: 100%; overflow: hidden; }
+    .uut-tag-dot { width: 6px; height: 6px; border-radius: 999px; flex: 0 0 auto; }
+    .uut-tag-lbl { overflow: hidden; text-overflow: ellipsis; }
+    .uut-trend { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; flex: 0 0 auto; font-variant-numeric: tabular-nums; }
+    .uut-trend svg { width: 16px; height: 16px; display: block; }
+    .uut-trend.pos { color: var(--vt-up); }
+    .uut-trend.neg { color: var(--vt-down); }
+
+    /* 2x28px buttons + 2px gap + the cell's 12/16px padding = 86px of hard content.
+       ACTIONS_MIN sits above that so the cell never has to clip. */
+    .uut-actions { display: inline-flex; align-items: center; gap: 2px; flex: 0 0 auto; }
+    .uut-td-actions { overflow: hidden; }
+    .uut-actbtn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; border: 0; border-radius: 7px;
+      background: transparent; color: var(--vc-third); cursor: pointer; padding: 0; flex: 0 0 auto;
+    }
+    .uut-actbtn:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
+    .uut-actbtn svg { width: 15px; height: 15px; display: block; }
+
+    /* brief checkmark after copying — confirms the action at the button itself, not only in the toast */
+    /* `.uut-actbtn svg { display:block }` is more specific than a bare `.up-ic-done`, which is
+       why the checkmark showed permanently. Both states are qualified the same way now. */
+    .uut-actbtn.is-done { color: var(--vt-up); }
+    .uut-actbtn svg.up-ic-done { display: none; }
+    .uut-actbtn.is-done svg.up-ic-copy { display: none; }
+    .uut-actbtn.is-done svg.up-ic-done { display: block; }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    /* Narrow layouts drop columns too, but that is handled together with the gear menu in
+       applyCols() — an inline grid-template from JS would beat a class rule here, so both
+       have to come from the same place. */
+    /* ---------- progressive disclosure by width ----------
+       Four breakpoints, dropping the least important control first. Order of sacrifice:
+       brand toggle (a shortcut, reachable via the filter) → citation type label collapses to an
+       icon-width control → sort (the header sorters still work) → columns gear. Export and search
+       survive longest: export is the reason people come to the table, search is the only way to
+       find something in a long list. */
+    /* Labelled dropdowns are never squeezed into icon-sized buttons: a control that loses its
+       label stops saying what it filters, which is the whole reason it is labelled. They drop out
+       one at a time instead, least important first.
+         w3  brand toggle      (a shortcut; the same filter exists in the dropdowns)
+         w2  mentioned brands  (the broader of the two brand filters)
+         w1  sort              (the header sorters still cover Share and Last Seen)
+         w0  columns gear      + Export collapses to its icon
+       Search and the type filter survive longest: search is the only way through a long list,
+       and the type filter is the one people actually reach for. */
+    .up-root.is-w3 .uut-brand-toggle { display: none !important; }
+    
+    
+    
+            /* export shrinks to its icon */
+    
+    
+    
+
+    /* table: same idea, dropping cell content before dropping whole columns
+       (a domain name you can't read is worse than a missing trend chip) */
+    .up-root.is-t2 .uut-td-actions, .up-root.is-t2 .uut-th-actions { display: none !important; }
+    
+    .up-root.is-t0 .uut-trend { display: none; }
+
+    /* ---------- tooltip (same as the other components) ---------- */
+    
+    /* wider, wrapping variant for the full URL title (which can be long) */
+    
+    
+    
+    /* Tooltips keep the same dark card in both themes: they float above the page, not inside
+       the surface, so inverting them made them read as a different component. */
