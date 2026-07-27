@@ -5,19 +5,40 @@ Ein Ort für den geteilten Core, pro Komponente eine schlanke Datei. Änderungen
 wirken nach einem Push + Purge sofort auf allen Platzierungen, kein Neu-Einfügen
 in Bubble mehr.
 
-## Dateien
+> **Vor dem Bauen einer neuen Komponente zuerst `STYLEGUIDE.md` lesen** — dort
+> stehen alle Konventionen (Prefixe, Farben, Muster) und die Checkliste.
 
-| Datei                    | Zweck                                                        |
-|--------------------------|-------------------------------------------------------------|
-| `core.css`               | Geteiltes Styling: Tokens/Farben (Light+Dark), Buttons, Dropdowns/Portal, Tooltips, Skeleton, Suche, Sticky-Mechanik, generische Tabellenstruktur. Prefix `up-`. |
-| `core.js`                | Geteilte Daten + Logik: Farbtabellen, Utils, Icons, `resolveBubbleFn`, Stores, und die Subsysteme `makeTooltips`, `makeFire`, `makePortal`, `placeMenu`, `makeSticky`. Stellt `window.UpstreemCore` bereit. |
-| `urls-table.css`         | Komponenten-CSS der URLs-Tabelle (Prefix `uut-`).           |
-| `urls-table.js`          | Komponenten-Logik der URLs-Tabelle. Braucht `core.js` vorher. |
-| `urls_table_bubble.html` | **Vorlage** für das Bubble-HTML-Element: Markup + `data-*` + CDN-Includes. Das kommt in Bubble rein. |
+## Struktur
+
+```
+upstreem-ui/
+├─ README.md
+├─ STYLEGUIDE.md          Konventionen + Checkliste. Zuerst lesen.
+├─ core.css               ausgeliefert (CDN) — geteiltes Styling, Prefix up-
+├─ core.js                ausgeliefert (CDN) — window.UpstreemCore
+├─ urls-table.css         ausgeliefert (CDN) — Komponenten-CSS, Prefix uut-
+├─ urls-table.js          ausgeliefert (CDN) — Komponenten-Logik, braucht core.js
+├─ bubble/                Loader-Vorlagen für Bubble (NICHT ausgeliefert)
+│  └─ urls_table_bubble.html
+└─ to-migrate/            alte Bubble-Komponenten, noch NICHT auf Core-Logik (Referenz)
+```
+
+- **Root** (`core.*`, `<komponente>.*`): wird von jsDelivr ausgeliefert; der
+  Pfad muss zur CDN-URL passen (`@main/core.css` = Root). Prefixe: geteilt `up-`,
+  komponenten-spezifisch `uut-` / `udt-` …
+- **`core.js`** stellt `window.UpstreemCore` bereit: Farbtabellen, Utils, Icons,
+  `resolveBubbleFn`, Stores und die Subsysteme `makeTooltips`, `makeFire`,
+  `makePortal`, `placeMenu`, `makeSticky`.
+- **`bubble/`**: die HTML-Schnipsel, die ins jeweilige Bubble-HTML-Element
+  kommen (Markup + `data-*` + CDN-Includes). Werden nicht ausgeliefert, sind nur
+  Kopiervorlagen. Eine pro Komponente.
+- **`to-migrate/`**: die noch nicht umgebauten Bubble-Komponenten als
+  Ausgangs-Referenz. Aus ihnen entstehen bei der Migration die Root-Dateien
+  (`<name>.css`/`.js`) plus ein Loader in `bubble/`. Werden nicht ausgeliefert.
 
 ## Wie es zusammenspielt
 
-Im Bubble-HTML-Element steht nur der Loader (`urls_table_bubble.html`): das
+Im Bubble-HTML-Element steht nur der Loader (`bubble/urls_table_bubble.html`): das
 statische Markup mit den dynamischen `data-*`-Bindungen und vier CDN-Includes.
 Reihenfolge ist wichtig — Core **vor** Komponente:
 
@@ -86,6 +107,13 @@ liefern, unabhängig vom aktiven Filter.
 
 ## Neue Komponente hinzufügen
 
-Gleiches Muster: `<name>.css` (Prefix `<x>-`) + `<name>.js` (nutzt `UpstreemCore`)
-+ ein Bubble-Loader mit Markup und CDN-Includes. Der Core wird wiederverwendet.
-Nächste Kandidaten: `domains-table.*`, danach der Chart-Core.
+Gleiches Muster:
+1. Referenz in `to-migrate/` lesen (der aktuelle Bubble-Stand der Komponente).
+2. `STYLEGUIDE.md` und `urls-table.js` als Vorlage nehmen.
+3. Root-Dateien `<name>.css` (eigener Prefix, z.B. `udt-`) + `<name>.js` (nutzt
+   `UpstreemCore`) bauen.
+4. Einen Loader `bubble/<name>_bubble.html` (Markup + `data-*` + CDN-Includes) anlegen.
+
+Der Core wird wiederverwendet. Nächste Kandidaten: `domains-table.*` (aus
+`to-migrate/`, sehr ähnlich zur URLs-Tabelle), danach ein gemeinsamer **Chart-Core**
+aus den Chart-Komponenten in `to-migrate/`.
