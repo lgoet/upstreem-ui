@@ -176,7 +176,11 @@
       if (bt && root.contains(bt)) showTipText(bt, bt.getAttribute("data-brandtip"));
     });
     root.addEventListener("mouseout", function(e){
-      if (e.target.closest("[data-tip]") || e.target.closest("[data-brandtip]")) hideTip();
+      var tipEl = e.target.closest("[data-tip]") || e.target.closest("[data-brandtip]");
+      if (!tipEl) return;
+      var to = e.relatedTarget;
+      if (to && tipEl.contains(to)) return;
+      hideTip();
     });
     return { showTip: showTip, showTipText: showTipText, showTipWide: showTipWide, hideTip: hideTip, el: tip };
   }
