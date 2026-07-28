@@ -88,8 +88,8 @@
     </div>
     <div class="combo-box combo-box-left">
       <div class="combo-panel-body">
-        <div class="cc-line-wrap"><canvas class="cc-line-canvas"></canvas></div>
-        <div class="cc-legend"></div>
+        <div class="up-line-wrap"><canvas class="up-line-canvas"></canvas></div>
+        <div class="up-legend"></div>
       </div>
     </div>
   </div>
@@ -98,11 +98,11 @@
     <div class="combo-head">
       <div class="combo-heading combo-heading-right">Citation Type Split</div>
       <div class="combo-head-tools">
-        <div class="ccd-seg" role="tablist" aria-label="Chart type">
-          <button class="ccd-seg-btn is-active" data-chart="doughnut" role="tab" aria-selected="true" data-tip="Doughnut" aria-label="Doughnut">
+        <div class="cc-seg" role="tablist" aria-label="Chart type">
+          <button class="cc-seg-btn is-active" data-chart="doughnut" role="tab" aria-selected="true" data-tip="Doughnut" aria-label="Doughnut">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
           </button>
-          <button class="ccd-seg-btn" data-chart="bar" role="tab" aria-selected="false" data-tip="Bars" aria-label="Bars">
+          <button class="cc-seg-btn" data-chart="bar" role="tab" aria-selected="false" data-tip="Bars" aria-label="Bars">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="9" y2="18"/></svg>
           </button>
         </div>
@@ -114,11 +114,11 @@
     </div>
     <div class="combo-box combo-box-right">
       <div class="combo-panel-body">
-        <div class="ccd-chart-root">
-          <div class="ccd-top">
-            <div class="ccd-top-total"><span class="n">0</span><span class="lbl">Citations</span></div>
+        <div class="cc-type-root">
+          <div class="cc-top">
+            <div class="cc-top-total"><span class="n">0</span><span class="lbl">Citations</span></div>
           </div>
-          <div class="ccd-body"></div>
+          <div class="up-donut-body"></div>
         </div>
       </div>
     </div>
@@ -147,6 +147,6 @@
   function css(f){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = base + f; document.head.appendChild(l); }
   function js(f){ var s = document.createElement("script"); s.src = base + f; s.async = false; document.head.appendChild(s); }
   css("core.css"); css("citations-combo-chart.css");
-  js("core.js"); js("citations-combo-chart.js"); js("citations-combo-chart-watermark.js");
+  js("core.js"); js("citations-combo-chart.js");
 })();
 </script>

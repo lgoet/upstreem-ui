@@ -30,76 +30,14 @@
 
   function ccRun(){
   var UC = window.UpstreemCore;
-  var esc = UC.esc, isYes = UC.isYes, citeName = UC.citeName, resolveBubbleFn = UC.resolveBubbleFn, fmtTotal = UC.fmtTotal;
-  var CITE_COLOR = UC.CITE_COLOR, CITE_ALIAS = UC.CITE_ALIAS;
+  var esc = UC.esc, isYes = UC.isYes, resolveBubbleFn = UC.resolveBubbleFn, fmtTotal = UC.fmtTotal;
 
-  /* ================= Chart.js loader (SHARED across ALL upstreem components on the page) ================= */
-  function loadChartJs(){
-    if (window.Chart) return Promise.resolve();
-    if (window.__upstreemChartJs) return window.__upstreemChartJs;
-    window.__upstreemChartJs = new Promise(function(res, rej){
-      // if a Chart.js script is already present (e.g. from another upstreem component on this
-      // same page), wait for IT instead of loading a second copy — loading Chart.js twice breaks
-      // existing chart instances (each load overwrites window.Chart with a fresh module/registry)
-      var existing = document.querySelector('script[data-upstreem-chartjs], script[data-ccchart], script[src*="chart.umd"], script[src*="chart.js@"], script[src*="chart.local"]');
-      if (existing){
-        var iv = setInterval(function(){ if (window.Chart){ clearInterval(iv); res(); } }, 40);
-        setTimeout(function(){ clearInterval(iv); if (window.Chart) res(); else rej(new Error("chartjs timeout")); }, 10000);
-        return;
-      }
-      var s = document.createElement("script");
-      s.src = "https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js";
-      s.setAttribute("data-upstreem-chartjs", "1");
-      s.onload = function(){ res(); };
-      s.onerror = rej;
-      document.head.appendChild(s);
-    });
-    return window.__upstreemChartJs;
-  }
-
-  /* ================= colours/labels not covered by core.js (CITE_COLOR/CITE_ALIAS ARE — see
-     UC above) ================= */
-  var URL_LABEL = {
-    homepage:"Homepage", product_service:"Product / Service", marketplace:"Marketplace", company_info:"Company Info",
-    article:"Article", listicle:"Listicle", guide:"Guide", comparison:"Comparison", review:"Review",
-    documentation:"Documentation", forum:"Forum", directory:"Directory", video:"Video", social_post:"Social Post", other:"Uncategorized"
-  };
-  var URL_COLOR_CHART = {
-    homepage:"#c3753a", product_service:"#ce8662", marketplace:"#ae7c58", company_info:"#b48139",
-    article:"#369379", listicle:"#3e90a6", guide:"#5182ef", comparison:"#726bea", review:"#8a53e1",
-    documentation:"#8a53e1", forum:"#a95cee", directory:"#b549bf", video:"#9661f1", social_post:"#a27df8", other:"#8c8f96"
-  };
-  var URL_COLOR_DARK = {
-    homepage:"#fbbf24", product_service:"#fdba74", marketplace:"#fcae6f", company_info:"#facc15",
-    article:"#6ee7b7", listicle:"#67e8f9", guide:"#93c5fd", comparison:"#a5b4fc", review:"#c4b5fd",
-    documentation:"#c4b5fd", forum:"#d8b4fe", directory:"#f0abfc", video:"#c4b5fd", social_post:"#ddd6fe", other:"#a0a0a0"
-  };
-  /* NOT UC.OTHER_DARK (#a8abb2) — this component's dark "other" value is #a0a0a0, same trap
-     already documented in topcitations-dashboard.js: looks like a shared constant, isn't one. */
-  var OTHER_LIGHT = "#8c8f96", OTHER_DARK = "#a0a0a0";
-  var MAX_URL_SLICES = 8;
-
-  /* ================= local-only helpers (no core.js equivalent) ================= */
-  function capitalize(s){ s = String(s||""); return s.charAt(0).toUpperCase() + s.slice(1); }
-  /* fmtPct has the <1% special case UC.fmtTotal doesn't — kept local, same as topcitations. */
-  function fmtPct(v){ v = Number(v) || 0; if (v > 0 && v < 1) return "<1%"; return Math.round(v) + "%"; }
+  /* ---------- component-local colour ramp ----------
+     The only colour logic that stays here: when several series share the same TYPE (e.g. three
+     Editorial domains), they must be visually separable while still reading as one family. Core
+     gives the family colour via UC.typeColor; this spreads N shades around it. No other component
+     needs this, so it is not in core. */
   function hexToRgb(hex){ var h=String(hex).replace("#",""); if(h.length===3)h=h.split("").map(function(x){return x+x;}).join(""); var n=parseInt(h,16); return [(n>>16)&255,(n>>8)&255,n&255]; }
-  function measureText(el){ if(!el) return 0; var r=el.getBoundingClientRect(); return r.width || el.scrollWidth || 0; }
-  function truncate(s, n){ s = String(s==null?"":s); return s.length > n ? s.slice(0, n-1) + "…" : s; }
-  var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  var MONTHS_DE = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-  function dateFmt(day){
-    var m = String(day||"").match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (!m) return String(day||"");
-    return parseInt(m[3],10) + " " + MONTHS[parseInt(m[2],10)-1] + " " + m[1];
-  }
-  function dateFmtTitle(day, gran){
-    var m = String(day||"").match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (!m) return String(day||"");
-    if (gran === "month") return MONTHS_DE[parseInt(m[2],10) - 1] || dateFmt(day);
-    return dateFmt(day);
-  }
-
   function hexToHsl(hex){
     var c = hexToRgb(hex).map(function(v){ return v/255; });
     var r=c[0],g=c[1],b=c[2];
@@ -119,29 +57,21 @@
     function to(x){ var v=Math.round(x*255).toString(16); return v.length===1?"0"+v:v; }
     return "#"+to(r)+to(g)+to(b);
   }
-  /* Is a fill colour light enough that white label text would be hard to read? Uses WCAG relative
-     luminance so it judges by hue too. Threshold sits high on purpose: only genuinely light bars
-     flip to dark text, mid-tone citation fills keep white. */
-  function barIsLight(col){
-    if (typeof col !== "string") return false;
-    var c = col.charAt(0) === "#" ? col.slice(1) : col;
-    if (c.length === 3) c = c.charAt(0)+c.charAt(0)+c.charAt(1)+c.charAt(1)+c.charAt(2)+c.charAt(2);
-    if (!/^[0-9a-fA-F]{6}$/.test(c)) return false;
-    function lin(v){ v/=255; return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); }
-    var L = 0.2126*lin(parseInt(c.substr(0,2),16)) + 0.7152*lin(parseInt(c.substr(2,2),16)) + 0.0722*lin(parseInt(c.substr(4,2),16));
-    return L > 0.55;
-  }
   function shadeVariants(base, n){
     if(n<=1) return [base];
     var hsl=hexToHsl(base), h=hsl[0], s=hsl[1], lBase=hsl[2];
+    // lightness window around the base, kept inside a visible range
     var lo = Math.max(24, lBase - 27);
     var hi = Math.min(78, lBase + 27);
+    // widen if the clamped window is too narrow to keep N shades clearly distinct
     var minSpan = Math.min(60, (n - 1) * 10);
     if (hi - lo < minSpan){
       var mid = (lo + hi) / 2;
       lo = Math.max(16, mid - minSpan / 2);
       hi = Math.min(84, mid + minSpan / 2);
     }
+    // small hue spread on top of the lightness ramp — noticeably separates same-category shades
+    // while keeping them recognisably the same colour family
     var hueSpan = Math.min(30, (n - 1) * 11);
     var out=[];
     for(var i=0;i<n;i++){
@@ -154,231 +84,10 @@
     return out;
   }
 
-  /* ================= doughnut plugins ================= */
-  var RING_PX = 12, SEG_GAP = 6, CORNER = 4, HOVER = 12;
-  var ringWidthPlugin = {
-    id: "ucRingWidth",
-    beforeDatasetDraw: function(chart, args){
-      var meta = chart.getDatasetMeta(args.index);
-      meta.data.forEach(function(arc){ arc.innerRadius = Math.max(1, arc.outerRadius - RING_PX); });
-    }
-  };
-  var constantGapPlugin = {
-    id: "ucConstantGap",
-    beforeDatasetDraw: function(chart, args){
-      var meta = chart.getDatasetMeta(args.index);
-      if (!meta || !meta.data || !meta.data.length) return;
-      var r = (meta.data[0] && meta.data[0].outerRadius) || 100;
-      var gap = SEG_GAP / r, N = meta.data.length;
-      var available = (Math.PI*2) - gap*N;
-      var total = meta.total || chart.data.datasets[args.index].data.reduce(function(a,b){return a+Number(b||0);},0);
-      var cur = -Math.PI/2;
-      meta.data.forEach(function(arc, i){
-        var value = chart.data.datasets[args.index].data[i];
-        var frac = total>0 ? (value/total) : 0;
-        var span = frac*available;
-        arc.startAngle = cur + gap/2;
-        arc.endAngle = cur + span + gap/2;
-        arc.circumference = span;
-        cur += span + gap;
-      });
-    }
-  };
-
-  /* ================= doughnut tooltip ================= */
-  function makeDonutTooltip(root){
-    var state = { x:0, y:0, raf:null };
-    var clamp = function(v,a,b){ return Math.max(a, Math.min(b, v)); };
-    var lerp = function(a,b,t){ return a+(b-a)*t; };
-    return function(context){
-      var chart = context.chart, tooltip = context.tooltip;
-      var el = root.querySelector(".ccd-donut-tooltip");
-      var dark = root.getAttribute("data-theme") === "dark";
-      if (!el){
-        el = document.createElement("div");
-        el.className = "ccd-donut-tooltip";
-        el.style.cssText = "position:absolute;pointer-events:none;z-index:9999;opacity:0;transform:translate3d(0,0,0);transition:opacity 120ms ease, transform 120ms ease;";
-        el.innerHTML = '<div class="ccd-tt-box"><div class="ccd-tt-title"><span class="ccd-tt-dot"></span><span class="ccd-tt-lbl"></span></div><div class="ccd-tt-sub">Share:</div><div class="ccd-tt-val"></div></div>';
-        chart.canvas.parentNode.appendChild(el);
-      }
-      /* Re-applied on every call, not just at creation — otherwise the tooltip stays stuck on
-         whatever theme was active the first time it was ever shown (a real bug that shipped here
-         once: dark-only styling regardless of the page's actual light/dark state). Matches
-         topcitations-dashboard.js's makeDonutTooltip exactly. */
-      var boxBg = dark ? "#121212" : "#ffffff";
-      var boxBorder = dark ? "" : "border:1px solid #e0e2e6;";
-      var boxShadow = dark ? "box-shadow:0 4px 14px rgba(0,0,0,.25);" : "box-shadow:0 4px 14px rgba(0,0,0,.10);";
-      var textColor = dark ? "#e6e6e6" : "#1f1f1b";
-      var mutedColor = dark ? "#8a8a8a" : "#6f737c";
-      el.querySelector(".ccd-tt-box").style.cssText = "background:" + boxBg + ";color:" + textColor + ";" + boxBorder + "border-radius:16px;padding:12px 14px;font-family:Geist,system-ui,-apple-system,Segoe UI,Roboto,Arial;font-size:13px;line-height:1.35;" + boxShadow + "white-space:nowrap;";
-      el.querySelector(".ccd-tt-title").style.cssText = "display:flex;align-items:center;gap:6px;font-weight:600;margin-bottom:6px;";
-      el.querySelector(".ccd-tt-sub").style.cssText = "color:" + mutedColor + ";font-size:11px;";
-      el.querySelector(".ccd-tt-val").style.cssText = "color:" + textColor + ";";
-      if (tooltip.opacity === 0){ el.style.opacity = "0"; return; }
-      var i = (tooltip.dataPoints && tooltip.dataPoints[0] && tooltip.dataPoints[0].dataIndex) || 0;
-      var od = chart.data.datasets[0].originalData;
-      var val = (od && od[i] != null) ? od[i] : (chart.data.datasets[0].data[i] || 0);
-      var sliceColor = (chart.data.datasets[0].backgroundColor && chart.data.datasets[0].backgroundColor[i]) || textColor;
-      var isUrlMode = chart.__ccMode === "url";
-      var dotEl = el.querySelector(".ccd-tt-dot");
-      dotEl.style.cssText = isUrlMode ? "width:6px;height:6px;border-radius:999px;flex:0 0 auto;background:" + sliceColor + ";display:inline-block;" : "display:none;";
-      el.querySelector(".ccd-tt-lbl").style.color = sliceColor;
-      el.querySelector(".ccd-tt-lbl").textContent = chart.data.labels[i] || "";
-      el.querySelector(".ccd-tt-val").textContent = Number(val).toFixed(2) + "%";
-      var cx = chart.canvas.offsetLeft, cy = chart.canvas.offsetTop, ca = chart.chartArea;
-      var caretX = cx + tooltip.caretX, caretY = cy + tooltip.caretY, m = 12;
-      el.style.left = "0px"; el.style.top = "0px";
-      var rect = el.getBoundingClientRect();
-      var tx = (caretX + rect.width + m > cx + ca.right) ? (caretX - rect.width - m) : (caretX + m);
-      tx = clamp(tx, cx + ca.left + m, cx + ca.right - rect.width - m);
-      var ty = caretY - rect.height - m;
-      if (ty < cy + ca.top + m) ty = caretY + m;
-      ty = clamp(ty, cy + ca.top + m, cy + ca.bottom - rect.height - m);
-      if (state.raf) cancelAnimationFrame(state.raf);
-      var sx = state.x||tx, sy = state.y||ty, st = performance.now(), d = 120;
-      function stepFn(now){
-        var t = Math.min(1,(now-st)/d), k = t<.5?2*t*t:-1+(4-2*t)*t;
-        var nx = lerp(sx,tx,k), ny = lerp(sy,ty,k);
-        el.style.transform = "translate3d("+nx+"px,"+ny+"px,0)"; el.style.opacity = "1";
-        state.x = nx; state.y = ny;
-        if (t<1) state.raf = requestAnimationFrame(stepFn);
-      }
-      state.raf = requestAnimationFrame(stepFn);
-    };
-  }
-
-  /* ================= line chart plugins + tooltip ================= */
-  var LINE_TENSION = 0.3, LINE_WIDTH = 1.5, LINE_POINT_HOVER = 4, LINE_POINT_HIT = 6, LINE_POINT_BORDER = 1.4;
-  var X_MAX_TICKS = 7, Y_PAD = 1.15;
-
-  var hoverLinePlugin = {
-    id: "ccHoverLine",
-    afterDatasetsDraw: function(chart){
-      var act = chart.tooltip && chart.tooltip.getActiveElements ? chart.tooltip.getActiveElements() : [];
-      if (!act || !act.length) return;
-      var x = act[0].element.x, ca = chart.chartArea, ctx = chart.ctx;
-      ctx.save();
-      ctx.beginPath(); ctx.moveTo(x, ca.top); ctx.lineTo(x, ca.bottom);
-      ctx.lineWidth = 1; ctx.strokeStyle = chart.$ccHoverLineColor || "rgba(0,0,0,0.12)";
-      ctx.stroke(); ctx.restore();
-    }
-  };
-  var dashedYGridPlugin = {
-    id: "ccDashedYGrid",
-    beforeDatasetsDraw: function(chart){
-      var y = chart.scales.y, ca = chart.chartArea, ctx = chart.ctx;
-      if (!y || !ca) return;
-      var ticks = (y.getTicks && y.getTicks()) || y.ticks || [];
-      if (!ticks.length) return;
-      ctx.save();
-      ctx.setLineDash([6,6]); ctx.lineWidth = 1; ctx.strokeStyle = chart.$ccGridColor || "rgba(0,0,0,0.08)";
-      ticks.forEach(function(t){
-        if (t.value <= 0) return;
-        var yp = y.getPixelForValue(t.value);
-        if (yp == null || isNaN(yp)) return;
-        if (yp < ca.top - 0.5 || yp > ca.bottom + 0.5) return;
-        ctx.beginPath(); ctx.moveTo(ca.left, Math.round(yp) + 0.5); ctx.lineTo(ca.right, Math.round(yp) + 0.5); ctx.stroke();
-      });
-      ctx.restore();
-    }
-  };
-
-  function makeLineTooltip(wrap){
-    var pos = { x:null, y:null }, target = { x:0, y:0 }, running = false, visible = false, raf = null;
-    var FOLLOW = 0.18;
-    function loop(){
-      var el = wrap.querySelector(".cc-line-tt");
-      if (pos.x == null){ pos.x = target.x; pos.y = target.y; }
-      pos.x += (target.x - pos.x) * FOLLOW;
-      pos.y += (target.y - pos.y) * FOLLOW;
-      if (el) el.style.transform = "translate3d(" + pos.x + "px," + pos.y + "px,0)";
-      var dx = Math.abs(target.x - pos.x), dy = Math.abs(target.y - pos.y);
-      if (visible || dx > 0.4 || dy > 0.4){ raf = requestAnimationFrame(loop); }
-      else { running = false; }
-    }
-    return function(context){
-      var chart = context.chart, tooltip = context.tooltip;
-      var el = wrap.querySelector(".cc-line-tt");
-      if (!el){
-        el = document.createElement("div");
-        el.className = "cc-line-tt";
-        el.style.cssText = "position:absolute;left:0;top:0;pointer-events:none;z-index:9999;opacity:0;transform:translate3d(0,0,0);transition:opacity 120ms ease;";
-        wrap.appendChild(el);
-      }
-      if (tooltip.opacity === 0){ el.style.opacity = "0"; visible = false; pos.x = null; pos.y = null; return; }
-      var dps = (tooltip.dataPoints || []).filter(function(dp){ return dp && dp.parsed && dp.parsed.y != null; });
-      if (!dps.length){ el.style.opacity = "0"; visible = false; pos.x = null; pos.y = null; return; }
-      var themeRoot = chart.canvas.closest(".combo-root");
-      var dark = !!(themeRoot && themeRoot.getAttribute("data-theme") === "dark");
-      var boxBg = dark ? "#121212" : "#ffffff";
-      var boxBorder = dark ? "" : "border:1px solid #e0e2e6;";
-      var boxShadow = dark ? "box-shadow:0 4px 14px rgba(0,0,0,.25);" : "box-shadow:0 4px 14px rgba(0,0,0,.10);";
-      var textColor = dark ? "#e6e6e6" : "#1f1f1b";
-      var mutedColor = dark ? "#8a8a8a" : "#6f737c";
-      var idx = dps[0].dataIndex;
-      var dayLabel = chart.data.labels[idx];
-      dps = dps.slice().sort(function(a,b){ return b.parsed.y - a.parsed.y; });
-      var ff = "Geist,system-ui,-apple-system,Segoe UI,Roboto,Arial";
-      var rows = dps.map(function(dp){
-        var ds = dp.dataset;
-        var icon = ds.__favicon
-          ? '<img src="' + esc(ds.__favicon) + '" width="16" height="16" style="border-radius:4px;display:block;object-fit:cover" onerror="this.style.visibility=\'hidden\'"/>'
-          : '<span style="width:16px;height:16px;border-radius:4px;background:' + ds.__baseColor + ';display:block"></span>';
-        var name = truncate(ds.label, 32);
-        var vy = Number(dp.parsed.y) || 0, vr = Math.round(vy);
-        var val = (vy > 0 && vr === 0) ? "<1%" : (vr + "%");
-        return '<div style="display:flex;align-items:center;gap:8px;margin-top:8px">' +
-            '<span style="flex:0 0 16px;display:flex">' + icon + '</span>' +
-            '<span style="flex:1 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:' + textColor + '">' + esc(name) + '</span>' +
-            '<span style="flex:0 0 auto;margin-left:77px;color:' + textColor + ';font-weight:500">' + val + '</span>' +
-          '</div>';
-      }).join("");
-      el.innerHTML =
-        '<div style="background:' + boxBg + ';color:' + textColor + ';' + boxBorder + 'border-radius:16px;padding:10px 12px;font-family:' + ff + ';font-size:13px;line-height:1.35;' + boxShadow + 'white-space:nowrap;min-width:220px;">' +
-          '<div style="color:' + mutedColor + ';font-size:11px">' + esc(dateFmtTitle(dayLabel, chart.__curGran)) + '</div>' +
-          rows +
-        '</div>';
-      var cx = chart.canvas.offsetLeft, cy = chart.canvas.offsetTop, ca = chart.chartArea;
-      var caretX = cx + (tooltip.caretX != null ? tooltip.caretX : dps[0].element.x), m = 16;
-      el.style.left = "0px"; el.style.top = "0px";
-      var rect = el.getBoundingClientRect();
-      var tx = (caretX + rect.width + m > cx + ca.right) ? (caretX - rect.width - m) : (caretX + m);
-      tx = Math.max(cx + ca.left, Math.min(tx, cx + ca.right - rect.width));
-      var ty = Math.max(cy + ca.top, Math.min(cy + ca.top + 8, cy + ca.bottom - rect.height));
-      target.x = tx; target.y = ty;
-      if (pos.x == null){ pos.x = tx; pos.y = ty; el.style.transform = "translate3d("+tx+"px,"+ty+"px,0)"; }
-      el.style.opacity = "1"; visible = true;
-      if (!running){ running = true; raf = requestAnimationFrame(loop); }
-    };
-  }
-
-  /* ================= data prep ================= */
-  function prepData(dataMode, rows, isDark){
-    rows = Array.isArray(rows) ? rows : [];
-    var items = rows
-      .filter(function(r){ return r && (r.type != null) && isFinite(Number(r.share_pct)); })
-      .map(function(r){ return { key: String(r.type).trim(), share: Math.max(0, Number(r.share_pct)) }; });
-    if (dataMode === "url"){
-      items.sort(function(a,b){ return b.share - a.share; });
-      if (items.length > MAX_URL_SLICES){
-        var head = items.slice(0, MAX_URL_SLICES);
-        var otherShare = items.slice(MAX_URL_SLICES).reduce(function(a,b){ return a + b.share; }, 0);
-        head.push({ key:"other", share:otherShare, _other:true });
-        items = head;
-      }
-      return items.map(function(it){
-        var name = it._other ? "Other" : (URL_LABEL[it.key] || capitalize(String(it.key).replace(/_/g," ")));
-        var map = isDark ? URL_COLOR_DARK : URL_COLOR_CHART;
-        var color = it._other ? (isDark?OTHER_DARK:OTHER_LIGHT) : (map[it.key] || (isDark?OTHER_DARK:OTHER_LIGHT));
-        return { name:name, share:it.share, color:color };
-      });
-    }
-    return items.map(function(it){
-      var name = citeName(it.key);
-      return { name:name, share:it.share, color: CITE_COLOR[name] || OTHER_LIGHT };
-    });
-  }
-
+  /* ---------- data mapping (the part the chart kit cannot know) ----------
+     Turns the Bubble payload into the {labels, datasets} UC.makeLine expects. This is genuinely
+     per component: visibility-chart keys on company_id with a fixed palette, this one keys on
+     domain or url depending on dataMode and derives its colours from the entry's TYPE. */
   function buildLineDatasets(series, meta, dataMode, isDark){
     series = Array.isArray(series) ? series : [];
     meta = Array.isArray(meta) ? meta : [];
@@ -397,6 +106,7 @@
     var byId = {}, daySet = {};
     series.forEach(function(p){
       if (!p) return;
+      // accept the identifier under any of these keys: id, company_id, url (url mode), domain (domain mode)
       var raw = (p.id != null) ? p.id : (p.company_id != null) ? p.company_id : (p.url != null) ? p.url : (p.domain != null) ? p.domain : "";
       var id = String(raw);
       if (!id) return;
@@ -415,18 +125,10 @@
     });
     ids.sort(function(a,b){ return (metaMap[b].global_share||0) - (metaMap[a].global_share||0); });
     ids = ids.slice(0, 7);
-    function baseColor(type){
-      if (dataMode === "url"){
-        var key = String(type||"").trim();
-        var map = isDark ? URL_COLOR_DARK : URL_COLOR_CHART;
-        return map[key] || (isDark?OTHER_DARK:OTHER_LIGHT);
-      }
-      var name = citeName(type);
-      return CITE_COLOR[name] || OTHER_LIGHT;
-    }
+    /* group ids by their family colour, then spread a shade ramp inside each group */
     var groups = {};
     ids.forEach(function(id){
-      var base = baseColor(metaMap[id].type);
+      var base = UC.typeColor(metaMap[id].type, dataMode === "url" ? "url" : "citation", isDark);
       (groups[base] = groups[base] || []).push(id);
     });
     var colorForId = {};
@@ -434,9 +136,7 @@
       var arr = groups[base], shades = shadeVariants(base, arr.length);
       arr.forEach(function(id,i){ colorForId[id] = shades[i]; });
     });
-    var globalMax = 0;
     var datasets = ids.map(function(id){
-      var data = labels.map(function(d){ var v = byId[id][d]; if (v != null && v > globalMax) globalMax = v; return v != null ? v : null; });
       var col = colorForId[id];
       return {
         label: metaMap[id].label,
@@ -444,107 +144,23 @@
         __globalShare: metaMap[id].global_share,
         __favicon: metaMap[id].favicon,
         __baseColor: col,
-        data: data,
+        data: labels.map(function(d){ var v = byId[id][d]; return v != null ? v : null; }),
         borderColor: col
       };
     });
-    return { labels: labels, datasets: datasets, globalMax: globalMax };
-  }
-
-  /* ================= skeletons ================= */
-  function skeletonHtml(){
-    var rows = [[110,34],[72,22],[90,22],[120,18],[80,18]];
-    var legend = rows.map(function(r){
-      return '<div class="ccd-sk-row"><span class="ccd-sk-dot"></span><span class="ccd-sk-lbl" style="width:'+r[0]+'px"></span><span class="ccd-sk-pct" style="width:'+r[1]+'px"></span></div>';
-    }).join("");
-    var u = Math.random().toString(36).slice(2);
-    var mId = 'ccd-sk-mask-' + u, gId = 'ccd-sk-grad-' + u;
-    return '<div class="ccd-skeleton">' +
-      '<div class="ccd-sk-chart"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">' +
-        '<defs><mask id="' + mId + '"><circle cx="50" cy="50" r="38" fill="none" stroke="white" stroke-width="7"/></mask>' +
-        '<linearGradient id="' + gId + '" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" class="ccd-sk-g0"/><stop offset="50%" class="ccd-sk-g1"/><stop offset="100%" class="ccd-sk-g0"/></linearGradient></defs>' +
-        '<circle cx="50" cy="50" r="38" fill="none" class="ccd-sk-ring" stroke-width="7"/>' +
-        '<rect x="-60" y="0" width="50" height="100" fill="url(#' + gId + ')" mask="url(#' + mId + ')"><animateTransform attributeName="transform" type="translate" from="-60 0" to="160 0" dur="1.2s" repeatCount="indefinite"/></rect>' +
-      '</svg></div>' +
-      '<div class="ccd-sk-legend">' + legend + '</div>' +
-    '</div>';
-  }
-  function lineSkeletonHtml(){
-    var hlines = new Array(4).join("x").split("x").map(function(){ return '<div class="sk-lc-hline"></div>'; }).join("");
-    var xlabels = new Array(6).join("x").split("x").map(function(){ return '<div class="sk-lc-xlabel"></div>'; }).join("");
-    var d = "M0,125 C60,115 100,70 150,58 C200,46 230,90 280,74 C330,58 390,22 460,14";
-    var agId = 'cc-sk-ag-' + Math.random().toString(36).slice(2);
-    return '<div class="cc-line-sk"><div class="sk-linechart">' +
-      '<div class="sk-lc-grid">' + hlines +
-        '<svg class="sk-lc-svg" viewBox="0 0 460 160" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">' +
-          '<defs><linearGradient id="' + agId + '" x1="0" y1="0" x2="0" y2="1"><stop class="sk-lc-astop0" offset="0%"/><stop class="sk-lc-astop1" offset="100%"/></linearGradient></defs>' +
-          '<path d="' + d + ' L460,160 L0,160 Z" fill="url(#' + agId + ')"/>' +
-          '<path class="sk-lc-stroke" d="' + d + '"/>' +
-          '<path class="sk-lc-shimmer-path" d="' + d + '"/>' +
-        '</svg>' +
-      '</div>' +
-      '<div class="sk-lc-xaxis">' + xlabels + '</div>' +
-    '</div></div>';
-  }
-
-  /* ================= line legend (balanced rows — same algorithm as visibility-chart.js) ================= */
-  var LEG_MIN_GAP = 8, LEG_MAX_GAP = 16;
-  function legGetColumnGap(w){ return Math.max(LEG_MIN_GAP, Math.min(LEG_MAX_GAP, Math.floor(w * 0.025))); }
-  function legNormalizeUrl(url){ if (!url) return ""; if (url.indexOf("//") === 0) return "https:" + url; return url; }
-  function legItemHtml(c, measure){
-    return '<div class="up-company-item' + (measure ? ' up-measure-item' : '') + '" data-company-id="' + esc(c.company_id) + '">' +
-        '<span class="up-company-color" style="background:' + esc(c.color || "#999999") + '"></span>' +
-        '<span class="up-company-inner-gap"></span>' +
-        (c.favicon_url ? '<img class="up-company-favicon" src="' + esc(legNormalizeUrl(c.favicon_url)) + '" alt="" onerror="this.style.visibility=\'hidden\'">' : '<span class="up-company-favicon" style="visibility:hidden"></span>') +
-        '<span class="up-company-inner-gap"></span>' +
-        '<span class="up-company-name">' + esc(c.name) + '</span>' +
-      '</div>';
-  }
-  function legRowWidth(widths, start, end, gap){ var total = 0; for (var i = start; i < end; i++){ total += widths[i]; if (i > start) total += gap; } return total; }
-  function legGreedyRowCount(widths, cw, gap){
-    var rows = 1, cur = 0;
-    for (var i = 0; i < widths.length; i++){
-      var next = cur === 0 ? widths[i] : cur + gap + widths[i];
-      if (cur > 0 && next > cw){ rows++; cur = widths[i]; } else { cur = next; }
-    }
-    return rows;
-  }
-  function legBalancedBreaks(widths, rowCount, cw, gap){
-    var n = widths.length;
-    if (rowCount <= 1 || n <= 1) return [];
-    var dp = [], prev = [];
-    for (var r = 0; r <= rowCount; r++){ dp.push(new Array(n + 1).fill(Infinity)); prev.push(new Array(n + 1).fill(-1)); }
-    dp[0][0] = 0;
-    for (var r2 = 1; r2 <= rowCount; r2++){
-      for (var i = 1; i <= n; i++){
-        for (var k = r2 - 1; k < i; k++){
-          var w = legRowWidth(widths, k, i, gap);
-          if (w > cw) continue;
-          var score = Math.max(dp[r2 - 1][k], w);
-          if (score < dp[r2][i]){ dp[r2][i] = score; prev[r2][i] = k; }
-        }
-      }
-    }
-    if (!isFinite(dp[rowCount][n])) return [];
-    var breaks = [], ii = n;
-    for (var r3 = rowCount; r3 > 1; r3--){ var kk = prev[r3][ii]; if (kk <= 0) break; breaks.unshift(kk); ii = kk; }
-    return breaks;
-  }
-  function getPageWidth(){
-    try { if (window.top && window.top.innerWidth) return window.top.innerWidth; } catch(e){}
-    return window.innerWidth || document.documentElement.clientWidth || 0;
+    return { labels: labels, datasets: datasets };
   }
 
   /* ================= controller ================= */
   function makeController(root){
-    var donutRoot = root.querySelector(".ccd-chart-root");
-    var body = donutRoot ? donutRoot.querySelector(".ccd-body") : null;
-    var topTotal = donutRoot ? donutRoot.querySelector(".ccd-top-total") : null;
+    var donutRoot = root.querySelector(".cc-type-root");
+    var body = donutRoot ? donutRoot.querySelector(".up-donut-body") : null;
+    var topTotal = donutRoot ? donutRoot.querySelector(".cc-top-total") : null;
     var topTotalN = topTotal ? topTotal.querySelector(".n") : null;
-    var segBtns = Array.prototype.slice.call(root.querySelectorAll(".ccd-seg-btn"));
-    var lineWrap = root.querySelector(".cc-line-wrap");
-    var lineCanvas = root.querySelector(".cc-line-canvas");
-    var legendEl = root.querySelector(".cc-legend");
+    var segBtns = Array.prototype.slice.call(root.querySelectorAll(".cc-seg-btn"));
+    var lineWrap = root.querySelector(".up-line-wrap");
+    var lineCanvas = root.querySelector(".up-line-canvas");
+    var legendEl = root.querySelector(".up-legend");
     var headingRight = root.querySelector(".combo-heading-right");
     if (!donutRoot || !body || !topTotal || !topTotalN || !segBtns.length || !lineWrap || !lineCanvas){
       return null;
@@ -580,7 +196,6 @@
       hasData: false, __lastType: null,
       series: [], meta: { domains: [], urls: [] }, hasLine: false
     };
-    var chartInstance = null, lineChart = null;
 
     // ---- granularity (day/week/month) — controller-level so renderLine + update can use it ----
     var GRAN_STORE = (window.__ccGran = window.__ccGran || {});
@@ -636,11 +251,6 @@
       if (activeBtn && activeBtn.classList.contains("is-disabled")){ curGran = "day"; GRAN_STORE[instanceId] = "day"; syncGranActive(); }
     }
 
-    function themeColors(){
-      return isDark
-        ? { text:"#e0e0e0", muted:"#a0a0a0", border:"#353535", bg:"#1b1b1b" }
-        : { text:"#1f1f1b", muted:"#6f737c", border:"#e0e2e6", bg:"#ffffff" };
-    }
     function setHeading(){
       if (headingRight) headingRight.textContent = (state.dataMode === "url") ? "URL Type Split" : "Citation Type Split";
     }
@@ -648,353 +258,46 @@
       if (isDark){ root.setAttribute("data-theme","dark"); donutRoot.setAttribute("data-theme","dark"); } else { root.removeAttribute("data-theme"); donutRoot.removeAttribute("data-theme"); }
     }
 
-    /* ---------- doughnut render ---------- */
-    function destroyChart(){
-      if (chartInstance){ try { chartInstance.destroy(); } catch(e){} chartInstance = null; }
-      var cv = body.querySelector("canvas");
-      if (cv && window.Chart && window.Chart.getChart){ var ex = window.Chart.getChart(cv); if (ex) try{ ex.destroy(); }catch(e){} }
-    }
-    function applyCollapse(){
-      if (!body) return;
-      var layout = body.querySelector(".ccd-donut-layout");
-      if (!layout) return;
-      layout.classList.toggle("is-collapsed", donutRoot.getBoundingClientRect().width < 320);
-    }
-    var donutTooltip = makeDonutTooltip(donutRoot);
+    /* ---------- the two charts, both from the shared kits ----------
+       Everything that used to live here — plugins, tooltips, skeletons, the size poll, the render
+       verify, the legend layout and its hover highlight, the bar fit/label logic — is in core now.
+       What is left is only this component's wiring: which element, which theme, who owns the
+       render, and which granularity the tooltip should format dates for. */
+    function isOwner(){ return !root.__ccController || root.__ccController.__ctrlId === myCtrlId; }
+    function darkNow(){ return isDark; }
 
-    function renderDoughnut(){
-      if (root.__ccController && root.__ccController.__ctrlId !== myCtrlId)return;
-      destroyChart();
-      var d = state.prepped;
-      body.innerHTML =
-        '<div class="ccd-donut-layout">' +
-          '<div class="ccd-donut-wrap"><canvas></canvas>' +
-            '<div class="ccd-center"><span class="n">' + esc(fmtTotal(state.total)) + '</span><span class="lbl">Citations</span></div>' +
-          '</div><div class="ccd-legend"></div>' +
-        '</div>';
-      body.querySelector(".ccd-legend").innerHTML = d.map(function(it){
-        return '<div class="ccd-legend-row"><span class="ccd-legend-chip" style="background:' + it.color + '"></span>' +
-          '<span class="ccd-legend-name">' + esc(it.name) + '</span>' +
-          '<span class="ccd-legend-pct">' + esc(fmtPct(it.share)) + '</span></div>';
-      }).join("");
-      applyCollapse();
-      if (!d.length) return;
-      loadChartJs().then(function(){
-        var canvas = body.querySelector("canvas");
-        if (!canvas) return;
-        var ctx = canvas.getContext("2d");
-        var origData = d.map(function(x){ return x.share; });
-        var display = origData.map(function(v){ return Math.max(v, 1.0); });
-        var colors = d.map(function(x){ return x.color; });
-        var allZero = origData.every(function(v){ return v <= 0; });
-        window.Chart.defaults.color = isDark ? "#a0a0a0" : "#6f737c";
-        window.Chart.defaults.font = { family: "Geist, system-ui, -apple-system, Segoe UI, Roboto, Arial", size: 12 };
-        try {
-          chartInstance = new window.Chart(ctx, {
-            type: "doughnut",
-            data: { labels: allZero ? ["—"] : d.map(function(x){ return x.name; }),
-              datasets: [{ data: allZero ? [1] : display, originalData: allZero ? [0] : origData,
-                backgroundColor: allZero ? [isDark?"rgba(255,255,255,0.06)":"#eeeeee"] : colors,
-                spacing: 0, borderWidth: 0, borderRadius: CORNER, hoverOffset: HOVER }] },
-            plugins: [constantGapPlugin, ringWidthPlugin],
-            options: { responsive: true, maintainAspectRatio: false, layout: { padding: 8 },
-              animation: { duration: 200, easing: "easeOutQuad" },
-              plugins: { legend: { display:false }, tooltip: { enabled:false, external: donutTooltip } } }
-          });
-          chartInstance.__ccMode = state.dataMode;   // lets the tooltip show the url-mode colour dot
-        } catch(err){}
-      });
-    }
-
-    function renderBars(){
-      if (root.__ccController && root.__ccController.__ctrlId !== myCtrlId)return;
-      destroyChart();
-      var d = state.prepped.slice().sort(function(a,b){ return b.share - a.share; });
-      topTotalN.textContent = fmtTotal(state.total);
-      topTotal.style.display = "flex";
-      if (!d.length){ body.innerHTML = '<div class="ccd-empty">No data</div>'; return; }
-      body.innerHTML = '<div class="ccd-bars">' + d.map(function(it){
-        var light = barIsLight(it.color);
-        var txt = light ? "rgba(31,31,27,0.96)" : "rgba(255,255,255,0.95)";
-        var txtPct = light ? "rgba(31,31,27,0.62)" : "rgba(255,255,255,0.75)";
-        /* var(--vc-text)/var(--vc-muted) — not var(--ccd-text)/var(--ccd-muted), which no longer
-           exist as separate tokens (see citations-combo-chart.css header). */
-        var outColor = isDark ? "rgba(255,255,255,0.85)" : "var(--vc-text)";
-        var outPctColor = isDark ? "rgba(255,255,255,0.55)" : "var(--vc-muted)";
-        return '<div class="ccd-bar-row"><div class="ccd-bar-track">' +
-            '<div class="ccd-bar-fill" style="background:' + it.color + ';width:0%">' +
-              '<span class="ccd-bar-name" style="color:' + txt + ';opacity:0">' + esc(it.name) + '</span>' +
-              '<span class="ccd-bar-pct ccd-bar-pct-in" style="color:' + txtPct + ';opacity:0">' + esc(fmtPct(it.share)) + '</span>' +
-            '</div>' +
-            '<span class="ccd-bar-outside" style="opacity:0">' +
-              '<span class="ccd-bar-name-out" style="color:' + outColor + '">' + esc(it.name) + '</span>' +
-              '<span class="ccd-bar-pct-out" style="color:' + outPctColor + '">' + esc(fmtPct(it.share)) + '</span>' +
-            '</span></div></div>';
-      }).join("") + '</div>';
-
-      var rows = Array.prototype.slice.call(body.querySelectorAll(".ccd-bar-row"));
-      var metrics = rows.map(function(row){
-        return { nameW: measureText(row.querySelector(".ccd-bar-name")), pctW: measureText(row.querySelector(".ccd-bar-pct-in")) };
-      });
-      function placeRow(row, m){
-        var fill = row.querySelector(".ccd-bar-fill"), name = row.querySelector(".ccd-bar-name"),
-            pin = row.querySelector(".ccd-bar-pct-in"), outside = row.querySelector(".ccd-bar-outside");
-        if (!fill || !outside) return;
-        var fillPx = fill.offsetWidth, needed = m.nameW + m.pctW + 12 + 20;
-        if (fillPx >= needed){ if(name)name.style.opacity="1"; if(pin)pin.style.opacity="1"; outside.style.opacity="0"; }
-        else { if(name)name.style.opacity="0"; if(pin)pin.style.opacity="0"; outside.style.left=Math.round(fillPx+8)+"px"; outside.style.opacity="1"; }
-      }
-      function placeAll(){ rows.forEach(function(row, i){ placeRow(row, metrics[i]); }); }
-      function fitBars(){
-        if (!rows.length) return;
-        var avail = body.clientHeight; if (!avail) return;
-        var rowH = rows[0].offsetHeight || 42;
-        var maxVisible = Math.max(1, Math.floor(avail / rowH));
-        for (var i=0;i<rows.length;i++) rows[i].style.display = (i < maxVisible) ? "" : "none";
-      }
-      requestAnimationFrame(function(){ requestAnimationFrame(function(){
-        rows.forEach(function(row, i){ var fill = row.querySelector(".ccd-bar-fill"); if (fill) fill.style.width = Math.max(d[i].share,0) + "%"; });
-        fitBars();
-      }); });
-      var placed = false;
-      rows.forEach(function(row){
-        var fill = row.querySelector(".ccd-bar-fill"); if (!fill) return;
-        var done = false;
-        fill.addEventListener("transitionend", function onEnd(e){
-          if (e.propertyName !== "width" || done) return;
-          done = true; fill.removeEventListener("transitionend", onEnd);
-          var i = rows.indexOf(row); if (i>=0) placeRow(row, metrics[i]);
-        });
-      });
-      setTimeout(function(){ placed = true; fitBars(); placeAll(); }, 640);
-      if (window.ResizeObserver){
-        var ro = new ResizeObserver(function(){ fitBars(); if (placed) placeAll(); });
-        ro.observe(body);
-        rows.forEach(function(row){ var t = row.querySelector(".ccd-bar-track"); if (t) ro.observe(t); });
-      }
-    }
-
-    /* ---------- line legend ---------- */
-    var legendCompanies = [];
-    function buildLegendCompanies(datasets){
-      return (datasets || []).map(function(ds){
-        return { company_id: ds.__id, name: ds.label, color: ds.__baseColor, favicon_url: ds.__favicon };
-      });
-    }
-    function legendLayout(){
-      if (!legendEl) return;
-      if (getPageWidth() < 500){ legendEl.classList.add("is-hidden"); return; }
-      legendEl.classList.remove("is-hidden");
-      var rowsC = legendEl.querySelector(".up-company-rows");
-      var measure = Array.prototype.slice.call(legendEl.querySelectorAll(".up-measure-item"));
-      if (!rowsC || !measure.length) return;
-      var cw = legendEl.clientWidth;
-      if (!cw){ setTimeout(legendLayout, 100); return; }
-      var gap = legGetColumnGap(cw);
-      legendEl.style.setProperty("--up-column-gap", gap + "px");
-      var widths = measure.map(function(it){ return it.getBoundingClientRect().width; });
-      var rowCount = legGreedyRowCount(widths, cw, gap);
-      rowCount = Math.max(1, Math.min(rowCount, legendCompanies.length, 2));
-      var breaks = legBalancedBreaks(widths, rowCount, cw, gap);
-      if (rowCount === 2 && !breaks.length) breaks = [Math.ceil(legendCompanies.length / 2)];
-      var rows = [], start = 0;
-      for (var b = 0; b < breaks.length; b++){ rows.push(legendCompanies.slice(start, breaks[b])); start = breaks[b]; }
-      rows.push(legendCompanies.slice(start));
-      rowsC.innerHTML = rows.map(function(row){
-        return '<div class="up-company-row">' + row.map(function(c){ return legItemHtml(c, false); }).join("") + '</div>';
-      }).join("");
-    }
-    function renderLegend(datasets){
-      if (!legendEl) return;
-      legendCompanies = buildLegendCompanies(datasets);
-      if (!legendCompanies.length){ legendEl.innerHTML = ""; return; }
-      legendEl.innerHTML =
-        '<div class="up-company-measure">' + legendCompanies.map(function(c){ return legItemHtml(c, true); }).join("") + '</div>' +
-        '<div class="up-company-rows"></div>';
-      legendLayout();
-    }
-    function clearLegend(){ if (legendEl){ legendCompanies = []; legendEl.innerHTML = ""; } }
-
-    function applyHighlight(id){
-      if (lineChart && lineChart.__activeId !== id){
-        lineChart.__activeId = id;
-        var dim = isDark ? "rgba(160,160,160,0.20)" : "rgba(120,123,124,0.22)";
-        lineChart.data.datasets.forEach(function(ds){
-          ds.borderColor = (id == null || ds.__id === id) ? ds.__baseColor : dim;
-        });
-        lineChart.update("highlight");
-      }
-      if (legendEl){
-        var items = legendEl.querySelectorAll(".up-company-item");
-        for (var i=0;i<items.length;i++){
-          var cid = items[i].getAttribute("data-company-id");
-          items[i].style.opacity = (id == null || cid === id) ? "1" : "0.35";
-        }
-      }
-    }
-    if (legendEl && legendEl.getAttribute("data-cc-hoverbound") !== "1"){
-      legendEl.setAttribute("data-cc-hoverbound", "1");
-      legendEl.addEventListener("mouseover", function(e){
-        var it = e.target && e.target.closest ? e.target.closest(".up-company-item") : null;
-        if (it) applyHighlight(it.getAttribute("data-company-id"));
-      });
-      legendEl.addEventListener("mouseleave", function(){ applyHighlight(null); });
-    }
-
-    /* ---------- line render ---------- */
-    function destroyLine(){
-      if (lineChart){ try { lineChart.destroy(); } catch(e){} lineChart = null; }
-      if (window.Chart && window.Chart.getChart){ var ex = window.Chart.getChart(lineCanvas); if (ex) try{ ex.destroy(); }catch(e){} }
-      /* The external tooltip is a plain DOM element outside Chart.js's own lifecycle — destroying
-         the chart stops the callback that would otherwise set its opacity back to 0, so a tooltip
-         left visible from a hover right before a reload/skeleton would stay stuck on screen. */
-      var tt = lineWrap.querySelector(".cc-line-tt");
-      if (tt) tt.style.opacity = "0";
-    }
-    function clearLineExtras(){ var sk = lineWrap.querySelector(".cc-line-sk"); if (sk) sk.remove(); var em = lineWrap.querySelector(".cc-line-empty"); if (em) em.remove(); }
-    function showLineSkeleton(){ destroyLine(); clearLineExtras(); clearLegend(); lineWrap.insertAdjacentHTML("beforeend", lineSkeletonHtml()); }
-
-    function renderLine(){
-      if (root.__ccController && root.__ccController.__ctrlId !== myCtrlId)return;
-      clearLineExtras();
-      var meta = state.dataMode === "url" ? state.meta.urls : state.meta.domains;
-      var built = buildLineDatasets(state.series, meta || [], state.dataMode, isDark);
-      populateFilter(built.datasets);
-      if (!built.datasets.length){
-        destroyLine(); clearLegend();
-        lineWrap.insertAdjacentHTML("beforeend", '<div class="cc-line-empty">No data</div>');
-        return;
-      }
-      var visDs = built.datasets.filter(function(ds){ return !hiddenSeries[ds.__id]; });
-      if (!visDs.length){
-        destroyLine(); clearLegend();
-        lineWrap.insertAdjacentHTML("beforeend", '<div class="cc-line-empty">No data</div>');
-        return;
-      }
-      renderLegend(visDs);
-      loadChartJs().then(function(){
-        if (root.__ccController && root.__ccController.__ctrlId !== myCtrlId) return;
-        if (!lineCanvas) return;
-
-        /* Chart.js needs the container to have real, settled dimensions at creation time — a
-           setInterval poll (not rAF/ResizeObserver, both of which pause/throttle on a backgrounded
-           or not-yet-visible Bubble popup tab) waits for that before building. Ported verbatim from
-           visibility-chart.js — see that file's comment on the exact reasoning. */
-        function buildChart(){
-          destroyLine();
-          var tc = themeColors();
-          var ctx = lineCanvas.getContext("2d");
-          window.Chart.defaults.color = tc.muted;
-          window.Chart.defaults.font = { family: "Geist, system-ui, -apple-system, Segoe UI, Roboto, Arial", size: 12 };
-          var single = built.labels.length <= 1;
-          visDs.forEach(function(ds){
-            ds.borderWidth = LINE_WIDTH; ds.fill = false; ds.cubicInterpolationMode = "monotone"; ds.tension = LINE_TENSION;
-            ds.pointRadius = single ? 4 : 0; ds.pointHoverRadius = LINE_POINT_HOVER; ds.pointHitRadius = LINE_POINT_HIT;
-            ds.pointBorderWidth = LINE_POINT_BORDER; ds.pointBackgroundColor = tc.bg; ds.pointBorderColor = ds.__baseColor;
-            ds.pointHoverBackgroundColor = tc.bg; ds.pointHoverBorderColor = ds.__baseColor;
-            if (single){ ds.pointBackgroundColor = ds.__baseColor; }
-            ds.spanGaps = true; ds.clip = 8;
-          });
-          var visMax = 0; visDs.forEach(function(ds){ (ds.data || []).forEach(function(v){ if (v != null && v > visMax) visMax = v; }); });
-          var yMax = visMax * Y_PAD; if (yMax <= 0) yMax = 1; if (yMax > 100) yMax = 100;
-          var labels = built.labels;
-          try {
-            lineChart = new window.Chart(ctx, {
-              type: "line",
-              data: { labels: labels, datasets: visDs },
-              plugins: [hoverLinePlugin, dashedYGridPlugin],
-              options: {
-                responsive: true, maintainAspectRatio: false,
-                animation: { duration: 600, easing: "easeOutQuart" },
-                /* named transition used by applyHighlight()'s lineChart.update("highlight") — a
-                   separate, faster easing for the legend-hover cross-highlight than the initial
-                   line-draw animation above. Matches visibility-chart.js exactly. */
-                transitions: { highlight: { animation: { duration: 200, easing: "easeOutQuad" } } },
-                interaction: { mode: "index", intersect: false },
-                layout: { padding: { top: 8, right: 2, bottom: 0, left: 0 } },
-                plugins: { legend: { display:false }, tooltip: { enabled:false, external: makeLineTooltip(lineWrap) } },
-                scales: {
-                  x: { grid: { display:false }, offset: single, border: { display:true, color: tc.border, width:1 },
-                       ticks: { autoSkip:true, maxTicksLimit:X_MAX_TICKS, maxRotation:0, color: tc.muted,
-                                callback: function(v, i){
-                                  var lab = String(labels[i] || "");
-                                  if (curGran === "month"){
-                                    var m = lab.match(/^(\d{4})-(\d{2})/);
-                                    if (m) return MONTHS_DE[parseInt(m[2],10) - 1] || lab;
-                                  }
-                                  return lab.slice(5);
-                                } } },
-                  y: { min:0, max:yMax, beginAtZero:true,
-                       afterBuildTicks: function(scale){ var m = scale.max || 1; scale.ticks = [{value:0},{value:m/3},{value:2*m/3},{value:m}]; },
-                       ticks: { color: tc.muted, callback: function(v){ return Math.round(v) + "%"; } },
-                       grid: { display:false }, border: { display:false } }
-                },
-                elements: { point: { radius: 0 } }
-              }
-            });
-            lineChart.$ccGridColor = tc.border;
-            lineChart.$ccHoverLineColor = tc.border;
-            lineChart.__curGran = curGran;
-          } catch(err){
-          }
-        }
-
-        if (lineWrap.clientWidth > 0 && lineWrap.clientHeight > 0){
-          buildChart();
-        } else {
-          var __sizeTicks = 0;
-          var __sizeIv = setInterval(function(){
-            if (root.__ccController && root.__ccController.__ctrlId !== myCtrlId){
-              clearInterval(__sizeIv); return;
-            }
-            if (!lineCanvas || !lineCanvas.isConnected){ clearInterval(__sizeIv); return; }
-            var sized = lineWrap.clientWidth > 0 && lineWrap.clientHeight > 0;
-            if (sized || ++__sizeTicks > 600){
-              clearInterval(__sizeIv);
-              buildChart();
-            }
-          }, 200);
-        }
-      }).catch(function(err){
-      });
-    }
+    var line = UC.makeLine({
+      wrap: lineWrap, canvas: lineCanvas, legend: legendEl,
+      isDark: darkNow, isOwner: isOwner,
+      gran: function(){ return curGran; }
+    });
+    var typeChart = UC.makeTypeChart({
+      body: body, isDark: darkNow, isOwner: isOwner,
+      mode: function(){ return state.dataMode; },
+      total: function(){ return state.total; },
+      centerLabel: "Citations",
+      collapseHost: donutRoot
+    });
 
     /* ---------- render (two independent halves) ---------- */
     function renderDonutSide(){
-      if (root.__ccController && root.__ccController.__ctrlId !== myCtrlId){ return; }
-      if (state.loading || !state.hasData){
-        destroyChart(); topTotal.style.display = "none"; body.innerHTML = skeletonHtml();
-      } else if (state.chartMode === "bar"){ topTotal.style.display = "flex"; renderBars(); }
-      else { topTotal.style.display = "none"; renderDoughnut(); }
+      if (!isOwner()) return;
+      if (state.loading || !state.hasData){ topTotal.style.display = "none"; typeChart.skeleton(); }
+      else if (state.chartMode === "bar"){ topTotal.style.display = "flex"; topTotalN.textContent = fmtTotal(state.total); typeChart.renderBars(state.prepped); }
+      else { topTotal.style.display = "none"; typeChart.renderDonut(state.prepped); }
     }
     function renderLineSide(){
-      if (root.__ccController && root.__ccController.__ctrlId !== myCtrlId){ return; }
-      if (state.loading || !state.hasLine || state.linePending){ showLineSkeleton(); return; }
-      renderLine();
-      verifyLineRendered();
-    }
-    /* Chart.js's own internals occasionally fail to attach silently (a race inside its own resize
-       observer) — re-check a few times and rebuild if the canvas ends up with no live chart
-       instance and no empty-state shown. Ported verbatim from visibility-chart.js. */
-    function verifyLineRendered(){
-      clearTimeout(root.__ccLineVerifyT);
-      var attempts = 0;
-      function check(){
-        if (root.__ccController && root.__ccController.__ctrlId !== myCtrlId) return;
-        if (state.loading || !state.hasLine || state.linePending) return;
-        var alive = false;
-        try { alive = !!(window.Chart && window.Chart.getChart && lineCanvas && window.Chart.getChart(lineCanvas)); } catch(e){}
-        if (alive || lineWrap.querySelector(".cc-line-empty")){
-          return;
-        }
-        if (attempts++ >= 12) return;
-        renderLine();
-        root.__ccLineVerifyT = setTimeout(check, 250);
-      }
-      root.__ccLineVerifyT = setTimeout(check, 400);
+      if (!isOwner()) return;
+      if (state.loading || !state.hasLine || state.linePending){ line.skeleton(); return; }
+      /* the per-series filter is this component's own feature — the kit only ever sees the
+         datasets that should actually be drawn */
+      var built = buildLineDatasets(state.series, state.dataMode === "url" ? state.meta.urls : state.meta.domains, state.dataMode, isDark);
+      populateFilter(built.datasets);
+      var visible = built.datasets.filter(function(ds){ return !hiddenSeries[ds.__id]; });
+      line.render({ labels: built.labels, datasets: visible });
     }
     function render(){
-      if (root.__ccController && root.__ccController.__ctrlId !== myCtrlId)return;
+      if (!isOwner()) return;
       syncTheme();
       setHeading();
       syncSwitch();
@@ -1028,8 +331,7 @@
         maxBtn.setAttribute("data-tip", max ? "Minimize" : "Maximize");
         maxBtn.setAttribute("aria-label", max ? "Minimize" : "Maximize");
         setTimeout(function(){
-          try { if (chartInstance) chartInstance.resize(); } catch(e){}
-          try { if (lineChart) lineChart.resize(); } catch(e){}
+          typeChart.resize(); line.resize();
         }, 60);
       });
     }
@@ -1051,110 +353,16 @@
             if (maxBtn){ maxBtn.setAttribute("data-tip","Maximize"); maxBtn.setAttribute("aria-label","Maximize"); }
           }
           setTimeout(function(){
-            try { if (chartInstance) chartInstance.resize(); } catch(e){}
-            try { if (lineChart) lineChart.resize(); } catch(e){}
-            legendLayout();
+            typeChart.resize(); line.resize(); line.relayoutLegend();
           }, 230);
         });
       });
     }
 
-    /* Mira-style button tooltip — kept as this component's own implementation (see
-       citations-combo-chart.css header comment for why this isn't UpstreemCore.makeTooltips).
-       ONE shared element for the whole page (not one per root). */
-    var ccTipEl = window.__ccTipEl;
-    if (!ccTipEl || !document.body.contains(ccTipEl)){
-      ccTipEl = document.createElement("div");
-      ccTipEl.className = "cc-tip";
-      document.body.appendChild(ccTipEl);
-      window.__ccTipEl = ccTipEl;
-    }
-    /* ccTipTimer/ccTipBtn/ccTipPlacedRect/lastScrollAt must be shared across EVERY combo-root on
-       the page — they all bind to the same singleton ccTipEl above. Keeping them as per-root
-       closure state (as this used to) meant each OTHER, idle root's own near-always-null ccTipBtn
-       lost the mousemove/scroll safety-net race against whichever root was actually being hovered
-       and hid its tooltip out from under it whenever 2+ instances shared a page — that's exactly
-       what read as "tooltips barely ever show, buggy." Same fix already shipped for
-       topcitations-dashboard.js's .tcd-tip; this component regressed to the pre-fix, per-root-state
-       version because the original pasted source predates that fix. */
-    var ccTipState = window.__ccTipState || (window.__ccTipState = { timer: null, btn: null, placedRect: null, lastScrollAt: 0 });
-    var ccHideTip = function(){ clearTimeout(ccTipState.timer); ccTipState.timer = null; ccTipState.btn = null; ccTipEl.classList.remove("show"); };
-    var ccPlaceTip = function(btn){
-      ccTipEl.style.transform = "";
-      var br = btn.getBoundingClientRect();
-      var tw = ccTipEl.offsetWidth, vw = window.innerWidth || document.documentElement.clientWidth;
-      var left = br.left + br.width / 2 - tw / 2;
-      left = Math.max(6, Math.min(left, vw - tw - 6));
-      ccTipEl.style.left = left + "px";
-      ccTipEl.style.top = (br.bottom + 8) + "px";
-      ccTipState.placedRect = br;
-    };
-    var ccShowTip = function(btn){
-      if (!btn || !document.contains(btn)) return;
-      var txt = btn.getAttribute("data-tip"); if (!txt) return;
-      var dark = (btn.closest(".combo-root") || root).getAttribute("data-theme") === "dark";
-      ccTipEl.style.background = dark ? "#f0f0f0" : "#1f1f1b";
-      ccTipEl.style.color = dark ? "#1f1f1b" : "#ffffff";
-      ccTipEl.textContent = txt;
-      ccTipEl.classList.add("show");
-      ccPlaceTip(btn);
-    };
-    if (!root.__ccTipBound){
-      root.__ccTipBound = true;
-      /* ccTipState.lastScrollAt guards these: scrolling moves content under a completely
-         stationary cursor, and the browser recomputes hover state as different elements pass
-         under it — without suppressing that, a mid-scroll phantom mouseout on the currently-tipped
-         button fought the transform-nudge below, which is exactly what read as the tooltip
-         "jumping/buggy" while scrolling instead of calmly tracking one target. */
-      root.addEventListener("mouseover", function(e){
-        if (Date.now() - ccTipState.lastScrollAt < 200) return;
-        var btn = e.target.closest("[data-tip]");
-        if (!btn || !root.contains(btn) || btn === ccTipState.btn) return;
-        ccTipState.btn = btn;
-        clearTimeout(ccTipState.timer);
-        ccTipState.timer = setTimeout(function(){ ccShowTip(btn); }, 60);
-      });
-      root.addEventListener("mouseout", function(e){
-        if (Date.now() - ccTipState.lastScrollAt < 200) return;
-        var btn = e.target.closest("[data-tip]");
-        if (!btn) return;
-        if (e.relatedTarget && btn.contains(e.relatedTarget)) return;
-        if (btn === ccTipState.btn) ccHideTip();
-      });
-      root.addEventListener("mousedown", ccHideTip);
-    }
-    /* The mousemove/scroll/blur safety-net only needs to run once globally — it operates on the
-       shared ccTipState/ccTipEl above regardless of which root's closure it was bound from. */
-    if (!window.__ccTipGlobalBound){
-      window.__ccTipGlobalBound = true;
-      document.addEventListener("mousemove", function(){
-        if (!ccTipEl.classList.contains("show") && !ccTipState.timer) return;
-        if (!ccTipState.btn || !document.contains(ccTipState.btn)){ ccHideTip(); return; }
-        var stillHovered = false;
-        try { stillHovered = ccTipState.btn.matches(":hover"); } catch(err){ stillHovered = true; }
-        if (!stillHovered) ccHideTip();
-      });
-      /* Keep an open tooltip glued to its trigger while the page scrolls — same cheap,
-         compositor-only transform-nudge + settle-time full reposition as the dropdown menus and
-         .vot-tip/.tcd-tip already use. Global (not per-root) for the same reason the mousemove
-         safety-net above is global — one listener serves whichever instance's ccTipState.btn is
-         currently set. */
-      var ccTipRepositionRaf = null, ccTipSettleTimer = null;
-      window.addEventListener("scroll", function(){
-        ccTipState.lastScrollAt = Date.now();
-        if (!ccTipState.btn) return;
-        if (ccTipRepositionRaf) return;
-        ccTipRepositionRaf = requestAnimationFrame(function(){
-          ccTipRepositionRaf = null;
-          if (!ccTipState.btn || !ccTipState.placedRect) return;
-          var r = ccTipState.btn.getBoundingClientRect();
-          ccTipEl.style.transform = "translate(" + Math.round(r.left - ccTipState.placedRect.left) + "px," + Math.round(r.top - ccTipState.placedRect.top) + "px)";
-          clearTimeout(ccTipSettleTimer);
-          ccTipSettleTimer = setTimeout(function(){ if (ccTipState.btn) ccPlaceTip(ccTipState.btn); }, 150);
-        });
-      }, { capture: true, passive: true });
-      window.addEventListener("blur", ccHideTip);
-    }
+    /* Button tooltips: the shared core implementation. This component used to carry its own
+       ~95-line copy (.cc-tip) — that copy is exactly where the multi-instance bug lived, because
+       its state was per root while the chip element was per page. */
+    UC.makeTooltips(root, darkNow);
 
     // line-chart granularity switcher — fires a Run-JS / JavaScript-to-Bubble event on change.
     if (granBtns.length){
@@ -1229,15 +437,15 @@
         });
       });
     }
-    /* Dropdown menu is a plain position:absolute child of .combo-filter (position:relative) — no
-       UpstreemCore.makePortal/placeMenu call, per STYLEGUIDE §14. */
+    /* Dropdown via the shared primitive: still a plain position:absolute child of a
+       position:relative wrapper (STYLEGUIDE §14, no portal), but the open/close mechanics,
+       focus escape, Escape key and the single page-wide outside-click listener come from core.
+       This component previously toggled `display` directly, which broke §6 — the menu now stays
+       in the layout and animates via .is-shown like every other dropdown. */
+    var filterPop = UC.makePopover({ wrap: filterWrap, menu: filterMenu, opener: filterBtn, group: "cc-" + instanceId });
     if (filterBtn && filterWrap && !filterBtn.__ccBound){
       filterBtn.__ccBound = true;
-      filterBtn.addEventListener("click", function(e){ e.stopPropagation(); filterWrap.classList.toggle("is-open"); });
-    }
-    if (filterWrap && !filterWrap.__ccOutsideBound){
-      filterWrap.__ccOutsideBound = true;
-      document.addEventListener("click", function(e){ if (filterWrap && !filterWrap.contains(e.target)) filterWrap.classList.remove("is-open"); });
+      filterBtn.addEventListener("click", function(e){ e.stopPropagation(); filterPop.toggle(); });
     }
 
     var NARROW_STACK = 880;
@@ -1246,11 +454,10 @@
         var w = inner.clientWidth || root.clientWidth || 0;
         if (w){ if (w < NARROW_STACK) root.classList.add("is-narrow"); else root.classList.remove("is-narrow"); }
       }
-      root.classList.toggle("cc-narrow-page", getPageWidth() < 500);
+      root.classList.toggle("cc-narrow-page", UC.getPageWidth() < 500);
       clearTimeout(root.__ccRespT);
       root.__ccRespT = setTimeout(function(){
-        try { if (chartInstance) chartInstance.resize(); } catch(e){}
-        try { if (lineChart) lineChart.resize(); } catch(e){}
+        typeChart.resize(); line.resize();
       }, 60);
     }
 
@@ -1262,7 +469,7 @@
         if (wantDark !== isDark){
           isDark = wantDark;
           if (isDark){ root.setAttribute("data-theme","dark"); donutRoot.setAttribute("data-theme","dark"); } else { root.removeAttribute("data-theme"); donutRoot.removeAttribute("data-theme"); }
-          if (state.hasData){ state.prepped = prepData(state.dataMode, state.__lastType, isDark); }
+          if (state.hasData){ state.prepped = UC.prepTypeData(state.dataMode, state.__lastType, isDark); }
           changed = true;
         }
         if (!LOADING_EXPLICIT[instanceId] && wantProc !== state.loading){ state.loading = wantProc; changed = true; }
@@ -1274,7 +481,7 @@
     if (window.ResizeObserver){
       new ResizeObserver(function(){
         if (root.__ccRaf) return;
-        root.__ccRaf = requestAnimationFrame(function(){ root.__ccRaf = null; applyCollapse(); applyResponsive(); });
+        root.__ccRaf = requestAnimationFrame(function(){ root.__ccRaf = null; typeChart.applyCollapse(); applyResponsive(); });
       }).observe(donutRoot);
       new ResizeObserver(function(){
         if (root.__ccRespRaf) return;
@@ -1283,13 +490,13 @@
       if (legendEl){
         new ResizeObserver(function(){
           if (root.__ccLegRaf) return;
-          root.__ccLegRaf = requestAnimationFrame(function(){ root.__ccLegRaf = null; legendLayout(); });
+          root.__ccLegRaf = requestAnimationFrame(function(){ root.__ccLegRaf = null; line.relayoutLegend(); });
         }).observe(legendEl);
       }
     }
     window.addEventListener("resize", function(){
       if (root.__ccWinRaf) return;
-      root.__ccWinRaf = requestAnimationFrame(function(){ root.__ccWinRaf = null; legendLayout(); applyResponsive(); });
+      root.__ccWinRaf = requestAnimationFrame(function(){ root.__ccWinRaf = null; line.relayoutLegend(); applyResponsive(); });
     });
 
     applyResponsive();
@@ -1309,7 +516,7 @@
         var split = (params.typeSplit != null) ? params.typeSplit : params.data;
         if (split != null){
           state.__lastType = split;
-          state.prepped = prepData(state.dataMode, split, isDark);
+          state.prepped = UC.prepTypeData(state.dataMode, split, isDark);
           state.hasData = true;
         }
         if (params.series != null){
