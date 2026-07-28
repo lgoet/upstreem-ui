@@ -160,8 +160,11 @@
   }
 
   /* Loading skeleton rows for a grid table.
-     spec: { count, cols:[width|{w,logo}], rowClass, cellClass, headHtml }
-     A number is a bar width in px; {logo:true} prepends the round logo placeholder. */
+     spec: { count, cols:[width|{w, jitter, logo, logoStyle, cls}], rowClass, cellClass, headHtml }
+     A number is a bar width in px. `cls` is appended to the cell — the tables need it because
+     their column show/hide toggles target per-column classes, and the skeleton has to hide the
+     same columns as the real rows. `logo` prepends the square placeholder, `logoStyle` lets the
+     brand-stack column make it round instead. */
   function skeletonRows(spec){
     spec = spec || {};
     var count = spec.count || 7;
@@ -172,13 +175,16 @@
     for (var i = 0; i < count; i++){
       var cells = "";
       for (var c = 0; c < cols.length; c++){
-        var spec2 = cols[c];
-        var w = (typeof spec2 === "number") ? spec2 : (spec2 && spec2.w) || 60;
+        var col = cols[c];
+        var isObj = col && typeof col === "object";
+        var w = (typeof col === "number") ? col : (isObj && col.w) || 0;
         /* jitter the width per row so the block doesn't read as a rigid grid */
-        if (spec2 && spec2.jitter) w = w + (i % 3) * spec2.jitter;
-        cells += '<div class="' + cellClass + '">' +
-          ((spec2 && spec2.logo) ? '<span class="up-tsk-logo"></span>' : "") +
-          '<span class="up-tsk-bar" style="width:' + w + 'px"></span></div>';
+        if (isObj && col.jitter) w = w + (i % 3) * col.jitter;
+        var logo = isObj && col.logo
+          ? '<span class="up-tsk-logo"' + (col.logoStyle ? ' style="' + col.logoStyle + '"' : "") + '></span>'
+          : "";
+        var bar = w ? '<span class="up-tsk-bar" style="width:' + w + 'px"></span>' : "";
+        cells += '<div class="' + cellClass + (isObj && col.cls ? " " + col.cls : "") + '">' + logo + bar + '</div>';
       }
       out += '<div class="' + rowClass + ' up-tsk">' + cells + '</div>';
     }

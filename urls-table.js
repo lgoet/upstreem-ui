@@ -75,7 +75,7 @@
     var saved = STORE[instanceId] || {};
 
     var isDark = isYes(root.getAttribute("data-isdark"));
-    if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme"); if (typeof syncPortalTheme === "function") syncPortalTheme();
+    if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
 
     var elHeadCount = root.querySelector(".up-head-count");
     var elTbody     = root.querySelector(".up-tbody");
@@ -200,28 +200,18 @@
 
     /* ---------------- table ---------------- */
     function skeletonRows(n){
-      var out = "";
-      for (var i = 0; i < n; i++){
-        out += '<div class="up-row up-tsk">' +
-          '<div class="up-td uut-td-domain"><span class="up-tsk-logo"></span><span class="up-tsk-bar" style="width:' + (110 + (i%3)*30) + 'px"></span></div>' +
-          '<div class="up-td uut-td-share"><span class="up-tsk-bar" style="width:70px"></span></div>' +
-          '<div class="up-td uut-td-type"><span class="up-tsk-bar" style="width:82px"></span></div>' +
-          '<div class="up-td uut-td-ment"><span class="up-tsk-bar" style="width:48px"></span></div>' +
-          '<div class="up-td uut-td-brands"><span class="up-tsk-logo" style="border-radius:999px"></span></div>' +
-          '<div class="up-td uut-td-lastseen"><span class="up-tsk-bar" style="width:88px"></span></div>' +
-          '<div class="up-td uut-td-actions"><span class="up-tsk-bar" style="width:56px"></span></div>' +
-        '</div>';
-      }
-      return out;
+      return UC.skeletonRows({ count: n, cols: [
+        { w:110, jitter:30, logo:true, cls:"uut-td-domain" },
+        { w:70,  cls:"uut-td-share" },
+        { w:82,  cls:"uut-td-type" },
+        { w:48,  cls:"uut-td-ment" },
+        { logo:true, logoStyle:"border-radius:999px", cls:"uut-td-brands" },
+        { w:88,  cls:"uut-td-lastseen" },
+        { w:56,  cls:"uut-td-actions" }
+      ]});
     }
-    function trendChip(delta){
-      var d = toNum(delta);
-      if (d == null) return "";
-      var shown = Math.round(Math.abs(d) * 10) / 10;
-      if (shown === 0) return "";
-      var up = d > 0;
-      return '<span class="uut-trend ' + (up ? "pos" : "neg") + '">' + (up ? TREND_UP : TREND_DOWN) +
-             shown.toFixed(1) + "%</span>";
+    function trendChip(delta, suffix){
+      return UC.trendChip(delta, { decimals: true, suffix: suffix });
     }
     /* URL types have their own dark palette; citation types deliberately do not. */
     function urlTypeInfo(raw){
@@ -1055,8 +1045,11 @@
        the theme; display:contents means the layer paints nothing and the fixed menus stack at body
        level. Clicks are handled via a document listener + ownership guard (see below). */
     /* body-portal for the dropdown menus (core) */
-    var _portal = UpstreemCore.makePortal(root, [elSortMenu, elFilterMenu, elColsMenu, elMentMenu], instanceId);
-    var portalLayer = _portal.portalLayer, syncPortalTheme = _portal.syncPortalTheme;
+    /* Each dropdown is a plain position:absolute child of its position:relative wrapper
+       (STYLEGUIDE §14). UC.makePopover owns the open/close mechanics, focus escape, Escape key,
+       group auto-close and the ONE page-wide outside-click listener — previously this file
+       carried its own copy of all of that plus two more document listeners. revertDrafts runs
+       via the onClose callback whenever a menu closes without Apply. */
     function menuOf(pop){
       return pop === elFilter ? elFilterMenu
            : pop === elMent   ? elMentMenu
@@ -1064,8 +1057,6 @@
            : pop === elCols   ? elColsMenu
            : (pop && pop.querySelector(MENU_SEL));
     }
-    /* Re-render a menu's list without losing scroll position (selecting after scrolling down must
-       not jump the list back to the top). */
     function repopKeepScroll(menu, fn){
       var l = menu && menu.querySelector(".up-filter-list");
       var sc = l ? l.scrollTop : 0;
@@ -1073,40 +1064,24 @@
       var nl = menu && menu.querySelector(".up-filter-list");
       if (nl) nl.scrollTop = sc;
     }
-    function placeMenu(pop){
-      if (!pop) return;
-      UpstreemCore.placeMenu(menuOf(pop), pop.querySelector(BTN_SEL));
+    var POP_GROUP = "uut-" + instanceId;
+    var POPS = {};
+    [elSort, elFilter, elCols, elMent].forEach(function(p){
+      if (!p) return;
+      POPS[p.className] = UC.makePopover({
+        wrap: p, menu: menuOf(p), opener: p.querySelector(BTN_SEL), group: POP_GROUP,
+        onClose: function(committed){ if (!committed) revertDrafts(p); }
+      });
+    });
+    function popOf(pop){ return pop && POPS[pop.className]; }
+    function setPopOpen(pop, open){
+      var h = popOf(pop); if (!h) return;
+      if (open) h.open(); else h.close(false);
     }
     function closePops(except){
       [elSort, elFilter, elCols, elMent].forEach(function(p){
-        if (!p || p === except) return;
-        if (!p.classList.contains("is-open")) return;
-        var menu = menuOf(p);
-        // never leave focus inside something about to be hidden from assistive tech
-        if (menu && menu.contains(document.activeElement)){
-          var opener = p.querySelector(".up-sort-btn, .up-filter-btn, .up-cols-btn, .up-ment-btn");
-          try { opener ? opener.focus({ preventScroll: true }) : document.activeElement.blur(); } catch(e){}
-        }
-        p.classList.remove("is-open");
-        if (menu){ menu.setAttribute("aria-hidden", "true"); menu.classList.remove("is-shown"); }
-        revertDrafts(p);   // closing any way other than Apply discards the draft
+        if (p && p !== except) setPopOpen(p, false);
       });
-    }
-    function setPopOpen(pop, open){
-      var menu = menuOf(pop);
-      if (!open && menu && menu.contains(document.activeElement)){
-        var opener = pop.querySelector(".up-sort-btn, .up-filter-btn, .up-cols-btn, .up-ment-btn");
-        try { opener ? opener.focus({ preventScroll: true }) : document.activeElement.blur(); } catch(e){}
-      }
-      if (!open) revertDrafts(pop);   // toggled shut without Apply -> forget the draft
-      pop.classList.toggle("is-open", !!open);
-      if (menu){
-        menu.setAttribute("aria-hidden", open ? "false" : "true");
-        menu.classList.toggle("is-shown", !!open);
-        // keep the fixed placement on close so it fades where it is (no downward snap); placeMenu
-        // re-measures on the next open.
-        if (open) placeMenu(pop);
-      }
     }
 
     function ownsTarget(tg){
@@ -1122,7 +1097,6 @@
          work this out on its own: populateFilter()/populateCols() rebuild the menu via innerHTML,
          so by the time the event reaches document the clicked node is detached and
          root.contains(e.target) is false — which closed the menu on every toggle. */
-      e.__uutInside = true;
       /* A click on empty space inside the component closes any open dropdown. Clicks INSIDE an
          open menu obviously don't. */
       var inMenu = e.target.closest(".up-sort-menu, .up-filter-menu, .up-cols-menu, .up-ment-menu");
@@ -1355,11 +1329,6 @@
         if (e.key === "Enter"){ clearTimeout(debTimer); if (state.query.length >= MIN || !state.query.length) runSearch(); }
       });
     }
-    document.addEventListener("click", function(e){
-      if (e.__uutInside) return;          // handled by the root listener above
-      if (root.contains(e.target)) return;
-      closePops();
-    });
 
     var lastProcAttr = String(root.getAttribute("data-processing") || "") + "|" +
                        String(root.getAttribute("data-processing2") || "");
@@ -1370,7 +1339,7 @@
       var changed = false;
       if (wantDark !== isDark){
         isDark = wantDark;
-        if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme"); if (typeof syncPortalTheme === "function") syncPortalTheme();
+        if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
         changed = true;
       }
       var procAttr = String(root.getAttribute("data-processing") || "") + "|" +
@@ -1499,7 +1468,7 @@
         params = params || {};
         if (params.isDark != null){
           isDark = isYes(params.isDark);
-          if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme"); if (typeof syncPortalTheme === "function") syncPortalTheme();
+          if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
         }
         // A response for a superseded search must not overwrite a newer one. Bubble can
         // echo requestId back; when it does, anything stale is dropped here.
@@ -1545,7 +1514,10 @@
         return true;
       },
       destroy: function(){
-        if (tip.parentNode) tip.parentNode.removeChild(tip);
+        /* The tooltip chip is deliberately NOT removed: it is one page-wide singleton shared by
+           every component, so tearing it down here would take it away from all the others. (This
+           line used to reference an undeclared `tip` and threw a ReferenceError on every
+           teardown.) The explainer IS per instance, so that one does get removed. */
         if (explain.parentNode) explain.parentNode.removeChild(explain);
         if (root.__uutController === this) root.__uutController = null;
       }

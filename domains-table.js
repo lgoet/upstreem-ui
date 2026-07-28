@@ -78,7 +78,7 @@
     var saved = STORE[instanceId] || {};
 
     var isDark = isYes(root.getAttribute("data-isdark"));
-    if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme"); if (typeof syncPortalTheme === "function") syncPortalTheme();
+    if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
 
     var elHeadCount = root.querySelector(".up-head-count");
     var elTbody     = root.querySelector(".up-tbody");
@@ -191,27 +191,17 @@
 
     /* ---------------- table ---------------- */
     function skeletonRows(n){
-      var out = "";
-      for (var i = 0; i < n; i++){
-        out += '<div class="up-row up-tsk">' +
-          '<div class="up-td up-td-domain"><span class="up-tsk-logo"></span><span class="up-tsk-bar" style="width:' + (110 + (i%3)*30) + 'px"></span></div>' +
-          '<div class="up-td up-td-share"><span class="up-tsk-bar" style="width:70px"></span></div>' +
-          '<div class="up-td up-td-used"><span class="up-tsk-bar" style="width:56px"></span></div>' +
-          '<div class="up-td up-td-type"><span class="up-tsk-bar" style="width:82px"></span></div>' +
-          '<div class="up-td up-td-lastseen"><span class="up-tsk-bar" style="width:88px"></span></div>' +
-          '<div class="up-td udt-td-actions"><span class="up-tsk-bar" style="width:56px"></span></div>' +
-        '</div>';
-      }
-      return out;
+      return UC.skeletonRows({ count: n, cols: [
+        { w:110, jitter:30, logo:true, cls:"up-td-domain" },
+        { w:70,  cls:"up-td-share" },
+        { w:56,  cls:"up-td-used" },
+        { w:82,  cls:"up-td-type" },
+        { w:88,  cls:"up-td-lastseen" },
+        { w:56,  cls:"udt-td-actions" }
+      ]});
     }
-    function trendChip(delta){
-      var d = toNum(delta);
-      if (d == null) return "";
-      var shown = Math.round(Math.abs(d) * 10) / 10;
-      if (shown === 0) return "";
-      var up = d > 0;
-      return '<span class="udt-trend ' + (up ? "pos" : "neg") + '">' + (up ? TREND_UP : TREND_DOWN) +
-             shown.toFixed(1) + "%</span>";
+    function trendChip(delta, suffix){
+      return UC.trendChip(delta, { decimals: true, suffix: suffix });
     }
     /* Domains only ever have a citation type (no url-type concept) — one palette, no leading dot
        needed to distinguish it from a second type system the way urls-table's chip does. */
@@ -877,8 +867,11 @@
 
     var MENU_SEL = ".up-sort-menu, .up-filter-menu, .up-cols-menu, .up-ment-menu";
     var BTN_SEL  = ".up-sort-btn, .up-filter-btn, .up-cols-btn, .up-ment-btn";
-    var _portal = UpstreemCore.makePortal(root, [elSortMenu, elFilterMenu, elColsMenu, elMentMenu], instanceId);
-    var portalLayer = _portal.portalLayer, syncPortalTheme = _portal.syncPortalTheme;
+    /* Each dropdown is a plain position:absolute child of its position:relative wrapper
+       (STYLEGUIDE §14). UC.makePopover owns the open/close mechanics, focus escape, Escape key,
+       group auto-close and the ONE page-wide outside-click listener — previously this file
+       carried its own copy of all of that plus two more document listeners. revertDrafts runs
+       via the onClose callback whenever a menu closes without Apply. */
     function menuOf(pop){
       return pop === elFilter ? elFilterMenu
            : pop === elMent   ? elMentMenu
@@ -893,37 +886,24 @@
       var nl = menu && menu.querySelector(".up-filter-list");
       if (nl) nl.scrollTop = sc;
     }
-    function placeMenu(pop){
-      if (!pop) return;
-      UpstreemCore.placeMenu(menuOf(pop), pop.querySelector(BTN_SEL));
+    var POP_GROUP = "udt-" + instanceId;
+    var POPS = {};
+    [elSort, elFilter, elCols, elMent].forEach(function(p){
+      if (!p) return;
+      POPS[p.className] = UC.makePopover({
+        wrap: p, menu: menuOf(p), opener: p.querySelector(BTN_SEL), group: POP_GROUP,
+        onClose: function(committed){ if (!committed) revertDrafts(p); }
+      });
+    });
+    function popOf(pop){ return pop && POPS[pop.className]; }
+    function setPopOpen(pop, open){
+      var h = popOf(pop); if (!h) return;
+      if (open) h.open(); else h.close(false);
     }
     function closePops(except){
       [elSort, elFilter, elCols, elMent].forEach(function(p){
-        if (!p || p === except) return;
-        if (!p.classList.contains("is-open")) return;
-        var menu = menuOf(p);
-        if (menu && menu.contains(document.activeElement)){
-          var opener = p.querySelector(".up-sort-btn, .up-filter-btn, .up-cols-btn, .up-ment-btn");
-          try { opener ? opener.focus({ preventScroll: true }) : document.activeElement.blur(); } catch(e){}
-        }
-        p.classList.remove("is-open");
-        if (menu){ menu.setAttribute("aria-hidden", "true"); menu.classList.remove("is-shown"); }
-        revertDrafts(p);
+        if (p && p !== except) setPopOpen(p, false);
       });
-    }
-    function setPopOpen(pop, open){
-      var menu = menuOf(pop);
-      if (!open && menu && menu.contains(document.activeElement)){
-        var opener = pop.querySelector(".up-sort-btn, .up-filter-btn, .up-cols-btn, .up-ment-btn");
-        try { opener ? opener.focus({ preventScroll: true }) : document.activeElement.blur(); } catch(e){}
-      }
-      if (!open) revertDrafts(pop);
-      pop.classList.toggle("is-open", !!open);
-      if (menu){
-        menu.setAttribute("aria-hidden", open ? "false" : "true");
-        menu.classList.toggle("is-shown", !!open);
-        if (open) placeMenu(pop);
-      }
     }
 
     function ownsTarget(tg){
@@ -935,7 +915,6 @@
     }
     document.addEventListener("click", function(e){
       if (!ownsTarget(e.target)) return;
-      e.__udtInside = true;
       var inMenu = e.target.closest(".up-sort-menu, .up-filter-menu, .up-cols-menu, .up-ment-menu");
       var onOpener = e.target.closest(".up-sort-btn, .up-filter-btn, .up-cols-btn, .up-ment-btn");
       if (!inMenu && !onOpener) closePops();
@@ -1149,11 +1128,6 @@
         if (e.key === "Enter"){ clearTimeout(debTimer); if (state.query.length >= MIN || !state.query.length) runSearch(); }
       });
     }
-    document.addEventListener("click", function(e){
-      if (e.__udtInside) return;
-      if (root.contains(e.target)) return;
-      closePops();
-    });
 
     var lastProcAttr = String(root.getAttribute("data-processing") || "") + "|" +
                        String(root.getAttribute("data-processing2") || "");
@@ -1163,7 +1137,7 @@
       var changed = false;
       if (wantDark !== isDark){
         isDark = wantDark;
-        if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme"); if (typeof syncPortalTheme === "function") syncPortalTheme();
+        if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
         changed = true;
       }
       var procAttr = String(root.getAttribute("data-processing") || "") + "|" +
@@ -1269,7 +1243,7 @@
         params = params || {};
         if (params.isDark != null){
           isDark = isYes(params.isDark);
-          if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme"); if (typeof syncPortalTheme === "function") syncPortalTheme();
+          if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
         }
         if (params.requestId != null && latestReqId != null && String(params.requestId) !== String(latestReqId)) return;
         if (params.rows != null){
