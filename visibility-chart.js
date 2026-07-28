@@ -40,150 +40,6 @@
   var UC = window.UpstreemCore;
   var esc = UC.esc, isYes = UC.isYes, resolveBubbleFn = UC.resolveBubbleFn, fmt1 = UC.fmt1, CHECK_SVG = UC.CHECK_SVG;
 
-  /* ================= Chart.js loader (SHARED across ALL upstreem components on the page) =================
-     Unchanged from the pre-migration component: window.__upstreemChartJs is already a deliberate
-     cross-component dedup global, not something this migration introduces. */
-  function loadChartJs(){
-    if (window.Chart) return Promise.resolve();
-    if (window.__upstreemChartJs) return window.__upstreemChartJs;
-    window.__upstreemChartJs = new Promise(function(res, rej){
-      var existing = document.querySelector('script[data-upstreem-chartjs], script[data-ccchart], script[src*="chart.umd"], script[src*="chart.js@"], script[src*="chart.local"]');
-      if (existing){
-        var iv = setInterval(function(){ if (window.Chart){ clearInterval(iv); res(); } }, 40);
-        setTimeout(function(){ clearInterval(iv); if (window.Chart) res(); else rej(new Error("chartjs timeout")); }, 10000);
-        return;
-      }
-      var s = document.createElement("script");
-      s.src = "https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js";
-      s.setAttribute("data-upstreem-chartjs", "1");
-      s.onload = function(){ res(); };
-      s.onerror = rej;
-      document.head.appendChild(s);
-    });
-    return window.__upstreemChartJs;
-  }
-
-  /* ================= local helpers (chart-specific date formatting, not covered by core.js) ================= */
-  function truncate(s, n){ s = String(s==null?"":s); return s.length > n ? s.slice(0, n-1) + "…" : s; }
-  var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  var MONTHS_DE = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-  function dateFmt(day){
-    var m = String(day||"").match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (!m) return String(day||"");
-    return parseInt(m[3],10) + " " + MONTHS[parseInt(m[2],10)-1] + " " + m[1];
-  }
-  function dateFmtTitle(day, gran){
-    var m = String(day||"").match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (!m) return String(day||"");
-    if (gran === "month") return MONTHS_DE[parseInt(m[2],10) - 1] || dateFmt(day);
-    return dateFmt(day);
-  }
-
-  /* ================= line chart plugins + tooltip ================= */
-  var LINE_TENSION = 0.3, LINE_WIDTH = 1.5, LINE_POINT_HOVER = 4, LINE_POINT_HIT = 6, LINE_POINT_BORDER = 1.4;
-  var X_MAX_TICKS = 7, Y_PAD = 1.15;
-
-  var hoverLinePlugin = {
-    id: "ccHoverLine",
-    afterDatasetsDraw: function(chart){
-      var act = chart.tooltip && chart.tooltip.getActiveElements ? chart.tooltip.getActiveElements() : [];
-      if (!act || !act.length) return;
-      var x = act[0].element.x, ca = chart.chartArea, ctx = chart.ctx;
-      ctx.save();
-      ctx.beginPath(); ctx.moveTo(x, ca.top); ctx.lineTo(x, ca.bottom);
-      ctx.lineWidth = 1; ctx.strokeStyle = chart.$ccHoverLineColor || "rgba(0,0,0,0.12)";
-      ctx.stroke(); ctx.restore();
-    }
-  };
-  var dashedYGridPlugin = {
-    id: "ccDashedYGrid",
-    beforeDatasetsDraw: function(chart){
-      var y = chart.scales.y, ca = chart.chartArea, ctx = chart.ctx;
-      if (!y || !ca) return;
-      var ticks = (y.getTicks && y.getTicks()) || y.ticks || [];
-      if (!ticks.length) return;
-      ctx.save();
-      ctx.setLineDash([6,6]); ctx.lineWidth = 1; ctx.strokeStyle = chart.$ccGridColor || "rgba(0,0,0,0.08)";
-      ticks.forEach(function(t){
-        if (t.value <= 0) return;
-        var yp = y.getPixelForValue(t.value);
-        if (yp == null || isNaN(yp)) return;
-        if (yp < ca.top - 0.5 || yp > ca.bottom + 0.5) return;
-        ctx.beginPath(); ctx.moveTo(ca.left, Math.round(yp) + 0.5); ctx.lineTo(ca.right, Math.round(yp) + 0.5); ctx.stroke();
-      });
-      ctx.restore();
-    }
-  };
-
-  function makeLineTooltip(wrap){
-    var pos = { x:null, y:null }, target = { x:0, y:0 }, running = false, visible = false, raf = null;
-    var FOLLOW = 0.18;
-    function loop(){
-      var el = wrap.querySelector(".vc-line-tt");
-      if (pos.x == null){ pos.x = target.x; pos.y = target.y; }
-      pos.x += (target.x - pos.x) * FOLLOW;
-      pos.y += (target.y - pos.y) * FOLLOW;
-      if (el) el.style.transform = "translate3d(" + pos.x + "px," + pos.y + "px,0)";
-      var dx = Math.abs(target.x - pos.x), dy = Math.abs(target.y - pos.y);
-      if (visible || dx > 0.4 || dy > 0.4){ raf = requestAnimationFrame(loop); }
-      else { running = false; }
-    }
-    return function(context){
-      var chart = context.chart, tooltip = context.tooltip;
-      var el = wrap.querySelector(".vc-line-tt");
-      if (!el){
-        el = document.createElement("div");
-        el.className = "vc-line-tt";
-        el.style.cssText = "position:absolute;left:0;top:0;pointer-events:none;z-index:9999;opacity:0;transform:translate3d(0,0,0);transition:opacity 120ms ease;";
-        wrap.appendChild(el);
-      }
-      if (tooltip.opacity === 0){ el.style.opacity = "0"; visible = false; pos.x = null; pos.y = null; return; }
-      var dps = (tooltip.dataPoints || []).filter(function(dp){ return dp && dp.parsed && dp.parsed.y != null; });
-      if (!dps.length){ el.style.opacity = "0"; visible = false; pos.x = null; pos.y = null; return; }
-      var themeRoot = chart.canvas.closest(".vot-root");
-      var dark = !!(themeRoot && themeRoot.getAttribute("data-theme") === "dark");
-      var boxBg = dark ? "#121212" : "#ffffff";
-      var boxBorder = dark ? "" : "border:1px solid #e0e2e6;";
-      var boxShadow = dark ? "box-shadow:0 4px 14px rgba(0,0,0,.25);" : "box-shadow:0 4px 14px rgba(0,0,0,.10);";
-      var textColor = dark ? "#e6e6e6" : "#1f1f1b";
-      var mutedColor = dark ? "#8a8a8a" : "#6f737c";
-      var idx = dps[0].dataIndex;
-      var dayLabel = chart.data.labels[idx];
-      dps = dps.slice().sort(function(a,b){ return b.parsed.y - a.parsed.y; });
-      var ff = "Geist,system-ui,-apple-system,Segoe UI,Roboto,Arial";
-      var rows = dps.map(function(dp){
-        var ds = dp.dataset;
-        var icon = ds.__favicon
-          ? '<img src="' + esc(ds.__favicon) + '" width="16" height="16" style="border-radius:4px;display:block;object-fit:cover" onerror="this.style.visibility=\'hidden\'"/>'
-          : '<span style="width:16px;height:16px;border-radius:4px;background:' + ds.__baseColor + ';display:block"></span>';
-        var name = truncate(ds.label, 32);
-        var vy = Number(dp.parsed.y) || 0, vr = Math.round(vy);
-        var val = (vy > 0 && vr === 0) ? "<1%" : (vr + "%");
-        return '<div style="display:flex;align-items:center;gap:8px;margin-top:8px">' +
-            '<span style="flex:0 0 16px;display:flex">' + icon + '</span>' +
-            '<span style="flex:1 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:' + textColor + '">' + esc(name) + '</span>' +
-            '<span style="flex:0 0 auto;margin-left:77px;color:' + textColor + ';font-weight:500">' + val + '</span>' +
-          '</div>';
-      }).join("");
-      el.innerHTML =
-        '<div style="background:' + boxBg + ';color:' + textColor + ';' + boxBorder + 'border-radius:16px;padding:10px 12px;font-family:' + ff + ';font-size:13px;line-height:1.35;' + boxShadow + 'white-space:nowrap;min-width:220px;">' +
-          '<div style="color:' + mutedColor + ';font-size:11px">' + esc(dateFmtTitle(dayLabel, chart.__curGran)) + '</div>' +
-          rows +
-        '</div>';
-      var cx = chart.canvas.offsetLeft, cy = chart.canvas.offsetTop, ca = chart.chartArea;
-      var caretX = cx + (tooltip.caretX != null ? tooltip.caretX : dps[0].element.x), m = 16;
-      el.style.left = "0px"; el.style.top = "0px";
-      var rect = el.getBoundingClientRect();
-      var tx = (caretX + rect.width + m > cx + ca.right) ? (caretX - rect.width - m) : (caretX + m);
-      tx = Math.max(cx + ca.left, Math.min(tx, cx + ca.right - rect.width));
-      var ty = Math.max(cy + ca.top, Math.min(cy + ca.top + 8, cy + ca.bottom - rect.height));
-      target.x = tx; target.y = ty;
-      if (pos.x == null){ pos.x = tx; pos.y = ty; el.style.transform = "translate3d("+tx+"px,"+ty+"px,0)"; }
-      el.style.opacity = "1"; visible = true;
-      if (!running){ running = true; raf = requestAnimationFrame(loop); }
-    };
-  }
-
   /* ================= data prep ================= */
   function buildLineDatasets(series, companies){
     series = Array.isArray(series) ? series : [];
@@ -238,79 +94,12 @@
     return { labels: labels, datasets: datasets, globalMax: globalMax };
   }
 
-  /* ================= skeletons ================= */
-  function lineSkeletonHtml(){
-    var hlines = new Array(4).join("x").split("x").map(function(){ return '<div class="sk-lc-hline"></div>'; }).join("");
-    var xlabels = new Array(6).join("x").split("x").map(function(){ return '<div class="sk-lc-xlabel"></div>'; }).join("");
-    var d = "M0,125 C60,115 100,70 150,58 C200,46 230,90 280,74 C330,58 390,22 460,14";
-    var agId = 'vc-sk-ag-' + Math.random().toString(36).slice(2);
-    return '<div class="vc-line-sk"><div class="sk-linechart">' +
-      '<div class="sk-lc-grid">' + hlines +
-        '<svg class="sk-lc-svg" viewBox="0 0 460 160" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">' +
-          '<defs><linearGradient id="' + agId + '" x1="0" y1="0" x2="0" y2="1"><stop class="sk-lc-astop0" offset="0%"/><stop class="sk-lc-astop1" offset="100%"/></linearGradient></defs>' +
-          '<path d="' + d + ' L460,160 L0,160 Z" fill="url(#' + agId + ')"/>' +
-          '<path class="sk-lc-stroke" d="' + d + '"/>' +
-          '<path class="sk-lc-shimmer-path" d="' + d + '"/>' +
-        '</svg>' +
-      '</div>' +
-      '<div class="sk-lc-xaxis">' + xlabels + '</div>' +
-    '</div></div>';
-  }
-
-  /* ================= line legend (balanced rows) ================= */
-  var LEG_MIN_GAP = 8, LEG_MAX_GAP = 16;
-  function legGetColumnGap(w){ return Math.max(LEG_MIN_GAP, Math.min(LEG_MAX_GAP, Math.floor(w * 0.025))); }
-  function legNormalizeUrl(url){ if (!url) return ""; if (url.indexOf("//") === 0) return "https:" + url; return url; }
-  function legItemHtml(c, measure){
-    return '<div class="up-company-item' + (measure ? ' up-measure-item' : '') + '" data-company-id="' + esc(c.company_id) + '">' +
-        '<span class="up-company-color" style="background:' + esc(c.color || "#999999") + '"></span>' +
-        '<span class="up-company-inner-gap"></span>' +
-        (c.favicon_url ? '<img class="up-company-favicon" src="' + esc(legNormalizeUrl(c.favicon_url)) + '" alt="" onerror="this.style.visibility=\'hidden\'">' : '<span class="up-company-favicon" style="visibility:hidden"></span>') +
-        '<span class="up-company-inner-gap"></span>' +
-        '<span class="up-company-name">' + esc(c.name) + '</span>' +
-      '</div>';
-  }
-  function legRowWidth(widths, start, end, gap){ var total = 0; for (var i = start; i < end; i++){ total += widths[i]; if (i > start) total += gap; } return total; }
-  function legGreedyRowCount(widths, cw, gap){
-    var rows = 1, cur = 0;
-    for (var i = 0; i < widths.length; i++){
-      var next = cur === 0 ? widths[i] : cur + gap + widths[i];
-      if (cur > 0 && next > cw){ rows++; cur = widths[i]; } else { cur = next; }
-    }
-    return rows;
-  }
-  function legBalancedBreaks(widths, rowCount, cw, gap){
-    var n = widths.length;
-    if (rowCount <= 1 || n <= 1) return [];
-    var dp = [], prev = [];
-    for (var r = 0; r <= rowCount; r++){ dp.push(new Array(n + 1).fill(Infinity)); prev.push(new Array(n + 1).fill(-1)); }
-    dp[0][0] = 0;
-    for (var r2 = 1; r2 <= rowCount; r2++){
-      for (var i = 1; i <= n; i++){
-        for (var k = r2 - 1; k < i; k++){
-          var w = legRowWidth(widths, k, i, gap);
-          if (w > cw) continue;
-          var score = Math.max(dp[r2 - 1][k], w);
-          if (score < dp[r2][i]){ dp[r2][i] = score; prev[r2][i] = k; }
-        }
-      }
-    }
-    if (!isFinite(dp[rowCount][n])) return [];
-    var breaks = [], ii = n;
-    for (var r3 = rowCount; r3 > 1; r3--){ var kk = prev[r3][ii]; if (kk <= 0) break; breaks.unshift(kk); ii = kk; }
-    return breaks;
-  }
-  function getPageWidth(){
-    try { if (window.top && window.top.innerWidth) return window.top.innerWidth; } catch(e){}
-    return window.innerWidth || document.documentElement.clientWidth || 0;
-  }
-
   /* ================= controller ================= */
   function makeController(root){
     var tableEl = root.querySelector(".vt-table");
-    var lineWrap = root.querySelector(".vc-line-wrap");
-    var lineCanvas = root.querySelector(".vc-line-canvas");
-    var legendEl = root.querySelector(".vc-legend");
+    var lineWrap = root.querySelector(".up-line-wrap");
+    var lineCanvas = root.querySelector(".up-line-canvas");
+    var legendEl = root.querySelector(".up-legend");
     if (!tableEl || !lineWrap || !lineCanvas){
       return null;
     }
@@ -338,7 +127,6 @@
       hasLine: false, hasTable: false,
       series: [], companies: [], tableRows: [], filterCompanies: [], totalCount: null
     };
-    var chartInstance = null, lineChart = null;
     var SORT_STORE = (window.__votSort = window.__votSort || {});
     var sortField = (SORT_STORE[instanceId] && SORT_STORE[instanceId].field) || "visibility";
     var sortDir = (SORT_STORE[instanceId] && SORT_STORE[instanceId].dir) || "desc";
@@ -395,240 +183,36 @@
       if (activeBtn && activeBtn.classList.contains("is-disabled")){ curGran = "day"; GRAN_STORE[instanceId] = "day"; syncGranActive(); }
     }
 
-    function themeColors(){
-      return isDark
-        ? { text:"#e0e0e0", muted:"#a0a0a0", border:"#353535", bg:"#1b1b1b" }
-        : { text:"#1f1f1b", muted:"#6f737c", border:"#e0e2e6", bg:"#ffffff" };
-    }
-    function setHeading(){ /* headings are static ("Visibility over Time" / "Top Brands") */ }
+    /* ---------- the line chart, from the shared kit ----------
+       Plugins, tooltip, skeleton, size poll, render verify, the balanced-rows legend with its
+       hover highlight and the watermark all live in core now. What stays here is the wiring. */
+    function isOwner(){ return !root.__votController || root.__votController.__ctrlId === myCtrlId; }
+    function darkNow(){ return isDark; }
     function syncTheme(){
       if (isDark){ root.setAttribute("data-theme","dark"); }
       else { root.removeAttribute("data-theme"); }
-      if (typeof syncPortalTheme === "function") syncPortalTheme();
     }
 
-    /* ---------- line legend ---------- */
-    var legendCompanies = [];
-    function buildLegendCompanies(datasets){
-      return (datasets || []).map(function(ds){
-        return { company_id: ds.__id, name: ds.label, color: ds.__baseColor, favicon_url: ds.__favicon };
-      });
-    }
-    function legendLayout(){
-      if (!legendEl) return;
-      if (getPageWidth() < 500){ legendEl.classList.add("is-hidden"); return; }
-      legendEl.classList.remove("is-hidden");
-      var rowsC = legendEl.querySelector(".up-company-rows");
-      var measure = Array.prototype.slice.call(legendEl.querySelectorAll(".up-measure-item"));
-      if (!rowsC || !measure.length) return;
-      var cw = legendEl.clientWidth;
-      if (!cw){ setTimeout(legendLayout, 100); return; }
-      var gap = legGetColumnGap(cw);
-      legendEl.style.setProperty("--up-column-gap", gap + "px");
-      var widths = measure.map(function(it){ return it.getBoundingClientRect().width; });
-      var rowCount = legGreedyRowCount(widths, cw, gap);
-      rowCount = Math.max(1, Math.min(rowCount, legendCompanies.length, 2));
-      var breaks = legBalancedBreaks(widths, rowCount, cw, gap);
-      if (rowCount === 2 && !breaks.length) breaks = [Math.ceil(legendCompanies.length / 2)];
-      var rows = [], start = 0;
-      for (var b = 0; b < breaks.length; b++){ rows.push(legendCompanies.slice(start, breaks[b])); start = breaks[b]; }
-      rows.push(legendCompanies.slice(start));
-      rowsC.innerHTML = rows.map(function(row){
-        return '<div class="up-company-row">' + row.map(function(c){ return legItemHtml(c, false); }).join("") + '</div>';
-      }).join("");
-    }
-    function renderLegend(datasets){
-      if (!legendEl) return;
-      legendCompanies = buildLegendCompanies(datasets);
-      if (!legendCompanies.length){ legendEl.innerHTML = ""; return; }
-      legendEl.innerHTML =
-        '<div class="up-company-measure">' + legendCompanies.map(function(c){ return legItemHtml(c, true); }).join("") + '</div>' +
-        '<div class="up-company-rows"></div>';
-      legendLayout();
-    }
-    function clearLegend(){ if (legendEl){ legendCompanies = []; legendEl.innerHTML = ""; } }
-
-    function applyHighlight(id){
-      if (lineChart && lineChart.__activeId !== id){
-        lineChart.__activeId = id;
-        var dim = isDark ? "rgba(160,160,160,0.20)" : "rgba(120,123,124,0.22)";
-        lineChart.data.datasets.forEach(function(ds){
-          ds.borderColor = (id == null || ds.__id === id) ? ds.__baseColor : dim;
-        });
-        lineChart.update("highlight");
-      }
-      if (legendEl){
-        var items = legendEl.querySelectorAll(".up-company-item");
-        for (var i=0;i<items.length;i++){
-          var cid = items[i].getAttribute("data-company-id");
-          items[i].style.opacity = (id == null || cid === id) ? "1" : "0.35";
-        }
-      }
-    }
-    if (legendEl && legendEl.getAttribute("data-vc-hoverbound") !== "1"){
-      legendEl.setAttribute("data-vc-hoverbound", "1");
-      legendEl.addEventListener("mouseover", function(e){
-        var it = e.target && e.target.closest ? e.target.closest(".up-company-item") : null;
-        if (it) applyHighlight(it.getAttribute("data-company-id"));
-      });
-      legendEl.addEventListener("mouseleave", function(){ applyHighlight(null); });
-    }
-
-    /* ---------- line render ---------- */
-    function destroyLine(){
-      if (lineChart){ try { lineChart.destroy(); } catch(e){} lineChart = null; }
-      if (window.Chart && window.Chart.getChart){ var ex = window.Chart.getChart(lineCanvas); if (ex) try{ ex.destroy(); }catch(e){} }
-      /* The external tooltip is a plain DOM element outside Chart.js's own lifecycle — destroying
-         the chart stops the callback that would otherwise set its opacity back to 0, so a tooltip
-         left visible from a hover right before a reload/skeleton would stay stuck on screen. */
-      var tt = lineWrap.querySelector(".vc-line-tt");
-      if (tt) tt.style.opacity = "0";
-    }
-    function clearLineExtras(){ var sk = lineWrap.querySelector(".vc-line-sk"); if (sk) sk.remove(); var em = lineWrap.querySelector(".vc-line-empty"); if (em) em.remove(); }
-    function showLineSkeleton(){ destroyLine(); clearLineExtras(); clearLegend(); lineWrap.insertAdjacentHTML("beforeend", lineSkeletonHtml()); }
-
-    function renderLine(){
-      if (root.__votController && root.__votController.__ctrlId !== myCtrlId){
-        return;
-      }
-      clearLineExtras();
-      var built = buildLineDatasets(state.series, state.companies || []);
-      if (!built.datasets.length){
-        destroyLine(); clearLegend();
-        lineWrap.insertAdjacentHTML("beforeend", '<div class="vc-line-empty">No data</div>');
-        return;
-      }
-      var visDs = built.datasets;
-      renderLegend(visDs);
-      loadChartJs().then(function(){
-        if (root.__votController && root.__votController.__ctrlId !== myCtrlId){
-          return;
-        }
-        if (!lineCanvas) return;
-
-        function buildChart(){
-          if (root.__votController && root.__votController.__ctrlId !== myCtrlId){
-            return;
-          }
-          if (!lineCanvas || !lineCanvas.isConnected) return;
-          destroyLine();
-          var tc = themeColors();
-          var ctx = lineCanvas.getContext("2d");
-          window.Chart.defaults.color = tc.muted;
-          window.Chart.defaults.font = { family: "Geist, system-ui, -apple-system, Segoe UI, Roboto, Arial", size: 12 };
-          var single = built.labels.length <= 1;
-          visDs.forEach(function(ds){
-            ds.borderWidth = LINE_WIDTH; ds.fill = false; ds.cubicInterpolationMode = "monotone"; ds.tension = LINE_TENSION;
-            ds.pointRadius = single ? 4 : 0; ds.pointHoverRadius = LINE_POINT_HOVER; ds.pointHitRadius = LINE_POINT_HIT;
-            ds.pointBorderWidth = LINE_POINT_BORDER; ds.pointBackgroundColor = tc.bg; ds.pointBorderColor = ds.__baseColor;
-            ds.pointHoverBackgroundColor = tc.bg; ds.pointHoverBorderColor = ds.__baseColor;
-            if (single){ ds.pointBackgroundColor = ds.__baseColor; }
-            ds.spanGaps = true; ds.clip = 8;
-          });
-          var visMax = 0; visDs.forEach(function(ds){ (ds.data || []).forEach(function(v){ if (v != null && v > visMax) visMax = v; }); });
-          var yMax = visMax * Y_PAD; if (yMax <= 0) yMax = 1; if (yMax > 100) yMax = 100;
-          var labels = built.labels;
-          try {
-            lineChart = new window.Chart(ctx, {
-              type: "line",
-              data: { labels: labels, datasets: visDs },
-              plugins: [hoverLinePlugin, dashedYGridPlugin],
-              options: {
-                responsive: true, maintainAspectRatio: false,
-                animation: { duration: 600, easing: "easeOutQuart" },
-                /* named transition used by applyHighlight()'s update("highlight") — a smooth 200ms
-                   fade for the row/legend cross-highlight, separate from the slower initial draw-in. */
-                transitions: { highlight: { animation: { duration: 200, easing: "easeOutQuad" } } },
-                interaction: { mode: "index", intersect: false },
-                layout: { padding: { top: 8, right: 2, bottom: 0, left: 0 } },
-                plugins: { legend: { display:false }, tooltip: { enabled:false, external: makeLineTooltip(lineWrap) } },
-                scales: {
-                  x: { grid: { display:false }, offset: single, border: { display:true, color: tc.border, width:1 },
-                       ticks: { autoSkip:true, maxTicksLimit:X_MAX_TICKS, maxRotation:0, color: tc.muted,
-                                callback: function(v, i){
-                                  var lab = String(labels[i] || "");
-                                  if (curGran === "month"){
-                                    var m = lab.match(/^(\d{4})-(\d{2})/);
-                                    if (m) return MONTHS_DE[parseInt(m[2],10) - 1] || lab;
-                                  }
-                                  return lab.slice(5);
-                                } } },
-                  y: { min:0, max:yMax, beginAtZero:true,
-                       afterBuildTicks: function(scale){ var m = scale.max || 1; scale.ticks = [{value:0},{value:m/3},{value:2*m/3},{value:m}]; },
-                       ticks: { color: tc.muted, callback: function(v){ return Math.round(v) + "%"; } },
-                       grid: { display:false }, border: { display:false } }
-                },
-                elements: { point: { radius: 0 } }
-              }
-            });
-            lineChart.$ccGridColor = tc.border;
-            lineChart.$ccHoverLineColor = tc.border;
-            lineChart.__curGran = curGran;
-          } catch(err){
-          }
-        }
-
-        /* Chart.js reads the canvas's live layout to compute where the entrance animation starts
-           from, so it needs a container with real, settled dimensions at creation time — not just
-           "attached to the DOM". Two situations defeat that:
-           1) Chart.js was already loaded (cached from a prior mount) and this .then() runs as an
-              immediate microtask, before the browser has laid out a freshly re-inserted widget
-              (e.g. navigating back to a dashboard that rebuilds the DOM subtree) — a short wait
-              fixes this, since the container genuinely has a size once layout catches up.
-           2) The root is fed data while sitting inside a Bubble element that's hidden via
-              display:none (a popup/group not yet shown) — the container reports 0x0 no matter how
-              long you wait, since display:none never gets a box. Building the chart against that
-              collapsed geometry, then having Chart.js's own resize observer redraw it once the
-              group becomes visible, replays as the points flying in from that collapsed (0,0)
-              corner instead of growing up from the baseline.
-           Deliberately setInterval, not requestAnimationFrame or ResizeObserver: both of those are
-           tied to the rendering/compositor pipeline, which browsers pause or heavily throttle for a
-           backgrounded or inactive tab — exactly when a Bubble popup is likely to sit hidden for a
-           while before the user opens it, so either would risk stalling indefinitely. setInterval
-           keeps ticking (throttled, but not paused) regardless of tab visibility, matching this
-           file's other wait-for-Bubble-to-catch-up loops (initAll's retry cascade, the watermark's
-           injection interval). */
-        if (lineWrap.clientWidth > 0 && lineWrap.clientHeight > 0){
-          buildChart();
-        } else {
-          var __sizeTicks = 0;
-          var __sizeIv = setInterval(function(){
-            if (root.__votController && root.__votController.__ctrlId !== myCtrlId){
-              clearInterval(__sizeIv); return;
-            }
-            if (!lineCanvas || !lineCanvas.isConnected){ clearInterval(__sizeIv); return; }
-            var sized = lineWrap.clientWidth > 0 && lineWrap.clientHeight > 0;
-            if (sized || ++__sizeTicks > 600){   // ~2 min cap — give up and build anyway past that
-              clearInterval(__sizeIv);
-              buildChart();
-            }
-          }, 200);
-        }
-      }).catch(function(err){
-      });
-    }
+    var line = UC.makeLine({
+      wrap: lineWrap, canvas: lineCanvas, legend: legendEl,
+      isDark: darkNow, isOwner: isOwner,
+      gran: function(){ return curGran; }
+    });
 
     /* ---------- render (two independent halves) ---------- */
     function tableHeadHtml(){
       return '<div class="vt-thead">' +
         '<div class="vt-th vt-th-idx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg></div>' +
         '<div class="vt-th">Brand</div>' +
-        '<div class="vt-th vt-th-visibility">Visibility<span class="vt-th-info" data-explain="visibility"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div>' +
-        '<div class="vt-th vt-th-ranking">Ranking<span class="vt-th-info" data-explain="ranking"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div>' +
-        '<div class="vt-th vt-th-sentiment">Sentiment<span class="vt-th-info" data-explain="sentiment"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div></div>';
+        '<div class="vt-th vt-th-visibility">Visibility<span class="up-th-info" data-explain="visibility"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div>' +
+        '<div class="vt-th vt-th-ranking">Ranking<span class="up-th-info" data-explain="ranking"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div>' +
+        '<div class="vt-th vt-th-sentiment">Sentiment<span class="up-th-info" data-explain="sentiment"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span></div></div>';
     }
     function tableSkeletonHtml(){
-      var rows = "";
-      for (var i = 0; i < 7; i++){
-        rows += '<div class="vt-row vt-tsk">' +
-          '<div class="vt-td vt-td-idx"><span class="vt-tsk-bar" style="width:12px"></span></div>' +
-          '<div class="vt-td"><span class="vt-tsk-logo"></span><span class="vt-tsk-bar" style="width:' + (70 + (i % 3) * 18) + 'px"></span></div>' +
-          '<div class="vt-td"><span class="vt-tsk-bar" style="width:46px"></span></div>' +
-          '<div class="vt-td"><span class="vt-tsk-bar" style="width:52px"></span></div>' +
-          '<div class="vt-td"><span class="vt-tsk-bar" style="width:56px"></span></div>' +
-        '</div>';
-      }
-      return tableHeadHtml() + '<div class="vt-tbody">' + rows + '</div>';
+      return tableHeadHtml() + '<div class="vt-tbody">' + UC.skeletonRows({
+        count: 7, rowClass: "vt-row", cellClass: "vt-td",
+        cols: [12, { w:70, jitter:18, logo:true }, 46, 52, 56]
+      }) + '</div>';
     }
     var tableEmptyGraceTimer = null;
     function renderTableSide(){
@@ -640,36 +224,13 @@
       else { renderTable(); }
     }
     function renderLineSide(){
-      if (root.__votController && root.__votController.__ctrlId !== myCtrlId){
-        return;
-      }
-      if (state.loading || !state.hasLine || state.linePending){
-        showLineSkeleton(); return;
-      }
-      renderLine();
-      verifyLineRendered();
-    }
-    function verifyLineRendered(){
-      clearTimeout(root.__votLineVerifyT);
-      var attempts = 0;
-      function check(){
-        if (root.__votController && root.__votController.__ctrlId !== myCtrlId) return;
-        if (state.loading || !state.hasLine || state.linePending) return;
-        var alive = false;
-        try { alive = !!(window.Chart && window.Chart.getChart && lineCanvas && window.Chart.getChart(lineCanvas)); } catch(e){}
-        if (alive || lineWrap.querySelector(".vc-line-empty")){
-          return;
-        }
-        if (attempts++ >= 12) return;
-        renderLine();
-        root.__votLineVerifyT = setTimeout(check, 250);
-      }
-      root.__votLineVerifyT = setTimeout(check, 400);
+      if (!isOwner()) return;
+      if (state.loading || !state.hasLine || state.linePending){ line.skeleton(); return; }
+      line.render(buildLineDatasets(state.series, state.companies || []));
     }
     function render(){
       if (root.__votController && root.__votController.__ctrlId !== myCtrlId) return;
       syncTheme();
-      setHeading();
       setHeadCount();
       renderTableSide();
       renderLineSide();
@@ -678,21 +239,10 @@
     }
 
     /* ---------- Top Brands table ---------- */
-    var TREND_UP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>';
-    var TREND_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="7" x2="17" y2="17"></line><polyline points="17 7 17 17 7 17"></polyline></svg>';
-    var HASH_ICON = '<svg class="vt-hash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>';
+    /* the hash glyph keeps a local class only because it needs the .vt-hash sizing rule */
+    var HASH_ICON = UC.HASH_ICON.replace('<svg ', '<svg class="vt-hash" ');
     function trendChip(delta, decimals, inverted, suffix){
-      if (delta == null || delta === "") return "";
-      var d = Number(delta);
-      if (!isFinite(d)) return "";
-      var shown = decimals ? Math.round(Math.abs(d) * 10) / 10 : Math.round(Math.abs(d));
-      if (shown === 0) return "";
-      var goingUp = d > 0;
-      var positive = inverted ? !goingUp : goingUp;
-      var cls = positive ? "pos" : "neg";
-      var icon = goingUp ? TREND_UP : TREND_DOWN;
-      var txt = (decimals ? shown.toFixed(1) : String(shown)) + (suffix || "");
-      return '<span class="vt-trend ' + cls + '">' + icon + txt + '</span>';
+      return UC.trendChip(delta, { decimals: decimals, inverted: inverted, suffix: suffix });
     }
     function sentColor(v){
       v = Number(v);
@@ -702,7 +252,7 @@
       if (v <= 75) return "#9FD25D";
       return "#60D25D";
     }
-    var ROW_GOTO = '<span class="vt-row-goto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg></span>';
+    var ROW_GOTO = '<span class="up-row-goto">' + UC.GOTO_SVG + '</span>';
     function renderTable(){
       var rows = Array.isArray(state.tableRows) ? state.tableRows : [];
       var head = tableHeadHtml();
@@ -727,8 +277,8 @@
         var isLast = (i === rows.length - 1);
         var gap = (isLast && pos != null && pos > 7) ? " vt-gap" : "";
         var logo = r.logo_url
-          ? '<span class="vt-logo-box"><img src="' + esc(r.logo_url) + '" onerror="this.style.visibility=\'hidden\'"/></span>'
-          : '<span class="vt-logo-box"></span>';
+          ? '<span class="up-logo-box has-img"><img src="' + esc(r.logo_url) + '" onerror="this.style.visibility=\'hidden\'"/></span>'
+          : '<span class="up-logo-box"></span>';
         var visNull = (r.visibility_pct == null || r.visibility_pct === "");
         var vis = '<span class="vt-num">' + (visNull ? "–" : (Math.round(Number(r.visibility_pct) || 0) + "%")) + '</span>' + trendChip(r.visibility_delta_pct, false, false, "%");
         var rank = '<span class="vt-rank-group">' + HASH_ICON + '<span class="vt-num">' + fmt1(r.avg_rank) + '</span></span>' + trendChip(r.avg_rank_delta, true, true);
@@ -745,8 +295,8 @@
       tableEl.innerHTML = head + '<div class="vt-tbody">' + body + '</div>';
       Array.prototype.slice.call(tableEl.querySelectorAll(".vt-row")).forEach(function(row){
         var id = row.getAttribute("data-id");
-        row.addEventListener("mouseenter", function(){ applyHighlight(id); });
-        row.addEventListener("mouseleave", function(){ applyHighlight(null); });
+        row.addEventListener("mouseenter", function(){ line.highlight(id); });
+        row.addEventListener("mouseleave", function(){ line.highlight(null); });
         row.addEventListener("click", function(){
           var fnName = root.getAttribute("data-rowclick-fn") || "bubble_fn_votRowClick";
           var fn = resolveBubbleFn(fnName);
@@ -765,7 +315,7 @@
       for (var i = 0; i < cells.length; i++){
         var c = cells[i];
         if (getComputedStyle(c).display === "none") continue;
-        var trend = c.querySelector(".vt-trend");
+        var trend = c.querySelector(".up-trend");
         if (!trend) continue;
         var cRect = c.getBoundingClientRect();
         var tRect = trend.getBoundingClientRect();
@@ -793,12 +343,9 @@
       else { hr.classList.remove("has-count"); }
     }
 
-    /* ---------- column explainers (Visibility / Ranking / Sentiment) — NEW, matches the
-       urls-table/domains-table .up-explain pattern; not a shared UpstreemCore function there
-       either, so this follows the same per-component convention rather than inventing one. ---------- */
-    var explain = document.createElement("div");
-    explain.className = "up-explain";
-    document.body.appendChild(explain);
+    /* ---------- column explainers (Visibility / Ranking / Sentiment) ----------
+       Positioning/flip/caret logic is UC.makeExplain now; only the per-metric copy and the little
+       visual sample stay here, because those genuinely are this component's content. */
     var EXPLAIN_TEXT = {
       visibility: { h: "Visibility",
         t: "How often this brand appears in AI answers for the tracked prompts, plus the change against the previous period." },
@@ -817,148 +364,47 @@
         }).join("");
       }
       return '<span class="vot-explain-row">18.4%' +
-             '<span class="vot-explain-up">' + TREND_UP + '</span>' +
+             '<span class="vot-explain-up">' + UC.TREND_UP + '</span>' +
              '<span class="vot-explain-up">2.9%</span></span>';
     }
-    function showExplain(el){
-      var kind = el.getAttribute("data-explain");
-      var info = EXPLAIN_TEXT[kind];
-      if (!info) return;
-      explain.setAttribute("data-theme", isDark ? "dark" : "light");
-      explain.innerHTML =
-        '<div class="vot-explain-vis">' + explainVisual(kind) + '</div>' +
-        '<div class="vot-explain-h">' + esc(info.h) + '</div>' +
-        '<div class="vot-explain-t">' + esc(info.t) + '</div>';
-      explain.classList.add("is-on");
-      var r = el.getBoundingClientRect();
-      var er = explain.getBoundingClientRect();
-      var iconCenter = r.left + r.width / 2;
-      var left = Math.max(8, Math.min(window.innerWidth - er.width - 8, iconCenter - er.width/2));
-      var flipped = false;
-      var top = r.bottom + 10;
-      if (top + er.height > window.innerHeight - 8){ top = Math.max(8, r.top - er.height - 10); flipped = true; }
-      explain.classList.toggle("is-flipped", flipped);
-      explain.style.left = left + "px";
-      explain.style.top = top + "px";
-      var caret = Math.max(14, Math.min(er.width - 14, iconCenter - left));
-      explain.style.setProperty("--up-caret", caret + "px");
-    }
-    function hideExplain(){ explain.classList.remove("is-on"); }
-    root.addEventListener("mouseover", function(e){
-      var el = e.target.closest(".vt-th-info");
-      if (el && root.contains(el)) showExplain(el);
-    });
-    root.addEventListener("mouseout", function(e){
-      if (e.target.closest(".vt-th-info")) hideExplain();
+    UC.makeExplain({
+      root: root,
+      triggerSel: ".up-th-info",
+      getIsDark: darkNow,
+      html: function(kind){
+        var info = EXPLAIN_TEXT[kind];
+        if (!info) return "";
+        return '<div class="vot-explain-vis">' + explainVisual(kind) + '</div>' +
+               '<div class="vot-explain-h">' + esc(info.h) + '</div>' +
+               '<div class="vot-explain-t">' + esc(info.t) + '</div>';
+      }
     });
 
     var inner = root;
     var gotoBtn = root.querySelector(".vot-goto");
     var exportBtn = root.querySelector(".vot-export");
 
-    /* ---------- popovers: plain position:absolute, NOT portaled to <body> ---------- */
+    /* ---------- dropdowns via the shared primitive ----------
+       Still plain position:absolute children of their position:relative wrappers (STYLEGUIDE §14,
+       no portal) — the open/close mechanics, focus escape, Escape key and the single page-wide
+       outside-click listener now come from core instead of being re-implemented here. */
     var sortWrap = root.querySelector(".vot-sort");
     var filterWrap = root.querySelector(".vot-filter");
     var filterMenu = root.querySelector(".up-ment-menu");
-    var sortMenu = root.querySelector(".vot-sort-menu");
-    /* Both used to be portaled (matching every other dropdown in the library) so a JS scroll
-       listener could keep a position:fixed menu glued to its trigger. In practice that JS-driven
-       follow — however cheap, however well-throttled — never matched plain CSS: a normal
-       position:absolute child inside a position:relative wrapper (.vot-sort/.vot-filter both
-       already are) scrolls with the page natively, zero JS, zero lag, by construction. That's
-       exactly what .vot-sort-menu ran on before this file went through the Core migration, and it
-       was never wrong. Going back to it for both menus, deliberately giving up the portal's
-       anti-clip guarantee for a dropdown that's provably correct over one that's merely robust. */
-    function setPopOpen(pop, open){
-      if (!pop) return;
-      var isFilter = pop === filterWrap;
-      var menu = isFilter ? filterMenu : sortMenu;
-      if (!open && menu && menu.contains(document.activeElement)){
-        var opener = pop.querySelector(".vot-sort-btn, .vot-filter-btn");
-        try { opener ? opener.focus({ preventScroll: true }) : document.activeElement.blur(); }
-        catch(e){ try { document.activeElement.blur(); } catch(e2){} }
-      }
-      pop.classList.toggle("is-open", !!open);
-      if (menu){
-        menu.setAttribute("aria-hidden", open ? "false" : "true");
-        menu.classList.toggle("is-shown", !!open);
-      }
-    }
+    var sortMenu = root.querySelector(".up-sort-menu");
+    var POP_GROUP = "vot-" + instanceId;
+    var sortPop = UC.makePopover({ wrap: sortWrap, menu: sortMenu, opener: root.querySelector(".vot-sort-btn"), group: POP_GROUP });
+    var filterPop = UC.makePopover({ wrap: filterWrap, menu: filterMenu, opener: root.querySelector(".vot-filter-btn"), group: POP_GROUP });
+    function popFor(wrap){ return wrap === filterWrap ? filterPop : sortPop; }
+    function setPopOpen(pop, open){ if (!pop) return; if (open) popFor(pop).open(); else popFor(pop).close(false); }
     function closePops(except){
-      [sortWrap, filterWrap].forEach(function(pop){
-        if (!pop || pop === except || !pop.classList.contains("is-open")) return;
-        setPopOpen(pop, false);
-      });
+      [sortWrap, filterWrap].forEach(function(w){ if (w && w !== except) popFor(w).close(false); });
     }
 
-    // Mira-style button tooltip — kept as this component's own implementation (see
-    // visibility-chart.css header comment for why this isn't UpstreemCore.makeTooltips).
-    if (!root.__votTip){
-      var tipEl = document.createElement("div"); tipEl.className = "vot-tip"; document.body.appendChild(tipEl);
-      root.__votTip = tipEl;
-      var tipTimer = null, tipSuppressed = false;
-      var themeTip = function(){
-        var dark = root.getAttribute("data-theme") === "dark";
-        tipEl.style.background = dark ? "#f0f0f0" : "#1f1f1b";
-        tipEl.style.color = dark ? "#1f1f1b" : "#ffffff";
-      };
-      var tipBtn = null, tipPlacedRect = null;
-      var placeTip = function(btn){
-        tipEl.style.transform = "";
-        var br = btn.getBoundingClientRect();
-        var tw = tipEl.offsetWidth, vw = window.innerWidth || document.documentElement.clientWidth;
-        var left = br.left + br.width / 2 - tw / 2;
-        left = Math.max(6, Math.min(left, vw - tw - 6));
-        tipEl.style.left = left + "px";
-        tipEl.style.top = (br.bottom + 8) + "px";
-        tipBtn = btn; tipPlacedRect = br;
-      };
-      var showTip = function(btn){
-        if (tipSuppressed) return;
-        var txt = btn.getAttribute("data-tip"); if (!txt) return;
-        tipEl.textContent = txt; themeTip();
-        tipEl.classList.add("show");
-        placeTip(btn);
-      };
-      var hideTip = function(){ clearTimeout(tipTimer); tipEl.classList.remove("show"); tipBtn = null; };
-      /* Keep an open tooltip glued to its trigger while the page scrolls — same cheap,
-         compositor-only transform-nudge + settle-time full reposition as dropdown menus (see
-         core.js's makePortal/nudgeMenu and makeTooltips). Without this the tooltip just stayed
-         frozen at its old screen position while the trigger scrolled out from under it.
-         lastScrollAt ALSO guards mouseenter/mouseleave below: scrolling moves content under a
-         completely stationary cursor, and the browser recomputes hover state as different
-         elements pass under it — without suppressing that, a mid-scroll phantom mouseleave on
-         the currently-tipped button (or mouseenter on some other data-tip element it scrolls
-         past) fought the transform-nudge above, which is exactly what read as the tooltip
-         "jumping wildly" while scrolling instead of calmly tracking one target. */
-      var lastScrollAt = 0;
-      var tipRepositionRaf = null, tipSettleTimer = null;
-      window.addEventListener("scroll", function(){
-        lastScrollAt = Date.now();
-        if (!tipBtn) return;
-        if (tipRepositionRaf) return;
-        tipRepositionRaf = requestAnimationFrame(function(){
-          tipRepositionRaf = null;
-          if (!tipBtn || !tipPlacedRect) return;
-          var r = tipBtn.getBoundingClientRect();
-          tipEl.style.transform = "translate(" + Math.round(r.left - tipPlacedRect.left) + "px," + Math.round(r.top - tipPlacedRect.top) + "px)";
-          clearTimeout(tipSettleTimer);
-          tipSettleTimer = setTimeout(function(){ if (tipBtn) placeTip(tipBtn); }, 150);
-        });
-      }, { capture: true, passive: true });
-      Array.prototype.slice.call(root.querySelectorAll("[data-tip]")).forEach(function(btn){
-        btn.addEventListener("mouseenter", function(){
-          if (Date.now() - lastScrollAt < 200) return;
-          tipSuppressed = false; clearTimeout(tipTimer); tipTimer = setTimeout(function(){ showTip(btn); }, 60);
-        });
-        btn.addEventListener("mouseleave", function(){
-          if (Date.now() - lastScrollAt < 200) return;
-          tipSuppressed = false; hideTip();
-        });
-        btn.addEventListener("mousedown", function(){ tipSuppressed = true; hideTip(); });
-        btn.addEventListener("click", function(){ tipSuppressed = true; hideTip(); });
-      });
-    }
+    /* Button tooltips: the shared core implementation. This component used to carry its own
+       ~70-line copy (.vot-tip) whose state was per root — the pre-fix architecture that broke
+       whenever two instances shared a page. */
+    UC.makeTooltips(root, darkNow);
 
     if (granBtnsLive().length){
       syncGranActive();
@@ -1185,8 +631,7 @@
         if (e.target.closest(".vot-maximize")){
           root.classList.toggle("is-max");
           setTimeout(function(){
-            try { if (chartInstance) chartInstance.resize(); } catch(err){}
-            try { if (lineChart) lineChart.resize(); } catch(err){}
+            line.resize();
           }, 60);
           return;
         }
@@ -1228,12 +673,11 @@
         var w = inner.clientWidth || root.clientWidth || 0;
         if (w){ if (w < NARROW_STACK) root.classList.add("is-narrow"); else root.classList.remove("is-narrow"); }
       }
-      root.classList.toggle("vc-narrow-page", getPageWidth() < 500);
+      root.classList.toggle("vc-narrow-page", UC.getPageWidth() < 500);
       checkBrandWidth();
       clearTimeout(root.__votRespT);
       root.__votRespT = setTimeout(function(){
-        try { if (chartInstance) chartInstance.resize(); } catch(e){}
-        try { if (lineChart) lineChart.resize(); } catch(e){}
+        line.resize();
       }, 60);
     }
 
@@ -1246,7 +690,6 @@
           isDark = wantDark;
           if (isDark){ root.setAttribute("data-theme","dark"); }
           else { root.removeAttribute("data-theme"); }
-          if (typeof syncPortalTheme === "function") syncPortalTheme();
           changed = true;
         }
         if (!LOADING_EXPLICIT[instanceId] && wantProc !== state.loading){
@@ -1271,13 +714,13 @@
       if (legendEl){
         new ResizeObserver(function(){
           if (root.__votLegRaf) return;
-          root.__votLegRaf = requestAnimationFrame(function(){ root.__votLegRaf = null; legendLayout(); });
+          root.__votLegRaf = requestAnimationFrame(function(){ root.__votLegRaf = null; line.relayoutLegend(); });
         }).observe(legendEl);
       }
     }
     window.addEventListener("resize", function(){
       if (root.__votWinRaf) return;
-      root.__votWinRaf = requestAnimationFrame(function(){ root.__votWinRaf = null; legendLayout(); applyResponsive(); });
+      root.__votWinRaf = requestAnimationFrame(function(){ root.__votWinRaf = null; line.relayoutLegend(); applyResponsive(); });
     });
 
     applyResponsive();
@@ -1329,7 +772,6 @@
           isDark = isYes(params.isDark);
           if (isDark){ root.setAttribute("data-theme","dark"); }
           else { root.removeAttribute("data-theme"); }
-          if (typeof syncPortalTheme === "function") syncPortalTheme();
         }
         if (params.companies != null){
           state.companies = Array.isArray(params.companies) ? params.companies : [];
@@ -1499,7 +941,7 @@
     if (!roots.length){ console.log("[VOT] keine Instanz mit id", id, "gefunden"); return; }
     roots.forEach(function(root){
       var ctrl = root.__votController;
-      var canvas = root.querySelector(".vc-line-canvas");
+      var canvas = root.querySelector(".up-line-canvas");
       var chart = null;
       try { chart = (window.Chart && window.Chart.getChart && canvas) ? window.Chart.getChart(canvas) : null; } catch(e){}
       console.log("[VOT] Instanz", root.getAttribute("data-instance"), {

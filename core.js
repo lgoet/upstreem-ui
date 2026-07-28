@@ -1238,6 +1238,10 @@
       empty: empty,
       destroy: destroy,
       relayoutLegend: legendLayout,
+      /* exposed because a component can drive the same highlight from outside the legend —
+         visibility-chart cross-highlights the line when you hover the matching table row.
+         Pass null to clear. */
+      highlight: applyHighlight,
       resize: function(){ try { if (chart) chart.resize(); } catch(e){} },
       chart: function(){ return chart; }
     };

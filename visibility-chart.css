@@ -7,9 +7,7 @@
    button itself, .vot-filter-btn, is untouched — still the icon "fader" button), and the new
    Visibility/Ranking/Sentiment column explainers reuse core.css's shared .up-explain shell.
 
-   Deliberately NOT reusing .up-iconbtn for .vot-iconbtn or .up-tip for .vot-tip: both looked
    like exact matches at a glance but aren't — .up-iconbtn adds a hover background this component
-   never had, and .vot-tip's JS has click-suppression behaviour .up-tip's shared handler lacks.
    Kept separate rather than risk an unintended visual/behavioural change. .up-switch IS reused
    for the sort dropdown's Descending toggle — confirmed byte-identical to .vot-switch. */
 
@@ -84,7 +82,6 @@
 .up-filter-item.is-disabled { opacity: 0.4; cursor: default; }
 .up-filter-item.is-disabled:hover { background: transparent; }
 .vot-filter-head-actions { display: flex; align-items: center; gap: 10px; }
-@keyframes votpulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
 
 /* right heading with total-count */
 .vot-heading-right { display: flex; align-items: center; }
@@ -96,21 +93,7 @@
    the Descending switch reuses core.css's .up-switch. The .is-shown toggle (not a parent-state
    selector) is required once portaled: the menu is no longer a DOM descendant of .vot-sort. */
 .vot-sort { position: relative; flex: 0 0 auto; }
-.vot-sort-menu { position: absolute; top: calc(100% + 8px); right: 0; z-index: 60; width: 220px;
-  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 14px; box-shadow: 0 10px 28px rgba(0,0,0,.14); padding: 8px;
-  opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none; transition: opacity 140ms ease, transform 140ms ease; }
-.vot-sort-menu.is-shown { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
-.up-root[data-theme="dark"] .vot-sort-menu { background: #151515; }
 .vot-sort.is-open .vot-sort-btn { color: var(--vc-text); background: var(--vc-heading-bg); }
-.vot-pop-head { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--vc-muted); padding: 4px 10px 8px; }
-.vot-pop-opt { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; border-radius: 9px; cursor: pointer; font-size: 13.5px; font-weight: 500; color: var(--vc-text); }
-.vot-pop-opt:hover { background: var(--vc-heading-bg); }
-.vot-pop-opt .vot-check { width: 16px; height: 16px; color: var(--vc-text); opacity: 0; flex: 0 0 auto; }
-.vot-pop-opt.is-active .vot-check { opacity: 1; }
-.vot-pop-div { height: 1px; background: var(--vc-border); margin: 7px 4px; }
-.vot-pop-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; border-radius: 9px; }
-.vot-pop-row:hover { background: var(--vc-heading-bg); }
-.vot-pop-label { font-size: 13.5px; font-weight: 500; color: var(--vc-text); }
 
 /* Go-To button: primary FONT color as bg, icon = the other theme's primary font color */
 .vot-goto { background: var(--vc-text) !important; color: #e0e0e0; }
@@ -119,25 +102,9 @@
 .up-root[data-theme="dark"] .vot-goto:hover { background: #a0a0a0 !important; color: #1f1f1b; }
 
 /* dark button tooltip — own implementation, not core.css's .up-tip (see file header) */
-.vot-tip {
-  position: fixed; z-index: 2147483000; box-sizing: border-box;
-  height: 24px; display: inline-flex; align-items: center;
-  padding: 0 9px; border-radius: 6px;
-  font-family: Geist, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-  font-size: 12px; font-weight: 500; line-height: 1; white-space: nowrap;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.18);
-  opacity: 0; transform: translateY(4px); pointer-events: none;
-  transition: opacity .14s ease, transform .14s ease;
-}
-.vot-tip.show { opacity: 1; transform: translateY(0); }
 
 /* row hover → clickable go-to icon at the far right of the Brand cell */
 .vt-td-brand { position: relative; }
-.vt-row-goto { margin-left: auto; width: 16px; height: 16px; flex: 0 0 auto; color: var(--vc-third);
-  opacity: 0; transform: translateX(-3px); transition: opacity .18s ease, transform .18s ease; transition-delay: 0ms; }
-.vt-row-goto svg { width: 16px; height: 16px; display: block; }
-.vt-row:hover .vt-row-goto { opacity: 1; transform: translateX(0); transition-delay: 220ms; }
-.vot-root.is-narrow-cell .vt-row-goto { display: none; }
 
 /* granularity switcher (in the header) */
 .vc-gran { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-bg); border-radius: 8px; border: 0; height: 32px; flex: 0 0 auto; }
@@ -149,47 +116,15 @@
 .up-root[data-theme="dark"] .vc-gran-btn.is-active { background: #121212; border-color: #353535; }
 .vc-gran-btn.is-disabled { opacity: 0.4; pointer-events: none; cursor: default; }
 
-.vc-line-wrap { position: relative; flex: 1 1 auto; min-height: 0; width: 100%; }
-.vc-line-canvas { display: block; width: 100% !important; height: 100% !important; }
-.vc-line-empty { position:absolute; left:0; right:0; top:58%; transform:translateY(-50%); display:flex; align-items:center; justify-content:center; font-size:13px; color: var(--vc-muted); }
 
-.vc-line-sk { position:absolute; inset:0; pointer-events:none; --shimmer:.14; }
-.vc-line-sk .sk-linechart { width:100%; height:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:6px; padding:32px; }
-.vc-line-sk .sk-lc-grid { flex:1; position:relative; display:flex; flex-direction:column; justify-content:space-between; }
-.vc-line-sk .sk-lc-hline { height:1px; background:var(--vc-sk); border-radius:1px; position:relative; overflow:hidden; }
-.vc-line-sk .sk-lc-hline::after { content:""; position:absolute; inset:0; background:linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,var(--shimmer)) 50%, rgba(255,255,255,0) 100%); transform:translateX(-100%); animation:vc-skt 1200ms linear infinite; }
-.vc-line-sk .sk-lc-svg { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
-.vc-line-sk .sk-lc-astop0 { stop-color:var(--vc-sk); stop-opacity:.5; }
-.vc-line-sk .sk-lc-astop1 { stop-color:var(--vc-sk); stop-opacity:0; }
-.vc-line-sk .sk-lc-stroke { fill:none; stroke:var(--vc-sk); stroke-width:1.875; stroke-linecap:round; }
-.vc-line-sk .sk-lc-shimmer-path { stroke-dasharray:1000; stroke-dashoffset:1000; animation:vc-skt-path 1200ms linear infinite; stroke:rgba(255,255,255,var(--shimmer)); fill:none; stroke-width:2.25; stroke-linecap:round; }
-.vc-line-sk .sk-lc-xaxis { display:flex; justify-content:space-between; flex-shrink:0; padding:0 1px; }
-.vc-line-sk .sk-lc-xlabel { height:8px; width:24px; background:var(--vc-sk); border-radius:4px; position:relative; overflow:hidden; }
-.vc-line-sk .sk-lc-xlabel::after { content:""; position:absolute; inset:0; background:linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,var(--shimmer)) 50%, rgba(255,255,255,0) 100%); transform:translateX(-100%); animation:vc-skt 1200ms linear infinite; }
-@keyframes vc-skt { 100% { transform:translateX(100%); } }
-@keyframes vc-skt-path { 0% { stroke-dashoffset:1000; } 100% { stroke-dashoffset:-1000; } }
-@media (prefers-reduced-motion: reduce){ .vc-line-sk .sk-lc-hline::after,.vc-line-sk .sk-lc-xlabel::after,.vc-line-sk .sk-lc-shimmer-path{ animation:none; } }
 
 /* ---------- line legend (balanced rows) ---------- */
-.vc-legend { width:100%; height:auto; box-sizing:border-box; overflow:visible; --up-column-gap:16px; margin-top:12px; flex:0 0 auto; }
-.vc-legend.is-hidden { display:none; }
-.vc-legend .up-company-rows { width:100%; height:auto; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; row-gap:8px; box-sizing:border-box; }
-.vc-legend .up-company-row { width:100%; min-height:24px; display:flex; align-items:center; justify-content:center; column-gap:var(--up-column-gap,16px); box-sizing:border-box; overflow:hidden; min-width:0; }
-.vc-legend .up-company-item { height:24px; padding:2px 8px; border:0; background:transparent; display:inline-flex; align-items:center; justify-content:flex-start; flex:0 1 auto; min-width:0; box-sizing:border-box; white-space:nowrap; transition: opacity 200ms ease; }
-.vc-legend .up-company-color { width:10px; height:10px; min-width:10px; min-height:10px; border-radius:4px; flex:0 0 auto; }
-.vc-legend .up-company-favicon { width:16px; height:16px; min-width:16px; min-height:16px; border-radius:4px; object-fit:cover; display:block; flex:0 0 auto; }
-.vc-legend .up-company-name { font-family:Geist, Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size:12px; font-weight:500; line-height:16px; color:var(--vc-text); white-space:nowrap; max-width:150px; overflow:hidden; text-overflow:ellipsis; flex:1 1 auto; min-width:0; }
-.vot-root.is-narrow .vc-legend .up-company-name { max-width: 90px; }
-.vc-legend .up-company-inner-gap { width:8px; height:1px; flex:0 0 8px; }
-.vc-legend .up-company-measure { position:absolute; left:-99999px; top:-99999px; visibility:hidden; pointer-events:none; display:flex; column-gap:var(--up-column-gap,16px); width:auto; height:auto; overflow:visible; }
 
-.vot-root.vc-narrow-page .vt-legend { display: none !important; }
 
 /* ---------- Top Brands table ---------- */
 .vt-table { width: 100%; height: 100%; display: flex; flex-direction: column; background: var(--vc-bg); overflow: hidden; }
 .vt-thead, .vt-row { display: grid; grid-template-columns: 44px minmax(120px,1fr) 22% 20% 20%; align-items: center; }
 
-.vt-table.vt-hide-trend .vt-trend { display: none; }
 .vt-table.vt-hide-sentiment .vt-th-sentiment,
 .vt-table.vt-hide-sentiment .vt-td-sentiment { display: none; }
 .vt-table.vt-hide-sentiment .vt-thead,
@@ -212,24 +147,18 @@
   border-right: 1px solid var(--vc-border); border-bottom: 1px solid var(--vc-border); }
 .vt-td:last-child { border-right: none; }
 .vt-td-idx { justify-content: center; padding: 0; gap: 0; font-size: 13px; font-weight: 500; color: var(--vc-third); }
-.vt-logo-box { width: 24px; height: 24px; border-radius: 8px; background: var(--vt-logo-bg); padding: 1px; flex: 0 0 auto; display: block; }
-.vt-logo-box img { width: 22px; height: 22px; border-radius: 7px; object-fit: cover; display: block; }
 .vt-brand-name { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .vt-num { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; flex: 0 0 auto; }
 .vt-rank-group { display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; }
 .vt-hash { width: 12px; height: 12px; color: var(--vc-third); flex: 0 0 auto; display: block; }
-.vt-trend { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; flex: 0 0 auto; }
-.vt-trend svg { width: 16px; height: 16px; display: block; }
-.vt-trend.pos { color: var(--vt-up); }
-.vt-trend.neg { color: var(--vt-down); }
 .vt-sent { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 6px; border: 1px solid var(--vc-border); border-radius: 6px; flex: 0 0 auto; }
 .vt-sent-dot { width: 6px; height: 6px; border-radius: 2px; flex: 0 0 auto; }
 .vt-sent-val { font-size: 13px; font-weight: 500; color: var(--vc-text); }
 .vt-empty { padding: 24px; text-align: center; color: var(--vc-muted); font-size: 13px; }
-.vt-row.vt-tsk { cursor: default; }
-.vt-row.vt-tsk:hover { background: transparent; }
-.vt-tsk-bar { display: inline-block; height: 12px; border-radius: 4px; background: var(--vc-sk); animation: votpulse 1.2s ease-in-out infinite; }
-.vt-tsk-logo { display: inline-block; width: 24px; height: 24px; border-radius: 8px; background: var(--vc-sk); animation: votpulse 1.2s ease-in-out infinite; flex: 0 0 auto; }
+/* skeleton rows come from UC.skeletonRows and carry the shared .up-tsk marker; the bar/logo
+   placeholders themselves are styled by core.css */
+.vt-row.up-tsk { cursor: default; }
+.vt-row.up-tsk:hover { background: transparent; }
 
 /* ---------- column explainer visuals (panel + tooltip shell are core.css's .up-explain) ---------- */
 .vot-explain-vis {
@@ -254,10 +183,3 @@
 .up-explain[data-theme="dark"] .vot-explain-down { color: #fca5a5; }
 .up-explain[data-theme="dark"] .vot-explain-dot { background: #3a3a3a; border-color: #4a4a4a; box-shadow: 0 0 0 2px #1b1b1b; color: #b8b8b8; }
 /* header info icon, reveal-on-hover — same interaction as urls/domains table column explainers */
-.vt-th-info {
-  width: 14px; height: 14px; flex: 0 0 14px; margin-left: auto;
-  color: var(--vc-third); opacity: 0; transition: opacity .14s ease;
-}
-.vt-th-info svg { width: 14px; height: 14px; display: block; }
-.vt-th:hover .vt-th-info { opacity: 1; }
-.vt-th-info:hover { color: var(--vc-text); }
