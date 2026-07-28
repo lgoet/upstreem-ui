@@ -314,39 +314,59 @@
      timers all doing redundant work forever, and every one of them re-fires on totally unrelated
      DOM churn elsewhere on the page (another reusable's appear animation, a repeating group
      re-rendering, Mira's own UI) — exactly the kind of background tax that shows up as animations
-     feeling slightly less smooth than a plain standalone HTML embed had. One shared observer/timer
-     pair here does the same job for every registered component at once. */
-  var __rootWatchers = [];
-  var __rootWatcherObs = null, __rootWatcherIv = null;
+     feeling slightly less smooth than a plain standalone HTML embed had.
+
+     The shared registry/observer/interval live on WINDOW, not in this module's closure — because
+     each component loads its own copy of core.js, so this IIFE runs once PER component (and again
+     on every Bubble re-render of a component). Keeping the state module-scoped meant each core.js
+     execution built its OWN whole-page observer + interval, quietly re-creating the exact 2-4
+     redundant observers this consolidation exists to prevent. On window there is provably ONE
+     observer + ONE interval + ONE watcher list for the whole page, no matter how many times
+     core.js is evaluated.
+
+     The observer's per-mutation work is also coalesced: any relevant DOM change schedules a SINGLE
+     rAF-batched pass over the watchers instead of running each watcher's init synchronously inside
+     every mutation callback — so a burst of mutations during a drawer/slide-in open (Bubble
+     rendering a whole subtree at once) collapses to one cheap pass per frame. */
   function watchRoots(rootSelector, onRootsFound){
-    for (var e = 0; e < __rootWatchers.length; e++){
-      if (__rootWatchers[e].selector === rootSelector) return;   // already registered — a component's boot can run more than once per page
+    var G = window.__upRootWatch;
+    if (!G) G = window.__upRootWatch = { watchers: [], obs: null, iv: null, pending: false };
+    for (var e = 0; e < G.watchers.length; e++){
+      if (G.watchers[e].selector === rootSelector) return;   // already registered by some core.js execution
     }
-    __rootWatchers.push({ selector: rootSelector, onFound: onRootsFound });
-    if (!__rootWatcherObs && window.MutationObserver){
-      __rootWatcherObs = new MutationObserver(function(muts){
-        var hit = {};
+    G.watchers.push({ selector: rootSelector, onFound: onRootsFound });
+
+    function runAll(){
+      G.pending = false;
+      for (var k = 0; k < G.watchers.length; k++){ try { G.watchers[k].onFound(); } catch(e){} }
+    }
+    function scheduleAll(){
+      if (G.pending) return;
+      G.pending = true;
+      if (window.requestAnimationFrame) window.requestAnimationFrame(runAll); else setTimeout(runAll, 16);
+    }
+
+    if (!G.obs && window.MutationObserver){
+      G.obs = new MutationObserver(function(muts){
         for (var i = 0; i < muts.length; i++){
           var added = muts[i].addedNodes;
           for (var j = 0; j < added.length; j++){
             var n = added[j];
             if (n.nodeType !== 1) continue;
-            for (var w = 0; w < __rootWatchers.length; w++){
-              var watcher = __rootWatchers[w];
-              if (hit[w]) continue;
-              if ((n.classList && n.classList.contains(watcher.selector)) ||
-                  (n.querySelector && n.querySelector("." + watcher.selector))) hit[w] = true;
+            for (var w = 0; w < G.watchers.length; w++){
+              var sel = G.watchers[w].selector;
+              /* first relevant node anywhere in the batch → schedule one coalesced pass and stop
+                 scanning; the per-component initAll each pass runs is itself cheap + idempotent. */
+              if ((n.classList && n.classList.contains(sel)) ||
+                  (n.querySelector && n.querySelector("." + sel))){ scheduleAll(); return; }
             }
           }
         }
-        for (var k = 0; k < __rootWatchers.length; k++){ if (hit[k]) try { __rootWatchers[k].onFound(); } catch(e){} }
       });
-      __rootWatcherObs.observe(document.body, { childList: true, subtree: true });
+      G.obs.observe(document.body, { childList: true, subtree: true });
     }
-    if (!__rootWatcherIv){
-      __rootWatcherIv = setInterval(function(){
-        for (var i = 0; i < __rootWatchers.length; i++){ try { __rootWatchers[i].onFound(); } catch(e){} }
-      }, 1500);
+    if (!G.iv){
+      G.iv = setInterval(runAll, 1500);
     }
   }
 
