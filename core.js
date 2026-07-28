@@ -129,8 +129,138 @@
   var CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
   var COPY_SVG = '<svg class="up-ic-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
   var GOTO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>';
+  var HASH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>';
   var DONE_SVG = '<svg class="up-ic-done" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
   var EXT_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
+
+  /* ==========================================================================================
+     TABLE PRIMITIVES
+     ==========================================================================================
+     The four tables in this library legitimately differ in their columns, heights and row
+     content — that stays per component. What did NOT need to differ, but was copy-pasted anyway,
+     is everything below: the trend chip (4 copies), the loading skeleton rows (4), the 3000ms
+     empty-state grace timer (5), and the column-explainer popover logic (3). */
+
+  /* Delta chip: an arrow plus the absolute value, coloured by whether the change is GOOD, which
+     is not the same as whether it went up — for a ranking, down is good. Hence `inverted`.
+     Returns "" for null/NaN/rounds-to-zero, so callers can concatenate it unconditionally.
+     opts: { decimals, inverted, suffix, cls } */
+  function trendChip(delta, opts){
+    opts = opts || {};
+    if (delta == null || delta === "") return "";
+    var d = Number(delta);
+    if (!isFinite(d)) return "";
+    var shown = opts.decimals ? Math.round(Math.abs(d) * 10) / 10 : Math.round(Math.abs(d));
+    if (shown === 0) return "";                       // "+0%" is noise, not information
+    var goingUp = d > 0;
+    var positive = opts.inverted ? !goingUp : goingUp;
+    var txt = (opts.decimals ? shown.toFixed(1) : String(shown)) + (opts.suffix || "");
+    return '<span class="' + (opts.cls || "up-trend") + " " + (positive ? "pos" : "neg") + '">' +
+      (goingUp ? TREND_UP : TREND_DOWN) + txt + '</span>';
+  }
+
+  /* Loading skeleton rows for a grid table.
+     spec: { count, cols:[width|{w,logo}], rowClass, cellClass, headHtml }
+     A number is a bar width in px; {logo:true} prepends the round logo placeholder. */
+  function skeletonRows(spec){
+    spec = spec || {};
+    var count = spec.count || 7;
+    var cols = spec.cols || [];
+    var rowClass = spec.rowClass || "up-row";
+    var cellClass = spec.cellClass || "up-td";
+    var out = "";
+    for (var i = 0; i < count; i++){
+      var cells = "";
+      for (var c = 0; c < cols.length; c++){
+        var spec2 = cols[c];
+        var w = (typeof spec2 === "number") ? spec2 : (spec2 && spec2.w) || 60;
+        /* jitter the width per row so the block doesn't read as a rigid grid */
+        if (spec2 && spec2.jitter) w = w + (i % 3) * spec2.jitter;
+        cells += '<div class="' + cellClass + '">' +
+          ((spec2 && spec2.logo) ? '<span class="up-tsk-logo"></span>' : "") +
+          '<span class="up-tsk-bar" style="width:' + w + 'px"></span></div>';
+      }
+      out += '<div class="' + rowClass + ' up-tsk">' + cells + '</div>';
+    }
+    return (spec.headHtml || "") + out;
+  }
+
+  /* Empty-state grace timer.
+     An empty delivery is often an interim "clearing" step a beat before the real data lands;
+     committing to "No data" immediately flashes a placeholder that is gone again a moment later.
+     This shows the skeleton first and only commits after the window if the state still says
+     empty. 3000ms matches the line chart's own no-data window, so a table and the chart beside
+     it never disagree about whether there is data.
+     cfg: { showSkeleton(), commitEmpty(), stillEmpty(), ms } */
+  function makeEmptyGrace(cfg){
+    var t = null;
+    function clear(){ if (t){ clearTimeout(t); t = null; } }
+    return {
+      /* call when a render finds no rows; returns true if it handled the render (grace running) */
+      hold: function(){
+        if (t) return true;
+        cfg.showSkeleton();
+        t = setTimeout(function(){
+          t = null;
+          if (cfg.stillEmpty && !cfg.stillEmpty()) return;   // data arrived meanwhile
+          cfg.commitEmpty();
+        }, cfg.ms || 3000);
+        return true;
+      },
+      clear: clear
+    };
+  }
+
+  /* Column explainer popover (the "i" next to a metric header).
+     Body-appended so it can't be clipped by the table's overflow, flips above the trigger when
+     there isn't room below, and clamps its caret to stay under the icon after that clamp.
+     cfg: { root, triggerSel, html(key), getIsDark } */
+  function makeExplain(cfg){
+    var root = cfg.root;
+    var el = document.createElement("div");
+    el.className = "up-explain";
+    document.body.appendChild(el);
+    var openFor = null;
+    function hide(){ el.classList.remove("is-on"); openFor = null; }
+    function show(trigger){
+      var key = trigger.getAttribute("data-explain");
+      var html = cfg.html ? cfg.html(key) : "";
+      if (!html) return;
+      el.innerHTML = html;
+      el.setAttribute("data-theme", (cfg.getIsDark && cfg.getIsDark()) ? "dark" : "light");
+      el.classList.add("is-on");
+      el.classList.remove("is-flipped");
+      el.style.left = "0px"; el.style.top = "0px";
+      var r = trigger.getBoundingClientRect();
+      var box = el.getBoundingClientRect();
+      var vw = window.innerWidth || document.documentElement.clientWidth;
+      var vh = window.innerHeight || document.documentElement.clientHeight;
+      var left = r.left + r.width / 2 - box.width / 2;
+      left = Math.max(8, Math.min(left, vw - box.width - 8));
+      var top = r.bottom + 10;
+      if (top + box.height > vh - 8){          // no room below → flip above the trigger
+        top = r.top - box.height - 10;
+        el.classList.add("is-flipped");
+      }
+      el.style.left = left + "px";
+      el.style.top = top + "px";
+      /* the caret follows the icon, not the box, because the box was clamped to the viewport */
+      el.style.setProperty("--up-caret", Math.round(r.left + r.width / 2 - left) + "px");
+      openFor = trigger;
+    }
+    root.addEventListener("mouseover", function(e){
+      var t = e.target.closest(cfg.triggerSel || "[data-explain]");
+      if (t && root.contains(t) && t !== openFor) show(t);
+    });
+    root.addEventListener("mouseout", function(e){
+      var t = e.target.closest(cfg.triggerSel || "[data-explain]");
+      if (!t) return;
+      if (e.relatedTarget && t.contains(e.relatedTarget)) return;
+      if (t === openFor) hide();
+    });
+    window.addEventListener("scroll", hide, { capture: true, passive: true });
+    return { show: show, hide: hide, el: el };
+  }
 
   /* Survives Bubble rebuilding the element, keyed by instanceId. */
   var STORE = (window.__uutStore = window.__uutStore || {});
@@ -1417,8 +1547,15 @@
     CHECK_SVG: CHECK_SVG,
     COPY_SVG: COPY_SVG,
     GOTO_SVG: GOTO_SVG,
+    HASH_ICON: HASH_ICON,
     DONE_SVG: DONE_SVG,
     EXT_SVG: EXT_SVG,
+
+    /* ---- table primitives ---- */
+    trendChip: trendChip,
+    skeletonRows: skeletonRows,
+    makeEmptyGrace: makeEmptyGrace,
+    makeExplain: makeExplain,
     STORE: STORE,
     LOADING_EXPLICIT: LOADING_EXPLICIT,
     makeTooltips: makeTooltips,

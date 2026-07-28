@@ -744,3 +744,42 @@
   transform: translateX(-100%); animation: upskt 1200ms linear infinite;
 }
 @media (prefers-reduced-motion: reduce){ .up-sk-dot::after, .up-sk-lbl::after, .up-sk-pct::after { animation: none; } }
+
+/* ==========================================================================================
+   TABLE PRIMITIVES — shared cell furniture
+   ==========================================================================================
+   Each of these existed 3-4 times under different prefixes (.uut-/.udt-/.tct-/.vt-) with
+   byte-identical rules. One copy now; components keep only their own column widths and the
+   cells that are genuinely theirs. */
+
+/* delta chip: arrow + value, green when the change is good, red when it isn't */
+.up-trend { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; flex: 0 0 auto; font-variant-numeric: tabular-nums; }
+.up-trend svg { width: 16px; height: 16px; display: block; }
+.up-trend.pos { color: var(--vt-up); }
+.up-trend.neg { color: var(--vt-down); }
+
+/* favicon holder with a letter fallback — a broken favicon used to leave an empty square, which
+   reads as a loading glitch; the initial keeps every row visually complete */
+.up-logo-box { width: 24px; height: 24px; border-radius: 8px; background: var(--vt-logo-bg); padding: 1px; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center; position: relative; }
+.up-logo-box img { width: 22px; height: 22px; border-radius: 7px; object-fit: cover; display: block; }
+.up-logo-ltr { font-size: 11px; font-weight: 600; color: var(--vc-muted); line-height: 1; text-transform: uppercase; }
+.up-logo-box.has-img .up-logo-ltr { display: none; }
+
+/* go-to arrow, revealed on row hover after a short delay so it doesn't flicker while the cursor
+   sweeps across rows */
+.up-row-goto { margin-left: auto; width: 16px; height: 16px; flex: 0 0 auto; color: var(--vc-third);
+  opacity: 0; transform: translateX(-3px); transition: opacity .18s ease, transform .18s ease; transition-delay: 0ms; }
+.up-row-goto svg { width: 16px; height: 16px; display: block; }
+.up-row:hover .up-row-goto { opacity: 1; transform: translateX(0); transition-delay: 220ms; }
+.up-root.is-vnarrow .up-row-goto { display: none; }
+
+/* type/citation chip */
+.up-tag { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 7px;
+  font-size: 12px; font-weight: 600; white-space: nowrap; max-width: 100%; overflow: hidden; }
+.up-tag-dot { width: 6px; height: 6px; border-radius: 999px; flex: 0 0 auto; }
+.up-tag-lbl { overflow: hidden; text-overflow: ellipsis; }
+
+/* compact "No data" line for tables that live in a fixed-height box and have no room for the
+   full illustrated empty state */
+.up-empty-mini { padding: 24px; text-align: center; color: var(--vc-muted); font-size: 13px; }
