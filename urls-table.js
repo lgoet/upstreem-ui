@@ -8,13 +8,14 @@
      queueing functions right away; uutRun() drains the queue (in original order) once the real
      implementations are assigned. window.__uutBootStubbed guards against re-stubbing over a
      real implementation if this script tag executes more than once on the page. */
+  /* Stubs must exist before core.js is guaranteed to be loaded — Bubble polls for these by
+     name and would otherwise miss the earliest calls. Everything after the wait uses UC.makeMount. */
   var __uutBootQueue = window.__uutBootQueue = window.__uutBootQueue || [];
   if (!window.__uutBootStubbed){
     window.__uutBootStubbed = true;
-    window.renderUrlsTable = function(){ __uutBootQueue.push(["renderUrlsTable", arguments]); };
-    window.setUrlsTableLoading = function(){ __uutBootQueue.push(["setUrlsTableLoading", arguments]); };
-    window.setUrlsTableBrands = function(){ __uutBootQueue.push(["setUrlsTableBrands", arguments]); };
-    window.resetUrlsTable = function(){ __uutBootQueue.push(["resetUrlsTable", arguments]); };
+    ["renderUrlsTable", "setUrlsTableLoading", "resetUrlsTable"].forEach(function(n){
+      window[n] = function(){ __uutBootQueue.push([n, arguments]); };
+    });
   }
 
   /* Bubble injects this component's <script> tags via jQuery .html(), which does not guarantee
@@ -136,7 +137,23 @@
     function denseKey(){ return "uut_dense__" + instanceId; }
     function readDense(){ try { return window.localStorage.getItem(denseKey()) === "1"; } catch(e){ return false; } }
     function writeDense(){ try { window.localStorage.setItem(denseKey(), state.dense ? "1" : "0"); } catch(e){} }
-    var debTimer = null, latestReqId = null, sortTimer = null;
+    var sortTimer = null;
+    /* Search comes from core (UC.makeSearch) — this file and domains-table carried copies that
+       were identical apart from comments. fitToolbar stays local because the toolbar tiers are
+       this component's own. */
+    var MOBILE_SEARCH_MAX = 640;   // below this component width an open search takes over the toolbar
+    var search = UC.makeSearch({
+      root: root, box: elSearch, input: elSearchIn, state: state,
+      mobileMax: MOBILE_SEARCH_MAX, prefix: "uut",
+      onRender: function(){ renderTable(); renderPager(); },
+      onFire: function(payload){ fire("data-search-fn", "uutSearch", payload); },
+      onTakeoverEnd: function(){ fitToolbar(); },
+      persist: function(){ persist(); }
+    });
+    function runSearch(){ search.run(); }
+    function toggleSearch(){ search.toggle(); }
+    function onSearchInput(){ search.onInput(); }
+    function syncSearchTakeover(){ search.syncTakeover(); }
 
     function usableAttr(v, placeholder){
       return v != null && v !== "" && v !== placeholder;
@@ -352,7 +369,7 @@
       sortTimer = setTimeout(function(){
         // A sort is a deliberate action, not part of a search race — clear the search's requestId
         // so its response can't be dropped by the requestId guard in update().
-        latestReqId = null;
+        search.setLatest(null);
         fire("data-sort-fn", "uutSort", {
           order: orderValue(state.sortField, state.sortDir),   // -> p_order
           sort_field: state.sortField, sort_dir: state.sortDir // split parts, in case a workflow prefers them
@@ -523,7 +540,7 @@
     function firePage(){
       /* A page/size change is a deliberate action, not part of a search race. Clear the search's
          requestId so its response can't be dropped by the requestId guard in update(). */
-      latestReqId = null;
+      search.setLatest(null);
       fire("data-page-fn", "uutPage", { limit: state.pageSize, offset: offset(), page: state.page });
     }
 
@@ -658,42 +675,6 @@
     }
 
     /* ---------------- search (same debounce/min-length/reqId as quick_actions) ---------------- */
-    function newReqId(){ return "uut_" + Date.now() + "_" + Math.random().toString(36).slice(2,8); }
-    function runSearch(){
-      var reqId = newReqId(); latestReqId = reqId;
-      state.page = 1;   // a new query is a new result set
-      state.loading = true; renderTable(); renderPager();
-      fire("data-search-fn", "uutSearch", {
-        query: state.query,
-        query_folded: foldDiacritics(state.query),
-        query_de: germanExpand(state.query),
-        requestId: reqId
-      });
-    }
-    function onSearchInput(){
-      state.query = String(elSearchIn.value || "").trim();
-      elSearch.classList.toggle("has-text", !!elSearchIn.value.length);
-      persist();
-      clearTimeout(debTimer);
-      // Below the minimum, an empty query still has to go out — that's how the table gets
-      // its unfiltered list back after the user clears the box.
-      if (state.query.length && state.query.length < MIN){ latestReqId = null; return; }
-      debTimer = setTimeout(runSearch, DEBOUNCE);
-    }
-    function toggleSearch(){
-      var open = !elSearch.classList.contains("is-open");
-      elSearch.classList.toggle("is-open", open);
-      syncSearchTakeover();   // mobile: take over the row when opening / release it when closing
-      /* No fitToolbar() here: the open search's width is already reserved in headGap(), so the
-         tier decision is identical open or closed. Re-measuring here would run mid-transition
-         (box not full width yet), read too much room, and wrongly un-hide toolbar elements. */
-      if (open){ setTimeout(function(){ try { elSearchIn.focus(); } catch(e){} }, 60); }
-      else if (state.query){
-        // closing clears the search, which means going back to the unfiltered list
-        state.query = ""; elSearchIn.value = "";
-        persist(); clearTimeout(debTimer); runSearch();
-      }
-    }
 
     /* ---------------- export ---------------- */
     function openExport(){
@@ -909,7 +890,7 @@
         state.brandMentioned = ""; state.mentionSel = {}; state.mentionApplied = {};
         state.page = 1;
         persist(); syncFilterBadge(); syncBrand(); syncMentLabel(); populateFilter(); populateMent();
-        clearTimeout(debTimer); runSearch();
+        search.cancel(); runSearch();
         fire("data-filter-fn", "uutFilter", { citation_types: "" });
         fire("data-mentioned-fn", "uutMentioned", { brands: "" });
         fire("data-brand-fn", "uutBrand", { brand_mentioned: "" });
@@ -921,7 +902,7 @@
         if (root.classList.contains("is-searchtakeover")){ toggleSearch(); return; }   // mobile: X closes + resets the search
         elSearchIn.value = ""; state.query = "";
         elSearch.classList.remove("has-text");
-        persist(); clearTimeout(debTimer); runSearch();
+        persist(); search.cancel(); runSearch();
         try { elSearchIn.focus(); } catch(e2){}
         return;
       }
@@ -1109,7 +1090,7 @@
       elSearchIn.addEventListener("input", onSearchInput);
       elSearchIn.addEventListener("keydown", function(e){
         if (e.key === "Escape"){ e.stopPropagation(); toggleSearch(); }
-        if (e.key === "Enter"){ clearTimeout(debTimer); if (state.query.length >= MIN || !state.query.length) runSearch(); }
+        if (e.key === "Enter"){ search.cancel(); if (state.query.length >= MIN || !state.query.length) runSearch(); }
       });
     }
 
@@ -1177,13 +1158,6 @@
 
     /* On a narrow (mobile) width, an open search hides the other tools so it can use the full
        row; closing it restores the normal tier layout. */
-    function syncSearchTakeover(){
-      var w = root.getBoundingClientRect().width || 0;
-      var on = !!elSearch && elSearch.classList.contains("is-open") && w > 0 && w < MOBILE_SEARCH_MAX;
-      if (on === root.classList.contains("is-searchtakeover")) return;
-      root.classList.toggle("is-searchtakeover", on);
-      if (!on) fitToolbar();   // takeover ended -> recompute which tools fit
-    }
     /* responsive: drop columns rather than squeezing them */
     function applyResponsive(){
       var w = root.getBoundingClientRect().width || 0;
@@ -1246,7 +1220,7 @@
         }
         // A response for a superseded search must not overwrite a newer one. Bubble can
         // echo requestId back; when it does, anything stale is dropped here.
-        if (params.requestId != null && latestReqId != null && String(params.requestId) !== String(latestReqId)) return;
+        if (params.requestId != null && search.latestReqId() != null && String(params.requestId) !== String(search.latestReqId())) return;
         if (params.rows != null){
           state.rows = Array.isArray(params.rows) ? params.rows : [];
           state.hasData = true;
@@ -1313,17 +1287,6 @@
      try to initialize the OTHER component's roots (and vice versa) — same shared CSS-variable
      class, different JS. .up-root still carries the theming/variables; .uut-root marks "this
      root belongs to urls-table.js" specifically. */
-  function initAll(){
-    var roots = document.querySelectorAll(".uut-root:not(.up-portal)");
-    for (var i = 0; i < roots.length; i++) initRoot(roots[i]);
-  }
-  function rootsWithId(id){
-    var out = [], roots = document.querySelectorAll(".uut-root:not(.up-portal)");
-    for (var i = 0; i < roots.length; i++){
-      if (roots[i].getAttribute("data-instance") === id) out.push(roots[i]);
-    }
-    return out;
-  }
   function resolve(id){
     var r = rootsWithId(String(id || "").trim());
     if (!r.length) return null;
@@ -1356,67 +1319,20 @@
     ctrl.update({ brands: list });
     return true;
   }
-  window.renderUrlsTable = doRender;
-  window.setUrlsTableLoading = doLoading;
-  window.setUrlsTableBrands = doBrands;
-  window.resetUrlsTable = doReset;
-  if (__uutBootQueue.length){
-    var __uutQueued = __uutBootQueue.splice(0, __uutBootQueue.length);
-    __uutQueued.forEach(function(entry){
-      try { window[entry[0]].apply(null, entry[1]); } catch(e){}
-    });
-  }
-  window.__uutResolveLocal = function(id){ return rootsWithId(id).length > 0; };
+  /* mount from core: root registry, iframe forwarder, wheel forwarding, init cascade and the
+     replay of whatever Bubble queued against the stubs. doRender/doLoading/doReset stay local. */
+  var mount = UC.makeMount({
+    rootClass: "uut-root", notPortal: true,
+    ctrlProp: "__uutController",
+    resolveLocal: "__uutResolveLocal",
+    queue: "__uutBootQueue",
+    initRoot: initRoot,
+    api: { renderUrlsTable: doRender, setUrlsTableLoading: doLoading, resetUrlsTable: doReset },
+    forwardShape: { renderUrlsTable: "params", resetUrlsTable: "id" }
+  });
+  function rootsWithId(id){ return mount.rootsWithId(id); }
+  function initAll(){ return mount.initAll(); }
 
-  /* ================= forwarder on parent AND top (nested reusables) ================= */
-  (function exposeUpward(){
-    var targets = [];
-    try { if (window.parent && window.parent !== window) targets.push(window.parent); } catch(e){}
-    try { if (window.top && window.top !== window && targets.indexOf(window.top) === -1) targets.push(window.top); } catch(e){}
-    if (!targets.length) return;
-    function makeDeliver(w){
-      return function(fnName, id, arg1, arg2){
-        var queue = [w], seen = [];
-        while (queue.length){
-          var win = queue.shift(), ifr;
-          try { ifr = win.document.querySelectorAll("iframe"); } catch(e){ continue; }
-          for (var i = 0; i < ifr.length; i++){
-            var cw; try { cw = ifr[i].contentWindow; } catch(e){ cw = null; }
-            if (!cw || seen.indexOf(cw) !== -1) continue;
-            seen.push(cw); queue.push(cw);
-          }
-        }
-        for (var a = 0; a < seen.length; a++){
-          try {
-            var c = seen[a];
-            if (c && typeof c[fnName] === "function" && c.__uutResolveLocal && c.__uutResolveLocal(id)) return c[fnName](arg1, arg2);
-          } catch(e){}
-        }
-        for (var b = 0; b < seen.length; b++){
-          try { var c2 = seen[b]; if (c2 && typeof c2[fnName] === "function") return c2[fnName](arg1, arg2); } catch(e){}
-        }
-        return false;
-      };
-    }
-    for (var t = 0; t < targets.length; t++){
-      (function(w){
-        try {
-          var deliver = makeDeliver(w);
-          w.renderUrlsTable = function(p){ return deliver("renderUrlsTable", (p && p.instanceId) || "default", p); };
-          w.setUrlsTableLoading = function(id, on){ return deliver("setUrlsTableLoading", id || "default", id, on); };
-          w.setUrlsTableBrands = function(id, brands){ return deliver("setUrlsTableBrands", id || "default", id, brands); };
-          w.resetUrlsTable = function(id){ return deliver("resetUrlsTable", id || "default", id); };
-        } catch(e){}
-      })(targets[t]);
-    }
-  })();
-
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initAll);
-  else initAll();
-  [30, 100, 250, 500, 1000, 1800].forEach(function(ms){ setTimeout(initAll, ms); });
-  /* shared page-level watcher (core) — see UC.watchRoots for why this replaced a
-     private-to-this-component MutationObserver + setInterval pair */
-  if (UC.watchRoots) UC.watchRoots("uut-root", initAll);   // guard: a stale cached core.js on the page may predate this API
   } // end uutRun
 
   uutBoot(50); // retry for ~5s before giving up on core.js

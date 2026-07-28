@@ -8,13 +8,14 @@
      queueing functions right away; udtRun() drains the queue (in original order) once the real
      implementations are assigned. window.__udtBootStubbed guards against re-stubbing over a
      real implementation if this script tag executes more than once on the page. */
+  /* Stubs must exist before core.js is guaranteed to be loaded — Bubble polls for these by
+     name and would otherwise miss the earliest calls. Everything after the wait uses UC.makeMount. */
   var __udtBootQueue = window.__udtBootQueue = window.__udtBootQueue || [];
   if (!window.__udtBootStubbed){
     window.__udtBootStubbed = true;
-    window.renderDomainsTable = function(){ __udtBootQueue.push(["renderDomainsTable", arguments]); };
-    window.setDomainsTableLoading = function(){ __udtBootQueue.push(["setDomainsTableLoading", arguments]); };
-    window.setDomainsTableBrands = function(){ __udtBootQueue.push(["setDomainsTableBrands", arguments]); };
-    window.resetDomainsTable = function(){ __udtBootQueue.push(["resetDomainsTable", arguments]); };
+    ["renderDomainsTable", "setDomainsTableLoading", "resetDomainsTable"].forEach(function(n){
+      window[n] = function(){ __udtBootQueue.push([n, arguments]); };
+    });
   }
 
   /* Bubble injects this component's <script> tags via jQuery .html(), which does not guarantee
@@ -132,7 +133,23 @@
     /* Column visibility is a per-user display preference, not app data — localStorage, keyed by
        instance so two placements can differ. Wrapped because Bubble can run inside contexts where
        storage access throws (private mode, blocked third-party cookies). */
-    var debTimer = null, latestReqId = null, sortTimer = null;
+    var sortTimer = null;
+    /* Search comes from core (UC.makeSearch) — this file and domains-table carried copies that
+       were identical apart from comments. fitToolbar stays local because the toolbar tiers are
+       this component's own. */
+    var MOBILE_SEARCH_MAX = 640;   // below this component width an open search takes over the toolbar
+    var search = UC.makeSearch({
+      root: root, box: elSearch, input: elSearchIn, state: state,
+      mobileMax: MOBILE_SEARCH_MAX, prefix: "udt",
+      onRender: function(){ renderTable(); renderPager(); },
+      onFire: function(payload){ fire("data-search-fn", "udtSearch", payload); },
+      onTakeoverEnd: function(){ fitToolbar(); },
+      persist: function(){ persist(); }
+    });
+    function runSearch(){ search.run(); }
+    function toggleSearch(){ search.toggle(); }
+    function onSearchInput(){ search.onInput(); }
+    function syncSearchTakeover(){ search.syncTakeover(); }
 
     function usableAttr(v, placeholder){
       return v != null && v !== "" && v !== placeholder;
@@ -285,7 +302,7 @@
       persist(); syncHeadSorters(); populateSort();
       clearTimeout(sortTimer);
       sortTimer = setTimeout(function(){
-        latestReqId = null;
+        search.setLatest(null);
         fire("data-sort-fn", "udtSort", {
           order: orderValue(state.sortField, state.sortDir),   // -> p_order — last_used_desc/asc, NOT last_seen_*
           sort_field: state.sortField, sort_dir: state.sortDir
@@ -409,7 +426,7 @@
 
     /* ---------------- pagination ---------------- */
     function firePage(){
-      latestReqId = null;
+      search.setLatest(null);
       fire("data-page-fn", "udtPage", { limit: state.pageSize, offset: offset(), page: state.page });
     }
 
@@ -523,36 +540,6 @@
     }
 
     /* ---------------- search (same debounce/min-length/reqId pattern as urls-table.js) ---------------- */
-    function newReqId(){ return "udt_" + Date.now() + "_" + Math.random().toString(36).slice(2,8); }
-    function runSearch(){
-      var reqId = newReqId(); latestReqId = reqId;
-      state.page = 1;
-      state.loading = true; renderTable(); renderPager();
-      fire("data-search-fn", "udtSearch", {
-        query: state.query,
-        query_folded: foldDiacritics(state.query),
-        query_de: germanExpand(state.query),
-        requestId: reqId
-      });
-    }
-    function onSearchInput(){
-      state.query = String(elSearchIn.value || "").trim();
-      elSearch.classList.toggle("has-text", !!elSearchIn.value.length);
-      persist();
-      clearTimeout(debTimer);
-      if (state.query.length && state.query.length < MIN){ latestReqId = null; return; }
-      debTimer = setTimeout(runSearch, DEBOUNCE);
-    }
-    function toggleSearch(){
-      var open = !elSearch.classList.contains("is-open");
-      elSearch.classList.toggle("is-open", open);
-      syncSearchTakeover();
-      if (open){ setTimeout(function(){ try { elSearchIn.focus(); } catch(e){} }, 60); }
-      else if (state.query){
-        state.query = ""; elSearchIn.value = "";
-        persist(); clearTimeout(debTimer); runSearch();
-      }
-    }
 
     /* ---------------- export ---------------- */
     function openExport(){
@@ -739,7 +726,7 @@
         state.brandMentioned = ""; state.mentionSel = {}; state.mentionApplied = {};
         state.page = 1;
         persist(); syncFilterBadge(); syncBrand(); syncMentLabel(); populateFilter(); populateMent();
-        clearTimeout(debTimer); runSearch();
+        search.cancel(); runSearch();
         fire("data-filter-fn", "udtFilter", { citation_types: "" });
         fire("data-mentioned-fn", "udtMentioned", { brands: "" });
         return;
@@ -750,7 +737,7 @@
         if (root.classList.contains("is-searchtakeover")){ toggleSearch(); return; }
         elSearchIn.value = ""; state.query = "";
         elSearch.classList.remove("has-text");
-        persist(); clearTimeout(debTimer); runSearch();
+        persist(); search.cancel(); runSearch();
         try { elSearchIn.focus(); } catch(e2){}
         return;
       }
@@ -920,7 +907,7 @@
       elSearchIn.addEventListener("input", onSearchInput);
       elSearchIn.addEventListener("keydown", function(e){
         if (e.key === "Escape"){ e.stopPropagation(); toggleSearch(); }
-        if (e.key === "Enter"){ clearTimeout(debTimer); if (state.query.length >= MIN || !state.query.length) runSearch(); }
+        if (e.key === "Enter"){ search.cancel(); if (state.query.length >= MIN || !state.query.length) runSearch(); }
       });
     }
 
@@ -976,13 +963,6 @@
         root.classList.add(TOOLBAR_TIERS[i]);
       }
     }
-    function syncSearchTakeover(){
-      var w = root.getBoundingClientRect().width || 0;
-      var on = !!elSearch && elSearch.classList.contains("is-open") && w > 0 && w < MOBILE_SEARCH_MAX;
-      if (on === root.classList.contains("is-searchtakeover")) return;
-      root.classList.toggle("is-searchtakeover", on);
-      if (!on) fitToolbar();
-    }
     function applyResponsive(){
       var w = root.getBoundingClientRect().width || 0;
       if (!w) return;
@@ -1030,7 +1010,7 @@
           isDark = isYes(params.isDark);
           if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
         }
-        if (params.requestId != null && latestReqId != null && String(params.requestId) !== String(latestReqId)) return;
+        if (params.requestId != null && search.latestReqId() != null && String(params.requestId) !== String(search.latestReqId())) return;
         if (params.rows != null){
           state.rows = Array.isArray(params.rows) ? params.rows : [];
           state.hasData = true;
@@ -1089,17 +1069,6 @@
     root.__udtController = ctrl;
     return ctrl;
   }
-  function initAll(){
-    var roots = document.querySelectorAll(".udt-root:not(.up-portal)");
-    for (var i = 0; i < roots.length; i++) initRoot(roots[i]);
-  }
-  function rootsWithId(id){
-    var out = [], roots = document.querySelectorAll(".udt-root:not(.up-portal)");
-    for (var i = 0; i < roots.length; i++){
-      if (roots[i].getAttribute("data-instance") === id) out.push(roots[i]);
-    }
-    return out;
-  }
   function resolve(id){
     var r = rootsWithId(String(id || "").trim());
     if (!r.length) return null;
@@ -1129,67 +1098,20 @@
     ctrl.update({ brands: list });
     return true;
   }
-  window.renderDomainsTable = doRender;
-  window.setDomainsTableLoading = doLoading;
-  window.setDomainsTableBrands = doBrands;
-  window.resetDomainsTable = doReset;
-  if (__udtBootQueue.length){
-    var __udtQueued = __udtBootQueue.splice(0, __udtBootQueue.length);
-    __udtQueued.forEach(function(entry){
-      try { window[entry[0]].apply(null, entry[1]); } catch(e){}
-    });
-  }
-  window.__udtResolveLocal = function(id){ return rootsWithId(id).length > 0; };
+  /* mount from core: root registry, iframe forwarder, wheel forwarding, init cascade and the
+     replay of whatever Bubble queued against the stubs. doRender/doLoading/doReset stay local. */
+  var mount = UC.makeMount({
+    rootClass: "udt-root", notPortal: true,
+    ctrlProp: "__udtController",
+    resolveLocal: "__udtResolveLocal",
+    queue: "__udtBootQueue",
+    initRoot: initRoot,
+    api: { renderDomainsTable: doRender, setDomainsTableLoading: doLoading, resetDomainsTable: doReset },
+    forwardShape: { renderDomainsTable: "params", resetDomainsTable: "id" }
+  });
+  function rootsWithId(id){ return mount.rootsWithId(id); }
+  function initAll(){ return mount.initAll(); }
 
-  /* ================= forwarder on parent AND top (nested reusables) ================= */
-  (function exposeUpward(){
-    var targets = [];
-    try { if (window.parent && window.parent !== window) targets.push(window.parent); } catch(e){}
-    try { if (window.top && window.top !== window && targets.indexOf(window.top) === -1) targets.push(window.top); } catch(e){}
-    if (!targets.length) return;
-    function makeDeliver(w){
-      return function(fnName, id, arg1, arg2){
-        var queue = [w], seen = [];
-        while (queue.length){
-          var win = queue.shift(), ifr;
-          try { ifr = win.document.querySelectorAll("iframe"); } catch(e){ continue; }
-          for (var i = 0; i < ifr.length; i++){
-            var cw; try { cw = ifr[i].contentWindow; } catch(e){ cw = null; }
-            if (!cw || seen.indexOf(cw) !== -1) continue;
-            seen.push(cw); queue.push(cw);
-          }
-        }
-        for (var a = 0; a < seen.length; a++){
-          try {
-            var c = seen[a];
-            if (c && typeof c[fnName] === "function" && c.__udtResolveLocal && c.__udtResolveLocal(id)) return c[fnName](arg1, arg2);
-          } catch(e){}
-        }
-        for (var b = 0; b < seen.length; b++){
-          try { var c2 = seen[b]; if (c2 && typeof c2[fnName] === "function") return c2[fnName](arg1, arg2); } catch(e){}
-        }
-        return false;
-      };
-    }
-    for (var t = 0; t < targets.length; t++){
-      (function(w){
-        try {
-          var deliver = makeDeliver(w);
-          w.renderDomainsTable = function(p){ return deliver("renderDomainsTable", (p && p.instanceId) || "default", p); };
-          w.setDomainsTableLoading = function(id, on){ return deliver("setDomainsTableLoading", id || "default", id, on); };
-          w.setDomainsTableBrands = function(id, brands){ return deliver("setDomainsTableBrands", id || "default", id, brands); };
-          w.resetDomainsTable = function(id){ return deliver("resetDomainsTable", id || "default", id); };
-        } catch(e){}
-      })(targets[t]);
-    }
-  })();
-
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initAll);
-  else initAll();
-  [30, 100, 250, 500, 1000, 1800].forEach(function(ms){ setTimeout(initAll, ms); });
-  /* shared page-level watcher (core) — see UC.watchRoots for why this replaced a
-     private-to-this-component MutationObserver + setInterval pair */
-  if (UC.watchRoots) UC.watchRoots("udt-root", initAll);   // guard: a stale cached core.js on the page may predate this API
   } // end udtRun
 
   udtBoot(50); // retry for ~5s before giving up on core.js

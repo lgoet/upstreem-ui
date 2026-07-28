@@ -12,12 +12,14 @@
      in a queue in the exact order Bubble invoked them and replay in that order once the real
      implementations are ready. Applied here proactively — this component has the exact same
      boot-order dependency. */
+  /* Stubs must exist before core.js is guaranteed to be loaded — Bubble polls for these by
+     name and would otherwise miss the earliest calls. Everything after the wait uses UC.makeMount. */
   var __tcdBootQueue = window.__tcdBootQueue = window.__tcdBootQueue || [];
   if (!window.__tcdBootStubbed){
     window.__tcdBootStubbed = true;
-    window.renderTopCitations = function(){ __tcdBootQueue.push(["renderTopCitations", arguments]); };
-    window.setTopCitationsLoading = function(){ __tcdBootQueue.push(["setTopCitationsLoading", arguments]); };
-    window.resetTopCitations = function(){ __tcdBootQueue.push(["resetTopCitations", arguments]); };
+    ["renderTopCitations", "setTopCitationsLoading", "resetTopCitations"].forEach(function(n){
+      window[n] = function(){ __tcdBootQueue.push([n, arguments]); };
+    });
   }
 
   /* Bubble injects this component's <script> tags via jQuery .html(), which does not guarantee
@@ -729,18 +731,8 @@
     root.__tcdController = ctrl; root.__tcdId = ctrl.__ctrlId;
     return ctrl;
   }
-  function initAll(){
-    var roots = document.querySelectorAll(".tcd-root:not(.up-portal)");
-    for (var i = 0; i < roots.length; i++) initRoot(roots[i]);
-  }
   function isVisible(el){
     try { return !!el.offsetParent; } catch(e){ return true; }
-  }
-  function rootsWithId(id){
-    var roots = document.querySelectorAll(".tcd-root:not(.up-portal)");
-    var out = [];
-    for (var i = 0; i < roots.length; i++){ if (roots[i].getAttribute("data-instance") === id) out.push(roots[i]); }
-    return out;
   }
   function resolve(id){
     var r = rootsWithId(id);
@@ -770,110 +762,34 @@
     });
     return did;
   }
-  window.renderTopCitations = doRender;
-  window.setTopCitationsLoading = function(id, l){ return doLoading(id, l); };
-  window.__tcdResolveLocal = function(id){ return rootsWithId(id).length > 0; };
-  window.resetTopCitations = function(instanceId){
-    var id = String(instanceId || "").trim();
-    if (!id) return false;
-    var roots = rootsWithId(id);
-    var did = false;
-    for (var i = 0; i < roots.length; i++){
-      var ctrl = roots[i].__tcdController;
-      if (ctrl && typeof ctrl.reset === "function"){ try { ctrl.reset(); did = true; } catch(e){} }
-    }
-    return did;
-  };
-
-  /* Replay whatever Bubble called against the stub functions above while this script was still
-     waiting on core.js, in the exact order those calls arrived. */
-  if (__tcdBootQueue.length){
-    var __tcdQueued = __tcdBootQueue.splice(0, __tcdBootQueue.length);
-    __tcdQueued.forEach(function(entry){
-      try { window[entry[0]].apply(null, entry[1]); } catch(e){}
-    });
-  }
-
-  /* ================= forwarder on parent AND top (nested reusables) ================= */
-  (function exposeUpward(){
-    var targets = [];
-    try { if (window.parent && window.parent !== window) targets.push(window.parent); } catch(e){}
-    try { if (window.top && window.top !== window && targets.indexOf(window.top) === -1) targets.push(window.top); } catch(e){}
-    if (!targets.length) return;
-    function makeDeliver(w){
-      return function(fnName, id, arg1, arg2){
-        var queue = [w], seen = [];
-        while (queue.length){
-          var win = queue.shift(), ifr;
-          try { ifr = win.document.querySelectorAll("iframe"); } catch(e){ continue; }
-          for (var i=0;i<ifr.length;i++){ var cw; try { cw = ifr[i].contentWindow; } catch(e){ cw = null; } if (!cw || seen.indexOf(cw) !== -1) continue; seen.push(cw); queue.push(cw); }
+  /* mount from core: root registry, forwarder, wheel forwarding, init cascade, stub replay.
+     doRender/doLoading stay local — this component deliberately resolves the single VISIBLE root
+     for an instanceId instead of broadcasting, unlike the others. */
+  var mount = UC.makeMount({
+    rootClass: "tcd-root", notPortal: true,
+    ctrlProp: "__tcdController",
+    resolveLocal: "__tcdResolveLocal",
+    queue: "__tcdBootQueue",
+    initRoot: initRoot,
+    api: {
+      renderTopCitations: doRender,
+      setTopCitationsLoading: function(id, l){ return doLoading(id, l); },
+      resetTopCitations: function(instanceId){
+        var id = String(instanceId || "").trim();
+        if (!id) return false;
+        var rs = rootsWithId(id), did = false;
+        for (var i = 0; i < rs.length; i++){
+          var c = rs[i].__tcdController;
+          if (c && typeof c.reset === "function"){ try { c.reset(); did = true; } catch(e){} }
         }
-        var delivered = false;
-        for (var a=0;a<seen.length;a++){ try { var c = seen[a]; if (c && typeof c[fnName] === "function" && c.__tcdResolveLocal && c.__tcdResolveLocal(id)){ c[fnName](arg1, arg2); delivered = true; } } catch(e){} }
-        if (delivered) return true;
-        for (var b2=0;b2<seen.length;b2++){ try { var c2 = seen[b2]; if (c2 && typeof c2[fnName] === "function") return c2[fnName](arg1, arg2); } catch(e){} }
-        return false;
-      };
-    }
-    for (var t=0;t<targets.length;t++){
-      (function(w){
-        try {
-          var deliver = makeDeliver(w);
-          w.renderTopCitations = function(params){ params = params || {}; return deliver("renderTopCitations", params.instanceId || "default", params); };
-          w.setTopCitationsLoading = function(id, l){ return deliver("setTopCitationsLoading", id || "default", id, l); };
-          w.resetTopCitations = function(id){ return deliver("resetTopCitations", id || "default", id); };
-        } catch(e){}
-      })(targets[t]);
-    }
-  })();
-
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initAll);
-  else initAll();
-  [30, 100, 250, 500, 1000, 1800].forEach(function(ms){ setTimeout(initAll, ms); });
-
-  /* shared page-level watcher (core) — see UC.watchRoots for why this replaced a
-     private-to-this-component MutationObserver */
-  if (UC.watchRoots) UC.watchRoots("tcd-root", initAll);   // guard: a stale cached core.js on the page may predate this API
-  window.addEventListener("resize", function(){
-    var roots = document.querySelectorAll(".tcd-root:not(.up-portal)");
-    for (var i = 0; i < roots.length; i++){
-      var ctrl = roots[i].__tcdController;
-      if (ctrl) ctrl.update({});
-    }
+        return did;
+      }
+    },
+    forwardShape: { renderTopCitations: "params", resetTopCitations: "id" }
   });
-  /* ================= scroll fix ================= */
-  function __tcdScrollTarget(fromEl){
-    var doc = document;
-    var node = fromEl;
-    while (node && node.nodeType === 1 && node !== doc.body && node !== doc.documentElement){
-      try {
-        var oy = getComputedStyle(node).overflowY;
-        if ((oy === "auto" || oy === "scroll") && node.scrollHeight > node.clientHeight + 2) return node;
-      } catch(e){}
-      node = node.parentNode;
-    }
-    var byId = doc.getElementById("main");
-    if (byId && byId.scrollHeight > byId.clientHeight + 2) return byId;
-    var se = doc.scrollingElement || doc.documentElement;
-    if (se && se.scrollHeight > se.clientHeight + 2) return se;
-    return byId || null;
-  }
-  function __tcdForwardWheel(e){
-    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
-    var t = __tcdScrollTarget(e.target);
-    if (t){ if (e.cancelable) e.preventDefault(); t.scrollTop += e.deltaY; return; }
-    try { if (window.parent && window.parent !== window) window.parent.scrollBy(0, e.deltaY); } catch(ex){}
-    try { window.scrollBy(0, e.deltaY); } catch(ex){}
-  }
-  function attachCanvasWheel(){
-    var roots = document.querySelectorAll(".tcd-root:not(.up-portal)");
-    for (var i = 0; i < roots.length; i++){ if (!roots[i].__tcdWheel){ roots[i].__tcdWheel = true; roots[i].addEventListener("wheel", __tcdForwardWheel, { passive: false }); } }
-  }
-  if (!window.__tcdWheelFixInstalled){
-    window.__tcdWheelFixInstalled = true;
-    attachCanvasWheel();
-    setInterval(attachCanvasWheel, 800);
-  }
+  function rootsWithId(id){ return mount.rootsWithId(id); }
+  function initAll(){ return mount.initAll(); }
+
   } // end tcdRun
 
   tcdBoot(50); // retry for ~5s before giving up on core.js

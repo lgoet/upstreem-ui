@@ -610,6 +610,249 @@
     } catch(e){ return false; }
   }
 
+  /* ---------- makeSearch ----------
+     The slide-out search in the toolbar. urls-table and domains-table carried copies that were
+     identical apart from comments, so there is nothing component-specific left here except the
+     wiring: which elements, what to re-render, and what to send.
+
+     cfg: { root, box, input, state, minChars, debounceMs, mobileMax, prefix,
+            onRender(), onFire(payload), onTakeoverEnd(), persist() }
+     Returns { toggle, run, onInput, syncTakeover, latestReqId(), setLatest(id) }.
+     latestReqId is exposed because the component's update() drops responses whose requestId is
+     not the newest one — that guard is what stops a slow early query from overwriting a fast
+     later one. */
+  function makeSearch(cfg){
+    var root = cfg.root, box = cfg.box, input = cfg.input, state = cfg.state;
+    var MINC = cfg.minChars != null ? cfg.minChars : MIN;
+    var DEB = cfg.debounceMs != null ? cfg.debounceMs : DEBOUNCE;
+    var MOBILE_MAX = cfg.mobileMax || 640;
+    var debTimer = null, latestReqId = null;
+
+    function newReqId(){ return cfg.prefix + "_" + (+new Date()) + "_" + Math.random().toString(36).slice(2,8); }
+    function run(){
+      var reqId = newReqId(); latestReqId = reqId;
+      state.page = 1;                 // a new query is a new result set
+      state.loading = true;
+      if (cfg.onRender) cfg.onRender();
+      cfg.onFire({
+        query: state.query,
+        query_folded: foldDiacritics(state.query),
+        query_de: germanExpand(state.query),
+        requestId: reqId
+      });
+    }
+    function onInput(){
+      state.query = String(input.value || "").trim();
+      box.classList.toggle("has-text", !!input.value.length);
+      if (cfg.persist) cfg.persist();
+      clearTimeout(debTimer);
+      /* Below the minimum an EMPTY query still has to go out — that is how the table gets its
+         unfiltered list back once the user clears the box. */
+      if (state.query.length && state.query.length < MINC){ latestReqId = null; return; }
+      debTimer = setTimeout(run, DEB);
+    }
+    function toggle(){
+      var open = !box.classList.contains("is-open");
+      box.classList.toggle("is-open", open);
+      syncTakeover();   // mobile: take over the row when opening, release it when closing
+      /* Deliberately no toolbar re-fit here: the open search's width is already reserved by the
+         component's own gap calculation, so the tier decision is the same open or closed.
+         Re-measuring mid-transition would read too much room and wrongly un-hide toolbar items. */
+      if (open){ setTimeout(function(){ try { input.focus(); } catch(e){} }, 60); }
+      else if (state.query){
+        state.query = ""; input.value = "";       // closing clears the search
+        box.classList.remove("has-text");
+        if (cfg.persist) cfg.persist();
+        clearTimeout(debTimer);
+        run();
+      }
+    }
+    /* On a narrow component an open search takes over the whole toolbar row. */
+    function syncTakeover(){
+      var w = root.getBoundingClientRect().width || 0;
+      var on = !!box && box.classList.contains("is-open") && w > 0 && w < MOBILE_MAX;
+      if (on === root.classList.contains("is-searchtakeover")) return;
+      root.classList.toggle("is-searchtakeover", on);
+      if (!on && cfg.onTakeoverEnd) cfg.onTakeoverEnd();
+    }
+    return {
+      toggle: toggle, run: run, onInput: onInput, syncTakeover: syncTakeover,
+      latestReqId: function(){ return latestReqId; },
+      setLatest: function(id){ latestReqId = id; },
+      cancel: function(){ clearTimeout(debTimer); }
+    };
+  }
+
+  /* ==========================================================================================
+     MOUNT — the Bubble plumbing every component needs
+     ==========================================================================================
+     Each component carried ~200 lines of this: the boot retry, the stub queue, the root registry,
+     the iframe forwarder, the wheel forwarding and the init cascade. None of it is about what the
+     component DOES; all of it is about surviving how Bubble injects and re-renders markup.
+
+     Deliberately NOT included: doRender / doLoading / initRoot. Those genuinely differ — some
+     components broadcast an update to every root sharing an instanceId, topcitations resolves the
+     single visible one. That is a real decision per component, not drift, so it stays local.
+
+     Usage is two calls. Before anything else, while core.js may still be loading:
+       UC.bootStubs({ names: ["renderFoo","setFooLoading","resetFoo"], flag: "__fooBootStubbed",
+                      queue: "__fooBootQueue" });
+     then, once the component's own run() executes:
+       var mount = UC.makeMount({ rootClass:"foo-root", ctrlProp:"__fooController",
+                                  resolveLocal:"__fooResolveLocal", initRoot:initRoot,
+                                  api:{ renderFoo:doRender, setFooLoading:doLoading },
+                                  queue:"__fooBootQueue" }); */
+  function bootStubs(cfg){
+    var q = window[cfg.queue] = window[cfg.queue] || [];
+    if (window[cfg.flag]) return q;
+    window[cfg.flag] = true;
+    /* Bubble's "Run Javascript" steps poll for these by name and call whichever is callable
+       first. Without stubs a "data has arrived" call could beat a "start loading" call issued
+       earlier, because each poll wins independently. Queuing here keeps Bubble's original order. */
+    cfg.names.forEach(function(n){
+      window[n] = function(){ q.push([n, arguments]); };
+    });
+    return q;
+  }
+
+  function makeMount(cfg){
+    var rootSel = "." + cfg.rootClass + (cfg.notPortal ? ":not(.up-portal)" : "");
+
+    function roots(){ return document.querySelectorAll(rootSel); }
+    function rootsWithId(id){
+      id = id || "default";
+      var out = [], all = roots();
+      for (var i = 0; i < all.length; i++){
+        if ((all[i].getAttribute("data-instance") || "default") === id) out.push(all[i]);
+      }
+      return out;
+    }
+    function initAll(){ var all = roots(); for (var i = 0; i < all.length; i++) cfg.initRoot(all[i]); }
+
+    /* Expose the real implementations, then replay whatever Bubble queued against the stubs —
+       in the order Bubble called them. */
+    Object.keys(cfg.api).forEach(function(name){ window[name] = cfg.api[name]; });
+    window[cfg.resolveLocal] = function(id){ return rootsWithId(id).length > 0; };
+    var q = window[cfg.queue];
+    if (q && q.length){
+      q.splice(0, q.length).forEach(function(entry){
+        try { window[entry[0]].apply(null, entry[1]); } catch(e){}
+      });
+    }
+
+    /* ---- forwarder on parent AND top ----
+       A component often lives inside a Bubble reusable, i.e. its own iframe, while the workflow
+       calling render* runs in the parent page. Walk every reachable frame and hand the call to
+       whichever one actually owns that instanceId; fall back to any frame that has the function
+       so a mismatched id still lands somewhere rather than silently doing nothing. */
+    (function exposeUpward(){
+      var targets = [];
+      try { if (window.parent && window.parent !== window) targets.push(window.parent); } catch(e){}
+      try { if (window.top && window.top !== window && targets.indexOf(window.top) === -1) targets.push(window.top); } catch(e){}
+      if (!targets.length) return;
+      function makeDeliver(w){
+        return function(fnName, id, arg1, arg2){
+          var queue = [w], seen = [];
+          while (queue.length){
+            var win = queue.shift(), ifr;
+            try { ifr = win.document.querySelectorAll("iframe"); } catch(e){ continue; }
+            for (var i = 0; i < ifr.length; i++){
+              var cw; try { cw = ifr[i].contentWindow; } catch(e){ cw = null; }
+              if (!cw || seen.indexOf(cw) !== -1) continue;
+              seen.push(cw); queue.push(cw);
+            }
+          }
+          var delivered = false;
+          for (var a = 0; a < seen.length; a++){
+            try {
+              var c = seen[a];
+              if (c && typeof c[fnName] === "function" && c[cfg.resolveLocal] && c[cfg.resolveLocal](id)){
+                c[fnName](arg1, arg2); delivered = true;
+              }
+            } catch(e){}
+          }
+          if (delivered) return true;
+          for (var b = 0; b < seen.length; b++){
+            try { var c2 = seen[b]; if (c2 && typeof c2[fnName] === "function") return c2[fnName](arg1, arg2); } catch(e){}
+          }
+          return false;
+        };
+      }
+      for (var t = 0; t < targets.length; t++){
+        (function(w){
+          try {
+            var deliver = makeDeliver(w);
+            Object.keys(cfg.api).forEach(function(name){
+              var shape = cfg.forwardShape && cfg.forwardShape[name];
+              if (shape === "params"){
+                w[name] = function(params){ params = params || {}; return deliver(name, params.instanceId || "default", params); };
+              } else if (shape === "id"){
+                w[name] = function(id){ return deliver(name, id || "default", id); };
+              } else {
+                w[name] = function(id, v){ return deliver(name, id || "default", id, v); };
+              }
+            });
+          } catch(e){}
+        })(targets[t]);
+      }
+    })();
+
+    /* ---- wheel forwarding ----
+       Chart.js sets touch-action:none on its canvas and other regions swallow the wheel too, so
+       the event never reaches the app's scroll container. Forward it to the nearest scrollable
+       ancestor of the ACTUAL target — that way an internal scrollable (a long dropdown list)
+       scrolls itself instead of having its wheel hijacked up to the page. */
+    function scrollTarget(fromEl){
+      var node = fromEl;
+      while (node && node.nodeType === 1 && node !== document.body && node !== document.documentElement){
+        try {
+          var oy = getComputedStyle(node).overflowY;
+          if ((oy === "auto" || oy === "scroll") && node.scrollHeight > node.clientHeight + 2) return node;
+        } catch(e){}
+        node = node.parentNode;
+      }
+      var byId = document.getElementById("main");
+      if (byId && byId.scrollHeight > byId.clientHeight + 2) return byId;
+      var se = document.scrollingElement || document.documentElement;
+      if (se && se.scrollHeight > se.clientHeight + 2) return se;
+      return byId || null;
+    }
+    function forwardWheel(e){
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;   // leave horizontal gestures alone
+      var t = scrollTarget(e.target);
+      if (t){ if (e.cancelable) e.preventDefault(); t.scrollTop += e.deltaY; return; }
+      try { if (window.parent && window.parent !== window) window.parent.scrollBy(0, e.deltaY); } catch(ex){}
+      try { window.scrollBy(0, e.deltaY); } catch(ex){}
+    }
+    var wheelFlag = "__upWheel_" + cfg.rootClass;
+    function attachWheel(){
+      var all = roots();
+      for (var i = 0; i < all.length; i++){
+        if (!all[i][wheelFlag]){ all[i][wheelFlag] = true; all[i].addEventListener("wheel", forwardWheel, { passive: false }); }
+      }
+    }
+    if (!window[wheelFlag + "_installed"]){
+      window[wheelFlag + "_installed"] = true;
+      attachWheel();
+      setInterval(attachWheel, 800);
+    }
+
+    /* ---- init cascade ----
+       Bubble can insert the markup well after this script runs, and again on every re-render.
+       watchRoots covers the long tail; the short cascade catches the common early cases, and the
+       pointerdown fallback rescues a root that somehow escaped both the moment it is touched. */
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initAll);
+    else initAll();
+    [30, 100, 250, 500, 1000, 1800].forEach(function(ms){ setTimeout(initAll, ms); });
+    document.addEventListener("pointerdown", function(e){
+      var r = e.target && e.target.closest ? e.target.closest(rootSel) : null;
+      if (r && !r[cfg.ctrlProp]) cfg.initRoot(r);
+    }, true);
+    if (watchRoots) watchRoots(cfg.rootClass, initAll);
+
+    return { roots: roots, rootsWithId: rootsWithId, initAll: initAll };
+  }
+
   /* Survives Bubble rebuilding the element, keyed by instanceId. */
   var STORE = (window.__uutStore = window.__uutStore || {});
   var LOADING_EXPLICIT = (window.__uutLoadingExplicit = window.__uutLoadingExplicit || {});
@@ -1914,6 +2157,9 @@
     trendChip: trendChip,
     skeletonRows: skeletonRows,
     makeColumns: makeColumns,
+    makeSearch: makeSearch,
+    bootStubs: bootStubs,
+    makeMount: makeMount,
     makePager: makePager,
     makeHeadSort: makeHeadSort,
     legacyCopy: legacyCopy,

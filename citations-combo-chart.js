@@ -2,18 +2,15 @@
 (function(){
   "use strict";
 
-  /* window.renderComboChart / setComboChartLoading / resetComboChart only become the real
-     implementations once ccRun() finishes below (after the core.js wait) — same stub-queue
-     pattern as the other three chart/table components, for the same reason: Bubble's own
-     "Run Javascript" steps poll for these by name and call whichever is callable first, so thin
-     stubs defined immediately (before any waiting happens) mean calls land in a queue in the exact
-     order Bubble invoked them and get replayed in that order once the real implementations exist. */
+  /* Stubs must exist before core.js is guaranteed to be loaded, so this one block stays inline —
+     Bubble's Run-Javascript steps poll for these by name and would otherwise miss the earliest
+     calls. Everything after the core.js wait uses UC.makeMount. */
   var __ccBootQueue = window.__ccBootQueue = window.__ccBootQueue || [];
   if (!window.__ccBootStubbed){
     window.__ccBootStubbed = true;
-    window.renderComboChart = function(){ __ccBootQueue.push(["renderComboChart", arguments]); };
-    window.setComboChartLoading = function(){ __ccBootQueue.push(["setComboChartLoading", arguments]); };
-    window.resetComboChart = function(){ __ccBootQueue.push(["resetComboChart", arguments]); };
+    ["renderComboChart","setComboChartLoading","resetComboChart"].forEach(function(n){
+      window[n] = function(){ __ccBootQueue.push([n, arguments]); };
+    });
   }
 
   /* Bubble injects this component's <script> tags via jQuery .html(), which does not guarantee
@@ -605,17 +602,6 @@
     applyCache(root, ctrl);
     return ctrl;
   }
-  function initAll(){ var roots = document.querySelectorAll(".combo-root"); for (var i=0;i<roots.length;i++) initRoot(roots[i]); }
-  /* shared page-level watcher (core) — see UC.watchRoots for why this replaces a private-to-this-
-     component MutationObserver + setInterval pair (the original standalone version of this
-     component had its own window.__ccRootWatcher doing exactly that). */
-  if (UC.watchRoots) UC.watchRoots("combo-root", initAll);   // guard: a stale cached core.js on the page may predate this API
-  function rootsWithId(id){
-    id = id || "default";
-    var out = [], roots = document.querySelectorAll(".combo-root");
-    for (var i=0;i<roots.length;i++){ if ((roots[i].getAttribute("data-instance")||"default") === id) out.push(roots[i]); }
-    return out;
-  }
   function stashRetryRoot(target, kind, a){
     if (kind === "update") target.__ccPendingParams = a;
     if (kind === "loading") target.__ccPendingLoading = isYes(a);
@@ -659,105 +645,34 @@
     return true;
   }
 
-  window.renderComboChart = doRender;
-  window.setComboChartLoading = function(id, l){ return doLoading(id, l); };
-  window.__ccResolveLocal = function(id){ return rootsWithId(id).length > 0; };
-  window.resetComboChart = function(instanceId){
-    var id = String(instanceId || "").trim();
-    if (!id) return false;
-    var roots = rootsWithId(id);
-    var did = false;
-    for (var i = 0; i < roots.length; i++){
-      var ctrl = roots[i].__ccController;
-      if (ctrl && typeof ctrl.reset === "function"){ try { ctrl.reset(); did = true; } catch(e){} }
-    }
-    return did;
-  };
-
-  /* Replay whatever Bubble called against the stub functions above while this script was still
-     waiting on core.js, in the exact order those calls arrived. */
-  if (__ccBootQueue.length){
-    var __ccQueued = __ccBootQueue.splice(0, __ccBootQueue.length);
-    __ccQueued.forEach(function(entry){
-      try { window[entry[0]].apply(null, entry[1]); } catch(e){}
-    });
-  }
-
-  /* ================= forwarder on parent AND top (nested reusables) ================= */
-  (function exposeUpward(){
-    var targets = [];
-    try { if (window.parent && window.parent !== window) targets.push(window.parent); } catch(e){}
-    try { if (window.top && window.top !== window && targets.indexOf(window.top) === -1) targets.push(window.top); } catch(e){}
-    if (!targets.length) return;
-    function makeDeliver(w){
-      return function(fnName, id, arg1, arg2){
-        var queue = [w], seen = [];
-        while (queue.length){
-          var win = queue.shift(), ifr;
-          try { ifr = win.document.querySelectorAll("iframe"); } catch(e){ continue; }
-          for (var i=0;i<ifr.length;i++){ var cw; try { cw = ifr[i].contentWindow; } catch(e){ cw = null; } if (!cw || seen.indexOf(cw) !== -1) continue; seen.push(cw); queue.push(cw); }
+  /* mount: root registry, iframe forwarder, wheel forwarding, init cascade and the replay of
+     whatever Bubble queued against the stubs above — all from core. doRender/doLoading stay here
+     because this component broadcasts to every root sharing an instanceId. */
+  var mount = UC.makeMount({
+    rootClass: "combo-root",
+    ctrlProp: "__ccController",
+    resolveLocal: "__ccResolveLocal",
+    queue: "__ccBootQueue",
+    initRoot: initRoot,
+    api: {
+      renderComboChart: doRender,
+      setComboChartLoading: function(id, l){ return doLoading(id, l); },
+      resetComboChart: function(instanceId){
+        var id = String(instanceId || "").trim();
+        if (!id) return false;
+        var rs = rootsWithId(id), did = false;
+        for (var i = 0; i < rs.length; i++){
+          var ctrl = rs[i].__ccController;
+          if (ctrl && typeof ctrl.reset === "function"){ try { ctrl.reset(); did = true; } catch(e){} }
         }
-        var delivered = false;
-        for (var a=0;a<seen.length;a++){ try { var c = seen[a]; if (c && typeof c[fnName] === "function" && c.__ccResolveLocal && c.__ccResolveLocal(id)){ c[fnName](arg1, arg2); delivered = true; } } catch(e){} }
-        if (delivered) return true;
-        for (var b2=0;b2<seen.length;b2++){ try { var c2 = seen[b2]; if (c2 && typeof c2[fnName] === "function") return c2[fnName](arg1, arg2); } catch(e){} }
-        return false;
-      };
-    }
-    for (var t=0;t<targets.length;t++){
-      (function(w){
-        try {
-          var deliver = makeDeliver(w);
-          w.renderComboChart = function(params){ params = params || {}; return deliver("renderComboChart", params.instanceId || "default", params); };
-          w.setComboChartLoading = function(id, l){ return deliver("setComboChartLoading", id || "default", id, l); };
-          w.resetComboChart = function(id){ return deliver("resetComboChart", id || "default", id); };
-        } catch(e){}
-      })(targets[t]);
-    }
-  })();
+        return did;
+      }
+    },
+    forwardShape: { renderComboChart: "params", resetComboChart: "id" }
+  });
+  function rootsWithId(id){ return mount.rootsWithId(id); }
+  function initAll(){ return mount.initAll(); }
 
-  /* ================= scroll fix ================= */
-  function __ccScrollTarget(fromEl){
-    var doc = document;
-    var node = fromEl;
-    while (node && node.nodeType === 1 && node !== doc.body && node !== doc.documentElement){
-      try {
-        var oy = getComputedStyle(node).overflowY;
-        if ((oy === "auto" || oy === "scroll") && node.scrollHeight > node.clientHeight + 2) return node;
-      } catch(e){}
-      node = node.parentNode;
-    }
-    var byId = doc.getElementById("main");
-    if (byId && byId.scrollHeight > byId.clientHeight + 2) return byId;
-    var se = doc.scrollingElement || doc.documentElement;
-    if (se && se.scrollHeight > se.clientHeight + 2) return se;
-    return byId || null;
-  }
-  function __ccForwardWheel(e){
-    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
-    var t = __ccScrollTarget(e.target);
-    if (t){ if (e.cancelable) e.preventDefault(); t.scrollTop += e.deltaY; return; }
-    try { if (window.parent && window.parent !== window) window.parent.scrollBy(0, e.deltaY); } catch(ex){}
-    try { window.scrollBy(0, e.deltaY); } catch(ex){}
-  }
-  function __ccAttachWheel(){
-    var roots = document.querySelectorAll(".combo-root");
-    for (var i = 0; i < roots.length; i++){ if (!roots[i].__ccWheel){ roots[i].__ccWheel = true; roots[i].addEventListener("wheel", __ccForwardWheel, { passive: false }); } }
-  }
-  if (!window.__ccWheelFixInstalled){
-    window.__ccWheelFixInstalled = true;
-    __ccAttachWheel();
-    setInterval(__ccAttachWheel, 800);
-  }
-
-  /* ================= init ================= */
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initAll);
-  else initAll();
-  [30, 100, 250, 500, 1000, 1800].forEach(function(ms){ setTimeout(initAll, ms); });
-  document.addEventListener("pointerdown", function(e){
-    var r = e.target && e.target.closest ? e.target.closest(".combo-root") : null;
-    if (r && !r.__ccController) initRoot(r);
-  }, true);
   } // end ccRun
 
   ccBoot(50); // retry for ~5s before giving up on core.js

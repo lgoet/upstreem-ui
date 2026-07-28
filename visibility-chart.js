@@ -15,12 +15,14 @@
      first try, so calls land in a queue in the exact order Bubble invoked them and get replayed in
      that same order once the real implementations are ready — no more race between independent
      polling loops. */
+  /* Stubs must exist before core.js is guaranteed to be loaded — Bubble polls for these by
+     name and would otherwise miss the earliest calls. Everything after the wait uses UC.makeMount. */
   var __votBootQueue = window.__votBootQueue = window.__votBootQueue || [];
   if (!window.__votBootStubbed){
     window.__votBootStubbed = true;
-    window.renderVisibilityChart = function(){ __votBootQueue.push(["renderVisibilityChart", arguments]); };
-    window.setVisibilityChartLoading = function(){ __votBootQueue.push(["setVisibilityChartLoading", arguments]); };
-    window.resetVisibilityChart = function(){ __votBootQueue.push(["resetVisibilityChart", arguments]); };
+    ["renderVisibilityChart", "setVisibilityChartLoading", "resetVisibilityChart"].forEach(function(n){
+      window[n] = function(){ __votBootQueue.push([n, arguments]); };
+    });
   }
 
   /* Bubble injects this component's <script> tags via jQuery .html(), which does not guarantee
@@ -883,16 +885,6 @@
     applyCache(root, ctrl);
     return ctrl;
   }
-  function initAll(){ var roots = document.querySelectorAll(".vot-root:not(.up-portal)"); for (var i=0;i<roots.length;i++) initRoot(roots[i]); }
-  /* shared page-level watcher (core) — see UC.watchRoots for why this replaced a
-     private-to-this-component MutationObserver + setInterval pair */
-  if (UC.watchRoots) UC.watchRoots("vot-root", initAll);   // guard: a stale cached core.js on the page may predate this API
-  function rootsWithId(id){
-    id = id || "default";
-    var out = [], roots = document.querySelectorAll(".vot-root:not(.up-portal)");
-    for (var i=0;i<roots.length;i++){ if ((roots[i].getAttribute("data-instance")||"default") === id) out.push(roots[i]); }
-    return out;
-  }
   function resolve(id){ var r = rootsWithId(id); return r.length ? initRoot(r[0]) : null; }
   function stashRetryRoot(target, kind, a){
     if (kind === "update") target.__votPendingParams = a;
@@ -935,9 +927,6 @@
     return true;
   }
 
-  window.renderVisibilityChart = doRender;
-  window.setVisibilityChartLoading = function(id, l){ return doLoading(id, l); };
-  window.__votResolveLocal = function(id){ return rootsWithId(id).length > 0; };
   window.votThemeDebug = function(id){
     var roots = rootsWithId(String(id || "").trim());
     if (!roots.length){ console.log("[VOT] keine Instanz mit id", id, "gefunden"); return; }
@@ -955,103 +944,35 @@
       });
     });
   };
-  window.resetVisibilityChart = function(instanceId){
-    var id = String(instanceId || "").trim();
-    if (!id) return false;
-    var roots = rootsWithId(id);
-    var did = false;
-    for (var i = 0; i < roots.length; i++){
-      var ctrl = roots[i].__votController;
-      if (ctrl && typeof ctrl.reset === "function"){ try { ctrl.reset(); did = true; } catch(e){} }
-    }
-    return did;
-  };
 
-  /* Replay whatever Bubble called against the stub functions above while this script was still
-     waiting on core.js, in the exact order those calls arrived — see the comment by the stub
-     definitions for why this is what actually fixes the loading-state race. */
-  if (__votBootQueue.length){
-    var __votQueued = __votBootQueue.splice(0, __votBootQueue.length);
-    __votQueued.forEach(function(entry){
-      try { window[entry[0]].apply(null, entry[1]); } catch(e){}
-    });
-  }
-
-  /* ================= forwarder on parent AND top (nested reusables) ================= */
-  (function exposeUpward(){
-    var targets = [];
-    try { if (window.parent && window.parent !== window) targets.push(window.parent); } catch(e){}
-    try { if (window.top && window.top !== window && targets.indexOf(window.top) === -1) targets.push(window.top); } catch(e){}
-    if (!targets.length) return;
-    function makeDeliver(w){
-      return function(fnName, id, arg1, arg2){
-        var queue = [w], seen = [];
-        while (queue.length){
-          var win = queue.shift(), ifr;
-          try { ifr = win.document.querySelectorAll("iframe"); } catch(e){ continue; }
-          for (var i=0;i<ifr.length;i++){ var cw; try { cw = ifr[i].contentWindow; } catch(e){ cw = null; } if (!cw || seen.indexOf(cw) !== -1) continue; seen.push(cw); queue.push(cw); }
+  /* mount: root registry, iframe forwarder, wheel forwarding, init cascade, and the replay of
+     whatever Bubble queued against the stubs — all from core. doRender/doLoading stay local
+     because this component broadcasts to every root sharing an instanceId. */
+  var mount = UC.makeMount({
+    rootClass: "vot-root", notPortal: true,
+    ctrlProp: "__votController",
+    resolveLocal: "__votResolveLocal",
+    queue: "__votBootQueue",
+    initRoot: initRoot,
+    api: {
+      renderVisibilityChart: doRender,
+      setVisibilityChartLoading: function(id, l){ return doLoading(id, l); },
+      resetVisibilityChart: function(instanceId){
+        var id = String(instanceId || "").trim();
+        if (!id) return false;
+        var rs = rootsWithId(id), did = false;
+        for (var i = 0; i < rs.length; i++){
+          var c = rs[i].__votController;
+          if (c && typeof c.reset === "function"){ try { c.reset(); did = true; } catch(e){} }
         }
-        var delivered = false;
-        for (var a=0;a<seen.length;a++){ try { var c = seen[a]; if (c && typeof c[fnName] === "function" && c.__votResolveLocal && c.__votResolveLocal(id)){ c[fnName](arg1, arg2); delivered = true; } } catch(e){} }
-        if (delivered) return true;
-        for (var b2=0;b2<seen.length;b2++){ try { var c2 = seen[b2]; if (c2 && typeof c2[fnName] === "function") return c2[fnName](arg1, arg2); } catch(e){} }
-        return false;
-      };
-    }
-    for (var t=0;t<targets.length;t++){
-      (function(w){
-        try {
-          var deliver = makeDeliver(w);
-          w.renderVisibilityChart = function(params){ params = params || {}; return deliver("renderVisibilityChart", params.instanceId || "default", params); };
-          w.setVisibilityChartLoading = function(id, l){ return deliver("setVisibilityChartLoading", id || "default", id, l); };
-          w.resetVisibilityChart = function(id){ return deliver("resetVisibilityChart", id || "default", id); };
-        } catch(e){}
-      })(targets[t]);
-    }
-  })();
+        return did;
+      }
+    },
+    forwardShape: { renderVisibilityChart: "params", resetVisibilityChart: "id" }
+  });
+  function rootsWithId(id){ return mount.rootsWithId(id); }
+  function initAll(){ return mount.initAll(); }
 
-  /* ================= scroll fix ================= */
-  function __votScrollTarget(fromEl){
-    var doc = document;
-    var node = fromEl;
-    while (node && node.nodeType === 1 && node !== doc.body && node !== doc.documentElement){
-      try {
-        var oy = getComputedStyle(node).overflowY;
-        if ((oy === "auto" || oy === "scroll") && node.scrollHeight > node.clientHeight + 2) return node;
-      } catch(e){}
-      node = node.parentNode;
-    }
-    var byId = doc.getElementById("main");
-    if (byId && byId.scrollHeight > byId.clientHeight + 2) return byId;
-    var se = doc.scrollingElement || doc.documentElement;
-    if (se && se.scrollHeight > se.clientHeight + 2) return se;
-    return byId || null;
-  }
-  function __votForwardWheel(e){
-    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
-    var t = __votScrollTarget(e.target);
-    if (t){ if (e.cancelable) e.preventDefault(); t.scrollTop += e.deltaY; return; }
-    try { if (window.parent && window.parent !== window) window.parent.scrollBy(0, e.deltaY); } catch(ex){}
-    try { window.scrollBy(0, e.deltaY); } catch(ex){}
-  }
-  function __votAttachWheel(){
-    var roots = document.querySelectorAll(".vot-root");
-    for (var i = 0; i < roots.length; i++){ if (!roots[i].__votWheel){ roots[i].__votWheel = true; roots[i].addEventListener("wheel", __votForwardWheel, { passive: false }); } }
-  }
-  if (!window.__votWheelFixInstalled){
-    window.__votWheelFixInstalled = true;
-    __votAttachWheel();
-    setInterval(__votAttachWheel, 800);
-  }
-
-  /* ================= init ================= */
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initAll);
-  else initAll();
-  [30, 100, 250, 500, 1000, 1800].forEach(function(ms){ setTimeout(initAll, ms); });
-  document.addEventListener("pointerdown", function(e){
-    var r = e.target && e.target.closest ? e.target.closest(".vot-root") : null;
-    if (r && !r.__votController) initRoot(r);
-  }, true);
   } // end votRun
 
   votBoot(50); // retry for ~5s before giving up on core.js
