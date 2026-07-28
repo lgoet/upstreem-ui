@@ -38,11 +38,11 @@
   /* Hideable columns. Domain and Actions are deliberately absent — the table makes no sense
      without the domain, and the row actions are the point of the Actions cell. */
   var COLUMNS = [
-    { key: "share",    label: "Share",            w: "minmax(13%, 150px)", min: 130 },
-    { key: "type",     label: "Type",             w: "minmax(11%, 1fr)",   min: 118 },
-    { key: "ment",     label: "Mentioned?",       w: "minmax(112px, 0.6fr)", min: 112 },
-    { key: "brands",   label: "Brands mentioned", w: "minmax(13%, 1fr)",   min: 178 },
-    { key: "lastseen", label: "Last Seen",        w: "minmax(104px, 0.7fr)", min: 104 }
+      { key: "share",    label: "Share",            w: "minmax(13%, 150px)",   min: 130 },
+      { key: "type",     label: "Type",             w: "minmax(11%, 1fr)",     min: 118, dropAt: "vnarrow" },
+      { key: "ment",     label: "Mentioned?",       w: "minmax(112px, 0.6fr)", min: 112, dropAt: "narrow" },
+      { key: "brands",   label: "Brands mentioned", w: "minmax(13%, 1fr)",     min: 178, dropAt: "vnarrow" },
+      { key: "lastseen", label: "Last Seen",        w: "minmax(104px, 0.7fr)", min: 104, dropAt: "vnarrow" }
   ];
 
   /* ORDER maps each (field, direction) pair onto the single value the RPC expects in p_order.
@@ -121,8 +121,8 @@
       brandMentioned: saved.brandMentioned || "",
       pageSize: saved.pageSize || DEFAULT_PAGE_SIZE,
       page: saved.page || 1,                   // 1-based; offset is derived, never stored
-      cols: readCols(),
-      widths: readWidths(),
+      cols: {},                                // filled from colsKit.readCols() below
+      widths: {},                              // filled from colsKit.readWidths() below
       brands: saved.brands || [],              // full list; persisted so a Bubble re-render keeps them
       mentionSel: saved.mentionSel || {},      // live checkbox state
       mentionApplied: saved.mentionApplied || {},
@@ -132,27 +132,10 @@
     /* Column visibility is a per-user display preference, not app data — localStorage, keyed by
        instance so two placements can differ. Wrapped because Bubble can run inside contexts where
        storage access throws (private mode, blocked third-party cookies). */
-    function colsKey(){ return "uut_cols__" + instanceId; }
-    function readCols(){
-      var out = {};
-      COLUMNS.forEach(function(c){ out[c.key] = true; });
-      try {
-        var raw = window.localStorage.getItem(colsKey());
-        if (raw){
-          var parsed = JSON.parse(raw);
-          COLUMNS.forEach(function(c){ if (parsed[c.key] === false) out[c.key] = false; });
-        }
-      } catch(e){}
-      return out;
-    }
-    function writeCols(){
-      try { window.localStorage.setItem(colsKey(), JSON.stringify(state.cols)); } catch(e){}
-    }
     /* Row-height mode is a display preference too -> localStorage, survives reloads. */
     function denseKey(){ return "uut_dense__" + instanceId; }
     function readDense(){ try { return window.localStorage.getItem(denseKey()) === "1"; } catch(e){ return false; } }
     function writeDense(){ try { window.localStorage.setItem(denseKey(), state.dense ? "1" : "0"); } catch(e){} }
-    function visibleCols(){ return COLUMNS.filter(function(c){ return state.cols[c.key] !== false; }); }
     var debTimer = null, latestReqId = null, sortTimer = null;
 
     function usableAttr(v, placeholder){
@@ -188,12 +171,6 @@
         mentionSel: state.mentionSel, mentionApplied: state.mentionApplied,
         brands: state.brands
       };
-    }
-    function offset(){ return (state.page - 1) * state.pageSize; }
-    function pageCount(){
-      var t = toNum(state.totalCount);
-      if (t == null || t <= 0) return 1;
-      return Math.max(1, Math.ceil(t / state.pageSize));
     }
     /* shared event dispatch (core) */
     var fire = UpstreemCore.makeFire(root, { label: "urls-table", eventPrefix: "uut-" });
@@ -350,32 +327,6 @@
     }
 
     /* ---------------- header sorters ---------------- */
-    function syncHeadSorters(){
-      Array.prototype.forEach.call(root.querySelectorAll(".up-thsort"), function(el){
-        var col = el.getAttribute("data-for");
-        el.classList.remove("is-asc","is-desc");
-        // Share's header lights up for its trend key too — they share one column.
-        var owns = (col === "share")
-          ? (state.sortField === "share" || state.sortField === "share_trend")
-          : (state.sortField === col);
-        if (owns) el.classList.add(state.sortDir === "asc" ? "is-asc" : "is-desc");
-        var th = el.closest(".up-th");
-        if (th) th.setAttribute("aria-sort", owns ? (state.sortDir === "asc" ? "ascending" : "descending") : "none");
-      });
-      // show "Trend" next to the Share label while the trend key is the active sort
-      var shareTh = root.querySelector(".up-th-share");
-      if (shareTh){
-        var sub = shareTh.querySelector(".up-th-sub");
-        if (state.sortField === "share_trend"){
-          if (!sub){
-            sub = document.createElement("span");
-            sub.className = "up-th-sub";
-            sub.textContent = "Trend";
-            shareTh.insertBefore(sub, shareTh.querySelector(".up-thsort"));
-          }
-        } else if (sub && sub.parentNode){ sub.parentNode.removeChild(sub); }
-      }
-    }
     /* The position inside a column's cycle is DERIVED from the sort that is actually active,
        never stored. A stored position drifts apart from the real state: once the cycle wrapped
        back to the default (share:desc) the stored position was cleared, so the next click
@@ -383,18 +334,6 @@
        share:asc. Reading the current sort back out of the cycle makes that impossible —
        wherever we are is where the next click continues from, no matter how we got there
        (header click, sort dropdown, wrap-around, or a reset). */
-    function headSortClick(col){
-      var cycle = HEAD_CYCLE[col];
-      if (!cycle) return;
-      var idx = cycle.indexOf(state.sortField + ":" + state.sortDir);  // -1 = another column owns the sort
-      var pos = idx + 1;                                               // -1 -> 0: start this cycle at the top
-      if (pos >= cycle.length){
-        applySort(DEFAULT_SORT.field, DEFAULT_SORT.dir);               // past the end -> back to the default
-        return;
-      }
-      var parts = cycle[pos].split(":");
-      applySort(parts[0], parts[1]);
-    }
     /* Sorting is optimistic: the arrow, the header state and the dropdown update on the
        very first click with no delay, so the control never feels blocked. Only the OUTGOING
        event is debounced, exactly like search. Clicking through Share -> Share Trend -> Last
@@ -512,60 +451,50 @@
        can never be squeezed to the point where its header or cell content wraps. */
     var URL_MIN = 220;          // the URL cell holds two lines of text; below this it stops being readable
     var ACTIONS_MIN = 120;
-    function widthsKey(){ return "uut_widths__" + instanceId; }
-    function readWidths(){
-      try {
-        var raw = window.localStorage.getItem(widthsKey());
-        return raw ? JSON.parse(raw) : {};
-      } catch(e){ return {}; }
-    }
-    function writeWidths(){
-      try { window.localStorage.setItem(widthsKey(), JSON.stringify(state.widths)); } catch(e){}
-    }
-    function colMin(key){
-      if (key === "domain") return URL_MIN;
-      if (key === "actions") return ACTIONS_MIN;
-      var c = COLUMNS.filter(function(x){ return x.key === key; })[0];
-      return (c && c.min) || 100;
-    }
+
+    /* Columns, pagination and header sorting all come from core now — urls-table and
+       domains-table used to carry byte-identical copies of that machinery. Only the data
+       differs, and that data is right here in the config. */
+    var colsKit = UC.makeColumns({
+      root: root, state: state, columns: COLUMNS,
+      storePrefix: "uut", instanceId: instanceId,
+      firstKey: "domain", firstMin: URL_MIN, actionsMin: 120,
+      dense: true, badgeSel: ".uut-cols-badge", cellPrefixes: ["up","uut"],
+      onChange: function(){ render(); }
+    });
+    var readCols = colsKit.readCols, writeCols = colsKit.writeCols;
+    var readWidths = colsKit.readWidths, writeWidths = colsKit.writeWidths;
+    var visibleCols = colsKit.visibleCols, effectiveCols = colsKit.effectiveCols;
+    var layoutKeys = colsKit.layoutKeys, colMin = colsKit.colMin;
+    var applyCols = colsKit.applyCols, startResize = colsKit.startResize;
+    var populateCols = colsKit.populateCols, toggleCol = colsKit.toggleCol;
+    var selectAllCols = colsKit.selectAllCols, syncColsBadge = colsKit.syncColsBadge;
+    /* hydrated here, not in the state literal above: the kit owns the storage format, and
+       these used to be hoisted function declarations that could run before it existed */
+    state.cols = colsKit.readCols();
+    state.widths = colsKit.readWidths();
+
+    var pagerKit = UC.makePager({
+      root: root, state: state,
+      onClamp: function(){ persist(); },
+      onChange: function(){ persist(); renderTable(); firePage(); }
+    });
+    var pageCount = pagerKit.pageCount, offset = pagerKit.offset;
+    var renderPager = pagerKit.renderPager, renderPageSize = pagerKit.renderPageSize;
+    var goToPage = pagerKit.goToPage, setPageSize = pagerKit.setPageSize;
+
+    var sortKit = UC.makeHeadSort({
+      root: root, state: state, cycles: HEAD_CYCLE, defaultSort: DEFAULT_SORT,
+      trendField: "share_trend",
+      onSort: function(f, d){ applySort(f, d); }
+    });
+    var syncHeadSorters = sortKit.syncHeadSorters, headSortClick = sortKit.headSortClick;
+    var legacyCopy = UC.legacyCopy;
     /* The visible order, including the two fixed columns that bracket the configurable ones. */
-    function layoutKeys(){
-      return ["domain"].concat(effectiveCols().map(function(c){ return c.key; }))
-             .concat(root.classList.contains("is-t2") ? [] : ["actions"]);
-    }
     /* Only the URL column is draggable. Everything else keeps its fr-based track, so the
        remaining space redistributes automatically — no pairwise trading, and no column can be
        starved by dragging a distant divider. The URL width is clamped so that every other visible
        column still fits its own minimum. */
-    function startResize(e){
-      var thead = root.querySelector(".up-thead");
-      if (!thead) return;
-      var startX = e.clientX;
-      var first = thead.firstElementChild;
-      var wA = first.getBoundingClientRect().width;
-      var total = thead.getBoundingClientRect().width;
-      var others = layoutKeys().slice(1).reduce(function(sum, k){ return sum + colMin(k); }, 0);
-      var maxA = Math.max(URL_MIN, total - others);
-      var grip = e.target.closest(".up-grip");
-      if (grip) grip.classList.add("is-active");
-      root.classList.add("is-resizing");
-
-      function move(ev){
-        var w = wA + (ev.clientX - startX);
-        state.widths.domain = Math.round(Math.max(URL_MIN, Math.min(maxA, w)));
-        applyCols();
-      }
-      function up(){
-        document.removeEventListener("pointermove", move);
-        document.removeEventListener("pointerup", up);
-        root.classList.remove("is-resizing");
-        if (grip) grip.classList.remove("is-active");
-        writeWidths();
-      }
-      document.addEventListener("pointermove", move);
-      document.addEventListener("pointerup", up);
-      e.preventDefault();
-    }
     root.addEventListener("pointerdown", function(e){
       var grip = e.target.closest(".up-grip");
       if (!grip) return;
@@ -577,163 +506,17 @@
     /* Columns the user switched off AND columns the current width can't fit. Both end up here so
        the grid template is built in exactly one place — otherwise the inline style from one would
        silently beat the class rule from the other. */
-    function effectiveCols(){
-      var narrow = root.classList.contains("is-narrow");
-      var vnarrow = root.classList.contains("is-vnarrow");
-      return visibleCols().filter(function(c){
-        if (vnarrow && (c.key === "type" || c.key === "lastseen" || c.key === "brands")) return false;
-        if ((narrow || vnarrow) && c.key === "ment") return false;
-        return true;
-      });
-    }
-    function applyCols(){
-      /* The grid template is rebuilt from the shown columns rather than just hiding cells: with
-         CSS grid a hidden cell would leave its track behind and knock the whole row out of line. */
-      var shown = {};
-      effectiveCols().forEach(function(c){ shown[c.key] = true; });
-      COLUMNS.forEach(function(c){
-        Array.prototype.forEach.call(root.querySelectorAll(".up-th-"+c.key+", .uut-th-"+c.key+", .up-td-"+c.key+", .uut-td-"+c.key), function(el){
-          el.style.display = shown[c.key] ? "" : "none";
-        });
-      });
-      /* A dragged column becomes a fixed px track; everything untouched keeps its responsive
-         minmax() so the table still adapts to the container. */
-      /* Once the URL column is pinned to a pixel width, every other track has to switch from its
-         percentage minimum to its PIXEL minimum. The percentages are relative to the whole grid,
-         not to the space left over — keeping them made the tracks add up to more than the
-         container, so the table overflowed and the Actions buttons ended up outside the box. */
-      var W = state.widths || {};
-      var pinned = !!W.domain;
-      var domainPx = W.domain;
-      if (pinned){
-        /* Clamp the pinned URL width against what's actually available so a fixed px URL plus the
-           other tracks' minimums can't overflow a shrunken container and push Actions out. */
-        var cw = root.getBoundingClientRect().width || 0;
-        var othersMin = 0;
-        effectiveCols().forEach(function(c){ othersMin += colMin(c.key); });
-        if (!root.classList.contains("is-t2")) othersMin += ACTIONS_MIN;
-        if (cw) domainPx = Math.max(URL_MIN, Math.min(W.domain, cw - othersMin));
-      }
-      var parts = [pinned ? domainPx + "px" : "minmax(30%, 1.6fr)"];
-      effectiveCols().forEach(function(c){
-        parts.push(pinned ? "minmax(" + colMin(c.key) + "px, 1fr)" : c.w);
-      });
-      if (!root.classList.contains("is-t2")){
-        parts.push(pinned ? ACTIONS_MIN + "px" : "minmax(" + ACTIONS_MIN + "px, auto)");
-      }
-      var tpl = parts.join(" ");
-      Array.prototype.forEach.call(root.querySelectorAll(".up-thead, .up-row"), function(el){
-        el.style.gridTemplateColumns = tpl;
-      });
-    }
-    function populateCols(){
-      if (!elColsMenu) return;   // a stale/incomplete root copy may be missing this markup
-      var vis = visibleCols();
-      var off = COLUMNS.length - vis.length;
-      var head = '<div class="up-pop-head up-pop-head-row">' +
-        '<span>Columns</span>' +
-        '<button class="up-pop-action' + (off >= 2 ? "" : " is-hidden") + '" type="button" data-colsall>Select all</button>' +
-      '</div>';
-      var COMFY_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/></svg>';
-      var COMPACT_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>';
-      elColsMenu.innerHTML = head +
-        COLUMNS.map(function(c){
-          var on = state.cols[c.key] !== false;
-          // the last visible column can't be turned off
-          var locked = on && vis.length === 1;
-          return '<div class="up-pop-row' + (locked ? " is-locked" : "") + '" data-col="' + c.key + '">' +
-                   '<span class="up-pop-label">' + esc(c.label) + '</span>' +
-                   '<span class="up-switch' + (on ? " is-on" : "") + '" role="switch"></span>' +
-                 '</div>';
-        }).join("") +
-        '<div class="up-pop-div"></div>' +
-        '<div class="up-pop-sub">Row height</div>' +
-        '<div class="up-dense">' +
-          '<button class="up-dense-btn' + (!state.dense ? " is-active" : "") + '" type="button" data-dense="0">' + COMFY_SVG + 'Comfortable</button>' +
-          '<button class="up-dense-btn' + (state.dense ? " is-active" : "") + '" type="button" data-dense="1">' + COMPACT_SVG + 'Compact</button>' +
-        '</div>';
-    }
     function setDense(on){
       state.dense = !!on;
       root.classList.toggle("is-dense", state.dense);
       writeDense(); populateCols();
     }
-    function selectAllCols(){
-      COLUMNS.forEach(function(c){ state.cols[c.key] = true; });
-      writeCols(); populateCols(); applyCols(); syncColsBadge();
-    }
-    function toggleCol(key){
-      var on = state.cols[key] !== false;
-      if (on && visibleCols().length === 1) return;   // never hide the last one
-      state.cols[key] = !on;
-      writeCols(); populateCols(); applyCols(); syncColsBadge();
-    }
 
     /* ---------------- pagination ----------------
        Classic offset pagination: page size × page index → offset. The component never slices
        rows itself — it asks Bubble for the window and renders whatever comes back. */
-    function renderPageSize(){
-      elPageSize.innerHTML = PAGE_SIZES.map(function(n){
-        return '<button class="up-pagesize-btn' + (n === state.pageSize ? " is-active" : "") +
-               '" type="button" data-pagesize="' + n + '">' + n + '</button>';
-      }).join("");
-    }
     /* Window of page numbers around the current one: first, last, current ±1, ellipses between.
        Standard pattern — 1 … 4 [5] 6 … 12 — nothing invented here. */
-    function pageWindow(cur, total){
-      if (total <= 7){
-        var all = [];
-        for (var i = 1; i <= total; i++) all.push(i);
-        return all;
-      }
-      var out = [1];
-      var from = Math.max(2, cur - 1), to = Math.min(total - 1, cur + 1);
-      if (from > 2) out.push("gap");
-      for (var p = from; p <= to; p++) out.push(p);
-      if (to < total - 1) out.push("gap");
-      out.push(total);
-      return out;
-    }
-    function renderPager(){
-      var total = pageCount();
-      var cur = Math.min(state.page, total);
-      if (cur !== state.page){ state.page = cur; persist(); }
-      var t = toNum(state.totalCount);
-      var info = "";
-      if (t != null && t > 0){
-        var from = offset() + 1;
-        var to = Math.min(offset() + state.pageSize, t);
-        info = '<span class="up-pager-info">' + fmtInt(from) + '–' + fmtInt(to) + ' of ' + fmtTotal(t) + '</span>';
-      }
-      var prevDis = cur <= 1 ? " disabled" : "";
-      var nextDis = cur >= total ? " disabled" : "";
-      var pages = pageWindow(cur, total).map(function(p){
-        if (p === "gap") return '<span class="up-page-gap">…</span>';
-        return '<button class="up-page' + (p === cur ? " is-active" : "") + '" type="button" data-page="' + p + '">' + p + '</button>';
-      }).join("");
-      elPager.innerHTML = info +
-        '<button class="up-page up-page-prev" type="button" aria-label="Previous page"' + prevDis + '>' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>' +
-        pages +
-        '<button class="up-page up-page-next" type="button" aria-label="Next page"' + nextDis + '>' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>';
-    }
-    function goToPage(p){
-      var total = pageCount();
-      p = Math.max(1, Math.min(total, p));
-      if (p === state.page) return;
-      state.page = p; state.loading = true;   // show a skeleton until the new page's rows arrive
-      persist(); renderTable(); renderPager();
-      firePage();
-    }
-    function setPageSize(n){
-      if (n === state.pageSize) return;
-      state.pageSize = n;
-      state.page = 1;          // a different window size invalidates the current page index
-      state.loading = true;    // show a skeleton until the resized page arrives
-      persist(); renderPageSize(); renderTable(); renderPager();
-      firePage();
-    }
     function firePage(){
       /* A page/size change is a deliberate action, not part of a search race. Clear the search's
          requestId so its response can't be dropped by the requestId guard in update(). */
@@ -1301,16 +1084,6 @@
 
     /* Clipboard fallback for browsers/contexts where the async API is unavailable
        (e.g. a non-secure origin) — without this, Copy would silently do nothing there. */
-    function legacyCopy(text){
-      try {
-        var ta = document.createElement("textarea");
-        ta.value = text; ta.setAttribute("readonly", "");
-        ta.style.position = "fixed"; ta.style.top = "-1000px"; ta.style.opacity = "0";
-        document.body.appendChild(ta); ta.select();
-        document.execCommand("copy");
-        document.body.removeChild(ta);
-      } catch(e){}
-    }
 
     // rows are focusable (tabindex on the markup); make them behave like the buttons they are
     root.addEventListener("keydown", function(e){
@@ -1443,15 +1216,6 @@
        one off. Uses state.cols (the user's choice), NOT the responsive/effective set, so shrinking
        the screen never triggers it. Same rule as the combo chart: show only when some (not all) are
        off. */
-    function syncColsBadge(){
-      var badge = root.querySelector(".uut-cols-badge");
-      if (!badge) return;
-      var all = COLUMNS.length;
-      var active = visibleCols().length;
-      var show = all > 0 && active > 0 && active < all;
-      badge.textContent = show ? String(active) : "";
-      badge.classList.toggle("is-visible", show);
-    }
     function render(){
       renderTable(); renderCount(); syncHeadSorters(); syncBrand(); syncFilterBadge(); syncColsBadge();
       renderPageSize(); renderPager(); applyCols(); syncMentLabel(); syncHeadBrand(); applyResponsive();

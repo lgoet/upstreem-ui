@@ -268,6 +268,345 @@
     return { show: show, hide: hide, el: el };
   }
 
+  /* ==========================================================================================
+     TABLE CHROME — columns, pagination, header sorting
+     ==========================================================================================
+     urls-table and domains-table carried byte-identical copies of all of this (~300 lines each).
+     The two tables genuinely differ in their COLUMNS, their row markup and their filters — that
+     stays in the components. The machinery around it does not differ at all: the only things that
+     were ever component-specific here are the per-column minimum width, which columns drop at
+     which breakpoint, and whether the Columns menu offers the row-height switch. Those are now
+     config, not forked code. */
+
+  /* ---------- makeColumns ----------
+     cfg: { root, state, columns, storePrefix, instanceId, firstKey, firstMin, actionsMin,
+            dense, badgeSel, cellPrefixes, onChange }
+       columns    — [{key, label, w, min, dropAt}]; `w` is the responsive track, `dropAt` is
+                    "narrow" | "vnarrow" (the breakpoint at which the column stops being shown)
+       firstKey   — the leading column that becomes a fixed px track once dragged ("domain")
+       dense      — show the Comfortable/Compact switch in the menu
+       cellPrefixes — class prefixes to toggle per column, e.g. ["up","uut"]
+     state is the component's own object; this mutates state.cols / state.widths / state.dense. */
+  function makeColumns(cfg){
+    var root = cfg.root, state = cfg.state, COLUMNS = cfg.columns;
+    var FIRST = cfg.firstKey || "domain";
+    var FIRST_MIN = cfg.firstMin || 220, ACTIONS_MIN = cfg.actionsMin || 100;
+    var prefixes = cfg.cellPrefixes || ["up"];
+    /* Key format is deliberately "<pfx>_cols__<instanceId>", matching what the tables wrote
+       before this machinery moved into core — changing it would silently throw away every user's
+       saved column choices and drag widths on first load. */
+    function colsKey(){ return cfg.storePrefix + "_cols__" + cfg.instanceId; }
+    function widthsKey(){ return cfg.storePrefix + "_widths__" + cfg.instanceId; }
+
+    function readCols(){
+      var out = {};
+      COLUMNS.forEach(function(c){ out[c.key] = true; });
+      try {
+        var raw = window.localStorage.getItem(colsKey());
+        if (raw){
+          var parsed = JSON.parse(raw);
+          COLUMNS.forEach(function(c){ if (parsed[c.key] === false) out[c.key] = false; });
+        }
+      } catch(e){}
+      return out;
+    }
+    function writeCols(){ try { window.localStorage.setItem(colsKey(), JSON.stringify(state.cols)); } catch(e){} }
+    function readWidths(){
+      try { var raw = window.localStorage.getItem(widthsKey()); return raw ? JSON.parse(raw) : {}; }
+      catch(e){ return {}; }
+    }
+    function writeWidths(){ try { window.localStorage.setItem(widthsKey(), JSON.stringify(state.widths)); } catch(e){} }
+
+    function visibleCols(){ return COLUMNS.filter(function(c){ return state.cols[c.key] !== false; }); }
+    /* what is actually on screen right now: user-hidden columns minus the ones this width drops */
+    function effectiveCols(){
+      var narrow = root.classList.contains("is-narrow");
+      var vnarrow = root.classList.contains("is-vnarrow");
+      return visibleCols().filter(function(c){
+        if (vnarrow && c.dropAt === "vnarrow") return false;
+        if ((narrow || vnarrow) && c.dropAt === "narrow") return false;
+        return true;
+      });
+    }
+    function layoutKeys(){
+      return [FIRST].concat(effectiveCols().map(function(c){ return c.key; }))
+             .concat(root.classList.contains("is-t2") ? [] : ["actions"]);
+    }
+    function colMin(key){
+      if (key === FIRST) return FIRST_MIN;
+      if (key === "actions") return ACTIONS_MIN;
+      var c = COLUMNS.filter(function(x){ return x.key === key; })[0];
+      return (c && c.min) || 100;
+    }
+    function applyCols(){
+      /* The grid template is rebuilt from the shown columns rather than just hiding cells: with
+         CSS grid a hidden cell would leave its track behind and knock the whole row out of line. */
+      var shown = {};
+      effectiveCols().forEach(function(c){ shown[c.key] = true; });
+      COLUMNS.forEach(function(c){
+        var sel = [];
+        for (var p = 0; p < prefixes.length; p++){
+          sel.push("." + prefixes[p] + "-th-" + c.key, "." + prefixes[p] + "-td-" + c.key);
+        }
+        Array.prototype.forEach.call(root.querySelectorAll(sel.join(", ")), function(el){
+          el.style.display = shown[c.key] ? "" : "none";
+        });
+      });
+      var W = state.widths || {};
+      var pinned = !!W[FIRST];
+      var firstPx = W[FIRST];
+      if (pinned){
+        /* Once the lead column is pinned to a pixel width, every other track has to switch from
+           its percentage minimum to its PIXEL minimum: the percentages are relative to the whole
+           grid, not to the space left over, so keeping them made the tracks add up to more than
+           the container and the table overflowed. Clamping against the available width stops a
+           pinned lead column plus the other minimums from pushing Actions outside the box. */
+        var cw = root.getBoundingClientRect().width || 0;
+        var othersMin = 0;
+        effectiveCols().forEach(function(c){ othersMin += colMin(c.key); });
+        if (!root.classList.contains("is-t2")) othersMin += ACTIONS_MIN;
+        if (cw) firstPx = Math.max(FIRST_MIN, Math.min(W[FIRST], cw - othersMin));
+      }
+      var parts = [pinned ? firstPx + "px" : "minmax(30%, 1.6fr)"];
+      effectiveCols().forEach(function(c){
+        parts.push(pinned ? "minmax(" + colMin(c.key) + "px, 1fr)" : c.w);
+      });
+      if (!root.classList.contains("is-t2")){
+        parts.push(pinned ? ACTIONS_MIN + "px" : "minmax(" + ACTIONS_MIN + "px, auto)");
+      }
+      var tpl = parts.join(" ");
+      Array.prototype.forEach.call(root.querySelectorAll(".up-thead, .up-row"), function(el){
+        el.style.gridTemplateColumns = tpl;
+      });
+    }
+    /* drag the lead column's right edge; everything else keeps its responsive track */
+    function startResize(e){
+      var thead = root.querySelector(".up-thead");
+      if (!thead) return;
+      var startX = e.clientX;
+      var first = thead.firstElementChild;
+      var wA = first.getBoundingClientRect().width;
+      var total = thead.getBoundingClientRect().width;
+      var others = layoutKeys().slice(1).reduce(function(sum, k){ return sum + colMin(k); }, 0);
+      var maxA = Math.max(FIRST_MIN, total - others);
+      var grip = e.target.closest(".up-grip");
+      if (grip) grip.classList.add("is-active");
+      root.classList.add("is-resizing");
+      function move(ev){
+        state.widths[FIRST] = Math.round(Math.max(FIRST_MIN, Math.min(maxA, wA + (ev.clientX - startX))));
+        applyCols();
+      }
+      function up(){
+        document.removeEventListener("pointermove", move);
+        document.removeEventListener("pointerup", up);
+        root.classList.remove("is-resizing");
+        if (grip) grip.classList.remove("is-active");
+        writeWidths();
+      }
+      document.addEventListener("pointermove", move);
+      document.addEventListener("pointerup", up);
+      e.preventDefault();
+    }
+    var COMFY_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/></svg>';
+    var COMPACT_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>';
+    function populateCols(){
+      var menu = root.querySelector(".up-cols-menu");
+      if (!menu) return;   // a stale/incomplete root copy may be missing this markup
+      var vis = visibleCols();
+      var off = COLUMNS.length - vis.length;
+      var head = '<div class="up-pop-head up-pop-head-row">' +
+        '<span>Columns</span>' +
+        '<button class="up-pop-action' + (off >= 2 ? "" : " is-hidden") + '" type="button" data-colsall>Select all</button>' +
+      '</div>';
+      var rows = COLUMNS.map(function(c){
+        var on = state.cols[c.key] !== false;
+        var locked = on && vis.length === 1;   // the last visible column can't be turned off
+        return '<div class="up-pop-row' + (locked ? " is-locked" : "") + '" data-col="' + c.key + '">' +
+                 '<span class="up-pop-label">' + esc(c.label) + '</span>' +
+                 '<span class="up-switch' + (on ? " is-on" : "") + '" role="switch"></span>' +
+               '</div>';
+      }).join("");
+      var densePart = cfg.dense
+        ? '<div class="up-pop-div"></div>' +
+          '<div class="up-pop-sub">Row height</div>' +
+          '<div class="up-dense">' +
+            '<button class="up-dense-btn' + (!state.dense ? " is-active" : "") + '" type="button" data-dense="0">' + COMFY_SVG + 'Comfortable</button>' +
+            '<button class="up-dense-btn' + (state.dense ? " is-active" : "") + '" type="button" data-dense="1">' + COMPACT_SVG + 'Compact</button>' +
+          '</div>'
+        : "";
+      menu.innerHTML = head + rows + densePart;
+    }
+    function syncColsBadge(){
+      var badge = cfg.badgeSel ? root.querySelector(cfg.badgeSel) : null;
+      if (!badge) return;
+      var all = COLUMNS.length, active = visibleCols().length;
+      var show = all > 0 && active > 0 && active < all;
+      badge.textContent = show ? String(active) : "";
+      badge.classList.toggle("is-visible", show);
+    }
+    function refresh(){ writeCols(); populateCols(); applyCols(); syncColsBadge(); }
+    function toggleCol(key){
+      var on = state.cols[key] !== false;
+      if (on && visibleCols().length === 1) return;   // never hide the last one
+      state.cols[key] = !on;
+      refresh();
+      if (cfg.onChange) cfg.onChange();
+    }
+    function selectAllCols(){
+      COLUMNS.forEach(function(c){ state.cols[c.key] = true; });
+      refresh();
+      if (cfg.onChange) cfg.onChange();
+    }
+    return {
+      readCols: readCols, writeCols: writeCols, readWidths: readWidths, writeWidths: writeWidths,
+      visibleCols: visibleCols, effectiveCols: effectiveCols, layoutKeys: layoutKeys, colMin: colMin,
+      applyCols: applyCols, startResize: startResize, populateCols: populateCols,
+      toggleCol: toggleCol, selectAllCols: selectAllCols, syncColsBadge: syncColsBadge
+    };
+  }
+
+  /* ---------- makePager ----------
+     cfg: { root, state, onChange } — onChange(reason) fires after page/size changes so the
+     component can persist, re-render and tell Bubble. */
+  function makePager(cfg){
+    var root = cfg.root, state = cfg.state;
+    function pageCount(){
+      var t = toNum(state.totalCount);
+      if (t == null || t <= 0) return 1;
+      return Math.max(1, Math.ceil(t / state.pageSize));
+    }
+    function offset(){ return (state.page - 1) * state.pageSize; }
+    /* 1 … 4 5 6 … 12 — always the ends, a window around the current page, gaps elsewhere */
+    function pageWindow(cur, total){
+      if (total <= 7){
+        var all = [];
+        for (var i = 1; i <= total; i++) all.push(i);
+        return all;
+      }
+      var out = [1];
+      var from = Math.max(2, cur - 1), to = Math.min(total - 1, cur + 1);
+      if (from > 2) out.push("gap");
+      for (var p = from; p <= to; p++) out.push(p);
+      if (to < total - 1) out.push("gap");
+      out.push(total);
+      return out;
+    }
+    function renderPager(){
+      var el = root.querySelector(".up-pager");
+      if (!el) return;
+      var total = pageCount();
+      var cur = Math.min(state.page, total);
+      if (cur !== state.page){ state.page = cur; if (cfg.onClamp) cfg.onClamp(); }
+      var t = toNum(state.totalCount);
+      var info = "";
+      if (t != null && t > 0){
+        var from = offset() + 1;
+        var to = Math.min(offset() + state.pageSize, t);
+        info = '<span class="up-pager-info">' + fmtInt(from) + '–' + fmtInt(to) + ' of ' + fmtTotal(t) + '</span>';
+      }
+      var pages = pageWindow(cur, total).map(function(p){
+        if (p === "gap") return '<span class="up-page-gap">…</span>';
+        return '<button class="up-page' + (p === cur ? " is-active" : "") + '" type="button" data-page="' + p + '">' + p + '</button>';
+      }).join("");
+      el.innerHTML = info +
+        '<button class="up-page up-page-prev" type="button" aria-label="Previous page"' + (cur <= 1 ? " disabled" : "") + '>' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>' +
+        pages +
+        '<button class="up-page up-page-next" type="button" aria-label="Next page"' + (cur >= total ? " disabled" : "") + '>' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>';
+    }
+    function renderPageSize(){
+      var el = root.querySelector(".up-pagesize");
+      if (!el) return;
+      el.innerHTML = PAGE_SIZES.map(function(n){
+        return '<button class="up-pagesize-btn' + (n === state.pageSize ? " is-active" : "") +
+               '" type="button" data-pagesize="' + n + '">' + n + '</button>';
+      }).join("");
+    }
+    function goToPage(p){
+      var total = pageCount();
+      p = Math.max(1, Math.min(total, p));
+      if (p === state.page) return;
+      state.page = p;
+      state.loading = true;   // show a skeleton until the new page's rows arrive
+      renderPageSize(); renderPager();
+      if (cfg.onChange) cfg.onChange("page");
+    }
+    function setPageSize(n){
+      if (n === state.pageSize) return;
+      state.pageSize = n;
+      state.page = 1;          // a different window size invalidates the current page index
+      state.loading = true;    // show a skeleton until the resized page arrives
+      renderPageSize(); renderPager();
+      if (cfg.onChange) cfg.onChange("size");
+    }
+    return { pageCount: pageCount, offset: offset, pageWindow: pageWindow,
+             renderPager: renderPager, renderPageSize: renderPageSize,
+             goToPage: goToPage, setPageSize: setPageSize };
+  }
+
+  /* ---------- makeHeadSort ----------
+     Clicking a column header walks that column's cycle (e.g. share:desc -> share:asc ->
+     share_trend:desc …) and falls back to the table's default once the cycle is exhausted.
+     cfg: { root, state, cycles, defaultSort, trendField, onSort } */
+  function makeHeadSort(cfg){
+    var root = cfg.root, state = cfg.state;
+    var TREND = cfg.trendField || null;   // a second sort key that shares the Share column
+    function syncHeadSorters(){
+      Array.prototype.forEach.call(root.querySelectorAll(".up-thsort"), function(el){
+        var col = el.getAttribute("data-for");
+        el.classList.remove("is-asc","is-desc");
+        /* the Share header lights up for its trend key too — they share one column */
+        var owns = (TREND && col === "share")
+          ? (state.sortField === "share" || state.sortField === TREND)
+          : (state.sortField === col);
+        if (owns) el.classList.add(state.sortDir === "asc" ? "is-asc" : "is-desc");
+        var th = el.closest(".up-th");
+        if (th) th.setAttribute("aria-sort", owns ? (state.sortDir === "asc" ? "ascending" : "descending") : "none");
+      });
+      if (!TREND) return;
+      /* show "Trend" next to the Share label while the trend key is the active sort */
+      var shareTh = root.querySelector(".up-th-share");
+      if (!shareTh) return;
+      var sub = shareTh.querySelector(".up-th-sub");
+      if (state.sortField === TREND){
+        if (!sub){
+          sub = document.createElement("span");
+          sub.className = "up-th-sub";
+          sub.textContent = "Trend";
+          shareTh.insertBefore(sub, shareTh.querySelector(".up-thsort"));
+        }
+      } else if (sub && sub.parentNode){ sub.parentNode.removeChild(sub); }
+    }
+    function headSortClick(col){
+      var cycle = cfg.cycles[col];
+      if (!cycle) return;
+      var idx = cycle.indexOf(state.sortField + ":" + state.sortDir);   // -1 = another column owns the sort
+      var pos = idx + 1;                                                // -1 -> 0: start this cycle at the top
+      if (pos >= cycle.length){                                         // past the end -> back to the default
+        cfg.onSort(cfg.defaultSort.field, cfg.defaultSort.dir);
+        return;
+      }
+      var parts = cycle[pos].split(":");
+      cfg.onSort(parts[0], parts[1]);
+    }
+    return { syncHeadSorters: syncHeadSorters, headSortClick: headSortClick };
+  }
+
+  /* Clipboard fallback for browsers/iframes where navigator.clipboard is unavailable. */
+  function legacyCopy(text){
+    try {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.cssText = "position:fixed;left:-9999px;top:0;opacity:0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      return true;
+    } catch(e){ return false; }
+  }
+
   /* Survives Bubble rebuilding the element, keyed by instanceId. */
   var STORE = (window.__uutStore = window.__uutStore || {});
   var LOADING_EXPLICIT = (window.__uutLoadingExplicit = window.__uutLoadingExplicit || {});
@@ -1571,6 +1910,10 @@
     /* ---- table primitives ---- */
     trendChip: trendChip,
     skeletonRows: skeletonRows,
+    makeColumns: makeColumns,
+    makePager: makePager,
+    makeHeadSort: makeHeadSort,
+    legacyCopy: legacyCopy,
     makeEmptyGrace: makeEmptyGrace,
     makeExplain: makeExplain,
     STORE: STORE,
