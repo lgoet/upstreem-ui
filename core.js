@@ -241,129 +241,34 @@
     };
   }
 
-  /* Body-portal for dropdown menus: position:sticky / Bubble wrappers form stacking contexts that
-     trap fixed menus; moving them under a display:contents layer on <body> frees them. Returns the
-     layer + a theme mirror that must be called on every theme change (and once at creation).
+  /* Dropdown menus stay exactly where they are in the markup: a plain position:absolute child of a
+     position:relative wrapper (.up-sort / .up-filter / .up-cols / .up-ment, etc. — all already
+     position:relative in core.css, all with the menu positioned via `top:calc(100% + Npx); right:0`).
+     That's pure CSS layout, so the menu moves in the SAME paint as its trigger when the page
+     scrolls — glued, by construction, with zero JavaScript and therefore zero possibility of
+     lag or jitter.
 
-     Also owns keeping an OPEN portaled menu glued to its trigger while the page scrolls. A
-     position:fixed menu (which is what placeMenu produces) doesn't move on its own when an
-     ancestor scrolls — without this, every portaled dropdown across every component either drifted
-     from its trigger or stayed frozen on screen, and each component that remembered to wire its own
-     scroll listener did so slightly differently (unthrottled vs rAF-batched), so the same dropdown
-     felt "sticky" in one component and "detached" in another for no product reason. One shared,
-     rAF-throttled listener here means every component gets identical behaviour for free just by
-     calling makePortal/placeMenu — nothing left for a future migration to remember or get slightly
-     wrong. Relies on placeMenu() stamping menu.__upBtn with its trigger on every call, and on the
-     is-shown class every component already toggles to mark a portaled menu as currently open.
+     Earlier versions moved every menu into a <body>-level layer and switched it to position:fixed
+     so it could escape an ancestor's overflow:hidden clipping, then re-ran a JS reposition on every
+     scroll event to chase the trigger. No matter how that reposition was optimized (rAF-throttled,
+     then compositor-only transform nudges), a JS scroll-follow is inherently one step behind the
+     scroll it reacts to, so the menu visibly drifted / sprang against its trigger while scrolling.
+     Not worth it: a menu that tracks its trigger perfectly beats one that's robust against a
+     clipping failure mode we haven't actually hit here (the pre-migration components used plain
+     position:absolute and were never clipped in practice).
 
-     During the scroll itself, follow the trigger with a CSS `transform` (nudgeMenu) rather than
-     re-running placeMenu's full top/left + flip/max-height logic every frame. top/left writes are
-     layout-triggering — on a component with a lot of other DOM to lay out (a big data table) that
-     reflow is expensive enough to occasionally miss a frame, which is exactly why the same
-     mechanism felt buttery on the lighter chart components but very slightly draggy on urls-table/
-     domains-table: same code, but more competing main-thread work on the heavier ones. `transform`
-     is compositor-only — no reflow — so nudging is cheap regardless of how much else is on the
-     page. Once scrolling settles (150ms of no scroll events) a single full placeMenu() call folds
-     the accumulated offset back into real top/left and re-evaluates flip/max-height, so a long
-     scroll gesture that crosses from "flip up" to "flip down" territory still ends up correct. */
+     Kept as a no-op shell — the menus already live inside the root, so there is nothing to move.
+     Existing call sites keep working unchanged, including their syncPortalTheme() calls; the theme
+     now reaches the menus through the normal cascade (.up-root[data-theme="dark"] .xxx-menu),
+     because the menus are still inside the themed root. */
   function makePortal(root, menuEls, instanceId){
-    if (instanceId){                                  // clear a stale portal from a prior (re-injected) mount
-      var old = document.querySelectorAll(".up-portal");
-      for (var k = 0; k < old.length; k++){
-        if (old[k].getAttribute("data-portal-for") === String(instanceId)){
-          try { old[k].parentNode.removeChild(old[k]); } catch(e){}
-        }
-      }
-    }
-    var portalLayer = document.createElement("div");
-    portalLayer.className = "up-root up-portal";
-    if (instanceId) portalLayer.setAttribute("data-portal-for", String(instanceId));
-    document.body.appendChild(portalLayer);
-    (menuEls || []).forEach(function(m){ if (m) portalLayer.appendChild(m); });
-    function syncPortalTheme(){
-      if (!portalLayer) return;
-      if (root.getAttribute("data-theme") === "dark") portalLayer.setAttribute("data-theme", "dark");
-      else portalLayer.removeAttribute("data-theme");
-    }
-    syncPortalTheme();
-
-    var repositionRaf = null, settleTimer = null;
-    function repositionShownMenus(){
-      repositionRaf = null;
-      (menuEls || []).forEach(function(m){
-        if (m && m.__upBtn && m.classList.contains("is-shown")) nudgeMenu(m);
-      });
-      clearTimeout(settleTimer);
-      settleTimer = setTimeout(function(){
-        (menuEls || []).forEach(function(m){
-          if (m && m.__upBtn && m.classList.contains("is-shown")) placeMenu(m, m.__upBtn);
-        });
-      }, 150);
-    }
-    function scheduleReposition(){
-      if (repositionRaf) return;
-      repositionRaf = requestAnimationFrame(repositionShownMenus);
-    }
-    /* passive: true — this listener never calls preventDefault(), so telling the browser that up
-       front lets it get on with its own native scroll compositing without waiting on us. */
-    window.addEventListener("scroll", scheduleReposition, { capture: true, passive: true });
-    window.addEventListener("resize", scheduleReposition);
-
-    return { portalLayer: portalLayer, syncPortalTheme: syncPortalTheme };
+    return { portalLayer: null, syncPortalTheme: function(){} };
   }
 
-  /* Position a dropdown menu against its trigger: right-aligned, kept inside the viewport, flips
-     above when there's more room, and caps max-height to the available space. Pure geometry — the
-     component still decides which menu/trigger and when. Remembers the trigger AND the trigger's
-     rect on the menu element itself, so makePortal's scroll/resize listener can re-call this (or
-     the cheaper nudgeMenu below) with the right button without the component having to track that
-     separately. */
-  function placeMenu(menu, btn, opts){
-    if (!menu || !btn) return;
-    menu.__upBtn = btn;
-    opts = opts || {};
-    var GAP = opts.gap != null ? opts.gap : 4, EDGE = opts.edge != null ? opts.edge : 8;
-    menu.style.transform = "";                    // fold any scroll-nudge offset back in before re-measuring
-    menu.style.maxHeight = "";                    // measure natural size first
-    var r = btn.getBoundingClientRect();
-    var vw = window.innerWidth || document.documentElement.clientWidth;
-    var vh = window.innerHeight || document.documentElement.clientHeight;
-    var mw = menu.offsetWidth, mh = menu.offsetHeight;
-    var left = r.right - mw;                       // right-aligned to the trigger
-    if (left < EDGE) left = EDGE;
-    if (left + mw > vw - EDGE) left = vw - EDGE - mw;
-    var below = vh - r.bottom - GAP - EDGE;
-    var above = r.top - GAP - EDGE;
-    var top, maxH;
-    if (mh <= below || below >= above){ top = r.bottom + GAP; maxH = below; }   // below the button
-    else { maxH = above; top = r.top - GAP - Math.min(mh, maxH); }              // flipped up
-    menu.style.position = "fixed";
-    menu.style.top = Math.max(EDGE, Math.round(top)) + "px";
-    menu.style.left = Math.round(left) + "px";
-    menu.style.right = "auto";
-    menu.style.maxHeight = Math.max(0, Math.round(maxH)) + "px";
-    /* Deliberately NOT the near-max value used for tooltips (2147483000/2147483001) — a dropdown
-       menu only needs to clear ordinary page content, not out-rank every Bubble-native overlay on
-       the page (a sticky nav, a floating widget). Appending to <body> already escapes clipping and
-       stacking-context traps (the actual point of the portal); an extreme z-index on top of that
-       was making menus render above page chrome they had no business covering. 9999 clears normal
-       content with a wide margin while leaving room for anything the page itself elevates. */
-    menu.style.zIndex = "9999";
-    menu.__upPlacedRect = r;                       // baseline for nudgeMenu's cheap per-frame delta
-  }
-
-  /* Cheap, compositor-only alternative to a full placeMenu() call for the DURING-scroll case: move
-     the menu by exactly however far its trigger has moved since the last full placeMenu(), via
-     `transform` instead of `top`/`left`. Correct for any scroll source (window or an ancestor
-     scroll container) because it compares the trigger's CURRENT viewport rect to its rect at
-     placeMenu-time, not to a window.scrollY delta. Does not re-evaluate flip/max-height — that's
-     what makePortal's post-scroll settle timer's full placeMenu() call is for. */
-  function nudgeMenu(menu){
-    var btn = menu.__upBtn, placed = menu.__upPlacedRect;
-    if (!btn || !placed) return;
-    var r = btn.getBoundingClientRect();
-    menu.style.transform = "translate(" + Math.round(r.left - placed.left) + "px," + Math.round(r.top - placed.top) + "px)";
-  }
+  /* No-op: dropdown menus are positioned entirely by CSS now (position:absolute against their
+     position:relative wrapper — see makePortal). Kept as a callable shell so the components that
+     call it on open don't need to change; the CSS rest-state already places the menu correctly. */
+  function placeMenu(menu, btn, opts){}
 
   /* Sticky header machinery: pins the toolbar + column header at data-sticky-top on wide screens,
      un-clips overflow:hidden ancestors (Bubble wrappers) so position:sticky isn't trapped, and
