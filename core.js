@@ -370,6 +370,884 @@
     }
   }
 
+  /* ==========================================================================================
+     CHART KITS
+     ==========================================================================================
+     Every chart in this library is one of exactly three shapes: a multi-series line chart, a
+     doughnut, or a horizontal bar list. Before these kits existed, each shape was copy-pasted
+     into every component that needed it — visibility-chart and citations-combo-chart carried two
+     near-identical ~376-line line charts, topcitations-dashboard and citations-combo-chart two
+     near-identical ~200-line doughnut/bar charts. That duplication is what let the same bug get
+     fixed in one component and stay broken in another (the multi-instance tooltip bug, the
+     theme-sticky doughnut tooltip, the missing highlight easing — all found the hard way).
+
+     What lives HERE: everything that is presentation or interaction — Chart.js plugins, the
+     external tooltips, skeletons, the container-size poll, the render-verify retry, the legend
+     layout algorithm, animation curves, the watermark.
+     What stays in the COMPONENT: only the data mapping — turning a Bubble payload into
+     {labels, datasets} or into [{name, share, color}]. That genuinely differs per component
+     (visibility-chart keys on company_id with a fixed palette, citations-combo-chart keys on
+     domain/url with a generated shade ramp), so it is passed in, not guessed at here. */
+
+  /* Loads Chart.js once per PAGE, shared across every upstreem component. Loading it twice
+     breaks existing chart instances (each load replaces window.Chart with a fresh registry), so
+     if another component already injected it we wait for that copy instead of adding a second. */
+  function loadChartJs(){
+    if (window.Chart) return Promise.resolve();
+    if (window.__upstreemChartJs) return window.__upstreemChartJs;
+    window.__upstreemChartJs = new Promise(function(res, rej){
+      var existing = document.querySelector('script[data-upstreem-chartjs], script[data-ccchart], script[src*="chart.umd"], script[src*="chart.js@"], script[src*="chart.local"]');
+      if (existing){
+        var iv = setInterval(function(){ if (window.Chart){ clearInterval(iv); res(); } }, 40);
+        setTimeout(function(){ clearInterval(iv); if (window.Chart) res(); else rej(new Error("chartjs timeout")); }, 10000);
+        return;
+      }
+      var s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js";
+      s.setAttribute("data-upstreem-chartjs", "1");
+      s.onload = function(){ res(); };
+      s.onerror = rej;
+      document.head.appendChild(s);
+    });
+    return window.__upstreemChartJs;
+  }
+
+  /* ---------- chart colour system ----------
+     Citation types have a genuine dark accent, not the same hex reused on both themes. This was
+     previously local to topcitations-dashboard, which meant citations-combo-chart rendered
+     light-mode citation hexes in dark mode. Shared now so that cannot drift again.
+     CHART_OTHER_* are deliberately NOT the same values as OTHER_LIGHT/OTHER_DARK above:
+     the chart palette's neutral is #a0a0a0, the chip palette's is #a8abb2. Same idea, different
+     tuning; keeping both avoids silently shifting a colour nobody asked to change. */
+  var CITE_COLOR_DARK = {
+    "Editorial":"#5cd7c8", "UGC / Community":"#62b4da", "Knowledge-Base":"#8082db",
+    "Brand Platforms":"#c377cf", "Institutional":"#7693bb", "Competition":"#de8c54", "You":"#d76f82"
+  };
+  var URL_LABEL = {
+    homepage:"Homepage", product_service:"Product / Service", marketplace:"Marketplace", company_info:"Company Info",
+    article:"Article", listicle:"Listicle", guide:"Guide", comparison:"Comparison", review:"Review",
+    documentation:"Documentation", forum:"Forum", directory:"Directory", video:"Video", social_post:"Social Post", other:"Uncategorized"
+  };
+  /* bright chart-fill palette, tuned for large area fills — deliberately separate from URL_TYPE
+     above, which is tuned for small text-on-tint chips. */
+  var URL_COLOR_CHART = {
+    homepage:"#c3753a", product_service:"#ce8662", marketplace:"#ae7c58", company_info:"#b48139",
+    article:"#369379", listicle:"#3e90a6", guide:"#5182ef", comparison:"#726bea", review:"#8a53e1",
+    documentation:"#8a53e1", forum:"#a95cee", directory:"#b549bf", video:"#9661f1", social_post:"#a27df8", other:"#8c8f96"
+  };
+  var URL_COLOR_DARK = {
+    homepage:"#fbbf24", product_service:"#fdba74", marketplace:"#fcae6f", company_info:"#facc15",
+    article:"#6ee7b7", listicle:"#67e8f9", guide:"#93c5fd", comparison:"#a5b4fc", review:"#c4b5fd",
+    documentation:"#c4b5fd", forum:"#d8b4fe", directory:"#f0abfc", video:"#c4b5fd", social_post:"#ddd6fe", other:"#a0a0a0"
+  };
+  var CHART_OTHER_LIGHT = "#8c8f96", CHART_OTHER_DARK = "#a0a0a0";
+  var MAX_URL_SLICES = 8;
+
+  /* Slice/line colour for a raw type key. mode: "url" | anything else (= citation type). */
+  function typeColor(raw, mode, isDark){
+    if (mode === "url"){
+      var map = isDark ? URL_COLOR_DARK : URL_COLOR_CHART;
+      return map[String(raw || "").trim()] || (isDark ? CHART_OTHER_DARK : CHART_OTHER_LIGHT);
+    }
+    var name = citeName(raw);
+    return isDark ? (CITE_COLOR_DARK[name] || CHART_OTHER_DARK) : (CITE_COLOR[name] || CHART_OTHER_LIGHT);
+  }
+  function capitalize(s){ s = String(s || ""); return s.charAt(0).toUpperCase() + s.slice(1); }
+  /* Share formatter with the <1% case fmtTotal doesn't have. */
+  function fmtPct(v){ v = Number(v) || 0; if (v > 0 && v < 1) return "<1%"; return Math.round(v) + "%"; }
+
+  /* Turns a raw [{type, share_pct}] breakdown into the [{name, share, color}] the doughnut/bar
+     renderers take. In url mode the tail past MAX_URL_SLICES is folded into one "Other" slice. */
+  function prepTypeData(mode, rows, isDark){
+    rows = Array.isArray(rows) ? rows : [];
+    var items = rows
+      .filter(function(r){ return r && (r.type != null) && isFinite(Number(r.share_pct)); })
+      .map(function(r){ return { key: String(r.type).trim(), share: Math.max(0, Number(r.share_pct)) }; });
+    if (mode === "url"){
+      items.sort(function(a, b){ return b.share - a.share; });
+      if (items.length > MAX_URL_SLICES){
+        var head = items.slice(0, MAX_URL_SLICES);
+        var otherShare = items.slice(MAX_URL_SLICES).reduce(function(a, b){ return a + b.share; }, 0);
+        head.push({ key: "other", share: otherShare, _other: true });
+        items = head;
+      }
+      return items.map(function(it){
+        return {
+          key: it.key,
+          name: it._other ? "Other" : (URL_LABEL[it.key] || capitalize(String(it.key).replace(/_/g, " "))),
+          share: it.share,
+          color: it._other ? (isDark ? CHART_OTHER_DARK : CHART_OTHER_LIGHT) : typeColor(it.key, "url", isDark)
+        };
+      });
+    }
+    return items.map(function(it){
+      return { key: it.key, name: citeName(it.key), share: it.share, color: typeColor(it.key, "citation", isDark) };
+    });
+  }
+
+  /* Would white label text be hard to read on this fill? WCAG relative luminance, so it judges by
+     hue too (a light yellow reads bright, a light blue less so). Threshold sits high on purpose:
+     only genuinely light bars flip to dark text, mid-tone citation fills keep white. */
+  function barIsLight(col){
+    if (typeof col !== "string") return false;
+    var c = col.charAt(0) === "#" ? col.slice(1) : col;
+    if (c.length === 3) c = c.charAt(0)+c.charAt(0)+c.charAt(1)+c.charAt(1)+c.charAt(2)+c.charAt(2);
+    if (!/^[0-9a-fA-F]{6}$/.test(c)) return false;
+    function lin(v){ v /= 255; return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); }
+    var L = 0.2126*lin(parseInt(c.substr(0,2),16)) + 0.7152*lin(parseInt(c.substr(2,2),16)) + 0.0722*lin(parseInt(c.substr(4,2),16));
+    return L > 0.55;
+  }
+  /* Intrinsic text width via an off-DOM probe. Deliberately NOT getBoundingClientRect(): the bar
+     labels are measured while still opacity:0 inside a 0%-wide flex fill, so their box width is
+     the clipped width, not the width the text actually needs. */
+  function measureText(el){
+    if (!el) return 0;
+    var cs = window.getComputedStyle(el);
+    var probe = document.createElement("span");
+    probe.textContent = el.textContent;
+    probe.style.cssText = "position:absolute;left:-9999px;top:-9999px;white-space:nowrap;visibility:hidden;" +
+      "font-family:" + cs.fontFamily + ";font-size:" + cs.fontSize + ";font-weight:" + cs.fontWeight + ";letter-spacing:" + cs.letterSpacing + ";";
+    document.body.appendChild(probe);
+    var w = probe.offsetWidth;
+    document.body.removeChild(probe);
+    return w;
+  }
+  function truncate(s, n){ s = String(s == null ? "" : s); return s.length > n ? s.slice(0, n-1) + "…" : s; }
+  var MONTHS_LONG = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  function chartDateFmt(day){
+    var m = String(day || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!m) return String(day || "");
+    return parseInt(m[3],10) + " " + MONTHS[parseInt(m[2],10)-1] + " " + m[1];
+  }
+  /* Tooltip header date. At month granularity a full "1 Jul 2026" reads wrong for what is really
+     a whole-month bucket, so it collapses to just the month name. */
+  function chartDateTitle(day, gran){
+    var m = String(day || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!m) return String(day || "");
+    if (gran === "month") return MONTHS_LONG[parseInt(m[2],10)-1] || chartDateFmt(day);
+    return chartDateFmt(day);
+  }
+  function getPageWidth(){
+    try { if (window.top && window.top.innerWidth) return window.top.innerWidth; } catch(e){}
+    return window.innerWidth || document.documentElement.clientWidth || 0;
+  }
+
+  /* ---------- watermark ----------
+     Injected by the line kit into its own wrap. Used to be a separate per-component script file
+     with its own whole-page MutationObserver + 300ms interval hunting for wraps by class; the kit
+     owns its wrap element directly, so none of that scanning is needed. Idempotent. */
+  var WM_PATH_TEXT = "M195.928 128.536C190.979 128.536 186.669 127.512 183 125.464C179.331 123.331 176.472 120.173 174.424 115.992C172.461 111.811 171.48 106.52 171.48 100.12V63.512H184.28V98.84C184.28 104.984 185.56 109.677 188.12 112.92C190.765 116.077 194.605 117.656 199.64 117.656C203.139 117.656 206.211 116.845 208.856 115.224C211.501 113.517 213.592 111.085 215.128 107.928C216.749 104.685 217.56 100.845 217.56 96.408V63.512H230.36V127H219.224L218.072 117.016H217.56C215.427 120.429 212.568 123.203 208.984 125.336C205.4 127.469 201.048 128.536 195.928 128.536ZM241.26 152.6V63.512H252.012L252.908 75.416H253.42C255.297 72.4293 257.431 69.9547 259.82 67.992C262.295 66.0293 265.068 64.536 268.14 63.512C271.212 62.488 274.497 61.976 277.996 61.976C284.055 61.976 289.303 63.4267 293.74 66.328C298.263 69.2293 301.719 73.1973 304.108 78.232C306.583 83.2667 307.82 88.9413 307.82 95.256C307.82 101.571 306.583 107.245 304.108 112.28C301.719 117.315 298.22 121.283 293.612 124.184C289.004 127.085 283.415 128.536 276.844 128.536C271.212 128.536 266.519 127.384 262.764 125.08C259.009 122.776 256.108 120.173 254.06 117.272V152.6H241.26ZM274.54 117.656C278.721 117.656 282.305 116.717 285.292 114.84C288.364 112.963 290.711 110.36 292.332 107.032C294.039 103.704 294.892 99.7787 294.892 95.256C294.892 90.8187 294.039 86.936 292.332 83.608C290.711 80.1947 288.364 77.5493 285.292 75.672C282.305 73.7947 278.721 72.856 274.54 72.856C270.444 72.856 266.86 73.7947 263.788 75.672C260.716 77.5493 258.327 80.1947 256.62 83.608C254.999 86.936 254.188 90.8187 254.188 95.256C254.188 99.7787 254.999 103.704 256.62 107.032C258.327 110.36 260.716 112.963 263.788 114.84C266.86 116.717 270.444 117.656 274.54 117.656ZM341.336 128.536C336.131 128.536 331.48 127.64 327.384 125.848C323.288 124.056 319.96 121.581 317.4 118.424C314.925 115.181 313.432 111.384 312.92 107.032H325.848C326.36 108.995 327.171 110.872 328.28 112.664C329.475 114.456 331.139 115.949 333.272 117.144C335.491 118.253 338.179 118.808 341.336 118.808C344.152 118.808 346.456 118.424 348.248 117.656C350.125 116.803 351.491 115.693 352.344 114.328C353.283 112.963 353.752 111.469 353.752 109.848C353.752 107.885 353.112 106.307 351.832 105.112C350.637 103.832 348.888 102.765 346.584 101.912C344.365 100.973 341.677 100.077 338.52 99.224C335.875 98.456 333.187 97.6453 330.456 96.792C327.725 95.8533 325.251 94.744 323.032 93.464C320.813 92.184 319.021 90.52 317.656 88.472C316.291 86.3387 315.608 83.736 315.608 80.664C315.608 77.1653 316.547 74.008 318.424 71.192C320.387 68.376 323.16 66.1573 326.744 64.536C330.328 62.8293 334.595 61.976 339.544 61.976C346.541 61.976 352.216 63.6827 356.568 67.096C361.005 70.424 363.608 75.2453 364.376 81.56H351.96C351.619 78.4027 350.339 75.9707 348.12 74.264C345.987 72.5573 343.085 71.704 339.416 71.704C335.832 71.704 333.059 72.472 331.096 74.008C329.219 75.544 328.28 77.464 328.28 79.768C328.28 81.304 328.792 82.584 329.816 83.608C330.84 84.632 332.419 85.528 334.552 86.296C336.771 86.9787 339.501 87.832 342.744 88.856C346.84 90.0507 350.68 91.3733 354.264 92.824C357.933 94.2747 360.877 96.1947 363.096 98.584C365.4 100.888 366.552 104.088 366.552 108.184C366.637 112.109 365.613 115.608 363.48 118.68C361.432 121.752 358.531 124.184 354.776 125.976C351.021 127.683 346.541 128.536 341.336 128.536ZM397.988 127C393.977 127 390.436 126.36 387.364 125.08C384.377 123.8 382.073 121.667 380.452 118.68C378.916 115.693 378.148 111.64 378.148 106.52V73.112H367.14V63.512H378.148L379.556 47.64H390.948V63.512H408.996V73.112H390.948V106.648C390.948 110.659 391.673 113.347 393.124 114.712C394.66 116.077 397.305 116.76 401.06 116.76H408.228V127H397.988ZM414.745 127V63.512H425.881L427.033 77.336H427.545C429.593 72.8133 431.641 69.4853 433.689 67.352C435.822 65.1333 438.254 63.6827 440.985 63C443.801 62.3173 447.129 61.976 450.969 61.976V75.416H447.641C444.313 75.416 441.369 75.8427 438.809 76.696C436.334 77.464 434.244 78.6587 432.537 80.28C430.916 81.9013 429.678 83.992 428.825 86.552C427.972 89.0267 427.545 91.9707 427.545 95.384V127H414.745ZM484.822 128.536C478.593 128.536 473.089 127.171 468.31 124.44C463.531 121.624 459.777 117.741 457.046 112.792C454.315 107.843 452.95 102.04 452.95 95.384C452.95 88.728 454.273 82.9253 456.918 77.976C459.649 72.9413 463.403 69.016 468.182 66.2C473.046 63.384 478.635 61.976 484.95 61.976C491.265 61.976 496.683 63.384 501.206 66.2C505.729 68.9307 509.227 72.5573 511.702 77.08C514.262 81.6027 515.542 86.6373 515.542 92.184C515.542 93.0373 515.542 93.976 515.542 95C515.542 96.024 515.457 97.0907 515.286 98.2H462.294V89.24H502.742C502.486 83.7787 500.694 79.5547 497.366 76.568C494.038 73.496 489.857 71.96 484.822 71.96C481.409 71.96 478.209 72.728 475.222 74.264C472.321 75.8 469.974 78.104 468.182 81.176C466.39 84.248 465.494 88.1307 465.494 92.824V96.408C465.494 101.101 466.39 105.069 468.182 108.312C469.974 111.469 472.321 113.859 475.222 115.48C478.209 117.101 481.366 117.912 484.694 117.912C488.79 117.912 492.161 117.016 494.806 115.224C497.537 113.347 499.542 110.829 500.822 107.672H513.75C512.555 111.683 510.635 115.267 507.99 118.424C505.345 121.496 502.059 123.971 498.134 125.848C494.294 127.64 489.857 128.536 484.822 128.536ZM553.197 128.536C546.968 128.536 541.464 127.171 536.685 124.44C531.906 121.624 528.152 117.741 525.421 112.792C522.69 107.843 521.325 102.04 521.325 95.384C521.325 88.728 522.648 82.9253 525.293 77.976C528.024 72.9413 531.778 69.016 536.557 66.2C541.421 63.384 547.01 61.976 553.325 61.976C559.64 61.976 565.058 63.384 569.581 66.2C574.104 68.9307 577.602 72.5573 580.077 77.08C582.637 81.6027 583.917 86.6373 583.917 92.184C583.917 93.0373 583.917 93.976 583.917 95C583.917 96.024 583.832 97.0907 583.661 98.2H530.669V89.24H571.117C570.861 83.7787 569.069 79.5547 565.741 76.568C562.413 73.496 558.232 71.96 553.197 71.96C549.784 71.96 546.584 72.728 543.597 74.264C540.696 75.8 538.349 78.104 536.557 81.176C534.765 84.248 533.869 88.1307 533.869 92.824V96.408C533.869 101.101 534.765 105.069 536.557 108.312C538.349 111.469 540.696 113.859 543.597 115.48C546.584 117.101 549.741 117.912 553.069 117.912C557.165 117.912 560.536 117.016 563.181 115.224C565.912 113.347 567.917 110.829 569.197 107.672H582.125C580.93 111.683 579.01 115.267 576.365 118.424C573.72 121.496 570.434 123.971 566.509 125.848C562.669 127.64 558.232 128.536 553.197 128.536ZM591.62 127V63.512H602.884L604.036 74.008H604.548C606.596 69.9973 609.369 67.0107 612.868 65.048C616.452 63 620.377 61.976 624.644 61.976C627.972 61.976 630.959 62.4453 633.604 63.384C636.335 64.3227 638.681 65.7307 640.644 67.608C642.607 69.4853 644.228 71.8747 645.508 74.776H646.02C648.324 70.5947 651.268 67.4373 654.852 65.304C658.436 63.0853 662.873 61.976 668.164 61.976C672.943 61.976 677.081 63.0427 680.58 65.176C684.164 67.224 686.98 70.3387 689.028 74.52C691.076 78.7013 692.1 83.992 692.1 90.392V127H679.428V91.672C679.428 85.528 678.191 80.8773 675.716 77.72C673.241 74.4773 669.487 72.856 664.452 72.856C661.209 72.856 658.393 73.5387 656.004 74.904C653.615 76.184 651.695 78.232 650.244 81.048C648.879 83.7787 648.196 87.32 648.196 91.672V127H635.524V91.672C635.524 85.528 634.287 80.8773 631.812 77.72C629.337 74.4773 625.711 72.856 620.932 72.856C618.031 72.856 615.343 73.7093 612.868 75.416C610.393 77.0373 608.345 79.4267 606.724 82.584C605.188 85.7413 604.42 89.5813 604.42 94.104V127H591.62Z";
+  var WM_PATH_MARK = "M83.7971 91.7952C83.7971 98.5594 85.6493 101.942 89.3538 101.942C92.5789 101.942 96.1744 100.053 100.14 96.2765C103.67 92.838 106.765 88.554 109.423 83.4245C111.384 83.2554 112.365 84.2982 112.365 86.5529C112.365 88.4694 111.45 91.4006 109.619 95.3464C107.833 99.2922 106.089 102.703 104.39 105.577C102.69 108.452 100.794 111.271 98.7019 114.033C96.6102 116.795 94.3876 119.275 92.0341 121.473C86.7607 126.321 81.618 128.745 76.606 128.745C69.0227 128.745 63.9672 125.25 61.4394 118.26C56.6454 122.883 51.5899 126.067 46.2729 127.815C44.4424 128.435 42.394 128.745 40.1277 128.745C37.9051 128.745 35.6824 128.238 33.4597 127.223C31.2806 126.152 29.4066 124.63 27.8376 122.657C24.6125 118.599 23 113.018 23 105.916C23 97.9675 25.0919 89.625 29.2758 80.8878C32.7624 73.6163 37.2078 67.1903 42.612 61.6098C47.5803 56.5366 51.5899 54 54.6407 54C56.2967 54 58.1708 55.6911 60.2628 59.0732C55.9917 62.9626 52.309 67.9231 49.2146 73.9545C45.7716 80.6624 44.0502 86.722 44.0502 92.1334C44.0502 98.6722 46.1639 101.942 50.3914 101.942C54.5753 101.942 57.8657 101.011 60.2628 99.1513C61.9624 90.3578 65.7759 81.2824 71.703 71.9252C77.5866 62.6244 82.969 56.7903 87.8502 54.4228C89.4192 53.69 91.5547 54.6482 94.2568 57.2976C94.9105 57.9176 95.4117 58.4531 95.7604 58.9041C92.0559 63.019 89.0487 68.5995 86.7389 75.6455C84.7776 81.6207 83.7971 87.0039 83.7971 91.7952Z";
+  function injectWatermark(wrap){
+    if (!wrap || wrap.querySelector(".upstreem-watermark")) return;
+    var W = 150, H = W * (184 / 707);
+    /* pick black or white from the nearest ancestor that actually paints a background */
+    var color = "#000", node = wrap;
+    while (node){
+      var bg; try { bg = getComputedStyle(node).backgroundColor; } catch(e){ break; }
+      var m = bg && bg.match(/rgba?\(([^)]+)\)/);
+      if (m){
+        var p = m[1].split(",").map(function(s){ return parseFloat(s); });
+        var a = p[3] == null ? 1 : p[3];
+        if (a > 0){ color = (0.299*p[0] + 0.587*p[1] + 0.114*p[2]) < 128 ? "#fff" : "#000"; break; }
+      }
+      node = node.parentElement;
+    }
+    try { if (getComputedStyle(wrap).position === "static") wrap.style.position = "relative"; } catch(e){}
+    /* The mask id MUST be unique per watermark: several charts can live on one page, and duplicate
+       ids make every SVG resolve url(#…) to the FIRST match — when that one isn't usable the mask
+       silently fails and the rect paints unmasked (a grey box on every instance but the first). */
+    var id = "up-wm-" + Math.random().toString(36).slice(2) + "-" + (+new Date());
+    var wm = document.createElement("div");
+    wm.className = "upstreem-watermark";
+    wm.style.cssText = "position:absolute;top:47%;left:50%;transform:translate(-50%,-50%);width:" + W +
+      "px;height:" + H + "px;opacity:0.05;color:" + color + ";pointer-events:none;z-index:2;";
+    wm.innerHTML =
+      '<svg viewBox="0 0 707 184" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="display:block">' +
+        '<defs><mask id="' + id + '">' +
+          '<path fill="#fff" d="' + WM_PATH_TEXT + '"/>' +
+          '<rect x="4" y="32" width="120" height="120" rx="28" fill="#fff"/>' +
+          '<path fill="#000" d="' + WM_PATH_MARK + '"/>' +
+        '</mask></defs>' +
+        '<rect width="707" height="184" fill="currentColor" mask="url(#' + id + ')"/>' +
+      '</svg>';
+    wrap.appendChild(wm);
+  }
+
+  /* ---------- line chart ---------- */
+  var LINE_TENSION = 0.3, LINE_WIDTH = 1.5, LINE_POINT_HOVER = 4, LINE_POINT_HIT = 6, LINE_POINT_BORDER = 1.4;
+  var X_MAX_TICKS = 7, Y_PAD = 1.15;
+
+  var hoverLinePlugin = {
+    id: "upHoverLine",
+    afterDatasetsDraw: function(chart){
+      var act = chart.tooltip && chart.tooltip.getActiveElements ? chart.tooltip.getActiveElements() : [];
+      if (!act || !act.length) return;
+      var x = act[0].element.x, ca = chart.chartArea, ctx = chart.ctx;
+      ctx.save();
+      ctx.beginPath(); ctx.moveTo(x, ca.top); ctx.lineTo(x, ca.bottom);
+      ctx.lineWidth = 1; ctx.strokeStyle = chart.$upHoverLineColor || "rgba(0,0,0,0.12)";
+      ctx.stroke(); ctx.restore();
+    }
+  };
+  /* dashed horizontal grid at every y tick, drawn behind the lines (Chart.js's own grid can't do
+     the zero-line exception this design wants) */
+  var dashedYGridPlugin = {
+    id: "upDashedYGrid",
+    beforeDatasetsDraw: function(chart){
+      var y = chart.scales.y, ca = chart.chartArea, ctx = chart.ctx;
+      if (!y || !ca) return;
+      var ticks = (y.getTicks && y.getTicks()) || y.ticks || [];
+      if (!ticks.length) return;
+      ctx.save();
+      ctx.setLineDash([6,6]); ctx.lineWidth = 1; ctx.strokeStyle = chart.$upGridColor || "rgba(0,0,0,0.08)";
+      ticks.forEach(function(t){
+        if (t.value <= 0) return;   // no gridline on the zero line
+        var yp = y.getPixelForValue(t.value);
+        if (yp == null || isNaN(yp)) return;
+        if (yp < ca.top - 0.5 || yp > ca.bottom + 0.5) return;
+        ctx.beginPath(); ctx.moveTo(ca.left, Math.round(yp) + 0.5); ctx.lineTo(ca.right, Math.round(yp) + 0.5); ctx.stroke();
+      });
+      ctx.restore();
+    }
+  };
+
+  /* index-mode tooltip: every series at the hovered day, sorted desc, with a date header and
+     favicon rows. Eases toward its target instead of snapping, so sweeping across the chart reads
+     as one object following the cursor rather than a box teleporting per data point. */
+  function makeLineTooltip(wrap, getIsDark, getGran){
+    var pos = { x:null, y:null }, target = { x:0, y:0 }, running = false, visible = false;
+    var FOLLOW = 0.18;
+    function loop(){
+      var el = wrap.querySelector(".up-line-tt");
+      if (pos.x == null){ pos.x = target.x; pos.y = target.y; }
+      pos.x += (target.x - pos.x) * FOLLOW;
+      pos.y += (target.y - pos.y) * FOLLOW;
+      if (el) el.style.transform = "translate3d(" + pos.x + "px," + pos.y + "px,0)";
+      var dx = Math.abs(target.x - pos.x), dy = Math.abs(target.y - pos.y);
+      if (visible || dx > 0.4 || dy > 0.4){ requestAnimationFrame(loop); }
+      else { running = false; }
+    }
+    return function(context){
+      var chart = context.chart, tooltip = context.tooltip;
+      var el = wrap.querySelector(".up-line-tt");
+      if (!el){
+        el = document.createElement("div");
+        el.className = "up-line-tt";
+        el.style.cssText = "position:absolute;left:0;top:0;pointer-events:none;z-index:9999;opacity:0;transform:translate3d(0,0,0);transition:opacity 120ms ease;";
+        wrap.appendChild(el);
+      }
+      if (tooltip.opacity === 0){ el.style.opacity = "0"; visible = false; pos.x = null; pos.y = null; return; }
+      var dps = (tooltip.dataPoints || []).filter(function(dp){ return dp && dp.parsed && dp.parsed.y != null; });
+      if (!dps.length){ el.style.opacity = "0"; visible = false; pos.x = null; pos.y = null; return; }
+      var dark = !!getIsDark();
+      var boxBg = dark ? "#121212" : "#ffffff";
+      var boxBorder = dark ? "" : "border:1px solid #e0e2e6;";
+      var boxShadow = dark ? "box-shadow:0 4px 14px rgba(0,0,0,.25);" : "box-shadow:0 4px 14px rgba(0,0,0,.10);";
+      var textColor = dark ? "#e6e6e6" : "#1f1f1b";
+      var mutedColor = dark ? "#8a8a8a" : "#6f737c";
+      var dayLabel = chart.data.labels[dps[0].dataIndex];
+      dps = dps.slice().sort(function(a, b){ return b.parsed.y - a.parsed.y; });
+      var ff = "Geist,system-ui,-apple-system,Segoe UI,Roboto,Arial";
+      var rows = dps.map(function(dp){
+        var ds = dp.dataset;
+        var icon = ds.__favicon
+          ? '<img src="' + esc(ds.__favicon) + '" width="16" height="16" style="border-radius:4px;display:block;object-fit:cover" onerror="this.style.visibility=\'hidden\'"/>'
+          : '<span style="width:16px;height:16px;border-radius:4px;background:' + ds.__baseColor + ';display:block"></span>';
+        var vy = Number(dp.parsed.y) || 0, vr = Math.round(vy);
+        var val = (vy > 0 && vr === 0) ? "<1%" : (vr + "%");
+        return '<div style="display:flex;align-items:center;gap:8px;margin-top:8px">' +
+            '<span style="flex:0 0 16px;display:flex">' + icon + '</span>' +
+            '<span style="flex:1 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:' + textColor + '">' + esc(truncate(ds.label, 32)) + '</span>' +
+            '<span style="flex:0 0 auto;margin-left:77px;color:' + textColor + ';font-weight:500">' + val + '</span>' +
+          '</div>';
+      }).join("");
+      el.innerHTML =
+        '<div style="background:' + boxBg + ';color:' + textColor + ';' + boxBorder + 'border-radius:16px;padding:10px 12px;font-family:' + ff + ';font-size:13px;line-height:1.35;' + boxShadow + 'white-space:nowrap;min-width:220px;">' +
+          '<div style="color:' + mutedColor + ';font-size:11px">' + esc(chartDateTitle(dayLabel, getGran ? getGran() : "day")) + '</div>' +
+          rows +
+        '</div>';
+      var cx = chart.canvas.offsetLeft, cy = chart.canvas.offsetTop, ca = chart.chartArea;
+      var caretX = cx + (tooltip.caretX != null ? tooltip.caretX : dps[0].element.x), m = 16;
+      el.style.left = "0px"; el.style.top = "0px";
+      var rect = el.getBoundingClientRect();
+      var tx = (caretX + rect.width + m > cx + ca.right) ? (caretX - rect.width - m) : (caretX + m);
+      tx = Math.max(cx + ca.left, Math.min(tx, cx + ca.right - rect.width));
+      var ty = Math.max(cy + ca.top, Math.min(cy + ca.top + 8, cy + ca.bottom - rect.height));
+      target.x = tx; target.y = ty;
+      if (pos.x == null){ pos.x = tx; pos.y = ty; el.style.transform = "translate3d(" + tx + "px," + ty + "px,0)"; }
+      el.style.opacity = "1"; visible = true;
+      if (!running){ running = true; requestAnimationFrame(loop); }
+    };
+  }
+
+  function lineSkeletonHtml(){
+    var hlines = "", xlabels = "", i;
+    for (i = 0; i < 4; i++) hlines += '<div class="sk-lc-hline"></div>';
+    for (i = 0; i < 6; i++) xlabels += '<div class="sk-lc-xlabel"></div>';
+    var d = "M0,125 C60,115 100,70 150,58 C200,46 230,90 280,74 C330,58 390,22 460,14";
+    var agId = "up-sk-ag-" + Math.random().toString(36).slice(2);
+    return '<div class="up-line-sk"><div class="sk-linechart">' +
+      '<div class="sk-lc-grid">' + hlines +
+        '<svg class="sk-lc-svg" viewBox="0 0 460 160" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">' +
+          '<defs><linearGradient id="' + agId + '" x1="0" y1="0" x2="0" y2="1"><stop class="sk-lc-astop0" offset="0%"/><stop class="sk-lc-astop1" offset="100%"/></linearGradient></defs>' +
+          '<path d="' + d + ' L460,160 L0,160 Z" fill="url(#' + agId + ')"/>' +
+          '<path class="sk-lc-stroke" d="' + d + '"/>' +
+          '<path class="sk-lc-shimmer-path" d="' + d + '"/>' +
+        '</svg>' +
+      '</div>' +
+      '<div class="sk-lc-xaxis">' + xlabels + '</div>' +
+    '</div></div>';
+  }
+
+  /* ---------- line legend: balanced rows ----------
+     Greedy wrapping leaves an ugly widow row (5 items, then 1). This packs the items into at most
+     two rows minimising the WIDEST row, via a small DP over the break positions. */
+  var LEG_MIN_GAP = 8, LEG_MAX_GAP = 16;
+  function legGetColumnGap(w){ return Math.max(LEG_MIN_GAP, Math.min(LEG_MAX_GAP, Math.floor(w * 0.025))); }
+  function legNormalizeUrl(url){ if (!url) return ""; if (url.indexOf("//") === 0) return "https:" + url; return url; }
+  function legItemHtml(c, measure){
+    return '<div class="up-company-item' + (measure ? " up-measure-item" : "") + '" data-company-id="' + esc(c.company_id) + '">' +
+        '<span class="up-company-color" style="background:' + esc(c.color || "#999999") + '"></span>' +
+        '<span class="up-company-inner-gap"></span>' +
+        (c.favicon_url
+          ? '<img class="up-company-favicon" src="' + esc(legNormalizeUrl(c.favicon_url)) + '" alt="" onerror="this.style.visibility=\'hidden\'">'
+          : '<span class="up-company-favicon" style="visibility:hidden"></span>') +
+        '<span class="up-company-inner-gap"></span>' +
+        '<span class="up-company-name">' + esc(c.name) + '</span>' +
+      '</div>';
+  }
+  function legRowWidth(widths, start, end, gap){
+    var total = 0;
+    for (var i = start; i < end; i++){ total += widths[i]; if (i > start) total += gap; }
+    return total;
+  }
+  function legGreedyRowCount(widths, cw, gap){
+    var rows = 1, cur = 0;
+    for (var i = 0; i < widths.length; i++){
+      var next = cur === 0 ? widths[i] : cur + gap + widths[i];
+      if (cur > 0 && next > cw){ rows++; cur = widths[i]; } else { cur = next; }
+    }
+    return rows;
+  }
+  function legBalancedBreaks(widths, rowCount, cw, gap){
+    var n = widths.length;
+    if (rowCount <= 1 || n <= 1) return [];
+    var dp = [], prev = [], r, i, k;
+    for (r = 0; r <= rowCount; r++){
+      dp.push(new Array(n + 1)); prev.push(new Array(n + 1));
+      for (i = 0; i <= n; i++){ dp[r][i] = Infinity; prev[r][i] = -1; }
+    }
+    dp[0][0] = 0;
+    for (r = 1; r <= rowCount; r++){
+      for (i = 1; i <= n; i++){
+        for (k = r - 1; k < i; k++){
+          var w = legRowWidth(widths, k, i, gap);
+          if (w > cw) continue;
+          var score = Math.max(dp[r-1][k], w);
+          if (score < dp[r][i]){ dp[r][i] = score; prev[r][i] = k; }
+        }
+      }
+    }
+    if (!isFinite(dp[rowCount][n])) return [];
+    var breaks = [], ii = n;
+    for (r = rowCount; r > 1; r--){ var kk = prev[r][ii]; if (kk <= 0) break; breaks.unshift(kk); ii = kk; }
+    return breaks;
+  }
+
+  /* ---------- makeLine ----------
+     cfg: { wrap, canvas, legend, isDark(), isOwner(), gran(), watermark:bool }
+     The component builds {labels, datasets}; datasets must carry __id / __baseColor / __favicon.
+     Returns { render, skeleton, empty, destroy, resize, relayoutLegend, chart }. */
+  function makeLine(cfg){
+    var wrap = cfg.wrap, canvas = cfg.canvas, legendEl = cfg.legend || null;
+    var isDark = cfg.isDark || function(){ return false; };
+    var isOwner = cfg.isOwner || function(){ return true; };
+    var chart = null, legendCompanies = [], verifyT = null, sizeIv = null;
+
+    function themeColors(){
+      return isDark()
+        ? { text:"#e0e0e0", muted:"#a0a0a0", border:"#353535", bg:"#1b1b1b" }
+        : { text:"#1f1f1b", muted:"#6f737c", border:"#e0e2e6", bg:"#ffffff" };
+    }
+    function clearExtras(){
+      var sk = wrap.querySelector(".up-line-sk"); if (sk) sk.remove();
+      var em = wrap.querySelector(".up-line-empty"); if (em) em.remove();
+    }
+    function destroy(){
+      if (sizeIv){ clearInterval(sizeIv); sizeIv = null; }
+      clearTimeout(verifyT);
+      if (chart){ try { chart.destroy(); } catch(e){} chart = null; }
+      if (window.Chart && window.Chart.getChart){ var ex = window.Chart.getChart(canvas); if (ex) try { ex.destroy(); } catch(e){} }
+      /* The external tooltip is a plain DOM element outside Chart.js's lifecycle — destroying the
+         chart stops the callback that would set its opacity back to 0, so a tooltip left visible
+         from a hover right before a reload would stay stuck on screen. */
+      var tt = wrap.querySelector(".up-line-tt");
+      if (tt) tt.style.opacity = "0";
+    }
+    function clearLegend(){ if (legendEl){ legendCompanies = []; legendEl.innerHTML = ""; } }
+
+    function legendLayout(){
+      if (!legendEl) return;
+      if (getPageWidth() < 500){ legendEl.classList.add("is-hidden"); return; }
+      legendEl.classList.remove("is-hidden");
+      var rowsC = legendEl.querySelector(".up-company-rows");
+      var measure = Array.prototype.slice.call(legendEl.querySelectorAll(".up-measure-item"));
+      if (!rowsC || !measure.length) return;
+      var cw = legendEl.clientWidth;
+      if (!cw){ setTimeout(legendLayout, 100); return; }
+      var gap = legGetColumnGap(cw);
+      legendEl.style.setProperty("--up-column-gap", gap + "px");
+      var widths = measure.map(function(it){ return it.getBoundingClientRect().width; });
+      var rowCount = legGreedyRowCount(widths, cw, gap);
+      rowCount = Math.max(1, Math.min(rowCount, legendCompanies.length, 2));   // never more than 2 rows
+      var breaks = legBalancedBreaks(widths, rowCount, cw, gap);
+      /* if 2 balanced rows don't fit (items too wide even truncated), split at the midpoint */
+      if (rowCount === 2 && !breaks.length) breaks = [Math.ceil(legendCompanies.length / 2)];
+      var rows = [], start = 0, b;
+      for (b = 0; b < breaks.length; b++){ rows.push(legendCompanies.slice(start, breaks[b])); start = breaks[b]; }
+      rows.push(legendCompanies.slice(start));
+      rowsC.innerHTML = rows.map(function(row){
+        return '<div class="up-company-row">' + row.map(function(c){ return legItemHtml(c, false); }).join("") + '</div>';
+      }).join("");
+    }
+    function renderLegend(datasets){
+      if (!legendEl) return;
+      legendCompanies = (datasets || []).map(function(ds){
+        return { company_id: ds.__id, name: ds.label, color: ds.__baseColor, favicon_url: ds.__favicon };
+      });
+      if (!legendCompanies.length){ legendEl.innerHTML = ""; return; }
+      legendEl.innerHTML =
+        '<div class="up-company-measure">' + legendCompanies.map(function(c){ return legItemHtml(c, true); }).join("") + '</div>' +
+        '<div class="up-company-rows"></div>';
+      legendLayout();
+    }
+    /* highlight one series on legend hover: active keeps its colour, everything else dims */
+    function applyHighlight(id){
+      if (chart && chart.__activeId !== id){
+        chart.__activeId = id;
+        var dim = isDark() ? "rgba(160,160,160,0.20)" : "rgba(120,123,124,0.22)";
+        chart.data.datasets.forEach(function(ds){
+          ds.borderColor = (id == null || ds.__id === id) ? ds.__baseColor : dim;
+        });
+        chart.update("highlight");   // named transition, see options.transitions below
+      }
+      if (legendEl){
+        var items = legendEl.querySelectorAll(".up-company-item");
+        for (var i = 0; i < items.length; i++){
+          items[i].style.opacity = (id == null || items[i].getAttribute("data-company-id") === id) ? "1" : "0.35";
+        }
+      }
+    }
+    /* bound once via delegation — rows are re-rendered on every resize */
+    if (legendEl && legendEl.getAttribute("data-up-hoverbound") !== "1"){
+      legendEl.setAttribute("data-up-hoverbound", "1");
+      legendEl.addEventListener("mouseover", function(e){
+        var it = e.target && e.target.closest ? e.target.closest(".up-company-item") : null;
+        if (it) applyHighlight(it.getAttribute("data-company-id"));
+      });
+      legendEl.addEventListener("mouseleave", function(){ applyHighlight(null); });
+    }
+
+    function skeleton(){
+      destroy(); clearExtras(); clearLegend();
+      wrap.insertAdjacentHTML("beforeend", lineSkeletonHtml());
+      if (cfg.watermark !== false) injectWatermark(wrap);
+    }
+    function empty(msg){
+      destroy(); clearExtras(); clearLegend();
+      wrap.insertAdjacentHTML("beforeend", '<div class="up-line-empty">' + esc(msg || "No data") + '</div>');
+      if (cfg.watermark !== false) injectWatermark(wrap);
+    }
+
+    function build(built){
+      destroy();
+      var tc = themeColors();
+      var ctx = canvas.getContext("2d");
+      window.Chart.defaults.color = tc.muted;
+      window.Chart.defaults.font = { family: "Geist, system-ui, -apple-system, Segoe UI, Roboto, Arial", size: 12 };
+      var labels = built.labels, ds = built.datasets;
+      var single = labels.length <= 1;   // single-day range → show the values as points
+      ds.forEach(function(d){
+        d.borderWidth = LINE_WIDTH; d.fill = false; d.cubicInterpolationMode = "monotone"; d.tension = LINE_TENSION;
+        d.pointRadius = single ? 4 : 0; d.pointHoverRadius = LINE_POINT_HOVER; d.pointHitRadius = LINE_POINT_HIT;
+        d.pointBorderWidth = LINE_POINT_BORDER; d.pointBackgroundColor = single ? d.__baseColor : tc.bg;
+        d.pointBorderColor = d.__baseColor; d.pointHoverBackgroundColor = tc.bg; d.pointHoverBorderColor = d.__baseColor;
+        d.spanGaps = true; d.clip = 8;
+      });
+      var visMax = 0;
+      ds.forEach(function(d){ (d.data || []).forEach(function(v){ if (v != null && v > visMax) visMax = v; }); });
+      var yMax = visMax * Y_PAD; if (yMax <= 0) yMax = 1; if (yMax > 100) yMax = 100;
+      try {
+        chart = new window.Chart(ctx, {
+          type: "line",
+          data: { labels: labels, datasets: ds },
+          plugins: [hoverLinePlugin, dashedYGridPlugin],
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            animation: { duration: 600, easing: "easeOutQuart" },
+            /* separate, faster curve for the legend-hover cross-highlight than the initial draw */
+            transitions: { highlight: { animation: { duration: 200, easing: "easeOutQuad" } } },
+            interaction: { mode: "index", intersect: false },
+            layout: { padding: { top: 8, right: 2, bottom: 0, left: 0 } },
+            plugins: { legend: { display: false }, tooltip: { enabled: false, external: makeLineTooltip(wrap, isDark, cfg.gran) } },
+            scales: {
+              x: { grid: { display:false }, offset: single, border: { display:true, color: tc.border, width:1 },
+                   ticks: { autoSkip:true, maxTicksLimit:X_MAX_TICKS, maxRotation:0, color: tc.muted,
+                            callback: function(v, i){
+                              var lab = String(labels[i] || "");
+                              if (cfg.gran && cfg.gran() === "month"){
+                                var m = lab.match(/^(\d{4})-(\d{2})/);
+                                if (m) return MONTHS_LONG[parseInt(m[2],10) - 1] || lab;
+                              }
+                              return lab.slice(5);   // day / week → "MM-DD"
+                            } } },
+              y: { min:0, max:yMax, beginAtZero:true,
+                   afterBuildTicks: function(scale){ var m = scale.max || 1; scale.ticks = [{value:0},{value:m/3},{value:2*m/3},{value:m}]; },
+                   ticks: { color: tc.muted, callback: function(v){ return Math.round(v) + "%"; } },
+                   grid: { display:false }, border: { display:false } }
+            },
+            elements: { point: { radius: 0 } }
+          }
+        });
+        chart.$upGridColor = tc.border;
+        chart.$upHoverLineColor = tc.border;
+      } catch(err){}
+    }
+
+    /* Chart.js reads the canvas's live layout to compute where the entrance animation starts, so
+       it needs a container with real, settled dimensions at creation time — not just "attached".
+       Two situations defeat that: (1) Chart.js was already cached so this .then() runs as an
+       immediate microtask before the browser laid out a freshly re-inserted widget; (2) the root
+       sits inside a Bubble element hidden via display:none, which reports 0x0 forever until shown.
+       Building against that collapsed geometry replays as points flying in from the (0,0) corner.
+       Deliberately setInterval, not rAF/ResizeObserver: both of those are tied to the rendering
+       pipeline, which browsers pause for a backgrounded or hidden tab — exactly when a Bubble
+       popup sits unopened. setInterval keeps ticking (throttled, not paused). */
+    function buildWhenSized(built){
+      if (wrap.clientWidth > 0 && wrap.clientHeight > 0){ build(built); return; }
+      var ticks = 0;
+      if (sizeIv) clearInterval(sizeIv);
+      sizeIv = setInterval(function(){
+        if (!isOwner() || !canvas || !canvas.isConnected){ clearInterval(sizeIv); sizeIv = null; return; }
+        if ((wrap.clientWidth > 0 && wrap.clientHeight > 0) || ++ticks > 600){   // ~2 min cap
+          clearInterval(sizeIv); sizeIv = null;
+          build(built);
+        }
+      }, 200);
+    }
+    /* Chart.js's internals occasionally fail to attach silently (a race in its own resize
+       observer). Re-check a few times and rebuild if the canvas ends up with no live instance. */
+    function verify(built){
+      clearTimeout(verifyT);
+      var attempts = 0;
+      function check(){
+        if (!isOwner()) return;
+        var alive = false;
+        try { alive = !!(window.Chart && window.Chart.getChart && canvas && window.Chart.getChart(canvas)); } catch(e){}
+        if (alive || wrap.querySelector(".up-line-empty")) return;
+        if (attempts++ >= 12) return;
+        buildWhenSized(built);
+        verifyT = setTimeout(check, 250);
+      }
+      verifyT = setTimeout(check, 400);
+    }
+
+    function render(built){
+      if (!isOwner()) return;
+      clearExtras();
+      if (!built || !built.datasets || !built.datasets.length){ empty(); return; }
+      renderLegend(built.datasets);
+      if (cfg.watermark !== false) injectWatermark(wrap);
+      loadChartJs().then(function(){
+        if (!isOwner() || !canvas) return;
+        buildWhenSized(built);
+        verify(built);
+      })["catch"](function(){});
+    }
+
+    return {
+      render: render,
+      skeleton: skeleton,
+      empty: empty,
+      destroy: destroy,
+      relayoutLegend: legendLayout,
+      resize: function(){ try { if (chart) chart.resize(); } catch(e){} },
+      chart: function(){ return chart; }
+    };
+  }
+
+  /* ---------- doughnut + bars ---------- */
+  var RING_PX = 12, SEG_GAP = 6, CORNER = 4, HOVER = 12;
+  var ringWidthPlugin = {
+    id: "upRingWidth",
+    beforeDatasetDraw: function(chart, args){
+      var meta = chart.getDatasetMeta(args.index);
+      meta.data.forEach(function(arc){ arc.innerRadius = Math.max(1, arc.outerRadius - RING_PX); });
+    }
+  };
+  /* Chart.js spaces slices proportionally, so a 1% slice gets a hairline gap and a 40% slice a
+     wide one. This redistributes the angles so every gap is the same number of pixels. */
+  var constantGapPlugin = {
+    id: "upConstantGap",
+    beforeDatasetDraw: function(chart, args){
+      var meta = chart.getDatasetMeta(args.index);
+      if (!meta || !meta.data || !meta.data.length) return;
+      var r = (meta.data[0] && meta.data[0].outerRadius) || 100;
+      var gap = SEG_GAP / r, N = meta.data.length;
+      var available = (Math.PI*2) - gap*N;
+      var total = meta.total || chart.data.datasets[args.index].data.reduce(function(a,b){ return a + Number(b||0); }, 0);
+      var cur = -Math.PI/2;
+      meta.data.forEach(function(arc, i){
+        var value = chart.data.datasets[args.index].data[i];
+        var frac = total > 0 ? (value/total) : 0;
+        var span = frac * available;
+        arc.startAngle = cur + gap/2;
+        arc.endAngle = cur + span + gap/2;
+        arc.circumference = span;
+        cur += span + gap;
+      });
+    }
+  };
+
+  function makeDonutTooltip(container, getIsDark, getMode){
+    var state = { x:0, y:0, raf:null };
+    function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+    function lerp(a, b, t){ return a + (b-a)*t; }
+    return function(context){
+      var chart = context.chart, tooltip = context.tooltip;
+      var el = container.querySelector(".up-donut-tt");
+      var dark = !!getIsDark();
+      if (!el){
+        el = document.createElement("div");
+        el.className = "up-donut-tt";
+        el.style.cssText = "position:absolute;pointer-events:none;z-index:9999;opacity:0;transform:translate3d(0,0,0);transition:opacity 120ms ease, transform 120ms ease;";
+        el.innerHTML = '<div class="up-tt-box"><div class="up-tt-title"><span class="up-tt-dot"></span><span class="up-tt-lbl"></span></div><div class="up-tt-sub">Share:</div><div class="up-tt-val"></div></div>';
+        chart.canvas.parentNode.appendChild(el);
+      }
+      /* Re-applied on every call, not just at creation: styling it once left the tooltip stuck on
+         whatever theme happened to be active the first time it was ever shown. */
+      var boxBg = dark ? "#121212" : "#ffffff";
+      var boxBorder = dark ? "" : "border:1px solid #e0e2e6;";
+      var boxShadow = dark ? "box-shadow:0 4px 14px rgba(0,0,0,.25);" : "box-shadow:0 4px 14px rgba(0,0,0,.10);";
+      var textColor = dark ? "#e6e6e6" : "#1f1f1b";
+      var mutedColor = dark ? "#8a8a8a" : "#6f737c";
+      el.querySelector(".up-tt-box").style.cssText = "background:" + boxBg + ";color:" + textColor + ";" + boxBorder + "border-radius:16px;padding:12px 14px;font-family:Geist,system-ui,-apple-system,Segoe UI,Roboto,Arial;font-size:13px;line-height:1.35;" + boxShadow + "white-space:nowrap;";
+      el.querySelector(".up-tt-title").style.cssText = "display:flex;align-items:center;gap:6px;font-weight:600;margin-bottom:6px;";
+      el.querySelector(".up-tt-sub").style.cssText = "color:" + mutedColor + ";font-size:11px;";
+      el.querySelector(".up-tt-val").style.cssText = "color:" + textColor + ";";
+      if (tooltip.opacity === 0){ el.style.opacity = "0"; return; }
+      var i = (tooltip.dataPoints && tooltip.dataPoints[0] && tooltip.dataPoints[0].dataIndex) || 0;
+      var od = chart.data.datasets[0].originalData;
+      var val = (od && od[i] != null) ? od[i] : (chart.data.datasets[0].data[i] || 0);
+      var sliceColor = (chart.data.datasets[0].backgroundColor && chart.data.datasets[0].backgroundColor[i]) || textColor;
+      var isUrlMode = getMode && getMode() === "url";
+      el.querySelector(".up-tt-dot").style.cssText = isUrlMode
+        ? "width:6px;height:6px;border-radius:999px;flex:0 0 auto;background:" + sliceColor + ";display:inline-block;"
+        : "display:none;";
+      el.querySelector(".up-tt-lbl").style.color = sliceColor;
+      el.querySelector(".up-tt-lbl").textContent = chart.data.labels[i] || "";
+      el.querySelector(".up-tt-val").textContent = Number(val).toFixed(2) + "%";
+      var cx = chart.canvas.offsetLeft, cy = chart.canvas.offsetTop, ca = chart.chartArea;
+      var caretX = cx + tooltip.caretX, caretY = cy + tooltip.caretY, m = 12;
+      el.style.left = "0px"; el.style.top = "0px";
+      var rect = el.getBoundingClientRect();
+      var tx = (caretX + rect.width + m > cx + ca.right) ? (caretX - rect.width - m) : (caretX + m);
+      tx = clamp(tx, cx + ca.left + m, cx + ca.right - rect.width - m);
+      var ty = caretY - rect.height - m;
+      if (ty < cy + ca.top + m) ty = caretY + m;
+      ty = clamp(ty, cy + ca.top + m, cy + ca.bottom - rect.height - m);
+      if (state.raf) cancelAnimationFrame(state.raf);
+      var sx = state.x || tx, sy = state.y || ty, st = performance.now(), d = 120;
+      function stepFn(now){
+        var t = Math.min(1, (now-st)/d), k = t < .5 ? 2*t*t : -1 + (4-2*t)*t;
+        var nx = lerp(sx, tx, k), ny = lerp(sy, ty, k);
+        el.style.transform = "translate3d(" + nx + "px," + ny + "px,0)"; el.style.opacity = "1";
+        state.x = nx; state.y = ny;
+        if (t < 1) state.raf = requestAnimationFrame(stepFn);
+      }
+      state.raf = requestAnimationFrame(stepFn);
+    };
+  }
+
+  function donutSkeletonHtml(){
+    var rows = [[110,34],[72,22],[90,22],[120,18],[80,18]];
+    var legend = rows.map(function(r){
+      return '<div class="up-sk-row"><span class="up-sk-dot"></span><span class="up-sk-lbl" style="width:' + r[0] + 'px"></span><span class="up-sk-pct" style="width:' + r[1] + 'px"></span></div>';
+    }).join("");
+    /* unique ids per call — fixed ids collide when two instances share a page and the mask
+       silently fails, painting an unmasked grey box on every instance but the first */
+    var u = Math.random().toString(36).slice(2);
+    var mId = "up-sk-mask-" + u, gId = "up-sk-grad-" + u;
+    return '<div class="up-donut-sk">' +
+      '<div class="up-sk-chart"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">' +
+        '<defs><mask id="' + mId + '"><circle cx="50" cy="50" r="38" fill="none" stroke="white" stroke-width="7"/></mask>' +
+        '<linearGradient id="' + gId + '" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" class="up-sk-g0"/><stop offset="50%" class="up-sk-g1"/><stop offset="100%" class="up-sk-g0"/></linearGradient></defs>' +
+        '<circle cx="50" cy="50" r="38" fill="none" class="up-sk-ring" stroke-width="7"/>' +
+        '<rect x="-60" y="0" width="50" height="100" fill="url(#' + gId + ')" mask="url(#' + mId + ')"><animateTransform attributeName="transform" type="translate" from="-60 0" to="160 0" dur="1.2s" repeatCount="indefinite"/></rect>' +
+      '</svg></div>' +
+      '<div class="up-sk-legend">' + legend + '</div>' +
+    '</div>';
+  }
+
+  /* ---------- makeTypeChart ----------
+     One controller for both the doughnut and the bar view of the same [{name, share, color}] data,
+     because a component always has both behind one switcher.
+     cfg: { body, isDark(), isOwner(), mode(), total(), centerLabel, collapseAt, availHeight() }
+     Returns { renderDonut, renderBars, skeleton, empty, destroy, applyCollapse, resize, chart }. */
+  function makeTypeChart(cfg){
+    var body = cfg.body;
+    var isDark = cfg.isDark || function(){ return false; };
+    var isOwner = cfg.isOwner || function(){ return true; };
+    var total = cfg.total || function(){ return 0; };
+    var collapseAt = cfg.collapseAt != null ? cfg.collapseAt : 420;
+    var chart = null;
+    var donutTooltip = makeDonutTooltip(body, isDark, cfg.mode);
+
+    function destroy(){
+      if (chart){ try { chart.destroy(); } catch(e){} chart = null; }
+      var cv = body.querySelector("canvas");
+      if (cv && window.Chart && window.Chart.getChart){ var ex = window.Chart.getChart(cv); if (ex) try { ex.destroy(); } catch(e){} }
+    }
+    /* below collapseAt the legend drops under the doughnut instead of sitting beside it */
+    function applyCollapse(){
+      var layout = body.querySelector(".up-donut-layout");
+      if (!layout) return;
+      var host = cfg.collapseHost || body;
+      layout.classList.toggle("is-collapsed", host.getBoundingClientRect().width < collapseAt);
+    }
+    function skeleton(){ destroy(); body.innerHTML = donutSkeletonHtml(); }
+    function empty(msg){ destroy(); body.innerHTML = '<div class="up-chart-empty">' + esc(msg || "No data") + '</div>'; }
+    function isEmpty(d){ return !d.length || d.every(function(x){ return !(Number(x.share) > 0); }); }
+
+    function renderDonut(d){
+      if (!isOwner()) return;
+      destroy();
+      d = d || [];
+      if (isEmpty(d)){ empty(); return; }
+      body.innerHTML =
+        '<div class="up-donut-layout">' +
+          '<div class="up-donut-wrap"><canvas></canvas>' +
+            '<div class="up-donut-center"><span class="n">' + esc(fmtTotal(total())) + '</span><span class="lbl">' + esc(cfg.centerLabel || "Citations") + '</span></div>' +
+          '</div><div class="up-donut-legend"></div>' +
+        '</div>';
+      body.querySelector(".up-donut-legend").innerHTML = d.map(function(it){
+        return '<div class="up-donut-legend-row"><span class="up-donut-legend-chip" style="background:' + it.color + '"></span>' +
+          '<span class="up-donut-legend-name">' + esc(it.name) + '</span>' +
+          '<span class="up-donut-legend-pct">' + esc(fmtPct(it.share)) + '</span></div>';
+      }).join("");
+      applyCollapse();
+      loadChartJs().then(function(){
+        if (!isOwner()) return;
+        var canvas = body.querySelector("canvas");
+        if (!canvas) return;
+        var ctx = canvas.getContext("2d");
+        var origData = d.map(function(x){ return x.share; });
+        /* floor the drawn value so a near-zero slice still gets a visible sliver; the tooltip
+           reads originalData so the number stays truthful */
+        var display = origData.map(function(v){ return Math.max(v, 1.0); });
+        var allZero = origData.every(function(v){ return v <= 0; });
+        window.Chart.defaults.color = isDark() ? "#a0a0a0" : "#6f737c";
+        window.Chart.defaults.font = { family: "Geist, system-ui, -apple-system, Segoe UI, Roboto, Arial", size: 12 };
+        try {
+          chart = new window.Chart(ctx, {
+            type: "doughnut",
+            data: { labels: allZero ? ["—"] : d.map(function(x){ return x.name; }),
+              datasets: [{ data: allZero ? [1] : display, originalData: allZero ? [0] : origData,
+                backgroundColor: allZero ? [isDark() ? "rgba(255,255,255,0.06)" : "#eeeeee"] : d.map(function(x){ return x.color; }),
+                spacing: 0, borderWidth: 0, borderRadius: CORNER, hoverOffset: HOVER }] },
+            plugins: [constantGapPlugin, ringWidthPlugin],
+            options: { responsive: true, maintainAspectRatio: false, layout: { padding: 8 },
+              animation: { duration: 200, easing: "easeOutQuad" },
+              plugins: { legend: { display:false }, tooltip: { enabled:false, external: donutTooltip } } }
+          });
+        } catch(err){}
+      })["catch"](function(){});
+    }
+
+    function renderBars(d){
+      if (!isOwner()) return;
+      destroy();
+      d = (d || []).slice().sort(function(a, b){ return b.share - a.share; });
+      if (isEmpty(d)){ empty(); return; }
+      body.innerHTML = '<div class="up-bars">' + d.map(function(it){
+        /* Label colour follows the fill's luminance so it stays readable: white on dark/mid fills,
+           dark on genuinely light ones. Bar colours are identical in both themes, so this is
+           per-bar, not per-theme. */
+        var light = barIsLight(it.color);
+        var txt = light ? "rgba(31,31,27,0.96)" : "rgba(255,255,255,0.95)";
+        var txtPct = light ? "rgba(31,31,27,0.62)" : "rgba(255,255,255,0.75)";
+        var outColor = isDark() ? "rgba(255,255,255,0.85)" : "var(--vc-text)";
+        var outPctColor = isDark() ? "rgba(255,255,255,0.55)" : "var(--vc-muted)";
+        return '<div class="up-bar-row"><div class="up-bar-track">' +
+            '<div class="up-bar-fill" style="background:' + it.color + ';width:0%">' +
+              '<span class="up-bar-name" style="color:' + txt + ';opacity:0">' + esc(it.name) + '</span>' +
+              '<span class="up-bar-pct up-bar-pct-in" style="color:' + txtPct + ';opacity:0">' + esc(fmtPct(it.share)) + '</span>' +
+            '</div>' +
+            '<span class="up-bar-outside" style="opacity:0">' +
+              '<span class="up-bar-name-out" style="color:' + outColor + '">' + esc(it.name) + '</span>' +
+              '<span class="up-bar-pct-out" style="color:' + outPctColor + '">' + esc(fmtPct(it.share)) + '</span>' +
+            '</span></div></div>';
+      }).join("") + '</div>';
+
+      var rows = Array.prototype.slice.call(body.querySelectorAll(".up-bar-row"));
+      var metrics = rows.map(function(row){
+        return { nameW: measureText(row.querySelector(".up-bar-name")), pctW: measureText(row.querySelector(".up-bar-pct-in")) };
+      });
+      /* labels sit inside the bar when it's wide enough, otherwise they move outside next to it */
+      function placeRow(row, m){
+        var fill = row.querySelector(".up-bar-fill"), name = row.querySelector(".up-bar-name"),
+            pin = row.querySelector(".up-bar-pct-in"), outside = row.querySelector(".up-bar-outside");
+        if (!fill || !outside) return;
+        var fillPx = fill.offsetWidth, needed = m.nameW + m.pctW + 12 + 20;
+        if (fillPx >= needed){ if (name) name.style.opacity = "1"; if (pin) pin.style.opacity = "1"; outside.style.opacity = "0"; }
+        else { if (name) name.style.opacity = "0"; if (pin) pin.style.opacity = "0"; outside.style.left = Math.round(fillPx + 8) + "px"; outside.style.opacity = "1"; }
+      }
+      function placeAll(){ rows.forEach(function(row, i){ placeRow(row, metrics[i]); }); }
+      function fitBars(){
+        if (!rows.length) return;
+        var avail = cfg.availHeight ? cfg.availHeight() : body.clientHeight;
+        if (!avail || avail <= 0) return;
+        var rowH = rows[0].offsetHeight || 42;
+        var maxVisible = Math.max(1, Math.floor(avail / rowH));
+        for (var i = 0; i < rows.length; i++) rows[i].style.display = (i < maxVisible) ? "" : "none";
+      }
+      /* double rAF so the 0% width lands in a painted frame first — otherwise the browser
+         coalesces both widths and the grow animation never runs */
+      requestAnimationFrame(function(){ requestAnimationFrame(function(){
+        rows.forEach(function(row, i){ var fill = row.querySelector(".up-bar-fill"); if (fill) fill.style.width = Math.max(d[i].share, 0) + "%"; });
+        fitBars();
+      }); });
+      var placed = false;
+      rows.forEach(function(row){
+        var fill = row.querySelector(".up-bar-fill"); if (!fill) return;
+        var done = false;
+        fill.addEventListener("transitionend", function onEnd(e){
+          if (e.propertyName !== "width" || done) return;
+          done = true; fill.removeEventListener("transitionend", onEnd);
+          var i = rows.indexOf(row); if (i >= 0) placeRow(row, metrics[i]);
+        });
+      });
+      setTimeout(function(){ placed = true; fitBars(); placeAll(); }, 640);
+      if (window.ResizeObserver){
+        var ro = new ResizeObserver(function(){ fitBars(); if (placed) placeAll(); });
+        ro.observe(body);
+        rows.forEach(function(row){ var t = row.querySelector(".up-bar-track"); if (t) ro.observe(t); });
+      }
+    }
+
+    return {
+      renderDonut: renderDonut,
+      renderBars: renderBars,
+      skeleton: skeleton,
+      empty: empty,
+      destroy: destroy,
+      applyCollapse: applyCollapse,
+      resize: function(){ try { if (chart) chart.resize(); } catch(e){} },
+      chart: function(){ return chart; }
+    };
+  }
+
   window.UpstreemCore = {
     CITE_COLOR: CITE_COLOR,
     CITE_ALIAS: CITE_ALIAS,
@@ -412,6 +1290,29 @@
     makePortal: makePortal,
     placeMenu: placeMenu,
     makeSticky: makeSticky,
-    watchRoots: watchRoots
+    watchRoots: watchRoots,
+
+    /* ---- chart kits (see the big comment block above) ---- */
+    loadChartJs: loadChartJs,
+    CITE_COLOR_DARK: CITE_COLOR_DARK,
+    URL_LABEL: URL_LABEL,
+    URL_COLOR_CHART: URL_COLOR_CHART,
+    URL_COLOR_DARK: URL_COLOR_DARK,
+    CHART_OTHER_LIGHT: CHART_OTHER_LIGHT,
+    CHART_OTHER_DARK: CHART_OTHER_DARK,
+    MAX_URL_SLICES: MAX_URL_SLICES,
+    typeColor: typeColor,
+    prepTypeData: prepTypeData,
+    barIsLight: barIsLight,
+    measureText: measureText,
+    fmtPct: fmtPct,
+    capitalize: capitalize,
+    truncate: truncate,
+    chartDateFmt: chartDateFmt,
+    chartDateTitle: chartDateTitle,
+    getPageWidth: getPageWidth,
+    injectWatermark: injectWatermark,
+    makeLine: makeLine,
+    makeTypeChart: makeTypeChart
   };
 })();
