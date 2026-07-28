@@ -906,7 +906,7 @@
        (as this used to) meant each other, idle root's own near-always-null tipBtn lost the
        mousemove/scroll safety-net race against whichever root was actually being hovered and
        hid its tooltip out from under it whenever 2+ instances shared a page. */
-    var tipState = window.__tcdTipState || (window.__tcdTipState = { timer: null, btn: null, placedRect: null });
+    var tipState = window.__tcdTipState || (window.__tcdTipState = { timer: null, btn: null, placedRect: null, lastScrollAt: 0 });
     var hideTip = function(){ clearTimeout(tipState.timer); tipState.timer = null; tipState.btn = null; tipEl.classList.remove("show"); };
     var placeTip = function(btn){
       tipEl.style.transform = "";
@@ -930,7 +930,14 @@
     };
     if (!root.__tcdTipBound){
       root.__tcdTipBound = true;
+      /* tipState.lastScrollAt guards these: scrolling moves content under a completely stationary
+         cursor, and the browser recomputes hover state as different elements pass under it —
+         without suppressing that, a mid-scroll phantom mouseout on the currently-tipped button
+         (or mouseover on some other [data-tip] it scrolls past) fought the transform-nudge below,
+         which is exactly what read as the tooltip "jumping wildly" while scrolling instead of
+         calmly tracking one target. */
       root.addEventListener("mouseover", function(e){
+        if (Date.now() - tipState.lastScrollAt < 200) return;
         var btn = e.target.closest("[data-tip]");
         if (!btn || !root.contains(btn) || btn === tipState.btn) return;
         tipState.btn = btn;
@@ -938,6 +945,7 @@
         tipState.timer = setTimeout(function(){ showTip(btn); }, 60);
       });
       root.addEventListener("mouseout", function(e){
+        if (Date.now() - tipState.lastScrollAt < 200) return;
         var btn = e.target.closest("[data-tip]");
         if (!btn) return;
         if (e.relatedTarget && btn.contains(e.relatedTarget)) return;
@@ -964,6 +972,7 @@
          serves whichever instance's tipState.btn is currently set. */
       var tipRepositionRaf = null, tipSettleTimer = null;
       window.addEventListener("scroll", function(){
+        tipState.lastScrollAt = Date.now();
         if (!tipState.btn) return;
         if (tipRepositionRaf) return;
         tipRepositionRaf = requestAnimationFrame(function(){

@@ -178,13 +178,22 @@
       tipBtn = el;
       placeTip();
     }
+    /* lastScrollAt guards mouseover/mouseleave below: scrolling moves content under a completely
+       stationary cursor, and the browser recomputes hover state as different elements pass under
+       it — without suppressing that, a mid-scroll phantom mouseleave on the currently-tipped
+       element (or mouseover on some other [data-tip] it scrolls past) fought the transform-nudge
+       further down, which is exactly what read as the tooltip "jumping wildly" while scrolling
+       instead of calmly tracking one target. */
+    var lastScrollAt = 0;
     root.addEventListener("mouseover", function(e){
+      if (Date.now() - lastScrollAt < 200) return;
       var el = e.target.closest("[data-tip]");
       if (el && root.contains(el)){ showTip(el); return; }
       var bt = e.target.closest("[data-brandtip]");
       if (bt && root.contains(bt)) showTipText(bt, bt.getAttribute("data-brandtip"));
     });
     root.addEventListener("mouseleave", function(e){
+      if (Date.now() - lastScrollAt < 200) return;
       var t = e.target;
       if (t && (t.hasAttribute("data-tip") || t.hasAttribute("data-brandtip"))) hideTip();
     }, true);
@@ -199,6 +208,7 @@
       tip.style.transform = "translate(" + Math.round(r.left - tipPlacedRect.left) + "px," + Math.round(r.top - tipPlacedRect.top) + "px)";
     }
     window.addEventListener("scroll", function(){
+      lastScrollAt = Date.now();
       if (!tipBtn) return;
       if (repositionRaf) return;
       repositionRaf = requestAnimationFrame(function(){

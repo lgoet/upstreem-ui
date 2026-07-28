@@ -928,9 +928,17 @@
       /* Keep an open tooltip glued to its trigger while the page scrolls — same cheap,
          compositor-only transform-nudge + settle-time full reposition as dropdown menus (see
          core.js's makePortal/nudgeMenu and makeTooltips). Without this the tooltip just stayed
-         frozen at its old screen position while the trigger scrolled out from under it. */
+         frozen at its old screen position while the trigger scrolled out from under it.
+         lastScrollAt ALSO guards mouseenter/mouseleave below: scrolling moves content under a
+         completely stationary cursor, and the browser recomputes hover state as different
+         elements pass under it — without suppressing that, a mid-scroll phantom mouseleave on
+         the currently-tipped button (or mouseenter on some other data-tip element it scrolls
+         past) fought the transform-nudge above, which is exactly what read as the tooltip
+         "jumping wildly" while scrolling instead of calmly tracking one target. */
+      var lastScrollAt = 0;
       var tipRepositionRaf = null, tipSettleTimer = null;
       window.addEventListener("scroll", function(){
+        lastScrollAt = Date.now();
         if (!tipBtn) return;
         if (tipRepositionRaf) return;
         tipRepositionRaf = requestAnimationFrame(function(){
@@ -943,8 +951,14 @@
         });
       }, { capture: true, passive: true });
       Array.prototype.slice.call(root.querySelectorAll("[data-tip]")).forEach(function(btn){
-        btn.addEventListener("mouseenter", function(){ tipSuppressed = false; clearTimeout(tipTimer); tipTimer = setTimeout(function(){ showTip(btn); }, 60); });
-        btn.addEventListener("mouseleave", function(){ tipSuppressed = false; hideTip(); });
+        btn.addEventListener("mouseenter", function(){
+          if (Date.now() - lastScrollAt < 200) return;
+          tipSuppressed = false; clearTimeout(tipTimer); tipTimer = setTimeout(function(){ showTip(btn); }, 60);
+        });
+        btn.addEventListener("mouseleave", function(){
+          if (Date.now() - lastScrollAt < 200) return;
+          tipSuppressed = false; hideTip();
+        });
         btn.addEventListener("mousedown", function(){ tipSuppressed = true; hideTip(); });
         btn.addEventListener("click", function(){ tipSuppressed = true; hideTip(); });
       });
