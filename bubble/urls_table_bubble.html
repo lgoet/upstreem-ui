@@ -193,29 +193,28 @@
   </div>
 </div>
 <script>
-/* Reads data-cdn-pin off the root div right above and builds every asset URL from it — @<pin> if
-   set, @main otherwise. See the data-cdn-pin doc comment at the top of this file.
-   core.js/core.css load AT MOST ONCE PER PAGE. It sets window.UpstreemCore, a single shared
-   global — if two placements load it independently (e.g. one pinned, one still on @main), the
-   one that finishes loading LAST silently overwrites the other, breaking every already-
-   initialized component on the page the moment a mismatched or stale pin shows up anywhere.
-   Whichever placement's bootstrap runs first "claims" the load; every other placement (of this
-   or any other component) waits for that one instance instead of injecting its own. */
+/* Loads this component's CSS/JS from jsDelivr, pinned to the commit hash you put in data-cdn-pin on
+   the root div above (falls back to @main only if data-cdn-pin is left blank or at the literal
+   "CDN_PIN" placeholder). The pin is found by looking the root element up BY CLASS — deliberately
+   NOT via document.currentScript, because Bubble injects an HTML element's inline scripts in a way
+   that leaves document.currentScript null/misattached. That made the previous loader read no pin
+   and silently fall back to @main for every file (and jsDelivr caches @main for hours, so it served
+   stale code) — which is why setting data-cdn-pin appeared to do nothing. Loading core.js once per
+   component is fine: the browser caches the (immutable, commit-pinned) URL, and the component's own
+   init is idempotent. */
 (function(){
-  var root = document.currentScript.previousElementSibling;
-  var pin = (root && root.getAttribute("data-cdn-pin") || "").trim();
-  var ref = (pin && pin !== "CDN_PIN") ? pin : "main";
-  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + ref + "/";
-  function css(file){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = base + file; document.head.appendChild(l); }
-  function js(file, onload){ var s = document.createElement("script"); s.src = base + file; s.async = false; if (onload) s.onload = onload; document.head.appendChild(s); }
-  function loadOwn(){ css("urls-table.css"); js("urls-table.js"); }
-  if (window.UpstreemCore){ loadOwn(); return; }
-  if (window.__upCoreLoaders){ window.__upCoreLoaders.push(loadOwn); return; }
-  window.__upCoreLoaders = [loadOwn];
-  css("core.css");
-  js("core.js", function(){
-    var loaders = window.__upCoreLoaders; window.__upCoreLoaders = null;
-    loaders.forEach(function(fn){ fn(); });
-  });
+  function readPin(cls){
+    var els = document.getElementsByClassName(cls), i, p;
+    for (i = 0; i < els.length; i++){
+      p = (els[i].getAttribute("data-cdn-pin") || "").trim();
+      if (p && p !== "CDN_PIN") return p;
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("uut-root") + "/";
+  function css(f){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = base + f; document.head.appendChild(l); }
+  function js(f){ var s = document.createElement("script"); s.src = base + f; s.async = false; document.head.appendChild(s); }
+  css("core.css"); css("urls-table.css");
+  js("core.js"); js("urls-table.js");
 })();
 </script>
