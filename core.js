@@ -136,88 +136,141 @@
   var STORE = (window.__uutStore = window.__uutStore || {});
   var LOADING_EXPLICIT = (window.__uutLoadingExplicit = window.__uutLoadingExplicit || {});
 
-  /* Shared button/brand tooltip: creates the floating chip, positions it, and installs the
-     generic [data-tip]/[data-brandtip] hover handlers on root. getIsDark() is read at show-time
-     so it always reflects the current theme. Returns the show/hide handles for component-specific
-     tooltips (e.g. a truncated title) to reuse. */
+  /* Shared button/brand tooltip — the ONE implementation for the whole library.
+     Before this, four near-identical copies existed (.up-tip here, plus .vot-tip, .tcd-tip and
+     .cc-tip inside three components). They drifted: the multi-instance fix landed in two of them,
+     the hover delay in three, the mousemove safety net in two. This is the union of all four.
+
+     The element AND its state live on window, not per root. That is the actual multi-instance
+     fix: every root binds to the same singleton chip, so per-root state meant an idle second
+     instance — whose own btn is almost always null — kept winning the mousemove/scroll safety-net
+     race and hid the tooltip out from under whichever instance you were really hovering. That
+     read as "tooltips barely ever show, they bug out."
+
+     getIsDark() is only the fallback: the theme is read from the hovered button's own .up-root
+     first, so two roots on one page in different themes each get the right chip.
+     Signature and return shape are unchanged, so existing call sites keep working as-is. */
   function makeTooltips(root, getIsDark){
-    var tip = document.createElement("div");
-    tip.className = "up-tip";
-    document.body.appendChild(tip);
-    var tipBtn = null, tipWide = false, tipPlacedRect = null;
+    var tip = window.__upTipEl;
+    if (!tip || !document.body.contains(tip)){
+      tip = document.createElement("div");
+      tip.className = "up-tip";
+      document.body.appendChild(tip);
+      window.__upTipEl = tip;
+    }
+    var S = window.__upTipState || (window.__upTipState = {
+      timer: null, btn: null, placedRect: null, lastScrollAt: 0, wide: false, suppressed: false
+    });
+
     function placeTip(){
-      if (!tipBtn) return;
+      if (!S.btn) return;
       tip.style.transform = "";
-      var r = tipBtn.getBoundingClientRect();
+      var r = S.btn.getBoundingClientRect();
       tip.style.left = "0px"; tip.style.top = "0px";
       var tr = tip.getBoundingClientRect();
-      var left = tipWide ? r.left : (r.left + r.width / 2 - tr.width / 2);
-      tip.style.left = Math.max(4, Math.min(window.innerWidth - tr.width - 4, left)) + "px";
-      tip.style.top = Math.max(4, r.top - tr.height - 6) + "px";
-      tipPlacedRect = r;
+      var vw = window.innerWidth || document.documentElement.clientWidth;
+      /* the wide variant left-aligns to the trigger (long text, centring looks arbitrary),
+         the normal chip centres under it */
+      var left = S.wide ? r.left : (r.left + r.width / 2 - tr.width / 2);
+      tip.style.left = Math.max(6, Math.min(left, vw - tr.width - 6)) + "px";
+      tip.style.top = (r.bottom + 8) + "px";
+      S.placedRect = r;
     }
-    function showTip(el){ showTipText(el, el.getAttribute("data-tip")); }
-    function showTipText(el, t){
-      if (!t) return;
-      tip.classList.remove("is-wide");
-      tipWide = false;
-      tip.textContent = t;
-      tip.setAttribute("data-theme", getIsDark() ? "dark" : "light");
-      tip.classList.add("is-on");
-      tipBtn = el;
-      placeTip();
+    function hideTip(){
+      clearTimeout(S.timer); S.timer = null; S.btn = null; S.placedRect = null;
+      /* clear any leftover inline transform from the scroll nudge, otherwise it would beat the
+         CSS translateY fade-out and the chip would just blink off */
+      tip.style.transform = "";
+      tip.classList.remove("is-on"); tip.classList.remove("is-wide");
     }
-    function hideTip(){ tip.classList.remove("is-on"); tip.classList.remove("is-wide"); tipBtn = null; }
-    function showTipWide(el, text){
-      if (!text) return;
+    function paint(el, text, wide){
+      if (!text || !el || !document.contains(el)) return;
+      var host = el.closest ? el.closest(".up-root") : null;
+      var dark = host ? host.getAttribute("data-theme") === "dark" : !!(getIsDark && getIsDark());
       tip.textContent = text;
-      tip.classList.add("is-wide");
-      tipWide = true;
-      tip.setAttribute("data-theme", getIsDark() ? "dark" : "light");
+      tip.classList.toggle("is-wide", !!wide);
+      S.wide = !!wide;
+      tip.setAttribute("data-theme", dark ? "dark" : "light");
       tip.classList.add("is-on");
-      tipBtn = el;
+      S.btn = el;
       placeTip();
     }
-    /* lastScrollAt guards mouseover/mouseleave below: scrolling moves content under a completely
-       stationary cursor, and the browser recomputes hover state as different elements pass under
-       it — without suppressing that, a mid-scroll phantom mouseleave on the currently-tipped
-       element (or mouseover on some other [data-tip] it scrolls past) fought the transform-nudge
-       further down, which is exactly what read as the tooltip "jumping wildly" while scrolling
-       instead of calmly tracking one target. */
-    var lastScrollAt = 0;
-    root.addEventListener("mouseover", function(e){
-      if (Date.now() - lastScrollAt < 200) return;
-      var el = e.target.closest("[data-tip]");
-      if (el && root.contains(el)){ showTip(el); return; }
-      var bt = e.target.closest("[data-brandtip]");
-      if (bt && root.contains(bt)) showTipText(bt, bt.getAttribute("data-brandtip"));
-    });
-    root.addEventListener("mouseleave", function(e){
-      if (Date.now() - lastScrollAt < 200) return;
-      var t = e.target;
-      if (t && (t.hasAttribute("data-tip") || t.hasAttribute("data-brandtip"))) hideTip();
-    }, true);
-    /* Keep an open tooltip glued to its trigger while the page scrolls — same cheap,
-       compositor-only transform-nudge + settle-time full reposition as dropdown menus (see
-       makePortal/nudgeMenu). Without this the tooltip just stayed frozen at its old screen
-       position while the trigger scrolled out from under it. */
-    var repositionRaf = null, settleTimer = null;
-    function nudgeTip(){
-      if (!tipBtn || !tipPlacedRect) return;
-      var r = tipBtn.getBoundingClientRect();
-      tip.style.transform = "translate(" + Math.round(r.left - tipPlacedRect.left) + "px," + Math.round(r.top - tipPlacedRect.top) + "px)";
-    }
-    window.addEventListener("scroll", function(){
-      lastScrollAt = Date.now();
-      if (!tipBtn) return;
-      if (repositionRaf) return;
-      repositionRaf = requestAnimationFrame(function(){
-        repositionRaf = null;
-        nudgeTip();
-        clearTimeout(settleTimer);
-        settleTimer = setTimeout(function(){ if (tipBtn) placeTip(); }, 150);
+    /* showTip/showTipText/showTipWide are immediate (a component asking explicitly already
+       decided); only the delegated hover path below applies the 60ms delay. */
+    function showTip(el){ if (!S.suppressed) paint(el, el.getAttribute("data-tip"), false); }
+    function showTipText(el, t){ if (!S.suppressed) paint(el, t, false); }
+    function showTipWide(el, text){ if (!S.suppressed) paint(el, text, true); }
+
+    if (!root.__upTipBound){
+      root.__upTipBound = true;
+      /* S.lastScrollAt guards these: scrolling moves content under a completely stationary
+         cursor and the browser recomputes hover as different elements pass under it. Without
+         suppressing that, a mid-scroll phantom mouseout on the tipped button (or mouseover on
+         some other [data-tip] scrolling past) fought the transform-nudge below — which is what
+         read as the tooltip "jumping wildly" while scrolling instead of tracking one target. */
+      root.addEventListener("mouseover", function(e){
+        if (Date.now() - S.lastScrollAt < 200) return;
+        var el = e.target.closest("[data-tip]");
+        if (el && root.contains(el)){
+          if (el === S.btn) return;                       // already showing for this button
+          S.suppressed = false; S.btn = el;
+          clearTimeout(S.timer);
+          S.timer = setTimeout(function(){ showTip(el); }, 60);
+          return;
+        }
+        var bt = e.target.closest("[data-brandtip]");
+        if (bt && root.contains(bt)){
+          if (bt === S.btn) return;
+          S.suppressed = false; S.btn = bt;
+          clearTimeout(S.timer);
+          S.timer = setTimeout(function(){ showTipText(bt, bt.getAttribute("data-brandtip")); }, 60);
+        }
       });
-    }, { capture: true, passive: true });
+      root.addEventListener("mouseout", function(e){
+        if (Date.now() - S.lastScrollAt < 200) return;
+        var el = e.target.closest("[data-tip],[data-brandtip]");
+        if (!el) return;
+        if (e.relatedTarget && el.contains(e.relatedTarget)) return;   // still inside the trigger
+        if (el === S.btn){ S.suppressed = false; hideTip(); }
+      });
+      /* A click means the user acted — keep the tip down until they leave and come back, rather
+         than having it pop up again over whatever the click just opened. */
+      root.addEventListener("mousedown", function(){ S.suppressed = true; hideTip(); });
+      root.addEventListener("click", function(){ S.suppressed = true; hideTip(); });
+    }
+
+    /* One global safety net for the whole page — it operates on the shared state, so it does not
+       matter which root's call installed it. */
+    if (!window.__upTipGlobalBound){
+      window.__upTipGlobalBound = true;
+      /* if a button is removed or replaced mid-hover its mouseout never fires, so verify on each
+         move that the anchor still exists and is still hovered */
+      document.addEventListener("mousemove", function(){
+        if (!tip.classList.contains("is-on") && !S.timer) return;
+        if (!S.btn || !document.contains(S.btn)){ hideTip(); return; }
+        var still = false;
+        try { still = S.btn.matches(":hover"); } catch(err){ still = true; }
+        if (!still) hideTip();
+      });
+      /* Keep an open tooltip glued to its trigger while the page scrolls: a cheap
+         compositor-only transform nudge per frame, then one full reposition once scrolling
+         settles. Just hiding on scroll reads as "the tooltip vanished", not "it is attached". */
+      var repositionRaf = null, settleTimer = null;
+      window.addEventListener("scroll", function(){
+        S.lastScrollAt = Date.now();
+        if (!S.btn) return;
+        if (repositionRaf) return;
+        repositionRaf = requestAnimationFrame(function(){
+          repositionRaf = null;
+          if (!S.btn || !S.placedRect) return;
+          var r = S.btn.getBoundingClientRect();
+          tip.style.transform = "translate(" + Math.round(r.left - S.placedRect.left) + "px," + Math.round(r.top - S.placedRect.top) + "px)";
+          clearTimeout(settleTimer);
+          settleTimer = setTimeout(function(){ if (S.btn) placeTip(); }, 150);
+        });
+      }, { capture: true, passive: true });
+      window.addEventListener("blur", hideTip);
+    }
     return { showTip: showTip, showTipText: showTipText, showTipWide: showTipWide, hideTip: hideTip, el: tip };
   }
 
@@ -269,6 +322,89 @@
      position:relative wrapper — see makePortal). Kept as a callable shell so the components that
      call it on open don't need to change; the CSS rest-state already places the menu correctly. */
   function placeMenu(menu, btn, opts){}
+
+  /* ---------- makePopover ----------
+     Open/close mechanics for every dropdown in the library. There were four different versions of
+     this (each table's, visibility-chart's, topcitations', and citations-combo-chart's), which is
+     why one of them ended up hard-toggling `display` — breaking the "menu always stays in the
+     layout" rule in STYLEGUIDE §6 — and why only some of them restore focus or revert drafts.
+
+     Registration is page-global so ONE document click listener serves every popover on the page,
+     instead of one listener per menu per instance as before.
+
+     cfg: { wrap, menu, opener?, onClose?(committed), group? }
+       wrap   — the position:relative element that gets .is-open
+       menu   — the position:absolute child that gets .is-shown + aria-hidden
+       opener — the trigger button (focus is moved off it before hiding, so the menu can't be
+                re-opened by a stray Enter on a now-hidden control)
+       onClose(committed) — called on every close; `committed` is false unless close(true) was
+                used, which is how a component reverts unapplied draft state.
+       group  — popovers sharing a group close each other (a component's toolbar menus). */
+  var POPOVERS = (window.__upPopovers = window.__upPopovers || []);
+  function makePopover(cfg){
+    var wrap = cfg.wrap, menu = cfg.menu;
+    if (!wrap || !menu) return { open: function(){}, close: function(){}, toggle: function(){}, isOpen: function(){ return false; } };
+    var rec = { wrap: wrap, menu: menu, opener: cfg.opener || null, onClose: cfg.onClose || null, group: cfg.group || null };
+    for (var i = 0; i < POPOVERS.length; i++){ if (POPOVERS[i].wrap === wrap){ POPOVERS.splice(i, 1); break; } }
+    POPOVERS.push(rec);
+
+    function isOpen(){ return wrap.classList.contains("is-open"); }
+    function close(committed){
+      if (!isOpen()) return;
+      /* move focus off anything inside the menu BEFORE hiding it — a focused element inside a
+         hidden subtree is an accessibility trap and keeps swallowing keystrokes */
+      try {
+        var a = document.activeElement;
+        if (a && menu.contains(a)){ if (rec.opener && rec.opener.focus) rec.opener.focus(); else a.blur(); }
+        if (rec.opener && document.activeElement === rec.opener && rec.opener.blur) rec.opener.blur();
+      } catch(e){}
+      wrap.classList.remove("is-open");
+      menu.classList.remove("is-shown");
+      menu.setAttribute("aria-hidden", "true");
+      if (rec.onClose) { try { rec.onClose(!!committed); } catch(e){} }
+    }
+    function open(){
+      if (isOpen()) return;
+      closeAll(wrap, rec.group);
+      wrap.classList.add("is-open");
+      menu.classList.add("is-shown");
+      menu.setAttribute("aria-hidden", "false");
+    }
+    function toggle(){ if (isOpen()) close(false); else open(); }
+    return { open: open, close: close, toggle: toggle, isOpen: isOpen, el: wrap };
+  }
+  function closeAll(exceptWrap, group){
+    for (var i = 0; i < POPOVERS.length; i++){
+      var p = POPOVERS[i];
+      if (p.wrap === exceptWrap) continue;
+      if (group && p.group && p.group !== group) continue;
+      if (!p.wrap.classList.contains("is-open")) continue;
+      if (!document.contains(p.wrap)){ POPOVERS.splice(i--, 1); continue; }   // stale after a rebuild
+      p.wrap.classList.remove("is-open");
+      p.menu.classList.remove("is-shown");
+      p.menu.setAttribute("aria-hidden", "true");
+      if (p.onClose) { try { p.onClose(false); } catch(e){} }
+    }
+  }
+  if (!window.__upPopoverGlobalBound){
+    window.__upPopoverGlobalBound = true;
+    document.addEventListener("click", function(e){
+      for (var i = 0; i < POPOVERS.length; i++){
+        var p = POPOVERS[i];
+        if (!document.contains(p.wrap)){ POPOVERS.splice(i--, 1); continue; }
+        if (!p.wrap.classList.contains("is-open")) continue;
+        if (p.wrap.contains(e.target)) continue;   // click inside the trigger or the menu itself
+        p.wrap.classList.remove("is-open");
+        p.menu.classList.remove("is-shown");
+        p.menu.setAttribute("aria-hidden", "true");
+        if (p.onClose) { try { p.onClose(false); } catch(err){} }
+      }
+    });
+    document.addEventListener("keydown", function(e){
+      if (e.key !== "Escape" && e.keyCode !== 27) return;
+      closeAll(null, null);
+    });
+  }
 
   /* Sticky header machinery: pins the toolbar + column header at data-sticky-top on wide screens,
      un-clips overflow:hidden ancestors (Bubble wrappers) so position:sticky isn't trapped, and
@@ -1289,6 +1425,8 @@
     makeFire: makeFire,
     makePortal: makePortal,
     placeMenu: placeMenu,
+    makePopover: makePopover,
+    closePopovers: closeAll,
     makeSticky: makeSticky,
     watchRoots: watchRoots,
 

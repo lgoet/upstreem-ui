@@ -636,15 +636,18 @@
     /* ---------- tooltip (same as the other components) ---------- */
     .up-tip {
       position: fixed; z-index: 2147483000; box-sizing: border-box;
-      height: 24px; display: inline-flex; align-items: center; padding: 0 8px;
+      height: 24px; display: inline-flex; align-items: center; padding: 0 9px;
       border-radius: 6px; background: #1f1f1b; color: #ffffff;
       font-family: Geist, system-ui, sans-serif; font-size: 12px; font-weight: 500; line-height: 1;
-      white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity 120ms ease;
+      white-space: nowrap; pointer-events: none;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+      opacity: 0; transform: translateY(4px);
+      transition: opacity .14s ease, transform .14s ease;
     }
     /* wider, wrapping variant for the full URL title (which can be long) */
     .up-tip.is-wide { height: auto; white-space: normal; max-width: 340px; padding: 6px 9px; line-height: 1.35; align-items: flex-start; }
-    .up-tip.is-on { opacity: 1; }
-    .up-tip[data-theme="dark"] { background: #e8e8e8; color: #1f1f1b; }
+    .up-tip.is-on { opacity: 1; transform: translateY(0); }
+    .up-tip[data-theme="dark"] { background: #f0f0f0; color: #1f1f1b; }
     /* Tooltips keep the same dark card in both themes: they float above the page, not inside
        the surface, so inverting them made them read as a different component. */
 
