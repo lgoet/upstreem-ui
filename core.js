@@ -516,7 +516,10 @@
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>';
     }
     function renderPageSize(){
-      var el = root.querySelector(".up-pagesize");
+      /* .up-pagesize-seg, NOT .up-pagesize: the outer element also holds the "Rows per page"
+         label, and the grey switcher background lives on the -seg wrapper. Writing into the outer
+         one wiped both. */
+      var el = root.querySelector(".up-pagesize-seg");
       if (!el) return;
       el.innerHTML = PAGE_SIZES.map(function(n){
         return '<button class="up-pagesize-btn' + (n === state.pageSize ? " is-active" : "") +

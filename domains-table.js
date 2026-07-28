@@ -691,15 +691,17 @@
       if (nl) nl.scrollTop = sc;
     }
     var POP_GROUP = "udt-" + instanceId;
-    var POPS = {};
     [elSort, elFilter, elCols, elMent].forEach(function(p){
       if (!p) return;
-      POPS[p.className] = UC.makePopover({
+      /* handle stored ON the element, never in a map keyed by className: the wrapper gains
+         "is-active" as soon as the filter has a selection, so a className key stopped matching and
+         the dropdown could not be opened or closed any more. */
+      p.__upPop = UC.makePopover({
         wrap: p, menu: menuOf(p), opener: p.querySelector(BTN_SEL), group: POP_GROUP,
         onClose: function(committed){ if (!committed) revertDrafts(p); }
       });
     });
-    function popOf(pop){ return pop && POPS[pop.className]; }
+    function popOf(pop){ return pop && pop.__upPop; }
     function setPopOpen(pop, open){
       var h = popOf(pop); if (!h) return;
       if (open) h.open(); else h.close(false);
@@ -794,7 +796,7 @@
         return;
       }
       if (e.target.closest("[data-mentreset]")){
-        state.mentionSel = {}; persist(); populateMent(); submitMent();
+        state.mentionSel = {}; persist(); populateMent(); submitMent(); setPopOpen(elMent, false);
         return;
       }
       if (e.target.closest("[data-mentapply]")){ submitMent(); setPopOpen(elMent, false); return; }
@@ -852,7 +854,7 @@
       }
       if (e.target.closest(".up-filter-reset")){
         state.filterSel = {};
-        persist(); populateFilter(); submitFilter();
+        persist(); populateFilter(); submitFilter(); setPopOpen(elFilter, false);
         return;
       }
       if (e.target.closest("[data-typeapply]")){

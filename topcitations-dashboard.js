@@ -469,6 +469,7 @@
         populateFilter();
         syncChartDim();
         fireApplyFilter();   // also clears the applied snapshot + hides the badge
+        setFilterOpen(false);   // Reset is a decision, not a staging step — closes like Apply
       });
 
       var dimBtns = Array.prototype.slice.call(filterMenu.querySelectorAll("[data-dim]"));
