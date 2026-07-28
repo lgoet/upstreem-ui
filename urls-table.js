@@ -297,7 +297,10 @@
       if (!state.rows.length){
         var filtered = !!state.query ||
           Object.keys(state.appliedSel).some(function(k){ return state.appliedSel[k]; }) ||
-          !!state.brandMentioned;
+          !!state.brandMentioned ||
+          /* the brands multiselect counts as a filter too — without this clause an empty result
+             caused purely by it read as "No URLs yet" and offered no way to clear it */
+          Object.keys(state.mentionApplied).some(function(k){ return state.mentionApplied[k]; });
         if (filtered){ clearEmptyGrace(); renderEmptyState(true); return; }
         /* An unfiltered empty result can be an interim "clearing" step before the real data lands
            a moment later (e.g. a workflow that clears the table before kicking off a new query) —
@@ -614,7 +617,10 @@
       state.mentionApplied = next;
       state.page = 1;
       persist(); syncMentLabel(); renderPager();
-      fire("data-brand-fn", "uutBrand", { brand_mentioned: Object.keys(next).join(",") });
+      /* the multi-brand list goes out on the "mentioned" channel, the yes/no toggle on the
+         "brand" channel — this file had the two swapped, which is why the workflow wired per the
+         documented contract (and per domains-table) never saw the value it expected. */
+      fire("data-mentioned-fn", "uutMentioned", { brands: Object.keys(next).join(",") });
     }
 
     /* ---------------- brand mentioned ---------------- */
@@ -648,7 +654,7 @@
       state.brandMentioned = state.brandMentioned === "" ? "yes" : (state.brandMentioned === "yes" ? "no" : "");
       state.page = 1;
       persist(); syncBrand(); renderPager();
-      fire("data-mentioned-fn", "uutMentioned", { brands: state.brandMentioned });
+      fire("data-brand-fn", "uutBrand", { brand_mentioned: state.brandMentioned });
     }
 
     /* ---------------- search (same debounce/min-length/reqId as quick_actions) ---------------- */
@@ -900,11 +906,13 @@
         elSearch.classList.remove("has-text");
         state.filterSel = {}; state.appliedSel = {};
         state.filterUrlSel = {}; state.appliedUrlSel = {}; state.filterDim = "citation_type";
-        state.brandMentioned = ""; state.page = 1;
-        persist(); syncFilterBadge(); syncBrand(); populateFilter();
+        state.brandMentioned = ""; state.mentionSel = {}; state.mentionApplied = {};
+        state.page = 1;
+        persist(); syncFilterBadge(); syncBrand(); syncMentLabel(); populateFilter(); populateMent();
         clearTimeout(debTimer); runSearch();
         fire("data-filter-fn", "uutFilter", { citation_types: "" });
         fire("data-mentioned-fn", "uutMentioned", { brands: "" });
+        fire("data-brand-fn", "uutBrand", { brand_mentioned: "" });
         return;
       }
 
