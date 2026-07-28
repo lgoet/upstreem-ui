@@ -193,21 +193,37 @@
     return function(context){
       var chart = context.chart, tooltip = context.tooltip;
       var el = root.querySelector(".ccd-donut-tooltip");
+      var dark = root.getAttribute("data-theme") === "dark";
       if (!el){
         el = document.createElement("div");
         el.className = "ccd-donut-tooltip";
         el.style.cssText = "position:absolute;pointer-events:none;z-index:9999;opacity:0;transform:translate3d(0,0,0);transition:opacity 120ms ease, transform 120ms ease;";
-        el.innerHTML = '<div class="ccd-tt-box"><div class="ccd-tt-title"></div><div class="ccd-tt-sub">Share:</div><div class="ccd-tt-val"></div></div>';
-        el.querySelector(".ccd-tt-box").style.cssText = "background:#121212;color:#e6e6e6;border-radius:8px;padding:12px 14px;font-family:Geist,system-ui,-apple-system,Segoe UI,Roboto,Arial;font-size:13px;line-height:1.35;box-shadow:0 4px 14px rgba(0,0,0,.25);white-space:nowrap;";
-        el.querySelector(".ccd-tt-title").style.cssText = "font-weight:500;margin-bottom:6px;";
-        el.querySelector(".ccd-tt-sub").style.cssText = "color:#8a8a8a;font-size:11px;";
+        el.innerHTML = '<div class="ccd-tt-box"><div class="ccd-tt-title"><span class="ccd-tt-dot"></span><span class="ccd-tt-lbl"></span></div><div class="ccd-tt-sub">Share:</div><div class="ccd-tt-val"></div></div>';
         chart.canvas.parentNode.appendChild(el);
       }
+      /* Re-applied on every call, not just at creation — otherwise the tooltip stays stuck on
+         whatever theme was active the first time it was ever shown (a real bug that shipped here
+         once: dark-only styling regardless of the page's actual light/dark state). Matches
+         topcitations-dashboard.js's makeDonutTooltip exactly. */
+      var boxBg = dark ? "#121212" : "#ffffff";
+      var boxBorder = dark ? "" : "border:1px solid #e0e2e6;";
+      var boxShadow = dark ? "box-shadow:0 4px 14px rgba(0,0,0,.25);" : "box-shadow:0 4px 14px rgba(0,0,0,.10);";
+      var textColor = dark ? "#e6e6e6" : "#1f1f1b";
+      var mutedColor = dark ? "#8a8a8a" : "#6f737c";
+      el.querySelector(".ccd-tt-box").style.cssText = "background:" + boxBg + ";color:" + textColor + ";" + boxBorder + "border-radius:16px;padding:12px 14px;font-family:Geist,system-ui,-apple-system,Segoe UI,Roboto,Arial;font-size:13px;line-height:1.35;" + boxShadow + "white-space:nowrap;";
+      el.querySelector(".ccd-tt-title").style.cssText = "display:flex;align-items:center;gap:6px;font-weight:600;margin-bottom:6px;";
+      el.querySelector(".ccd-tt-sub").style.cssText = "color:" + mutedColor + ";font-size:11px;";
+      el.querySelector(".ccd-tt-val").style.cssText = "color:" + textColor + ";";
       if (tooltip.opacity === 0){ el.style.opacity = "0"; return; }
       var i = (tooltip.dataPoints && tooltip.dataPoints[0] && tooltip.dataPoints[0].dataIndex) || 0;
       var od = chart.data.datasets[0].originalData;
       var val = (od && od[i] != null) ? od[i] : (chart.data.datasets[0].data[i] || 0);
-      el.querySelector(".ccd-tt-title").textContent = chart.data.labels[i] || "";
+      var sliceColor = (chart.data.datasets[0].backgroundColor && chart.data.datasets[0].backgroundColor[i]) || textColor;
+      var isUrlMode = chart.__ccMode === "url";
+      var dotEl = el.querySelector(".ccd-tt-dot");
+      dotEl.style.cssText = isUrlMode ? "width:6px;height:6px;border-radius:999px;flex:0 0 auto;background:" + sliceColor + ";display:inline-block;" : "display:none;";
+      el.querySelector(".ccd-tt-lbl").style.color = sliceColor;
+      el.querySelector(".ccd-tt-lbl").textContent = chart.data.labels[i] || "";
       el.querySelector(".ccd-tt-val").textContent = Number(val).toFixed(2) + "%";
       var cx = chart.canvas.offsetLeft, cy = chart.canvas.offsetTop, ca = chart.chartArea;
       var caretX = cx + tooltip.caretX, caretY = cy + tooltip.caretY, m = 12;
@@ -685,6 +701,7 @@
               animation: { duration: 200, easing: "easeOutQuad" },
               plugins: { legend: { display:false }, tooltip: { enabled:false, external: donutTooltip } } }
           });
+          chartInstance.__ccMode = state.dataMode;   // lets the tooltip show the url-mode colour dot
         } catch(err){}
       });
     }
@@ -805,7 +822,7 @@
         lineChart.data.datasets.forEach(function(ds){
           ds.borderColor = (id == null || ds.__id === id) ? ds.__baseColor : dim;
         });
-        lineChart.update("none");
+        lineChart.update("highlight");
       }
       if (legendEl){
         var items = legendEl.querySelectorAll(".up-company-item");
@@ -828,6 +845,11 @@
     function destroyLine(){
       if (lineChart){ try { lineChart.destroy(); } catch(e){} lineChart = null; }
       if (window.Chart && window.Chart.getChart){ var ex = window.Chart.getChart(lineCanvas); if (ex) try{ ex.destroy(); }catch(e){} }
+      /* The external tooltip is a plain DOM element outside Chart.js's own lifecycle — destroying
+         the chart stops the callback that would otherwise set its opacity back to 0, so a tooltip
+         left visible from a hover right before a reload/skeleton would stay stuck on screen. */
+      var tt = lineWrap.querySelector(".cc-line-tt");
+      if (tt) tt.style.opacity = "0";
     }
     function clearLineExtras(){ var sk = lineWrap.querySelector(".cc-line-sk"); if (sk) sk.remove(); var em = lineWrap.querySelector(".cc-line-empty"); if (em) em.remove(); }
     function showLineSkeleton(){ destroyLine(); clearLineExtras(); clearLegend(); lineWrap.insertAdjacentHTML("beforeend", lineSkeletonHtml()); }
@@ -884,6 +906,10 @@
               options: {
                 responsive: true, maintainAspectRatio: false,
                 animation: { duration: 600, easing: "easeOutQuart" },
+                /* named transition used by applyHighlight()'s lineChart.update("highlight") — a
+                   separate, faster easing for the legend-hover cross-highlight than the initial
+                   line-draw animation above. Matches visibility-chart.js exactly. */
+                transitions: { highlight: { animation: { duration: 200, easing: "easeOutQuad" } } },
                 interaction: { mode: "index", intersect: false },
                 layout: { padding: { top: 8, right: 2, bottom: 0, left: 0 } },
                 plugins: { legend: { display:false }, tooltip: { enabled:false, external: makeLineTooltip(lineWrap) } },
@@ -1035,9 +1061,7 @@
 
     /* Mira-style button tooltip — kept as this component's own implementation (see
        citations-combo-chart.css header comment for why this isn't UpstreemCore.makeTooltips).
-       ONE shared element for the whole page (not one per root). Events are delegated on root
-       rather than bound per button, so replacing a button can't strand a tooltip that never
-       receives its mouseleave. */
+       ONE shared element for the whole page (not one per root). */
     var ccTipEl = window.__ccTipEl;
     if (!ccTipEl || !document.body.contains(ccTipEl)){
       ccTipEl = document.createElement("div");
@@ -1045,69 +1069,90 @@
       document.body.appendChild(ccTipEl);
       window.__ccTipEl = ccTipEl;
     }
+    /* ccTipTimer/ccTipBtn/ccTipPlacedRect/lastScrollAt must be shared across EVERY combo-root on
+       the page — they all bind to the same singleton ccTipEl above. Keeping them as per-root
+       closure state (as this used to) meant each OTHER, idle root's own near-always-null ccTipBtn
+       lost the mousemove/scroll safety-net race against whichever root was actually being hovered
+       and hid its tooltip out from under it whenever 2+ instances shared a page — that's exactly
+       what read as "tooltips barely ever show, buggy." Same fix already shipped for
+       topcitations-dashboard.js's .tcd-tip; this component regressed to the pre-fix, per-root-state
+       version because the original pasted source predates that fix. */
+    var ccTipState = window.__ccTipState || (window.__ccTipState = { timer: null, btn: null, placedRect: null, lastScrollAt: 0 });
+    var ccHideTip = function(){ clearTimeout(ccTipState.timer); ccTipState.timer = null; ccTipState.btn = null; ccTipEl.classList.remove("show"); };
+    var ccPlaceTip = function(btn){
+      ccTipEl.style.transform = "";
+      var br = btn.getBoundingClientRect();
+      var tw = ccTipEl.offsetWidth, vw = window.innerWidth || document.documentElement.clientWidth;
+      var left = br.left + br.width / 2 - tw / 2;
+      left = Math.max(6, Math.min(left, vw - tw - 6));
+      ccTipEl.style.left = left + "px";
+      ccTipEl.style.top = (br.bottom + 8) + "px";
+      ccTipState.placedRect = br;
+    };
+    var ccShowTip = function(btn){
+      if (!btn || !document.contains(btn)) return;
+      var txt = btn.getAttribute("data-tip"); if (!txt) return;
+      var dark = (btn.closest(".combo-root") || root).getAttribute("data-theme") === "dark";
+      ccTipEl.style.background = dark ? "#f0f0f0" : "#1f1f1b";
+      ccTipEl.style.color = dark ? "#1f1f1b" : "#ffffff";
+      ccTipEl.textContent = txt;
+      ccTipEl.classList.add("show");
+      ccPlaceTip(btn);
+    };
     if (!root.__ccTipBound){
       root.__ccTipBound = true;
-      var ccTipTimer = null, ccTipBtn = null, ccTipPlacedRect = null;
-      var ccHideTip = function(){ clearTimeout(ccTipTimer); ccTipBtn = null; ccTipPlacedRect = null; ccTipEl.classList.remove("show"); };
-      var ccPlaceTip = function(btn){
-        ccTipEl.style.transform = "";
-        var br = btn.getBoundingClientRect();
-        var tw = ccTipEl.offsetWidth, vw = window.innerWidth || document.documentElement.clientWidth;
-        var left = br.left + br.width / 2 - tw / 2;
-        left = Math.max(6, Math.min(left, vw - tw - 6));
-        ccTipEl.style.left = left + "px";
-        ccTipEl.style.top = (br.bottom + 8) + "px";
-        ccTipPlacedRect = br;
-      };
-      var ccShowTip = function(btn){
-        if (!btn || !document.contains(btn)) return;
-        var txt = btn.getAttribute("data-tip"); if (!txt) return;
-        var dark = (btn.closest(".combo-root") || root).getAttribute("data-theme") === "dark";
-        ccTipEl.style.background = dark ? "#f0f0f0" : "#1f1f1b";
-        ccTipEl.style.color = dark ? "#1f1f1b" : "#ffffff";
-        ccTipEl.textContent = txt;
-        ccTipEl.classList.add("show");
-        ccTipBtn = btn;
-        ccPlaceTip(btn);
-      };
-      /* Keep an open tooltip glued to its trigger while the page scrolls — same cheap,
-         compositor-only transform-nudge + settle-time full reposition as the dropdown menus and
-         .vot-tip/.tcd-tip already use. Without this the tooltip just stayed frozen at its old
-         screen position while the trigger scrolled out from under it. */
-      var ccTipRepositionRaf = null, ccTipSettleTimer = null;
-      window.addEventListener("scroll", function(){
-        if (!ccTipBtn) return;
-        if (ccTipRepositionRaf) return;
-        ccTipRepositionRaf = requestAnimationFrame(function(){
-          ccTipRepositionRaf = null;
-          if (!ccTipBtn || !ccTipPlacedRect) return;
-          var r = ccTipBtn.getBoundingClientRect();
-          ccTipEl.style.transform = "translate(" + Math.round(r.left - ccTipPlacedRect.left) + "px," + Math.round(r.top - ccTipPlacedRect.top) + "px)";
-          clearTimeout(ccTipSettleTimer);
-          ccTipSettleTimer = setTimeout(function(){ if (ccTipBtn) ccPlaceTip(ccTipBtn); }, 150);
-        });
-      }, { capture: true, passive: true });
+      /* ccTipState.lastScrollAt guards these: scrolling moves content under a completely
+         stationary cursor, and the browser recomputes hover state as different elements pass
+         under it — without suppressing that, a mid-scroll phantom mouseout on the currently-tipped
+         button fought the transform-nudge below, which is exactly what read as the tooltip
+         "jumping/buggy" while scrolling instead of calmly tracking one target. */
       root.addEventListener("mouseover", function(e){
+        if (Date.now() - ccTipState.lastScrollAt < 200) return;
         var btn = e.target.closest("[data-tip]");
-        if (!btn || !root.contains(btn) || btn === ccTipBtn) return;
-        ccTipBtn = btn;
-        clearTimeout(ccTipTimer);
-        ccTipTimer = setTimeout(function(){ ccShowTip(btn); }, 60);
+        if (!btn || !root.contains(btn) || btn === ccTipState.btn) return;
+        ccTipState.btn = btn;
+        clearTimeout(ccTipState.timer);
+        ccTipState.timer = setTimeout(function(){ ccShowTip(btn); }, 60);
       });
       root.addEventListener("mouseout", function(e){
+        if (Date.now() - ccTipState.lastScrollAt < 200) return;
         var btn = e.target.closest("[data-tip]");
         if (!btn) return;
         if (e.relatedTarget && btn.contains(e.relatedTarget)) return;
-        ccHideTip();
+        if (btn === ccTipState.btn) ccHideTip();
       });
       root.addEventListener("mousedown", ccHideTip);
+    }
+    /* The mousemove/scroll/blur safety-net only needs to run once globally — it operates on the
+       shared ccTipState/ccTipEl above regardless of which root's closure it was bound from. */
+    if (!window.__ccTipGlobalBound){
+      window.__ccTipGlobalBound = true;
       document.addEventListener("mousemove", function(){
-        if (!ccTipEl.classList.contains("show") && !ccTipTimer) return;
-        if (!ccTipBtn || !document.contains(ccTipBtn)){ ccHideTip(); return; }
+        if (!ccTipEl.classList.contains("show") && !ccTipState.timer) return;
+        if (!ccTipState.btn || !document.contains(ccTipState.btn)){ ccHideTip(); return; }
         var stillHovered = false;
-        try { stillHovered = ccTipBtn.matches(":hover"); } catch(err){ stillHovered = true; }
+        try { stillHovered = ccTipState.btn.matches(":hover"); } catch(err){ stillHovered = true; }
         if (!stillHovered) ccHideTip();
       });
+      /* Keep an open tooltip glued to its trigger while the page scrolls — same cheap,
+         compositor-only transform-nudge + settle-time full reposition as the dropdown menus and
+         .vot-tip/.tcd-tip already use. Global (not per-root) for the same reason the mousemove
+         safety-net above is global — one listener serves whichever instance's ccTipState.btn is
+         currently set. */
+      var ccTipRepositionRaf = null, ccTipSettleTimer = null;
+      window.addEventListener("scroll", function(){
+        ccTipState.lastScrollAt = Date.now();
+        if (!ccTipState.btn) return;
+        if (ccTipRepositionRaf) return;
+        ccTipRepositionRaf = requestAnimationFrame(function(){
+          ccTipRepositionRaf = null;
+          if (!ccTipState.btn || !ccTipState.placedRect) return;
+          var r = ccTipState.btn.getBoundingClientRect();
+          ccTipEl.style.transform = "translate(" + Math.round(r.left - ccTipState.placedRect.left) + "px," + Math.round(r.top - ccTipState.placedRect.top) + "px)";
+          clearTimeout(ccTipSettleTimer);
+          ccTipSettleTimer = setTimeout(function(){ if (ccTipState.btn) ccPlaceTip(ccTipState.btn); }, 150);
+        });
+      }, { capture: true, passive: true });
       window.addEventListener("blur", ccHideTip);
     }
 
