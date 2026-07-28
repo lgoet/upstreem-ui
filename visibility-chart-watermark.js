@@ -57,11 +57,25 @@
      arrivals. Fix: inject() is idempotent (skips wraps that already have a watermark), so it's safe
      to keep re-running it — via a persistent MutationObserver plus a long-lived interval fallback —
      instead of stopping after the first successful pass. */
-  inject();
-  try {
-    var mo = new MutationObserver(function(){ inject(); });
-    mo.observe(document.body, { childList: true, subtree: true });
-  } catch (e) {}
-  var ticks = 0;
-  var t = setInterval(function () { inject(); if (++ticks > 400) clearInterval(t); }, 300);  // ~2 min safety net
+  inject();   // idempotent — always run once for whatever wraps exist at this load
+  /* The persistent whole-page MutationObserver + interval must exist only ONCE per page. This
+     script loads once per visibility-chart placement (and again on Bubble re-renders), so without
+     the window guard each load added its own document.body subtree observer + 300ms interval — the
+     same multiply-the-whole-page-observer regression that made drawer/slide-in opens hakelig
+     (each observer ran inject()'s querySelectorAll on every single mutation during the open burst).
+     One observer, rAF-coalesced so a mutation burst collapses to one inject() per frame, one timer. */
+  if (!window.__upWatermarkInstalled){
+    window.__upWatermarkInstalled = true;
+    var wmRaf = null;
+    function scheduleInject(){
+      if (wmRaf) return;
+      wmRaf = (window.requestAnimationFrame || function(f){ return setTimeout(f, 16); })(function(){ wmRaf = null; inject(); });
+    }
+    try {
+      var mo = new MutationObserver(scheduleInject);
+      mo.observe(document.body, { childList: true, subtree: true });
+    } catch (e) {}
+    var ticks = 0;
+    var t = setInterval(function () { inject(); if (++ticks > 400) clearInterval(t); }, 300);  // ~2 min safety net
+  }
 })();
