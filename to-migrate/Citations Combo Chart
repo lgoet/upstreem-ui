@@ -1,0 +1,1829 @@
+
+<div class="combo-root" data-instance="insightschart_v2" data-isdark="ISDARK" data-processing="PROCESSING" data-gran-fn="bubble_fn_comboGranularity">
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap");
+ 
+    /* ---------- combo layout ---------- */
+    .combo-root {
+      --cc-text: #1f1f1b; --cc-muted: #6f737c; --cc-border: #e0e2e6;
+      --cc-bg: #ffffff; --cc-topbar-bg: #ffffff; --cc-heading-bg: #f5f5f5; --cc-sk: #e8e8e8;
+      --cc-switch-bg: #f5f5f5; --cc-switch-border: #e0e2e6;
+      --cc-primary: #14b8a6;
+      --ccd-text: #1f1f1b; --ccd-muted: #6f737c; --ccd-switch-bg: #f5f5f5; --ccd-switch-border: #e0e2e6;
+      display: flex; flex-direction: row; align-items: stretch; gap: 16px;
+      font-family: Geist, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      color: var(--cc-text); width: 100%; box-sizing: border-box; -webkit-font-smoothing: antialiased;
+    }
+    .combo-root * { box-sizing: border-box; }
+    .combo-root[data-theme="dark"] {
+      --cc-text: #e0e0e0; --cc-muted: #a0a0a0; --cc-border: #353535;
+      --cc-bg: #1b1b1b; --cc-topbar-bg: #121212; --cc-heading-bg: rgba(42,42,42,0.6); --cc-sk: #3a3a3a;
+      --cc-switch-bg: rgba(42,42,42,0.6); --cc-switch-border: #353535;
+      --ccd-text: #e0e0e0; --ccd-muted: #a0a0a0; --ccd-switch-bg: rgba(42,42,42,0.6); --ccd-switch-border: #353535;
+    }
+ 
+    /* ---------- two units: each = header + bordered chart-box ---------- */
+    .combo-unit { display: flex; flex-direction: column; min-width: 0; }
+    .combo-unit-left  { flex: 1 1 auto; }
+    .combo-unit-right { flex: 0 0 35%; max-width: 35%; }
+ 
+    .combo-head { display: flex; align-items: center; height: 32px; margin-bottom: 16px; padding: 0; }
+    .combo-unit-left .combo-head { padding-right: 0; }
+    .combo-heading { font-size: 14px; font-weight: 500; color: var(--cc-text); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .combo-head-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; flex: 0 0 auto; }
+ 
+    .combo-iconbtn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border: 0; border-radius: 8px;
+      background: transparent; color: #6f6f6f; cursor: pointer; padding: 0; flex: 0 0 auto;
+    }
+    .combo-root[data-theme="dark"] .combo-iconbtn { color: #a0a0a0; }
+    .combo-iconbtn:hover { color: var(--cc-text); }
+    .combo-root[data-theme="dark"] .combo-iconbtn:hover { color: var(--cc-text); }
+    .combo-iconbtn svg { width: 16px; height: 16px; display: block; }
+ 
+    /* dark button tooltip (~24px, 12px text, dark bg in light mode) */
+    .cc-tip {
+      position: fixed; z-index: 2147483000; box-sizing: border-box;
+      height: 24px; display: inline-flex; align-items: center;
+      padding: 0 9px; border-radius: 6px;
+      font-family: Geist, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      font-size: 12px; font-weight: 500; line-height: 1; white-space: nowrap;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+      opacity: 0; transform: translateY(4px); pointer-events: none;
+      transition: opacity .14s ease, transform .14s ease;
+    }
+    .cc-tip.show { opacity: 1; transform: translateY(0); }
+ 
+    .combo-box {
+      flex: 1 1 auto; min-height: 0; height: 430px;
+      border: 1px solid var(--cc-border); background: var(--cc-bg); overflow: hidden;
+      display: flex; flex-direction: column;
+      transition: height 200ms ease, opacity 200ms ease;
+    }
+    /* row mode: the two boxes touch to look like one bordered container with a divider */
+    .combo-box-left  { border-radius: 16px; }
+    .combo-box-right { border-radius: 16px; }
+    .combo-panel-body { flex: 1 1 auto; min-height: 0; padding: 16px; position: relative; display: flex; flex-direction: column; transition: opacity 200ms ease; }
+    .combo-box-left .combo-panel-body { padding-top: 24px; }   /* extra breathing room above the line chart */
+ 
+    /* ---------- maximize / auto-stack: two separate stacked containers ---------- */
+    .combo-root.is-max, .combo-root.is-narrow { flex-direction: column; gap: 32px; }
+    .combo-root.is-max .combo-unit, .combo-root.is-narrow .combo-unit { flex: 0 0 auto; width: 100%; max-width: 100%; }
+    .combo-root.is-max .combo-box-left, .combo-root.is-narrow .combo-box-left { height: 400px; }
+    .combo-root.is-max .combo-box-right, .combo-root.is-narrow .combo-box-right { height: 340px; }
+    .combo-root.is-narrow .combo-maximize { display: none; }
+ 
+    /* ---------- hide (collapse both boxes → just the 32px header rows) ---------- */
+    .combo-root.is-hidden-view .combo-box { height: 0 !important; opacity: 0; border-width: 0; }
+    .combo-root.is-hidden-view .combo-panel-body { opacity: 0; }
+    .combo-root.is-hidden-view .combo-head { margin-bottom: 0; }
+    .combo-root.is-hidden-view .combo-unit-left { margin-bottom: 0; }
+    /* grey out the (now inactive) controls; the Hide/Show toggle stays active */
+    .combo-root.is-hidden-view .cc-gran,
+    .combo-root.is-hidden-view .ccd-seg,
+    .combo-root.is-hidden-view .combo-filter,
+    .combo-root.is-hidden-view .combo-maximize { opacity: 0.4; pointer-events: none; }
+ 
+    /* maximize icon swap */
+    .combo-maximize .ic-min { display: none; }
+    .combo-root.is-max .combo-maximize .ic-max { display: none; }
+    .combo-root.is-max .combo-maximize .ic-min { display: block; }
+    /* hide/show icon swap */
+    .combo-hide .ic-show { display: none; }
+    .combo-root.is-hidden-view .combo-hide .ic-hide { display: none; }
+    .combo-root.is-hidden-view .combo-hide .ic-show { display: block; }
+ 
+    /* ---------- filter dropdown ---------- */
+    .combo-filter { position: relative; flex: 0 0 auto; }
+    /* visible-series count badge, sits on the top-right corner of the fader button */
+    .combo-filter-badge {
+      position: absolute; top: -3px; right: -3px; z-index: 2;
+      min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
+      background: var(--cc-text); color: #e0e0e0;
+      font-family: inherit; font-size: 10px; font-weight: 600; line-height: 1;
+      display: none; align-items: center; justify-content: center;
+      font-variant-numeric: tabular-nums; pointer-events: none;
+    }
+    .combo-root[data-theme="dark"] .combo-filter-badge { color: #1f1f1b; }
+    .combo-filter-badge.is-visible { display: inline-flex; }
+    .combo-filter-menu {
+      position: absolute; top: calc(100% + 6px); right: 0; z-index: 60;
+      min-width: 230px; max-width: 300px; max-height: 340px; overflow-y: auto;
+      background: var(--cc-bg); border: 1px solid var(--cc-border); border-radius: 12px;
+      box-shadow: 0 10px 28px rgba(0,0,0,.14); padding: 6px; display: none;
+    }
+    .combo-filter.is-open .combo-filter-menu { display: block; }
+    .combo-root[data-theme="dark"] .combo-filter-menu { background: #151515; }
+    .combo-filter.is-open .combo-filter-btn { color: var(--cc-text); background: var(--cc-heading-bg); }
+    .combo-filter-head { display: flex; align-items: center; justify-content: space-between; padding: 4px 9px 6px; margin-bottom: 4px; }
+    .combo-filter-title { font-size: 11px; font-weight: 600; color: var(--cc-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .combo-filter-toggle { border: 0; background: transparent; color: var(--cc-muted); font-family: inherit; font-size: 11px; font-weight: 500; cursor: pointer; padding: 2px 4px; border-radius: 6px; }
+    .combo-filter-toggle:hover { color: var(--cc-primary, #14b8a6); background: transparent; }
+    .combo-filter-item { display: flex; align-items: center; gap: 10px; padding: 7px 9px; border-radius: 8px; cursor: pointer; font-size: 13px; color: var(--cc-text); }
+    .combo-filter-item:hover { background: var(--cc-heading-bg); }
+    .combo-filter-check { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--cc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #fff; }
+    .combo-filter-check svg { width: 11px; height: 11px; display: none; }
+    .combo-filter-item.is-checked .combo-filter-check { background: var(--cc-fltclr, #14b8a6); border-color: var(--cc-fltclr, #14b8a6); }
+    .combo-filter-item.is-checked .combo-filter-check svg { display: block; }
+    .combo-filter-favicon { width: 16px; height: 16px; min-width: 16px; border-radius: 4px; object-fit: cover; flex: 0 0 auto; }
+    .combo-filter-dot { width: 10px; height: 10px; min-width: 10px; border-radius: 3px; flex: 0 0 auto; }
+    .combo-filter-name { flex: 1 1 auto; min-width: 0; max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .combo-filter-empty { padding: 10px; font-size: 12px; color: var(--cc-muted); text-align: center; }
+ 
+    /* granularity switcher (in the header) */
+    .cc-gran { display: inline-flex; padding: 0; gap: 0; background: var(--cc-switch-bg); border-radius: 8px; border: 0; height: 32px; flex: 0 0 auto; }
+    .cc-gran-btn { height: 32px; padding: 0 12px; border: 1px solid transparent; border-radius: 8px; background: transparent;
+      color: var(--cc-muted); cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1;
+      display: inline-flex; align-items: center; justify-content: center; }
+    .cc-gran-btn:hover { color: var(--cc-text); }
+    .cc-gran-btn.is-active { background: #ffffff; color: var(--cc-text); border-color: var(--cc-switch-border); }
+    .combo-root[data-theme="dark"] .cc-gran-btn.is-active { background: #121212; border-color: #353535; }
+    .cc-gran-btn.is-disabled { opacity: 0.4; pointer-events: none; cursor: default; }
+ 
+    .cc-line-wrap { position: relative; flex: 1 1 auto; min-height: 0; width: 100%; }
+    .cc-line-canvas { display: block; width: 100% !important; height: 100% !important; }
+    .cc-line-empty { position:absolute; left:0; right:0; top:58%; transform:translateY(-50%); display:flex; align-items:center; justify-content:center; font-size:13px; color: var(--cc-muted); }
+ 
+    .cc-line-sk { position:absolute; inset:0; pointer-events:none; --shimmer:.14; }
+    .cc-line-sk .sk-linechart { width:100%; height:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:6px; padding:32px; }
+    .cc-line-sk .sk-lc-grid { flex:1; position:relative; display:flex; flex-direction:column; justify-content:space-between; }
+    .cc-line-sk .sk-lc-hline { height:1px; background:var(--cc-sk); border-radius:1px; position:relative; overflow:hidden; }
+    .cc-line-sk .sk-lc-hline::after { content:""; position:absolute; inset:0; background:linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,var(--shimmer)) 50%, rgba(255,255,255,0) 100%); transform:translateX(-100%); animation:cc-skt 1200ms linear infinite; }
+    .cc-line-sk .sk-lc-svg { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+    .cc-line-sk .sk-lc-astop0 { stop-color:var(--cc-sk); stop-opacity:.5; }
+    .cc-line-sk .sk-lc-astop1 { stop-color:var(--cc-sk); stop-opacity:0; }
+    .cc-line-sk .sk-lc-stroke { fill:none; stroke:var(--cc-sk); stroke-width:1.875; stroke-linecap:round; }
+    .cc-line-sk .sk-lc-shimmer-path { stroke-dasharray:1000; stroke-dashoffset:1000; animation:cc-skt-path 1200ms linear infinite; stroke:rgba(255,255,255,var(--shimmer)); fill:none; stroke-width:2.25; stroke-linecap:round; }
+    .cc-line-sk .sk-lc-xaxis { display:flex; justify-content:space-between; flex-shrink:0; padding:0 1px; }
+    .cc-line-sk .sk-lc-xlabel { height:8px; width:24px; background:var(--cc-sk); border-radius:4px; position:relative; overflow:hidden; }
+    .cc-line-sk .sk-lc-xlabel::after { content:""; position:absolute; inset:0; background:linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,var(--shimmer)) 50%, rgba(255,255,255,0) 100%); transform:translateX(-100%); animation:cc-skt 1200ms linear infinite; }
+    @keyframes cc-skt { 100% { transform:translateX(100%); } }
+    @keyframes cc-skt-path { 0% { stroke-dashoffset:1000; } 100% { stroke-dashoffset:-1000; } }
+    @media (prefers-reduced-motion: reduce){ .cc-line-sk .sk-lc-hline::after,.cc-line-sk .sk-lc-xlabel::after,.cc-line-sk .sk-lc-shimmer-path{ animation:none; } }
+ 
+    /* ---------- line legend (balanced rows, same styling/behaviour as the provided component) ---------- */
+    .cc-legend { width:100%; height:auto; box-sizing:border-box; overflow:visible; --up-column-gap:16px; margin-top:12px; flex:0 0 auto; }
+    .cc-legend.is-hidden { display:none; }
+    .cc-legend .up-company-rows { width:100%; height:auto; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; row-gap:8px; box-sizing:border-box; }
+    .cc-legend .up-company-row { width:100%; min-height:24px; display:flex; align-items:center; justify-content:center; column-gap:var(--up-column-gap,16px); box-sizing:border-box; overflow:hidden; min-width:0; }
+    .cc-legend .up-company-item { height:24px; padding:2px 8px; border:0; background:transparent; display:inline-flex; align-items:center; justify-content:flex-start; flex:0 1 auto; min-width:0; box-sizing:border-box; white-space:nowrap; }
+    .cc-legend .up-company-color { width:10px; height:10px; min-width:10px; min-height:10px; border-radius:4px; flex:0 0 auto; }
+    .cc-legend .up-company-favicon { width:16px; height:16px; min-width:16px; min-height:16px; border-radius:4px; object-fit:cover; display:block; flex:0 0 auto; }
+    .cc-legend .up-company-name { font-family:Geist, Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size:12px; font-weight:500; line-height:16px; color:var(--cc-text); white-space:nowrap; max-width:150px; overflow:hidden; text-overflow:ellipsis; flex:1 1 auto; min-width:0; }
+    .combo-root.is-narrow .cc-legend .up-company-name { max-width: 90px; }
+    .cc-legend .up-company-inner-gap { width:8px; height:1px; flex:0 0 8px; }
+    .cc-legend .up-company-measure { position:absolute; left:-99999px; top:-99999px; visibility:hidden; pointer-events:none; display:flex; column-gap:var(--up-column-gap,16px); width:auto; height:auto; overflow:visible; }
+ 
+    /* hide the doughnut (right) legend below page width 500 */
+    .combo-root.cc-narrow-page .ccd-legend { display: none !important; }
+ 
+    /* ---------- doughnut (nested, ccd- prefix, identical to the standalone element) ---------- */
+    .ccd-chart-root {
+      --ccd-text: #1f1f1b; --ccd-muted: #6f737c; --ccd-third: #9e9e9e;
+      --ccd-track: #f5f5f5; --ccd-switch-bg: #f5f5f5; --ccd-switch-border: #e0e2e6;
+      color: var(--ccd-text); width: 100%; height: 100%; box-sizing: border-box; position: relative;
+      display: flex; flex-direction: column;
+    }
+    .ccd-chart-root * { box-sizing: border-box; }
+    .ccd-chart-root[data-theme="dark"] {
+      --ccd-text: #e0e0e0; --ccd-muted: #a0a0a0; --ccd-third: #707070;
+      --ccd-track: rgba(255,255,255,0.06); --ccd-switch-bg: #242424; --ccd-switch-border: #353535;
+    }
+    .ccd-top { display: flex; align-items: flex-start; justify-content: flex-end; gap: 12px; min-height: 24px; margin-bottom: 5px; }
+    .ccd-top-total { margin-right: auto; display: none; align-items: baseline; gap: 6px; }
+    .ccd-top-total .n { font-size: 16px; font-weight: 500; color: var(--ccd-text); line-height: 1; }
+    .ccd-top-total .lbl { font-size: 12px; font-weight: 400; color: var(--ccd-third); }
+    .ccd-seg { display: inline-flex; padding: 0; gap: 0; background: var(--ccd-switch-bg); border-radius: 8px; border: 0; height: 32px; flex: 0 0 auto; }
+    .ccd-seg-btn { height: 32px; padding: 0 12px; border: 1px solid transparent; border-radius: 8px; background: transparent;
+      color: var(--ccd-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+    .ccd-seg-btn svg { width: 14px; height: 14px; color: var(--ccd-muted); display: block; }
+    .ccd-seg-btn:hover, .ccd-seg-btn:hover svg { color: var(--ccd-text); }
+    .ccd-seg-btn.is-active { background: #ffffff; color: var(--ccd-text); border-color: var(--ccd-switch-border); }
+    .ccd-seg-btn.is-active svg { color: var(--ccd-text); }
+    .ccd-chart-root[data-theme="dark"] .ccd-seg-btn.is-active,
+    .combo-root[data-theme="dark"] .ccd-seg-btn.is-active { background: #121212; border-color: #353535; }
+    .ccd-body { width: 100%; position: relative; flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+    .ccd-body > .ccd-bars, .ccd-body > .ccd-donut-layout, .ccd-body > .ccd-skeleton, .ccd-body > .ccd-empty { margin-top: auto; margin-bottom: auto; }
+    .ccd-donut-layout { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 28px; width: 100%; }
+    .ccd-donut-wrap { position: relative; flex: 0 0 auto; width: min(52%, 200px); aspect-ratio: 1 / 1; }
+    .ccd-donut-wrap canvas { width: 100% !important; height: 100% !important; }
+    /* once the legend drops BELOW the donut (narrow container), the donut no longer shares width
+       with it — let it use much more of the available space instead of staying pinned small */
+    .ccd-donut-layout.is-collapsed .ccd-donut-wrap { width: min(75%, 220px); }
+    .ccd-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+    .ccd-center .n { font-size: 22px; font-weight: 500; color: var(--ccd-text); line-height: 1; }
+    .ccd-center .lbl { font-size: 14px; font-weight: 400; color: var(--ccd-third); margin-top: 8px; line-height: 1; }
+    .ccd-legend { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+    .ccd-legend-row { display: flex; align-items: center; gap: 10px; }
+    .ccd-legend-chip { width: 12px; height: 12px; border-radius: 4px; flex: 0 0 auto; }
+    .ccd-legend-name { font-size: 12px; font-weight: 500; color: var(--ccd-text); white-space: nowrap; }
+    .ccd-legend-pct { font-size: 12px; font-weight: 500; color: var(--ccd-muted); white-space: nowrap; }
+    .ccd-donut-layout.is-collapsed { flex-direction: column; gap: 18px; }
+    .ccd-donut-layout.is-collapsed .ccd-legend { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 10px 16px; }
+    .ccd-bars { display: flex; flex-direction: column; gap: 0; width: 100%; }
+    .ccd-bar-row { display: flex; align-items: center; padding: 5px 0; }
+    .ccd-bar-track { flex: 1; height: 32px; background: var(--ccd-track); border-radius: 8px; overflow: visible; position: relative; min-width: 0; }
+    .ccd-bar-fill { height: 100%; border-radius: 8px; transition: width .5s cubic-bezier(.4,0,.2,1);
+      display: flex; align-items: center; justify-content: space-between; padding: 0 10px; min-width: 0; gap: 8px; overflow: hidden; }
+    .ccd-bar-name { font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: opacity .18s ease; }
+    .ccd-bar-pct { font-size: 11px; font-weight: 600; white-space: nowrap; flex: 0 0 auto; transition: opacity .18s ease; }
+    .ccd-bar-outside { position: absolute; top: 50%; transform: translateY(-50%); left: 0; pointer-events: none;
+      display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; transition: opacity .18s ease; }
+    .ccd-bar-name-out { font-size: 11px; font-weight: 600; }
+    .ccd-bar-pct-out { font-size: 11px; font-weight: 600; }
+    .ccd-empty { font-size: 13px; color: var(--ccd-muted); text-align: center; padding: 40px 0; }
+    .ccd-skeleton { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 28px; width: 100%; pointer-events: none; }
+    .ccd-sk-chart { flex: 0 0 auto; width: min(52%, 180px); aspect-ratio: 1; }
+    .ccd-sk-chart svg { width: 100%; height: 100%; display: block; }
+    .ccd-sk-ring { stroke: #e8e8e8; }
+    .ccd-sk-g0 { stop-color: #e8e8e8; } .ccd-sk-g1 { stop-color: #ffffff; }
+    .ccd-sk-legend { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+    .ccd-sk-row { display: flex; align-items: center; gap: 10px; }
+    .ccd-sk-dot { width: 12px; height: 12px; border-radius: 4px; background: #e8e8e8; flex: 0 0 auto; position: relative; overflow: hidden; }
+    .ccd-sk-lbl { height: 10px; background: #e8e8e8; border-radius: 5px; position: relative; overflow: hidden; }
+    .ccd-sk-pct { height: 10px; background: #e8e8e8; border-radius: 5px; flex: 0 0 auto; position: relative; overflow: hidden; }
+    .ccd-sk-dot::after, .ccd-sk-lbl::after, .ccd-sk-pct::after {
+      content: ""; position: absolute; inset: 0;
+      background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.14) 50%, rgba(255,255,255,0) 100%);
+      transform: translateX(-100%); animation: ccd-shimmer 1200ms linear infinite; }
+    @keyframes ccd-shimmer { 100% { transform: translateX(100%); } }
+    .ccd-chart-root[data-theme="dark"] .ccd-sk-ring { stroke: #3a3a3a; }
+    .ccd-chart-root[data-theme="dark"] .ccd-sk-g0 { stop-color: #3a3a3a; } .ccd-chart-root[data-theme="dark"] .ccd-sk-g1 { stop-color: #555555; }
+    .ccd-chart-root[data-theme="dark"] .ccd-sk-dot,
+    .ccd-chart-root[data-theme="dark"] .ccd-sk-lbl,
+    .ccd-chart-root[data-theme="dark"] .ccd-sk-pct { background: #3a3a3a; }
+    @media (prefers-reduced-motion: reduce){ .ccd-sk-dot::after,.ccd-sk-lbl::after,.ccd-sk-pct::after{ animation:none; } }
+  </style>
+ 
+  <div class="combo-unit combo-unit-left">
+    <div class="combo-head">
+      <div class="combo-heading">Citation Share</div>
+      <div class="combo-head-tools">
+        <div class="cc-gran" role="tablist" aria-label="Granularity">
+          <button class="cc-gran-btn is-active" data-gran="day" type="button" role="tab">Day</button>
+          <button class="cc-gran-btn" data-gran="week" type="button" role="tab">Week</button>
+          <button class="cc-gran-btn" data-gran="month" type="button" role="tab">Month</button>
+        </div>
+        <div class="combo-filter">
+          <button class="combo-filter-btn combo-iconbtn" type="button" data-tip="Filter brands" aria-label="Filter">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+            <span class="combo-filter-badge"></span>
+          </button>
+          <div class="combo-filter-menu" role="menu" aria-hidden="true"></div>
+        </div>
+        <button class="combo-maximize combo-iconbtn" type="button" data-tip="Maximize" aria-label="Maximize">
+          <svg class="ic-max" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline>
+            <line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line>
+          </svg>
+          <svg class="ic-min" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 14 10 14 10 20"></polyline><polyline points="20 10 14 10 14 4"></polyline>
+            <line x1="14" y1="10" x2="21" y2="3"></line><line x1="3" y1="21" x2="10" y2="14"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="combo-box combo-box-left">
+      <div class="combo-panel-body">
+        <div class="cc-line-wrap"><canvas class="cc-line-canvas"></canvas></div>
+        <div class="cc-legend"></div>
+      </div>
+    </div>
+  </div>
+ 
+  <div class="combo-unit combo-unit-right">
+    <div class="combo-head">
+      <div class="combo-heading combo-heading-right">Citation Type Split</div>
+      <div class="combo-head-tools">
+        <div class="ccd-seg" role="tablist" aria-label="Chart type">
+          <button class="ccd-seg-btn is-active" data-chart="doughnut" role="tab" aria-selected="true" data-tip="Doughnut" aria-label="Doughnut">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+          </button>
+          <button class="ccd-seg-btn" data-chart="bar" role="tab" aria-selected="false" data-tip="Bars" aria-label="Bars">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="9" y2="18"/></svg>
+          </button>
+        </div>
+        <button class="combo-hide combo-iconbtn" type="button" data-tip="Hide" aria-label="Hide">
+          <svg class="ic-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg class="ic-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="combo-box combo-box-right">
+      <div class="combo-panel-body">
+        <div class="ccd-chart-root">
+          <div class="ccd-top">
+            <div class="ccd-top-total"><span class="n">0</span><span class="lbl">Citations</span></div>
+          </div>
+          <div class="ccd-body"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+ 
+<script>
+(function(){
+  "use strict";
+ 
+  /* ================= Chart.js loader (SHARED across ALL upstreem components on the page) ================= */
+  function loadChartJs(){
+    if (window.Chart) return Promise.resolve();
+    if (window.__upstreemChartJs) return window.__upstreemChartJs;
+    window.__upstreemChartJs = new Promise(function(res, rej){
+      // if a Chart.js script is already present (e.g. from another upstreem component on this
+      // same page), wait for IT instead of loading a second copy — loading Chart.js twice breaks
+      // existing chart instances (each load overwrites window.Chart with a fresh module/registry)
+      var existing = document.querySelector('script[data-upstreem-chartjs], script[data-ccchart], script[src*="chart.umd"], script[src*="chart.js@"], script[src*="chart.local"]');
+      if (existing){
+        var iv = setInterval(function(){ if (window.Chart){ clearInterval(iv); res(); } }, 40);
+        setTimeout(function(){ clearInterval(iv); if (window.Chart) res(); else rej(new Error("chartjs timeout")); }, 10000);
+        return;
+      }
+      var s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js";
+      s.setAttribute("data-upstreem-chartjs", "1");
+      s.onload = function(){ res(); };
+      s.onerror = rej;
+      document.head.appendChild(s);
+    });
+    return window.__upstreemChartJs;
+  }
+ 
+  /* ================= colours (identical to the citations element) ================= */
+  var CITE_COLOR = {
+    "Editorial":"#27a79b", "UGC / Community":"#34a1d1", "Knowledge-Base":"#797ad8",
+    "Brand Platforms":"#bc69c9", "Institutional":"#5e7eac", "Competition":"#dd7e3e", "You":"#d35f73"
+  };
+  var CITE_ALIAS = {
+    "Brand_Platform":"Brand Platforms", "Brand Platform":"Brand Platforms",
+    "Knowledge_Base":"Knowledge-Base", "Knowledge Base":"Knowledge-Base",
+    "UGC_Community":"UGC / Community", "UGC Community":"UGC / Community"
+  };
+  function citeName(raw){
+    if (!raw) return "";
+    var s = String(raw).trim();
+    if (CITE_ALIAS[s]) return CITE_ALIAS[s];
+    if (/^Brand\s+Platforms?$/i.test(s)) return "Brand Platforms";
+    if (/^Knowledge[-\s_]?Base$/i.test(s)) return "Knowledge-Base";
+    if (/^UGC(\s*[\/_]?\s*Community)?$/i.test(s)) return "UGC / Community";
+    return s;
+  }
+  var URL_LABEL = {
+    homepage:"Homepage", product_service:"Product / Service", marketplace:"Marketplace", company_info:"Company Info",
+    article:"Article", listicle:"Listicle", guide:"Guide", comparison:"Comparison", review:"Review",
+    documentation:"Documentation", forum:"Forum", directory:"Directory", video:"Video", social_post:"Social Post", other:"Uncategorized"
+  };
+  var URL_COLOR_CHART = {
+    homepage:"#c3753a", product_service:"#ce8662", marketplace:"#ae7c58", company_info:"#b48139",
+    article:"#369379", listicle:"#3e90a6", guide:"#5182ef", comparison:"#726bea", review:"#8a53e1",
+    documentation:"#8a53e1", forum:"#a95cee", directory:"#b549bf", video:"#9661f1", social_post:"#a27df8", other:"#8c8f96"
+  };
+  var URL_COLOR_DARK = {
+    homepage:"#fbbf24", product_service:"#fdba74", marketplace:"#fcae6f", company_info:"#facc15",
+    article:"#6ee7b7", listicle:"#67e8f9", guide:"#93c5fd", comparison:"#a5b4fc", review:"#c4b5fd",
+    documentation:"#c4b5fd", forum:"#d8b4fe", directory:"#f0abfc", video:"#c4b5fd", social_post:"#ddd6fe", other:"#a0a0a0"
+  };
+  var OTHER_LIGHT = "#8c8f96", OTHER_DARK = "#a0a0a0";
+  var MAX_URL_SLICES = 8;
+ 
+  /* ================= helpers ================= */
+  function isYes(v){ return /^(1|true|yes|y)$/i.test(String(v == null ? "" : v).trim()); }
+  function esc(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
+  function capitalize(s){ s = String(s||""); return s.charAt(0).toUpperCase() + s.slice(1); }
+  function fmtTotal(n){
+    n = Number(n) || 0;
+    if (n < 1000) return String(Math.round(n));
+    var k = n / 1000;
+    if (n < 10000) return (Math.round(k * 100) / 100).toFixed(2).replace(/0+$/,"").replace(/\.$/,"") + "k";
+    if (n < 1000000) return (Math.round(k * 10) / 10).toFixed(1).replace(/\.0$/,"") + "k";
+    return (Math.round((n/1000000) * 10) / 10).toFixed(1).replace(/\.0$/,"") + "m";
+  }
+  function fmtPct(v){ v = Number(v) || 0; if (v > 0 && v < 1) return "<1%"; return Math.round(v) + "%"; }
+  function hexToRgb(hex){ var h=String(hex).replace("#",""); if(h.length===3)h=h.split("").map(function(x){return x+x;}).join(""); var n=parseInt(h,16); return [(n>>16)&255,(n>>8)&255,n&255]; }
+  function measureText(el){ if(!el) return 0; var r=el.getBoundingClientRect(); return r.width || el.scrollWidth || 0; }
+  function truncate(s, n){ s = String(s==null?"":s); return s.length > n ? s.slice(0, n-1) + "…" : s; }
+  var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var MONTHS_DE = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  function dateFmt(day){
+    var m = String(day||"").match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!m) return String(day||"");
+    return parseInt(m[3],10) + " " + MONTHS[parseInt(m[2],10)-1] + " " + m[1];
+  }
+  function dateFmtTitle(day, gran){
+    var m = String(day||"").match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!m) return String(day||"");
+    if (gran === "month") return MONTHS_DE[parseInt(m[2],10) - 1] || dateFmt(day);
+    return dateFmt(day);
+  }
+ 
+  function hexToHsl(hex){
+    var c = hexToRgb(hex).map(function(v){ return v/255; });
+    var r=c[0],g=c[1],b=c[2];
+    var max=Math.max(r,g,b), min=Math.min(r,g,b), h, s, l=(max+min)/2;
+    if(max===min){ h=s=0; }
+    else{ var d=max-min; s = l>0.5 ? d/(2-max-min) : d/(max+min);
+      if(max===r) h=(g-b)/d+(g<b?6:0); else if(max===g) h=(b-r)/d+2; else h=(r-g)/d+4;
+      h/=6; }
+    return [h*360, s*100, l*100];
+  }
+  function hslToHex(h,s,l){
+    h/=360; s/=100; l/=100;
+    function hue2rgb(p,q,t){ if(t<0)t+=1; if(t>1)t-=1; if(t<1/6)return p+(q-p)*6*t; if(t<1/2)return q; if(t<2/3)return p+(q-p)*(2/3-t)*6; return p; }
+    var r,g,b;
+    if(s===0){ r=g=b=l; }
+    else{ var q=l<0.5?l*(1+s):l+s-l*s; var p=2*l-q; r=hue2rgb(p,q,h+1/3); g=hue2rgb(p,q,h); b=hue2rgb(p,q,h-1/3); }
+    function to(x){ var v=Math.round(x*255).toString(16); return v.length===1?"0"+v:v; }
+    return "#"+to(r)+to(g)+to(b);
+  }
+  /* Is a fill colour light enough that white label text would be hard to read? Uses WCAG relative
+     luminance so it judges by hue too (a light yellow reads bright, a light blue less so). The
+     threshold sits high on purpose: only genuinely light bars flip to dark text, mid-tone citation
+     fills keep white. Accepts #rgb / #rrggbb; anything else is treated as dark (white text). */
+  function barIsLight(col){
+    if (typeof col !== "string") return false;
+    var c = col.charAt(0) === "#" ? col.slice(1) : col;
+    if (c.length === 3) c = c.charAt(0)+c.charAt(0)+c.charAt(1)+c.charAt(1)+c.charAt(2)+c.charAt(2);
+    if (!/^[0-9a-fA-F]{6}$/.test(c)) return false;
+    function lin(v){ v/=255; return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); }
+    var L = 0.2126*lin(parseInt(c.substr(0,2),16)) + 0.7152*lin(parseInt(c.substr(2,2),16)) + 0.0722*lin(parseInt(c.substr(4,2),16));
+    return L > 0.55;
+  }
+  function shadeVariants(base, n){
+    if(n<=1) return [base];
+    var hsl=hexToHsl(base), h=hsl[0], s=hsl[1], lBase=hsl[2];
+    // lightness window around the base, kept inside a visible range
+    var lo = Math.max(24, lBase - 27);
+    var hi = Math.min(78, lBase + 27);
+    // widen if the clamped window is too narrow to keep N shades clearly distinct
+    var minSpan = Math.min(60, (n - 1) * 10);
+    if (hi - lo < minSpan){
+      var mid = (lo + hi) / 2;
+      lo = Math.max(16, mid - minSpan / 2);
+      hi = Math.min(84, mid + minSpan / 2);
+    }
+    // small hue spread on top of the lightness ramp — noticeably separates same-category shades
+    // while keeping them recognisably the same colour family
+    var hueSpan = Math.min(30, (n - 1) * 11);
+    var out=[];
+    for(var i=0;i<n;i++){
+      var t = i/(n-1);
+      var l = lo + t*(hi-lo);
+      var hv = (h + (t - 0.5) * hueSpan + 360) % 360;
+      var sv = Math.max(30, Math.min(96, s - 10 + t*20));
+      out.push(hslToHex(hv, sv, l));
+    }
+    return out;
+  }
+ 
+  /* ================= doughnut plugins ================= */
+  var RING_PX = 12, SEG_GAP = 6, CORNER = 4, HOVER = 12;
+  var ringWidthPlugin = {
+    id: "ucRingWidth",
+    beforeDatasetDraw: function(chart, args){
+      var meta = chart.getDatasetMeta(args.index);
+      meta.data.forEach(function(arc){ arc.innerRadius = Math.max(1, arc.outerRadius - RING_PX); });
+    }
+  };
+  var constantGapPlugin = {
+    id: "ucConstantGap",
+    beforeDatasetDraw: function(chart, args){
+      var meta = chart.getDatasetMeta(args.index);
+      if (!meta || !meta.data || !meta.data.length) return;
+      var r = (meta.data[0] && meta.data[0].outerRadius) || 100;
+      var gap = SEG_GAP / r, N = meta.data.length;
+      var available = (Math.PI*2) - gap*N;
+      var total = meta.total || chart.data.datasets[args.index].data.reduce(function(a,b){return a+Number(b||0);},0);
+      var cur = -Math.PI/2;
+      meta.data.forEach(function(arc, i){
+        var value = chart.data.datasets[args.index].data[i];
+        var frac = total>0 ? (value/total) : 0;
+        var span = frac*available;
+        arc.startAngle = cur + gap/2;
+        arc.endAngle = cur + span + gap/2;
+        arc.circumference = span;
+        cur += span + gap;
+      });
+    }
+  };
+ 
+  /* ================= doughnut tooltip ================= */
+  function makeDonutTooltip(root){
+    var state = { x:0, y:0, raf:null };
+    var clamp = function(v,a,b){ return Math.max(a, Math.min(b, v)); };
+    var lerp = function(a,b,t){ return a+(b-a)*t; };
+    return function(context){
+      var chart = context.chart, tooltip = context.tooltip;
+      var el = root.querySelector(".ccd-donut-tooltip");
+      if (!el){
+        el = document.createElement("div");
+        el.className = "ccd-donut-tooltip";
+        el.style.cssText = "position:absolute;pointer-events:none;z-index:9999;opacity:0;transform:translate3d(0,0,0);transition:opacity 120ms ease, transform 120ms ease;";
+        el.innerHTML = '<div class="ccd-tt-box"><div class="ccd-tt-title"></div><div class="ccd-tt-sub">Share:</div><div class="ccd-tt-val"></div></div>';
+        el.querySelector(".ccd-tt-box").style.cssText = "background:#121212;color:#e6e6e6;border-radius:8px;padding:12px 14px;font-family:Geist,system-ui,-apple-system,Segoe UI,Roboto,Arial;font-size:13px;line-height:1.35;box-shadow:0 4px 14px rgba(0,0,0,.25);white-space:nowrap;";
+        el.querySelector(".ccd-tt-title").style.cssText = "font-weight:500;margin-bottom:6px;";
+        el.querySelector(".ccd-tt-sub").style.cssText = "color:#8a8a8a;font-size:11px;";
+        chart.canvas.parentNode.appendChild(el);
+      }
+      if (tooltip.opacity === 0){ el.style.opacity = "0"; return; }
+      var i = (tooltip.dataPoints && tooltip.dataPoints[0] && tooltip.dataPoints[0].dataIndex) || 0;
+      var od = chart.data.datasets[0].originalData;
+      var val = (od && od[i] != null) ? od[i] : (chart.data.datasets[0].data[i] || 0);
+      el.querySelector(".ccd-tt-title").textContent = chart.data.labels[i] || "";
+      el.querySelector(".ccd-tt-val").textContent = Number(val).toFixed(2) + "%";
+      var cx = chart.canvas.offsetLeft, cy = chart.canvas.offsetTop, ca = chart.chartArea;
+      var caretX = cx + tooltip.caretX, caretY = cy + tooltip.caretY, m = 12;
+      el.style.left = "0px"; el.style.top = "0px";
+      var rect = el.getBoundingClientRect();
+      var tx = (caretX + rect.width + m > cx + ca.right) ? (caretX - rect.width - m) : (caretX + m);
+      tx = clamp(tx, cx + ca.left + m, cx + ca.right - rect.width - m);
+      var ty = caretY - rect.height - m;
+      if (ty < cy + ca.top + m) ty = caretY + m;
+      ty = clamp(ty, cy + ca.top + m, cy + ca.bottom - rect.height - m);
+      if (state.raf) cancelAnimationFrame(state.raf);
+      var sx = state.x||tx, sy = state.y||ty, st = performance.now(), d = 120;
+      function stepFn(now){
+        var t = Math.min(1,(now-st)/d), k = t<.5?2*t*t:-1+(4-2*t)*t;
+        var nx = lerp(sx,tx,k), ny = lerp(sy,ty,k);
+        el.style.transform = "translate3d("+nx+"px,"+ny+"px,0)"; el.style.opacity = "1";
+        state.x = nx; state.y = ny;
+        if (t<1) state.raf = requestAnimationFrame(stepFn);
+      }
+      state.raf = requestAnimationFrame(stepFn);
+    };
+  }
+ 
+  /* ================= line chart plugins + tooltip ================= */
+  var LINE_TENSION = 0.3, LINE_WIDTH = 1.5, LINE_POINT_HOVER = 4, LINE_POINT_HIT = 6, LINE_POINT_BORDER = 1.4;
+  var Y_TICKS = 4, X_MAX_TICKS = 7, Y_PAD = 1.15;
+ 
+  var hoverLinePlugin = {
+    id: "ccHoverLine",
+    afterDatasetsDraw: function(chart){
+      var act = chart.tooltip && chart.tooltip.getActiveElements ? chart.tooltip.getActiveElements() : [];
+      if (!act || !act.length) return;
+      var x = act[0].element.x, ca = chart.chartArea, ctx = chart.ctx;
+      ctx.save();
+      ctx.beginPath(); ctx.moveTo(x, ca.top); ctx.lineTo(x, ca.bottom);
+      ctx.lineWidth = 1; ctx.strokeStyle = chart.$ccHoverLineColor || "rgba(0,0,0,0.12)";
+      ctx.stroke(); ctx.restore();
+    }
+  };
+  // dashed horizontal grid at every y tick, drawn behind the lines
+  var dashedYGridPlugin = {
+    id: "ccDashedYGrid",
+    beforeDatasetsDraw: function(chart){
+      var y = chart.scales.y, ca = chart.chartArea, ctx = chart.ctx;
+      if (!y || !ca) return;
+      var ticks = (y.getTicks && y.getTicks()) || y.ticks || [];
+      if (!ticks.length) return;
+      ctx.save();
+      ctx.setLineDash([6,6]); ctx.lineWidth = 1; ctx.strokeStyle = chart.$ccGridColor || "rgba(0,0,0,0.08)";
+      ticks.forEach(function(t){
+        if (t.value <= 0) return;   // no gridline on the zero line
+        var yp = y.getPixelForValue(t.value);
+        if (yp == null || isNaN(yp)) return;
+        if (yp < ca.top - 0.5 || yp > ca.bottom + 0.5) return;
+        ctx.beginPath(); ctx.moveTo(ca.left, Math.round(yp) + 0.5); ctx.lineTo(ca.right, Math.round(yp) + 0.5); ctx.stroke();
+      });
+      ctx.restore();
+    }
+  };
+ 
+  // index-mode tooltip: shows ALL series at the hovered day, with a date header + favicon rows
+  function makeLineTooltip(wrap){
+    var pos = { x:null, y:null }, target = { x:0, y:0 }, running = false, visible = false, raf = null;
+    var FOLLOW = 0.18;   // per-frame easing toward the target (smooth follow, ~280ms feel)
+    function loop(){
+      var el = wrap.querySelector(".cc-line-tt");
+      if (pos.x == null){ pos.x = target.x; pos.y = target.y; }
+      pos.x += (target.x - pos.x) * FOLLOW;
+      pos.y += (target.y - pos.y) * FOLLOW;
+      if (el) el.style.transform = "translate3d(" + pos.x + "px," + pos.y + "px,0)";
+      var dx = Math.abs(target.x - pos.x), dy = Math.abs(target.y - pos.y);
+      if (visible || dx > 0.4 || dy > 0.4){ raf = requestAnimationFrame(loop); }
+      else { running = false; }
+    }
+    return function(context){
+      var chart = context.chart, tooltip = context.tooltip;
+      var el = wrap.querySelector(".cc-line-tt");
+      if (!el){
+        el = document.createElement("div");
+        el.className = "cc-line-tt";
+        el.style.cssText = "position:absolute;left:0;top:0;pointer-events:none;z-index:9999;opacity:0;transform:translate3d(0,0,0);transition:opacity 120ms ease;";
+        wrap.appendChild(el);
+      }
+      if (tooltip.opacity === 0){ el.style.opacity = "0"; visible = false; pos.x = null; pos.y = null; return; }
+      var dps = (tooltip.dataPoints || []).filter(function(dp){ return dp && dp.parsed && dp.parsed.y != null; });
+      if (!dps.length){ el.style.opacity = "0"; visible = false; pos.x = null; pos.y = null; return; }
+      var themeRoot = chart.canvas.closest(".combo-root");
+      var dark = !!(themeRoot && themeRoot.getAttribute("data-theme") === "dark");
+      var boxBg = dark ? "#121212" : "#ffffff";
+      var boxBorder = dark ? "" : "border:1px solid #e0e2e6;";
+      var boxShadow = dark ? "box-shadow:0 4px 14px rgba(0,0,0,.25);" : "box-shadow:0 4px 14px rgba(0,0,0,.10);";
+      var textColor = dark ? "#e6e6e6" : "#1f1f1b";
+      var mutedColor = dark ? "#8a8a8a" : "#6f737c";
+      var idx = dps[0].dataIndex;
+      var dayLabel = chart.data.labels[idx];
+      dps = dps.slice().sort(function(a,b){ return b.parsed.y - a.parsed.y; });
+      var ff = "Geist,system-ui,-apple-system,Segoe UI,Roboto,Arial";
+      var rows = dps.map(function(dp){
+        var ds = dp.dataset;
+        var icon = ds.__favicon
+          ? '<img src="' + esc(ds.__favicon) + '" width="16" height="16" style="border-radius:4px;display:block;object-fit:cover" onerror="this.style.visibility=\'hidden\'"/>'
+          : '<span style="width:16px;height:16px;border-radius:4px;background:' + ds.__baseColor + ';display:block"></span>';
+        var name = truncate(ds.label, 32);
+        var vy = Number(dp.parsed.y) || 0, vr = Math.round(vy);
+        var val = (vy > 0 && vr === 0) ? "<1%" : (vr + "%");
+        return '<div style="display:flex;align-items:center;gap:8px;margin-top:8px">' +
+            '<span style="flex:0 0 16px;display:flex">' + icon + '</span>' +
+            '<span style="flex:1 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:' + textColor + '">' + esc(name) + '</span>' +
+            '<span style="flex:0 0 auto;margin-left:77px;color:' + textColor + ';font-weight:500">' + val + '</span>' +
+          '</div>';
+      }).join("");
+      el.innerHTML =
+        '<div style="background:' + boxBg + ';color:' + textColor + ';' + boxBorder + 'border-radius:16px;padding:10px 12px;font-family:' + ff + ';font-size:13px;line-height:1.35;' + boxShadow + 'white-space:nowrap;min-width:220px;">' +
+          '<div style="color:' + mutedColor + ';font-size:11px">' + esc(dateFmtTitle(dayLabel, chart.__curGran)) + '</div>' +
+          rows +
+        '</div>';
+      var cx = chart.canvas.offsetLeft, cy = chart.canvas.offsetTop, ca = chart.chartArea;
+      var caretX = cx + (tooltip.caretX != null ? tooltip.caretX : dps[0].element.x), m = 16;
+      el.style.left = "0px"; el.style.top = "0px";
+      var rect = el.getBoundingClientRect();
+      var tx = (caretX + rect.width + m > cx + ca.right) ? (caretX - rect.width - m) : (caretX + m);
+      tx = Math.max(cx + ca.left, Math.min(tx, cx + ca.right - rect.width));
+      var ty = Math.max(cy + ca.top, Math.min(cy + ca.top + 8, cy + ca.bottom - rect.height));
+      target.x = tx; target.y = ty;
+      if (pos.x == null){ pos.x = tx; pos.y = ty; el.style.transform = "translate3d("+tx+"px,"+ty+"px,0)"; }
+      el.style.opacity = "1"; visible = true;
+      if (!running){ running = true; raf = requestAnimationFrame(loop); }
+    };
+  }
+ 
+  /* ================= data prep ================= */
+  function prepData(dataMode, rows, isDark){
+    rows = Array.isArray(rows) ? rows : [];
+    var items = rows
+      .filter(function(r){ return r && (r.type != null) && isFinite(Number(r.share_pct)); })
+      .map(function(r){ return { key: String(r.type).trim(), share: Math.max(0, Number(r.share_pct)) }; });
+    if (dataMode === "url"){
+      items.sort(function(a,b){ return b.share - a.share; });
+      if (items.length > MAX_URL_SLICES){
+        var head = items.slice(0, MAX_URL_SLICES);
+        var otherShare = items.slice(MAX_URL_SLICES).reduce(function(a,b){ return a + b.share; }, 0);
+        head.push({ key:"other", share:otherShare, _other:true });
+        items = head;
+      }
+      return items.map(function(it){
+        var name = it._other ? "Other" : (URL_LABEL[it.key] || capitalize(String(it.key).replace(/_/g," ")));
+        var map = isDark ? URL_COLOR_DARK : URL_COLOR_CHART;
+        var color = it._other ? (isDark?OTHER_DARK:OTHER_LIGHT) : (map[it.key] || (isDark?OTHER_DARK:OTHER_LIGHT));
+        return { name:name, share:it.share, color:color };
+      });
+    }
+    return items.map(function(it){
+      var name = citeName(it.key);
+      return { name:name, share:it.share, color: CITE_COLOR[name] || OTHER_LIGHT };
+    });
+  }
+ 
+  function buildLineDatasets(series, meta, dataMode, isDark){
+    series = Array.isArray(series) ? series : [];
+    meta = Array.isArray(meta) ? meta : [];
+    var metaMap = {};
+    meta.forEach(function(m){
+      if (!m) return;
+      var id = dataMode === "url" ? m.url : m.domain;
+      if (id == null) return;
+      metaMap[String(id)] = {
+        type: dataMode === "url" ? m.url_type : m.citation_type,
+        favicon: m.favicon || "",
+        global_share: (m.global_share != null ? Number(m.global_share) : null),
+        label: String(id)
+      };
+    });
+    var byId = {}, daySet = {};
+    series.forEach(function(p){
+      if (!p) return;
+      // accept the identifier under any of these keys: id, company_id, url (url mode), domain (domain mode)
+      var raw = (p.id != null) ? p.id : (p.company_id != null) ? p.company_id : (p.url != null) ? p.url : (p.domain != null) ? p.domain : "";
+      var id = String(raw);
+      if (!id) return;
+      var day = String(p.day);
+      daySet[day] = true;
+      (byId[id] = byId[id] || {})[day] = Number(p.share_pct) || 0;
+    });
+    var labels = Object.keys(daySet).sort();
+    var ids = Object.keys(byId);
+    ids.forEach(function(id){
+      if (!metaMap[id]) metaMap[id] = { type:null, favicon:"", global_share:null, label:id };
+      if (metaMap[id].global_share == null){
+        var vals = labels.map(function(d){ return byId[id][d]; }).filter(function(v){ return v != null; });
+        metaMap[id].global_share = vals.length ? (vals.reduce(function(a,b){ return a+b; },0)/vals.length) : 0;
+      }
+    });
+    ids.sort(function(a,b){ return (metaMap[b].global_share||0) - (metaMap[a].global_share||0); });
+    ids = ids.slice(0, 7);
+    function baseColor(type){
+      if (dataMode === "url"){
+        var key = String(type||"").trim();
+        var map = isDark ? URL_COLOR_DARK : URL_COLOR_CHART;
+        return map[key] || (isDark?OTHER_DARK:OTHER_LIGHT);
+      }
+      var name = citeName(type);
+      return CITE_COLOR[name] || OTHER_LIGHT;
+    }
+    var groups = {};
+    ids.forEach(function(id){
+      var base = baseColor(metaMap[id].type);
+      (groups[base] = groups[base] || []).push(id);
+    });
+    var colorForId = {};
+    Object.keys(groups).forEach(function(base){
+      var arr = groups[base], shades = shadeVariants(base, arr.length);
+      arr.forEach(function(id,i){ colorForId[id] = shades[i]; });
+    });
+    var globalMax = 0;
+    var datasets = ids.map(function(id){
+      var data = labels.map(function(d){ var v = byId[id][d]; if (v != null && v > globalMax) globalMax = v; return v != null ? v : null; });
+      var col = colorForId[id];
+      return {
+        label: metaMap[id].label,
+        __id: id,
+        __globalShare: metaMap[id].global_share,
+        __favicon: metaMap[id].favicon,
+        __baseColor: col,
+        data: data,
+        borderColor: col
+      };
+    });
+    return { labels: labels, datasets: datasets, globalMax: globalMax };
+  }
+ 
+  /* ================= skeletons ================= */
+  function skeletonHtml(){
+    var rows = [[110,34],[72,22],[90,22],[120,18],[80,18]];
+    var legend = rows.map(function(r){
+      return '<div class="ccd-sk-row"><span class="ccd-sk-dot"></span><span class="ccd-sk-lbl" style="width:'+r[0]+'px"></span><span class="ccd-sk-pct" style="width:'+r[1]+'px"></span></div>';
+    }).join("");
+    var u = Math.random().toString(36).slice(2);
+    var mId = 'ccd-sk-mask-' + u, gId = 'ccd-sk-grad-' + u;
+    return '<div class="ccd-skeleton">' +
+      '<div class="ccd-sk-chart"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">' +
+        '<defs><mask id="' + mId + '"><circle cx="50" cy="50" r="38" fill="none" stroke="white" stroke-width="7"/></mask>' +
+        '<linearGradient id="' + gId + '" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" class="ccd-sk-g0"/><stop offset="50%" class="ccd-sk-g1"/><stop offset="100%" class="ccd-sk-g0"/></linearGradient></defs>' +
+        '<circle cx="50" cy="50" r="38" fill="none" class="ccd-sk-ring" stroke-width="7"/>' +
+        '<rect x="-60" y="0" width="50" height="100" fill="url(#' + gId + ')" mask="url(#' + mId + ')"><animateTransform attributeName="transform" type="translate" from="-60 0" to="160 0" dur="1.2s" repeatCount="indefinite"/></rect>' +
+      '</svg></div>' +
+      '<div class="ccd-sk-legend">' + legend + '</div>' +
+    '</div>';
+  }
+  function lineSkeletonHtml(){
+    var hlines = new Array(4).join("x").split("x").map(function(){ return '<div class="sk-lc-hline"></div>'; }).join("");
+    var xlabels = new Array(6).join("x").split("x").map(function(){ return '<div class="sk-lc-xlabel"></div>'; }).join("");
+    var d = "M0,125 C60,115 100,70 150,58 C200,46 230,90 280,74 C330,58 390,22 460,14";
+    var agId = 'cc-sk-ag-' + Math.random().toString(36).slice(2);
+    return '<div class="cc-line-sk"><div class="sk-linechart">' +
+      '<div class="sk-lc-grid">' + hlines +
+        '<svg class="sk-lc-svg" viewBox="0 0 460 160" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">' +
+          '<defs><linearGradient id="' + agId + '" x1="0" y1="0" x2="0" y2="1"><stop class="sk-lc-astop0" offset="0%"/><stop class="sk-lc-astop1" offset="100%"/></linearGradient></defs>' +
+          '<path d="' + d + ' L460,160 L0,160 Z" fill="url(#' + agId + ')"/>' +
+          '<path class="sk-lc-stroke" d="' + d + '"/>' +
+          '<path class="sk-lc-shimmer-path" d="' + d + '"/>' +
+        '</svg>' +
+      '</div>' +
+      '<div class="sk-lc-xaxis">' + xlabels + '</div>' +
+    '</div></div>';
+  }
+ 
+  /* ================= line legend (balanced rows — same algorithm as the provided component) ================= */
+  var LEG_ROW_GAP = 8, LEG_MIN_GAP = 8, LEG_MAX_GAP = 16;
+  function legGetColumnGap(w){ return Math.max(LEG_MIN_GAP, Math.min(LEG_MAX_GAP, Math.floor(w * 0.025))); }
+  function legNormalizeUrl(url){ if (!url) return ""; if (url.indexOf("//") === 0) return "https:" + url; return url; }
+  function legItemHtml(c, measure){
+    return '<div class="up-company-item' + (measure ? ' up-measure-item' : '') + '" data-company-id="' + esc(c.company_id) + '">' +
+        '<span class="up-company-color" style="background:' + esc(c.color || "#999999") + '"></span>' +
+        '<span class="up-company-inner-gap"></span>' +
+        (c.favicon_url ? '<img class="up-company-favicon" src="' + esc(legNormalizeUrl(c.favicon_url)) + '" alt="" onerror="this.style.visibility=\'hidden\'">' : '<span class="up-company-favicon" style="visibility:hidden"></span>') +
+        '<span class="up-company-inner-gap"></span>' +
+        '<span class="up-company-name">' + esc(c.name) + '</span>' +
+      '</div>';
+  }
+  function legRowWidth(widths, start, end, gap){ var total = 0; for (var i = start; i < end; i++){ total += widths[i]; if (i > start) total += gap; } return total; }
+  function legGreedyRowCount(widths, cw, gap){
+    var rows = 1, cur = 0;
+    for (var i = 0; i < widths.length; i++){
+      var next = cur === 0 ? widths[i] : cur + gap + widths[i];
+      if (cur > 0 && next > cw){ rows++; cur = widths[i]; } else { cur = next; }
+    }
+    return rows;
+  }
+  function legBalancedBreaks(widths, rowCount, cw, gap){
+    var n = widths.length;
+    if (rowCount <= 1 || n <= 1) return [];
+    var dp = [], prev = [];
+    for (var r = 0; r <= rowCount; r++){ dp.push(new Array(n + 1).fill(Infinity)); prev.push(new Array(n + 1).fill(-1)); }
+    dp[0][0] = 0;
+    for (var r2 = 1; r2 <= rowCount; r2++){
+      for (var i = 1; i <= n; i++){
+        for (var k = r2 - 1; k < i; k++){
+          var w = legRowWidth(widths, k, i, gap);
+          if (w > cw) continue;
+          var score = Math.max(dp[r2 - 1][k], w);
+          if (score < dp[r2][i]){ dp[r2][i] = score; prev[r2][i] = k; }
+        }
+      }
+    }
+    if (!isFinite(dp[rowCount][n])) return [];
+    var breaks = [], ii = n;
+    for (var r3 = rowCount; r3 > 1; r3--){ var kk = prev[r3][ii]; if (kk <= 0) break; breaks.unshift(kk); ii = kk; }
+    return breaks;
+  }
+  function getPageWidth(){
+    try { if (window.top && window.top.innerWidth) return window.top.innerWidth; } catch(e){}
+    return window.innerWidth || document.documentElement.clientWidth || 0;
+  }
+ 
+  /* ================= controller ================= */
+  function makeController(root){
+    var donutRoot = root.querySelector(".ccd-chart-root");
+    var body = donutRoot ? donutRoot.querySelector(".ccd-body") : null;
+    var topTotal = donutRoot ? donutRoot.querySelector(".ccd-top-total") : null;
+    var topTotalN = topTotal ? topTotal.querySelector(".n") : null;
+    var segBtns = Array.prototype.slice.call(root.querySelectorAll(".ccd-seg-btn"));
+    var lineWrap = root.querySelector(".cc-line-wrap");
+    var lineCanvas = root.querySelector(".cc-line-canvas");
+    var legendEl = root.querySelector(".cc-legend");
+    var headingRight = root.querySelector(".combo-heading-right");
+    if (!donutRoot || !body || !topTotal || !topTotalN || !segBtns.length || !lineWrap || !lineCanvas){
+      return null;
+    }
+ 
+    var instanceId = root.getAttribute("data-instance") || "default";
+    var myCtrlId = "cc_" + Math.random().toString(36).slice(2) + "_" + Date.now();
+    var savedMode = null;
+    try { savedMode = window.localStorage.getItem("cc_chart_mode__" + instanceId); } catch(e){}
+    var startMode = (savedMode === "bar" || savedMode === "doughnut") ? savedMode : "doughnut";
+ 
+    var isDark = isYes(root.getAttribute("data-isdark"));
+    if (isDark){ root.setAttribute("data-theme","dark"); donutRoot.setAttribute("data-theme","dark"); } else { root.removeAttribute("data-theme"); donutRoot.removeAttribute("data-theme"); }
+    function readProcessing(){
+      var a = root.getAttribute("data-processing");
+      return (a === "IS_PROCESSING" || a == null) ? false : isYes(a);
+    }
+ 
+    var state = {
+      chartMode: startMode, dataMode: "domain",
+      total: 0, prepped: [], loading: readProcessing(), hasData: false, __lastType: null,
+      series: [], meta: { domains: [], urls: [] }, hasLine: false
+    };
+    var chartInstance = null, lineChart = null;
+ 
+    // ---- granularity (day/week/month) — controller-level so renderLine + update can use it ----
+    var GRAN_STORE = (window.__ccGran = window.__ccGran || {});
+    var curGran = (GRAN_STORE[instanceId] === "week" || GRAN_STORE[instanceId] === "month") ? GRAN_STORE[instanceId] : "day";
+    var granBtns = Array.prototype.slice.call(root.querySelectorAll(".cc-gran-btn"));
+    function seriesRangeDays(){
+      var days = [];
+      (state.series || []).forEach(function(p){ if (p && p.day != null) days.push(String(p.day)); });
+      if (!days.length) return 0;
+      days.sort();
+      var a = Date.parse(days[0]), b = Date.parse(days[days.length - 1]);
+      if (isNaN(a) || isNaN(b)) return days.length;
+      return Math.round((b - a) / 86400000) + 1;
+    }
+    function normGran(v){
+      v = String(v == null ? "" : v).toLowerCase().trim();
+      if (v.indexOf("month") === 0 || v === "mon" || v === "m") return "month";
+      if (v.indexOf("week") === 0 || v === "w") return "week";
+      if (v.indexOf("day") === 0 || v === "daily" || v === "d") return "day";
+      return null;
+    }
+    function inferGran(series){
+      var seen = {};
+      (series || []).forEach(function(p){ if (p && p.day != null) seen[String(p.day)] = 1; });
+      var arr = Object.keys(seen).sort();
+      if (arr.length < 2) return null;                 // can't tell from a single point
+      var gaps = [];
+      for (var i = 1; i < arr.length; i++){
+        var a = Date.parse(arr[i - 1]), b = Date.parse(arr[i]);
+        if (!isNaN(a) && !isNaN(b)) gaps.push((b - a) / 86400000);
+      }
+      if (!gaps.length) return null;
+      gaps.sort(function(x, y){ return x - y; });
+      var med = gaps[Math.floor(gaps.length / 2)];     // median spacing in days
+      if (med >= 20) return "month";
+      if (med >= 4) return "week";
+      return "day";
+    }
+    function syncGranActive(){ granBtns.forEach(function(bn){ bn.classList.toggle("is-active", bn.getAttribute("data-gran") === curGran); }); }
+    function applyGranAvailability(){
+      var r = seriesRangeDays();
+      granBtns.forEach(function(bn){
+        var g = bn.getAttribute("data-gran");
+        var dis = (g === "week" && r > 0 && r < 8) || (g === "month" && r > 0 && r < 31);   // week needs ≥8 days, month ≥31
+        bn.classList.toggle("is-disabled", dis);
+        if (dis) bn.setAttribute("aria-disabled", "true"); else bn.removeAttribute("aria-disabled");
+      });
+      var activeBtn = granBtns.filter(function(bn){ return bn.getAttribute("data-gran") === curGran; })[0];
+      if (activeBtn && activeBtn.classList.contains("is-disabled")){ curGran = "day"; GRAN_STORE[instanceId] = "day"; syncGranActive(); }
+    }
+ 
+    function themeColors(){
+      return isDark
+        ? { text:"#e0e0e0", muted:"#a0a0a0", border:"#353535", bg:"#1b1b1b" }
+        : { text:"#1f1f1b", muted:"#6f737c", border:"#e0e2e6", bg:"#ffffff" };
+    }
+    function setHeading(){
+      if (headingRight) headingRight.textContent = (state.dataMode === "url") ? "URL Type Split" : "Citation Type Split";
+    }
+    // keep the nested doughnut root's theme in sync with the combo root (its skeleton, switcher and
+    // css vars are scoped to .ccd-chart-root[data-theme], so this must be set on donutRoot too)
+    function syncTheme(){
+      if (isDark){ root.setAttribute("data-theme","dark"); donutRoot.setAttribute("data-theme","dark"); } else { root.removeAttribute("data-theme"); donutRoot.removeAttribute("data-theme"); }
+    }
+ 
+    /* ---------- doughnut render ---------- */
+    function destroyChart(){
+      if (chartInstance){ try { chartInstance.destroy(); } catch(e){} chartInstance = null; }
+      var cv = body.querySelector("canvas");
+      if (cv && window.Chart && window.Chart.getChart){ var ex = window.Chart.getChart(cv); if (ex) try{ ex.destroy(); }catch(e){} }
+    }
+    function applyCollapse(){
+      if (!body) return;
+      var layout = body.querySelector(".ccd-donut-layout");
+      if (!layout) return;
+      layout.classList.toggle("is-collapsed", donutRoot.getBoundingClientRect().width < 320);
+    }
+    var donutTooltip = makeDonutTooltip(donutRoot);
+ 
+    function renderDoughnut(){
+      if (root.__ccController && root.__ccController.__ctrlId !== myCtrlId)return;
+      destroyChart();
+      var d = state.prepped;
+      body.innerHTML =
+        '<div class="ccd-donut-layout">' +
+          '<div class="ccd-donut-wrap"><canvas></canvas>' +
+            '<div class="ccd-center"><span class="n">' + esc(fmtTotal(state.total)) + '</span><span class="lbl">Citations</span></div>' +
+          '</div><div class="ccd-legend"></div>' +
+        '</div>';
+      body.querySelector(".ccd-legend").innerHTML = d.map(function(it){
+        return '<div class="ccd-legend-row"><span class="ccd-legend-chip" style="background:' + it.color + '"></span>' +
+          '<span class="ccd-legend-name">' + esc(it.name) + '</span>' +
+          '<span class="ccd-legend-pct">' + esc(fmtPct(it.share)) + '</span></div>';
+      }).join("");
+      applyCollapse();
+      if (!d.length) return;
+      loadChartJs().then(function(){
+        var canvas = body.querySelector("canvas");
+        if (!canvas) return;
+        var ctx = canvas.getContext("2d");
+        var origData = d.map(function(x){ return x.share; });
+        var display = origData.map(function(v){ return Math.max(v, 1.0); });
+        var colors = d.map(function(x){ return x.color; });
+        var allZero = origData.every(function(v){ return v <= 0; });
+        window.Chart.defaults.color = isDark ? "#a0a0a0" : "#6f737c";
+        window.Chart.defaults.font = { family: "Geist, system-ui, -apple-system, Segoe UI, Roboto, Arial", size: 12 };
+        try {
+          chartInstance = new window.Chart(ctx, {
+            type: "doughnut",
+            data: { labels: allZero ? ["—"] : d.map(function(x){ return x.name; }),
+              datasets: [{ data: allZero ? [1] : display, originalData: allZero ? [0] : origData,
+                backgroundColor: allZero ? [isDark?"rgba(255,255,255,0.06)":"#eeeeee"] : colors,
+                spacing: 0, borderWidth: 0, borderRadius: CORNER, hoverOffset: HOVER }] },
+            plugins: [constantGapPlugin, ringWidthPlugin],
+            options: { responsive: true, maintainAspectRatio: false, layout: { padding: 8 },
+              animation: { duration: 200, easing: "easeOutQuad" },
+              plugins: { legend: { display:false }, tooltip: { enabled:false, external: donutTooltip } } }
+          });
+        } catch(err){}
+      });
+    }
+ 
+    function renderBars(){
+      if (root.__ccController && root.__ccController.__ctrlId !== myCtrlId)return;
+      destroyChart();
+      var d = state.prepped.slice().sort(function(a,b){ return b.share - a.share; });
+      topTotalN.textContent = fmtTotal(state.total);
+      topTotal.style.display = "flex";
+      if (!d.length){ body.innerHTML = '<div class="ccd-empty">No data</div>'; return; }
+      body.innerHTML = '<div class="ccd-bars">' + d.map(function(it){
+        /* Text inside a bar is always white. It used to be picked by luminance via
+           contrastText(), which flipped to dark on the current mid-tone citation palette and
+           read badly on those fills. The bar colours are identical in both themes, so the
+           label colour has to be too — anything else would look like a rendering bug when
+           switching modes. Applies to both the citation-type and the url-type view, since
+           both go through this one renderer. */
+        /* Label colour inside a bar follows the fill's luminance so it stays readable: white on
+           dark/mid fills, dark on genuinely light fills (e.g. a light "Listicle" shade that white
+           text disappeared on in dark mode). Bar colours are identical in both themes, so this is
+           per-bar, not per-theme. Applies to both citation-type and url-type views. */
+        var light = barIsLight(it.color);
+        var txt = light ? "rgba(31,31,27,0.96)" : "rgba(255,255,255,0.95)";
+        var txtPct = light ? "rgba(31,31,27,0.62)" : "rgba(255,255,255,0.75)";
+        var outColor = isDark ? "rgba(255,255,255,0.85)" : "var(--ccd-text)";
+        var outPctColor = isDark ? "rgba(255,255,255,0.55)" : "var(--ccd-muted)";
+        return '<div class="ccd-bar-row"><div class="ccd-bar-track">' +
+            '<div class="ccd-bar-fill" style="background:' + it.color + ';width:0%">' +
+              '<span class="ccd-bar-name" style="color:' + txt + ';opacity:0">' + esc(it.name) + '</span>' +
+              '<span class="ccd-bar-pct ccd-bar-pct-in" style="color:' + txtPct + ';opacity:0">' + esc(fmtPct(it.share)) + '</span>' +
+            '</div>' +
+            '<span class="ccd-bar-outside" style="opacity:0">' +
+              '<span class="ccd-bar-name-out" style="color:' + outColor + '">' + esc(it.name) + '</span>' +
+              '<span class="ccd-bar-pct-out" style="color:' + outPctColor + '">' + esc(fmtPct(it.share)) + '</span>' +
+            '</span></div></div>';
+      }).join("") + '</div>';
+ 
+      var rows = Array.prototype.slice.call(body.querySelectorAll(".ccd-bar-row"));
+      var metrics = rows.map(function(row){
+        return { nameW: measureText(row.querySelector(".ccd-bar-name")), pctW: measureText(row.querySelector(".ccd-bar-pct-in")) };
+      });
+      function placeRow(row, m){
+        var fill = row.querySelector(".ccd-bar-fill"), name = row.querySelector(".ccd-bar-name"),
+            pin = row.querySelector(".ccd-bar-pct-in"), outside = row.querySelector(".ccd-bar-outside");
+        if (!fill || !outside) return;
+        var fillPx = fill.offsetWidth, needed = m.nameW + m.pctW + 12 + 20;
+        if (fillPx >= needed){ if(name)name.style.opacity="1"; if(pin)pin.style.opacity="1"; outside.style.opacity="0"; }
+        else { if(name)name.style.opacity="0"; if(pin)pin.style.opacity="0"; outside.style.left=Math.round(fillPx+8)+"px"; outside.style.opacity="1"; }
+      }
+      function placeAll(){ rows.forEach(function(row, i){ placeRow(row, metrics[i]); }); }
+      function fitBars(){
+        if (!rows.length) return;
+        var avail = body.clientHeight; if (!avail) return;
+        var rowH = rows[0].offsetHeight || 42;
+        var maxVisible = Math.max(1, Math.floor(avail / rowH));
+        for (var i=0;i<rows.length;i++) rows[i].style.display = (i < maxVisible) ? "" : "none";
+      }
+      requestAnimationFrame(function(){ requestAnimationFrame(function(){
+        rows.forEach(function(row, i){ var fill = row.querySelector(".ccd-bar-fill"); if (fill) fill.style.width = Math.max(d[i].share,0) + "%"; });
+        fitBars();
+      }); });
+      var placed = false;
+      rows.forEach(function(row){
+        var fill = row.querySelector(".ccd-bar-fill"); if (!fill) return;
+        var done = false;
+        fill.addEventListener("transitionend", function onEnd(e){
+          if (e.propertyName !== "width" || done) return;
+          done = true; fill.removeEventListener("transitionend", onEnd);
+          var i = rows.indexOf(row); if (i>=0) placeRow(row, metrics[i]);
+        });
+      });
+      setTimeout(function(){ placed = true; fitBars(); placeAll(); }, 640);
+      if (window.ResizeObserver){
+        var ro = new ResizeObserver(function(){ fitBars(); if (placed) placeAll(); });
+        ro.observe(body);
+        rows.forEach(function(row){ var t = row.querySelector(".ccd-bar-track"); if (t) ro.observe(t); });
+      }
+    }
+ 
+    /* ---------- line legend ---------- */
+    var legendCompanies = [];
+    function buildLegendCompanies(datasets){
+      return (datasets || []).map(function(ds){
+        return { company_id: ds.__id, name: ds.label, color: ds.__baseColor, favicon_url: ds.__favicon };
+      });
+    }
+    function legendLayout(){
+      if (!legendEl) return;
+      if (getPageWidth() < 500){ legendEl.classList.add("is-hidden"); return; }  // hide below page width 500
+      legendEl.classList.remove("is-hidden");
+      var rowsC = legendEl.querySelector(".up-company-rows");
+      var measure = Array.prototype.slice.call(legendEl.querySelectorAll(".up-measure-item"));
+      if (!rowsC || !measure.length) return;
+      var cw = legendEl.clientWidth;
+      if (!cw){ setTimeout(legendLayout, 100); return; }
+      var gap = legGetColumnGap(cw);
+      legendEl.style.setProperty("--up-column-gap", gap + "px");
+      var widths = measure.map(function(it){ return it.getBoundingClientRect().width; });
+      var rowCount = legGreedyRowCount(widths, cw, gap);
+      rowCount = Math.max(1, Math.min(rowCount, legendCompanies.length, 2));   // never more than 2 rows
+      var breaks = legBalancedBreaks(widths, rowCount, cw, gap);
+      // if 2 balanced rows don't fit (items too wide even truncated), split evenly at the midpoint
+      if (rowCount === 2 && !breaks.length) breaks = [Math.ceil(legendCompanies.length / 2)];
+      var rows = [], start = 0;
+      for (var b = 0; b < breaks.length; b++){ rows.push(legendCompanies.slice(start, breaks[b])); start = breaks[b]; }
+      rows.push(legendCompanies.slice(start));
+      rowsC.innerHTML = rows.map(function(row){
+        return '<div class="up-company-row">' + row.map(function(c){ return legItemHtml(c, false); }).join("") + '</div>';
+      }).join("");
+    }
+    function renderLegend(datasets){
+      if (!legendEl) return;
+      legendCompanies = buildLegendCompanies(datasets);
+      if (!legendCompanies.length){ legendEl.innerHTML = ""; return; }
+      legendEl.innerHTML =
+        '<div class="up-company-measure">' + legendCompanies.map(function(c){ return legItemHtml(c, true); }).join("") + '</div>' +
+        '<div class="up-company-rows"></div>';
+      legendLayout();
+    }
+    function clearLegend(){ if (legendEl){ legendCompanies = []; legendEl.innerHTML = ""; } }
+ 
+    // highlight one series on legend hover: active stays coloured, all others (lines + legend) dim
+    function applyHighlight(id){
+      if (lineChart && lineChart.__activeId !== id){
+        lineChart.__activeId = id;
+        var dim = isDark ? "rgba(160,160,160,0.20)" : "rgba(120,123,124,0.22)";
+        lineChart.data.datasets.forEach(function(ds){
+          ds.borderColor = (id == null || ds.__id === id) ? ds.__baseColor : dim;
+        });
+        lineChart.update("none");
+      }
+      if (legendEl){
+        var items = legendEl.querySelectorAll(".up-company-item");
+        for (var i=0;i<items.length;i++){
+          var cid = items[i].getAttribute("data-company-id");
+          items[i].style.opacity = (id == null || cid === id) ? "1" : "0.35";
+        }
+      }
+    }
+    // bind legend hover once (rows are re-rendered on resize, so use delegation)
+    if (legendEl && legendEl.getAttribute("data-cc-hoverbound") !== "1"){
+      legendEl.setAttribute("data-cc-hoverbound", "1");
+      legendEl.addEventListener("mouseover", function(e){
+        var it = e.target && e.target.closest ? e.target.closest(".up-company-item") : null;
+        if (it) applyHighlight(it.getAttribute("data-company-id"));
+      });
+      legendEl.addEventListener("mouseleave", function(){ applyHighlight(null); });
+    }
+ 
+    /* ---------- line render ---------- */
+    function destroyLine(){
+      if (lineChart){ try { lineChart.destroy(); } catch(e){} lineChart = null; }
+      if (window.Chart && window.Chart.getChart){ var ex = window.Chart.getChart(lineCanvas); if (ex) try{ ex.destroy(); }catch(e){} }
+    }
+    function clearLineExtras(){ var sk = lineWrap.querySelector(".cc-line-sk"); if (sk) sk.remove(); var em = lineWrap.querySelector(".cc-line-empty"); if (em) em.remove(); }
+    function showLineSkeleton(){ destroyLine(); clearLineExtras(); clearLegend(); lineWrap.insertAdjacentHTML("beforeend", lineSkeletonHtml()); }
+ 
+    function renderLine(){
+      if (root.__ccController && root.__ccController.__ctrlId !== myCtrlId)return;
+      clearLineExtras();
+      var meta = state.dataMode === "url" ? state.meta.urls : state.meta.domains;
+      var built = buildLineDatasets(state.series, meta || [], state.dataMode, isDark);
+      populateFilter(built.datasets);
+      if (!built.datasets.length){
+        destroyLine(); clearLegend();
+        lineWrap.insertAdjacentHTML("beforeend", '<div class="cc-line-empty">No data</div>');
+        return;
+      }
+      var visDs = built.datasets.filter(function(ds){ return !hiddenSeries[ds.__id]; });
+      if (!visDs.length){
+        destroyLine(); clearLegend();
+        lineWrap.insertAdjacentHTML("beforeend", '<div class="cc-line-empty">No data</div>');
+        return;
+      }
+      renderLegend(visDs);
+      loadChartJs().then(function(){
+        if (root.__ccController && root.__ccController.__ctrlId !== myCtrlId) return;
+        if (!lineCanvas) return;
+        destroyLine();
+        var tc = themeColors();
+        var ctx = lineCanvas.getContext("2d");
+        window.Chart.defaults.color = tc.muted;
+        window.Chart.defaults.font = { family: "Geist, system-ui, -apple-system, Segoe UI, Roboto, Arial", size: 12 };
+        var single = built.labels.length <= 1;   // single-day range → show the values as points
+        visDs.forEach(function(ds){
+          ds.borderWidth = LINE_WIDTH; ds.fill = false; ds.cubicInterpolationMode = "monotone"; ds.tension = LINE_TENSION;
+          ds.pointRadius = single ? 4 : 0; ds.pointHoverRadius = LINE_POINT_HOVER; ds.pointHitRadius = LINE_POINT_HIT;
+          ds.pointBorderWidth = LINE_POINT_BORDER; ds.pointBackgroundColor = tc.bg; ds.pointBorderColor = ds.__baseColor;
+          ds.pointHoverBackgroundColor = tc.bg; ds.pointHoverBorderColor = ds.__baseColor;
+          if (single){ ds.pointBackgroundColor = ds.__baseColor; }
+          ds.spanGaps = true; ds.clip = 8;
+        });
+        var visMax = 0; visDs.forEach(function(ds){ (ds.data || []).forEach(function(v){ if (v != null && v > visMax) visMax = v; }); });
+        var yMax = visMax * Y_PAD; if (yMax <= 0) yMax = 1; if (yMax > 100) yMax = 100;
+        var labels = built.labels;
+        try {
+          lineChart = new window.Chart(ctx, {
+            type: "line",
+            data: { labels: labels, datasets: visDs },
+            plugins: [hoverLinePlugin, dashedYGridPlugin],
+            options: {
+              responsive: true, maintainAspectRatio: false,
+              animation: { duration: 600, easing: "easeOutQuart" },
+              interaction: { mode: "index", intersect: false },
+              layout: { padding: { top: 8, right: 2, bottom: 0, left: 0 } },
+              plugins: { legend: { display:false }, tooltip: { enabled:false, external: makeLineTooltip(lineWrap) } },
+              scales: {
+                x: { grid: { display:false }, offset: single, border: { display:true, color: tc.border, width:1 },
+                     ticks: { autoSkip:true, maxTicksLimit:X_MAX_TICKS, maxRotation:0, color: tc.muted,
+                              callback: function(v, i){
+                                var lab = String(labels[i] || "");
+                                if (curGran === "month"){
+                                  var m = lab.match(/^(\d{4})-(\d{2})/);
+                                  if (m) return MONTHS_DE[parseInt(m[2],10) - 1] || lab;
+                                }
+                                return lab.slice(5);   // day / week → "MM-DD"
+                              } } },
+                y: { min:0, max:yMax, beginAtZero:true,
+                     afterBuildTicks: function(scale){ var m = scale.max || 1; scale.ticks = [{value:0},{value:m/3},{value:2*m/3},{value:m}]; },
+                     ticks: { color: tc.muted, callback: function(v){ return Math.round(v) + "%"; } },
+                     grid: { display:false }, border: { display:false } }
+              },
+              elements: { point: { radius: 0 } }
+            }
+          });
+          lineChart.$ccGridColor = tc.border;
+          lineChart.$ccHoverLineColor = tc.border;
+          lineChart.__curGran = curGran;   // let the shared tooltip formatter know the active granularity
+        } catch(err){}
+      });
+    }
+ 
+    /* ---------- render (two independent halves) ---------- */
+    // Skeleton shows while loading (processing=yes) OR until the first data has arrived.
+    function renderDonutSide(){
+      if (root.__ccController && root.__ccController.__ctrlId !== myCtrlId){ return; }
+      if (state.loading || !state.hasData){
+        destroyChart(); topTotal.style.display = "none"; body.innerHTML = skeletonHtml();
+      } else if (state.chartMode === "bar"){ topTotal.style.display = "flex"; renderBars(); }
+      else { topTotal.style.display = "none"; renderDoughnut(); }
+    }
+    function renderLineSide(){
+      if (root.__ccController && root.__ccController.__ctrlId !== myCtrlId){ return; }
+      if (state.loading || !state.hasLine || state.linePending){ showLineSkeleton(); }
+      else { renderLine(); }
+    }
+    function render(){
+      if (root.__ccController && root.__ccController.__ctrlId !== myCtrlId)return;
+      syncTheme();
+      setHeading();
+      syncSwitch();
+      renderDonutSide();
+      renderLineSide();
+    }
+ 
+    function syncSwitch(){
+      segBtns.forEach(function(o){
+        var on = o.getAttribute("data-chart") === state.chartMode;
+        o.classList.toggle("is-active", on);
+        o.setAttribute("aria-selected", on ? "true" : "false");
+      });
+    }
+    segBtns.forEach(function(o){
+      if (o.getAttribute("data-cc-bound") === "1") return;
+      o.setAttribute("data-cc-bound", "1");
+      o.addEventListener("click", function(){
+        var ctrl = root.__ccController || initRoot(root);
+        if (!ctrl) return;
+        ctrl.setMode(o.getAttribute("data-chart"));
+      });
+    });
+ 
+    var maxBtn = root.querySelector(".combo-maximize");
+    var inner = root;
+    if (maxBtn && inner && maxBtn.getAttribute("data-cc-bound") !== "1"){
+      maxBtn.setAttribute("data-cc-bound", "1");
+      maxBtn.addEventListener("click", function(){
+        var max = root.classList.toggle("is-max");
+        maxBtn.setAttribute("data-tip", max ? "Minimize" : "Maximize");
+        maxBtn.setAttribute("aria-label", max ? "Minimize" : "Maximize");
+        setTimeout(function(){
+          try { if (chartInstance) chartInstance.resize(); } catch(e){}
+          try { if (lineChart) lineChart.resize(); } catch(e){}
+        }, 60);
+      });
+    }
+ 
+    var hideBtns = Array.prototype.slice.call(root.querySelectorAll(".combo-hide"));
+    if (hideBtns.length && inner){
+      // collapsed state kept for the whole session (until page reload), so new data / mode change can't reopen it
+      var HIDDEN = (window.__ccHidden = window.__ccHidden || {});
+      if (HIDDEN[instanceId]){ root.classList.add("is-hidden-view"); }
+      hideBtns.forEach(function(hideBtn){
+        if (hideBtn.getAttribute("data-cc-bound") === "1") return;
+        hideBtn.setAttribute("data-cc-bound", "1");
+        hideBtn.addEventListener("click", function(){
+          var collapsed = root.classList.toggle("is-hidden-view");
+          HIDDEN[instanceId] = collapsed;
+          hideBtn.setAttribute("data-tip", collapsed ? "Show" : "Hide");
+          hideBtn.setAttribute("aria-label", collapsed ? "Show" : "Hide");
+          if (collapsed){
+            root.classList.remove("is-max");
+            if (maxBtn){ maxBtn.setAttribute("data-tip","Maximize"); maxBtn.setAttribute("aria-label","Maximize"); }
+          }
+          setTimeout(function(){
+            try { if (chartInstance) chartInstance.resize(); } catch(e){}
+            try { if (lineChart) lineChart.resize(); } catch(e){}
+            legendLayout();
+          }, 230);
+        });
+      });
+    }
+ 
+    // Mira-style button tooltip. ONE shared element for the whole page (not one per root): a
+    // per-root element gets re-created on every rebuild and leaves orphaned copies stuck in the
+    // DOM — that's the second, disconnected tooltip that showed up. Events are delegated on root
+    // rather than bound per button, so replacing a button can't strand a tooltip that never
+    // receives its mouseleave — that's the one that never disappears.
+    var ccTipEl = window.__ccTipEl;
+    if (!ccTipEl || !document.body.contains(ccTipEl)){
+      ccTipEl = document.createElement("div");
+      ccTipEl.className = "cc-tip";
+      document.body.appendChild(ccTipEl);
+      window.__ccTipEl = ccTipEl;
+    }
+    if (!root.__ccTipBound){
+      root.__ccTipBound = true;
+      var ccTipTimer = null, ccTipBtn = null;
+      var ccHideTip = function(){ clearTimeout(ccTipTimer); ccTipBtn = null; ccTipEl.classList.remove("show"); };
+      var ccShowTip = function(btn){
+        if (!btn || !document.contains(btn)) return;   // button vanished while the delay ran
+        var txt = btn.getAttribute("data-tip"); if (!txt) return;
+        var dark = (btn.closest(".combo-root") || root).getAttribute("data-theme") === "dark";
+        ccTipEl.style.background = dark ? "#f0f0f0" : "#1f1f1b";
+        ccTipEl.style.color = dark ? "#1f1f1b" : "#ffffff";
+        ccTipEl.textContent = txt;
+        ccTipEl.classList.add("show");
+        var br = btn.getBoundingClientRect();
+        var tw = ccTipEl.offsetWidth, vw = window.innerWidth || document.documentElement.clientWidth;
+        var left = br.left + br.width / 2 - tw / 2;
+        left = Math.max(6, Math.min(left, vw - tw - 6));
+        ccTipEl.style.left = left + "px";
+        ccTipEl.style.top = (br.bottom + 8) + "px";
+      };
+      root.addEventListener("mouseover", function(e){
+        var btn = e.target.closest("[data-tip]");
+        if (!btn || !root.contains(btn) || btn === ccTipBtn) return;
+        ccTipBtn = btn;
+        clearTimeout(ccTipTimer);
+        ccTipTimer = setTimeout(function(){ ccShowTip(btn); }, 60);
+      });
+      root.addEventListener("mouseout", function(e){
+        var btn = e.target.closest("[data-tip]");
+        if (!btn) return;
+        if (e.relatedTarget && btn.contains(e.relatedTarget)) return;   // still inside the same button
+        ccHideTip();
+      });
+      root.addEventListener("mousedown", ccHideTip);
+      // safety net: if a button is removed/replaced mid-hover its mouseout never fires, so verify
+      // on each move that the anchor is still there and still hovered — otherwise drop the tooltip
+      document.addEventListener("mousemove", function(){
+        if (!ccTipEl.classList.contains("show") && !ccTipTimer) return;
+        if (!ccTipBtn || !document.contains(ccTipBtn)){ ccHideTip(); return; }
+        var stillHovered = false;
+        try { stillHovered = ccTipBtn.matches(":hover"); } catch(err){ stillHovered = true; }
+        if (!stillHovered) ccHideTip();
+      });
+      window.addEventListener("scroll", ccHideTip, true);
+      window.addEventListener("blur", ccHideTip);
+    }
+ 
+    // line-chart granularity switcher — fires a Run-JS / JavaScript-to-Bubble event on change.
+    // The chart itself does nothing with it; the workflow re-fetches the timeseries at the new
+    // granularity and re-sends the payload (same response shape, date key stays "day").
+    if (granBtns.length){
+      syncGranActive();
+      applyGranAvailability();
+      granBtns.forEach(function(bn){
+        if (bn.getAttribute("data-cc-bound") === "1") return;
+        bn.setAttribute("data-cc-bound", "1");
+        bn.addEventListener("click", function(){
+          if (bn.classList.contains("is-disabled")) return;   // not selectable for the current range
+          var g = bn.getAttribute("data-gran");
+          if (g === curGran) return;   // clicking the already-selected granularity fires nothing
+          curGran = g; GRAN_STORE[instanceId] = g; syncGranActive();
+          var fnName = root.getAttribute("data-gran-fn") || "bubble_fn_comboGranularity";
+          var fn = window[fnName] || (window.parent && window.parent[fnName]) || (window.top && window.top[fnName]);
+          if (typeof fn === "function"){ try { fn(g); } catch(e){} }
+        });
+      });
+    }
+ 
+    // ---- filter dropdown: hide/show individual domains/urls in the line chart ----
+    var FILTER_STORE = (window.__ccFilter = window.__ccFilter || {});
+    var hiddenSeries = FILTER_STORE[instanceId] || (FILTER_STORE[instanceId] = {});
+    var filterWrap = root.querySelector(".combo-filter");
+    var filterBtn = root.querySelector(".combo-filter-btn");
+    var filterMenu = root.querySelector(".combo-filter-menu");
+    function syncFilterBadge(datasets){
+      var badge = root.querySelector(".combo-filter-badge");
+      if (!badge) return;
+      var all = (datasets || []).length;
+      var visible = (datasets || []).filter(function(ds){ return !hiddenSeries[ds.__id]; }).length;
+      var show = all > 0 && visible > 0 && visible < all;
+      badge.textContent = show ? String(visible) : "";
+      badge.classList.toggle("is-visible", show);
+    }
+    function populateFilter(datasets){
+      if (!filterMenu) return;
+      syncFilterBadge(datasets);
+      if (!datasets || !datasets.length){ filterMenu.innerHTML = '<div class="combo-filter-empty">Keine Serien</div>'; return; }
+      var anyHidden = datasets.some(function(ds){ return hiddenSeries[ds.__id]; });
+      var title = state.dataMode === "url" ? "URLs" : "Domains";
+      var head = '<div class="combo-filter-head"><span class="combo-filter-title">' + title + '</span>' +
+        '<button class="combo-filter-toggle" type="button" data-act="' + (anyHidden ? "select" : "deselect") + '">' +
+        (anyHidden ? "Select all" : "Deselect all") + '</button></div>';
+      var items = datasets.map(function(ds){
+        var checked = !hiddenSeries[ds.__id];
+        var icon = ds.__favicon
+          ? '<img class="combo-filter-favicon" src="' + esc(ds.__favicon) + '" onerror="this.style.visibility=\'hidden\'"/>'
+          : '<span class="combo-filter-dot" style="background:' + ds.__baseColor + '"></span>';
+        return '<div class="combo-filter-item ' + (checked ? "is-checked" : "") + '" data-id="' + esc(String(ds.__id)) + '" style="--cc-fltclr:' + ds.__baseColor + '" title="' + esc(ds.label) + '">' +
+          '<span class="combo-filter-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>' +
+          icon + '<span class="combo-filter-name">' + esc(ds.label) + '</span></div>';
+      }).join("");
+      filterMenu.innerHTML = head + items;
+      var tog = filterMenu.querySelector(".combo-filter-toggle");
+      if (tog){
+        tog.addEventListener("click", function(ev){
+          ev.stopPropagation();
+          if (tog.getAttribute("data-act") === "deselect"){ datasets.forEach(function(ds){ hiddenSeries[ds.__id] = true; }); }
+          else { datasets.forEach(function(ds){ delete hiddenSeries[ds.__id]; }); }
+          renderLineSide();
+        });
+      }
+      Array.prototype.slice.call(filterMenu.querySelectorAll(".combo-filter-item")).forEach(function(it){
+        it.addEventListener("click", function(ev){
+          ev.stopPropagation();
+          var id = it.getAttribute("data-id");
+          if (hiddenSeries[id]) delete hiddenSeries[id]; else hiddenSeries[id] = true;
+          it.classList.toggle("is-checked");
+          syncFilterBadge(datasets);
+          renderLineSide();
+        });
+      });
+    }
+    if (filterBtn && filterWrap && !filterBtn.__ccBound){
+      filterBtn.__ccBound = true;
+      filterBtn.addEventListener("click", function(e){ e.stopPropagation(); filterWrap.classList.toggle("is-open"); });
+    }
+    if (filterWrap && !filterWrap.__ccOutsideBound){
+      filterWrap.__ccOutsideBound = true;
+      document.addEventListener("click", function(e){ if (filterWrap && !filterWrap.contains(e.target)) filterWrap.classList.remove("is-open"); });
+    }
+ 
+    // responsive: force the stacked layout (and hide the maximize button) when too narrow;
+    // hide the doughnut legend below page width 500
+    var NARROW_STACK = 880;
+    function applyResponsive(){
+      if (inner){
+        var w = inner.clientWidth || root.clientWidth || 0;
+        if (w){ if (w < NARROW_STACK) root.classList.add("is-narrow"); else root.classList.remove("is-narrow"); }
+      }
+      root.classList.toggle("cc-narrow-page", getPageWidth() < 500);
+      clearTimeout(root.__ccRespT);
+      root.__ccRespT = setTimeout(function(){
+        try { if (chartInstance) chartInstance.resize(); } catch(e){}
+        try { if (lineChart) lineChart.resize(); } catch(e){}
+      }, 60);
+    }
+ 
+    if (window.MutationObserver){
+      new MutationObserver(function(){
+        var wantProc = readProcessing();
+        var wantDark = isYes(root.getAttribute("data-isdark"));
+        var changed = false;
+        if (wantDark !== isDark){
+          isDark = wantDark;
+          if (isDark){ root.setAttribute("data-theme","dark"); donutRoot.setAttribute("data-theme","dark"); } else { root.removeAttribute("data-theme"); donutRoot.removeAttribute("data-theme"); }
+          if (state.hasData){ state.prepped = prepData(state.dataMode, state.__lastType, isDark); }
+          changed = true;
+        }
+        if (wantProc !== state.loading){ state.loading = wantProc; changed = true; }
+        if (changed) render();
+      }).observe(root, { attributes:true, attributeFilter:["data-processing","data-isdark"] });
+    }
+ 
+    if (window.ResizeObserver){
+      new ResizeObserver(function(){
+        if (root.__ccRaf) return;
+        root.__ccRaf = requestAnimationFrame(function(){ root.__ccRaf = null; applyCollapse(); applyResponsive(); });
+      }).observe(donutRoot);
+      new ResizeObserver(function(){
+        if (root.__ccRespRaf) return;
+        root.__ccRespRaf = requestAnimationFrame(function(){ root.__ccRespRaf = null; applyResponsive(); });
+      }).observe(inner || root);
+      if (legendEl){
+        new ResizeObserver(function(){
+          if (root.__ccLegRaf) return;
+          root.__ccLegRaf = requestAnimationFrame(function(){ root.__ccLegRaf = null; legendLayout(); });
+        }).observe(legendEl);
+      }
+    }
+    // page-width breakpoint (hide legends < 500 / force stack) also reacts to window resizes
+    window.addEventListener("resize", function(){
+      if (root.__ccWinRaf) return;
+      root.__ccWinRaf = requestAnimationFrame(function(){ root.__ccWinRaf = null; legendLayout(); applyResponsive(); });
+    });
+ 
+    applyResponsive();
+    render();
+ 
+    return {
+      __ctrlId: myCtrlId,
+      update: function(params){
+        params = params || {};
+        if (params.isDark != null){
+          isDark = isYes(params.isDark);
+          if (isDark){ root.setAttribute("data-theme","dark"); donutRoot.setAttribute("data-theme","dark"); } else { root.removeAttribute("data-theme"); donutRoot.removeAttribute("data-theme"); }
+        }
+        if (params.dataMode != null) state.dataMode = (params.dataMode === "url") ? "url" : "domain";
+        if ((params.chartMode === "bar" || params.chartMode === "doughnut") && !savedMode) state.chartMode = params.chartMode;
+        if (params.total != null) state.total = Number(params.total) || 0;
+        // doughnut split accepts either `typeSplit` (combo) or `data` (same key the standalone chart uses)
+        var split = (params.typeSplit != null) ? params.typeSplit : params.data;
+        if (split != null){
+          state.__lastType = split;
+          state.prepped = prepData(state.dataMode, split, isDark);
+          state.hasData = true;
+        }
+        if (params.series != null){
+          var __arr = Array.isArray(params.series) ? params.series : [];
+          if (__arr.length){ state.series = __arr; state.hasLine = true; state.linePending = false; applyGranAvailability(); }
+          else if (!state.hasLine){ state.series = []; state.hasLine = true; state.linePending = false; }   // genuinely empty on first load → "No data"
+          else {
+            // Empty series while we already have data means the new set hasn't arrived yet (the
+            // workflow is still fetching, e.g. right after a granularity switch). Showing the
+            // PREVIOUS line here would silently display stale data as if it were current — flag it
+            // as pending instead: the skeleton shows until real data lands.
+            state.linePending = true;
+          }
+        }
+        if (params.domains != null) state.meta.domains = Array.isArray(params.domains) ? params.domains : [];
+        if (params.urls != null) state.meta.urls = Array.isArray(params.urls) ? params.urls : [];
+        // keep the switcher in sync with the data: an explicit payload `granularity`/`gran` wins,
+        // otherwise infer it from the spacing between data points. Skip inference while loading — the
+        // series is still the OLD one during the loading render, so inferring would briefly snap the
+        // switcher back to the previous granularity until the new data lands.
+        var __proc = readProcessing();
+        var __explicit = normGran(params.granularity != null ? params.granularity : params.gran);
+        var __resolved = __explicit || ((!__proc && params.series != null) ? inferGran(state.series) : null);
+        if (__resolved && __resolved !== curGran){ curGran = __resolved; GRAN_STORE[instanceId] = __resolved; }
+        syncGranActive();
+        state.loading = __proc;
+        render();
+      },
+      setLoading: function(on){ state.loading = isYes(on); render(); },
+      setMode: function(m){
+        if (m !== "bar" && m !== "doughnut") return;
+        state.chartMode = m;
+        try { window.localStorage.setItem("cc_chart_mode__" + instanceId, m); } catch(e){}
+        syncSwitch(); renderDonutSide();   // do NOT touch the line chart on a switcher click
+      }
+    };
+  }
+ 
+  /* ================= root resolution + owner-guard ================= */
+  // Global cache (on window, survives element re-renders / script re-runs): the last payload and
+  // loading state per instance id. A fresh controller re-applies it immediately, so a Bubble
+  // re-render of the element can never leave the chart stuck on the (empty) skeleton.
+  var CACHE = (window.__ccCache = window.__ccCache || {});
+  function cacheData(id, params){
+    if (!id) return;
+    CACHE[id] = CACHE[id] || {};
+    // MERGE field-by-field rather than replacing the whole params object — a later partial payload
+    // (e.g. a quick loading-signal call that only carries instanceId/granularity) must not wipe out
+    // fields like domains/series that a fresh controller would need to replay after a rebuild.
+    CACHE[id].params = CACHE[id].params || {};
+    for (var k in params){ if (params.hasOwnProperty(k) && params[k] !== undefined) CACHE[id].params[k] = params[k]; }
+  }
+  function cacheLoading(id, v){ if (!id) return; CACHE[id] = CACHE[id] || {}; CACHE[id].loading = isYes(v); }
+  function applyCache(root, ctrl){
+    var id = root.getAttribute("data-instance");
+    if (!id || !CACHE[id]) return;
+    try { if (CACHE[id].params != null) ctrl.update(CACHE[id].params); } catch(e){}
+    try { if (CACHE[id].loading != null) ctrl.setLoading(CACHE[id].loading); } catch(e){}
+  }
+  function initRoot(root){
+    if (root.__ccController) return root.__ccController;
+    if (root.__ccBuilding) return null;
+    var id = root.getAttribute("data-instance") || "default";
+    if (id === "INSTANCE_ID") return null;
+    root.__ccBuilding = true;
+    var ctrl = makeController(root);
+    root.__ccBuilding = false;
+    if (!ctrl) return null;
+    if (root.__ccController) return root.__ccController;
+    root.__ccController = ctrl; root.__ccId = id;
+    if (root.__ccPendingParams != null){ try { ctrl.update(root.__ccPendingParams); } catch(e){} root.__ccPendingParams = null; }
+    if (root.__ccPendingLoading != null){ try { ctrl.setLoading(root.__ccPendingLoading); } catch(e){} root.__ccPendingLoading = null; }
+    applyCache(root, ctrl);   // re-fill a freshly built controller from the last known payload
+    return ctrl;
+  }
+  function initAll(){ var roots = document.querySelectorAll(".combo-root"); for (var i=0;i<roots.length;i++) initRoot(roots[i]); }
+  // Persistent watcher for the element being torn down and rebuilt by Bubble at any point in the
+  // page's lifetime — not just during the first ~2s after this script loads. Without this, a root
+  // rebuilt later (or a reusable that appears in a popup/group after some delay) never gets a
+  // controller again — no render, no events, nothing — until the user happens to click it.
+  if (window.MutationObserver && !window.__ccRootWatcher){
+    window.__ccRootWatcher = new MutationObserver(function(muts){
+      for (var i = 0; i < muts.length; i++){
+        var added = muts[i].addedNodes;
+        for (var j = 0; j < added.length; j++){
+          var n = added[j];
+          if (n.nodeType !== 1) continue;
+          if (n.classList && n.classList.contains("combo-root")) initRoot(n);
+          if (n.querySelectorAll){
+            var found = n.querySelectorAll(".combo-root");
+            for (var k = 0; k < found.length; k++) initRoot(found[k]);
+          }
+        }
+      }
+    });
+    window.__ccRootWatcher.observe(document.body, { childList: true, subtree: true });
+    setInterval(initAll, 1500);   // belt-and-suspenders: cheap no-op for already-initialized roots
+  }
+  function rootsWithId(id){
+    id = id || "default";
+    var out = [], roots = document.querySelectorAll(".combo-root");
+    for (var i=0;i<roots.length;i++){ if ((roots[i].getAttribute("data-instance")||"default") === id) out.push(roots[i]); }
+    return out;
+  }
+  function resolve(id){ var r = rootsWithId(id); return r.length ? initRoot(r[0]) : null; }
+  function stashRetryRoot(target, kind, a){
+    if (kind === "update") target.__ccPendingParams = a;
+    if (kind === "loading") target.__ccPendingLoading = isYes(a);
+    var tries = 0;
+    (function retry(){
+      var ctrl = initRoot(target);
+      if (ctrl){
+        if (target.__ccPendingParams != null){ ctrl.update(target.__ccPendingParams); target.__ccPendingParams = null; }
+        if (target.__ccPendingLoading != null){ ctrl.setLoading(target.__ccPendingLoading); target.__ccPendingLoading = null; }
+        return;
+      }
+      if (tries++ < 40) setTimeout(retry, 100);
+    })();
+  }
+  // deliver to EVERY root that carries the id (a reusable embedded N times shares one iframe,
+  // so several .combo-root copies have the same instance id — all of them must fill, not just the first)
+  function doRender(params){
+    params = params || {};
+    var id = params.instanceId || "default";
+    cacheData(id, params);   // remember for any (re)built controller with this id
+    var roots = rootsWithId(id);
+    if (!roots.length) return false;   // not in this frame; the forwarder reaches the others
+    var any = false;
+    roots.forEach(function(root){
+      var ctrl = initRoot(root);
+      if (ctrl){ ctrl.update(params); any = true; }
+      else stashRetryRoot(root, "update", params);
+    });
+    return any;
+  }
+  function doLoading(id, loading){
+    id = id || "default";
+    cacheLoading(id, loading);
+    var roots = rootsWithId(id);
+    if (!roots.length) return false;
+    roots.forEach(function(root){
+      var ctrl = initRoot(root);
+      if (ctrl) ctrl.setLoading(loading);
+      else stashRetryRoot(root, "loading", loading);
+    });
+    return true;
+  }
+ 
+  window.renderComboChart = doRender;
+  window.setComboChartLoading = function(id, l){ return doLoading(id, l); };
+  window.__ccResolveLocal = function(id){ return rootsWithId(id).length > 0; };
+ 
+  /* ================= forwarder on parent AND top (nested reusables) ================= */
+  (function exposeUpward(){
+    var targets = [];
+    try { if (window.parent && window.parent !== window) targets.push(window.parent); } catch(e){}
+    try { if (window.top && window.top !== window && targets.indexOf(window.top) === -1) targets.push(window.top); } catch(e){}
+    if (!targets.length) return;
+    function makeDeliver(w){
+      return function(fnName, id, arg1, arg2){
+        var queue = [w], seen = [];
+        while (queue.length){
+          var win = queue.shift(), ifr;
+          try { ifr = win.document.querySelectorAll("iframe"); } catch(e){ continue; }
+          for (var i=0;i<ifr.length;i++){ var cw; try { cw = ifr[i].contentWindow; } catch(e){ cw = null; } if (!cw || seen.indexOf(cw) !== -1) continue; seen.push(cw); queue.push(cw); }
+        }
+        // deliver to EVERY frame that owns the id (a reusable can live in several iframes)
+        var delivered = false;
+        for (var a=0;a<seen.length;a++){ try { var c = seen[a]; if (c && typeof c[fnName] === "function" && c.__ccResolveLocal && c.__ccResolveLocal(id)){ c[fnName](arg1, arg2); delivered = true; } } catch(e){} }
+        if (delivered) return true;
+        for (var b2=0;b2<seen.length;b2++){ try { var c2 = seen[b2]; if (c2 && typeof c2[fnName] === "function") return c2[fnName](arg1, arg2); } catch(e){} }
+        return false;
+      };
+    }
+    for (var t=0;t<targets.length;t++){
+      (function(w){
+        try {
+          var deliver = makeDeliver(w);
+          w.renderComboChart = function(params){ params = params || {}; return deliver("renderComboChart", params.instanceId || "default", params); };
+          w.setComboChartLoading = function(id, l){ return deliver("setComboChartLoading", id || "default", id, l); };
+        } catch(e){}
+      })(targets[t]);
+    }
+  })();
+ 
+  /* ================= scroll fix ================= */
+  // Something inside the chart (Chart.js sets touch-action:none on the canvas; other regions can
+  // trap the wheel too) stops the wheel from reaching the app's scroll container. Catch the wheel
+  // and forward it to the correct scroll container.
+  //
+  // IMPORTANT: walk up from the ACTUAL wheel-event target first (e.target, not the .combo-root the
+  // listener happens to be attached to), looking for the nearest scrollable ancestor. Only if
+  // nothing scrollable is found before reaching #main do we fall back to #main / the page. This
+  // matters both for a Bubble popup this chart might sit inside (scroll the popup, not the page
+  // behind it) AND for the chart's OWN internal scrollable bits — e.g. the domain filter dropdown
+  // list — which must scroll themselves rather than have their wheel events hijacked up to #main.
+  function __ccScrollTarget(fromEl){
+    var doc = document;
+    var node = fromEl;
+    while (node && node.nodeType === 1 && node !== doc.body && node !== doc.documentElement){
+      try {
+        var oy = getComputedStyle(node).overflowY;
+        if ((oy === "auto" || oy === "scroll") && node.scrollHeight > node.clientHeight + 2) return node;
+      } catch(e){}
+      node = node.parentNode;
+    }
+    var byId = doc.getElementById("main");
+    if (byId && byId.scrollHeight > byId.clientHeight + 2) return byId;
+    var se = doc.scrollingElement || doc.documentElement;
+    if (se && se.scrollHeight > se.clientHeight + 2) return se;
+    return byId || null;
+  }
+  function __ccForwardWheel(e){
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;   // let horizontal gestures be
+    var t = __ccScrollTarget(e.target);
+    if (t){ if (e.cancelable) e.preventDefault(); t.scrollTop += e.deltaY; return; }
+    try { if (window.parent && window.parent !== window) window.parent.scrollBy(0, e.deltaY); } catch(ex){}
+    try { window.scrollBy(0, e.deltaY); } catch(ex){}
+  }
+  function __ccAttachWheel(){
+    var roots = document.querySelectorAll(".combo-root");
+    for (var i = 0; i < roots.length; i++){ if (!roots[i].__ccWheel){ roots[i].__ccWheel = true; roots[i].addEventListener("wheel", __ccForwardWheel, { passive: false }); } }
+  }
+  if (!window.__ccWheelFixInstalled){
+    window.__ccWheelFixInstalled = true;
+    __ccAttachWheel();
+    setInterval(__ccAttachWheel, 800);
+  }
+ 
+  /* ================= init ================= */
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initAll);
+  else initAll();
+  [30, 100, 250, 500, 1000, 1800].forEach(function(ms){ setTimeout(initAll, ms); });
+  document.addEventListener("pointerdown", function(e){
+    var r = e.target && e.target.closest ? e.target.closest(".combo-root") : null;
+    if (r && !r.__ccController) initRoot(r);
+  }, true);
+})();
+</script>
+ 
+<!-- === UPSTREEM WATERMARK (line chart, same as the provided chart) === -->
+<script>
+(function () {
+  var CFG = { wrapClass: 'cc-line-wrap', width: 150, opacity: 0.05, pos: { top: '47%', left: '50%' }, force: null };
+  function pickColor(el) {
+    if (CFG.force === 'dark') return '#fff';
+    if (CFG.force === 'light') return '#000';
+    var node = el;
+    while (node) {
+      var bg = getComputedStyle(node).backgroundColor;
+      var m = bg.match(/rgba?\(([^)]+)\)/);
+      if (m) {
+        var p = m[1].split(',').map(function(s){ return parseFloat(s); });
+        var a = p[3] == null ? 1 : p[3];
+        if (a > 0) { var lum = (0.299*p[0] + 0.587*p[1] + 0.114*p[2]); return lum < 128 ? '#fff' : '#000'; }
+      }
+      node = node.parentElement;
+    }
+    return '#000';
+  }
+  function inject() {
+    var wraps = document.querySelectorAll('.' + CFG.wrapClass);
+    for (var k = 0; k < wraps.length; k++) {
+      var wrap = wraps[k];
+      if (wrap.querySelector('.upstreem-watermark')) continue;
+      if (getComputedStyle(wrap).position === 'static') wrap.style.position = 'relative';
+      var color = pickColor(wrap);
+      var h = CFG.width * (184 / 707);
+      var wm = document.createElement('div');
+      wm.className = 'upstreem-watermark';
+      wm.style.cssText = 'position:absolute;top:' + CFG.pos.top + ';left:' + CFG.pos.left + ';transform:translate(-50%,-50%);width:' + CFG.width + 'px;height:' + h + 'px;opacity:' + CFG.opacity + ';color:' + color + ';pointer-events:none;z-index:2;';
+      var wmMaskId = 'cc-wm-mask-' + Math.random().toString(36).slice(2) + '-' + Date.now();
+      wm.innerHTML =
+        '<svg viewBox="0 0 707 184" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="display:block">' +
+          '<defs><mask id="' + wmMaskId + '">' +
+            '<path fill="#fff" d="M195.928 128.536C190.979 128.536 186.669 127.512 183 125.464C179.331 123.331 176.472 120.173 174.424 115.992C172.461 111.811 171.48 106.52 171.48 100.12V63.512H184.28V98.84C184.28 104.984 185.56 109.677 188.12 112.92C190.765 116.077 194.605 117.656 199.64 117.656C203.139 117.656 206.211 116.845 208.856 115.224C211.501 113.517 213.592 111.085 215.128 107.928C216.749 104.685 217.56 100.845 217.56 96.408V63.512H230.36V127H219.224L218.072 117.016H217.56C215.427 120.429 212.568 123.203 208.984 125.336C205.4 127.469 201.048 128.536 195.928 128.536ZM241.26 152.6V63.512H252.012L252.908 75.416H253.42C255.297 72.4293 257.431 69.9547 259.82 67.992C262.295 66.0293 265.068 64.536 268.14 63.512C271.212 62.488 274.497 61.976 277.996 61.976C284.055 61.976 289.303 63.4267 293.74 66.328C298.263 69.2293 301.719 73.1973 304.108 78.232C306.583 83.2667 307.82 88.9413 307.82 95.256C307.82 101.571 306.583 107.245 304.108 112.28C301.719 117.315 298.22 121.283 293.612 124.184C289.004 127.085 283.415 128.536 276.844 128.536C271.212 128.536 266.519 127.384 262.764 125.08C259.009 122.776 256.108 120.173 254.06 117.272V152.6H241.26ZM274.54 117.656C278.721 117.656 282.305 116.717 285.292 114.84C288.364 112.963 290.711 110.36 292.332 107.032C294.039 103.704 294.892 99.7787 294.892 95.256C294.892 90.8187 294.039 86.936 292.332 83.608C290.711 80.1947 288.364 77.5493 285.292 75.672C282.305 73.7947 278.721 72.856 274.54 72.856C270.444 72.856 266.86 73.7947 263.788 75.672C260.716 77.5493 258.327 80.1947 256.62 83.608C254.999 86.936 254.188 90.8187 254.188 95.256C254.188 99.7787 254.999 103.704 256.62 107.032C258.327 110.36 260.716 112.963 263.788 114.84C266.86 116.717 270.444 117.656 274.54 117.656ZM341.336 128.536C336.131 128.536 331.48 127.64 327.384 125.848C323.288 124.056 319.96 121.581 317.4 118.424C314.925 115.181 313.432 111.384 312.92 107.032H325.848C326.36 108.995 327.171 110.872 328.28 112.664C329.475 114.456 331.139 115.949 333.272 117.144C335.491 118.253 338.179 118.808 341.336 118.808C344.152 118.808 346.456 118.424 348.248 117.656C350.125 116.803 351.491 115.693 352.344 114.328C353.283 112.963 353.752 111.469 353.752 109.848C353.752 107.885 353.112 106.307 351.832 105.112C350.637 103.832 348.888 102.765 346.584 101.912C344.365 100.973 341.677 100.077 338.52 99.224C335.875 98.456 333.187 97.6453 330.456 96.792C327.725 95.8533 325.251 94.744 323.032 93.464C320.813 92.184 319.021 90.52 317.656 88.472C316.291 86.3387 315.608 83.736 315.608 80.664C315.608 77.1653 316.547 74.008 318.424 71.192C320.387 68.376 323.16 66.1573 326.744 64.536C330.328 62.8293 334.595 61.976 339.544 61.976C346.541 61.976 352.216 63.6827 356.568 67.096C361.005 70.424 363.608 75.2453 364.376 81.56H351.96C351.619 78.4027 350.339 75.9707 348.12 74.264C345.987 72.5573 343.085 71.704 339.416 71.704C335.832 71.704 333.059 72.472 331.096 74.008C329.219 75.544 328.28 77.464 328.28 79.768C328.28 81.304 328.792 82.584 329.816 83.608C330.84 84.632 332.419 85.528 334.552 86.296C336.771 86.9787 339.501 87.832 342.744 88.856C346.84 90.0507 350.68 91.3733 354.264 92.824C357.933 94.2747 360.877 96.1947 363.096 98.584C365.4 100.888 366.552 104.088 366.552 108.184C366.637 112.109 365.613 115.608 363.48 118.68C361.432 121.752 358.531 124.184 354.776 125.976C351.021 127.683 346.541 128.536 341.336 128.536ZM397.988 127C393.977 127 390.436 126.36 387.364 125.08C384.377 123.8 382.073 121.667 380.452 118.68C378.916 115.693 378.148 111.64 378.148 106.52V73.112H367.14V63.512H378.148L379.556 47.64H390.948V63.512H408.996V73.112H390.948V106.648C390.948 110.659 391.673 113.347 393.124 114.712C394.66 116.077 397.305 116.76 401.06 116.76H408.228V127H397.988ZM414.745 127V63.512H425.881L427.033 77.336H427.545C429.593 72.8133 431.641 69.4853 433.689 67.352C435.822 65.1333 438.254 63.6827 440.985 63C443.801 62.3173 447.129 61.976 450.969 61.976V75.416H447.641C444.313 75.416 441.369 75.8427 438.809 76.696C436.334 77.464 434.244 78.6587 432.537 80.28C430.916 81.9013 429.678 83.992 428.825 86.552C427.972 89.0267 427.545 91.9707 427.545 95.384V127H414.745ZM484.822 128.536C478.593 128.536 473.089 127.171 468.31 124.44C463.531 121.624 459.777 117.741 457.046 112.792C454.315 107.843 452.95 102.04 452.95 95.384C452.95 88.728 454.273 82.9253 456.918 77.976C459.649 72.9413 463.403 69.016 468.182 66.2C473.046 63.384 478.635 61.976 484.95 61.976C491.265 61.976 496.683 63.384 501.206 66.2C505.729 68.9307 509.227 72.5573 511.702 77.08C514.262 81.6027 515.542 86.6373 515.542 92.184C515.542 93.0373 515.542 93.976 515.542 95C515.542 96.024 515.457 97.0907 515.286 98.2H462.294V89.24H502.742C502.486 83.7787 500.694 79.5547 497.366 76.568C494.038 73.496 489.857 71.96 484.822 71.96C481.409 71.96 478.209 72.728 475.222 74.264C472.321 75.8 469.974 78.104 468.182 81.176C466.39 84.248 465.494 88.1307 465.494 92.824V96.408C465.494 101.101 466.39 105.069 468.182 108.312C469.974 111.469 472.321 113.859 475.222 115.48C478.209 117.101 481.366 117.912 484.694 117.912C488.79 117.912 492.161 117.016 494.806 115.224C497.537 113.347 499.542 110.829 500.822 107.672H513.75C512.555 111.683 510.635 115.267 507.99 118.424C505.345 121.496 502.059 123.971 498.134 125.848C494.294 127.64 489.857 128.536 484.822 128.536ZM553.197 128.536C546.968 128.536 541.464 127.171 536.685 124.44C531.906 121.624 528.152 117.741 525.421 112.792C522.69 107.843 521.325 102.04 521.325 95.384C521.325 88.728 522.648 82.9253 525.293 77.976C528.024 72.9413 531.778 69.016 536.557 66.2C541.421 63.384 547.01 61.976 553.325 61.976C559.64 61.976 565.058 63.384 569.581 66.2C574.104 68.9307 577.602 72.5573 580.077 77.08C582.637 81.6027 583.917 86.6373 583.917 92.184C583.917 93.0373 583.917 93.976 583.917 95C583.917 96.024 583.832 97.0907 583.661 98.2H530.669V89.24H571.117C570.861 83.7787 569.069 79.5547 565.741 76.568C562.413 73.496 558.232 71.96 553.197 71.96C549.784 71.96 546.584 72.728 543.597 74.264C540.696 75.8 538.349 78.104 536.557 81.176C534.765 84.248 533.869 88.1307 533.869 92.824V96.408C533.869 101.101 534.765 105.069 536.557 108.312C538.349 111.469 540.696 113.859 543.597 115.48C546.584 117.101 549.741 117.912 553.069 117.912C557.165 117.912 560.536 117.016 563.181 115.224C565.912 113.347 567.917 110.829 569.197 107.672H582.125C580.93 111.683 579.01 115.267 576.365 118.424C573.72 121.496 570.434 123.971 566.509 125.848C562.669 127.64 558.232 128.536 553.197 128.536ZM591.62 127V63.512H602.884L604.036 74.008H604.548C606.596 69.9973 609.369 67.0107 612.868 65.048C616.452 63 620.377 61.976 624.644 61.976C627.972 61.976 630.959 62.4453 633.604 63.384C636.335 64.3227 638.681 65.7307 640.644 67.608C642.607 69.4853 644.228 71.8747 645.508 74.776H646.02C648.324 70.5947 651.268 67.4373 654.852 65.304C658.436 63.0853 662.873 61.976 668.164 61.976C672.943 61.976 677.081 63.0427 680.58 65.176C684.164 67.224 686.98 70.3387 689.028 74.52C691.076 78.7013 692.1 83.992 692.1 90.392V127H679.428V91.672C679.428 85.528 678.191 80.8773 675.716 77.72C673.241 74.4773 669.487 72.856 664.452 72.856C661.209 72.856 658.393 73.5387 656.004 74.904C653.615 76.184 651.695 78.232 650.244 81.048C648.879 83.7787 648.196 87.32 648.196 91.672V127H635.524V91.672C635.524 85.528 634.287 80.8773 631.812 77.72C629.337 74.4773 625.711 72.856 620.932 72.856C618.031 72.856 615.343 73.7093 612.868 75.416C610.393 77.0373 608.345 79.4267 606.724 82.584C605.188 85.7413 604.42 89.5813 604.42 94.104V127H591.62Z"/>' +
+            '<rect x="4" y="32" width="120" height="120" rx="28" fill="#fff"/>' +
+            '<path fill="#000" d="M83.7971 91.7952C83.7971 98.5594 85.6493 101.942 89.3538 101.942C92.5789 101.942 96.1744 100.053 100.14 96.2765C103.67 92.838 106.765 88.554 109.423 83.4245C111.384 83.2554 112.365 84.2982 112.365 86.5529C112.365 88.4694 111.45 91.4006 109.619 95.3464C107.833 99.2922 106.089 102.703 104.39 105.577C102.69 108.452 100.794 111.271 98.7019 114.033C96.6102 116.795 94.3876 119.275 92.0341 121.473C86.7607 126.321 81.618 128.745 76.606 128.745C69.0227 128.745 63.9672 125.25 61.4394 118.26C56.6454 122.883 51.5899 126.067 46.2729 127.815C44.4424 128.435 42.394 128.745 40.1277 128.745C37.9051 128.745 35.6824 128.238 33.4597 127.223C31.2806 126.152 29.4066 124.63 27.8376 122.657C24.6125 118.599 23 113.018 23 105.916C23 97.9675 25.0919 89.625 29.2758 80.8878C32.7624 73.6163 37.2078 67.1903 42.612 61.6098C47.5803 56.5366 51.5899 54 54.6407 54C56.2967 54 58.1708 55.6911 60.2628 59.0732C55.9917 62.9626 52.309 67.9231 49.2146 73.9545C45.7716 80.6624 44.0502 86.722 44.0502 92.1334C44.0502 98.6722 46.1639 101.942 50.3914 101.942C54.5753 101.942 57.8657 101.011 60.2628 99.1513C61.9624 90.3578 65.7759 81.2824 71.703 71.9252C77.5866 62.6244 82.969 56.7903 87.8502 54.4228C89.4192 53.69 91.5547 54.6482 94.2568 57.2976C94.9105 57.9176 95.4117 58.4531 95.7604 58.9041C92.0559 63.019 89.0487 68.5995 86.7389 75.6455C84.7776 81.6207 83.7971 87.0039 83.7971 91.7952Z"/>' +
+          '</mask></defs>' +
+          '<rect width="707" height="184" fill="currentColor" mask="url(#' + wmMaskId + ')"/>' +
+        '</svg>';
+      wrap.appendChild(wm);
+    }
+  }
+  // Multiple instances of this component can exist on the same page (dashboard + a reusable used
+  // elsewhere), and they don't all appear in the DOM at the same moment — a popup/group that becomes
+  // visible later will render its `.cc-line-wrap` after this script has already run. The previous
+  // retry logic stopped as soon as ANY wrap was found at all (not once every wrap was handled), so a
+  // late-appearing instance was permanently skipped. Fix: inject() is idempotent (skips wraps that
+  // already have a watermark), so it's safe to keep re-running it — via a persistent
+  // MutationObserver plus a long-lived interval fallback — instead of stopping after the first hit.
+  inject();
+  try {
+    var mo = new MutationObserver(function(){ inject(); });
+    mo.observe(document.body, { childList: true, subtree: true });
+  } catch (e) {}
+  var ticks = 0;
+  var t = setInterval(function () { inject(); if (++ticks > 400) clearInterval(t); }, 300);  // ~2 min safety net
+})();
+</script>
+<!-- === /UPSTREEM WATERMARK === -->
