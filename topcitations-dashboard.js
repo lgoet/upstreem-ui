@@ -1143,6 +1143,10 @@
         state.topDomains = []; state.topUrls = [];
         state.typesBreakdown = []; state.urlTypesBreakdown = [];
         state.baselineDomain = []; state.baselineUrl = [];
+        /* also clear the counts, otherwise setHeadCount keeps showing the OLD "Top Domains 25"
+           through the next loading animation until fresh data lands (null -> head-count skeleton).
+           chartTotal is the doughnut-center / bar "N Citations" number. */
+        state.totalCountDomain = null; state.totalCountUrl = null; state.chartTotal = 0;
         state.hasChart = false; state.hasTable = false;
         state.optimisticLoading = false;
         persistState();
