@@ -13,7 +13,6 @@
      glance: .up-iconbtn's :hover adds a background (var(--vc-heading-bg)), .tcd-iconbtn's hover
      only changes the icon colour. Same reasoning as visibility-chart.css keeping .vot-iconbtn
      separate — kept apart rather than risk an unintended visual change.
-   - .up-tip is NOT reused for .tcd-tip: .tcd-tip's JS has a show delay and a mousemove-based
      still-hovered safety net that the shared handler lacks (same reasoning as .vot-tip).
    - .tct-tag/.tct-tag-dot/.tct-tag-lbl stay local (not switched to the near-identical
      .up-filter-tag) because the source already reuses this ONE local class for both the table
@@ -55,17 +54,6 @@
 .tcd-iconbtn svg { width: 16px; height: 16px; display: block; }
 
 /* dark button tooltip (own implementation — see file header) */
-.tcd-tip {
-  position: fixed; z-index: 2147483000; box-sizing: border-box;
-  height: 24px; display: inline-flex; align-items: center;
-  padding: 0 9px; border-radius: 6px;
-  font-family: Geist, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-  font-size: 12px; font-weight: 500; line-height: 1; white-space: nowrap;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.18);
-  opacity: 0; transform: translateY(4px); pointer-events: none;
-  transition: opacity .14s ease, transform .14s ease;
-}
-.tcd-tip.show { opacity: 1; transform: translateY(0); }
 
 /* Go-To: primary-font-color bg */
 .tcd-goto { background: var(--vc-text) !important; color: #e0e0e0; }
@@ -103,54 +91,9 @@
 .tcl-top-total .n { font-size: 16px; font-weight: 500; color: var(--vc-text); line-height: 1; }
 .tcl-top-total .lbl { font-size: 12px; font-weight: 400; color: var(--vc-third); }
 
-.tcl-body { width: 100%; position: relative; flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
-.tcl-body > .tcl-bars, .tcl-body > .tcl-donut-layout, .tcl-body > .tcl-skeleton, .tcl-body > .tcl-empty { margin-top: auto; margin-bottom: auto; }
 
-.tcl-donut-layout { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 28px; width: 100%; }
-.tcl-donut-wrap { position: relative; flex: 0 0 auto; width: min(52%, 200px); aspect-ratio: 1 / 1; }
-.tcl-donut-wrap canvas { width: 100% !important; height: 100% !important; }
-.tcl-donut-layout.is-collapsed .tcl-donut-wrap { width: min(75%, 220px); }
-.tcl-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
-.tcl-center .n { font-size: 22px; font-weight: 500; color: var(--vc-text); line-height: 1; }
-.tcl-center .lbl { font-size: 14px; font-weight: 400; color: var(--vc-third); margin-top: 8px; line-height: 1; }
-.tcl-legend { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
-.tcl-legend-row { display: flex; align-items: center; gap: 10px; }
-.tcl-legend-chip { width: 12px; height: 12px; border-radius: 4px; flex: 0 0 auto; }
-.tcl-legend-name { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; flex: 1 1 auto; min-width: 0; }
-.tcl-legend-pct { font-size: 12px; font-weight: 500; color: var(--vc-muted); white-space: nowrap; flex: 0 0 auto; }
-.tcl-donut-layout.is-collapsed { flex-direction: column; gap: 18px; }
-.tcl-donut-layout.is-collapsed .tcl-legend { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 10px 16px; }
 
-.tcl-bars { display: flex; flex-direction: column; gap: 0; width: 100%; }
-.tcl-bar-row { display: flex; align-items: center; padding: 5px 0; }
-.tcl-bar-track { flex: 1; height: 32px; background: var(--vc-heading-bg); border-radius: 8px; overflow: visible; position: relative; min-width: 0; }
-.tcl-bar-fill { height: 100%; border-radius: 8px; transition: width .5s cubic-bezier(.4,0,.2,1);
-  display: flex; align-items: center; justify-content: space-between; padding: 0 10px; min-width: 0; gap: 8px; overflow: hidden; }
-.tcl-bar-name { font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: opacity .18s ease; }
-.tcl-bar-pct { font-size: 11px; font-weight: 600; white-space: nowrap; flex: 0 0 auto; transition: opacity .18s ease; }
-.tcl-bar-outside { position: absolute; top: 50%; transform: translateY(-50%); left: 0; pointer-events: none;
-  display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; transition: opacity .18s ease; }
-.tcl-bar-name-out { font-size: 11px; font-weight: 600; }
-.tcl-bar-pct-out { font-size: 11px; font-weight: 600; }
-.tcl-empty { font-size: 13px; color: var(--vc-muted); text-align: center; padding: 40px 0; }
 
-.tcl-skeleton { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 28px; width: 100%; pointer-events: none; }
-.tcl-sk-chart { flex: 0 0 auto; width: min(52%, 180px); aspect-ratio: 1; }
-.tcl-sk-chart svg { width: 100%; height: 100%; display: block; }
-.tcl-sk-ring { stroke: var(--vc-sk); }
-.tcl-sk-g0 { stop-color: var(--vc-sk); } .tcl-sk-g1 { stop-color: #ffffff; }
-.up-root[data-theme="dark"] .tcl-sk-g1 { stop-color: #555555; }
-.tcl-sk-legend { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
-.tcl-sk-row { display: flex; align-items: center; gap: 10px; }
-.tcl-sk-dot { width: 12px; height: 12px; border-radius: 4px; background: var(--vc-sk); flex: 0 0 auto; position: relative; overflow: hidden; }
-.tcl-sk-lbl { height: 10px; background: var(--vc-sk); border-radius: 5px; position: relative; overflow: hidden; }
-.tcl-sk-pct { height: 10px; background: var(--vc-sk); border-radius: 5px; flex: 0 0 auto; position: relative; overflow: hidden; }
-.tcl-sk-dot::after, .tcl-sk-lbl::after, .tcl-sk-pct::after {
-  content: ""; position: absolute; inset: 0;
-  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.14) 50%, rgba(255,255,255,0) 100%);
-  transform: translateX(-100%); animation: tcd-shimmer 1200ms linear infinite; }
-@keyframes tcd-shimmer { 100% { transform: translateX(100%); } }
-@media (prefers-reduced-motion: reduce){ .tcl-sk-dot::after,.tcl-sk-lbl::after,.tcl-sk-pct::after{ animation:none; } }
 
 /* ================= RIGHT: Top Domains/URLs table ================= */
 .tct-table { width: 100%; height: 100%; display: flex; flex-direction: column; background: var(--vc-bg); overflow: hidden; }
@@ -159,7 +102,6 @@
 .tct-table.tct-hide-used .tct-thead, .tct-table.tct-hide-used .tct-row { grid-template-columns: 44px minmax(120px,1fr) 22% 24%; }
 .tct-table.tct-hide-type .tct-th-type, .tct-table.tct-hide-type .tct-td-type { display: none; }
 .tct-table.tct-hide-type.tct-hide-used .tct-thead, .tct-table.tct-hide-type.tct-hide-used .tct-row { grid-template-columns: 44px minmax(120px,1fr) 30%; }
-.tct-table.tct-hide-trend .tct-trend { display: none; }
 .tct-thead { height: 45px; flex: 0 0 45px; background: var(--vt-head-bg); }
 .tct-th { font-size: 12px; font-weight: 400; color: var(--vc-muted); padding: 0 16px 0 8px; height: 100%;
   display: flex; align-items: center; border-right: 1px solid var(--vc-border); border-bottom: 1px solid var(--vc-border); }
@@ -173,30 +115,13 @@
   border-right: 1px solid var(--vc-border); border-bottom: 1px solid var(--vc-border); }
 .tct-td:last-child { border-right: none; }
 .tct-td-idx { justify-content: center; padding: 0; gap: 0; font-size: 13px; font-weight: 500; color: var(--vc-third); }
-.tct-logo-box { width: 24px; height: 24px; border-radius: 8px; background: var(--vt-logo-bg); padding: 1px; flex: 0 0 auto; display: block; }
-.tct-logo-box img { width: 22px; height: 22px; border-radius: 7px; object-fit: cover; display: block; }
 .tct-name { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.tct-row-goto { margin-left: auto; width: 16px; height: 16px; flex: 0 0 auto; color: var(--vc-third);
-  opacity: 0; transform: translateX(-3px); transition: opacity .18s ease, transform .18s ease; transition-delay: 0ms; }
-.tct-row-goto svg { width: 16px; height: 16px; display: block; }
-.tct-row:hover .tct-row-goto { opacity: 1; transform: translateX(0); transition-delay: 220ms; }
-.tcd-root.is-narrow-cell .tct-row-goto { display: none; }
 .tct-num { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; flex: 0 0 auto; }
 .tct-used { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
 .tct-tag { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 7px;
   font-size: 12px; font-weight: 600; white-space: nowrap; max-width: 100%; overflow: hidden; }
 .tct-tag-dot { width: 6px; height: 6px; border-radius: 999px; flex: 0 0 auto; }
 .tct-tag-lbl { overflow: hidden; text-overflow: ellipsis; }
-.tct-trend { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; flex: 0 0 auto; }
-.tct-trend svg { width: 16px; height: 16px; display: block; }
-.tct-trend.pos { color: var(--vt-up); }
-.tct-trend.neg { color: var(--vt-down); }
-.tct-empty { padding: 24px; text-align: center; color: var(--vc-muted); font-size: 13px; }
-.tct-row.tct-tsk { cursor: default; }
-.tct-row.tct-tsk:hover { background: transparent; }
-.tct-tsk-bar { display: inline-block; height: 12px; border-radius: 4px; background: var(--vc-sk); animation: tcdpulse 1.2s ease-in-out infinite; }
-.tct-tsk-logo { display: inline-block; width: 24px; height: 24px; border-radius: 8px; background: var(--vc-sk); animation: tcdpulse 1.2s ease-in-out infinite; flex: 0 0 auto; }
-@keyframes tcdpulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
 
 /* ================= filter (fader) dropdown — trigger + badge stay local; the panel itself
    (menu shell, dimension switch, head/list/item/check/submit) reuses core.css's shared
@@ -230,3 +155,11 @@
 .tcd-brand-toggle.is-no .tcd-brand-check .tcd-brand-check-no { display: block; }
 .tcd-brand-logo { width: 16px; height: 16px; border-radius: 4px; flex: 0 0 auto; display: block; object-fit: cover; }
 .tcd-brand-label { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
+
+/* the chart body the type-chart kit renders into (the kit styles its own contents) */
+.up-donut-body { width: 100%; position: relative; flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+.up-donut-body > .up-bars, .up-donut-body > .up-donut-layout,
+.up-donut-body > .up-donut-sk, .up-donut-body > .up-chart-empty { margin-top: auto; margin-bottom: auto; }
+/* skeleton rows come from UC.skeletonRows and carry the shared .up-tsk marker */
+.tct-row.up-tsk { cursor: default; }
+.tct-row.up-tsk:hover { background: transparent; }
