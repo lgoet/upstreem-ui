@@ -154,7 +154,6 @@
 .vt-sent { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 6px; border: 1px solid var(--vc-border); border-radius: 6px; flex: 0 0 auto; }
 .vt-sent-dot { width: 6px; height: 6px; border-radius: 2px; flex: 0 0 auto; }
 .vt-sent-val { font-size: 13px; font-weight: 500; color: var(--vc-text); }
-.vt-empty { padding: 24px; text-align: center; color: var(--vc-muted); font-size: 13px; }
 /* skeleton rows come from UC.skeletonRows and carry the shared .up-tsk marker; the bar/logo
    placeholders themselves are styled by core.css */
 .vt-row.up-tsk { cursor: default; }

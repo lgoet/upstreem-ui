@@ -266,7 +266,7 @@
           tableEmptyGraceTimer = setTimeout(function(){
             tableEmptyGraceTimer = null;
             if (state.loading || !state.hasTable || (Array.isArray(state.tableRows) && state.tableRows.length)) return;
-            tableEl.innerHTML = head + '<div class="vt-empty">No data</div>';
+            tableEl.innerHTML = head + '<div class="up-empty-mini">No data</div>';
           }, 3000);   // matches this same file's line-chart __votNoDataT grace window
         }
         return;
@@ -593,14 +593,16 @@
     }
     function populateSort(){
       if (!sortMenu) return;
+      /* uses core.css's shared .up-pop-* / .up-check option rows — this file used to carry a
+         byte-identical .vot-pop-* copy of them */
       var opts = SORT_LABELS.map(function(o){
-        return '<div class="vot-pop-opt ' + (sortField === o[0] ? "is-active" : "") + '" data-field="' + o[0] + '">' + o[1] +
-          '<svg class="vot-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>';
+        return '<div class="up-pop-opt ' + (sortField === o[0] ? "is-active" : "") + '" data-field="' + o[0] + '">' + o[1] +
+          '<svg class="up-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>';
       }).join("");
-      sortMenu.innerHTML = '<div class="vot-pop-head">Sort by</div>' + opts +
-        '<div class="vot-pop-div"></div>' +
-        '<div class="vot-pop-row"><span class="vot-pop-label">Descending</span><span class="up-switch ' + (sortDir === "desc" ? "is-on" : "") + '"></span></div>';
-      Array.prototype.slice.call(sortMenu.querySelectorAll(".vot-pop-opt")).forEach(function(op){
+      sortMenu.innerHTML = '<div class="up-pop-head">Sort by</div>' + opts +
+        '<div class="up-pop-div"></div>' +
+        '<div class="up-pop-row"><span class="up-pop-label">Descending</span><span class="up-switch ' + (sortDir === "desc" ? "is-on" : "") + '"></span></div>';
+      Array.prototype.slice.call(sortMenu.querySelectorAll(".up-pop-opt")).forEach(function(op){
         op.addEventListener("click", function(e){ e.stopPropagation(); sortField = op.getAttribute("data-field"); SORT_STORE[instanceId] = { field: sortField, dir: sortDir }; populateSort(); fireSort(); });
       });
       var sw = sortMenu.querySelector(".up-switch");

@@ -278,7 +278,7 @@
           tableEmptyGraceTimer = setTimeout(function(){
             tableEmptyGraceTimer = null;
             if (state.loading || state.optimisticLoading || !state.hasTable || activeRows().length) return;
-            tableEl.innerHTML = head + '<div class="tct-empty">No data</div>';
+            tableEl.innerHTML = head + '<div class="up-empty-mini">No data</div>';
           }, 3000);   // matches visibility-chart's established __votNoDataT grace window
         }
         return;
