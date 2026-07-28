@@ -83,7 +83,15 @@
     var n = parseInt(h, 16);
     return "rgba(" + ((n>>16)&255) + "," + ((n>>8)&255) + "," + (n&255) + "," + a + ")";
   }
-  function toNum(v){ var n = Number(v); return isFinite(n) ? n : null; }
+  /* Number(null) is 0 and Number("") is 0 — both would otherwise sail through as valid numbers
+     here, turning "no value" into a fake zero everywhere toNum feeds fmt1/fmtInt (found via a
+     null avg_rank rendering "0.0" instead of "–" in prompts-table; the same bug was latent
+     wherever else a nullable numeric field went through this path). */
+  function toNum(v){
+    if (v == null || v === "") return null;
+    var n = Number(v);
+    return isFinite(n) ? n : null;
+  }
   function fmt1(v){ var n = toNum(v); return n == null ? "–" : (Math.round(n * 10) / 10).toFixed(1); }
   function fmtInt(v){ var n = toNum(v); return n == null ? "–" : String(Math.round(n)); }
   /* App-wide date format: "24. Jul 2026". Parses the RPC's ISO timestamps; anything
@@ -157,6 +165,50 @@
     var txt = (opts.decimals ? shown.toFixed(1) : String(shown)) + (opts.suffix || "");
     return '<span class="' + (opts.cls || "up-trend") + " " + (positive ? "pos" : "neg") + '">' +
       (goingUp ? TREND_UP : TREND_DOWN) + txt + '</span>';
+  }
+
+  /* Colour for a 0-100 sentiment score: red -> orange -> grey -> light green -> green.
+     Shared by visibility-chart's Top Brands table and prompts-table's Sentiment column —
+     both need the exact same thresholds, not just a similar-looking scale. */
+  function sentColor(v){
+    v = Number(v);
+    if (v <= 25) return "#D25D5D";
+    if (v <= 40) return "#D2865D";
+    if (v <= 60) return "#9E9E9E";
+    if (v <= 75) return "#9FD25D";
+    return "#60D25D";
+  }
+
+  /* Brand-mention chip stack: overlapping favicon circles + "+N" overflow. Shared by urls-table
+     and prompts-table's Brand Mentions column — same chips, same hover-lift, same overflow math.
+     mentions: [{name, favicon_url|favicon}, ...] — the RPC sends only a preview; totalCount
+     carries the real count so "+N" is correct even when the preview happens to be exactly full.
+     opts: { max } (default 4) */
+  function brandStack(mentions, totalCount, opts){
+    opts = opts || {};
+    var MAX = opts.max || 4;
+    var list = Array.isArray(mentions) ? mentions : [];
+    if (!list.length) return '<span class="up-stack-empty">-</span>';
+    var shown = list.slice(0, MAX);
+    var total = toNum(totalCount);
+    if (total == null || total < list.length) total = list.length;
+    var rest = total - shown.length;
+    var html = shown.map(function(m){
+      var nm = String(m && m.name != null ? m.name : "");
+      var logo = String(m && (m.favicon_url != null ? m.favicon_url : (m.favicon != null ? m.favicon : "")) || "");
+      // protocol-relative urls ("//cdn...") break inside some Bubble contexts
+      if (logo.indexOf("//") === 0) logo = "https:" + logo;
+      var initial = nm.charAt(0) || "?";
+      return '<span class="up-stack-item' + (logo ? " has-img" : "") + '" data-brandtip="' + esc(nm) + '">' +
+               '<span class="up-stack-vis">' +
+                 '<span class="up-stack-ltr">' + esc(initial) + '</span>' +
+                 (logo ? '<img src="' + esc(logo) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
+                         ' onerror="this.closest(\'.up-stack-item\').classList.remove(\'has-img\'); this.remove()"/>' : "") +
+               '</span>' +
+             '</span>';
+    }).join("");
+    if (rest > 0) html += '<span class="up-stack-more">+' + rest + '</span>';
+    return '<span class="up-stack">' + html + '</span>';
   }
 
   /* Loading skeleton rows for a grid table.
@@ -328,9 +380,11 @@
         return true;
       });
     }
+    /* cfg.noActions: tables without a row-actions column (e.g. prompts-table) skip the fixed
+       trailing track entirely instead of reserving space for a column that has no cells. */
     function layoutKeys(){
       return [FIRST].concat(effectiveCols().map(function(c){ return c.key; }))
-             .concat(root.classList.contains("is-t2") ? [] : ["actions"]);
+             .concat((cfg.noActions || root.classList.contains("is-t2")) ? [] : ["actions"]);
     }
     function colMin(key){
       if (key === FIRST) return FIRST_MIN;
@@ -364,14 +418,14 @@
         var cw = root.getBoundingClientRect().width || 0;
         var othersMin = 0;
         effectiveCols().forEach(function(c){ othersMin += colMin(c.key); });
-        if (!root.classList.contains("is-t2")) othersMin += ACTIONS_MIN;
+        if (!cfg.noActions && !root.classList.contains("is-t2")) othersMin += ACTIONS_MIN;
         if (cw) firstPx = Math.max(FIRST_MIN, Math.min(W[FIRST], cw - othersMin));
       }
       var parts = [pinned ? firstPx + "px" : "minmax(30%, 1.6fr)"];
       effectiveCols().forEach(function(c){
         parts.push(pinned ? "minmax(" + colMin(c.key) + "px, 1fr)" : c.w);
       });
-      if (!root.classList.contains("is-t2")){
+      if (!cfg.noActions && !root.classList.contains("is-t2")){
         parts.push(pinned ? ACTIONS_MIN + "px" : "minmax(" + ACTIONS_MIN + "px, auto)");
       }
       var tpl = parts.join(" ");
@@ -434,7 +488,21 @@
             '<button class="up-dense-btn' + (state.dense ? " is-active" : "") + '" type="button" data-dense="1">' + COMPACT_SVG + 'Compact</button>' +
           '</div>'
         : "";
-      menu.innerHTML = head + rows + densePart;
+      /* cfg.rowHeightSwitch: [{key,label,icon}, ...] — a 3(+)-way row-height picker instead of
+         the 2-way Comfortable/Compact above, for tables with a genuine third (e.g. dynamic)
+         height mode. Wired against state.rowHeight (a string), not state.dense (a bool). Click
+         handling stays local to the component, same as data-dense today. */
+      var rowHeightPart = cfg.rowHeightSwitch
+        ? '<div class="up-pop-div"></div>' +
+          '<div class="up-pop-sub">Row height</div>' +
+          '<div class="up-dense up-dense-3">' +
+            cfg.rowHeightSwitch.map(function(o){
+              return '<button class="up-dense-btn' + (state.rowHeight === o.key ? " is-active" : "") +
+                     '" type="button" data-rowheight="' + o.key + '">' + o.icon + esc(o.label) + '</button>';
+            }).join("") +
+          '</div>'
+        : "";
+      menu.innerHTML = head + rows + densePart + rowHeightPart;
     }
     function syncColsBadge(){
       var badge = cfg.badgeSel ? root.querySelector(cfg.badgeSel) : null;
@@ -2155,6 +2223,8 @@
 
     /* ---- table primitives ---- */
     trendChip: trendChip,
+    sentColor: sentColor,
+    brandStack: brandStack,
     skeletonRows: skeletonRows,
     makeColumns: makeColumns,
     makeSearch: makeSearch,

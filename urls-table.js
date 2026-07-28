@@ -226,34 +226,6 @@
                '<span class="uut-tag-lbl">' + esc(ti.label) + '</span>' +
              '</span>';
     }
-    var MAX_STACK = 4;
-    function stackHtml(mentions, totalCount){
-      var list = Array.isArray(mentions) ? mentions : [];
-      if (!list.length) return '<span class="up-stack-empty">-</span>';
-      var shown = list.slice(0, MAX_STACK);
-      /* The RPC sends only a preview in `mentions` (4 entries) while mentions_totalcount carries
-         the real number. Deriving the overflow from the array length gave 0 whenever the preview
-         was exactly full, so the "+N" never appeared on rows that actually had more. */
-      var total = toNum(totalCount);
-      if (total == null || total < list.length) total = list.length;
-      var rest = total - shown.length;
-      var html = shown.map(function(m){
-        var nm = String(m && m.name != null ? m.name : "");
-        var logo = String(m && m.favicon_url != null ? m.favicon_url : "");
-        // protocol-relative urls ("//cdn...") break inside some Bubble contexts
-        if (logo.indexOf("//") === 0) logo = "https:" + logo;
-        var initial = nm.charAt(0) || "?";
-        return '<span class="uut-stack-item' + (logo ? " has-img" : "") + '" data-brandtip="' + esc(nm) + '">' +
-                 '<span class="uut-stack-vis">' +
-                   '<span class="uut-stack-ltr">' + esc(initial) + '</span>' +
-                   (logo ? '<img src="' + esc(logo) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
-                           ' onerror="this.closest(\'.uut-stack-item\').classList.remove(\'has-img\'); this.remove()"/>' : "") +
-                 '</span>' +
-               '</span>';
-      }).join("");
-      if (rest > 0) html += '<span class="uut-stack-more">+' + rest + '</span>';
-      return '<span class="uut-stack">' + html + '</span>';
-    }
     var YES_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
     var NO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
     function mentCell(v){
@@ -286,7 +258,7 @@
         '<div class="up-td uut-td-share"><span class="uut-num">' + fmt1(share) + '%</span>' + trendChip(r.share_delta_pct) + '</div>' +
         '<div class="up-td uut-td-type">' + tagHtml(r.url_type) + '</div>' +
         '<div class="up-td uut-td-ment">' + mentCell(r.is_mentioned) + '</div>' +
-        '<div class="up-td uut-td-brands">' + stackHtml(r.mentions, r.mentions_totalcount) + '</div>' +
+        '<div class="up-td uut-td-brands">' + UC.brandStack(r.mentions, r.mentions_totalcount) + '</div>' +
         '<div class="up-td uut-td-lastseen"><span class="uut-date">' + esc(fmtDate(r.last_seen)) + '</span></div>' +
         '<div class="up-td uut-td-actions">' +
           '<span class="uut-actions">' +

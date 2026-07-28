@@ -352,20 +352,7 @@
     /* Compact row mode: shorter rows, first column shows only the title (URL sub-line hidden). */
     
     .up-root.is-dense .uut-url-sub { display: none; }
-    /* Compact mode shrinks the mentioned-brand logos ~20% and scales every gap/shift to match. */
-    .up-root.is-dense .uut-stack-item { width: 28.16px; height: 28.16px; flex: 0 0 28.16px; }
-    .up-root.is-dense .uut-stack-vis { box-shadow: 0 0 0 1.76px var(--vc-bg); }
-    .up-root.is-dense .up-row:hover .uut-stack-vis { box-shadow: 0 0 0 1.76px var(--vt-row-hover-solid, var(--vc-bg)); }
-    .up-root.is-dense .uut-stack-item img { width: 21.12px; height: 21.12px; }
-    .up-root.is-dense .uut-stack-ltr { font-size: 9.68px; }
-    .up-root.is-dense .uut-stack-item + .uut-stack-item { margin-left: -5.28px; }
-    .up-root.is-dense .uut-stack-more { margin-left: 7.04px; }
-    .up-root.is-dense .uut-stack-item:hover .uut-stack-vis { transform: translateX(7.04px) translateY(-3px); }
-    .up-root.is-dense .uut-stack-item:first-child:hover .uut-stack-vis { transform: translateY(-3px); }
-    .up-root.is-dense .uut-stack-item:hover ~ .uut-stack-item .uut-stack-vis,
-    .up-root.is-dense .uut-stack-item:hover ~ .uut-stack-more { transform: translateX(14.08px); }
-    .up-root.is-dense .uut-stack-item:first-child:hover ~ .uut-stack-item .uut-stack-vis,
-    .up-root.is-dense .uut-stack-item:first-child:hover ~ .uut-stack-more { transform: translateX(7.04px); }
+    /* .up-stack-item etc dense overrides now live in core.css (shared with prompts-table) */
     .up-root.is-dense .uut-td-brands .up-tsk-logo { width: 21.12px; height: 21.12px; }   /* skeleton brand logo matches compact size */
     
     
@@ -398,63 +385,11 @@
     .uut-ment-cell.is-yes { color: var(--vt-up); }
     .uut-ment-cell.is-no { color: var(--vt-down); }
 
-    /* ---------- brand stack ----------
-       Overlapping 32px circles. The 4px visual gap between them is a ring in the ROW's background
-       colour, not a real gap: with a negative margin the neighbour would otherwise touch. The ring
-       has to follow the row's hover colour too, hence the two overrides below. */
-    /* The cell clips: with a negative-margin stack plus the hover spread, a narrow column would
-       otherwise let logos spill over the column border and sit on top of the neighbouring cell. */
+    /* .up-stack* (brand-mention chips) now lives in core.css, shared with prompts-table. The
+       cell still clips locally: with a negative-margin stack plus the hover spread, a narrow
+       column would otherwise let logos spill over the column border onto the neighbouring cell. */
     .uut-td-brands { overflow: hidden; }
-    .uut-stack { display: inline-flex; align-items: center; min-width: 0; max-width: 100%; }
-    /* No size/margin transition here: with up to 100 rows × 4 logos on screen, animating those
-       on the dense-mode toggle forces simultaneous layout reflow across hundreds of elements and
-       visibly stalls the page for a couple of seconds (see .up-row in core.css for the same
-       reasoning). The hover lift/spread below stays on .uut-stack-vis's transform, which is
-       cheap and only ever touches one row's stack at a time. */
-    .uut-stack-item {
-      width: 32px; height: 32px; flex: 0 0 32px;
-      display: inline-flex; align-items: center; justify-content: center;
-      position: relative; cursor: default;
-    }
-    .uut-stack-item + .uut-stack-item { margin-left: -6px; }
-    /* Hit-testing lives on .uut-stack-item, which never moves — only its inner .uut-stack-vis
-       animates on hover. Previously the transform (and the circle's own paint) sat directly on
-       .uut-stack-item, so the hovered circle's own hoverable box slid into the next logo's
-       territory (and needed an oversized ::before hit-area to stop it flickering back out from
-       under a still cursor). That let a fast or lingering hover "steal" the next logo's hover,
-       which is why its tooltip never took over. With the outer box empty and static, neighbouring
-       items' hover boundaries never move, so crossing from one logo to the next always fires a
-       clean mouseout/mouseover pair — the border/background/ring live on .uut-stack-vis instead,
-       so the whole circle (not just the image inside it) lifts and shifts together on hover. */
-    .uut-stack-vis {
-      display: inline-flex; align-items: center; justify-content: center; width: 100%; height: 100%;
-      border-radius: 999px; background: var(--vt-logo-bg); box-shadow: 0 0 0 2px var(--vc-bg);
-      border: 1px solid var(--vc-border);
-      transition: transform .16s ease;
-    }
-    /* only the gap-ring follows the row hover colour; the circle fill stays the (light-in-dark) logo bg */
-    .up-row:hover .uut-stack-vis { box-shadow: 0 0 0 2px var(--vt-row-hover-solid, var(--vc-bg)); }
-    .uut-stack-item img { width: 24px; height: 24px; border-radius: 999px; object-fit: contain; display: block; }
-    .uut-stack-ltr { font-size: 11px; font-weight: 600; color: var(--vc-muted); line-height: 1; text-transform: uppercase; }
-    .uut-stack-item.has-img .uut-stack-ltr { display: none; }
-    /* plain text, no circle: the overflow count is a label, not another brand */
-    .uut-stack-more {
-      margin-left: 8px; flex: 0 0 auto;
-      font-size: 12px; font-weight: 500; color: var(--vc-muted); white-space: nowrap;
-      transition: transform .16s ease;
-    }
-    /* Hovering a logo lifts it, brings it to front, and opens a gap on both sides — created by
-       shifting the hovered item's visual layer and everything AFTER it to the right. Items BEFORE
-       it never move (so the first brand can't drift left). Following items shift twice as far so
-       their gaps to each other stay at the default: they don't squash together. */
-    .uut-stack-item:hover { z-index: 3; }
-    .uut-stack-item:hover .uut-stack-vis { transform: translateX(8px) translateY(-3px); }
-    .uut-stack-item:first-child:hover .uut-stack-vis { transform: translateY(-3px); }
-    .uut-stack-item:hover ~ .uut-stack-item .uut-stack-vis,
-    .uut-stack-item:hover ~ .uut-stack-more { transform: translateX(16px); }
-    .uut-stack-item:first-child:hover ~ .uut-stack-item .uut-stack-vis,
-    .uut-stack-item:first-child:hover ~ .uut-stack-more { transform: translateX(8px); }
-    
+
     
     
     

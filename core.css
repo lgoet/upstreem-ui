@@ -373,6 +373,7 @@
     .up-dense-btn:hover { color: var(--vc-text); }
     .up-dense-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
     .up-root[data-theme="dark"] .up-dense-btn.is-active { background: #121212; border-color: #353535; }
+    .up-dense-3 .up-dense-btn { flex: 1 1 33.333%; padding: 0 4px; }
     .up-pop-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; border-radius: 9px; }
     .up-pop-row:hover { background: var(--vc-heading-bg); }
     .up-pop-label { font-size: 13.5px; font-weight: 500; color: var(--vc-text); }
@@ -779,6 +780,80 @@
   font-size: 12px; font-weight: 600; white-space: nowrap; max-width: 100%; overflow: hidden; }
 .up-tag-dot { width: 6px; height: 6px; border-radius: 999px; flex: 0 0 auto; }
 .up-tag-lbl { overflow: hidden; text-overflow: ellipsis; }
+
+/* Visibility / Rank / Sentiment metric cells — shared by visibility-chart's Top Brands table
+   and prompts-table's Sentiment/Rank/Visibility columns. */
+.up-num { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; flex: 0 0 auto; }
+.up-rank-group { display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; }
+.up-hash { width: 12px; height: 12px; color: var(--vc-third); flex: 0 0 auto; display: block; }
+.up-sent { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 6px; border: 1px solid var(--vc-border); border-radius: 6px; flex: 0 0 auto; }
+.up-sent-dot { width: 6px; height: 6px; border-radius: 2px; flex: 0 0 auto; }
+.up-sent-val { font-size: 13px; font-weight: 500; color: var(--vc-text); }
+
+/* ---------- brand-mention chip stack ----------
+   Overlapping 32px circles. Shared by urls-table's Brands mentioned column and prompts-table's
+   Brand Mentions column. The 4px visual gap between them is a ring in the ROW's background
+   colour, not a real gap: with a negative margin the neighbour would otherwise touch. The ring
+   has to follow the row's hover colour too, hence the override below.
+   No size/margin transition: with up to 100 rows × 4 logos on screen, animating those on the
+   dense-mode toggle forces simultaneous layout reflow across hundreds of elements and visibly
+   stalls the page for a couple of seconds (see .up-row for the same reasoning). The hover
+   lift/spread stays on .up-stack-vis's transform, which is cheap and only ever touches one
+   row's stack at a time. */
+.up-stack { display: inline-flex; align-items: center; min-width: 0; max-width: 100%; }
+.up-stack-item {
+  width: 32px; height: 32px; flex: 0 0 32px;
+  display: inline-flex; align-items: center; justify-content: center;
+  position: relative; cursor: default;
+}
+.up-stack-item + .up-stack-item { margin-left: -6px; }
+/* Hit-testing lives on .up-stack-item, which never moves — only its inner .up-stack-vis animates
+   on hover. With the outer box empty and static, neighbouring items' hover boundaries never move,
+   so crossing from one logo to the next always fires a clean mouseout/mouseover pair — the
+   border/background/ring live on .up-stack-vis instead, so the whole circle (not just the image
+   inside it) lifts and shifts together on hover. */
+.up-stack-vis {
+  display: inline-flex; align-items: center; justify-content: center; width: 100%; height: 100%;
+  border-radius: 999px; background: var(--vt-logo-bg); box-shadow: 0 0 0 2px var(--vc-bg);
+  border: 1px solid var(--vc-border);
+  transition: transform .16s ease;
+}
+/* only the gap-ring follows the row hover colour; the circle fill stays the (light-in-dark) logo bg */
+.up-row:hover .up-stack-vis { box-shadow: 0 0 0 2px var(--vt-row-hover-solid, var(--vc-bg)); }
+.up-stack-item img { width: 24px; height: 24px; border-radius: 999px; object-fit: contain; display: block; }
+.up-stack-ltr { font-size: 11px; font-weight: 600; color: var(--vc-muted); line-height: 1; text-transform: uppercase; }
+.up-stack-item.has-img .up-stack-ltr { display: none; }
+/* plain text, no circle: the overflow count is a label, not another brand */
+.up-stack-more {
+  margin-left: 8px; flex: 0 0 auto;
+  font-size: 12px; font-weight: 500; color: var(--vc-muted); white-space: nowrap;
+  transition: transform .16s ease;
+}
+/* Hovering a logo lifts it, brings it to front, and opens a gap on both sides — created by
+   shifting the hovered item's visual layer and everything AFTER it to the right. Items BEFORE
+   it never move (so the first brand can't drift left). Following items shift twice as far so
+   their gaps to each other stay at the default: they don't squash together. */
+.up-stack-item:hover { z-index: 3; }
+.up-stack-item:hover .up-stack-vis { transform: translateX(8px) translateY(-3px); }
+.up-stack-item:first-child:hover .up-stack-vis { transform: translateY(-3px); }
+.up-stack-item:hover ~ .up-stack-item .up-stack-vis,
+.up-stack-item:hover ~ .up-stack-more { transform: translateX(16px); }
+.up-stack-item:first-child:hover ~ .up-stack-item .up-stack-vis,
+.up-stack-item:first-child:hover ~ .up-stack-more { transform: translateX(8px); }
+/* Compact mode shrinks the mentioned-brand logos ~20% and scales every gap/shift to match. */
+.up-root.is-dense .up-stack-item { width: 28.16px; height: 28.16px; flex: 0 0 28.16px; }
+.up-root.is-dense .up-stack-vis { box-shadow: 0 0 0 1.76px var(--vc-bg); }
+.up-root.is-dense .up-row:hover .up-stack-vis { box-shadow: 0 0 0 1.76px var(--vt-row-hover-solid, var(--vc-bg)); }
+.up-root.is-dense .up-stack-item img { width: 21.12px; height: 21.12px; }
+.up-root.is-dense .up-stack-ltr { font-size: 9.68px; }
+.up-root.is-dense .up-stack-item + .up-stack-item { margin-left: -5.28px; }
+.up-root.is-dense .up-stack-more { margin-left: 7.04px; }
+.up-root.is-dense .up-stack-item:hover .up-stack-vis { transform: translateX(7.04px) translateY(-3px); }
+.up-root.is-dense .up-stack-item:first-child:hover .up-stack-vis { transform: translateY(-3px); }
+.up-root.is-dense .up-stack-item:hover ~ .up-stack-item .up-stack-vis,
+.up-root.is-dense .up-stack-item:hover ~ .up-stack-more { transform: translateX(14.08px); }
+.up-root.is-dense .up-stack-item:first-child:hover ~ .up-stack-item .up-stack-vis,
+.up-root.is-dense .up-stack-item:first-child:hover ~ .up-stack-more { transform: translateX(7.04px); }
 
 /* compact "No data" line for tables that live in a fixed-height box and have no room for the
    full illustrated empty state */

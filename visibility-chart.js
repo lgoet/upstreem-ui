@@ -241,19 +241,13 @@
     }
 
     /* ---------- Top Brands table ---------- */
-    /* the hash glyph keeps a local class only because it needs the .vt-hash sizing rule */
-    var HASH_ICON = UC.HASH_ICON.replace('<svg ', '<svg class="vt-hash" ');
+    /* Visibility/Rank/Sentiment cell classes and sentColor() live in core now — shared with
+       prompts-table, which formats these three metrics identically. */
+    var HASH_ICON = UC.HASH_ICON.replace('<svg ', '<svg class="up-hash" ');
     function trendChip(delta, decimals, inverted, suffix){
       return UC.trendChip(delta, { decimals: decimals, inverted: inverted, suffix: suffix });
     }
-    function sentColor(v){
-      v = Number(v);
-      if (v <= 25) return "#D25D5D";
-      if (v <= 40) return "#D2865D";
-      if (v <= 60) return "#9E9E9E";
-      if (v <= 75) return "#9FD25D";
-      return "#60D25D";
-    }
+    var sentColor = UC.sentColor;
     var ROW_GOTO = '<span class="up-row-goto">' + UC.GOTO_SVG + '</span>';
     function renderTable(){
       var rows = Array.isArray(state.tableRows) ? state.tableRows : [];
@@ -282,11 +276,11 @@
           ? '<span class="up-logo-box has-img"><img src="' + esc(r.logo_url) + '" onerror="this.style.visibility=\'hidden\'"/></span>'
           : '<span class="up-logo-box"></span>';
         var visNull = (r.visibility_pct == null || r.visibility_pct === "");
-        var vis = '<span class="vt-num">' + (visNull ? "–" : (Math.round(Number(r.visibility_pct) || 0) + "%")) + '</span>' + trendChip(r.visibility_delta_pct, false, false, "%");
-        var rank = '<span class="vt-rank-group">' + HASH_ICON + '<span class="vt-num">' + fmt1(r.avg_rank) + '</span></span>' + trendChip(r.avg_rank_delta, true, true);
+        var vis = '<span class="up-num">' + (visNull ? "–" : (Math.round(Number(r.visibility_pct) || 0) + "%")) + '</span>' + trendChip(r.visibility_delta_pct, false, false, "%");
+        var rank = '<span class="up-rank-group">' + HASH_ICON + '<span class="up-num">' + fmt1(r.avg_rank) + '</span></span>' + trendChip(r.avg_rank_delta, true, true);
         var sentNull = (r.sentiment == null || r.sentiment === "" || !isFinite(Number(r.sentiment)));
         var sc = sentNull ? "#9E9E9E" : sentColor(r.sentiment);
-        var sent = '<span class="vt-sent"><span class="vt-sent-dot" style="background:' + sc + '"></span><span class="vt-sent-val">' + (sentNull ? "–" : Math.round(Number(r.sentiment))) + '</span></span>' + trendChip(r.sentiment_delta, true, false);
+        var sent = '<span class="up-sent"><span class="up-sent-dot" style="background:' + sc + '"></span><span class="up-sent-val">' + (sentNull ? "–" : Math.round(Number(r.sentiment))) + '</span></span>' + trendChip(r.sentiment_delta, true, false);
         return '<div class="vt-row' + gap + '" data-id="' + esc(String(r.company_id == null ? "" : r.company_id)) + '">' +
           '<div class="vt-td vt-td-idx">' + (pos != null ? pos : "") + '</div>' +
           '<div class="vt-td vt-td-brand">' + logo + '<span class="vt-brand-name">' + esc(r.name == null ? "" : r.name) + '</span>' + ROW_GOTO + '</div>' +
