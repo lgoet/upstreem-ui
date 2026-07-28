@@ -906,19 +906,42 @@
         tipEl.style.background = dark ? "#f0f0f0" : "#1f1f1b";
         tipEl.style.color = dark ? "#1f1f1b" : "#ffffff";
       };
-      var showTip = function(btn){
-        if (tipSuppressed) return;
-        var txt = btn.getAttribute("data-tip"); if (!txt) return;
-        tipEl.textContent = txt; themeTip();
-        tipEl.classList.add("show");
+      var tipBtn = null, tipPlacedRect = null;
+      var placeTip = function(btn){
+        tipEl.style.transform = "";
         var br = btn.getBoundingClientRect();
         var tw = tipEl.offsetWidth, vw = window.innerWidth || document.documentElement.clientWidth;
         var left = br.left + br.width / 2 - tw / 2;
         left = Math.max(6, Math.min(left, vw - tw - 6));
         tipEl.style.left = left + "px";
         tipEl.style.top = (br.bottom + 8) + "px";
+        tipBtn = btn; tipPlacedRect = br;
       };
-      var hideTip = function(){ clearTimeout(tipTimer); tipEl.classList.remove("show"); };
+      var showTip = function(btn){
+        if (tipSuppressed) return;
+        var txt = btn.getAttribute("data-tip"); if (!txt) return;
+        tipEl.textContent = txt; themeTip();
+        tipEl.classList.add("show");
+        placeTip(btn);
+      };
+      var hideTip = function(){ clearTimeout(tipTimer); tipEl.classList.remove("show"); tipBtn = null; };
+      /* Keep an open tooltip glued to its trigger while the page scrolls — same cheap,
+         compositor-only transform-nudge + settle-time full reposition as dropdown menus (see
+         core.js's makePortal/nudgeMenu and makeTooltips). Without this the tooltip just stayed
+         frozen at its old screen position while the trigger scrolled out from under it. */
+      var tipRepositionRaf = null, tipSettleTimer = null;
+      window.addEventListener("scroll", function(){
+        if (!tipBtn) return;
+        if (tipRepositionRaf) return;
+        tipRepositionRaf = requestAnimationFrame(function(){
+          tipRepositionRaf = null;
+          if (!tipBtn || !tipPlacedRect) return;
+          var r = tipBtn.getBoundingClientRect();
+          tipEl.style.transform = "translate(" + Math.round(r.left - tipPlacedRect.left) + "px," + Math.round(r.top - tipPlacedRect.top) + "px)";
+          clearTimeout(tipSettleTimer);
+          tipSettleTimer = setTimeout(function(){ if (tipBtn) placeTip(tipBtn); }, 150);
+        });
+      }, { capture: true, passive: true });
       Array.prototype.slice.call(root.querySelectorAll("[data-tip]")).forEach(function(btn){
         btn.addEventListener("mouseenter", function(){ tipSuppressed = false; clearTimeout(tipTimer); tipTimer = setTimeout(function(){ showTip(btn); }, 60); });
         btn.addEventListener("mouseleave", function(){ tipSuppressed = false; hideTip(); });

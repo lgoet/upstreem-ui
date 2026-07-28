@@ -906,8 +906,18 @@
        (as this used to) meant each other, idle root's own near-always-null tipBtn lost the
        mousemove/scroll safety-net race against whichever root was actually being hovered and
        hid its tooltip out from under it whenever 2+ instances shared a page. */
-    var tipState = window.__tcdTipState || (window.__tcdTipState = { timer: null, btn: null });
+    var tipState = window.__tcdTipState || (window.__tcdTipState = { timer: null, btn: null, placedRect: null });
     var hideTip = function(){ clearTimeout(tipState.timer); tipState.timer = null; tipState.btn = null; tipEl.classList.remove("show"); };
+    var placeTip = function(btn){
+      tipEl.style.transform = "";
+      var br = btn.getBoundingClientRect();
+      var tw = tipEl.offsetWidth, vw = window.innerWidth || document.documentElement.clientWidth;
+      var left = br.left + br.width / 2 - tw / 2;
+      left = Math.max(6, Math.min(left, vw - tw - 6));
+      tipEl.style.left = left + "px";
+      tipEl.style.top = (br.bottom + 8) + "px";
+      tipState.placedRect = br;
+    };
     var showTip = function(btn){
       if (!btn || !document.contains(btn)) return;
       var txt = btn.getAttribute("data-tip"); if (!txt) return;
@@ -916,12 +926,7 @@
       tipEl.style.color = dark2 ? "#1f1f1b" : "#ffffff";
       tipEl.textContent = txt;
       tipEl.classList.add("show");
-      var br = btn.getBoundingClientRect();
-      var tw = tipEl.offsetWidth, vw = window.innerWidth || document.documentElement.clientWidth;
-      var left = br.left + br.width / 2 - tw / 2;
-      left = Math.max(6, Math.min(left, vw - tw - 6));
-      tipEl.style.left = left + "px";
-      tipEl.style.top = (br.bottom + 8) + "px";
+      placeTip(btn);
     };
     if (!root.__tcdTipBound){
       root.__tcdTipBound = true;
@@ -951,7 +956,25 @@
         try { stillHovered = tipState.btn.matches(":hover"); } catch(err){ stillHovered = true; }
         if (!stillHovered) hideTip();
       });
-      window.addEventListener("scroll", hideTip, true);
+      /* Keep an open tooltip glued to its trigger while the page scrolls — same cheap,
+         compositor-only transform-nudge + settle-time full reposition as dropdown menus (see
+         core.js's makePortal/nudgeMenu and makeTooltips). Used to just hide on scroll, which
+         reads as "the tooltip vanished," not "the tooltip is stuck to the button." Global (not
+         per-root) for the same reason the mousemove safety-net above is global — one listener
+         serves whichever instance's tipState.btn is currently set. */
+      var tipRepositionRaf = null, tipSettleTimer = null;
+      window.addEventListener("scroll", function(){
+        if (!tipState.btn) return;
+        if (tipRepositionRaf) return;
+        tipRepositionRaf = requestAnimationFrame(function(){
+          tipRepositionRaf = null;
+          if (!tipState.btn || !tipState.placedRect) return;
+          var r = tipState.btn.getBoundingClientRect();
+          tipEl.style.transform = "translate(" + Math.round(r.left - tipState.placedRect.left) + "px," + Math.round(r.top - tipState.placedRect.top) + "px)";
+          clearTimeout(tipSettleTimer);
+          tipSettleTimer = setTimeout(function(){ if (tipState.btn) placeTip(tipState.btn); }, 150);
+        });
+      }, { capture: true, passive: true });
       window.addEventListener("blur", hideTip);
     }
 

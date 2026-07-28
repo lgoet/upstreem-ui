@@ -144,30 +144,39 @@
     var tip = document.createElement("div");
     tip.className = "up-tip";
     document.body.appendChild(tip);
+    var tipBtn = null, tipWide = false, tipPlacedRect = null;
+    function placeTip(){
+      if (!tipBtn) return;
+      tip.style.transform = "";
+      var r = tipBtn.getBoundingClientRect();
+      tip.style.left = "0px"; tip.style.top = "0px";
+      var tr = tip.getBoundingClientRect();
+      var left = tipWide ? r.left : (r.left + r.width / 2 - tr.width / 2);
+      tip.style.left = Math.max(4, Math.min(window.innerWidth - tr.width - 4, left)) + "px";
+      tip.style.top = Math.max(4, r.top - tr.height - 6) + "px";
+      tipPlacedRect = r;
+    }
     function showTip(el){ showTipText(el, el.getAttribute("data-tip")); }
     function showTipText(el, t){
       if (!t) return;
+      tip.classList.remove("is-wide");
+      tipWide = false;
       tip.textContent = t;
       tip.setAttribute("data-theme", getIsDark() ? "dark" : "light");
-      var r = el.getBoundingClientRect();
-      tip.style.left = "0px"; tip.style.top = "0px";
       tip.classList.add("is-on");
-      var tr = tip.getBoundingClientRect();
-      tip.style.left = Math.max(4, Math.min(window.innerWidth - tr.width - 4, r.left + r.width/2 - tr.width/2)) + "px";
-      tip.style.top = Math.max(4, r.top - tr.height - 6) + "px";
+      tipBtn = el;
+      placeTip();
     }
-    function hideTip(){ tip.classList.remove("is-on"); tip.classList.remove("is-wide"); }
+    function hideTip(){ tip.classList.remove("is-on"); tip.classList.remove("is-wide"); tipBtn = null; }
     function showTipWide(el, text){
       if (!text) return;
       tip.textContent = text;
       tip.classList.add("is-wide");
+      tipWide = true;
       tip.setAttribute("data-theme", getIsDark() ? "dark" : "light");
-      var r = el.getBoundingClientRect();
-      tip.style.left = "0px"; tip.style.top = "0px";
       tip.classList.add("is-on");
-      var tr = tip.getBoundingClientRect();
-      tip.style.left = Math.max(4, Math.min(window.innerWidth - tr.width - 4, r.left)) + "px";
-      tip.style.top = Math.max(4, r.top - tr.height - 6) + "px";
+      tipBtn = el;
+      placeTip();
     }
     root.addEventListener("mouseover", function(e){
       var el = e.target.closest("[data-tip]");
@@ -179,6 +188,26 @@
       var t = e.target;
       if (t && (t.hasAttribute("data-tip") || t.hasAttribute("data-brandtip"))) hideTip();
     }, true);
+    /* Keep an open tooltip glued to its trigger while the page scrolls — same cheap,
+       compositor-only transform-nudge + settle-time full reposition as dropdown menus (see
+       makePortal/nudgeMenu). Without this the tooltip just stayed frozen at its old screen
+       position while the trigger scrolled out from under it. */
+    var repositionRaf = null, settleTimer = null;
+    function nudgeTip(){
+      if (!tipBtn || !tipPlacedRect) return;
+      var r = tipBtn.getBoundingClientRect();
+      tip.style.transform = "translate(" + Math.round(r.left - tipPlacedRect.left) + "px," + Math.round(r.top - tipPlacedRect.top) + "px)";
+    }
+    window.addEventListener("scroll", function(){
+      if (!tipBtn) return;
+      if (repositionRaf) return;
+      repositionRaf = requestAnimationFrame(function(){
+        repositionRaf = null;
+        nudgeTip();
+        clearTimeout(settleTimer);
+        settleTimer = setTimeout(function(){ if (tipBtn) placeTip(); }, 150);
+      });
+    }, { capture: true, passive: true });
     return { showTip: showTip, showTipText: showTipText, showTipWide: showTipWide, hideTip: hideTip, el: tip };
   }
 
