@@ -856,26 +856,23 @@
     var gotoBtn = root.querySelector(".vot-goto");
     var exportBtn = root.querySelector(".vot-export");
 
-    /* ---------- popovers: both Sort and Companies go through the shared body-portal (core) ---------- */
+    /* ---------- popovers: plain position:absolute, NOT portaled to <body> ---------- */
     var sortWrap = root.querySelector(".vot-sort");
     var filterWrap = root.querySelector(".vot-filter");
-    var filterBtn = root.querySelector(".vot-filter-btn");
     var filterMenu = root.querySelector(".up-ment-menu");
-    var sortBtn = root.querySelector(".vot-sort-btn");
     var sortMenu = root.querySelector(".vot-sort-menu");
-    /* Sort used to stay on the old, pre-Core position:absolute popover (a scope-limited exception
-       from the original migration) while Companies got the shared portal treatment — that split
-       is exactly what made the two dropdowns behave differently (z-index level, scroll-tracking).
-       Both now go through the same makePortal/placeMenu path as every dropdown in every other
-       component, so they're identical: same z-index, same scroll behaviour, same clip-safety. */
-    var _portal = UpstreemCore.makePortal(root, [filterMenu, sortMenu], instanceId);
-    var portalLayer = _portal.portalLayer, syncPortalTheme = _portal.syncPortalTheme;
-
+    /* Both used to be portaled (matching every other dropdown in the library) so a JS scroll
+       listener could keep a position:fixed menu glued to its trigger. In practice that JS-driven
+       follow — however cheap, however well-throttled — never matched plain CSS: a normal
+       position:absolute child inside a position:relative wrapper (.vot-sort/.vot-filter both
+       already are) scrolls with the page natively, zero JS, zero lag, by construction. That's
+       exactly what .vot-sort-menu ran on before this file went through the Core migration, and it
+       was never wrong. Going back to it for both menus, deliberately giving up the portal's
+       anti-clip guarantee for a dropdown that's provably correct over one that's merely robust. */
     function setPopOpen(pop, open){
       if (!pop) return;
       var isFilter = pop === filterWrap;
       var menu = isFilter ? filterMenu : sortMenu;
-      var btn = isFilter ? filterBtn : sortBtn;
       if (!open && menu && menu.contains(document.activeElement)){
         var opener = pop.querySelector(".vot-sort-btn, .vot-filter-btn");
         try { opener ? opener.focus({ preventScroll: true }) : document.activeElement.blur(); }
@@ -885,7 +882,6 @@
       if (menu){
         menu.setAttribute("aria-hidden", open ? "false" : "true");
         menu.classList.toggle("is-shown", !!open);
-        if (open) UpstreemCore.placeMenu(menu, btn);
       }
     }
     function closePops(except){
