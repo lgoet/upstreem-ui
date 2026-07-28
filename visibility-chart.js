@@ -1397,7 +1397,7 @@
   function initAll(){ var roots = document.querySelectorAll(".vot-root:not(.up-portal)"); for (var i=0;i<roots.length;i++) initRoot(roots[i]); }
   /* shared page-level watcher (core) — see UC.watchRoots for why this replaced a
      private-to-this-component MutationObserver + setInterval pair */
-  UC.watchRoots("vot-root", initAll);
+  if (UC.watchRoots) UC.watchRoots("vot-root", initAll);   // guard: a stale cached core.js on the page may predate this API
   function rootsWithId(id){
     id = id || "default";
     var out = [], roots = document.querySelectorAll(".vot-root:not(.up-portal)");

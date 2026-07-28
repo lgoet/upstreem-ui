@@ -138,15 +138,28 @@
 </div>
 <script>
 /* Reads data-cdn-pin off the root div right above and builds every asset URL from it — @<pin> if
-   set, @main otherwise. See the data-cdn-pin doc comment at the top of this file. */
+   set, @main otherwise. See the data-cdn-pin doc comment at the top of this file.
+   core.js/core.css load AT MOST ONCE PER PAGE. It sets window.UpstreemCore, a single shared
+   global — if two placements load it independently (e.g. one pinned, one still on @main), the
+   one that finishes loading LAST silently overwrites the other, breaking every already-
+   initialized component on the page the moment a mismatched or stale pin shows up anywhere.
+   Whichever placement's bootstrap runs first "claims" the load; every other placement (of this
+   or any other component) waits for that one instance instead of injecting its own. */
 (function(){
   var root = document.currentScript.previousElementSibling;
   var pin = (root && root.getAttribute("data-cdn-pin") || "").trim();
   var ref = (pin && pin !== "CDN_PIN") ? pin : "main";
   var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + ref + "/";
   function css(file){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = base + file; document.head.appendChild(l); }
-  function js(file){ var s = document.createElement("script"); s.src = base + file; s.async = false; document.head.appendChild(s); }
-  css("core.css"); css("topcitations-dashboard.css");
-  js("core.js"); js("topcitations-dashboard.js");
+  function js(file, onload){ var s = document.createElement("script"); s.src = base + file; s.async = false; if (onload) s.onload = onload; document.head.appendChild(s); }
+  function loadOwn(){ css("topcitations-dashboard.css"); js("topcitations-dashboard.js"); }
+  if (window.UpstreemCore){ loadOwn(); return; }
+  if (window.__upCoreLoaders){ window.__upCoreLoaders.push(loadOwn); return; }
+  window.__upCoreLoaders = [loadOwn];
+  css("core.css");
+  js("core.js", function(){
+    var loaders = window.__upCoreLoaders; window.__upCoreLoaders = null;
+    loaders.forEach(function(fn){ fn(); });
+  });
 })();
 </script>

@@ -58,8 +58,8 @@
     "share:asc":        "share_asc",
     "share_trend:desc": "share_delta_desc",
     "share_trend:asc":  "share_delta_asc",
-    "last_seen:desc":   "last_seen_desc",
-    "last_seen:asc":    "last_seen_asc"
+    "last_seen:desc":   "last_used_desc",
+    "last_seen:asc":    "last_used_asc"
   };
   function orderValue(field, dir){ return ORDER[field + ":" + dir] || "share_desc"; }
   /* Which sort keys a header column cycles through, in order. Clicking past the end
@@ -1670,7 +1670,7 @@
   [30, 100, 250, 500, 1000, 1800].forEach(function(ms){ setTimeout(initAll, ms); });
   /* shared page-level watcher (core) — see UC.watchRoots for why this replaced a
      private-to-this-component MutationObserver + setInterval pair */
-  UC.watchRoots("uut-root", initAll);
+  if (UC.watchRoots) UC.watchRoots("uut-root", initAll);   // guard: a stale cached core.js on the page may predate this API
   } // end uutRun
 
   uutBoot(50); // retry for ~5s before giving up on core.js

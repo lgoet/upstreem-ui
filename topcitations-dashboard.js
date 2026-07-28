@@ -1262,7 +1262,7 @@
 
   /* shared page-level watcher (core) — see UC.watchRoots for why this replaced a
      private-to-this-component MutationObserver */
-  UC.watchRoots("tcd-root", initAll);
+  if (UC.watchRoots) UC.watchRoots("tcd-root", initAll);   // guard: a stale cached core.js on the page may predate this API
   window.addEventListener("resize", function(){
     var roots = document.querySelectorAll(".tcd-root:not(.up-portal)");
     for (var i = 0; i < roots.length; i++){

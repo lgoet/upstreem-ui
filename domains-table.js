@@ -1430,7 +1430,7 @@
   [30, 100, 250, 500, 1000, 1800].forEach(function(ms){ setTimeout(initAll, ms); });
   /* shared page-level watcher (core) — see UC.watchRoots for why this replaced a
      private-to-this-component MutationObserver + setInterval pair */
-  UC.watchRoots("udt-root", initAll);
+  if (UC.watchRoots) UC.watchRoots("udt-root", initAll);   // guard: a stale cached core.js on the page may predate this API
   } // end udtRun
 
   udtBoot(50); // retry for ~5s before giving up on core.js
