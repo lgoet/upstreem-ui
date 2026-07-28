@@ -7,6 +7,13 @@
 
   ── Bubble dynamic values on the root element ────────────────────────────────
   data-instance        = "ROOTID_[dynamic id]"   unique per placement
+  data-cdn-pin         = commit hash to load from, e.g. "71ed61f" — leave EMPTY (or leave the
+                         literal "CDN_PIN" placeholder) to load @main. Point this at a Bubble
+                         constant/Option Set field you control so every placement can be repinned
+                         to a new commit in one edit instead of hunting down every embed's URL by
+                         hand — @main itself lags jsDelivr's cache, sometimes for hours, so a fresh
+                         fix may not actually be live yet even right after it's pushed. The loader
+                         script at the bottom reads this once and builds every asset URL from it.
   data-isdark          = "yes" / "no"
   data-brand-name      = the brand's display name (for the "X mentioned" toggle)
   data-brand-logo      = the brand's logo url (optional)
@@ -70,6 +77,7 @@
 -->
 <div class="up-root udt-root"
      data-instance="INSTANCE_ID"
+     data-cdn-pin="CDN_PIN"
      data-isdark="IS_DARK"
      data-brand-name="BRAND_NAME"
      data-brand-logo="BRAND_LOGO"
@@ -82,8 +90,6 @@
      data-rowclick-fn="bubble_fn_udtRowClick"
      data-page-fn="bubble_fn_udtPage"
      data-mentioned-fn="bubble_fn_udtMentioned">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@239264f/core.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@239264f/domains-table.css">
 
   <div class="up-head">
     <div class="up-heading"><span class="up-head-label">Domains</span><span class="up-head-sep"></span><span class="up-head-count"></span></div>
@@ -186,5 +192,17 @@
     <div class="up-pager"></div>
   </div>
 </div>
-<script src="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@239264f/core.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@239264f/domains-table.js"></script>
+<script>
+/* Reads data-cdn-pin off the root div right above and builds every asset URL from it — @<pin> if
+   set, @main otherwise. See the data-cdn-pin doc comment at the top of this file. */
+(function(){
+  var root = document.currentScript.previousElementSibling;
+  var pin = (root && root.getAttribute("data-cdn-pin") || "").trim();
+  var ref = (pin && pin !== "CDN_PIN") ? pin : "main";
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + ref + "/";
+  function css(file){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = base + file; document.head.appendChild(l); }
+  function js(file){ var s = document.createElement("script"); s.src = base + file; s.async = false; document.head.appendChild(s); }
+  css("core.css"); css("domains-table.css");
+  js("core.js"); js("domains-table.js");
+})();
+</script>
