@@ -475,7 +475,9 @@
                 re-opened by a stray Enter on a now-hidden control)
        onClose(committed) — called on every close; `committed` is false unless close(true) was
                 used, which is how a component reverts unapplied draft state.
-       group  — popovers sharing a group close each other (a component's toolbar menus). */
+       group  — only scopes an explicit UC.closePopovers(except, group) call. Opening a popover
+                always closes every other one on the page regardless of group: two open dropdowns
+                is never a state we want. */
   var POPOVERS = (window.__upPopovers = window.__upPopovers || []);
   function makePopover(cfg){
     var wrap = cfg.wrap, menu = cfg.menu;
@@ -501,7 +503,12 @@
     }
     function open(){
       if (isOpen()) return;
-      closeAll(wrap, rec.group);
+      /* Closes EVERY other popover on the page, not just this component's. Two dropdowns open at
+         once is never wanted, and scoping this by group meant a menu in one component stayed open
+         while you opened one in another. Relying on the outside-click listener for that is not
+         enough either: several openers call stopPropagation(), so that click never reaches the
+         document handler — closing here is the reliable path. */
+      closeAll(wrap, null);
       wrap.classList.add("is-open");
       menu.classList.add("is-shown");
       menu.setAttribute("aria-hidden", "false");
