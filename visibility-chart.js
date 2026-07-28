@@ -1300,15 +1300,27 @@
         sortField = "visibility";
         sortDir = "desc";
         SORT_STORE[instanceId] = { field: sortField, dir: sortDir };
-        populateSort();
 
-        var initIds = INIT_COMPANIES[instanceId] || activeCompanyIds();
         filterSel = {};
-        initIds.forEach(function(id){ filterSel[id] = true; });
-        populateFilter();
         delete USER_FILTERED[instanceId];
         delete INIT_COMPANIES[instanceId];  // next fill re-captures it fresh, like a first load
+
+        /* Also EMPTY the data (chart + table back to skeleton), not just the filters. A slide-in
+           that re-uses this placement calls resetVisibilityChart() on open; without this the old
+           chart/table sat there and re-animated/re-resized during the open (stale data flashing +
+           extra paint). Clearing to skeleton means the reopen is light and the next data load
+           starts clean. Deliberately fires NO Bubble event — the caller loads fresh data next.
+           The instance cache is cleared too so a Bubble re-render doesn't restore the old data. */
+        state.series = []; state.tableRows = [];
+        state.companies = []; state.filterCompanies = []; state.totalCount = null;
+        state.hasLine = false; state.hasTable = false;
+        state.linePending = false; state.noDataConfirmed = false;
+        if (window.__votCache){ try { delete window.__votCache[instanceId]; } catch(e){} }
+
+        populateSort();
+        populateFilter();
         syncFilterBadge();
+        render();   // renders skeletons now that hasLine/hasTable are false
         return true;
       },
       update: function(params){

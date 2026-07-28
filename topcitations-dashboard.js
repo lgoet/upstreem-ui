@@ -1134,6 +1134,17 @@
         state.appliedTypeSel = {};
         state.appliedUrlTypeSel = {};
         state.filterDimension = "citation_type";
+        /* Also EMPTY the data (chart + table back to skeleton), not just the filters — same reason
+           as visibility-chart's reset: a slide-in that re-uses this placement calls
+           resetTopCitations() on open, and without this the old doughnut/bars + table re-rendered
+           and re-animated during the open (stale data flash + extra paint). Fires NO Bubble event;
+           the caller loads fresh data next. persistState() does not store the data arrays, so a
+           Bubble re-render already starts empty — no cache to clear here. */
+        state.topDomains = []; state.topUrls = [];
+        state.typesBreakdown = []; state.urlTypesBreakdown = [];
+        state.baselineDomain = []; state.baselineUrl = [];
+        state.hasChart = false; state.hasTable = false;
+        state.optimisticLoading = false;
         persistState();
         render();
         populateFilter();
