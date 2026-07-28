@@ -485,39 +485,16 @@ Kein Mint/Teal irgendwo in Switches oder Checkboxen — immer `--vc-text` als �
 ```
 Wichtig: das Menü bleibt IMMER im DOM/Layout (`display` wird nie umgeschaltet) — nur `opacity`/`transform`/`pointer-events`. Nur **ein** Dropdown gleichzeitig offen (beim Öffnen eines anderen wird das erste geschlossen).
 
-### Positionierung: fixed + Flip, damit nichts abschneidet
+### Positionierung: reines `position:absolute` (siehe Abschnitt 14 für das ganze Warum)
 
-Das im CSS oben gezeigte `position:absolute` ist nur der Ruhezustand. **Sobald ein
-Menü geöffnet wird, wird es per JS auf `position:fixed` umgestellt** und aus dem
-Trigger-Rect (`getBoundingClientRect`) im Viewport platziert. Grund: Liegt die
-Komponente in einem kurzen Container (wenige Zeilen) oder in einem Vorfahren mit
-`overflow:hidden` — in Bubble der Normalfall — würde ein nach unten aufklappendes
-Menü an der Unterkante abgeschnitten.
+`position:absolute` im `position:relative`-Wrapper, `top: calc(100% + Npx); right: 0;
+z-index: 60`. Klappt immer nach unten auf, klebt per CSS am Trigger, auch beim Scrollen.
+**Kein** JS-Positioning, **kein** `position:fixed`, **kein** Body-Portal, **kein** Flip-nach-oben.
 
-```
-Genug Platz unter dem Trigger      -> Menü klappt nach unten auf
-Zu wenig Platz unten, mehr oben    -> Menü klappt nach oben auf (Flip)
-Reicht in keine Richtung ganz      -> verbleibender Platz wird max-height, Liste scrollt
-```
-Rechtsbündig am Trigger, im Viewport gehalten (Rand 8px), `z-index: 9999` — hoch
-genug für normalen Seiteninhalt, aber bewusst NICHT auf Tooltip-Ebene
-(`2147483000`/`2147483001`): der Body-Portal allein reicht schon, um Clipping/
-Stacking-Context-Fallen zu entkommen (siehe Abschnitt 14); ein extrem hoher
-z-index zusätzlich hat Menüs über Seiten-Chrome gelegt, die eigentlich darüber
-liegen sollte (Sticky-Nav, Bubble-eigene Overlays) — genau das, was die Migration
-eigentlich vereinheitlichen sollte. Gap zwischen Trigger und Menü: **4px** (`GAP = 4`).
-Keine erzwungene Mindesthöhe — die `max-height` ist der real verfügbare Platz, damit
-ein nach oben geklapptes Menü nie nach unten über den Button hinausschießt; ist wenig
-Platz, scrollt die Liste. Bei `scroll` (Capture, um Scrolls in **jedem** Vorfahren zu
-erwischen) und `resize` wird neu positioniert.
-
-**Wichtig — `position:fixed` allein reicht nicht.** `position:sticky` (Sticky-Header)
-und Bubble-Wrapper bilden **Stacking-Contexts**, die ein darin liegendes fixed-Menü
-deckeln — es verschwindet dann hinter anderen Seiten-Komponenten, egal wie hoch sein
-z-index ist. Deshalb werden die Menüs beim Init in einen **Body-Portal-Layer**
-verschoben (siehe Abschnitt 14). Beim Schließen bleibt die fixe Position erhalten und
-das Menü fadet an Ort und Stelle aus (kein kurzes Zurückspringen nach unten); die
-Platzierung wird erst beim nächsten Öffnen neu gemessen.
+Frühere Versionen haben das Menü nach `<body>` portiert + auf `position:fixed` gesetzt + per
+JS-Scroll-Listener nachgezogen (gegen `overflow:hidden`-Clipping). Ergebnis: das Menü ruckelte/
+sprang beim Scrollen, weil JS-Repositioning immer eine Frame zu spät kommt. Verworfen. Details,
+Trade-off und die verbindliche Regel stehen in **Abschnitt 14**.
 
 ### Staging-Semantik: Apply committet, Schließen verwirft
 
@@ -1236,46 +1213,53 @@ dieselben Workflows wie jeder andere Wert.
 Der Reset **wendet sofort an** (siehe Abschnitt 6a), es folgt kein separater
 Apply-Klick.
 
-## 14. Dropdown-Menüs im Body-Portal (z-index endgültig)
+## 14. Dropdown-Menüs: reines `position:absolute` — KEIN Body-Portal, KEIN JS beim Scrollen
 
-Damit Dropdowns über **allen** anderen Seiten-Komponenten liegen (nicht nur innerhalb
-der eigenen Komponente), werden die Menüs beim Init aus dem DOM der Komponente
-herausgelöst und in einen eigenen Layer an `document.body` gehängt:
+**Endgültige Entscheidung (nach einer sehr langen, schmerzhaften Runde — bitte nie wieder
+umbauen).** Jedes Dropdown-Menü ist ein ganz normales `position:absolute`-Kind seines
+`position:relative`-Wrappers (`.up-sort` / `.up-filter` / `.up-cols` / `.up-ment` / `.vot-sort`
+/ `.vot-filter` / `.tcd-filter` …). Positioniert wird **ausschließlich per CSS**:
 
-```js
-/* Im Init einmal aufrufen. makePortal übernimmt das Erstellen des Layers und das Verschieben
-   der Menü-Elemente. Als Rückgabe: portalLayer (DOM-Referenz) + syncPortalTheme (Funktion). */
-var _portal = UpstreemCore.makePortal(root, [elSortMenu, elFilterMenu, elColsMenu, elMentMenu], instanceId);
-var portalLayer = _portal.portalLayer, syncPortalTheme = _portal.syncPortalTheme;
-syncPortalTheme();   /* sofort aufrufen — sonst fehlt Theme beim initialen Dark-Load */
+```css
+.up-sort  { position: relative; }
+.up-sort-menu { position: absolute; top: calc(100% + 8px); right: 0; z-index: 60;
+  opacity: 0; transform: translateY(-4px) scale(.985); pointer-events: none;
+  transition: opacity 140ms, transform 140ms; }
+.up-sort-menu.is-shown { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
 ```
 
-**Was `makePortal` intern tut:**
-```js
-portalLayer.className = "up-root up-portal";   /* IMMER so — nicht komponentenspezifisch */
-document.body.appendChild(portalLayer);
-menuEls.forEach(function(m){ if (m) portalLayer.appendChild(m); });
-```
+Öffnen/Schließen togglet nur die Klasse `.is-shown` am Menü (plus `.is-open` am Wrapper für den
+Trigger-State). **Sonst passiert nichts** — kein Verschieben ins `<body>`, kein `placeMenu`, kein
+Scroll-Listener.
 
-Regeln dazu (alle Pflicht, sonst bricht Theme/Events):
+**Warum kein Portal / kein JS-Repositioning (die Falle):** Früher wurden die Menüs beim Init nach
+`document.body` verschoben und auf `position:fixed` gesetzt, damit ein `overflow:hidden`-Vorfahre
+sie nicht abschneidet. Ein fixed-Menü bewegt sich beim Scrollen aber nicht von selbst mit, also
+musste ein JS-Scroll-Listener es bei **jedem** Scroll-Event nachpositionieren. Egal wie das
+optimiert wurde (rAF-gedrosselt, dann `transform`-Nudge + Settle-Timer): ein JS-Follow reagiert
+prinzipbedingt **eine Frame zu spät** auf das Scrollen, also **zog/sprang** das Menü sichtbar
+gegen seinen Trigger. Ein `position:absolute`-Kind bewegt sich dagegen im **selben Layout/Paint**
+wie sein Trigger — geklebt per Konstruktion, null JS, null Lag, unmöglich zu ruckeln.
 
-- **CSS:** `.up-portal { display: contents; }` kommt aus **`core.css`** — der Layer malt nichts,
-  fixed-Menüs stacken auf Body-Ebene. Die Klasse `.up-root` am Layer sorgt dafür, dass
-  CSS-Variablen (`--vc-*`) und Dark-Mode-Regeln (`.up-root[data-theme="dark"] …`) im Portal gelten.
-- **Theme spiegeln:** `syncPortalTheme()` bei jedem Theme-Wechsel aufrufen (und direkt nach dem Erstellen).
-- **Sichtbarkeit:** Weil das Menü nicht mehr im Pop liegt, greift `.pop.is-open .menu`
-  nicht. Stattdessen togglet eine Klasse **am Menü selbst**: `.<pfx>-…-menu.is-shown`.
-- **Events:** Der zentrale Click-Handler läuft auf `document` mit einem Ownership-Guard,
-  weil die Menü-Klicks nicht mehr zu `root` blubbern:
-  ```js
-  function ownsTarget(tg){ return root.contains(tg)
-      || elFilterMenu.contains(tg) || elMentMenu.contains(tg)
-      || elSortMenu.contains(tg)   || elColsMenu.contains(tg); }
-  document.addEventListener("click", function(e){ if (!ownsTarget(e.target)) return; /* … */ });
-  ```
-- **Init-Selektoren ausschließen:** `initAll`/`rootsWithId` dürfen den Portal nicht als
-  Tabelle initialisieren → Selektor `.up-root:not(.up-portal)` (fest so, kein `<pfx>`).
-- **Menü finden:** `menuOf(pop)` liefert die gecachte Referenz statt `pop.querySelector`.
+`UpstreemCore.makePortal()` und `UpstreemCore.placeMenu()` sind bewusst **No-op-Hüllen** (damit
+bestehende Aufrufstellen nicht angefasst werden müssen). Neue Komponenten müssen sie **nicht**
+aufrufen — einfach das Menü als `position:absolute`-Kind im relativen Wrapper lassen.
+
+**Trade-off (bewusst akzeptiert):** Ein Menü kann jetzt von einem Vorfahren mit `overflow:hidden`
+abgeschnitten werden — genau das, wogegen das Portal existierte. In der Praxis nie aufgetreten
+(die Pre-Migration-Komponenten liefen schon immer auf `position:absolute`). Ein Dropdown, das
+**immer** korrekt am Trigger klebt, ist mehr wert als die Robustheit gegen einen Clipping-Fall,
+der real nicht vorkommt. Falls doch mal ein Container clippt: dort `overflow: visible` setzen —
+nicht das Portal wieder einbauen.
+
+- **Events:** Weil das Menü im `root` bleibt, deckt `root.contains(tg)` Menü-Klicks ab (der
+  zentrale Outside-Click-Handler schließt nur bei Klick **außerhalb**). Die alten expliziten
+  `elFilterMenu.contains(tg)`-Checks sind harmlos-redundant.
+- **Dark-Mode:** greift über die normale Kaskade (`.up-root[data-theme="dark"] .<pfx>-menu`), weil
+  das Menü im themed root liegt. Kein `syncPortalTheme` mehr nötig.
+- **Nach unten aufklappend, kein Flip:** `top: calc(100% + Npx)` klappt immer nach unten auf —
+  das ist „normales Dropdown"-Verhalten und war beim ursprünglichen Sort-By in der Visibility
+  Chart nie ein Problem. Kein Flip-nach-oben, keine JS-`max-height`.
 
 ## 15. Multi-Select-Dropdown mit Suche (Mentioned Brands)
 
@@ -1446,8 +1430,8 @@ die Antwort nicht verwirft (sonst „jeder zweite Sort kommt an").
    Type/Trend-Dark-Varianten. Prüfen: jede Farbe hat Light **und** Dark.
 3. **Basis-CSS** für Icon-Buttons, Switcher, Dropdowns, Tooltips, Skeleton aus den
    bestehenden Dateien übernehmen (nur Präfix ändern).
-4. **Body-Portal** (Abschnitt 14) einbauen, wenn es Dropdowns gibt; `syncPortalTheme()` nach
-   Erstellung + bei Theme-Wechsel; Init-Selektoren mit `:not(.<pfx>-portal)`.
+4. **Dropdowns** (Abschnitt 14): Menü als `position:absolute`-Kind im `position:relative`-Wrapper,
+   `.is-shown` togglen. KEIN Portal, KEIN `placeMenu`, KEIN Scroll-Listener.
 5. **Event-Kontrakt** (Abschnitt 13): ein JSON-String pro Event, `requestId` bei Suche,
    Namenskonvention, `data-*-fn`-Attribute.
 6. **Persistenz** (Abschnitt 22): Display-Prefs in localStorage, Rest in STORE.
@@ -1455,6 +1439,53 @@ die Antwort nicht verwirft (sonst „jeder zweite Sort kommt an").
 8. **Verifizieren ohne Browser:** `<script>` extrahieren → `node --check`; Verhalten per
    jsdom (getBoundingClientRect/offset* stubben, `bubble_fn_*` einsammeln). CSS lässt sich so
    **nicht** rendern → optische Punkte immer im echten Bubble-Kontext gegenprüfen.
+
+## 26. CDN-Auslieferung & dynamischer Pin (`data-cdn-pin`) — Bubble-Falle
+
+Jedes Bubble-Element lädt seine Dateien per kleinem Loader-Script (unten im Element) von jsDelivr.
+Der Commit, von dem geladen wird, steht im Attribut **`data-cdn-pin`** am Root-Div (direkt unter
+`data-instance`). Gesetzt → `@<pin>`, leer/`CDN_PIN`-Platzhalter → `@main`. So kann man in Bubble
+den Pin einmal zentral (Konstante/Option-Set → als Text!) auf einen neuen Commit setzen, statt in
+jedem Embed die URL von Hand zu tauschen.
+
+**DIE FALLE (hat eine ganze Runde gekostet):** `document.currentScript` ist in Bubble **null bzw.
+falsch zugeordnet**. Bubble injiziert den HTML-Element-Inhalt via jQuery `.html()` und erzeugt die
+`<script>`-Tags neu, um sie auszuführen — dabei zeigt `document.currentScript` nicht mehr auf das
+Markup. Ein Loader, der den Pin über `document.currentScript.previousElementSibling` liest, liest
+also **nichts** und fällt für **jede** Datei auf `@main` zurück. Und `@main` wird von jsDelivr
+**Stunden** lang gecacht → man bekommt alten Code, egal was im Pin steht. Symptom: `data-cdn-pin`
+zu setzen „tut nichts", die Konsole zeigt alle Script-URLs auf `@main`.
+
+**Richtig — Pin über die Klasse suchen, NICHT über `currentScript`:**
+```js
+(function(){
+  function readPin(cls){
+    var els = document.getElementsByClassName(cls), i, p;
+    for (i = 0; i < els.length; i++){
+      p = (els[i].getAttribute("data-cdn-pin") || "").trim();
+      if (p && p !== "CDN_PIN") return p;
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("<pfx>-root") + "/";
+  function css(f){ var l=document.createElement("link"); l.rel="stylesheet"; l.href=base+f; document.head.appendChild(l); }
+  function js(f){ var s=document.createElement("script"); s.src=base+f; s.async=false; document.head.appendChild(s); }
+  css("core.css"); css("<component>.css");
+  js("core.js"); js("<component>.js");
+})();
+```
+
+Weitere Regeln:
+- **Immer auf einen Commit-Hash pinnen, nie dauerhaft auf `@main`.** Commit-URLs (`@<hash>`) sind
+  unveränderlich und werden korrekt gecacht — keine Propagierungs-Verzögerung, kein stale. `@main`
+  hat jsDelivr-Cache-Lag von Stunden.
+- **In Bubble den Pin als reinen Text** in `data-cdn-pin` eintragen (oder via Konstante, die einen
+  Text liefert) — keine zirkuläre Option-Set-Referenz (die wirft `cdn_pin contains circular
+  reference` und liefert leer → `@main`).
+- Jede Komponente lädt ihr eigenes `core.js` vom selben Pin. Mehrfaches Laden derselben
+  (unveränderlichen) URL ist billig (Browser-Cache) und die Init jeder Komponente ist idempotent —
+  **kein** „load-once"-Sharing über `window` nötig (das hat früher bei EINEM kaputten Pin den
+  ganzen Seiten-Core vergiftet).
 
 ---
 
