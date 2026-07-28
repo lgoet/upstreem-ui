@@ -1423,22 +1423,76 @@ attribut-zuerst-Logik ignorierte `setLoading("no")` und ließ Zeilen im Skeleton
 Pagination/Sort: `latestReqId = null` **vor** dem Feuern setzen, damit der requestId-Guard
 die Antwort nicht verwirft (sonst „jeder zweite Sort kommt an").
 
-## 25. Neue Komponente bauen — Checkliste (loop-frei)
+## 25. Neue Komponente bauen — gegen die Kits, nicht daneben
 
-1. **Präfix** wählen (`udt`, `uut`, …), Root `<div class="<pfx>-root" data-instance="…">`.
-2. **Variablen-Block** (Abschnitt 1) 1:1 übernehmen, inkl. `--<pfx>-surface` und der
-   Type/Trend-Dark-Varianten. Prüfen: jede Farbe hat Light **und** Dark.
-3. **Basis-CSS** für Icon-Buttons, Switcher, Dropdowns, Tooltips, Skeleton aus den
-   bestehenden Dateien übernehmen (nur Präfix ändern).
-4. **Dropdowns** (Abschnitt 14): Menü als `position:absolute`-Kind im `position:relative`-Wrapper,
-   `.is-shown` togglen. KEIN Portal, KEIN `placeMenu`, KEIN Scroll-Listener.
-5. **Event-Kontrakt** (Abschnitt 13): ein JSON-String pro Event, `requestId` bei Suche,
-   Namenskonvention, `data-*-fn`-Attribute.
-6. **Persistenz** (Abschnitt 22): Display-Prefs in localStorage, Rest in STORE.
-7. **Dark-Mode-Spezifität** (Abschnitt 21) für alle Hover-/Aktiv-States prüfen.
-8. **Verifizieren ohne Browser:** `<script>` extrahieren → `node --check`; Verhalten per
-   jsdom (getBoundingClientRect/offset* stubben, `bubble_fn_*` einsammeln). CSS lässt sich so
-   **nicht** rendern → optische Punkte immer im echten Bubble-Kontext gegenprüfen.
+**Die wichtigste Regel: nichts nachbauen, was `core.js` schon kann.** Wenn du in einer bestehenden
+Komponente Code siehst, den du kopieren willst, prüfe zuerst, ob er inzwischen im Core liegt — die
+vier Altkomponenten sind vollständig darauf umgestellt, aber alte Codebeispiele in älteren
+Abschnitten dieses Dokuments können noch den Vorher-Zustand zeigen.
+
+### Was der Core stellt
+
+| Bereich | Aufruf |
+|---|---|
+| Linien-Chart (Plugins, Tooltip, Skeleton, Größen-Poll, Verify, Legende, Watermark) | `UC.makeLine({wrap, canvas, legend, isDark, isOwner, gran})` |
+| Doughnut + Bars hinter einem Controller | `UC.makeTypeChart({body, isDark, isOwner, mode, total, centerLabel})` |
+| Chart-Daten aufbereiten / Farben | `UC.prepTypeData`, `UC.typeColor`, `UC.CITE_COLOR_DARK`, `UC.barIsLight` |
+| Button-Tooltips (`[data-tip]`, `[data-brandtip]`) | `UC.makeTooltips(root, getIsDark)` |
+| Dropdowns | `UC.makePopover({wrap, menu, opener, onClose, group})` |
+| Spalten: Sichtbarkeit, Breiten, Resize, Cols-Menü | `UC.makeColumns({root, state, columns, storePrefix, instanceId, …})` |
+| Pagination | `UC.makePager({root, state, onChange})` |
+| Header-Sortierung mit Klick-Zyklus | `UC.makeHeadSort({root, state, cycles, defaultSort, trendField, onSort})` |
+| Suche (Slide-out, Debounce, requestId-Schutz) | `UC.makeSearch({root, box, input, state, prefix, onRender, onFire, …})` |
+| Skelett-Zeilen, Trend-Chip, Leer-Schonfrist, Spalten-Erklärer | `UC.skeletonRows`, `UC.trendChip`, `UC.makeEmptyGrace`, `UC.makeExplain` |
+| Bubble-Klempnerei: Root-Registry, iframe-Forwarder, Wheel, Init-Kaskade, Stub-Replay | `UC.makeMount({rootClass, ctrlProp, resolveLocal, queue, initRoot, api, forwardShape})` |
+
+CSS dazu kommt aus `core.css`: `.up-root`, `.up-head*`, `.up-iconbtn`, `.up-thead/.up-row/.up-th/.up-td`,
+`.up-pop-*`, `.up-filter-*`, `.up-line-*`, `.up-legend`, `.up-donut-*`, `.up-bars/.up-bar-*`,
+`.up-trend`, `.up-logo-box`, `.up-row-goto`, `.up-tag`, `.up-tip`, `.up-explain`, `.up-empty*`.
+
+### Was zwingend lokal bleibt
+
+- **Daten-Mapping** — Bubble-Payload → Datasets bzw. Zeilen. Jede Komponente bekommt eine andere
+  Form; das ist kein Duplikat.
+- **Event-Vertrag** — `data-*-fn`-Attribute, Event-Namen, Payload-Keys (Abschnitt 13).
+- **Markup und Rahmen** — Layout, Header, komponenteneigene Schalter.
+- **`doRender` / `doLoading` / `initRoot`** — bewusst pro Komponente: die meisten broadcasten an
+  jeden Root mit derselben `instanceId`, topcitations löst gezielt den sichtbaren auf.
+- **Spaltendefinition** (`COLUMNS` mit `min` und `dropAt`) und Toolbar-Stufen (`fitToolbar`).
+
+### Schritte
+
+1. **Präfix** wählen. Root: `<div class="up-root <pfx>-root" data-instance="…" data-cdn-pin="CDN_PIN">`.
+   Das `up-root` ist Pflicht — daran hängen alle geteilten CSS-Variablen.
+2. **Stub-Block** ganz oben, vor dem core.js-Warten (siehe jede bestehende Komponente): Bubble
+   pollt die `render*`-Funktionen und würde die frühesten Aufrufe sonst verlieren.
+3. **Boot-Retry** `<pfx>Boot(50)` → `<pfx>Run()`, weil Bubble Scripts nicht in DOM-Reihenfolge
+   ausführt.
+4. **Kits verdrahten** statt nachbauen (Tabelle oben).
+5. **`UC.makeMount`** am Ende von `<pfx>Run()` — ersetzt Forwarder, Wheel-Fix, Init-Kaskade und
+   Stub-Replay.
+6. **Loading**: `data-processing` und `data-processing2` verodern, plus `LOADING_EXPLICIT`-Gate
+   (ein expliziter `set*Loading`-Aufruf hat ab dann Vorrang vor den Attributen).
+7. **`reset*()`** leert Filter **und** Daten und feuert **null** Bubble-Events.
+8. **Bubble-Referenzdatei** unter `bubble/` mit dem `getElementsByClassName`-Loader (Abschnitt 26),
+   niemals `document.currentScript`.
+
+### Verifizieren
+
+- **CSS-Klassen-Sweep**: jede im JS ausgegebene Klasse muss eine Regel haben. Das ist genau der
+  Fehler, der schon zweimal passiert ist (Regel gelöscht, JS gab den Namen weiter aus):
+  `class="…"` aus dem JS ziehen und gegen `core.css` + die eigene CSS prüfen. Reine JS-Hooks
+  (`.up-td-<key>`, `.up-act-*`, `.up-page-prev/next`) haben bewusst kein CSS.
+- **Definitions-Diff** nach jedem größeren Umbau: welche Funktion war vorher definiert, wird noch
+  aufgerufen, ist aber weg? Fängt genau die Fehler, die erst zur Laufzeit auffallen.
+- **Multi-Instanz**: zwei Roots derselben Komponente auf einer Seite — Tooltips, Dropdowns,
+  SVG-Mask-IDs und Chart-Instanzen dürfen sich nicht gegenseitig stören.
+- **Größen-Poll**: Daten liefern, während der Root in `display:none` steckt, dann einblenden —
+  der Chart muss trotzdem bauen.
+- **Persistenz**: localStorage-Keyformat nicht ändern, sonst verlieren alle Nutzer ihre
+  gespeicherten Spalten und Breiten. Format ist `<pfx>_cols__<instanceId>` / `<pfx>_widths__<id>`.
+- **`reset*()`**: Events-Spy, **0** Events.
+- Konsole fehlerfrei, in Light **und** Dark.
 
 ## 26. CDN-Auslieferung & dynamischer Pin (`data-cdn-pin`) — Bubble-Falle
 
