@@ -1062,18 +1062,27 @@
       }).observe(root);
     }
 
-    /* Reconcile isDark from the ATTRIBUTE too, not only from params.isDark in a payload — mirrors
-       the same fix already applied to Visibility Chart. */
+    /* Reconcile isDark AND the loading attributes from the DOM too, not only from an explicit
+       render()/setLoading() call — mirrors the same live-attribute reconciliation already in
+       urls-table.js/domains-table.js/visibility-chart.js. Without this, a page that flips
+       data-processing purely via the attribute (no accompanying JS call) never got noticed here,
+       unlike everywhere else in the library. */
     var themeObserver = new MutationObserver(function(){
       var wantDark = isYes(root.getAttribute("data-isdark"));
-      if (wantDark === isDark) return;
-      isDark = wantDark;
-      if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
-      if (typeof syncPortalTheme === "function") syncPortalTheme();
-      render();
-      populateFilter();
+      var changed = false;
+      if (wantDark !== isDark){
+        isDark = wantDark;
+        if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
+        if (typeof syncPortalTheme === "function") syncPortalTheme();
+        changed = true;
+      }
+      if (!LOADING_EXPLICIT[instanceId]){
+        var wantProc = readProcessing();
+        if (wantProc !== state.loading){ state.loading = wantProc; changed = true; }
+      }
+      if (changed){ render(); populateFilter(); }
     });
-    themeObserver.observe(root, { attributes: true, attributeFilter: ["data-isdark"] });
+    themeObserver.observe(root, { attributes: true, attributeFilter: ["data-isdark", "data-processing", "data-processing2"] });
 
     return {
       __ctrlId: myCtrlId,

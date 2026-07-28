@@ -177,7 +177,6 @@
       var pb = usableAttr(b, "IS_PROCESSING_2") ? isYes(b) : false;
       return pa || pb;
     }
-    function attrOwnsLoading(){ return hasProcessingAttr(); }
     function persist(){
       STORE[instanceId] = {
         loading: state.loading, query: state.query,
@@ -859,6 +858,7 @@
         ? name + " mentioned?" : "mentioned?";
     }
     function syncBrand(){
+      if (!elBrand) return;
       var name = root.getAttribute("data-brand-name") || "";
       var logo = root.getAttribute("data-brand-logo") || "";
       var valid = name && name !== "BRAND_NAME";
@@ -1076,12 +1076,6 @@
     function placeMenu(pop){
       if (!pop) return;
       UpstreemCore.placeMenu(menuOf(pop), pop.querySelector(BTN_SEL));
-    }
-    function clearMenuPlacement(pop){
-      var menu = menuOf(pop);
-      if (!menu) return;
-      menu.style.position = ""; menu.style.top = ""; menu.style.left = "";
-      menu.style.right = ""; menu.style.maxHeight = ""; menu.style.zIndex = "";
     }
     function closePops(except){
       [elSort, elFilter, elCols, elMent].forEach(function(p){

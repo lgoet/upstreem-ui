@@ -708,6 +708,7 @@
 
     /* ---------------- brand mentioned (single toggle) ---------------- */
     function syncBrand(){
+      if (!elBrand) return;
       var name = root.getAttribute("data-brand-name") || "";
       var logo = root.getAttribute("data-brand-logo") || "";
       var valid = name && name !== "BRAND_NAME";
