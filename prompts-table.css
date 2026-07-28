@@ -1,0 +1,61 @@
+/* upstreem prompts-table.css — component styling. Requires core.css loaded first.
+   Table chrome (toolbar, dropdowns, tooltips, pager, columns menu, skeletons, sticky header,
+   .up-num/.up-sent/.up-rank-group, .up-stack brand chips) all come from core.css — this file only
+   has what's genuinely specific to the Prompts table: the checkbox, the prompt cell (clamp +
+   3-way row height), the market flag, and the date cell. */
+
+.upt-root { --upt-check-size: 18px; }
+
+/* ---------- selection checkbox ----------
+   Same visual language as .up-filter-check (core): a square, border by default, filled + white
+   check when active. Indeterminate (header, some-but-not-all selected) gets a dash instead. */
+.upt-check {
+  width: var(--upt-check-size); height: var(--upt-check-size); border-radius: 5px;
+  border: 1.5px solid var(--vc-border); flex: 0 0 auto; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; color: #fff;
+}
+.upt-check svg { width: 11px; height: 11px; display: block; }
+.upt-check.is-checked, .upt-check.is-indeterminate { background: var(--vc-text); border-color: var(--vc-text); }
+.up-root[data-theme="dark"] .upt-check.is-checked,
+.up-root[data-theme="dark"] .upt-check.is-indeterminate { color: #1f1f1b; }
+.upt-check.is-indeterminate::after { content: ""; width: 8px; height: 2px; border-radius: 1px; background: currentColor; }
+.up-row:hover .upt-check:not(.is-checked) { border-color: var(--vc-third); }
+.up-th .upt-check { margin-right: 2px; }
+
+/* ---------- prompt cell ----------
+   72px default (2-line clamp) / 55px compact (1-line) / dynamic (auto height, full text) — the
+   only genuinely new row-height mode this app has, wired via UC.makeColumns' rowHeightSwitch. */
+.upt-td-prompt { gap: 10px; }
+.upt-prompt-wrap { display: flex; flex-direction: column; justify-content: center; min-width: 0; flex: 1 1 auto; }
+.upt-prompt-text {
+  font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.35; letter-spacing: -0.01em;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+}
+.upt-root.is-rh-compact .up-row { height: 55px; flex: 0 0 55px; }
+.upt-root.is-rh-compact .upt-prompt-text { -webkit-line-clamp: 1; }
+.upt-root.is-rh-dynamic .up-row { height: auto; flex: 0 0 auto; }
+.upt-root.is-rh-dynamic .up-td { height: auto; align-items: center; padding-top: 14px; padding-bottom: 14px; }
+.upt-root.is-rh-dynamic .upt-prompt-text { -webkit-line-clamp: unset; display: block; white-space: normal; overflow: visible; }
+/* selected rows keep a persistent tint, same colour the hover state already uses */
+.up-row.is-selected, .up-row.is-selected:hover { background: var(--vt-row-hover); }
+
+/* ---------- market flag ---------- */
+.upt-market { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.upt-flag { width: 20px; height: 20px; border-radius: 999px; overflow: hidden; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center; line-height: 0; }
+.upt-flag img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.upt-market-code { font-size: 13px; font-weight: 500; color: var(--vc-text); letter-spacing: 0.02em; white-space: nowrap; }
+
+/* ---------- created cell ---------- */
+.upt-date { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
+
+/* ---------- topics cell ----------
+   The .ust-* widget styles itself (injected once by UstTopics) — only the table-cell frame
+   around it is ours: no clipping, so the "+N" hover popup (which escapes the row via
+   position:fixed) isn't cut off by the row/column boundary underneath it. */
+.upt-td-topics { overflow: visible; min-width: 0; }
+.upt-td-topics .ust-cell { overflow: visible; }
+.upt-td-topics .ust-row { overflow: hidden; }
+
+/* ---------- responsive: narrow first column and dropped columns ---------- */
+.up-root.is-vnarrow .upt-td-prompt .up-row-goto { display: none; }
