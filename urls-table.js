@@ -13,7 +13,7 @@
   var __uutBootQueue = window.__uutBootQueue = window.__uutBootQueue || [];
   if (!window.__uutBootStubbed){
     window.__uutBootStubbed = true;
-    ["renderUrlsTable", "setUrlsTableLoading", "resetUrlsTable"].forEach(function(n){
+    ["renderUrlsTable", "setUrlsTableLoading", "resetUrlsTable", "setUrlsTableBrands"].forEach(function(n){
       window[n] = function(){ __uutBootQueue.push([n, arguments]); };
     });
   }
@@ -109,7 +109,8 @@
       rows: [],
       totalCount: null,
       hasData: false,
-      loading: hasProcessingAttr() ? readProcessing()
+      loading: false,                       // intern (Suche/Pagination), startet immer frei
+      extLoading: hasProcessingAttr() ? readProcessing()
              : (LOADING_EXPLICIT[instanceId] ? !!saved.loading : false),
       query: saved.query || "",
       sortField: saved.sortField || DEFAULT_SORT.field,
@@ -179,7 +180,7 @@
     }
     function persist(){
       STORE[instanceId] = {
-        loading: state.loading, query: state.query,
+        loading: state.extLoading, query: state.query,
         sortField: state.sortField, sortDir: state.sortDir,
         filterSel: state.filterSel, appliedSel: state.appliedSel,
         filterUrlSel: state.filterUrlSel, appliedUrlSel: state.appliedUrlSel, filterDim: state.filterDim,
@@ -310,7 +311,7 @@
     }
     function renderTable(){
       // skeleton matches the CURRENT page size, so the table doesn't visibly resize when data lands
-      if (state.loading || !state.hasData){ clearEmptyGrace(); elTbody.innerHTML = skeletonRows(state.pageSize); return; }
+      if (isBusy() || !state.hasData){ clearEmptyGrace(); elTbody.innerHTML = skeletonRows(state.pageSize); return; }
       if (!state.rows.length){
         var filtered = !!state.query ||
           Object.keys(state.appliedSel).some(function(k){ return state.appliedSel[k]; }) ||
@@ -329,7 +330,7 @@
           elTbody.innerHTML = skeletonRows(state.pageSize);
           emptyGraceTimer = setTimeout(function(){
             emptyGraceTimer = null;
-            if (state.loading || !state.hasData || state.rows.length) return;   // state moved on already
+            if (isBusy() || !state.hasData || state.rows.length) return;   // state moved on already
             renderEmptyState(false);
           }, 3000);   // matches the line-chart's established __votNoDataT grace window (visibility-chart.js)
         }
@@ -1097,6 +1098,15 @@
     var lastProcAttr = String(root.getAttribute("data-processing") || "") + "|" +
                        String(root.getAttribute("data-processing2") || "");
     var explicitOverride = false;
+    /* Zwei Quellen fuer den Skeleton-Zustand, absichtlich getrennt:
+         state.loading     — INTERN: von UC.makeSearch/UC.makePager gesetzt, wenn die Komponente
+                             selbst nachlaedt. Wird geloescht, sobald Zeilen ankommen.
+         state.extLoading  — EXTERN: data-processing/-2 oder ein expliziter set*Loading-Aufruf.
+                             Wird NUR durch die Gegenseite geloescht, nie durch ankommende Daten.
+       Vorher teilten sich beide einen Schalter, deshalb beendete die erste Datenlieferung auch
+       einen extern gesetzten Ladezustand — die Tabelle verliess den Skeleton frueher als eine
+       Chart-Komponente, deren set*Loading("no") gleichzeitig geplant war. */
+    function isBusy(){ return !!state.loading || !!state.extLoading; }
     /* theme + processing attributes */
     var syncFromAttrs = function(){
       var wantDark = isYes(root.getAttribute("data-isdark"));
@@ -1114,7 +1124,7 @@
       }
       if (!explicitOverride){
         var wantProc = readProcessing();
-        if (wantProc !== state.loading){ state.loading = wantProc; changed = true; }
+        if (wantProc !== state.extLoading){ state.extLoading = wantProc; changed = true; }
       }
       if (changed) render();
     };
@@ -1233,19 +1243,19 @@
         }
         if (params.brand_name != null) root.setAttribute("data-brand-name", String(params.brand_name));
         if (params.brand_logo != null) root.setAttribute("data-brand-logo", String(params.brand_logo));
-        if (explicitOverride){
-          // an explicit "loading" is only cleared by an explicit "no" or by arriving rows
-          if (params.rows != null){ state.loading = false; explicitOverride = false; }
-        }
-        else if (hasProcessingAttr()) state.loading = readProcessing();
-        else if (params.rows != null) state.loading = false;   // data arrived -> the search is done
+        /* Ankommende Zeilen beenden nur das selbst ausgeloeste Nachladen. Ein extern gesetzter
+           Ladezustand bleibt stehen, bis Bubble ihn selbst aufhebt — sonst wuerde diese Tabelle
+           den Skeleton frueher verlassen als die Charts daneben. */
+        if (params.rows != null) state.loading = false;
+        if (!explicitOverride && hasProcessingAttr()) state.extLoading = readProcessing();
         persist(); render();
       },
       setLoading: function(on){
         // Overrides the attribute until the attribute itself changes again.
         explicitOverride = true;
         LOADING_EXPLICIT[instanceId] = true;
-        state.loading = isYes(on);
+        state.extLoading = isYes(on);
+        if (!state.extLoading) state.loading = false;   // "fertig" beendet auch ein internes Nachladen
         persist(); render();
       },
       reset: function(){
@@ -1327,7 +1337,7 @@
     resolveLocal: "__uutResolveLocal",
     queue: "__uutBootQueue",
     initRoot: initRoot,
-    api: { renderUrlsTable: doRender, setUrlsTableLoading: doLoading, resetUrlsTable: doReset },
+    api: { renderUrlsTable: doRender, setUrlsTableLoading: doLoading, resetUrlsTable: doReset, setUrlsTableBrands: doBrands },
     forwardShape: { renderUrlsTable: "params", resetUrlsTable: "id" }
   });
   function rootsWithId(id){ return mount.rootsWithId(id); }
