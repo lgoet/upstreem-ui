@@ -193,6 +193,12 @@
     .up-page-gap { min-width: 20px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
       color: var(--vc-third); font-size: 12px; flex: 0 0 auto; }
     .up-root.is-vnarrow .up-pager-info, .up-root.is-vnarrow .up-pagesize-lbl { display: none; }
+    /* Wrapped onto two lines (not enough room for both groups side by side) — centre each line
+       instead of leaving page size hugging the left edge and page nav the right. See
+       syncFootWrap() in UC.makePager, shared by every table using this footer. */
+    .up-foot.is-wrapped { justify-content: center; }
+    .up-foot.is-wrapped .up-pagesize { flex: 1 1 100%; justify-content: center; }
+    .up-foot.is-wrapped .up-pager { flex: 1 1 100%; justify-content: center; margin-left: 0; }
 
     /* ---------- filter dropdown (citation types) ---------- */
     .up-filter { position: relative; flex: 0 0 auto; }

@@ -221,10 +221,14 @@
 .upt-bulkbar-row [data-bulk-topics] { margin-left: auto; }
 .upt-bulkbar-row [data-bulk-status] { margin-left: -8px; }   /* 16px row gap -> 8px */
 .upt-bulkbar-row [data-bulk-clear] { margin-left: -8px; }    /* same: 16px row gap -> 8px */
-/* inline-block + overflow:hidden so syncBulkBarCount()'s slide/fade has a transform to animate
-   and a clipping box to slide within — a plain inline text node can't take either. */
-.upt-bulkbar-count { display: inline-block; overflow: hidden; font-size: 13.5px; font-weight: 600;
-  color: var(--vc-text); white-space: nowrap; flex: 0 0 auto; }
+.upt-bulkbar-count { font-size: 13.5px; font-weight: 600; color: var(--vc-text); white-space: nowrap; flex: 0 0 auto; }
+/* Only this inner span animates — see syncBulkBarCount(). inline-block + overflow:hidden give it
+   a transform to animate and a clipping box to slide within (a plain inline text node has
+   neither). min-width + text-align:right + tabular-nums reserve room for two digits and grow
+   the number LEFTWARD past that, so "selected" next to it never shifts sideways going from a
+   1- to a 2-digit count — the common case; three digits or more still push it, unavoidably. */
+.upt-bulkbar-count-n { display: inline-block; overflow: hidden; min-width: 2ch; text-align: right;
+  font-variant-numeric: tabular-nums; }
 .upt-bulkbar-link { border: 0; background: transparent; padding: 0 2px; cursor: pointer;
   font-family: inherit; font-size: 12.5px; font-weight: 500; color: var(--vc-muted);
   text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; flex: 0 0 auto; }
@@ -438,6 +442,32 @@
 
 /* ---------- responsive: narrow first column and dropped columns ---------- */
 .up-root.is-vnarrow .upt-td-prompt .up-row-goto { display: none; }
+
+/* ---------- responsive: toolbar (mobile) ----------
+   is-w3 is the gap-measured tier (see fitToolbar()) — same one urls-table drops its own brand
+   toggle at. is-w1/is-w0 (sort, cols, export-shrink) are already generic in core.css and need no
+   prompts-table-specific rule. */
+.up-root.is-w3 .upt-brand-toggle { display: none !important; }
+/* is-vnarrow is a hard width cutoff, not a gap measurement, so it's the reliable place to
+   guarantee the mobile end-state regardless of how fitToolbar's tiers landed: only the
+   Active/Inactive switcher (plus search, if there's still room) survive. Export only SHRINKS at
+   is-w0 (matching every other table); past this point it's gone entirely.
+   The switcher moves to order:2 with its own margin-left:auto — .up-head-tools already carries
+   a permanent margin-left:auto from core.css, so with both in sequence the pair reads as one
+   right-aligned group instead of the switcher sitting stranded mid-row. */
+.up-root.is-vnarrow .upt-brand-toggle,
+.up-root.is-vnarrow .up-sort,
+.up-root.is-vnarrow .up-cols,
+.up-root.is-vnarrow .up-export { display: none !important; }
+.up-root.is-vnarrow .up-head { flex-wrap: nowrap; }
+.up-root.is-vnarrow .upt-status { order: 2; margin-left: auto; }
+.up-root.is-vnarrow .up-head-tools { order: 3; }
+/* Selection active on mobile: the switcher would otherwise fight the selected-count chip for the
+   same slot, so it steps aside and the chip (already living inside .up-heading, right after the
+   label) effectively takes over that role — the heading stretches to fill the row and pushes the
+   chip out to the same right-aligned position the switcher just vacated. */
+.up-root.is-vnarrow.is-bulk .upt-status { display: none; }
+.up-root.is-vnarrow.is-bulk .up-heading { flex: 1 1 auto; justify-content: space-between; }
 
 /* ---------- Visibility column header: tracked-brand logo ----------
    Every metric in Visibility/Rank/Sentiment is about this one brand's performance on the

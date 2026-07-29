@@ -603,6 +603,29 @@
      component can persist, re-render and tell Bubble. */
   function makePager(cfg){
     var root = cfg.root, state = cfg.state;
+    var elFoot = root.querySelector(".up-foot");
+    /* .up-foot is space-between by default (page size left, page nav right via margin-left:auto)
+       — fine on one line, but once there's no room and it wraps to two lines that layout leaves
+       each row hugging its own edge instead of reading as one centred block. Detected by
+       comparing the two groups' own top offsets (same top -> one line, different top -> wrapped)
+       rather than a fixed width breakpoint, because what wraps depends on how many page-number
+       buttons are actually showing, not just the container's width. Shared here so it applies to
+       every table that uses this pager, not just whichever one asked for it first. */
+    function syncFootWrap(){
+      if (!elFoot) return;
+      var pagesize = elFoot.querySelector(".up-pagesize");
+      var pager = elFoot.querySelector(".up-pager");
+      if (!pagesize || !pager) return;
+      var wrapped = Math.round(pagesize.getBoundingClientRect().top) !== Math.round(pager.getBoundingClientRect().top);
+      elFoot.classList.toggle("is-wrapped", wrapped);
+    }
+    if (elFoot && window.ResizeObserver){
+      var footRaf = null;
+      new ResizeObserver(function(){
+        if (footRaf) return;
+        footRaf = requestAnimationFrame(function(){ footRaf = null; syncFootWrap(); });
+      }).observe(elFoot);
+    }
     function pageCount(){
       var t = toNum(state.totalCount);
       if (t == null || t <= 0) return 1;
@@ -647,6 +670,7 @@
         pages +
         '<button class="up-page up-page-next" type="button" aria-label="Next page"' + (cur >= total ? " disabled" : "") + '>' +
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>';
+      syncFootWrap();   // page count just changed -> the row may have gained/lost a line
     }
     function renderPageSize(){
       /* .up-pagesize-seg, NOT .up-pagesize: the outer element also holds the "Rows per page"
@@ -658,6 +682,7 @@
         return '<button class="up-pagesize-btn' + (n === state.pageSize ? " is-active" : "") +
                '" type="button" data-pagesize="' + n + '">' + n + '</button>';
       }).join("");
+      syncFootWrap();
     }
     function goToPage(p){
       var total = pageCount();

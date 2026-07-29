@@ -227,7 +227,10 @@
     /* 178px, same as urls-table's identical column: 4 × 32px avatars (−6px overlap each) plus
        the "+N" label plus the cell's own 28px padding, with headroom for the hover spread.
        A %-based floor let it collapse below that and clipped the stack. */
-    { key: "brands",     label: "Brand Mentions",  w: "minmax(178px, 1fr)", min: 178 },
+    /* No dropAt was a real bug, not a deliberate "always show" — every other column has one, and
+       leaving this the sole exception meant the narrowest tier still showed Prompt + Visibility
+       + Brand Mentions instead of just the two columns that are supposed to survive down there. */
+    { key: "brands",     label: "Brand Mentions",  w: "minmax(178px, 1fr)", min: 178, dropAt: "vnarrow" },
     { key: "topics",     label: "Topics",          w: "minmax(12%, 1fr)",   min: 150, dropAt: "vnarrow" },
     { key: "market",     label: "Market",          w: "minmax(8%, 0.6fr)", min: 90,  dropAt: "narrow" },
     { key: "created",    label: "Created",         w: "minmax(10%, 0.7fr)",min: 110, dropAt: "narrow" }
@@ -673,7 +676,8 @@
         var unicode = e.detail && e.detail.unicode;
         if (!unicode) return;
         newTopicEmoji = unicode;
-        pickOpen = null;
+        /* Deliberately does NOT close the picker — picking is not the same as being done;
+           closing on every click made it hard to compare a couple of emoji against each other. */
         renderTopicList();
       });
       /* The bar hangs off <body>, outside .up-root — core's tooltips delegate from whatever root
@@ -692,27 +696,29 @@
     function syncBulkBarCount(){
       var n = bulkCount();
       if (n === 0 || !elBulk || !elBulk.classList.contains("is-on")){ renderBulkBar(); return; }
-      var countEl = elBulk.querySelector(".upt-bulkbar-count");
-      if (!countEl){ renderBulkBar(); return; }
+      var numEl = elBulk.querySelector(".upt-bulkbar-count-n");
+      if (!numEl){ renderBulkBar(); return; }
       var wantEscape = state.selectAllMatching || (hasMorePages() && pageFullySelected());
       var hasEscapeNow = !!elBulk.querySelector("[data-bulk-all],[data-bulk-undoall]");
       if (wantEscape !== hasEscapeNow){ renderBulkBar(); return; }
-      var newTxt = n === 1 ? "1 selected" : UC.fmtInt(n) + " selected";
-      var prev = Number(countEl.getAttribute("data-n"));
-      countEl.setAttribute("data-n", n);
-      if (isNaN(prev) || prev === n){ countEl.textContent = newTxt; return; }
+      /* Only this span moves — "selected" outside it is untouched, so it never has to be part of
+         the animation and never shifts sideways from a wider/narrower digit run next to it. */
+      var newTxt = UC.fmtInt(n);
+      var prev = Number(numEl.getAttribute("data-n"));
+      numEl.setAttribute("data-n", n);
+      if (isNaN(prev) || prev === n){ numEl.textContent = newTxt; return; }
       var dir = n > prev ? 1 : -1;
-      countEl.style.transition = "none";
-      countEl.style.transform = "translateY(0)";
-      countEl.style.opacity = "1";
-      countEl.textContent = newTxt;
-      void countEl.offsetWidth;
-      countEl.style.transform = "translateY(" + (dir * 6) + "px)";
-      countEl.style.opacity = "0";
-      void countEl.offsetWidth;
-      countEl.style.transition = "transform 180ms cubic-bezier(.2,0,.38,.9), opacity 140ms ease";
-      countEl.style.transform = "translateY(0)";
-      countEl.style.opacity = "1";
+      numEl.style.transition = "none";
+      numEl.style.transform = "translateY(0)";
+      numEl.style.opacity = "1";
+      numEl.textContent = newTxt;
+      void numEl.offsetWidth;
+      numEl.style.transform = "translateY(" + (dir * 6) + "px)";
+      numEl.style.opacity = "0";
+      void numEl.offsetWidth;
+      numEl.style.transition = "transform 180ms cubic-bezier(.2,0,.38,.9), opacity 140ms ease";
+      numEl.style.transform = "translateY(0)";
+      numEl.style.opacity = "1";
     }
     function renderBulkBar(){
       var n = bulkCount();
@@ -738,7 +744,6 @@
       var isAll = state.selectAllMatching;
       /* No "+": bulkCount() is the exact total_count once select-all is active, not an estimate —
          a "+" on a number we know precisely reads as a hedge we don't actually mean. */
-      var countTxt = n === 1 ? "1 selected" : UC.fmtInt(n) + " selected";
       /* Polaris's trick: one control with two states. Before -> the escape hatch; after -> Undo.
          Only offered when there actually IS another page, otherwise "select all" is a lie. */
       var escape = "";
@@ -752,7 +757,11 @@
       var wasOpen = bar.classList.contains("is-topics");
       bar.innerHTML =
         '<div class="upt-bulkbar-row">' +
-          '<span class="upt-bulkbar-count" role="status" aria-live="polite" data-n="' + n + '">' + esc(countTxt) + '</span>' +
+          /* Only the number lives in its own span — "selected" never moves, and syncBulkBarCount()
+             only ever touches this inner span, not the whole phrase. */
+          '<span class="upt-bulkbar-count" role="status" aria-live="polite">' +
+            '<span class="upt-bulkbar-count-n" data-n="' + n + '">' + UC.fmtInt(n) + '</span> selected' +
+          '</span>' +
           escape +
           '<button class="up-filter-btn upt-bulkbar-btn" type="button" data-bulk-topics aria-expanded="' + (wasOpen ? "true" : "false") + '">' + TAG_SVG + 'Topics</button>' +
           '<button class="up-filter-btn upt-bulkbar-btn" type="button" data-bulk-status>' + esc(statusLabel) + '</button>' +
@@ -1482,7 +1491,7 @@
         var colorBtn = e.target.closest("[data-color]");
         if (colorBtn){
           newTopicColor = colorBtn.getAttribute("data-color");
-          pickOpen = null;
+          /* Stays open — same reasoning as the emoji picker above. */
           renderTopicList();
           return;
         }
@@ -1688,12 +1697,39 @@
       attributes: true, attributeFilter: ["data-brand-name","data-brand-logo"]
     });
 
+    /* ---------------- toolbar fit (mobile) ----------------
+       Same mechanism as urls-table/domains-table: measure the actual gap between the heading and
+       the tools row, drop one tool at a time (least important first) until it fits again. This
+       table never had this wired up at all — is-w0..is-w3 only ever did anything because
+       core.css's rules for them are generic; nothing here was ever adding the classes. */
+    var SEARCH_OPEN_WIDTH = 202;
+    var MIN_HEAD_GAP = 64;
+    var TOOLBAR_TIERS = ["is-w3", "is-w1", "is-w0"];   // no is-w2: that tier is urls-table's mentioned-brands dropdown, which this table doesn't have
+    function headGap(){
+      var h = elHeading && elHeading.getBoundingClientRect();
+      var tl = elHeadTools && elHeadTools.getBoundingClientRect();
+      if (!h || !tl || !tl.width) return Infinity;
+      var gap = tl.left - h.right;
+      if (elSearch && !elSearch.classList.contains("is-open")) gap -= SEARCH_OPEN_WIDTH;
+      return gap;
+    }
+    function fitToolbar(){
+      if (!elHeading || !elHeadTools) return;
+      if (root.classList.contains("is-searchtakeover")) return;
+      for (var r = 0; r < TOOLBAR_TIERS.length; r++) root.classList.remove(TOOLBAR_TIERS[r]);
+      for (var i = 0; i < TOOLBAR_TIERS.length; i++){
+        if (headGap() >= MIN_HEAD_GAP) return;
+        root.classList.add(TOOLBAR_TIERS[i]);
+      }
+    }
+
     /* responsive: drop columns rather than squeezing them */
     function applyResponsive(){
       var w = root.getBoundingClientRect().width || 0;
       if (!w) return;
       var before = root.className;
       search.syncTakeover();
+      fitToolbar();
       root.classList.toggle("is-t1", w < 560);
       root.classList.toggle("is-narrow", w < 860);
       root.classList.toggle("is-vnarrow", w < 620);
