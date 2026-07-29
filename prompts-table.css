@@ -28,17 +28,22 @@
    Same visual language as .up-filter-check (core): a square, border by default, filled + white
    check when active. Indeterminate (header, some-but-not-all selected) gets a dash instead. */
 .upt-check {
+  position: relative;
   width: var(--upt-check-size); height: var(--upt-check-size); border-radius: 5px;
   border: 1.5px solid var(--vc-border); flex: 0 0 auto; cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center; color: #fff;
 }
+/* Invisible hit-target extension — the box itself stays the same visual size, but a click up to
+   8px outside it still lands here instead of missing. A ::before is part of its host's hit-test
+   area without being a separate element clicks could land "on" instead. */
+.upt-check::before { content: ""; position: absolute; inset: -8px; }
 .upt-check svg { width: 11px; height: 11px; display: block; }
 .upt-check.is-checked, .upt-check.is-indeterminate { background: var(--vc-text); border-color: var(--vc-text); }
 .up-root[data-theme="dark"] .upt-check.is-checked,
 .up-root[data-theme="dark"] .upt-check.is-indeterminate { color: #1f1f1b; }
 .upt-check.is-indeterminate::after { content: ""; width: 8px; height: 2px; border-radius: 1px; background: currentColor; }
 .up-row:hover .upt-check:not(.is-checked) { border-color: var(--vc-third); }
-.up-th .upt-check { margin-right: 2px; }
+.up-th .upt-check { margin-right: 8px; }
 
 /* ---------- prompt cell ----------
    72px default (2-line clamp) / 55px compact (1-line) / dynamic (auto height, full text) — the
@@ -231,26 +236,44 @@
   background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 10%, transparent);
   color: var(--ust-tag-color, #4b5563); font-size: 12px; font-weight: 500; line-height: 1;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
-  transition: border-color 160ms ease; }
+  transition: border-color 200ms cubic-bezier(.2,0,.38,.9); }
 .upt-bulkbar[data-theme="dark"] .upt-topicchip { background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 22%, transparent); color: #e0e0e0; }
 .upt-topicchip-e { font-size: 12px; line-height: 1; }
 /* Staged (this popover's draft) or pre-existing on the one selected prompt — see
-   topicInitialStaged()/isStaged(). */
+   topicInitialStaged()/isStaged(). Same 200ms curve as the checkbox below: it used to run at a
+   different duration, so the border reached "selected" a beat before the checkbox finished
+   sliding in — two things visibly out of step instead of one motion. */
 .upt-topicchip.is-on { border-color: var(--vc-text); }
 .upt-topicchip-lbl { overflow: hidden; text-overflow: ellipsis; }
-/* Slides in from the right on toggle: width/opacity/transform all animate together, the chip's
-   own width grows as a side effect (nothing to do there — it's just a flex child), and that
-   growth is what pushes later chips onto the next line, caught by the FLIP in renderTopicList(). */
+/* An actual checkbox — a filled square with a white tick — not a bare check glyph; the glyph
+   alone read as "some faint mark appeared", not "this is checked". Slides in from the right as
+   ONE box (background + tick together, nothing added or swapped mid-transition), the chip's own
+   width grows as a side effect, and that growth is what pushes later chips onto the next line,
+   caught by the FLIP in renderTopicList(). */
 .upt-topicchip-check { display: inline-flex; align-items: center; justify-content: center;
-  width: 0; opacity: 0; overflow: hidden; flex: 0 0 auto; margin-left: 0; transform: translateX(6px);
-  transition: width 200ms cubic-bezier(.2,0,.38,.9), opacity 160ms ease,
+  width: 0; height: 14px; border-radius: 4px; opacity: 0; overflow: hidden; flex: 0 0 auto;
+  margin-left: 0; transform: translateX(6px);
+  background: var(--vc-text); color: var(--up-surface);
+  transition: width 200ms cubic-bezier(.2,0,.38,.9), opacity 200ms cubic-bezier(.2,0,.38,.9),
               transform 200ms cubic-bezier(.2,0,.38,.9), margin-left 200ms cubic-bezier(.2,0,.38,.9); }
-.upt-topicchip-check.is-on { width: 12px; opacity: 1; transform: translateX(0); margin-left: 1px; }
-.upt-topicchip-check svg { width: 11px; height: 11px; display: block; }
+.upt-topicchip-check.is-on { width: 14px; opacity: 1; transform: translateX(0); margin-left: 2px; }
+.upt-topicchip-check svg { width: 9px; height: 9px; display: block; flex: 0 0 auto; }
+/* At the per-prompt cap: chips you haven't staged can't be added anyway, so a click there would
+   silently do nothing — dimming them says so up front instead of leaving that a surprise. */
+.upt-topiclist.is-full .upt-topicchip:not(.is-on) { opacity: .4; cursor: default; pointer-events: none; }
 .upt-topicmenu-empty { padding: 14px 8px; text-align: center; font-size: 12.5px; color: var(--vc-muted); }
-/* Add Topic stays left (hands off to your own topic-creation UI without touching the staged
-   selection); Apply is the one control that actually sends it. */
-.upt-topicfoot { margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+/* No matches for the typed query -> the obvious next move is creating it, offered right where
+   the empty state would otherwise sit. */
+.upt-topiccreate { width: 100%; height: 34px; padding: 0 12px; border-radius: 9px;
+  border: 1px dashed var(--vc-border); background: transparent; color: var(--vc-text);
+  cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 500; text-align: left;
+  display: inline-flex; align-items: center; gap: 8px; }
+.upt-topiccreate:hover { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
+.upt-topiccreate svg { width: 13px; height: 13px; display: block; flex: 0 0 auto; color: var(--vc-muted); }
+.upt-topiccreate strong { font-weight: 600; }
+/* Both right-aligned: Add Topic hands off to your own topic-creation UI without touching the
+   staged selection, Apply is the one control that actually sends it. */
+.upt-topicfoot { margin-top: 10px; display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
 .upt-topicadd { flex: 0 0 auto; height: 34px; padding: 0 14px; border-radius: 9px;
   border: 1px dashed var(--vc-border); background: transparent; color: var(--vc-muted);
   cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 500;
@@ -289,7 +312,7 @@
   transition: max-width 220ms cubic-bezier(0.2,0,0.38,0.9), opacity 160ms ease,
               transform 220ms cubic-bezier(0.2,0,0.38,0.9), margin-left 220ms cubic-bezier(0.2,0,0.38,0.9);
 }
-.upt-selcount.is-on { max-width: 220px; opacity: 1; margin-left: 14px; transform: translateX(0); pointer-events: auto; }
+.upt-selcount.is-on { max-width: 220px; opacity: 1; margin-left: 16px; transform: translateX(0); pointer-events: auto; }
 @media (prefers-reduced-motion: reduce){ .upt-selcount { transition-duration: 1ms; } }
 .upt-selcount-clear { width: 18px; height: 18px; border: 0; padding: 0; border-radius: 5px;
   background: transparent; color: var(--vc-muted); cursor: pointer; flex: 0 0 auto;

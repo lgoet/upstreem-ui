@@ -593,6 +593,7 @@
     var elBulk = null;
     var CLOSE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
     var TAG_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>';
+    var PLUS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
     /* Lives on document.body, NOT inside the component root: it has to sit bottom-centre of the
        PAGE, and a position:fixed element is positioned against the nearest ancestor that has a
        transform/filter/perspective — which Bubble containers frequently do. Parenting it to body
@@ -726,14 +727,19 @@
        patched separately from a toggle so a click doesn't also tear down the search input. */
     function topicListHtml(){
       var list = state.topics || [];
-      var q = topicQuery.trim().toLowerCase();
+      var q = topicQuery.trim();
+      var qLower = q.toLowerCase();
       var shown = list.filter(function(t){
-        return !q || String(t.name || "").toLowerCase().indexOf(q) > -1;
+        return !qLower || String(t.name || "").toLowerCase().indexOf(qLower) > -1;
       });
       var items = !list.length
         ? '<div class="upt-topicmenu-empty">No topics available</div>'
         : (!shown.length
-            ? '<div class="upt-topicmenu-empty">No matches</div>'
+            /* A typed query with zero matches is the exact moment "create it instead" is the
+               obvious next action — surfaced inline rather than making the user go find the
+               separate Add Topic button and retype the name there. */
+            ? '<button type="button" class="upt-topiccreate" data-topic-create="' + esc(q) + '">' +
+                PLUS_SVG + '<span>Create &ldquo;<strong>' + esc(q) + '</strong>&rdquo;</span></button>'
             : shown.map(function(t){
                 var id = topicId(t);
                 var on = isStaged(id);
@@ -756,6 +762,9 @@
       if (!elBulk) return;
       var el = elBulk.querySelector(".upt-topiclist");
       if (!el) return;
+      /* At the per-prompt cap, chips you haven't staged can't be added anyway — dimming them
+         (see .upt-topiclist.is-full in the CSS) says so before the click does nothing. */
+      el.classList.toggle("is-full", stagedCount() >= TOPIC_MAX);
       if (!animate){ el.innerHTML = topicListHtml(); return; }
       var before = {};
       Array.prototype.forEach.call(el.querySelectorAll("[data-topic]"), function(c){
@@ -800,7 +809,7 @@
               '<span class="upt-topiccount">' + n + '/' + TOPIC_MAX + '</span>' +
             '</div>'
           : "") +
-        '<div class="upt-topiclist">' + topicListHtml() + '</div>' +
+        '<div class="upt-topiclist' + (n >= TOPIC_MAX ? " is-full" : "") + '">' + topicListHtml() + '</div>' +
         '<div class="upt-topicfoot">' +
           '<button class="upt-topicadd" type="button" data-topic-add>' +
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
@@ -1273,6 +1282,15 @@
           return;
         }
         if (e.target.closest("[data-topic-apply]")){ applyStagedTopics(); return; }
+        var createBtn = e.target.closest("[data-topic-create]");
+        if (createBtn){
+          /* Same hand-off as the plain Add Topic button, plus the typed name — the create UI can
+             pre-fill it instead of making the user retype what they just searched for. */
+          var cp = selectionPayload();
+          cp.new_topic_name = createBtn.getAttribute("data-topic-create") || "";
+          fire("data-addtopics-fn", "uptAddTopics", cp);
+          return;
+        }
         if (e.target.closest("[data-topic-add]")){
           /* Hands off to your own "create topic" UI, carrying the selection so the new topic can
              be applied straight away if you want that. Deliberately does NOT close the panel —

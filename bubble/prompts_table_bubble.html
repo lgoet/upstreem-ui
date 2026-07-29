@@ -89,11 +89,13 @@
                    filter fields the same way the render RPC does, same as every other bulk action.
                    tag_ids is capped at 5 client-side (the per-prompt topic limit) — your RPC still
                    has final say for rows that were already close to that limit.
-    addtopics   <selection>
+    addtopics   <selection> + optionally {"new_topic_name":"SUV"}
                 -> the "Add Topic" button at the foot of the bulk topic editor. Open your own
                    topic-creation UI; the selection rides along so a freshly created topic can be
                    applied straight away. Does NOT close the topic editor or touch the staged
-                   selection.
+                   selection. new_topic_name is only present when this came from the inline
+                   "Create '…'" button shown when a topic search has zero matches — pre-fill your
+                   create-topic form with it instead of making the user retype what they searched.
     bulkstatus  <selection> + {"status":"inactive"}
                 -> set every selected prompt to that status. Reversible, so no confirm dialog is
                    shown; surface an undo in your own toast instead.
@@ -124,7 +126,7 @@
     (?<="sort_dir":")[^"]*     (?<="prompt_id":")[^"]*      (?<="selected":")[^"]*
     (?<="brand_mentioned":")[^"]*                           (?<="status":")[^"]*
     (?<="mode":")[^"]*         (?<="ids":")[^"]*            (?<="tag_ids":")[^"]*
-    (?<="prompt_ids":")[^"]*
+    (?<="prompt_ids":")[^"]*   (?<="new_topic_name":")[^"]*
     (?<="limit":)[0-9]+        (?<="offset":)[0-9]+         (?<="page":)[0-9]+
     (?<="count":)[0-9]+
 
