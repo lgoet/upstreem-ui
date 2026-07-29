@@ -51,8 +51,11 @@
 }
 .upt-root.is-rh-compact .up-row { height: 55px; flex: 0 0 55px; }
 .upt-root.is-rh-compact .upt-prompt-text { -webkit-line-clamp: 1; }
-.upt-root.is-rh-dynamic .up-row { height: auto; flex: 0 0 auto; }
-.upt-root.is-rh-dynamic .up-td { height: auto; align-items: center; padding-top: 14px; padding-bottom: 14px; }
+/* :not(.up-tsk) — skeleton rows have no real content to size against, so letting them go
+   height:auto collapsed them to whatever the tiny skeleton bar needed. Skeletons stay at the
+   normal 72px row height in every row-height mode; only real rows with real text grow. */
+.upt-root.is-rh-dynamic .up-row:not(.up-tsk) { height: auto; flex: 0 0 auto; }
+.upt-root.is-rh-dynamic .up-row:not(.up-tsk) .up-td { height: auto; align-items: center; padding-top: 14px; padding-bottom: 14px; }
 .upt-root.is-rh-dynamic .upt-prompt-text { -webkit-line-clamp: unset; display: block; white-space: normal; overflow: visible; }
 /* selected rows keep a persistent tint, same colour the hover state already uses */
 .up-row.is-selected, .up-row.is-selected:hover { background: var(--vt-row-hover); }
@@ -77,3 +80,22 @@
 
 /* ---------- responsive: narrow first column and dropped columns ---------- */
 .up-root.is-vnarrow .upt-td-prompt .up-row-goto { display: none; }
+
+/* ---------- Visibility column header: tracked-brand logo ----------
+   Every metric in Visibility/Rank/Sentiment is about this one brand's performance on the
+   prompt, so the header names it once instead of repeating it per row. */
+.upt-th-brandlogo { width: 16px; height: 16px; border-radius: 4px; flex: 0 0 auto; display: none; object-fit: cover; }
+
+/* ---------- column explainer visuals (panel + tooltip shell are core.css's .up-explain) ----------
+   A 3rd copy of this exact pattern now (visibility-chart, urls-table) — candidate for a core
+   extraction if a 4th table needs it. */
+.upt-explain-vis {
+  background: #ffffff; border-radius: 9px; padding: 11px 12px;
+  display: flex; flex-direction: column; gap: 7px; align-items: flex-start;
+  margin-bottom: 9px; min-height: 46px; justify-content: center;
+}
+.upt-explain-h { font-size: 14.5px; font-weight: 600; line-height: 1.2; padding: 0 3px; margin-bottom: 4px; color: #ffffff; }
+.upt-explain-t { font-size: 13.5px; font-weight: 400; line-height: 1.5; padding: 0 3px; color: rgba(255,255,255,0.68); }
+.up-explain[data-theme="dark"] .upt-explain-h { color: #1f1f1b; }
+.up-explain[data-theme="dark"] .upt-explain-t { color: rgba(31,31,27,0.66); }
+.up-explain[data-theme="dark"] .upt-explain-vis { background: #1b1b1b; }

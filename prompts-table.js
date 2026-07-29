@@ -206,8 +206,8 @@
   var COLUMNS = [
     { key: "visibility", label: "Visibility",      w: "minmax(10%, 1fr)",   min: 100 },
     { key: "rank",       label: "Rank",            w: "minmax(10%, 1fr)",   min: 90,  dropAt: "vnarrow" },
-    { key: "brands",     label: "Brand Mentions",  w: "minmax(12%, 1fr)",   min: 150 },
     { key: "sentiment",  label: "Sentiment",       w: "minmax(9%, 1fr)",    min: 100, dropAt: "narrow" },
+    { key: "brands",     label: "Brand Mentions",  w: "minmax(12%, 1fr)",   min: 150 },
     { key: "topics",     label: "Topics",          w: "minmax(12%, 1fr)",   min: 150, dropAt: "vnarrow" },
     { key: "market",     label: "Market",          w: "minmax(8%, 0.6fr)", min: 90,  dropAt: "narrow" },
     { key: "created",    label: "Created",         w: "minmax(10%, 0.7fr)",min: 110, dropAt: "narrow" }
@@ -341,14 +341,20 @@
        Same off -> yes -> no -> off cycle as urls-table/domains-table. Visible only once
        data-brand-name is actually filled in (Bubble's placeholder text otherwise shows through). */
     function syncBrand(){
-      if (!elBrand) return;
       var name = root.getAttribute("data-brand-name") || "";
       var logo = root.getAttribute("data-brand-logo") || "";
       var valid = name && name !== "BRAND_NAME";
+      var hasLogo = valid && logo && logo !== "BRAND_LOGO";
+      /* Visibility column header carries the tracked brand's logo — every metric in this table
+         (Visibility/Rank/Sentiment) is about THIS brand's performance on the prompt, so naming it
+         once in the header reads better than repeating it per row. */
+      var headLogo = root.querySelector(".upt-th-brandlogo");
+      if (headLogo){ if (hasLogo){ headLogo.src = logo; headLogo.style.display = "block"; } else { headLogo.style.display = "none"; } }
+      if (!elBrand) return;
       elBrand.classList.toggle("is-visible", !!valid);
       if (!valid) return;
       elBrandLbl.textContent = name + " mentioned";
-      if (logo && logo !== "BRAND_LOGO"){ elBrandLogo.src = logo; elBrandLogo.style.display = "block"; }
+      if (hasLogo){ elBrandLogo.src = logo; elBrandLogo.style.display = "block"; }
       else { elBrandLogo.style.display = "none"; }
       elBrand.classList.toggle("is-yes", state.brandMentioned === "yes");
       elBrand.classList.toggle("is-no", state.brandMentioned === "no");
@@ -400,8 +406,8 @@
         { w:180, jitter:40, cls:"upt-td-prompt" },
         { w:56,  cls:"upt-td-visibility" },
         { w:44,  cls:"upt-td-rank" },
-        { logo:true, logoStyle:"border-radius:999px", cls:"upt-td-brands" },
         { w:56,  cls:"upt-td-sentiment" },
+        { logo:true, logoStyle:"border-radius:999px", cls:"upt-td-brands" },
         { w:90,  cls:"upt-td-topics" },
         { w:60,  cls:"upt-td-market" },
         { w:76,  cls:"upt-td-created" }
@@ -454,8 +460,8 @@
         '</div>' +
         '<div class="up-td upt-td-visibility">' + visCell(r.visibility_pct) + '</div>' +
         '<div class="up-td upt-td-rank">' + rankCell(r.avg_rank) + '</div>' +
-        '<div class="up-td upt-td-brands">' + UC.brandStack(r.top_mentions, r.companies_preview_totalcount) + '</div>' +
         '<div class="up-td upt-td-sentiment">' + sentCell(r.avg_sentiment_30d) + '</div>' +
+        '<div class="up-td upt-td-brands">' + UC.brandStack(r.top_mentions, r.companies_preview_totalcount) + '</div>' +
         '<div class="up-td upt-td-topics">' + topicsCell(id, r.tags) + '</div>' +
         '<div class="up-td upt-td-market">' + marketCell(r.market) + '</div>' +
         '<div class="up-td upt-td-created"><span class="upt-date">' + esc(fmtDate(r.created_at)) + '</span></div>' +
@@ -626,6 +632,41 @@
       var to = e.relatedTarget;
       if (to && to.closest && to.closest(".upt-prompt-wrap") === wrap) return;
       promptTipWrap = null; clearTimeout(promptTipTimer); hideTip();
+    });
+
+    /* ---------------- column explainers ----------------
+       Positioning/flip/caret is UC.makeExplain (core); only the per-metric copy and the visual
+       sample are this component's own. The samples reuse the exact same cell builders the real
+       rows use, so the preview can never drift out of sync with what a row actually looks like. */
+    var EXPLAIN_TEXT = {
+      visibility: { h: "Visibility",
+        t: "How often your brand appears in AI answers for this prompt." },
+      rank: { h: "Rank",
+        t: "Your brand's average position among all brands mentioned for this prompt. A lower number is better." },
+      sentiment: { h: "Sentiment",
+        t: "How positively your brand is described when mentioned for this prompt, over the last 30 days." },
+      brands: { h: "Brand Mentions",
+        t: "Which of your tracked brands are mentioned in AI answers for this prompt. Hover a logo to see its name." },
+      market: { h: "Market",
+        t: "The market this prompt is tracked in." }
+    };
+    function explainVisual(kind){
+      if (kind === "visibility") return visCell(34);
+      if (kind === "rank") return rankCell(2.3);
+      if (kind === "sentiment") return sentCell(78);
+      if (kind === "brands") return UC.brandStack([{ name: "Toyota" }, { name: "VW" }], 2);
+      if (kind === "market") return marketCell("DE");
+      return "";
+    }
+    UC.makeExplain({
+      root: root, triggerSel: ".up-th-info", getIsDark: function(){ return isDark; },
+      html: function(kind){
+        var info = EXPLAIN_TEXT[kind];
+        if (!info) return "";
+        return '<div class="upt-explain-vis">' + explainVisual(kind) + '</div>' +
+          '<div class="upt-explain-h">' + esc(info.h) + '</div>' +
+          '<div class="upt-explain-t">' + esc(info.t) + '</div>';
+      }
     });
 
     /* ---------------- dropdowns ---------------- */
