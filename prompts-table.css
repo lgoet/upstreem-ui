@@ -6,6 +6,24 @@
 
 .upt-root { --upt-check-size: 18px; }
 
+/* ---------- brand mentioned (quick toggle) ----------
+   Same off -> yes -> no -> off pattern as urls-table/domains-table (a 3rd copy now — worth
+   moving into core if a 4th table ever needs it). Hidden until data-brand-name is actually set. */
+.upt-brand-toggle { display: none; align-items: center; justify-content: space-between; gap: 10px; height: 32px; padding: 0 8px; border-radius: 8px;
+  border: 0; background: transparent; color: var(--vc-muted); cursor: pointer; font-family: inherit; }
+.upt-brand-toggle.is-visible { display: inline-flex; }
+.upt-brand-toggle:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
+.upt-brand-toggle.is-yes, .upt-brand-toggle.is-no { background: var(--vc-heading-bg); }
+.upt-brand-toggle-lbl { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.upt-brand-check { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #fff; }
+.upt-brand-check svg { width: 11px; height: 11px; display: none; }
+.upt-brand-toggle.is-yes .upt-brand-check, .upt-brand-toggle.is-no .upt-brand-check { background: var(--vc-text); border-color: var(--vc-text); }
+.up-root[data-theme="dark"] .upt-brand-toggle.is-yes .upt-brand-check, .up-root[data-theme="dark"] .upt-brand-toggle.is-no .upt-brand-check { color: #1f1f1b; }
+.upt-brand-toggle.is-yes .upt-brand-check .upt-brand-check-yes { display: block; }
+.upt-brand-toggle.is-no .upt-brand-check .upt-brand-check-no { display: block; }
+.upt-brand-logo { width: 16px; height: 16px; border-radius: 4px; flex: 0 0 auto; display: block; object-fit: cover; }
+.upt-brand-label { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
+
 /* ---------- selection checkbox ----------
    Same visual language as .up-filter-check (core): a square, border by default, filled + white
    check when active. Indeterminate (header, some-but-not-all selected) gets a dash instead. */

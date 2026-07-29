@@ -254,6 +254,9 @@
     var elTbody     = root.querySelector(".up-tbody");
     var elSearch    = root.querySelector(".up-search");
     var elSearchIn  = root.querySelector(".up-search-input");
+    var elBrand     = root.querySelector(".upt-brand-toggle");
+    var elBrandLogo = root.querySelector(".upt-brand-logo");
+    var elBrandLbl  = root.querySelector(".upt-brand-label");
     var elSort      = root.querySelector(".up-sort");
     var elSortMenu  = root.querySelector(".up-sort-menu");
     var elHeading   = root.querySelector(".up-heading");
@@ -287,7 +290,8 @@
       cols: {},                             // filled from colsKit.readCols() below
       widths: {},                           // filled from colsKit.readWidths() below
       rowHeight: readRowHeight(),
-      selected: saved.selected || {}        // prompt_id -> true, persisted across pages
+      selected: saved.selected || {},       // prompt_id -> true, persisted across pages
+      brandMentioned: saved.brandMentioned || ""
     };
     function applyRowHeightClass(){
       root.classList.remove("is-rh-compact", "is-rh-dynamic");
@@ -315,7 +319,7 @@
         loading: state.extLoading, query: state.query,
         sortField: state.sortField, sortDir: state.sortDir,
         pageSize: state.pageSize, page: state.page,
-        selected: state.selected
+        selected: state.selected, brandMentioned: state.brandMentioned
       };
     }
     /* shared event dispatch (core) */
@@ -332,6 +336,29 @@
     function runSearch(){ search.run(); }
     function toggleSearch(){ search.toggle(); }
     function onSearchInput(){ search.onInput(); }
+
+    /* ---------------- brand mentioned (quick toggle) ----------------
+       Same off -> yes -> no -> off cycle as urls-table/domains-table. Visible only once
+       data-brand-name is actually filled in (Bubble's placeholder text otherwise shows through). */
+    function syncBrand(){
+      if (!elBrand) return;
+      var name = root.getAttribute("data-brand-name") || "";
+      var logo = root.getAttribute("data-brand-logo") || "";
+      var valid = name && name !== "BRAND_NAME";
+      elBrand.classList.toggle("is-visible", !!valid);
+      if (!valid) return;
+      elBrandLbl.textContent = name + " mentioned";
+      if (logo && logo !== "BRAND_LOGO"){ elBrandLogo.src = logo; elBrandLogo.style.display = "block"; }
+      else { elBrandLogo.style.display = "none"; }
+      elBrand.classList.toggle("is-yes", state.brandMentioned === "yes");
+      elBrand.classList.toggle("is-no", state.brandMentioned === "no");
+    }
+    function cycleBrand(){
+      state.brandMentioned = state.brandMentioned === "" ? "yes" : (state.brandMentioned === "yes" ? "no" : "");
+      state.page = 1;
+      persist(); syncBrand(); renderPager();
+      fire("data-brand-fn", "uptBrand", { brand_mentioned: state.brandMentioned });
+    }
 
     /* ---------------- selection ---------------- */
     function selectedIds(){ return Object.keys(state.selected).filter(function(k){ return state.selected[k]; }); }
@@ -463,7 +490,7 @@
         clearEmptyGrace(); elTbody.innerHTML = skeletonRows(state.pageSize); applyCols(); return;
       }
       if (!state.rows.length){
-        var filtered = !!state.query;
+        var filtered = !!state.query || !!state.brandMentioned;
         if (filtered){ clearEmptyGrace(); renderEmptyState(true); return; }
         if (!emptyGraceTimer){
           elTbody.innerHTML = skeletonRows(state.pageSize);
@@ -638,9 +665,11 @@
       if (e.target.closest("[data-clearall]")){
         elSearchIn.value = ""; state.query = "";
         elSearch.classList.remove("has-text");
+        state.brandMentioned = "";
         state.page = 1;
-        persist();
+        persist(); syncBrand();
         search.cancel(); runSearch();
+        fire("data-brand-fn", "uptBrand", { brand_mentioned: "" });
         return;
       }
 
@@ -654,6 +683,7 @@
         return;
       }
       if (e.target.closest(".up-search-btn")){ closePops(); toggleSearch(); return; }
+      if (e.target.closest(".upt-brand-toggle")){ closePops(); cycleBrand(); return; }
 
       // --- selection (must come before header-sorter / row-click) ---
       if (e.target.closest("[data-selectall]")){ toggleSelectAll(); return; }
@@ -756,6 +786,9 @@
       attributes: true, attributeFilter: ["data-isdark","data-processing","data-processing2"]
     });
     syncFromAttrs();
+    new MutationObserver(syncBrand).observe(root, {
+      attributes: true, attributeFilter: ["data-brand-name","data-brand-logo"]
+    });
 
     /* responsive: drop columns rather than squeezing them */
     function applyResponsive(){
@@ -784,7 +817,7 @@
     _sticky.applySticky();
 
     function render(){
-      renderTable(); renderCount(); syncHeadSorters(); syncColsBadge(); syncSelectAll();
+      renderTable(); renderCount(); syncHeadSorters(); syncColsBadge(); syncSelectAll(); syncBrand();
       renderPageSize(); renderPager(); applyCols(); applyResponsive();
       if (root.classList.contains("up-sticky")) syncTheadOffset();
     }
@@ -822,7 +855,7 @@
         state.query = ""; elSearchIn.value = ""; elSearch.classList.remove("is-open");
         state.sortField = DEFAULT_SORT.field; state.sortDir = DEFAULT_SORT.dir;
         state.pageSize = DEFAULT_PAGE_SIZE; state.page = 1;
-        state.selected = {};
+        state.selected = {}; state.brandMentioned = "";
         state.widths = {}; writeWidths();
         elSearch.classList.remove("has-text");
         persist(); populateSort(); render();

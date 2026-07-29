@@ -373,7 +373,9 @@
     .up-dense-btn:hover { color: var(--vc-text); }
     .up-dense-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
     .up-root[data-theme="dark"] .up-dense-btn.is-active { background: #121212; border-color: #353535; }
-    .up-dense-3 .up-dense-btn { flex: 1 1 33.333%; padding: 0 4px; }
+    /* icon-only variant (row-height 3-way switch): no label, so it never outgrows the menu */
+    .up-dense-btn-icon { flex: 1 1 33.333%; padding: 0; gap: 0; }
+    .up-dense-btn-icon svg { width: 16px; height: 16px; }
     .up-pop-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; border-radius: 9px; }
     .up-pop-row:hover { background: var(--vc-heading-bg); }
     .up-pop-label { font-size: 13.5px; font-weight: 500; color: var(--vc-text); }

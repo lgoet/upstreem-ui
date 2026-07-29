@@ -16,6 +16,9 @@
                     yet even right after it's pushed. The loader script at the bottom reads this
                     once and builds every asset URL from it.
   data-isdark     = "yes" / "no"
+  data-brand-name = the brand's display name (for the "X mentioned" quick toggle) — leave the
+                    literal "BRAND_NAME" placeholder to hide the toggle entirely
+  data-brand-logo = the brand's logo url (optional)
   data-sticky-top = px offset from the top at which the sticky header pins
                     (= height of your page's topbar, e.g. "171"). Desktop only (>=1000px page
                     width). Set "no" on data-sticky to disable.
@@ -23,6 +26,7 @@
   ── Event names must be unique per placement ─────────────────────────────────
   data-search-fn    = "bubble_fn_uptSearch_[dynamic id]"
   data-sort-fn      = "bubble_fn_uptSort_[dynamic id]"
+  data-brand-fn     = "bubble_fn_uptBrand_[dynamic id]"
   data-page-fn      = "bubble_fn_uptPage_[dynamic id]"
   data-rowclick-fn  = "bubble_fn_uptRowClick_[dynamic id]"
   data-select-fn    = "bubble_fn_uptSelect_[dynamic id]"
@@ -33,6 +37,7 @@
 
     search   {"query":"nike","query_folded":"nike","query_de":"nike","requestId":"upt_…"}
     sort     {"order":"created_desc","sort_field":"created","sort_dir":"desc"}
+    brand    {"brand_mentioned":"yes"}          "yes" | "no" | ""  (empty = off)
     page     {"limit":25,"offset":50,"page":3}
     rowclick {"prompt_id":"614ebcc4-c784-440c-aff8-0394e59ae266"}
     select   {"selected":"id1,id2,id3","count":3}   -> fires on every checkbox change, current
@@ -46,6 +51,7 @@
     (?<="query":")[^"]*        (?<="query_folded":")[^"]*   (?<="query_de":")[^"]*
     (?<="requestId":")[^"]*    (?<="order":")[^"]*          (?<="sort_field":")[^"]*
     (?<="sort_dir":")[^"]*     (?<="prompt_id":")[^"]*      (?<="selected":")[^"]*
+    (?<="brand_mentioned":")[^"]*
     (?<="limit":)[0-9]+        (?<="offset":)[0-9]+         (?<="page":)[0-9]+
     (?<="count":)[0-9]+
 
@@ -74,7 +80,12 @@
       if (s[0] === "{") s = "[" + s + "]";
       s = s.replace(/:\s*([,}\]])/g, ": null$1");
       s = s.replace(/,\s*([}\]])/g, "$1");
-      try { return eval("(" + s + ")"); } catch (e) { return []; }
+      // Logs instead of silently returning [] on a parse failure — an empty array here reads
+      // as "no prompts", indistinguishable from a genuinely empty result, unless you check the
+      // console. If you see this warning, the RPC output isn't valid JSON as inserted (a common
+      // cause: German-locale decimals using a comma instead of a dot, e.g. 11,11 instead of 11.11).
+      try { return eval("(" + s + ")"); }
+      catch (e) { console.warn("[prompts-table sanitizer] could not parse RPC response:", e.message, s); return []; }
     }
     function toNum(raw) {
       var n = Number(String(raw == null ? "" : raw).trim());
@@ -121,15 +132,29 @@
      data-instance="INSTANCE_ID"
      data-cdn-pin="CDN_PIN"
      data-isdark="IS_DARK"
+     data-brand-name="BRAND_NAME"
+     data-brand-logo="BRAND_LOGO"
      data-sticky-top="171"
      data-search-fn="bubble_fn_uptSearch"
      data-sort-fn="bubble_fn_uptSort"
+     data-brand-fn="bubble_fn_uptBrand"
      data-page-fn="bubble_fn_uptPage"
      data-rowclick-fn="bubble_fn_uptRowClick"
      data-select-fn="bubble_fn_uptSelect">
   <div class="up-head">
     <div class="up-heading"><span class="up-head-label">Prompts</span><span class="up-head-sep"></span><span class="up-head-count"></span></div>
     <div class="up-head-tools">
+      <button class="upt-brand-toggle" type="button" data-tip="Filter by brand mention">
+        <span class="upt-brand-toggle-lbl">
+          <img class="upt-brand-logo" src="" style="display:none" alt=""/>
+          <span class="upt-brand-label"></span>
+        </span>
+        <span class="upt-brand-check">
+          <svg class="upt-brand-check-yes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <svg class="upt-brand-check-no" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </span>
+      </button>
+
       <div class="up-sort">
         <button class="up-sort-btn up-iconbtn" type="button" data-tip="Sort" aria-label="Sort">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>

@@ -497,8 +497,8 @@
           '<div class="up-pop-sub">Row height</div>' +
           '<div class="up-dense up-dense-3">' +
             cfg.rowHeightSwitch.map(function(o){
-              return '<button class="up-dense-btn' + (state.rowHeight === o.key ? " is-active" : "") +
-                     '" type="button" data-rowheight="' + o.key + '">' + o.icon + esc(o.label) + '</button>';
+              return '<button class="up-dense-btn up-dense-btn-icon' + (state.rowHeight === o.key ? " is-active" : "") +
+                     '" type="button" data-rowheight="' + o.key + '" data-tip="' + esc(o.label) + '">' + o.icon + '</button>';
             }).join("") +
           '</div>'
         : "";
