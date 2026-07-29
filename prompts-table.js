@@ -188,7 +188,11 @@
       isYes = UC.isYes, highlight = UC.highlight, esc = UC.esc, toNum = UC.toNum, fmt1 = UC.fmt1,
       fmtDate = UC.fmtDate, foldDiacritics = UC.foldDiacritics, germanExpand = UC.germanExpand,
       resolveBubbleFn = UC.resolveBubbleFn, CHECK_SVG = UC.CHECK_SVG, GOTO_SVG = UC.GOTO_SVG,
-      HASH_ICON = UC.HASH_ICON.replace('<svg ', '<svg class="up-hash" ');
+      /* Falls back to an inline copy rather than throwing if an older/mismatched core.js on the
+         page (e.g. another component pinned to a different commit having last overwritten
+         window.UpstreemCore) doesn't have this export yet — a missing icon shouldn't take down
+         the whole table. */
+      HASH_ICON = (UC.HASH_ICON || '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>').replace('<svg ', '<svg class="up-hash" ');
 
   installUstTopics();
 
