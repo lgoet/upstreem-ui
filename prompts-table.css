@@ -130,9 +130,12 @@
      foot sat at 10px, which only became obvious once a picker opened and stacked three of those
      rules on top of each other. */
   --upt-sep-gap: 12px;
-  /* The frosted frame drawn by ::before — see there for why it's a ring and not a wrapper. */
-  --upt-frame: rgba(245,245,245,.8);
-  --upt-frame-w: 16px;
+  /* The frosted frame drawn by ::before — see there for why it's a ring and not a wrapper.
+     A dark tint rather than a light fill: the frame's whole job is to separate a white surface
+     from a white page, which a near-white ring cannot do. As an alpha tint it darkens whatever
+     is actually behind it, so it works on any background instead of only on white. */
+  --upt-frame: rgba(31,31,27,.16);
+  --upt-frame-w: 8px;
 
   position: fixed !important;
   bottom: 80px !important;
@@ -152,6 +155,7 @@
   border-radius: 32px;
   background: var(--up-surface);
   border: 1px solid var(--vc-border);
+  box-shadow: 0 14px 34px rgba(0,0,0,0.14);
   font-family: Geist, Inter, system-ui, -apple-system, sans-serif;
   color: var(--vc-text);
   opacity: 0; pointer-events: none;
@@ -169,8 +173,7 @@
      - z-index:-1 is what keeps it under the bar's CONTENT. Without it the ring paints above the
        buttons — positioned descendants paint after plain block children — and its
        backdrop-filter would then blur the labels themselves.
-   Radius is the bar's own 32px plus the ring width, so inner and outer curves stay concentric.
-   The drop shadow moves here as well: on the bar it would have been half-covered by the ring. */
+   Radius is the bar's own 32px plus the ring width, so inner and outer curves stay concentric. */
 .upt-bulkbar::before {
   content: "";
   position: absolute;
@@ -179,7 +182,18 @@
   border-radius: calc(32px + var(--upt-frame-w));
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
-  box-shadow: 0 14px 34px rgba(0,0,0,0.14);
+  /* Masked down to the RING. A transparent centre is not enough: backdrop-filter always applies
+     to the element's whole box, so the untouched middle was still blurring the bar's own
+     background and its 1px border underneath — which is what made the edge shimmer and washed
+     the border out. The two-layer mask keeps the border box and subtracts the content box,
+     leaving the filter with nothing to do over the bar itself. */
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  /* No box-shadow here — the mask clips the element's whole rendering, and a drop shadow lives
+     OUTSIDE the border box, so it would be masked away entirely. It stays on the bar and simply
+     shows through the translucent ring. */
   pointer-events: none;
   z-index: -1;
 }
@@ -195,9 +209,9 @@
   --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #353535;
   --vc-heading-bg: rgba(42,42,42,0.6); --vc-switch-bg: rgba(42,42,42,0.6); --vc-third: #808080;
   --vc-hover-border: #707070; --up-surface: #151515;
-  --upt-frame: rgba(42,42,42,.8);
+  --upt-frame: rgba(0,0,0,.45);
+  box-shadow: 0 14px 34px rgba(0,0,0,0.6);
 }
-.upt-bulkbar[data-theme="dark"]::before { box-shadow: 0 14px 34px rgba(0,0,0,0.6); }
 /* The action row. No separators — the gaps carry the grouping on their own. */
 .upt-bulkbar-row { display: flex; flex-direction: row; align-items: center; gap: 16px; min-height: 36px; }
 /* Actions sit right, count and the select-all link stay left.
@@ -223,7 +237,7 @@
 .upt-bulkbar-x svg { width: 15px; height: 15px; display: block; }
 .upt-bulkbar-x:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
 /* Keep the bar off the last row while it's up. */
-.upt-root.is-bulk { padding-bottom: 156px; }   /* + the 16px frame */
+.upt-root.is-bulk { padding-bottom: 148px; }   /* + the 8px frame */
 
 /* ---------- topic section ----------
    Not a dropdown: it slides out of the bar's own lower edge, so there is one surface instead of
