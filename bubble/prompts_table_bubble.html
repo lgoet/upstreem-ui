@@ -74,18 +74,34 @@
   ── Run-JS "Render" step (paste as-is, swap the bracketed dynamic values) ────
 
   (function () {
-    function toArr(raw) {
+    function parseOnce(raw) {
       var s = String(raw == null ? "" : raw).trim();
       if (!s) return [];
       if (s[0] === "{") s = "[" + s + "]";
       s = s.replace(/:\s*([,}\]])/g, ": null$1");
       s = s.replace(/,\s*([}\]])/g, "$1");
-      // Logs instead of silently returning [] on a parse failure — an empty array here reads
-      // as "no prompts", indistinguishable from a genuinely empty result, unless you check the
-      // console. If you see this warning, the RPC output isn't valid JSON as inserted (a common
-      // cause: German-locale decimals using a comma instead of a dot, e.g. 11,11 instead of 11.11).
-      try { return eval("(" + s + ")"); }
-      catch (e) { console.warn("[prompts-table sanitizer] could not parse RPC response:", e.message, s); return []; }
+      return eval("(" + s + ")");
+    }
+    // Bubble sometimes inserts a dynamic "text" value pre-escaped/quoted (double-encoded JSON) —
+    // the first parse then yields a STRING containing more JSON instead of the array itself.
+    // Re-parses once more when that happens. Always logs when the end result still isn't a
+    // populated array, instead of silently returning [] — an empty array here reads as "no
+    // prompts", indistinguishable from a genuinely empty result, unless you check the console.
+    function toArr(raw) {
+      var result;
+      try { result = parseOnce(raw); }
+      catch (e) { console.warn("[prompts-table sanitizer] could not parse RPC response:", e.message, raw); return []; }
+      if (typeof result === "string") {
+        try { result = parseOnce(result); }
+        catch (e) { console.warn("[prompts-table sanitizer] double-encoded response still failed to parse:", e.message, result); return []; }
+      }
+      if (result && !Array.isArray(result) && typeof result === "object") result = [result];
+      if (!Array.isArray(result)) {
+        console.warn("[prompts-table sanitizer] parsed value is not an array/object — check the RPC output shape:", result, raw);
+        return [];
+      }
+      if (!result.length) console.warn("[prompts-table sanitizer] parsed an empty array — RPC genuinely returned no rows, or the raw value wasn't what you expected:", raw);
+      return result;
     }
     function toNum(raw) {
       var n = Number(String(raw == null ? "" : raw).trim());
