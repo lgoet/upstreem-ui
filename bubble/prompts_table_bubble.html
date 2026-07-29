@@ -37,7 +37,8 @@
   data-select-fn    = "bubble_fn_uptSelect_[dynamic id]"
   data-topics-fn    = "bubble_fn_uptTopicsClick_[dynamic id]"
   data-status-fn      = "bubble_fn_uptStatus_[dynamic id]"        view switch Active/Inactive
-  data-bulktopics-fn  = "bubble_fn_uptBulkTopics_[dynamic id]"    bulk topic add/remove
+  data-bulktopics-fn  = "bubble_fn_uptBulkTopics_[dynamic id]"    unused — kept for back-compat, see below
+  data-applybulktopics-fn = "bubble_fn_uptApplyBulkTopics_[dynamic id]"  the topic editor's Apply button
   data-bulkstatus-fn  = "bubble_fn_uptBulkStatus_[dynamic id]"    bulk set active/inactive
   data-addtopics-fn   = "bubble_fn_uptAddTopics_[dynamic id]"      "Add Topic" in the bulk editor
 
@@ -78,14 +79,21 @@
   the field names here are chosen to match it. If they ever drift apart, the table and the bulk
   action will silently disagree about which rows they mean.
 
-    bulktopics  <selection> + {"topic_id":"…","topic_name":"SUV","action":"add"|"remove"}
-                -> add/remove ONE topic on every selected prompt. Never send "replace the tags
-                   with this" — the component only ever emits an explicit add or remove, so
-                   topics the user didn't touch must stay untouched.
+    applybulktopics  <selection> + {"tag_ids":"id1,id2,…","prompt_ids":"id1,id2,…"}
+                -> fires ONCE, from the topic editor's Apply button — never per click. Clicking a
+                   topic chip only stages/unstages it locally; nothing reaches Bubble until Apply.
+                   ADDS every tag in tag_ids to every prompt in prompt_ids (never "replace the
+                   tags with this" — topics the user didn't touch stay untouched). prompt_ids is
+                   only present when mode:"ids" (an explicit selection); under mode:"filter" (the
+                   "select all N matching" case) resolve the target prompts server-side from the
+                   filter fields the same way the render RPC does, same as every other bulk action.
+                   tag_ids is capped at 5 client-side (the per-prompt topic limit) — your RPC still
+                   has final say for rows that were already close to that limit.
     addtopics   <selection>
                 -> the "Add Topic" button at the foot of the bulk topic editor. Open your own
                    topic-creation UI; the selection rides along so a freshly created topic can be
-                   applied straight away.
+                   applied straight away. Does NOT close the topic editor or touch the staged
+                   selection.
     bulkstatus  <selection> + {"status":"inactive"}
                 -> set every selected prompt to that status. Reversible, so no confirm dialog is
                    shown; surface an undo in your own toast instead.
@@ -93,13 +101,30 @@
   order tokens: name_asc/desc, visibility_asc/desc, rank_asc/desc, sentiment_asc/desc,
   created_at_asc/desc.   Default (and fallback) is visibility_desc — the table is never unsorted.
 
+  ── Reading tag_ids / prompt_ids into two separate Bubble states ──────────────
+  Both arrive as plain comma-joined text — same convention as "ids" above — specifically so no
+  JSON parsing is needed on the Bubble side:
+    1. Regex them out same as everything else:
+         (?<="tag_ids":")[^"]*        (?<="prompt_ids":")[^"]*
+    2. In the workflow step that reads the event payload, run each captured text through Bubble's
+       own ":split by" operator with "," as the separator — that alone turns it into a proper
+       Bubble list of texts.
+    3. Store each list in its own custom state (e.g. State "Selected Tag IDs" = list of texts,
+       State "Selected Prompt IDs" = list of texts). If your backend workflow expects numbers/IDs
+       of a data type instead of raw text, chain ":converted to number" (or a "Search for Tags
+       where unique id is this text" lookup) on top of the split list before saving it to state —
+       the split step itself only ever produces texts.
+    Net result: two independent states, each a real Bubble list, ready to feed a "Schedule API
+    Workflow on a list" (tags) nested inside one (prompts), or however your bulk-tag backend
+    action is shaped.
+
   Regex, as everywhere else:
     (?<="query":")[^"]*        (?<="query_folded":")[^"]*   (?<="query_de":")[^"]*
     (?<="requestId":")[^"]*    (?<="order":")[^"]*          (?<="sort_field":")[^"]*
     (?<="sort_dir":")[^"]*     (?<="prompt_id":")[^"]*      (?<="selected":")[^"]*
     (?<="brand_mentioned":")[^"]*                           (?<="status":")[^"]*
-    (?<="mode":")[^"]*         (?<="ids":")[^"]*            (?<="topic_id":")[^"]*
-    (?<="topic_name":")[^"]*   (?<="action":")[^"]*
+    (?<="mode":")[^"]*         (?<="ids":")[^"]*            (?<="tag_ids":")[^"]*
+    (?<="prompt_ids":")[^"]*
     (?<="limit":)[0-9]+        (?<="offset":)[0-9]+         (?<="page":)[0-9]+
     (?<="count":)[0-9]+
 
@@ -219,6 +244,7 @@
      data-topics-fn="bubble_fn_uptTopicsClick"
      data-status-fn="bubble_fn_uptStatus"
      data-bulktopics-fn="bubble_fn_uptBulkTopics"
+     data-applybulktopics-fn="bubble_fn_uptApplyBulkTopics"
      data-bulkstatus-fn="bubble_fn_uptBulkStatus"
      data-addtopics-fn="bubble_fn_uptAddTopics"
      data-export-instance="EXPORT_INSTANCE_ID">

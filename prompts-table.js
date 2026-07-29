@@ -321,7 +321,8 @@
          blow up the payload, and they'd go stale against rows that changed since. Any change to
          the query invalidates it (see invalidateSelectAll). */
       selectAllMatching: false,
-      topics: saved.topics || []            // full topic list for the bulk editor, filled once
+      topics: saved.topics || [],           // full topic list for the bulk editor, filled once
+      stagedTopicIds: null                  // {id: true, ...} — the topic editor's draft selection
     };
     function applyRowHeightClass(){
       root.classList.remove("is-rh-compact", "is-rh-dynamic");
@@ -439,6 +440,10 @@
       fire("data-select-fn", "uptSelect", p);
     }
     function toggleSelectRow(id){
+      /* A manual tick while "select all N matching" is active can't be expressed by that flag
+         (it means "all of them except this one", which isn't a filter predicate) — so it drops
+         back to an explicit id-based selection instead of silently keeping the stale N. */
+      if (state.selectAllMatching) invalidateSelectAll();
       if (state.selected[id]) delete state.selected[id]; else state.selected[id] = true;
       persist(); syncRowChecks(); syncSelectAll(); fireSelect();
     }
@@ -609,6 +614,8 @@
       elBulk.addEventListener("input", function(e){
         if (!e.target.classList || !e.target.classList.contains("upt-topicsearch-in")) return;
         topicQuery = e.target.value;
+        var head = elBulk.querySelector(".upt-topichead");
+        if (head) head.classList.toggle("has-text", topicQuery.length > 0);
         renderTopicList();   // the input itself is left untouched, so focus and caret survive
       });
       document.body.appendChild(elBulk);
@@ -636,7 +643,9 @@
         return;
       }
       var isAll = state.selectAllMatching;
-      var countTxt = isAll ? (UC.fmtTotal(n) + "+ selected") : (n === 1 ? "1 selected" : n + " selected");
+      /* No "+": bulkCount() is the exact total_count once select-all is active, not an estimate —
+         a "+" on a number we know precisely reads as a hedge we don't actually mean. */
+      var countTxt = n === 1 ? "1 selected" : UC.fmtInt(n) + " selected";
       /* Polaris's trick: one control with two states. Before -> the escape hatch; after -> Undo.
          Only offered when there actually IS another page, otherwise "select all" is a lie. */
       var escape = "";
@@ -673,32 +682,48 @@
     }
 
     /* ---- topic editor ----
-       Tri-state per topic. The state can only be READ from rows we actually have loaded (the
-       current page), which is a real limit once the selection spans pages — but the resulting
-       ACTION is still unambiguous, because we send an explicit add/remove rather than "here is
-       the new value". That's the difference from Notion's bulk edit, which overwrites the whole
-       property and silently drops topics the user never touched. */
+       Staged, not immediate: a click only checks/unchecks a topic locally. Nothing is sent until
+       Apply, which fires ONE event carrying the full staged set — mirrors picking labels in a
+       Linear/Notion multi-select rather than firing a workflow per click. Capped at 5 staged
+       topics client-side because that's the per-prompt limit; the RPC still has the final word
+       for rows that already sit close to that limit before this batch is added. */
+    var TOPIC_MAX = 5;
     function topicId(t){ return String((t && (t.id != null ? t.id : t.tag_id)) || ""); }
     function loadedSelectedRows(){
       return (state.rows || []).filter(function(r){ return state.selected[String(r.prompt_id)]; });
     }
-    /* State is only shown for a SINGLE selected prompt. With several selected the panel's job is
-       "put these topics on all of them" — showing a mixed/partial state there invites the reader
-       to interpret a tick as "this is the new value for everything", which it isn't. */
-    function topicStateFor(id){
-      if (state.selectAllMatching) return "unknown";
+    /* Seeds the staged set from what's already on the prompt — but only when exactly ONE prompt
+       is selected. With several selected, "put these on all of them" has no single starting
+       point, so the panel opens empty rather than guessing. */
+    function topicInitialStaged(){
+      var seed = {};
+      if (state.selectAllMatching) return seed;
       var sel = loadedSelectedRows();
-      if (sel.length !== 1) return "unknown";
-      var hits = sel.filter(function(r){
-        return (r.tags || []).some(function(t){ return topicId(t) === id; });
-      }).length;
-      return hits === 0 ? "none" : (hits === sel.length ? "all" : "some");
+      if (sel.length !== 1) return seed;
+      (sel[0].tags || []).forEach(function(t){ seed[topicId(t)] = true; });
+      return seed;
+    }
+    function stagedCount(){ return Object.keys(state.stagedTopicIds || {}).length; }
+    function isStaged(id){ return !!(state.stagedTopicIds && state.stagedTopicIds[id]); }
+    function toggleStagedTopic(id){
+      if (!state.stagedTopicIds) state.stagedTopicIds = {};
+      if (state.stagedTopicIds[id]) delete state.stagedTopicIds[id];
+      else {
+        if (stagedCount() >= TOPIC_MAX) return;   // client-side guard only; RPC enforces per-row
+        state.stagedTopicIds[id] = true;
+      }
+      renderTopicList(true);
+      syncTopicFoot();
+    }
+    function resetStagedTopics(){
+      state.stagedTopicIds = topicInitialStaged();
+      renderTopicList(true);
+      syncTopicFoot();
     }
     var topicQuery = "";
-    /* Split in two on purpose: the search field is built ONCE when the menu opens, and only the
-       list below it is rebuilt as the user types. Re-rendering the whole menu per keystroke
-       would destroy and recreate the very input being typed into, forcing a focus-and-caret
-       restore dance that breaks the moment anything else steals focus first. */
+    /* Split in three on purpose: the head (search + reset + count) is built ONCE when the menu
+       opens; the chip list is rebuilt per keystroke/toggle; the foot's count/disabled-state is
+       patched separately from a toggle so a click doesn't also tear down the search input. */
     function topicListHtml(){
       var list = state.topics || [];
       var q = topicQuery.trim().toLowerCase();
@@ -711,39 +736,77 @@
             ? '<div class="upt-topicmenu-empty">No matches</div>'
             : shown.map(function(t){
                 var id = topicId(t);
-                var st = topicStateFor(id);
+                var on = isStaged(id);
                 var color = String(t.hex_light || t.hex_dark || "#6b7280");
                 if (color.charAt(0) !== "#") color = "#" + color;
-                return '<button type="button" class="upt-topicchip up-chiphover' + (st === "all" ? " is-on" : "") +
-                 '" data-topic="' + esc(id) + '" data-state="' + st + '" style="--ust-tag-color:' + esc(color) + '">' +
+                return '<button type="button" class="upt-topicchip up-chiphover' + (on ? " is-on" : "") +
+                 '" data-topic="' + esc(id) + '" style="--ust-tag-color:' + esc(color) + '">' +
                  (t.emoji ? '<span class="upt-topicchip-e">' + esc(t.emoji) + '</span>' : "") +
-                 '<span>' + esc(t.name == null ? "" : t.name) + '</span>' +
-                 (st === "all" ? '<span class="upt-topicchip-x">' + CHECK_SVG + '</span>' : "") +
+                 '<span class="upt-topicchip-lbl">' + esc(t.name == null ? "" : t.name) + '</span>' +
+                 '<span class="upt-topicchip-check' + (on ? " is-on" : "") + '">' + CHECK_SVG + '</span>' +
                '</button>';
               }).join(""));
       return items;
     }
-    function renderTopicList(){
+    /* animate=true runs a tiny FLIP: capture each chip's position before the rebuild, then ease
+       from there — so a toggle that reflows the wrap (a chip growing a checkbox pushes the next
+       one to a new line) reads as a slide instead of a jump. Skipped while typing: a full
+       re-filter isn't "the same chips moved", it's a different set. */
+    function renderTopicList(animate){
       if (!elBulk) return;
       var el = elBulk.querySelector(".upt-topiclist");
-      if (el) el.innerHTML = topicListHtml();
+      if (!el) return;
+      if (!animate){ el.innerHTML = topicListHtml(); return; }
+      var before = {};
+      Array.prototype.forEach.call(el.querySelectorAll("[data-topic]"), function(c){
+        before[c.getAttribute("data-topic")] = c.getBoundingClientRect();
+      });
+      el.innerHTML = topicListHtml();
+      Array.prototype.forEach.call(el.querySelectorAll("[data-topic]"), function(c){
+        var b = before[c.getAttribute("data-topic")];
+        if (!b) return;
+        var a = c.getBoundingClientRect();
+        var dx = b.left - a.left, dy = b.top - a.top;
+        if (!dx && !dy) return;
+        c.style.transition = "none";
+        c.style.transform = "translate(" + dx + "px," + dy + "px)";
+        void c.offsetWidth;
+        c.style.transition = "transform 200ms cubic-bezier(.2,0,.38,.9)";
+        c.style.transform = "";
+        c.addEventListener("transitionend", function te(){ c.style.transition = ""; c.removeEventListener("transitionend", te); });
+      });
+    }
+    function syncTopicFoot(){
+      if (!elBulk) return;
+      var n = stagedCount();
+      var countEl = elBulk.querySelector(".upt-topiccount");
+      if (countEl) countEl.textContent = n + "/" + TOPIC_MAX;
+      var applyBtn = elBulk.querySelector("[data-topic-apply]");
+      if (applyBtn) applyBtn.disabled = n === 0;
     }
     function renderTopicMenu(){
       if (!elBulk) return;
       var menu = elBulk.querySelector(".upt-bulkpanel");
       if (!menu) return;
-      var n = bulkCount();
+      var n = stagedCount();
       menu.innerHTML =
         ((state.topics || []).length
           ? '<div class="upt-topichead">' +
-              '<input class="upt-topicsearch-in" type="text" placeholder="Search topics..." autocomplete="off" spellcheck="false"/>' +
-              '<span class="upt-topiccount">' + esc(n === 1 ? "1 selected" : n + " selected") + '</span>' +
+              '<div class="upt-topicsearch-wrap">' +
+                '<input class="upt-topicsearch-in" type="text" placeholder="Search topics..." autocomplete="off" spellcheck="false"/>' +
+                '<button class="upt-topicsearch-clear" type="button" data-topic-search-clear aria-label="Clear search">' + CLOSE_SVG + '</button>' +
+              '</div>' +
+              '<button class="upt-topicreset" type="button" data-topic-reset>Reset</button>' +
+              '<span class="upt-topiccount">' + n + '/' + TOPIC_MAX + '</span>' +
             '</div>'
           : "") +
         '<div class="upt-topiclist">' + topicListHtml() + '</div>' +
-        '<button class="upt-topicadd" type="button" data-topic-add>' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
-          'Add Topic</button>';
+        '<div class="upt-topicfoot">' +
+          '<button class="upt-topicadd" type="button" data-topic-add>' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+            'Add Topic</button>' +
+          '<button class="upt-topicapply" type="button" data-topic-apply' + (n === 0 ? " disabled" : "") + '>Apply</button>' +
+        '</div>';
     }
     /* Opening Topics grows the BAR — the topic section slides out of its lower edge rather than
        floating above it as a separate dropdown. One surface, not two stacked ones. */
@@ -752,35 +815,46 @@
       var panel = elBulk.querySelector(".upt-bulkpanel");
       var btn = elBulk.querySelector("[data-bulk-topics]");
       if (!panel) return;
+      if (!open && panel.contains(document.activeElement)){
+        /* Same trap as the bar's own hide-toggle: aria-hidden on an ancestor of the focused
+           element (Add Topic, Apply, a chip) is rejected outright by Chrome unless focus moves
+           out first. */
+        try { document.activeElement.blur(); } catch(e){}
+      }
       elBulk.classList.toggle("is-topics", !!open);
       panel.setAttribute("aria-hidden", open ? "false" : "true");
       if (btn) btn.setAttribute("aria-expanded", open ? "true" : "false");
       if (open){
-        topicQuery = ""; renderTopicMenu();
+        topicQuery = "";
+        state.stagedTopicIds = topicInitialStaged();
+        renderTopicMenu();
         var inp = panel.querySelector(".upt-topicsearch-in");
         if (inp) setTimeout(function(){ try { inp.focus(); } catch(e){} }, 40);
       }
     }
     function topicMenuOpen(){ return !!(elBulk && elBulk.classList.contains("is-topics")); }
-    function applyBulkTopic(id){
-      var t = (state.topics || []).filter(function(x){ return topicId(x) === id; })[0];
-      var st = topicStateFor(id);
-      var action = st === "all" ? "remove" : "add";
+    /* The one event this panel fires. prompt_ids/tag_ids are comma-joined strings — same
+       convention selectionPayload() already uses for `ids` — so Bubble turns each into a real
+       list with ":split by" a comma, no JSON parsing required on that side. */
+    function applyStagedTopics(){
+      var tagIds = Object.keys(state.stagedTopicIds || {});
+      if (!tagIds.length) return;
+      var tagsById = {};
+      (state.topics || []).forEach(function(t){ tagsById[topicId(t)] = t; });
       var p = selectionPayload();
-      p.topic_id = id;
-      p.topic_name = t ? String(t.name == null ? "" : t.name) : "";
-      p.action = action;
-      fire("data-bulktopics-fn", "uptBulkTopics", p);
-      /* Optimistic local update so the tri-state reflects the click immediately; the authoritative
-         result arrives with the next render payload. Only touches rows we have. */
+      p.tag_ids = tagIds.join(",");
+      if (p.mode === "ids") p.prompt_ids = p.ids;
+      fire("data-applybulktopics-fn", "uptApplyBulkTopics", p);
+      /* Optimistic local update, same idea as the rest of the bar: only touches rows we have. */
       loadedSelectedRows().forEach(function(r){
         var tags = Array.isArray(r.tags) ? r.tags : (r.tags = []);
-        var at = -1;
-        for (var i = 0; i < tags.length; i++){ if (topicId(tags[i]) === id) { at = i; break; } }
-        if (action === "add" && at === -1 && t) tags.push(t);
-        if (action === "remove" && at > -1) tags.splice(at, 1);
+        tagIds.forEach(function(id){
+          var has = tags.some(function(x){ return topicId(x) === id; });
+          if (!has && tagsById[id]) tags.push(tagsById[id]);
+        });
       });
-      syncTopicCells(); renderTopicList();
+      syncTopicCells();
+      setTopicMenuOpen(false);
     }
     function applyBulkStatus(){
       var next = state.status === "inactive" ? "active" : "inactive";
@@ -1186,11 +1260,23 @@
         }
         if (e.target.closest("[data-bulk-topics]")){ setTopicMenuOpen(!topicMenuOpen()); return; }
         var tRow2 = e.target.closest("[data-topic]");
-        if (tRow2){ applyBulkTopic(tRow2.getAttribute("data-topic")); return; }
+        if (tRow2){ toggleStagedTopic(tRow2.getAttribute("data-topic")); return; }
+        if (e.target.closest("[data-topic-reset]")){ resetStagedTopics(); return; }
+        if (e.target.closest("[data-topic-search-clear]")){
+          topicQuery = "";
+          var inp2 = elBulk.querySelector(".upt-topicsearch-in");
+          if (inp2) inp2.value = "";
+          var head2 = elBulk.querySelector(".upt-topichead");
+          if (head2) head2.classList.remove("has-text");
+          renderTopicList();
+          if (inp2) inp2.focus();
+          return;
+        }
+        if (e.target.closest("[data-topic-apply]")){ applyStagedTopics(); return; }
         if (e.target.closest("[data-topic-add]")){
           /* Hands off to your own "create topic" UI, carrying the selection so the new topic can
-             be applied straight away if you want that. */
-          setTopicMenuOpen(false);
+             be applied straight away if you want that. Deliberately does NOT close the panel —
+             the staged selection is still live and the user may come back to it. */
           fire("data-addtopics-fn", "uptAddTopics", selectionPayload());
           return;
         }

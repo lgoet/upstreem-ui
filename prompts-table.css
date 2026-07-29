@@ -129,7 +129,7 @@
      every chip on a single line and the bar ballooned to fit them instead of wrapping. Fixed
      also means the bar never resizes as the selection count grows — a control that changes
      width under the cursor is hard to aim at. */
-  width: 600px; max-width: calc(100vw - 32px);
+  width: 536px; max-width: calc(100vw - 32px);
   box-sizing: border-box;
   display: flex; flex-direction: column; align-items: stretch;
   padding: 10px 12px 10px 18px;
@@ -142,10 +142,16 @@
   opacity: 0; pointer-events: none;
   transform: translateX(-50%) translateY(24px);
   transition: opacity 200ms cubic-bezier(0.2, 0, 0.38, 0.9),
-              transform 200ms cubic-bezier(0.2, 0, 0.38, 0.9);
+              transform 200ms cubic-bezier(0.2, 0, 0.38, 0.9),
+              width 200ms ease;
 }
 .upt-bulkbar * { box-sizing: border-box; }
 .upt-bulkbar.is-on { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
+/* Topics open -> 256px wider, still clamped to the viewport by the max-width above. */
+.upt-bulkbar.is-topics { width: 792px; }
+.upt-bulkbar.is-topics [data-bulk-topics] {
+  background: transparent; color: var(--vc-text); border-color: var(--vc-hover-border);
+}
 @media (prefers-reduced-motion: reduce){ .upt-bulkbar { transition-duration: 1ms; } }
 .upt-bulkbar[data-theme="dark"] {
   --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #353535;
@@ -160,7 +166,8 @@
    and the select-all link is a <button> too, so ".upt-bulkbar-btn:first-of-type" matched nothing
    at all and the actions never moved right. */
 .upt-bulkbar-row [data-bulk-topics] { margin-left: auto; }
-.upt-bulkbar-row [data-bulk-status] { margin-left: -8px; }   /* 16px row gap -> the 8px asked for */
+.upt-bulkbar-row [data-bulk-status] { margin-left: -8px; }   /* 16px row gap -> 8px */
+.upt-bulkbar-row [data-bulk-clear] { margin-left: -8px; }    /* same: 16px row gap -> 8px */
 .upt-bulkbar-count { font-size: 13.5px; font-weight: 600; color: var(--vc-text); white-space: nowrap; flex: 0 0 auto; }
 .upt-bulkbar-link { border: 0; background: transparent; padding: 0 2px; cursor: pointer;
   font-family: inherit; font-size: 12.5px; font-weight: 500; color: var(--vc-muted);
@@ -193,34 +200,68 @@
   max-height: 340px; opacity: 1; margin-top: 12px; padding-top: 12px; border-top-color: var(--vc-border);
 }
 @media (prefers-reduced-motion: reduce){ .upt-bulkpanel { transition-duration: 1ms; } }
-.upt-topichead { display: flex; align-items: center; gap: 10px; padding: 0 0 10px; }
-.upt-topicsearch-in { flex: 1 1 auto; min-width: 0; height: 32px; padding: 0 10px; border-radius: 9px;
-  border: 1px solid var(--vc-border); background: transparent; outline: none;
+.upt-topichead { display: flex; align-items: center; gap: 8px; padding: 0 0 10px; }
+.upt-topicsearch-wrap { flex: 1 1 auto; min-width: 0; display: flex; align-items: center;
+  height: 32px; padding: 0 4px 0 10px; border-radius: 9px;
+  border: 1px solid var(--vc-border); background: transparent; }
+.upt-topicsearch-wrap:focus-within { border-color: var(--vc-hover-border); }
+.upt-topicsearch-in { flex: 1 1 auto; min-width: 0; height: 100%; padding: 0;
+  border: 0; background: transparent; outline: none;
   font-family: inherit; font-size: 12.5px; color: var(--vc-text); }
-.upt-topicsearch-in:focus { border-color: var(--vc-hover-border); }
-.upt-topiccount { flex: 0 0 auto; font-size: 12px; font-weight: 500; color: var(--vc-muted); white-space: nowrap; }
+/* Slot always reserved (visibility, not display) so the field's width doesn't shift when the x
+   appears — same trick as the main table's own search box. */
+.upt-topicsearch-clear { flex: 0 0 20px; width: 20px; height: 20px; border: 0; border-radius: 6px;
+  background: transparent; color: var(--vc-muted); cursor: pointer; padding: 0; margin-left: 4px;
+  display: inline-flex; align-items: center; justify-content: center; visibility: hidden; }
+.upt-topicsearch-clear svg { width: 12px; height: 12px; display: block; }
+.upt-topicsearch-clear:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
+.upt-topichead.has-text .upt-topicsearch-clear { visibility: visible; }
+.upt-topicreset { flex: 0 0 auto; height: 32px; padding: 0 12px; border-radius: 8px; border: 0;
+  background: var(--vc-heading-bg); color: var(--vc-muted); cursor: pointer;
+  font-family: inherit; font-size: 12px; font-weight: 500; white-space: nowrap; }
+.upt-topicreset:hover { color: var(--vc-text); }
+.upt-topiccount { flex: 0 0 auto; font-size: 12px; font-weight: 600; color: var(--vc-muted);
+  white-space: nowrap; font-variant-numeric: tabular-nums; }
 /* Wrapped, not a stacked list: the topics read as a set you pick from, and a dozen of them fit
    in three rows instead of needing a scroll. */
 .upt-topiclist { max-height: 190px; overflow-y: auto; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 8px; }
-.upt-topicchip { height: 30px; padding: 0 11px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;
+.upt-topicchip { height: 30px; padding: 0 8px 0 11px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;
   cursor: pointer; font-family: inherit;
   border: 1px solid color-mix(in srgb, var(--ust-tag-color, #6b7280) 40%, transparent);
   background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 10%, transparent);
   color: var(--ust-tag-color, #4b5563); font-size: 12px; font-weight: 500; line-height: 1;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+  transition: border-color 160ms ease; }
 .upt-bulkbar[data-theme="dark"] .upt-topicchip { background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 22%, transparent); color: #e0e0e0; }
 .upt-topicchip-e { font-size: 12px; line-height: 1; }
-/* Only ever shown for a SINGLE selected prompt — see topicStateFor(). */
+/* Staged (this popover's draft) or pre-existing on the one selected prompt — see
+   topicInitialStaged()/isStaged(). */
 .upt-topicchip.is-on { border-color: var(--vc-text); }
-.upt-topicchip-x { display: inline-flex; align-items: center; margin-left: 1px; }
-.upt-topicchip-x svg { width: 11px; height: 11px; display: block; }
-.upt-topicadd { margin-top: 10px; flex: 0 0 auto; height: 34px; width: 100%; border-radius: 9px;
+.upt-topicchip-lbl { overflow: hidden; text-overflow: ellipsis; }
+/* Slides in from the right on toggle: width/opacity/transform all animate together, the chip's
+   own width grows as a side effect (nothing to do there — it's just a flex child), and that
+   growth is what pushes later chips onto the next line, caught by the FLIP in renderTopicList(). */
+.upt-topicchip-check { display: inline-flex; align-items: center; justify-content: center;
+  width: 0; opacity: 0; overflow: hidden; flex: 0 0 auto; margin-left: 0; transform: translateX(6px);
+  transition: width 200ms cubic-bezier(.2,0,.38,.9), opacity 160ms ease,
+              transform 200ms cubic-bezier(.2,0,.38,.9), margin-left 200ms cubic-bezier(.2,0,.38,.9); }
+.upt-topicchip-check.is-on { width: 12px; opacity: 1; transform: translateX(0); margin-left: 1px; }
+.upt-topicchip-check svg { width: 11px; height: 11px; display: block; }
+.upt-topicmenu-empty { padding: 14px 8px; text-align: center; font-size: 12.5px; color: var(--vc-muted); }
+/* Add Topic stays left (hands off to your own topic-creation UI without touching the staged
+   selection); Apply is the one control that actually sends it. */
+.upt-topicfoot { margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.upt-topicadd { flex: 0 0 auto; height: 34px; padding: 0 14px; border-radius: 9px;
   border: 1px dashed var(--vc-border); background: transparent; color: var(--vc-muted);
   cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 500;
-  display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+  display: inline-flex; align-items: center; gap: 7px; }
 .upt-topicadd svg { width: 14px; height: 14px; display: block; }
 .upt-topicadd:hover { color: var(--vc-text); border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
-.upt-topicmenu-empty { padding: 14px 8px; text-align: center; font-size: 12.5px; color: var(--vc-muted); }
+.upt-topicapply { flex: 0 0 auto; height: 34px; padding: 0 20px; border-radius: 9px; border: 0;
+  background: var(--vc-text); color: var(--up-surface); cursor: pointer;
+  font-family: inherit; font-size: 12.5px; font-weight: 600; transition: opacity 120ms ease; }
+.upt-topicapply:hover:not(:disabled) { opacity: .88; }
+.upt-topicapply:disabled { background: var(--vc-heading-bg); color: var(--vc-third); cursor: default; }
 
 /* ---------- soft reload (sort / paging) ----------
    The rows stay on screen because they're still truthful — only their ORDER or the visible
