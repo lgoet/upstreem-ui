@@ -785,12 +785,16 @@
 
 /* Visibility / Rank / Sentiment metric cells — shared by visibility-chart's Top Brands table
    and prompts-table's Sentiment/Rank/Visibility columns. */
-.up-num { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; flex: 0 0 auto; }
+/* tabular-nums: digits keep the same advance width, so a column of numbers lines up across rows
+   instead of jittering. urls-table/domains-table always had this on their own .uut-num/.udt-num;
+   visibility-chart's .vt-num never did, and extracting THAT one into .up-num quietly spread the
+   omission to prompts-table. Fixing it here fixes both at once. */
+.up-num { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; flex: 0 0 auto; font-variant-numeric: tabular-nums; }
 .up-rank-group { display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; }
 .up-hash { width: 12px; height: 12px; color: var(--vc-third); flex: 0 0 auto; display: block; }
 .up-sent { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 6px; border: 1px solid var(--vc-border); border-radius: 6px; flex: 0 0 auto; }
 .up-sent-dot { width: 6px; height: 6px; border-radius: 2px; flex: 0 0 auto; }
-.up-sent-val { font-size: 13px; font-weight: 500; color: var(--vc-text); }
+.up-sent-val { font-size: 13px; font-weight: 500; color: var(--vc-text); font-variant-numeric: tabular-nums; }
 
 /* ---------- brand-mention chip stack ----------
    Overlapping 32px circles. Shared by urls-table's Brands mentioned column and prompts-table's
