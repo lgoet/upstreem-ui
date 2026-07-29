@@ -39,6 +39,11 @@
   data-status-fn      = "bubble_fn_uptStatus_[dynamic id]"        view switch Active/Inactive
   data-bulktopics-fn  = "bubble_fn_uptBulkTopics_[dynamic id]"    bulk topic add/remove
   data-bulkstatus-fn  = "bubble_fn_uptBulkStatus_[dynamic id]"    bulk set active/inactive
+  data-addtopics-fn   = "bubble_fn_uptAddTopics_[dynamic id]"      "Add Topic" in the bulk editor
+
+  data-export-instance = the instanceId of the EXPORT POPUP component you place on the same
+                         page. The Export button calls window.upstreemExportOpen(thatId), exactly
+                         as in urls-table/domains-table.
 
   Every one fires ONE JSON string, values pulled out on the Bubble side by regex — same
   convention as the other tables. All of these except rowclick/select are SERVER-side: they tell
@@ -65,8 +70,9 @@
     mode:"filter"  {"mode":"filter","count":1240,"query":"…","brand_mentioned":"yes",
                     "status":"active","order":"visibility_desc"}
 
-  "filter" appears only after the user takes the "Select all N matching this filter" link, which
-  the bar offers when the selection can span more pages than are loaded. It deliberately sends
+  "filter" appears only after the user takes the "Select all N prompts" link. That link is
+  offered ONLY once the header checkbox has selected the whole visible page AND more pages exist
+  — after a single manual tick, "select all 94" would be a non-sequitur. It deliberately sends
   the PREDICATE rather than 1240 ids: the ids would blow up the payload and go stale against rows
   that changed since. Resolve it server-side with the SAME where-clause your render RPC uses —
   the field names here are chosen to match it. If they ever drift apart, the table and the bulk
@@ -76,6 +82,10 @@
                 -> add/remove ONE topic on every selected prompt. Never send "replace the tags
                    with this" — the component only ever emits an explicit add or remove, so
                    topics the user didn't touch must stay untouched.
+    addtopics   <selection>
+                -> the "Add Topic" button at the foot of the bulk topic editor. Open your own
+                   topic-creation UI; the selection rides along so a freshly created topic can be
+                   applied straight away.
     bulkstatus  <selection> + {"status":"inactive"}
                 -> set every selected prompt to that status. Reversible, so no confirm dialog is
                    shown; surface an undo in your own toast instead.
@@ -248,7 +258,9 @@
      data-topics-fn="bubble_fn_uptTopicsClick"
      data-status-fn="bubble_fn_uptStatus"
      data-bulktopics-fn="bubble_fn_uptBulkTopics"
-     data-bulkstatus-fn="bubble_fn_uptBulkStatus">
+     data-bulkstatus-fn="bubble_fn_uptBulkStatus"
+     data-addtopics-fn="bubble_fn_uptAddTopics"
+     data-export-instance="EXPORT_INSTANCE_ID">
   <div class="up-head">
     <div class="up-heading"><span class="up-head-label">Prompts</span><span class="up-head-sep"></span><span class="up-head-count"></span>
       <span class="upt-selcount"><span class="upt-selcount-n">0 selected</span><button class="upt-selcount-clear" type="button" aria-label="Clear selection"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></span>
@@ -292,6 +304,11 @@
         <span class="upt-cols-badge"></span>
         <div class="up-cols-menu" role="menu" aria-hidden="true"></div>
       </div>
+
+      <button class="up-export" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Export</span>
+      </button>
     </div>
   </div>
 

@@ -483,9 +483,13 @@
       var counts = { active: state.totalCount, inactive: state.totalCountInactive };
       el.innerHTML = [["active","Active"],["inactive","Inactive"]].map(function(p){
         var n = counts[p[0]];
-        /* No count until the server sends one — total_count_inactive isn't in the payload yet,
-           and "Inactive 0" would be a claim we can't back up. */
-        var cnt = (n == null || n === "") ? "" : '<span class="upt-status-n">' + UC.fmtTotal(n) + '</span>';
+        /* Only the tab you are NOT on carries a count: the current view's total is already
+           shown next to the heading two elements to the left, and repeating it there just
+           makes the eye check whether the two numbers agree.
+           No count at all until the server sends one — total_count_inactive isn't in the
+           payload yet, and "Inactive 0" would be a claim we can't back up. */
+        var cnt = (p[0] === state.status || n == null || n === "")
+          ? "" : '<span class="upt-status-n">' + UC.fmtTotal(n) + '</span>';
         return '<button class="upt-status-btn' + (state.status === p[0] ? " is-active" : "") +
                '" type="button" data-status="' + p[0] + '">' + p[1] + cnt + '</button>';
       }).join("");
@@ -510,6 +514,14 @@
       return t != null && t > (state.rows || []).length;
     }
     function invalidateSelectAll(){ state.selectAllMatching = false; }
+    /* The "select all N" offer belongs to the header checkbox, not to ticking single rows:
+       after one manual tick, "select all 94" is a non-sequitur. Only once the whole visible
+       page is selected does "and the rest?" become the obvious next question. */
+    function pageFullySelected(){
+      var rows = state.rows || [];
+      if (!rows.length) return false;
+      return rows.every(function(r){ return !!state.selected[String(r.prompt_id)]; });
+    }
     /* What a bulk action operates on. Two shapes on purpose:
          ids    — the user ticked specific rows; send them.
          filter — the user took "select all N matching"; send the PREDICATE, not the ids, so the
@@ -539,7 +551,11 @@
     function ensureBulkBar(){
       if (elBulk && document.body.contains(elBulk)) return elBulk;
       elBulk = document.createElement("div");
-      elBulk.className = "upt-bulkbar";
+            /* .up-root as well as our own class: every core rule is written as ".up-root …", and the
+         bar hangs off document.body, outside the component. Without this it inherits none of the
+         CSS variables and none of the dark-mode selectors — which is exactly why the buttons in
+         here first got hand-rolled styles instead of the shared ones. */
+      elBulk.className = "up-root upt-bulkbar";
       elBulk.setAttribute("role", "toolbar");
       elBulk.setAttribute("aria-label", "Bulk actions");
       elBulk.setAttribute("aria-hidden", "true");
@@ -575,8 +591,8 @@
          Only offered when there actually IS another page, otherwise "select all" is a lie. */
       var escape = "";
       if (isAll) escape = '<button class="upt-bulkbar-link" type="button" data-bulk-undoall>Undo</button>';
-      else if (hasMorePages()) escape = '<button class="upt-bulkbar-link" type="button" data-bulk-all>Select all ' +
-        UC.fmtTotal(toNum(state.totalCount)) + ' matching this filter</button>';
+      else if (hasMorePages() && pageFullySelected()) escape = '<button class="upt-bulkbar-link" type="button" data-bulk-all>Select all ' +
+        UC.fmtTotal(toNum(state.totalCount)) + ' prompts</button>';
 
       var statusLabel = state.status === "inactive" ? "Set Active" : "Set Inactive";
       bar.innerHTML =
@@ -584,10 +600,10 @@
         escape +
         '<span class="upt-bulkbar-div"></span>' +
         '<span class="upt-bulkbar-topics">' +
-          '<button class="upt-bulkbar-btn" type="button" data-bulk-topics aria-haspopup="menu" aria-expanded="false">' + TAG_SVG + 'Topics</button>' +
+          '<button class="up-filter-btn upt-bulkbar-btn" type="button" data-bulk-topics aria-haspopup="menu" aria-expanded="false">' + TAG_SVG + 'Topics</button>' +
           '<div class="upt-topicmenu" role="menu" aria-hidden="true"></div>' +
         '</span>' +
-        '<button class="upt-bulkbar-btn" type="button" data-bulk-status>' + esc(statusLabel) + '</button>' +
+        '<button class="up-filter-btn upt-bulkbar-btn" type="button" data-bulk-status>' + esc(statusLabel) + '</button>' +
         '<span class="upt-bulkbar-div"></span>' +
         '<button class="upt-bulkbar-x" type="button" data-bulk-clear aria-label="Clear selection">' + CLOSE_SVG + '</button>';
       Array.prototype.forEach.call(bar.querySelectorAll("button"), function(b){ b.tabIndex = 0; });
@@ -663,7 +679,10 @@
       if (!menu) return;
       menu.innerHTML =
         ((state.topics || []).length ? '<div class="upt-topicsearch"><input class="upt-topicsearch-in" type="text" placeholder="Search topics..." autocomplete="off" spellcheck="false"/></div>' : "") +
-        '<div class="upt-topiclist">' + topicListHtml() + '</div>';
+        '<div class="upt-topiclist">' + topicListHtml() + '</div>' +
+        '<button class="upt-topicadd" type="button" data-topic-add>' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+          'Add Topic</button>';
     }
     function setTopicMenuOpen(open){
       if (!elBulk) return;
@@ -857,10 +876,15 @@
       clearTimeout(sortTimer);
       sortTimer = setTimeout(function(){
         search.setLatest(null);
+        /* Nothing has actually been requested until this moment, so this is where the loading
+           state starts. UC.makeSearch and UC.makePager both do the same for their own events;
+           sort was the one path that never set it, which is why the table never dimmed. */
+        state.loading = true;
         fire("data-sort-fn", "uptSort", {
           order: orderValue(state.sortField, state.sortDir),
           sort_field: state.sortField, sort_dir: state.sortDir
         });
+        renderTable(); syncReloadDim();
       }, SORT_DEBOUNCE);
     }
     function populateSort(){
@@ -935,6 +959,27 @@
       search.setLatest(null);
       state.softReload = true;   // same result set, different window -> dim, don't blank
       fire("data-page-fn", "uptPage", { limit: state.pageSize, offset: offset(), page: state.page });
+    }
+
+    /* ---------------- export ----------------
+       Hands off to the shared export popup component, exactly like urls-table/domains-table:
+       put that popup's instanceId in data-export-instance. */
+    function openExport(){
+      var id = String(root.getAttribute("data-export-instance") || "").trim();
+      var fn = window.upstreemExportOpen
+        || (window.parent && window.parent.upstreemExportOpen)
+        || (window.top && window.top.upstreemExportOpen);
+      if (typeof fn !== "function"){
+        console.warn("[prompts-table] window.upstreemExportOpen not found — is the export popup " +
+          "component placed on this page?");
+        return;
+      }
+      if (!id || id === "EXPORT_INSTANCE_ID"){
+        console.warn("[prompts-table] data-export-instance is not set. Put the export popup's " +
+          "instanceId there so this button knows which popup to open.");
+        return;
+      }
+      try { fn(id); } catch(e){}
     }
 
     /* ---------------- tooltips (shared via core) ---------------- */
@@ -1062,6 +1107,13 @@
         if (e.target.closest("[data-bulk-topics]")){ setTopicMenuOpen(!topicMenuOpen()); return; }
         var tRow2 = e.target.closest("[data-topic]");
         if (tRow2){ applyBulkTopic(tRow2.getAttribute("data-topic")); return; }
+        if (e.target.closest("[data-topic-add]")){
+          /* Hands off to your own "create topic" UI, carrying the selection so the new topic can
+             be applied straight away if you want that. */
+          setTopicMenuOpen(false);
+          fire("data-addtopics-fn", "uptAddTopics", selectionPayload());
+          return;
+        }
         if (e.target.closest("[data-bulk-status]")){ setTopicMenuOpen(false); applyBulkStatus(); return; }
         return;
       }
@@ -1100,6 +1152,7 @@
         return;
       }
       if (e.target.closest(".up-search-btn")){ closePops(); toggleSearch(); return; }
+      if (e.target.closest(".up-export")){ openExport(); return; }
       if (e.target.closest(".upt-brand-toggle")){ closePops(); cycleBrand(); return; }
 
       // --- selection (must come before header-sorter / row-click) ---
@@ -1378,7 +1431,12 @@
     if (typeof list === "string"){ try { list = JSON.parse(list); } catch(e){ list = []; } }
     if (!Array.isArray(list)) list = [];
     var ctrl = id ? resolve(id) : initRoot(document.querySelector(".upt-root"));
-    if (!ctrl) return false;
+    if (!ctrl){
+      if (window.console) console.warn("[prompts-table] setPromptsTableTopics: no .upt-root matches instanceId " +
+        JSON.stringify(id) + " — the topics were dropped.");
+      return false;
+    }
+    if (!list.length && window.console) console.warn("[prompts-table] setPromptsTableTopics got an empty list.");
     ctrl.update({ topics: list });
     return true;
   }

@@ -121,9 +121,11 @@
   z-index: 99999;
   width: max-content; max-width: calc(100vw - 32px);
   box-sizing: border-box;
-  display: flex; align-items: center; gap: 8px;
-  min-height: 48px; padding: 0 8px 0 14px;
-  border-radius: 12px;
+  /* flex-direction is spelled out because .up-root (which the bar also carries, so that core's
+     variables and [data-theme] rules reach it) sets column. */
+  display: flex; flex-direction: row; align-items: center; gap: 12px;
+  min-height: 56px; padding: 0 12px 0 18px;
+  border-radius: 32px;
   background: var(--up-surface, #ffffff);
   border: 1px solid var(--vc-border, #d9dde3);
   box-shadow: 0 14px 34px rgba(0,0,0,0.14);
@@ -137,22 +139,19 @@
 .upt-bulkbar.is-on { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
 @media (prefers-reduced-motion: reduce){ .upt-bulkbar { transition-duration: 1ms; } }
 .upt-bulkbar[data-theme="dark"] { background: #151515; border-color: #353535; box-shadow: 0 14px 34px rgba(0,0,0,0.6); }
-.upt-bulkbar-count { font-size: 13px; font-weight: 600; color: var(--vc-text, #1f1f1b); white-space: nowrap; flex: 0 0 auto; }
+.upt-bulkbar-count { font-size: 13.5px; font-weight: 600; color: var(--vc-text, #1f1f1b); white-space: nowrap; flex: 0 0 auto; }
 .upt-bulkbar[data-theme="dark"] .upt-bulkbar-count { color: #f0f0f0; }
 .upt-bulkbar-link { border: 0; background: transparent; padding: 0 2px; cursor: pointer;
   font-family: inherit; font-size: 12.5px; font-weight: 500; color: var(--vc-muted, #6f737c);
   text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; flex: 0 0 auto; }
 .upt-bulkbar-link:hover { color: var(--vc-text, #1f1f1b); }
 .upt-bulkbar[data-theme="dark"] .upt-bulkbar-link:hover { color: #f0f0f0; }
-.upt-bulkbar-div { width: 1px; height: 22px; background: var(--vc-border, #d9dde3); flex: 0 0 auto; }
-.upt-bulkbar-btn { height: 32px; padding: 0 11px; border-radius: 8px; border: 1px solid var(--vc-border, #d9dde3);
-  background: transparent; color: var(--vc-text, #1f1f1b); cursor: pointer; font-family: inherit;
-  font-size: 12.5px; font-weight: 500; white-space: nowrap; flex: 0 0 auto;
-  display: inline-flex; align-items: center; gap: 7px; }
-.upt-bulkbar-btn svg { width: 14px; height: 14px; display: block; }
-.upt-bulkbar-btn:hover { background: var(--vc-heading-bg, #f5f5f5); }
-.upt-bulkbar[data-theme="dark"] .upt-bulkbar-btn { color: #e0e0e0; border-color: #353535; }
-.upt-bulkbar[data-theme="dark"] .upt-bulkbar-btn:hover { background: rgba(255,255,255,0.06); }
+.upt-bulkbar-div { width: 1px; height: 24px; background: var(--vc-border, #d9dde3); flex: 0 0 auto; }
+/* The action buttons ARE core's .up-filter-btn — same height, border, hover and dark-mode
+   treatment as every other labelled toolbar button in the app. Only the icon sizing is added
+   here, because no other .up-filter-btn carries one. */
+.upt-bulkbar-btn { gap: 7px; }
+.upt-bulkbar-btn svg { width: 14px; height: 14px; display: block; flex: 0 0 auto; }
 .upt-bulkbar-x { width: 30px; height: 30px; border: 0; padding: 0; border-radius: 8px; background: transparent;
   color: var(--vc-muted, #6f737c); cursor: pointer; flex: 0 0 auto;
   display: inline-flex; align-items: center; justify-content: center; }
@@ -168,9 +167,9 @@
 .upt-bulkbar-topics { position: relative; display: inline-flex; flex: 0 0 auto; }
 .upt-topicmenu {
   position: absolute; bottom: calc(100% + 8px); left: 0; z-index: 5;
-  width: 260px; max-height: 320px; overflow: hidden;
+  width: 288px; max-height: 340px; overflow: hidden;
   display: flex; flex-direction: column;
-  padding: 6px; border-radius: 12px;
+  padding: 10px; border-radius: 18px;
   background: var(--up-surface, #ffffff); border: 1px solid var(--vc-border, #d9dde3);
   box-shadow: 0 14px 34px rgba(0,0,0,0.14);
   opacity: 0; visibility: hidden; transform: translateY(6px);
@@ -184,7 +183,7 @@
   font-family: inherit; font-size: 12.5px; color: var(--vc-text, #1f1f1b); box-sizing: border-box; }
 .upt-bulkbar[data-theme="dark"] .upt-topicsearch-in { color: #e0e0e0; border-color: #353535; }
 .upt-topiclist { overflow-y: auto; flex: 1 1 auto; min-height: 0; }
-.upt-topicrow { display: flex; align-items: center; gap: 9px; padding: 6px 7px; border-radius: 8px; cursor: pointer; }
+.upt-topicrow { display: flex; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 9px; cursor: pointer; }
 .upt-topicrow:hover { background: var(--vc-heading-bg, #f5f5f5); }
 .upt-bulkbar[data-theme="dark"] .upt-topicrow:hover { background: rgba(255,255,255,0.06); }
 .upt-topiccheck { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--vc-border, #d9dde3);
@@ -206,6 +205,12 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .upt-bulkbar[data-theme="dark"] .upt-topicchip { background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 22%, transparent); color: #e0e0e0; }
 .upt-topicchip-e { font-size: 12px; line-height: 1; }
+.upt-topicadd { margin-top: 8px; flex: 0 0 auto; height: 34px; width: 100%; border-radius: 9px;
+  border: 1px dashed var(--vc-border); background: transparent; color: var(--vc-muted);
+  cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 500;
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+.upt-topicadd svg { width: 14px; height: 14px; display: block; }
+.upt-topicadd:hover { color: var(--vc-text); border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
 .upt-topicmenu-empty { padding: 14px 8px; text-align: center; font-size: 12.5px; color: var(--vc-muted, #6f737c); }
 
 /* ---------- soft reload (sort / paging) ----------
@@ -240,10 +245,19 @@
 /* ---------- selection count ----------
    Counts the whole selection across pages (selection survives paging), sits right after the
    total in the heading. The X clears it — the same affordance the filter chips already use. */
-.upt-selcount { display: none; align-items: center; gap: 6px; margin-left: 10px; height: 24px;
+/* Always in the layout, never display:none — a display switch can't be transitioned, which is
+   why it used to pop in. It's the width/opacity that animate; the chip slides out from behind
+   the heading it sits next to. */
+.upt-selcount { display: inline-flex; align-items: center; gap: 6px; height: 24px;
   padding: 0 4px 0 9px; border-radius: 7px; background: var(--vc-heading-bg);
-  font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; flex: 0 0 auto; }
-.upt-selcount.is-on { display: inline-flex; }
+  font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; flex: 0 0 auto;
+  margin-left: 0; max-width: 0; opacity: 0; overflow: hidden; pointer-events: none;
+  transform: translateX(-6px);
+  transition: max-width 220ms cubic-bezier(0.2,0,0.38,0.9), opacity 160ms ease,
+              transform 220ms cubic-bezier(0.2,0,0.38,0.9), margin-left 220ms cubic-bezier(0.2,0,0.38,0.9);
+}
+.upt-selcount.is-on { max-width: 220px; opacity: 1; margin-left: 10px; transform: translateX(0); pointer-events: auto; }
+@media (prefers-reduced-motion: reduce){ .upt-selcount { transition-duration: 1ms; } }
 .upt-selcount-clear { width: 18px; height: 18px; border: 0; padding: 0; border-radius: 5px;
   background: transparent; color: var(--vc-muted); cursor: pointer; flex: 0 0 auto;
   display: inline-flex; align-items: center; justify-content: center; }
