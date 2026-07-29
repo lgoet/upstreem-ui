@@ -536,6 +536,13 @@
 
        /* skeleton brand logo matches compact size */
     .up-row:hover { background: var(--vt-row-hover); }
+    /* While the page is actively scrolling (see the scroll listener in core.js), hover-matching
+       is suspended tbody-wide — content sliding under a stationary cursor still fires real
+       mouseenter/mouseleave, and .up-row:hover's background is a paint, not a compositor-only
+       change, so a tall table under the cursor during a scroll was a full-width paint per row per
+       frame. pointer-events:none takes every hover-driven style with it in one rule (row
+       background, chip hover, the goto arrow) instead of having to override each individually. */
+    html.up-is-scrolling .up-tbody { pointer-events: none; }
     .up-td { height: 100%; display: flex; align-items: center; gap: 10px; padding: 0 16px 0 12px; min-width: 0;
       border-right: 1px solid var(--vc-border); border-bottom: 1px solid var(--vc-border); }
     .up-td:last-child { border-right: none; }

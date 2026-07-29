@@ -34,12 +34,18 @@
      Bubble repeating-group rows, with one adaptation: that version locates its own cell via
      document.currentScript.previousElementSibling from a trailing <script> tag. Rows here are
      built with innerHTML, and a <script> tag inserted that way never executes — so instead of
-     the auto-locate tail, initTopicsCells() below calls window.UstTopics.init(cell) directly for
+     the auto-locate tail, initTopicsCells() below calls the widget's init(cell) directly for
      every .ust-cell after each render. Everything else (styling, popup, layout, hover-reveal,
-     theme) is unchanged, so it looks and behaves exactly like the version already live elsewhere. */
+     theme) is unchanged, so it looks and behaves exactly like the version already live elsewhere.
+     Deliberately NOT stored on the shared window.UstTopics name the older standalone widget uses:
+     if that widget's script runs first on the same Bubble page, "if (window.UstTopics) return"
+     used to silently skip installing THIS component's copy — including its hover-reveal CSS and
+     the empty-state morph — since the two have since diverged (this one gained click-to-edit and
+     the "-"/"+Add" hover morph the read-only widget never had). A component-private global can't
+     collide with it, at the cost of a harmless duplicate <style>/popup div if both are present. */
   function installUstTopics(){
-    if (window.UstTopics) return;
-    window.UstTopics = (function(){
+    if (window.__uptUstTopics) return;
+    window.__uptUstTopics = (function(){
       var GAP = 8, theme = (window.__ustTheme === 'dark' ? 'dark' : 'light'), hideTimer = null;
       var registry = [];
 
@@ -279,7 +285,7 @@
 
     var isDark = isYes(root.getAttribute("data-isdark"));
     if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
-    if (window.UstTopics) window.UstTopics.setTheme(isDark ? "dark" : "light");
+    if (window.__uptUstTopics) window.__uptUstTopics.setTheme(isDark ? "dark" : "light");
 
     var elHeadCount = root.querySelector(".up-head-count");
     var elTbody     = root.querySelector(".up-tbody");
@@ -477,7 +483,7 @@
         if (!r || !cell) return;
         cell.innerHTML = topicsCell(id, r.tags);
         var c = cell.querySelector(".ust-cell");
-        if (c && window.UstTopics) window.UstTopics.init(c);
+        if (c && window.__uptUstTopics) window.__uptUstTopics.init(c);
       });
     }
     function clearSelection(){
@@ -1141,9 +1147,9 @@
       '</div>';
     }
     function initTopicsCells(){
-      if (!window.UstTopics) return;
+      if (!window.__uptUstTopics) return;
       Array.prototype.forEach.call(elTbody.querySelectorAll(".ust-cell"), function(cell){
-        if (!cell.__ustInit) window.UstTopics.init(cell);
+        if (!cell.__ustInit) window.__uptUstTopics.init(cell);
       });
     }
     var emptyGraceTimer = null;
@@ -1661,6 +1667,12 @@
       if (!topicMenuOpen()) return;
       if (e.__uptInBar) return;                              // handled inside the bar already
       if (elBulk && elBulk.contains(e.target)) return;
+      /* Ticking a row (or header select-all) checkbox while the topic editor is open isn't
+         "clicking away" — it's still building the same selection the editor is working on, and
+         used to close the panel on every tick, which was especially jarring right as the escape-
+         hatch link appears/disappears (that swap alone forced a bar rebuild that this listener's
+         very next click would then immediately undo). */
+      if (e.target.closest("[data-select], [data-selectall]")) return;
       setTopicMenuOpen(false);
     });
     /* Escape unwinds one layer at a time: first the topic menu, then the selection itself.
@@ -1682,7 +1694,7 @@
       if (wantDark !== isDark){
         isDark = wantDark;
         if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
-        if (window.UstTopics) window.UstTopics.setTheme(isDark ? "dark" : "light");
+        if (window.__uptUstTopics) window.__uptUstTopics.setTheme(isDark ? "dark" : "light");
         changed = true;
       }
       var procAttr = String(root.getAttribute("data-processing") || "") + "|" +
@@ -1775,7 +1787,7 @@
         if (params.isDark != null){
           isDark = isYes(params.isDark);
           if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
-          if (window.UstTopics) window.UstTopics.setTheme(isDark ? "dark" : "light");
+          if (window.__uptUstTopics) window.__uptUstTopics.setTheme(isDark ? "dark" : "light");
         }
         if (params.requestId != null && search.latestReqId() != null && String(params.requestId) !== String(search.latestReqId())) return;
         if (params.rows != null){

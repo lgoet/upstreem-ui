@@ -2306,6 +2306,36 @@
     };
   }
 
+  /* Suppresses :hover-driven repaints on table rows while the page is actively scrolling — one
+     page-global listener, install-once like the tooltip's own scroll listener above, so it works
+     no matter how many components/roots share the page (and however many times core.js itself
+     gets re-evaluated by them).
+     Content sliding under a stationary cursor still fires real mouseenter/mouseleave in every
+     browser, and .up-row:hover changes `background`, a paint-triggering property, not a cheap
+     compositor-only one (transform/opacity) — with the cursor parked over a tall table during a
+     scroll that's a full-width paint on every row that crosses it, which is what "scrolling isn't
+     smooth" actually was. pointer-events:none on the tbody during a scroll (removed ~150ms after
+     the last scroll event) blocks hover-matching entirely for the duration, taking every
+     hover-driven style with it (row background, chip hover, the goto arrow) without having to
+     enumerate and override each one — and without touching click handling, since a genuine row
+     click can't land mid-scroll anyway. */
+  if (!window.__upScrollHoverBound){
+    window.__upScrollHoverBound = true;
+    var scrollHoverRaf = null, scrollHoverSettle = null;
+    window.addEventListener("scroll", function(){
+      if (!scrollHoverRaf){
+        scrollHoverRaf = requestAnimationFrame(function(){
+          scrollHoverRaf = null;
+          document.documentElement.classList.add("up-is-scrolling");
+        });
+      }
+      clearTimeout(scrollHoverSettle);
+      scrollHoverSettle = setTimeout(function(){
+        document.documentElement.classList.remove("up-is-scrolling");
+      }, 150);
+    }, { capture: true, passive: true });
+  }
+
   window.UpstreemCore = {
     CITE_COLOR: CITE_COLOR,
     CITE_ALIAS: CITE_ALIAS,

@@ -291,10 +291,13 @@
 .upt-topicsearch-clear svg { width: 12px; height: 12px; display: block; }
 .upt-topicsearch-clear:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
 .upt-topichead.has-text .upt-topicsearch-clear { visibility: visible; }
+/* Same rest/hover idiom as every other button in here (transparent -> --vc-heading-bg on hover,
+   e.g. .up-iconbtn/.upt-topicsearch-clear) — it used to sit permanently grey with only its text
+   darkening on hover, which read as "no hover feedback" next to buttons that visibly light up. */
 .upt-topicreset { flex: 0 0 auto; height: 32px; padding: 0 12px; border-radius: 8px; border: 0;
-  background: var(--vc-heading-bg); color: var(--vc-muted); cursor: pointer;
+  background: transparent; color: var(--vc-muted); cursor: pointer;
   font-family: inherit; font-size: 12px; font-weight: 500; white-space: nowrap; }
-.upt-topicreset:hover { color: var(--vc-text); }
+.upt-topicreset:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
 .upt-topiccount { flex: 0 0 auto; font-size: 12px; font-weight: 600; color: var(--vc-muted);
   white-space: nowrap; font-variant-numeric: tabular-nums; overflow: hidden; }
 /* inline-block so the slide/fade in syncTopicFoot() has a transform to animate — a plain inline
