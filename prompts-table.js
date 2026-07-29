@@ -231,14 +231,21 @@
     { key: "sentiment",  label: "Sentiment" },
     { key: "created",    label: "Created" }
   ];
+  /* The tokens the RPC expects. The table thinks in field+direction because the header cycle
+     needs both; only the outgoing `order` value is collapsed into one of these. Note the two
+     names that deliberately differ from the column key: the prompt column sorts on `name_*` and
+     Created on `created_at_*`. */
   var ORDER = {
-    "prompt:asc": "prompt_asc",         "prompt:desc": "prompt_desc",
+    "prompt:asc": "name_asc",             "prompt:desc": "name_desc",
     "visibility:desc": "visibility_desc", "visibility:asc": "visibility_asc",
-    "rank:asc": "rank_asc",             "rank:desc": "rank_desc",
-    "sentiment:desc": "sentiment_desc", "sentiment:asc": "sentiment_asc",
-    "created:desc": "created_desc",     "created:asc": "created_asc"
+    "rank:asc": "rank_asc",               "rank:desc": "rank_desc",
+    "sentiment:desc": "sentiment_desc",   "sentiment:asc": "sentiment_asc",
+    "created:desc": "created_at_desc",    "created:asc": "created_at_asc"
   };
-  function orderValue(field, dir){ return ORDER[field + ":" + dir] || "created_desc"; }
+  function orderValue(field, dir){ return ORDER[field + ":" + dir] || "visibility_desc"; }
+  /* First click per column goes the way people actually want it: highest first for the two
+     "more is better" metrics, LOWEST first for Rank (1 is the best rank), A-Z for the text
+     column, newest first for a date. */
   var HEAD_CYCLE = {
     prompt:     ["prompt:asc", "prompt:desc"],
     visibility: ["visibility:desc", "visibility:asc"],
@@ -246,7 +253,8 @@
     sentiment:  ["sentiment:desc", "sentiment:asc"],
     created:    ["created:desc", "created:asc"]
   };
-  var DEFAULT_SORT = { field: "created", dir: "desc" };
+  /* There is no unsorted state — the table always carries a sort, and Visibility desc is it. */
+  var DEFAULT_SORT = { field: "visibility", dir: "desc" };
 
   function makeController(root){
     var instanceId = root.getAttribute("data-instance") || "default";
@@ -286,6 +294,11 @@
       totalCount: null,
       hasData: false,
       loading: false,                       // intern (Suche/Pagination/Sort), startet immer frei
+      /* true = the pending reload only reorders/re-windows the SAME result set (sort, paging),
+         so the rows already on screen stay valid and merely dim. false = the result set itself
+         is changing (search, filter, brand toggle) and the rows must go back to a skeleton.
+         Deliberately NOT persisted: a rebuilt element has no rows to keep, so it starts hard. */
+      softReload: false,
       extLoading: hasProcessingAttr() ? readProcessing()
              : (LOADING_EXPLICIT[instanceId] ? !!saved.loading : false),
       query: saved.query || "",
@@ -331,12 +344,33 @@
     /* shared event dispatch (core) */
     var fire = UC.makeFire(root, { label: "prompts-table", eventPrefix: "upt-" });
 
+    /* ---------------- soft-reload dimming ----------------
+       The dim waits a moment before appearing: most sorts come back well under this, and a
+       ~50ms flash of dimmed rows reads as a glitch rather than as feedback. Same principle as
+       Primer's "don't announce a load that finished before the user could notice it", just at a
+       visual timescale rather than a screen-reader one. */
+    var RELOAD_DIM_DELAY = 180;
+    var dimTimer = null;
+    function syncReloadDim(){
+      var want = isBusy() && state.softReload && state.hasData && state.rows.length > 0;
+      if (!want){
+        clearTimeout(dimTimer); dimTimer = null;
+        root.classList.remove("is-reloading");
+        return;
+      }
+      if (dimTimer || root.classList.contains("is-reloading")) return;
+      dimTimer = setTimeout(function(){
+        dimTimer = null;
+        if (isBusy() && state.softReload) root.classList.add("is-reloading");
+      }, RELOAD_DIM_DELAY);
+    }
+
     var MOBILE_SEARCH_MAX = 640;
     var search = UC.makeSearch({
       root: root, box: elSearch, input: elSearchIn, state: state,
       mobileMax: MOBILE_SEARCH_MAX, prefix: "upt",
       onRender: function(){ renderTable(); renderPager(); },
-      onFire: function(payload){ fire("data-search-fn", "uptSearch", payload); },
+      onFire: function(payload){ state.softReload = false; fire("data-search-fn", "uptSearch", payload); },
       persist: function(){ persist(); }
     });
     function runSearch(){ search.run(); }
@@ -369,6 +403,7 @@
       state.brandMentioned = state.brandMentioned === "" ? "yes" : (state.brandMentioned === "yes" ? "no" : "");
       state.page = 1;
       persist(); syncBrand(); renderPager();
+      state.softReload = false;
       fire("data-brand-fn", "uptBrand", { brand_mentioned: state.brandMentioned });
     }
 
@@ -514,6 +549,15 @@
          set of rows carries no inline style at all until applyCols() runs again. Callers outside
          the full render() cycle (checkbox toggle, search results, pagination) call renderTable()
          directly, so that reapply has to happen HERE, not rely on a later render(). */
+      /* Two kinds of reload, deliberately shown differently (see setSoftReload):
+         SOFT (sort, paging) reorders or re-windows the SAME result set — the rows on screen are
+         still truthful, so they stay and only dim. Blanking them made every header click look
+         like the table broke.
+         HARD (search, filters, brand toggle, status switch) changes WHICH rows match — anything
+         still on screen would be a lie, so it goes back to the skeleton. */
+      if (isBusy() && state.softReload && state.hasData && state.rows.length){
+        clearEmptyGrace(); return;   // leave the rows exactly as they are; CSS dims them
+      }
       if (isBusy() || !state.hasData){
         clearEmptyGrace(); elTbody.innerHTML = skeletonRows(state.pageSize); applyCols(); return;
       }
@@ -549,6 +593,10 @@
     function applySort(field, dir){
       state.sortField = field; state.sortDir = dir;
       state.page = 1;
+      /* Marked on the CLICK, not inside the debounce below: the outgoing event is delayed, but a
+         loading state can be switched on by anything in between, and by then we still want it
+         treated as a sort (dim) rather than as a fresh query (blank). */
+      state.softReload = true;
       persist(); syncHeadSorters(); populateSort();
       clearTimeout(sortTimer);
       sortTimer = setTimeout(function(){
@@ -625,6 +673,7 @@
 
     function firePage(){
       search.setLatest(null);
+      state.softReload = true;   // same result set, different window -> dim, don't blank
       fire("data-page-fn", "uptPage", { limit: state.pageSize, offset: offset(), page: state.page });
     }
 
@@ -753,6 +802,7 @@
         state.page = 1;
         persist(); syncBrand();
         search.cancel(); runSearch();
+        state.softReload = false;
         fire("data-brand-fn", "uptBrand", { brand_mentioned: "" });
         return;
       }
@@ -917,7 +967,7 @@
 
     function render(){
       renderTable(); renderCount(); syncHeadSorters(); syncColsBadge(); syncSelectAll(); syncBrand();
-      renderPageSize(); renderPager(); applyCols(); applyResponsive();
+      renderPageSize(); renderPager(); applyCols(); applyResponsive(); syncReloadDim();
       if (root.classList.contains("up-sticky")) syncTheadOffset();
     }
 
@@ -939,7 +989,7 @@
           state.hasData = true;
         }
         if (params.totalCount != null) state.totalCount = toNum(params.totalCount);
-        if (params.rows != null) state.loading = false;
+        if (params.rows != null){ state.loading = false; state.softReload = false; }
         if (!explicitOverride && hasProcessingAttr()) state.extLoading = readProcessing();
         persist(); render();
       },
