@@ -83,6 +83,11 @@
       var s = String(raw == null ? "" : raw).trim();
       if (!s) return [];
       if (s[0] === "{") s = "[" + s + "]";
+      // Bubble's own yes/no ":formatted as text" output for a boolean field is the bare word
+      // yes/no with NO quotes — invalid JS ("yes is not defined"). Only matches a bare value
+      // (colon ... comma/brace/bracket), so a genuine quoted "yes" string elsewhere is untouched.
+      s = s.replace(/:\s*yes\s*([,}\]])/g, ": true$1");
+      s = s.replace(/:\s*no\s*([,}\]])/g, ": false$1");
       s = s.replace(/:\s*([,}\]])/g, ": null$1");
       s = s.replace(/,\s*([}\]])/g, "$1");
       return eval("(" + s + ")");
