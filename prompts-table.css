@@ -134,7 +134,7 @@
      A dark tint rather than a light fill: the frame's whole job is to separate a white surface
      from a white page, which a near-white ring cannot do. As an alpha tint it darkens whatever
      is actually behind it, so it works on any background instead of only on white. */
-  --upt-frame: rgba(31,31,27,.16);
+  --upt-frame: rgba(31,31,27,.1);
   --upt-frame-w: 8px;
 
   position: fixed !important;
@@ -209,7 +209,7 @@
   --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #353535;
   --vc-heading-bg: rgba(42,42,42,0.6); --vc-switch-bg: rgba(42,42,42,0.6); --vc-third: #808080;
   --vc-hover-border: #707070; --up-surface: #151515;
-  --upt-frame: rgba(0,0,0,.45);
+  --upt-frame: rgba(0,0,0,.3);
   box-shadow: 0 14px 34px rgba(0,0,0,0.6);
 }
 /* The action row. No separators — the gaps carry the grouping on their own. */
@@ -221,7 +221,10 @@
 .upt-bulkbar-row [data-bulk-topics] { margin-left: auto; }
 .upt-bulkbar-row [data-bulk-status] { margin-left: -8px; }   /* 16px row gap -> 8px */
 .upt-bulkbar-row [data-bulk-clear] { margin-left: -8px; }    /* same: 16px row gap -> 8px */
-.upt-bulkbar-count { font-size: 13.5px; font-weight: 600; color: var(--vc-text); white-space: nowrap; flex: 0 0 auto; }
+/* inline-block + overflow:hidden so syncBulkBarCount()'s slide/fade has a transform to animate
+   and a clipping box to slide within — a plain inline text node can't take either. */
+.upt-bulkbar-count { display: inline-block; overflow: hidden; font-size: 13.5px; font-weight: 600;
+  color: var(--vc-text); white-space: nowrap; flex: 0 0 auto; }
 .upt-bulkbar-link { border: 0; background: transparent; padding: 0 2px; cursor: pointer;
   font-family: inherit; font-size: 12.5px; font-weight: 500; color: var(--vc-muted);
   text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; flex: 0 0 auto; }
@@ -297,7 +300,7 @@
    padding-top on the far side of the same separator stayed 12px. Zeroing the list's own gap
    here leaves margin-top as the only source of spacing, matching --upt-sep-gap on both sides. */
 .upt-topiclist.is-create { max-height: none; overflow: visible; gap: 0; }
-.upt-topicchip { height: 30px; padding: 0 8px 0 11px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;
+.upt-topicchip { height: 32px; padding: 0 8px 0 11px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;
   cursor: pointer; font-family: inherit;
   border: 1px solid color-mix(in srgb, var(--ust-tag-color, #6b7280) 40%, transparent);
   background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 10%, transparent);
@@ -359,21 +362,23 @@
 /* Rows are tone scales (vibrant / muted / deep), columns are hues — read down for a mood,
    across for a color. Centred, because a left-aligned 8-wide grid under a full-width row above
    it looked like it had fallen over. */
-.upt-colorgrid { display: grid; grid-template-columns: repeat(8, 32px); gap: 6px; }
-/* The 32x32 cell is the hit target and carries the hover, the blob inside is just the colour —
+.upt-colorgrid { display: grid; grid-template-columns: repeat(10, 34px); gap: 6px; }
+/* The 34x34 cell is the hit target and carries the hover, the blob inside is just the colour —
    splitting them is what lets the swatch stay a fixed size while the cell gets a proper
-   button-sized surface, instead of a 20px dot you have to aim at. */
-.upt-colorcell { width: 32px; height: 32px; padding: 0; border: 0; border-radius: 8px;
+   button-sized surface, instead of a small dot you have to aim at.
+   Transparent border reserved at rest (not added on hover) so the hover state doesn't shift
+   the swatch by the border's own width. */
+.upt-colorcell { width: 34px; height: 34px; padding: 0; border: 1px solid transparent; border-radius: 8px;
   background: transparent; cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center;
-  transition: background 120ms ease; }
-.upt-colorcell:hover { background: var(--vc-heading-bg); }
+  transition: background 120ms ease, border-color 120ms ease; }
+.upt-colorcell:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
 /* No inset ring and no fractional-px spread: an inset shadow on a 20px circle plus a 3.5px
    outer ring is what made these look soft/smeared rather than crisp. The blob is now a plain
    filled circle at whole-pixel size, and selection is shown INSIDE it. */
-.upt-colorblob { width: 20px; height: 20px; border-radius: 50%; display: inline-flex;
+.upt-colorblob { width: 22px; height: 22px; border-radius: 50%; display: inline-flex;
   align-items: center; justify-content: center; flex: 0 0 auto; }
-.upt-colorblob svg { width: 11px; height: 11px; display: block; stroke: currentColor; }
+.upt-colorblob svg { width: 12px; height: 12px; display: block; stroke: currentColor; stroke-width: 4; }
 /* Wider and shallower than the library's default: the panel is ~760px across, so a narrow tall
    picker wasted most of it and pushed the bar down the screen. --num-columns is the supported
    knob for this (the grid is shadow DOM, so plain CSS can't reach in). */

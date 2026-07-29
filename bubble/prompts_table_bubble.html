@@ -148,6 +148,8 @@
   renderPromptsTable also accepts, both optional:
     totalCountInactive  -> puts a count on the Inactive tab. Until you send it the tab simply
                            renders without one, rather than claiming a number it doesn't have.
+                           Comes from row 0's total_count_inactive, same idea as total_count —
+                           see the Render step below, which reads both off row 0 for you.
     topics              -> same list as setPromptsTableTopics, if it's easier to send it here.
 
   Row fields (straight from your RPC, no renaming needed):
@@ -157,9 +159,10 @@
   Not used by the table (kept in the row for later): source, is_active, runs_total,
   mentioned_runs, last_seen_run_at.
 
-  Your RPC returns one flat array with the grand total repeated on every row (total_count) rather
-  than a separate scalar output — the sanitizer below reads it off row 0, same idea as "Used"
-  reading a per-row field elsewhere in this app.
+  Your RPC repeats TWO grand totals on every row, rather than separate scalar outputs — total_count
+  (the count for whichever status you asked for) and total_count_inactive (the count for the OTHER
+  status, so the tab you're not currently on can show a number too). The Render step below reads
+  both off row 0, same idea as "Used" reading a per-row field elsewhere in this app.
 
   ── Run-JS "Render" step (paste as-is, swap the bracketed dynamic values) ────
   The raw RPC text is NOT parsed here: the step waits until the component is on the page and then
@@ -182,13 +185,16 @@
       if (typeof fn === "function" && UC && UC.parseBubbleJson) {
         var rows = UC.parseBubbleJson(RAW);
         var total = rows.length ? Number(rows[0].total_count) : null;
+        var totalInactive = rows.length ? Number(rows[0].total_count_inactive) : null;
         var payload = {
           instanceId: `INSTANCE_ID`,
           isDark: `ISDARK`,
           rows: rows,
-          totalCount: isFinite(total) ? total : null
+          totalCount: isFinite(total) ? total : null,
+          totalCountInactive: isFinite(totalInactive) ? totalInactive : null
         };
-        console.log("[prompts-table] sending", rows.length, "rows, total", payload.totalCount);
+        console.log("[prompts-table] sending", rows.length, "rows, total", payload.totalCount,
+          "total inactive", payload.totalCountInactive);
         fn(payload);
         return;
       }

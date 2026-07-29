@@ -52,7 +52,17 @@
         '.ust-tag{height:28px;padding:0 10px;border-radius:8px;display:inline-flex;align-items:center;gap:7px;flex:0 0 auto;border:1px solid color-mix(in srgb,var(--ust-tag-color,#6b7280) 40%,transparent);background:color-mix(in srgb,var(--ust-tag-color,#6b7280) 10%,transparent);color:var(--ust-tag-color,#4b5563);font-size:12px;line-height:1;font-weight:500;white-space:nowrap;cursor:pointer;user-select:none;}',
         '.ust-tag-emoji{font-size:12px;line-height:1;}',
         '.ust-tag-label{white-space:nowrap;}',
-        '.ust-empty{color:#a0a5ad;font-size:13px;line-height:1;}',
+        '.ust-empty{display:inline-flex;align-items:center;color:#a0a5ad;font-size:13px;line-height:1;}',
+        /* Dash shrinks/fades out, "+ Add" grows/fades in from width:0 — same idiom as the topic
+           chip checkbox elsewhere in this file (a max-width transition, not display, since
+           display can\'t be animated). Hover trigger lives on .upt-td-topics in prompts-table.css
+           (the whole cell, not just this span, is the click/hover target — see the click handler
+           that already fires uptTopicsClick from anywhere in the cell). */
+        '.ust-empty-dash{display:inline-block;transition:opacity 140ms ease,max-width 180ms cubic-bezier(.2,0,.38,.9);}',
+        '.ust-empty-add{display:inline-flex;align-items:center;gap:3px;max-width:0;opacity:0;overflow:hidden;white-space:nowrap;transition:max-width 180ms cubic-bezier(.2,0,.38,.9),opacity 140ms ease,margin-left 180ms cubic-bezier(.2,0,.38,.9);}',
+        '.upt-td-topics:hover .ust-empty{color:var(--vc-text,#1f1f1b);}',
+        '.upt-td-topics:hover .ust-empty-dash{opacity:0;max-width:0;}',
+        '.upt-td-topics:hover .ust-empty-add{max-width:50px;opacity:1;margin-left:4px;}',
         '.ust-more{height:28px;padding:0 10px;border-radius:8px;display:inline-flex;align-items:center;flex:0 0 auto;border:0;background:#f5f5f5;color:var(--ust-more-color,#5f646d);font-size:12px;line-height:1;font-weight:600;white-space:nowrap;cursor:pointer;user-select:none;}',
         '.ust-cell{--ust-more-border:#d9dde3;--ust-more-color:#5f646d;}',
         '.ust-cell .ust-more:hover{background:#ececec;color:#1f1f1b;}',
@@ -150,7 +160,11 @@
         var st={ cell:cell, row:row, tags:tags, tagEls:[], moreEl:null, promptId:cell.getAttribute('data-prompt-id')||null };
 
         row.innerHTML='';
-        if(!tags.length){ row.innerHTML='<span class="ust-empty">—</span>'; return; }
+        if(!tags.length){
+          row.innerHTML='<span class="ust-empty"><span class="ust-empty-dash">—</span>' +
+            '<span class="ust-empty-add"><span>+</span><span>Add</span></span></span>';
+          return;
+        }
 
         tags.forEach(function(t){
           var el=document.createElement('span');
@@ -493,7 +507,7 @@
       box.setAttribute("aria-checked", all ? "true" : (some ? "mixed" : "false"));
       box.innerHTML = all ? CHECK_SVG : "";
       syncSelCount();
-      renderBulkBar();
+      syncBulkBarCount();
     }
 
     /* ---------------- status view: Active / Inactive ----------------
@@ -574,16 +588,19 @@
     var SMILE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>';
     /* First stop of the tag creator this table will eventually need in full — for now it lives
        only where a brand-new topic can be named: the inline "no matches, create it" row.
-       4 hue families x 8 shades each. Every one of the 32 was picked by checking WCAG contrast
-       against both a plain white and a plain near-black background (>= 2.5:1, in line with what
-       the app's own existing example topic colors already sit at) — because only hex_light is
-       ever actually rendered (see doTopics/topicListHtml), the same 32 values have to read
-       acceptably in both themes rather than getting a per-theme pass. */
-    var TOPIC_COLOR_COLS = 8;   // must match .upt-colorgrid's column count
+       8 hue families + 2 neutral grays, x 3 tone rows each. Every one was picked by checking WCAG
+       contrast against both a plain white and a plain near-black background (>= 2.5:1, in line
+       with what the app's own existing example topic colors already sit at) — because only
+       hex_light is ever actually rendered (see doTopics/topicListHtml), the same values have to
+       read acceptably in both themes rather than getting a per-theme pass. The 2 grays per row
+       are solved for a DIFFERENT target luminance than their row's hues (0.8x / 1.25x) rather
+       than reusing the row's own — two swatches at the identical luminance would look like the
+       same gray twice. */
+    var TOPIC_COLOR_COLS = 10;   // must match .upt-colorgrid's column count
     var TOPIC_COLOR_PALETTE = [
-      /* vibrant */ "#de1b22", "#b65616", "#8d6a11", "#108440", "#107c84", "#1b6eda", "#9145e8", "#d51a8b",
-      /* muted   */ "#b47476", "#a87b5d", "#988552", "#4f926b", "#509195", "#6a88af", "#977ab8", "#b27098",
-      /* deep    */ "#ab2b2f", "#8b4c23", "#725a1d", "#1b6a3c", "#1b656a", "#295ea3", "#7a33cc", "#a32972"
+      /* vibrant */ "#de1b22", "#b65616", "#8d6a11", "#108440", "#107c84", "#1b6eda", "#9145e8", "#d51a8b", "#666666", "#7d7d7d",
+      /* muted   */ "#b47476", "#a87b5d", "#988552", "#4f926b", "#509195", "#6a88af", "#977ab8", "#b27098", "#787878", "#949494",
+      /* deep    */ "#ab2b2f", "#8b4c23", "#725a1d", "#1b6a3c", "#1b656a", "#295ea3", "#7a33cc", "#a32972", "#575757", "#666666"
     ];
     /* Each ROW is one tone scale across the full hue range, each COLUMN one hue — so scanning
        down picks a mood and across picks a color.
@@ -667,6 +684,36 @@
       document.body.appendChild(elBulk);
       return elBulk;
     }
+    /* Patches just the "N selected" text (slide + fade, same technique as the topic count) when
+       a row checkbox toggles — the common case, and by far the most frequent call into the bar.
+       renderBulkBar() rebuilds the whole innerHTML, which would destroy this very span before any
+       transition could run; falls back to it only when something structural has to change too
+       (the bar appearing/disappearing, or the escape-hatch link's presence flipping). */
+    function syncBulkBarCount(){
+      var n = bulkCount();
+      if (n === 0 || !elBulk || !elBulk.classList.contains("is-on")){ renderBulkBar(); return; }
+      var countEl = elBulk.querySelector(".upt-bulkbar-count");
+      if (!countEl){ renderBulkBar(); return; }
+      var wantEscape = state.selectAllMatching || (hasMorePages() && pageFullySelected());
+      var hasEscapeNow = !!elBulk.querySelector("[data-bulk-all],[data-bulk-undoall]");
+      if (wantEscape !== hasEscapeNow){ renderBulkBar(); return; }
+      var newTxt = n === 1 ? "1 selected" : UC.fmtInt(n) + " selected";
+      var prev = Number(countEl.getAttribute("data-n"));
+      countEl.setAttribute("data-n", n);
+      if (isNaN(prev) || prev === n){ countEl.textContent = newTxt; return; }
+      var dir = n > prev ? 1 : -1;
+      countEl.style.transition = "none";
+      countEl.style.transform = "translateY(0)";
+      countEl.style.opacity = "1";
+      countEl.textContent = newTxt;
+      void countEl.offsetWidth;
+      countEl.style.transform = "translateY(" + (dir * 6) + "px)";
+      countEl.style.opacity = "0";
+      void countEl.offsetWidth;
+      countEl.style.transition = "transform 180ms cubic-bezier(.2,0,.38,.9), opacity 140ms ease";
+      countEl.style.transform = "translateY(0)";
+      countEl.style.opacity = "1";
+    }
     function renderBulkBar(){
       var n = bulkCount();
       var on = n > 0;
@@ -705,7 +752,7 @@
       var wasOpen = bar.classList.contains("is-topics");
       bar.innerHTML =
         '<div class="upt-bulkbar-row">' +
-          '<span class="upt-bulkbar-count" role="status" aria-live="polite">' + esc(countTxt) + '</span>' +
+          '<span class="upt-bulkbar-count" role="status" aria-live="polite" data-n="' + n + '">' + esc(countTxt) + '</span>' +
           escape +
           '<button class="up-filter-btn upt-bulkbar-btn" type="button" data-bulk-topics aria-expanded="' + (wasOpen ? "true" : "false") + '">' + TAG_SVG + 'Topics</button>' +
           '<button class="up-filter-btn upt-bulkbar-btn" type="button" data-bulk-status>' + esc(statusLabel) + '</button>' +
