@@ -639,8 +639,10 @@
 
     /* ---------------- column explainers ----------------
        Positioning/flip/caret is UC.makeExplain (core); only the per-metric copy and the visual
-       sample are this component's own. The samples reuse the exact same cell builders the real
-       rows use, so the preview can never drift out of sync with what a row actually looks like. */
+       sample are this component's own. Visibility/Rank/Sentiment deliberately do NOT reuse the
+       real row cell builders (up-num/up-sent/up-rank-group) here: the explainer panel has its
+       own plain "value + trend" look — same one urls-table's "Share" explainer uses — not the
+       table's chip styling. */
     var EXPLAIN_TEXT = {
       visibility: { h: "Visibility",
         t: "How often your brand appears in AI answers for this prompt." },
@@ -654,9 +656,21 @@
         t: "The market this prompt is tracked in." }
     };
     function explainVisual(kind){
-      if (kind === "visibility") return visCell(34) + UC.trendChip(2.9, { suffix: "%" });
-      if (kind === "rank") return rankCell(2.3) + UC.trendChip(-0.4, { decimals: true, inverted: true });
-      if (kind === "sentiment") return sentCell(78) + UC.trendChip(4, { decimals: true });
+      if (kind === "visibility"){
+        return '<span class="upt-explain-row">34%' +
+          '<span class="upt-explain-up">' + UC.TREND_UP + '</span>' +
+          '<span class="upt-explain-up">2.9%</span></span>';
+      }
+      if (kind === "rank"){
+        return '<span class="upt-explain-row">' + UC.HASH_ICON + '2.3' +
+          '<span class="upt-explain-down">' + UC.TREND_DOWN + '</span>' +
+          '<span class="upt-explain-down">0.4</span></span>';
+      }
+      if (kind === "sentiment"){
+        return '<span class="upt-explain-row">78' +
+          '<span class="upt-explain-up">' + UC.TREND_UP + '</span>' +
+          '<span class="upt-explain-up">4</span></span>';
+      }
       if (kind === "brands"){
         return '<span class="upt-explain-row" style="gap:0">' +
           '<span class="upt-explain-dot"></span><span class="upt-explain-dot" style="margin-left:-10px"></span>' +

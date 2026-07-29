@@ -97,6 +97,9 @@
 .upt-explain-h { font-size: 14.5px; font-weight: 600; line-height: 1.2; padding: 0 3px; margin-bottom: 4px; color: #ffffff; }
 .upt-explain-t { font-size: 13.5px; font-weight: 400; line-height: 1.5; padding: 0 3px; color: rgba(255,255,255,0.68); }
 .upt-explain-row { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 500; color: #1f1f1b; }
+.upt-explain-row svg { width: 14px; height: 14px; display: block; }
+.upt-explain-up { color: #2ea84a; }
+.upt-explain-down { color: #b0200c; }
 .upt-explain-dot { width: 26px; height: 26px; border-radius: 999px; background: #e8e8e8;
   border: 1px solid #d9dde3; box-shadow: 0 0 0 2px #ffffff; display: inline-flex;
   align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: #6f737c; }
@@ -104,5 +107,8 @@
 .up-explain[data-theme="dark"] .upt-explain-h { color: #1f1f1b; }
 .up-explain[data-theme="dark"] .upt-explain-t { color: rgba(31,31,27,0.66); }
 .up-explain[data-theme="dark"] .upt-explain-vis { background: #1b1b1b; }
+.up-explain[data-theme="dark"] .upt-explain-row { color: #f0f0f0; }
+.up-explain[data-theme="dark"] .upt-explain-up { color: #6ee7b7; }
+.up-explain[data-theme="dark"] .upt-explain-down { color: #fca5a5; }
 .up-explain[data-theme="dark"] .upt-explain-dot { background: #3a3a3a; border-color: #4a4a4a; box-shadow: 0 0 0 2px #1b1b1b; color: #b8b8b8; }
 .up-explain[data-theme="dark"] .upt-explain-more { background: #2c2c2c; }
