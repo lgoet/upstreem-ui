@@ -361,7 +361,7 @@
        ~50ms flash of dimmed rows reads as a glitch rather than as feedback. Same principle as
        Primer's "don't announce a load that finished before the user could notice it", just at a
        visual timescale rather than a screen-reader one. */
-    var RELOAD_DIM_DELAY = 180;
+    var RELOAD_DIM_DELAY = 0;
     var RELOAD_DIM_MAX = 20000;
     var dimTimer = null, dimKill = null;
     /* Driven explicitly by the two events that cause a soft reload, NOT derived from isBusy().
@@ -372,7 +372,8 @@
     function beginSoftReload(){
       clearTimeout(dimTimer); clearTimeout(dimKill);
       if (!state.hasData || !(state.rows || []).length) return;   // nothing on screen to dim
-      dimTimer = setTimeout(function(){
+      if (RELOAD_DIM_DELAY <= 0) root.classList.add("is-reloading");
+      else dimTimer = setTimeout(function(){
         dimTimer = null;
         root.classList.add("is-reloading");
       }, RELOAD_DIM_DELAY);
@@ -594,6 +595,12 @@
       if (!bar) return;
       bar.setAttribute("data-theme", isDark ? "dark" : "light");
       if (!on){
+        /* Move focus out BEFORE hiding: aria-hidden on an ancestor of the focused element is
+           an accessibility trap, and Chrome refuses it outright with a console error. Clicking
+           the bar's own X is exactly the case that triggers it. */
+        if (bar.contains(document.activeElement)){
+          try { document.activeElement.blur(); } catch(e){}
+        }
         bar.classList.remove("is-on");
         bar.setAttribute("aria-hidden", "true");
         /* Every control must leave the tab order while the bar is invisible, otherwise an
@@ -609,7 +616,9 @@
       var escape = "";
       if (isAll) escape = '<button class="upt-bulkbar-link" type="button" data-bulk-undoall>Undo</button>';
       else if (hasMorePages() && pageFullySelected()) escape = '<button class="upt-bulkbar-link" type="button" data-bulk-all>Select all ' +
-        UC.fmtTotal(toNum(state.totalCount)) + ' prompts</button>';
+        /* fmtInt, not fmtTotal: fmtTotal abbreviates (1000 -> "1k"), and "Select all 1k prompts"
+           reads like a rounded guess when it is in fact an exact figure. */
+        UC.fmtInt(toNum(state.totalCount)) + ' prompts</button>';
 
       var statusLabel = state.status === "inactive" ? "Set Active" : "Set Inactive";
       var wasOpen = bar.classList.contains("is-topics");
@@ -888,6 +897,10 @@
          loading state can be switched on by anything in between, and by then we still want it
          treated as a sort (dim) rather than as a fresh query (blank). */
       state.softReload = true;
+      /* Dim on the CLICK. The outgoing event is debounced by a quarter second and the answer
+         takes longer still — waiting for either means the table sits there looking like nothing
+         happened at the exact moment the user expects a response. */
+      beginSoftReload();
       persist(); syncHeadSorters(); populateSort();
       clearTimeout(sortTimer);
       sortTimer = setTimeout(function(){
@@ -900,7 +913,7 @@
           order: orderValue(state.sortField, state.sortDir),
           sort_field: state.sortField, sort_dir: state.sortDir
         });
-        renderTable(); beginSoftReload();
+        renderTable();
       }, SORT_DEBOUNCE);
     }
     function populateSort(){
@@ -1458,7 +1471,10 @@
      urls-table/domains-table. */
   function doTopics(id, topics){
     var list = topics;
-    if (typeof list === "string"){ try { list = JSON.parse(list); } catch(e){ list = []; } }
+    /* Accepts either a ready array OR the raw Bubble text. Raw text goes through the shared
+       core parser, so there is exactly ONE implementation of the "Bubble emits unquoted emoji
+       and yes/no" workaround in the codebase. */
+    if (typeof list === "string") list = UC.parseBubbleJson(list);
     if (!Array.isArray(list)) list = [];
     var ctrl = id ? resolve(id) : initRoot(document.querySelector(".upt-root"));
     if (!ctrl){

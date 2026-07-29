@@ -126,104 +126,39 @@
   reading a per-row field elsewhere in this app.
 
   ── Run-JS "Render" step (paste as-is, swap the bracketed dynamic values) ────
+  The raw RPC text is NOT parsed here: the step waits until the component is on the page and then
+  uses UpstreemCore.parseBubbleJson, the one shared implementation of Bubble's quirks (unquoted
+  emoji, bare yes/no, trailing commas, double-encoded strings).
 
   (function () {
-    /* Bubble emits several field types UNQUOTED, which is invalid JS: booleans as the bare
-       words yes/no ("yes is not defined") and emoji as a bare glyph ("emoji": 💎  ->  "Invalid
-       or unexpected token"). This walks the text once, tracking whether it is inside a quoted
-       string, and quotes every bare value it finds outside one. A plain regex cannot do this
-       safely — a timestamp like "May 9, 2026 12:23 pm" contains BOTH a comma and a colon inside
-       its quotes, and a regex has no way to know it should keep its hands off. */
-    function fixBareValues(src){
-      var out = "", i = 0, n = src.length, inStr = false, esc = false, ch, c, start, raw, v;
-      while (i < n){
-        ch = src.charAt(i);
-        if (inStr){
-          out += ch;
-          if (esc) esc = false;
-          else if (ch === "\\") esc = true;
-          else if (ch === '"') inStr = false;
-          i++; continue;
-        }
-        if (ch === '"'){ inStr = true; out += ch; i++; continue; }
-        if (ch !== ":"){ out += ch; i++; continue; }
-
-        out += ch; i++;                                  // the colon itself
-        while (i < n && /\s/.test(src.charAt(i))){ out += src.charAt(i); i++; }
-        if (i >= n) break;
-        c = src.charAt(i);
-        if (c === '"' || c === "[" || c === "{") continue;   // already quoted or structured
-
-        start = i;
-        while (i < n && src.charAt(i) !== "," && src.charAt(i) !== "}" && src.charAt(i) !== "]") i++;
-        raw = src.slice(start, i);
-        v = raw.replace(/^\s+|\s+$/g, "");
-        if (v === "") { out += "null"; continue; }
-        if (v === "true" || v === "false" || v === "null"){ out += v; continue; }
-        if (/^-?\d+(\.\d+)?([eE][+-]?\d+)?$/.test(v)){ out += v; continue; }
-        if (/^yes$/i.test(v)){ out += "true"; continue; }
-        if (/^no$/i.test(v)){ out += "false"; continue; }
-        out += '"' + v.replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"';
-      }
-      return out;
-    }
-    function parseOnce(raw) {
-      var s = String(raw == null ? "" : raw).trim();
-      if (!s) return [];
-      if (s.charAt(0) === "{") s = "[" + s + "]";
-      s = fixBareValues(s);
-      s = s.replace(/,\s*([}\]])/g, "$1");    // trailing comma before a closing bracket
-      return eval("(" + s + ")");
-    }
-    // Bubble sometimes inserts a dynamic "text" value pre-escaped/quoted (double-encoded JSON) —
-    // the first parse then yields a STRING containing more JSON instead of the array itself.
-    // Re-parses once more when that happens. Always logs when the end result still isn't a
-    // populated array, instead of silently returning [] — an empty array here reads as "no
-    // prompts", indistinguishable from a genuinely empty result, unless you check the console.
-    function toArr(raw) {
-      var result;
-      try { result = parseOnce(raw); }
-      catch (e) { console.warn("[prompts-table sanitizer] could not parse RPC response:", e.message, raw); return []; }
-      if (typeof result === "string") {
-        try { result = parseOnce(result); }
-        catch (e) { console.warn("[prompts-table sanitizer] double-encoded response still failed to parse:", e.message, result); return []; }
-      }
-      if (result && !Array.isArray(result) && typeof result === "object") result = [result];
-      if (!Array.isArray(result)) {
-        console.warn("[prompts-table sanitizer] parsed value is not an array/object — check the RPC output shape:", result, raw);
-        return [];
-      }
-      if (!result.length) console.warn("[prompts-table sanitizer] parsed an empty array — RPC genuinely returned no rows, or the raw value wasn't what you expected:", raw);
-      return result;
-    }
-    function toNum(raw) {
-      var n = Number(String(raw == null ? "" : raw).trim());
-      return isFinite(n) ? n : null;
-    }
-
-    var rows = toArr(`[PROMPTS_RPC_RESPONSE]`);
-
-    var payload = {
-      instanceId: `INSTANCE_ID`,
-      isDark: `ISDARK`,
-      rows: rows,
-      totalCount: rows.length ? toNum(rows[0].total_count) : null
-    };
-    // Unconditional, not just on failure — proves this script actually ran and shows exactly
-    // what's about to be sent, regardless of which step downstream (if any) silently drops it.
-    console.log("[prompts-table sanitizer] sending payload:", payload);
+    var RAW = `[PROMPTS_RPC_RESPONSE]`;
 
     var t = 0;
     (function go () {
-      var fn = window.renderPromptsTable
-            || (window.parent && window.parent.renderPromptsTable)
-            || (window.top && window.top.renderPromptsTable);
-      if (typeof fn === "function") { fn(payload); return; }
+      var w  = window,
+          fn = w.renderPromptsTable
+            || (w.parent && w.parent.renderPromptsTable)
+            || (w.top && w.top.renderPromptsTable);
+      var UC = w.UpstreemCore
+            || (w.parent && w.parent.UpstreemCore)
+            || (w.top && w.top.UpstreemCore);
+
+      if (typeof fn === "function" && UC && UC.parseBubbleJson) {
+        var rows = UC.parseBubbleJson(RAW);
+        var total = rows.length ? Number(rows[0].total_count) : null;
+        var payload = {
+          instanceId: `INSTANCE_ID`,
+          isDark: `ISDARK`,
+          rows: rows,
+          totalCount: isFinite(total) ? total : null
+        };
+        console.log("[prompts-table] sending", rows.length, "rows, total", payload.totalCount);
+        fn(payload);
+        return;
+      }
       if (t++ < 60) { setTimeout(go, 100); return; }
-      console.error("[prompts-table sanitizer] window.renderPromptsTable was never found after 6s — " +
-        "prompts-table.js hasn't loaded (or hasn't finished loading) in this window, its parent, or top. " +
-        "Check data-cdn-pin / that the component is actually placed on this page / whether this runs " +
-        "inside an iframe that can't reach the frame the component lives in.");
+      console.error("[prompts-table] renderPromptsTable / UpstreemCore never appeared after 6s — " +
+        "check data-cdn-pin and that the component is actually on this page.");
     })();
   })();
 
@@ -231,29 +166,21 @@
   Same pattern as the brand lists in urls-table/domains-table: the full topic list is static for
   the session, so it's loaded once rather than riding along with every page of rows.
 
-  (function () {
-    function toArr(raw) {
-      var s = String(raw == null ? "" : raw).trim();
-      if (!s) return [];
-      if (s[0] === "{") s = "[" + s + "]";
-      s = s.replace(/:\s*yes\s*([,}\]])/g, ": true$1");
-      s = s.replace(/:\s*no\s*([,}\]])/g, ": false$1");
-      s = s.replace(/:\s*([,}\]])/g, ": null$1");
-      s = s.replace(/,\s*([}\]])/g, "$1");
-      try { return eval("(" + s + ")"); }
-      catch (e) { console.warn("[prompts-table] could not parse topics:", e.message, s); return []; }
-    }
+  Note there is no parsing here — the raw RPC text is handed over as-is and the component runs it
+  through UpstreemCore.parseBubbleJson. That parser handles Bubble's unquoted emoji and bare
+  yes/no. Keeping a second copy of it in this step is exactly how the emoji bug survived a round
+  of fixes once already: only one of the two copies got repaired.
 
+  (function () {
     var INSTANCE_ID = `INSTANCE_ID`;
-    var topics = toArr(`[TOPICS_RPC_RESPONSE]`);   // [{id,name,emoji,hex_light,hex_dark}, …]
-    console.log("[prompts-table] sending topics:", topics.length);
+    var RAW = `[TOPICS_RPC_RESPONSE]`;      // [{id,name,emoji,hex_light,hex_dark}, …]
 
     var t = 0;
     (function go () {
       var fn = window.setPromptsTableTopics
             || (window.parent && window.parent.setPromptsTableTopics)
             || (window.top && window.top.setPromptsTableTopics);
-      if (typeof fn === "function") { fn(INSTANCE_ID, topics); return; }
+      if (typeof fn === "function") { fn(INSTANCE_ID, RAW); return; }
       if (t++ < 60) { setTimeout(go, 100); return; }
       console.error("[prompts-table] setPromptsTableTopics never appeared — is the component on this page?");
     })();

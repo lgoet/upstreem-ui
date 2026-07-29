@@ -63,6 +63,66 @@
     try { return safe.replace(new RegExp("(" + needle + ")", "ig"), '<mark class="up-hl">$1</mark>'); }
     catch(e){ return safe; }
   }
+  /* ---------- parseBubbleJson ----------
+     Bubble's ":formatted as text" output is JSON-SHAPED but not valid JSON: several field types
+     come through unquoted — booleans as the bare words yes/no ("yes is not defined") and emoji as
+     a bare glyph ("emoji": 💎 -> "Invalid or unexpected token"). This walks the text once,
+     tracking whether it is inside a quoted string, and quotes every bare value found outside one.
+
+     Deliberately a scanner and not a regex: a timestamp like "May 9, 2026 12:23 pm" contains BOTH
+     a comma and a colon inside its own quotes, and a regex has no way to know it must keep its
+     hands off. An earlier regex version broke exactly that case.
+
+     Lives in core because more than one caller needs it — every Run-JS step that feeds a
+     component the raw RPC text. Two copies of this is how the emoji bug survived a round of
+     fixes: only one of them got repaired. */
+  function parseBubbleJson(raw){
+    var src = String(raw == null ? "" : raw).trim();
+    if (!src) return [];
+    if (src.charAt(0) === "{") src = "[" + src + "]";
+    var out = "", i = 0, n = src.length, inStr = false, esc2 = false, ch, c, start, v;
+    while (i < n){
+      ch = src.charAt(i);
+      if (inStr){
+        out += ch;
+        if (esc2) esc2 = false;
+        else if (ch === "\\") esc2 = true;
+        else if (ch === '"') inStr = false;
+        i++; continue;
+      }
+      if (ch === '"'){ inStr = true; out += ch; i++; continue; }
+      if (ch !== ":"){ out += ch; i++; continue; }
+
+      out += ch; i++;                                     // the colon itself
+      while (i < n && /\s/.test(src.charAt(i))){ out += src.charAt(i); i++; }
+      if (i >= n) break;
+      c = src.charAt(i);
+      if (c === '"' || c === "[" || c === "{") continue;   // already quoted or structured
+
+      start = i;
+      while (i < n && src.charAt(i) !== "," && src.charAt(i) !== "}" && src.charAt(i) !== "]") i++;
+      v = src.slice(start, i).replace(/^\s+|\s+$/g, "");
+      if (v === ""){ out += "null"; continue; }
+      if (v === "true" || v === "false" || v === "null"){ out += v; continue; }
+      if (/^-?\d+(\.\d+)?([eE][+-]?\d+)?$/.test(v)){ out += v; continue; }
+      if (/^yes$/i.test(v)){ out += "true"; continue; }
+      if (/^no$/i.test(v)){ out += "false"; continue; }
+      out += '"' + v.replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"';
+    }
+    out = out.replace(/,\s*([}\]])/g, "$1");              // trailing comma before a closer
+    var parsed;
+    try { parsed = eval("(" + out + ")"); }
+    catch(e){
+      if (window.console) console.warn("[UpstreemCore] parseBubbleJson failed:", e.message, raw);
+      return [];
+    }
+    if (typeof parsed === "string"){                      // Bubble sometimes double-encodes
+      try { return parseBubbleJson(parsed); } catch(e2){ return []; }
+    }
+    if (parsed && !Array.isArray(parsed) && typeof parsed === "object") return [parsed];
+    return Array.isArray(parsed) ? parsed : [];
+  }
+
   function esc(s){
     return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){
       return { "&":"&amp;", "<":"&lt;", ">":"&gt;", "\"":"&quot;" }[c];
@@ -2208,6 +2268,7 @@
     isYes: isYes,
     highlight: highlight,
     esc: esc,
+    parseBubbleJson: parseBubbleJson,
     citeName: citeName,
     tint: tint,
     toNum: toNum,
