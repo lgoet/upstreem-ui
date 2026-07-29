@@ -440,7 +440,7 @@
     }
     function toggleSelectRow(id){
       if (state.selected[id]) delete state.selected[id]; else state.selected[id] = true;
-      persist(); renderTable(); syncSelectAll(); fireSelect();
+      persist(); syncRowChecks(); syncSelectAll(); fireSelect();
     }
     function toggleSelectAll(){
       var rows = state.rows || [];
@@ -452,10 +452,36 @@
       });
       persist(); renderTable(); syncSelectAll(); fireSelect();
     }
+    /* Updates the checkboxes in place instead of re-rendering the table.
+       renderTable() replaces elTbody.innerHTML wholesale, which recreates every <img> in every
+       row — the brand logos then visibly flash while they re-decode. urls-table already learned
+       this with its brand list ("rebuilding made every row flash for a frame"). */
+    function syncRowChecks(){
+      Array.prototype.forEach.call(elTbody.querySelectorAll("[data-select]"), function(b){
+        var on = !!state.selected[b.getAttribute("data-select")];
+        b.classList.toggle("is-checked", on);
+        b.setAttribute("aria-checked", on ? "true" : "false");
+        b.innerHTML = on ? CHECK_SVG : "";
+        var row = b.closest(".up-row");
+        if (row) row.classList.toggle("is-selected", on);
+      });
+    }
+    /* Same idea for the Topics column after a bulk topic change: only those cells changed. */
+    function syncTopicCells(){
+      Array.prototype.forEach.call(elTbody.querySelectorAll(".up-row"), function(row){
+        var id = row.getAttribute("data-id");
+        var cell = row.querySelector(".upt-td-topics");
+        var r = (state.rows || []).filter(function(x){ return String(x.prompt_id) === id; })[0];
+        if (!r || !cell) return;
+        cell.innerHTML = topicsCell(id, r.tags);
+        var c = cell.querySelector(".ust-cell");
+        if (c && window.UstTopics) window.UstTopics.init(c);
+      });
+    }
     function clearSelection(){
       if (!selectedIds().length && !state.selectAllMatching) return;
       state.selected = {}; invalidateSelectAll();
-      persist(); renderTable(); syncSelectAll(); fireSelect();
+      persist(); syncRowChecks(); syncSelectAll(); fireSelect();
     }
     /* Counts the WHOLE selection, not just this page's — state.selected deliberately survives
        paging/sorting, so a user who selected rows on page 1 and paged on still sees them counted. */
@@ -656,10 +682,13 @@
     function loadedSelectedRows(){
       return (state.rows || []).filter(function(r){ return state.selected[String(r.prompt_id)]; });
     }
+    /* State is only shown for a SINGLE selected prompt. With several selected the panel's job is
+       "put these topics on all of them" — showing a mixed/partial state there invites the reader
+       to interpret a tick as "this is the new value for everything", which it isn't. */
     function topicStateFor(id){
       if (state.selectAllMatching) return "unknown";
       var sel = loadedSelectedRows();
-      if (!sel.length) return "unknown";
+      if (sel.length !== 1) return "unknown";
       var hits = sel.filter(function(r){
         return (r.tags || []).some(function(t){ return topicId(t) === id; });
       }).length;
@@ -685,12 +714,12 @@
                 var st = topicStateFor(id);
                 var color = String(t.hex_light || t.hex_dark || "#6b7280");
                 if (color.charAt(0) !== "#") color = "#" + color;
-                return '<div class="upt-topicrow" data-topic="' + esc(id) + '" data-state="' + st + '">' +
-                  '<span class="upt-topiccheck is-' + st + '">' + (st === "all" ? CHECK_SVG : "") + '</span>' +
-                  '<span class="upt-topicchip up-chiphover" style="--ust-tag-color:' + esc(color) + '">' +
-                    (t.emoji ? '<span class="upt-topicchip-e">' + esc(t.emoji) + '</span>' : "") +
-                    '<span>' + esc(t.name == null ? "" : t.name) + '</span>' +
-                  '</span></div>';
+                return '<button type="button" class="upt-topicchip up-chiphover' + (st === "all" ? " is-on" : "") +
+                 '" data-topic="' + esc(id) + '" data-state="' + st + '" style="--ust-tag-color:' + esc(color) + '">' +
+                 (t.emoji ? '<span class="upt-topicchip-e">' + esc(t.emoji) + '</span>' : "") +
+                 '<span>' + esc(t.name == null ? "" : t.name) + '</span>' +
+                 (st === "all" ? '<span class="upt-topicchip-x">' + CHECK_SVG + '</span>' : "") +
+               '</button>';
               }).join(""));
       return items;
     }
@@ -703,8 +732,14 @@
       if (!elBulk) return;
       var menu = elBulk.querySelector(".upt-bulkpanel");
       if (!menu) return;
+      var n = bulkCount();
       menu.innerHTML =
-        ((state.topics || []).length ? '<div class="upt-topicsearch"><input class="upt-topicsearch-in" type="text" placeholder="Search topics..." autocomplete="off" spellcheck="false"/></div>' : "") +
+        ((state.topics || []).length
+          ? '<div class="upt-topichead">' +
+              '<input class="upt-topicsearch-in" type="text" placeholder="Search topics..." autocomplete="off" spellcheck="false"/>' +
+              '<span class="upt-topiccount">' + esc(n === 1 ? "1 selected" : n + " selected") + '</span>' +
+            '</div>'
+          : "") +
         '<div class="upt-topiclist">' + topicListHtml() + '</div>' +
         '<button class="upt-topicadd" type="button" data-topic-add>' +
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
@@ -745,7 +780,7 @@
         if (action === "add" && at === -1 && t) tags.push(t);
         if (action === "remove" && at > -1) tags.splice(at, 1);
       });
-      renderTable(); renderTopicList();
+      syncTopicCells(); renderTopicList();
     }
     function applyBulkStatus(){
       var next = state.status === "inactive" ? "active" : "inactive";
@@ -1134,6 +1169,12 @@
 
       /* --- bulk action bar (lives on document.body; ownsTarget lets its clicks through) --- */
       if (elBulk && elBulk.contains(e.target)){
+        /* Marked HERE, while the clicked node is still attached. Handlers below rebuild the
+           topic list via innerHTML, so by the time the outside-click listener further down sees
+           this same event, e.target is detached and elBulk.contains() returns false — which
+           closed the panel on every topic click. Same trap urls-table documents for its filter
+           menu. */
+        e.__uptInBar = true;
         if (e.target.closest("[data-bulk-clear]")){ setTopicMenuOpen(false); clearSelection(); return; }
         if (e.target.closest("[data-bulk-all]")){
           state.selectAllMatching = true;
@@ -1289,6 +1330,7 @@
        component's own ownsTarget-guarded handler — it needs to see clicks anywhere. */
     document.addEventListener("click", function(e){
       if (!topicMenuOpen()) return;
+      if (e.__uptInBar) return;                              // handled inside the bar already
       if (elBulk && elBulk.contains(e.target)) return;
       setTopicMenuOpen(false);
     });
