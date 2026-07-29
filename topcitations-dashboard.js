@@ -344,6 +344,10 @@
       var cn = root.querySelector(".tcd-head-count");
       if (!hr || !cn) return;
       hr.classList.add("has-count");
+      /* Skeleton for the WHOLE duration of loading, not just before the first load — otherwise a
+         stale count from before a filter/mode change sits there unchanged while fresh data is
+         still in flight, which reads as "nothing happened" rather than "loading". */
+      if (state.loading || state.optimisticLoading){ cn.textContent = ""; cn.classList.add("is-sk"); return; }
       var count = state.mode === "url" ? state.totalCountUrl : state.totalCountDomain;
       if (count != null && count !== ""){ cn.textContent = fmtTotal(count); cn.classList.remove("is-sk"); }
       else { cn.textContent = ""; cn.classList.add("is-sk"); }
@@ -402,7 +406,11 @@
     function syncBrandToggle(startClearMessage){
       if (!brandToggle) return;
       var hasBrand = !!(state.brand && state.brand.name);
-      brandToggle.classList.toggle("is-visible", hasBrand);
+      /* Gated on hasTable too, not just the brand attribute: Bubble can set the brand before the
+         first table payload lands, and re-hiding this on every later loading toggle (hasTable
+         only resets on a full reset()) would make it flicker out on each reload instead of
+         staying put. */
+      brandToggle.classList.toggle("is-visible", hasBrand && state.hasTable);
       if (!hasBrand) return;
       var lbl = brandToggle.querySelector(".tcd-brand-label");
       var logo = brandToggle.querySelector(".tcd-brand-logo");

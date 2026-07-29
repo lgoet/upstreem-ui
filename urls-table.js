@@ -324,6 +324,10 @@
     }
     function renderCount(){
       elHeading.classList.add("has-count");   // dot + slot always shown; a skeleton stands in for a missing number
+      /* Skeleton for the WHOLE duration of isBusy(), not just before the first load — otherwise
+         a stale count from before a filter/sort change sits there unchanged while fresh data is
+         still in flight, which reads as "nothing happened" rather than "loading". */
+      if (isBusy()){ elHeadCount.textContent = ""; elHeadCount.classList.add("is-sk"); return; }
       var n = (state.totalCount != null) ? state.totalCount : (state.hasData ? state.rows.length : null);
       if (n == null){ elHeadCount.textContent = ""; elHeadCount.classList.add("is-sk"); return; }
       elHeadCount.textContent = fmtTotal(n);
@@ -652,7 +656,10 @@
       var name = root.getAttribute("data-brand-name") || "";
       var logo = root.getAttribute("data-brand-logo") || "";
       var valid = name && name !== "BRAND_NAME";
-      elBrand.classList.toggle("is-visible", !!valid);
+      /* Gated on hasData too, not just the attribute: Bubble can set data-brand-name before the
+         first row payload lands, and re-hiding this on every later loading=yes (hasData never
+         resets once true) would make it flicker out on each reload instead of staying put. */
+      elBrand.classList.toggle("is-visible", !!valid && state.hasData);
       if (!valid) return;
       elBrandLbl.textContent = name + " mentioned";
       if (logo && logo !== "BRAND_LOGO"){ elBrandLogo.src = logo; elBrandLogo.style.display = "block"; }

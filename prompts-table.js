@@ -408,7 +408,10 @@
       var headLogo = root.querySelector(".upt-th-brandlogo");
       if (headLogo){ if (hasLogo){ headLogo.src = logo; headLogo.style.display = "block"; } else { headLogo.style.display = "none"; } }
       if (!elBrand) return;
-      elBrand.classList.toggle("is-visible", !!valid);
+      /* Gated on hasData too, not just the attribute: Bubble can set data-brand-name before the
+         first row payload lands, and re-hiding this on every later loading=yes (hasData never
+         resets once true) would make it flicker out on each reload instead of staying put. */
+      elBrand.classList.toggle("is-visible", !!valid && state.hasData);
       if (!valid) return;
       elBrandLbl.textContent = name + " mentioned";
       if (hasLogo){ elBrandLogo.src = logo; elBrandLogo.style.display = "block"; }
@@ -760,7 +763,8 @@
           /* Only the number lives in its own span — "selected" never moves, and syncBulkBarCount()
              only ever touches this inner span, not the whole phrase. */
           '<span class="upt-bulkbar-count" role="status" aria-live="polite">' +
-            '<span class="upt-bulkbar-count-n" data-n="' + n + '">' + UC.fmtInt(n) + '</span> selected' +
+            '<span class="upt-bulkbar-count-n" data-n="' + n + '">' + UC.fmtInt(n) + '</span>' +
+            '<span class="upt-bulkbar-count-lbl">selected</span>' +
           '</span>' +
           escape +
           '<button class="up-filter-btn upt-bulkbar-btn" type="button" data-bulk-topics aria-expanded="' + (wasOpen ? "true" : "false") + '">' + TAG_SVG + 'Topics</button>' +
@@ -1194,6 +1198,10 @@
     }
     function renderCount(){
       elHeading.classList.add("has-count");
+      /* Skeleton for the WHOLE duration of isBusy(), not just before the first load — otherwise
+         a stale count from before a filter/status change sits there unchanged while fresh data
+         is still in flight, which reads as "nothing happened" rather than "loading". */
+      if (isBusy()){ elHeadCount.textContent = ""; elHeadCount.classList.add("is-sk"); return; }
       var n = (state.totalCount != null) ? state.totalCount : (state.hasData ? state.rows.length : null);
       if (n == null){ elHeadCount.textContent = ""; elHeadCount.classList.add("is-sk"); return; }
       elHeadCount.textContent = UC.fmtTotal(n);

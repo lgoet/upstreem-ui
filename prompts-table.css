@@ -102,9 +102,9 @@
    Left of the toolbar, next to the heading — it's a view switch, not a filter, and the filter
    area on the right implies "combinable with the others", which these two never are. Reuses the
    .up-dense segmented look so it reads as the same kind of control as the row-height switch. */
-.upt-status { display: inline-flex; align-items: center; gap: 0; margin-left: 12px; height: 28px;
+.upt-status { display: inline-flex; align-items: center; gap: 0; margin-left: 12px; height: 32px;
   padding: 0; background: var(--vc-switch-bg); border-radius: 8px; flex: 0 0 auto; }
-.upt-status-btn { height: 28px; padding: 0 10px; border: 1px solid transparent; border-radius: 8px;
+.upt-status-btn { height: 32px; padding: 0 10px; border: 1px solid transparent; border-radius: 8px;
   background: transparent; color: var(--vc-muted); cursor: pointer; font-family: inherit;
   font-size: 12px; font-weight: 500; line-height: 1; white-space: nowrap;
   display: inline-flex; align-items: center; gap: 6px; }
@@ -221,7 +221,14 @@
 .upt-bulkbar-row [data-bulk-topics] { margin-left: auto; }
 .upt-bulkbar-row [data-bulk-status] { margin-left: -8px; }   /* 16px row gap -> 8px */
 .upt-bulkbar-row [data-bulk-clear] { margin-left: -8px; }    /* same: 16px row gap -> 8px */
-.upt-bulkbar-count { font-size: 13.5px; font-weight: 600; color: var(--vc-text); white-space: nowrap; flex: 0 0 auto; }
+/* inline-flex + align-items:baseline rather than a plain inline span: the animated number below
+   is an overflow:hidden inline-block, and per spec an atomic inline box with overflow != visible
+   uses its BOTTOM MARGIN EDGE as its baseline instead of its text baseline — sat a few px above
+   "selected" as a result. Flex baseline alignment doesn't have that quirk, so this was the fix,
+   not a vertical-align nudge. The label is its own span (not a trailing text node) so `gap` can
+   space the two instead of a single hardcoded character of whitespace. */
+.upt-bulkbar-count { font-size: 13.5px; font-weight: 600; color: var(--vc-text); white-space: nowrap;
+  flex: 0 0 auto; display: inline-flex; align-items: baseline; gap: 5px; }
 /* Only this inner span animates — see syncBulkBarCount(). inline-block + overflow:hidden give it
    a transform to animate and a clipping box to slide within (a plain inline text node has
    neither). min-width + text-align:right + tabular-nums reserve room for two digits and grow
@@ -229,6 +236,7 @@
    1- to a 2-digit count — the common case; three digits or more still push it, unavoidably. */
 .upt-bulkbar-count-n { display: inline-block; overflow: hidden; min-width: 2ch; text-align: right;
   font-variant-numeric: tabular-nums; }
+.upt-bulkbar-count-lbl { white-space: nowrap; }
 .upt-bulkbar-link { border: 0; background: transparent; padding: 0 2px; cursor: pointer;
   font-family: inherit; font-size: 12.5px; font-weight: 500; color: var(--vc-muted);
   text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; flex: 0 0 auto; }
@@ -403,8 +411,10 @@
 /* Both right-aligned: Add Topic hands off to your own topic-creation UI without touching the
    staged selection, Apply is the one control that actually sends it. */
 .upt-topicfoot { margin-top: var(--upt-sep-gap); display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+/* Same face as the bar's own action buttons (.upt-bulkbar-btn/core's .up-filter-btn): solid
+   border, plain surface — a dashed border read as "disabled" rather than "secondary action". */
 .upt-topicadd { flex: 0 0 auto; height: 34px; padding: 0 14px; border-radius: 9px;
-  border: 1px dashed var(--vc-border); background: transparent; color: var(--vc-muted);
+  border: 1px solid var(--vc-border); background: transparent; color: var(--vc-text);
   cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 500;
   display: inline-flex; align-items: center; gap: 7px; }
 .upt-topicadd svg { width: 14px; height: 14px; display: block; }
