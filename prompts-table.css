@@ -122,7 +122,7 @@
    flex-direction:column, which flattened the bar across the whole page. Core's button rules
    aren't root-scoped anyway — they only need these variables, so the bar declares them itself. */
 .upt-bulkbar {
-  --vc-text: #1f1f1b; --vc-muted: #6f737c; --vc-border: #e0e2e6;
+  --vc-text: #1f1f1b; --vc-muted: #6f737c; --vc-border: #e7e9ec;
   --vc-heading-bg: #f5f5f5; --vc-switch-bg: #f5f5f5; --vc-third: #9e9e9e;
   --vc-hover-border: #6f6f6f; --up-surface: #ffffff;
   /* The one gap used on BOTH sides of every separator inside the bar — see STYLEGUIDE "Abstände
@@ -281,14 +281,22 @@
   font-family: inherit; font-size: 12px; font-weight: 500; white-space: nowrap; }
 .upt-topicreset:hover { color: var(--vc-text); }
 .upt-topiccount { flex: 0 0 auto; font-size: 12px; font-weight: 600; color: var(--vc-muted);
-  white-space: nowrap; font-variant-numeric: tabular-nums; }
+  white-space: nowrap; font-variant-numeric: tabular-nums; overflow: hidden; }
+/* inline-block so the slide/fade in syncTopicFoot() has a transform to animate — a plain inline
+   text node can't take one. */
+.upt-topiccount-n { display: inline-block; }
 /* Wrapped, not a stacked list: the topics read as a set you pick from, and a dozen of them fit
    in three rows instead of needing a scroll. */
 .upt-topiclist { max-height: 190px; overflow-y: auto; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 8px; }
 /* Create-mode holds at most one row (+ optionally a picker panel) — no grid to wrap, and the
    190px cap would clip an open picker instead of just letting the panel grow (see .is-picking
    above). */
-.upt-topiclist.is-create { max-height: none; overflow: visible; }
+/* gap:0 here specifically: .upt-topiclist's own flex `gap` (for the chip grid) was stacking
+   with .upt-topicpickpanel's margin-top below, which are BOTH flex children of this same list
+   in create-mode — 8px of gap plus 12px of margin made that gap 20px while the identical
+   padding-top on the far side of the same separator stayed 12px. Zeroing the list's own gap
+   here leaves margin-top as the only source of spacing, matching --upt-sep-gap on both sides. */
+.upt-topiclist.is-create { max-height: none; overflow: visible; gap: 0; }
 .upt-topicchip { height: 30px; padding: 0 8px 0 11px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;
   cursor: pointer; font-family: inherit;
   border: 1px solid color-mix(in srgb, var(--ust-tag-color, #6b7280) 40%, transparent);
@@ -370,9 +378,7 @@
    picker wasted most of it and pushed the bar down the screen. --num-columns is the supported
    knob for this (the grid is shadow DOM, so plain CSS can't reach in). */
 .upt-emojipicker {
-  /* 280px = the picker's own chrome (search + category nav + favourites bar) plus five whole
-     emoji rows; at 250 the fifth row was sliced in half by the fixed height. */
-  width: 100%; height: 280px;
+  width: 100%; height: 268px;
   --num-columns: 16;
   --emoji-size: 1.25rem;
   --emoji-padding: 0.35rem;
@@ -400,17 +406,8 @@
 .upt-topicapply:hover:not(:disabled) { opacity: .88; }
 .upt-topicapply:disabled { background: var(--vc-heading-bg); color: var(--vc-third); cursor: default; }
 
-/* ---------- soft reload (sort / paging) ----------
-   The rows stay on screen because they're still truthful — only their ORDER or the visible
-   window is being refetched. Dim + a 2px indeterminate bar under the column header says
-   "working" without destroying the thing the user is looking at. Search and filters do NOT use
-   this: there the result set itself changes, so the old rows would be a lie and the skeleton is
-   the honest answer. */
-.upt-root.is-reloading .up-tbody { opacity: .42; transition: opacity 140ms ease; pointer-events: none; }
-/* The dim alone carries the message — no progress bar. */
-@media (prefers-reduced-motion: reduce){
-  .upt-root.is-reloading .up-tbody { transition: none; }
-}
+/* Soft-reload dim (sort) now lives in core.css as a generic .up-root.is-reloading rule, shared
+   with urls-table/domains-table — see UC.makeSoftReload. */
 
 /* ---------- selection count ----------
    Counts the whole selection across pages (selection survives paging), sits right after the

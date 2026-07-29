@@ -357,36 +357,13 @@
     /* shared event dispatch (core) */
     var fire = UC.makeFire(root, { label: "prompts-table", eventPrefix: "upt-" });
 
-    /* ---------------- soft-reload dimming ----------------
-       The dim waits a moment before appearing: most sorts come back well under this, and a
-       ~50ms flash of dimmed rows reads as a glitch rather than as feedback. Same principle as
-       Primer's "don't announce a load that finished before the user could notice it", just at a
-       visual timescale rather than a screen-reader one. */
-    var RELOAD_DIM_DELAY = 0;
-    var RELOAD_DIM_MAX = 20000;
-    var dimTimer = null, dimKill = null;
-    /* Driven explicitly by the two events that cause a soft reload, NOT derived from isBusy().
-       Deriving it was the bug: whether a loading flag is ever set at all depends on how the
-       Bubble workflow is wired, and any render call arriving in between reset the flag the
-       derivation depended on — so the dim silently never appeared. Begin when the request goes
-       out, end when rows come back. */
-    function beginSoftReload(){
-      clearTimeout(dimTimer); clearTimeout(dimKill);
-      if (!state.hasData || !(state.rows || []).length) return;   // nothing on screen to dim
-      if (RELOAD_DIM_DELAY <= 0) root.classList.add("is-reloading");
-      else dimTimer = setTimeout(function(){
-        dimTimer = null;
-        root.classList.add("is-reloading");
-      }, RELOAD_DIM_DELAY);
-      /* Never let it stick: if the answer never arrives, a permanently greyed-out table is worse
-         than no feedback at all. */
-      dimKill = setTimeout(endSoftReload, RELOAD_DIM_MAX);
-    }
-    function endSoftReload(){
-      clearTimeout(dimTimer); clearTimeout(dimKill);
-      dimTimer = dimKill = null;
-      root.classList.remove("is-reloading");
-    }
+    /* ---------------- soft-reload dimming (core) ----------------
+       Shared with urls-table/domains-table now that both need the identical thing for their own
+       sort — see UC.makeSoftReload. Only sort uses it; a page/size change goes back to whatever
+       isBusy() drives normally (skeleton or nothing), it does not dim. */
+    var _dim = UC.makeSoftReload(root);
+    function beginSoftReload(){ _dim.begin(state.hasData && !!(state.rows || []).length); }
+    function endSoftReload(){ _dim.end(); }
 
     var MOBILE_SEARCH_MAX = 640;
     var search = UC.makeSearch({
@@ -913,11 +890,33 @@
         c.addEventListener("transitionend", function te(){ c.style.transition = ""; c.removeEventListener("transitionend", te); });
       });
     }
+    /* Subtle count-up/down: the new number slides in from the direction it moved (up when the
+       count grew, down when it shrank) and fades in, rather than just snapping to the new digit
+       — same idea as the FLIP nudges elsewhere in this panel, kept purely CSS-driven since it's
+       only ever a +/-1 step. */
     function syncTopicFoot(){
       if (!elBulk) return;
       var n = stagedCount();
-      var countEl = elBulk.querySelector(".upt-topiccount");
-      if (countEl) countEl.textContent = n + "/" + TOPIC_MAX;
+      var nEl = elBulk.querySelector(".upt-topiccount-n");
+      if (nEl){
+        var prev = Number(nEl.textContent);
+        if (prev !== n){
+          var dir = n > prev ? 1 : -1;
+          nEl.style.transition = "none";
+          nEl.style.transform = "translateY(0)";
+          nEl.style.opacity = "1";
+          nEl.textContent = n;
+          void nEl.offsetWidth;
+          nEl.style.transform = "translateY(" + (dir * 6) + "px)";
+          nEl.style.opacity = "0";
+          void nEl.offsetWidth;
+          nEl.style.transition = "transform 180ms cubic-bezier(.2,0,.38,.9), opacity 140ms ease";
+          nEl.style.transform = "translateY(0)";
+          nEl.style.opacity = "1";
+        } else {
+          nEl.textContent = n;
+        }
+      }
       var applyBtn = elBulk.querySelector("[data-topic-apply]");
       if (applyBtn) applyBtn.disabled = n === 0;
     }
@@ -930,11 +929,11 @@
         ((state.topics || []).length
           ? '<div class="upt-topichead">' +
               '<div class="upt-topicsearch-wrap">' +
-                '<input class="upt-topicsearch-in" type="text" placeholder="Search topics..." autocomplete="off" spellcheck="false"/>' +
+                '<input class="upt-topicsearch-in" type="text" placeholder="Search or create topics..." autocomplete="off" spellcheck="false"/>' +
                 '<button class="upt-topicsearch-clear" type="button" data-topic-search-clear aria-label="Clear search">' + CLOSE_SVG + '</button>' +
               '</div>' +
               '<button class="upt-topicreset" type="button" data-topic-reset>Reset</button>' +
-              '<span class="upt-topiccount">' + n + '/' + TOPIC_MAX + '</span>' +
+              '<span class="upt-topiccount"><span class="upt-topiccount-n">' + n + '</span>/' + TOPIC_MAX + '</span>' +
             '</div>'
           : "") +
         '<div class="upt-topiclist' + (n >= TOPIC_MAX ? " is-full" : "") + '">' + topicListHtml() + '</div>' +
@@ -975,8 +974,9 @@
         ensureEmojiLib();
         state.stagedTopicIds = topicInitialStaged();
         renderTopicMenu();
-        var inp = panel.querySelector(".upt-topicsearch-in");
-        if (inp) setTimeout(function(){ try { inp.focus(); } catch(e){} }, 40);
+        /* Deliberately no autofocus on the search input — opening Topics is often just to look
+           at what's already on the prompt, and grabbing focus steals the keyboard from wherever
+           the user actually was (mid-selection, or about to keep typing elsewhere). */
       }
     }
     function topicMenuOpen(){ return !!(elBulk && elBulk.classList.contains("is-topics")); }
@@ -1251,8 +1251,12 @@
 
     function firePage(){
       search.setLatest(null);
-      state.softReload = true;   // same result set, different window -> dim, don't blank
-      beginSoftReload();
+      /* No dim here on purpose — only sort does that now. A page/size change falls back to
+         whatever isBusy() drives on its own (skeleton, or nothing if it resolves fast). Also
+         clears any dim a just-clicked sort left running, in case the two land in quick
+         succession — endSoftReload(), not just the flag, or the class would stay on the root. */
+      state.softReload = false;
+      endSoftReload();
       fire("data-page-fn", "uptPage", { limit: state.pageSize, offset: offset(), page: state.page });
     }
 

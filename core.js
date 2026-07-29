@@ -681,6 +681,38 @@
              goToPage: goToPage, setPageSize: setPageSize };
   }
 
+  /* ---------- makeSoftReload ----------
+     Sort re-orders the SAME result set — the rows on screen are still truthful, so a sort dims
+     them in place instead of blanking to a skeleton (which reads as "the table broke" on every
+     header click). Started here first for prompts-table, now shared once urls-table and
+     domains-table needed the identical thing for their own sort.
+     Deliberately driven by explicit begin()/end() calls at the exact user-action moment rather
+     than derived from a loading flag: the derivation was the original bug — whether a loading
+     flag is ever set depends on how the Bubble workflow is wired, and any render() call arriving
+     in between resets whatever the derivation depended on, so the dim silently never appeared.
+     cfg: { delay (ms before it shows, default 0), killAfter (hard timeout, default 20000) } */
+  function makeSoftReload(root, cfg){
+    cfg = cfg || {};
+    var delay = cfg.delay != null ? cfg.delay : 0;
+    var killAfter = cfg.killAfter != null ? cfg.killAfter : 20000;
+    var dimTimer = null, dimKill = null;
+    function begin(hasContent){
+      clearTimeout(dimTimer); clearTimeout(dimKill);
+      if (!hasContent) return;   // nothing on screen to dim
+      if (delay <= 0) root.classList.add("is-reloading");
+      else dimTimer = setTimeout(function(){ dimTimer = null; root.classList.add("is-reloading"); }, delay);
+      /* Never let it stick: if the answer never arrives, a permanently greyed-out table is worse
+         than no feedback at all. */
+      dimKill = setTimeout(end, killAfter);
+    }
+    function end(){
+      clearTimeout(dimTimer); clearTimeout(dimKill);
+      dimTimer = dimKill = null;
+      root.classList.remove("is-reloading");
+    }
+    return { begin: begin, end: end };
+  }
+
   /* ---------- makeHeadSort ----------
      Clicking a column header walks that column's cycle (e.g. share:desc -> share:asc ->
      share_trend:desc …) and falls back to the table's default once the cycle is exhausted.
@@ -2298,6 +2330,7 @@
     makeMount: makeMount,
     makePager: makePager,
     makeHeadSort: makeHeadSort,
+    makeSoftReload: makeSoftReload,
     legacyCopy: legacyCopy,
     makeEmptyGrace: makeEmptyGrace,
     makeExplain: makeExplain,

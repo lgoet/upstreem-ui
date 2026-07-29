@@ -502,6 +502,15 @@
     .up-th-sub { font-size: 11px; font-weight: 500; color: var(--vc-text); }
 
     .up-tbody { display: flex; flex-direction: column; }
+    /* Soft-reload dim — see UC.makeSoftReload. The rows stay on screen because they're still
+       truthful (a sort only re-orders the same result set); dimming says "working" without
+       destroying the thing the user is looking at. Search/filters do NOT use this: there the
+       result set itself changes, so the old rows would be a lie and the skeleton is the honest
+       answer instead. */
+    .up-root.is-reloading .up-tbody { opacity: .42; transition: opacity 140ms ease; pointer-events: none; }
+    @media (prefers-reduced-motion: reduce){
+      .up-root.is-reloading .up-tbody { transition: none; }
+    }
     /* height/flex-basis deliberately don't transition: with 50-100 rows on screen, animating them
        forces a synchronous layout reflow on every row simultaneously, which visibly stalls the
        page for a couple of seconds on Comfortable/Compact toggle before the rows "jump" to their

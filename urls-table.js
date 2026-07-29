@@ -110,6 +110,7 @@
       totalCount: null,
       hasData: false,
       loading: false,                       // intern (Suche/Pagination), startet immer frei
+      softReload: false,                    // true only while a sort is in flight — see dim.begin/end
       extLoading: hasProcessingAttr() ? readProcessing()
              : (LOADING_EXPLICIT[instanceId] ? !!saved.loading : false),
       query: saved.query || "",
@@ -147,7 +148,7 @@
       root: root, box: elSearch, input: elSearchIn, state: state,
       mobileMax: MOBILE_SEARCH_MAX, prefix: "uut",
       onRender: function(){ renderTable(); renderPager(); },
-      onFire: function(payload){ fire("data-search-fn", "uutSearch", payload); },
+      onFire: function(payload){ state.softReload = false; dim.end(); fire("data-search-fn", "uutSearch", payload); },
       onTakeoverEnd: function(){ fitToolbar(); },
       persist: function(){ persist(); }
     });
@@ -192,6 +193,10 @@
     }
     /* shared event dispatch (core) */
     var fire = UpstreemCore.makeFire(root, { label: "urls-table", eventPrefix: "uut-" });
+    /* Soft-reload dim — sort only. Same result set, only re-ordered, so the rows stay on screen
+       and just dim instead of blanking to a skeleton. See UC.makeSoftReload / prompts-table.js,
+       which had this first. */
+    var dim = UC.makeSoftReload(root);
 
     /* ---------------- table ---------------- */
     function skeletonRows(n){
@@ -282,6 +287,12 @@
       '</div>';
     }
     function renderTable(){
+      /* SOFT reload (sort): the result set is the same, just re-ordered — the rows on screen are
+         still truthful, so they stay and only dim (see UC.makeSoftReload). Everything else that
+         reaches isBusy() (search, filters, page) still falls through to the skeleton below. */
+      if (isBusy() && state.softReload && state.hasData && state.rows.length){
+        clearEmptyGrace(); return;
+      }
       // skeleton matches the CURRENT page size, so the table doesn't visibly resize when data lands
       if (isBusy() || !state.hasData){ clearEmptyGrace(); elTbody.innerHTML = skeletonRows(state.pageSize); return; }
       if (!state.rows.length){
@@ -337,16 +348,23 @@
     function applySort(field, dir){
       state.sortField = field; state.sortDir = dir;
       state.page = 1;   // a new ordering makes the old page index meaningless
+      /* Marked and dimmed on the CLICK, not inside the debounce below: the outgoing event is
+         delayed, but the user expects a response the moment they click — waiting for the debounce
+         (or the eventual answer) means the table sits there looking like nothing happened. */
+      state.softReload = true;
+      dim.begin(state.hasData && !!state.rows.length);
       persist(); syncHeadSorters(); populateSort();   // UI first, immediately
       clearTimeout(sortTimer);
       sortTimer = setTimeout(function(){
         // A sort is a deliberate action, not part of a search race — clear the search's requestId
         // so its response can't be dropped by the requestId guard in update().
         search.setLatest(null);
+        state.loading = true;
         fire("data-sort-fn", "uutSort", {
           order: orderValue(state.sortField, state.sortDir),   // -> p_order
           sort_field: state.sortField, sort_dir: state.sortDir // split parts, in case a workflow prefers them
         });
+        renderTable();
       }, SORT_DEBOUNCE);
     }
 
@@ -430,6 +448,7 @@
       state.appliedSel = nextCt;
       state.appliedUrlSel = nextUt;
       state.page = 1;   // filtering changes the result set -> back to page 1
+      state.softReload = false; dim.end();
       persist(); syncFilterBadge(); renderPager();
       // both dimensions go out together; the workflow decides how to combine them
       fire("data-filter-fn", "uutFilter", {
@@ -514,6 +533,7 @@
       /* A page/size change is a deliberate action, not part of a search race. Clear the search's
          requestId so its response can't be dropped by the requestId guard in update(). */
       search.setLatest(null);
+      state.softReload = false; dim.end();   // paging never dims — only sort does
       fire("data-page-fn", "uutPage", { limit: state.pageSize, offset: offset(), page: state.page });
     }
 
@@ -606,6 +626,7 @@
       if (after === before){ persist(); return; }   // unchanged -> close only, no RPC re-run
       state.mentionApplied = next;
       state.page = 1;
+      state.softReload = false; dim.end();
       persist(); syncMentLabel(); renderPager();
       /* the multi-brand list goes out on the "mentioned" channel, the yes/no toggle on the
          "brand" channel — this file had the two swapped, which is why the workflow wired per the
@@ -643,6 +664,7 @@
       // off → yes → no → off
       state.brandMentioned = state.brandMentioned === "" ? "yes" : (state.brandMentioned === "yes" ? "no" : "");
       state.page = 1;
+      state.softReload = false; dim.end();
       persist(); syncBrand(); renderPager();
       fire("data-brand-fn", "uutBrand", { brand_mentioned: state.brandMentioned });
     }
@@ -862,6 +884,7 @@
         state.filterUrlSel = {}; state.appliedUrlSel = {}; state.filterDim = "citation_type";
         state.brandMentioned = ""; state.mentionSel = {}; state.mentionApplied = {};
         state.page = 1;
+        state.softReload = false; dim.end();
         persist(); syncFilterBadge(); syncBrand(); syncMentLabel(); populateFilter(); populateMent();
         search.cancel(); runSearch();
         fire("data-filter-fn", "uutFilter", { citation_types: "" });
@@ -1218,7 +1241,7 @@
         /* Ankommende Zeilen beenden nur das selbst ausgeloeste Nachladen. Ein extern gesetzter
            Ladezustand bleibt stehen, bis Bubble ihn selbst aufhebt — sonst wuerde diese Tabelle
            den Skeleton frueher verlassen als die Charts daneben. */
-        if (params.rows != null) state.loading = false;
+        if (params.rows != null){ state.loading = false; state.softReload = false; dim.end(); }
         if (!explicitOverride && hasProcessingAttr()) state.extLoading = readProcessing();
         persist(); render();
       },
@@ -1227,7 +1250,7 @@
         explicitOverride = true;
         LOADING_EXPLICIT[instanceId] = true;
         state.extLoading = isYes(on);
-        if (!state.extLoading) state.loading = false;   // "fertig" beendet auch ein internes Nachladen
+        if (!state.extLoading){ state.loading = false; state.softReload = false; dim.end(); }   // "fertig" beendet auch ein internes Nachladen
         persist(); render();
       },
       reset: function(){
@@ -1239,6 +1262,7 @@
         state.pageSize = DEFAULT_PAGE_SIZE; state.page = 1;
         state.mentionSel = {}; state.mentionApplied = {};
         state.widths = {}; writeWidths();
+        state.softReload = false; dim.end();
         elSearch.classList.remove("has-text");
         persist(); populateSort(); populateFilter(); render();
         return true;

@@ -113,6 +113,7 @@
       totalCount: null,
       hasData: false,
       loading: false,                       // intern (Suche/Pagination), startet immer frei
+      softReload: false,                    // true only while a sort is in flight — see dim.begin/end
       extLoading: hasProcessingAttr() ? readProcessing()
              : (LOADING_EXPLICIT[instanceId] ? !!saved.loading : false),
       query: saved.query || "",
@@ -143,7 +144,7 @@
       root: root, box: elSearch, input: elSearchIn, state: state,
       mobileMax: MOBILE_SEARCH_MAX, prefix: "udt",
       onRender: function(){ renderTable(); renderPager(); },
-      onFire: function(payload){ fire("data-search-fn", "udtSearch", payload); },
+      onFire: function(payload){ state.softReload = false; dim.end(); fire("data-search-fn", "udtSearch", payload); },
       onTakeoverEnd: function(){ fitToolbar(); },
       persist: function(){ persist(); }
     });
@@ -183,6 +184,10 @@
     /* shared event dispatch (core) — "udt-" matches the CustomEvent prefix the old component
        already used ("udt-" + fallbackName), kept for anything listening on the DOM side-channel. */
     var fire = UpstreemCore.makeFire(root, { label: "domains-table", eventPrefix: "udt-" });
+    /* Soft-reload dim — sort only. Same result set, only re-ordered, so the rows stay on screen
+       and just dim instead of blanking to a skeleton. See UC.makeSoftReload / prompts-table.js,
+       which had this first. */
+    var dim = UC.makeSoftReload(root);
 
     /* ---------------- table ---------------- */
     function skeletonRows(n){
@@ -259,6 +264,12 @@
       '</div>';
     }
     function renderTable(){
+      /* SOFT reload (sort): the result set is the same, just re-ordered — the rows on screen are
+         still truthful, so they stay and only dim (see UC.makeSoftReload). Everything else that
+         reaches isBusy() (search, filters, page) still falls through to the skeleton below. */
+      if (isBusy() && state.softReload && state.hasData && state.rows.length){
+        clearEmptyGrace(); return;
+      }
       // skeleton matches the CURRENT page size, so the table doesn't visibly resize when data lands
       if (isBusy() || !state.hasData){ clearEmptyGrace(); elTbody.innerHTML = skeletonRows(state.pageSize); return; }
       if (!state.rows.length){
@@ -300,14 +311,20 @@
     function applySort(field, dir){
       state.sortField = field; state.sortDir = dir;
       state.page = 1;
+      /* Marked and dimmed on the CLICK, not inside the debounce below — see urls-table.js's
+         identical comment. */
+      state.softReload = true;
+      dim.begin(state.hasData && !!state.rows.length);
       persist(); syncHeadSorters(); populateSort();
       clearTimeout(sortTimer);
       sortTimer = setTimeout(function(){
         search.setLatest(null);
+        state.loading = true;
         fire("data-sort-fn", "udtSort", {
           order: orderValue(state.sortField, state.sortDir),   // -> p_order — last_used_desc/asc, NOT last_seen_*
           sort_field: state.sortField, sort_dir: state.sortDir
         });
+        renderTable();
       }, SORT_DEBOUNCE);
     }
 
@@ -365,6 +382,7 @@
       if (after === before){ persist(); return; }   // unchanged -> close only, don't re-run the RPC
       state.appliedSel = next;
       state.page = 1;
+      state.softReload = false; dim.end();
       persist(); syncFilterBadge(); renderPager();
       fire("data-filter-fn", "udtFilter", { citation_types: Object.keys(next).join(",") });
     }
@@ -428,6 +446,7 @@
     /* ---------------- pagination ---------------- */
     function firePage(){
       search.setLatest(null);
+      state.softReload = false; dim.end();   // paging never dims — only sort does
       fire("data-page-fn", "udtPage", { limit: state.pageSize, offset: offset(), page: state.page });
     }
 
@@ -514,6 +533,7 @@
       if (after === before){ persist(); return; }
       state.mentionApplied = next;
       state.page = 1;
+      state.softReload = false; dim.end();
       persist(); syncMentLabel(); renderPager();
       fire("data-mentioned-fn", "udtMentioned", { brands: Object.keys(next).join(",") });
     }
@@ -536,6 +556,7 @@
       // off → yes → no → off
       state.brandMentioned = state.brandMentioned === "" ? "yes" : (state.brandMentioned === "yes" ? "no" : "");
       state.page = 1;
+      state.softReload = false; dim.end();
       persist(); syncBrand(); renderPager();
       fire("data-brand-fn", "udtBrand", { brand_mentioned: state.brandMentioned });
     }
@@ -726,6 +747,7 @@
         state.filterSel = {}; state.appliedSel = {};
         state.brandMentioned = ""; state.mentionSel = {}; state.mentionApplied = {};
         state.page = 1;
+        state.softReload = false; dim.end();
         persist(); syncFilterBadge(); syncBrand(); syncMentLabel(); populateFilter(); populateMent();
         search.cancel(); runSearch();
         fire("data-filter-fn", "udtFilter", { citation_types: "" });
@@ -1036,7 +1058,7 @@
         /* Ankommende Zeilen beenden nur das selbst ausgeloeste Nachladen. Ein extern gesetzter
            Ladezustand bleibt stehen, bis Bubble ihn selbst aufhebt — sonst wuerde diese Tabelle
            den Skeleton frueher verlassen als die Charts daneben. */
-        if (params.rows != null) state.loading = false;
+        if (params.rows != null){ state.loading = false; state.softReload = false; dim.end(); }
         if (!explicitOverride && hasProcessingAttr()) state.extLoading = readProcessing();
         persist(); render();
       },
@@ -1044,7 +1066,7 @@
         explicitOverride = true;
         LOADING_EXPLICIT[instanceId] = true;
         state.extLoading = isYes(on);
-        if (!state.extLoading) state.loading = false;   // "fertig" beendet auch ein internes Nachladen
+        if (!state.extLoading){ state.loading = false; state.softReload = false; dim.end(); }   // "fertig" beendet auch ein internes Nachladen
         persist(); render();
       },
       reset: function(){
@@ -1055,6 +1077,7 @@
         state.pageSize = DEFAULT_PAGE_SIZE; state.page = 1;
         state.mentionSel = {}; state.mentionApplied = {};
         state.widths = {}; writeWidths();
+        state.softReload = false; dim.end();
         elSearch.classList.remove("has-text");
         persist(); populateSort(); populateFilter(); render();
         return true;
