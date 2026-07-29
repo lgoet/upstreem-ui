@@ -1544,3 +1544,21 @@ Weitere Regeln:
 ---
 
 *Stand: Werte 1:1 aus dem aktuellen Code der vier Dateien extrahiert (nicht aus Erinnerung). Bei Widersprüchen zwischen den Dateien wurde die neueste/zuletzt gefixte Version als Standard genommen.*
+
+### Interaktive Chips (`.up-chiphover`)
+
+Jeder farbige Chip/Tag, der **klickbar** ist, bekommt zusaetzlich `.up-chiphover`. Im Ruhezustand
+behaelt der Chip seine eigene Tint-Farbe; beim Hover faellt er auf die neutrale Flaeche mit dem
+geteilten Hover-Border zurueck, damit "das ist ein Control" ueberall gleich liest — unabhaengig
+davon, welche Farbe das Tag zufaellig traegt.
+
+```
+light:  background #f5f5f5 · border #6f6f6f · color #1f1f1b · box-shadow none
+dark:   background #2a2a2a · border #707070 · color #e0e0e0 · box-shadow none
+```
+
+Die Dark-Regel matcht sowohl `.up-root[data-theme="dark"]` als auch ein `[data-theme="dark"]`
+direkt auf der Flaeche — Chips koennen auch ausserhalb des Komponenten-Roots leben (z.B. in der
+Bulk-Action-Bar, die an `document.body` haengt).
+
+Genutzt von: prompts-table (Topics-Zelle, Topics-Editor in der Bulk-Bar).

@@ -112,106 +112,110 @@
 
 /* ---------- bulk action bar ----------
    Parented to document.body (see ensureBulkBar) and fixed to the VIEWPORT, so it sits bottom-
-   centre of the page rather than of the component. 80px up from the bottom clears a typical
-   app footer; it is deliberately not flush to the edge. */
+   centre of the page rather than of the component.
+   It deliberately does NOT carry .up-root: that class brings width:100% and
+   flex-direction:column, which flattened the bar across the whole page. Core's button rules
+   aren't root-scoped anyway — they only need these variables, so the bar declares them itself. */
 .upt-bulkbar {
+  --vc-text: #1f1f1b; --vc-muted: #6f737c; --vc-border: #e0e2e6;
+  --vc-heading-bg: #f5f5f5; --vc-switch-bg: #f5f5f5; --vc-third: #9e9e9e;
+  --vc-hover-border: #6f6f6f; --up-surface: #ffffff;
+
   position: fixed !important;
   bottom: 80px !important;
   left: 50% !important;
   z-index: 99999;
   width: max-content; max-width: calc(100vw - 32px);
   box-sizing: border-box;
-  /* flex-direction is spelled out because .up-root (which the bar also carries, so that core's
-     variables and [data-theme] rules reach it) sets column. */
-  display: flex; flex-direction: row; align-items: center; gap: 12px;
-  min-height: 56px; padding: 0 12px 0 18px;
+  display: flex; flex-direction: column; align-items: stretch;
+  padding: 10px 12px 10px 18px;
   border-radius: 32px;
-  background: var(--up-surface, #ffffff);
-  border: 1px solid var(--vc-border, #d9dde3);
+  background: var(--up-surface);
+  border: 1px solid var(--vc-border);
   box-shadow: 0 14px 34px rgba(0,0,0,0.14);
   font-family: Geist, Inter, system-ui, -apple-system, sans-serif;
-  /* out-state: sitting below its resting place, invisible. 200ms in, 200ms back down. */
+  color: var(--vc-text);
   opacity: 0; pointer-events: none;
   transform: translateX(-50%) translateY(24px);
   transition: opacity 200ms cubic-bezier(0.2, 0, 0.38, 0.9),
               transform 200ms cubic-bezier(0.2, 0, 0.38, 0.9);
 }
+.upt-bulkbar * { box-sizing: border-box; }
 .upt-bulkbar.is-on { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
 @media (prefers-reduced-motion: reduce){ .upt-bulkbar { transition-duration: 1ms; } }
-.upt-bulkbar[data-theme="dark"] { background: #151515; border-color: #353535; box-shadow: 0 14px 34px rgba(0,0,0,0.6); }
-.upt-bulkbar-count { font-size: 13.5px; font-weight: 600; color: var(--vc-text, #1f1f1b); white-space: nowrap; flex: 0 0 auto; }
-.upt-bulkbar[data-theme="dark"] .upt-bulkbar-count { color: #f0f0f0; }
+.upt-bulkbar[data-theme="dark"] {
+  --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #353535;
+  --vc-heading-bg: rgba(42,42,42,0.6); --vc-switch-bg: rgba(42,42,42,0.6); --vc-third: #808080;
+  --vc-hover-border: #707070; --up-surface: #151515;
+  box-shadow: 0 14px 34px rgba(0,0,0,0.6);
+}
+/* The action row. No separators — the gaps carry the grouping on their own. */
+.upt-bulkbar-row { display: flex; flex-direction: row; align-items: center; gap: 16px; min-height: 36px; }
+.upt-bulkbar-count { font-size: 13.5px; font-weight: 600; color: var(--vc-text); white-space: nowrap; flex: 0 0 auto; }
 .upt-bulkbar-link { border: 0; background: transparent; padding: 0 2px; cursor: pointer;
-  font-family: inherit; font-size: 12.5px; font-weight: 500; color: var(--vc-muted, #6f737c);
+  font-family: inherit; font-size: 12.5px; font-weight: 500; color: var(--vc-muted);
   text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; flex: 0 0 auto; }
-.upt-bulkbar-link:hover { color: var(--vc-text, #1f1f1b); }
-.upt-bulkbar[data-theme="dark"] .upt-bulkbar-link:hover { color: #f0f0f0; }
-.upt-bulkbar-div { width: 1px; height: 24px; background: var(--vc-border, #d9dde3); flex: 0 0 auto; }
-/* The action buttons ARE core's .up-filter-btn — same height, border, hover and dark-mode
-   treatment as every other labelled toolbar button in the app. Only the icon sizing is added
-   here, because no other .up-filter-btn carries one. */
-.upt-bulkbar-btn { gap: 7px; }
+.upt-bulkbar-link:hover { color: var(--vc-text); }
+/* The action buttons ARE core's .up-filter-btn — same height, border, hover and dark treatment
+   as every other labelled toolbar button. Only the icon sizing is added, because no other
+   .up-filter-btn carries one. */
+.upt-bulkbar-btn { gap: 7px; flex: 0 0 auto; }
 .upt-bulkbar-btn svg { width: 14px; height: 14px; display: block; flex: 0 0 auto; }
-.upt-bulkbar-x { width: 30px; height: 30px; border: 0; padding: 0; border-radius: 8px; background: transparent;
-  color: var(--vc-muted, #6f737c); cursor: pointer; flex: 0 0 auto;
+.upt-bulkbar-x { width: 30px; height: 30px; border: 0; padding: 0; border-radius: 999px; background: transparent;
+  color: var(--vc-muted); cursor: pointer; flex: 0 0 auto; margin-left: 4px;
   display: inline-flex; align-items: center; justify-content: center; }
 .upt-bulkbar-x svg { width: 15px; height: 15px; display: block; }
-.upt-bulkbar-x:hover { background: var(--vc-heading-bg, #f5f5f5); color: var(--vc-text, #1f1f1b); }
-.upt-bulkbar[data-theme="dark"] .upt-bulkbar-x:hover { background: rgba(255,255,255,0.06); color: #e0e0e0; }
-/* Keep the bar off the last row: reserve space under the table while it's up. */
-.upt-root.is-bulk { padding-bottom: 108px; }
+.upt-bulkbar-x:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
+/* Keep the bar off the last row while it's up. */
+.upt-root.is-bulk { padding-bottom: 140px; }
 
-/* ---------- topic editor (opens UPWARD out of the bar) ----------
-   Plain position:absolute inside the button wrapper — the bar is fixed and never moves, so
-   there is nothing to chase on scroll and no portal is needed. */
-.upt-bulkbar-topics { position: relative; display: inline-flex; flex: 0 0 auto; }
-.upt-topicmenu {
-  position: absolute; bottom: calc(100% + 8px); left: 0; z-index: 5;
-  width: 288px; max-height: 340px; overflow: hidden;
-  display: flex; flex-direction: column;
-  padding: 10px; border-radius: 18px;
-  background: var(--up-surface, #ffffff); border: 1px solid var(--vc-border, #d9dde3);
-  box-shadow: 0 14px 34px rgba(0,0,0,0.14);
-  opacity: 0; visibility: hidden; transform: translateY(6px);
-  transition: opacity 140ms ease, transform 140ms ease, visibility 140ms;
+/* ---------- topic section ----------
+   Not a dropdown: it slides out of the bar's own lower edge, so there is one surface instead of
+   two stacked ones. max-height rather than height because the content height isn't known. */
+.upt-bulkpanel {
+  overflow: hidden; max-height: 0; opacity: 0; margin-top: 0;
+  border-top: 1px solid transparent;
+  transition: max-height 220ms cubic-bezier(0.2,0,0.38,0.9), opacity 160ms ease,
+              margin-top 220ms cubic-bezier(0.2,0,0.38,0.9), padding-top 220ms cubic-bezier(0.2,0,0.38,0.9);
+  padding-top: 0;
 }
-.upt-bulkbar-topics.is-open .upt-topicmenu { opacity: 1; visibility: visible; transform: translateY(0); }
-.upt-bulkbar[data-theme="dark"] .upt-topicmenu { background: #151515; border-color: #353535; box-shadow: 0 14px 34px rgba(0,0,0,0.6); }
-.upt-topicsearch { padding: 2px 2px 6px; flex: 0 0 auto; }
-.upt-topicsearch-in { width: 100%; height: 30px; padding: 0 9px; border-radius: 8px;
-  border: 1px solid var(--vc-border, #d9dde3); background: transparent; outline: none;
-  font-family: inherit; font-size: 12.5px; color: var(--vc-text, #1f1f1b); box-sizing: border-box; }
-.upt-bulkbar[data-theme="dark"] .upt-topicsearch-in { color: #e0e0e0; border-color: #353535; }
-.upt-topiclist { overflow-y: auto; flex: 1 1 auto; min-height: 0; }
-.upt-topicrow { display: flex; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 9px; cursor: pointer; }
-.upt-topicrow:hover { background: var(--vc-heading-bg, #f5f5f5); }
-.upt-bulkbar[data-theme="dark"] .upt-topicrow:hover { background: rgba(255,255,255,0.06); }
-.upt-topiccheck { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--vc-border, #d9dde3);
+.upt-bulkbar.is-topics .upt-bulkpanel {
+  max-height: 340px; opacity: 1; margin-top: 12px; padding-top: 12px; border-top-color: var(--vc-border);
+}
+@media (prefers-reduced-motion: reduce){ .upt-bulkpanel { transition-duration: 1ms; } }
+.upt-topicsearch { padding: 0 0 8px; }
+.upt-topicsearch-in { width: 100%; height: 32px; padding: 0 10px; border-radius: 9px;
+  border: 1px solid var(--vc-border); background: transparent; outline: none;
+  font-family: inherit; font-size: 12.5px; color: var(--vc-text); }
+.upt-topicsearch-in:focus { border-color: var(--vc-hover-border); }
+.upt-topiclist { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+.upt-topicrow { display: flex; align-items: center; gap: 10px; padding: 6px 6px; border-radius: 9px; cursor: pointer; }
+.upt-topicrow:hover { background: var(--vc-heading-bg); }
+.upt-topiccheck { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--vc-border);
   flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; color: #fff; }
 .upt-topiccheck svg { width: 11px; height: 11px; display: block; }
-.upt-topiccheck.is-all { background: var(--vc-text, #1f1f1b); border-color: var(--vc-text, #1f1f1b); }
+.upt-topiccheck.is-all { background: var(--vc-text); border-color: var(--vc-text); }
 /* "some": a dash, not a tick — the topic is on part of the selection, and clicking ADDS it to
    the rest rather than replacing anything. This is the state Notion's bulk edit doesn't have,
    which is why theirs silently overwrites tags the user never touched. */
-.upt-topiccheck.is-some { background: var(--vc-text, #1f1f1b); border-color: var(--vc-text, #1f1f1b); }
-.upt-topiccheck.is-some::after { content: ""; width: 8px; height: 2px; border-radius: 1px; background: #fff; }
+.upt-topiccheck.is-some { background: var(--vc-text); border-color: var(--vc-text); }
+.upt-topiccheck.is-some::after { content: ""; width: 8px; height: 2px; border-radius: 1px; background: var(--up-surface); }
 .upt-bulkbar[data-theme="dark"] .upt-topiccheck.is-all,
-.upt-bulkbar[data-theme="dark"] .upt-topiccheck.is-some { background: #e0e0e0; border-color: #e0e0e0; color: #1f1f1b; }
-.upt-bulkbar[data-theme="dark"] .upt-topiccheck.is-some::after { background: #1f1f1b; }
-.upt-topicchip { height: 24px; padding: 0 9px; border-radius: 7px; display: inline-flex; align-items: center; gap: 6px;
+.upt-bulkbar[data-theme="dark"] .upt-topiccheck.is-some { color: #1f1f1b; }
+.upt-topicchip { height: 26px; padding: 0 10px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;
   border: 1px solid color-mix(in srgb, var(--ust-tag-color, #6b7280) 40%, transparent);
   background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 10%, transparent);
   color: var(--ust-tag-color, #4b5563); font-size: 12px; font-weight: 500; line-height: 1;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .upt-bulkbar[data-theme="dark"] .upt-topicchip { background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 22%, transparent); color: #e0e0e0; }
 .upt-topicchip-e { font-size: 12px; line-height: 1; }
-.upt-topicadd { margin-top: 8px; flex: 0 0 auto; height: 34px; width: 100%; border-radius: 9px;
+.upt-topicadd { margin-top: 10px; flex: 0 0 auto; height: 34px; width: 100%; border-radius: 9px;
   border: 1px dashed var(--vc-border); background: transparent; color: var(--vc-muted);
   cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 500;
   display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
 .upt-topicadd svg { width: 14px; height: 14px; display: block; }
 .upt-topicadd:hover { color: var(--vc-text); border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
-.upt-topicmenu-empty { padding: 14px 8px; text-align: center; font-size: 12.5px; color: var(--vc-muted, #6f737c); }
+.upt-topicmenu-empty { padding: 14px 8px; text-align: center; font-size: 12.5px; color: var(--vc-muted); }
 
 /* ---------- soft reload (sort / paging) ----------
    The rows stay on screen because they're still truthful — only their ORDER or the visible
@@ -256,7 +260,7 @@
   transition: max-width 220ms cubic-bezier(0.2,0,0.38,0.9), opacity 160ms ease,
               transform 220ms cubic-bezier(0.2,0,0.38,0.9), margin-left 220ms cubic-bezier(0.2,0,0.38,0.9);
 }
-.upt-selcount.is-on { max-width: 220px; opacity: 1; margin-left: 10px; transform: translateX(0); pointer-events: auto; }
+.upt-selcount.is-on { max-width: 220px; opacity: 1; margin-left: 12px; transform: translateX(0); pointer-events: auto; }
 @media (prefers-reduced-motion: reduce){ .upt-selcount { transition-duration: 1ms; } }
 .upt-selcount-clear { width: 18px; height: 18px; border: 0; padding: 0; border-radius: 5px;
   background: transparent; color: var(--vc-muted); cursor: pointer; flex: 0 0 auto;

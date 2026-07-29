@@ -128,17 +128,51 @@
   ── Run-JS "Render" step (paste as-is, swap the bracketed dynamic values) ────
 
   (function () {
+    /* Bubble emits several field types UNQUOTED, which is invalid JS: booleans as the bare
+       words yes/no ("yes is not defined") and emoji as a bare glyph ("emoji": 💎  ->  "Invalid
+       or unexpected token"). This walks the text once, tracking whether it is inside a quoted
+       string, and quotes every bare value it finds outside one. A plain regex cannot do this
+       safely — a timestamp like "May 9, 2026 12:23 pm" contains BOTH a comma and a colon inside
+       its quotes, and a regex has no way to know it should keep its hands off. */
+    function fixBareValues(src){
+      var out = "", i = 0, n = src.length, inStr = false, esc = false, ch, c, start, raw, v;
+      while (i < n){
+        ch = src.charAt(i);
+        if (inStr){
+          out += ch;
+          if (esc) esc = false;
+          else if (ch === "\\") esc = true;
+          else if (ch === '"') inStr = false;
+          i++; continue;
+        }
+        if (ch === '"'){ inStr = true; out += ch; i++; continue; }
+        if (ch !== ":"){ out += ch; i++; continue; }
+
+        out += ch; i++;                                  // the colon itself
+        while (i < n && /\s/.test(src.charAt(i))){ out += src.charAt(i); i++; }
+        if (i >= n) break;
+        c = src.charAt(i);
+        if (c === '"' || c === "[" || c === "{") continue;   // already quoted or structured
+
+        start = i;
+        while (i < n && src.charAt(i) !== "," && src.charAt(i) !== "}" && src.charAt(i) !== "]") i++;
+        raw = src.slice(start, i);
+        v = raw.replace(/^\s+|\s+$/g, "");
+        if (v === "") { out += "null"; continue; }
+        if (v === "true" || v === "false" || v === "null"){ out += v; continue; }
+        if (/^-?\d+(\.\d+)?([eE][+-]?\d+)?$/.test(v)){ out += v; continue; }
+        if (/^yes$/i.test(v)){ out += "true"; continue; }
+        if (/^no$/i.test(v)){ out += "false"; continue; }
+        out += '"' + v.replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"';
+      }
+      return out;
+    }
     function parseOnce(raw) {
       var s = String(raw == null ? "" : raw).trim();
       if (!s) return [];
-      if (s[0] === "{") s = "[" + s + "]";
-      // Bubble's own yes/no ":formatted as text" output for a boolean field is the bare word
-      // yes/no with NO quotes — invalid JS ("yes is not defined"). Only matches a bare value
-      // (colon ... comma/brace/bracket), so a genuine quoted "yes" string elsewhere is untouched.
-      s = s.replace(/:\s*yes\s*([,}\]])/g, ": true$1");
-      s = s.replace(/:\s*no\s*([,}\]])/g, ": false$1");
-      s = s.replace(/:\s*([,}\]])/g, ": null$1");
-      s = s.replace(/,\s*([}\]])/g, "$1");
+      if (s.charAt(0) === "{") s = "[" + s + "]";
+      s = fixBareValues(s);
+      s = s.replace(/,\s*([}\]])/g, "$1");    // trailing comma before a closing bracket
       return eval("(" + s + ")");
     }
     // Bubble sometimes inserts a dynamic "text" value pre-escaped/quoted (double-encoded JSON) —

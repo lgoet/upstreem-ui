@@ -81,7 +81,7 @@
         return { id:t.id||t.tag_id||null, name:name, emoji:t.emoji?String(t.emoji):'', color:normHex(hex) };
       }
       function tagHtml(t){
-        return '<span class="ust-tag" style="--ust-tag-color:'+esc(t.color)+';">'+(t.emoji?'<span class="ust-tag-emoji">'+esc(t.emoji)+'</span>':'')+'<span class="ust-tag-label">'+esc(t.name)+'</span></span>';
+        return '<span class="ust-tag up-chiphover" style="--ust-tag-color:'+esc(t.color)+';">'+(t.emoji?'<span class="ust-tag-emoji">'+esc(t.emoji)+'</span>':'')+'<span class="ust-tag-label">'+esc(t.name)+'</span></span>';
       }
 
       function layout(st){
@@ -154,7 +154,7 @@
 
         tags.forEach(function(t){
           var el=document.createElement('span');
-          el.className='ust-tag'; el.style.setProperty('--ust-tag-color', t.color);
+          el.className='ust-tag up-chiphover'; el.style.setProperty('--ust-tag-color', t.color);
           el.innerHTML=(t.emoji?'<span class="ust-tag-emoji">'+esc(t.emoji)+'</span>':'')+'<span class="ust-tag-label">'+esc(t.name)+'</span>';
 
           row.appendChild(el); st.tagEls.push(el);
@@ -362,19 +362,28 @@
        Primer's "don't announce a load that finished before the user could notice it", just at a
        visual timescale rather than a screen-reader one. */
     var RELOAD_DIM_DELAY = 180;
-    var dimTimer = null;
-    function syncReloadDim(){
-      var want = isBusy() && state.softReload && state.hasData && state.rows.length > 0;
-      if (!want){
-        clearTimeout(dimTimer); dimTimer = null;
-        root.classList.remove("is-reloading");
-        return;
-      }
-      if (dimTimer || root.classList.contains("is-reloading")) return;
+    var RELOAD_DIM_MAX = 20000;
+    var dimTimer = null, dimKill = null;
+    /* Driven explicitly by the two events that cause a soft reload, NOT derived from isBusy().
+       Deriving it was the bug: whether a loading flag is ever set at all depends on how the
+       Bubble workflow is wired, and any render call arriving in between reset the flag the
+       derivation depended on — so the dim silently never appeared. Begin when the request goes
+       out, end when rows come back. */
+    function beginSoftReload(){
+      clearTimeout(dimTimer); clearTimeout(dimKill);
+      if (!state.hasData || !(state.rows || []).length) return;   // nothing on screen to dim
       dimTimer = setTimeout(function(){
         dimTimer = null;
-        if (isBusy() && state.softReload) root.classList.add("is-reloading");
+        root.classList.add("is-reloading");
       }, RELOAD_DIM_DELAY);
+      /* Never let it stick: if the answer never arrives, a permanently greyed-out table is worse
+         than no feedback at all. */
+      dimKill = setTimeout(endSoftReload, RELOAD_DIM_MAX);
+    }
+    function endSoftReload(){
+      clearTimeout(dimTimer); clearTimeout(dimKill);
+      dimTimer = dimKill = null;
+      root.classList.remove("is-reloading");
     }
 
     var MOBILE_SEARCH_MAX = 640;
@@ -382,7 +391,7 @@
       root: root, box: elSearch, input: elSearchIn, state: state,
       mobileMax: MOBILE_SEARCH_MAX, prefix: "upt",
       onRender: function(){ renderTable(); renderPager(); },
-      onFire: function(payload){ state.softReload = false; invalidateSelectAll(); fire("data-search-fn", "uptSearch", payload); },
+      onFire: function(payload){ state.softReload = false; endSoftReload(); invalidateSelectAll(); fire("data-search-fn", "uptSearch", payload); },
       persist: function(){ persist(); }
     });
     function runSearch(){ search.run(); }
@@ -415,7 +424,7 @@
       state.brandMentioned = state.brandMentioned === "" ? "yes" : (state.brandMentioned === "yes" ? "no" : "");
       state.page = 1;
       persist(); syncBrand(); renderPager();
-      state.softReload = false; invalidateSelectAll();
+      state.softReload = false; endSoftReload(); invalidateSelectAll();
       fire("data-brand-fn", "uptBrand", { brand_mentioned: state.brandMentioned });
     }
 
@@ -454,8 +463,13 @@
       if (!el) return;
       var n = selectedIds().length;
       el.classList.toggle("is-on", n > 0);
-      var nEl = el.querySelector(".upt-selcount-n");
-      if (nEl) nEl.textContent = n === 1 ? "1 selected" : (n + " selected");
+      /* Only ever written while there IS a selection: the chip fades out over ~200ms, and
+         rewriting it to "0 selected" first meant you watched the number drop to zero before it
+         disappeared. It keeps its last real count all the way out. */
+      if (n > 0){
+        var nEl = el.querySelector(".upt-selcount-n");
+        if (nEl) nEl.textContent = n === 1 ? "1 selected" : (n + " selected");
+      }
     }
     function syncSelectAll(){
       var box = root.querySelector("[data-selectall]");
@@ -503,9 +517,12 @@
       /* A different record set entirely: keeping ids selected across the switch would let a bulk
          action hit prompts the user can no longer see. */
       state.selected = {}; invalidateSelectAll();
-      state.softReload = false;   // the result set changes -> skeleton, not dim
+      state.softReload = false; endSoftReload();   // the result set changes -> skeleton, not dim
       persist(); renderStatusTabs(); render();
-      fire("data-status-fn", "uptStatus", { status: state.status });
+      fire("data-status-fn", "uptStatus", {
+        status: state.status,
+        is_active: state.status === "active" ? "yes" : "no"
+      });
     }
 
     /* ---------------- bulk actions ---------------- */
@@ -551,11 +568,11 @@
     function ensureBulkBar(){
       if (elBulk && document.body.contains(elBulk)) return elBulk;
       elBulk = document.createElement("div");
-            /* .up-root as well as our own class: every core rule is written as ".up-root …", and the
-         bar hangs off document.body, outside the component. Without this it inherits none of the
-         CSS variables and none of the dark-mode selectors — which is exactly why the buttons in
-         here first got hand-rolled styles instead of the shared ones. */
-      elBulk.className = "up-root upt-bulkbar";
+            /* Deliberately NOT .up-root: that class carries width:100% and flex-direction:column,
+         which flattened the bar across the page. Core's button rules (.up-filter-btn et al) are
+         not root-scoped anyway — they only need the --vc-* variables, which prompts-table.css
+         declares on .upt-bulkbar directly. */
+      elBulk.className = "upt-bulkbar";
       elBulk.setAttribute("role", "toolbar");
       elBulk.setAttribute("aria-label", "Bulk actions");
       elBulk.setAttribute("aria-hidden", "true");
@@ -595,17 +612,17 @@
         UC.fmtTotal(toNum(state.totalCount)) + ' prompts</button>';
 
       var statusLabel = state.status === "inactive" ? "Set Active" : "Set Inactive";
+      var wasOpen = bar.classList.contains("is-topics");
       bar.innerHTML =
-        '<span class="upt-bulkbar-count" role="status" aria-live="polite">' + esc(countTxt) + '</span>' +
-        escape +
-        '<span class="upt-bulkbar-div"></span>' +
-        '<span class="upt-bulkbar-topics">' +
-          '<button class="up-filter-btn upt-bulkbar-btn" type="button" data-bulk-topics aria-haspopup="menu" aria-expanded="false">' + TAG_SVG + 'Topics</button>' +
-          '<div class="upt-topicmenu" role="menu" aria-hidden="true"></div>' +
-        '</span>' +
-        '<button class="up-filter-btn upt-bulkbar-btn" type="button" data-bulk-status>' + esc(statusLabel) + '</button>' +
-        '<span class="upt-bulkbar-div"></span>' +
-        '<button class="upt-bulkbar-x" type="button" data-bulk-clear aria-label="Clear selection">' + CLOSE_SVG + '</button>';
+        '<div class="upt-bulkbar-row">' +
+          '<span class="upt-bulkbar-count" role="status" aria-live="polite">' + esc(countTxt) + '</span>' +
+          escape +
+          '<button class="up-filter-btn upt-bulkbar-btn" type="button" data-bulk-topics aria-expanded="' + (wasOpen ? "true" : "false") + '">' + TAG_SVG + 'Topics</button>' +
+          '<button class="up-filter-btn upt-bulkbar-btn" type="button" data-bulk-status>' + esc(statusLabel) + '</button>' +
+          '<button class="upt-bulkbar-x" type="button" data-bulk-clear aria-label="Clear selection">' + CLOSE_SVG + '</button>' +
+        '</div>' +
+        '<div class="upt-bulkpanel" aria-hidden="' + (wasOpen ? "false" : "true") + '"></div>';
+      if (wasOpen) renderTopicMenu();   // innerHTML above threw the open panel away
       Array.prototype.forEach.call(bar.querySelectorAll("button"), function(b){ b.tabIndex = 0; });
       bar.setAttribute("aria-hidden", "false");
       root.classList.add("is-bulk");
@@ -661,7 +678,7 @@
                 if (color.charAt(0) !== "#") color = "#" + color;
                 return '<div class="upt-topicrow" data-topic="' + esc(id) + '" data-state="' + st + '">' +
                   '<span class="upt-topiccheck is-' + st + '">' + (st === "all" ? CHECK_SVG : "") + '</span>' +
-                  '<span class="upt-topicchip" style="--ust-tag-color:' + esc(color) + '">' +
+                  '<span class="upt-topicchip up-chiphover" style="--ust-tag-color:' + esc(color) + '">' +
                     (t.emoji ? '<span class="upt-topicchip-e">' + esc(t.emoji) + '</span>' : "") +
                     '<span>' + esc(t.name == null ? "" : t.name) + '</span>' +
                   '</span></div>';
@@ -675,7 +692,7 @@
     }
     function renderTopicMenu(){
       if (!elBulk) return;
-      var menu = elBulk.querySelector(".upt-topicmenu");
+      var menu = elBulk.querySelector(".upt-bulkpanel");
       if (!menu) return;
       menu.innerHTML =
         ((state.topics || []).length ? '<div class="upt-topicsearch"><input class="upt-topicsearch-in" type="text" placeholder="Search topics..." autocomplete="off" spellcheck="false"/></div>' : "") +
@@ -684,24 +701,23 @@
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
           'Add Topic</button>';
     }
+    /* Opening Topics grows the BAR — the topic section slides out of its lower edge rather than
+       floating above it as a separate dropdown. One surface, not two stacked ones. */
     function setTopicMenuOpen(open){
       if (!elBulk) return;
-      var wrap = elBulk.querySelector(".upt-bulkbar-topics");
-      var menu = elBulk.querySelector(".upt-topicmenu");
+      var panel = elBulk.querySelector(".upt-bulkpanel");
       var btn = elBulk.querySelector("[data-bulk-topics]");
-      if (!wrap || !menu) return;
-      wrap.classList.toggle("is-open", !!open);
-      menu.setAttribute("aria-hidden", open ? "false" : "true");
+      if (!panel) return;
+      elBulk.classList.toggle("is-topics", !!open);
+      panel.setAttribute("aria-hidden", open ? "false" : "true");
       if (btn) btn.setAttribute("aria-expanded", open ? "true" : "false");
       if (open){
         topicQuery = ""; renderTopicMenu();
-        var inp = menu.querySelector(".upt-topicsearch-in");
+        var inp = panel.querySelector(".upt-topicsearch-in");
         if (inp) setTimeout(function(){ try { inp.focus(); } catch(e){} }, 40);
       }
     }
-    function topicMenuOpen(){
-      return !!(elBulk && elBulk.querySelector(".upt-bulkbar-topics.is-open"));
-    }
+    function topicMenuOpen(){ return !!(elBulk && elBulk.classList.contains("is-topics")); }
     function applyBulkTopic(id){
       var t = (state.topics || []).filter(function(x){ return topicId(x) === id; })[0];
       var st = topicStateFor(id);
@@ -884,7 +900,7 @@
           order: orderValue(state.sortField, state.sortDir),
           sort_field: state.sortField, sort_dir: state.sortDir
         });
-        renderTable(); syncReloadDim();
+        renderTable(); beginSoftReload();
       }, SORT_DEBOUNCE);
     }
     function populateSort(){
@@ -941,11 +957,20 @@
     });
     var syncHeadSorters = sortKit.syncHeadSorters, headSortClick = sortKit.headSortClick;
 
+    /* The Prompt header is BOTH sortable and the one carrying the resize grip — unlike
+       urls-table, where the draggable first column isn't sortable. Without this, finishing a
+       drag left a click on the sortable header behind, which re-sorted and reloaded the table. */
+    var lastResizeEnd = 0;
     root.addEventListener("pointerdown", function(e){
       var grip = e.target.closest(".up-grip");
       if (!grip) return;
       e.stopPropagation();
       startResize(e);
+      var markEnd = function(){
+        lastResizeEnd = +new Date();
+        document.removeEventListener("pointerup", markEnd, true);
+      };
+      document.addEventListener("pointerup", markEnd, true);
     });
 
     function setRowHeight(mode){
@@ -958,6 +983,7 @@
     function firePage(){
       search.setLatest(null);
       state.softReload = true;   // same result set, different window -> dim, don't blank
+      beginSoftReload();
       fire("data-page-fn", "uptPage", { limit: state.pageSize, offset: offset(), page: state.page });
     }
 
@@ -1194,7 +1220,11 @@
 
       // --- header sorters ---
       var th = e.target.closest(".up-th.is-sortable");
-      if (th){ headSortClick(th.getAttribute("data-sortcol")); return; }
+      if (th){
+        if (e.target.closest(".up-grip")) return;                 // the grip is not a sort target
+        if (+new Date() - lastResizeEnd < 300) return;            // the click that ends a drag
+        headSortClick(th.getAttribute("data-sortcol")); return;
+      }
 
       /* --- topics cell (own event; must come BEFORE the row-click handler) ---
          Clicking the tags opens topic management for that prompt rather than the prompt's own
@@ -1319,7 +1349,7 @@
 
     function render(){
       renderTable(); renderCount(); syncHeadSorters(); syncColsBadge(); syncSelectAll(); syncBrand();
-      renderPageSize(); renderPager(); applyCols(); applyResponsive(); syncReloadDim();
+      renderPageSize(); renderPager(); applyCols(); applyResponsive();
       renderStatusTabs(); renderBulkBar();
       if (root.classList.contains("up-sticky")) syncTheadOffset();
     }
@@ -1348,7 +1378,7 @@
           var _t = Array.isArray(params.topics) ? params.topics : [];
           if (_t.length) state.topics = _t;   // ignore a stray empty list so it can't wipe the editor
         }
-        if (params.rows != null){ state.loading = false; state.softReload = false; }
+        if (params.rows != null){ state.loading = false; state.softReload = false; endSoftReload(); }
         if (!explicitOverride && hasProcessingAttr()) state.extLoading = readProcessing();
         persist(); render();
       },
@@ -1356,7 +1386,7 @@
         explicitOverride = true;
         LOADING_EXPLICIT[instanceId] = true;
         state.extLoading = isYes(on);
-        if (!state.extLoading) state.loading = false;
+        if (!state.extLoading){ state.loading = false; endSoftReload(); }
         persist(); render();
       },
       reset: function(){

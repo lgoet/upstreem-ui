@@ -861,6 +861,21 @@
 .up-root.is-dense .up-stack-item:first-child:hover ~ .up-stack-item .up-stack-vis,
 .up-root.is-dense .up-stack-item:first-child:hover ~ .up-stack-more { transform: translateX(7.04px); }
 
+/* ---------- interactive chip hover ----------
+   For any coloured chip/tag that is CLICKABLE (topic tags in a table cell, topic tags in the
+   bulk editor, and anything similar that follows). The chip keeps its own tint at rest; on
+   hover it drops to the neutral surface with the shared hover border, so "this is a control"
+   reads the same everywhere regardless of which colour the tag happens to carry.
+   Applied by adding .up-chiphover next to the chip's own class. */
+.up-chiphover { transition: background 120ms ease, border-color 120ms ease, color 120ms ease; }
+.up-chiphover:hover { background: #f5f5f5; border-color: #6f6f6f; color: #1f1f1b; box-shadow: none; }
+/* Matches on the component root OR on a body-level surface (the bulk bar) that carries the
+   attribute itself — the chip can live in either. */
+.up-root[data-theme="dark"] .up-chiphover:hover,
+[data-theme="dark"] .up-chiphover:hover {
+  background: #2a2a2a; border-color: #707070; color: #e0e0e0; box-shadow: none;
+}
+
 /* compact "No data" line for tables that live in a fixed-height box and have no room for the
    full illustrated empty state */
 .up-empty-mini { padding: 24px; text-align: center; color: var(--vc-muted); font-size: 13px; }
