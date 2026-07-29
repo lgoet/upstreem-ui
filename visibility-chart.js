@@ -335,6 +335,11 @@
       var hr = root.querySelector(".vot-heading-right");
       var cn = root.querySelector(".vot-head-count");
       if (!hr || !cn) return;
+      /* Skeleton for the WHOLE duration of isLoading(), not just before the first load —
+         otherwise a stale count from before the loading toggle sits there unchanged, which reads
+         as "nothing happened" rather than "loading". Same idiom as the table components' .is-sk. */
+      if (isLoading()){ cn.textContent = ""; cn.classList.add("is-sk"); hr.classList.add("has-count"); return; }
+      cn.classList.remove("is-sk");
       if (state.totalCount != null && state.totalCount !== ""){ cn.textContent = state.totalCount; hr.classList.add("has-count"); }
       else { hr.classList.remove("has-count"); }
     }

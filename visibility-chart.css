@@ -88,6 +88,9 @@
 .vot-head-sep { width: 4px; height: 4px; border-radius: 50%; background: var(--vc-muted); margin: 0 8px; flex: 0 0 auto; display: none; }
 .vot-head-count { font-size: 14px; font-weight: 500; color: var(--vc-muted); display: none; }
 .vot-heading-right.has-count .vot-head-sep, .vot-heading-right.has-count .vot-head-count { display: block; }
+/* Same pulse as core's .up-head-count.is-sk (urls-/domains-/prompts-table) — kept local since this
+   component predates the shared table primitives and doesn't pull in core's exact class. */
+.vot-head-count.is-sk { width: 28px; height: 14px; border-radius: 4px; background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
 
 /* sort dropdown — portaled to <body> same as every other dropdown in the library (core), only
    the Descending switch reuses core.css's .up-switch. The .is-shown toggle (not a parent-state
