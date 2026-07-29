@@ -93,6 +93,121 @@
 .up-row:not(.up-tsk) .upt-td-topics { cursor: pointer; transition: background 120ms ease; }
 .up-row:not(.up-tsk) .upt-td-topics:hover { background: var(--vc-heading-bg); }
 
+/* ---------- Active / Inactive view switch ----------
+   Left of the toolbar, next to the heading — it's a view switch, not a filter, and the filter
+   area on the right implies "combinable with the others", which these two never are. Reuses the
+   .up-dense segmented look so it reads as the same kind of control as the row-height switch. */
+.upt-status { display: inline-flex; align-items: center; gap: 0; margin-left: 12px; height: 28px;
+  padding: 0; background: var(--vc-switch-bg); border-radius: 8px; flex: 0 0 auto; }
+.upt-status-btn { height: 28px; padding: 0 10px; border: 1px solid transparent; border-radius: 8px;
+  background: transparent; color: var(--vc-muted); cursor: pointer; font-family: inherit;
+  font-size: 12px; font-weight: 500; line-height: 1; white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 6px; }
+.upt-status-btn:hover { color: var(--vc-text); }
+.upt-status-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
+.up-root[data-theme="dark"] .upt-status-btn.is-active { background: #121212; border-color: #353535; }
+.upt-status-n { font-size: 11px; font-weight: 600; color: var(--vc-third); font-variant-numeric: tabular-nums; }
+.upt-status-btn.is-active .upt-status-n { color: var(--vc-muted); }
+.up-root.is-searchtakeover .upt-status { display: none; }
+
+/* ---------- bulk action bar ----------
+   Parented to document.body (see ensureBulkBar) and fixed to the VIEWPORT, so it sits bottom-
+   centre of the page rather than of the component. 80px up from the bottom clears a typical
+   app footer; it is deliberately not flush to the edge. */
+.upt-bulkbar {
+  position: fixed !important;
+  bottom: 80px !important;
+  left: 50% !important;
+  z-index: 99999;
+  width: max-content; max-width: calc(100vw - 32px);
+  box-sizing: border-box;
+  display: flex; align-items: center; gap: 8px;
+  min-height: 48px; padding: 0 8px 0 14px;
+  border-radius: 12px;
+  background: var(--up-surface, #ffffff);
+  border: 1px solid var(--vc-border, #d9dde3);
+  box-shadow: 0 14px 34px rgba(0,0,0,0.14);
+  font-family: Geist, Inter, system-ui, -apple-system, sans-serif;
+  /* out-state: sitting below its resting place, invisible. 200ms in, 200ms back down. */
+  opacity: 0; pointer-events: none;
+  transform: translateX(-50%) translateY(24px);
+  transition: opacity 200ms cubic-bezier(0.2, 0, 0.38, 0.9),
+              transform 200ms cubic-bezier(0.2, 0, 0.38, 0.9);
+}
+.upt-bulkbar.is-on { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
+@media (prefers-reduced-motion: reduce){ .upt-bulkbar { transition-duration: 1ms; } }
+.upt-bulkbar[data-theme="dark"] { background: #151515; border-color: #353535; box-shadow: 0 14px 34px rgba(0,0,0,0.6); }
+.upt-bulkbar-count { font-size: 13px; font-weight: 600; color: var(--vc-text, #1f1f1b); white-space: nowrap; flex: 0 0 auto; }
+.upt-bulkbar[data-theme="dark"] .upt-bulkbar-count { color: #f0f0f0; }
+.upt-bulkbar-link { border: 0; background: transparent; padding: 0 2px; cursor: pointer;
+  font-family: inherit; font-size: 12.5px; font-weight: 500; color: var(--vc-muted, #6f737c);
+  text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; flex: 0 0 auto; }
+.upt-bulkbar-link:hover { color: var(--vc-text, #1f1f1b); }
+.upt-bulkbar[data-theme="dark"] .upt-bulkbar-link:hover { color: #f0f0f0; }
+.upt-bulkbar-div { width: 1px; height: 22px; background: var(--vc-border, #d9dde3); flex: 0 0 auto; }
+.upt-bulkbar-btn { height: 32px; padding: 0 11px; border-radius: 8px; border: 1px solid var(--vc-border, #d9dde3);
+  background: transparent; color: var(--vc-text, #1f1f1b); cursor: pointer; font-family: inherit;
+  font-size: 12.5px; font-weight: 500; white-space: nowrap; flex: 0 0 auto;
+  display: inline-flex; align-items: center; gap: 7px; }
+.upt-bulkbar-btn svg { width: 14px; height: 14px; display: block; }
+.upt-bulkbar-btn:hover { background: var(--vc-heading-bg, #f5f5f5); }
+.upt-bulkbar[data-theme="dark"] .upt-bulkbar-btn { color: #e0e0e0; border-color: #353535; }
+.upt-bulkbar[data-theme="dark"] .upt-bulkbar-btn:hover { background: rgba(255,255,255,0.06); }
+.upt-bulkbar-x { width: 30px; height: 30px; border: 0; padding: 0; border-radius: 8px; background: transparent;
+  color: var(--vc-muted, #6f737c); cursor: pointer; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center; }
+.upt-bulkbar-x svg { width: 15px; height: 15px; display: block; }
+.upt-bulkbar-x:hover { background: var(--vc-heading-bg, #f5f5f5); color: var(--vc-text, #1f1f1b); }
+.upt-bulkbar[data-theme="dark"] .upt-bulkbar-x:hover { background: rgba(255,255,255,0.06); color: #e0e0e0; }
+/* Keep the bar off the last row: reserve space under the table while it's up. */
+.upt-root.is-bulk { padding-bottom: 108px; }
+
+/* ---------- topic editor (opens UPWARD out of the bar) ----------
+   Plain position:absolute inside the button wrapper — the bar is fixed and never moves, so
+   there is nothing to chase on scroll and no portal is needed. */
+.upt-bulkbar-topics { position: relative; display: inline-flex; flex: 0 0 auto; }
+.upt-topicmenu {
+  position: absolute; bottom: calc(100% + 8px); left: 0; z-index: 5;
+  width: 260px; max-height: 320px; overflow: hidden;
+  display: flex; flex-direction: column;
+  padding: 6px; border-radius: 12px;
+  background: var(--up-surface, #ffffff); border: 1px solid var(--vc-border, #d9dde3);
+  box-shadow: 0 14px 34px rgba(0,0,0,0.14);
+  opacity: 0; visibility: hidden; transform: translateY(6px);
+  transition: opacity 140ms ease, transform 140ms ease, visibility 140ms;
+}
+.upt-bulkbar-topics.is-open .upt-topicmenu { opacity: 1; visibility: visible; transform: translateY(0); }
+.upt-bulkbar[data-theme="dark"] .upt-topicmenu { background: #151515; border-color: #353535; box-shadow: 0 14px 34px rgba(0,0,0,0.6); }
+.upt-topicsearch { padding: 2px 2px 6px; flex: 0 0 auto; }
+.upt-topicsearch-in { width: 100%; height: 30px; padding: 0 9px; border-radius: 8px;
+  border: 1px solid var(--vc-border, #d9dde3); background: transparent; outline: none;
+  font-family: inherit; font-size: 12.5px; color: var(--vc-text, #1f1f1b); box-sizing: border-box; }
+.upt-bulkbar[data-theme="dark"] .upt-topicsearch-in { color: #e0e0e0; border-color: #353535; }
+.upt-topiclist { overflow-y: auto; flex: 1 1 auto; min-height: 0; }
+.upt-topicrow { display: flex; align-items: center; gap: 9px; padding: 6px 7px; border-radius: 8px; cursor: pointer; }
+.upt-topicrow:hover { background: var(--vc-heading-bg, #f5f5f5); }
+.upt-bulkbar[data-theme="dark"] .upt-topicrow:hover { background: rgba(255,255,255,0.06); }
+.upt-topiccheck { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--vc-border, #d9dde3);
+  flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; color: #fff; }
+.upt-topiccheck svg { width: 11px; height: 11px; display: block; }
+.upt-topiccheck.is-all { background: var(--vc-text, #1f1f1b); border-color: var(--vc-text, #1f1f1b); }
+/* "some": a dash, not a tick — the topic is on part of the selection, and clicking ADDS it to
+   the rest rather than replacing anything. This is the state Notion's bulk edit doesn't have,
+   which is why theirs silently overwrites tags the user never touched. */
+.upt-topiccheck.is-some { background: var(--vc-text, #1f1f1b); border-color: var(--vc-text, #1f1f1b); }
+.upt-topiccheck.is-some::after { content: ""; width: 8px; height: 2px; border-radius: 1px; background: #fff; }
+.upt-bulkbar[data-theme="dark"] .upt-topiccheck.is-all,
+.upt-bulkbar[data-theme="dark"] .upt-topiccheck.is-some { background: #e0e0e0; border-color: #e0e0e0; color: #1f1f1b; }
+.upt-bulkbar[data-theme="dark"] .upt-topiccheck.is-some::after { background: #1f1f1b; }
+.upt-topicchip { height: 24px; padding: 0 9px; border-radius: 7px; display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid color-mix(in srgb, var(--ust-tag-color, #6b7280) 40%, transparent);
+  background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 10%, transparent);
+  color: var(--ust-tag-color, #4b5563); font-size: 12px; font-weight: 500; line-height: 1;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.upt-bulkbar[data-theme="dark"] .upt-topicchip { background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 22%, transparent); color: #e0e0e0; }
+.upt-topicchip-e { font-size: 12px; line-height: 1; }
+.upt-topicmenu-empty { padding: 14px 8px; text-align: center; font-size: 12.5px; color: var(--vc-muted, #6f737c); }
+
 /* ---------- soft reload (sort / paging) ----------
    The rows stay on screen because they're still truthful — only their ORDER or the visible
    window is being refetched. Dim + a 2px indeterminate bar under the column header says

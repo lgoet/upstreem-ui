@@ -36,13 +36,16 @@
   data-rowclick-fn  = "bubble_fn_uptRowClick_[dynamic id]"
   data-select-fn    = "bubble_fn_uptSelect_[dynamic id]"
   data-topics-fn    = "bubble_fn_uptTopicsClick_[dynamic id]"
+  data-status-fn      = "bubble_fn_uptStatus_[dynamic id]"        view switch Active/Inactive
+  data-bulktopics-fn  = "bubble_fn_uptBulkTopics_[dynamic id]"    bulk topic add/remove
+  data-bulkstatus-fn  = "bubble_fn_uptBulkStatus_[dynamic id]"    bulk set active/inactive
 
   Every one fires ONE JSON string, values pulled out on the Bubble side by regex — same
   convention as the other tables. All of these except rowclick/select are SERVER-side: they tell
   Bubble to re-run the RPC, this component never filters/sorts/paginates locally.
 
     search   {"query":"nike","query_folded":"nike","query_de":"nike","requestId":"upt_…"}
-    sort     {"order":"created_desc","sort_field":"created","sort_dir":"desc"}
+    sort     {"order":"visibility_desc","sort_field":"visibility","sort_dir":"desc"}
     brand    {"brand_mentioned":"yes"}          "yes" | "no" | ""  (empty = off)
     page     {"limit":25,"offset":50,"page":3}
     rowclick {"prompt_id":"614ebcc4-c784-440c-aff8-0394e59ae266"}
@@ -52,15 +55,41 @@
     topics   {"prompt_id":"614ebcc4-…"}             -> click on the Topics cell. Deliberately does
                                                         NOT also fire rowclick — open your topic
                                                         management for that prompt here.
+    status   {"status":"inactive"}                  -> Active/Inactive view switch. Re-run the RPC
+                                                        filtered to that status.
 
-  order tokens: prompt_asc/desc, visibility_asc/desc, rank_asc/desc, sentiment_asc/desc,
-  created_asc/desc.
+  ── Bulk actions (the floating bar, shown while rows are selected) ────────────
+  Both carry the SELECTION in one of two shapes. Branch your workflow on "mode":
+
+    mode:"ids"     {"mode":"ids","count":12,"ids":"id1,id2,…"}
+    mode:"filter"  {"mode":"filter","count":1240,"query":"…","brand_mentioned":"yes",
+                    "status":"active","order":"visibility_desc"}
+
+  "filter" appears only after the user takes the "Select all N matching this filter" link, which
+  the bar offers when the selection can span more pages than are loaded. It deliberately sends
+  the PREDICATE rather than 1240 ids: the ids would blow up the payload and go stale against rows
+  that changed since. Resolve it server-side with the SAME where-clause your render RPC uses —
+  the field names here are chosen to match it. If they ever drift apart, the table and the bulk
+  action will silently disagree about which rows they mean.
+
+    bulktopics  <selection> + {"topic_id":"…","topic_name":"SUV","action":"add"|"remove"}
+                -> add/remove ONE topic on every selected prompt. Never send "replace the tags
+                   with this" — the component only ever emits an explicit add or remove, so
+                   topics the user didn't touch must stay untouched.
+    bulkstatus  <selection> + {"status":"inactive"}
+                -> set every selected prompt to that status. Reversible, so no confirm dialog is
+                   shown; surface an undo in your own toast instead.
+
+  order tokens: name_asc/desc, visibility_asc/desc, rank_asc/desc, sentiment_asc/desc,
+  created_at_asc/desc.   Default (and fallback) is visibility_desc — the table is never unsorted.
 
   Regex, as everywhere else:
     (?<="query":")[^"]*        (?<="query_folded":")[^"]*   (?<="query_de":")[^"]*
     (?<="requestId":")[^"]*    (?<="order":")[^"]*          (?<="sort_field":")[^"]*
     (?<="sort_dir":")[^"]*     (?<="prompt_id":")[^"]*      (?<="selected":")[^"]*
-    (?<="brand_mentioned":")[^"]*
+    (?<="brand_mentioned":")[^"]*                           (?<="status":")[^"]*
+    (?<="mode":")[^"]*         (?<="ids":")[^"]*            (?<="topic_id":")[^"]*
+    (?<="topic_name":")[^"]*   (?<="action":")[^"]*
     (?<="limit":)[0-9]+        (?<="offset":)[0-9]+         (?<="page":)[0-9]+
     (?<="count":)[0-9]+
 
@@ -68,6 +97,12 @@
   window.renderPromptsTable({ instanceId: "...", rows: [...], totalCount: 94 });
   window.setPromptsTableLoading("INSTANCE_ID", "yes" | "no");
   window.resetPromptsTable("INSTANCE_ID");
+  window.setPromptsTableTopics("INSTANCE_ID", [ {id,name,emoji,hex_light,hex_dark}, … ]);
+
+  renderPromptsTable also accepts, both optional:
+    totalCountInactive  -> puts a count on the Inactive tab. Until you send it the tab simply
+                           renders without one, rather than claiming a number it doesn't have.
+    topics              -> same list as setPromptsTableTopics, if it's easier to send it here.
 
   Row fields (straight from your RPC, no renaming needed):
     prompt_id, prompt_text, market, tags [{id,name,emoji,hex_light,hex_dark}], visibility_pct,
@@ -148,6 +183,38 @@
     })();
   })();
 
+  ── Topics for the bulk editor — own Run-JS step, run ONCE on page load ──────
+  Same pattern as the brand lists in urls-table/domains-table: the full topic list is static for
+  the session, so it's loaded once rather than riding along with every page of rows.
+
+  (function () {
+    function toArr(raw) {
+      var s = String(raw == null ? "" : raw).trim();
+      if (!s) return [];
+      if (s[0] === "{") s = "[" + s + "]";
+      s = s.replace(/:\s*yes\s*([,}\]])/g, ": true$1");
+      s = s.replace(/:\s*no\s*([,}\]])/g, ": false$1");
+      s = s.replace(/:\s*([,}\]])/g, ": null$1");
+      s = s.replace(/,\s*([}\]])/g, "$1");
+      try { return eval("(" + s + ")"); }
+      catch (e) { console.warn("[prompts-table] could not parse topics:", e.message, s); return []; }
+    }
+
+    var INSTANCE_ID = `INSTANCE_ID`;
+    var topics = toArr(`[TOPICS_RPC_RESPONSE]`);   // [{id,name,emoji,hex_light,hex_dark}, …]
+    console.log("[prompts-table] sending topics:", topics.length);
+
+    var t = 0;
+    (function go () {
+      var fn = window.setPromptsTableTopics
+            || (window.parent && window.parent.setPromptsTableTopics)
+            || (window.top && window.top.setPromptsTableTopics);
+      if (typeof fn === "function") { fn(INSTANCE_ID, topics); return; }
+      if (t++ < 60) { setTimeout(go, 100); return; }
+      console.error("[prompts-table] setPromptsTableTopics never appeared — is the component on this page?");
+    })();
+  })();
+
   ── Loading state — own Run-JS step, same reasoning as the other tables ──────
   Driven via Run-JS (not a dynamic attribute) so a Reusable placed more than once on a page
   doesn't force a full re-render on every processing-flag change.
@@ -178,11 +245,15 @@
      data-page-fn="bubble_fn_uptPage"
      data-rowclick-fn="bubble_fn_uptRowClick"
      data-select-fn="bubble_fn_uptSelect"
-     data-topics-fn="bubble_fn_uptTopicsClick">
+     data-topics-fn="bubble_fn_uptTopicsClick"
+     data-status-fn="bubble_fn_uptStatus"
+     data-bulktopics-fn="bubble_fn_uptBulkTopics"
+     data-bulkstatus-fn="bubble_fn_uptBulkStatus">
   <div class="up-head">
     <div class="up-heading"><span class="up-head-label">Prompts</span><span class="up-head-sep"></span><span class="up-head-count"></span>
       <span class="upt-selcount"><span class="upt-selcount-n">0 selected</span><button class="upt-selcount-clear" type="button" aria-label="Clear selection"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></span>
     </div>
+    <div class="upt-status" role="tablist" aria-label="Prompt status"></div>
     <div class="up-head-tools">
       <button class="upt-brand-toggle" type="button" data-tip="Filter by brand mention">
         <span class="upt-brand-toggle-lbl">

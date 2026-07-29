@@ -11,7 +11,7 @@
   var __uptBootQueue = window.__uptBootQueue = window.__uptBootQueue || [];
   if (!window.__uptBootStubbed){
     window.__uptBootStubbed = true;
-    ["renderPromptsTable", "setPromptsTableLoading", "resetPromptsTable"].forEach(function(n){
+    ["renderPromptsTable", "setPromptsTableLoading", "resetPromptsTable", "setPromptsTableTopics"].forEach(function(n){
       window[n] = function(){ __uptBootQueue.push([n, arguments]); };
     });
   }
@@ -310,7 +310,18 @@
       widths: {},                           // filled from colsKit.readWidths() below
       rowHeight: readRowHeight(),
       selected: saved.selected || {},       // prompt_id -> true, persisted across pages
-      brandMentioned: saved.brandMentioned || ""
+      brandMentioned: saved.brandMentioned || "",
+      /* Active vs Inactive is a VIEW, not a filter: the two are mutually exclusive and the
+         column set differs (Inactive has no Brand Mentions). Hence a segmented control on the
+         left rather than another dropdown in the filter area on the right. */
+      status: saved.status === "inactive" ? "inactive" : "active",
+      totalCountInactive: null,             // optional; tab renders without a count until it arrives
+      /* true once the user takes the "select all N matching" escape hatch. Deliberately a FLAG,
+         never a materialised id list: the set can be far larger than one page, the ids would
+         blow up the payload, and they'd go stale against rows that changed since. Any change to
+         the query invalidates it (see invalidateSelectAll). */
+      selectAllMatching: false,
+      topics: saved.topics || []            // full topic list for the bulk editor, filled once
     };
     function applyRowHeightClass(){
       root.classList.remove("is-rh-compact", "is-rh-dynamic");
@@ -338,7 +349,8 @@
         loading: state.extLoading, query: state.query,
         sortField: state.sortField, sortDir: state.sortDir,
         pageSize: state.pageSize, page: state.page,
-        selected: state.selected, brandMentioned: state.brandMentioned
+        selected: state.selected, brandMentioned: state.brandMentioned,
+        status: state.status, topics: state.topics
       };
     }
     /* shared event dispatch (core) */
@@ -370,7 +382,7 @@
       root: root, box: elSearch, input: elSearchIn, state: state,
       mobileMax: MOBILE_SEARCH_MAX, prefix: "upt",
       onRender: function(){ renderTable(); renderPager(); },
-      onFire: function(payload){ state.softReload = false; fire("data-search-fn", "uptSearch", payload); },
+      onFire: function(payload){ state.softReload = false; invalidateSelectAll(); fire("data-search-fn", "uptSearch", payload); },
       persist: function(){ persist(); }
     });
     function runSearch(){ search.run(); }
@@ -403,15 +415,18 @@
       state.brandMentioned = state.brandMentioned === "" ? "yes" : (state.brandMentioned === "yes" ? "no" : "");
       state.page = 1;
       persist(); syncBrand(); renderPager();
-      state.softReload = false;
+      state.softReload = false; invalidateSelectAll();
       fire("data-brand-fn", "uptBrand", { brand_mentioned: state.brandMentioned });
     }
 
     /* ---------------- selection ---------------- */
     function selectedIds(){ return Object.keys(state.selected).filter(function(k){ return state.selected[k]; }); }
     function fireSelect(){
-      var ids = selectedIds();
-      fire("data-select-fn", "uptSelect", { selected: ids.join(","), count: ids.length });
+      var p = selectionPayload();
+      /* "selected" is the field the original contract documented; keep sending it for the id
+         case so existing workflows don't break, alongside the newer mode/ids pair. */
+      if (p.mode === "ids") p.selected = p.ids;
+      fire("data-select-fn", "uptSelect", p);
     }
     function toggleSelectRow(id){
       if (state.selected[id]) delete state.selected[id]; else state.selected[id] = true;
@@ -428,8 +443,8 @@
       persist(); renderTable(); syncSelectAll(); fireSelect();
     }
     function clearSelection(){
-      if (!selectedIds().length) return;
-      state.selected = {};
+      if (!selectedIds().length && !state.selectAllMatching) return;
+      state.selected = {}; invalidateSelectAll();
       persist(); renderTable(); syncSelectAll(); fireSelect();
     }
     /* Counts the WHOLE selection, not just this page's — state.selected deliberately survives
@@ -455,6 +470,247 @@
       box.setAttribute("aria-checked", all ? "true" : (some ? "mixed" : "false"));
       box.innerHTML = all ? CHECK_SVG : "";
       syncSelCount();
+      renderBulkBar();
+    }
+
+    /* ---------------- status view: Active / Inactive ----------------
+       A view switch, not a filter — see state.status. The Inactive view drops Brand Mentions via
+       a class on the root rather than by editing the column config, so it can't collide with the
+       user's own saved column preferences. */
+    function renderStatusTabs(){
+      var el = root.querySelector(".upt-status");
+      if (!el) return;
+      var counts = { active: state.totalCount, inactive: state.totalCountInactive };
+      el.innerHTML = [["active","Active"],["inactive","Inactive"]].map(function(p){
+        var n = counts[p[0]];
+        /* No count until the server sends one — total_count_inactive isn't in the payload yet,
+           and "Inactive 0" would be a claim we can't back up. */
+        var cnt = (n == null || n === "") ? "" : '<span class="upt-status-n">' + UC.fmtTotal(n) + '</span>';
+        return '<button class="upt-status-btn' + (state.status === p[0] ? " is-active" : "") +
+               '" type="button" data-status="' + p[0] + '">' + p[1] + cnt + '</button>';
+      }).join("");
+      root.classList.toggle("is-inactive-view", state.status === "inactive");
+    }
+    function setStatus(next){
+      if (next !== "active" && next !== "inactive") return;
+      if (state.status === next) return;
+      state.status = next;
+      state.page = 1;
+      /* A different record set entirely: keeping ids selected across the switch would let a bulk
+         action hit prompts the user can no longer see. */
+      state.selected = {}; invalidateSelectAll();
+      state.softReload = false;   // the result set changes -> skeleton, not dim
+      persist(); renderStatusTabs(); render();
+      fire("data-status-fn", "uptStatus", { status: state.status });
+    }
+
+    /* ---------------- bulk actions ---------------- */
+    function hasMorePages(){
+      var t = toNum(state.totalCount);
+      return t != null && t > (state.rows || []).length;
+    }
+    function invalidateSelectAll(){ state.selectAllMatching = false; }
+    /* What a bulk action operates on. Two shapes on purpose:
+         ids    — the user ticked specific rows; send them.
+         filter — the user took "select all N matching"; send the PREDICATE, not the ids, so the
+                  server resolves the same set the table is showing. The field names here must
+                  stay identical to the ones the render RPC already takes, otherwise the table
+                  and the bulk action can silently disagree about which rows they mean. */
+    function selectionPayload(){
+      if (state.selectAllMatching){
+        return { mode: "filter", count: toNum(state.totalCount) || 0,
+                 query: state.query, brand_mentioned: state.brandMentioned,
+                 status: state.status, order: orderValue(state.sortField, state.sortDir) };
+      }
+      var ids = selectedIds();
+      return { mode: "ids", count: ids.length, ids: ids.join(",") };
+    }
+    function bulkCount(){
+      return state.selectAllMatching ? (toNum(state.totalCount) || 0) : selectedIds().length;
+    }
+
+    var elBulk = null;
+    var CLOSE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+    var TAG_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>';
+    /* Lives on document.body, NOT inside the component root: it has to sit bottom-centre of the
+       PAGE, and a position:fixed element is positioned against the nearest ancestor that has a
+       transform/filter/perspective — which Bubble containers frequently do. Parenting it to body
+       is the only way to guarantee it's anchored to the viewport. */
+    function ensureBulkBar(){
+      if (elBulk && document.body.contains(elBulk)) return elBulk;
+      elBulk = document.createElement("div");
+      elBulk.className = "upt-bulkbar";
+      elBulk.setAttribute("role", "toolbar");
+      elBulk.setAttribute("aria-label", "Bulk actions");
+      elBulk.setAttribute("aria-hidden", "true");
+      elBulk.setAttribute("data-for", instanceId);
+      /* The menu is rebuilt on every keystroke, so the listener has to sit on the bar and
+         delegate rather than on the input itself. */
+      elBulk.addEventListener("input", function(e){
+        if (!e.target.classList || !e.target.classList.contains("upt-topicsearch-in")) return;
+        topicQuery = e.target.value;
+        renderTopicList();   // the input itself is left untouched, so focus and caret survive
+      });
+      document.body.appendChild(elBulk);
+      return elBulk;
+    }
+    function renderBulkBar(){
+      var n = bulkCount();
+      var on = n > 0;
+      var bar = on ? ensureBulkBar() : elBulk;
+      if (!bar) return;
+      bar.setAttribute("data-theme", isDark ? "dark" : "light");
+      if (!on){
+        bar.classList.remove("is-on");
+        bar.setAttribute("aria-hidden", "true");
+        /* Every control must leave the tab order while the bar is invisible, otherwise an
+           opacity:0 toolbar becomes a set of phantom tab stops. */
+        Array.prototype.forEach.call(bar.querySelectorAll("button"), function(b){ b.tabIndex = -1; });
+        root.classList.remove("is-bulk");
+        return;
+      }
+      var isAll = state.selectAllMatching;
+      var countTxt = isAll ? (UC.fmtTotal(n) + "+ selected") : (n === 1 ? "1 selected" : n + " selected");
+      /* Polaris's trick: one control with two states. Before -> the escape hatch; after -> Undo.
+         Only offered when there actually IS another page, otherwise "select all" is a lie. */
+      var escape = "";
+      if (isAll) escape = '<button class="upt-bulkbar-link" type="button" data-bulk-undoall>Undo</button>';
+      else if (hasMorePages()) escape = '<button class="upt-bulkbar-link" type="button" data-bulk-all>Select all ' +
+        UC.fmtTotal(toNum(state.totalCount)) + ' matching this filter</button>';
+
+      var statusLabel = state.status === "inactive" ? "Set Active" : "Set Inactive";
+      bar.innerHTML =
+        '<span class="upt-bulkbar-count" role="status" aria-live="polite">' + esc(countTxt) + '</span>' +
+        escape +
+        '<span class="upt-bulkbar-div"></span>' +
+        '<span class="upt-bulkbar-topics">' +
+          '<button class="upt-bulkbar-btn" type="button" data-bulk-topics aria-haspopup="menu" aria-expanded="false">' + TAG_SVG + 'Topics</button>' +
+          '<div class="upt-topicmenu" role="menu" aria-hidden="true"></div>' +
+        '</span>' +
+        '<button class="upt-bulkbar-btn" type="button" data-bulk-status>' + esc(statusLabel) + '</button>' +
+        '<span class="upt-bulkbar-div"></span>' +
+        '<button class="upt-bulkbar-x" type="button" data-bulk-clear aria-label="Clear selection">' + CLOSE_SVG + '</button>';
+      Array.prototype.forEach.call(bar.querySelectorAll("button"), function(b){ b.tabIndex = 0; });
+      bar.setAttribute("aria-hidden", "false");
+      root.classList.add("is-bulk");
+      if (!bar.classList.contains("is-on")){
+        /* Force a style/layout flush so the browser has actually computed the from-state before
+           the class flips — otherwise both states land in one frame and the transition is
+           skipped. Deliberately NOT requestAnimationFrame: rAF is paused in a backgrounded tab,
+           so the bar would simply never appear for anyone who selects a row and switches away
+           and back. Same reason the chart kit polls on setInterval rather than rAF. */
+        void bar.offsetWidth;
+        bar.classList.add("is-on");
+      }
+    }
+
+    /* ---- topic editor ----
+       Tri-state per topic. The state can only be READ from rows we actually have loaded (the
+       current page), which is a real limit once the selection spans pages — but the resulting
+       ACTION is still unambiguous, because we send an explicit add/remove rather than "here is
+       the new value". That's the difference from Notion's bulk edit, which overwrites the whole
+       property and silently drops topics the user never touched. */
+    function topicId(t){ return String((t && (t.id != null ? t.id : t.tag_id)) || ""); }
+    function loadedSelectedRows(){
+      return (state.rows || []).filter(function(r){ return state.selected[String(r.prompt_id)]; });
+    }
+    function topicStateFor(id){
+      if (state.selectAllMatching) return "unknown";
+      var sel = loadedSelectedRows();
+      if (!sel.length) return "unknown";
+      var hits = sel.filter(function(r){
+        return (r.tags || []).some(function(t){ return topicId(t) === id; });
+      }).length;
+      return hits === 0 ? "none" : (hits === sel.length ? "all" : "some");
+    }
+    var topicQuery = "";
+    /* Split in two on purpose: the search field is built ONCE when the menu opens, and only the
+       list below it is rebuilt as the user types. Re-rendering the whole menu per keystroke
+       would destroy and recreate the very input being typed into, forcing a focus-and-caret
+       restore dance that breaks the moment anything else steals focus first. */
+    function topicListHtml(){
+      var list = state.topics || [];
+      var q = topicQuery.trim().toLowerCase();
+      var shown = list.filter(function(t){
+        return !q || String(t.name || "").toLowerCase().indexOf(q) > -1;
+      });
+      var items = !list.length
+        ? '<div class="upt-topicmenu-empty">No topics available</div>'
+        : (!shown.length
+            ? '<div class="upt-topicmenu-empty">No matches</div>'
+            : shown.map(function(t){
+                var id = topicId(t);
+                var st = topicStateFor(id);
+                var color = String(t.hex_light || t.hex_dark || "#6b7280");
+                if (color.charAt(0) !== "#") color = "#" + color;
+                return '<div class="upt-topicrow" data-topic="' + esc(id) + '" data-state="' + st + '">' +
+                  '<span class="upt-topiccheck is-' + st + '">' + (st === "all" ? CHECK_SVG : "") + '</span>' +
+                  '<span class="upt-topicchip" style="--ust-tag-color:' + esc(color) + '">' +
+                    (t.emoji ? '<span class="upt-topicchip-e">' + esc(t.emoji) + '</span>' : "") +
+                    '<span>' + esc(t.name == null ? "" : t.name) + '</span>' +
+                  '</span></div>';
+              }).join(""));
+      return items;
+    }
+    function renderTopicList(){
+      if (!elBulk) return;
+      var el = elBulk.querySelector(".upt-topiclist");
+      if (el) el.innerHTML = topicListHtml();
+    }
+    function renderTopicMenu(){
+      if (!elBulk) return;
+      var menu = elBulk.querySelector(".upt-topicmenu");
+      if (!menu) return;
+      menu.innerHTML =
+        ((state.topics || []).length ? '<div class="upt-topicsearch"><input class="upt-topicsearch-in" type="text" placeholder="Search topics..." autocomplete="off" spellcheck="false"/></div>' : "") +
+        '<div class="upt-topiclist">' + topicListHtml() + '</div>';
+    }
+    function setTopicMenuOpen(open){
+      if (!elBulk) return;
+      var wrap = elBulk.querySelector(".upt-bulkbar-topics");
+      var menu = elBulk.querySelector(".upt-topicmenu");
+      var btn = elBulk.querySelector("[data-bulk-topics]");
+      if (!wrap || !menu) return;
+      wrap.classList.toggle("is-open", !!open);
+      menu.setAttribute("aria-hidden", open ? "false" : "true");
+      if (btn) btn.setAttribute("aria-expanded", open ? "true" : "false");
+      if (open){
+        topicQuery = ""; renderTopicMenu();
+        var inp = menu.querySelector(".upt-topicsearch-in");
+        if (inp) setTimeout(function(){ try { inp.focus(); } catch(e){} }, 40);
+      }
+    }
+    function topicMenuOpen(){
+      return !!(elBulk && elBulk.querySelector(".upt-bulkbar-topics.is-open"));
+    }
+    function applyBulkTopic(id){
+      var t = (state.topics || []).filter(function(x){ return topicId(x) === id; })[0];
+      var st = topicStateFor(id);
+      var action = st === "all" ? "remove" : "add";
+      var p = selectionPayload();
+      p.topic_id = id;
+      p.topic_name = t ? String(t.name == null ? "" : t.name) : "";
+      p.action = action;
+      fire("data-bulktopics-fn", "uptBulkTopics", p);
+      /* Optimistic local update so the tri-state reflects the click immediately; the authoritative
+         result arrives with the next render payload. Only touches rows we have. */
+      loadedSelectedRows().forEach(function(r){
+        var tags = Array.isArray(r.tags) ? r.tags : (r.tags = []);
+        var at = -1;
+        for (var i = 0; i < tags.length; i++){ if (topicId(tags[i]) === id) { at = i; break; } }
+        if (action === "add" && at === -1 && t) tags.push(t);
+        if (action === "remove" && at > -1) tags.splice(at, 1);
+      });
+      renderTable(); renderTopicList();
+    }
+    function applyBulkStatus(){
+      var next = state.status === "inactive" ? "active" : "inactive";
+      var p = selectionPayload();
+      p.status = next;
+      fire("data-bulkstatus-fn", "uptBulkStatus", p);
+      /* Both directions are trivially reversible, so no confirm dialog — surface an undo in your
+         own toast instead. The rows leave the current view once the server answers. */
+      clearSelection();
     }
 
     /* ---------------- table ---------------- */
@@ -629,6 +885,10 @@
       root: root, state: state, columns: COLUMNS,
       storePrefix: "upt", instanceId: instanceId,
       firstKey: "prompt", firstMin: PROMPT_MIN, noActions: true,
+      /* Inactive prompts aren't being run, so there are no brand mentions to show. Removed from
+         the grid template rather than hidden with CSS — a hidden cell would leave its track
+         behind and knock the row out of line. */
+      isHidden: function(c){ return c.key === "brands" && state.status === "inactive"; },
       rowHeightSwitch: ROW_HEIGHTS, badgeSel: ".upt-cols-badge", cellPrefixes: ["up","upt"],
       onChange: function(){ render(); }
     });
@@ -779,13 +1039,36 @@
     }
 
     function ownsTarget(tg){
-      return root.contains(tg) || (elSortMenu && elSortMenu.contains(tg)) || (elColsMenu && elColsMenu.contains(tg));
+      return root.contains(tg) || (elSortMenu && elSortMenu.contains(tg)) || (elColsMenu && elColsMenu.contains(tg))
+          || (elBulk && elBulk.contains(tg));
     }
     document.addEventListener("click", function(e){
       if (!ownsTarget(e.target)) return;
       var inMenu = e.target.closest(".up-sort-menu, .up-cols-menu");
       var onOpener = e.target.closest(".up-sort-btn, .up-cols-btn");
       if (!inMenu && !onOpener) closePops();
+
+      /* --- bulk action bar (lives on document.body; ownsTarget lets its clicks through) --- */
+      if (elBulk && elBulk.contains(e.target)){
+        if (e.target.closest("[data-bulk-clear]")){ setTopicMenuOpen(false); clearSelection(); return; }
+        if (e.target.closest("[data-bulk-all]")){
+          state.selectAllMatching = true;
+          persist(); renderBulkBar(); syncSelCount(); fireSelect(); return;
+        }
+        if (e.target.closest("[data-bulk-undoall]")){
+          invalidateSelectAll();
+          persist(); renderBulkBar(); syncSelCount(); fireSelect(); return;
+        }
+        if (e.target.closest("[data-bulk-topics]")){ setTopicMenuOpen(!topicMenuOpen()); return; }
+        var tRow2 = e.target.closest("[data-topic]");
+        if (tRow2){ applyBulkTopic(tRow2.getAttribute("data-topic")); return; }
+        if (e.target.closest("[data-bulk-status]")){ setTopicMenuOpen(false); applyBulkStatus(); return; }
+        return;
+      }
+
+      /* --- Active / Inactive view switch --- */
+      var stBtn = e.target.closest("[data-status]");
+      if (stBtn){ setStatus(stBtn.getAttribute("data-status")); return; }
 
       // --- pagination ---
       var ps = e.target.closest("[data-pagesize]");
@@ -906,6 +1189,22 @@
       });
     }
 
+    /* The topic menu hangs off a body-level bar, so its outside-click can't go through the
+       component's own ownsTarget-guarded handler — it needs to see clicks anywhere. */
+    document.addEventListener("click", function(e){
+      if (!topicMenuOpen()) return;
+      if (elBulk && elBulk.contains(e.target)) return;
+      setTopicMenuOpen(false);
+    });
+    /* Escape unwinds one layer at a time: first the topic menu, then the selection itself.
+       Deliberately no focus trap on the bar — it's a toolbar, and trapping would break
+       shift-arrow range selection in the table behind it. */
+    document.addEventListener("keydown", function(e){
+      if (e.key !== "Escape" && e.key !== "Esc") return;
+      if (topicMenuOpen()){ setTopicMenuOpen(false); return; }
+      if (bulkCount() > 0) clearSelection();
+    });
+
     var lastProcAttr = String(root.getAttribute("data-processing") || "") + "|" +
                        String(root.getAttribute("data-processing2") || "");
     var explicitOverride = false;
@@ -968,6 +1267,7 @@
     function render(){
       renderTable(); renderCount(); syncHeadSorters(); syncColsBadge(); syncSelectAll(); syncBrand();
       renderPageSize(); renderPager(); applyCols(); applyResponsive(); syncReloadDim();
+      renderStatusTabs(); renderBulkBar();
       if (root.classList.contains("up-sticky")) syncTheadOffset();
     }
 
@@ -989,6 +1289,12 @@
           state.hasData = true;
         }
         if (params.totalCount != null) state.totalCount = toNum(params.totalCount);
+        /* Not in the payload yet — the Inactive tab simply renders without a count until it is. */
+        if (params.totalCountInactive != null) state.totalCountInactive = toNum(params.totalCountInactive);
+        if (params.topics != null){
+          var _t = Array.isArray(params.topics) ? params.topics : [];
+          if (_t.length) state.topics = _t;   // ignore a stray empty list so it can't wipe the editor
+        }
         if (params.rows != null){ state.loading = false; state.softReload = false; }
         if (!explicitOverride && hasProcessingAttr()) state.extLoading = readProcessing();
         persist(); render();
@@ -1004,13 +1310,20 @@
         state.query = ""; elSearchIn.value = ""; elSearch.classList.remove("is-open");
         state.sortField = DEFAULT_SORT.field; state.sortDir = DEFAULT_SORT.dir;
         state.pageSize = DEFAULT_PAGE_SIZE; state.page = 1;
-        state.selected = {}; state.brandMentioned = "";
+        state.selected = {}; state.brandMentioned = ""; invalidateSelectAll();
+        state.status = "active";
         state.widths = {}; writeWidths();
         elSearch.classList.remove("has-text");
+        setTopicMenuOpen(false);
         persist(); populateSort(); render();
         return true;
       },
       destroy: function(){
+        /* The bar is parented to document.body, so it does NOT go away with the component's own
+           markup when Bubble rebuilds the element — it has to be removed explicitly or it
+           lingers as an orphan over the new instance. */
+        if (elBulk && elBulk.parentNode) elBulk.parentNode.removeChild(elBulk);
+        elBulk = null;
         if (root.__uptController === this) root.__uptController = null;
       }
     };
@@ -1056,6 +1369,19 @@
     return true;
   }
   function doLoading(id, on){ var c = resolve(id); if (!c) return false; c.setLoading(on); return true; }
+  /* Fills the bulk topic editor. Accepts an array or a JSON string of
+     {id, name, emoji, hex_light, hex_dark} — the same shape the rows' own `tags` use, so you can
+     feed it straight from your topics table. Load it once on page load, like the brand lists in
+     urls-table/domains-table. */
+  function doTopics(id, topics){
+    var list = topics;
+    if (typeof list === "string"){ try { list = JSON.parse(list); } catch(e){ list = []; } }
+    if (!Array.isArray(list)) list = [];
+    var ctrl = id ? resolve(id) : initRoot(document.querySelector(".upt-root"));
+    if (!ctrl) return false;
+    ctrl.update({ topics: list });
+    return true;
+  }
   function doReset(id){ var c = resolve(id); if (!c) return false; return c.reset(); }
 
   var mount = UC.makeMount({
@@ -1064,7 +1390,8 @@
     resolveLocal: "__uptResolveLocal",
     queue: "__uptBootQueue",
     initRoot: initRoot,
-    api: { renderPromptsTable: doRender, setPromptsTableLoading: doLoading, resetPromptsTable: doReset },
+    api: { renderPromptsTable: doRender, setPromptsTableLoading: doLoading, resetPromptsTable: doReset,
+           setPromptsTableTopics: doTopics },
     forwardShape: { renderPromptsTable: "params", resetPromptsTable: "id" }
   });
   function rootsWithId(id){ return mount.rootsWithId(id); }

@@ -375,6 +375,10 @@
       var narrow = root.classList.contains("is-narrow");
       var vnarrow = root.classList.contains("is-vnarrow");
       return visibleCols().filter(function(c){
+        /* cfg.isHidden — a column the current VIEW removes entirely (not the user, not the
+           width). Kept separate from state.cols on purpose: writing the user's saved column
+           prefs to hide it would silently clobber their choice when the view switches back. */
+        if (cfg.isHidden && cfg.isHidden(c)) return false;
         if (vnarrow && c.dropAt === "vnarrow") return false;
         if ((narrow || vnarrow) && c.dropAt === "narrow") return false;
         return true;
@@ -466,13 +470,14 @@
     function populateCols(){
       var menu = root.querySelector(".up-cols-menu");
       if (!menu) return;   // a stale/incomplete root copy may be missing this markup
-      var vis = visibleCols();
-      var off = COLUMNS.length - vis.length;
+      var listed = COLUMNS.filter(function(c){ return !(cfg.isHidden && cfg.isHidden(c)); });
+      var vis = visibleCols().filter(function(c){ return !(cfg.isHidden && cfg.isHidden(c)); });
+      var off = listed.length - vis.length;
       var head = '<div class="up-pop-head up-pop-head-row">' +
         '<span>Columns</span>' +
         '<button class="up-pop-action' + (off >= 2 ? "" : " is-hidden") + '" type="button" data-colsall>Select all</button>' +
       '</div>';
-      var rows = COLUMNS.map(function(c){
+      var rows = listed.map(function(c){
         var on = state.cols[c.key] !== false;
         var locked = on && vis.length === 1;   // the last visible column can't be turned off
         return '<div class="up-pop-row' + (locked ? " is-locked" : "") + '" data-col="' + c.key + '">' +
