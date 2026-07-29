@@ -35,6 +35,7 @@
   data-page-fn      = "bubble_fn_uptPage_[dynamic id]"
   data-rowclick-fn  = "bubble_fn_uptRowClick_[dynamic id]"
   data-select-fn    = "bubble_fn_uptSelect_[dynamic id]"
+  data-topics-fn    = "bubble_fn_uptTopicsClick_[dynamic id]"
 
   Every one fires ONE JSON string, values pulled out on the Bubble side by regex — same
   convention as the other tables. All of these except rowclick/select are SERVER-side: they tell
@@ -45,9 +46,12 @@
     brand    {"brand_mentioned":"yes"}          "yes" | "no" | ""  (empty = off)
     page     {"limit":25,"offset":50,"page":3}
     rowclick {"prompt_id":"614ebcc4-c784-440c-aff8-0394e59ae266"}
-    select   {"selected":"id1,id2,id3","count":3}   -> fires on every checkbox change, current
-                                                        page's selection only (selection state
-                                                        itself is NOT cleared by paging/sorting)
+    select   {"selected":"id1,id2,id3","count":3}   -> fires on every checkbox change; carries the
+                                                        WHOLE selection, which deliberately
+                                                        survives paging and sorting
+    topics   {"prompt_id":"614ebcc4-…"}             -> click on the Topics cell. Deliberately does
+                                                        NOT also fire rowclick — open your topic
+                                                        management for that prompt here.
 
   order tokens: prompt_asc/desc, visibility_asc/desc, rank_asc/desc, sentiment_asc/desc,
   created_asc/desc.
@@ -173,9 +177,12 @@
      data-brand-fn="bubble_fn_uptBrand"
      data-page-fn="bubble_fn_uptPage"
      data-rowclick-fn="bubble_fn_uptRowClick"
-     data-select-fn="bubble_fn_uptSelect">
+     data-select-fn="bubble_fn_uptSelect"
+     data-topics-fn="bubble_fn_uptTopicsClick">
   <div class="up-head">
-    <div class="up-heading"><span class="up-head-label">Prompts</span><span class="up-head-sep"></span><span class="up-head-count"></span></div>
+    <div class="up-heading"><span class="up-head-label">Prompts</span><span class="up-head-sep"></span><span class="up-head-count"></span>
+      <span class="upt-selcount"><span class="upt-selcount-n">0 selected</span><button class="upt-selcount-clear" type="button" aria-label="Clear selection"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></span>
+    </div>
     <div class="up-head-tools">
       <button class="upt-brand-toggle" type="button" data-tip="Filter by brand mention">
         <span class="upt-brand-toggle-lbl">

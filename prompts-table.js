@@ -210,7 +210,10 @@
     { key: "visibility", label: "Visibility",      w: "minmax(150px, 1fr)", min: 150 },
     { key: "rank",       label: "Rank",            w: "minmax(90px, 1fr)",  min: 90,  dropAt: "vnarrow" },
     { key: "sentiment",  label: "Sentiment",       w: "minmax(120px, 1fr)", min: 120, dropAt: "narrow" },
-    { key: "brands",     label: "Brand Mentions",  w: "minmax(12%, 1fr)",   min: 150 },
+    /* 178px, same as urls-table's identical column: 4 × 32px avatars (−6px overlap each) plus
+       the "+N" label plus the cell's own 28px padding, with headroom for the hover spread.
+       A %-based floor let it collapse below that and clipped the stack. */
+    { key: "brands",     label: "Brand Mentions",  w: "minmax(178px, 1fr)", min: 178 },
     { key: "topics",     label: "Topics",          w: "minmax(12%, 1fr)",   min: 150, dropAt: "vnarrow" },
     { key: "market",     label: "Market",          w: "minmax(8%, 0.6fr)", min: 90,  dropAt: "narrow" },
     { key: "created",    label: "Created",         w: "minmax(10%, 0.7fr)",min: 110, dropAt: "narrow" }
@@ -389,6 +392,21 @@
       });
       persist(); renderTable(); syncSelectAll(); fireSelect();
     }
+    function clearSelection(){
+      if (!selectedIds().length) return;
+      state.selected = {};
+      persist(); renderTable(); syncSelectAll(); fireSelect();
+    }
+    /* Counts the WHOLE selection, not just this page's — state.selected deliberately survives
+       paging/sorting, so a user who selected rows on page 1 and paged on still sees them counted. */
+    function syncSelCount(){
+      var el = root.querySelector(".upt-selcount");
+      if (!el) return;
+      var n = selectedIds().length;
+      el.classList.toggle("is-on", n > 0);
+      var nEl = el.querySelector(".upt-selcount-n");
+      if (nEl) nEl.textContent = n === 1 ? "1 selected" : (n + " selected");
+    }
     function syncSelectAll(){
       var box = root.querySelector("[data-selectall]");
       if (!box) return;
@@ -401,6 +419,7 @@
       box.classList.toggle("is-indeterminate", some);
       box.setAttribute("aria-checked", all ? "true" : (some ? "mixed" : "false"));
       box.innerHTML = all ? CHECK_SVG : "";
+      syncSelCount();
     }
 
     /* ---------------- table ---------------- */
@@ -649,7 +668,7 @@
       rank: { h: "Rank",
         t: "Your brand's average position among all brands mentioned for this prompt. A lower number is better." },
       sentiment: { h: "Sentiment",
-        t: "How positively your brand is described when mentioned for this prompt, over the last 30 days." },
+        t: "How positively your brand is described when it's mentioned for this prompt." },
       brands: { h: "Brand Mentions",
         t: "Which of your tracked brands are mentioned in AI answers for this prompt. Hover a logo to see its name." },
       market: { h: "Market",
@@ -751,6 +770,7 @@
       if (e.target.closest(".upt-brand-toggle")){ closePops(); cycleBrand(); return; }
 
       // --- selection (must come before header-sorter / row-click) ---
+      if (e.target.closest(".upt-selcount-clear")){ clearSelection(); return; }
       if (e.target.closest("[data-selectall]")){ toggleSelectAll(); return; }
       var selBox = e.target.closest("[data-select]");
       if (selBox){ e.stopPropagation(); toggleSelectRow(selBox.getAttribute("data-select")); return; }
@@ -789,6 +809,20 @@
       // --- header sorters ---
       var th = e.target.closest(".up-th.is-sortable");
       if (th){ headSortClick(th.getAttribute("data-sortcol")); return; }
+
+      /* --- topics cell (own event; must come BEFORE the row-click handler) ---
+         Clicking the tags opens topic management for that prompt rather than the prompt's own
+         detail page, so it deliberately swallows the row click. */
+      var topicsTd = e.target.closest(".upt-td-topics");
+      if (topicsTd && root.contains(topicsTd)){
+        var tRow = topicsTd.closest(".up-row");
+        if (tRow && !tRow.classList.contains("up-tsk")){
+          e.stopPropagation();
+          var tId = tRow.getAttribute("data-id");
+          if (tId) fire("data-topics-fn", "uptTopicsClick", { prompt_id: tId });
+        }
+        return;
+      }
 
       // --- row click ---
       var row = e.target.closest(".up-row");

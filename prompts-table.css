@@ -44,6 +44,8 @@
    72px default (2-line clamp) / 55px compact (1-line) / dynamic (auto height, full text) — the
    only genuinely new row-height mode this app has, wired via UC.makeColumns' rowHeightSwitch. */
 .upt-td-prompt { gap: 10px; }
+/* extra breathing room specifically between the checkbox and the prompt text */
+.upt-td-prompt .upt-check { margin-right: 6px; }
 .upt-prompt-wrap { display: flex; flex-direction: column; justify-content: center; min-width: 0; flex: 1 1 auto; }
 .upt-prompt-text {
   font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.35; letter-spacing: -0.01em;
@@ -53,9 +55,17 @@
 .upt-root.is-rh-compact .upt-prompt-text { -webkit-line-clamp: 1; }
 /* :not(.up-tsk) — skeleton rows have no real content to size against, so letting them go
    height:auto collapsed them to whatever the tiny skeleton bar needed. Skeletons stay at the
-   normal 72px row height in every row-height mode; only real rows with real text grow. */
-.upt-root.is-rh-dynamic .up-row:not(.up-tsk) { height: auto; flex: 0 0 auto; }
-.upt-root.is-rh-dynamic .up-row:not(.up-tsk) .up-td { height: auto; align-items: center; padding-top: 14px; padding-bottom: 14px; }
+   normal 72px row height in every row-height mode; only real rows with real text grow.
+   align-items:stretch is the important bit: .up-row is a GRID that inherits align-items:center
+   from core, which sizes every cell to its own content and centres it — so with height:auto the
+   cells of one row all ended up different heights and their borders no longer lined up. Stretch
+   makes every cell fill the full row height; .up-td is itself a flex row with align-items:center,
+   so the content still sits vertically centred inside it. */
+.upt-root.is-rh-dynamic .up-row:not(.up-tsk) {
+  height: auto; flex: 0 0 auto; align-items: stretch;
+  min-height: 55px;   /* never shorter than Compact, however short the prompt is */
+}
+.upt-root.is-rh-dynamic .up-row:not(.up-tsk) .up-td { height: auto; padding-top: 14px; padding-bottom: 14px; }
 .upt-root.is-rh-dynamic .upt-prompt-text { -webkit-line-clamp: unset; display: block; white-space: normal; overflow: visible; }
 /* selected rows keep a persistent tint, same colour the hover state already uses */
 .up-row.is-selected, .up-row.is-selected:hover { background: var(--vt-row-hover); }
@@ -73,10 +83,28 @@
 /* ---------- topics cell ----------
    The .ust-* widget styles itself (injected once by UstTopics) — only the table-cell frame
    around it is ours: no clipping, so the "+N" hover popup (which escapes the row via
-   position:fixed) isn't cut off by the row/column boundary underneath it. */
+   position:fixed) isn't cut off by the row/column boundary underneath it.
+   The cell is its own click target (opens topic management, not the prompt detail page), so it
+   gets its own hover tint to advertise that — deliberately a shade stronger than the row hover
+   it sits inside, otherwise it's invisible once the whole row is already highlighted. */
 .upt-td-topics { overflow: visible; min-width: 0; }
 .upt-td-topics .ust-cell { overflow: visible; }
 .upt-td-topics .ust-row { overflow: hidden; }
+.up-row:not(.up-tsk) .upt-td-topics { cursor: pointer; transition: background 120ms ease; }
+.up-row:not(.up-tsk) .upt-td-topics:hover { background: var(--vc-heading-bg); }
+
+/* ---------- selection count ----------
+   Counts the whole selection across pages (selection survives paging), sits right after the
+   total in the heading. The X clears it — the same affordance the filter chips already use. */
+.upt-selcount { display: none; align-items: center; gap: 6px; margin-left: 10px; height: 24px;
+  padding: 0 4px 0 9px; border-radius: 7px; background: var(--vc-heading-bg);
+  font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; flex: 0 0 auto; }
+.upt-selcount.is-on { display: inline-flex; }
+.upt-selcount-clear { width: 18px; height: 18px; border: 0; padding: 0; border-radius: 5px;
+  background: transparent; color: var(--vc-muted); cursor: pointer; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center; }
+.upt-selcount-clear svg { width: 12px; height: 12px; display: block; }
+.upt-selcount-clear:hover { background: var(--vc-switch-bg); color: var(--vc-text); }
 
 /* ---------- responsive: narrow first column and dropped columns ---------- */
 .up-root.is-vnarrow .upt-td-prompt .up-row-goto { display: none; }
