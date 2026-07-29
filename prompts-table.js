@@ -602,12 +602,33 @@
        the app's own existing example topic colors already sit at) — because only hex_light is
        ever actually rendered (see doTopics/topicListHtml), the same 32 values have to read
        acceptably in both themes rather than getting a per-theme pass. */
+    var TOPIC_COLOR_COLS = 8;   // must match .upt-colorgrid's column count
     var TOPIC_COLOR_PALETTE = [
-      "#1860dc", "#1651b6", "#7da4e8", "#4969a2", "#405882", "#8da3c9", "#2956a3", "#86a3d5",
-      "#dc1839", "#ac152f", "#ea8696", "#a24958", "#85424d", "#cc939d", "#a3293d", "#d78e9a",
-      "#14b86b", "#0c643b", "#21ba73", "#49a278", "#2f6049", "#5fb48d", "#196642", "#40b57e",
-      "#dc8718", "#7b4c0f", "#dc9538", "#a27b49", "#6a5334", "#be9e74", "#76501e", "#c79b60"
+      /* vibrant */ "#de1b22", "#b65616", "#8d6a11", "#108440", "#107c84", "#1b6eda", "#9145e8", "#d51a8b",
+      /* muted   */ "#b47476", "#a87b5d", "#988552", "#4f926b", "#509195", "#6a88af", "#977ab8", "#b27098",
+      /* deep    */ "#ab2b2f", "#8b4c23", "#725a1d", "#1b6a3c", "#1b656a", "#295ea3", "#7a33cc", "#a32972"
     ];
+    /* Each ROW is one tone scale across the full hue range, each COLUMN one hue — so scanning
+       down picks a mood and across picks a color.
+       The rows are banded by PERCEPTUAL luminance, not by a fixed HSL lightness: at the same L,
+       amber is far brighter than blue, so a fixed-L row came out visibly ragged. Solving each
+       hue for a target luminance instead lands every swatch in a row within ~0.1 of the same
+       contrast ratio. Those bands are also what keeps all 24 legible in BOTH themes at once
+       (>=2.5:1 against white and against near-black) — necessary because only hex_light is ever
+       rendered, so one value has to carry both. */
+    function swatchInk(hex){
+      var h = String(hex).replace("#", "");
+      function lin(c){ c = parseInt(c, 16) / 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
+      var y = 0.2126 * lin(h.slice(0,2)) + 0.7152 * lin(h.slice(2,4)) + 0.0722 * lin(h.slice(4,6));
+      /* 0.179 is where contrast-against-white and contrast-against-black are exactly equal
+         (solve 1.05/(Y+.05) = (Y+.05)/.05), so it picks whichever tick is genuinely more legible
+         rather than guessing at a "looks dark enough" cutoff.
+         The three palette rows were each tuned to sit clearly on ONE side of it — vibrant and
+         deep take a white tick, muted a near-black one. A row straddling the boundary would show
+         some white and some black ticks side by side, which reads as a bug rather than a
+         contrast decision. */
+      return y > 0.179 ? "#151515" : "#ffffff";
+    }
     /* emoji-picker-element (MIT, github.com/nolanlawson/emoji-picker-element) — a self-contained
        Web Component with its own emoji data, no framework/build step required. Loaded lazily as a
        real ES module <script> only once the emoji trigger is actually clicked, so nobody pays for
@@ -661,6 +682,11 @@
         pickOpen = null;
         renderTopicList();
       });
+      /* The bar hangs off <body>, outside .up-root — core's tooltips delegate from whatever root
+         they're given, so without registering the bar as its own root no [data-tip] inside it
+         would ever fire. The tooltip ELEMENT and its state are page singletons, so this shares
+         one tooltip with the table rather than creating a second. */
+      UC.makeTooltips(elBulk, function(){ return isDark; });
       document.body.appendChild(elBulk);
       return elBulk;
     }
@@ -826,8 +852,14 @@
       } else if (colorOpen){
         panel = '<div class="upt-topicpickpanel"><div class="upt-colorgrid">' +
           TOPIC_COLOR_PALETTE.map(function(hx){
-            return '<button type="button" class="upt-colorswatch' + (hx === color ? " is-picked" : "") +
-              '" data-color="' + esc(hx) + '" style="background:' + esc(hx) + '" aria-label="' + esc(hx) + '"></button>';
+            var on = hx === color;
+            /* The tick sits INSIDE the blob rather than ringing it: a ring changes the swatch's
+               footprint and made the whole grid twitch on every pick. */
+            return '<button type="button" class="upt-colorcell" data-color="' + esc(hx) + '"' +
+              ' aria-label="' + esc(hx) + '" aria-pressed="' + (on ? "true" : "false") + '">' +
+              '<span class="upt-colorblob" style="background:' + esc(hx) +
+                (on ? ";color:" + swatchInk(hx) : "") + '">' + (on ? CHECK_SVG : "") + '</span>' +
+            '</button>';
           }).join("") +
         '</div></div>';
       }
@@ -835,11 +867,11 @@
           '<button type="button" class="upt-topiccreate" data-topic-create="' + esc(query) + '">' +
             PLUS_SVG + '<span>Create &ldquo;<strong>' + esc(query) + '</strong>&rdquo;</span></button>' +
           '<button type="button" class="upt-topiccreate-pick' + (emojiOpen ? " is-open" : "") +
-            '" data-topic-pick="emoji" aria-label="Pick emoji" aria-expanded="' + (emojiOpen ? "true" : "false") + '">' +
+            '" data-topic-pick="emoji" data-tip="Topic Emoji" aria-label="Topic emoji" aria-expanded="' + (emojiOpen ? "true" : "false") + '">' +
             (newTopicEmoji ? esc(newTopicEmoji) : SMILE_SVG) +
           '</button>' +
           '<button type="button" class="upt-topiccreate-pick' + (colorOpen ? " is-open" : "") +
-            '" data-topic-pick="color" aria-label="Pick color" aria-expanded="' + (colorOpen ? "true" : "false") + '">' +
+            '" data-topic-pick="color" data-tip="Topic Color" aria-label="Topic color" aria-expanded="' + (colorOpen ? "true" : "false") + '">' +
             '<span class="upt-topiccreate-swatch" style="background:' + esc(color) + '"></span>' +
           '</button>' +
         '</div>' +
@@ -935,6 +967,12 @@
         newTopicEmoji = "";
         newTopicColor = null;
         pickOpen = null;
+        /* Warmed HERE rather than on the emoji button itself: the library downloads a sizeable
+           emoji JSON and fills IndexedDB the first time, which was the stall on first open. The
+           fetch now overlaps the seconds the user spends reading the chip list, so by the time
+           the emoji button is actually clicked the data is usually already in place. Still not
+           on page load — nobody who never opens Topics should pay for it. */
+        ensureEmojiLib();
         state.stagedTopicIds = topicInitialStaged();
         renderTopicMenu();
         var inp = panel.querySelector(".upt-topicsearch-in");

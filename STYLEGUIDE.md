@@ -1411,6 +1411,32 @@ applySticky();   /* einmal sofort */
   Größenordnung klein).
 - **`aria-sort`** am aktiven Spaltenkopf setzen (`ascending`/`descending`/`none`).
 
+## 23b. Abstände an Separatoren
+
+**Regel: ober- und unterhalb einer Trennlinie steht immer derselbe Abstand — und in einer
+Fläche ist es überall derselbe Wert.** Ein Separator trennt zwei Blöcke; sitzt er näher am
+einen als am anderen, liest er sich als Teil dieses Blocks statt als Trennung.
+
+Praktisch heißt das: **ein Token pro Fläche**, nicht pro Regel eine Zahl.
+
+```css
+.upt-bulkbar { --upt-sep-gap: 12px; }
+
+.upt-bulkpanel     { margin-top: var(--upt-sep-gap); padding-top: var(--upt-sep-gap); }  /* border-top */
+.upt-topicpickpanel{ margin-top: var(--upt-sep-gap); padding-top: var(--upt-sep-gap); }  /* border-top */
+.upt-topichead     { padding-bottom: var(--upt-sep-gap); }   /* keine Linie, gleicher Rhythmus */
+.upt-topicfoot     { margin-top: var(--upt-sep-gap); }
+```
+
+Warum als Regel und nicht als Einzelfall: im Topic-Editor standen Panel (12px), Head (10px) und
+Foot (10px) lange nebeneinander, ohne dass es auffiel — **sichtbar wurde es erst, als ein
+zusätzliches Panel aufklappte** und drei dieser Abstände übereinander lagen. Ungleiche
+Separator-Abstände fallen einzeln fast nie auf und in der Summe sofort; deshalb gehören sie an
+ein Token, nicht in die jeweilige Regel.
+
+Auch Blöcke **ohne** Linie (Head, Foot) nehmen denselben Wert — sonst rutscht der Rhythmus der
+Fläche auseinander, sobald ein Abschnitt ein- oder ausgeblendet wird.
+
 ## 24. Loading — explicitOverride
 
 `setLoading(on)` muss **immer** greifen (auch wenn ein `data-processing`-Attribut existiert)

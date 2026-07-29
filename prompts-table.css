@@ -125,6 +125,11 @@
   --vc-text: #1f1f1b; --vc-muted: #6f737c; --vc-border: #e0e2e6;
   --vc-heading-bg: #f5f5f5; --vc-switch-bg: #f5f5f5; --vc-third: #9e9e9e;
   --vc-hover-border: #6f6f6f; --up-surface: #ffffff;
+  /* The one gap used on BOTH sides of every separator inside the bar — see STYLEGUIDE "Abstände
+     an Separatoren". Hardcoding it per rule is what left the panel at 12px while the head and
+     foot sat at 10px, which only became obvious once a picker opened and stacked three of those
+     rules on top of each other. */
+  --upt-sep-gap: 12px;
 
   position: fixed !important;
   bottom: 80px !important;
@@ -202,14 +207,17 @@
   padding-top: 0;
 }
 .upt-bulkbar.is-topics .upt-bulkpanel {
-  max-height: 340px; opacity: 1; margin-top: 12px; padding-top: 12px; border-top-color: var(--vc-border);
+  max-height: 340px; opacity: 1;
+  margin-top: var(--upt-sep-gap); padding-top: var(--upt-sep-gap); border-top-color: var(--vc-border);
 }
 /* The emoji/color picker for the inline create row needs more room than the usual chip grid —
    grown here rather than let the picker float, so it never fights .upt-bulkpanel's own
    overflow:hidden (which the collapse/expand animation above needs to keep). */
-.upt-bulkbar.is-topics.is-picking .upt-bulkpanel { max-height: 560px; }
+.upt-bulkbar.is-topics.is-picking .upt-bulkpanel { max-height: 480px; }
 @media (prefers-reduced-motion: reduce){ .upt-bulkpanel { transition-duration: 1ms; } }
-.upt-topichead { display: flex; align-items: center; gap: 8px; padding: 0 0 10px; }
+/* One token for every gap that meets a separator (see --upt-sep-gap on .upt-bulkbar). The head
+   has no rule under it but shares the value so the panel's internal rhythm stays even. */
+.upt-topichead { display: flex; align-items: center; gap: 8px; padding: 0 0 var(--upt-sep-gap); }
 .upt-topicsearch-wrap { flex: 1 1 auto; min-width: 0; display: flex; align-items: center;
   height: 32px; padding: 0 4px 0 10px; border-radius: 9px;
   border: 1px solid var(--vc-border); background: transparent; }
@@ -293,16 +301,50 @@
 /* Grows the panel inline instead of floating — a floating popover here would sit inside
    .upt-topiclist's own scroll/overflow (or .upt-bulkpanel's, needed for its collapse animation)
    and get clipped by one of them. See .is-picking / .upt-topiclist.is-create above. */
-.upt-topicpickpanel { flex: 0 0 100%; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--vc-border); }
-.upt-colorgrid { display: grid; grid-template-columns: repeat(8, 20px); gap: 6px; justify-content: start; }
-.upt-colorswatch { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid transparent;
-  cursor: pointer; padding: 0; box-shadow: inset 0 0 0 1px rgba(0,0,0,.1); }
-.upt-colorswatch.is-picked { border-color: var(--vc-text);
-  box-shadow: 0 0 0 2px var(--up-surface), 0 0 0 3.5px var(--vc-text); }
-.upt-emojipicker { width: 100%; max-width: 340px; height: 320px; }
+.upt-topicpickpanel { flex: 0 0 100%;
+  margin-top: var(--upt-sep-gap); padding-top: var(--upt-sep-gap);
+  border-top: 1px solid var(--vc-border);
+  display: flex; justify-content: center; }
+/* Rows are tone scales (vibrant / muted / deep), columns are hues — read down for a mood,
+   across for a color. Centred, because a left-aligned 8-wide grid under a full-width row above
+   it looked like it had fallen over. */
+.upt-colorgrid { display: grid; grid-template-columns: repeat(8, 32px); gap: 6px; }
+/* The 32x32 cell is the hit target and carries the hover, the blob inside is just the colour —
+   splitting them is what lets the swatch stay a fixed size while the cell gets a proper
+   button-sized surface, instead of a 20px dot you have to aim at. */
+.upt-colorcell { width: 32px; height: 32px; padding: 0; border: 0; border-radius: 8px;
+  background: transparent; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background 120ms ease; }
+.upt-colorcell:hover { background: var(--vc-heading-bg); }
+/* No inset ring and no fractional-px spread: an inset shadow on a 20px circle plus a 3.5px
+   outer ring is what made these look soft/smeared rather than crisp. The blob is now a plain
+   filled circle at whole-pixel size, and selection is shown INSIDE it. */
+.upt-colorblob { width: 20px; height: 20px; border-radius: 50%; display: inline-flex;
+  align-items: center; justify-content: center; flex: 0 0 auto; }
+.upt-colorblob svg { width: 11px; height: 11px; display: block; stroke: currentColor; }
+/* Wider and shallower than the library's default: the panel is ~760px across, so a narrow tall
+   picker wasted most of it and pushed the bar down the screen. --num-columns is the supported
+   knob for this (the grid is shadow DOM, so plain CSS can't reach in). */
+.upt-emojipicker {
+  /* 280px = the picker's own chrome (search + category nav + favourites bar) plus five whole
+     emoji rows; at 250 the fifth row was sliced in half by the fixed height. */
+  width: 100%; height: 280px;
+  --num-columns: 16;
+  --emoji-size: 1.25rem;
+  --emoji-padding: 0.35rem;
+  --border-radius: 10px;
+  --border-color: var(--vc-border);
+  --background: transparent;
+  --input-border-radius: 9px;
+  --input-border-color: var(--vc-border);
+  --input-font-size: 12.5px;
+  --indicator-color: var(--vc-text);
+  --outline-color: var(--vc-hover-border);
+}
 /* Both right-aligned: Add Topic hands off to your own topic-creation UI without touching the
    staged selection, Apply is the one control that actually sends it. */
-.upt-topicfoot { margin-top: 10px; display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.upt-topicfoot { margin-top: var(--upt-sep-gap); display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
 .upt-topicadd { flex: 0 0 auto; height: 34px; padding: 0 14px; border-radius: 9px;
   border: 1px dashed var(--vc-border); background: transparent; color: var(--vc-muted);
   cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 500;
