@@ -594,6 +594,37 @@
     var CLOSE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
     var TAG_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>';
     var PLUS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+    var SMILE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>';
+    /* First stop of the tag creator this table will eventually need in full — for now it lives
+       only where a brand-new topic can be named: the inline "no matches, create it" row.
+       4 hue families x 8 shades each. Every one of the 32 was picked by checking WCAG contrast
+       against both a plain white and a plain near-black background (>= 2.5:1, in line with what
+       the app's own existing example topic colors already sit at) — because only hex_light is
+       ever actually rendered (see doTopics/topicListHtml), the same 32 values have to read
+       acceptably in both themes rather than getting a per-theme pass. */
+    var TOPIC_COLOR_PALETTE = [
+      "#1860dc", "#1651b6", "#7da4e8", "#4969a2", "#405882", "#8da3c9", "#2956a3", "#86a3d5",
+      "#dc1839", "#ac152f", "#ea8696", "#a24958", "#85424d", "#cc939d", "#a3293d", "#d78e9a",
+      "#14b86b", "#0c643b", "#21ba73", "#49a278", "#2f6049", "#5fb48d", "#196642", "#40b57e",
+      "#dc8718", "#7b4c0f", "#dc9538", "#a27b49", "#6a5334", "#be9e74", "#76501e", "#c79b60"
+    ];
+    /* emoji-picker-element (MIT, github.com/nolanlawson/emoji-picker-element) — a self-contained
+       Web Component with its own emoji data, no framework/build step required. Loaded lazily as a
+       real ES module <script> only once the emoji trigger is actually clicked, so nobody pays for
+       ~200KB of emoji data just for having the table on the page. Once the custom element is
+       defined, any <emoji-picker> already sitting in the DOM upgrades itself automatically — no
+       manual re-mounting needed after the fetch resolves. */
+    var EMOJI_LIB_URL = "https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js";
+    var emojiLibPromise = null;
+    function ensureEmojiLib(){
+      if (window.customElements && window.customElements.get("emoji-picker")) return;
+      if (emojiLibPromise) return;
+      emojiLibPromise = true;
+      var s = document.createElement("script");
+      s.type = "module";
+      s.textContent = 'import "' + EMOJI_LIB_URL + '";';
+      document.head.appendChild(s);
+    }
     /* Lives on document.body, NOT inside the component root: it has to sit bottom-centre of the
        PAGE, and a position:fixed element is positioned against the nearest ancestor that has a
        transform/filter/perspective — which Bubble containers frequently do. Parenting it to body
@@ -617,7 +648,18 @@
         topicQuery = e.target.value;
         var head = elBulk.querySelector(".upt-topichead");
         if (head) head.classList.toggle("has-text", topicQuery.length > 0);
+        pickOpen = null;   // editing the intended name invalidates whichever picker was open
         renderTopicList();   // the input itself is left untouched, so focus and caret survive
+      });
+      /* emoji-picker-element dispatches this (bubbling, composed) from inside its shadow root.
+         Delegated here rather than bound per-instance because the <emoji-picker> element itself
+         gets torn down and recreated on every re-render while the picker is open. */
+      elBulk.addEventListener("emoji-click", function(e){
+        var unicode = e.detail && e.detail.unicode;
+        if (!unicode) return;
+        newTopicEmoji = unicode;
+        pickOpen = null;
+        renderTopicList();
       });
       document.body.appendChild(elBulk);
       return elBulk;
@@ -722,24 +764,36 @@
       syncTopicFoot();
     }
     var topicQuery = "";
+    /* Draft state for the inline "create a new topic" row — see topicCreateHtml(). */
+    var newTopicEmoji = "";
+    var newTopicColor = null;
+    var pickOpen = null;   // null | "emoji" | "color" — which picker (if any) is expanded
     /* Split in three on purpose: the head (search + reset + count) is built ONCE when the menu
        opens; the chip list is rebuilt per keystroke/toggle; the foot's count/disabled-state is
        patched separately from a toggle so a click doesn't also tear down the search input. */
+    function topicShown(){
+      var list = state.topics || [];
+      var qLower = topicQuery.trim().toLowerCase();
+      return list.filter(function(t){
+        return !qLower || String(t.name || "").toLowerCase().indexOf(qLower) > -1;
+      });
+    }
+    /* True once a typed query has zero matches — the create-affordance state, and the one case
+       where renderTopicList() has to free the list from its own chip-grid max-height/scroll. */
+    function topicIsCreateMode(){
+      return (state.topics || []).length > 0 && topicShown().length === 0;
+    }
     function topicListHtml(){
       var list = state.topics || [];
       var q = topicQuery.trim();
-      var qLower = q.toLowerCase();
-      var shown = list.filter(function(t){
-        return !qLower || String(t.name || "").toLowerCase().indexOf(qLower) > -1;
-      });
+      var shown = topicShown();
       var items = !list.length
         ? '<div class="upt-topicmenu-empty">No topics available</div>'
         : (!shown.length
             /* A typed query with zero matches is the exact moment "create it instead" is the
                obvious next action — surfaced inline rather than making the user go find the
                separate Add Topic button and retype the name there. */
-            ? '<button type="button" class="upt-topiccreate" data-topic-create="' + esc(q) + '">' +
-                PLUS_SVG + '<span>Create &ldquo;<strong>' + esc(q) + '</strong>&rdquo;</span></button>'
+            ? topicCreateHtml(q)
             : shown.map(function(t){
                 var id = topicId(t);
                 var on = isStaged(id);
@@ -754,6 +808,43 @@
               }).join(""));
       return items;
     }
+    /* The inline "create a new topic" row, plus — first piece of the fuller tag creator this
+       table will need later — an emoji and a color picker right next to it. Neither the emoji
+       nor the color are staged in any global sense; they only ever travel along with THIS create
+       click (see the data-topic-create handler). */
+    function topicCreateHtml(query){
+      var color = newTopicColor || TOPIC_COLOR_PALETTE[0];
+      var emojiOpen = pickOpen === "emoji";
+      var colorOpen = pickOpen === "color";
+      var panel = "";
+      if (emojiOpen){
+        /* Explicit "light"/"dark" class, not just omitting "dark" in light mode — left unset,
+           emoji-picker-element falls back to the OS's own prefers-color-scheme instead of this
+           table's theme, which silently mismatched on any device set to dark. */
+        panel = '<div class="upt-topicpickpanel"><emoji-picker class="upt-emojipicker ' +
+          (isDark ? "dark" : "light") + '"></emoji-picker></div>';
+      } else if (colorOpen){
+        panel = '<div class="upt-topicpickpanel"><div class="upt-colorgrid">' +
+          TOPIC_COLOR_PALETTE.map(function(hx){
+            return '<button type="button" class="upt-colorswatch' + (hx === color ? " is-picked" : "") +
+              '" data-color="' + esc(hx) + '" style="background:' + esc(hx) + '" aria-label="' + esc(hx) + '"></button>';
+          }).join("") +
+        '</div></div>';
+      }
+      return '<div class="upt-topiccreate-row">' +
+          '<button type="button" class="upt-topiccreate" data-topic-create="' + esc(query) + '">' +
+            PLUS_SVG + '<span>Create &ldquo;<strong>' + esc(query) + '</strong>&rdquo;</span></button>' +
+          '<button type="button" class="upt-topiccreate-pick' + (emojiOpen ? " is-open" : "") +
+            '" data-topic-pick="emoji" aria-label="Pick emoji" aria-expanded="' + (emojiOpen ? "true" : "false") + '">' +
+            (newTopicEmoji ? esc(newTopicEmoji) : SMILE_SVG) +
+          '</button>' +
+          '<button type="button" class="upt-topiccreate-pick' + (colorOpen ? " is-open" : "") +
+            '" data-topic-pick="color" aria-label="Pick color" aria-expanded="' + (colorOpen ? "true" : "false") + '">' +
+            '<span class="upt-topiccreate-swatch" style="background:' + esc(color) + '"></span>' +
+          '</button>' +
+        '</div>' +
+        panel;
+    }
     /* animate=true runs a tiny FLIP: capture each chip's position before the rebuild, then ease
        from there — so a toggle that reflows the wrap (a chip growing a checkbox pushes the next
        one to a new line) reads as a slide instead of a jump. Skipped while typing: a full
@@ -765,6 +856,11 @@
       /* At the per-prompt cap, chips you haven't staged can't be added anyway — dimming them
          (see .upt-topiclist.is-full in the CSS) says so before the click does nothing. */
       el.classList.toggle("is-full", stagedCount() >= TOPIC_MAX);
+      /* Create-mode has nothing to wrap/scroll — freed from the chip grid's own max-height so an
+         open picker panel isn't clipped by it (see .upt-topiclist.is-create in the CSS). */
+      var inCreateMode = topicIsCreateMode();
+      el.classList.toggle("is-create", inCreateMode);
+      elBulk.classList.toggle("is-picking", inCreateMode && !!pickOpen);
       if (!animate){ el.innerHTML = topicListHtml(); return; }
       var before = {};
       Array.prototype.forEach.call(el.querySelectorAll("[data-topic]"), function(c){
@@ -831,10 +927,14 @@
         try { document.activeElement.blur(); } catch(e){}
       }
       elBulk.classList.toggle("is-topics", !!open);
+      if (!open) elBulk.classList.remove("is-picking");
       panel.setAttribute("aria-hidden", open ? "false" : "true");
       if (btn) btn.setAttribute("aria-expanded", open ? "true" : "false");
       if (open){
         topicQuery = "";
+        newTopicEmoji = "";
+        newTopicColor = null;
+        pickOpen = null;
         state.stagedTopicIds = topicInitialStaged();
         renderTopicMenu();
         var inp = panel.querySelector(".upt-topicsearch-in");
@@ -1282,12 +1382,31 @@
           return;
         }
         if (e.target.closest("[data-topic-apply]")){ applyStagedTopics(); return; }
+        var pickBtn = e.target.closest("[data-topic-pick]");
+        if (pickBtn){
+          var kind = pickBtn.getAttribute("data-topic-pick");
+          pickOpen = pickOpen === kind ? null : kind;
+          if (pickOpen === "emoji") ensureEmojiLib();   // fire-and-forget; the tag upgrades itself once defined
+          renderTopicList();
+          return;
+        }
+        var colorBtn = e.target.closest("[data-color]");
+        if (colorBtn){
+          newTopicColor = colorBtn.getAttribute("data-color");
+          pickOpen = null;
+          renderTopicList();
+          return;
+        }
         var createBtn = e.target.closest("[data-topic-create]");
         if (createBtn){
-          /* Same hand-off as the plain Add Topic button, plus the typed name — the create UI can
-             pre-fill it instead of making the user retype what they just searched for. */
+          /* Same hand-off as the plain Add Topic button, plus the typed name and whatever emoji/
+             color were picked — the create UI can use them straight away instead of asking again. */
           var cp = selectionPayload();
           cp.new_topic_name = createBtn.getAttribute("data-topic-create") || "";
+          cp.new_topic_emoji = newTopicEmoji || "";
+          var pickedHex = newTopicColor || TOPIC_COLOR_PALETTE[0];
+          cp.new_topic_hex_light = pickedHex;
+          cp.new_topic_hex_dark = pickedHex;
           fire("data-addtopics-fn", "uptAddTopics", cp);
           return;
         }

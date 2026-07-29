@@ -204,6 +204,10 @@
 .upt-bulkbar.is-topics .upt-bulkpanel {
   max-height: 340px; opacity: 1; margin-top: 12px; padding-top: 12px; border-top-color: var(--vc-border);
 }
+/* The emoji/color picker for the inline create row needs more room than the usual chip grid —
+   grown here rather than let the picker float, so it never fights .upt-bulkpanel's own
+   overflow:hidden (which the collapse/expand animation above needs to keep). */
+.upt-bulkbar.is-topics.is-picking .upt-bulkpanel { max-height: 560px; }
 @media (prefers-reduced-motion: reduce){ .upt-bulkpanel { transition-duration: 1ms; } }
 .upt-topichead { display: flex; align-items: center; gap: 8px; padding: 0 0 10px; }
 .upt-topicsearch-wrap { flex: 1 1 auto; min-width: 0; display: flex; align-items: center;
@@ -230,6 +234,10 @@
 /* Wrapped, not a stacked list: the topics read as a set you pick from, and a dozen of them fit
    in three rows instead of needing a scroll. */
 .upt-topiclist { max-height: 190px; overflow-y: auto; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 8px; }
+/* Create-mode holds at most one row (+ optionally a picker panel) — no grid to wrap, and the
+   190px cap would clip an open picker instead of just letting the panel grow (see .is-picking
+   above). */
+.upt-topiclist.is-create { max-height: none; overflow: visible; }
 .upt-topicchip { height: 30px; padding: 0 8px 0 11px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;
   cursor: pointer; font-family: inherit;
   border: 1px solid color-mix(in srgb, var(--ust-tag-color, #6b7280) 40%, transparent);
@@ -263,14 +271,35 @@
 .upt-topiclist.is-full .upt-topicchip:not(.is-on) { opacity: .4; cursor: default; pointer-events: none; }
 .upt-topicmenu-empty { padding: 14px 8px; text-align: center; font-size: 12.5px; color: var(--vc-muted); }
 /* No matches for the typed query -> the obvious next move is creating it, offered right where
-   the empty state would otherwise sit. */
-.upt-topiccreate { width: 100%; height: 34px; padding: 0 12px; border-radius: 9px;
+   the empty state would otherwise sit — together with the start of the fuller tag creator this
+   table will need later: an emoji and a color picked right alongside the name. */
+.upt-topiccreate-row { flex: 0 0 100%; display: flex; align-items: center; gap: 8px; }
+.upt-topiccreate { flex: 1 1 auto; min-width: 0; height: 34px; padding: 0 12px; border-radius: 9px;
   border: 1px dashed var(--vc-border); background: transparent; color: var(--vc-text);
   cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 500; text-align: left;
-  display: inline-flex; align-items: center; gap: 8px; }
+  display: inline-flex; align-items: center; gap: 8px; overflow: hidden; }
 .upt-topiccreate:hover { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
 .upt-topiccreate svg { width: 13px; height: 13px; display: block; flex: 0 0 auto; color: var(--vc-muted); }
 .upt-topiccreate strong { font-weight: 600; }
+.upt-topiccreate-pick { flex: 0 0 auto; width: 34px; height: 34px; padding: 0; border-radius: 9px;
+  border: 1px solid var(--vc-border); background: transparent; cursor: pointer; font-size: 16px; line-height: 1;
+  color: var(--vc-muted); display: inline-flex; align-items: center; justify-content: center; }
+.upt-topiccreate-pick:hover, .upt-topiccreate-pick.is-open {
+  border-color: var(--vc-hover-border); background: var(--vc-heading-bg);
+}
+.upt-topiccreate-pick svg { width: 16px; height: 16px; display: block; }
+.upt-topiccreate-swatch { width: 16px; height: 16px; border-radius: 50%; display: block;
+  border: 1px solid rgba(0,0,0,.14); }
+/* Grows the panel inline instead of floating — a floating popover here would sit inside
+   .upt-topiclist's own scroll/overflow (or .upt-bulkpanel's, needed for its collapse animation)
+   and get clipped by one of them. See .is-picking / .upt-topiclist.is-create above. */
+.upt-topicpickpanel { flex: 0 0 100%; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--vc-border); }
+.upt-colorgrid { display: grid; grid-template-columns: repeat(8, 20px); gap: 6px; justify-content: start; }
+.upt-colorswatch { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid transparent;
+  cursor: pointer; padding: 0; box-shadow: inset 0 0 0 1px rgba(0,0,0,.1); }
+.upt-colorswatch.is-picked { border-color: var(--vc-text);
+  box-shadow: 0 0 0 2px var(--up-surface), 0 0 0 3.5px var(--vc-text); }
+.upt-emojipicker { width: 100%; max-width: 340px; height: 320px; }
 /* Both right-aligned: Add Topic hands off to your own topic-creation UI without touching the
    staged selection, Apply is the one control that actually sends it. */
 .upt-topicfoot { margin-top: 10px; display: flex; align-items: center; justify-content: flex-end; gap: 8px; }

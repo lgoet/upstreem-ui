@@ -89,13 +89,21 @@
                    filter fields the same way the render RPC does, same as every other bulk action.
                    tag_ids is capped at 5 client-side (the per-prompt topic limit) — your RPC still
                    has final say for rows that were already close to that limit.
-    addtopics   <selection> + optionally {"new_topic_name":"SUV"}
+    addtopics   <selection> + optionally {"new_topic_name":"SUV","new_topic_emoji":"🚙",
+                             "new_topic_hex_light":"#1860dc","new_topic_hex_dark":"#1860dc"}
                 -> the "Add Topic" button at the foot of the bulk topic editor. Open your own
                    topic-creation UI; the selection rides along so a freshly created topic can be
                    applied straight away. Does NOT close the topic editor or touch the staged
-                   selection. new_topic_name is only present when this came from the inline
-                   "Create '…'" button shown when a topic search has zero matches — pre-fill your
-                   create-topic form with it instead of making the user retype what they searched.
+                   selection. All four new_topic_* fields are only present when this came from the
+                   inline "Create '…'" row shown when a topic search has zero matches — a first
+                   pass at the fuller tag creator this table will eventually need, with a name
+                   (pre-filled from the search box), an emoji (via emoji-picker-element, a free
+                   self-contained CDN-loaded web component — https://github.com/nolanlawson/
+                   emoji-picker-element — loaded lazily only once the emoji trigger is clicked, no
+                   Bubble-side setup needed), and a color (one of 32 preset swatches, contrast-
+                   checked against both light and dark chip backgrounds since only hex_light ever
+                   actually gets rendered — see topicListHtml()/doTopics()). hex_light and hex_dark
+                   are always sent as the SAME value: this creator only ever picks one color.
     bulkstatus  <selection> + {"status":"inactive"}
                 -> set every selected prompt to that status. Reversible, so no confirm dialog is
                    shown; surface an undo in your own toast instead.
@@ -127,6 +135,7 @@
     (?<="brand_mentioned":")[^"]*                           (?<="status":")[^"]*
     (?<="mode":")[^"]*         (?<="ids":")[^"]*            (?<="tag_ids":")[^"]*
     (?<="prompt_ids":")[^"]*   (?<="new_topic_name":")[^"]*
+    (?<="new_topic_emoji":")[^"]*     (?<="new_topic_hex_light":")[^"]*  (?<="new_topic_hex_dark":")[^"]*
     (?<="limit":)[0-9]+        (?<="offset":)[0-9]+         (?<="page":)[0-9]+
     (?<="count":)[0-9]+
 
