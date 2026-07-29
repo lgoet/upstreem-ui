@@ -116,6 +116,9 @@
       rows: rows,
       totalCount: rows.length ? toNum(rows[0].total_count) : null
     };
+    // Unconditional, not just on failure — proves this script actually ran and shows exactly
+    // what's about to be sent, regardless of which step downstream (if any) silently drops it.
+    console.log("[prompts-table sanitizer] sending payload:", payload);
 
     var t = 0;
     (function go () {
@@ -123,7 +126,11 @@
             || (window.parent && window.parent.renderPromptsTable)
             || (window.top && window.top.renderPromptsTable);
       if (typeof fn === "function") { fn(payload); return; }
-      if (t++ < 60) setTimeout(go, 100);
+      if (t++ < 60) { setTimeout(go, 100); return; }
+      console.error("[prompts-table sanitizer] window.renderPromptsTable was never found after 6s — " +
+        "prompts-table.js hasn't loaded (or hasn't finished loading) in this window, its parent, or top. " +
+        "Check data-cdn-pin / that the component is actually placed on this page / whether this runs " +
+        "inside an iframe that can't reach the frame the component lives in.");
     })();
   })();
 

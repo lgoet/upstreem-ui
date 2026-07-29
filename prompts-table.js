@@ -890,7 +890,19 @@
   function doRender(params){
     var id = params && params.instanceId;
     var ctrl = id ? resolve(id) : initRoot(document.querySelector(".upt-root"));
-    if (!ctrl) return false;
+    if (!ctrl){
+      /* Silent otherwise: renderPromptsTable() is called, but no matching .upt-root exists (yet,
+         or ever) — e.g. instanceId doesn't match data-instance on any root, or the root's
+         data-instance is still the literal "INSTANCE_ID" placeholder. That reads as "the table
+         ignored my data" with zero signal, so name exactly what was asked for vs what's on the
+         page. */
+      var have = Array.prototype.map.call(document.querySelectorAll(".upt-root"), function(r){
+        return r.getAttribute("data-instance") || "(none)";
+      });
+      if (window.console) console.warn("[prompts-table] renderPromptsTable: no matching .upt-root for instanceId " +
+        JSON.stringify(id) + ". Roots on this page have data-instance: " + JSON.stringify(have));
+      return false;
+    }
     ctrl.update(params);
     return true;
   }
