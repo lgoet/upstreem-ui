@@ -204,9 +204,12 @@
 
   /* Hideable columns. Prompt is deliberately absent — the table makes no sense without it. */
   var COLUMNS = [
-    { key: "visibility", label: "Visibility",      w: "minmax(10%, 1fr)",   min: 100 },
-    { key: "rank",       label: "Rank",            w: "minmax(10%, 1fr)",   min: 90,  dropAt: "vnarrow" },
-    { key: "sentiment",  label: "Sentiment",       w: "minmax(9%, 1fr)",    min: 100, dropAt: "narrow" },
+    /* Visibility/Sentiment carry more header furniture now (logo/info-icon/sorter) than a plain
+       label — a %-based responsive floor let them shrink below what that furniture needs at
+       narrow widths, so both use a px floor instead, matching Rank's own min. */
+    { key: "visibility", label: "Visibility",      w: "minmax(150px, 1fr)", min: 150 },
+    { key: "rank",       label: "Rank",            w: "minmax(90px, 1fr)",  min: 90,  dropAt: "vnarrow" },
+    { key: "sentiment",  label: "Sentiment",       w: "minmax(120px, 1fr)", min: 120, dropAt: "narrow" },
     { key: "brands",     label: "Brand Mentions",  w: "minmax(12%, 1fr)",   min: 150 },
     { key: "topics",     label: "Topics",          w: "minmax(12%, 1fr)",   min: 150, dropAt: "vnarrow" },
     { key: "market",     label: "Market",          w: "minmax(8%, 0.6fr)", min: 90,  dropAt: "narrow" },
@@ -651,11 +654,18 @@
         t: "The market this prompt is tracked in." }
     };
     function explainVisual(kind){
-      if (kind === "visibility") return visCell(34);
-      if (kind === "rank") return rankCell(2.3);
-      if (kind === "sentiment") return sentCell(78);
-      if (kind === "brands") return UC.brandStack([{ name: "Toyota" }, { name: "VW" }], 2);
-      if (kind === "market") return marketCell("DE");
+      if (kind === "visibility") return visCell(34) + UC.trendChip(2.9, { suffix: "%" });
+      if (kind === "rank") return rankCell(2.3) + UC.trendChip(-0.4, { decimals: true, inverted: true });
+      if (kind === "sentiment") return sentCell(78) + UC.trendChip(4, { decimals: true });
+      if (kind === "brands"){
+        return '<span class="upt-explain-row" style="gap:0">' +
+          '<span class="upt-explain-dot"></span><span class="upt-explain-dot" style="margin-left:-10px"></span>' +
+          '<span class="upt-explain-dot" style="margin-left:-10px"></span>' +
+          '<span class="upt-explain-dot upt-explain-more" style="margin-left:-10px">+2</span></span>';
+      }
+      if (kind === "market"){
+        return '<div style="display:flex;flex-direction:column;gap:6px;">' + marketCell("DE") + marketCell("US") + '</div>';
+      }
       return "";
     }
     UC.makeExplain({
