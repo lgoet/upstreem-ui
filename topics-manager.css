@@ -1,24 +1,33 @@
 /* upstreem topics-manager.css — component styles. Requires core.css loaded first (shares --vc-*
    tokens, .up-root/.up-head/.up-export/.up-search*/.up-sort*/.up-pop-*/.up-chiphover). */
 
-/* ---------- chip grid (replaces the table body this component doesn't have) ---------- */
-.utm-box { padding: 4px; }
-.utm-chipgrid { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 8px; padding: 16px; min-height: 60px; }
-.utm-empty { padding: 24px 4px; color: var(--vc-muted); font-size: 13px; }
+/* ---------- chip grid ----------
+   Deliberately NOT wrapped in a bordered/shadowed .up-box card — this page's entire content IS
+   the chip grid, so boxing it in a "table container" reads as a mostly-empty card around a
+   handful of pills (this is what most tag-management UIs get right: GitHub's label list, Notion's
+   tag admin, Linear's labels all show the tags directly on the page canvas, not nested inside a
+   secondary panel). A thin top border under the toolbar is the only separator — enough to read as
+   "the list starts here" without manufacturing a whole extra surface. Chips are also a size step
+   up from the same widget's appearance inside prompts-table's bulk-editor popover (36px vs. 32px,
+   13px vs. 12.5px font) — there they're a secondary annotation inside a picker; here they're the
+   page's primary content and read as undersized/fiddly at the old size. */
+.utm-chipgrid { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 10px;
+  padding: 20px 0 40px; border-top: 1px solid var(--vc-border); min-height: 80px; }
+.utm-empty { padding: 24px 0; color: var(--vc-muted); font-size: 13px; }
 
 /* Chip: name + emoji + color + usage count. Same visual language as the topic chips in
    prompts-table.js's bulk editor (.upt-topicchip), duplicated+renamed rather than shared — see
    STYLEGUIDE §25, extract only after real re-duplication, and this is only the second consumer. */
-.utm-topicchip { height: 32px; padding: 0 10px 0 11px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;
+.utm-topicchip { height: 36px; padding: 0 12px 0 13px; border-radius: 9px; display: inline-flex; align-items: center; gap: 7px;
   cursor: pointer; font-family: inherit; border: 0; text-align: left;
   border: 1px solid color-mix(in srgb, var(--ust-tag-color, #6b7280) 40%, transparent);
   background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 10%, transparent);
-  color: var(--ust-tag-color, #4b5563); font-size: 12.5px; font-weight: 500; line-height: 1;
+  color: var(--ust-tag-color, #4b5563); font-size: 13px; font-weight: 500; line-height: 1;
   white-space: nowrap; max-width: 100%; }
 .up-root[data-theme="dark"] .utm-topicchip { background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 22%, transparent); color: #e0e0e0; }
-.utm-topicchip-e { font-size: 12px; line-height: 1; flex: 0 0 auto; }
-.utm-topicchip-lbl { overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
-.utm-topicchip-count { flex: 0 0 auto; font-size: 11px; font-weight: 600; color: var(--vc-third);
+.utm-topicchip-e { font-size: 13px; line-height: 1; flex: 0 0 auto; }
+.utm-topicchip-lbl { overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
+.utm-topicchip-count { flex: 0 0 auto; font-size: 11.5px; font-weight: 600; color: var(--vc-third);
   font-variant-numeric: tabular-nums; }
 
 /* Loading skeleton: same shape as the real chip, filled with the shared skeleton pulse instead of

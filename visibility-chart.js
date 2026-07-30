@@ -20,7 +20,7 @@
   var __votBootQueue = window.__votBootQueue = window.__votBootQueue || [];
   if (!window.__votBootStubbed){
     window.__votBootStubbed = true;
-    ["renderVisibilityChart", "setVisibilityChartLoading", "resetVisibilityChart"].forEach(function(n){
+    ["renderVisibilityChart", "setVisibilityChartLoading", "resetVisibilityChart", "setVisibilityChartTheme"].forEach(function(n){
       window[n] = function(){ __votBootQueue.push([n, arguments]); };
     });
   }
@@ -831,6 +831,20 @@
         LOADING_EXPLICIT[instanceId] = true;
         state.loading = isYes(on);
         render();
+      },
+      /* Theme-only entry point, deliberately separate from update({isDark}) — that path always
+         calls render() unconditionally at the end regardless of whether isDark actually changed,
+         which for this component means a full table innerHTML rebuild (every row, every <img>,
+         every listener re-attached) plus a Chart.js redraw, just because a Run-JS step re-fired
+         the SAME theme value (Bubble's own reactive re-evaluation does this routinely, not only on
+         a genuine toggle). True no-op when the incoming value matches the current theme. */
+      setTheme: function(on){
+        var want = isYes(on);
+        if (want === isDark) return;
+        isDark = want;
+        if (isDark){ root.setAttribute("data-theme","dark"); }
+        else { root.removeAttribute("data-theme"); }
+        render();
       }
     };
   }
@@ -888,12 +902,14 @@
   function stashRetryRoot(target, kind, a){
     if (kind === "update") target.__votPendingParams = a;
     if (kind === "loading") target.__votPendingLoading = isYes(a);
+    if (kind === "theme") target.__votPendingTheme = isYes(a);
     var tries = 0;
     (function retry(){
       var ctrl = initRoot(target);
       if (ctrl){
         if (target.__votPendingParams != null){ ctrl.update(target.__votPendingParams); target.__votPendingParams = null; }
         if (target.__votPendingLoading != null){ ctrl.setLoading(target.__votPendingLoading); target.__votPendingLoading = null; }
+        if (target.__votPendingTheme != null){ ctrl.setTheme(target.__votPendingTheme); target.__votPendingTheme = null; }
         return;
       }
       if (tries++ < 40) setTimeout(retry, 100);
@@ -922,6 +938,21 @@
       var ctrl = initRoot(root);
       if (ctrl) ctrl.setLoading(loading);
       else stashRetryRoot(root, "loading", loading);
+    });
+    return true;
+  }
+  /* Theme-only entry point for a Run-JS step that fires on every page-state recalculation whether
+     or not the theme actually changed — see ctrl.setTheme's own comment for why that matters here
+     specifically (a full table + chart rebuild, not a cheap style flip). Deliberately does NOT go
+     through cacheData/doRender — this never touches series/table/companies, only isDark. */
+  function doSetTheme(id, on){
+    id = id || "default";
+    var roots = rootsWithId(id);
+    if (!roots.length) return false;
+    roots.forEach(function(root){
+      var ctrl = initRoot(root);
+      if (ctrl) ctrl.setTheme(on);
+      else stashRetryRoot(root, "theme", on);
     });
     return true;
   }
@@ -956,6 +987,7 @@
     api: {
       renderVisibilityChart: doRender,
       setVisibilityChartLoading: function(id, l){ return doLoading(id, l); },
+      setVisibilityChartTheme: function(id, on){ return doSetTheme(id, on); },
       resetVisibilityChart: function(instanceId){
         var id = String(instanceId || "").trim();
         if (!id) return false;

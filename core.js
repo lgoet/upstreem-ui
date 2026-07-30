@@ -1324,36 +1324,49 @@
     });
   }
 
+  /* Walks a root's ancestors and neutralizes any overflow:hidden/clip it finds (stopping at the
+     first real scroll container, or body/html) — Bubble frequently wraps a component in a plain
+     group div that clips overflow with no scrolling of its own, which cuts off anything the
+     component tries to render OUTSIDE its own box: a position:sticky header trying to escape, or
+     — just as often — a plain position:absolute dropdown menu that needs to hang below a short
+     component. Marks what it touches via a data-up-unclipped attribute (storing the prior inline
+     value) so restore(true) can put it back. Originally private to makeSticky (only useful when
+     sticky was ACTUALLY engaged); pulled out standalone because dropdown clipping has nothing to
+     do with whether the header happens to be sticky — a component with no sticky header at all
+     (topics-manager, no data-sticky-top concept) still needs its sort/filter menus to escape a
+     short host container, and shouldn't have to fake-enable sticky positioning just to get the
+     side effect. */
+  function unclipAncestors(root, restore){
+    var el = root.parentElement, guard = 0;
+    while (el && el !== document.body && el !== document.documentElement && guard++ < 40){
+      var cs; try { cs = window.getComputedStyle(el); } catch(e){ break; }
+      var oy = cs.overflowY;
+      if (oy === "auto" || oy === "scroll" || oy === "overlay") break;   // the scroll container: leave it
+      var clips = (cs.overflow === "hidden" || cs.overflow === "clip" ||
+                   cs.overflowX === "hidden" || cs.overflowX === "clip" ||
+                   oy === "hidden" || oy === "clip");
+      if (restore){
+        if (el.hasAttribute("data-up-unclipped")){ el.style.overflow = el.getAttribute("data-up-unclipped") || ""; el.removeAttribute("data-up-unclipped"); }
+      } else if (clips && !el.hasAttribute("data-up-unclipped")){
+        el.setAttribute("data-up-unclipped", el.style.overflow || "");
+        el.style.overflow = "visible";
+      }
+      el = el.parentElement;
+    }
+  }
+
   /* Sticky header machinery: pins the toolbar + column header at data-sticky-top on wide screens,
      un-clips overflow:hidden ancestors (Bubble wrappers) so position:sticky isn't trapped, and
      keeps --up-thead-off in sync with the toolbar height. Returns applySticky (wire to resize) and
      syncTheadOffset (call after the header height can change). */
   function makeSticky(root, headEl){
-    function unclipToScroller(restore){
-      var el = root.parentElement, guard = 0;
-      while (el && el !== document.body && el !== document.documentElement && guard++ < 40){
-        var cs; try { cs = window.getComputedStyle(el); } catch(e){ break; }
-        var oy = cs.overflowY;
-        if (oy === "auto" || oy === "scroll" || oy === "overlay") break;   // the scroll container: leave it
-        var clips = (cs.overflow === "hidden" || cs.overflow === "clip" ||
-                     cs.overflowX === "hidden" || cs.overflowX === "clip" ||
-                     oy === "hidden" || oy === "clip");
-        if (restore){
-          if (el.hasAttribute("data-up-unclipped")){ el.style.overflow = el.getAttribute("data-up-unclipped") || ""; el.removeAttribute("data-up-unclipped"); }
-        } else if (clips && !el.hasAttribute("data-up-unclipped")){
-          el.setAttribute("data-up-unclipped", el.style.overflow || "");
-          el.style.overflow = "visible";
-        }
-        el = el.parentElement;
-      }
-    }
     function syncTheadOffset(){ if (headEl) root.style.setProperty("--up-thead-off", headEl.offsetHeight + "px"); }
     function applySticky(){
       var pageW = window.innerWidth || document.documentElement.clientWidth || 0;
       var on = root.getAttribute("data-sticky") !== "no" && pageW >= 1000;
       var v = root.getAttribute("data-sticky-top"); if (v) root.style.setProperty("--up-sticky-top", /^[0-9]+$/.test(v) ? v + "px" : v);
       root.classList.toggle("up-sticky", on);
-      unclipToScroller(!on);
+      unclipAncestors(root, !on);
       if (on) syncTheadOffset();
     }
     return { applySticky: applySticky, syncTheadOffset: syncTheadOffset };
@@ -2398,6 +2411,7 @@
     makePopover: makePopover,
     closePopovers: closeAll,
     makeSticky: makeSticky,
+    unclipAncestors: unclipAncestors,
     watchRoots: watchRoots,
 
     /* ---- chart kits (see the big comment block above) ---- */

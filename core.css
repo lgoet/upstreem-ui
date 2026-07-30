@@ -88,12 +88,12 @@
     /* The clear button's slot is ALWAYS reserved (visibility, not display), so text never shifts
        when the x appears. */
     .up-search-clear {
-      flex: 0 0 20px; width: 20px; height: 20px; border: 0; border-radius: 6px; background: transparent;
+      flex: 0 0 24px; width: 24px; height: 24px; border: 0; border-radius: 7px; background: transparent;
       color: var(--vc-muted); cursor: pointer; padding: 0; margin-left: 4px;
       display: inline-flex; align-items: center; justify-content: center;
       visibility: hidden;
     }
-    .up-search-clear svg { width: 13px; height: 13px; display: block; }
+    .up-search-clear svg { width: 16px; height: 16px; display: block; }
     .up-search-clear:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
     .up-search.has-text .up-search-clear { visibility: visible; }
     /* Mobile: an open search takes over the toolbar row. Below MOBILE_SEARCH_MAX the other

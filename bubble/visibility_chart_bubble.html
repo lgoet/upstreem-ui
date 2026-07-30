@@ -51,6 +51,14 @@
   });
   window.setVisibilityChartLoading("INSTANCE_ID", "yes" | "no");
   window.resetVisibilityChart("INSTANCE_ID");    // resets sort + Companies filter to defaults
+
+  window.setVisibilityChartTheme("INSTANCE_ID", "yes" | "no");
+    -> theme-ONLY switch, for a Run-JS step wired to nothing but your dark-mode toggle. Deliberately
+       separate from renderVisibilityChart's own isDark param: that path always re-renders (full
+       table rebuild + chart redraw) even when isDark didn't actually change, which matters here
+       because Bubble re-fires a Run-JS step on unrelated page-state recalculations, not only on a
+       genuine toggle. This one is a true no-op — nothing happens at all — when the value you pass
+       already matches the chart's current theme; it only touches anything on an actual flip.
 -->
 <div class="up-root vot-root"
      data-instance="INSTANCE_ID"

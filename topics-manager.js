@@ -33,11 +33,11 @@
       parseBubbleJson = UC.parseBubbleJson, CHECK_SVG = UC.CHECK_SVG, STORE = UC.STORE;
 
   var SORT_FIELDS = [
-    { key: "name",    label: "Name" },
     { key: "usage",   label: "Usage" },
-    { key: "created", label: "Created" }
+    { key: "created", label: "Newest" },
+    { key: "name",    label: "Name" }
   ];
-  var DEFAULT_SORT = { field: "name", dir: "asc" };
+  var DEFAULT_SORT = { field: "usage", dir: "desc" };
 
   var CLOSE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
   var PLUS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
@@ -79,6 +79,13 @@
 
     var isDark = isYes(root.getAttribute("data-isdark"));
     if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
+
+    /* This page has no sticky header (no data-sticky-top concept), so it never calls
+       UC.makeSticky — but the sort dropdown is still a plain position:absolute child that needs
+       to escape any overflow:hidden Bubble container shorter than the menu itself. Unclip once,
+       unconditionally, and never re-clip (unlike the sticky-header path, which only unclips while
+       actually stuck) — this page's menus must never be cut off, full stop. */
+    UC.unclipAncestors(root, false);
 
     var elHeadCount = root.querySelector(".up-head-count");
     var elHeading   = root.querySelector(".up-heading");
