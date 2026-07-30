@@ -43,7 +43,30 @@
   var esc = UC.esc, isYes = UC.isYes, resolveBubbleFn = UC.resolveBubbleFn, fmt1 = UC.fmt1, CHECK_SVG = UC.CHECK_SVG;
 
   /* ================= data prep ================= */
-  function buildLineDatasets(series, companies){
+  /* Fallback palette for companies that arrive with no color of their own — unrelated to the color
+     SCALES below (also hoisted here so the color-scale dropdown's "Default" preview can reuse the
+     exact same 7 values a company without its own color actually gets rendered in). */
+  var PALETTE = ["#14b8a6","#0ea5e9","#6366f1","#d946ef","#f97316","#f43f5e","#64748b"];
+  /* Color scales: an override for the chart line (and legend) colors, independent of each
+     company's own assigned color. "default" isn't listed here — it means "use each company's own
+     color, falling back to PALETTE above" (buildLineDatasets' pre-existing behavior, untouched).
+     Every hex below is a real, sourced palette (see STYLEGUIDE), not invented:
+       tableau     — Tableau 10's softened/professional-BI variant
+       colorblind  — Okabe/Ito (2008), the de-facto standard colorblind-safe qualitative palette
+                     for scientific figures (the 8th color, black, is dropped — it doesn't read as
+                     a distinct "brand" line and disappears against a dark chart background)
+       vivid       — the D3/matplotlib "tab10"/Category10 palette, the most widely used punchy
+                     qualitative palette in general-purpose data visualization
+     All three are mid-toned/moderately saturated by design (not pure pastels, not near-black), the
+     same property that makes them work as-is on both a white and a dark chart background — no
+     separate light/dark variant needed. */
+  var COLOR_SCALES = {
+    tableau:    { label: "Tableau",         colors: ["#5778a4","#e49444","#d1615d","#85b6b2","#6a9f58","#e7ca60","#a87c9f"] },
+    colorblind: { label: "Colorblind Safe", colors: ["#e69f00","#56b4e9","#009e73","#f0e442","#0072b2","#d55e00","#cc79a7"] },
+    vivid:      { label: "Vivid",           colors: ["#1f77b4","#ff7f0e","#2ca02c","#d62728","#9467bd","#8c564b","#e377c2"] }
+  };
+  var SCALE_ORDER = ["default", "tableau", "colorblind", "vivid"];
+  function buildLineDatasets(series, companies, colorScale){
     series = Array.isArray(series) ? series : [];
     companies = Array.isArray(companies) ? companies : [];
     var metaMap = {};
@@ -78,11 +101,11 @@
     });
     ids.sort(function(a,b){ return (metaMap[b].global_share||0) - (metaMap[a].global_share||0); });
     ids = ids.slice(0, 7);
-    var PALETTE = ["#14b8a6","#0ea5e9","#6366f1","#d946ef","#f97316","#f43f5e","#64748b"];
+    var scale = colorScale && COLOR_SCALES[colorScale] ? COLOR_SCALES[colorScale].colors : null;
     var globalMax = 0;
     var datasets = ids.map(function(id, i){
       var data = labels.map(function(d){ var v = byId[id][d]; if (v != null && v > globalMax) globalMax = v; return v != null ? v : null; });
-      var col = metaMap[id].color || PALETTE[i % PALETTE.length];
+      var col = scale ? scale[i % scale.length] : (metaMap[id].color || PALETTE[i % PALETTE.length]);
       return {
         label: metaMap[id].name,
         __id: id,
@@ -108,6 +131,18 @@
 
     var instanceId = root.getAttribute("data-instance") || "default";
     var myCtrlId = "cc_" + Math.random().toString(36).slice(2) + "_" + Date.now();
+    /* Chart line color scale — persisted to localStorage (unlike sort/granularity above, which are
+       deliberately session-only via window.__votSort etc.), per explicit request: a chosen scale
+       should survive a page reload. */
+    function scaleKey(){ return "vot_colorscale__" + instanceId; }
+    function readColorScale(){
+      try {
+        var v = window.localStorage.getItem(scaleKey());
+        return (v === "default" || (v && COLOR_SCALES[v])) ? v : "default";
+      } catch(e){ return "default"; }
+    }
+    function writeColorScale(){ try { window.localStorage.setItem(scaleKey(), colorScale); } catch(e){} }
+    var colorScale = readColorScale();
     var isDark = isYes(root.getAttribute("data-isdark"));
     if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
     function readProcessing(){
@@ -228,7 +263,7 @@
     function renderLineSide(){
       if (!isOwner()) return;
       if (state.loading || !state.hasLine || state.linePending){ line.skeleton(); return; }
-      line.render(buildLineDatasets(state.series, state.companies || []));
+      line.render(buildLineDatasets(state.series, state.companies || [], colorScale));
     }
     function render(){
       if (root.__votController && root.__votController.__ctrlId !== myCtrlId) return;
@@ -400,12 +435,105 @@
     function setPopOpen(pop, open){ if (!pop) return; if (open) popFor(pop).open(); else popFor(pop).close(false); }
     function closePops(except){
       [sortWrap, filterWrap].forEach(function(w){ if (w && w !== except) popFor(w).close(false); });
+      if (except !== scaleBtn) closeScaleMenu();
     }
 
     /* Button tooltips: the shared core implementation. This component used to carry its own
        ~70-line copy (.vot-tip) whose state was per root — the pre-fix architecture that broke
        whenever two instances shared a page. */
     UC.makeTooltips(root, darkNow);
+
+    /* ---------- chart color scale ----------
+       NOT routed through UC.makePopover: that primitive's outside-click check is
+       `wrap.contains(e.target)`, which assumes the menu is a DOM descendant of its trigger — true
+       for every other dropdown here, but this one's menu is body-mounted (see the CSS comment in
+       visibility-chart.css for why: .vot-box's overflow:hidden would otherwise clip it). Hand-rolled
+       open/close instead, same shape as topics-manager's modal: own outside-click/Escape, blur
+       focus before hiding (aria-hidden-on-ancestor-of-focused-element trap). */
+    var scaleBtn = root.querySelector(".vot-scale-btn");
+    var scaleMenu = null, scaleOpen = false;
+    var SCALE_CHECK_SVG = CHECK_SVG.replace('<svg ', '<svg class="up-check" ');
+    function scaleSwatchesHtml(colors){
+      return '<span class="vot-scale-dots">' + colors.map(function(hx){
+        return '<span class="vot-scale-dot" style="background:' + esc(hx) + '"></span>';
+      }).join("") + '</span>';
+    }
+    function ensureScaleMenu(){
+      if (scaleMenu && document.body.contains(scaleMenu)) return scaleMenu;
+      scaleMenu = document.createElement("div");
+      scaleMenu.className = "up-scale-menu";
+      scaleMenu.setAttribute("role", "menu");
+      scaleMenu.setAttribute("aria-hidden", "true");
+      scaleMenu.addEventListener("click", function(e){
+        var opt = e.target.closest("[data-scale]");
+        if (!opt) return;
+        colorScale = opt.getAttribute("data-scale");
+        writeColorScale();
+        populateScaleMenu();
+        renderLineSide();
+        closeScaleMenu();
+      });
+      document.body.appendChild(scaleMenu);
+      return scaleMenu;
+    }
+    function populateScaleMenu(){
+      if (!scaleMenu) return;
+      var rows = SCALE_ORDER.map(function(key){
+        var def = key === "default" ? { label: "Default", colors: PALETTE } : COLOR_SCALES[key];
+        return '<div class="vot-scale-opt' + (colorScale === key ? " is-active" : "") + '" data-scale="' + key + '">' +
+            '<span class="vot-scale-opt-head"><span class="vot-scale-opt-lbl">' + esc(def.label) + '</span>' + SCALE_CHECK_SVG + '</span>' +
+            scaleSwatchesHtml(def.colors) +
+          '</div>';
+      }).join("");
+      scaleMenu.innerHTML = '<div class="up-pop-head">Chart Colors</div>' + rows;
+    }
+    function positionScaleMenu(){
+      if (!scaleBtn || !scaleMenu) return;
+      var r = scaleBtn.getBoundingClientRect();
+      scaleMenu.style.top = (r.bottom + 8) + "px";
+      scaleMenu.style.right = (window.innerWidth - r.right) + "px";
+    }
+    function openScaleMenu(){
+      if (!scaleBtn || scaleOpen) return;
+      ensureScaleMenu();
+      closePops(scaleBtn);
+      populateScaleMenu();
+      scaleOpen = true;
+      scaleBtn.classList.add("is-open");
+      scaleMenu.setAttribute("data-theme", isDark ? "dark" : "light");
+      positionScaleMenu();
+      scaleMenu.setAttribute("aria-hidden", "false");
+      void scaleMenu.offsetWidth;   // force layout flush so the appear transition actually runs
+      scaleMenu.classList.add("is-shown");
+    }
+    function closeScaleMenu(){
+      if (!scaleOpen) return;
+      if (scaleMenu && scaleMenu.contains(document.activeElement)){
+        try { document.activeElement.blur(); } catch(e){}
+      }
+      scaleOpen = false;
+      if (scaleBtn) scaleBtn.classList.remove("is-open");
+      if (scaleMenu){ scaleMenu.classList.remove("is-shown"); scaleMenu.setAttribute("aria-hidden", "true"); }
+    }
+    if (scaleBtn && !scaleBtn.__votScaleBound){
+      scaleBtn.__votScaleBound = true;
+      scaleBtn.addEventListener("click", function(e){
+        e.stopPropagation();
+        if (scaleOpen) closeScaleMenu(); else openScaleMenu();
+      });
+      document.addEventListener("click", function(e){
+        if (!scaleOpen) return;
+        if (scaleBtn.contains(e.target)) return;
+        if (scaleMenu && scaleMenu.contains(e.target)) return;
+        closeScaleMenu();
+      });
+      document.addEventListener("keydown", function(e){
+        if (!scaleOpen) return;
+        if (e.key !== "Escape" && e.key !== "Esc") return;
+        closeScaleMenu();
+      });
+      window.addEventListener("resize", function(){ if (scaleOpen) positionScaleMenu(); });
+    }
 
     if (granBtnsLive().length){
       syncGranActive();

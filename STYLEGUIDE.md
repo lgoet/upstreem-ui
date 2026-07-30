@@ -1261,6 +1261,15 @@ nicht das Portal wieder einbauen.
   das ist „normales Dropdown"-Verhalten und war beim ursprünglichen Sort-By in der Visibility
   Chart nie ein Problem. Kein Flip-nach-oben, keine JS-`max-height`.
 
+**Die eine bewusste Ausnahme:** visibility-chart's Color-Scale-Dropdown (`.up-scale-menu`, siehe
+`visibility-chart.js`) IST body-gemountet und `position:fixed`. Kein Widerspruch zur Regel oben —
+der Unterschied ist der GRUND: dort ging es um einen Bubble-Container, der zufällig zu kurz war
+(ein Konfigurationsproblem, siehe `UC.unclipAncestors`, §-Core-B4). Hier ist der Vorfahre `.vot-box`
+mit voller Absicht `overflow:hidden` — das clippt den Chart selbst an seinen runden Ecken, das darf
+nicht weg. Und entscheidend: es gibt trotzdem **keinen Scroll-Listener** — die Position wird einmal
+beim Öffnen aus `getBoundingClientRect()` berechnet, nicht laufend nachgeführt. Genau das JS-Follow-
+Problem, das §14 verhindern soll, existiert hier also gar nicht; nur der Mount-Ort unterscheidet sich.
+
 ## 15. Multi-Select-Dropdown mit Suche (Mentioned Brands)
 
 Für lange Auswahl-Listen (Brands) im Dropdown:

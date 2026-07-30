@@ -5,6 +5,12 @@
   side with a "Top Brands" table (Visibility / Ranking / Sentiment). No pagination, no column
   hiding, no row-height control — this is a dashboard component, not a data table.
 
+  Hovering the chart reveals a small pencil button top-right (after a short delay); its dropdown
+  lets the user pick one of 4 line-color scales for the chart (Default = each company's own
+  `color`; Tableau/Colorblind Safe/Vivid override every company's color with a fixed 7-color
+  palette). Entirely client-side — no Bubble event, no server round-trip. The choice is saved to
+  localStorage per instanceId and restored automatically on the next page load.
+
   ── Bubble dynamic values on the root element ────────────────────────────────
   data-instance   = "ROOTID_[dynamic id]"   unique per placement
   data-cdn-pin    = commit hash to load from, e.g. "71ed61f" — leave EMPTY (or leave the literal
@@ -96,6 +102,9 @@
     </div>
     <div class="vot-box vot-box-left">
       <div class="vot-panel-body">
+        <button class="vot-scale-btn" type="button" data-tip="Chart colors" aria-label="Chart colors">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+        </button>
         <div class="up-line-wrap"><canvas class="up-line-canvas"></canvas></div>
         <div class="up-legend"></div>
       </div>
