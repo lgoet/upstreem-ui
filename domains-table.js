@@ -299,14 +299,21 @@
             '<span class="udt-dom-title">' + highlight(dom, state.query) + '</span>' +
             pagesBtn +
           '</span>' +
-          '<span class="udt-row-goto">' + GOTO_SVG + '</span>' +
-          /* Second, longer-dwell affordance: a 1.5s hover on the row fades/slides the plain goto
-             arrow into an explicit "Show Pages" control (see the row-hover-timer below and both
-             elements' CSS — width:0+opacity:0 at rest on both, so the swap animates instead of
-             cutting). Same data-pages-toggle trigger as the "N pages" chevron, so the existing
-             click handler opens it for free — only rendered when there is something to show. */
-          (pages > 0 ? '<button class="udt-row-showpages" type="button" data-pages-toggle aria-label="Show pages">' +
-             LINK_SVG + '<span>Show Pages</span></button>' : "") +
+          /* Both the goto arrow and the "Show Pages" affordance anchor to this ONE wrapper
+             (position:absolute inside it, see the CSS) rather than each carrying its own
+             margin-left:auto — two auto-margin siblings split the row's free space between them,
+             which is what put the arrow somewhere in the middle of the cell instead of flush
+             against the edge. Second, longer-dwell affordance: a 1.5s hover on the row fades the
+             plain goto arrow out and fades an explicit "Show Pages" control in, staggered so one
+             finishes leaving before the other arrives (see the row-hover-timer below and both
+             elements' transition-delay). Same data-pages-toggle trigger as the "N pages" chevron,
+             so the existing click handler opens it for free — only rendered when there is
+             something to show. */
+          '<span class="udt-row-affordance">' +
+            '<span class="udt-row-goto">' + GOTO_SVG + '</span>' +
+            (pages > 0 ? '<button class="udt-row-showpages" type="button" data-pages-toggle aria-label="Show pages">' +
+               LINK_SVG + '<span>Show Pages</span></button>' : "") +
+          '</span>' +
         '</div>' +
         '<div class="up-td up-td-share"><span class="udt-num">' + fmt1(share) + '%</span>' + trendChip(r.share_delta_pct) + '</div>' +
         '<div class="up-td up-td-used"><span class="udt-used">' + fmtTotal(used || 0) + '</span></div>' +
@@ -387,8 +394,15 @@
          the class has been handed to the markup. */
       var enter = subEnter ? " is-entering" : "";
       subEnter = false;
+      /* .udt-sub-inner normally clips (overflow:hidden, needed for the open/close height
+         animation) — but that clips the Types dropdown too whenever the drilldown isn't tall
+         enough for the menu to fit below the toolbar. is-menu-open lifts the clip only while a
+         menu inside is actually open, same targeted-overflow-override pattern as
+         .upt-td-topics/.ust-cell in prompts-table.css (STYLEGUIDE §29) rather than reintroducing
+         a portal. */
+      var innerCls = "udt-sub-inner" + (subTypeOpen ? " is-menu-open" : "");
       return '<div class="udt-subrows' + enter + '" data-sub-for="' + esc(dom) + '">' +
-               '<div class="udt-sub-inner">' + inner + '</div>' +
+               '<div class="' + innerCls + '">' + inner + '</div>' +
              '</div>';
     }
     /* Skeleton mirrors the real row's shape — icon block, title bar, and one bar per right-hand
@@ -537,11 +551,20 @@
       '</div>';
     }
     var subTypeOpen = false, subEnter = false, subReqSeq = 0;
+    /* subPageSize and subDisplay are deliberately NOT reset here — unlike query/types/page, which
+       are filters on THIS domain's content and have no reason to carry over to the next one,
+       "how many rows" and "title vs URL" are user preferences about how they like to read the
+       list. They persist for the session (in state, so a real page reload still starts fresh —
+       there is no localStorage write here on purpose) across opening a different domain, or the
+       same one again. */
     function resetSubState(){
       state.subQuery = ""; state.subTypes = {}; state.subPage = 1;
-      state.subPageSize = SUB_PAGE_SIZES[0]; state.subDisplay = "title";
       state.subRows = []; state.subTotal = null; state.subLoading = false; state.subReqId = null;
       subTypeOpen = false;
+      /* Covers the close path too, not just switching domains — togglePages' close branches call
+         this without a following renderSubBlockOnly, so without this the class would otherwise
+         stay stuck on root (see the comment at its toggle site). */
+      root.classList.remove("is-subfilter-open");
     }
     /* Any action up in the OUTER table's own toolbar (search, sort, the citation-type filter,
        mentioned brands, the brand toggle, main pagination) closes an open drilldown instantly —
@@ -582,6 +605,11 @@
       var fresh = wrap.firstElementChild;
       if (!fresh){ if (host) host.remove(); return; }   // dom is no longer expandedDomain — nothing to show
       if (host) host.replaceWith(fresh); else row.after(fresh);
+      /* .udt-sub-inner lifting its own overflow:hidden (see subrowsHtml) isn't enough on its
+         own — while the sticky header is pinned, .up-tbody ALSO clips (overflow:hidden, for its
+         rounded bottom corners, core.css). That ancestor sits outside this function's own
+         replaced subtree, so it needs its own toggle here rather than in the markup string. */
+      root.classList.toggle("is-subfilter-open", subTypeOpen);
     }
     /* Shows the row-list skeleton immediately (the toolbar above it stays live — see subrowsHtml),
        then fires a request for exactly the current domain/query/types/page/page-size combination.

@@ -846,6 +846,8 @@
 .up-donut-center .lbl { font-size: 14px; font-weight: 400; color: var(--vc-third); margin-top: 8px; line-height: 1; }
 .up-donut-legend { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .up-donut-legend-row { display: flex; align-items: center; gap: 10px; }
+.up-donut-legend-row.is-clickable { cursor: pointer; margin: -4px -6px; padding: 4px 6px; border-radius: 6px; transition: background 120ms ease; }
+.up-donut-legend-row.is-clickable:hover { background: var(--vc-heading-bg); }
 .up-donut-legend-chip { width: 12px; height: 12px; border-radius: 4px; flex: 0 0 auto; }
 .up-donut-legend-name { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; flex: 1 1 auto; min-width: 0; }
 .up-donut-legend-pct { font-size: 12px; font-weight: 500; color: var(--vc-muted); white-space: nowrap; flex: 0 0 auto; }
@@ -855,6 +857,8 @@
 /* ---------- bars ---------- */
 .up-bars { display: flex; flex-direction: column; gap: 0; width: 100%; }
 .up-bar-row { display: flex; align-items: center; padding: 5px 0; }
+.up-bar-row.is-clickable { cursor: pointer; }
+.up-bar-row.is-clickable:hover .up-bar-track { box-shadow: 0 0 0 2px var(--vc-border); }
 .up-bar-track { flex: 1; height: 32px; background: var(--vc-heading-bg); border-radius: 8px; overflow: visible; position: relative; min-width: 0; }
 .up-bar-fill { height: 100%; border-radius: 8px; transition: width .5s cubic-bezier(.4,0,.2,1); display: flex; align-items: center; justify-content: space-between; padding: 0 10px; min-width: 0; gap: 8px; overflow: hidden; }
 .up-bar-name { font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: opacity .18s ease; }

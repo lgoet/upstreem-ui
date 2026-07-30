@@ -29,38 +29,48 @@
 .udt-logo-ltr { font-size: 11px; font-weight: 600; color: var(--vc-muted); line-height: 1; text-transform: uppercase; }
 .udt-logo-box.has-img .udt-logo-ltr { display: none; }
 
-/* go-to arrow, revealed on row hover with a delay — same behaviour as urls-table.
-   Also collapses to width:0 once the 1.5s "Show Pages" dwell kicks in (.is-showpages-hover),
-   fading and sliding out of the way instead of a hard display:none swap, so the handoff between
-   the two controls reads as one continuous motion rather than a cut. */
-.udt-row-goto { margin-left: auto; width: 16px; height: 16px; flex: 0 0 auto; overflow: hidden;
+/* Anchor for both the goto arrow AND "Show Pages" — a single flex child with margin-left:auto,
+   zero width, that both children are absolutely positioned against (right:0). Fixed a real bug:
+   the arrow and the Show-Pages control used to be TWO SEPARATE siblings, each with its own
+   margin-left:auto. Flexbox splits available free space EQUALLY across every auto-margin item on
+   the line, so with two of them the arrow no longer landed flush against the cell's edge — it sat
+   wherever the split happened to leave it, roughly mid-cell. Anchoring both to one zero-width,
+   absolutely-positioned wrapper means there is only ever ONE auto margin in the row, and both
+   children share the exact same right edge regardless of which is visible. */
+.udt-row-affordance { display: inline-block; margin-left: auto; position: relative; flex: 0 0 auto; width: 0; height: 32px; }
+
+/* go-to arrow, revealed on row hover with a delay — same behaviour as urls-table. */
+.udt-row-goto { position: absolute; top: 50%; right: 0; width: 16px; height: 16px;
   color: var(--vc-third);
-  opacity: 0; transform: translateX(-3px); transition: opacity .18s ease, transform .18s ease; transition-delay: 0ms; }
+  opacity: 0; transform: translateY(-50%) translateX(-3px);
+  transition: opacity .18s ease, transform .18s ease; transition-delay: 0ms; }
 .udt-row-goto svg { width: 16px; height: 16px; display: block; }
-.up-row:hover .udt-row-goto { opacity: 1; transform: translateX(0); transition-delay: 220ms; }
-.up-row.is-showpages-hover .udt-row-goto { width: 0; opacity: 0; margin-left: 0;
-  transition: width 200ms ease, opacity 140ms ease, margin-left 200ms ease; transition-delay: 0ms; }
+.up-row:hover .udt-row-goto { opacity: 1; transform: translateY(-50%) translateX(0); transition-delay: 220ms; }
+/* The 1.5s "Show Pages" dwell (.is-showpages-hover) fades the arrow out FIRST — no delay on the
+   way out — and only then fades Show Pages in (see its own transition-delay below), so the
+   handoff reads as one thing leaving before the next arrives, not two things fighting for the
+   same spot at once. */
+.up-row.is-showpages-hover .udt-row-goto { opacity: 0; transition: opacity 120ms ease; transition-delay: 0ms; }
 .up-root.is-vnarrow .udt-row-goto { display: none; }
 
 /* "Show Pages" — swaps in for the goto arrow after a 1.5s hover dwell (see the JS timer in
    makeController). No border/pill shell — reads as a label with an icon in the same slot the
-   arrow occupied, not a new button appearing out of nowhere. Slides + fades in on the way in,
-   and the same transition running in reverse on the way out (removing .is-showpages-hover) —
-   no separate "leave" animation needed, a CSS transition is inherently reversible.
-   width:0 + overflow:hidden at rest (not display:none) is what makes the width itself
-   transitionable — the same technique the "N pages" chevron already uses (.udt-chev) for the
-   identical reason: display can't be animated, width can. The fixed 96px target on
-   .is-showpages-hover is generous for the fixed "Show Pages" string, not a measured value — once
-   the real (narrower) content width is reached the extra headroom just goes unused, no jump. */
-.udt-row-showpages { display: inline-flex; align-items: center; gap: 6px; margin-left: auto;
+   arrow occupied, not a new button appearing out of nowhere. position:absolute (see
+   .udt-row-affordance above) rather than a width transition: nothing here needs to occupy real
+   layout space while hidden, and an absolutely positioned element can't disturb the flex row's
+   auto-margin math the way the old width:0 approach did. transition-delay staggers this to start
+   AFTER the arrow's own fade-out has had time to mostly finish, per the sequencing above. */
+.udt-row-showpages { position: absolute; top: 50%; right: 0;
+  display: inline-flex; align-items: center; gap: 6px; transform: translateY(-50%) translateX(6px);
   height: 32px; padding: 0; border: 0; background: transparent; cursor: pointer; font: inherit;
-  font-size: 12px; font-weight: 500; color: var(--vc-third); white-space: nowrap; flex: 0 0 auto;
-  width: 0; overflow: hidden; opacity: 0;
-  transition: width 200ms ease, opacity 160ms ease, color 120ms ease; }
+  font-size: 12px; font-weight: 500; color: var(--vc-third); white-space: nowrap;
+  opacity: 0; pointer-events: none;
+  transition: opacity 160ms ease, transform 160ms ease, color 120ms ease; transition-delay: 0ms; }
 .udt-row-showpages svg { width: 14px; height: 14px; flex: 0 0 14px; display: block; }
 .udt-row-showpages:hover, .udt-row-showpages:focus-visible { color: var(--vc-text); }
-.up-row.is-showpages-hover .udt-row-showpages { width: 96px; opacity: 1; }
-.up-root.is-vnarrow .udt-row-showpages { display: none !important; }
+.up-row.is-showpages-hover .udt-row-showpages { opacity: 1; transform: translateY(-50%) translateX(0);
+  pointer-events: auto; transition-delay: 140ms; }
+.up-root.is-vnarrow .udt-row-affordance { display: none !important; }
 
 .udt-dom-wrap { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .udt-dom-title { font-size: 13.5px; font-weight: 500; color: var(--vc-text); letter-spacing: -0.01em;
@@ -202,16 +212,17 @@
    0fr -> 1fr is the height-agnostic way to do this - no magic max-height that clips a long list.
    is-entering is emitted only on the render that follows the toggle, so re-rendering while the
    panel is open (every keystroke in the sub-search) does not replay the animation. */
-/* Panel tint, not var(--vt-head-bg) — that token is shared with the sticky header and tuned for
-   a much larger, flatter area; this needed its own value in each theme.
-   Light: the ORIGINAL light-mode value (var(--vt-head-bg), the same soft grey the sticky header
-   used) at a further 60% opacity on top of its own already-partial alpha — not a fresh 60%-alpha
-   copy of the solid heading-bg swatch, which read as darker/more opaque than the original instead
-   of lighter. Dark: exactly halfway between the app-level background (--vc-bg, what's behind the
-   whole table) and the table's own surface (--up-surface, which .udt-subrows would otherwise be
-   indistinguishable from — see the removed .up-row.is-expanded tint above, same family of bug). */
+/* Panel tint, not var(--vt-head-bg) alone in dark mode — that token is shared with the sticky
+   header and, in dark mode, happens to equal --up-surface exactly (the table's own surface),
+   which made the panel indistinguishable from the table around it (see the removed
+   .up-row.is-expanded tint above, same family of bug).
+   Light: back to plain var(--vt-head-bg), unmodified — this went through two overcorrections
+   (a fresh 60%-alpha copy of the solid heading-bg swatch, which read darker than the original;
+   then that value's own alpha reduced by a further 60%, which read too faint) before landing
+   back on exactly what it always was. Dark: exactly halfway between the app-level background
+   (--vc-bg, what's behind the whole table) and the table's own surface (--up-surface). */
 .udt-subrows { position: relative; flex: 0 0 auto;
-  background: color-mix(in srgb, var(--vt-head-bg) 60%, transparent);
+  background: var(--vt-head-bg);
   border-bottom: 1px solid var(--vc-border);
   display: grid; grid-template-rows: 1fr;
   --udt-subcols: minmax(0, 1fr) 112px 128px 108px 34px; }
@@ -219,6 +230,14 @@
   background: color-mix(in srgb, var(--vc-bg) 50%, var(--up-surface) 50%);
 }
 .udt-sub-inner { min-height: 0; overflow: hidden; padding: 0 0 8px 0; }
+/* Lifted only while the Types menu is open (see the JS comment at its class site) — the rest of
+   the time overflow:hidden stays on, since the open/close grid-template-rows animation above
+   depends on it to actually clip during the height transition. */
+.udt-sub-inner.is-menu-open { overflow: visible; }
+/* While the sticky header is pinned, .up-tbody ALSO clips (overflow:hidden, core.css — needed
+   for its own rounded bottom corners) — a second ancestor between .udt-sub-inner and the page
+   that has to lift in lockstep, or the menu still gets cut off even with the fix above. */
+.up-root.is-subfilter-open.up-sticky .up-tbody { overflow: visible; }
 .udt-subrows.is-entering { animation: udtSubIn 200ms ease; }
 .udt-subrows.is-closing { animation: udtSubOut 200ms ease forwards; }
 @keyframes udtSubIn  { from { grid-template-rows: 0fr; opacity: 0; } to { grid-template-rows: 1fr; opacity: 1; } }

@@ -45,7 +45,13 @@
     series: [{ domain, day, share_pct }, ...],       // domain mode, OR:
     // series: [{ url, day, share_pct }, ...],       // url mode — one point per series/day
     domains: [{ domain, citation_type, favicon, global_share }, ...],  // line-series metadata, domain mode
-    urls: [{ url, url_type, favicon, global_share }, ...],             // line-series metadata, url mode
+    urls: [{ url, title, url_type, favicon, global_share }, ...],      // line-series metadata, url mode
+                                              // title is what the legend and the line's tooltip
+                                              // actually show in url mode — url itself is only
+                                              // the lookup key now. Omit title and both fall back
+                                              // to showing the raw url, same as before this field
+                                              // existed, so this is safe to add whenever you're
+                                              // ready rather than something that breaks today.
     granularity: "day" | "week" | "month"    // optional explicit override — otherwise inferred from
                                               // the spacing between series data points, UNLESS the
                                               // user has already manually clicked a granularity

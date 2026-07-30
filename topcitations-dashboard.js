@@ -197,20 +197,24 @@
         var rootH = root.clientHeight; if (!rootH) return 0;
         var head = root.querySelector(".tcd-head");
         return rootH - (head ? head.offsetHeight + 16 : 0) - 32;
+      },
+      /* Clicking a segment/legend row/bar toggles it exactly like its checkbox in the filter menu
+         below (stage + live dim) — Apply still has to be clicked to actually fire the RPC filter,
+         same staged-then-committed flow the menu already uses. Keeps the two entry points into
+         the same `sel` object in sync automatically, since both write to it. */
+      onSliceClick: function(key){
+        var sel = state.mode === "url" ? state.filterUrlTypeSel : state.filterTypeSel;
+        sel[key] = !sel[key];
+        persistState();
+        populateFilter();
+        syncChartDim();
       }
     });
     function applyCollapse(){ typeChart.applyCollapse(); }
 
     function applySelectionDim(prepped){
       var sel = state.mode === "url" ? state.filterUrlTypeSel : state.filterTypeSel;
-      var selectedKeys = Object.keys(sel).filter(function(k){ return sel[k]; });
-      if (!selectedKeys.length) return prepped;
-      var selSet = {};
-      selectedKeys.forEach(function(k){ selSet[k] = true; });
-      var grey = isDark ? "#3a3a3a" : "#e0e2e6";
-      return prepped.map(function(it){
-        return (it.key != null && selSet[it.key]) ? it : { key: it.key, name: it.name, share: it.share, color: grey };
-      });
+      return UC.applyTypeDim(prepped, sel, isDark);
     }
     function chartIsEmpty(){ return !state.prepped.length || state.prepped.every(function(x){ return !(Number(x.share) > 0); }); }
     /* Same interim-"clearing" flash risk as the table side — the shared grace helper shows the

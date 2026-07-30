@@ -87,7 +87,21 @@
         out += ch;
         if (esc2) esc2 = false;
         else if (ch === "\\") esc2 = true;
-        else if (ch === '"') inStr = false;
+        else if (ch === '"'){
+          /* Bubble's text fields (titles, descriptions) sometimes carry a literal, un-escaped
+             quote of their own — e.g. a description containing von "Meine Top 3" geht. Blindly
+             toggling inStr off at THAT quote corrupts every field after it. A real closing quote
+             here is always followed (after whitespace) by one of , } ] : or the end of the text;
+             anything else is content, not a terminator — keep scanning and escape it instead. */
+          var peek = i + 1;
+          while (peek < n && /\s/.test(src.charAt(peek))) peek++;
+          var after = peek < n ? src.charAt(peek) : "";
+          if (after === "" || after === "," || after === "}" || after === "]" || after === ":"){
+            inStr = false;
+          } else {
+            out = out.slice(0, -1) + '\\"';
+          }
+        }
         i++; continue;
       }
       if (ch === '"'){ inStr = true; out += ch; i++; continue; }
@@ -588,7 +602,14 @@
       var wA = first.getBoundingClientRect().width;
       var total = thead.getBoundingClientRect().width;
       var others = layoutKeys().slice(1).reduce(function(sum, k){ return sum + colMin(k); }, 0);
-      var maxA = Math.max(FIRST_MIN, total - others);
+      /* Has to subtract the same `reserve` fudge autoFit's own budget does (see autoFit above) —
+         without it this let the drag go `reserve` px further than autoFit actually tolerates, so
+         dragging the lead column anywhere near this max caused autoFit to drop the lowest-prio
+         column mid-drag even though every other column was still sitting right at its own
+         minimum. Two independently-computed "how far can the lead column grow" limits that
+         disagreed by exactly one fudge factor. */
+      var reserve = 24 + effectiveCols().length;
+      var maxA = Math.max(FIRST_MIN, total - others - reserve);
       var grip = e.target.closest(".up-grip");
       if (grip) grip.classList.add("is-active");
       root.classList.add("is-resizing");
@@ -1994,6 +2015,22 @@
       return { key: it.key, name: citeName(it.key), share: it.share, color: typeColor(it.key, "citation", isDark) };
     });
   }
+  /* Grey out every slice/bar whose key isn't in `sel` — the shared half of "click a type chart
+     segment to filter by it". Second real caller (citations-combo-chart, alongside
+     topcitations-dashboard's own filter-menu checkboxes) is what earns this its place in core;
+     each caller keeps its own `sel` state and its own idea of what selecting a type actually DOES
+     (an RPC-backed applied filter for one, a client-side line-series filter for the other) — this
+     only owns the shared visual. */
+  function applyTypeDim(prepped, sel, isDark){
+    var selectedKeys = Object.keys(sel || {}).filter(function(k){ return sel[k]; });
+    if (!selectedKeys.length) return prepped;
+    var selSet = {};
+    selectedKeys.forEach(function(k){ selSet[k] = true; });
+    var grey = isDark ? "#3a3a3a" : "#e0e2e6";
+    return prepped.map(function(it){
+      return (it.key != null && selSet[it.key]) ? it : { key: it.key, name: it.name, share: it.share, color: grey };
+    });
+  }
 
   /* Would white label text be hard to read on this fill? WCAG relative luminance, so it judges by
      hue too (a light yellow reads bright, a light blue less so). Threshold sits high on purpose:
@@ -2690,11 +2727,17 @@
             '<div class="up-donut-center"><span class="n">' + esc(fmtTotal(total())) + '</span><span class="lbl">' + esc(cfg.centerLabel || "Citations") + '</span></div>' +
           '</div><div class="up-donut-legend"></div>' +
         '</div>';
+      var clickable = !!cfg.onSliceClick;
       body.querySelector(".up-donut-legend").innerHTML = d.map(function(it){
-        return '<div class="up-donut-legend-row"><span class="up-donut-legend-chip" style="background:' + it.color + '"></span>' +
+        return '<div class="up-donut-legend-row' + (clickable && it.key !== "other" ? " is-clickable" : "") + '" data-type-key="' + esc(it.key || "") + '"><span class="up-donut-legend-chip" style="background:' + it.color + '"></span>' +
           '<span class="up-donut-legend-name">' + esc(it.name) + '</span>' +
           '<span class="up-donut-legend-pct">' + esc(fmtPct(it.share)) + '</span></div>';
       }).join("");
+      if (clickable){
+        Array.prototype.forEach.call(body.querySelectorAll(".up-donut-legend-row.is-clickable"), function(row){
+          row.addEventListener("click", function(){ cfg.onSliceClick(row.getAttribute("data-type-key")); });
+        });
+      }
       applyCollapse();
       loadChartJs().then(function(){
         if (!isOwner()) return;
@@ -2718,7 +2761,15 @@
             plugins: [constantGapPlugin, ringWidthPlugin],
             options: { responsive: true, maintainAspectRatio: false, layout: { padding: 8 },
               animation: { duration: 200, easing: "easeOutQuad" },
-              plugins: { legend: { display:false }, tooltip: { enabled:false, external: donutTooltip } } }
+              plugins: { legend: { display:false }, tooltip: { enabled:false, external: donutTooltip } },
+              onClick: (clickable && !allZero) ? function(evt, elements){
+                if (!elements || !elements.length) return;
+                var it = d[elements[0].index];
+                if (it && it.key && it.key !== "other") cfg.onSliceClick(it.key);
+              } : undefined,
+              onHover: (clickable && !allZero) ? function(evt, elements){
+                evt.native.target.style.cursor = (elements && elements.length) ? "pointer" : "default";
+              } : undefined }
           });
         } catch(err){}
       })["catch"](function(){});
@@ -2738,7 +2789,7 @@
         var txtPct = light ? "rgba(31,31,27,0.62)" : "rgba(255,255,255,0.75)";
         var outColor = isDark() ? "rgba(255,255,255,0.85)" : "var(--vc-text)";
         var outPctColor = isDark() ? "rgba(255,255,255,0.55)" : "var(--vc-muted)";
-        return '<div class="up-bar-row"><div class="up-bar-track">' +
+        return '<div class="up-bar-row' + (cfg.onSliceClick && it.key !== "other" ? " is-clickable" : "") + '" data-type-key="' + esc(it.key || "") + '"><div class="up-bar-track">' +
             '<div class="up-bar-fill" style="background:' + it.color + ';width:0%">' +
               '<span class="up-bar-name" style="color:' + txt + ';opacity:0">' + esc(it.name) + '</span>' +
               '<span class="up-bar-pct up-bar-pct-in" style="color:' + txtPct + ';opacity:0">' + esc(fmtPct(it.share)) + '</span>' +
@@ -2750,6 +2801,12 @@
       }).join("") + '</div>';
 
       var rows = Array.prototype.slice.call(body.querySelectorAll(".up-bar-row"));
+      if (cfg.onSliceClick){
+        rows.forEach(function(row){
+          if (!row.classList.contains("is-clickable")) return;
+          row.addEventListener("click", function(){ cfg.onSliceClick(row.getAttribute("data-type-key")); });
+        });
+      }
       var metrics = rows.map(function(row){
         return { nameW: measureText(row.querySelector(".up-bar-name")), pctW: measureText(row.querySelector(".up-bar-pct-in")) };
       });
@@ -2918,6 +2975,7 @@
     MAX_URL_SLICES: MAX_URL_SLICES,
     typeColor: typeColor,
     prepTypeData: prepTypeData,
+    applyTypeDim: applyTypeDim,
     barIsLight: barIsLight,
     measureText: measureText,
     fmtPct: fmtPct,

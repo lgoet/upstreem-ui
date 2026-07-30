@@ -1796,10 +1796,23 @@ existierende Klick-Handler greift dafür automatisch, kein zweiter Handler nöti
 `width`+`opacity` beim Klassenwechsel — dieselbe Technik wie schon der "N pages"-Chevron
 (`.udt-chev`), weil `display` selbst nicht animierbar ist, `width` aber schon: so faden/schieben
 beide sich rein/raus statt hart umzuschalten, UND belegen in Ruhe trotzdem keinen Platz (anders als
-ein reines `opacity`-Fade, das den Platz permanent reservieren würde). Layout-Detail: zwei
-Geschwister mit je `margin-left:auto`, von denen zur Laufzeit meist nur eines eine reale Breite
-hat, funktionieren problemlos — ein `width:0`-Element trägt zur "Schub"-Rechnung der Flexbox
-nichts bei, das andere übernimmt automatisch die volle Rolle.
+ein reines `opacity`-Fade, das den Platz permanent reservieren würde).
+
+**Korrektur (galt nur so lange beide Elemente nie gleichzeitig eine reale Breite hatten):** Die
+ursprüngliche Annahme oben — zwei Geschwister mit je `margin-left:auto` seien unproblematisch, weil
+zur Laufzeit meist nur eines eine reale Breite hat — hielt nicht. Flexbox verteilt den verfügbaren
+freien Platz GLEICHMÄSSIG auf ALLE Kinder mit `margin-left:auto` auf einer Zeile, nicht nur auf das
+sichtbare. Sobald beide (Pfeil UND Show-Pages-Button) während der Übergangsphase gleichzeitig
+Platz beanspruchten (z.B. während der Opacity-Transition, wo beide kurz im Layout mitzählen), landete
+der Pfeil nicht mehr flächenbündig am Zellenrand, sondern irgendwo in der Zellenmitte — je nachdem,
+wie sich der Platz gerade aufteilte. Fix: **nur EIN** `margin-left:auto`-Element pro Zeile, ein
+`width:0; position:relative`-Wrapper (`.udt-row-affordance`), an das beide Zustände als
+`position:absolute; right:0`-Kinder andocken. Damit gibt es pro Zeile immer nur einen Auto-Margin-
+Teilnehmer, und beide Kinder teilen sich exakt denselben rechten Ankerpunkt, unabhängig davon,
+welches gerade sichtbar ist — kein Flex-Verteilungsproblem mehr möglich. Faustregel: **mehr als ein
+`margin-left:auto`-Geschwister auf derselben Flex-Zeile ist ein Bug, sobald mehr als eines davon
+jemals gleichzeitig eine reale (auch nur kurzzeitige, transition-bedingte) Breite haben kann** —
+in Zweifel immer auf einen einzigen Anker + `position:absolute`-Kinder umstellen.
 
 **Nachtrag — die eigentliche Ursache des Aufblitzens war nie die Farbe, sondern volle
 Neu-Erzeugung.** `renderTable()` ersetzte bei JEDER Zustandsänderung (Öffnen, Suche, Filter, Seite)
@@ -1866,3 +1879,121 @@ Drei Regeln, die zusammengehören:
   Dimension für die alte Welt gewählt, nicht für die neue.
 - Der Default ist **komponenten-eigen**: nicht als Render-Parameter von Bubble annehmen. Sonst
   überschreibt der erste Re-Render nach dem Umschalten den gerade gesetzten Default wieder.
+
+## 32. Ein Dropdown kann von MEHREREN Vorfahren gleichzeitig geclippt werden
+
+`UC.unclipAncestors` (§Core-B4) läuft nur AUFWÄRTS von `root.parentElement` — es fixt Clipping durch
+Elemente AUSSERHALB der Komponente (z.B. ein Bubble-Wrapper-Div mit `overflow:hidden`). Es erreicht
+nie Container, die selbst Teil der Komponenten-eigenen Markup-Struktur sind — genau das ist der
+Fall, wenn ein Dropdown-Menü innerhalb eines Panels sitzt, das aus Animationsgründen sein eigenes
+`overflow:hidden` braucht (z.B. `domains-table`s `.udt-sub-inner`, dessen Clip die
+`grid-template-rows`-Öffnen/Schließen-Animation überhaupt erst möglich macht).
+
+Konkret beim Drilldown-Types-Filter waren es sogar **zwei** solcher Container gleichzeitig:
+`.udt-sub-inner` (Animation) UND, sobald der sticky Header greift, `.up-tbody` (dessen
+`overflow:hidden` core.css nur für die abgerundeten unteren Ecken braucht, §14). Ein Fix, der nur
+einen der beiden lockert, bleibt für den User unsichtbar kaputt — das Menü ragt einfach an der
+NÄCHSTEN Grenze wieder ab.
+
+Muster für diesen Fall (targeted overflow-lift, kein `unclipAncestors`, kein Portal, siehe
+STYLEGUIDE-Policy „falls doch mal ein Container clippt: dort `overflow:visible` setzen"):
+- Eine State-Klasse (`is-menu-open`/`is-subfilter-open`) wird **beim Öffnen und Schließen des
+  Menüs** auf JEDEM betroffenen Container gesetzt/entfernt — nicht nur auf dem unmittelbaren
+  Eltern-Element des Menüs. `renderSubBlockOnly()` setzt sie auf `.udt-sub-inner` direkt in seiner
+  eigenen Markup-Rückgabe; `.up-tbody` sitzt außerhalb dieses ausgetauschten Teilbaums, bekommt sie
+  deshalb separat über `root.classList.toggle(...)` (CSS-Selektor `.is-subfilter-open.up-sticky
+  .up-tbody`).
+- Die Klasse muss auch beim SCHLIESSEN des ganzen Drilldowns (nicht nur beim Schließen des Menüs)
+  wieder runter — sonst bleibt `overflow:visible` hängen, obwohl gar kein Menü mehr offen ist.
+  Sicherster Ort dafür: die zentrale `resetSubState()`, die ohnehin bei jedem Schließen-Pfad läuft.
+- `overflow:hidden` bleibt der Normalzustand (Animation/Ecken brauchen es die meiste Zeit) —
+  `overflow:visible` gilt nur, WÄHREND das Menü faktisch offen ist.
+
+Faustregel: Bei jedem neuen Dropdown-im-Panel immer die GESAMTE Vorfahren-Kette bis zum nächsten
+echten Scroll-Container auf `overflow:hidden` prüfen, nicht nur den direkten Elternknoten — es sind
+oft mehrere, aus unterschiedlichen, voneinander unabhängigen Gründen.
+
+## 33. Zwei unabhängig berechnete Limits für dieselbe Grenze driften auseinander
+
+`UC.makeColumns`s Spalten-Resize hatte zwei Stellen, die beide "wie weit darf die erste Spalte
+wachsen" beantworten sollten, aber nie gegeneinander abgeglichen wurden:
+
+- `startResize()` berechnet beim Drag-Start ein `maxA` aus `total - others` (Summe der Minimalbreiten
+  aller anderen Spalten).
+- `autoFit()` berechnet bei JEDEM Frame (auch während des Drags) ein `budget`, das zusätzlich einen
+  `reserve`-Fudge-Faktor abzieht (Border/Rahmen/Rundungs-Puffer, §44) — und dropt eine Spalte, sobald
+  `need > budget`.
+
+Da `startResize` den `reserve` nie kannte, erlaubte es dem Drag, GENAU um `reserve` px weiter zu
+gehen, als `autoFit` tatsächlich toleriert — der Drag lief also regelmäßig über die eigene, von
+`autoFit` gesetzte Grenze hinaus, wodurch mitten im Ziehen eine Spalte verschwand, obwohl jede
+andere Spalte noch exakt an ihrem Minimum stand. Fix: `maxA` zieht denselben `reserve` ab wie
+`autoFit`s `budget` — beide Grenzen landen dadurch algebraisch auf demselben Punkt (siehe
+Kommentar an der Fix-Stelle für die Herleitung).
+
+Faustregel: Wenn zwei Funktionen unabhängig voneinander entscheiden, wo dieselbe Grenze liegt (hier:
+"wie weit darf X wachsen, bevor Y passiert"), MÜSSEN sie entweder dieselbe Formel teilen oder
+explizit gegeneinander verifiziert werden — sonst drainet die Diskrepanz irgendwann sichtbar durch,
+und zwar nur in dem schmalen Bereich nahe der Grenze, was sie beim ersten Test leicht übersehen
+lässt.
+
+## 34. `parseBubbleJson`: ein einzelnes unescaptes Anführungszeichen im Text bricht ALLES danach
+
+Bubble baut seine quasi-JSON-Ausgabe per Text-Konkatenation, nicht per echtem `JSON.stringify` —
+ein Titel/Description-Feld, das selbst ein wörtliches `"` enthält (z.B. `von "Meine Top 3" geht`),
+kommt deshalb manchmal OHNE das nötige `\"`-Escaping durch. `parseBubbleJson`s Scanner behandelte
+bis jetzt JEDES `"` innerhalb eines Strings als dessen Ende — trifft es auf so ein wörtliches
+Anführungszeichen, hält es den String für beendet und interpretiert den gesamten Rest des Textes
+(alle folgenden Felder/Objekte) als syntaktisch kaputt. Ergebnis: der komplette `eval()` schlägt
+fehl, `parseBubbleJson` gibt `[]` zurück, und die Komponente zeigt scheinbar grundlos gar keine
+Daten — obwohl nur EIN einziges Zeichen in einem einzigen Feld eines einzigen Objekts das Problem
+war.
+
+Fix: beim Antreffen eines `"` innerhalb eines Strings erst nach vorne schauen (Whitespace
+überspringen) — ist das nächste Zeichen eines von `, } ] :` oder das Textende, ist es ein echtes
+schließendes Anführungszeichen; alles andere (ein Buchstabe, ein Leerzeichen vor mehr Text) ist
+Inhalt und wird escaped, der Scanner bleibt im String. Deckt den weit überwiegenden Realfall ab
+("Wort in Anführungszeichen mitten im Fließtext") — ein `"` das zufällig direkt vor einem
+Trennzeichen als Inhalt gemeint ist, bleibt ein unlösbarer Grenzfall (kein Kontext-freier Scanner
+kann das von einem echten Ende unterscheiden), kam in der Praxis aber noch nie vor.
+
+Faustregel: **"Sanitizer vergessen" ist bei diesem Repo fast nie das Rendering** (jedes gerenderte
+Feld läuft durch `esc()`/`highlight()`) — es ist fast immer das ROHE RPC-Parsing, bevor überhaupt
+ein JS-Objekt existiert. Bei einem gemeldeten Fehler mit echten Nutzdaten zuerst `parseBubbleJson`
+gegen genau diesen Payload testen (nicht nur den Render-Pfad), speziell auf eingebettete
+Anführungszeichen, Backslashes und Emoji in Freitextfeldern.
+
+## 35. Chart-Segment-Klick als Typ-Filter: geteiltes Kit, komponenten-eigene Bedeutung
+
+`UC.makeTypeChart` kann jetzt optional `cfg.onSliceClick(key)` nehmen — verkabelt automatisch
+Klicks auf Doughnut-Segmente (Chart.js `onClick`, inkl. `onHover`-Cursor), Legenden-Zeilen
+(`.up-donut-legend-row.is-clickable`) und Bar-Zeilen (`.up-bar-row.is-clickable`), alle drei auf
+denselben `key` aus den vorbereiteten Items. Der "other"-Sammel-Key (URL-Modus, mehr als
+`MAX_URL_SLICES` Typen) ist NIE klickbar — er fasst mehrere echte Typen zusammen und lässt sich
+nicht auf einen einzelnen Filter-Wert zurückführen.
+
+Das eigentliche Grau-Legen non-selektierter Slices ist jetzt `UC.applyTypeDim(prepped, sel,
+isDark)` — extrahiert aus `topcitations-dashboard`s vorheriger lokaler `applySelectionDim`, weil
+`citations-combo-chart` als zweiter echter Verbraucher genau dieselbe Logik brauchte (Duplicate-
+first-Prinzip: erst extrahieren, wenn eine zweite Stelle es wirklich braucht, nicht vorsorglich).
+
+**Was ein Klick tatsächlich AUSLÖST bleibt bewusst komponenten-eigen, nicht Teil des Kits:**
+- `topcitations-dashboard` hat bereits ein Apply-gated Filtermenü mit eigenem `sel`-State und
+  einer echten RPC (`fireApplyFilter`). Ein Chart-Klick toggelt hier NUR denselben `sel` und ruft
+  dieselbe Live-Dim-Vorschau wie ein Checkbox-Klick im Menü (`syncChartDim()`) — der User muss wie
+  bisher noch aktiv „Apply" drücken, damit es wirklich fürs Backend gilt. Beide Entry-Points
+  schreiben in denselben State, bleiben also automatisch synchron (Menü zeigt den Chart-Klick als
+  angehakt, ohne dass irgendwas das Menü-Markup direkt anfassen müsste).
+- `citations-combo-chart` hatte noch GAR KEINEN Typ-Filter (die vorhandene `.combo-filter` filtert
+  einzelne Linien-Serien per Checkbox, keine Typen). Hier gibt es kein Apply-Menü, in das man staged
+  reinschreiben könnte — ein Klick wirkt deshalb sofort: er filtert rein clientseitig sowohl den
+  Typ-Chart selbst (Dim) als auch die im Liniendiagramm sichtbaren Serien
+  (`seriesTypeFilter()`, verglichen gegen `ds.__type`, das aus derselben `citation_type`/`url_type`-
+  Metadata stammt wie die Zeilenfarbe). Kein neues Bubble-Event nötig — reine Client-Filterung.
+  Der manuelle Pro-Serie-Filter (`hiddenSeries`, die bestehende `.combo-filter`-Checkbox-Liste) und
+  der neue Typ-Filter sind bewusst UND-verknüpft, nicht ersetzend: eine von Hand ausgeblendete
+  Serie bleibt ausgeblendet, selbst wenn ihr Typ gerade selektiert ist — ein Chart-Klick darf nie
+  eine explizite User-Entscheidung stillschweigend rückgängig machen.
+- `state.typeSel` (combo-chart) wird beim `dataMode`-Wechsel (Domain ↔ URL) hart geleert — die
+  beiden Modi teilen kein Typ-Vokabular (`citation_type` vs. `url_type`), eine übernommene
+  Selektion würde im neuen Modus einen Key filtern, der dort gar nicht existiert.
