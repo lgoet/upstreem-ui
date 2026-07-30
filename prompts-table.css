@@ -97,6 +97,11 @@
 .upt-td-topics .ust-row { overflow: hidden; }
 .up-row:not(.up-tsk) .upt-td-topics { cursor: pointer; transition: background 120ms ease; }
 .up-row:not(.up-tsk) .upt-td-topics:hover { background: var(--vc-heading-bg); }
+/* Inactive view: no topic management on a prompt you've turned off — the cell falls back to
+   plain, non-interactive content (same cursor/hover as any other cell), matching the click
+   handler in prompts-table.js, which skips firing uptTopicsClick entirely in this view. */
+.up-root.is-inactive-view .upt-td-topics { cursor: default; }
+.up-root.is-inactive-view .upt-td-topics:hover { background: transparent; }
 
 /* ---------- Active / Inactive view switch ----------
    Left of the toolbar, next to the heading — it's a view switch, not a filter, and the filter

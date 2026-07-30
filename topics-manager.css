@@ -43,21 +43,23 @@
 .up-root.is-vnarrow .up-export { padding: 0 8px; }
 
 /* ============================================================
-   Modal — the first centered popup/dialog in this component library. Modeled off the closest
-   existing floating surfaces (dropdown menus: border + 0 10px 28px shadow, 140ms opacity/
-   translateY/scale appear; the bulk-bar: heavier shadow the more a surface floats, local --vc-*
-   token redeclaration since it lives outside any .up-root). See the plan doc for the exact
-   reasoning behind every number that isn't a straight reuse.
+   Modal — the first centered popup/dialog in this component library, and the reference
+   implementation for STYLEGUIDE §27 (Popup/Modal). Every number below is the documented standard,
+   not a one-off choice for this component — a second modal elsewhere in the app should copy this
+   section rather than reinvent it.
    ============================================================ */
 .utm-modalbackdrop {
   position: fixed; inset: 0; z-index: 100000;   /* above the bulk-bar's 99999 */
-  background: rgba(0,0,0,.45);
-  backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px);   /* STYLEGUIDE §26: every popup backdrop gets this */
+  background: rgba(0,0,0,.30);
+  backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px);
   display: flex; align-items: center; justify-content: center; padding: 24px;
   opacity: 0; pointer-events: none;
   transition: opacity 160ms ease;
 }
 .utm-modalbackdrop.is-shown { opacity: 1; pointer-events: auto; }
+/* Darker backdrop in dark mode: the same 30% black reads as noticeably lighter/washed-out over a
+   dark page than over a light one, so dark mode gets its own, slightly heavier value. */
+.utm-modalbackdrop[data-theme="dark"] { background: rgba(0,0,0,.35); }
 
 .utm-modalcard {
   --vc-text: #1f1f1b; --vc-muted: #6f737c; --vc-third: #9e9e9e; --vc-border: #e7e9ec;
@@ -70,26 +72,39 @@
   -webkit-font-smoothing: antialiased;
   opacity: 0; transform: translateY(-4px) scale(.985); pointer-events: none;
   transition: opacity 140ms ease, transform 140ms ease;
+  /* One flex column, one gap value (32px) between every top-level block (header, each field,
+     footer) — padding carries the OUTER 16px on all four sides, gap carries everything between. */
+  position: relative;
+  padding: 16px;
+  display: flex; flex-direction: column; gap: 32px;
 }
 .utm-modalbackdrop.is-shown .utm-modalcard { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
 .utm-modalbackdrop[data-theme="dark"] .utm-modalcard {
   --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-third: #808080; --vc-border: #353535;
-  --vc-heading-bg: rgba(42,42,42,0.6); --vc-hover-border: #707070; --up-surface: #151515; --vc-sk: #3a3a3a;
+  --vc-heading-bg: rgba(42,42,42,0.6); --vc-hover-border: #707070; --up-surface: #1b1b1b; --vc-sk: #3a3a3a;
 }
 @media (prefers-reduced-motion: reduce){ .utm-modalbackdrop, .utm-modalcard { transition-duration: 1ms; } }
 .utm-modalcard * { box-sizing: border-box; }
 
-.utm-modalhead { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 20px 0; }
-.utm-modaltitle { font-size: 15px; font-weight: 600; margin: 0; line-height: 1.3; }
-.utm-modalclose { flex: 0 0 auto; width: 28px; height: 28px; border: 0; border-radius: 8px;
+.utm-modalhead { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.utm-modalheading { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.utm-modaltitle { font-size: 22px; font-weight: 500; margin: 0; line-height: 1.25; }
+/* Optional second line under the title — not every popup needs one (this modal currently doesn't),
+   but the token exists so a future one doesn't have to invent its own size/color/weight. */
+.utm-modalsub { font-size: 16px; font-weight: 400; color: var(--vc-third); margin: 0; line-height: 1.3; }
+/* 32x32 hit target, pulled -8px top/right via margin so it visually sits close to the card's true
+   corner despite the card's own 16px padding — a plain 16px inset read as floating, not anchored. */
+.utm-modalclose { flex: 0 0 auto; width: 32px; height: 32px; margin: -8px -8px 0 0; border: 0; border-radius: 9px;
   background: transparent; color: var(--vc-muted); cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center; }
-.utm-modalclose svg { width: 15px; height: 15px; display: block; }
+.utm-modalclose svg { width: 16px; height: 16px; display: block; }
 .utm-modalclose:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
 
-.utm-modalbody { padding: 16px 20px; display: flex; flex-direction: column; gap: 16px; }
-.utm-modalfield { display: flex; flex-direction: column; gap: 6px; }
-.utm-modallabel { font-size: 12px; font-weight: 600; color: var(--vc-muted); }
+.utm-modalbody { display: flex; flex-direction: column; gap: 32px; }
+.utm-modalfield { display: flex; flex-direction: column; gap: 8px; }
+/* Each field's own heading: primary color + weight, not muted — these are content labels a user
+   reads every time the modal opens, not secondary chrome. */
+.utm-modallabel { font-size: 14px; font-weight: 500; color: var(--vc-text); }
 .utm-modalname { height: 36px; padding: 0 12px; border: 1px solid var(--vc-border); border-radius: 9px;
   background: transparent; color: var(--vc-text); font: inherit; font-size: 14px; outline: 0; width: 100%; }
 .utm-modalname:focus { border-color: var(--vc-hover-border); }
@@ -119,7 +134,7 @@
   --indicator-color: var(--vc-text); --outline-color: var(--vc-hover-border);
 }
 
-.utm-modalfoot { display: flex; align-items: center; gap: 10px; padding: 14px 20px 20px; }
+.utm-modalfoot { display: flex; align-items: center; gap: 10px; }
 .utm-modaldelete { height: 34px; padding: 0 14px; border-radius: 9px; border: 1px solid var(--vc-border);
   background: transparent; color: var(--vc-muted); font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; }
 .utm-modaldelete:hover { border-color: #b0200c; color: #b0200c; }

@@ -58,9 +58,13 @@
     select   {"selected":"id1,id2,id3","count":3}   -> fires on every checkbox change; carries the
                                                         WHOLE selection, which deliberately
                                                         survives paging and sorting
-    topics   {"prompt_id":"614ebcc4-…"}             -> click on the Topics cell. Deliberately does
-                                                        NOT also fire rowclick — open your topic
-                                                        management for that prompt here.
+    topics   {"prompt_id":"614ebcc4-…","prompt_text":"Best running shoes 2026","tag_ids":"t1,t2"}
+                -> click on the Topics cell. Deliberately does NOT also fire rowclick — open your
+                   topic management for that prompt here. prompt_text and tag_ids (comma-joined,
+                   same convention as "selected"/"ids" elsewhere) are read straight off that row's
+                   already-loaded data, no extra lookup needed on your side. Inactive prompts have
+                   no topic management at all — the cell is inert there and this event never fires
+                   (see "status" below).
     status   {"status":"inactive"}                  -> Active/Inactive view switch. Re-run the RPC
                                                         filtered to that status.
 
@@ -132,6 +136,7 @@
     (?<="query":")[^"]*        (?<="query_folded":")[^"]*   (?<="query_de":")[^"]*
     (?<="requestId":")[^"]*    (?<="order":")[^"]*          (?<="sort_field":")[^"]*
     (?<="sort_dir":")[^"]*     (?<="prompt_id":")[^"]*      (?<="selected":")[^"]*
+    (?<="prompt_text":")[^"]*
     (?<="brand_mentioned":")[^"]*                           (?<="status":")[^"]*
     (?<="mode":")[^"]*         (?<="ids":")[^"]*            (?<="tag_ids":")[^"]*
     (?<="prompt_ids":")[^"]*   (?<="new_topic_name":")[^"]*
@@ -157,7 +162,10 @@
     avg_rank, avg_sentiment_30d, top_mentions [{name,favicon,mention_count,mentioned_pct}],
     companies_preview_totalcount, created_at
   Not used by the table (kept in the row for later): source, is_active, runs_total,
-  mentioned_runs, last_seen_run_at.
+  mentioned_runs, last_seen_run_at. is_active is worth calling out specifically: whatever popup you
+  build off the rowclick event (prompt detail, actions) can branch its own layout on it directly —
+  e.g. show a Topics action only when true, and Set Active/Delete instead when false — since the
+  whole visible page is always ONE status at a time, sourced from your own "status" event already.
 
   Your RPC repeats TWO grand totals on every row, rather than separate scalar outputs — total_count
   (the count for whichever status you asked for) and total_count_inactive (the count for the OTHER

@@ -66,9 +66,9 @@
            that already fires uptTopicsClick from anywhere in the cell). */
         '.ust-empty-dash{display:inline-block;transition:opacity 140ms ease,max-width 180ms cubic-bezier(.2,0,.38,.9);}',
         '.ust-empty-add{display:inline-flex;align-items:center;gap:3px;max-width:0;opacity:0;overflow:hidden;white-space:nowrap;transition:max-width 180ms cubic-bezier(.2,0,.38,.9),opacity 140ms ease,margin-left 180ms cubic-bezier(.2,0,.38,.9);}',
-        '.upt-td-topics:hover .ust-empty{color:var(--vc-text,#1f1f1b);}',
-        '.upt-td-topics:hover .ust-empty-dash{opacity:0;max-width:0;}',
-        '.upt-td-topics:hover .ust-empty-add{max-width:50px;opacity:1;margin-left:4px;}',
+        '.up-root:not(.is-inactive-view) .upt-td-topics:hover .ust-empty{color:var(--vc-text,#1f1f1b);}',
+        '.up-root:not(.is-inactive-view) .upt-td-topics:hover .ust-empty-dash{opacity:0;max-width:0;}',
+        '.up-root:not(.is-inactive-view) .upt-td-topics:hover .ust-empty-add{max-width:50px;opacity:1;margin-left:4px;}',
         '.ust-more{height:28px;padding:0 10px;border-radius:8px;display:inline-flex;align-items:center;flex:0 0 auto;border:0;background:#f5f5f5;color:var(--ust-more-color,#5f646d);font-size:12px;line-height:1;font-weight:600;white-space:nowrap;cursor:pointer;user-select:none;}',
         '.ust-cell{--ust-more-border:#d9dde3;--ust-more-color:#5f646d;}',
         '.ust-cell .ust-more:hover{background:#ececec;color:#1f1f1b;}',
@@ -1115,6 +1115,12 @@
                '<span class="upt-market-code">' + esc(code) + '</span>' +
              '</span>';
     }
+    function findRowById(id){
+      for (var i = 0; i < state.rows.length; i++){
+        if (String(state.rows[i].prompt_id) === String(id)) return state.rows[i];
+      }
+      return null;
+    }
     function topicsCell(id, tags){
       var json;
       try { json = JSON.stringify(Array.isArray(tags) ? tags : []); } catch(e){ json = "[]"; }
@@ -1208,7 +1214,8 @@
          a stale count from before a filter/status change sits there unchanged while fresh data
          is still in flight, which reads as "nothing happened" rather than "loading". */
       if (isBusy()){ elHeadCount.textContent = ""; elHeadCount.classList.add("is-sk"); return; }
-      var n = (state.totalCount != null) ? state.totalCount : (state.hasData ? state.rows.length : null);
+      var totalForView = state.status === "inactive" ? state.totalCountInactive : state.totalCount;
+      var n = (totalForView != null) ? totalForView : (state.hasData ? state.rows.length : null);
       if (n == null){ elHeadCount.textContent = ""; elHeadCount.classList.add("is-sk"); return; }
       elHeadCount.textContent = UC.fmtTotal(n);
       elHeadCount.classList.remove("is-sk");
@@ -1617,14 +1624,23 @@
 
       /* --- topics cell (own event; must come BEFORE the row-click handler) ---
          Clicking the tags opens topic management for that prompt rather than the prompt's own
-         detail page, so it deliberately swallows the row click. */
-      var topicsTd = e.target.closest(".upt-td-topics");
+         detail page, so it deliberately swallows the row click. Inactive prompts don't get topic
+         management at all (there's nothing to tag on a prompt you've turned off) — the cell falls
+         through untouched so a click there behaves like anywhere else in the row. */
+      var topicsTd = state.status !== "inactive" ? e.target.closest(".upt-td-topics") : null;
       if (topicsTd && root.contains(topicsTd)){
         var tRow = topicsTd.closest(".up-row");
         if (tRow && !tRow.classList.contains("up-tsk")){
           e.stopPropagation();
           var tId = tRow.getAttribute("data-id");
-          if (tId) fire("data-topics-fn", "uptTopicsClick", { prompt_id: tId });
+          if (tId){
+            var tRowData = findRowById(tId);
+            fire("data-topics-fn", "uptTopicsClick", {
+              prompt_id: tId,
+              prompt_text: tRowData ? String(tRowData.prompt_text || "") : "",
+              tag_ids: tRowData && tRowData.tags ? tRowData.tags.map(function(t){ return String(t.id); }).join(",") : ""
+            });
+          }
         }
         return;
       }

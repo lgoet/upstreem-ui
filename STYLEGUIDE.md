@@ -1567,19 +1567,50 @@ Weitere Regeln:
   **kein** „load-once"-Sharing über `window` nötig (das hat früher bei EINEM kaputten Pin den
   ganzen Seiten-Core vergiftet).
 
-## 27. Popup/Modal-Backdrop — Blur
+## 27. Popup/Modal — verbindliches Template
 
-Jeder Modal-/Popup-Backdrop (fixed, `inset:0`, abgedunkelter Scrim hinter einer schwebenden Karte)
-bekommt zusätzlich einen leichten Blur auf den Hintergrund, nicht nur die Abdunkelung:
+Referenzimplementierung: `.utm-modalbackdrop`/`.utm-modalcard` in `topics-manager.css` (der erste
+und bislang einzige echte Modal-Präzedenzfall im Repo). Jedes künftige Popup/Modal übernimmt diese
+Werte 1:1, statt eigene zu erfinden.
 
+**Backdrop** (fixed, `inset:0`, abgedunkelter Scrim hinter einer schwebenden Karte):
 ```css
-background: rgba(0,0,0,.45);
+background: rgba(0,0,0,.30);                                            /* Light Mode */
 backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px);
 ```
+```css
+[data-theme="dark"] { background: rgba(0,0,0,.35); }                    /* Dark Mode */
+```
+Dieselbe 30%-Abdunkelung liest im Dark Mode heller/ausgewaschener als im Light Mode — daher der
+eigene, etwas dunklere Wert. Der Blur bleibt in beiden Themes bei `1.5px`: subtil genug, um den
+Hintergrund als "außer Fokus" zu lesen, ohne selbst sichtbar zu wirken oder auf schwächerer
+Hardware zu ruckeln.
 
-`1.5px` ist bewusst subtil — genug, um den Hintergrund als "außer Fokus" zu lesen, ohne selbst
-sichtbar zu wirken oder auf schwächerer Hardware zu ruckeln. Gilt für jeden neuen Modal-Backdrop
-im Repo (erster Präzedenzfall: `.utm-modalbackdrop` in `topics-manager.css`).
+**Karte** — EIN Flex-Column-Container, EIN Padding-Wert, EIN Gap-Wert zwischen allen
+Top-Level-Blöcken (Header, jedes Feld, Footer):
+```css
+padding: 16px;
+display: flex; flex-direction: column; gap: 32px;
+border-radius: 18px;
+box-shadow: 0 20px 48px rgba(0,0,0,.22);
+```
+Dark Mode: `--up-surface: #1b1b1b` (Karten-Hintergrund).
+
+**Kopfzeile** (`.utm-modalhead`, `align-items:flex-start` wegen des zweizeiligen Headings):
+- Heading: **22px, Weight 500**.
+- Optionale Subheading direkt darunter (eigener `.utm-modalheading`-Wrapper mit **8px Gap**
+  zwischen Heading und Subheading): **16px, Weight 400, Drittfarbe** (`--vc-third`). Nicht jedes
+  Popup braucht eine — das Token existiert, damit ein künftiges nicht wieder Größe/Farbe/Gewicht
+  neu erfindet.
+- Close-Button: **32×32px** Container, **16×16px** Icon, `margin: -8px -8px 0 0` — zieht den
+  Button trotz der 16px Karten-Padding näher an die wirkliche Ecke, statt sichtbar "freizuschweben".
+
+**Feld-Headings** (z. B. "Name", "Appearance" innerhalb der Karte): **14px, Weight 500,
+Primärfarbe** (`--vc-text`, NICHT Mutedfarbe — der User liest diese Labels bei jedem Öffnen).
+**8px Gap** zwischen Feld-Heading und dem Feldinhalt darunter.
+
+**Alle Elemente untereinander** (Header-Block, jedes Feld, Footer): **32px Gap** — getragen vom
+Card-Flex-Container selbst, nicht von individuellem Padding pro Block.
 
 ---
 

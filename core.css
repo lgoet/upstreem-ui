@@ -37,7 +37,7 @@
     /* separator + count exactly as in the other components: 4px dot, 8px gap either side */
     .up-head-sep { width: 4px; height: 4px; border-radius: 50%; background: var(--vc-muted); margin: 0 8px; flex: 0 0 auto; display: none; }
     .up-head-count { font-size: 14px; font-weight: 500; color: var(--vc-muted); display: none; }
-    .up-head-count.is-sk { width: 28px; height: 14px; border-radius: 4px; background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
+    .up-head-count.is-sk { width: 20px; height: 14px; border-radius: 4px; background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
     .up-heading.has-count .up-head-sep, .up-heading.has-count .up-head-count { display: block; }
     .up-head-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; flex: 0 0 auto; }
 
@@ -357,6 +357,15 @@
       background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 14px; box-shadow: 0 10px 28px rgba(0,0,0,.14); padding: 8px;
       opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none; transition: opacity 140ms ease, transform 140ms ease; }
     .up-sort-menu.is-shown { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+    /* Dark mode: var(--vc-border) (#353535) against these menus' #151515 background reads as
+       barely-there — almost the same darkness, so the whole floating card looks edgeless/blurry.
+       A dedicated, brighter border-only override for the four dropdown menus (mentioned/cols/
+       sort/filter), independent of --vc-border everywhere else, which stays as-is for borders on
+       the page's own (lighter) surfaces where the contrast problem doesn't exist. */
+    .up-root[data-theme="dark"] .up-ment-menu,
+    .up-root[data-theme="dark"] .up-cols-menu,
+    .up-root[data-theme="dark"] .up-sort-menu,
+    .up-root[data-theme="dark"] .up-filter-menu { border-color: #454545; }
     .up-root[data-theme="dark"] .up-sort-menu { background: #151515; }
     .up-sort.is-open .up-sort-btn { color: var(--vc-text); background: var(--vc-heading-bg); }
     .up-pop-head-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 18px; }   /* reserve the Select-all button height up front so nothing resizes */

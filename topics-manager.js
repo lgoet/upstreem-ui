@@ -290,7 +290,9 @@
       modalBackdrop.innerHTML =
         '<div class="utm-modalcard" role="dialog" aria-modal="true" aria-labelledby="utm-modaltitle-' + esc(instanceId) + '">' +
           '<div class="utm-modalhead">' +
-            '<h2 class="utm-modaltitle" id="utm-modaltitle-' + esc(instanceId) + '"></h2>' +
+            '<div class="utm-modalheading">' +
+              '<h2 class="utm-modaltitle" id="utm-modaltitle-' + esc(instanceId) + '"></h2>' +
+            '</div>' +
             '<button type="button" class="utm-modalclose" data-modal-close aria-label="Close">' + CLOSE_SVG + '</button>' +
           '</div>' +
           '<div class="utm-modalbody">' +
