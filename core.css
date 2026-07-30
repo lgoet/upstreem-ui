@@ -707,6 +707,10 @@
     .up-name { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
     .up-hl { background: rgba(255, 214, 10, 0.38); color: inherit; border-radius: 3px; padding: 0 1px; }
     .up-root[data-theme="dark"] .up-hl { background: rgba(255, 214, 10, 0.26); }
+    /* Reddit fallback title (UC.redditTitleHtml) — the r/sub prefix and its separator read as a
+       muted breadcrumb, same tone as everywhere else this app uses --vc-third for "secondary,
+       not the point" text; the parsed slug after it stays the row's own normal text colour. */
+    .up-reddit-sub, .up-reddit-sep { color: var(--vc-third); }
     .up-pages { font-size: 12px; font-weight: 400; color: var(--vc-third); white-space: nowrap; flex: 0 0 auto; }
 
     
@@ -858,9 +862,19 @@
 .up-bars { display: flex; flex-direction: column; gap: 0; width: 100%; }
 .up-bar-row { display: flex; align-items: center; padding: 5px 0; }
 .up-bar-row.is-clickable { cursor: pointer; }
-.up-bar-row.is-clickable:hover .up-bar-track { box-shadow: 0 0 0 2px var(--vc-border); }
-.up-bar-track { flex: 1; height: 32px; background: var(--vc-heading-bg); border-radius: 8px; overflow: visible; position: relative; min-width: 0; }
-.up-bar-fill { height: 100%; border-radius: 8px; transition: width .5s cubic-bezier(.4,0,.2,1); display: flex; align-items: center; justify-content: space-between; padding: 0 10px; min-width: 0; gap: 8px; overflow: hidden; }
+/* Hover reads on the FILL and the grey TRACK's own background only — never a border, never the
+   row as a whole (a full-row treatment reads as "the row is a button", which it isn't outside
+   is-clickable, and even there the row's own hit area is enough without a visible outline).
+   filter: brightness() works directly against each bar's inline background color, so it doesn't
+   need its own per-item colour math the way the doughnut's hoverBackgroundColor does (core.js) —
+   same visual language (colours read "stronger" on hover), different mechanism because one is a
+   canvas fill and the other a DOM element's inline style. The track darkens via background, not
+   filter — filter on the track would also repaint .up-bar-fill sitting inside it, compounding
+   with the fill's own brightness() instead of leaving it alone. */
+.up-bar-row:hover .up-bar-fill { filter: brightness(1.12); }
+.up-bar-row:hover .up-bar-track { background: color-mix(in srgb, var(--vc-heading-bg) 100%, black 6%); }
+.up-bar-track { flex: 1; height: 32px; background: var(--vc-heading-bg); border-radius: 8px; overflow: visible; position: relative; min-width: 0; transition: background 120ms ease; }
+.up-bar-fill { height: 100%; border-radius: 8px; transition: width .5s cubic-bezier(.4,0,.2,1), filter 120ms ease; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; min-width: 0; gap: 8px; overflow: hidden; }
 .up-bar-name { font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: opacity .18s ease; }
 .up-bar-pct { font-size: 11px; font-weight: 600; white-space: nowrap; flex: 0 0 auto; transition: opacity .18s ease; }
 /* shown instead of the inside labels when the bar is too short to hold them */

@@ -34,7 +34,7 @@
 
   function uutRun(){
   var UC = window.UpstreemCore;
-  var CITE_COLOR = UC.CITE_COLOR, CITE_ALIAS = UC.CITE_ALIAS, ALL_CITATION_TYPES = UC.ALL_CITATION_TYPES, URL_TYPE = UC.URL_TYPE, ALL_URL_TYPES = UC.ALL_URL_TYPES, OTHER_LIGHT = UC.OTHER_LIGHT, OTHER_DARK = UC.OTHER_DARK, CHIP_BG_DARK = UC.CHIP_BG_DARK, MONTHS = UC.MONTHS, DEBOUNCE = UC.DEBOUNCE, MIN = UC.MIN, SORT_DEBOUNCE = UC.SORT_DEBOUNCE, PAGE_SIZES = UC.PAGE_SIZES, DEFAULT_PAGE_SIZE = UC.DEFAULT_PAGE_SIZE, fmtTotal = UC.fmtTotal, isYes = UC.isYes, highlight = UC.highlight, esc = UC.esc, citeName = UC.citeName, tint = UC.tint, toNum = UC.toNum, fmt1 = UC.fmt1, fmtInt = UC.fmtInt, fmtDate = UC.fmtDate, foldDiacritics = UC.foldDiacritics, germanExpand = UC.germanExpand, resolveBubbleFn = UC.resolveBubbleFn, TREND_UP = UC.TREND_UP, TREND_DOWN = UC.TREND_DOWN, CHECK_SVG = UC.CHECK_SVG, COPY_SVG = UC.COPY_SVG, GOTO_SVG = UC.GOTO_SVG, DONE_SVG = UC.DONE_SVG, EXT_SVG = UC.EXT_SVG, STORE = UC.STORE, LOADING_EXPLICIT = UC.LOADING_EXPLICIT;
+  var CITE_COLOR = UC.CITE_COLOR, CITE_ALIAS = UC.CITE_ALIAS, ALL_CITATION_TYPES = UC.ALL_CITATION_TYPES, URL_TYPE = UC.URL_TYPE, ALL_URL_TYPES = UC.ALL_URL_TYPES, OTHER_LIGHT = UC.OTHER_LIGHT, OTHER_DARK = UC.OTHER_DARK, CHIP_BG_DARK = UC.CHIP_BG_DARK, MONTHS = UC.MONTHS, DEBOUNCE = UC.DEBOUNCE, MIN = UC.MIN, SORT_DEBOUNCE = UC.SORT_DEBOUNCE, PAGE_SIZES = UC.PAGE_SIZES, DEFAULT_PAGE_SIZE = UC.DEFAULT_PAGE_SIZE, fmtTotal = UC.fmtTotal, isYes = UC.isYes, highlight = UC.highlight, redditTitleHtml = UC.redditTitleHtml, esc = UC.esc, citeName = UC.citeName, tint = UC.tint, toNum = UC.toNum, fmt1 = UC.fmt1, fmtInt = UC.fmtInt, fmtDate = UC.fmtDate, foldDiacritics = UC.foldDiacritics, germanExpand = UC.germanExpand, resolveBubbleFn = UC.resolveBubbleFn, TREND_UP = UC.TREND_UP, TREND_DOWN = UC.TREND_DOWN, CHECK_SVG = UC.CHECK_SVG, COPY_SVG = UC.COPY_SVG, GOTO_SVG = UC.GOTO_SVG, DONE_SVG = UC.DONE_SVG, EXT_SVG = UC.EXT_SVG, STORE = UC.STORE, LOADING_EXPLICIT = UC.LOADING_EXPLICIT;
 
   /* Hideable columns. Domain and Actions are deliberately absent — the table makes no sense
      without the domain, and the row actions are the point of the Actions cell. */
@@ -261,7 +261,7 @@
                    ' onerror="this.parentNode.classList.remove(\'has-img\'); this.remove()"/>' : "") +
           '</span>' +
           '<span class="uut-url-wrap">' +
-            '<span class="uut-url-title">' + highlight(title, state.query) + '</span>' +
+            '<span class="uut-url-title">' + (redditTitleHtml(url, title, state.query) || highlight(title, state.query)) + '</span>' +
             '<span class="uut-url-sub">' + highlight(url, state.query) + '</span>' +
           '</span>' +
           '<span class="uut-row-goto">' + GOTO_SVG + '</span>' +

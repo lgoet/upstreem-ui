@@ -143,7 +143,6 @@
       return {
         label: metaMap[id].label,
         __id: id,
-        __type: metaMap[id].type,
         __globalShare: metaMap[id].global_share,
         __favicon: metaMap[id].favicon,
         __baseColor: col,
@@ -190,14 +189,9 @@
        are ignored for it from then on — matches visibility-chart.js/topcitations-dashboard.js. */
     var LOADING_EXPLICIT = (window.__ccLoadingExplicit = window.__ccLoadingExplicit || {});
 
-    /* Which type slices are "selected" for the click-to-filter feature below — session-only,
-       reset whenever dataMode actually switches (see update()) since domain/url modes don't share
-       a type vocabulary (citation_type vs url_type). */
-    var TYPE_SEL_STORE = (window.__ccTypeSel = window.__ccTypeSel || {});
     var state = {
       chartMode: startMode, dataMode: "domain",
       total: 0, prepped: [],
-      typeSel: TYPE_SEL_STORE[instanceId] || (TYPE_SEL_STORE[instanceId] = {}),
       loading: LOADING_EXPLICIT[instanceId]
         ? !!(window.__ccCache && window.__ccCache[instanceId] && window.__ccCache[instanceId].loading)
         : readProcessing(),
@@ -284,32 +278,15 @@
       mode: function(){ return state.dataMode; },
       total: function(){ return state.total; },
       centerLabel: "Citations",
-      collapseHost: donutRoot,
-      /* Clicking a segment/legend row/bar toggles that type as a live filter on BOTH halves: the
-         type chart itself dims non-selected slices (same treatment as topcitations-dashboard),
-         and the line chart on the left keeps only the series whose own type is selected — see
-         seriesTypeFilter() in renderLineSide. No server round-trip: unlike topcitations-dashboard
-         there is no type-filter RPC/menu here to stage into, so this applies immediately. */
-      onSliceClick: function(key){
-        if (state.typeSel[key]) delete state.typeSel[key]; else state.typeSel[key] = true;
-        renderDonutSide();
-        renderLineSide();
-      }
+      collapseHost: donutRoot
     });
 
     /* ---------- render (two independent halves) ---------- */
     function renderDonutSide(){
       if (!isOwner()) return;
       if (state.loading || !state.hasData){ topTotal.style.display = "none"; typeChart.skeleton(); }
-      else {
-        var dimmed = UC.applyTypeDim(state.prepped, state.typeSel, isDark);
-        if (state.chartMode === "bar"){ topTotal.style.display = "flex"; topTotalN.textContent = fmtTotal(state.total); typeChart.renderBars(dimmed); }
-        else { topTotal.style.display = "none"; typeChart.renderDonut(dimmed); }
-      }
-    }
-    function seriesTypeFilter(ds){
-      var keys = Object.keys(state.typeSel).filter(function(k){ return state.typeSel[k]; });
-      return !keys.length || keys.indexOf(String(ds.__type || "")) >= 0;
+      else if (state.chartMode === "bar"){ topTotal.style.display = "flex"; topTotalN.textContent = fmtTotal(state.total); typeChart.renderBars(state.prepped); }
+      else { topTotal.style.display = "none"; typeChart.renderDonut(state.prepped); }
     }
     function renderLineSide(){
       if (!isOwner()) return;
@@ -326,10 +303,7 @@
          datasets that should actually be drawn */
       var built = buildLineDatasets(state.series, state.dataMode === "url" ? state.meta.urls : state.meta.domains, state.dataMode, isDark);
       populateFilter(built.datasets);
-      /* Two independent filters AND together: the user's own per-series checkbox choice
-         (hiddenSeries) always wins regardless of type selection, and a type filter only narrows
-         further — clicking a type slice never silently un-hides a series the user hid by hand. */
-      var visible = built.datasets.filter(function(ds){ return !hiddenSeries[ds.__id] && seriesTypeFilter(ds); });
+      var visible = built.datasets.filter(function(ds){ return !hiddenSeries[ds.__id]; });
       line.render({ labels: built.labels, datasets: visible });
     }
     function render(){
@@ -618,13 +592,7 @@
           isDark = isYes(params.isDark);
           if (isDark){ root.setAttribute("data-theme","dark"); donutRoot.setAttribute("data-theme","dark"); } else { root.removeAttribute("data-theme"); donutRoot.removeAttribute("data-theme"); }
         }
-        if (params.dataMode != null){
-          var newMode = (params.dataMode === "url") ? "url" : "domain";
-          /* domain and url modes don't share a type vocabulary (citation_type vs url_type) — a
-             selection carried over from one would silently (and wrongly) filter the other. */
-          if (newMode !== state.dataMode){ state.typeSel = TYPE_SEL_STORE[instanceId] = {}; }
-          state.dataMode = newMode;
-        }
+        if (params.dataMode != null) state.dataMode = (params.dataMode === "url") ? "url" : "domain";
         if ((params.chartMode === "bar" || params.chartMode === "doughnut") && !savedMode) state.chartMode = params.chartMode;
         if (params.total != null) state.total = Number(params.total) || 0;
         var split = (params.typeSplit != null) ? params.typeSplit : params.data;
@@ -672,7 +640,6 @@
            resetTopCitations, and for the same reason: a reset ahead of a fresh load must not
            re-trigger whatever workflow is wired to the granularity click. */
         hiddenSeries = FILTER_STORE[instanceId] = {};
-        state.typeSel = TYPE_SEL_STORE[instanceId] = {};
         delete GRAN_PICKED[instanceId];
         curGran = "day"; GRAN_STORE[instanceId] = "day";
 

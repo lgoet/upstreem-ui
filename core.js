@@ -63,6 +63,53 @@
     try { return safe.replace(new RegExp("(" + needle + ")", "ig"), '<mark class="up-hl">$1</mark>'); }
     catch(e){ return safe; }
   }
+  /* ---------- Reddit URL → readable title ----------
+     RPC-supplied titles for Reddit results are usually just the scraped page <title>, which for
+     Reddit is almost always the literal string "reddit.com" — useless as a row label. The comment
+     ID in the URL's own path is more informative than that: r/<subreddit> always exists, and the
+     slug segment right after the ID (when Reddit's own link included one — it doesn't always,
+     e.g. a bare .../comments/1k1eu6a with no trailing words) is the post's own title with spaces
+     swapped for underscores and non-ASCII percent-encoded. Old/new/mobile/no-participation
+     subdomains (old./m./np.) all share this same path shape. A REAL scraped title (anything other
+     than the bare domain) always wins over this — parsing is only the fallback for the common
+     "reddit.com" case. */
+  var REDDIT_URL_RE = /^https?:\/\/(?:[a-z0-9-]+\.)?reddit\.com\/r\/([A-Za-z0-9_]+)\/comments\/[a-z0-9]+(?:\/([^\/?#]+))?/i;
+  function parseRedditUrl(url){
+    var m = REDDIT_URL_RE.exec(String(url == null ? "" : url));
+    if (!m) return null;
+    var slug = null;
+    if (m[2]){
+      var raw = m[2];
+      try { raw = decodeURIComponent(raw); } catch(e){}
+      raw = raw.replace(/_/g, " ").trim();
+      if (raw) slug = raw.charAt(0).toUpperCase() + raw.slice(1);
+    }
+    return { sub: m[1], slug: slug };
+  }
+  /* "No real title" means empty, or exactly the URL's own hostname — the scraped-<title> sentinel
+     Reddit produces for the vast majority of links (also covers a title that's literally the raw
+     URL, which some callers already fall back to when the RPC sends nothing at all). */
+  function isGenericUrlTitle(title, url){
+    var t = String(title == null ? "" : title).trim().toLowerCase();
+    if (!t || t === String(url == null ? "" : url).trim().toLowerCase()) return true;
+    try { return t === new URL(String(url)).hostname.replace(/^www\./, "").toLowerCase(); }
+    catch(e){ return false; }
+  }
+  /* Returns HTML (r/sub, then a muted "/", then the parsed slug when Reddit's own link had one)
+     or null when this isn't a Reddit URL / a real title already exists — null means "render your
+     normal title the usual way", not "render nothing". `q` is the caller's active search query,
+     highlighted exactly like every other title cell so a Reddit result found via search still
+     shows its match. */
+  function redditTitleHtml(url, title, q){
+    if (!isGenericUrlTitle(title, url)) return null;
+    var parsed = parseRedditUrl(url);
+    if (!parsed) return null;
+    var out = '<span class="up-reddit-sub">' + highlight("r/" + parsed.sub, q) + '</span>';
+    if (parsed.slug){
+      out += ' <span class="up-reddit-sep">/</span> ' + highlight(parsed.slug, q);
+    }
+    return out;
+  }
   /* ---------- parseBubbleJson ----------
      Bubble's ":formatted as text" output is JSON-SHAPED but not valid JSON: several field types
      come through unquoted — booleans as the bare words yes/no ("yes is not defined") and emoji as
@@ -156,6 +203,19 @@
     if (h.length === 3) h = h.split("").map(function(x){ return x + x; }).join("");
     var n = parseInt(h, 16);
     return "rgba(" + ((n>>16)&255) + "," + ((n>>8)&255) + "," + (n&255) + "," + a + ")";
+  }
+  /* Blends a hex colour toward white by `amt` (0-1) — the doughnut's hover state (see
+     makeTypeChart's hoverBackgroundColor). Bars get the visually equivalent effect via a CSS
+     `filter: brightness()` on their own fill instead (their colour is an inline style, not a
+     canvas fill core can intercept), so the two chart types read as the same hover language
+     without sharing implementation. */
+  function brighten(hex, amt){
+    var h = String(hex).replace("#","");
+    if (h.length === 3) h = h.split("").map(function(x){ return x + x; }).join("");
+    var n = parseInt(h, 16);
+    var r = (n>>16)&255, g = (n>>8)&255, b = n&255;
+    r = Math.round(r + (255-r)*amt); g = Math.round(g + (255-g)*amt); b = Math.round(b + (255-b)*amt);
+    return "rgb(" + r + "," + g + "," + b + ")";
   }
   /* Number(null) is 0 and Number("") is 0 — both would otherwise sail through as valid numbers
      here, turning "no value" into a fake zero everywhere toNum feeds fmt1/fmtInt (found via a
@@ -2757,6 +2817,7 @@
             data: { labels: allZero ? ["—"] : d.map(function(x){ return x.name; }),
               datasets: [{ data: allZero ? [1] : display, originalData: allZero ? [0] : origData,
                 backgroundColor: allZero ? [isDark() ? "rgba(255,255,255,0.06)" : "#eeeeee"] : d.map(function(x){ return x.color; }),
+                hoverBackgroundColor: allZero ? [isDark() ? "rgba(255,255,255,0.06)" : "#eeeeee"] : d.map(function(x){ return brighten(x.color, 0.15); }),
                 spacing: 0, borderWidth: 0, borderRadius: CORNER, hoverOffset: HOVER }] },
             plugins: [constantGapPlugin, ringWidthPlugin],
             options: { responsive: true, maintainAspectRatio: false, layout: { padding: 8 },
@@ -2912,10 +2973,12 @@
     fmtTotal: fmtTotal,
     isYes: isYes,
     highlight: highlight,
+    redditTitleHtml: redditTitleHtml,
     esc: esc,
     parseBubbleJson: parseBubbleJson,
     citeName: citeName,
     tint: tint,
+    brighten: brighten,
     toNum: toNum,
     fmt1: fmt1,
     fmtInt: fmtInt,

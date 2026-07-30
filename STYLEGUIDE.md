@@ -1965,35 +1965,89 @@ Anführungszeichen, Backslashes und Emoji in Freitextfeldern.
 
 ## 35. Chart-Segment-Klick als Typ-Filter: geteiltes Kit, komponenten-eigene Bedeutung
 
-`UC.makeTypeChart` kann jetzt optional `cfg.onSliceClick(key)` nehmen — verkabelt automatisch
-Klicks auf Doughnut-Segmente (Chart.js `onClick`, inkl. `onHover`-Cursor), Legenden-Zeilen
+`UC.makeTypeChart` kann optional `cfg.onSliceClick(key)` nehmen — verkabelt automatisch Klicks auf
+Doughnut-Segmente (Chart.js `onClick`, inkl. `onHover`-Cursor), Legenden-Zeilen
 (`.up-donut-legend-row.is-clickable`) und Bar-Zeilen (`.up-bar-row.is-clickable`), alle drei auf
 denselben `key` aus den vorbereiteten Items. Der "other"-Sammel-Key (URL-Modus, mehr als
 `MAX_URL_SLICES` Typen) ist NIE klickbar — er fasst mehrere echte Typen zusammen und lässt sich
-nicht auf einen einzelnen Filter-Wert zurückführen.
+nicht auf einen einzelnen Filter-Wert zurückführen. `UC.applyTypeDim(prepped, sel, isDark)` ist das
+eigentliche Grau-Legen non-selektierter Slices, extrahiert aus `topcitations-dashboard`s vorheriger
+lokaler `applySelectionDim`.
 
-Das eigentliche Grau-Legen non-selektierter Slices ist jetzt `UC.applyTypeDim(prepped, sel,
-isDark)` — extrahiert aus `topcitations-dashboard`s vorheriger lokaler `applySelectionDim`, weil
-`citations-combo-chart` als zweiter echter Verbraucher genau dieselbe Logik brauchte (Duplicate-
-first-Prinzip: erst extrahieren, wenn eine zweite Stelle es wirklich braucht, nicht vorsorglich).
+**Aktuell nur EIN echter Verbraucher: `topcitations-dashboard`.** `citations-combo-chart` hatte
+diese Funktion kurzzeitig (eigener, rein clientseitiger Typ-Filter ohne Apply-Menü, UND-verknüpft
+mit dem Pro-Serie-Filter) — auf expliziten User-Wunsch wieder komplett entfernt. Das Kit selbst
+(`onSliceClick`/`applyTypeDim`) bleibt trotzdem in core, weil `topcitations-dashboard` es weiter
+braucht; nur die Verkabelung in `citations-combo-chart.js`s `UC.makeTypeChart({...})`-Aufruf ist
+weg (kein `onSliceClick` mehr übergeben → `clickable` ist dort automatisch `false`, keine
+`.is-clickable`-Klasse, kein Cursor-Wechsel — nichts extra abzuschalten). Falls das je wieder
+gebraucht wird: der Git-Verlauf dieser Datei zeigt die vorherige Implementierung (`state.typeSel`,
+`seriesTypeFilter()`, UND-Verknüpfung mit `hiddenSeries`) — nicht neu erfinden, nur zurückholen.
 
-**Was ein Klick tatsächlich AUSLÖST bleibt bewusst komponenten-eigen, nicht Teil des Kits:**
-- `topcitations-dashboard` hat bereits ein Apply-gated Filtermenü mit eigenem `sel`-State und
-  einer echten RPC (`fireApplyFilter`). Ein Chart-Klick toggelt hier NUR denselben `sel` und ruft
-  dieselbe Live-Dim-Vorschau wie ein Checkbox-Klick im Menü (`syncChartDim()`) — der User muss wie
-  bisher noch aktiv „Apply" drücken, damit es wirklich fürs Backend gilt. Beide Entry-Points
-  schreiben in denselben State, bleiben also automatisch synchron (Menü zeigt den Chart-Klick als
-  angehakt, ohne dass irgendwas das Menü-Markup direkt anfassen müsste).
-- `citations-combo-chart` hatte noch GAR KEINEN Typ-Filter (die vorhandene `.combo-filter` filtert
-  einzelne Linien-Serien per Checkbox, keine Typen). Hier gibt es kein Apply-Menü, in das man staged
-  reinschreiben könnte — ein Klick wirkt deshalb sofort: er filtert rein clientseitig sowohl den
-  Typ-Chart selbst (Dim) als auch die im Liniendiagramm sichtbaren Serien
-  (`seriesTypeFilter()`, verglichen gegen `ds.__type`, das aus derselben `citation_type`/`url_type`-
-  Metadata stammt wie die Zeilenfarbe). Kein neues Bubble-Event nötig — reine Client-Filterung.
-  Der manuelle Pro-Serie-Filter (`hiddenSeries`, die bestehende `.combo-filter`-Checkbox-Liste) und
-  der neue Typ-Filter sind bewusst UND-verknüpft, nicht ersetzend: eine von Hand ausgeblendete
-  Serie bleibt ausgeblendet, selbst wenn ihr Typ gerade selektiert ist — ein Chart-Klick darf nie
-  eine explizite User-Entscheidung stillschweigend rückgängig machen.
-- `state.typeSel` (combo-chart) wird beim `dataMode`-Wechsel (Domain ↔ URL) hart geleert — die
-  beiden Modi teilen kein Typ-Vokabular (`citation_type` vs. `url_type`), eine übernommene
-  Selektion würde im neuen Modus einen Key filtern, der dort gar nicht existiert.
+**`topcitations-dashboard`s Klick feuert seit dieser Runde SOFORT das echte Apply-Event**, nicht
+nur den Live-Dim wie ein bloßer Checkbox-Klick im Menü. `onSliceClick` toggelt `sel[key]` — exakt
+dasselbe Objekt, das die Checkboxen im Filtermenü auch schreiben, beide Entry-Points bleiben also
+automatisch synchron — UND ruft danach `fireApplyFilter()` selbst auf (nicht eine Kopie davon: ein
+Klick auf ein Chart-Segment kann sich sonst nie von einem echten Apply-Klick unterscheiden). Die
+Menü-Checkboxen selbst bleiben staged-bis-Apply (siehe §31-Nachbarschaft/`up-filter-submit`) — nur
+der Chart-Klick committet sofort, weil er eine einzelne, abgeschlossene Entscheidung ist, kein
+Multi-Select-Vorgang wie das Ankreuzen mehrerer Boxen vor einem gemeinsamen Apply.
+
+**Reset-Button neben dem Chart-Type-Switch** (`.tcd-chart-reset`, `topcitations-dashboard.js`):
+nur sichtbar, wenn `state.appliedTypeSel`/`appliedUrlTypeSel` mindestens einen Key enthält — exakt
+dasselbe Signal, das schon den Filter-Badge zeigt (`syncFilterBadge()` toggelt jetzt beide). Klick
+ruft `resetTypeFilters()` — dieselbe Funktion, die auch das Filtermenü-eigene Reset benutzt, damit
+die zwei Einstiegspunkte nie auseinanderlaufen können. **Wird per JS in `.tcd-unit-left
+.tcd-head-tools` injiziert statt in die statische Bubble-Markup aufgenommen** — bestehende Embeds
+bekommen den Button dadurch automatisch mit dem nächsten CDN-Pin, ohne dass der User seine
+Bubble-HTML neu einfügen muss. Faustregel für jede zukünftige "neuer Header-Button"-Anfrage:
+erst prüfen, ob eine JS-Injektion reicht (spart dem User einen Markup-Reimport), statisches Markup
+nur, wenn das Element wirklich vom allerersten Render an da sein muss.
+
+## 36. Bar-Hover "wie im Doughnut": zwei verschiedene Mechanismen für denselben Eindruck
+
+Der Doughnut hovert per Chart.js `hoverBackgroundColor` (ein Array vorberechneter, aufgehellter
+Farben, `UC.brighten(hex, amt)` — blendet Richtung Weiß). Bars sind aber kein Canvas-Fill, sondern
+ein `<div>` mit `background: <inline-color>` — Chart.js' Mechanismus greift dort gar nicht. Gleiche
+WIRKUNG, andere Technik: `.up-bar-row:hover .up-bar-fill { filter: brightness(1.12); }` funktioniert
+direkt gegen jede beliebige inline gesetzte Farbe, ganz ohne pro Bar eine eigene Hover-Farbe
+vorausberechnen zu müssen.
+
+**Der graue Track darf NICHT über `filter` mitgedimmt werden.** `.up-bar-fill` sitzt als echtes
+Kind-Element IN `.up-bar-track` — ein `filter` auf dem Track würde das gerenderte Ergebnis der
+gesamten Subtree (also auch den bereits gehoverten Fill) ein zweites Mal einfärben, die beiden
+Effekte multiplizieren sich (0.94 × 1.12 ≈ 1.05 statt der beabsichtigten 1.12). Deshalb bekommt der
+Track stattdessen `background: color-mix(in srgb, var(--vc-heading-bg) 100%, black 6%)` — ändert
+nur die eigene Hintergrundfarbe, lässt das gerenderte Kind unangetastet. Faustregel: `filter` auf
+einem Container trifft IMMER auch dessen Kinder mit — sobald ein Kind selbst schon einen Hover-
+Filter/eine Hover-Transition hat, gehört die Elternfarbe auf `background`, nicht auf `filter`.
+
+Genauso wichtig: der Hover-Trigger sitzt auf `.up-bar-row` (die ganze Zeile reagiert, großzügige
+Trefferfläche), aber die sichtbare ÄNDERUNG bleibt auf `.up-bar-fill`/`.up-bar-track` beschränkt —
+nie ein Border, nie ein Hintergrund/Schatten auf der Row selbst. Eine Row-weite Hover-Optik liest
+sich wie "die ganze Zeile ist ein Button", was außerhalb von `.is-clickable` schlicht falsch ist.
+
+## 37. Reddit-URLs: der gescrapte Titel ist fast immer nur "reddit.com"
+
+`UC.redditTitleHtml(url, title, query)` (core.js) parst `r/<subreddit>` und den optionalen
+Slug-Teil direkt aus dem URL-Pfad (`/r/sub/comments/<id>/<slug>`) und baut daraus "r/sub / Lesbarer
+Titel" — Slug URL-dekodiert, Unterstriche durch Leerzeichen ersetzt, erster Buchstabe groß. Läuft
+NUR an, wenn der mitgelieferte `title` "generisch" ist (leer, oder exakt die URL, oder exakt der
+Hostname — `isGenericUrlTitle()`) — ein echter, vom RPC gelieferter Titel gewinnt immer, auch wenn
+er zufällig ebenfalls von einer Reddit-URL kommt. Reddit liefert nicht jedem Kommentar-Link einen
+Slug (z.B. `.../comments/1k1eu6a` ganz ohne Textteil) — in dem Fall zeigt die Funktion nur
+`r/subreddit`, ohne Trenner oder leeren Rest danach.
+
+Gibt `null` zurück (nicht einen leeren String), wenn die URL kein Reddit ist ODER schon ein echter
+Titel vorliegt — der Aufrufer fällt in dem Fall auf sein normales `highlight(title, query)` zurück
+(`redditTitleHtml(...) || highlight(...)`). Zwei Verbraucher bislang: `domains-table.js`s
+`subrowHtml()` (nur im Title-Modus des Drilldown-Switchers, nicht im URL-Modus — der zeigt bewusst
+die rohe URL) und `urls-table.js`s `rowHtml()` (nur die Titel-Zeile `.uut-url-title`, die separate
+URL-Subzeile `.uut-url-sub` bleibt unverändert die rohe URL). Zweiter echter Verbraucher direkt bei
+Einführung — deshalb sofort in core statt erst komponenten-lokal gebaut.
+
+Visuell: `r/sub` UND der `/`-Trenner laufen über `--vc-third` (die gedämpfteste Textfarbe im
+System — "das hier ist Kontext, nicht der Inhalt"), der geparste Titel-Teil bleibt in der Zeile
+eigener normaler Textfarbe. Als reine Leerzeichen im HTML eingefügt (kein Flex-`gap`), weil die
+Titel-Zellen selbst kein Flex-Layout sind — funktioniert dadurch unabhängig davon, wie die jeweilige
+Zelle sonst aufgebaut ist.

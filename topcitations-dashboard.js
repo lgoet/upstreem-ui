@@ -198,16 +198,18 @@
         var head = root.querySelector(".tcd-head");
         return rootH - (head ? head.offsetHeight + 16 : 0) - 32;
       },
-      /* Clicking a segment/legend row/bar toggles it exactly like its checkbox in the filter menu
-         below (stage + live dim) — Apply still has to be clicked to actually fire the RPC filter,
-         same staged-then-committed flow the menu already uses. Keeps the two entry points into
-         the same `sel` object in sync automatically, since both write to it. */
+      /* Clicking a segment/legend row/bar is the exact same action as clicking its checkbox in
+         the filter menu below, PLUS an immediate Apply — a chart click is one decisive action
+         with nothing to stage further, unlike ticking several boxes in the menu before deciding.
+         Reuses fireApplyFilter() itself (not a copy of what it does) so this can never drift from
+         what a real Apply click sends. */
       onSliceClick: function(key){
         var sel = state.mode === "url" ? state.filterUrlTypeSel : state.filterTypeSel;
         sel[key] = !sel[key];
         persistState();
         populateFilter();
         syncChartDim();
+        fireApplyFilter();
       }
     });
     function applyCollapse(){ typeChart.applyCollapse(); }
@@ -384,6 +386,24 @@
     function setFilterOpen(open){ if (open) filterPop.open(); else filterPop.close(false); }
     function closePops(){ setFilterOpen(false); }
 
+    /* Small "Reset" control, top-right of the LEFT (type chart) unit's own toolbar — shown only
+       while a type filter (citation or url) is actually applied. Injected here rather than added
+       to the static bubble markup so existing embeds pick it up on the next CDN-pin bump without
+       needing their HTML re-pasted; see syncFilterBadge() for the visibility toggle, and
+       resetTypeFilters() above for what a click does — identical to the filter menu's own Reset. */
+    var chartHeadTools = root.querySelector(".tcd-unit-left .tcd-head-tools");
+    var chartResetBtn = chartHeadTools ? chartHeadTools.querySelector(".tcd-chart-reset") : null;
+    if (chartHeadTools && !chartResetBtn){
+      chartResetBtn = document.createElement("button");
+      chartResetBtn.type = "button";
+      chartResetBtn.className = "tcd-chart-reset";
+      chartResetBtn.innerHTML =
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>' +
+        '<span>Reset</span>';
+      chartHeadTools.appendChild(chartResetBtn);
+      chartResetBtn.addEventListener("click", function(ev){ ev.stopPropagation(); resetTypeFilters(); });
+    }
+
     function fireApplyFilter(){
       var citationIds = Object.keys(state.filterTypeSel).filter(function(k){ return state.filterTypeSel[k]; });
       var urlIds = Object.keys(state.filterUrlTypeSel).filter(function(k){ return state.filterUrlTypeSel[k]; });
@@ -399,6 +419,16 @@
       var fn = resolveBubbleFn(fnName);
       if (typeof fn === "function"){ try { fn(combined, instanceId); } catch(e){} }
     }
+    /* Shared by the filter menu's own Reset button and the header reset button next to the chart
+       (see chartResetBtn below) — one place so the two entry points can never drift apart. */
+    function resetTypeFilters(){
+      state.filterTypeSel = {};
+      state.filterUrlTypeSel = {};
+      persistState();
+      populateFilter();
+      syncChartDim();
+      fireApplyFilter();   // also clears the applied snapshot + hides the badge
+    }
     function fireDimension(){
       var fnName = root.getAttribute("data-dimension-fn") || "bubble_fn_tcdFilterDimension";
       var fn = resolveBubbleFn(fnName);
@@ -412,13 +442,12 @@
 
     var brandToggle = root.querySelector(".tcd-brand-toggle");
     function syncFilterBadge(){
-      var badge = root.querySelector(".tcd-filter-badge");
-      if (!badge) return;
       var n = 0;
       Object.keys(state.appliedTypeSel).forEach(function(k){ if (state.appliedTypeSel[k]) n++; });
       Object.keys(state.appliedUrlTypeSel).forEach(function(k){ if (state.appliedUrlTypeSel[k]) n++; });
-      badge.textContent = n ? String(n) : "";
-      badge.classList.toggle("is-visible", n > 0);
+      var badge = root.querySelector(".tcd-filter-badge");
+      if (badge){ badge.textContent = n ? String(n) : ""; badge.classList.toggle("is-visible", n > 0); }
+      if (chartResetBtn) chartResetBtn.classList.toggle("is-visible", n > 0);
     }
     function syncBrandToggle(startClearMessage){
       if (!brandToggle) return;
@@ -490,12 +519,7 @@
       var resetBtn = filterMenu.querySelector(".up-filter-reset");
       if (resetBtn) resetBtn.addEventListener("click", function(ev){
         ev.stopPropagation();
-        state.filterTypeSel = {};
-        state.filterUrlTypeSel = {};
-        persistState();
-        populateFilter();
-        syncChartDim();
-        fireApplyFilter();   // also clears the applied snapshot + hides the badge
+        resetTypeFilters();
         setFilterOpen(false);   // Reset is a decision, not a staging step — closes like Apply
       });
 

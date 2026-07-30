@@ -35,7 +35,7 @@
 
   function udtRun(){
   var UC = window.UpstreemCore;
-  var CITE_COLOR = UC.CITE_COLOR, CITE_ALIAS = UC.CITE_ALIAS, ALL_CITATION_TYPES = UC.ALL_CITATION_TYPES, URL_TYPE = UC.URL_TYPE, ALL_URL_TYPES = UC.ALL_URL_TYPES, OTHER_LIGHT = UC.OTHER_LIGHT, OTHER_DARK = UC.OTHER_DARK, CHIP_BG_DARK = UC.CHIP_BG_DARK, MONTHS = UC.MONTHS, DEBOUNCE = UC.DEBOUNCE, MIN = UC.MIN, SORT_DEBOUNCE = UC.SORT_DEBOUNCE, PAGE_SIZES = UC.PAGE_SIZES, DEFAULT_PAGE_SIZE = UC.DEFAULT_PAGE_SIZE, fmtTotal = UC.fmtTotal, isYes = UC.isYes, highlight = UC.highlight, esc = UC.esc, citeName = UC.citeName, tint = UC.tint, toNum = UC.toNum, fmt1 = UC.fmt1, fmtInt = UC.fmtInt, fmtDate = UC.fmtDate, foldDiacritics = UC.foldDiacritics, germanExpand = UC.germanExpand, resolveBubbleFn = UC.resolveBubbleFn, TREND_UP = UC.TREND_UP, TREND_DOWN = UC.TREND_DOWN, CHECK_SVG = UC.CHECK_SVG, COPY_SVG = UC.COPY_SVG, GOTO_SVG = UC.GOTO_SVG, DONE_SVG = UC.DONE_SVG, EXT_SVG = UC.EXT_SVG;
+  var CITE_COLOR = UC.CITE_COLOR, CITE_ALIAS = UC.CITE_ALIAS, ALL_CITATION_TYPES = UC.ALL_CITATION_TYPES, URL_TYPE = UC.URL_TYPE, ALL_URL_TYPES = UC.ALL_URL_TYPES, OTHER_LIGHT = UC.OTHER_LIGHT, OTHER_DARK = UC.OTHER_DARK, CHIP_BG_DARK = UC.CHIP_BG_DARK, MONTHS = UC.MONTHS, DEBOUNCE = UC.DEBOUNCE, MIN = UC.MIN, SORT_DEBOUNCE = UC.SORT_DEBOUNCE, PAGE_SIZES = UC.PAGE_SIZES, DEFAULT_PAGE_SIZE = UC.DEFAULT_PAGE_SIZE, fmtTotal = UC.fmtTotal, isYes = UC.isYes, highlight = UC.highlight, redditTitleHtml = UC.redditTitleHtml, esc = UC.esc, citeName = UC.citeName, tint = UC.tint, toNum = UC.toNum, fmt1 = UC.fmt1, fmtInt = UC.fmtInt, fmtDate = UC.fmtDate, foldDiacritics = UC.foldDiacritics, germanExpand = UC.germanExpand, resolveBubbleFn = UC.resolveBubbleFn, TREND_UP = UC.TREND_UP, TREND_DOWN = UC.TREND_DOWN, CHECK_SVG = UC.CHECK_SVG, COPY_SVG = UC.COPY_SVG, GOTO_SVG = UC.GOTO_SVG, DONE_SVG = UC.DONE_SVG, EXT_SVG = UC.EXT_SVG;
 
   /* Own store, deliberately NOT UpstreemCore.STORE — that's hardcoded to window.__uutStore
      inside core.js (urls-table-specific despite living in the "shared" file). Sharing it here
@@ -535,6 +535,11 @@
          else about the row (search matches, sort, favicon) is unaffected. Same truncation/hover-
          tooltip handling either way, since both go through .udt-sub-title. */
       var shown = state.subDisplay === "url" ? url : title;
+      /* Reddit's own scraped title is almost always just "reddit.com" — a parsed r/sub + slug
+         reads far better and is available right in the URL. Only applies in title mode: URL mode
+         means "show me the literal URL," which this would defeat the point of. */
+      var titleHtml = state.subDisplay === "url" ? null : redditTitleHtml(url, title, state.subQuery);
+      if (titleHtml == null) titleHtml = highlight(shown, state.subQuery);
       return '<div class="udt-subrow" data-suburl="' + esc(url) + '" tabindex="0" role="button">' +
         '<span class="udt-sub-main">' +
           '<span class="udt-sub-logo' + (fav ? " has-img" : "") + '">' +
@@ -542,7 +547,7 @@
             (fav ? '<img src="' + esc(fav) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
                    ' onerror="this.parentNode.classList.remove(\'has-img\'); this.remove()"/>' : "") +
           '</span>' +
-          '<span class="udt-sub-title">' + highlight(shown, state.subQuery) + '</span>' +
+          '<span class="udt-sub-title">' + titleHtml + '</span>' +
         '</span>' +
         '<span class="udt-sub-share">' + shareTxt + '</span>' +
         '<span class="udt-sub-type">' + urlTagHtml(u.url_type) + '</span>' +
