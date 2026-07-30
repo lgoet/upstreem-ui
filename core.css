@@ -36,8 +36,17 @@
     .up-heading { display: inline-flex; align-items: center; font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.2; white-space: nowrap; }
     /* separator + count exactly as in the other components: 4px dot, 8px gap either side */
     .up-head-sep { width: 4px; height: 4px; border-radius: 50%; background: var(--vc-muted); margin: 0 8px; flex: 0 0 auto; display: none; }
-    .up-head-count { font-size: 14px; font-weight: 500; color: var(--vc-muted); display: none; }
-    .up-head-count.is-sk { width: 14px; height: 14px; border-radius: 4px; background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
+    /* Fixed-width reserved slot (not min-width, not content-based) — this is what actually
+       guarantees anything sitting to the right (e.g. prompts-table's Active/Inactive switch) never
+       shifts, regardless of whether the real count is 1 digit or 4-with-a-comma, and regardless of
+       whether the current state is the skeleton or real text. Trying to match the skeleton's width
+       to "the" real count's width doesn't work — the real count itself changes width across
+       renders, so any fixed skeleton width is only ever a coincidental match for one specific
+       number. Reserving worst-realistic-case space (a comma'd 4-digit total, ~35px) and
+       left-aligning the number inside it is the only way to make the position itself stable. */
+    .up-head-count { font-size: 14px; font-weight: 500; color: var(--vc-muted); display: none;
+      flex: 0 0 34px; width: 34px; text-align: left; white-space: nowrap; }
+    .up-head-count.is-sk { height: 14px; border-radius: 4px; background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
     .up-heading.has-count .up-head-sep, .up-heading.has-count .up-head-count { display: block; }
     .up-head-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; flex: 0 0 auto; }
 

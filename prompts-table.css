@@ -214,7 +214,11 @@
   --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #353535;
   --vc-heading-bg: rgba(42,42,42,0.6); --vc-switch-bg: rgba(42,42,42,0.6); --vc-third: #808080;
   --vc-hover-border: #707070; --up-surface: #151515;
-  --upt-frame: rgba(0,0,0,.3);
+  /* This is the actual "blurry border" — the frosted ::before ring, not any dropdown menu's plain
+     border (those live in core.css and were already fixed separately). A BLACK tint at any opacity
+     still reads as "the same dark nothing" against an already-dark page, no matter how much you
+     turn the opacity up — it needs actual white mixed in to read as a highlight/frame at all. */
+  --upt-frame: rgba(255,255,255,.08);
   box-shadow: 0 14px 34px rgba(0,0,0,0.6);
 }
 /* The action row. No separators — the gaps carry the grouping on their own. */
