@@ -430,11 +430,55 @@
     function writeWidths(){ try { window.localStorage.setItem(widthsKey(), JSON.stringify(state.widths)); } catch(e){} }
 
     function visibleCols(){ return COLUMNS.filter(function(c){ return state.cols[c.key] !== false; }); }
+    /* Drop order when the table is too narrow for every column: lowest `prio` goes first.
+       Columns without an explicit prio fall back to their declaration order (leftmost = most
+       important), which is the convention every table here already follows. */
+    function prioOf(c){ return c.prio != null ? c.prio : (COLUMNS.length - COLUMNS.indexOf(c)); }
+    /* The width the lead column will actually occupy. It is NOT simply FIRST_MIN: until the user
+       drags it, its track is `minmax(30%, 1.6fr)`, so on a wide container the 30% is what really
+       applies and it is far larger than FIRST_MIN. Budgeting against FIRST_MIN alone was the bug
+       that let 8 columns claim ~1150px of minimums inside a 1100px table and silently overflow. */
+    function firstWidth(cw){
+      var pinnedW = (state.widths || {})[FIRST];
+      if (pinnedW) return Math.max(FIRST_MIN, pinnedW);
+      return Math.max(FIRST_MIN, cw * 0.30);
+    }
+    /* Measurement-driven column dropping. The hardcoded is-narrow/is-vnarrow breakpoints below
+       only ever knew the ROOT's width, never what the columns actually need — so any table whose
+       minimums outgrew its first breakpoint (prompts-table: ~1150px of minimums, first drop at
+       860px) overflowed its own box across that whole range, pushing the rightmost columns off
+       screen. This drops the least important columns until the remaining minimums genuinely fit,
+       so the tiers act as a floor for intent ("never show Last Seen on mobile") while the fit
+       itself is computed, not guessed. Adding a column to any table can no longer silently break
+       a width range. */
+    function autoFit(cols, cw){
+      if (!cw) return cols;
+      /* Reserve beyond the declared minimums: one separator border per column plus the table
+         frame and sub-pixel track rounding. Measured, not guessed — without it an 8-column
+         prompts-table still overflowed by ~20px at 1300px, because the sum of `min` values is
+         not the whole story once borders and the box's own frame are laid out. Erring
+         conservative here costs at most one column near a threshold; erring the other way puts
+         columns off-screen, which is the bug this exists to prevent. */
+      var reserve = 24 + cols.length;
+      var budget = cw - firstWidth(cw) - reserve;
+      if (!cfg.noActions && !root.classList.contains("is-t2")) budget -= ACTIONS_MIN;
+      var need = 0;
+      cols.forEach(function(c){ need += colMin(c.key); });
+      if (need <= budget) return cols;
+      var byPrio = cols.slice().sort(function(a, b){ return prioOf(a) - prioOf(b); });
+      var dropped = {}, kept = cols.length;
+      for (var i = 0; i < byPrio.length && need > budget && kept > 1; i++){
+        dropped[byPrio[i].key] = true;
+        need -= colMin(byPrio[i].key);
+        kept--;
+      }
+      return cols.filter(function(c){ return !dropped[c.key]; });
+    }
     /* what is actually on screen right now: user-hidden columns minus the ones this width drops */
     function effectiveCols(){
       var narrow = root.classList.contains("is-narrow");
       var vnarrow = root.classList.contains("is-vnarrow");
-      return visibleCols().filter(function(c){
+      var cols = visibleCols().filter(function(c){
         /* cfg.isHidden — a column the current VIEW removes entirely (not the user, not the
            width). Kept separate from state.cols on purpose: writing the user's saved column
            prefs to hide it would silently clobber their choice when the view switches back. */
@@ -443,6 +487,7 @@
         if ((narrow || vnarrow) && c.dropAt === "narrow") return false;
         return true;
       });
+      return autoFit(cols, root.getBoundingClientRect().width || 0);
     }
     /* cfg.noActions: tables without a row-actions column (e.g. prompts-table) skip the fixed
        trailing track entirely instead of reserving space for a column that has no cells. */
@@ -456,20 +501,29 @@
       var c = COLUMNS.filter(function(x){ return x.key === key; })[0];
       return (c && c.min) || 100;
     }
+    /* see applyCols(): the two halves are guarded separately because they change at different
+       rates — the track template on every width change, the visible column set only when a
+       column actually drops in or out. */
+    var lastTpl = null, lastSigCols = null;
     function applyCols(){
       /* The grid template is rebuilt from the shown columns rather than just hiding cells: with
-         CSS grid a hidden cell would leave its track behind and knock the whole row out of line. */
+         CSS grid a hidden cell would leave its track behind and knock the whole row out of line.
+         effectiveCols() and the container width are read ONCE up front and reused: every call
+         measures layout, and interleaving those reads with the style writes below is a textbook
+         read-write-read thrash — the thing that makes a resize drag feel like it is running at a
+         fraction of the frame rate. */
+      var cw = root.getBoundingClientRect().width || 0;
+      var cols = effectiveCols();
       var shown = {};
-      effectiveCols().forEach(function(c){ shown[c.key] = true; });
-      COLUMNS.forEach(function(c){
-        var sel = [];
-        for (var p = 0; p < prefixes.length; p++){
-          sel.push("." + prefixes[p] + "-th-" + c.key, "." + prefixes[p] + "-td-" + c.key);
-        }
-        Array.prototype.forEach.call(root.querySelectorAll(sel.join(", ")), function(el){
-          el.style.display = shown[c.key] ? "" : "none";
-        });
-      });
+      cols.forEach(function(c){ shown[c.key] = true; });
+      /* Bail out before touching the DOM when nothing about the layout actually changed. This is
+         now the hot path: applyCols() runs on EVERY resize frame (it has to — column dropping is
+         width-driven, not breakpoint-driven), and a 25-row table means ~200 style writes per
+         frame. Most frames of a drag change no columns at all, so the signature check turns those
+         into one rect read plus one querySelector. The per-row marker attribute is what makes it
+         safe: a fresh renderTable() creates rows without it, so re-rendered rows always get the
+         template written even when the signature itself is unchanged. */
+      var sigCols = cols.map(function(c){ return c.key; }).join(",");
       var W = state.widths || {};
       var pinned = !!W[FIRST];
       var firstPx = W[FIRST];
@@ -479,22 +533,40 @@
            grid, not to the space left over, so keeping them made the tracks add up to more than
            the container and the table overflowed. Clamping against the available width stops a
            pinned lead column plus the other minimums from pushing Actions outside the box. */
-        var cw = root.getBoundingClientRect().width || 0;
         var othersMin = 0;
-        effectiveCols().forEach(function(c){ othersMin += colMin(c.key); });
+        cols.forEach(function(c){ othersMin += colMin(c.key); });
         if (!cfg.noActions && !root.classList.contains("is-t2")) othersMin += ACTIONS_MIN;
         if (cw) firstPx = Math.max(FIRST_MIN, Math.min(W[FIRST], cw - othersMin));
       }
       var parts = [pinned ? firstPx + "px" : "minmax(30%, 1.6fr)"];
-      effectiveCols().forEach(function(c){
+      cols.forEach(function(c){
         parts.push(pinned ? "minmax(" + colMin(c.key) + "px, 1fr)" : c.w);
       });
       if (!cfg.noActions && !root.classList.contains("is-t2")){
         parts.push(pinned ? ACTIONS_MIN + "px" : "minmax(" + ACTIONS_MIN + "px, auto)");
       }
       var tpl = parts.join(" ");
-      Array.prototype.forEach.call(root.querySelectorAll(".up-thead, .up-row"), function(el){
-        el.style.gridTemplateColumns = tpl;
+      /* The track list goes on the ROOT as --up-cols; core.css has .up-thead/.up-row read it via
+         var(). One style write instead of one per row — during a column drag that is the
+         difference between ~100 writes per frame and 1, and it costs nothing to keep in sync
+         because freshly rendered rows inherit it automatically. */
+      if (tpl !== lastTpl){
+        root.style.setProperty("--up-cols", tpl);
+        lastTpl = tpl;
+      }
+      /* Per-cell show/hide still has to touch cells, so it keeps its own guard: the visible set
+         changes only when a column actually drops in or out, which during a drag or a smooth
+         resize is a small fraction of frames. */
+      if (sigCols === lastSigCols) return;
+      lastSigCols = sigCols;
+      COLUMNS.forEach(function(c){
+        var sel = [];
+        for (var p = 0; p < prefixes.length; p++){
+          sel.push("." + prefixes[p] + "-th-" + c.key, "." + prefixes[p] + "-td-" + c.key);
+        }
+        Array.prototype.forEach.call(root.querySelectorAll(sel.join(", ")), function(el){
+          el.style.display = shown[c.key] ? "" : "none";
+        });
       });
     }
     /* drag the lead column's right edge; everything else keeps its responsive track */
@@ -510,11 +582,25 @@
       var grip = e.target.closest(".up-grip");
       if (grip) grip.classList.add("is-active");
       root.classList.add("is-resizing");
-      function move(ev){
-        state.widths[FIRST] = Math.round(Math.max(FIRST_MIN, Math.min(maxA, wA + (ev.clientX - startX))));
+      /* pointermove fires up to 120 Hz on a trackpad — several times per frame — and each event
+         used to run a full applyCols(). Coalesce to one apply per animation frame: the extra
+         events carried no information the last one didn't already supersede. */
+      var moveRaf = null, pendingX = null;
+      function commitMove(){
+        if (pendingX == null) return;
+        state.widths[FIRST] = Math.round(Math.max(FIRST_MIN, Math.min(maxA, wA + (pendingX - startX))));
         applyCols();
       }
+      function move(ev){
+        pendingX = ev.clientX;
+        if (moveRaf) return;
+        moveRaf = requestAnimationFrame(function(){ moveRaf = null; commitMove(); });
+      }
       function up(){
+        /* Flush the last pointer position synchronously rather than dropping it — cancelling a
+           pending frame without committing would leave the column a few px off wherever the user
+           actually released. */
+        if (moveRaf){ cancelAnimationFrame(moveRaf); moveRaf = null; commitMove(); }
         document.removeEventListener("pointermove", move);
         document.removeEventListener("pointerup", up);
         root.classList.remove("is-resizing");
@@ -1626,6 +1712,24 @@
       }
       el = el.parentElement;
     }
+  }
+
+  /* Collapses a burst of calls into one per animation frame, keeping the LAST call's arguments.
+     Resize and pointermove both fire faster than the screen refreshes, so anything that measures
+     or writes layout in response wants this — otherwise the same work runs several times to
+     produce one visible frame, which is exactly how a resize starts feeling like it runs at a
+     fraction of the real frame rate. Deliberately trailing-edge: the final event of a burst is
+     the one whose state is correct. */
+  function rafThrottle(fn){
+    var pending = null, lastArgs = null, lastThis = null;
+    return function(){
+      lastArgs = arguments; lastThis = this;
+      if (pending) return;
+      pending = requestAnimationFrame(function(){
+        pending = null;
+        fn.apply(lastThis, lastArgs);
+      });
+    };
   }
 
   /* Sticky header machinery: pins the toolbar + column header at data-sticky-top on wide screens,
@@ -2755,6 +2859,7 @@
     makePopover: makePopover,
     closePopovers: closeAll,
     makeSticky: makeSticky,
+    rafThrottle: rafThrottle,
     unclipAncestors: unclipAncestors,
     watchRoots: watchRoots,
     TOPIC_COLOR_PALETTE: TOPIC_COLOR_PALETTE,

@@ -45,10 +45,12 @@
   /* Hideable columns. Domain and Actions are deliberately absent — the table makes no sense
      without the domain, and the row actions are the point of the Actions cell. */
   var COLUMNS = [
-      { key: "share",    label: "Share",     w: "minmax(13%, 150px)",   min: 130 },
-      { key: "used",     label: "Used",      w: "minmax(11%, 1fr)",     min: 100, dropAt: "narrow" },
-      { key: "type",     label: "Type",      w: "minmax(11%, 1fr)",     min: 118, dropAt: "vnarrow" },
-      { key: "lastseen", label: "Last Seen", w: "minmax(104px, 0.7fr)", min: 104, dropAt: "vnarrow" }
+      /* `prio` = survival order when too narrow to fit everything (higher survives longer, see
+         UC.makeColumns' autoFit). */
+      { key: "share",    label: "Share",     w: "minmax(13%, 150px)",   min: 130, prio: 40 },
+      { key: "used",     label: "Used",      w: "minmax(11%, 1fr)",     min: 100, dropAt: "narrow",  prio: 20 },
+      { key: "type",     label: "Type",      w: "minmax(11%, 1fr)",     min: 118, dropAt: "vnarrow", prio: 30 },
+      { key: "lastseen", label: "Last Seen", w: "minmax(104px, 0.7fr)", min: 104, dropAt: "vnarrow", prio: 10 }
   ];
 
   /* ORDER maps each (field, direction) pair onto the single value the RPC expects in p_order.
@@ -1013,8 +1015,10 @@
       root.classList.toggle("is-t0", w < 440);   // trend chip
       root.classList.toggle("is-narrow", w < 860);
       root.classList.toggle("is-vnarrow", w < 620);
-      if (root.className !== before) applyCols();
-      else if (state.widths && state.widths.domain) applyCols();
+      /* Unconditional: which columns fit is now a continuous function of the width (autoFit
+         in UC.makeColumns), not only of the tier classes above. applyCols() no-ops when the
+         resulting layout is unchanged, so this stays cheap on every resize frame. */
+      applyCols();
     }
     if (window.ResizeObserver){
       new ResizeObserver(function(){
@@ -1022,13 +1026,14 @@
         root.__udtRaf = requestAnimationFrame(function(){ root.__udtRaf = null; applyResponsive(); });
       }).observe(root);
     }
-    window.addEventListener("resize", applyResponsive);
+    /* rAF-throttled: fires alongside the ResizeObserver above, which is already guarded. */
+    window.addEventListener("resize", UpstreemCore.rafThrottle(applyResponsive));
 
     /* sticky header machinery (core) */
     var _sticky = UpstreemCore.makeSticky(root, elHead);
     function syncTheadOffset(){ _sticky.syncTheadOffset(); }
     function applySticky(){ _sticky.applySticky(); }
-    window.addEventListener("resize", applySticky);
+    window.addEventListener("resize", UpstreemCore.rafThrottle(applySticky));
     applySticky();
     /* scroll-repositioning for the portaled dropdowns is handled centrally by
        UpstreemCore.makePortal — see core.js */

@@ -30,7 +30,16 @@
   function utmRun(){
   var UC = window.UpstreemCore;
   var isYes = UC.isYes, esc = UC.esc, toNum = UC.toNum, fmtInt = UC.fmtInt, fmtTotal = UC.fmtTotal,
-      parseBubbleJson = UC.parseBubbleJson, CHECK_SVG = UC.CHECK_SVG, STORE = UC.STORE;
+      parseBubbleJson = UC.parseBubbleJson, CHECK_SVG = UC.CHECK_SVG;
+
+  /* Own store, deliberately NOT UC.STORE. Despite living in core, UC.STORE is hardcoded to
+     window.__uutStore — urls-table's private key — and is keyed purely by data-instance. Sharing
+     it meant a urls-table and a topics-manager that both sat at the default instance id
+     overwrote each other: persist() here writes {query, sortField, sortDir}, wholesale replacing
+     urls-table's 13-field entry (page, pageSize, filters, brands), and urls-table's query then
+     surfaced in this component's search box on the next re-init. prompts-table and domains-table
+     already declare their own for exactly this reason. */
+  var STORE = (window.__utmStore = window.__utmStore || {});
 
   var SORT_FIELDS = [
     { key: "usage",   label: "Usage" },
@@ -251,7 +260,7 @@
         root.__utmRaf = requestAnimationFrame(function(){ root.__utmRaf = null; applyResponsive(); });
       }).observe(root);
     }
-    window.addEventListener("resize", applyResponsive);
+    window.addEventListener("resize", UC.rafThrottle(applyResponsive));
 
     /* ---------------- click delegation ----------------
        On document, not root — deliberately. UC.makePopover's own outside-click listener is also

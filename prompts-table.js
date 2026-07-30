@@ -54,8 +54,8 @@
       style.textContent = [
         '.ust-cell{width:100%;height:100%;min-width:0;display:flex;align-items:center;background:transparent;border:0;overflow:hidden;font-family:Geist,Inter,system-ui,-apple-system,sans-serif;}',
         '.ust-cell *,.ust-topics-popup *{box-sizing:border-box;}',
-        '.ust-row{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;width:100%;min-width:0;min-height:28px;overflow:hidden;}',
-        '.ust-tag{height:28px;padding:0 10px;border-radius:8px;display:inline-flex;align-items:center;gap:7px;flex:0 0 auto;border:1px solid color-mix(in srgb,var(--ust-tag-color,#6b7280) 40%,transparent);background:color-mix(in srgb,var(--ust-tag-color,#6b7280) 10%,transparent);color:var(--ust-tag-color,#4b5563);font-size:12px;line-height:1;font-weight:500;white-space:nowrap;cursor:pointer;user-select:none;}',
+        '.ust-row{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;width:100%;min-width:0;min-height:32px;overflow:hidden;}',
+        '.ust-tag{height:32px;padding:0 10px;border-radius:8px;display:inline-flex;align-items:center;gap:7px;flex:0 0 auto;border:1px solid color-mix(in srgb,var(--ust-tag-color,#6b7280) 40%,transparent);background:color-mix(in srgb,var(--ust-tag-color,#6b7280) 10%,transparent);color:var(--ust-tag-color,#4b5563);font-size:12px;line-height:1;font-weight:500;white-space:nowrap;cursor:pointer;user-select:none;}',
         '.ust-tag-emoji{font-size:12px;line-height:1;}',
         '.ust-tag-label{white-space:nowrap;}',
         '.ust-empty{display:inline-flex;align-items:center;color:#a0a5ad;font-size:13px;line-height:1;}',
@@ -69,7 +69,7 @@
         '.up-root:not(.is-inactive-view) .upt-td-topics:hover .ust-empty{color:var(--vc-text,#1f1f1b);}',
         '.up-root:not(.is-inactive-view) .upt-td-topics:hover .ust-empty-dash{opacity:0;max-width:0;}',
         '.up-root:not(.is-inactive-view) .upt-td-topics:hover .ust-empty-add{max-width:50px;opacity:1;margin-left:4px;}',
-        '.ust-more{height:28px;padding:0 10px;border-radius:8px;display:inline-flex;align-items:center;flex:0 0 auto;border:0;background:#f5f5f5;color:var(--ust-more-color,#5f646d);font-size:12px;line-height:1;font-weight:600;white-space:nowrap;cursor:pointer;user-select:none;}',
+        '.ust-more{height:32px;padding:0 10px;border-radius:8px;display:inline-flex;align-items:center;flex:0 0 auto;border:0;background:#f5f5f5;color:var(--ust-more-color,#5f646d);font-size:12px;line-height:1;font-weight:600;white-space:nowrap;cursor:pointer;user-select:none;}',
         '.ust-cell{--ust-more-border:#d9dde3;--ust-more-color:#5f646d;}',
         '.ust-cell .ust-more:hover{background:#ececec;color:#1f1f1b;}',
         '.ust-cell[data-theme="dark"] .ust-tag{background:color-mix(in srgb,var(--ust-tag-color,#6b7280) 22%,transparent);color:#e0e0e0;}',
@@ -231,19 +231,23 @@
     /* Visibility/Sentiment carry more header furniture now (logo/info-icon/sorter) than a plain
        label — a %-based responsive floor let them shrink below what that furniture needs at
        narrow widths, so both use a px floor instead, matching Rank's own min. */
-    { key: "visibility", label: "Visibility",      w: "minmax(150px, 1fr)", min: 150 },
-    { key: "rank",       label: "Rank",            w: "minmax(90px, 1fr)",  min: 90,  dropAt: "vnarrow" },
-    { key: "sentiment",  label: "Sentiment",       w: "minmax(120px, 1fr)", min: 120, dropAt: "narrow" },
+    /* `prio` = survival order when the table is too narrow to show everything (higher survives
+       longer, see UC.makeColumns' autoFit). Deliberately NOT the same as left-to-right order:
+       Topics outranks Rank and Sentiment because it is the column this table is actually managed
+       by, while Market/Created are reference data you can live without on a laptop screen. */
+    { key: "visibility", label: "Visibility",      w: "minmax(150px, 1fr)", min: 150, prio: 70 },
+    { key: "rank",       label: "Rank",            w: "minmax(90px, 1fr)",  min: 90,  dropAt: "vnarrow", prio: 40 },
+    { key: "sentiment",  label: "Sentiment",       w: "minmax(120px, 1fr)", min: 120, dropAt: "narrow",  prio: 30 },
     /* 178px, same as urls-table's identical column: 4 × 32px avatars (−6px overlap each) plus
        the "+N" label plus the cell's own 28px padding, with headroom for the hover spread.
        A %-based floor let it collapse below that and clipped the stack. */
     /* No dropAt was a real bug, not a deliberate "always show" — every other column has one, and
        leaving this the sole exception meant the narrowest tier still showed Prompt + Visibility
        + Brand Mentions instead of just the two columns that are supposed to survive down there. */
-    { key: "brands",     label: "Brand Mentions",  w: "minmax(178px, 1fr)", min: 178, dropAt: "vnarrow" },
-    { key: "topics",     label: "Topics",          w: "minmax(12%, 1fr)",   min: 150, dropAt: "vnarrow" },
-    { key: "market",     label: "Market",          w: "minmax(8%, 0.6fr)", min: 90,  dropAt: "narrow" },
-    { key: "created",    label: "Created",         w: "minmax(10%, 0.7fr)",min: 110, dropAt: "narrow" }
+    { key: "brands",     label: "Brand Mentions",  w: "minmax(178px, 1fr)", min: 178, dropAt: "vnarrow", prio: 50 },
+    { key: "topics",     label: "Topics",          w: "minmax(12%, 1fr)",   min: 150, dropAt: "vnarrow", prio: 60 },
+    { key: "market",     label: "Market",          w: "minmax(8%, 0.6fr)", min: 90,  dropAt: "narrow",  prio: 20 },
+    { key: "created",    label: "Created",         w: "minmax(10%, 0.7fr)",min: 110, dropAt: "narrow",  prio: 10 }
   ];
   var ROW_HEIGHTS = [
     { key: "default", label: "Default", icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/></svg>' },
@@ -1868,8 +1872,12 @@
       root.classList.toggle("is-t1", w < 560);
       root.classList.toggle("is-narrow", w < 860);
       root.classList.toggle("is-vnarrow", w < 620);
-      if (root.className !== before) applyCols();
-      else if (state.widths && state.widths.prompt) applyCols();
+      /* Unconditional: which columns fit is now a continuous function of the width (see autoFit
+         in UC.makeColumns), not something that only changes when one of the tier classes above
+         flips. Gating this on a class change was why the table happily overflowed anywhere
+         between two breakpoints. applyCols() itself no-ops when the resulting layout is
+         identical, so calling it every frame is cheap. */
+      applyCols();
     }
     if (window.ResizeObserver){
       new ResizeObserver(function(){
@@ -1877,12 +1885,14 @@
         root.__uptRaf = requestAnimationFrame(function(){ root.__uptRaf = null; applyResponsive(); });
       }).observe(root);
     }
-    window.addEventListener("resize", applyResponsive);
+    /* rAF-throttled: this fires alongside the ResizeObserver above, so without it every window
+       resize ran the whole measure/drop cascade twice per frame. */
+    window.addEventListener("resize", UC.rafThrottle(applyResponsive));
 
     /* sticky header machinery (core) */
     var _sticky = UC.makeSticky(root, elHead);
     function syncTheadOffset(){ _sticky.syncTheadOffset(); }
-    window.addEventListener("resize", function(){ _sticky.applySticky(); });
+    window.addEventListener("resize", UC.rafThrottle(function(){ _sticky.applySticky(); }));
     _sticky.applySticky();
 
     function render(){

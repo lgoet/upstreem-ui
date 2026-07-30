@@ -39,11 +39,14 @@
   /* Hideable columns. Domain and Actions are deliberately absent — the table makes no sense
      without the domain, and the row actions are the point of the Actions cell. */
   var COLUMNS = [
-      { key: "share",    label: "Share",            w: "minmax(13%, 150px)",   min: 130 },
-      { key: "type",     label: "Type",             w: "minmax(11%, 1fr)",     min: 118, dropAt: "vnarrow" },
-      { key: "ment",     label: "Mentioned?",       w: "minmax(112px, 0.6fr)", min: 112, dropAt: "narrow" },
-      { key: "brands",   label: "Brands mentioned", w: "minmax(13%, 1fr)",     min: 178, dropAt: "vnarrow" },
-      { key: "lastseen", label: "Last Seen",        w: "minmax(104px, 0.7fr)", min: 104, dropAt: "vnarrow" }
+      /* `prio` = survival order when too narrow to fit everything (higher survives longer, see
+         UC.makeColumns' autoFit). Share is the metric the table exists for; Last Seen is the
+         first thing you can do without. */
+      { key: "share",    label: "Share",            w: "minmax(13%, 150px)",   min: 130, prio: 50 },
+      { key: "type",     label: "Type",             w: "minmax(11%, 1fr)",     min: 118, dropAt: "vnarrow", prio: 30 },
+      { key: "ment",     label: "Mentioned?",       w: "minmax(112px, 0.6fr)", min: 112, dropAt: "narrow",  prio: 20 },
+      { key: "brands",   label: "Brands mentioned", w: "minmax(13%, 1fr)",     min: 178, dropAt: "vnarrow", prio: 40 },
+      { key: "lastseen", label: "Last Seen",        w: "minmax(104px, 0.7fr)", min: 104, dropAt: "vnarrow", prio: 10 }
   ];
 
   /* ORDER maps each (field, direction) pair onto the single value the RPC expects in p_order.
@@ -1184,8 +1187,10 @@
       // column drops
       root.classList.toggle("is-narrow", w < 860);
       root.classList.toggle("is-vnarrow", w < 620);
-      if (root.className !== before) applyCols();   // width change -> different column set
-      else if (state.widths && state.widths.domain) applyCols();   // re-clamp the pinned URL width even within a tier
+      /* Unconditional: which columns fit is now a continuous function of the width (autoFit
+         in UC.makeColumns), not only of the tier classes above. applyCols() no-ops when the
+         resulting layout is unchanged, so this stays cheap on every resize frame. */
+      applyCols();
     }
     if (window.ResizeObserver){
       new ResizeObserver(function(){
@@ -1193,7 +1198,8 @@
         root.__uutRaf = requestAnimationFrame(function(){ root.__uutRaf = null; applyResponsive(); });
       }).observe(root);
     }
-    window.addEventListener("resize", applyResponsive);
+    /* rAF-throttled: fires alongside the ResizeObserver above, which is already guarded. */
+    window.addEventListener("resize", UpstreemCore.rafThrottle(applyResponsive));
 
     /* Sticky header. Default on at >=1000px page width (off via data-sticky="no"); the column
        header sits right below the component head, its offset measured from the head's height.
@@ -1203,7 +1209,7 @@
     var _sticky = UpstreemCore.makeSticky(root, elHead);
     function syncTheadOffset(){ _sticky.syncTheadOffset(); }
     function applySticky(){ _sticky.applySticky(); }
-    window.addEventListener("resize", applySticky);
+    window.addEventListener("resize", UpstreemCore.rafThrottle(applySticky));
     applySticky();
     /* scroll-repositioning for the portaled dropdowns is handled centrally by
        UpstreemCore.makePortal — see core.js */

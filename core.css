@@ -557,26 +557,42 @@
       overflow: hidden;
     }
     .up-table { width: 100%; display: flex; flex-direction: column; background: var(--vc-bg); }
-    /* Column widths per spec. The percentages are MINIMUMS; the 1fr maxima let the
-       flexible columns absorb the leftover space. Actions is fixed-width but allowed
-       to grow, never to shrink below 120px. */
+    /* Column widths come from --up-cols, which UC.makeColumns' applyCols() writes ONCE on the
+       root. Every header and row inherits it, so changing the layout is a single style write
+       instead of one per row — with 100 rows and a column drag firing at up to 120 Hz, the
+       per-row version was writing ~100 inline styles several times per frame, which is a large
+       part of why dragging felt like it ran at a fraction of the frame rate.
+       The literal below is only the pre-JS fallback (urls-table's shape, the widest of the
+       tables); applyCols() replaces it on first run. The percentages are MINIMUMS; the 1fr
+       maxima let the flexible columns absorb the leftover space. */
     .up-thead, .up-row {
       display: grid;
-      grid-template-columns:
+      grid-template-columns: var(--up-cols,
         minmax(30%, 1.6fr)    /* URL              */
         minmax(13%, 150px)    /* Share            */
         minmax(11%, 1fr)      /* Type             */
         minmax(112px, 0.6fr)  /* Mentioned?       */
         minmax(13%, 1fr)      /* Brands mentioned */
         minmax(104px, 0.7fr)  /* Last Seen        */
-        minmax(120px, auto);  /* Actions          */
+        minmax(120px, auto)   /* Actions          */);
       align-items: center;
     }
+    /* Bounds layout/style invalidation to the row. Without it every one of the measure-then-write
+       cycles elsewhere in this file costs a layout of the WHOLE table subtree; with 50-100 rows
+       that is the difference between a resize that tracks the cursor and one that stutters. */
+    .up-row { contain: layout style; }
     .up-thead { height: 45px; flex: 0 0 45px; background: var(--vt-head-bg); }
     .up-th { font-size: 12px; font-weight: 400; color: var(--vc-muted); padding: 0 16px 0 12px; height: 100%;
       white-space: nowrap; overflow: hidden;
-      display: flex; align-items: center; gap: 6px; border-right: 1px solid var(--vc-border); border-bottom: 1px solid var(--vc-border); }
-    .up-th:last-child { border-right: none; }
+      display: flex; align-items: center; gap: 6px; border-left: 1px solid var(--vc-border); border-bottom: 1px solid var(--vc-border); }
+    /* Column separators sit on the LEFT edge, not the right, and the exception is :first-child.
+       Mirror-imaging this matters: hidden columns are still DOM children, so with border-right +
+       ":last-child { border-right: none }" the exception kept landing on a display:none cell while
+       the genuinely last VISIBLE column still painted a right border straight against the table's
+       own frame — two lines a pixel apart, which read as "the right border gets thicker whenever
+       columns drop out". Anchoring on :first-child is immune to that, because the lead column is
+       the one column that never hides. Same set of separators either way. */
+    .up-th:first-child { border-left: none; }
     .up-th.is-sortable { cursor: pointer; user-select: none; }
     /* ---------- column resizing ---------- */
     .up-th { position: relative; }
@@ -642,8 +658,8 @@
        background, chip hover, the goto arrow) instead of having to override each individually. */
     html.up-is-scrolling .up-tbody { pointer-events: none; }
     .up-td { height: 100%; display: flex; align-items: center; gap: 10px; padding: 0 16px 0 12px; min-width: 0;
-      border-right: 1px solid var(--vc-border); border-bottom: 1px solid var(--vc-border); }
-    .up-td:last-child { border-right: none; }
+      border-left: 1px solid var(--vc-border); border-bottom: 1px solid var(--vc-border); }
+    .up-td:first-child { border-left: none; }   /* see .up-th:first-child for why left, not right */
     .up-tbody .up-row:last-child .up-td { border-bottom: none; }
 
     
