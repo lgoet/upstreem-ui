@@ -24,6 +24,22 @@
 .upt-brand-logo { width: 16px; height: 16px; border-radius: 4px; flex: 0 0 auto; display: block; object-fit: cover; }
 .upt-brand-label { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
 
+/* ---------- active-columns count badge on the columns (gear) button ----------
+   Same styling as urls-table's .uut-cols-badge / domains-table's .udt-cols-badge — this table's
+   own copy was never actually written (only a stub comment referencing it existed, in core.css of
+   all places, where it had nothing to attach to), so the badge rendered as bare unstyled text next
+   to the gear icon instead of a small pill. */
+.upt-cols-badge {
+  position: absolute; top: -3px; right: -3px; z-index: 2;
+  min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
+  background: var(--vc-text); color: #e0e0e0;
+  font-family: inherit; font-size: 10px; font-weight: 600; line-height: 1;
+  display: none; align-items: center; justify-content: center;
+  font-variant-numeric: tabular-nums; pointer-events: none;
+}
+.up-root[data-theme="dark"] .upt-cols-badge { color: #1f1f1b; }
+.upt-cols-badge.is-visible { display: inline-flex; }
+
 /* ---------- selection checkbox ----------
    Same visual language as .up-filter-check (core): a square, border by default, filled + white
    check when active. Indeterminate (header, some-but-not-all selected) gets a dash instead. */

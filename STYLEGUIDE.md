@@ -1646,3 +1646,56 @@ direkt auf der Flaeche — Chips koennen auch ausserhalb des Komponenten-Roots l
 Bulk-Action-Bar, die an `document.body` haengt).
 
 Genutzt von: prompts-table (Topics-Zelle, Topics-Editor in der Bulk-Bar).
+
+## 28. Der `*/`-in-CSS-Kommentar-Bug — PFLICHTCHECK vor jedem CSS-Commit
+
+**Das ist jetzt zweimal live passiert und hat beide Male eine ganze Komponente unbenutzbar gemacht
+(Dropdown-Clipping in topics-manager, dann das Topic-Modal komplett kaputt — öffnete unstyled am
+Seitenende statt als zentriertes Overlay, kein Backdrop, Seite sprang). Beide Male war die Ursache
+identisch und beide Male hat es Stunden gekostet, weil der Fehler NICHT da ist, wo man ihn vermutet.**
+
+**Der Mechanismus:** `/* ... */` ist der einzige Kommentar-Syntax in CSS. Der Parser sucht stur
+nach der ERSTEN Zeichenfolge `*/` nach einem `/*` — ihm ist völlig egal, ob die Absicht dahinter
+"das ist ein Kommentar-Ende" war oder ob da zufällig ein `*` gefolgt von `/` in normalem Fließtext
+steht (Klassenlisten mit `*` als Platzhalter, Pfade, CSS-Custom-Property-Namen mit Sternchen-Suffix
+etc.). Sobald das passiert, schließt der Kommentar Zeilen zu früh — der Rest des ursprünglichen
+Kommentartexts wird plötzlich als ECHTES CSS interpretiert, ergibt keinen Sinn, und der Parser
+verwirft alles bis zum nächsten Punkt, an dem er sich wieder "einfängt". Das kann eine einzelne
+Regel verschlucken (wie beim Topic-Modal: nur `.up-topicmodal-backdrop` fehlte, alle Folgeregeln
+mit demselben Klassennamen-Präfix parsten trotzdem normal weiter — sieht beim flüchtigen Draufblick
+aus wie "muss doch da sein"). Kein Build-Fehler, keine Warnung, keine Konsolen-Ausgabe — die Seite
+lädt einfach mit einer leise fehlenden Regel.
+
+**Beide bisherigen Fälle, wörtlich:**
+```
+.up-root/.up-head/.up-export/.up-search*/.up-sort*/.up-pop-*/.up-chiphover
+                              ^^^^^^^^^^^ "search*" + "/" = "*/" → Kommentar schließt hier
+```
+```
+it redeclares its own --vc-*/--up-surface tokens locally
+                      ^^^^^^^^^^^^^^^^^^^ "--vc-*" + "/--up-surface" = "*/" → Kommentar schließt hier
+```
+
+**Die Regel, ab sofort ohne Ausnahme:** Schreib niemals `*` unmittelbar gefolgt von `/` innerhalb
+eines CSS-Kommentars — auch nicht über eine Zeilenumbruch-Grenze hinweg, auch nicht wenn die
+Absicht "Wildcard" oder "oder" war. Bei Klassenlisten: Kommas oder Zeilenumbrüche statt `/` als
+Trenner (`.up-search, .up-sort, .up-pop-` statt `.up-search*/.up-sort*/.up-pop-*`). Bei
+CSS-Custom-Property-Namen mit gemeinsamem Präfix: ausschreiben statt abkürzen (`--vc- und
+--up-surface` statt `--vc-*/--up-surface`).
+
+**Vor jedem Commit, der eine `.css`-Datei ändert (kein Ausnahme-Fall — auch bei "nur ein
+Kommentar geändert"):**
+```bash
+grep -n '[a-zA-Z0-9_-]\*/[a-zA-Z._-]' *.css
+```
+Ein Treffer heißt: irgendwo schließt ein Kommentar zu früh. Nicht ignorieren, nicht "sieht schon
+richtig aus" — im Browser via `document.styleSheets` nachsehen, ob die erwartete Regel wirklich in
+`cssRules` auftaucht (siehe Debug-Technik unten), dann erst committen.
+
+**Debug-Technik, falls der Grep-Check zu spät kommt und etwas schon kaputt gerendert wird:**
+```js
+var sheet = [...document.styleSheets].find(s => s.href && s.href.includes('core.css'));
+[...sheet.cssRules].filter(r => r.selectorText && r.selectorText.includes('DEIN-SELECTOR'));
+```
+Kommt nichts zurück, obwohl die Regel im Quelltext eindeutig dasteht: exakt dieser Bug. Nicht an
+Spezifität, Ladereihenfolge oder Browser-Bugs denken — zuerst hier suchen.

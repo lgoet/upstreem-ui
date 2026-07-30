@@ -346,10 +346,6 @@
       .up-search.is-open .up-search-input { font-size: 16px; }
       .up-tip { display: none !important; }
     }
-    /* active-columns count badge on the columns (gear) button — same styling as the combo chart's
-       visible-series badge over its fader button. */
-
-    
     .up-cols-menu { position: absolute; top: calc(100% + 8px); right: 0; z-index: 60; width: 230px;
       background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 14px; box-shadow: 0 10px 28px rgba(0,0,0,.14); padding: 8px;
       opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none; transition: opacity 140ms ease, transform 140ms ease; }
@@ -924,8 +920,9 @@
    Topic create/edit modal (UC.makeTopicModal) — STYLEGUIDE §27's reference implementation, moved
    here from topics-manager.css once prompts-table's "Add Topic" button became a second consumer
    of the exact same modal. Body-mounted (outside any .up-root), so — like .upt-bulkbar and every
-   other document.body-mounted surface in this library — it redeclares its own --vc-*/--up-surface
-   tokens locally instead of relying on the cascade from a .up-root ancestor it doesn't have.
+   other document.body-mounted surface in this library — it redeclares its own --vc- and
+   --up-surface tokens locally instead of relying on the cascade from a .up-root ancestor it
+   doesn't have.
    ============================================================ */
 .up-topicmodal-backdrop {
   position: fixed; inset: 0; z-index: 100000;   /* above the bulk-bar's 99999 */
