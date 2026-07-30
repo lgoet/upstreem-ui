@@ -30,6 +30,8 @@
   data-filter-fn="bubble_fn_udtFilter_[dynamic id]"
   data-brand-fn="bubble_fn_udtBrand_[dynamic id]"
   data-rowclick-fn="bubble_fn_udtRowClick_[dynamic id]"
+  data-showpages-fn="bubble_fn_udtShowPages_[dynamic id]"   drilldown: asks for a domain's URLs
+  data-openurl-fn="bubble_fn_udtOpenUrl_[dynamic id]"       drilldown: a page row was clicked
   data-page-fn="bubble_fn_udtPage_[dynamic id]"
   data-mentioned-fn="bubble_fn_udtMentioned_[dynamic id]"
 
@@ -44,6 +46,9 @@
     rowclick {"domain":"youtube.com"}                       -- key is "domain", not "url"
     page      {"limit":25,"offset":50,"page":3}   -> p_limit / p_offset in your RPC
     mentioned {"brands":"id1,id2"}                -> multi-brand mention filter
+    showpages {"domain":"carwow.de"}             -> the user expanded a domain row; answer it
+                                                    with setDomainsTablePages (see below)
+    openurl   {"url":"https://…","domain":"carwow.de"}  -> a page inside an expanded row was clicked
 
   ORDER tokens (in the sort event's "order" key) — note last_used_*, not last_seen_*:
     share_desc | share_asc | share_delta_desc | share_delta_asc | last_used_desc | last_used_asc
@@ -53,7 +58,7 @@
     (?<="requestId":")[^"]*    (?<="sort_field":")[^"]*     (?<="sort_dir":")[^"]*
     (?<="citation_types":")[^"]*
     (?<="brand_mentioned":")[^"]*                           (?<="brands":")[^"]*
-    (?<="domain":")[^"]*
+    (?<="domain":")[^"]*     (?<="url":")[^"]*
     (?<="limit":)[0-9]+        (?<="offset":)[0-9]+         (?<="page":)[0-9]+
 
   ── Export ───────────────────────────────────────────────────────────────────
@@ -68,6 +73,39 @@
   window.setDomainsTableLoading("INSTANCE_ID", "yes" | "no");
   window.setDomainsTableBrands("INSTANCE_ID", [...]);
   window.resetDomainsTable("INSTANCE_ID");
+  window.setDomainsTablePages("INSTANCE_ID", "carwow.de", [ … ]);   // drilldown, see below
+
+  ── Drilldown: the pages of one domain ───────────────────────────────────────
+  "N pages" in the domain cell is a button. Clicking it expands that row and lists the domain's
+  top URLs underneath (max 10). Several rows can be open at once.
+
+  The flow, all of it driven by the two events above:
+    1. User clicks "N pages" -> the row expands and immediately shows a SKELETON. You do not have
+       to drive a loading flag for this; the component knows it is waiting.
+    2. The component fires  showpages  {"domain":"carwow.de"}.
+       Pull the domain out with:   (?<="domain":")[^"]*
+    3. Your workflow runs the URLs-for-this-domain RPC, then a Run-JS step:
+
+         window.setDomainsTablePages("INSTANCE_ID", "[the domain from step 2]", `[RPC_RESPONSE]`);
+
+       The third argument takes the raw RPC text OR a ready array — it goes through
+       UpstreemCore.parseBubbleJson, same as setDomainsTableBrands, so no Bubble-side parsing.
+       An EMPTY array is a valid answer and renders "No pages found for this domain" instead of
+       leaving the skeleton spinning forever.
+    4. Clicking one of those page rows fires  openurl  {"url":"…","domain":"…"}.
+       Pull the url out with:   (?<="url":")[^"]*
+
+  Page fields (straight from the RPC):
+    url, title, domain_share, last_seen   — rendered
+    description                           — becomes the row's tooltip
+    first_seen                            — accepted, not shown
+
+  Note on domain_share: this is the URL's share WITHIN its domain, not the global share the
+  parent row shows — the two numbers answer different questions and are deliberately not mixed.
+
+  The list is cached per domain, so collapsing and re-opening a row costs no second RPC. It is
+  NOT persisted: after a reload nothing is expanded, because restoring an expansion over a
+  different result set would show one domain's pages under another domain's row.
 
   Row fields (straight from your RPC, no renaming needed):
     domain, favicon, share_pct, share_delta_pct, urls_count, last_used_at, citation_type,
@@ -88,6 +126,8 @@
      data-filter-fn="bubble_fn_udtFilter"
      data-brand-fn="bubble_fn_udtBrand"
      data-rowclick-fn="bubble_fn_udtRowClick"
+     data-showpages-fn="bubble_fn_udtShowPages"
+     data-openurl-fn="bubble_fn_udtOpenUrl"
      data-page-fn="bubble_fn_udtPage"
      data-mentioned-fn="bubble_fn_udtMentioned">
 

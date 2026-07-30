@@ -13,7 +13,8 @@
   var __udtBootQueue = window.__udtBootQueue = window.__udtBootQueue || [];
   if (!window.__udtBootStubbed){
     window.__udtBootStubbed = true;
-    ["renderDomainsTable", "setDomainsTableLoading", "resetDomainsTable", "setDomainsTableBrands"].forEach(function(n){
+    ["renderDomainsTable", "setDomainsTableLoading", "resetDomainsTable", "setDomainsTableBrands",
+     "setDomainsTablePages"].forEach(function(n){
       window[n] = function(){ __udtBootQueue.push([n, arguments]); };
     });
   }
@@ -75,6 +76,10 @@
     last_seen: ["last_seen:desc", "last_seen:asc"]
   };
   var DEFAULT_SORT = { field: "share", dir: "desc" };
+  /* Drilldown cap. Ten is enough to see the shape of a domain's coverage without turning one
+     expanded row into its own scrolling page — past that the URLs table is the right tool. */
+  var SUB_MAX = 10;
+  var CHEV_SVG = '<svg class="udt-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
 
   function makeController(root){
     var instanceId = root.getAttribute("data-instance") || "default";
@@ -114,6 +119,13 @@
       rows: [],
       totalCount: null,
       hasData: false,
+      /* Drilldown: which domains are expanded, and the URL list fetched for each. Kept per domain
+         (not a single "current" list) so several rows can stay open at once for comparison, and so
+         re-opening a domain is instant instead of re-hitting the RPC. Deliberately NOT persisted:
+         an expansion is a look-at-this-now gesture, and restoring one over a different result set
+         after a reload would show a domain's pages next to the wrong parent. */
+      expanded: {},                         // domain -> true
+      pages: {},                            // domain -> [{url,title,domain_share,last_seen,...}]
       loading: false,                       // intern (Suche/Pagination), startet immer frei
       softReload: false,                    // true only while a sort is in flight — see dim.begin/end
       extLoading: hasProcessingAttr() ? readProcessing()
@@ -227,7 +239,18 @@
                : (r.used != null) ? r.used
                : r.total_used;
       var pages = toNum(r.urls_count);
-      return '<div class="up-row" data-domain="' + esc(dom) + '" tabindex="0" role="button">' +
+      var isOpen = !!state.expanded[dom];
+      /* "N pages" doubles as the drilldown trigger. A real <button> rather than a styled span:
+         it is a genuine control, so it should be tabbable and Enter/Space-operable for free
+         instead of needing a parallel keydown path. aria-expanded makes the state audible. */
+      var pagesBtn = pages > 0
+        ? '<button class="up-pages udt-pagesbtn' + (isOpen ? " is-open" : "") + '" type="button"' +
+            ' data-pages-toggle aria-expanded="' + (isOpen ? "true" : "false") + '">' +
+            '<span class="udt-pagesbtn-lbl">' + fmtTotal(pages) + (pages === 1 ? " page" : " pages") + '</span>' +
+            CHEV_SVG +
+          '</button>'
+        : '<span class="up-pages">' + fmtTotal(pages || 0) + " pages" + '</span>';
+      return '<div class="up-row' + (isOpen ? " is-expanded" : "") + '" data-domain="' + esc(dom) + '" tabindex="0" role="button">' +
         '<div class="up-td up-td-domain">' +
           '<span class="udt-logo-box' + (fav ? " has-img" : "") + '">' +
             '<span class="udt-logo-ltr">' + esc(initial) + '</span>' +
@@ -236,7 +259,7 @@
           '</span>' +
           '<span class="udt-dom-wrap">' +
             '<span class="udt-dom-title">' + highlight(dom, state.query) + '</span>' +
-            '<span class="up-pages">' + fmtTotal(pages || 0) + (pages === 1 ? " page" : " pages") + '</span>' +
+            pagesBtn +
           '</span>' +
           '<span class="udt-row-goto">' + GOTO_SVG + '</span>' +
         '</div>' +
@@ -250,7 +273,87 @@
             '<button class="udt-actbtn up-act-open" type="button" data-tip="Open in new tab" aria-label="Open in new tab">' + EXT_SVG + '</button>' +
           '</span>' +
         '</div>' +
+      '</div>' + subrowsHtml(dom, pages, fav);
+    }
+    /* ---------- drilldown: the pages of one domain ----------
+       Rendered as a SIBLING of .up-row, never as more .up-row elements: a row is a CSS grid whose
+       track list is the domain table's columns, and these have a different shape entirely. Keeping
+       them outside also keeps them out of UC.makeColumns' show/hide sweep and its per-row
+       signature stamping, which both key on .up-row.
+       Visual language follows the disclosure convention: the parent row is tinted while open so
+       you can see at a glance what is expanded, the block is indented to sit under the parent's
+       title, and a vertical spine ties the children back to it. */
+    function subrowsHtml(dom, pagesTotal, parentFav){
+      if (!state.expanded[dom]) return "";
+      var list = state.pages[dom];
+      var inner;
+      if (!list){
+        /* No data yet -> skeleton. The component shows this the instant the row opens, without
+           waiting to be told: the Bubble side only has to answer the show_pages event, it does not
+           also have to drive a loading flag. */
+        inner = '<div class="udt-sub-sk">' +
+          '<div class="udt-subrow is-sk"></div><div class="udt-subrow is-sk"></div><div class="udt-subrow is-sk"></div>' +
+        '</div>';
+      } else if (!list.length){
+        inner = '<div class="udt-sub-empty">No pages found for this domain</div>';
+      } else {
+        var shown = list.slice(0, SUB_MAX);
+        inner = shown.map(function(u){ return subrowHtml(u, parentFav); }).join("");
+        /* Honest about the cap: the parent row says "47 pages" but ten are listed. */
+        if (pagesTotal > shown.length){
+          inner += '<div class="udt-sub-more">Top ' + shown.length + ' of ' + fmtTotal(pagesTotal) + '</div>';
+        }
+      }
+      return '<div class="udt-subrows" data-sub-for="' + esc(dom) + '">' + inner + '</div>';
+    }
+    function subrowHtml(u, parentFav){
+      var url = String(u.url == null ? "" : u.url);
+      var title = String(u.title == null ? "" : u.title) || url;
+      /* The page payload carries no favicon of its own — and every one of these URLs belongs to
+         the domain in the row above, so that domain's favicon is the correct icon anyway. Reusing
+         it also means no extra image request per page row, and nothing is fetched from a
+         third-party favicon service that was never asked for. */
+      var fav = String(u.favicon == null ? "" : u.favicon) || String(parentFav || "");
+      if (fav.indexOf("//") === 0) fav = "https:" + fav;
+      var initial = (title || url).charAt(0) || "?";
+      /* description is delivered but there is no room for it inline — it becomes the tooltip, so
+         the full context is one hover away instead of thrown away. */
+      var desc = String(u.description == null ? "" : u.description);
+      /* Two cells, laid out on the PARENT's own grid template (--up-cols): the title lands under
+         Domain and the numbers under Share. Stretching a single flex line across a 1500px table
+         instead pushed the values to the far edge, miles from the title they belong to — aligning
+         to the columns above is what makes the block read as part of the table rather than as a
+         stray strip. It also stays aligned for free when columns are dropped or the lead column
+         is dragged, since both read the same variable. */
+      return '<div class="udt-subrow" data-suburl="' + esc(url) + '" tabindex="0" role="button"' +
+               (desc ? ' data-tip="' + esc(desc) + '"' : "") + '>' +
+        '<span class="udt-sub-main">' +
+          '<span class="udt-sub-logo' + (fav ? " has-img" : "") + '">' +
+            '<span class="udt-sub-ltr">' + esc(initial) + '</span>' +
+            (fav ? '<img src="' + esc(fav) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
+                   ' onerror="this.parentNode.classList.remove(\'has-img\'); this.remove()"/>' : "") +
+          '</span>' +
+          '<span class="udt-sub-title">' + esc(title) + '</span>' +
+        '</span>' +
+        '<span class="udt-sub-meta">' +
+          '<span class="udt-sub-share">' + fmt1(u.domain_share) + '%</span>' +
+          '<span class="udt-sub-date">' + esc(fmtDate(u.last_seen)) + '</span>' +
+        '</span>' +
       '</div>';
+    }
+    /* Open/close one domain's page list. Asks Bubble for the URLs only the FIRST time a domain is
+       opened — after that the cached list is reused, so toggling a row closed and open again is
+       instant and costs no RPC. renderTable() rebuilds the tbody, which is what actually paints
+       the new state; there is no separate DOM patch to keep in sync. */
+    function togglePages(dom){
+      if (state.expanded[dom]){
+        delete state.expanded[dom];
+        renderTable();
+        return;
+      }
+      state.expanded[dom] = true;
+      renderTable();
+      if (!state.pages[dom]) fire("data-showpages-fn", "udtShowPages", { domain: dom });
     }
     var emptyGraceTimer = null;
     function clearEmptyGrace(){ if (emptyGraceTimer){ clearTimeout(emptyGraceTimer); emptyGraceTimer = null; } }
@@ -885,6 +988,28 @@
       var th = e.target.closest(".up-th.is-sortable");
       if (th){ headSortClick(th.getAttribute("data-sortcol")); return; }
 
+      /* --- drilldown: "N pages" toggle + clicks on a page row ---
+         Both sit inside .up-row, so they must be handled (and stopped) before the row-click below,
+         otherwise expanding a domain would also fire udtRowClick and navigate away. */
+      var pagesBtn = e.target.closest("[data-pages-toggle]");
+      if (pagesBtn){
+        e.stopPropagation();
+        var rowP = pagesBtn.closest(".up-row");
+        var dP = rowP ? rowP.getAttribute("data-domain") : "";
+        if (dP) togglePages(dP);
+        return;
+      }
+      var subRow = e.target.closest(".udt-subrow");
+      if (subRow && !subRow.classList.contains("is-sk")){
+        e.stopPropagation();
+        var su = subRow.getAttribute("data-suburl") || "";
+        var subHost = subRow.closest("[data-sub-for]");
+        if (su) fire("data-openurl-fn", "udtOpenUrl", {
+          url: su, domain: subHost ? subHost.getAttribute("data-sub-for") : ""
+        });
+        return;
+      }
+
       // --- row actions (must come BEFORE the row-click handler) ---
       var copyBtn = e.target.closest(".up-act-copy");
       if (copyBtn){
@@ -928,6 +1053,20 @@
 
     root.addEventListener("keydown", function(e){
       if (e.key !== "Enter" && e.key !== " ") return;
+      /* Page rows are focusable, so they need the same Enter/Space treatment the domain rows get —
+         and they must be checked FIRST, since they sit inside a .up-row and would otherwise be
+         swallowed by the domain-row branch below. The "N pages" toggle needs nothing here: it is
+         a real <button>, so the browser already turns Enter/Space into a click. */
+      var sub = e.target.closest && e.target.closest(".udt-subrow");
+      if (sub && !sub.classList.contains("is-sk")){
+        e.preventDefault();
+        var su2 = sub.getAttribute("data-suburl") || "";
+        var host2 = sub.closest("[data-sub-for]");
+        if (su2) fire("data-openurl-fn", "udtOpenUrl", {
+          url: su2, domain: host2 ? host2.getAttribute("data-sub-for") : ""
+        });
+        return;
+      }
       var row = e.target.closest && e.target.closest(".up-row");
       if (!row || row.classList.contains("up-tsk")) return;
       e.preventDefault();
@@ -1081,6 +1220,14 @@
         if (!state.extLoading){ state.loading = false; state.softReload = false; dim.end(); }   // "fertig" beendet auch ein internes Nachladen
         persist(); render();
       },
+      /* Answer to a udtShowPages event. Only repaints when the domain is still expanded — a user
+         who collapsed the row before the RPC came back should not have it pop open again, but the
+         list is still cached so re-opening is instant. */
+      setPages: function(domain, list){
+        state.pages[domain] = list;
+        if (state.expanded[domain]) renderTable();
+        return true;
+      },
       reset: function(){
         state.query = ""; elSearchIn.value = ""; elSearch.classList.remove("is-open");
         state.filterSel = {}; state.appliedSel = {};
@@ -1144,6 +1291,28 @@
     ctrl.update({ brands: list });
     return true;
   }
+  /* Feeds one domain's page list into its expanded row. Called from the Run-JS step that answers
+     the udtShowPages event. Accepts a ready array OR the raw Bubble text, same as doBrands — the
+     RPC response can be handed straight through without parsing it Bubble-side.
+     Until this lands for a domain, the expanded row shows a skeleton on its own; an empty array is
+     a valid answer and renders the "no pages" line rather than an endless skeleton. */
+  function doPages(id, domain, urls){
+    var dom = String(domain == null ? "" : domain).trim();
+    if (!dom){
+      if (window.console) console.warn("[domains-table] setDomainsTablePages needs a domain as the 2nd argument.");
+      return false;
+    }
+    var list = urls;
+    if (typeof list === "string") list = UC.parseBubbleJson(list);
+    if (!Array.isArray(list)) list = [];
+    var ctrl = id ? resolve(id) : initRoot(document.querySelector(".udt-root"));
+    if (!ctrl){
+      if (window.console) console.warn("[domains-table] setDomainsTablePages: no .udt-root matches instanceId " +
+        JSON.stringify(id) + " — the pages were dropped.");
+      return false;
+    }
+    return ctrl.setPages(dom, list);
+  }
   /* mount from core: root registry, iframe forwarder, wheel forwarding, init cascade and the
      replay of whatever Bubble queued against the stubs. doRender/doLoading/doReset stay local. */
   var mount = UC.makeMount({
@@ -1152,7 +1321,8 @@
     resolveLocal: "__udtResolveLocal",
     queue: "__udtBootQueue",
     initRoot: initRoot,
-    api: { renderDomainsTable: doRender, setDomainsTableLoading: doLoading, resetDomainsTable: doReset, setDomainsTableBrands: doBrands },
+    api: { renderDomainsTable: doRender, setDomainsTableLoading: doLoading, resetDomainsTable: doReset,
+           setDomainsTableBrands: doBrands, setDomainsTablePages: doPages },
     forwardShape: { renderDomainsTable: "params", resetDomainsTable: "id" }
   });
   function rootsWithId(id){ return mount.rootsWithId(id); }

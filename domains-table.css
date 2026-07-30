@@ -113,3 +113,81 @@
    Actions and "N pages" (.up-pages, core.css is-t1) use the shared tier classes already. */
 .up-root.is-t2 .udt-td-actions, .up-root.is-t2 .udt-th-actions { display: none !important; }
 .up-root.is-t0 .udt-trend { display: none; }
+
+/* ============================================================
+   Drilldown: "N pages" opens the domain's top URLs inline
+   ============================================================
+   Disclosure convention, deliberately followed rather than invented: the trigger carries a
+   chevron that rotates when open, the parent row stays tinted for as long as it is expanded so
+   you can see at a glance what you opened, and the children are indented under the parent's title
+   with a vertical spine tying them back to it. Several rows may be open at once — comparing two
+   domains' pages side by side is the whole point of doing this inline instead of in a modal.
+
+   Sizing is one clear step down from the parent row (55px -> 45px, 24px logo -> 20px,
+   13.5px title -> 12.5px), not two: the indent and the tint already carry the hierarchy, so
+   shrinking the text further would only cost legibility. */
+
+/* ---------- the trigger ---------- */
+.udt-pagesbtn { display: inline-flex; align-items: center; gap: 3px; border: 0; padding: 0;
+  background: transparent; cursor: pointer; font: inherit; font-size: 12px; font-weight: 400;
+  color: var(--vc-third); white-space: nowrap; transition: color 120ms ease; }
+.udt-pagesbtn:hover, .udt-pagesbtn.is-open { color: var(--vc-text); }
+/* The chevron only exists on hover/open — at rest the cell stays as quiet as it is today, so the
+   drilldown adds no visual noise to a table you are just scanning. width, not display, so it
+   slides out instead of jumping the label sideways. */
+.udt-chev { width: 0; height: 13px; flex: 0 0 auto; opacity: 0; overflow: hidden;
+  transition: width 140ms ease, opacity 140ms ease, transform 180ms ease; }
+.udt-pagesbtn:hover .udt-chev, .udt-pagesbtn:focus-visible .udt-chev, .udt-pagesbtn.is-open .udt-chev {
+  width: 13px; opacity: 1; }
+.udt-pagesbtn.is-open .udt-chev { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce){ .udt-chev { transition: none; } }
+
+/* ---------- expanded parent row ---------- */
+.up-row.is-expanded { background: var(--vt-head-bg); }
+
+/* ---------- the children ---------- */
+.udt-subrows { position: relative; flex: 0 0 auto; background: var(--vt-head-bg);
+  border-bottom: 1px solid var(--vc-border); padding: 2px 0 6px 0; }
+/* the spine — sits under the parent's logo box, visually parenting the whole block */
+.udt-subrows::before { content: ""; position: absolute; left: 24px; top: 0; bottom: 10px;
+  width: 2px; border-radius: 1px; background: var(--vc-border); z-index: 1; }
+/* Same track list as .up-row, so the cells below line up with the columns above. */
+.udt-subrow { height: 45px; display: grid; grid-template-columns: var(--up-cols);
+  align-items: center; cursor: pointer; min-width: 0; transition: background 120ms ease; }
+.udt-subrow:hover { background: var(--vt-row-hover-solid, var(--vc-bg)); }
+.udt-subrow:focus-visible { outline: 2px solid var(--vc-hover-border); outline-offset: -2px; }
+/* padding-left indents past the spine so the child sits under the parent's TITLE, not its logo */
+.udt-sub-main { display: flex; align-items: center; gap: 10px; min-width: 0;
+  padding: 0 12px 0 46px; }
+/* Spans from the Share column to the end rather than sitting inside one track: the share and
+   the date read as one group, and the group is free to use the empty Used/Type space beside it
+   instead of being clipped by the Share track's width. */
+.udt-sub-meta { grid-column: 2 / -1; display: flex; align-items: center; gap: 14px;
+  min-width: 0; padding: 0 12px; }
+.udt-sub-logo { width: 20px; height: 20px; border-radius: 6px; background: var(--vt-logo-bg);
+  padding: 1px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden; }
+.udt-sub-logo img { width: 18px; height: 18px; border-radius: 5px; object-fit: cover; display: block; }
+.udt-sub-ltr { font-size: 10px; font-weight: 600; color: var(--vc-muted); text-transform: uppercase; }
+.udt-sub-logo.has-img .udt-sub-ltr { display: none; }
+.udt-sub-title { flex: 1 1 auto; min-width: 0; font-size: 12.5px; font-weight: 500;
+  color: var(--vc-text); letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; }
+.udt-sub-share { flex: 0 0 auto; font-size: 12.5px; font-weight: 500; color: var(--vc-text);
+  font-variant-numeric: tabular-nums; }
+.udt-sub-date { flex: 0 0 auto; font-size: 12px; font-weight: 500; color: var(--vc-muted);
+  white-space: nowrap; }
+.udt-sub-more, .udt-sub-empty { font-size: 12px; color: var(--vc-third); padding: 8px 12px 2px 46px; }
+
+/* ---------- skeleton while the pages are being fetched ---------- */
+.udt-subrow.is-sk { cursor: default; background: transparent; display: block; padding: 0 12px 0 46px; }
+.udt-subrow.is-sk::after { content: ""; display: block; height: 12px; width: 34%; border-radius: 6px;
+  background: var(--vc-sk); margin-top: 16px; }
+.udt-subrow.is-sk:nth-child(2)::after { width: 46%; }
+.udt-subrow.is-sk:nth-child(3)::after { width: 27%; }
+
+/* Narrow: the date is the first thing to go — the title is the point. */
+.up-root.is-t1 .udt-sub-date { display: none; }
+.up-root.is-vnarrow .udt-sub-main { padding-left: 28px; }
+.up-root.is-vnarrow .udt-sub-more, .up-root.is-vnarrow .udt-sub-empty { padding-left: 28px; }
+.up-root.is-vnarrow .udt-subrows::before { left: 12px; }
