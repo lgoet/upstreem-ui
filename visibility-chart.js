@@ -65,7 +65,7 @@
     colorblind: { label: "Colorblind Safe", colors: ["#e69f00","#56b4e9","#009e73","#f0e442","#0072b2","#d55e00","#cc79a7"] },
     vivid:      { label: "Vivid",           colors: ["#1f77b4","#ff7f0e","#2ca02c","#d62728","#9467bd","#8c564b","#e377c2"] }
   };
-  var SCALE_ORDER = ["default", "tableau", "colorblind", "vivid"];
+  var SCALE_ORDER = ["default", "vivid", "tableau", "colorblind"];
   function buildLineDatasets(series, companies, colorScale){
     series = Array.isArray(series) ? series : [];
     companies = Array.isArray(companies) ? companies : [];
@@ -478,8 +478,17 @@
     }
     function populateScaleMenu(){
       if (!scaleMenu) return;
+      /* "Default" previews the colors that would ACTUALLY render right now — each company's own
+         RPC-provided color, in the same order buildLineDatasets already picks (top 7 by
+         global_share) — never a hardcoded stand-in. Reuses buildLineDatasets itself (with no scale
+         override) rather than re-deriving "which 7 companies, in what order" a second time, so
+         this can never drift from what the chart actually draws. PALETTE only backfills here the
+         same way it does in the real render: when a company genuinely has no color of its own. */
+      var defaultColors = buildLineDatasets(state.series, state.companies || [], null)
+        .datasets.map(function(d){ return d.__baseColor; });
+      if (!defaultColors.length) defaultColors = PALETTE;
       var rows = SCALE_ORDER.map(function(key){
-        var def = key === "default" ? { label: "Default", colors: PALETTE } : COLOR_SCALES[key];
+        var def = key === "default" ? { label: "Default", colors: defaultColors } : COLOR_SCALES[key];
         return '<div class="vot-scale-opt' + (colorScale === key ? " is-active" : "") + '" data-scale="' + key + '">' +
             '<span class="vot-scale-opt-head"><span class="vot-scale-opt-lbl">' + esc(def.label) + '</span>' + SCALE_CHECK_SVG + '</span>' +
             scaleSwatchesHtml(def.colors) +

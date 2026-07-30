@@ -201,12 +201,18 @@
 }
 .vot-scale-btn svg { width: 14px; height: 14px; display: block; }
 /* Hovering anywhere in the chart panel reveals it, after a delay — button itself and its own open
-   state keep it visible with no delay once already shown, so it never flickers mid-interaction. */
+   state keep it visible with no delay once already shown, so it never flickers mid-interaction.
+   pointer-events is listed with the SAME delay as opacity on purpose: pointer-events isn't an
+   animatable property, so without its own transition entry it would otherwise flip to "auto" the
+   INSTANT the hover starts (transitions on a property not listed at all apply with zero delay,
+   regardless of what other properties in the same rule are doing) — meaning the button becomes
+   hoverable/tooltip-triggering well before it's actually visible. Giving it an explicit entry with
+   the same 450ms delay makes it flip at the same moment opacity finishes fading in. */
 .vot-panel-body:hover .vot-scale-btn,
 .vot-scale-btn:focus-visible,
 .vot-scale-btn.is-open {
   opacity: 1; pointer-events: auto;
-  transition: opacity 160ms ease 450ms, border-color 120ms ease, background 120ms ease, color 120ms ease;   /* delayed show */
+  transition: opacity 160ms ease 450ms, pointer-events 0s 450ms, border-color 120ms ease, background 120ms ease, color 120ms ease;   /* delayed show */
 }
 .vot-scale-btn:hover, .vot-scale-btn.is-open { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); color: var(--vc-text); }
 @media (prefers-reduced-motion: reduce){ .vot-scale-btn { transition-duration: 1ms; } }
@@ -231,6 +237,7 @@
 }
 @media (prefers-reduced-motion: reduce){ .up-scale-menu { transition-duration: 1ms; } }
 .up-scale-menu * { box-sizing: border-box; }
+.up-scale-menu { display: flex; flex-direction: column; gap: 4px; }
 
 .vot-scale-opt { display: flex; flex-direction: column; gap: 8px; padding: 9px 10px; border-radius: 9px; cursor: pointer; }
 .vot-scale-opt:hover, .vot-scale-opt.is-active { background: var(--vc-heading-bg); }

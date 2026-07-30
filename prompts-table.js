@@ -452,7 +452,7 @@
          back to an explicit id-based selection instead of silently keeping the stale N. */
       if (state.selectAllMatching) invalidateSelectAll();
       if (state.selected[id]) delete state.selected[id]; else state.selected[id] = true;
-      persist(); syncRowChecks(); syncSelectAll(); fireSelect();
+      persist(); syncRowChecks(); syncSelectAll(); fireSelect(); syncStagedTopicsToSelection();
     }
     function toggleSelectAll(){
       var rows = state.rows || [];
@@ -462,7 +462,7 @@
         var id = String(r.prompt_id);
         if (allSel) delete state.selected[id]; else state.selected[id] = true;
       });
-      persist(); renderTable(); syncSelectAll(); fireSelect();
+      persist(); renderTable(); syncSelectAll(); fireSelect(); syncStagedTopicsToSelection();
     }
     /* Updates the checkboxes in place instead of re-rendering the table.
        renderTable() replaces elTbody.innerHTML wholesale, which recreates every <img> in every
@@ -493,7 +493,7 @@
     function clearSelection(){
       if (!selectedIds().length && !state.selectAllMatching) return;
       state.selected = {}; invalidateSelectAll();
-      persist(); syncRowChecks(); syncSelectAll(); fireSelect();
+      persist(); syncRowChecks(); syncSelectAll(); fireSelect(); syncStagedTopicsToSelection();
     }
     /* Counts the WHOLE selection, not just this page's — state.selected deliberately survives
        paging/sorting, so a user who selected rows on page 1 and paged on still sees them counted. */
@@ -836,6 +836,19 @@
       renderTopicList(true);
       syncTopicFoot();
     }
+    /* Selection changed (a different prompt got checked/unchecked, "select all N matching" got
+       toggled, ...) while the topic panel happens to be open. The staged draft is tied to
+       whichever prompt(s) were selected at the moment the panel was seeded — the instant that set
+       changes, a topic that only ever came from the FIRST prompt would otherwise keep sitting
+       there looking staged for a selection the user never actually asked to tag, and Apply would
+       silently add it there too. Re-seeding (topicInitialStaged() already returns empty for
+       anything but exactly one prompt) is simpler and safer than trying to tell "still exactly
+       what was auto-seeded" apart from "the user edited it by hand" — losing an in-progress manual
+       edit on a selection change is a much smaller cost than applying an unintended tag. */
+    function syncStagedTopicsToSelection(){
+      if (!topicMenuOpen()) return;
+      resetStagedTopics();
+    }
     var topicQuery = "";
     /* Draft state for the inline "create a new topic" row — see topicCreateHtml(). */
     var newTopicEmoji = "";
@@ -1028,7 +1041,12 @@
         try { document.activeElement.blur(); } catch(e){}
       }
       elBulk.classList.toggle("is-topics", !!open);
-      if (!open) elBulk.classList.remove("is-picking");
+      if (!open){
+        elBulk.classList.remove("is-picking");
+        /* Explicit, not just "the next open reseeds anyway": a staged draft that outlives the
+           panel it was drafted in is never meant to be read by anything else. */
+        state.stagedTopicIds = null;
+      }
       panel.setAttribute("aria-hidden", open ? "false" : "true");
       if (btn) btn.setAttribute("aria-expanded", open ? "true" : "false");
       if (open){
@@ -1484,11 +1502,11 @@
         if (e.target.closest("[data-bulk-clear]")){ setTopicMenuOpen(false); clearSelection(); return; }
         if (e.target.closest("[data-bulk-all]")){
           state.selectAllMatching = true;
-          persist(); renderBulkBar(); syncSelCount(); fireSelect(); return;
+          persist(); renderBulkBar(); syncSelCount(); fireSelect(); syncStagedTopicsToSelection(); return;
         }
         if (e.target.closest("[data-bulk-undoall]")){
           invalidateSelectAll();
-          persist(); renderBulkBar(); syncSelCount(); fireSelect(); return;
+          persist(); renderBulkBar(); syncSelCount(); fireSelect(); syncStagedTopicsToSelection(); return;
         }
         if (e.target.closest("[data-bulk-topics]")){ setTopicMenuOpen(!topicMenuOpen()); return; }
         var tRow2 = e.target.closest("[data-topic]");
