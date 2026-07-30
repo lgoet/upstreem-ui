@@ -1993,16 +1993,78 @@ Menü-Checkboxen selbst bleiben staged-bis-Apply (siehe §31-Nachbarschaft/`up-f
 der Chart-Klick committet sofort, weil er eine einzelne, abgeschlossene Entscheidung ist, kein
 Multi-Select-Vorgang wie das Ankreuzen mehrerer Boxen vor einem gemeinsamen Apply.
 
-**Reset-Button neben dem Chart-Type-Switch** (`.tcd-chart-reset`, `topcitations-dashboard.js`):
-nur sichtbar, wenn `state.appliedTypeSel`/`appliedUrlTypeSel` mindestens einen Key enthält — exakt
-dasselbe Signal, das schon den Filter-Badge zeigt (`syncFilterBadge()` toggelt jetzt beide). Klick
-ruft `resetTypeFilters()` — dieselbe Funktion, die auch das Filtermenü-eigene Reset benutzt, damit
-die zwei Einstiegspunkte nie auseinanderlaufen können. **Wird per JS in `.tcd-unit-left
-.tcd-head-tools` injiziert statt in die statische Bubble-Markup aufgenommen** — bestehende Embeds
-bekommen den Button dadurch automatisch mit dem nächsten CDN-Pin, ohne dass der User seine
-Bubble-HTML neu einfügen muss. Faustregel für jede zukünftige "neuer Header-Button"-Anfrage:
-erst prüfen, ob eine JS-Injektion reicht (spart dem User einen Markup-Reimport), statisches Markup
-nur, wenn das Element wirklich vom allerersten Render an da sein muss.
+**Reset-Button LINKS vom Chart-Type-Switch** (`.tcd-chart-reset`, `topcitations-dashboard.js`) —
+`insertBefore(btn, chartHeadTools.firstChild)`, nicht `appendChild`: die naheliegende erste
+Instinkt-Platzierung ("neuer Button = rechts anhängen") war hier falsch, User wollte ihn explizit
+VOR dem Doughnut/Bar-Switch. Nur sichtbar, wenn `state.appliedTypeSel`/`appliedUrlTypeSel`
+mindestens einen Key enthält — exakt dasselbe Signal, das schon den Filter-Badge zeigt
+(`syncFilterBadge()` toggelt jetzt beide). Klick ruft `resetTypeFilters()` — dieselbe Funktion, die
+auch das Filtermenü-eigene Reset benutzt, damit die zwei Einstiegspunkte nie auseinanderlaufen
+können. **Wird per JS in `.tcd-unit-left .tcd-head-tools` injiziert statt in die statische Bubble-
+Markup aufgenommen** — bestehende Embeds bekommen den Button dadurch automatisch mit dem nächsten
+CDN-Pin, ohne dass der User seine Bubble-HTML neu einfügen muss. Faustregel für jede zukünftige
+"neuer Header-Button"-Anfrage: erst prüfen, ob eine JS-Injektion reicht (spart dem User einen
+Markup-Reimport), statisches Markup nur, wenn das Element wirklich vom allerersten Render an da
+sein muss.
+
+**`typeChart.updateColors(d)` — re-colouren statt neu bauen.** Jeder Klick auf ein Chart-Segment
+löste vorher einen kompletten `renderDonut()`/`renderBars()`-Neuaufbau aus (über `syncChartDim()` →
+`renderChartSide()` → `drawChart()`) — bei Bars sichtbar als kurzes Aufblitzen, weil jede Bar-Fill
+beim Neuaufbau erst auf `width:0%` zurückgesetzt und dann neu hochanimiert wird (dieselbe
+Entrance-Animation wie beim allerersten Laden), beim Doughnut als ein erneutes 200ms-Fade-in. Ein
+reiner Dim-Wechsel (welches Segment ausgegraut ist) ändert aber weder die Anzahl noch die
+Reihenfolge der Items — nur ihre Farbe. `updateColors(d)` vergleicht die Keys/Reihenfolge des neuen
+gegen das zuletzt gerenderte `d` (`lastKeys`/`lastMode`, Bars werden dafür identisch zu `renderBars`
+nach Share sortiert, sonst false positive) — bei Übereinstimmung wird NUR neu eingefärbt (Bars:
+`.up-bar-fill.style.background` direkt gesetzt, kein `innerHTML`, keine neuen Knoten; Doughnut:
+`chart.data.datasets[0].backgroundColor` ersetzt + `chart.update("none")`, `"none"` heißt explizit
+"ohne die Update-Animation abzuspielen"). Bei einer echten Strukturänderung (andere Keys) fällt es
+automatisch auf den vollen `renderDonut`/`renderBars`-Pfad zurück. `topcitations-dashboard.js`s
+`syncChartDim()` nutzt das jetzt für alle drei Aufrufer (Menü-Checkbox, Chart-Klick, Reset) — ein
+einziger Fix an einer Stelle behebt das Aufblitzen überall, nicht nur beim Chart-Klick, den der
+User konkret meldete.
+
+**Dimm-Zustand braucht seine ECHTE Farbe griffbereit, nicht nur die gedimmte.** `UC.applyTypeDim`
+hängt `__dimmed:true` und `__realColor:<Original>` an jedes ausgegraute Item — zwei Stellen lesen
+das:
+- **Tooltip-Name-Text** (`makeDonutTooltip`, core.js): der Punkt/Dot im Tooltip zeigt weiterhin die
+  TATSÄCHLICH gemalte (gedimmte) Farbe — das ist ein Farb-Swatch, "so sieht das Segment gerade aus".
+  Der NAME-Text daneben liest aber aus `chart.data.datasets[0].__realColors[i]` — ein gehovertes,
+  gerade ausgefiltertes Segment soll lesbar/erkennbar bleiben, nicht selbst grau wirken, nur weil
+  die Ringfarbe gerade grau ist.
+- **Hover-Richtung** (`.up-bar-row.is-dimmed`/Doughnuts `hoverBackgroundColor`): ein bereits graues
+  Element auf Hover Richtung Weiß aufzuhellen (`UC.brighten`) sah aus wie "wird fast unsichtbar
+  weiß" — falsch. Gedimmte Elemente dunkeln stattdessen leicht ab (`UC.darken`, neuer Helper neben
+  `brighten` — Blend Richtung Schwarz statt Weiß), echte Farben hellen wie gehabt auf. Faustregel:
+  Hover-Richtung ist nie universell "heller" — bei einem Element, das selbst schon eine gedämpfte
+  Farbe TRÄGT (nicht nur optisch hell aussieht, sondern bewusst als "gedimmt/inaktiv" markiert ist),
+  muss Hover die Dämpfung verstärken, nicht umkehren.
+
+## 38. Wheel-Forwarding: der Canvas braucht es, der Rahmen drumherum nicht
+
+Nachtrag zu R1 (Wheel-Interception eingrenzen): die Eingrenzung auf Komponenten-Ebene (nur Charts
+bekommen überhaupt einen `wheelSel`, Tabellen keinen) war richtig, aber INNERHALB der Chart-
+Komponenten war der Selektor selbst noch zu weit gefasst — `.up-donut-body`/`.cc-type-root` sind
+der ganze gepolsterte Flex-Container, nicht der Ring. Der Doughnut sitzt bei ca. 52% Breite mittig
+darin (`.up-donut-wrap`) — der Rest ist leerer Platz, der trotzdem denselben `wheel`-Listener bekam.
+Ergebnis: irgendwo im Panel (auch 8-16px vom Rand entfernt, weit weg vom eigentlichen Ring) wurde
+jedes Scrollen abgefangen und über `forwardWheel()`s manuelles `scrollTop += deltaY` nachgebildet —
+kein natives Scrollen mehr (keine Trägheit/kein Rubber-Banding), was sich wie "kann hier nicht
+scrollen" anfühlte.
+
+Der eigentliche Grund, wheel überhaupt abzufangen, ist rein Chart.js-spezifisch: Chart.js setzt
+`touch-action:none` auf sein eigenes `<canvas>`, NUR das verhindert, dass ein Wheel-Event den
+Seiten-Scroll-Container erreicht. Fix: `wheelSel` zeigt jetzt exakt auf `canvas` (`".up-donut-body
+canvas"`, `".up-line-wrap canvas, .up-donut-body canvas"` bei `citations-combo-chart`), nicht auf
+den umgebenden Container. Bar-Modus hat gar kein `<canvas>` (handgebaute Divs) — dort matcht der
+Selektor folgerichtig nichts, `attachWheel()` findet keine Ziele, und native Seiten-Scroll
+funktioniert dort automatisch ohne jeden Sonderfall. `.up-line-wrap` bei den Liniendiagrammen war
+davon nie betroffen (sein gesamter Bereich ist ohnehin schon der Canvas, kein Padding drumherum) —
+trotzdem auf `canvas` umgestellt, für Konsistenz und falls sich das CSS dort mal ändert.
+
+Faustregel: `wheelSel` (oder jeder ähnliche "dieses Element braucht Sonderbehandlung"-Selektor)
+muss auf das Element zeigen, das das eigentliche Problem hat — nicht auf dessen sichtbaren
+Container. Ein Container ist fast immer größer als das Element, das den Browser-Ärger auslöst.
 
 ## 36. Bar-Hover "wie im Doughnut": zwei verschiedene Mechanismen für denselben Eindruck
 

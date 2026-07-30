@@ -217,6 +217,18 @@
     r = Math.round(r + (255-r)*amt); g = Math.round(g + (255-g)*amt); b = Math.round(b + (255-b)*amt);
     return "rgb(" + r + "," + g + "," + b + ")";
   }
+  /* Same idea as brighten(), toward black instead — the DIM/grey slices' own hover state (see
+     makeTypeChart). A dim slice's colour is already a light neutral grey; blending IT toward
+     white on hover made the hovered slice read as nearly-white instead of "a bit darker than
+     resting", which is what a hover on an already-muted element should look like. */
+  function darken(hex, amt){
+    var h = String(hex).replace("#","");
+    if (h.length === 3) h = h.split("").map(function(x){ return x + x; }).join("");
+    var n = parseInt(h, 16);
+    var r = (n>>16)&255, g = (n>>8)&255, b = n&255;
+    r = Math.round(r * (1-amt)); g = Math.round(g * (1-amt)); b = Math.round(b * (1-amt));
+    return "rgb(" + r + "," + g + "," + b + ")";
+  }
   /* Number(null) is 0 and Number("") is 0 — both would otherwise sail through as valid numbers
      here, turning "no value" into a fake zero everywhere toNum feeds fmt1/fmtInt (found via a
      null avg_rank rendering "0.0" instead of "–" in prompts-table; the same bug was latent
@@ -2076,11 +2088,12 @@
     });
   }
   /* Grey out every slice/bar whose key isn't in `sel` — the shared half of "click a type chart
-     segment to filter by it". Second real caller (citations-combo-chart, alongside
-     topcitations-dashboard's own filter-menu checkboxes) is what earns this its place in core;
-     each caller keeps its own `sel` state and its own idea of what selecting a type actually DOES
-     (an RPC-backed applied filter for one, a client-side line-series filter for the other) — this
-     only owns the shared visual. */
+     segment to filter by it" (topcitations-dashboard's filter-menu checkboxes AND its chart-click
+     shortcut both funnel through this). `__dimmed`/`__realColor` ride along on every greyed item
+     so a hover state (makeTypeChart) or a tooltip (makeDonutTooltip) can tell "this is currently
+     filtered out" from "this is its real, always-was-grey color" and react differently — a
+     tooltip name and a hover state both still need the REAL colour even while the paint itself
+     is dimmed. */
   function applyTypeDim(prepped, sel, isDark){
     var selectedKeys = Object.keys(sel || {}).filter(function(k){ return sel[k]; });
     if (!selectedKeys.length) return prepped;
@@ -2088,7 +2101,7 @@
     selectedKeys.forEach(function(k){ selSet[k] = true; });
     var grey = isDark ? "#3a3a3a" : "#e0e2e6";
     return prepped.map(function(it){
-      return (it.key != null && selSet[it.key]) ? it : { key: it.key, name: it.name, share: it.share, color: grey };
+      return (it.key != null && selSet[it.key]) ? it : { key: it.key, name: it.name, share: it.share, color: grey, __dimmed: true, __realColor: it.color };
     });
   }
 
@@ -2697,11 +2710,17 @@
       var od = chart.data.datasets[0].originalData;
       var val = (od && od[i] != null) ? od[i] : (chart.data.datasets[0].data[i] || 0);
       var sliceColor = (chart.data.datasets[0].backgroundColor && chart.data.datasets[0].backgroundColor[i]) || textColor;
+      /* The dot mirrors what's actually painted on the ring right now (dimmed grey included — it's
+         a legend swatch, "this is this slice's current colour"). The NAME stays legible even while
+         dimmed, so it reads off __realColors instead — a hovered, filtered-out slice's name should
+         never itself look greyed out just because the ring paint is. */
+      var realColors = chart.data.datasets[0].__realColors;
+      var nameColor = (realColors && realColors[i]) || sliceColor;
       var isUrlMode = getMode && getMode() === "url";
       el.querySelector(".up-tt-dot").style.cssText = isUrlMode
         ? "width:6px;height:6px;border-radius:999px;flex:0 0 auto;background:" + sliceColor + ";display:inline-block;"
         : "display:none;";
-      el.querySelector(".up-tt-lbl").style.color = sliceColor;
+      el.querySelector(".up-tt-lbl").style.color = nameColor;
       el.querySelector(".up-tt-lbl").textContent = chart.data.labels[i] || "";
       el.querySelector(".up-tt-val").textContent = Number(val).toFixed(2) + "%";
       var cx = chart.canvas.offsetLeft, cy = chart.canvas.offsetTop, ca = chart.chartArea;
@@ -2759,6 +2778,11 @@
     var collapseAt = cfg.collapseAt != null ? cfg.collapseAt : 420;
     var chart = null;
     var donutTooltip = makeDonutTooltip(body, isDark, cfg.mode);
+    /* Tracks what the LAST full render actually drew, so updateColors() (a dim-only re-colour, see
+       below) can tell "same slices/bars, just different selection" from "genuinely new data" —
+       only the former is safe to patch in place. */
+    var lastKeys = null, lastMode = null;
+    function keysOf(d){ return (d || []).map(function(it){ return it.key; }).join(""); }
 
     function destroy(){
       if (chart){ try { chart.destroy(); } catch(e){} chart = null; }
@@ -2780,6 +2804,7 @@
       if (!isOwner()) return;
       destroy();
       d = d || [];
+      lastKeys = keysOf(d); lastMode = "donut";
       if (isEmpty(d)){ empty(); return; }
       body.innerHTML =
         '<div class="up-donut-layout">' +
@@ -2817,7 +2842,11 @@
             data: { labels: allZero ? ["—"] : d.map(function(x){ return x.name; }),
               datasets: [{ data: allZero ? [1] : display, originalData: allZero ? [0] : origData,
                 backgroundColor: allZero ? [isDark() ? "rgba(255,255,255,0.06)" : "#eeeeee"] : d.map(function(x){ return x.color; }),
-                hoverBackgroundColor: allZero ? [isDark() ? "rgba(255,255,255,0.06)" : "#eeeeee"] : d.map(function(x){ return brighten(x.color, 0.15); }),
+                /* Darken a dimmed (filtered-out) slice on hover instead of brightening it — it's
+                   already a light neutral grey, so brightening read as "this slice turns nearly
+                   white," not "this slice is being hovered." Real-colour slices still brighten. */
+                hoverBackgroundColor: allZero ? [isDark() ? "rgba(255,255,255,0.06)" : "#eeeeee"] : d.map(function(x){ return x.__dimmed ? darken(x.color, 0.08) : brighten(x.color, 0.15); }),
+                __realColors: allZero ? [] : d.map(function(x){ return x.__realColor || x.color; }),
                 spacing: 0, borderWidth: 0, borderRadius: CORNER, hoverOffset: HOVER }] },
             plugins: [constantGapPlugin, ringWidthPlugin],
             options: { responsive: true, maintainAspectRatio: false, layout: { padding: 8 },
@@ -2841,6 +2870,7 @@
       destroy();
       d = (d || []).slice().sort(function(a, b){ return b.share - a.share; });
       if (isEmpty(d)){ empty(); return; }
+      lastKeys = keysOf(d); lastMode = "bar";
       body.innerHTML = '<div class="up-bars">' + d.map(function(it){
         /* Label colour follows the fill's luminance so it stays readable: white on dark/mid fills,
            dark on genuinely light ones. Bar colours are identical in both themes, so this is
@@ -2850,7 +2880,7 @@
         var txtPct = light ? "rgba(31,31,27,0.62)" : "rgba(255,255,255,0.75)";
         var outColor = isDark() ? "rgba(255,255,255,0.85)" : "var(--vc-text)";
         var outPctColor = isDark() ? "rgba(255,255,255,0.55)" : "var(--vc-muted)";
-        return '<div class="up-bar-row' + (cfg.onSliceClick && it.key !== "other" ? " is-clickable" : "") + '" data-type-key="' + esc(it.key || "") + '"><div class="up-bar-track">' +
+        return '<div class="up-bar-row' + (cfg.onSliceClick && it.key !== "other" ? " is-clickable" : "") + (it.__dimmed ? " is-dimmed" : "") + '" data-type-key="' + esc(it.key || "") + '"><div class="up-bar-track">' +
             '<div class="up-bar-fill" style="background:' + it.color + ';width:0%">' +
               '<span class="up-bar-name" style="color:' + txt + ';opacity:0">' + esc(it.name) + '</span>' +
               '<span class="up-bar-pct up-bar-pct-in" style="color:' + txtPct + ';opacity:0">' + esc(fmtPct(it.share)) + '</span>' +
@@ -2913,9 +2943,42 @@
       }
     }
 
+    /* Re-colours an already-rendered donut/bars in place — no destroy, no replayed entrance
+       animation, no DOM node replacement — for when only WHICH items are dimmed changed (a type-
+       filter toggle), not the underlying data. A full renderDonut()/renderBars() call replays the
+       entrance animation every time it runs (donut: a fresh 200ms fade-in; bars: width resets to
+       0% and regrows, core.css .up-bar-fill transition) — correct for genuinely new data, but on
+       every single filter click it read as the whole chart flashing/highlighting before settling.
+       Falls back to a full render if the item SET actually changed (different keys or order, not
+       just which of the same items are selected) — updateColors only ever patches, never adds or
+       removes bars/slices. */
+    function updateColors(d){
+      d = d || [];
+      var normalized = (lastMode === "bar") ? d.slice().sort(function(a, b){ return b.share - a.share; }) : d;
+      if (keysOf(normalized) !== lastKeys){
+        if (lastMode === "bar") renderBars(d); else renderDonut(d);
+        return;
+      }
+      if (lastMode === "bar"){
+        var rows = Array.prototype.slice.call(body.querySelectorAll(".up-bar-row"));
+        rows.forEach(function(row, i){
+          var it = normalized[i]; if (!it) return;
+          var fill = row.querySelector(".up-bar-fill");
+          if (fill) fill.style.background = it.color;
+          row.classList.toggle("is-dimmed", !!it.__dimmed);
+        });
+      } else if (chart){
+        chart.data.datasets[0].backgroundColor = normalized.map(function(x){ return x.color; });
+        chart.data.datasets[0].hoverBackgroundColor = normalized.map(function(x){ return x.__dimmed ? darken(x.color, 0.08) : brighten(x.color, 0.15); });
+        chart.data.datasets[0].__realColors = normalized.map(function(x){ return x.__realColor || x.color; });
+        chart.update("none");
+      }
+    }
+
     return {
       renderDonut: renderDonut,
       renderBars: renderBars,
+      updateColors: updateColors,
       skeleton: skeleton,
       empty: empty,
       destroy: destroy,
@@ -2979,6 +3042,7 @@
     citeName: citeName,
     tint: tint,
     brighten: brighten,
+    darken: darken,
     toNum: toNum,
     fmt1: fmt1,
     fmtInt: fmtInt,

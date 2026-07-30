@@ -247,7 +247,20 @@
       drawChart();
       syncChartSwitch();
     }
-    function syncChartDim(){ renderChartSide(); }
+    /* A dim-only change (checkbox toggle, chart-segment click, Reset) never touches WHICH items
+       exist or their shares — only which are greyed out. Going through the full renderChartSide()
+       path for that replayed typeChart's entrance animation on every single click (donut: fresh
+       fade-in; bars: width resets to 0% and regrows) — visible as the whole chart flashing before
+       settling into the new selection. typeChart.updateColors() patches the existing paint in
+       place instead. Only falls back to the full path for states updateColors can't handle on its
+       own: still loading, or a transition into/out of the empty state (skeleton/grace needed). */
+    function syncChartDim(){
+      if (!isOwner() || state.loading || state.optimisticLoading || !state.hasChart){ renderChartSide(); return; }
+      state.prepped = applySelectionDim(UC.prepTypeData(state.mode, activeBreakdown(), isDark));
+      if (chartIsEmpty()){ renderChartSide(); return; }
+      chartGrace.clear();
+      typeChart.updateColors(state.prepped);
+    }
 
     /* ================= RIGHT: Top Domains / Top URLs table ================= */
     var ROW_GOTO = '<span class="up-row-goto">' + UC.GOTO_SVG + '</span>';
@@ -386,11 +399,12 @@
     function setFilterOpen(open){ if (open) filterPop.open(); else filterPop.close(false); }
     function closePops(){ setFilterOpen(false); }
 
-    /* Small "Reset" control, top-right of the LEFT (type chart) unit's own toolbar — shown only
-       while a type filter (citation or url) is actually applied. Injected here rather than added
-       to the static bubble markup so existing embeds pick it up on the next CDN-pin bump without
-       needing their HTML re-pasted; see syncFilterBadge() for the visibility toggle, and
-       resetTypeFilters() above for what a click does — identical to the filter menu's own Reset. */
+    /* Small "Reset" control, LEFT (type chart) unit's own toolbar, placed before the doughnut/bar
+       switch — shown only while a type filter (citation or url) is actually applied. Injected here
+       rather than added to the static bubble markup so existing embeds pick it up on the next
+       CDN-pin bump without needing their HTML re-pasted; see syncFilterBadge() for the visibility
+       toggle, and resetTypeFilters() above for what a click does — identical to the filter menu's
+       own Reset. */
     var chartHeadTools = root.querySelector(".tcd-unit-left .tcd-head-tools");
     var chartResetBtn = chartHeadTools ? chartHeadTools.querySelector(".tcd-chart-reset") : null;
     if (chartHeadTools && !chartResetBtn){
@@ -400,7 +414,7 @@
       chartResetBtn.innerHTML =
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>' +
         '<span>Reset</span>';
-      chartHeadTools.appendChild(chartResetBtn);
+      chartHeadTools.insertBefore(chartResetBtn, chartHeadTools.firstChild);
       chartResetBtn.addEventListener("click", function(ev){ ev.stopPropagation(); resetTypeFilters(); });
     }
 
@@ -816,7 +830,14 @@
      for an instanceId instead of broadcasting, unlike the others. */
   var mount = UC.makeMount({
     rootClass: "tcd-root", notPortal: true,
-    wheelSel: ".up-donut-body",
+    /* Only the actual <canvas> (doughnut mode) needs this — Chart.js sets touch-action:none on
+       its own canvas, which is the only thing that stops a wheel event from reaching the page's
+       scroll container in the first place. .up-donut-body itself is a much bigger flex box (the
+       canvas is centered at ~52% of it, core.css .up-donut-wrap) — binding the listener there
+       forwarded (and thereby de-inertia'd, see forwardWheel's comment) every wheel over the empty
+       padding around the ring too, which read as "can't scroll the page near this panel's edges."
+       Bar mode has no canvas at all — nothing here needs forwarding, native scroll just works. */
+    wheelSel: ".up-donut-body canvas",
     ctrlProp: "__tcdController",
     resolveLocal: "__tcdResolveLocal",
     queue: "__tcdBootQueue",

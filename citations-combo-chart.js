@@ -735,8 +735,14 @@
      because this component broadcasts to every root sharing an instanceId. */
   var mount = UC.makeMount({
     rootClass: "combo-root",
-    /* only the chart surfaces swallow the wheel; nothing else here intercepts scrolling */
-    wheelSel: ".up-line-wrap, .up-donut-body, .cc-type-root",
+    /* Only the actual <canvas> swallows the wheel (Chart.js's own touch-action:none) — scoping to
+       it, not the surrounding flex box, is what matters here: .up-donut-body/.cc-type-root are
+       much bigger than the ring itself (canvas sits centered at ~52% of .up-donut-body, core.css
+       .up-donut-wrap), so binding the old wider selectors forwarded (and de-inertia'd — see
+       forwardWheel's own comment) every wheel over their empty padding too, which is what made the
+       page refuse to scroll near this panel's edges. Bar mode has no canvas at all, so it needs
+       nothing here — native scroll already works there. */
+    wheelSel: ".up-line-wrap canvas, .up-donut-body canvas",
     ctrlProp: "__ccController",
     resolveLocal: "__ccResolveLocal",
     queue: "__ccBootQueue",

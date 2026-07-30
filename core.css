@@ -872,6 +872,11 @@
    filter — filter on the track would also repaint .up-bar-fill sitting inside it, compounding
    with the fill's own brightness() instead of leaving it alone. */
 .up-bar-row:hover .up-bar-fill { filter: brightness(1.12); }
+/* A dimmed (filtered-out) bar's fill is already a light neutral grey — brightening THAT further
+   on hover read as "turns nearly white," not "is being hovered." Darken instead, same amount the
+   grey track itself darkens by, for one consistent "muted things get a bit darker on hover" rule
+   rather than two different directions depending on which grey element you're looking at. */
+.up-bar-row.is-dimmed:hover .up-bar-fill { filter: brightness(0.94); }
 .up-bar-row:hover .up-bar-track { background: color-mix(in srgb, var(--vc-heading-bg) 100%, black 6%); }
 .up-bar-track { flex: 1; height: 32px; background: var(--vc-heading-bg); border-radius: 8px; overflow: visible; position: relative; min-width: 0; transition: background 120ms ease; }
 .up-bar-fill { height: 100%; border-radius: 8px; transition: width .5s cubic-bezier(.4,0,.2,1), filter 120ms ease; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; min-width: 0; gap: 8px; overflow: hidden; }
