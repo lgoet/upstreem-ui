@@ -47,15 +47,55 @@
     (?<="hex_light":")[^"]*    (?<="hex_dark":")[^"]*
     (?<="id":")[^"]*
 
-  ── Filling the component ─────────────────────────────────────────────────────
-  window.renderTopicsManager({
-    instanceId: "...",
-    topics: [
-      { id, name, emoji /* string or null */, hex_light, hex_dark, is_active, created_at, prompt_count },
-      ...
-    ]
-  });
-  window.setTopicsManagerLoading("INSTANCE_ID", "yes" | "no");
+  ── Filling the component — Run-JS "Render" step (paste as-is, swap the bracketed value) ────
+  DO NOT splice your RPC's dynamic output directly into a JS array/object literal here (i.e. never
+  write `topics: [<dynamic value>]`) — Bubble's own text output for a list containing emoji is not
+  valid JSON (unquoted emoji, bare yes/no), so the instant a topic has an emoji this breaks with
+  exactly the "Invalid or unexpected token" syntax error prompts-table.js already hit once before.
+  The fix, and the ONLY safe way to hand data to any component in this library: put the raw dynamic
+  text inside backticks as a single JS string (backticks don't care what's inside them, syntax-wise
+  — that's what protects you here), then let UpstreemCore.parseBubbleJson do the real parsing. Never
+  keep a second, ad-hoc parsing/escaping attempt in the Run-JS step itself — that's exactly how the
+  emoji bug survived a round of fixes once already: only one of two copies got repaired.
+
+  (function () {
+    var RAW = `[TOPICS_RPC_RESPONSE]`;      // [{id,name,emoji,hex_light,hex_dark,is_active,created_at,prompt_count}, …]
+
+    var t = 0;
+    (function go () {
+      var w  = window,
+          fn = w.renderTopicsManager
+            || (w.parent && w.parent.renderTopicsManager)
+            || (w.top && w.top.renderTopicsManager);
+      var UC = w.UpstreemCore
+            || (w.parent && w.parent.UpstreemCore)
+            || (w.top && w.top.UpstreemCore);
+
+      if (typeof fn === "function" && UC && UC.parseBubbleJson) {
+        var topics = UC.parseBubbleJson(RAW);
+        fn({ instanceId: `INSTANCE_ID`, isDark: `ISDARK`, topics: topics });
+        return;
+      }
+      if (t++ < 60) { setTimeout(go, 100); return; }
+      console.error("[topics-manager] renderTopicsManager / UpstreemCore never appeared after 6s — " +
+        "check data-cdn-pin and that the component is actually on this page.");
+    })();
+  })();
+
+  ── Loading state — own Run-JS step, same reasoning as every other component ─
+  (function () {
+    const INSTANCE_ID = `INSTANCE_ID`;
+    const LOADING = `IS_LOADING`;          // "yes" / "no"
+    let t = 0;
+    (function go(){
+      const fn = window.setTopicsManagerLoading
+        || (window.parent && window.parent.setTopicsManagerLoading)
+        || (window.top && window.top.setTopicsManagerLoading);
+      if (typeof fn === "function") { fn(INSTANCE_ID, LOADING); return; }
+      if (t++ < 60) setTimeout(go, 100);
+    })();
+  })();
+
   window.resetTopicsManager("INSTANCE_ID");   // clears search/sort, closes an open modal, fires 0 events
 -->
 
