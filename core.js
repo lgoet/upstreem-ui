@@ -1642,6 +1642,32 @@
       unclipAncestors(root, !on);
       if (on) syncTheadOffset();
     }
+    /* The intermittent "only the toolbar sticks, the column header scrolls away with the table"
+       bug: every syncTheadOffset() call above only fires from explicit call sites (component
+       init, resize, and each render()) — none of which fire again if the toolbar's real height
+       changes for a reason that ISN'T one of those triggers. Two real ones: Geist (core.css's own
+       @import, ...&display=swap) loads asynchronously and can swap in — changing glyph metrics —
+       after the first measurement already ran; a brand logo <img> in the toolbar (data-brand-name)
+       finishes loading and un-collapses its box on the same kind of delay. Either way
+       --up-thead-off is left stuck at whatever the toolbar measured BEFORE it settled — .up-root's
+       own 32px fallback (set once, before any JS runs) if that first measurement was early enough
+       — and for a toolbar this tall, sticking that many px too high lands the thead UNDERNEATH the
+       (correctly positioned) toolbar rather than below it: exactly "the heading isn't there, only
+       the toolbar is" while scrolling. Switching tabs or reloading "fixes" it purely because
+       whatever was still loading has finished by then, so THAT render's own remeasure happens to
+       land on the right number — not because anything was actually fixed. A ResizeObserver on the
+       toolbar itself re-measures the instant its real height changes for ANY reason, removing the
+       race instead of relying on it resolving by coincidence on some later render. */
+    if (headEl && window.ResizeObserver){
+      var lastTheadOffH = null;
+      new ResizeObserver(function(){
+        if (!root.classList.contains("up-sticky")) return;
+        var h = headEl.offsetHeight;
+        if (h === lastTheadOffH) return;
+        lastTheadOffH = h;
+        syncTheadOffset();
+      }).observe(headEl);
+    }
     return { applySticky: applySticky, syncTheadOffset: syncTheadOffset };
   }
 
