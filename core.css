@@ -37,7 +37,7 @@
     /* separator + count exactly as in the other components: 4px dot, 8px gap either side */
     .up-head-sep { width: 4px; height: 4px; border-radius: 50%; background: var(--vc-muted); margin: 0 8px; flex: 0 0 auto; display: none; }
     .up-head-count { font-size: 14px; font-weight: 500; color: var(--vc-muted); display: none; }
-    .up-head-count.is-sk { width: 20px; height: 14px; border-radius: 4px; background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
+    .up-head-count.is-sk { width: 14px; height: 14px; border-radius: 4px; background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
     .up-heading.has-count .up-head-sep, .up-heading.has-count .up-head-count { display: block; }
     .up-head-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; flex: 0 0 auto; }
 

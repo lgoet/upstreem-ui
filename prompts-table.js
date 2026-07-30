@@ -79,7 +79,11 @@
         '.ust-cell[data-theme="dark"] .ust-more:hover{background:rgba(42,42,42,0.85);color:#e0e0e0;}',
         '.ust-topics-popup{position:fixed;z-index:2147483000;display:none;pointer-events:none;max-width:320px;padding:10px;border:1px solid #d9dde3;border-radius:12px;background:#fff;box-shadow:0 14px 34px rgba(0,0,0,0.14);font-family:Geist,Inter,system-ui,-apple-system,sans-serif;}',
         '.ust-topics-popup .ust-popup-inner{display:flex;flex-wrap:wrap;gap:8px;}',
-        '.ust-topics-popup[data-theme="dark"]{background:#151515;border-color:#353535;box-shadow:0 14px 34px rgba(0,0,0,0.6);}',
+        /* Border brightened vs. the plain --vc-border dark value (#353535) — against this popup's
+           #151515 background that reads as barely-there/blurry. Same #454545 fix already applied
+           to the sort/columns/mentioned/filter dropdowns in core.css; this popup is a separate,
+           hardcoded-color widget (not built on --vc-border) so it needs its own copy of the fix. */
+        '.ust-topics-popup[data-theme="dark"]{background:#151515;border-color:#454545;box-shadow:0 14px 34px rgba(0,0,0,0.6);}',
         '.ust-topics-popup[data-theme="dark"] .ust-tag{background:color-mix(in srgb,var(--ust-tag-color,#6b7280) 22%,transparent);color:#e0e0e0;}'
       ].join('');
       document.head.appendChild(style);
