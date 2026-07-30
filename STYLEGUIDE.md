@@ -1567,6 +1567,20 @@ Weitere Regeln:
   **kein** „load-once"-Sharing über `window` nötig (das hat früher bei EINEM kaputten Pin den
   ganzen Seiten-Core vergiftet).
 
+## 27. Popup/Modal-Backdrop — Blur
+
+Jeder Modal-/Popup-Backdrop (fixed, `inset:0`, abgedunkelter Scrim hinter einer schwebenden Karte)
+bekommt zusätzlich einen leichten Blur auf den Hintergrund, nicht nur die Abdunkelung:
+
+```css
+background: rgba(0,0,0,.45);
+backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px);
+```
+
+`1.5px` ist bewusst subtil — genug, um den Hintergrund als "außer Fokus" zu lesen, ohne selbst
+sichtbar zu wirken oder auf schwächerer Hardware zu ruckeln. Gilt für jeden neuen Modal-Backdrop
+im Repo (erster Präzedenzfall: `.utm-modalbackdrop` in `topics-manager.css`).
+
 ---
 
 *Stand: Werte 1:1 aus dem aktuellen Code der vier Dateien extrahiert (nicht aus Erinnerung). Bei Widersprüchen zwischen den Dateien wurde die neueste/zuletzt gefixte Version als Standard genommen.*
