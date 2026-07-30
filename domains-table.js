@@ -254,10 +254,22 @@
                '<span class="udt-tag-lbl">' + esc(label) + '</span>' +
              '</span>';
     }
+    /* Shared with the targeted sub-block re-render below (renderSubBlockOnly) — the drilldown's
+       page rows reuse the parent domain's favicon, so both need the exact same normalization. */
+    function domainFavUrl(r){
+      var fav = String((r && r.favicon) == null ? "" : r.favicon);
+      if (fav.indexOf("//") === 0) fav = "https:" + fav;
+      return fav;
+    }
+    function rowByDomain(dom){
+      for (var i = 0; i < state.rows.length; i++){
+        if (String(state.rows[i].domain) === dom) return state.rows[i];
+      }
+      return null;
+    }
     function rowHtml(r){
       var dom = String(r.domain == null ? "" : r.domain);
-      var fav = String(r.favicon == null ? "" : r.favicon);
-      if (fav.indexOf("//") === 0) fav = "https:" + fav;
+      var fav = domainFavUrl(r);
       var initial = dom.replace(/^www\./, "").charAt(0) || "?";
       var share = r.share_pct;
       var used = (r.runs_with_domain != null) ? r.runs_with_domain
@@ -288,10 +300,11 @@
             pagesBtn +
           '</span>' +
           '<span class="udt-row-goto">' + GOTO_SVG + '</span>' +
-          /* Second, longer-dwell affordance: a 2s hover on the row swaps the plain goto arrow
-             for an explicit "Show Pages" control (see the row-hover-timer below). Same
-             data-pages-toggle trigger as the "N pages" chevron, so the existing click handler
-             opens it for free — only rendered when there is something to show. */
+          /* Second, longer-dwell affordance: a 1.5s hover on the row fades/slides the plain goto
+             arrow into an explicit "Show Pages" control (see the row-hover-timer below and both
+             elements' CSS — width:0+opacity:0 at rest on both, so the swap animates instead of
+             cutting). Same data-pages-toggle trigger as the "N pages" chevron, so the existing
+             click handler opens it for free — only rendered when there is something to show. */
           (pages > 0 ? '<button class="udt-row-showpages" type="button" data-pages-toggle aria-label="Show pages">' +
              LINK_SVG + '<span>Show Pages</span></button>' : "") +
         '</div>' +
@@ -542,6 +555,34 @@
       state.expandedDomain = null;
       resetSubState();
     }
+    /* Domains can contain characters that are syntax inside an attribute selector. */
+    function cssEsc(v){
+      var t = String(v == null ? "" : v);
+      if (window.CSS && CSS.escape) return CSS.escape(t);
+      return t.replace(/["\\]/g, "\\$&");
+    }
+    /* Replaces ONLY the .udt-subrows block for `dom` — the domain ROW above it, and every OTHER
+       row in the table, are never touched. Creates the block fresh if it doesn't exist yet (the
+       first render after opening) or swaps in a new one if it does (every later search/filter/
+       page/page-size change, and the async response that lands after any of those).
+
+       This replaced calling the full renderTable() for all of that. A full render rebuilds every
+       row's HTML from scratch on every keystroke or page click — including the one row the user's
+       mouse is still sitting on. A brand-new DOM node under a stationary mouse forces the browser
+       to re-evaluate :hover from a blank slate, which visibly dropped and re-delayed the hover-only
+       bits (the goto arrow, the "Show Pages" pill) for a frame — that flicker on the domain row
+       every time the drilldown loaded anything was this function's whole reason to exist. */
+    function renderSubBlockOnly(dom){
+      var row = root.querySelector('.up-row[data-domain="' + cssEsc(dom) + '"]');
+      if (!row){ renderTable(); return; }   // not in the DOM right now (e.g. an outer reload is racing this) — fall back
+      var host = row.nextElementSibling && row.nextElementSibling.classList.contains("udt-subrows")
+        ? row.nextElementSibling : null;
+      var wrap = document.createElement("div");
+      wrap.innerHTML = subrowsHtml(dom, domainFavUrl(rowByDomain(dom)));
+      var fresh = wrap.firstElementChild;
+      if (!fresh){ if (host) host.remove(); return; }   // dom is no longer expandedDomain — nothing to show
+      if (host) host.replaceWith(fresh); else row.after(fresh);
+    }
     /* Shows the row-list skeleton immediately (the toolbar above it stays live — see subrowsHtml),
        then fires a request for exactly the current domain/query/types/page/page-size combination.
        subReqSeq guards against a slow, now-stale response landing after a faster, later one:
@@ -550,14 +591,14 @@
        delay (ms), when given, defers only the actual network round-trip, not the skeleton — used
        exclusively by the OPEN path (see togglePages) so the request doesn't start competing with
        the panel's own 200ms entrance animation. Without it, a fast response arriving mid-animation
-       forces a second full re-render before the panel had settled into its final height, which is
-       what read as the drilldown "stuttering" open. Every other trigger (search, filter, page,
+       forces a second re-render before the panel had settled into its final height, which is what
+       read as the drilldown "stuttering" open. Every other trigger (search, filter, page,
        page-size — the panel is already open and at rest for all of them) calls this with no delay. */
     function fetchSubPage(delay){
       var dom = state.expandedDomain;
       if (!dom) return;
       state.subLoading = true;
-      renderTable();
+      renderSubBlockOnly(dom);
       function fireNow(){
         if (state.expandedDomain !== dom) return;   // closed (or switched) before the delay elapsed
         subReqSeq += 1;
@@ -568,41 +609,66 @@
           url_types: Object.keys(state.subTypes).filter(function(k){ return state.subTypes[k]; }).join(","),
           page: state.subPage,
           page_size: state.subPageSize,
+          /* Same shape as the outer table's own page event (limit/offset/page) — your RPC reads
+             p_offset there, so the drilldown's RPC gets the identical field rather than making you
+             derive it Bubble-side from page * page_size. */
+          offset: (state.subPage - 1) * state.subPageSize,
           request_id: subReqSeq
         });
       }
       if (delay) setTimeout(fireNow, delay); else fireNow();
     }
-    /* Domains can contain characters that are syntax inside an attribute selector. */
-    function cssEsc(v){
-      var t = String(v == null ? "" : v);
-      if (window.CSS && CSS.escape) return CSS.escape(t);
-      return t.replace(/["\\]/g, "\\$&");
-    }
     /* Exactly one open at a time — opening another closes and fully resets the previous one, so a
        search or type filter never carries over from one domain to the next.
-       Closing animates out BEFORE the row is removed: re-rendering straight away would delete the
-       node mid-transition and the block would simply vanish. Opening a DIFFERENT domain swaps
-       immediately (the new one animates in) instead of waiting out a close first. */
+       Every transition here is an in-place DOM mutation (class toggle, single-node insert/remove/
+       replace) — never a rebuild of the row itself, let alone the whole table. See the comment on
+       renderSubBlockOnly for why: recreating the row under an active mouse is what caused the
+       flicker.
+       Closing animates out BEFORE the block is removed: removing it immediately would delete the
+       node mid-transition and it would simply vanish. Switching directly from one open domain to
+       another closes the first instantly (no fade) and opens the second — same behavior as before,
+       just done by hand now instead of falling out of a full re-render for free. */
     function togglePages(dom){
       if (state.expandedDomain === dom){
         var host = root.querySelector('.udt-subrows[data-sub-for="' + cssEsc(dom) + '"]');
-        var btn = root.querySelector('.up-row[data-domain="' + cssEsc(dom) + '"] [data-pages-toggle]');
+        var row = root.querySelector('.up-row[data-domain="' + cssEsc(dom) + '"]');
+        var btn = row && row.querySelector("[data-pages-toggle]");
         if (btn){ btn.classList.remove("is-open"); btn.setAttribute("aria-expanded", "false"); }
         if (host){
           host.classList.add("is-closing");
           setTimeout(function(){
             if (state.expandedDomain !== dom) return;   // something else already took over
-            state.expandedDomain = null; resetSubState(); renderTable();
+            state.expandedDomain = null; resetSubState();
+            var r2 = root.querySelector('.up-row[data-domain="' + cssEsc(dom) + '"]');
+            if (r2) r2.classList.remove("is-expanded");
+            if (host.parentNode) host.remove();
           }, SUB_ANIM_MS);
         } else {
-          state.expandedDomain = null; resetSubState(); renderTable();
+          state.expandedDomain = null; resetSubState();
+          if (row) row.classList.remove("is-expanded");
         }
         return;
+      }
+      var prevDom = state.expandedDomain;
+      if (prevDom){
+        var prevRow = root.querySelector('.up-row[data-domain="' + cssEsc(prevDom) + '"]');
+        if (prevRow){
+          prevRow.classList.remove("is-expanded");
+          var prevBtn = prevRow.querySelector("[data-pages-toggle]");
+          if (prevBtn){ prevBtn.classList.remove("is-open"); prevBtn.setAttribute("aria-expanded", "false"); }
+          var prevSub = prevRow.nextElementSibling;
+          if (prevSub && prevSub.classList.contains("udt-subrows")) prevSub.remove();
+        }
       }
       state.expandedDomain = dom;
       resetSubState();
       subEnter = true;
+      var newRow = root.querySelector('.up-row[data-domain="' + cssEsc(dom) + '"]');
+      if (newRow){
+        newRow.classList.add("is-expanded");
+        var newBtn = newRow.querySelector("[data-pages-toggle]");
+        if (newBtn){ newBtn.classList.add("is-open"); newBtn.setAttribute("aria-expanded", "true"); }
+      }
       /* Delayed: the panel's own entrance animation gets to finish uninterrupted before the
          response can possibly land and force a second render mid-flight — see fetchSubPage. */
       fetchSubPage(SUB_ANIM_MS);
@@ -1183,7 +1249,7 @@
         return;
       }
       if (e.target.closest("[data-subfilter]")){
-        e.stopPropagation(); subTypeOpen = !subTypeOpen; renderTable(); return;
+        e.stopPropagation(); subTypeOpen = !subTypeOpen; renderSubBlockOnly(state.expandedDomain); return;
       }
       if (e.target.closest("[data-subtypereset]")){
         e.stopPropagation(); state.subTypes = {}; state.subPage = 1; fetchSubPage(); return;
@@ -1227,13 +1293,13 @@
         e.stopPropagation();
         var mode = subDispBtn.getAttribute("data-subdisp") === "url" ? "url" : "title";
         if (mode === state.subDisplay) return;
-        state.subDisplay = mode; renderTable(); return;   // pure display toggle, no fetch
+        state.subDisplay = mode; renderSubBlockOnly(state.expandedDomain); return;   // pure display toggle, no fetch
       }
       /* Any click that is not inside the type menu itself closes it — inside the drilldown or
          anywhere else on the page. The two branches that must NOT close it (the trigger and the
          items) have already returned above. */
       if (subTypeOpen && !e.target.closest(".udt-sub-filtermenu")){
-        subTypeOpen = false; renderTable();
+        subTypeOpen = false; renderSubBlockOnly(state.expandedDomain);
       }
 
       var inMenu = !inSub && e.target.closest(".up-sort-menu, .up-filter-menu, .up-cols-menu, .up-ment-menu");
@@ -1646,7 +1712,7 @@
         var searchEl = root.querySelector(".udt-sub-search-in");
         var hadFocus = !!searchEl && document.activeElement === searchEl;
         var caret = hadFocus ? searchEl.selectionStart : null;
-        renderTable();
+        renderSubBlockOnly(domain);
         if (hadFocus){
           var again = root.querySelector(".udt-sub-search-in");
           if (again){ again.focus(); try { again.setSelectionRange(caret, caret); } catch(e){} }

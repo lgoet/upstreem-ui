@@ -29,27 +29,37 @@
 .udt-logo-ltr { font-size: 11px; font-weight: 600; color: var(--vc-muted); line-height: 1; text-transform: uppercase; }
 .udt-logo-box.has-img .udt-logo-ltr { display: none; }
 
-/* go-to arrow, revealed on row hover with a delay — same behaviour as urls-table */
-.udt-row-goto { margin-left: auto; width: 16px; height: 16px; flex: 0 0 auto; color: var(--vc-third);
+/* go-to arrow, revealed on row hover with a delay — same behaviour as urls-table.
+   Also collapses to width:0 once the 1.5s "Show Pages" dwell kicks in (.is-showpages-hover),
+   fading and sliding out of the way instead of a hard display:none swap, so the handoff between
+   the two controls reads as one continuous motion rather than a cut. */
+.udt-row-goto { margin-left: auto; width: 16px; height: 16px; flex: 0 0 auto; overflow: hidden;
+  color: var(--vc-third);
   opacity: 0; transform: translateX(-3px); transition: opacity .18s ease, transform .18s ease; transition-delay: 0ms; }
 .udt-row-goto svg { width: 16px; height: 16px; display: block; }
 .up-row:hover .udt-row-goto { opacity: 1; transform: translateX(0); transition-delay: 220ms; }
+.up-row.is-showpages-hover .udt-row-goto { width: 0; opacity: 0; margin-left: 0;
+  transition: width 200ms ease, opacity 140ms ease, margin-left 200ms ease; transition-delay: 0ms; }
 .up-root.is-vnarrow .udt-row-goto { display: none; }
 
 /* "Show Pages" — swaps in for the goto arrow after a 1.5s hover dwell (see the JS timer in
-   makeController). Bordered pill, 8px radius, matching how every other standalone control in the
-   drilldown reads ("a real button"), rather than the bare-text-plus-icon look this started as.
-   margin-left:auto only matters when the goto arrow is hidden (.is-showpages-hover) — see the
-   comment on .udt-row-showpages in the JS for why two auto-margin siblings here is safe. */
-.udt-row-showpages { display: none; align-items: center; gap: 6px; margin-left: auto;
-  height: 32px; padding: 0 10px; border: 1px solid var(--vc-border); border-radius: 8px;
-  background: transparent; cursor: pointer; font: inherit;
+   makeController). No border/pill shell — reads as a label with an icon in the same slot the
+   arrow occupied, not a new button appearing out of nowhere. Slides + fades in on the way in,
+   and the same transition running in reverse on the way out (removing .is-showpages-hover) —
+   no separate "leave" animation needed, a CSS transition is inherently reversible.
+   width:0 + overflow:hidden at rest (not display:none) is what makes the width itself
+   transitionable — the same technique the "N pages" chevron already uses (.udt-chev) for the
+   identical reason: display can't be animated, width can. The fixed 96px target on
+   .is-showpages-hover is generous for the fixed "Show Pages" string, not a measured value — once
+   the real (narrower) content width is reached the extra headroom just goes unused, no jump. */
+.udt-row-showpages { display: inline-flex; align-items: center; gap: 6px; margin-left: auto;
+  height: 32px; padding: 0; border: 0; background: transparent; cursor: pointer; font: inherit;
   font-size: 12px; font-weight: 500; color: var(--vc-third); white-space: nowrap; flex: 0 0 auto;
-  transition: color 120ms ease, border-color 120ms ease; }
-.udt-row-showpages svg { width: 14px; height: 14px; flex: 0 0 auto; display: block; }
-.udt-row-showpages:hover, .udt-row-showpages:focus-visible { color: var(--vc-text); border-color: var(--vc-hover-border); }
-.up-row.is-showpages-hover .udt-row-goto { display: none; }
-.up-row.is-showpages-hover .udt-row-showpages { display: inline-flex; }
+  width: 0; overflow: hidden; opacity: 0;
+  transition: width 200ms ease, opacity 160ms ease, color 120ms ease; }
+.udt-row-showpages svg { width: 14px; height: 14px; flex: 0 0 14px; display: block; }
+.udt-row-showpages:hover, .udt-row-showpages:focus-visible { color: var(--vc-text); }
+.up-row.is-showpages-hover .udt-row-showpages { width: 96px; opacity: 1; }
 .up-root.is-vnarrow .udt-row-showpages { display: none !important; }
 
 .udt-dom-wrap { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
@@ -194,13 +204,14 @@
    panel is open (every keystroke in the sub-search) does not replay the animation. */
 /* Panel tint, not var(--vt-head-bg) — that token is shared with the sticky header and tuned for
    a much larger, flatter area; this needed its own value in each theme.
-   Light: the heading-bg swatch at 60% opacity — enough to read as "a distinct panel" without
-   going flat/opaque. Dark: exactly halfway between the app-level background (--vc-bg, what's
-   behind the whole table) and the table's own surface (--up-surface, which .udt-subrows would
-   otherwise be indistinguishable from — see the removed .up-row.is-expanded tint above, same
-   family of bug). */
+   Light: the ORIGINAL light-mode value (var(--vt-head-bg), the same soft grey the sticky header
+   used) at a further 60% opacity on top of its own already-partial alpha — not a fresh 60%-alpha
+   copy of the solid heading-bg swatch, which read as darker/more opaque than the original instead
+   of lighter. Dark: exactly halfway between the app-level background (--vc-bg, what's behind the
+   whole table) and the table's own surface (--up-surface, which .udt-subrows would otherwise be
+   indistinguishable from — see the removed .up-row.is-expanded tint above, same family of bug). */
 .udt-subrows { position: relative; flex: 0 0 auto;
-  background: color-mix(in srgb, var(--vc-heading-bg) 60%, transparent);
+  background: color-mix(in srgb, var(--vt-head-bg) 60%, transparent);
   border-bottom: 1px solid var(--vc-border);
   display: grid; grid-template-rows: 1fr;
   --udt-subcols: minmax(0, 1fr) 112px 128px 108px 34px; }

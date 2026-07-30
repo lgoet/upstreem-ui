@@ -47,7 +47,7 @@
     page      {"limit":25,"offset":50,"page":3}   -> p_limit / p_offset in your RPC
     mentioned {"brands":"id1,id2"}                -> multi-brand mention filter
     showpages {"domain":"carwow.de","query":"","url_types":"","page":1,"page_size":10,
-               "request_id":3}
+               "offset":0,"request_id":3}
               -> the drilldown needs data for this exact combination; answer it with
                  setDomainsTablePages (see "Drilldown" below). Fires on open AND again on every
                  later search / type-filter / page / page-size change inside the drilldown —
@@ -72,7 +72,9 @@
     (?<="brand_mentioned":")[^"]*                           (?<="brands":")[^"]*
     (?<="domain":")[^"]*     (?<="url":")[^"]*
     (?<="limit":)[0-9]+        (?<="offset":)[0-9]+         (?<="page":)[0-9]+
-    -- showpages-specific (its "query"/"page" keys are the SAME regex as the ones above):
+    -- showpages-specific (its "query"/"page"/"offset" keys are the SAME regex as the ones
+       above — "offset" is (page-1)*page_size, already computed for you, same field your RPC
+       already reads as p_offset off the outer table's own page event):
     (?<="url_types":")[^"]*     (?<="page_size":)[0-9]+      (?<="request_id":)[0-9]+
 
   ── Export ───────────────────────────────────────────────────────────────────
@@ -92,8 +94,8 @@
                                                                        // request_id echoed back
 
   ── Drilldown: the pages of one domain ───────────────────────────────────────
-  "N pages" in the domain cell is a button; hovering a row for ~2s also swaps its go-to arrow for
-  an explicit "Show Pages" control, wired to the exact same click. Either one expands that row and
+  "N pages" in the domain cell is a button; hovering a row for ~1.5s also fades/slides its go-to
+  arrow into an explicit "Show Pages" control, wired to the exact same click. Either one expands the row and
   lists the domain's pages underneath as a real, independently paginated mini table: its own
   search, its own URL-type filter, its own pager, its own column headers. Exactly ONE domain is
   expanded at a time — opening a second one closes the first (see below for what closing does).

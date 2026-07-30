@@ -1786,15 +1786,47 @@ getriebene Schließen-Klick (über den Toggle oder den Drilldown-eigenen X-Butto
 200-ms-Animation, ein programmatisches Schließen ist sofort.
 
 **Nachtrag — ein zweiter, spät auftauchender Trigger für dieselbe Aktion.** `domains-table`s
-Zeile bekommt nach 2s Hover einen zweiten Weg, den Drilldown zu öffnen (ein "Show Pages"-Button an
-der Stelle des Pfeils) — reiner CSS-Klassen-Toggle über einen JS-Timer (kein `transition-delay`
+Zeile bekommt nach 1.5s Hover einen zweiten Weg, den Drilldown zu öffnen (ein "Show Pages"-Button
+an der Stelle des Pfeils) — reiner CSS-Klassen-Toggle über einen JS-Timer (kein `transition-delay`
 für "erst rein, dann nach mehr Zeit wieder raus" — das sind zwei verschiedene Endzustände auf
 demselben `:hover`, was CSS ohne Keyframes an eine feste Gesamtdauer koppeln müsste). Der neue
 Button trägt einfach dasselbe `data-pages-toggle`-Attribut wie der bestehende Trigger — der
-existierende Klick-Handler greift dafür automatisch, kein zweiter Handler nötig. Layout-Detail:
-zwei Geschwister mit je `margin-left:auto`, von denen per CSS-Klasse immer nur eines sichtbar ist,
-funktionieren problemlos — ein unsichtbares (`display:none`) Element zählt in Flexbox nicht mit,
-also übernimmt automatisch das sichtbare die Schub-Rolle.
+existierende Klick-Handler greift dafür automatisch, kein zweiter Handler nötig. Beide Elemente
+(Pfeil und "Show Pages") stehen bei `width:0; overflow:hidden; opacity:0` in Ruhe und animieren
+`width`+`opacity` beim Klassenwechsel — dieselbe Technik wie schon der "N pages"-Chevron
+(`.udt-chev`), weil `display` selbst nicht animierbar ist, `width` aber schon: so faden/schieben
+beide sich rein/raus statt hart umzuschalten, UND belegen in Ruhe trotzdem keinen Platz (anders als
+ein reines `opacity`-Fade, das den Platz permanent reservieren würde). Layout-Detail: zwei
+Geschwister mit je `margin-left:auto`, von denen zur Laufzeit meist nur eines eine reale Breite
+hat, funktionieren problemlos — ein `width:0`-Element trägt zur "Schub"-Rechnung der Flexbox
+nichts bei, das andere übernimmt automatisch die volle Rolle.
+
+**Nachtrag — die eigentliche Ursache des Aufblitzens war nie die Farbe, sondern volle
+Neu-Erzeugung.** `renderTable()` ersetzte bei JEDER Zustandsänderung (Öffnen, Suche, Filter, Seite)
+das komplette `innerHTML` der Tabelle — alle Zeilen, nicht nur die betroffene. Eine Zeile, unter
+der die Maus gerade steht, wird dabei als BRANDNEUER DOM-Knoten eingefügt; der Browser muss `:hover`
+für diesen Knoten von null neu auswerten, was hover-abhängige Elemente (Goto-Pfeil, "Show
+Pages"-Pille) für einen Frame sichtbar verschwinden und wieder auftauchen ließ — das eigentliche
+"Aufblitzen", mehrfach als Farb-Bug missverstanden und entsprechend erfolglos an der Farbe gefixt.
+Die richtige Lösung war eine gezielte Aktualisierung statt eines vollen Re-Renders:
+
+- `renderSubBlockOnly(dom)` ersetzt NUR das `.udt-subrows`-Element (Suche, Filter, Seite,
+  Seitengröße, die asynchrone RPC-Antwort, der Title/URL-Switch — alles, was rein den Drilldown-
+  Inhalt betrifft). Die Domain-ZEILE wird dabei nie angefasst.
+- `togglePages()` selbst fasst die Zeile beim Öffnen/Schließen nur noch per `classList`/
+  `setAttribute` an (`is-expanded`, `is-open`, `aria-expanded`) — keine `innerHTML`-Neuerzeugung,
+  auch nicht für die tatsächlich angeklickte Zeile. Das `.udt-subrows`-Element wird als
+  Geschwister-Knoten eingefügt/entfernt, alle anderen Zeilen bleiben zu jedem Zeitpunkt exakt
+  dieselben DOM-Objekte.
+- Direkter Wechsel von Domain A zu Domain B (ohne Zuklapp-Animation dazwischen) räumt A's Zustand
+  explizit von Hand ab (Klassen runter, Sub-Block entfernen), BEVOR B geöffnet wird — das lief
+  vorher "kostenlos" über den vollen Re-Render mit, muss beim gezielten Update aber nachgebaut
+  werden, sonst blieben zwei Drilldowns gleichzeitig sichtbar offen.
+
+Faustregel für den nächsten Fall: Ein Flackern, das an EINER Zeile hängt, sobald irgendein
+`:hover`-Element daran beteiligt ist, ist fast nie ein Farb-/Timing-Problem — es ist fast immer
+"dieser Knoten wurde gerade neu erzeugt". Die Lösung ist selten mehr CSS, sondern gezielteres DOM-
+Patching statt eines pauschalen `innerHTML`-Ersatzes.
 
 ## 30. Truncation-Tooltip: nach einem Klick ist der Tooltip global stummgeschaltet
 

@@ -62,9 +62,14 @@
   var fmtPct = UC.fmtPct;
 
   function tableSkeletonHtml(mode){
+    /* One bar per real column — idx, name, type, share, USED. The migration to UC.skeletonRows
+       dropped the 5th entry (Used), which just rendered as an empty cell rather than an obviously
+       missing bar, so it went unnoticed. idx also needs its own cls (tct-td-idx) — without it the
+       bar falls back to the generic cell's left-aligned padding instead of the real idx column's
+       centered one. */
     return tableHeadHtml(mode) + '<div class="tct-tbody">' + UC.skeletonRows({
       count: 7, rowClass: "tct-row", cellClass: "tct-td",
-      cols: [12, { w:60, jitter:18, logo:true }, 46, 40]
+      cols: [{ w:12, cls:"tct-td-idx" }, { w:60, jitter:18, logo:true }, 46, 40, 36]
     }) + '</div>';
   }
   function tableHeadHtml(mode){
