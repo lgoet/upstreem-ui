@@ -1353,10 +1353,14 @@
       root: root, state: state, columns: COLUMNS,
       storePrefix: "upt", instanceId: instanceId,
       firstKey: "prompt", firstMin: PROMPT_MIN, noActions: true,
-      /* Inactive prompts aren't being run, so there are no brand mentions to show. Removed from
-         the grid template rather than hidden with CSS — a hidden cell would leave its track
-         behind and knock the row out of line. */
-      isHidden: function(c){ return c.key === "brands" && state.status === "inactive"; },
+      /* Inactive prompts aren't being run, so there's nothing to show for any of these — no brand
+         mentions, and no visibility/rank/sentiment either (those numbers come from the same runs).
+         Removed from the grid template rather than hidden with CSS — a hidden cell would leave its
+         track behind and knock the row out of line. */
+      isHidden: function(c){
+        return state.status === "inactive" &&
+          (c.key === "brands" || c.key === "visibility" || c.key === "rank" || c.key === "sentiment");
+      },
       rowHeightSwitch: ROW_HEIGHTS, badgeSel: ".upt-cols-badge", cellPrefixes: ["up","upt"],
       onChange: function(){ render(); }
     });

@@ -1096,6 +1096,13 @@
     }
     function paint(el, text, wide){
       if (!text || !el || !document.contains(el)) return;
+      /* Belt-and-suspenders for hover-reveal buttons (chart settings gears and anything else that
+         fades in on its own delay): if the browser somehow still delivers a mouseover for an
+         element sitting at opacity:0 — a stale CDN pin still on the old timing, or a browser that
+         doesn't recompute :hover the instant a CSS transition-delay elapses under an already-
+         stationary cursor — this is the one choke point every tip-showing path (showTip/
+         showTipText/showTipWide) funnels through, so it's the one place that needs the check. */
+      if (getComputedStyle(el).opacity === "0") return;
       var host = el.closest ? el.closest(".up-root") : null;
       var dark = host ? host.getAttribute("data-theme") === "dark" : !!(getIsDark && getIsDark());
       tip.textContent = text;

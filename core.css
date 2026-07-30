@@ -420,7 +420,7 @@
        than per component, so every consumer's menu looks and themes identically by construction. */
     .vot-scale-btn, .ccl-settings-btn {
       width: 28px; height: 28px; border-radius: 8px; z-index: 5;
-      border: 1px solid var(--vc-border); background: var(--vc-bg); color: var(--vc-muted);
+      border: 0; background: transparent; color: var(--vc-third);
       cursor: pointer; padding: 0; display: inline-flex; align-items: center; justify-content: center;
       opacity: 0; pointer-events: none;
       transition: opacity 120ms ease, color 120ms ease;   /* fast hide */
@@ -428,16 +428,19 @@
     .vot-scale-btn svg, .ccl-settings-btn svg { width: 14px; height: 14px; display: block; }
     /* Hovering the host panel reveals it, after a delay — the button itself and its own open state
        keep it visible with no delay once already shown, so it never flickers mid-interaction.
-       pointer-events is listed with the SAME delay as opacity's delay PLUS DURATION (450+160=
-       610ms) on purpose: pointer-events isn't animatable, so without its own transition entry it
+       pointer-events is listed with the SAME delay as opacity's delay PLUS DURATION (900+160=
+       1060ms) on purpose: pointer-events isn't animatable, so without its own transition entry it
        flips to "auto" the INSTANT the hover starts regardless of what opacity is doing — letting
-       hover (and the tooltip) fire on a button that's still transparent mid fade-in. 610ms is where
-       opacity actually finishes landing on 1. */
+       hover (and the tooltip) fire on a button that's still transparent mid fade-in. 1060ms is
+       where opacity actually finishes landing on 1. Belt-and-suspenders: core.js's tooltip
+       delegation ALSO refuses to tip any [data-tip] element still at opacity:0, so even a stale
+       CDN pin or a browser that doesn't recompute hover state the instant pointer-events flips
+       can't show a tooltip over an invisible button either way. */
     .vot-panel-body:hover .vot-scale-btn, .combo-panel-body:hover .ccl-settings-btn,
     .vot-scale-btn:focus-visible, .ccl-settings-btn:focus-visible,
     .vot-scale-btn.is-open, .ccl-settings-btn.is-open {
       opacity: 1; pointer-events: auto;
-      transition: opacity 160ms ease 450ms, pointer-events 0s 610ms, color 120ms ease;   /* delayed show */
+      transition: opacity 160ms ease 900ms, pointer-events 0s 1060ms, color 120ms ease;   /* delayed show */
     }
     .vot-scale-btn:hover, .ccl-settings-btn:hover, .vot-scale-btn.is-open, .ccl-settings-btn.is-open { color: var(--vc-text); }
     /* Skeleton is loading -> the button (and, if it was somehow already open, its menu) hides
