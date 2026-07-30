@@ -554,10 +554,17 @@
         root.style.setProperty("--up-cols", tpl);
         lastTpl = tpl;
       }
-      /* Per-cell show/hide still has to touch cells, so it keeps its own guard: the visible set
-         changes only when a column actually drops in or out, which during a drag or a smooth
-         resize is a small fraction of frames. */
-      if (sigCols === lastSigCols) return;
+      /* Per-cell show/hide has to touch cells, so it gets its own guard — but the guard CANNOT be
+         "the column set is unchanged" alone. Hiding a cell is an inline style, and renderTable()
+         replaces every .up-row with brand-new nodes that carry no inline styles at all. So after
+         any re-render (sort, search, page, new data) the fresh rows show every cell again while
+         --up-cols still lists only the visible tracks — the surplus cells then wrap onto a second
+         implicit grid row, which is the "two rows rendered inside one row" breakage.
+         Hence the stamp: rows carry the column signature they were styled for, and a row without
+         the current one is by definition un-styled and needs the write. */
+      var firstRow = root.querySelector(".up-row");
+      var rowsStale = !!firstRow && firstRow.getAttribute("data-up-colsig") !== sigCols;
+      if (sigCols === lastSigCols && !rowsStale) return;
       lastSigCols = sigCols;
       COLUMNS.forEach(function(c){
         var sel = [];
@@ -567,6 +574,9 @@
         Array.prototype.forEach.call(root.querySelectorAll(sel.join(", ")), function(el){
           el.style.display = shown[c.key] ? "" : "none";
         });
+      });
+      Array.prototype.forEach.call(root.querySelectorAll(".up-row"), function(r){
+        r.setAttribute("data-up-colsig", sigCols);
       });
     }
     /* drag the lead column's right edge; everything else keeps its responsive track */
