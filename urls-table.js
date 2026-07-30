@@ -774,7 +774,7 @@
 
     /* ---------------- tooltips (shared via core) ---------------- */
     var _tips = UpstreemCore.makeTooltips(root, function(){ return isDark; });
-    var showTip = _tips.showTip, showTipText = _tips.showTipText, showTipWide = _tips.showTipWide, hideTip = _tips.hideTip;
+    var showTip = _tips.showTip, showTipText = _tips.showTipText, showTipWide = _tips.showTipWide, hideTip = _tips.hideTip, unsuppressTip = _tips.unsuppress;
     /* Full URL title on a short hover-delay, but only when actually clipped — component-specific
        (uut-url-wrap) yet driven by the shared tooltip. */
     var titleTipTimer = null, titleTipWrap = null;
@@ -783,6 +783,10 @@
       if (!wrap || !root.contains(wrap)) return;
       if (wrap === titleTipWrap) return;
       titleTipWrap = wrap;
+      /* Same thing the core's delegated [data-tip] path does on mouseover: entering a new trigger
+         lifts the suppression a previous click left behind. These wraps carry no data-tip, so
+         nothing else would ever clear it. */
+      if (unsuppressTip) unsuppressTip();
       clearTimeout(titleTipTimer);
       titleTipTimer = setTimeout(function(){
         var ut = wrap.querySelector(".uut-url-title");

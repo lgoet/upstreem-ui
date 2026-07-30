@@ -96,16 +96,34 @@
        Pull the url out with:   (?<="url":")[^"]*
 
   Page fields (straight from the RPC):
-    url, title, domain_share, last_seen   — rendered
-    description                           — becomes the row's tooltip
-    first_seen                            — accepted, not shown
+    url, title, domain_share, url_type, last_seen   — rendered
+    description, first_seen                         — accepted, not shown
+
+  url_type takes the SAME keys as the URL types everywhere else in the app (article, guide,
+  review, comparison, homepage, product_service, marketplace, company_info, listicle,
+  documentation, forum, directory, video, social_post). An unknown or missing value still
+  renders — as a neutral grey chip with the raw text — so a new type on your side never breaks
+  the table, it just shows up uncoloured until it is added to the shared list.
 
   Note on domain_share: this is the URL's share WITHIN its domain, not the global share the
-  parent row shows — the two numbers answer different questions and are deliberately not mixed.
+  parent row shows — the two numbers answer different questions and are deliberately not mixed,
+  which is also why the drilldown's column is headed "Domain Share" and not "Global Share".
+  A missing domain_share renders as a bare dash, not "–%".
 
-  The list is cached per domain, so collapsing and re-opening a row costs no second RPC. It is
-  NOT persisted: after a reload nothing is expanded, because restoring an expansion over a
-  different result set would show one domain's pages under another domain's row.
+  What the drilldown gives the user, with no extra work on your side — all of it runs locally
+  over the list you handed to setDomainsTablePages, so none of it costs a second RPC:
+    · a search field over page title and URL
+    · a URL-type filter, listing only the types that actually occur in THIS domain
+      (it is hidden entirely when the domain has one type or none — a filter with a single
+       option is not a choice)
+    · pagination, 10 or 25 rows per page
+    · column headers, and the full title on hover whenever it is clipped
+
+  Exactly ONE domain can be open at a time: opening a second one closes the first and resets its
+  search / filter / page. Re-opening a domain you closed earlier costs no second RPC — the list
+  is cached per domain for the lifetime of the page. It is NOT persisted: after a reload nothing
+  is expanded, because restoring an expansion over a different result set would show one domain's
+  pages under another domain's row.
 
   Row fields (straight from your RPC, no renaming needed):
     domain, favicon, share_pct, share_delta_pct, urls_count, last_used_at, citation_type,

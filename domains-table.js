@@ -35,7 +35,7 @@
 
   function udtRun(){
   var UC = window.UpstreemCore;
-  var CITE_COLOR = UC.CITE_COLOR, CITE_ALIAS = UC.CITE_ALIAS, ALL_CITATION_TYPES = UC.ALL_CITATION_TYPES, OTHER_LIGHT = UC.OTHER_LIGHT, OTHER_DARK = UC.OTHER_DARK, CHIP_BG_DARK = UC.CHIP_BG_DARK, MONTHS = UC.MONTHS, DEBOUNCE = UC.DEBOUNCE, MIN = UC.MIN, SORT_DEBOUNCE = UC.SORT_DEBOUNCE, PAGE_SIZES = UC.PAGE_SIZES, DEFAULT_PAGE_SIZE = UC.DEFAULT_PAGE_SIZE, fmtTotal = UC.fmtTotal, isYes = UC.isYes, highlight = UC.highlight, esc = UC.esc, citeName = UC.citeName, tint = UC.tint, toNum = UC.toNum, fmt1 = UC.fmt1, fmtInt = UC.fmtInt, fmtDate = UC.fmtDate, foldDiacritics = UC.foldDiacritics, germanExpand = UC.germanExpand, resolveBubbleFn = UC.resolveBubbleFn, TREND_UP = UC.TREND_UP, TREND_DOWN = UC.TREND_DOWN, CHECK_SVG = UC.CHECK_SVG, COPY_SVG = UC.COPY_SVG, GOTO_SVG = UC.GOTO_SVG, DONE_SVG = UC.DONE_SVG, EXT_SVG = UC.EXT_SVG;
+  var CITE_COLOR = UC.CITE_COLOR, CITE_ALIAS = UC.CITE_ALIAS, ALL_CITATION_TYPES = UC.ALL_CITATION_TYPES, URL_TYPE = UC.URL_TYPE, OTHER_LIGHT = UC.OTHER_LIGHT, OTHER_DARK = UC.OTHER_DARK, CHIP_BG_DARK = UC.CHIP_BG_DARK, MONTHS = UC.MONTHS, DEBOUNCE = UC.DEBOUNCE, MIN = UC.MIN, SORT_DEBOUNCE = UC.SORT_DEBOUNCE, PAGE_SIZES = UC.PAGE_SIZES, DEFAULT_PAGE_SIZE = UC.DEFAULT_PAGE_SIZE, fmtTotal = UC.fmtTotal, isYes = UC.isYes, highlight = UC.highlight, esc = UC.esc, citeName = UC.citeName, tint = UC.tint, toNum = UC.toNum, fmt1 = UC.fmt1, fmtInt = UC.fmtInt, fmtDate = UC.fmtDate, foldDiacritics = UC.foldDiacritics, germanExpand = UC.germanExpand, resolveBubbleFn = UC.resolveBubbleFn, TREND_UP = UC.TREND_UP, TREND_DOWN = UC.TREND_DOWN, CHECK_SVG = UC.CHECK_SVG, COPY_SVG = UC.COPY_SVG, GOTO_SVG = UC.GOTO_SVG, DONE_SVG = UC.DONE_SVG, EXT_SVG = UC.EXT_SVG;
 
   /* Own store, deliberately NOT UpstreemCore.STORE — that's hardcoded to window.__uutStore
      inside core.js (urls-table-specific despite living in the "shared" file). Sharing it here
@@ -76,10 +76,14 @@
     last_seen: ["last_seen:desc", "last_seen:asc"]
   };
   var DEFAULT_SORT = { field: "share", dir: "desc" };
-  /* Drilldown cap. Ten is enough to see the shape of a domain's coverage without turning one
-     expanded row into its own scrolling page — past that the URLs table is the right tool. */
-  var SUB_MAX = 10;
+  /* Drilldown paging. The whole URL list for a domain arrives in one call, so search, type filter
+     and paging all run CLIENT-side over that list — no second round-trip per page, same model
+     topics-manager already uses for its own list. */
+  var SUB_PAGE_SIZES = [10, 25];
+  var SUB_DEBOUNCE = 150;   // local filtering only; no reason for the server-facing 400ms here
   var CHEV_SVG = '<svg class="udt-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+  var SUB_SEARCH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
+  var SUB_X_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
 
   function makeController(root){
     var instanceId = root.getAttribute("data-instance") || "default";
@@ -119,13 +123,19 @@
       rows: [],
       totalCount: null,
       hasData: false,
-      /* Drilldown: which domains are expanded, and the URL list fetched for each. Kept per domain
-         (not a single "current" list) so several rows can stay open at once for comparison, and so
-         re-opening a domain is instant instead of re-hitting the RPC. Deliberately NOT persisted:
-         an expansion is a look-at-this-now gesture, and restoring one over a different result set
-         after a reload would show a domain's pages next to the wrong parent. */
-      expanded: {},                         // domain -> true
-      pages: {},                            // domain -> [{url,title,domain_share,last_seen,...}]
+      /* Drilldown. Exactly ONE domain is expanded at a time — opening another closes and resets
+         the previous one, so the sub-toolbar's search/type/page state can live as plain fields
+         here instead of being kept per domain. The fetched lists ARE still cached per domain, so
+         re-opening one costs no second RPC.
+         Deliberately not persisted: an expansion is a look-at-this-now gesture, and restoring one
+         over a different result set after a reload would show a domain's pages under the wrong
+         parent row. */
+      expandedDomain: null,                 // the one open domain, or null
+      pages: {},                            // domain -> [{url,title,domain_share,url_type,last_seen,...}]
+      subQuery: "",                         // sub-toolbar search
+      subTypes: {},                         // sub-toolbar URL-type filter (applied immediately)
+      subPage: 1,
+      subPageSize: SUB_PAGE_SIZES[0],
       loading: false,                       // intern (Suche/Pagination), startet immer frei
       softReload: false,                    // true only while a sort is in flight — see dim.begin/end
       extLoading: hasProcessingAttr() ? readProcessing()
@@ -239,7 +249,7 @@
                : (r.used != null) ? r.used
                : r.total_used;
       var pages = toNum(r.urls_count);
-      var isOpen = !!state.expanded[dom];
+      var isOpen = state.expandedDomain === dom;
       /* "N pages" doubles as the drilldown trigger. A real <button> rather than a styled span:
          it is a genuine control, so it should be tabbable and Enter/Space-operable for free
          instead of needing a parallel keydown path. aria-expanded makes the state audible. */
@@ -273,38 +283,177 @@
             '<button class="udt-actbtn up-act-open" type="button" data-tip="Open in new tab" aria-label="Open in new tab">' + EXT_SVG + '</button>' +
           '</span>' +
         '</div>' +
-      '</div>' + subrowsHtml(dom, pages, fav);
+      '</div>' + subrowsHtml(dom, fav);
     }
-    /* ---------- drilldown: the pages of one domain ----------
+    /* ---------- drilldown: one domain's pages, as a self-contained mini table ----------
        Rendered as a SIBLING of .up-row, never as more .up-row elements: a row is a CSS grid whose
-       track list is the domain table's columns, and these have a different shape entirely. Keeping
-       them outside also keeps them out of UC.makeColumns' show/hide sweep and its per-row
+       track list is the domain table's columns, and this block has its own columns entirely.
+       Keeping it outside also keeps it out of UC.makeColumns' show/hide sweep and its per-row
        signature stamping, which both key on .up-row.
-       Visual language follows the disclosure convention: the parent row is tinted while open so
-       you can see at a glance what is expanded, the block is indented to sit under the parent's
-       title, and a vertical spine ties the children back to it. */
-    function subrowsHtml(dom, pagesTotal, parentFav){
-      if (!state.expanded[dom]) return "";
+       It carries its own header, search, URL-type filter and pager because it IS a table — giving
+       it the same furniture as every other table in the app is what makes it feel like part of
+       the product rather than a popover that happens to contain rows. All of that filtering runs
+       locally over the delivered list; only opening the row ever talks to the server. */
+    function urlTypeInfo(raw){
+      var key = String(raw == null ? "" : raw).trim().toLowerCase().replace(/[\s-]+/g, "_");
+      var t = URL_TYPE[key];
+      if (!t) return { label: String(raw || ""), color: isDark ? OTHER_DARK : OTHER_LIGHT, base: OTHER_LIGHT };
+      return { label: t.label, color: isDark ? t.cDark : t.c, base: t.c };
+    }
+    /* Same chip as urls-table's URL-type cell — leading dot included, since that dot is what
+       tells URL types and citation types apart at a glance. One step smaller here, matching the
+       rest of the drilldown. */
+    function urlTagHtml(raw){
+      if (!raw) return "";
+      var ti = urlTypeInfo(raw);
+      var bg = isDark ? CHIP_BG_DARK : tint(ti.base, 0.12);
+      return '<span class="udt-sub-tag" style="color:' + ti.color + ';background:' + bg + '">' +
+               '<span class="udt-sub-tag-dot" style="background:' + ti.color + '"></span>' +
+               '<span class="udt-sub-tag-lbl">' + esc(ti.label) + '</span>' +
+             '</span>';
+    }
+    /* Which URL types actually occur in THIS domain's pages. The dropdown lists only those rather
+       than all 14 possible types: a domain typically has two or three, and offering twelve options
+       that would all return nothing is noise, not choice. */
+    function subTypeKeys(list){
+      var seen = {}, out = [];
+      (list || []).forEach(function(u){
+        var k = String((u && u.url_type) == null ? "" : u.url_type).trim();
+        if (!k || seen[k]) return;
+        seen[k] = true; out.push(k);
+      });
+      return out;
+    }
+    function subFiltered(list){
+      var q = String(state.subQuery || "").trim().toLowerCase();
+      var types = state.subTypes || {};
+      var anyType = Object.keys(types).some(function(k){ return types[k]; });
+      return (list || []).filter(function(u){
+        if (anyType && !types[String(u.url_type == null ? "" : u.url_type).trim()]) return false;
+        if (!q) return true;
+        var hay = (String(u.title || "") + " " + String(u.url || "")).toLowerCase();
+        return hay.indexOf(q) >= 0;
+      });
+    }
+    function subrowsHtml(dom, parentFav){
+      if (state.expandedDomain !== dom) return "";
       var list = state.pages[dom];
       var inner;
       if (!list){
-        /* No data yet -> skeleton. The component shows this the instant the row opens, without
-           waiting to be told: the Bubble side only has to answer the show_pages event, it does not
-           also have to drive a loading flag. */
-        inner = '<div class="udt-sub-sk">' +
-          '<div class="udt-subrow is-sk"></div><div class="udt-subrow is-sk"></div><div class="udt-subrow is-sk"></div>' +
-        '</div>';
-      } else if (!list.length){
-        inner = '<div class="udt-sub-empty">No pages found for this domain</div>';
+        inner = subSkeletonHtml();
       } else {
-        var shown = list.slice(0, SUB_MAX);
-        inner = shown.map(function(u){ return subrowHtml(u, parentFav); }).join("");
-        /* Honest about the cap: the parent row says "47 pages" but ten are listed. */
-        if (pagesTotal > shown.length){
-          inner += '<div class="udt-sub-more">Top ' + shown.length + ' of ' + fmtTotal(pagesTotal) + '</div>';
+        var filtered = subFiltered(list);
+        var total = filtered.length;
+        var size = state.subPageSize;
+        var pageCount = Math.max(1, Math.ceil(total / size));
+        var cur = Math.min(Math.max(1, state.subPage), pageCount);
+        var from = (cur - 1) * size;
+        var slice = filtered.slice(from, from + size);
+        var body;
+        if (!total){
+          var filteredNow = !!String(state.subQuery || "").trim() ||
+            Object.keys(state.subTypes || {}).some(function(k){ return state.subTypes[k]; });
+          body = '<div class="udt-sub-empty">' +
+            (filteredNow ? "No pages match those filters" : "No pages found for this domain") + '</div>';
+        } else {
+          body = slice.map(function(u){ return subrowHtml(u, parentFav); }).join("");
         }
+        inner = subToolbarHtml(dom, list) + subHeadHtml() +
+                '<div class="udt-sub-list">' + body + '</div>' +
+                subFootHtml(total, cur, pageCount, from, slice.length);
       }
-      return '<div class="udt-subrows" data-sub-for="' + esc(dom) + '">' + inner + '</div>';
+      /* is-entering only on the first render after the toggle — see the animation comment in
+         domains-table.css. Cleared here rather than in a timer because this is the exact moment
+         the class has been handed to the markup. */
+      var enter = subEnter ? " is-entering" : "";
+      subEnter = false;
+      return '<div class="udt-subrows' + enter + '" data-sub-for="' + esc(dom) + '">' +
+               '<div class="udt-sub-inner">' + inner + '</div>' +
+             '</div>';
+    }
+    /* Skeleton mirrors the real row's shape — icon block, title bar, and one bar per right-hand
+       column — instead of a single generic stripe, so the layout does not visibly jump when the
+       data lands. */
+    function subSkeletonHtml(){
+      var one = '<div class="udt-subrow is-sk">' +
+          '<span class="udt-sub-main"><span class="udt-sk-logo"></span><span class="udt-sk-bar udt-sk-title"></span></span>' +
+          '<span class="udt-sk-bar udt-sk-share"></span>' +
+          '<span class="udt-sk-bar udt-sk-type"></span>' +
+          '<span class="udt-sk-bar udt-sk-date"></span>' +
+          '<span></span>' +
+        '</div>';
+      return '<div class="udt-sub-toolbar is-sk"></div>' + subHeadHtml() +
+             '<div class="udt-sub-list">' + one + one + one + '</div>';
+    }
+    function subToolbarHtml(dom, list){
+      var q = String(state.subQuery || "");
+      var keys = subTypeKeys(list);
+      var selCount = Object.keys(state.subTypes || {}).filter(function(k){ return state.subTypes[k]; }).length;
+      var typeCtl = "";
+      if (keys.length > 1){
+        typeCtl = '<div class="udt-sub-filter' + (subTypeOpen ? " is-open" : "") + '">' +
+          '<button class="up-filter-btn udt-sub-filterbtn' + (selCount ? " is-active" : "") + '" type="button" data-subfilter>' +
+            '<span class="up-filter-btn-lbl">' + (selCount ? selCount + " selected" : "All URL Types") + '</span>' +
+            '<svg class="up-filter-btn-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
+          '</button>' +
+          '<div class="up-filter-menu udt-sub-filtermenu' + (subTypeOpen ? " is-shown" : "") + '" role="menu">' +
+            '<div class="up-filter-head"><span class="up-filter-title">URL Types</span>' +
+              (selCount ? '<button class="up-filter-reset" type="button" data-subtypereset>Reset</button>' : "") +
+            '</div>' +
+            '<div class="up-filter-list">' + keys.map(function(k){
+              var ti = urlTypeInfo(k);
+              var bg = isDark ? CHIP_BG_DARK : tint(ti.base, 0.12);
+              return '<div class="up-filter-item' + (state.subTypes[k] ? " is-checked" : "") + '" data-subtype="' + esc(k) + '">' +
+                '<span class="up-filter-check">' + CHECK_SVG + '</span>' +
+                '<span class="up-filter-tag" style="color:' + ti.color + ';background:' + bg + '">' +
+                  '<span class="uut-tag-dot" style="background:' + ti.color + '"></span>' +
+                  '<span class="up-filter-tag-lbl">' + esc(ti.label) + '</span></span>' +
+              '</div>';
+            }).join("") + '</div>' +
+          '</div>' +
+        '</div>';
+      }
+      return '<div class="udt-sub-toolbar">' +
+        '<span class="udt-sub-label">Pages of ' + esc(dom) + '</span>' +
+        '<div class="udt-sub-tools">' + typeCtl +
+          '<div class="udt-sub-search' + (q ? " has-text" : "") + '">' +
+            '<span class="udt-sub-search-ic">' + SUB_SEARCH_SVG + '</span>' +
+            '<input class="udt-sub-search-in" type="text" placeholder="Search pages…" autocomplete="off"' +
+              ' spellcheck="false" aria-label="Search pages" value="' + esc(q) + '"/>' +
+            '<button class="udt-sub-search-x" type="button" data-subclear aria-label="Clear search">' + SUB_X_SVG + '</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }
+    function subHeadHtml(){
+      /* "Domain Share", not "Global Share": the number is each page's share WITHIN this domain,
+         which is a different figure from the global share the parent row carries. Labelling it
+         global would invite comparing it against the wrong thing. */
+      return '<div class="udt-sub-head">' +
+        '<span>Page</span>' +
+        '<span class="udt-sub-h-num">Domain Share</span>' +
+        '<span>Type</span>' +
+        '<span>Last Seen</span>' +
+        '<span></span>' +
+      '</div>';
+    }
+    function subFootHtml(total, cur, pageCount, from, shown){
+      var sizes = SUB_PAGE_SIZES.map(function(n){
+        return '<button class="up-pagesize-btn' + (state.subPageSize === n ? " is-active" : "") +
+               '" type="button" data-subsize="' + n + '">' + n + '</button>';
+      }).join("");
+      var pages = "";
+      for (var p = 1; p <= pageCount; p++){
+        pages += '<button class="up-page' + (p === cur ? " is-active" : "") + '" type="button" data-subpage="' + p + '">' + p + '</button>';
+      }
+      var info = total ? '<span class="up-pager-info">' + fmtInt(from + 1) + '–' + fmtInt(from + shown) + ' of ' + fmtTotal(total) + '</span>' : "";
+      return '<div class="udt-sub-foot">' +
+        '<div class="up-pagesize"><span class="up-pagesize-lbl">Rows</span>' +
+          '<div class="up-pagesize-seg" role="group" aria-label="Rows per page">' + sizes + '</div></div>' +
+        '<div class="up-pager">' + info +
+          (pageCount > 1 ? '<span class="udt-sub-pages">' + pages + '</span>' : "") +
+        '</div>' +
+      '</div>';
     }
     function subrowHtml(u, parentFav){
       var url = String(u.url == null ? "" : u.url);
@@ -316,45 +465,80 @@
       var fav = String(u.favicon == null ? "" : u.favicon) || String(parentFav || "");
       if (fav.indexOf("//") === 0) fav = "https:" + fav;
       var initial = (title || url).charAt(0) || "?";
-      /* description is delivered but there is no room for it inline — it becomes the tooltip, so
-         the full context is one hover away instead of thrown away. */
-      var desc = String(u.description == null ? "" : u.description);
-      /* Two cells, laid out on the PARENT's own grid template (--up-cols): the title lands under
-         Domain and the numbers under Share. Stretching a single flex line across a 1500px table
-         instead pushed the values to the far edge, miles from the title they belong to — aligning
-         to the columns above is what makes the block read as part of the table rather than as a
-         stray strip. It also stays aligned for free when columns are dropped or the lead column
-         is dragged, since both read the same variable. */
-      return '<div class="udt-subrow" data-suburl="' + esc(url) + '" tabindex="0" role="button"' +
-               (desc ? ' data-tip="' + esc(desc) + '"' : "") + '>' +
+      /* A missing share renders as a bare dash, never "–%" — a unit on a value that isn't there
+         reads like a broken number rather than an absent one. */
+      var shareTxt = (u.domain_share == null || u.domain_share === "") ? "–" : fmt1(u.domain_share) + "%";
+      return '<div class="udt-subrow" data-suburl="' + esc(url) + '" tabindex="0" role="button">' +
         '<span class="udt-sub-main">' +
           '<span class="udt-sub-logo' + (fav ? " has-img" : "") + '">' +
             '<span class="udt-sub-ltr">' + esc(initial) + '</span>' +
             (fav ? '<img src="' + esc(fav) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
                    ' onerror="this.parentNode.classList.remove(\'has-img\'); this.remove()"/>' : "") +
           '</span>' +
-          '<span class="udt-sub-title">' + esc(title) + '</span>' +
+          '<span class="udt-sub-title">' + highlight(title, state.subQuery) + '</span>' +
         '</span>' +
-        '<span class="udt-sub-meta">' +
-          '<span class="udt-sub-share">' + fmt1(u.domain_share) + '%</span>' +
-          '<span class="udt-sub-date">' + esc(fmtDate(u.last_seen)) + '</span>' +
-        '</span>' +
+        '<span class="udt-sub-share">' + shareTxt + '</span>' +
+        '<span class="udt-sub-type">' + urlTagHtml(u.url_type) + '</span>' +
+        '<span class="udt-sub-date">' + esc(fmtDate(u.last_seen)) + '</span>' +
+        '<span class="udt-sub-goto">' + GOTO_SVG + '</span>' +
       '</div>';
     }
-    /* Open/close one domain's page list. Asks Bubble for the URLs only the FIRST time a domain is
-       opened — after that the cached list is reused, so toggling a row closed and open again is
-       instant and costs no RPC. renderTable() rebuilds the tbody, which is what actually paints
-       the new state; there is no separate DOM patch to keep in sync. */
+    var subTypeOpen = false, subEnter = false;
+    function resetSubState(){
+      state.subQuery = ""; state.subTypes = {}; state.subPage = 1;
+      state.subPageSize = SUB_PAGE_SIZES[0];
+      subTypeOpen = false;
+    }
+    /* Domains can contain characters that are syntax inside an attribute selector. */
+    function cssEsc(v){
+      var t = String(v == null ? "" : v);
+      if (window.CSS && CSS.escape) return CSS.escape(t);
+      return t.replace(/["\\]/g, "\\$&");
+    }
+    /* Exactly one open at a time — opening another closes and fully resets the previous one, so a
+       search or type filter never carries over from one domain to the next.
+       Closing animates out BEFORE the row is removed: re-rendering straight away would delete the
+       node mid-transition and the block would simply vanish. Opening a DIFFERENT domain swaps
+       immediately (the new one animates in) instead of waiting out a close first. */
     function togglePages(dom){
-      if (state.expanded[dom]){
-        delete state.expanded[dom];
-        renderTable();
+      if (state.expandedDomain === dom){
+        var host = root.querySelector('.udt-subrows[data-sub-for="' + cssEsc(dom) + '"]');
+        var btn = root.querySelector('.up-row[data-domain="' + cssEsc(dom) + '"] [data-pages-toggle]');
+        if (btn){ btn.classList.remove("is-open"); btn.setAttribute("aria-expanded", "false"); }
+        if (host){
+          host.classList.add("is-closing");
+          setTimeout(function(){
+            if (state.expandedDomain !== dom) return;   // something else already took over
+            state.expandedDomain = null; resetSubState(); renderTable();
+          }, 200);
+        } else {
+          state.expandedDomain = null; resetSubState(); renderTable();
+        }
         return;
       }
-      state.expanded[dom] = true;
+      state.expandedDomain = dom;
+      resetSubState();
+      subEnter = true;
       renderTable();
       if (!state.pages[dom]) fire("data-showpages-fn", "udtShowPages", { domain: dom });
     }
+    /* Sub-search input. Delegated on the root because the whole block is re-rendered on every
+       keystroke's re-filter — a listener bound to the input itself would die with it. The input is
+       NOT re-created while typing: renderTable() replaces the markup, so focus and caret are
+       restored explicitly below, which is why this debounces rather than re-rendering per key. */
+    var subSearchTimer = null;
+    root.addEventListener("input", function(e){
+      var inp = e.target.closest && e.target.closest(".udt-sub-search-in");
+      if (!inp) return;
+      var v = inp.value;
+      clearTimeout(subSearchTimer);
+      subSearchTimer = setTimeout(function(){
+        state.subQuery = v; state.subPage = 1;
+        renderTable();
+        var again = root.querySelector(".udt-sub-search-in");
+        if (again){ again.focus(); try { again.setSelectionRange(v.length, v.length); } catch(err){} }
+      }, SUB_DEBOUNCE);
+    });
     var emptyGraceTimer = null;
     function clearEmptyGrace(){ if (emptyGraceTimer){ clearTimeout(emptyGraceTimer); emptyGraceTimer = null; } }
     function renderEmptyState(filtered){
@@ -761,25 +945,33 @@
 
     /* ---------------- tooltips (shared via core) ---------------- */
     var _tips = UpstreemCore.makeTooltips(root, function(){ return isDark; });
-    var showTipWide = _tips.showTipWide, hideTip = _tips.hideTip;
-    /* Full domain title on a short hover-delay, but only when actually clipped. */
+    var showTipWide = _tips.showTipWide, hideTip = _tips.hideTip, unsuppressTip = _tips.unsuppress;
+    /* Full title on a short hover-delay, but only when actually clipped — same rule for the domain
+       rows and for the drilldown's page rows, so a hover never surfaces text the user can already
+       read. .udt-sub-main deliberately carries no `title` attribute: the native tooltip would fire
+       on every row regardless of clipping and can't be styled or delayed. */
+    var TIP_WRAP_SEL = ".udt-dom-wrap, .udt-sub-main";
     var titleTipTimer = null, titleTipWrap = null;
     root.addEventListener("mouseover", function(e){
-      var wrap = e.target.closest(".udt-dom-wrap");
+      var wrap = e.target.closest(TIP_WRAP_SEL);
       if (!wrap || !root.contains(wrap)) return;
       if (wrap === titleTipWrap) return;
       titleTipWrap = wrap;
+      /* Same thing the core's delegated [data-tip] path does on mouseover: entering a new trigger
+         lifts the suppression a previous click left behind. These wraps carry no data-tip, so
+         nothing else would ever clear it. */
+      if (unsuppressTip) unsuppressTip();
       clearTimeout(titleTipTimer);
       titleTipTimer = setTimeout(function(){
-        var dt = wrap.querySelector(".udt-dom-title");
+        var dt = wrap.querySelector(".udt-dom-title, .udt-sub-title");
         if (dt && dt.scrollWidth > dt.clientWidth + 1) showTipWide(dt, dt.textContent);
       }, 400);
     });
     root.addEventListener("mouseout", function(e){
-      var wrap = e.target.closest(".udt-dom-wrap");
+      var wrap = e.target.closest(TIP_WRAP_SEL);
       if (!wrap || wrap !== titleTipWrap) return;
       var to = e.relatedTarget;
-      if (to && to.closest && to.closest(".udt-dom-wrap") === wrap) return;
+      if (to && to.closest && to.closest(TIP_WRAP_SEL) === wrap) return;
       titleTipWrap = null; clearTimeout(titleTipTimer); hideTip();
     });
 
@@ -842,8 +1034,58 @@
     }
     document.addEventListener("click", function(e){
       if (!ownsTarget(e.target)) return;
-      var inMenu = e.target.closest(".up-sort-menu, .up-filter-menu, .up-cols-menu, .up-ment-menu");
-      var onOpener = e.target.closest(".up-sort-btn, .up-filter-btn, .up-cols-btn, .up-ment-btn");
+
+      /* The drilldown's toolbar is handled FIRST, before anything else in this listener.
+         Its type filter deliberately reuses the core .up-filter-btn / .up-filter-menu /
+         .up-filter-item / .up-filter-reset classes so it looks identical to every other dropdown
+         in the app — which means the toolbar handlers below would otherwise claim these clicks
+         and drive the DOMAIN filter instead: opening the sub-dropdown opened the main one, and
+         picking a URL type wrote a null key into state.filterSel. Matching by the data-sub*
+         attributes up here keeps the shared styling without the shared behaviour. */
+      var inSub = e.target.closest(".udt-subrows");
+      /* --- drilldown sub-toolbar / pager --- */
+      if (e.target.closest("[data-subclear]")){
+        e.stopPropagation();
+        state.subQuery = ""; state.subPage = 1; renderTable();
+        var inp = root.querySelector(".udt-sub-search-in"); if (inp) inp.focus();
+        return;
+      }
+      if (e.target.closest("[data-subfilter]")){
+        e.stopPropagation(); subTypeOpen = !subTypeOpen; renderTable(); return;
+      }
+      if (e.target.closest("[data-subtypereset]")){
+        e.stopPropagation(); state.subTypes = {}; state.subPage = 1; renderTable(); return;
+      }
+      var subTypeItem = e.target.closest("[data-subtype]");
+      if (subTypeItem){
+        e.stopPropagation();
+        var tk = subTypeItem.getAttribute("data-subtype");
+        if (state.subTypes[tk]) delete state.subTypes[tk]; else state.subTypes[tk] = true;
+        /* Applied immediately, no Apply button: this filters an already-loaded list locally, so
+           there is no request to batch and nothing to be gained by staging the choice. */
+        state.subPage = 1; renderTable(); return;
+      }
+      var subSizeBtn = e.target.closest("[data-subsize]");
+      if (subSizeBtn){
+        e.stopPropagation();
+        state.subPageSize = toNum(subSizeBtn.getAttribute("data-subsize")) || SUB_PAGE_SIZES[0];
+        state.subPage = 1; renderTable(); return;
+      }
+      var subPageBtn = e.target.closest("[data-subpage]");
+      if (subPageBtn){
+        e.stopPropagation();
+        state.subPage = toNum(subPageBtn.getAttribute("data-subpage")) || 1;
+        renderTable(); return;
+      }
+      /* Any click that is not inside the type menu itself closes it — inside the drilldown or
+         anywhere else on the page. The two branches that must NOT close it (the trigger and the
+         items) have already returned above. */
+      if (subTypeOpen && !e.target.closest(".udt-sub-filtermenu")){
+        subTypeOpen = false; renderTable();
+      }
+
+      var inMenu = !inSub && e.target.closest(".up-sort-menu, .up-filter-menu, .up-cols-menu, .up-ment-menu");
+      var onOpener = !inSub && e.target.closest(".up-sort-btn, .up-filter-btn, .up-cols-btn, .up-ment-btn");
       if (!inMenu && !onOpener) closePops();
       // --- pagination ---
       var ps = e.target.closest("[data-pagesize]");
@@ -1225,7 +1467,7 @@
          list is still cached so re-opening is instant. */
       setPages: function(domain, list){
         state.pages[domain] = list;
-        if (state.expanded[domain]) renderTable();
+        if (state.expandedDomain === domain) renderTable();
         return true;
       },
       reset: function(){

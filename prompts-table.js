@@ -1463,7 +1463,7 @@
 
     /* ---------------- tooltips (shared via core) ---------------- */
     var _tips = UC.makeTooltips(root, function(){ return isDark; });
-    var showTipWide = _tips.showTipWide, hideTip = _tips.hideTip;
+    var showTipWide = _tips.showTipWide, hideTip = _tips.hideTip, unsuppressTip = _tips.unsuppress;
     /* Full prompt text on a short hover-delay, but only when actually clipped — mirrors
        urls-table's title hover, checking both dimensions since the clip can be a 1/2-line
        vertical clamp (default/compact) or, in principle, horizontal overflow. */
@@ -1473,6 +1473,10 @@
       if (!wrap || !root.contains(wrap)) return;
       if (wrap === promptTipWrap) return;
       promptTipWrap = wrap;
+      /* Same thing the core's delegated [data-tip] path does on mouseover: entering a new trigger
+         lifts the suppression a previous click left behind. These wraps carry no data-tip, so
+         nothing else would ever clear it. */
+      if (unsuppressTip) unsuppressTip();
       clearTimeout(promptTipTimer);
       promptTipTimer = setTimeout(function(){
         var pt = wrap.querySelector(".upt-prompt-text");

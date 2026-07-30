@@ -1306,7 +1306,16 @@
       }, { capture: true, passive: true });
       window.addEventListener("blur", hideTip);
     }
-    return { showTip: showTip, showTipText: showTipText, showTipWide: showTipWide, hideTip: hideTip, el: tip };
+    /* Lifts the post-click suppression above. A component that drives its own hover-tooltip (the
+       "show the full title only when it is actually clipped" pattern in the tables) has to call
+       this from its own mouseover handler, because the delegated [data-tip] path — the only place
+       that clears `suppressed` — never runs for those elements: they carry no data-tip, since the
+       decision to show anything at all depends on a measurement. Without it, one click anywhere in
+       the component (opening a drilldown, sorting, paging) silenced every truncation tooltip until
+       the user happened to hover some unrelated icon button. */
+    function unsuppress(){ S.suppressed = false; }
+    return { showTip: showTip, showTipText: showTipText, showTipWide: showTipWide,
+             hideTip: hideTip, unsuppress: unsuppress, el: tip };
   }
 
   /* ---- topic color palette + emoji library ----

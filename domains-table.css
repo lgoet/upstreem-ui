@@ -113,26 +113,38 @@
    Actions and "N pages" (.up-pages, core.css is-t1) use the shared tier classes already. */
 .up-root.is-t2 .udt-td-actions, .up-root.is-t2 .udt-th-actions { display: none !important; }
 .up-root.is-t0 .udt-trend { display: none; }
-
 /* ============================================================
-   Drilldown: "N pages" opens the domain's top URLs inline
+   Drilldown: "N pages" opens the domain's pages as a real mini table
    ============================================================
    Disclosure convention, deliberately followed rather than invented: the trigger carries a
-   chevron that rotates when open, the parent row stays tinted for as long as it is expanded so
-   you can see at a glance what you opened, and the children are indented under the parent's title
-   with a vertical spine tying them back to it. Several rows may be open at once — comparing two
-   domains' pages side by side is the whole point of doing this inline instead of in a modal.
+   chevron that rotates when open, and the parent row stays tinted for as long as it is expanded
+   so you can see at a glance what you opened.
 
-   Sizing is one clear step down from the parent row (55px -> 45px, 24px logo -> 20px,
-   13.5px title -> 12.5px), not two: the indent and the tint already carry the hierarchy, so
-   shrinking the text further would only cost legibility. */
+   Exactly ONE domain is open at a time. Two open drilldowns, each with its own search, type
+   filter and pager, would read as two competing tables stacked inside a third - the outer table
+   would stop being scannable, which is the only reason to do this inline rather than in a modal.
+
+   The block is a table in its own right: toolbar, column headers, gridlined rows, pager. It does
+   NOT reuse the parent's --up-cols track list - its columns are different columns (Page / Domain
+   Share / Type / Last Seen), and borrowing the parent's tracks only made the values drift apart
+   into whatever width the domain columns happened to have.
+
+   Sizing is one clear step down from the parent row (55px -> 46px, 24px logo -> 21px), not two:
+   the indent and the tint already carry the hierarchy, so shrinking the text further would only
+   cost legibility. */
 
 /* ---------- the trigger ---------- */
-.udt-pagesbtn { display: inline-flex; align-items: center; gap: 3px; border: 0; padding: 0;
+/* Padding + matching negative margin: the hit target is ~28px tall and reaches past the label on
+   both sides, without the button occupying any more layout space than the bare text did. */
+.udt-pagesbtn { display: inline-flex; align-items: center; gap: 3px; border: 0;
+  /* align-self, because .udt-dom-wrap is a COLUMN flex: without it the button stretches to the
+     wrap's full width and the hover background reads as a bar hanging off the label. */
+  align-self: flex-start;
+  padding: 5px 6px; margin: -5px -6px; border-radius: 6px;
   background: transparent; cursor: pointer; font: inherit; font-size: 12px; font-weight: 400;
-  color: var(--vc-third); white-space: nowrap; transition: color 120ms ease; }
-.udt-pagesbtn:hover, .udt-pagesbtn.is-open { color: var(--vc-text); }
-/* The chevron only exists on hover/open — at rest the cell stays as quiet as it is today, so the
+  color: var(--vc-third); white-space: nowrap; transition: color 120ms ease, background 120ms ease; }
+.udt-pagesbtn:hover, .udt-pagesbtn.is-open { color: var(--vc-text); background: var(--vc-heading-bg); }
+/* The chevron only exists on hover/open - at rest the cell stays as quiet as it is today, so the
    drilldown adds no visual noise to a table you are just scanning. width, not display, so it
    slides out instead of jumping the label sideways. */
 .udt-chev { width: 0; height: 13px; flex: 0 0 auto; opacity: 0; overflow: hidden;
@@ -145,49 +157,143 @@
 /* ---------- expanded parent row ---------- */
 .up-row.is-expanded { background: var(--vt-head-bg); }
 
-/* ---------- the children ---------- */
+/* ---------- open/close animation ----------
+   A keyframe, not a transition: the block is created fresh by renderTable() on open, and a
+   transition never runs on a node that was just inserted with its final value. grid-template-rows
+   0fr -> 1fr is the height-agnostic way to do this - no magic max-height that clips a long list.
+   is-entering is emitted only on the render that follows the toggle, so re-rendering while the
+   panel is open (every keystroke in the sub-search) does not replay the animation. */
 .udt-subrows { position: relative; flex: 0 0 auto; background: var(--vt-head-bg);
-  border-bottom: 1px solid var(--vc-border); padding: 2px 0 6px 0; }
-/* the spine — sits under the parent's logo box, visually parenting the whole block */
-.udt-subrows::before { content: ""; position: absolute; left: 24px; top: 0; bottom: 10px;
-  width: 2px; border-radius: 1px; background: var(--vc-border); z-index: 1; }
-/* Same track list as .up-row, so the cells below line up with the columns above. */
-.udt-subrow { height: 45px; display: grid; grid-template-columns: var(--up-cols);
-  align-items: center; cursor: pointer; min-width: 0; transition: background 120ms ease; }
+  border-bottom: 1px solid var(--vc-border);
+  display: grid; grid-template-rows: 1fr;
+  --udt-subcols: minmax(0, 1fr) 112px 128px 108px 34px; }
+.udt-sub-inner { min-height: 0; overflow: hidden; padding: 0 0 8px 0; }
+.udt-subrows.is-entering { animation: udtSubIn 200ms ease; }
+.udt-subrows.is-closing { animation: udtSubOut 200ms ease forwards; }
+@keyframes udtSubIn  { from { grid-template-rows: 0fr; opacity: 0; } to { grid-template-rows: 1fr; opacity: 1; } }
+@keyframes udtSubOut { from { grid-template-rows: 1fr; opacity: 1; } to { grid-template-rows: 0fr; opacity: 0; } }
+@media (prefers-reduced-motion: reduce){
+  .udt-subrows.is-entering, .udt-subrows.is-closing { animation-duration: 1ms; }
+}
+
+/* ---------- the mini table's own grid ----------
+   Title track is minmax(0,1fr) but the text itself is capped: on a very wide table a headline
+   stretched across 900px is harder to read, not easier, and the numbers would drift far from it.
+   Below that cap the track shrinks first and the title does take the full remaining width. */
+.udt-sub-head, .udt-subrow {
+  display: grid; grid-template-columns: var(--udt-subcols); align-items: center;
+  min-width: 0; padding: 0 12px 0 46px; column-gap: 12px; }
+.udt-sub-head { height: 30px; font-size: 11px; font-weight: 600; color: var(--vc-third);
+  text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid var(--vc-border); }
+.udt-sub-head > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- rows ----------
+   Horizontal rules only. Vertical ones would box in a five-column block that is already visually
+   contained by the tinted panel around it. */
+.udt-subrow { height: 46px; cursor: pointer; transition: background 120ms ease;
+  border-top: 1px solid var(--vc-border); }
+.udt-subrow:first-child { border-top: 0; }
 .udt-subrow:hover { background: var(--vt-row-hover-solid, var(--vc-bg)); }
 .udt-subrow:focus-visible { outline: 2px solid var(--vc-hover-border); outline-offset: -2px; }
-/* padding-left indents past the spine so the child sits under the parent's TITLE, not its logo */
-.udt-sub-main { display: flex; align-items: center; gap: 10px; min-width: 0;
-  padding: 0 12px 0 46px; }
-/* Spans from the Share column to the end rather than sitting inside one track: the share and
-   the date read as one group, and the group is free to use the empty Used/Type space beside it
-   instead of being clipped by the Share track's width. */
-.udt-sub-meta { grid-column: 2 / -1; display: flex; align-items: center; gap: 14px;
-  min-width: 0; padding: 0 12px; }
-.udt-sub-logo { width: 20px; height: 20px; border-radius: 6px; background: var(--vt-logo-bg);
+
+.udt-sub-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.udt-sub-logo { width: 21px; height: 21px; border-radius: 6px; background: var(--vt-logo-bg);
   padding: 1px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
-  position: relative; overflow: hidden; }
-.udt-sub-logo img { width: 18px; height: 18px; border-radius: 5px; object-fit: cover; display: block; }
+  position: relative; overflow: hidden; box-sizing: border-box; }
+.udt-sub-logo img { width: 19px; height: 19px; border-radius: 5px; object-fit: cover; display: block; }
 .udt-sub-ltr { font-size: 10px; font-weight: 600; color: var(--vc-muted); text-transform: uppercase; }
 .udt-sub-logo.has-img .udt-sub-ltr { display: none; }
-.udt-sub-title { flex: 1 1 auto; min-width: 0; font-size: 12.5px; font-weight: 500;
+.udt-sub-title { min-width: 0; max-width: 620px; font-size: 13.5px; font-weight: 500;
   color: var(--vc-text); letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis;
   white-space: nowrap; }
-.udt-sub-share { flex: 0 0 auto; font-size: 12.5px; font-weight: 500; color: var(--vc-text);
-  font-variant-numeric: tabular-nums; }
-.udt-sub-date { flex: 0 0 auto; font-size: 12px; font-weight: 500; color: var(--vc-muted);
-  white-space: nowrap; }
-.udt-sub-more, .udt-sub-empty { font-size: 12px; color: var(--vc-third); padding: 8px 12px 2px 46px; }
+.udt-sub-share { font-size: 13.5px; font-weight: 500; color: var(--vc-text);
+  font-variant-numeric: tabular-nums; white-space: nowrap; }
+.udt-sub-date { font-size: 13px; font-weight: 500; color: var(--vc-muted); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; }
+/* One step under urls-table's .uut-tag (24px/12px) - same chip, quieter, because here it is a
+   secondary attribute of a row whose subject is the page title. */
+.udt-sub-tag { display: inline-flex; align-items: center; gap: 5px; height: 23px; padding: 0 9px;
+  border-radius: 7px; font-size: 11px; font-weight: 600; max-width: 100%; box-sizing: border-box; }
+.udt-sub-tag-dot { width: 6px; height: 6px; border-radius: 999px; flex: 0 0 auto; }
+.udt-sub-tag-lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Arrow appears on row hover, same delayed slide-in as the domain row's own goto arrow, so the
+   two levels of the table announce clickability identically. */
+.udt-sub-goto { width: 16px; height: 16px; color: var(--vc-third); opacity: 0;
+  transform: translateX(-3px); justify-self: end;
+  transition: opacity 140ms ease, transform 140ms ease; }
+.udt-sub-goto svg { width: 16px; height: 16px; display: block; }
+.udt-subrow:hover .udt-sub-goto, .udt-subrow:focus-visible .udt-sub-goto {
+  opacity: 1; transform: translateX(0); transition-delay: 180ms; }
 
-/* ---------- skeleton while the pages are being fetched ---------- */
-.udt-subrow.is-sk { cursor: default; background: transparent; display: block; padding: 0 12px 0 46px; }
-.udt-subrow.is-sk::after { content: ""; display: block; height: 12px; width: 34%; border-radius: 6px;
-  background: var(--vc-sk); margin-top: 16px; }
-.udt-subrow.is-sk:nth-child(2)::after { width: 46%; }
-.udt-subrow.is-sk:nth-child(3)::after { width: 27%; }
+.udt-sub-empty { font-size: 12.5px; color: var(--vc-third); padding: 20px 12px 20px 46px; }
 
-/* Narrow: the date is the first thing to go — the title is the point. */
-.up-root.is-t1 .udt-sub-date { display: none; }
-.up-root.is-vnarrow .udt-sub-main { padding-left: 28px; }
-.up-root.is-vnarrow .udt-sub-more, .up-root.is-vnarrow .udt-sub-empty { padding-left: 28px; }
-.up-root.is-vnarrow .udt-subrows::before { left: 12px; }
+/* ---------- toolbar ---------- */
+/* The search sits open rather than behind a magnifier: this panel is already a disclosure, and a
+   second one inside it (click to reveal, click to dismiss) is a click too many for a field that
+   is the point of opening the drilldown. Height, border and radius are the shared 32px control
+   shell, so it still reads as the app's search. */
+.udt-sub-toolbar { display: flex; align-items: center; gap: 10px; padding: 10px 12px 10px 46px;
+  min-height: 32px; }
+.udt-sub-toolbar.is-sk { height: 52px; }
+.udt-sub-label { font-size: 11px; font-weight: 600; color: var(--vc-third);
+  text-transform: uppercase; letter-spacing: 0.04em; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.udt-sub-tools { margin-left: auto; display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.udt-sub-filter { position: relative; }
+.udt-sub-filterbtn { font-size: 12px; }
+.udt-sub-filtermenu { min-width: 220px; max-width: 260px; }
+
+.udt-sub-search { display: inline-flex; align-items: center; gap: 6px; height: 32px;
+  padding: 0 8px; border: 1px solid var(--vc-border); border-radius: 8px;
+  background: transparent; width: 200px; box-sizing: border-box;
+  transition: border-color 120ms ease; }
+.udt-sub-search:hover, .udt-sub-search:focus-within { border-color: var(--vc-hover-border); }
+.udt-sub-search-ic { width: 15px; height: 15px; flex: 0 0 15px; color: var(--vc-muted); }
+.udt-sub-search-ic svg { width: 15px; height: 15px; display: block; }
+.udt-sub-search-in { flex: 1 1 auto; min-width: 0; border: 0; outline: none; background: transparent;
+  font: inherit; font-size: 12.5px; font-weight: 500; color: var(--vc-text); padding: 0; }
+.udt-sub-search-in::placeholder { color: var(--vc-third); font-weight: 400; }
+.udt-sub-search-x { display: none; width: 16px; height: 16px; flex: 0 0 16px; padding: 0; border: 0;
+  background: transparent; color: var(--vc-muted); cursor: pointer; }
+.udt-sub-search-x svg { width: 16px; height: 16px; display: block; }
+.udt-sub-search-x:hover { color: var(--vc-text); }
+.udt-sub-search.has-text .udt-sub-search-x { display: block; }
+
+/* ---------- footer ---------- */
+/* Reuses the table's own .up-pagesize / .up-pager / .up-page primitives verbatim - a pager that
+   looked different one level down would read as a different product. */
+.udt-sub-foot { display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 10px 12px 2px 46px; }
+.udt-sub-foot .up-pagesize-seg { height: 28px; }
+.udt-sub-foot .up-pagesize-btn { height: 28px; min-width: 30px; padding: 0 8px; font-size: 12px; }
+.udt-sub-pages { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.udt-sub-foot .up-page { height: 28px; min-width: 28px; font-size: 12px; }
+
+/* ---------- skeleton while the pages are being fetched ----------
+   One bar per column, in that column, at that column's real size - the panel therefore does not
+   resize or reflow when the data lands, which a single generic stripe always did. */
+.udt-subrow.is-sk { cursor: default; background: transparent; }
+.udt-subrow.is-sk:hover { background: transparent; }
+.udt-sk-logo { width: 21px; height: 21px; border-radius: 6px; flex: 0 0 auto;
+  background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
+.udt-sk-bar { height: 12px; border-radius: 6px; background: var(--vc-sk);
+  animation: uutpulse 1.2s ease-in-out infinite; }
+.udt-sk-title { flex: 0 0 auto; width: 42%; min-width: 90px; }
+.udt-subrow.is-sk:nth-child(2) .udt-sk-title { width: 56%; }
+.udt-subrow.is-sk:nth-child(3) .udt-sk-title { width: 33%; }
+.udt-sk-share { width: 44px; }
+.udt-sk-type { width: 76px; height: 20px; border-radius: 7px; }
+.udt-sk-date { width: 62px; }
+
+/* ---------- narrow ----------
+   The date goes first, then the type chip: on a phone the drilldown is answering "which pages",
+   and the recency of each is the last thing worth the width. */
+.up-root.is-t1 .udt-subrows { --udt-subcols: minmax(0, 1fr) 92px 112px 0px 30px; }
+.up-root.is-t1 .udt-sub-date, .up-root.is-t1 .udt-sub-head > span:nth-child(4) { display: none; }
+.up-root.is-t0 .udt-subrows { --udt-subcols: minmax(0, 1fr) 84px 0px 0px 30px; }
+.up-root.is-t0 .udt-sub-type, .up-root.is-t0 .udt-sub-head > span:nth-child(3) { display: none; }
+.up-root.is-vnarrow .udt-sub-head, .up-root.is-vnarrow .udt-subrow,
+.up-root.is-vnarrow .udt-sub-toolbar, .up-root.is-vnarrow .udt-sub-foot,
+.up-root.is-vnarrow .udt-sub-empty { padding-left: 14px; }
+.up-root.is-vnarrow .udt-sub-title { max-width: none; }
+.up-root.is-vnarrow .udt-sub-search { width: 150px; }

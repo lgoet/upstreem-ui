@@ -1699,3 +1699,65 @@ var sheet = [...document.styleSheets].find(s => s.href && s.href.includes('core.
 ```
 Kommt nichts zurück, obwohl die Regel im Quelltext eindeutig dasteht: exakt dieser Bug. Nicht an
 Spezifität, Ladereihenfolge oder Browser-Bugs denken — zuerst hier suchen.
+
+## 29. Sub-Tabellen (Drilldown) — Core-Klassen weiterverwenden, Core-Verhalten NICHT erben
+
+Ein Drilldown, der aufgeht und Zeilen zeigt, ist eine eigene kleine Tabelle. Damit er sich wie
+Teil der App anfühlt und nicht wie ein Popover mit Zeilen drin, bekommt er dieselbe Möblierung wie
+jede andere Tabelle: **Topbar (Suche + Filter), Spaltenüberschriften, waagerechte Trennlinien,
+Pager.** Präzedenzfall: `domains-table.js` / `.udt-sub-*`.
+
+**Eigenes Grid, nicht das des Elternteils.** Die Sub-Zeile ist ein Geschwister von `.up-row`, nie
+selbst eine `.up-row` — sonst landet sie im Show/Hide-Sweep und im `data-up-colsig`-Stempel von
+`UC.makeColumns` (§ Spaltenlogik) und wird beim Spaltenausblenden zerlegt. Sie bekommt eine eigene
+Custom Property (`--udt-subcols`) statt `var(--up-cols)`: es sind andere Spalten, und die Werte
+driften sonst in die Breiten der Elternspalten auseinander.
+
+**Klassen teilen, Handler nicht.** Für Filter-Dropdown und Pager werden die Core-Klassen 1:1
+weiterverwendet (`.up-filter-btn`, `.up-filter-menu`, `.up-filter-item`, `.up-filter-reset`,
+`.up-pagesize`, `.up-pager`, `.up-page`) — ein Pager, der eine Ebene tiefer anders aussieht, liest
+sich als anderes Produkt. Die Kehrseite: **der Klick-Listener der Komponente matcht genau diese
+Selektoren bereits.** Ohne Gegenmaßnahme öffnet der Klick auf den Sub-Filter das Haupt-Dropdown
+und ein Klick auf einen Sub-Typ schreibt einen Null-Key in `state.filterSel`. Regel:
+
+- Sub-Controls tragen **`data-sub*`-Attribute** und werden **ganz oben** im Klick-Listener
+  behandelt, vor jedem Core-Klassen-Match — mit `return`.
+- Die Popover-Buchführung darauf (`inMenu` / `onOpener` / `closePops()`) muss über ein
+  `closest(".udt-subrows")`-Gate ausgenommen werden.
+
+**Genau EIN Drilldown offen.** Zwei offene Blöcke mit je eigener Suche, eigenem Filter und eigenem
+Pager lesen sich als zwei konkurrierende Tabellen in einer dritten. Öffnen schließt und **resettet**
+den vorherigen (Suche, Filter, Seite, Seitengröße).
+
+**Auf/Zu animieren: Keyframe, keine Transition.** Der Block wird von `renderTable()` frisch erzeugt;
+eine Transition läuft auf einem gerade eingefügten Knoten nie an. `grid-template-rows: 0fr -> 1fr`
+über 200 ms, `.is-closing` mit `forwards` für den Weg zurück (JS wartet die 200 ms ab, dann erst
+State löschen und rendern). Die Enter-Klasse darf **nur** beim Render direkt nach dem Toggle
+gesetzt werden — sonst spielt die Animation bei jedem Tastendruck in der Sub-Suche neu.
+
+**Skeleton = die echte Zeile in grau.** Ein Balken pro Spalte, in dieser Spalte, in deren realer
+Breite — plus bereits sichtbare Spaltenköpfe. Ein generischer Streifen lässt das Panel beim
+Eintreffen der Daten sichtbar umspringen.
+
+## 30. Truncation-Tooltip: nach einem Klick ist der Tooltip global stummgeschaltet
+
+`UC.makeTooltips` setzt bei jedem `mousedown`/`click` innerhalb der Root `S.suppressed = true` (der
+Tooltip soll nicht über dem aufpoppen, was der Klick gerade geöffnet hat). Zurückgesetzt wird das
+**ausschließlich** im delegierten `[data-tip]`-Hover-Pfad.
+
+Komponenten-eigene Hover-Tooltips — das „volle Titel nur zeigen, wenn wirklich abgeschnitten“-
+Muster in allen drei Tabellen — laufen aber nicht über `[data-tip]`: ob überhaupt etwas gezeigt
+wird, hängt an einer Messung (`scrollWidth > clientWidth`), also gibt es kein Attribut. Folge ohne
+Gegenmaßnahme: **ein einziger Klick irgendwo in der Komponente** (Drilldown öffnen, sortieren,
+blättern) schaltet jeden Truncation-Tooltip stumm, bis der User zufällig einen fremden Icon-Button
+überfährt.
+
+Deshalb im eigenen `mouseover`-Handler, direkt beim Betreten eines neuen Wraps:
+```js
+var _tips = UC.makeTooltips(root, function(){ return isDark; });
+var showTipWide = _tips.showTipWide, hideTip = _tips.hideTip, unsuppressTip = _tips.unsuppress;
+// …
+if (unsuppressTip) unsuppressTip();   // vor dem 400ms-Timer
+```
+Kein `title="…"`-Attribut als Ersatz: das feuert unabhängig davon, ob der Text abgeschnitten ist,
+und ist weder verzögerbar noch stylebar.
