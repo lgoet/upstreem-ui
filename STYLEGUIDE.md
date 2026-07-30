@@ -1739,6 +1739,51 @@ gesetzt werden — sonst spielt die Animation bei jedem Tastendruck in der Sub-S
 Breite — plus bereits sichtbare Spaltenköpfe. Ein generischer Streifen lässt das Panel beim
 Eintreffen der Daten sichtbar umspringen.
 
+**Nachtrag — echte Server-Pagination statt "einmal laden, lokal filtern":**
+`domains-table`s Drilldown wurde von "die ganze Liste kommt in einem Call, Suche/Filter/Paging
+laufen lokal darüber" auf "jede Zustandsänderung feuert ein neues Request" umgestellt, weil der
+darunterliegende RPC jetzt selbst paginiert (jede Zeile trägt `total_count`). Zwei Regeln, die
+dabei wichtig wurden:
+
+- **Toolbar bleibt IMMER live, nur die Zeilenliste geht in den Skeleton-Zustand.** Öffnen, Suchen,
+  Filtern, Blättern — jedes davon setzt einen `loading`-Flag und rendert neu, aber Such-Input,
+  Typ-Filter-Button und der Schließen-Button dürfen dabei nicht aus dem DOM verschwinden, sonst
+  verliert das Suchfeld beim Tippen den Fokus, sobald die Debounce-Zeit abläuft. Toolbar und
+  Zeilenliste sind deshalb zwei getrennte Render-Zweige in derselben Funktion, nicht ein
+  gemeinsamer "alles oder Skeleton"-Schalter.
+- **Eine optionale request_id gegen Race Conditions.** Ein Request feuert eine hochzählende ID
+  mit; die Antwort-Funktion vergleicht sie (falls mitgegeben) gegen die zuletzt gefeuerte ID und
+  verwirft eine zu spät ankommende, veraltete Antwort still, statt kurz falsche Zeilen zu zeigen.
+  Optional halten (nicht erzwingen): eine bestehende Bubble-Seite, die den vierten Parameter nicht
+  mitgibt, funktioniert unverändert weiter, nur ohne den Schutz.
+
+**Nachtrag — nur das Panel wird eingefärbt, nie die Eltern-Zeile.** Ein früher Versuch tintete
+zusätzlich `.up-row.is-expanded` — zwei Signale für "das ist offen" (Zeile UND Panel) lasen sich
+nicht klarer, und beim Schließen sprang die Zeilenfarbe eine Frame NACH dem Zuklapp-Fade sichtbar
+zurück auf Weiß, was sich wie ein kurzes Aufblitzen anfühlte. Die Zeile bleibt jetzt in beiden
+Themes exakt im Ruhezustand; nur der Drilldown-Container selbst trägt die Tönung.
+
+**Nachtrag — jede Aktion in der ÄUSSEREN Toolbar schließt einen offenen Drilldown.** Suche, Sort,
+Filter, Mentioned-Brands, Brand-Toggle, Haupt-Pagination — und auch ein von außen (nicht über die
+eigene UI) hereinkommender `render...`-Aufruf mit neuen Zeilen. Ein Drilldown, der über einer
+Zeile offen bleibt, die es im neuen Ergebnis vielleicht gar nicht mehr gibt, oder dessen eigener
+Suchzustand nie neu geladen wird, ist der komplexere und fehleranfälligere Zustand — ein einziges
+`closeDrilldown()`, an jeder dieser Stellen aufgerufen, ist einfacher als jede Aktion einzeln
+dazu zu bringen, den Drilldown-Zustand zu berücksichtigen. Kein Fade-out dabei — nur der User-
+getriebene Schließen-Klick (über den Toggle oder den Drilldown-eigenen X-Button) bekommt die
+200-ms-Animation, ein programmatisches Schließen ist sofort.
+
+**Nachtrag — ein zweiter, spät auftauchender Trigger für dieselbe Aktion.** `domains-table`s
+Zeile bekommt nach 2s Hover einen zweiten Weg, den Drilldown zu öffnen (ein "Show Pages"-Button an
+der Stelle des Pfeils) — reiner CSS-Klassen-Toggle über einen JS-Timer (kein `transition-delay`
+für "erst rein, dann nach mehr Zeit wieder raus" — das sind zwei verschiedene Endzustände auf
+demselben `:hover`, was CSS ohne Keyframes an eine feste Gesamtdauer koppeln müsste). Der neue
+Button trägt einfach dasselbe `data-pages-toggle`-Attribut wie der bestehende Trigger — der
+existierende Klick-Handler greift dafür automatisch, kein zweiter Handler nötig. Layout-Detail:
+zwei Geschwister mit je `margin-left:auto`, von denen per CSS-Klasse immer nur eines sichtbar ist,
+funktionieren problemlos — ein unsichtbares (`display:none`) Element zählt in Flexbox nicht mit,
+also übernimmt automatisch das sichtbare die Schub-Rolle.
+
 ## 30. Truncation-Tooltip: nach einem Klick ist der Tooltip global stummgeschaltet
 
 `UC.makeTooltips` setzt bei jedem `mousedown`/`click` innerhalb der Root `S.suppressed = true` (der

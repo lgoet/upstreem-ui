@@ -46,9 +46,21 @@
     rowclick {"domain":"youtube.com"}                       -- key is "domain", not "url"
     page      {"limit":25,"offset":50,"page":3}   -> p_limit / p_offset in your RPC
     mentioned {"brands":"id1,id2"}                -> multi-brand mention filter
-    showpages {"domain":"carwow.de"}             -> the user expanded a domain row; answer it
-                                                    with setDomainsTablePages (see below)
+    showpages {"domain":"carwow.de","query":"","url_types":"","page":1,"page_size":10,
+               "request_id":3}
+              -> the drilldown needs data for this exact combination; answer it with
+                 setDomainsTablePages (see "Drilldown" below). Fires on open AND again on every
+                 later search / type-filter / page / page-size change inside the drilldown —
+                 it is the ONLY event the drilldown has, deliberately: everything it asks for
+                 (query, url_types, page, page_size) has to travel together anyway, since your
+                 RPC needs all four to know what to return, so one event carrying all four is
+                 simpler to wire than four separate ones that would each still need the other
+                 three tagging along.
     openurl   {"url":"https://…","domain":"carwow.de"}  -> a page inside an expanded row was clicked
+
+  ANY of the outer-table events above (search, sort, filter, brand, page, mentioned) — or a
+  render call you push in from OUTSIDE this component's own UI — closes an open drilldown first.
+  There is no separate "drilldown closed" event for this; it is silent on your side.
 
   ORDER tokens (in the sort event's "order" key) — note last_used_*, not last_seen_*:
     share_desc | share_asc | share_delta_desc | share_delta_asc | last_used_desc | last_used_asc
@@ -60,6 +72,8 @@
     (?<="brand_mentioned":")[^"]*                           (?<="brands":")[^"]*
     (?<="domain":")[^"]*     (?<="url":")[^"]*
     (?<="limit":)[0-9]+        (?<="offset":)[0-9]+         (?<="page":)[0-9]+
+    -- showpages-specific (its "query"/"page" keys are the SAME regex as the ones above):
+    (?<="url_types":")[^"]*     (?<="page_size":)[0-9]+      (?<="request_id":)[0-9]+
 
   ── Export ───────────────────────────────────────────────────────────────────
   Place the export popup component anywhere on the same page and give it an
@@ -74,56 +88,91 @@
   window.setDomainsTableBrands("INSTANCE_ID", [...]);
   window.resetDomainsTable("INSTANCE_ID");
   window.setDomainsTablePages("INSTANCE_ID", "carwow.de", [ … ]);   // drilldown, see below
+  window.setDomainsTablePages("INSTANCE_ID", "carwow.de", [ … ], 3);  // …with the optional
+                                                                       // request_id echoed back
 
   ── Drilldown: the pages of one domain ───────────────────────────────────────
-  "N pages" in the domain cell is a button. Clicking it expands that row and lists the domain's
-  top URLs underneath (max 10). Several rows can be open at once.
+  "N pages" in the domain cell is a button; hovering a row for ~2s also swaps its go-to arrow for
+  an explicit "Show Pages" control, wired to the exact same click. Either one expands that row and
+  lists the domain's pages underneath as a real, independently paginated mini table: its own
+  search, its own URL-type filter, its own pager, its own column headers. Exactly ONE domain is
+  expanded at a time — opening a second one closes the first (see below for what closing does).
 
-  The flow, all of it driven by the two events above:
-    1. User clicks "N pages" -> the row expands and immediately shows a SKELETON. You do not have
-       to drive a loading flag for this; the component knows it is waiting.
-    2. The component fires  showpages  {"domain":"carwow.de"}.
-       Pull the domain out with:   (?<="domain":")[^"]*
-    3. Your workflow runs the URLs-for-this-domain RPC, then a Run-JS step:
+  This is now GENUINELY paginated, not "fetch everything once and page through it locally": the
+  drilldown never holds more than the current page, and your RPC needs to return exactly the
+  slice showpages asked for. The upside is it scales to a domain with thousands of pages the same
+  way the outer table scales to thousands of domains; the cost is that opening the drilldown,
+  paging inside it, searching inside it, or changing its type filter ALL round-trip to Bubble —
+  there is no "already loaded, just re-filter" shortcut any more.
 
-         window.setDomainsTablePages("INSTANCE_ID", "[the domain from step 2]", `[RPC_RESPONSE]`);
+  The flow, all of it driven by the two events documented above:
+    1. Something inside the drilldown needs data (opening it, a search debounce elapsing, a type
+       toggled, a page or page-size clicked) -> the ROW LIST shows a skeleton (5 rows) while its
+       toolbar (search box, type filter, the X that closes the drilldown) stays fully live and
+       interactive throughout — you can keep typing in the search field while a previous
+       keystroke's request is still in flight.
+    2. The component fires  showpages  {"domain":"carwow.de","query":"","url_types":"",
+       "page":1,"page_size":10,"request_id":1}. Pull each field out with the regexes above.
+       query/url_types are empty strings on the very first open; url_types is a comma-joined list
+       of the SAME keys used everywhere else (see below), empty meaning "all types".
+    3. Your workflow runs the URLs-for-this-domain RPC with those exact filters/page/page_size,
+       then a Run-JS step:
+
+         window.setDomainsTablePages("INSTANCE_ID", "[domain]", `[RPC_RESPONSE]`, [request_id]);
 
        The third argument takes the raw RPC text OR a ready array — it goes through
        UpstreemCore.parseBubbleJson, same as setDomainsTableBrands, so no Bubble-side parsing.
-       An EMPTY array is a valid answer and renders "No pages found for this domain" instead of
-       leaving the skeleton spinning forever.
+       An EMPTY array is a valid answer and renders "No pages found for this domain" (or "No
+       pages match those filters", if query/url_types were non-empty) instead of leaving the
+       skeleton spinning forever.
+       The fourth argument (request_id) is OPTIONAL — echo back the request_id the showpages
+       payload carried and a response that arrives after a newer request already fired gets
+       dropped instead of briefly flashing stale rows over the current search/filter/page; omit
+       it and every response is accepted as-is, same as before this round.
     4. Clicking one of those page rows fires  openurl  {"url":"…","domain":"…"}.
        Pull the url out with:   (?<="url":")[^"]*
 
   Page fields (straight from the RPC):
-    url, title, domain_share, url_type, last_seen   — rendered
-    description, first_seen                         — accepted, not shown
+    url, title, domain_share, url_type, last_seen, total_count   — rendered
+    description, first_seen                                      — accepted, not shown
+
+  total_count is new and REQUIRED for pagination to work: put the grand total for the current
+  domain+query+url_types combination (not just the page size) on every single row in the array —
+  the component reads it off the first row of whatever you send back. Missing it doesn't break
+  anything visually (the footer falls back to the row count you actually sent), it just means the
+  page numbers/"1–10 of N" can undercount whenever a domain has more pages than fit on one screen.
 
   url_type takes the SAME keys as the URL types everywhere else in the app (article, guide,
   review, comparison, homepage, product_service, marketplace, company_info, listicle,
-  documentation, forum, directory, video, social_post). An unknown or missing value still
-  renders — as a neutral grey chip with the raw text — so a new type on your side never breaks
-  the table, it just shows up uncoloured until it is added to the shared list.
+  documentation, forum, directory, video, social_post). A null/empty value renders as a grey
+  "Uncategorized" chip — same convention as everywhere else that chip appears — never a blank
+  cell. A non-empty value that just doesn't match one of those keys still renders as its own raw
+  text: that's a real (if unmapped) type, not an absent one, so a new type on your side never
+  breaks the table, it just shows up uncoloured until it's added to the shared list.
+
+  The drilldown's type-filter DROPDOWN always lists all 14 keys, regardless of what happens to be
+  on the currently-loaded page — with server-side paging this view never holds the full list for
+  a domain, so deriving "which types exist" from what's loaded would silently hide options that
+  are one page away.
 
   Note on domain_share: this is the URL's share WITHIN its domain, not the global share the
   parent row shows — the two numbers answer different questions and are deliberately not mixed,
   which is also why the drilldown's column is headed "Domain Share" and not "Global Share".
   A missing domain_share renders as a bare dash, not "–%".
 
-  What the drilldown gives the user, with no extra work on your side — all of it runs locally
-  over the list you handed to setDomainsTablePages, so none of it costs a second RPC:
-    · a search field over page title and URL
-    · a URL-type filter, listing only the types that actually occur in THIS domain
-      (it is hidden entirely when the domain has one type or none — a filter with a single
-       option is not a choice)
+  What the drilldown gives the user:
+    · a search field over page title and URL (server-side now — see the flow above)
+    · a URL-type filter, all 14 types always offered
+    · an X button next to the search field that closes the whole drilldown
     · pagination, 10 or 25 rows per page
     · column headers, and the full title on hover whenever it is clipped
 
-  Exactly ONE domain can be open at a time: opening a second one closes the first and resets its
-  search / filter / page. Re-opening a domain you closed earlier costs no second RPC — the list
-  is cached per domain for the lifetime of the page. It is NOT persisted: after a reload nothing
-  is expanded, because restoring an expansion over a different result set would show one domain's
-  pages under another domain's row.
+  Closing (the row's own toggle, the drilldown's own X, OR any outer-table action per the note
+  above) is instant client-side state — it fires no event and costs no RPC. Re-opening a domain
+  you closed earlier is a fresh fetch, same as any other page-1/no-filters request; there is no
+  cache to reuse any more (see "genuinely paginated" above). Nothing about the drilldown is
+  persisted across a reload, because restoring an expansion over a different result set would
+  show one domain's pages under another domain's row.
 
   Row fields (straight from your RPC, no renaming needed):
     domain, favicon, share_pct, share_delta_pct, urls_count, last_used_at, citation_type,

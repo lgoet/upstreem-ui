@@ -216,15 +216,18 @@
     function trendChip(delta, suffix){
       return UC.trendChip(delta, { decimals: true, suffix: suffix });
     }
-    /* URL types have their own dark palette; citation types deliberately do not. */
+    /* URL types have their own dark palette; citation types deliberately do not.
+       A missing/empty type is "Uncategorized" — same convention as core.js's URL_LABEL.other and
+       topcitations-dashboard's URL_TYPE_CHIP.other — never a blank cell. A non-empty value that
+       just doesn't match a known key still renders as its own raw text: a real, if unmapped, type
+       is not the same thing as an absent one. */
     function urlTypeInfo(raw){
       var key = String(raw == null ? "" : raw).trim().toLowerCase().replace(/[\s-]+/g, "_");
       var t = URL_TYPE[key];
-      if (!t) return { label: String(raw || ""), color: isDark ? OTHER_DARK : OTHER_LIGHT, base: OTHER_LIGHT };
-      return { label: t.label, color: isDark ? t.cDark : t.c, base: t.c };
+      if (t) return { label: t.label, color: isDark ? t.cDark : t.c, base: t.c };
+      return { label: key ? String(raw) : "Uncategorized", color: isDark ? OTHER_DARK : OTHER_LIGHT, base: OTHER_LIGHT };
     }
     function tagHtml(raw){
-      if (!raw) return "";
       var ti = urlTypeInfo(raw);
       var bg = isDark ? CHIP_BG_DARK : tint(ti.base, 0.12);
       /* URL types always carry a leading dot; citation types never do. That is what keeps the two

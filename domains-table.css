@@ -36,6 +36,20 @@
 .up-row:hover .udt-row-goto { opacity: 1; transform: translateX(0); transition-delay: 220ms; }
 .up-root.is-vnarrow .udt-row-goto { display: none; }
 
+/* "Show Pages" — swaps in for the goto arrow after a 2s hover dwell (see the JS timer in
+   makeController). Not styled as a chip/button shell: it sits in the same slot the plain arrow
+   occupied, so it should read as a label with an icon, not a new control appearing out of
+   nowhere. margin-left:auto only matters when the goto arrow is hidden (.is-hover2s) — see the
+   comment on .udt-row-showpages in the JS for why two auto-margin siblings here is safe. */
+.udt-row-showpages { display: none; align-items: center; gap: 6px; margin-left: auto;
+  height: 32px; padding: 0 2px; border: 0; background: transparent; cursor: pointer; font: inherit;
+  font-size: 12px; font-weight: 500; color: var(--vc-third); white-space: nowrap; flex: 0 0 auto; }
+.udt-row-showpages svg { width: 14px; height: 14px; flex: 0 0 auto; display: block; }
+.udt-row-showpages:hover, .udt-row-showpages:focus-visible { color: var(--vc-text); }
+.up-row.is-hover2s .udt-row-goto { display: none; }
+.up-row.is-hover2s .udt-row-showpages { display: inline-flex; }
+.up-root.is-vnarrow .udt-row-showpages { display: none !important; }
+
 .udt-dom-wrap { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .udt-dom-title { font-size: 13.5px; font-weight: 500; color: var(--vc-text); letter-spacing: -0.01em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -117,8 +131,9 @@
    Drilldown: "N pages" opens the domain's pages as a real mini table
    ============================================================
    Disclosure convention, deliberately followed rather than invented: the trigger carries a
-   chevron that rotates when open, and the parent row stays tinted for as long as it is expanded
-   so you can see at a glance what you opened.
+   chevron that rotates when open, and the drilldown panel itself is tinted for as long as it is
+   expanded so you can see at a glance what's open — the parent row stays exactly as it looks at
+   rest (see the "expanded parent row" comment below).
 
    Exactly ONE domain is open at a time. Two open drilldowns, each with its own search, type
    filter and pager, would read as two competing tables stacked inside a third - the outer table
@@ -154,8 +169,14 @@
 .udt-pagesbtn.is-open .udt-chev { transform: rotate(180deg); }
 @media (prefers-reduced-motion: reduce){ .udt-chev { transition: none; } }
 
-/* ---------- expanded parent row ---------- */
-.up-row.is-expanded { background: var(--vt-head-bg); }
+/* ---------- expanded parent row ----------
+   Deliberately NOT tinted — the row stays exactly as it looks at rest, in both themes. Only the
+   drilldown panel itself (.udt-subrows below) is coloured; that panel is already unambiguous as
+   "the open thing", and tinting the row on top of it doubled the same signal while adding a
+   second background swap the instant the panel finished closing — which read as the row itself
+   flashing right after the close animation ended. .up-row still carries the is-expanded class
+   in markup (aria/chevron logic reads it, and it's a reasonable hook to keep), it just carries
+   no styling of its own any more. */
 
 /* ---------- open/close animation ----------
    A keyframe, not a transition: the block is created fresh by renderTable() on open, and a
@@ -234,10 +255,10 @@
    shell, so it still reads as the app's search. */
 .udt-sub-toolbar { display: flex; align-items: center; gap: 10px; padding: 10px 12px 10px 46px;
   min-height: 32px; }
-.udt-sub-toolbar.is-sk { height: 52px; }
-.udt-sub-label { font-size: 11px; font-weight: 600; color: var(--vc-third);
-  text-transform: uppercase; letter-spacing: 0.04em; min-width: 0;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* No label on the left any more (item 1) — .udt-sub-tools' own margin-left:auto still pushes
+   everything to the right, exactly as if there were a heading sharing the row with it. The
+   toolbar is also never re-rendered into a skeleton state now: a fetch in flight only skeletons
+   the row list below it (see subrowsHtml in the JS), so this stays interactive at all times. */
 .udt-sub-tools { margin-left: auto; display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
 .udt-sub-filter { position: relative; }
 .udt-sub-filterbtn { font-size: 12px; }
@@ -281,6 +302,8 @@
 .udt-sk-title { flex: 0 0 auto; width: 42%; min-width: 90px; }
 .udt-subrow.is-sk:nth-child(2) .udt-sk-title { width: 56%; }
 .udt-subrow.is-sk:nth-child(3) .udt-sk-title { width: 33%; }
+.udt-subrow.is-sk:nth-child(4) .udt-sk-title { width: 48%; }
+.udt-subrow.is-sk:nth-child(5) .udt-sk-title { width: 38%; }
 .udt-sk-share { width: 44px; }
 .udt-sk-type { width: 76px; height: 20px; border-radius: 7px; }
 .udt-sk-date { width: 62px; }
