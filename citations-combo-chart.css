@@ -47,11 +47,11 @@
 .combo-panel-body { flex: 1 1 auto; min-height: 0; padding: 16px; position: relative; display: flex; flex-direction: column; transition: opacity 200ms ease; }
 .combo-box-left .combo-panel-body { padding-top: 24px; }   /* extra breathing room above the line chart */
 /* Line Width only — no color scale here, that stays exclusive to visibility-chart. Trigger shell
-   + dropdown shell (.up-chartset-btn/.up-scale-menu) are shared via core.css, same as every other
-   line-chart component's settings gear; only this positioning declaration and the menu's populate
-   callback (see citations-combo-chart.js) are this component's own. .combo-box has overflow:hidden
-   (line chart clipping), so — same reasoning as visibility-chart's — the actual dropdown menu is
-   body-mounted, not a plain absolute child of this button. */
+   + dropdown shell are shared via core.css's rule for .vot-scale-btn/.ccl-settings-btn, same as
+   every other line-chart component's settings gear; only this positioning declaration and the
+   menu's populate callback (see citations-combo-chart.js) are this component's own. .combo-box has
+   overflow:hidden (line chart clipping), so — same reasoning as visibility-chart's — the actual
+   dropdown menu is body-mounted, not a plain absolute child of this button. */
 .ccl-settings-btn { position: absolute; top: 12px; right: 12px; }
 
 /* ---------- maximize / auto-stack ---------- */

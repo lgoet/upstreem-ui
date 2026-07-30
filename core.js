@@ -1911,11 +1911,12 @@
   var LINE_TENSION = 0.3, LINE_POINT_HOVER = 4, LINE_POINT_HIT = 6, LINE_POINT_BORDER = 1.4;
   var X_MAX_TICKS = 7, Y_PAD = 1.15;
   /* Line width is a page-wide preference, not per-component/per-instance — one localStorage key
-     read by every makeLine() chart, changeable from any one of them (only visibility-chart's own
-     dropdown exposes a UI for it; every other line chart just picks it up). "thin" is the
-     original 1.5px this shipped with, kept as the default so nothing already deployed shifts
-     appearance until someone actually opens the setting and changes it. */
-  var LINE_WIDTH_VALUES = { thin: 1.5, thick: 2.75 };
+     read by every makeLine() chart, changeable from any of their own Chart Settings dropdowns.
+     "thin" is the original 1.5px this shipped with, kept as the default so nothing already
+     deployed shifts appearance until someone actually opens the setting and changes it. "thick"
+     is the midpoint between thin and the first version's 2.75px, not that value itself — 2.75
+     read as too heavy in practice. */
+  var LINE_WIDTH_VALUES = { thin: 1.5, thick: 2.125 };
   var LINE_WIDTH_KEY = "up_line_width_pref";
   function getLineWidthPref(){
     try { return window.localStorage.getItem(LINE_WIDTH_KEY) === "thick" ? "thick" : "thin"; }

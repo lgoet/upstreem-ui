@@ -285,7 +285,15 @@
     }
     function renderLineSide(){
       if (!isOwner()) return;
-      if (state.loading || !state.hasLine || state.linePending){ line.skeleton(); return; }
+      var loading = state.loading || !state.hasLine || state.linePending;
+      /* The gear button (and its dropdown, if it was somehow open when a reload started) has no
+         business being reachable over a skeleton — nothing to configure yet. */
+      root.classList.toggle("is-line-loading", loading);
+      if (loading){
+        if (settingsOpen) closeSettingsMenu();
+        line.skeleton();
+        return;
+      }
       /* the per-series filter is this component's own feature — the kit only ever sees the
          datasets that should actually be drawn */
       var built = buildLineDatasets(state.series, state.dataMode === "url" ? state.meta.urls : state.meta.domains, state.dataMode, isDark);

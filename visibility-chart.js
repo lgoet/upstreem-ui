@@ -262,7 +262,16 @@
     }
     function renderLineSide(){
       if (!isOwner()) return;
-      if (state.loading || !state.hasLine || state.linePending){ line.skeleton(); return; }
+      var loading = state.loading || !state.hasLine || state.linePending;
+      /* The gear button (and, if it was somehow open when a reload started, its dropdown) has no
+         business being reachable over a skeleton — there's nothing to configure yet. Plain
+         descendant CSS rule keyed off this class, not a per-render inline style. */
+      root.classList.toggle("is-line-loading", loading);
+      if (loading){
+        if (scaleOpen) closeScaleMenu();
+        line.skeleton();
+        return;
+      }
       line.render(buildLineDatasets(state.series, state.companies || [], colorScale));
     }
     function render(){

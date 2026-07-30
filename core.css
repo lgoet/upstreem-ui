@@ -399,27 +399,33 @@
 
     /* ---------- chart settings (gear) trigger + its body-mounted dropdown ----------
        Shared by every Chart.js line-chart component (visibility-chart's own colors+line-width
-       menu, and any other line chart's line-width-only menu) — one hover-reveal/open-state/
+       menu, citations-combo-chart's line-width-only menu) — one hover-reveal/open-state/
        transition-timing definition instead of a copy per component drifting out of sync, which is
        exactly how the pointer-events-fires-before-visible bug above got fixed in one place and
-       then silently reintroduced in a duplicate. Host component marks its trigger's positioning
-       parent with .up-chartset-host (needs position:relative, already true of every chart panel
-       body in this app) so :hover reveals the button; the button itself still needs component-
-       specific position:absolute placement since panel padding differs slightly per component —
-       add that one declaration on the component's own class alongside .up-chartset-btn.
+       then silently reintroduced in a duplicate.
+       Deliberately keyed on each component's OWN existing button class (.vot-scale-btn,
+       .ccl-settings-btn — add the next consumer's class to this same selector list, don't invent
+       a shared marker class instead): visibility-chart's button already exists in every already-
+       deployed Bubble page. A shared class name would only apply once every one of those pages'
+       HTML elements gets manually re-pasted with the new markup — until then the button would
+       silently lose ALL of this styling (which is exactly what happened the first time this was
+       tried: the button rendered as a bare unstyled sliver). Targeting the class that's already
+       there means the sizing/hover/position rules take effect immediately off the CDN pin alone;
+       only the gear-vs-pencil SVG *content* genuinely requires a markup paste, because no amount
+       of CSS can change what path data an inline <svg> contains.
        The MENU is body-mounted (component boxes are overflow:hidden — see visibility-chart.css's
        original comment on this), positioned in JS from the trigger's getBoundingClientRect(), so —
        living outside any .up-root — it redeclares the --vc- and --vc-switch- tokens here with
        this app's one universal light/dark palette (core.css's own .up-root tokens above) rather
        than per component, so every consumer's menu looks and themes identically by construction. */
-    .up-chartset-btn {
+    .vot-scale-btn, .ccl-settings-btn {
       width: 28px; height: 28px; border-radius: 8px; z-index: 5;
       border: 1px solid var(--vc-border); background: var(--vc-bg); color: var(--vc-muted);
       cursor: pointer; padding: 0; display: inline-flex; align-items: center; justify-content: center;
       opacity: 0; pointer-events: none;
       transition: opacity 120ms ease, color 120ms ease;   /* fast hide */
     }
-    .up-chartset-btn svg { width: 14px; height: 14px; display: block; }
+    .vot-scale-btn svg, .ccl-settings-btn svg { width: 14px; height: 14px; display: block; }
     /* Hovering the host panel reveals it, after a delay — the button itself and its own open state
        keep it visible with no delay once already shown, so it never flickers mid-interaction.
        pointer-events is listed with the SAME delay as opacity's delay PLUS DURATION (450+160=
@@ -427,14 +433,22 @@
        flips to "auto" the INSTANT the hover starts regardless of what opacity is doing — letting
        hover (and the tooltip) fire on a button that's still transparent mid fade-in. 610ms is where
        opacity actually finishes landing on 1. */
-    .up-chartset-host:hover .up-chartset-btn,
-    .up-chartset-btn:focus-visible,
-    .up-chartset-btn.is-open {
+    .vot-panel-body:hover .vot-scale-btn, .combo-panel-body:hover .ccl-settings-btn,
+    .vot-scale-btn:focus-visible, .ccl-settings-btn:focus-visible,
+    .vot-scale-btn.is-open, .ccl-settings-btn.is-open {
       opacity: 1; pointer-events: auto;
       transition: opacity 160ms ease 450ms, pointer-events 0s 610ms, color 120ms ease;   /* delayed show */
     }
-    .up-chartset-btn:hover, .up-chartset-btn.is-open { color: var(--vc-text); }
-    @media (prefers-reduced-motion: reduce){ .up-chartset-btn { transition-duration: 1ms; } }
+    .vot-scale-btn:hover, .ccl-settings-btn:hover, .vot-scale-btn.is-open, .ccl-settings-btn.is-open { color: var(--vc-text); }
+    /* Skeleton is loading -> the button (and, if it was somehow already open, its menu) hides
+       outright, no hover-reveal override. The component toggles .is-line-loading on its OWN root
+       (not this button) the same way it already tracks every other loading state, so this is a
+       plain descendant rule, not new JS wiring. !important because the alternative is duplicating
+       every opacity/pointer-events rule above at higher specificity for one edge case. */
+    .vot-root.is-line-loading .vot-scale-btn, .combo-root.is-line-loading .ccl-settings-btn {
+      opacity: 0 !important; pointer-events: none !important;
+    }
+    @media (prefers-reduced-motion: reduce){ .vot-scale-btn, .ccl-settings-btn { transition-duration: 1ms; } }
 
     .up-scale-menu {
       --vc-text: #1f1f1b; --vc-muted: #6f737c; --vc-third: #9e9e9e; --vc-border: #e0e2e6;

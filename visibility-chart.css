@@ -182,19 +182,18 @@
 
 /* ============================================================
    Chart settings — hover-reveal gear button over the line chart + its dropdown (colors here, PLUS
-   the Line Width switch every line chart in the app gets — see core.css's shared
-   .up-chartset-btn/.up-scale-menu for the trigger shell, dropdown shell, and the pointer-events
+   the Line Width switch every line chart in the app gets — see core.css's shared rule for
+   .vot-scale-btn/.ccl-settings-btn for the trigger shell, dropdown shell, and the pointer-events
    timing fix; only the color-swatch option rows below are visibility-chart-specific, since colors
    stay exclusive to this component).
-   The button lives inside .vot-panel-body (already position:relative, and marked
-   .up-chartset-host in the markup for the shared hover-reveal rule) so it needs no special
-   positioning beyond its own placement inside that box. The MENU is a different story: .vot-box
-   has overflow:hidden (load-bearing — it's what clips the chart canvas/skeleton to the box's
-   rounded corners), so a plain position:absolute child menu would get cut off exactly like
-   topics-manager's sort menu did before UC.unclipAncestors — except here the clipping is
-   intentional and can't just be stripped. The menu is instead body-mounted (same escape hatch as
-   the topics-manager modal and the "+N more" topics popup), positioned in JS from the button's
-   getBoundingClientRect(). */
+   The button lives inside .vot-panel-body (already position:relative) so it needs no special
+   positioning beyond its own placement inside that box, declared here since panel padding differs
+   slightly per component. The MENU is a different story: .vot-box has overflow:hidden
+   (load-bearing — it's what clips the chart canvas/skeleton to the box's rounded corners), so a
+   plain position:absolute child menu would get cut off exactly like topics-manager's sort menu
+   did before UC.unclipAncestors — except here the clipping is intentional and can't just be
+   stripped. The menu is instead body-mounted (same escape hatch as the topics-manager modal and
+   the "+N more" topics popup), positioned in JS from the button's getBoundingClientRect(). */
 .vot-scale-btn { position: absolute; top: 12px; right: 12px; }
 
 
