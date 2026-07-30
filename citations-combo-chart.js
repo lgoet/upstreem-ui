@@ -361,6 +361,78 @@
        its state was per root while the chip element was per page. */
     UC.makeTooltips(root, darkNow);
 
+    /* ---------- chart settings (Line Width only — no colors here, see .ccl-settings-btn) ----------
+       Same hand-rolled body-mounted open/close shape as visibility-chart's own scale menu (not
+       UC.makePopover: its outside-click check assumes the menu is a DOM descendant of its trigger,
+       which isn't true once the menu escapes .combo-box's overflow:hidden via document.body). */
+    var settingsBtn = root.querySelector(".ccl-settings-btn");
+    var settingsMenu = null, settingsOpen = false;
+    function ensureSettingsMenu(){
+      if (settingsMenu && document.body.contains(settingsMenu)) return settingsMenu;
+      settingsMenu = document.createElement("div");
+      settingsMenu.className = "up-scale-menu";
+      settingsMenu.setAttribute("role", "menu");
+      settingsMenu.setAttribute("aria-hidden", "true");
+      settingsMenu.addEventListener("click", function(e){
+        var lw = e.target.closest("[data-linewidth]");
+        if (!lw) return;
+        UC.setLineWidthPref(lw.getAttribute("data-linewidth"));
+        populateSettingsMenu();
+      });
+      document.body.appendChild(settingsMenu);
+      return settingsMenu;
+    }
+    function populateSettingsMenu(){
+      if (!settingsMenu) return;
+      settingsMenu.innerHTML = '<div class="up-pop-head">Chart Settings</div>' + UC.lineWidthSectionHtml();
+    }
+    function positionSettingsMenu(){
+      if (!settingsBtn || !settingsMenu) return;
+      var r = settingsBtn.getBoundingClientRect();
+      settingsMenu.style.top = (r.bottom + 8) + "px";
+      settingsMenu.style.right = (window.innerWidth - r.right) + "px";
+    }
+    function openSettingsMenu(){
+      if (!settingsBtn || settingsOpen) return;
+      ensureSettingsMenu();
+      populateSettingsMenu();
+      settingsOpen = true;
+      settingsBtn.classList.add("is-open");
+      settingsMenu.setAttribute("data-theme", isDark ? "dark" : "light");
+      positionSettingsMenu();
+      settingsMenu.setAttribute("aria-hidden", "false");
+      void settingsMenu.offsetWidth;
+      settingsMenu.classList.add("is-shown");
+    }
+    function closeSettingsMenu(){
+      if (!settingsOpen) return;
+      if (settingsMenu && settingsMenu.contains(document.activeElement)){
+        try { document.activeElement.blur(); } catch(e){}
+      }
+      settingsOpen = false;
+      if (settingsBtn) settingsBtn.classList.remove("is-open");
+      if (settingsMenu){ settingsMenu.classList.remove("is-shown"); settingsMenu.setAttribute("aria-hidden", "true"); }
+    }
+    if (settingsBtn && !settingsBtn.__ccSettingsBound){
+      settingsBtn.__ccSettingsBound = true;
+      settingsBtn.addEventListener("click", function(e){
+        e.stopPropagation();
+        if (settingsOpen) closeSettingsMenu(); else openSettingsMenu();
+      });
+      document.addEventListener("click", function(e){
+        if (!settingsOpen) return;
+        if (settingsBtn.contains(e.target)) return;
+        if (settingsMenu && settingsMenu.contains(e.target)) return;
+        closeSettingsMenu();
+      });
+      document.addEventListener("keydown", function(e){
+        if (!settingsOpen) return;
+        if (e.key !== "Escape" && e.key !== "Esc") return;
+        closeSettingsMenu();
+      });
+      window.addEventListener("resize", function(){ if (settingsOpen) positionSettingsMenu(); });
+    }
+
     // line-chart granularity switcher — fires a Run-JS / JavaScript-to-Bubble event on change.
     if (granBtns.length){
       syncGranActive();

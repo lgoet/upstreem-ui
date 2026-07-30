@@ -245,6 +245,10 @@
    at all and the actions never moved right. */
 .upt-bulkbar-row [data-bulk-topics] { margin-left: auto; }
 .upt-bulkbar-row [data-bulk-status] { margin-left: -8px; }   /* 16px row gap -> 8px */
+/* Inactive view drops Topics entirely (see renderBulkBar()) — data-bulk-status becomes the
+   first action button and needs the auto margin Topics normally carries. */
+.upt-bulkbar-row.is-inactive [data-bulk-status] { margin-left: auto; }
+.upt-bulkbar-row [data-bulk-delete] { margin-left: -8px; }
 .upt-bulkbar-row [data-bulk-clear] { margin-left: -8px; }    /* same: 16px row gap -> 8px */
 /* inline-flex + align-items:baseline rather than a plain inline span: the animated number below
    is an overflow:hidden inline-block, and per spec an atomic inline box with overflow != visible
@@ -271,6 +275,12 @@
    .up-filter-btn carries one. */
 .upt-bulkbar-btn { gap: 7px; flex: 0 0 auto; }
 .upt-bulkbar-btn svg { width: 14px; height: 14px; display: block; flex: 0 0 auto; }
+/* Same red as core's .up-topicmodal-delete (the topic modal's own hard-delete button) — one
+   "this is destructive" color across the app rather than each surface picking its own. Neutral
+   at rest like every other bulk-bar action; only hover and the confirm-armed state go red. */
+.upt-bulkbar-delete:hover { border-color: #b0200c; color: #b0200c; }
+.upt-bulkbar-delete.is-armed { border-color: #b0200c; background: #b0200c; color: #fff; }
+.upt-bulkbar-delete.is-armed:hover { opacity: .9; }
 .upt-bulkbar-x { width: 32px; height: 32px; border: 0; padding: 0; border-radius: 8px; background: transparent;
   color: var(--vc-muted); cursor: pointer; flex: 0 0 auto; margin-left: 0;
   display: inline-flex; align-items: center; justify-content: center; }

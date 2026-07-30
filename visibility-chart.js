@@ -466,12 +466,23 @@
       scaleMenu.setAttribute("aria-hidden", "true");
       scaleMenu.addEventListener("click", function(e){
         var opt = e.target.closest("[data-scale]");
-        if (!opt) return;
-        colorScale = opt.getAttribute("data-scale");
-        writeColorScale();
-        populateScaleMenu();
-        renderLineSide();
-        closeScaleMenu();
+        if (opt){
+          colorScale = opt.getAttribute("data-scale");
+          writeColorScale();
+          populateScaleMenu();
+          renderLineSide();
+          closeScaleMenu();
+          return;
+        }
+        var lw = e.target.closest("[data-linewidth]");
+        if (lw){
+          /* Global, not staged: takes effect immediately (every mounted line chart on the page
+             redraws itself via the up-linewidth-change listener in core.js's makeLine), same as
+             every other visibility-chart setting — there's no separate Apply step here. */
+          UC.setLineWidthPref(lw.getAttribute("data-linewidth"));
+          populateScaleMenu();
+          return;
+        }
       });
       document.body.appendChild(scaleMenu);
       return scaleMenu;
@@ -494,7 +505,7 @@
             scaleSwatchesHtml(def.colors) +
           '</div>';
       }).join("");
-      scaleMenu.innerHTML = '<div class="up-pop-head">Chart Colors</div>' + rows;
+      scaleMenu.innerHTML = '<div class="up-pop-head">Chart Settings</div>' + rows + UC.lineWidthSectionHtml();
     }
     function positionScaleMenu(){
       if (!scaleBtn || !scaleMenu) return;

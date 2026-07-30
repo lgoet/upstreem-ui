@@ -40,6 +40,7 @@
   data-bulktopics-fn  = "bubble_fn_uptBulkTopics_[dynamic id]"    unused — kept for back-compat, see below
   data-applybulktopics-fn = "bubble_fn_uptApplyBulkTopics_[dynamic id]"  the topic editor's Apply button
   data-bulkstatus-fn  = "bubble_fn_uptBulkStatus_[dynamic id]"    bulk set active/inactive
+  data-bulkdelete-fn  = "bubble_fn_uptBulkDelete_[dynamic id]"    bulk hard-delete, Inactive view only
   data-addtopics-fn   = "bubble_fn_uptAddTopics_[dynamic id]"      "Add Topic" in the bulk editor
 
   data-export-instance = the instanceId of the EXPORT POPUP component you place on the same
@@ -68,6 +69,15 @@
     status   {"status":"inactive"}                  -> Active/Inactive view switch. Re-run the RPC
                                                         filtered to that status.
 
+  The bulk bar's own action buttons differ by that same status. Active view: Topics + Set
+  Inactive. Inactive view: Set Active + Delete instead — Topics management doesn't exist there at
+  all (inactive prompts aren't tagged), Delete takes its place. Delete is the one bulk action
+  that isn't trivially reversible, so it needs two clicks: the first arms the button (turns red,
+  label becomes "Confirm delete?") without firing anything; the second, on the now-armed button,
+  fires bulkdelete below and clears the selection. Any selection change while armed (ticking a
+  different row, Select all N, Undo) disarms it silently — an armed confirm never survives onto a
+  different set of rows than the one it was armed for.
+
   ── Bulk actions (the floating bar, shown while rows are selected) ────────────
   Both carry the SELECTION in one of two shapes. Branch your workflow on "mode":
 
@@ -83,16 +93,50 @@
   the field names here are chosen to match it. If they ever drift apart, the table and the bulk
   action will silently disagree about which rows they mean.
 
-    applybulktopics  <selection> + {"tag_ids":"id1,id2,…","prompt_ids":"id1,id2,…"}
-                -> fires ONCE, from the topic editor's Apply button — never per click. Clicking a
-                   topic chip only stages/unstages it locally; nothing reaches Bubble until Apply.
-                   ADDS every tag in tag_ids to every prompt in prompt_ids (never "replace the
-                   tags with this" — topics the user didn't touch stay untouched). prompt_ids is
-                   only present when mode:"ids" (an explicit selection); under mode:"filter" (the
-                   "select all N matching" case) resolve the target prompts server-side from the
-                   filter fields the same way the render RPC does, same as every other bulk action.
-                   tag_ids is capped at 5 client-side (the per-prompt topic limit) — your RPC still
-                   has final say for rows that were already close to that limit.
+    applybulktopics  -> fires ONCE, from the topic editor's Apply button — never per click.
+                   Clicking a topic chip only stages/unstages it locally; nothing reaches Bubble
+                   until Apply. ADDS every tag in tag_ids to every prompt the selection resolves to
+                   (never "replace the tags with this" — topics the user didn't touch stay
+                   untouched). tag_ids is capped at 5 client-side (the per-prompt topic limit) —
+                   your RPC still has final say for rows that were already close to that limit.
+                   Every field that can appear, spelled out in full — no other field is ever
+                   present beyond these:
+
+                   mode:"ids" (an explicit row-by-row selection):
+                     {"mode":"ids","count":3,"ids":"id1,id2,id3","prompt_ids":"id1,id2,id3",
+                      "tag_ids":"t1,t2"}
+                     ids and prompt_ids are always identical (same comma-joined id list, sent
+                     under both keys — "ids" is the general selection-payload field every bulk
+                     action carries, "prompt_ids" is the older name this specific event has always
+                     used; both stay for back-compat, pick whichever your workflow already reads).
+
+                   mode:"filter" (the "Select all N matching" case):
+                     {"mode":"filter","count":1240,"query":"nike","brand_mentioned":"yes",
+                      "status":"active","order":"visibility_desc","tag_ids":"t1,t2"}
+                     No ids/prompt_ids field at all in this shape (there IS no fixed id list — that
+                     is the whole point of "filter" mode). count is the exact total, not an
+                     estimate. Resolve the actual target prompts server-side from
+                     query/brand_mentioned/status/order using the SAME where-clause your render RPC
+                     already applies for those fields, then apply tag_ids to every prompt that
+                     resolves to.
+
+                   Field-by-field meanings (present in one or both shapes above):
+                     mode             "ids" | "filter" — which shape this payload is
+                     count            exact number of prompts targeted, either way
+                     ids              (mode:"ids" only) comma-joined prompt ids ticked by hand
+                     prompt_ids       (mode:"ids" only) identical value to ids, see above
+                     query            (mode:"filter" only) the active search text at apply time
+                     brand_mentioned  (mode:"filter" only) "yes" | "no" | "" — the brand-mention
+                                      toggle's state at apply time
+                     status           (mode:"filter" only) "active" | "inactive" — which tab was
+                                      open, so the filter matches the same rows the user was
+                                      looking at
+                     order            (mode:"filter" only) sort token, see the order-tokens list
+                                      below — included so "select all" resolves the exact same
+                                      ordering the visible table used, in case your RPC's default
+                                      order differs
+                     tag_ids          comma-joined topic ids staged in the panel — present in BOTH
+                                      shapes, always at least one id (Apply is disabled at 0 staged)
     addtopics   <selection> + {"new_topic_name":"SUV","new_topic_emoji":"🚙",
                              "new_topic_hex_light":"#1860dc","new_topic_hex_dark":"#1860dc"}
                 -> fires from TWO places, both producing this exact same shape (no need to branch
@@ -113,6 +157,13 @@
     bulkstatus  <selection> + {"status":"inactive"}
                 -> set every selected prompt to that status. Reversible, so no confirm dialog is
                    shown; surface an undo in your own toast instead.
+    bulkdelete  <selection>, no extra fields
+                -> Inactive view only (see above) — the bar's Delete button, armed by a first click.
+                   Hard-delete every prompt in the selection; there is no separate "restore"
+                   surface on this component's side, so treat this as destructive on your end too.
+                   Same two shapes as every other bulk action: {"mode":"ids","count":2,
+                   "ids":"id1,id2"} or, after "Select all N", {"mode":"filter","count":140,
+                   "query":"…","brand_mentioned":"yes","status":"inactive","order":"…"}.
 
   order tokens: name_asc/desc, visibility_asc/desc, rank_asc/desc, sentiment_asc/desc,
   created_at_asc/desc.   Default (and fallback) is visibility_desc — the table is never unsorted.
@@ -151,6 +202,20 @@
   window.setPromptsTableLoading("INSTANCE_ID", "yes" | "no");
   window.resetPromptsTable("INSTANCE_ID");
   window.setPromptsTableTopics("INSTANCE_ID", [ {id,name,emoji,hex_light,hex_dark}, … ]);
+
+  ── Leaving the page: cleanup ─────────────────────────────────────────────────
+  The bulk bar and the "Add Topic" modal both mount to document.body (so they can escape any
+  overflow:hidden ancestor), not inside this component's own root — so if the user navigates to a
+  different page/reusable while either is open, they're left floating over whatever Bubble shows
+  next. Two layers of defense:
+    1. Automatic: if this component's root element is ever actually removed from the DOM (a
+       repeating structure re-rendering, a conditional "only when" going false), it's detected and
+       cleaned up on its own — no action needed on your side.
+    2. Bubble reusable elements are more often just hidden (display:none) than removed outright,
+       which layer 1 can't see. For that case, call window.resetPromptsTable("INSTANCE_ID") from a
+       "user leaves this page" workflow event — it closes the Add Topic modal if open, closes the
+       bulk topic panel, clears the selection (which hides the bulk bar), and resets search/sort/
+       paging. Cheap and safe to call even when nothing was open.
 
   renderPromptsTable also accepts, both optional:
     totalCountInactive  -> puts a count on the Inactive tab. Until you send it the tab simply
@@ -273,6 +338,7 @@
      data-bulktopics-fn="bubble_fn_uptBulkTopics"
      data-applybulktopics-fn="bubble_fn_uptApplyBulkTopics"
      data-bulkstatus-fn="bubble_fn_uptBulkStatus"
+     data-bulkdelete-fn="bubble_fn_uptBulkDelete"
      data-addtopics-fn="bubble_fn_uptAddTopics"
      data-export-instance="EXPORT_INSTANCE_ID">
   <div class="up-head">

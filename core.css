@@ -396,6 +396,73 @@
     /* icon-only variant (row-height 3-way switch): no label, so it never outgrows the menu */
     .up-dense-btn-icon { flex: 1 1 33.333%; padding: 0; gap: 0; }
     .up-dense-btn-icon svg { width: 16px; height: 16px; }
+
+    /* ---------- chart settings (gear) trigger + its body-mounted dropdown ----------
+       Shared by every Chart.js line-chart component (visibility-chart's own colors+line-width
+       menu, and any other line chart's line-width-only menu) — one hover-reveal/open-state/
+       transition-timing definition instead of a copy per component drifting out of sync, which is
+       exactly how the pointer-events-fires-before-visible bug above got fixed in one place and
+       then silently reintroduced in a duplicate. Host component marks its trigger's positioning
+       parent with .up-chartset-host (needs position:relative, already true of every chart panel
+       body in this app) so :hover reveals the button; the button itself still needs component-
+       specific position:absolute placement since panel padding differs slightly per component —
+       add that one declaration on the component's own class alongside .up-chartset-btn.
+       The MENU is body-mounted (component boxes are overflow:hidden — see visibility-chart.css's
+       original comment on this), positioned in JS from the trigger's getBoundingClientRect(), so —
+       living outside any .up-root — it redeclares the --vc- and --vc-switch- tokens here with
+       this app's one universal light/dark palette (core.css's own .up-root tokens above) rather
+       than per component, so every consumer's menu looks and themes identically by construction. */
+    .up-chartset-btn {
+      width: 28px; height: 28px; border-radius: 8px; z-index: 5;
+      border: 1px solid var(--vc-border); background: var(--vc-bg); color: var(--vc-muted);
+      cursor: pointer; padding: 0; display: inline-flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 120ms ease, color 120ms ease;   /* fast hide */
+    }
+    .up-chartset-btn svg { width: 14px; height: 14px; display: block; }
+    /* Hovering the host panel reveals it, after a delay — the button itself and its own open state
+       keep it visible with no delay once already shown, so it never flickers mid-interaction.
+       pointer-events is listed with the SAME delay as opacity's delay PLUS DURATION (450+160=
+       610ms) on purpose: pointer-events isn't animatable, so without its own transition entry it
+       flips to "auto" the INSTANT the hover starts regardless of what opacity is doing — letting
+       hover (and the tooltip) fire on a button that's still transparent mid fade-in. 610ms is where
+       opacity actually finishes landing on 1. */
+    .up-chartset-host:hover .up-chartset-btn,
+    .up-chartset-btn:focus-visible,
+    .up-chartset-btn.is-open {
+      opacity: 1; pointer-events: auto;
+      transition: opacity 160ms ease 450ms, pointer-events 0s 610ms, color 120ms ease;   /* delayed show */
+    }
+    .up-chartset-btn:hover, .up-chartset-btn.is-open { color: var(--vc-text); }
+    @media (prefers-reduced-motion: reduce){ .up-chartset-btn { transition-duration: 1ms; } }
+
+    .up-scale-menu {
+      --vc-text: #1f1f1b; --vc-muted: #6f737c; --vc-third: #9e9e9e; --vc-border: #e0e2e6;
+      --vc-heading-bg: #f5f5f5; --vc-hover-border: #6f6f6f; --vc-bg: #ffffff;
+      --vc-switch-bg: #f5f5f5; --vc-switch-border: #e0e2e6;
+      position: fixed; z-index: 100050; width: 248px;
+      background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 14px;
+      box-shadow: 0 10px 28px rgba(0,0,0,.14); padding: 8px;
+      color: var(--vc-text); font-family: Geist, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      opacity: 0; transform: translateY(-4px) scale(.985); pointer-events: none;
+      transition: opacity 140ms ease, transform 140ms ease;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .up-scale-menu.is-shown { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+    /* Same brightened dark border as every other dropdown menu in the app — a plain --vc-border
+       black-ish tone reads as blurry/edgeless against a dark surface. */
+    .up-scale-menu[data-theme="dark"] {
+      --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-third: #808080; --vc-border: #454545;
+      --vc-heading-bg: rgba(42,42,42,0.6); --vc-hover-border: #707070; --vc-bg: #1b1b1b;
+      --vc-switch-bg: rgba(42,42,42,0.6); --vc-switch-border: #353535;
+    }
+    /* .up-dense-btn.is-active's own dark override above is scoped to .up-root — this menu lives
+       outside it, so the Line Width switch needs its own copy of the same colors. */
+    .up-scale-menu[data-theme="dark"] .up-dense-btn.is-active { background: #121212; border-color: #353535; }
+    @media (prefers-reduced-motion: reduce){ .up-scale-menu { transition-duration: 1ms; } }
+    .up-scale-menu * { box-sizing: border-box; }
+
     .up-pop-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; border-radius: 9px; }
     .up-pop-row:hover { background: var(--vc-heading-bg); }
     .up-pop-label { font-size: 13.5px; font-weight: 500; color: var(--vc-text); }

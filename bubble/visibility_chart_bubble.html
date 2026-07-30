@@ -5,11 +5,15 @@
   side with a "Top Brands" table (Visibility / Ranking / Sentiment). No pagination, no column
   hiding, no row-height control — this is a dashboard component, not a data table.
 
-  Hovering the chart reveals a small pencil button top-right (after a short delay); its dropdown
-  lets the user pick one of 4 line-color scales for the chart (Default = each company's own
-  `color`; Tableau/Colorblind Safe/Vivid override every company's color with a fixed 7-color
-  palette). Entirely client-side — no Bubble event, no server round-trip. The choice is saved to
-  localStorage per instanceId and restored automatically on the next page load.
+  Hovering the chart reveals a small gear button top-right (after a short delay); its "Chart
+  Settings" dropdown has two sections. Colors (this component only — see below): one of 4
+  line-color scales (Default = each company's own `color`; Tableau/Colorblind Safe/Vivid override
+  every company's color with a fixed 7-color palette), saved to localStorage per instanceId and
+  restored on the next page load. Line Width: Thin/Thick, shared across the WHOLE APP — one
+  localStorage key read by every Chart.js line chart on the page (this component, citations-combo-
+  chart's own settings menu, and any future line chart), so changing it here is felt everywhere
+  immediately, no page reload. Entirely client-side either way — no Bubble event, no server
+  round-trip.
 
   ── Bubble dynamic values on the root element ────────────────────────────────
   data-instance   = "ROOTID_[dynamic id]"   unique per placement
@@ -101,9 +105,9 @@
       </div>
     </div>
     <div class="vot-box vot-box-left">
-      <div class="vot-panel-body">
-        <button class="vot-scale-btn" type="button" data-tip="Chart colors" aria-label="Chart colors">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+      <div class="vot-panel-body up-chartset-host">
+        <button class="up-chartset-btn vot-scale-btn" type="button" data-tip="Chart Settings" aria-label="Chart Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
         <div class="up-line-wrap"><canvas class="up-line-canvas"></canvas></div>
         <div class="up-legend"></div>

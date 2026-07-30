@@ -621,6 +621,7 @@
     var CLOSE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
     var TAG_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>';
     var PLUS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+    var TRASH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
     var SMILE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>';
     /* First stop of the tag creator this table will eventually need in full — for now it lives
        only where a brand-new topic can be named: the inline "no matches, create it" row.
@@ -727,6 +728,9 @@
        transition could run; falls back to it only when something structural has to change too
        (the bar appearing/disappearing, or the escape-hatch link's presence flipping). */
     function syncBulkBarCount(){
+      /* The selection just changed, so an armed Delete no longer refers to the set the user
+         confirmed — never carry that arm over onto a different (or now-empty) set of rows. */
+      disarmBulkDelete();
       var n = bulkCount();
       if (n === 0 || !elBulk || !elBulk.classList.contains("is-on")){ renderBulkBar(); return; }
       var numEl = elBulk.querySelector(".upt-bulkbar-count-n");
@@ -787,9 +791,17 @@
         UC.fmtInt(toNum(state.totalCount)) + ' prompts</button>';
 
       var statusLabel = state.status === "inactive" ? "Set Active" : "Set Inactive";
-      var wasOpen = bar.classList.contains("is-topics");
+      /* Inactive prompts aren't tagged — Topics management only ever makes sense for the active
+         set, so the button (and the whole staged-topic panel behind it) doesn't exist at all here
+         rather than existing-but-disabled. Delete takes its place as the second action instead. */
+      var isInactive = state.status === "inactive";
+      var wasOpen = !isInactive && bar.classList.contains("is-topics");
+      var topicsBtn = isInactive ? "" :
+        '<button class="up-filter-btn upt-bulkbar-btn" type="button" data-bulk-topics aria-expanded="' + (wasOpen ? "true" : "false") + '">' + TAG_SVG + 'Topics</button>';
+      var deleteBtn = isInactive ?
+        '<button class="up-filter-btn upt-bulkbar-btn upt-bulkbar-delete" type="button" data-bulk-delete>' + TRASH_SVG + '<span class="upt-bulkbar-delete-lbl">Delete</span></button>' : "";
       bar.innerHTML =
-        '<div class="upt-bulkbar-row">' +
+        '<div class="upt-bulkbar-row' + (isInactive ? " is-inactive" : "") + '">' +
           /* Only the number lives in its own span — "selected" never moves, and syncBulkBarCount()
              only ever touches this inner span, not the whole phrase. */
           '<span class="upt-bulkbar-count" role="status" aria-live="polite">' +
@@ -797,8 +809,9 @@
             '<span class="upt-bulkbar-count-lbl">selected</span>' +
           '</span>' +
           escape +
-          '<button class="up-filter-btn upt-bulkbar-btn" type="button" data-bulk-topics aria-expanded="' + (wasOpen ? "true" : "false") + '">' + TAG_SVG + 'Topics</button>' +
+          topicsBtn +
           '<button class="up-filter-btn upt-bulkbar-btn" type="button" data-bulk-status>' + esc(statusLabel) + '</button>' +
+          deleteBtn +
           '<button class="upt-bulkbar-x" type="button" data-bulk-clear aria-label="Clear selection">' + CLOSE_SVG + '</button>' +
         '</div>' +
         '<div class="upt-bulkpanel" aria-hidden="' + (wasOpen ? "false" : "true") + '"></div>';
@@ -1118,6 +1131,33 @@
       fire("data-bulkstatus-fn", "uptBulkStatus", p);
       /* Both directions are trivially reversible, so no confirm dialog — surface an undo in your
          own toast instead. The rows leave the current view once the server answers. */
+      clearSelection();
+    }
+    /* Delete is the one bulk action that isn't trivially reversible, so unlike Set Active/Inactive
+       above it gets the same two-click "arm" confirm UC.makeTopicModal's own Delete button uses
+       (core.js's .up-topicmodal-delete): first click just arms the button and relabels it, second
+       click (on the now-armed button) actually fires. Arming is a plain DOM class toggle, not a
+       render() round-trip — same reasoning as syncBulkBarCount() staying out of renderBulkBar()
+       for the common case. */
+    function bulkDeleteBtn(){ return elBulk && elBulk.querySelector("[data-bulk-delete]"); }
+    function disarmBulkDelete(){
+      var btn = bulkDeleteBtn();
+      if (!btn || !btn.classList.contains("is-armed")) return;
+      btn.classList.remove("is-armed");
+      var lbl = btn.querySelector(".upt-bulkbar-delete-lbl");
+      if (lbl) lbl.textContent = "Delete";
+    }
+    function applyBulkDelete(){
+      var btn = bulkDeleteBtn();
+      if (!btn) return;
+      if (!btn.classList.contains("is-armed")){
+        btn.classList.add("is-armed");
+        var lbl = btn.querySelector(".upt-bulkbar-delete-lbl");
+        if (lbl) lbl.textContent = "Confirm delete?";
+        return;
+      }
+      var p = selectionPayload();
+      fire("data-bulkdelete-fn", "uptBulkDelete", p);
       clearSelection();
     }
 
@@ -1579,6 +1619,7 @@
           return;
         }
         if (e.target.closest("[data-bulk-status]")){ setTopicMenuOpen(false); applyBulkStatus(); return; }
+        if (e.target.closest("[data-bulk-delete]")){ applyBulkDelete(); return; }
         return;
       }
 
@@ -1891,6 +1932,11 @@
         state.widths = {}; writeWidths();
         elSearch.classList.remove("has-text");
         setTopicMenuOpen(false);
+        /* Separate from the bulk topic panel above — this is the "Add Topic" modal, which can be
+           open on its own (it isn't nested inside the bulk bar's is-topics state). A page-leave
+           reset that skips this leaves a body-mounted modal + backdrop stranded over whatever
+           Bubble shows next. */
+        if (addTopicModal.isOpen()) addTopicModal.close();
         persist(); populateSort(); render();
         return true;
       },
@@ -1902,11 +1948,39 @@
         elBulk = null;
         addTopicModal.destroy();
         if (root.__uptController === this) root.__uptController = null;
+        var li = LIVE_ROOTS.indexOf(root);
+        if (li !== -1) LIVE_ROOTS.splice(li, 1);
       }
     };
   }
 
   /* ================= init / multi-instance bootstrap ================= */
+  /* Cross-page cleanup (one shared observer for every instance, not one per root — the check
+     itself is a cheap property read, so batching them behind a single document-wide observer
+     costs nothing extra per instance). Bubble usually just re-renders the same root when a
+     reusable is swapped back in, but when it's actually removed from the DOM (repeating
+     structures, conditional "only when" visibility) neither the bulk bar nor the Add Topic
+     modal — both parented to document.body — would otherwise ever notice, and they'd sit
+     orphaned over whatever page Bubble shows next. This only catches genuine removal; a
+     display:none-style hide (no DOM change) still needs the manual window.resetPromptsTable(id)
+     fallback wired to a "user leaves this page" Bubble workflow. */
+  var LIVE_ROOTS = [];
+  var rootWatcher = null;
+  function watchRootRemoval(root){
+    LIVE_ROOTS.push(root);
+    if (rootWatcher) return;
+    rootWatcher = new MutationObserver(function(){
+      for (var i = LIVE_ROOTS.length - 1; i >= 0; i--){
+        var r = LIVE_ROOTS[i];
+        if (!r.isConnected){
+          LIVE_ROOTS.splice(i, 1);
+          var ctrl = r.__uptController;
+          if (ctrl && ctrl.reset) ctrl.reset();
+        }
+      }
+    });
+    rootWatcher.observe(document.body, { childList: true, subtree: true });
+  }
   function initRoot(root){
     if (root.__uptController) return root.__uptController;
     var id = root.getAttribute("data-instance") || "default";
@@ -1914,6 +1988,7 @@
     var ctrl = makeController(root);
     if (!ctrl) return null;
     root.__uptController = ctrl;
+    watchRootRemoval(root);
     return ctrl;
   }
   function resolve(id){

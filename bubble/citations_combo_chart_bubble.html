@@ -5,6 +5,12 @@
   URL Type doughnut-or-bar chart — the same two chart types as visibility-chart's line chart and
   topcitations-dashboard's doughnut/bar chart, side by side in one component.
 
+  Hovering the line chart reveals a small gear button top-right (after a short delay); its "Chart
+  Settings" dropdown has only Line Width (Thin/Thick) — no color picker, colors on this line stay
+  fixed. Line Width itself is shared across the WHOLE APP: the same localStorage key visibility-
+  chart's own Chart Settings menu writes, so a change made in either place is felt in both
+  immediately, no page reload, no Bubble event.
+
   ── Bubble dynamic values on the root element ────────────────────────────────
   data-instance   = "ROOTID_[dynamic id]"   unique per placement
   data-cdn-pin    = commit hash to load from, e.g. "71ed61f" — leave EMPTY (or leave the literal
@@ -87,7 +93,10 @@
       </div>
     </div>
     <div class="combo-box combo-box-left">
-      <div class="combo-panel-body">
+      <div class="combo-panel-body up-chartset-host">
+        <button class="up-chartset-btn ccl-settings-btn" type="button" data-tip="Chart Settings" aria-label="Chart Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
         <div class="up-line-wrap"><canvas class="up-line-canvas"></canvas></div>
         <div class="up-legend"></div>
       </div>

@@ -1908,8 +1908,43 @@
   }
 
   /* ---------- line chart ---------- */
-  var LINE_TENSION = 0.3, LINE_WIDTH = 1.5, LINE_POINT_HOVER = 4, LINE_POINT_HIT = 6, LINE_POINT_BORDER = 1.4;
+  var LINE_TENSION = 0.3, LINE_POINT_HOVER = 4, LINE_POINT_HIT = 6, LINE_POINT_BORDER = 1.4;
   var X_MAX_TICKS = 7, Y_PAD = 1.15;
+  /* Line width is a page-wide preference, not per-component/per-instance — one localStorage key
+     read by every makeLine() chart, changeable from any one of them (only visibility-chart's own
+     dropdown exposes a UI for it; every other line chart just picks it up). "thin" is the
+     original 1.5px this shipped with, kept as the default so nothing already deployed shifts
+     appearance until someone actually opens the setting and changes it. */
+  var LINE_WIDTH_VALUES = { thin: 1.5, thick: 2.75 };
+  var LINE_WIDTH_KEY = "up_line_width_pref";
+  function getLineWidthPref(){
+    try { return window.localStorage.getItem(LINE_WIDTH_KEY) === "thick" ? "thick" : "thin"; }
+    catch(e){ return "thin"; }
+  }
+  function setLineWidthPref(v){
+    v = v === "thick" ? "thick" : "thin";
+    try { window.localStorage.setItem(LINE_WIDTH_KEY, v); } catch(e){}
+    /* Every currently-mounted makeLine() chart on the page — including ones belonging to OTHER
+       component instances — listens for this and redraws immediately with its last-built data,
+       so changing it from one chart's settings menu is felt everywhere without a page reload. */
+    try { window.dispatchEvent(new CustomEvent("up-linewidth-change", { detail: { value: v } })); } catch(e){}
+  }
+  var LW_THIN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="4" y1="12" x2="20" y2="12"/></svg>';
+  var LW_THICK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"><line x1="4" y1="12" x2="20" y2="12"/></svg>';
+  /* Same visual family as UC.makeColumns's row-height switch (.up-pop-div/.up-pop-sub/.up-dense/
+     .up-dense-btn) — a settings dropdown that already has ITS OWN row-height 2-way switch and one
+     that has a Line Width switch should look like the same kind of control, not two different
+     idioms for "pick one of two". Every line-chart component's settings menu gets this same
+     section appended; only visibility-chart's menu additionally offers Colors above it. */
+  function lineWidthSectionHtml(){
+    var pref = getLineWidthPref();
+    return '<div class="up-pop-div"></div>' +
+      '<div class="up-pop-sub">Line Width</div>' +
+      '<div class="up-dense">' +
+        '<button class="up-dense-btn' + (pref === "thin" ? " is-active" : "") + '" type="button" data-linewidth="thin">' + LW_THIN_SVG + 'Thin</button>' +
+        '<button class="up-dense-btn' + (pref === "thick" ? " is-active" : "") + '" type="button" data-linewidth="thick">' + LW_THICK_SVG + 'Thick</button>' +
+      '</div>';
+  }
 
   var hoverLinePlugin = {
     id: "upHoverLine",
@@ -2096,7 +2131,15 @@
     var wrap = cfg.wrap, canvas = cfg.canvas, legendEl = cfg.legend || null;
     var isDark = cfg.isDark || function(){ return false; };
     var isOwner = cfg.isOwner || function(){ return true; };
-    var chart = null, legendCompanies = [], verifyT = null, sizeIv = null;
+    var chart = null, legendCompanies = [], verifyT = null, sizeIv = null, lastBuilt = null;
+    /* Redraw with whatever data is already on screen — no refetch — the moment ANY chart on the
+       page (this instance's own dropdown or another component's) changes the shared line-width
+       preference. Bound once per instance, not per render: this closure lives as long as the
+       component does, same as the resize/click listeners the color-scale dropdown binds below. */
+    window.addEventListener("up-linewidth-change", function(){
+      if (!isOwner() || !chart || !lastBuilt) return;
+      build(lastBuilt);
+    });
 
     function themeColors(){
       return isDark()
@@ -2202,7 +2245,7 @@
       var labels = built.labels, ds = built.datasets;
       var single = labels.length <= 1;   // single-day range → show the values as points
       ds.forEach(function(d){
-        d.borderWidth = LINE_WIDTH; d.fill = false; d.cubicInterpolationMode = "monotone"; d.tension = LINE_TENSION;
+        d.borderWidth = LINE_WIDTH_VALUES[getLineWidthPref()]; d.fill = false; d.cubicInterpolationMode = "monotone"; d.tension = LINE_TENSION;
         d.pointRadius = single ? 4 : 0; d.pointHoverRadius = LINE_POINT_HOVER; d.pointHitRadius = LINE_POINT_HIT;
         d.pointBorderWidth = LINE_POINT_BORDER; d.pointBackgroundColor = single ? d.__baseColor : tc.bg;
         d.pointBorderColor = d.__baseColor; d.pointHoverBackgroundColor = tc.bg; d.pointHoverBorderColor = d.__baseColor;
@@ -2290,6 +2333,7 @@
       if (!isOwner()) return;
       clearExtras();
       if (!built || !built.datasets || !built.datasets.length){ empty(); return; }
+      lastBuilt = built;
       renderLegend(built.datasets);
       if (cfg.watermark !== false) injectWatermark(wrap);
       loadChartJs().then(function(){
@@ -2705,6 +2749,9 @@
     getPageWidth: getPageWidth,
     injectWatermark: injectWatermark,
     makeLine: makeLine,
-    makeTypeChart: makeTypeChart
+    makeTypeChart: makeTypeChart,
+    getLineWidthPref: getLineWidthPref,
+    setLineWidthPref: setLineWidthPref,
+    lineWidthSectionHtml: lineWidthSectionHtml
   };
 })();
