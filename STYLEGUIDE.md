@@ -1725,6 +1725,18 @@ und ein Klick auf einen Sub-Typ schreibt einen Null-Key in `state.filterSel`. Re
 - Die Popover-Buchführung darauf (`inMenu` / `onOpener` / `closePops()`) muss über ein
   `closest(".udt-subrows")`-Gate ausgenommen werden.
 
+**Derselbe Konflikt taucht auch OHNE Klick-Handler auf, sobald ein core-Kit selbst per
+`root.querySelector(EINE_KLASSE)` (nicht `querySelectorAll`, nicht gescoped) in einen bestimmten
+Container schreibt — z.B. `UC.makePager`s `renderPageSize()`, das ungezielt das ERSTE Element mit
+`.up-pagesize-seg` im ganzen `root` überschreibt.** Ein Drilldown-Control, das rein optisch dieselbe
+Klasse trägt (z.B. ein zweiter Segment-Switcher fürs Anzeigeformat), sitzt in der DOM-Reihenfolge
+VOR der echten Fußzeile des Haupttabs und wird beim nächsten `renderPageSize()`-Aufruf klammheimlich
+mit den 10/25/50/100-Buttons der äußeren Tabelle überschrieben — sichtbarer Bug erst beim visuellen
+Check, nicht beim Lesen des Codes. Regel: Sub-Controls, die optisch ein core-Primitive nachbilden
+(Segment-Switcher, Icon-Button, …), bekommen **eigene Klassennamen** und eine **eigene, fast
+identische CSS-Regel** — nicht die wörtlich gleiche Klasse. Etwas mehr CSS-Duplikation ist hier der
+richtige Preis dafür, dass kein core-Kit sie versehentlich für sein eigenes Element hält.
+
 **Genau EIN Drilldown offen.** Zwei offene Blöcke mit je eigener Suche, eigenem Filter und eigenem
 Pager lesen sich als zwei konkurrierende Tabellen in einer dritten. Öffnen schließt und **resettet**
 den vorherigen (Suche, Filter, Seite, Seitengröße).

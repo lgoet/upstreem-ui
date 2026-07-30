@@ -82,6 +82,10 @@
      below offers every possible URL type rather than only the ones on the currently-loaded page. */
   var SUB_PAGE_SIZES = [10, 25];
   var SUB_SKELETON_ROWS = 5;
+  /* Must match the open/close animation's own duration in domains-table.css
+     (.udt-subrows.is-entering/.is-closing { animation: ... 200ms ... }) — there is no shared
+     CSS custom property for a keyframe's duration, so the two are kept in sync by hand. */
+  var SUB_ANIM_MS = 200;
   var CHEV_SVG = '<svg class="udt-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
   var SUB_SEARCH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
   var SUB_X_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
@@ -145,6 +149,7 @@
       subReqId: null,                       // guards against a stale response overwriting a newer one
       subQuery: "",                         // sub-toolbar search
       subTypes: {},                         // sub-toolbar URL-type filter (applied immediately)
+      subDisplay: "title",                  // "title" | "url" — which text the page cell shows; purely local, no fetch
       subPage: 1,
       subPageSize: SUB_PAGE_SIZES[0],
       loading: false,                       // intern (Suche/Pagination), startet immer frei
@@ -336,7 +341,12 @@
       if (state.expandedDomain !== dom) return "";
       var body, foot;
       if (state.subLoading){
-        body = subSkeletonRowsHtml();
+        /* Skeleton rows match whatever count was actually on screen a moment ago, not a fixed
+           number — switching page size from 10 to 25 while only 10 rows exist would otherwise
+           jump the panel to 25 skeleton bars and then shrink back to 10 real ones the instant the
+           response lands, a resize the user did not ask for. Falls back to SUB_SKELETON_ROWS only
+           when there is no previous page to measure (the very first open). */
+        body = subSkeletonRowsHtml(state.subRows.length || SUB_SKELETON_ROWS);
         foot = "";
       } else if (!state.subRows.length){
         var filteredNow = !!String(state.subQuery || "").trim() ||
@@ -373,7 +383,7 @@
        data lands. Runs on every fetch, not just the first: opening a domain, paging, or changing
        a filter/search all refetch server-side now, so this replaces the row list (never the
        toolbar above it — see subrowsHtml) on each of those too. */
-    function subSkeletonRowsHtml(){
+    function subSkeletonRowsHtml(count){
       var one = '<div class="udt-subrow is-sk">' +
           '<span class="udt-sub-main"><span class="udt-sk-logo"></span><span class="udt-sk-bar udt-sk-title"></span></span>' +
           '<span class="udt-sk-bar udt-sk-share"></span>' +
@@ -382,7 +392,7 @@
           '<span></span>' +
         '</div>';
       var out = "";
-      for (var i = 0; i < SUB_SKELETON_ROWS; i++) out += one;
+      for (var i = 0; i < (count || SUB_SKELETON_ROWS); i++) out += one;
       return out;
     }
     /* Every possible URL type is offered, always — not just the ones visible on the current page.
@@ -412,19 +422,34 @@
           }).join("") + '</div>' +
         '</div>' +
       '</div>';
+      /* Title/URL is a pure display toggle over whatever is already loaded — no fetch, so it's a
+         plain state flip + re-render, unlike everything else in this toolbar. Visually matches
+         the page-size segmented control (same shape, same idea: two mutually-exclusive options),
+         but deliberately does NOT reuse its literal .up-pagesize-seg/-btn classes — the outer
+         table's own renderPageSize() does an untargeted root.querySelector(".up-pagesize-seg")
+         and would grab whichever one comes first in the DOM, silently overwriting this control
+         with 10/25 buttons. Own classes, own (near-identical) CSS instead. */
+      var dispCtl = '<div class="udt-sub-dispseg" role="group" aria-label="Show title or URL">' +
+        '<button class="udt-sub-disp-btn' + (state.subDisplay !== "url" ? " is-active" : "") + '" type="button" data-subdisp="title">Title</button>' +
+        '<button class="udt-sub-disp-btn' + (state.subDisplay === "url" ? " is-active" : "") + '" type="button" data-subdisp="url">URL</button>' +
+      '</div>';
+      /* Left-aligned, in this order: search, URL-type filter, title/url switcher — same reading
+         order as the columns they affect. The close button is the one thing that stays pinned to
+         the far right (margin-left:auto on itself), since "how do I leave" belongs on the
+         opposite side from "how do I narrow what I'm looking at". */
       return '<div class="udt-sub-toolbar">' +
-        '<div class="udt-sub-tools">' + typeCtl +
+        '<div class="udt-sub-tools">' +
           '<div class="udt-sub-search' + (q ? " has-text" : "") + '">' +
             '<span class="udt-sub-search-ic">' + SUB_SEARCH_SVG + '</span>' +
             '<input class="udt-sub-search-in" type="text" placeholder="Search pages…" autocomplete="off"' +
               ' spellcheck="false" aria-label="Search pages" value="' + esc(q) + '"/>' +
             '<button class="udt-sub-search-x" type="button" data-subclear aria-label="Clear search">' + SUB_X_SVG + '</button>' +
           '</div>' +
-          /* Closes the whole drilldown — distinct from the search-field's own X, which only
-             clears the query. A real icon button (.up-iconbtn), matching every other lone-icon
-             control in the toolbar. */
-          '<button class="up-iconbtn udt-sub-closebtn" type="button" data-subdrillclose aria-label="Close pages">' + SUB_X_SVG + '</button>' +
+          typeCtl + dispCtl +
         '</div>' +
+        /* Closes the whole drilldown — distinct from the search-field's own X, which only clears
+           the query. A real icon button (.up-iconbtn), matching every other lone-icon control. */
+        '<button class="up-iconbtn udt-sub-closebtn" type="button" data-subdrillclose aria-label="Close pages">' + SUB_X_SVG + '</button>' +
       '</div>';
     }
     function subHeadHtml(){
@@ -444,16 +469,25 @@
         return '<button class="up-pagesize-btn' + (state.subPageSize === n ? " is-active" : "") +
                '" type="button" data-subsize="' + n + '">' + n + '</button>';
       }).join("");
-      var pages = "";
-      for (var p = 1; p <= pageCount; p++){
-        pages += '<button class="up-page' + (p === cur ? " is-active" : "") + '" type="button" data-subpage="' + p + '">' + p + '</button>';
-      }
+      /* Same windowed pager as every other table's footer (UC.makePager's pageWindow): ends,
+         a run around the current page, "…" gaps between — not a flat 1..N row, which at a
+         couple hundred pages read as a wall of numbers instead of a pager. */
+      var pages = subPageWindow(cur, pageCount).map(function(p){
+        if (p === "gap") return '<span class="up-page-gap">…</span>';
+        return '<button class="up-page' + (p === cur ? " is-active" : "") + '" type="button" data-subpage="' + p + '">' + p + '</button>';
+      }).join("");
       var info = total ? '<span class="up-pager-info">' + fmtInt(from + 1) + '–' + fmtInt(from + shown) + ' of ' + fmtTotal(total) + '</span>' : "";
       return '<div class="udt-sub-foot">' +
         '<div class="up-pagesize"><span class="up-pagesize-lbl">Rows</span>' +
           '<div class="up-pagesize-seg" role="group" aria-label="Rows per page">' + sizes + '</div></div>' +
         '<div class="up-pager">' + info +
-          (pageCount > 1 ? '<span class="udt-sub-pages">' + pages + '</span>' : "") +
+          (pageCount > 1 ?
+            '<button class="up-page up-page-prev" type="button" aria-label="Previous page" data-subpage-prev' + (cur <= 1 ? " disabled" : "") + '>' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>' +
+            '<span class="udt-sub-pages">' + pages + '</span>' +
+            '<button class="up-page up-page-next" type="button" aria-label="Next page" data-subpage-next' + (cur >= pageCount ? " disabled" : "") + '>' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>'
+            : "") +
         '</div>' +
       '</div>';
     }
@@ -470,6 +504,10 @@
       /* A missing share renders as a bare dash, never "–%" — a unit on a value that isn't there
          reads like a broken number rather than an absent one. */
       var shareTxt = (u.domain_share == null || u.domain_share === "") ? "–" : fmt1(u.domain_share) + "%";
+      /* Title/URL switcher (item 6) — purely which STRING lands in this one cell; everything
+         else about the row (search matches, sort, favicon) is unaffected. Same truncation/hover-
+         tooltip handling either way, since both go through .udt-sub-title. */
+      var shown = state.subDisplay === "url" ? url : title;
       return '<div class="udt-subrow" data-suburl="' + esc(url) + '" tabindex="0" role="button">' +
         '<span class="udt-sub-main">' +
           '<span class="udt-sub-logo' + (fav ? " has-img" : "") + '">' +
@@ -477,7 +515,7 @@
             (fav ? '<img src="' + esc(fav) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
                    ' onerror="this.parentNode.classList.remove(\'has-img\'); this.remove()"/>' : "") +
           '</span>' +
-          '<span class="udt-sub-title">' + highlight(title, state.subQuery) + '</span>' +
+          '<span class="udt-sub-title">' + highlight(shown, state.subQuery) + '</span>' +
         '</span>' +
         '<span class="udt-sub-share">' + shareTxt + '</span>' +
         '<span class="udt-sub-type">' + urlTagHtml(u.url_type) + '</span>' +
@@ -488,7 +526,7 @@
     var subTypeOpen = false, subEnter = false, subReqSeq = 0;
     function resetSubState(){
       state.subQuery = ""; state.subTypes = {}; state.subPage = 1;
-      state.subPageSize = SUB_PAGE_SIZES[0];
+      state.subPageSize = SUB_PAGE_SIZES[0]; state.subDisplay = "title";
       state.subRows = []; state.subTotal = null; state.subLoading = false; state.subReqId = null;
       subTypeOpen = false;
     }
@@ -504,25 +542,36 @@
       state.expandedDomain = null;
       resetSubState();
     }
-    /* Fires a request for exactly the current domain/query/types/page/page-size combination and
-       shows the row-list skeleton while it is in flight (the toolbar above it stays live — see
-       subrowsHtml). subReqSeq guards against a slow, now-stale response landing after a faster,
-       later one: setPages() only accepts a response whose (optional) requestId still matches. */
-    function fetchSubPage(){
+    /* Shows the row-list skeleton immediately (the toolbar above it stays live — see subrowsHtml),
+       then fires a request for exactly the current domain/query/types/page/page-size combination.
+       subReqSeq guards against a slow, now-stale response landing after a faster, later one:
+       setPages() only accepts a response whose (optional) requestId still matches.
+
+       delay (ms), when given, defers only the actual network round-trip, not the skeleton — used
+       exclusively by the OPEN path (see togglePages) so the request doesn't start competing with
+       the panel's own 200ms entrance animation. Without it, a fast response arriving mid-animation
+       forces a second full re-render before the panel had settled into its final height, which is
+       what read as the drilldown "stuttering" open. Every other trigger (search, filter, page,
+       page-size — the panel is already open and at rest for all of them) calls this with no delay. */
+    function fetchSubPage(delay){
       var dom = state.expandedDomain;
       if (!dom) return;
-      subReqSeq += 1;
-      state.subReqId = subReqSeq;
       state.subLoading = true;
       renderTable();
-      fire("data-showpages-fn", "udtShowPages", {
-        domain: dom,
-        query: state.subQuery,
-        url_types: Object.keys(state.subTypes).filter(function(k){ return state.subTypes[k]; }).join(","),
-        page: state.subPage,
-        page_size: state.subPageSize,
-        request_id: subReqSeq
-      });
+      function fireNow(){
+        if (state.expandedDomain !== dom) return;   // closed (or switched) before the delay elapsed
+        subReqSeq += 1;
+        state.subReqId = subReqSeq;
+        fire("data-showpages-fn", "udtShowPages", {
+          domain: dom,
+          query: state.subQuery,
+          url_types: Object.keys(state.subTypes).filter(function(k){ return state.subTypes[k]; }).join(","),
+          page: state.subPage,
+          page_size: state.subPageSize,
+          request_id: subReqSeq
+        });
+      }
+      if (delay) setTimeout(fireNow, delay); else fireNow();
     }
     /* Domains can contain characters that are syntax inside an attribute selector. */
     function cssEsc(v){
@@ -545,7 +594,7 @@
           setTimeout(function(){
             if (state.expandedDomain !== dom) return;   // something else already took over
             state.expandedDomain = null; resetSubState(); renderTable();
-          }, 200);
+          }, SUB_ANIM_MS);
         } else {
           state.expandedDomain = null; resetSubState(); renderTable();
         }
@@ -554,7 +603,9 @@
       state.expandedDomain = dom;
       resetSubState();
       subEnter = true;
-      fetchSubPage();
+      /* Delayed: the panel's own entrance animation gets to finish uninterrupted before the
+         response can possibly land and force a second render mid-flight — see fetchSubPage. */
+      fetchSubPage(SUB_ANIM_MS);
     }
     /* Sub-search input. Delegated on the root because the whole block is re-rendered on every
        fetch — a listener bound to the input itself would die with it. The input is NOT re-created
@@ -756,6 +807,10 @@
     var pageCount = pagerKit.pageCount, offset = pagerKit.offset;
     var renderPager = pagerKit.renderPager, renderPageSize = pagerKit.renderPageSize;
     var goToPage = pagerKit.goToPage, setPageSize = pagerKit.setPageSize;
+    /* Reused as-is for the drilldown's own pager (subFootHtml) — same 1 … 4 5 6 … 12 windowing
+       every other table's footer already uses, instead of the drilldown printing every page
+       number in a flat row. */
+    var subPageWindow = pagerKit.pageWindow;
 
     var sortKit = UC.makeHeadSort({
       root: root, state: state, cycles: HEAD_CYCLE, defaultSort: DEFAULT_SORT,
@@ -1017,7 +1072,7 @@
       titleTipWrap = null; clearTimeout(titleTipTimer); hideTip();
     });
 
-    /* A 2s dwell on a domain row swaps the plain goto arrow for the explicit "Show Pages" control
+    /* A 1.5s dwell on a domain row swaps the plain goto arrow for the explicit "Show Pages" control
        (item 10) — long enough that a cursor merely passing over the row on its way somewhere else
        never triggers it, but short enough to reward someone who is actually reading that row.
        Plain class toggle rather than a CSS transition-delay: a delayed appear and a delayed
@@ -1031,7 +1086,7 @@
       if (row === rowHoverEl) return;
       rowHoverEl = row;
       clearTimeout(rowHoverTimer);
-      rowHoverTimer = setTimeout(function(){ row.classList.add("is-hover2s"); }, 2000);
+      rowHoverTimer = setTimeout(function(){ row.classList.add("is-showpages-hover"); }, 1500);
     });
     root.addEventListener("mouseout", function(e){
       var row = e.target.closest(".up-row");
@@ -1039,7 +1094,7 @@
       var to = e.relatedTarget;
       if (to && to.closest && to.closest(".up-row") === row) return;
       rowHoverEl = null; clearTimeout(rowHoverTimer);
-      row.classList.remove("is-hover2s");
+      row.classList.remove("is-showpages-hover");
     });
 
     /* ---------------- events ---------------- */
@@ -1149,12 +1204,30 @@
         if (newSize === state.subPageSize) return;
         state.subPageSize = newSize; state.subPage = 1; fetchSubPage(); return;
       }
+      if (e.target.closest("[data-subpage-prev]")){
+        e.stopPropagation();
+        if (state.subPage <= 1) return;
+        state.subPage -= 1; fetchSubPage(); return;
+      }
+      if (e.target.closest("[data-subpage-next]")){
+        e.stopPropagation();
+        var subMaxPage = Math.max(1, Math.ceil((state.subTotal || 0) / state.subPageSize));
+        if (state.subPage >= subMaxPage) return;
+        state.subPage += 1; fetchSubPage(); return;
+      }
       var subPageBtn = e.target.closest("[data-subpage]");
       if (subPageBtn){
         e.stopPropagation();
         var newPage = toNum(subPageBtn.getAttribute("data-subpage")) || 1;
         if (newPage === state.subPage) return;
         state.subPage = newPage; fetchSubPage(); return;
+      }
+      var subDispBtn = e.target.closest("[data-subdisp]");
+      if (subDispBtn){
+        e.stopPropagation();
+        var mode = subDispBtn.getAttribute("data-subdisp") === "url" ? "url" : "title";
+        if (mode === state.subDisplay) return;
+        state.subDisplay = mode; renderTable(); return;   // pure display toggle, no fetch
       }
       /* Any click that is not inside the type menu itself closes it — inside the drilldown or
          anywhere else on the page. The two branches that must NOT close it (the trigger and the

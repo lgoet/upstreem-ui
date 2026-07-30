@@ -36,18 +36,20 @@
 .up-row:hover .udt-row-goto { opacity: 1; transform: translateX(0); transition-delay: 220ms; }
 .up-root.is-vnarrow .udt-row-goto { display: none; }
 
-/* "Show Pages" — swaps in for the goto arrow after a 2s hover dwell (see the JS timer in
-   makeController). Not styled as a chip/button shell: it sits in the same slot the plain arrow
-   occupied, so it should read as a label with an icon, not a new control appearing out of
-   nowhere. margin-left:auto only matters when the goto arrow is hidden (.is-hover2s) — see the
+/* "Show Pages" — swaps in for the goto arrow after a 1.5s hover dwell (see the JS timer in
+   makeController). Bordered pill, 8px radius, matching how every other standalone control in the
+   drilldown reads ("a real button"), rather than the bare-text-plus-icon look this started as.
+   margin-left:auto only matters when the goto arrow is hidden (.is-showpages-hover) — see the
    comment on .udt-row-showpages in the JS for why two auto-margin siblings here is safe. */
 .udt-row-showpages { display: none; align-items: center; gap: 6px; margin-left: auto;
-  height: 32px; padding: 0 2px; border: 0; background: transparent; cursor: pointer; font: inherit;
-  font-size: 12px; font-weight: 500; color: var(--vc-third); white-space: nowrap; flex: 0 0 auto; }
+  height: 32px; padding: 0 10px; border: 1px solid var(--vc-border); border-radius: 8px;
+  background: transparent; cursor: pointer; font: inherit;
+  font-size: 12px; font-weight: 500; color: var(--vc-third); white-space: nowrap; flex: 0 0 auto;
+  transition: color 120ms ease, border-color 120ms ease; }
 .udt-row-showpages svg { width: 14px; height: 14px; flex: 0 0 auto; display: block; }
-.udt-row-showpages:hover, .udt-row-showpages:focus-visible { color: var(--vc-text); }
-.up-row.is-hover2s .udt-row-goto { display: none; }
-.up-row.is-hover2s .udt-row-showpages { display: inline-flex; }
+.udt-row-showpages:hover, .udt-row-showpages:focus-visible { color: var(--vc-text); border-color: var(--vc-hover-border); }
+.up-row.is-showpages-hover .udt-row-goto { display: none; }
+.up-row.is-showpages-hover .udt-row-showpages { display: inline-flex; }
 .up-root.is-vnarrow .udt-row-showpages { display: none !important; }
 
 .udt-dom-wrap { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
@@ -158,7 +160,13 @@
   padding: 5px 6px; margin: -5px -6px; border-radius: 6px;
   background: transparent; cursor: pointer; font: inherit; font-size: 12px; font-weight: 400;
   color: var(--vc-third); white-space: nowrap; transition: color 120ms ease, background 120ms ease; }
-.udt-pagesbtn:hover, .udt-pagesbtn.is-open { color: var(--vc-text); background: var(--vc-heading-bg); }
+.udt-pagesbtn:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
+/* Open (the drilldown for this row IS the active thing) reads via color + weight alone — no grey
+   background. A background here would say "you're hovering something", which isn't true once the
+   button itself no longer has the pointer on it; the text/chevron staying primary-colored is the
+   actual "this is open" signal, and it doesn't need a pill behind it to be legible. Wins over the
+   hover rule above even while both are true (pointer still on it right as it opens). */
+.udt-pagesbtn.is-open, .udt-pagesbtn.is-open:hover { color: var(--vc-text); background: transparent; font-weight: 500; }
 /* The chevron only exists on hover/open - at rest the cell stays as quiet as it is today, so the
    drilldown adds no visual noise to a table you are just scanning. width, not display, so it
    slides out instead of jumping the label sideways. */
@@ -184,10 +192,21 @@
    0fr -> 1fr is the height-agnostic way to do this - no magic max-height that clips a long list.
    is-entering is emitted only on the render that follows the toggle, so re-rendering while the
    panel is open (every keystroke in the sub-search) does not replay the animation. */
-.udt-subrows { position: relative; flex: 0 0 auto; background: var(--vt-head-bg);
+/* Panel tint, not var(--vt-head-bg) — that token is shared with the sticky header and tuned for
+   a much larger, flatter area; this needed its own value in each theme.
+   Light: the heading-bg swatch at 60% opacity — enough to read as "a distinct panel" without
+   going flat/opaque. Dark: exactly halfway between the app-level background (--vc-bg, what's
+   behind the whole table) and the table's own surface (--up-surface, which .udt-subrows would
+   otherwise be indistinguishable from — see the removed .up-row.is-expanded tint above, same
+   family of bug). */
+.udt-subrows { position: relative; flex: 0 0 auto;
+  background: color-mix(in srgb, var(--vc-heading-bg) 60%, transparent);
   border-bottom: 1px solid var(--vc-border);
   display: grid; grid-template-rows: 1fr;
   --udt-subcols: minmax(0, 1fr) 112px 128px 108px 34px; }
+.up-root[data-theme="dark"] .udt-subrows {
+  background: color-mix(in srgb, var(--vc-bg) 50%, var(--up-surface) 50%);
+}
 .udt-sub-inner { min-height: 0; overflow: hidden; padding: 0 0 8px 0; }
 .udt-subrows.is-entering { animation: udtSubIn 200ms ease; }
 .udt-subrows.is-closing { animation: udtSubOut 200ms ease forwards; }
@@ -253,16 +272,34 @@
    second one inside it (click to reveal, click to dismiss) is a click too many for a field that
    is the point of opening the drilldown. Height, border and radius are the shared 32px control
    shell, so it still reads as the app's search. */
-.udt-sub-toolbar { display: flex; align-items: center; gap: 10px; padding: 10px 12px 10px 46px;
-  min-height: 32px; }
-/* No label on the left any more (item 1) — .udt-sub-tools' own margin-left:auto still pushes
-   everything to the right, exactly as if there were a heading sharing the row with it. The
-   toolbar is also never re-rendered into a skeleton state now: a fetch in flight only skeletons
-   the row list below it (see subrowsHtml in the JS), so this stays interactive at all times. */
-.udt-sub-tools { margin-left: auto; display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+/* Wraps rather than clips or scrolls — four controls (search, filter, switcher, close) plus the
+   fixed 46px indent can outgrow a narrow drilldown well before the outer table itself goes
+   vnarrow, and every one of them needs to stay reachable. */
+.udt-sub-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; row-gap: 8px;
+  padding: 10px 12px 10px 46px; min-height: 32px; }
+/* Left-aligned, in reading order: search, then the URL-type filter, then the title/url switcher
+   (.udt-sub-tools itself carries no margin — it's the FIRST thing in the toolbar now, not pushed
+   right). The close button is the one control that stays pinned to the opposite edge (its own
+   margin-left:auto, see below). The toolbar is never re-rendered into a skeleton state: a fetch
+   in flight only skeletons the row list below it (see subrowsHtml in the JS), so this stays
+   interactive at all times. */
+.udt-sub-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; row-gap: 8px; flex: 1 1 auto; min-width: 0; }
 .udt-sub-filter { position: relative; }
 .udt-sub-filterbtn { font-size: 12px; }
 .udt-sub-filtermenu { min-width: 220px; max-width: 260px; }
+/* Own classes, not core's .up-pagesize-seg/-btn — see the comment on dispCtl in the JS for why
+   reusing those literal classes broke the outer table's own page-size control. Same look,
+   independent markup: a 32px segmented pill matching the rest of this toolbar's control height. */
+.udt-sub-dispseg { display: inline-flex; align-items: center; gap: 0; height: 32px; padding: 0;
+  background: var(--vc-switch-bg); border-radius: 8px; flex: 0 0 auto; }
+.udt-sub-disp-btn { height: 32px; min-width: 44px; padding: 0 10px; border: 1px solid transparent; border-radius: 8px;
+  background: transparent; color: var(--vc-muted); cursor: pointer;
+  font: inherit; font-size: 12px; font-weight: 500; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center; }
+.udt-sub-disp-btn:hover:not(.is-active) { color: var(--vc-text); }
+.udt-sub-disp-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
+.up-root[data-theme="dark"] .udt-sub-disp-btn.is-active { background: #121212; border-color: #353535; }
+.udt-sub-closebtn { margin-left: auto; flex: 0 0 auto; }
 
 .udt-sub-search { display: inline-flex; align-items: center; gap: 6px; height: 32px;
   padding: 0 8px; border: 1px solid var(--vc-border); border-radius: 8px;
@@ -284,7 +321,7 @@
 /* Reuses the table's own .up-pagesize / .up-pager / .up-page primitives verbatim - a pager that
    looked different one level down would read as a different product. */
 .udt-sub-foot { display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  padding: 10px 12px 2px 46px; }
+  padding: 18px 12px 2px 46px; }
 .udt-sub-foot .up-pagesize-seg { height: 28px; }
 .udt-sub-foot .up-pagesize-btn { height: 28px; min-width: 30px; padding: 0 8px; font-size: 12px; }
 .udt-sub-pages { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; }
