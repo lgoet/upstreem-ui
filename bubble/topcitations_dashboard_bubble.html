@@ -40,6 +40,8 @@
                                             #1 = citation types, item #2 = url types, each further
                                             :split by "," for a clean list of texts.
     dimension fn(dimension, instanceId)    dimension: "citation_type" | "url_type"
+                                           only fires on a manual switch inside the filter menu,
+                                           NOT when the mode button changes the default
     brand     fn(brandMentioned, instanceId)   ""  |  "yes"  |  "no"
 
   ── Filling the component ─────────────────────────────────────────────────────
@@ -56,8 +58,14 @@
     types_breakdown: [{ type, share_pct }, ...],
     brand: { id: "...", name: "ADAC", logo: "https://..." },   // for the "ADAC mentioned?" toggle
     filterTypeSel: [...], filterUrlTypeSel: [...],             // optional, pre-check on first load
-    filterDimension: "citation_type", brandMentioned: ""       // "" | "yes" | "no"
+    brandMentioned: ""                                         // "" | "yes" | "no"
   });
+
+  // NOT a render parameter: filterDimension. The component owns which dimension the type filter
+  // opens on and never reads it back from a render call — passing it does nothing. It defaults to
+  // URL Type in url mode and Citation Type in domain mode, switching modes resets it to that
+  // mode's default, and an explicit pick by the user survives re-renders. You still get the
+  // dimension event when the user switches it by hand, if you want to mirror it into a state.
   window.setTopCitationsLoading("INSTANCE_ID", "yes" | "no");
   window.resetTopCitations("INSTANCE_ID");    // resets every filter (Brand Mentioned, both type
                                                // selections, filter dimension) — does NOT fire any

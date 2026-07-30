@@ -1761,3 +1761,19 @@ if (unsuppressTip) unsuppressTip();   // vor dem 400ms-Timer
 ```
 Kein `title="…"`-Attribut als Ersatz: das feuert unabhängig davon, ob der Text abgeschnitten ist,
 und ist weder verzögerbar noch stylebar.
+
+## 31. Filter-Defaults folgen dem Modus, nicht der Historie
+
+Wenn eine Komponente zwischen zwei Datenarten umschaltet (Domains ↔ URLs), muss ein Filter, den es
+in beiden Welten gibt, in der **Standarddimension der aktuellen Welt** aufgehen — nicht in der, die
+zufällig zuletzt aktiv war. Konkret in `topcitations-dashboard`: URL-Modus öffnet den Typ-Filter auf
+**URL Types**, Domain-Modus auf **Citation Types** (`defaultDim(mode)`). Begründung: Die Liste IST
+die Antwort auf „welche URLs", Citation Types sind dort die zweite Frage — und jede andere Stelle,
+die URLs zeigt (`urls-table`, der `domains-table`-Drilldown), filtert sie nach URL-Typ.
+
+Drei Regeln, die zusammengehören:
+- Eine **explizite** Wahl des Users wird persistiert und gewinnt beim Re-Render.
+- Ein **Moduswechsel** setzt trotzdem auf den Default des neuen Modus zurück — der User hat die
+  Dimension für die alte Welt gewählt, nicht für die neue.
+- Der Default ist **komponenten-eigen**: nicht als Render-Parameter von Bubble annehmen. Sonst
+  überschreibt der erste Re-Render nach dem Umschalten den gerade gesetzten Default wieder.

@@ -105,6 +105,14 @@
     var saved = INSTANCE_STORE[instanceId] || {};
     var BRAND_CLEAR_STORE = (window.__tcdBrandClearUntil = window.__tcdBrandClearUntil || {});
 
+    /* Which type dimension the filter dropdown opens on. In URL mode that is URL Types: the list
+       IS urls, so citation types are the second question, not the first — and every other place
+       in the app that shows urls (urls-table, the domains-table drilldown) filters them by URL
+       type. Domain mode has only one dimension, so the segmented switch does not even render
+       there. An explicit pick by the user is persisted and wins over this on re-render; switching
+       modes deliberately does not — the new mode gets its own default. */
+    function defaultDim(mode){ return mode === "url" ? "url_type" : "citation_type"; }
+
     var state = {
       loading: LOADING_EXPLICIT[instanceId] ? !!saved.loading : readProcessing(),
       optimisticLoading: false,
@@ -117,7 +125,7 @@
       typesBreakdown: [], urlTypesBreakdown: [], baselineDomain: [], baselineUrl: [], brand: saved.brand || null,
       filterTypeSel: saved.filterTypeSel || {}, filterUrlTypeSel: saved.filterUrlTypeSel || {},
       appliedTypeSel: saved.appliedTypeSel || {}, appliedUrlTypeSel: saved.appliedUrlTypeSel || {},
-      filterDimension: saved.filterDimension || "citation_type", brandMentioned: saved.brandMentioned || ""
+      filterDimension: saved.filterDimension || defaultDim(saved.mode || "domain"), brandMentioned: saved.brandMentioned || ""
     };
     function persistState(){
       INSTANCE_STORE[instanceId] = {
@@ -558,7 +566,7 @@
           if (m === state.mode) return;
           state.mode = m;
           state.userPickedMode = true;
-          state.filterDimension = "citation_type";
+          state.filterDimension = defaultDim(m);
           state.optimisticLoading = true;
           persistState();
           delete BRAND_CLEAR_STORE[instanceId];
@@ -668,7 +676,7 @@
         state.filterUrlTypeSel = {};
         state.appliedTypeSel = {};
         state.appliedUrlTypeSel = {};
-        state.filterDimension = "citation_type";
+        state.filterDimension = defaultDim(state.mode);
         /* Also EMPTY the data (chart + table back to skeleton), not just the filters — same reason
            as visibility-chart's reset: a slide-in that re-uses this placement calls
            resetTopCitations() on open, and without this the old doughnut/bars + table re-rendered
