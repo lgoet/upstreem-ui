@@ -775,6 +775,7 @@
      for an instanceId instead of broadcasting, unlike the others. */
   var mount = UC.makeMount({
     rootClass: "tcd-root", notPortal: true,
+    wheelSel: ".up-donut-body",
     ctrlProp: "__tcdController",
     resolveLocal: "__tcdResolveLocal",
     queue: "__tcdBootQueue",

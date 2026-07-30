@@ -355,10 +355,23 @@
       topics: saved.topics || [],           // full topic list for the bulk editor, filled once
       stagedTopicIds: null                  // {id: true, ...} — the topic editor's draft selection
     };
+    /* On a touch device a clamped prompt is unreadable, full stop: the full text is only ever
+       reachable through the hover tooltip, and core.css switches tooltips off entirely under
+       (hover: none). So on touch the row height falls back to Dynamic — the row grows to fit the
+       prompt instead of hiding it behind an interaction that device cannot perform.
+       This is an override, NOT a write: state.rowHeight and the saved preference are untouched, so
+       the same user on a desktop still gets whatever they picked, and the switch in the Table
+       Settings menu still reflects their real choice rather than silently reading "Dynamic". */
+    var TOUCH_ONLY = (function(){
+      try { return window.matchMedia && window.matchMedia("(hover: none)").matches; }
+      catch(e){ return false; }
+    })();
+    function effectiveRowHeight(){ return TOUCH_ONLY ? "dynamic" : state.rowHeight; }
     function applyRowHeightClass(){
+      var rh = effectiveRowHeight();
       root.classList.remove("is-rh-compact", "is-rh-dynamic");
-      if (state.rowHeight === "compact") root.classList.add("is-rh-compact");
-      else if (state.rowHeight === "dynamic") root.classList.add("is-rh-dynamic");
+      if (rh === "compact") root.classList.add("is-rh-compact");
+      else if (rh === "dynamic") root.classList.add("is-rh-dynamic");
     }
     applyRowHeightClass();
 

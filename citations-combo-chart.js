@@ -730,6 +730,8 @@
      because this component broadcasts to every root sharing an instanceId. */
   var mount = UC.makeMount({
     rootClass: "combo-root",
+    /* only the chart surfaces swallow the wheel; nothing else here intercepts scrolling */
+    wheelSel: ".up-line-wrap, .up-donut-body, .cc-type-root",
     ctrlProp: "__ccController",
     resolveLocal: "__ccResolveLocal",
     queue: "__ccBootQueue",

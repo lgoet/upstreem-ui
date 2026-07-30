@@ -1110,16 +1110,37 @@
       try { if (window.parent && window.parent !== window) window.parent.scrollBy(0, e.deltaY); } catch(ex){}
       try { window.scrollBy(0, e.deltaY); } catch(ex){}
     }
+    /* cfg.wheelSel — WHICH elements inside the root actually need this. Omit it and nothing is
+       intercepted at all, which is what every table wants.
+       This used to be bound to the whole component root, which was far too wide a net. The problem
+       it solves is real but narrow: Chart.js registers its own wheel handling on the canvas, so a
+       wheel over a chart never reached Bubble's scroll container and the page simply refused to
+       scroll there. Everywhere else there was nothing to fix — and replacing native scrolling with
+       `scrollTop += deltaY` throws away compositor-thread scrolling, inertia and rubber-banding,
+       which on a trackpad is exactly the "doesn't feel like a real app" difference. Tables are the
+       biggest surfaces in this library, so they were paying that cost on every scroll for a
+       problem they never had. */
     var wheelFlag = "__upWheel_" + cfg.rootClass;
+    function wheelTargets(){
+      if (!cfg.wheelSel) return [];
+      var out = [], all = roots();
+      for (var i = 0; i < all.length; i++){
+        var found = all[i].querySelectorAll(cfg.wheelSel);
+        for (var j = 0; j < found.length; j++) out.push(found[j]);
+      }
+      return out;
+    }
     function attachWheel(){
-      var all = roots();
+      var all = wheelTargets();
       for (var i = 0; i < all.length; i++){
         if (!all[i][wheelFlag]){ all[i][wheelFlag] = true; all[i].addEventListener("wheel", forwardWheel, { passive: false }); }
       }
     }
-    if (!window[wheelFlag + "_installed"]){
+    if (cfg.wheelSel && !window[wheelFlag + "_installed"]){
       window[wheelFlag + "_installed"] = true;
       attachWheel();
+      /* Chart wraps are re-created on every render, so newly built ones still need picking up.
+         Only runs for components that actually declared a wheelSel. */
       setInterval(attachWheel, 800);
     }
 

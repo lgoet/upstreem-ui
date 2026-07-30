@@ -1137,6 +1137,8 @@
      because this component broadcasts to every root sharing an instanceId. */
   var mount = UC.makeMount({
     rootClass: "vot-root", notPortal: true,
+    /* only the chart itself swallows the wheel — the Top Brands table beside it scrolls natively */
+    wheelSel: ".up-line-wrap",
     ctrlProp: "__votController",
     resolveLocal: "__votResolveLocal",
     queue: "__votBootQueue",
