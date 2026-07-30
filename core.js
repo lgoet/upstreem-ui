@@ -1185,6 +1185,272 @@
     return { showTip: showTip, showTipText: showTipText, showTipWide: showTipWide, hideTip: hideTip, el: tip };
   }
 
+  /* ---- topic color palette + emoji library ----
+     Extracted from topics-manager.js/prompts-table.js, which each carried a byte-identical copy
+     (per STYLEGUIDE §25: duplicate first, extract once a SECOND consumer needs the exact same
+     thing — prompts-table's own "Add Topic" button opening this same modal is that second
+     consumer). Rows are tone bands (vibrant/muted/deep), columns are hues — scanning down picks a
+     mood, across picks a color. Only hex_light is ever rendered anywhere in the app, so these are
+     tuned to read acceptably in BOTH themes at once rather than getting a per-theme pass. */
+  var TOPIC_COLOR_PALETTE = [
+    /* vibrant */ "#de1b22", "#b65616", "#8d6a11", "#108440", "#107c84", "#1b6eda", "#9145e8", "#d51a8b", "#666666", "#7d7d7d",
+    /* muted   */ "#b47476", "#a87b5d", "#988552", "#4f926b", "#509195", "#6a88af", "#977ab8", "#b27098", "#787878", "#949494",
+    /* deep    */ "#ab2b2f", "#8b4c23", "#725a1d", "#1b6a3c", "#1b656a", "#295ea3", "#7a33cc", "#a32972", "#575757", "#666666"
+  ];
+  function swatchInk(hex){
+    var h = String(hex).replace("#", "");
+    function lin(c){ c = parseInt(c, 16) / 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
+    var y = 0.2126 * lin(h.slice(0,2)) + 0.7152 * lin(h.slice(2,4)) + 0.0722 * lin(h.slice(4,6));
+    return y > 0.179 ? "#151515" : "#ffffff";
+  }
+  var EMOJI_LIB_URL = "https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js";
+  var emojiLibPromise = null;
+  function ensureEmojiLib(){
+    if (window.customElements && window.customElements.get("emoji-picker")) return;
+    if (emojiLibPromise) return;
+    emojiLibPromise = true;
+    var s = document.createElement("script");
+    s.type = "module";
+    s.textContent = 'import "' + EMOJI_LIB_URL + '";';
+    document.head.appendChild(s);
+  }
+
+  var CLOSE_SVG_TM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  var SMILE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>';
+
+  /* ---- shared topic create/edit modal ----
+     One modal, two consumers: topics-manager (create + edit + delete, its own page) and
+     prompts-table's "Add Topic" button (create only, no delete — the caller simply never passes
+     onDelete). Deliberately does NOT fire any Bubble event itself and does NOT know the word
+     "selection" — it only ever hands the caller a clean draft {name, emoji, hex_light, hex_dark}
+     (+ id when editing) via cfg.onSave, and lets the caller decide what event name / extra fields
+     (a bulk selection payload, in prompts-table's case) to wrap it in. This is exactly why it
+     can't hardcode data-add-fn/data-edit-fn the way it used to when it only lived in
+     topics-manager.js — the two callers fire completely different events with different payload
+     shapes for what is, from the modal's point of view, the identical "user finished a draft" action.
+     Body-mounted (position:fixed backdrop) for the same reason the bulk-bar and every other
+     document.body-mounted surface in this library is: it must never be clipped by whatever
+     Bubble container happens to hold the component that opened it. Not routed through
+     UC.makePopover — that primitive's open() closes every OTHER popover on the page, which is
+     right for a corner dropdown but wrong for a true modal (opening a dropdown elsewhere must not
+     silently close this). Hand-rolled instead: blur focus before hiding (aria-hidden-on-ancestor-
+     of-focused-element is a Chrome accessibility trap), plus its own Escape listener scoped to
+     just this modal instance. */
+  function makeTopicModal(cfg){
+    cfg = cfg || {};
+    var getIsDark = cfg.getIsDark || function(){ return false; };
+    var palette = cfg.palette || TOPIC_COLOR_PALETTE;
+    var onSave = cfg.onSave || function(){};
+    var onDelete = cfg.onDelete || null;
+
+    var modalBackdrop = null, modalOpenerEl = null;
+    var modalMode = null;        // null | "create" | "edit"
+    var modalTopic = null;
+    var draftName = "", draftEmoji = "", draftColor = null;
+    var pickOpen = null;         // null | "emoji" | "color"
+    var modalSaving = false, modalSaveTimer = null;
+
+    function pickerRowHtml(){
+      var color = draftColor || palette[0];
+      var emojiOpen = pickOpen === "emoji";
+      var colorOpen = pickOpen === "color";
+      var panel = "";
+      if (emojiOpen){
+        panel = '<div class="up-topicmodal-pickpanel"><emoji-picker class="up-topicmodal-emojipicker ' + (getIsDark() ? "dark" : "light") + '"></emoji-picker></div>';
+      } else if (colorOpen){
+        panel = '<div class="up-topicmodal-pickpanel"><div class="up-topicmodal-colorgrid">' +
+          palette.map(function(hx){
+            var on = hx === color;
+            return '<button type="button" class="up-topicmodal-colorcell" data-color="' + esc(hx) + '"' +
+              ' aria-label="' + esc(hx) + '" aria-pressed="' + (on ? "true" : "false") + '">' +
+              '<span class="up-topicmodal-colorblob" style="background:' + esc(hx) +
+                (on ? ";color:" + swatchInk(hx) : "") + '">' + (on ? CHECK_SVG : "") + '</span>' +
+            '</button>';
+          }).join("") +
+        '</div></div>';
+      }
+      return '<div class="up-topicmodal-approw">' +
+          '<button type="button" class="up-topicmodal-pickbtn' + (emojiOpen ? " is-open" : "") +
+            '" data-pick="emoji" data-tip="Topic Emoji" aria-label="Topic emoji" aria-expanded="' + (emojiOpen ? "true" : "false") + '">' +
+            (draftEmoji ? esc(draftEmoji) : SMILE_SVG) +
+          '</button>' +
+          '<button type="button" class="up-topicmodal-pickbtn' + (colorOpen ? " is-open" : "") +
+            '" data-pick="color" data-tip="Topic Color" aria-label="Topic color" aria-expanded="' + (colorOpen ? "true" : "false") + '">' +
+            '<span class="up-topicmodal-pickswatch" style="background:' + esc(color) + '"></span>' +
+          '</button>' +
+        '</div>' + panel;
+    }
+    function renderAppearance(){
+      var wrap = modalBackdrop && modalBackdrop.querySelector(".up-topicmodal-approw-wrap");
+      if (wrap) wrap.innerHTML = pickerRowHtml();
+    }
+    function syncSaveEnabled(){
+      var saveBtn = modalBackdrop && modalBackdrop.querySelector(".up-topicmodal-save");
+      if (saveBtn) saveBtn.disabled = !draftName.trim();
+    }
+    function deleteArmed(){
+      var b = modalBackdrop && modalBackdrop.querySelector(".up-topicmodal-delete");
+      return !!(b && b.classList.contains("is-armed"));
+    }
+    function ensureModal(){
+      if (modalBackdrop && document.body.contains(modalBackdrop)) return modalBackdrop;
+      modalBackdrop = document.createElement("div");
+      modalBackdrop.className = "up-topicmodal-backdrop";
+      modalBackdrop.setAttribute("aria-hidden", "true");
+      modalBackdrop.innerHTML =
+        '<div class="up-topicmodal-card" role="dialog" aria-modal="true" aria-labelledby="up-topicmodal-title-' + Math.random().toString(36).slice(2) + '">' +
+          '<div class="up-topicmodal-head">' +
+            '<div class="up-topicmodal-heading">' +
+              '<h2 class="up-topicmodal-title"></h2>' +
+            '</div>' +
+            '<button type="button" class="up-topicmodal-close" data-modal-close aria-label="Close">' + CLOSE_SVG_TM + '</button>' +
+          '</div>' +
+          '<div class="up-topicmodal-body">' +
+            '<div class="up-topicmodal-field">' +
+              '<label class="up-topicmodal-label">Name</label>' +
+              '<input type="text" class="up-topicmodal-name" maxlength="60" autocomplete="off" spellcheck="false"/>' +
+            '</div>' +
+            '<div class="up-topicmodal-field">' +
+              '<label class="up-topicmodal-label">Appearance</label>' +
+              '<div class="up-topicmodal-approw-wrap"></div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="up-topicmodal-foot"></div>' +
+        '</div>';
+
+      var nameInput = modalBackdrop.querySelector(".up-topicmodal-name");
+      nameInput.addEventListener("input", function(){ draftName = nameInput.value; syncSaveEnabled(); });
+
+      modalBackdrop.addEventListener("click", function(e){
+        if (e.target === modalBackdrop){ closeModal(); return; }
+        if (e.target.closest("[data-modal-close]")){ closeModal(); return; }
+        if (e.target.closest("[data-modal-save]")){ saveModal(); return; }
+        var delBtn = e.target.closest("[data-modal-delete]");
+        if (delBtn){
+          if (!deleteArmed()){
+            modalBackdrop.querySelector(".up-topicmodal-delete").classList.add("is-armed");
+            modalBackdrop.querySelector(".up-topicmodal-delete").textContent = "Confirm delete?";
+            return;
+          }
+          fireDelete();
+          return;
+        }
+        var pickBtn = e.target.closest("[data-pick]");
+        if (pickBtn){
+          var kind = pickBtn.getAttribute("data-pick");
+          pickOpen = pickOpen === kind ? null : kind;
+          if (pickOpen === "emoji") ensureEmojiLib();
+          renderAppearance();
+          return;
+        }
+        var colorBtn = e.target.closest("[data-color]");
+        if (colorBtn){ draftColor = colorBtn.getAttribute("data-color"); renderAppearance(); return; }
+      });
+      /* emoji-picker-element dispatches this (bubbling, composed) from inside its shadow root. */
+      modalBackdrop.addEventListener("emoji-click", function(e){
+        var unicode = e.detail && e.detail.unicode;
+        if (!unicode) return;
+        draftEmoji = unicode;
+        renderAppearance();   // deliberately does not close the picker
+      });
+      /* Scoped to just this modal, not a page-global Escape (which would close every open
+         popover) — this modal's Escape must not, say, also close an unrelated sort menu open
+         elsewhere on the page, nor should some other component's Escape reach in and close it. */
+      document.addEventListener("keydown", function(e){
+        if (!modalMode) return;
+        if (e.key !== "Escape" && e.key !== "Esc") return;
+        closeModal();
+      });
+      makeTooltips(modalBackdrop, getIsDark);
+      document.body.appendChild(modalBackdrop);
+      return modalBackdrop;
+    }
+    function openModal(mode, topic){
+      ensureModal();
+      modalMode = mode; modalTopic = topic || null;
+      draftName = topic ? String(topic.name || "") : "";
+      draftEmoji = topic ? String(topic.emoji || "") : "";
+      draftColor = topic ? String(topic.hex_light || topic.hex_dark || palette[0]) : palette[0];
+      if (draftColor.charAt(0) !== "#") draftColor = "#" + draftColor;
+      pickOpen = null; modalSaving = false;
+      clearTimeout(modalSaveTimer);
+      modalBackdrop.setAttribute("data-theme", getIsDark() ? "dark" : "light");
+      var titleEl = modalBackdrop.querySelector(".up-topicmodal-title");
+      if (titleEl) titleEl.textContent = mode === "create" ? "New Topic" : "Edit Topic";
+      var nameInput = modalBackdrop.querySelector(".up-topicmodal-name");
+      if (nameInput) nameInput.value = draftName;
+      var foot = modalBackdrop.querySelector(".up-topicmodal-foot");
+      if (foot){
+        foot.innerHTML = (mode === "edit" && onDelete
+          ? '<button type="button" class="up-topicmodal-delete" data-modal-delete>Delete</button>'
+          : "") +
+          '<button type="button" class="up-topicmodal-save" data-modal-save' + (draftName.trim() ? "" : " disabled") + '>Save</button>';
+      }
+      renderAppearance();
+      modalOpenerEl = document.activeElement;
+      modalBackdrop.setAttribute("aria-hidden", "false");
+      void modalBackdrop.offsetWidth;   // force layout flush so the appear transition actually runs
+      modalBackdrop.classList.add("is-shown");
+      setTimeout(function(){ try { nameInput.focus(); nameInput.select(); } catch(e){} }, 60);
+    }
+    function closeModal(){
+      if (!modalBackdrop || !modalMode) return;
+      /* Blur focus BEFORE hiding: aria-hidden on an ancestor of the focused element is an
+         accessibility trap, and Chrome refuses it outright with a console error. */
+      if (modalBackdrop.contains(document.activeElement)){
+        try { document.activeElement.blur(); } catch(e){}
+      }
+      modalBackdrop.classList.remove("is-shown");
+      modalBackdrop.setAttribute("aria-hidden", "true");
+      modalMode = null; modalTopic = null;
+      clearTimeout(modalSaveTimer); modalSaving = false;
+      try { if (modalOpenerEl && modalOpenerEl.focus) modalOpenerEl.focus(); } catch(e){}
+      modalOpenerEl = null;
+    }
+    function saveModal(){
+      var name = draftName.trim();
+      if (!name || modalSaving) return;
+      var payload = { name: name, emoji: draftEmoji || "", hex_light: draftColor || palette[0], hex_dark: draftColor || palette[0] };
+      if (modalMode === "edit" && modalTopic) payload.id = String(modalTopic.id);
+      modalSaving = true;
+      var saveBtn = modalBackdrop.querySelector(".up-topicmodal-save");
+      if (saveBtn){ saveBtn.disabled = true; saveBtn.style.opacity = ".6"; }
+      onSave(payload, modalMode, modalTopic);
+      /* Nothing else in this library waits mid-interaction on a round trip — every table's
+         search/sort/filter updates the local view optimistically and never blocks a control on
+         the response. A mutation genuinely has to wait for Bubble's RPC before the modal can
+         close (there's no optimistic id to show yet on create), so this is the one place with a
+         "saving" state — with a generous timeout so a dropped/failed RPC can't trap the user in
+         a stuck modal forever. The caller is expected to call .close() itself once its RPC
+         answers (by re-rendering, same as everywhere else); this timer is only the fallback. */
+      clearTimeout(modalSaveTimer);
+      modalSaveTimer = setTimeout(function(){
+        modalSaving = false;
+        if (saveBtn){ saveBtn.disabled = !draftName.trim(); saveBtn.style.opacity = ""; }
+      }, 8000);
+    }
+    function fireDelete(){
+      if (!modalTopic || !onDelete) return;
+      onDelete(modalTopic);
+      closeModal();
+    }
+    return {
+      open: openModal, close: closeModal,
+      isOpen: function(){ return !!modalMode; },
+      /* The render/update path needs to tell "modal is open because the user is mid-edit" apart
+         from "modal is open AND its save is in flight, so THIS incoming re-render is very likely
+         the RPC answer — close it" without reaching into the closure. */
+      isSaving: function(){ return modalSaving; },
+      /* The modal is parented to document.body, so it does NOT go away with the component's own
+         markup when Bubble rebuilds the element — the caller's own destroy() must remove it
+         explicitly or it lingers as an orphan over the next instance. */
+      destroy: function(){
+        if (modalBackdrop && modalBackdrop.parentNode) modalBackdrop.parentNode.removeChild(modalBackdrop);
+        modalBackdrop = null;
+      }
+    };
+  }
+
   /* Shared event dispatch: resolves the Bubble function (via the data-*-fn attr or a fallback
      name) across window/parent/top/iframes and calls it with the JSON payload. label + eventPrefix
      stay per component so warnings and the DOM side-channel event read correctly. */
@@ -2413,6 +2679,10 @@
     makeSticky: makeSticky,
     unclipAncestors: unclipAncestors,
     watchRoots: watchRoots,
+    TOPIC_COLOR_PALETTE: TOPIC_COLOR_PALETTE,
+    swatchInk: swatchInk,
+    ensureEmojiLib: ensureEmojiLib,
+    makeTopicModal: makeTopicModal,
 
     /* ---- chart kits (see the big comment block above) ---- */
     loadChartJs: loadChartJs,

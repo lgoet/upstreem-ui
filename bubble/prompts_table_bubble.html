@@ -93,21 +93,23 @@
                    filter fields the same way the render RPC does, same as every other bulk action.
                    tag_ids is capped at 5 client-side (the per-prompt topic limit) — your RPC still
                    has final say for rows that were already close to that limit.
-    addtopics   <selection> + optionally {"new_topic_name":"SUV","new_topic_emoji":"🚙",
+    addtopics   <selection> + {"new_topic_name":"SUV","new_topic_emoji":"🚙",
                              "new_topic_hex_light":"#1860dc","new_topic_hex_dark":"#1860dc"}
-                -> the "Add Topic" button at the foot of the bulk topic editor. Open your own
-                   topic-creation UI; the selection rides along so a freshly created topic can be
-                   applied straight away. Does NOT close the topic editor or touch the staged
-                   selection. All four new_topic_* fields are only present when this came from the
-                   inline "Create '…'" row shown when a topic search has zero matches — a first
-                   pass at the fuller tag creator this table will eventually need, with a name
-                   (pre-filled from the search box), an emoji (via emoji-picker-element, a free
-                   self-contained CDN-loaded web component — https://github.com/nolanlawson/
-                   emoji-picker-element — loaded lazily only once the emoji trigger is clicked, no
-                   Bubble-side setup needed), and a color (one of 32 preset swatches, contrast-
-                   checked against both light and dark chip backgrounds since only hex_light ever
-                   actually gets rendered — see topicListHtml()/doTopics()). hex_light and hex_dark
-                   are always sent as the SAME value: this creator only ever picks one color.
+                -> fires from TWO places, both producing this exact same shape (no need to branch
+                   on Bubble's side): the "Add Topic" button at the foot of the bulk topic editor
+                   (opens the SAME create modal topics-manager uses — UC.makeTopicModal, shared via
+                   core.js — and fires this once the user saves it) and the inline "Create '…'" row
+                   shown when a topic search has zero matches (name pre-filled from the search box).
+                   Neither closes the topic editor or touches the staged selection — the selection
+                   rides along purely so a freshly created topic can be applied to it straight away
+                   if you want that; emoji is "" (empty string, not omitted) when none was picked.
+                   Emoji via emoji-picker-element (a free self-contained CDN-loaded web component —
+                   https://github.com/nolanlawson/emoji-picker-element — loaded lazily only once the
+                   emoji trigger is clicked, no Bubble-side setup needed), color one of 30 preset
+                   swatches, contrast-checked against both light and dark chip backgrounds since
+                   only hex_light ever actually gets rendered — see topicListHtml()/doTopics().
+                   hex_light and hex_dark are always sent as the SAME value: only one color is ever
+                   picked.
     bulkstatus  <selection> + {"status":"inactive"}
                 -> set every selected prompt to that status. Reversible, so no confirm dialog is
                    shown; surface an undo in your own toast instead.

@@ -1578,9 +1578,13 @@ Weitere Regeln:
 
 ## 27. Popup/Modal — verbindliches Template
 
-Referenzimplementierung: `.utm-modalbackdrop`/`.utm-modalcard` in `topics-manager.css` (der erste
-und bislang einzige echte Modal-Präzedenzfall im Repo). Jedes künftige Popup/Modal übernimmt diese
-Werte 1:1, statt eigene zu erfinden.
+Referenzimplementierung: `.up-topicmodal-backdrop`/`.up-topicmodal-card` in `core.css`, gebaut über
+`UC.makeTopicModal(cfg)`. War ursprünglich `.utm-*` lokal in topics-manager.css — mit
+prompts-table's "Add Topic"-Button als zweitem Verbraucher (identisches Modal, eigener
+Event-Vertrag über `cfg.onSave`/`cfg.onDelete`) nach core extrahiert, siehe dortigen Kommentar für
+die Callback-Architektur. Jedes künftige Popup/Modal übernimmt die Werte unten 1:1, statt eigene
+zu erfinden — bei einem echten NEUEN Modal-Typ (nicht Topic-Create/Edit) dupliziere die Werte
+zunächst lokal, extrahiere erst nach einem zweiten Verbraucher (STYLEGUIDE §25).
 
 **Backdrop** (fixed, `inset:0`, abgedunkelter Scrim hinter einer schwebenden Karte):
 ```css
@@ -1605,9 +1609,9 @@ box-shadow: 0 20px 48px rgba(0,0,0,.22);
 ```
 Dark Mode: `--up-surface: #1b1b1b` (Karten-Hintergrund).
 
-**Kopfzeile** (`.utm-modalhead`, `align-items:flex-start` wegen des zweizeiligen Headings):
+**Kopfzeile** (`.up-topicmodal-head`, `align-items:flex-start` wegen des zweizeiligen Headings):
 - Heading: **22px, Weight 500**.
-- Optionale Subheading direkt darunter (eigener `.utm-modalheading`-Wrapper mit **8px Gap**
+- Optionale Subheading direkt darunter (eigener `.up-topicmodal-heading`-Wrapper mit **8px Gap**
   zwischen Heading und Subheading): **16px, Weight 400, Drittfarbe** (`--vc-third`). Nicht jedes
   Popup braucht eine — das Token existiert, damit ein künftiges nicht wieder Größe/Farbe/Gewicht
   neu erfindet.

@@ -384,6 +384,26 @@
     /* shared event dispatch (core) */
     var fire = UC.makeFire(root, { label: "prompts-table", eventPrefix: "upt-" });
 
+    /* Same shared modal topics-manager's own "+ New Topic" uses (UC.makeTopicModal, core.js) —
+       "Add Topic" in the bulk editor used to just hand off to "your own topic-creation UI" via a
+       bare uptAddTopics fire; now it opens this instead and folds the modal's clean
+       {name,emoji,hex_light,hex_dark} draft into the SAME new_topic_* shape the inline
+       "Create '…'" row (topicCreateHtml(), below) already produces — same event, same fields, no
+       Bubble-side change needed for either path. Create-only: no onDelete, so the modal never
+       shows a Delete button (it also only ever gets opened with mode "create" here). */
+    var addTopicModal = UC.makeTopicModal({
+      getIsDark: function(){ return isDark; },
+      onSave: function(payload){
+        var p = selectionPayload();
+        p.new_topic_name = payload.name;
+        p.new_topic_emoji = payload.emoji || "";
+        p.new_topic_hex_light = payload.hex_light;
+        p.new_topic_hex_dark = payload.hex_dark;
+        fire("data-addtopics-fn", "uptAddTopics", p);
+        addTopicModal.close();
+      }
+    });
+
     /* ---------------- soft-reload dimming (core) ----------------
        Shared with urls-table/domains-table now that both need the identical thing for their own
        sort — see UC.makeSoftReload. Only sort uses it; a page/size change goes back to whatever
@@ -1552,10 +1572,10 @@
           return;
         }
         if (e.target.closest("[data-topic-add]")){
-          /* Hands off to your own "create topic" UI, carrying the selection so the new topic can
-             be applied straight away if you want that. Deliberately does NOT close the panel —
-             the staged selection is still live and the user may come back to it. */
-          fire("data-addtopics-fn", "uptAddTopics", selectionPayload());
+          /* Opens the shared create modal rather than firing straight off — the selection itself
+             is untouched either way (still only leaves via Apply), and the bulk panel stays open
+             behind it since the staged selection is still live and the user may come back to it. */
+          addTopicModal.open("create", null);
           return;
         }
         if (e.target.closest("[data-bulk-status]")){ setTopicMenuOpen(false); applyBulkStatus(); return; }
@@ -1705,6 +1725,14 @@
       if (!topicMenuOpen()) return;
       if (e.__uptInBar) return;                              // handled inside the bar already
       if (elBulk && elBulk.contains(e.target)) return;
+      /* The Add Topic modal is a deliberate overlay spawned FROM this panel's own "+ Add Topic"
+         button, but — like the bar itself — it's body-mounted outside elBulk, so without this it
+         reads as a click "away" from the bar and closes the topic panel behind it on every click
+         inside the modal, including its own Save button. Checked via the DOM (not
+         addTopicModal.isOpen()) on purpose: Save's own click handler closes the modal
+         SYNCHRONOUSLY during the same bubble phase, before this document-level listener runs, so
+         an isOpen() check here would already read false by the time it matters. */
+      if (e.target.closest(".up-topicmodal-backdrop")) return;
       /* Ticking a row (or header select-all) checkbox while the topic editor is open isn't
          "clicking away" — it's still building the same selection the editor is working on, and
          used to close the panel on every tick, which was especially jarring right as the escape-
@@ -1713,11 +1741,15 @@
       if (e.target.closest("[data-select], [data-selectall]")) return;
       setTopicMenuOpen(false);
     });
-    /* Escape unwinds one layer at a time: first the topic menu, then the selection itself.
-       Deliberately no focus trap on the bar — it's a toolbar, and trapping would break
-       shift-arrow range selection in the table behind it. */
+    /* Escape unwinds one layer at a time: the add-topic modal (its own scoped listener, inside
+       UC.makeTopicModal), then the topic menu, then the selection itself. If the modal is open,
+       do nothing here — its own Escape listener already closes just that layer on this same
+       keydown, and closing the topic panel too on the same keystroke would unwind two layers at
+       once. Deliberately no focus trap on the bar itself — it's a toolbar, and trapping would
+       break shift-arrow range selection in the table behind it. */
     document.addEventListener("keydown", function(e){
       if (e.key !== "Escape" && e.key !== "Esc") return;
+      if (addTopicModal.isOpen()) return;
       if (topicMenuOpen()){ setTopicMenuOpen(false); return; }
       if (bulkCount() > 0) clearSelection();
     });
@@ -1863,11 +1895,12 @@
         return true;
       },
       destroy: function(){
-        /* The bar is parented to document.body, so it does NOT go away with the component's own
-           markup when Bubble rebuilds the element — it has to be removed explicitly or it
+        /* Both are parented to document.body, so neither goes away with the component's own
+           markup when Bubble rebuilds the element — each has to be removed explicitly or it
            lingers as an orphan over the new instance. */
         if (elBulk && elBulk.parentNode) elBulk.parentNode.removeChild(elBulk);
         elBulk = null;
+        addTopicModal.destroy();
         if (root.__uptController === this) root.__uptController = null;
       }
     };
