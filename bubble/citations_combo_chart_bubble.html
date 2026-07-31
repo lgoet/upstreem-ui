@@ -36,6 +36,10 @@
     instanceId: "...",
     isDark: "yes" | "no",
     dataMode: "domain" | "url",              // which line-chart series identity + doughnut split to show
+                                              // ("mode" also accepted as an alias, in case your
+                                              // Run-JS step passes the backend response through
+                                              // close to as-is — that response calls this field
+                                              // "mode", not "dataMode")
     chartMode: "doughnut" | "bar",           // only applied on first load — a user's manual switcher
                                               // click is remembered (localStorage) and never overridden
     total: 128,                              // doughnut/bar centre total ("Citations")

@@ -618,7 +618,16 @@
           isDark = isYes(params.isDark);
           if (isDark){ root.setAttribute("data-theme","dark"); donutRoot.setAttribute("data-theme","dark"); } else { root.removeAttribute("data-theme"); donutRoot.removeAttribute("data-theme"); }
         }
-        if (params.dataMode != null) state.dataMode = (params.dataMode === "url") ? "url" : "domain";
+        /* Accepts "mode" as well as the documented "dataMode" — the backend payload this actually
+           gets fed from (confirmed live) calls it "mode", and if the Bubble Run-JS render step
+           passes that object through close to as-is, "dataMode" never arrives at all. When that
+           happens state.dataMode silently stays on its previous value (usually "domain"), which
+           picks state.meta.domains as the join source below — normally empty in url mode — so
+           EVERY line's title lookup fails and falls back to the raw url. Exactly the symptom that
+           survived two rounds of fixing the join-key matching itself: the join was never reached,
+           because the wrong meta array was selected before it. */
+        var modeParam = params.dataMode != null ? params.dataMode : params.mode;
+        if (modeParam != null) state.dataMode = (modeParam === "url") ? "url" : "domain";
         if ((params.chartMode === "bar" || params.chartMode === "doughnut") && !savedMode) state.chartMode = params.chartMode;
         if (params.total != null) state.total = Number(params.total) || 0;
         var split = (params.typeSplit != null) ? params.typeSplit : params.data;
