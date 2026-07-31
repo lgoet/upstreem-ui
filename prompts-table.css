@@ -122,8 +122,13 @@
 /* ---------- Active / Inactive view switch ----------
    Left of the toolbar, next to the heading — it's a view switch, not a filter, and the filter
    area on the right implies "combinable with the others", which these two never are. Reuses the
-   .up-dense segmented look so it reads as the same kind of control as the row-height switch. */
-.upt-status { display: inline-flex; align-items: center; gap: 0; margin-left: 12px; height: 32px;
+   .up-dense segmented look so it reads as the same kind of control as the row-height switch.
+   No margin-left of its own — .up-head (core.css) already has gap:8px between its flex children,
+   which is what actually sits between this and .up-heading. An extra margin here on top of that
+   flex gap would compound into a bigger gap than the one between the head-count and the selected-
+   chip inside .up-heading (a plain margin there, no flex gap to add to), which is exactly the
+   "should feel like the same rhythm" mismatch this was asked to fix. */
+.upt-status { display: inline-flex; align-items: center; gap: 0; margin-left: 0; height: 32px;
   padding: 0; background: var(--vc-switch-bg); border-radius: 8px; flex: 0 0 auto; }
 .upt-status-btn { height: 32px; padding: 0 10px; border: 1px solid transparent; border-radius: 8px;
   background: transparent; color: var(--vc-muted); cursor: pointer; font-family: inherit;
@@ -492,7 +497,7 @@
   transition: max-width 220ms cubic-bezier(0.2,0,0.38,0.9), opacity 160ms ease,
               transform 220ms cubic-bezier(0.2,0,0.38,0.9), margin-left 220ms cubic-bezier(0.2,0,0.38,0.9);
 }
-.upt-selcount.is-on { max-width: 220px; opacity: 1; margin-left: 16px; transform: translateX(0); pointer-events: auto; }
+.upt-selcount.is-on { max-width: 220px; opacity: 1; margin-left: 8px; transform: translateX(0); pointer-events: auto; }
 @media (prefers-reduced-motion: reduce){ .upt-selcount { transition-duration: 1ms; } }
 .upt-selcount-clear { width: 18px; height: 18px; border: 0; padding: 0; border-radius: 5px;
   background: transparent; color: var(--vc-muted); cursor: pointer; flex: 0 0 auto;
