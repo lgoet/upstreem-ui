@@ -1958,11 +1958,19 @@
         /* Deliberately narrow: only the bulk-topic popover state + selection, per explicit user
            request — NOT search/sort/paging/status/widths, which used to also get wiped here and
            surprised the user by silently flipping the table back to the Active tab. */
+        var hadSelection = state.selectAllMatching || Object.keys(state.selected || {}).length > 0;
+        var hadTopicMenu = topicMenuOpen();
+        var hadModal = addTopicModal.isOpen();
+        /* True no-op when there's nothing to reset — the caller is expected to fire this on every
+           filter/page-leave trigger, not just when something was actually open, so skipping the
+           persist()+render() round trip here matters for how often this realistically fires. */
+        if (!hadSelection && !hadTopicMenu && !hadModal) return true;
+
         state.selected = {}; invalidateSelectAll();
-        setTopicMenuOpen(false);
+        if (hadTopicMenu) setTopicMenuOpen(false);
         /* Separate from the bulk topic panel above — this is the "Add Topic" modal, which can be
            open on its own (it isn't nested inside the bulk bar's is-topics state). */
-        if (addTopicModal.isOpen()) addTopicModal.close();
+        if (hadModal) addTopicModal.close();
         persist(); render();
         return true;
       },

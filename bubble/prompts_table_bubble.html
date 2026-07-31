@@ -214,8 +214,10 @@
     2. Bubble reusable elements are more often just hidden (display:none) than removed outright,
        which layer 1 can't see. For that case, call window.resetPromptsTable("INSTANCE_ID") from a
        "user leaves this page" workflow event — it closes the Add Topic modal if open, closes the
-       bulk topic panel, and clears the selection (which hides the bulk bar). Cheap and safe to
-       call even when nothing was open.
+       bulk topic panel, and clears the selection (which hides the bulk bar). Checks first: if
+       nothing is selected and neither the topic panel nor the Add Topic modal is open, it's a true
+       no-op (no persist, no re-render) — cheap and safe to call unconditionally, e.g. on every
+       search/filter change, not just on page-leave.
 
        NOTE: this deliberately does NOT touch search/sort/paging/status/column widths — it only
        resets popover/selection state. If you also want the table itself back to its default view
