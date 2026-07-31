@@ -1440,6 +1440,10 @@
 
     var pagerKit = UC.makePager({
       root: root, state: state,
+      /* Active/Inactive have separate totals (state.totalCount / state.totalCountInactive) —
+         without this the pager always paginated against the Active count even while looking at
+         the Inactive tab, showing the wrong page count and "X-Y of Z" for that view. */
+      total: currentTotal,
       onClamp: function(){ persist(); },
       onChange: function(){ persist(); renderTable(); firePage(); }
     });
@@ -1995,6 +1999,16 @@
         if (params.rows != null){
           state.rows = Array.isArray(params.rows) ? params.rows : [];
           state.hasData = true;
+          /* An empty rows delivery with no accompanying total (e.g. every prompt just got
+             deactivated, so the Active RPC now genuinely returns nothing) has no way to still
+             imply a non-zero count for the tab it's FOR — left alone, the head count and "Select
+             all N" kept showing whatever was there before the change. Only defaults the total for
+             whichever tab this delivery is actually for; an explicit totalCount/totalCountInactive
+             in the same payload always wins over this. */
+          if (!state.rows.length){
+            if (params.totalCount == null && state.status === "active") state.totalCount = 0;
+            if (params.totalCountInactive == null && state.status === "inactive") state.totalCountInactive = 0;
+          }
         }
         if (params.totalCount != null) state.totalCount = toNum(params.totalCount);
         /* Not in the payload yet — the Inactive tab simply renders without a count until it is. */

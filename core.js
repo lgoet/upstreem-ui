@@ -817,8 +817,14 @@
         footRaf = requestAnimationFrame(function(){ footRaf = null; syncFootWrap(); });
       }).observe(elFoot);
     }
+    /* state.totalCount is the generic field every table using this pager has — prompts-table is
+       the one exception with a second, status-scoped total (state.totalCountInactive). cfg.total()
+       lets it hand over "whichever total actually applies right now" without this shared kit
+       having to know that field exists; every other table just doesn't pass it and keeps reading
+       state.totalCount directly. */
+    function totalOf(){ return cfg.total ? toNum(cfg.total()) : toNum(state.totalCount); }
     function pageCount(){
-      var t = toNum(state.totalCount);
+      var t = totalOf();
       if (t == null || t <= 0) return 1;
       return Math.max(1, Math.ceil(t / state.pageSize));
     }
@@ -844,7 +850,7 @@
       var total = pageCount();
       var cur = Math.min(state.page, total);
       if (cur !== state.page){ state.page = cur; if (cfg.onClamp) cfg.onClamp(); }
-      var t = toNum(state.totalCount);
+      var t = totalOf();
       var info = "";
       if (t != null && t > 0){
         var from = offset() + 1;
