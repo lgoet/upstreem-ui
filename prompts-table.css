@@ -161,7 +161,12 @@
   position: fixed !important;
   bottom: 80px !important;
   left: 50% !important;
-  z-index: 99999;
+  /* Below the host page's own floating groups/drawers + their backdrops (a real, documented
+     conflict: their drawer/backdrop z-indexes go up to ~9930, and used to sit UNDER this bar even
+     though a drawer is conceptually "on top of the page" — the bar was stealing focus/clicks it
+     had no business winning). The Add Topic modal (core.css, 100000) still opens above this bar
+     regardless of this value, since a modal always wins. */
+  z-index: 8000;
   /* A FIXED width, not max-content: with the topic list wrapping inside, max-content measures
      every chip on a single line and the bar ballooned to fit them instead of wrapping. Fixed
      also means the bar never resizes as the selection count grows — a control that changes
@@ -237,6 +242,13 @@
   --upt-frame: rgba(255,255,255,.08);
   box-shadow: 0 14px 34px rgba(0,0,0,0.6);
 }
+/* Same dim treatment the table itself gets from .up-root.is-reloading (core.css) — this bar lives
+   outside .up-root on document.body, so it needs its own copy rather than inheriting that rule.
+   Covers both the row and the topic panel (if open): nothing on this bar should be actionable
+   while the table underneath it is mid-load, a bulk action firing against a row set that's about
+   to change would be worse than a moment of disabled buttons. */
+.upt-bulkbar.is-loading .upt-bulkbar-row,
+.upt-bulkbar.is-loading .upt-bulkpanel { opacity: .42; pointer-events: none; }
 /* The action row. No separators — the gaps carry the grouping on their own. */
 .upt-bulkbar-row { display: flex; flex-direction: row; align-items: center; gap: 16px; min-height: 36px; }
 /* Actions sit right, count and the select-all link stay left.

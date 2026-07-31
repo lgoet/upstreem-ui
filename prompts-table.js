@@ -54,8 +54,8 @@
       style.textContent = [
         '.ust-cell{width:100%;height:100%;min-width:0;display:flex;align-items:center;background:transparent;border:0;overflow:hidden;font-family:Geist,Inter,system-ui,-apple-system,sans-serif;}',
         '.ust-cell *,.ust-topics-popup *{box-sizing:border-box;}',
-        '.ust-row{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;width:100%;min-width:0;min-height:32px;overflow:hidden;}',
-        '.ust-tag{height:32px;padding:0 10px;border-radius:8px;display:inline-flex;align-items:center;gap:7px;flex:0 0 auto;border:1px solid color-mix(in srgb,var(--ust-tag-color,#6b7280) 40%,transparent);background:color-mix(in srgb,var(--ust-tag-color,#6b7280) 10%,transparent);color:var(--ust-tag-color,#4b5563);font-size:12px;line-height:1;font-weight:500;white-space:nowrap;cursor:pointer;user-select:none;}',
+        '.ust-row{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;width:100%;min-width:0;min-height:28px;overflow:hidden;}',
+        '.ust-tag{height:28px;padding:0 10px;border-radius:8px;display:inline-flex;align-items:center;gap:7px;flex:0 0 auto;border:1px solid color-mix(in srgb,var(--ust-tag-color,#6b7280) 40%,transparent);background:color-mix(in srgb,var(--ust-tag-color,#6b7280) 10%,transparent);color:var(--ust-tag-color,#4b5563);font-size:12px;line-height:1;font-weight:500;white-space:nowrap;cursor:pointer;user-select:none;}',
         '.ust-tag-emoji{font-size:12px;line-height:1;}',
         '.ust-tag-label{white-space:nowrap;}',
         '.ust-empty{display:inline-flex;align-items:center;color:#a0a5ad;font-size:13px;line-height:1;}',
@@ -69,7 +69,7 @@
         '.up-root:not(.is-inactive-view) .upt-td-topics:hover .ust-empty{color:var(--vc-text,#1f1f1b);}',
         '.up-root:not(.is-inactive-view) .upt-td-topics:hover .ust-empty-dash{opacity:0;max-width:0;}',
         '.up-root:not(.is-inactive-view) .upt-td-topics:hover .ust-empty-add{max-width:50px;opacity:1;margin-left:4px;}',
-        '.ust-more{height:32px;padding:0 10px;border-radius:8px;display:inline-flex;align-items:center;flex:0 0 auto;border:0;background:#f5f5f5;color:var(--ust-more-color,#5f646d);font-size:12px;line-height:1;font-weight:600;white-space:nowrap;cursor:pointer;user-select:none;}',
+        '.ust-more{height:28px;padding:0 10px;border-radius:8px;display:inline-flex;align-items:center;flex:0 0 auto;border:0;background:#f5f5f5;color:var(--ust-more-color,#5f646d);font-size:12px;line-height:1;font-weight:600;white-space:nowrap;cursor:pointer;user-select:none;}',
         '.ust-cell{--ust-more-border:#d9dde3;--ust-more-color:#5f646d;}',
         '.ust-cell .ust-more:hover{background:#ececec;color:#1f1f1b;}',
         '.ust-cell[data-theme="dark"] .ust-tag{background:color-mix(in srgb,var(--ust-tag-color,#6b7280) 22%,transparent);color:#e0e0e0;}',
@@ -527,7 +527,7 @@
        this with its brand list ("rebuilding made every row flash for a frame"). */
     function syncRowChecks(){
       Array.prototype.forEach.call(elTbody.querySelectorAll("[data-select]"), function(b){
-        var on = !!state.selected[b.getAttribute("data-select")];
+        var on = state.selectAllMatching || !!state.selected[b.getAttribute("data-select")];
         b.classList.toggle("is-checked", on);
         b.setAttribute("aria-checked", on ? "true" : "false");
         b.innerHTML = on ? CHECK_SVG : "";
@@ -572,7 +572,7 @@
       if (!box) return;
       var rows = state.rows || [];
       var total = rows.length;
-      var sel = rows.filter(function(r){ return state.selected[String(r.prompt_id)]; }).length;
+      var sel = state.selectAllMatching ? total : rows.filter(function(r){ return state.selected[String(r.prompt_id)]; }).length;
       var all = total > 0 && sel === total;
       var some = sel > 0 && sel < total;
       box.classList.toggle("is-checked", all);
@@ -806,6 +806,12 @@
       var bar = on ? ensureBulkBar() : elBulk;
       if (!bar) return;
       bar.setAttribute("data-theme", isDark ? "dark" : "light");
+      /* Same treatment as the table's own soft-reload dim, but this bar lives on document.body
+         (outside .up-root), so it can't just piggyback on .up-root.is-reloading — it needs its
+         own class. Nothing on it should be clickable while the table is mid-load; a bulk action
+         fired against a row set that's about to change under it would be worse than just waiting
+         a moment for the buttons to come back. */
+      bar.classList.toggle("is-loading", isBusy());
       if (!on){
         /* Move focus out BEFORE hiding: aria-hidden on an ancestor of the focused element is
            an accessibility trap, and Chrome refuses it outright with a console error. Clicking
@@ -1263,7 +1269,10 @@
     }
     function rowHtml(r){
       var id = String(r.prompt_id == null ? "" : r.prompt_id);
-      var checked = !!state.selected[id];
+      /* "Select all N matching" only ever set the flag, never backfilled state.selected for rows
+         that weren't loaded yet — a page turn or a bigger page size brings in rows this flag
+         should already cover, but that individually never got a state.selected[id]=true entry. */
+      var checked = state.selectAllMatching || !!state.selected[id];
       var text = String(r.prompt_text == null ? "" : r.prompt_text);
       return '<div class="up-row' + (checked ? " is-selected" : "") + '" data-id="' + esc(id) + '" tabindex="0" role="button">' +
         '<div class="up-td upt-td-prompt">' +

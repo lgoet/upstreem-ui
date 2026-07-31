@@ -228,13 +228,16 @@
     }
     function chartIsEmpty(){ return !state.prepped.length || state.prepped.every(function(x){ return !(Number(x.share) > 0); }); }
     /* Same interim-"clearing" flash risk as the table side — the shared grace helper shows the
-       skeleton first and only commits to "No data" if it is still empty 3s later. */
+       skeleton first and only commits to "No data" if it is still empty shortly after. Shorter
+       than the 3s default (and shorter than visibility-chart's own window): once loading is
+       genuinely done, sitting on a skeleton for multiple seconds read as "stuck", not "settling". */
     var chartGrace = UC.makeEmptyGrace({
       showSkeleton: function(){ typeChart.skeleton(); },
       stillEmpty: function(){
         return isOwner() && !state.loading && !state.optimisticLoading && state.hasChart && chartIsEmpty();
       },
-      commitEmpty: function(){ drawChart(); syncChartSwitch(); }
+      commitEmpty: function(){ drawChart(); syncChartSwitch(); },
+      ms: 600
     });
     function drawChart(){
       if (state.chartMode === "bar"){ if (topTotal) topTotal.style.display = "flex"; if (topTotalN) topTotalN.textContent = fmtTotal(state.chartTotal); typeChart.renderBars(state.prepped); }
@@ -321,7 +324,7 @@
             tableEmptyGraceTimer = null;
             if (state.loading || state.optimisticLoading || !state.hasTable || activeRows().length) return;
             tableEl.innerHTML = head + '<div class="up-empty-mini">No data</div>';
-          }, 3000);   // matches visibility-chart's established __votNoDataT grace window
+          }, 600);   // shortened from the 3s visibility-chart default — felt "stuck" once loading was genuinely done
         }
         return;
       }

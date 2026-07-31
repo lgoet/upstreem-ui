@@ -2213,3 +2213,41 @@ gemeinsame ID, keine garantierte Formatgleichheit.
   Wert plus zwei Kommentare, `domains-table.css` zwei Kommentare — die eigentlichen
   `transition-delay`-Werte für den Fade-Handoff selbst waren davon nie betroffen, die stehen für
   den Übergang NACH dem Dwell, nicht für den Dwell selbst).
+
+## 40. R10-Runde: sechs kleine, unabhängige Fixes
+
+- **Bulk-Bar dimmt bei Loading**: `elBulk` sitzt auf `document.body`, außerhalb von `.up-root` —
+  `.up-root.is-reloading .up-tbody` (core.css) erreicht ihn deshalb nie. Eigene Klasse
+  `.upt-bulkbar.is-loading`, in `renderBulkBar()` per `isBusy()` gesetzt, dimmt Row+Panel und
+  schaltet `pointer-events:none` — unabhängig vom on/off-Zustand der Bar selbst.
+- **"Select all N matching" + neue Seite/Limit**: `state.selectAllMatching` wurde nie in
+  `state.selected` zurückgeschrieben — nur neu geladene Zeilen (Page-Wechsel, Page-Size hoch)
+  zeigten sich deshalb als nicht selektiert, obwohl die Predicate-Selektion sie längst umfasst.
+  `rowHtml()`, `syncRowChecks()`, `syncSelectAll()` prüfen jetzt `state.selectAllMatching ||
+  state.selected[id]` statt nur `state.selected[id]`.
+- **Select-All-Header-Checkbox**: der Deselect-Zweig von `toggleSelectAll()` leerte nur die
+  aktuell geladene Seite — über mehrere Seiten selektiert (oder mit aktivem
+  `selectAllMatching`) blieb entweder eine fremde Seite selektiert oder die Bulk-Bar zeigte
+  weiter den vollen Count trotz leerer Checkboxen. Deselect leert jetzt immer die komplette
+  Selection (`state.selected = {}`, `invalidateSelectAll()`).
+- **Status-Switch (Active/Inactive) + Pagination**: `uptStatus` trägt jetzt `limit`/`offset`/
+  `page` (immer Seite 1) im Payload, gleiche Form wie `uptPage` — vorher hatte die Bubble-Seite
+  keine explizite Bestätigung, dass sie ihre eigene Pagination-State auf Seite 1 zurücksetzen
+  muss, und konnte eine stehengebliebene Seite/Offset weiter anfragen.
+- **TopCitations Dashboard Empty-Grace**: 3s → 600ms (Chart-Seite über `UC.makeEmptyGrace({ms:
+  600})`, Tabellen-Seite über den eigenen `tableEmptyGraceTimer`). Der 3s-Wert war 1:1 von
+  visibility-chart übernommen, ohne dass der dortige Anti-Flash-Grund (RPC-Zwischenschritt
+  räumt kurz leer) hier in der Praxis so lange gebraucht hätte — fühlte sich nach "hängt" an,
+  nicht nach "settled".
+- **Chart-Settings-Zahnrad Position**: `.vot-scale-btn`/`.ccl-settings-btn` (visibility-chart,
+  citations-combo-chart) von `top:12px;right:12px` auf `top:8px;right:8px` — sitzt jetzt näher
+  an der Ecke.
+- **Topics-Zellen-Höhe in der Prompts-Table**: `.ust-tag`/`.ust-more`/`.ust-row` (die JS-
+  injizierte In-Table-Widget-CSS, siehe `installUstTopics()`) von 32px auf 28px. Bewusst NUR
+  dort — der Bulk-Popover-Chip (`.upt-topicchip`) und die Add-Topic-Modal-Chips
+  (`.up-topicmodal-*`) bleiben bei 32px, das sind komplett andere CSS-Klassen.
+- **Bulk-Bar z-index unter Bubble-Drawern**: `.upt-bulkbar` von `z-index:99999` auf `8000` — lag
+  bisher über den Host-Page-eigenen Floating-Group-Drawern/Backdrops (deren `dz1-3`/`bz1-3` bei
+  ~9905-9930 liegen), obwohl ein geöffneter Drawer konzeptionell über der Seite liegen sollte.
+  Das Add-Topic-Modal (core.css, `z-index:100000`) öffnet weiterhin über der Bar, unabhängig
+  von diesem Wert.

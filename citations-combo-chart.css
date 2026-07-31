@@ -52,7 +52,7 @@
    menu's populate callback (see citations-combo-chart.js) are this component's own. .combo-box has
    overflow:hidden (line chart clipping), so — same reasoning as visibility-chart's — the actual
    dropdown menu is body-mounted, not a plain absolute child of this button. */
-.ccl-settings-btn { position: absolute; top: 12px; right: 12px; }
+.ccl-settings-btn { position: absolute; top: 8px; right: 8px; }
 
 /* ---------- maximize / auto-stack ---------- */
 .combo-root.is-max .combo-unit, .combo-root.is-narrow .combo-unit { flex: 0 0 auto; width: 100%; max-width: 100%; }
