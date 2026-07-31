@@ -628,8 +628,15 @@
     }
 
     /* ---------------- bulk actions ---------------- */
+    /* The count that actually applies to whichever tab is open — state.totalCount is the Active
+       count, state.totalCountInactive is the Inactive one, and every "how many rows are there in
+       total" question below has to ask the right one. Using state.totalCount unconditionally is
+       exactly the bug that made "Select all N" silently never appear on the Inactive tab whenever
+       the Active count happened to be 0 — hasMorePages() saw "0 total" and never offered it, even
+       with 45 real inactive rows sitting right there. */
+    function currentTotal(){ return toNum(state.status === "inactive" ? state.totalCountInactive : state.totalCount); }
     function hasMorePages(){
-      var t = toNum(state.totalCount);
+      var t = currentTotal();
       return t != null && t > (state.rows || []).length;
     }
     function invalidateSelectAll(){ state.selectAllMatching = false; }
@@ -649,7 +656,7 @@
                   and the bulk action can silently disagree about which rows they mean. */
     function selectionPayload(){
       if (state.selectAllMatching){
-        return { mode: "filter", count: toNum(state.totalCount) || 0,
+        return { mode: "filter", count: currentTotal() || 0,
                  query: state.query, brand_mentioned: state.brandMentioned,
                  status: state.status, order: orderValue(state.sortField, state.sortDir) };
       }
@@ -657,7 +664,7 @@
       return { mode: "ids", count: ids.length, ids: ids.join(",") };
     }
     function bulkCount(){
-      return state.selectAllMatching ? (toNum(state.totalCount) || 0) : selectedIds().length;
+      return state.selectAllMatching ? (currentTotal() || 0) : selectedIds().length;
     }
 
     var elBulk = null;
@@ -837,7 +844,7 @@
       else if (hasMorePages() && pageFullySelected()) escape = '<button class="upt-bulkbar-link" type="button" data-bulk-all>Select all ' +
         /* fmtInt, not fmtTotal: fmtTotal abbreviates (1000 -> "1k"), and "Select all 1k prompts"
            reads like a rounded guess when it is in fact an exact figure. */
-        UC.fmtInt(toNum(state.totalCount)) + ' prompts</button>';
+        UC.fmtInt(currentTotal()) + ' prompts</button>';
 
       var statusLabel = state.status === "inactive" ? "Set Active" : "Set Inactive";
       /* Inactive prompts aren't tagged — Topics management only ever makes sense for the active
@@ -1353,7 +1360,7 @@
          a stale count from before a filter/status change sits there unchanged while fresh data
          is still in flight, which reads as "nothing happened" rather than "loading". */
       if (isBusy()){ elHeadCount.textContent = ""; elHeadCount.classList.add("is-sk"); return; }
-      var totalForView = state.status === "inactive" ? state.totalCountInactive : state.totalCount;
+      var totalForView = currentTotal();
       var n = (totalForView != null) ? totalForView : (state.hasData ? state.rows.length : null);
       if (n == null){ elHeadCount.textContent = ""; elHeadCount.classList.add("is-sk"); return; }
       elHeadCount.textContent = UC.fmtTotal(n);
