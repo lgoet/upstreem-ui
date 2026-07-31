@@ -259,16 +259,27 @@
       .replace(/ä/g,"ae").replace(/ö/g,"oe").replace(/ü/g,"ue").replace(/ß/g,"ss")
       .toLowerCase();
   }
+  /* Once a bubble_fn_* is actually found, its window/property reference stays valid for the rest
+     of the page's life (Bubble never relocates an already-defined workflow function) — caching it
+     turns every fire() AFTER THE FIRST for that name into a plain property read instead of
+     re-walking window/parent/top and then, on a miss, a full BFS over every iframe on the page.
+     That BFS is the one genuinely slow path here: a page with several embedded components/iframes
+     re-walks all of them on EVERY click if the direct window/parent/top check doesn't hit — which
+     is exactly what made a row click (fired constantly, expected to feel instant) noticeably
+     laggy despite there being no actual delay/debounce anywhere in the click handling itself. */
+  var __resolvedFnCache = {};
   function resolveBubbleFn(fnName){
+    var cached = __resolvedFnCache[fnName];
+    if (typeof cached === "function") return cached;
     var fn = window[fnName] || (window.parent && window.parent[fnName]) || (window.top && window.top[fnName]);
-    if (typeof fn === "function") return fn;
+    if (typeof fn === "function"){ __resolvedFnCache[fnName] = fn; return fn; }
     var start; try { start = window.top || window.parent || window; } catch(e){ start = window; }
     var queue = [start], seen = [];
     while (queue.length){
       var win = queue.shift();
       if (seen.indexOf(win) !== -1) continue;
       seen.push(win);
-      try { if (typeof win[fnName] === "function") return win[fnName]; } catch(e){}
+      try { if (typeof win[fnName] === "function"){ __resolvedFnCache[fnName] = win[fnName]; return win[fnName]; } } catch(e){}
       var frames; try { frames = win.document.querySelectorAll("iframe"); } catch(e){ continue; }
       for (var i = 0; i < frames.length; i++){
         var cw; try { cw = frames[i].contentWindow; } catch(e){ cw = null; }
@@ -2163,15 +2174,15 @@
   var X_MAX_TICKS = 7, Y_PAD = 1.15;
   /* Line width is a page-wide preference, not per-component/per-instance — one localStorage key
      read by every makeLine() chart, changeable from any of their own Chart Settings dropdowns.
-     "thin" is the original 1.5px this shipped with, kept as the default so nothing already
-     deployed shifts appearance until someone actually opens the setting and changes it. "thick"
-     is the midpoint between thin and the first version's 2.75px, not that value itself — 2.75
-     read as too heavy in practice. */
+     "thick" is the default (explicit user request) — the stored key only ever needs to hold "thin"
+     as an opt-out, so an unset/unreadable key falls through to "thick" here. "thick" itself is the
+     midpoint between thin (1.5px, the original) and the first version's 2.75px, not that value
+     itself — 2.75 read as too heavy in practice. */
   var LINE_WIDTH_VALUES = { thin: 1.5, thick: 2.125 };
   var LINE_WIDTH_KEY = "up_line_width_pref";
   function getLineWidthPref(){
-    try { return window.localStorage.getItem(LINE_WIDTH_KEY) === "thick" ? "thick" : "thin"; }
-    catch(e){ return "thin"; }
+    try { return window.localStorage.getItem(LINE_WIDTH_KEY) === "thin" ? "thin" : "thick"; }
+    catch(e){ return "thick"; }
   }
   function setLineWidthPref(v){
     v = v === "thick" ? "thick" : "thin";
