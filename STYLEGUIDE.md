@@ -2251,3 +2251,45 @@ gemeinsame ID, keine garantierte Formatgleichheit.
   ~9905-9930 liegen), obwohl ein geöffneter Drawer konzeptionell über der Seite liegen sollte.
   Das Add-Topic-Modal (core.css, `z-index:100000`) öffnet weiterhin über der Bar, unabhängig
   von diesem Wert.
+
+## 41. Der Loader-Akkumulations-Bug — warum Drawer/Views nach der HTML-Umstellung "ploppten"
+
+**Symptom (vom User gemeldet):** vor der Umstellung auf diese HTML-Komponenten hatten die Bubble-
+Drawer und View-Wechsel eine saubere kurze Animation. Danach: Animationen laufen oft gar nicht
+mehr ("es ploppt einfach rein"), teils bis zu einer Sekunde Verzögerung.
+
+**Ursache:** der CDN-Loader am Fuß jeder `bubble/*.html`. Bubble re-injiziert den kompletten
+Markup-Block einer Komponente — inklusive dieses `<script>` — bei JEDEM Re-Render des Reusables,
+in dem sie sitzt. Also bei jedem Drawer-/View-Öffnen. Der Loader hatte keinerlei Dedupe und hängte
+dabei jedes Mal erneut `<link core.css>`, `<link component.css>`, `<script core.js>`,
+`<script component.js>` an den `<head>` — 4 Tags pro Render, dauerhaft, nie aufgeräumt.
+
+Gemessen (lokaler Harness, 7 Komponenten auf der Seite):
+`14 Tags` nach einem Seitenaufbau → `24` nach 5 Drawer-Öffnungen → `64` nach ~25 Navigationen.
+
+Warum das die Animation trifft und nicht bloß Speicher kostet: **das Einfügen eines
+`<link rel="stylesheet">` ist render-blocking.** Der Browser hält das Painting an, bis das
+Stylesheet aufgelöst ist. Das passierte exakt im Moment der Öffnungsanimation, und bei kaltem oder
+revalidierendem Cache mit einem vollen Netzwerk-Roundtrip zu jsDelivr davor.
+
+**Zwei Hypothesen, die vorher geprüft und WIDERLEGT wurden** (bewusst hier festgehalten, damit sie
+nicht nochmal jemand verfolgt):
+- Der ganzseitige MutationObserver in `watchRoots` — mit Kontrolltest gemessen: ~0.6ms Mehrkosten
+  bei 1200 injizierten Knoten. Zu klein, um relevant zu sein.
+- Mehrfaches Auswerten von core.js — gemessen: ~0.1ms Median pro Evaluation (180kB). Die Datei ist
+  fast nur Funktionsdefinitionen, das Parsen ist billig.
+Nicht die Ursache war auch der `data-cdn-pin` gegenüber `@main` — der Pin bestimmt nur, WELCHE
+Datei geholt wird, beide werden gleich gecacht.
+
+**Fix:** Registry auf `window.__upAssetsLoaded`, gekeyed auf die volle URL; `css()`/`js()` gehen
+durch ein `once()`. Bewusst auf `window` und nicht in der Closure — jede Komponente bringt ihre
+eigene Kopie des Loaders mit, eine Closure-Variable würde pro Komponente einmal existieren und
+genau nichts verhindern.
+
+**Warum das Überspringen sicher ist** (die kritische Annahme, separat verifiziert): ein
+re-gerenderter Root braucht die Scripts NICHT erneut. `core.js`s `watchRoots`-Observer plus der
+1.5s-Heartbeat finden den neuen Root und initialisieren ihn. Gegengetestet mit einem Harness, der
+die Scripts absichtlich genau einmal ausführt und danach frisches Component-Markup in den DOM
+hängt: Root wird gefunden, `__uptController` wird gesetzt, `renderPromptsTable()` rendert echte
+Zeilen. Ohne diesen Test wäre der Dedupe ein Blindflug gewesen — er hätte die Komponenten nach dem
+ersten Render tot stellen können.

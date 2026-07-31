@@ -468,8 +468,8 @@
    the root div above (falls back to @main only if data-cdn-pin is left blank or at the literal
    "CDN_PIN" placeholder). The pin is found by looking the root element up BY CLASS — deliberately
    NOT via document.currentScript, because Bubble injects an HTML element's inline scripts in a way
-   that leaves document.currentScript null/misattached. Loading core.js once per component is fine:
-   the browser caches the (immutable, commit-pinned) URL, and the component's own init is idempotent. */
+   that leaves document.currentScript null/misattached. Each asset url is fetched and evaluated at most
+   ONCE per page — see the dedupe guard below for why that matters. */
 (function(){
   function readPin(cls){
     var els = document.getElementsByClassName(cls), i, p;
@@ -480,8 +480,20 @@
     return "main";
   }
   var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("upt-root") + "/";
-  function css(f){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = base + f; document.head.appendChild(l); }
-  function js(f){ var s = document.createElement("script"); s.src = base + f; s.async = false; document.head.appendChild(s); }
+  /* Bubble re-injects this whole block (this script tag included) every time the reusable this
+     component sits in re-renders — i.e. on every drawer/view open. Without this guard each of
+     those re-runs appended ANOTHER <link> + <script> for the SAME urls, forever: 4 more tags per
+     render, never cleaned up (measured: 14 tags after one page build, 64 after ~25 navigations).
+     Inserting a stylesheet <link> is render-blocking, so that landed right in the middle of the
+     open animation — which is what made drawers/views "pop" in instead of animating.
+     The registry lives on window, not in this closure, because every component ships its own copy
+     of this loader. Skipping the re-run is safe: a re-rendered root is picked up and initialised
+     by core.js's own root observer + 1.5s heartbeat, it does not need the scripts evaluated
+     again (verified against a root injected with the scripts deliberately run only once). */
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(url, make){ if (L[url]) return; L[url] = 1; make(url); }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
   css("core.css"); css("prompts-table.css");
   js("core.js"); js("prompts-table.js");
 })();
