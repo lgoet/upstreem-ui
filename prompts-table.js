@@ -1338,7 +1338,7 @@
             emptyGraceTimer = null;
             if (isBusy() || !state.hasData || state.rows.length) return;
             renderEmptyState(false);
-          }, 3000);
+          }, 600);
         }
         return;
       }

@@ -292,7 +292,7 @@
      ==========================================================================================
      The four tables in this library legitimately differ in their columns, heights and row
      content — that stays per component. What did NOT need to differ, but was copy-pasted anyway,
-     is everything below: the trend chip (4 copies), the loading skeleton rows (4), the 3000ms
+     is everything below: the trend chip (4 copies), the loading skeleton rows (4), the 600ms
      empty-state grace timer (5), and the column-explainer popover logic (3). */
 
   /* Delta chip: an arrow plus the absolute value, coloured by whether the change is GOOD, which
@@ -393,8 +393,10 @@
      An empty delivery is often an interim "clearing" step a beat before the real data lands;
      committing to "No data" immediately flashes a placeholder that is gone again a moment later.
      This shows the skeleton first and only commits after the window if the state still says
-     empty. 3000ms matches the line chart's own no-data window, so a table and the chart beside
-     it never disagree about whether there is data.
+     empty. 600ms is short enough that it doesn't read as "stuck" once loading is genuinely done,
+     while still catching a same-tick clearing flash — every consumer across the app (this one and
+     each table/chart's own hand-rolled copy of the same pattern) uses the same window, so nothing
+     next to something else ever disagrees about whether there is data.
      cfg: { showSkeleton(), commitEmpty(), stillEmpty(), ms } */
   function makeEmptyGrace(cfg){
     var t = null;
@@ -408,7 +410,7 @@
           t = null;
           if (cfg.stillEmpty && !cfg.stillEmpty()) return;   // data arrived meanwhile
           cfg.commitEmpty();
-        }, cfg.ms || 3000);
+        }, cfg.ms || 600);
         return true;
       },
       clear: clear

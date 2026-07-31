@@ -309,7 +309,7 @@
             tableEmptyGraceTimer = null;
             if (state.loading || !state.hasTable || (Array.isArray(state.tableRows) && state.tableRows.length)) return;
             tableEl.innerHTML = head + '<div class="up-empty-mini">No data</div>';
-          }, 3000);   // matches this same file's line-chart __votNoDataT grace window
+          }, 600);   // matches this same file's line-chart __votNoDataT grace window
         }
         return;
       }
@@ -965,7 +965,7 @@
               if (isLoading()) return;
               state.hasLine = true; state.series = []; state.linePending = false; state.noDataConfirmed = true;
               render();
-            }, 3000);
+            }, 600);
             if (state.hasLine && isLoading()){
               clearTimeout(root.__votPendingT);
               root.__votPendingT = setTimeout(function(){

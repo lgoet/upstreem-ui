@@ -767,7 +767,7 @@
             emptyGraceTimer = null;
             if (isBusy() || !state.hasData || state.rows.length) return;   // state moved on already
             renderEmptyState(false);
-          }, 3000);   // matches the line-chart's established __votNoDataT grace window (visibility-chart.js)
+          }, 600);   // matches the app-wide empty-grace window (see core.js's makeEmptyGrace)
         }
         return;
       }
