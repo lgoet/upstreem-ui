@@ -421,6 +421,16 @@
         p.new_topic_hex_light = payload.hex_light;
         p.new_topic_hex_dark = payload.hex_dark;
         fire("data-addtopics-fn", "uptAddTopics", p);
+        /* Same stale-query trap as the inline create row below: the bulk panel's search box can
+           still be holding a non-matching query from before this modal was opened, which would
+           filter the freshly-updated topics list down to nothing once it lands. */
+        if (elBulk){
+          topicQuery = "";
+          var mInp = elBulk.querySelector(".upt-topicsearch-in");
+          if (mInp) mInp.value = "";
+          var mHead = elBulk.querySelector(".upt-topichead");
+          if (mHead) mHead.classList.remove("has-text");
+        }
         addTopicModal.close();
       }
     });
@@ -908,6 +918,10 @@
     var newTopicEmoji = "";
     var newTopicColor = null;
     var pickOpen = null;   // null | "emoji" | "color" — which picker (if any) is expanded
+    /* Name of a topic just created (inline row or the Add Topic modal), waiting for the next
+       topics list to land so it can be auto-staged — see the params.topics branch in update()
+       and both create call sites below. Cleared once matched or once the panel closes. */
+    var pendingAutoStageName = null;
     /* Split in three on purpose: the head (search + reset + count) is built ONCE when the menu
        opens; the chip list is rebuilt per keystroke/toggle; the foot's count/disabled-state is
        patched separately from a toggle so a click doesn't also tear down the search input. */
@@ -1100,6 +1114,7 @@
         /* Explicit, not just "the next open reseeds anyway": a staged draft that outlives the
            panel it was drafted in is never meant to be read by anything else. */
         state.stagedTopicIds = null;
+        pendingAutoStageName = null;
       }
       panel.setAttribute("aria-hidden", open ? "false" : "true");
       if (btn) btn.setAttribute("aria-expanded", open ? "true" : "false");
@@ -1632,12 +1647,25 @@
           /* Same hand-off as the plain Add Topic button, plus the typed name and whatever emoji/
              color were picked — the create UI can use them straight away instead of asking again. */
           var cp = selectionPayload();
-          cp.new_topic_name = createBtn.getAttribute("data-topic-create") || "";
+          var newName = createBtn.getAttribute("data-topic-create") || "";
+          cp.new_topic_name = newName;
           cp.new_topic_emoji = newTopicEmoji || "";
           var pickedHex = newTopicColor || TOPIC_COLOR_PALETTE[0];
           cp.new_topic_hex_light = pickedHex;
           cp.new_topic_hex_dark = pickedHex;
           fire("data-addtopics-fn", "uptAddTopics", cp);
+          /* The query that got us into "no matches, create it" mode is now stale the moment the
+             fresh topics list lands — left alone, it kept filtering the rebuilt chip list down to
+             just the new topic (the only one still matching that exact typed text) until the next
+             keystroke nudged a re-filter. Clear it now, and remember the name so the matching
+             topic in the next list gets auto-staged instead of the user having to re-find and
+             re-click it. */
+          topicQuery = ""; pendingAutoStageName = newName.trim();
+          var cInp = elBulk.querySelector(".upt-topicsearch-in");
+          if (cInp) cInp.value = "";
+          var cHead = elBulk.querySelector(".upt-topichead");
+          if (cHead) cHead.classList.remove("has-text");
+          renderTopicList();
           return;
         }
         if (e.target.closest("[data-topic-add]")){
@@ -1946,6 +1974,15 @@
         if (params.topics != null){
           var _t = Array.isArray(params.topics) ? params.topics : [];
           if (_t.length) state.topics = _t;   // ignore a stray empty list so it can't wipe the editor
+          /* Auto-stage the topic just created via the inline "Create '…'" row (see the
+             data-topic-create handler) — it just landed in this fresh list, matched by the exact
+             name that was typed. Only while the panel still has a live staged draft: if the user
+             closed it in the meantime, state.stagedTopicIds is null and there's nothing to add to. */
+          if (pendingAutoStageName && state.stagedTopicIds){
+            var match = _t.filter(function(t){ return String(t && t.name || "").trim() === pendingAutoStageName; })[0];
+            if (match) state.stagedTopicIds[topicId(match)] = true;
+            pendingAutoStageName = null;
+          }
         }
         if (params.rows != null){ state.loading = false; state.softReload = false; endSoftReload(); }
         if (!explicitOverride && hasProcessingAttr()) state.extLoading = readProcessing();
