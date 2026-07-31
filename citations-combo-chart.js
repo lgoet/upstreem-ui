@@ -735,13 +735,9 @@
      because this component broadcasts to every root sharing an instanceId. */
   var mount = UC.makeMount({
     rootClass: "combo-root",
-    /* REVERTED (R7 attempt): scoping this to canvas-only made real-world scrolling near this
-       panel much WORSE, not better — canvas is destroyed/recreated on every render, so the
-       listener depends on the 800ms wheelFlag re-poll to ever land on the current canvas; the
-       containers below are never recreated, so binding here never has that gap. Needs proper
-       re-investigation (actual wheel event / real embed) before trying narrower scoping again —
-       see STYLEGUIDE §38 for the retracted theory. */
-    wheelSel: ".up-line-wrap, .up-donut-body, .cc-type-root",
+    /* No wheelSel — the whole wheel-forwarding mechanism is gone from core (see the comment where
+       it used to live in makeMount). It replaced native scrolling with a hand-rolled scrollTop
+       write for a Chart.js problem that measurably does not exist. */
     ctrlProp: "__ccController",
     resolveLocal: "__ccResolveLocal",
     queue: "__ccBootQueue",

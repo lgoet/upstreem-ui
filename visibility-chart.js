@@ -1139,12 +1139,9 @@
      because this component broadcasts to every root sharing an instanceId. */
   var mount = UC.makeMount({
     rootClass: "vot-root", notPortal: true,
-    /* REVERTED (R7 attempt): scoping this to canvas-only made real-world scrolling worse across
-       the board (canvas is destroyed/recreated on render, listener depends on the 800ms re-poll
-       to catch up; .up-line-wrap itself never is) — see STYLEGUIDE §38, theory retracted, needs
-       proper re-investigation before trying narrower scoping again.
-       only the chart itself swallows the wheel — the Top Brands table beside it scrolls natively */
-    wheelSel: ".up-line-wrap",
+    /* No wheelSel — the whole wheel-forwarding mechanism is gone from core (see the comment where
+       it used to live in makeMount). It replaced native scrolling with a hand-rolled scrollTop
+       write for a Chart.js problem that measurably does not exist. */
     ctrlProp: "__votController",
     resolveLocal: "__votResolveLocal",
     queue: "__votBootQueue",

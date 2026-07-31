@@ -2040,33 +2040,47 @@ das:
   Farbe TRÄGT (nicht nur optisch hell aussieht, sondern bewusst als "gedimmt/inaktiv" markiert ist),
   muss Hover die Dämpfung verstärken, nicht umkehren.
 
-## 38. Wheel-Forwarding auf `canvas` scopen: RETRACTED — machte es schlimmer, nicht besser
+## 38. Wheel-Forwarding komplett entfernt — die Prämisse war schlicht falsch
 
-**Versuch (kurz live, dann sofort zurückgerollt):** `wheelSel` von `.up-donut-body`/`.cc-type-root`
-auf `".up-donut-body canvas"` eingeengt, in der Annahme, der ganze gepolsterte Flex-Container sei
-zu breit gescoped (Ring sitzt bei ~52% mittig, Rest ist leerer Platz, der trotzdem denselben
-Listener bekam). Ergebnis beim echten User-Test: **spürbar schlimmer**, nicht besser — auf den
-betroffenen Komponenten war kaum noch normales Scrollen möglich, wenn die Maus irgendwo darüber
-stand. Sofort auf den alten Container-Selektor zurückgerollt (`.up-donut-body`, `.up-line-wrap,
-.up-donut-body, .cc-type-root`, `.up-line-wrap`).
+`UC.makeMount` hatte ein `cfg.wheelSel`: ein `wheel`-Listener, der `preventDefault()` rief und
+Scrollen von Hand nachbaute (`scrollTarget(e.target).scrollTop += e.deltaY`). Begründung im
+Original-Kommentar: *"Chart.js sets touch-action:none on its canvas, so the wheel never reaches the
+app's scroll container."*
 
-**Naheliegende Erklärung, NICHT verifiziert (nächster Anlauf muss das erst bestätigen, bevor
-wieder auf `canvas` gescoped wird):** `renderDonut()`/`renderBars()` ersetzen `body.innerHTML`
-bei JEDEM Rebuild — das `<canvas>`-Element wird dabei zerstört und neu erzeugt. `.up-donut-body`
-selbst wird nie neu erzeugt (nur sein Inhalt). `attachWheel()`s 800ms-Poll-Intervall existiert
-genau deshalb, um neu erzeugte Canvas-Elemente nachträglich zu finden — mit `wheelSel` auf
-`canvas` gescoped hängt der Listener ab jedem Rebuild in einem bis zu 800ms breiten Fenster
-komplett in der Luft (kein Canvas im DOM, das den `wheelFlag` trägt, ODER ein neues Canvas ohne
-Listener), während mit dem Container-Selektor der Listener nie verloren geht, weil der Container
-selbst stabil bleibt. Diese Theorie erklärt "schlimmer" aber nicht zwingend vollständig — bevor
-das nochmal versucht wird: mit einem ECHTEN Wheel-Event in einem echten (oder zumindest sehr nah
-nachgebauten) Embed reproduzieren, nicht nur aus dem Code ableiten. Die vorherige Runde hatte genau
-das nicht getan (reine Code-Lektüre, kein Live-Repro) und lag falsch.
+**Das ist gemessen falsch.** Auf Chart.js 4 (unser Stand):
+- Ein Chart-Canvas hat `touch-action: auto`, NICHT `none`.
+- Ein Wheel-Event über dem Canvas blubbert normal bis `window`.
+- Nichts ruft `preventDefault()` darauf.
 
-Faustregel, die stehen bleibt: **ein Fix, der nur aus Code-Lesen abgeleitet wurde und nie gegen
-ein echtes Wheel-Event/einen echten Embed getestet wurde, ist eine Hypothese, kein Fix** — erst
-recht bei Timing-abhängigem Verhalten (Poll-Intervalle, Recreate-on-render), wo die Lücke selbst
-unsichtbar ist, bis man sie tatsächlich live triggert.
+Es gab also nie etwas weiterzuleiten. Was der Code tatsächlich tat: das native Scrollen bei JEDEM
+Wheel über einem Chart abbrechen und durch einen synchronen `scrollTop`-Schreibzugriff ersetzen —
+kein Compositor-Thread-Scrolling, keine Trägheit, kein Rubber-Banding. Genau das war "das Scrollen
+fühlt sich weird an / es gibt keinen iOS-Bounce".
+
+**Beweis (echtes Wheel-Event, echte Komponente, `#main`-Scrollcontainer wie in Bubble):**
+
+| Ziel | `defaultPrevented` | Verhalten |
+|---|---|---|
+| `.up-donut-body` (hatte den Listener) | `true` | JS kaperte es, sprang exakt um `deltaY` |
+| `.tct-table` (kein Listener, gleiche Komponente) | `false` | nativ |
+| normaler Seiteninhalt | `false` | nativ |
+
+Nach dem Entfernen melden Canvas, Chart-Body, Tabelle und Seiteninhalt alle `false` — also
+identisch. Dass die drei reinen Tabellen (`domains-`/`urls-`/`prompts-table`) nie einen `wheelSel`
+hatten, ist exakt der Grund, warum ihr Scrollen sich immer richtig anfühlte.
+
+**Nicht wieder einbauen.** Falls ein Chart doch mal echt den Wheel abfängt (`chartjs-plugin-zoom`
+ruft tatsächlich `preventDefault`), gehört das in dessen eigene Config — nicht in einen globalen
+handgeschriebenen Scroller.
+
+**Zwei Lehren, die teuer waren:**
+1. Ein aus reiner Code-Lektüre abgeleiteter Fix ist eine Hypothese, kein Fix. Der vorherige Versuch
+   (Selektor auf `canvas` einengen) war genau das, wurde nie gegen ein echtes Wheel-Event getestet
+   und machte es schlimmer.
+2. **Prämissen in Kommentaren sind Behauptungen, keine Fakten.** Der `touch-action:none`-Satz stand
+   jahrelang unwidersprochen im Code und hat zwei Debug-Runden in die falsche Richtung geschickt.
+   Bei einem Bug, der einem Workaround zugeschrieben wird: erst die Existenz des Problems messen,
+   das der Workaround angeblich löst — vielleicht ist der Workaround selbst der ganze Bug.
 
 ## 36. Bar-Hover "wie im Doughnut": zwei verschiedene Mechanismen für denselben Eindruck
 
