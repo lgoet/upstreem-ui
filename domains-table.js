@@ -315,7 +315,7 @@
                LINK_SVG + '<span>Show Pages</span></button>' : "") +
           '</span>' +
         '</div>' +
-        '<div class="up-td up-td-share"><span class="udt-num">' + fmt1(share) + '%</span>' + trendChip(r.share_delta_pct) + '</div>' +
+        '<div class="up-td up-td-share"><span class="udt-num">' + fmt1(share) + '%</span>' + trendChip(r.share_delta_pct, "%") + '</div>' +
         '<div class="up-td up-td-used"><span class="udt-used">' + fmtTotal(used || 0) + '</span></div>' +
         '<div class="up-td up-td-type">' + tagHtml(r.citation_type) + '</div>' +
         '<div class="up-td up-td-lastseen"><span class="udt-date">' + esc(fmtDate(r.last_used_at)) + '</span></div>' +

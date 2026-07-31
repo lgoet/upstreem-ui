@@ -266,7 +266,7 @@
           '</span>' +
           '<span class="uut-row-goto">' + GOTO_SVG + '</span>' +
         '</div>' +
-        '<div class="up-td uut-td-share"><span class="uut-num">' + fmt1(share) + '%</span>' + trendChip(r.share_delta_pct) + '</div>' +
+        '<div class="up-td uut-td-share"><span class="uut-num">' + fmt1(share) + '%</span>' + trendChip(r.share_delta_pct, "%") + '</div>' +
         '<div class="up-td uut-td-type">' + tagHtml(r.url_type) + '</div>' +
         '<div class="up-td uut-td-ment">' + mentCell(r.is_mentioned) + '</div>' +
         '<div class="up-td uut-td-brands">' + UC.brandStack(r.mentions, r.mentions_totalcount) + '</div>' +
