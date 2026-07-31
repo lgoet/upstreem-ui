@@ -169,7 +169,8 @@
 /* the chart body the type-chart kit renders into (the kit styles its own contents) */
 .up-donut-body { width: 100%; position: relative; flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
 .up-donut-body > .up-bars, .up-donut-body > .up-donut-layout,
-.up-donut-body > .up-donut-sk, .up-donut-body > .up-chart-empty { margin-top: auto; margin-bottom: auto; }
+.up-donut-body > .up-donut-sk, .up-donut-body > .up-bars-sk,
+.up-donut-body > .up-chart-empty { margin-top: auto; margin-bottom: auto; }
 /* skeleton rows come from UC.skeletonRows and carry the shared .up-tsk marker */
 .tct-row.up-tsk { cursor: default; }
 .tct-row.up-tsk:hover { background: transparent; }

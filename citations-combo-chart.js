@@ -121,8 +121,15 @@
     var byId = {}, daySet = {};
     series.forEach(function(p){
       if (!p) return;
-      // accept the identifier under any of these keys: id, company_id, url (url mode), domain (domain mode)
-      var raw = (p.id != null) ? p.id : (p.company_id != null) ? p.company_id : (p.url != null) ? p.url : (p.domain != null) ? p.domain : "";
+      /* The mode-specific field goes FIRST — it's what meta.urls[]/meta.domains[] is keyed on
+         above, so it's the only field guaranteed to actually join. A generic id/company_id is
+         only a fallback for series payloads that don't carry the mode field at all: if Bubble's
+         list serialization tacks its own internal _id onto every row (which it does for real
+         "Thing" lists), preferring that id here silently breaks every title lookup — same visible
+         symptom as a missing title (falls back to the raw url), but with a real title sitting
+         right there in meta.urls[].title the whole time. */
+      var raw = (dataMode === "url" ? p.url : p.domain);
+      if (raw == null) raw = (p.id != null) ? p.id : (p.company_id != null) ? p.company_id : (p.url != null) ? p.url : (p.domain != null) ? p.domain : "";
       var id = String(raw);
       if (!id) return;
       var day = String(p.day);
