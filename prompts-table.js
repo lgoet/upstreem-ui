@@ -245,8 +245,12 @@
        leaving this the sole exception meant the narrowest tier still showed Prompt + Visibility
        + Brand Mentions instead of just the two columns that are supposed to survive down there. */
     { key: "brands",     label: "Brand Mentions",  w: "minmax(178px, 1fr)", min: 178, dropAt: "vnarrow", prio: 50 },
-    { key: "topics",     label: "Topics",          w: "minmax(12%, 1fr)",   min: 150, dropAt: "vnarrow", prio: 60 },
-    { key: "market",     label: "Market",          w: "minmax(8%, 0.6fr)", min: 90,  dropAt: "narrow",  prio: 20 },
+    /* Market's growth ceiling (the fr half of minmax) is deliberately smaller than Topics' — this
+       is the column people actually manage, Market is reference data that never needs to eat
+       spare row width. The floors (150/90 px, 12%/8%) are untouched; only the fr split moved,
+       0.3 from Market's ceiling straight onto Topics'. */
+    { key: "topics",     label: "Topics",          w: "minmax(12%, 1.3fr)", min: 150, dropAt: "vnarrow", prio: 60 },
+    { key: "market",     label: "Market",          w: "minmax(8%, 0.3fr)", min: 90,  dropAt: "narrow",  prio: 20 },
     { key: "created",    label: "Created",         w: "minmax(10%, 0.7fr)",min: 110, dropAt: "narrow",  prio: 10 }
   ];
   var ROW_HEIGHTS = [
