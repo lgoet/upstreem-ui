@@ -328,6 +328,11 @@
       /* the per-series filter is this component's own feature — the kit only ever sees the
          datasets that should actually be drawn */
       var built = buildLineDatasets(state.series, state.dataMode === "url" ? state.meta.urls : state.meta.domains, state.dataMode, isDark);
+      /* Same debug stash as root.__ccLastParams above, but the resolved side: what dataMode and
+         meta array this actually used, and the id/label buildLineDatasets produced for each
+         series — so a "still shows urls" report can be diagnosed from one console read instead of
+         another round of synthetic-data guessing. */
+      root.__ccLastBuilt = { dataMode: state.dataMode, metaCount: (state.dataMode === "url" ? state.meta.urls : state.meta.domains).length, datasets: built.datasets.map(function(d){ return { id: d.__id, label: d.label }; }) };
       populateFilter(built.datasets);
       var visible = built.datasets.filter(function(ds){ return !hiddenSeries[ds.__id]; });
       line.render({ labels: built.labels, datasets: visible });
@@ -614,6 +619,12 @@
       __ctrlId: myCtrlId,
       update: function(params){
         params = params || {};
+        /* Debug-only, permanent: stash the exact object this call received on the root element
+           itself, so it can be inspected from the console at any later time with zero timing
+           risk — no need to wrap the render function and hope a fresh call happens while watching.
+           Four rounds of guessing at the title-vs-url bug from synthetic data before finally
+           getting a real payload is the reason this is here now instead of a one-off snippet. */
+        root.__ccLastParams = params;
         if (params.isDark != null){
           isDark = isYes(params.isDark);
           if (isDark){ root.setAttribute("data-theme","dark"); donutRoot.setAttribute("data-theme","dark"); } else { root.removeAttribute("data-theme"); donutRoot.removeAttribute("data-theme"); }
