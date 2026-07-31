@@ -654,7 +654,7 @@
     var TOPIC_COLOR_PALETTE = [
       /* vibrant */ "#de1b22", "#b65616", "#8d6a11", "#108440", "#107c84", "#1b6eda", "#9145e8", "#d51a8b", "#666666", "#7d7d7d",
       /* muted   */ "#b47476", "#a87b5d", "#988552", "#4f926b", "#509195", "#6a88af", "#977ab8", "#b27098", "#787878", "#949494",
-      /* deep    */ "#ab2b2f", "#8b4c23", "#725a1d", "#1b6a3c", "#1b656a", "#295ea3", "#7a33cc", "#a32972", "#575757", "#666666"
+      /* deep    */ "#ab2b2f", "#8b4c23", "#725a1d", "#1b6a3c", "#1b656a", "#295ea3", "#7a33cc", "#a32972", "#575757", "#6f6f6f"
     ];
     /* Each ROW is one tone scale across the full hue range, each COLUMN one hue — so scanning
        down picks a mood and across picks a color.
@@ -1753,9 +1753,9 @@
         return;
       }
 
-      // --- row click ---
+      // --- row click (Inactive view: nothing to open, no event) ---
       var row = e.target.closest(".up-row");
-      if (row && !row.classList.contains("up-tsk")){
+      if (row && !row.classList.contains("up-tsk") && state.status !== "inactive"){
         var d = row.getAttribute("data-id");
         if (d) fire("data-rowclick-fn", "uptRowClick", { prompt_id: d });
       }
@@ -1771,7 +1771,7 @@
         return;
       }
       var row = e.target.closest && e.target.closest(".up-row");
-      if (!row || row.classList.contains("up-tsk")) return;
+      if (!row || row.classList.contains("up-tsk") || state.status === "inactive") return;
       e.preventDefault();
       var d = row.getAttribute("data-id");
       if (d) fire("data-rowclick-fn", "uptRowClick", { prompt_id: d });
@@ -1955,20 +1955,15 @@
         persist(); render();
       },
       reset: function(){
-        state.query = ""; elSearchIn.value = ""; elSearch.classList.remove("is-open");
-        state.sortField = DEFAULT_SORT.field; state.sortDir = DEFAULT_SORT.dir;
-        state.pageSize = DEFAULT_PAGE_SIZE; state.page = 1;
-        state.selected = {}; state.brandMentioned = ""; invalidateSelectAll();
-        state.status = "active";
-        state.widths = {}; writeWidths();
-        elSearch.classList.remove("has-text");
+        /* Deliberately narrow: only the bulk-topic popover state + selection, per explicit user
+           request — NOT search/sort/paging/status/widths, which used to also get wiped here and
+           surprised the user by silently flipping the table back to the Active tab. */
+        state.selected = {}; invalidateSelectAll();
         setTopicMenuOpen(false);
         /* Separate from the bulk topic panel above — this is the "Add Topic" modal, which can be
-           open on its own (it isn't nested inside the bulk bar's is-topics state). A page-leave
-           reset that skips this leaves a body-mounted modal + backdrop stranded over whatever
-           Bubble shows next. */
+           open on its own (it isn't nested inside the bulk bar's is-topics state). */
         if (addTopicModal.isOpen()) addTopicModal.close();
-        persist(); populateSort(); render();
+        persist(); render();
         return true;
       },
       destroy: function(){

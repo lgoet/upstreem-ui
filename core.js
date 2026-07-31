@@ -1377,7 +1377,7 @@
   var TOPIC_COLOR_PALETTE = [
     /* vibrant */ "#de1b22", "#b65616", "#8d6a11", "#108440", "#107c84", "#1b6eda", "#9145e8", "#d51a8b", "#666666", "#7d7d7d",
     /* muted   */ "#b47476", "#a87b5d", "#988552", "#4f926b", "#509195", "#6a88af", "#977ab8", "#b27098", "#787878", "#949494",
-    /* deep    */ "#ab2b2f", "#8b4c23", "#725a1d", "#1b6a3c", "#1b656a", "#295ea3", "#7a33cc", "#a32972", "#575757", "#666666"
+    /* deep    */ "#ab2b2f", "#8b4c23", "#725a1d", "#1b6a3c", "#1b656a", "#295ea3", "#7a33cc", "#a32972", "#575757", "#6f6f6f"
   ];
   function swatchInk(hex){
     var h = String(hex).replace("#", "");
@@ -2721,6 +2721,16 @@
     '</div>';
   }
 
+  /* Bar-mode counterpart to donutSkeletonHtml() — same shimmer treatment (.up-sk-* CSS), shaped
+     like descending-width .up-bar-track rows instead of a ring + legend. */
+  function barSkeletonHtml(){
+    var widths = [92, 76, 61, 47, 34];
+    var rows = widths.map(function(w){
+      return '<div class="up-bar-sk-row"><span class="up-bar-sk-track" style="width:' + w + '%"></span></div>';
+    }).join("");
+    return '<div class="up-bars-sk">' + rows + '</div>';
+  }
+
   /* ---------- makeTypeChart ----------
      One controller for both the doughnut and the bar view of the same [{name, share, color}] data,
      because a component always has both behind one switcher.
@@ -2752,7 +2762,7 @@
       var host = cfg.collapseHost || body;
       layout.classList.toggle("is-collapsed", host.getBoundingClientRect().width < collapseAt);
     }
-    function skeleton(){ destroy(); body.innerHTML = donutSkeletonHtml(); }
+    function skeleton(){ destroy(); body.innerHTML = (cfg.chartMode && cfg.chartMode() === "bar") ? barSkeletonHtml() : donutSkeletonHtml(); }
     function empty(msg){ destroy(); body.innerHTML = '<div class="up-chart-empty">' + esc(msg || "No data") + '</div>'; }
     function isEmpty(d){ return !d.length || d.every(function(x){ return !(Number(x.share) > 0); }); }
 

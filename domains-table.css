@@ -46,14 +46,14 @@
   transition: opacity .18s ease, transform .18s ease; transition-delay: 0ms; }
 .udt-row-goto svg { width: 16px; height: 16px; display: block; }
 .up-row:hover .udt-row-goto { opacity: 1; transform: translateY(-50%) translateX(0); transition-delay: 220ms; }
-/* The 1.5s "Show Pages" dwell (.is-showpages-hover) fades the arrow out FIRST — no delay on the
+/* The 1s "Show Pages" dwell (.is-showpages-hover) fades the arrow out FIRST — no delay on the
    way out — and only then fades Show Pages in (see its own transition-delay below), so the
    handoff reads as one thing leaving before the next arrives, not two things fighting for the
    same spot at once. */
 .up-row.is-showpages-hover .udt-row-goto { opacity: 0; transition: opacity 120ms ease; transition-delay: 0ms; }
 .up-root.is-vnarrow .udt-row-goto { display: none; }
 
-/* "Show Pages" — swaps in for the goto arrow after a 1.5s hover dwell (see the JS timer in
+/* "Show Pages" — swaps in for the goto arrow after a 1s hover dwell (see the JS timer in
    makeController). No border/pill shell — reads as a label with an icon in the same slot the
    arrow occupied, not a new button appearing out of nowhere. position:absolute (see
    .udt-row-affordance above) rather than a width transition: nothing here needs to occupy real

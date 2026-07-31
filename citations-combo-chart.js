@@ -81,6 +81,17 @@
     return out;
   }
 
+  /* Bubble sends `series[].url` and `meta.urls[].url` from two different data sources (the
+     time-series RPC vs. the per-url metadata RPC) — they usually match byte-for-byte, but a
+     mismatch (trailing slash, whitespace, %-encoding) silently breaks the exact-string lookup
+     below and makes the title fall back to the raw url, looking exactly like a missing title even
+     though the RPC did send one. normKey() gives the lookup a second, forgiving pass. */
+  function normKey(s){
+    s = String(s == null ? "" : s).trim();
+    try { s = decodeURIComponent(s); } catch(e){}
+    return s.toLowerCase().replace(/\/+$/, "");
+  }
+
   /* ---------- data mapping (the part the chart kit cannot know) ----------
      Turns the Bubble payload into the {labels, datasets} UC.makeLine expects. This is genuinely
      per component: visibility-chart keys on company_id with a fixed palette, this one keys on
@@ -88,7 +99,7 @@
   function buildLineDatasets(series, meta, dataMode, isDark){
     series = Array.isArray(series) ? series : [];
     meta = Array.isArray(meta) ? meta : [];
-    var metaMap = {};
+    var metaMap = {}, metaMapNorm = {};
     meta.forEach(function(m){
       if (!m) return;
       var id = dataMode === "url" ? m.url : m.domain;
@@ -98,12 +109,14 @@
          `id` is the raw url, which is what used to show up verbatim in both places; showing the
          page title instead needs the RPC to actually send one — falls back to the url when it
          doesn't, so this degrades gracefully rather than showing a blank label. */
-      metaMap[String(id)] = {
+      var entry = {
         type: dataMode === "url" ? m.url_type : m.citation_type,
         favicon: m.favicon || "",
         global_share: (m.global_share != null ? Number(m.global_share) : null),
         label: dataMode === "url" ? String(m.title || id) : String(id)
       };
+      metaMap[String(id)] = entry;
+      metaMapNorm[normKey(id)] = entry;
     });
     var byId = {}, daySet = {};
     series.forEach(function(p){
@@ -119,7 +132,12 @@
     var labels = Object.keys(daySet).sort();
     var ids = Object.keys(byId);
     ids.forEach(function(id){
-      if (!metaMap[id]) metaMap[id] = { type:null, favicon:"", global_share:null, label:id };
+      if (!metaMap[id]){
+        var nm = metaMapNorm[normKey(id)];
+        metaMap[id] = nm
+          ? { type: nm.type, favicon: nm.favicon, global_share: nm.global_share, label: nm.label }
+          : { type:null, favicon:"", global_share:null, label:id };
+      }
       if (metaMap[id].global_share == null){
         var vals = labels.map(function(d){ return byId[id][d]; }).filter(function(v){ return v != null; });
         metaMap[id].global_share = vals.length ? (vals.reduce(function(a,b){ return a+b; },0)/vals.length) : 0;
@@ -276,6 +294,7 @@
     var typeChart = UC.makeTypeChart({
       body: body, isDark: darkNow, isOwner: isOwner,
       mode: function(){ return state.dataMode; },
+      chartMode: function(){ return state.chartMode; },
       total: function(){ return state.total; },
       centerLabel: "Citations",
       collapseHost: donutRoot

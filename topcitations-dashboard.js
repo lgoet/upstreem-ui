@@ -188,6 +188,7 @@
     var typeChart = UC.makeTypeChart({
       body: body, isDark: darkNow, isOwner: isOwner,
       mode: function(){ return state.mode; },
+      chartMode: function(){ return state.chartMode; },
       total: function(){ return state.chartTotal; },
       centerLabel: "Citations",
       collapseHost: root,
@@ -208,7 +209,14 @@
         sel[key] = !sel[key];
         persistState();
         populateFilter();
-        syncChartDim();
+        /* Unlike a filter-menu checkbox (which only stages a change syncChartDim can safely
+           preview live, see below), this always fires an immediate Apply — a reload is coming no
+           matter what. Previewing the toggle's dim state first is actively wrong here: deselecting
+           the last-checked slice empties the selection, which by design means "no filter" and
+           un-dims everything — a bright full-color flash right before the loader replaces it.
+           Go straight to the loading state instead, same as a manual mode switch does. */
+        state.optimisticLoading = true;
+        renderChartSide();
         fireApplyFilter();
       }
     });
@@ -440,7 +448,10 @@
       state.filterUrlTypeSel = {};
       persistState();
       populateFilter();
-      syncChartDim();
+      /* Same immediate-apply flash as onSliceClick above — clearing the selection always un-dims
+         everything, so go straight to the loader instead of showing that undimmed state first. */
+      state.optimisticLoading = true;
+      renderChartSide();
       fireApplyFilter();   // also clears the applied snapshot + hides the badge
     }
     function fireDimension(){

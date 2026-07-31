@@ -2154,3 +2154,62 @@ System — "das hier ist Kontext, nicht der Inhalt"), der geparste Titel-Teil bl
 eigener normaler Textfarbe. Als reine Leerzeichen im HTML eingefügt (kein Flex-`gap`), weil die
 Titel-Zellen selbst kein Flex-Layout sind — funktioniert dadurch unabhängig davon, wie die jeweilige
 Zelle sonst aufgebaut ist.
+
+## 38b. Combo-Chart Titel-Bug, dritter Anlauf: der Code war korrekt, das Matching nicht
+
+Zweimal (R5, R6) wurde `buildLineDatasets()` in `citations-combo-chart.js` gegen isolierte
+Testdaten verifiziert und als korrekt bestätigt — `label: dataMode === "url" ? String(m.title ||
+id) : String(id)` liest den Titel exakt dort, wo Legende/Tooltip ihn holen. Beim dritten Report
+("hab ich dir nicht schon das dritte mal gesagt") lag der eigentliche Fehler nicht in dieser Zeile,
+sondern eine Ebene darüber: `series[].url` (aus der Zeitreihen-RPC) und `meta.urls[].url` (aus der
+separaten Metadaten-RPC) werden per exaktem String-Vergleich gejoint (`metaMap[String(id)]`). Bubble
+liefert beide aus unterschiedlichen Datenquellen — weichen sie auch nur in Trailing-Slash,
+Groß-/Kleinschreibung, Whitespace oder %-Encoding voneinander ab, matched nichts, und der Code
+fällt lautlos (by design, als "RPC hat keinen Titel geschickt"-Fallback) auf die rohe URL zurück.
+Von außen exakt nicht von einem fehlenden Titel zu unterscheiden — deshalb bestand der Bug beide
+vorigen Male die Codeprüfung, obwohl er nie im geprüften Code lag.
+
+Fix: `normKey()` — trim, `decodeURIComponent`, lowercase, trailing Slashes weg — als zweiter,
+nachsichtiger Lookup (`metaMapNorm`), bevor auf die rohe id zurückgefallen wird. Ändert nichts am
+Verhalten, wenn beide Seiten exakt übereinstimmen oder wenn wirklich kein Titel gesendet wird (dann
+bleibt der dokumentierte Fallback auf die URL bestehen) — schließt nur die stille Lücke dazwischen.
+
+**Lehre, direkt aus [[feedback_verify_live_before_shipping]]:** "der Code ist korrekt" ist nur eine
+Antwort auf "stimmt die Logik", nicht auf "wieso sieht der User in Produktion das falsche Ergebnis".
+Bei einer dritten identischen Beschwerde nach zwei bestandenen Code-Reviews ist die richtige nächste
+Frage nicht "ist der Code nochmal richtig", sondern "was zwischen zwei korrekten Code-Pfaden könnte
+in echten Bubble-Daten anders aussehen als im selbstgebauten Testdatensatz" — hier: zwei RPCs, eine
+gemeinsame ID, keine garantierte Formatgleichheit.
+
+## 39. R8-Runde: sieben kleine, unabhängige Fixes
+
+- **Tag-Creator-Farbpalette**: `TOPIC_COLOR_PALETTE` (dupliziert in `prompts-table.js` UND
+  `core.js` — zwei unabhängige Kopien, siehe §25/§G1) hatte denselben Grauton (`#666666`) zweimal:
+  Reihe 1 Spalte 9 UND Reihe 3 (deep) Spalte 10. Da die Auswahl-Markierung über den Hex-Wert läuft,
+  markierte ein Klick auf den einen automatisch auch den anderen — kein Bug in der Selection-Logik,
+  echte Datenduplikation. Ersetzt durch `#6f6f6f` (gleiche Luminanz-Familie wie die Zeile, per
+  WCAG-Kontrast-Formel gegen Weiß UND Schwarz neu geprüft, siehe die Kommentare direkt über der
+  Palette). Beide Kopien synchron gehalten.
+- **Prompts-Table Inactive-Mode**: Row-Click feuerte `uptRowClick` unabhängig vom `state.status` —
+  jetzt gated auf `state.status !== "inactive"` (Maus- UND Keyboard-Pfad).
+- **`resetPromptsTable()` verengt**: resettete bisher zusätzlich Suche/Sort/Paging/Status/
+  Spaltenbreiten — als "Page-Leave-Reset" ursprünglich so gewollt und dokumentiert, aber das hat den
+  User überrascht, der die Funktion für einen reinen Popover-Reset hielt. Jetzt: nur noch Add-Topic-
+  Modal schließen, Bulk-Topic-Panel schließen, Selection leeren. Bubble-Doku entsprechend
+  nachgezogen — wer weiterhin einen vollen Tabellen-Reset beim Seitenverlassen will, muss die
+  Tabelle stattdessen mit frischen Daten neu rendern.
+- **TCD Bar-/Doughnut-Deselect-Flash**: `onSliceClick`/`resetTypeFilters()` feuern immer sofort
+  Apply (kein Staging). Der bisherige Weg über `syncChartDim()` zeigte dabei kurz den lokal schon
+  aktualisierten (oft: komplett ungedimmten, weil leere Selektion = kein Filter) Zwischenzustand,
+  bevor die echte Bubble-Antwort den Loader brachte. Beide Pfade setzen jetzt sofort
+  `state.optimisticLoading = true` und rufen den vollen `renderChartSide()` (Skeleton) statt der
+  Dim-Preview — genau der gleiche Mechanismus, den ein manueller Mode-Switch schon nutzt.
+- **Bar-Chart-Skeleton**: `makeTypeChart.skeleton()` baute bisher immer `donutSkeletonHtml()`,
+  unabhängig vom aktiven Chart-Typ. Neues `cfg.chartMode()` (NICHT zu verwechseln mit `cfg.mode()`,
+  das ist der Daten-Modus domain/url bzw. citation/url-type!) plus `barSkeletonHtml()` — descending-
+  width `.up-bar-track`-Zeilen mit demselben Shimmer wie der Doughnut. Beide Verbraucher
+  (`topcitations-dashboard.js`, `citations-combo-chart.js`) geben jetzt `chartMode` mit rein.
+- **Domains-Table Show-Pages-Delay**: Hover-Dwell 1.5s → 1s (`domains-table.js`, ein `setTimeout`-
+  Wert plus zwei Kommentare, `domains-table.css` zwei Kommentare — die eigentlichen
+  `transition-delay`-Werte für den Fade-Handoff selbst waren davon nie betroffen, die stehen für
+  den Übergang NACH dem Dwell, nicht für den Dwell selbst).

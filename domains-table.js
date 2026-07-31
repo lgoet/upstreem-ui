@@ -303,7 +303,7 @@
              (position:absolute inside it, see the CSS) rather than each carrying its own
              margin-left:auto — two auto-margin siblings split the row's free space between them,
              which is what put the arrow somewhere in the middle of the cell instead of flush
-             against the edge. Second, longer-dwell affordance: a 1.5s hover on the row fades the
+             against the edge. Second, longer-dwell affordance: a 1s hover on the row fades the
              plain goto arrow out and fades an explicit "Show Pages" control in, staggered so one
              finishes leaving before the other arrives (see the row-hover-timer below and both
              elements' transition-delay). Same data-pages-toggle trigger as the "N pages" chevron,
@@ -1171,7 +1171,7 @@
       titleTipWrap = null; clearTimeout(titleTipTimer); hideTip();
     });
 
-    /* A 1.5s dwell on a domain row swaps the plain goto arrow for the explicit "Show Pages" control
+    /* A 1s dwell on a domain row swaps the plain goto arrow for the explicit "Show Pages" control
        (item 10) — long enough that a cursor merely passing over the row on its way somewhere else
        never triggers it, but short enough to reward someone who is actually reading that row.
        Plain class toggle rather than a CSS transition-delay: a delayed appear and a delayed
@@ -1185,7 +1185,7 @@
       if (row === rowHoverEl) return;
       rowHoverEl = row;
       clearTimeout(rowHoverTimer);
-      rowHoverTimer = setTimeout(function(){ row.classList.add("is-showpages-hover"); }, 1500);
+      rowHoverTimer = setTimeout(function(){ row.classList.add("is-showpages-hover"); }, 1000);
     });
     root.addEventListener("mouseout", function(e){
       var row = e.target.closest(".up-row");
