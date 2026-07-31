@@ -21,6 +21,19 @@
       color: var(--vc-text); width: 100%; box-sizing: border-box; -webkit-font-smoothing: antialiased;
     }
 .up-root * { box-sizing: border-box; }
+/* Scroll-Chaining schuetzen — gegen fremdes Seiten-CSS, das `overscroll-behavior: contain`
+   pauschal per `*` auf alles legt (der Bubble-Header dieser App tat/tut genau das ueber
+   `[id*="allow_scroll"] *`). `contain` gehoert nur auf einen ECHTEN Scroll-Container, der die
+   Seite bewusst nicht mitscrollen lassen soll (z.B. ein Modal). Liegt es dagegen auf allem, trifft
+   es auch jedes Element, das nur wegen runder Ecken/Clipping ein `overflow: hidden` hat — und
+   `overflow: hidden` macht ein Element bereits zum Scroll-Container. Ergebnis: das Element kann
+   selbst nichts scrollen, gibt das Scrollen aber auch nicht an die Seite weiter, und das Scrollen
+   versickert genau ueber diesen Flaechen (gemessen an `.tct-table`, `.tcd-box`, `.vt-table`).
+   `auto` ist der Browser-Default — das hier stellt also nur wieder her, was ohne die fremde Regel
+   ohnehin gaelte, und kann fuer sich genommen nichts kaputt machen.
+   Doppeltes `.up-root` nur wegen Spezifitaet: (0,2,0) schlaegt `[id*="..."] *` (0,1,0) unabhaengig
+   von der Ladereihenfolge, weil beide Seiten `!important` verwenden. */
+.up-root.up-root, .up-root.up-root * { overscroll-behavior: auto !important; }
     .up-root[data-theme="dark"] {
       --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #353535;
       --vc-bg: #1b1b1b; --vc-heading-bg: rgba(42,42,42,0.6); --vc-sk: #3a3a3a; --up-surface: #121212;

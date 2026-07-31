@@ -2040,33 +2040,62 @@ das:
   Farbe TRÄGT (nicht nur optisch hell aussieht, sondern bewusst als "gedimmt/inaktiv" markiert ist),
   muss Hover die Dämpfung verstärken, nicht umkehren.
 
-## 38. Wheel-Forwarding auf `canvas` scopen: RETRACTED — machte es schlimmer, nicht besser
+## 38. Der Scroll-Bug: fremdes `overscroll-behavior: contain` auf ALLEM (gelöst)
 
-**Versuch (kurz live, dann sofort zurückgerollt):** `wheelSel` von `.up-donut-body`/`.cc-type-root`
-auf `".up-donut-body canvas"` eingeengt, in der Annahme, der ganze gepolsterte Flex-Container sei
-zu breit gescoped (Ring sitzt bei ~52% mittig, Rest ist leerer Platz, der trotzdem denselben
-Listener bekam). Ergebnis beim echten User-Test: **spürbar schlimmer**, nicht besser — auf den
-betroffenen Komponenten war kaum noch normales Scrollen möglich, wenn die Maus irgendwo darüber
-stand. Sofort auf den alten Container-Selektor zurückgerollt (`.up-donut-body`, `.up-line-wrap,
-.up-donut-body, .cc-type-root`, `.up-line-wrap`).
+**Ursache — gemessen und vom User live bestätigt.** Das Bubble-Header-CSS dieser App enthält einen
+"Universal Scroll Fix" mit u.a. dieser Regel:
 
-**Naheliegende Erklärung, NICHT verifiziert (nächster Anlauf muss das erst bestätigen, bevor
-wieder auf `canvas` gescoped wird):** `renderDonut()`/`renderBars()` ersetzen `body.innerHTML`
-bei JEDEM Rebuild — das `<canvas>`-Element wird dabei zerstört und neu erzeugt. `.up-donut-body`
-selbst wird nie neu erzeugt (nur sein Inhalt). `attachWheel()`s 800ms-Poll-Intervall existiert
-genau deshalb, um neu erzeugte Canvas-Elemente nachträglich zu finden — mit `wheelSel` auf
-`canvas` gescoped hängt der Listener ab jedem Rebuild in einem bis zu 800ms breiten Fenster
-komplett in der Luft (kein Canvas im DOM, das den `wheelFlag` trägt, ODER ein neues Canvas ohne
-Listener), während mit dem Container-Selektor der Listener nie verloren geht, weil der Container
-selbst stabil bleibt. Diese Theorie erklärt "schlimmer" aber nicht zwingend vollständig — bevor
-das nochmal versucht wird: mit einem ECHTEN Wheel-Event in einem echten (oder zumindest sehr nah
-nachgebauten) Embed reproduzieren, nicht nur aus dem Code ableiten. Die vorherige Runde hatte genau
-das nicht getan (reine Code-Lektüre, kein Live-Repro) und lag falsch.
+```css
+[id*="allow_scroll"] * { overscroll-behavior: contain !important; }
+```
 
-Faustregel, die stehen bleibt: **ein Fix, der nur aus Code-Lesen abgeleitet wurde und nie gegen
-ein echtes Wheel-Event/einen echten Embed getestet wurde, ist eine Hypothese, kein Fix** — erst
-recht bei Timing-abhängigem Verhalten (Poll-Intervalle, Recreate-on-render), wo die Lücke selbst
-unsichtbar ist, bis man sie tatsächlich live triggert.
+`overscroll-behavior: contain` unterbindet Scroll-Chaining: erreicht ein Scroll-Container sein Ende
+— oder hat gar nichts zu scrollen — wird das Scrollen NICHT an die Seite weitergereicht. Auf einem
+echten Scroll-Container (Modal, lange Dropdown-Liste) ist das sinnvoll. Per `*` auf ALLES gelegt
+trifft es aber auch jedes Element, das nur wegen runder Ecken/Clipping ein `overflow: hidden` hat —
+und `overflow: hidden` macht ein Element bereits zum Scroll-Container. Gemessene Betroffene:
+`.tct-table`, `.tcd-box`, `.vt-table`. Über genau diesen Flächen versickerte das Scrollen komplett.
+
+Das erklärt alle vier Beobachtungen widerspruchsfrei:
+- Tabellen in `visibility-chart`/`topcitations-dashboard` gar nicht scrollbar → `.tcd-box`/
+  `.vt-table` blockten das Chaining.
+- Charts "scrollten, aber komisch, kein iOS-Bounce" → dort lief das JS-Wheel-Forwarding, das
+  `preventDefault` rief und von Hand scrollte.
+- `domains-`/`urls-`/`prompts-table` immer einwandfrei → deren Bubble-Wrapper trägt die
+  `allow_scroll`-ID nicht, die Regel greift dort gar nicht.
+- Wheel-Forwarding komplett zu entfernen machte die Charts UNscrollbar → ohne die JS-Krücke schlug
+  dort dieselbe CSS-Blockade durch (der Chart sitzt in `.tcd-box`).
+
+**Fix in core.css** — die Bibliothek stellt für ihren eigenen Teilbaum den Browser-Default wieder
+her, statt sich auf fremdes Seiten-CSS zu verlassen:
+```css
+.up-root.up-root, .up-root.up-root * { overscroll-behavior: auto !important; }
+```
+Doppeltes `.up-root` rein wegen Spezifität: (0,2,0) schlägt `[id*="..."] *` (0,1,0) unabhängig von
+der Ladereihenfolge, da beide `!important` nutzen. Verifiziert mit dem echten Header-CSS im
+Testaufbau: innerhalb der Komponente `auto`, außerhalb weiterhin `contain` — die fremde Regel
+bleibt überall sonst wirksam.
+
+**Sauberste Lösung wäre trotzdem seitenseitig**: `overscroll-behavior: contain` aus der `*`-Regel
+entfernen (`touch-action: pan-y` darf bleiben). Die core.css-Regel ist die Verteidigungslinie für
+den Fall, dass das nicht passiert.
+
+**Wheel-Forwarding bleibt vorerst drin.** Mit dem CSS-Fix ist es theoretisch überflüssig (natives
+Chaining funktioniert wieder) und kostet weiterhin Bounce/Trägheit auf den Chart-Flächen. Es zu
+entfernen ist aber ein SEPARATER Schritt, der erst nach bestätigtem CSS-Fix am echten Embed
+getestet werden darf — genau diese zwei Änderungen auf einmal auszuliefern hat vorher zwei
+kaputte Deploys produziert.
+
+**Drei Lehren, die diese Session teuer bezahlt hat:**
+1. Ein aus reiner Code-Lektüre abgeleiteter Fix ist eine Hypothese, kein Fix.
+2. **Prämissen in Kommentaren sind Behauptungen, keine Fakten.** Der Satz "Chart.js sets
+   touch-action:none on its canvas" stand jahrelang im Code, ist auf Chart.js 4 messbar falsch
+   (`touch-action: auto`) — und hat zwei Debug-Runden in die völlig falsche Richtung geschickt. Der
+   Mechanismus war trotzdem nötig, nur aus einem ganz anderen Grund als dort behauptet.
+3. **Immer einen Kontrolltest fahren, bevor man einer Messung glaubt.** Ein Test "über der Tabelle
+   scrollt nichts → Bug bestätigt" war wertlos, weil derselbe Test über normalem Seiteninhalt
+   ebenfalls nichts scrollte: das Messwerkzeug lieferte gar keine echten Scroll-Events. Ohne den
+   Kontrolltest wäre daraus der dritte falsche Fix geworden.
 
 ## 36. Bar-Hover "wie im Doughnut": zwei verschiedene Mechanismen für denselben Eindruck
 
