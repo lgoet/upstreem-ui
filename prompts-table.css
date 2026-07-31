@@ -123,13 +123,16 @@
    Left of the toolbar, next to the heading — it's a view switch, not a filter, and the filter
    area on the right implies "combinable with the others", which these two never are. Reuses the
    .up-dense segmented look so it reads as the same kind of control as the row-height switch.
-   No margin-left of its own — .up-head (core.css) already has gap:8px between its flex children,
-   which is what actually sits between this and .up-heading. An extra margin here on top of that
-   flex gap would compound into a bigger gap than the one between the head-count and the selected-
-   chip inside .up-heading (a plain margin there, no flex gap to add to), which is exactly the
-   "should feel like the same rhythm" mismatch this was asked to fix. */
+   Two different margins on purpose, not one: with no selection, this sits right after the plain
+   head-count and that gap reads as too wide at the original 12px (on top of .up-head's own
+   gap:8px) — shrunk to 0 here so the flex gap alone carries it. But once a selection is active,
+   this same element sits after the "N selected" chip instead, and THAT gap must stay exactly as
+   wide as it always was — shrinking it too made the chip and the switcher read as one glued-
+   together control instead of two separate ones. .up-root.is-bulk (set in renderBulkBar()
+   whenever the chip is showing) restores the original 12px for that case only. */
 .upt-status { display: inline-flex; align-items: center; gap: 0; margin-left: 0; height: 32px;
   padding: 0; background: var(--vc-switch-bg); border-radius: 8px; flex: 0 0 auto; }
+.up-root.is-bulk .upt-status { margin-left: 12px; }
 .upt-status-btn { height: 32px; padding: 0 10px; border: 1px solid transparent; border-radius: 8px;
   background: transparent; color: var(--vc-muted); cursor: pointer; font-family: inherit;
   font-size: 12px; font-weight: 500; line-height: 1; white-space: nowrap;
