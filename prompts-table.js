@@ -509,10 +509,16 @@
       var rows = state.rows || [];
       if (!rows.length) return;
       var allSel = rows.every(function(r){ return state.selected[String(r.prompt_id)]; });
-      rows.forEach(function(r){
-        var id = String(r.prompt_id);
-        if (allSel) delete state.selected[id]; else state.selected[id] = true;
-      });
+      if (allSel){
+        /* Deselect always clears EVERYTHING, not just this page's rows — otherwise paging
+           through, ticking "select all" on each page, then unticking on the last page silently
+           stranded earlier pages' selections (or, with "Select all N matching" active, left
+           state.selectAllMatching stuck true — every checkbox visually clears but the bulk bar
+           keeps showing the full N count). One button, one unambiguous "all" both directions. */
+        state.selected = {}; invalidateSelectAll();
+      } else {
+        rows.forEach(function(r){ state.selected[String(r.prompt_id)] = true; });
+      }
       persist(); renderTable(); syncSelectAll(); fireSelect(); syncStagedTopicsToSelection();
     }
     /* Updates the checkboxes in place instead of re-rendering the table.
@@ -609,9 +615,15 @@
       state.selected = {}; invalidateSelectAll();
       state.softReload = false; endSoftReload();   // the result set changes -> skeleton, not dim
       persist(); renderStatusTabs(); render();
+      /* limit/offset/page ride along (same shape as uptPage) so the Bubble workflow can re-run
+         its RPC at page 1 directly, rather than relying on whatever pagination custom state it
+         separately tracks from the last uptPage call still happening to be page 1 — the mode
+         switch is a different record set entirely and must never silently keep serving a stale
+         offset from the tab the user just left. */
       fire("data-status-fn", "uptStatus", {
         status: state.status,
-        is_active: state.status === "active" ? "yes" : "no"
+        is_active: state.status === "active" ? "yes" : "no",
+        limit: state.pageSize, offset: offset(), page: state.page
       });
     }
 

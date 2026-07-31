@@ -66,8 +66,12 @@
                    already-loaded data, no extra lookup needed on your side. Inactive prompts have
                    no topic management at all — the cell is inert there and this event never fires
                    (see "status" below).
-    status   {"status":"inactive"}                  -> Active/Inactive view switch. Re-run the RPC
-                                                        filtered to that status.
+    status   {"status":"inactive","is_active":"no","limit":25,"offset":0,"page":1}
+                -> Active/Inactive view switch. Re-run the RPC filtered to that status. limit/
+                   offset/page are ALWAYS page 1 here (same shape as "page" above) — the mode
+                   switch always resets to the first page client-side, and rides along explicitly
+                   so your workflow re-runs at offset 0 instead of whatever page/offset custom
+                   state it separately kept from the last "page" event.
 
   The bulk bar's own action buttons differ by that same status. Active view: Topics + Set
   Inactive. Inactive view: Set Active + Delete instead — Topics management doesn't exist there at
