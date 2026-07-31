@@ -2040,31 +2040,33 @@ das:
   Farbe TRÄGT (nicht nur optisch hell aussieht, sondern bewusst als "gedimmt/inaktiv" markiert ist),
   muss Hover die Dämpfung verstärken, nicht umkehren.
 
-## 38. Wheel-Forwarding: der Canvas braucht es, der Rahmen drumherum nicht
+## 38. Wheel-Forwarding auf `canvas` scopen: RETRACTED — machte es schlimmer, nicht besser
 
-Nachtrag zu R1 (Wheel-Interception eingrenzen): die Eingrenzung auf Komponenten-Ebene (nur Charts
-bekommen überhaupt einen `wheelSel`, Tabellen keinen) war richtig, aber INNERHALB der Chart-
-Komponenten war der Selektor selbst noch zu weit gefasst — `.up-donut-body`/`.cc-type-root` sind
-der ganze gepolsterte Flex-Container, nicht der Ring. Der Doughnut sitzt bei ca. 52% Breite mittig
-darin (`.up-donut-wrap`) — der Rest ist leerer Platz, der trotzdem denselben `wheel`-Listener bekam.
-Ergebnis: irgendwo im Panel (auch 8-16px vom Rand entfernt, weit weg vom eigentlichen Ring) wurde
-jedes Scrollen abgefangen und über `forwardWheel()`s manuelles `scrollTop += deltaY` nachgebildet —
-kein natives Scrollen mehr (keine Trägheit/kein Rubber-Banding), was sich wie "kann hier nicht
-scrollen" anfühlte.
+**Versuch (kurz live, dann sofort zurückgerollt):** `wheelSel` von `.up-donut-body`/`.cc-type-root`
+auf `".up-donut-body canvas"` eingeengt, in der Annahme, der ganze gepolsterte Flex-Container sei
+zu breit gescoped (Ring sitzt bei ~52% mittig, Rest ist leerer Platz, der trotzdem denselben
+Listener bekam). Ergebnis beim echten User-Test: **spürbar schlimmer**, nicht besser — auf den
+betroffenen Komponenten war kaum noch normales Scrollen möglich, wenn die Maus irgendwo darüber
+stand. Sofort auf den alten Container-Selektor zurückgerollt (`.up-donut-body`, `.up-line-wrap,
+.up-donut-body, .cc-type-root`, `.up-line-wrap`).
 
-Der eigentliche Grund, wheel überhaupt abzufangen, ist rein Chart.js-spezifisch: Chart.js setzt
-`touch-action:none` auf sein eigenes `<canvas>`, NUR das verhindert, dass ein Wheel-Event den
-Seiten-Scroll-Container erreicht. Fix: `wheelSel` zeigt jetzt exakt auf `canvas` (`".up-donut-body
-canvas"`, `".up-line-wrap canvas, .up-donut-body canvas"` bei `citations-combo-chart`), nicht auf
-den umgebenden Container. Bar-Modus hat gar kein `<canvas>` (handgebaute Divs) — dort matcht der
-Selektor folgerichtig nichts, `attachWheel()` findet keine Ziele, und native Seiten-Scroll
-funktioniert dort automatisch ohne jeden Sonderfall. `.up-line-wrap` bei den Liniendiagrammen war
-davon nie betroffen (sein gesamter Bereich ist ohnehin schon der Canvas, kein Padding drumherum) —
-trotzdem auf `canvas` umgestellt, für Konsistenz und falls sich das CSS dort mal ändert.
+**Naheliegende Erklärung, NICHT verifiziert (nächster Anlauf muss das erst bestätigen, bevor
+wieder auf `canvas` gescoped wird):** `renderDonut()`/`renderBars()` ersetzen `body.innerHTML`
+bei JEDEM Rebuild — das `<canvas>`-Element wird dabei zerstört und neu erzeugt. `.up-donut-body`
+selbst wird nie neu erzeugt (nur sein Inhalt). `attachWheel()`s 800ms-Poll-Intervall existiert
+genau deshalb, um neu erzeugte Canvas-Elemente nachträglich zu finden — mit `wheelSel` auf
+`canvas` gescoped hängt der Listener ab jedem Rebuild in einem bis zu 800ms breiten Fenster
+komplett in der Luft (kein Canvas im DOM, das den `wheelFlag` trägt, ODER ein neues Canvas ohne
+Listener), während mit dem Container-Selektor der Listener nie verloren geht, weil der Container
+selbst stabil bleibt. Diese Theorie erklärt "schlimmer" aber nicht zwingend vollständig — bevor
+das nochmal versucht wird: mit einem ECHTEN Wheel-Event in einem echten (oder zumindest sehr nah
+nachgebauten) Embed reproduzieren, nicht nur aus dem Code ableiten. Die vorherige Runde hatte genau
+das nicht getan (reine Code-Lektüre, kein Live-Repro) und lag falsch.
 
-Faustregel: `wheelSel` (oder jeder ähnliche "dieses Element braucht Sonderbehandlung"-Selektor)
-muss auf das Element zeigen, das das eigentliche Problem hat — nicht auf dessen sichtbaren
-Container. Ein Container ist fast immer größer als das Element, das den Browser-Ärger auslöst.
+Faustregel, die stehen bleibt: **ein Fix, der nur aus Code-Lesen abgeleitet wurde und nie gegen
+ein echtes Wheel-Event/einen echten Embed getestet wurde, ist eine Hypothese, kein Fix** — erst
+recht bei Timing-abhängigem Verhalten (Poll-Intervalle, Recreate-on-render), wo die Lücke selbst
+unsichtbar ist, bis man sie tatsächlich live triggert.
 
 ## 36. Bar-Hover "wie im Doughnut": zwei verschiedene Mechanismen für denselben Eindruck
 

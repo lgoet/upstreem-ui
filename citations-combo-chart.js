@@ -735,14 +735,13 @@
      because this component broadcasts to every root sharing an instanceId. */
   var mount = UC.makeMount({
     rootClass: "combo-root",
-    /* Only the actual <canvas> swallows the wheel (Chart.js's own touch-action:none) — scoping to
-       it, not the surrounding flex box, is what matters here: .up-donut-body/.cc-type-root are
-       much bigger than the ring itself (canvas sits centered at ~52% of .up-donut-body, core.css
-       .up-donut-wrap), so binding the old wider selectors forwarded (and de-inertia'd — see
-       forwardWheel's own comment) every wheel over their empty padding too, which is what made the
-       page refuse to scroll near this panel's edges. Bar mode has no canvas at all, so it needs
-       nothing here — native scroll already works there. */
-    wheelSel: ".up-line-wrap canvas, .up-donut-body canvas",
+    /* REVERTED (R7 attempt): scoping this to canvas-only made real-world scrolling near this
+       panel much WORSE, not better — canvas is destroyed/recreated on every render, so the
+       listener depends on the 800ms wheelFlag re-poll to ever land on the current canvas; the
+       containers below are never recreated, so binding here never has that gap. Needs proper
+       re-investigation (actual wheel event / real embed) before trying narrower scoping again —
+       see STYLEGUIDE §38 for the retracted theory. */
+    wheelSel: ".up-line-wrap, .up-donut-body, .cc-type-root",
     ctrlProp: "__ccController",
     resolveLocal: "__ccResolveLocal",
     queue: "__ccBootQueue",

@@ -830,14 +830,14 @@
      for an instanceId instead of broadcasting, unlike the others. */
   var mount = UC.makeMount({
     rootClass: "tcd-root", notPortal: true,
-    /* Only the actual <canvas> (doughnut mode) needs this — Chart.js sets touch-action:none on
-       its own canvas, which is the only thing that stops a wheel event from reaching the page's
-       scroll container in the first place. .up-donut-body itself is a much bigger flex box (the
-       canvas is centered at ~52% of it, core.css .up-donut-wrap) — binding the listener there
-       forwarded (and thereby de-inertia'd, see forwardWheel's comment) every wheel over the empty
-       padding around the ring too, which read as "can't scroll the page near this panel's edges."
-       Bar mode has no canvas at all — nothing here needs forwarding, native scroll just works. */
-    wheelSel: ".up-donut-body canvas",
+    /* REVERTED (R7 attempt): scoping this to ".up-donut-body canvas" made real-world scrolling
+       near this panel much WORSE, not better — canvas is destroyed/recreated on every render
+       (renderDonut/renderBars replace body.innerHTML), so the listener depends on the 800ms
+       wheelFlag re-poll to ever land on the current canvas; .up-donut-body itself is never
+       recreated, so binding here never has that gap. The original "too-wide dead zone" diagnosis
+       needs to be re-investigated properly (with an actual wheel event / real embed, not static
+       reading) before trying again — see STYLEGUIDE §38 for the retracted theory. */
+    wheelSel: ".up-donut-body",
     ctrlProp: "__tcdController",
     resolveLocal: "__tcdResolveLocal",
     queue: "__tcdBootQueue",

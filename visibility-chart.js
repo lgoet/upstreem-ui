@@ -1139,12 +1139,12 @@
      because this component broadcasts to every root sharing an instanceId. */
   var mount = UC.makeMount({
     rootClass: "vot-root", notPortal: true,
-    /* Only the actual <canvas> swallows the wheel (Chart.js's own touch-action:none) — .up-line-
-       wrap happens to BE the canvas here (core.css: no padding, canvas at 100%/100%), so this was
-       never the bug the other two chart components had, but scoping to canvas explicitly rather
-       than relying on that staying true keeps all three consistent and safe against future CSS
-       changes to .up-line-wrap. The Top Brands table beside it scrolls natively either way. */
-    wheelSel: ".up-line-wrap canvas",
+    /* REVERTED (R7 attempt): scoping this to canvas-only made real-world scrolling worse across
+       the board (canvas is destroyed/recreated on render, listener depends on the 800ms re-poll
+       to catch up; .up-line-wrap itself never is) — see STYLEGUIDE §38, theory retracted, needs
+       proper re-investigation before trying narrower scoping again.
+       only the chart itself swallows the wheel — the Top Brands table beside it scrolls natively */
+    wheelSel: ".up-line-wrap",
     ctrlProp: "__votController",
     resolveLocal: "__votResolveLocal",
     queue: "__votBootQueue",
