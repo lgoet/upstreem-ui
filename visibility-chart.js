@@ -1139,12 +1139,10 @@
      because this component broadcasts to every root sharing an instanceId. */
   var mount = UC.makeMount({
     rootClass: "vot-root", notPortal: true,
-    /* REVERTED (R7 attempt): scoping this to canvas-only made real-world scrolling worse across
-       the board (canvas is destroyed/recreated on render, listener depends on the 800ms re-poll
-       to catch up; .up-line-wrap itself never is) — see STYLEGUIDE §38, theory retracted, needs
-       proper re-investigation before trying narrower scoping again.
-       only the chart itself swallows the wheel — the Top Brands table beside it scrolls natively */
-    wheelSel: ".up-line-wrap",
+    /* Kein wheelSel mehr — der ganze Wheel-Forwarding-Mechanismus ist aus core raus (siehe den
+       Kommentar an seiner alten Stelle in makeMount). Die Ursache lag in fremdem Seiten-CSS
+       (`overscroll-behavior: contain` per `*`) und ist in core.css an der Wurzel behoben; damit
+       scrollt hier alles wieder nativ, inkl. Trägheit und Bounce. */
     ctrlProp: "__votController",
     resolveLocal: "__votResolveLocal",
     queue: "__votBootQueue",

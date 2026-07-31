@@ -735,13 +735,10 @@
      because this component broadcasts to every root sharing an instanceId. */
   var mount = UC.makeMount({
     rootClass: "combo-root",
-    /* REVERTED (R7 attempt): scoping this to canvas-only made real-world scrolling near this
-       panel much WORSE, not better — canvas is destroyed/recreated on every render, so the
-       listener depends on the 800ms wheelFlag re-poll to ever land on the current canvas; the
-       containers below are never recreated, so binding here never has that gap. Needs proper
-       re-investigation (actual wheel event / real embed) before trying narrower scoping again —
-       see STYLEGUIDE §38 for the retracted theory. */
-    wheelSel: ".up-line-wrap, .up-donut-body, .cc-type-root",
+    /* Kein wheelSel mehr — der ganze Wheel-Forwarding-Mechanismus ist aus core raus (siehe den
+       Kommentar an seiner alten Stelle in makeMount). Die Ursache lag in fremdem Seiten-CSS
+       (`overscroll-behavior: contain` per `*`) und ist in core.css an der Wurzel behoben; damit
+       scrollt hier alles wieder nativ, inkl. Trägheit und Bounce. */
     ctrlProp: "__ccController",
     resolveLocal: "__ccResolveLocal",
     queue: "__ccBootQueue",

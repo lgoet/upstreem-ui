@@ -830,14 +830,10 @@
      for an instanceId instead of broadcasting, unlike the others. */
   var mount = UC.makeMount({
     rootClass: "tcd-root", notPortal: true,
-    /* REVERTED (R7 attempt): scoping this to ".up-donut-body canvas" made real-world scrolling
-       near this panel much WORSE, not better — canvas is destroyed/recreated on every render
-       (renderDonut/renderBars replace body.innerHTML), so the listener depends on the 800ms
-       wheelFlag re-poll to ever land on the current canvas; .up-donut-body itself is never
-       recreated, so binding here never has that gap. The original "too-wide dead zone" diagnosis
-       needs to be re-investigated properly (with an actual wheel event / real embed, not static
-       reading) before trying again — see STYLEGUIDE §38 for the retracted theory. */
-    wheelSel: ".up-donut-body",
+    /* Kein wheelSel mehr — der ganze Wheel-Forwarding-Mechanismus ist aus core raus (siehe den
+       Kommentar an seiner alten Stelle in makeMount). Die Ursache lag in fremdem Seiten-CSS
+       (`overscroll-behavior: contain` per `*`) und ist in core.css an der Wurzel behoben; damit
+       scrollt hier alles wieder nativ, inkl. Trägheit und Bounce. */
     ctrlProp: "__tcdController",
     resolveLocal: "__tcdResolveLocal",
     queue: "__tcdBootQueue",

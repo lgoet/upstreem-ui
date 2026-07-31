@@ -2080,11 +2080,21 @@ bleibt überall sonst wirksam.
 entfernen (`touch-action: pan-y` darf bleiben). Die core.css-Regel ist die Verteidigungslinie für
 den Fall, dass das nicht passiert.
 
-**Wheel-Forwarding bleibt vorerst drin.** Mit dem CSS-Fix ist es theoretisch überflüssig (natives
-Chaining funktioniert wieder) und kostet weiterhin Bounce/Trägheit auf den Chart-Flächen. Es zu
-entfernen ist aber ein SEPARATER Schritt, der erst nach bestätigtem CSS-Fix am echten Embed
-getestet werden darf — genau diese zwei Änderungen auf einmal auszuliefern hat vorher zwei
-kaputte Deploys produziert.
+**Wheel-Forwarding ist danach komplett entfernt worden** — als SEPARATER zweiter Schritt, erst
+nachdem der CSS-Fix am echten Embed bestätigt war. `cfg.wheelSel` und der ganze
+`forwardWheel`/`scrollTarget`/`attachWheel`-Block sind aus `UC.makeMount` raus, alle drei
+Chart-Komponenten übergeben kein `wheelSel` mehr. Damit scrollt überall wieder der Browser selbst,
+inkl. Trägheit und Rubber-Banding.
+
+Verifiziert mit dem echten Header-CSS im Testaufbau, beide Bedingungen gleichzeitig:
+`overscroll-behavior` innerhalb von `.up-root` überall `auto` (Blockade weg) UND
+`defaultPrevented === false` auf `.tct-table`/`.tcd-box`/`.up-donut-body`/`canvas` (JS-Krücke weg).
+Zusätzlich geprüft, dass die core.css-Regel nicht über `.up-root` hinausleckt: ein frisches div im
+`allow_scroll`-Wrapper, aber außerhalb `.up-root`, behält `contain`.
+
+Dass diese zwei Änderungen zusammen ausgeliefert einmal ZWEI kaputte Deploys erzeugt haben, lag
+genau daran, dass sie in der falschen Reihenfolge kamen: Krücke weg, bevor die Ursache behoben war.
+Reihenfolge zählt — erst die Ursache beheben, bestätigen lassen, dann die Krücke entfernen.
 
 **Drei Lehren, die diese Session teuer bezahlt hat:**
 1. Ein aus reiner Code-Lektüre abgeleiteter Fix ist eine Hypothese, kein Fix.

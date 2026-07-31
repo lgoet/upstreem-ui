@@ -1176,66 +1176,22 @@
       }
     })();
 
-    /* ---- wheel forwarding ----
-       Chart.js sets touch-action:none on its canvas and other regions swallow the wheel too, so
-       the event never reaches the app's scroll container. Forward it to the nearest scrollable
-       ancestor of the ACTUAL target — that way an internal scrollable (a long dropdown list)
-       scrolls itself instead of having its wheel hijacked up to the page. */
-    function scrollTarget(fromEl){
-      var node = fromEl;
-      while (node && node.nodeType === 1 && node !== document.body && node !== document.documentElement){
-        try {
-          var oy = getComputedStyle(node).overflowY;
-          if ((oy === "auto" || oy === "scroll") && node.scrollHeight > node.clientHeight + 2) return node;
-        } catch(e){}
-        node = node.parentNode;
-      }
-      var byId = document.getElementById("main");
-      if (byId && byId.scrollHeight > byId.clientHeight + 2) return byId;
-      var se = document.scrollingElement || document.documentElement;
-      if (se && se.scrollHeight > se.clientHeight + 2) return se;
-      return byId || null;
-    }
-    function forwardWheel(e){
-      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;   // leave horizontal gestures alone
-      var t = scrollTarget(e.target);
-      if (t){ if (e.cancelable) e.preventDefault(); t.scrollTop += e.deltaY; return; }
-      try { if (window.parent && window.parent !== window) window.parent.scrollBy(0, e.deltaY); } catch(ex){}
-      try { window.scrollBy(0, e.deltaY); } catch(ex){}
-    }
-    /* cfg.wheelSel — WHICH elements inside the root actually need this. Omit it and nothing is
-       intercepted at all, which is what every table wants.
-       This used to be bound to the whole component root, which was far too wide a net. The problem
-       it solves is real but narrow: Chart.js registers its own wheel handling on the canvas, so a
-       wheel over a chart never reached Bubble's scroll container and the page simply refused to
-       scroll there. Everywhere else there was nothing to fix — and replacing native scrolling with
-       `scrollTop += deltaY` throws away compositor-thread scrolling, inertia and rubber-banding,
-       which on a trackpad is exactly the "doesn't feel like a real app" difference. Tables are the
-       biggest surfaces in this library, so they were paying that cost on every scroll for a
-       problem they never had. */
-    var wheelFlag = "__upWheel_" + cfg.rootClass;
-    function wheelTargets(){
-      if (!cfg.wheelSel) return [];
-      var out = [], all = roots();
-      for (var i = 0; i < all.length; i++){
-        var found = all[i].querySelectorAll(cfg.wheelSel);
-        for (var j = 0; j < found.length; j++) out.push(found[j]);
-      }
-      return out;
-    }
-    function attachWheel(){
-      var all = wheelTargets();
-      for (var i = 0; i < all.length; i++){
-        if (!all[i][wheelFlag]){ all[i][wheelFlag] = true; all[i].addEventListener("wheel", forwardWheel, { passive: false }); }
-      }
-    }
-    if (cfg.wheelSel && !window[wheelFlag + "_installed"]){
-      window[wheelFlag + "_installed"] = true;
-      attachWheel();
-      /* Chart wraps are re-created on every render, so newly built ones still need picking up.
-         Only runs for components that actually declared a wheelSel. */
-      setInterval(attachWheel, 800);
-    }
+    /* ---- wheel forwarding: ENTFERNT (und darf nicht zurückkommen) ----
+       Hier stand ein `cfg.wheelSel`, das einen `wheel`-Listener anhängte, `preventDefault()` rief
+       und Scrollen von Hand nachbaute (`scrollTarget(e.target).scrollTop += e.deltaY`). Es war eine
+       Krücke um ein CSS-Problem herum, das jetzt an der Wurzel behoben ist (siehe STYLEGUIDE §38):
+       fremdes Seiten-CSS legte `overscroll-behavior: contain` per `*` auf alles, wodurch jedes
+       Element mit `overflow:hidden` (also auch reine Optik-Container wie `.tcd-box`) das
+       Scroll-Chaining zur Seite blockierte. core.css stellt für `.up-root` jetzt wieder
+       `overscroll-behavior: auto` her — damit funktioniert natives Scrollen überall von selbst.
+       Der Preis der Krücke war real: `preventDefault` + synchroner `scrollTop`-Schreibzugriff heißt
+       kein Compositor-Scrolling, keine Trägheit, kein Rubber-Banding — genau das "fühlt sich weird
+       an, kein iOS-Bounce" auf den Chart-Flächen.
+       Die Begründung im alten Kommentar ("Chart.js sets touch-action:none on its canvas") ist
+       übrigens auf Chart.js 4 messbar falsch: das Canvas hat `touch-action: auto`, das Wheel-Event
+       blubbert normal bis window, nichts ruft preventDefault. Falls ein Chart doch mal echt den
+       Wheel abfängt (`chartjs-plugin-zoom` tut das), gehört das in dessen eigene Config — nicht in
+       einen globalen handgeschriebenen Scroller. */
 
     /* ---- init cascade ----
        Bubble can insert the markup well after this script runs, and again on every re-render.
