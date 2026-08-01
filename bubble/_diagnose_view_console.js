@@ -23,7 +23,23 @@
     l.getEntries().forEach(function(e){ LT.push({ at: e.startTime, ms: Math.round(e.duration) }); });
   }).observe({entryTypes:['longtask']}); } catch(e){}
 
-  function ev(label){ if (RUN) RUN.events.push({ t: Math.round(performance.now()-RUN.t0), label: label }); }
+  function ev(label, atMs){
+    if (RUN) RUN.events.push({ t: atMs != null ? atMs : Math.round(performance.now()-RUN.t0), label: label });
+  }
+  /* Misst, wie lange unsere eigene Funktion synchron laeuft. Wichtig fuer die Zuordnung: liegt
+     eine Blockade direkt auf so einem Aufruf, ist sie unsere; liegt sie in einer Luecke dazwischen,
+     gehoert sie Bubble. Achtung, die Charts rendern asynchron weiter — eine kleine Sync-Dauer
+     schliesst spaetere Kosten aus unserem Code nicht voellig aus, macht sie aber unwahrscheinlich. */
+  function timed(n, orig){
+    return function(){
+      var startedAt = Math.round(performance.now() - (RUN ? RUN.t0 : performance.now()));
+      var s = performance.now();
+      var res = orig.apply(this, arguments);
+      var d = Math.round(performance.now() - s);
+      ev('JS: ' + n + '()' + (d >= 2 ? '   ⏱ ' + d + 'ms synchron' : ''), startedAt);
+      return res;
+    };
+  }
 
   /* Alle Render-/Loading-Funktionen mitschreiben — zeigt, WANN unsere Komponenten ueberhaupt
      ins Spiel kommen. Kommen sie erst spaet, war die Zeit davor nicht unsere. */
@@ -37,7 +53,7 @@
   ].forEach(function(n){
     var orig = window[n];
     if (typeof orig !== 'function') return;
-    window[n] = function(){ ev('JS: ' + n + '()'); return orig.apply(this, arguments); };
+    window[n] = timed(n, orig);
   });
 
   if (typeof window.fadeView === 'function'){
