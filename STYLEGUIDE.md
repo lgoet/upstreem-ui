@@ -2406,3 +2406,40 @@ Konsole), statt weiter innerhalb der eigenen Codebasis nach der Ursache zu suche
 Zu den vier falschen Fährten unterwegs, alle mit lokal gemessenen Gegenbeweisen: Tag-Akkumulation
 (§41), Ladelatenz im Animationsfenster (§42), Chart.js-Nachladen, dynamische Attribute (§43).
 Gemeinsamer Nenner: alle wurden lokal nie sichtbar, weil das Problem gar nicht im Repo lag.
+
+## 45. View-Wechsel: 1686ms blockiert, davon 83ms unsere — Messung und Konsequenz
+
+Gemessen auf der echten Seite (Navigation zur Prompts-View, `bubble/_diagnose_view_console.js`):
+
+    +0ms      Navigation
+    +198ms    View sichtbar
+    +803ms    ⛔ 165ms
+    +969ms    ⛔ 586ms          ← groesste Blockade, VOR unserem ersten Aufruf
+    +1309ms   setPromptsTableLoading()   ⏱ 21ms
+    +1555ms   ⛔ 87ms
+    +1692ms   ⛔ 52ms
+    +1908ms   renderPromptsTable()       ⏱ 14ms      (15 Zeilen)
+    +2153ms   ⛔ 451ms
+    +2390ms   setPromptsTableTopics()    ⏱ 12ms
+    +2405ms   renderTopicsManager()      ⏱ <2ms
+    +2414ms   setPromptsTableLoading()   ⏱ 36ms
+    +2735ms   ⛔ 345ms
+
+Summe blockiert: 1686ms. Summe unserer Funktionen: ~83ms (5%). **Keine der sechs Blockaden liegt
+auf einem unserer Aufrufe** — alle sitzen in den Luecken dazwischen, die groesste sogar bevor wir
+das erste Mal gerufen werden. Die Zeit gehoert Bubbles Workflow-/Expression-Maschinerie.
+
+**Konsequenz fuer dieses Repo:** an der Render-Pipeline der Tabellen ist hier nichts zu holen.
+`renderPromptsTable` mit 15 Zeilen kostet 14ms — selbst eine Halbierung waere im Rauschen. Wer das
+naechste Mal einen langsamen View-Wechsel meldet, misst zuerst mit dem Snippet und optimiert erst,
+wenn eine Blockade tatsaechlich AUF einem unserer Aufrufe liegt.
+
+**Was auf Bubble-Seite hilft** (nach Hebelwirkung):
+1. Ladezustand als ERSTEN Workflow-Schritt setzen, vor der RPC. Im Log kam er bei +1309ms — die
+   View stand da schon 1.1s leer da, ohne dass irgendetwas blockiert war. Kostet keine Millisekunde
+   Gesamtzeit, aendert aber die gefuehlte Geschwindigkeit komplett.
+2. Alles hinter die erste Tabellendarstellung schieben, was fuer sie nicht gebraucht wird —
+   `setPromptsTableTopics` (nur fuer den Bulk-Editor noetig) und `renderTopicsManager` (gehoert
+   gar nicht auf diese View) liefen hier im selben Block mit.
+3. Payload der Run-JS-Schritte kleiner halten: die Blockaden vor unserem ersten Aufruf sind Bubble
+   beim Auswerten der RPC-Antwort und Bauen des Text-Ausdrucks.
