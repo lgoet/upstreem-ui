@@ -194,7 +194,7 @@
    did before UC.unclipAncestors — except here the clipping is intentional and can't just be
    stripped. The menu is instead body-mounted (same escape hatch as the topics-manager modal and
    the "+N more" topics popup), positioned in JS from the button's getBoundingClientRect(). */
-.vot-scale-btn { position: absolute; top: 8px; right: 8px; }
+.vot-scale-btn { position: absolute; top: 4px; right: 4px; }
 
 
 .vot-scale-opt { display: flex; flex-direction: column; gap: 8px; padding: 9px 10px; border-radius: 9px; cursor: pointer; }
