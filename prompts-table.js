@@ -597,14 +597,16 @@
       var counts = { active: state.totalCount, inactive: state.totalCountInactive };
       el.innerHTML = [["active","Active"],["inactive","Inactive"]].map(function(p){
         var n = counts[p[0]];
-        /* Only the tab you are NOT on SHOWS a count: the current view's total is already
+        /* Only the tab you are NOT on carries a count: the current view's total is already
            shown next to the heading two elements to the left, and repeating it there just
-           makes the eye check whether the two numbers agree. The span is still emitted for the
-           active tab and merely hidden in CSS — omitting it changed the button's width on every
-           switch, so both buttons resized right as the "N selected" chip was collapsing.
+           makes the eye check whether the two numbers agree.
+           Both buttons stay fit-width — an earlier attempt kept the span in the markup and only
+           hid it, to stop the switcher resizing on a tab change. That reserved a number's worth
+           of empty space inside the active button and read as broken, which is worse than the
+           resize it was avoiding. Fit-width wins.
            No count at all until the server sends one — total_count_inactive isn't in the
            payload yet, and "Inactive 0" would be a claim we can't back up. */
-        var cnt = (n == null || n === "")
+        var cnt = (p[0] === state.status || n == null || n === "")
           ? "" : '<span class="upt-status-n">' + UC.fmtTotal(n) + '</span>';
         return '<button class="upt-status-btn' + (state.status === p[0] ? " is-active" : "") +
                '" type="button" data-status="' + p[0] + '">' + p[1] + cnt + '</button>';

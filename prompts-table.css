@@ -143,12 +143,11 @@
 .upt-status-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
 .up-root[data-theme="dark"] .upt-status-btn.is-active { background: #121212; border-color: #353535; }
 .upt-status-n { font-size: 11px; font-weight: 600; color: var(--vc-third); font-variant-numeric: tabular-nums; }
-/* Hidden, not removed. Only the tab you are NOT on shows its count (see renderStatusTabs), but
-   dropping the span from the active tab's markup changes that button's width — so every switch
-   made both buttons resize under the cursor at the same moment the "N selected" chip next to
-   them was collapsing. visibility:hidden keeps the box, so the switcher's geometry is identical
-   in both tabs and only the chip actually moves. */
-.upt-status-btn.is-active .upt-status-n { visibility: hidden; }
+/* Takes NO space on the active tab. renderStatusTabs already omits the span there; this is the
+   belt-and-braces half, and deliberately display:none rather than visibility:hidden — the latter
+   reserves a number's width of blank space inside the button, which makes the switcher look
+   padded out for a count that isn't shown. Both buttons must stay fit-width. */
+.upt-status-btn.is-active .upt-status-n { display: none; }
 .up-root.is-searchtakeover .upt-status { display: none; }
 
 /* ---------- bulk action bar ----------
