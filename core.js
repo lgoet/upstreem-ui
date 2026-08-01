@@ -3003,7 +3003,26 @@
     }, { capture: true, passive: true });
   }
 
+  /* Theme-Umschalter fuer ALLE Komponenten auf der Seite, per JS statt per Bubble-Attribut.
+     Warum das existiert: `data-isdark` als dynamischer Bubble-Ausdruck im Markup zwingt Bubble,
+     das ganze HTML-Element bei jeder Aenderung neu zu rendern ($.fn.html) — und das reisst die
+     Komponente komplett ab und baut sie neu auf, mitten in einer eventuell laufenden Animation.
+     Dasselbe gilt fuer data-processing (dafuer gibt es die set*Loading-Funktionen). Setzt man das
+     Attribut stattdessen von hier aus per JS, sieht Bubble davon nichts, aber der ohnehin schon
+     vorhandene MutationObserver jeder Komponente (attributeFilter: data-isdark) reagiert normal.
+     Das Markup kann damit vollstaendig statisch bleiben. Siehe STYLEGUIDE 43. */
+  function upstreemSetTheme(isDarkVal){
+    var v = isYes(isDarkVal) ? "yes" : "no";
+    var roots = document.querySelectorAll(".up-root");
+    for (var i = 0; i < roots.length; i++){
+      if (roots[i].getAttribute("data-isdark") !== v) roots[i].setAttribute("data-isdark", v);
+    }
+    return roots.length;
+  }
+  window.upstreemSetTheme = upstreemSetTheme;
+
   window.UpstreemCore = {
+    upstreemSetTheme: upstreemSetTheme,
     CITE_COLOR: CITE_COLOR,
     CITE_ALIAS: CITE_ALIAS,
     ALL_CITATION_TYPES: ALL_CITATION_TYPES,

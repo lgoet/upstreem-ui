@@ -2340,3 +2340,26 @@ Scripts gar nicht erneut braucht.
 zwangsläufig im Animationsfenster desjenigen Containers, der die Komponente einblendet. Neue
 Assets (weitere Libs, Fonts, Icon-Sets) gehören deshalb in den Header-Preload, nicht in einen
 Lazy-Load beim ersten Gebrauch.
+
+## 43. Dynamische Bubble-Attribute im Komponenten-Markup = Vollrebuild bei jeder Änderung
+
+Bubble rendert ein HTML-Element, dessen Inhalt dynamische Ausdrücke enthält, bei jeder Änderung
+komplett neu (`$.fn.html()`). Die Komponente wird dabei abgerissen und neu gebaut. Auf der echten
+Seite gemessen: 209–320ms Long Tasks, 6 statt 24 Frames — jedes Mal, wenn `data-processing` kippt,
+also bei jedem Ladevorgang und damit mitten in jeder Drawer-/View-Animation.
+
+Wichtig für die Fehlersuche: die Long Tasks liegen laut Stacktrace komplett in Bubbles `run.js`
+(`freeze_workflows_sync`, `find_element_references`) und `$.fn.html` — nicht in unserem Code.
+Dieselben Operationen lokal: Markup einfügen 2ms, Init 0 Long Tasks, `reset()` 8ms. Es ist also
+kein Perf-Bug in den Komponenten, sondern ein Integrationsfehler im Bubble-Setup. Das war auch der
+Grund, warum drei vorherige Erklärungsversuche (Tag-Akkumulation §41, Ladelatenz §42, Chart.js)
+danebenlagen: lokal war nie etwas messbar, weil lokal kein Bubble die Komponente neu baut.
+
+**Regel:** kein dynamischer Bubble-Ausdruck im Markup, der sich zur Laufzeit ändert. Für alles
+Veränderliche gibt es JS-Funktionen (`set…Loading`, `upstreemSetTheme`, `render…({brand})`).
+Details und Umstellungstabelle: `bubble/STATISCHES_MARKUP_PFLICHT.md`.
+
+`upstreemSetTheme(isDark)` (core.js) setzt `data-isdark` per JS auf allen `.up-root`s — die pro
+Komponente ohnehin vorhandenen MutationObserver auf dieses Attribut ziehen nach, ohne dass Bubble
+etwas davon mitbekommt. Genau deshalb bleibt der Attribut-Mechanismus erhalten, statt ihn durch
+eine neue API zu ersetzen: er funktioniert, sobald ihn nicht mehr Bubble triggert.
