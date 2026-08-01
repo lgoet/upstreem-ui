@@ -1,0 +1,78 @@
+<!--
+  UPSTREEM — ASSET-PRELOAD FÜRS PAGE-HEADER-SCRIPT
+
+  WOHIN: Bubble → Settings → SEO/metatags → "Script/meta tags in header" (bzw. das Header-Script
+  der jeweiligen Page). NICHT in ein HTML-Element auf der Page — es muss laufen, BEVOR irgendeine
+  Komponente im DOM auftaucht.
+
+  ── WARUM ES DAS GIBT ────────────────────────────────────────────────────────
+  Jede Komponente bringt am Fuß ihres Markups einen eigenen Loader mit, der core.css/core.js und
+  ihre eigenen Assets nachlädt. Bubble injiziert dieses Markup aber erst in dem Moment, in dem das
+  Reusable gerendert wird — also exakt WÄHREND ein Drawer aufgeht oder eine View eingeblendet wird.
+  In diesem Moment passieren dann drei Dinge nacheinander, jeweils mit Netzwerk-Roundtrip zu
+  jsDelivr:
+
+      1. <link rel="stylesheet"> wird in den <head> gehängt   ← RENDER-BLOCKING
+      2. core.js + component.js werden geladen (async=false → strikt nacheinander)
+      3. beim ersten Chart-Render: Chart.js, ~200kB, nochmal ein eigener Request
+
+  Punkt 1 ist der Übeltäter für "es ploppt einfach rein": der Browser hält das Painting an, bis
+  ein neu eingefügtes Stylesheet aufgelöst ist. Die Öffnungsanimation läuft damit ins Leere — sie
+  ist fertig, bevor überhaupt wieder gemalt werden darf. Punkt 2+3 erklären die 600–1000ms.
+
+  Gemessen wurde dabei ausdrücklich KEINE CPU-Blockade: die Komponenten erzeugen beim Öffnen null
+  Long Tasks. Es ist reine Lade-Latenz, die zufällig im Animationsfenster liegt.
+
+  Dieses Script zieht genau diese Ladevorgänge auf den Seitenaufbau vor. Wenn später ein Drawer
+  aufgeht, ist alles längst da: kein neues <link>, kein Request, kein Chart.js-Nachladen. Die
+  Komponente initialisiert sich nur noch aus bereits geladenem Code.
+
+  Dass das reicht, hängt an einer Eigenschaft der Komponenten: ein neu im DOM auftauchender Root
+  braucht die Scripts NICHT erneut. core.js' watchRoots-Observer plus sein 1.5s-Heartbeat finden
+  ihn und initialisieren ihn von selbst.
+
+  ── ACHTUNG, EINZIGE FALLE ───────────────────────────────────────────────────
+  PIN unten MUSS identisch sein mit dem data-cdn-pin auf den Komponenten. Weichen sie ab, lädt
+  dieses Script Version A, die Loader der Komponenten finden ihre eigenen (anderen) URLs nicht in
+  der Registry und laden Version B zusätzlich nach — dann hast du beides doppelt und in zwei
+  Ständen. Am saubersten: beide auf dieselbe Bubble-Konstante zeigen lassen.
+-->
+<script>
+(function(){
+  var PIN = "CDN_PIN";   // <-- exakt derselbe Wert wie data-cdn-pin auf den Komponenten
+  if (!PIN || PIN === "CDN_" + "PIN") PIN = "main";
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + PIN + "/";
+
+  /* Dieselbe Registry, die die Loader in den Komponenten benutzen. Dadurch sehen die dort später
+     ihre URLs als "schon geladen" und tun gar nichts mehr — das ist der ganze Trick. */
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(url, make){ if (L[url]) return; L[url] = 1; make(url); }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+
+  /* core zuerst — async=false hält die Reihenfolge ein, die Komponenten brauchen core.js vorher.
+     Die Liste darunter darf gekürzt werden auf das, was auf DIESER Page wirklich vorkommt; alles
+     zu laden ist nur bequemer und kostet einmalig ein paar gecachte Requests. */
+  css("core.css");
+  js("core.js");
+
+  css("visibility-chart.css");        js("visibility-chart.js");
+  css("topcitations-dashboard.css");  js("topcitations-dashboard.js");
+  css("citations-combo-chart.css");   js("citations-combo-chart.js");
+  css("prompts-table.css");           js("prompts-table.js");
+  css("urls-table.css");              js("urls-table.js");
+  css("domains-table.css");           js("domains-table.js");
+  css("topics-manager.css");          js("topics-manager.js");
+
+  /* Chart.js vorwärmen. Ohne das wird es erst beim ERSTEN Chart-Render geholt — also mitten im
+     Öffnen des ersten Drawers, der einen Chart enthält. Das data-Attribut ist genau das, worauf
+     core.js' loadChartJs() prüft: findet es dieses Script schon vor, lädt es nichts nach. */
+  once("chartjs", function(){
+    var c = document.createElement("script");
+    c.src = "https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js";
+    c.setAttribute("data-upstreem-chartjs", "1");
+    c.async = false;
+    document.head.appendChild(c);
+  });
+})();
+</script>

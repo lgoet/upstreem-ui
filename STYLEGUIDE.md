@@ -2252,7 +2252,12 @@ gemeinsame ID, keine garantierte Formatgleichheit.
   Das Add-Topic-Modal (core.css, `z-index:100000`) öffnet weiterhin über der Bar, unabhängig
   von diesem Wert.
 
-## 41. Der Loader-Akkumulations-Bug — warum Drawer/Views nach der HTML-Umstellung "ploppten"
+## 41. Der Loader-Akkumulations-Bug (Teilbefund — die eigentliche Ursache steht in §42)
+
+> **Korrektur:** Dieser Abschnitt beschreibt einen echten, aber NACHRANGIGEN Bug. Er erklärt
+> nicht das gemeldete Symptom: der User hatte das Problem sofort beim ERSTEN Öffnen, nicht
+> erst nach mehreren Navigationen. Der Dedupe-Fix unten verhindert nur Wiederholungen und hat
+> entsprechend nichts gebracht. Die echte Ursache und der wirksame Fix: §42.
 
 **Symptom (vom User gemeldet):** vor der Umstellung auf diese HTML-Komponenten hatten die Bubble-
 Drawer und View-Wechsel eine saubere kurze Animation. Danach: Animationen laufen oft gar nicht
@@ -2293,3 +2298,45 @@ die Scripts absichtlich genau einmal ausführt und danach frisches Component-Mar
 hängt: Root wird gefunden, `__uptController` wird gesetzt, `renderPromptsTable()` rendert echte
 Zeilen. Ohne diesen Test wäre der Dedupe ein Blindflug gewesen — er hätte die Komponenten nach dem
 ersten Render tot stellen können.
+
+
+## 42. Die echte Ursache der lahmen Drawer/Views: Laden IM Animationsfenster
+
+**Symptom:** Drawer und View-Wechsel animieren nicht mehr ("ploppt rein") oder hängen 600–1000ms.
+Sofort, ab dem ersten Öffnen. Entfernt man die Komponenten von der Page, ist alles sofort wieder
+flüssig.
+
+**Was es NICHT ist** (alles gemessen, nicht vermutet):
+- Keine CPU-Blockade. Beim Öffnen eines Drawers mit visibility-chart + topcitations-dashboard:
+  **null Long Tasks, 0ms blockierte Zeit.** Die Komponenten rechnen beim Start praktisch nichts.
+- Nicht der ganzseitige MutationObserver (~0.6ms bei 1200 Knoten).
+- Nicht das mehrfache Auswerten von core.js (~0.1ms Median).
+- Nicht `data-cdn-pin` vs. `@main`.
+- Nicht die Tag-Akkumulation aus §41 (die ist real, aber tritt erst über viele Navigationen auf).
+
+**Was es IST:** die Assets werden erst geladen, wenn Bubble das Komponenten-Markup injiziert —
+und das passiert exakt während der Öffnungsanimation. Drei Latenzen hintereinander:
+
+    1. <link rel="stylesheet"> in den <head>            ← RENDER-BLOCKING
+    2. core.js + component.js (async=false → seriell)
+    3. beim ersten Chart: Chart.js, ~200kB, eigener Request
+
+Schritt 1 erklärt das "Ploppen" vollständig: ein frisch eingefügtes Stylesheet hält das Painting
+an, bis es aufgelöst ist. Die Animation läuft in dieser Zeit ins Leere und ist vorbei, bevor
+wieder gemalt werden darf. Schritt 2+3 erklären die 600–1000ms. Lokal ist das alles ~0ms, gegen
+jsDelivr eben nicht — deshalb war es im Harness nie sichtbar und nur in der echten App.
+
+**Fix:** `bubble/page_header_preload.html` — lädt core + alle Komponenten-Assets + Chart.js einmal
+beim Seitenaufbau ins Page-Header-Script und trägt sie in dieselbe `window.__upAssetsLoaded`
+Registry ein, die die Loader in den Komponenten benutzen. Die finden ihre URLs dann als "schon da"
+vor und tun nichts mehr.
+
+Verifiziert: beim Öffnen eines Drawers entstehen danach **0 neue `<link>`/`<script>`-Tags**
+(vorher 4), Chart.js ist vorher schon bereit, und die Komponente initialisiert sich trotzdem
+korrekt — weil ein neu auftauchender Root von `watchRoots` + Heartbeat gefunden wird und die
+Scripts gar nicht erneut braucht.
+
+**Regel für neue Komponenten:** alles, was ein Komponenten-Loader zur Laufzeit nachlädt, landet
+zwangsläufig im Animationsfenster desjenigen Containers, der die Komponente einblendet. Neue
+Assets (weitere Libs, Fonts, Icon-Sets) gehören deshalb in den Header-Preload, nicht in einen
+Lazy-Load beim ersten Gebrauch.
