@@ -480,11 +480,15 @@
     function syncBrandToggle(startClearMessage){
       if (!brandToggle) return;
       var hasBrand = !!(state.brand && state.brand.name);
-      /* Gated on hasTable too, not just the brand attribute: Bubble can set the brand before the
-         first table payload lands, and re-hiding this on every later loading toggle (hasTable
-         only resets on a full reset()) would make it flicker out on each reload instead of
-         staying put. */
-      brandToggle.classList.toggle("is-visible", hasBrand && state.hasTable);
+      /* Gated on the DATA, not just the brand attribute: Bubble can set the brand long before the
+         first table payload lands. Two separate conditions, both needed:
+           hasTable — nothing has ever arrived, so there is nothing to filter yet.
+           rows on screen while busy — a reload that still has its old rows keeps the toggle put
+             (re-hiding it on every loading toggle made it flicker out on each reload), but a
+             reload showing nothing but skeleton must not offer a filter over an empty table. */
+      var busy = state.loading || state.optimisticLoading;
+      var showsRows = state.hasTable && !!activeRows().length;
+      brandToggle.classList.toggle("is-visible", hasBrand && state.hasTable && (showsRows || !busy));
       if (!hasBrand) return;
       var lbl = brandToggle.querySelector(".tcd-brand-label");
       var logo = brandToggle.querySelector(".tcd-brand-logo");

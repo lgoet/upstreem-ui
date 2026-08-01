@@ -2394,7 +2394,33 @@
     var wrap = cfg.wrap, canvas = cfg.canvas, legendEl = cfg.legend || null;
     var isDark = cfg.isDark || function(){ return false; };
     var isOwner = cfg.isOwner || function(){ return true; };
-    var chart = null, legendCompanies = [], verifyT = null, sizeIv = null, lastBuilt = null;
+    var chart = null, legendCompanies = [], verifyT = null, sizeIv = null, lastBuilt = null, lastSig = null;
+
+    /* Fingerprint of everything a rebuild would actually change: the drawn values, the colours,
+       the line width and the theme. Its whole job is to let render() recognise "you are asking
+       for exactly the chart that is already on the canvas" and do nothing.
+       This matters because render() is not called once per data load. A component's render() runs
+       on the data arriving, on loading flipping back off, on a theme sync, on a sort or filter
+       change — and every one of those used to destroy the Chart instance and construct a new one,
+       which replays the 600ms entrance animation from zero. Two of those landing back-to-back is
+       what "the chart appears, stutters, and appears again" looks like from the outside.
+       Cost is a few hundred string joins against a ~70ms rebuild — worth it, but keep it flat:
+       no JSON.stringify over the full dataset objects, those carry Chart.js internals. */
+    function builtSig(built){
+      if (!built || !built.datasets) return null;
+      try {
+        var parts = [isDark() ? "d" : "l", getLineWidthPref(), (built.labels || []).join(",")];
+        for (var i = 0; i < built.datasets.length; i++){
+          var d = built.datasets[i];
+          parts.push(String(d.label) + "|" + String(d.__baseColor || d.borderColor || "") + "|" + (d.data || []).join(","));
+        }
+        return parts.join(";");
+      } catch(e){ return null; }
+    }
+    function canvasHasLiveChart(){
+      try { return !!(window.Chart && window.Chart.getChart && canvas && window.Chart.getChart(canvas)); }
+      catch(e){ return false; }
+    }
     /* Redraw with whatever data is already on screen — no refetch — the moment ANY chart on the
        page (this instance's own dropdown or another component's) changes the shared line-width
        preference. Bound once per instance, not per render: this closure lives as long as the
@@ -2417,6 +2443,7 @@
       if (sizeIv){ clearInterval(sizeIv); sizeIv = null; }
       clearTimeout(verifyT);
       if (chart){ try { chart.destroy(); } catch(e){} chart = null; }
+      lastSig = null;   // nothing is drawn any more, so the next render must actually build
       if (window.Chart && window.Chart.getChart){ var ex = window.Chart.getChart(canvas); if (ex) try { ex.destroy(); } catch(e){} }
       /* The external tooltip is a plain DOM element outside Chart.js's lifecycle — destroying the
          chart stops the callback that would set its opacity back to 0, so a tooltip left visible
@@ -2501,6 +2528,7 @@
 
     function build(built){
       destroy();
+      lastSig = builtSig(built);   // after destroy(), which clears it
       var tc = themeColors();
       var ctx = canvas.getContext("2d");
       window.Chart.defaults.color = tc.muted;
@@ -2596,6 +2624,13 @@
       if (!isOwner()) return;
       clearExtras();
       if (!built || !built.datasets || !built.datasets.length){ empty(); return; }
+      /* Same chart already on the canvas → leave it alone. Not just a saved rebuild: rebuilding
+         restarts the entrance animation, so a second render() arriving 200ms after the first
+         (data, then loading=no) made the lines wipe in twice. Both halves of the check matter —
+         a matching signature with no live Chart instance means Chart.js dropped it and we DO
+         need to build. */
+      var sig = builtSig(built);
+      if (sig && sig === lastSig && chart && canvasHasLiveChart()){ lastBuilt = built; return; }
       lastBuilt = built;
       renderLegend(built.datasets);
       if (cfg.watermark !== false) injectWatermark(wrap);

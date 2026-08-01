@@ -662,10 +662,14 @@
       var name = root.getAttribute("data-brand-name") || "";
       var logo = root.getAttribute("data-brand-logo") || "";
       var valid = name && name !== "BRAND_NAME";
-      /* Gated on hasData too, not just the attribute: Bubble can set data-brand-name before the
-         first row payload lands, and re-hiding this on every later loading=yes (hasData never
-         resets once true) would make it flicker out on each reload instead of staying put. */
-      elBrand.classList.toggle("is-visible", !!valid && state.hasData);
+      /* Gated on the DATA, not just the attribute: Bubble can set data-brand-name long before the
+         first row payload lands. Two separate conditions, both needed:
+           hasData  — nothing has ever arrived, so there is nothing to filter yet.
+           rows on screen while busy — a reload that still has its old rows keeps the toggle put
+             (re-hiding it on every loading=yes made it flicker out on each reload), but a reload
+             showing nothing but skeleton must not offer a filter over an empty table. */
+      var showsRows = state.hasData && !!(state.rows || []).length;
+      elBrand.classList.toggle("is-visible", !!valid && state.hasData && (showsRows || !isBusy()));
       if (!valid) return;
       elBrandLbl.textContent = name + " mentioned";
       if (logo && logo !== "BRAND_LOGO"){ elBrandLogo.src = logo; elBrandLogo.style.display = "block"; }

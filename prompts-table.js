@@ -469,10 +469,14 @@
       var headLogo = root.querySelector(".upt-th-brandlogo");
       if (headLogo){ if (hasLogo){ headLogo.src = logo; headLogo.style.display = "block"; } else { headLogo.style.display = "none"; } }
       if (!elBrand) return;
-      /* Gated on hasData too, not just the attribute: Bubble can set data-brand-name before the
-         first row payload lands, and re-hiding this on every later loading=yes (hasData never
-         resets once true) would make it flicker out on each reload instead of staying put. */
-      elBrand.classList.toggle("is-visible", !!valid && state.hasData);
+      /* Gated on the DATA, not just the attribute: Bubble can set data-brand-name long before the
+         first row payload lands. Two separate conditions, both needed:
+           hasData  — nothing has ever arrived, so there is nothing to filter yet.
+           rows on screen while busy — a reload that still has its old rows keeps the toggle put
+             (re-hiding it on every loading=yes made it flicker out on each reload), but a reload
+             showing nothing but skeleton must not offer a filter over an empty table. */
+      var showsRows = state.hasData && !!(state.rows || []).length;
+      elBrand.classList.toggle("is-visible", !!valid && state.hasData && (showsRows || !isBusy()));
       if (!valid) return;
       elBrandLbl.textContent = name + " mentioned";
       if (hasLogo){ elBrandLogo.src = logo; elBrandLogo.style.display = "block"; }
@@ -593,12 +597,14 @@
       var counts = { active: state.totalCount, inactive: state.totalCountInactive };
       el.innerHTML = [["active","Active"],["inactive","Inactive"]].map(function(p){
         var n = counts[p[0]];
-        /* Only the tab you are NOT on carries a count: the current view's total is already
+        /* Only the tab you are NOT on SHOWS a count: the current view's total is already
            shown next to the heading two elements to the left, and repeating it there just
-           makes the eye check whether the two numbers agree.
+           makes the eye check whether the two numbers agree. The span is still emitted for the
+           active tab and merely hidden in CSS — omitting it changed the button's width on every
+           switch, so both buttons resized right as the "N selected" chip was collapsing.
            No count at all until the server sends one — total_count_inactive isn't in the
            payload yet, and "Inactive 0" would be a claim we can't back up. */
-        var cnt = (p[0] === state.status || n == null || n === "")
+        var cnt = (n == null || n === "")
           ? "" : '<span class="upt-status-n">' + UC.fmtTotal(n) + '</span>';
         return '<button class="upt-status-btn' + (state.status === p[0] ? " is-active" : "") +
                '" type="button" data-status="' + p[0] + '">' + p[1] + cnt + '</button>';
