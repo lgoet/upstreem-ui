@@ -2341,7 +2341,12 @@ zwangsläufig im Animationsfenster desjenigen Containers, der die Komponente ein
 Assets (weitere Libs, Fonts, Icon-Sets) gehören deshalb in den Header-Preload, nicht in einen
 Lazy-Load beim ersten Gebrauch.
 
-## 43. Dynamische Bubble-Attribute im Komponenten-Markup = Vollrebuild bei jeder Änderung
+## 43. Dynamische Bubble-Attribute im Komponenten-Markup (WIDERLEGT — siehe §44)
+
+> **Korrektur:** Diese Erklärung war falsch. Der User hat `data-processing` und `data-isdark`
+> entfernt — die Long Tasks blieben unverändert (249ms / 285ms). Statisches Markup bleibt
+> gute Praxis und `upstreemSetTheme()` bleibt nützlich, aber die Ursache war es nicht.
+> Die tatsächliche Ursache und der Beweis: §44.
 
 Bubble rendert ein HTML-Element, dessen Inhalt dynamische Ausdrücke enthält, bei jeder Änderung
 komplett neu (`$.fn.html()`). Die Komponente wird dabei abgerissen und neu gebaut. Auf der echten
@@ -2363,3 +2368,41 @@ Details und Umstellungstabelle: `bubble/STATISCHES_MARKUP_PFLICHT.md`.
 Komponente ohnehin vorhandenen MutationObserver auf dieses Attribut ziehen nach, ohne dass Bubble
 etwas davon mitbekommt. Genau deshalb bleibt der Attribut-Mechanismus erhalten, statt ihn durch
 eine neue API zu ersetzen: er funktioniert, sobald ihn nicht mehr Bubble triggert.
+
+
+## 44. Die tatsächliche Ursache: Bubble-Workflow-Arbeit im Animationsfenster
+
+**Der entscheidende Test** (nachdem vier Erklärungsversuche danebenlagen): den Drawer einmal
+komplett ohne Bubble aufrufen — direkt aus der Konsole, kein Button, kein Workflow, kein RPC:
+
+    openDrawer('prompt')      →  32 Frames, 0 verzögert, keine Long Tasks   ✓ flüssig
+    closeDrawer('prompt')     →  32 Frames, 0 verzögert, keine Long Tasks   ✓ flüssig
+
+Exakt derselbe Drawer, exakt derselbe Inhalt, exakt dieselben Komponenten — nur ohne den Workflow
+drumherum. Über den Button dagegen: 249ms bzw. 285ms Long Tasks, 12 statt 24 Frames.
+
+Damit ist bewiesen: **weder die Komponenten noch ihr DOM kosten irgendetwas.** Die Blockade ist
+Bubbles eigene Workflow-Maschinerie (`freeze_workflows_sync`, `find_element_references`,
+`evaluate_property` im Stacktrace), die gleichzeitig mit der CSS-Transition läuft und den
+Main-Thread so lange belegt, dass keine Frames mehr gerendert werden.
+
+**Fix (Bubble-seitig):** die Animation zuerst durchlaufen lassen, dann arbeiten.
+
+    Schritt 1:  Run JS  →  openDrawer('prompt')
+    Schritt 2:  Add a pause before next action  →  ~300ms
+    Schritt 3+: RPCs, States, Run-JS-Datenschritte
+
+    Schritt 1:  Run JS  →  closeDrawer('prompt')
+    Schritt 2:  Add a pause before next action  →  ~250ms
+    Schritt 3:  reset…()
+
+**Die Debugging-Lehre, die hier teuer war:** der Kontrollversuch des Users ("Komponenten raus →
+alles flüssig") wurde von mir als Beweis gelesen, dass die Komponenten die Ursache sind. Das war
+ein Fehlschluss — mit den Komponenten verschwanden auch die Workflows, die sie füttern. Wenn ein
+Kontrollversuch etwas entfernt, entfernt er meistens mehr als eine Sache. Der richtige nächste
+Schritt ist, die verdächtige Sache **isoliert auszulösen** (hier: openDrawer direkt aus der
+Konsole), statt weiter innerhalb der eigenen Codebasis nach der Ursache zu suchen.
+
+Zu den vier falschen Fährten unterwegs, alle mit lokal gemessenen Gegenbeweisen: Tag-Akkumulation
+(§41), Ladelatenz im Animationsfenster (§42), Chart.js-Nachladen, dynamische Attribute (§43).
+Gemeinsamer Nenner: alle wurden lokal nie sichtbar, weil das Problem gar nicht im Repo lag.
