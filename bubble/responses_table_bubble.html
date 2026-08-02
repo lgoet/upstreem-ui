@@ -53,26 +53,99 @@
   instanceId, put that id in data-export-instance here.
 
   ── Filling the table ────────────────────────────────────────────────────────
-  window.renderResponsesTable({ instanceId: "...", rows: [...], totalCount: 123 });
+  window.renderResponsesTable({ instanceId: "...", rows: RAW_STRING_OR_ARRAY, totalCount: 123 });
   window.setResponsesTableLoading("INSTANCE_ID", "yes" | "no");
   window.resetResponsesTable("INSTANCE_ID");
+  window.setResponsesTableModels("INSTANCE_ID", RAW_STRING_OR_ARRAY);
+  window.setResponsesTableBrands("INSTANCE_ID", RAW_STRING_OR_ARRAY);
 
-  window.setResponsesTableModels("INSTANCE_ID", [
-    { key: "chatgpt", logo_url: "https://...", provider: "OpenAI", is_active: "yes", display_name: "ChatGPT" },
-    ...
-  ]);
-  Called once at page load (like setUrlsTableBrands below) — keyed by `key`, which is what each
-  row's `model` field references. A row whose `model` isn't in this list still renders (the raw
-  key as plain text, no logo, no crash) rather than breaking.
+  !! NEVER paste the RPC result straight into the JS as an array literal. Bubble's raw output is
+  NOT valid JavaScript: a null column arrives as `"user_sentiment":,` — nothing at all between
+  the colon and the comma — and the Run-JS step dies with "Unexpected token ','" before any of
+  this component's code runs. Bare yes/no and unescaped emoji/quotes break it the same way.
+  ALWAYS put the raw text in a backtick string and hand THAT over: every entry point here runs
+  strings through UpstreemCore.parseBubbleJson, the one shared repair pass (same as every other
+  table in this repo).
 
-  OPTIONAL `short_name`: the Model column is narrow, so a long display_name gets abbreviated.
-  Set short_name to control that yourself; without it "google-aio" falls back to "Google AIO"
-  and everything else uses display_name unchanged. The full display_name stays available as the
-  cell's tooltip whenever the two differ.
+  ── Run-JS "Render" step (paste as-is, swap the bracketed dynamic values) ────
 
-  window.setResponsesTableBrands("INSTANCE_ID", [ {company_id, name, logo_url}, ... ]);
+  (function () {
+    var RAW = `[RESPONSES_RPC_RESPONSE]`;          // backticks — do NOT wrap in [ ] yourself
+
+    var t = 0;
+    (function go () {
+      var w  = window,
+          fn = w.renderResponsesTable
+            || (w.parent && w.parent.renderResponsesTable)
+            || (w.top && w.top.renderResponsesTable);
+      if (typeof fn === "function") {
+        fn({ instanceId: `INSTANCE_ID`, rows: RAW });   // rows stays a STRING on purpose
+        return;
+      }
+      if (t++ < 60) { setTimeout(go, 100); return; }
+      console.error("[responses-table] renderResponsesTable never appeared after 6s — " +
+        "check data-cdn-pin and that the component is actually on this page.");
+    })();
+  })();
+
+  totalCount is read off row 0's `total_count`… no: that field is the CITATIONS total. Pass the
+  row count total explicitly if your RPC returns one, e.g. fn({instanceId, rows: RAW,
+  totalCount: Number(`[TOTAL_COUNT]`)}). Omitted, the head count shows the number of loaded rows.
+
+  ── Models — own Run-JS step, run ONCE on page load ─────────────────────────
+  Keyed by `key`, which is what each row's `model` field references. A row whose `model` is not
+  in this list still renders (raw key as text, no logo, no crash).
+
+  OPTIONAL `short_name` per model: the Model column is narrow, so a long display_name gets
+  abbreviated. Set short_name to control that yourself; without it "google-aio" falls back to
+  "Google AIO" and everything else uses display_name unchanged. The full display_name stays
+  available as the cell's tooltip whenever the two differ.
+
+  (function () {
+    var INSTANCE_ID = `INSTANCE_ID`;
+    var RAW = `[MODELS_RPC_RESPONSE]`;   // [{key,logo_url,provider,is_active,display_name}, …]
+    var t = 0;
+    (function go () {
+      var fn = window.setResponsesTableModels
+            || (window.parent && window.parent.setResponsesTableModels)
+            || (window.top && window.top.setResponsesTableModels);
+      if (typeof fn === "function") { fn(INSTANCE_ID, RAW); return; }
+      if (t++ < 60) { setTimeout(go, 100); return; }
+      console.error("[responses-table] setResponsesTableModels never appeared.");
+    })();
+  })();
+
+  ── Brands — own Run-JS step, run ONCE on page load ─────────────────────────
   Same "fed in once at page load, full unfiltered list" contract as every other table's brands
   dropdown. An empty list is ignored (keeps whatever was already loaded).
+
+  (function () {
+    var INSTANCE_ID = `INSTANCE_ID`;
+    var RAW = `[BRANDS_RPC_RESPONSE]`;   // [{company_id,name,logo_url}, …]
+    var t = 0;
+    (function go () {
+      var fn = window.setResponsesTableBrands
+            || (window.parent && window.parent.setResponsesTableBrands)
+            || (window.top && window.top.setResponsesTableBrands);
+      if (typeof fn === "function") { fn(INSTANCE_ID, RAW); return; }
+      if (t++ < 60) { setTimeout(go, 100); return; }
+      console.error("[responses-table] setResponsesTableBrands never appeared.");
+    })();
+  })();
+
+  ── Loading state — own Run-JS step ─────────────────────────────────────────
+  (function () {
+    var INSTANCE_ID = `INSTANCE_ID`;
+    var LOADING = `IS_LOADING`;          // "yes" / "no"
+    var t = 0;
+    (function go(){
+      var fn = window.setResponsesTableLoading
+        || (window.parent && window.parent.setResponsesTableLoading)
+        || (window.top && window.top.setResponsesTableLoading);
+      if (typeof fn === "function") { fn(INSTANCE_ID, LOADING); return; }
+      if (t++ < 60) setTimeout(go, 100);
+    })();
+  })();
 
   Row fields (straight from your RPC, no renaming needed):
     prompt_run_id, run_at, model, prompt_id, prompt_text, user_rank, user_sentiment,

@@ -1061,30 +1061,39 @@
     return initRoot(r[0]);
   }
 
+  /* Bubble hands raw RPC text through, and that text is NOT valid JSON: a null column arrives as
+     `"user_sentiment":,` (nothing between the colon and the comma), yes/no come through bare, and
+     emoji/quotes inside text fields are unescaped. UC.parseBubbleJson is the ONE shared repair
+     pass for all of that — JSON.parse (what this used to use for the setters) throws on every one
+     of those cases. Anything that can arrive as a string from a Run-JS step goes through here. */
+  function asList(v){
+    if (typeof v === "string") return UC.parseBubbleJson(v);
+    return Array.isArray(v) ? v : [];
+  }
   function doRender(params){
     var id = params && params.instanceId;
     var ctrl = id ? resolve(id) : initRoot(document.querySelector(".urt-root"));
     if (!ctrl) return false;
+    if (params && params.rows != null) params.rows = asList(params.rows);
     ctrl.update(params);
     return true;
   }
   function doLoading(id, on){ var c = resolve(id); if (!c) return false; c.setLoading(on); return true; }
   function doReset(id){ var c = resolve(id); if (!c) return false; return c.reset(); }
   function doModels(id, models){
-    var list = models;
-    if (typeof list === "string"){ try { list = JSON.parse(list); } catch(e){ list = []; } }
-    if (!Array.isArray(list)) list = [];
+    var list = asList(models);
     var ctrl = id ? resolve(id) : initRoot(document.querySelector(".urt-root"));
     if (!ctrl) return false;
+    /* an empty list is a failed/not-yet-loaded fetch, not "no models" — keep what we have */
+    if (!list.length) return true;
     ctrl.update({ models: list });
     return true;
   }
   function doBrands(id, brands){
-    var list = brands;
-    if (typeof list === "string"){ try { list = JSON.parse(list); } catch(e){ list = []; } }
-    if (!Array.isArray(list)) list = [];
+    var list = asList(brands);
     var ctrl = id ? resolve(id) : initRoot(document.querySelector(".urt-root"));
     if (!ctrl) return false;
+    if (!list.length) return true;
     ctrl.update({ brands: list });
     return true;
   }
