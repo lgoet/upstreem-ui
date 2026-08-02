@@ -55,14 +55,10 @@
 
 /* ================================================================
    view switcher (Table / Cards)
-   The LOOK is core's .up-dense / .up-dense-btn — nothing about it is redeclared here. The JS
-   adds those classes on init, so the markup version is irrelevant and this switcher can never
-   drift from the row-height picker or any other segmented control again.
-   Only the two things that genuinely differ from core's popover usage are set: core's is
-   full-width, this one hugs its two icons.
+   Nothing is declared here. The JS puts core's .up-seg / .up-seg-btn on the elements — the same
+   control as topcitations' doughnut/bar switch. Restating any of it under a urt- name is exactly
+   how this switcher kept ending up "almost" like the others.
    ================================================================ */
-.urt-viewswitch { width: auto; flex: 0 0 auto; }
-.urt-viewswitch .up-dense-btn { flex: 0 0 auto; width: 32px; }
 
 /* ================================================================
    fader (rank/sentiment range)
@@ -135,23 +131,25 @@
 /* ================================================================
    card mode
    ================================================================ */
-.urt-cards { display: none; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+/* auto-fill + minmax does the wrapping itself: as many 435px columns as fit, then 2, then 1.
+   The min() guard keeps the track from overflowing a container narrower than one card. */
+.urt-cards { display: none; grid-template-columns: repeat(auto-fill, minmax(min(435px, 100%), 1fr)); gap: 14px; }
 .up-root.is-cards-view .urt-cards { display: grid; }
 .up-root.is-cards-view .up-box { display: none; }   /* .up-box wraps .up-thead + .up-tbody */
 
-.urt-card { display: flex; flex-direction: column; min-width: 435px; min-height: 200px; max-height: 250px;
+.urt-card { display: flex; flex-direction: column; min-width: 0; min-height: 200px; max-height: 250px;
   padding: 16px; border-radius: 14px; border: 1px solid var(--vc-border); background: var(--up-surface);
   cursor: pointer; transition: border-color .12s ease, box-shadow .12s ease; }
 .urt-card:hover { border-color: var(--vc-hover-border); box-shadow: 0 2px 10px rgba(0,0,0,.05); }
 .up-root[data-theme="dark"] .urt-card:hover { box-shadow: 0 2px 10px rgba(0,0,0,.25); }
 
-/* Date is top-aligned against the model chip, not vertically centred against it. */
-.urt-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
-.urt-card-headleft { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.urt-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+/* model chip | mentioned check | sentiment | rank — 16px off the chip, wider gaps between the
+   three metrics so they do not read as one run-on group */
+.urt-card-headleft { display: flex; align-items: center; gap: 16px; min-width: 0; flex-wrap: wrap; }
 .urt-card-ment { flex: 0 0 auto; }
 .urt-card-date { font-size: 11px; font-weight: 500; color: var(--vc-muted); white-space: nowrap; flex: 0 0 auto; }
 
-.urt-card-badges { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
 /* the green "Mentioned" pill is gone: the card now uses core's .up-ment-cell badge, sat next
    to the model chip in .urt-card-headleft */
 
@@ -171,8 +169,7 @@
 .urt-sk-date { width: 56px; height: 12px; }
 .urt-sk-line { height: 12px; margin-top: 10px; border-radius: 5px; }
 
-@media (max-width: 1180px){ .urt-cards { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 760px){ .urt-cards { grid-template-columns: 1fr; } .urt-card { min-width: 0; } }
+
 
 /* ---------- narrow: table settings hides in cards mode (JS also sets display:none inline;
    this covers the moment before JS runs / no-JS fallback) ---------- */

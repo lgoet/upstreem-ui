@@ -398,12 +398,8 @@
     .up-pop-opt.is-active .up-check { opacity: 1; }
     .up-pop-div { height: 1px; background: var(--vc-border); margin: 7px 4px; }
     .up-pop-sub { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--vc-muted); padding: 8px 10px 14px; }
-    /* 2px inset. Without it the active chip is exactly as tall as the track, so its top and
-       bottom borders land on the track's own edges and read as missing — the chip looked like it
-       had a border on three sides. The inset also gives the segmented control the usual "pill
-       floating in a groove" look. */
-    .up-dense { display: inline-flex; width: 100%; padding: 2px; gap: 0; background: var(--vc-switch-bg); border-radius: 8px; height: 34px; box-sizing: border-box; }
-    .up-dense-btn { flex: 1 1 50%; height: 30px; box-sizing: border-box; border: 1px solid transparent; border-radius: 6px; background: transparent;
+    .up-dense { display: inline-flex; width: 100%; padding: 0; gap: 0; background: var(--vc-switch-bg); border-radius: 8px; height: 34px; }
+    .up-dense-btn { flex: 1 1 50%; height: 34px; border: 1px solid transparent; border-radius: 8px; background: transparent;
       color: var(--vc-muted); cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1;
       display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
     .up-dense-btn svg { width: 15px; height: 15px; }
@@ -982,6 +978,21 @@
 .up-sent { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 6px; border: 1px solid var(--vc-border); border-radius: 6px; flex: 0 0 auto; }
 .up-sent-dot { width: 6px; height: 6px; border-radius: 2px; flex: 0 0 auto; }
 .up-sent-val { font-size: 13px; font-weight: 500; color: var(--vc-text); font-variant-numeric: tabular-nums; }
+
+/* ---------- icon segmented control ----------
+   Lifted verbatim from topcitations-dashboard's doughnut/bar switch (.tcl-seg), which is the
+   look every icon-pair switch in the app already had. It lives here so a new one cannot be
+   "almost" it: components add .up-seg/.up-seg-btn, they do not restate the rules.
+   NOTE this is a different control from .up-dense — that one is the full-width label switcher
+   inside the Table Settings popover. */
+.up-seg { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-bg); border-radius: 8px; border: 0; height: 32px; flex: 0 0 auto; }
+.up-seg-btn { height: 32px; padding: 0 10px; border: 1px solid transparent; border-radius: 8px; background: transparent;
+  color: var(--vc-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.up-seg-btn svg { width: 16px; height: 16px; color: var(--vc-muted); display: block; }
+.up-seg-btn:hover, .up-seg-btn:hover svg { color: var(--vc-text); }
+.up-seg-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
+.up-seg-btn.is-active svg { color: var(--vc-text); }
+.up-root[data-theme="dark"] .up-seg-btn.is-active { background: #121212; border-color: #353535; }
 
 /* ---------- "X mentioned?" yes/no cell ----------
    Shared by urls-table and responses-table (both had their own byte-identical copy under a local

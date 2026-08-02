@@ -155,10 +155,11 @@
       if (fb){ fb.classList.add("up-iconbtn"); fb.innerHTML = UC.SLIDERS_ICON; }
       var vs = root.querySelector(".urt-viewswitch");
       if (vs){
-        vs.classList.add("up-dense");
+        vs.classList.add("up-seg");
+        vs.classList.remove("up-dense");
         Array.prototype.forEach.call(vs.querySelectorAll("[data-view]"), function(b){
-          b.classList.add("up-dense-btn", "up-dense-btn-icon");
-          b.classList.remove("urt-viewswitch-btn");
+          b.classList.add("up-seg-btn");
+          b.classList.remove("urt-viewswitch-btn", "up-dense-btn", "up-dense-btn-icon");
         });
       }
     })();
@@ -382,20 +383,21 @@
       var promptText = String(r.prompt_text == null ? "" : r.prompt_text);
       var preview = String(r.response_preview == null ? "" : r.response_preview);
       var mentioned = isYes(r.has_user_brand);
+      var hasSent = r.user_sentiment != null && r.user_sentiment !== "" && isFinite(Number(r.user_sentiment));
+      var hasRank = r.user_rank != null && r.user_rank !== "" && isFinite(Number(r.user_rank));
       return '<div class="urt-card" data-run="' + esc(String(r.prompt_run_id || "")) + '" tabindex="0" role="button">' +
         '<div class="urt-card-head">' +
           '<div class="urt-card-headleft">' +
             modelChip(r.model) +
-            /* Same badge the table cell uses, label in the secondary colour — no green pill.
-               Nothing at all when the brand is not mentioned: an explicit "not mentioned" is
-               noise on a card, the table column is where you compare yes against no. */
-            (mentioned ? '<span class="up-ment-cell is-yes urt-card-ment">' +
-                           '<span class="up-ment-badge">' + MENT_CHECK_SVG + '</span>Mentioned</span>' : "") +
+            /* Metrics live in the head row next to the model chip. All three are omitted entirely
+               when there is nothing to say — a card is a summary, and a column of "–" placeholders
+               is noise. The table view is where you compare a present value against a missing one. */
+            (mentioned ? '<span class="up-ment-cell is-yes urt-card-ment" data-tip="Your brand was mentioned">' +
+                           '<span class="up-ment-badge">' + MENT_CHECK_SVG + '</span></span>' : "") +
+            (hasSent ? sentCell(r.user_sentiment) : "") +
+            (hasRank ? rankCell(r.user_rank) : "") +
           '</div>' +
           '<span class="urt-card-date" data-tip="' + esc(fmtDate(r.run_at)) + '">' + esc(relativeTime(r.run_at)) + '</span>' +
-        '</div>' +
-        '<div class="urt-card-badges">' +
-          sentCell(r.user_sentiment) + rankCell(r.user_rank) +
         '</div>' +
         '<div class="urt-card-prompt">' + highlight(promptText, state.query) + '</div>' +
         '<div class="urt-card-preview">' + esc(preview) + '</div>' +
