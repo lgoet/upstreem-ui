@@ -128,27 +128,50 @@
     if (!src) return [];
     if (src.charAt(0) === "{") src = "[" + src + "]";
     var out = "", i = 0, n = src.length, inStr = false, esc2 = false, ch, c, start, v;
+    /* A real closing quote is always followed (after whitespace) by one of , } ] : or the end of
+       the text. Everything else means the quote is part of the content. */
+    function terminates(from){
+      var p = from;
+      while (p < n && /\s/.test(src.charAt(p))) p++;
+      var a = p < n ? src.charAt(p) : "";
+      return a === "" || a === "," || a === "}" || a === "]" || a === ":";
+    }
+    /* Raw control characters are fine in Bubble's output but ILLEGAL inside a JS string literal.
+       An LLM answer in response_preview contains line breaks as a matter of course, and copying
+       one through produced an unterminated literal — "Invalid or unexpected token", the whole
+       payload lost. U+2028/U+2029 break a literal the same way even though they are not
+       <0x20 — written as escapes below on purpose, since a literal one in THIS file would
+       be a line terminator in core.js itself. */
+    function escCtrl(c2){
+      if (c2 === "\n") return "\\n";
+      if (c2 === "\r") return "\\r";
+      if (c2 === "\t") return "\\t";
+      var h = c2.charCodeAt(0).toString(16);
+      return "\\u" + "0000".slice(h.length) + h;
+    }
+    function isCtrl(c2){ return c2 < " " || c2 === "\u2028" || c2 === "\u2029"; }
     while (i < n){
       ch = src.charAt(i);
       if (inStr){
-        out += ch;
-        if (esc2) esc2 = false;
-        else if (ch === "\\") esc2 = true;
-        else if (ch === '"'){
+        if (esc2){ out += ch; esc2 = false; i++; continue; }
+        if (ch === "\\"){
+          /* Bubble truncates long text fields at a fixed length. When the cut lands on a
+             backslash the result is `…text\"` — that stray backslash escapes the closing quote
+             and swallows the rest of the payload. A backslash sitting directly before what is
+             unambiguously a terminating quote is that truncation artefact, never a real escape. */
+          if (src.charAt(i + 1) === '"' && terminates(i + 2)){ i++; continue; }
+          out += ch; esc2 = true; i++; continue;
+        }
+        if (ch === '"'){
           /* Bubble's text fields (titles, descriptions) sometimes carry a literal, un-escaped
              quote of their own — e.g. a description containing von "Meine Top 3" geht. Blindly
-             toggling inStr off at THAT quote corrupts every field after it. A real closing quote
-             here is always followed (after whitespace) by one of , } ] : or the end of the text;
-             anything else is content, not a terminator — keep scanning and escape it instead. */
-          var peek = i + 1;
-          while (peek < n && /\s/.test(src.charAt(peek))) peek++;
-          var after = peek < n ? src.charAt(peek) : "";
-          if (after === "" || after === "," || after === "}" || after === "]" || after === ":"){
-            inStr = false;
-          } else {
-            out = out.slice(0, -1) + '\\"';
-          }
+             toggling inStr off at THAT quote corrupts every field after it. */
+          out += ch;
+          if (terminates(i + 1)) inStr = false;
+          else out = out.slice(0, -1) + '\\"';
+          i++; continue;
         }
+        out += (isCtrl(ch) ? escCtrl(ch) : ch);
         i++; continue;
       }
       if (ch === '"'){ inStr = true; out += ch; i++; continue; }
