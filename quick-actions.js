@@ -340,6 +340,7 @@
         (secondary ? '<span class="mqa-secondary">' + secondary + '</span>' : '') +
       '</span>' +
       '<span class="mqa-type">' + (TYPE_SINGULAR[item.type] || "") + '</span>' +
+      '<span class="mqa-rowmenu-btn" role="button" tabindex="-1" aria-label="More options" aria-haspopup="true">' + MORE_SVG + '</span>' +
       '<span class="mqa-enter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>' +
     '</button>';
   }
@@ -510,46 +511,51 @@
   }
 
   /* ---------- per-row "more" menu ----------
-     Hover a result row for a second -> a "..." button slides in -> Open / Open in new tab.
-     Deliberately scoped to real search results only (.mqa-scroll, which contains ONLY
-     .mqa-results — Recent/Viewed and Actions live in their own separate containers outside it),
-     not to the static Actions list or the Recent/Viewed rows.
+     Hover a result OR a Recent/Viewed row for a bit -> a "..." button slides in -> Open / Open
+     in new tab. NOT on the static Actions or "Recent Searches" rows — those aren't single
+     navigable items (no .type/id to build a drawer link from).
 
-     Delegated on `scroll`, not bound per-row: rows get replaced wholesale on every render, so
-     per-element listeners would need rebinding every time. mouseover/mouseout bubble (unlike
-     mouseenter/mouseleave), which is what makes delegation possible here. */
-  var ROWMENU_HOVER_MS = 1000;
-  var hoverTimer = null, hoverRi = null, rowMenuOpenRi = null, rowMenuEl = null;
+     Both source lists get a row-menu, so every row is tagged with WHICH list it came from
+     ("result" = _rowData via data-ri, "viewed" = _viewed via data-viewed) rather than just an
+     index — an index alone would be ambiguous between the two.
 
-  function markMenuReady(ri){
-    var el = resultsEl.querySelector('.mqa-row[data-ri="' + ri + '"]');
-    if (el) el.classList.add("is-menuready");
+     Delegated on `scroll` AND `recentEl`, not bound per-row: rows get replaced wholesale on
+     every render, so per-element listeners would need rebinding every time. mouseover/mouseout
+     bubble (unlike mouseenter/mouseleave), which is what makes delegation possible here. */
+  var ROWMENU_HOVER_MS = 750;
+  var hoverTimer = null, hoverRowEl = null;
+  var rowMenuOpenKind = null, rowMenuOpenIdx = null, rowMenuEl = null;
+
+  function menuRowSel(){ return ".mqa-row[data-ri], .mqa-row[data-viewed]"; }
+  function isOpenRow(rowEl){
+    if (rowMenuOpenKind == null) return false;
+    var attr = rowMenuOpenKind === "result" ? "data-ri" : "data-viewed";
+    return rowEl.getAttribute(attr) === String(rowMenuOpenIdx);
   }
-  function unmarkMenuReady(ri){
-    var el = resultsEl.querySelector('.mqa-row[data-ri="' + ri + '"]');
-    if (el) el.classList.remove("is-menuready");
-  }
-  scroll.addEventListener("mouseover", function(e){
-    var rowEl = e.target.closest ? e.target.closest(".mqa-row[data-ri]") : null;
+  function onRowHoverIn(e){
+    var rowEl = e.target.closest ? e.target.closest(menuRowSel()) : null;
     if (!rowEl) return;
-    var ri = +rowEl.getAttribute("data-ri");
-    if (ri === hoverRi) return;   // already tracking — mouseover keeps firing as the pointer crosses child elements
+    if (rowEl === hoverRowEl) return;   // already tracking — mouseover keeps firing as the pointer crosses child elements
     clearTimeout(hoverTimer);
-    if (hoverRi != null && hoverRi !== rowMenuOpenRi) unmarkMenuReady(hoverRi);
-    hoverRi = ri;
-    hoverTimer = setTimeout(function(){ markMenuReady(ri); }, ROWMENU_HOVER_MS);
-  });
-  scroll.addEventListener("mouseout", function(e){
-    var rowEl = e.target.closest ? e.target.closest(".mqa-row[data-ri]") : null;
+    if (hoverRowEl && !isOpenRow(hoverRowEl)) hoverRowEl.classList.remove("is-menuready");
+    hoverRowEl = rowEl;
+    hoverTimer = setTimeout(function(){ rowEl.classList.add("is-menuready"); }, ROWMENU_HOVER_MS);
+  }
+  function onRowHoverOut(e){
+    var rowEl = e.target.closest ? e.target.closest(menuRowSel()) : null;
     if (!rowEl) return;
     if (e.relatedTarget && rowEl.contains(e.relatedTarget)) return;   // moved to a child, still inside the row
-    var ri = +rowEl.getAttribute("data-ri");
-    if (ri !== hoverRi) return;
+    if (rowEl !== hoverRowEl) return;
     clearTimeout(hoverTimer);
-    hoverRi = null;
-    if (ri !== rowMenuOpenRi) unmarkMenuReady(ri);   // its dropdown is open -> keep the trigger visible
-  });
+    hoverRowEl = null;
+    if (!isOpenRow(rowEl)) rowEl.classList.remove("is-menuready");   // its dropdown is open -> keep the trigger visible
+  }
+  scroll.addEventListener("mouseover", onRowHoverIn);
+  scroll.addEventListener("mouseout", onRowHoverOut);
+  recentEl.addEventListener("mouseover", onRowHoverIn);
+  recentEl.addEventListener("mouseout", onRowHoverOut);
 
+  function itemForMenu(kind, idx){ return kind === "result" ? _rowData[idx] : _viewed[idx]; }
   function ensureRowMenu(){
     if (rowMenuEl) return rowMenuEl;
     rowMenuEl = document.createElement("div");
@@ -564,11 +570,15 @@
       var b = e.target.closest ? e.target.closest("[data-rowmenu-act]") : null;
       if (!b) return;
       e.stopPropagation();
-      var ri = rowMenuOpenRi, act = b.getAttribute("data-rowmenu-act");
+      var kind = rowMenuOpenKind, idx = rowMenuOpenIdx, act = b.getAttribute("data-rowmenu-act");
       closeRowMenu();
-      if (ri == null) return;
-      if (act === "open") selectResult(ri);
-      else if (act === "newtab") openResultInNewTab(ri);
+      if (kind == null) return;
+      if (act === "open"){
+        if (kind === "result") selectResult(idx);
+        else { var v = _viewed[idx]; if (v){ _rowData.push(v); selectResult(_rowData.length - 1); } }   // same path activate() already uses for a viewed row
+      } else if (act === "newtab"){
+        var it = itemForMenu(kind, idx); if (it) openItemInNewTab(it);
+      }
     });
     return rowMenuEl;
   }
@@ -585,10 +595,10 @@
     if (e.target.closest && e.target.closest(".mqa-rowmenu-btn")) return;   // its own toggle click, handled separately
     closeRowMenu();
   }
-  function openRowMenu(ri, btn){
+  function openRowMenu(kind, idx, btn){
     ensureRowMenu();
-    if (rowMenuOpenRi != null) closeRowMenu();
-    rowMenuOpenRi = ri;
+    if (rowMenuOpenKind != null) closeRowMenu();
+    rowMenuOpenKind = kind; rowMenuOpenIdx = idx;
     btn.classList.add("is-open");
     var rowEl = btn.closest(".mqa-row"); if (rowEl) rowEl.classList.add("is-menuopen");
     rowMenuEl.classList.add("is-on");
@@ -596,8 +606,8 @@
     document.addEventListener("mousedown", onRowMenuOutside, true);
   }
   function closeRowMenu(){
-    if (rowMenuOpenRi == null) return;
-    rowMenuOpenRi = null;
+    if (rowMenuOpenKind == null) return;
+    rowMenuOpenKind = null; rowMenuOpenIdx = null;
     if (rowMenuEl) rowMenuEl.classList.remove("is-on");
     var openBtn = modal.querySelector(".mqa-rowmenu-btn.is-open"); if (openBtn) openBtn.classList.remove("is-open");
     var openRow = modal.querySelector(".mqa-row.is-menuopen"); if (openRow) openRow.classList.remove("is-menuopen");
@@ -626,8 +636,7 @@
     u.searchParams.set("detail", it.type + ":" + val);
     return u.toString();
   }
-  function openResultInNewTab(ri){
-    var it = _rowData[ri]; if (!it) return;
+  function openItemInNewTab(it){
     var url = detailUrl(it); if (!url) return;
     viewedPush(it.type, it);   // still "viewed" it, just not in this tab
     try { window.open(url, "_blank", "noopener"); } catch(_){}
@@ -635,7 +644,7 @@
 
   /* ---------- keyboard selection ---------- */
   function refreshRows(){
-    clearTimeout(hoverTimer); hoverRi = null; closeRowMenu();   // stale rows are about to be replaced
+    clearTimeout(hoverTimer); hoverRowEl = null; closeRowMenu();   // stale rows are about to be replaced
     // results and actions are separate containers now -> query the modal (DOM order keeps results first).
     // only rows that are actually on screen: the actions block is hidden in command mode, and
     // keyboard nav must not run through invisible entries
@@ -778,7 +787,7 @@
   function onKeydown(e){
     if (!isOpen) return;
     if (e.key === "Escape"){
-      if (rowMenuOpenRi != null){ e.preventDefault(); closeRowMenu(); return; }   // close just the menu first
+      if (rowMenuOpenKind != null){ e.preventDefault(); closeRowMenu(); return; }   // close just the menu first
       e.preventDefault(); close(); return;
     }
     // terminal-style: on an untouched field, ArrowUp recalls the last search instead of moving the cursor
@@ -805,8 +814,12 @@
     if (menuBtn){
       e.stopPropagation();   // do NOT also activate() the row underneath
       var rowEl = menuBtn.closest(".mqa-row");
-      var ri = rowEl ? +rowEl.getAttribute("data-ri") : -1;
-      if (rowMenuOpenRi === ri) closeRowMenu(); else openRowMenu(ri, menuBtn);
+      var kind = null, idx = -1;
+      if (rowEl){
+        if (rowEl.hasAttribute("data-ri")){ kind = "result"; idx = +rowEl.getAttribute("data-ri"); }
+        else if (rowEl.hasAttribute("data-viewed")){ kind = "viewed"; idx = +rowEl.getAttribute("data-viewed"); }
+      }
+      if (rowMenuOpenKind === kind && rowMenuOpenIdx === idx) closeRowMenu(); else openRowMenu(kind, idx, menuBtn);
       return;
     }
     var el = e.target.closest ? e.target.closest(".mqa-row, .mqa-action") : null; if (el) activate(el);

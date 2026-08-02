@@ -81,7 +81,9 @@
        bubble_fn_qa_select_prompt(value)  value = prompt id
        Each also dispatches CustomEvent("mira_qa_select_" + cat, {detail:{value}}).
 
-     ── per-row "more" menu (hover a result for ~1s) ────────────────────────
+     ── per-row "more" menu (hover a result OR a Recent row for ~750ms) ─────
+       Shows on real search results AND on the "Recent" (last-viewed) rows — NOT on the
+       separate "Recent Searches" list (those are saved queries/filters, not a single item).
        Open              same as clicking the row — calls the bubble_fn_qa_select_* above.
        Open in new tab   pure client-side, fires NOTHING to Bubble. Builds
                            <current origin+path>?view=<current ?view= value, if any>
