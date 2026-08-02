@@ -128,6 +128,13 @@
     var elCols      = root.querySelector(".up-cols");
     var elColsMenu  = root.querySelector(".up-cols-menu");
     var elFader     = root.querySelector(".urt-fader");
+    /* The filter glyph is WRITTEN here, not read from the markup. Markup is a hand copy that the
+       CDN pin never touches, so an icon defined only there drifts away from the rest of the app
+       the moment it is not re-pasted. UC.SLIDERS_ICON is the same constant the charts use. */
+    (function(){
+      var fb = root.querySelector(".urt-fader-btn");
+      if (fb) fb.innerHTML = UC.SLIDERS_ICON;
+    })();
     var elFaderMenu = root.querySelector(".urt-fader-menu");
     var elMent      = root.querySelector(".up-ment");
     var elMentMenu  = root.querySelector(".up-ment-menu");
@@ -286,7 +293,7 @@
       var mapped = (Array.isArray(sources) ? sources : []).map(function(s){
         return { name: s && s.title, favicon: s && s.favicon };
       });
-      return brandStack(mapped, null, { max: 5 });
+      return brandStack(mapped, null, { max: 5, spread: "left" });
     }
     /* Defensive on the ENTRY, not just the key: a malformed models list (a hole, a null, a bare
        string) must degrade to "unknown model, show the raw key" — never throw. This runs inside
@@ -697,9 +704,28 @@
     function syncHeadBrand(){
       var logo = root.getAttribute("data-brand-logo") || "";
       var name = root.getAttribute("data-brand-name") || "";
-      var img = root.querySelector(".up-th-brandlogo");
-      var lbl = root.querySelector(".up-th-mentlbl");
-      if (!img || !lbl) return;
+      var th = root.querySelector(".up-th-mentioned");
+      if (!th) return;
+      /* Built here when absent instead of required from the markup: the CDN pin ships JS/CSS
+         while the Bubble markup is a hand copy, so anything that lives only in markup silently
+         stays on whichever version was pasted last. */
+      var img = th.querySelector(".up-th-brandlogo");
+      if (!img){
+        img = document.createElement("img");
+        img.className = "up-th-brandlogo"; img.alt = ""; img.style.display = "none";
+        th.insertBefore(img, th.firstChild);
+      }
+      var lbl = th.querySelector(".up-th-mentlbl");
+      if (!lbl){
+        lbl = document.createElement("span");
+        lbl.className = "up-th-mentlbl";
+        lbl.textContent = (th.textContent || "Mentioned?").trim() || "Mentioned?";
+        /* replace the bare text node the old markup had */
+        Array.prototype.slice.call(th.childNodes).forEach(function(n){
+          if (n.nodeType === 3) th.removeChild(n);
+        });
+        th.appendChild(lbl);
+      }
       if (logo && logo !== "BRAND_LOGO"){ img.src = logo; img.style.display = "block"; }
       else { img.style.display = "none"; }
       lbl.textContent = (!logo || logo === "BRAND_LOGO") && name && name !== "BRAND_NAME"
@@ -808,6 +834,10 @@
     _sticky.applySticky();
 
     var _tips = UC.makeTooltips(root, function(){ return isDark; });
+    /* Full prompt on hover when the 2-line clamp cuts it off — same behaviour prompts-table has,
+       now from the shared kit rather than a second copy of the logic. */
+    UC.makeClipTip(root, _tips, ".urt-td-prompt", ".urt-prompt-text");
+    UC.makeClipTip(root, _tips, ".urt-card-prompt");
 
     var sortKit = UC.makeHeadSort({ root: root, state: state, cycles: HEAD_CYCLE, defaultSort: DEFAULT_SORT, onSort: function(f, d){ applySort(f, d); } });
     var syncHeadSorters = sortKit.syncHeadSorters, headSortClick = sortKit.headSortClick;
@@ -1018,6 +1048,12 @@
         if (params.requestId != null && search.latestReqId() != null && String(params.requestId) !== String(search.latestReqId())) return;
         if (params.rows != null){ state.rows = Array.isArray(params.rows) ? params.rows : []; state.hasData = true; }
         if (params.totalCount != null) state.totalCount = toNum(params.totalCount);
+        else if (state.rows.length && state.rows[0].total_count != null){
+          /* The RPC carries the result-set total on every row (same shape prompts-table uses).
+             Deriving it here means pagination works without the Run-JS step having to know to
+             pull it out — getting that wrong left the pager stuck on one page. */
+          state.totalCount = toNum(state.rows[0].total_count);
+        }
         if (params.models != null){
           var _m = Array.isArray(params.models) ? params.models : [];
           if (_m.length) state.models = _m;

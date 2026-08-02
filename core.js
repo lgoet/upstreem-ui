@@ -327,7 +327,10 @@
      urls-table and responses-table carried their own byte-identical copy; keeping two is exactly
      how they drift. Renders a filled colour badge with a knocked-out glyph plus a neutral label
      (see .up-ment-cell in core.css). */
-  var MENT_YES_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  /* y 6.5→17.5 rather than feather's 6→17: the stock check's ink sits 0.5 units above the
+     viewBox centre, which reads as "the tick is too high in its badge" once the badge is a
+     filled square around it. */
+  var MENT_YES_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6.5 9 17.5 4 12.5"/></svg>';
   var MENT_NO_SVG  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
   function mentCell(v){
     var yes = isYes(v);
@@ -406,7 +409,9 @@
              '</span>';
     }).join("");
     if (rest > 0) html += '<span class="up-stack-more">+' + rest + '</span>';
-    return '<span class="up-stack">' + html + '</span>';
+    /* opts.spread:"left" — for a stack pinned to the right edge of its cell/card, where the
+       default rightward hover spread would push chips outside the container. */
+    return '<span class="up-stack' + (opts.spread === "left" ? " is-spread-left" : "") + '">' + html + '</span>';
   }
 
   /* Loading skeleton rows for a grid table.
@@ -1308,6 +1313,46 @@
      getIsDark() is only the fallback: the theme is read from the hovered button's own .up-root
      first, so two roots on one page in different themes each get the right chip.
      Signature and return shape are unchanged, so existing call sites keep working as-is. */
+  /* The app's filter/"fader" glyph (feather `sliders`, vertical). Components that own a filter
+     trigger should WRITE this into the button from JS rather than relying on the markup carrying
+     it: the CDN pin ships JS/CSS, while the Bubble markup is a hand-made copy, so an icon that
+     lives only in markup silently stays on whatever version was pasted last. */
+  var SLIDERS_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>';
+
+  /* Tooltip for text that is clamped/ellipsised — shows the full string only when it actually
+     does not fit. prompts-table grew this first; responses-table needs the identical behaviour
+     for its Prompt column, so it lives here instead of being copied.
+       tips    — the object makeTooltips() returned
+       wrapSel — the hover target (the cell/wrapper)
+       textSel — the clamped element inside it (defaults to wrapSel)  */
+  function makeClipTip(root, tips, wrapSel, textSel, delay){
+    var timer = null, current = null;
+    var wait = delay == null ? 400 : delay;
+    root.addEventListener("mouseover", function(e){
+      var wrap = e.target.closest(wrapSel);
+      if (!wrap || wrap === current) return;
+      current = wrap;
+      /* Same unsuppress the delegated [data-tip] path does: entering a new trigger clears the
+         suppression a previous click left behind. These wrappers carry no data-tip of their own,
+         so nothing else would ever lift it. */
+      if (tips.unsuppress) tips.unsuppress();
+      clearTimeout(timer);
+      timer = setTimeout(function(){
+        var el = textSel ? wrap.querySelector(textSel) : wrap;
+        if (!el) return;
+        var clipped = el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1;
+        if (clipped) tips.showTipWide(el, el.textContent);
+      }, wait);
+    });
+    root.addEventListener("mouseout", function(e){
+      var wrap = e.target.closest(wrapSel);
+      if (!wrap || wrap !== current) return;
+      var to = e.relatedTarget;
+      if (to && to.closest && to.closest(wrapSel) === wrap) return;
+      current = null; clearTimeout(timer); tips.hideTip();
+    });
+  }
+
   function makeTooltips(root, getIsDark){
     var tip = window.__upTipEl;
     if (!tip || !document.body.contains(tip)){
@@ -3179,6 +3224,8 @@
     STORE: STORE,
     LOADING_EXPLICIT: LOADING_EXPLICIT,
     makeTooltips: makeTooltips,
+    makeClipTip: makeClipTip,
+    SLIDERS_ICON: SLIDERS_ICON,
     makeFire: makeFire,
     makePortal: makePortal,
     placeMenu: placeMenu,
