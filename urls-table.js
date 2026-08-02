@@ -238,8 +238,13 @@
              '</span>';
     }
     /* The yes/no cell moved to core as UC.mentCell — this file and responses-table.js each had
-       their own byte-identical copy, so a design change had to be made twice. */
-    var mentCell = UC.mentCell;
+       their own byte-identical copy, so a design change had to be made twice.
+       The fallback covers a page whose LAST-loaded core.js predates mentCell (see onResizeCompat
+       for why that happens): without it the first render throws and the component is dead. */
+    var mentCell = UC.mentCell || function(v){
+      var yes = UC.isYes(v);
+      return '<span class="up-ment-cell ' + (yes ? "is-yes" : "is-no") + '">' + (yes ? "Yes" : "No") + '</span>';
+    };
     function rowHtml(r){
       var url = String(r.url == null ? "" : r.url);
       var title = String(r.title == null ? "" : r.title) || url;
@@ -1199,11 +1204,30 @@
          resulting layout is unchanged, so this stays cheap on every resize frame. */
       applyCols();
     }
+    /* Fallback when core.js is OLDER than this file.
+       core.js is a single global (window.UpstreemCore) shared by every component on the page, but
+       each component loads it via its OWN data-cdn-pin — so a page with mixed pins ends up with
+       whichever core.js executed last. Calling a function a stale core does not have throws
+       inside initRoot, which aborts the whole component: no controller is stored, so render* and
+       reset* silently do nothing afterwards. Degrading here instead keeps the component alive on
+       a mixed page; only the newer behaviour is missing. */
+    function onResizeCompat(el, fn){
+      if (UpstreemCore.onResize) return UpstreemCore.onResize(el, fn);
+      if (window.ResizeObserver){
+        var raf = null;
+        new ResizeObserver(function(){
+          if (raf) return;
+          raf = requestAnimationFrame(function(){ raf = null; fn(); });
+        }).observe(el);
+      } else {
+        window.addEventListener("resize", UpstreemCore.rafThrottle(fn));
+      }
+    }
     /* One coalesced responsive pass per frame (core). The old pairing of a
        ResizeObserver AND a window-resize listener ran the whole measure/drop cascade
        TWICE per frame while a window was being dragged, and each pass forces several
        synchronous reflows. onResize also skips frames where the width did not change. */
-    UpstreemCore.onResize(root, applyResponsive);
+    onResizeCompat(root, applyResponsive);
 
     /* Sticky header. Default on at >=1000px page width (off via data-sticky="no"); the column
        header sits right below the component head, its offset measured from the head's height.

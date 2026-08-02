@@ -254,11 +254,30 @@
       fitToolbar();
       root.classList.toggle("is-vnarrow", w < 620);
     }
+    /* Fallback when core.js is OLDER than this file.
+       core.js is a single global (window.UpstreemCore) shared by every component on the page, but
+       each component loads it via its OWN data-cdn-pin — so a page with mixed pins ends up with
+       whichever core.js executed last. Calling a function a stale core does not have throws
+       inside initRoot, which aborts the whole component: no controller is stored, so render* and
+       reset* silently do nothing afterwards. Degrading here instead keeps the component alive on
+       a mixed page; only the newer behaviour is missing. */
+    function onResizeCompat(el, fn){
+      if (UC.onResize) return UC.onResize(el, fn);
+      if (window.ResizeObserver){
+        var raf = null;
+        new ResizeObserver(function(){
+          if (raf) return;
+          raf = requestAnimationFrame(function(){ raf = null; fn(); });
+        }).observe(el);
+      } else {
+        window.addEventListener("resize", UC.rafThrottle(fn));
+      }
+    }
     /* One coalesced responsive pass per frame (core). The old pairing of a
        ResizeObserver AND a window-resize listener ran the whole measure/drop cascade
        TWICE per frame while a window was being dragged, and each pass forces several
        synchronous reflows. onResize also skips frames where the width did not change. */
-    UC.onResize(root, applyResponsive);
+    onResizeCompat(root, applyResponsive);
 
     /* ---------------- click delegation ----------------
        On document, not root — deliberately. UC.makePopover's own outside-click listener is also

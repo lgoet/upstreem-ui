@@ -30,8 +30,18 @@
       isYes = UC.isYes, highlight = UC.highlight, esc = UC.esc, toNum = UC.toNum, fmt1 = UC.fmt1, fmtInt = UC.fmtInt,
       fmtDate = UC.fmtDate, fmtTotal = UC.fmtTotal, foldDiacritics = UC.foldDiacritics, germanExpand = UC.germanExpand,
       resolveBubbleFn = UC.resolveBubbleFn, CHECK_SVG = UC.CHECK_SVG, GOTO_SVG = UC.GOTO_SVG,
-      sentColor = UC.sentColor, brandStack = UC.brandStack, mentCell = UC.mentCell,
-      MENT_CHECK_SVG = UC.MENT_CHECK_SVG;
+      sentColor = UC.sentColor, brandStack = UC.brandStack;
+  /* Everything below was added to core.js recently. A page with mixed data-cdn-pins keeps
+     whichever core.js executed LAST, so this file can end up running against an older one —
+     and an unguarded call there throws inside initRoot and kills the whole component. Each
+     fallback is a plain-but-correct stand-in; only the newer polish is missing. */
+  var MENT_CHECK_SVG = UC.MENT_CHECK_SVG ||
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6.5 9 17.5 4 12.5"/></svg>';
+  var mentCell = UC.mentCell || function(v){
+    var yes = UC.isYes(v);
+    return '<span class="up-ment-cell ' + (yes ? "is-yes" : "is-no") + '">' +
+             '<span class="up-ment-badge">' + MENT_CHECK_SVG + '</span>' + (yes ? "Yes" : "No") + '</span>';
+  };
   /* Same .up-hash treatment prompts-table and visibility-chart apply — the shared rank cell is
      icon + number, never a typed "#". */
   var HASH_ICON = UC.HASH_ICON.replace('<svg ', '<svg class="up-hash" ');
@@ -152,7 +162,8 @@
        and core.css stays the single source of truth for how these controls look. */
     (function(){
       var fb = root.querySelector(".urt-fader-btn");
-      if (fb){ fb.classList.add("up-iconbtn"); fb.innerHTML = UC.SLIDERS_ICON; }
+      if (fb && UC.SLIDERS_ICON){ fb.classList.add("up-iconbtn"); fb.innerHTML = UC.SLIDERS_ICON; }
+      else if (fb) fb.classList.add("up-iconbtn");
       var vs = root.querySelector(".urt-viewswitch");
       if (vs){
         vs.classList.add("up-seg");
@@ -855,11 +866,30 @@
       root.classList.toggle("is-vnarrow", w < 620);
       applyCols();
     }
+    /* Fallback when core.js is OLDER than this file.
+       core.js is a single global (window.UpstreemCore) shared by every component on the page, but
+       each component loads it via its OWN data-cdn-pin — so a page with mixed pins ends up with
+       whichever core.js executed last. Calling a function a stale core does not have throws
+       inside initRoot, which aborts the whole component: no controller is stored, so render* and
+       reset* silently do nothing afterwards. Degrading here instead keeps the component alive on
+       a mixed page; only the newer behaviour is missing. */
+    function onResizeCompat(el, fn){
+      if (UC.onResize) return UC.onResize(el, fn);
+      if (window.ResizeObserver){
+        var raf = null;
+        new ResizeObserver(function(){
+          if (raf) return;
+          raf = requestAnimationFrame(function(){ raf = null; fn(); });
+        }).observe(el);
+      } else {
+        window.addEventListener("resize", UC.rafThrottle(fn));
+      }
+    }
     /* One coalesced responsive pass per frame (core). The old pairing of a
        ResizeObserver AND a window-resize listener ran the whole measure/drop cascade
        TWICE per frame while a window was being dragged, and each pass forces several
        synchronous reflows. onResize also skips frames where the width did not change. */
-    UC.onResize(root, applyResponsive);
+    onResizeCompat(root, applyResponsive);
 
     var _sticky = UC.makeSticky(root, elHead);
     function syncTheadOffset(){ _sticky.syncTheadOffset(); }
@@ -869,8 +899,10 @@
     var _tips = UC.makeTooltips(root, function(){ return isDark; });
     /* Full prompt on hover when the 2-line clamp cuts it off — same behaviour prompts-table has,
        now from the shared kit rather than a second copy of the logic. */
-    UC.makeClipTip(root, _tips, ".urt-td-prompt", ".urt-prompt-text");
-    UC.makeClipTip(root, _tips, ".urt-card-prompt");
+    if (UC.makeClipTip){
+      UC.makeClipTip(root, _tips, ".urt-td-prompt", ".urt-prompt-text");
+      UC.makeClipTip(root, _tips, ".urt-card-prompt");
+    }
 
     var sortKit = UC.makeHeadSort({ root: root, state: state, cycles: HEAD_CYCLE, defaultSort: DEFAULT_SORT, onSort: function(f, d){ applySort(f, d); } });
     var syncHeadSorters = sortKit.syncHeadSorters, headSortClick = sortKit.headSortClick;
