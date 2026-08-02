@@ -177,6 +177,45 @@
 .mqa-enter svg { width: 13px; height: 13px; display: block; }
 .mqa-row.is-active .mqa-enter, .mqa-action.is-active .mqa-enter { opacity: 1; }
 
+/* ---------- per-row "more" menu (hover-reveal after a dwell, see quick-actions.js) ----------
+   Sits between the type label and the enter-chevron, a real flex child at zero width by default
+   — animating max-width/opacity/margin, not display, so it slides the row's own layout open
+   instead of popping in (same idiom as this repo's other animated reveals). A real <button>
+   can't nest inside .mqa-row (already a <button> — invalid HTML, browsers hoist it out and break
+   the layout): <span role="button"> matches the .mqa-recent-x precedent below for the same
+   reason. */
+.mqa-rowmenu-btn {
+  flex: 0 0 auto; width: 22px; height: 22px; border-radius: 6px;
+  background: transparent; color: var(--am-muted-2); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  max-width: 0; opacity: 0; overflow: hidden; margin-left: 0; pointer-events: none;
+  transition: max-width 200ms cubic-bezier(.2,0,.38,.9), opacity 160ms ease, margin-left 200ms cubic-bezier(.2,0,.38,.9);
+}
+.mqa-row.is-menuready .mqa-rowmenu-btn, .mqa-row.is-menuopen .mqa-rowmenu-btn {
+  max-width: 22px; opacity: 1; margin-left: 6px; pointer-events: auto;
+}
+.mqa-rowmenu-btn svg { width: 15px; height: 15px; display: block; }
+.mqa-rowmenu-btn:hover, .mqa-rowmenu-btn.is-open { background: var(--am-hover-bg); color: var(--am-text); }
+
+/* the dropdown itself — body-mounted like .mqa-tip below, for the same reason: .mqa-modal clips
+   overflow, so a row near the bottom of the list would cut its own menu off. */
+.mqa-rowmenu {
+  position: fixed; z-index: 2147483601; min-width: 180px; padding: 5px;
+  border-radius: 10px; background: var(--am-card); border: 1px solid var(--am-border);
+  box-shadow: 0 10px 30px rgba(17,18,20,.14);
+  opacity: 0; pointer-events: none; transform: translateY(4px);
+  transition: opacity .12s ease, transform .12s ease;
+}
+.mqa-rowmenu.is-on { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.mqa-rowmenu-opt {
+  display: flex; align-items: center; gap: 9px; width: 100%; text-align: left; border: 0;
+  background: transparent; padding: 7px 8px; border-radius: 7px; cursor: pointer;
+  font-family: var(--mqa-font); font-size: 12.5px; font-weight: 500; color: var(--am-text);
+}
+.mqa-rowmenu-opt:hover { background: var(--am-soft); }
+.mqa-rowmenu-opt-ic { flex: 0 0 auto; width: 15px; height: 15px; display: inline-flex; color: var(--am-muted); }
+.mqa-rowmenu-opt-ic svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; display: block; }
+
 /* action icon: plain 16px glyph in primary color, no card, tight gap to the label */
 .mqa-action { gap: 10px; }
 .mqa-action-ic { width: 16px; height: 16px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; color: var(--am-text); }

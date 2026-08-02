@@ -164,6 +164,10 @@
   var ARR_UP   = '<svg viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>';
   var ARR_DOWN = '<svg viewBox="0 0 24 24"><line x1="7" y1="7" x2="17" y2="17"/><polyline points="17 7 17 17 7 17"/></svg>';
   var DASH     = '<svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+  // per-row "more" menu — see rowHtml()/the row-menu block near the bottom of this file
+  var MORE_SVG   = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>';
+  var OPEN_SVG   = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+  var NEWTAB_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
   function trendHtml(v){
     if (v == null || v === "" || isNaN(Number(v))) return '<span class="mqa-trend is-flat">' + DASH + '</span>';   // no trend
     var n = Number(v), a = Math.abs(n);
@@ -201,6 +205,7 @@
       '</span>' +
       metricHtml(item) +
       '<span class="mqa-type">' + TYPE_SINGULAR[type] + '</span>' +
+      '<span class="mqa-rowmenu-btn" role="button" tabindex="-1" aria-label="More options" aria-haspopup="true">' + MORE_SVG + '</span>' +
       '<span class="mqa-enter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>' +
     '</button>';
   }
@@ -504,8 +509,133 @@
     scroll.scrollTop = 0;
   }
 
+  /* ---------- per-row "more" menu ----------
+     Hover a result row for a second -> a "..." button slides in -> Open / Open in new tab.
+     Deliberately scoped to real search results only (.mqa-scroll, which contains ONLY
+     .mqa-results — Recent/Viewed and Actions live in their own separate containers outside it),
+     not to the static Actions list or the Recent/Viewed rows.
+
+     Delegated on `scroll`, not bound per-row: rows get replaced wholesale on every render, so
+     per-element listeners would need rebinding every time. mouseover/mouseout bubble (unlike
+     mouseenter/mouseleave), which is what makes delegation possible here. */
+  var ROWMENU_HOVER_MS = 1000;
+  var hoverTimer = null, hoverRi = null, rowMenuOpenRi = null, rowMenuEl = null;
+
+  function markMenuReady(ri){
+    var el = resultsEl.querySelector('.mqa-row[data-ri="' + ri + '"]');
+    if (el) el.classList.add("is-menuready");
+  }
+  function unmarkMenuReady(ri){
+    var el = resultsEl.querySelector('.mqa-row[data-ri="' + ri + '"]');
+    if (el) el.classList.remove("is-menuready");
+  }
+  scroll.addEventListener("mouseover", function(e){
+    var rowEl = e.target.closest ? e.target.closest(".mqa-row[data-ri]") : null;
+    if (!rowEl) return;
+    var ri = +rowEl.getAttribute("data-ri");
+    if (ri === hoverRi) return;   // already tracking — mouseover keeps firing as the pointer crosses child elements
+    clearTimeout(hoverTimer);
+    if (hoverRi != null && hoverRi !== rowMenuOpenRi) unmarkMenuReady(hoverRi);
+    hoverRi = ri;
+    hoverTimer = setTimeout(function(){ markMenuReady(ri); }, ROWMENU_HOVER_MS);
+  });
+  scroll.addEventListener("mouseout", function(e){
+    var rowEl = e.target.closest ? e.target.closest(".mqa-row[data-ri]") : null;
+    if (!rowEl) return;
+    if (e.relatedTarget && rowEl.contains(e.relatedTarget)) return;   // moved to a child, still inside the row
+    var ri = +rowEl.getAttribute("data-ri");
+    if (ri !== hoverRi) return;
+    clearTimeout(hoverTimer);
+    hoverRi = null;
+    if (ri !== rowMenuOpenRi) unmarkMenuReady(ri);   // its dropdown is open -> keep the trigger visible
+  });
+
+  function ensureRowMenu(){
+    if (rowMenuEl) return rowMenuEl;
+    rowMenuEl = document.createElement("div");
+    rowMenuEl.className = "mqa-rowmenu";
+    rowMenuEl.innerHTML =
+      '<button class="mqa-rowmenu-opt" type="button" data-rowmenu-act="open">' +
+        '<span class="mqa-rowmenu-opt-ic">' + OPEN_SVG + '</span>Open</button>' +
+      '<button class="mqa-rowmenu-opt" type="button" data-rowmenu-act="newtab">' +
+        '<span class="mqa-rowmenu-opt-ic">' + NEWTAB_SVG + '</span>Open in new tab</button>';
+    overlay.appendChild(rowMenuEl);
+    rowMenuEl.addEventListener("click", function(e){
+      var b = e.target.closest ? e.target.closest("[data-rowmenu-act]") : null;
+      if (!b) return;
+      e.stopPropagation();
+      var ri = rowMenuOpenRi, act = b.getAttribute("data-rowmenu-act");
+      closeRowMenu();
+      if (ri == null) return;
+      if (act === "open") selectResult(ri);
+      else if (act === "newtab") openResultInNewTab(ri);
+    });
+    return rowMenuEl;
+  }
+  function positionRowMenu(btn){
+    var r = btn.getBoundingClientRect(), t = rowMenuEl.getBoundingClientRect();
+    var pad = 8, left = r.right - t.width;
+    left = Math.max(pad, Math.min(left, window.innerWidth - t.width - pad));
+    var top = r.bottom + 6;
+    if (top + t.height > window.innerHeight - pad) top = r.top - t.height - 6;   // flip above if needed
+    rowMenuEl.style.left = Math.round(left) + "px"; rowMenuEl.style.top = Math.round(top) + "px";
+  }
+  function onRowMenuOutside(e){
+    if (!rowMenuEl || rowMenuEl.contains(e.target)) return;
+    if (e.target.closest && e.target.closest(".mqa-rowmenu-btn")) return;   // its own toggle click, handled separately
+    closeRowMenu();
+  }
+  function openRowMenu(ri, btn){
+    ensureRowMenu();
+    if (rowMenuOpenRi != null) closeRowMenu();
+    rowMenuOpenRi = ri;
+    btn.classList.add("is-open");
+    var rowEl = btn.closest(".mqa-row"); if (rowEl) rowEl.classList.add("is-menuopen");
+    rowMenuEl.classList.add("is-on");
+    positionRowMenu(btn);
+    document.addEventListener("mousedown", onRowMenuOutside, true);
+  }
+  function closeRowMenu(){
+    if (rowMenuOpenRi == null) return;
+    rowMenuOpenRi = null;
+    if (rowMenuEl) rowMenuEl.classList.remove("is-on");
+    var openBtn = modal.querySelector(".mqa-rowmenu-btn.is-open"); if (openBtn) openBtn.classList.remove("is-open");
+    var openRow = modal.querySelector(".mqa-row.is-menuopen"); if (openRow) openRow.classList.remove("is-menuopen");
+    document.removeEventListener("mousedown", onRowMenuOutside, true);
+  }
+
+  /* Reads the CURRENT page's own ?view= (same param the app's view-system already writes) and
+     the app's ?detail=<type>:<value> drawer convention. Base URL always comes from
+     location.origin + location.pathname — never a hardcoded host/path — so this produces a
+     correct link on both the version-test environment and production without touching this file.
+     Any drawer already open on the current page is deliberately dropped: "open in new tab" means
+     exactly the current view plus ONE fresh drawer, never a stack of whatever was open here. */
+  function detailValueFor(it){
+    if (it.type === "brand")  return it.id;
+    if (it.type === "domain") return it.domain;
+    if (it.type === "url")    return it.url;
+    if (it.type === "prompt") return it.id;
+    return null;
+  }
+  function detailUrl(it){
+    var val = detailValueFor(it); if (val == null || val === "") return null;
+    var u;
+    try { u = new URL(window.location.origin + window.location.pathname); } catch(_){ return null; }
+    var view = null; try { view = new URL(window.location.href).searchParams.get("view"); } catch(_){}
+    if (view) u.searchParams.set("view", view);
+    u.searchParams.set("detail", it.type + ":" + val);
+    return u.toString();
+  }
+  function openResultInNewTab(ri){
+    var it = _rowData[ri]; if (!it) return;
+    var url = detailUrl(it); if (!url) return;
+    viewedPush(it.type, it);   // still "viewed" it, just not in this tab
+    try { window.open(url, "_blank", "noopener"); } catch(_){}
+  }
+
   /* ---------- keyboard selection ---------- */
   function refreshRows(){
+    clearTimeout(hoverTimer); hoverRi = null; closeRowMenu();   // stale rows are about to be replaced
     // results and actions are separate containers now -> query the modal (DOM order keeps results first).
     // only rows that are actually on screen: the actions block is hidden in command mode, and
     // keyboard nav must not run through invisible entries
@@ -601,6 +731,7 @@
     setTimeout(function(){ try { input.focus(); input.select(); } catch(_){} }, 20);
   }
   function close(){
+    closeRowMenu();
     recentPush(); _lastCompleted = null;
     if (!isOpen) return; isOpen = false;
     overlay.classList.remove("is-open"); overlay.setAttribute("aria-hidden", "true");
@@ -646,7 +777,10 @@
 
   function onKeydown(e){
     if (!isOpen) return;
-    if (e.key === "Escape"){ e.preventDefault(); close(); return; }
+    if (e.key === "Escape"){
+      if (rowMenuOpenRi != null){ e.preventDefault(); closeRowMenu(); return; }   // close just the menu first
+      e.preventDefault(); close(); return;
+    }
     // terminal-style: on an untouched field, ArrowUp recalls the last search instead of moving the cursor
     if (e.key === "ArrowUp" && !input.value && !anyFilter() && recentLoad().length){
       e.preventDefault(); applyRecent(0); return;
@@ -666,7 +800,17 @@
   input.addEventListener("input", onInput);
   overlay.addEventListener("mousedown", function(e){ if (e.target === overlay) close(); });   // click outside
   // results, recent and actions live in three separate containers -> listen on the modal
-  modal.addEventListener("click", function(e){ var el = e.target.closest ? e.target.closest(".mqa-row, .mqa-action") : null; if (el) activate(el); });
+  modal.addEventListener("click", function(e){
+    var menuBtn = e.target.closest ? e.target.closest(".mqa-rowmenu-btn") : null;
+    if (menuBtn){
+      e.stopPropagation();   // do NOT also activate() the row underneath
+      var rowEl = menuBtn.closest(".mqa-row");
+      var ri = rowEl ? +rowEl.getAttribute("data-ri") : -1;
+      if (rowMenuOpenRi === ri) closeRowMenu(); else openRowMenu(ri, menuBtn);
+      return;
+    }
+    var el = e.target.closest ? e.target.closest(".mqa-row, .mqa-action") : null; if (el) activate(el);
+  });
   modal.addEventListener("mousemove", function(e){ var el = e.target.closest ? e.target.closest(".mqa-row, .mqa-action") : null; if (el){ var i = rows.indexOf(el); if (i >= 0 && i !== activeIndex) setActive(i); } });
   // BULLETPROOF SCROLL: drive the list ourselves on wheel so it works over any element (text/logo/favicon)
   // and never leaks to the page behind — independent of any app-level scroll CSS/handlers.

@@ -81,6 +81,18 @@
        bubble_fn_qa_select_prompt(value)  value = prompt id
        Each also dispatches CustomEvent("mira_qa_select_" + cat, {detail:{value}}).
 
+     ── per-row "more" menu (hover a result for ~1s) ────────────────────────
+       Open              same as clicking the row — calls the bubble_fn_qa_select_* above.
+       Open in new tab   pure client-side, fires NOTHING to Bubble. Builds
+                           <current origin+path>?view=<current ?view= value, if any>
+                             &detail=<type>:<value>
+                         and window.open()s it. This mirrors the app's own drawer-URL convention
+                         (?detail=brand:<id> / domain:<domain> / url:<url> / prompt:<id>) — no
+                         Bubble workflow step needed, nothing to wire up on that side.
+                         Any ?detail= already on the CURRENT page is dropped, not carried over —
+                         "open in new tab" always means the current view plus exactly ONE fresh
+                         drawer, never whatever was already open here.
+
      ── keyboard ────────────────────────────────────────────────────────────
        Cmd/Ctrl+K opens/closes globally (capture phase). Inside: ↑/↓ move, Enter activates the
        highlighted row, Esc closes, Backspace on an empty field with active filters removes the
