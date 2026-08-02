@@ -31,6 +31,9 @@
       fmtDate = UC.fmtDate, fmtTotal = UC.fmtTotal, foldDiacritics = UC.foldDiacritics, germanExpand = UC.germanExpand,
       resolveBubbleFn = UC.resolveBubbleFn, CHECK_SVG = UC.CHECK_SVG, GOTO_SVG = UC.GOTO_SVG,
       sentColor = UC.sentColor, brandStack = UC.brandStack;
+  /* Same .up-hash treatment prompts-table and visibility-chart apply — the shared rank cell is
+     icon + number, never a typed "#". */
+  var HASH_ICON = UC.HASH_ICON.replace('<svg ', '<svg class="up-hash" ');
 
   /* Own store — deliberately NOT UC.STORE (that one is hardcoded to urls-table's key, see
      topics-manager.js/prompts-table.js for the same reasoning). */
@@ -40,14 +43,23 @@
   /* Table mode only — the card grid has no columns/row-height to configure, so the whole
      Table-Settings gear hides itself in Cards mode (see render()). "Prompt" is the firstKey,
      always visible, not in this hideable list — same convention as every other table here. */
+  /* ORDER IS LOAD-BEARING: makeColumns builds the grid track template by walking this array, while
+     the cells come from the markup. If the two disagree, every track lands on the wrong column —
+     which is exactly what made Citations render narrower than Brand Mentions. This order must stay
+     identical to the .up-th order in bubble/responses_table_bubble.html (after the Prompt column,
+     which is `firstKey` and not listed here). `prio` is independent of this order and controls
+     drop order when the table runs out of width. */
   var COLUMNS = [
-    { key: "sentiment", label: "Sentiment",     w: "minmax(120px, 0.8fr)", min: 120, dropAt: "narrow",  prio: 70 },
-    { key: "rank",       label: "Rank",          w: "minmax(90px, 0.6fr)",  min: 90,  dropAt: "narrow",  prio: 60 },
-    { key: "brands",     label: "Brand Mentions", w: "minmax(178px, 1fr)",  min: 178, dropAt: "vnarrow", prio: 50 },
-    { key: "citations",  label: "Citations",     w: "minmax(200px, 1fr)",  min: 200, dropAt: "vnarrow", prio: 40 },
-    { key: "mentioned",  label: "Mentioned?",    w: "minmax(110px, 0.6fr)",min: 110, dropAt: "vnarrow", prio: 30 },
-    { key: "model",      label: "Model",         w: "minmax(140px, 0.8fr)",min: 140, dropAt: "vnarrow", prio: 20 },
-    { key: "date",       label: "Date",          w: "minmax(100px, 0.6fr)",min: 100, dropAt: "narrow",  prio: 10 }
+    { key: "mentioned",  label: "Mentioned?",     w: "minmax(110px, 0.6fr)",  min: 110, dropAt: "vnarrow", prio: 30 },
+    { key: "sentiment",  label: "Sentiment",      w: "minmax(120px, 0.8fr)",  min: 120, dropAt: "narrow",  prio: 70 },
+    { key: "rank",       label: "Rank",           w: "minmax(90px, 0.6fr)",   min: 90,  dropAt: "narrow",  prio: 60 },
+    /* Brand Mentions shows 4 chips + "+N" (178px, the app-wide figure). Citations shows FIVE chips
+       and its "+N" routinely runs to 5 digits (+23266), so it gets a strictly wider floor and a
+       larger fr share — with equal fr both columns end up the same width regardless of the mins. */
+    { key: "brands",     label: "Brand Mentions", w: "minmax(178px, 1fr)",    min: 178, dropAt: "vnarrow", prio: 50 },
+    { key: "citations",  label: "Citations",      w: "minmax(216px, 1.25fr)", min: 216, dropAt: "vnarrow", prio: 40 },
+    { key: "model",      label: "Model",          w: "minmax(140px, 0.8fr)",  min: 140, dropAt: "vnarrow", prio: 20 },
+    { key: "date",       label: "Date",           w: "minmax(100px, 0.6fr)",  min: 100, dropAt: "narrow",  prio: 10 }
   ];
   var ROW_HEIGHTS = [
     { key: "default", label: "Default", icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/></svg>' },
@@ -169,7 +181,15 @@
     state.page = state.view === "cards" ? state.cardPage : state.tablePage;
     state.pageSize = state.view === "cards" ? state.cardPageSize : state.tablePageSize;
     root.classList.toggle("is-cards-view", state.view === "cards");
-    function applyRowHeightClass(){ root.classList.toggle("is-rh-compact", state.rowHeight === "compact"); }
+    /* is-dense is core's own compact-row mode (72px -> 55px plus the smaller brand-stack chips).
+       Toggling it is what actually resizes the rows; is-rh-compact only carries this component's
+       own extras (the prompt line-clamp). Setting just the latter is why the Row Height switcher
+       looked dead. */
+    function applyRowHeightClass(){
+      var compact = state.rowHeight === "compact";
+      root.classList.toggle("is-rh-compact", compact);
+      root.classList.toggle("is-dense", compact);
+    }
     applyRowHeightClass();
     function setRowHeight(mode){
       if (state.rowHeight === mode) return;
@@ -249,7 +269,10 @@
     function rankCell(v){
       var n = (v == null || v === "") ? null : Number(v);
       if (n == null || !isFinite(n)) return '<span class="urt-empty">' + MINUS_SVG + '</span>';
-      return '<span class="up-rank-group"><span class="up-num">#' + fmtInt(n) + '</span></span>';
+      /* HASH_ICON + .up-num, exactly like prompts-table and visibility-chart — a literal "#"
+         character is NOT the convention here and rendered visibly different from every other
+         rank cell in the app. fmtInt (not fmt1): user_rank is an ordinal, not an average. */
+      return '<span class="up-rank-group">' + HASH_ICON + '<span class="up-num">' + fmtInt(n) + '</span></span>';
     }
     function sentCell(v){
       var n = (v == null || v === "") ? null : Number(v);
@@ -273,19 +296,33 @@
       for (var i = 0; i < models.length; i++){ if (models[i].key === key) return models[i]; }
       return null;
     }
+    /* Long provider names blow the Model column apart ("Google AI Overviews" alone is wider than
+       the whole track). A model may ship its own `short_name`; otherwise these known long names
+       fall back to the abbreviation the rest of the product uses. Unknown keys pass through
+       untouched. */
+    var MODEL_SHORT = { "google-aio": "Google AIO" };
+    function modelLabel(m, key){
+      if (m && m.short_name) return String(m.short_name);
+      if (MODEL_SHORT[key]) return MODEL_SHORT[key];
+      return m ? String(m.display_name || key) : String(key || "");
+    }
     function modelChip(key){
       var m = modelInfo(key);
-      var name = m ? String(m.display_name || key) : String(key || "");
+      var name = modelLabel(m, key);
+      var full = m ? String(m.display_name || key) : String(key || "");
       var logo = m && m.logo_url ? String(m.logo_url) : "";
       if (logo.indexOf("//") === 0) logo = "https:" + logo;
       var initial = name.charAt(0) || "?";
-      return '<span class="urt-model-chip">' +
-               '<span class="urt-model-logo' + (logo ? " has-img" : "") + '">' +
+      /* .up-ment-logo / .up-ment-name are the shared 18px logo + label pair from core.css — the
+         same one the Mentioned dropdown uses. The earlier custom .urt-model-logo drew a border
+         box around the logo that exists nowhere else in the app. */
+      return '<span class="urt-model-chip"' + (full !== name ? ' data-tip="' + esc(full) + '"' : "") + '>' +
+               '<span class="up-ment-logo' + (logo ? " has-img" : "") + '">' +
                  '<span class="urt-model-ltr">' + esc(initial) + '</span>' +
                  (logo ? '<img src="' + esc(logo) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
                          ' onerror="this.parentNode.classList.remove(\'has-img\'); this.remove()"/>' : "") +
                '</span>' +
-               '<span class="urt-model-name">' + esc(name) + '</span>' +
+               '<span class="up-ment-name">' + esc(name) + '</span>' +
              '</span>';
     }
 
@@ -492,54 +529,61 @@
       rankMinDraft = state.rankMin; rankMaxDraft = state.rankMax;
       sentMinDraft = state.sentMin; sentMaxDraft = state.sentMax;
     }
+    /* RANK_MAX is an OPEN upper end — at the top of the track the filter means "20 or worse",
+       so it reads "20+" everywhere the number is shown. */
+    function rankLabel(v){ return v >= RANK_MAX ? (RANK_MAX + "+") : String(v); }
+    function sectionHtml(kind, label, lo, hi, vLo, vHi, fmt){
+      return '<div class="urt-fader-sec">' +
+          '<div class="urt-fader-head">' +
+            '<span class="urt-fader-lbl">' + label + '</span>' +
+            '<span class="urt-fader-val">' + fmt(vLo) + '<span class="urt-fader-dash">–</span>' + fmt(vHi) + '</span>' +
+          '</div>' +
+          '<div class="urt-slider" data-slider="' + kind + '">' +
+            '<div class="urt-slider-track"></div>' +
+            '<div class="urt-slider-fill" style="' + faderFillStyle(vLo, vHi, lo, hi) + '"></div>' +
+            '<input type="range" class="urt-range urt-range-lo" min="' + lo + '" max="' + hi + '" step="1" value="' + vLo + '" data-handle="lo" aria-label="' + label + ' minimum"/>' +
+            '<input type="range" class="urt-range urt-range-hi" min="' + lo + '" max="' + hi + '" step="1" value="' + vHi + '" data-handle="hi" aria-label="' + label + ' maximum"/>' +
+          '</div>' +
+        '</div>';
+    }
     function populateFader(){
       if (!elFaderMenu) return;
-      var rankTopLabel = rankMaxDraft >= RANK_MAX ? (RANK_MAX + "+") : String(rankMaxDraft);
       elFaderMenu.innerHTML =
-        '<div class="urt-fader-sec">' +
-          '<div class="urt-fader-lbl">Rank</div>' +
-          '<div class="urt-slider" data-slider="rank">' +
-            '<div class="urt-slider-track"></div>' +
-            '<div class="urt-slider-fill" style="' + faderFillStyle(rankMinDraft, rankMaxDraft, RANK_MIN, RANK_MAX) + '"></div>' +
-            '<input type="range" class="urt-range urt-range-lo" min="' + RANK_MIN + '" max="' + RANK_MAX + '" step="1" value="' + rankMinDraft + '" data-handle="lo"/>' +
-            '<input type="range" class="urt-range urt-range-hi" min="' + RANK_MIN + '" max="' + RANK_MAX + '" step="1" value="' + rankMaxDraft + '" data-handle="hi"/>' +
-          '</div>' +
-          '<div class="urt-slider-vals"><span>' + rankMinDraft + '</span><span>' + rankTopLabel + '</span></div>' +
-        '</div>' +
-        '<div class="urt-fader-sec">' +
-          '<div class="urt-fader-lbl">Sentiment</div>' +
-          '<div class="urt-slider" data-slider="sentiment">' +
-            '<div class="urt-slider-track"></div>' +
-            '<div class="urt-slider-fill" style="' + faderFillStyle(sentMinDraft, sentMaxDraft, SENT_MIN, SENT_MAX) + '"></div>' +
-            '<input type="range" class="urt-range urt-range-lo" min="' + SENT_MIN + '" max="' + SENT_MAX + '" step="1" value="' + sentMinDraft + '" data-handle="lo"/>' +
-            '<input type="range" class="urt-range urt-range-hi" min="' + SENT_MIN + '" max="' + SENT_MAX + '" step="1" value="' + sentMaxDraft + '" data-handle="hi"/>' +
-          '</div>' +
-          '<div class="urt-slider-vals"><span>' + sentMinDraft + '</span><span>' + sentMaxDraft + '</span></div>' +
-        '</div>' +
-        '<button class="urt-fader-apply" type="button" data-faderapply>Apply</button>';
+        sectionHtml("rank", "Rank", RANK_MIN, RANK_MAX, rankMinDraft, rankMaxDraft, rankLabel) +
+        sectionHtml("sentiment", "Sentiment", SENT_MIN, SENT_MAX, sentMinDraft, sentMaxDraft, String) +
+        '<div class="urt-fader-foot">' +
+          '<button class="urt-fader-reset" type="button" data-faderreset>Reset</button>' +
+          '<button class="urt-fader-apply" type="button" data-faderapply>Apply</button>' +
+        '</div>';
       wireFaderInputs();
     }
     function wireFaderInputs(){
       var sliders = elFaderMenu.querySelectorAll(".urt-slider");
       Array.prototype.forEach.call(sliders, function(sl){
         var kind = sl.getAttribute("data-slider");
-        var lo = kind === "rank" ? RANK_MIN : SENT_MIN, hi = kind === "rank" ? RANK_MAX : SENT_MAX;
+        var isRank = kind === "rank";
+        var lo = isRank ? RANK_MIN : SENT_MIN, hi = isRank ? RANK_MAX : SENT_MAX;
+        var fmt = isRank ? rankLabel : String;
         var loIn = sl.querySelector(".urt-range-lo"), hiIn = sl.querySelector(".urt-range-hi");
         var fill = sl.querySelector(".urt-slider-fill");
-        var vals = sl.parentNode.querySelector(".urt-slider-vals");
+        var val = sl.parentNode.querySelector(".urt-fader-val");
         function updateDraft(){
           var pair = clampPair(Number(loIn.value), Number(hiIn.value), lo, hi);
           loIn.value = pair[0]; hiIn.value = pair[1];
-          if (kind === "rank"){ rankMinDraft = pair[0]; rankMaxDraft = pair[1]; }
+          if (isRank){ rankMinDraft = pair[0]; rankMaxDraft = pair[1]; }
           else { sentMinDraft = pair[0]; sentMaxDraft = pair[1]; }
           fill.setAttribute("style", faderFillStyle(pair[0], pair[1], lo, hi));
-          if (vals){
-            var topLabel = (kind === "rank" && pair[1] >= RANK_MAX) ? (RANK_MAX + "+") : String(pair[1]);
-            vals.innerHTML = "<span>" + pair[0] + "</span><span>" + topLabel + "</span>";
-          }
+          /* Which handle sits on top matters: at the extremes both thumbs land on the same pixel
+             and whichever input is last in the DOM would swallow every grab, making the range
+             impossible to reopen. Raise the one the pointer can still usefully move. */
+          var atTop = pair[0] === hi;
+          loIn.style.zIndex = atTop ? 4 : 3;
+          hiIn.style.zIndex = atTop ? 3 : 4;
+          if (val) val.innerHTML = fmt(pair[0]) + '<span class="urt-fader-dash">–</span>' + fmt(pair[1]);
         }
         loIn.addEventListener("input", updateDraft);
         hiIn.addEventListener("input", updateDraft);
+        updateDraft();
       });
     }
     function applyFader(){
@@ -869,6 +913,14 @@
         closePops(elFader);
         if (openFd){ seedFaderDrafts(); populateFader(); }
         setPopOpen(elFader, openFd);
+        return;
+      }
+      /* Reset only rewinds the DRAFT and repaints — it does not commit. Same Apply-gate as
+         dragging a handle, so a mis-click costs nothing until Apply. */
+      if (e.target.closest("[data-faderreset]")){
+        rankMinDraft = RANK_MIN; rankMaxDraft = RANK_MAX;
+        sentMinDraft = SENT_MIN; sentMaxDraft = SENT_MAX;
+        populateFader();
         return;
       }
       if (e.target.closest("[data-faderapply]")){ applyFader(); setPopOpen(elFader, false); return; }
