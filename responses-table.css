@@ -1,0 +1,146 @@
+/* upstreem responses-table.css — component-specific styling (urt-).
+   Shared base lives in core.css. Loaded after core.css. */
+
+/* ---------- prompt cell ---------- */
+.urt-prompt-text { font-size: 13.5px; font-weight: 500; color: var(--vc-text); letter-spacing: -0.01em;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.up-root.is-rh-compact .urt-prompt-text { -webkit-line-clamp: 1; }
+
+/* ---------- mentioned? cell — same shape as urls-table's .uut-ment-cell ---------- */
+.urt-ment-cell { display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; font-weight: 500; }
+.urt-ment-cell svg { width: 16px; height: 16px; display: block; flex: 0 0 auto; }
+.urt-ment-cell.is-yes { color: var(--vt-up); }
+.urt-ment-cell.is-no { color: var(--vt-down); }
+
+/* ---------- empty sentiment/rank — explicit minus icon, NOT the "–" character every other
+   table uses. Deliberate for this component (see STYLEGUIDE), matches --vc-third. ---------- */
+.urt-empty { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; color: var(--vc-third); }
+.urt-minus { width: 14px; height: 14px; display: block; }
+
+/* ---------- brand mentioned toggle (mirrors uut-brand-toggle in urls-table.css) ---------- */
+.urt-brand-toggle { display: none; align-items: center; justify-content: space-between; gap: 10px; height: 32px; padding: 0 8px; border-radius: 8px;
+  background: transparent; border: 0; cursor: pointer; flex: 0 0 auto; }
+.urt-brand-toggle.is-visible { display: inline-flex; }
+.urt-brand-toggle:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
+.urt-brand-toggle.is-yes, .urt-brand-toggle.is-no { background: var(--vc-heading-bg); }
+.urt-brand-toggle-lbl { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.urt-brand-check { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #fff; }
+.urt-brand-check svg { width: 11px; height: 11px; display: none; }
+.urt-brand-toggle.is-yes .urt-brand-check, .urt-brand-toggle.is-no .urt-brand-check { background: var(--vc-text); border-color: var(--vc-text); }
+.up-root[data-theme="dark"] .urt-brand-toggle.is-yes .urt-brand-check, .up-root[data-theme="dark"] .urt-brand-toggle.is-no .urt-brand-check { color: #1f1f1b; }
+.urt-brand-toggle.is-yes .urt-brand-check .urt-brand-check-yes { display: block; }
+.urt-brand-toggle.is-no .urt-brand-check .urt-brand-check-no { display: block; }
+.urt-brand-logo { width: 16px; height: 16px; border-radius: 4px; flex: 0 0 auto; display: block; object-fit: cover; }
+.urt-brand-label { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
+
+/* ---------- date ---------- */
+.urt-date { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
+
+/* ---------- model chip — 18x18 logo + name, reuses .up-ment-logo's sizing convention ---------- */
+.urt-model-chip { display: inline-flex; align-items: center; gap: 7px; min-width: 0; }
+.urt-model-logo { position: relative; width: 18px; height: 18px; border-radius: 5px; overflow: hidden; flex: 0 0 auto;
+  background: var(--vc-switch-bg); border: 1px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; }
+.urt-model-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.urt-model-ltr { font-size: 9px; font-weight: 600; color: var(--vc-muted); }
+.urt-model-logo.has-img .urt-model-ltr { display: none; }
+.urt-model-name { font-size: 13px; font-weight: 500; color: var(--vc-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------- table skeleton (own cell classes referenced by skeletonRowsHtml) ---------- */
+.urt-td-prompt, .urt-td-mentioned, .urt-td-sentiment, .urt-td-rank, .urt-td-brands, .urt-td-citations, .urt-td-model, .urt-td-date { min-width: 0; }
+
+/* ================================================================
+   view switcher (Table / Cards) — same segmented-track look as core's .up-dense
+   ================================================================ */
+.urt-viewswitch { display: inline-flex; align-items: center; height: 32px; padding: 2px; border-radius: 9px;
+  background: var(--vc-switch-bg); flex: 0 0 auto; gap: 2px; }
+.urt-viewswitch-btn { width: 28px; height: 28px; border: 0; border-radius: 7px; background: transparent;
+  color: var(--vc-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.urt-viewswitch-btn svg { width: 16px; height: 16px; display: block; }
+.urt-viewswitch-btn.is-active { background: #ffffff; color: var(--vc-text); box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+.up-root[data-theme="dark"] .urt-viewswitch-btn.is-active { background: #2a2a2a; }
+.urt-viewswitch-btn:not(.is-active):hover { color: var(--vc-text); }
+
+/* ================================================================
+   fader (rank/sentiment range) — trigger + popover, same shell family as .up-sort/.up-cols
+   ================================================================ */
+.urt-fader { position: relative; }
+.urt-fader-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid transparent; background: transparent;
+  color: var(--vc-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.urt-fader-btn svg { width: 16px; height: 16px; display: block; }
+.urt-fader-btn:hover { background: var(--vc-switch-bg); color: var(--vc-text); }
+.urt-fader.is-open .urt-fader-btn, .urt-fader.is-active .urt-fader-btn { background: var(--vc-switch-bg); color: var(--vc-text); border-color: var(--vc-switch-border); }
+.urt-fader-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 60; width: 260px; padding: 14px;
+  border-radius: 12px; background: var(--up-surface); border: 1px solid var(--vc-border);
+  box-shadow: 0 10px 30px rgba(17,18,20,.14); opacity: 0; pointer-events: none; transform: translateY(-4px) scale(.985);
+  transition: opacity 140ms ease, transform 140ms ease; }
+.urt-fader.is-open .urt-fader-menu { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); }
+.urt-fader-sec + .urt-fader-sec { margin-top: 16px; }
+.urt-fader-lbl { font-size: 12px; font-weight: 600; color: var(--vc-text); margin-bottom: 10px; }
+.urt-slider { position: relative; height: 16px; }
+.urt-slider-track { position: absolute; top: 7px; left: 0; right: 0; height: 2px; border-radius: 999px; background: var(--vc-switch-border); }
+.urt-slider-fill { position: absolute; top: 7px; height: 2px; border-radius: 999px; background: var(--vc-text); }
+.urt-range { position: absolute; top: 0; left: 0; width: 100%; height: 16px; margin: 0; background: transparent;
+  -webkit-appearance: none; appearance: none; pointer-events: none; }
+.urt-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; pointer-events: auto;
+  width: 16px; height: 16px; border-radius: 999px; background: #ffffff; border: 2px solid var(--vc-text);
+  cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+.urt-range::-moz-range-thumb { pointer-events: auto; width: 16px; height: 16px; border-radius: 999px;
+  background: #ffffff; border: 2px solid var(--vc-text); cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+.urt-range::-webkit-slider-runnable-track { background: transparent; }
+.urt-range::-moz-range-track { background: transparent; }
+.urt-slider-vals { display: flex; align-items: center; justify-content: space-between; margin-top: 8px;
+  font-size: 11px; font-weight: 600; color: var(--vc-muted); font-variant-numeric: tabular-nums; }
+.urt-fader-apply { width: 100%; height: 32px; margin-top: 16px; border: 0; border-radius: 8px;
+  background: var(--vc-text); color: var(--up-surface); font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+.urt-fader-apply:hover { opacity: .92; }
+
+/* ================================================================
+   card mode
+   ================================================================ */
+.urt-cards { display: none; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.up-root.is-cards-view .urt-cards { display: grid; }
+.up-root.is-cards-view .up-box { display: none; }   /* .up-box wraps .up-thead + .up-tbody */
+
+.urt-card { display: flex; flex-direction: column; min-width: 435px; min-height: 200px; max-height: 250px;
+  padding: 16px; border-radius: 14px; border: 1px solid var(--vc-border); background: var(--up-surface);
+  cursor: pointer; transition: border-color .12s ease, box-shadow .12s ease; }
+.urt-card:hover { border-color: var(--vc-hover-border); box-shadow: 0 2px 10px rgba(0,0,0,.05); }
+.up-root[data-theme="dark"] .urt-card:hover { box-shadow: 0 2px 10px rgba(0,0,0,.25); }
+
+.urt-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.urt-card-date { font-size: 11px; font-weight: 500; color: var(--vc-muted); white-space: nowrap; flex: 0 0 auto; }
+
+.urt-card-badges { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+.urt-mentioned-badge { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 8px 0 6px;
+  border-radius: 999px; background: color-mix(in srgb, var(--vt-up) 14%, transparent); color: var(--vt-up);
+  font-size: 11.5px; font-weight: 600; }
+.urt-mentioned-badge svg { width: 13px; height: 13px; display: block; }
+
+.urt-card-prompt { font-size: 14px; font-weight: 500; color: var(--vc-text); letter-spacing: -0.01em;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 4px; }
+.urt-card-preview { font-size: 14px; font-weight: 400; color: var(--vc-muted); line-height: 1.4;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; flex: 1 1 auto; }
+
+.urt-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--vc-border); }
+.urt-card-brands, .urt-card-citations { min-width: 0; }
+
+/* skeleton cards */
+.urt-card-sk { pointer-events: none; }
+.urt-sk { display: block; border-radius: 5px; background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
+.urt-sk-chip { width: 96px; height: 18px; border-radius: 6px; }
+.urt-sk-date { width: 56px; height: 12px; }
+.urt-sk-line { height: 12px; margin-top: 10px; border-radius: 5px; }
+
+@media (max-width: 1180px){ .urt-cards { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 760px){ .urt-cards { grid-template-columns: 1fr; } .urt-card { min-width: 0; } }
+
+/* ---------- narrow: table settings hides in cards mode (JS also sets display:none inline;
+   this covers the moment before JS runs / no-JS fallback) ---------- */
+.up-root.is-cards-view .up-cols { display: none; }
+
+/* ---------- responsive toolbar tiers (mirrors urls-table's is-w0..is-w3 convention:
+   core.css already drops .up-ment at is-w2 / .up-sort at is-w1 / .up-cols at is-w0 —
+   these are the component-specific additions, ordered least- to most-essential) ---------- */
+.up-root.is-w1 .urt-fader-btn .up-tip-lbl { display: none; }
+.up-root.is-w3 .urt-brand-toggle { display: none !important; }
+.up-root.is-w2 .urt-fader { display: none !important; }

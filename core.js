@@ -880,13 +880,19 @@
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>';
       syncFootWrap();   // page count just changed -> the row may have gained/lost a line
     }
+    /* cfg.pageSizes: optional fn returning the size list for THIS render — lets a component run
+       different page-size sets depending on its own state (e.g. a table/cards view switch with
+       differently-sized grids per mode), without this shared kit knowing why. Omitted by every
+       existing caller, which keeps reading the plain module-level PAGE_SIZES exactly as before —
+       purely additive, no behavior change for urls-table/domains-table/prompts-table. */
+    function sizesOf(){ return cfg.pageSizes ? cfg.pageSizes() : PAGE_SIZES; }
     function renderPageSize(){
       /* .up-pagesize-seg, NOT .up-pagesize: the outer element also holds the "Rows per page"
          label, and the grey switcher background lives on the -seg wrapper. Writing into the outer
          one wiped both. */
       var el = root.querySelector(".up-pagesize-seg");
       if (!el) return;
-      el.innerHTML = PAGE_SIZES.map(function(n){
+      el.innerHTML = sizesOf().map(function(n){
         return '<button class="up-pagesize-btn' + (n === state.pageSize ? " is-active" : "") +
                '" type="button" data-pagesize="' + n + '">' + n + '</button>';
       }).join("");
