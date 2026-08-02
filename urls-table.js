@@ -237,13 +237,9 @@
                '<span class="uut-tag-lbl">' + esc(ti.label) + '</span>' +
              '</span>';
     }
-    var YES_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-    var NO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-    function mentCell(v){
-      var yes = isYes(v);
-      return '<span class="uut-ment-cell ' + (yes ? "is-yes" : "is-no") + '">' +
-               (yes ? YES_SVG : NO_SVG) + (yes ? "Yes" : "No") + '</span>';
-    }
+    /* The yes/no cell moved to core as UC.mentCell — this file and responses-table.js each had
+       their own byte-identical copy, so a design change had to be made twice. */
+    var mentCell = UC.mentCell;
     function rowHtml(r){
       var url = String(r.url == null ? "" : r.url);
       var title = String(r.title == null ? "" : r.title) || url;
@@ -648,7 +644,7 @@
     function syncHeadBrand(){
       var logo = root.getAttribute("data-brand-logo") || "";
       var name = root.getAttribute("data-brand-name") || "";
-      var img = root.querySelector(".uut-th-brandlogo");
+      var img = root.querySelector(".up-th-brandlogo");
       var lbl = root.querySelector(".up-th-mentlbl");
       if (!img || !lbl) return;
       if (logo && logo !== "BRAND_LOGO"){ img.src = logo; img.style.display = "block"; }

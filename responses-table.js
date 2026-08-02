@@ -30,7 +30,7 @@
       isYes = UC.isYes, highlight = UC.highlight, esc = UC.esc, toNum = UC.toNum, fmt1 = UC.fmt1, fmtInt = UC.fmtInt,
       fmtDate = UC.fmtDate, fmtTotal = UC.fmtTotal, foldDiacritics = UC.foldDiacritics, germanExpand = UC.germanExpand,
       resolveBubbleFn = UC.resolveBubbleFn, CHECK_SVG = UC.CHECK_SVG, GOTO_SVG = UC.GOTO_SVG,
-      sentColor = UC.sentColor, brandStack = UC.brandStack;
+      sentColor = UC.sentColor, brandStack = UC.brandStack, mentCell = UC.mentCell;
   /* Same .up-hash treatment prompts-table and visibility-chart apply — the shared rank cell is
      icon + number, never a typed "#". */
   var HASH_ICON = UC.HASH_ICON.replace('<svg ', '<svg class="up-hash" ');
@@ -51,8 +51,8 @@
      drop order when the table runs out of width. */
   var COLUMNS = [
     { key: "mentioned",  label: "Mentioned?",     w: "minmax(110px, 0.6fr)",  min: 110, dropAt: "vnarrow", prio: 30 },
-    { key: "sentiment",  label: "Sentiment",      w: "minmax(120px, 0.8fr)",  min: 120, dropAt: "narrow",  prio: 70 },
-    { key: "rank",       label: "Rank",           w: "minmax(90px, 0.6fr)",   min: 90,  dropAt: "narrow",  prio: 60 },
+    { key: "sentiment",  label: "Sentiment",      w: "minmax(120px, 1fr)",    min: 120, dropAt: "narrow",  prio: 70 },
+    { key: "rank",       label: "Rank",           w: "minmax(90px, 1fr)",     min: 90,  dropAt: "narrow",  prio: 60 },
     /* Brand Mentions shows 4 chips + "+N" (178px, the app-wide figure). Citations shows FIVE chips
        and its "+N" routinely runs to 5 digits (+23266), so it gets a strictly wider floor and a
        larger fr share — with equal fr both columns end up the same width regardless of the mins. */
@@ -91,8 +91,6 @@
   var CARD_PAGE_SIZES = [6, 12, 24, 48];   // all divisible by 2/3/4/6 -> a clean column count at every breakpoint
 
   var MINUS_SVG = '<svg class="urt-minus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>';
-  var YES_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-  var NO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
   var TABLE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>';
   var CARDS_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>';
   var FADER_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><circle cx="9" cy="6" r="2" fill="currentColor" stroke="none"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="15" cy="12" r="2" fill="currentColor" stroke="none"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="11" cy="18" r="2" fill="currentColor" stroke="none"/></svg>';
@@ -280,16 +278,15 @@
       return '<span class="up-sent"><span class="up-sent-dot" style="background:' + sentColor(n) + '"></span>' +
              '<span class="up-sent-val">' + Math.round(n) + '</span></span>';
     }
-    function mentCell(v){
-      var yes = isYes(v);
-      return '<span class="urt-ment-cell ' + (yes ? "is-yes" : "is-no") + '">' +
-               (yes ? YES_SVG : NO_SVG) + (yes ? "Yes" : "No") + '</span>';
-    }
-    function citationsChips(sources, total){
+    /* NO total argument on purpose. `total_count` on a row is the RESULT-SET total — it drives
+       pagination and the heading count — and passing it here printed "+23346" next to five
+       citation chips. There is no per-row citations total in the payload, so the preview length
+       is the count: brandStack falls back to it when totalCount is null. */
+    function citationsChips(sources){
       var mapped = (Array.isArray(sources) ? sources : []).map(function(s){
         return { name: s && s.title, favicon: s && s.favicon };
       });
-      return brandStack(mapped, total, { max: 5 });
+      return brandStack(mapped, null, { max: 5 });
     }
     /* Defensive on the ENTRY, not just the key: a malformed models list (a hole, a null, a bare
        string) must degrade to "unknown model, show the raw key" — never throw. This runs inside
@@ -342,7 +339,7 @@
         '<div class="up-td urt-td-sentiment">' + sentCell(r.user_sentiment) + '</div>' +
         '<div class="up-td urt-td-rank">' + rankCell(r.user_rank) + '</div>' +
         '<div class="up-td urt-td-brands">' + brandStack(r.companies_preview, r.companies_preview_totalcount, { max: 4 }) + '</div>' +
-        '<div class="up-td urt-td-citations">' + citationsChips(r.sources_preview, r.total_count) + '</div>' +
+        '<div class="up-td urt-td-citations">' + citationsChips(r.sources_preview) + '</div>' +
         '<div class="up-td urt-td-model">' + modelChip(r.model) + '</div>' +
         '<div class="up-td urt-td-date"><span class="urt-date">' + esc(fmtDate(r.run_at)) + '</span></div>' +
       '</div>';
@@ -364,7 +361,7 @@
         '<div class="urt-card-preview">' + esc(preview) + '</div>' +
         '<div class="urt-card-foot">' +
           '<div class="urt-card-brands">' + brandStack(r.companies_preview, r.companies_preview_totalcount, { max: 4 }) + '</div>' +
-          '<div class="urt-card-citations">' + citationsChips(r.sources_preview, r.total_count) + '</div>' +
+          '<div class="urt-card-citations">' + citationsChips(r.sources_preview) + '</div>' +
         '</div>' +
       '</div>';
     }
@@ -694,7 +691,22 @@
     }
 
     /* ---------------- brand X mentioned (single cycle) ---------------- */
+    /* Column header reads "<brand logo> mentioned?" — same treatment as urls-table. Without a
+       logo the brand NAME has to carry the meaning, otherwise the header just says "mentioned?"
+       with no clue what is meant. */
+    function syncHeadBrand(){
+      var logo = root.getAttribute("data-brand-logo") || "";
+      var name = root.getAttribute("data-brand-name") || "";
+      var img = root.querySelector(".up-th-brandlogo");
+      var lbl = root.querySelector(".up-th-mentlbl");
+      if (!img || !lbl) return;
+      if (logo && logo !== "BRAND_LOGO"){ img.src = logo; img.style.display = "block"; }
+      else { img.style.display = "none"; }
+      lbl.textContent = (!logo || logo === "BRAND_LOGO") && name && name !== "BRAND_NAME"
+        ? name + " mentioned?" : "Mentioned?";
+    }
     function syncBrand(){
+      syncHeadBrand();
       if (!elBrand) return;
       var name = root.getAttribute("data-brand-name") || "";
       var logo = root.getAttribute("data-brand-logo") || "";

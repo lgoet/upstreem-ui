@@ -979,6 +979,25 @@
 .up-sent-dot { width: 6px; height: 6px; border-radius: 2px; flex: 0 0 auto; }
 .up-sent-val { font-size: 13px; font-weight: 500; color: var(--vc-text); font-variant-numeric: tabular-nums; }
 
+/* ---------- "X mentioned?" yes/no cell ----------
+   Shared by urls-table and responses-table (both had their own byte-identical copy under a local
+   prefix, which is how they drifted apart in the first place). A FILLED 14px badge carries the
+   colour, the glyph inside is knocked out of it, and the label stays in the primary text colour —
+   a coloured label next to a coloured icon read as two competing signals. */
+.up-ment-cell { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: var(--vc-text); }
+.up-ment-badge { width: 14px; height: 14px; border-radius: 999px; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center; }
+/* The glyph is the SURFACE colour, not a hardcoded white: on dark the badge is a light tint and
+   a white glyph would vanish into it. */
+.up-ment-badge svg { width: 9px; height: 9px; display: block; color: var(--up-surface, #fff); }
+.up-ment-cell.is-yes .up-ment-badge { background: var(--vt-up); }
+.up-ment-cell.is-no  .up-ment-badge { background: var(--vt-down); }
+.up-root[data-theme="dark"] .up-ment-badge svg { color: #1f1f1b; }
+
+/* ---------- "<brand logo> mentioned?" column header ----------
+   urls-table established this; it lives here so every table with the column gets the same thing. */
+.up-th-brandlogo { width: 16px; height: 16px; border-radius: 4px; flex: 0 0 auto; object-fit: cover; margin-right: 5px; }
+
 /* ---------- brand-mention chip stack ----------
    Overlapping 32px circles. Shared by urls-table's Brands mentioned column and prompts-table's
    Brand Mentions column. The 4px visual gap between them is a ring in the ROW's background

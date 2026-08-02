@@ -53,7 +53,7 @@
       /* far-right X closes/resets search */
 
     /* ---------- column info icon + explainer tooltip ---------- */
-    .uut-th-brandlogo { width: 16px; height: 16px; border-radius: 4px; flex: 0 0 auto; object-fit: cover; margin-right: 5px; }
+    /* .up-th-brandlogo now lives in core.css (shared with responses-table) */
     
     
     
@@ -380,10 +380,7 @@
     .uut-url-sub { font-size: 12px; color: var(--vc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     /* Mentioned? cell */
-    .uut-ment-cell { display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; font-weight: 500; }
-    .uut-ment-cell svg { width: 16px; height: 16px; display: block; flex: 0 0 auto; }
-    .uut-ment-cell.is-yes { color: var(--vt-up); }
-    .uut-ment-cell.is-no { color: var(--vt-down); }
+    /* yes/no cell now comes from core (.up-ment-cell) */
 
     /* .up-stack* (brand-mention chips) now lives in core.css, shared with prompts-table. The
        cell still clips locally: with a negative-margin stack plus the hover spread, a narrow

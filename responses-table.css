@@ -9,11 +9,7 @@
    setRowHeight() toggles. Re-declaring the height here would fork those numbers. */
 .up-root.is-rh-compact .urt-prompt-text { -webkit-line-clamp: 1; }
 
-/* ---------- mentioned? cell — same shape as urls-table's .uut-ment-cell ---------- */
-.urt-ment-cell { display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; font-weight: 500; }
-.urt-ment-cell svg { width: 16px; height: 16px; display: block; flex: 0 0 auto; }
-.urt-ment-cell.is-yes { color: var(--vt-up); }
-.urt-ment-cell.is-no { color: var(--vt-down); }
+/* mentioned? cell now comes from core (.up-ment-cell) — see core.css */
 
 /* ---------- empty sentiment/rank — explicit minus icon, NOT the "–" character every other
    table uses. Deliberate for this component (see STYLEGUIDE), matches --vc-third. ---------- */
@@ -40,10 +36,11 @@
 .urt-date { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
 
 /* ---------- model chip ----------
-   Structure and sizing come from core's .up-ment-logo / .up-ment-name (the Mentioned dropdown's
-   logo+label pair). Only the initial-letter fallback is local — core's version always has an
-   image, ours may not. NO border box around the logo: that was a local invention. */
-.urt-model-chip { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+   Logo + label sizing comes from core's .up-ment-logo / .up-ment-name (the Mentioned dropdown's
+   pair). The chip shell around it is local: field background, 8/4 padding, 8px radius. */
+.urt-model-chip { display: inline-flex; align-items: center; gap: 8px; min-width: 0;
+  padding: 4px 8px; border-radius: 8px; background: var(--vc-switch-bg); max-width: 100%; }
+.up-root[data-theme="dark"] .urt-model-chip { background: #2a2a2a; }
 .urt-model-ltr { font-size: 10px; font-weight: 600; color: var(--vc-muted); line-height: 1; text-transform: uppercase; }
 .up-ment-logo.has-img .urt-model-ltr { display: none; }
 
@@ -52,20 +49,42 @@
 
 /* ================================================================
    view switcher (Table / Cards)
-   Visuals come entirely from core's .up-dense / .up-dense-btn. The only thing this component
-   needs to change is the width: core's segmented control is width:100% because it lives inside
-   the Table-Settings popover, and in a toolbar it has to shrink to its two icons.
+   Looks exactly like core's .up-dense segmented control, but the rules are written against THIS
+   component's own class names too.
+   Why both: the CDN pin updates CSS/JS while the Bubble markup is a manual copy. Styling that
+   only works once the markup carries core's class names means a CSS-only update renders the
+   toolbar as unstyled 4px slivers — worse than either version alone. Every selector below is
+   therefore duplicated for .urt-viewswitch-btn (old markup) and .up-dense-btn (new markup).
    ================================================================ */
-.urt-viewswitch { width: auto; flex: 0 0 auto; }
-.urt-viewswitch .up-dense-btn { flex: 0 0 auto; width: 34px; }
+.urt-viewswitch { width: auto; flex: 0 0 auto; display: inline-flex; align-items: center;
+  padding: 0; gap: 0; background: var(--vc-switch-bg); border-radius: 8px; height: 34px; }
+.urt-viewswitch .up-dense-btn,
+.urt-viewswitch-btn { flex: 0 0 auto; width: 34px; height: 34px; padding: 0;
+  border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--vc-muted);
+  cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.urt-viewswitch .up-dense-btn svg,
+.urt-viewswitch-btn svg { width: 16px; height: 16px; display: block; }
+.urt-viewswitch .up-dense-btn:hover,
+.urt-viewswitch-btn:hover { color: var(--vc-text); }
+.urt-viewswitch .up-dense-btn.is-active,
+.urt-viewswitch-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
+.up-root[data-theme="dark"] .urt-viewswitch .up-dense-btn.is-active,
+.up-root[data-theme="dark"] .urt-viewswitch-btn.is-active { background: #121212; border-color: #353535; }
 
 /* ================================================================
    fader (rank/sentiment range)
-   Trigger = plain .up-iconbtn (core). Open/active state mirrors `.up-sort.is-open .up-sort-btn`
-   exactly — a background tint, NO border. The earlier border-color here was the only bordered
-   toolbar trigger in the whole app.
+   Same reasoning as the switcher: the trigger is styled here as well as inheriting .up-iconbtn,
+   so it is a proper 32px icon button even if the markup predates that class.
+   Open/active state mirrors `.up-sort.is-open .up-sort-btn` — a background tint, NO border.
    ================================================================ */
 .urt-fader { position: relative; flex: 0 0 auto; }
+.urt-fader-btn { width: 32px; height: 32px; padding: 0; border: 0; border-radius: 8px;
+  background: transparent; color: var(--vc-muted); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+.urt-fader-btn svg { width: 16px; height: 16px; display: block; }
+.urt-fader-btn:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
+.up-root[data-theme="dark"] .urt-fader-btn { color: #a0a0a0; }
+.up-root[data-theme="dark"] .urt-fader-btn:hover { color: var(--vc-text); }
 .urt-fader.is-open .urt-fader-btn,
 .urt-fader.is-active .urt-fader-btn { color: var(--vc-text); background: var(--vc-heading-bg); }
 /* a filter is silently destructive, so an applied range gets a dot the way the cols badge does */

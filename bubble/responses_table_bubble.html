@@ -254,7 +254,12 @@
         <!-- The lead column's resize grip. Every other table has one; without it the first
              column simply cannot be dragged (core's resize kit binds to .up-grip). -->
         <div class="up-th up-th-prompt">Prompt<span class="up-grip" data-grip="prompt"></span></div>
-        <div class="up-th up-th-mentioned">Mentioned?</div>
+        <!-- "<brand logo> mentioned?", identical to urls-table: the logo is filled in from
+             data-brand-logo, and without one the label falls back to "<brand name> mentioned?" -->
+        <div class="up-th up-th-mentioned">
+          <img class="up-th-brandlogo" src="" alt="" style="display:none"/>
+          <span class="up-th-mentlbl">Mentioned?</span>
+        </div>
         <div class="up-th up-th-sentiment is-sortable" data-sortcol="sentiment">
           <span class="up-th-txt">Sentiment</span>
           <span class="up-thsort" data-for="sentiment">

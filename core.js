@@ -322,6 +322,20 @@
   var COPY_SVG = '<svg class="up-ic-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
   var GOTO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>';
   var HASH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>';
+
+  /* "<brand> mentioned?" cell — one implementation for every table that has the column. Both
+     urls-table and responses-table carried their own byte-identical copy; keeping two is exactly
+     how they drift. Renders a filled colour badge with a knocked-out glyph plus a neutral label
+     (see .up-ment-cell in core.css). */
+  var MENT_YES_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  var MENT_NO_SVG  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  function mentCell(v){
+    var yes = isYes(v);
+    return '<span class="up-ment-cell ' + (yes ? "is-yes" : "is-no") + '">' +
+             '<span class="up-ment-badge">' + (yes ? MENT_YES_SVG : MENT_NO_SVG) + '</span>' +
+             (yes ? "Yes" : "No") +
+           '</span>';
+  }
   var DONE_SVG = '<svg class="up-ic-done" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
   var EXT_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
 
@@ -630,6 +644,21 @@
     /* see applyCols(): the two halves are guarded separately because they change at different
        rates — the track template on every width change, the visible column set only when a
        column actually drops in or out. */
+    /* The lead column's drag handle is markup that every table has to remember to include, and a
+       table that forgets it is simply not resizable with no visible clue why. The handle carries
+       no content and no per-table config, so create it here when it is missing: the resize
+       behaviour now ships with the kit instead of with a copy-pasted <span>. Idempotent — a
+       markup-provided grip is left exactly as it is. */
+    function ensureFirstGrip(){
+      var th = root.querySelector(".up-thead .up-th");
+      if (!th || th.querySelector(".up-grip")) return;
+      var g = document.createElement("span");
+      g.className = "up-grip";
+      g.setAttribute("data-grip", FIRST);
+      th.appendChild(g);
+    }
+    ensureFirstGrip();
+
     var lastTpl = null, lastSigCols = null;
     function applyCols(){
       /* The grid template is rebuilt from the shown columns rather than just hiding cells: with
@@ -3128,6 +3157,7 @@
     COPY_SVG: COPY_SVG,
     GOTO_SVG: GOTO_SVG,
     HASH_ICON: HASH_ICON,
+    mentCell: mentCell,
     DONE_SVG: DONE_SVG,
     EXT_SVG: EXT_SVG,
 
