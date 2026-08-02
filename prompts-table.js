@@ -1968,15 +1968,11 @@
          identical, so calling it every frame is cheap. */
       applyCols();
     }
-    if (window.ResizeObserver){
-      new ResizeObserver(function(){
-        if (root.__uptRaf) return;
-        root.__uptRaf = requestAnimationFrame(function(){ root.__uptRaf = null; applyResponsive(); });
-      }).observe(root);
-    }
-    /* rAF-throttled: this fires alongside the ResizeObserver above, so without it every window
-       resize ran the whole measure/drop cascade twice per frame. */
-    window.addEventListener("resize", UC.rafThrottle(applyResponsive));
+    /* One coalesced responsive pass per frame (core). The old pairing of a
+       ResizeObserver AND a window-resize listener ran the whole measure/drop cascade
+       TWICE per frame while a window was being dragged, and each pass forces several
+       synchronous reflows. onResize also skips frames where the width did not change. */
+    UC.onResize(root, applyResponsive);
 
     /* sticky header machinery (core) */
     var _sticky = UC.makeSticky(root, elHead);

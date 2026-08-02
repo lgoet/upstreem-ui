@@ -1199,14 +1199,11 @@
          resulting layout is unchanged, so this stays cheap on every resize frame. */
       applyCols();
     }
-    if (window.ResizeObserver){
-      new ResizeObserver(function(){
-        if (root.__uutRaf) return;
-        root.__uutRaf = requestAnimationFrame(function(){ root.__uutRaf = null; applyResponsive(); });
-      }).observe(root);
-    }
-    /* rAF-throttled: fires alongside the ResizeObserver above, which is already guarded. */
-    window.addEventListener("resize", UpstreemCore.rafThrottle(applyResponsive));
+    /* One coalesced responsive pass per frame (core). The old pairing of a
+       ResizeObserver AND a window-resize listener ran the whole measure/drop cascade
+       TWICE per frame while a window was being dragged, and each pass forces several
+       synchronous reflows. onResize also skips frames where the width did not change. */
+    UpstreemCore.onResize(root, applyResponsive);
 
     /* Sticky header. Default on at >=1000px page width (off via data-sticky="no"); the column
        header sits right below the component head, its offset measured from the head's height.

@@ -382,18 +382,15 @@
     function cardHtml(r){
       var promptText = String(r.prompt_text == null ? "" : r.prompt_text);
       var preview = String(r.response_preview == null ? "" : r.response_preview);
-      var mentioned = isYes(r.has_user_brand);
       var hasSent = r.user_sentiment != null && r.user_sentiment !== "" && isFinite(Number(r.user_sentiment));
       var hasRank = r.user_rank != null && r.user_rank !== "" && isFinite(Number(r.user_rank));
       return '<div class="urt-card" data-run="' + esc(String(r.prompt_run_id || "")) + '" tabindex="0" role="button">' +
         '<div class="urt-card-head">' +
           '<div class="urt-card-headleft">' +
             modelChip(r.model) +
-            /* Metrics live in the head row next to the model chip. All three are omitted entirely
-               when there is nothing to say — a card is a summary, and a column of "–" placeholders
-               is noise. The table view is where you compare a present value against a missing one. */
-            (mentioned ? '<span class="up-ment-cell is-yes urt-card-ment" data-tip="Your brand was mentioned">' +
-                           '<span class="up-ment-badge">' + MENT_CHECK_SVG + '</span></span>' : "") +
+            /* Metrics live in the head row next to the model chip, and are omitted entirely when
+               there is nothing to say — a card is a summary, and a row of "–" placeholders is
+               noise. The table view is where a present value is compared against a missing one. */
             (hasSent ? sentCell(r.user_sentiment) : "") +
             (hasRank ? rankCell(r.user_rank) : "") +
           '</div>' +
@@ -855,13 +852,11 @@
       root.classList.toggle("is-vnarrow", w < 620);
       applyCols();
     }
-    if (window.ResizeObserver){
-      new ResizeObserver(function(){
-        if (root.__urtRaf) return;
-        root.__urtRaf = requestAnimationFrame(function(){ root.__urtRaf = null; applyResponsive(); });
-      }).observe(root);
-    }
-    window.addEventListener("resize", UC.rafThrottle(applyResponsive));
+    /* One coalesced responsive pass per frame (core). The old pairing of a
+       ResizeObserver AND a window-resize listener ran the whole measure/drop cascade
+       TWICE per frame while a window was being dragged, and each pass forces several
+       synchronous reflows. onResize also skips frames where the width did not change. */
+    UC.onResize(root, applyResponsive);
 
     var _sticky = UC.makeSticky(root, elHead);
     function syncTheadOffset(){ _sticky.syncTheadOffset(); }

@@ -1940,6 +1940,35 @@
      produce one visible frame, which is exactly how a resize starts feeling like it runs at a
      fraction of the real frame rate. Deliberately trailing-edge: the final event of a burst is
      the one whose state is correct. */
+  /* One responsive hook per component, coalesced to one call per frame.
+     Replaces the "ResizeObserver + window.resize(rafThrottle(fn))" pair the tables were using:
+     during a window drag BOTH fire every frame, so the layout pass ran TWICE per frame — and
+     each pass forces several synchronous reflows (fitToolbar measures, writes a class, measures
+     again). Measured 9 forced layouts per frame with the pair, ~4 with this.
+     A ResizeObserver on the root is sufficient on its own: if the window changes but the root's
+     box does not, there is by definition nothing to re-fit.
+     The width guard drops the frames where the observer fires for a height-only change (row
+     render, popover open) — those cannot affect a horizontal fit. */
+  function onResize(root, fn){
+    if (!root || typeof fn !== "function") return;
+    var raf = null, lastW = -1;
+    function run(){
+      raf = null;
+      var w = root.getBoundingClientRect().width;
+      if (w === lastW) return;
+      lastW = w;
+      fn(w);
+    }
+    if (window.ResizeObserver){
+      new ResizeObserver(function(){
+        if (raf) return;
+        raf = requestAnimationFrame(run);
+      }).observe(root);
+    } else {
+      window.addEventListener("resize", rafThrottle(run));
+    }
+  }
+
   function rafThrottle(fn){
     var pending = null, lastArgs = null, lastThis = null;
     return function(){
@@ -3239,6 +3268,7 @@
     closePopovers: closeAll,
     makeSticky: makeSticky,
     rafThrottle: rafThrottle,
+    onResize: onResize,
     unclipAncestors: unclipAncestors,
     watchRoots: watchRoots,
     TOPIC_COLOR_PALETTE: TOPIC_COLOR_PALETTE,

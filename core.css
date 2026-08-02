@@ -1072,6 +1072,15 @@
    the hovered one" is the mirror of the plain `~` used above. The last CHIP carries .is-last from
    brandStack — :last-child would miss it when a "+N" badge follows, and expressing it inline would
    need :has() inside :has(), which CSS forbids (the rule is dropped as invalid). */
+/* FIRST cancel the right-hand spread. The four rules above still match inside a left-spreading
+   stack — they are not scoped to it — so without this the chips AFTER the hovered one kept
+   sliding right while the ones before it slid left. Nothing in a left-spread stack may move
+   right, so the trailing items (and the "+N" badge, which sits at the right edge) stay put. */
+.up-stack.is-spread-left .up-stack-item:hover ~ .up-stack-item .up-stack-vis,
+.up-stack.is-spread-left .up-stack-item:hover ~ .up-stack-more,
+.up-stack.is-spread-left .up-stack-item:first-child:hover ~ .up-stack-item .up-stack-vis,
+.up-stack.is-spread-left .up-stack-item:first-child:hover ~ .up-stack-more { transform: none; }
+
 .up-stack.is-spread-left .up-stack-item:hover .up-stack-vis { transform: translateX(-8px) translateY(-3px); }
 .up-stack.is-spread-left .up-stack-item.is-last:hover .up-stack-vis { transform: translateY(-3px); }
 .up-stack.is-spread-left .up-stack-item:has(~ .up-stack-item:hover) .up-stack-vis { transform: translateX(-16px); }

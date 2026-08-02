@@ -254,13 +254,11 @@
       fitToolbar();
       root.classList.toggle("is-vnarrow", w < 620);
     }
-    if (window.ResizeObserver){
-      new ResizeObserver(function(){
-        if (root.__utmRaf) return;
-        root.__utmRaf = requestAnimationFrame(function(){ root.__utmRaf = null; applyResponsive(); });
-      }).observe(root);
-    }
-    window.addEventListener("resize", UC.rafThrottle(applyResponsive));
+    /* One coalesced responsive pass per frame (core). The old pairing of a
+       ResizeObserver AND a window-resize listener ran the whole measure/drop cascade
+       TWICE per frame while a window was being dragged, and each pass forces several
+       synchronous reflows. onResize also skips frames where the width did not change. */
+    UC.onResize(root, applyResponsive);
 
     /* ---------------- click delegation ----------------
        On document, not root — deliberately. UC.makePopover's own outside-click listener is also

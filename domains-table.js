@@ -1656,14 +1656,11 @@
          resulting layout is unchanged, so this stays cheap on every resize frame. */
       applyCols();
     }
-    if (window.ResizeObserver){
-      new ResizeObserver(function(){
-        if (root.__udtRaf) return;
-        root.__udtRaf = requestAnimationFrame(function(){ root.__udtRaf = null; applyResponsive(); });
-      }).observe(root);
-    }
-    /* rAF-throttled: fires alongside the ResizeObserver above, which is already guarded. */
-    window.addEventListener("resize", UpstreemCore.rafThrottle(applyResponsive));
+    /* One coalesced responsive pass per frame (core). The old pairing of a
+       ResizeObserver AND a window-resize listener ran the whole measure/drop cascade
+       TWICE per frame while a window was being dragged, and each pass forces several
+       synchronous reflows. onResize also skips frames where the width did not change. */
+    UpstreemCore.onResize(root, applyResponsive);
 
     /* sticky header machinery (core) */
     var _sticky = UpstreemCore.makeSticky(root, elHead);
