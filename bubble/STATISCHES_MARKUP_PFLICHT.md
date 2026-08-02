@@ -1,4 +1,11 @@
-# Komponenten-Markup MUSS statisch sein (Animations-Killer Nr. 1)
+# Komponenten-Markup MUSS statisch sein (gute Praxis — war NICHT die Ursache der Drawer-Lags)
+
+> **Korrektur:** die Kausalerklärung unten ("dynamische Attribute triggern den Rebuild") ist
+> widerlegt (STYLEGUIDE.md §43) — der User hat `data-processing`/`data-isdark` entfernt, die Long
+> Tasks blieben unverändert (249ms/285ms). Die tatsächliche Ursache und der wirksame Fix stehen in
+> STYLEGUIDE.md §44 (Bubble-Workflow-Arbeit im Animationsfenster, Fix: "Add a pause before next
+> action"). Die Regel unten bleibt trotzdem gute Praxis und `upstreemSetTheme()` bleibt nützlich —
+> nur eben nicht aus dem hier behaupteten Grund.
 
 ## Das Problem
 
@@ -51,6 +58,6 @@ aufrufen, statt `data-isdark` an einen Bubble-Ausdruck zu hängen.
 
 ## Gegenprobe
 
-Nach der Umstellung mit `bubble/_diagnose_drawer_console.js` messen. Ziel:
+Nach der Umstellung mit `bubble/diagnostics/_diagnose_drawer_console.js` messen. Ziel:
 
     Frames: ~24, verzoegert: 0-1, Long Tasks: keine

@@ -1,6 +1,6 @@
 # Upstreem UI-Komponenten — Styleguide
 
-Gilt für alle Tabellen- und Chart-Komponenten des Upstreem-UI-Systems. Root-Klasse aller Komponenten: **`.up-root`** (Core, `core.css`/`core.js`). Komponentenspezifische Präfixe: `uut-` (URLs Table), `udt-` (Domains Table), weitere folgen. Chart-Komponenten aus der Pre-Core-Ära (`vc-`/`cc-`/`uc-`-Präfixe) sind noch nicht migriert und in `to-migrate/` abgelegt.
+Gilt für alle Tabellen- und Chart-Komponenten des Upstreem-UI-Systems. Root-Klasse aller Komponenten: **`.up-root`** (Core, `core.css`/`core.js`). Komponentenspezifische Präfixe: `uut-` (URLs Table), `udt-` (Domains Table), `upt-` (Prompts Table), `vot-` (Visibility Chart), `tcd-` (TopCitations Dashboard), `combo-` (Citations Combo Chart), `utm-` (Topics Manager). Ausnahme `quick-actions.*` (Präfix `mqa-`): eigenes Token-Set, kein `core.css`/`core.js` — siehe Abschnitt 12.
 
 > **Hinweis:** Abschnitte 1–11 dokumentieren das Design-System (Farben, Typo, Spacing). Abschnitte 12–25 dokumentieren Verhalten und Implementierungsmuster. Abschnitt 0 (direkt unten) listet die `window.UpstreemCore` API.
 
@@ -929,9 +929,14 @@ Chart.js setzt `touch-action:none` auf den Canvas, was natives Scrollen blockier
 
 ---
 
-## 12. Historische Referenz: `quick_actions.html` (Mira-Familie, Präfix `am-`, noch NICHT migriert)
+## 12. Quick Actions (Mira-Familie, Präfix `am-`/`mqa-`) — eigenes Token-Set, bewusst kein core.css
 
-> Dieser Abschnitt dokumentiert eine Komponente aus der Pre-Core-Ära, die noch in `to-migrate/` liegt und noch kein `core.js`/`core.css` nutzt. Dient als Referenz beim zukünftigen Umbau, gilt nicht für neue Tabellen-Komponenten.
+> Inzwischen migriert: `quick-actions.css`/`.js` + `bubble/quick_actions_bubble.html`. Bleibt
+> trotzdem eigenständig dokumentiert, weil die Komponente absichtlich **kein** `core.css`/`core.js`
+> lädt — sie ist ein Seiten-Singleton (`#mira-quick-actions`, kein `.up-root`, keine
+> `data-instance`), nicht ein wiederholbares Tabellen-/Chart-Element, und brachte ihr komplettes
+> eigenes `--am-*`-Token-Set schon aus der Pre-Core-Ära mit. Gilt nicht als Vorlage für neue
+> Tabellen-/Chart-Komponenten — dafür `urls-table.*`/Abschnitt 25 nehmen.
 
 Verwandt, aber mit eigenen Werten — falls du dort auch mal was anpasst:
 - Border: `#e5e7eb` (statt `#e0e2e6`)
@@ -2300,7 +2305,13 @@ Zeilen. Ohne diesen Test wäre der Dedupe ein Blindflug gewesen — er hätte di
 ersten Render tot stellen können.
 
 
-## 42. Die echte Ursache der lahmen Drawer/Views: Laden IM Animationsfenster
+## 42. Ladelatenz im Animationsfenster (Teilbefund — die dominante Ursache steht in §44)
+
+> **Korrektur:** die Massnahme unten wurde ausgeliefert und wirkt technisch wie gemessen (0 neue
+> Tags, Chart.js vorher bereit) — hat das gemeldete Symptom aber nicht spürbar behoben ("außer
+> dass der Pageload jetzt bisschen laggyer ist... hat sich nicht wirklich was geändert"). Die
+> dominante Ursache war §44 (Bubble-Workflow-Arbeit im Animationsfenster), nicht diese. Bleibt als
+> sinnvolle Sekundär-Optimierung bestehen — ist nur nicht "der Fix".
 
 **Symptom:** Drawer und View-Wechsel animieren nicht mehr ("ploppt rein") oder hängen 600–1000ms.
 Sofort, ab dem ersten Öffnen. Entfernt man die Komponenten von der Page, ist alles sofort wieder
@@ -2409,7 +2420,7 @@ Gemeinsamer Nenner: alle wurden lokal nie sichtbar, weil das Problem gar nicht i
 
 ## 45. View-Wechsel: 1686ms blockiert, davon 83ms unsere — Messung und Konsequenz
 
-Gemessen auf der echten Seite (Navigation zur Prompts-View, `bubble/_diagnose_view_console.js`):
+Gemessen auf der echten Seite (Navigation zur Prompts-View, `bubble/diagnostics/_diagnose_view_console.js`):
 
     +0ms      Navigation
     +198ms    View sichtbar

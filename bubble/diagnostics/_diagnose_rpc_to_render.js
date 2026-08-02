@@ -25,8 +25,8 @@
   var t0 = performance.now();
   function now(){ return Math.round(performance.now() - t0); }
   var LOG = [];
-  function log(kind, label){
-    LOG.push({ t: now(), kind: kind, label: label });
+  function log(kind, label, isStart){
+    LOG.push({ t: now(), kind: kind, label: label, isStart: !!isStart });
     if (LOG.length > 500) LOG.shift();
   }
   function shortUrl(u){ u = String(u == null ? '' : u); return u.length > 70 ? u.slice(0, 70) + '…' : u; }
@@ -86,7 +86,14 @@
       var res = orig.apply(this, arguments);
       var d = Math.round(performance.now() - s);
       var extra = /Loading$/.test(n) ? ' -> "' + arguments[1] + '"' : '';
-      log('js', n + '()' + extra + (d >= 2 ? '   ⏱ ' + d + 'ms synchron' : ''));
+      /* A "-> yes" (or reset*) call marks the START of a fresh load — it has no business being
+         compared against whatever 🌐 finished before it, that could be minutes-old idle time from
+         the previous view/drawer. Only "-> no" and render*() calls, which SHOULD follow a
+         response closely, get the gap check. Missing this distinction produced a fake multi-
+         second "Bubble wertet noch aus" on every "-> yes" line — measured against a network call
+         from a completely different, already-finished load cycle. */
+      var isStart = /Loading$/.test(n) ? (String(arguments[1]).toLowerCase() === "yes") : /^reset/.test(n);
+      log('js', n + '()' + extra + (d >= 2 ? '   ⏱ ' + d + 'ms synchron' : ''), isStart);
       if (/Loading$/.test(n) || /^render/.test(n)){
         clearTimeout(reportTimer);
         reportTimer = setTimeout(report, 1500);
@@ -104,10 +111,11 @@
     recent.forEach(function(e){
       var tag = e.kind === 'net' ? '🌐' : e.kind === 'net-err' ? '⚠️' : '·';
       var gapNote = '';
-      if (e.kind === 'js' && lastNet != null && (e.t - lastNet) >= 300){
+      if (e.kind === 'js' && !e.isStart && lastNet != null && (e.t - lastNet) >= 300){
         gapNote = '   ← ' + (e.t - lastNet) + 'ms nach dem letzten 🌐, VOR unserem Aufruf (Bubble wertet noch aus)';
       }
       if (e.kind === 'net' || e.kind === 'net-err') lastNet = e.t;
+      if (e.kind === 'js' && e.isStart) lastNet = null;   // fresh cycle -> any earlier 🌐 is stale, don't compare against it
       console.log('   +' + e.t + 'ms  ' + tag + '  ' + e.label + gapNote);
     });
     console.log('%c   "← ... Bubble wertet noch aus" markiert genau die Luecke, um die es hier geht: '
