@@ -291,9 +291,16 @@
       });
       return brandStack(mapped, total, { max: 5 });
     }
+    /* Defensive on the ENTRY, not just the key: a malformed models list (a hole, a null, a bare
+       string) must degrade to "unknown model, show the raw key" — never throw. This runs inside
+       renderBody(), so a throw here took out everything render() does afterwards: pagination,
+       column layout, brand toggle, view switch. One bad row should not empty the whole toolbar. */
     function modelInfo(key){
       var models = state.models || [];
-      for (var i = 0; i < models.length; i++){ if (models[i].key === key) return models[i]; }
+      for (var i = 0; i < models.length; i++){
+        var m = models[i];
+        if (m && m.key === key) return m;
+      }
       return null;
     }
     /* Long provider names blow the Model column apart ("Google AI Overviews" alone is wider than
@@ -1067,8 +1074,10 @@
      pass for all of that — JSON.parse (what this used to use for the setters) throws on every one
      of those cases. Anything that can arrive as a string from a Run-JS step goes through here. */
   function asList(v){
-    if (typeof v === "string") return UC.parseBubbleJson(v);
-    return Array.isArray(v) ? v : [];
+    var l = (typeof v === "string") ? UC.parseBubbleJson(v) : (Array.isArray(v) ? v : []);
+    /* Holes/nulls survive when a caller hands us a raw array instead of a string (parseBubbleJson
+       already strips them on its own path). Every consumer below does property access. */
+    return l.filter(function(x){ return x != null; });
   }
   function doRender(params){
     var id = params && params.instanceId;

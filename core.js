@@ -204,7 +204,11 @@
       try { return parseBubbleJson(parsed); } catch(e2){ return []; }
     }
     if (parsed && !Array.isArray(parsed) && typeof parsed === "object") return [parsed];
-    return Array.isArray(parsed) ? parsed : [];
+    /* An empty item in a Bubble list emits `,,`, which eval turns into an ARRAY HOLE — the entry
+       reads back as undefined and every consumer here does `row.something` on it. Callers all
+       expect a list of records, so a hole is never meaningful data; drop it rather than hand out
+       a list that blows up on the first property access. */
+    return Array.isArray(parsed) ? parsed.filter(function(x){ return x != null; }) : [];
   }
 
   function esc(s){
