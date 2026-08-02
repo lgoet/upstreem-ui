@@ -989,11 +989,11 @@
    colour, the glyph inside is knocked out of it, and the label stays in the primary text colour —
    a coloured label next to a coloured icon read as two competing signals. */
 .up-ment-cell { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: var(--vc-muted); }
-.up-ment-badge { width: 16px; height: 16px; border-radius: 4px; flex: 0 0 auto;
+.up-ment-badge { width: 14px; height: 14px; border-radius: 4px; flex: 0 0 auto;
   display: inline-flex; align-items: center; justify-content: center; }
 /* The glyph is the SURFACE colour, not a hardcoded white: on dark the badge is a light tint and
    a white glyph would vanish into it. */
-.up-ment-badge svg { width: 10px; height: 10px; display: block; color: var(--up-surface, #fff); }
+.up-ment-badge svg { width: 9px; height: 9px; display: block; color: var(--up-surface, #fff); }
 .up-ment-cell.is-yes .up-ment-badge { background: var(--vt-up); }
 .up-ment-cell.is-no  .up-ment-badge { background: var(--vt-down); }
 .up-root[data-theme="dark"] .up-ment-badge svg { color: #1f1f1b; }
@@ -1053,19 +1053,22 @@
 .up-stack-item:first-child:hover ~ .up-stack-item .up-stack-vis,
 .up-stack-item:first-child:hover ~ .up-stack-more { transform: translateX(8px); }
 
-/* Mirror the spread for a stack that sits at the RIGHT edge of its container (Citations in the
-   responses table, and the same stack inside a card footer). Spreading rightwards there pushes
-   the chips out of the cell/card instead of into free space. brandStack(..., {spread:"left"}). */
+/* Mirror image of the four rules above, for a stack pinned to the RIGHT edge of its container
+   (Citations in the responses table, and the same stack in a card footer): spreading rightwards
+   there pushes chips out of the cell/card instead of into free space. Same distances, same lift,
+   same easing — only the axis is flipped. brandStack(..., {spread:"left"}).
+   `:has(~ …)` is the previous-sibling selector CSS otherwise lacks: "an item that is followed by
+   the hovered one" is the mirror of the plain `~` used above. The last CHIP carries .is-last from
+   brandStack — :last-child would miss it when a "+N" badge follows, and expressing it inline would
+   need :has() inside :has(), which CSS forbids (the rule is dropped as invalid). */
 .up-stack.is-spread-left .up-stack-item:hover .up-stack-vis { transform: translateX(-8px) translateY(-3px); }
-.up-stack.is-spread-left .up-stack-item:last-child:hover .up-stack-vis { transform: translateY(-3px); }
-.up-stack.is-spread-left .up-stack-item:hover ~ .up-stack-item .up-stack-vis,
-.up-stack.is-spread-left .up-stack-item:hover ~ .up-stack-more { transform: none; }
-/* everything BEFORE the hovered chip steps left, so the row opens up towards the left */
-.up-stack.is-spread-left:has(.up-stack-item:hover) .up-stack-item .up-stack-vis { transform: translateX(-16px); }
-.up-stack.is-spread-left .up-stack-item:hover ~ .up-stack-item .up-stack-vis { transform: none; }
+.up-stack.is-spread-left .up-stack-item.is-last:hover .up-stack-vis { transform: translateY(-3px); }
+.up-stack.is-spread-left .up-stack-item:has(~ .up-stack-item:hover) .up-stack-vis { transform: translateX(-16px); }
+.up-stack.is-spread-left .up-stack-item:has(~ .up-stack-item.is-last:hover) .up-stack-vis { transform: translateX(-8px); }
 .up-root.is-dense .up-stack.is-spread-left .up-stack-item:hover .up-stack-vis { transform: translateX(-7.04px) translateY(-3px); }
-.up-root.is-dense .up-stack.is-spread-left:has(.up-stack-item:hover) .up-stack-item .up-stack-vis { transform: translateX(-14.08px); }
-.up-root.is-dense .up-stack.is-spread-left .up-stack-item:hover ~ .up-stack-item .up-stack-vis { transform: none; }
+.up-root.is-dense .up-stack.is-spread-left .up-stack-item.is-last:hover .up-stack-vis { transform: translateY(-3px); }
+.up-root.is-dense .up-stack.is-spread-left .up-stack-item:has(~ .up-stack-item:hover) .up-stack-vis { transform: translateX(-14.08px); }
+.up-root.is-dense .up-stack.is-spread-left .up-stack-item:has(~ .up-stack-item.is-last:hover) .up-stack-vis { transform: translateX(-7.04px); }
 /* Compact mode shrinks the mentioned-brand logos ~20% and scales every gap/shift to match. */
 .up-root.is-dense .up-stack-item { width: 28.16px; height: 28.16px; flex: 0 0 28.16px; }
 .up-root.is-dense .up-stack-vis { box-shadow: 0 0 0 1.76px var(--vc-bg); }

@@ -43,47 +43,34 @@
 .urt-model-ltr { font-size: 10px; font-weight: 600; color: var(--vc-muted); line-height: 1; text-transform: uppercase; }
 .up-ment-logo.has-img .urt-model-ltr { display: none; }
 
+/* ---------- mentioned? column header ----------
+   The logo is fixed-size and the label must be the part that gives way; without min-width:0 the
+   flex item refuses to shrink below its text and runs straight through the cell's right padding
+   once the column is dragged narrow. ---------- */
+.up-th-mentioned { min-width: 0; }
+.up-th-mentlbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 /* ---------- table skeleton (own cell classes referenced by skeletonRowsHtml) ---------- */
 .urt-td-prompt, .urt-td-mentioned, .urt-td-sentiment, .urt-td-rank, .urt-td-brands, .urt-td-citations, .urt-td-model, .urt-td-date { min-width: 0; }
 
 /* ================================================================
    view switcher (Table / Cards)
-   Looks exactly like core's .up-dense segmented control, but the rules are written against THIS
-   component's own class names too.
-   Why both: the CDN pin updates CSS/JS while the Bubble markup is a manual copy. Styling that
-   only works once the markup carries core's class names means a CSS-only update renders the
-   toolbar as unstyled 4px slivers — worse than either version alone. Every selector below is
-   therefore duplicated for .urt-viewswitch-btn (old markup) and .up-dense-btn (new markup).
+   The LOOK is core's .up-dense / .up-dense-btn — nothing about it is redeclared here. The JS
+   adds those classes on init, so the markup version is irrelevant and this switcher can never
+   drift from the row-height picker or any other segmented control again.
+   Only the two things that genuinely differ from core's popover usage are set: core's is
+   full-width, this one hugs its two icons.
    ================================================================ */
-.urt-viewswitch { width: auto; flex: 0 0 auto; display: inline-flex; align-items: center;
-  padding: 2px; gap: 0; background: var(--vc-switch-bg); border-radius: 8px; height: 34px; box-sizing: border-box; }
-.urt-viewswitch .up-dense-btn,
-.urt-viewswitch-btn { flex: 0 0 auto; width: 32px; height: 30px; padding: 0; box-sizing: border-box;
-  border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--vc-muted);
-  cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
-.urt-viewswitch .up-dense-btn svg,
-.urt-viewswitch-btn svg { width: 16px; height: 16px; display: block; }
-.urt-viewswitch .up-dense-btn:hover,
-.urt-viewswitch-btn:hover { color: var(--vc-text); }
-.urt-viewswitch .up-dense-btn.is-active,
-.urt-viewswitch-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
-.up-root[data-theme="dark"] .urt-viewswitch .up-dense-btn.is-active,
-.up-root[data-theme="dark"] .urt-viewswitch-btn.is-active { background: #121212; border-color: #353535; }
+.urt-viewswitch { width: auto; flex: 0 0 auto; }
+.urt-viewswitch .up-dense-btn { flex: 0 0 auto; width: 32px; }
 
 /* ================================================================
    fader (rank/sentiment range)
-   Same reasoning as the switcher: the trigger is styled here as well as inheriting .up-iconbtn,
-   so it is a proper 32px icon button even if the markup predates that class.
-   Open/active state mirrors `.up-sort.is-open .up-sort-btn` — a background tint, NO border.
+   Trigger is core's .up-iconbtn (added by the JS). Only the open/active state and the popover
+   itself are this component's own.
    ================================================================ */
 .urt-fader { position: relative; flex: 0 0 auto; }
-.urt-fader-btn { width: 32px; height: 32px; padding: 0; border: 0; border-radius: 8px;
-  background: transparent; color: var(--vc-muted); cursor: pointer;
-  display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
-.urt-fader-btn svg { width: 16px; height: 16px; display: block; }
-.urt-fader-btn:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
-.up-root[data-theme="dark"] .urt-fader-btn { color: #a0a0a0; }
-.up-root[data-theme="dark"] .urt-fader-btn:hover { color: var(--vc-text); }
+.urt-fader-btn { position: relative; }
 .urt-fader.is-open .urt-fader-btn,
 .urt-fader.is-active .urt-fader-btn { color: var(--vc-text); background: var(--vc-heading-bg); }
 /* a filter is silently destructive, so an applied range gets a dot the way the cols badge does */
@@ -91,7 +78,6 @@
   content: ""; position: absolute; top: 5px; right: 5px; width: 6px; height: 6px;
   border-radius: 999px; background: var(--vc-text); box-shadow: 0 0 0 2px var(--up-surface);
 }
-.urt-fader-btn { position: relative; }
 
 .urt-fader-menu { position: absolute; top: calc(100% + 8px); right: 0; z-index: 60; width: 268px; padding: 14px;
   border-radius: 12px; background: var(--up-surface); border: 1px solid var(--vc-border);
@@ -159,14 +145,15 @@
 .urt-card:hover { border-color: var(--vc-hover-border); box-shadow: 0 2px 10px rgba(0,0,0,.05); }
 .up-root[data-theme="dark"] .urt-card:hover { box-shadow: 0 2px 10px rgba(0,0,0,.25); }
 
-.urt-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+/* Date is top-aligned against the model chip, not vertically centred against it. */
+.urt-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.urt-card-headleft { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.urt-card-ment { flex: 0 0 auto; }
 .urt-card-date { font-size: 11px; font-weight: 500; color: var(--vc-muted); white-space: nowrap; flex: 0 0 auto; }
 
 .urt-card-badges { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
-.urt-mentioned-badge { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 8px 0 6px;
-  border-radius: 999px; background: color-mix(in srgb, var(--vt-up) 14%, transparent); color: var(--vt-up);
-  font-size: 11.5px; font-weight: 600; }
-.urt-mentioned-badge svg { width: 13px; height: 13px; display: block; }
+/* the green "Mentioned" pill is gone: the card now uses core's .up-ment-cell badge, sat next
+   to the model chip in .urt-card-headleft */
 
 .urt-card-prompt { font-size: 14px; font-weight: 500; color: var(--vc-text); letter-spacing: -0.01em;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 4px; }

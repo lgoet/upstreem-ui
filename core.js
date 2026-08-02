@@ -394,13 +394,18 @@
     var total = toNum(totalCount);
     if (total == null || total < list.length) total = list.length;
     var rest = total - shown.length;
-    var html = shown.map(function(m){
+    var last = shown.length - 1;
+    var html = shown.map(function(m, mi){
       var nm = String(m && m.name != null ? m.name : "");
       var logo = String(m && (m.favicon_url != null ? m.favicon_url : (m.favicon != null ? m.favicon : "")) || "");
       // protocol-relative urls ("//cdn...") break inside some Bubble contexts
       if (logo.indexOf("//") === 0) logo = "https:" + logo;
       var initial = nm.charAt(0) || "?";
-      return '<span class="up-stack-item' + (logo ? " has-img" : "") + '" data-brandtip="' + esc(nm) + '">' +
+      /* is-last marks the final CHIP (a "+N" badge may follow it, so :last-child will not do).
+         The left-spread hover rules need to target it, and CSS forbids :has() inside :has() —
+         which is what an inline "item not followed by another item" selector would require. */
+      return '<span class="up-stack-item' + (logo ? " has-img" : "") + (mi === last ? " is-last" : "") +
+             '" data-brandtip="' + esc(nm) + '">' +
                '<span class="up-stack-vis">' +
                  '<span class="up-stack-ltr">' + esc(initial) + '</span>' +
                  (logo ? '<img src="' + esc(logo) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
@@ -3203,6 +3208,7 @@
     GOTO_SVG: GOTO_SVG,
     HASH_ICON: HASH_ICON,
     mentCell: mentCell,
+    MENT_CHECK_SVG: MENT_YES_SVG,
     DONE_SVG: DONE_SVG,
     EXT_SVG: EXT_SVG,
 

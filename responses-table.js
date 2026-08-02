@@ -30,7 +30,8 @@
       isYes = UC.isYes, highlight = UC.highlight, esc = UC.esc, toNum = UC.toNum, fmt1 = UC.fmt1, fmtInt = UC.fmtInt,
       fmtDate = UC.fmtDate, fmtTotal = UC.fmtTotal, foldDiacritics = UC.foldDiacritics, germanExpand = UC.germanExpand,
       resolveBubbleFn = UC.resolveBubbleFn, CHECK_SVG = UC.CHECK_SVG, GOTO_SVG = UC.GOTO_SVG,
-      sentColor = UC.sentColor, brandStack = UC.brandStack, mentCell = UC.mentCell;
+      sentColor = UC.sentColor, brandStack = UC.brandStack, mentCell = UC.mentCell,
+      MENT_CHECK_SVG = UC.MENT_CHECK_SVG;
   /* Same .up-hash treatment prompts-table and visibility-chart apply — the shared rank cell is
      icon + number, never a typed "#". */
   var HASH_ICON = UC.HASH_ICON.replace('<svg ', '<svg class="up-hash" ');
@@ -128,12 +129,38 @@
     var elCols      = root.querySelector(".up-cols");
     var elColsMenu  = root.querySelector(".up-cols-menu");
     var elFader     = root.querySelector(".urt-fader");
-    /* The filter glyph is WRITTEN here, not read from the markup. Markup is a hand copy that the
-       CDN pin never touches, so an icon defined only there drifts away from the rest of the app
-       the moment it is not re-pasted. UC.SLIDERS_ICON is the same constant the charts use. */
+    /* Column-header tooltips. Set from JS for the same reason the icons are: they must not depend
+       on which markup revision is pasted into Bubble. The Mentioned? header is skipped — its text
+       is already the brand name and it carries the logo. */
+    var COL_TIPS = {
+      "up-th-sentiment": "How positively the model wrote about your brand in this response, 0–100.",
+      "up-th-rank":      "Where your brand appeared in this response, counting from the top.",
+      "up-th-brands":    "Every brand the model named in this response.",
+      "up-th-citations": "The sources the model cited for this response.",
+      "up-th-model":     "The model that produced this response."
+    };
+    Object.keys(COL_TIPS).forEach(function(cls){
+      var th = root.querySelector("." + cls);
+      if (th && !th.getAttribute("data-tip")) th.setAttribute("data-tip", COL_TIPS[cls]);
+    });
+
+    /* Normalise the toolbar onto the shared core classes.
+       The markup is a hand copy the CDN pin never touches, so anything defined ONLY there drifts
+       away from the rest of the app the moment it is not re-pasted. Rather than duplicating
+       core's styling under this component's own class names (which is how the switcher ended up
+       looking subtly different from every other segmented control), the classes are added here
+       and core.css stays the single source of truth for how these controls look. */
     (function(){
       var fb = root.querySelector(".urt-fader-btn");
-      if (fb) fb.innerHTML = UC.SLIDERS_ICON;
+      if (fb){ fb.classList.add("up-iconbtn"); fb.innerHTML = UC.SLIDERS_ICON; }
+      var vs = root.querySelector(".urt-viewswitch");
+      if (vs){
+        vs.classList.add("up-dense");
+        Array.prototype.forEach.call(vs.querySelectorAll("[data-view]"), function(b){
+          b.classList.add("up-dense-btn", "up-dense-btn-icon");
+          b.classList.remove("urt-viewswitch-btn");
+        });
+      }
     })();
     var elFaderMenu = root.querySelector(".urt-fader-menu");
     var elMent      = root.querySelector(".up-ment");
@@ -357,12 +384,18 @@
       var mentioned = isYes(r.has_user_brand);
       return '<div class="urt-card" data-run="' + esc(String(r.prompt_run_id || "")) + '" tabindex="0" role="button">' +
         '<div class="urt-card-head">' +
-          modelChip(r.model) +
+          '<div class="urt-card-headleft">' +
+            modelChip(r.model) +
+            /* Same badge the table cell uses, label in the secondary colour — no green pill.
+               Nothing at all when the brand is not mentioned: an explicit "not mentioned" is
+               noise on a card, the table column is where you compare yes against no. */
+            (mentioned ? '<span class="up-ment-cell is-yes urt-card-ment">' +
+                           '<span class="up-ment-badge">' + MENT_CHECK_SVG + '</span>Mentioned</span>' : "") +
+          '</div>' +
           '<span class="urt-card-date" data-tip="' + esc(fmtDate(r.run_at)) + '">' + esc(relativeTime(r.run_at)) + '</span>' +
         '</div>' +
         '<div class="urt-card-badges">' +
           sentCell(r.user_sentiment) + rankCell(r.user_rank) +
-          (mentioned ? '<span class="urt-mentioned-badge">' + CHECK_SVG + 'Mentioned</span>' : "") +
         '</div>' +
         '<div class="urt-card-prompt">' + highlight(promptText, state.query) + '</div>' +
         '<div class="urt-card-preview">' + esc(preview) + '</div>' +
