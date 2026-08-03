@@ -1257,10 +1257,21 @@
        in the order Bubble called them. */
     Object.keys(cfg.api).forEach(function(name){ window[name] = cfg.api[name]; });
     window[cfg.resolveLocal] = function(id){ return rootsWithId(id).length > 0; };
+    /* cfg.onMount — hand the mount object to the component BEFORE the replay below.
+       Every component writes `var mount = UC.makeMount({...})` and reads `mount.rootsWithId(...)`
+       inside the very api functions passed in here. The replay runs while makeMount is still
+       constructing, i.e. while that assignment has not happened yet, so a queued first render read
+       `mount` as undefined, threw, and the catch below swallowed it — Bubble's first render was
+       silently dropped and the component just stayed empty. Passing the object through a callback
+       keeps the replay fully synchronous (deferring it to a timeout would let a direct render that
+       arrives later in the same tick be overwritten by the older queued one). */
+    var self = { roots: roots, rootsWithId: rootsWithId, initAll: initAll };
+    if (typeof cfg.onMount === "function") cfg.onMount(self);
     var q = window[cfg.queue];
     if (q && q.length){
       q.splice(0, q.length).forEach(function(entry){
-        try { window[entry[0]].apply(null, entry[1]); } catch(e){}
+        try { window[entry[0]].apply(null, entry[1]); }
+        catch(e){ if (window.console) console.error("[upstreem] queued " + entry[0] + " failed:", e); }
       });
     }
 
@@ -1351,7 +1362,7 @@
     }, true);
     if (watchRoots) watchRoots(cfg.rootClass, initAll);
 
-    return { roots: roots, rootsWithId: rootsWithId, initAll: initAll };
+    return self;
   }
 
   /* Survives Bubble rebuilding the element, keyed by instanceId. */

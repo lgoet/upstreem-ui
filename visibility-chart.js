@@ -990,6 +990,10 @@
      whatever Bubble queued against the stubs — all from core. doRender/doLoading stay local
      because this component broadcasts to every root sharing an instanceId. */
   var mount = UC.makeMount({
+    /* onMount: makeMount replays Bubble's queued render* calls while it is still
+       constructing, i.e. before `mount` below has been assigned. Without this the very
+       first render Bubble queued threw on `mount` being undefined and was swallowed. */
+    onMount: function(m){ mount = m; },
     rootClass: "vot-root", notPortal: true,
     /* Kein wheelSel mehr — der ganze Wheel-Forwarding-Mechanismus ist aus core raus (siehe den
        Kommentar an seiner alten Stelle in makeMount). Die Ursache lag in fremdem Seiten-CSS

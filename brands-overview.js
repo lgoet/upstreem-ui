@@ -43,6 +43,32 @@
 
   function uboRun(){
   var UC = window.UpstreemCore;
+
+  /* core.js is ONE global shared by every component on the page, but each component loads it via
+     its own data-cdn-pin — so a page with mixed pins keeps whichever core.js executed last. If
+     that one predates a kit this file needs, the component used to die on the first call to it
+     with a bare "UC.<kit> is not a function", which says nothing about the actual cause. Name the
+     cause once, then degrade: the gear menu becomes a no-op and the line chart stays empty, but
+     the table, the Landscape chart and every event still work. */
+  var MISSING = ["makeMount", "makeLine", "makePopover", "makeSearch", "makeColumns",
+                 "makeTooltips", "buildLineDatasets", "makeScaleMenu"]
+    .filter(function(k){ return typeof UC[k] !== "function"; });
+  if (MISSING.length && window.console){
+    console.error("[brands-overview] The core.js running on this page is OLDER than " +
+      "brands-overview.js and is missing: " + MISSING.join(", ") + ". Every Upstreem component on " +
+      "a page shares one core.js — the last one loaded wins — so pin them ALL to the same commit " +
+      "(data-cdn-pin). Degrading: chart settings and the line chart are disabled.");
+  }
+  if (typeof UC.makeScaleMenu !== "function"){
+    UC.makeScaleMenu = function(){
+      return { open: function(){}, close: function(){}, isOpen: function(){ return false; },
+               populate: function(){}, reposition: function(){} };
+    };
+  }
+  if (typeof UC.buildLineDatasets !== "function"){
+    UC.buildLineDatasets = function(){ return { labels: [], datasets: [] }; };
+  }
+
   var esc = UC.esc, isYes = UC.isYes, fmt1 = UC.fmt1, sentColor = UC.sentColor;
   var CHECK_SVG = UC.CHECK_SVG;
 
@@ -1439,6 +1465,10 @@
   }
 
   var mount = UC.makeMount({
+    /* onMount: makeMount replays Bubble's queued render* calls while it is still
+       constructing, i.e. before `mount` below has been assigned. Without this the very
+       first render Bubble queued threw on `mount` being undefined and was swallowed. */
+    onMount: function(m){ mount = m; },
     rootClass: "ubo-root", notPortal: true,
     ctrlProp: "__uboController",
     resolveLocal: "__uboResolveLocal",

@@ -847,6 +847,10 @@
      doRender/doLoading stay local — this component deliberately resolves the single VISIBLE root
      for an instanceId instead of broadcasting, unlike the others. */
   var mount = UC.makeMount({
+    /* onMount: makeMount replays Bubble's queued render* calls while it is still
+       constructing, i.e. before `mount` below has been assigned. Without this the very
+       first render Bubble queued threw on `mount` being undefined and was swallowed. */
+    onMount: function(m){ mount = m; },
     rootClass: "tcd-root", notPortal: true,
     /* Kein wheelSel mehr — der ganze Wheel-Forwarding-Mechanismus ist aus core raus (siehe den
        Kommentar an seiner alten Stelle in makeMount). Die Ursache lag in fremdem Seiten-CSS

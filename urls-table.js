@@ -1380,6 +1380,10 @@
   /* mount from core: root registry, iframe forwarder, wheel forwarding, init cascade and the
      replay of whatever Bubble queued against the stubs. doRender/doLoading/doReset stay local. */
   var mount = UC.makeMount({
+    /* onMount: makeMount replays Bubble's queued render* calls while it is still
+       constructing, i.e. before `mount` below has been assigned. Without this the very
+       first render Bubble queued threw on `mount` being undefined and was swallowed. */
+    onMount: function(m){ mount = m; },
     rootClass: "uut-root", notPortal: true,
     ctrlProp: "__uutController",
     resolveLocal: "__uutResolveLocal",

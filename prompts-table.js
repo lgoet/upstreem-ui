@@ -2374,6 +2374,10 @@
   }
 
   var mount = UC.makeMount({
+    /* onMount: makeMount replays Bubble's queued render* calls while it is still
+       constructing, i.e. before `mount` below has been assigned. Without this the very
+       first render Bubble queued threw on `mount` being undefined and was swallowed. */
+    onMount: function(m){ mount = m; },
     rootClass: "upt-root", notPortal: true,
     ctrlProp: "__uptController",
     resolveLocal: "__uptResolveLocal",
