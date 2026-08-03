@@ -59,59 +59,63 @@
     activate     the row's company_id      (Actions -> Activate, Inactive view only)
 
   ── Filling the component ────────────────────────────────────────────────────
-  window.renderBrandsOverview({
-    instanceId: "...",
-    series: [{ company_id, day, visibility_pct }, ...],
-    companies: [{ company_id, name, color, favicon_url, visibility_window_pct }, ...],
-    filterCompanies: [{ company_id, name, color, favicon_url }, ...],   // full list for "All Brands"
-    table: [{ company_id, name, logo_url, position,
-              visibility_pct, visibility_delta_pct,
-              avg_rank, avg_rank_delta,
-              sentiment, sentiment_delta }, ...],
-    totalCount: 42,
-    granularity: "day" | "week" | "month"      // optional, only applied before the user picks one
-  });
-  window.setBrandsOverviewLoading("INSTANCE_ID", "yes" | "no");
-  window.setBrandsOverviewInactive("INSTANCE_ID", RAW_STRING_OR_ARRAY);
-  window.resetBrandsOverview("INSTANCE_ID");
-  window.setBrandsOverviewTheme("INSTANCE_ID", "yes" | "no");
+  Exactly like visibility-chart: renderBrandsOverview is a MERGE, not a replace. Every key is
+  checked on its own, and a key you leave out is left untouched. That is what lets the chart and
+  the table come from their own separate RPCs, in their own separate Run-JS steps, in whatever
+  order they happen to finish.
 
-  This is the SAME payload visibility-chart takes — the same RPC feeds the Linechart, the Landscape
-  chart AND the Active table. The Landscape chart is drawn from `table` (it needs visibility_pct +
-  sentiment + avg_rank per brand, which only that array carries), so a payload without `table`
-  shows the line chart but leaves Landscape empty.
+  window.renderBrandsOverview({ instanceId, series, companies, filterCompanies, granularity });
+  window.renderBrandsOverview({ instanceId, table, totalCount });
+  window.setBrandsOverviewInactive("INSTANCE_ID", RAW_STRING_OR_ARRAY);
+  window.setBrandsOverviewLoading("INSTANCE_ID", "yes" | "no");
+  window.setBrandsOverviewTheme("INSTANCE_ID", "yes" | "no");
+  window.resetBrandsOverview("INSTANCE_ID");
+
+  CHART RPC (step A below) — feeds the Linechart and the "All Brands" filter:
+    series          [{ company_id, day, visibility_pct }, ...]
+    companies       [{ company_id, name, color, favicon_url, visibility_window_pct }, ...]
+    filterCompanies [{ company_id, name, color, favicon_url }, ...]  full list for "All Brands"
+    granularity     "day" | "week" | "month"   optional, only applied before the user picks one
+
+  TABLE RPC (step B below) — feeds the Active table AND the Landscape chart:
+    table           [{ company_id, name, logo_url, position,
+                       visibility_pct, visibility_delta_pct,
+                       avg_rank, avg_rank_delta,
+                       sentiment, sentiment_delta }, ...]
+    totalCount      42
+
+  The Landscape chart is drawn from `table`, not from `series` — it needs visibility_pct +
+  sentiment + avg_rank per brand, and only that array carries them. So if only step A has run,
+  the Linechart is live and Landscape is still empty; that is expected, not a bug.
 
   !! NEVER paste an RPC result straight into the JS as an array literal. Bubble's raw output is NOT
   valid JavaScript: a null column arrives as `"sentiment":,` — nothing between colon and comma —
   and the step dies with "Unexpected token ','" before any of this code runs. Put the raw text in a
   backtick string; every entry point here runs strings through UpstreemCore.parseBubbleJson.
 
-  ── Run-JS "Render" step (paste as-is, swap the bracketed dynamic values) ────
-  Identical in shape to the visibility-chart step, because it is the identical RPC.
+  ── Step A: chart — own Run-JS step, own RPC ─────────────────────────────────
+  Same RPC and same step shape visibility-chart uses. Passes ONLY the chart keys; the table keeps
+  whatever step B last put there.
 
   (function () {
-    var RAW = `[VISIBILITY_RPC_RESPONSE]`;      // the same RPC visibility-chart uses
-
+    var INSTANCE_ID = `INSTANCE_ID`;
+    var RAW = `[VISIBILITY_SERIES_RPC_RESPONSE]`;
     var t = 0;
     (function go () {
       var w  = window,
           fn = w.renderBrandsOverview
             || (w.parent && w.parent.renderBrandsOverview)
-            || (w.top && w.top.renderBrandsOverview);
-      var UC = w.UpstreemCore
+            || (w.top && w.top.renderBrandsOverview),
+          UC = w.UpstreemCore
             || (w.parent && w.parent.UpstreemCore)
             || (w.top && w.top.UpstreemCore);
-
       if (typeof fn === "function" && UC && UC.parseBubbleJson) {
         var d = UC.parseBubbleJson(RAW);
-        // Your RPC returns one object with these keys; adjust only if yours nests them differently.
         fn({
-          instanceId: `INSTANCE_ID`,
-          series:          d.series          || [],
-          companies:       d.companies       || [],
-          filterCompanies: d.filterCompanies || d.companies || [],
-          table:           d.table           || [],
-          totalCount:      d.totalCount != null ? d.totalCount : null,
+          instanceId:      INSTANCE_ID,
+          series:          d.series,
+          companies:       d.companies,
+          filterCompanies: d.filterCompanies || d.companies,
           granularity:     `GRANULARITY`
         });
         return;
@@ -119,6 +123,40 @@
       if (t++ < 60) { setTimeout(go, 100); return; }
       console.error("[brands-overview] renderBrandsOverview / UpstreemCore never appeared after 6s " +
         "— check data-cdn-pin and that the component is actually on this page.");
+    })();
+  })();
+
+  If your chart RPC returns the series ARRAY itself instead of an object wrapping it, pass
+  `series: d` and feed `companies` / `filterCompanies` from wherever you hold the brand list.
+
+  ── Step B: table — own Run-JS step, own RPC ─────────────────────────────────
+  Passes ONLY the table keys; the chart keeps whatever step A last put there. Re-run this one
+  alone on sort, search and the Active/Inactive switch — the chart does not need to refetch.
+
+  (function () {
+    var INSTANCE_ID = `INSTANCE_ID`;
+    var RAW = `[BRANDS_TABLE_RPC_RESPONSE]`;
+    var TOTAL = `[TOTAL_COUNT]`;
+    var t = 0;
+    (function go () {
+      var w  = window,
+          fn = w.renderBrandsOverview
+            || (w.parent && w.parent.renderBrandsOverview)
+            || (w.top && w.top.renderBrandsOverview),
+          UC = w.UpstreemCore
+            || (w.parent && w.parent.UpstreemCore)
+            || (w.top && w.top.UpstreemCore);
+      if (typeof fn === "function" && UC && UC.parseBubbleJson) {
+        var d = UC.parseBubbleJson(RAW);
+        fn({
+          instanceId: INSTANCE_ID,
+          table:      Array.isArray(d) ? d : (d.table || d.brands || d.rows),
+          totalCount: TOTAL
+        });
+        return;
+      }
+      if (t++ < 60) { setTimeout(go, 100); return; }
+      console.error("[brands-overview] renderBrandsOverview / UpstreemCore never appeared.");
     })();
   })();
 
