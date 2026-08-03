@@ -723,20 +723,20 @@
         }).join("");
       }
       if (kind === "brands"){
-        return '<span class="uut-explain-row" style="gap:0">' +
-          '<span class="uut-explain-dot"></span><span class="uut-explain-dot" style="margin-left:-10px"></span>' +
-          '<span class="uut-explain-dot" style="margin-left:-10px"></span>' +
-          '<span class="uut-explain-dot uut-explain-more" style="margin-left:-10px">+2</span></span>';
+        return '<span class="up-explain-row" style="gap:0">' +
+          '<span class="up-explain-dot"></span><span class="up-explain-dot" style="margin-left:-4px"></span>' +
+          '<span class="up-explain-dot" style="margin-left:-4px"></span>' +
+          '<span class="up-explain-dot up-explain-more" style="margin-left:-4px">+2</span></span>';
       }
       if (kind === "share"){
-        return '<span class="uut-explain-row">18.4%' +
-               '<span class="uut-explain-up">' + TREND_UP + '</span>' +
-               '<span class="uut-explain-up">2.9%</span></span>' +
-               '<span class="uut-explain-row">6.1%' +
-               '<span class="uut-explain-down">' + TREND_DOWN + '</span>' +
-               '<span class="uut-explain-down">1.4%</span></span>';
+        return '<span class="up-explain-row">18.4%' +
+               '<span class="up-explain-up">' + TREND_UP + '</span>' +
+               '<span class="up-explain-up">2.9%</span></span>' +
+               '<span class="up-explain-row">6.1%' +
+               '<span class="up-explain-down">' + TREND_DOWN + '</span>' +
+               '<span class="up-explain-down">1.4%</span></span>';
       }
-      return '<span class="uut-explain-row">6.9%</span>';
+      return '<span class="up-explain-row">6.9%</span>';
     }
     /* Share/Brand Mentions text comes from UC.EXPLAIN_TEXT (core) — the one shared wording every
        table with these columns uses now, instead of each writing its own (this table's "brands"
@@ -763,9 +763,9 @@
       if (!info) return;
       explain.setAttribute("data-theme", isDark ? "dark" : "light");
       explain.innerHTML =
-        '<div class="uut-explain-vis">' + explainVisual(kind) + '</div>' +
-        '<div class="uut-explain-h">' + esc(info.h) + '</div>' +
-        '<div class="uut-explain-t">' + esc(info.t) + '</div>';
+        '<div class="up-explain-vis">' + explainVisual(kind) + '</div>' +
+        '<div class="up-explain-h">' + esc(info.h) + '</div>' +
+        '<div class="up-explain-t">' + esc(info.t) + '</div>';
       explain.classList.add("is-on");
       var r = el.getBoundingClientRect();
       var er = explain.getBoundingClientRect();

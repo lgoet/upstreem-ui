@@ -989,15 +989,15 @@
     function explainInfo(kind){
       if (EXPLAIN_LOCAL[kind]) return EXPLAIN_LOCAL[kind];
       if (UC.explainCopy){
-        if (kind === "sentiment") return UC.explainCopy("sentiment", {});
-        if (kind === "rank") return UC.explainCopy("rank", {});
+        if (kind === "sentiment") return UC.explainCopy("sentiment", { scope: " for this response" });
+        if (kind === "rank") return UC.explainCopy("rank", { scope: " for this response" });
         if (kind === "brands") return UC.explainCopy("brands", { scope: " in this response" });
       }
       /* Fallback for a page where an older core.js (no explainCopy yet) won the mixed-pin race —
          same wording UC.EXPLAIN_TEXT would have produced, just not shared from one place. */
       var FALLBACK = {
-        sentiment: { h: "Sentiment", t: "How positively the brand is described when it's mentioned." },
-        rank:      { h: "Rank", t: "The brand's average position among all brands mentioned. A lower number is better." },
+        sentiment: { h: "Sentiment", t: "How positively the brand is described when it's mentioned for this response." },
+        rank:      { h: "Rank", t: "The brand's average position among all brands mentioned for this response. A lower number is better." },
         brands:    { h: "Brand Mentions", t: "Which of your tracked brands are mentioned in this response. Hover a logo to see its name." }
       };
       return FALLBACK[kind] || null;
@@ -1010,16 +1010,22 @@
        literal-coloured .up-explain-row/-dot building blocks prompts-table's explainer already
        uses, for the same reason. */
     function explainVisual(kind){
-      if (kind === "sentiment") return '<span class="up-explain-row">' +
-        '<span style="width:6px;height:6px;border-radius:2px;display:inline-block;background:' + sentColor(78) + '"></span>78</span>';
-      if (kind === "rank") return '<span class="up-explain-row">' +
-        UC.HASH_ICON.replace('<svg ', '<svg style="width:12px;height:12px" ') + '3</span>';
+      /* Same "value + trend" sample prompts-table's Rank/Sentiment explainer uses — the trend
+         numbers here are as illustrative/fake as prompts-table's own (2.3/0.4, 78/4), not a claim
+         that a single response has a 30-day trend. Consistency of the sample beats correctness of
+         a number nobody reads literally. */
+      if (kind === "sentiment") return '<span class="up-explain-row">78' +
+        '<span class="up-explain-up">' + UC.TREND_UP + '</span>' +
+        '<span class="up-explain-up">4</span></span>';
+      if (kind === "rank") return '<span class="up-explain-row">' + UC.HASH_ICON + '2.3' +
+        '<span class="up-explain-down">' + UC.TREND_DOWN + '</span>' +
+        '<span class="up-explain-down">0.4</span></span>';
       if (kind === "brands") return '<span class="up-explain-row" style="gap:0">' +
-        '<span class="up-explain-dot">T</span><span class="up-explain-dot" style="margin-left:-10px">V</span>' +
-        '<span class="up-explain-dot up-explain-more" style="margin-left:-10px">+3</span></span>';
+        '<span class="up-explain-dot">T</span><span class="up-explain-dot" style="margin-left:-4px">V</span>' +
+        '<span class="up-explain-dot up-explain-more" style="margin-left:-4px">+3</span></span>';
       if (kind === "citations") return '<span class="up-explain-row" style="gap:0">' +
-        '<span class="up-explain-dot">S</span><span class="up-explain-dot" style="margin-left:-10px">A</span>' +
-        '<span class="up-explain-dot up-explain-more" style="margin-left:-10px">+5</span></span>';
+        '<span class="up-explain-dot">S</span><span class="up-explain-dot" style="margin-left:-4px">A</span>' +
+        '<span class="up-explain-dot up-explain-more" style="margin-left:-4px">+5</span></span>';
       if (kind === "model") return '<span class="up-explain-row">ChatGPT</span>';
       return "";
     }

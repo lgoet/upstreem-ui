@@ -186,8 +186,10 @@
     .up-explain-row svg { width: 14px; height: 14px; display: block; }
     .up-explain-up { color: #2ea84a; }
     .up-explain-down { color: #b0200c; }
-    .up-explain-dot { width: 26px; height: 26px; border-radius: 999px; background: #e8e8e8;
-      border: 1.5px solid #ffffff; box-shadow: 0 0 0 2px #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #6f6f6f; }
+    /* Matches the real .up-stack-item/.up-stack-vis chip exactly (28x28, radius 8, 4px ring) —
+       this sample must look like the actual table cell, not an older circular approximation of it. */
+    .up-explain-dot { width: 28px; height: 28px; border-radius: 8px; background: #e8e8e8;
+      border: 1px solid #e0e2e6; box-shadow: 0 0 0 4px #ffffff; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #6f6f6f; }
     .up-explain-more { background: #f0f0f0; }
     .up-explain[data-theme="dark"] .up-explain-h { color: #1f1f1b; }
     .up-explain[data-theme="dark"] .up-explain-t { color: rgba(31,31,27,0.66); }
@@ -195,7 +197,7 @@
     .up-explain[data-theme="dark"] .up-explain-row { color: #f0f0f0; }
     .up-explain[data-theme="dark"] .up-explain-up { color: #6ee7b7; }
     .up-explain[data-theme="dark"] .up-explain-down { color: #fca5a5; }
-    .up-explain[data-theme="dark"] .up-explain-dot { background: #3a3a3a; border-color: #4a4a4a; box-shadow: 0 0 0 2px #1b1b1b; color: #b8b8b8; }
+    .up-explain[data-theme="dark"] .up-explain-dot { background: #3a3a3a; border-color: #4a4a4a; box-shadow: 0 0 0 4px #1b1b1b; color: #b8b8b8; }
     .up-explain[data-theme="dark"] .up-explain-more { background: #2c2c2c; }
 
     

@@ -1694,25 +1694,25 @@
     }
     function explainVisual(kind){
       if (kind === "visibility"){
-        return '<span class="upt-explain-row">34%' +
-          '<span class="upt-explain-up">' + UC.TREND_UP + '</span>' +
-          '<span class="upt-explain-up">2.9%</span></span>';
+        return '<span class="up-explain-row">34%' +
+          '<span class="up-explain-up">' + UC.TREND_UP + '</span>' +
+          '<span class="up-explain-up">2.9%</span></span>';
       }
       if (kind === "rank"){
-        return '<span class="upt-explain-row">' + UC.HASH_ICON + '2.3' +
-          '<span class="upt-explain-down">' + UC.TREND_DOWN + '</span>' +
-          '<span class="upt-explain-down">0.4</span></span>';
+        return '<span class="up-explain-row">' + UC.HASH_ICON + '2.3' +
+          '<span class="up-explain-down">' + UC.TREND_DOWN + '</span>' +
+          '<span class="up-explain-down">0.4</span></span>';
       }
       if (kind === "sentiment"){
-        return '<span class="upt-explain-row">78' +
-          '<span class="upt-explain-up">' + UC.TREND_UP + '</span>' +
-          '<span class="upt-explain-up">4</span></span>';
+        return '<span class="up-explain-row">78' +
+          '<span class="up-explain-up">' + UC.TREND_UP + '</span>' +
+          '<span class="up-explain-up">4</span></span>';
       }
       if (kind === "brands"){
-        return '<span class="upt-explain-row" style="gap:0">' +
-          '<span class="upt-explain-dot"></span><span class="upt-explain-dot" style="margin-left:-10px"></span>' +
-          '<span class="upt-explain-dot" style="margin-left:-10px"></span>' +
-          '<span class="upt-explain-dot upt-explain-more" style="margin-left:-10px">+2</span></span>';
+        return '<span class="up-explain-row" style="gap:0">' +
+          '<span class="up-explain-dot"></span><span class="up-explain-dot" style="margin-left:-4px"></span>' +
+          '<span class="up-explain-dot" style="margin-left:-4px"></span>' +
+          '<span class="up-explain-dot up-explain-more" style="margin-left:-4px">+2</span></span>';
       }
       if (kind === "market"){
         return '<div style="display:flex;flex-direction:column;gap:6px;">' + marketCell("DE") + marketCell("US") + '</div>';
@@ -1724,9 +1724,9 @@
       html: function(kind){
         var info = explainInfo(kind);
         if (!info) return "";
-        return '<div class="upt-explain-vis">' + explainVisual(kind) + '</div>' +
-          '<div class="upt-explain-h">' + esc(info.h) + '</div>' +
-          '<div class="upt-explain-t">' + esc(info.t) + '</div>';
+        return '<div class="up-explain-vis">' + explainVisual(kind) + '</div>' +
+          '<div class="up-explain-h">' + esc(info.h) + '</div>' +
+          '<div class="up-explain-t">' + esc(info.t) + '</div>';
       }
     });
 
