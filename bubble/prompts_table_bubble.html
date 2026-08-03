@@ -397,6 +397,50 @@
                     {"group_key":"TagA","tag_ids":"a1,b2"}
                     Feuert NUR dieses Event -- kein Refetch, kein Zustandswechsel.
 
+
+  ── Run-JS "Groups" Step (der Step, den uptGroups ausloest) ──────────────────
+  WICHTIG zum Timing: "RPC-Action, dann Run javascript" reicht bei diesem Plugin NICHT. Die
+  Supabase-Action publiziert ihr Ergebnis als ELEMENT-STATE, und zwar asynchron -- der direkt
+  danach stehende Run-JS-Step laeuft, bevor der State gesetzt ist. Der Slot ist dann leer und
+  toArr() liefert [], was in der Konsole als "got 0 groups" erscheint.
+  Genau wie in deinen anderen Komponenten also: die Action feuert, und ein eigener Workflow
+  ("Do when <plugin element>'s state is not empty", oder das "RPC success"-Event des Plugins)
+  fuehrt DIESEN Step aus und liest den STATE, nicht "Result of step N".
+
+  (function () {
+    function toArr(raw) {
+      var s = String(raw == null ? "" : raw).trim();
+      if (!s) return [];
+      if (s[0] === "{") s = "[" + s + "]";
+      s = s.replace(/:\s*([,}\]])/g, ": null$1");
+      s = s.replace(/,\s*([}\]])/g, "$1");
+      try { return eval("(" + s + ")"); } catch (e) { return []; }
+    }
+    var INSTANCE_ID = `INSTANCE_ID`;
+    var RAW  = `[GROUPS_RPC_STATE]`;          // <- der STATE des Plugins, nicht "Result of step N"
+    var ROWS = toArr(RAW);
+
+    /* Sagt genau, welcher der beiden Faelle vorliegt, statt beide als "nichts passiert"
+       aussehen zu lassen. */
+    if (!String(RAW || "").trim()) {
+      console.warn("[groups step] Der Slot war LEER. Der RPC-State war zum Zeitpunkt dieses " +
+        "Steps noch nicht gesetzt -- haenge den Step an das Success-Event/den State-Watcher " +
+        "des Plugins statt direkt hinter die Action.");
+    } else if (!ROWS.length) {
+      console.warn("[groups step] Der Slot hatte Inhalt, liess sich aber nicht als Array " +
+        "lesen. Erste 200 Zeichen:", String(RAW).slice(0, 200));
+    }
+
+    var t = 0;
+    (function go () {
+      var fn = window.setPromptsTableGroups
+            || (window.parent && window.parent.setPromptsTableGroups)
+            || (window.top && window.top.setPromptsTableGroups);
+      if (typeof fn === "function") { fn(INSTANCE_ID, ROWS); return; }
+      if (t++ < 60) setTimeout(go, 100);
+    })();
+  })();
+
   ── Eigene Gruppierungen ─────────────────────────────────────────────────────
   Liegen AUSSCHLIESSLICH im localStorage des Browsers, unter genau diesem Key und Format:
       promptGroups = [{ "key": "SUV & Hybrid", "tag_ids": ["uuid1","uuid2"] }]
