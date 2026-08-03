@@ -15,6 +15,9 @@
   data-brand-logo      = the brand's logo url (optional)
   data-export-instance = the instanceId of the EXPORT POPUP component on the same page
   data-sticky-top      = px offset from the top at which the sticky header pins (desktop only)
+  data-sticky          = "yes" / "no" — same dynamic-input convention as data-isdark. "no" turns
+                         off the sticky header entirely on this placement; any other value (or
+                         omitted) keeps the default sticky-on-desktop behaviour.
 
   ── Event names must be unique per placement ─────────────────────────────────
   data-search-fn="bubble_fn_urtSearch_[dynamic id]"
@@ -162,6 +165,7 @@
      data-brand-logo="BRAND_LOGO"
      data-export-instance="EXPORT_INSTANCE_ID"
      data-sticky-top="171"
+     data-sticky="IS_STICKY"
      data-search-fn="bubble_fn_urtSearch"
      data-sort-fn="bubble_fn_urtSort"
      data-filter-fn="bubble_fn_urtFilter"

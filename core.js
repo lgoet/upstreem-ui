@@ -884,6 +884,14 @@
       var pagesize = elFoot.querySelector(".up-pagesize");
       var pager = elFoot.querySelector(".up-pager");
       if (!pagesize || !pager) return;
+      /* Self-locking bug: .is-wrapped forces both children to flex:1 1 100%, which by itself
+         puts them on two separate lines — so once this class is set (even wrongly, e.g. from a
+         transient skeleton-width measurement before real data settled), every future measurement
+         "confirms" wrapped is still true regardless of how much room is actually available, and
+         the footer can never recover back to one line even at full desktop width. Dropping the
+         class before measuring forces a synchronous reflow back to natural (non-forced-100%)
+         widths, so the check reflects whether the content genuinely needs two lines right now. */
+      elFoot.classList.remove("is-wrapped");
       var wrapped = Math.round(pagesize.getBoundingClientRect().top) !== Math.round(pager.getBoundingClientRect().top);
       elFoot.classList.toggle("is-wrapped", wrapped);
     }

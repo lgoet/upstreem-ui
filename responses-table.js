@@ -139,20 +139,6 @@
     var elCols      = root.querySelector(".up-cols");
     var elColsMenu  = root.querySelector(".up-cols-menu");
     var elFader     = root.querySelector(".urt-fader");
-    /* Column-header tooltips. Set from JS for the same reason the icons are: they must not depend
-       on which markup revision is pasted into Bubble. The Mentioned? header is skipped — its text
-       is already the brand name and it carries the logo. */
-    var COL_TIPS = {
-      "up-th-sentiment": "How positively the model wrote about your brand in this response, 0–100.",
-      "up-th-rank":      "Where your brand appeared in this response, counting from the top.",
-      "up-th-brands":    "Every brand the model named in this response.",
-      "up-th-citations": "The sources the model cited for this response.",
-      "up-th-model":     "The model that produced this response."
-    };
-    Object.keys(COL_TIPS).forEach(function(cls){
-      var th = root.querySelector("." + cls);
-      if (th && !th.getAttribute("data-tip")) th.setAttribute("data-tip", COL_TIPS[cls]);
-    });
 
     /* Normalise the toolbar onto the shared core classes.
        The markup is a hand copy the CDN pin never touches, so anything defined ONLY there drifts
@@ -384,6 +370,23 @@
              '</span>';
     }
 
+    /* response_preview is raw LLM output — markdown markers (**bold**) come through as literal
+       asterisks, and stray newlines break the 2-line clamp's spacing. Escape FIRST so the markdown
+       pass only ever inserts the one real tag it's allowed to (<strong>) and can't be used to smuggle
+       anything else in; ** survives esc() unchanged since it has no HTML significance. Bold only —
+       italics/links aren't worth the regex edge cases in a 2-line preview. Always ends in one "…":
+       a preview is by definition cut off, and the field's own trailing "..." (when present) is
+       inconsistent about whether it's there at all, so it's stripped and re-added the same way
+       every time rather than trusted. */
+    function mdPreview(v){
+      var t = String(v == null ? "" : v).replace(/\s+/g, " ").trim();
+      if (!t) return "";
+      t = esc(t);
+      t = t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+      t = t.replace(/(?:\.\.\.|…)\s*$/, "");
+      return t + "…";
+    }
+
     /* ---------------- table rows ---------------- */
     function rowHtml(r){
       var promptText = String(r.prompt_text == null ? "" : r.prompt_text);
@@ -416,7 +419,7 @@
           '<span class="urt-card-date" data-tip="' + esc(fmtDate(r.run_at)) + '">' + esc(relativeTime(r.run_at)) + '</span>' +
         '</div>' +
         '<div class="urt-card-prompt">' + highlight(promptText, state.query) + '</div>' +
-        '<div class="urt-card-preview">' + esc(preview) + '</div>' +
+        '<div class="urt-card-preview">' + mdPreview(preview) + '</div>' +
         '<div class="urt-card-foot">' +
           '<div class="urt-card-brands">' + brandStack(r.companies_preview, r.companies_preview_totalcount, { max: 4 }) + '</div>' +
           '<div class="urt-card-citations">' + citationsChips(r.sources_preview, true) + '</div>' +
