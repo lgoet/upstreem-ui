@@ -277,7 +277,7 @@
 
     /* ---------- brand mentioned toggle ---------- */
     .uut-brand-toggle { display: none; align-items: center; justify-content: space-between; gap: 10px; height: 32px; padding: 0 8px; border-radius: 8px;
-      background: transparent; border: 0; cursor: pointer; flex: 0 0 auto; }
+      background: transparent; border: 0; cursor: pointer; flex: 0 0 auto; font-family: inherit; }
     .uut-brand-toggle.is-visible { display: inline-flex; }
     .uut-brand-toggle:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
     .uut-brand-toggle.is-yes, .uut-brand-toggle.is-no { background: var(--vc-heading-bg); }

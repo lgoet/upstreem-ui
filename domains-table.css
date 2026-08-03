@@ -6,7 +6,7 @@
 
 /* ---------- brand mentioned toggle (mirrors urls-table's uut-brand-toggle) ---------- */
 .udt-brand-toggle { display: none; align-items: center; justify-content: space-between; gap: 10px; height: 32px; padding: 0 8px; border-radius: 8px;
-  background: transparent; border: 0; cursor: pointer; flex: 0 0 auto; }
+  background: transparent; border: 0; cursor: pointer; flex: 0 0 auto; font-family: inherit; }
 .udt-brand-toggle.is-visible { display: inline-flex; }
 .udt-brand-toggle:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
 .udt-brand-toggle.is-yes, .udt-brand-toggle.is-no { background: var(--vc-heading-bg); }

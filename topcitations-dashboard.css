@@ -154,7 +154,7 @@
 
 /* "Brand mentioned?" — its own toolbar element, left of the filter button */
 .tcd-brand-toggle { display: none; align-items: center; justify-content: space-between; gap: 10px; height: 32px; padding: 0 8px; border-radius: 8px;
-  background: transparent; border: 0; cursor: pointer; flex: 0 0 auto; }
+  background: transparent; border: 0; cursor: pointer; flex: 0 0 auto; font-family: inherit; }
 .tcd-brand-toggle.is-visible { display: inline-flex; }
 .tcd-root.tcd-hide-brand .tcd-brand-toggle { display: none !important; }
 .tcd-brand-toggle:hover { background: var(--vc-heading-bg); }

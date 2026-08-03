@@ -16,7 +16,7 @@
 
 /* ---------- brand mentioned toggle (mirrors uut-brand-toggle in urls-table.css) ---------- */
 .urt-brand-toggle { display: none; align-items: center; justify-content: space-between; gap: 10px; height: 32px; padding: 0 8px; border-radius: 8px;
-  background: transparent; border: 0; cursor: pointer; flex: 0 0 auto; }
+  background: transparent; border: 0; cursor: pointer; flex: 0 0 auto; font-family: inherit; }
 .urt-brand-toggle.is-visible { display: inline-flex; }
 .urt-brand-toggle:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
 .urt-brand-toggle.is-yes, .urt-brand-toggle.is-no { background: var(--vc-heading-bg); }
