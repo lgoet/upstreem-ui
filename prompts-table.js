@@ -1823,6 +1823,8 @@
     var GRP_CHEV = '<svg class="upt-grp-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
     /* Prompts first and default: "how many prompts is this topic actually about" is the question
        people open the grouped view with; visibility is the follow-up. */
+    /* Feather "zap" — the app's "produce something new" mark. */
+    var GEN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>';
     var GRP_MORE_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>';
     var grpRowMenu = null;   /* group key whose row menu is open, or null */
     var GRP_SORTS = [
@@ -1868,9 +1870,11 @@
 
     /* KPI cell — same primitives the flat rows use, so a Visibility figure in a group header and
        one in a row are literally the same widget. */
+    /* Value first, label under it in uppercase — the number is what you scan, the label only
+       tells you which number it is. */
     function grpKpi(label, html){
-      return '<div class="upt-grp-kpi"><span class="upt-grp-kpi-lbl">' + esc(label) + '</span>' +
-             '<span class="upt-grp-kpi-val">' + html + '</span></div>';
+      return '<div class="upt-grp-kpi"><span class="upt-grp-kpi-val">' + html + '</span>' +
+             '<span class="upt-grp-kpi-lbl">' + esc(label) + '</span></div>';
     }
     function grpHeadHtml(g){
       var id = groupId(g), open = state.expandedGroup === id;
@@ -1887,10 +1891,13 @@
       } else if (untag){
         chip = '<span class="upt-grp-name">' + esc(label) + '</span>';
       } else {
+        /* core's .up-topicchip — the same chip the topic popover and the grouping popup draw.
+           Read-only here, so no checkbox slot; everything else is identical by construction. */
         var hex = String(g.tag_hex_light || g.tag_hex_dark || "#6b7280");
-        chip = '<span class="upt-grp-topic" style="background:' + esc(hex) + '">' +
-                 (g.tag_emoji ? '<span class="upt-grp-emoji">' + esc(g.tag_emoji) + '</span>' : "") +
-                 '<span class="upt-grp-name">' + esc(label) + '</span>' +
+        if (hex.charAt(0) !== "#") hex = "#" + hex;
+        chip = '<span class="up-topicchip is-static" style="--ust-tag-color:' + esc(hex) + '">' +
+                 (g.tag_emoji ? '<span class="up-topicchip-e">' + esc(g.tag_emoji) + '</span>' : "") +
+                 '<span class="up-topicchip-lbl">' + esc(label) + '</span>' +
                '</span>';
       }
       var nAct = toNum(g.prompts_count), nIn = toNum(g.prompts_count_inactive);
@@ -1903,8 +1910,10 @@
       var rank = (rankN == null) ? '<span class="up-num is-empty">–</span>'
         : '<span class="up-rank-group">' + HASH_ICON + '<span class="up-num">' + fmt1(rankN) + '</span></span>';
       var sN = toNum(g.avg_sentiment);
+      /* No .up-sent box here: in a header row of four KPIs the boxed one read as a control among
+         plain numbers. Dot plus number, same colour logic. */
       var sent = (sN == null) ? '<span class="up-num is-empty">–</span>'
-        : '<span class="up-sent"><span class="up-sent-dot" style="background:' + UC.sentColor(sN) + '"></span>' +
+        : '<span class="upt-grp-sent"><span class="up-sent-dot" style="background:' + UC.sentColor(sN) + '"></span>' +
           '<span class="up-sent-val">' + Math.round(sN) + '</span></span>';
 
       return '<div class="upt-grp-head' + (open ? " is-open" : "") + '" data-grp="' + esc(id) + '"' +
@@ -1915,7 +1924,7 @@
             grpKpi("Ø Rank", rank) + grpKpi("Ø Sentiment", sent) +
           '</div>' +
           /* Fires a JS event and nothing else -- no state change, no refetch, by design. */
-          '<button class="upt-grp-more" type="button" data-grp-more="' + esc(id) + '">Generate More</button>' +
+          '<button class="upt-grp-more" type="button" data-grp-more="' + esc(id) + '">' + GEN_SVG + 'Generate More</button>' +
         '</div>';
     }
 

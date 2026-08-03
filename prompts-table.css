@@ -556,23 +556,33 @@
   transition: transform 160ms ease; }
 .upt-grp-head.is-open .upt-grp-chev { transform: rotate(180deg); }
 
-/* Topic chip: same emoji + name on the topic's own colour the topic popover uses. */
-.upt-grp-topic { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px;
-  border-radius: 8px; min-width: 0; }
-.upt-grp-emoji { font-size: 13px; line-height: 1; flex: 0 0 auto; }
+/* The topic chip is core's .up-topicchip (see grpHeadHtml) — nothing chip-shaped is redeclared
+   here. Only the read-only variant's cursor and the custom-group name need a line. */
+.up-topicchip.is-static { cursor: default; }
 .upt-grp-name { font-size: 13.5px; font-weight: 500; color: var(--vc-text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 
 .upt-grp-kpis { display: flex; align-items: center; justify-content: center; gap: 28px; flex: 0 0 auto; }
-.upt-grp-kpi { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 76px; }
-.upt-grp-kpi-lbl { font-size: 11px; font-weight: 400; color: var(--vc-muted); white-space: nowrap; }
+.upt-grp-kpi { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 76px; }
 .upt-grp-kpi-val { display: inline-flex; align-items: center; gap: 6px; }
+.upt-grp-kpi-lbl { font-size: 10px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--vc-muted); white-space: nowrap; }
 .upt-grp-inactive { font-size: 11px; font-weight: 500; color: var(--vc-third); }
+/* Sentiment without the bordered box the table cell uses — see grpHeadHtml. */
+.upt-grp-sent { display: inline-flex; align-items: center; gap: 6px; }
+.upt-grp-sent .up-sent-val { font-size: 14px; }
 
-.upt-grp-more { flex: 0 0 auto; height: 30px; padding: 0 12px; border-radius: 8px;
-  border: 1px solid var(--vc-border); background: transparent; color: var(--vc-text);
-  font-family: inherit; font-size: 12px; font-weight: 500; cursor: pointer; white-space: nowrap; }
-.upt-grp-more:hover { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
+/* Text only, no button chrome: it is a link-like action next to a row of readings, and a bordered
+   button there competed with the group header itself. */
+/* The 64px separation sits on the ACTION, not on the KPI block: a margin on the block that has
+   to be pushed away survives however the flex row distributes its free space. */
+.upt-grp-more { flex: 0 0 auto; margin-left: 64px; height: 28px; padding: 0; border: 0; background: transparent;
+  color: var(--vc-third); font-family: inherit; font-size: 12.5px; font-weight: 500;
+  cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;
+  transition: color 120ms ease; }
+.upt-grp-more svg { width: 14px; height: 14px; display: block; }
+.upt-grp-more:hover { color: var(--vc-text); }
 
 /* open/close animation -- duration must match GRP_ANIM_MS in prompts-table.js */
 .upt-grp-rows { overflow: hidden; }
@@ -615,7 +625,10 @@
    4px between dense buttons) instead of new one-off numbers. */
 /* 340px: the three sort labels each get their own 8px of padding left and right and still sit
    side by side. And the whole panel breathes -- 230px had every block stacked flush. */
-.upt-group-menu { width: 340px; padding: 10px; }
+/* Breite folgt dem Switcher, nicht andersherum: die drei Labels brauchen bei je 10px Padding
+   ~311px, dazu 2x6px Gap und 2x10px Panel-Padding. 360px laesst dem breitesten Label noch Luft,
+   ohne dass der Switcher rechts ueber den Rand steht. */
+.upt-group-menu { width: 360px; padding: 10px; }
 .upt-group-menu .up-pop-head { margin-bottom: 4px; }
 .upt-group-menu .up-pop-div { margin: 12px 0; }
 .upt-group-menu .up-pop-sub { margin-bottom: 8px; }
