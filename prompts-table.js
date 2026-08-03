@@ -330,6 +330,13 @@
       } catch(e){ return "count"; }
     }
     function writeGroupSort(v){ try { window.localStorage.setItem(gKey("groupsort"), v); } catch(e){} }
+    function readGroupMode(){
+      try {
+        var v = window.localStorage.getItem(gKey("groupmode"));
+        return (v === "topics" || v === "custom") ? v : "both";
+      } catch(e){ return "both"; }
+    }
+    function writeGroupMode(v){ try { window.localStorage.setItem(gKey("groupmode"), v); } catch(e){} }
 
     var isDark = isYes(root.getAttribute("data-isdark"));
     if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
@@ -433,6 +440,7 @@
       groupsHasData: false,
       groupsLoading: false,
       groupSort: readGroupSort(),           // "count" (default) | "visibility" | "name"
+      groupMode: readGroupMode(),           // "both" (default) | "topics" | "custom"
       /* Exactly ONE group is expanded at a time, same rule (and same reasoning) as domains-table's
          drilldown: with one open section the sub-pagination can live as plain fields here instead
          of being kept per group. Not persisted — an expansion is a look-at-this-now gesture. */
@@ -1521,6 +1529,11 @@
           return '<button class="up-dense-btn' + (state.groupSort === o.key ? " is-active" : "") +
                  '" type="button" data-grp-sort="' + o.key + '">' + esc(o.label) + '</button>';
         }).join("") + '</div>';
+      h += '<div class="up-pop-div"></div><div class="up-pop-sub">Show</div><div class="up-dense">' +
+        GRP_MODES.map(function(o){
+          return '<button class="up-dense-btn' + (state.groupMode === o.key ? " is-active" : "") +
+                 '" type="button" data-grp-mode="' + o.key + '">' + esc(o.label) + '</button>';
+        }).join("") + '</div>';
       h += '<div class="up-pop-div"></div><div class="up-pop-sub">Custom groupings</div>';
       if (!custom.length){
         h += '<div class="upt-group-note">No custom grouping yet.</div>';
@@ -1530,12 +1543,15 @@
           return '<div class="up-pop-row upt-group-item' + (open ? " is-menuopen" : "") + '">' +
             '<span class="upt-grp-cdot" style="background:' + esc(g.color || "#6b7280") + '"></span>' +
             '<span class="up-pop-label">' + esc(g.key) + '</span>' +
+            '<button class="upt-group-eye' + (g.hidden ? " is-off" : "") + '" type="button" data-grp-eye="' + esc(g.key) + '"' +
+              ' aria-label="' + (g.hidden ? "Show grouping" : "Hide grouping") + '" aria-pressed="' + (g.hidden ? "true" : "false") + '">' +
+              (g.hidden ? EYE_OFF_SVG : EYE_SVG) + '</button>' +
             '<button class="upt-group-more" type="button" data-grp-rowmenu="' + esc(g.key) + '" aria-label="Group actions" aria-haspopup="menu">' + GRP_MORE_SVG + '</button>' +
             /* Opens to the LEFT: this row already sits at the right edge of a 340px popover, so a
                right-opening menu would leave the panel. */
             (open ? '<div class="up-menu upt-group-rowmenu is-shown" role="menu">' +
-                '<button class="up-pop-opt" type="button" data-grp-edit="' + esc(g.key) + '">Edit</button>' +
-                '<button class="up-pop-opt is-danger" type="button" data-grp-del="' + esc(g.key) + '">Delete</button>' +
+                '<div class="up-pop-opt" data-grp-edit="' + esc(g.key) + '">Edit</div>' +
+                '<div class="up-pop-opt is-danger" data-grp-del="' + esc(g.key) + '">Delete</div>' +
               '</div>' : "") +
           '</div>';
         }).join("");
@@ -1825,8 +1841,18 @@
        people open the grouped view with; visibility is the follow-up. */
     /* Feather "refresh-cw". */
     var GEN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>';
+    var EYE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+    var EYE_OFF_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
     var GRP_MORE_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>';
     var grpRowMenu = null;   /* group key whose row menu is open, or null */
+    /* Which kind of section the view shows. "Topics" = the RPC's default (one group per topic +
+       untagged), "Custom" = only the user's own groupings, "Both" = the union. The mode rides on
+       the uptGroups event so the RPC can answer accordingly. */
+    var GRP_MODES = [
+      { key: "both",   label: "Both" },
+      { key: "topics", label: "Topics" },
+      { key: "custom", label: "Custom" }
+    ];
     var GRP_SORTS = [
       { key: "count",      label: "Prompts" },
       { key: "visibility", label: "Visibility" },
@@ -1993,10 +2019,21 @@
             var left = head.querySelector(".upt-grp-left");
             var kpis = head.querySelector(".upt-grp-kpis");
             if (!more || !left || !kpis) return;
-            /* 64px separation + the button's own width + a little slack for the row's padding. */
-            var need = more.scrollWidth + 64 + 24;
-            var free = head.clientWidth - left.scrollWidth - kpis.scrollWidth;
-            if (free < need) return;
+            /* Fails OPEN, and measures the RIGHT thing. .upt-grp-left is flex:1 1 auto, so its own
+               scrollWidth is the box's GROWN width (it fills whatever space kpis leaves) -- for a
+               short chip like "SUV" that was 796px against ~90px of real content, so the guard
+               always thought the row was nearly full and refused to reveal. What actually matters
+               is the left block's true content width: sum its children's own widths (they are not
+               flex-grow), not the grown container's. */
+            var w = head.clientWidth || 0;
+            if (w){
+              var need = 64 + 150;                    /* separation + the label's own width */
+              var leftContent = 0;
+              Array.prototype.forEach.call(left.children, function(c){ leftContent += c.offsetWidth || 0; });
+              if (left.children.length > 1) leftContent += 10 * (left.children.length - 1);  /* .upt-grp-left gap */
+              var used = leftContent + (kpis.scrollWidth || 0);
+              if (used && (w - used) < need) return;
+            }
             head.classList.add("is-hovered");
           }, GRP_HOVER_MS);
         });
@@ -2125,11 +2162,15 @@
     function fetchGroups(){
       state.groupsLoading = true;
       renderTable();
-      var custom = readCustomGroups();
-      var p = { grouped: "yes" };
-      /* Only send p_groups when the user actually HAS custom groups -- the RPC's default is one
-         group per topic plus untagged, and sending an empty array would ask for zero groups. */
-      if (custom.length) p.groups = JSON.stringify(custom);
+      /* Hidden groupings are simply not sent: the server never computes a section nobody wants to
+         see, instead of computing it and the client throwing it away. */
+      var custom = readCustomGroups().filter(function(g){ return !g.hidden; });
+      var p = { grouped: "yes", mode: state.groupMode };
+      /* Only send p_groups when the user actually HAS visible custom groups -- the RPC's default
+         is one group per topic plus untagged, and sending an empty array would ask for zero. */
+      if (custom.length) p.groups = JSON.stringify(custom.map(function(g){
+        return { key: g.key, tag_ids: g.tag_ids };   // color is a client-side concern
+      }));
       fire("data-groups-fn", "uptGroups", p);
     }
 
@@ -2482,6 +2523,15 @@
           if (groupingOn() && !state.groupsHasData) fetchGroups(); else render();
           return;
         }
+        var gmo = e.target.closest("[data-grp-mode]");
+        if (gmo){
+          state.groupMode = gmo.getAttribute("data-grp-mode");
+          writeGroupMode(state.groupMode);
+          populateGroupMenu();
+          state.expandedGroup = null;
+          if (groupingOn()) fetchGroups();
+          return;
+        }
         var gs = e.target.closest("[data-grp-sort]");
         if (gs){
           state.groupSort = gs.getAttribute("data-grp-sort");
@@ -2491,6 +2541,19 @@
              closed first so its sub-block cannot end up under a different header. */
           state.expandedGroup = null;
           renderTable();
+          return;
+        }
+        var ge2 = e.target.closest("[data-grp-eye]");
+        if (ge2){
+          var ek2 = ge2.getAttribute("data-grp-eye");
+          writeCustomGroups(readCustomGroups().map(function(g){
+            if (g.key !== ek2) return g;
+            var n = { key: g.key, tag_ids: g.tag_ids, color: g.color };
+            if (!g.hidden) n.hidden = true;      // toggle; hidden groups are simply not sent as p_groups
+            return n;
+          }));
+          populateGroupMenu();
+          if (groupingOn()) fetchGroups();
           return;
         }
         var rm = e.target.closest("[data-grp-rowmenu]");
@@ -3007,9 +3070,16 @@
         /* Stale-response guard, same shape as the drilldown's: a slow answer to an older request
            must not overwrite a newer one. */
         if (requestId != null && state.gReqId != null && String(requestId) !== String(state.gReqId)) return;
-        var list = Array.isArray(rows) ? rows : [];
+        var list = coerceRows(rows);
         state.gRows = list;
-        state.gTotal = list.length ? toNum(list[0].total_count) : 0;
+        /* The group header already knows how many prompts this group has, and that is the number
+           this pager must page through. total_count from the prompts RPC is the count of the
+           FILTERED SET -- if the workflow forgets p_tag_ids it is the whole table, and the pager
+           then offered pages that do not exist. Header first, RPC only as a fallback. */
+        var g = (state.groups || []).filter(function(x){ return groupId(x) === state.expandedGroup; })[0];
+        var headerCount = g ? toNum(g.prompts_count) : null;
+        state.gTotal = (headerCount != null) ? headerCount
+                     : (list.length ? toNum(list[0].total_count) : 0);
         state.gLoading = false;
         if (state.expandedGroup) renderGroupBlockOnly(state.expandedGroup);
       },
