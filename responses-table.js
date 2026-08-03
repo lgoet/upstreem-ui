@@ -1073,12 +1073,19 @@
       return root.contains(tg) || (elSortMenu && elSortMenu.contains(tg)) || (elColsMenu && elColsMenu.contains(tg)) ||
         (elFaderMenu && elFaderMenu.contains(tg)) || (elMentMenu && elMentMenu.contains(tg));
     }
-    document.addEventListener("click", function(e){
+    /* pointerdown, not click: closing on a stray click let a Rank/Sentiment slider drag that
+       physically released outside the menu close the popover mid-drag (same reasoning as core's
+       global popover closer, right above where this component registers with it — see there for
+       the full explanation). Deciding on pointerdown instead locks in "don't close" the moment the
+       drag legitimately starts inside the menu, before the drag can wander anywhere. */
+    document.addEventListener("pointerdown", function(e){
       if (!ownsTarget(e.target)) return;
       var inMenu = e.target.closest(".up-sort-menu, .up-cols-menu, .urt-fader-menu, .up-ment-menu");
       var onOpener = e.target.closest(".up-sort-btn, .up-cols-btn, .urt-fader-btn, .up-ment-btn");
       if (!inMenu && !onOpener) closePops();
-
+    });
+    document.addEventListener("click", function(e){
+      if (!ownsTarget(e.target)) return;
       var vs = e.target.closest("[data-view]");
       if (vs){ swapView(vs.getAttribute("data-view")); return; }
 

@@ -1918,12 +1918,22 @@
   }
   if (!window.__upPopoverGlobalBound){
     window.__upPopoverGlobalBound = true;
-    document.addEventListener("click", function(e){
+    /* pointerdown, not click: a click event fires wherever the pointer physically RELEASES, which
+       for anything you can drag inside a popover (a range slider, most notably) is wherever the
+       drag happened to end — often nowhere near the menu, sometimes outside the whole component.
+       That stray click used to read as "clicked outside" and closed the popover mid-drag, no
+       matter how carefully the drag itself was handled (pointer-capture on the slider inputs
+       still couldn't save it, because the mis-targeted event was never really about the drag
+       target at all — it was this listener reacting to release position). Deciding on pointerDOWN
+       instead makes the call once, at gesture START, using where the user actually put their
+       finger/cursor down — which is always correct: down inside the menu never closes it,
+       wherever the matching up/click eventually lands. */
+    document.addEventListener("pointerdown", function(e){
       for (var i = 0; i < POPOVERS.length; i++){
         var p = POPOVERS[i];
         if (!document.contains(p.wrap)){ POPOVERS.splice(i--, 1); continue; }
         if (!p.wrap.classList.contains("is-open")) continue;
-        if (p.wrap.contains(e.target)) continue;   // click inside the trigger or the menu itself
+        if (p.wrap.contains(e.target)) continue;   // press inside the trigger or the menu itself
         p.wrap.classList.remove("is-open");
         p.menu.classList.remove("is-shown");
         p.menu.setAttribute("aria-hidden", "true");
