@@ -1543,10 +1543,17 @@
         h += '<div class="upt-group-note">No custom grouping yet.</div>';
       } else {
         h += custom.map(function(g){
-          return '<div class="up-pop-row upt-group-item">' +
+          var open = grpRowMenu === g.key;
+          return '<div class="up-pop-row upt-group-item' + (open ? " is-menuopen" : "") + '">' +
             '<span class="upt-grp-cdot" style="background:' + esc(g.color || "#6b7280") + '"></span>' +
             '<span class="up-pop-label">' + esc(g.key) + '</span>' +
-            '<button class="upt-group-del" type="button" data-grp-del="' + esc(g.key) + '" aria-label="Delete group">' + CLOSE_SVG + '</button>' +
+            '<button class="upt-group-more" type="button" data-grp-rowmenu="' + esc(g.key) + '" aria-label="Group actions" aria-haspopup="menu">' + GRP_MORE_SVG + '</button>' +
+            /* Opens to the LEFT: this row already sits at the right edge of a 340px popover, so a
+               right-opening menu would leave the panel. */
+            (open ? '<div class="upt-group-rowmenu" role="menu">' +
+                '<button class="up-pop-opt" type="button" data-grp-edit="' + esc(g.key) + '">Edit</button>' +
+                '<button class="up-pop-opt is-danger" type="button" data-grp-del="' + esc(g.key) + '">Delete</button>' +
+              '</div>' : "") +
           '</div>';
         }).join("");
       }
@@ -1569,7 +1576,8 @@
     var GM_SEARCH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
     var GRP_TOPICS_COLLAPSED = 10;   /* show this many, then a "Show all" button */
     var grpModal = null, grpPicked = {}, grpColor = null, grpColorOpen = false,
-        grpNameTouched = false, grpQuery = "", grpSearchOpen = false, grpShowAll = false;
+        grpNameTouched = false, grpQuery = "", grpSearchOpen = false, grpShowAll = false,
+        grpEditKey = null;   /* non-null => editing that existing group instead of creating one */
     /* Reopens the dropdown the popup was launched from — closing the popup should put you back
        where you were, not leave you staring at the table. */
     function reopenGroupMenu(){
@@ -1669,6 +1677,7 @@
       var nameEl = grpModal.querySelector(".upt-gm-name-in");
       /* Prefilled from the picked topics ("Sedans & SUVs") until the user types their own. */
       if (nameEl && !grpNameTouched) nameEl.value = grpAutoName();
+      if (nameEl && grpEditKey && !nameEl.value) nameEl.value = grpEditKey;
       var col = grpColor || grpAutoColor();
       var dot = grpModal.querySelector(".upt-gm-dot");
       if (dot) dot.style.background = col;
@@ -1694,10 +1703,23 @@
       var submit = grpModal.querySelector(".upt-gm-submit");
       if (submit) submit.disabled = !(n > 0 && nameEl && nameEl.value.trim());
     }
-    function openGroupModal(){
-      closeGroupModal();
-      grpPicked = {}; grpColor = null; grpColorOpen = false; grpNameTouched = false;
+    /* Two random topic names for the placeholder, so the field shows the shape of a good name
+       ("Sedans & Hybrid") rather than an abstract instruction. */
+    function grpPlaceholder(){
+      var names = (state.topics || []).map(function(t){ return String(t.name == null ? "" : t.name); }).filter(Boolean);
+      if (names.length < 2) return "Group name…";
+      var i = Math.floor(Math.random() * names.length);
+      var j = Math.floor(Math.random() * (names.length - 1));
+      if (j >= i) j += 1;
+      return names[i] + " & " + names[j];
+    }
+    function openGroupModal(editing){
+      closeGroupModal(false);
+      grpEditKey = editing ? editing.key : null;
+      grpPicked = {}; grpColor = editing ? (editing.color || null) : null;
+      grpColorOpen = false; grpNameTouched = !!editing;
       grpQuery = ""; grpSearchOpen = false; grpShowAll = false;
+      if (editing) (editing.tag_ids || []).forEach(function(id){ grpPicked[String(id)] = true; });
       grpModal = document.createElement("div");
       grpModal.className = "up-topicmodal-backdrop upt-gm-backdrop";
       if (isDark) grpModal.setAttribute("data-theme", "dark");
@@ -1705,7 +1727,7 @@
         '<div class="up-topicmodal-card" role="dialog" aria-modal="true" aria-label="New Grouping">' +
           '<div class="up-topicmodal-head">' +
             '<div class="up-topicmodal-heading">' +
-              '<h3 class="up-topicmodal-title">New Grouping</h3>' +
+              '<h3 class="up-topicmodal-title">' + (grpEditKey ? "Edit Grouping" : "New Grouping") + '</h3>' +
               '<p class="up-topicmodal-sub">Combine several topics into one group. A prompt counts ' +
                 'towards the group if it carries at least one of the topics.</p>' +
             '</div>' +
@@ -1716,8 +1738,8 @@
               '<div class="upt-gm-labelrow">' +
                 '<span class="up-topicmodal-label">Topics</span>' +
                 '<span class="upt-gm-right">' +
-                  '<span class="upt-gm-count">0/' + GRP_MAX_TOPICS + '</span>' +
                   '<button class="upt-gm-searchbtn" type="button" data-gm-searchtoggle aria-label="Search topics">' + GM_SEARCH_SVG + '</button>' +
+                  '<span class="upt-gm-count">0/' + GRP_MAX_TOPICS + '</span>' +
                 '</span>' +
               '</div>' +
               '<div class="upt-gm-search">' +
@@ -1734,13 +1756,13 @@
                   '<button class="upt-gm-dotbtn" type="button" data-gm-colorbtn aria-label="Group color">' +
                     '<span class="upt-gm-dot"></span></button>' +
                 '</div>' +
-                '<input class="up-topicmodal-name upt-gm-name-in" type="text" placeholder="e.g. SUV &amp; Hybrid" autocomplete="off" spellcheck="false"/>' +
+                '<input class="up-topicmodal-name upt-gm-name-in" type="text" placeholder="' + esc(grpPlaceholder()) + '" autocomplete="off" spellcheck="false"/>' +
               '</div>' +
               '<div class="upt-gm-colorpanel"></div>' +
             '</div>' +
           '</div>' +
           '<div class="up-topicmodal-foot">' +
-            '<button class="up-topicmodal-save upt-gm-submit" type="button" data-gm-submit disabled>Create group</button>' +
+            '<button class="up-topicmodal-save upt-gm-submit" type="button" data-gm-submit disabled>' + (grpEditKey ? "Save" : "Create group") + '</button>' +
           '</div>' +
         '</div>';
       document.body.appendChild(grpModal);
@@ -1790,7 +1812,9 @@
           var name = nameEl ? nameEl.value.trim() : "";
           var ids = grpPickedIds();
           if (!name || !ids.length) return;
-          var all = readCustomGroups().filter(function(g){ return g.key !== name; });
+          var all = readCustomGroups().filter(function(g){
+            return g.key !== name && g.key !== grpEditKey;   // renaming replaces the old entry
+          });
           all.push({ key: name, tag_ids: ids, color: grpColor || grpAutoColor() });
           writeCustomGroups(all);            // localStorage only — no backend call, by design
           closeGroupModal();
@@ -1813,6 +1837,8 @@
     var GRP_CHEV = '<svg class="upt-grp-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
     /* Prompts first and default: "how many prompts is this topic actually about" is the question
        people open the grouped view with; visibility is the follow-up. */
+    var GRP_MORE_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>';
+    var grpRowMenu = null;   /* group key whose row menu is open, or null */
     var GRP_SORTS = [
       { key: "count",      label: "Prompts" },
       { key: "visibility", label: "Visibility" },
@@ -2375,7 +2401,7 @@
         if (!elGrpWrap) return;
         var openG = !elGrpWrap.classList.contains("is-open");
         closePops(elGrpWrap);
-        if (openG){ populateGroupMenu(); if (grpPop) grpPop.open(); }
+        if (openG){ grpRowMenu = null; populateGroupMenu(); if (grpPop) grpPop.open(); }
         else if (grpPop) grpPop.close(false);
         return;
       }
@@ -2400,9 +2426,25 @@
           renderTable();
           return;
         }
+        var rm = e.target.closest("[data-grp-rowmenu]");
+        if (rm){
+          var rk = rm.getAttribute("data-grp-rowmenu");
+          grpRowMenu = (grpRowMenu === rk) ? null : rk;
+          populateGroupMenu();
+          return;
+        }
+        var ge = e.target.closest("[data-grp-edit]");
+        if (ge){
+          var ek = ge.getAttribute("data-grp-edit");
+          grpRowMenu = null;
+          if (grpPop) grpPop.close(false);
+          openGroupModal(readCustomGroups().filter(function(x){ return x.key === ek; })[0] || null);
+          return;
+        }
         var gd = e.target.closest("[data-grp-del]");
         if (gd){
           var delKey = gd.getAttribute("data-grp-del");
+          grpRowMenu = null;
           writeCustomGroups(readCustomGroups().filter(function(g){ return g.key !== delKey; }));
           populateGroupMenu();
           if (groupingOn()) fetchGroups();
