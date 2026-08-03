@@ -1220,24 +1220,7 @@
       el.classList.toggle("is-create", inCreateMode);
       elBulk.classList.toggle("is-picking", inCreateMode && !!pickOpen);
       if (!animate){ el.innerHTML = topicListHtml(); return; }
-      var before = {};
-      Array.prototype.forEach.call(el.querySelectorAll("[data-topic]"), function(c){
-        before[c.getAttribute("data-topic")] = c.getBoundingClientRect();
-      });
-      el.innerHTML = topicListHtml();
-      Array.prototype.forEach.call(el.querySelectorAll("[data-topic]"), function(c){
-        var b = before[c.getAttribute("data-topic")];
-        if (!b) return;
-        var a = c.getBoundingClientRect();
-        var dx = b.left - a.left, dy = b.top - a.top;
-        if (!dx && !dy) return;
-        c.style.transition = "none";
-        c.style.transform = "translate(" + dx + "px," + dy + "px)";
-        void c.offsetWidth;
-        c.style.transition = "transform 200ms cubic-bezier(.2,0,.38,.9)";
-        c.style.transform = "";
-        c.addEventListener("transitionend", function te(){ c.style.transition = ""; c.removeEventListener("transitionend", te); });
-      });
+      UC.flipReplace(el, topicListHtml(), "[data-topic]");
     }
     /* Subtle count-up/down: the new number slides in from the direction it moved (up when the
        count grew, down when it shrank) and fades in, rather than just snapping to the new digit
@@ -1550,7 +1533,7 @@
             '<button class="upt-group-more" type="button" data-grp-rowmenu="' + esc(g.key) + '" aria-label="Group actions" aria-haspopup="menu">' + GRP_MORE_SVG + '</button>' +
             /* Opens to the LEFT: this row already sits at the right edge of a 340px popover, so a
                right-opening menu would leave the panel. */
-            (open ? '<div class="upt-group-rowmenu" role="menu">' +
+            (open ? '<div class="up-menu upt-group-rowmenu is-shown" role="menu">' +
                 '<button class="up-pop-opt" type="button" data-grp-edit="' + esc(g.key) + '">Edit</button>' +
                 '<button class="up-pop-opt is-danger" type="button" data-grp-del="' + esc(g.key) + '">Delete</button>' +
               '</div>' : "") +
@@ -1642,7 +1625,7 @@
         '<span class="up-topicchip-check' + (on ? " is-on" : "") + '">' + CHECK_SVG + '</span>' +
       '</button>';
     }
-    function renderGroupModalBody(){
+    function renderGroupModalBody(animateList){
       if (!grpModal) return;
       var picked = grpPickedIds(), n = picked.length, full = n >= GRP_MAX_TOPICS;
 
@@ -1657,9 +1640,13 @@
       var list = grpModal.querySelector(".upt-gm-list");
       if (list){
         list.className = "upt-gm-list up-topiclist" + (full ? " is-full" : "") + (grpShowAll ? " is-scroll" : "");
-        list.innerHTML = visible.length
+        var html = visible.length
           ? visible.map(grpChipHtml).join("")
           : '<div class="upt-topicmenu-empty">No topics match</div>';
+        /* Exactly the popover's mechanic, from the same helper — the chips that shift because a
+           checkbox appeared slide to their new places instead of jumping. */
+        if (animateList) UC.flipReplace(list, html, "[data-gm-topic]");
+        else list.innerHTML = html;
       }
       var moreBtn = grpModal.querySelector(".upt-gm-more");
       if (moreBtn){
@@ -1803,8 +1790,7 @@
           if (grpPicked[tid]) delete grpPicked[tid];
           else if (grpPickedIds().length < GRP_MAX_TOPICS) grpPicked[tid] = true;
           else return;                       // at the cap; .is-full already says so visually
-          if (!grpColor) grpColorOpen = grpColorOpen;   // auto colour follows the selection
-          renderGroupModalBody();
+          renderGroupModalBody(true);
           return;
         }
         if (e.target.closest("[data-gm-submit]")){
@@ -3090,25 +3076,52 @@
     console.warn("[prompts-table] " + fnName + ": no .upt-root with data-instance " +
       JSON.stringify(id) + ". On this page: " + (have.length ? have.join(", ") : "no .upt-root at all") + ".");
   }
+  /* Reports what ACTUALLY arrived instead of guessing at it. The previous message said "the
+     array handed in was empty" for every non-string value -- including undefined, null and a
+     plain object -- which made three different causes look like one. */
+  function describeArg(v){
+    if (v === undefined) return "undefined (the argument never arrived)";
+    if (v === null) return "null";
+    var t = Object.prototype.toString.call(v).slice(8, -1);
+    var extra = "";
+    try { extra = " — value: " + JSON.stringify(v).slice(0, 240); } catch(e){ extra = ""; }
+    if (t === "Array") return "Array(" + v.length + ")" + extra;
+    if (t === "String") return "String(" + v.length + " chars)" + extra;
+    return t + extra;
+  }
+  function coerceRows(v){
+    if (typeof v === "string") v = UC.parseBubbleJson(v);
+    if (Array.isArray(v)) return v;
+    /* Some Bubble plugins hand the result back wrapped. Accept the common shapes rather than
+       silently rendering nothing. */
+    if (v && typeof v === "object"){
+      var keys = ["rows", "data", "result", "results", "items", "groups"];
+      for (var i = 0; i < keys.length; i++){
+        var inner = v[keys[i]];
+        if (typeof inner === "string") inner = UC.parseBubbleJson(inner);
+        if (Array.isArray(inner)) return inner;
+      }
+      /* A single row delivered as one object, not wrapped in an array. */
+      if (v.group_key != null || v.tag_id != null || v.is_untagged != null) return [v];
+    }
+    return [];
+  }
   function doGroups(id, rows){
-    var list = rows;
-    if (typeof list === "string") list = UC.parseBubbleJson(list);
-    if (!Array.isArray(list)) list = [];
+    /* Called as setPromptsTableGroups(ROWS) with the id left out: treat the first argument as
+       the rows and fall back to the only root on the page. */
+    if (rows === undefined && (Array.isArray(id) || (id && typeof id === "object"))){ rows = id; id = null; }
+    var list = coerceRows(rows);
     var ctrl = id ? resolve(id) : initRoot(document.querySelector(".upt-root"));
     if (!ctrl || !ctrl.setGroups){ warnNoRoot("setPromptsTableGroups", id); return false; }
     if (!list.length && window.console){
-      console.warn("[prompts-table] setPromptsTableGroups got 0 groups" +
-        (typeof rows === "string" ? " — the raw string did not parse into an array. First 120 chars: " +
-          JSON.stringify(String(rows).slice(0, 120)) : " — the array handed in was empty.") +
-        " The grouped view will show its empty state.");
+      console.warn("[prompts-table] setPromptsTableGroups got 0 groups. Second argument was: " +
+        describeArg(rows) + ". Expected an array of group rows (or the JSON string of one).");
     }
     ctrl.setGroups(list);
     return true;
   }
   function doGroupPrompts(id, rows, requestId){
-    var list = rows;
-    if (typeof list === "string") list = UC.parseBubbleJson(list);
-    if (!Array.isArray(list)) list = [];
+    var list = coerceRows(rows);
     var ctrl = id ? resolve(id) : initRoot(document.querySelector(".upt-root"));
     if (!ctrl || !ctrl.setGroupPrompts){ warnNoRoot("setPromptsTableGroupPrompts", id); return false; }
     ctrl.setGroupPrompts(list, requestId);

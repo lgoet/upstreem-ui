@@ -1302,8 +1302,11 @@
       try { if (window.parent && window.parent !== window) targets.push(window.parent); } catch(e){}
       try { if (window.top && window.top !== window && targets.indexOf(window.top) === -1) targets.push(window.top); } catch(e){}
       if (!targets.length) return;
+      /* arg3 exists because a setter can genuinely need three: setPromptsTableGroupPrompts takes
+         (id, rows, requestId), and dropping the request id across a frame boundary silently
+         re-enabled the stale-response bug the id is there to prevent. */
       function makeDeliver(w){
-        return function(fnName, id, arg1, arg2){
+        return function(fnName, id, arg1, arg2, arg3){
           var queue = [w], seen = [];
           while (queue.length){
             var win = queue.shift(), ifr;
@@ -1319,13 +1322,13 @@
             try {
               var c = seen[a];
               if (c && typeof c[fnName] === "function" && c[cfg.resolveLocal] && c[cfg.resolveLocal](id)){
-                c[fnName](arg1, arg2); delivered = true;
+                c[fnName](arg1, arg2, arg3); delivered = true;
               }
             } catch(e){}
           }
           if (delivered) return true;
           for (var b = 0; b < seen.length; b++){
-            try { var c2 = seen[b]; if (c2 && typeof c2[fnName] === "function") return c2[fnName](arg1, arg2); } catch(e){}
+            try { var c2 = seen[b]; if (c2 && typeof c2[fnName] === "function") return c2[fnName](arg1, arg2, arg3); } catch(e){}
           }
           return false;
         };
@@ -1341,7 +1344,7 @@
               } else if (shape === "id"){
                 w[name] = function(id){ return deliver(name, id || "default", id); };
               } else {
-                w[name] = function(id, v){ return deliver(name, id || "default", id, v); };
+                w[name] = function(id, v, v2){ return deliver(name, id || "default", id, v, v2); };
               }
             });
           } catch(e){}
@@ -2077,6 +2080,40 @@
      un-clips overflow:hidden ancestors (Bubble wrappers) so position:sticky isn't trapped, and
      keeps --up-thead-off in sync with the toolbar height. Returns applySticky (wire to resize) and
      syncTheadOffset (call after the header height can change). */
+
+  /* ---------- flipReplace ----------
+     Swap a container's innerHTML and slide every item that MOVED from its old position to its new
+     one. This is what makes a chip list feel like the checkbox "grows in": the checkbox itself
+     cannot transition (it is a brand-new node), but every chip after it shifts, and animating that
+     shift is the motion people actually see. It existed only inside prompts-table's topic popover
+     as inline code; the grouping popup in the same component needed the identical thing and got a
+     hard innerHTML swap instead, which is why one felt smooth and the other snapped. */
+  function flipReplace(el, html, sel, ms){
+    if (!el) return;
+    sel = sel || "[data-flip]";
+    ms = ms || 200;
+    var before = {};
+    Array.prototype.forEach.call(el.querySelectorAll(sel), function(c){
+      var k = c.getAttribute("data-flip") || c.getAttribute("data-topic") || c.getAttribute("data-gm-topic");
+      if (k != null) before[k] = c.getBoundingClientRect();
+    });
+    el.innerHTML = html;
+    Array.prototype.forEach.call(el.querySelectorAll(sel), function(c){
+      var k = c.getAttribute("data-flip") || c.getAttribute("data-topic") || c.getAttribute("data-gm-topic");
+      var b = k != null && before[k];
+      if (!b) return;
+      var a = c.getBoundingClientRect();
+      var dx = b.left - a.left, dy = b.top - a.top;
+      if (!dx && !dy) return;
+      c.style.transition = "none";
+      c.style.transform = "translate(" + dx + "px," + dy + "px)";
+      void c.offsetWidth;
+      c.style.transition = "transform " + ms + "ms cubic-bezier(.2,0,.38,.9)";
+      c.style.transform = "";
+      c.addEventListener("transitionend", function te(){ c.style.transition = ""; c.removeEventListener("transitionend", te); });
+    });
+  }
+
   function makeSticky(root, headEl){
     function syncTheadOffset(){ if (headEl) root.style.setProperty("--up-thead-off", headEl.offsetHeight + "px"); }
     function applySticky(){
@@ -3607,7 +3644,7 @@
     applyTypeDim: applyTypeDim,
     barIsLight: barIsLight,
     measureText: measureText,
-    fmtPct: fmtPct,
+    fmtPct: fmtPct, flipReplace: flipReplace,
     capitalize: capitalize,
     truncate: truncate,
     chartDateFmt: chartDateFmt,
