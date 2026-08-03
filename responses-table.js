@@ -100,10 +100,16 @@
 
   var TABLE_PAGE_SIZES = [15, 25, 50, 100];
   var CARD_PAGE_SIZES = [6, 12, 24, 48];   // all divisible by 2/3/4/6 -> a clean column count at every breakpoint
+  var CARD_MIN_W = 360;   // floor used only to size how many equal-width (1fr) columns fit
 
   var TABLE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>';
   var CARDS_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>';
   var FADER_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><circle cx="9" cy="6" r="2" fill="currentColor" stroke="none"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="15" cy="12" r="2" fill="currentColor" stroke="none"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="11" cy="18" r="2" fill="currentColor" stroke="none"/></svg>';
+  /* Same info-circle every other table's column explainer uses (urls-table/domains-table/
+     prompts-table/visibility-chart) — .up-th-info has no markup precedent to inherit from here
+     since this component builds its header decorations from JS, same reason the brand logo/label
+     in the Mentioned? header do. */
+  var INFO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
 
   /* "vor 1 Minute" / "vor 4 Stunden", falling back to the app's normal date format once the gap
      is >= 24h. Used by both the table Date column and the card header; the full date is still
@@ -183,15 +189,25 @@
     }
     function writeRowHeight(){ try { window.localStorage.setItem(rhKey(), state.rowHeight); } catch(e){} }
 
+    /* Per-placement default view — a page that only ever wants Cards (or only Table) sets this
+       once on the root, same dynamic-input convention as data-isdark/data-sticky. Only matters on
+       the FIRST load of an instanceId: once the visitor has switched views, STORE/saved.view wins
+       from then on, same as every other remembered preference here. */
+    var defaultView = String(root.getAttribute("data-default-view") || "").toLowerCase() === "cards" ? "cards" : "table";
+
     var state = {
       rows: [], totalCount: null, hasData: false,
       loading: false, softReload: false,
       extLoading: hasProcessingAttr() ? readProcessing()
              : (LOADING_EXPLICIT[instanceId] ? !!saved.loading : false),
-      view: saved.view || "table",
+      view: saved.view || defaultView,
       // two independent pagination states — only the one matching `view` is "live" in page/pageSize
       tablePage: saved.tablePage || 1, tablePageSize: saved.tablePageSize || DEFAULT_PAGE_SIZE,
-      cardPage: saved.cardPage || 1, cardPageSize: saved.cardPageSize || 12,
+      // Cards default to the smallest page size (6) when Cards IS the page's configured default
+      // view — a page that opens straight into a card grid wants a light first paint, not 12
+      // skeleton cards. A page that starts in Table and is only switched to Cards by hand keeps
+      // the normal 12.
+      cardPage: saved.cardPage || 1, cardPageSize: saved.cardPageSize || (defaultView === "cards" ? 6 : 12),
       query: saved.query || "",
       sortField: saved.sortField || DEFAULT_SORT.field, sortDir: saved.sortDir || DEFAULT_SORT.dir,
       // rank*/sent* are the last APPLIED values, only ever written by applyFader(). The Fader
@@ -879,6 +895,30 @@
         root.classList.add(TOOLBAR_TIERS[i]);
       }
     }
+    /* Card grid column count. NEVER auto-fill: auto-fill picks however many CARD_MIN_W columns
+       physically fit the container, with no idea how many cards there actually are to show — a
+       page of 6 cards at a width that fits 4 columns renders 4 + 2, an orphaned short last row.
+       Only ever returns a column count that divides `count` evenly (searching downward from the
+       widest that still fits), so the last row is always exactly as full as every other row; when
+       that forces fewer columns than the width could hold, the 1fr track spreads the difference
+       into wider cards instead, per instruction — never more, narrower columns to force a fit. */
+    function computeCardCols(width, count){
+      if (!count || count < 1) return 1;
+      var gap = 14;
+      var maxCols = Math.max(1, Math.floor((width + gap) / (CARD_MIN_W + gap)));
+      maxCols = Math.min(maxCols, count);
+      for (var n = maxCols; n > 1; n--){
+        if (count % n === 0) return n;
+      }
+      return 1;
+    }
+    function applyCardCols(){
+      if (!elCards || state.view !== "cards") return;
+      var w = elCards.getBoundingClientRect().width || 0;
+      if (!w) return;
+      var count = (isBusy() || !state.hasData) ? state.pageSize : (state.rows.length || state.pageSize);
+      root.style.setProperty("--urt-cols", computeCardCols(w, count));
+    }
     function applyResponsive(){
       var w = root.getBoundingClientRect().width || 0;
       if (!w) return;
@@ -887,6 +927,7 @@
       root.classList.toggle("is-narrow", w < 860);
       root.classList.toggle("is-vnarrow", w < 620);
       applyCols();
+      applyCardCols();
     }
     /* Fallback when core.js is OLDER than this file.
        core.js is a single global (window.UpstreemCore) shared by every component on the page, but
@@ -924,6 +965,67 @@
     if (UC.makeClipTip){
       UC.makeClipTip(root, _tips, ".urt-td-prompt", ".urt-prompt-text");
       UC.makeClipTip(root, _tips, ".urt-card-prompt");
+    }
+
+    /* ---------------- column explainers ----------------
+       UC.makeExplain (core) — the SAME "(i) icon in the header → popover on hover" mechanism
+       urls-table/domains-table/prompts-table/visibility-chart all already use. An earlier version
+       of this file hand-rolled a different, incompatible thing (a plain data-tip sentence on the
+       header, routed through the narrow single-line tooltip) instead of using this — that's why it
+       looked broken and nothing like the rest of the app. Only makeExplain's positioning/flip/caret
+       is core; the per-column copy and the little visual sample below are this component's own,
+       same as every other consumer. The visual sample reuses the REAL cell renderers
+       (sentCell/rankCell/brandStack/citationsChips/modelChip) with representative sample data,
+       rather than a separate hand-drawn approximation. */
+    var EXPLAIN_TEXT = {
+      sentiment: { h: "Sentiment", t: "How positively the model wrote about your brand in this response, 0–100." },
+      rank:      { h: "Rank",      t: "Where your brand appeared in this response, counting from the top." },
+      brands:    { h: "Brand Mentions", t: "Every brand the model named in this response." },
+      citations: { h: "Citations", t: "The sources the model cited for this response." },
+      model:     { h: "Model",     t: "The model that produced this response." }
+    };
+    /* This panel is appended to <body>, OUTSIDE .up-root (see core.css's note on .up-explain) —
+       none of this component's CSS custom properties reach in here. The real cell renderers
+       (sentCell/rankCell/brandStack/modelChip) lean on var(--vc-text)/var(--vc-border)/etc for
+       everything but the sentiment dot's own inline colour, so reusing them directly would render
+       correctly by pure accident in light mode and near-invisible in dark. Built with the same
+       literal-coloured .up-explain-row/-dot building blocks prompts-table's explainer already
+       uses, for the same reason. */
+    function explainVisual(kind){
+      if (kind === "sentiment") return '<span class="up-explain-row">' +
+        '<span style="width:6px;height:6px;border-radius:2px;display:inline-block;background:' + sentColor(78) + '"></span>78</span>';
+      if (kind === "rank") return '<span class="up-explain-row">' +
+        UC.HASH_ICON.replace('<svg ', '<svg style="width:12px;height:12px" ') + '3</span>';
+      if (kind === "brands") return '<span class="up-explain-row" style="gap:0">' +
+        '<span class="up-explain-dot">T</span><span class="up-explain-dot" style="margin-left:-10px">V</span>' +
+        '<span class="up-explain-dot up-explain-more" style="margin-left:-10px">+3</span></span>';
+      if (kind === "citations") return '<span class="up-explain-row" style="gap:0">' +
+        '<span class="up-explain-dot">S</span><span class="up-explain-dot" style="margin-left:-10px">A</span>' +
+        '<span class="up-explain-dot up-explain-more" style="margin-left:-10px">+5</span></span>';
+      if (kind === "model") return '<span class="up-explain-row">ChatGPT</span>';
+      return "";
+    }
+    var THINFO_COLS = { sentiment: "up-th-sentiment", rank: "up-th-rank", brands: "up-th-brands", citations: "up-th-citations", model: "up-th-model" };
+    Object.keys(THINFO_COLS).forEach(function(key){
+      var th = root.querySelector("." + THINFO_COLS[key]);
+      if (!th || th.querySelector(".up-th-info")) return;
+      var info = document.createElement("span");
+      info.className = "up-th-info";
+      info.setAttribute("data-explain", key);
+      info.innerHTML = INFO_SVG;
+      th.appendChild(info);
+    });
+    if (UC.makeExplain){
+      UC.makeExplain({
+        root: root, triggerSel: ".up-th-info", getIsDark: function(){ return isDark; },
+        html: function(kind){
+          var info = EXPLAIN_TEXT[kind];
+          if (!info) return "";
+          return '<div class="up-explain-vis">' + explainVisual(kind) + '</div>' +
+            '<div class="up-explain-h">' + esc(info.h) + '</div>' +
+            '<div class="up-explain-t">' + esc(info.t) + '</div>';
+        }
+      });
     }
 
     var sortKit = UC.makeHeadSort({ root: root, state: state, cycles: HEAD_CYCLE, defaultSort: DEFAULT_SORT, onSort: function(f, d){ applySort(f, d); } });

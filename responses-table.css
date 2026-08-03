@@ -139,9 +139,12 @@
 /* ================================================================
    card mode
    ================================================================ */
-/* auto-fill + minmax does the wrapping itself: as many 435px columns as fit, then 2, then 1.
-   The min() guard keeps the track from overflowing a container narrower than one card. */
-.urt-cards { display: none; grid-template-columns: repeat(auto-fill, minmax(min(435px, 100%), 1fr)); gap: 14px; }
+/* Column count is JS-driven (--urt-cols, see applyCardCols), not auto-fill: auto-fill picks
+   however many min-width columns fit the container regardless of how many cards there actually
+   are, which routinely left an orphaned last row (e.g. 6 cards at a width that fits 4 -> 4+2).
+   applyCardCols only ever picks a column count that divides the card count evenly, growing the
+   cards WIDER instead — never a short last row. */
+.urt-cards { display: none; grid-template-columns: repeat(var(--urt-cols, 1), 1fr); gap: 14px; }
 .up-root.is-cards-view .urt-cards { display: grid; }
 .up-root.is-cards-view .up-box { display: none; }   /* .up-box wraps .up-thead + .up-tbody */
 

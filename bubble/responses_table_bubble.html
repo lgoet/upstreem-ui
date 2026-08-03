@@ -18,6 +18,12 @@
   data-sticky          = "yes" / "no" — same dynamic-input convention as data-isdark. "no" turns
                          off the sticky header entirely on this placement; any other value (or
                          omitted) keeps the default sticky-on-desktop behaviour.
+  data-default-view    = "table" / "cards" — which view this placement opens into. Only applies
+                         on this instanceId's FIRST load; once a visitor switches views by hand
+                         that choice is remembered from then on, same as every other preference
+                         here. Cards-as-default also starts the card grid at page size 6 instead
+                         of 12 (a lighter first paint), same reasoning STYLEGUIDE §1c gives for
+                         table page sizes.
 
   ── Event names must be unique per placement ─────────────────────────────────
   data-search-fn="bubble_fn_urtSearch_[dynamic id]"
@@ -166,6 +172,7 @@
      data-export-instance="EXPORT_INSTANCE_ID"
      data-sticky-top="171"
      data-sticky="IS_STICKY"
+     data-default-view="DEFAULT_VIEW"
      data-search-fn="bubble_fn_urtSearch"
      data-sort-fn="bubble_fn_urtSort"
      data-filter-fn="bubble_fn_urtFilter"
