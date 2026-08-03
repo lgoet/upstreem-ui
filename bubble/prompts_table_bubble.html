@@ -32,6 +32,7 @@
   data-search-fn    = "bubble_fn_uptSearch_[dynamic id]"
   data-sort-fn      = "bubble_fn_uptSort_[dynamic id]"
   data-brand-fn     = "bubble_fn_uptBrand_[dynamic id]"
+  data-mentioned-fn = "bubble_fn_uptMentioned_[dynamic id]"    multi-select brands filter dropdown
   data-page-fn      = "bubble_fn_uptPage_[dynamic id]"
   data-rowclick-fn  = "bubble_fn_uptRowClick_[dynamic id]"
   data-select-fn    = "bubble_fn_uptSelect_[dynamic id]"
@@ -54,6 +55,8 @@
     search   {"query":"nike","query_folded":"nike","query_de":"nike","requestId":"upt_…"}
     sort     {"order":"visibility_desc","sort_field":"visibility","sort_dir":"desc"}
     brand    {"brand_mentioned":"yes"}          "yes" | "no" | ""  (empty = off)
+    mentioned {"brands":"id1,id2"}              multi-select brands filter, same shape/behaviour
+                                                  as urls-table/responses-table's dropdown
     page     {"limit":25,"offset":50,"page":3}
     rowclick {"prompt_id":"614ebcc4-c784-440c-aff8-0394e59ae266"}
     select   {"selected":"id1,id2,id3","count":3}   -> fires on every checkbox change; carries the
@@ -198,6 +201,7 @@
     (?<="mode":")[^"]*         (?<="ids":")[^"]*            (?<="tag_ids":")[^"]*
     (?<="prompt_ids":")[^"]*   (?<="new_topic_name":")[^"]*
     (?<="new_topic_emoji":")[^"]*     (?<="new_topic_hex_light":")[^"]*  (?<="new_topic_hex_dark":")[^"]*
+    (?<="brands":")[^"]*
     (?<="limit":)[0-9]+        (?<="offset":)[0-9]+         (?<="page":)[0-9]+
     (?<="count":)[0-9]+
 
@@ -206,6 +210,7 @@
   window.setPromptsTableLoading("INSTANCE_ID", "yes" | "no");
   window.resetPromptsTable("INSTANCE_ID");
   window.setPromptsTableTopics("INSTANCE_ID", [ {id,name,emoji,hex_light,hex_dark}, … ]);
+  window.setPromptsTableBrands("INSTANCE_ID", RAW_STRING_OR_ARRAY);
 
   ── Leaving the page: cleanup ─────────────────────────────────────────────────
   The bulk bar and the "Add Topic" modal both mount to document.body (so they can escape any
@@ -314,6 +319,24 @@
     })();
   })();
 
+  ── Brands for the mentioned-brands filter — own Run-JS step, run ONCE on page load ─────
+  Same "fed in once at page load, full unfiltered list" contract as urls-table/responses-table's
+  brands dropdown. An empty list is ignored (keeps whatever was already loaded).
+
+  (function () {
+    var INSTANCE_ID = `INSTANCE_ID`;
+    var RAW = `[BRANDS_RPC_RESPONSE]`;   // [{company_id,name,logo_url}, …]
+    var t = 0;
+    (function go () {
+      var fn = window.setPromptsTableBrands
+            || (window.parent && window.parent.setPromptsTableBrands)
+            || (window.top && window.top.setPromptsTableBrands);
+      if (typeof fn === "function") { fn(INSTANCE_ID, RAW); return; }
+      if (t++ < 60) { setTimeout(go, 100); return; }
+      console.error("[prompts-table] setPromptsTableBrands never appeared.");
+    })();
+  })();
+
   ── Loading state — own Run-JS step, same reasoning as the other tables ──────
   Driven via Run-JS (not a dynamic attribute) so a Reusable placed more than once on a page
   doesn't force a full re-render on every processing-flag change.
@@ -341,6 +364,7 @@
      data-search-fn="bubble_fn_uptSearch"
      data-sort-fn="bubble_fn_uptSort"
      data-brand-fn="bubble_fn_uptBrand"
+     data-mentioned-fn="bubble_fn_uptMentioned"
      data-page-fn="bubble_fn_uptPage"
      data-rowclick-fn="bubble_fn_uptRowClick"
      data-select-fn="bubble_fn_uptSelect"

@@ -11,7 +11,7 @@
   var __uptBootQueue = window.__uptBootQueue = window.__uptBootQueue || [];
   if (!window.__uptBootStubbed){
     window.__uptBootStubbed = true;
-    ["renderPromptsTable", "setPromptsTableLoading", "resetPromptsTable", "setPromptsTableTopics"].forEach(function(n){
+    ["renderPromptsTable", "setPromptsTableLoading", "resetPromptsTable", "setPromptsTableTopics", "setPromptsTableBrands"].forEach(function(n){
       window[n] = function(){ __uptBootQueue.push([n, arguments]); };
     });
   }
@@ -315,6 +315,33 @@
     var elCols      = root.querySelector(".up-cols");
     var elColsMenu  = root.querySelector(".up-cols-menu");
 
+    /* Mentioned-brands multi-select — built from JS the same reason the header explainer icons
+       are: the markup is a hand copy the CDN pin never touches, and this table simply never had
+       the widget urls-table/responses-table already have. Same core classes (.up-ment/.up-ment-
+       menu/.up-filter-item, all already styled), inserted right after the brand toggle — same
+       toolbar position responses-table uses. */
+    (function(){
+      if (root.querySelector(".up-ment") || !elHeadTools) return;
+      var wrap = document.createElement("div");
+      wrap.className = "up-ment";
+      wrap.innerHTML =
+        '<button class="up-ment-btn" type="button" aria-haspopup="menu" aria-expanded="false">' +
+          '<span class="up-ment-lbl">All Brands</span>' +
+          '<svg class="up-ment-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
+          '<svg class="up-ment-clear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+        '</button>' +
+        '<div class="up-ment-menu" role="menu" aria-hidden="true"></div>';
+      var beforeEl = elSort || elHeadTools.firstElementChild;
+      if (beforeEl) elHeadTools.insertBefore(wrap, beforeEl); else elHeadTools.appendChild(wrap);
+    })();
+    var elMent      = root.querySelector(".up-ment");
+    var elMentMenu  = root.querySelector(".up-ment-menu");
+    var elMentLbl   = root.querySelector(".up-ment-lbl");
+    var mentQuery = "";
+    if (elMentMenu) elMentMenu.addEventListener("input", function(e){
+      if (e.target && e.target.classList && e.target.classList.contains("up-ment-search")) applyMentFilter();
+    });
+
     function rhKey(){ return "upt_rowheight__" + instanceId; }
     function readRowHeight(){
       try {
@@ -346,6 +373,8 @@
       rowHeight: readRowHeight(),
       selected: saved.selected || {},       // prompt_id -> true, persisted across pages
       brandMentioned: saved.brandMentioned || "",
+      brands: saved.brands || [],                             // full tracked-brand list, fed in once via setPromptsTableBrands
+      mentionSel: saved.mentionSel || {}, mentionApplied: saved.mentionApplied || {}, // mentioned-brands multi-select filter
       /* Active vs Inactive is a VIEW, not a filter: the two are mutually exclusive and the
          column set differs (Inactive has no Brand Mentions). Hence a segmented control on the
          left rather than another dropdown in the filter area on the right. */
@@ -399,6 +428,7 @@
         sortField: state.sortField, sortDir: state.sortDir,
         pageSize: state.pageSize, page: state.page,
         selected: state.selected, brandMentioned: state.brandMentioned,
+        brands: state.brands, mentionSel: state.mentionSel, mentionApplied: state.mentionApplied,
         status: state.status, topics: state.topics
       };
     }
@@ -490,6 +520,89 @@
       persist(); syncBrand(); renderPager();
       state.softReload = false; endSoftReload(); invalidateSelectAll();
       fire("data-brand-fn", "uptBrand", { brand_mentioned: state.brandMentioned });
+    }
+
+    /* ---------------- mentioned brands (multi-select) — same pattern as urls-table/responses-table,
+       same core classes (.up-ment/.up-filter-item), fed in via setPromptsTableBrands (below). ---- */
+    function populateMent(){
+      if (!elMentMenu) return;
+      var list = state.brands || [];
+      var selCount = Object.keys(state.mentionSel).filter(function(k){ return state.mentionSel[k]; }).length;
+      var head = '<div class="up-filter-head"><span class="up-filter-title">Mentioned brands</span>' +
+          (selCount ? '<button class="up-pop-action" type="button" data-mentreset>Reset</button>'
+             : (list.length ? '<button class="up-pop-action" type="button" data-mentall>Select all</button>' : "")) +
+        '</div>';
+      var items = !list.length ? '<div class="up-ment-empty">No brands available</div>'
+        : list.map(function(b){
+            var id = String(b.company_id != null ? b.company_id : (b.id != null ? b.id : (b.brand_id != null ? b.brand_id : b.name)));
+            var nm = String(b.name != null ? b.name : id);
+            var logo = String(b.logo_url != null ? b.logo_url : (b.logo != null ? b.logo : (b.favicon != null ? b.favicon : "")));
+            return '<div class="up-filter-item' + (state.mentionSel[id] ? " is-checked" : "") +
+                   '" data-brand="' + esc(id) + '" data-name="' + esc(nm.toLowerCase()) + '" title="' + esc(nm) + '">' +
+                     '<span class="up-filter-check">' + CHECK_SVG + '</span>' +
+                     (logo ? '<span class="up-ment-logo"><img src="' + esc(logo) + '" alt="" loading="lazy" referrerpolicy="no-referrer"/></span>'
+                           : '<span class="up-ment-logo"></span>') +
+                     '<span class="up-ment-name">' + esc(nm) + '</span></div>';
+          }).join("");
+      var srch = list.length ? '<div class="up-ment-searchwrap">' +
+            '<input class="up-ment-search" type="text" placeholder="Search brands..." autocomplete="off" spellcheck="false" value="' + esc(mentQuery) + '"/>' +
+            '<button class="up-ment-searchclear" type="button" aria-label="Clear brand search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>' : "";
+      elMentMenu.innerHTML = head + srch +
+        '<div class="up-filter-list up-ment-list">' + items + '<div class="up-ment-noresult" style="display:none">No matches</div></div>' +
+        '<button class="up-filter-submit" type="button" data-mentapply>Apply</button>';
+      applyMentFilter();
+    }
+    function applyMentFilter(){
+      if (!elMentMenu) return;
+      var inp = elMentMenu.querySelector(".up-ment-search");
+      if (inp) mentQuery = inp.value;
+      var q = (mentQuery || "").trim().toLowerCase();
+      var items = elMentMenu.querySelectorAll(".up-filter-item[data-brand]");
+      var shown = 0;
+      Array.prototype.forEach.call(items, function(it){
+        var match = !q || (it.getAttribute("data-name") || "").indexOf(q) > -1;
+        it.style.display = match ? "" : "none";
+        if (match) shown++;
+      });
+      var nr = elMentMenu.querySelector(".up-ment-noresult");
+      if (nr) nr.style.display = (items.length && shown === 0) ? "" : "none";
+    }
+    function syncMentHead(){
+      if (!elMentMenu) return;
+      var head = elMentMenu.querySelector(".up-filter-head");
+      if (!head) return;
+      var list = state.brands || [];
+      var selCount = Object.keys(state.mentionSel).filter(function(k){ return state.mentionSel[k]; }).length;
+      head.innerHTML = '<span class="up-filter-title">Mentioned brands</span>' +
+        (selCount ? '<button class="up-pop-action" type="button" data-mentreset>Reset</button>'
+           : (list.length ? '<button class="up-pop-action" type="button" data-mentall>Select all</button>' : ""));
+    }
+    function syncMentLabel(){
+      if (!elMent || !elMentLbl) return;
+      var keys = Object.keys(state.mentionApplied).filter(function(k){ return state.mentionApplied[k]; });
+      elMent.classList.toggle("is-active", !!keys.length);
+      var lbl;
+      if (!keys.length) lbl = "All Brands";
+      else if (keys.length === 1){
+        var hit = (state.brands || []).filter(function(b){
+          return String(b.company_id != null ? b.company_id : (b.id != null ? b.id : (b.brand_id != null ? b.brand_id : b.name))) === keys[0];
+        })[0];
+        lbl = hit ? String(hit.name || keys[0]) : keys[0];
+      } else lbl = keys.length + " Brands";
+      elMentLbl.textContent = lbl;
+    }
+    function submitMent(){
+      var next = {};
+      Object.keys(state.mentionSel).forEach(function(k){ if (state.mentionSel[k]) next[k] = true; });
+      var before = Object.keys(state.mentionApplied).filter(function(k){ return state.mentionApplied[k]; }).sort().join(",");
+      var after = Object.keys(next).sort().join(",");
+      if (after === before){ persist(); return; }
+      state.mentionApplied = next;
+      state.page = 1;
+      search.setLatest(null);
+      state.softReload = false; endSoftReload(); invalidateSelectAll();
+      persist(); syncMentLabel(); renderPager();
+      fire("data-mentioned-fn", "uptMentioned", { brands: Object.keys(next).join(",") });
     }
 
     /* ---------------- selection ---------------- */
@@ -1619,10 +1732,10 @@
 
     /* ---------------- dropdowns ---------------- */
     var POP_GROUP = "upt-" + instanceId;
-    [elSort, elCols].forEach(function(p){
+    [elSort, elCols, elMent].forEach(function(p){
       if (!p) return;
       p.__upPop = UC.makePopover({
-        wrap: p, menu: p.querySelector(".up-sort-menu, .up-cols-menu"), opener: p.querySelector("button"), group: POP_GROUP
+        wrap: p, menu: p.querySelector(".up-sort-menu, .up-cols-menu, .up-ment-menu"), opener: p.querySelector("button"), group: POP_GROUP
       });
     });
     function popOf(pop){ return pop && pop.__upPop; }
@@ -1631,17 +1744,17 @@
       if (open) h.open(); else h.close(false);
     }
     function closePops(except){
-      [elSort, elCols].forEach(function(p){ if (p && p !== except) setPopOpen(p, false); });
+      [elSort, elCols, elMent].forEach(function(p){ if (p && p !== except) setPopOpen(p, false); });
     }
 
     function ownsTarget(tg){
       return root.contains(tg) || (elSortMenu && elSortMenu.contains(tg)) || (elColsMenu && elColsMenu.contains(tg))
-          || (elBulk && elBulk.contains(tg));
+          || (elMentMenu && elMentMenu.contains(tg)) || (elBulk && elBulk.contains(tg));
     }
     document.addEventListener("click", function(e){
       if (!ownsTarget(e.target)) return;
-      var inMenu = e.target.closest(".up-sort-menu, .up-cols-menu");
-      var onOpener = e.target.closest(".up-sort-btn, .up-cols-btn");
+      var inMenu = e.target.closest(".up-sort-menu, .up-cols-menu, .up-ment-menu");
+      var onOpener = e.target.closest(".up-sort-btn, .up-cols-btn, .up-ment-btn");
       if (!inMenu && !onOpener) closePops();
 
       /* --- bulk action bar (lives on document.body; ownsTarget lets its clicks through) --- */
@@ -1765,6 +1878,49 @@
       if (e.target.closest(".up-search-btn")){ closePops(); toggleSearch(); return; }
       if (e.target.closest(".up-export")){ openExport(); return; }
       if (e.target.closest(".upt-brand-toggle")){ closePops(); cycleBrand(); return; }
+
+      if (e.target.closest(".up-ment-clear")){
+        state.mentionSel = {}; persist();
+        if (elMent.classList.contains("is-open")) populateMent();
+        submitMent(); setPopOpen(elMent, false);
+        return;
+      }
+      var mentBtn = e.target.closest(".up-ment-btn");
+      if (mentBtn){
+        var openM = !elMent.classList.contains("is-open");
+        closePops(elMent);
+        if (openM){ state.mentionSel = JSON.parse(JSON.stringify(state.mentionApplied)); mentQuery = ""; populateMent(); }
+        setPopOpen(elMent, openM);
+        return;
+      }
+      if (e.target.closest(".up-ment-searchclear")){
+        var msi = elMentMenu.querySelector(".up-ment-search");
+        if (msi){ msi.value = ""; mentQuery = ""; applyMentFilter(); try { msi.focus(); } catch(e2){} }
+        return;
+      }
+      var mentItem = e.target.closest("[data-brand]");
+      if (mentItem){
+        var bid = mentItem.getAttribute("data-brand");
+        state.mentionSel[bid] = !state.mentionSel[bid];
+        persist();
+        mentItem.classList.toggle("is-checked", !!state.mentionSel[bid]);
+        syncMentHead();
+        return;
+      }
+      if (e.target.closest("[data-mentall]")){
+        state.mentionSel = {};
+        (state.brands || []).forEach(function(b){
+          var id = String(b.company_id != null ? b.company_id : (b.id != null ? b.id : (b.brand_id != null ? b.brand_id : b.name)));
+          state.mentionSel[id] = true;
+        });
+        persist(); populateMent(); submitMent();
+        return;
+      }
+      if (e.target.closest("[data-mentreset]")){
+        state.mentionSel = {}; persist(); populateMent(); submitMent(); setPopOpen(elMent, false);
+        return;
+      }
+      if (e.target.closest("[data-mentapply]")){ submitMent(); setPopOpen(elMent, false); return; }
 
       // --- selection (must come before header-sorter / row-click) ---
       if (e.target.closest(".upt-selcount-clear")){ clearSelection(); return; }
@@ -1941,7 +2097,7 @@
        core.css's rules for them are generic; nothing here was ever adding the classes. */
     var SEARCH_OPEN_WIDTH = 202;
     var MIN_HEAD_GAP = 64;
-    var TOOLBAR_TIERS = ["is-w3", "is-w1", "is-w0"];   // no is-w2: that tier is urls-table's mentioned-brands dropdown, which this table doesn't have
+    var TOOLBAR_TIERS = ["is-w3", "is-w2", "is-w1", "is-w0"];   // is-w2 now applies: this table has the mentioned-brands dropdown too
     function headGap(){
       var h = elHeading && elHeading.getBoundingClientRect();
       var tl = elHeadTools && elHeadTools.getBoundingClientRect();
@@ -2010,13 +2166,14 @@
 
     function render(){
       renderTable(); renderCount(); syncHeadSorters(); syncColsBadge(); syncSelectAll(); syncBrand();
+      syncMentLabel();
       renderPageSize(); renderPager(); applyCols(); applyResponsive();
       renderStatusTabs(); renderBulkBar();
       if (root.classList.contains("up-sticky")) syncTheadOffset();
     }
 
     if (state.query){ elSearchIn.value = state.query; elSearch.classList.add("is-open", "has-text"); }
-    populateSort(); populateCols(); render();
+    populateSort(); populateCols(); populateMent(); render();
 
     return {
       root: root,
@@ -2045,6 +2202,11 @@
         if (params.totalCount != null) state.totalCount = toNum(params.totalCount);
         /* Not in the payload yet — the Inactive tab simply renders without a count until it is. */
         if (params.totalCountInactive != null) state.totalCountInactive = toNum(params.totalCountInactive);
+        if (params.brands != null){
+          var _b = Array.isArray(params.brands) ? params.brands : [];
+          if (_b.length) state.brands = _b;   // an empty list is a failed/not-yet-loaded fetch, not "no brands"
+          populateMent();
+        }
         if (params.topics != null){
           var _t = Array.isArray(params.topics) ? params.topics : [];
           if (_t.length) state.topics = _t;   // ignore a stray empty list so it can't wipe the editor
@@ -2192,6 +2354,24 @@
     return true;
   }
   function doReset(id){ var c = resolve(id); if (!c) return false; return c.reset(); }
+  /* Fills the mentioned-brands filter dropdown. Same "fed in once at page load, full unfiltered
+     list, raw string OR array" contract as every other table's brands setter (urls-table,
+     responses-table). */
+  function doBrands(id, brands){
+    var list = brands;
+    if (typeof list === "string") list = UC.parseBubbleJson(list);
+    if (!Array.isArray(list)) list = [];
+    list = list.filter(function(x){ return x != null; });
+    var ctrl = id ? resolve(id) : initRoot(document.querySelector(".upt-root"));
+    if (!ctrl){
+      if (window.console) console.warn("[prompts-table] setPromptsTableBrands: no .upt-root matches instanceId " +
+        JSON.stringify(id) + " — the brands were dropped.");
+      return false;
+    }
+    if (!list.length) return true;   // an empty list is a failed/not-yet-loaded fetch, not "no brands"
+    ctrl.update({ brands: list });
+    return true;
+  }
 
   var mount = UC.makeMount({
     rootClass: "upt-root", notPortal: true,
@@ -2200,7 +2380,7 @@
     queue: "__uptBootQueue",
     initRoot: initRoot,
     api: { renderPromptsTable: doRender, setPromptsTableLoading: doLoading, resetPromptsTable: doReset,
-           setPromptsTableTopics: doTopics },
+           setPromptsTableTopics: doTopics, setPromptsTableBrands: doBrands },
     forwardShape: { renderPromptsTable: "params", resetPromptsTable: "id" }
   });
   function rootsWithId(id){ return mount.rootsWithId(id); }
