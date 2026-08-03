@@ -558,13 +558,16 @@
 
 /* The topic chip is core's .up-topicchip (see grpHeadHtml) — nothing chip-shaped is redeclared
    here. Only the read-only variant's cursor and the custom-group name need a line. */
-.up-topicchip.is-static { cursor: default; }
+.up-topicchip.is-static { cursor: default; height: 32px; }
 .upt-grp-name { font-size: 13.5px; font-weight: 500; color: var(--vc-text);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 
-.upt-grp-kpis { display: flex; align-items: center; justify-content: center; gap: 28px; flex: 0 0 auto; }
-.upt-grp-kpi { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 76px; }
+/* flex-shrink:0 auf BEIDEN Ebenen. Ohne das schrumpften die vier Blocks im engen Header auf
+   0 Breite und lagen sichtbar uebereinander. */
+.upt-grp-kpis { display: flex; align-items: center; justify-content: flex-end; gap: 28px;
+  flex: 0 0 auto; min-width: 0; }
+.upt-grp-kpi { display: flex; flex-direction: column; align-items: center; gap: 3px;
+  flex: 0 0 auto; min-width: 76px; }
 .upt-grp-kpi-val { display: inline-flex; align-items: center; gap: 6px; }
 .upt-grp-kpi-lbl { font-size: 10px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase;
   color: var(--vc-muted); white-space: nowrap; }
@@ -578,10 +581,16 @@
 /* The 64px separation sits on the ACTION, not on the KPI block: a margin on the block that has
    to be pushed away survives however the flex row distributes its free space. */
 .upt-grp-more { flex: 0 0 auto; margin-left: 64px; height: 28px; padding: 0; border: 0; background: transparent;
+  /* Hidden until the row has been hovered for 750ms (see bindGroupHoverReveal); it slides in from
+     the right and the KPIs shift left to make room, instead of appearing on top of them. */
+  max-width: 0; opacity: 0; overflow: hidden; pointer-events: none;
+  transition: max-width 200ms cubic-bezier(.2,0,.38,.9), opacity 160ms ease, margin-left 200ms cubic-bezier(.2,0,.38,.9);
+  margin-left: 0;
   color: var(--vc-third); font-family: inherit; font-size: 12.5px; font-weight: 500;
   cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;
   transition: color 120ms ease; }
 .upt-grp-more svg { width: 14px; height: 14px; display: block; }
+.upt-grp-head.is-hovered .upt-grp-more { max-width: 200px; opacity: 1; pointer-events: auto; margin-left: 64px; }
 .upt-grp-more:hover { color: var(--vc-text); }
 
 /* open/close animation -- duration must match GRP_ANIM_MS in prompts-table.js */
@@ -593,14 +602,25 @@
 @media (prefers-reduced-motion: reduce){
   .upt-grp-rows.is-entering, .upt-grp-rows.is-closing { animation-duration: 1ms; }
 }
-.upt-grp-inner { border-top: 1px solid var(--vc-border); background: var(--vc-heading-bg); }
+/* Exactly the drilldown's panel tint (domains-table.css .udt-subrows): plain --vt-head-bg in
+   light, and in dark halfway between the page background and the table surface, because that
+   token equals --up-surface there and the panel would vanish into the table. */
+.upt-grp-head.is-open { background: var(--vt-head-bg); }
+.up-root[data-theme="dark"] .upt-grp-head.is-open {
+  background: color-mix(in srgb, var(--vc-bg) 50%, var(--up-surface) 50%); }
+.upt-grp-inner { border-top: 1px solid var(--vc-border); background: var(--vt-head-bg); }
+.up-root[data-theme="dark"] .upt-grp-inner {
+  background: color-mix(in srgb, var(--vc-bg) 50%, var(--up-surface) 50%); }
 .upt-grp-inner .up-row { background: var(--vc-bg); }
 
-.upt-grp-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: 10px 16px 10px 12px; border-top: 1px solid var(--vc-border); flex-wrap: wrap; }
-.upt-grp-range { font-size: 12px; color: var(--vc-muted); }
-.upt-grp-pager { display: flex; align-items: center; gap: 8px; }
-.upt-grp-pg { font-size: 12px; color: var(--vc-muted); font-variant-numeric: tabular-nums; }
+/* Reuses the table's own .up-pagesize / .up-pager / .up-page primitives verbatim, same as the
+   domains-table drilldown footer. */
+.upt-grp-foot { display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 14px 16px 10px 12px; }
+.upt-grp-foot .up-pagesize-seg { height: 28px; }
+.upt-grp-foot .up-pagesize-btn { height: 28px; min-width: 30px; padding: 0 8px; font-size: 12px; }
+.upt-grp-pages { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.upt-grp-foot .up-page { height: 28px; min-width: 28px; font-size: 12px; }
 
 /* header skeleton while the group RPC is in flight */
 .upt-grp-sk { display: flex; flex-direction: column; }
@@ -628,7 +648,10 @@
 /* Breite folgt dem Switcher, nicht andersherum: die drei Labels brauchen bei je 10px Padding
    ~311px, dazu 2x6px Gap und 2x10px Panel-Padding. 360px laesst dem breitesten Label noch Luft,
    ohne dass der Switcher rechts ueber den Rand steht. */
-.upt-group-menu { width: 360px; padding: 10px; }
+/* width:max-content statt einer geratenen Pixelzahl: das Panel ist per Definition so breit wie
+   sein breitester Block (der Sortier-Switcher), egal wie die Labels rendern. Zehn Runden
+   Nachjustieren waren die Folge davon, dass hier eine feste Zahl stand. */
+.upt-group-menu { width: max-content; min-width: 340px; max-width: 420px; padding: 10px; }
 .upt-group-menu .up-pop-head { margin-bottom: 4px; }
 .upt-group-menu .up-pop-div { margin: 12px 0; }
 .upt-group-menu .up-pop-sub { margin-bottom: 8px; }

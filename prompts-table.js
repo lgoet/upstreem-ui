@@ -438,7 +438,7 @@
          of being kept per group. Not persisted — an expansion is a look-at-this-now gesture. */
       expandedGroup: null,
       gRows: [], gTotal: null, gLoading: false, gReqId: null,
-      gPage: 1, gPageSize: DEFAULT_PAGE_SIZE
+      gPage: 1, gPageSize: 10
     };
     /* On a touch device a clamped prompt is unreadable, full stop: the full text is only ever
        reachable through the hover tooltip, and core.css switches tooltips off entirely under
@@ -1823,8 +1823,8 @@
     var GRP_CHEV = '<svg class="upt-grp-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
     /* Prompts first and default: "how many prompts is this topic actually about" is the question
        people open the grouped view with; visibility is the follow-up. */
-    /* Feather "zap" — the app's "produce something new" mark. */
-    var GEN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>';
+    /* Feather "refresh-cw". */
+    var GEN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>';
     var GRP_MORE_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>';
     var grpRowMenu = null;   /* group key whose row menu is open, or null */
     var GRP_SORTS = [
@@ -1928,19 +1928,40 @@
         '</div>';
     }
 
-    function grpSubToolbarHtml(){
-      var total = toNum(state.gTotal);
-      var pages = (total != null && state.gPageSize) ? Math.max(1, Math.ceil(total / state.gPageSize)) : 1;
-      var from = (state.gPage - 1) * state.gPageSize + 1;
-      var to = Math.min(state.gPage * state.gPageSize, total == null ? state.gRows.length : total);
-      var range = (total == null || !total) ? "" : (UC.fmtTotal(from) + "–" + UC.fmtTotal(to) + " of " + UC.fmtTotal(total));
+    /* Byte-for-byte the domains-table drilldown footer: the table's own .up-pagesize /
+       .up-pager / .up-page primitives, a Rows selector, the windowed page list (ends, a run
+       around the current page, "…" between) and prev/next chevrons. A pager that looked
+       different one level down would read as a different product. */
+    var GRP_PAGE_SIZES = [10, 25];
+    function grpFootHtml(){
+      var total = toNum(state.gTotal) || 0;
+      var cur = state.gPage;
+      var pageCount = Math.max(1, Math.ceil(total / state.gPageSize));
+      var from = (cur - 1) * state.gPageSize;
+      var shown = state.gRows.length;
+      var sizes = GRP_PAGE_SIZES.map(function(n){
+        return '<button class="up-pagesize-btn' + (state.gPageSize === n ? " is-active" : "") +
+               '" type="button" data-grpsize="' + n + '">' + n + '</button>';
+      }).join("");
+      var pages = pagerKit.pageWindow(cur, pageCount).map(function(p){
+        if (p === "gap") return '<span class="up-page-gap">…</span>';
+        return '<button class="up-page' + (p === cur ? " is-active" : "") + '" type="button" data-grppage="' + p + '">' + p + '</button>';
+      }).join("");
+      var info = total ? '<span class="up-pager-info">' + UC.fmtTotal(from + 1) + '–' +
+        UC.fmtTotal(from + shown) + ' of ' + UC.fmtTotal(total) + '</span>' : "";
       return '<div class="upt-grp-foot">' +
-        '<span class="upt-grp-range">' + esc(range) + '</span>' +
-        '<div class="upt-grp-pager">' +
-          '<button class="up-pg-btn" type="button" data-grp-page="prev"' + (state.gPage <= 1 ? " disabled" : "") + '>Prev</button>' +
-          '<span class="upt-grp-pg">' + state.gPage + " / " + pages + '</span>' +
-          '<button class="up-pg-btn" type="button" data-grp-page="next"' + (state.gPage >= pages ? " disabled" : "") + '>Next</button>' +
-        '</div></div>';
+        '<div class="up-pagesize"><span class="up-pagesize-lbl">Rows</span>' +
+          '<div class="up-pagesize-seg" role="group" aria-label="Rows per page">' + sizes + '</div></div>' +
+        '<div class="up-pager">' + info +
+          (pageCount > 1 ?
+            '<button class="up-page up-page-prev" type="button" aria-label="Previous page" data-grppage-prev' + (cur <= 1 ? " disabled" : "") + '>' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>' +
+            '<span class="upt-grp-pages">' + pages + '</span>' +
+            '<button class="up-page up-page-next" type="button" aria-label="Next page" data-grppage-next' + (cur >= pageCount ? " disabled" : "") + '>' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>'
+            : "") +
+        '</div>' +
+      '</div>';
     }
     function grpRowsHtml(id, entering){
       if (state.expandedGroup !== id) return "";
@@ -1950,10 +1971,41 @@
       else body = state.gRows.map(rowHtml).join("");
       return '<div class="upt-grp-rows' + (entering ? " is-entering" : "") + '" data-grp-for="' + esc(id) + '">' +
                '<div class="upt-grp-inner">' + body +
-                 (state.gLoading ? "" : grpSubToolbarHtml()) +
+                 (state.gLoading ? "" : grpFootHtml()) +
                '</div></div>';
     }
 
+
+    /* Generate More is hidden until you have hovered the row for 750ms — long enough that it does
+       not flash while you scan the list, short enough to feel deliberate. It only reveals when the
+       row can actually fit it: measured against what the KPIs plus the label already occupy, so a
+       narrow table never has it overlap them. */
+    var GRP_HOVER_MS = 750;
+    function bindGroupHoverReveal(){
+      Array.prototype.slice.call(elTbody.querySelectorAll(".upt-grp-head")).forEach(function(head){
+        if (head.getAttribute("data-hoverbound") === "1") return;
+        head.setAttribute("data-hoverbound", "1");
+        var timer = null;
+        head.addEventListener("mouseenter", function(){
+          clearTimeout(timer);
+          timer = setTimeout(function(){
+            var more = head.querySelector(".upt-grp-more");
+            var left = head.querySelector(".upt-grp-left");
+            var kpis = head.querySelector(".upt-grp-kpis");
+            if (!more || !left || !kpis) return;
+            /* 64px separation + the button's own width + a little slack for the row's padding. */
+            var need = more.scrollWidth + 64 + 24;
+            var free = head.clientWidth - left.scrollWidth - kpis.scrollWidth;
+            if (free < need) return;
+            head.classList.add("is-hovered");
+          }, GRP_HOVER_MS);
+        });
+        head.addEventListener("mouseleave", function(){
+          clearTimeout(timer);
+          head.classList.remove("is-hovered");
+        });
+      });
+    }
     function renderGroups(){
       if (state.groupsLoading || !state.groupsHasData){
         /* The table's own skeleton, not a second one: a hand-rolled row of grey bars looked like a
@@ -1985,6 +2037,7 @@
       }).join("");
       applyCols();
       initTopicsCells();
+      bindGroupHoverReveal();
     }
 
     /* Lazy load: one request per expand, and one more per page turn inside the open group. */
@@ -2480,17 +2533,35 @@
         fire("data-generatemore-fn", "uptGenerateMore", { group_key: mk, tag_ids: mg ? groupTagIds(mg).join(",") : "" });
         return;
       }
-      var grpPage = e.target.closest("[data-grp-page]");
-      if (grpPage){
+      var grpSize = e.target.closest("[data-grpsize]");
+      if (grpSize){
         e.stopPropagation();
-        if (grpPage.disabled) return;
-        var dir = grpPage.getAttribute("data-grp-page");
-        var totalG = toNum(state.gTotal);
-        var maxP = (totalG != null && state.gPageSize) ? Math.max(1, Math.ceil(totalG / state.gPageSize)) : 1;
-        var np = dir === "next" ? Math.min(maxP, state.gPage + 1) : Math.max(1, state.gPage - 1);
-        if (np === state.gPage) return;
-        state.gPage = np;
-        fetchGroupPage(0);
+        var ns = Number(grpSize.getAttribute("data-grpsize"));
+        if (ns === state.gPageSize) return;
+        state.gPageSize = ns; state.gPage = 1; fetchGroupPage(0);
+        return;
+      }
+      var grpMaxPage = function(){
+        return Math.max(1, Math.ceil((toNum(state.gTotal) || 0) / state.gPageSize));
+      };
+      var grpNum = e.target.closest("[data-grppage]");
+      if (grpNum){
+        e.stopPropagation();
+        var pn = Number(grpNum.getAttribute("data-grppage"));
+        if (!pn || pn === state.gPage) return;
+        state.gPage = pn; fetchGroupPage(0);
+        return;
+      }
+      if (e.target.closest("[data-grppage-prev]")){
+        e.stopPropagation();
+        if (state.gPage <= 1) return;
+        state.gPage -= 1; fetchGroupPage(0);
+        return;
+      }
+      if (e.target.closest("[data-grppage-next]")){
+        e.stopPropagation();
+        if (state.gPage >= grpMaxPage()) return;
+        state.gPage += 1; fetchGroupPage(0);
         return;
       }
       var grpHead = e.target.closest("[data-grp]");
