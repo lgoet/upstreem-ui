@@ -606,13 +606,16 @@
        Columns without an explicit prio fall back to their declaration order (leftmost = most
        important), which is the convention every table here already follows. */
     function prioOf(c){ return c.prio != null ? c.prio : (COLUMNS.length - COLUMNS.indexOf(c)); }
-    /* The width the lead column will actually occupy. It is NOT simply FIRST_MIN: until the user
-       drags it, its track is `minmax(30%, 1.6fr)`, so on a wide container the 30% is what really
-       applies and it is far larger than FIRST_MIN. Budgeting against FIRST_MIN alone was the bug
-       that let 8 columns claim ~1150px of minimums inside a 1100px table and silently overflow. */
+    /* The width the lead column will actually occupy BEFORE the user ever drags it: its track is
+       `minmax(30%, 1.6fr)`, so on a wide container the 30% is what really applies and it is far
+       larger than FIRST_MIN. Budgeting against FIRST_MIN alone was the bug that let 8 columns
+       claim ~1150px of minimums inside a 1100px table and silently overflow.
+       Deliberately ignores state.widths[FIRST] (the user's manual drag pin) even once one exists:
+       dropping a column is a width-driven decision that must only ever react to the CONTAINER
+       shrinking, never to the user choosing to spend more of the existing space on the lead
+       column. A pinned lead column instead squeezes every other track down toward its own
+       minimum (applyCols' own clamp handles that) — it does not make columns disappear. */
     function firstWidth(cw){
-      var pinnedW = (state.widths || {})[FIRST];
-      if (pinnedW) return Math.max(FIRST_MIN, pinnedW);
       return Math.max(FIRST_MIN, cw * 0.30);
     }
     /* Measurement-driven column dropping. The hardcoded is-narrow/is-vnarrow breakpoints below
