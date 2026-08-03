@@ -143,6 +143,31 @@
     var isDark = cfg.isDark || function(){ return false; };
     var isOwner = cfg.isOwner || function(){ return true; };
     var chart = null, points = [], hovered = null, lastRows = null, tipEl = null, tipRaf = null;
+    /* Appear animation for the logos, matching the line chart's own smooth draw-in. Chart.js's
+       own `animation` config (below) only tweens the invisible scatter points (pointRadius:0) --
+       the logos themselves are custom-drawn in logoPlugin() straight from getPixelForValue/the
+       de-overlap layout's fixed _px/_py, which is the FINAL position on every single frame from
+       frame one, so Chart.js's animation never actually reached anything visible. Driven here
+       instead, independent of Chart.js's own tween: a short RAF loop that fades the whole logo
+       layer in while it eases up a few px into place, restarted on every render() (new data, a
+       filter change, a Y-axis switch). */
+    var MX_RISE_MS = 420, MX_RISE_PX = 12;
+    var revealStart = null, revealRaf = null;
+    function revealEased(){
+      if (!revealStart) return 1;
+      var t = (Date.now() - revealStart) / MX_RISE_MS;
+      if (t >= 1) return 1;
+      return 1 - Math.pow(1 - Math.max(0, t), 4);   // easeOutQuart, same curve chart.js uses elsewhere here
+    }
+    function startReveal(){
+      revealStart = Date.now();
+      if (revealRaf) cancelAnimationFrame(revealRaf);
+      (function tick(){
+        if (chart) chart.draw();
+        if (revealEased() < 1) revealRaf = requestAnimationFrame(tick);
+        else revealRaf = null;
+      })();
+    }
     var tipX = 0, tipY = 0;
 
     /* One source of truth for colour: the same CSS custom properties every other component reads,
@@ -308,9 +333,12 @@
         id: "uboMxLogos",
         afterDatasetsDraw: function(c){
           var ctx = c.ctx, t = theme(), base = MX.logoSize;
+          var eased = revealEased();
           ctx.save();
+          ctx.globalAlpha = eased;
           points.forEach(function(pt){
             var P = mxPx(c, pt);
+            P = { px: P.px, py: P.py - (1 - eased) * MX_RISE_PX };   // settles UP into place as it fades in
             var over = hovered && hovered.company_id === pt.company_id;
             var s = over ? base * MX.hoverScale : base;
             var f = s / base;
@@ -453,6 +481,7 @@
 
     function destroy(){
       if (chart){ try { chart.destroy(); } catch(e){} chart = null; }
+      if (revealRaf){ cancelAnimationFrame(revealRaf); revealRaf = null; }
       points = []; hovered = null;
       killTip();
     }
@@ -484,6 +513,7 @@
       points = pts;
       hovered = null;
       hideTip();
+      startReveal();
 
       var existing = window.Chart.getChart ? window.Chart.getChart(canvas) : null;
       if (existing) existing.destroy();
@@ -838,9 +868,12 @@
       var h = '<div class="up-thead">' +
         '<div class="up-th up-th-idx">' + HASH_ICON + '</div>' +
         '<div class="up-th up-th-brand">Brand</div>';
-      if (colOn("visibility")) h += '<div class="up-th up-th-visibility">Visibility' + infoIcon("visibility") + '</div>';
-      if (colOn("ranking"))    h += '<div class="up-th up-th-ranking">Ranking' + infoIcon("ranking") + '</div>';
-      if (colOn("sentiment"))  h += '<div class="up-th up-th-sentiment">Sentiment' + infoIcon("sentiment") + '</div>';
+      var sortAttr = function(col){
+        return ' aria-sort="' + (sortField === col ? (sortDir === "asc" ? "ascending" : "descending") : "none") + '"';
+      };
+      if (colOn("visibility")) h += '<div class="up-th up-th-visibility is-sortable" data-sortcol="visibility"' + sortAttr("visibility") + '>Visibility' + sortChevronHtml("visibility") + infoIcon("visibility") + '</div>';
+      if (colOn("ranking"))    h += '<div class="up-th up-th-ranking is-sortable" data-sortcol="ranking"' + sortAttr("ranking") + '>Ranking' + sortChevronHtml("ranking") + infoIcon("ranking") + '</div>';
+      if (colOn("sentiment"))  h += '<div class="up-th up-th-sentiment is-sortable" data-sortcol="sentiment"' + sortAttr("sentiment") + '>Sentiment' + sortChevronHtml("sentiment") + infoIcon("sentiment") + '</div>';
       h += '<div class="up-th up-th-act"></div></div>';
       return h;
     }
@@ -1133,6 +1166,32 @@
     var SORT_LABELS = [["visibility","Visibility"],["ranking","Ranking"],["sentiment","Sentiment"]];
     var SORT_OUT = { visibility: "visibility", ranking: "rank", sentiment: "sentiment" };
     function fireSort(){ fireRaw("data-sort-fn", "uboSortTable", (SORT_OUT[sortField] || sortField) + "_" + sortDir); }
+    /* Clickable column headers, the same convention every other table in the app uses (urls-table,
+       domains-table, prompts-table, responses-table) -- this table only ever had the Sort dropdown,
+       which is still there and still works, but a header click is the expected affordance and
+       nothing here wired one up. Same cycle shape as core's UC.makeHeadSort: two clicks on a column
+       walk its asc/desc states, a third goes back to the overall default (Visibility, descending) —
+       hand-rolled rather than routed through the kit because headHtml() already rebuilds the whole
+       thead from scratch on every render (see renderTable()), so there is no separate DOM node to
+       patch afterwards the way the kit's syncHeadSorters() assumes. */
+    var SORT_CYCLE = { visibility: ["desc", "asc"], ranking: ["asc", "desc"], sentiment: ["desc", "asc"] };
+    function headSortClick(col){
+      var cyc = SORT_CYCLE[col];
+      if (!cyc) return;
+      var idx = (sortField === col) ? cyc.indexOf(sortDir) : -1;
+      var pos = idx + 1;
+      if (pos >= cyc.length){ sortField = "visibility"; sortDir = "desc"; }
+      else { sortField = col; sortDir = cyc[pos]; }
+      SORT_STORE[instanceId] = { field: sortField, dir: sortDir };
+      populateSort(); fireSort(); renderTable();
+    }
+    var THSORT_UP = '<svg class="up-thsort-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>';
+    var THSORT_DOWN = '<svg class="up-thsort-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+    function sortChevronHtml(col){
+      var on = sortField === col;
+      return '<span class="up-thsort' + (on ? (sortDir === "asc" ? " is-asc" : " is-desc") : "") +
+        '" data-for="' + col + '">' + THSORT_UP + THSORT_DOWN + '</span>';
+    }
     function populateSort(){
       if (!sortMenu) return;
       var opts = SORT_LABELS.map(function(o){
@@ -1244,6 +1303,8 @@
         if (!inMenu && !onOpener) closePops(null);
       });
       root.addEventListener("click", function(e){
+        var thSort = e.target.closest("[data-sortcol]");
+        if (thSort){ headSortClick(thSort.getAttribute("data-sortcol")); return; }
         var gran = e.target.closest(".vc-gran-btn");
         if (gran){
           if (gran.classList.contains("is-disabled")) return;

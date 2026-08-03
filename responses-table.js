@@ -78,7 +78,7 @@
        long display_name still truncates — that tail case is what the chip's data-tip is for.)
        minNarrow 44 is the mobile rendering: responses-table.css collapses the chip to a bare
        32px logo below the vnarrow breakpoint. */
-    { key: "model",      label: "Model",          w: "minmax(160px, 0.8fr)",  min: 160, minNarrow: 44, keep: true, prio: 20 },
+    { key: "model",      label: "Model",          w: "minmax(160px, 0.8fr)",  min: 160, minNarrow: 48, keep: true, prio: 20 },
     /* 120 = 28px cell padding + the widest relative-time string ("59 minutes ago", 88px). */
     { key: "date",       label: "Date",           w: "minmax(120px, 0.6fr)",  min: 120, dropAt: "narrow",  prio: 10 }
   ];
@@ -449,7 +449,15 @@
         '<div class="urt-card-prompt">' + highlight(promptText, state.query) + '</div>' +
         '<div class="urt-card-preview">' + mdPreview(preview) + '</div>' +
         '<div class="urt-card-foot">' +
-          '<div class="urt-card-brands">' + brandStack(r.companies_preview, r.companies_preview_totalcount, { max: 4 }) + '</div>' +
+          '<div class="urt-card-footleft">' +
+            '<div class="urt-card-brands">' + brandStack(r.companies_preview, r.companies_preview_totalcount, { max: 4 }) + '</div>' +
+            /* Same icon box the table's Mentioned? column uses, minus the "Yes" label -- a card
+               foot is tight on room, and the color alone (green box) already reads as "mentioned"
+               next to the brand chips it sits beside. Only rendered when true: "not mentioned"
+               isn't worth a foot slot on every card. */
+            (UC.isYes(r.has_user_brand) ? '<span class="up-ment-cell is-yes urt-card-ment" data-tip="Your brand is mentioned">' +
+              '<span class="up-ment-badge">' + MENT_CHECK_SVG + '</span></span>' : "") +
+          '</div>' +
           '<div class="urt-card-citations">' + citationsChips(r.sources_preview, r.sources_totalcount, true) + '</div>' +
         '</div>' +
       '</div>';
