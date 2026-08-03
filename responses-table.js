@@ -69,7 +69,11 @@
        larger fr share — with equal fr both columns end up the same width regardless of the mins. */
     { key: "brands",     label: "Brand Mentions", w: "minmax(178px, 1fr)",    min: 178, dropAt: "vnarrow", prio: 50 },
     { key: "citations",  label: "Citations",      w: "minmax(216px, 1.25fr)", min: 216, dropAt: "vnarrow", prio: 40 },
-    { key: "model",      label: "Model",          w: "minmax(140px, 0.8fr)",  min: 140, dropAt: "vnarrow", prio: 20 },
+    /* No dropAt: Model is one of the two columns (with Prompt, the fixed lead) that must survive
+       even in mobile mode — core.css switches it to a bare 32px logo there (see .is-vnarrow
+       .urt-model-chip in responses-table.css), so its real floor at that width is just the logo
+       plus cell padding, not the full chip-with-name track. */
+    { key: "model",      label: "Model",          w: "minmax(140px, 0.8fr)",  min: 44,  prio: 20 },
     { key: "date",       label: "Date",           w: "minmax(100px, 0.6fr)",  min: 100, dropAt: "narrow",  prio: 10 }
   ];
   var ROW_HEIGHTS = [
