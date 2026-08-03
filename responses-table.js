@@ -1171,12 +1171,14 @@
         setPopOpen(elFader, openFd);
         return;
       }
-      /* Reset only rewinds the DRAFT and repaints — it does not commit. Same Apply-gate as
-         dragging a handle, so a mis-click costs nothing until Apply. */
+      /* Reset commits immediately (same as Apply) and closes the popover — explicit instruction,
+         reset is a decision, not a staging step (matches topcitations-dashboard's own filter
+         reset, which behaves the same way for the same reason). */
       if (e.target.closest("[data-faderreset]")){
         rankMinDraft = RANK_MIN; rankMaxDraft = RANK_MAX;
         sentMinDraft = SENT_MIN; sentMaxDraft = SENT_MAX;
-        populateFader();
+        applyFader();
+        setPopOpen(elFader, false);
         return;
       }
       if (e.target.closest("[data-faderapply]")){ applyFader(); setPopOpen(elFader, false); return; }
