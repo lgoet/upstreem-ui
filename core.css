@@ -1069,15 +1069,22 @@
    so crossing from one logo to the next always fires a clean mouseout/mouseover pair — the
    border/background/ring live on .up-stack-vis instead, so the whole circle (not just the image
    inside it) lifts and shifts together on hover. */
+/* padding, not flex-centering a smaller fixed-px child, is what actually guarantees the logo
+   sits dead-center: 28px outer minus a 5px (odd) or 21px (also odd relative to 28) child left a
+   fractional remainder that flexbox splits unevenly depending on the item's own sub-pixel screen
+   position — the same class of drift already fixed once on the Mentioned-badge icon. Padding
+   removes the split entirely: the image is sized 100%/100% of the PADDED content box (border-box
+   is already the sitewide default, see .up-root *), so it always lands exactly 2px from every
+   edge with nothing left over to round differently row to row. */
 .up-stack-vis {
   display: inline-flex; align-items: center; justify-content: center; width: 100%; height: 100%;
-  border-radius: 8px; background: var(--vt-logo-bg); box-shadow: 0 0 0 4px var(--vc-bg);
+  border-radius: 8px; padding: 2px; background: var(--vt-logo-bg); box-shadow: 0 0 0 1px var(--vc-bg);
   border: 1px solid var(--vc-border);
   transition: transform .16s ease;
 }
 /* only the gap-ring follows the row hover colour; the circle fill stays the (light-in-dark) logo bg */
-.up-row:hover .up-stack-vis { box-shadow: 0 0 0 4px var(--vt-row-hover-solid, var(--vc-bg)); }
-.up-stack-item img { width: 21px; height: 21px; border-radius: 7px; object-fit: contain; display: block; }
+.up-row:hover .up-stack-vis { box-shadow: 0 0 0 1px var(--vt-row-hover-solid, var(--vc-bg)); }
+.up-stack-item img { width: 100%; height: 100%; border-radius: 6px; object-fit: contain; display: block; }
 .up-stack-ltr { font-size: 10px; font-weight: 600; color: var(--vc-muted); line-height: 1; text-transform: uppercase; }
 .up-stack-item.has-img .up-stack-ltr { display: none; }
 /* plain text, no circle: the overflow count is a label, not another brand */
@@ -1125,9 +1132,9 @@
 .up-root.is-dense .up-stack.is-spread-left .up-stack-item:has(~ .up-stack-item.is-last:hover) .up-stack-vis { transform: translateX(-7.04px); }
 /* Compact mode shrinks the mentioned-brand logos ~20% and scales every gap/shift to match. */
 .up-root.is-dense .up-stack-item { width: 24.64px; height: 24.64px; flex: 0 0 24.64px; }
-.up-root.is-dense .up-stack-vis { border-radius: 7.04px; box-shadow: 0 0 0 3.52px var(--vc-bg); }
-.up-root.is-dense .up-row:hover .up-stack-vis { box-shadow: 0 0 0 3.52px var(--vt-row-hover-solid, var(--vc-bg)); }
-.up-root.is-dense .up-stack-item img { width: 18.48px; height: 18.48px; border-radius: 6.16px; }
+.up-root.is-dense .up-stack-vis { border-radius: 7.04px; padding: 1.76px; box-shadow: 0 0 0 0.88px var(--vc-bg); }
+.up-root.is-dense .up-row:hover .up-stack-vis { box-shadow: 0 0 0 0.88px var(--vt-row-hover-solid, var(--vc-bg)); }
+.up-root.is-dense .up-stack-item img { border-radius: 5.28px; }
 .up-root.is-dense .up-stack-ltr { font-size: 8.8px; }
 .up-root.is-dense .up-stack-item + .up-stack-item { margin-left: -5.28px; }
 .up-root.is-dense .up-stack-more { margin-left: 7.04px; }
