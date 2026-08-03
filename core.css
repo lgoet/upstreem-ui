@@ -668,9 +668,9 @@
     /* height/flex-basis deliberately don't transition: with 50-100 rows on screen, animating them
        forces a synchronous layout reflow on every row simultaneously, which visibly stalls the
        page for a couple of seconds on Comfortable/Compact toggle before the rows "jump" to their
-       final height at once. A settings toggle snapping instantly is normal UX; only per-row hover
-       (background) stays smooth since it only ever affects one row at a time. */
-    .up-row { height: 72px; flex: 0 0 72px; cursor: pointer; transition: background 120ms ease; }
+       final height at once. Per-row hover (background) is instant, no transition — explicit
+       instruction: no ease on table-row hover, anywhere. */
+    .up-row { height: 72px; flex: 0 0 72px; cursor: pointer; }
     /* Compact row mode: shorter rows, first column shows only the title (URL sub-line hidden). */
     .up-root.is-dense .up-row { height: 55px; flex: 0 0 55px; }
     

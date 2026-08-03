@@ -260,7 +260,7 @@
 /* ---------- rows ----------
    Horizontal rules only. Vertical ones would box in a five-column block that is already visually
    contained by the tinted panel around it. */
-.udt-subrow { height: 46px; cursor: pointer; transition: background 120ms ease;
+.udt-subrow { height: 46px; cursor: pointer;
   border-top: 1px solid var(--vc-border); }
 .udt-subrow:first-child { border-top: 0; }
 .udt-subrow:hover { background: var(--vt-row-hover-solid, var(--vc-bg)); }

@@ -143,7 +143,7 @@
 .vt-th-idx svg { width: 12px; height: 12px; color: var(--vc-third); display: block; }
 .vt-th:last-child { border-right: none; }
 .vt-tbody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-.vt-row { height: 55px; flex: 0 0 55px; cursor: pointer; transition: background 120ms ease; }
+.vt-row { height: 55px; flex: 0 0 55px; cursor: pointer; }
 .vt-row:hover, .vt-row.is-hl { background: var(--vt-row-hover); }
 .vt-row.vt-gap { flex: 0 0 50px; height: 50px; margin-top: 4px; border-top: 1px solid var(--vc-border); }
 .vt-td { height: 100%; display: flex; align-items: center; gap: 12px; padding: 0 16px 0 8px; min-width: 0;
