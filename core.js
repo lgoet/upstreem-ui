@@ -2408,6 +2408,23 @@
        so changing it from one chart's settings menu is felt everywhere without a page reload. */
     try { window.dispatchEvent(new CustomEvent("up-linewidth-change", { detail: { value: v } })); } catch(e){}
   }
+  /* Colour scale — page-wide, exactly like the line width above and for the same reason: the
+     Chart Settings menu is one setting the user thinks of as "how MY charts look", not as a
+     property of the one chart whose gear they happened to click. It used to be per instanceId in
+     localStorage, so visibility-chart and brands-overview on the same page could sit there in two
+     different palettes. Same broadcast shape, so any chart mounted anywhere repaints at once. */
+  var COLOR_SCALE_KEY = "up_color_scale_pref";
+  function getColorScalePref(){
+    try {
+      var v = window.localStorage.getItem(COLOR_SCALE_KEY);
+      return (SCALE_ORDER.indexOf(v) > -1) ? v : "default";
+    } catch(e){ return "default"; }
+  }
+  function setColorScalePref(v){
+    if (SCALE_ORDER.indexOf(v) < 0) v = "default";
+    try { window.localStorage.setItem(COLOR_SCALE_KEY, v); } catch(e){}
+    try { window.dispatchEvent(new CustomEvent("up-colorscale-change", { detail: { value: v } })); } catch(e){}
+  }
   var LW_THIN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="4" y1="12" x2="20" y2="12"/></svg>';
   var LW_THICK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"><line x1="4" y1="12" x2="20" y2="12"/></svg>';
   /* Same visual family as UC.makeColumns's row-height switch (.up-pop-div/.up-pop-sub/.up-dense/
@@ -3580,6 +3597,7 @@
     makeScaleMenu: makeScaleMenu,
     getLineWidthPref: getLineWidthPref,
     setLineWidthPref: setLineWidthPref,
-    lineWidthSectionHtml: lineWidthSectionHtml
+    lineWidthSectionHtml: lineWidthSectionHtml,
+    getColorScalePref: getColorScalePref, setColorScalePref: setColorScalePref
   };
 })();

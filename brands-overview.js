@@ -83,6 +83,9 @@
          printed "0.5"), so the number under the cursor matches the number in the table
        · logo chips use the app's chip geometry (32px box, 8px radius, 2px pad, 6px inner radius)
      ================================================================ */
+  /* core's real hash icon, so the rank in the Landscape tooltip is literally the same mark the
+     tables draw — the old tooltip used a typed "#" character, which is why it looked off. */
+  var HASH_SVG = UC.HASH_ICON.replace('<svg ', '<svg class="up-hash" ');
   var MX = {
     logoSize: 32, logoRadius: 8, logoInnerRadius: 6, logoPad: 2,
     logoMinGap: 4, hoverScale: 1.08, hitRadius: 22,
@@ -131,6 +134,11 @@
   /* makeMatrix(cfg) — cfg: { wrap, canvas, isDark(), isOwner(), onPick(company_id) }
      Returns { render(rows), skeleton(), destroy(), resize() }. */
   function makeMatrix(cfg){
+    /* Y axis is switchable: "sentiment" (0-100, higher is better) or "ranking" (avg_rank, where
+       LOWER is better, so that axis is drawn inverted and the quadrant split sits at the midpoint
+       of the actual rank range rather than at a fixed 50). X (visibility) is the same either way. */
+    function yMode(){ return cfg.getYAxis && cfg.getYAxis() === "ranking" ? "ranking" : "sentiment"; }
+    var midYVal = MX.midY;
     var wrap = cfg.wrap, canvas = cfg.canvas;
     var isDark = cfg.isDark || function(){ return false; };
     var isOwner = cfg.isOwner || function(){ return true; };
@@ -150,6 +158,7 @@
       var dark = isDark();
       return {
         grid:    tok("--vc-border", dark ? "#454545" : "#e0e2e6"),
+        gridSoft: dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)",
         font:    tok("--vc-muted",  dark ? "#a0a0a0" : "#6f737c"),
         axis:    tok("--vc-border", dark ? "#454545" : "#e0e2e6"),
         quad:    tok("--vc-border", dark ? "#454545" : "#e0e2e6"),
@@ -167,7 +176,11 @@
           if (!A || !x || !y) return;
           ctx.save();
           ctx.beginPath(); ctx.rect(A.left, A.top, A.right - A.left, A.bottom - A.top); ctx.clip();
-          ctx.strokeStyle = t.grid; ctx.lineWidth = 1; ctx.setLineDash([6, 6]);
+          /* 1px, and deliberately LIGHTER than the solid quadrant lines below: this grid used the
+             full --vc-border colour, i.e. exactly the weight of the quadrant split, so the two
+             read as one heavy mesh. core's line chart draws its dashed grid at ~0.08 alpha; this
+             matches that relationship. */
+          ctx.strokeStyle = t.gridSoft; ctx.lineWidth = 1; ctx.setLineDash([6, 6]);
           y.ticks.forEach(function(_, i){
             var py = y.getPixelForTick(i);
             ctx.beginPath(); ctx.moveTo(A.left, py + 0.5); ctx.lineTo(A.right, py + 0.5); ctx.stroke();
@@ -187,7 +200,7 @@
           var t = theme(), A = c.chartArea, ctx = c.ctx;
           var midX = (c.scales.x.min + c.scales.x.max) / 2;
           var mx = c.scales.x.getPixelForValue(midX);
-          var my = c.scales.y.getPixelForValue(MX.midY);
+          var my = c.scales.y.getPixelForValue(midYVal);
           var p = 14;
           ctx.save();
           ctx.strokeStyle = t.quad; ctx.lineWidth = 1; ctx.setLineDash([]);
@@ -195,10 +208,16 @@
           ctx.beginPath(); ctx.moveTo(A.left, my); ctx.lineTo(A.right, my);  ctx.stroke();
           ctx.fillStyle = t.quadTxt;
           ctx.font = '500 11px Geist, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
-          ctx.textAlign = "left";  ctx.textBaseline = "top";    ctx.fillText("High-Potential Players", A.left  + p, A.top    + p);
-          ctx.textAlign = "right"; ctx.textBaseline = "top";    ctx.fillText("Dominant & Trusted",     A.right - p, A.top    + p);
-          ctx.textAlign = "left";  ctx.textBaseline = "bottom"; ctx.fillText("At Risk",                A.left  + p, A.bottom - p);
-          ctx.textAlign = "right"; ctx.textBaseline = "bottom"; ctx.fillText("Controversial",          A.right - p, A.bottom - p);
+          /* The quadrant names describe SENTIMENT on Y ("Controversial" = seen a lot, liked
+             little). With Ranking on Y that reading is simply wrong, so the four labels follow
+             the axis instead of staying put and lying. */
+             var Q = (yMode() === "ranking")
+               ? ["Rising Challengers", "Category Leaders", "Low Presence", "Broad but Unranked"]
+               : ["High-Potential Players", "Dominant & Trusted", "At Risk", "Controversial"];
+          ctx.textAlign = "left";  ctx.textBaseline = "top";    ctx.fillText(Q[0], A.left  + p, A.top    + p);
+          ctx.textAlign = "right"; ctx.textBaseline = "top";    ctx.fillText(Q[1], A.right - p, A.top    + p);
+          ctx.textAlign = "left";  ctx.textBaseline = "bottom"; ctx.fillText(Q[2], A.left  + p, A.bottom - p);
+          ctx.textAlign = "right"; ctx.textBaseline = "bottom"; ctx.fillText(Q[3], A.right - p, A.bottom - p);
           ctx.restore();
         }
       };
@@ -298,7 +317,10 @@
             var rx = P.px - s / 2, ry = P.py - s / 2;
             var pad = MX.logoPad * f, rOut = MX.logoRadius * f, rIn = MX.logoInnerRadius * f;
 
-            if (over){ ctx.shadowColor = "rgba(0,0,0,0.42)"; ctx.shadowBlur = 14; ctx.shadowOffsetY = 4; }
+            /* Was 0.42/14/4 — a drop shadow that heavy exists nowhere else in this app. The app's
+               floating layers sit around 0.10-0.16 alpha; a hovered chip should read as lifted,
+               not as cut out of the chart. */
+            if (over){ ctx.shadowColor = "rgba(0,0,0,0.14)"; ctx.shadowBlur = 8; ctx.shadowOffsetY = 2; }
             ctx.fillStyle = t.logoBg;
             rrect(ctx, rx, ry, s, s, rOut);
             ctx.fill();
@@ -349,10 +371,10 @@
       var vis  = pt.x != null ? Math.round(pt.x) + "%" : "–";
       var sv   = pt.sentiment, rv = pt.avg_rank;
       var sentHtml = (sv == null) ? '<span class="ubo-mxtip-empty">–</span>'
-        : '<span class="ubo-mxtip-badge"><span class="ubo-mxtip-dot" style="background:' + sentColor(sv) + '"></span>' +
-          Math.round(sv) + '</span>';
+        : '<span class="up-sent"><span class="up-sent-dot" style="background:' + sentColor(sv) + '"></span>' +
+          '<span class="up-sent-val">' + Math.round(sv) + '</span></span>';
       var rankHtml = (rv == null) ? '<span class="ubo-mxtip-empty">–</span>'
-        : '<span class="ubo-mxtip-badge"><span class="ubo-mxtip-hash">#</span>' + fmt1(rv) + '</span>';
+        : '<span class="up-rank-group">' + HASH_SVG + '<span class="up-num">' + fmt1(rv) + '</span></span>';
       el.innerHTML =
         '<div class="ubo-mxtip-head">' +
           '<span class="up-logo-box' + (pt.logo_url ? " has-img" : "") + '">' +
@@ -443,13 +465,15 @@
       lastRows = rows;
       if (!window.Chart){ UC.loadChartJs(); setTimeout(function(){ render(lastRows); }, 120); return; }
       wrap.classList.remove("is-sk");
+      var rank = (yMode() === "ranking");
+      var yField = rank ? "avg_rank" : "sentiment";
       var pts = (rows || []).filter(function(r){
-        return r && r.visibility_pct != null && r.sentiment != null && isFinite(Number(r.sentiment));
+        return r && r.visibility_pct != null && r[yField] != null && isFinite(Number(r[yField]));
       }).map(function(r){
         return {
           x: Number(r.visibility_pct),
-          y: clamp(Number(r.sentiment), MX.yMin, MX.yMax),
-          sentiment: Number(r.sentiment),
+          y: rank ? Number(r.avg_rank) : clamp(Number(r.sentiment), MX.yMin, MX.yMax),
+          sentiment: (r.sentiment != null && isFinite(Number(r.sentiment))) ? Number(r.sentiment) : null,
           avg_rank: (r.avg_rank != null && isFinite(Number(r.avg_rank))) ? Number(r.avg_rank) : null,
           name: r.name || "",
           logo_url: r.logo_url || r.favicon_url || "",
@@ -469,6 +493,11 @@
       var t = theme();
       var maxVis = Math.max.apply(null, pts.map(function(p){ return p.x; }).concat([0]));
       var xMax = Math.max(10, Math.ceil(maxVis * 1.1));
+      /* Rank axis: 1 at the top (reverse), and the bottom bound follows the data instead of a
+         fixed 100 -- a field of ranks 1-6 squeezed into a 0-100 axis would put every logo in one
+         stripe. midY (the quadrant split) moves with it. */
+      var yTop = rank ? Math.max(2, Math.ceil(Math.max.apply(null, pts.map(function(p){ return p.y; })) + 0.5)) : MX.yMax;
+      midYVal = rank ? (1 + yTop) / 2 : MX.midY;
       chart = new window.Chart(canvas.getContext("2d"), {
         type: "scatter",
         data: { datasets: [{ label: "Brands", data: pts, pointRadius: 0, pointHoverRadius: 0,
@@ -485,10 +514,15 @@
                  grid: { display: false }, border: { display: true, color: t.axis, width: 1 },
                  ticks: { count: MX.xTicks, color: t.font, maxRotation: 0,
                           callback: function(v){ return Math.round(v) + "%"; } } },
-            y: { type: "linear", min: MX.yMin, max: MX.yMax,
-                 grid: { display: false }, border: { display: false },
-                 ticks: { count: MX.yTicks, color: t.font,
-                          callback: function(v){ return Math.round(v); } } }
+            y: rank
+              ? { type: "linear", min: 1, max: yTop, reverse: true,
+                  grid: { display: false }, border: { display: false },
+                  ticks: { count: MX.yTicks, color: t.font,
+                           callback: function(v){ return "#" + Math.round(v); } } }
+              : { type: "linear", min: MX.yMin, max: MX.yMax,
+                  grid: { display: false }, border: { display: false },
+                  ticks: { count: MX.yTicks, color: t.font,
+                           callback: function(v){ return Math.round(v); } } }
           }
         }
       });
@@ -537,11 +571,11 @@
     function key(n){ return "ubo_" + n + "__" + instanceId; }
     function readLS(n, fallback){ try { var v = window.localStorage.getItem(key(n)); return v == null ? fallback : v; } catch(e){ return fallback; } }
     function writeLS(n, v){ try { window.localStorage.setItem(key(n), v); } catch(e){} }
-    var colorScale = (function(){
-      var v = readLS("colorscale", "default");
-      return (v === "default" || UC.COLOR_SCALES[v]) ? v : "default";
-    })();
+    /* Page-wide, not per instance: core owns the preference and broadcasts changes, so setting the
+       scale in visibility-chart's gear applies here too (and the other way round). */
+    var colorScale = UC.getColorScalePref ? UC.getColorScalePref() : "default";
     var chartMode = (readLS("chartmode", "line") === "landscape") ? "landscape" : "line";
+    var yAxis = (readLS("yaxis", "sentiment") === "ranking") ? "ranking" : "sentiment";
     var COLS_ALL = [
       { key: "visibility", label: "Visibility" },
       { key: "ranking",    label: "Ranking" },
@@ -578,6 +612,9 @@
     var SORT_STORE  = (window.__uboSort = window.__uboSort || {});
     var GRAN_STORE  = (window.__uboGran = window.__uboGran || {});
     var GRAN_PICKED = (window.__uboGranPicked = window.__uboGranPicked || {});
+    /* Chart hidden/shown survives a Bubble re-render of the markup, per instance — exactly the
+       window.__ccHidden shape citations-combo-chart uses for its own Hide button. */
+    var HIDDEN_STORE = (window.__uboHidden = window.__uboHidden || {});
     var INIT_COMPANIES = (window.__uboInitCompanies = window.__uboInitCompanies || {});
     var USER_FILTERED  = (window.__uboUserFiltered = window.__uboUserFiltered || {});
     var sortField = (SORT_STORE[instanceId] && SORT_STORE[instanceId].field) || "visibility";
@@ -594,6 +631,7 @@
     });
     var matrix = makeMatrix({
       wrap: mxWrap, canvas: mxCanvas, isDark: darkNow, isOwner: isOwner,
+      getYAxis: function(){ return yAxis; },
       onPick: function(id){ fireRaw("data-rowclick-fn", "uboRowClick", id); }
     });
 
@@ -636,8 +674,16 @@
       if (act && act.classList.contains("is-disabled")){ curGran = "day"; GRAN_STORE[instanceId] = "day"; syncGran(); }
     }
 
+    function syncYAxis(){
+      Array.prototype.slice.call(root.querySelectorAll("[data-yaxis]")).forEach(function(b){
+        b.classList.toggle("is-active", b.getAttribute("data-yaxis") === yAxis);
+      });
+      var cap = root.querySelector(".ubo-mx-legend-y span");
+      if (cap) cap.textContent = (yAxis === "ranking") ? "Ranking" : "Sentiment";
+    }
     function syncChartMode(){
       root.classList.toggle("is-landscape", chartMode === "landscape");
+      syncYAxis();
       Array.prototype.slice.call(root.querySelectorAll("[data-chartmode]")).forEach(function(b){
         b.classList.toggle("is-active", b.getAttribute("data-chartmode") === chartMode);
       });
@@ -664,13 +710,20 @@
       btn: root.querySelector(".ubo-scale-btn"),
       getIsDark: darkNow,
       getScale: function(){ return colorScale; },
-      setScale: function(k){ colorScale = k; writeLS("colorscale", k); },
+      setScale: function(k){ colorScale = k; if (UC.setColorScalePref) UC.setColorScalePref(k); },
       defaultColors: function(){
         return UC.buildLineDatasets(state.series, state.companies || [], null)
           .datasets.map(function(d){ return d.__baseColor; });
       },
       onChange: function(){ renderChartSide(); },
       closeOthers: function(){ closePops(null); }
+    });
+    window.addEventListener("up-colorscale-change", function(e){
+      var v = e && e.detail ? e.detail.value : null;
+      if (!v || v === colorScale) return;
+      colorScale = v;
+      renderChartSide();
+      if (scaleKit && scaleKit.isOpen && scaleKit.isOpen()) scaleKit.populate();
     });
 
     /* ---------- table ---------- */
@@ -695,30 +748,30 @@
     }
     function headHtml(){
       if (state.status === "inactive"){
-        return '<div class="ubo-thead">' +
-          '<div class="ubo-th">Brand</div>' +
-          '<div class="ubo-th">Deactivated</div>' +
-          '<div class="ubo-th ubo-th-act"></div></div>';
+        return '<div class="up-thead">' +
+          '<div class="up-th">Brand</div>' +
+          '<div class="up-th">Deactivated</div>' +
+          '<div class="up-th up-th-act"></div></div>';
       }
-      var h = '<div class="ubo-thead">' +
-        '<div class="ubo-th ubo-th-idx">' + HASH_ICON + '</div>' +
-        '<div class="ubo-th">Brand</div>';
-      if (colOn("visibility")) h += '<div class="ubo-th">Visibility' + infoIcon("visibility") + '</div>';
-      if (colOn("ranking"))    h += '<div class="ubo-th">Ranking' + infoIcon("ranking") + '</div>';
-      if (colOn("sentiment"))  h += '<div class="ubo-th">Sentiment' + infoIcon("sentiment") + '</div>';
-      h += '<div class="ubo-th ubo-th-act"></div></div>';
+      var h = '<div class="up-thead">' +
+        '<div class="up-th up-th-idx">' + HASH_ICON + '</div>' +
+        '<div class="up-th">Brand</div>';
+      if (colOn("visibility")) h += '<div class="up-th">Visibility' + infoIcon("visibility") + '</div>';
+      if (colOn("ranking"))    h += '<div class="up-th">Ranking' + infoIcon("ranking") + '</div>';
+      if (colOn("sentiment"))  h += '<div class="up-th">Sentiment' + infoIcon("sentiment") + '</div>';
+      h += '<div class="up-th up-th-act"></div></div>';
       return h;
     }
     function skeletonHtml(){
       var cols = (state.status === "inactive")
-        ? [{ w:70, jitter:18, logo:true }, 64, { w:20, cls:"ubo-td-act" }]
-        : [{ w:12, cls:"ubo-td-idx" }, { w:70, jitter:18, logo:true }]
+        ? [{ w:70, jitter:18, logo:true }, 64, { w:20, cls:"up-td-act" }]
+        : [{ w:12, cls:"up-td-idx" }, { w:70, jitter:18, logo:true }]
             .concat(colOn("visibility") ? [46] : [])
             .concat(colOn("ranking")    ? [52] : [])
             .concat(colOn("sentiment")  ? [56] : [])
-            .concat([{ w:20, cls:"ubo-td-act" }]);
-      return headHtml() + '<div class="ubo-tbody">' +
-        UC.skeletonRows({ count: 7, rowClass: "ubo-row", cellClass: "ubo-td", cols: cols }) + '</div>';
+            .concat([{ w:20, cls:"up-td-act" }]);
+      return headHtml() + '<div class="up-tbody">' +
+        UC.skeletonRows({ count: 7, rowClass: "up-row", cellClass: "up-td", cols: cols }) + '</div>';
     }
     function logoHtml(url){
       return url
@@ -726,7 +779,7 @@
         : '<span class="up-logo-box"></span>';
     }
     function actionsCell(){
-      return '<div class="ubo-td ubo-td-act">' +
+      return '<div class="up-td up-td-act">' +
         '<button class="ubo-actbtn" type="button" data-actmenu aria-label="Actions" aria-haspopup="menu">' + MORE_SVG + '</button></div>';
     }
     function activeRowHtml(r, i){
@@ -742,26 +795,26 @@
       var sent = '<span class="up-sent"><span class="up-sent-dot" style="background:' + sc + '"></span>' +
         '<span class="up-sent-val' + (sNull ? " is-empty" : "") + '">' + (sNull ? "–" : Math.round(Number(r.sentiment))) + '</span></span>' +
         UC.trendChip(r.sentiment_delta, { decimals: true, inverted: false });
-      var h = '<div class="ubo-row" data-id="' + esc(String(r.company_id == null ? "" : r.company_id)) + '">' +
-        '<div class="ubo-td ubo-td-idx">' + pos + '</div>' +
-        '<div class="ubo-td ubo-td-brand">' + logoHtml(r.logo_url || r.favicon_url) +
+      var h = '<div class="up-row" data-id="' + esc(String(r.company_id == null ? "" : r.company_id)) + '">' +
+        '<div class="up-td up-td-idx">' + pos + '</div>' +
+        '<div class="up-td up-td-brand">' + logoHtml(r.logo_url || r.favicon_url) +
           '<span class="ubo-brand-name">' + esc(r.name == null ? "" : r.name) + '</span></div>';
-      if (colOn("visibility")) h += '<div class="ubo-td">' + vis + '</div>';
-      if (colOn("ranking"))    h += '<div class="ubo-td">' + rank + '</div>';
-      if (colOn("sentiment"))  h += '<div class="ubo-td">' + sent + '</div>';
+      if (colOn("visibility")) h += '<div class="up-td">' + vis + '</div>';
+      if (colOn("ranking"))    h += '<div class="up-td">' + rank + '</div>';
+      if (colOn("sentiment"))  h += '<div class="up-td">' + sent + '</div>';
       return h + actionsCell() + '</div>';
     }
     function inactiveRowHtml(r){
-      return '<div class="ubo-row" data-id="' + esc(String(r.company_id == null ? "" : r.company_id)) + '">' +
-        '<div class="ubo-td ubo-td-brand">' + logoHtml(r.logo_url || r.favicon_url) +
+      return '<div class="up-row" data-id="' + esc(String(r.company_id == null ? "" : r.company_id)) + '">' +
+        '<div class="up-td up-td-brand">' + logoHtml(r.logo_url || r.favicon_url) +
           '<span class="ubo-brand-name">' + esc(r.name == null ? "" : r.name) + '</span></div>' +
-        '<div class="ubo-td"><span class="ubo-deact">' + esc(UC.fmtDate(r.deactivated_at) || "–") + '</span></div>' +
+        '<div class="up-td"><span class="ubo-deact">' + esc(UC.fmtDate(r.deactivated_at) || "–") + '</span></div>' +
         actionsCell() + '</div>';
     }
     var emptyGraceTimer = null;
     function renderTable(){
       if (!isOwner()) return;
-      tableEl.style.setProperty("--ubo-cols", gridTemplate());
+      tableEl.style.setProperty("--up-cols", gridTemplate());
       var inactive = state.status === "inactive";
       var hasData = inactive ? true : state.hasTable;
       if (isLoading() || !hasData){
@@ -788,8 +841,8 @@
       }
       if (emptyGraceTimer){ clearTimeout(emptyGraceTimer); emptyGraceTimer = null; }
       var body = rows.map(inactive ? inactiveRowHtml : activeRowHtml).join("");
-      tableEl.innerHTML = headHtml() + '<div class="ubo-tbody">' + body + '</div>';
-      Array.prototype.slice.call(tableEl.querySelectorAll(".ubo-row")).forEach(function(row){
+      tableEl.innerHTML = headHtml() + '<div class="up-tbody">' + body + '</div>';
+      Array.prototype.slice.call(tableEl.querySelectorAll(".up-row")).forEach(function(row){
         var id = row.getAttribute("data-id");
         if (!inactive){
           row.addEventListener("mouseenter", function(){ line.highlight(id); });
@@ -815,12 +868,13 @@
       Array.prototype.slice.call(root.querySelectorAll("[data-status]")).forEach(function(b){
         var s = b.getAttribute("data-status");
         b.classList.toggle("is-active", s === state.status);
-        /* Count lives on the INACTIVE tab (prompts-table's idiom): the tab you're not on is the
-           one whose size you can't see. Hidden while loading, and on the active tab itself. */
+        /* Only the ACTIVE tab carries a number, and it carries it whether or not you are standing
+           on it: total_count is the figure the user actually tracks. Inactive is deliberately
+           bare — an inactive-brand count is noise next to it. */
         var n = b.querySelector(".ubo-seg-n");
         if (!n) return;
-        var v = (s === "inactive") ? state.totalCountInactive : state.totalCount;
-        var show = (s !== state.status) && !isLoading() && v != null && v !== "";
+        var v = state.totalCount;
+        var show = (s === "active") && !isLoading() && v != null && v !== "";
         n.textContent = show ? UC.fmtTotal(v) : "";
         n.style.display = show ? "" : "none";
       });
@@ -832,6 +886,13 @@
     function render(){
       if (root.__uboController && root.__uboController.__ctrlId !== myCtrlId) return;
       if (isDark) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
+      /* Hidden-state is restored on every render, so a Bubble re-render of the markup does not
+         silently pop the chart back open. */
+      if (HIDDEN_STORE[instanceId]){
+        root.classList.add("is-hidden-view");
+        var hbtn = root.querySelector(".ubo-hide");
+        if (hbtn){ hbtn.setAttribute("data-tip", "Show"); hbtn.setAttribute("aria-label", "Show"); }
+      }
       syncChartMode(); syncGran(); syncStatusSwitch(); setHeadCount();
       renderTable(); renderChartSide(); syncFilterBadge(); syncColsBadge();
     }
@@ -1152,12 +1213,38 @@
         var actBtn = e.target.closest("[data-actmenu]");
         if (actBtn){
           e.stopPropagation();
-          var rowEl = actBtn.closest(".ubo-row");
+          var rowEl = actBtn.closest(".up-row");
           var rid = rowEl ? rowEl.getAttribute("data-id") : null;
           if (actOpenFor === rid) closeActMenu(); else openActMenu(actBtn, rid);
           return;
         }
-        if (e.target.closest(".ubo-export")){ fireRaw("data-export-fn", "uboExportTable", instanceId); return; }
+        if (e.target.closest(".up-export, .ubo-export")){ fireRaw("data-export-fn", "uboExportTable", instanceId); return; }
+        /* The search button was never wired to the kit, so clicking it did nothing at all. */
+        if (e.target.closest(".up-search-btn")){
+          e.stopPropagation();
+          closePops(null);
+          if (searchKit) searchKit.toggle();
+          return;
+        }
+        /* Hide/Show the chart container — same toggle, same persistence shape and the same
+           post-toggle resize as citations-combo-chart's .combo-hide. */
+        if (e.target.closest(".ubo-hide")){
+          var hb = e.target.closest(".ubo-hide");
+          var collapsed = root.classList.toggle("is-hidden-view");
+          HIDDEN_STORE[instanceId] = collapsed;
+          hb.setAttribute("data-tip", collapsed ? "Show" : "Hide");
+          hb.setAttribute("aria-label", collapsed ? "Show" : "Hide");
+          setTimeout(function(){ line.resize(); line.relayoutLegend && line.relayoutLegend(); matrix.resize(); }, 230);
+          return;
+        }
+        var ya = e.target.closest("[data-yaxis]");
+        if (ya){
+          var yk = ya.getAttribute("data-yaxis");
+          if (yk === yAxis) return;
+          yAxis = yk; writeLS("yaxis", yk);
+          syncYAxis(); renderChartSide();
+          return;
+        }
         if (e.target.closest(".ubo-filter-btn")){
           e.stopPropagation();
           if (!filterWrap) return;

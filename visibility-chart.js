@@ -63,17 +63,13 @@
 
     var instanceId = root.getAttribute("data-instance") || "default";
     var myCtrlId = "cc_" + Math.random().toString(36).slice(2) + "_" + Date.now();
-    /* Chart line color scale — persisted to localStorage (unlike sort/granularity above, which are
-       deliberately session-only via window.__votSort etc.), per explicit request: a chosen scale
-       should survive a page reload. */
-    function scaleKey(){ return "vot_colorscale__" + instanceId; }
-    function readColorScale(){
-      try {
-        var v = window.localStorage.getItem(scaleKey());
-        return (v === "default" || (v && COLOR_SCALES[v])) ? v : "default";
-      } catch(e){ return "default"; }
-    }
-    function writeColorScale(){ try { window.localStorage.setItem(scaleKey(), colorScale); } catch(e){} }
+    /* Chart line colour scale — a PAGE-WIDE preference in core (UC.get/setColorScalePref), not a
+       per-instance one. It used to be keyed by instanceId, so this chart and brands-overview's
+       chart on the same page could sit in two different palettes even though the user set it once.
+       Same mechanism the Line Width switch already used: core persists it and broadcasts
+       up-colorscale-change, and every mounted chart repaints (see the listener further down). */
+    function readColorScale(){ return UC.getColorScalePref ? UC.getColorScalePref() : "default"; }
+    function writeColorScale(){ if (UC.setColorScalePref) UC.setColorScalePref(colorScale); }
     var colorScale = readColorScale();
     var isDark = isYes(root.getAttribute("data-isdark"));
     if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
@@ -417,6 +413,16 @@
       closeOthers: function(){ closePops(scaleBtn); }
     });
     function closeScaleMenu(){ scaleKit.close(); }
+
+    /* A colour scale picked in ANY chart on the page (this one, brands-overview's) lands here. */
+    window.addEventListener("up-colorscale-change", function(e){
+      var v = e && e.detail ? e.detail.value : null;
+      if (!v || v === colorScale) return;
+      colorScale = v;
+      renderLineSide();
+      if (scaleKit && scaleKit.isOpen && scaleKit.isOpen()) scaleKit.populate();
+    });
+
 
     if (granBtnsLive().length){
       syncGranActive();

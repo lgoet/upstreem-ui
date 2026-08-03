@@ -1470,6 +1470,15 @@ Komponente Code siehst, den du kopieren willst, prüfe zuerst, ob er inzwischen 
 vier Altkomponenten sind vollständig darauf umgestellt, aber alte Codebeispiele in älteren
 Abschnitten dieses Dokuments können noch den Vorher-Zustand zeigen.
 
+**Das gilt für CSS genauso, und dort fällt es später auf.** Eine Tabelle benutzt `.up-table` /
+`.up-thead` / `.up-tbody` / `.up-row` / `.up-th` / `.up-td` und `--up-cols` — es gibt keinen Grund,
+je eigene `<pfx>-th` / `<pfx>-td` zu schreiben. brands-overview hatte genau das: eine
+byte-ähnliche, aber eben nicht identische Kopie dieser Regeln, in der der `border-left` pro Zelle
+fehlte. Das ist die vertikale Gridline. Ergebnis war eine Tabelle, die als einzige in der ganzen
+App keine Spaltentrenner hatte — und niemandem fällt beim Schreiben einer Kopie auf, welche
+einzelne Deklaration er vergessen hat. Komponenten-eigene Klassen sind nur für das da, was diese
+Komponente wirklich zusätzlich hat (eine Zeilenhöhe, eine Index-Zelle, ein Actions-Button).
+
 ### Was der Core stellt
 
 | Bereich | Aufruf |

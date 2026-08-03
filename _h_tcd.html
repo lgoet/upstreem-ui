@@ -1,0 +1,98 @@
+<meta charset="utf-8">
+<link rel="stylesheet" href="core.css?v=2">
+<link rel="stylesheet" href="topcitations-dashboard.css?v=2">
+<body style="margin:0;padding:16px;width:1400px">
+<script>window.__err=[];window.onerror=function(msg){window.__err.push(msg);};</script>
+<div class="up-root tcd-root"
+     data-instance="t1"
+     data-cdn-pin=""
+     data-isdark="no"
+     data-processing="IS_PROCESSING"
+     data-processing2="IS_PROCESSING_2"
+     data-mode-fn="bubble_fn_tcdMode"
+     data-rowclick-fn="bubble_fn_tcdRowClick"
+     data-goto-fn="bubble_fn_tcdGoTo"
+     data-export-fn="bubble_fn_tcdExportTable"
+     data-types-fn="bubble_fn_tcdApplyTypeFilter"
+     data-dimension-fn="bubble_fn_tcdFilterDimension"
+     data-brand-fn="bubble_fn_tcdBrandMentioned">
+
+  <div class="tcd-unit tcd-unit-left">
+    <div class="tcd-head">
+      <div class="tcd-mode" role="tablist" aria-label="Mode">
+        <button class="tcd-mode-btn is-active" data-mode="domain" type="button" role="tab">Domains</button>
+        <button class="tcd-mode-btn" data-mode="url" type="button" role="tab">URLs</button>
+      </div>
+      <div class="tcd-head-tools">
+        <div class="tcl-seg" role="tablist" aria-label="Chart type">
+          <button class="tcl-seg-btn is-active" data-chart="doughnut" role="tab" aria-selected="true" data-tip="Doughnut" aria-label="Doughnut">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+          </button>
+          <button class="tcl-seg-btn" data-chart="bar" role="tab" aria-selected="false" data-tip="Bars" aria-label="Bars">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="9" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="tcd-box">
+      <div class="tcd-panel-body">
+        <div class="tcl-top-total"><span class="n">0</span><span class="lbl">Citations</span></div>
+        <div class="up-donut-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tcd-unit tcd-unit-right">
+    <div class="tcd-head">
+      <div class="tcd-heading tcd-heading-right"><span class="tcd-head-label">Top Domains</span><span class="tcd-head-sep"></span><span class="tcd-head-count"></span></div>
+      <div class="tcd-head-tools">
+        <button class="tcd-brand-toggle" type="button" data-tip="Filter by brand mention">
+          <span class="tcd-brand-toggle-lbl">
+            <img class="tcd-brand-logo" src="" style="display:none"/>
+            <span class="tcd-brand-label"></span>
+          </span>
+          <span class="tcd-brand-check">
+            <svg class="tcd-brand-check-yes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <svg class="tcd-brand-check-no" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </span>
+        </button>
+        <div class="tcd-filter">
+          <button class="tcd-filter-btn tcd-iconbtn" type="button" data-tip="Filter" aria-label="Filter">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+            <span class="tcd-filter-badge"></span>
+          </button>
+          <div class="up-filter-menu" role="menu" aria-hidden="true"></div>
+        </div>
+        <button class="tcd-export tcd-iconbtn" type="button" data-tip="Export" aria-label="Export">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+        <button class="tcd-goto tcd-iconbtn" type="button" data-tip="Open" aria-label="Open">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+        </button>
+      </div>
+    </div>
+    <div class="tcd-box">
+      <div class="tct-table"></div>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="core.js?v=2"></script>
+<script src="topcitations-dashboard.js?v=2"></script>
+<script>window.addEventListener("load",function(){setTimeout(function(){
+  try{ window.renderTopCitations({instanceId:"t1", rows:[{"rank":1,"name":"domain1.de","domain":"domain1.de","favicon":"","citations":93,"used_in_prompts":19,"citation_type":"Blog","share":14,"total_count":9},{"rank":2,"name":"domain2.de","domain":"domain2.de","favicon":"","citations":86,"used_in_prompts":18,"citation_type":"Blog","share":13,"total_count":9},{"rank":3,"name":"domain3.de","domain":"domain3.de","favicon":"","citations":79,"used_in_prompts":17,"citation_type":"Blog","share":12,"total_count":9},{"rank":4,"name":"domain4.de","domain":"domain4.de","favicon":"","citations":72,"used_in_prompts":16,"citation_type":"Blog","share":11,"total_count":9},{"rank":5,"name":"domain5.de","domain":"domain5.de","favicon":"","citations":65,"used_in_prompts":15,"citation_type":"Blog","share":10,"total_count":9},{"rank":6,"name":"domain6.de","domain":"domain6.de","favicon":"","citations":58,"used_in_prompts":14,"citation_type":"Blog","share":9,"total_count":9},{"rank":7,"name":"domain7.de","domain":"domain7.de","favicon":"","citations":51,"used_in_prompts":13,"citation_type":"Blog","share":8,"total_count":9},{"rank":8,"name":"domain8.de","domain":"domain8.de","favicon":"","citations":44,"used_in_prompts":12,"citation_type":"Blog","share":7,"total_count":9},{"rank":9,"name":"domain9.de","domain":"domain9.de","favicon":"","citations":37,"used_in_prompts":11,"citation_type":"Blog","share":6,"total_count":9}]}); }catch(e){ window.__err.push("render "+e.message); }
+  setTimeout(function(){
+    var box=document.querySelector(".tcd-box"), tb=document.querySelector(".tct-tbody");
+    var rws=document.querySelectorAll(".tct-row");
+    var r={fehler:window.__err.slice(0,3)};
+    r.box_hoehe = box? Math.round(box.getBoundingClientRect().height):"kein .tcd-box";
+    r.box_css = box? getComputedStyle(box).height:"-";
+    r.zeilen_gerendert = rws.length;
+    r.zeilen_sichtbar = 0; r.zeilenhoehe = rws[0]? Math.round(rws[0].getBoundingClientRect().height):0;
+    if (box){ var bb=box.getBoundingClientRect();
+      rws.forEach(function(x){ var rr=x.getBoundingClientRect(); if (rr.bottom <= bb.bottom+1) r.zeilen_sichtbar++; }); }
+    r.tbody_hoehe = tb? Math.round(tb.getBoundingClientRect().height):"-";
+    r.tbody_scrollH = tb? tb.scrollHeight:"-";
+    document.title=JSON.stringify(r);
+  }, 700);
+},900);});</script>
