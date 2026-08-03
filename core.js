@@ -1661,8 +1661,8 @@
             var on = hx === color;
             return '<button type="button" class="up-topicmodal-colorcell" data-color="' + esc(hx) + '"' +
               ' aria-label="' + esc(hx) + '" aria-pressed="' + (on ? "true" : "false") + '">' +
-              '<span class="up-topicmodal-colorblob" style="background:' + esc(hx) +
-                (on ? ";color:" + swatchInk(hx) : "") + '">' + (on ? CHECK_SVG : "") + '</span>' +
+              '<span class="up-topicmodal-colorblob" style="background:' + esc(hx) + '">' +
+                (on ? CHECK_SVG : "") + '</span>' +
             '</button>';
           }).join("") +
         '</div></div>';

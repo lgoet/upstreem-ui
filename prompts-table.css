@@ -426,8 +426,14 @@
    outer ring is what made these look soft/smeared rather than crisp. The blob is now a plain
    filled circle at whole-pixel size, and selection is shown INSIDE it. */
 .upt-colorblob { width: 22px; height: 22px; border-radius: 50%; display: inline-flex;
-  align-items: center; justify-content: center; flex: 0 0 auto; }
+  align-items: center; justify-content: center; flex: 0 0 auto; color: #fff; }
 .upt-colorblob svg { width: 12px; height: 12px; display: block; stroke: currentColor; stroke-width: 4; }
+/* Fixed ink, not per-swatch contrast-solved: white in light mode, primary text in dark. Same rule
+   as core's canonical picker (up-topicmodal-colorblob) -- two selectors because this cell shows up
+   both inside .up-root (the inline topic creator) and inside the body-mounted group-modal
+   backdrop, which carries its own data-theme rather than inheriting .up-root's. */
+.up-root[data-theme="dark"] .upt-colorblob,
+.upt-gm-backdrop[data-theme="dark"] .upt-colorblob { color: var(--vc-text); }
 /* Wider and shallower than the library's default: the panel is ~760px across, so a narrow tall
    picker wasted most of it and pushed the bar down the screen. --num-columns is the supported
    knob for this (the grid is shadow DOM, so plain CSS can't reach in). */
@@ -580,25 +586,33 @@
    button there competed with the group header itself. */
 /* The 64px separation sits on the ACTION, not on the KPI block: a margin on the block that has
    to be pushed away survives however the flex row distributes its free space. */
-.upt-grp-more { flex: 0 0 auto; margin-left: 64px; height: 28px; padding: 0; border: 0; background: transparent;
+.upt-grp-more { flex: 0 0 auto; height: 28px; padding: 0; border: 0; background: transparent;
   /* Hidden until the row has been hovered for 750ms (see bindGroupHoverReveal); it slides in from
      the right and the KPIs shift left to make room, instead of appearing on top of them. */
-  max-width: 0; opacity: 0; overflow: hidden; pointer-events: none;
-  transition: max-width 200ms cubic-bezier(.2,0,.38,.9), opacity 160ms ease, margin-left 200ms cubic-bezier(.2,0,.38,.9);
-  margin-left: 0;
+  max-width: 0; opacity: 0; overflow: hidden; pointer-events: none; margin-left: 0;
   color: var(--vc-third); font-family: inherit; font-size: 12.5px; font-weight: 500;
   cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;
-  transition: color 120ms ease; }
+  /* A SECOND transition declaration used to sit right after this one and silently win (CSS keeps
+     only the last value for a repeated property on one rule) -- max-width/opacity/margin-left had
+     no transition at all as a result, so the button popped in instead of sliding. One declaration,
+     everything it actually needs to animate. */
+  transition: max-width 200ms cubic-bezier(.2,0,.38,.9), opacity 160ms ease,
+    margin-left 200ms cubic-bezier(.2,0,.38,.9), color 120ms ease; }
 .upt-grp-more svg { width: 14px; height: 14px; display: block; }
 .upt-grp-head.is-hovered .upt-grp-more { max-width: 200px; opacity: 1; pointer-events: auto; margin-left: 64px; }
 .upt-grp-more:hover { color: var(--vc-text); }
 
-/* open/close animation -- duration must match GRP_ANIM_MS in prompts-table.js */
-.upt-grp-rows { overflow: hidden; }
-.upt-grp-rows.is-entering { animation: uptGrpIn 200ms ease both; }
-.upt-grp-rows.is-closing { animation: uptGrpOut 200ms ease both; }
-@keyframes uptGrpIn { from { opacity: 0; max-height: 0; } to { opacity: 1; max-height: 1400px; } }
-@keyframes uptGrpOut { from { opacity: 1; max-height: 1400px; } to { opacity: 0; max-height: 0; } }
+/* open/close animation -- duration must match GRP_ANIM_MS in prompts-table.js. Byte-for-byte the
+   domains-table drilldown's own technique (.udt-subrows/.udt-sub-inner): grid-template-rows
+   0fr -> 1fr is height-agnostic, so a 2-row group and a 20-row group both animate at the same
+   perceived speed. The previous max-height:0->1400px approach animated over that FIXED 1400px
+   range regardless of actual content height -- a short group hit its real height almost
+   immediately and then just sat there fading in, which read as a pop, not a grow. */
+.upt-grp-rows { display: grid; grid-template-rows: 1fr; }
+.upt-grp-rows.is-entering { animation: uptGrpIn 200ms ease; }
+.upt-grp-rows.is-closing { animation: uptGrpOut 200ms ease forwards; }
+@keyframes uptGrpIn { from { grid-template-rows: 0fr; opacity: 0; } to { grid-template-rows: 1fr; opacity: 1; } }
+@keyframes uptGrpOut { from { grid-template-rows: 1fr; opacity: 1; } to { grid-template-rows: 0fr; opacity: 0; } }
 @media (prefers-reduced-motion: reduce){
   .upt-grp-rows.is-entering, .upt-grp-rows.is-closing { animation-duration: 1ms; }
 }
@@ -608,7 +622,8 @@
 .upt-grp-head.is-open { background: var(--vt-head-bg); }
 .up-root[data-theme="dark"] .upt-grp-head.is-open {
   background: color-mix(in srgb, var(--vc-bg) 50%, var(--up-surface) 50%); }
-.upt-grp-inner { border-top: 1px solid var(--vc-border); background: var(--vt-head-bg); }
+.upt-grp-inner { border-top: 1px solid var(--vc-border); background: var(--vt-head-bg);
+  min-height: 0; overflow: hidden; }
 .up-root[data-theme="dark"] .upt-grp-inner {
   background: color-mix(in srgb, var(--vc-bg) 50%, var(--up-surface) 50%); }
 .upt-grp-inner .up-row { background: var(--vc-bg); }
@@ -666,6 +681,13 @@
    takes the auto margin instead of the gap doing it. */
 .upt-group-item { gap: 8px; justify-content: flex-start; position: relative; }
 .upt-group-item .up-pop-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.upt-group-item.is-draggable { cursor: grab; }
+.upt-group-item.is-dragging { opacity: .4; cursor: grabbing; }
+/* A 2px rule where the dragged row would land, not a full highlight -- matches how reorder
+   affordances read everywhere else (Kanban boards, playlist reorder), and doesn't fight the row's
+   own hover background. */
+.upt-group-item.is-dragover-before { box-shadow: inset 0 2px 0 0 var(--vc-text); }
+.upt-group-item.is-dragover-after { box-shadow: inset 0 -2px 0 0 var(--vc-text); }
 /* Full width, 32px, and it is core's secondary button — same face and same hover as every other
    secondary action in the app. */
 .upt-group-new { width: 100%; height: 32px; margin-top: 4px; }
@@ -707,7 +729,16 @@
   background: transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
 .upt-gm-dotbtn:hover, .upt-gm-colorwrap.is-open .upt-gm-dotbtn { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
 .upt-gm-dot { width: 16px; height: 16px; border-radius: 50%; display: block; border: 1px solid rgba(0,0,0,.14); }
-.upt-gm-colorpanel:not(:empty) { margin-top: 8px; }
+/* Centered (same reasoning as .upt-topicpickpanel above: a left-aligned grid under a full-width
+   row looks like it fell over) and smooth: max-height/opacity animate together on open, driven by
+   .is-open added a frame after mount (see openGroupModal's data-gm-colorbtn handler) so there is
+   an actual "before" state to transition FROM. Because the panel node itself is never recreated
+   (only its innerHTML), the rest of the popup -- everything below it in the modal -- reflows in
+   step with the same 200ms ease instead of snapping to the new height. */
+.upt-gm-colorpanel { display: flex; justify-content: center;
+  max-height: 0; opacity: 0; overflow: hidden; margin-top: 0;
+  transition: max-height 200ms ease, opacity 200ms ease, margin-top 200ms ease; }
+.upt-gm-colorpanel.is-open { max-height: 160px; opacity: 1; margin-top: 10px; }
 .upt-group-dot { position: absolute; top: 5px; right: 5px; width: 6px; height: 6px; border-radius: 50%;
   background: var(--vc-text); opacity: 0; transition: opacity 120ms ease; }
 .upt-group.is-on .upt-group-dot { opacity: 1; }
@@ -729,8 +760,14 @@
    right-aligned as one unit. Always visible (it is state, not an action). */
 .upt-group-eye { width: 24px; height: 24px; flex: 0 0 auto; margin-left: auto; border: 0;
   border-radius: 6px; padding: 0; background: transparent; color: var(--vc-muted); cursor: pointer;
-  display: inline-flex; align-items: center; justify-content: center; }
+  display: inline-flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 120ms ease, color 120ms ease, background 120ms ease; }
 .upt-group-eye svg { width: 14px; height: 14px; display: block; }
+/* Same hover-reveal as the three-dot trigger next to it -- an action row that's all-icons-visible
+   at rest read busier than the rest of this popover. A hidden grouping still reads as hidden while
+   collapsed (the dimmed name/dot below), so nothing is lost by hiding the toggle itself too. */
+.upt-group-item:hover .upt-group-eye,
+.upt-group-item.is-menuopen .upt-group-eye { opacity: 1; }
 .upt-group-eye:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
 .upt-group-eye.is-off { color: var(--vc-third); }
 /* A hidden grouping reads as hidden in the list too. */

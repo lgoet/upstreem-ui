@@ -871,26 +871,10 @@
       /* deep    */ "#ab2b2f", "#8b4c23", "#725a1d", "#1b6a3c", "#1b656a", "#295ea3", "#7a33cc", "#a32972", "#575757", "#6f6f6f"
     ];
     /* Each ROW is one tone scale across the full hue range, each COLUMN one hue — so scanning
-       down picks a mood and across picks a color.
-       The rows are banded by PERCEPTUAL luminance, not by a fixed HSL lightness: at the same L,
-       amber is far brighter than blue, so a fixed-L row came out visibly ragged. Solving each
-       hue for a target luminance instead lands every swatch in a row within ~0.1 of the same
-       contrast ratio. Those bands are also what keeps all 24 legible in BOTH themes at once
-       (>=2.5:1 against white and against near-black) — necessary because only hex_light is ever
-       rendered, so one value has to carry both. */
-    function swatchInk(hex){
-      var h = String(hex).replace("#", "");
-      function lin(c){ c = parseInt(c, 16) / 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
-      var y = 0.2126 * lin(h.slice(0,2)) + 0.7152 * lin(h.slice(2,4)) + 0.0722 * lin(h.slice(4,6));
-      /* 0.179 is where contrast-against-white and contrast-against-black are exactly equal
-         (solve 1.05/(Y+.05) = (Y+.05)/.05), so it picks whichever tick is genuinely more legible
-         rather than guessing at a "looks dark enough" cutoff.
-         The three palette rows were each tuned to sit clearly on ONE side of it — vibrant and
-         deep take a white tick, muted a near-black one. A row straddling the boundary would show
-         some white and some black ticks side by side, which reads as a bug rather than a
-         contrast decision. */
-      return y > 0.179 ? "#151515" : "#ffffff";
-    }
+       down picks a mood and across picks a color. The check mark itself is a fixed white (dark
+       mode: primary text color, see core.css) rather than per-swatch contrast-solved ink — with
+       24 hand-picked, already-legible colors a single fixed ink reads fine on all of them, and it
+       is one fewer thing that has to match between this table's picker and core's canonical one. */
     /* emoji-picker-element (MIT, github.com/nolanlawson/emoji-picker-element) — a self-contained
        Web Component with its own emoji data, no framework/build step required. Loaded lazily as a
        real ES module <script> only once the emoji trigger is actually clicked, so nobody pays for
@@ -1191,8 +1175,8 @@
                footprint and made the whole grid twitch on every pick. */
             return '<button type="button" class="upt-colorcell" data-color="' + esc(hx) + '"' +
               ' aria-label="' + esc(hx) + '" aria-pressed="' + (on ? "true" : "false") + '">' +
-              '<span class="upt-colorblob" style="background:' + esc(hx) +
-                (on ? ";color:" + swatchInk(hx) : "") + '">' + (on ? CHECK_SVG : "") + '</span>' +
+              '<span class="upt-colorblob" style="background:' + esc(hx) + '">' +
+                (on ? CHECK_SVG : "") + '</span>' +
             '</button>';
           }).join("") +
         '</div></div>';
@@ -1538,9 +1522,17 @@
       if (!custom.length){
         h += '<div class="upt-group-note">No custom grouping yet.</div>';
       } else {
-        h += custom.map(function(g){
+        /* Hidden groupings sort to the bottom and cannot be dragged -- reordering something you
+           cannot currently see is a recipe for "why did my list change" later. Visible ones keep
+           whatever order the user last dragged them into (that order IS the stored array order,
+           see reorderCustomGroups below). */
+        var visible = custom.filter(function(g){ return !g.hidden; });
+        var hidden = custom.filter(function(g){ return g.hidden; });
+        h += visible.concat(hidden).map(function(g){
           var open = grpRowMenu === g.key;
-          return '<div class="up-pop-row upt-group-item' + (open ? " is-menuopen" : "") + '">' +
+          return '<div class="up-pop-row upt-group-item' + (open ? " is-menuopen" : "") +
+              (g.hidden ? "" : " is-draggable") + '"' +
+              (g.hidden ? "" : ' draggable="true" data-grp-drag="' + esc(g.key) + '"') + '>' +
             '<span class="upt-grp-cdot" style="background:' + esc(g.color || "#6b7280") + '"></span>' +
             '<span class="up-pop-label">' + esc(g.key) + '</span>' +
             '<button class="upt-group-eye' + (g.hidden ? " is-off" : "") + '" type="button" data-grp-eye="' + esc(g.key) + '"' +
@@ -1563,6 +1555,69 @@
     function syncGroupBtn(){
       if (!elGrpWrap) return;
       elGrpWrap.classList.toggle("is-on", groupingOn());
+    }
+
+    /* Moves dragKey to just before/after targetKey in the SAME array readCustomGroups() already
+       returns -- that array's order IS the display order (see populateGroupMenu), so there is
+       nothing else to keep in sync. Works on the full list including hidden entries wherever they
+       currently sit; only the render step splits visible-first/hidden-last. */
+    function reorderCustomGroups(dragKey, targetKey, before){
+      var all = readCustomGroups();
+      var dragItem = null, dragIdx = -1, targetIdx = -1;
+      for (var i = 0; i < all.length; i++){
+        if (all[i].key === dragKey) { dragItem = all[i]; dragIdx = i; }
+        if (all[i].key === targetKey) targetIdx = i;
+      }
+      if (!dragItem || dragIdx === -1 || targetIdx === -1) return;
+      all.splice(dragIdx, 1);
+      if (dragIdx < targetIdx) targetIdx -= 1;   // the removal shifted everything after it left
+      all.splice(before ? targetIdx : targetIdx + 1, 0, dragItem);
+      writeCustomGroups(all);
+      populateGroupMenu();
+    }
+    /* Native HTML5 drag-and-drop, delegated on the menu itself (it survives every
+       populateGroupMenu() re-render -- only its innerHTML is replaced, never the node). Hidden
+       groupings have no [draggable] (see populateGroupMenu), so they are simply not valid drag
+       sources or drop targets. */
+    var grpDragKey = null;
+    function grpClearDragClasses(){
+      if (!elGrpMenu) return;
+      Array.prototype.forEach.call(elGrpMenu.querySelectorAll("[data-grp-drag]"), function(r){
+        r.classList.remove("is-dragging", "is-dragover-before", "is-dragover-after");
+      });
+    }
+    if (elGrpMenu){
+      elGrpMenu.addEventListener("dragstart", function(e){
+        var row = e.target.closest && e.target.closest("[data-grp-drag]");
+        if (!row){ e.preventDefault(); return; }
+        grpDragKey = row.getAttribute("data-grp-drag");
+        row.classList.add("is-dragging");
+        try { e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", grpDragKey); } catch(err){}
+      });
+      elGrpMenu.addEventListener("dragover", function(e){
+        if (!grpDragKey) return;
+        var row = e.target.closest && e.target.closest("[data-grp-drag]");
+        if (!row || row.getAttribute("data-grp-drag") === grpDragKey) return;
+        e.preventDefault();
+        Array.prototype.forEach.call(elGrpMenu.querySelectorAll("[data-grp-drag]"), function(r){
+          if (r !== row) r.classList.remove("is-dragover-before", "is-dragover-after");
+        });
+        var r2 = row.getBoundingClientRect();
+        row.classList.toggle("is-dragover-before", (e.clientY - r2.top) < r2.height / 2);
+        row.classList.toggle("is-dragover-after", (e.clientY - r2.top) >= r2.height / 2);
+      });
+      elGrpMenu.addEventListener("drop", function(e){
+        if (!grpDragKey) return;
+        var row = e.target.closest && e.target.closest("[data-grp-drag]");
+        if (row && row.getAttribute("data-grp-drag") !== grpDragKey){
+          e.preventDefault();
+          var r2 = row.getBoundingClientRect();
+          reorderCustomGroups(grpDragKey, row.getAttribute("data-grp-drag"), (e.clientY - r2.top) < r2.height / 2);
+        }
+        grpDragKey = null;
+        grpClearDragClasses();
+      });
+      elGrpMenu.addEventListener("dragend", function(){ grpDragKey = null; grpClearDragClasses(); });
     }
 
 
@@ -1687,18 +1742,25 @@
 
       var wrap = grpModal.querySelector(".upt-gm-colorwrap");
       if (wrap) wrap.classList.toggle("is-open", grpColorOpen);
+      /* .upt-gm-colorpanel itself is never recreated (only its innerHTML), so an .is-open class
+         added after mount (see the data-gm-colorbtn handler) survives every re-render while the
+         picker stays open -- picking a color just refreshes the grid's checkmark, it does not
+         replay the entrance animation. */
       var panel = grpModal.querySelector(".upt-gm-colorpanel");
       if (panel){
-        panel.innerHTML = grpColorOpen
-          ? '<div class="upt-colorgrid">' + TOPIC_COLOR_PALETTE.map(function(hx){
+        if (grpColorOpen){
+          panel.innerHTML = '<div class="upt-colorgrid">' + TOPIC_COLOR_PALETTE.map(function(hx){
               var on = hx === col;
               return '<button type="button" class="upt-colorcell" data-gm-color="' + esc(hx) + '"' +
                 ' aria-label="' + esc(hx) + '" aria-pressed="' + (on ? "true" : "false") + '">' +
-                '<span class="upt-colorblob" style="background:' + esc(hx) +
-                  (on ? ";color:" + swatchInk(hx) : "") + '">' + (on ? CHECK_SVG : "") + '</span>' +
+                '<span class="upt-colorblob" style="background:' + esc(hx) + '">' +
+                  (on ? CHECK_SVG : "") + '</span>' +
               '</button>';
-            }).join("") + '</div>'
-          : "";
+            }).join("") + '</div>';
+        } else {
+          panel.classList.remove("is-open");
+          panel.innerHTML = "";
+        }
       }
       var clr = grpModal.querySelector(".upt-gm-clear");
       if (clr) clr.classList.toggle("is-on", !!grpQuery);
@@ -1797,9 +1859,22 @@
           if (si){ si.value = ""; si.focus(); }
           renderGroupModalBody(); return;
         }
-        if (e.target.closest("[data-gm-colorbtn]")){ grpColorOpen = !grpColorOpen; renderGroupModalBody(); return; }
+        if (e.target.closest("[data-gm-colorbtn]")){
+          var wasOpen = grpColorOpen;
+          grpColorOpen = !grpColorOpen;
+          renderGroupModalBody();
+          /* Opening animates in (two-phase: mount collapsed, THEN add .is-open next frame so the
+             browser actually has a "before" state to transition from -- same trick the modal
+             itself uses for .is-shown). Closing is instant; only "einblenden" was asked for. */
+          if (!wasOpen && grpColorOpen){
+            var p0 = grpModal.querySelector(".upt-gm-colorpanel");
+            if (p0) requestAnimationFrame(function(){ p0.classList.add("is-open"); });
+          }
+          return;
+        }
         var cc = e.target.closest("[data-gm-color]");
-        if (cc){ grpColor = cc.getAttribute("data-gm-color"); grpColorOpen = false; renderGroupModalBody(); return; }
+        /* Stays open on pick -- same as the emoji/color pickers everywhere else in this table. */
+        if (cc){ grpColor = cc.getAttribute("data-gm-color"); renderGroupModalBody(); return; }
         var chip = e.target.closest("[data-gm-topic]");
         if (chip){
           var tid = chip.getAttribute("data-gm-topic");
@@ -2518,9 +2593,21 @@
         if (e.target.closest("[data-grp-toggle]")){
           state.grouped = !state.grouped;
           writeGrouped(state.grouped);
+          /* Flipping between the flat and grouped view is a different question, not a refinement
+             of the last one -- a search or selection made in one reads as stale leftover state in
+             the other. */
+          clearSelection();
+          var hadQuery = !!state.query;
+          if (hadQuery){
+            state.query = "";
+            if (elSearchIn) elSearchIn.value = "";
+            if (elSearch) elSearch.classList.remove("is-open", "has-text");
+          }
           populateGroupMenu(); syncGroupBtn();
           state.expandedGroup = null;
-          if (groupingOn() && !state.groupsHasData) fetchGroups(); else render();
+          if (groupingOn() && !state.groupsHasData) fetchGroups();
+          else if (hadQuery) runSearch();     // clears the filter server-side, not just the input
+          else render();
           return;
         }
         var gmo = e.target.closest("[data-grp-mode]");
