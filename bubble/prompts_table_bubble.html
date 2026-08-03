@@ -426,6 +426,49 @@
     "Second argument was: String(863 chars) — value: …"  -> Text da, aber nicht als Array lesbar
     gar keine Meldung                        -> die Gruppen sind angekommen
 
+
+  ── Regex zum Extrahieren (Bubble: "extract with Regex") ─────────────────────
+  So sehen die Strings wirklich aus, live abgegriffen:
+
+    uptGroupOpen
+    {"group_key":"Solar","tag_ids":"a1-uuid","untagged":"no","is_custom":"no",
+     "tagmode":"and","limit":15,"offset":0,"page":1,"order":"visibility_desc","request_id":1}
+
+    uptGenerateMore
+    {"group_key":"SUV & Hybrid","tag_ids":"t1,t3"}
+
+    uptGroups  (ohne eigene Gruppierungen)
+    {"grouped":"yes"}
+
+    uptGroups  (mit eigenen Gruppierungen — `groups` ist ein JSON-String IM JSON,
+                seine Anfuehrungszeichen sind deshalb mit \ maskiert)
+    {"grouped":"yes","groups":"[{\"key\":\"SUV & Hybrid\",\"tag_ids\":[\"t1\",\"t3\"],\"color\":\"#b47476\"}]"}
+
+  Feld            Regex                              Ergebnis (Beispiel)
+  ─────────────── ────────────────────────────────── ──────────────────────────
+  group_key       (?<="group_key":")[^"]*            SUV & Hybrid
+  tag_ids         (?<="tag_ids":")[^"]*              t1,t3      -> :split by ","
+  untagged        (?<="untagged":")[^"]*             no
+  is_custom       (?<="is_custom":")[^"]*            no
+  tagmode         (?<="tagmode":")[^"]*              and
+  order           (?<="order":")[^"]*                visibility_desc
+  limit           (?<="limit":)[0-9]+                15
+  offset          (?<="offset":)[0-9]+               0
+  page            (?<="page":)[0-9]+                 1
+  request_id      (?<="request_id":)[0-9]+           1
+  grouped         (?<="grouped":")[^"]*              yes
+  groups          (?<="groups":").*(?="\}$)          siehe unten
+
+  `groups` braucht einen zweiten Schritt: das Extrahierte ist noch maskiert
+  ([{\"key\":\"SUV & Hybrid\",...). Danach :find & replace  \"  ->  "  , dann ist es
+  gueltiges JSON und kann direkt als p_groups gehen.
+
+  Zwei Fallstricke:
+  · tag_ids ist eine KOMMAGETRENNTE Textliste, kein JSON-Array. In Bubble
+    :split by "," verwenden -- das Feld muss "text" sein, nicht "list of texts".
+  · [^"]* bricht ab, wenn ein Gruppenname selbst ein Anfuehrungszeichen enthaelt
+    (es steht dann als \" im String). Betrifft nur selbst vergebene Gruppennamen.
+
   ── Eigene Gruppierungen ─────────────────────────────────────────────────────
   Liegen AUSSCHLIESSLICH im localStorage des Browsers, unter genau diesem Key und Format:
       promptGroups = [{ "key": "SUV & Hybrid", "tag_ids": ["uuid1","uuid2"] }]
