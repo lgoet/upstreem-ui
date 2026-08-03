@@ -543,6 +543,51 @@
     if (!lineWrap || !lineCanvas || !tableEl || !mxWrap || !mxCanvas) return null;
 
     var instanceId = root.getAttribute("data-instance") || "default";
+
+    /* ---------- markup self-healing ----------
+       Bubble markup is pasted by hand, so a placement can sit on an OLDER copy of the root HTML
+       forever while its CDN pin moves forward. Anything this file needs but the markup may not
+       have yet is created here instead of being a "please re-paste" instruction that silently
+       does nothing until someone acts on it. Same idea as core's ensureFirstGrip(). Idempotent. */
+    function ensureChrome(){
+      var chartTools = root.querySelector(".ubo-head-tools");
+      if (chartTools && !root.querySelector(".ubo-hide")){
+        var eye = document.createElement("button");
+        eye.className = "ubo-hide ubo-iconbtn";
+        eye.type = "button";
+        eye.setAttribute("data-tip", "Hide");
+        eye.setAttribute("aria-label", "Hide");
+        eye.innerHTML =
+          '<svg class="ic-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>' +
+          '<svg class="ic-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+        chartTools.appendChild(eye);
+      }
+      if (chartTools && !root.querySelector(".ubo-yaxis")){
+        var ys = document.createElement("div");
+        ys.className = "ubo-yaxis";
+        ys.setAttribute("role", "tablist");
+        ys.setAttribute("aria-label", "Y axis");
+        ys.innerHTML = '<button class="ubo-yaxis-btn is-active" data-yaxis="sentiment" type="button" role="tab">Sentiment</button>' +
+                       '<button class="ubo-yaxis-btn" data-yaxis="ranking" type="button" role="tab">Ranking</button>';
+        var eyeBtn = root.querySelector(".ubo-hide");
+        if (eyeBtn) chartTools.insertBefore(ys, eyeBtn); else chartTools.appendChild(ys);
+      }
+      /* Export: an old placement has it as a bare 32px icon button (.ubo-export.ubo-iconbtn).
+         Upgrade it in place to the app-wide full button rather than leaving one table with a
+         different-looking Export than every other table. */
+      var oldExport = root.querySelector(".ubo-export");
+      if (oldExport && !root.querySelector(".up-export")){
+        oldExport.className = "up-export";
+        oldExport.removeAttribute("data-tip");
+        oldExport.innerHTML =
+          '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
+          '<span>Export</span>';
+      }
+      /* The table container needs core's .up-table for its frame/background. */
+      if (tableEl && !tableEl.classList.contains("up-table")) tableEl.classList.add("up-table");
+    }
+    ensureChrome();
+
     var myCtrlId = "ubo_" + Math.random().toString(36).slice(2) + "_" + Date.now();
     var isDark = isYes(root.getAttribute("data-isdark"));
     if (isDark) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
@@ -576,21 +621,17 @@
     var colorScale = UC.getColorScalePref ? UC.getColorScalePref() : "default";
     var chartMode = (readLS("chartmode", "line") === "landscape") ? "landscape" : "line";
     var yAxis = (readLS("yaxis", "sentiment") === "ranking") ? "ranking" : "sentiment";
+    /* Column model in the shape UC.makeColumns expects (w / min / prio), so this table gets the
+       same width behaviour as every other one: drag the Brand column, columns drop by prio when
+       the box genuinely runs out of room, both persisted per instance. */
     var COLS_ALL = [
-      { key: "visibility", label: "Visibility" },
-      { key: "ranking",    label: "Ranking" },
-      { key: "sentiment",  label: "Sentiment" }
+      { key: "visibility", label: "Visibility", w: "minmax(120px, 1fr)", min: 120, prio: 30 },
+      { key: "ranking",    label: "Ranking",    w: "minmax(112px, 1fr)", min: 112, prio: 20 },
+      { key: "sentiment",  label: "Sentiment",  w: "minmax(120px, 1fr)", min: 120, prio: 10 },
+      /* Inactive-only, and the inverse of the three above — see cfg.isHidden below. */
+      { key: "deactivated", label: "Deactivated", w: "minmax(140px, 0.8fr)", min: 140, prio: 5 }
     ];
-    var colsOn = (function(){
-      var out = {};
-      COLS_ALL.forEach(function(c){ out[c.key] = true; });
-      try {
-        var raw = window.localStorage.getItem(key("cols"));
-        if (raw){ var p = JSON.parse(raw); COLS_ALL.forEach(function(c){ if (p[c.key] === false) out[c.key] = false; }); }
-      } catch(e){}
-      return out;
-    })();
-    function writeCols(){ try { window.localStorage.setItem(key("cols"), JSON.stringify(colsOn)); } catch(e){} }
+    var METRIC_COLS = COLS_ALL.filter(function(c){ return c.key !== "deactivated"; });
 
     function readProcessing(){
       var a = root.getAttribute("data-processing"), b = root.getAttribute("data-processing2");
@@ -731,34 +772,61 @@
     var MORE_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' +
       '<circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>';
 
-    function colOn(k){ return colsOn[k] !== false; }
-    function gridTemplate(){
-      if (state.status === "inactive") return "minmax(140px,1fr) minmax(120px,0.7fr) 56px";
-      var parts = ["44px", "minmax(140px,1.4fr)"];
-      if (colOn("visibility")) parts.push("minmax(96px,0.9fr)");
-      if (colOn("ranking"))    parts.push("minmax(88px,0.8fr)");
-      if (colOn("sentiment"))  parts.push("minmax(96px,0.9fr)");
-      parts.push("56px");
-      return parts.join(" ");
+    /* The table kit: grid template, column dropping, the Brand column's drag handle and the
+       Table Settings menu all come from core now. The Inactive view is a different table (Brand /
+       Deactivated / Actions) with nothing resizable or hideable, so it is fed through cfg.isHidden
+       rather than through the user's saved column prefs -- switching back must not have clobbered
+       their choices. */
+    var IDX_W = 44;
+    var colsKit = UC.makeColumns({
+      root: root, state: state, columns: COLS_ALL,
+      storePrefix: "ubo", instanceId: instanceId,
+      firstKey: "brand", firstMin: 160, actionsMin: 56,
+      /* No "#" column in the Inactive list — it is not a ranking, so the lead track collapses. */
+      leadWidth: function(){ return state.status === "inactive" ? 0 : IDX_W; },
+      badgeSel: ".ubo-cols-badge", cellPrefixes: ["up", "ubo"],
+      isHidden: function(c){
+        return (c.key === "deactivated") ? (state.status !== "inactive")
+                                         : (state.status === "inactive");
+      },
+      onChange: function(){ renderTable(); }
+    });
+    state.cols = colsKit.readCols();
+    state.widths = colsKit.readWidths();
+    var applyCols = colsKit.applyCols, startResize = colsKit.startResize;
+    var populateCols = colsKit.populateCols, toggleCol = colsKit.toggleCol;
+    var selectAllCols = colsKit.selectAllCols, syncColsBadge = colsKit.syncColsBadge;
+    function colOn(k){
+      if (k === "deactivated") return state.status === "inactive";
+      return state.cols[k] !== false && state.status !== "inactive";
     }
+    root.addEventListener("pointerdown", function(e){
+      var grip = e.target.closest(".up-grip");
+      if (!grip) return;
+      e.stopPropagation();
+      startResize(e);
+    });
     function infoIcon(kind){
       return '<span class="up-th-info" data-explain="' + kind + '">' +
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
         '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span>';
     }
+    /* Every cell carries its column key as a class (up-th-<key> / up-td-<key>) because that is
+       what core's applyCols() shows and hides by. The Brand header is the resizable one; core
+       appends the .up-grip to it itself. */
     function headHtml(){
       if (state.status === "inactive"){
         return '<div class="up-thead">' +
-          '<div class="up-th">Brand</div>' +
-          '<div class="up-th">Deactivated</div>' +
+          '<div class="up-th up-th-brand">Brand</div>' +
+          '<div class="up-th up-th-deactivated">Deactivated</div>' +
           '<div class="up-th up-th-act"></div></div>';
       }
       var h = '<div class="up-thead">' +
         '<div class="up-th up-th-idx">' + HASH_ICON + '</div>' +
-        '<div class="up-th">Brand</div>';
-      if (colOn("visibility")) h += '<div class="up-th">Visibility' + infoIcon("visibility") + '</div>';
-      if (colOn("ranking"))    h += '<div class="up-th">Ranking' + infoIcon("ranking") + '</div>';
-      if (colOn("sentiment"))  h += '<div class="up-th">Sentiment' + infoIcon("sentiment") + '</div>';
+        '<div class="up-th up-th-brand">Brand</div>';
+      if (colOn("visibility")) h += '<div class="up-th up-th-visibility">Visibility' + infoIcon("visibility") + '</div>';
+      if (colOn("ranking"))    h += '<div class="up-th up-th-ranking">Ranking' + infoIcon("ranking") + '</div>';
+      if (colOn("sentiment"))  h += '<div class="up-th up-th-sentiment">Sentiment' + infoIcon("sentiment") + '</div>';
       h += '<div class="up-th up-th-act"></div></div>';
       return h;
     }
@@ -799,27 +867,27 @@
         '<div class="up-td up-td-idx">' + pos + '</div>' +
         '<div class="up-td up-td-brand">' + logoHtml(r.logo_url || r.favicon_url) +
           '<span class="ubo-brand-name">' + esc(r.name == null ? "" : r.name) + '</span></div>';
-      if (colOn("visibility")) h += '<div class="up-td">' + vis + '</div>';
-      if (colOn("ranking"))    h += '<div class="up-td">' + rank + '</div>';
-      if (colOn("sentiment"))  h += '<div class="up-td">' + sent + '</div>';
+      if (colOn("visibility")) h += '<div class="up-td up-td-visibility">' + vis + '</div>';
+      if (colOn("ranking"))    h += '<div class="up-td up-td-ranking">' + rank + '</div>';
+      if (colOn("sentiment"))  h += '<div class="up-td up-td-sentiment">' + sent + '</div>';
       return h + actionsCell() + '</div>';
     }
     function inactiveRowHtml(r){
       return '<div class="up-row" data-id="' + esc(String(r.company_id == null ? "" : r.company_id)) + '">' +
         '<div class="up-td up-td-brand">' + logoHtml(r.logo_url || r.favicon_url) +
           '<span class="ubo-brand-name">' + esc(r.name == null ? "" : r.name) + '</span></div>' +
-        '<div class="up-td"><span class="ubo-deact">' + esc(UC.fmtDate(r.deactivated_at) || "–") + '</span></div>' +
+        '<div class="up-td up-td-deactivated"><span class="ubo-deact">' + esc(UC.fmtDate(r.deactivated_at) || "–") + '</span></div>' +
         actionsCell() + '</div>';
     }
     var emptyGraceTimer = null;
     function renderTable(){
       if (!isOwner()) return;
-      tableEl.style.setProperty("--up-cols", gridTemplate());
       var inactive = state.status === "inactive";
       var hasData = inactive ? true : state.hasTable;
       if (isLoading() || !hasData){
         if (emptyGraceTimer){ clearTimeout(emptyGraceTimer); emptyGraceTimer = null; }
         tableEl.innerHTML = skeletonHtml();
+        applyCols();
         return;
       }
       var rows = inactive ? (state.inactiveRows || []) : (state.tableRows || []);
@@ -830,11 +898,13 @@
            Same short grace window visibility-chart uses before committing to "No data". */
         if (!emptyGraceTimer){
           tableEl.innerHTML = skeletonHtml();
+          applyCols();
           emptyGraceTimer = setTimeout(function(){
             emptyGraceTimer = null;
             var live = (state.status === "inactive") ? state.inactiveRows : state.tableRows;
             if (isLoading() || (Array.isArray(live) && live.length && !q)) return;
             tableEl.innerHTML = headHtml() + '<div class="up-empty-mini">' + (q ? "No matches" : "No data") + '</div>';
+            applyCols();
           }, 600);
         }
         return;
@@ -842,6 +912,7 @@
       if (emptyGraceTimer){ clearTimeout(emptyGraceTimer); emptyGraceTimer = null; }
       var body = rows.map(inactive ? inactiveRowHtml : activeRowHtml).join("");
       tableEl.innerHTML = headHtml() + '<div class="up-tbody">' + body + '</div>';
+      applyCols();
       Array.prototype.slice.call(tableEl.querySelectorAll(".up-row")).forEach(function(row){
         var id = row.getAttribute("data-id");
         if (!inactive){
@@ -1059,28 +1130,6 @@
         '<div class="up-pop-row"><span class="up-pop-label">Descending</span><span class="up-switch ' + (sortDir === "desc" ? "is-on" : "") + '"></span></div>';
     }
 
-    /* ---- table settings (column visibility) ---- */
-    function syncColsBadge(){
-      var badge = root.querySelector(".ubo-cols-badge");
-      if (!badge) return;
-      var on = COLS_ALL.filter(function(c){ return colOn(c.key); }).length;
-      var show = on > 0 && on < COLS_ALL.length;
-      badge.textContent = show ? String(on) : "";
-      badge.classList.toggle("is-visible", show);
-    }
-    function populateCols(){
-      if (!colsMenu) return;
-      var visN = COLS_ALL.filter(function(c){ return colOn(c.key); }).length;
-      var rows = COLS_ALL.map(function(c){
-        var on = colOn(c.key);
-        var locked = on && visN === 1;   // never let the last metric column be switched off
-        return '<div class="up-pop-row' + (locked ? " is-locked" : "") + '" data-col="' + c.key + '">' +
-          '<span class="up-pop-label">' + esc(c.label) + '</span>' +
-          '<span class="up-switch' + (on ? " is-on" : "") + '" role="switch"></span></div>';
-      }).join("");
-      colsMenu.innerHTML = '<div class="up-pop-head up-pop-head-row"><span>Columns</span>' +
-        '<button class="up-pop-action' + (visN < COLS_ALL.length ? "" : " is-hidden") + '" type="button" data-colsall>Select all</button></div>' + rows;
-    }
 
     /* ---- row actions (three-dot menu) ----
        Local by §25 (single consumer). Body-mounted for the same reason the Chart Settings menu is:
@@ -1290,17 +1339,14 @@
         /* --- inside the columns menu --- */
         if (e.target.closest("[data-colsall]")){
           e.stopPropagation();
-          COLS_ALL.forEach(function(c){ colsOn[c.key] = true; });
-          writeCols(); populateCols(); syncColsBadge(); renderTable();
+          selectAllCols();
           return;
         }
         var colRow = e.target.closest(".up-cols-menu [data-col]");
         if (colRow){
           e.stopPropagation();
           if (colRow.classList.contains("is-locked")) return;
-          var ck = colRow.getAttribute("data-col");
-          colsOn[ck] = !colOn(ck);
-          writeCols(); populateCols(); syncColsBadge(); renderTable();
+          toggleCol(colRow.getAttribute("data-col"));
           return;
         }
         /* --- inside the brands filter menu --- */

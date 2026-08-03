@@ -575,6 +575,14 @@
     var root = cfg.root, state = cfg.state, COLUMNS = cfg.columns;
     var FIRST = cfg.firstKey || "domain";
     var FIRST_MIN = cfg.firstMin || 220, ACTIONS_MIN = cfg.actionsMin || 100;
+    /* cfg.leadWidth — a fixed, never-hidden, never-resized track BEFORE the resizable lead column
+       (brands-overview's "#" rank cell). Without it such a table could not use this kit at all and
+       had to hand-roll its own grid template, which is how it ended up with no column resizing.
+       Every width calculation below works on the space LEFT OVER after it. */
+    function LEAD(){
+      var v = (typeof cfg.leadWidth === "function") ? cfg.leadWidth() : cfg.leadWidth;
+      return v || 0;
+    }
     var prefixes = cfg.cellPrefixes || ["up"];
     /* Key format is deliberately "<pfx>_cols__<instanceId>", matching what the tables wrote
        before this machinery moved into core — changing it would silently throw away every user's
@@ -616,7 +624,7 @@
        column. A pinned lead column instead squeezes every other track down toward its own
        minimum (applyCols' own clamp handles that) — it does not make columns disappear. */
     function firstWidth(cw){
-      return Math.max(FIRST_MIN, cw * 0.30);
+      return Math.max(FIRST_MIN, (cw - LEAD()) * 0.30);
     }
     /* Measurement-driven column dropping. The hardcoded is-narrow/is-vnarrow breakpoints below
        only ever knew the ROOT's width, never what the columns actually need — so any table whose
@@ -635,7 +643,7 @@
          conservative here costs at most one column near a threshold; erring the other way puts
          columns off-screen, which is the bug this exists to prevent. */
       var reserve = 24 + cols.length;
-      var budget = cw - firstWidth(cw) - reserve;
+      var budget = cw - LEAD() - firstWidth(cw) - reserve;
       if (!cfg.noActions && !root.classList.contains("is-t2")) budget -= ACTIONS_MIN;
       var need = 0;
       cols.forEach(function(c){ need += colMin(c.key); });
@@ -706,7 +714,9 @@
        behaviour now ships with the kit instead of with a copy-pasted <span>. Idempotent — a
        markup-provided grip is left exactly as it is. */
     function ensureFirstGrip(){
-      var th = root.querySelector(".up-thead .up-th");
+      /* With a lead track the resizable column is the SECOND cell, not the first. */
+      var ths = root.querySelectorAll(".up-thead .up-th");
+      var th = ths[LEAD() ? 1 : 0];
       if (!th || th.querySelector(".up-grip")) return;
       var g = document.createElement("span");
       g.className = "up-grip";
@@ -717,6 +727,10 @@
 
     var lastTpl = null, lastSigCols = null;
     function applyCols(){
+      /* Tables that render their own <thead> markup (brands-overview swaps between two different
+         head layouts) throw the grip away on every render, so re-ensure it here instead of only
+         once at construction. Idempotent: one querySelector when it is already there. */
+      ensureFirstGrip();
       /* The grid template is rebuilt from the shown columns rather than just hiding cells: with
          CSS grid a hidden cell would leave its track behind and knock the whole row out of line.
          effectiveCols() and the container width are read ONCE up front and reused: every call
@@ -747,9 +761,11 @@
         var othersMin = 0;
         cols.forEach(function(c){ othersMin += colMin(c.key); });
         if (!cfg.noActions && !root.classList.contains("is-t2")) othersMin += ACTIONS_MIN;
-        if (cw) firstPx = Math.max(FIRST_MIN, Math.min(W[FIRST], cw - othersMin));
+        if (cw) firstPx = Math.max(FIRST_MIN, Math.min(W[FIRST], cw - LEAD() - othersMin));
       }
-      var parts = [pinned ? firstPx + "px" : "minmax(30%, 1.6fr)"];
+      var lw = LEAD();
+      var parts = lw ? [lw + "px"] : [];
+      parts.push(pinned ? firstPx + "px" : "minmax(30%, 1.6fr)");
       cols.forEach(function(c){
         parts.push(pinned ? "minmax(" + colMin(c.key) + "px, 1fr)" : colTrack(c));
       });
@@ -795,7 +811,8 @@
       var thead = root.querySelector(".up-thead");
       if (!thead) return;
       var startX = e.clientX;
-      var first = thead.firstElementChild;
+      var first = thead.children[LEAD() ? 1 : 0];
+      if (!first) return;
       var wA = first.getBoundingClientRect().width;
       var total = thead.getBoundingClientRect().width;
       var others = layoutKeys().slice(1).reduce(function(sum, k){ return sum + colMin(k); }, 0);
@@ -806,7 +823,7 @@
          minimum. Two independently-computed "how far can the lead column grow" limits that
          disagreed by exactly one fudge factor. */
       var reserve = 24 + effectiveCols().length;
-      var maxA = Math.max(FIRST_MIN, total - others - reserve);
+      var maxA = Math.max(FIRST_MIN, total - LEAD() - others - reserve);
       var grip = e.target.closest(".up-grip");
       if (grip) grip.classList.add("is-active");
       root.classList.add("is-resizing");
