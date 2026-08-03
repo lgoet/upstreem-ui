@@ -1507,7 +1507,7 @@
         elGrpWrap.innerHTML =
           '<button class="upt-group-btn up-iconbtn" type="button" data-tip="Grouping" aria-label="Grouping" aria-haspopup="menu" aria-expanded="false">' +
             GRP_ICON + '<span class="upt-group-dot"></span></button>' +
-          '<div class="up-pop-menu upt-group-menu" role="menu" aria-hidden="true"></div>';
+          '<div class="up-cols-menu upt-group-menu" role="menu" aria-hidden="true"></div>';
         /* Left of the column-settings gear — grouping changes WHAT the table lists, the gear only
            changes how it is drawn, and the app orders toolbar controls that way everywhere. */
         if (elCols && elCols.parentNode === elHeadTools) elHeadTools.insertBefore(elGrpWrap, elCols);

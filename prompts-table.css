@@ -629,8 +629,21 @@
   background: var(--vc-sk); opacity: .55; animation: uutpulse 1.2s ease-in-out infinite; }
 .upt-grp-skrow:last-child { border-bottom: 0; }
 
-/* ---------- grouping dropdown ---------- */
+/* ---------- grouping dropdown ----------
+   The menu itself is core's .up-cols-menu shell (the Table-Settings dropdown), not a private
+   look-alike: it already carries the absolute positioning, the frame, the shadow and the
+   open/close transition, and .up-pop-head/.up-pop-row/.up-switch/.up-dense inside it are the same
+   parts every other dropdown here uses. An invented ".up-pop-menu" class matched nothing at all,
+   which is why the panel rendered as an unstyled static block in the middle of the toolbar. */
 .upt-group { position: relative; flex: 0 0 auto; }
+/* .up-cols-menu's own open state keys off .up-cols.is-open — this wrap is .upt-group. */
+.upt-group.is-open .upt-group-menu { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+.upt-group.is-open .upt-group-btn { color: var(--vc-text); background: var(--vc-heading-bg); }
+/* 230px (the shell's default) is enough for a column list but not for three sort labels side by
+   side — "Name A–Z" wrapped onto two lines inside its own button. */
+.upt-group-menu { width: 264px; }
+.upt-group-menu .up-dense { display: flex; gap: 4px; }
+.upt-group-menu .up-dense-btn { flex: 1 1 0; min-width: 0; padding: 0 6px; white-space: nowrap; }
 .upt-group-dot { position: absolute; top: 5px; right: 5px; width: 6px; height: 6px; border-radius: 50%;
   background: var(--vc-text); opacity: 0; transition: opacity 120ms ease; }
 .upt-group.is-on .upt-group-dot { opacity: 1; }
