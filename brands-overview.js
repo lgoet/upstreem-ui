@@ -583,6 +583,12 @@
           '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
           '<span>Export</span>';
       }
+      /* The Linechart | Landscape switcher ships icon-free. Older pasted markup still carries an
+         SVG in each button, so strip them here rather than leaving the switcher looking different
+         depending on how old a placement's HTML is. */
+      Array.prototype.slice.call(root.querySelectorAll("[data-chartmode] svg")).forEach(function(svg){
+        svg.parentNode.removeChild(svg);
+      });
       /* The table container needs core's .up-table for its frame/background. */
       if (tableEl && !tableEl.classList.contains("up-table")) tableEl.classList.add("up-table");
     }
