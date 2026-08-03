@@ -454,14 +454,14 @@
        living outside any .up-root — it redeclares the --vc- and --vc-switch- tokens here with
        this app's one universal light/dark palette (core.css's own .up-root tokens above) rather
        than per component, so every consumer's menu looks and themes identically by construction. */
-    .vot-scale-btn, .ccl-settings-btn {
+    .vot-scale-btn, .ccl-settings-btn, .ubo-scale-btn {
       width: 28px; height: 28px; border-radius: 8px; z-index: 5;
       border: 0; background: transparent; color: var(--vc-third);
       cursor: pointer; padding: 0; display: inline-flex; align-items: center; justify-content: center;
       opacity: 0; pointer-events: none;
       transition: opacity 120ms ease, color 120ms ease;   /* fast hide */
     }
-    .vot-scale-btn svg, .ccl-settings-btn svg { width: 14px; height: 14px; display: block; }
+    .vot-scale-btn svg, .ccl-settings-btn svg, .ubo-scale-btn svg { width: 14px; height: 14px; display: block; }
     /* Hovering the host panel reveals it, after a delay — the button itself and its own open state
        keep it visible with no delay once already shown, so it never flickers mid-interaction.
        pointer-events is listed with the SAME delay as opacity's delay PLUS DURATION (900+160=
@@ -473,21 +473,24 @@
        CDN pin or a browser that doesn't recompute hover state the instant pointer-events flips
        can't show a tooltip over an invisible button either way. */
     .vot-panel-body:hover .vot-scale-btn, .combo-panel-body:hover .ccl-settings-btn,
+    .ubo-panel-body:hover .ubo-scale-btn, .ubo-scale-btn:focus-visible, .ubo-scale-btn.is-open,
     .vot-scale-btn:focus-visible, .ccl-settings-btn:focus-visible,
     .vot-scale-btn.is-open, .ccl-settings-btn.is-open {
       opacity: 1; pointer-events: auto;
       transition: opacity 160ms ease 900ms, pointer-events 0s 1060ms, color 120ms ease;   /* delayed show */
     }
-    .vot-scale-btn:hover, .ccl-settings-btn:hover, .vot-scale-btn.is-open, .ccl-settings-btn.is-open { color: var(--vc-text); }
+    .vot-scale-btn:hover, .ccl-settings-btn:hover, .vot-scale-btn.is-open, .ccl-settings-btn.is-open,
+    .ubo-scale-btn:hover, .ubo-scale-btn.is-open { color: var(--vc-text); }
     /* Skeleton is loading -> the button (and, if it was somehow already open, its menu) hides
        outright, no hover-reveal override. The component toggles .is-line-loading on its OWN root
        (not this button) the same way it already tracks every other loading state, so this is a
        plain descendant rule, not new JS wiring. !important because the alternative is duplicating
        every opacity/pointer-events rule above at higher specificity for one edge case. */
-    .vot-root.is-line-loading .vot-scale-btn, .combo-root.is-line-loading .ccl-settings-btn {
+    .vot-root.is-line-loading .vot-scale-btn, .combo-root.is-line-loading .ccl-settings-btn,
+    .ubo-root.is-line-loading .ubo-scale-btn {
       opacity: 0 !important; pointer-events: none !important;
     }
-    @media (prefers-reduced-motion: reduce){ .vot-scale-btn, .ccl-settings-btn { transition-duration: 1ms; } }
+    @media (prefers-reduced-motion: reduce){ .vot-scale-btn, .ccl-settings-btn, .ubo-scale-btn { transition-duration: 1ms; } }
 
     .up-scale-menu {
       --vc-text: #1f1f1b; --vc-muted: #6f737c; --vc-third: #9e9e9e; --vc-border: #e0e2e6;
@@ -515,6 +518,28 @@
     .up-scale-menu[data-theme="dark"] .up-dense-btn.is-active { background: #121212; border-color: #353535; }
     @media (prefers-reduced-motion: reduce){ .up-scale-menu { transition-duration: 1ms; } }
     .up-scale-menu * { box-sizing: border-box; }
+
+    /* Colour-scale option rows. These live here — not in a component file — because UC.makeScaleMenu
+       (core.js) is what emits them: JS in core whose class names are styled in ONE component's CSS
+       is exactly the split that has already produced a "renders as unstyled text" bug twice. They
+       were .vot-scale-* in visibility-chart.css until brands-overview became the second consumer.
+       Renaming to .up-* is safe despite already-deployed pages: this menu is built at RUNTIME by
+       core.js, so no pasted Bubble markup contains these class names (unlike the TRIGGER button,
+       which does — hence .vot-scale-btn keeps its component-specific name in the rule above). */
+    .up-scale-opt { display: flex; flex-direction: column; gap: 8px; padding: 9px 10px; border-radius: 9px; cursor: pointer; }
+    .up-scale-opt:hover, .up-scale-opt.is-active { background: var(--vc-heading-bg); }
+    .up-scale-opt-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .up-scale-opt-lbl { font-size: 13.5px; font-weight: 500; color: var(--vc-text); }
+    .up-scale-opt .up-check { width: 16px; height: 16px; color: var(--vc-text); opacity: 0; flex: 0 0 auto; }
+    .up-scale-opt.is-active .up-check { opacity: 1; }
+    /* "Nebeneinander, etwas übereinandergeschoben, mit sichtbarem Gap dazwischen" — each dot overlaps
+       the previous by a third, with a background-colored ring (border) standing in for the gap, so the
+       seam between colors stays visible even though the dots physically overlap (the same idiom as an
+       avatar stack). */
+    .up-scale-dots { display: flex; }
+    .up-scale-dot { width: 18px; height: 18px; border-radius: 50%; flex: 0 0 auto;
+      border: 2px solid var(--vc-bg); margin-left: -6px; }
+    .up-scale-dot:first-child { margin-left: 0; }
 
     .up-pop-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; border-radius: 9px; }
     .up-pop-row:hover { background: var(--vc-heading-bg); }

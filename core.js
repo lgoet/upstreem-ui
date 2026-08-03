@@ -2570,6 +2570,197 @@
     return breaks;
   }
 
+  /* ---------- shared line-chart data prep + colour scales ----------
+     visibility-chart and brands-overview are fed by the SAME RPC and draw the same "top 7
+     companies over time" line from it. This mapping, the fallback palette and the four colour
+     scales all lived in visibility-chart.js; the second consumer is exactly the trigger §25 names
+     for extracting instead of copy-pasting. Behaviour is byte-identical to what visibility-chart
+     did before — the only change is where it lives.
+
+     LINE_PALETTE backfills companies that arrive with NO colour of their own, and is unrelated to
+     the COLOR_SCALES below (a scale overrides every company's colour; the palette only fills gaps).
+     Every scale hex is a real, sourced palette (see STYLEGUIDE), not invented:
+       tableau     — Tableau 10's softened/professional-BI variant
+       colorblind  — Okabe/Ito (2008), the de-facto colourblind-safe qualitative palette (the 8th
+                     colour, black, is dropped — it doesn't read as a distinct "brand" line and
+                     disappears against a dark chart background)
+       vivid       — D3/matplotlib "tab10"/Category10
+     All three are mid-toned by design, which is what lets them work unchanged on a white AND a
+     dark chart background — no separate light/dark variant needed. */
+  var LINE_PALETTE = ["#14b8a6","#0ea5e9","#6366f1","#d946ef","#f97316","#f43f5e","#64748b"];
+  var COLOR_SCALES = {
+    tableau:    { label: "Tableau",         colors: ["#5778a4","#e49444","#d1615d","#85b6b2","#6a9f58","#e7ca60","#a87c9f"] },
+    colorblind: { label: "Colorblind Safe", colors: ["#e69f00","#56b4e9","#009e73","#f0e442","#0072b2","#d55e00","#cc79a7"] },
+    vivid:      { label: "Vivid",           colors: ["#1f77b4","#ff7f0e","#2ca02c","#d62728","#9467bd","#8c564b","#e377c2"] }
+  };
+  /* "default" is not in COLOR_SCALES on purpose — it means "each company's own colour, backfilled
+     from LINE_PALETTE", which is what a null colorScale already produces below. */
+  var SCALE_ORDER = ["default", "vivid", "tableau", "colorblind"];
+  var MAX_LINE_SERIES = 7;
+  function buildLineDatasets(series, companies, colorScale){
+    series = Array.isArray(series) ? series : [];
+    companies = Array.isArray(companies) ? companies : [];
+    var metaMap = {};
+    companies.forEach(function(c){
+      if (!c || c.company_id == null) return;
+      metaMap[String(c.company_id)] = {
+        color: c.color || null,
+        favicon: c.favicon_url || c.favicon || "",
+        name: c.name != null ? String(c.name) : String(c.company_id),
+        global_share: (c.visibility_window_pct != null ? Number(c.visibility_window_pct) : null)
+      };
+    });
+    var byId = {}, daySet = {};
+    series.forEach(function(p){
+      if (!p) return;
+      var raw = (p.company_id != null) ? p.company_id : (p.id != null) ? p.id : "";
+      var id = String(raw);
+      if (!id) return;
+      var day = String(p.day);
+      daySet[day] = true;
+      var v = (p.visibility_pct != null) ? Number(p.visibility_pct) : (p.share_pct != null ? Number(p.share_pct) : 0);
+      (byId[id] = byId[id] || {})[day] = v || 0;
+    });
+    var labels = Object.keys(daySet).sort();
+    var ids = Object.keys(byId);
+    ids.forEach(function(id){
+      if (!metaMap[id]) metaMap[id] = { color:null, favicon:"", name:id, global_share:null };
+      if (metaMap[id].global_share == null){
+        var vals = labels.map(function(d){ return byId[id][d]; }).filter(function(v){ return v != null; });
+        metaMap[id].global_share = vals.length ? (vals.reduce(function(a,b){ return a+b; },0)/vals.length) : 0;
+      }
+    });
+    ids.sort(function(a,b){ return (metaMap[b].global_share||0) - (metaMap[a].global_share||0); });
+    ids = ids.slice(0, MAX_LINE_SERIES);
+    var scale = colorScale && COLOR_SCALES[colorScale] ? COLOR_SCALES[colorScale].colors : null;
+    var globalMax = 0;
+    var datasets = ids.map(function(id, i){
+      var data = labels.map(function(d){ var v = byId[id][d]; if (v != null && v > globalMax) globalMax = v; return v != null ? v : null; });
+      var col = scale ? scale[i % scale.length] : (metaMap[id].color || LINE_PALETTE[i % LINE_PALETTE.length]);
+      return {
+        label: metaMap[id].name,
+        __id: id,
+        __globalShare: metaMap[id].global_share,
+        __favicon: metaMap[id].favicon,
+        __baseColor: col,
+        data: data,
+        borderColor: col
+      };
+    });
+    return { labels: labels, datasets: datasets, globalMax: globalMax };
+  }
+
+  /* ---------- makeScaleMenu ----------
+     The gear-button "Chart Settings" dropdown shared by every line chart: colour scale + the
+     app-wide Line Width section. Deliberately NOT built on makePopover — that primitive's
+     outside-click test is `wrap.contains(e.target)`, which assumes the menu is a DOM descendant of
+     its trigger. This menu is body-mounted instead, because the chart panel it sits in clips
+     overflow and would otherwise cut it off. Hand-rolled open/close with its own outside-click,
+     Escape and focus-blur (aria-hidden-on-an-ancestor-of-the-focused-element is a real a11y trap).
+
+     cfg: { btn, getIsDark(), getScale(), setScale(key), defaultColors() -> [hex],
+            onChange(), closeOthers() }
+     Returns { open, close, isOpen, populate, reposition }. */
+  function makeScaleMenu(cfg){
+    var btn = cfg.btn;
+    if (!btn) return { open: function(){}, close: function(){}, isOpen: function(){ return false; },
+                       populate: function(){}, reposition: function(){} };
+    var menu = null, open = false;
+    var SCALE_CHECK = CHECK_SVG.replace('<svg ', '<svg class="up-check" ');
+    function swatches(colors){
+      return '<span class="up-scale-dots">' + (colors || []).map(function(hx){
+        return '<span class="up-scale-dot" style="background:' + esc(hx) + '"></span>';
+      }).join("") + '</span>';
+    }
+    function ensure(){
+      if (menu && document.body.contains(menu)) return menu;
+      menu = document.createElement("div");
+      menu.className = "up-scale-menu";
+      menu.setAttribute("role", "menu");
+      menu.setAttribute("aria-hidden", "true");
+      menu.addEventListener("click", function(e){
+        var opt = e.target.closest("[data-scale]");
+        if (opt){
+          cfg.setScale(opt.getAttribute("data-scale"));
+          populate();
+          if (cfg.onChange) cfg.onChange();
+          close();
+          return;
+        }
+        var lw = e.target.closest("[data-linewidth]");
+        if (lw){
+          /* Global and immediate, not staged: every mounted line chart on the page redraws itself
+             through the up-linewidth-change listener in makeLine. No Apply step here by design. */
+          setLineWidthPref(lw.getAttribute("data-linewidth"));
+          populate();
+          return;
+        }
+      });
+      document.body.appendChild(menu);
+      return menu;
+    }
+    function populate(){
+      if (!menu) return;
+      /* "Default" previews the colours that would ACTUALLY render right now (each company's own
+         RPC colour, in the same top-7 order the chart picks), never a hardcoded stand-in — the
+         caller derives them from buildLineDatasets itself so this cannot drift from the chart. */
+      var defs = (cfg.defaultColors && cfg.defaultColors()) || [];
+      if (!defs.length) defs = LINE_PALETTE;
+      var cur = cfg.getScale();
+      var rows = SCALE_ORDER.map(function(key){
+        var def = key === "default" ? { label: "Default", colors: defs } : COLOR_SCALES[key];
+        return '<div class="up-scale-opt' + (cur === key ? " is-active" : "") + '" data-scale="' + key + '">' +
+            '<span class="up-scale-opt-head"><span class="up-scale-opt-lbl">' + esc(def.label) + '</span>' + SCALE_CHECK + '</span>' +
+            swatches(def.colors) +
+          '</div>';
+      }).join("");
+      menu.innerHTML = '<div class="up-pop-head">Chart Settings</div>' + rows + lineWidthSectionHtml();
+    }
+    function reposition(){
+      if (!menu) return;
+      var r = btn.getBoundingClientRect();
+      menu.style.top = (r.bottom + 8) + "px";
+      menu.style.right = (window.innerWidth - r.right) + "px";
+    }
+    function doOpen(){
+      if (open) return;
+      ensure();
+      if (cfg.closeOthers) cfg.closeOthers();
+      populate();
+      open = true;
+      btn.classList.add("is-open");
+      menu.setAttribute("data-theme", cfg.getIsDark && cfg.getIsDark() ? "dark" : "light");
+      reposition();
+      menu.setAttribute("aria-hidden", "false");
+      void menu.offsetWidth;   // force a layout flush so the appear transition actually runs
+      menu.classList.add("is-shown");
+    }
+    function close(){
+      if (!open) return;
+      if (menu && menu.contains(document.activeElement)){ try { document.activeElement.blur(); } catch(e){} }
+      open = false;
+      btn.classList.remove("is-open");
+      if (menu){ menu.classList.remove("is-shown"); menu.setAttribute("aria-hidden", "true"); }
+    }
+    if (!btn.__upScaleBound){
+      btn.__upScaleBound = true;
+      btn.addEventListener("click", function(e){ e.stopPropagation(); if (open) close(); else doOpen(); });
+      document.addEventListener("click", function(e){
+        if (!open) return;
+        if (btn.contains(e.target)) return;
+        if (menu && menu.contains(e.target)) return;
+        close();
+      });
+      document.addEventListener("keydown", function(e){
+        if (!open) return;
+        if (e.key !== "Escape" && e.key !== "Esc") return;
+        close();
+      });
+      window.addEventListener("resize", function(){ if (open) reposition(); });
+    }
+    return { open: doOpen, close: close, isOpen: function(){ return open; }, populate: populate, reposition: reposition };
+  }
+
   /* ---------- makeLine ----------
      cfg: { wrap, canvas, legend, isDark(), isOwner(), gran(), watermark:bool }
      The component builds {labels, datasets}; datasets must carry __id / __baseColor / __favicon.
@@ -3349,6 +3540,12 @@
     injectWatermark: injectWatermark,
     makeLine: makeLine,
     makeTypeChart: makeTypeChart,
+    LINE_PALETTE: LINE_PALETTE,
+    COLOR_SCALES: COLOR_SCALES,
+    SCALE_ORDER: SCALE_ORDER,
+    MAX_LINE_SERIES: MAX_LINE_SERIES,
+    buildLineDatasets: buildLineDatasets,
+    makeScaleMenu: makeScaleMenu,
     getLineWidthPref: getLineWidthPref,
     setLineWidthPref: setLineWidthPref,
     lineWidthSectionHtml: lineWidthSectionHtml

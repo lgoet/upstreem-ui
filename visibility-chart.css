@@ -195,20 +195,7 @@
    stripped. The menu is instead body-mounted (same escape hatch as the topics-manager modal and
    the "+N more" topics popup), positioned in JS from the button's getBoundingClientRect(). */
 .vot-scale-btn { position: absolute; top: 4px; right: 4px; }
-
-
-.vot-scale-opt { display: flex; flex-direction: column; gap: 8px; padding: 9px 10px; border-radius: 9px; cursor: pointer; }
-.vot-scale-opt:hover, .vot-scale-opt.is-active { background: var(--vc-heading-bg); }
-.vot-scale-opt-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.vot-scale-opt-lbl { font-size: 13.5px; font-weight: 500; color: var(--vc-text); }
-.vot-scale-opt .up-check { width: 16px; height: 16px; color: var(--vc-text); opacity: 0; flex: 0 0 auto; }
-.vot-scale-opt.is-active .up-check { opacity: 1; }
-/* "Nebeneinander, etwas übereinandergeschoben, mit sichtbarem Gap dazwischen" — each dot overlaps
-   the previous by a third, with a background-colored ring (border) standing in for the gap, so the
-   seam between colors stays visible even though the dots physically overlap (the same idiom as an
-   avatar stack). */
-.vot-scale-dots { display: flex; }
-.vot-scale-dot { width: 18px; height: 18px; border-radius: 50%; flex: 0 0 auto;
-  border: 2px solid var(--vc-bg); margin-left: -6px; }
-.vot-scale-dot:first-child { margin-left: 0; }
+/* The option rows/swatches this menu is filled with are .up-scale-* in core.css now: the menu is
+   built by UC.makeScaleMenu (core.js), and brands-overview is a second consumer of it. Only this
+   component's own BUTTON PLACEMENT stays here, since panel padding differs per component. */
 /* header info icon, reveal-on-hover — same interaction as urls/domains table column explainers */

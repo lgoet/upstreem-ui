@@ -42,82 +42,14 @@
   var UC = window.UpstreemCore;
   var esc = UC.esc, isYes = UC.isYes, resolveBubbleFn = UC.resolveBubbleFn, fmt1 = UC.fmt1, CHECK_SVG = UC.CHECK_SVG;
 
-  /* ================= data prep ================= */
-  /* Fallback palette for companies that arrive with no color of their own — unrelated to the color
-     SCALES below (also hoisted here so the color-scale dropdown's "Default" preview can reuse the
-     exact same 7 values a company without its own color actually gets rendered in). */
-  var PALETTE = ["#14b8a6","#0ea5e9","#6366f1","#d946ef","#f97316","#f43f5e","#64748b"];
-  /* Color scales: an override for the chart line (and legend) colors, independent of each
-     company's own assigned color. "default" isn't listed here — it means "use each company's own
-     color, falling back to PALETTE above" (buildLineDatasets' pre-existing behavior, untouched).
-     Every hex below is a real, sourced palette (see STYLEGUIDE), not invented:
-       tableau     — Tableau 10's softened/professional-BI variant
-       colorblind  — Okabe/Ito (2008), the de-facto standard colorblind-safe qualitative palette
-                     for scientific figures (the 8th color, black, is dropped — it doesn't read as
-                     a distinct "brand" line and disappears against a dark chart background)
-       vivid       — the D3/matplotlib "tab10"/Category10 palette, the most widely used punchy
-                     qualitative palette in general-purpose data visualization
-     All three are mid-toned/moderately saturated by design (not pure pastels, not near-black), the
-     same property that makes them work as-is on both a white and a dark chart background — no
-     separate light/dark variant needed. */
-  var COLOR_SCALES = {
-    tableau:    { label: "Tableau",         colors: ["#5778a4","#e49444","#d1615d","#85b6b2","#6a9f58","#e7ca60","#a87c9f"] },
-    colorblind: { label: "Colorblind Safe", colors: ["#e69f00","#56b4e9","#009e73","#f0e442","#0072b2","#d55e00","#cc79a7"] },
-    vivid:      { label: "Vivid",           colors: ["#1f77b4","#ff7f0e","#2ca02c","#d62728","#9467bd","#8c564b","#e377c2"] }
-  };
-  var SCALE_ORDER = ["default", "vivid", "tableau", "colorblind"];
-  function buildLineDatasets(series, companies, colorScale){
-    series = Array.isArray(series) ? series : [];
-    companies = Array.isArray(companies) ? companies : [];
-    var metaMap = {};
-    companies.forEach(function(c){
-      if (!c || c.company_id == null) return;
-      metaMap[String(c.company_id)] = {
-        color: c.color || null,
-        favicon: c.favicon_url || c.favicon || "",
-        name: c.name != null ? String(c.name) : String(c.company_id),
-        global_share: (c.visibility_window_pct != null ? Number(c.visibility_window_pct) : null)
-      };
-    });
-    var byId = {}, daySet = {};
-    series.forEach(function(p){
-      if (!p) return;
-      var raw = (p.company_id != null) ? p.company_id : (p.id != null) ? p.id : "";
-      var id = String(raw);
-      if (!id) return;
-      var day = String(p.day);
-      daySet[day] = true;
-      var v = (p.visibility_pct != null) ? Number(p.visibility_pct) : (p.share_pct != null ? Number(p.share_pct) : 0);
-      (byId[id] = byId[id] || {})[day] = v || 0;
-    });
-    var labels = Object.keys(daySet).sort();
-    var ids = Object.keys(byId);
-    ids.forEach(function(id){
-      if (!metaMap[id]) metaMap[id] = { color:null, favicon:"", name:id, global_share:null };
-      if (metaMap[id].global_share == null){
-        var vals = labels.map(function(d){ return byId[id][d]; }).filter(function(v){ return v != null; });
-        metaMap[id].global_share = vals.length ? (vals.reduce(function(a,b){ return a+b; },0)/vals.length) : 0;
-      }
-    });
-    ids.sort(function(a,b){ return (metaMap[b].global_share||0) - (metaMap[a].global_share||0); });
-    ids = ids.slice(0, 7);
-    var scale = colorScale && COLOR_SCALES[colorScale] ? COLOR_SCALES[colorScale].colors : null;
-    var globalMax = 0;
-    var datasets = ids.map(function(id, i){
-      var data = labels.map(function(d){ var v = byId[id][d]; if (v != null && v > globalMax) globalMax = v; return v != null ? v : null; });
-      var col = scale ? scale[i % scale.length] : (metaMap[id].color || PALETTE[i % PALETTE.length]);
-      return {
-        label: metaMap[id].name,
-        __id: id,
-        __globalShare: metaMap[id].global_share,
-        __favicon: metaMap[id].favicon,
-        __baseColor: col,
-        data: data,
-        borderColor: col
-      };
-    });
-    return { labels: labels, datasets: datasets, globalMax: globalMax };
-  }
+  /* ================= data prep =================
+     The series→datasets mapping, the fallback palette and the four colour scales all live in
+     core.js now (UC.buildLineDatasets / UC.LINE_PALETTE / UC.COLOR_SCALES / UC.SCALE_ORDER):
+     brands-overview is fed by the SAME RPC and draws the same chart from it, which is exactly the
+     second consumer §25 names as the trigger to extract rather than copy. Behaviour is unchanged. */
+  var PALETTE = UC.LINE_PALETTE;
+  var COLOR_SCALES = UC.COLOR_SCALES;
+  var buildLineDatasets = UC.buildLineDatasets;
 
   /* ================= controller ================= */
   function makeController(root){
@@ -270,7 +202,7 @@
          descendant CSS rule keyed off this class, not a per-render inline style. */
       root.classList.toggle("is-line-loading", loading);
       if (loading){
-        if (scaleOpen) closeScaleMenu();
+        closeScaleMenu();   // no-op when it isn't open
         line.skeleton();
         return;
       }
@@ -464,116 +396,27 @@
     UC.makeTooltips(root, darkNow);
 
     /* ---------- chart color scale ----------
-       NOT routed through UC.makePopover: that primitive's outside-click check is
-       `wrap.contains(e.target)`, which assumes the menu is a DOM descendant of its trigger — true
-       for every other dropdown here, but this one's menu is body-mounted (see the CSS comment in
-       visibility-chart.css for why: .vot-box's overflow:hidden would otherwise clip it). Hand-rolled
-       open/close instead, same shape as topics-manager's modal: own outside-click/Escape, blur
-       focus before hiding (aria-hidden-on-ancestor-of-focused-element trap). */
+       The whole body-mounted "Chart Settings" menu (colour scales + the app-wide Line Width
+       section, its open/close, outside-click, Escape and focus handling) is UC.makeScaleMenu now —
+       shared with brands-overview. Only the per-component wiring stays here. */
     var scaleBtn = root.querySelector(".vot-scale-btn");
-    var scaleMenu = null, scaleOpen = false;
-    var SCALE_CHECK_SVG = CHECK_SVG.replace('<svg ', '<svg class="up-check" ');
-    function scaleSwatchesHtml(colors){
-      return '<span class="vot-scale-dots">' + colors.map(function(hx){
-        return '<span class="vot-scale-dot" style="background:' + esc(hx) + '"></span>';
-      }).join("") + '</span>';
-    }
-    function ensureScaleMenu(){
-      if (scaleMenu && document.body.contains(scaleMenu)) return scaleMenu;
-      scaleMenu = document.createElement("div");
-      scaleMenu.className = "up-scale-menu";
-      scaleMenu.setAttribute("role", "menu");
-      scaleMenu.setAttribute("aria-hidden", "true");
-      scaleMenu.addEventListener("click", function(e){
-        var opt = e.target.closest("[data-scale]");
-        if (opt){
-          colorScale = opt.getAttribute("data-scale");
-          writeColorScale();
-          populateScaleMenu();
-          renderLineSide();
-          closeScaleMenu();
-          return;
-        }
-        var lw = e.target.closest("[data-linewidth]");
-        if (lw){
-          /* Global, not staged: takes effect immediately (every mounted line chart on the page
-             redraws itself via the up-linewidth-change listener in core.js's makeLine), same as
-             every other visibility-chart setting — there's no separate Apply step here. */
-          UC.setLineWidthPref(lw.getAttribute("data-linewidth"));
-          populateScaleMenu();
-          return;
-        }
-      });
-      document.body.appendChild(scaleMenu);
-      return scaleMenu;
-    }
-    function populateScaleMenu(){
-      if (!scaleMenu) return;
-      /* "Default" previews the colors that would ACTUALLY render right now — each company's own
-         RPC-provided color, in the same order buildLineDatasets already picks (top 7 by
-         global_share) — never a hardcoded stand-in. Reuses buildLineDatasets itself (with no scale
-         override) rather than re-deriving "which 7 companies, in what order" a second time, so
-         this can never drift from what the chart actually draws. PALETTE only backfills here the
-         same way it does in the real render: when a company genuinely has no color of its own. */
-      var defaultColors = buildLineDatasets(state.series, state.companies || [], null)
-        .datasets.map(function(d){ return d.__baseColor; });
-      if (!defaultColors.length) defaultColors = PALETTE;
-      var rows = SCALE_ORDER.map(function(key){
-        var def = key === "default" ? { label: "Default", colors: defaultColors } : COLOR_SCALES[key];
-        return '<div class="vot-scale-opt' + (colorScale === key ? " is-active" : "") + '" data-scale="' + key + '">' +
-            '<span class="vot-scale-opt-head"><span class="vot-scale-opt-lbl">' + esc(def.label) + '</span>' + SCALE_CHECK_SVG + '</span>' +
-            scaleSwatchesHtml(def.colors) +
-          '</div>';
-      }).join("");
-      scaleMenu.innerHTML = '<div class="up-pop-head">Chart Settings</div>' + rows + UC.lineWidthSectionHtml();
-    }
-    function positionScaleMenu(){
-      if (!scaleBtn || !scaleMenu) return;
-      var r = scaleBtn.getBoundingClientRect();
-      scaleMenu.style.top = (r.bottom + 8) + "px";
-      scaleMenu.style.right = (window.innerWidth - r.right) + "px";
-    }
-    function openScaleMenu(){
-      if (!scaleBtn || scaleOpen) return;
-      ensureScaleMenu();
-      closePops(scaleBtn);
-      populateScaleMenu();
-      scaleOpen = true;
-      scaleBtn.classList.add("is-open");
-      scaleMenu.setAttribute("data-theme", isDark ? "dark" : "light");
-      positionScaleMenu();
-      scaleMenu.setAttribute("aria-hidden", "false");
-      void scaleMenu.offsetWidth;   // force layout flush so the appear transition actually runs
-      scaleMenu.classList.add("is-shown");
-    }
-    function closeScaleMenu(){
-      if (!scaleOpen) return;
-      if (scaleMenu && scaleMenu.contains(document.activeElement)){
-        try { document.activeElement.blur(); } catch(e){}
-      }
-      scaleOpen = false;
-      if (scaleBtn) scaleBtn.classList.remove("is-open");
-      if (scaleMenu){ scaleMenu.classList.remove("is-shown"); scaleMenu.setAttribute("aria-hidden", "true"); }
-    }
-    if (scaleBtn && !scaleBtn.__votScaleBound){
-      scaleBtn.__votScaleBound = true;
-      scaleBtn.addEventListener("click", function(e){
-        e.stopPropagation();
-        if (scaleOpen) closeScaleMenu(); else openScaleMenu();
-      });
-      document.addEventListener("click", function(e){
-        if (!scaleOpen) return;
-        if (scaleBtn.contains(e.target)) return;
-        if (scaleMenu && scaleMenu.contains(e.target)) return;
-        closeScaleMenu();
-      });
-      document.addEventListener("keydown", function(e){
-        if (!scaleOpen) return;
-        if (e.key !== "Escape" && e.key !== "Esc") return;
-        closeScaleMenu();
-      });
-      window.addEventListener("resize", function(){ if (scaleOpen) positionScaleMenu(); });
-    }
+    var scaleKit = UC.makeScaleMenu({
+      btn: scaleBtn,
+      getIsDark: darkNow,
+      getScale: function(){ return colorScale; },
+      setScale: function(k){ colorScale = k; writeColorScale(); },
+      /* "Default" previews the colours that would ACTUALLY render right now — each company's own
+         RPC colour, in the same top-7 order buildLineDatasets already picks — never a hardcoded
+         stand-in. Reuses buildLineDatasets itself (no scale override) rather than re-deriving
+         "which 7 companies, in what order" a second time, so it cannot drift from the real chart. */
+      defaultColors: function(){
+        return buildLineDatasets(state.series, state.companies || [], null)
+          .datasets.map(function(d){ return d.__baseColor; });
+      },
+      onChange: function(){ renderLineSide(); },
+      closeOthers: function(){ closePops(scaleBtn); }
+    });
+    function closeScaleMenu(){ scaleKit.close(); }
 
     if (granBtnsLive().length){
       syncGranActive();
