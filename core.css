@@ -254,15 +254,15 @@
       cursor: pointer; white-space: nowrap; max-width: 220px;
     }
     /* Same hover/open treatment as every other dropdown trigger in the app: background goes to
-       --vc-heading-bg, text to --vc-text, and the border is NOT re-coloured on open. */
-    .up-filter-btn:hover { background: var(--vc-heading-bg); color: var(--vc-text); border-color: var(--vc-hover-border); }
+       --vc-heading-bg, the border never changes (there isn't one to change). */
+    .up-filter-btn:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
     .up-filter-btn:hover .up-filter-btn-chev { color: var(--vc-text); }
-    .up-filter.is-open .up-filter-btn { background: transparent; color: var(--vc-text); border-color: var(--vc-hover-border); }
+    .up-filter.is-open .up-filter-btn { background: var(--vc-heading-bg); color: var(--vc-text); }
     .up-filter.is-open .up-filter-btn-chev { color: var(--vc-text); }
-    /* An applied filter wears the same face as an open dropdown: border in --vc-hover-border,
-       label in --vc-text, background still transparent. "This control is doing something" and
-       "this control is open" are the same visual weight on purpose — both mean "look here". */
-    .up-filter.is-active .up-filter-btn { background: transparent; color: var(--vc-text); border-color: var(--vc-hover-border); }
+    /* An applied filter wears the same face as an open dropdown: background in --vc-heading-bg,
+       label in --vc-text. "This control is doing something" and "this control is open" are the
+       same visual weight on purpose — both mean "look here". */
+    .up-filter.is-active .up-filter-btn { background: var(--vc-heading-bg); color: var(--vc-text); }
     .up-filter.is-active .up-filter-btn-chev { color: var(--vc-text); }
     /* Hovering an ACTIVE trigger swaps the chevron for an x: the shortcut out of the filter,
        without opening the menu to reach Reset. Inactive triggers keep their chevron. */
@@ -322,11 +322,11 @@
       color: var(--vc-text); font: inherit; font-size: 12px; font-weight: 500; line-height: 1;
       cursor: pointer; white-space: nowrap; max-width: 200px;
     }
-    .up-ment-btn:hover { background: var(--vc-heading-bg); color: var(--vc-text); border-color: var(--vc-hover-border); }
+    .up-ment-btn:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
     .up-ment-btn:hover .up-ment-chev { color: var(--vc-text); }
-    .up-ment.is-open .up-ment-btn { background: transparent; color: var(--vc-text); border-color: var(--vc-hover-border); }
+    .up-ment.is-open .up-ment-btn { background: var(--vc-heading-bg); color: var(--vc-text); }
     .up-ment.is-open .up-ment-chev { color: var(--vc-text); }
-    .up-ment.is-active .up-ment-btn { background: transparent; color: var(--vc-text); border-color: var(--vc-hover-border); }
+    .up-ment.is-active .up-ment-btn { background: var(--vc-heading-bg); color: var(--vc-text); }
     .up-ment.is-active .up-ment-chev { color: var(--vc-text); }
     .up-ment-clear { display: none; width: 14px; height: 14px; flex: 0 0 14px; color: var(--vc-muted); }
     .up-ment-clear:hover { color: var(--vc-text); }
