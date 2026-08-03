@@ -322,11 +322,11 @@
           ? '<span class="up-logo-box has-img"><img src="' + esc(r.logo_url) + '" onerror="this.style.visibility=\'hidden\'"/></span>'
           : '<span class="up-logo-box"></span>';
         var visNull = (r.visibility_pct == null || r.visibility_pct === "");
-        var vis = '<span class="up-num">' + (visNull ? "–" : (Math.round(Number(r.visibility_pct) || 0) + "%")) + '</span>' + trendChip(r.visibility_delta_pct, false, false, "%");
+        var vis = '<span class="up-num' + (visNull ? " is-empty" : "") + '">' + (visNull ? "–" : (Math.round(Number(r.visibility_pct) || 0) + "%")) + '</span>' + trendChip(r.visibility_delta_pct, false, false, "%");
         var rank = '<span class="up-rank-group">' + HASH_ICON + '<span class="up-num">' + fmt1(r.avg_rank) + '</span></span>' + trendChip(r.avg_rank_delta, true, true);
         var sentNull = (r.sentiment == null || r.sentiment === "" || !isFinite(Number(r.sentiment)));
         var sc = sentNull ? "#9E9E9E" : sentColor(r.sentiment);
-        var sent = '<span class="up-sent"><span class="up-sent-dot" style="background:' + sc + '"></span><span class="up-sent-val">' + (sentNull ? "–" : Math.round(Number(r.sentiment))) + '</span></span>' + trendChip(r.sentiment_delta, true, false);
+        var sent = '<span class="up-sent"><span class="up-sent-dot" style="background:' + sc + '"></span><span class="up-sent-val' + (sentNull ? " is-empty" : "") + '">' + (sentNull ? "–" : Math.round(Number(r.sentiment))) + '</span></span>' + trendChip(r.sentiment_delta, true, false);
         return '<div class="vt-row' + gap + '" data-id="' + esc(String(r.company_id == null ? "" : r.company_id)) + '">' +
           '<div class="vt-td vt-td-idx">' + (pos != null ? pos : "") + '</div>' +
           '<div class="vt-td vt-td-brand">' + logo + '<span class="vt-brand-name">' + esc(r.name == null ? "" : r.name) + '</span>' + ROW_GOTO + '</div>' +

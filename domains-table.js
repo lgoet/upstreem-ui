@@ -529,8 +529,11 @@
       if (fav.indexOf("//") === 0) fav = "https:" + fav;
       var initial = (title || url).charAt(0) || "?";
       /* A missing share renders as a bare dash, never "–%" — a unit on a value that isn't there
-         reads like a broken number rather than an absent one. */
-      var shareTxt = (u.domain_share == null || u.domain_share === "") ? "–" : fmt1(u.domain_share) + "%";
+         reads like a broken number rather than an absent one. Muted via is-empty — same "nothing
+         here" convention every table in the app uses now (core.css). */
+      var shareMissing = u.domain_share == null || u.domain_share === "";
+      var shareTxt = shareMissing ? "–" : fmt1(u.domain_share) + "%";
+      var shareCls = "udt-sub-share" + (shareMissing ? " is-empty" : "");
       /* Title/URL switcher (item 6) — purely which STRING lands in this one cell; everything
          else about the row (search matches, sort, favicon) is unaffected. Same truncation/hover-
          tooltip handling either way, since both go through .udt-sub-title. */
@@ -549,7 +552,7 @@
           '</span>' +
           '<span class="udt-sub-title">' + titleHtml + '</span>' +
         '</span>' +
-        '<span class="udt-sub-share">' + shareTxt + '</span>' +
+        '<span class="' + shareCls + '">' + shareTxt + '</span>' +
         '<span class="udt-sub-type">' + urlTagHtml(u.url_type) + '</span>' +
         '<span class="udt-sub-date">' + esc(fmtDate(u.last_seen)) + '</span>' +
         '<span class="udt-sub-goto">' + GOTO_SVG + '</span>' +

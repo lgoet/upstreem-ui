@@ -1246,7 +1246,7 @@
     function visCell(v){
       var n = (v == null || v === "") ? null : Number(v);
       var bad = n == null || !isFinite(n);
-      return '<span class="up-num">' + (bad ? "–" : (Math.round(n) + "%")) + '</span>';
+      return '<span class="up-num' + (bad ? " is-empty" : "") + '">' + (bad ? "–" : (Math.round(n) + "%")) + '</span>';
     }
     function rankCell(v){
       return '<span class="up-rank-group">' + HASH_ICON + '<span class="up-num">' + fmt1(v) + '</span></span>';
@@ -1256,11 +1256,11 @@
       var bad = n == null || !isFinite(n);
       var sc = bad ? "#9E9E9E" : UC.sentColor(n);
       return '<span class="up-sent"><span class="up-sent-dot" style="background:' + sc + '"></span>' +
-             '<span class="up-sent-val">' + (bad ? "–" : Math.round(n)) + '</span></span>';
+             '<span class="up-sent-val' + (bad ? " is-empty" : "") + '">' + (bad ? "–" : Math.round(n)) + '</span></span>';
     }
     function marketCell(m){
       var code = String(m == null ? "" : m).trim().toUpperCase();
-      if (!code) return '<span class="up-num">–</span>';
+      if (!code) return '<span class="up-num is-empty">–</span>';
       return '<span class="upt-market">' +
                '<span class="upt-flag"><img src="https://flagcdn.com/' + esc(code.toLowerCase()) + '.svg" alt="" loading="lazy"/></span>' +
                '<span class="upt-market-code">' + esc(code) + '</span>' +

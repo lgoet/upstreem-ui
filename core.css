@@ -978,6 +978,15 @@
 .up-sent { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 6px; border: 1px solid var(--vc-border); border-radius: 6px; flex: 0 0 auto; }
 .up-sent-dot { width: 6px; height: 6px; border-radius: 2px; flex: 0 0 auto; }
 .up-sent-val { font-size: 13px; font-weight: 500; color: var(--vc-text); font-variant-numeric: tabular-nums; }
+/* ---------- "nothing here" convention ----------
+   ONE muted dash for every "no value" cell in the app — sentiment/rank/share percentages,
+   brand-mention/citation stacks with zero items. Before this there were three different
+   answers to "nothing here" (a bare unstyled "-" on .up-stack-empty, a plain "–" inline in
+   .up-num/.up-sent-val with no color override so it rendered in full text-strength color, and
+   responses-table's own SVG minus icon) — one per component, none of them muted. This is the
+   single source every one of them now points at. */
+.up-num.is-empty, .up-sent-val.is-empty, .up-stack-empty,
+.tct-num.is-empty, .udt-sub-share.is-empty { color: var(--vc-third); font-weight: 500; }
 
 /* ---------- icon segmented control ----------
    Lifted verbatim from topcitations-dashboard's doughnut/bar switch (.tcl-seg), which is the

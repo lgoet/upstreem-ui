@@ -11,10 +11,8 @@
 
 /* mentioned? cell now comes from core (.up-ment-cell) — see core.css */
 
-/* ---------- empty sentiment/rank — explicit minus icon, NOT the "–" character every other
-   table uses. Deliberate for this component (see STYLEGUIDE), matches --vc-third. ---------- */
-.urt-empty { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; color: var(--vc-third); }
-.urt-minus { width: 14px; height: 14px; display: block; }
+/* ---------- empty sentiment/rank now come from core (.up-num.is-empty / .up-sent-val.is-empty)
+   — same muted dash every table in the app uses. See core.css. ---------- */
 
 /* ---------- brand mentioned toggle (mirrors uut-brand-toggle in urls-table.css) ---------- */
 .urt-brand-toggle { display: none; align-items: center; justify-content: space-between; gap: 10px; height: 32px; padding: 0 8px; border-radius: 8px;
@@ -42,6 +40,12 @@
   padding: 6px 8px; border-radius: 8px; border: 1px solid var(--vc-border); background: transparent; max-width: 100%; }
 .urt-model-ltr { font-size: 10px; font-weight: 600; color: var(--vc-muted); line-height: 1; text-transform: uppercase; }
 .up-ment-logo.has-img .urt-model-ltr { display: none; }
+/* Dark mode only: .up-ment-logo's white/light backdrop+padding exists for brand favicons, which
+   are often transparent PNGs that would vanish on a dark background. Model logos (ChatGPT,
+   Gemini, ...) are their own solid marks and don't need that backdrop — on a dark page it just
+   reads as a stray white box around the logo. Local to the model chip only: the Mentioned-brands
+   dropdown still needs the backdrop it already has. */
+.up-root[data-theme="dark"] .urt-model-chip .up-ment-logo { background: transparent; padding: 0; }
 
 /* ---------- mentioned? column header ----------
    The logo is fixed-size and the label must be the part that gives way; without min-width:0 the
@@ -122,7 +126,11 @@
   padding-top: 14px; border-top: 1px solid var(--vc-border); }
 .urt-fader-reset { height: 32px; padding: 0 12px; border: 1px solid var(--vc-border); border-radius: 8px;
   background: transparent; color: var(--vc-muted); font-family: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; flex: 0 0 auto; }
-.urt-fader-reset:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
+/* A BORDERED secondary button's hover also brightens its border (see .up-topicmodal-pickbtn in
+   core.css) — a plain color+background swap is the convention for a borderless .up-iconbtn, which
+   is what got copied here instead. Without the border-color change the outline never visibly
+   reacted to hover, only the fill. */
+.urt-fader-reset:hover { color: var(--vc-text); background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
 .urt-fader-apply { flex: 1 1 auto; height: 32px; border: 0; border-radius: 8px;
   background: var(--vc-text); color: var(--up-surface); font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
 .up-root[data-theme="dark"] .urt-fader-apply { color: #1f1f1b; }
@@ -137,21 +145,24 @@
 .up-root.is-cards-view .urt-cards { display: grid; }
 .up-root.is-cards-view .up-box { display: none; }   /* .up-box wraps .up-thead + .up-tbody */
 
+/* Background + hover match .up-row exactly (var(--vc-bg) / var(--vt-row-hover)) — a card is a
+   row's alternate rendering of the same data, not a different surface. .up-surface (the popover/
+   modal white) reads a shade off from the table in dark mode; this is the same fix border-color/
+   box-shadow-on-hover would never have caught since it changed the wrong property. */
 .urt-card { display: flex; flex-direction: column; min-width: 0; min-height: 200px; max-height: 250px;
-  padding: 16px; border-radius: 14px; border: 1px solid var(--vc-border); background: var(--up-surface);
-  cursor: pointer; transition: border-color .12s ease, box-shadow .12s ease; }
-.urt-card:hover { border-color: var(--vc-hover-border); box-shadow: 0 2px 10px rgba(0,0,0,.05); }
-.up-root[data-theme="dark"] .urt-card:hover { box-shadow: 0 2px 10px rgba(0,0,0,.25); }
+  padding: 16px; border-radius: 14px; border: 1px solid var(--vc-border); background: var(--vc-bg);
+  cursor: pointer; transition: background 120ms ease; }
+.urt-card:hover { background: var(--vt-row-hover); }
 
 .urt-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
 /* model chip | sentiment | rank — 16px off the chip so the metrics read as their own group
    three metrics so they do not read as one run-on group */
 .urt-card-headleft { display: flex; align-items: center; gap: 16px; min-width: 0; flex-wrap: wrap; }
-.urt-card-date { font-size: 11px; font-weight: 500; color: var(--vc-muted); white-space: nowrap; flex: 0 0 auto; }
+.urt-card-date { font-size: 12px; font-weight: 500; color: var(--vc-muted); white-space: nowrap; flex: 0 0 auto; }
 
 
-.urt-card-prompt { font-size: 14px; font-weight: 500; color: var(--vc-text); letter-spacing: -0.01em;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 4px; }
+.urt-card-prompt { font-size: 15px; font-weight: 500; color: var(--vc-text); letter-spacing: -0.01em;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 8px; }
 .urt-card-preview { font-size: 14px; font-weight: 400; color: var(--vc-muted); line-height: 1.4;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; flex: 1 1 auto; }
 

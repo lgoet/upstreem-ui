@@ -101,14 +101,14 @@
   var TABLE_PAGE_SIZES = [15, 25, 50, 100];
   var CARD_PAGE_SIZES = [6, 12, 24, 48];   // all divisible by 2/3/4/6 -> a clean column count at every breakpoint
 
-  var MINUS_SVG = '<svg class="urt-minus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>';
   var TABLE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>';
   var CARDS_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>';
   var FADER_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><circle cx="9" cy="6" r="2" fill="currentColor" stroke="none"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="15" cy="12" r="2" fill="currentColor" stroke="none"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="11" cy="18" r="2" fill="currentColor" stroke="none"/></svg>';
 
   /* "vor 1 Minute" / "vor 4 Stunden", falling back to the app's normal date format once the gap
-     is >= 24h — no relative-time helper exists in core.js yet, and this is currently the only
-     consumer, so it stays local rather than becoming a premature core export. */
+     is >= 24h. Used by both the table Date column and the card header; the full date is still
+     always one hover away via data-tip. No relative-time helper exists in core.js yet — this
+     stays local until a second component needs it too. */
   function relativeTime(iso){
     var d = iso ? new Date(iso) : null;
     if (!d || isNaN(d.getTime())) return "";
@@ -310,9 +310,14 @@
       }
       return s;
     }
+    /* Empty state (null rank/sentiment) is a bare muted dash in .up-num/.up-sent-val — the SAME
+       "nothing here" convention every other table in the app uses (see core.css), not a
+       component-local icon. No hash icon / colored dot on the empty state either, matching
+       prompts-table and visibility-chart: those only appear once there is a real value to attach
+       them to. */
     function rankCell(v){
       var n = (v == null || v === "") ? null : Number(v);
-      if (n == null || !isFinite(n)) return '<span class="urt-empty">' + MINUS_SVG + '</span>';
+      if (n == null || !isFinite(n)) return '<span class="up-num is-empty">–</span>';
       /* HASH_ICON + .up-num, exactly like prompts-table and visibility-chart — a literal "#"
          character is NOT the convention here and rendered visibly different from every other
          rank cell in the app. fmtInt (not fmt1): user_rank is an ordinal, not an average. */
@@ -320,7 +325,7 @@
     }
     function sentCell(v){
       var n = (v == null || v === "") ? null : Number(v);
-      if (n == null || !isFinite(n)) return '<span class="urt-empty">' + MINUS_SVG + '</span>';
+      if (n == null || !isFinite(n)) return '<span class="up-sent-val is-empty">–</span>';
       return '<span class="up-sent"><span class="up-sent-dot" style="background:' + sentColor(n) + '"></span>' +
              '<span class="up-sent-val">' + Math.round(n) + '</span></span>';
     }
@@ -390,7 +395,7 @@
         '<div class="up-td urt-td-brands">' + brandStack(r.companies_preview, r.companies_preview_totalcount, { max: 4 }) + '</div>' +
         '<div class="up-td urt-td-citations">' + citationsChips(r.sources_preview) + '</div>' +
         '<div class="up-td urt-td-model">' + modelChip(r.model) + '</div>' +
-        '<div class="up-td urt-td-date"><span class="urt-date">' + esc(fmtDate(r.run_at)) + '</span></div>' +
+        '<div class="up-td urt-td-date"><span class="urt-date" data-tip="' + esc(fmtDate(r.run_at)) + '">' + esc(relativeTime(r.run_at)) + '</span></div>' +
       '</div>';
     }
     function cardHtml(r){
@@ -640,6 +645,20 @@
         }
         loIn.addEventListener("input", updateDraft);
         hiIn.addEventListener("input", updateDraft);
+        /* Explicit pointer capture on drag start. Without it, dragging a handle past the edge of
+           the (268px-wide) popover releases the mouse over whatever the cursor physically ends up
+           on — the page behind the popover — and THAT release fires the "click" the global
+           outside-click-closes-popover listener sees, closing the fader mid-drag. The z-index swap
+           above (raising whichever handle is still reachable) makes this worse: it changes which
+           element sits under the cursor while a drag is already in progress. Capturing the pointer
+           on mousedown pins every subsequent move/up event to the handle itself regardless of
+           where the cursor physically travels, so the resulting click always targets the input —
+           inside the menu — and the popover only ever closes on Apply/Escape/a real outside click. */
+        [loIn, hiIn].forEach(function(inp){
+          inp.addEventListener("pointerdown", function(e){
+            try { inp.setPointerCapture(e.pointerId); } catch(err){}
+          });
+        });
         updateDraft();
       });
     }
