@@ -69,12 +69,18 @@
        larger fr share — with equal fr both columns end up the same width regardless of the mins. */
     { key: "brands",     label: "Brand Mentions", w: "minmax(178px, 1fr)",    min: 178, dropAt: "vnarrow", prio: 50 },
     { key: "citations",  label: "Citations",      w: "minmax(216px, 1.25fr)", min: 216, dropAt: "vnarrow", prio: 40 },
-    /* No dropAt: Model is one of the two columns (with Prompt, the fixed lead) that must survive
-       even in mobile mode — core.css switches it to a bare 32px logo there (see .is-vnarrow
-       .urt-model-chip in responses-table.css), so its real floor at that width is just the logo
-       plus cell padding, not the full chip-with-name track. */
-    { key: "model",      label: "Model",          w: "minmax(140px, 0.8fr)",  min: 44,  prio: 20 },
-    { key: "date",       label: "Date",           w: "minmax(100px, 0.6fr)",  min: 100, dropAt: "narrow",  prio: 10 }
+    /* keep + no dropAt: Model is one of the two columns (with Prompt, the fixed lead) that must
+       survive even in mobile mode. Two different floors, because the cell renders two different
+       things: 160px on desktop is the full chip measured, not guessed — 12+16 cell padding, 2px
+       border, 16px chip padding, an 18px logo and its 8px gap leave 88px for the name, and the
+       widest label modelLabel() can produce for a known model is "Google AIO" at 69px. At 140px
+       the name box was 68px, so that exact label already ellipsised. (An unknown model with a
+       long display_name still truncates — that tail case is what the chip's data-tip is for.)
+       minNarrow 44 is the mobile rendering: responses-table.css collapses the chip to a bare
+       32px logo below the vnarrow breakpoint. */
+    { key: "model",      label: "Model",          w: "minmax(160px, 0.8fr)",  min: 160, minNarrow: 44, keep: true, prio: 20 },
+    /* 120 = 28px cell padding + the widest relative-time string ("59 minutes ago", 88px). */
+    { key: "date",       label: "Date",           w: "minmax(120px, 0.6fr)",  min: 120, dropAt: "narrow",  prio: 10 }
   ];
   var ROW_HEIGHTS = [
     { key: "default", label: "Default", icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/></svg>' },

@@ -640,7 +640,13 @@
       var need = 0;
       cols.forEach(function(c){ need += colMin(c.key); });
       if (need <= budget) return cols;
-      var byPrio = cols.slice().sort(function(a, b){ return prioOf(a) - prioOf(b); });
+      /* `keep` columns are never dropped by width — they are the ones a table declares as its
+         irreducible core (responses-table: Model, which has to survive even in mobile mode). They
+         still count toward `need`, so they squeeze the droppable ones instead of being squeezed.
+         Filtered out of the candidate list rather than skipped inside the loop so the loop can
+         never spin on a column it refuses to drop. */
+      var byPrio = cols.filter(function(c){ return !c.keep; })
+                       .sort(function(a, b){ return prioOf(a) - prioOf(b); });
       var dropped = {}, kept = cols.length;
       for (var i = 0; i < byPrio.length && need > budget && kept > 1; i++){
         dropped[byPrio[i].key] = true;
@@ -670,11 +676,26 @@
       return [FIRST].concat(effectiveCols().map(function(c){ return c.key; }))
              .concat((cfg.noActions || root.classList.contains("is-t2")) ? [] : ["actions"]);
     }
+    /* `minNarrow` — a column whose CELL renders differently in mobile mode (responses-table's Model
+       chip collapses to a bare 32px logo) has a genuinely smaller floor there. Without this the
+       two widths had to share one number, and picking the mobile one (44) made autoFit believe on
+       DESKTOP that the column fit in 44px while the grid track still floored at its real 140px —
+       so the budget was wrong by ~100px and the rightmost column dropped a breakpoint too early.
+       Both colMin() and the unpinned track in applyCols() read through here, so the two can no
+       longer disagree. */
     function colMin(key){
       if (key === FIRST) return FIRST_MIN;
       if (key === "actions") return ACTIONS_MIN;
       var c = COLUMNS.filter(function(x){ return x.key === key; })[0];
+      if (c && c.minNarrow != null && root.classList.contains("is-vnarrow")) return c.minNarrow;
       return (c && c.min) || 100;
+    }
+    /* the unpinned grid track: c.w verbatim, except where minNarrow overrides the floor */
+    function colTrack(c){
+      if (c.minNarrow != null && root.classList.contains("is-vnarrow")) {
+        return "minmax(" + c.minNarrow + "px, 1fr)";
+      }
+      return c.w;
     }
     /* see applyCols(): the two halves are guarded separately because they change at different
        rates — the track template on every width change, the visible column set only when a
@@ -730,7 +751,7 @@
       }
       var parts = [pinned ? firstPx + "px" : "minmax(30%, 1.6fr)"];
       cols.forEach(function(c){
-        parts.push(pinned ? "minmax(" + colMin(c.key) + "px, 1fr)" : c.w);
+        parts.push(pinned ? "minmax(" + colMin(c.key) + "px, 1fr)" : colTrack(c));
       });
       if (!cfg.noActions && !root.classList.contains("is-t2")){
         parts.push(pinned ? ACTIONS_MIN + "px" : "minmax(" + ACTIONS_MIN + "px, auto)");

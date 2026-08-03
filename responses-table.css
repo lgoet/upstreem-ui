@@ -30,8 +30,12 @@
 .urt-brand-logo { width: 16px; height: 16px; border-radius: 4px; flex: 0 0 auto; display: block; object-fit: cover; }
 .urt-brand-label { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
 
-/* ---------- date ---------- */
-.urt-date { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
+/* ---------- date ----------
+   overflow/ellipsis is not cosmetic here: nowrap alone let a long relative time ("59 minutes ago")
+   run straight out of the cell and across the 16px right padding into the next column. The column
+   min is sized so this never actually truncates -- this is the guard for the case it does. */
+.urt-date { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; min-width: 0; max-width: 100%; }
 
 /* ---------- model chip ----------
    Logo + label sizing comes from core's .up-ment-logo / .up-ment-name (the Mentioned dropdown's
