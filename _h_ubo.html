@@ -1,6 +1,6 @@
 <meta charset="utf-8">
-<link rel="stylesheet" href="core.css?v=6">
-<link rel="stylesheet" href="brands-overview.css?v=6">
+<link rel="stylesheet" href="core.css?v=7">
+<link rel="stylesheet" href="brands-overview.css?v=7">
 <body style="margin:0;padding:20px;font-family:sans-serif;background:#fff">
 
 <div class="up-root ubo-root"
@@ -128,8 +128,8 @@
   </div>
 </div>
 
-<script src="core.js?v=6"></script>
-<script src="brands-overview.js?v=6"></script>
+<script src="core.js?v=7"></script>
+<script src="brands-overview.js?v=7"></script>
 <script>
 window.__events = [];
 ["uboGranularity","uboSubmitBrands","uboSortTable","uboSearch","uboStatus","uboExportTable",
@@ -162,16 +162,52 @@ var INACTIVE = [
   {company_id:"4a50d6d7", name:"SocialNatives",  favicon_url:"https://www.google.com/s2/favicons?domain=socialnatives.de&sz=64", deactivated_at:"2026-03-12T11:30:17.183062+00:00"},
   {company_id:"d95500d5", name:"wolf-of-seo",    favicon_url:"https://www.google.com/s2/favicons?domain=wolf-of-seo.de&sz=64",   deactivated_at:"2026-03-11T20:59:46.493025+00:00"}
 ];
+/* Byte-for-byte the sanitizers from the documented Run-JS step (bubble/brands_overview_bubble.html),
+   so the harness exercises the step the user actually pastes into Bubble -- not a cleaned-up
+   version of it. TABLE_RAW below is deliberately RAW Bubble output: a null column arrives as
+   `"sentiment":,` and there is a trailing comma before the closing bracket. Both are exactly what
+   toArr() has to repair; a plain JSON.parse dies on either. */
+function toArr(raw) {
+  var s = String(raw == null ? "" : raw).trim();
+  if (!s) return [];
+  if (s[0] === "{") s = "[" + s + "]";
+  s = s.replace(/:\s*([,}\]])/g, ": null$1");
+  s = s.replace(/,\s*([}\]])/g, "$1");
+  try { return eval("(" + s + ")"); } catch (e) { return []; }
+}
+function toNum(raw) {
+  var s = String(raw == null ? "" : raw).trim();
+  var n = parseFloat(s.replace(/,/g, ""));
+  return isNaN(n) ? 0 : n;
+}
+var TABLE_RAW = JSON.stringify(TABLE)
+  .replace('"sentiment":78', '"sentiment":')      // null column, Bubble-style
+  .replace(/\}\]$/, '},]');                       // trailing comma before the bracket
+
 window.addEventListener("load", function(){
   setTimeout(function(){
-    /* Two separate RPC steps, exactly as bubble/brands_overview_bubble.html documents them:
-       step A carries only the chart keys, step B only the table keys, and they arrive apart. */
-    window.renderBrandsOverview({ instanceId:"bo1", series:SERIES, companies:COMPANIES,
-      filterCompanies:COMPANIES, granularity:"day" });
-    setTimeout(function(){
-      window.renderBrandsOverview({ instanceId:"bo1", table:TABLE, totalCount:5 });
-    }, 400);
-    window.setBrandsOverviewInactive("bo1", INACTIVE);
+    /* ONE step, one payload, one backtick slot per RPC -- the shape documented in
+       bubble/brands_overview_bubble.html and used by the visibility-chart step. */
+    var payload = {
+      instanceId: "bo1",
+      isDark: "no",
+      granularity: "day",
+      totalCount: toNum("5"),
+      totalCountInactive: toNum("3"),
+      series: toArr(JSON.stringify(SERIES)),
+      companies: toArr(JSON.stringify(COMPANIES)),
+      table: toArr(TABLE_RAW),
+      filterCompanies: toArr(JSON.stringify(COMPANIES)),
+      inactive: toArr(JSON.stringify(INACTIVE))
+    };
+    var t = 0;
+    (function go () {
+      var fn = window.renderBrandsOverview
+            || (window.parent && window.parent.renderBrandsOverview)
+            || (window.top && window.top.renderBrandsOverview);
+      if (typeof fn === "function") { fn(payload); return; }
+      if (t++ < 60) setTimeout(go, 100);
+    })();
   }, 300);
 });
 </script>

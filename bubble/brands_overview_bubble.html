@@ -59,110 +59,98 @@
     activate     the row's company_id      (Actions -> Activate, Inactive view only)
 
   ── Filling the component ────────────────────────────────────────────────────
-  Exactly like visibility-chart: renderBrandsOverview is a MERGE, not a replace. Every key is
-  checked on its own, and a key you leave out is left untouched. That is what lets the chart and
-  the table come from their own separate RPCs, in their own separate Run-JS steps, in whatever
-  order they happen to finish.
+  One Run-JS step, exactly like visibility-chart's — several RPCs, each in its own backtick slot,
+  assembled into ONE payload. renderBrandsOverview merges per key (a key you leave out stays as it
+  was), so you can also re-run a stripped-down copy of the step that only carries `table` when
+  sort/search/status change.
 
-  window.renderBrandsOverview({ instanceId, series, companies, filterCompanies, granularity });
-  window.renderBrandsOverview({ instanceId, table, totalCount });
-  window.setBrandsOverviewInactive("INSTANCE_ID", RAW_STRING_OR_ARRAY);
+  window.renderBrandsOverview({ instanceId, isDark, granularity, totalCount, totalCountInactive,
+                                series, companies, filterCompanies, table, inactive });
+  window.setBrandsOverviewInactive("INSTANCE_ID", RAW_STRING_OR_ARRAY);   // refresh only that list
   window.setBrandsOverviewLoading("INSTANCE_ID", "yes" | "no");
   window.setBrandsOverviewTheme("INSTANCE_ID", "yes" | "no");
   window.resetBrandsOverview("INSTANCE_ID");
 
-  CHART RPC (step A below) — feeds the Linechart and the "All Brands" filter:
-    series          [{ company_id, day, visibility_pct }, ...]
-    companies       [{ company_id, name, color, favicon_url, visibility_window_pct }, ...]
-    filterCompanies [{ company_id, name, color, favicon_url }, ...]  full list for "All Brands"
-    granularity     "day" | "week" | "month"   optional, only applied before the user picks one
-
-  TABLE RPC (step B below) — feeds the Active table AND the Landscape chart:
+  Which RPC feeds what:
+    series          [{ company_id, day, visibility_pct }, ...]                    Linechart
+    companies       [{ company_id, name, color, favicon_url,
+                       visibility_window_pct }, ...]                              Linechart + legend
+    filterCompanies [{ company_id, name, color, favicon_url }, ...]               "All Brands" list
     table           [{ company_id, name, logo_url, position,
                        visibility_pct, visibility_delta_pct,
                        avg_rank, avg_rank_delta,
-                       sentiment, sentiment_delta }, ...]
-    totalCount      42
+                       sentiment, sentiment_delta }, ...]                         Active table
+    inactive        [{ company_id, name, favicon_url, deactivated_at }, ...]      Inactive table
+    totalCount / totalCountInactive                                               the two head counts
+    granularity     "day" | "week" | "month"   optional, only applied before the user picks one
 
   The Landscape chart is drawn from `table`, not from `series` — it needs visibility_pct +
-  sentiment + avg_rank per brand, and only that array carries them. So if only step A has run,
-  the Linechart is live and Landscape is still empty; that is expected, not a bug.
+  sentiment + avg_rank per brand, and only that array carries them. A payload without `table`
+  shows the Linechart but leaves Landscape empty.
 
   !! NEVER paste an RPC result straight into the JS as an array literal. Bubble's raw output is NOT
   valid JavaScript: a null column arrives as `"sentiment":,` — nothing between colon and comma —
-  and the step dies with "Unexpected token ','" before any of this code runs. Put the raw text in a
-  backtick string; every entry point here runs strings through UpstreemCore.parseBubbleJson.
+  and the step dies with "Unexpected token ','" before any of this code runs. Every raw slot below
+  sits in a backtick string and goes through toArr(), which repairs exactly that.
 
-  ── Step A: chart — own Run-JS step, own RPC ─────────────────────────────────
-  Same RPC and same step shape visibility-chart uses. Passes ONLY the chart keys; the table keeps
-  whatever step B last put there.
+  ── Run-JS "Render" step (paste as-is, drop your RPC expressions into the slots) ──
+  Same step as visibility-chart's, one payload per component, one backtick slot per RPC.
 
   (function () {
-    var INSTANCE_ID = `INSTANCE_ID`;
-    var RAW = `[VISIBILITY_SERIES_RPC_RESPONSE]`;
+    // --- Sanitizer: rohen/kaputten Bubble-Output -> gueltige Arrays ---
+    function toArr(raw) {
+      var s = String(raw == null ? "" : raw).trim();
+      if (!s) return [];
+      if (s[0] === "{") s = "[" + s + "]";
+      s = s.replace(/:\s*([,}\]])/g, ": null$1");
+      s = s.replace(/,\s*([}\]])/g, "$1");
+      try { return eval("(" + s + ")"); } catch (e) { return []; }
+    }
+    // --- Sanitizer: rohen/leeren Bubble-Output -> gueltige Zahl ---
+    function toNum(raw) {
+      var s = String(raw == null ? "" : raw).trim();
+      var n = parseFloat(s.replace(/,/g, ""));   // falls Bubble Tausender-Kommas liefert
+      return isNaN(n) ? 0 : n;
+    }
+    var payload = {
+      instanceId: "brands_overview_",
+      isDark: ``,
+      granularity: ``,
+      totalCount: toNum(``),
+      totalCountInactive: toNum(``),
+      series: toArr(`[]`),
+
+
+      companies: toArr(`[]`),
+
+
+      table: toArr(`[]`),
+
+
+      filterCompanies: toArr(`[]`),
+
+
+      inactive: toArr(`[]`)
+    };
+
     var t = 0;
     (function go () {
-      var w  = window,
-          fn = w.renderBrandsOverview
-            || (w.parent && w.parent.renderBrandsOverview)
-            || (w.top && w.top.renderBrandsOverview),
-          UC = w.UpstreemCore
-            || (w.parent && w.parent.UpstreemCore)
-            || (w.top && w.top.UpstreemCore);
-      if (typeof fn === "function" && UC && UC.parseBubbleJson) {
-        var d = UC.parseBubbleJson(RAW);
-        fn({
-          instanceId:      INSTANCE_ID,
-          series:          d.series,
-          companies:       d.companies,
-          filterCompanies: d.filterCompanies || d.companies,
-          granularity:     `GRANULARITY`
-        });
-        return;
-      }
-      if (t++ < 60) { setTimeout(go, 100); return; }
-      console.error("[brands-overview] renderBrandsOverview / UpstreemCore never appeared after 6s " +
-        "— check data-cdn-pin and that the component is actually on this page.");
+      var fn = window.renderBrandsOverview
+            || (window.parent && window.parent.renderBrandsOverview)
+            || (window.top && window.top.renderBrandsOverview);
+      if (typeof fn === "function") { fn(payload); return; }
+      if (t++ < 60) setTimeout(go, 100);
     })();
   })();
 
-  If your chart RPC returns the series ARRAY itself instead of an object wrapping it, pass
-  `series: d` and feed `companies` / `filterCompanies` from wherever you hold the brand list.
+  Every key is applied on its own and a key you leave out stays as it was, so you can also run a
+  stripped copy of this step that carries only `table` + `totalCount` when sort, search or the
+  Active/Inactive switch fires — the chart then does not refetch.
 
-  ── Step B: table — own Run-JS step, own RPC ─────────────────────────────────
-  Passes ONLY the table keys; the chart keeps whatever step A last put there. Re-run this one
-  alone on sort, search and the Active/Inactive switch — the chart does not need to refetch.
-
-  (function () {
-    var INSTANCE_ID = `INSTANCE_ID`;
-    var RAW = `[BRANDS_TABLE_RPC_RESPONSE]`;
-    var TOTAL = `[TOTAL_COUNT]`;
-    var t = 0;
-    (function go () {
-      var w  = window,
-          fn = w.renderBrandsOverview
-            || (w.parent && w.parent.renderBrandsOverview)
-            || (w.top && w.top.renderBrandsOverview),
-          UC = w.UpstreemCore
-            || (w.parent && w.parent.UpstreemCore)
-            || (w.top && w.top.UpstreemCore);
-      if (typeof fn === "function" && UC && UC.parseBubbleJson) {
-        var d = UC.parseBubbleJson(RAW);
-        fn({
-          instanceId: INSTANCE_ID,
-          table:      Array.isArray(d) ? d : (d.table || d.brands || d.rows),
-          totalCount: TOTAL
-        });
-        return;
-      }
-      if (t++ < 60) { setTimeout(go, 100); return; }
-      console.error("[brands-overview] renderBrandsOverview / UpstreemCore never appeared.");
-    })();
-  })();
-
-  ── Inactive brands — own Run-JS step ────────────────────────────────────────
-  Its own small RPC, separate from the visibility payload. Re-run it whenever the "status" event
-  reports "inactive" (and after an Activate/Set Inactive action, so the two tabs stay in sync).
+  ── Inactive brands — optional extra step ────────────────────────────────────
+  The `inactive` slot in the step above already covers the normal case. This smaller step exists
+  for refreshing ONLY that list without re-sending the whole payload — after an Activate or
+  Set Inactive action, so the two tabs stay in sync without refetching the chart.
 
   (function () {
     var INSTANCE_ID = `INSTANCE_ID`;
