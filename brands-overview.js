@@ -368,7 +368,7 @@
       if (!pt){ hideTip(); return; }
       var el = ensureTip();
       el.setAttribute("data-theme", isDark() ? "dark" : "light");
-      var vis  = pt.x != null ? Math.round(pt.x) + "%" : "–";
+      var vis  = pt.x != null ? UC.fmtPct(pt.x) : "–";
       var sv   = pt.sentiment, rv = pt.avg_rank;
       var sentHtml = (sv == null) ? '<span class="ubo-mxtip-empty">–</span>'
         : '<span class="up-sent"><span class="up-sent-dot" style="background:' + sentColor(sv) + '"></span>' +
@@ -562,15 +562,23 @@
           '<svg class="ic-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
         chartTools.appendChild(eye);
       }
-      if (chartTools && !root.querySelector(".ubo-yaxis")){
-        var ys = document.createElement("div");
+      var ys = root.querySelector(".ubo-yaxis");
+      if (chartTools && !ys){
+        ys = document.createElement("div");
         ys.className = "ubo-yaxis";
         ys.setAttribute("role", "tablist");
         ys.setAttribute("aria-label", "Y axis");
         ys.innerHTML = '<button class="ubo-yaxis-btn is-active" data-yaxis="sentiment" type="button" role="tab">Sentiment</button>' +
                        '<button class="ubo-yaxis-btn" data-yaxis="ranking" type="button" role="tab">Ranking</button>';
-        var eyeBtn = root.querySelector(".ubo-hide");
-        if (eyeBtn) chartTools.insertBefore(ys, eyeBtn); else chartTools.appendChild(ys);
+      }
+      /* Order, not just presence: the Y-axis switch sits LEFT of the Linechart|Landscape switch.
+         Moving it here (rather than only inserting it when missing) means a placement that still
+         has the old markup order gets corrected too, without a re-paste. */
+      var typeSeg = root.querySelector('.ubo-seg[aria-label="Chart type"]');
+      if (chartTools && ys && typeSeg && ys.nextElementSibling !== typeSeg){
+        chartTools.insertBefore(ys, typeSeg);
+      } else if (chartTools && ys && !ys.parentNode){
+        chartTools.appendChild(ys);
       }
       /* Export: an old placement has it as a bare 32px icon button (.ubo-export.ubo-iconbtn).
          Upgrade it in place to the app-wide full button rather than leaving one table with a
@@ -860,7 +868,7 @@
       var pos = (r.position != null) ? Number(r.position) : (i + 1);
       var visNull = (r.visibility_pct == null || r.visibility_pct === "");
       var vis = '<span class="up-num' + (visNull ? " is-empty" : "") + '">' +
-        (visNull ? "–" : (Math.round(Number(r.visibility_pct) || 0) + "%")) + '</span>' +
+        (visNull ? "–" : UC.fmtPct(r.visibility_pct)) + '</span>' +
         UC.trendChip(r.visibility_delta_pct, { decimals: false, inverted: false, suffix: "%" });
       var rank = '<span class="up-rank-group">' + HASH_ICON + '<span class="up-num">' + fmt1(r.avg_rank) + '</span></span>' +
         UC.trendChip(r.avg_rank_delta, { decimals: true, inverted: true });

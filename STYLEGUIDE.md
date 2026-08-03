@@ -273,6 +273,26 @@ aus der die Palette in `topcitations_dashboard.html` 1:1 übernommen wurde (sieh
 
 ## 1c. Datums- und Zahlenformate
 
+**Prozentwerte — immer durch `UC.fmtPct(v)`, nie selbst `Math.round(v) + "%"`.**
+
+Ein Wert, der echt über null liegt, aber auf null rundet, darf **nie** `0%` anzeigen — er zeigt
+`<1%`. `0%` und „kommt überhaupt nicht vor" sind zwei verschiedene Aussagen, und der Leser kann
+sie sonst nicht auseinanderhalten. Schwelle ist `Math.round(v) === 0`, also unter 0.5; 0.7 rundet
+auf 1 und zeigt `1%`.
+
+```js
+UC.fmtPct(0)     // "0%"      wirklich null
+UC.fmtPct(0.3)   // "<1%"     über null, rundet auf null
+UC.fmtPct(0.7)   // "1%"
+UC.fmtPct(42.4)  // "42%"
+```
+
+Fehlende Werte (`null`, `""`) sind davon unberührt und bleiben der `–`-Platzhalter — auch das ist
+eine dritte, eigene Aussage.
+
+Einzige Ausnahme: **Achsen-Ticks** bleiben roh (`Math.round(v) + "%"`). Ein Tick mit `0` ist eine
+Skalenposition, keine Messung.
+
 **Datum — app-weit einheitlich:** `dd. mmm yyyy`
 
 ```

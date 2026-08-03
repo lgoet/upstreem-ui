@@ -250,7 +250,7 @@
           ? '<span class="up-logo-box has-img"><img src="' + esc(r.logo_url) + '" onerror="this.style.visibility=\'hidden\'"/></span>'
           : '<span class="up-logo-box"></span>';
         var visNull = (r.visibility_pct == null || r.visibility_pct === "");
-        var vis = '<span class="up-num' + (visNull ? " is-empty" : "") + '">' + (visNull ? "–" : (Math.round(Number(r.visibility_pct) || 0) + "%")) + '</span>' + trendChip(r.visibility_delta_pct, false, false, "%");
+        var vis = '<span class="up-num' + (visNull ? " is-empty" : "") + '">' + (visNull ? "–" : UC.fmtPct(r.visibility_pct)) + '</span>' + trendChip(r.visibility_delta_pct, false, false, "%");
         var rank = '<span class="up-rank-group">' + HASH_ICON + '<span class="up-num">' + fmt1(r.avg_rank) + '</span></span>' + trendChip(r.avg_rank_delta, true, true);
         var sentNull = (r.sentiment == null || r.sentiment === "" || !isFinite(Number(r.sentiment)));
         var sc = sentNull ? "#9E9E9E" : sentColor(r.sentiment);

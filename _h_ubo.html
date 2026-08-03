@@ -1,6 +1,6 @@
 <meta charset="utf-8">
-<link rel="stylesheet" href="core.css?v=10">
-<link rel="stylesheet" href="brands-overview.css?v=10">
+<link rel="stylesheet" href="core.css?v=12">
+<link rel="stylesheet" href="brands-overview.css?v=12">
 <body style="margin:0;padding:20px;font-family:sans-serif;background:#fff">
 
 <div class="up-root ubo-root"
@@ -40,15 +40,15 @@
           <div class="up-ment-menu" role="menu" aria-hidden="true"></div>
         </div>
 
+        <div class="ubo-yaxis" role="tablist" aria-label="Y axis">
+          <button class="ubo-yaxis-btn is-active" data-yaxis="sentiment" type="button" role="tab">Sentiment</button>
+          <button class="ubo-yaxis-btn" data-yaxis="ranking" type="button" role="tab">Ranking</button>
+        </div>
         <div class="ubo-seg" role="tablist" aria-label="Chart type">
           <button class="ubo-seg-btn is-active" data-chartmode="line" type="button" role="tab">Linechart
           </button>
           <button class="ubo-seg-btn" data-chartmode="landscape" type="button" role="tab">Landscape
           </button>
-        </div>
-        <div class="ubo-yaxis" role="tablist" aria-label="Y axis">
-          <button class="ubo-yaxis-btn is-active" data-yaxis="sentiment" type="button" role="tab">Sentiment</button>
-          <button class="ubo-yaxis-btn" data-yaxis="ranking" type="button" role="tab">Ranking</button>
         </div>
         <button class="ubo-hide ubo-iconbtn" type="button" data-tip="Hide" aria-label="Hide">
           <svg class="ic-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -133,8 +133,8 @@
   </div>
 </div>
 
-<script src="core.js?v=10"></script>
-<script src="brands-overview.js?v=10"></script>
+<script src="core.js?v=12"></script>
+<script src="brands-overview.js?v=12"></script>
 <script>
 window.__events = [];
 ["uboGranularity","uboSubmitBrands","uboSortTable","uboSearch","uboStatus","uboExportTable",
@@ -147,7 +147,7 @@ var COMPANIES = [
   {company_id:"c2", name:"Audi",   color:"#0ea5e9", favicon_url:"https://www.google.com/s2/favicons?domain=audi.de&sz=64",       visibility_window_pct:31},
   {company_id:"c3", name:"Volvo",  color:"#22c55e", favicon_url:"https://www.google.com/s2/favicons?domain=volvo.com&sz=64",     visibility_window_pct:18},
   {company_id:"c4", name:"VW",     color:"#a855f7", favicon_url:"https://www.google.com/s2/favicons?domain=volkswagen.de&sz=64", visibility_window_pct:9},
-  {company_id:"c5", name:"BMW",    color:"#f59e0b", favicon_url:"https://www.google.com/s2/favicons?domain=bmw.de&sz=64",        visibility_window_pct:26}
+  {company_id:"c5", name:"BMW",   color:"#f59e0b", favicon_url:"https://www.google.com/s2/favicons?domain=bmw.de&sz=64",        visibility_window_pct:0.3}
 ];
 var DAYS = ["2026-07-28","2026-07-29","2026-07-30","2026-07-31","2026-08-01","2026-08-02","2026-08-03"];
 var SERIES = [];

@@ -172,7 +172,7 @@
     if (v == null || v === "" || isNaN(Number(v))) return '<span class="mqa-trend is-flat">' + DASH + '</span>';   // no trend
     var n = Number(v), a = Math.abs(n);
     if (a === 0) return '<span class="mqa-trend is-flat">' + DASH + '</span>';         // no change
-    var txt = (a < 0.5) ? "<1%" : (Math.round(a) + "%");                               // <0.5 would round to 0% -> show "<1%"; 0.5-0.99 rounds to 1%
+    var txt = UC.fmtPct(a);   // >0 but rounding to 0 prints "<1%" — see UC.fmtPct
     return '<span class="mqa-trend ' + (n > 0 ? "is-up" : "is-down") + '">' +
              (n > 0 ? ARR_UP : ARR_DOWN) + '<span class="mqa-trend-n">' + txt + '</span>' +
            '</span>';

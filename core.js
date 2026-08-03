@@ -2265,7 +2265,18 @@
   }
   function capitalize(s){ s = String(s || ""); return s.charAt(0).toUpperCase() + s.slice(1); }
   /* Share formatter with the <1% case fmtTotal doesn't have. */
-  function fmtPct(v){ v = Number(v) || 0; if (v > 0 && v < 1) return "<1%"; return Math.round(v) + "%"; }
+  /* THE percent formatter for this app — every share/visibility figure goes through it.
+     The rule: a value that is genuinely above zero but ROUNDS to zero must never print "0%",
+     because "0%" and "not mentioned at all" are different facts and the reader cannot tell them
+     apart. It prints "<1%" instead. Threshold is Math.round(v) === 0, i.e. below 0.5 — 0.7 still
+     rounds to 1 and prints "1%". (Was `v < 1`, which wrongly swallowed 0.5-0.99 into "<1%".)
+     Axis TICKS are the one exception and stay plain: a tick labelled 0 is a scale position, not
+     a measurement. */
+  function fmtPct(v){
+    v = Number(v) || 0;
+    if (v > 0 && Math.round(v) === 0) return "<1%";
+    return Math.round(v) + "%";
+  }
 
   /* Turns a raw [{type, share_pct}] breakdown into the [{name, share, color}] the doughnut/bar
      renderers take. In url mode the tail past MAX_URL_SLICES is folded into one "Other" slice. */
@@ -2535,8 +2546,7 @@
         var icon = ds.__favicon
           ? '<img src="' + esc(ds.__favicon) + '" width="16" height="16" style="border-radius:4px;display:block;object-fit:cover" onerror="this.style.visibility=\'hidden\'"/>'
           : '<span style="width:16px;height:16px;border-radius:4px;background:' + ds.__baseColor + ';display:block"></span>';
-        var vy = Number(dp.parsed.y) || 0, vr = Math.round(vy);
-        var val = (vy > 0 && vr === 0) ? "<1%" : (vr + "%");
+        var val = fmtPct(dp.parsed.y);
         return '<div style="display:flex;align-items:center;gap:8px;margin-top:8px">' +
             '<span style="flex:0 0 16px;display:flex">' + icon + '</span>' +
             '<span style="flex:1 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:' + textColor + '">' + esc(truncate(ds.label, 32)) + '</span>' +

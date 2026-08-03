@@ -349,7 +349,7 @@
         }
         var shareRaw = isUrl ? r.global_share_pct : r.share_pct;
         var shareNull = (shareRaw == null || shareRaw === "");
-        var share = '<span class="tct-num' + (shareNull ? " is-empty" : "") + '">' + (shareNull ? "–" : (Math.round(Number(shareRaw) || 0) + "%")) + '</span>' + trendChip(r.share_delta_pct, "%");
+        var share = '<span class="tct-num' + (shareNull ? " is-empty" : "") + '">' + (shareNull ? "–" : fmtPct(shareRaw)) + '</span>' + trendChip(r.share_delta_pct, "%");
         var used = (r.used_total != null) ? '<span class="tct-used">' + esc(fmtTotal(r.used_total)) + '</span>' : "";
         return '<div class="tct-row" data-id="' + esc(String(idKey == null ? "" : idKey)) + '">' +
           '<div class="tct-td tct-td-idx">' + pos + '</div>' +

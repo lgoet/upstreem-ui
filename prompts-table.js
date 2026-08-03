@@ -1359,7 +1359,7 @@
     function visCell(v){
       var n = (v == null || v === "") ? null : Number(v);
       var bad = n == null || !isFinite(n);
-      return '<span class="up-num' + (bad ? " is-empty" : "") + '">' + (bad ? "–" : (Math.round(n) + "%")) + '</span>';
+      return '<span class="up-num' + (bad ? " is-empty" : "") + '">' + (bad ? "–" : UC.fmtPct(n)) + '</span>';
     }
     function rankCell(v){
       return '<span class="up-rank-group">' + HASH_ICON + '<span class="up-num">' + fmt1(v) + '</span></span>';
