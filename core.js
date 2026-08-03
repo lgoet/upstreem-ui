@@ -2958,12 +2958,17 @@
       var cv = body.querySelector("canvas");
       if (cv && window.Chart && window.Chart.getChart){ var ex = window.Chart.getChart(cv); if (ex) try { ex.destroy(); } catch(e){} }
     }
-    /* below collapseAt the legend drops under the doughnut instead of sitting beside it */
+    /* below collapseAt the legend drops under the doughnut instead of sitting beside it — mirrored
+       onto .up-donut-sk too (when the skeleton is what's currently showing) so the loading circle
+       is never a different size/layout than the real chart it's about to be replaced by. Both
+       consumers already call this unconditionally on every resize, skeleton or not. */
     function applyCollapse(){
-      var layout = body.querySelector(".up-donut-layout");
-      if (!layout) return;
       var host = cfg.collapseHost || body;
-      layout.classList.toggle("is-collapsed", host.getBoundingClientRect().width < collapseAt);
+      var collapsed = host.getBoundingClientRect().width < collapseAt;
+      var layout = body.querySelector(".up-donut-layout");
+      if (layout) layout.classList.toggle("is-collapsed", collapsed);
+      var sk = body.querySelector(".up-donut-sk");
+      if (sk) sk.classList.toggle("is-collapsed", collapsed);
     }
     function skeleton(){ destroy(); body.innerHTML = (cfg.chartMode && cfg.chartMode() === "bar") ? barSkeletonHtml() : donutSkeletonHtml(); }
     function empty(msg){ destroy(); body.innerHTML = '<div class="up-chart-empty">' + esc(msg || "No data") + '</div>'; }
