@@ -382,15 +382,61 @@
       .up-search.is-open .up-search-input { font-size: 16px; }
       .up-tip { display: none !important; }
     }
-    .up-cols-menu { position: absolute; top: calc(100% + 8px); right: 0; z-index: 60; width: 230px;
+    /* THE dropdown shell. .up-sort-menu / .up-cols-menu / .up-ment-menu were three near-identical
+       copies of it; anything new that needs a dropdown uses .up-menu and adds only its own width.
+       Do NOT borrow one of the named classes for a different dropdown: each component looks its
+       own menu up with root.querySelector(".up-cols-menu") and a second element carrying that
+       class silently steals the lookup -- that is exactly how Table Settings ended up rendering
+       into the grouping dropdown. */
+    .up-menu, .up-cols-menu { position: absolute; top: calc(100% + 8px); right: 0; z-index: 60; width: 230px;
       background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 14px; box-shadow: 0 10px 28px rgba(0,0,0,.14); padding: 8px;
       opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none; transition: opacity 140ms ease, transform 140ms ease; }
-    .up-cols-menu.is-shown { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
-    .up-root[data-theme="dark"] .up-cols-menu { background: #151515; }
+    .up-menu.is-shown, .up-cols-menu.is-shown { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+    .up-root[data-theme="dark"] .up-menu, .up-root[data-theme="dark"] .up-cols-menu { background: #151515; }
     /* icon buttons have no border, so their open state is the background */
     .up-cols.is-open .up-cols-btn { color: var(--vc-text); background: var(--vc-heading-bg); }
     /* a column that is the last one left can't be switched off — an empty table helps nobody */
     .up-pop-row.is-locked { opacity: .45; pointer-events: none; }
+
+
+    /* ---------- topic chip ----------
+       ONE topic chip for the whole app. It lived only in prompts-table.css, so the first other
+       place that needed one (the grouping popup, in the SAME component) got a hand-made
+       look-alike with different colours, a different check and a different height. Any surface
+       that shows a topic uses this: emoji + label on the topic's own colour, the checkbox sliding
+       in from the right when selected. Colour comes in through --ust-tag-color. */
+    .up-topicchip { height: 32px; padding: 0 8px 0 11px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;
+      cursor: pointer; font-family: inherit;
+      border: 1px solid color-mix(in srgb, var(--ust-tag-color, #6b7280) 40%, transparent);
+      background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 10%, transparent);
+      color: var(--ust-tag-color, #4b5563); font-size: 12px; font-weight: 500; line-height: 1;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+      transition: border-color 200ms cubic-bezier(.2,0,.38,.9); }
+    .up-topicchip-e { font-size: 12px; line-height: 1; }
+    .up-topicchip.is-on { border-color: var(--vc-text); }
+    .up-topicchip-lbl { overflow: hidden; text-overflow: ellipsis; }
+    .up-topicchip-check { display: inline-flex; align-items: center; justify-content: center;
+      width: 0; height: 14px; border-radius: 4px; opacity: 0; overflow: hidden; flex: 0 0 auto;
+      margin-left: 0; transform: translateX(6px);
+      background: var(--vc-text); color: var(--up-surface);
+      transition: width 200ms cubic-bezier(.2,0,.38,.9), opacity 200ms cubic-bezier(.2,0,.38,.9),
+                  transform 200ms cubic-bezier(.2,0,.38,.9), margin-left 200ms cubic-bezier(.2,0,.38,.9); }
+    .up-topicchip-check.is-on { width: 14px; opacity: 1; transform: translateX(0); margin-left: 2px; }
+    .up-topicchip-check svg { width: 9px; height: 9px; display: block; flex: 0 0 auto; }
+    /* at the cap: chips you cannot add anyway say so instead of silently ignoring the click */
+    .up-topiclist.is-full .up-topicchip:not(.is-on) { opacity: .4; cursor: default; pointer-events: none; }
+
+    /* ---------- secondary button ----------
+       Extracted from prompts-table's .upt-topicadd, which was the only place it existed. Solid
+       border, plain surface, real hover -- the app's "second action next to a primary one". */
+    .up-btn-sec { height: 32px; padding: 0 14px; border-radius: 9px;
+      border: 1px solid var(--vc-border); background: transparent; color: var(--vc-text);
+      cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 500;
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+    .up-btn-sec svg { width: 14px; height: 14px; display: block; }
+    .up-btn-sec:hover { color: var(--vc-text); border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
+    .up-btn-sec:disabled { opacity: .45; cursor: default; }
+    .up-btn-sec:disabled:hover { border-color: var(--vc-border); background: transparent; }
 
     /* ---------- sort dropdown ---------- */
     .up-sort { position: relative; flex: 0 0 auto; }

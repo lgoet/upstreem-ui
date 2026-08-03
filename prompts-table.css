@@ -376,37 +376,10 @@
    padding-top on the far side of the same separator stayed 12px. Zeroing the list's own gap
    here leaves margin-top as the only source of spacing, matching --upt-sep-gap on both sides. */
 .upt-topiclist.is-create { max-height: none; overflow: visible; gap: 0; }
-.upt-topicchip { height: 32px; padding: 0 8px 0 11px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;
-  cursor: pointer; font-family: inherit;
-  border: 1px solid color-mix(in srgb, var(--ust-tag-color, #6b7280) 40%, transparent);
-  background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 10%, transparent);
-  color: var(--ust-tag-color, #4b5563); font-size: 12px; font-weight: 500; line-height: 1;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
-  transition: border-color 200ms cubic-bezier(.2,0,.38,.9); }
-.upt-bulkbar[data-theme="dark"] .upt-topicchip { background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 22%, transparent); color: #e0e0e0; }
-.upt-topicchip-e { font-size: 12px; line-height: 1; }
-/* Staged (this popover's draft) or pre-existing on the one selected prompt — see
-   topicInitialStaged()/isStaged(). Same 200ms curve as the checkbox below: it used to run at a
-   different duration, so the border reached "selected" a beat before the checkbox finished
-   sliding in — two things visibly out of step instead of one motion. */
-.upt-topicchip.is-on { border-color: var(--vc-text); }
-.upt-topicchip-lbl { overflow: hidden; text-overflow: ellipsis; }
-/* An actual checkbox — a filled square with a white tick — not a bare check glyph; the glyph
-   alone read as "some faint mark appeared", not "this is checked". Slides in from the right as
-   ONE box (background + tick together, nothing added or swapped mid-transition), the chip's own
-   width grows as a side effect, and that growth is what pushes later chips onto the next line,
-   caught by the FLIP in renderTopicList(). */
-.upt-topicchip-check { display: inline-flex; align-items: center; justify-content: center;
-  width: 0; height: 14px; border-radius: 4px; opacity: 0; overflow: hidden; flex: 0 0 auto;
-  margin-left: 0; transform: translateX(6px);
-  background: var(--vc-text); color: var(--up-surface);
-  transition: width 200ms cubic-bezier(.2,0,.38,.9), opacity 200ms cubic-bezier(.2,0,.38,.9),
-              transform 200ms cubic-bezier(.2,0,.38,.9), margin-left 200ms cubic-bezier(.2,0,.38,.9); }
-.upt-topicchip-check.is-on { width: 14px; opacity: 1; transform: translateX(0); margin-left: 2px; }
-.upt-topicchip-check svg { width: 9px; height: 9px; display: block; flex: 0 0 auto; }
-/* At the per-prompt cap: chips you haven't staged can't be added anyway, so a click there would
-   silently do nothing — dimming them says so up front instead of leaving that a surprise. */
-.upt-topiclist.is-full .upt-topicchip:not(.is-on) { opacity: .4; cursor: default; pointer-events: none; }
+/* The chip itself is core's .up-topicchip now — this file only keeps what is specific to THIS
+   popover: the dark-bulk-bar tint and the cap-dimming hook on its own list class. */
+.upt-bulkbar[data-theme="dark"] .up-topicchip { background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 22%, transparent); color: #e0e0e0; }
+.upt-topiclist.is-full .up-topicchip:not(.is-on) { opacity: .4; cursor: default; pointer-events: none; }
 .upt-topicmenu-empty { padding: 14px 8px; text-align: center; font-size: 12.5px; color: var(--vc-muted); }
 /* No matches for the typed query -> the obvious next move is creating it, offered right where
    the empty state would otherwise sit — together with the start of the fuller tag creator this
@@ -477,12 +450,6 @@
 .upt-topicfoot { margin-top: var(--upt-sep-gap); display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
 /* Same face as the bar's own action buttons (.upt-bulkbar-btn/core's .up-filter-btn): solid
    border, plain surface — a dashed border read as "disabled" rather than "secondary action". */
-.upt-topicadd { flex: 0 0 auto; height: 34px; padding: 0 14px; border-radius: 9px;
-  border: 1px solid var(--vc-border); background: transparent; color: var(--vc-text);
-  cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 500;
-  display: inline-flex; align-items: center; gap: 7px; }
-.upt-topicadd svg { width: 14px; height: 14px; display: block; }
-.upt-topicadd:hover { color: var(--vc-text); border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
 .upt-topicapply { flex: 0 0 auto; height: 34px; padding: 0 20px; border-radius: 9px; border: 0;
   background: var(--vc-text); color: var(--up-surface); cursor: pointer;
   font-family: inherit; font-size: 12.5px; font-weight: 600; transition: opacity 120ms ease; }
@@ -641,9 +608,39 @@
 .upt-group.is-open .upt-group-btn { color: var(--vc-text); background: var(--vc-heading-bg); }
 /* 230px (the shell's default) is enough for a column list but not for three sort labels side by
    side — "Name A–Z" wrapped onto two lines inside its own button. */
-.upt-group-menu { width: 264px; }
+/* 230px (the shell default) squeezed three sort labels and the group rows together; 300px is
+   what this content needs. Padding/gap follow the app's dropdown rhythm (8px shell padding,
+   4px between dense buttons) instead of new one-off numbers. */
+.upt-group-menu { width: 300px; }
 .upt-group-menu .up-dense { display: flex; gap: 4px; }
 .upt-group-menu .up-dense-btn { flex: 1 1 0; min-width: 0; padding: 0 6px; white-space: nowrap; }
+/* Full width, 32px, and it is core's secondary button — same face and same hover as every other
+   secondary action in the app. */
+.upt-group-new { width: 100%; height: 32px; }
+
+/* ---------- "New grouping" popup: shell + chips are core's, only the layout here is local ---------- */
+.upt-gm-backdrop .up-topicmodal-card { max-width: 460px; }
+.upt-gm-labelrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.upt-gm-count { font-size: 12px; font-weight: 500; color: var(--vc-muted); font-variant-numeric: tabular-nums; }
+.upt-gm-search { position: relative; display: flex; align-items: center; }
+.upt-gm-search-in { flex: 1 1 auto; height: 36px; padding: 0 34px 0 12px; border: 1px solid var(--vc-border);
+  border-radius: 9px; background: transparent; color: var(--vc-text); font: inherit; font-size: 14px; outline: 0; }
+.upt-gm-search-in:focus { border-color: var(--vc-hover-border); }
+.upt-gm-clear { position: absolute; right: 6px; width: 24px; height: 24px; border: 0; border-radius: 6px;
+  padding: 0; background: transparent; color: var(--vc-muted); cursor: pointer;
+  display: none; align-items: center; justify-content: center; }
+.upt-gm-clear.is-on { display: inline-flex; }
+.upt-gm-clear svg { width: 12px; height: 12px; display: block; }
+.upt-gm-clear:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
+.upt-gm-list { display: flex; flex-wrap: wrap; gap: 8px; max-height: 200px; overflow-y: auto; }
+
+.upt-gm-namerow { display: flex; align-items: center; gap: 8px; }
+.upt-gm-colorwrap { flex: 0 0 auto; }
+.upt-gm-dotbtn { width: 36px; height: 36px; padding: 0; border-radius: 9px; border: 1px solid var(--vc-border);
+  background: transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.upt-gm-dotbtn:hover, .upt-gm-colorwrap.is-open .upt-gm-dotbtn { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
+.upt-gm-dot { width: 16px; height: 16px; border-radius: 50%; display: block; border: 1px solid rgba(0,0,0,.14); }
+.upt-gm-colorpanel:not(:empty) { margin-top: 8px; }
 .upt-group-dot { position: absolute; top: 5px; right: 5px; width: 6px; height: 6px; border-radius: 50%;
   background: var(--vc-text); opacity: 0; transition: opacity 120ms ease; }
 .upt-group.is-on .upt-group-dot { opacity: 1; }
@@ -657,21 +654,12 @@
 .upt-group-del:hover { color: #b0200c; background: var(--vc-heading-bg); }
 .upt-group-new { width: 100%; }
 
-/* ---------- "create group" popup: only the topic grid is local, the shell is .up-topicmodal-* ---------- */
-.upt-gm-backdrop .up-topicmodal-card { max-width: 460px; }
-.upt-gm-list { display: flex; flex-wrap: wrap; gap: 8px; max-height: 220px; overflow-y: auto; }
-.upt-gm-chip { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px;
-  border: 1px solid transparent; border-radius: 8px; cursor: pointer;
-  font-family: inherit; font-size: 13px; font-weight: 500; color: var(--vc-text);
-  opacity: .62; transition: opacity 120ms ease, border-color 120ms ease; }
-.upt-gm-chip:hover { opacity: .85; }
-.upt-gm-chip.is-on { opacity: 1; border-color: var(--vc-text); }
-.upt-gm-emoji { font-size: 13px; line-height: 1; }
-.upt-gm-check { display: inline-flex; }
-.upt-gm-check svg { width: 12px; height: 12px; display: block; stroke: currentColor; stroke-width: 3.4; }
-.upt-gm-count { font-size: 12px; font-weight: 400; color: var(--vc-muted); }
 
 @media (max-width: 900px){
   .upt-grp-kpis { gap: 14px; }
   .upt-grp-kpi { min-width: 58px; }
 }
+
+/* 6px colour dot in front of a custom group's name — the mix of its topics' colours, or whatever
+   the user picked in the popup. Topic groups carry their emoji+colour chip instead. */
+.upt-grp-cdot { width: 6px; height: 6px; border-radius: 50%; flex: 0 0 auto; display: block; }
