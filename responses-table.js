@@ -331,18 +331,20 @@
       return '<span class="up-sent"><span class="up-sent-dot" style="background:' + sentColor(n) + '"></span>' +
              '<span class="up-sent-val">' + Math.round(n) + '</span></span>';
     }
-    /* NO total argument on purpose. `total_count` on a row is the RESULT-SET total — it drives
-       pagination and the heading count — and passing it here printed "+23346" next to five
-       citation chips. There is no per-row citations total in the payload, so the preview length
-       is the count: brandStack falls back to it when totalCount is null. */
+    /* total comes straight from sources_totalcount now — a real per-row citations count the RPC
+       added specifically for this. Do NOT use `total_count`: that's the RESULT-SET total (drives
+       pagination/the heading count), reused identically on every row, and passing it here printed
+       "+23346" next to five citation chips. sources_preview itself is capped to 5 server-side now
+       too, so brandStack's own list-length fallback (for when totalCount is null) is no longer
+       load-bearing here — kept only as a defensive fallback if the field is ever missing. */
     /* spreadLeft is for the CARD footer only. There the stack sits hard against the card's right
        edge, so the default rightward hover spread pushes chips outside it. In the table the
        column has the rest of the row to its right and behaves like every other chip stack. */
-    function citationsChips(sources, spreadLeft){
+    function citationsChips(sources, total, spreadLeft){
       var mapped = (Array.isArray(sources) ? sources : []).map(function(s){
         return { name: s && s.title, favicon: s && s.favicon };
       });
-      return brandStack(mapped, null, spreadLeft ? { max: 5, spread: "left" } : { max: 5 });
+      return brandStack(mapped, total, spreadLeft ? { max: 5, spread: "left" } : { max: 5 });
     }
     /* Defensive on the ENTRY, not just the key: a malformed models list (a hole, a null, a bare
        string) must degrade to "unknown model, show the raw key" — never throw. This runs inside
@@ -412,7 +414,7 @@
         '<div class="up-td urt-td-sentiment">' + sentCell(r.user_sentiment) + '</div>' +
         '<div class="up-td urt-td-rank">' + rankCell(r.user_rank) + '</div>' +
         '<div class="up-td urt-td-brands">' + brandStack(r.companies_preview, r.companies_preview_totalcount, { max: 4 }) + '</div>' +
-        '<div class="up-td urt-td-citations">' + citationsChips(r.sources_preview) + '</div>' +
+        '<div class="up-td urt-td-citations">' + citationsChips(r.sources_preview, r.sources_totalcount) + '</div>' +
         '<div class="up-td urt-td-model">' + modelChip(r.model) + '</div>' +
         '<div class="up-td urt-td-date"><span class="urt-date" data-tip="' + esc(fmtDate(r.run_at)) + '">' + esc(relativeTime(r.run_at)) + '</span></div>' +
       '</div>';
@@ -438,7 +440,7 @@
         '<div class="urt-card-preview">' + mdPreview(preview) + '</div>' +
         '<div class="urt-card-foot">' +
           '<div class="urt-card-brands">' + brandStack(r.companies_preview, r.companies_preview_totalcount, { max: 4 }) + '</div>' +
-          '<div class="urt-card-citations">' + citationsChips(r.sources_preview, true) + '</div>' +
+          '<div class="urt-card-citations">' + citationsChips(r.sources_preview, r.sources_totalcount, true) + '</div>' +
         '</div>' +
       '</div>';
     }

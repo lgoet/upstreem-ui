@@ -159,9 +159,12 @@
   Row fields (straight from your RPC, no renaming needed):
     prompt_run_id, run_at, model, prompt_id, prompt_text, user_rank, user_sentiment,
     has_user_brand, companies_preview_totalcount, companies_preview[{name,rank,company_id,
-    favicon_url,brand_name_raw}], sources_preview[{pos,url,title,domain,favicon}], total_count
-    (the citations total — sources_preview is only a preview, same "+N" pattern as brand mentions),
-    response_preview (Cards view only)
+    favicon_url,brand_name_raw}], sources_totalcount, sources_preview[{pos,url,title,domain,
+    favicon}] (capped to the first 5 server-side — sources_totalcount is the real count behind
+    the "+N" badge, same "preview + separate total" pattern as companies_preview/
+    companies_preview_totalcount above it), total_count (the RESULT-SET total across every row —
+    drives pagination and the heading count, NOT a per-row citations total), response_preview
+    (Cards view only)
 -->
 <div class="up-root urt-root"
      data-instance="INSTANCE_ID"
