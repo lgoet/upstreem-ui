@@ -249,7 +249,7 @@
        without opening the menu */
     .up-filter-btn {
       display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px;
-      border: 1px solid var(--vc-border); border-radius: 8px; background: transparent;
+      border: 1px solid transparent; border-radius: 8px; background: transparent;
       color: var(--vc-text); font: inherit; font-size: 12px; font-weight: 500; line-height: 1;
       cursor: pointer; white-space: nowrap; max-width: 220px;
     }
@@ -318,7 +318,7 @@
     .up-ment { position: relative; flex: 0 0 auto; }
     .up-ment-btn {
       display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px;
-      border: 1px solid var(--vc-border); border-radius: 8px; background: transparent;
+      border: 1px solid transparent; border-radius: 8px; background: transparent;
       color: var(--vc-text); font: inherit; font-size: 12px; font-weight: 500; line-height: 1;
       cursor: pointer; white-space: nowrap; max-width: 200px;
     }
