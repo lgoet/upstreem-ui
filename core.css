@@ -526,6 +526,18 @@
        Renaming to .up-* is safe despite already-deployed pages: this menu is built at RUNTIME by
        core.js, so no pasted Bubble markup contains these class names (unlike the TRIGGER button,
        which does — hence .vot-scale-btn keeps its component-specific name in the rule above). */
+    /* Granularity switcher (Day/Week/Month). Lives here because visibility-chart AND
+       brands-overview both show it; the vc- prefix is kept rather than renamed because it is in
+       already-deployed visibility-chart markup (same reasoning as .vot-scale-btn above). */
+.vc-gran { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-bg); border-radius: 8px; border: 0; height: 32px; flex: 0 0 auto; }
+    .vc-gran-btn { height: 32px; padding: 0 12px; border: 1px solid transparent; border-radius: 8px; background: transparent;
+      color: var(--vc-muted); cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1;
+      display: inline-flex; align-items: center; justify-content: center; }
+    .vc-gran-btn:hover { color: var(--vc-text); }
+    .vc-gran-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
+    .up-root[data-theme="dark"] .vc-gran-btn.is-active { background: #121212; border-color: #353535; }
+    .vc-gran-btn.is-disabled { opacity: 0.4; pointer-events: none; cursor: default; }
+
     .up-scale-opt { display: flex; flex-direction: column; gap: 8px; padding: 9px 10px; border-radius: 9px; cursor: pointer; }
     .up-scale-opt:hover, .up-scale-opt.is-active { background: var(--vc-heading-bg); }
     .up-scale-opt-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }

@@ -110,14 +110,10 @@
 .vt-td-brand { position: relative; }
 
 /* granularity switcher (in the header) */
-.vc-gran { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-bg); border-radius: 8px; border: 0; height: 32px; flex: 0 0 auto; }
-.vc-gran-btn { height: 32px; padding: 0 12px; border: 1px solid transparent; border-radius: 8px; background: transparent;
-  color: var(--vc-muted); cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1;
-  display: inline-flex; align-items: center; justify-content: center; }
-.vc-gran-btn:hover { color: var(--vc-text); }
-.vc-gran-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
-.up-root[data-theme="dark"] .vc-gran-btn.is-active { background: #121212; border-color: #353535; }
-.vc-gran-btn.is-disabled { opacity: 0.4; pointer-events: none; cursor: default; }
+/* The Day/Week/Month switcher (.vc-gran/.vc-gran-btn) moved to core.css — brands-overview shows
+   the identical control, and a second consumer is what STYLEGUIDE 25 calls the extraction trigger.
+   The CLASS NAME deliberately keeps its vc- prefix there: it is baked into every already-deployed
+   visibility-chart embed, and a rename would leave those unstyled until each page is re-pasted. */
 
 
 
