@@ -79,6 +79,23 @@
    Trigger is core's .up-iconbtn (added by the JS). Only the open/active state and the popover
    itself are this component's own.
    ================================================================ */
+/* active-columns count badge on the columns (gear) button — same styling as urls-table's
+   .uut-cols-badge / prompts-table's .upt-cols-badge / domains-table's .udt-cols-badge. The markup
+   (.urt-cols-badge) and the JS that fills it (core's syncColsBadge) were already wired up — this
+   table's own copy of the actual styling was simply never written, so the badge rendered as bare
+   unstyled text next to the gear icon instead of a small pill. Exactly the bug prompts-table had
+   before its own copy was added. */
+.urt-cols-badge {
+  position: absolute; top: -3px; right: -3px; z-index: 2;
+  min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
+  background: var(--vc-text); color: #e0e0e0;
+  font-family: inherit; font-size: 10px; font-weight: 600; line-height: 1;
+  display: none; align-items: center; justify-content: center;
+  font-variant-numeric: tabular-nums; pointer-events: none;
+}
+.up-root[data-theme="dark"] .urt-cols-badge { color: #1f1f1b; }
+.urt-cols-badge.is-visible { display: inline-flex; }
+
 .urt-fader { position: relative; flex: 0 0 auto; }
 .urt-fader-btn { position: relative; }
 .urt-fader.is-open .urt-fader-btn,
