@@ -536,7 +536,9 @@
    group is the same .up-row the flat table draws, so the two can never drift apart. Only the
    section header and its sub-footer are new here. Active view only: see state.grouped.
    ============================================================ */
-.up-root.is-grouped .up-thead { display: none; }   /* the sections carry their own headers */
+/* The column header STAYS in grouped mode. Hiding it pulled the whole box up by its 45px, which
+   is what "the table sits too high" was — and it is not even redundant: the rows inside an open
+   group are the flat table's own .up-row, laid out in exactly these columns. */
 .up-root.is-grouped .up-foot { display: none; }    /* pagination lives inside the open section */
 
 .upt-grp { border-bottom: 1px solid var(--vc-border); }

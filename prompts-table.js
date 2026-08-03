@@ -1968,7 +1968,22 @@
         return;
       }
       var rows = sortedGroups();
-      if (!rows.length){ renderEmptyState(!!state.query || !!state.brandMentioned); return; }
+      if (!rows.length){
+        /* Its own wording: "no prompts" is the flat table's message and sends you looking for the
+           wrong problem when what is actually missing is the group payload. */
+        /* Same .up-empty-* markup the flat empty state uses — only the wording differs, because
+           "no prompts" sends you looking for the wrong problem when the group payload is what is
+           missing. */
+        elTbody.innerHTML = '<div class="up-empty">' +
+          '<div class="up-empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' +
+            '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></div>' +
+          '<div class="up-empty-h">No groups</div>' +
+          '<div class="up-empty-t">' + ((state.query || state.brandMentioned)
+            ? "No topic group matches the current search."
+            : "The grouping call returned no rows — check the setPromptsTableGroups step.") + '</div>' +
+        '</div>';
+        return;
+      }
       elTbody.innerHTML = rows.map(function(g){
         var id = groupId(g);
         return '<div class="upt-grp" data-grp-sec="' + esc(id) + '">' + grpHeadHtml(g) + grpRowsHtml(id) + '</div>';
@@ -3065,12 +3080,28 @@
 
   /* Both take the RPC's array straight through UC.parseBubbleJson, so a raw Bubble string with
      its usual `"avg_rank":,` holes works without any regex on the workflow side. */
+  /* Same loud failure doRender already has: a silent `return false` on a mismatched instanceId
+     reads as "the grouped view is broken", with nothing anywhere saying what actually happened. */
+    function warnNoRoot(fnName, id){
+    if (!window.console) return;
+    var have = Array.prototype.map.call(document.querySelectorAll(".upt-root"), function(r){
+      return r.getAttribute("data-instance") || "(none)";
+    });
+    console.warn("[prompts-table] " + fnName + ": no .upt-root with data-instance " +
+      JSON.stringify(id) + ". On this page: " + (have.length ? have.join(", ") : "no .upt-root at all") + ".");
+  }
   function doGroups(id, rows){
     var list = rows;
     if (typeof list === "string") list = UC.parseBubbleJson(list);
     if (!Array.isArray(list)) list = [];
     var ctrl = id ? resolve(id) : initRoot(document.querySelector(".upt-root"));
-    if (!ctrl || !ctrl.setGroups) return false;
+    if (!ctrl || !ctrl.setGroups){ warnNoRoot("setPromptsTableGroups", id); return false; }
+    if (!list.length && window.console){
+      console.warn("[prompts-table] setPromptsTableGroups got 0 groups" +
+        (typeof rows === "string" ? " — the raw string did not parse into an array. First 120 chars: " +
+          JSON.stringify(String(rows).slice(0, 120)) : " — the array handed in was empty.") +
+        " The grouped view will show its empty state.");
+    }
     ctrl.setGroups(list);
     return true;
   }
@@ -3079,7 +3110,7 @@
     if (typeof list === "string") list = UC.parseBubbleJson(list);
     if (!Array.isArray(list)) list = [];
     var ctrl = id ? resolve(id) : initRoot(document.querySelector(".upt-root"));
-    if (!ctrl || !ctrl.setGroupPrompts) return false;
+    if (!ctrl || !ctrl.setGroupPrompts){ warnNoRoot("setPromptsTableGroupPrompts", id); return false; }
     ctrl.setGroupPrompts(list, requestId);
     return true;
   }
