@@ -1059,7 +1059,7 @@
    row's stack at a time. */
 .up-stack { display: inline-flex; align-items: center; min-width: 0; max-width: 100%; }
 .up-stack-item {
-  width: 24px; height: 24px; flex: 0 0 24px;
+  width: 28px; height: 28px; flex: 0 0 28px;
   display: inline-flex; align-items: center; justify-content: center;
   position: relative; cursor: default;
 }
@@ -1077,8 +1077,8 @@
 }
 /* only the gap-ring follows the row hover colour; the circle fill stays the (light-in-dark) logo bg */
 .up-row:hover .up-stack-vis { box-shadow: 0 0 0 4px var(--vt-row-hover-solid, var(--vc-bg)); }
-.up-stack-item img { width: 18px; height: 18px; border-radius: 6px; object-fit: contain; display: block; }
-.up-stack-ltr { font-size: 9px; font-weight: 600; color: var(--vc-muted); line-height: 1; text-transform: uppercase; }
+.up-stack-item img { width: 21px; height: 21px; border-radius: 7px; object-fit: contain; display: block; }
+.up-stack-ltr { font-size: 10px; font-weight: 600; color: var(--vc-muted); line-height: 1; text-transform: uppercase; }
 .up-stack-item.has-img .up-stack-ltr { display: none; }
 /* plain text, no circle: the overflow count is a label, not another brand */
 .up-stack-more {
@@ -1124,11 +1124,11 @@
 .up-root.is-dense .up-stack.is-spread-left .up-stack-item:has(~ .up-stack-item:hover) .up-stack-vis { transform: translateX(-14.08px); }
 .up-root.is-dense .up-stack.is-spread-left .up-stack-item:has(~ .up-stack-item.is-last:hover) .up-stack-vis { transform: translateX(-7.04px); }
 /* Compact mode shrinks the mentioned-brand logos ~20% and scales every gap/shift to match. */
-.up-root.is-dense .up-stack-item { width: 21.12px; height: 21.12px; flex: 0 0 21.12px; }
+.up-root.is-dense .up-stack-item { width: 24.64px; height: 24.64px; flex: 0 0 24.64px; }
 .up-root.is-dense .up-stack-vis { border-radius: 7.04px; box-shadow: 0 0 0 3.52px var(--vc-bg); }
 .up-root.is-dense .up-row:hover .up-stack-vis { box-shadow: 0 0 0 3.52px var(--vt-row-hover-solid, var(--vc-bg)); }
-.up-root.is-dense .up-stack-item img { width: 15.84px; height: 15.84px; border-radius: 5.28px; }
-.up-root.is-dense .up-stack-ltr { font-size: 7.92px; }
+.up-root.is-dense .up-stack-item img { width: 18.48px; height: 18.48px; border-radius: 6.16px; }
+.up-root.is-dense .up-stack-ltr { font-size: 8.8px; }
 .up-root.is-dense .up-stack-item + .up-stack-item { margin-left: -5.28px; }
 .up-root.is-dense .up-stack-more { margin-left: 7.04px; }
 .up-root.is-dense .up-stack-item:hover .up-stack-vis { transform: translateX(7.04px) translateY(-3px); }
