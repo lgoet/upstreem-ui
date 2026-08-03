@@ -611,18 +611,45 @@
 /* 230px (the shell default) squeezed three sort labels and the group rows together; 300px is
    what this content needs. Padding/gap follow the app's dropdown rhythm (8px shell padding,
    4px between dense buttons) instead of new one-off numbers. */
-.upt-group-menu { width: 300px; }
-.upt-group-menu .up-dense { display: flex; gap: 4px; }
-.upt-group-menu .up-dense-btn { flex: 1 1 0; min-width: 0; padding: 0 6px; white-space: nowrap; }
+/* 340px: the three sort labels each get their own 8px of padding left and right and still sit
+   side by side. And the whole panel breathes -- 230px had every block stacked flush. */
+.upt-group-menu { width: 340px; padding: 10px; }
+.upt-group-menu .up-pop-head { margin-bottom: 4px; }
+.upt-group-menu .up-pop-div { margin: 12px 0; }
+.upt-group-menu .up-pop-sub { margin-bottom: 8px; }
+.upt-group-menu .up-pop-row { min-height: 34px; }
+.upt-group-menu .up-dense { display: flex; gap: 6px; }
+.upt-group-menu .up-dense-btn { flex: 1 1 0; min-width: 0; padding: 0 8px; white-space: nowrap; }
+/* .up-pop-row is space-between (label left, control right). A three-part row — dot, name,
+   delete — needs the dot and the name to stay together, so the delete button takes the auto
+   margin instead of the gap doing it. */
+.upt-group-item { gap: 8px; justify-content: flex-start; }
+.upt-group-item .up-pop-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.upt-group-item .upt-group-del { margin-left: auto; }
 /* Full width, 32px, and it is core's secondary button — same face and same hover as every other
    secondary action in the app. */
-.upt-group-new { width: 100%; height: 32px; }
+.upt-group-new { width: 100%; height: 32px; margin-top: 4px; }
 
 /* ---------- "New grouping" popup: shell + chips are core's, only the layout here is local ---------- */
-.upt-gm-backdrop .up-topicmodal-card { max-width: 460px; }
+.upt-gm-backdrop .up-topicmodal-card { max-width: 560px; }
 .upt-gm-labelrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .upt-gm-count { font-size: 12px; font-weight: 500; color: var(--vc-muted); font-variant-numeric: tabular-nums; }
-.upt-gm-search { position: relative; display: flex; align-items: center; }
+/* Hidden until the magnifier is clicked — with a handful of topics a permanent search field is
+   just a field nobody needs. */
+.upt-gm-search { position: relative; display: none; align-items: center; }
+.upt-gm-search.is-open { display: flex; }
+.upt-gm-right { display: inline-flex; align-items: center; gap: 8px; }
+.upt-gm-searchbtn { width: 26px; height: 26px; border: 0; border-radius: 7px; padding: 0;
+  background: transparent; color: var(--vc-muted); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; }
+.upt-gm-searchbtn svg { width: 14px; height: 14px; display: block; }
+.upt-gm-searchbtn:hover, .upt-gm-searchbtn.is-open { color: var(--vc-text); background: var(--vc-heading-bg); }
+/* Expanded list scrolls instead of growing without limit — 100 topics must not push the footer
+   off screen. */
+.upt-gm-list.is-scroll { max-height: 240px; overflow-y: auto; }
+.upt-gm-more { width: 100%; height: 30px; border: 0; border-radius: 8px; background: transparent;
+  color: var(--vc-muted); font-family: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; }
+.upt-gm-more:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
 .upt-gm-search-in { flex: 1 1 auto; height: 36px; padding: 0 34px 0 12px; border: 1px solid var(--vc-border);
   border-radius: 9px; background: transparent; color: var(--vc-text); font: inherit; font-size: 14px; outline: 0; }
 .upt-gm-search-in:focus { border-color: var(--vc-hover-border); }
@@ -632,7 +659,7 @@
 .upt-gm-clear.is-on { display: inline-flex; }
 .upt-gm-clear svg { width: 12px; height: 12px; display: block; }
 .upt-gm-clear:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
-.upt-gm-list { display: flex; flex-wrap: wrap; gap: 8px; max-height: 200px; overflow-y: auto; }
+.upt-gm-list { display: flex; flex-wrap: wrap; gap: 8px; }
 
 .upt-gm-namerow { display: flex; align-items: center; gap: 8px; }
 .upt-gm-colorwrap { flex: 0 0 auto; }
@@ -646,7 +673,6 @@
 .upt-group.is-on .upt-group-dot { opacity: 1; }
 .upt-group-note { padding: 6px 10px 8px; font-size: 12px; color: var(--vc-muted); line-height: 1.35; }
 .upt-group-item { gap: 8px; }
-.upt-group-n { font-size: 11px; font-weight: 600; color: var(--vc-third); font-variant-numeric: tabular-nums; }
 .upt-group-del { width: 24px; height: 24px; flex: 0 0 auto; border: 0; border-radius: 6px; padding: 0;
   background: transparent; color: var(--vc-muted); cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center; }

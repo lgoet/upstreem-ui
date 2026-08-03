@@ -326,8 +326,8 @@
     function readGroupSort(){
       try {
         var v = window.localStorage.getItem(gKey("groupsort"));
-        return (v === "count" || v === "name") ? v : "visibility";
-      } catch(e){ return "visibility"; }
+        return (v === "visibility" || v === "name") ? v : "count";
+      } catch(e){ return "count"; }
     }
     function writeGroupSort(v){ try { window.localStorage.setItem(gKey("groupsort"), v); } catch(e){} }
 
@@ -432,7 +432,7 @@
       groups: [],                           // header rows from cached_prompt_topics_grouped_v1
       groupsHasData: false,
       groupsLoading: false,
-      groupSort: readGroupSort(),           // "visibility" | "count" | "name"
+      groupSort: readGroupSort(),           // "count" (default) | "visibility" | "name"
       /* Exactly ONE group is expanded at a time, same rule (and same reasoning) as domains-table's
          drilldown: with one open section the sub-pagination can live as plain fields here instead
          of being kept per group. Not persisted — an expansion is a look-at-this-now gesture. */
@@ -1496,9 +1496,8 @@
        Built from JS for the same reason the Mentioned dropdown above is: the root markup is a
        hand-pasted copy in Bubble that a CDN pin never touches, so anything new that only lives in
        the markup simply never arrives. */
-    /* Feather "layers" — stacked sheets. The previous icon was an indented list, which reads as
-       "bullet list", not "put these into groups". */
-    var GRP_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>';
+    /* Feather "database" — "layers" is already taken elsewhere in the app. */
+    var GRP_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>';
     var elGrpWrap = null, elGrpMenu = null;
     (function(){
       if (!elHeadTools) return;
@@ -1545,14 +1544,14 @@
       } else {
         h += custom.map(function(g){
           return '<div class="up-pop-row upt-group-item">' +
+            '<span class="upt-grp-cdot" style="background:' + esc(g.color || "#6b7280") + '"></span>' +
             '<span class="up-pop-label">' + esc(g.key) + '</span>' +
-            '<span class="upt-group-n">' + g.tag_ids.length + '</span>' +
             '<button class="upt-group-del" type="button" data-grp-del="' + esc(g.key) + '" aria-label="Delete group">' + CLOSE_SVG + '</button>' +
           '</div>';
         }).join("");
       }
       h += '<div class="up-pop-div"></div>' +
-        '<button class="up-btn-sec upt-group-new" type="button" data-grp-new>New grouping</button>';
+        '<button class="up-btn-sec upt-group-new" type="button" data-grp-new>New Grouping</button>';
       elGrpMenu.innerHTML = h;
     }
     function syncGroupBtn(){
@@ -1567,10 +1566,21 @@
        draws, because a topic has to look like itself everywhere. The colour picker is the same
        TOPIC_COLOR_PALETTE grid the inline topic creator uses. Nothing here is a look-alike. */
     var GRP_MAX_TOPICS = 3;
+    var GM_SEARCH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
+    var GRP_TOPICS_COLLAPSED = 10;   /* show this many, then a "Show all" button */
     var grpModal = null, grpPicked = {}, grpColor = null, grpColorOpen = false,
-        grpNameTouched = false, grpQuery = "";
-    function closeGroupModal(){
+        grpNameTouched = false, grpQuery = "", grpSearchOpen = false, grpShowAll = false;
+    /* Reopens the dropdown the popup was launched from — closing the popup should put you back
+       where you were, not leave you staring at the table. */
+    function reopenGroupMenu(){
+      setTimeout(function(){
+        if (!elGrpWrap || !grpPop) return;
+        populateGroupMenu(); grpPop.open();
+      }, 180);
+    }
+    function closeGroupModal(reopen){
       if (!grpModal) return;
+      if (reopen !== false) reopenGroupMenu();
       grpModal.classList.remove("is-shown");
       var m = grpModal;
       setTimeout(function(){ if (m && m.parentNode) m.parentNode.removeChild(m); }, 160);
@@ -1632,13 +1642,27 @@
       var shown = (state.topics || []).filter(function(t){
         return !q || String(t.name || "").toLowerCase().indexOf(q) > -1;
       });
+      /* Collapsed by default so ten topics do not become a wall; expanding turns the list into a
+         scroll container rather than letting 100 topics push the popup off screen. */
+      var hidden = Math.max(0, shown.length - GRP_TOPICS_COLLAPSED);
+      var visible = (grpShowAll || !hidden) ? shown : shown.slice(0, GRP_TOPICS_COLLAPSED);
       var list = grpModal.querySelector(".upt-gm-list");
       if (list){
-        list.className = "upt-gm-list up-topiclist" + (full ? " is-full" : "");
-        list.innerHTML = shown.length
-          ? shown.map(grpChipHtml).join("")
+        list.className = "upt-gm-list up-topiclist" + (full ? " is-full" : "") + (grpShowAll ? " is-scroll" : "");
+        list.innerHTML = visible.length
+          ? visible.map(grpChipHtml).join("")
           : '<div class="upt-topicmenu-empty">No topics match</div>';
       }
+      var moreBtn = grpModal.querySelector(".upt-gm-more");
+      if (moreBtn){
+        var showMore = hidden > 0 && !grpShowAll;
+        moreBtn.style.display = showMore ? "" : "none";
+        moreBtn.textContent = showMore ? ("Show all " + shown.length + " topics") : "";
+      }
+      var sw = grpModal.querySelector(".upt-gm-search");
+      if (sw) sw.classList.toggle("is-open", grpSearchOpen);
+      var sbtn = grpModal.querySelector(".upt-gm-searchbtn");
+      if (sbtn) sbtn.classList.toggle("is-open", grpSearchOpen);
       var cnt = grpModal.querySelector(".upt-gm-count");
       if (cnt) cnt.textContent = n + "/" + GRP_MAX_TOPICS;
 
@@ -1672,15 +1696,16 @@
     }
     function openGroupModal(){
       closeGroupModal();
-      grpPicked = {}; grpColor = null; grpColorOpen = false; grpNameTouched = false; grpQuery = "";
+      grpPicked = {}; grpColor = null; grpColorOpen = false; grpNameTouched = false;
+      grpQuery = ""; grpSearchOpen = false; grpShowAll = false;
       grpModal = document.createElement("div");
       grpModal.className = "up-topicmodal-backdrop upt-gm-backdrop";
       if (isDark) grpModal.setAttribute("data-theme", "dark");
       grpModal.innerHTML =
-        '<div class="up-topicmodal-card" role="dialog" aria-modal="true" aria-label="New grouping">' +
+        '<div class="up-topicmodal-card" role="dialog" aria-modal="true" aria-label="New Grouping">' +
           '<div class="up-topicmodal-head">' +
             '<div class="up-topicmodal-heading">' +
-              '<h3 class="up-topicmodal-title">New grouping</h3>' +
+              '<h3 class="up-topicmodal-title">New Grouping</h3>' +
               '<p class="up-topicmodal-sub">Combine several topics into one group. A prompt counts ' +
                 'towards the group if it carries at least one of the topics.</p>' +
             '</div>' +
@@ -1690,13 +1715,17 @@
             '<div class="up-topicmodal-field">' +
               '<div class="upt-gm-labelrow">' +
                 '<span class="up-topicmodal-label">Topics</span>' +
-                '<span class="upt-gm-count">0/' + GRP_MAX_TOPICS + '</span>' +
+                '<span class="upt-gm-right">' +
+                  '<span class="upt-gm-count">0/' + GRP_MAX_TOPICS + '</span>' +
+                  '<button class="upt-gm-searchbtn" type="button" data-gm-searchtoggle aria-label="Search topics">' + GM_SEARCH_SVG + '</button>' +
+                '</span>' +
               '</div>' +
               '<div class="upt-gm-search">' +
                 '<input class="upt-gm-search-in" type="text" placeholder="Search topics…" autocomplete="off" spellcheck="false"/>' +
                 '<button class="upt-gm-clear" type="button" data-gm-clear aria-label="Clear search">' + CLOSE_SVG + '</button>' +
               '</div>' +
               '<div class="upt-gm-list up-topiclist"></div>' +
+              '<button class="upt-gm-more" type="button" data-gm-more></button>' +
             '</div>' +
             '<div class="up-topicmodal-field">' +
               '<span class="up-topicmodal-label">Group name</span>' +
@@ -1726,6 +1755,17 @@
       grpModal.addEventListener("click", function(e){
         if (e.target === grpModal){ closeGroupModal(); return; }
         if (e.target.closest("[data-gm-close]")){ closeGroupModal(); return; }
+        if (e.target.closest("[data-gm-more]")){ grpShowAll = true; renderGroupModalBody(); return; }
+        if (e.target.closest("[data-gm-searchtoggle]")){
+          grpSearchOpen = !grpSearchOpen;
+          if (!grpSearchOpen) grpQuery = "";
+          renderGroupModalBody();
+          if (grpSearchOpen){
+            var si2 = grpModal.querySelector(".upt-gm-search-in");
+            if (si2) setTimeout(function(){ try { si2.focus(); } catch(e){} }, 60);
+          }
+          return;
+        }
         if (e.target.closest("[data-gm-clear]")){
           grpQuery = "";
           var si = grpModal.querySelector(".upt-gm-search-in");
@@ -1771,9 +1811,11 @@
        ============================================================================ */
     var GRP_ANIM_MS = 200;   /* must match .upt-grp-rows animation in prompts-table.css */
     var GRP_CHEV = '<svg class="upt-grp-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+    /* Prompts first and default: "how many prompts is this topic actually about" is the question
+       people open the grouped view with; visibility is the follow-up. */
     var GRP_SORTS = [
-      { key: "visibility", label: "Visibility" },
       { key: "count",      label: "Prompts" },
+      { key: "visibility", label: "Visibility" },
       { key: "name",       label: "Name A–Z" }
     ];
     var grpReqSeq = 0;
@@ -1893,9 +1935,10 @@
 
     function renderGroups(){
       if (state.groupsLoading || !state.groupsHasData){
-        elTbody.innerHTML = '<div class="upt-grp-sk">' +
-          new Array(5).join("x").split("x").map(function(){ return '<div class="upt-grp-skrow"></div>'; }).join("") +
-          '</div>';
+        /* The table's own skeleton, not a second one: a hand-rolled row of grey bars looked like a
+           different product loading. */
+        elTbody.innerHTML = skeletonRows(6);
+        applyCols();
         return;
       }
       var rows = sortedGroups();
