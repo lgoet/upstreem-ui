@@ -393,14 +393,23 @@
     /* ---------- column explainers (Visibility / Ranking / Sentiment) ----------
        Positioning/flip/caret logic is UC.makeExplain now; only the per-metric copy and the little
        visual sample stay here, because those genuinely are this component's content. */
-    var EXPLAIN_TEXT = {
-      visibility: { h: "Visibility",
-        t: "How often this brand appears in AI answers for the tracked prompts, plus the change against the previous period." },
-      ranking: { h: "Ranking",
-        t: "This brand's average position among all brands mentioned, plus the change against the previous period. A lower number is better." },
-      sentiment: { h: "Sentiment",
-        t: "How positively this brand is described when it's mentioned, plus the change against the previous period." }
+    /* Visibility/Ranking/Sentiment come from UC.EXPLAIN_TEXT (core) — the one shared wording
+       every table with these columns uses now (ranking maps onto the shared "rank" concept;
+       "Ranking" is just this table's own heading for it, kept as-is). */
+    var EXPLAIN_FALLBACK = {
+      visibility: { h: "Visibility", t: "How often the brand appears in AI answers for the tracked prompts, plus the change against the previous period." },
+      ranking:    { h: "Ranking", t: "The brand's average position among all brands mentioned, plus the change against the previous period. A lower number is better." },
+      sentiment:  { h: "Sentiment", t: "How positively the brand is described when it's mentioned, plus the change against the previous period." }
     };
+    function explainInfo(kind){
+      if (UC.explainCopy){
+        var trend = ", plus the change against the previous period";
+        if (kind === "visibility") return UC.explainCopy("visibility", { scope: " for the tracked prompts", trend: trend });
+        if (kind === "ranking"){ var r = UC.explainCopy("rank", { trend: trend }); return r ? { h: "Ranking", t: r.t } : null; }
+        if (kind === "sentiment") return UC.explainCopy("sentiment", { trend: trend });
+      }
+      return EXPLAIN_FALLBACK[kind] || null;
+    }
     function explainVisual(kind){
       if (kind === "ranking"){
         return '<span class="vot-explain-row">' + HASH_ICON + '<span>2.3</span></span>';
@@ -419,7 +428,7 @@
       triggerSel: ".up-th-info",
       getIsDark: darkNow,
       html: function(kind){
-        var info = EXPLAIN_TEXT[kind];
+        var info = explainInfo(kind);
         if (!info) return "";
         return '<div class="vot-explain-vis">' + explainVisual(kind) + '</div>' +
                '<div class="vot-explain-h">' + esc(info.h) + '</div>' +

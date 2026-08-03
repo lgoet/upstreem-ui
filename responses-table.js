@@ -979,13 +979,29 @@
        same as every other consumer. The visual sample reuses the REAL cell renderers
        (sentCell/rankCell/brandStack/citationsChips/modelChip) with representative sample data,
        rather than a separate hand-drawn approximation. */
-    var EXPLAIN_TEXT = {
-      sentiment: { h: "Sentiment", t: "How positively the model wrote about your brand in this response, 0–100." },
-      rank:      { h: "Rank",      t: "Where your brand appeared in this response, counting from the top." },
-      brands:    { h: "Brand Mentions", t: "Every brand the model named in this response." },
+    /* Sentiment/Rank/Brand Mentions come from UC.EXPLAIN_TEXT (core) — the ONE shared wording
+       every table with these columns now uses, instead of each writing its own. Citations/Model
+       have no other table's column to match yet, so they stay local. */
+    var EXPLAIN_LOCAL = {
       citations: { h: "Citations", t: "The sources the model cited for this response." },
       model:     { h: "Model",     t: "The model that produced this response." }
     };
+    function explainInfo(kind){
+      if (EXPLAIN_LOCAL[kind]) return EXPLAIN_LOCAL[kind];
+      if (UC.explainCopy){
+        if (kind === "sentiment") return UC.explainCopy("sentiment", {});
+        if (kind === "rank") return UC.explainCopy("rank", {});
+        if (kind === "brands") return UC.explainCopy("brands", { scope: " in this response" });
+      }
+      /* Fallback for a page where an older core.js (no explainCopy yet) won the mixed-pin race —
+         same wording UC.EXPLAIN_TEXT would have produced, just not shared from one place. */
+      var FALLBACK = {
+        sentiment: { h: "Sentiment", t: "How positively the brand is described when it's mentioned." },
+        rank:      { h: "Rank", t: "The brand's average position among all brands mentioned. A lower number is better." },
+        brands:    { h: "Brand Mentions", t: "Which of your tracked brands are mentioned in this response. Hover a logo to see its name." }
+      };
+      return FALLBACK[kind] || null;
+    }
     /* This panel is appended to <body>, OUTSIDE .up-root (see core.css's note on .up-explain) —
        none of this component's CSS custom properties reach in here. The real cell renderers
        (sentCell/rankCell/brandStack/modelChip) lean on var(--vc-text)/var(--vc-border)/etc for
@@ -1021,7 +1037,7 @@
       UC.makeExplain({
         root: root, triggerSel: ".up-th-info", getIsDark: function(){ return isDark; },
         html: function(kind){
-          var info = EXPLAIN_TEXT[kind];
+          var info = explainInfo(kind);
           if (!info) return "";
           return '<div class="up-explain-vis">' + explainVisual(kind) + '</div>' +
             '<div class="up-explain-h">' + esc(info.h) + '</div>' +

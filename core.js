@@ -323,6 +323,28 @@
   var GOTO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>';
   var HASH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>';
 
+  /* Column-header explainer copy (the popover UC.makeExplain opens from a .up-th-info icon) — ONE
+     canonical sentence per metric, shared by every table that has that column. This used to be
+     five independently-worded EXPLAIN_TEXT objects (urls-table/domains-table/prompts-table/
+     visibility-chart/responses-table) for the exact same concepts — Sentiment, Rank, Brand
+     Mentions, Share all read differently table to table, which is what every "the tooltips don't
+     match" report has actually been about. {tokens} fill in the handful of words that genuinely
+     differ per caller (what to call the row, whether a trend clause applies) via explainCopy();
+     the sentence structure and the concept it explains stay identical everywhere. */
+  var EXPLAIN_TEXT = {
+    sentiment:  { h: "Sentiment", t: "How positively the brand is described when it's mentioned{scope}{trend}." },
+    rank:       { h: "Rank", t: "The brand's average position among all brands mentioned{scope}{trend}. A lower number is better." },
+    visibility: { h: "Visibility", t: "How often the brand appears in AI answers{scope}{trend}." },
+    brands:     { h: "Brand Mentions", t: "Which of your tracked brands are mentioned{scope}. Hover a logo to see its name." },
+    share:      { h: "Share", t: "How much of all citations in the period went to this {subject}, plus the change against the previous period." }
+  };
+  function explainCopy(key, vars){
+    var e = EXPLAIN_TEXT[key];
+    if (!e) return null;
+    var t = e.t.replace(/\{(\w+)\}/g, function(_, k){ return (vars && vars[k] != null) ? vars[k] : ""; });
+    return { h: e.h, t: t };
+  }
+
   /* "<brand> mentioned?" cell — one implementation for every table that has the column. Both
      urls-table and responses-table carried their own byte-identical copy; keeping two is exactly
      how they drift. Renders a filled colour badge with a knocked-out glyph plus a neutral label
@@ -3249,6 +3271,8 @@
     COPY_SVG: COPY_SVG,
     GOTO_SVG: GOTO_SVG,
     HASH_ICON: HASH_ICON,
+    EXPLAIN_TEXT: EXPLAIN_TEXT,
+    explainCopy: explainCopy,
     mentCell: mentCell,
     MENT_CHECK_SVG: MENT_YES_SVG,
     DONE_SVG: DONE_SVG,

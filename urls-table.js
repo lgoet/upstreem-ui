@@ -738,17 +738,28 @@
       }
       return '<span class="uut-explain-row">6.9%</span>';
     }
-    var EXPLAIN_TEXT = {
-      share: { h: "Share",
-        t: "How much of all citations in the period went to this URL, plus the change against the previous period." },
-      type:  { h: "URL Type",
-        t: "What kind of page this is: an article, a comparison, a product page, and so on." },
-      brands: { h: "Brands mentioned",
-        t: "Which of your tracked brands appear on this page. Hover a logo to see its name." }
+    /* Share/Brand Mentions text comes from UC.EXPLAIN_TEXT (core) — the one shared wording every
+       table with these columns uses now, instead of each writing its own (this table's "brands"
+       used to say "appear on this page" where every other table said "are mentioned"). URL Type
+       has no counterpart elsewhere, stays local. */
+    var EXPLAIN_LOCAL = {
+      type: { h: "URL Type", t: "What kind of page this is: an article, a comparison, a product page, and so on." }
     };
+    function explainInfo(kind){
+      if (EXPLAIN_LOCAL[kind]) return EXPLAIN_LOCAL[kind];
+      if (UC.explainCopy){
+        if (kind === "share") return UC.explainCopy("share", { subject: "URL" });
+        if (kind === "brands") return UC.explainCopy("brands", { scope: " on this page" });
+      }
+      var FALLBACK = {
+        share: { h: "Share", t: "How much of all citations in the period went to this URL, plus the change against the previous period." },
+        brands: { h: "Brand Mentions", t: "Which of your tracked brands are mentioned on this page. Hover a logo to see its name." }
+      };
+      return FALLBACK[kind] || null;
+    }
     function showExplain(el){
       var kind = el.getAttribute("data-explain");
-      var info = EXPLAIN_TEXT[kind];
+      var info = explainInfo(kind);
       if (!info) return;
       explain.setAttribute("data-theme", isDark ? "dark" : "light");
       explain.innerHTML =

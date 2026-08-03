@@ -1106,17 +1106,21 @@
       }
       return '<span class="udt-explain-row">6.9%</span>';
     }
-    var EXPLAIN_TEXT = {
-      share: { h: "Share",
-        t: "How much of all citations in the period went to this domain, plus the change against the previous period." },
-      used:  { h: "Used",
-        t: "How many of this domain's pages were cited across all responses in the period." },
-      type:  { h: "Citation Type",
-        t: "What kind of source this domain is: editorial, UGC, institutional, and so on." }
+    /* Share text comes from UC.EXPLAIN_TEXT (core) — same wording urls-table's Share column uses,
+       just "URL" swapped for "domain". Used/Citation Type have no counterpart elsewhere, local. */
+    var EXPLAIN_LOCAL = {
+      used: { h: "Used", t: "How many of this domain's pages were cited across all responses in the period." },
+      type: { h: "Citation Type", t: "What kind of source this domain is: editorial, UGC, institutional, and so on." }
     };
+    function explainInfo(kind){
+      if (EXPLAIN_LOCAL[kind]) return EXPLAIN_LOCAL[kind];
+      if (kind === "share" && UC.explainCopy) return UC.explainCopy("share", { subject: "domain" });
+      if (kind === "share") return { h: "Share", t: "How much of all citations in the period went to this domain, plus the change against the previous period." };
+      return null;
+    }
     function showExplain(el){
       var kind = el.getAttribute("data-explain");
-      var info = EXPLAIN_TEXT[kind];
+      var info = explainInfo(kind);
       if (!info) return;
       explain.setAttribute("data-theme", isDark ? "dark" : "light");
       explain.innerHTML =

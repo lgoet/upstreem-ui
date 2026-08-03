@@ -1558,18 +1558,27 @@
        real row cell builders (up-num/up-sent/up-rank-group) here: the explainer panel has its
        own plain "value + trend" look — same one urls-table's "Share" explainer uses — not the
        table's chip styling. */
-    var EXPLAIN_TEXT = {
-      visibility: { h: "Visibility",
-        t: "How often your brand appears in AI answers for this prompt." },
-      rank: { h: "Rank",
-        t: "Your brand's average position among all brands mentioned for this prompt. A lower number is better." },
-      sentiment: { h: "Sentiment",
-        t: "How positively your brand is described when it's mentioned for this prompt." },
-      brands: { h: "Brand Mentions",
-        t: "Which of your tracked brands are mentioned in AI answers for this prompt. Hover a logo to see its name." },
-      market: { h: "Market",
-        t: "The market this prompt is tracked in." }
+    /* Visibility/Rank/Sentiment/Brand Mentions come from UC.EXPLAIN_TEXT (core) — the one shared
+       wording every table with these columns uses now. Market has no counterpart elsewhere. */
+    var EXPLAIN_LOCAL = {
+      market: { h: "Market", t: "The market this prompt is tracked in." }
     };
+    var EXPLAIN_FALLBACK = {
+      visibility: { h: "Visibility", t: "How often the brand appears in AI answers for this prompt." },
+      rank:       { h: "Rank", t: "The brand's average position among all brands mentioned for this prompt. A lower number is better." },
+      sentiment:  { h: "Sentiment", t: "How positively the brand is described when it's mentioned for this prompt." },
+      brands:     { h: "Brand Mentions", t: "Which of your tracked brands are mentioned in AI answers for this prompt. Hover a logo to see its name." }
+    };
+    function explainInfo(kind){
+      if (EXPLAIN_LOCAL[kind]) return EXPLAIN_LOCAL[kind];
+      if (UC.explainCopy){
+        if (kind === "visibility") return UC.explainCopy("visibility", { scope: " for this prompt" });
+        if (kind === "rank") return UC.explainCopy("rank", { scope: " for this prompt" });
+        if (kind === "sentiment") return UC.explainCopy("sentiment", { scope: " for this prompt" });
+        if (kind === "brands") return UC.explainCopy("brands", { scope: " in AI answers for this prompt" });
+      }
+      return EXPLAIN_FALLBACK[kind] || null;
+    }
     function explainVisual(kind){
       if (kind === "visibility"){
         return '<span class="upt-explain-row">34%' +
@@ -1600,7 +1609,7 @@
     UC.makeExplain({
       root: root, triggerSel: ".up-th-info", getIsDark: function(){ return isDark; },
       html: function(kind){
-        var info = EXPLAIN_TEXT[kind];
+        var info = explainInfo(kind);
         if (!info) return "";
         return '<div class="upt-explain-vis">' + explainVisual(kind) + '</div>' +
           '<div class="upt-explain-h">' + esc(info.h) + '</div>' +
