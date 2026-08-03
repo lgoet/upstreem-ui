@@ -353,6 +353,59 @@
       if (t++ < 60) setTimeout(go, 100);
     })();
   })();
+
+  ══════════════════════════════════════════════════════════════════════════════
+  GRUPPIERTE TOPIC-ANSICHT (optional)
+  ══════════════════════════════════════════════════════════════════════════════
+  Ein Layer ÜBER der flachen Tabelle, kein Ersatz: Suche, Sortierung, Brand-Toggle,
+  Mentioned-Filter und Table Settings bleiben unverändert und bestimmen nur, woraus die Gruppen
+  berechnet werden. Der Toggle sitzt im neuen Icon-Button "Grouping" rechts in der Topbar.
+
+  NUR IN DER ACTIVE-ANSICHT. Inaktive Prompts bleiben die flache Tabelle, die sie immer waren --
+  der Toggle wird dort ignoriert und das Dropdown sagt das auch.
+
+  ── Drei neue Attribute am Root (MÜSSEN ergänzt werden) ──────────────────────
+  data-groups-fn        = "bubble_fn_uptGroups_[dynamic id]"
+  data-groupopen-fn     = "bubble_fn_uptGroupOpen_[dynamic id]"
+  data-generatemore-fn  = "bubble_fn_uptGenerateMore_[dynamic id]"
+
+  ── Was wann feuert ──────────────────────────────────────────────────────────
+  uptGroups         beim Einschalten der Ansicht und nach jeder Filteränderung.
+                    {"grouped":"yes"}                       -- keine eigenen Gruppen
+                    {"grouped":"yes","groups":"[{\"key\":\"SUV & Hybrid\",\"tag_ids\":[...]}]"}
+                    -> RPC cached_prompt_topics_grouped_v1 mit DENSELBEN Filtern wie die flache
+                       Tabelle (p_team, p_search, p_tag_ids, p_only_active, p_models, p_markets,
+                       p_date_from, p_date_to, p_tagmode, p_mentioned, p_company_ids). `groups`
+                       nur dann als p_groups mitsenden, wenn der Key im Payload überhaupt da ist
+                       -- fehlt er, liefert der RPC seinen Default: eine Gruppe pro Topic +
+                       untagged.
+                    Antwort zurück per window.setPromptsTableGroups("INSTANCE_ID", RAW).
+
+  uptGroupOpen      beim Aufklappen einer Gruppe und bei jedem Seitenwechsel darin.
+                    {"group_key":"TagA","tag_ids":"a1,b2","untagged":"no","is_custom":"no",
+                     "limit":25,"offset":0,"page":1,"order":"visibility_desc","request_id":3}
+                    -> RPC cached_prompt_insights_alltime_v18, unverändert wie in der flachen
+                       Tabelle, nur zusätzlich:
+                         normale Topic-Gruppe  p_tag_ids = [tag_ids]
+                         Custom Group          p_tag_ids = tag_ids der Gruppe, p_tagmode = 'or'
+                         untagged = "yes"      p_untagged = true
+                    Antwort per window.setPromptsTableGroupPrompts("INSTANCE_ID", RAW, REQUEST_ID).
+                    REQUEST_ID unbedingt durchreichen: eine langsame Antwort auf eine ältere
+                    Anfrage überschreibt sonst eine neuere.
+
+  uptGenerateMore   Klick auf "Generate More" im Gruppen-Header.
+                    {"group_key":"TagA","tag_ids":"a1,b2"}
+                    Feuert NUR dieses Event -- kein Refetch, kein Zustandswechsel.
+
+  ── Eigene Gruppierungen ─────────────────────────────────────────────────────
+  Liegen AUSSCHLIESSLICH im localStorage des Browsers, unter genau diesem Key und Format:
+      promptGroups = [{ "key": "SUV & Hybrid", "tag_ids": ["uuid1","uuid2"] }]
+  Kein DB-Schreiben, kein Backend-Call beim Erstellen. Die Topic-Liste im Erstellen-Popup ist die
+  aus window.setPromptsTableTopics(...) -- ohne die bleibt das Popup leer.
+
+  Ein Prompt mit mehreren Topics erscheint in mehreren Gruppen. Das ist so gewollt; es wird über
+  Gruppengrenzen hinweg NICHT dedupliziert.
+
 -->
 <div class="up-root upt-root"
      data-instance="INSTANCE_ID"
@@ -367,6 +420,9 @@
      data-mentioned-fn="bubble_fn_uptMentioned"
      data-page-fn="bubble_fn_uptPage"
      data-rowclick-fn="bubble_fn_uptRowClick"
+     data-groups-fn="bubble_fn_uptGroups"
+     data-groupopen-fn="bubble_fn_uptGroupOpen"
+     data-generatemore-fn="bubble_fn_uptGenerateMore"
      data-select-fn="bubble_fn_uptSelect"
      data-topics-fn="bubble_fn_uptTopicsClick"
      data-status-fn="bubble_fn_uptStatus"

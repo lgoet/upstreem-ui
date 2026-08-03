@@ -561,3 +561,104 @@
 
 /* Column explainer visuals: panel shell + row/dot/trend classes all now live in core.css's
    .up-explain-* — this table used to carry its own byte-identical upt-explain-* copy. */
+
+/* ============================================================
+   Grouped-by-topic view
+   An accordion of topic sections that replaces the BODY of the table when the grouping toggle is
+   on. Deliberately reuses the table's own row classes inside an open section -- a prompt row in a
+   group is the same .up-row the flat table draws, so the two can never drift apart. Only the
+   section header and its sub-footer are new here. Active view only: see state.grouped.
+   ============================================================ */
+.up-root.is-grouped .up-thead { display: none; }   /* the sections carry their own headers */
+.up-root.is-grouped .up-foot { display: none; }    /* pagination lives inside the open section */
+
+.upt-grp { border-bottom: 1px solid var(--vc-border); }
+.upt-grp:last-child { border-bottom: 0; }
+
+.upt-grp-head {
+  display: flex; align-items: center; gap: 12px;
+  height: 60px; padding: 0 16px 0 12px; cursor: pointer;
+  background: var(--vc-bg); user-select: none;
+}
+.upt-grp-head:hover { background: var(--vt-row-hover); }
+.upt-grp-head.is-open { background: var(--vc-heading-bg); }
+.upt-grp-left { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 auto; }
+.upt-grp-chev { width: 16px; height: 16px; flex: 0 0 auto; color: var(--vc-muted);
+  transition: transform 160ms ease; }
+.upt-grp-head.is-open .upt-grp-chev { transform: rotate(180deg); }
+
+/* Topic chip: same emoji + name on the topic's own colour the topic popover uses. */
+.upt-grp-topic { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px;
+  border-radius: 8px; min-width: 0; }
+.upt-grp-emoji { font-size: 13px; line-height: 1; flex: 0 0 auto; }
+.upt-grp-name { font-size: 13.5px; font-weight: 500; color: var(--vc-text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+
+.upt-grp-kpis { display: flex; align-items: center; justify-content: center; gap: 28px; flex: 0 0 auto; }
+.upt-grp-kpi { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 76px; }
+.upt-grp-kpi-lbl { font-size: 11px; font-weight: 400; color: var(--vc-muted); white-space: nowrap; }
+.upt-grp-kpi-val { display: inline-flex; align-items: center; gap: 6px; }
+.upt-grp-inactive { font-size: 11px; font-weight: 500; color: var(--vc-third); }
+
+.upt-grp-more { flex: 0 0 auto; height: 30px; padding: 0 12px; border-radius: 8px;
+  border: 1px solid var(--vc-border); background: transparent; color: var(--vc-text);
+  font-family: inherit; font-size: 12px; font-weight: 500; cursor: pointer; white-space: nowrap; }
+.upt-grp-more:hover { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
+
+/* open/close animation -- duration must match GRP_ANIM_MS in prompts-table.js */
+.upt-grp-rows { overflow: hidden; }
+.upt-grp-rows.is-entering { animation: uptGrpIn 200ms ease both; }
+.upt-grp-rows.is-closing { animation: uptGrpOut 200ms ease both; }
+@keyframes uptGrpIn { from { opacity: 0; max-height: 0; } to { opacity: 1; max-height: 1400px; } }
+@keyframes uptGrpOut { from { opacity: 1; max-height: 1400px; } to { opacity: 0; max-height: 0; } }
+@media (prefers-reduced-motion: reduce){
+  .upt-grp-rows.is-entering, .upt-grp-rows.is-closing { animation-duration: 1ms; }
+}
+.upt-grp-inner { border-top: 1px solid var(--vc-border); background: var(--vc-heading-bg); }
+.upt-grp-inner .up-row { background: var(--vc-bg); }
+
+.upt-grp-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 16px 10px 12px; border-top: 1px solid var(--vc-border); flex-wrap: wrap; }
+.upt-grp-range { font-size: 12px; color: var(--vc-muted); }
+.upt-grp-pager { display: flex; align-items: center; gap: 8px; }
+.upt-grp-pg { font-size: 12px; color: var(--vc-muted); font-variant-numeric: tabular-nums; }
+
+/* header skeleton while the group RPC is in flight */
+.upt-grp-sk { display: flex; flex-direction: column; }
+.upt-grp-skrow { height: 60px; border-bottom: 1px solid var(--vc-border);
+  background: var(--vc-sk); opacity: .55; animation: uutpulse 1.2s ease-in-out infinite; }
+.upt-grp-skrow:last-child { border-bottom: 0; }
+
+/* ---------- grouping dropdown ---------- */
+.upt-group { position: relative; flex: 0 0 auto; }
+.upt-group-dot { position: absolute; top: 5px; right: 5px; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--vc-text); opacity: 0; transition: opacity 120ms ease; }
+.upt-group.is-on .upt-group-dot { opacity: 1; }
+.upt-group-note { padding: 6px 10px 8px; font-size: 12px; color: var(--vc-muted); line-height: 1.35; }
+.upt-group-item { gap: 8px; }
+.upt-group-n { font-size: 11px; font-weight: 600; color: var(--vc-third); font-variant-numeric: tabular-nums; }
+.upt-group-del { width: 24px; height: 24px; flex: 0 0 auto; border: 0; border-radius: 6px; padding: 0;
+  background: transparent; color: var(--vc-muted); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; }
+.upt-group-del svg { width: 13px; height: 13px; display: block; }
+.upt-group-del:hover { color: #b0200c; background: var(--vc-heading-bg); }
+.upt-group-new { width: 100%; }
+
+/* ---------- "create group" popup: only the topic grid is local, the shell is .up-topicmodal-* ---------- */
+.upt-gm-backdrop .up-topicmodal-card { max-width: 460px; }
+.upt-gm-list { display: flex; flex-wrap: wrap; gap: 8px; max-height: 220px; overflow-y: auto; }
+.upt-gm-chip { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px;
+  border: 1px solid transparent; border-radius: 8px; cursor: pointer;
+  font-family: inherit; font-size: 13px; font-weight: 500; color: var(--vc-text);
+  opacity: .62; transition: opacity 120ms ease, border-color 120ms ease; }
+.upt-gm-chip:hover { opacity: .85; }
+.upt-gm-chip.is-on { opacity: 1; border-color: var(--vc-text); }
+.upt-gm-emoji { font-size: 13px; line-height: 1; }
+.upt-gm-check { display: inline-flex; }
+.upt-gm-check svg { width: 12px; height: 12px; display: block; stroke: currentColor; stroke-width: 3.4; }
+.upt-gm-count { font-size: 12px; font-weight: 400; color: var(--vc-muted); }
+
+@media (max-width: 900px){
+  .upt-grp-kpis { gap: 14px; }
+  .upt-grp-kpi { min-width: 58px; }
+}

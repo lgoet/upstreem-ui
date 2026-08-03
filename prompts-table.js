@@ -11,7 +11,8 @@
   var __uptBootQueue = window.__uptBootQueue = window.__uptBootQueue || [];
   if (!window.__uptBootStubbed){
     window.__uptBootStubbed = true;
-    ["renderPromptsTable", "setPromptsTableLoading", "resetPromptsTable", "setPromptsTableTopics", "setPromptsTableBrands"].forEach(function(n){
+    ["renderPromptsTable", "setPromptsTableLoading", "resetPromptsTable", "setPromptsTableTopics", "setPromptsTableBrands",
+     "setPromptsTableGroups", "setPromptsTableGroupPrompts"].forEach(function(n){
       window[n] = function(){ __uptBootQueue.push([n, arguments]); };
     });
   }
@@ -291,9 +292,44 @@
   /* There is no unsorted state — the table always carries a sort, and Visibility desc is it. */
   var DEFAULT_SORT = { field: "visibility", dir: "desc" };
 
+  /* Custom groups live in localStorage under exactly this key and shape, per the spec:
+       promptGroups = [{ "key": "SUV & Hybrid", "tag_ids": ["uuid1","uuid2"] }]
+     Global, not per instance: a grouping the user invented is a property of how THEY think about
+     their topics, not of one placement of the table. Never written to the database. */
+  var GROUPS_KEY = "promptGroups";
+  function readCustomGroups(){
+    try {
+      var raw = window.localStorage.getItem(GROUPS_KEY);
+      if (!raw) return [];
+      var arr = JSON.parse(raw);
+      if (!Array.isArray(arr)) return [];
+      return arr.filter(function(g){
+        return g && typeof g.key === "string" && g.key && Array.isArray(g.tag_ids) && g.tag_ids.length;
+      });
+    } catch(e){ return []; }
+  }
+  function writeCustomGroups(list){
+    try { window.localStorage.setItem(GROUPS_KEY, JSON.stringify(list || [])); } catch(e){}
+  }
+
   function makeController(root){
     var instanceId = root.getAttribute("data-instance") || "default";
     var saved = STORE[instanceId] || {};
+
+    function gKey(k){ return "upt_" + k + "__" + instanceId; }
+    function readGrouped(){
+      try { return window.localStorage.getItem(gKey("grouped")) === "yes"; } catch(e){ return false; }
+    }
+    function writeGrouped(v){
+      try { window.localStorage.setItem(gKey("grouped"), v ? "yes" : "no"); } catch(e){}
+    }
+    function readGroupSort(){
+      try {
+        var v = window.localStorage.getItem(gKey("groupsort"));
+        return (v === "count" || v === "name") ? v : "visibility";
+      } catch(e){ return "visibility"; }
+    }
+    function writeGroupSort(v){ try { window.localStorage.setItem(gKey("groupsort"), v); } catch(e){} }
 
     var isDark = isYes(root.getAttribute("data-isdark"));
     if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
@@ -386,7 +422,23 @@
          the query invalidates it (see invalidateSelectAll). */
       selectAllMatching: false,
       topics: saved.topics || [],           // full topic list for the bulk editor, filled once
-      stagedTopicIds: null                  // {id: true, ...} — the topic editor's draft selection
+      stagedTopicIds: null,                 // {id: true, ...} — the topic editor's draft selection
+
+      /* ---- grouped-by-topic view (optional, layered ON TOP of the flat table) ----
+         Deliberately ACTIVE-ONLY: the Inactive view stays exactly the flat table it always was.
+         Grouping inactive prompts by topic answers a question nobody asks — you go to Inactive to
+         see what you switched off, not to compare topic performance. */
+      grouped: readGrouped(),
+      groups: [],                           // header rows from cached_prompt_topics_grouped_v1
+      groupsHasData: false,
+      groupsLoading: false,
+      groupSort: readGroupSort(),           // "visibility" | "count" | "name"
+      /* Exactly ONE group is expanded at a time, same rule (and same reasoning) as domains-table's
+         drilldown: with one open section the sub-pagination can live as plain fields here instead
+         of being kept per group. Not persisted — an expansion is a look-at-this-now gesture. */
+      expandedGroup: null,
+      gRows: [], gTotal: null, gLoading: false, gReqId: null,
+      gPage: 1, gPageSize: DEFAULT_PAGE_SIZE
     };
     /* On a touch device a clamped prompt is unreadable, full stop: the full text is only ever
        reachable through the hover tooltip, and core.css switches tooltips off entirely under
@@ -1438,7 +1490,417 @@
         (filtered ? '<button class="up-empty-btn" type="button" data-clearall>Clear search</button>' : "") +
       '</div>';
     }
+
+
+    /* ---- grouping control: icon button + dropdown + the "create group" popup ----
+       Built from JS for the same reason the Mentioned dropdown above is: the root markup is a
+       hand-pasted copy in Bubble that a CDN pin never touches, so anything new that only lives in
+       the markup simply never arrives. */
+    var GRP_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="6" y2="6"/><line x1="9" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="6" y2="12"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="6" y2="18"/><line x1="9" y1="18" x2="21" y2="18"/></svg>';
+    var elGrpWrap = null, elGrpMenu = null;
+    (function(){
+      if (!elHeadTools) return;
+      elGrpWrap = root.querySelector(".upt-group");
+      if (!elGrpWrap){
+        elGrpWrap = document.createElement("div");
+        elGrpWrap.className = "upt-group";
+        elGrpWrap.innerHTML =
+          '<button class="upt-group-btn up-iconbtn" type="button" data-tip="Grouping" aria-label="Grouping" aria-haspopup="menu" aria-expanded="false">' +
+            GRP_ICON + '<span class="upt-group-dot"></span></button>' +
+          '<div class="up-pop-menu upt-group-menu" role="menu" aria-hidden="true"></div>';
+        /* Left of the column-settings gear — grouping changes WHAT the table lists, the gear only
+           changes how it is drawn, and the app orders toolbar controls that way everywhere. */
+        if (elCols && elCols.parentNode === elHeadTools) elHeadTools.insertBefore(elGrpWrap, elCols);
+        else elHeadTools.appendChild(elGrpWrap);
+      }
+      elGrpMenu = elGrpWrap.querySelector(".upt-group-menu");
+    })();
+    /* The popover itself is wired further down, next to the other dropdowns — POP_GROUP does not
+       exist yet at this point in the file. */
+    var grpPop = null;
+
+    function populateGroupMenu(){
+      if (!elGrpMenu) return;
+      var custom = readCustomGroups();
+      var on = state.grouped;
+      var h = '<div class="up-pop-head">Grouping</div>' +
+        '<div class="up-pop-row" data-grp-toggle>' +
+          '<span class="up-pop-label">Nach Topics gruppieren</span>' +
+          '<span class="up-switch' + (on ? " is-on" : "") + '" role="switch" aria-checked="' + (on ? "true" : "false") + '"></span>' +
+        '</div>';
+      /* Grouping is an Active-view feature; say so instead of silently doing nothing. */
+      if (state.status === "inactive"){
+        h += '<div class="upt-group-note">Nur in der Active-Ansicht — inaktive Prompts bleiben ungruppiert.</div>';
+      }
+      h += '<div class="up-pop-div"></div><div class="up-pop-sub">Sortierung</div><div class="up-dense">' +
+        GRP_SORTS.map(function(o){
+          return '<button class="up-dense-btn' + (state.groupSort === o.key ? " is-active" : "") +
+                 '" type="button" data-grp-sort="' + o.key + '">' + esc(o.label) + '</button>';
+        }).join("") + '</div>';
+      h += '<div class="up-pop-div"></div><div class="up-pop-sub">Eigene Gruppierungen</div>';
+      if (!custom.length){
+        h += '<div class="upt-group-note">Noch keine eigene Gruppierung.</div>';
+      } else {
+        h += custom.map(function(g){
+          return '<div class="up-pop-row upt-group-item">' +
+            '<span class="up-pop-label">' + esc(g.key) + '</span>' +
+            '<span class="upt-group-n">' + g.tag_ids.length + '</span>' +
+            '<button class="upt-group-del" type="button" data-grp-del="' + esc(g.key) + '" aria-label="Delete group">' + CLOSE_SVG + '</button>' +
+          '</div>';
+        }).join("");
+      }
+      h += '<div class="up-pop-div"></div>' +
+        '<button class="up-pop-action upt-group-new" type="button" data-grp-new>Neue Gruppierung erstellen</button>';
+      elGrpMenu.innerHTML = h;
+    }
+    function syncGroupBtn(){
+      if (!elGrpWrap) return;
+      elGrpWrap.classList.toggle("is-on", groupingOn());
+    }
+
+
+    /* ---- "Neue Gruppierung erstellen" popup ----
+       Follows STYLEGUIDE 27 (backdrop + card, Escape and backdrop-click close, body-mounted so no
+       ancestor's overflow can clip it). The topic list is drawn with the SAME chip the topic
+       popover uses — emoji + name on the topic's own colour — so a topic looks like itself
+       wherever the user meets it. */
+    var grpModal = null, grpPicked = {};
+    function closeGroupModal(){
+      if (!grpModal) return;
+      grpModal.classList.remove("is-shown");
+      var m = grpModal;
+      setTimeout(function(){ if (m && m.parentNode) m.parentNode.removeChild(m); }, 160);
+      grpModal = null;
+      document.removeEventListener("keydown", grpModalKey, true);
+    }
+    function grpModalKey(e){ if (e.key === "Escape"){ e.stopPropagation(); closeGroupModal(); } }
+    function grpTopicChipHtml(t){
+      var hex = String(t.hex_light || t.hex_dark || "#6b7280");
+      var on = !!grpPicked[String(t.id)];
+      return '<button class="upt-gm-chip' + (on ? " is-on" : "") + '" type="button" data-gm-topic="' + esc(String(t.id)) + '"' +
+             ' style="background:' + esc(hex) + '" aria-pressed="' + (on ? "true" : "false") + '">' +
+        (t.emoji ? '<span class="upt-gm-emoji">' + esc(t.emoji) + '</span>' : "") +
+        '<span class="upt-gm-name">' + esc(String(t.name == null ? "" : t.name)) + '</span>' +
+        (on ? '<span class="upt-gm-check">' + CHECK_SVG + '</span>' : "") +
+      '</button>';
+    }
+    function renderGroupModalBody(){
+      if (!grpModal) return;
+      var list = grpModal.querySelector(".upt-gm-list");
+      var topics = state.topics || [];
+      if (list){
+        list.innerHTML = topics.length
+          ? topics.map(grpTopicChipHtml).join("")
+          : '<div class="upt-group-note">Keine Topics vorhanden.</div>';
+      }
+      var n = Object.keys(grpPicked).filter(function(k){ return grpPicked[k]; }).length;
+      var nameEl = grpModal.querySelector(".upt-gm-name-in");
+      var submit = grpModal.querySelector(".upt-gm-submit");
+      if (submit) submit.disabled = !(n > 0 && nameEl && nameEl.value.trim());
+      var cnt = grpModal.querySelector(".upt-gm-count");
+      if (cnt) cnt.textContent = n ? (n + " selected") : "";
+    }
+    function openGroupModal(){
+      closeGroupModal();
+      grpPicked = {};
+      grpModal = document.createElement("div");
+      grpModal.className = "up-topicmodal-backdrop upt-gm-backdrop";
+      if (isDark) grpModal.setAttribute("data-theme", "dark");
+      /* Reuses the shared modal shell (STYLEGUIDE 27 reference: .up-topicmodal-*) rather than a
+         second set of look-alike classes — only the topic-chip grid below is genuinely new here. */
+      grpModal.innerHTML =
+        '<div class="up-topicmodal-card" role="dialog" aria-modal="true" aria-label="Neue Gruppierung erstellen">' +
+          '<div class="up-topicmodal-head">' +
+            '<div class="up-topicmodal-heading">' +
+              '<h3 class="up-topicmodal-title">Neue Gruppierung erstellen</h3>' +
+              '<p class="up-topicmodal-sub">Fasse mehrere Topics zu einer Gruppe zusammen. Ein Prompt zählt in der ' +
+                'Gruppe, wenn er mindestens eines der Topics trägt.</p>' +
+            '</div>' +
+            '<button class="up-topicmodal-close" type="button" data-gm-close aria-label="Close">' + CLOSE_SVG + '</button>' +
+          '</div>' +
+          '<div class="up-topicmodal-body">' +
+            '<div class="up-topicmodal-field">' +
+              '<span class="up-topicmodal-label">Topics <span class="upt-gm-count"></span></span>' +
+              '<div class="upt-gm-list"></div>' +
+            '</div>' +
+            '<div class="up-topicmodal-field">' +
+              '<span class="up-topicmodal-label">Name der Gruppe</span>' +
+              '<input class="up-topicmodal-name upt-gm-name-in" type="text" placeholder="z. B. SUV &amp; Hybrid" autocomplete="off" spellcheck="false"/>' +
+            '</div>' +
+          '</div>' +
+          '<div class="up-topicmodal-foot">' +
+            '<button class="up-topicmodal-save upt-gm-submit" type="button" data-gm-submit disabled>Gruppe erstellen</button>' +
+          '</div>' +
+        '</div>';
+      document.body.appendChild(grpModal);
+      renderGroupModalBody();
+      requestAnimationFrame(function(){ if (grpModal) grpModal.classList.add("is-shown"); });
+      document.addEventListener("keydown", grpModalKey, true);
+
+      grpModal.addEventListener("input", function(e){
+        if (e.target && e.target.classList.contains("upt-gm-name-in")) renderGroupModalBody();
+      });
+      grpModal.addEventListener("click", function(e){
+        if (e.target === grpModal){ closeGroupModal(); return; }        // backdrop
+        if (e.target.closest("[data-gm-close]")){ closeGroupModal(); return; }
+        var chip = e.target.closest("[data-gm-topic]");
+        if (chip){
+          var tid = chip.getAttribute("data-gm-topic");
+          if (grpPicked[tid]) delete grpPicked[tid]; else grpPicked[tid] = true;
+          renderGroupModalBody();
+          return;
+        }
+        if (e.target.closest("[data-gm-submit]")){
+          var nameEl = grpModal.querySelector(".upt-gm-name-in");
+          var name = nameEl ? nameEl.value.trim() : "";
+          var ids = Object.keys(grpPicked).filter(function(k){ return grpPicked[k]; });
+          if (!name || !ids.length) return;
+          var all = readCustomGroups().filter(function(g){ return g.key !== name; });   // same name replaces
+          all.push({ key: name, tag_ids: ids });
+          writeCustomGroups(all);                     // localStorage only — no backend call, by design
+          closeGroupModal();
+          populateGroupMenu();
+          /* A new grouping changes what the sections ARE, so the headers have to be recomputed. */
+          if (groupingOn()) fetchGroups();
+          return;
+        }
+      });
+    }
+
+    /* ============================================================================
+       GROUPED-BY-TOPIC VIEW
+       An optional layer on top of the flat table, not a replacement: every toolbar filter, the
+       search, the brand toggle and the column settings keep working exactly as before and simply
+       scope what the groups are computed from. Only the BODY changes -- accordion sections
+       instead of rows -- and the outer pager is hidden, because in this view pagination belongs
+       inside the open group (same model as domains-table's drilldown).
+       ============================================================================ */
+    var GRP_ANIM_MS = 200;   /* must match .upt-grp-rows animation in prompts-table.css */
+    var GRP_CHEV = '<svg class="upt-grp-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+    var GRP_SORTS = [
+      { key: "visibility", label: "Visibility" },
+      { key: "count",      label: "Prompts" },
+      { key: "name",       label: "Name A–Z" }
+    ];
+    var grpReqSeq = 0;
+
+    function groupingOn(){ return state.grouped && state.status === "active"; }
+
+    /* The group list, sorted client-side. "Ohne Topic" is pinned last regardless of the sort --
+       it is not a topic competing with the others, it is the remainder. */
+    function sortedGroups(){
+      var rows = (state.groups || []).slice();
+      var untagged = rows.filter(function(g){ return isYes2(g.is_untagged); });
+      rows = rows.filter(function(g){ return !isYes2(g.is_untagged); });
+      var mode = state.groupSort;
+      rows.sort(function(a, b){
+        if (mode === "name") return String(groupLabel(a)).localeCompare(String(groupLabel(b)));
+        var av, bv;
+        if (mode === "count"){ av = toNum(a.prompts_count) || 0; bv = toNum(b.prompts_count) || 0; }
+        else { av = toNum(a.visibility_pct) || 0; bv = toNum(b.visibility_pct) || 0; }
+        return bv - av;   // both numeric modes are descending
+      });
+      return rows.concat(untagged);
+    }
+    /* The RPC's booleans arrive as real booleans from Supabase but as strings through Bubble. */
+    function isYes2(v){ return v === true || v === "true" || v === "yes" || v === 1 || v === "1"; }
+    function groupLabel(g){
+      if (isYes2(g.is_untagged)) return "Ohne Topic";
+      return String(g.tag_name || g.group_key || "");
+    }
+    function groupTagIds(g){
+      if (isYes2(g.is_untagged)) return [];
+      if (isYes2(g.is_custom)){
+        var cg = readCustomGroups().filter(function(c){ return c.key === g.group_key; })[0];
+        return cg ? cg.tag_ids.slice() : [];
+      }
+      return g.tag_id ? [String(g.tag_id)] : [];
+    }
+    function groupId(g){ return String(g.group_key == null ? "" : g.group_key); }
+
+    /* KPI cell — same primitives the flat rows use, so a Visibility figure in a group header and
+       one in a row are literally the same widget. */
+    function grpKpi(label, html){
+      return '<div class="upt-grp-kpi"><span class="upt-grp-kpi-lbl">' + esc(label) + '</span>' +
+             '<span class="upt-grp-kpi-val">' + html + '</span></div>';
+    }
+    function grpHeadHtml(g){
+      var id = groupId(g), open = state.expandedGroup === id;
+      var custom = isYes2(g.is_custom), untag = isYes2(g.is_untagged);
+      var label = groupLabel(g);
+      var chip;
+      if (custom || untag){
+        /* Custom groups and the remainder carry no emoji and no colour -- they are not topics. */
+        chip = '<span class="upt-grp-name">' + esc(label) + '</span>';
+      } else {
+        var hex = String(g.tag_hex_light || g.tag_hex_dark || "#6b7280");
+        chip = '<span class="upt-grp-topic" style="background:' + esc(hex) + '">' +
+                 (g.tag_emoji ? '<span class="upt-grp-emoji">' + esc(g.tag_emoji) + '</span>' : "") +
+                 '<span class="upt-grp-name">' + esc(label) + '</span>' +
+               '</span>';
+      }
+      var nAct = toNum(g.prompts_count), nIn = toNum(g.prompts_count_inactive);
+      var counts = '<span class="up-num">' + (nAct == null ? "–" : UC.fmtTotal(nAct)) + '</span>' +
+        ((nIn != null && nIn > 0) ? '<span class="upt-grp-inactive">+' + UC.fmtTotal(nIn) + '</span>' : "");
+      var visN = toNum(g.visibility_pct);
+      var vis = '<span class="up-num' + (visN == null ? " is-empty" : "") + '">' +
+                (visN == null ? "–" : UC.fmtPct(visN)) + '</span>';
+      var rankN = toNum(g.avg_rank);
+      var rank = (rankN == null) ? '<span class="up-num is-empty">–</span>'
+        : '<span class="up-rank-group">' + HASH_ICON + '<span class="up-num">' + fmt1(rankN) + '</span></span>';
+      var sN = toNum(g.avg_sentiment);
+      var sent = (sN == null) ? '<span class="up-num is-empty">–</span>'
+        : '<span class="up-sent"><span class="up-sent-dot" style="background:' + UC.sentColor(sN) + '"></span>' +
+          '<span class="up-sent-val">' + Math.round(sN) + '</span></span>';
+
+      return '<div class="upt-grp-head' + (open ? " is-open" : "") + '" data-grp="' + esc(id) + '"' +
+               ' role="button" tabindex="0" aria-expanded="' + (open ? "true" : "false") + '">' +
+          '<div class="upt-grp-left">' + GRP_CHEV + chip + '</div>' +
+          '<div class="upt-grp-kpis">' +
+            grpKpi("Prompts", counts) + grpKpi("Visibility", vis) +
+            grpKpi("Ø Rank", rank) + grpKpi("Ø Sentiment", sent) +
+          '</div>' +
+          /* Fires a JS event and nothing else -- no state change, no refetch, by design. */
+          '<button class="upt-grp-more" type="button" data-grp-more="' + esc(id) + '">Generate More</button>' +
+        '</div>';
+    }
+
+    function grpSubToolbarHtml(){
+      var total = toNum(state.gTotal);
+      var pages = (total != null && state.gPageSize) ? Math.max(1, Math.ceil(total / state.gPageSize)) : 1;
+      var from = (state.gPage - 1) * state.gPageSize + 1;
+      var to = Math.min(state.gPage * state.gPageSize, total == null ? state.gRows.length : total);
+      var range = (total == null || !total) ? "" : (UC.fmtTotal(from) + "–" + UC.fmtTotal(to) + " of " + UC.fmtTotal(total));
+      return '<div class="upt-grp-foot">' +
+        '<span class="upt-grp-range">' + esc(range) + '</span>' +
+        '<div class="upt-grp-pager">' +
+          '<button class="up-pg-btn" type="button" data-grp-page="prev"' + (state.gPage <= 1 ? " disabled" : "") + '>Prev</button>' +
+          '<span class="upt-grp-pg">' + state.gPage + " / " + pages + '</span>' +
+          '<button class="up-pg-btn" type="button" data-grp-page="next"' + (state.gPage >= pages ? " disabled" : "") + '>Next</button>' +
+        '</div></div>';
+    }
+    function grpRowsHtml(id, entering){
+      if (state.expandedGroup !== id) return "";
+      var body;
+      if (state.gLoading || state.gRows == null) body = skeletonRows(Math.min(5, state.gPageSize));
+      else if (!state.gRows.length) body = '<div class="up-empty-mini">No prompts in this group</div>';
+      else body = state.gRows.map(rowHtml).join("");
+      return '<div class="upt-grp-rows' + (entering ? " is-entering" : "") + '" data-grp-for="' + esc(id) + '">' +
+               '<div class="upt-grp-inner">' + body +
+                 (state.gLoading ? "" : grpSubToolbarHtml()) +
+               '</div></div>';
+    }
+
+    function renderGroups(){
+      if (state.groupsLoading || !state.groupsHasData){
+        elTbody.innerHTML = '<div class="upt-grp-sk">' +
+          new Array(5).join("x").split("x").map(function(){ return '<div class="upt-grp-skrow"></div>'; }).join("") +
+          '</div>';
+        return;
+      }
+      var rows = sortedGroups();
+      if (!rows.length){ renderEmptyState(!!state.query || !!state.brandMentioned); return; }
+      elTbody.innerHTML = rows.map(function(g){
+        var id = groupId(g);
+        return '<div class="upt-grp" data-grp-sec="' + esc(id) + '">' + grpHeadHtml(g) + grpRowsHtml(id) + '</div>';
+      }).join("");
+      applyCols();
+      initTopicsCells();
+    }
+
+    /* Lazy load: one request per expand, and one more per page turn inside the open group. */
+    function fetchGroupPage(delay){
+      var id = state.expandedGroup;
+      if (!id) return;
+      var g = (state.groups || []).filter(function(x){ return groupId(x) === id; })[0];
+      if (!g) return;
+      state.gLoading = true;
+      renderGroupBlockOnly(id);
+      function fireNow(){
+        if (state.expandedGroup !== id) return;   // closed again before the delay elapsed
+        grpReqSeq += 1;
+        state.gReqId = grpReqSeq;
+        fire("data-groupopen-fn", "uptGroupOpen", {
+          group_key: id,
+          tag_ids: groupTagIds(g).join(","),
+          untagged: isYes2(g.is_untagged) ? "yes" : "no",
+          is_custom: isYes2(g.is_custom) ? "yes" : "no",
+          /* Same limit/offset/page trio every other paginated event in this app sends. */
+          limit: state.gPageSize,
+          offset: (state.gPage - 1) * state.gPageSize,
+          page: state.gPage,
+          order: orderValue(state.sortField, state.sortDir),
+          request_id: grpReqSeq
+        });
+      }
+      if (delay) setTimeout(fireNow, delay); else fireNow();
+    }
+    /* In-place swap of just this group's sub-block, never a rebuild of the whole list -- the same
+       reason domains-table does it: recreating the header under an active mouse flickers. */
+    function renderGroupBlockOnly(id, entering){
+      var sec = elTbody.querySelector('[data-grp-sec="' + cssEsc(id) + '"]');
+      if (!sec) return;
+      var old = sec.querySelector('[data-grp-for]');
+      var html = grpRowsHtml(id, entering);
+      if (!html){ if (old) old.parentNode.removeChild(old); return; }
+      var tmp = document.createElement("div");
+      tmp.innerHTML = html;
+      var next = tmp.firstChild;
+      if (old) sec.replaceChild(next, old); else sec.appendChild(next);
+      applyCols();
+      initTopicsCells();
+    }
+    function cssEsc(v){ return String(v).replace(/["\\]/g, "\\$&"); }
+
+    function toggleGroup(id){
+      var head = elTbody.querySelector('[data-grp="' + cssEsc(id) + '"]');
+      if (state.expandedGroup === id){
+        var sec = elTbody.querySelector('[data-grp-sec="' + cssEsc(id) + '"]');
+        var block = sec && sec.querySelector('[data-grp-for]');
+        state.expandedGroup = null;
+        state.gRows = []; state.gTotal = null; state.gLoading = false; state.gReqId = null; state.gPage = 1;
+        if (head){ head.classList.remove("is-open"); head.setAttribute("aria-expanded", "false"); }
+        /* Animate out BEFORE removing: dropping the node immediately makes it vanish instead. */
+        if (block){
+          block.classList.add("is-closing");
+          setTimeout(function(){ if (block.parentNode) block.parentNode.removeChild(block); }, GRP_ANIM_MS);
+        }
+        return;
+      }
+      /* Switching straight from one open group to another: close the old one instantly. */
+      if (state.expandedGroup){
+        var oldSec = elTbody.querySelector('[data-grp-sec="' + cssEsc(state.expandedGroup) + '"]');
+        var oldHead = elTbody.querySelector('[data-grp="' + cssEsc(state.expandedGroup) + '"]');
+        var oldBlock = oldSec && oldSec.querySelector('[data-grp-for]');
+        if (oldBlock && oldBlock.parentNode) oldBlock.parentNode.removeChild(oldBlock);
+        if (oldHead){ oldHead.classList.remove("is-open"); oldHead.setAttribute("aria-expanded", "false"); }
+      }
+      state.expandedGroup = id;
+      state.gRows = []; state.gTotal = null; state.gReqId = null; state.gPage = 1;
+      if (head){ head.classList.add("is-open"); head.setAttribute("aria-expanded", "true"); }
+      /* Small delay before firing, exactly as domains-table does: the open animation and a
+         synchronous re-render in the same frame read as a stutter. */
+      fetchGroupPage(GRP_ANIM_MS + 40);
+      renderGroupBlockOnly(id, true);
+    }
+
+    /* Header data. One call when the view opens and on every filter change, because the groups
+       are computed from the same filtered set the flat table shows. */
+    function fetchGroups(){
+      state.groupsLoading = true;
+      renderTable();
+      var custom = readCustomGroups();
+      var p = { grouped: "yes" };
+      /* Only send p_groups when the user actually HAS custom groups -- the RPC's default is one
+         group per topic plus untagged, and sending an empty array would ask for zero groups. */
+      if (custom.length) p.groups = JSON.stringify(custom);
+      fire("data-groups-fn", "uptGroups", p);
+    }
+
     function renderTable(){
+      /* The grouped view owns the body entirely; the flat path below is untouched by it. */
+      root.classList.toggle("is-grouped", groupingOn());
+      if (groupingOn()){ renderGroups(); return; }
       /* elTbody.innerHTML is reassigned in every branch below, which throws away whatever grid-
          column inline style applyCols() had put on the previous .up-row elements — a brand new
          set of rows carries no inline style at all until applyCols() runs again. Callers outside
@@ -1732,6 +2194,13 @@
 
     /* ---------------- dropdowns ---------------- */
     var POP_GROUP = "upt-" + instanceId;
+    if (elGrpWrap && elGrpMenu){
+      grpPop = UC.makePopover({
+        wrap: elGrpWrap, menu: elGrpMenu,
+        opener: elGrpWrap.querySelector(".upt-group-btn"), group: POP_GROUP
+      });
+      elGrpWrap.__upPop = grpPop;
+    }
     [elSort, elCols, elMent].forEach(function(p){
       if (!p) return;
       p.__upPop = UC.makePopover({
@@ -1744,7 +2213,7 @@
       if (open) h.open(); else h.close(false);
     }
     function closePops(except){
-      [elSort, elCols, elMent].forEach(function(p){ if (p && p !== except) setPopOpen(p, false); });
+      [elSort, elCols, elMent, elGrpWrap].forEach(function(p){ if (p && p !== except) setPopOpen(p, false); });
     }
 
     function ownsTarget(tg){
@@ -1753,9 +2222,83 @@
     }
     document.addEventListener("click", function(e){
       if (!ownsTarget(e.target)) return;
-      var inMenu = e.target.closest(".up-sort-menu, .up-cols-menu, .up-ment-menu");
-      var onOpener = e.target.closest(".up-sort-btn, .up-cols-btn, .up-ment-btn");
+      var inMenu = e.target.closest(".up-sort-menu, .up-cols-menu, .up-ment-menu, .upt-group-menu");
+      var onOpener = e.target.closest(".up-sort-btn, .up-cols-btn, .up-ment-btn, .upt-group-btn");
       if (!inMenu && !onOpener) closePops();
+
+      /* --- grouping: trigger, dropdown, accordion --- */
+      if (e.target.closest(".upt-group-btn")){
+        e.stopPropagation();
+        if (!elGrpWrap) return;
+        var openG = !elGrpWrap.classList.contains("is-open");
+        closePops(elGrpWrap);
+        if (openG){ populateGroupMenu(); if (grpPop) grpPop.open(); }
+        else if (grpPop) grpPop.close(false);
+        return;
+      }
+      if (e.target.closest(".upt-group-menu")){
+        e.stopPropagation();
+        if (e.target.closest("[data-grp-toggle]")){
+          state.grouped = !state.grouped;
+          writeGrouped(state.grouped);
+          populateGroupMenu(); syncGroupBtn();
+          state.expandedGroup = null;
+          if (groupingOn() && !state.groupsHasData) fetchGroups(); else render();
+          return;
+        }
+        var gs = e.target.closest("[data-grp-sort]");
+        if (gs){
+          state.groupSort = gs.getAttribute("data-grp-sort");
+          writeGroupSort(state.groupSort);
+          populateGroupMenu();
+          /* Client-side only — re-sorting the sections needs no new request. The open group is
+             closed first so its sub-block cannot end up under a different header. */
+          state.expandedGroup = null;
+          renderTable();
+          return;
+        }
+        var gd = e.target.closest("[data-grp-del]");
+        if (gd){
+          var delKey = gd.getAttribute("data-grp-del");
+          writeCustomGroups(readCustomGroups().filter(function(g){ return g.key !== delKey; }));
+          populateGroupMenu();
+          if (groupingOn()) fetchGroups();
+          return;
+        }
+        if (e.target.closest("[data-grp-new]")){
+          if (grpPop) grpPop.close(false);
+          openGroupModal();
+          return;
+        }
+        return;
+      }
+      var grpMore = e.target.closest("[data-grp-more]");
+      if (grpMore){
+        e.stopPropagation();
+        var mk = grpMore.getAttribute("data-grp-more");
+        var mg = (state.groups || []).filter(function(x){ return groupId(x) === mk; })[0];
+        /* Fires the JS event and nothing else — no refetch, no state change, per the spec. */
+        fire("data-generatemore-fn", "uptGenerateMore", { group_key: mk, tag_ids: mg ? groupTagIds(mg).join(",") : "" });
+        return;
+      }
+      var grpPage = e.target.closest("[data-grp-page]");
+      if (grpPage){
+        e.stopPropagation();
+        if (grpPage.disabled) return;
+        var dir = grpPage.getAttribute("data-grp-page");
+        var totalG = toNum(state.gTotal);
+        var maxP = (totalG != null && state.gPageSize) ? Math.max(1, Math.ceil(totalG / state.gPageSize)) : 1;
+        var np = dir === "next" ? Math.min(maxP, state.gPage + 1) : Math.max(1, state.gPage - 1);
+        if (np === state.gPage) return;
+        state.gPage = np;
+        fetchGroupPage(0);
+        return;
+      }
+      var grpHead = e.target.closest("[data-grp]");
+      if (grpHead && elTbody.contains(grpHead)){
+        toggleGroup(grpHead.getAttribute("data-grp"));
+        return;
+      }
 
       /* --- bulk action bar (lives on document.body; ownsTarget lets its clicks through) --- */
       if (elBulk && elBulk.contains(e.target)){
@@ -2168,6 +2711,8 @@
       renderTable(); renderCount(); syncHeadSorters(); syncColsBadge(); syncSelectAll(); syncBrand();
       syncMentLabel();
       renderPageSize(); renderPager(); applyCols(); applyResponsive();
+      syncGroupBtn();
+      if (groupingOn() && !state.groupsHasData && !state.groupsLoading) fetchGroups();
       renderStatusTabs(); renderBulkBar();
       if (root.classList.contains("up-sticky")) syncTheadOffset();
     }
@@ -2177,6 +2722,27 @@
 
     return {
       root: root,
+      /* ---- grouped view: the two setters Bubble calls back into ---- */
+      setGroups: function(rows){
+        state.groups = Array.isArray(rows) ? rows : [];
+        state.groupsHasData = true;
+        state.groupsLoading = false;
+        /* A fresh header set invalidates whatever section was open — the sections themselves may
+           be different objects now. */
+        state.expandedGroup = null;
+        state.gRows = []; state.gTotal = null; state.gLoading = false;
+        renderTable();
+      },
+      setGroupPrompts: function(rows, requestId){
+        /* Stale-response guard, same shape as the drilldown's: a slow answer to an older request
+           must not overwrite a newer one. */
+        if (requestId != null && state.gReqId != null && String(requestId) !== String(state.gReqId)) return;
+        var list = Array.isArray(rows) ? rows : [];
+        state.gRows = list;
+        state.gTotal = list.length ? toNum(list[0].total_count) : 0;
+        state.gLoading = false;
+        if (state.expandedGroup) renderGroupBlockOnly(state.expandedGroup);
+      },
       update: function(params){
         params = params || {};
         if (params.isDark != null){
@@ -2312,6 +2878,27 @@
     return initRoot(r[0]);
   }
 
+  /* Both take the RPC's array straight through UC.parseBubbleJson, so a raw Bubble string with
+     its usual `"avg_rank":,` holes works without any regex on the workflow side. */
+  function doGroups(id, rows){
+    var list = rows;
+    if (typeof list === "string") list = UC.parseBubbleJson(list);
+    if (!Array.isArray(list)) list = [];
+    var ctrl = id ? resolve(id) : initRoot(document.querySelector(".upt-root"));
+    if (!ctrl || !ctrl.setGroups) return false;
+    ctrl.setGroups(list);
+    return true;
+  }
+  function doGroupPrompts(id, rows, requestId){
+    var list = rows;
+    if (typeof list === "string") list = UC.parseBubbleJson(list);
+    if (!Array.isArray(list)) list = [];
+    var ctrl = id ? resolve(id) : initRoot(document.querySelector(".upt-root"));
+    if (!ctrl || !ctrl.setGroupPrompts) return false;
+    ctrl.setGroupPrompts(list, requestId);
+    return true;
+  }
+
   function doRender(params){
     var id = params && params.instanceId;
     var ctrl = id ? resolve(id) : initRoot(document.querySelector(".upt-root"));
@@ -2384,7 +2971,8 @@
     queue: "__uptBootQueue",
     initRoot: initRoot,
     api: { renderPromptsTable: doRender, setPromptsTableLoading: doLoading, resetPromptsTable: doReset,
-           setPromptsTableTopics: doTopics, setPromptsTableBrands: doBrands },
+           setPromptsTableTopics: doTopics, setPromptsTableBrands: doBrands,
+           setPromptsTableGroups: doGroups, setPromptsTableGroupPrompts: doGroupPrompts },
     forwardShape: { renderPromptsTable: "params", resetPromptsTable: "id" }
   });
   function rootsWithId(id){ return mount.rootsWithId(id); }
