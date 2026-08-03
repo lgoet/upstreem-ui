@@ -44,7 +44,9 @@
               rank_max:20 means "20+" (open upper end) — the slider's own top handle has no ceiling
     mentioned {"brands":"id1,id2"}
     brand     {"brand_mentioned":"yes"}        "yes" | "no" | ""  (empty = off)
-    page      {"page":3,"size":25,"view":"table"|"cards"}
+    page      {"limit":25,"offset":50,"page":3,"view":"table"|"cards"}   -> p_limit / p_offset in
+              your RPC, same convention as urls-table/domains-table/prompts-table. "view" rides
+              along so you know which pagesize set the request came from (table vs cards).
     view      {"view":"table"|"cards"}
     rowclick  {"prompt_run_id":"..."}
 
@@ -54,7 +56,7 @@
     (?<="rank_min":)[0-9]+   (?<="rank_max":)[0-9]+   (?<="rank_active":)(true|false)
     (?<="sent_min":)[0-9]+   (?<="sent_max":)[0-9]+   (?<="sent_active":)(true|false)
     (?<="brands":")[^"]*   (?<="brand_mentioned":")[^"]*
-    (?<="page":)[0-9]+   (?<="size":)[0-9]+   (?<="view":")[^"]*
+    (?<="limit":)[0-9]+   (?<="offset":)[0-9]+   (?<="page":)[0-9]+   (?<="view":")[^"]*
     (?<="prompt_run_id":")[^"]*
 
   ── Export ───────────────────────────────────────────────────────────────────

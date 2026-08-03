@@ -564,7 +564,7 @@
     function firePage(){
       search.setLatest(null);
       state.softReload = false; dim.end();
-      fire("data-page-fn", "urtPage", { page: state.page, size: state.pageSize, view: state.view });
+      fire("data-page-fn", "urtPage", { limit: state.pageSize, offset: offset(), page: state.page, view: state.view });
     }
     /* View switch keeps each mode's own {page, pageSize} — going Table page 3/50 -> Cards ->
        back to Table restores exactly that, instead of dumping the user on whatever the other
