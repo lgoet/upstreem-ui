@@ -1716,7 +1716,7 @@
             '<div class="up-topicmodal-heading">' +
               '<h3 class="up-topicmodal-title">' + (grpEditKey ? "Edit Grouping" : "New Grouping") + '</h3>' +
               '<p class="up-topicmodal-sub">Combine several topics into one group. A prompt counts ' +
-                'towards the group if it carries at least one of the topics.</p>' +
+                'towards the group only if it carries <strong>all</strong> of the topics.</p>' +
             '</div>' +
             '<button class="up-topicmodal-close" type="button" data-gm-close aria-label="Close">' + CLOSE_SVG + '</button>' +
           '</div>' +
@@ -2004,6 +2004,10 @@
           tag_ids: groupTagIds(g).join(","),
           untagged: isYes2(g.is_untagged) ? "yes" : "no",
           is_custom: isYes2(g.is_custom) ? "yes" : "no",
+          /* A custom group means ALL of its topics, so p_tagmode is 'and'. A plain topic group is
+             a single tag_id, where the mode makes no difference — 'and' keeps one value to wire up
+             instead of a conditional in the workflow. */
+          tagmode: "and",
           /* Same limit/offset/page trio every other paginated event in this app sends. */
           limit: state.gPageSize,
           offset: (state.gPage - 1) * state.gPageSize,

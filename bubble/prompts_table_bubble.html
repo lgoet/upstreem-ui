@@ -383,11 +383,13 @@
 
   uptGroupOpen      beim Aufklappen einer Gruppe und bei jedem Seitenwechsel darin.
                     {"group_key":"TagA","tag_ids":"a1,b2","untagged":"no","is_custom":"no",
-                     "limit":25,"offset":0,"page":1,"order":"visibility_desc","request_id":3}
+                     "tagmode":"and","limit":25,"offset":0,"page":1,
+                     "order":"visibility_desc","request_id":3}
                     -> RPC cached_prompt_insights_alltime_v18, unverändert wie in der flachen
                        Tabelle, nur zusätzlich:
                          normale Topic-Gruppe  p_tag_ids = [tag_ids]
-                         Custom Group          p_tag_ids = tag_ids der Gruppe, p_tagmode = 'or'
+                         Custom Group          p_tag_ids = tag_ids der Gruppe, p_tagmode = 'and'
+                                               (der Modus steht auch als `tagmode` im Event)
                          untagged = "yes"      p_untagged = true
                     Antwort per window.setPromptsTableGroupPrompts("INSTANCE_ID", RAW, REQUEST_ID).
                     REQUEST_ID unbedingt durchreichen: eine langsame Antwort auf eine ältere
