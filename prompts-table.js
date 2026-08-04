@@ -549,7 +549,7 @@
       root: root, box: elSearch, input: elSearchIn, state: state,
       mobileMax: MOBILE_SEARCH_MAX, prefix: "upt",
       onRender: function(){ renderTable(); renderPager(); },
-      onFire: function(payload){ state.softReload = false; endSoftReload(); invalidateSelectAll(); fire("data-search-fn", "uptSearch", payload); },
+      onFire: function(payload){ state.softReload = false; endSoftReload(); invalidateSelectAll(); fire("data-search-fn", "uptSearch", payload); refreshOpenGroupIfAny(); },
       persist: function(){ persist(); }
     });
     function runSearch(){ search.run(); }
@@ -591,6 +591,7 @@
       persist(); syncBrand(); renderPager();
       state.softReload = false; endSoftReload(); invalidateSelectAll();
       fire("data-brand-fn", "uptBrand", { brand_mentioned: state.brandMentioned });
+      refreshOpenGroupIfAny();
     }
 
     /* ---------------- mentioned brands (multi-select) — same pattern as urls-table/responses-table,
@@ -674,6 +675,7 @@
       state.softReload = false; endSoftReload(); invalidateSelectAll();
       persist(); syncMentLabel(); renderPager();
       fire("data-mentioned-fn", "uptMentioned", { brands: Object.keys(next).join(",") });
+      refreshOpenGroupIfAny();
     }
 
     /* ---------------- selection ---------------- */
@@ -2170,7 +2172,12 @@
          way. That is what makes a pure opacity fade possible: nothing needs to slide out of the way
          for it to appear. Both buttons live in one .upt-grp-hoveractions wrapper (flex, 16px gap)
          so only ONE absolute-positioned element needs its `left` set in JS, not two. */
-      return '<div class="upt-grp-head' + (open ? " is-open" : "") + '" data-grp="' + esc(id) + '"' +
+      /* is-ready mirrors state.gReady, not just something maybeMarkGroupReady() pokes onto a live
+         DOM node once -- a full re-render of this markup (e.g. renderGroups() rebuilding
+         everything from a groupsLoading/extLoading transition) used to lose the class even though
+         the group was logically still ready, since the class only ever lived on the OLD node. */
+      return '<div class="upt-grp-head' + (open ? " is-open" : "") + (open && state.gReady ? " is-ready" : "") +
+               '" data-grp="' + esc(id) + '"' +
                ' role="button" tabindex="0" aria-expanded="' + (open ? "true" : "false") + '">' +
           chk +
           '<div class="upt-grp-left">' + GRP_CHEV + chip +
@@ -2288,17 +2295,28 @@
       });
     }
     function renderGroups(){
-      /* isBusy() (state.loading/state.extLoading -- driven by setPromptsTableLoading, i.e. an
-         EXTERNAL filter like a date-range picker with its own loading flag) used to be invisible
-         here: this only ever checked its OWN internal state.groupsLoading, which is exclusively
-         set by fetchGroups() itself. An external filter change re-runs the main RPC (which sets
-         extLoading) and, per the doc's own guidance, should also re-run the groups RPC when
-         grouping is on -- but until that groups RPC's response actually lands, this kept showing
-         the now-stale groups from before the filter changed, with no loading indication at all.
-         Once the fresh setPromptsTableGroups() response arrives, its own state.expandedGroup =
-         null reset (see setGroups) already invalidates any open section -- this skeleton only
-         needs to cover the gap while nothing has arrived yet. */
-      if (isBusy() || state.groupsLoading || !state.groupsHasData){
+      /* state.extLoading (driven by setPromptsTableLoading, i.e. an EXTERNAL filter like a
+         date-range picker with its own loading flag) used to be invisible here: this only ever
+         checked its OWN internal state.groupsLoading, which is exclusively set by fetchGroups()
+         itself. An external filter change re-runs the main RPC (which sets extLoading) and, per
+         the doc's own guidance, should also re-run the groups RPC when grouping is on -- but
+         until that groups RPC's response actually lands, this kept showing the now-stale groups
+         from before the filter changed, with no loading indication at all. Once the fresh
+         setPromptsTableGroups() response arrives, its own state.expandedGroup = null reset (see
+         setGroups) already invalidates any open section -- this skeleton only needs to cover the
+         gap while nothing has arrived yet.
+         Deliberately state.extLoading ONLY, not the broader isBusy() (which also covers
+         state.loading): state.loading is this component's OWN internal row-level loading flag --
+         set by sort/search/brand/mentioned, none of which ever touch the groups RPC (see
+         fetchGroups' own comment, groups aren't filter-live by design). Treating THOSE as reason
+         to wipe the whole grouped body to a 6-row skeleton was a real regression: it blew away an
+         open group's DOM (including its .is-ready marker, see grpHeadHtml) and the page's scroll
+         position on every single sort click, search keystroke, or brand toggle while grouped --
+         confirmed live (a sort while a group was open and scrolled into sticky position jumped
+         the scroll and silently re-hid the Edit/Generate More buttons on reopen-less re-renders).
+         Those filters now keep the open group's rows honest via refreshOpenGroupIfAny() instead
+         (see fetchGroupPage), which patches in place rather than rebuilding the whole tree. */
+      if (state.extLoading || state.groupsLoading || !state.groupsHasData){
         /* The table's own skeleton, not a second one: a hand-rolled row of grey bars looked like a
            different product loading. */
         elTbody.innerHTML = skeletonRows(6);
@@ -2361,6 +2379,22 @@
         });
       }
       if (delay) setTimeout(fireNow, delay); else fireNow();
+    }
+    /* Shared by every toolbar filter that changes WHICH rows match (sort, search, brand-mentioned
+       toggle, mentioned-brands apply): if a group happens to be open when one of them fires, its
+       own rows are exactly as filter-dependent as the flat table's, so they need the same re-fetch
+       -- otherwise the open group keeps showing rows from before the filter changed until closed
+       and reopened. Re-fires the SAME uptGroupOpen event fetchGroupPage always fires (with
+       whatever order/search/etc. state already holds by the time this runs), no new Bubble-side
+       event needed. Page reset to 1 -- a changed filter invalidates whatever page of the group you
+       were on the same way it does for the flat table's own state.page. Groups themselves (the
+       header list) deliberately do NOT refresh here -- see fetchGroups' own comment, headers were
+       never filter-live by design, only the currently open group's rows are being kept honest. */
+    function refreshOpenGroupIfAny(){
+      if (groupingOn() && state.expandedGroup){
+        state.gPage = 1;
+        fetchGroupPage(0);
+      }
     }
     /* In-place swap of just this group's sub-block, never a rebuild of the whole list -- the same
        reason domains-table does it: recreating the header under an active mouse flickers. */
@@ -2589,20 +2623,7 @@
           order: orderValue(state.sortField, state.sortDir),
           sort_field: state.sortField, sort_dir: state.sortDir
         });
-        /* The currently OPEN group's own rows carry this same order (see fetchGroupPage's own
-           `order: orderValue(...)`), but only at the moment it was opened -- nothing previously
-           re-fetched it when the sort changed while it was already open, so it kept showing rows
-           in the stale order until closed and reopened. Groups themselves deliberately do NOT
-           refresh on a sort change (see fetchGroups' own comment -- headers aren't sort-dependent
-           at all), but the open group's ROWS are exactly as sort-dependent as the flat table's,
-           so this re-fires the SAME uptGroupOpen event fetchGroupPage always fires, no new Bubble-
-           side event needed. Page reset to 1, matching the flat table's own state.page = 1 above
-           -- a changed order invalidates whatever page you were on the same way a changed filter
-           would. */
-        if (groupingOn() && state.expandedGroup){
-          state.gPage = 1;
-          fetchGroupPage(0);
-        }
+        refreshOpenGroupIfAny();
         renderTable();
       }, SORT_DEBOUNCE);
     }

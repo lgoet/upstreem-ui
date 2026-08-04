@@ -485,6 +485,16 @@
                     REQUEST_ID unbedingt durchreichen: eine langsame Antwort auf eine ältere
                     Anfrage überschreibt sonst eine neuere.
 
+                    Feuert AUSSERDEM automatisch erneut (Page zurück auf 1, sonst identisches
+                    Payload-Shape wie oben, neue request_id), wenn eine offene Gruppe gerade
+                    sichtbar ist und der Nutzer sortiert, sucht, den Brand-mentioned-Toggle
+                    umschaltet oder einen Mentioned-Brands-Filter anwendet -- diese vier Aktionen
+                    aendern ja WELCHE Prompts ueberhaupt matchen, und die Zeilen der offenen
+                    Gruppe sind davon genauso betroffen wie die flache Tabelle. Kein neuer Step
+                    noetig: das ist derselbe uptGroupOpen-Event, derselbe Run-JS-Step wie beim
+                    Aufklappen selbst behandelt das automatisch mit. Ist gerade KEINE Gruppe
+                    offen, passiert bei diesen vier Aktionen serverseitig nichts Zusaetzliches.
+
   uptGenerateMore   Klick auf "Generate More" im Gruppen-Header.
                     {"group_key":"TagA","tag_ids":"a1,b2"}
                     Feuert NUR dieses Event -- kein Refetch, kein Zustandswechsel.
