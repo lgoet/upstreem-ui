@@ -2234,58 +2234,52 @@
     }
 
 
-    /* Generate More is hidden until you have hovered the row for 750ms — long enough that it does
-       not flash while you scan the list, short enough to feel deliberate. It only reveals when the
-       row can actually fit it: measured against what the KPIs plus the label already occupy, so a
-       narrow table never has it overlap them. */
-    var GRP_HOVER_MS = 750;
+    /* Generate More/Edit reveal on hover of the OPEN group's header, no delay -- just the CSS
+       opacity fade (.upt-grp-hoveractions { transition: opacity 200ms ease }). It only reveals
+       when the row can actually fit it: measured against what the KPIs plus the label already
+       occupy, so a narrow table never has it overlap them. */
     function bindGroupHoverReveal(){
       Array.prototype.slice.call(elTbody.querySelectorAll(".upt-grp-head")).forEach(function(head){
         if (head.getAttribute("data-hoverbound") === "1") return;
         head.setAttribute("data-hoverbound", "1");
-        var timer = null;
         head.addEventListener("mouseenter", function(){
-          clearTimeout(timer);
-          timer = setTimeout(function(){
-            /* CSS already gates the reveal on .is-open too (see .upt-grp-head.is-open.is-hovered),
-               but bailing here as well skips the width measurement below entirely for a collapsed
-               row -- there's nothing to reveal, so nothing to measure. */
-            if (!head.classList.contains("is-open")) return;
-            var wrap = head.querySelector(".upt-grp-hoveractions");
-            var left = head.querySelector(".upt-grp-left");
-            var kpis = head.querySelector(".upt-grp-kpis");
-            if (!wrap || !left || !kpis) return;
-            /* .upt-grp-hoveractions (Edit + Generate More together) is position:absolute inside
-               .upt-grp-left (see CSS) -- it never contributes to that flex item's own width, so it
-               cannot squeeze the chevron/chip even while sitting in the DOM at all times for a pure
-               opacity fade. Its left offset is set here, freshly, from the REAL rendered width of
-               everything that comes before it (not the grown flex container's own scrollWidth --
-               see the fail-open note this used to carry two rounds ago for why that was wrong). */
-            /* getBoundingClientRect, not offsetWidth -- the chevron is an <svg>, and offsetWidth
-               is an HTMLElement-only property that silently comes back undefined/0 on SVG in some
-               engines, which starved leftContent of ~16px and landed the button 16px too close. */
-            var leftContent = 0;
-            Array.prototype.forEach.call(left.children, function(c){
-              if (c === wrap) return;
-              leftContent += c.getBoundingClientRect().width || 0;
-            });
-            var gaps = Math.max(0, left.children.length - 2);   // -1 for fencepost, -1 to exclude `wrap`
-            leftContent += gaps * 10;                            // .upt-grp-left's own flex gap
-            var GAP = 32;
-            wrap.style.left = (leftContent + GAP) + "px";
-            /* Still fails OPEN: only a row too narrow to fit label + gap + buttons blocks the
-               reveal, and only in that direction -- an unmeasurable/zero clientWidth still shows
-               it rather than hiding it by default. */
-            var w = head.clientWidth || 0;
-            if (w){
-              var need = leftContent + GAP + (wrap.offsetWidth || 150) + (kpis.scrollWidth || 0);
-              if (w < need) return;
-            }
-            head.classList.add("is-hovered");
-          }, GRP_HOVER_MS);
+          /* CSS already gates the reveal on .is-open too (see .upt-grp-head.is-open.is-hovered),
+             but bailing here as well skips the width measurement below entirely for a collapsed
+             row -- there's nothing to reveal, so nothing to measure. */
+          if (!head.classList.contains("is-open")) return;
+          var wrap = head.querySelector(".upt-grp-hoveractions");
+          var left = head.querySelector(".upt-grp-left");
+          var kpis = head.querySelector(".upt-grp-kpis");
+          if (!wrap || !left || !kpis) return;
+          /* .upt-grp-hoveractions (Edit + Generate More together) is position:absolute inside
+             .upt-grp-left (see CSS) -- it never contributes to that flex item's own width, so it
+             cannot squeeze the chevron/chip even while sitting in the DOM at all times for a pure
+             opacity fade. Its left offset is set here, freshly, from the REAL rendered width of
+             everything that comes before it (not the grown flex container's own scrollWidth --
+             see the fail-open note this used to carry two rounds ago for why that was wrong). */
+          /* getBoundingClientRect, not offsetWidth -- the chevron is an <svg>, and offsetWidth
+             is an HTMLElement-only property that silently comes back undefined/0 on SVG in some
+             engines, which starved leftContent of ~16px and landed the button 16px too close. */
+          var leftContent = 0;
+          Array.prototype.forEach.call(left.children, function(c){
+            if (c === wrap) return;
+            leftContent += c.getBoundingClientRect().width || 0;
+          });
+          var gaps = Math.max(0, left.children.length - 2);   // -1 for fencepost, -1 to exclude `wrap`
+          leftContent += gaps * 10;                            // .upt-grp-left's own flex gap
+          var GAP = 32;
+          wrap.style.left = (leftContent + GAP) + "px";
+          /* Still fails OPEN: only a row too narrow to fit label + gap + buttons blocks the
+             reveal, and only in that direction -- an unmeasurable/zero clientWidth still shows
+             it rather than hiding it by default. */
+          var w = head.clientWidth || 0;
+          if (w){
+            var need = leftContent + GAP + (wrap.offsetWidth || 150) + (kpis.scrollWidth || 0);
+            if (w < need) return;
+          }
+          head.classList.add("is-hovered");
         });
         head.addEventListener("mouseleave", function(){
-          clearTimeout(timer);
           head.classList.remove("is-hovered");
         });
       });

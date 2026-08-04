@@ -579,11 +579,17 @@
   flex: 0 0 auto; min-width: 76px; }
 .upt-grp-kpi-val { display: inline-flex; align-items: center; gap: 6px; }
 .upt-grp-kpi-lbl { font-size: 10px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase;
-  color: var(--vc-muted); white-space: nowrap; }
+  color: var(--vc-third); white-space: nowrap; }
 .upt-grp-inactive { font-size: 11px; font-weight: 500; color: var(--vc-third); }
 /* Sentiment without the bordered box the table cell uses — see grpHeadHtml. */
 .upt-grp-sent { display: inline-flex; align-items: center; gap: 6px; }
-.upt-grp-sent .up-sent-val { font-size: 14px; }
+/* All four KPI values (Prompts' .up-num, Visibility's .up-num, Rank's .up-rank-group .up-num,
+   Sentiment's .up-sent-val) forced to the same 13px/500 here -- their shared classes come from
+   core.css at 14px/13px respectively for ordinary table cells, one size too big for a compact
+   header row of four side by side, and that 1px gap between .up-num (14px) and .up-sent-val
+   (core default 13px) read as the group header not quite matching itself across its own KPIs. */
+.upt-grp-kpi-val, .upt-grp-kpi-val .up-num, .upt-grp-kpi-val .up-sent-val {
+  font-size: 13px; font-weight: 500; }
 
 /* Text only, no button chrome: Edit/Generate More are link-like actions next to a row of readings,
    and bordered buttons there competed with the group header itself. Sit right next to the
@@ -648,6 +654,46 @@
 .upt-grp-head.is-open { background: var(--vt-head-bg); }
 .up-root[data-theme="dark"] .upt-grp-head.is-open {
   background: color-mix(in srgb, var(--vc-bg) 50%, var(--up-surface) 50%); }
+/* Pins the OPEN group's own header directly under the sticky column header while its rows scroll
+   past underneath -- same idea as a sticky section header in any grouped list. position:sticky's
+   containing block is .upt-grp (the section wrapper around this header + its rows), so it
+   naturally un-sticks once that group's own content (rows + footer) has fully scrolled by,
+   without any scroll-listener math. 45px must match core.css's .up-thead { height: 45px }: this
+   sticks right where the column header's own bottom edge is. z-index 4, one below .up-thead's 5,
+   so a header still mid-transition off-screen tucks under the column header rather than flashing
+   on top of it for a frame. Only in sticky mode (>=1000px, data-sticky != "no") -- below that the
+   page doesn't pin .up-thead either, so there is no fixed edge to pin this under. */
+.up-sticky .upt-grp-head.is-open {
+  position: sticky;
+  top: calc(var(--up-sticky-top) + var(--up-thead-off) + 45px);
+  z-index: 4;
+  background-image: linear-gradient(var(--vt-head-bg), var(--vt-head-bg));
+  background-color: var(--vc-bg);
+  border-bottom: 1px solid var(--vc-border);
+}
+.up-root.up-sticky[data-theme="dark"] .upt-grp-head.is-open {
+  background-image: linear-gradient(
+    color-mix(in srgb, var(--vc-bg) 50%, var(--up-surface) 50%),
+    color-mix(in srgb, var(--vc-bg) 50%, var(--up-surface) 50%));
+}
+/* core.css gives .up-tbody `overflow: hidden` in sticky mode, purely to round the last row's
+   bottom corners to match .up-box's 16px radius (see the comment there). That overflow, on an
+   ANCESTOR of the sticky group header above, silently breaks its position:sticky -- any
+   `overflow` other than visible establishes a scroll container, and a sticky element can't
+   escape one to pin against the real (page-level) scroll, so it just scrolls away with the rest
+   of the content instead of sticking (confirmed live: it rendered with position:sticky applied
+   but its rect scrolled straight past the intended top offset). Grouped mode swaps that
+   overflow:hidden for the exact same radial-gradient corner-mask trick .up-thead's own
+   ::before/::after already use for ITS top corners two rules up -- the rounding survives, but
+   nothing here clips/constrains a sticky descendant anymore. Specificity: three classes on one
+   element (.up-root.is-grouped.up-sticky) beats core.css's two-class `.up-sticky .up-tbody`. */
+.up-root.is-grouped.up-sticky .up-tbody { overflow: visible; position: relative; }
+.up-root.is-grouped.up-sticky .up-tbody::before,
+.up-root.is-grouped.up-sticky .up-tbody::after {
+  content: ""; position: absolute; bottom: -1px; width: 16px; height: 16px; pointer-events: none; z-index: 2;
+}
+.up-root.is-grouped.up-sticky .up-tbody::before { left: -1px;  background: radial-gradient(circle at top right, rgba(0,0,0,0) 16px, var(--up-surface) 16.5px); }
+.up-root.is-grouped.up-sticky .up-tbody::after  { right: -1px; background: radial-gradient(circle at top left,  rgba(0,0,0,0) 16px, var(--up-surface) 16.5px); }
 .upt-grp-inner { border-top: 1px solid var(--vc-border); background: var(--vt-head-bg);
   min-height: 0; overflow: hidden; }
 .up-root[data-theme="dark"] .upt-grp-inner {
