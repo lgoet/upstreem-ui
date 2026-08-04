@@ -557,14 +557,17 @@
 }
 .upt-grp-head:hover { background: var(--vt-row-hover); }
 .upt-grp-head.is-open { background: var(--vc-heading-bg); }
-.upt-grp-left { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 auto; }
+.upt-grp-left { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 auto; position: relative; }
 .upt-grp-chev { width: 16px; height: 16px; flex: 0 0 auto; color: var(--vc-muted);
   transition: transform 160ms ease; }
 .upt-grp-head.is-open .upt-grp-chev { transform: rotate(180deg); }
 
 /* The topic chip is core's .up-topicchip (see grpHeadHtml) — nothing chip-shaped is redeclared
    here. Only the read-only variant's cursor and the custom-group name need a line. */
-.up-topicchip.is-static { cursor: default; height: 32px; }
+/* 28px, not core's default 32px -- matches .ust-tag, the height every topic pill in this table
+   (the per-prompt Topics cell) already uses. This is the one other place a topic reads as a chip
+   (a topic-type group's own header identity), so it has to match, not just happen to be a chip. */
+.up-topicchip.is-static { cursor: default; height: 28px; }
 .upt-grp-name { font-size: 13.5px; font-weight: 500; color: var(--vc-text);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 
@@ -583,23 +586,20 @@
 .upt-grp-sent .up-sent-val { font-size: 14px; }
 
 /* Text only, no button chrome: it is a link-like action next to a row of readings, and a bordered
-   button there competed with the group header itself. */
-/* The 64px separation sits on the ACTION, not on the KPI block: a margin on the block that has
-   to be pushed away survives however the flex row distributes its free space. */
-.upt-grp-more { flex: 0 0 auto; height: 28px; padding: 0; border: 0; background: transparent;
-  /* Hidden until the row has been hovered for 750ms (see bindGroupHoverReveal); it slides in from
-     the right and the KPIs shift left to make room, instead of appearing on top of them. */
-  max-width: 0; opacity: 0; overflow: hidden; pointer-events: none; margin-left: 0;
+   button there competed with the group header itself. Sits right next to the topic/group label
+   now, not after the KPIs -- position:absolute inside .upt-grp-left (positioned) is what makes a
+   PURE fade possible: an absolute element has zero footprint in the flex layout, so it can live
+   in the DOM at all times (needed for a fade to have something to fade FROM) without ever being
+   able to squeeze the chevron/label/KPIs, hovered or not. Its `left` offset is set in JS
+   (bindGroupHoverReveal) from the real rendered width of what comes before it. */
+.upt-grp-more { position: absolute; top: 50%; transform: translateY(-50%); left: 0;
+  height: 28px; padding: 0; border: 0; background: transparent;
+  opacity: 0; pointer-events: none;
   color: var(--vc-third); font-family: inherit; font-size: 12.5px; font-weight: 500;
   cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;
-  /* A SECOND transition declaration used to sit right after this one and silently win (CSS keeps
-     only the last value for a repeated property on one rule) -- max-width/opacity/margin-left had
-     no transition at all as a result, so the button popped in instead of sliding. One declaration,
-     everything it actually needs to animate. */
-  transition: max-width 200ms cubic-bezier(.2,0,.38,.9), opacity 160ms ease,
-    margin-left 200ms cubic-bezier(.2,0,.38,.9), color 120ms ease; }
+  transition: opacity 200ms ease, color 120ms ease; }
 .upt-grp-more svg { width: 14px; height: 14px; display: block; }
-.upt-grp-head.is-hovered .upt-grp-more { max-width: 200px; opacity: 1; pointer-events: auto; margin-left: 64px; }
+.upt-grp-head.is-hovered .upt-grp-more { opacity: 1; pointer-events: auto; }
 .upt-grp-more:hover { color: var(--vc-text); }
 
 /* open/close animation -- duration must match GRP_ANIM_MS in prompts-table.js. Byte-for-byte the
@@ -667,9 +667,12 @@
    sein breitester Block (der Sortier-Switcher), egal wie die Labels rendern. Zehn Runden
    Nachjustieren waren die Folge davon, dass hier eine feste Zahl stand. */
 .upt-group-menu { width: max-content; min-width: 340px; max-width: 420px; padding: 10px; }
-.upt-group-menu .up-pop-head { margin-bottom: 4px; }
+/* Section-to-section spacing only -- this stays local on purpose (a 340-420px panel with four
+   sections wanted more air between them than the default). Heading-to-content spacing INSIDE a
+   section used to be overridden here too (an extra margin stacked on top of .up-pop-head/
+   .up-pop-sub's own core padding) and read as "off" next to every other dropdown in the app that
+   just uses the core default -- removed, not fixed to a new number. */
 .upt-group-menu .up-pop-div { margin: 12px 0; }
-.upt-group-menu .up-pop-sub { margin-bottom: 8px; }
 .upt-group-menu .up-pop-row { min-height: 34px; }
 .upt-group-menu .up-dense { display: flex; gap: 6px; }
 /* flex-basis 0 zwang alle drei auf dieselbe Breite — das laengste Label ("Name A–Z") hatte damit
@@ -682,12 +685,23 @@
 .upt-group-item { gap: 8px; justify-content: flex-start; position: relative; }
 .upt-group-item .up-pop-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .upt-group-item.is-draggable { cursor: grab; }
-.upt-group-item.is-dragging { opacity: .4; cursor: grabbing; }
-/* A 2px rule where the dragged row would land, not a full highlight -- matches how reorder
-   affordances read everywhere else (Kanban boards, playlist reorder), and doesn't fight the row's
-   own hover background. */
-.upt-group-item.is-dragover-before { box-shadow: inset 0 2px 0 0 var(--vc-text); }
-.upt-group-item.is-dragover-after { box-shadow: inset 0 -2px 0 0 var(--vc-text); }
+/* The dragged row becomes its own placeholder rather than just dimming: real content (dot, name,
+   eye, menu) hides, two static skeleton blocks take its place, gray border marks the slot. Pure
+   CSS class toggle -- no innerHTML swap/restore needed, so a cancelled drag (dropped outside any
+   target, Escape) can never leave the row stuck mid-swap. Not animated: a shimmering skeleton
+   reads as "loading", which this is not. */
+.upt-group-item.is-dragging { border: 1px solid var(--vc-border); border-radius: 8px; cursor: grabbing; }
+.upt-group-item.is-dragging > .upt-grp-cdot,
+.upt-group-item.is-dragging > .up-pop-label,
+.upt-group-item.is-dragging > .upt-group-eye,
+.upt-group-item.is-dragging > .upt-group-more { display: none; }
+.upt-group-sk-dot, .upt-group-sk-text { display: none; background: var(--vc-border); border-radius: 4px; }
+.upt-group-item.is-dragging > .upt-group-sk-dot { display: block; width: 8px; height: 8px; border-radius: 4px; flex: 0 0 auto; }
+.upt-group-item.is-dragging > .upt-group-sk-text { display: block; width: 45%; height: 12px; }
+/* Drop target: the same gray-border language, not a hard black line -- a row-shaped hint, not an
+   inserted rule. */
+.upt-group-item.is-dragover-before,
+.upt-group-item.is-dragover-after { border-radius: 8px; box-shadow: inset 0 0 0 1px var(--vc-border); }
 /* Full width, 32px, and it is core's secondary button — same face and same hover as every other
    secondary action in the app. */
 .upt-group-new { width: 100%; height: 32px; margin-top: 4px; }
@@ -786,8 +800,10 @@
 /* .up-pop-opt is space-between (label left, a check right) — with a plain action list and no
    check, the label ended up stretched across a too-tall row. flex-start + a tighter row is what
    every other action menu in the app looks like. */
-.upt-group-rowmenu { top: calc(100% - 2px); right: 4px; left: auto; width: 148px; padding: 6px;
+.upt-group-rowmenu { top: calc(100% - 2px); right: 4px; left: auto; width: 128px; padding: 6px;
   display: flex; flex-direction: column; gap: 2px; }
-.upt-group-rowmenu .up-pop-opt { justify-content: flex-start; padding: 7px 10px; font-size: 13px; }
+/* 32px, flat, not padding-derived -- every menu row in this app is 32px, this one drifted to
+   whatever 7px vertical padding happened to compute to. */
+.upt-group-rowmenu .up-pop-opt { justify-content: flex-start; height: 32px; padding: 0 10px; font-size: 13px; }
 .upt-group-rowmenu .up-pop-opt.is-danger { color: #b0200c; }
 .upt-group-rowmenu .up-pop-opt.is-danger:hover { background: rgba(176,32,12,.08); }

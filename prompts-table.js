@@ -1535,6 +1535,9 @@
               (g.hidden ? "" : ' draggable="true" data-grp-drag="' + esc(g.key) + '"') + '>' +
             '<span class="upt-grp-cdot" style="background:' + esc(g.color || "#6b7280") + '"></span>' +
             '<span class="up-pop-label">' + esc(g.key) + '</span>' +
+            /* Only ever shown via .is-dragging (see CSS) -- static placeholders for the dragged
+               row's own slot, swapped in with a pure class toggle rather than an innerHTML swap. */
+            '<span class="upt-group-sk-dot"></span><span class="upt-group-sk-text"></span>' +
             '<button class="upt-group-eye' + (g.hidden ? " is-off" : "") + '" type="button" data-grp-eye="' + esc(g.key) + '"' +
               ' aria-label="' + (g.hidden ? "Show grouping" : "Hide grouping") + '" aria-pressed="' + (g.hidden ? "true" : "false") + '">' +
               (g.hidden ? EYE_OFF_SVG : EYE_SVG) + '</button>' +
@@ -2017,15 +2020,22 @@
         : '<span class="upt-grp-sent"><span class="up-sent-dot" style="background:' + UC.sentColor(sN) + '"></span>' +
           '<span class="up-sent-val">' + Math.round(sN) + '</span></span>';
 
+      /* Generate More sits right after the chip/label, inside .upt-grp-left, not after the KPIs.
+         .upt-grp-left is flex:1 1 auto and already runs far wider than its own content (see the
+         hover-reveal width guard below), so appending a child here claims space that was already
+         free -- the chevron and chip that come BEFORE it never move, and .upt-grp-kpis is a
+         separate sibling of .upt-grp-left entirely, unaffected either way. That is what makes a
+         pure opacity fade possible: nothing needs to slide out of the way for it to appear. */
       return '<div class="upt-grp-head' + (open ? " is-open" : "") + '" data-grp="' + esc(id) + '"' +
                ' role="button" tabindex="0" aria-expanded="' + (open ? "true" : "false") + '">' +
-          '<div class="upt-grp-left">' + GRP_CHEV + chip + '</div>' +
+          '<div class="upt-grp-left">' + GRP_CHEV + chip +
+            /* Fires a JS event and nothing else -- no state change, no refetch, by design. */
+            '<button class="upt-grp-more" type="button" data-grp-more="' + esc(id) + '">' + GEN_SVG + 'Generate More</button>' +
+          '</div>' +
           '<div class="upt-grp-kpis">' +
             grpKpi("Prompts", counts) + grpKpi("Visibility", vis) +
             grpKpi("Ø Rank", rank) + grpKpi("Ø Sentiment", sent) +
           '</div>' +
-          /* Fires a JS event and nothing else -- no state change, no refetch, by design. */
-          '<button class="upt-grp-more" type="button" data-grp-more="' + esc(id) + '">' + GEN_SVG + 'Generate More</button>' +
         '</div>';
     }
 
@@ -2094,20 +2104,31 @@
             var left = head.querySelector(".upt-grp-left");
             var kpis = head.querySelector(".upt-grp-kpis");
             if (!more || !left || !kpis) return;
-            /* Fails OPEN, and measures the RIGHT thing. .upt-grp-left is flex:1 1 auto, so its own
-               scrollWidth is the box's GROWN width (it fills whatever space kpis leaves) -- for a
-               short chip like "SUV" that was 796px against ~90px of real content, so the guard
-               always thought the row was nearly full and refused to reveal. What actually matters
-               is the left block's true content width: sum its children's own widths (they are not
-               flex-grow), not the grown container's. */
+            /* .upt-grp-more is position:absolute inside .upt-grp-left (see CSS) -- it never
+               contributes to that flex item's own width, so it cannot squeeze the chevron/chip
+               even while sitting in the DOM at all times for a pure opacity fade. Its left offset
+               is set here, freshly, from the REAL rendered width of everything that comes before
+               it (not the grown flex container's own scrollWidth -- see the fail-open note this
+               used to carry two rounds ago for why that was wrong). */
+            /* getBoundingClientRect, not offsetWidth -- the chevron is an <svg>, and offsetWidth
+               is an HTMLElement-only property that silently comes back undefined/0 on SVG in some
+               engines, which starved leftContent of ~16px and landed the button 16px too close. */
+            var leftContent = 0;
+            Array.prototype.forEach.call(left.children, function(c){
+              if (c === more) return;
+              leftContent += c.getBoundingClientRect().width || 0;
+            });
+            var gaps = Math.max(0, left.children.length - 2);   // -1 for fencepost, -1 to exclude `more`
+            leftContent += gaps * 10;                            // .upt-grp-left's own flex gap
+            var GAP = 32;
+            more.style.left = (leftContent + GAP) + "px";
+            /* Still fails OPEN: only a row too narrow to fit label + gap + button blocks the
+               reveal, and only in that direction -- an unmeasurable/zero clientWidth still shows
+               it rather than hiding it by default. */
             var w = head.clientWidth || 0;
             if (w){
-              var need = 64 + 150;                    /* separation + the label's own width */
-              var leftContent = 0;
-              Array.prototype.forEach.call(left.children, function(c){ leftContent += c.offsetWidth || 0; });
-              if (left.children.length > 1) leftContent += 10 * (left.children.length - 1);  /* .upt-grp-left gap */
-              var used = leftContent + (kpis.scrollWidth || 0);
-              if (used && (w - used) < need) return;
+              var need = leftContent + GAP + (more.offsetWidth || 150) + (kpis.scrollWidth || 0);
+              if (w < need) return;
             }
             head.classList.add("is-hovered");
           }, GRP_HOVER_MS);
@@ -3165,6 +3186,14 @@
            then offered pages that do not exist. Header first, RPC only as a fallback. */
         var g = (state.groups || []).filter(function(x){ return groupId(x) === state.expandedGroup; })[0];
         var headerCount = g ? toNum(g.prompts_count) : null;
+        if (headerCount == null && window.console){
+          console.warn("[prompts-table] Drilldown pagination fell back to the prompts RPC's own " +
+            "total_count instead of the group header's prompts_count -- " +
+            (g ? "the matched group header has no prompts_count field (" + JSON.stringify(g) + ")."
+               : "no group header matched expandedGroup=" + JSON.stringify(state.expandedGroup) +
+                 " against the " + (state.groups || []).length + " header(s) currently held (keys: " +
+                 (state.groups || []).map(groupId).join(", ") + ")."));
+        }
         state.gTotal = (headerCount != null) ? headerCount
                      : (list.length ? toNum(list[0].total_count) : 0);
         state.gLoading = false;
