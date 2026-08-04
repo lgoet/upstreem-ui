@@ -605,8 +605,15 @@
   opacity: 0; pointer-events: none; transition: opacity 200ms ease;
   display: flex; align-items: center; gap: 32px; }
 /* Edit/Generate More only reveal on hover for the OPEN group's header, same gating as the
-   select-all checkbox -- a collapsed row never shows either, by design. */
-.upt-grp-head.is-open.is-hovered .upt-grp-hoveractions { opacity: 1; pointer-events: auto; }
+   select-all checkbox -- a collapsed row never shows either, by design. .is-ready (set in JS by
+   maybeMarkGroupReady, prompts-table.js) additionally requires this group's first load to have
+   actually landed AND the expand animation to have visually finished -- hovering the instant a
+   group starts opening no longer flashes these before either is done. Deliberately a plain class
+   gate, not tied to the mouseenter handler itself: hovering BEFORE ready still adds .is-hovered
+   (see bindGroupHoverReveal), so if the user is still hovering the moment .is-ready lands, this
+   rule re-evaluates live and the buttons fade in on their own -- no need to move the mouse out
+   and back in. */
+.upt-grp-head.is-open.is-ready.is-hovered .upt-grp-hoveractions { opacity: 1; pointer-events: auto; }
 .upt-grp-more, .upt-grp-edit { height: 28px; padding: 0; border: 0; background: transparent;
   color: var(--vc-third); font-family: inherit; font-size: 12.5px; font-weight: 500;
   cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;
@@ -662,38 +669,26 @@
    sticks right where the column header's own bottom edge is. z-index 4, one below .up-thead's 5,
    so a header still mid-transition off-screen tucks under the column header rather than flashing
    on top of it for a frame. Only in sticky mode (>=1000px, data-sticky != "no") -- below that the
-   page doesn't pin .up-thead either, so there is no fixed edge to pin this under. */
+   page doesn't pin .up-thead either, so there is no fixed edge to pin this under.
+   No border-bottom here on purpose -- .upt-grp-inner's own border-top (below) already draws the
+   ONE line between this header and its rows. Adding a second one here doubled it to ~2px while
+   the group sat in normal flow (both borders sitting flush against each other), and only looked
+   right once actually pinned and visually separated from that inner border by the scroll gap --
+   i.e. correct in exactly one of its two states. core.css's .up-tbody now clips with `overflow:
+   clip` instead of `hidden` (see there), which is what makes this sticky in the first place
+   without a corner-masking workaround. */
 .up-sticky .upt-grp-head.is-open {
   position: sticky;
   top: calc(var(--up-sticky-top) + var(--up-thead-off) + 45px);
   z-index: 4;
   background-image: linear-gradient(var(--vt-head-bg), var(--vt-head-bg));
   background-color: var(--vc-bg);
-  border-bottom: 1px solid var(--vc-border);
 }
 .up-root.up-sticky[data-theme="dark"] .upt-grp-head.is-open {
   background-image: linear-gradient(
     color-mix(in srgb, var(--vc-bg) 50%, var(--up-surface) 50%),
     color-mix(in srgb, var(--vc-bg) 50%, var(--up-surface) 50%));
 }
-/* core.css gives .up-tbody `overflow: hidden` in sticky mode, purely to round the last row's
-   bottom corners to match .up-box's 16px radius (see the comment there). That overflow, on an
-   ANCESTOR of the sticky group header above, silently breaks its position:sticky -- any
-   `overflow` other than visible establishes a scroll container, and a sticky element can't
-   escape one to pin against the real (page-level) scroll, so it just scrolls away with the rest
-   of the content instead of sticking (confirmed live: it rendered with position:sticky applied
-   but its rect scrolled straight past the intended top offset). Grouped mode swaps that
-   overflow:hidden for the exact same radial-gradient corner-mask trick .up-thead's own
-   ::before/::after already use for ITS top corners two rules up -- the rounding survives, but
-   nothing here clips/constrains a sticky descendant anymore. Specificity: three classes on one
-   element (.up-root.is-grouped.up-sticky) beats core.css's two-class `.up-sticky .up-tbody`. */
-.up-root.is-grouped.up-sticky .up-tbody { overflow: visible; position: relative; }
-.up-root.is-grouped.up-sticky .up-tbody::before,
-.up-root.is-grouped.up-sticky .up-tbody::after {
-  content: ""; position: absolute; bottom: -1px; width: 16px; height: 16px; pointer-events: none; z-index: 2;
-}
-.up-root.is-grouped.up-sticky .up-tbody::before { left: -1px;  background: radial-gradient(circle at top right, rgba(0,0,0,0) 16px, var(--up-surface) 16.5px); }
-.up-root.is-grouped.up-sticky .up-tbody::after  { right: -1px; background: radial-gradient(circle at top left,  rgba(0,0,0,0) 16px, var(--up-surface) 16.5px); }
 .upt-grp-inner { border-top: 1px solid var(--vc-border); background: var(--vt-head-bg);
   min-height: 0; overflow: hidden; }
 .up-root[data-theme="dark"] .upt-grp-inner {

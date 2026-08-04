@@ -447,6 +447,9 @@
          of being kept per group. Not persisted — an expansion is a look-at-this-now gesture. */
       expandedGroup: null,
       gRows: [], gTotal: null, gLoading: false, gReqId: null,
+      /* gReady/gAnimDone: gate Edit/Generate More's reveal on BOTH the first load landing and the
+         expand animation finishing -- see maybeMarkGroupReady/toggleGroup. */
+      gReady: false, gAnimDone: false,
       gPage: 1, gPageSize: 10,
       /* Group-scoped sibling of selectAllMatching, same reasoning: the group can hold far more
          prompts than the one loaded page in state.gRows, so "select the rest of it" has to be a
@@ -2406,6 +2409,37 @@
          synchronous re-render in the same frame read as a stutter. */
       fetchGroupPage(GRP_ANIM_MS + 40);
       renderGroupBlockOnly(id, true);
+      /* Edit/Generate More must not be revealable (even on hover) until this group's FIRST load
+         has actually landed AND the expand animation has visually finished -- see
+         maybeMarkGroupReady's own comment for why both conditions are tracked separately rather
+         than assuming one implies the other. Reset on every open (including re-opening the same
+         id) so a stale .is-ready from a previous open cycle can't leak into this one. */
+      if (head) head.classList.remove("is-ready");
+      state.gReady = false;
+      state.gAnimDone = false;
+      (function(openedId){
+        setTimeout(function(){
+          if (state.expandedGroup !== openedId) return;   // closed/switched before the anim timer fired
+          state.gAnimDone = true;
+          maybeMarkGroupReady(openedId);
+        }, GRP_ANIM_MS);
+      })(id);
+    }
+
+    /* Flips .is-ready on the currently-open group's header once BOTH: (a) the expand animation has
+       visually finished (state.gAnimDone, timed in toggleGroup's open branch above) and (b) this
+       group's first page of rows has actually arrived (!state.gLoading, flipped in setGroupPrompts
+       below). Tracked as two independent flags rather than inferring one from the other -- fetching
+       is already delayed GRP_ANIM_MS+40 past open (see fetchGroupPage's own call above), which in
+       practice makes the animation finish first every time, but that is an accident of the current
+       delay constant, not a guarantee this function should rely on. Whichever condition lands
+       second is what actually triggers the reveal; the other call site is a no-op until then. */
+    function maybeMarkGroupReady(id){
+      if (state.expandedGroup !== id || state.gReady) return;
+      if (!(state.gAnimDone && !state.gLoading)) return;
+      state.gReady = true;
+      var head = elTbody.querySelector('[data-grp="' + cssEsc(id) + '"]');
+      if (head) head.classList.add("is-ready");
     }
 
     /* Header data. Fired on: the "Group by topics" toggle, the "Only show custom groupings"
@@ -3426,6 +3460,7 @@
               "tag_ids/tagmode filter it applies to the actual rows. Check that step, not this file.");
           }
         }
+        if (state.expandedGroup) maybeMarkGroupReady(state.expandedGroup);
         if (state.expandedGroup) renderGroupBlockOnly(state.expandedGroup);
       },
       update: function(params){

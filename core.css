@@ -673,7 +673,13 @@
     .up-sticky .up-tbody {
       border: 1px solid var(--vc-border); border-top: none;
       border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;
-      overflow: hidden;
+      /* clip, not hidden: visually identical (still clips row backgrounds to the rounded corner),
+         but per spec `clip` does not establish a scroll container the way `hidden`/`auto`/`scroll`
+         do -- and a scroll-container ancestor is exactly what breaks position:sticky for anything
+         nested inside it (prompts-table's grouped view sticks its open group's own header here;
+         with `hidden` that sticky silently failed, the header just scrolled away with the page).
+         `clip` sidesteps the conflict entirely instead of working around it with corner masks. */
+      overflow: clip;
     }
     .up-table { width: 100%; display: flex; flex-direction: column; background: var(--vc-bg); }
     /* Column widths come from --up-cols, which UC.makeColumns' applyCols() writes ONCE on the
