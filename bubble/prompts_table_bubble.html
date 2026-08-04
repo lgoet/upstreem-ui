@@ -370,14 +370,27 @@
   data-generatemore-fn  = "bubble_fn_uptGenerateMore_[dynamic id]"
 
   ── Was wann feuert ──────────────────────────────────────────────────────────
-  uptGroups         {"grouped":"yes"}                       -- keine eigenen Gruppen
-                    {"grouped":"yes","groups":"[{\"key\":\"SUV & Hybrid\",\"tag_ids\":[...]}]"}
+  uptGroups         {"grouped":"yes","mode":"both"}          -- keine eigenen Gruppen
+                    {"grouped":"yes","mode":"both","groups":"[{\"key\":\"SUV & Hybrid\",\"tag_ids\":[...]}]"}
                     -> RPC cached_prompt_topics_grouped_v1 mit DENSELBEN Filtern wie die flache
                        Tabelle (p_team, p_search, p_tag_ids, p_only_active, p_models, p_markets,
                        p_date_from, p_date_to, p_tagmode, p_mentioned, p_company_ids). `groups`
                        nur dann als p_groups mitsenden, wenn der Key im Payload überhaupt da ist
                        -- fehlt er, liefert der RPC seinen Default: eine Gruppe pro Topic +
                        untagged.
+
+                    `mode` ist IMMER dabei, unabhaengig davon ob `groups` mitkommt (Werte:
+                    "both" | "custom" | "topics", siehe "Only show custom groupings"-Dreifach-
+                    Zyklus weiter unten). Muss als p_mode an die RPC durchgereicht werden:
+                      p_mode = "both"    -> Topic-Gruppen UND eigene Gruppierungen zusammen
+                      p_mode = "custom"  -> NUR die eigenen Gruppierungen aus p_groups
+                      p_mode = "topics"  -> NUR die automatischen Topic-Gruppen, eigene raus
+                    Ohne dieses Wiring hat p_mode faktisch nie einen Wert, und wenn deine RPC
+                    dann (vermutlich: "p_groups ist da, also nur die zeigen") auf einen eigenen
+                    Default zurueckfaellt, sieht das von hier aus so aus, als würde der
+                    "Only show custom groupings"-Zyklus gar nichts bewirken, sobald mindestens
+                    eine eigene Gruppierung existiert -- das Event feuert zwar korrekt mit dem
+                    jeweils neuen mode-Wert, aber die RPC ignoriert ihn.
                     Antwort zurück per window.setPromptsTableGroups("INSTANCE_ID", RAW).
 
                     WANN GENAU (jeder Auslöser feuert dasselbe Event neu, mit dem dann aktuellen
@@ -507,11 +520,11 @@
     {"group_key":"SUV & Hybrid","tag_ids":"t1,t3"}
 
     uptGroups  (ohne eigene Gruppierungen)
-    {"grouped":"yes"}
+    {"grouped":"yes","mode":"both"}
 
     uptGroups  (mit eigenen Gruppierungen — `groups` ist ein JSON-String IM JSON,
                 seine Anfuehrungszeichen sind deshalb mit \ maskiert)
-    {"grouped":"yes","groups":"[{\"key\":\"SUV & Hybrid\",\"tag_ids\":[\"t1\",\"t3\"],\"color\":\"#b47476\"}]"}
+    {"grouped":"yes","mode":"custom","groups":"[{\"key\":\"SUV & Hybrid\",\"tag_ids\":[\"t1\",\"t3\"],\"color\":\"#b47476\"}]"}
 
   Feld            Regex                              Ergebnis (Beispiel)
   ─────────────── ────────────────────────────────── ──────────────────────────
@@ -526,6 +539,7 @@
   page            (?<="page":)[0-9]+                 1
   request_id      (?<="request_id":)[0-9]+           1
   grouped         (?<="grouped":")[^"]*              yes
+  mode            (?<="mode":")[^"]*                 both | custom | topics -> p_mode, siehe oben
   groups          (?<="groups":").*(?="\}$)          siehe unten
 
   `groups` braucht einen zweiten Schritt: das Extrahierte ist noch maskiert
