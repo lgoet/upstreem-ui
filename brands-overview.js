@@ -815,9 +815,9 @@
     var HASH_ICON = UC.HASH_ICON.replace('<svg ', '<svg class="up-hash" ');
     var MORE_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' +
       '<circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>';
-    /* Plain single-path Feather "Edit" pencil -- same icon prompts-table's group-header Edit
-       button uses (GRP_EDIT_SVG), not the square+pencil "Edit-2" combo. */
-    var EDIT_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7 21l-4 1 1-4L17 3z"/></svg>';
+    /* Real Feather "Edit" (paper + pencil, two paths) -- same icon prompts-table's group-header
+       Edit button uses (GRP_EDIT_SVG), NOT "edit-2" (the bare single-path pencil). */
+    var EDIT_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
     var GOTO_SVG = UC.GOTO_SVG;
 
     /* The table kit: grid template, column dropping, the Brand column's drag handle and the
@@ -921,9 +921,10 @@
           '<span class="ubo-brand-name">' + esc(r.name == null ? "" : r.name) + '</span>' +
           /* Fires the exact same event as the kebab menu's own Edit item (data-edit-fn/uboEdit) --
              this is a second entry point to the identical action, not a new one. Hover-reveal
-             mirrors prompts-table's group-header Edit/Generate-More buttons: 200ms opacity ease,
-             gated on .up-row:hover so it never competes with the row's own click-to-open. */
-          '<button class="ubo-row-edit" type="button" data-row-edit="' + esc(id) + '" aria-label="Edit">' + EDIT_SVG + '</button>' +
+             mirrors prompts-table's group-header Edit button exactly: icon + "Edit" label, 200ms
+             opacity ease, gated on .up-row:hover so it never competes with the row's own
+             click-to-open. */
+          '<button class="ubo-row-edit" type="button" data-row-edit="' + esc(id) + '">' + EDIT_SVG + 'Edit</button>' +
           '<span class="up-row-goto">' + GOTO_SVG + '</span></div>';
       if (colOn("visibility")) h += '<div class="up-td up-td-visibility">' + vis + '</div>';
       if (colOn("ranking"))    h += '<div class="up-td up-td-ranking">' + rank + '</div>';
@@ -988,6 +989,32 @@
         });
       });
     }
+    /* Relocates the Brand-status switcher into the table's own toolbar (between Table Settings and
+       Export -- same move prompts-table.js makes for its own Active/Inactive switcher, and same
+       reason: a CDN pin never touches a Bubble element's hand-pasted HTML, so doing this in JS is
+       what makes every existing embed pick it up immediately) and builds the "Brands" heading in
+       the slot it vacated. This table never had a heading of its own, unlike every other
+       component -- .ubo-heading-table/.ubo-head-sep/.ubo-head-count already existed in
+       brands-overview.css, unused, until now. */
+    (function(){
+      var seg = root.querySelector('.ubo-seg[aria-label="Brand status"]');
+      if (!seg) return;
+      var uboHead = seg.parentElement;
+      if (!uboHead) return;
+      var tools = uboHead.querySelector(".ubo-head-tools");
+      var exportBtn = uboHead.querySelector(".up-export");
+      if (tools && seg.parentNode !== tools){
+        if (exportBtn && exportBtn.parentNode === tools) tools.insertBefore(seg, exportBtn);
+        else tools.appendChild(seg);
+      }
+      if (!uboHead.querySelector(".ubo-heading-table")){
+        var h = document.createElement("div");
+        h.className = "ubo-heading-table";
+        h.innerHTML = '<span class="ubo-status-tag"></span><span class="ubo-heading">Brands</span>' +
+          '<span class="ubo-head-sep"></span><span class="ubo-head-count"></span>';
+        uboHead.insertBefore(h, uboHead.firstChild);
+      }
+    })();
     function setHeadCount(){
       var hr = root.querySelector(".ubo-heading-table");
       var cn = root.querySelector(".ubo-head-count");
@@ -999,22 +1026,19 @@
       else { hr.classList.remove("has-count"); }
     }
     function syncStatusSwitch(){
+      /* No counts on either tab any more -- the total now lives once, in the heading next to
+         "Brands" (setHeadCount), not duplicated onto the switcher itself. */
       Array.prototype.slice.call(root.querySelectorAll("[data-status]")).forEach(function(b){
         var s = b.getAttribute("data-status");
         b.classList.toggle("is-active", s === state.status);
-        /* Only the ACTIVE tab carries a number, and it carries it whether or not you are standing
-           on it: total_count is the figure the user actually tracks. Inactive is deliberately
-           bare — an inactive-brand count is noise next to it. */
         var n = b.querySelector(".ubo-seg-n");
-        if (!n) return;
-        var v = state.totalCount;
-        var show = (s === "active") && !isLoading() && v != null && v !== "";
-        n.textContent = show ? UC.fmtTotal(v) : "";
-        n.style.display = show ? "" : "none";
+        if (n) n.textContent = "";
       });
       /* Sort and column settings describe the ACTIVE table's metric columns; the Inactive table has
          none of them, so the controls go away instead of sitting there doing nothing. */
       root.classList.toggle("is-inactive-view", state.status === "inactive");
+      var tag = root.querySelector(".ubo-status-tag");
+      if (tag) tag.textContent = (state.status === "inactive") ? "(Inactive)" : "";
     }
 
     function render(){

@@ -1734,17 +1734,8 @@
     var grpModal = null, grpPicked = {}, grpColor = null, grpColorOpen = false,
         grpNameTouched = false, grpQuery = "", grpSearchOpen = false, grpShowAll = false,
         grpEditKey = null;   /* non-null => editing that existing group instead of creating one */
-    /* Reopens the dropdown the popup was launched from — closing the popup should put you back
-       where you were, not leave you staring at the table. */
-    function reopenGroupMenu(){
-      setTimeout(function(){
-        if (!elGrpWrap || !grpPop) return;
-        populateGroupMenu(); grpPop.open();
-      }, 180);
-    }
-    function closeGroupModal(reopen){
+    function closeGroupModal(){
       if (!grpModal) return;
-      if (reopen !== false) reopenGroupMenu();
       grpModal.classList.remove("is-shown");
       var m = grpModal;
       setTimeout(function(){ if (m && m.parentNode) m.parentNode.removeChild(m); }, 160);
@@ -1881,7 +1872,7 @@
       return names[i] + " & " + names[j];
     }
     function openGroupModal(editing){
-      closeGroupModal(false);
+      closeGroupModal();
       grpEditKey = editing ? editing.key : null;
       grpPicked = {}; grpColor = editing ? (editing.color || null) : null;
       grpColorOpen = false; grpNameTouched = !!editing;
@@ -2018,7 +2009,7 @@
        people open the grouped view with; visibility is the follow-up. */
     /* Feather "refresh-cw". */
     var GEN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>';
-    var GRP_EDIT_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7 21l-4 1 1-4L17 3z"/></svg>';
+    var GRP_EDIT_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
     var EYE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
     var EYE_OFF_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
     var GRP_MORE_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>';

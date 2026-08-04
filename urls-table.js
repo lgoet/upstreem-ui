@@ -87,6 +87,8 @@
     var elSearchIn  = root.querySelector(".up-search-input");
     var elFilter    = root.querySelector(".up-filter");
     var elFilterMenu= root.querySelector(".up-filter-menu");
+    var elFilterBtn = elFilter && elFilter.querySelector(".up-filter-btn");
+    if (elFilterBtn) elFilterBtn.setAttribute("data-tip", "Filter Citation and URL Types");
     var elSort      = root.querySelector(".up-sort");
     var elSortMenu  = root.querySelector(".up-sort-menu");
     var elBrand     = root.querySelector(".uut-brand-toggle");

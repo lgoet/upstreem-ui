@@ -27,6 +27,12 @@
 .ubo-heading-table.has-count .ubo-head-sep, .ubo-heading-table.has-count .ubo-head-count { display: block; }
 .ubo-head-count.is-sk { width: 28px; height: 14px; border-radius: 4px; background: var(--vc-sk);
   animation: uutpulse 1.2s ease-in-out infinite; display: block; }
+/* "(Inactive)" qualifier before "Brands" -- same secondary/muted treatment as the head count right
+   next to it, not the heading's own full-strength text color. Empty string when Active, so it
+   takes no space (JS sets/clears the text in syncStatusSwitch, same idea as prompts-table's
+   .upt-status-tag). */
+.ubo-status-tag { font-size: 14px; font-weight: 500; color: var(--vc-muted); margin-right: 6px; }
+.ubo-status-tag:empty { display: none; }
 
 .ubo-iconbtn {
   display: inline-flex; align-items: center; justify-content: center;
@@ -170,13 +176,15 @@
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .ubo-deact { font-size: 13px; color: var(--vc-muted); white-space: nowrap; }
 
-/* Per-row Edit, hover-revealed directly after the brand name -- same 200ms opacity ease as
-   prompts-table's group-header Edit/Generate-More buttons, and the same 10px gap .up-td already
-   gives every flex child (matching .upt-grp-left's own gap). Sits between the name and the
-   right-aligned .up-row-goto arrow (core.css), not fighting it for the same slot. */
-.ubo-row-edit { flex: 0 0 auto; height: 24px; padding: 0 4px; border: 0; background: transparent;
-  color: var(--vc-third); cursor: pointer; opacity: 0; pointer-events: none;
-  display: inline-flex; align-items: center; justify-content: center;
+/* Per-row Edit, hover-revealed directly after the brand name -- icon + "Edit" label, same shape,
+   sizing and 200ms opacity ease as prompts-table's group-header Edit button (.upt-grp-edit), and
+   the same 10px gap .up-td already gives every flex child (matching .upt-grp-left's own gap).
+   Sits between the name and the right-aligned .up-row-goto arrow (core.css), not fighting it for
+   the same slot. */
+.ubo-row-edit { flex: 0 0 auto; height: 28px; padding: 0; border: 0; background: transparent;
+  color: var(--vc-third); font-family: inherit; font-size: 12.5px; font-weight: 500;
+  cursor: pointer; white-space: nowrap; opacity: 0; pointer-events: none;
+  display: inline-flex; align-items: center; gap: 6px;
   transition: opacity 200ms ease, color 120ms ease; }
 .ubo-row-edit svg { width: 14px; height: 14px; display: block; }
 .up-row:hover .ubo-row-edit { opacity: 1; pointer-events: auto; }

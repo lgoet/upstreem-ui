@@ -107,6 +107,11 @@
     var elSearchIn  = root.querySelector(".up-search-input");
     var elFilter    = root.querySelector(".up-filter");
     var elFilterMenu= root.querySelector(".up-filter-menu");
+    /* The drilldown's own sub-filter button reuses this same .up-filter-btn class but doesn't
+       exist in the DOM yet at init (built later per open drilldown row) -- this querySelector
+       only ever reaches the toolbar-level one. */
+    var elFilterBtn = elFilter && elFilter.querySelector(".up-filter-btn");
+    if (elFilterBtn) elFilterBtn.setAttribute("data-tip", "Filter Citation Types");
     var elSort      = root.querySelector(".up-sort");
     var elSortMenu  = root.querySelector(".up-sort-menu");
     var elBrand     = root.querySelector(".udt-brand-toggle");
