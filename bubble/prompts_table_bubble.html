@@ -341,6 +341,12 @@
   Driven via Run-JS (not a dynamic attribute) so a Reusable placed more than once on a page
   doesn't force a full re-render on every processing-flag change.
 
+  Also shows a skeleton in the GROUPED view, not just the flat one -- e.g. an external filter
+  (a date-range picker elsewhere on the page, say) that calls this with "yes" while grouping is
+  on now correctly blanks the (about-to-be-stale) group list instead of silently leaving the old
+  groups on screen until the new setPromptsTableGroups() response happens to arrive. See "IST
+  GROUPING GERADE AN?" further down for the fuller external-filter + grouping picture.
+
   (function () {
     const INSTANCE_ID = `INSTANCE_ID`;
     const LOADING = `IS_LOADING`;          // "yes" / "no"

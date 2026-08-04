@@ -2288,7 +2288,17 @@
       });
     }
     function renderGroups(){
-      if (state.groupsLoading || !state.groupsHasData){
+      /* isBusy() (state.loading/state.extLoading -- driven by setPromptsTableLoading, i.e. an
+         EXTERNAL filter like a date-range picker with its own loading flag) used to be invisible
+         here: this only ever checked its OWN internal state.groupsLoading, which is exclusively
+         set by fetchGroups() itself. An external filter change re-runs the main RPC (which sets
+         extLoading) and, per the doc's own guidance, should also re-run the groups RPC when
+         grouping is on -- but until that groups RPC's response actually lands, this kept showing
+         the now-stale groups from before the filter changed, with no loading indication at all.
+         Once the fresh setPromptsTableGroups() response arrives, its own state.expandedGroup =
+         null reset (see setGroups) already invalidates any open section -- this skeleton only
+         needs to cover the gap while nothing has arrived yet. */
+      if (isBusy() || state.groupsLoading || !state.groupsHasData){
         /* The table's own skeleton, not a second one: a hand-rolled row of grey bars looked like a
            different product loading. */
         elTbody.innerHTML = skeletonRows(6);
