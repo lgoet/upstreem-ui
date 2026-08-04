@@ -2414,8 +2414,12 @@
       renderGroupBlockOnly(id, true);
     }
 
-    /* Header data. One call when the view opens and on every filter change, because the groups
-       are computed from the same filtered set the flat table shows. */
+    /* Header data. Fired on: the "Group by topics" toggle, the "Only show custom groupings"
+       checkbox, saving/hiding/deleting a custom grouping. NOT re-fired on search/brand-filter
+       changes -- state.groupsHasData latches true after the first successful load and nothing
+       ever clears it, so the header counts/visibility stay whatever they were as of the last
+       explicit grouping action while you filter. (Worth knowing, not obviously a bug -- flag it
+       back if the headers should track search/filter live.) */
     function fetchGroups(){
       state.groupsLoading = true;
       renderTable();
@@ -2429,6 +2433,29 @@
         return { key: g.key, tag_ids: g.tag_ids };   // color is a client-side concern
       }));
       fire("data-groups-fn", "uptGroups", p);
+    }
+    /* Page-load-specific: if grouping was already on from a persisted (localStorage) state, this
+       fires as part of the FIRST synchronous render(), which can run before Bubble has finished
+       publishing its own bubble_fn_* function onto window -- fire() (see UC.makeFire) tries
+       exactly once and gives up silently (a console warning, nothing else) if the name isn't
+       resolvable yet, unlike Bubble's own "Render" RunJS step, which polls for OUR function for
+       up to 6s before giving up. A user-triggered click (toggle grouping, edit a custom group)
+       never hits this: by then the page has been up for a while and Bubble's function is long
+       since published, so firing immediately there is correct and stays that way -- only THIS one
+       call site, made before any user interaction, needs the same wait Bubble's own step gets.
+       state.groupsLoading is set synchronously here (not just inside fetchGroups(), which only
+       runs once resolution succeeds) so that a second render() during the retry window -- a
+       resize, a responsive re-layout, anything that re-renders before the poll resolves -- sees
+       the render() guard's `!state.groupsLoading` as already false and doesn't start a second,
+       parallel poll loop that would double-fire the event once both resolve. */
+    function fetchGroupsInitial(){
+      var fnName = root.getAttribute("data-groups-fn") || "uptGroups";
+      var tries = 0;
+      state.groupsLoading = true;
+      (function go(){
+        if (UC.resolveBubbleFn(fnName) || tries++ >= 30){ fetchGroups(); return; }
+        setTimeout(go, 100);
+      })();
     }
 
     function renderTable(){
@@ -3347,7 +3374,12 @@
       syncMentLabel();
       renderPageSize(); renderPager(); applyCols(); applyResponsive();
       syncGroupBtn();
-      if (groupingOn() && !state.groupsHasData && !state.groupsLoading) fetchGroups();
+      /* Only ever reachable here on the true initial mount (see fetchGroupsInitial's own comment):
+         once groups have loaded once, state.groupsHasData latches true forever, so this branch
+         can't fire again from any later render() call -- every other path to fetchGroups() is a
+         direct, immediate, user-triggered call elsewhere (the toggle, the checkbox, saving a
+         custom group), correctly NOT going through this retry-aware wrapper. */
+      if (groupingOn() && !state.groupsHasData && !state.groupsLoading) fetchGroupsInitial();
       renderStatusTabs(); renderBulkBar();
       if (root.classList.contains("up-sticky")) syncTheadOffset();
     }
