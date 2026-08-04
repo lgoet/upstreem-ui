@@ -789,8 +789,15 @@
          implicit grid row, which is the "two rows rendered inside one row" breakage.
          Hence the stamp: rows carry the column signature they were styled for, and a row without
          the current one is by definition un-styled and needs the write. */
-      var firstRow = root.querySelector(".up-row");
-      var rowsStale = !!firstRow && firstRow.getAttribute("data-up-colsig") !== sigCols;
+      /* Checking only the first .up-row in the root missed this: a partial DOM patch (prompts-table's
+         grouped drilldown inserts fresh rows into ONE group's block via renderGroupBlockOnly, not a
+         full renderTable()) can leave brand-new, un-stamped rows sitting AFTER an already-stamped row
+         elsewhere in the same root. "First row is current" then wrongly implied every row was, so the
+         new rows kept every cell visible while --up-cols had already dropped a track for them --
+         exactly the wrap-onto-a-second-implicit-row breakage above, just on a delayed/intermittent
+         trigger (only after some other row had already been stamped with the current signature). The
+         query below finds ANY row missing the current signature, wherever it sits. */
+      var rowsStale = !!root.querySelector('.up-row:not([data-up-colsig="' + sigCols + '"])');
       if (sigCols === lastSigCols && !rowsStale) return;
       lastSigCols = sigCols;
       COLUMNS.forEach(function(c){

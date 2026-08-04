@@ -698,13 +698,22 @@
 .upt-group-sk-dot, .upt-group-sk-text { display: none; background: var(--vc-border); border-radius: 4px; }
 .upt-group-item.is-dragging > .upt-group-sk-dot { display: block; width: 8px; height: 8px; border-radius: 4px; flex: 0 0 auto; }
 .upt-group-item.is-dragging > .upt-group-sk-text { display: block; width: 45%; height: 12px; }
-/* Drop target: the same gray-border language, not a hard black line -- a row-shaped hint, not an
-   inserted rule. */
-.upt-group-item.is-dragover-before,
-.upt-group-item.is-dragover-after { border-radius: 8px; box-shadow: inset 0 0 0 1px var(--vc-border); }
+/* "Only show custom groupings" checkbox row — same yes/no/off 3-state check-square as the
+   toolbar's "Brand mentioned" toggle (.upt-brand-check, defined above), just reusing that square
+   inside a .up-pop-row instead of a .upt-brand-toggle (this lives in the dropdown, not the
+   toolbar, so it needs the menu-row layout, not the toolbar-button one). */
+.upt-group-onlycustom.is-yes .upt-brand-check, .upt-group-onlycustom.is-no .upt-brand-check { background: var(--vc-text); border-color: var(--vc-text); }
+.up-root[data-theme="dark"] .upt-group-onlycustom.is-yes .upt-brand-check, .up-root[data-theme="dark"] .upt-group-onlycustom.is-no .upt-brand-check { color: #1f1f1b; }
+.upt-group-onlycustom.is-yes .upt-brand-check .upt-brand-check-yes { display: block; }
+.upt-group-onlycustom.is-no .upt-brand-check .upt-brand-check-no { display: block; }
 /* Full width, 32px, and it is core's secondary button — same face and same hover as every other
    secondary action in the app. */
 .upt-group-new { width: 100%; height: 32px; margin-top: 4px; }
+/* Every custom-grouping row keeps a 4px gap to its neighbor, dragging or not — flex+gap on the
+   list wrapper covers the static order, and since dragover physically moves the .is-dragging row
+   inside this same wrapper (see prompts-table.js), the gap applies to the live-reorder preview
+   for free, no separate drag-state CSS needed. */
+.upt-group-list { display: flex; flex-direction: column; gap: 4px; }
 
 /* ---------- "New grouping" popup: shell + chips are core's, only the layout here is local ---------- */
 .upt-gm-backdrop .up-topicmodal-card { max-width: 560px; }

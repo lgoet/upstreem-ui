@@ -1513,22 +1513,32 @@
           return '<button class="up-dense-btn' + (state.groupSort === o.key ? " is-active" : "") +
                  '" type="button" data-grp-sort="' + o.key + '">' + esc(o.label) + '</button>';
         }).join("") + '</div>';
-      h += '<div class="up-pop-div"></div><div class="up-pop-sub">Show</div><div class="up-dense">' +
-        GRP_MODES.map(function(o){
-          return '<button class="up-dense-btn' + (state.groupMode === o.key ? " is-active" : "") +
-                 '" type="button" data-grp-mode="' + o.key + '">' + esc(o.label) + '</button>';
-        }).join("") + '</div>';
       h += '<div class="up-pop-div"></div><div class="up-pop-sub">Custom groupings</div>';
+      /* Same off -> yes -> no -> off cycle and the exact checkbox glyph (.upt-brand-check) the
+         "Brand mentioned" toolbar toggle uses -- replaces the old Both/Topics/Custom segmented
+         control, which read as a fourth unrelated control rather than a property OF the custom
+         groupings section. yes = groupMode "custom" (only custom), no = "topics" (custom
+         excluded), off = "both". */
+      var onlyCustom = state.groupMode === "custom", noCustom = state.groupMode === "topics";
+      h += '<div class="up-pop-row upt-group-onlycustom' + (onlyCustom ? " is-yes" : (noCustom ? " is-no" : "")) +
+          '" data-grp-onlycustom role="checkbox" aria-checked="' + (onlyCustom ? "true" : "false") + '">' +
+        '<span class="up-pop-label">Only show custom groupings</span>' +
+        '<span class="upt-brand-check">' +
+          '<svg class="upt-brand-check-yes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+          '<svg class="upt-brand-check-no" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+        '</span></div>';
       if (!custom.length){
         h += '<div class="upt-group-note">No custom grouping yet.</div>';
       } else {
         /* Hidden groupings sort to the bottom and cannot be dragged -- reordering something you
            cannot currently see is a recipe for "why did my list change" later. Visible ones keep
            whatever order the user last dragged them into (that order IS the stored array order,
-           see reorderCustomGroups below). */
+           committed from the live DOM order at drop -- see the dragend handler below). 4px gap
+           via .upt-group-list, not per-item margin, so it applies identically whether a row is
+           being dragged or not. */
         var visible = custom.filter(function(g){ return !g.hidden; });
         var hidden = custom.filter(function(g){ return g.hidden; });
-        h += visible.concat(hidden).map(function(g){
+        h += '<div class="upt-group-list">' + visible.concat(hidden).map(function(g){
           var open = grpRowMenu === g.key;
           return '<div class="up-pop-row upt-group-item' + (open ? " is-menuopen" : "") +
               (g.hidden ? "" : " is-draggable") + '"' +
@@ -1549,7 +1559,7 @@
                 '<div class="up-pop-opt is-danger" data-grp-del="' + esc(g.key) + '">Delete</div>' +
               '</div>' : "") +
           '</div>';
-        }).join("");
+        }).join("") + '</div>';
       }
       h += '<div class="up-pop-div"></div>' +
         '<button class="up-btn-sec upt-group-new" type="button" data-grp-new>New Grouping</button>';
@@ -1560,33 +1570,34 @@
       elGrpWrap.classList.toggle("is-on", groupingOn());
     }
 
-    /* Moves dragKey to just before/after targetKey in the SAME array readCustomGroups() already
-       returns -- that array's order IS the display order (see populateGroupMenu), so there is
-       nothing else to keep in sync. Works on the full list including hidden entries wherever they
-       currently sit; only the render step splits visible-first/hidden-last. */
-    function reorderCustomGroups(dragKey, targetKey, before){
+    /* Reads the CURRENT DOM order of [data-grp-drag] rows (which dragover has already been
+       live-moving, see below) and writes it back as the stored order -- hidden groupings are
+       appended after, in whatever relative order they already had (they are never part of the
+       draggable set, so their order among themselves never changes). */
+    function commitDragOrder(){
       var all = readCustomGroups();
-      var dragItem = null, dragIdx = -1, targetIdx = -1;
-      for (var i = 0; i < all.length; i++){
-        if (all[i].key === dragKey) { dragItem = all[i]; dragIdx = i; }
-        if (all[i].key === targetKey) targetIdx = i;
-      }
-      if (!dragItem || dragIdx === -1 || targetIdx === -1) return;
-      all.splice(dragIdx, 1);
-      if (dragIdx < targetIdx) targetIdx -= 1;   // the removal shifted everything after it left
-      all.splice(before ? targetIdx : targetIdx + 1, 0, dragItem);
-      writeCustomGroups(all);
-      populateGroupMenu();
+      var byKey = {};
+      all.forEach(function(g){ byKey[g.key] = g; });
+      var visibleKeys = Array.prototype.map.call(
+        elGrpMenu.querySelectorAll("[data-grp-drag]"),
+        function(el){ return el.getAttribute("data-grp-drag"); }
+      );
+      var hidden = all.filter(function(g){ return g.hidden; });
+      var newOrder = visibleKeys.map(function(k){ return byKey[k]; }).filter(Boolean).concat(hidden);
+      writeCustomGroups(newOrder);
     }
     /* Native HTML5 drag-and-drop, delegated on the menu itself (it survives every
-       populateGroupMenu() re-render -- only its innerHTML is replaced, never the node). Hidden
-       groupings have no [draggable] (see populateGroupMenu), so they are simply not valid drag
-       sources or drop targets. */
+       populateGroupMenu() re-render -- only its innerHTML is replaced, never the node, and
+       nothing here calls populateGroupMenu() mid-drag). Hidden groupings have no [draggable] (see
+       populateGroupMenu), so they are simply not valid drag sources or drop targets.
+       The dragged row is physically moved in the DOM on every dragover (the standard "list
+       shifts to show where it'll land" reorder feel), not just marked with an insertion line --
+       .is-dragging's own skeleton-placeholder look (see CSS) travels along with it. */
     var grpDragKey = null;
     function grpClearDragClasses(){
       if (!elGrpMenu) return;
       Array.prototype.forEach.call(elGrpMenu.querySelectorAll("[data-grp-drag]"), function(r){
-        r.classList.remove("is-dragging", "is-dragover-before", "is-dragover-after");
+        r.classList.remove("is-dragging");
       });
     }
     if (elGrpMenu){
@@ -1602,25 +1613,21 @@
         var row = e.target.closest && e.target.closest("[data-grp-drag]");
         if (!row || row.getAttribute("data-grp-drag") === grpDragKey) return;
         e.preventDefault();
-        Array.prototype.forEach.call(elGrpMenu.querySelectorAll("[data-grp-drag]"), function(r){
-          if (r !== row) r.classList.remove("is-dragover-before", "is-dragover-after");
-        });
+        var dragged = elGrpMenu.querySelector(".upt-group-item.is-dragging");
+        if (!dragged) return;
         var r2 = row.getBoundingClientRect();
-        row.classList.toggle("is-dragover-before", (e.clientY - r2.top) < r2.height / 2);
-        row.classList.toggle("is-dragover-after", (e.clientY - r2.top) >= r2.height / 2);
+        var before = (e.clientY - r2.top) < r2.height / 2;
+        row.parentNode.insertBefore(dragged, before ? row : row.nextSibling);
       });
-      elGrpMenu.addEventListener("drop", function(e){
-        if (!grpDragKey) return;
-        var row = e.target.closest && e.target.closest("[data-grp-drag]");
-        if (row && row.getAttribute("data-grp-drag") !== grpDragKey){
-          e.preventDefault();
-          var r2 = row.getBoundingClientRect();
-          reorderCustomGroups(grpDragKey, row.getAttribute("data-grp-drag"), (e.clientY - r2.top) < r2.height / 2);
-        }
+      /* Whichever fires -- a real drop, or dragend after being released outside any row -- the
+         DOM is already showing the live position, so both just commit it. */
+      elGrpMenu.addEventListener("drop", function(e){ if (grpDragKey) e.preventDefault(); });
+      elGrpMenu.addEventListener("dragend", function(){
+        if (grpDragKey) commitDragOrder();
         grpDragKey = null;
         grpClearDragClasses();
+        populateGroupMenu();
       });
-      elGrpMenu.addEventListener("dragend", function(){ grpDragKey = null; grpClearDragClasses(); });
     }
 
 
@@ -1923,14 +1930,11 @@
     var EYE_OFF_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
     var GRP_MORE_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>';
     var grpRowMenu = null;   /* group key whose row menu is open, or null */
-    /* Which kind of section the view shows. "Topics" = the RPC's default (one group per topic +
-       untagged), "Custom" = only the user's own groupings, "Both" = the union. The mode rides on
-       the uptGroups event so the RPC can answer accordingly. */
-    var GRP_MODES = [
-      { key: "both",   label: "Both" },
-      { key: "topics", label: "Topics" },
-      { key: "custom", label: "Custom" }
-    ];
+    /* Which kind of section the view shows. "topics" = the RPC's default (one group per topic +
+       untagged), "custom" = only the user's own groupings, "both" = the union (default). Set via
+       the "Only show custom groupings" checkbox in populateGroupMenu, not a dedicated switcher --
+       off/yes/no maps to both/custom/topics, same 3-state cycle as "Brand mentioned". The mode
+       rides on the uptGroups event so the RPC can answer accordingly. */
     var GRP_SORTS = [
       { key: "count",      label: "Prompts" },
       { key: "visibility", label: "Visibility" },
@@ -1947,14 +1951,19 @@
       var untagged = rows.filter(function(g){ return isYes2(g.is_untagged); });
       rows = rows.filter(function(g){ return !isYes2(g.is_untagged); });
       var mode = state.groupSort;
-      rows.sort(function(a, b){
+      function cmp(a, b){
         if (mode === "name") return String(groupLabel(a)).localeCompare(String(groupLabel(b)));
         var av, bv;
         if (mode === "count"){ av = toNum(a.prompts_count) || 0; bv = toNum(b.prompts_count) || 0; }
         else { av = toNum(a.visibility_pct) || 0; bv = toNum(b.visibility_pct) || 0; }
         return bv - av;   // both numeric modes are descending
-      });
-      return rows.concat(untagged);
+      }
+      /* Custom groupings lead in Both mode -- in Topics/Custom mode this partition is a no-op
+         (one side is always empty, since the RPC only ever returns one kind), so it is simplest
+         to just always split rather than special-case the mode. */
+      var custom = rows.filter(function(g){ return isYes2(g.is_custom); }).sort(cmp);
+      var topics = rows.filter(function(g){ return !isYes2(g.is_custom); }).sort(cmp);
+      return custom.concat(topics, untagged);
     }
     /* The RPC's booleans arrive as real booleans from Supabase but as strings through Bubble. */
     function isYes2(v){ return v === true || v === "true" || v === "yes" || v === 1 || v === "1"; }
@@ -2631,9 +2640,8 @@
           else render();
           return;
         }
-        var gmo = e.target.closest("[data-grp-mode]");
-        if (gmo){
-          state.groupMode = gmo.getAttribute("data-grp-mode");
+        if (e.target.closest("[data-grp-onlycustom]")){
+          state.groupMode = state.groupMode === "both" ? "custom" : (state.groupMode === "custom" ? "topics" : "both");
           writeGroupMode(state.groupMode);
           populateGroupMenu();
           state.expandedGroup = null;
@@ -3180,22 +3188,11 @@
         if (requestId != null && state.gReqId != null && String(requestId) !== String(state.gReqId)) return;
         var list = coerceRows(rows);
         state.gRows = list;
-        /* The group header already knows how many prompts this group has, and that is the number
-           this pager must page through. total_count from the prompts RPC is the count of the
-           FILTERED SET -- if the workflow forgets p_tag_ids it is the whole table, and the pager
-           then offered pages that do not exist. Header first, RPC only as a fallback. */
-        var g = (state.groups || []).filter(function(x){ return groupId(x) === state.expandedGroup; })[0];
-        var headerCount = g ? toNum(g.prompts_count) : null;
-        if (headerCount == null && window.console){
-          console.warn("[prompts-table] Drilldown pagination fell back to the prompts RPC's own " +
-            "total_count instead of the group header's prompts_count -- " +
-            (g ? "the matched group header has no prompts_count field (" + JSON.stringify(g) + ")."
-               : "no group header matched expandedGroup=" + JSON.stringify(state.expandedGroup) +
-                 " against the " + (state.groups || []).length + " header(s) currently held (keys: " +
-                 (state.groups || []).map(groupId).join(", ") + ")."));
-        }
-        state.gTotal = (headerCount != null) ? headerCount
-                     : (list.length ? toNum(list[0].total_count) : 0);
+        /* total_count rides on every row this same prompts RPC call returns (see the sample
+           payload: each item carries its own "total_count") -- that IS the filtered-set count for
+           the tag_ids this specific group-open request asked for, and it is what the pager pages
+           through. Not the group header's prompts_count -- that was the earlier (wrong) guess. */
+        state.gTotal = list.length ? toNum(list[0].total_count) : 0;
         state.gLoading = false;
         if (state.expandedGroup) renderGroupBlockOnly(state.expandedGroup);
       },
