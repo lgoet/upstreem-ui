@@ -841,25 +841,20 @@
       var t = toNum(state.gTotal);
       return !!state.expandedGroup && t != null && t > (state.gRows || []).length;
     }
-    /* The header checkbox's click, for group `id`. Two different gestures depending on whether
-       this is the OPEN group: expanded means state.gRows is a real loaded page, so this is exactly
-       toggleSelectAll()'s own logic, just scoped to that array instead of state.rows. Collapsed
-       means there is nothing loaded to tick individually -- the click IS the "select everything in
-       this group" gesture directly, so it goes straight to gSelectAllGroup (the same server-side-
-       filter flag the bulk bar's own "Select all N" escape hatch sets, see selectionPayload()). */
+    /* The header checkbox's click, for group `id`. Only ever reachable while `id` is the OPEN
+       group -- grpHeadHtml doesn't render the checkbox at all for a collapsed one (see there), so
+       there's nothing loaded to select against otherwise. Same logic toggleSelectAll() uses, just
+       scoped to state.gRows instead of state.rows. */
     function toggleGroupHeaderCheckbox(id){
-      if (state.expandedGroup === id){
-        var rows = state.gRows || [];
-        if (!rows.length) return;
-        var allSel = rows.every(function(r){ return state.selected[String(r.prompt_id)]; });
-        if (allSel || state.gSelectAllGroup === id){
-          rows.forEach(function(r){ delete state.selected[String(r.prompt_id)]; });
-          if (state.gSelectAllGroup === id) state.gSelectAllGroup = null;
-        } else {
-          rows.forEach(function(r){ state.selected[String(r.prompt_id)] = true; });
-        }
+      if (state.expandedGroup !== id) return;
+      var rows = state.gRows || [];
+      if (!rows.length) return;
+      var allSel = rows.every(function(r){ return state.selected[String(r.prompt_id)]; });
+      if (allSel || state.gSelectAllGroup === id){
+        rows.forEach(function(r){ delete state.selected[String(r.prompt_id)]; });
+        if (state.gSelectAllGroup === id) state.gSelectAllGroup = null;
       } else {
-        state.gSelectAllGroup = (state.gSelectAllGroup === id) ? null : id;
+        rows.forEach(function(r){ state.selected[String(r.prompt_id)] = true; });
       }
       persist(); renderTable(); renderBulkBar(); fireSelect(); syncStagedTopicsToSelection();
     }
@@ -876,11 +871,11 @@
        was clicked on a COLLAPSED group (never fetched, nothing to be stale FROM). The group
        header's own prompts_count (from the group-list RPC, already on screen either way) is the
        right fallback there — same number the header itself displays. */
+    /* gSelectAllGroup is only ever set to state.expandedGroup (see the data-bulk-group-all
+       handler) -- the checkbox that used to set it for a COLLAPSED group is gone, so gTotal (the
+       currently open group's own pagination total) is always the right number here. */
     function gSelectAllGroupTotal(){
-      if (!state.gSelectAllGroup) return 0;
-      if (state.gSelectAllGroup === state.expandedGroup) return toNum(state.gTotal) || 0;
-      var g = (state.groups || []).filter(function(x){ return groupId(x) === state.gSelectAllGroup; })[0];
-      return (g ? toNum(g.prompts_count) : 0) || 0;
+      return state.gSelectAllGroup ? (toNum(state.gTotal) || 0) : 0;
     }
     /* What a bulk action operates on. Two shapes on purpose:
          ids    — the user ticked specific rows; send them.
@@ -2053,6 +2048,42 @@
     }
     function groupId(g){ return String(g.group_key == null ? "" : g.group_key); }
 
+    /* The select-all-for-this-group checkbox markup, shared by grpHeadHtml() (full render) and
+       syncGroupHeadCheckbox() (surgical patch on open/close -- see toggleGroup() for why that
+       needs to be surgical rather than a full head re-render). Returns "" when the group isn't
+       open: no gesture makes sense against a group whose rows aren't loaded. */
+    function grpSelectallHtml(id, open){
+      if (!open) return "";
+      var rows = state.gRows || [];
+      var anySel = rows.some(function(r){ return !!state.selected[String(r.prompt_id)]; });
+      var allSel = rows.length > 0 && rows.every(function(r){ return !!state.selected[String(r.prompt_id)]; });
+      var gChecked = state.gSelectAllGroup === id || allSel;
+      var gIndet = !gChecked && anySel;
+      return '<span class="upt-check upt-grp-selectall' + (gChecked ? " is-checked" : (gIndet ? " is-indeterminate" : "")) +
+        '" role="checkbox" tabindex="0" aria-checked="' + (gChecked ? "true" : (gIndet ? "mixed" : "false")) +
+        '" data-grp-selectall="' + esc(id) + '">' + (gChecked ? CHECK_SVG : "") + '</span>';
+    }
+    /* Patches the checkbox in or out of an EXISTING header node without touching anything else in
+       it -- toggleGroup() mutates the header's is-open class directly on the live node (so the
+       chevron's CSS rotate transition actually animates; a full grpHeadHtml() re-render would swap
+       in a brand-new SVG already at its final angle, no transition to animate FROM). The checkbox
+       needs the same "patch the live node" treatment, or it would only ever catch up to state on
+       the next full renderGroups() -- which is exactly the bug this fixes: opening a group toggled
+       state.expandedGroup and the CSS class fine, but the checkbox stayed absent until some
+       unrelated re-render happened to sweep through later. */
+    function syncGroupHeadCheckbox(id){
+      var head = elTbody.querySelector('[data-grp="' + cssEsc(id) + '"]');
+      if (!head) return;
+      var existing = head.querySelector(".upt-grp-selectall");
+      var open = state.expandedGroup === id;
+      if (existing) existing.parentNode.removeChild(existing);
+      var html = grpSelectallHtml(id, open);
+      if (!html) return;
+      var tmp = document.createElement("div");
+      tmp.innerHTML = html;
+      head.insertBefore(tmp.firstChild, head.firstChild);
+    }
+
     /* KPI cell — same primitives the flat rows use, so a Visibility figure in a group header and
        one in a row are literally the same widget. */
     /* Value first, label under it in uppercase — the number is what you scan, the label only
@@ -2101,26 +2132,18 @@
         : '<span class="upt-grp-sent"><span class="up-sent-dot" style="background:' + UC.sentColor(sN) + '"></span>' +
           '<span class="up-sent-val">' + Math.round(sN) + '</span></span>';
 
-      /* Select-all-for-this-group checkbox: same left position a row's own checkbox sits at (both
-         .upt-grp-head and .up-td share the same 0 16px 0 12px padding, so a first-child element in
-         either lands at the identical x), fades in on hover only (200ms ease, no delay -- unlike
-         Generate More's 750ms, this is a control someone reaching for expects to see land
-         immediately, not a secondary action that should stay out of the way of a passing cursor).
-         Stays visible without hovering once it actually has a selection to show, same as the flat
-         table's own header checkbox never disappearing mid-selection.
-         Two different actions depending on whether this group is the OPEN one: expanded ->
-         gRows is the loaded page, so it is a real two-step (page, then "select all N" in the bulk
-         bar) exactly like the flat table. Collapsed -> nothing is loaded to tick individually, so
-         the click IS the "select all N matching" gesture directly (see toggleGroupHeaderCheckbox). */
-      var loadedRows = open ? (state.gRows || []) : [];
-      var anySel = loadedRows.some(function(r){ return !!state.selected[String(r.prompt_id)]; });
-      var allSel = loadedRows.length > 0 && loadedRows.every(function(r){ return !!state.selected[String(r.prompt_id)]; });
-      var isAllMode = state.gSelectAllGroup === id;
-      var gChecked = isAllMode || (open && allSel);
-      var gIndet = !gChecked && open && anySel;
-      var chk = '<span class="upt-check upt-grp-selectall' + (gChecked ? " is-checked" : (gIndet ? " is-indeterminate" : "")) +
-        '" role="checkbox" tabindex="0" aria-checked="' + (gChecked ? "true" : (gIndet ? "mixed" : "false")) +
-        '" data-grp-selectall="' + esc(id) + '">' + (gChecked ? CHECK_SVG : "") + '</span>';
+      /* Select-all-for-this-group checkbox -- ONLY exists while this group is the open one, exactly
+         like the flat table's own header checkbox exists unconditionally in its heading row (not a
+         hover reveal here either): no gesture makes sense against a group whose rows aren't loaded,
+         so there is nothing to show or fade in for a collapsed group. Rendering "" rather than a
+         present-but-invisible element when collapsed matters just as much as the element itself --
+         .upt-grp-left is a plain flex sibling with no reserved slot for it, so the chevron/chip
+         shift back to the same left edge a headerless row would use the moment the checkbox isn't
+         in the DOM at all. Same left position a row's own checkbox sits at either way (.upt-grp-head
+         and .up-td share the same 0 16px 0 12px padding, so a first-child element in either lands at
+         the identical x). Markup itself lives in grpSelectallHtml() -- toggleGroup() patches this
+         same element in/out on open/close without a full head re-render (see there for why). */
+      var chk = grpSelectallHtml(id, open);
       /* Generate More (and, for a custom group, Edit) sit right after the chip/label, inside
          .upt-grp-left, not after the KPIs. .upt-grp-left is flex:1 1 auto and already runs far
          wider than its own content (see the hover-reveal width guard below), so appending a child
@@ -2336,6 +2359,9 @@
         state.expandedGroup = null;
         state.gRows = []; state.gTotal = null; state.gLoading = false; state.gReqId = null; state.gPage = 1;
         if (head){ head.classList.remove("is-open"); head.setAttribute("aria-expanded", "false"); }
+        /* Checkbox has to catch up to the class toggle above -- see syncGroupHeadCheckbox's own
+           comment for why this can't just wait for the next full renderGroups(). */
+        syncGroupHeadCheckbox(id);
         /* Animate out BEFORE removing: dropping the node immediately makes it vanish instead. */
         if (block){
           block.classList.add("is-closing");
@@ -2345,15 +2371,20 @@
       }
       /* Switching straight from one open group to another: close the old one instantly. */
       if (state.expandedGroup){
-        var oldSec = elTbody.querySelector('[data-grp-sec="' + cssEsc(state.expandedGroup) + '"]');
-        var oldHead = elTbody.querySelector('[data-grp="' + cssEsc(state.expandedGroup) + '"]');
+        var oldId = state.expandedGroup;
+        var oldSec = elTbody.querySelector('[data-grp-sec="' + cssEsc(oldId) + '"]');
+        var oldHead = elTbody.querySelector('[data-grp="' + cssEsc(oldId) + '"]');
         var oldBlock = oldSec && oldSec.querySelector('[data-grp-for]');
         if (oldBlock && oldBlock.parentNode) oldBlock.parentNode.removeChild(oldBlock);
         if (oldHead){ oldHead.classList.remove("is-open"); oldHead.setAttribute("aria-expanded", "false"); }
+        state.expandedGroup = id;   // reassigned BEFORE the sync below, so oldId's own checkbox reads "closed"
+        syncGroupHeadCheckbox(oldId);
+      } else {
+        state.expandedGroup = id;
       }
-      state.expandedGroup = id;
       state.gRows = []; state.gTotal = null; state.gReqId = null; state.gPage = 1;
       if (head){ head.classList.add("is-open"); head.setAttribute("aria-expanded", "true"); }
+      syncGroupHeadCheckbox(id);
       /* Small delay before firing, exactly as domains-table does: the open animation and a
          synchronous re-render in the same frame read as a stutter. */
       fetchGroupPage(GRP_ANIM_MS + 40);

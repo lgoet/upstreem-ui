@@ -62,6 +62,7 @@
   ── Filling the table ────────────────────────────────────────────────────────
   window.renderUrlsTable({ instanceId: "...", rows: [...], totalCount: 123 });
   window.setUrlsTableLoading("INSTANCE_ID", "yes" | "no");
+  window.resetUrlsTable("INSTANCE_ID");
 
   Row fields (straight from your RPC, no renaming needed):
     domain, favicon, share_pct, share_delta_pct, urls_count, last_used_at,

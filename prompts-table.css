@@ -597,7 +597,7 @@
    wrapper's own gap, not a second absolute calculation. */
 .upt-grp-hoveractions { position: absolute; top: 50%; transform: translateY(-50%); left: 0;
   opacity: 0; pointer-events: none; transition: opacity 200ms ease;
-  display: flex; align-items: center; gap: 16px; }
+  display: flex; align-items: center; gap: 32px; }
 .upt-grp-head.is-hovered .upt-grp-hoveractions { opacity: 1; pointer-events: auto; }
 .upt-grp-more, .upt-grp-edit { height: 28px; padding: 0; border: 0; background: transparent;
   color: var(--vc-third); font-family: inherit; font-size: 12.5px; font-weight: 500;
@@ -606,16 +606,12 @@
 .upt-grp-more svg, .upt-grp-edit svg { width: 14px; height: 14px; display: block; }
 .upt-grp-more:hover, .upt-grp-edit:hover { color: var(--vc-text); }
 
-/* Select-all-for-this-group checkbox: first child of .upt-grp-head, same left position a row's
-   own checkbox sits at (.upt-grp-head and .up-td share the same 0 16px 0 12px padding). A plain
-   opacity fade on hover -- no JS timer, unlike Generate More's deliberate 750ms delay: this is a
-   control someone moving toward the row's left edge expects to see land immediately, not a
-   secondary action that should stay out of a passing cursor's way. Stays visible without hovering
-   once it actually reflects a selection (checked/indeterminate), same as the flat table's own
-   header checkbox never disappearing mid-selection. */
-.upt-grp-selectall { flex: 0 0 auto; opacity: 0; transition: opacity 200ms ease; }
-.upt-grp-head:hover .upt-grp-selectall,
-.upt-grp-selectall.is-checked, .upt-grp-selectall.is-indeterminate { opacity: 1; }
+/* Select-all-for-this-group checkbox: first child of .upt-grp-head (only present while the group
+   is open -- see grpHeadHtml), same left position a row's own checkbox sits at (.upt-grp-head and
+   .up-td share the same 0 16px 0 12px padding). Unconditionally visible while it exists, exactly
+   like the flat table's own header checkbox in the column head -- no opacity/hover gating; it
+   only being IN the DOM at all is what already gates it to "group is open". */
+.upt-grp-selectall { flex: 0 0 auto; }
 
 /* open/close animation -- duration must match GRP_ANIM_MS in prompts-table.js. Byte-for-byte the
    domains-table drilldown's own technique (.udt-subrows/.udt-sub-inner): grid-template-rows
