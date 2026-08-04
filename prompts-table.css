@@ -585,22 +585,37 @@
 .upt-grp-sent { display: inline-flex; align-items: center; gap: 6px; }
 .upt-grp-sent .up-sent-val { font-size: 14px; }
 
-/* Text only, no button chrome: it is a link-like action next to a row of readings, and a bordered
-   button there competed with the group header itself. Sits right next to the topic/group label
-   now, not after the KPIs -- position:absolute inside .upt-grp-left (positioned) is what makes a
-   PURE fade possible: an absolute element has zero footprint in the flex layout, so it can live
-   in the DOM at all times (needed for a fade to have something to fade FROM) without ever being
-   able to squeeze the chevron/label/KPIs, hovered or not. Its `left` offset is set in JS
-   (bindGroupHoverReveal) from the real rendered width of what comes before it. */
-.upt-grp-more { position: absolute; top: 50%; transform: translateY(-50%); left: 0;
-  height: 28px; padding: 0; border: 0; background: transparent;
-  opacity: 0; pointer-events: none;
+/* Text only, no button chrome: Edit/Generate More are link-like actions next to a row of readings,
+   and bordered buttons there competed with the group header itself. Sit right next to the
+   topic/group label now, not after the KPIs -- position:absolute on the WRAPPER, inside
+   .upt-grp-left (positioned), is what makes a PURE fade possible: an absolute element has zero
+   footprint in the flex layout, so it can live in the DOM at all times (needed for a fade to have
+   something to fade FROM) without ever being able to squeeze the chevron/label/KPIs, hovered or
+   not. Its `left` offset is set in JS (bindGroupHoverReveal) from the real rendered width of what
+   comes before it. Both buttons share this one wrapper so only ONE element needs that JS-computed
+   offset -- Edit (custom groupings only) sits 16px to the LEFT of Generate More, via the
+   wrapper's own gap, not a second absolute calculation. */
+.upt-grp-hoveractions { position: absolute; top: 50%; transform: translateY(-50%); left: 0;
+  opacity: 0; pointer-events: none; transition: opacity 200ms ease;
+  display: flex; align-items: center; gap: 16px; }
+.upt-grp-head.is-hovered .upt-grp-hoveractions { opacity: 1; pointer-events: auto; }
+.upt-grp-more, .upt-grp-edit { height: 28px; padding: 0; border: 0; background: transparent;
   color: var(--vc-third); font-family: inherit; font-size: 12.5px; font-weight: 500;
   cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;
-  transition: opacity 200ms ease, color 120ms ease; }
-.upt-grp-more svg { width: 14px; height: 14px; display: block; }
-.upt-grp-head.is-hovered .upt-grp-more { opacity: 1; pointer-events: auto; }
-.upt-grp-more:hover { color: var(--vc-text); }
+  transition: color 120ms ease; }
+.upt-grp-more svg, .upt-grp-edit svg { width: 14px; height: 14px; display: block; }
+.upt-grp-more:hover, .upt-grp-edit:hover { color: var(--vc-text); }
+
+/* Select-all-for-this-group checkbox: first child of .upt-grp-head, same left position a row's
+   own checkbox sits at (.upt-grp-head and .up-td share the same 0 16px 0 12px padding). A plain
+   opacity fade on hover -- no JS timer, unlike Generate More's deliberate 750ms delay: this is a
+   control someone moving toward the row's left edge expects to see land immediately, not a
+   secondary action that should stay out of a passing cursor's way. Stays visible without hovering
+   once it actually reflects a selection (checked/indeterminate), same as the flat table's own
+   header checkbox never disappearing mid-selection. */
+.upt-grp-selectall { flex: 0 0 auto; opacity: 0; transition: opacity 200ms ease; }
+.upt-grp-head:hover .upt-grp-selectall,
+.upt-grp-selectall.is-checked, .upt-grp-selectall.is-indeterminate { opacity: 1; }
 
 /* open/close animation -- duration must match GRP_ANIM_MS in prompts-table.js. Byte-for-byte the
    domains-table drilldown's own technique (.udt-subrows/.udt-sub-inner): grid-template-rows
@@ -698,12 +713,24 @@
 .upt-group-sk-dot, .upt-group-sk-text { display: none; background: var(--vc-border); border-radius: 4px; }
 .upt-group-item.is-dragging > .upt-group-sk-dot { display: block; width: 8px; height: 8px; border-radius: 4px; flex: 0 0 auto; }
 .upt-group-item.is-dragging > .upt-group-sk-text { display: block; width: 45%; height: 12px; }
-/* "Only show custom groupings" checkbox row — same yes/no/off 3-state check-square as the
-   toolbar's "Brand mentioned" toggle (.upt-brand-check, defined above), just reusing that square
-   inside a .up-pop-row instead of a .upt-brand-toggle (this lives in the dropdown, not the
-   toolbar, so it needs the menu-row layout, not the toolbar-button one). */
+/* "Only show custom groupings" — same visual pill the toolbar's "Brand mentioned" toggle uses
+   (32px, rounded, filled background once yes/no, same .upt-brand-check glyph), but its OWN class
+   rather than literally .upt-brand-toggle: that class is also the target of the toolbar's
+   responsive rules (.up-root.is-w3 .upt-brand-toggle, .is-vnarrow .upt-brand-toggle
+   {display:none!important}), meant to drop the TOOLBAR copy at narrow widths. Reusing it here made
+   this popover control disappear under those same width rules for a reason that has nothing to do
+   with it — it isn't in the toolbar and was never meant to be width-gated at all. Sits below the
+   custom-group list (not above it — a view filter belongs after the list it filters), so its own
+   gap is a top margin rather than a divider line, which would have read as a second heading. */
+.upt-group-onlycustom { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  width: 100%; height: 32px; padding: 0 8px; margin: 10px 0 0; border-radius: 8px; cursor: pointer;
+  color: var(--vc-muted); }
+.upt-group-onlycustom:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
+.upt-group-onlycustom.is-yes, .upt-group-onlycustom.is-no { background: var(--vc-heading-bg); color: var(--vc-text); }
+.upt-group-onlycustom .upt-brand-toggle-lbl { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
 .upt-group-onlycustom.is-yes .upt-brand-check, .upt-group-onlycustom.is-no .upt-brand-check { background: var(--vc-text); border-color: var(--vc-text); }
-.up-root[data-theme="dark"] .upt-group-onlycustom.is-yes .upt-brand-check, .up-root[data-theme="dark"] .upt-group-onlycustom.is-no .upt-brand-check { color: #1f1f1b; }
+.up-root[data-theme="dark"] .upt-group-onlycustom.is-yes .upt-brand-check,
+.up-root[data-theme="dark"] .upt-group-onlycustom.is-no .upt-brand-check { color: #1f1f1b; }
 .upt-group-onlycustom.is-yes .upt-brand-check .upt-brand-check-yes { display: block; }
 .upt-group-onlycustom.is-no .upt-brand-check .upt-brand-check-no { display: block; }
 /* Full width, 32px, and it is core's secondary button — same face and same hover as every other

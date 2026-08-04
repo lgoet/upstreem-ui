@@ -446,7 +446,14 @@
          of being kept per group. Not persisted — an expansion is a look-at-this-now gesture. */
       expandedGroup: null,
       gRows: [], gTotal: null, gLoading: false, gReqId: null,
-      gPage: 1, gPageSize: 10
+      gPage: 1, gPageSize: 10,
+      /* Group-scoped sibling of selectAllMatching, same reasoning: the group can hold far more
+         prompts than the one loaded page in state.gRows, so "select the rest of it" has to be a
+         flag the RPC resolves server-side (via the group's own tag_ids/tagmode, the same fields
+         uptGroupOpen already sends), not a materialised id list. Holds the group's id (group_key)
+         while active, null otherwise. Mutually exclusive with selectAllMatching in practice —
+         that one only ever offers itself on the flat (ungrouped) view. */
+      gSelectAllGroup: null
     };
     /* On a touch device a clamped prompt is unreadable, full stop: the full text is only ever
        reachable through the hover tooltip, and core.css switches tooltips off entirely under
@@ -725,9 +732,13 @@
       });
     }
     function clearSelection(){
-      if (!selectedIds().length && !state.selectAllMatching) return;
+      if (!selectedIds().length && !state.selectAllMatching && !state.gSelectAllGroup) return;
       state.selected = {}; invalidateSelectAll();
       persist(); syncRowChecks(); syncSelectAll(); fireSelect(); syncStagedTopicsToSelection();
+      /* syncRowChecks() only patches the flat table's own [data-select] buttons -- a group
+         header's own checkbox (checked/indeterminate off state.gRows/gSelectAllGroup) needs the
+         real re-render renderGroups() does. Guarded: cheap no-op when not grouped. */
+      if (groupingOn()) renderGroups();
     }
     /* Counts the WHOLE selection, not just this page's — state.selected deliberately survives
        paging/sorting, so a user who selected rows on page 1 and paged on still sees them counted. */
@@ -820,7 +831,38 @@
       var t = currentTotal();
       return t != null && t > (state.rows || []).length;
     }
-    function invalidateSelectAll(){ state.selectAllMatching = false; }
+    function invalidateSelectAll(){ state.selectAllMatching = false; state.gSelectAllGroup = null; }
+    function groupPageFullySelected(){
+      var rows = state.gRows || [];
+      if (!state.expandedGroup || !rows.length) return false;
+      return rows.every(function(r){ return !!state.selected[String(r.prompt_id)]; });
+    }
+    function groupHasMorePages(){
+      var t = toNum(state.gTotal);
+      return !!state.expandedGroup && t != null && t > (state.gRows || []).length;
+    }
+    /* The header checkbox's click, for group `id`. Two different gestures depending on whether
+       this is the OPEN group: expanded means state.gRows is a real loaded page, so this is exactly
+       toggleSelectAll()'s own logic, just scoped to that array instead of state.rows. Collapsed
+       means there is nothing loaded to tick individually -- the click IS the "select everything in
+       this group" gesture directly, so it goes straight to gSelectAllGroup (the same server-side-
+       filter flag the bulk bar's own "Select all N" escape hatch sets, see selectionPayload()). */
+    function toggleGroupHeaderCheckbox(id){
+      if (state.expandedGroup === id){
+        var rows = state.gRows || [];
+        if (!rows.length) return;
+        var allSel = rows.every(function(r){ return state.selected[String(r.prompt_id)]; });
+        if (allSel || state.gSelectAllGroup === id){
+          rows.forEach(function(r){ delete state.selected[String(r.prompt_id)]; });
+          if (state.gSelectAllGroup === id) state.gSelectAllGroup = null;
+        } else {
+          rows.forEach(function(r){ state.selected[String(r.prompt_id)] = true; });
+        }
+      } else {
+        state.gSelectAllGroup = (state.gSelectAllGroup === id) ? null : id;
+      }
+      persist(); renderTable(); renderBulkBar(); fireSelect(); syncStagedTopicsToSelection();
+    }
     /* The "select all N" offer belongs to the header checkbox, not to ticking single rows:
        after one manual tick, "select all 94" is a non-sequitur. Only once the whole visible
        page is selected does "and the rest?" become the obvious next question. */
@@ -829,6 +871,17 @@
       if (!rows.length) return false;
       return rows.every(function(r){ return !!state.selected[String(r.prompt_id)]; });
     }
+    /* state.gTotal is only ever the OPEN group's own pagination total (see setGroupPrompts) --
+       accurate for gSelectAllGroup when that is the same group, but stale/null when the checkbox
+       was clicked on a COLLAPSED group (never fetched, nothing to be stale FROM). The group
+       header's own prompts_count (from the group-list RPC, already on screen either way) is the
+       right fallback there — same number the header itself displays. */
+    function gSelectAllGroupTotal(){
+      if (!state.gSelectAllGroup) return 0;
+      if (state.gSelectAllGroup === state.expandedGroup) return toNum(state.gTotal) || 0;
+      var g = (state.groups || []).filter(function(x){ return groupId(x) === state.gSelectAllGroup; })[0];
+      return (g ? toNum(g.prompts_count) : 0) || 0;
+    }
     /* What a bulk action operates on. Two shapes on purpose:
          ids    — the user ticked specific rows; send them.
          filter — the user took "select all N matching"; send the PREDICATE, not the ids, so the
@@ -836,6 +889,13 @@
                   stay identical to the ones the render RPC already takes, otherwise the table
                   and the bulk action can silently disagree about which rows they mean. */
     function selectionPayload(){
+      if (state.gSelectAllGroup){
+        var g = (state.groups || []).filter(function(x){ return groupId(x) === state.gSelectAllGroup; })[0];
+        return { mode: "filter_group", count: gSelectAllGroupTotal(), group_key: state.gSelectAllGroup,
+                 tag_ids: g ? groupTagIds(g).join(",") : "", tagmode: "and",
+                 is_custom: g && isYes2(g.is_custom) ? "yes" : "no",
+                 untagged: g && isYes2(g.is_untagged) ? "yes" : "no" };
+      }
       if (state.selectAllMatching){
         return { mode: "filter", count: currentTotal() || 0,
                  query: state.query, brand_mentioned: state.brandMentioned,
@@ -845,6 +905,7 @@
       return { mode: "ids", count: ids.length, ids: ids.join(",") };
     }
     function bulkCount(){
+      if (state.gSelectAllGroup) return gSelectAllGroupTotal();
       return state.selectAllMatching ? (currentTotal() || 0) : selectedIds().length;
     }
 
@@ -950,8 +1011,9 @@
       if (n === 0 || !elBulk || !elBulk.classList.contains("is-on")){ renderBulkBar(); return; }
       var numEl = elBulk.querySelector(".upt-bulkbar-count-n");
       if (!numEl){ renderBulkBar(); return; }
-      var wantEscape = state.selectAllMatching || (hasMorePages() && pageFullySelected());
-      var hasEscapeNow = !!elBulk.querySelector("[data-bulk-all],[data-bulk-undoall]");
+      var wantEscape = state.selectAllMatching || !!state.gSelectAllGroup ||
+        (hasMorePages() && pageFullySelected()) || (groupHasMorePages() && groupPageFullySelected());
+      var hasEscapeNow = !!elBulk.querySelector("[data-bulk-all],[data-bulk-group-all],[data-bulk-undoall]");
       if (wantEscape !== hasEscapeNow){ renderBulkBar(); return; }
       /* Only this span moves — "selected" outside it is untouched, so it never has to be part of
          the animation and never shifts sideways from a wider/narrower digit run next to it. */
@@ -999,17 +1061,21 @@
         root.classList.remove("is-bulk");
         return;
       }
-      var isAll = state.selectAllMatching;
+      var isAll = state.selectAllMatching || !!state.gSelectAllGroup;
       /* No "+": bulkCount() is the exact total_count once select-all is active, not an estimate —
          a "+" on a number we know precisely reads as a hedge we don't actually mean. */
       /* Polaris's trick: one control with two states. Before -> the escape hatch; after -> Undo.
-         Only offered when there actually IS another page, otherwise "select all" is a lie. */
+         Only offered when there actually IS another page, otherwise "select all" is a lie.
+         Group-scoped variant (data-bulk-group-all) mirrors it one level down: the group's own
+         total (state.gTotal) instead of the whole active set (currentTotal()). */
       var escape = "";
       if (isAll) escape = '<button class="upt-bulkbar-link" type="button" data-bulk-undoall>Undo</button>';
       else if (hasMorePages() && pageFullySelected()) escape = '<button class="upt-bulkbar-link" type="button" data-bulk-all>Select all ' +
         /* fmtInt, not fmtTotal: fmtTotal abbreviates (1000 -> "1k"), and "Select all 1k prompts"
            reads like a rounded guess when it is in fact an exact figure. */
         UC.fmtInt(currentTotal()) + ' prompts</button>';
+      else if (groupHasMorePages() && groupPageFullySelected()) escape = '<button class="upt-bulkbar-link" type="button" data-bulk-group-all>Select all ' +
+        UC.fmtInt(toNum(state.gTotal)) + ' prompts</button>';
 
       var statusLabel = state.status === "inactive" ? "Set Active" : "Set Inactive";
       /* Inactive prompts aren't tagged — Topics management only ever makes sense for the active
@@ -1514,19 +1580,6 @@
                  '" type="button" data-grp-sort="' + o.key + '">' + esc(o.label) + '</button>';
         }).join("") + '</div>';
       h += '<div class="up-pop-div"></div><div class="up-pop-sub">Custom groupings</div>';
-      /* Same off -> yes -> no -> off cycle and the exact checkbox glyph (.upt-brand-check) the
-         "Brand mentioned" toolbar toggle uses -- replaces the old Both/Topics/Custom segmented
-         control, which read as a fourth unrelated control rather than a property OF the custom
-         groupings section. yes = groupMode "custom" (only custom), no = "topics" (custom
-         excluded), off = "both". */
-      var onlyCustom = state.groupMode === "custom", noCustom = state.groupMode === "topics";
-      h += '<div class="up-pop-row upt-group-onlycustom' + (onlyCustom ? " is-yes" : (noCustom ? " is-no" : "")) +
-          '" data-grp-onlycustom role="checkbox" aria-checked="' + (onlyCustom ? "true" : "false") + '">' +
-        '<span class="up-pop-label">Only show custom groupings</span>' +
-        '<span class="upt-brand-check">' +
-          '<svg class="upt-brand-check-yes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
-          '<svg class="upt-brand-check-no" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
-        '</span></div>';
       if (!custom.length){
         h += '<div class="upt-group-note">No custom grouping yet.</div>';
       } else {
@@ -1561,6 +1614,24 @@
           '</div>';
         }).join("") + '</div>';
       }
+      /* Same off -> yes -> no -> off cycle and the exact checkbox glyph (.upt-brand-check) the
+         toolbar's "Brand mentioned" toggle uses, and the same visual pill (see CSS) -- but NOT the
+         literal .upt-brand-toggle class: that class is also the target of the toolbar's own
+         responsive rules (.up-root.is-w3 .upt-brand-toggle, .is-vnarrow .upt-brand-toggle {
+         display:none!important}), meant to drop the TOOLBAR toggle at narrow widths. Reusing it
+         verbatim here made this popover control vanish under the exact same width rules, for a
+         completely unrelated reason (it doesn't even live in the toolbar). Own class, same look.
+         Sits BELOW the list, its own gap, not above: it is a view filter on the list that already
+         rendered above it, not a heading for it. yes = groupMode "custom" (only custom), no =
+         "topics" (custom excluded), off = "both". */
+      var onlyCustom = state.groupMode === "custom", noCustom = state.groupMode === "topics";
+      h += '<div class="upt-group-onlycustom' + (onlyCustom ? " is-yes" : (noCustom ? " is-no" : "")) +
+          '" data-grp-onlycustom role="checkbox" aria-checked="' + (onlyCustom ? "true" : "false") + '">' +
+        '<span class="upt-brand-toggle-lbl"><span class="upt-brand-label">Only show custom groupings</span></span>' +
+        '<span class="upt-brand-check">' +
+          '<svg class="upt-brand-check-yes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+          '<svg class="upt-brand-check-no" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+        '</span></div>';
       h += '<div class="up-pop-div"></div>' +
         '<button class="up-btn-sec upt-group-new" type="button" data-grp-new>New Grouping</button>';
       elGrpMenu.innerHTML = h;
@@ -1926,6 +1997,7 @@
        people open the grouped view with; visibility is the follow-up. */
     /* Feather "refresh-cw". */
     var GEN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>';
+    var GRP_EDIT_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7 21l-4 1 1-4L17 3z"/></svg>';
     var EYE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
     var EYE_OFF_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
     var GRP_MORE_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>';
@@ -2029,17 +2101,43 @@
         : '<span class="upt-grp-sent"><span class="up-sent-dot" style="background:' + UC.sentColor(sN) + '"></span>' +
           '<span class="up-sent-val">' + Math.round(sN) + '</span></span>';
 
-      /* Generate More sits right after the chip/label, inside .upt-grp-left, not after the KPIs.
-         .upt-grp-left is flex:1 1 auto and already runs far wider than its own content (see the
-         hover-reveal width guard below), so appending a child here claims space that was already
-         free -- the chevron and chip that come BEFORE it never move, and .upt-grp-kpis is a
-         separate sibling of .upt-grp-left entirely, unaffected either way. That is what makes a
-         pure opacity fade possible: nothing needs to slide out of the way for it to appear. */
+      /* Select-all-for-this-group checkbox: same left position a row's own checkbox sits at (both
+         .upt-grp-head and .up-td share the same 0 16px 0 12px padding, so a first-child element in
+         either lands at the identical x), fades in on hover only (200ms ease, no delay -- unlike
+         Generate More's 750ms, this is a control someone reaching for expects to see land
+         immediately, not a secondary action that should stay out of the way of a passing cursor).
+         Stays visible without hovering once it actually has a selection to show, same as the flat
+         table's own header checkbox never disappearing mid-selection.
+         Two different actions depending on whether this group is the OPEN one: expanded ->
+         gRows is the loaded page, so it is a real two-step (page, then "select all N" in the bulk
+         bar) exactly like the flat table. Collapsed -> nothing is loaded to tick individually, so
+         the click IS the "select all N matching" gesture directly (see toggleGroupHeaderCheckbox). */
+      var loadedRows = open ? (state.gRows || []) : [];
+      var anySel = loadedRows.some(function(r){ return !!state.selected[String(r.prompt_id)]; });
+      var allSel = loadedRows.length > 0 && loadedRows.every(function(r){ return !!state.selected[String(r.prompt_id)]; });
+      var isAllMode = state.gSelectAllGroup === id;
+      var gChecked = isAllMode || (open && allSel);
+      var gIndet = !gChecked && open && anySel;
+      var chk = '<span class="upt-check upt-grp-selectall' + (gChecked ? " is-checked" : (gIndet ? " is-indeterminate" : "")) +
+        '" role="checkbox" tabindex="0" aria-checked="' + (gChecked ? "true" : (gIndet ? "mixed" : "false")) +
+        '" data-grp-selectall="' + esc(id) + '">' + (gChecked ? CHECK_SVG : "") + '</span>';
+      /* Generate More (and, for a custom group, Edit) sit right after the chip/label, inside
+         .upt-grp-left, not after the KPIs. .upt-grp-left is flex:1 1 auto and already runs far
+         wider than its own content (see the hover-reveal width guard below), so appending a child
+         here claims space that was already free -- the chevron and chip that come BEFORE it never
+         move, and .upt-grp-kpis is a separate sibling of .upt-grp-left entirely, unaffected either
+         way. That is what makes a pure opacity fade possible: nothing needs to slide out of the way
+         for it to appear. Both buttons live in one .upt-grp-hoveractions wrapper (flex, 16px gap)
+         so only ONE absolute-positioned element needs its `left` set in JS, not two. */
       return '<div class="upt-grp-head' + (open ? " is-open" : "") + '" data-grp="' + esc(id) + '"' +
                ' role="button" tabindex="0" aria-expanded="' + (open ? "true" : "false") + '">' +
+          chk +
           '<div class="upt-grp-left">' + GRP_CHEV + chip +
-            /* Fires a JS event and nothing else -- no state change, no refetch, by design. */
-            '<button class="upt-grp-more" type="button" data-grp-more="' + esc(id) + '">' + GEN_SVG + 'Generate More</button>' +
+            '<div class="upt-grp-hoveractions">' +
+              (custom ? '<button class="upt-grp-edit" type="button" data-grp-headedit="' + esc(id) + '">' + GRP_EDIT_SVG + 'Edit</button>' : "") +
+              /* Fires a JS event and nothing else -- no state change, no refetch, by design. */
+              '<button class="upt-grp-more" type="button" data-grp-more="' + esc(id) + '">' + GEN_SVG + 'Generate More</button>' +
+            '</div>' +
           '</div>' +
           '<div class="upt-grp-kpis">' +
             grpKpi("Prompts", counts) + grpKpi("Visibility", vis) +
@@ -2109,34 +2207,34 @@
         head.addEventListener("mouseenter", function(){
           clearTimeout(timer);
           timer = setTimeout(function(){
-            var more = head.querySelector(".upt-grp-more");
+            var wrap = head.querySelector(".upt-grp-hoveractions");
             var left = head.querySelector(".upt-grp-left");
             var kpis = head.querySelector(".upt-grp-kpis");
-            if (!more || !left || !kpis) return;
-            /* .upt-grp-more is position:absolute inside .upt-grp-left (see CSS) -- it never
-               contributes to that flex item's own width, so it cannot squeeze the chevron/chip
-               even while sitting in the DOM at all times for a pure opacity fade. Its left offset
-               is set here, freshly, from the REAL rendered width of everything that comes before
-               it (not the grown flex container's own scrollWidth -- see the fail-open note this
-               used to carry two rounds ago for why that was wrong). */
+            if (!wrap || !left || !kpis) return;
+            /* .upt-grp-hoveractions (Edit + Generate More together) is position:absolute inside
+               .upt-grp-left (see CSS) -- it never contributes to that flex item's own width, so it
+               cannot squeeze the chevron/chip even while sitting in the DOM at all times for a pure
+               opacity fade. Its left offset is set here, freshly, from the REAL rendered width of
+               everything that comes before it (not the grown flex container's own scrollWidth --
+               see the fail-open note this used to carry two rounds ago for why that was wrong). */
             /* getBoundingClientRect, not offsetWidth -- the chevron is an <svg>, and offsetWidth
                is an HTMLElement-only property that silently comes back undefined/0 on SVG in some
                engines, which starved leftContent of ~16px and landed the button 16px too close. */
             var leftContent = 0;
             Array.prototype.forEach.call(left.children, function(c){
-              if (c === more) return;
+              if (c === wrap) return;
               leftContent += c.getBoundingClientRect().width || 0;
             });
-            var gaps = Math.max(0, left.children.length - 2);   // -1 for fencepost, -1 to exclude `more`
+            var gaps = Math.max(0, left.children.length - 2);   // -1 for fencepost, -1 to exclude `wrap`
             leftContent += gaps * 10;                            // .upt-grp-left's own flex gap
             var GAP = 32;
-            more.style.left = (leftContent + GAP) + "px";
-            /* Still fails OPEN: only a row too narrow to fit label + gap + button blocks the
+            wrap.style.left = (leftContent + GAP) + "px";
+            /* Still fails OPEN: only a row too narrow to fit label + gap + buttons blocks the
                reveal, and only in that direction -- an unmeasurable/zero clientWidth still shows
                it rather than hiding it by default. */
             var w = head.clientWidth || 0;
             if (w){
-              var need = leftContent + GAP + (more.offsetWidth || 150) + (kpis.scrollWidth || 0);
+              var need = leftContent + GAP + (wrap.offsetWidth || 150) + (kpis.scrollWidth || 0);
               if (w < need) return;
             }
             head.classList.add("is-hovered");
@@ -2712,6 +2810,19 @@
         fire("data-generatemore-fn", "uptGenerateMore", { group_key: mk, tag_ids: mg ? groupTagIds(mg).join(",") : "" });
         return;
       }
+      var grpHeadEdit = e.target.closest("[data-grp-headedit]");
+      if (grpHeadEdit){
+        e.stopPropagation();
+        var hek = grpHeadEdit.getAttribute("data-grp-headedit");
+        openGroupModal(readCustomGroups().filter(function(x){ return x.key === hek; })[0] || null);
+        return;
+      }
+      var grpSelAll = e.target.closest("[data-grp-selectall]");
+      if (grpSelAll){
+        e.stopPropagation();
+        toggleGroupHeaderCheckbox(grpSelAll.getAttribute("data-grp-selectall"));
+        return;
+      }
       var grpSize = e.target.closest("[data-grpsize]");
       if (grpSize){
         e.stopPropagation();
@@ -2762,9 +2873,15 @@
           state.selectAllMatching = true;
           persist(); renderBulkBar(); syncSelCount(); fireSelect(); syncStagedTopicsToSelection(); return;
         }
+        if (e.target.closest("[data-bulk-group-all]")){
+          state.gSelectAllGroup = state.expandedGroup;
+          persist(); renderBulkBar(); syncSelCount(); fireSelect(); syncStagedTopicsToSelection();
+          renderGroups(); return;
+        }
         if (e.target.closest("[data-bulk-undoall]")){
           invalidateSelectAll();
-          persist(); renderBulkBar(); syncSelCount(); fireSelect(); syncStagedTopicsToSelection(); return;
+          persist(); renderBulkBar(); syncSelCount(); fireSelect(); syncStagedTopicsToSelection();
+          if (groupingOn()) renderGroups(); return;
         }
         if (e.target.closest("[data-bulk-topics]")){ setTopicMenuOpen(!topicMenuOpen()); return; }
         var tRow2 = e.target.closest("[data-topic]");
@@ -3194,6 +3311,26 @@
            through. Not the group header's prompts_count -- that was the earlier (wrong) guess. */
         state.gTotal = list.length ? toNum(list[0].total_count) : 0;
         state.gLoading = false;
+        /* Self-diagnosing check, not a fix -- there is nothing left to fix client-side here: this
+           reads exactly the field the payload sample specified (list[0].total_count), nothing else
+           in this file ever assigns state.gTotal a different value (grep it). If that number equals
+           the OVERALL active count instead of this group's own size, the group-open RPC step is not
+           applying its own tag_ids/tagmode filter when it computes total_count -- same rows-query
+           filter, different (or missing) filter on the count query. That is a Bubble workflow bug,
+           not something this file can correct: it can only display whatever total_count the RPC
+           actually sends. */
+        if (window.console && state.expandedGroup){
+          var hdrG = (state.groups || []).filter(function(x){ return groupId(x) === state.expandedGroup; })[0];
+          var hdrCount = hdrG ? toNum(hdrG.prompts_count) : null;
+          if (hdrCount != null && state.gTotal != null && state.gTotal > hdrCount &&
+              (state.totalCount == null || state.gTotal === toNum(state.totalCount))){
+            console.warn("[prompts-table] group \"" + state.expandedGroup + "\" header says " + hdrCount +
+              " prompts, but the group-open RPC's total_count came back as " + state.gTotal +
+              (state.totalCount != null ? " -- which matches the OVERALL active total (" + state.totalCount + ")" : "") +
+              ". The group-open workflow step is very likely computing total_count without the " +
+              "tag_ids/tagmode filter it applies to the actual rows. Check that step, not this file.");
+          }
+        }
         if (state.expandedGroup) renderGroupBlockOnly(state.expandedGroup);
       },
       update: function(params){
