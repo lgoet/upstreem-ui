@@ -598,7 +598,9 @@
 .upt-grp-hoveractions { position: absolute; top: 50%; transform: translateY(-50%); left: 0;
   opacity: 0; pointer-events: none; transition: opacity 200ms ease;
   display: flex; align-items: center; gap: 32px; }
-.upt-grp-head.is-hovered .upt-grp-hoveractions { opacity: 1; pointer-events: auto; }
+/* Edit/Generate More only reveal on hover for the OPEN group's header, same gating as the
+   select-all checkbox -- a collapsed row never shows either, by design. */
+.upt-grp-head.is-open.is-hovered .upt-grp-hoveractions { opacity: 1; pointer-events: auto; }
 .upt-grp-more, .upt-grp-edit { height: 28px; padding: 0; border: 0; background: transparent;
   color: var(--vc-third); font-family: inherit; font-size: 12.5px; font-weight: 500;
   cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;

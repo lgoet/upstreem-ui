@@ -2247,6 +2247,10 @@
         head.addEventListener("mouseenter", function(){
           clearTimeout(timer);
           timer = setTimeout(function(){
+            /* CSS already gates the reveal on .is-open too (see .upt-grp-head.is-open.is-hovered),
+               but bailing here as well skips the width measurement below entirely for a collapsed
+               row -- there's nothing to reveal, so nothing to measure. */
+            if (!head.classList.contains("is-open")) return;
             var wrap = head.querySelector(".upt-grp-hoveractions");
             var left = head.querySelector(".upt-grp-left");
             var kpis = head.querySelector(".upt-grp-kpis");
