@@ -615,8 +615,16 @@
    delay, see syncGroupHeadCheckbox) -- .is-visible is what grpSelectallHtml() bakes straight into
    a FULL re-render's markup, so unrelated renders show it at full opacity immediately with no
    delay/fade to replay. */
-.upt-grp-selectall { flex: 0 0 auto; opacity: 0; transition: opacity 200ms ease; }
-.upt-grp-selectall.is-visible { opacity: 1; }
+/* Off state cancels its OWN box out of the layout entirely -- not just invisible, genuinely takes
+   no room -- via a negative margin-right sized to exactly its own width plus .upt-grp-head's 12px
+   flex gap. .upt-grp-left (chevron+chip) then sits exactly where it would if the checkbox weren't
+   in the DOM at all, same as a collapsed group. Revealing animates that margin back to 0 AND fades
+   opacity at once: the chevron/chip visibly slide right as the checkbox's box "grows into" the
+   space its margin stops cancelling, while the checkbox itself fades in -- one motion, not a fade
+   that waits for space to already be there. */
+.upt-grp-selectall { flex: 0 0 auto; opacity: 0; margin-right: calc(-1 * (var(--upt-check-size) + 12px));
+  transition: opacity 200ms ease, margin-right 200ms ease; }
+.upt-grp-selectall.is-visible { opacity: 1; margin-right: 0; }
 
 /* open/close animation -- duration must match GRP_ANIM_MS in prompts-table.js. Byte-for-byte the
    domains-table drilldown's own technique (.udt-subrows/.udt-sub-inner): grid-template-rows

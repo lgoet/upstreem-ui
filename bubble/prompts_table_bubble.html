@@ -427,6 +427,44 @@
     gar keine Meldung                        -> die Gruppen sind angekommen
 
 
+  ── Run-JS "Group Open" Step (der Step, den uptGroupOpen ausloest) ───────────
+  Byte-fuer-byte dasselbe Prinzip wie der "Render"-Step oben: total_count kommt NICHT als eigener
+  RPC-Output, sondern reitet auf JEDER Row mit (siehe die Beispiel-Row ganz oben in diesem File --
+  "total_count": 8). Also row 0 lesen, genau wie "Render" es fuer die flache Tabelle schon tut.
+  Das ist der Step, der beim letzten Mal gefehlt hat und dessen Fehlen die Pagination im Drilldown
+  kaputt gemacht hat (er hat vermutlich TOTAL_ACTIVE_COUNT aus einem anderen Slot genommen, statt
+  row 0's eigenes total_count aus DIESEM RPC-Aufruf). REQUEST_ID muss 1:1 aus dem uptGroupOpen-
+  Event durchgereicht werden -- ohne die wird eine langsame Antwort auf eine alte Anfrage die
+  neuere ueberschreiben.
+
+  (function () {
+    var RAW = `[GROUP_PROMPTS_RPC_RESPONSE]`;
+    var REQUEST_ID = `REQUEST_ID`;             // aus dem uptGroupOpen-Event, unveraendert durchreichen
+
+    var t = 0;
+    (function go () {
+      var w  = window,
+          fn = w.setPromptsTableGroupPrompts
+            || (w.parent && w.parent.setPromptsTableGroupPrompts)
+            || (w.top && w.top.setPromptsTableGroupPrompts);
+      var UC = w.UpstreemCore
+            || (w.parent && w.parent.UpstreemCore)
+            || (w.top && w.top.UpstreemCore);
+
+      if (typeof fn === "function" && UC && UC.parseBubbleJson) {
+        var rows = UC.parseBubbleJson(RAW);
+        console.log("[prompts-table] group-open sending", rows.length, "rows, total_count",
+          rows.length ? rows[0].total_count : null, "request", REQUEST_ID);
+        fn(`INSTANCE_ID`, rows, REQUEST_ID);
+        return;
+      }
+      if (t++ < 60) { setTimeout(go, 100); return; }
+      console.error("[prompts-table] setPromptsTableGroupPrompts / UpstreemCore never appeared after 6s — " +
+        "check data-cdn-pin and that the component is actually on this page.");
+    })();
+  })();
+
+
   ── Regex zum Extrahieren (Bubble: "extract with Regex") ─────────────────────
   So sehen die Strings wirklich aus, live abgegriffen:
 
