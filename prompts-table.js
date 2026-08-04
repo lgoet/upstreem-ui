@@ -344,6 +344,7 @@
 
     var elHeadCount = root.querySelector(".up-head-count");
     var elTbody     = root.querySelector(".up-tbody");
+    var elFoot      = root.querySelector(".up-foot");
     var elSearch    = root.querySelector(".up-search");
     var elSearchIn  = root.querySelector(".up-search-input");
     var elBrand     = root.querySelector(".upt-brand-toggle");
@@ -2428,8 +2429,23 @@
 
     function renderTable(){
       /* The grouped view owns the body entirely; the flat path below is untouched by it. */
-      root.classList.toggle("is-grouped", groupingOn());
-      if (groupingOn()){ renderGroups(); return; }
+      var grouped = groupingOn();
+      root.classList.toggle("is-grouped", grouped);
+      /* Belt-and-suspenders on top of the .up-root.is-grouped .up-foot{display:none} CSS rule:
+         render() unconditionally calls renderPageSize()/renderPager() below regardless of
+         grouping, which keeps refreshing this element's CONTENT (page-size buttons, page numbers,
+         "1-15 of 88" -- the flat table's own state.pageSize/currentTotal(), nothing to do with any
+         group) even while it's meant to be hidden. A host page's own CSS can out-specificity a
+         class-based display:none from an embedded component's stylesheet -- confirmed live: an
+         embedding page's global reset/theme CSS with an !important display rule on this element
+         beats BOTH the class rule AND a plain inline style (inline style only outranks a
+         non-!important selector; an !important selector still beats a plain inline value).
+         setProperty(..., "important") is the one thing left that cannot lose that fight, so the
+         pager some host CSS accidentally kept visible can never be mistaken for the group's own
+         (that one is .upt-grp-foot, driven by state.gTotal, and lives inside the open group's own
+         block). */
+      if (elFoot) elFoot.style.setProperty("display", grouped ? "none" : "", grouped ? "important" : "");
+      if (grouped){ renderGroups(); return; }
       /* elTbody.innerHTML is reassigned in every branch below, which throws away whatever grid-
          column inline style applyCols() had put on the previous .up-row elements — a brand new
          set of rows carries no inline style at all until applyCols() runs again. Callers outside
