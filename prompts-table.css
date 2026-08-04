@@ -120,20 +120,13 @@
 .up-root.is-inactive-view .upt-td-topics:hover { background: transparent; }
 
 /* ---------- Active / Inactive view switch ----------
-   Left of the toolbar, next to the heading — it's a view switch, not a filter, and the filter
-   area on the right implies "combinable with the others", which these two never are. Reuses the
-   .up-dense segmented look so it reads as the same kind of control as the row-height switch.
-   Two different margins on purpose, not one: with no selection, this sits right after the plain
-   head-count and that gap reads as too wide at the original 12px (on top of .up-head's own
-   gap:8px) — shrunk to 0 here so the flex gap alone carries it. But once a selection is active,
-   this same element sits after the "N selected" chip instead, and THAT gap must stay exactly as
-   wide as it always was — shrinking it too made the chip and the switcher read as one glued-
-   together control instead of two separate ones. That wider gap is NOT declared here: it is the
-   chip's own animated margin-right (see .upt-selcount). It lived here as an .is-bulk margin
-   once, but a margin appearing on THIS element via a class toggle snaps instantly while the chip
-   next to it is still collapsing over 220ms — the switcher jumped 12px left, then slid the rest
-   of the way. Whatever moves must move as one thing. */
-.upt-status { display: inline-flex; align-items: center; gap: 0; margin-left: 0; height: 32px;
+   Lives in the toolbar now, between Table Settings and Export (moved there in JS -- see the IIFE
+   right before renderStatusTabs() in prompts-table.js -- rather than requiring every existing
+   Bubble embed to re-copy its root markup). Reuses the .up-dense segmented look so it reads as
+   the same kind of control as the row-height switch. No margin-left tuning needed here any more:
+   it is just another child of .up-head-tools now, spaced by that container's own flex gap like
+   every other toolbar icon. */
+.upt-status { display: inline-flex; align-items: center; gap: 0; height: 32px;
   padding: 0; background: var(--vc-switch-bg); border-radius: 8px; flex: 0 0 auto; }
 .upt-status-btn { height: 32px; padding: 0 10px; border: 1px solid transparent; border-radius: 8px;
   background: transparent; color: var(--vc-muted); cursor: pointer; font-family: inherit;
@@ -142,13 +135,13 @@
 .upt-status-btn:hover { color: var(--vc-text); }
 .upt-status-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
 .up-root[data-theme="dark"] .upt-status-btn.is-active { background: #121212; border-color: #353535; }
-.upt-status-n { font-size: 11px; font-weight: 600; color: var(--vc-third); font-variant-numeric: tabular-nums; }
-/* Takes NO space on the active tab. renderStatusTabs already omits the span there; this is the
-   belt-and-braces half, and deliberately display:none rather than visibility:hidden — the latter
-   reserves a number's width of blank space inside the button, which makes the switcher look
-   padded out for a count that isn't shown. Both buttons must stay fit-width. */
-.upt-status-btn.is-active .upt-status-n { display: none; }
 .up-root.is-searchtakeover .upt-status { display: none; }
+/* "(Inactive)" qualifier before the "Prompts" heading label -- built once in JS (see the same
+   IIFE above), text never changes, only its visibility does. Secondary/muted, matching the
+   existing .up-head-count treatment right next to it, not the heading's own full-strength text
+   color -- it's a qualifier on the heading, not part of it. */
+.upt-status-tag { display: none; font-size: 14px; font-weight: 500; color: var(--vc-muted); margin-right: 6px; }
+.up-root.is-inactive-view .upt-status-tag { display: inline; }
 
 /* ---------- bulk action bar ----------
    Parented to document.body (see ensureBulkBar) and fixed to the VIEWPORT, so it sits bottom-
@@ -510,16 +503,16 @@
    guarantee the mobile end-state regardless of how fitToolbar's tiers landed: only the
    Active/Inactive switcher (plus search, if there's still room) survive. Export only SHRINKS at
    is-w0 (matching every other table); past this point it's gone entirely.
-   The switcher moves to order:2 with its own margin-left:auto — .up-head-tools already carries
-   a permanent margin-left:auto from core.css, so with both in sequence the pair reads as one
-   right-aligned group instead of the switcher sitting stranded mid-row. */
+   No order/margin juggling needed for the switcher any more now that it lives INSIDE
+   .up-head-tools (see the relocation IIFE in prompts-table.js) rather than beside it: it's just
+   another child of a flex row that already carries its own margin-left:auto, so once its hidden
+   siblings (brand-toggle/sort/cols/export) drop out at this width, it naturally ends up right-
+   aligned wherever the remaining visible children (search, then this) land. */
 .up-root.is-vnarrow .upt-brand-toggle,
 .up-root.is-vnarrow .up-sort,
 .up-root.is-vnarrow .up-cols,
 .up-root.is-vnarrow .up-export { display: none !important; }
 .up-root.is-vnarrow .up-head { flex-wrap: nowrap; }
-.up-root.is-vnarrow .upt-status { order: 2; margin-left: auto; }
-.up-root.is-vnarrow .up-head-tools { order: 3; }
 /* Selection active on mobile: the switcher would otherwise fight the selected-count chip for the
    same slot, so it steps aside and the chip (already living inside .up-heading, right after the
    label) effectively takes over that role — the heading stretches to fill the row and pushes the

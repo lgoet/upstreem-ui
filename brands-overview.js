@@ -815,6 +815,10 @@
     var HASH_ICON = UC.HASH_ICON.replace('<svg ', '<svg class="up-hash" ');
     var MORE_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">' +
       '<circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>';
+    /* Plain single-path Feather "Edit" pencil -- same icon prompts-table's group-header Edit
+       button uses (GRP_EDIT_SVG), not the square+pencil "Edit-2" combo. */
+    var EDIT_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7 21l-4 1 1-4L17 3z"/></svg>';
+    var GOTO_SVG = UC.GOTO_SVG;
 
     /* The table kit: grid template, column dropping, the Brand column's drag handle and the
        Table Settings menu all come from core now. The Inactive view is a different table (Brand /
@@ -910,10 +914,17 @@
       var sent = '<span class="up-sent"><span class="up-sent-dot" style="background:' + sc + '"></span>' +
         '<span class="up-sent-val' + (sNull ? " is-empty" : "") + '">' + (sNull ? "–" : Math.round(Number(r.sentiment))) + '</span></span>' +
         UC.trendChip(r.sentiment_delta, { decimals: true, inverted: false });
-      var h = '<div class="up-row" data-id="' + esc(String(r.company_id == null ? "" : r.company_id)) + '">' +
+      var id = String(r.company_id == null ? "" : r.company_id);
+      var h = '<div class="up-row" data-id="' + esc(id) + '">' +
         '<div class="up-td up-td-idx">' + pos + '</div>' +
         '<div class="up-td up-td-brand">' + logoHtml(r.logo_url || r.favicon_url) +
-          '<span class="ubo-brand-name">' + esc(r.name == null ? "" : r.name) + '</span></div>';
+          '<span class="ubo-brand-name">' + esc(r.name == null ? "" : r.name) + '</span>' +
+          /* Fires the exact same event as the kebab menu's own Edit item (data-edit-fn/uboEdit) --
+             this is a second entry point to the identical action, not a new one. Hover-reveal
+             mirrors prompts-table's group-header Edit/Generate-More buttons: 200ms opacity ease,
+             gated on .up-row:hover so it never competes with the row's own click-to-open. */
+          '<button class="ubo-row-edit" type="button" data-row-edit="' + esc(id) + '" aria-label="Edit">' + EDIT_SVG + '</button>' +
+          '<span class="up-row-goto">' + GOTO_SVG + '</span></div>';
       if (colOn("visibility")) h += '<div class="up-td up-td-visibility">' + vis + '</div>';
       if (colOn("ranking"))    h += '<div class="up-td up-td-ranking">' + rank + '</div>';
       if (colOn("sentiment"))  h += '<div class="up-td up-td-sentiment">' + sent + '</div>';
@@ -966,8 +977,13 @@
           row.addEventListener("mouseenter", function(){ line.highlight(id); });
           row.addEventListener("mouseleave", function(){ line.highlight(null); });
         }
+        var editBtn = row.querySelector("[data-row-edit]");
+        if (editBtn) editBtn.addEventListener("click", function(e){
+          e.stopPropagation();
+          fireRaw("data-edit-fn", "uboEdit", id);
+        });
         row.addEventListener("click", function(e){
-          if (e.target.closest("[data-actmenu]")) return;   // the menu button is not a row click
+          if (e.target.closest("[data-actmenu], [data-row-edit]")) return;   // neither is a row click
           fireRaw("data-rowclick-fn", "uboRowClick", id);
         });
       });

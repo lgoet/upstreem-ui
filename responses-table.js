@@ -179,12 +179,18 @@
     var elFaderMenu = root.querySelector(".urt-fader-menu");
     var elMent      = root.querySelector(".up-ment");
     var elMentMenu  = root.querySelector(".up-ment-menu");
+    var elMentBtn   = elMent && elMent.querySelector(".up-ment-btn");
+    if (elMentBtn) elMentBtn.setAttribute("data-tip", "Filter for brand mentions");
     var mentQuery = "";
     if (elMentMenu) elMentMenu.addEventListener("input", function(e){
       if (e.target && e.target.classList && e.target.classList.contains("up-ment-search")) applyMentFilter();
     });
     var elMentLbl   = root.querySelector(".up-ment-lbl");
     var elBrand     = root.querySelector(".urt-brand-toggle");
+    /* Overwrites whatever data-tip a hand-pasted root copy already carries -- static Bubble
+       markup, not something this file builds, so a wording fix only reaches existing embeds if
+       the CDN'd JS rewrites the attribute at init. */
+    if (elBrand) elBrand.setAttribute("data-tip", "Filter for your brand mentions");
     var elBrandLogo = root.querySelector(".urt-brand-logo");
     var elBrandLbl  = root.querySelector(".urt-brand-label");
     var elHeading   = root.querySelector(".up-heading");

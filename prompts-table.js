@@ -348,6 +348,11 @@
     var elSearch    = root.querySelector(".up-search");
     var elSearchIn  = root.querySelector(".up-search-input");
     var elBrand     = root.querySelector(".upt-brand-toggle");
+    /* Overwrites whatever data-tip a hand-pasted root copy already carries -- this is a static
+       Bubble element, not one this file builds, so a wording fix only reaches existing embeds if
+       the CDN'd JS itself rewrites the attribute at init. Same reasoning as the .upt-status
+       relocation above, applied to a text change instead of a DOM move. */
+    if (elBrand) elBrand.setAttribute("data-tip", "Filter for your brand mentions");
     var elBrandLogo = root.querySelector(".upt-brand-logo");
     var elBrandLbl  = root.querySelector(".upt-brand-label");
     var elSort      = root.querySelector(".up-sort");
@@ -369,7 +374,7 @@
       var wrap = document.createElement("div");
       wrap.className = "up-ment";
       wrap.innerHTML =
-        '<button class="up-ment-btn" type="button" aria-haspopup="menu" aria-expanded="false">' +
+        '<button class="up-ment-btn" type="button" data-tip="Filter for brand mentions" aria-haspopup="menu" aria-expanded="false">' +
           '<span class="up-ment-lbl">All Brands</span>' +
           '<svg class="up-ment-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
           '<svg class="up-ment-clear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
@@ -781,25 +786,36 @@
        A view switch, not a filter — see state.status. The Inactive view drops Brand Mentions via
        a class on the root rather than by editing the column config, so it can't collide with the
        user's own saved column preferences. */
+    /* Relocates .upt-status from wherever the (possibly old, hand-pasted-in-Bubble) root markup
+       put it into the toolbar, between Table Settings and Export -- same "build/move it from JS"
+       reasoning as the Grouping button above: a CDN pin never touches a Bubble element's own
+       copy-pasted HTML, so doing this in JS is what makes every existing embed pick it up
+       immediately, with nothing to re-copy on the Bubble side. Also creates .upt-status-tag (the
+       "(Inactive)" qualifier shown before the heading label in Inactive view) the same way, since
+       it never existed in any prior markup at all. */
+    (function(){
+      var elStatus = root.querySelector(".upt-status");
+      var elExport = root.querySelector(".up-export");
+      if (elStatus && elHeadTools && elStatus.parentNode !== elHeadTools){
+        if (elExport && elExport.parentNode === elHeadTools) elHeadTools.insertBefore(elStatus, elExport);
+        else elHeadTools.appendChild(elStatus);
+      }
+      if (elHeading && !elHeading.querySelector(".upt-status-tag")){
+        var tag = document.createElement("span");
+        tag.className = "upt-status-tag";
+        tag.textContent = "(Inactive)";
+        elHeading.insertBefore(tag, elHeading.firstChild);
+      }
+    })();
     function renderStatusTabs(){
       var el = root.querySelector(".upt-status");
       if (!el) return;
-      var counts = { active: state.totalCount, inactive: state.totalCountInactive };
+      /* No counts on either tab -- these used to show the OTHER tab's total, but a number here
+         that disagrees with (or just duplicates) the head count two elements away read as more
+         confusing than helpful. Plain "Active"/"Inactive" text only. */
       el.innerHTML = [["active","Active"],["inactive","Inactive"]].map(function(p){
-        var n = counts[p[0]];
-        /* Only the tab you are NOT on carries a count: the current view's total is already
-           shown next to the heading two elements to the left, and repeating it there just
-           makes the eye check whether the two numbers agree.
-           Both buttons stay fit-width — an earlier attempt kept the span in the markup and only
-           hid it, to stop the switcher resizing on a tab change. That reserved a number's worth
-           of empty space inside the active button and read as broken, which is worse than the
-           resize it was avoiding. Fit-width wins.
-           No count at all until the server sends one — total_count_inactive isn't in the
-           payload yet, and "Inactive 0" would be a claim we can't back up. */
-        var cnt = (p[0] === state.status || n == null || n === "")
-          ? "" : '<span class="upt-status-n">' + UC.fmtTotal(n) + '</span>';
         return '<button class="upt-status-btn' + (state.status === p[0] ? " is-active" : "") +
-               '" type="button" data-status="' + p[0] + '">' + p[1] + cnt + '</button>';
+               '" type="button" data-status="' + p[0] + '">' + p[1] + '</button>';
       }).join("");
       root.classList.toggle("is-inactive-view", state.status === "inactive");
     }
@@ -1626,9 +1642,13 @@
          rendered above it, not a heading for it. yes = groupMode "custom" (only custom), no =
          "topics" (custom excluded), off = "both". */
       var onlyCustom = state.groupMode === "custom", noCustom = state.groupMode === "topics";
+      /* Label flips with the "no" state -- "Only show custom groupings" reads as backwards once
+         the checkbox is actually hiding them (noCustom / groupMode "topics"), since "only" implies
+         it's the one thing still showing. */
       h += '<div class="upt-group-onlycustom' + (onlyCustom ? " is-yes" : (noCustom ? " is-no" : "")) +
           '" data-grp-onlycustom role="checkbox" aria-checked="' + (onlyCustom ? "true" : "false") + '">' +
-        '<span class="upt-brand-toggle-lbl"><span class="upt-brand-label">Only show custom groupings</span></span>' +
+        '<span class="upt-brand-toggle-lbl"><span class="upt-brand-label">' +
+          (noCustom ? "Don&#39;t show custom groupings" : "Only show custom groupings") + '</span></span>' +
         '<span class="upt-brand-check">' +
           '<svg class="upt-brand-check-yes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
           '<svg class="upt-brand-check-no" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>' +

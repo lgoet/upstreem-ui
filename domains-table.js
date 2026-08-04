@@ -110,6 +110,10 @@
     var elSort      = root.querySelector(".up-sort");
     var elSortMenu  = root.querySelector(".up-sort-menu");
     var elBrand     = root.querySelector(".udt-brand-toggle");
+    /* Overwrites whatever data-tip a hand-pasted root copy already carries -- static Bubble
+       markup, not something this file builds, so a wording fix only reaches existing embeds if
+       the CDN'd JS rewrites the attribute at init. */
+    if (elBrand) elBrand.setAttribute("data-tip", "Filter for your brand mentions");
     var elBrandLogo = root.querySelector(".udt-brand-logo");
     var elBrandLbl  = root.querySelector(".udt-brand-label");
     var elFilterLbl = root.querySelector(".up-filter-btn-lbl");
@@ -122,6 +126,8 @@
     var elColsMenu  = root.querySelector(".up-cols-menu");
     var elMent      = root.querySelector(".up-ment");
     var elMentMenu  = root.querySelector(".up-ment-menu");
+    var elMentBtn   = elMent && elMent.querySelector(".up-ment-btn");
+    if (elMentBtn) elMentBtn.setAttribute("data-tip", "Filter for brand mentions");
     var mentQuery = "";   // transient brand-search query inside the mentioned dropdown
     if (elMentMenu) elMentMenu.addEventListener("input", function(e){
       if (e.target && e.target.classList && e.target.classList.contains("up-ment-search")) applyMentFilter();

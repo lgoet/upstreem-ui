@@ -469,6 +469,10 @@
     }
 
     var brandToggle = root.querySelector(".tcd-brand-toggle");
+    /* Overwrites whatever data-tip a hand-pasted root copy already carries -- static Bubble
+       markup, not something this file builds, so a wording fix only reaches existing embeds if
+       the CDN'd JS rewrites the attribute at init. */
+    if (brandToggle) brandToggle.setAttribute("data-tip", "Filter for your brand mentions");
     function syncFilterBadge(){
       var n = 0;
       Object.keys(state.appliedTypeSel).forEach(function(k){ if (state.appliedTypeSel[k]) n++; });

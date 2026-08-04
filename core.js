@@ -2140,7 +2140,15 @@
       var on = root.getAttribute("data-sticky") !== "no" && pageW >= 1000;
       var v = root.getAttribute("data-sticky-top"); if (v) root.style.setProperty("--up-sticky-top", /^[0-9]+$/.test(v) ? v + "px" : v);
       root.classList.toggle("up-sticky", on);
-      unclipAncestors(root, !on);
+      /* Always unclip, regardless of "on" -- sticky positioning is the reason this call exists
+         here, but topbar dropdowns (position:absolute, not sticky) need the same escape from a
+         too-short Bubble wrapper whether or not sticky happens to be engaged (data-sticky="no",
+         or pageW < 1000). Re-clipping the external ancestor when sticky turns off served no
+         purpose (.up-box's own corner-rounding clip is separate and untouched by this) and was
+         the actual cause of "few rows -> topbar dropdown gets cut off": a short component means
+         a short Bubble wrapper, and re-clipping it left no room for a menu taller than the empty
+         state. Mirrors topics-manager.js's own unconditional call for the same reason. */
+      unclipAncestors(root, false);
       if (on) syncTheadOffset();
     }
     /* The intermittent "only the toolbar sticks, the column header scrolls away with the table"

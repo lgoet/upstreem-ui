@@ -170,6 +170,19 @@
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .ubo-deact { font-size: 13px; color: var(--vc-muted); white-space: nowrap; }
 
+/* Per-row Edit, hover-revealed directly after the brand name -- same 200ms opacity ease as
+   prompts-table's group-header Edit/Generate-More buttons, and the same 10px gap .up-td already
+   gives every flex child (matching .upt-grp-left's own gap). Sits between the name and the
+   right-aligned .up-row-goto arrow (core.css), not fighting it for the same slot. */
+.ubo-row-edit { flex: 0 0 auto; height: 24px; padding: 0 4px; border: 0; background: transparent;
+  color: var(--vc-third); cursor: pointer; opacity: 0; pointer-events: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: opacity 200ms ease, color 120ms ease; }
+.ubo-row-edit svg { width: 14px; height: 14px; display: block; }
+.up-row:hover .ubo-row-edit { opacity: 1; pointer-events: auto; }
+.ubo-row-edit:hover { color: var(--vc-text); }
+.up-root.is-vnarrow .ubo-row-edit { display: none; }
+
 /* row actions trigger — always visible, not hover-revealed */
 .ubo-actbtn {
   width: 28px; height: 28px; border: 0; border-radius: 8px; background: transparent;
