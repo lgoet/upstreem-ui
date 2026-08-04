@@ -408,12 +408,52 @@
                       · Eigene Gruppierung loeschen
                       · Eigene Gruppierung speichern -- sowohl "New Grouping" als auch "Edit" auf
                         einer bestehenden (Umbenennen ersetzt intern den alten Eintrag)
+                      · "Group by topics" AUSschalten -- feuert {"grouped":"no"}, sonst NICHTS
+                        (kein `mode`, kein `groups`). Reine Benachrichtigung, keine RPC dahinter
+                        noetig: es gibt nichts zu fetchen, wenn Grouping aus ist. Vorher feuerte
+                        das Ausschalten ueberhaupt nichts (außer zufaellig ueber eine parallel
+                        laufende Suche), was jeden Versuch, den Grouping-Status extern
+                        mitzuverfolgen, unmoeglich machte.
                     NICHT ausgeloest von: Suche, Brand-Toggle, Mentioned-Brands-Filter, oder vom
                     Sortier-Dropdown der Gruppen selbst (der ist rein client-seitig -- die schon
                     geladenen Sections werden nur neu angeordnet). Das heisst: die Kopfzeilen-
                     Counts pro Gruppe zeigen den Stand vom letzten uptGroups-Aufruf, nicht live
                     den aktuellen Suchtext -- wenn die Gruppen live mit der Suche mitgehen sollen,
                     sag Bescheid, das ist ein bewusster Kompromiss und aenderbar.
+
+                    "IST GROUPING GERADE AN?" ALS EIGENER BUBBLE-STATE: `grouped` ("yes"/"no") ist
+                    das EINZIGE Feld, das bei WIRKLICH jedem uptGroups-Aufruf dabei ist -- die
+                    obige Trigger-Liste deckt beide Richtungen ab (ein-/ausschalten), nicht nur
+                    "ein". Im uptGroups-Workflow-Step also einmalig `grouped` per Regex ziehen
+                    und in einen eigenen Custom State schreiben (Page-Level oder auf einem
+                    Container, den auch andere Filter-Elemente sehen -- NICHT nur ein State
+                    innerhalb dieser Komponente selbst, sonst kommt ein externer Datumsfilter gar
+                    nicht dran). Damit weiss jeder andere Workflow auf der Seite jederzeit, ob
+                    Grouping aktiv ist, ohne den internen state.grouped dieser Komponente lesen zu
+                    muessen (den gibt es von außen ohnehin nicht).
+
+                    EXTERNE FILTER (z.B. Date Range) UND GROUPING KOMBINIEREN: ein Filter, der
+                    nicht Teil dieser Komponente ist (Datumsbereich, o.ä.), refresht heute
+                    vermutlich nur die flache Tabelle (Haupt-RPC + "Render"-Step). Sobald Grouping
+                    an ist, muss er ZUSAETZLICH den Gruppen-RPC mit denselben neuen Filterwerten
+                    (inkl. p_date_from/p_date_to) neu aufrufen und danach den "Groups"-Step
+                    (window.setPromptsTableGroups) feuern -- sonst zeigen die Gruppen-Kopfzeilen
+                    weiter die ALTEN Zahlen, waehrend die flache Tabelle (falls der User zurueck-
+                    schaltet) schon die neuen zeigt.
+                      · Reihenfolge: EGAL. Die beiden RPCs/Run-JS-Steps sind clientseitig komplett
+                        unabhaengig (schreiben in getrennte States, keiner wartet auf den anderen)
+                        -- "erst Gruppen-RPC, dann Render" ist NICHT noetig, beide koennen parallel
+                        oder in beliebiger Reihenfolge laufen.
+                      · Bedingung: "Nur wenn [Is Grouping On] = yes" um den zusaetzlichen Gruppen-
+                        RPC-Aufruf + Groups-Step herum -- der Haupt-RPC + Render-Step laeuft immer,
+                        grouping an oder aus (die Kopfzeile/totalCount braucht ihn so oder so, und
+                        wenn der User Grouping waehrenddessen ausschaltet, muss die flache Tabelle
+                        schon aktuell sein).
+                      · p_groups/p_mode fuer diesen zusaetzlichen Aufruf: exakt dieselbe Logik wie
+                        im normalen uptGroups-Handler -- am saubersten als gemeinsamer Backend-
+                        Workflow (API Workflow) extrahiert, den sowohl der uptGroups-Event-Handler
+                        als auch dieser externe Filter-Workflow aufrufen, statt die Logik zweimal
+                        zu pflegen.
 
                     PAGELOAD-SONDERFALL: wenn Grouping schon aus einer frueheren Session an ist
                     (localStorage), feuert uptGroups synchron beim allerersten Render der

@@ -2857,9 +2857,24 @@
           }
           populateGroupMenu(); syncGroupBtn();
           state.expandedGroup = null;
-          if (groupingOn() && !state.groupsHasData) fetchGroups();
-          else if (hadQuery) runSearch();     // clears the filter server-side, not just the input
-          else render();
+          if (groupingOn() && !state.groupsHasData){
+            fetchGroups();
+          } else {
+            /* Turning OFF fired nothing at all here before this line -- the only other place
+               uptGroups fires is fetchGroups(), which this branch deliberately does NOT call
+               (there's nothing to fetch when grouping is off). Bubble-side workflows that need to
+               track "is grouping currently on" (e.g. an external date-range filter deciding
+               whether it also needs to refresh the groups RPC) had no reliable signal for this
+               transition -- turning ON always fired uptGroups with grouped:"yes" the first time,
+               but the reverse never fired anything, unless a search happened to be active (whose
+               own runSearch() event carries no `grouped` field at all). This one-off, no-RPC-
+               expected fire makes uptGroups's own `grouped` field the single source of truth for
+               both directions: extract it from every uptGroups payload, regardless of whether
+               `groups` is also present, and keep a persistent state from that alone. */
+            if (!groupingOn()) fire("data-groups-fn", "uptGroups", { grouped: "no" });
+            if (hadQuery) runSearch();     // clears the filter server-side, not just the input
+            else render();
+          }
           return;
         }
         if (e.target.closest("[data-grp-onlycustom]")){
