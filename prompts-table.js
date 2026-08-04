@@ -2589,6 +2589,20 @@
           order: orderValue(state.sortField, state.sortDir),
           sort_field: state.sortField, sort_dir: state.sortDir
         });
+        /* The currently OPEN group's own rows carry this same order (see fetchGroupPage's own
+           `order: orderValue(...)`), but only at the moment it was opened -- nothing previously
+           re-fetched it when the sort changed while it was already open, so it kept showing rows
+           in the stale order until closed and reopened. Groups themselves deliberately do NOT
+           refresh on a sort change (see fetchGroups' own comment -- headers aren't sort-dependent
+           at all), but the open group's ROWS are exactly as sort-dependent as the flat table's,
+           so this re-fires the SAME uptGroupOpen event fetchGroupPage always fires, no new Bubble-
+           side event needed. Page reset to 1, matching the flat table's own state.page = 1 above
+           -- a changed order invalidates whatever page you were on the same way a changed filter
+           would. */
+        if (groupingOn() && state.expandedGroup){
+          state.gPage = 1;
+          fetchGroupPage(0);
+        }
         renderTable();
       }, SORT_DEBOUNCE);
     }
