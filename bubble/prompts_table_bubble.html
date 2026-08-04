@@ -36,7 +36,8 @@
   data-page-fn      = "bubble_fn_uptPage_[dynamic id]"
   data-rowclick-fn  = "bubble_fn_uptRowClick_[dynamic id]"
   data-select-fn    = "bubble_fn_uptSelect_[dynamic id]"
-  data-topics-fn    = "bubble_fn_uptTopicsClick_[dynamic id]"
+  data-topics-fn    = "bubble_fn_uptTopicsClick_[dynamic id]"     unused — kept for back-compat, see below
+  data-edittopics-fn  = "bubble_fn_uptEditTopics_[dynamic id]"    Apply in the single-prompt Edit Topics popup
   data-status-fn      = "bubble_fn_uptStatus_[dynamic id]"        view switch Active/Inactive
   data-bulktopics-fn  = "bubble_fn_uptBulkTopics_[dynamic id]"    unused — kept for back-compat, see below
   data-applybulktopics-fn = "bubble_fn_uptApplyBulkTopics_[dynamic id]"  the topic editor's Apply button
@@ -62,13 +63,20 @@
     select   {"selected":"id1,id2,id3","count":3}   -> fires on every checkbox change; carries the
                                                         WHOLE selection, which deliberately
                                                         survives paging and sorting
-    topics   {"prompt_id":"614ebcc4-…","prompt_text":"Best running shoes 2026","tag_ids":"t1,t2"}
-                -> click on the Topics cell. Deliberately does NOT also fire rowclick — open your
-                   topic management for that prompt here. prompt_text and tag_ids (comma-joined,
-                   same convention as "selected"/"ids" elsewhere) are read straight off that row's
-                   already-loaded data, no extra lookup needed on your side. Inactive prompts have
-                   no topic management at all — the cell is inert there and this event never fires
+    topics   UNUSED — kept for back-compat only, never fires any more. Clicking the Topics cell
+                   now opens this component's own "Edit Topics" popup (prompt + its topics + an
+                   Add Topics reveal for the rest, Apply/Cancel) instead of handing off to your
+                   own topic-management UI — see "edittopics" below for the event it fires instead.
+                   Inactive prompts still get no topic management at all — the cell is inert there
                    (see "status" below).
+    edittopics  {"prompt_id":"614ebcc4-…","tag_ids":["t1","t2"]}
+                -> Apply in the Edit Topics popup (opened by clicking a row's Topics cell).
+                   Fires ONCE with the FULL resulting set for that one prompt — not a diff, not
+                   ADD-only like applybulktopics below: whatever is in tag_ids here is the prompt's
+                   complete topic list after this event, including an empty array if the user
+                   removed every topic. tag_ids is a real JSON array (not the comma-joined string
+                   "selected"/applybulktopics use elsewhere) — asked for as an array specifically
+                   for this event.
     status   {"status":"inactive","is_active":"no","limit":25,"offset":0,"page":1}
                 -> Active/Inactive view switch. Re-run the RPC filtered to that status. limit/
                    offset/page are ALWAYS page 1 here (same shape as "page" above) — the mode
@@ -642,6 +650,7 @@
      data-generatemore-fn="bubble_fn_uptGenerateMore"
      data-select-fn="bubble_fn_uptSelect"
      data-topics-fn="bubble_fn_uptTopicsClick"
+     data-edittopics-fn="bubble_fn_uptEditTopics"
      data-status-fn="bubble_fn_uptStatus"
      data-bulktopics-fn="bubble_fn_uptBulkTopics"
      data-applybulktopics-fn="bubble_fn_uptApplyBulkTopics"

@@ -369,9 +369,8 @@
    padding-top on the far side of the same separator stayed 12px. Zeroing the list's own gap
    here leaves margin-top as the only source of spacing, matching --upt-sep-gap on both sides. */
 .upt-topiclist.is-create { max-height: none; overflow: visible; gap: 0; }
-/* The chip itself is core's .up-topicchip now — this file only keeps what is specific to THIS
-   popover: the dark-bulk-bar tint and the cap-dimming hook on its own list class. */
-.upt-bulkbar[data-theme="dark"] .up-topicchip { background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 22%, transparent); color: #e0e0e0; }
+/* The chip itself is core's .up-topicchip now, dark mode included ([data-theme="dark"]
+   .up-topicchip in core.css) — this file only keeps the cap-dimming hook on its own list class. */
 .upt-topiclist.is-full .up-topicchip:not(.is-on) { opacity: .4; cursor: default; pointer-events: none; }
 .upt-topicmenu-empty { padding: 14px 8px; text-align: center; font-size: 12.5px; color: var(--vc-muted); }
 /* No matches for the typed query -> the obvious next move is creating it, offered right where
@@ -458,6 +457,21 @@
 /* Soft-reload dim (sort) now lives in core.css as a generic .up-root.is-reloading rule, shared
    with urls-table/domains-table — see UC.makeSoftReload. */
 
+/* ---------- Edit Topics popup (single-prompt) ----------
+   Shell is core's .up-topicmodal-* (same as New/Edit Grouping) — only what's specific to THIS
+   popup lives here: the prompt-text readout and the Add-Topics reveal. Chips are core's
+   .up-topicchip inside .up-topiclist, both already used elsewhere in this file. */
+.upt-et-prompttext { font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.35;
+  letter-spacing: -0.01em; margin: 0; white-space: pre-wrap; }
+.upt-et-empty { padding: 10px 2px; font-size: 12.5px; color: var(--vc-muted); }
+.upt-et-addbtn { margin-top: 10px; }
+/* Same 200ms cubic-bezier(.2,0,.38,.9) reveal every other slide-open panel in this file uses
+   (the empty-topics-cell "+Add" morph, the grouping create/edit modal's picker panels). */
+.upt-et-addwrap { max-height: 0; opacity: 0; overflow: hidden; margin-top: 0;
+  transition: max-height 200ms cubic-bezier(.2,0,.38,.9), opacity 160ms ease, margin-top 200ms cubic-bezier(.2,0,.38,.9); }
+.upt-et-addwrap.is-open { max-height: 260px; opacity: 1; margin-top: 12px; }
+.upt-et-addwrap .up-topiclist { max-height: 220px; }
+
 /* ---------- selection count ----------
    Counts the whole selection across pages (selection survives paging), sits right after the
    total in the heading. The X clears it — the same affordance the filter chips already use. */
@@ -539,6 +553,33 @@
    is what "the table sits too high" was — and it is not even redundant: the rows inside an open
    group are the flat table's own .up-row, laid out in exactly these columns. */
 .up-root.is-grouped .up-foot { display: none; }    /* pagination lives inside the open section */
+
+/* ---------- groups wide view ----------
+   .upt-grp-widewrap wraps .up-box (unchanged) with a new side list to its left. display:contents
+   when off (the default/normal case, and also whenever grouping itself is off) means .up-box sits
+   exactly where it always has, full width -- the wrapper is invisible to layout until BOTH
+   is-groups-wide and is-grouped are on. align-items:stretch (flex default) is what makes the two
+   panels match height: whichever is taller sets the row's height, the other one just gets that
+   same height handed to it and scrolls its own content if it doesn't need all of it. */
+.upt-grp-widewrap { display: contents; }
+.up-root.is-groups-wide.is-grouped .upt-grp-widewrap { display: flex; align-items: stretch; gap: 8px; }
+.up-root.is-groups-wide.is-grouped .up-box { flex: 1 1 auto; min-width: 0; }
+.upt-grp-sidelist { display: none; }
+.up-root.is-groups-wide.is-grouped .upt-grp-sidelist {
+  display: flex; flex-direction: column; flex: 0 0 20%; min-width: 0;
+  overflow-x: hidden; overflow-y: auto;
+  border: 1px solid var(--vc-border); border-radius: 16px;   /* matches .up-box's own radius */
+}
+/* Same look/hover/open treatment as .upt-grp-head (the inline view's own group row), just
+   shorter -- no KPIs here by design, so there's nothing that needs the extra height for. */
+.upt-grp-sideitem { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 12px;
+  border: 0; border-bottom: 1px solid var(--vc-border); background: transparent; color: var(--vc-text);
+  cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 500; text-align: left;
+  width: 100%; min-width: 0; }
+.upt-grp-sideitem:last-child { border-bottom: 0; }
+.upt-grp-sideitem:hover { background: var(--vt-row-hover); }
+.upt-grp-sideitem.is-open { background: var(--vc-heading-bg); }
+.upt-grp-side-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 
 .upt-grp { border-bottom: 1px solid var(--vc-border); }
 .upt-grp:last-child { border-bottom: 0; }

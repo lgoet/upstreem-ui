@@ -410,6 +410,11 @@
   function brandStack(mentions, totalCount, opts){
     opts = opts || {};
     var MAX = opts.max || 4;
+    /* tipKey lets a caller show a different field in the hover tooltip than the one driving the
+       chip's own initial-letter fallback (still always m.name) — responses-table's Brand Mentions
+       column wants the untouched brand_name_raw the RPC sends alongside name, not the (possibly
+       normalized) display name. Defaults to "name" so every other consumer is unaffected. */
+    var tipKey = opts.tipKey || "name";
     var list = Array.isArray(mentions) ? mentions : [];
     if (!list.length) return '<span class="up-stack-empty">-</span>';
     var shown = list.slice(0, MAX);
@@ -419,6 +424,7 @@
     var last = shown.length - 1;
     var html = shown.map(function(m, mi){
       var nm = String(m && m.name != null ? m.name : "");
+      var tip = String(m && m[tipKey] != null ? m[tipKey] : nm);
       var logo = String(m && (m.favicon_url != null ? m.favicon_url : (m.favicon != null ? m.favicon : "")) || "");
       // protocol-relative urls ("//cdn...") break inside some Bubble contexts
       if (logo.indexOf("//") === 0) logo = "https:" + logo;
@@ -427,7 +433,7 @@
          The left-spread hover rules need to target it, and CSS forbids :has() inside :has() —
          which is what an inline "item not followed by another item" selector would require. */
       return '<span class="up-stack-item' + (logo ? " has-img" : "") + (mi === last ? " is-last" : "") +
-             '" data-brandtip="' + esc(nm) + '">' +
+             '" data-brandtip="' + esc(tip) + '">' +
                '<span class="up-stack-vis">' +
                  '<span class="up-stack-ltr">' + esc(initial) + '</span>' +
                  (logo ? '<img src="' + esc(logo) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +

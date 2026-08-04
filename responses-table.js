@@ -429,7 +429,7 @@
         '<div class="up-td urt-td-mentioned">' + mentCell(r.has_user_brand) + '</div>' +
         '<div class="up-td urt-td-sentiment">' + sentCell(r.user_sentiment) + '</div>' +
         '<div class="up-td urt-td-rank">' + rankCell(r.user_rank) + '</div>' +
-        '<div class="up-td urt-td-brands">' + brandStack(r.companies_preview, r.companies_preview_totalcount, { max: 4 }) + '</div>' +
+        '<div class="up-td urt-td-brands">' + brandStack(r.companies_preview, r.companies_preview_totalcount, { max: 4, tipKey: "brand_name_raw" }) + '</div>' +
         '<div class="up-td urt-td-citations">' + citationsChips(r.sources_preview, r.sources_totalcount) + '</div>' +
         '<div class="up-td urt-td-model">' + modelChip(r.model) + '</div>' +
         '<div class="up-td urt-td-date"><span class="urt-date" data-tip="' + esc(fmtDate(r.run_at)) + '">' + esc(relativeTime(r.run_at)) + '</span></div>' +
@@ -456,7 +456,7 @@
         '<div class="urt-card-preview">' + mdPreview(preview) + '</div>' +
         '<div class="urt-card-foot">' +
           '<div class="urt-card-footleft">' +
-            '<div class="urt-card-brands">' + brandStack(r.companies_preview, r.companies_preview_totalcount, { max: 4 }) + '</div>' +
+            '<div class="urt-card-brands">' + brandStack(r.companies_preview, r.companies_preview_totalcount, { max: 4, tipKey: "brand_name_raw" }) + '</div>' +
             /* Same icon box the table's Mentioned? column uses, minus the "Yes" label -- a card
                foot is tight on room, and the color alone (green box) already reads as "mentioned"
                next to the brand chips it sits beside. Only rendered when true: "not mentioned"

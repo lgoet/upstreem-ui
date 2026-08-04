@@ -423,6 +423,13 @@
                   transform 200ms cubic-bezier(.2,0,.38,.9), margin-left 200ms cubic-bezier(.2,0,.38,.9); }
     .up-topicchip-check.is-on { width: 14px; opacity: 1; transform: translateX(0); margin-left: 2px; }
     .up-topicchip-check svg { width: 9px; height: 9px; display: block; flex: 0 0 auto; }
+    /* Matches .ust-cell[data-theme="dark"] .ust-tag exactly (prompts-table.js's own topics-column
+       widget) -- same chip, same colours, everywhere. [data-theme="dark"] on ANY ancestor matches
+       here (the bulk-topics bar, both topic-modal backdrops, the grouping create/edit modal, the
+       grouping dropdown's own chips), so a new consumer gets this for free instead of needing its
+       own scoped copy -- which is exactly how this chip went uncovered in the grouping modal/popup
+       before: only the bulk-topics bar had ever added one. */
+    [data-theme="dark"] .up-topicchip { background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 22%, transparent); color: #e0e0e0; }
     /* at the cap: chips you cannot add anyway say so instead of silently ignoring the click */
     .up-topiclist.is-full .up-topicchip:not(.is-on) { opacity: .4; cursor: default; pointer-events: none; }
 

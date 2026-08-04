@@ -64,7 +64,7 @@
            chip checkbox elsewhere in this file (a max-width transition, not display, since
            display can\'t be animated). Hover trigger lives on .upt-td-topics in prompts-table.css
            (the whole cell, not just this span, is the click/hover target — see the click handler
-           that already fires uptTopicsClick from anywhere in the cell). */
+           that opens the Edit Topics popup from anywhere in the cell, openEditTopicsModal). */
         '.ust-empty-dash{display:inline-block;transition:opacity 140ms ease,max-width 180ms cubic-bezier(.2,0,.38,.9);}',
         '.ust-empty-add{display:inline-flex;align-items:center;gap:3px;max-width:0;opacity:0;overflow:hidden;white-space:nowrap;transition:max-width 180ms cubic-bezier(.2,0,.38,.9),opacity 140ms ease,margin-left 180ms cubic-bezier(.2,0,.38,.9);}',
         '.up-root:not(.is-inactive-view) .upt-td-topics:hover .ust-empty{color:var(--vc-text,#1f1f1b);}',
@@ -137,13 +137,6 @@
         popup.style.top=top+'px'; popup.style.left=left+'px'; popup.style.visibility='visible';
       }
       function hidePopup(){ hideTimer=setTimeout(function(){ popup.style.display='none'; },80); }
-
-      function fireOpen(st, tagId){
-        var payload={ prompt_id:st.promptId, tag_id:tagId||null, tags:st.tags };
-        var json=JSON.stringify(payload);
-        if(typeof window.bubble_fn_openTags==='function') window.bubble_fn_openTags(json);
-        else { window.dispatchEvent(new CustomEvent('upstreem:open-tags',{detail:payload})); console.log('open_tags', payload); }
-      }
 
       var ro = (typeof ResizeObserver!=='undefined') ? new ResizeObserver(function(entries){
         for(var i=0;i<entries.length;i++){
@@ -337,6 +330,12 @@
       } catch(e){ return "both"; }
     }
     function writeGroupMode(v){ try { window.localStorage.setItem(gKey("groupmode"), v); } catch(e){} }
+    function readGroupsWide(){
+      try { return window.localStorage.getItem(gKey("groupswide")) === "yes"; } catch(e){ return false; }
+    }
+    function writeGroupsWide(v){
+      try { window.localStorage.setItem(gKey("groupswide"), v ? "yes" : "no"); } catch(e){}
+    }
 
     var isDark = isYes(root.getAttribute("data-isdark"));
     if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
@@ -447,6 +446,10 @@
       groupsLoading: false,
       groupSort: readGroupSort(),           // "count" (default) | "visibility" | "name"
       groupMode: readGroupMode(),           // "both" (default) | "topics" | "custom"
+      /* Wide view: a side list of groups to the left of the (otherwise completely unchanged)
+         prompts table, instead of each group expanding inline. Purely a display preference —
+         doesn't affect what data is fetched or which events fire. */
+      groupsWide: readGroupsWide(),
       /* Exactly ONE group is expanded at a time, same rule (and same reasoning) as domains-table's
          drilldown: with one open section the sub-pagination can live as plain fields here instead
          of being kept per group. Not persisted — an expansion is a look-at-this-now gesture. */
@@ -1505,6 +1508,127 @@
                '<div class="ust-row"></div>' +
              '</div>';
     }
+    /* ---- Edit Topics popup (single-prompt, opened by clicking the Topics cell) ----
+       Same up-topicmodal-* shell New/Edit Grouping uses (same header/body/foot rhythm, same
+       200ms show/hide) so it reads as the same app, not a one-off. Current topics sit up top as
+       chips the user can click to remove; "Add Topics" reveals (200ms ease, the same
+       cubic-bezier(.2,0,.38,.9) every other slide-reveal in this file uses) everything not yet on
+       the prompt, click to add. One event on Apply. tag_ids is a real array here, unlike the
+       comma-joined string uptTopicsClick/uptApplyBulkTopics use — asked for as an array
+       specifically for this one. */
+    var etModal = null, etRow = null, etStaged = {}, etAddOpen = false;
+    function etTagsById(){
+      var byId = {};
+      (state.topics || []).forEach(function(t){ byId[topicId(t)] = t; });
+      return byId;
+    }
+    function etChipHtml(t, on){
+      var id = topicId(t);
+      var color = String(t.hex_light || t.hex_dark || "#6b7280");
+      if (color.charAt(0) !== "#") color = "#" + color;
+      return '<button type="button" class="up-topicchip up-chiphover' + (on ? " is-on" : "") +
+        '" data-et-topic="' + esc(id) + '" style="--ust-tag-color:' + esc(color) + '">' +
+        (t.emoji ? '<span class="up-topicchip-e">' + esc(t.emoji) + '</span>' : "") +
+        '<span class="up-topicchip-lbl">' + esc(t.name == null ? "" : t.name) + '</span>' +
+        '<span class="up-topicchip-check' + (on ? " is-on" : "") + '">' + CHECK_SVG + '</span>' +
+      '</button>';
+    }
+    function etRenderLists(animate){
+      if (!etModal) return;
+      var byId = etTagsById();
+      var curEl = etModal.querySelector(".upt-et-current");
+      var addEl = etModal.querySelector(".upt-et-addlist");
+      if (curEl){
+        var currentIds = Object.keys(etStaged);
+        var curHtml = currentIds.length
+          ? currentIds.map(function(id){ return byId[id] ? etChipHtml(byId[id], true) : ""; }).join("")
+          : '<div class="upt-et-empty">No topics on this prompt yet</div>';
+        if (animate) UC.flipReplace(curEl, curHtml, "[data-et-topic]"); else curEl.innerHTML = curHtml;
+      }
+      if (addEl){
+        var addable = (state.topics || []).filter(function(t){ return !etStaged[topicId(t)]; });
+        var addHtml = addable.length
+          ? addable.map(function(t){ return etChipHtml(t, false); }).join("")
+          : '<div class="upt-et-empty">No more topics to add</div>';
+        if (animate) UC.flipReplace(addEl, addHtml, "[data-et-topic]"); else addEl.innerHTML = addHtml;
+      }
+    }
+    function etToggleTopic(id){
+      if (etStaged[id]) delete etStaged[id]; else etStaged[id] = true;
+      etRenderLists(true);
+    }
+    function etModalKey(e){ if (e.key === "Escape"){ e.stopPropagation(); closeEtModal(); } }
+    function closeEtModal(){
+      if (!etModal) return;
+      etModal.classList.remove("is-shown");
+      var m = etModal;
+      setTimeout(function(){ if (m && m.parentNode) m.parentNode.removeChild(m); }, 160);
+      etModal = null; etRow = null;
+      document.removeEventListener("keydown", etModalKey, true);
+    }
+    function openEditTopicsModal(rowId){
+      var row = findRowById(rowId);
+      if (!row) return;
+      closeEtModal();
+      etRow = row; etStaged = {}; etAddOpen = false;
+      (row.tags || []).forEach(function(t){ etStaged[topicId(t)] = true; });
+      etModal = document.createElement("div");
+      etModal.className = "up-topicmodal-backdrop upt-et-backdrop";
+      if (isDark) etModal.setAttribute("data-theme", "dark");
+      etModal.innerHTML =
+        '<div class="up-topicmodal-card" role="dialog" aria-modal="true" aria-label="Edit Topics">' +
+          '<div class="up-topicmodal-head">' +
+            '<div class="up-topicmodal-heading"><h3 class="up-topicmodal-title">Edit Topics</h3></div>' +
+            '<button class="up-topicmodal-close" type="button" data-et-close aria-label="Close">' + CLOSE_SVG + '</button>' +
+          '</div>' +
+          '<div class="up-topicmodal-body">' +
+            '<div class="up-topicmodal-field">' +
+              '<span class="up-topicmodal-label">Prompt</span>' +
+              '<p class="upt-et-prompttext">' + esc(String(row.prompt_text == null ? "" : row.prompt_text)) + '</p>' +
+            '</div>' +
+            '<div class="up-topicmodal-field">' +
+              '<span class="up-topicmodal-label">Topics</span>' +
+              '<div class="upt-et-current up-topiclist"></div>' +
+              '<button class="up-btn-sec upt-et-addbtn" type="button" data-et-addtoggle>' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+                'Add Topics</button>' +
+              '<div class="upt-et-addwrap"><div class="upt-et-addlist up-topiclist"></div></div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="up-topicmodal-foot">' +
+            '<button class="up-btn-sec" type="button" data-et-cancel>Cancel</button>' +
+            '<button class="up-topicmodal-save" type="button" data-et-apply>Apply</button>' +
+          '</div>' +
+        '</div>';
+      document.body.appendChild(etModal);
+      etRenderLists(false);
+      requestAnimationFrame(function(){ if (etModal) etModal.classList.add("is-shown"); });
+      document.addEventListener("keydown", etModalKey, true);
+      etModal.addEventListener("click", function(e){
+        if (e.target === etModal){ closeEtModal(); return; }
+        if (e.target.closest("[data-et-close]")){ closeEtModal(); return; }
+        if (e.target.closest("[data-et-cancel]")){ closeEtModal(); return; }
+        if (e.target.closest("[data-et-addtoggle]")){
+          etAddOpen = !etAddOpen;
+          var wrap = etModal.querySelector(".upt-et-addwrap");
+          if (wrap) wrap.classList.toggle("is-open", etAddOpen);
+          e.target.closest("[data-et-addtoggle]").classList.toggle("is-open", etAddOpen);
+          return;
+        }
+        var chip = e.target.closest("[data-et-topic]");
+        if (chip){ etToggleTopic(chip.getAttribute("data-et-topic")); return; }
+        if (e.target.closest("[data-et-apply]")){
+          var tagIds = Object.keys(etStaged);
+          var tagsById = etTagsById();
+          fire("data-edittopics-fn", "uptEditTopics", { prompt_id: String(etRow.prompt_id), tag_ids: tagIds });
+          /* Optimistic local update, same idea as the bulk editor's applyStagedTopics(). */
+          etRow.tags = tagIds.map(function(id){ return tagsById[id]; }).filter(Boolean);
+          syncTopicCells();
+          closeEtModal();
+          return;
+        }
+      });
+    }
     function rowHtml(r){
       var id = String(r.prompt_id == null ? "" : r.prompt_id);
       /* "Select all N matching" only ever set the flag, never backfilled state.selected for rows
@@ -1578,14 +1702,41 @@
        exist yet at this point in the file. */
     var grpPop = null;
 
+    /* ---- groups wide view: side list + the SAME .up-box, unchanged ----
+       Wraps .up-box (head + body, untouched) in a flex row with a new side list to its left.
+       display:contents on the wrapper when wide view is off means .up-box behaves exactly as if
+       this wrapper didn't exist -- no effect on the normal flat/inline-grouped layouts at all.
+       Built once at init (same reasoning as the Grouping button above: a CDN pin never touches a
+       Bubble element's hand-pasted root markup, so this has to happen in JS to reach existing
+       embeds), not per-render. */
+    var elGrpSidelist = null;
+    (function(){
+      var box = root.querySelector(".up-box");
+      if (!box || (box.parentNode && box.parentNode.classList.contains("upt-grp-widewrap"))) return;
+      var wrap = document.createElement("div");
+      wrap.className = "upt-grp-widewrap";
+      box.parentNode.insertBefore(wrap, box);
+      elGrpSidelist = document.createElement("div");
+      elGrpSidelist.className = "upt-grp-sidelist";
+      wrap.appendChild(elGrpSidelist);
+      wrap.appendChild(box);
+    })();
+    if (!elGrpSidelist) elGrpSidelist = root.querySelector(".upt-grp-sidelist");
+    root.classList.toggle("is-groups-wide", state.groupsWide);
+
     function populateGroupMenu(){
       if (!elGrpMenu) return;
       var custom = readCustomGroups();
       var on = state.grouped;
+      var wide = state.groupsWide;
       var h = '<div class="up-pop-head">Grouping</div>' +
         '<div class="up-pop-row" data-grp-toggle>' +
           '<span class="up-pop-label">Group by topics</span>' +
           '<span class="up-switch' + (on ? " is-on" : "") + '" role="switch" aria-checked="' + (on ? "true" : "false") + '"></span>' +
+        '</div>' +
+        '<div class="up-pop-row" data-grp-widetoggle>' +
+          '<span class="up-pop-label">Wide view</span>' +
+          '<span class="up-switch' + (wide ? " is-on" : "") + '" role="switch" aria-checked="' + (wide ? "true" : "false") + '"></span>' +
         '</div>';
       /* Grouping is an Active-view feature; say so instead of silently doing nothing. */
       if (state.status === "inactive"){
@@ -2329,6 +2480,7 @@
            different product loading. */
         elTbody.innerHTML = skeletonRows(6);
         applyCols();
+        if (state.groupsWide && elGrpSidelist) elGrpSidelist.innerHTML = "";
         return;
       }
       var rows = sortedGroups();
@@ -2346,6 +2498,17 @@
             ? "No topic group matches the current search."
             : "The grouping call returned no rows — check the setPromptsTableGroups step.") + '</div>' +
         '</div>';
+        if (state.groupsWide && elGrpSidelist) elGrpSidelist.innerHTML = "";
+        return;
+      }
+      /* Wide view: same data (sortedGroups()), completely different shape -- a side list instead
+         of inline-expandable headers, and .up-tbody shows exactly the rows a flat-table render
+         would (rowHtml, same as always), just for whichever group is picked in the list. Zero new
+         fetch/event logic: renderGroupSidelist's click handler calls the SAME toggleGroup() the
+         inline header click already uses. */
+      if (state.groupsWide){
+        renderGroupSidelist(rows);
+        renderGroupWideBody();
         return;
       }
       elTbody.innerHTML = rows.map(function(g){
@@ -2356,6 +2519,52 @@
       initTopicsCells();
       bindGroupHoverReveal();
     }
+    /* No KPIs here on purpose (spec) -- a color dot + name, same label logic grpHeadHtml uses.
+       .is-open marks the currently expanded (state.expandedGroup) one. */
+    function renderGroupSidelist(rows){
+      if (!elGrpSidelist) return;
+      elGrpSidelist.innerHTML = rows.map(function(g){
+        var id = groupId(g);
+        var open = state.expandedGroup === id;
+        var color = String(g.tag_color || g.color || "#6b7280");
+        if (color.charAt(0) !== "#" && /^[0-9a-fA-F]{6}$/.test(color)) color = "#" + color;
+        return '<button type="button" class="upt-grp-sideitem' + (open ? " is-open" : "") +
+          '" data-grp-side="' + esc(id) + '">' +
+          (isYes2(g.is_untagged) ? "" : '<span class="upt-grp-cdot" style="background:' + esc(color) + '"></span>') +
+          '<span class="upt-grp-side-name">' + esc(groupLabel(g)) + '</span>' +
+        '</button>';
+      }).join("");
+    }
+    /* .up-tbody's content here is exactly what the flat table would put there for state.gRows —
+       same rowHtml(), same skeleton/empty markup grpRowsHtml() already used inline. Pagination
+       reuses grpFootHtml() as-is (already fully self-contained on state.gPage/gPageSize/gTotal;
+       its own data-grppage/data-grpsize handlers are delegated on document, not scoped to the
+       inline layout, so they work unchanged here). */
+    function renderGroupWideBody(){
+      if (!state.expandedGroup){
+        elTbody.innerHTML = '<div class="up-empty-mini">Select a group from the list</div>';
+        applyCols();
+        return;
+      }
+      var body;
+      if (state.gLoading || state.gRows == null) body = skeletonRows(Math.min(7, state.gPageSize));
+      else if (!state.gRows.length) body = '<div class="up-empty-mini">No prompts in this group</div>';
+      else body = state.gRows.map(rowHtml).join("");
+      elTbody.innerHTML = body + (state.gLoading ? "" : grpFootHtml());
+      applyCols();
+      initTopicsCells();
+    }
+    /* Thin wide-view wrapper around toggleGroup(): same state transition, same fetchGroupPage()
+       call, same "click the open one again to close" / "switch straight to a different one"
+       behaviour -- toggleGroup()'s own DOM patches (querySelector against .upt-grp-head/
+       [data-grp-sec]) are silent no-ops here since neither exists in this layout, so the two
+       renders below are what actually reflect the change. This is the "0 new event logic" the
+       spec asked for: toggleGroup() already fires the one RPC (uptGroupOpen) either layout needs. */
+    function toggleGroupWide(id){
+      toggleGroup(id);
+      renderGroupSidelist(sortedGroups());
+      renderGroupWideBody();
+    }
 
     /* Lazy load: one request per expand, and one more per page turn inside the open group. */
     function fetchGroupPage(delay){
@@ -2364,7 +2573,7 @@
       var g = (state.groups || []).filter(function(x){ return groupId(x) === id; })[0];
       if (!g) return;
       state.gLoading = true;
-      renderGroupBlockOnly(id);
+      if (state.groupsWide) renderGroupWideBody(); else renderGroupBlockOnly(id);
       function fireNow(){
         if (state.expandedGroup !== id) return;   // closed again before the delay elapsed
         grpReqSeq += 1;
@@ -2960,6 +3169,16 @@
           }
           return;
         }
+        if (e.target.closest("[data-grp-widetoggle]")){
+          /* Pure display preference -- doesn't touch state.expandedGroup, what's fetched, or any
+             event. Switching away and back leaves whichever group was open still open. */
+          state.groupsWide = !state.groupsWide;
+          writeGroupsWide(state.groupsWide);
+          populateGroupMenu();
+          root.classList.toggle("is-groups-wide", state.groupsWide);
+          if (groupingOn()) renderGroups();
+          return;
+        }
         if (e.target.closest("[data-grp-onlycustom]")){
           state.groupMode = state.groupMode === "both" ? "custom" : (state.groupMode === "custom" ? "topics" : "both");
           writeGroupMode(state.groupMode);
@@ -3021,6 +3240,12 @@
           openGroupModal();
           return;
         }
+        return;
+      }
+      var grpSide = e.target.closest("[data-grp-side]");
+      if (grpSide){
+        e.stopPropagation();
+        toggleGroupWide(grpSide.getAttribute("data-grp-side"));
         return;
       }
       var grpMore = e.target.closest("[data-grp-more]");
@@ -3298,7 +3523,7 @@
         headSortClick(th.getAttribute("data-sortcol")); return;
       }
 
-      /* --- topics cell (own event; must come BEFORE the row-click handler) ---
+      /* --- topics cell (opens the Edit Topics popup; must come BEFORE the row-click handler) ---
          Clicking the tags opens topic management for that prompt rather than the prompt's own
          detail page, so it deliberately swallows the row click. Inactive prompts don't get topic
          management at all (there's nothing to tag on a prompt you've turned off) — the cell falls
@@ -3309,14 +3534,7 @@
         if (tRow && !tRow.classList.contains("up-tsk")){
           e.stopPropagation();
           var tId = tRow.getAttribute("data-id");
-          if (tId){
-            var tRowData = findRowById(tId);
-            fire("data-topics-fn", "uptTopicsClick", {
-              prompt_id: tId,
-              prompt_text: tRowData ? String(tRowData.prompt_text || "") : "",
-              tag_ids: tRowData && tRowData.tags ? tRowData.tags.map(function(t){ return String(t.id); }).join(",") : ""
-            });
-          }
+          if (tId) openEditTopicsModal(tId);
         }
         return;
       }
@@ -3559,7 +3777,9 @@
           }
         }
         if (state.expandedGroup) maybeMarkGroupReady(state.expandedGroup);
-        if (state.expandedGroup) renderGroupBlockOnly(state.expandedGroup);
+        if (state.expandedGroup){
+          if (state.groupsWide) renderGroupWideBody(); else renderGroupBlockOnly(state.expandedGroup);
+        }
       },
       update: function(params){
         params = params || {};
