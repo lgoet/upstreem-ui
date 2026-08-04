@@ -789,8 +789,12 @@
        frame. pointer-events:none takes every hover-driven style with it in one rule (row
        background, chip hover, the goto arrow) instead of having to override each individually. */
     html.up-is-scrolling .up-tbody { pointer-events: none; }
+    /* overflow:hidden matches .up-th (see below) -- a cell's own content (a long unbroken chip
+       row, e.g.) must not be able to push past the cell's actual grid-track width once that track
+       has shrunk. Tooltips/popovers spawned from inside a cell are all position:fixed (mounted on
+       body or fixed to the viewport), so this never clips one of those. */
     .up-td { height: 100%; display: flex; align-items: center; gap: 10px; padding: 0 16px 0 12px; min-width: 0;
-      border-left: 1px solid var(--vc-border); }
+      overflow: hidden; border-left: 1px solid var(--vc-border); }
     .up-td:first-child { border-left: none; }   /* see .up-th:first-child for why left, not right */
     /* The row separator lives on the ROW now, not on every individual cell. Per-cell borders broke
        in two independent ways: (1) a stale/un-restamped cell (see applyCols()'s rowsStale fix above)

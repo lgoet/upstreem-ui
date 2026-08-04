@@ -323,6 +323,10 @@
       } catch(e){ return "count"; }
     }
     function writeGroupSort(v){ try { window.localStorage.setItem(gKey("groupsort"), v); } catch(e){} }
+    function readGroupSortDir(){
+      try { return window.localStorage.getItem(gKey("groupsortdir")) === "asc" ? "asc" : "desc"; } catch(e){ return "desc"; }
+    }
+    function writeGroupSortDir(v){ try { window.localStorage.setItem(gKey("groupsortdir"), v); } catch(e){} }
     function readGroupMode(){
       try {
         var v = window.localStorage.getItem(gKey("groupmode"));
@@ -445,6 +449,7 @@
       groupsHasData: false,
       groupsLoading: false,
       groupSort: readGroupSort(),           // "count" (default) | "visibility" | "name"
+      groupSortDir: readGroupSortDir(),     // "desc" (default) | "asc" -- direction for the Sorter above
       groupMode: readGroupMode(),           // "both" (default) | "topics" | "custom"
       /* Wide view: a side list of groups to the left of the (otherwise completely unchanged)
          prompts table, instead of each group expanding inline. Purely a display preference —
@@ -455,9 +460,6 @@
          of being kept per group. Not persisted — an expansion is a look-at-this-now gesture. */
       expandedGroup: null,
       gRows: [], gTotal: null, gLoading: false, gReqId: null,
-      /* gReady/gAnimDone: gate Edit/Generate More's reveal on BOTH the first load landing and the
-         expand animation finishing -- see maybeMarkGroupReady/toggleGroup. */
-      gReady: false, gAnimDone: false,
       gPage: 1, gPageSize: 10,
       /* Group-scoped sibling of selectAllMatching, same reasoning: the group can hold far more
          prompts than the one loaded page in state.gRows, so "select the rest of it" has to be a
@@ -1680,6 +1682,13 @@
        the markup simply never arrives. */
     /* Feather "database" — "layers" is already taken elsewhere in the app. */
     var GRP_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>';
+    /* Feather "sidebar" — one icon, both toggles (the sidelist heading's and the toolbar
+       heading's): clicking either always means "toggle the group sidebar". */
+    var SIDEBAR_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>';
+    /* Same three-line glyph .up-sort-btn already uses elsewhere — a second, differently-scoped
+       Sorter needs its own classes (see below) so it doesn't collide with the flat table's own
+       .up-sort-btn click handling, but it should still look like the same control. */
+    var GRPSIDE_SORT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>';
     var elGrpWrap = null, elGrpMenu = null;
     (function(){
       if (!elHeadTools) return;
@@ -1702,41 +1711,78 @@
        exist yet at this point in the file. */
     var grpPop = null;
 
-    /* ---- groups wide view: side list + the SAME .up-box, unchanged ----
-       Wraps .up-box (head + body, untouched) in a flex row with a new side list to its left.
+    /* ---- groups wide view: side panel + the SAME .up-box, unchanged ----
+       Wraps .up-box (head + body, untouched) in a flex row with a new side panel to its left.
        display:contents on the wrapper when wide view is off means .up-box behaves exactly as if
        this wrapper didn't exist -- no effect on the normal flat/inline-grouped layouts at all.
        Built once at init (same reasoning as the Grouping button above: a CDN pin never touches a
        Bubble element's hand-pasted root markup, so this has to happen in JS to reach existing
-       embeds), not per-render. */
-    var elGrpSidelist = null;
+       embeds), not per-render. The panel is [sidehead (fixed, "Group" + its own Sorter + the
+       list-view toggle)] + [sidelist (scrolls)], not just the list -- the heading needs a place to
+       live that isn't part of the scrolling rows. */
+    var elGrpSidelist = null, elGrpSideSort = null, elGrpSideSortMenu = null;
     (function(){
       var box = root.querySelector(".up-box");
-      if (!box || (box.parentNode && box.parentNode.classList.contains("upt-grp-widewrap"))) return;
-      var wrap = document.createElement("div");
-      wrap.className = "upt-grp-widewrap";
-      box.parentNode.insertBefore(wrap, box);
-      elGrpSidelist = document.createElement("div");
-      elGrpSidelist.className = "upt-grp-sidelist";
-      wrap.appendChild(elGrpSidelist);
-      wrap.appendChild(box);
+      if (!box) return;
+      var wrap = (box.parentNode && box.parentNode.classList.contains("upt-grp-widewrap")) ? box.parentNode : null;
+      if (!wrap){
+        wrap = document.createElement("div");
+        wrap.className = "upt-grp-widewrap";
+        box.parentNode.insertBefore(wrap, box);
+        wrap.appendChild(box);
+      }
+      var panel = wrap.querySelector(".upt-grp-sidepanel");
+      if (!panel){
+        panel = document.createElement("div");
+        panel.className = "upt-grp-sidepanel";
+        panel.innerHTML =
+          '<div class="upt-grp-sidehead">' +
+            '<span class="upt-grp-sidehead-lbl">Group</span>' +
+            '<div class="upt-grp-sidetools">' +
+              '<div class="upt-grp-sidesort">' +
+                '<button class="upt-grp-sidesort-btn up-iconbtn" type="button" data-tip="Sort" aria-label="Sort groups" aria-haspopup="menu" aria-expanded="false">' +
+                  GRPSIDE_SORT_ICON + '</button>' +
+                '<div class="up-menu upt-grp-sidesort-menu" role="menu" aria-hidden="true"></div>' +
+              '</div>' +
+              '<button class="upt-grp-widebtn up-iconbtn" type="button" data-grp-widebtn data-tip="List view" aria-label="Switch to list view">' +
+                SIDEBAR_ICON + '</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="upt-grp-sidelist"></div>';
+        wrap.insertBefore(panel, box);
+      }
+      elGrpSidelist = panel.querySelector(".upt-grp-sidelist");
+      elGrpSideSort = panel.querySelector(".upt-grp-sidesort");
+      elGrpSideSortMenu = panel.querySelector(".upt-grp-sidesort-menu");
     })();
-    if (!elGrpSidelist) elGrpSidelist = root.querySelector(".upt-grp-sidelist");
     root.classList.toggle("is-groups-wide", state.groupsWide);
+
+    /* The OTHER sidebar toggle: lives IN the toolbar heading, directly before "Prompts", and is
+       only ever visible while grouping is on and wide view is off (see CSS) -- when wide view is
+       already on, the sidepanel's own toggle above is the one in view. Built once, unconditionally;
+       .is-grouped/.is-groups-wide on root is what actually shows or hides it, same as every other
+       state-driven toolbar control in this file. */
+    (function(){
+      if (!elHeading) return;
+      if (elHeading.querySelector(".upt-heading-widebtn")) return;
+      var btn = document.createElement("button");
+      btn.className = "upt-heading-widebtn up-iconbtn";
+      btn.type = "button";
+      btn.setAttribute("data-grp-widebtn", "");
+      btn.setAttribute("data-tip", "Wide view");
+      btn.setAttribute("aria-label", "Switch to wide view");
+      btn.innerHTML = SIDEBAR_ICON;
+      elHeading.insertBefore(btn, elHeading.firstChild);
+    })();
 
     function populateGroupMenu(){
       if (!elGrpMenu) return;
       var custom = readCustomGroups();
       var on = state.grouped;
-      var wide = state.groupsWide;
       var h = '<div class="up-pop-head">Grouping</div>' +
         '<div class="up-pop-row" data-grp-toggle>' +
           '<span class="up-pop-label">Group by topics</span>' +
           '<span class="up-switch' + (on ? " is-on" : "") + '" role="switch" aria-checked="' + (on ? "true" : "false") + '"></span>' +
-        '</div>' +
-        '<div class="up-pop-row" data-grp-widetoggle>' +
-          '<span class="up-pop-label">Wide view</span>' +
-          '<span class="up-switch' + (wide ? " is-on" : "") + '" role="switch" aria-checked="' + (wide ? "true" : "false") + '"></span>' +
         '</div>';
       /* Grouping is an Active-view feature; say so instead of silently doing nothing. */
       if (state.status === "inactive"){
@@ -2179,6 +2225,17 @@
 
     function groupingOn(){ return state.grouped && state.status === "active"; }
 
+    /* Wide view on/off -- pure display preference (doesn't touch state.expandedGroup, what's
+       fetched, or any event). Switching away and back leaves whichever group was open still open.
+       Reached only via the two sidebar-icon toggles now (the dropdown's own "Wide view" switch
+       was removed -- one control, not two disagreeing ones). */
+    function toggleGroupsWide(){
+      state.groupsWide = !state.groupsWide;
+      writeGroupsWide(state.groupsWide);
+      root.classList.toggle("is-groups-wide", state.groupsWide);
+      if (groupingOn()) renderGroups();
+    }
+
     /* The group list, sorted client-side. "No topic" is pinned last regardless of the sort --
        it is not a topic competing with the others, it is the remainder. */
     function sortedGroups(){
@@ -2186,12 +2243,16 @@
       var untagged = rows.filter(function(g){ return isYes2(g.is_untagged); });
       rows = rows.filter(function(g){ return !isYes2(g.is_untagged); });
       var mode = state.groupSort;
+      /* "desc" is the literal direction, same convention orderValue()/state.sortDir already use
+         for the flat table -- not a per-field-flipped "sensible default". name:asc reads A-Z,
+         name:desc reads Z-A; count/visibility:desc reads highest first. */
+      var mul = state.groupSortDir === "asc" ? 1 : -1;
       function cmp(a, b){
-        if (mode === "name") return String(groupLabel(a)).localeCompare(String(groupLabel(b)));
+        if (mode === "name") return String(groupLabel(a)).localeCompare(String(groupLabel(b))) * mul;
         var av, bv;
         if (mode === "count"){ av = toNum(a.prompts_count) || 0; bv = toNum(b.prompts_count) || 0; }
         else { av = toNum(a.visibility_pct) || 0; bv = toNum(b.visibility_pct) || 0; }
-        return bv - av;   // both numeric modes are descending
+        return (av - bv) * mul;
       }
       /* Custom groupings lead in Both mode -- in Topics/Custom mode this partition is a no-op
          (one side is always empty, since the RPC only ever returns one kind), so it is simplest
@@ -2274,30 +2335,35 @@
       return '<div class="upt-grp-kpi"><span class="upt-grp-kpi-val">' + html + '</span>' +
              '<span class="upt-grp-kpi-lbl">' + esc(label) + '</span></div>';
     }
-    function grpHeadHtml(g){
-      var id = groupId(g), open = state.expandedGroup === id;
+    /* Shared with renderGroupSidelist() below -- a topic-type group is the SAME .up-topicchip
+       the topic popover and the grouping popup draw, a custom group is its colour dot + name, and
+       "No topic" is bare text. One function, so the wide view's sidelist can never drift from
+       what the inline header already draws for the identical group. */
+    function groupChipHtml(g){
       var custom = isYes2(g.is_custom), untag = isYes2(g.is_untagged);
       var label = groupLabel(g);
-      var chip;
       if (custom){
         /* A custom group has no emoji, but it does carry the colour the user picked (or the mix
            of its topics' colours) as a 6px dot in front of the name. */
         var cg = readCustomGroups().filter(function(c){ return c.key === g.group_key; })[0];
         var cgCol = (cg && cg.color) || "#6b7280";
-        chip = '<span class="upt-grp-cdot" style="background:' + esc(cgCol) + '"></span>' +
+        return '<span class="upt-grp-cdot" style="background:' + esc(cgCol) + '"></span>' +
                '<span class="upt-grp-name">' + esc(label) + '</span>';
-      } else if (untag){
-        chip = '<span class="upt-grp-name">' + esc(label) + '</span>';
-      } else {
-        /* core's .up-topicchip — the same chip the topic popover and the grouping popup draw.
-           Read-only here, so no checkbox slot; everything else is identical by construction. */
-        var hex = String(g.tag_hex_light || g.tag_hex_dark || "#6b7280");
-        if (hex.charAt(0) !== "#") hex = "#" + hex;
-        chip = '<span class="up-topicchip is-static" style="--ust-tag-color:' + esc(hex) + '">' +
-                 (g.tag_emoji ? '<span class="up-topicchip-e">' + esc(g.tag_emoji) + '</span>' : "") +
-                 '<span class="up-topicchip-lbl">' + esc(label) + '</span>' +
-               '</span>';
       }
+      if (untag) return '<span class="upt-grp-name">' + esc(label) + '</span>';
+      /* core's .up-topicchip — the same chip the topic popover and the grouping popup draw.
+         Read-only here, so no checkbox slot; everything else is identical by construction. */
+      var hex = String(g.tag_hex_light || g.tag_hex_dark || "#6b7280");
+      if (hex.charAt(0) !== "#") hex = "#" + hex;
+      return '<span class="up-topicchip is-static" style="--ust-tag-color:' + esc(hex) + '">' +
+               (g.tag_emoji ? '<span class="up-topicchip-e">' + esc(g.tag_emoji) + '</span>' : "") +
+               '<span class="up-topicchip-lbl">' + esc(label) + '</span>' +
+             '</span>';
+    }
+    function grpHeadHtml(g){
+      var id = groupId(g), open = state.expandedGroup === id;
+      var custom = isYes2(g.is_custom);
+      var chip = groupChipHtml(g);
       var nAct = toNum(g.prompts_count), nIn = toNum(g.prompts_count_inactive);
       var counts = '<span class="up-num">' + (nAct == null ? "–" : UC.fmtTotal(nAct)) + '</span>' +
         ((nIn != null && nIn > 0) ? '<span class="upt-grp-inactive">+' + UC.fmtTotal(nIn) + '</span>' : "");
@@ -2326,34 +2392,41 @@
          the identical x). Markup itself lives in grpSelectallHtml() -- toggleGroup() patches this
          same element in/out on open/close without a full head re-render (see there for why). */
       var chk = grpSelectallHtml(id, open);
-      /* Generate More (and, for a custom group, Edit) sit right after the chip/label, inside
-         .upt-grp-left, not after the KPIs. .upt-grp-left is flex:1 1 auto and already runs far
-         wider than its own content (see the hover-reveal width guard below), so appending a child
-         here claims space that was already free -- the chevron and chip that come BEFORE it never
-         move, and .upt-grp-kpis is a separate sibling of .upt-grp-left entirely, unaffected either
-         way. That is what makes a pure opacity fade possible: nothing needs to slide out of the way
-         for it to appear. Both buttons live in one .upt-grp-hoveractions wrapper (flex, 16px gap)
-         so only ONE absolute-positioned element needs its `left` set in JS, not two. */
-      /* is-ready mirrors state.gReady, not just something maybeMarkGroupReady() pokes onto a live
-         DOM node once -- a full re-render of this markup (e.g. renderGroups() rebuilding
-         everything from a groupsLoading/extLoading transition) used to lose the class even though
-         the group was logically still ready, since the class only ever lived on the OLD node. */
-      return '<div class="upt-grp-head' + (open ? " is-open" : "") + (open && state.gReady ? " is-ready" : "") +
+      return '<div class="upt-grp-head' + (open ? " is-open" : "") +
                '" data-grp="' + esc(id) + '"' +
                ' role="button" tabindex="0" aria-expanded="' + (open ? "true" : "false") + '">' +
           chk +
-          '<div class="upt-grp-left">' + GRP_CHEV + chip +
-            '<div class="upt-grp-hoveractions">' +
-              (custom ? '<button class="upt-grp-edit" type="button" data-grp-headedit="' + esc(id) + '">' + GRP_EDIT_SVG + 'Edit</button>' : "") +
-              /* Fires a JS event and nothing else -- no state change, no refetch, by design. */
-              '<button class="upt-grp-more" type="button" data-grp-more="' + esc(id) + '">' + GEN_SVG + 'Generate More</button>' +
-            '</div>' +
-          '</div>' +
+          '<div class="upt-grp-left">' + GRP_CHEV + chip + '</div>' +
           '<div class="upt-grp-kpis">' +
             grpKpi("Prompts", counts) + grpKpi("Visibility", vis) +
             grpKpi("Ø Rank", rank) + grpKpi("Ø Sentiment", sent) +
           '</div>' +
+          groupMenuBtnHtml(id, custom) +
         '</div>';
+    }
+    /* Group actions -- Edit/Delete (custom groupings only) + Generate More (always), reached via
+       one always-visible 3-dot button, not a hover reveal: on a touch device or with a mouse that
+       never happens to rest over the row, a hover-only action is an action you can't discover.
+       Shared verbatim between the inline header (grpHeadHtml) and the wide view's sidelist row
+       (renderGroupSidelist) -- same actions, same order, same look, wherever a group row appears.
+       grpActionMenu tracks which single group's menu is open (module state, like grpRowMenu);
+       closing on outside click is handled by its own document listener further down, since this
+       menu isn't nested inside any single makePopover-registered wrap the way grpRowMenu is
+       (nested inside the Grouping popover, which already closes it for free). */
+    var grpActionMenu = null;
+    function groupActionsMenuHtml(id, custom){
+      return '<div class="up-menu upt-grp-actmenu is-shown" role="menu">' +
+        (custom ? '<div class="up-pop-opt" data-grp-headedit="' + esc(id) + '">Edit</div>' : "") +
+        (custom ? '<div class="up-pop-opt is-danger" data-grp-headdel="' + esc(id) + '">Delete</div>' : "") +
+        '<div class="up-pop-opt" data-grp-more="' + esc(id) + '">Generate More</div>' +
+      '</div>';
+    }
+    function groupMenuBtnHtml(id, custom){
+      var open = grpActionMenu === id;
+      return '<div class="upt-grp-menuwrap' + (open ? " is-open" : "") + '">' +
+        '<button class="upt-grp-menubtn" type="button" data-grp-menubtn="' + esc(id) + '" aria-label="Group actions" aria-haspopup="menu" aria-expanded="' + (open ? "true" : "false") + '">' + GRP_MORE_SVG + '</button>' +
+        (open ? groupActionsMenuHtml(id, custom) : "") +
+      '</div>';
     }
 
     /* Byte-for-byte the domains-table drilldown footer: the table's own .up-pagesize /
@@ -2406,56 +2479,6 @@
     }
 
 
-    /* Generate More/Edit reveal on hover of the OPEN group's header, no delay -- just the CSS
-       opacity fade (.upt-grp-hoveractions { transition: opacity 200ms ease }). It only reveals
-       when the row can actually fit it: measured against what the KPIs plus the label already
-       occupy, so a narrow table never has it overlap them. */
-    function bindGroupHoverReveal(){
-      Array.prototype.slice.call(elTbody.querySelectorAll(".upt-grp-head")).forEach(function(head){
-        if (head.getAttribute("data-hoverbound") === "1") return;
-        head.setAttribute("data-hoverbound", "1");
-        head.addEventListener("mouseenter", function(){
-          /* CSS already gates the reveal on .is-open too (see .upt-grp-head.is-open.is-hovered),
-             but bailing here as well skips the width measurement below entirely for a collapsed
-             row -- there's nothing to reveal, so nothing to measure. */
-          if (!head.classList.contains("is-open")) return;
-          var wrap = head.querySelector(".upt-grp-hoveractions");
-          var left = head.querySelector(".upt-grp-left");
-          var kpis = head.querySelector(".upt-grp-kpis");
-          if (!wrap || !left || !kpis) return;
-          /* .upt-grp-hoveractions (Edit + Generate More together) is position:absolute inside
-             .upt-grp-left (see CSS) -- it never contributes to that flex item's own width, so it
-             cannot squeeze the chevron/chip even while sitting in the DOM at all times for a pure
-             opacity fade. Its left offset is set here, freshly, from the REAL rendered width of
-             everything that comes before it (not the grown flex container's own scrollWidth --
-             see the fail-open note this used to carry two rounds ago for why that was wrong). */
-          /* getBoundingClientRect, not offsetWidth -- the chevron is an <svg>, and offsetWidth
-             is an HTMLElement-only property that silently comes back undefined/0 on SVG in some
-             engines, which starved leftContent of ~16px and landed the button 16px too close. */
-          var leftContent = 0;
-          Array.prototype.forEach.call(left.children, function(c){
-            if (c === wrap) return;
-            leftContent += c.getBoundingClientRect().width || 0;
-          });
-          var gaps = Math.max(0, left.children.length - 2);   // -1 for fencepost, -1 to exclude `wrap`
-          leftContent += gaps * 10;                            // .upt-grp-left's own flex gap
-          var GAP = 32;
-          wrap.style.left = (leftContent + GAP) + "px";
-          /* Still fails OPEN: only a row too narrow to fit label + gap + buttons blocks the
-             reveal, and only in that direction -- an unmeasurable/zero clientWidth still shows
-             it rather than hiding it by default. */
-          var w = head.clientWidth || 0;
-          if (w){
-            var need = leftContent + GAP + (wrap.offsetWidth || 150) + (kpis.scrollWidth || 0);
-            if (w < need) return;
-          }
-          head.classList.add("is-hovered");
-        });
-        head.addEventListener("mouseleave", function(){
-          head.classList.remove("is-hovered");
-        });
-      });
-    }
     function renderGroups(){
       /* ONLY state.groupsLoading (set exclusively by fetchGroups() -- i.e. this component KNOWING
          it just asked for fresh groups) and !state.groupsHasData gate this skeleton. A tempting-
@@ -2517,22 +2540,24 @@
       }).join("");
       applyCols();
       initTopicsCells();
-      bindGroupHoverReveal();
     }
     /* No KPIs here on purpose (spec) -- a color dot + name, same label logic grpHeadHtml uses.
        .is-open marks the currently expanded (state.expandedGroup) one. */
     function renderGroupSidelist(rows){
       if (!elGrpSidelist) return;
       elGrpSidelist.innerHTML = rows.map(function(g){
-        var id = groupId(g);
+        var id = groupId(g), custom = isYes2(g.is_custom);
         var open = state.expandedGroup === id;
-        var color = String(g.tag_color || g.color || "#6b7280");
-        if (color.charAt(0) !== "#" && /^[0-9a-fA-F]{6}$/.test(color)) color = "#" + color;
-        return '<button type="button" class="upt-grp-sideitem' + (open ? " is-open" : "") +
-          '" data-grp-side="' + esc(id) + '">' +
-          (isYes2(g.is_untagged) ? "" : '<span class="upt-grp-cdot" style="background:' + esc(color) + '"></span>') +
-          '<span class="upt-grp-side-name">' + esc(groupLabel(g)) + '</span>' +
-        '</button>';
+        /* Same chip groupChipHtml() draws for the inline header -- a topic-type group reads as a
+           topic (its real .up-topicchip), a custom one as its colour dot, exactly like the
+           non-wide view, not a plain grey dot regardless of kind. Not a <button> here (the group
+           actions menu below needs its own nested <button>, and a button can't contain one) --
+           role="button"/tabindex mirrors .upt-grp-head's own convention for the identical reason. */
+        return '<div class="upt-grp-sideitem' + (open ? " is-open" : "") +
+          '" role="button" tabindex="0" data-grp-side="' + esc(id) + '">' +
+          '<span class="upt-grp-sidechip">' + groupChipHtml(g) + '</span>' +
+          groupMenuBtnHtml(id, custom) +
+        '</div>';
       }).join("");
     }
     /* .up-tbody's content here is exactly what the flat table would put there for state.gRows —
@@ -2700,37 +2725,6 @@
          synchronous re-render in the same frame read as a stutter. */
       fetchGroupPage(GRP_ANIM_MS + 40);
       renderGroupBlockOnly(id, true);
-      /* Edit/Generate More must not be revealable (even on hover) until this group's FIRST load
-         has actually landed AND the expand animation has visually finished -- see
-         maybeMarkGroupReady's own comment for why both conditions are tracked separately rather
-         than assuming one implies the other. Reset on every open (including re-opening the same
-         id) so a stale .is-ready from a previous open cycle can't leak into this one. */
-      if (head) head.classList.remove("is-ready");
-      state.gReady = false;
-      state.gAnimDone = false;
-      (function(openedId){
-        setTimeout(function(){
-          if (state.expandedGroup !== openedId) return;   // closed/switched before the anim timer fired
-          state.gAnimDone = true;
-          maybeMarkGroupReady(openedId);
-        }, GRP_ANIM_MS);
-      })(id);
-    }
-
-    /* Flips .is-ready on the currently-open group's header once BOTH: (a) the expand animation has
-       visually finished (state.gAnimDone, timed in toggleGroup's open branch above) and (b) this
-       group's first page of rows has actually arrived (!state.gLoading, flipped in setGroupPrompts
-       below). Tracked as two independent flags rather than inferring one from the other -- fetching
-       is already delayed GRP_ANIM_MS+40 past open (see fetchGroupPage's own call above), which in
-       practice makes the animation finish first every time, but that is an accident of the current
-       delay constant, not a guarantee this function should rely on. Whichever condition lands
-       second is what actually triggers the reveal; the other call site is a no-op until then. */
-    function maybeMarkGroupReady(id){
-      if (state.expandedGroup !== id || state.gReady) return;
-      if (!(state.gAnimDone && !state.gLoading)) return;
-      state.gReady = true;
-      var head = elTbody.querySelector('[data-grp="' + cssEsc(id) + '"]');
-      if (head) head.classList.add("is-ready");
     }
 
     /* Header data. Fired on: the "Group by topics" toggle, the "Only show custom groupings"
@@ -2888,6 +2882,27 @@
           '<span class="up-switch' + (state.sortDir === "desc" ? " is-on" : "") + '" role="switch" data-sortdir></span>' +
         '</div>';
       elSortMenu.innerHTML = html;
+    }
+    /* Same field list the Grouping dropdown's "Sort groups by" quick-picks use (GRP_SORTS,
+       state.groupSort), styled and behaving exactly like populateSort() above (checkmarked options
+       + a Descending switch) instead of the dense-button strip -- this lives right where you're
+       already looking (the sidelist heading), so it gets the full control, not a shortcut version
+       of it. Writes the SAME state.groupSort the quick-picks read/write, so the two stay in sync. */
+    function populateGrpSideSort(){
+      if (!elGrpSideSortMenu) return;
+      var html = '<div class="up-pop-head">Sort by</div>';
+      html += GRP_SORTS.map(function(f){
+        var label = f.key === "name" ? "Name" : f.label;
+        return '<div class="up-pop-opt' + (f.key === state.groupSort ? " is-active" : "") + '" data-grpside-sortfield="' + f.key + '">' +
+                 '<span>' + esc(label) + '</span>' +
+                 '<span class="up-check">' + CHECK_SVG + '</span>' +
+               '</div>';
+      }).join("");
+      html += '<div class="up-pop-div"></div>' +
+        '<div class="up-pop-row"><span class="up-pop-label">Descending</span>' +
+          '<span class="up-switch' + (state.groupSortDir === "desc" ? " is-on" : "") + '" role="switch" data-grpside-sortdir></span>' +
+        '</div>';
+      elGrpSideSortMenu.innerHTML = html;
     }
 
     /* ---------------- columns / pager / sort (core) ---------------- */
@@ -3097,10 +3112,10 @@
       });
       elGrpWrap.__upPop = grpPop;
     }
-    [elSort, elCols, elMent].forEach(function(p){
+    [elSort, elCols, elMent, elGrpSideSort].forEach(function(p){
       if (!p) return;
       p.__upPop = UC.makePopover({
-        wrap: p, menu: p.querySelector(".up-sort-menu, .up-cols-menu, .up-ment-menu"), opener: p.querySelector("button"), group: POP_GROUP
+        wrap: p, menu: p.querySelector(".up-sort-menu, .up-cols-menu, .up-ment-menu, .upt-grp-sidesort-menu"), opener: p.querySelector("button"), group: POP_GROUP
       });
     });
     function popOf(pop){ return pop && pop.__upPop; }
@@ -3109,12 +3124,25 @@
       if (open) h.open(); else h.close(false);
     }
     function closePops(except){
-      [elSort, elCols, elMent, elGrpWrap].forEach(function(p){ if (p && p !== except) setPopOpen(p, false); });
+      [elSort, elCols, elMent, elGrpWrap, elGrpSideSort].forEach(function(p){ if (p && p !== except) setPopOpen(p, false); });
     }
+
+    /* grpActionMenu's own outside-click-close -- it isn't nested inside any single makePopover
+       wrap (unlike grpRowMenu, which lives inside the Grouping popover and closes for free when
+       THAT closes), it can appear on any group row across the whole table/sidelist, and a click
+       anywhere on the page outside it -- not just inside root -- has to close it, so this is its
+       own always-active listener rather than folded into the ownsTarget-gated one below. */
+    document.addEventListener("click", function(e){
+      if (grpActionMenu == null) return;
+      if (e.target.closest(".upt-grp-menuwrap")) return;
+      grpActionMenu = null;
+      if (groupingOn()) renderGroups();
+    });
 
     function ownsTarget(tg){
       return root.contains(tg) || (elSortMenu && elSortMenu.contains(tg)) || (elColsMenu && elColsMenu.contains(tg))
-          || (elMentMenu && elMentMenu.contains(tg)) || (elBulk && elBulk.contains(tg));
+          || (elMentMenu && elMentMenu.contains(tg)) || (elBulk && elBulk.contains(tg))
+          || (elGrpSideSortMenu && elGrpSideSortMenu.contains(tg));
     }
     document.addEventListener("click", function(e){
       if (!ownsTarget(e.target)) return;
@@ -3167,16 +3195,6 @@
             if (hadQuery) runSearch();     // clears the filter server-side, not just the input
             else render();
           }
-          return;
-        }
-        if (e.target.closest("[data-grp-widetoggle]")){
-          /* Pure display preference -- doesn't touch state.expandedGroup, what's fetched, or any
-             event. Switching away and back leaves whichever group was open still open. */
-          state.groupsWide = !state.groupsWide;
-          writeGroupsWide(state.groupsWide);
-          populateGroupMenu();
-          root.classList.toggle("is-groups-wide", state.groupsWide);
-          if (groupingOn()) renderGroups();
           return;
         }
         if (e.target.closest("[data-grp-onlycustom]")){
@@ -3242,10 +3260,16 @@
         }
         return;
       }
-      var grpSide = e.target.closest("[data-grp-side]");
-      if (grpSide){
+      /* These four must be checked BEFORE grpSide below: the group-actions menu button and its
+         dropdown live NESTED inside a .upt-grp-sideitem[data-grp-side], so a click anywhere in
+         them also matches grpSide's own closest() check -- whichever branch runs first wins, and
+         a bare row-toggle must not swallow a menu click. */
+      var grpMenuBtn = e.target.closest("[data-grp-menubtn]");
+      if (grpMenuBtn){
         e.stopPropagation();
-        toggleGroupWide(grpSide.getAttribute("data-grp-side"));
+        var mbId = grpMenuBtn.getAttribute("data-grp-menubtn");
+        grpActionMenu = (grpActionMenu === mbId) ? null : mbId;
+        if (groupingOn()) renderGroups();
         return;
       }
       var grpMore = e.target.closest("[data-grp-more]");
@@ -3253,6 +3277,8 @@
         e.stopPropagation();
         var mk = grpMore.getAttribute("data-grp-more");
         var mg = (state.groups || []).filter(function(x){ return groupId(x) === mk; })[0];
+        grpActionMenu = null;
+        if (groupingOn()) renderGroups();
         /* Fires the JS event and nothing else — no refetch, no state change, per the spec. */
         fire("data-generatemore-fn", "uptGenerateMore", { group_key: mk, tag_ids: mg ? groupTagIds(mg).join(",") : "" });
         return;
@@ -3261,7 +3287,24 @@
       if (grpHeadEdit){
         e.stopPropagation();
         var hek = grpHeadEdit.getAttribute("data-grp-headedit");
+        grpActionMenu = null;
+        if (groupingOn()) renderGroups();
         openGroupModal(readCustomGroups().filter(function(x){ return x.key === hek; })[0] || null);
+        return;
+      }
+      var grpHeadDel = e.target.closest("[data-grp-headdel]");
+      if (grpHeadDel){
+        e.stopPropagation();
+        var hdk = grpHeadDel.getAttribute("data-grp-headdel");
+        grpActionMenu = null;
+        writeCustomGroups(readCustomGroups().filter(function(g){ return g.key !== hdk; }));
+        if (groupingOn()) fetchGroups();
+        return;
+      }
+      var grpSide = e.target.closest("[data-grp-side]");
+      if (grpSide){
+        e.stopPropagation();
+        toggleGroupWide(grpSide.getAttribute("data-grp-side"));
         return;
       }
       var grpSelAll = e.target.closest("[data-grp-selectall]");
@@ -3512,6 +3555,41 @@
       if (sf){ applySort(sf.getAttribute("data-sortfield"), state.sortDir); return; }
       if (e.target.closest("[data-sortdir]")){
         applySort(state.sortField, state.sortDir === "desc" ? "asc" : "desc");
+        return;
+      }
+
+      /* --- the sidelist's own Sorter (same state.groupSort/groupSortDir the Grouping dropdown's
+         quick-picks read/write, just the full field+direction control instead of a shortcut). --- */
+      var sideSortBtn = e.target.closest(".upt-grp-sidesort-btn");
+      if (sideSortBtn){
+        var openSS = !elGrpSideSort.classList.contains("is-open");
+        closePops(elGrpSideSort);
+        if (openSS) populateGrpSideSort();
+        setPopOpen(elGrpSideSort, openSS);
+        return;
+      }
+      var ssf = e.target.closest("[data-grpside-sortfield]");
+      if (ssf){
+        state.groupSort = ssf.getAttribute("data-grpside-sortfield");
+        writeGroupSort(state.groupSort);
+        populateGrpSideSort();
+        state.expandedGroup = null;
+        if (groupingOn()) renderTable();
+        return;
+      }
+      if (e.target.closest("[data-grpside-sortdir]")){
+        state.groupSortDir = state.groupSortDir === "desc" ? "asc" : "desc";
+        writeGroupSortDir(state.groupSortDir);
+        populateGrpSideSort();
+        state.expandedGroup = null;
+        if (groupingOn()) renderTable();
+        return;
+      }
+      /* --- the sidebar toggle -- one handler, both locations (sidelist heading + toolbar
+         heading), since both carry the same data-grp-widebtn marker and always mean the same
+         thing: toggle wide view. --- */
+      if (e.target.closest("[data-grp-widebtn]")){
+        toggleGroupsWide();
         return;
       }
 
@@ -3776,7 +3854,6 @@
               "tag_ids/tagmode filter it applies to the actual rows. Check that step, not this file.");
           }
         }
-        if (state.expandedGroup) maybeMarkGroupReady(state.expandedGroup);
         if (state.expandedGroup){
           if (state.groupsWide) renderGroupWideBody(); else renderGroupBlockOnly(state.expandedGroup);
         }

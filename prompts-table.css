@@ -555,31 +555,60 @@
 .up-root.is-grouped .up-foot { display: none; }    /* pagination lives inside the open section */
 
 /* ---------- groups wide view ----------
-   .upt-grp-widewrap wraps .up-box (unchanged) with a new side list to its left. display:contents
-   when off (the default/normal case, and also whenever grouping itself is off) means .up-box sits
-   exactly where it always has, full width -- the wrapper is invisible to layout until BOTH
-   is-groups-wide and is-grouped are on. align-items:stretch (flex default) is what makes the two
-   panels match height: whichever is taller sets the row's height, the other one just gets that
-   same height handed to it and scrolls its own content if it doesn't need all of it. */
+   .upt-grp-widewrap wraps .up-box (unchanged) with a new side panel to its left. display:contents
+   whenever grouping itself is off means .up-box sits exactly where it always has, full width --
+   the wrapper is invisible to layout until grouping is on. Once grouping is on the wrap stays flex
+   permanently (not just while wide view is also on) so the sidepanel's own width/opacity can
+   transition on toggle -- animating a display switch isn't possible, animating a width is.
+   align-items:stretch (flex default) is what makes the two panels match height: whichever is
+   taller sets the row's height, the other one just gets that same height handed to it and scrolls
+   its own content if it doesn't need all of it. */
 .upt-grp-widewrap { display: contents; }
-.up-root.is-groups-wide.is-grouped .upt-grp-widewrap { display: flex; align-items: stretch; gap: 8px; }
-.up-root.is-groups-wide.is-grouped .up-box { flex: 1 1 auto; min-width: 0; }
-.upt-grp-sidelist { display: none; }
-.up-root.is-groups-wide.is-grouped .upt-grp-sidelist {
-  display: flex; flex-direction: column; flex: 0 0 20%; min-width: 0;
-  overflow-x: hidden; overflow-y: auto;
-  border: 1px solid var(--vc-border); border-radius: 16px;   /* matches .up-box's own radius */
+.up-root.is-grouped .upt-grp-widewrap { display: flex; align-items: stretch; gap: 0; transition: gap 200ms ease; }
+.up-root.is-grouped.is-groups-wide .upt-grp-widewrap { gap: 8px; }
+.up-root.is-grouped .up-box { flex: 1 1 auto; min-width: 0; }
+/* The panel itself is what animates in/out (200ms ease, matching every other reveal in this app)
+   -- width 0 -> ~20% instead of a display toggle, so there is something to actually transition.
+   overflow:hidden while collapsed also clips the sidehead/sidelist content during the animation
+   instead of letting it reflow/wrap at intermediate widths. */
+.upt-grp-sidepanel { display: flex; flex-direction: column; flex: 0 0 auto; width: 0; min-width: 0;
+  opacity: 0; overflow: hidden; border: 1px solid transparent; border-radius: 16px;   /* matches .up-box's own radius */
+  transition: width 200ms ease, opacity 160ms ease, border-color 200ms ease; }
+.up-root.is-grouped.is-groups-wide .upt-grp-sidepanel {
+  width: 20%; opacity: 1; border-color: var(--vc-border);
 }
+.upt-grp-sidehead { display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  height: 45px; flex: 0 0 45px; padding: 0 12px; background: var(--vt-head-bg);
+  border-bottom: 1px solid var(--vc-border); }
+.upt-grp-sidehead-lbl { font-size: 12px; font-weight: 400; color: var(--vc-muted); white-space: nowrap; }
+.upt-grp-sidetools { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
+.upt-grp-sidelist { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0;
+  overflow-y: auto; overflow-x: hidden; }
 /* Same look/hover/open treatment as .upt-grp-head (the inline view's own group row), just
    shorter -- no KPIs here by design, so there's nothing that needs the extra height for. */
 .upt-grp-sideitem { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 12px;
-  border: 0; border-bottom: 1px solid var(--vc-border); background: transparent; color: var(--vc-text);
-  cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 500; text-align: left;
-  width: 100%; min-width: 0; }
+  border-bottom: 1px solid var(--vc-border); color: var(--vc-text);
+  cursor: pointer; font-size: 13px; font-weight: 500; width: 100%; min-width: 0; position: relative; }
 .upt-grp-sideitem:last-child { border-bottom: 0; }
 .upt-grp-sideitem:hover { background: var(--vt-row-hover); }
 .upt-grp-sideitem.is-open { background: var(--vc-heading-bg); }
-.upt-grp-side-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+/* Wraps whatever groupChipHtml() renders (a topic's .up-topicchip, or a custom group's colour dot
+   + name as two sibling spans) as ONE flex item so it can grow/shrink and truncate as a unit --
+   groupChipHtml() itself has no single root element for the custom-group case. */
+.upt-grp-sidechip { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto; overflow: hidden; }
+/* Only the sidelist's copy of the group-actions button is hover-revealed -- the inline header's
+   (see below) is always visible, since a KPI row has room and a click target there never competes
+   with the label the way this compact 44px row would if it stayed permanently visible. */
+.upt-grp-sideitem .upt-grp-menuwrap { opacity: 0; transition: opacity 120ms ease; }
+.upt-grp-sideitem:hover .upt-grp-menuwrap,
+.upt-grp-sideitem .upt-grp-menuwrap.is-open { opacity: 1; }
+
+/* The OTHER sidebar toggle: sits in the toolbar heading, right before "Prompts", built once and
+   ALWAYS in the DOM (see prompts-table.js) -- only shown while grouping is on and wide view is
+   NOT (once wide view is on, the sidepanel's own toggle above is the one already in view; showing
+   both would be two controls for the same single on/off switch). */
+.upt-heading-widebtn { display: none; margin-right: 4px; }
+.up-root.is-grouped:not(.is-groups-wide) .upt-heading-widebtn { display: inline-flex; }
 
 .upt-grp { border-bottom: 1px solid var(--vc-border); }
 .upt-grp:last-child { border-bottom: 0; }
@@ -625,35 +654,28 @@
 .upt-grp-kpi-val, .upt-grp-kpi-val .up-num, .upt-grp-kpi-val .up-sent-val {
   font-size: 13px; font-weight: 500; }
 
-/* Text only, no button chrome: Edit/Generate More are link-like actions next to a row of readings,
-   and bordered buttons there competed with the group header itself. Sit right next to the
-   topic/group label now, not after the KPIs -- position:absolute on the WRAPPER, inside
-   .upt-grp-left (positioned), is what makes a PURE fade possible: an absolute element has zero
-   footprint in the flex layout, so it can live in the DOM at all times (needed for a fade to have
-   something to fade FROM) without ever being able to squeeze the chevron/label/KPIs, hovered or
-   not. Its `left` offset is set in JS (bindGroupHoverReveal) from the real rendered width of what
-   comes before it. Both buttons share this one wrapper so only ONE element needs that JS-computed
-   offset -- Edit (custom groupings only) sits 16px to the LEFT of Generate More, via the
-   wrapper's own gap, not a second absolute calculation. */
-.upt-grp-hoveractions { position: absolute; top: 50%; transform: translateY(-50%); left: 0;
-  opacity: 0; pointer-events: none; transition: opacity 200ms ease;
-  display: flex; align-items: center; gap: 32px; }
-/* Edit/Generate More only reveal on hover for the OPEN group's header, same gating as the
-   select-all checkbox -- a collapsed row never shows either, by design. .is-ready (set in JS by
-   maybeMarkGroupReady, prompts-table.js) additionally requires this group's first load to have
-   actually landed AND the expand animation to have visually finished -- hovering the instant a
-   group starts opening no longer flashes these before either is done. Deliberately a plain class
-   gate, not tied to the mouseenter handler itself: hovering BEFORE ready still adds .is-hovered
-   (see bindGroupHoverReveal), so if the user is still hovering the moment .is-ready lands, this
-   rule re-evaluates live and the buttons fade in on their own -- no need to move the mouse out
-   and back in. */
-.upt-grp-head.is-open.is-ready.is-hovered .upt-grp-hoveractions { opacity: 1; pointer-events: auto; }
-.upt-grp-more, .upt-grp-edit { height: 28px; padding: 0; border: 0; background: transparent;
-  color: var(--vc-third); font-family: inherit; font-size: 12.5px; font-weight: 500;
-  cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;
-  transition: color 120ms ease; }
-.upt-grp-more svg, .upt-grp-edit svg { width: 14px; height: 14px; display: block; }
-.upt-grp-more:hover, .upt-grp-edit:hover { color: var(--vc-text); }
+/* ---- group actions: Edit/Delete (custom groupings only) + Generate More, one 3-dot menu ----
+   Inline header: always visible, sits after the KPIs (position:relative wrapper, not absolute --
+   there is no reveal to fade, so it just takes its own place in the flex row like anything else).
+   Wide-view sidelist row: same button/menu, hover-revealed instead (see the "groups wide view"
+   rules above) -- a compact 44px row has less room to spare a permanent icon than a 60px header
+   with four KPIs next to it. Rendered inline only while open (JS: grpActionMenu) -- same "absent
+   means closed" pattern the Grouping popover's own custom-groupings row menu already uses, not a
+   UC.makePopover instance, since only one of potentially many rows is ever open at a time. */
+.upt-grp-menuwrap { position: relative; flex: 0 0 auto; }
+.upt-grp-head .upt-grp-menuwrap { margin-left: 4px; }   /* head's own 12px gap + 4px = 16px to the KPIs */
+.upt-grp-menubtn { width: 24px; height: 24px; flex: 0 0 auto; border: 0; border-radius: 7px;
+  background: transparent; color: var(--vc-third); cursor: pointer; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: color 120ms ease, background 120ms ease; }
+.upt-grp-menubtn:hover, .upt-grp-menuwrap.is-open .upt-grp-menubtn { color: var(--vc-text); background: var(--vc-heading-bg); }
+.upt-grp-menubtn svg { width: 14px; height: 14px; display: block; }
+/* Byte-for-byte the Grouping popover's own row menu (.upt-group-rowmenu) -- same compact action
+   list look, wherever a group's actions appear. */
+.upt-grp-actmenu { top: calc(100% + 4px); right: 0; left: auto; width: 128px; padding: 6px; }
+.upt-grp-actmenu .up-pop-opt { justify-content: flex-start; height: 32px; padding: 0 10px; font-size: 13px; }
+.upt-grp-actmenu .up-pop-opt.is-danger { color: #b0200c; }
+.upt-grp-actmenu .up-pop-opt.is-danger:hover { background: rgba(176,32,12,.08); }
 
 /* Select-all-for-this-group checkbox: first child of .upt-grp-head (only present while the group
    is open -- see grpHeadHtml), same left position a row's own checkbox sits at (.upt-grp-head and
