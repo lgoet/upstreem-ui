@@ -2295,28 +2295,25 @@
       });
     }
     function renderGroups(){
-      /* state.extLoading (driven by setPromptsTableLoading, i.e. an EXTERNAL filter like a
-         date-range picker with its own loading flag) used to be invisible here: this only ever
-         checked its OWN internal state.groupsLoading, which is exclusively set by fetchGroups()
-         itself. An external filter change re-runs the main RPC (which sets extLoading) and, per
-         the doc's own guidance, should also re-run the groups RPC when grouping is on -- but
-         until that groups RPC's response actually lands, this kept showing the now-stale groups
-         from before the filter changed, with no loading indication at all. Once the fresh
-         setPromptsTableGroups() response arrives, its own state.expandedGroup = null reset (see
-         setGroups) already invalidates any open section -- this skeleton only needs to cover the
-         gap while nothing has arrived yet.
-         Deliberately state.extLoading ONLY, not the broader isBusy() (which also covers
-         state.loading): state.loading is this component's OWN internal row-level loading flag --
-         set by sort/search/brand/mentioned, none of which ever touch the groups RPC (see
-         fetchGroups' own comment, groups aren't filter-live by design). Treating THOSE as reason
-         to wipe the whole grouped body to a 6-row skeleton was a real regression: it blew away an
-         open group's DOM (including its .is-ready marker, see grpHeadHtml) and the page's scroll
-         position on every single sort click, search keystroke, or brand toggle while grouped --
-         confirmed live (a sort while a group was open and scrolled into sticky position jumped
-         the scroll and silently re-hid the Edit/Generate More buttons on reopen-less re-renders).
-         Those filters now keep the open group's rows honest via refreshOpenGroupIfAny() instead
-         (see fetchGroupPage), which patches in place rather than rebuilding the whole tree. */
-      if (state.extLoading || state.groupsLoading || !state.groupsHasData){
+      /* ONLY state.groupsLoading (set exclusively by fetchGroups() -- i.e. this component KNOWING
+         it just asked for fresh groups) and !state.groupsHasData gate this skeleton. A tempting-
+         looking earlier version also gated on state.extLoading (setPromptsTableLoading), reasoning
+         that an external filter refreshing everything should show the groups view loading too --
+         reverted, because extLoading turned out to be far too generic a signal to safely act on:
+         it is a single shared flag with no information about WHAT is loading, and this app's own
+         "Group Open" handler (like every other event handler here) wraps its own RPC in the exact
+         same Loading yes/RPC/Loading no pattern -- so simply expanding ONE group also flipped
+         extLoading true/false, which this code then read as "the whole groups list is stale,
+         skeleton everything" even though nothing about the group LIST had changed at all. Confirmed
+         live: opening a single group flashed every OTHER group's header too.
+         There is no reliable way to distinguish "an external filter is about to refresh groups"
+         from "literally any other RPC this component fires is in flight" using extLoading alone --
+         it would need a dedicated, purpose-specific signal, which does not exist yet. Until a
+         genuinely external groups-affecting refresh (e.g. a date-range filter) actually gets built
+         and needs this, staying with the narrower, always-correct groupsLoading/groupsHasData pair
+         is the safer default: it can undershoot (a genuinely external refresh shows stale groups
+         briefly) but never overshoots into a false-positive flash like this did. */
+      if (state.groupsLoading || !state.groupsHasData){
         /* The table's own skeleton, not a second one: a hand-rolled row of grey bars looked like a
            different product loading. */
         elTbody.innerHTML = skeletonRows(6);
@@ -2392,9 +2389,39 @@
        never filter-live by design, only the currently open group's rows are being kept honest. */
     function refreshOpenGroupIfAny(){
       if (groupingOn() && state.expandedGroup){
+        var id = state.expandedGroup;
         state.gPage = 1;
         fetchGroupPage(0);
+        /* The caller (applySort/search.onFire/cycleBrand/submitMent) always ends with its own
+           renderTable()/render() call right after this returns -- which, since renderGroups()
+           unconditionally rebuilds every group header's markup on every call (not just on a
+           skeleton path, see grpHeadHtml), REPLACES this group's own header node a moment from
+           now. Scrolling synchronously here would measure a node about to be thrown away. One
+           rAF later that rebuild has already happened (synchronous, same call stack turn the
+           caller runs right after this returns), so the fresh node is safe to measure. */
+        requestAnimationFrame(function(){ scrollGroupHeadToTop(id); });
       }
+    }
+    /* Re-pins the given group's header to wherever it's SUPPOSED to sit -- the sticky offset when
+       in sticky mode, flush against the viewport top otherwise -- instead of leaving wherever the
+       browser happened to land the scroll after a filter change. Without this, a sort/search/
+       brand/mentioned change while a group is open and its header pinned would otherwise often
+       scroll away from it entirely: the group's OWN rows still briefly shrink to their own local
+       skeleton while refetching (see fetchGroupPage/grpRowsHtml, unrelated to and unaffected by
+       the renderGroups() skeleton reverted above), and losing that much page height while scrolled
+       past the sticky threshold makes the browser clamp scrollY down on its own, with nothing
+       here to put it back once the real (taller) content returns.
+       getComputedStyle(head).top reads back the RESOLVED sticky offset (the calc() result, e.g.
+       264px) when position is sticky -- not the live stuck/unstuck position -- which is exactly
+       the target we want, no need to duplicate that calc() formula here. Falls back to 0 (flush
+       to the very top) when not in sticky mode, where "top" computes to "auto". */
+    function scrollGroupHeadToTop(id){
+      if (state.expandedGroup !== id) return;   // closed again before this frame ran
+      var head = elTbody.querySelector('[data-grp="' + cssEsc(id) + '"]');
+      if (!head) return;
+      var targetTop = parseFloat(getComputedStyle(head).top) || 0;
+      var delta = head.getBoundingClientRect().top - targetTop;
+      if (Math.abs(delta) > 1) window.scrollBy({ top: delta, left: 0, behavior: "instant" });
     }
     /* In-place swap of just this group's sub-block, never a rebuild of the whole list -- the same
        reason domains-table does it: recreating the header under an active mouse flickers. */
