@@ -370,8 +370,7 @@
   data-generatemore-fn  = "bubble_fn_uptGenerateMore_[dynamic id]"
 
   ── Was wann feuert ──────────────────────────────────────────────────────────
-  uptGroups         beim Einschalten der Ansicht und nach jeder Filteränderung.
-                    {"grouped":"yes"}                       -- keine eigenen Gruppen
+  uptGroups         {"grouped":"yes"}                       -- keine eigenen Gruppen
                     {"grouped":"yes","groups":"[{\"key\":\"SUV & Hybrid\",\"tag_ids\":[...]}]"}
                     -> RPC cached_prompt_topics_grouped_v1 mit DENSELBEN Filtern wie die flache
                        Tabelle (p_team, p_search, p_tag_ids, p_only_active, p_models, p_markets,
@@ -380,6 +379,38 @@
                        -- fehlt er, liefert der RPC seinen Default: eine Gruppe pro Topic +
                        untagged.
                     Antwort zurück per window.setPromptsTableGroups("INSTANCE_ID", RAW).
+
+                    WANN GENAU (jeder Auslöser feuert dasselbe Event neu, mit dem dann aktuellen
+                    `groups`-Wert aus localStorage):
+                      · "Group by topics" einschalten -- NUR beim allerersten Mal in dieser
+                        Session (danach steht state.groupsHasData auf true und bleibt es, bis die
+                        Seite neu geladen wird -- erneutes Ein-/Ausschalten des Toggles fetcht
+                        NICHT erneut, es zeigt einfach die schon geladenen Gruppen wieder)
+                      · Seite laedt mit Grouping bereits aus einer frueheren Session an
+                        (localStorage) -- siehe "Pageload-Sonderfall" unten
+                      · "Only show custom groupings"-Dreifach-Zyklus (both -> custom -> topics ->
+                        both) im Gruppen-Dropdown -- bei jedem Klick, auch wenn er zurueck auf
+                        "both" zyklt
+                      · Eigene Gruppierung ausblenden/wieder einblenden (Augen-Icon in der Zeile)
+                      · Eigene Gruppierung loeschen
+                      · Eigene Gruppierung speichern -- sowohl "New Grouping" als auch "Edit" auf
+                        einer bestehenden (Umbenennen ersetzt intern den alten Eintrag)
+                    NICHT ausgeloest von: Suche, Brand-Toggle, Mentioned-Brands-Filter, oder vom
+                    Sortier-Dropdown der Gruppen selbst (der ist rein client-seitig -- die schon
+                    geladenen Sections werden nur neu angeordnet). Das heisst: die Kopfzeilen-
+                    Counts pro Gruppe zeigen den Stand vom letzten uptGroups-Aufruf, nicht live
+                    den aktuellen Suchtext -- wenn die Gruppen live mit der Suche mitgehen sollen,
+                    sag Bescheid, das ist ein bewusster Kompromiss und aenderbar.
+
+                    PAGELOAD-SONDERFALL: wenn Grouping schon aus einer frueheren Session an ist
+                    (localStorage), feuert uptGroups synchron beim allerersten Render der
+                    Komponente -- das kann schneller sein, als Bubble seine eigene
+                    bubble_fn_uptGroups auf window published hat. Seit Commit 0bc1863 pollt die
+                    Komponente in diesem einen Fall bis zu 3s lang, bis die Funktion aufrufbar
+                    ist, bevor sie feuert (genau das gleiche Prinzip wie der "Render"-Schritt
+                    unten, nur umgekehrte Richtung). Jeder andere Aufruf oben (Toggle-Klick etc.)
+                    passiert immer erst lange nachdem die Seite steht, braucht diesen Umweg also
+                    nicht und feuert weiterhin sofort.
 
   uptGroupOpen      beim Aufklappen einer Gruppe und bei jedem Seitenwechsel darin.
                     {"group_key":"TagA","tag_ids":"a1,b2","untagged":"no","is_custom":"no",
@@ -512,6 +543,12 @@
       promptGroups = [{ "key": "SUV & Hybrid", "tag_ids": ["uuid1","uuid2"] }]
   Kein DB-Schreiben, kein Backend-Call beim Erstellen. Die Topic-Liste im Erstellen-Popup ist die
   aus window.setPromptsTableTopics(...) -- ohne die bleibt das Popup leer.
+
+  Save/Create/Edit/Hide/Delete einer eigenen Gruppierung sind ALLE reine localStorage-Schreibvorgaenge
+  im Client -- es gibt dafuer KEIN eigenes Bubble-Event. Jede dieser fuenf Aktionen loest im
+  Anschluss (wenn Grouping gerade an ist) denselben uptGroups-Aufruf erneut aus, siehe die
+  Trigger-Liste weiter oben -- der frisch geschriebene localStorage-Stand geht dann als `groups`
+  mit in genau dieses Event.
 
   Ein Prompt mit mehreren Topics erscheint in mehreren Gruppen. Das ist so gewollt; es wird über
   Gruppengrenzen hinweg NICHT dedupliziert.
