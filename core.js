@@ -1000,7 +1000,15 @@
       return out;
     }
     function renderPager(){
-      var el = root.querySelector(".up-pager");
+      /* elFoot.querySelector, NOT root.querySelector: prompts-table's grouped drilldown builds
+         its OWN pager with the identical class ".up-pager" (see grpFootHtml() there), nested
+         inside the currently-open group's block -- which sits earlier in the DOM than .up-foot.
+         root.querySelector(".up-pager") returns the FIRST match in document order, so while a
+         group was open this silently found and overwrote the GROUP's own pager with the FLAT
+         table's page/total instead (found live: the group's pagination showed the flat table's
+         page-size options and "of <overall total>", not its own). Scoping to elFoot is the fix --
+         this kit only ever owns the ONE pager inside its own .up-foot, never anyone else's. */
+      var el = elFoot ? elFoot.querySelector(".up-pager") : null;
       if (!el) return;
       var total = pageCount();
       var cur = Math.min(state.page, total);
@@ -1033,8 +1041,12 @@
     function renderPageSize(){
       /* .up-pagesize-seg, NOT .up-pagesize: the outer element also holds the "Rows per page"
          label, and the grey switcher background lives on the -seg wrapper. Writing into the outer
-         one wiped both. */
-      var el = root.querySelector(".up-pagesize-seg");
+         one wiped both.
+         elFoot.querySelector, NOT root.querySelector: same reasoning as renderPager() above --
+         prompts-table's grouped drilldown has its own identically-classed .up-pagesize-seg (see
+         grpFootHtml()), and an unscoped query silently overwrote THAT one with the flat table's
+         page-size options while a group was open. */
+      var el = elFoot ? elFoot.querySelector(".up-pagesize-seg") : null;
       if (!el) return;
       el.innerHTML = sizesOf().map(function(n){
         return '<button class="up-pagesize-btn' + (n === state.pageSize ? " is-active" : "") +
