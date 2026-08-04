@@ -777,9 +777,19 @@
        background, chip hover, the goto arrow) instead of having to override each individually. */
     html.up-is-scrolling .up-tbody { pointer-events: none; }
     .up-td { height: 100%; display: flex; align-items: center; gap: 10px; padding: 0 16px 0 12px; min-width: 0;
-      border-left: 1px solid var(--vc-border); border-bottom: 1px solid var(--vc-border); }
+      border-left: 1px solid var(--vc-border); }
     .up-td:first-child { border-left: none; }   /* see .up-th:first-child for why left, not right */
-    .up-tbody .up-row:last-child .up-td { border-bottom: none; }
+    /* The row separator lives on the ROW now, not on every individual cell. Per-cell borders broke
+       in two independent ways: (1) a stale/un-restamped cell (see applyCols()'s rowsStale fix above)
+       could sit display:none and silently drop its slice of the line, and (2) prompts-table's
+       Dynamic row-height mode gives every .up-td its own height:auto -- if a browser's grid-stretch
+       ever rounds one cell's stretched height a subpixel off from its neighbours (fractional row
+       heights from wrapped text are common there), each cell's border-bottom lands at a very
+       slightly different Y and the line reads as broken. One border on the row's own box, drawn
+       once at the row's actual outer edge, is immune to both: it does not care how many cells are
+       hidden or how their individual heights were rounded. */
+    .up-row { border-bottom: 1px solid var(--vc-border); }
+    .up-tbody .up-row:last-child { border-bottom: none; }
 
     
     /* Letter fallback: a broken/missing favicon used to leave an empty square, which reads as a
