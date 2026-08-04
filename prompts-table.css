@@ -658,7 +658,19 @@
 /* Exactly the drilldown's panel tint (domains-table.css .udt-subrows): plain --vt-head-bg in
    light, and in dark halfway between the page background and the table surface, because that
    token equals --up-surface there and the panel would vanish into the table. */
-.upt-grp-head.is-open { background: var(--vt-head-bg); }
+/* The ONE border between an open group's header and its rows lives HERE, on the header, as
+   border-bottom -- not on .upt-grp-inner as border-top (which is where it used to live, and
+   looked right only while the header sat in normal flow). Once the header is actually pinned
+   (see .up-sticky below), it visually detaches from .upt-grp-inner -- that inner block keeps
+   scrolling with the rest of the page while the header floats, so its OWN border-top scrolls
+   away too, leaving the floating header with no line under it at all. A border owned by the
+   header itself has no such problem: wherever the header is (in flow or pinned), its own edge is
+   right there. Doesn't double up with anything else -- .upt-grp-inner's border-top is gone (see
+   below), there is exactly one border-bottom for this seam, always. */
+.upt-grp-head.is-open {
+  background: var(--vt-head-bg);
+  border-bottom: 1px solid var(--vc-border);
+}
 .up-root[data-theme="dark"] .upt-grp-head.is-open {
   background: color-mix(in srgb, var(--vc-bg) 50%, var(--up-surface) 50%); }
 /* Pins the OPEN group's own header directly under the sticky column header while its rows scroll
@@ -669,14 +681,9 @@
    sticks right where the column header's own bottom edge is. z-index 4, one below .up-thead's 5,
    so a header still mid-transition off-screen tucks under the column header rather than flashing
    on top of it for a frame. Only in sticky mode (>=1000px, data-sticky != "no") -- below that the
-   page doesn't pin .up-thead either, so there is no fixed edge to pin this under.
-   No border-bottom here on purpose -- .upt-grp-inner's own border-top (below) already draws the
-   ONE line between this header and its rows. Adding a second one here doubled it to ~2px while
-   the group sat in normal flow (both borders sitting flush against each other), and only looked
-   right once actually pinned and visually separated from that inner border by the scroll gap --
-   i.e. correct in exactly one of its two states. core.css's .up-tbody now clips with `overflow:
-   clip` instead of `hidden` (see there), which is what makes this sticky in the first place
-   without a corner-masking workaround. */
+   page doesn't pin .up-thead either, so there is no fixed edge to pin this under. core.css's
+   .up-tbody now clips with `overflow: clip` instead of `hidden` (see there), which is what makes
+   this sticky in the first place without a corner-masking workaround. */
 .up-sticky .upt-grp-head.is-open {
   position: sticky;
   top: calc(var(--up-sticky-top) + var(--up-thead-off) + 45px);
@@ -689,7 +696,7 @@
     color-mix(in srgb, var(--vc-bg) 50%, var(--up-surface) 50%),
     color-mix(in srgb, var(--vc-bg) 50%, var(--up-surface) 50%));
 }
-.upt-grp-inner { border-top: 1px solid var(--vc-border); background: var(--vt-head-bg);
+.upt-grp-inner { background: var(--vt-head-bg);
   min-height: 0; overflow: hidden; }
 .up-root[data-theme="dark"] .upt-grp-inner {
   background: color-mix(in srgb, var(--vc-bg) 50%, var(--up-surface) 50%); }
