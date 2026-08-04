@@ -611,7 +611,12 @@
    .up-td share the same 0 16px 0 12px padding). Unconditionally visible while it exists, exactly
    like the flat table's own header checkbox in the column head -- no opacity/hover gating; it
    only being IN the DOM at all is what already gates it to "group is open". */
-.upt-grp-selectall { flex: 0 0 auto; }
+/* Off by default (the open transition inserts it this way and reveals it after a GRP_ANIM_MS
+   delay, see syncGroupHeadCheckbox) -- .is-visible is what grpSelectallHtml() bakes straight into
+   a FULL re-render's markup, so unrelated renders show it at full opacity immediately with no
+   delay/fade to replay. */
+.upt-grp-selectall { flex: 0 0 auto; opacity: 0; transition: opacity 200ms ease; }
+.upt-grp-selectall.is-visible { opacity: 1; }
 
 /* open/close animation -- duration must match GRP_ANIM_MS in prompts-table.js. Byte-for-byte the
    domains-table drilldown's own technique (.udt-subrows/.udt-sub-inner): grid-template-rows

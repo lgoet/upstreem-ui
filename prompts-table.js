@@ -2052,6 +2052,11 @@
        syncGroupHeadCheckbox() (surgical patch on open/close -- see toggleGroup() for why that
        needs to be surgical rather than a full head re-render). Returns "" when the group isn't
        open: no gesture makes sense against a group whose rows aren't loaded. */
+    /* .is-visible is baked into the markup here so a FULL re-render (grpHeadHtml, e.g. after a
+       search/sort/select-all touches the whole group list) shows the checkbox immediately, at full
+       opacity, with no animation -- the delayed fade is specifically an OPEN-transition thing (see
+       syncGroupHeadCheckbox), not something a checkbox should replay every time an unrelated render
+       happens to pass through it. */
     function grpSelectallHtml(id, open){
       if (!open) return "";
       var rows = state.gRows || [];
@@ -2059,7 +2064,7 @@
       var allSel = rows.length > 0 && rows.every(function(r){ return !!state.selected[String(r.prompt_id)]; });
       var gChecked = state.gSelectAllGroup === id || allSel;
       var gIndet = !gChecked && anySel;
-      return '<span class="upt-check upt-grp-selectall' + (gChecked ? " is-checked" : (gIndet ? " is-indeterminate" : "")) +
+      return '<span class="upt-check upt-grp-selectall is-visible' + (gChecked ? " is-checked" : (gIndet ? " is-indeterminate" : "")) +
         '" role="checkbox" tabindex="0" aria-checked="' + (gChecked ? "true" : (gIndet ? "mixed" : "false")) +
         '" data-grp-selectall="' + esc(id) + '">' + (gChecked ? CHECK_SVG : "") + '</span>';
     }
@@ -2070,8 +2075,12 @@
        needs the same "patch the live node" treatment, or it would only ever catch up to state on
        the next full renderGroups() -- which is exactly the bug this fixes: opening a group toggled
        state.expandedGroup and the CSS class fine, but the checkbox stayed absent until some
-       unrelated re-render happened to sweep through later. */
-    function syncGroupHeadCheckbox(id){
+       unrelated re-render happened to sweep through later.
+       `reveal` is true only for the click that's actually OPENING this group (see toggleGroup): the
+       checkbox is inserted invisible and, after the same GRP_ANIM_MS delay the row-block itself
+       waits before firing its fetch, gets its .is-visible class added -- 200ms delay, then a 200ms
+       CSS ease fade, not a plain instant appearance the row-block animation would otherwise dwarf. */
+    function syncGroupHeadCheckbox(id, reveal){
       var head = elTbody.querySelector('[data-grp="' + cssEsc(id) + '"]');
       if (!head) return;
       var existing = head.querySelector(".upt-grp-selectall");
@@ -2081,7 +2090,12 @@
       if (!html) return;
       var tmp = document.createElement("div");
       tmp.innerHTML = html;
-      head.insertBefore(tmp.firstChild, head.firstChild);
+      var el = tmp.firstChild;
+      if (reveal){
+        el.classList.remove("is-visible");
+        setTimeout(function(){ el.classList.add("is-visible"); }, GRP_ANIM_MS);
+      }
+      head.insertBefore(el, head.firstChild);
     }
 
     /* KPI cell — same primitives the flat rows use, so a Visibility figure in a group header and
@@ -2384,7 +2398,9 @@
       }
       state.gRows = []; state.gTotal = null; state.gReqId = null; state.gPage = 1;
       if (head){ head.classList.add("is-open"); head.setAttribute("aria-expanded", "true"); }
-      syncGroupHeadCheckbox(id);
+      /* reveal=true: this is the actual open, so the checkbox waits GRP_ANIM_MS then fades in over
+         its own 200ms ease, rather than just appearing the instant the row-block starts opening. */
+      syncGroupHeadCheckbox(id, true);
       /* Small delay before firing, exactly as domains-table does: the open animation and a
          synchronous re-render in the same frame read as a stutter. */
       fetchGroupPage(GRP_ANIM_MS + 40);
