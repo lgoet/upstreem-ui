@@ -1734,20 +1734,16 @@
        the markup simply never arrives. */
     /* "Rows" glyph (rows-into-group, user-supplied asset) -- stroke="currentColor" (was hardcoded
        black in the source export) so it follows .up-iconbtn's existing color/hover/dark-theme rules
-       exactly like every other toolbar icon; the source's <defs>/clipPath was dropped since nothing
-       in this icon actually overflows its own coordinate space and a duplicated clip-path id would
-       collide across multiple grouping-button instances on one page. The source shipped as a
-       20-unit viewBox with stroke-width 1.25 (Figma's default export); every other icon in this
-       repo is a Feather icon, 24-unit viewBox with stroke-width 2. A viewBox mismatch isn't just a
-       coordinate-system detail here -- with all icons forced into the same 16x16 CSS box
-       (.up-iconbtn svg), a 20-unit viewBox maps 1 unit to 0.8px on screen vs. a 24-unit one's
-       0.667px, so ANY stroke-width chosen for the 20-unit version renders at a different physical
-       thickness than the same stroke-width would on a 24-unit icon -- no single stroke-width value
-       can make the two match. Fixed at the source instead: every path coordinate scaled by 24/20
-       (=1.2, geometry-preserving -- same shape, same corner radii, same proportions) so this icon
-       is now genuinely a 24-unit/stroke-2 Feather-convention icon like all the others, not an
-       approximation of one. */
-    var GRP_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 13.5H11.25C10.84 13.5 10.5 13.84 10.5 14.25V18C10.5 18.41 10.84 18.75 11.25 18.75H19.5C19.91 18.75 20.25 18.41 20.25 18V14.25C20.25 13.84 19.91 13.5 19.5 13.5Z"/><path d="M19.5 5.25H4.5C4.09 5.25 3.75 5.59 3.75 6V9.75C3.75 10.16 4.09 10.5 4.5 10.5H19.5C19.91 10.5 20.25 10.16 20.25 9.75V6C20.25 5.59 19.91 5.25 19.5 5.25Z"/><path d="M3.75 13.5L6.75 16.5L3.75 19.5"/></svg>';
+       exactly like every other toolbar icon. Redrawn as two <rect rx>/one <polyline> instead of the
+       hand-coded cubic-bezier rounded-corner paths Figma originally exported: those paths' corner
+       control points landed on messy decimals (10.835784, 19.91424, ...) even after the 20->24
+       viewBox rescale, and at this icon's forced 20x20 render size (up from the shared 16x16, see
+       below) that showed as visibly soft/blurry edges -- a <rect> with rx is rasterized natively,
+       no bezier-approximation fuzz. stroke-width dropped 2 -> 1.7 (~15%): 2 matched the OTHER
+       Feather icons' weight at THEIR 16x16 size, but this icon renders 20x20 (see the size note
+       below), and stroke-width doesn't scale with the forced CSS box -- 2 was too heavy at the
+       bigger size. */
+    var GRP_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.75" y="5.25" width="16.5" height="5.25" rx="1.5"/><rect x="11.25" y="13.5" width="9" height="5.25" rx="1.5"/><polyline points="3.75,13.5 6.75,16.5 3.75,19.5"/></svg>';
     /* Feather "sidebar" — one icon, both toggles (the sidelist heading's and the toolbar
        heading's): clicking either always means "toggle the group sidebar". */
     var SIDEBAR_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>';
