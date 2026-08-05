@@ -1884,6 +1884,91 @@
     };
   }
 
+  /* Page-header subpage nav: builds the sliding-tab row (see the Page Header Kit in core.css for
+     the full markup contract) and wires click/keydown selection plus the width-driven is-narrow/
+     is-vnarrow responsive tiers. Shared because every page-headers/* component needs the exact
+     same nav, not because it's generic UI -- the PAGES list, labels and icons stay per-component.
+     cfg: { nav (element) OR navSelector (default ".up-ph-nav", resolved against root), pages:
+     [{value,label,icon}], selected (default pages[0].value), onSelect(value) -- called on a real
+     user selection, not the initial render, narrowAt (default 768), vnarrowAt (default 500) }.
+     Returns { selectPage(value, fireEvent), positionUnderline(item, animate) } so a caller can
+     drive the same tab switch programmatically (e.g. a data-nav-fn response echoed back). */
+  function makePageNav(root, cfg){
+    cfg = cfg || {};
+    var nav = cfg.nav || root.querySelector(cfg.navSelector || ".up-ph-nav");
+    if (!nav) return null;
+    var pages = cfg.pages || [];
+    var selected = cfg.selected != null ? cfg.selected : (pages[0] && pages[0].value);
+
+    function esc(v){ var d = document.createElement("div"); d.textContent = String(v == null ? "" : v); return d.innerHTML; }
+
+    nav.innerHTML = pages.map(function(p){
+      var on = p.value === selected;
+      return '<div class="up-ph-navitem' + (on ? " is-selected" : "") + '" role="tab" tabindex="0" ' +
+        'aria-selected="' + (on ? "true" : "false") + '" data-page="' + esc(p.value) + '">' +
+        '<span class="up-ph-navicon">' + p.icon + '</span>' +
+        '<span class="up-ph-navlabel">' + esc(p.label) + '</span>' +
+      '</div>';
+    }).join("") + '<div class="up-ph-navunderline"></div>';
+
+    var underline = nav.querySelector(".up-ph-navunderline");
+
+    /* transition:none for the initial placement only -- without it the indicator would visibly
+       grow in from a 0-width sliver at (0,0) on first paint, since it starts with no inline
+       left/width at all. Every later call (an actual click, or a resize re-placement) leaves the
+       CSS transition (200ms ease, up-ph-navunderline in core.css) alone. */
+    function positionUnderline(item, animate){
+      if (!item) return;
+      var navRect = nav.getBoundingClientRect();
+      var itemRect = item.getBoundingClientRect();
+      if (!animate) underline.style.transition = "none";
+      underline.style.left = (itemRect.left - navRect.left) + "px";
+      underline.style.width = itemRect.width + "px";
+      if (!animate){ void underline.offsetWidth; underline.style.transition = ""; }
+    }
+
+    function selectPage(value, fireEvent){
+      var items = nav.querySelectorAll(".up-ph-navitem");
+      var target = null;
+      Array.prototype.forEach.call(items, function(el){
+        var on = el.getAttribute("data-page") === value;
+        el.classList.toggle("is-selected", on);
+        el.setAttribute("aria-selected", on ? "true" : "false");
+        if (on) target = el;
+      });
+      positionUnderline(target, true);
+      if (fireEvent && cfg.onSelect) cfg.onSelect(value);
+    }
+
+    nav.addEventListener("click", function(e){
+      var item = e.target.closest(".up-ph-navitem");
+      if (!item) return;
+      selectPage(item.getAttribute("data-page"), true);
+    });
+    nav.addEventListener("keydown", function(e){
+      if (e.key !== "Enter" && e.key !== " ") return;
+      var item = e.target.closest(".up-ph-navitem");
+      if (!item) return;
+      e.preventDefault();
+      selectPage(item.getAttribute("data-page"), true);
+    });
+
+    positionUnderline(nav.querySelector(".up-ph-navitem.is-selected"), false);
+    /* is-narrow/is-vnarrow: measured off the ROOT's own box width via ResizeObserver, not a CSS
+       media query -- consistent with every other component in this repo, and correct if a page
+       header ever ends up in a narrower Bubble container than the full page (it doesn't today,
+       but this kit isn't specific to that). */
+    if (onResize){
+      onResize(root, function(w){
+        root.classList.toggle("is-narrow", w < (cfg.narrowAt || 768));
+        root.classList.toggle("is-vnarrow", w < (cfg.vnarrowAt || 500));
+        positionUnderline(nav.querySelector(".up-ph-navitem.is-selected"), false);
+      });
+    }
+
+    return { selectPage: selectPage, positionUnderline: positionUnderline };
+  }
+
   /* Shared event dispatch: resolves the Bubble function (via the data-*-fn attr or a fallback
      name) across window/parent/top/iframes and calls it with the JSON payload. label + eventPrefix
      stay per component so warnings and the DOM side-channel event read correctly. */
@@ -3672,6 +3757,7 @@
     swatchInk: swatchInk,
     ensureEmojiLib: ensureEmojiLib,
     makeTopicModal: makeTopicModal,
+    makePageNav: makePageNav,
 
     /* ---- chart kits (see the big comment block above) ---- */
     loadChartJs: loadChartJs,

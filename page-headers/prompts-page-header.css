@@ -1,62 +1,6 @@
 /* upstreem prompts-page-header.css — first of the page-headers/ component family.
-   Requires core.css (loaded first, same as every table/chart) for its .up-root CSS variables
-   (--vc-text/--vc-muted/--vc-third/--vc-border) and the shared .up-export button it reuses
-   verbatim for "Add Prompts" -- nothing color-related is redefined here. */
-
-.pph-root { padding: 32px 0 16px; background: transparent; }
-
-/* ---------- top row: brand/heading/description on the left, Add button top-right ---------- */
-.pph-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
-.pph-left { display: flex; flex-direction: column; min-width: 0; }
-
-.pph-brandrow { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-/* grayscale(1): the brand's own logo colour would otherwise compete with this being a quiet,
-   secondary line above the real heading. */
-.pph-brandlogo { width: 16px; height: 16px; display: block; flex: 0 0 auto; filter: grayscale(1); object-fit: cover; }
-.pph-brandtxt { font-size: 12px; font-weight: 600; color: var(--vc-third); line-height: 1; }
-
-.pph-heading { margin: 0 0 12px; font-size: 26px; font-weight: 500; color: var(--vc-text);
-  letter-spacing: -0.5px; line-height: 1.2; }
-.pph-desc { margin: 0; font-size: 16px; font-weight: 400; color: var(--vc-muted); line-height: 1.4; }
-
-.pph-addbtn { flex: 0 0 auto; margin-top: -16px; }
-
-/* ---------- page nav: three tabs + a sliding active indicator ---------- */
-.pph-nav { display: flex; position: relative; margin-top: 32px; }
-/* The continuous 1px baseline every item's own indicator sits on top of -- ONE shared separator
-   spanning the full nav width, not a copy under each item (see prompts-page-header.js's own build
-   for how the sliding 2px piece overlays exactly the selected item's own span of it). Both this and
-   .pph-navunderline anchor to the same bottom:0, so neither ever causes a layout shift switching
-   between the 1px (unselected) and 2px (selected) look. */
-.pph-nav::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--vc-border); }
-.pph-navitem { display: flex; align-items: center; justify-content: center; gap: 6px;
-  height: 32px; padding: 0 12px; cursor: pointer; user-select: none; }
-.pph-navicon { display: inline-flex; flex: 0 0 auto; color: var(--vc-muted); transition: color 120ms ease; }
-.pph-navicon svg { width: 16px; height: 16px; display: block; }
-.pph-navlabel { font-size: 14px; font-weight: 500; color: var(--vc-muted); white-space: nowrap; transition: color 120ms ease; }
-.pph-navitem.is-selected .pph-navicon,
-.pph-navitem.is-selected .pph-navlabel { color: var(--vc-text); }
-.pph-navitem:not(.is-selected):hover .pph-navicon,
-.pph-navitem:not(.is-selected):hover .pph-navlabel { color: var(--vc-text); }
-/* The active indicator: slides left/width to the newly selected tab on click (200ms ease, set in
-   JS via inline style so it can animate to an arbitrary measured position/width -- a CSS-only
-   nth-child approach can't do that for a JS-built, reorderable list). Position is set with
-   transition:none on first paint (see prompts-page-header.js) so it doesn't grow in from 0 on load. */
-/* z-index:1 -- without it this paints BEHIND .pph-nav::after: a ::after's generated box is always
-   painted after all of its element's real children, regardless of DOM/append order, so the grey
-   1px separator silently covered the bottom half of this 2px indicator, leaving only a 1px sliver
-   of primary color visible on top of it instead of a full 2px bar. */
-.pph-navunderline { position: absolute; bottom: 0; left: 0; width: 0; height: 2px; background: var(--vc-text);
-  z-index: 1; transition: left 200ms ease, width 200ms ease; }
-
-/* ---------- responsive (classes set by prompts-page-header.js via UC.onResize, see there) ---------- */
-/* is-narrow (<768px): tabs go from auto-width/left-packed to three even thirds, still centered
-   internally (.pph-navitem already centers its own icon+label). Add button drops "Prompts". */
-.pph-root.is-narrow .pph-navitem { flex: 1 1 0; }
-.pph-root.is-narrow .pph-addbtn-full { display: none; }
-/* is-vnarrow (<500px): Bubble's mobile sidebar-toggle sits top-right below this width on this
-   app's pages -- extra top clearance so this header doesn't collide with it. The Add button's
-   negative margin grows to match (-32 against the now-48px padding-top) so it still lands at the
-   same 16px visual offset it has at every other width. */
-.pph-root.is-vnarrow { padding-top: 48px; }
-.pph-root.is-vnarrow .pph-addbtn { margin-top: -32px; }
+   Deliberately near-empty: the meta/heading/description block, the "Add X" button, and the
+   sliding-tab subpage nav are all styled by the shared Page Header Kit in core.css (".up-ph-*"
+   classes) instead of being redefined per page -- see that kit's own comment block for the full
+   markup contract and reasoning. This file only exists for the day this page's header needs a
+   visual tweak no other page header should inherit; today it needs none. */

@@ -1411,3 +1411,80 @@
   font-family: inherit; font-size: 12.5px; font-weight: 600; transition: opacity 120ms ease; }
 .up-topicmodal-save:hover:not(:disabled) { opacity: .88; }
 .up-topicmodal-save:disabled { background: var(--vc-heading-bg); color: var(--vc-third); cursor: default; }
+
+/* ======================================================================
+   Page Header Kit — shared by every page-headers/* component (first user:
+   prompts-page-header.js). One dedicated component per page (see that
+   file's own header comment for why), but they all share this exact
+   meta/heading/description block plus the sliding-tab subpage nav below
+   it, so both live here instead of being copy-pasted into each page's own
+   CSS/JS. A future page header only needs its own PAGES array, heading/
+   description text and event names -- everything visual is this kit.
+   Markup shape a page header is expected to provide:
+     <div class="up-root up-ph-root">
+       <div class="up-ph-top">
+         <div class="up-ph-left">
+           <div class="up-ph-meta"><img class="up-ph-metalogo"/><span class="up-ph-metatxt">...</span></div>
+           <h1 class="up-ph-heading">...</h1>
+           <p class="up-ph-desc">...</p>
+         </div>
+         <button class="up-ph-addbtn up-export">...</button>
+       </div>
+       <div class="up-ph-nav" role="tablist"></div>  <!-- built by UC.makePageNav, see core.js -->
+     </div>
+   ====================================================================== */
+.up-ph-root { padding: 32px 0 16px; background: transparent; }
+
+.up-ph-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.up-ph-left { display: flex; flex-direction: column; min-width: 0; }
+
+.up-ph-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+/* grayscale(1): a brand's own logo colour would otherwise compete with this being a quiet,
+   secondary line above the real heading. */
+.up-ph-metalogo { width: 16px; height: 16px; display: block; flex: 0 0 auto; filter: grayscale(1); object-fit: cover; }
+.up-ph-metatxt { font-size: 12px; font-weight: 600; color: var(--vc-third); line-height: 1; }
+
+.up-ph-heading { margin: 0 0 12px; font-size: 28px; font-weight: 500; color: var(--vc-text);
+  letter-spacing: -0.5px; line-height: 1.2; }
+.up-ph-desc { margin: 0; font-size: 16px; font-weight: 400; color: var(--vc-muted); line-height: 1.4; }
+
+.up-ph-addbtn { flex: 0 0 auto; margin-top: -16px; }
+
+/* ---------- subpage nav: N tabs + a sliding active indicator (built by UC.makePageNav) ---------- */
+.up-ph-nav { display: flex; position: relative; margin-top: 32px; }
+/* The continuous 1px baseline every item's own indicator sits on top of -- ONE shared separator
+   spanning the full nav width, not a copy under each item. Both this and .up-ph-navunderline
+   anchor to the same bottom:0, so neither ever causes a layout shift switching between the 1px
+   (unselected) and 2px (selected) look. */
+.up-ph-nav::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--vc-border); }
+.up-ph-navitem { display: flex; align-items: center; justify-content: center; gap: 6px;
+  height: 32px; padding: 0 12px; cursor: pointer; user-select: none; }
+.up-ph-navicon { display: inline-flex; flex: 0 0 auto; color: var(--vc-muted); transition: color 120ms ease; }
+.up-ph-navicon svg { width: 16px; height: 16px; display: block; }
+.up-ph-navlabel { font-size: 14px; font-weight: 500; color: var(--vc-muted); white-space: nowrap; transition: color 120ms ease; }
+.up-ph-navitem.is-selected .up-ph-navicon,
+.up-ph-navitem.is-selected .up-ph-navlabel { color: var(--vc-text); }
+.up-ph-navitem:not(.is-selected):hover .up-ph-navicon,
+.up-ph-navitem:not(.is-selected):hover .up-ph-navlabel { color: var(--vc-text); }
+/* The active indicator: slides left/width to the newly selected tab on click (200ms ease, set in
+   JS via inline style so it can animate to an arbitrary measured position/width -- a CSS-only
+   nth-child approach can't do that for a JS-built, reorderable list). Position is set with
+   transition:none on first paint (see UC.makePageNav) so it doesn't grow in from 0 on load.
+   z-index:1 -- without it this paints BEHIND .up-ph-nav::after: a ::after's generated box is
+   always painted after all of its element's real children, regardless of DOM/append order, so the
+   grey 1px separator would silently cover the bottom half of this 2px indicator. */
+.up-ph-navunderline { position: absolute; bottom: 0; left: 0; width: 0; height: 2px; background: var(--vc-text);
+  z-index: 1; transition: left 200ms ease, width 200ms ease; }
+
+/* ---------- responsive (classes set by UC.makePageNav via UC.onResize) ---------- */
+/* is-narrow (<768px default): tabs go from auto-width/left-packed to even thirds, still centered
+   internally (.up-ph-navitem already centers its own icon+label). A page header's own "Add X"
+   button can drop its trailing word here by wrapping it in a child with class up-ph-addbtn-full. */
+.up-root.is-narrow .up-ph-navitem { flex: 1 1 0; }
+.up-root.is-narrow .up-ph-addbtn-full { display: none; }
+/* is-vnarrow (<500px default): Bubble's mobile sidebar-toggle sits top-right below this width on
+   this app's pages -- extra top clearance so a page header doesn't collide with it. The Add
+   button's negative margin grows to match (-32 against the now-48px padding-top) so it still lands
+   at the same 16px visual offset it has at every other width. */
+.up-root.is-vnarrow.up-ph-root { padding-top: 48px; }
+.up-root.is-vnarrow .up-ph-addbtn { margin-top: -32px; }

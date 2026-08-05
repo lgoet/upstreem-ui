@@ -1,13 +1,16 @@
 <!--
   UPSTREEM — PROMPTS PAGE HEADER
 
-  Sits at the very top of the Prompts page: brand row, page heading + description, a 3-tab page
+  Sits at the very top of the Prompts page: meta row, page heading + description, a 3-tab page
   nav (All Prompts / Responses / Topics) with an animated sliding active indicator, and an "Add
   Prompts" button top-right. First of a new component family (page-headers/) meant for the top of
   every page in the app -- one small dedicated component PER page, not a single generic component
-  fed different config. Copying this file for the next page's header (e.g. a Responses page one)
-  means duplicating this whole file and swapping PAGES/the heading/description text in the .js and
-  the two text nodes in the markup below; nothing about the boot/mount/event plumbing changes.
+  fed different config. All the actual visual styling and the sliding-tab nav interaction live in
+  core.css/core.js's shared Page Header Kit (the ".up-ph-*" classes and UC.makePageNav) so every
+  future page header gets them for free; this file only supplies the PAGES list, the heading/
+  description text, and the two event names. Copying this file for the next page's header means
+  duplicating this whole file and swapping those three things in the .js and the two text nodes in
+  the markup below; nothing about the boot/mount/event plumbing or the kit underneath changes.
 
   Almost nothing here is dynamic. Unlike a table, this component has no server data to wait on: no
   render()/reset() functions, no loading state. It reads its two dynamic inputs straight off the
@@ -59,7 +62,7 @@
   the current team's brand elsewhere in the app — no JS needed on your end for that either.
 -->
 
-<div class="up-root pph-root"
+<div class="up-root up-ph-root pph-root"
      data-instance="ROOTID_[dynamic id]"
      data-cdn-pin="CDN_PIN"
      data-isdark="IS_DARK"
@@ -67,23 +70,23 @@
      data-brand-logo="BRAND_LOGO_URL"
      data-nav-fn="bubble_fn_pphNav"
      data-add-fn="bubble_fn_pphAdd">
-  <div class="pph-top">
-    <div class="pph-left">
-      <div class="pph-brandrow">
-        <img class="pph-brandlogo" alt="" style="display:none"/>
-        <span class="pph-brandtxt"><span class="pph-brandname"></span> Database</span>
+  <div class="up-ph-top">
+    <div class="up-ph-left">
+      <div class="up-ph-meta">
+        <img class="up-ph-metalogo" alt="" style="display:none"/>
+        <span class="up-ph-metatxt"><span class="pph-metaname"></span> Database</span>
       </div>
-      <h1 class="pph-heading">Prompt Insights</h1>
-      <p class="pph-desc">Manage Prompts, Topics and monitor latest Responses</p>
+      <h1 class="up-ph-heading">Prompt Insights</h1>
+      <p class="up-ph-desc">Manage Prompts, Topics and monitor latest Responses</p>
     </div>
-    <button class="pph-addbtn up-export" type="button">
+    <button class="up-ph-addbtn up-export" type="button">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      <span>Add <span class="pph-addbtn-full">Prompts</span></span>
+      <span>Add <span class="up-ph-addbtn-full">Prompts</span></span>
     </button>
   </div>
 
-  <!-- prompts-page-header.js builds the three tab items + the sliding indicator into this on init. -->
-  <div class="pph-nav" role="tablist"></div>
+  <!-- UC.makePageNav (core.js) builds the three tab items + the sliding indicator into this on init. -->
+  <div class="up-ph-nav" role="tablist"></div>
 </div>
 <script>
 /* Loads this component's CSS/JS from jsDelivr, pinned to the commit hash you put in data-cdn-pin on
