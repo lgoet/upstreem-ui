@@ -56,7 +56,7 @@
         '.ust-cell{width:100%;height:100%;min-width:0;display:flex;align-items:center;background:transparent;border:0;overflow:hidden;font-family:Geist,Inter,system-ui,-apple-system,sans-serif;}',
         '.ust-cell *,.ust-topics-popup *{box-sizing:border-box;}',
         '.ust-row{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;width:100%;min-width:0;min-height:28px;overflow:hidden;}',
-        '.ust-tag{height:28px;padding:0 10px;border-radius:8px;display:inline-flex;align-items:center;gap:7px;flex:0 0 auto;border:1px solid color-mix(in srgb,var(--ust-tag-color,#6b7280) 40%,transparent);background:color-mix(in srgb,var(--ust-tag-color,#6b7280) 10%,transparent);color:var(--ust-tag-color,#4b5563);font-size:12px;line-height:1;font-weight:500;white-space:nowrap;cursor:pointer;user-select:none;}',
+        '.ust-tag{height:28px;padding:0 10px;border-radius:8px;display:inline-flex;align-items:center;gap:7px;flex:0 0 auto;border:1px solid transparent;background:color-mix(in srgb,var(--ust-tag-color,#6b7280) 10%,transparent);color:var(--ust-tag-color,#4b5563);font-size:12px;line-height:1;font-weight:500;white-space:nowrap;cursor:pointer;user-select:none;}',
         '.ust-tag-emoji{font-size:12px;line-height:1;}',
         '.ust-tag-label{white-space:nowrap;}',
         '.ust-empty{display:inline-flex;align-items:center;color:#a0a5ad;font-size:13px;line-height:1;}',
@@ -229,9 +229,9 @@
        longer, see UC.makeColumns' autoFit). Deliberately NOT the same as left-to-right order:
        Topics outranks Rank and Sentiment because it is the column this table is actually managed
        by, while Market/Created are reference data you can live without on a laptop screen. */
-    { key: "visibility", label: "Visibility",      w: "minmax(150px, 1fr)", min: 150, prio: 70 },
-    { key: "rank",       label: "Rank",            w: "minmax(90px, 1fr)",  min: 90,  dropAt: "vnarrow", prio: 40 },
-    { key: "sentiment",  label: "Sentiment",       w: "minmax(120px, 1fr)", min: 120, dropAt: "narrow",  prio: 30 },
+    { key: "visibility", label: "Visibility",      w: "minmax(150px, 150px)", min: 150, prio: 70 },
+    { key: "rank",       label: "Rank",            w: "minmax(90px, 128px)",  min: 90,  dropAt: "vnarrow", prio: 40 },
+    { key: "sentiment",  label: "Sentiment",       w: "minmax(120px, 128px)", min: 120, dropAt: "narrow",  prio: 30 },
     /* 178px, same as urls-table's identical column: 4 × 32px avatars (−6px overlap each) plus
        the "+N" label plus the cell's own 28px padding, with headroom for the hover spread.
        A %-based floor let it collapse below that and clipped the stack. */
@@ -239,12 +239,13 @@
        leaving this the sole exception meant the narrowest tier still showed Prompt + Visibility
        + Brand Mentions instead of just the two columns that are supposed to survive down there. */
     { key: "brands",     label: "Brand Mentions",  w: "minmax(178px, 1fr)", min: 178, dropAt: "vnarrow", prio: 50 },
-    /* Market's growth ceiling (the fr half of minmax) is deliberately smaller than Topics' — this
-       is the column people actually manage, Market is reference data that never needs to eat
-       spare row width. The floors (150/90 px, 12%/8%) are untouched; only the fr split moved,
-       0.3 from Market's ceiling straight onto Topics'. */
+    /* Topics is the column people actually manage, so it's the one that gets to keep growing --
+       Visibility/Rank/Sentiment/Market are all hard-capped now (see their own w: above/below), so
+       any spare row width flows to Topics (and Brands/Created's own smaller fr shares) instead. */
     { key: "topics",     label: "Topics",          w: "minmax(12%, 1.3fr)", min: 150, dropAt: "vnarrow", prio: 60 },
-    { key: "market",     label: "Market",          w: "minmax(8%, 0.3fr)", min: 90,  dropAt: "narrow",  prio: 20 },
+    /* Reference data, never needs to eat spare row width -- capped at 128px same as Rank/Sentiment,
+       not left on a %/fr leash that grows it back out on a wide screen. */
+    { key: "market",     label: "Market",          w: "minmax(90px, 128px)", min: 90,  dropAt: "narrow",  prio: 20 },
     { key: "created",    label: "Created",         w: "minmax(10%, 0.7fr)",min: 110, dropAt: "narrow",  prio: 10 }
   ];
   var ROW_HEIGHTS = [
@@ -451,6 +452,10 @@
       groupSort: readGroupSort(),           // "count" (default) | "visibility" | "name"
       groupSortDir: readGroupSortDir(),     // "desc" (default) | "asc" -- direction for the Sorter above
       groupMode: readGroupMode(),           // "both" (default) | "topics" | "custom"
+      /* Sidelist's own search -- purely a client-side filter over the already-loaded state.groups
+         (see filterGroupsForSidelist), never sent anywhere, so it's not persisted like state.query
+         is: there's no round trip to keep in sync with, just whatever's already on screen. */
+      grpSideQuery: "",
       /* Wide view: a side list of groups to the left of the (otherwise completely unchanged)
          prompts table, instead of each group expanding inline. Purely a display preference —
          doesn't affect what data is fetched or which events fire. */
@@ -1737,6 +1742,8 @@
        .up-sort-btn click handling, but it should still look like the same control. */
     var GRPSIDE_SORT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>';
     var GRPSIDE_ADD_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+    /* Same magnifier glyph the toolbar's own .up-search-btn uses -- one search icon everywhere. */
+    var GRPSIDE_SEARCH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
     var elGrpWrap = null, elGrpMenu = null;
     (function(){
       if (!elHeadTools) return;
@@ -1768,7 +1775,8 @@
        embeds), not per-render. The panel is [sidehead (fixed, "Group" + its own Sorter + the
        list-view toggle)] + [sidelist (scrolls)], not just the list -- the heading needs a place to
        live that isn't part of the scrolling rows. */
-    var elGrpSidelist = null, elGrpSideSort = null, elGrpSideSortMenu = null;
+    var elGrpSidelist = null, elGrpSideSort = null, elGrpSideSortMenu = null,
+        elGrpSidehead = null, elGrpSideSearchIn = null;
     (function(){
       var box = root.querySelector(".up-box");
       if (!box) return;
@@ -1792,6 +1800,8 @@
                   GRPSIDE_SORT_ICON + '</button>' +
                 '<div class="up-menu upt-grp-sidesort-menu" role="menu" aria-hidden="true"></div>' +
               '</div>' +
+              '<button class="upt-grp-sidesearch-btn up-iconbtn" type="button" data-grp-sidesearch-open data-tip="Search" aria-label="Search groups">' +
+                GRPSIDE_SEARCH_ICON + '</button>' +
               '<button class="upt-grp-sideadd up-iconbtn" type="button" data-grp-new data-tip="New grouping" aria-label="New grouping">' +
                 GRPSIDE_ADD_ICON + '</button>' +
               /* Only ever visible while the sidelist IS showing -- clicking it hides that list
@@ -1801,6 +1811,14 @@
               '<button class="upt-grp-widebtn up-iconbtn" type="button" data-grp-widebtn data-tip="Wide view" aria-label="Switch to wide view">' +
                 SIDEBAR_ICON + '</button>' +
             '</div>' +
+            /* Takes over the WHOLE sidehead row when open (see .is-searching in prompts-table.css)
+               -- unlike the toolbar's own .up-search, which only takes over its row below a width
+               threshold, this panel is always narrow enough (256px min) that a takeover is the
+               only layout that ever makes sense, so there is no width check here at all. */
+            '<div class="upt-grp-sidesearch-box">' +
+              '<input class="upt-grp-sidesearch-in" type="text" placeholder="Search groups…" autocomplete="off" spellcheck="false" aria-label="Search groups"/>' +
+              '<button class="upt-grp-sidesearch-clear" type="button" data-grp-sidesearch-close aria-label="Close search">' + CLOSE_SVG + '</button>' +
+            '</div>' +
           '</div>' +
           '<div class="upt-grp-sidelist"></div>';
         wrap.insertBefore(panel, box);
@@ -1808,6 +1826,8 @@
       elGrpSidelist = panel.querySelector(".upt-grp-sidelist");
       elGrpSideSort = panel.querySelector(".upt-grp-sidesort");
       elGrpSideSortMenu = panel.querySelector(".upt-grp-sidesort-menu");
+      elGrpSidehead = panel.querySelector(".upt-grp-sidehead");
+      elGrpSideSearchIn = panel.querySelector(".upt-grp-sidesearch-in");
     })();
     root.classList.toggle("is-groups-wide", state.groupsWide);
 
@@ -2303,6 +2323,27 @@
       setTimeout(function(){ applyCols(); }, 220);
     }
 
+    /* The sidelist's own search: the magnifier takes over the WHOLE .upt-grp-sidehead row when
+       opened (see .is-searching in prompts-table.css) -- there's no width check the way the
+       toolbar's own .up-search has, because this panel is always narrow enough (256px floor) that
+       a takeover is the only sane layout. Closing clears whatever query was typed (same "closing
+       resets" behaviour the toolbar search already has), not just visually -- otherwise reopening
+       later would silently still be filtering on stale text nobody can see anymore. */
+    function toggleGrpSideSearch(open){
+      if (!elGrpSidehead) return;
+      elGrpSidehead.classList.toggle("is-searching", open);
+      if (open){
+        setTimeout(function(){ try { elGrpSideSearchIn.focus(); } catch(e){} }, 60);
+        return;
+      }
+      if (!state.grpSideQuery) return;
+      state.grpSideQuery = "";
+      if (elGrpSideSearchIn) elGrpSideSearchIn.value = "";
+      var box = elGrpSidehead.querySelector(".upt-grp-sidesearch-box");
+      if (box) box.classList.remove("has-text");
+      if (groupingOn() && state.groupsWide) renderGroupSidelist(filterGroupsForSidelist(sortedGroups()));
+    }
+
     /* The group list, sorted client-side. "No topic" is pinned last regardless of the sort --
        it is not a topic competing with the others, it is the remainder. */
     function sortedGroups(){
@@ -2327,6 +2368,16 @@
       var custom = rows.filter(function(g){ return isYes2(g.is_custom); }).sort(cmp);
       var topics = rows.filter(function(g){ return !isYes2(g.is_custom); }).sort(cmp);
       return custom.concat(topics, untagged);
+    }
+    /* The sidelist's own search, applied on top of sortedGroups() -- never on the inline
+       (non-wide) view's own group headers, which have no search box and shouldn't silently start
+       filtering just because the sidelist's query happens to be non-empty. Plain substring match
+       against the same label grpHeadHtml/renderGroupSidelist already show, nothing fancier: this
+       is filtering a few dozen already-loaded rows, not a search that needs folding/debouncing. */
+    function filterGroupsForSidelist(rows){
+      var q = state.grpSideQuery.trim().toLowerCase();
+      if (!q) return rows;
+      return rows.filter(function(g){ return groupLabel(g).toLowerCase().indexOf(q) !== -1; });
     }
     /* The RPC's booleans arrive as real booleans from Supabase but as strings through Bubble. */
     function isYes2(v){ return v === true || v === "true" || v === "yes" || v === 1 || v === "1"; }
@@ -2601,7 +2652,7 @@
          fetch/event logic: renderGroupSidelist's click handler calls the SAME toggleGroup() the
          inline header click already uses. */
       if (state.groupsWide){
-        renderGroupSidelist(rows);
+        renderGroupSidelist(filterGroupsForSidelist(rows));
         renderGroupWideBody();
         return;
       }
@@ -2614,16 +2665,23 @@
     }
     /* No KPIs here on purpose (spec) -- a color dot + name, same label logic grpHeadHtml uses.
        .is-open marks the currently expanded (state.expandedGroup) one. Pinned first: "All Prompts"
-       (GRP_ALL_ID), no chip/dot -- selecting it just means no real group is open, which
-       renderGroupWideBody() already renders as the flat table's own state.rows. Pinned at the TOP,
-       not the bottom: the same place Notion/Attio/HubSpot-style grouped list views put their own
-       ungrouped/"all" entry, so it reads as the default rather than one option among many. */
+       (GRP_ALL_ID) -- selecting it just means no real group is open, which renderGroupWideBody()
+       already renders as the flat table's own state.rows. Pinned at the TOP, not the bottom: the
+       same place Notion/Attio/HubSpot-style grouped list views put their own ungrouped/"all" entry,
+       so it reads as the default rather than one option among many. Styled exactly like the
+       untagged "No topic" row (plain .upt-grp-name, no chip) plus one thing neither topic nor
+       custom groups have: a small dot in the PRIMARY text colour (var(--vc-text), not a per-group
+       hex) -- not a colour identity like a real group's dot, just a plain bullet marking this as
+       the pinned "everything" entry. */
     function renderGroupSidelist(rows){
       if (!elGrpSidelist) return;
       var allOpen = !state.expandedGroup;
       var allItem = '<div class="upt-grp-sideitem upt-grp-sideitem-all' + (allOpen ? " is-open" : "") +
         '" role="button" tabindex="0" data-grp-side="' + GRP_ALL_ID + '">' +
-        '<span class="upt-grp-sidechip"><span class="upt-grp-name">All Prompts</span></span>' +
+        '<span class="upt-grp-sidechip">' +
+          '<span class="upt-grp-cdot" style="background:var(--vc-text)"></span>' +
+          '<span class="upt-grp-name">All Prompts</span>' +
+        '</span>' +
       '</div>';
       elGrpSidelist.innerHTML = allItem + rows.map(function(g){
         var id = groupId(g), custom = isYes2(g.is_custom);
@@ -2637,8 +2695,7 @@
         return '<div class="upt-grp-sideitem' + (open ? " is-open" : "") +
           '" role="button" tabindex="0" data-grp-side="' + esc(id) + '">' +
           '<span class="upt-grp-sidechip">' + groupChipHtml(g) + '</span>' +
-          '<span class="upt-grp-sidecount"><span class="upt-grp-sidecount-dot"></span>' +
-            (n == null ? "–" : esc(UC.fmtTotal(n))) + '</span>' +
+          '<span class="upt-grp-sidecount">' + (n == null ? "–" : esc(UC.fmtTotal(n))) + '</span>' +
           groupMenuBtnHtml(id, custom) +
         '</div>';
       }).join("");
@@ -2673,7 +2730,7 @@
     function toggleGroupWide(id){
       if (id === GRP_ALL_ID){ selectAllPrompts(); return; }
       toggleGroup(id);
-      renderGroupSidelist(sortedGroups());
+      renderGroupSidelist(filterGroupsForSidelist(sortedGroups()));
       renderGroupWideBody();
       syncFlatFootVisibility();
       /* The reused header checkbox (see toggleSelectAll/syncSelectAll) has to catch up on every
@@ -2689,7 +2746,7 @@
       if (!state.expandedGroup) return;
       state.expandedGroup = null;
       state.gRows = []; state.gTotal = null; state.gReqId = null; state.gLoading = false; state.gPage = 1;
-      renderGroupSidelist(sortedGroups());
+      renderGroupSidelist(filterGroupsForSidelist(sortedGroups()));
       renderGroupWideBody();
       syncFlatFootVisibility();
       syncSelectAll();
@@ -3725,6 +3782,14 @@
         openGroupModal();
         return;
       }
+      if (e.target.closest("[data-grp-sidesearch-open]")){
+        toggleGrpSideSearch(true);
+        return;
+      }
+      if (e.target.closest("[data-grp-sidesearch-close]")){
+        toggleGrpSideSearch(false);
+        return;
+      }
 
       // --- header sorters ---
       var th = e.target.closest(".up-th.is-sortable");
@@ -3779,6 +3844,18 @@
       elSearchIn.addEventListener("keydown", function(e){
         if (e.key === "Escape"){ e.stopPropagation(); toggleSearch(); }
         if (e.key === "Enter"){ search.cancel(); if (state.query.length >= MIN || !state.query.length) runSearch(); }
+      });
+    }
+
+    if (elGrpSideSearchIn){
+      elGrpSideSearchIn.addEventListener("input", function(){
+        state.grpSideQuery = elGrpSideSearchIn.value;
+        var box = elGrpSidehead ? elGrpSidehead.querySelector(".upt-grp-sidesearch-box") : null;
+        if (box) box.classList.toggle("has-text", !!elGrpSideSearchIn.value.length);
+        if (groupingOn() && state.groupsWide) renderGroupSidelist(filterGroupsForSidelist(sortedGroups()));
+      });
+      elGrpSideSearchIn.addEventListener("keydown", function(e){
+        if (e.key === "Escape"){ e.stopPropagation(); toggleGrpSideSearch(false); }
       });
     }
 

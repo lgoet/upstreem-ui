@@ -604,13 +604,34 @@
 .up-root.is-groups-cramped .upt-heading-widebtn { display: none !important; }
 .upt-grp-sidehead { display: flex; align-items: center; justify-content: space-between; gap: 8px;
   height: 45px; flex: 0 0 45px; padding: 0 12px; background: var(--vt-head-bg);
-  border-bottom: 1px solid var(--vc-border); }
+  border-bottom: 1px solid var(--vc-border); position: relative; }
+/* Sticky mode: the sidehead sits at the exact same visual row as .up-thead (they're side by side
+   in the same flex layout), so it sticks to the exact same offset -- var(--up-thead-off) already
+   tracks the toolbar's real height generically (see core.js's syncTheadOffset), nothing sidelist-
+   specific needed there. */
+.up-sticky .upt-grp-sidehead { position: sticky; top: calc(var(--up-sticky-top) + var(--up-thead-off)); z-index: 5; }
 .upt-grp-sidehead-lbl { font-size: 12px; font-weight: 400; color: var(--vc-muted); white-space: nowrap; }
 .upt-grp-sidetools { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
 /* .up-menu's own position:absolute needs THIS as its positioned ancestor -- without it the menu
    anchors to whatever positioned ancestor happens to be further up the tree instead (root itself
    is position:relative), landing far from the Sorter button that opens it. */
 .upt-grp-sidesort { position: relative; flex: 0 0 auto; }
+/* Takes over the whole sidehead row when open -- see toggleGrpSideSearch() in prompts-table.js.
+   No width check the way the toolbar's own .up-search/.is-searchtakeover has: this panel never has
+   room to spare, so a takeover is the only layout that ever makes sense here. */
+.upt-grp-sidesearch-box { display: none; align-items: center; flex: 1 1 auto; min-width: 0; }
+.upt-grp-sidehead.is-searching .upt-grp-sidehead-lbl,
+.upt-grp-sidehead.is-searching .upt-grp-sidetools { display: none; }
+.upt-grp-sidehead.is-searching .upt-grp-sidesearch-box { display: flex; }
+.upt-grp-sidesearch-in { flex: 1 1 auto; min-width: 0; height: 32px; padding: 0;
+  border: 0; background: transparent; color: var(--vc-text); font: inherit; font-size: 13px; outline: 0; }
+.upt-grp-sidesearch-in::placeholder { color: var(--vc-third); }
+/* Slot always reserved (visibility, not display) so nothing shifts when the x appears/disappears. */
+.upt-grp-sidesearch-clear { flex: 0 0 24px; width: 24px; height: 24px; border: 0; border-radius: 7px;
+  background: transparent; color: var(--vc-muted); cursor: pointer; padding: 0; margin-left: 4px;
+  display: inline-flex; align-items: center; justify-content: center; }
+.upt-grp-sidesearch-clear svg { width: 16px; height: 16px; display: block; }
+.upt-grp-sidesearch-clear:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
 .upt-grp-sidelist { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0;
   overflow-y: auto; overflow-x: hidden; }
 /* Same look/hover/open treatment as .upt-grp-head (the inline view's own group row), just
@@ -618,34 +639,35 @@
 .upt-grp-sideitem { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 12px;
   border-bottom: 1px solid var(--vc-border); color: var(--vc-text);
   cursor: pointer; font-size: 13px; font-weight: 500; width: 100%; min-width: 0; position: relative; }
-.upt-grp-sideitem:last-child { border-bottom: 0; }
 .upt-grp-sideitem:hover { background: var(--vt-row-hover); }
 .upt-grp-sideitem.is-open { background: var(--vc-heading-bg); }
 /* Wraps whatever groupChipHtml() renders (a topic's .up-topicchip, or a custom group's colour dot
    + name as two sibling spans) as ONE flex item so it can grow/shrink and truncate as a unit --
-   groupChipHtml() itself has no single root element for the custom-group case. */
+   groupChipHtml() itself has no single root element for the custom-group case. Also wraps the
+   pinned "All Prompts" row's own dot+name pair -- see renderGroupSidelist()'s own comment for why
+   that one gets a primary-colour dot instead of a real group's chip. */
 .upt-grp-sidechip { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto; overflow: hidden; }
-/* The pinned "All Prompts" row -- .upt-grp-sidechip's own flex:1 1 auto already pushes it flush
-   left same as any other row's chip, no extra rule needed for that; this just makes sure a
-   slightly bolder/less crowded label reads as the "default" entry rather than one group among
-   others (no chip/dot -- that's the point, see renderGroupSidelist()'s own comment). */
-.upt-grp-sideitem-all .upt-grp-name { font-weight: 600; }
-/* Right-aligned prompt count, third colour with a small leading dot -- swaps out for the 3-dot
-   actions menu on hover/open (same reserved slot) rather than sitting alongside it, so the row
-   never shows two right-aligned things fighting for the same space. :has() is already used
-   elsewhere in this file (see .upt-group-item above) -- the "is the open menu inside THIS item"
-   check needs it, since plain CSS has no previous-sibling selector. */
-.upt-grp-sidecount { display: flex; align-items: center; gap: 6px; flex: 0 0 auto;
-  font-size: 12px; color: var(--vc-third); transition: opacity 120ms ease; }
-.upt-grp-sidecount-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--vc-third); flex: 0 0 auto; }
+/* Right-aligned prompt count, third colour -- collapses to width:0 (not just opacity:0) on hover/
+   open so it takes NO layout space while hidden, letting the 3-dot menu land in the exact same
+   flush-right slot instead of a second slot reserved further out. That's also why the row's own
+   12px right padding just works here with no extra math: whichever of the two is visible is always
+   the LAST flex child, so it always sits exactly `padding-right` from the edge. :has() is already
+   used elsewhere in this file (see .upt-group-item above) -- the "is the open menu inside THIS
+   item" check needs it, since plain CSS has no previous-sibling selector. */
+.upt-grp-sidecount { display: flex; align-items: center; flex: 0 0 auto; max-width: 64px; overflow: hidden;
+  font-size: 12px; color: var(--vc-third); white-space: nowrap;
+  transition: opacity 120ms ease, max-width 120ms ease; }
 .upt-grp-sideitem:hover .upt-grp-sidecount,
-.upt-grp-sideitem:has(.upt-grp-menuwrap.is-open) .upt-grp-sidecount { opacity: 0; }
+.upt-grp-sideitem:has(.upt-grp-menuwrap.is-open) .upt-grp-sidecount { opacity: 0; max-width: 0; }
 /* Only the sidelist's copy of the group-actions button is hover-revealed -- the inline header's
    (see below) is always visible, since a KPI row has room and a click target there never competes
-   with the label the way this compact 44px row would if it stayed permanently visible. */
-.upt-grp-sideitem .upt-grp-menuwrap { opacity: 0; transition: opacity 120ms ease; }
+   with the label the way this compact 44px row would if it stayed permanently visible. Same
+   width-collapse idiom as .upt-grp-sidecount above, mirrored, so the two genuinely swap places
+   instead of just fading in/out on top of each other. */
+.upt-grp-sideitem .upt-grp-menuwrap { max-width: 0; opacity: 0; overflow: hidden;
+  transition: opacity 120ms ease, max-width 120ms ease; }
 .upt-grp-sideitem:hover .upt-grp-menuwrap,
-.upt-grp-sideitem .upt-grp-menuwrap.is-open { opacity: 1; }
+.upt-grp-sideitem .upt-grp-menuwrap.is-open { max-width: 32px; opacity: 1; }
 
 /* The OTHER sidebar toggle: sits in the toolbar heading, right before "Prompts", built once and
    ALWAYS in the DOM (see prompts-table.js) -- only shown while grouping is on and wide view is
