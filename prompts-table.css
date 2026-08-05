@@ -608,8 +608,39 @@
 /* Sticky mode: the sidehead sits at the exact same visual row as .up-thead (they're side by side
    in the same flex layout), so it sticks to the exact same offset -- var(--up-thead-off) already
    tracks the toolbar's real height generically (see core.js's syncTheadOffset), nothing sidelist-
-   specific needed there. */
-.up-sticky .upt-grp-sidehead { position: sticky; top: calc(var(--up-sticky-top) + var(--up-thead-off)); z-index: 5; }
+   specific needed there. Byte-for-byte the same opaque-background/border/corner treatment
+   .up-thead gets in core.css, and for the identical reason: .upt-grp-sidepanel's own border goes
+   transparent below (mirrors `.up-sticky .up-box { border-color: transparent; }`), so without a
+   real border+background drawn HERE the stuck head would be borderless AND see-through -- rows
+   sliding underneath showed straight through it (confirmed live), not just missing corners. */
+.up-sticky .upt-grp-sidehead {
+  position: sticky; top: calc(var(--up-sticky-top) + var(--up-thead-off)); z-index: 5;
+  background-image: linear-gradient(var(--vt-head-bg), var(--vt-head-bg));
+  background-color: var(--vc-bg);
+  border: 1px solid var(--vc-border); border-bottom: none;
+  border-top-left-radius: 16px; border-top-right-radius: 16px;
+}
+/* Same corner-mask trick as .up-thead's own -- the rounded top corners are transparent by nature,
+   so the sidelist's straight side border shows through them as rows scroll behind the pinned head
+   (a little vertical stub at each corner). These fill only the triangle OUTSIDE the radius. */
+.up-sticky .upt-grp-sidehead::before,
+.up-sticky .upt-grp-sidehead::after {
+  content: ""; position: absolute; top: -1px; width: 16px; height: 16px; pointer-events: none; z-index: 2;
+}
+.up-sticky .upt-grp-sidehead::before { left: -1px;  background: radial-gradient(circle at bottom right, rgba(0,0,0,0) 16px, var(--up-surface) 16.5px); }
+.up-sticky .upt-grp-sidehead::after  { right: -1px; background: radial-gradient(circle at bottom left,  rgba(0,0,0,0) 16px, var(--up-surface) 16.5px); }
+/* The sidelist's own bottom half of the same treatment -- .up-tbody's twin. overflow-x (not the
+   overflow shorthand) so the list's EXISTING overflow-y:auto -- its real vertical scrollbar for
+   more groups than the panel's bound height, independent of the page's own scroll -- is untouched;
+   this only clips horizontally, enough to mask the rounded bottom corners the same way .up-tbody's
+   own `overflow: clip` does (clip, not auto/hidden, because unlike hidden it does not turn this
+   into a SECOND scroll-container ancestor for position:sticky -- moot on this axis since it's
+   x-only, but kept for the same documented reasoning as .up-tbody). */
+.up-sticky .upt-grp-sidelist {
+  border: 1px solid var(--vc-border); border-top: none;
+  border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;
+  overflow-x: clip;
+}
 /* position:sticky only ever sticks against the nearest ancestor whose OWN overflow is not
    visible -- .upt-grp-sidepanel's overflow:hidden (there for the open/close width transition, see
    above) was exactly that ancestor, so the sidehead was "sticking" to the PANEL's own box instead
@@ -618,12 +649,15 @@
    .up-box gets the identical treatment in core.css (`.up-sticky .up-box { overflow: visible; }`)
    for the exact same reason, so .up-thead's own sticky works -- this is that same fix for the
    sidepanel. Only under .up-sticky: overflow:hidden is still needed the rest of the time for the
-   wide-view toggle's width/opacity collapse animation. */
+   wide-view toggle's width/opacity collapse animation. border-color goes transparent too, same
+   reasoning as .up-box's own: the sidehead/sidelist now draw their OWN border above, so the
+   panel's own would either double up or (being 1px off from the two pieces above/below it) leave
+   a visible seam. */
 /* .up-root.is-grouped.up-sticky (4 classes) beats .up-root.is-grouped .upt-grp-sidepanel's own
    3-class overflow:hidden rule above on specificity alone -- a plain .up-sticky .upt-grp-sidepanel
    (2 classes) LOST that fight regardless of source order, which is exactly why this had no effect
    the first time (confirmed live: computed overflow stayed "hidden"). */
-.up-root.is-grouped.up-sticky .upt-grp-sidepanel { overflow: visible; }
+.up-root.is-grouped.up-sticky .upt-grp-sidepanel { overflow: visible; border-color: transparent; }
 .upt-grp-sidehead-lbl { font-size: 12px; font-weight: 400; color: var(--vc-muted); white-space: nowrap; }
 .upt-grp-sidetools { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
 /* .up-menu's own position:absolute needs THIS as its positioned ancestor -- without it the menu
@@ -682,6 +716,14 @@
   transition: opacity 120ms ease, max-width 120ms ease; }
 .upt-grp-sideitem:hover .upt-grp-menuwrap,
 .upt-grp-sideitem .upt-grp-menuwrap.is-open { max-width: 32px; opacity: 1; }
+/* The actions dropdown itself (.upt-grp-actmenu) is a child of THIS wrapper, position:absolute so
+   it can render outside the wrapper's own 32px button box -- but overflow:hidden above (needed for
+   the width-collapse transition) clips it right back to that box regardless of z-index, so the
+   open menu rendered with the correct is-open class and correct DOM but was invisible (confirmed
+   live: no dropdown showed, even though the trigger's own open state was right). Only override
+   back to visible once actually open -- .is-open only ever applies post-click, well after the
+   width transition above has already finished, so there's no transition-clipping to preserve here. */
+.upt-grp-sideitem .upt-grp-menuwrap.is-open { overflow: visible; }
 
 /* The OTHER sidebar toggle: sits in the toolbar heading, right before "Prompts", built once and
    ALWAYS in the DOM (see prompts-table.js) -- only shown while grouping is on and wide view is
