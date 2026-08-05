@@ -706,6 +706,24 @@
       persist(); syncRowChecks(); syncSelectAll(); fireSelect(); syncStagedTopicsToSelection();
     }
     function toggleSelectAll(){
+      /* Wide grouping view reuses this exact header checkbox (.up-thead is unchanged there, see
+         renderGroupWideBody) -- but the rows on screen are the OPEN GROUP's (state.gRows), not
+         the flat table's own state.rows (which is whatever the flat fetch last returned, often
+         stale or empty once grouping is on). Delegate to the same per-group logic the inline
+         view's own group-header checkbox already uses instead of duplicating it. */
+      if (groupingOn() && state.groupsWide){
+        /* No group open -- nothing on screen to select, so this is a no-op rather than falling
+           through to the flat table's own (unrelated, possibly stale) state.rows. */
+        if (state.expandedGroup){
+          toggleGroupHeaderCheckbox(state.expandedGroup);
+          /* toggleGroupHeaderCheckbox() only ever had to keep the INLINE view's own group-header
+             checkbox in sync (part of the same grpHeadHtml re-render). This reused flat-table
+             header box lives outside elTbody entirely (.up-thead is untouched by the body
+             re-render), so nothing else updates it -- do it explicitly. */
+          syncSelectAll();
+        }
+        return;
+      }
       var rows = state.rows || [];
       if (!rows.length) return;
       var allSel = rows.every(function(r){ return state.selected[String(r.prompt_id)]; });
@@ -774,6 +792,28 @@
     function syncSelectAll(){
       var box = root.querySelector("[data-selectall]");
       if (!box) return;
+      /* Same reasoning as toggleSelectAll() above -- in wide grouping view this box's checked/
+         indeterminate state has to read off the open group's own rows (state.gRows), not
+         state.rows, or it never agrees with what's actually on screen. Mirrors grpSelectallHtml's
+         own checked-state math (gChecked = gSelectAllGroup === id || allSel) so the two surfaces
+         (inline header checkbox, this reused flat-table one) never disagree about the same group. */
+      if (groupingOn() && state.groupsWide){
+        /* No group open (the "Select a group from the list" empty state) -- nothing to select
+           against, so the box just reads off, not whatever the flat table's stale state.rows
+           would otherwise suggest. */
+        var gRows = state.expandedGroup ? (state.gRows || []) : [];
+        var gTotal = gRows.length;
+        var gSel = gRows.filter(function(r){ return state.selected[String(r.prompt_id)]; }).length;
+        var gAll = state.expandedGroup && ((gTotal > 0 && gSel === gTotal) || state.gSelectAllGroup === state.expandedGroup);
+        var gSome = !gAll && gSel > 0;
+        box.classList.toggle("is-checked", gAll);
+        box.classList.toggle("is-indeterminate", gSome);
+        box.setAttribute("aria-checked", gAll ? "true" : (gSome ? "mixed" : "false"));
+        box.innerHTML = gAll ? CHECK_SVG : "";
+        syncSelCount();
+        syncBulkBarCount();
+        return;
+      }
       var rows = state.rows || [];
       var total = rows.length;
       var sel = state.selectAllMatching ? total : rows.filter(function(r){ return state.selected[String(r.prompt_id)]; }).length;
@@ -2606,6 +2646,10 @@
       toggleGroup(id);
       renderGroupSidelist(sortedGroups());
       renderGroupWideBody();
+      /* The reused header checkbox (see toggleSelectAll/syncSelectAll) has to catch up on every
+         open/close/switch -- closing clears it (nothing open to select), switching groups must not
+         leave it showing the PREVIOUS group's checked/indeterminate state. */
+      syncSelectAll();
     }
 
     /* Lazy load: one request per expand, and one more per page turn inside the open group. */
@@ -3872,7 +3916,7 @@
           }
         }
         if (state.expandedGroup){
-          if (state.groupsWide) renderGroupWideBody(); else renderGroupBlockOnly(state.expandedGroup);
+          if (state.groupsWide){ renderGroupWideBody(); syncSelectAll(); } else renderGroupBlockOnly(state.expandedGroup);
         }
       },
       update: function(params){
