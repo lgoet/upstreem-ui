@@ -574,12 +574,19 @@
 .up-root.is-grouped .upt-grp-widewrap { display: flex; align-items: stretch; gap: 0; transition: gap 200ms ease; }
 .up-root.is-grouped.is-groups-wide .upt-grp-widewrap { gap: 8px; }
 .up-root.is-grouped .up-box { flex: 1 1 auto; min-width: 0; }
-/* The panel itself is what animates in/out (200ms ease, matching every other reveal in this app)
-   -- width 0 -> ~20% instead of a display toggle, so there is something to actually transition.
-   overflow:hidden while collapsed also clips the sidehead/sidelist content during the animation
-   instead of letting it reflow/wrap at intermediate widths. */
-.upt-grp-sidepanel { display: flex; flex-direction: column; flex: 0 0 auto; width: 0; min-width: 0;
-  opacity: 0; overflow: hidden; border: 1px solid transparent; border-radius: 16px;   /* matches .up-box's own radius */
+/* display:none by default (grouping off) -- NOT just width:0, and this is the one that actually
+   matters: .upt-grp-widewrap is display:contents whenever grouping is off (see above), which
+   means the panel is no longer a flex ITEM of anything and gets no align-items:stretch height from
+   a parent. A flex item's own width:0 collapses its WIDTH fine even then, but says nothing about
+   its HEIGHT -- with the sidehead's fixed 45px (and, worse, a populated .upt-grp-sidelist left
+   over from the last time grouping WAS on) it still claimed its own full natural height as a
+   normal block sibling of .up-box, shoving the table down by however tall the leftover group list
+   happened to be. Once grouping is on, .upt-grp-widewrap is genuinely display:flex again and the
+   panel switches to display:flex too -- THAT's when the width/opacity transition (200ms ease,
+   matching every other reveal in this app) actually needs to exist, for the wide-view toggle. */
+.upt-grp-sidepanel { display: none; }
+.up-root.is-grouped .upt-grp-sidepanel { display: flex; flex-direction: column; flex: 0 0 auto;
+  width: 0; min-width: 0; opacity: 0; overflow: hidden; border: 1px solid transparent; border-radius: 16px;   /* matches .up-box's own radius */
   transition: width 200ms ease, opacity 160ms ease, border-color 200ms ease; }
 .up-root.is-grouped.is-groups-wide .upt-grp-sidepanel {
   width: 20%; opacity: 1; border-color: var(--vc-border);
