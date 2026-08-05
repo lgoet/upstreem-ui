@@ -669,6 +669,16 @@
       }
       return cols.filter(function(c){ return !dropped[c.key]; });
     }
+    /* The space actually available to the GRID, not root's own outer width -- prompts-table's
+       groups wide view puts a side panel next to .up-box inside root (see .upt-grp-widewrap):
+       root's own width never changes when that panel opens, only how root's existing width is
+       split between panel and box. Budgeting against root there would keep columns that no longer
+       fit the now-narrower box, running the row content past the box's real right edge. Every
+       other table has no such sibling, so .up-box's width there already equals root's. */
+    function boxWidth(){
+      var box = root.querySelector(".up-box");
+      return (box || root).getBoundingClientRect().width || 0;
+    }
     /* what is actually on screen right now: user-hidden columns minus the ones this width drops */
     function effectiveCols(){
       var narrow = root.classList.contains("is-narrow");
@@ -682,7 +692,7 @@
         if ((narrow || vnarrow) && c.dropAt === "narrow") return false;
         return true;
       });
-      return autoFit(cols, root.getBoundingClientRect().width || 0);
+      return autoFit(cols, boxWidth());
     }
     /* cfg.noActions: tables without a row-actions column (e.g. prompts-table) skip the fixed
        trailing track entirely instead of reserving space for a column that has no cells. */
@@ -743,7 +753,7 @@
          measures layout, and interleaving those reads with the style writes below is a textbook
          read-write-read thrash — the thing that makes a resize drag feel like it is running at a
          fraction of the frame rate. */
-      var cw = root.getBoundingClientRect().width || 0;
+      var cw = boxWidth();
       var cols = effectiveCols();
       var shown = {};
       cols.forEach(function(c){ shown[c.key] = true; });

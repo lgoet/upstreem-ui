@@ -430,6 +430,11 @@
        own scoped copy -- which is exactly how this chip went uncovered in the grouping modal/popup
        before: only the bulk-topics bar had ever added one. */
     [data-theme="dark"] .up-topicchip { background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 22%, transparent); color: #e0e0e0; }
+    /* ONE chip grid for the whole app -- 8px row+column gap (flex-wrap's own `gap` gives both for
+       free). Was missing a base rule entirely: every consumer either duplicated this declaration
+       itself (prompts-table's .upt-gm-list) or, like the Edit Topics popup, simply had no gap at
+       all and relied on nothing but the chips' own margins. */
+    .up-topiclist { display: flex; flex-wrap: wrap; gap: 8px; }
     /* at the cap: chips you cannot add anyway say so instead of silently ignoring the click */
     .up-topiclist.is-full .up-topicchip:not(.is-on) { opacity: .4; cursor: default; pointer-events: none; }
 

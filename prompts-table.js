@@ -1518,7 +1518,16 @@
        the prompt, click to add. One event on Apply. tag_ids is a real array here, unlike the
        comma-joined string uptTopicsClick/uptApplyBulkTopics use — asked for as an array
        specifically for this one. */
-    var etModal = null, etRow = null, etStaged = {}, etAddOpen = false;
+    var etModal = null, etRow = null, etStaged = {}, etOriginal = {}, etAddOpen = false;
+    /* Apply only makes sense once the staged set actually differs from what the prompt already
+       had when the popup opened -- same key-set-count-plus-membership comparison the bulk
+       editor's own dirty-check uses elsewhere in this file. */
+    function etHasChanges(){
+      var a = Object.keys(etStaged), b = Object.keys(etOriginal);
+      if (a.length !== b.length) return true;
+      for (var i = 0; i < a.length; i++){ if (!etOriginal[a[i]]) return true; }
+      return false;
+    }
     function etTagsById(){
       var byId = {};
       (state.topics || []).forEach(function(t){ byId[topicId(t)] = t; });
@@ -1554,6 +1563,8 @@
           : '<div class="upt-et-empty">No more topics to add</div>';
         if (animate) UC.flipReplace(addEl, addHtml, "[data-et-topic]"); else addEl.innerHTML = addHtml;
       }
+      var applyBtn = etModal.querySelector("[data-et-apply]");
+      if (applyBtn) applyBtn.disabled = !etHasChanges();
     }
     function etToggleTopic(id){
       if (etStaged[id]) delete etStaged[id]; else etStaged[id] = true;
@@ -1572,8 +1583,8 @@
       var row = findRowById(rowId);
       if (!row) return;
       closeEtModal();
-      etRow = row; etStaged = {}; etAddOpen = false;
-      (row.tags || []).forEach(function(t){ etStaged[topicId(t)] = true; });
+      etRow = row; etStaged = {}; etOriginal = {}; etAddOpen = false;
+      (row.tags || []).forEach(function(t){ etStaged[topicId(t)] = true; etOriginal[topicId(t)] = true; });
       etModal = document.createElement("div");
       etModal.className = "up-topicmodal-backdrop upt-et-backdrop";
       if (isDark) etModal.setAttribute("data-theme", "dark");
@@ -1585,7 +1596,7 @@
           '</div>' +
           '<div class="up-topicmodal-body">' +
             '<div class="up-topicmodal-field">' +
-              '<span class="up-topicmodal-label">Prompt</span>' +
+              '<span class="up-topicmodal-label upt-et-promptlabel">Prompt</span>' +
               '<p class="upt-et-prompttext">' + esc(String(row.prompt_text == null ? "" : row.prompt_text)) + '</p>' +
             '</div>' +
             '<div class="up-topicmodal-field">' +
@@ -1599,7 +1610,7 @@
           '</div>' +
           '<div class="up-topicmodal-foot">' +
             '<button class="up-btn-sec" type="button" data-et-cancel>Cancel</button>' +
-            '<button class="up-topicmodal-save" type="button" data-et-apply>Apply</button>' +
+            '<button class="up-topicmodal-save" type="button" data-et-apply disabled>Apply</button>' +
           '</div>' +
         '</div>';
       document.body.appendChild(etModal);
@@ -2234,6 +2245,12 @@
       writeGroupsWide(state.groupsWide);
       root.classList.toggle("is-groups-wide", state.groupsWide);
       if (groupingOn()) renderGroups();
+      /* .up-box's own width changes gradually as the sidepanel's 200ms CSS width transition runs
+         (see .upt-grp-sidepanel) -- root's OUTER width never changes (the panel and box just
+         re-split the same space), so the shared ResizeObserver (core.js's onResize, watching
+         root) never fires for this and the columns never re-fit to the box's real end width on
+         their own. Re-running applyCols() once the transition has settled catches it up. */
+      setTimeout(function(){ applyCols(); }, 220);
     }
 
     /* The group list, sorted client-side. "No topic" is pinned last regardless of the sort --

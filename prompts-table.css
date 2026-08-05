@@ -461,6 +461,13 @@
    Shell is core's .up-topicmodal-* (same as New/Edit Grouping) — only what's specific to THIS
    popup lives here: the prompt-text readout and the Add-Topics reveal. Chips are core's
    .up-topicchip inside .up-topiclist, both already used elsewhere in this file. */
+/* Wider than the shared 420px shell -- scoped to THIS popup's own backdrop class so the New/Edit
+   Grouping modal (same shared .up-topicmodal-card) is untouched. */
+.upt-et-backdrop .up-topicmodal-card { max-width: 520px; }
+/* "Prompt" specifically, not "Topics" -- a plain class on just that one label, not the shared
+   .up-topicmodal-label every field heading uses (that would also repaint the Grouping modal's own
+   field labels, which nobody asked for). */
+.upt-et-promptlabel { color: var(--vc-muted); }
 .upt-et-prompttext { font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.35;
   letter-spacing: -0.01em; margin: 0; white-space: pre-wrap; }
 .upt-et-empty { padding: 10px 2px; font-size: 12.5px; color: var(--vc-muted); }
@@ -582,6 +589,10 @@
   border-bottom: 1px solid var(--vc-border); }
 .upt-grp-sidehead-lbl { font-size: 12px; font-weight: 400; color: var(--vc-muted); white-space: nowrap; }
 .upt-grp-sidetools { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
+/* .up-menu's own position:absolute needs THIS as its positioned ancestor -- without it the menu
+   anchors to whatever positioned ancestor happens to be further up the tree instead (root itself
+   is position:relative), landing far from the Sorter button that opens it. */
+.upt-grp-sidesort { position: relative; flex: 0 0 auto; }
 .upt-grp-sidelist { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0;
   overflow-y: auto; overflow-x: hidden; }
 /* Same look/hover/open treatment as .upt-grp-head (the inline view's own group row), just
@@ -607,8 +618,20 @@
    ALWAYS in the DOM (see prompts-table.js) -- only shown while grouping is on and wide view is
    NOT (once wide view is on, the sidepanel's own toggle above is the one already in view; showing
    both would be two controls for the same single on/off switch). */
-.upt-heading-widebtn { display: none; margin-right: 4px; }
+/* Exactly one of these two ever shows -- the toolbar's own (this one) while wide view is OFF,
+   the sidepanel's own (.upt-grp-widebtn, "groups wide view" rules above) while it's ON. Both
+   sides use ".up-root .foo" (two classes), not just ".foo", so this always wins over
+   .up-iconbtn's own display value regardless of which stylesheet the runtime loader happens to
+   insert last -- a single-class rule here would be a cascade-order coin flip in production even
+   though it reads correctly in a static test harness with a fixed <link> order. */
+.up-root .upt-heading-widebtn { display: none; margin-right: 4px; }
 .up-root.is-grouped:not(.is-groups-wide) .upt-heading-widebtn { display: inline-flex; }
+/* Same belt-and-suspenders reasoning for the sidepanel's own toggle -- it already visually
+   disappears when the panel collapses to 0 width (see .upt-grp-sidepanel above), but an explicit
+   display toggle here means that stays true even if something about the panel's own collapse
+   ever stops being pixel-perfect, instead of silently depending on it. */
+.up-root .upt-grp-widebtn { display: none; }
+.up-root.is-grouped.is-groups-wide .upt-grp-widebtn { display: inline-flex; }
 
 .upt-grp { border-bottom: 1px solid var(--vc-border); }
 .upt-grp:last-child { border-bottom: 0; }
