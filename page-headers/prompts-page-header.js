@@ -8,7 +8,7 @@
    shared Page Header Kit (core.css's ".up-ph-*" classes, core.js's UC.makePageNav), because every
    future page header needs the exact same thing. This file only supplies what's genuinely specific
    to the Prompts page: the PAGES list (labels/icons/values), the heading/description text, and the
-   two event names. Copy this file for the next page's header and swap those three things; the
+   event names. Copy this file for the next page's header and swap those three things; the
    boot/mount plumbing and the visual/interaction kit underneath need no changes to do that. */
 (function(){
   "use strict";
@@ -105,6 +105,10 @@
     var addBtn = root.querySelector(".up-ph-addbtn");
     if (addBtn){
       addBtn.addEventListener("click", function(){ fire("data-add-fn", "pphAdd", {}); });
+    }
+    var refreshBtn = root.querySelector(".pph-refreshbtn");
+    if (refreshBtn){
+      refreshBtn.addEventListener("click", function(){ fire("data-refresh-fn", "pphRefresh", {}); });
     }
   }
 

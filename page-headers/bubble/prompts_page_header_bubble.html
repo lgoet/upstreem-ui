@@ -31,20 +31,24 @@
                     entirely rather than showing a broken-image icon
 
   ── Event names must be unique per placement ─────────────────────────────────
-  data-nav-fn = "bubble_fn_pphNav_[dynamic id]"
-  data-add-fn = "bubble_fn_pphAdd_[dynamic id]"
+  data-nav-fn     = "bubble_fn_pphNav_[dynamic id]"
+  data-add-fn     = "bubble_fn_pphAdd_[dynamic id]"
+  data-refresh-fn = "bubble_fn_pphRefresh_[dynamic id]"
 
-  Both fire ONE JSON string, values pulled out on the Bubble side by regex — same convention as
-  every other component in this library.
+  All three fire ONE JSON string, values pulled out on the Bubble side by regex — same convention
+  as every other component in this library.
 
-    nav   {"page":"allprompts"}   -> fires on every tab click, AFTER the sliding indicator has
+    nav     {"page":"allprompts"} -> fires on every tab click, AFTER the sliding indicator has
                                      already been told to animate to it. One of exactly three
                                      values: allprompts | mentions | topics. "mentions" is not a
                                      typo for the Responses tab — it's the same internal name the
                                      rest of the app already uses for that page.
-    add   {}                      -> "Add Prompts" button. No fields at all — this component's
+    add     {}                    -> "Add Prompts" button. No fields at all — this component's
                                      whole job here is "tell Bubble the button was clicked", not to
                                      carry any data along with it.
+    refresh {}                    -> the icon-only Refresh button, top right. Same "no fields,
+                                     just tell Bubble it happened" shape as add — this component
+                                     does not reload anything itself.
 
   Regex reference for a Bubble "extract" step:
     (?<="page":")[^"]*
@@ -69,7 +73,8 @@
      data-brand-name="BRAND_NAME"
      data-brand-logo="BRAND_LOGO_URL"
      data-nav-fn="bubble_fn_pphNav"
-     data-add-fn="bubble_fn_pphAdd">
+     data-add-fn="bubble_fn_pphAdd"
+     data-refresh-fn="bubble_fn_pphRefresh">
   <div class="up-ph-top">
     <div class="up-ph-left">
       <div class="up-ph-meta">
@@ -79,10 +84,15 @@
       <h1 class="up-ph-heading">Prompt Insights</h1>
       <p class="up-ph-desc">Manage Prompts, Topics and monitor latest Responses</p>
     </div>
-    <button class="up-ph-addbtn up-export" type="button">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      <span>Add <span class="up-ph-addbtn-full">Prompts</span></span>
-    </button>
+    <div class="pph-topright">
+      <button class="up-ph-addbtn up-export" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span>Add <span class="up-ph-addbtn-full">Prompts</span></span>
+      </button>
+      <button class="pph-refreshbtn up-ph-iconbtn" type="button" aria-label="Refresh" data-tip="Refresh">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      </button>
+    </div>
   </div>
 
   <!-- UC.makePageNav (core.js) builds the three tab items + the sliding indicator into this on init. -->

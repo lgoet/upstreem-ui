@@ -1450,6 +1450,17 @@
 
 .up-ph-addbtn { flex: 0 0 auto; margin-top: -16px; }
 
+/* 32x32, icon-only, primary color at rest (var(--vc-text)) with a hover background -- deliberately
+   NOT .up-iconbtn (that one is muted-by-default, primary-on-hover) or .up-export (a filled button):
+   this is its own third state a page header can reuse wherever it needs an icon-only utility
+   action next to its Add/tool buttons. First used by dashboard-page-header.js's Refresh button,
+   promoted here once prompts-page-header.js needed the identical one. */
+.up-ph-iconbtn { display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent;
+  color: var(--vc-text); cursor: pointer; padding: 0; flex: 0 0 auto; }
+.up-ph-iconbtn:hover { background: var(--vc-heading-bg); }
+.up-ph-iconbtn svg { width: 16px; height: 16px; display: block; }
+
 /* ---------- subpage nav: N tabs + a sliding active indicator (built by UC.makePageNav) ---------- */
 .up-ph-nav { display: flex; position: relative; margin-top: 32px; }
 /* The continuous 1px baseline every item's own indicator sits on top of -- ONE shared separator

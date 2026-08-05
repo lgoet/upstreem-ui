@@ -1,6 +1,11 @@
 /* upstreem prompts-page-header.css — first of the page-headers/ component family.
-   Deliberately near-empty: the meta/heading/description block, the "Add X" button, and the
-   sliding-tab subpage nav are all styled by the shared Page Header Kit in core.css (".up-ph-*"
-   classes) instead of being redefined per page -- see that kit's own comment block for the full
-   markup contract and reasoning. This file only exists for the day this page's header needs a
-   visual tweak no other page header should inherit; today it needs none. */
+   Meta/heading/description block, the "Add X" and Refresh buttons, and the sliding-tab subpage nav
+   are all styled by the shared Page Header Kit in core.css (".up-ph-*" classes) instead of being
+   redefined per page -- see that kit's own comment block for the full markup contract and
+   reasoning. This file only holds what's actually specific to this page. */
+
+/* Wraps the Add + Refresh buttons so .up-ph-top's own justify-content:space-between still only
+   ever sees two children (.up-ph-left and this) -- without it, adding a second top-right button as
+   a direct sibling would space THREE children apart across the whole row instead of keeping the
+   two buttons next to each other on the right. */
+.pph-topright { display: flex; align-items: center; gap: 8px; }
