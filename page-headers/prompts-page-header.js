@@ -102,13 +102,18 @@
       onSelect: function(value){ fire("data-nav-fn", "pphNav", { page: value }); }
     });
 
+    if (UC.makeTooltips) UC.makeTooltips(root, function(){ return UC.isYes(root.getAttribute("data-isdark")); });
+
     var addBtn = root.querySelector(".up-ph-addbtn");
     if (addBtn){
       addBtn.addEventListener("click", function(){ fire("data-add-fn", "pphAdd", {}); });
     }
     var refreshBtn = root.querySelector(".pph-refreshbtn");
     if (refreshBtn){
-      refreshBtn.addEventListener("click", function(){ fire("data-refresh-fn", "pphRefresh", {}); });
+      refreshBtn.addEventListener("click", function(){
+        UC.spinOnce(refreshBtn);
+        fire("data-refresh-fn", "pphRefresh", {});
+      });
     }
   }
 

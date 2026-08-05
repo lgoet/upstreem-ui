@@ -1969,6 +1969,19 @@
     return { selectPage: selectPage, positionUnderline: positionUnderline };
   }
 
+  /* Plays the .up-ph-iconbtn spin (core.css: 1s ease-in-out, one turn) on a button, re-triggerable
+     mid-spin. A plain classList.add("is-spinning") is a no-op on a button already mid-animation --
+     the class name doesn't change, so nothing tells the browser to restart it. Removing the class,
+     forcing a layout read (void el.offsetWidth), then re-adding it makes the browser treat it as a
+     fresh animation start every time, even if the previous spin from a rapid re-click hasn't
+     finished. Used by both prompts-page-header.js and dashboard-page-header.js's Refresh buttons. */
+  function spinOnce(el){
+    if (!el) return;
+    el.classList.remove("is-spinning");
+    void el.offsetWidth;
+    el.classList.add("is-spinning");
+  }
+
   /* Shared event dispatch: resolves the Bubble function (via the data-*-fn attr or a fallback
      name) across window/parent/top/iframes and calls it with the JSON payload. label + eventPrefix
      stay per component so warnings and the DOM side-channel event read correctly. */
@@ -3758,6 +3771,7 @@
     ensureEmojiLib: ensureEmojiLib,
     makeTopicModal: makeTopicModal,
     makePageNav: makePageNav,
+    spinOnce: spinOnce,
 
     /* ---- chart kits (see the big comment block above) ---- */
     loadChartJs: loadChartJs,

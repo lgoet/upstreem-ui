@@ -7,5 +7,18 @@
 /* Wraps the Add + Refresh buttons so .up-ph-top's own justify-content:space-between still only
    ever sees two children (.up-ph-left and this) -- without it, adding a second top-right button as
    a direct sibling would space THREE children apart across the whole row instead of keeping the
-   two buttons next to each other on the right. */
-.pph-topright { display: flex; align-items: center; gap: 8px; }
+   two buttons next to each other on the right.
+
+   The -16px lift core.css's .up-ph-addbtn carries (compensating for .up-ph-root's 32px top padding
+   so the button lands at the page's original 16px position) is moved from the button to THIS
+   wrapper instead, and cancelled back to 0 on the button itself. Left on the button, it only ever
+   shifted the Add button -- Refresh, its new sibling inside this wrapper, has no such margin and
+   sat 16px lower, out of line with Add (the actual bug report: "Refresh button ist 16px zu weit
+   unten"). Lifting the whole wrapper once moves both buttons together and keeps them level. */
+.pph-topright { display: flex; align-items: center; gap: 8px; margin-top: -16px; }
+/* .up-root prefix (not just .pph-topright .up-ph-addbtn) to match core.css's own
+   ".up-root.is-vnarrow .up-ph-addbtn" rule's specificity (3 classes) -- a 2-class override loses
+   that fight regardless of source order and the button would get shifted twice: once by this
+   wrapper, once by its own still-active core.css margin. */
+.up-root .pph-topright .up-ph-addbtn { margin-top: 0; }
+.up-root.is-vnarrow .pph-topright { margin-top: -32px; }

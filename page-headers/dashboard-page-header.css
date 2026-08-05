@@ -3,11 +3,13 @@
    actually specific to the Dashboard page: the KPI strip and the Docs button (Refresh is the
    shared ".up-ph-iconbtn" from core.css). */
 
-/* This page has no subpage nav, but the separator baseline still needs to sit at the exact same
-   height as it does on a page header that DOES have one -- so this row keeps the ".up-ph-nav"
-   class (margin-top:32px, the ::after separator line) and only adds its own content layout on top
-   via this second class, rather than duplicating that spacing/separator here. */
-.dph-toolrow { justify-content: flex-end; align-items: center; gap: 32px; }
+/* KPIs + Docs/Refresh sit top-right, in .up-ph-top itself (next to .up-ph-left), NOT in the second
+   row -- that row is a plain, empty ".up-ph-nav" (see the bubble doc's markup) kept only so its
+   separator line still lands at the exact same height a page WITH a subpage nav would put it,
+   32px below the taller of the two .up-ph-top columns, then the component ends. This wrapper is
+   what keeps .up-ph-top's own justify-content:space-between seeing exactly two children
+   (.up-ph-left and this), same reasoning as prompts-page-header.css's .pph-topright. */
+.dph-topright { display: flex; align-items: center; gap: 32px; }
 
 /* ---------- KPI strip: Visibility / Ranking / Sentiment ---------- */
 .dph-kpis { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; }

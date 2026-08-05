@@ -1460,6 +1460,12 @@
   color: var(--vc-text); cursor: pointer; padding: 0; flex: 0 0 auto; }
 .up-ph-iconbtn:hover { background: var(--vc-heading-bg); }
 .up-ph-iconbtn svg { width: 16px; height: 16px; display: block; }
+/* One full turn, ease-in-out, on click -- triggered via UC.spinOnce(btn) (core.js), which
+   toggles this class off/on with a forced reflow in between so a second click mid-spin restarts
+   the animation instead of doing nothing (the class name alone wouldn't change, so a plain
+   classList.add on an already-spinning button is a no-op without that reset). */
+@keyframes up-ph-spin { to { transform: rotate(360deg); } }
+.up-ph-iconbtn.is-spinning svg { animation: up-ph-spin 1s ease-in-out; }
 
 /* ---------- subpage nav: N tabs + a sliding active indicator (built by UC.makePageNav) ---------- */
 .up-ph-nav { display: flex; position: relative; margin-top: 32px; }

@@ -127,8 +127,15 @@
       attributes: true, attributeFilter: ["data-isdark", "data-brand-name", "data-brand-logo"]
     });
 
+    if (UC.makeTooltips) UC.makeTooltips(root, function(){ return UC.isYes(root.getAttribute("data-isdark")); });
+
     var refreshBtn = root.querySelector(".dph-refreshbtn");
-    if (refreshBtn) refreshBtn.addEventListener("click", function(){ fire("data-refresh-fn", "dphRefresh", {}); });
+    if (refreshBtn){
+      refreshBtn.addEventListener("click", function(){
+        UC.spinOnce(refreshBtn);
+        fire("data-refresh-fn", "dphRefresh", {});
+      });
+    }
     var docsBtn = root.querySelector(".dph-docsbtn");
     if (docsBtn) docsBtn.addEventListener("click", function(){ fire("data-docs-fn", "dphDocs", {}); });
 
