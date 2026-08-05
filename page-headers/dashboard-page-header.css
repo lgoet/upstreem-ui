@@ -1,0 +1,41 @@
+/* upstreem dashboard-page-header.css — meta/heading/description/spacing come from core.css's
+   shared Page Header Kit (".up-ph-*"), same as prompts-page-header.css. This file only holds what's
+   actually specific to the Dashboard page: the KPI strip and the Docs/Refresh buttons. */
+
+/* This page has no subpage nav, but the separator baseline still needs to sit at the exact same
+   height as it does on a page header that DOES have one -- so this row keeps the ".up-ph-nav"
+   class (margin-top:32px, the ::after separator line) and only adds its own content layout on top
+   via this second class, rather than duplicating that spacing/separator here. */
+.dph-toolrow { justify-content: flex-end; align-items: center; gap: 32px; }
+
+/* ---------- KPI strip: Visibility / Ranking / Sentiment ---------- */
+.dph-kpis { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; }
+.dph-kpi { display: inline-flex; align-items: center; gap: 6px; }
+.dph-kpi-label { font-size: 12px; font-weight: 500; color: var(--vc-third); white-space: nowrap; }
+.dph-kpi-value { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap;
+  font-variant-numeric: tabular-nums; }
+.dph-kpi-sep { width: 1px; height: 14px; background: var(--vc-border); flex: 0 0 auto; }
+/* Overrides core.css's .up-trend default (16x16 icon, 13px font) for just this usage -- kept as an
+   ADDITIONAL class (see dashboard-page-header.js's kpiItem: cls is "up-trend dph-trend-sm", not a
+   replacement) rather than a new .up-trend override in core.css, since every other trend chip in
+   the app is meant to stay full-size; only this compact KPI strip needs the smaller one. */
+.dph-trend-sm { font-size: 12px; }
+.dph-trend-sm svg { width: 14px; height: 14px; }
+
+/* ---------- top-right tools: Docs + Refresh ---------- */
+.dph-tools { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+/* Both tools sit in Primärfarbe (var(--vc-text)) at rest, not the muted default .up-iconbtn uses
+   elsewhere -- that's the actual reason these are their own classes instead of reusing
+   .up-iconbtn/.up-export: neither existing button primitive has an "already primary, hover just
+   adds a background" state. */
+.dph-refreshbtn { display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent;
+  color: var(--vc-text); cursor: pointer; padding: 0; flex: 0 0 auto; }
+.dph-refreshbtn:hover { background: var(--vc-heading-bg); }
+.dph-refreshbtn svg { width: 16px; height: 16px; display: block; }
+
+.dph-docsbtn { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 8px;
+  border: 0; border-radius: 8px; background: transparent; color: var(--vc-text); cursor: pointer;
+  font-family: inherit; font-size: 14px; font-weight: 500; flex: 0 0 auto; }
+.dph-docsbtn:hover { background: var(--vc-heading-bg); }
+.dph-docsbtn svg { width: 16px; height: 16px; display: block; }

@@ -1,0 +1,126 @@
+<!--
+  UPSTREEM — DASHBOARD PAGE HEADER
+
+  Sits at the very top of the Dashboard page: meta row, page heading + description, and a second
+  row holding a compact Visibility/Ranking/Sentiment KPI strip plus two tools (Docs, Refresh) top
+  right. Same page-headers/ family as prompts-page-header.js -- meta/heading/description styling
+  come from core.css's shared Page Header Kit (".up-ph-*"). This page has no subpage nav, but the
+  second row still uses the ".up-ph-nav" class purely to keep the separator line at the same height
+  as it sits on a page header that DOES have tabs -- ".dph-toolrow" (this component's own CSS) adds
+  the actual KPI-strip/tools layout on top of it.
+
+  ── Bubble dynamic values on the root element ────────────────────────────────
+  data-instance    = "ROOTID_[dynamic id]"   unique per placement
+  data-cdn-pin     = commit hash to load from, e.g. "71ed61f" — leave EMPTY (or leave the literal
+                     "CDN_PIN" placeholder) to load @main. Point this at a Bubble constant/Option
+                     Set field you control so every placement can be repinned to a new commit in
+                     one edit instead of hunting down every embed's URL by hand.
+  data-isdark      = "yes" / "no"
+  data-brand-name  = "Acme"                              plain text, no HTML
+  data-brand-logo  = "https://.../favicon.ico"            any image URL; left empty hides the <img>
+                     entirely rather than showing a broken-image icon
+
+  ── Event names must be unique per placement ─────────────────────────────────
+  data-refresh-fn = "bubble_fn_dphRefresh_[dynamic id]"
+  data-docs-fn    = "bubble_fn_dphDocs_[dynamic id]"
+
+  Both fire an empty JSON payload ({}) — neither button carries any data, they only tell Bubble
+  which one was clicked. This component does not refresh anything or open any URL itself; wiring
+  the resulting workflow up to an actual data reload / docs link is a Bubble-side decision.
+
+  ── Feeding the KPI numbers ────────────────────────────────────────────────────
+  Unlike prompts-page-header.js, this component has one real piece of server data, delivered ONCE
+  at page load via a Run-JS "setDashboardPageHeaderKpis" step (same convention as e.g.
+  setUrlsTableBrands on the urls-table component) — NOT a render()/reset() pair, there's no ongoing
+  data cycle here.
+
+    setDashboardPageHeaderKpis(instanceId, kpis)
+
+      instanceId = this element's data-instance value
+      kpis       = the exact array your example payload showed, e.g.:
+        [{
+          "avg_visibility_pct": 2.20, "avg_visibility_delta_pct": -0.96, "avg_visibility_prev_pct": 3.16,
+          "avg_rank": 2.79, "avg_rank_delta": -0.35, "avg_rank_prev": 3.14,
+          "avg_sentiment": 76.41, "avg_sentiment_delta": -0.59, "avg_sentiment_prev": 77.00,
+          "weighted_sentiment": 79.29, "bad_rate_pct": 0.00, "has_own_brand": true,
+          "runs_with_sentiment": 39, "runs_with_sentiment_prev": 22
+        }]
+
+  Only the first array element is read (kpis[0]) — every other field in it besides the six above
+  (avg_visibility_pct/_delta_pct, avg_rank/_delta, avg_sentiment/_delta) is accepted but currently
+  unused by this component; pass the whole object anyway so a future KPI can be added here without
+  a payload change on your end.
+
+  Formatting, so you know what to expect on screen:
+    Visibility — avg_visibility_pct rounded to a whole percent ("2%"), trend from
+                 avg_visibility_delta_pct (also whole-percent, non-inverted: up is good).
+    Ranking    — avg_rank to 1 decimal ("2.8"), trend from avg_rank_delta (1 decimal, INVERTED:
+                 a falling rank number is the improvement, shown as the green/up-styled chip).
+    Sentiment  — avg_sentiment rounded to a whole number ("76"), trend from avg_sentiment_delta
+                 (whole number, non-inverted).
+  A trend chip is omitted entirely when its delta is null/zero/rounds to zero (same core.js
+  UC.trendChip behavior every other trend indicator in this app already has).
+
+  ── Filling the component ─────────────────────────────────────────────────────
+  data-brand-name/data-brand-logo/data-isdark: set once when the element is placed (Property
+  Editor) — bind them directly to whatever dynamic expression already resolves the current team's
+  brand/theme elsewhere in the app, no JS needed. The KPI numbers are the only thing that needs an
+  actual Run-JS step, fired once when the Dashboard page's own data is ready.
+-->
+
+<div class="up-root up-ph-root dph-root"
+     data-instance="ROOTID_[dynamic id]"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="IS_DARK"
+     data-brand-name="BRAND_NAME"
+     data-brand-logo="BRAND_LOGO_URL"
+     data-refresh-fn="bubble_fn_dphRefresh"
+     data-docs-fn="bubble_fn_dphDocs">
+  <div class="up-ph-top">
+    <div class="up-ph-left">
+      <div class="up-ph-meta">
+        <img class="up-ph-metalogo" alt="" style="display:none"/>
+        <span class="up-ph-metatxt"><span class="pph-metaname"></span> AI Search Analytics</span>
+      </div>
+      <h1 class="up-ph-heading">Dashboard</h1>
+      <p class="up-ph-desc">Monitor your AI visibility, performance, and latest developments</p>
+    </div>
+  </div>
+
+  <div class="up-ph-nav dph-toolrow">
+    <!-- dashboard-page-header.js fills this in on setDashboardPageHeaderKpis(). -->
+    <div class="dph-kpis"></div>
+    <div class="dph-tools">
+      <button class="dph-docsbtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <span>Docs</span>
+      </button>
+      <button class="dph-refreshbtn" type="button" aria-label="Refresh" data-tip="Refresh">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+<script>
+/* Loads this component's CSS/JS from jsDelivr, pinned to the commit hash you put in data-cdn-pin on
+   the root div above (falls back to @main only if data-cdn-pin is left blank or at the literal
+   "CDN_PIN" placeholder). Byte-for-byte the same loader every other component in this repo ships —
+   see prompts_page_header_bubble.html's own copy for the full reasoning in comments. */
+(function(){
+  function readPin(cls){
+    var els = document.getElementsByClassName(cls), i, p;
+    for (i = 0; i < els.length; i++){
+      p = (els[i].getAttribute("data-cdn-pin") || "").trim();
+      if (p && p !== "CDN_PIN") return p;
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("dph-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(url, make){ if (L[url]) return; L[url] = 1; make(url); }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+  css("core.css"); css("page-headers/dashboard-page-header.css");
+  js("core.js"); js("page-headers/dashboard-page-header.js");
+})();
+</script>
