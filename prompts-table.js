@@ -335,8 +335,15 @@
       } catch(e){ return "both"; }
     }
     function writeGroupMode(v){ try { window.localStorage.setItem(gKey("groupmode"), v); } catch(e){} }
+    /* Defaults to List Mode (wide) the very first time grouping is ever turned on -- only an
+       EXPLICIT prior choice (the key actually set, "yes" or "no") overrides that default; a
+       missing key isn't the same thing as a stored "no". */
     function readGroupsWide(){
-      try { return window.localStorage.getItem(gKey("groupswide")) === "yes"; } catch(e){ return false; }
+      try {
+        var v = window.localStorage.getItem(gKey("groupswide"));
+        if (v == null) return true;
+        return v === "yes";
+      } catch(e){ return true; }
     }
     function writeGroupsWide(v){
       try { window.localStorage.setItem(gKey("groupswide"), v ? "yes" : "no"); } catch(e){}
