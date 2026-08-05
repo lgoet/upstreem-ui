@@ -3,7 +3,7 @@
    (--vc-text/--vc-muted/--vc-third/--vc-border) and the shared .up-export button it reuses
    verbatim for "Add Prompts" -- nothing color-related is redefined here. */
 
-.pph-root { padding: 16px 0; background: transparent; }
+.pph-root { padding: 32px 0 16px; background: transparent; }
 
 /* ---------- top row: brand/heading/description on the left, Add button top-right ---------- */
 .pph-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
@@ -19,7 +19,7 @@
   letter-spacing: -0.5px; line-height: 1.2; }
 .pph-desc { margin: 0; font-size: 18px; font-weight: 400; color: var(--vc-muted); line-height: 1.4; }
 
-.pph-addbtn { flex: 0 0 auto; }
+.pph-addbtn { flex: 0 0 auto; margin-top: -16px; }
 
 /* ---------- page nav: three tabs + a sliding active indicator ---------- */
 .pph-nav { display: flex; position: relative; margin-top: 32px; }
