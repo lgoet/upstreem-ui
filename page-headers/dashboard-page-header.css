@@ -12,17 +12,17 @@
 .dph-topright { display: flex; align-items: center; gap: 32px; }
 
 /* ---------- KPI strip: Visibility / Ranking / Sentiment ---------- */
-.dph-kpis { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; }
+.dph-kpis { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; margin-top: -32px; }
 .dph-kpi { display: inline-flex; align-items: center; gap: 6px; }
-.dph-kpi-label { font-size: 12px; font-weight: 500; color: var(--vc-third); white-space: nowrap; }
-.dph-kpi-value { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap;
+.dph-kpi-label { font-size: 14px; font-weight: 500; color: var(--vc-third); white-space: nowrap; }
+.dph-kpi-value { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap;
   font-variant-numeric: tabular-nums; }
 .dph-kpi-sep { width: 1px; height: 14px; background: var(--vc-border); flex: 0 0 auto; }
 /* Overrides core.css's .up-trend default (16x16 icon, 13px font) for just this usage -- kept as an
    ADDITIONAL class (see dashboard-page-header.js's kpiItem: cls is "up-trend dph-trend-sm", not a
    replacement) rather than a new .up-trend override in core.css, since every other trend chip in
    the app is meant to stay full-size; only this compact KPI strip needs the smaller one. */
-.dph-trend-sm { font-size: 12px; }
+.dph-trend-sm { font-size: 14px; }
 .dph-trend-sm svg { width: 14px; height: 14px; }
 
 /* ---------- top-right tools: Docs + Refresh ---------- */
