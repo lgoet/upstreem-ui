@@ -1,0 +1,46 @@
+/* upstreem prompts-page-header.css — first of the page-headers/ component family.
+   Requires core.css (loaded first, same as every table/chart) for its .up-root CSS variables
+   (--vc-text/--vc-muted/--vc-third/--vc-border) and the shared .up-export button it reuses
+   verbatim for "Add Prompts" -- nothing color-related is redefined here. */
+
+.pph-root { padding: 16px 0; background: transparent; }
+
+/* ---------- top row: brand/heading/description on the left, Add button top-right ---------- */
+.pph-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.pph-left { display: flex; flex-direction: column; min-width: 0; }
+
+.pph-brandrow { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+/* grayscale(1): the brand's own logo colour would otherwise compete with this being a quiet,
+   secondary line above the real heading. */
+.pph-brandlogo { width: 18px; height: 18px; display: block; flex: 0 0 auto; filter: grayscale(1); object-fit: cover; }
+.pph-brandtxt { font-size: 12px; font-weight: 600; color: var(--vc-third); line-height: 1; }
+
+.pph-heading { margin: 0 0 8px; font-size: 28px; font-weight: 500; color: var(--vc-text);
+  letter-spacing: -0.5px; line-height: 1.2; }
+.pph-desc { margin: 0; font-size: 18px; font-weight: 400; color: var(--vc-muted); line-height: 1.4; }
+
+.pph-addbtn { flex: 0 0 auto; }
+
+/* ---------- page nav: three tabs + a sliding active indicator ---------- */
+.pph-nav { display: flex; position: relative; margin-top: 32px; }
+/* The continuous 1px baseline every item's own indicator sits on top of -- ONE shared separator
+   spanning the full nav width, not a copy under each item (see prompts-page-header.js's own build
+   for how the sliding 2px piece overlays exactly the selected item's own span of it). Both this and
+   .pph-navunderline anchor to the same bottom:0, so neither ever causes a layout shift switching
+   between the 1px (unselected) and 2px (selected) look. */
+.pph-nav::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--vc-border); }
+.pph-navitem { display: flex; align-items: center; justify-content: center; gap: 6px;
+  height: 32px; padding: 0 12px; cursor: pointer; user-select: none; }
+.pph-navicon { display: inline-flex; flex: 0 0 auto; color: var(--vc-muted); transition: color 120ms ease; }
+.pph-navicon svg { width: 16px; height: 16px; display: block; }
+.pph-navlabel { font-size: 14px; font-weight: 500; color: var(--vc-muted); white-space: nowrap; transition: color 120ms ease; }
+.pph-navitem.is-selected .pph-navicon,
+.pph-navitem.is-selected .pph-navlabel { color: var(--vc-text); }
+.pph-navitem:not(.is-selected):hover .pph-navicon,
+.pph-navitem:not(.is-selected):hover .pph-navlabel { color: var(--vc-text); }
+/* The active indicator: slides left/width to the newly selected tab on click (200ms ease, set in
+   JS via inline style so it can animate to an arbitrary measured position/width -- a CSS-only
+   nth-child approach can't do that for a JS-built, reorderable list). Position is set with
+   transition:none on first paint (see prompts-page-header.js) so it doesn't grow in from 0 on load. */
+.pph-navunderline { position: absolute; bottom: 0; left: 0; width: 0; height: 2px; background: var(--vc-text);
+  transition: left 200ms ease, width 200ms ease; }
