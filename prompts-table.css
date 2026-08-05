@@ -625,6 +625,21 @@
    + name as two sibling spans) as ONE flex item so it can grow/shrink and truncate as a unit --
    groupChipHtml() itself has no single root element for the custom-group case. */
 .upt-grp-sidechip { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto; overflow: hidden; }
+/* The pinned "All Prompts" row -- .upt-grp-sidechip's own flex:1 1 auto already pushes it flush
+   left same as any other row's chip, no extra rule needed for that; this just makes sure a
+   slightly bolder/less crowded label reads as the "default" entry rather than one group among
+   others (no chip/dot -- that's the point, see renderGroupSidelist()'s own comment). */
+.upt-grp-sideitem-all .upt-grp-name { font-weight: 600; }
+/* Right-aligned prompt count, third colour with a small leading dot -- swaps out for the 3-dot
+   actions menu on hover/open (same reserved slot) rather than sitting alongside it, so the row
+   never shows two right-aligned things fighting for the same space. :has() is already used
+   elsewhere in this file (see .upt-group-item above) -- the "is the open menu inside THIS item"
+   check needs it, since plain CSS has no previous-sibling selector. */
+.upt-grp-sidecount { display: flex; align-items: center; gap: 6px; flex: 0 0 auto;
+  font-size: 12px; color: var(--vc-third); transition: opacity 120ms ease; }
+.upt-grp-sidecount-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--vc-third); flex: 0 0 auto; }
+.upt-grp-sideitem:hover .upt-grp-sidecount,
+.upt-grp-sideitem:has(.upt-grp-menuwrap.is-open) .upt-grp-sidecount { opacity: 0; }
 /* Only the sidelist's copy of the group-actions button is hover-revealed -- the inline header's
    (see below) is always visible, since a KPI row has room and a click target there never competes
    with the label the way this compact 44px row would if it stayed permanently visible. */
@@ -667,11 +682,9 @@
 .upt-grp-head.is-open .upt-grp-chev { transform: rotate(180deg); }
 
 /* The topic chip is core's .up-topicchip (see grpHeadHtml) — nothing chip-shaped is redeclared
-   here. Only the read-only variant's cursor and the custom-group name need a line. */
-/* 28px, not core's default 32px -- matches .ust-tag, the height every topic pill in this table
-   (the per-prompt Topics cell) already uses. This is the one other place a topic reads as a chip
-   (a topic-type group's own header identity), so it has to match, not just happen to be a chip. */
-.up-topicchip.is-static { cursor: default; height: 28px; }
+   here. Only the read-only variant's cursor needs a line -- core's .up-topicchip is already 28px
+   by default now, matching .ust-tag (the per-prompt Topics cell's own pill height) everywhere. */
+.up-topicchip.is-static { cursor: default; }
 .upt-grp-name { font-size: 13.5px; font-weight: 500; color: var(--vc-text);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 

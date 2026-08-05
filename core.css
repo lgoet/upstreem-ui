@@ -405,9 +405,13 @@
        look-alike with different colours, a different check and a different height. Any surface
        that shows a topic uses this: emoji + label on the topic's own colour, the checkbox sliding
        in from the right when selected. Colour comes in through --ust-tag-color. */
-    .up-topicchip { height: 32px; padding: 0 8px 0 11px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;
+    /* No resting border -- a plain tinted chip, background colour alone carries the topic's
+       identity. border stays declared at 1px solid transparent (not dropped entirely) purely so
+       .is-on below can still show a real border colour as its selected-state indicator without
+       the chip shifting size by 2px the moment it's picked. */
+    .up-topicchip { height: 28px; padding: 0 8px 0 11px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;
       cursor: pointer; font-family: inherit;
-      border: 1px solid color-mix(in srgb, var(--ust-tag-color, #6b7280) 40%, transparent);
+      border: 1px solid transparent;
       background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 10%, transparent);
       color: var(--ust-tag-color, #4b5563); font-size: 12px; font-weight: 500; line-height: 1;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;

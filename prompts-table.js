@@ -707,21 +707,18 @@
     }
     function toggleSelectAll(){
       /* Wide grouping view reuses this exact header checkbox (.up-thead is unchanged there, see
-         renderGroupWideBody) -- but the rows on screen are the OPEN GROUP's (state.gRows), not
-         the flat table's own state.rows (which is whatever the flat fetch last returned, often
-         stale or empty once grouping is on). Delegate to the same per-group logic the inline
-         view's own group-header checkbox already uses instead of duplicating it. */
-      if (groupingOn() && state.groupsWide){
-        /* No group open -- nothing on screen to select, so this is a no-op rather than falling
-           through to the flat table's own (unrelated, possibly stale) state.rows. */
-        if (state.expandedGroup){
-          toggleGroupHeaderCheckbox(state.expandedGroup);
-          /* toggleGroupHeaderCheckbox() only ever had to keep the INLINE view's own group-header
-             checkbox in sync (part of the same grpHeadHtml re-render). This reused flat-table
-             header box lives outside elTbody entirely (.up-thead is untouched by the body
-             re-render), so nothing else updates it -- do it explicitly. */
-          syncSelectAll();
-        }
+         renderGroupWideBody) -- but while a real group is open, the rows on screen are that
+         GROUP's (state.gRows), not the flat table's own state.rows. Delegate to the same
+         per-group logic the inline view's own group-header checkbox already uses instead of
+         duplicating it. With NO group open ("All Prompts" selected, or not grouped at all), the
+         rows on screen ARE state.rows -- same flat logic below, no special-casing needed. */
+      if (groupingOn() && state.groupsWide && state.expandedGroup){
+        toggleGroupHeaderCheckbox(state.expandedGroup);
+        /* toggleGroupHeaderCheckbox() only ever had to keep the INLINE view's own group-header
+           checkbox in sync (part of the same grpHeadHtml re-render). This reused flat-table
+           header box lives outside elTbody entirely (.up-thead is untouched by the body
+           re-render), so nothing else updates it -- do it explicitly. */
+        syncSelectAll();
         return;
       }
       var rows = state.rows || [];
@@ -792,19 +789,18 @@
     function syncSelectAll(){
       var box = root.querySelector("[data-selectall]");
       if (!box) return;
-      /* Same reasoning as toggleSelectAll() above -- in wide grouping view this box's checked/
-         indeterminate state has to read off the open group's own rows (state.gRows), not
-         state.rows, or it never agrees with what's actually on screen. Mirrors grpSelectallHtml's
-         own checked-state math (gChecked = gSelectAllGroup === id || allSel) so the two surfaces
-         (inline header checkbox, this reused flat-table one) never disagree about the same group. */
-      if (groupingOn() && state.groupsWide){
-        /* No group open (the "Select a group from the list" empty state) -- nothing to select
-           against, so the box just reads off, not whatever the flat table's stale state.rows
-           would otherwise suggest. */
-        var gRows = state.expandedGroup ? (state.gRows || []) : [];
+      /* Same reasoning as toggleSelectAll() above -- while a real group is open in wide grouping
+         view, this box's checked/indeterminate state has to read off that group's own rows
+         (state.gRows), not state.rows, or it never agrees with what's actually on screen. Mirrors
+         grpSelectallHtml's own checked-state math (gChecked = gSelectAllGroup === id || allSel) so
+         the two surfaces (inline header checkbox, this reused flat-table one) never disagree about
+         the same group. With no group open ("All Prompts"), the flat logic below already reads
+         off state.rows -- exactly what's on screen in that case. */
+      if (groupingOn() && state.groupsWide && state.expandedGroup){
+        var gRows = state.gRows || [];
         var gTotal = gRows.length;
         var gSel = gRows.filter(function(r){ return state.selected[String(r.prompt_id)]; }).length;
-        var gAll = state.expandedGroup && ((gTotal > 0 && gSel === gTotal) || state.gSelectAllGroup === state.expandedGroup);
+        var gAll = (gTotal > 0 && gSel === gTotal) || state.gSelectAllGroup === state.expandedGroup;
         var gSome = !gAll && gSel > 0;
         box.classList.toggle("is-checked", gAll);
         box.classList.toggle("is-indeterminate", gSome);
@@ -2504,7 +2500,11 @@
        .up-pager / .up-page primitives, a Rows selector, the windowed page list (ends, a run
        around the current page, "…" between) and prev/next chevrons. A pager that looked
        different one level down would read as a different product. */
-    var GRP_PAGE_SIZES = [10, 25];
+    var GRP_PAGE_SIZES = [10, 25, 50];
+    /* Sentinel group id for the sidelist's pinned "All Prompts" row -- not a real group_key, so it
+       can never collide with one. Selecting it just means state.expandedGroup is null, which
+       renderGroupWideBody() already treats as "show the flat table's own state.rows" (see there). */
+    var GRP_ALL_ID = "__all__";
     function grpFootHtml(){
       var total = toNum(state.gTotal) || 0;
       if (window.console) console.log("[prompts-table] drilldown pager for group \"" + state.expandedGroup +
@@ -2540,7 +2540,7 @@
     function grpRowsHtml(id, entering){
       if (state.expandedGroup !== id) return "";
       var body;
-      if (state.gLoading || state.gRows == null) body = skeletonRows(Math.min(5, state.gPageSize));
+      if (state.gLoading || state.gRows == null) body = skeletonRows(state.gPageSize);
       else if (!state.gRows.length) body = '<div class="up-empty-mini">No prompts in this group</div>';
       else body = state.gRows.map(rowHtml).join("");
       return '<div class="upt-grp-rows' + (entering ? " is-entering" : "") + '" data-grp-for="' + esc(id) + '">' +
@@ -2613,12 +2613,22 @@
       initTopicsCells();
     }
     /* No KPIs here on purpose (spec) -- a color dot + name, same label logic grpHeadHtml uses.
-       .is-open marks the currently expanded (state.expandedGroup) one. */
+       .is-open marks the currently expanded (state.expandedGroup) one. Pinned first: "All Prompts"
+       (GRP_ALL_ID), no chip/dot -- selecting it just means no real group is open, which
+       renderGroupWideBody() already renders as the flat table's own state.rows. Pinned at the TOP,
+       not the bottom: the same place Notion/Attio/HubSpot-style grouped list views put their own
+       ungrouped/"all" entry, so it reads as the default rather than one option among many. */
     function renderGroupSidelist(rows){
       if (!elGrpSidelist) return;
-      elGrpSidelist.innerHTML = rows.map(function(g){
+      var allOpen = !state.expandedGroup;
+      var allItem = '<div class="upt-grp-sideitem upt-grp-sideitem-all' + (allOpen ? " is-open" : "") +
+        '" role="button" tabindex="0" data-grp-side="' + GRP_ALL_ID + '">' +
+        '<span class="upt-grp-sidechip"><span class="upt-grp-name">All Prompts</span></span>' +
+      '</div>';
+      elGrpSidelist.innerHTML = allItem + rows.map(function(g){
         var id = groupId(g), custom = isYes2(g.is_custom);
         var open = state.expandedGroup === id;
+        var n = toNum(g.prompts_count);
         /* Same chip groupChipHtml() draws for the inline header -- a topic-type group reads as a
            topic (its real .up-topicchip), a custom one as its colour dot, exactly like the
            non-wide view, not a plain grey dot regardless of kind. Not a <button> here (the group
@@ -2627,6 +2637,8 @@
         return '<div class="upt-grp-sideitem' + (open ? " is-open" : "") +
           '" role="button" tabindex="0" data-grp-side="' + esc(id) + '">' +
           '<span class="upt-grp-sidechip">' + groupChipHtml(g) + '</span>' +
+          '<span class="upt-grp-sidecount"><span class="upt-grp-sidecount-dot"></span>' +
+            (n == null ? "–" : esc(UC.fmtTotal(n))) + '</span>' +
           groupMenuBtnHtml(id, custom) +
         '</div>';
       }).join("");
@@ -2637,13 +2649,15 @@
        its own data-grppage/data-grpsize handlers are delegated on document, not scoped to the
        inline layout, so they work unchanged here). */
     function renderGroupWideBody(){
-      if (!state.expandedGroup){
-        elTbody.innerHTML = '<div class="up-empty-mini">Select a group from the list</div>';
-        applyCols();
-        return;
-      }
+      /* No group open -- "All Prompts" is selected in the sidelist. Render literally the same
+         thing the flat (non-grouped) view would: renderFlatBody() reads state.rows/state.pageSize,
+         the SAME fields Bubble already keeps current via the SAME uptSearch/uptSort/etc. events
+         that fire regardless of grouping (see applySort/search.onFire) -- so this needs no new
+         Bubble event, and never shows an empty list, since state.rows is whatever was already
+         loaded before/while grouping got turned on. */
+      if (!state.expandedGroup){ renderFlatBody(); return; }
       var body;
-      if (state.gLoading || state.gRows == null) body = skeletonRows(Math.min(7, state.gPageSize));
+      if (state.gLoading || state.gRows == null) body = skeletonRows(state.gPageSize);
       else if (!state.gRows.length) body = '<div class="up-empty-mini">No prompts in this group</div>';
       else body = state.gRows.map(rowHtml).join("");
       elTbody.innerHTML = body + (state.gLoading ? "" : grpFootHtml());
@@ -2657,12 +2671,27 @@
        renders below are what actually reflect the change. This is the "0 new event logic" the
        spec asked for: toggleGroup() already fires the one RPC (uptGroupOpen) either layout needs. */
     function toggleGroupWide(id){
+      if (id === GRP_ALL_ID){ selectAllPrompts(); return; }
       toggleGroup(id);
       renderGroupSidelist(sortedGroups());
       renderGroupWideBody();
+      syncFlatFootVisibility();
       /* The reused header checkbox (see toggleSelectAll/syncSelectAll) has to catch up on every
          open/close/switch -- closing clears it (nothing open to select), switching groups must not
          leave it showing the PREVIOUS group's checked/indeterminate state. */
+      syncSelectAll();
+    }
+    /* Selecting the sidelist's pinned "All Prompts" row: closes whichever real group was open (no
+       animation to wait for here, unlike toggleGroup()'s own close branch -- the sidelist has no
+       .upt-grp-rows entering/exiting block to animate) and falls back to the flat body. A no-op if
+       All Prompts was already showing, so re-clicking it doesn't re-render for nothing. */
+    function selectAllPrompts(){
+      if (!state.expandedGroup) return;
+      state.expandedGroup = null;
+      state.gRows = []; state.gTotal = null; state.gReqId = null; state.gLoading = false; state.gPage = 1;
+      renderGroupSidelist(sortedGroups());
+      renderGroupWideBody();
+      syncFlatFootVisibility();
       syncSelectAll();
     }
 
@@ -2846,30 +2875,38 @@
       })();
     }
 
-    function renderTable(){
-      /* The grouped view owns the body entirely; the flat path below is untouched by it. */
+    /* Whether the flat table's own footer (.up-foot: page-size seg + pager) should be visible.
+       True whenever the flat table owns the body -- either not grouped at all, or grouped-and-wide
+       with "All Prompts" selected (no real group open), since that state literally renders the
+       flat body/pagination inside the wide view (see renderFlatBody/renderGroupWideBody). Its own
+       function so toggleGroupWide()/selectAllPrompts() can re-sync it on every sidelist switch, not
+       just on a full renderTable() pass. */
+    function syncFlatFootVisibility(){
       var grouped = groupingOn();
-      root.classList.toggle("is-grouped", grouped);
-      /* Belt-and-suspenders on top of the .up-root.is-grouped .up-foot{display:none} CSS rule:
-         render() unconditionally calls renderPageSize()/renderPager() below regardless of
-         grouping, which keeps refreshing this element's CONTENT (page-size buttons, page numbers,
-         "1-15 of 88" -- the flat table's own state.pageSize/currentTotal(), nothing to do with any
-         group) even while it's meant to be hidden. A host page's own CSS can out-specificity a
-         class-based display:none from an embedded component's stylesheet -- confirmed live: an
-         embedding page's global reset/theme CSS with an !important display rule on this element
-         beats BOTH the class rule AND a plain inline style (inline style only outranks a
-         non-!important selector; an !important selector still beats a plain inline value).
-         setProperty(..., "important") is the one thing left that cannot lose that fight, so the
-         pager some host CSS accidentally kept visible can never be mistaken for the group's own
-         (that one is .upt-grp-foot, driven by state.gTotal, and lives inside the open group's own
-         block). */
-      if (elFoot) elFoot.style.setProperty("display", grouped ? "none" : "", grouped ? "important" : "");
-      if (grouped){ renderGroups(); return; }
-      /* elTbody.innerHTML is reassigned in every branch below, which throws away whatever grid-
-         column inline style applyCols() had put on the previous .up-row elements — a brand new
-         set of rows carries no inline style at all until applyCols() runs again. Callers outside
-         the full render() cycle (checkbox toggle, search results, pagination) call renderTable()
-         directly, so that reapply has to happen HERE, not rely on a later render(). */
+      var showFlatFoot = !grouped || (state.groupsWide && !state.expandedGroup);
+      /* Explicit "flex"/"none" with !important BOTH ways, not a clear-to-"" for the show case --
+         .up-root.is-grouped .up-foot{display:none} in prompts-table.css would otherwise still win
+         while grouped (an absent inline style loses to ANY class rule, !important or not), which is
+         exactly the "All Prompts selected in wide view" case this now needs to show through. A host
+         page's own CSS can also out-specificity a class-based display:none from an embedded
+         component's stylesheet -- confirmed live: an embedding page's global reset/theme CSS with
+         an !important display rule on this element beats BOTH the class rule AND a plain inline
+         style (inline style only outranks a non-!important selector; an !important selector still
+         beats a plain inline value). setProperty(..., "important") is the one thing left that
+         cannot lose that fight in either direction, so the pager some host CSS accidentally kept
+         visible can never be mistaken for an open GROUP's own (that one is .upt-grp-foot, driven by
+         state.gTotal, and lives inside the open group's own block). */
+      if (elFoot) elFoot.style.setProperty("display", showFlatFoot ? "flex" : "none", "important");
+    }
+    /* elTbody.innerHTML is reassigned in every branch below, which throws away whatever grid-
+       column inline style applyCols() had put on the previous .up-row elements — a brand new
+       set of rows carries no inline style at all until applyCols() runs again. Callers outside
+       the full render() cycle (checkbox toggle, search results, pagination) call renderTable()
+       directly, so that reapply has to happen HERE, not rely on a later render(). Shared verbatim
+       between the plain (non-grouped) view and the grouped-wide view's "All Prompts" selection
+       (see renderGroupWideBody) -- same state.rows/state.pageSize, same skeleton/empty rules,
+       same everything, just rendered in a different place in the DOM. */
+    function renderFlatBody(){
       /* Two kinds of reload, deliberately shown differently (see setSoftReload):
          SOFT (sort, paging) reorders or re-windows the SAME result set — the rows on screen are
          still truthful, so they stay and only dim. Blanking them made every header click look
@@ -2900,6 +2937,19 @@
       elTbody.innerHTML = state.rows.map(rowHtml).join("");
       applyCols();
       initTopicsCells();
+    }
+    function renderTable(){
+      /* The grouped view owns the body entirely; the flat path below is untouched by it. */
+      var grouped = groupingOn();
+      root.classList.toggle("is-grouped", grouped);
+      /* render() unconditionally calls renderPageSize()/renderPager() regardless of grouping,
+         which keeps refreshing this element's CONTENT (page-size buttons, page numbers,
+         "1-15 of 88" -- the flat table's own state.pageSize/currentTotal(), nothing to do with any
+         group) even while it might be hidden -- syncFlatFootVisibility() is belt-and-suspenders on
+         top of the .up-root.is-grouped .up-foot{display:none} CSS rule for exactly that reason. */
+      syncFlatFootVisibility();
+      if (grouped){ renderGroups(); return; }
+      renderFlatBody();
     }
     function renderCount(){
       elHeading.classList.add("has-count");
