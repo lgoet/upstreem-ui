@@ -588,9 +588,20 @@
 .up-root.is-grouped .upt-grp-sidepanel { display: flex; flex-direction: column; flex: 0 0 auto;
   width: 0; min-width: 0; opacity: 0; overflow: hidden; border: 1px solid transparent; border-radius: 16px;   /* matches .up-box's own radius */
   transition: width 200ms ease, opacity 160ms ease, border-color 200ms ease; }
+/* 20% of a genuinely narrow root can be well under a usable list width -- never below 256px.
+   (Below the point where even 256px + a usable table no longer both fit, prompts-table.js itself
+   forces the list closed and hides its own toggle -- see .is-groups-cramped below -- so this
+   floor is never fighting an impossibly narrow root, only trimming the percentage within the
+   range where 256px genuinely still leaves the table enough room.) */
 .up-root.is-grouped.is-groups-wide .upt-grp-sidepanel {
-  width: 20%; opacity: 1; border-color: var(--vc-border);
+  width: max(256px, 20%); opacity: 1; border-color: var(--vc-border);
 }
+/* Below GRP_SIDELIST_MIN_ROOT (prompts-table.js), there is no longer room for a 256px list plus a
+   usable table -- the list has already been forced closed by then, and this just hides the ONE
+   remaining way to reopen it (the toolbar's own toggle) until the root is wide enough again. The
+   sidepanel's own toggle needs no matching rule: it only exists while the list itself does, and
+   the list is exactly what just got force-closed. */
+.up-root.is-groups-cramped .upt-heading-widebtn { display: none !important; }
 .upt-grp-sidehead { display: flex; align-items: center; justify-content: space-between; gap: 8px;
   height: 45px; flex: 0 0 45px; padding: 0 12px; background: var(--vt-head-bg);
   border-bottom: 1px solid var(--vc-border); }

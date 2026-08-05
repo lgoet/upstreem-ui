@@ -1740,6 +1740,7 @@
        Sorter needs its own classes (see below) so it doesn't collide with the flat table's own
        .up-sort-btn click handling, but it should still look like the same control. */
     var GRPSIDE_SORT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>';
+    var GRPSIDE_ADD_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
     var elGrpWrap = null, elGrpMenu = null;
     (function(){
       if (!elHeadTools) return;
@@ -1791,11 +1792,17 @@
             '<span class="upt-grp-sidehead-lbl">Group</span>' +
             '<div class="upt-grp-sidetools">' +
               '<div class="upt-grp-sidesort">' +
-                '<button class="upt-grp-sidesort-btn up-iconbtn" type="button" data-tip="Sort" aria-label="Sort groups" aria-haspopup="menu" aria-expanded="false">' +
+                '<button class="upt-grp-sidesort-btn up-iconbtn" type="button" data-tip="Sort Groups" aria-label="Sort groups" aria-haspopup="menu" aria-expanded="false">' +
                   GRPSIDE_SORT_ICON + '</button>' +
                 '<div class="up-menu upt-grp-sidesort-menu" role="menu" aria-hidden="true"></div>' +
               '</div>' +
-              '<button class="upt-grp-widebtn up-iconbtn" type="button" data-grp-widebtn data-tip="List view" aria-label="Switch to list view">' +
+              '<button class="upt-grp-sideadd up-iconbtn" type="button" data-grp-new data-tip="New grouping" aria-label="New grouping">' +
+                GRPSIDE_ADD_ICON + '</button>' +
+              /* Only ever visible while the sidelist IS showing -- clicking it hides that list
+                 again (the table goes back to full width), so the tooltip names THAT destination:
+                 "Wide view", not "List view" (which is what you're already looking at). See the
+                 toolbar's twin below for the mirror case. */
+              '<button class="upt-grp-widebtn up-iconbtn" type="button" data-grp-widebtn data-tip="Wide view" aria-label="Switch to wide view">' +
                 SIDEBAR_ICON + '</button>' +
             '</div>' +
           '</div>' +
@@ -1820,8 +1827,11 @@
       btn.className = "upt-heading-widebtn up-iconbtn";
       btn.type = "button";
       btn.setAttribute("data-grp-widebtn", "");
-      btn.setAttribute("data-tip", "Wide view");
-      btn.setAttribute("aria-label", "Switch to wide view");
+      /* Mirror of the sidepanel's own toggle above: only ever visible while the sidelist is
+         hidden (the table is at full/"wide" width already), so clicking it SHOWS the list --
+         the tooltip names that destination, "List view". */
+      btn.setAttribute("data-tip", "List view");
+      btn.setAttribute("aria-label", "Switch to list view");
       btn.innerHTML = SIDEBAR_ICON;
       elHeading.insertBefore(btn, elHeading.firstChild);
     })();
@@ -2281,6 +2291,10 @@
        Reached only via the two sidebar-icon toggles now (the dropdown's own "Wide view" switch
        was removed -- one control, not two disagreeing ones). */
     function toggleGroupsWide(){
+      /* The one trigger that could turn the list ON is already hidden while cramped (see
+         .is-groups-cramped/fitGroupsWide) -- this is just the same guard applied to the toggle
+         itself, so nothing can flip it on programmatically either while there's no room for it. */
+      if (!state.groupsWide && root.classList.contains("is-groups-cramped")) return;
       state.groupsWide = !state.groupsWide;
       writeGroupsWide(state.groupsWide);
       root.classList.toggle("is-groups-wide", state.groupsWide);
@@ -2474,8 +2488,8 @@
     function groupActionsMenuHtml(id, custom){
       return '<div class="up-menu upt-grp-actmenu is-shown" role="menu">' +
         (custom ? '<div class="up-pop-opt" data-grp-headedit="' + esc(id) + '">Edit</div>' : "") +
-        (custom ? '<div class="up-pop-opt is-danger" data-grp-headdel="' + esc(id) + '">Delete</div>' : "") +
         '<div class="up-pop-opt" data-grp-more="' + esc(id) + '">Generate More</div>' +
+        (custom ? '<div class="up-pop-opt is-danger" data-grp-headdel="' + esc(id) + '">Delete</div>' : "") +
       '</div>';
     }
     function groupMenuBtnHtml(id, custom){
@@ -3207,8 +3221,8 @@
     }
     document.addEventListener("click", function(e){
       if (!ownsTarget(e.target)) return;
-      var inMenu = e.target.closest(".up-sort-menu, .up-cols-menu, .up-ment-menu, .upt-group-menu");
-      var onOpener = e.target.closest(".up-sort-btn, .up-cols-btn, .up-ment-btn, .upt-group-btn");
+      var inMenu = e.target.closest(".up-sort-menu, .up-cols-menu, .up-ment-menu, .upt-group-menu, .upt-grp-sidesort-menu");
+      var onOpener = e.target.closest(".up-sort-btn, .up-cols-btn, .up-ment-btn, .upt-group-btn, .upt-grp-sidesort-btn");
       if (!inMenu && !onOpener) closePops();
 
       /* --- grouping: trigger, dropdown, accordion --- */
@@ -3653,6 +3667,14 @@
         toggleGroupsWide();
         return;
       }
+      /* The sidelist heading's own "+" -- same New Grouping modal the toolbar dropdown's own
+         data-grp-new opens, but THAT handler only fires from inside .upt-group-menu (see above);
+         this button lives in .upt-grp-sidehead, a different part of the DOM entirely, so it needs
+         its own unscoped check rather than being reachable through that one. */
+      if (e.target.closest(".upt-grp-sideadd")){
+        openGroupModal();
+        return;
+      }
 
       // --- header sorters ---
       var th = e.target.closest(".up-th.is-sortable");
@@ -3804,6 +3826,27 @@
       }
     }
 
+    /* Below this root width there is no longer room for a 256px-minimum group sidelist (see
+       .upt-grp-sidepanel's own min-width in prompts-table.css) plus a table worth looking at --
+       same neighbourhood as is-narrow (860) so the list doesn't force the table into a narrower
+       squeeze than the table's own breakpoints already consider workable. */
+    var GRP_SIDELIST_MIN_ROOT = 860;
+    function fitGroupsWide(w){
+      if (!groupingOn()){ root.classList.remove("is-groups-cramped"); return; }
+      var cramped = w < GRP_SIDELIST_MIN_ROOT;
+      root.classList.toggle("is-groups-cramped", cramped);
+      /* Force the list closed rather than merely hiding its toggle -- an already-open list has to
+         actually go away the moment there's no room for it, not just become unreachable to
+         re-open later. Re-opening it is what the (now hidden) toolbar toggle is for; there is
+         nothing left here for the user to do once it's closed, so no confirmation, just close it
+         the same way toggleGroupsWide() itself would. */
+      if (cramped && state.groupsWide){
+        state.groupsWide = false;
+        writeGroupsWide(false);
+        root.classList.remove("is-groups-wide");
+        renderGroups();
+      }
+    }
     /* responsive: drop columns rather than squeezing them */
     function applyResponsive(){
       var w = root.getBoundingClientRect().width || 0;
@@ -3811,6 +3854,7 @@
       var before = root.className;
       search.syncTakeover();
       fitToolbar();
+      fitGroupsWide(w);
       root.classList.toggle("is-t1", w < 560);
       root.classList.toggle("is-narrow", w < 860);
       root.classList.toggle("is-vnarrow", w < 620);
@@ -3889,35 +3933,20 @@
         if (requestId != null && state.gReqId != null && String(requestId) !== String(state.gReqId)) return;
         var list = coerceRows(rows);
         state.gRows = list;
-        /* total_count rides on every row this same prompts RPC call returns (see the sample
-           payload: each item carries its own "total_count") -- that IS the filtered-set count for
-           the tag_ids this specific group-open request asked for, and it is what the pager pages
-           through. Not the group header's prompts_count -- that was the earlier (wrong) guess. */
-        state.gTotal = list.length ? toNum(list[0].total_count) : 0;
+        /* group_total_count rides on every row this same prompts RPC call returns -- the
+           filtered-set count for the tag_ids this specific group-open request asked for, and what
+           the group's own pager pages through. Not the group header's prompts_count (a separate,
+           coarser figure from the groups list itself). total_count on the SAME row is a different
+           field now: the overall active-prompts count, identical in meaning to the flat table's
+           own total_count -- it feeds the heading count (renderCount()), same as the no-grouping
+           view already does, not the group pager. */
+        state.gTotal = list.length ? toNum(list[0].group_total_count) : 0;
+        if (list.length && list[0].total_count != null) state.totalCount = toNum(list[0].total_count);
         state.gLoading = false;
-        /* Self-diagnosing check, not a fix -- there is nothing left to fix client-side here: this
-           reads exactly the field the payload sample specified (list[0].total_count), nothing else
-           in this file ever assigns state.gTotal a different value (grep it). If that number equals
-           the OVERALL active count instead of this group's own size, the group-open RPC step is not
-           applying its own tag_ids/tagmode filter when it computes total_count -- same rows-query
-           filter, different (or missing) filter on the count query. That is a Bubble workflow bug,
-           not something this file can correct: it can only display whatever total_count the RPC
-           actually sends. */
-        if (window.console && state.expandedGroup){
-          var hdrG = (state.groups || []).filter(function(x){ return groupId(x) === state.expandedGroup; })[0];
-          var hdrCount = hdrG ? toNum(hdrG.prompts_count) : null;
-          if (hdrCount != null && state.gTotal != null && state.gTotal > hdrCount &&
-              (state.totalCount == null || state.gTotal === toNum(state.totalCount))){
-            console.warn("[prompts-table] group \"" + state.expandedGroup + "\" header says " + hdrCount +
-              " prompts, but the group-open RPC's total_count came back as " + state.gTotal +
-              (state.totalCount != null ? " -- which matches the OVERALL active total (" + state.totalCount + ")" : "") +
-              ". The group-open workflow step is very likely computing total_count without the " +
-              "tag_ids/tagmode filter it applies to the actual rows. Check that step, not this file.");
-          }
-        }
         if (state.expandedGroup){
           if (state.groupsWide){ renderGroupWideBody(); syncSelectAll(); } else renderGroupBlockOnly(state.expandedGroup);
         }
+        renderCount();
       },
       update: function(params){
         params = params || {};
