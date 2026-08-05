@@ -9,7 +9,7 @@
 .pph-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .pph-left { display: flex; flex-direction: column; min-width: 0; }
 
-.pph-brandrow { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.pph-brandrow { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 /* grayscale(1): the brand's own logo colour would otherwise compete with this being a quiet,
    secondary line above the real heading. */
 .pph-brandlogo { width: 18px; height: 18px; display: block; flex: 0 0 auto; filter: grayscale(1); object-fit: cover; }
@@ -17,7 +17,7 @@
 
 .pph-heading { margin: 0 0 8px; font-size: 28px; font-weight: 500; color: var(--vc-text);
   letter-spacing: -0.5px; line-height: 1.2; }
-.pph-desc { margin: 0; font-size: 18px; font-weight: 400; color: var(--vc-muted); line-height: 1.4; }
+.pph-desc { margin: 0; font-size: 15px; font-weight: 400; color: var(--vc-muted); line-height: 1.4; }
 
 .pph-addbtn { flex: 0 0 auto; }
 
