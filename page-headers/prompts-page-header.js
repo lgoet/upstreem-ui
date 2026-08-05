@@ -160,7 +160,22 @@
 
       positionUnderline(nav.querySelector(".pph-navitem.is-selected"), false);
       if (UC.onResize){
-        UC.onResize(root, function(){ positionUnderline(nav.querySelector(".pph-navitem.is-selected"), false); });
+        /* is-narrow (<768, standard tablet width) -- nav items go from auto-width/left-aligned to
+           evenly-split thirds (prompts-page-header.css floats each .pph-navitem to flex:1), and the
+           Add button's label drops "Prompts" (CSS-only, see .pph-addbtn-full). is-vnarrow (<500) is
+           a second, narrower tier: below it Bubble's own mobile sidebar-toggle control appears
+           top-right on this app's pages, so the header needs extra top clearance to not collide
+           with it -- an additional 16px of root padding-top, with the Add button's negative
+           margin-top adjusted to match so it still lands at the same 16px offset it always has.
+           Classes toggled here (not via a CSS media query) to stay consistent with how every other
+           component in this repo measures ITS OWN box width via ResizeObserver rather than the
+           viewport -- correct when a component sits in a narrower Bubble container than the full
+           page, and harmless here since this header is always full page width anyway. */
+        UC.onResize(root, function(w){
+          root.classList.toggle("is-narrow", w < 768);
+          root.classList.toggle("is-vnarrow", w < 500);
+          positionUnderline(nav.querySelector(".pph-navitem.is-selected"), false);
+        });
       }
     }
   }

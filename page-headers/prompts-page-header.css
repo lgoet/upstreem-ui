@@ -48,3 +48,15 @@
    of primary color visible on top of it instead of a full 2px bar. */
 .pph-navunderline { position: absolute; bottom: 0; left: 0; width: 0; height: 2px; background: var(--vc-text);
   z-index: 1; transition: left 200ms ease, width 200ms ease; }
+
+/* ---------- responsive (classes set by prompts-page-header.js via UC.onResize, see there) ---------- */
+/* is-narrow (<768px): tabs go from auto-width/left-packed to three even thirds, still centered
+   internally (.pph-navitem already centers its own icon+label). Add button drops "Prompts". */
+.pph-root.is-narrow .pph-navitem { flex: 1 1 0; }
+.pph-root.is-narrow .pph-addbtn-full { display: none; }
+/* is-vnarrow (<500px): Bubble's mobile sidebar-toggle sits top-right below this width on this
+   app's pages -- extra top clearance so this header doesn't collide with it. The Add button's
+   negative margin grows to match (-32 against the now-48px padding-top) so it still lands at the
+   same 16px visual offset it has at every other width. */
+.pph-root.is-vnarrow { padding-top: 48px; }
+.pph-root.is-vnarrow .pph-addbtn { margin-top: -32px; }
