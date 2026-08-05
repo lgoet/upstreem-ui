@@ -617,7 +617,7 @@
   position: sticky; top: calc(var(--up-sticky-top) + var(--up-thead-off)); z-index: 5;
   background-image: linear-gradient(var(--vt-head-bg), var(--vt-head-bg));
   background-color: var(--vc-bg);
-  border: 1px solid var(--vc-border); border-bottom: none;
+  border: 1px solid var(--vc-border);
   border-top-left-radius: 16px; border-top-right-radius: 16px;
 }
 /* Same corner-mask trick as .up-thead's own -- the rounded top corners are transparent by nature,
@@ -658,7 +658,7 @@
    (2 classes) LOST that fight regardless of source order, which is exactly why this had no effect
    the first time (confirmed live: computed overflow stayed "hidden"). */
 .up-root.is-grouped.up-sticky .upt-grp-sidepanel { overflow: visible; border-color: transparent; }
-.upt-grp-sidehead-lbl { font-size: 12px; font-weight: 400; color: var(--vc-muted); white-space: nowrap; }
+.upt-grp-sidehead-lbl { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
 .upt-grp-sidetools { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
 /* .up-menu's own position:absolute needs THIS as its positioned ancestor -- without it the menu
    anchors to whatever positioned ancestor happens to be further up the tree instead (root itself
@@ -912,6 +912,10 @@
    parts every other dropdown here uses. An invented ".up-pop-menu" class matched nothing at all,
    which is why the panel rendered as an unstyled static block in the middle of the toolbar. */
 .upt-group { position: relative; flex: 0 0 auto; }
+/* Explicitly bigger than .up-iconbtn svg's shared 16x16 -- matching the box size wasn't enough on
+   its own (confirmed: the glyph still read small next to the plus/sort icons even after fixing its
+   viewBox/stroke-width to genuine Feather proportions), so this one gets its own larger box. */
+.upt-group-btn svg { width: 18px; height: 18px; }
 /* .up-cols-menu's own open state keys off .up-cols.is-open — this wrap is .upt-group. */
 .upt-group.is-open .upt-group-menu { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
 .upt-group.is-open .upt-group-btn { color: var(--vc-text); background: var(--vc-heading-bg); }
