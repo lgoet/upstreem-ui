@@ -15,9 +15,9 @@
 .pph-brandlogo { width: 16px; height: 16px; display: block; flex: 0 0 auto; filter: grayscale(1); object-fit: cover; }
 .pph-brandtxt { font-size: 12px; font-weight: 600; color: var(--vc-third); line-height: 1; }
 
-.pph-heading { margin: 0 0 12px; font-size: 26px; font-weight: 500; color: var(--vc-text);
+.pph-heading { margin: 0 0 12px; font-size: 28px; font-weight: 500; color: var(--vc-text);
   letter-spacing: -0.5px; line-height: 1.2; }
-.pph-desc { margin: 0; font-size: 16px; font-weight: 500; color: var(--vc-muted); line-height: 1.4; }
+.pph-desc { margin: 0; font-size: 16px; font-weight: 400; color: var(--vc-muted); line-height: 1.4; }
 
 .pph-addbtn { flex: 0 0 auto; margin-top: -16px; }
 
