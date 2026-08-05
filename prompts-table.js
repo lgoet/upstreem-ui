@@ -2700,6 +2700,20 @@
         '</div>';
       }).join("");
     }
+    /* Asks for the flat prompts data "All Prompts" needs, the same way a manual search does --
+       reuses search.run() (fires the existing data-search-fn/uptSearch event with whatever
+       state.query currently is, usually "") rather than inventing a new event, because uptSearch
+       is already the mechanism every later filter/sort change relies on to refresh state.rows
+       while grouped (see refreshOpenGroupIfAny/applySort's own comments) -- Bubble's own workflow
+       bound to it already has to answer with fresh flat rows regardless of grouping for THAT case
+       to work at all. No-ops once state.hasData is true or a fetch is already in flight
+      (isBusy()), so this can be called on every render() without re-firing: the first call sets
+       state.loading, which is exactly what makes every call after it a no-op until real data (or a
+       real empty answer) lands and flips state.hasData. */
+    function ensureFlatDataForAllPrompts(){
+      if (state.hasData || isBusy()) return;
+      search.run();
+    }
     /* .up-tbody's content here is exactly what the flat table would put there for state.gRows —
        same rowHtml(), same skeleton/empty markup grpRowsHtml() already used inline. Pagination
        reuses grpFootHtml() as-is (already fully self-contained on state.gPage/gPageSize/gTotal;
@@ -2708,11 +2722,17 @@
     function renderGroupWideBody(){
       /* No group open -- "All Prompts" is selected in the sidelist. Render literally the same
          thing the flat (non-grouped) view would: renderFlatBody() reads state.rows/state.pageSize,
-         the SAME fields Bubble already keeps current via the SAME uptSearch/uptSort/etc. events
-         that fire regardless of grouping (see applySort/search.onFire) -- so this needs no new
-         Bubble event, and never shows an empty list, since state.rows is whatever was already
-         loaded before/while grouping got turned on. */
-      if (!state.expandedGroup){ renderFlatBody(); return; }
+         the SAME fields every later uptSearch/uptSort/etc. event already keeps current regardless
+         of grouping (see applySort/search.onFire) -- so switching between groups and All Prompts
+         needs no new Bubble event once state.rows has SOME data in it.
+         The gap that isn't covered by that: state.rows can still be genuinely empty here -- on a
+         page that boots directly into grouped+wide mode (grouping persisted from localStorage), or
+         after grouping was toggled on before any flat data ever arrived. There is no Bubble "kick"
+         that fills it in on its own in that case (confirmed live: the initial load fired the
+         grouped-headers RPC but never the flat prompts one). ensureFlatDataForAllPrompts() below
+         asks for it the same way a manual search would -- see its own comment for why that's safe
+         to reuse instead of needing a new event. */
+      if (!state.expandedGroup){ ensureFlatDataForAllPrompts(); renderFlatBody(); return; }
       var body;
       if (state.gLoading || state.gRows == null) body = skeletonRows(state.gPageSize);
       else if (!state.gRows.length) body = '<div class="up-empty-mini">No prompts in this group</div>';
