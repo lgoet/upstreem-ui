@@ -42,5 +42,9 @@
    JS via inline style so it can animate to an arbitrary measured position/width -- a CSS-only
    nth-child approach can't do that for a JS-built, reorderable list). Position is set with
    transition:none on first paint (see prompts-page-header.js) so it doesn't grow in from 0 on load. */
+/* z-index:1 -- without it this paints BEHIND .pph-nav::after: a ::after's generated box is always
+   painted after all of its element's real children, regardless of DOM/append order, so the grey
+   1px separator silently covered the bottom half of this 2px indicator, leaving only a 1px sliver
+   of primary color visible on top of it instead of a full 2px bar. */
 .pph-navunderline { position: absolute; bottom: 0; left: 0; width: 0; height: 2px; background: var(--vc-text);
-  transition: left 200ms ease, width 200ms ease; }
+  z-index: 1; transition: left 200ms ease, width 200ms ease; }
