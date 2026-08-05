@@ -49,25 +49,43 @@
   }
 
   function initRoot(root, UC){
-    if (UC.isYes(root.getAttribute("data-isdark"))) root.setAttribute("data-theme", "dark");
-    else root.removeAttribute("data-theme");
-
     var fire = UC.makeFire(root, { label: "prompts-page-header", eventPrefix: "pph" });
 
     /* The only two genuinely dynamic inputs -- everything else on this page's header (heading,
        description, the three nav items) is fixed content that belongs to THIS component, not a
        parameter. Same data-brand-name/data-brand-logo convention prompts-table.js's own toolbar
-       already uses, read directly off the root's attributes (no setter call, no async wait --
-       nothing here depends on server data the way a table's rows do). */
-    var brandName = root.getAttribute("data-brand-name") || "";
-    var brandLogo = root.getAttribute("data-brand-logo") || "";
+       already uses, read directly off the root's attributes.
+
+       Re-synced on every attribute change, not just read once at mount: Bubble frequently resolves
+       the dynamic expression behind data-brand-name/-logo/-isdark (current user's company, etc.)
+       AFTER this element has already been inserted and initialized, then patches the attribute in
+       place rather than replacing the whole node -- a one-shot read at init misses that and the
+       header is stuck showing nothing. Every other component in this repo (domains-table.js,
+       urls-table.js, responses-table.js) already guards against this the same way, via a
+       MutationObserver on these exact attributes. */
     var nameEl = root.querySelector(".pph-brandname");
     var logoEl = root.querySelector(".pph-brandlogo");
-    if (nameEl) nameEl.textContent = brandName;
-    if (logoEl){
-      if (brandLogo) logoEl.src = brandLogo;
-      else logoEl.style.display = "none";
+    function syncFromAttrs(){
+      var wantDark = UC.isYes(root.getAttribute("data-isdark"));
+      if (wantDark) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
+
+      var name = root.getAttribute("data-brand-name") || "";
+      if (name === "BRAND_NAME") name = "";
+      if (nameEl) nameEl.textContent = name;
+
+      var logo = root.getAttribute("data-brand-logo") || "";
+      if (logo === "BRAND_LOGO_URL") logo = "";
+      if (logoEl){
+        /* display:none (not just an unset src) so a not-yet-resolved/empty logo never shows the
+           browser's broken-image icon -- src="" resolves to the page's own URL and fails to load. */
+        if (logo){ logoEl.src = logo; logoEl.style.display = ""; }
+        else { logoEl.removeAttribute("src"); logoEl.style.display = "none"; }
+      }
     }
+    syncFromAttrs();
+    new MutationObserver(syncFromAttrs).observe(root, {
+      attributes: true, attributeFilter: ["data-isdark", "data-brand-name", "data-brand-logo"]
+    });
 
     buildNav(root);
     var addBtn = root.querySelector(".pph-addbtn");
