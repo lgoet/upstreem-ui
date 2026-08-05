@@ -1446,7 +1446,7 @@
 
 .up-ph-heading { margin: 0 0 12px; font-size: 28px; font-weight: 500; color: var(--vc-text);
   letter-spacing: -0.5px; line-height: 1.2; }
-.up-ph-desc { margin: 0; font-size: 16px; font-weight: 400; color: var(--vc-muted); line-height: 1.4; }
+.up-ph-desc { margin: 0; font-size: 17px; font-weight: 400; color: var(--vc-muted); line-height: 1.4; }
 
 .up-ph-addbtn { flex: 0 0 auto; margin-top: -16px; }
 
