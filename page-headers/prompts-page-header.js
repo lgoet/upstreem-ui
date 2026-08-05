@@ -19,7 +19,19 @@
       if (window.console) console.error("UpstreemCore (core.js) not loaded");
       return;
     }
+    var UC = window.UpstreemCore;
     pphRun();
+    /* Bubble replaces this element's whole markup block (script tag included) once the dynamic
+       expressions behind data-brand-name/-logo resolve -- which can happen moments after the very
+       first paint. The replacement root is un-initialized, and this file's own <script> does NOT
+       run again to catch it: the CDN loader's dedupe registry already has these asset URLs marked
+       loaded, so the freshly re-injected script tag's IIFE is a no-op. Every other component in
+       this repo catches that the same way -- core.js' shared watchRoots() runs a single page-wide
+       MutationObserver (+ heartbeat) that notices any newly-appeared root and re-runs init on it,
+       no re-fetch needed. Skipping this was the actual cause of the brand row + nav never showing
+       up live, even though a static, never-replaced test harness rendered correctly. */
+    if (UC.watchRoots) UC.watchRoots("pph-root", pphRun);
+    [100, 300, 800, 1800].forEach(function(ms){ setTimeout(pphRun, ms); });
   }
 
   /* This page's three tabs -- label/icon/value. "Responses" carries the value "mentions", not
