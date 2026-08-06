@@ -140,6 +140,23 @@
     if (docsBtn) docsBtn.addEventListener("click", function(){ fire("data-docs-fn", "dphDocs", {}); });
 
     var kpisEl = root.querySelector(".dph-kpis");
+    var descEl = root.querySelector(".up-ph-desc");
+
+    /* Mobile: the KPI strip is the thing that gives, not the description. Below some width the row
+       no longer has room for .up-ph-left's full heading+description block AND the KPI strip side
+       by side -- left, unlike the strip (flex:0 0 auto, fixed), can shrink and its text wraps, and
+       without this the description started breaking onto a second line while the KPIs just sat
+       there unbothered. Instead: try showing the KPIs, check whether the description NOW needs to
+       wrap because of it, and if so hide them again -- freeing that width back to .up-ph-left. Runs
+       on every resize tick (via UC.onResize below) and once right after setKpis() populates real
+       content, since the KPI strip's width appearing at all is not itself a root resize. */
+    function fitTopRight(){
+      if (!kpisEl || !kpisEl.firstChild || !descEl) return;
+      kpisEl.style.display = "";
+      var lineH = parseFloat(getComputedStyle(descEl).lineHeight) || 0;
+      if (lineH && descEl.scrollHeight > lineH * 1.4) kpisEl.style.display = "none";
+    }
+    if (UC.onResize) UC.onResize(root, fitTopRight);
 
     /* cls: "up-trend dph-trend-sm" keeps up-trend's pos/neg color logic (core.css) and just
        overrides icon/font size -- see dashboard-page-header.css's own comment on .dph-trend-sm for
@@ -165,6 +182,7 @@
       var rank = kpiItem("Ranking", fmtRank(k.avg_rank), k.avg_rank_delta, { inverted: true, decimals: true });
       var sent = kpiItem("Sentiment", fmtInt(k.avg_sentiment), k.avg_sentiment_delta, {});
       kpisEl.innerHTML = vis + '<span class="dph-kpi-sep"></span>' + rank + '<span class="dph-kpi-sep"></span>' + sent;
+      fitTopRight();
     }
 
     return { setKpis: setKpis };
