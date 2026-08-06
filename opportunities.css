@@ -174,8 +174,13 @@
 .uo-pot-bar.is-on.p3 { background-position: -16px 0; }
 .uo-pot-bar.is-on.p4 { background-position: -24px 0; }
 /* The explainer's own preview copy of the bars sits on the light panel inside the dark popover, so
-   it needs the light-mode ramp regardless of the page theme. */
-.up-explain .uo-pot-bar { background: #e0e2e6; }
+   it needs the light-mode ramp regardless of the page theme.
+   background-COLOR, not the `background` shorthand: the shorthand also resets background-size and
+   background-repeat, and being the later rule it beat the .is-on block above -- so in the popover
+   every bar drew the whole 0-100% gradient tiled inside its own 5px box, at a background-position
+   meant for a 29px slice. That is the "the potential segments look broken" bug: the ramp only
+   reads correctly while background-size stays 29px. */
+.up-explain .uo-pot-bar { background-color: #e0e2e6; }
 .up-explain .uo-pot-bar.is-on { background-image: linear-gradient(90deg, #c4c9d0, #1f1f1b); }
 
 /* ---------- list mode ---------- */
@@ -203,15 +208,24 @@
    A right-hand slide-in panel: new to this component (core has a centred modal, §27, which is the
    wrong shape for a record you read alongside the board). The scrim blurs the board rather than
    dimming it, so the lane a card came from stays recognisable underneath. */
+/* Portal host. opportunities.js moves the scrim and the drawer out of the component and straight
+   into <body>, because position:fixed only means "relative to the viewport" as long as no ancestor
+   has a transform/filter/will-change -- any of those turns that ancestor into the containing block
+   and the drawer ends up boxed inside the component's own area instead of covering the page. Bubble
+   groups routinely have one. display:contents means this element paints nothing and creates no
+   containing block of its own, while still carrying the .up-root token scope the drawer's colours
+   come from. */
+.uo-portal { display: contents; }
+/* z-index 8000/8001: above the page, deliberately BELOW the host app's own drawers and their
+   backdrops (documented at ~9930, same reasoning as prompts-table's bulk bar). */
 .uo-scrim {
-  position: absolute; inset: 0; z-index: 9; display: none; background: transparent;
+  position: fixed; inset: 0; z-index: 8000; display: none; background: transparent;
   -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
   opacity: 0; transition: opacity 220ms ease;
 }
 .uo-modal {
-  /* fixed, not absolute: the root is now as tall as its content, so an absolutely-positioned
-     drawer with bottom:6px would be as tall as the whole board and mostly off-screen. */
-  position: fixed; top: 6px; right: 6px; bottom: 6px; z-index: 10; width: min(720px, 86%);
+  /* full viewport height, unchanged width -- it is a page-level drawer, not a component overlay */
+  position: fixed; top: 6px; right: 6px; bottom: 6px; z-index: 8001; width: min(720px, 86%);
   display: none; flex-direction: column;
   background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 16px;
   box-shadow: 0 20px 48px rgba(0,0,0,.22); overflow: hidden;

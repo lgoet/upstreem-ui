@@ -520,7 +520,11 @@
     function hide(){ el.classList.remove("is-on"); openFor = null; }
     function show(trigger){
       var key = trigger.getAttribute("data-explain");
-      var html = cfg.html ? cfg.html(key) : "";
+      /* the trigger goes along as a second argument so a consumer can build a preview from THIS
+         row's values instead of a fixed sample (opportunities' potential bars mirror the level
+         you're hovering). Purely additive -- every other consumer takes one argument and ignores
+         it. */
+      var html = cfg.html ? cfg.html(key, trigger) : "";
       if (!html) return;
       el.innerHTML = html;
       el.setAttribute("data-theme", (cfg.getIsDark && cfg.getIsDark()) ? "dark" : "light");

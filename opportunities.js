@@ -51,6 +51,33 @@
 
   function initRoot(root, UC){
 
+  /* ---------- detail drawer portal ----------
+     The drawer is position:fixed so it can span the whole page, but "fixed" is only relative to the
+     viewport while NO ancestor has a transform/filter/will-change -- any of those makes that
+     ancestor the containing block, and the drawer collapses to the component's own box. A Bubble
+     page usually has at least one such wrapper, which is exactly the "drawer only covers the
+     component" symptom. Moving scrim + drawer to <body> takes them out of reach of whatever the
+     host wraps this element in, for good.
+     The host div keeps the .up-root and .uo-root classes so every colour token still resolves, and
+     it carries the open/close state classes the CSS already keys off (.uo-root.detail-open ...), so
+     those selectors keep matching after the move. __uoInit marks it as already-initialised, or
+     uoRun's ".uo-root" sweep would come back and try to boot the portal as a second board. */
+  var portal = document.createElement('div');
+  portal.className = 'up-root uo-root uo-portal';
+  portal.__uoInit = true;
+  portal.__uoOwner = root;
+  var scrimEl = root.querySelector('.uo-scrim');
+  var modalEl = root.querySelector('.uo-modal');
+  if (scrimEl) portal.appendChild(scrimEl);
+  if (modalEl) portal.appendChild(modalEl);
+  /* Bubble replaces this whole element on a page change and inits a fresh root; the old portal
+     would otherwise stay behind in <body> forever. Each one remembers its root, so any whose root
+     has left the document gets swept here. */
+  Array.prototype.forEach.call(document.querySelectorAll('.uo-portal'), function(p){
+    if (!p.__uoOwner || !document.body.contains(p.__uoOwner)) { try { p.remove(); } catch(_){} }
+  });
+  try { document.body.appendChild(portal); } catch(_){}
+
   /* ---------- state ---------- */
   var S = { items: [], mode: 'board', visible: { pending: true, in_progress: true, done: true, ignored: false }, query: '', sort: 'priority', externalOnly: false, detailId: null, loading: false };
   var COL_ORDER = ['ignored', 'pending', 'in_progress', 'done'];
@@ -100,11 +127,16 @@
     return '<span class="up-logo-box has-img"><img src="'+esc(url)+'" alt="" referrerpolicy="no-referrer" loading="lazy" ' +
            'onerror="this.remove();this.parentNode.classList.remove(\'has-img\')">'+ltr+'</span>';
   }
-  function potHtml(item){
-    var lvl = potLevel(item);
+  var POT_LABEL = { 1: 'Minimal', 2: 'Low', 3: 'Medium', 4: 'High' };
+  function potBars(lvl){
     var bars = '';
     for (var i=1;i<=4;i++) bars += '<span class="uo-pot-bar p'+i+(i<=lvl?' is-on':'')+'"></span>';
-    return '<div class="uo-pot" data-explain="potential"><div class="uo-pot-bars">'+bars+'</div></div>';
+    return bars;
+  }
+  function potHtml(item){
+    var lvl = potLevel(item);
+    // data-pot rides along so the explainer can preview THIS card's level instead of a fixed sample
+    return '<div class="uo-pot" data-explain="potential" data-pot="'+lvl+'"><div class="uo-pot-bars">'+potBars(lvl)+'</div></div>';
   }
   /* Topic chips are core's .up-topicchip (28px, tinted by --ust-tag-color) — the standalone had its
      own 26px .uo-tag with a parallel colour-mix implementation. */
@@ -138,11 +170,13 @@
     if (kind === 'share' && UC.explainCopy) return UC.explainCopy('share', { subject: 'source' });
     return null;
   }
-  function explainVisual(kind){
+  function explainVisual(kind, trigger){
     if (kind === 'potential'){
-      var bars = '';
-      for (var i=1;i<=4;i++) bars += '<span class="uo-pot-bar p'+i+(i<=3?' is-on':'')+'"></span>';
-      return '<span class="up-explain-row"><span class="uo-pot-bars">'+bars+'</span>Medium</span>';
+      /* mirrors the bars you're actually hovering -- a fixed "Medium" sample next to a four-bar
+         card read as a contradiction, not an example */
+      var lvl = trigger ? (parseInt(trigger.getAttribute('data-pot'), 10) || 3) : 3;
+      if (lvl < 1) lvl = 1; if (lvl > 4) lvl = 4;
+      return '<span class="up-explain-row"><span class="uo-pot-bars">'+potBars(lvl)+'</span>'+POT_LABEL[lvl]+'</span>';
     }
     if (kind === 'share') return '<span class="up-explain-row">6.9%<span class="up-explain-down">1.4%</span></span>';
     if (kind === 'competitors') return '<span class="up-explain-row">7</span>';
@@ -153,10 +187,10 @@
     root: root,
     triggerSel: '[data-explain]',
     getIsDark: isDark,
-    html: function(kind){
+    html: function(kind, trigger){
       var info = explainInfo(kind);
       if (!info) return '';
-      return '<div class="up-explain-vis">' + explainVisual(kind) + '</div>' +
+      return '<div class="up-explain-vis">' + explainVisual(kind, trigger) + '</div>' +
              '<div class="up-explain-h">' + esc(info.h) + '</div>' +
              '<div class="up-explain-t">' + esc(info.t) + '</div>';
     }
@@ -430,12 +464,13 @@
     var item = S.items.find(function(x){ return String(x.id) === String(id); });
     if (!item) return;
     S.detailId = id;
-    var modal = root.querySelector('.uo-modal');
+    var modal = modalEl;
     modal.innerHTML = detailHtml(item);
     if (closeTimer){ clearTimeout(closeTimer); closeTimer = null; }
-    root.classList.add('detail-open');
+    portal.setAttribute('data-theme', isDark() ? 'dark' : 'light');   // the portal is outside the root's theme attribute
+    portal.classList.add('detail-open');
     void modal.offsetWidth;
-    requestAnimationFrame(function(){ root.classList.add('detail-in'); });
+    requestAnimationFrame(function(){ portal.classList.add('detail-in'); });
     modal.querySelector('#uo-m-close').addEventListener('click', closeDetail);
     var ign = modal.querySelector('#uo-m-ignore');
     if (ign) ign.addEventListener('click', function(){ emit('ignore_opportunity', { opportunity_id: id }); setStatus(id, 'ignored'); });
@@ -449,8 +484,8 @@
   var closeTimer = null;
   function closeDetail(){
     S.detailId = null;
-    root.classList.remove('detail-in');
-    closeTimer = setTimeout(function(){ root.classList.remove('detail-open'); var m = root.querySelector('.uo-modal'); if (m) m.innerHTML = ''; }, 280);
+    portal.classList.remove('detail-in');
+    closeTimer = setTimeout(function(){ portal.classList.remove('detail-open'); if (modalEl) modalEl.innerHTML = ''; }, 280);
   }
 
   /* ---------- status change ---------- */
@@ -583,7 +618,7 @@
     var card = e.target.closest('.uo-card, .uo-row');
     if (card && root.querySelector('.uo-stage').contains(card)) { openDetail(card.getAttribute('data-id')); }
   });
-  root.querySelector('.uo-scrim').addEventListener('click', closeDetail);
+  if (scrimEl) scrimEl.addEventListener('click', closeDetail);
   document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && S.detailId) closeDetail(); });
 
   /* ---------- toolbar ---------- */
@@ -721,6 +756,7 @@
   function syncTheme(){
     if (UC.isYes(root.getAttribute('data-isdark'))) root.setAttribute('data-theme', 'dark');
     else if (root.getAttribute('data-theme') !== 'dark' || root.hasAttribute('data-isdark')) root.removeAttribute('data-theme');
+    portal.setAttribute('data-theme', isDark() ? 'dark' : 'light');   // the drawer lives outside the root now
   }
   if (root.hasAttribute('data-isdark')) syncTheme();
   new MutationObserver(syncTheme).observe(root, { attributes: true, attributeFilter: ['data-isdark'] });
@@ -733,10 +769,38 @@
   window.opportunitiesSetMode = function(m){ if (m==='board'||m==='list'){ S.mode = m; root.querySelectorAll('.uo-mode .up-seg-btn').forEach(function(x){ x.classList.toggle('is-active', x.getAttribute('data-mode')===m); }); render(); } };
   window.opportunitiesSetShowIgnored = function(v){ S.visible.ignored = !!v; var row = settingsPop.querySelector('[data-board="ignored"] .up-switch'); if (row) row.classList.toggle('is-on', S.visible.ignored); render(); };
   window.opportunitiesSetVisibleBoards = function(obj){ if (obj && typeof obj === 'object'){ ['pending','in_progress','done','ignored'].forEach(function(k){ if (k in obj){ S.visible[k] = !!obj[k]; var sw = settingsPop.querySelector('[data-board="'+k+'"] .up-switch'); if (sw) sw.classList.toggle('is-on', S.visible[k]); } }); render(); } };
-  window.opportunitiesSetTheme = function(t){ root.setAttribute('data-theme', String(t).toLowerCase()==='dark' ? 'dark' : 'light'); if (String(t).toLowerCase() !== 'dark') root.removeAttribute('data-theme'); };
+  window.opportunitiesSetTheme = function(t){ root.setAttribute('data-theme', String(t).toLowerCase()==='dark' ? 'dark' : 'light'); if (String(t).toLowerCase() !== 'dark') root.removeAttribute('data-theme'); portal.setAttribute('data-theme', isDark() ? 'dark' : 'light'); };
   window.opportunitiesOpenDetail = openDetail;
   window.opportunitiesCloseDetail = closeDetail;
   window.opportunitiesGetState = function(){ return { mode: S.mode, visible: S.visible, query: S.query, count: S.items.length }; };
+  /* Diagnostic for "the headers don't pin on my page". position:sticky only reaches the viewport
+     if nothing between this root and <html> scrolls, clips or establishes a containing block --
+     the usual culprits in a host page are overflow:hidden, transform, filter and will-change on a
+     wrapper. Reports the whole chain plus the two decisions applySticky() makes, so the answer is
+     one paste instead of another round of guessing. */
+  window.opportunitiesDiagnoseSticky = function(){
+    var out = { pageWidth: window.innerWidth, stickyOn: root.classList.contains('up-sticky'),
+                dataSticky: root.getAttribute('data-sticky'), stickyTop: root.getAttribute('data-sticky-top'),
+                blockers: [] };
+    var el = root.parentElement, guard = 0;
+    while (el && guard++ < 40){
+      var cs; try { cs = getComputedStyle(el); } catch(_){ break; }
+      var why = [];
+      if (cs.overflow !== 'visible' || cs.overflowX !== 'visible' || cs.overflowY !== 'visible')
+        why.push('overflow:' + cs.overflow + '/' + cs.overflowX + '/' + cs.overflowY);
+      if (cs.transform && cs.transform !== 'none') why.push('transform');
+      if (cs.filter && cs.filter !== 'none') why.push('filter');
+      if (cs.willChange && cs.willChange !== 'auto') why.push('will-change:' + cs.willChange);
+      if (cs.contain && cs.contain !== 'none') why.push('contain:' + cs.contain);
+      if (why.length) out.blockers.push({
+        tag: el.tagName.toLowerCase(), id: el.id || '', cls: String(el.className || '').slice(0, 90),
+        why: why.join(', '), scrolls: el.scrollHeight > el.clientHeight + 1
+      });
+      if (el === document.documentElement) break;
+      el = el.parentElement || (el === document.body ? document.documentElement : null);
+    }
+    return out;
+  };
 
   /* ---------- init ---------- */
   var skelTimer = null;

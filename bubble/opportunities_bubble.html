@@ -15,6 +15,18 @@
   search, sort, view switch, settings) pins at data-sticky-top, and each lane's header pins right
   underneath it so the lane stays labelled on the way down. The element has no scrollbar of its own.
 
+  The detail drawer is a PAGE-LEVEL drawer: on init the script moves the scrim and the panel out of
+  this element and into <body>, so they span the full viewport height instead of just the board's
+  own box (a Bubble group with a transform/blur on it would otherwise trap them inside the
+  component). They sit at z-index 8000/8001 — above the page, deliberately below your own drawers
+  and their backdrops. Nothing to configure; the element is cleaned up automatically when Bubble
+  swaps this component out.
+
+  If the headers do NOT pin on your page, run  opportunitiesDiagnoseSticky()  in the console. It
+  reports the page width (pinning is off below 1000px app-wide), the two data-sticky* values, and
+  every ancestor between this element and <html> that clips or establishes a containing block —
+  which is what breaks position:sticky when it breaks.
+
   ── Bubble dynamic values on the root element ────────────────────────────────
   data-instance = "ROOTID_[dynamic id]"   unique per placement
   data-cdn-pin  = commit hash to load from, e.g. "71ed61f" — leave EMPTY (or leave the literal
