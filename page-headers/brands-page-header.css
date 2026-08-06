@@ -1,0 +1,19 @@
+/* upstreem brands-page-header.css — meta/heading/description/nav/Add-button all come from
+   core.css's shared Page Header Kit; this file only holds what's actually specific to this page:
+   wrapping the Add + Refresh buttons together (same pattern prompts-page-header.css's own
+   .pph-topright uses, for the identical reason). */
+
+/* Wraps the Add + Refresh buttons so .up-ph-top's own justify-content:space-between still only
+   ever sees two children (.up-ph-left and this) -- without it, adding a second top-right button
+   as a direct sibling would space THREE children apart across the whole row instead of keeping
+   the two buttons next to each other on the right.
+
+   The -16px lift core.css's .up-ph-addbtn carries (compensating for .up-ph-root's 32px top
+   padding so the button lands at the page's original 16px position) is moved from the button to
+   THIS wrapper instead, and cancelled back to 0 on the button itself -- left on the button alone,
+   it would only shift Add, leaving Refresh (its new sibling, no such margin of its own) sitting
+   16px lower and out of line with it. Same fix prompts-page-header.css applies for the same
+   button pairing. */
+.bph-topright { display: flex; align-items: center; gap: 8px; margin-top: -16px; }
+.up-root .bph-topright .up-ph-addbtn { margin-top: 0; }
+.up-root.is-vnarrow .bph-topright { margin-top: -32px; }
