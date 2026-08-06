@@ -1,9 +1,10 @@
 /* upstreem opportunities-page-header.js — component logic. Requires core.js (window.UpstreemCore)
    loaded first, same family as prompts/dashboard/citations/brands/performance page headers: reuses
-   UC.isYes and the shared .up-root CSS variables plus the Page Header Kit's meta/heading/
-   description styling (core.css's ".up-ph-*" classes). Same bare layout as
-   performance-page-header.js -- no top-right buttons, no subpage nav, no separator row -- just the
-   meta row, heading, and description. No events, no UC.makeFire.
+   UC.isYes/UC.makeFire and the shared .up-root CSS variables plus the Page Header Kit's meta/
+   heading/description styling (core.css's ".up-ph-*" classes). Same bare layout as
+   performance-page-header.js otherwise -- no subpage nav, no separator row -- except for the one
+   top-right "Search for Opportunities" button (core.css's shared ".up-btn-sec" secondary button,
+   same one prompts-table.js already uses for its own secondary actions).
 
    watchRoots is still wired into the boot sequence: Bubble replaces this element's whole markup
    block once the dynamic expressions behind data-brand-name/-logo resolve, same as every other
@@ -34,6 +35,7 @@
 
   function initRoot(root){
     var UC = window.UpstreemCore;
+    var fire = UC.makeFire(root, { label: "opportunities-page-header", eventPrefix: "oph" });
 
     /* Same data-brand-name/-logo/-isdark re-sync as every other page header in this family --
        Bubble can resolve those dynamic expressions after this root is already mounted, patching
@@ -60,6 +62,11 @@
     new MutationObserver(syncFromAttrs).observe(root, {
       attributes: true, attributeFilter: ["data-isdark", "data-brand-name", "data-brand-logo"]
     });
+
+    var searchBtn = root.querySelector(".oph-searchbtn");
+    if (searchBtn){
+      searchBtn.addEventListener("click", function(){ fire("data-search-fn", "ophSearch", {}); });
+    }
   }
 
   ophBoot(30);

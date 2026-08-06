@@ -1,0 +1,12 @@
+/* upstreem opportunities-page-header.css — meta/heading/description all come from core.css's
+   shared Page Header Kit; this file only holds what's actually specific to this page: the lone
+   Search button's alignment. */
+
+/* Lifts the button back up by the root's 32px top padding (net 16px from the true top edge, vs.
+   the padded default) so it lands at the same height every other page header's top-right content
+   sits at -- same -16px/-32px(is-vnarrow) numbers prompts-page-header.css and
+   dashboard-page-header.css use for their own top-right groups, just applied directly since
+   there's only one button here and no wrapper needed (same reasoning as
+   citations-page-header.css's .cph-refreshbtn). */
+.oph-searchbtn { margin-top: -16px; }
+.up-root.is-vnarrow .oph-searchbtn { margin-top: -32px; }
