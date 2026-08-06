@@ -153,6 +153,13 @@
 .vt-row.up-tsk { cursor: default; }
 .vt-row.up-tsk:hover { background: transparent; }
 
+/* The info icon itself is core's .up-th-info, but core only reveals it via ".up-th:hover" -- and
+   this table predates the shared .up-th grid, so its header cells are .vt-th. Without this rule the
+   icons stayed at opacity:0 forever: the explainer still opened on hover (the mouseover handler is
+   bound to .up-th-info, not to the header), so the tooltip looked fine while the target you were
+   supposed to aim at was invisible. */
+.vt-th:hover .up-th-info { opacity: 1; }
+
 /* ---------- column explainer visuals (panel + tooltip shell are core.css's .up-explain) ---------- */
 .vot-explain-vis {
   background: #ffffff; border-radius: 9px; padding: 11px 12px;
@@ -165,16 +172,21 @@
 .vot-explain-row svg { width: 14px; height: 14px; display: block; }
 .vot-explain-up { color: #2ea84a; }
 .vot-explain-down { color: #b0200c; }
-.vot-explain-dot { width: 26px; height: 26px; border-radius: 999px; background: #e8e8e8;
-  border: 1px solid #d9dde3; box-shadow: 0 0 0 2px #ffffff; display: inline-flex;
-  align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: #6f737c; }
+/* Literal copy of core's .up-sent / .up-sent-dot for the Sentiment preview. It cannot reuse those
+   classes directly: .up-explain is appended to <body>, outside .up-root, so var(--vc-border) and
+   friends resolve to nothing there (the same trap STYLEGUIDE §7 documents for the tooltip colours).
+   Replaces a .vot-explain-dot rule that went unused once the Sentiment visual stopped drawing the
+   Brand-Mentions logo stack. */
+.vot-explain-sent { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 6px;
+  border: 1px solid #e0e2e6; border-radius: 6px; flex: 0 0 auto; font-variant-numeric: tabular-nums; }
+.vot-explain-sentdot { width: 6px; height: 6px; border-radius: 2px; flex: 0 0 auto; }
 .up-explain[data-theme="dark"] .vot-explain-h { color: #1f1f1b; }
 .up-explain[data-theme="dark"] .vot-explain-t { color: rgba(31,31,27,0.66); }
 .up-explain[data-theme="dark"] .vot-explain-vis { background: #1b1b1b; }
 .up-explain[data-theme="dark"] .vot-explain-row { color: #f0f0f0; }
 .up-explain[data-theme="dark"] .vot-explain-up { color: #6ee7b7; }
 .up-explain[data-theme="dark"] .vot-explain-down { color: #fca5a5; }
-.up-explain[data-theme="dark"] .vot-explain-dot { background: #3a3a3a; border-color: #4a4a4a; box-shadow: 0 0 0 2px #1b1b1b; color: #b8b8b8; }
+.up-explain[data-theme="dark"] .vot-explain-sent { border-color: #353535; }
 
 /* ============================================================
    Chart settings — hover-reveal gear button over the line chart + its dropdown (colors here, PLUS

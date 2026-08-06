@@ -8,12 +8,12 @@
    as a direct sibling would space THREE children apart across the whole row instead of keeping
    the two buttons next to each other on the right.
 
-   The -16px lift core.css's .up-ph-addbtn carries (compensating for .up-ph-root's 32px top
-   padding so the button lands at the page's original 16px position) is moved from the button to
-   THIS wrapper instead, and cancelled back to 0 on the button itself -- left on the button alone,
-   it would only shift Add, leaving Refresh (its new sibling, no such margin of its own) sitting
-   16px lower and out of line with it. Same fix prompts-page-header.css applies for the same
+   Any vertical offset lives on THIS wrapper, never on the button. At the default width there is
+   none to apply (core's 16px top padding needs no compensating), but under is-vnarrow core adds
+   extra top clearance for Bubble's mobile sidebar-toggle and the wrapper cancels it below. Left on
+   the button alone it would only shift Add, leaving Refresh (its sibling, no such margin of its
+   own) lower and out of line with it. Same fix prompts-page-header.css applies for the same
    button pairing. */
-.bph-topright { display: flex; align-items: center; gap: 8px; margin-top: -16px; }
+.bph-topright { display: flex; align-items: center; gap: 8px; margin-top: 0; }
 .up-root .bph-topright .up-ph-addbtn { margin-top: 0; }
-.up-root.is-vnarrow .bph-topright { margin-top: -32px; }
+.up-root.is-vnarrow .bph-topright { margin-top: -16px; }

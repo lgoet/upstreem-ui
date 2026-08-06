@@ -342,10 +342,16 @@
       if (kind === "ranking"){
         return '<span class="vot-explain-row">' + HASH_ICON + '<span>2.3</span></span>';
       }
+      /* Mirrors the Sentiment CELL: coloured dot + score + trend, the way it actually renders in
+         the table. This used to draw three empty coloured circles -- that is the Brand-Mentions
+         logo-stack visual, pasted onto the wrong metric, so the panel showed three blank blobs that
+         explained nothing. Colours are literal because .up-explain is body-appended and the
+         component's CSS variables do not reach it. */
       if (kind === "sentiment"){
-        return ["#D25D5D","#9E9E9E","#60D25D"].map(function(c){
-          return '<span class="vot-explain-dot" style="background:' + c + '22;color:' + c + '"></span>';
-        }).join("");
+        return '<span class="vot-explain-row">' +
+          '<span class="vot-explain-sent"><span class="vot-explain-sentdot" style="background:#60D25D"></span>78</span>' +
+          '<span class="vot-explain-up">' + UC.TREND_UP + '</span>' +
+          '<span class="vot-explain-up">4</span></span>';
       }
       return '<span class="vot-explain-row">18.4%' +
              '<span class="vot-explain-up">' + UC.TREND_UP + '</span>' +

@@ -1433,7 +1433,11 @@
        <div class="up-ph-nav" role="tablist"></div>  <!-- built by UC.makePageNav, see core.js -->
      </div>
    ====================================================================== */
-.up-ph-root { padding: 32px 0 16px; background: transparent; }
+/* Top padding is 16px, not 32: the meta row sits close to the page's own top edge. Everything that
+   sits top-RIGHT (Add button, refresh/docs icons, KPI strips) used to carry a -16px margin to pull
+   itself back up against the old 32px padding; with 16px there is nothing left to pull back, so
+   those margins are 0 now and only the is-vnarrow variants below still offset. */
+.up-ph-root { padding: 16px 0 16px; background: transparent; }
 
 .up-ph-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .up-ph-left { display: flex; flex-direction: column; min-width: 0; }
@@ -1453,7 +1457,7 @@
    subtitle under an H1; 17px (61%) read a shade too close to the heading's own weight. */
 .up-ph-desc { margin: 0; font-size: 15px; font-weight: 400; color: var(--vc-muted); line-height: 1.4; }
 
-.up-ph-addbtn { flex: 0 0 auto; margin-top: -16px; }
+.up-ph-addbtn { flex: 0 0 auto; margin-top: 0; }
 
 /* 32x32, icon-only, primary color at rest (var(--vc-text)) with a hover background -- deliberately
    NOT .up-iconbtn (that one is muted-by-default, primary-on-hover) or .up-export (a filled button):
@@ -1506,7 +1510,7 @@
 .up-root.is-narrow .up-ph-addbtn-full { display: none; }
 /* is-vnarrow (<500px default): Bubble's mobile sidebar-toggle sits top-right below this width on
    this app's pages -- extra top clearance so a page header doesn't collide with it. The Add
-   button's negative margin grows to match (-32 against the now-48px padding-top) so it still lands
-   at the same 16px visual offset it has at every other width. */
-.up-root.is-vnarrow.up-ph-root { padding-top: 48px; }
-.up-root.is-vnarrow .up-ph-addbtn { margin-top: -32px; }
+   button's negative margin matches that extra clearance (-16 against the now-32px padding-top) so
+   it still lands at the same visual offset it has at every other width. */
+.up-root.is-vnarrow.up-ph-root { padding-top: 32px; }
+.up-root.is-vnarrow .up-ph-addbtn { margin-top: -16px; }

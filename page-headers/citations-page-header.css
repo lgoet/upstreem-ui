@@ -2,10 +2,10 @@
    shared Page Header Kit; this file only holds what's actually specific to this page: the lone
    Refresh button's alignment. */
 
-/* Lifts the button back up by the root's 32px top padding (net 16px from the true top edge, vs.
-   the padded default) so it lands at the same height every other page header's top-right content
-   sits at -- same -16px/-32px(is-vnarrow) numbers prompts-page-header.css and
-   dashboard-page-header.css use for their own top-right groups, just applied directly since
-   there's only one button here and no wrapper needed. */
-.cph-refreshbtn { margin-top: -16px; }
-.up-root.is-vnarrow .cph-refreshbtn { margin-top: -32px; }
+/* Sits flush with the root's 16px top padding, so it lines up with the meta row -- same
+   0/-16px(is-vnarrow) numbers prompts-page-header.css and dashboard-page-header.css use for their
+   own top-right groups, just applied directly since there's only one button here and no wrapper
+   needed. The -16px under is-vnarrow cancels the extra top clearance core adds at that width for
+   Bubble's mobile sidebar-toggle. */
+.cph-refreshbtn { margin-top: 0; }
+.up-root.is-vnarrow .cph-refreshbtn { margin-top: -16px; }
