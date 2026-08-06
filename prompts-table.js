@@ -1757,7 +1757,7 @@
     /* Same three-line glyph .up-sort-btn already uses elsewhere — a second, differently-scoped
        Sorter needs its own classes (see below) so it doesn't collide with the flat table's own
        .up-sort-btn click handling, but it should still look like the same control. */
-    var GRPSIDE_SORT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>';
+    var GRPSIDE_SORT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 7.5L16.5 4.5L19.5 7.5"/><path d="M16.5 19.5V4.5"/><path d="M10.5 16.5L7.5 19.5L4.5 16.5"/><path d="M7.5 4.5V19.5"/></svg>';
     var GRPSIDE_ADD_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
     /* Same magnifier glyph the toolbar's own .up-search-btn uses -- one search icon everywhere. */
     var GRPSIDE_SEARCH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
