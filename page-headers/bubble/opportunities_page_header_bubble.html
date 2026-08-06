@@ -12,9 +12,8 @@
   Same bare layout as performance-page-header.js otherwise: NO subpage nav, NO separator row
   underneath. The Generate button reuses the exact SAME primary-button classes
   brands-page-header.js's "+ Add Brand" button uses (".up-ph-addbtn.up-export" -- filled, bold),
-  just with a different icon/label. The one page-specific rule is in
-  opportunities-page-header.css: this button sits 16px lower than the other headers' top-right
-  content, because there it pairs with the meta row and here it stands alone.
+  just with a different icon/label -- and at core's own top offset, so there is no page-specific
+  stylesheet to load here at all.
 
   Almost nothing here is dynamic. Like the other page headers, this component has no server data to
   wait on: no render()/reset() functions, no loading state. It reads its two dynamic inputs straight
@@ -88,7 +87,7 @@
   function once(url, make){ if (L[url]) return; L[url] = 1; make(url); }
   function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
   function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
-  css("core.css"); css("page-headers/opportunities-page-header.css");
+  css("core.css");
   js("core.js"); js("page-headers/opportunities-page-header.js");
 })();
 </script>

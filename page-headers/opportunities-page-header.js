@@ -5,9 +5,8 @@
    performance-page-header.js otherwise -- no subpage nav, no separator row -- except for the one
    top-right "Generate new Opportunities" button, which reuses the SAME primary-button classes
    brands-page-header.js's "+ Add Brand" button uses (".up-ph-addbtn.up-export" -- filled), just
-   with a different icon/label. opportunities-page-header.css adds the single rule that is specific
-   to this page: the button sits 16px lower than the other headers' top-right content, because
-   there it pairs with a meta row and here it stands alone against the page's top edge.
+   with a different icon/label -- and at core's own top offset, so this component ships no
+   stylesheet of its own.
 
    The button's event is still named ophSearch. It was a "Search for Opportunities" button first;
    renaming the event to match the new label would break the Bubble workflow already bound to it,
