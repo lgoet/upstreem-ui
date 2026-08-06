@@ -1,0 +1,329 @@
+<!-- ============================================================
+     Upstreem — Prompt Research
+     Paste this whole block into a Bubble HTML element. The loader at the bottom pulls
+     core.css/core.js + prompt-research.css/js from jsDelivr, pinned to the commit hash you put in
+     data-cdn-pin on the root div.
+
+     Migrated from the standalone prompt_research.html. The BEHAVIOUR is unchanged — every method
+     on window.upstreemPromptResearch, every bubble_fn_* it calls, every CustomEvent name and every
+     payload key is the same, so an existing Bubble page keeps working. What changed:
+       - colours, table, toolbar, dropdowns, chips and tooltips come from core
+       - "Previous researches" is a right-hand sidebar instead of an inline panel
+       - feather-icons is gone (every icon is inline SVG), so nothing loads from unpkg at runtime
+
+     ── Bubble dynamic values on the root element ────────────────────────────────
+     data-instance = "ROOTID_[dynamic id]"   unique per placement
+     data-cdn-pin  = commit hash to load from, e.g. "934cf50". NEVER leave this empty: blank falls
+                     back to @main, and jsDelivr caches branch URLs for days — you would be looking
+                     at an old build with no way to tell.
+     data-isdark   = "yes" / "no"
+
+     ── Data in (call these from "Run JavaScript") ───────────────────────────────
+     upstreemPromptResearch.setMarkets(markets)           [{alpha2, alpha3, name, flag_url, prompt_count}]
+     upstreemPromptResearch.setTags(tags)                 suggested keyword chips
+                                                          [{id, name, emoji, hex_light}] or ["a","b"]
+     upstreemPromptResearch.setRunning()                  show the loader
+     upstreemPromptResearch.setIdle()                     back to the start screen
+     upstreemPromptResearch.setError()                    same as setIdle
+     upstreemPromptResearch.setPrompts(rows, meta)        the result table + its context strip
+     upstreemPromptResearch.setComplete(rows)             setPrompts without meta
+     upstreemPromptResearch.setResearchMeta(meta)         only refresh the context strip
+     upstreemPromptResearch.setPreviousResearches(items)  fills the sidebar, clears the busy state
+     upstreemPromptResearch.setActionLoading(true/false)  disable everything while an action runs
+     upstreemPromptResearch.setBusy(...)                  alias of setActionLoading
+     upstreemPromptResearch.openHistory() / .closeHistory()
+     upstreemPromptResearch.setTheme("dark" | "light")
+
+     Every one of these accepts a JSON STRING as well as a real array/object, so a Bubble
+     ":formatted as JSON-safe" expression can go straight in.
+
+     rows  = [{ id, prompt_text, market, estimated_volume (0-100),
+                tags: [{ tag_id, name, emoji, hex_light }] }]
+     meta  = { keywords, market, market_name, business_model, persona }   (or nested in research_input)
+     items = [{ job_id, keywords, market, market_name, business_model, persona,
+                prompt_count, created_at }]
+
+     ── Events to Bubble ─────────────────────────────────────────────────────────
+     Like the standalone, this component does NOT read its function names off data-* attributes —
+     it calls six fixed globals. Create them as Toolbox "JavaScript to Bubble" elements with
+     exactly these names, one text parameter each (the payload arrives as a JSON string).
+     If a function is missing the component dispatches a window CustomEvent instead and carries on.
+
+       bubble_fn_startPromptResearch     {keywords, market, market_alpha2, market_alpha3,
+                                          market_name, business_model, persona}
+       bubble_fn_openPromptResearchJob   {job_id, keywords, market, market_name,
+                                          business_model, persona}
+       bubble_fn_deletePromptResearch    {job_id, keywords, market}
+       bubble_fn_acceptSuggestedPrompt   {suggested_prompt_id, suggested_prompt_ids,
+                                          accept_with_tags}
+       bubble_fn_ignoreSuggestedPrompt   {suggested_prompt_id, suggested_prompt_ids}
+       bubble_fn_acceptAllSuggestedPrompts {count, suggested_prompt_ids, accept_with_tags}
+       bubble_fn_deleteAllSuggestedPrompts {count, suggested_prompt_ids}
+
+     accept_with_tags follows the "Accept with Tags" switch in the results toolbar (on by default).
+
+     ── The sidebar ──────────────────────────────────────────────────────────────
+     "Previous researches" opens as a page-level drawer: on init the script moves the panel and its
+     backdrop out of this element and into <body>, so they span the full page instead of the
+     component's own box (a Bubble group with a transform or a blur on it would otherwise trap
+     them). z-index 9900/9895 — above the page, deliberately below your own drawers. While it is
+     open #main gets the class drawer-locked, exactly like your drawer script does, and the scroll
+     position is restored on close.
+     ============================================================ -->
+<div class="up-root upr-root"
+     id="upstreem-prompt-research"
+     data-instance="ROOTID_[dynamic id]"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="IS_DARK">
+
+  <div class="upr-shell">
+
+    <!-- ---------- start screen ---------- -->
+    <div class="upr-content">
+      <div class="upr-research-mark" aria-hidden="true">
+        <div class="upr-research-orb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+        <span class="upr-float-point p1"></span><span class="upr-float-point p2"></span><span class="upr-float-point p3"></span><span class="upr-float-point p4"></span>
+        <span class="upr-float-spark s1">✦</span><span class="upr-float-spark s2">✦</span>
+      </div>
+      <h1 class="upr-title">Start your prompt research</h1>
+      <p class="upr-subtitle">Enter keywords, topics, or context to uncover high-intent prompt themes and related opportunities.</p>
+
+      <div class="upr-suggestions-skeleton" id="upr-suggestions-skeleton" aria-hidden="true">
+        <span class="upr-skeleton-chip" style="width:82px;"></span><span class="upr-skeleton-chip" style="width:108px;"></span><span class="upr-skeleton-chip" style="width:68px;"></span><span class="upr-skeleton-chip" style="width:124px;"></span><span class="upr-skeleton-chip" style="width:90px;"></span><span class="upr-skeleton-chip" style="width:76px;"></span><span class="upr-skeleton-chip" style="width:116px;"></span><span class="upr-skeleton-chip" style="width:60px;"></span><span class="upr-skeleton-chip" style="width:98px;"></span><span class="upr-skeleton-chip" style="width:88px;"></span>
+      </div>
+      <div class="upr-suggestions" id="upr-suggestions" aria-label="Suggested keywords" style="display:none;"></div>
+
+      <div class="upr-history-entry">
+        <button class="upr-secondary-btn" type="button" id="upr-open-history">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          View previous researches
+        </button>
+      </div>
+
+      <div class="upr-composer-area">
+        <div class="upr-composer-shell">
+          <div class="upr-composer">
+            <textarea class="upr-textarea" rows="3" maxlength="300" placeholder="Enter keywords, topics, or context for prompt research..."></textarea>
+            <button class="upr-clear-input" type="button" id="upr-clear-input" data-tip="Clear input" aria-label="Clear input">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+            </button>
+            <div class="upr-actions">
+              <button class="up-iconbtn upr-settings-toggle" type="button" id="upr-settings-toggle" data-tip="Research settings" aria-label="Open research settings" aria-expanded="false">
+                <svg viewBox="0 0 24 24" class="upr-ic-fader" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="8" x2="20" y2="8"/><circle cx="9" cy="8" r="2.2"/><line x1="4" y1="16" x2="20" y2="16"/><circle cx="15" cy="16" r="2.2"/></svg>
+              </button>
+              <button class="upr-start-btn" type="button" id="upr-start-button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                <span>Start Research</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="upr-settings-panel" id="upr-settings-panel">
+            <div class="upr-settings-inner">
+              <div class="upr-settings-header">
+                <p class="upr-settings-title">Research settings</p>
+                <p class="upr-settings-desc">Configure market, business model and optional persona for generated prompt themes.</p>
+              </div>
+              <div class="upr-settings-grid">
+
+                <div class="upr-field">
+                  <span class="upr-label">Market</span>
+                  <div class="upr-dd" data-name="market" id="upr-market-dd">
+                    <button class="upr-dd-trigger" type="button">
+                      <span class="upr-dd-value" data-dd-value><span class="upr-flag"></span><span>Loading markets…</span></span>
+                      <svg class="upr-dd-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="upr-dd-menu">
+                      <div class="upr-dd-search-row">
+                        <div class="upr-dd-search-wrap">
+                          <input class="upr-dd-search" type="text" placeholder="Search for Markets">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        </div>
+                        <button class="upr-dd-clear" type="button">Clear</button>
+                      </div>
+                      <div class="upr-dd-list" data-dd-list>
+                        <div class="upr-dd-loading">Loading markets…</div>
+                        <div class="upr-dd-empty">No markets found</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="upr-field">
+                  <span class="upr-label">Business model</span>
+                  <div class="upr-dd" data-name="business_model">
+                    <button class="upr-dd-trigger" type="button">
+                      <span class="upr-dd-value" data-dd-value><span>B2C</span></span>
+                      <svg class="upr-dd-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="upr-dd-menu"><div class="upr-dd-list" data-dd-list>
+                      <button class="upr-dd-option is-selected" type="button" data-value="b2c" data-label="B2C"><span class="upr-dd-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="upr-dd-optlabel">B2C</span><span></span></button>
+                      <button class="upr-dd-option" type="button" data-value="b2b" data-label="B2B"><span class="upr-dd-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="upr-dd-optlabel">B2B</span><span></span></button>
+                      <button class="upr-dd-option" type="button" data-value="hybrid" data-label="Hybrid"><span class="upr-dd-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="upr-dd-optlabel">Hybrid <span class="upr-dd-meta">(B2B &amp; B2C)</span></span><span></span></button>
+                      <div class="upr-dd-empty">No options found</div>
+                    </div></div>
+                  </div>
+                </div>
+
+                <div class="upr-field">
+                  <span class="upr-label">Persona optional</span>
+                  <div class="upr-dd" data-name="persona">
+                    <button class="upr-dd-trigger" type="button">
+                      <span class="upr-dd-value" data-dd-value><span>No specific persona</span></span>
+                      <svg class="upr-dd-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="upr-dd-menu"><div class="upr-dd-list" data-dd-list>
+                      <button class="upr-dd-option is-selected" type="button" data-value="" data-label="No specific persona"><span class="upr-dd-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="upr-dd-optlabel">No specific persona</span><span></span></button>
+                      <button class="upr-dd-option" type="button" data-value="student" data-label="Student"><span class="upr-dd-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="upr-dd-optlabel">Student</span><span></span></button>
+                      <button class="upr-dd-option" type="button" data-value="entrepreneur" data-label="Entrepreneur"><span class="upr-dd-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="upr-dd-optlabel">Entrepreneur</span><span></span></button>
+                      <button class="upr-dd-option" type="button" data-value="smb_owner" data-label="SMB owner"><span class="upr-dd-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="upr-dd-optlabel">SMB owner</span><span></span></button>
+                      <button class="upr-dd-option" type="button" data-value="parent_family" data-label="Parent / Family"><span class="upr-dd-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="upr-dd-optlabel">Parent / Family</span><span></span></button>
+                      <button class="upr-dd-option" type="button" data-value="tech_enthusiast" data-label="Tech enthusiast"><span class="upr-dd-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="upr-dd-optlabel">Tech enthusiast</span><span></span></button>
+                      <div class="upr-dd-empty">No personas found</div>
+                    </div></div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="upr-tip">Tip: Be specific for better results. You can enter multiple keywords or a full topic description.</p>
+      </div>
+    </div>
+
+    <!-- ---------- results ---------- -->
+    <div class="upr-results-stage" id="upr-results-stage">
+      <div class="upr-results-nav">
+        <button class="upr-secondary-btn" type="button" id="upr-back-to-start">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          Back to start
+        </button>
+        <div class="upr-results-nav-right">
+          <button class="upr-secondary-btn" type="button" id="upr-open-history-results">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            View previous researches
+          </button>
+        </div>
+      </div>
+
+      <div class="up-head">
+        <div class="up-heading has-count" id="upr-results-heading">
+          <span class="up-head-label">Suggested prompts</span>
+          <span class="up-head-sep"></span>
+          <span class="up-head-count" id="upr-results-count">0</span>
+        </div>
+        <div class="upr-results-context" id="upr-results-context"></div>
+        <div class="up-head-tools">
+          <span class="upr-spinner" aria-hidden="true"></span>
+          <button class="upr-switchbtn is-on" type="button" id="upr-accept-with-tags" aria-pressed="true"
+                  data-tip="Track accepted prompts with their suggested tags">
+            <span>Accept with Tags</span><span class="up-switch is-on" aria-hidden="true"></span>
+          </button>
+          <div class="upr-menu-wrap" id="upr-table-menu">
+            <button class="up-iconbtn" type="button" id="upr-table-menu-trigger" data-tip="More actions" aria-label="Open suggested prompt actions" aria-expanded="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+            </button>
+            <div class="up-menu" id="upr-table-menu-popover" aria-hidden="true">
+              <button class="up-filter-item upr-menu-item" type="button" id="upr-accept-all-prompts">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                <span>Accept all Prompts <span data-count-label>(0)</span></span>
+              </button>
+              <button class="up-filter-item upr-menu-item is-danger" type="button" id="upr-delete-all-prompts">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                <span>Delete all Prompts <span data-count-label>(0)</span></span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="up-box upr-box">
+        <div class="up-table">
+          <div class="up-thead">
+            <div class="up-th">
+              <svg class="upr-th-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+              Prompt
+            </div>
+            <div class="up-th">Tags</div>
+            <div class="up-th">Est. Volume</div>
+            <div class="up-th">Actions</div>
+          </div>
+          <div class="up-tbody" id="upr-results-body"></div>
+        </div>
+      </div>
+
+      <div class="upr-results-empty">
+        <div class="up-box"><div class="up-empty">
+          <div class="up-empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+          <div class="up-empty-h">No suggested prompts found</div>
+          <div class="up-empty-t">Start a new prompt research to generate suggestions.</div>
+        </div></div>
+      </div>
+    </div>
+
+    <!-- ---------- loader ---------- -->
+    <div class="upr-loading-stage" aria-hidden="true">
+      <div class="upr-loading-inner">
+        <div class="upr-loader-mark">
+          <div class="upr-loader-ring r1"></div><div class="upr-loader-ring r2"></div>
+          <div class="upr-loader-core"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+        </div>
+        <div class="upr-tload">
+          <div class="upr-tl-bars"><span class="upr-tl-bar" style="width:82%;"></span><span class="upr-tl-bar" style="width:58%;"></span></div>
+          <div class="upr-tl-tags" id="upr-tl-tags"></div>
+        </div>
+        <div class="upr-think-loop"><span class="upr-think-text" id="upr-think-text">Understanding your intent…</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---------- previous researches sidebar ----------
+       Stays inside the root in the markup so it is easy to find; the script moves it to <body> on
+       init (see the note at the top). Do not reparent it by hand. -->
+  <div class="upr-side-scrim"></div>
+  <aside class="upr-side" role="dialog" aria-modal="true" aria-label="Previous researches">
+    <div class="upr-side-head">
+      <div class="up-heading has-count">
+        <span class="up-head-label">Previous researches</span>
+        <span class="up-head-sep"></span>
+        <span class="up-head-count" id="upr-history-count">0</span>
+      </div>
+      <div class="up-head-tools">
+        <button class="up-iconbtn" type="button" id="upr-close-history" data-tip="Close" aria-label="Close previous researches">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="upr-side-body" id="upr-history-list"></div>
+  </aside>
+
+  <!-- Optional server-rendered seeds. Leave them as empty arrays and use setMarkets()/setTags()
+       instead unless you really want the data in the initial HTML. -->
+  <script class="upr-json" id="upr-markets-json" type="application/json">[]</script>
+  <script class="upr-json" id="upr-suggested-keywords-json" type="application/json">[]</script>
+</div>
+
+<script>
+/* Loads this component's CSS/JS from jsDelivr, pinned to the commit hash you put in data-cdn-pin on
+   the root div above (falls back to @main only if data-cdn-pin is left blank or at the literal
+   "CDN_PIN" placeholder — don't, see the note at the top). Byte-for-byte the same loader every
+   other component in this repo ships. */
+(function(){
+  function readPin(cls){
+    var els = document.getElementsByClassName(cls), i, p;
+    for (i = 0; i < els.length; i++){
+      p = (els[i].getAttribute("data-cdn-pin") || "").trim();
+      if (p && p !== "CDN_PIN") return p;
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("upr-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(url, make){ if (L[url]) return; L[url] = 1; make(url); }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+  css("core.css"); css("prompt-research.css");
+  js("core.js");   js("prompt-research.js");
+})();
+</script>
