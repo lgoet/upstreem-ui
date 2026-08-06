@@ -533,6 +533,17 @@
   }
 
   /* ---------- settings dropdowns ---------- */
+  /* The root is its own scroll box, so a menu opening downwards near the bottom would have nothing
+     to scroll to. The CSS adds bottom padding to the shell while any dropdown is open; this flag
+     is what it keys off. Deferred by a tick because makePopover removes .is-open on the way out and
+     we would otherwise read the state one step behind -- setTimeout, not requestAnimationFrame,
+     because rAF is throttled to nothing in a background tab and the padding would then never come
+     back off. */
+  function syncDropdownOpenState(){
+    setTimeout(function(){
+      root.classList.toggle('is-dd-open', !!root.querySelector('.upr-dd.is-open'));
+    }, 0);
+  }
   function setDropdownValue(dd, option){
     if (!dd || !option) return;
     var name = dd.getAttribute('data-name');
@@ -548,6 +559,7 @@
     if (name === 'market'){ state.market = value; state.market_alpha2 = alpha2; state.market_alpha3 = alpha3; state.market_name = label; }
     if (valueEl) valueEl.innerHTML = (flag ? '<span class="upr-flag">' + flagHtml(flag, label) + '</span>' : '') + '<span>' + esc(label) + '</span>';
     if (dd.__pop) dd.__pop.close();
+    syncDropdownOpenState();
   }
   function wireDropdown(dd){
     var trigger = dd.querySelector('.upr-dd-trigger');
@@ -559,10 +571,14 @@
     /* core's popover: outside-click, Escape and mutual exclusion all come from there, so the
        standalone's own document-level click/keydown handlers are gone. makePopover has no open
        hook, so the search focus rides on the trigger click instead. */
-    dd.__pop = UC.makePopover({ wrap: dd, menu: menu, opener: trigger, group: 'upr-settings' });
+    dd.__pop = UC.makePopover({
+      wrap: dd, menu: menu, opener: trigger, group: 'upr-settings',
+      onClose: syncDropdownOpenState
+    });
     if (trigger) trigger.addEventListener('click', function(e){
       e.stopPropagation();
       dd.__pop.toggle();
+      syncDropdownOpenState();
       if (search && dd.__pop.isOpen()) setTimeout(function(){ try { search.focus(); } catch(err){} }, 80);
     });
     dd.addEventListener('click', function(e){

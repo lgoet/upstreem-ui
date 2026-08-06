@@ -15,31 +15,45 @@
      - the inline tag editor inside the composer.
      - the right-hand "Previous researches" sidebar. */
 
-/* ---------- root ---------- */
-/* Grows with its content and scrolls with the page, like every other component here. The
-   standalone was a self-contained scroll box (overflow:auto on the root, an inner results stage
-   with its own scrollbar); that is replaced by normal page scrolling so a Bubble page has exactly
-   one scrollbar again. */
+/* ---------- root ----------
+   The standalone's scroll model, kept EXACTLY as it was, because this component is not a table
+   screen: it is a full-height app surface. The root is its own scroll box; in results/running mode
+   it stops scrolling and the results stage fills it, with only the table body scrolling inside.
+   An earlier pass here converted it to page scrolling like the tables do — that produced two
+   scroll contexts fighting each other inside a fixed-height Bubble element, which is exactly the
+   "scrolling feels broken" report. Do not convert it again without also changing the Bubble
+   element to fit-height. */
 .upr-root {
+  height: 100%;
   min-height: 520px;
   padding: 0;
+  overflow: auto;
   /* Volume meter ramp: four steps from "barely searched" to "high demand". Kept as the standalone
      had them -- these are not the app's up/down colours and must not drift into them. */
   --upr-vol-1: #d2865d; --upr-vol-2: #d9b85d; --upr-vol-3: #9fd25d; --upr-vol-4: #60d25d;
   --upr-vol-track: #e8eaee;
 }
 .up-root[data-theme="dark"].upr-root { --upr-vol-track: #303030; }
+.upr-root.is-results, .upr-root.is-running { overflow: hidden; }
 .upr-root button, .upr-root input, .upr-root textarea { font-family: inherit; }
 
 /* ---------- hero shell ---------- */
 .upr-shell {
   width: 100%;
-  padding: clamp(24px, 4vw, 52px) 0;
+  height: auto;
+  min-height: 100%;
+  padding: clamp(24px, 4vw, 52px);
   display: flex;
   flex-direction: column;
   justify-content: center;
   position: relative;
+  overflow: visible;
 }
+.upr-root.is-results .upr-shell,
+.upr-root.is-running .upr-shell { height: 100%; min-height: inherit; overflow: hidden; }
+/* A settings dropdown opens downwards inside a scroll box, so the shell needs somewhere to scroll
+   to while one is open. Same trick the standalone used. */
+.upr-root.is-dd-open:not(.is-results):not(.is-running) .upr-shell { padding-bottom: 340px; }
 /* Faint graph-paper wash behind the hero. Masked to a soft circle so it never reaches the edges. */
 .upr-shell::before {
   content: "";
@@ -318,9 +332,14 @@
   .upr-inline-tag-remove { width: 14px; max-width: 14px; opacity: 0.85; margin-left: 1px; }
 }
 
-/* ---------- results ---------- */
-.upr-results-stage { width: 100%; display: none; flex-direction: column; }
+/* ---------- results ----------
+   Fills the root; only the table body scrolls. Nav and toolbar are fixed rows above it. */
+.upr-results-stage {
+  width: 100%; height: 100%; min-height: 0; position: relative; z-index: 4;
+  display: none; flex-direction: column; overflow: hidden;
+}
 .upr-root.is-results .upr-results-stage { display: flex; }
+.upr-results-stage > .upr-results-nav, .upr-results-stage > .up-head { flex: 0 0 auto; }
 .upr-results-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
 .upr-results-nav-right { display: flex; align-items: center; gap: 8px; }
 /* Context pills: market / keywords / business model / persona. Component-specific — nothing else
@@ -381,8 +400,24 @@
 .upr-menu-item svg { width: 16px; height: 16px; flex: 0 0 auto; display: block; }
 .upr-menu-item.is-danger { color: #b0200c; }
 .upr-menu-item.is-danger:hover { background: color-mix(in srgb, #b0200c 8%, transparent); }
-/* Column widths for core's .up-thead/.up-row grid. Prompt gets the room, actions a fixed lane. */
-.upr-box { --up-cols: minmax(0, 2.4fr) minmax(0, 1.7fr) 150px 200px; }
+/* Column widths for core's .up-thead/.up-row grid. Prompt gets the room, actions a fixed lane.
+   This box IS the scrollport in results mode (core's .up-box is overflow:hidden), so the column
+   header pins to its top rather than to the page. */
+.upr-box {
+  --up-cols: minmax(0, 2.4fr) minmax(0, 1.7fr) 150px 200px;
+  flex: 0 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+/* --vt-head-bg is semi-transparent, which is fine for a header that never has anything behind it.
+   Pinned, the rows slide underneath — so the same opaque base core paints under its own sticky
+   thead goes here too. */
+.upr-box .up-thead {
+  position: sticky; top: 0; z-index: 2;
+  background-image: linear-gradient(var(--vt-head-bg), var(--vt-head-bg));
+  background-color: var(--vc-bg);
+}
+.upr-box::-webkit-scrollbar { width: 10px; }
+.upr-box::-webkit-scrollbar-thumb { background: var(--vc-border); border: 3px solid var(--vc-bg); border-radius: 999px; }
 .upr-box .up-row { cursor: default; }
 .upr-box .up-row:hover { background: var(--vt-row-hover); }
 .upr-th-icon { width: 14px; height: 14px; margin-right: 6px; flex: 0 0 auto; display: block; }
@@ -416,7 +451,7 @@
 .upr-row-btn.is-accept { padding: 0 12px; border: 1px solid var(--vc-text); background: var(--vc-text); color: var(--vc-bg); }
 .upr-row-btn.is-accept:hover { opacity: .9; }
 
-.upr-results-empty { display: none; }
+.upr-results-empty { display: none; flex: 0 0 auto; }
 .upr-results-stage.is-empty .upr-box { display: none; }
 .upr-results-stage.is-empty .upr-results-empty { display: block; }
 
@@ -446,6 +481,11 @@
 .upr-loader-ring.r2 { inset: 4px; animation: uprRingPulse 3.7s ease-in-out infinite reverse; }
 @keyframes uprCoreFloat { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-4px) scale(1.018); } }
 @keyframes uprRingPulse { 0%, 100% { transform: scale(0.96); opacity: 0.42; } 50% { transform: scale(1.04); opacity: 0.84; } }
+/* The loader stage stays in the DOM at opacity 0 so it can fade in, which means its three infinite
+   animations would otherwise keep the compositor busy for the whole life of the page — felt as
+   stutter while scrolling the start screen. Stop them whenever the loader is not actually up. */
+.upr-root:not(.is-running) .upr-loader-core,
+.upr-root:not(.is-running) .upr-loader-ring { animation: none; }
 .upr-tload { display: flex; flex-direction: column; align-items: center; gap: 13px; width: min(100%, 300px); margin-top: 6px; }
 .upr-tl-bars { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; }
 .upr-tl-bar { height: 6px; border-radius: 4px; background: var(--vc-sk); }

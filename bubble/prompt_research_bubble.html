@@ -62,6 +62,14 @@
 
      accept_with_tags follows the "Accept with Tags" switch in the results toolbar (on by default).
 
+     ── Bubble element height ────────────────────────────────────────────────────
+     Set this HTML element to a FIXED height (the standalone's model, kept as it was) — it is a
+     full-height app surface, not a table that grows. The component is its own scroll box: on the
+     start screen the root scrolls, and once results are up the root stops scrolling and only the
+     table body does, under a pinned column header. Letting the element fit its content instead
+     puts the page scroll and the component's own scroll in the same place, which reads as broken
+     scrolling.
+
      ── The sidebar ──────────────────────────────────────────────────────────────
      "Previous researches" opens as a page-level drawer: on init the script moves the panel and its
      backdrop out of this element and into <body>, so they span the full page instead of the
