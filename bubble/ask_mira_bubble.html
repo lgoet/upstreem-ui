@@ -13,6 +13,19 @@
                      and jsDelivr caches branch URLs for days.
      data-isdark   = "yes" / "no"   (askMiraSetTheme("dark"|"light") also works)
 
+     ── Was gegenueber dem Standalone anders ist ─────────────────────────────────
+     - Farben kommen aus core (--vc-*). Das eigene Palettenset wird nur noch abgeleitet, keine
+       einzige der ~370 Regeln wurde angefasst: Chat, Antwort-Tabellen und die Brand-/Prompt-/
+       Response-/URL-Highlight-Chips sind unveraendert.
+     - Das zweite Theme-System (OS prefers-color-scheme) ist raus. core's data-theme fuehrt, sonst
+       hattest du bei dunklem OS ein helles App-Fenster mit dunklem Agent-Panel.
+     - Die drei Highlight-Dropdowns laufen auf UC.makePopover (Aussenklick, Escape, gegenseitiges
+       Schliessen aus core statt zwei eigener document-Listener).
+     - Die Buttons der Komponenten-Chrome haben das App-Tooltip statt title=.
+     - Stub-Queue: askMira*-Aufrufe vor dem Laden von core.js gehen nicht mehr verloren.
+     Chat-Bereich, Modell-/Detail-Dropdown, Chat-Kontextmenue, Voice und das Previous-Chats-Panel
+     sind bewusst unveraendert.
+
      ── Bubble element height ────────────────────────────────────────────────────
      FIXED height. Mira is a full-height app surface with its own internal scrolling (the chat
      scrolls, the composer and hero stay put). Fit-to-content would put the page scroll and the
@@ -63,10 +76,10 @@
           <p class="am-subline">Chat with your AI Search data.</p>
         </div>
         <div class="am-chat-titlebar" id="am-chat-titlebar" aria-hidden="true">
-          <button class="am-ct-back" id="am-ct-back" type="button" aria-label="Back to start" title="Back to start">
+          <button class="am-ct-back" id="am-ct-back" type="button" aria-label="Back to start" data-tip="Back to start">
             <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
           </button>
-          <button class="am-ct-name" id="am-ct-name" type="button" title="Rename chat">
+          <button class="am-ct-name" id="am-ct-name" type="button" data-tip="Rename chat">
             <span class="am-ct-text" id="am-ct-text"></span>
             <span class="am-ct-skeleton" id="am-ct-skeleton" aria-hidden="true"></span>
           </button>
@@ -75,8 +88,8 @@
           </button>
           <input class="am-ct-input" id="am-ct-input" type="text" maxlength="120" aria-label="Chat name">
           <span class="am-ct-edit-actions" id="am-ct-edit-actions">
-            <button class="am-ct-mini" id="am-ct-save" type="button" title="Save"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></button>
-            <button class="am-ct-mini" id="am-ct-discard" type="button" title="Discard"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            <button class="am-ct-mini" id="am-ct-save" type="button" data-tip="Save"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></button>
+            <button class="am-ct-mini" id="am-ct-discard" type="button" data-tip="Discard"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
           </span>
         </div>
         <button class="am-ghost-btn am-prev-btn" type="button" id="am-open-prev">
@@ -180,7 +193,7 @@
           <svg viewBox="0 0 24 24" class="am-ic"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
           <span>New Chat</span>
         </button>
-        <button class="am-settings-btn" type="button" id="am-settings-btn" aria-label="Settings" title="Settings" aria-expanded="false"></button>
+        <button class="am-settings-btn" type="button" id="am-settings-btn" aria-label="Settings" data-tip="Highlight settings" aria-expanded="false"></button>
       </div>
       <div class="am-hl-panel" id="am-hl-settings-panel">
         <div class="am-set-row">

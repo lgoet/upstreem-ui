@@ -3951,19 +3951,33 @@
     ddSync(elDdCitation, (S.settings && S.settings.citation) || 'icon');
     ddSync(elDdResponse, (S.settings && S.settings.response) || 'logo');
   }
-  function ddClose(dd){ if (dd){ dd.classList.remove('is-open'); var t = dd.querySelector('.am-dd-trigger'); if (t) t.setAttribute('aria-expanded','false'); } }
-  function ddCloseAll(){ ddClose(elDdBrand); ddClose(elDdCitation); ddClose(elDdResponse); }
-  function ddToggle(dd){
-    var open = !dd.classList.contains('is-open');
-    ddCloseAll();
-    dd.classList.toggle('is-open', open);
-    var t = dd.querySelector('.am-dd-trigger'); if (t) t.setAttribute('aria-expanded', open ? 'true' : 'false');
-  }
+  /* Open/close, outside-click, Escape and mutual exclusion come from UC.makePopover, the same
+     kit every dropdown in the app uses — the two document-level listeners the standalone kept for
+     this are gone with it. The CSS is untouched: makePopover puts .is-open on the wrap, which is
+     exactly what ".am-dd.is-open .am-dd-menu" already keys off. Selecting a value still runs the
+     identical ddSync + applySetting path, so the settings-change event is unchanged. */
+  var _ddPops = [];
+  function ddClose(dd){ if (dd && dd.__amPop) dd.__amPop.close(); }
+  function ddCloseAll(){ _ddPops.forEach(function(p){ p.close(); }); }
   function wireDropdown(dd){
     if (!dd) return;
     var key = dd.getAttribute('data-set');
     var trigger = dd.querySelector('.am-dd-trigger');
-    if (trigger) trigger.addEventListener('click', function(e){ e.stopPropagation(); ddToggle(dd); });
+    var menu = dd.querySelector('.am-dd-menu');
+    var UC = window.UpstreemCore;
+    if (UC && UC.makePopover && menu){
+      dd.__amPop = UC.makePopover({ wrap: dd, menu: menu, opener: trigger, group: 'am-hl-settings' });
+      _ddPops.push(dd.__amPop);
+    } else {
+      /* core.js older than this file: keep working with the standalone's own toggle rather than
+         losing the settings dropdowns entirely. */
+      dd.__amPop = {
+        close: function(){ dd.classList.remove('is-open'); if (trigger) trigger.setAttribute('aria-expanded','false'); },
+        toggle: function(){ var o = !dd.classList.contains('is-open'); ddCloseAll(); dd.classList.toggle('is-open', o); if (trigger) trigger.setAttribute('aria-expanded', o ? 'true' : 'false'); }
+      };
+      _ddPops.push(dd.__amPop);
+    }
+    if (trigger) trigger.addEventListener('click', function(e){ e.stopPropagation(); dd.__amPop.toggle(); });
     dd.querySelectorAll('.am-dd-opt').forEach(function(opt){
       opt.addEventListener('click', function(e){
         e.stopPropagation();
@@ -3989,9 +4003,17 @@
     renderMessages();   // refresh active chat so highlights update
   }
   wireDropdown(elDdBrand); wireDropdown(elDdCitation); wireDropdown(elDdResponse);
-  document.addEventListener('click', function(e){ if (!e.target.closest('.am-dd')) ddCloseAll(); }, true);
-  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') ddCloseAll(); });
   syncSettingsUI();
+
+  /* Button tooltips on the component chrome (hero, chat titlebar, settings) — core's delegated
+     [data-tip] chip, so Mira's buttons behave like every other button in the app instead of
+     waiting on the browser's native title delay. Scoped to the root, and only the chrome carries
+     data-tip: the chat area keeps its own rich evidence tooltip untouched. */
+  if (window.UpstreemCore && window.UpstreemCore.makeTooltips){
+    window.UpstreemCore.makeTooltips(root, function(){
+      return root.getAttribute('data-theme') === 'dark';
+    });
+  }
 
   window.addEventListener('resize', function(){ moveThumb(); });
 

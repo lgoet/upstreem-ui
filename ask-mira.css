@@ -765,10 +765,6 @@
   .am-cat-name { flex: 1 1 auto; min-width: 0; }
   #ask-mira[data-theme="dark"] .am-cat-ic { background: rgba(42,42,42,0.3); border-color: #3a3a3a; box-shadow: 0 1px 4px rgba(0,0,0,.28); }
   #ask-mira[data-theme="dark"] .am-cat-card:hover .am-cat-ic { background: rgba(53,54,56,0.3); color: #ececec; box-shadow: 0 3px 10px rgba(0,0,0,.38); }
-  @media (prefers-color-scheme: dark) {
-    #ask-mira:not([data-theme="light"]):not([data-theme="dark"]) .am-cat-ic { background: rgba(42,42,42,0.3); border-color: #3a3a3a; box-shadow: 0 1px 4px rgba(0,0,0,.28); }
-    #ask-mira:not([data-theme="light"]):not([data-theme="dark"]) .am-cat-card:hover .am-cat-ic { background: rgba(53,54,56,0.3); color: #ececec; box-shadow: 0 3px 10px rgba(0,0,0,.38); }
-  }
   .am-cat-chev { flex: 0 0 auto; display: grid; place-items: center; color: var(--am-muted-2); }
   .am-cat-chev svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
@@ -958,14 +954,6 @@
   #ask-mira[data-theme="dark"] .am-rep-card:hover { background: #2a2a2a; border-color: #707070; }
   #ask-mira[data-theme="dark"] .am-rep-ic { background: rgba(42,42,42,0.3); border-color: #3a3a3a; box-shadow: 0 1px 4px rgba(0,0,0,.28); }
   #ask-mira[data-theme="dark"] .am-rep-card:hover .am-rep-ic { background: rgba(53,54,56,0.3); color: #ececec; box-shadow: 0 3px 10px rgba(0,0,0,.38); }
-  @media (prefers-color-scheme: dark) {
-    #ask-mira:not([data-theme="light"]):not([data-theme="dark"]) .am-rep-card { background: transparent; }
-    #ask-mira:not([data-theme="light"]):not([data-theme="dark"]) .am-rep-card:hover { background: #2a2a2a; border-color: #707070; }
-    #ask-mira:not([data-theme="light"]):not([data-theme="dark"]) .am-rep-ic { background: rgba(42,42,42,0.3); border-color: #3a3a3a; box-shadow: 0 1px 4px rgba(0,0,0,.28); }
-    #ask-mira:not([data-theme="light"]):not([data-theme="dark"]) .am-rep-card:hover .am-rep-ic { background: rgba(53,54,56,0.3); color: #ececec; box-shadow: 0 3px 10px rgba(0,0,0,.38); }
-    #ask-mira:not([data-theme="light"]):not([data-theme="dark"]) .am-rep-edit { background: #2a2a2a; border-color: #3a3a3a; }
-    #ask-mira:not([data-theme="light"]):not([data-theme="dark"]) .am-rep-edit:hover { color: #ececec; border-color: #707070; background: #353638; }
-  }
 
   /* ===================== COMPOSER ===================== */
   .am-composer-area {
@@ -1178,11 +1166,7 @@
   .am-ask-sel .am-ic { width: 14px; height: 14px; }
   @keyframes amAskSelIn { from { opacity: 0; transform: translate(-50%, calc(-100% + 4px)); } to { opacity: 1; transform: translate(-50%, -100%); } }
 
-  #ask-mira[data-theme="dark"] .am-inline-quote-remove:hover,
-  #ask-mira:not([data-theme="light"]) .am-inline-quote-remove:hover { background: rgba(255,255,255,0.08); }
-  @media (prefers-color-scheme: dark) {
-    #ask-mira:not([data-theme="light"]):not([data-theme="dark"]) .am-inline-quote-remove:hover { background: rgba(255,255,255,0.08); }
-  }
+  #ask-mira[data-theme="dark"] .am-inline-quote-remove:hover { background: rgba(255,255,255,0.08); }
 
   .am-actions { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
 
@@ -1489,14 +1473,6 @@
   #ask-mira[data-theme="dark"] .am-dd-menu,
   #ask-mira[data-theme="dark"] .am-cm,
   #ask-mira[data-theme="dark"] .am-cm-submenu { background: #151515; }
-  @media (prefers-color-scheme: dark) {
-    #ask-mira:not([data-theme="light"]):not([data-theme="dark"]) .am-url-pop,
-    #ask-mira:not([data-theme="light"]):not([data-theme="dark"]) .am-rep-range-menu,
-    #ask-mira:not([data-theme="light"]):not([data-theme="dark"]) .am-rep-topics-menu,
-    #ask-mira:not([data-theme="light"]):not([data-theme="dark"]) .am-dd-menu,
-    #ask-mira:not([data-theme="light"]):not([data-theme="dark"]) .am-cm,
-    #ask-mira:not([data-theme="light"]):not([data-theme="dark"]) .am-cm-submenu { background: #151515; }
-  }
 
   /* scrollbars */
   #ask-mira .am-chat::-webkit-scrollbar,
@@ -1695,41 +1671,21 @@
     background-size: 44px 44px;
   }
   #ask-mira[data-theme="dark"] .am-send:hover { background: #a0a0a0; box-shadow: none; }
-  @media (prefers-color-scheme: dark) {
-    #ask-mira:not([data-theme="light"]):not([data-theme="dark"]) .am-send:hover { background: #a0a0a0; box-shadow: none; }
-  }
   #ask-mira[data-theme="dark"] .am-bubble tbody tr:nth-child(even) td { background: rgba(255,255,255,0.022); }
   #ask-mira[data-theme="dark"] .am-ev-pill { background: transparent; border-color: #353535; color: #a0a0a0; }
   #ask-mira[data-theme="dark"] .am-ev-pill:hover { background: #1e1e1e; border-color: #555; }
 
-  /* Inline markers — dark mode (explicit data-theme + prefers-color-scheme fallback) */
+  /* Inline markers — dark mode. Explicit data-theme only; the OS-preference twins that used
+     to sit next to every one of these are gone, see the token block above. */
   #ask-mira[data-theme="dark"] .am-bubble blockquote { border-left-color: #3a3a3a; }
   #ask-mira[data-theme="dark"] .am-bubble span[data-mira-sentiment="positive"]    { background: rgba(34,197,94,0.12);  color:#86efac; }
   #ask-mira[data-theme="dark"] .am-bubble span[data-mira-sentiment="negative"]    { background: rgba(248,113,113,0.18); color:#fecaca; }
   #ask-mira[data-theme="dark"] .am-bubble span[data-mira-source-signal="likely"]  { background: rgba(96,165,250,0.12);  color:#bfdbfe; }
   #ask-mira[data-theme="dark"] .am-bubble span[data-mira-source-signal="unclear"] { background: rgba(251,191,36,0.13);  color:#fde68a; }
-  @media (prefers-color-scheme: dark) {
-    #ask-mira:not([data-theme="light"]):not([data-theme="dark"]) .am-bubble blockquote { border-left-color: #3a3a3a; }
-    #ask-mira:not([data-theme="light"]):not([data-theme="dark"]) .am-bubble span[data-mira-sentiment="positive"]    { background: rgba(34,197,94,0.12);  color:#86efac; }
-    #ask-mira:not([data-theme="light"]):not([data-theme="dark"]) .am-bubble span[data-mira-sentiment="negative"]    { background: rgba(248,113,113,0.18); color:#fecaca; }
-    #ask-mira:not([data-theme="light"]):not([data-theme="dark"]) .am-bubble span[data-mira-source-signal="likely"]  { background: rgba(96,165,250,0.12);  color:#bfdbfe; }
-    #ask-mira:not([data-theme="light"]):not([data-theme="dark"]) .am-bubble span[data-mira-source-signal="unclear"] { background: rgba(251,191,36,0.13);  color:#fde68a; }
-  }
 
   /* Dark-mode hover / focus parity with prompt research */
-  #ask-mira[data-theme="dark"] .am-composer:focus-within,
-  #ask-mira:not([data-theme="light"]) .am-composer:focus-within { border-color: #555; box-shadow: 0 0 0 3px rgba(255,255,255,0.06), var(--am-shadow-sm); }
-  #ask-mira[data-theme="dark"] .am-icon-action:hover,
-  #ask-mira:not([data-theme="light"]) .am-icon-action:hover { background: #2a2a2a; color: #e0e0e0; }
-  #ask-mira[data-theme="dark"] .am-icon-action[aria-expanded="true"],
-  #ask-mira:not([data-theme="light"]) .am-icon-action[aria-expanded="true"] { background: #242424; color: #e0e0e0; }
-  @media (prefers-color-scheme: dark) {
-    #ask-mira:not([data-theme="light"]):not([data-theme="dark"]) .am-composer:focus-within { border-color: #555; box-shadow: 0 0 0 3px rgba(255,255,255,0.06), var(--am-shadow-sm); }
-    #ask-mira:not([data-theme="light"]):not([data-theme="dark"]) .am-icon-action:hover { background: #2a2a2a; color: #e0e0e0; }
-    #ask-mira:not([data-theme="light"]):not([data-theme="dark"]) .am-icon-action[aria-expanded="true"] { background: #242424; color: #e0e0e0; }
-  }
+  #ask-mira[data-theme="dark"] .am-composer:focus-within { border-color: #555; box-shadow: 0 0 0 3px rgba(255,255,255,0.06), var(--am-shadow-sm); }
+  #ask-mira[data-theme="dark"] .am-icon-action:hover { background: #2a2a2a; color: #e0e0e0; }
+  #ask-mira[data-theme="dark"] .am-icon-action[aria-expanded="true"] { background: #242424; color: #e0e0e0; }
   /* topic chips — dark mode (1:1 with the Opportunities page: white text, deeper tints) */
   #ask-mira[data-theme="dark"] .uo-tag { color: #e0e0e0; background: color-mix(in srgb, var(--uo-tag, #6b7280) 22%, transparent); border-color: color-mix(in srgb, var(--uo-tag, #6b7280) 45%, transparent); }
-  @media (prefers-color-scheme: dark) {
-    #ask-mira:not([data-theme="light"]):not([data-theme="dark"]) .uo-tag { color: #e0e0e0; background: color-mix(in srgb, var(--uo-tag, #6b7280) 22%, transparent); border-color: color-mix(in srgb, var(--uo-tag, #6b7280) 45%, transparent); }
-  }
