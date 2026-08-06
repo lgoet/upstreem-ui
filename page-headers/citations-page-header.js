@@ -30,13 +30,13 @@
     [100, 300, 800, 1800].forEach(function(ms){ setTimeout(cphRun, ms); });
   }
 
-  /* Feather "globe" / "link-2" -- no existing icon for either concept elsewhere in this repo to
-     reuse, so these are the standard Feather glyphs for "a domain" and "a URL/link". */
+  /* Feather "globe" / "link" (not "link-2") -- no existing icon for either concept elsewhere in
+     this repo to reuse, so these are the standard Feather glyphs for "a domain" and "a URL/link". */
   var PAGES = [
     { value: "domains", label: "Domains",
       icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>' },
     { value: "urls", label: "URLs",
-      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 5 5 5 5 0 0 1-5 5h-3m-6 0H6a5 5 0 0 1-5-5 5 5 0 0 1 5-5h3"/><line x1="8" y1="12" x2="16" y2="12"/></svg>' }
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>' }
   ];
 
   function cphRun(){

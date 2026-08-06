@@ -1473,7 +1473,7 @@
 .up-ph-iconbtn.is-spinning svg { animation: up-ph-spin 1s ease-in-out; }
 
 /* ---------- subpage nav: N tabs + a sliding active indicator (built by UC.makePageNav) ---------- */
-.up-ph-nav { display: flex; position: relative; margin-top: 32px; }
+.up-ph-nav { display: flex; position: relative; margin-top: 32px; gap: 4px; }
 /* The continuous 1px baseline every item's own indicator sits on top of -- ONE shared separator
    spanning the full nav width, not a copy under each item. Both this and .up-ph-navunderline
    anchor to the same bottom:0, so neither ever causes a layout shift switching between the 1px
