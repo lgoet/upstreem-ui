@@ -1,0 +1,192 @@
+<!--
+  UPSTREEM — OPPORTUNITIES (Kanban board)
+
+  A kanban board of AI-visibility opportunities: four status lanes (Pending / In Progress / Done /
+  Ignored), a list alternative, and a right-hand detail drawer per card. Cards are dragged between
+  lanes, or moved via the drawer's status switcher, or moved a whole lane at a time via the column
+  kebab.
+
+  Everything visual comes from core.css's shared kit (icon buttons, dropdowns, switches, the
+  segmented control, topic chips, favicon boxes, tooltips, skeletons) — the board only adds the
+  lane layout, the card, the potential bars and the drawer. Load core.css/core.js first; the loader
+  at the bottom does that for you.
+
+  ── Bubble dynamic values on the root element ────────────────────────────────
+  data-instance = "ROOTID_[dynamic id]"   unique per placement
+  data-cdn-pin  = commit hash to load from, e.g. "71ed61f" — leave EMPTY (or leave the literal
+                  "CDN_PIN" placeholder) to load @main. Point this at a Bubble constant/Option Set
+                  field you control so every placement can be repinned in one edit.
+  data-isdark   = "yes" / "no"
+
+  ── Events to Bubble ─────────────────────────────────────────────────────────
+  Unlike the table components, this one does NOT read its function names off data-* attributes —
+  it calls six fixed globals directly. Create these as Toolbox "JavaScript to Bubble" elements with
+  exactly these names:
+
+  | Action                       | Bubble function                            | Payload (ONE JSON string) |
+  |------------------------------|--------------------------------------------|---------------------------|
+  | Card moved (drag or drawer)  | bubble_fn_opportunity_change_status        | {"opportunity_id":"…","status":"In Progress","status_key":"in_progress","previous_status":"Created","previous_status_key":"pending"} |
+  | Whole lane moved (kebab)     | bubble_fn_opportunity_move_all             | {"from_status_key":"pending","from_status":"Created","to_status_key":"done","to_status":"Done","status":"Done","opportunity_ids":["…","…"]} |
+  | "Create this with AI"        | bubble_fn_opportunity_create_with_ai       | {"opportunity_id":"…"} |
+  | Source link / Open-URL icon  | bubble_fn_opportunity_open_url             | {"opportunity_id":"…","lead_url":"https://…","lead_title":"…","lead_domain":"…"} |
+  | Ignore icon in the drawer    | bubble_fn_opportunity_ignore               | {"opportunity_id":"…"} |
+  | Mentioned-competitor click   | bubble_fn_opportunity_competitor_click     | {"opportunity_id":"…","competitor_name":"…","company_id":"…","favicon_url":"…"} |
+
+  Regex for a Bubble "extract" step, same convention as every other component:
+    (?<="opportunity_id":")[^"]*      (?<="status":")[^"]*        (?<="status_key":")[^"]*
+    (?<="previous_status":")[^"]*     (?<="previous_status_key":")[^"]*
+    (?<="from_status_key":")[^"]*     (?<="to_status_key":")[^"]*
+    (?<="lead_url":")[^"]*            (?<="lead_title":")[^"]*    (?<="lead_domain":")[^"]*
+    (?<="competitor_name":")[^"]*     (?<="company_id":")[^"]*
+  opportunity_ids is a JSON ARRAY, not a comma string — extract it with (?<="opportunity_ids":\[)[^\]]*
+  and split on "," , or handle the whole payload in a Backend Workflow instead.
+
+  NOTE: the "Ignore" icon fires ignore AND then a normal change_status to "Ignored" — two events,
+  by design, so a workflow can react to the explicit ignore separately from a plain lane move.
+
+  IMPORTANT: the board mutates its own copy of the data the moment a card moves, so the UI never
+  waits on a round trip. Your workflow only has to persist the change; do NOT push the whole list
+  back in afterwards on every move, or the board will visibly re-render under the user.
+
+  ── Filling the component ─────────────────────────────────────────────────────
+  One Run-JS step per data load:
+
+    window.opportunitiesSetItems(LIST);            // array (or a JSON string of one)
+    window.opportunitiesSetLoading("yes"/"no");    // skeleton lanes on/off
+    window.opportunitiesSetTheme("dark"/"light");  // optional, data-isdark also works
+    window.opportunitiesSetMode("board"/"list");
+    window.opportunitiesSetShowIgnored(true/false);
+    window.opportunitiesSetVisibleBoards({pending:true,in_progress:true,done:true,ignored:false});
+    window.opportunitiesOpenDetail("OPPORTUNITY_ID");
+    window.opportunitiesCloseDetail();
+
+  Until opportunitiesSetItems() is called the board shows skeleton lanes; after 12 seconds without
+  data it falls back to the empty state so a broken RPC does not leave a shimmering board forever.
+
+  One item looks like this (only id/headline are strictly required, everything else degrades):
+
+    {
+      "id": "opp_1",
+      "label": "Create matching content",
+      "recommendation_type": "create_matching_content",   // also: build_presence | get_listed | improve_existing_content
+      "headline": "Reddit thread ranks for 'beste CRM Software' but you're absent",
+      "reason": "Competitors are mentioned 4x in this thread while your brand never appears.",
+      "status": "Created",                    // Created | In Progress | Done | Ignored
+      "priority_label": "High",               // High | Medium | Low  (drives the potential bars)
+      "priority_score": 88,                   // fallback when priority_label is missing
+      "created_at": "2026-08-01T10:00:00Z",
+      "lead_title": "Welches CRM nutzt ihr 2026?",
+      "lead_domain": "reddit.com",
+      "lead_favicon": "https://www.google.com/s2/favicons?domain=reddit.com&sz=64",
+      "lead_url": "https://reddit.com/…",
+      "effective_citation_type": "UGC_Community",  // Editorial | UGC_Community | Knowledge_Base |
+                                                   // Brand_Platform | Institutional | Competition | You
+      "market": "DE",
+      "source_scope": "external_only",        // only this value passes the "External only" filter
+      "competitor_count": 7,
+      "global_share_pct": 12.4,
+      "trend_pct": -2.1,
+      "gap": -18.3,
+      "your_conversion": 8.2,
+      "avg_competitor_conversion": 24.5,
+      "supporting_urls_count": 3,
+      "topics": [ {"name":"CRM","emoji":"💼","hex_light":"#1860dc"} ],
+      "mentioned_competitors": [ {"name":"HubSpot","company_id":"c1","favicon_url":"https://…"} ]
+    }
+
+  A card whose effective_citation_type is "UGC_Community" hides the "Create this with AI" button —
+  you cannot publish into someone else's forum thread, so the action would be a dead end.
+-->
+
+<div class="up-root uo-root"
+     data-instance="ROOTID_[dynamic id]"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="IS_DARK">
+
+  <div class="up-head uo-head">
+    <div class="up-heading has-count">
+      <span class="up-head-label">Active Opportunities</span>
+      <span class="up-head-sep"></span>
+      <span class="up-head-count uo-total">0</span>
+    </div>
+
+    <div class="up-head-tools">
+      <div class="up-search">
+        <button class="up-search-btn up-iconbtn" type="button" data-tip="Search" aria-label="Search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+        <div class="up-search-box">
+          <input class="up-search-input" type="text" placeholder="Search opportunities..." autocomplete="off" spellcheck="false" aria-label="Search opportunities"/>
+          <button class="up-search-clear" type="button" aria-label="Clear search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="uo-popwrap">
+        <button class="uo-sort-btn up-iconbtn" type="button" data-tip="Sort" aria-label="Sort" aria-haspopup="menu" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+        </button>
+        <div class="up-menu uo-sort-pop" role="menu" aria-hidden="true">
+          <div class="up-pop-head">Sort by</div>
+          <div class="up-pop-opt is-active" role="menuitem" data-sort="priority">Priority<svg class="up-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="up-pop-opt" role="menuitem" data-sort="newest">Newest<svg class="up-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="up-pop-div"></div>
+          <div class="up-pop-row uo-toggle-external"><span class="up-pop-label">External only</span><span class="up-switch uo-switch-external" role="switch"></span></div>
+        </div>
+      </div>
+
+      <div class="up-seg uo-mode" role="tablist" aria-label="View">
+        <button class="up-seg-btn is-active" type="button" role="tab" data-mode="board" data-tip="Board view">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1.5"/><rect x="14" y="3" width="7" height="11" rx="1.5"/></svg>Board</button>
+        <button class="up-seg-btn" type="button" role="tab" data-mode="list" data-tip="List view">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>List</button>
+      </div>
+
+      <div class="uo-popwrap">
+        <button class="uo-settings-btn up-iconbtn" type="button" data-tip="Board settings" aria-label="Board settings" aria-haspopup="menu" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+        <div class="up-menu uo-settings-pop" role="menu" aria-hidden="true">
+          <div class="up-pop-head">Lanes</div>
+          <div class="up-pop-row" data-board="pending"><span class="up-pop-label"><span class="uo-col-dot" style="background:#9ca3af;"></span>Pending</span><span class="up-switch is-on" role="switch"></span></div>
+          <div class="up-pop-row" data-board="in_progress"><span class="up-pop-label"><span class="uo-col-dot" style="background:#2384E2;"></span>In Progress</span><span class="up-switch is-on" role="switch"></span></div>
+          <div class="up-pop-row" data-board="done"><span class="up-pop-label"><span class="uo-col-dot" style="background:#15803d;"></span>Done</span><span class="up-switch is-on" role="switch"></span></div>
+          <div class="up-pop-row" data-board="ignored"><span class="up-pop-label"><span class="uo-col-dot" style="background:#b4451f;"></span>Ignored</span><span class="up-switch" role="switch"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- opportunities.js renders the lanes / list into this. -->
+  <div class="uo-stage"></div>
+
+  <div class="uo-scrim"></div>
+  <div class="uo-modal" role="dialog" aria-modal="true"></div>
+
+  <!-- Optional: paste a JSON array here to render without a Run-JS step (useful while designing). -->
+  <script class="uo-data-json" type="application/json">[]</script>
+</div>
+<script>
+/* Loads this component's CSS/JS from jsDelivr, pinned to the commit hash you put in data-cdn-pin on
+   the root div above (falls back to @main only if data-cdn-pin is left blank or at the literal
+   "CDN_PIN" placeholder). Byte-for-byte the same loader every other component in this repo ships —
+   see prompts_table_bubble.html's own copy for the full reasoning in comments. */
+(function(){
+  function readPin(cls){
+    var els = document.getElementsByClassName(cls), i, p;
+    for (i = 0; i < els.length; i++){
+      p = (els[i].getAttribute("data-cdn-pin") || "").trim();
+      if (p && p !== "CDN_PIN") return p;
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("uo-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(url, make){ if (L[url]) return; L[url] = 1; make(url); }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+  css("core.css"); css("opportunities.css");
+  js("core.js"); js("opportunities.js");
+})();
+</script>

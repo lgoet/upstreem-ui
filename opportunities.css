@@ -1,0 +1,301 @@
+/* upstreem opportunities.css — Kanban board for AI-visibility opportunities.
+
+   This file holds ONLY what is genuinely specific to a kanban board: the column layout, the card,
+   the potential-bar widget, and the right-hand detail drawer. Everything the component shares with
+   the rest of the app -- colour tokens, icon buttons, dropdown menus, switches, the segmented
+   control, topic chips, favicon boxes, tooltips, skeleton shimmer -- comes from core.css, because
+   the component root carries ".up-root" (see STYLEGUIDE §25).
+
+   The standalone version this was migrated from shipped its own complete design system: a full
+   "uo" token set whose values were already near-identical to core's, plus hand copies of the icon
+   button, popover, switch, segmented control, tooltip, skeleton and chip. 121 of those duplicated
+   declarations are gone -- they are the reason the board looked subtly unlike every other screen
+   (bordered icon buttons, a permanently-open search field, pill-shaped counters, two different
+   tooltip systems). The component's JS behaviour, its event contract and its public API are
+   unchanged; this was a purely visual migration. */
+
+/* ---------- root ----------
+   .up-root supplies every colour token, the font stack and the flex column; only the padding and
+   the two genuinely local tokens live here. Kept as a separate class from .up-root so a future
+   second board on the same page stays independent. */
+.uo-root { min-height: 480px; padding: 16px 16px 32px; overflow: hidden; }
+
+.uo-root {
+  /* Column surface: a hair off the page background so the columns read as lanes without needing a
+     border. Not a core token because no other component has a "lane" surface -- core's
+     --vc-heading-bg is a hover/emphasis tone and is noticeably darker here. */
+  --uo-col-bg: #f8f9f9;
+  /* Potential-bar gradient ends. The bars fade from muted to primary across the four steps, so a
+     4/4 bar set reads as a single left-to-right ramp rather than four identical blocks. */
+  --uo-pot-a: #c4c9d0;
+  --uo-pot-b: var(--vc-text);
+}
+.up-root[data-theme="dark"].uo-root { --uo-col-bg: #181818; --uo-pot-a: #4a4f56; }
+
+/* ---------- toolbar ----------
+   .up-head / .up-heading / .up-head-tools / .up-search / .up-iconbtn / .up-seg all come from
+   core.css. The only local rule is the wrap behaviour: a board toolbar carries more controls than
+   a table's, so it is allowed to wrap onto a second line instead of forcing a takeover. */
+.uo-head { flex: 0 0 auto; height: auto; min-height: 32px; flex-wrap: wrap; row-gap: 8px; }
+/* Positioned ancestor for the two toolbar dropdowns. core's .up-menu is position:absolute, so
+   without this it would anchor to the root and open far from the button that spawned it. */
+.uo-popwrap { position: relative; flex: 0 0 auto; }
+/* Open-state for a dropdown trigger (§6a): same treatment core gives .up-sort-btn, scoped to this
+   component because core has no generic .up-iconbtn.is-active rule to inherit. */
+.uo-root .up-iconbtn.is-active { color: var(--vc-text); background: var(--vc-heading-bg); }
+
+/* ---------- board ---------- */
+.uo-stage { flex: 1 1 auto; min-height: 0; position: relative; }
+.uo-board { height: 100%; display: flex; gap: 16px; align-items: stretch; min-height: 0; }
+
+.uo-col {
+  flex: 1 1 0; min-width: 300px; display: flex; flex-direction: column; min-height: 0;
+  background: var(--uo-col-bg); border: 0; border-radius: 16px; padding-bottom: 12px;
+  transition: background 140ms ease, box-shadow 140ms ease;
+}
+/* Drop target: the lane tints and gets an inset ring rather than a real border, so the column does
+   not change size mid-drag and shove the other lanes sideways. */
+.uo-col.is-drop-target { background: var(--vc-heading-bg); box-shadow: inset 0 0 0 2px var(--vc-hover-border); }
+
+.uo-col-head { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; padding: 16px 16px 12px; }
+.uo-col-dot { width: 8px; height: 8px; border-radius: 999px; flex: 0 0 auto; }
+/* Same 14px/500 as .up-heading -- a column title is a heading, and the standalone version's
+   13.5px/600 was the single biggest reason the board read as a different app. */
+.uo-col-title { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
+/* Count follows the app-wide "heading, dot, count" pattern (.up-head-sep + .up-head-count) instead
+   of the bordered pill the standalone version drew. */
+.uo-col-count { font-size: 14px; font-weight: 500; color: var(--vc-muted); font-variant-numeric: tabular-nums; }
+.uo-col-menu-wrap { margin-left: auto; position: relative; }
+
+.uo-col-body {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 6px 12px 0;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.uo-col-body::-webkit-scrollbar { width: 8px; }
+.uo-col-body::-webkit-scrollbar-thumb { background: var(--vc-border); border-radius: 999px; }
+.uo-col-body::-webkit-scrollbar-track { background: transparent; }
+
+.uo-col-empty {
+  margin-top: 8px; padding: 22px 12px; border: 1px dashed var(--vc-border); border-radius: 12px;
+  text-align: center; color: var(--vc-third); font-size: 13px;
+}
+
+/* Stacked layout: the element is too narrow to show the visible columns at their 300px minimum,
+   so the lanes go full width underneath each other and the board itself scrolls. */
+.uo-root.is-stacked .uo-board { flex-direction: column; align-items: stretch; overflow-x: hidden; overflow-y: auto; gap: 12px; height: 100%; }
+.uo-root.is-stacked .uo-col { min-width: 0; width: 100%; flex: 0 0 auto; }
+.uo-root.is-stacked .uo-col-body { overflow: visible; }
+
+/* ---------- card ---------- */
+.uo-card {
+  position: relative; background: var(--vc-bg); border: 1px solid var(--vc-border);
+  border-radius: 16px; padding: 16px; cursor: pointer; user-select: none;
+  transition: border-color 140ms ease, background 140ms ease;
+}
+.uo-card:hover { border-color: var(--vc-hover-border); background: var(--vt-row-hover); }
+.uo-card.is-dragging { opacity: 0.45; }
+
+.uo-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+/* Recommendation-type label. Same 11px/600/uppercase/letter-spacing as core's .up-pop-head -- the
+   app's one "small caps label" treatment -- on the shared emphasis surface. */
+.uo-eyebrow {
+  display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 9px;
+  border-radius: 8px; background: var(--vc-heading-bg); color: var(--vc-muted);
+  font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+  min-width: 0; max-width: 100%;
+}
+.uo-eyebrow svg { width: 12px; height: 12px; flex: 0 0 auto; }
+.uo-eyebrow span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.uo-card-title {
+  margin: 0; font-size: 15px; font-weight: 600; line-height: 1.35; letter-spacing: -0.015em;
+  color: var(--vc-text);
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+}
+.uo-card-reason {
+  margin: 8px 0 0; font-size: 13px; line-height: 1.55; color: var(--vc-muted);
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+}
+
+.uo-source { display: flex; align-items: center; gap: 10px; margin-top: 16px; min-width: 0; }
+.uo-source-meta { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.uo-source-title { font-size: 13px; font-weight: 500; color: var(--vc-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.uo-source-domain { font-size: 12px; color: var(--vc-third); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Topic chips are core's .up-topicchip. Only the row wrapper is local -- clampTagsTwoRows() in the
+   JS measures offsetTop against this container to decide what to fold into the "+N" chip. */
+.uo-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; overflow: hidden; }
+/* Neutral counterpart to .up-topicchip for the folded remainder: same 28px box and radius, no tint,
+   because it stands for several differently-coloured tags at once. */
+.uo-tagmore {
+  height: 28px; padding: 0 10px; border-radius: 8px; display: inline-flex; align-items: center;
+  flex: 0 0 auto; border: 1px solid transparent; background: var(--vc-heading-bg);
+  color: var(--vc-muted); font-size: 12px; line-height: 1; font-weight: 500;
+  white-space: nowrap; cursor: default;
+}
+
+.uo-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 16px; }
+.uo-date { font-size: 12px; color: var(--vc-third); font-weight: 500; display: inline-flex; align-items: center; gap: 5px; }
+.uo-date svg { width: 13px; height: 13px; flex: 0 0 auto; }
+
+/* ---------- potential bars ----------
+   Genuinely new: no core widget shows a 1-to-4 strength rating. Four 5px bars, filled left to
+   right, each carrying its own slice of one shared gradient so the filled run reads as a single
+   ramp instead of four separate blocks. The background-position offsets below are what cut that
+   one 29px-wide gradient into per-bar slices. */
+.uo-pot { display: inline-flex; align-items: center; flex: 0 0 auto; }
+.uo-pot-bars { display: flex; align-items: center; gap: 3px; }
+.uo-pot-bar { width: 5px; height: 15px; border-radius: 4px; background: var(--vc-border); }
+.uo-pot-bar.is-on {
+  background-image: linear-gradient(90deg, var(--uo-pot-a), var(--uo-pot-b));
+  background-size: 29px 100%; background-repeat: no-repeat;
+}
+.uo-pot-bar.is-on.p1 { background-position: 0 0; }
+.uo-pot-bar.is-on.p2 { background-position: -8px 0; }
+.uo-pot-bar.is-on.p3 { background-position: -16px 0; }
+.uo-pot-bar.is-on.p4 { background-position: -24px 0; }
+/* The explainer's own preview copy of the bars sits on the light panel inside the dark popover, so
+   it needs the light-mode ramp regardless of the page theme. */
+.up-explain .uo-pot-bar { background: #e0e2e6; }
+.up-explain .uo-pot-bar.is-on { background-image: linear-gradient(90deg, #c4c9d0, #1f1f1b); }
+
+/* ---------- list mode ---------- */
+.uo-list { height: 100%; overflow-y: auto; padding-right: 2px; }
+.uo-list::-webkit-scrollbar { width: 8px; }
+.uo-list::-webkit-scrollbar-thumb { background: var(--vc-border); border-radius: 999px; }
+.uo-list-section { margin-bottom: 18px; }
+.uo-list-sechead { display: flex; align-items: center; gap: 8px; padding: 4px 4px 10px; }
+.uo-list-rows { display: flex; flex-direction: column; gap: 8px; }
+.uo-row {
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 16px;
+  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 12px;
+  padding: 12px 15px; cursor: pointer; transition: border-color 140ms ease, background 140ms ease;
+}
+.uo-row:hover { border-color: var(--vc-hover-border); background: var(--vt-row-hover); }
+.uo-row-main { min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.uo-row-title { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.uo-row-sub { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.uo-row-sub .up-logo-box { width: 18px; height: 18px; border-radius: 5px; }
+.uo-row-sub .up-logo-box img { width: 16px; height: 16px; border-radius: 4px; }
+.uo-row-domain { font-size: 12px; color: var(--vc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.uo-row-right { display: flex; align-items: center; gap: 16px; flex: 0 0 auto; }
+.uo-row-tags { display: flex; gap: 6px; }
+.uo-dot-sep { width: 3px; height: 3px; border-radius: 999px; background: var(--vc-third); flex: 0 0 auto; }
+
+/* ---------- detail drawer ----------
+   A right-hand slide-in panel: new to this component (core has a centred modal, §27, which is the
+   wrong shape for a record you read alongside the board). The scrim blurs the board rather than
+   dimming it, so the lane a card came from stays recognisable underneath. */
+.uo-scrim {
+  position: absolute; inset: 0; z-index: 9; display: none; background: transparent;
+  -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+  opacity: 0; transition: opacity 220ms ease;
+}
+.uo-modal {
+  position: absolute; top: 6px; right: 6px; bottom: 6px; z-index: 10; width: min(720px, 86%);
+  display: none; flex-direction: column;
+  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 16px;
+  box-shadow: 0 20px 48px rgba(0,0,0,.22); overflow: hidden;
+  transform: translateX(120%); transition: transform 260ms cubic-bezier(0.22,0.61,0.36,1);
+}
+.uo-root.detail-open .uo-scrim { display: block; }
+.uo-root.detail-open .uo-modal { display: flex; }
+.uo-root.detail-in .uo-scrim { opacity: 1; }
+.uo-root.detail-in .uo-modal { transform: translateX(0); }
+
+.uo-m-head { flex: 0 0 auto; padding: 16px 16px 14px; border-bottom: 1px solid var(--vc-border); position: relative; }
+.uo-m-actions { position: absolute; top: 12px; right: 12px; display: inline-flex; align-items: center; gap: 4px; }
+.uo-m-source { display: flex; align-items: center; gap: 10px; min-width: 0; padding-right: 116px; }
+.uo-m-source .up-logo-box { width: 38px; height: 38px; border-radius: 10px; }
+.uo-m-source .up-logo-box img { width: 36px; height: 36px; border-radius: 9px; }
+.uo-m-source-meta { min-width: 0; }
+.uo-m-source-title { font-size: 14px; font-weight: 500; color: var(--vc-text); display: flex; align-items: center; gap: 7px; }
+.uo-m-source-link { cursor: pointer; }
+.uo-m-source-link:hover { text-decoration: underline; }
+.uo-m-source-row { display: flex; align-items: center; gap: 8px; margin-top: 5px; font-size: 12px; color: var(--vc-muted); flex-wrap: wrap; }
+.uo-cite { font-weight: 500; color: var(--uo-cite, var(--vc-muted)); }
+
+.uo-m-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 20px 16px 24px; }
+.uo-m-body::-webkit-scrollbar { width: 8px; }
+.uo-m-body::-webkit-scrollbar-thumb { background: var(--vc-border); border-radius: 999px; }
+.uo-m-eyebrow { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.uo-m-titlerow { display: flex; align-items: flex-start; gap: 10px; }
+.uo-m-title { margin: 12px 0 0; flex: 1 1 auto; min-width: 0; font-size: 20px; font-weight: 500; line-height: 1.28; letter-spacing: -0.02em; color: var(--vc-text); }
+.uo-m-copy { margin-top: 12px; opacity: 0; transition: opacity 140ms ease; }
+.uo-m-textwrap:hover .uo-m-copy { opacity: 1; }
+.uo-m-copy .uo-copy-ok { display: none; }
+.uo-m-copy.is-copied .uo-copy-ic { display: none; }
+.uo-m-copy.is-copied .uo-copy-ok { display: block; color: var(--vt-up); }
+.uo-m-reason { margin: 12px 0 0; font-size: 14px; line-height: 1.6; color: var(--vc-muted); }
+
+/* Section labels inside the drawer: same small-caps treatment as .up-pop-head, so "PERFORMANCE"
+   and a dropdown's "SORT BY" read as the same class of label. */
+.uo-m-section-title { margin: 28px 0 12px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--vc-muted); }
+
+.uo-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.uo-kpi { border: 1px solid var(--vc-border); border-radius: 12px; background: var(--vc-bg); padding: 12px 13px; min-width: 0; }
+.uo-kpi-label { font-size: 12px; color: var(--vc-muted); font-weight: 400; display: flex; align-items: center; gap: 5px; }
+.uo-kpi-val { margin-top: 6px; font-size: 17px; font-weight: 500; letter-spacing: -0.02em; color: var(--vc-text); display: flex; align-items: center; gap: 7px; font-variant-numeric: tabular-nums; }
+.uo-kpi-val.is-pos { color: var(--vt-up); }
+.uo-kpi-val.is-neg { color: var(--vt-down); }
+/* The info icon behaves exactly like a table column header's: invisible until the KPI is hovered,
+   14px, third colour, no cursor change (§7C). */
+.uo-kpi-info { display: inline-flex; align-items: center; color: var(--vc-third); opacity: 0; transition: opacity 140ms ease; flex: 0 0 auto; }
+.uo-kpi:hover .uo-kpi-info { opacity: 1; }
+.uo-kpi-info svg { width: 14px; height: 14px; display: block; }
+
+.uo-comp-list { display: flex; flex-direction: column; gap: 8px; }
+.uo-comp { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--vc-border); border-radius: 11px; background: var(--vc-bg); cursor: pointer; transition: background 140ms ease, border-color 140ms ease; }
+.uo-comp:hover { background: var(--vt-row-hover); border-color: var(--vc-hover-border); }
+.uo-comp .up-logo-box { width: 22px; height: 22px; border-radius: 6px; }
+.uo-comp .up-logo-box img { width: 20px; height: 20px; border-radius: 5px; }
+.uo-comp-name { font-size: 14px; font-weight: 500; color: var(--vc-text); }
+.uo-comp-more { display: inline-flex; align-self: flex-start; align-items: center; height: 28px; padding: 0 12px; border-radius: 8px; background: var(--vc-heading-bg); color: var(--vc-muted); font-size: 12px; font-weight: 500; }
+
+.uo-meta-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 0 18px; }
+.uo-meta-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--vc-border); }
+.uo-meta-k { font-size: 13px; color: var(--vc-muted); }
+.uo-meta-v { font-size: 13px; font-weight: 500; color: var(--vc-text); text-align: right; }
+
+.uo-m-foot { flex: 0 0 auto; padding: 12px 16px 16px; border-top: 1px solid var(--vc-border); display: flex; flex-direction: column; gap: 10px; }
+/* Status switcher: the same .up-seg control as the toolbar's Board/List, just stretched to fill
+   the footer. The standalone version had a third, separately-styled segmented control here. */
+.uo-m-foot .up-seg { width: 100%; }
+.uo-m-foot .up-seg-btn { flex: 1 1 0; }
+/* Full-width primary action. .up-export supplies the fill and hover; only the drawer-footer size
+   (44px, wider radius) is local -- a footer CTA is a different weight from a toolbar button. */
+.uo-cta { width: 100%; height: 44px; border-radius: 12px; font-size: 14px; justify-content: center; gap: 8px; }
+.uo-cta svg { width: 18px; height: 18px; }
+
+/* ---------- skeleton ----------
+   Uses core's --vc-sk token and uutpulse keyframes, the same loading treatment every table shows,
+   instead of the local shimmer gradient the standalone version animated. */
+.uo-skel { background: var(--vc-sk); border-radius: 6px; animation: uutpulse 1.2s ease-in-out infinite; }
+.uo-skel-card { background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; }
+.uo-skel-chip { width: 124px; height: 24px; border-radius: 8px; }
+.uo-skel-title { width: 100%; height: 14px; margin-top: 14px; }
+.uo-skel-title.short { width: 62%; margin-top: 8px; }
+.uo-skel-text { width: 100%; height: 11px; border-radius: 5px; margin-top: 14px; }
+.uo-skel-text.short { width: 78%; margin-top: 7px; }
+.uo-skel-source { display: flex; align-items: center; gap: 10px; margin-top: 18px; }
+.uo-skel-fav { width: 24px; height: 24px; border-radius: 8px; flex: 0 0 auto; }
+.uo-skel-source .uo-skel-line { flex: 1 1 auto; max-width: 60%; height: 12px; border-radius: 5px; }
+.uo-skel-tags { display: flex; gap: 6px; margin-top: 16px; }
+.uo-skel-tag { width: 98px; height: 28px; border-radius: 8px; }
+.uo-skel-tag.sm { width: 64px; }
+.uo-skel-cnt { width: 18px; height: 14px; border-radius: 4px; }
+
+/* ---------- responsive ---------- */
+@media (max-width: 720px) {
+  .uo-head { row-gap: 8px; }
+  .uo-row { grid-template-columns: 1fr; gap: 10px; }
+  .uo-row-right { justify-content: space-between; }
+  .uo-row-tags { display: none; }
+  /* Full-screen drawer on phones: a 86%-wide side panel on a 380px viewport is not a side panel. */
+  .uo-modal { position: fixed; inset: 0; width: auto; border-radius: 0; }
+  .uo-m-source { padding-right: 108px; }
+  .uo-meta-grid { grid-template-columns: minmax(0,1fr); }
+}
+@media (max-width: 420px) {
+  .uo-card-title { font-size: 14.5px; }
+}
