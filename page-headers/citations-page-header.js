@@ -15,7 +15,19 @@
       if (window.console) console.error("UpstreemCore (core.js) not loaded");
       return;
     }
+    var UC = window.UpstreemCore;
     cphRun();
+    /* Bubble replaces this element's whole markup block (script tag included) once the dynamic
+       expressions behind data-brand-name/-logo resolve -- which can happen moments after the very
+       first paint. The replacement root is un-initialized, and this file's own <script> does NOT
+       run again to catch it: the CDN loader's dedupe registry already has these asset URLs marked
+       loaded, so the freshly re-injected script tag's IIFE is a no-op. Every other page header in
+       this repo catches that the same way -- core.js' shared watchRoots() runs a single page-wide
+       MutationObserver (+ heartbeat) that notices any newly-appeared root and re-runs init on it,
+       no re-fetch needed. (See prompts-page-header.js's own history: forgetting this was the exact
+       cause of "brand row + nav never show up, no events fire" there too.) */
+    if (UC.watchRoots) UC.watchRoots("cph-root", cphRun);
+    [100, 300, 800, 1800].forEach(function(ms){ setTimeout(cphRun, ms); });
   }
 
   /* Feather "globe" / "link-2" -- no existing icon for either concept elsewhere in this repo to
