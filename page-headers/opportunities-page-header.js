@@ -3,11 +3,15 @@
    UC.isYes/UC.makeFire and the shared .up-root CSS variables plus the Page Header Kit's meta/
    heading/description styling (core.css's ".up-ph-*" classes). Same bare layout as
    performance-page-header.js otherwise -- no subpage nav, no separator row -- except for the one
-   top-right "Search for Opportunities" button, which reuses the SAME primary-button classes
-   brands-page-header.js's "+ Add Brand" button uses (".up-ph-addbtn.up-export" -- filled, and
-   already carries the standard -16px/-32px top-right margin core.css defines once for the whole
-   kit), just with a different icon/label. No page-specific CSS file needed because of that -- the
-   margin and the filled look both come from core.css already.
+   top-right "Generate new Opportunities" button, which reuses the SAME primary-button classes
+   brands-page-header.js's "+ Add Brand" button uses (".up-ph-addbtn.up-export" -- filled), just
+   with a different icon/label. opportunities-page-header.css adds the single rule that is specific
+   to this page: the button sits 16px lower than the other headers' top-right content, because
+   there it pairs with a meta row and here it stands alone against the page's top edge.
+
+   The button's event is still named ophSearch. It was a "Search for Opportunities" button first;
+   renaming the event to match the new label would break the Bubble workflow already bound to it,
+   which is not worth a cosmetic rename.
 
    watchRoots is still wired into the boot sequence: Bubble replaces this element's whole markup
    block once the dynamic expressions behind data-brand-name/-logo resolve, same as every other

@@ -2,7 +2,7 @@
   UPSTREEM — OPPORTUNITIES PAGE HEADER
 
   Sits at the very top of the Opportunities page: meta row, page heading + description on the
-  left, one "Search for Opportunities" button top right. Same page-headers/ family as
+  left, one "Generate new Opportunities" button top right. Same page-headers/ family as
   prompts-page-header.js / dashboard-page-header.js / citations-page-header.js /
   brands-page-header.js / performance-page-header.js -- all the actual visual styling lives in
   core.css/core.js's shared Page Header Kit (the ".up-ph-*" classes) so every page header gets it
@@ -10,11 +10,11 @@
   button.
 
   Same bare layout as performance-page-header.js otherwise: NO subpage nav, NO separator row
-  underneath. The Search button reuses the exact SAME primary-button classes
-  brands-page-header.js's "+ Add Brand" button uses (".up-ph-addbtn.up-export" -- filled, bold,
-  same -16px/-32px top-right margin every page header's top-right content already sits at), just
-  with a search icon/label instead -- same visual weight as every other page header's top-right
-  button, no page-specific CSS needed for it.
+  underneath. The Generate button reuses the exact SAME primary-button classes
+  brands-page-header.js's "+ Add Brand" button uses (".up-ph-addbtn.up-export" -- filled, bold),
+  just with a different icon/label. The one page-specific rule is in
+  opportunities-page-header.css: this button sits 16px lower than the other headers' top-right
+  content, because there it pairs with the meta row and here it stands alone.
 
   Almost nothing here is dynamic. Like the other page headers, this component has no server data to
   wait on: no render()/reset() functions, no loading state. It reads its two dynamic inputs straight
@@ -35,8 +35,9 @@
   data-search-fn = "bubble_fn_ophSearch_[dynamic id]"
 
   Fires an empty JSON payload ({}) — the button carries no data, it only tells Bubble it was
-  clicked. This component does not run any search itself; wiring the resulting workflow up to an
-  actual search/filter view is a Bubble-side decision.
+  clicked. This component does not generate anything itself; wiring the resulting workflow up to the
+  actual generation run is a Bubble-side decision. (The event name stays ophSearch — renaming it
+  would break the workflow already bound to it.)
 
   ── Filling the component ─────────────────────────────────────────────────────
   Nothing to fill — every attribute above is set once when the element is placed (Property
@@ -63,8 +64,8 @@
       <p class="up-ph-desc">Manage tasks, prioritize opportunities, and track progress</p>
     </div>
     <button class="up-ph-addbtn up-export" type="button">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <span>Search<span class="up-ph-addbtn-full"> for Opportunities</span></span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      <span>Generate<span class="up-ph-addbtn-full"> new Opportunities</span></span>
     </button>
   </div>
 </div>
@@ -87,7 +88,7 @@
   function once(url, make){ if (L[url]) return; L[url] = 1; make(url); }
   function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
   function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
-  css("core.css");
+  css("core.css"); css("page-headers/opportunities-page-header.css");
   js("core.js"); js("page-headers/opportunities-page-header.js");
 })();
 </script>

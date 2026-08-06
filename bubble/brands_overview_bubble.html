@@ -41,7 +41,6 @@
   data-rowclick-fn     = "bubble_fn_uboRowClick_[dynamic id]"
   data-setinactive-fn  = "bubble_fn_uboSetInactive_[dynamic id]"
   data-edit-fn         = "bubble_fn_uboEdit_[dynamic id]"
-  data-opendomain-fn   = "bubble_fn_uboOpenDomain_[dynamic id]"
   data-activate-fn     = "bubble_fn_uboActivate_[dynamic id]"
 
   Each fires ONE RAW value via fn(value) — not JSON, no regex needed on your side:
@@ -60,7 +59,6 @@
                  so one workflow covers all three
     setinactive  the row's company_id      (Actions -> Set Inactive)
     edit         the row's company_id      (Actions -> Edit)
-    opendomain   the row's company_id      (Actions -> Open Linked Domain, both views)
     activate     the row's company_id      (Actions -> Activate, Inactive view only)
 
   ── Filling the component ────────────────────────────────────────────────────
@@ -200,7 +198,6 @@
      data-rowclick-fn="bubble_fn_uboRowClick"
      data-setinactive-fn="bubble_fn_uboSetInactive"
      data-edit-fn="bubble_fn_uboEdit"
-     data-opendomain-fn="bubble_fn_uboOpenDomain"
      data-activate-fn="bubble_fn_uboActivate">
 
   <!-- ============ chart container ============ -->

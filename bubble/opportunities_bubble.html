@@ -11,12 +11,21 @@
   lane layout, the card, the potential bars and the drawer. Load core.css/core.js first; the loader
   at the bottom does that for you.
 
+  The board scrolls with the PAGE, like every table in this app: the toolbar (heading, count,
+  search, sort, view switch, settings) pins at data-sticky-top, and each lane's header pins right
+  underneath it so the lane stays labelled on the way down. The element has no scrollbar of its own.
+
   ── Bubble dynamic values on the root element ────────────────────────────────
   data-instance = "ROOTID_[dynamic id]"   unique per placement
   data-cdn-pin  = commit hash to load from, e.g. "71ed61f" — leave EMPTY (or leave the literal
                   "CDN_PIN" placeholder) to load @main. Point this at a Bubble constant/Option Set
                   field you control so every placement can be repinned in one edit.
   data-isdark   = "yes" / "no"
+  data-sticky-top = how far below the viewport top the toolbar pins while you scroll, in px.
+                  Set it to the height of whatever floating topbar sits above this component on the
+                  page (the tables use 171 for the app's own topbar); 16 is the default here, which
+                  suits a page where the board is the first thing under the page header. Pass "no"
+                  in data-sticky to switch pinning off entirely.
 
   ── Events to Bubble ─────────────────────────────────────────────────────────
   Unlike the table components, this one does NOT read its function names off data-* attributes —
@@ -101,7 +110,8 @@
 <div class="up-root uo-root"
      data-instance="ROOTID_[dynamic id]"
      data-cdn-pin="CDN_PIN"
-     data-isdark="IS_DARK">
+     data-isdark="IS_DARK"
+     data-sticky-top="16">
 
   <div class="up-head uo-head">
     <div class="up-heading has-count">

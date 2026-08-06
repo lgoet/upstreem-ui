@@ -187,13 +187,14 @@
    actual "this is open" signal, and it doesn't need a pill behind it to be legible. Wins over the
    hover rule above even while both are true (pointer still on it right as it opens). */
 .udt-pagesbtn.is-open, .udt-pagesbtn.is-open:hover { color: var(--vc-text); background: transparent; font-weight: 500; }
-/* The chevron only exists on hover/open - at rest the cell stays as quiet as it is today, so the
-   drilldown adds no visual noise to a table you are just scanning. width, not display, so it
-   slides out instead of jumping the label sideways. */
-.udt-chev { width: 0; height: 13px; flex: 0 0 auto; opacity: 0; overflow: hidden;
-  transition: width 140ms ease, opacity 140ms ease, transform 180ms ease; }
+/* The chevron is ALWAYS visible: it is the only thing marking "N pages" as a control rather than a
+   plain number, and hiding it until hover meant you had to already know the drilldown existed to
+   find it. It sits at third-colour weight at rest so a table you are only scanning still reads
+   quietly, and comes up to full strength together with the label on hover/open. */
+.udt-chev { width: 13px; height: 13px; flex: 0 0 auto; opacity: .55; overflow: hidden;
+  transition: opacity 140ms ease, transform 180ms ease; }
 .udt-pagesbtn:hover .udt-chev, .udt-pagesbtn:focus-visible .udt-chev, .udt-pagesbtn.is-open .udt-chev {
-  width: 13px; opacity: 1; }
+  opacity: 1; }
 .udt-pagesbtn.is-open .udt-chev { transform: rotate(180deg); }
 @media (prefers-reduced-motion: reduce){ .udt-chev { transition: none; } }
 

@@ -1259,12 +1259,10 @@
     var actMenu = null, actOpenFor = null;
     var ACTIONS_ACTIVE = [
       { key: "setinactive", label: "Set Inactive", fn: "data-setinactive-fn", ev: "uboSetInactive" },
-      { key: "edit",        label: "Edit",         fn: "data-edit-fn",        ev: "uboEdit" },
-      { key: "opendomain",  label: "Open Linked Domain", fn: "data-opendomain-fn", ev: "uboOpenDomain" }
+      { key: "edit",        label: "Edit",         fn: "data-edit-fn",        ev: "uboEdit" }
     ];
     var ACTIONS_INACTIVE = [
-      { key: "activate",   label: "Activate",           fn: "data-activate-fn",   ev: "uboActivate" },
-      { key: "opendomain", label: "Open Linked Domain", fn: "data-opendomain-fn", ev: "uboOpenDomain" }
+      { key: "activate",   label: "Activate",           fn: "data-activate-fn",   ev: "uboActivate" }
     ];
     function ensureActMenu(){
       if (actMenu && document.body.contains(actMenu)) return actMenu;

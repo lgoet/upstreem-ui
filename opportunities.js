@@ -341,6 +341,9 @@
     elTotal.textContent = String(active);
     if (S.mode === 'list') renderList(); else renderBoard();
     updateLayout();
+    /* The toolbar can change height between renders (the count going 1 -> 3 digits, the search
+       opening, a wrap at a narrow width), and the pinned lane headers offset by that height. */
+    if (stickyKit) stickyKit.syncTheadOffset();
   }
 
   /* ---------- detail drawer ---------- */
@@ -669,19 +672,28 @@
     searchInput.value = ''; S.query = ''; syncSearch(); searchInput.focus(); render();
   });
 
+  /* ---------- sticky header ----------
+     Same UC.makeSticky every table uses: it pins the toolbar at data-sticky-top and keeps
+     --up-thead-off in sync with the toolbar's measured height, which is what opportunities.css
+     offsets the pinned lane headers by. The board used to be a self-contained scroll box (the
+     element kept its own height and each lane scrolled inside it, driven by the wheel handler
+     that used to live here); it scrolls with the page now, so both of those are gone and the
+     kanban behaves like every other screen. */
+  var stickyKit = UC.makeSticky ? UC.makeSticky(root, root.querySelector('.uo-head')) : null;
+  function applySticky(){ if (stickyKit) stickyKit.applySticky(); }
+  applySticky();
+
   /* ---------- resize ---------- */
   var rzTimer = null;
-  function onResize(){ clearTimeout(rzTimer); rzTimer = setTimeout(function(){ updateLayout(); if (S.mode === 'board') clampAllCardTags(); }, 90); }
+  function onResize(){
+    clearTimeout(rzTimer);
+    rzTimer = setTimeout(function(){
+      applySticky(); updateLayout();
+      if (S.mode === 'board') clampAllCardTags();
+    }, 90);
+  }
   window.addEventListener('resize', onResize);
   if (typeof ResizeObserver !== 'undefined'){ try { new ResizeObserver(onResize).observe(root); } catch(_){} }
-
-  /* Wheel always scrolls the column under the cursor, even when it started over text or a chip. */
-  var stageEl = root.querySelector('.uo-stage');
-  stageEl.addEventListener('wheel', function(e){
-    var sc = e.target.closest('.uo-col-body');
-    if (!sc || sc.scrollHeight <= sc.clientHeight + 1) sc = e.target.closest('.uo-board');
-    if (sc && sc.scrollHeight > sc.clientHeight + 1){ sc.scrollTop += e.deltaY; e.preventDefault(); }
-  }, { passive: false, capture: true });
 
   /* Theme attribute mirror: Bubble sets data-isdark, core's CSS keys off data-theme. */
   function syncTheme(){

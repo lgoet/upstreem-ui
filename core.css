@@ -1148,8 +1148,14 @@
    NOTE this is a different control from .up-dense — that one is the full-width label switcher
    inside the Table Settings popover. */
 .up-seg { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-bg); border-radius: 8px; border: 0; height: 32px; flex: 0 0 auto; }
+/* gap + type spec: this control was lifted from an ICON-ONLY switcher, so a button carrying an icon
+   AND a label had its two children touching, and its text fell back to whatever the page inherited.
+   Both are set here rather than per component -- gap is a no-op on the single-child icon variants
+   that already use this, and the type matches .vc-gran-btn, the app's other labelled switcher
+   (STYLEGUIDE §2: switcher label 12px/500). */
 .up-seg-btn { height: 32px; padding: 0 10px; border: 1px solid transparent; border-radius: 8px; background: transparent;
-  color: var(--vc-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+  color: var(--vc-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+  gap: 7px; font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1; }
 .up-seg-btn svg { width: 16px; height: 16px; color: var(--vc-muted); display: block; }
 .up-seg-btn:hover, .up-seg-btn:hover svg { color: var(--vc-text); }
 .up-seg-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }

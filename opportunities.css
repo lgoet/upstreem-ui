@@ -18,9 +18,13 @@
    .up-root supplies every colour token, the font stack and the flex column; only the padding and
    the two genuinely local tokens live here. Kept as a separate class from .up-root so a future
    second board on the same page stays independent. */
-.uo-root { min-height: 480px; padding: 16px 16px 32px; overflow: hidden; }
-
+/* Grows with its content and scrolls with the PAGE -- no overflow:hidden, no fixed height. The
+   standalone version was a self-contained scroll box (the board scrolled inside the element, each
+   lane scrolled inside the board); that is replaced by the app-wide sticky-header behaviour below,
+   so there is exactly one scrollbar on a page again. overflow:hidden here would also trap the
+   sticky positioning outright. */
 .uo-root {
+  min-height: 480px; padding: 16px 16px 32px;
   /* Column surface: a hair off the page background so the columns read as lanes without needing a
      border. Not a core token because no other component has a "lane" surface -- core's
      --vc-heading-bg is a hover/emphasis tone and is noticeably darker here. */
@@ -37,6 +41,10 @@
    core.css. The only local rule is the wrap behaviour: a board toolbar carries more controls than
    a table's, so it is allowed to wrap onto a second line instead of forcing a takeover. */
 .uo-head { flex: 0 0 auto; height: auto; min-height: 32px; flex-wrap: wrap; row-gap: 8px; }
+/* While pinned, core fixes .up-head to a flat 48px (a 32px toolbar plus the 16px gap turned into
+   opaque padding). This toolbar is allowed to wrap, so it has to keep growing instead -- min-height
+   preserves core's number as the floor and everything else about the pinned state is inherited. */
+.up-sticky .uo-head { height: auto; min-height: 48px; }
 /* Positioned ancestor for the two toolbar dropdowns. core's .up-menu is position:absolute, so
    without this it would anchor to the root and open far from the button that spawned it. */
 .uo-popwrap { position: relative; flex: 0 0 auto; }
@@ -45,11 +53,11 @@
 .uo-root .up-iconbtn.is-active { color: var(--vc-text); background: var(--vc-heading-bg); }
 
 /* ---------- board ---------- */
-.uo-stage { flex: 1 1 auto; min-height: 0; position: relative; }
-.uo-board { height: 100%; display: flex; gap: 16px; align-items: stretch; min-height: 0; }
+.uo-stage { flex: 1 1 auto; position: relative; }
+.uo-board { display: flex; gap: 16px; align-items: stretch; }
 
 .uo-col {
-  flex: 1 1 0; min-width: 300px; display: flex; flex-direction: column; min-height: 0;
+  flex: 1 1 0; min-width: 300px; display: flex; flex-direction: column;
   background: var(--uo-col-bg); border: 0; border-radius: 16px; padding-bottom: 12px;
   transition: background 140ms ease, box-shadow 140ms ease;
 }
@@ -57,7 +65,15 @@
    not change size mid-drag and shove the other lanes sideways. */
 .uo-col.is-drop-target { background: var(--vc-heading-bg); box-shadow: inset 0 0 0 2px var(--vc-hover-border); }
 
+/* The lane header is this component's .up-thead: it pins directly under the sticky toolbar, so the
+   lane you are scrolling through stays labelled. --up-thead-off is the toolbar's measured height,
+   kept in sync by UC.makeSticky. Needs its own opaque background (the lane's own tint) or the cards
+   would scroll visibly underneath it. */
 .uo-col-head { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; padding: 16px 16px 12px; }
+.up-sticky .uo-col-head {
+  position: sticky; top: calc(var(--up-sticky-top) + var(--up-thead-off)); z-index: 4;
+  background: var(--uo-col-bg); border-radius: 16px 16px 0 0;
+}
 .uo-col-dot { width: 8px; height: 8px; border-radius: 999px; flex: 0 0 auto; }
 /* Same 14px/500 as .up-heading -- a column title is a heading, and the standalone version's
    13.5px/600 was the single biggest reason the board read as a different app. */
@@ -68,12 +84,9 @@
 .uo-col-menu-wrap { margin-left: auto; position: relative; }
 
 .uo-col-body {
-  flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 6px 12px 0;
+  flex: 1 1 auto; padding: 6px 12px 0;
   display: flex; flex-direction: column; gap: 12px;
 }
-.uo-col-body::-webkit-scrollbar { width: 8px; }
-.uo-col-body::-webkit-scrollbar-thumb { background: var(--vc-border); border-radius: 999px; }
-.uo-col-body::-webkit-scrollbar-track { background: transparent; }
 
 .uo-col-empty {
   margin-top: 8px; padding: 22px 12px; border: 1px dashed var(--vc-border); border-radius: 12px;
@@ -82,9 +95,11 @@
 
 /* Stacked layout: the element is too narrow to show the visible columns at their 300px minimum,
    so the lanes go full width underneath each other and the board itself scrolls. */
-.uo-root.is-stacked .uo-board { flex-direction: column; align-items: stretch; overflow-x: hidden; overflow-y: auto; gap: 12px; height: 100%; }
+.uo-root.is-stacked .uo-board { flex-direction: column; align-items: stretch; gap: 12px; }
 .uo-root.is-stacked .uo-col { min-width: 0; width: 100%; flex: 0 0 auto; }
-.uo-root.is-stacked .uo-col-body { overflow: visible; }
+/* Stacked lanes are full-width blocks in a single page-scrolling column; pinning each lane header
+   would stack four of them on top of each other on the way down. */
+.uo-root.is-stacked .uo-col-head { position: static; }
 
 /* ---------- card ---------- */
 .uo-card {
@@ -160,9 +175,7 @@
 .up-explain .uo-pot-bar.is-on { background-image: linear-gradient(90deg, #c4c9d0, #1f1f1b); }
 
 /* ---------- list mode ---------- */
-.uo-list { height: 100%; overflow-y: auto; padding-right: 2px; }
-.uo-list::-webkit-scrollbar { width: 8px; }
-.uo-list::-webkit-scrollbar-thumb { background: var(--vc-border); border-radius: 999px; }
+.uo-list { padding-right: 2px; }
 .uo-list-section { margin-bottom: 18px; }
 .uo-list-sechead { display: flex; align-items: center; gap: 8px; padding: 4px 4px 10px; }
 .uo-list-rows { display: flex; flex-direction: column; gap: 8px; }
@@ -192,7 +205,9 @@
   opacity: 0; transition: opacity 220ms ease;
 }
 .uo-modal {
-  position: absolute; top: 6px; right: 6px; bottom: 6px; z-index: 10; width: min(720px, 86%);
+  /* fixed, not absolute: the root is now as tall as its content, so an absolutely-positioned
+     drawer with bottom:6px would be as tall as the whole board and mostly off-screen. */
+  position: fixed; top: 6px; right: 6px; bottom: 6px; z-index: 10; width: min(720px, 86%);
   display: none; flex-direction: column;
   background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 16px;
   box-shadow: 0 20px 48px rgba(0,0,0,.22); overflow: hidden;

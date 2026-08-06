@@ -1,0 +1,12 @@
+/* upstreem opportunities-page-header.css — meta/heading/description and the button itself all come
+   from core.css's shared Page Header Kit; this file only holds the one thing specific to this page. */
+
+/* Pushes the Generate button 16px below the root's own 16px top padding, so it sits level with the
+   heading rather than up against the page's top edge. Every other page header has something on the
+   right that pairs with the meta row (a KPI strip, a refresh icon, a second button), so flush-to-top
+   reads correctly there; here the button stands alone and needed the extra drop.
+   Under is-vnarrow core already pulls .up-ph-addbtn up by 16px to cancel the extra sidebar-toggle
+   clearance it adds at that width -- adding the same 16px back on top keeps this button at its own
+   offset instead of inheriting that correction. */
+.oph-root .up-ph-addbtn { margin-top: 16px; }
+.up-root.is-vnarrow.oph-root .up-ph-addbtn { margin-top: 0; }
