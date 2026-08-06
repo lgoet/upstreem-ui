@@ -1,0 +1,79 @@
+<!--
+  UPSTREEM — OPPORTUNITIES PAGE HEADER
+
+  Sits at the very top of the Opportunities page: meta row, page heading + description. Same
+  page-headers/ family as prompts-page-header.js / dashboard-page-header.js /
+  citations-page-header.js / brands-page-header.js / performance-page-header.js -- all the actual
+  visual styling lives in core.css/core.js's shared Page Header Kit (the ".up-ph-*" classes) so
+  every page header gets it for free; this file only supplies the heading/description text and the
+  meta suffix.
+
+  Same bare layout as performance-page-header.js: NO top-right buttons, NO subpage nav, NO
+  separator row underneath -- just the meta/heading/description block. That also means it fires no
+  events at all: nothing to wire up on the Bubble side beyond placing the element and setting its
+  attributes.
+
+  Almost nothing here is dynamic. Like the other page headers, this component has no server data to
+  wait on: no render()/reset() functions, no loading state. It reads its two dynamic inputs straight
+  off the root element's own attributes at mount and never touches them again.
+
+  ── Bubble dynamic values on the root element ────────────────────────────────
+  data-instance   = "ROOTID_[dynamic id]"   unique per placement
+  data-cdn-pin    = commit hash to load from, e.g. "71ed61f" — leave EMPTY (or leave the literal
+                    "CDN_PIN" placeholder) to load @main. Point this at a Bubble constant/Option
+                    Set field you control so every placement can be repinned to a new commit in
+                    one edit instead of hunting down every embed's URL by hand.
+  data-isdark     = "yes" / "no"
+  data-brand-name = "Acme"                              plain text, no HTML
+  data-brand-logo = "https://.../favicon.ico"            any image URL; left empty hides the <img>
+                    entirely rather than showing a broken-image icon
+
+  ── Filling the component ─────────────────────────────────────────────────────
+  Nothing to fill — every attribute above is set once when the element is placed (Property
+  Editor), not via a Run-JS "Render" step the way a table's rows are. If data-brand-name/
+  data-brand-logo need to reflect the logged-in user's own team (not a fixed value), bind those
+  two attributes directly in the Property Editor to whatever dynamic expression already resolves
+  the current team's brand elsewhere in the app — no JS needed on your end for that either.
+-->
+
+<div class="up-root up-ph-root oph-root"
+     data-instance="ROOTID_[dynamic id]"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="IS_DARK"
+     data-brand-name="BRAND_NAME"
+     data-brand-logo="BRAND_LOGO_URL">
+  <div class="up-ph-top">
+    <div class="up-ph-left">
+      <div class="up-ph-meta">
+        <img class="up-ph-metalogo" alt="" style="display:none"/>
+        <span class="up-ph-metatxt"><span class="pph-metaname"></span> Workspace</span>
+      </div>
+      <h1 class="up-ph-heading">Opportunities</h1>
+      <p class="up-ph-desc">Manage tasks, prioritize opportunities, and track progress</p>
+    </div>
+  </div>
+</div>
+<script>
+/* Loads this component's CSS/JS from jsDelivr, pinned to the commit hash you put in data-cdn-pin on
+   the root div above (falls back to @main only if data-cdn-pin is left blank or at the literal
+   "CDN_PIN" placeholder). Byte-for-byte the same loader every other component in this repo ships --
+   see prompts_page_header_bubble.html's own copy for the full reasoning in comments. No page-
+   specific CSS file: this header has no buttons/nav to need one, everything comes from core.css. */
+(function(){
+  function readPin(cls){
+    var els = document.getElementsByClassName(cls), i, p;
+    for (i = 0; i < els.length; i++){
+      p = (els[i].getAttribute("data-cdn-pin") || "").trim();
+      if (p && p !== "CDN_PIN") return p;
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("oph-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(url, make){ if (L[url]) return; L[url] = 1; make(url); }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+  css("core.css");
+  js("core.js"); js("page-headers/opportunities-page-header.js");
+})();
+</script>
