@@ -3,8 +3,11 @@
    UC.isYes/UC.makeFire and the shared .up-root CSS variables plus the Page Header Kit's meta/
    heading/description styling (core.css's ".up-ph-*" classes). Same bare layout as
    performance-page-header.js otherwise -- no subpage nav, no separator row -- except for the one
-   top-right "Search for Opportunities" button (core.css's shared ".up-btn-sec" secondary button,
-   same one prompts-table.js already uses for its own secondary actions).
+   top-right "Search for Opportunities" button, which reuses the SAME primary-button classes
+   brands-page-header.js's "+ Add Brand" button uses (".up-ph-addbtn.up-export" -- filled, and
+   already carries the standard -16px/-32px top-right margin core.css defines once for the whole
+   kit), just with a different icon/label. No page-specific CSS file needed because of that -- the
+   margin and the filled look both come from core.css already.
 
    watchRoots is still wired into the boot sequence: Bubble replaces this element's whole markup
    block once the dynamic expressions behind data-brand-name/-logo resolve, same as every other
@@ -63,7 +66,7 @@
       attributes: true, attributeFilter: ["data-isdark", "data-brand-name", "data-brand-logo"]
     });
 
-    var searchBtn = root.querySelector(".oph-searchbtn");
+    var searchBtn = root.querySelector(".up-ph-addbtn");
     if (searchBtn){
       searchBtn.addEventListener("click", function(){ fire("data-search-fn", "ophSearch", {}); });
     }

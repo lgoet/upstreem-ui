@@ -10,10 +10,11 @@
   button.
 
   Same bare layout as performance-page-header.js otherwise: NO subpage nav, NO separator row
-  underneath. The Search button is core.css's shared ".up-btn-sec" secondary button (bordered,
-  transparent surface -- same class prompts-table.js already uses for its own secondary actions),
-  not the bold filled ".up-export" style brands-page-header.js's "+ Add Brand" uses, since this is
-  a lookup action, not a create action.
+  underneath. The Search button reuses the exact SAME primary-button classes
+  brands-page-header.js's "+ Add Brand" button uses (".up-ph-addbtn.up-export" -- filled, bold,
+  same -16px/-32px top-right margin every page header's top-right content already sits at), just
+  with a search icon/label instead -- same visual weight as every other page header's top-right
+  button, no page-specific CSS needed for it.
 
   Almost nothing here is dynamic. Like the other page headers, this component has no server data to
   wait on: no render()/reset() functions, no loading state. It reads its two dynamic inputs straight
@@ -61,9 +62,9 @@
       <h1 class="up-ph-heading">Opportunities</h1>
       <p class="up-ph-desc">Manage tasks, prioritize opportunities, and track progress</p>
     </div>
-    <button class="oph-searchbtn up-btn-sec" type="button">
+    <button class="up-ph-addbtn up-export" type="button">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <span>Search for Opportunities</span>
+      <span>Search<span class="up-ph-addbtn-full"> for Opportunities</span></span>
     </button>
   </div>
 </div>
@@ -86,7 +87,7 @@
   function once(url, make){ if (L[url]) return; L[url] = 1; make(url); }
   function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
   function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
-  css("core.css"); css("page-headers/opportunities-page-header.css");
+  css("core.css");
   js("core.js"); js("page-headers/opportunities-page-header.js");
 })();
 </script>
