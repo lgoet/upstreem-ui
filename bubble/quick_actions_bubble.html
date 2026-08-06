@@ -99,6 +99,21 @@
        Cmd/Ctrl+K opens/closes globally (capture phase). Inside: ↑/↓ move, Enter activates the
        highlighted row, Esc closes, Backspace on an empty field with active filters removes the
        most recent one, ↑ on an untouched empty field recalls the last search.
+
+       Enter also runs the search when there is nothing to activate: with chips set but neither
+       /top nor /trending picked, no row is pre-highlighted and Enter adds /top, which is what
+       makes the search runnable without a query. A "Press Enter to search" hint appears under
+       the input field in exactly that state (clicking it does the same thing). While a selection
+       list is open — the command list, or the brand/type sub-lists — a row IS highlighted, so
+       Enter keeps picking that row as before.
+
+     ── favourite searches (localStorage, no Bubble involvement) ─────────────
+       Once a search is running, a star button appears in the input, left of the trash icon. It
+       saves the current query+chips under "Favorites" in the idle screen, below "Recent
+       Searches"; max 5, hovering a row swaps its star for an x to remove it. Stored in
+       localStorage under "mqa_fav_<team id>" — so favourites survive a reload (unlike Recent
+       Searches, which stay session-only on purpose) but never leak between teams. Switching
+       teams via MiraQuickActions.setTeam() switches the list with it.
      ============================================================ -->
 <div id="mira-quick-actions" data-theme="light" data-team="" data-cdn-pin="CDN_PIN">
   <button class="mqa-trigger" type="button" aria-label="Open quick actions">
@@ -118,10 +133,18 @@
         </span>
         <span class="mqa-ph-cmd" id="mqa-ph-cmd" aria-hidden="true">/ for filters</span>
         <span class="mqa-kbd mqa-esc" id="mqa-esc">esc</span>
+        <button class="mqa-fav is-hidden" type="button" id="mqa-fav" aria-pressed="false" aria-label="Save this search">
+          <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </button>
         <button class="mqa-clear is-hidden" type="button" id="mqa-clear" aria-label="Clear search">
           <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
         </button>
       </div>
+      <button class="mqa-entercta is-hidden" type="button" id="mqa-entercta">
+        Press
+        <span class="mqa-kbd"><svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 10 4 15 9 20"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></svg>Enter</span>
+        to search
+      </button>
       <div class="mqa-scroll">
         <div class="mqa-results" aria-live="polite"></div>
       </div>

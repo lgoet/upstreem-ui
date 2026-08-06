@@ -284,6 +284,60 @@
     list.unshift(e);
     recentSave(list.slice(0, RECENT_MAX));
   }
+
+  /* ---------- favourite searches ----------
+     The one thing here that outlives the session. Recent Searches are deliberately in-memory only
+     (see above), but a favourite is an explicit act, so it goes to localStorage — keyed by team, so
+     switching teams switches the list instead of leaking one team's saved filters into another.
+     localStorage can throw outright (Safari private mode, blocked third-party storage inside
+     Bubble's iframe preview), so every access is wrapped: a failure degrades to "no favourites",
+     never to a broken palette. */
+  var FAV_MAX = 5;
+  var STAR = '<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+  var favEl = overlay.querySelector("#mqa-fav");
+  function favStoreKey(){ return "mqa_fav_" + (TEAM || "_"); }
+  function favLoad(){
+    try {
+      var raw = window.localStorage.getItem(favStoreKey());
+      var list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list.slice(0, FAV_MAX) : [];
+    } catch(_){ return []; }
+  }
+  function favSave(list){
+    try { window.localStorage.setItem(favStoreKey(), JSON.stringify(list.slice(0, FAV_MAX))); } catch(_){}
+  }
+  // the search as it stands right now — same shape as a recent entry, so recentKey/miniChips fit both
+  function currentEntry(){
+    return { query: query, scope: FILTERS.scope || "", rank: FILTERS.rank || "", type: FILTERS.type || "",
+             urltype: FILTERS.urltype || "", market: FILTERS.market || "", mentioning: FILTERS.mentioning || "" };
+  }
+  function isFav(e){ var k = recentKey(e); return favLoad().some(function(x){ return recentKey(x) === k; }); }
+  // the star only makes sense once a search actually ran — in idle/command mode there is nothing
+  // to save yet, and the same emptiness check recentPush uses keeps a blank palette out of the list
+  function favApplicable(){
+    if (state === "idle" || state === "commands") return false;
+    return !!(query || anyFilter());
+  }
+  function toggleFav(){
+    if (!favApplicable()) return;
+    var e = currentEntry(), k = recentKey(e);
+    var list = favLoad(), had = list.some(function(x){ return recentKey(x) === k; });
+    list = list.filter(function(x){ return recentKey(x) !== k; });
+    if (!had) list.unshift(e);
+    favSave(list);
+    syncFav();
+  }
+  function syncFav(){
+    if (!favEl) return;
+    var on = favApplicable();
+    favEl.classList.toggle("is-hidden", !on);
+    var saved = on && isFav(currentEntry());
+    favEl.classList.toggle("is-on", saved);
+    favEl.setAttribute("aria-pressed", saved ? "true" : "false");
+    favEl.setAttribute("aria-label", saved ? "Remove from favorites" : "Save this search");
+  }
+  if (favEl) favEl.addEventListener("click", function(e){ e.stopPropagation(); toggleFav(); input.focus(); });
+
   function miniChips(e){
     var out = "";
     var saved = FILTERS; FILTERS = { scope:e.scope, rank:e.rank, type:e.type, urltype:e.urltype, market:e.market, mentioning:e.mentioning };
@@ -301,27 +355,38 @@
     FILTERS = saved;
     return out;
   }
+  var ENTER_CHEV = '<span class="mqa-enter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>';
+  function entryLineHtml(e){
+    return '<span class="mqa-main"><span class="mqa-primary mqa-recent-line">' + miniChips(e) +
+      (e.query ? '<span class="mqa-recent-q">' + esc(e.query) + '</span>' : '') + '</span></span>';
+  }
+  function recentRowHtml(e, i){
+    return '<button class="mqa-action" type="button" role="option" data-recent="' + i + '">' +
+      '<span class="mqa-recent-ic">' + CLOCK + '</span>' + entryLineHtml(e) +
+      '<span class="mqa-recent-x" role="button" tabindex="-1" data-recent-rm="' + i + '" aria-label="Remove">' + XSVG + '</span>' +
+      ENTER_CHEV + '</button>';
+  }
+  // same row, but the leading icon doubles as the remove control: star at rest, x on hover — the
+  // delete affordance the user asked for without spending a second slot on it
+  function favRowHtml(e, i){
+    return '<button class="mqa-action" type="button" role="option" data-fav="' + i + '">' +
+      '<span class="mqa-fav-lead">' +
+        '<span class="mqa-fav-ic">' + STAR + '</span>' +
+        '<span class="mqa-fav-x" role="button" tabindex="-1" data-fav-rm="' + i + '" aria-label="Remove favorite">' + XSVG + '</span>' +
+      '</span>' + entryLineHtml(e) + ENTER_CHEV + '</button>';
+  }
   function renderRecent(){
-    var list = recentLoad();
+    var list = recentLoad(), favs = favLoad();
     var h = "";
-    if (_viewed.length){
-      h += '<div class="mqa-sep"></div><div class="mqa-group"><div class="mqa-group-head">Recent</div>';
-      _viewed.forEach(function(it, i){ h += viewedRowHtml(it, i); });
-      h += '</div>';
+    function group(head, body){
+      // the separator belongs to the first group only — the rest stack straight under it
+      h += (h ? '' : '<div class="mqa-sep"></div>') +
+        '<div class="mqa-group"><div class="mqa-group-head">' + head + '</div>' + body + '</div>';
     }
-    if (!list.length){ recentEl.innerHTML = h; return; }
-    h += (_viewed.length ? '' : '<div class="mqa-sep"></div>') + '<div class="mqa-group"><div class="mqa-group-head">Recent Searches</div>';
-    list.forEach(function(e, i){
-      h += '<button class="mqa-action" type="button" role="option" data-recent="' + i + '">' +
-        '<span class="mqa-recent-ic">' + CLOCK + '</span>' +
-        '<span class="mqa-main"><span class="mqa-primary mqa-recent-line">' + miniChips(e) +
-          (e.query ? '<span class="mqa-recent-q">' + esc(e.query) + '</span>' : '') +
-        '</span></span>' +
-        '<span class="mqa-recent-x" role="button" tabindex="-1" data-recent-rm="' + i + '" aria-label="Remove">' + XSVG + '</span>' +
-        '<span class="mqa-enter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>' +
-      '</button>';
-    });
-    recentEl.innerHTML = h + '</div>';
+    if (_viewed.length) group("Recent", _viewed.map(function(it, i){ return viewedRowHtml(it, i); }).join(""));
+    if (list.length)    group("Recent Searches", list.map(recentRowHtml).join(""));
+    if (favs.length)    group("Favorites", favs.map(favRowHtml).join(""));
+    recentEl.innerHTML = h;
   }
   // same shape as a result row, just smaller
   function viewedRowHtml(item, i){
@@ -344,14 +409,16 @@
       '<span class="mqa-enter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>' +
     '</button>';
   }
-  function applyRecent(i){
-    var e = recentLoad()[i]; if (!e) return;
+  function applyEntry(e){
+    if (!e) return;
     FILTERS = { scope:e.scope || null, rank:e.rank || null, type:e.type || null, urltype:e.urltype || null, market:e.market || null, mentioning:e.mentioning || null };
     query = e.query || ""; input.value = query;
     renderChips(); syncPh();
     if (query.length >= MIN || FILTERS.rank) runSearch(); else renderIdle();
     input.focus();
   }
+  function applyRecent(i){ applyEntry(recentLoad()[i]); }
+  function applyFav(i){ applyEntry(favLoad()[i]); }
   recentEl.addEventListener("click", function(ev){
     var rm = ev.target.closest ? ev.target.closest("[data-recent-rm]") : null;
     if (rm){
@@ -359,13 +426,39 @@
       var list = recentLoad(); list.splice(+rm.getAttribute("data-recent-rm"), 1); recentSave(list);
       renderRecent(); refreshRows(); return;
     }
+    var frm = ev.target.closest ? ev.target.closest("[data-fav-rm]") : null;
+    if (frm){
+      ev.stopPropagation();
+      var favs = favLoad(); favs.splice(+frm.getAttribute("data-fav-rm"), 1); favSave(favs);
+      renderRecent(); refreshRows(); return;
+    }
   });
   function showRecent(on){ recentEl.style.display = on ? "" : "none"; }
   function showStatic(on){ actionsWrap.style.display = on ? "" : "none"; }
   function renderIdle(){
     showStatic(true); renderRecent(); showRecent(true);
-    resultsEl.innerHTML = ""; state = "idle"; refreshRows(); setActive(0, false);
+    resultsEl.innerHTML = ""; state = "idle"; refreshRows();
+    // when Enter means "run the search", nothing may be pre-highlighted — otherwise Enter would
+    // fire that row instead. Arrow keys still walk the list from here (move(-1) wraps to the end).
+    if (enterSearchOn()) clearActive(); else setActive(0, false);
   }
+
+  /* ---------- "Press Enter to search" ----------
+     Chips alone don't run a search: without a query, the RPC needs a sort to have anything to
+     return, which is what /top provides. So once there are chips but no /top or /trending, Enter
+     (and the hint below the input, which is the same action with a mouse) fills that in and runs
+     it. It only ever applies in the idle state — while the command list or a brand/type sub-list
+     is open a row is highlighted, and Enter belongs to that row. */
+  var ctaEl = overlay.querySelector("#mqa-entercta");
+  function enterSearchOn(){ return state === "idle" && anyFilter() && !FILTERS.rank; }
+  function enterSearch(){
+    if (!enterSearchOn()) return;
+    FILTERS.rank = "top";
+    renderChips(); afterFilterChange();   // rank is set now -> afterFilterChange runs the search
+    input.focus();
+  }
+  function syncCta(){ if (ctaEl) ctaEl.classList.toggle("is-hidden", !enterSearchOn()); }
+  if (ctaEl) ctaEl.addEventListener("click", function(e){ e.preventDefault(); enterSearch(); });
 
   /* ---------- chips ---------- */
   var chipsEl = overlay.querySelector("#mqa-chips");
@@ -651,7 +744,10 @@
     modal.classList.toggle("has-results", !!resultsEl.children.length);
     rows = Array.prototype.slice.call(modal.querySelectorAll(".mqa-row, .mqa-action"))
       .filter(function(el){ return el.offsetParent !== null; });
+    // every render funnels through here, and both of these depend only on state+filters
+    syncCta(); syncFav();
   }
+  function clearActive(){ activeIndex = -1; for (var k = 0; k < rows.length; k++) rows[k].classList.remove("is-active"); }
   function setActive(i, doScroll){
     if (!rows.length){ activeIndex = -1; return; }
     if (i < 0) i = 0; if (i > rows.length - 1) i = rows.length - 1;
@@ -664,6 +760,7 @@
     if (!el) return;
     if (el.hasAttribute("data-viewed")){ var v = _viewed[+el.getAttribute("data-viewed")]; if (v){ _rowData.push(v); selectResult(_rowData.length - 1); } return; }
     if (el.hasAttribute("data-recent")){ applyRecent(+el.getAttribute("data-recent")); return; }
+    if (el.hasAttribute("data-fav")){ applyFav(+el.getAttribute("data-fav")); return; }
     if (el.hasAttribute("data-cmd")){ applyCommand(el.getAttribute("data-cmd"), el.getAttribute("data-cmd-val")); return; }
     if (el.classList.contains("mqa-action")) selectStatic(el.getAttribute("data-action"));
     else selectResult(+el.getAttribute("data-ri"));
@@ -796,7 +893,11 @@
     }
     if (e.key === "ArrowDown"){ e.preventDefault(); move(1); return; }
     if (e.key === "ArrowUp"){ e.preventDefault(); move(-1); return; }
-    if (e.key === "Enter"){ if (activeIndex >= 0 && rows[activeIndex]){ e.preventDefault(); activate(rows[activeIndex]); } return; }
+    if (e.key === "Enter"){
+      if (activeIndex >= 0 && rows[activeIndex]){ e.preventDefault(); activate(rows[activeIndex]); return; }
+      if (enterSearchOn()){ e.preventDefault(); enterSearch(); }
+      return;
+    }
     if (e.key === "Backspace" && !input.value && anyFilter()){
       var order = ["mentioning","market","urltype","type","rank","scope"];                       // remove the most recent-ish first
       for (var i = 0; i < order.length; i++){ if (FILTERS[order[i]]){ FILTERS[order[i]] = null; break; } }
