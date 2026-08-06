@@ -5,10 +5,9 @@
   compact Visibility/Ranking/Sentiment KPI strip plus two tools (Docs, Refresh) top RIGHT -- same
   row as the meta/heading block, not a second row. Same page-headers/ family as
   prompts-page-header.js -- meta/heading/description styling come from core.css's shared Page
-  Header Kit (".up-ph-*"). This page has no subpage nav, so the second row (".up-ph-nav") is left
-  completely empty; it exists purely so its separator line still lands at the same height a page
-  WITH tabs would put it, 32px below the taller of the two .up-ph-top columns -- the component ends
-  right after that line (plus the kit's own standard bottom padding).
+  Header Kit (".up-ph-*"). This page has no subpage nav and no separator row underneath -- same
+  bare layout as performance-page-header.js -- so the component ends right after the top row (plus
+  the kit's own standard bottom padding).
 
   ── Bubble dynamic values on the root element ────────────────────────────────
   data-instance    = "ROOTID_[dynamic id]"   unique per placement
@@ -107,9 +106,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Intentionally empty -- see the file header comment on why this row still exists. -->
-  <div class="up-ph-nav"></div>
 </div>
 <script>
 /* Loads this component's CSS/JS from jsDelivr, pinned to the commit hash you put in data-cdn-pin on

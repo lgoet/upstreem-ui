@@ -1,9 +1,9 @@
 /* upstreem dashboard-page-header.js — component logic. Requires core.js (window.UpstreemCore)
    loaded first: reuses UC.isYes/UC.makeFire/UC.makeMount/UC.trendChip and the shared .up-root CSS
    variables, plus the Page Header Kit's meta/heading/description styling (core.css's ".up-ph-*"
-   classes) -- same as prompts-page-header.js. No subpage nav here (this page has none), but the
-   second row keeps the exact same ".up-ph-nav" class purely for its position/separator -- see
-   dashboard-page-header.css's own comment on ".dph-toolrow" for why.
+   classes) -- same as prompts-page-header.js. No subpage nav here (this page has none) and no
+   separator row underneath either -- same bare layout as performance-page-header.js -- so the
+   markup ends right after the top row.
 
    Unlike prompts-page-header.js, this component has one real piece of server data (the KPI
    numbers), delivered once at page load via a setter call rather than read off a static
