@@ -708,6 +708,32 @@
     emitPromptAction('delete_all', { count: currentSuggestedPrompts.length, suggested_prompt_ids: currentSuggestedPrompts.map(function(p){ return p.id; }).filter(Boolean) });
   });
 
+  /* ---------- wheel bridge for the results table ----------
+     Straight back from the standalone, where it was there for a reason: inside a Bubble HTML
+     element the wheel over the results area does not reliably reach the inner scroll box, so only
+     the controls scrolled and the table itself felt stuck. Drive .upr-box ourselves for any wheel
+     that lands inside the stage, and only swallow the event when we actually moved it — so once
+     the box hits an end, the gesture chains out to the page as usual.
+     deltaMode is honoured (the standalone assumed pixels): a mouse that reports LINE deltas would
+     otherwise scroll about three pixels per notch. */
+  if (!root.__uprWheelBound){
+    root.__uprWheelBound = true;
+    root.addEventListener('wheel', function(e){
+      if (!root.classList.contains('is-results')) return;
+      var stage = root.querySelector('#upr-results-stage');
+      var box = root.querySelector('.upr-box');
+      if (!stage || !box) return;
+      if (!stage.contains(e.target)) return;
+      if (e.target.closest && e.target.closest('.up-menu')) return;   // the kebab menu scrolls itself
+      if (box.scrollHeight <= box.clientHeight + 1) return;
+      var d = e.deltaY;
+      if (e.deltaMode === 1) d *= 16; else if (e.deltaMode === 2) d *= box.clientHeight;
+      var before = box.scrollTop;
+      box.scrollTop = before + d;
+      if (box.scrollTop !== before){ e.preventDefault(); e.stopPropagation(); }
+    }, { passive: false, capture: true });
+  }
+
   /* Button tooltips, the app-wide way: one delegated [data-tip] handler per root. */
   if (UC.makeTooltips){ UC.makeTooltips(root, isDark); UC.makeTooltips(portal, isDark); }
 

@@ -544,11 +544,18 @@
 .upr-side-body::-webkit-scrollbar { width: 8px; }
 .upr-side-body::-webkit-scrollbar-thumb { background: var(--vc-border); border-radius: 999px; }
 .upr-history-item {
+  position: relative;
   border-radius: 12px; padding: 12px; cursor: pointer;
   display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
   transition: background 140ms ease;
 }
-.upr-history-item + .upr-history-item { margin-top: 2px; }
+/* Separator between entries, drawn as a pseudo-element rather than a border so the rounded hover
+   pill still covers the full row -- a real border-top would sit inside the radius and cut a
+   straight line across the top two corners. Inset by the row padding, the app-wide list look. */
+.upr-history-item + .upr-history-item::before {
+  content: ""; position: absolute; left: 12px; right: 12px; top: 0;
+  height: 1px; background: var(--vc-border); pointer-events: none;
+}
 .upr-history-item:hover, .upr-history-item:focus-visible { background: var(--vc-heading-bg); outline: none; }
 .upr-history-main { min-width: 0; flex: 1 1 auto; display: flex; flex-direction: column; gap: 3px; }
 .upr-history-headline {
