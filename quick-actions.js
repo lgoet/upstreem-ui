@@ -334,7 +334,7 @@
     var saved = on && isFav(currentEntry());
     favEl.classList.toggle("is-on", saved);
     favEl.setAttribute("aria-pressed", saved ? "true" : "false");
-    favEl.setAttribute("aria-label", saved ? "Remove from favorites" : "Save this search");
+    favEl.setAttribute("aria-label", saved ? "Remove Favorite" : "Save as Favorite");
   }
   if (favEl) favEl.addEventListener("click", function(e){ e.stopPropagation(); toggleFav(); input.focus(); });
 
@@ -837,7 +837,7 @@
     setTimeout(function(){ try { input.focus(); input.select(); } catch(_){} }, 20);
   }
   function close(){
-    closeRowMenu();
+    closeRowMenu(); hideBtip();
     recentPush(); _lastCompleted = null;
     if (!isOpen) return; isOpen = false;
     overlay.classList.remove("is-open"); overlay.setAttribute("aria-hidden", "true");
@@ -904,6 +904,39 @@
       pruneFilters(); e.preventDefault(); renderChips(); afterFilterChange(); return;
     }
   }
+
+  /* ---------- button tooltips ----------
+     The app-wide chip from core.css (.up-tip / UC.makeTooltips), rebuilt locally: this component
+     deliberately never loads core, and the ".mqa-tip" above it is the big multi-line Filters
+     explainer, not a label. Same visual contract as everywhere else -- dark card in BOTH themes
+     (it floats above the page, not inside the surface), centred under the trigger, 8px below. */
+  var btip = document.createElement("div");
+  btip.className = "mqa-btip";
+  overlay.appendChild(btip);
+  var btipTimer = null;
+  function showBtip(el, text){
+    if (!text) return;
+    btip.textContent = text;
+    btip.classList.add("is-on");
+    btip.style.left = "0px"; btip.style.top = "0px";
+    var r = el.getBoundingClientRect(), t = btip.getBoundingClientRect();
+    var vw = window.innerWidth || document.documentElement.clientWidth;
+    btip.style.left = Math.max(6, Math.min(r.left + r.width / 2 - t.width / 2, vw - t.width - 6)) + "px";
+    btip.style.top = (r.bottom + 8) + "px";
+  }
+  function hideBtip(){ clearTimeout(btipTimer); btipTimer = null; btip.classList.remove("is-on"); }
+  // label is a function, not a string: the star's caption flips with its saved state
+  function attachBtip(el, label){
+    if (!el) return;
+    function show(){ btipTimer = setTimeout(function(){ showBtip(el, label()); }, 260); }
+    el.addEventListener("mouseenter", show);
+    el.addEventListener("focus", show);
+    el.addEventListener("mouseleave", hideBtip);
+    el.addEventListener("blur", hideBtip);
+    el.addEventListener("click", hideBtip);   // the button's own state just changed under the cursor
+  }
+  attachBtip(favEl, function(){ return favEl.classList.contains("is-on") ? "Remove Favorite" : "Save as Favorite"; });
+  attachBtip(clearEl, function(){ return "Reset"; });
 
   /* ---------- wiring ---------- */
   if (trigger) trigger.addEventListener("click", open);

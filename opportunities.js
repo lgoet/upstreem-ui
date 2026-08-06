@@ -679,9 +679,31 @@
      element kept its own height and each lane scrolled inside it, driven by the wheel handler
      that used to live here); it scrolls with the page now, so both of those are gone and the
      kanban behaves like every other screen. */
+  /* Without data-sticky-top, makeSticky leaves --up-sticky-top at core's 171px default -- the value
+     a full app page with its own topbar needs, not this board's. Defaulting the attribute here
+     means an older pasted markup block still pins at the right offset off the CDN pin alone; an
+     explicit data-sticky-top in the markup still wins. */
+  if (!root.getAttribute('data-sticky-top')) root.setAttribute('data-sticky-top', '16');
   var stickyKit = UC.makeSticky ? UC.makeSticky(root, root.querySelector('.uo-head')) : null;
   function applySticky(){ if (stickyKit) stickyKit.applySticky(); }
   applySticky();
+
+  /* applySticky() decides on/off from a ONE-OFF viewport measurement, and the only things that
+     re-run it are a window resize and the ResizeObserver below. Both miss the case that actually
+     bites in Bubble: the board initialises while its group is still hidden or mid-responsive-pass,
+     so it measures a 0/narrow viewport, turns sticky off, and nothing ever asks again -- confirmed
+     locally, a root that goes 0px -> 1500px wide does not reliably deliver either signal, and the
+     headers stay unpinned for the life of the page. So re-check whenever the decision could be
+     stale: a few beats after boot, and on scroll (the only moment sticky is observable at all).
+     The guard repeats core's own condition on purpose -- applySticky() walks the ancestor chain to
+     unclip it, which is not something to run on every scroll frame for nothing. */
+  function stickyWanted(){
+    var pageW = window.innerWidth || document.documentElement.clientWidth || 0;
+    return root.getAttribute('data-sticky') !== 'no' && pageW >= 1000;
+  }
+  function resyncSticky(){ if (stickyWanted() !== root.classList.contains('up-sticky')) applySticky(); }
+  [120, 400, 1000, 2500].forEach(function(ms){ setTimeout(resyncSticky, ms); });
+  window.addEventListener('scroll', resyncSticky, { passive: true });
 
   /* ---------- resize ---------- */
   var rzTimer = null;

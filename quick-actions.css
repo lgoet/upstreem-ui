@@ -153,6 +153,21 @@
 .mqa-fav.is-on { color: var(--am-text); }
 .mqa-fav.is-on svg { fill: currentColor; }
 
+/* Label chip for the two input-bar buttons. Same contract as core.css's .up-tip: dark card in
+   BOTH themes (it floats above the page, not inside the surface), fixed-positioned so it is never
+   clipped by the modal. Rebuilt here rather than reused because this component never loads core. */
+.mqa-btip {
+  position: fixed; left: 0; top: 0; z-index: 2147483001; box-sizing: border-box;
+  height: 24px; display: inline-flex; align-items: center; padding: 0 9px;
+  border-radius: 6px; background: #1f1f1b; color: #ffffff;
+  font-family: var(--mqa-font); font-size: 12px; font-weight: 500; line-height: 1;
+  white-space: nowrap; pointer-events: none;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+  opacity: 0; transform: translateY(4px);
+  transition: opacity .14s ease, transform .14s ease;
+}
+.mqa-btip.is-on { opacity: 1; transform: translateY(0); }
+
 /* ---------- "Press Enter to search" hint ---------- */
 /* a button, not a label: clicking it does exactly what the key does */
 .mqa-entercta {

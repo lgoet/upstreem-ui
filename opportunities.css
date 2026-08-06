@@ -69,7 +69,11 @@
    lane you are scrolling through stays labelled. --up-thead-off is the toolbar's measured height,
    kept in sync by UC.makeSticky. Needs its own opaque background (the lane's own tint) or the cards
    would scroll visibly underneath it. */
-.uo-col-head { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; padding: 16px 16px 12px; }
+/* Symmetric 16px top and bottom: while pinned this padding IS the visible band around the lane
+   title, so an uneven 16/12 reads as the header sitting too high in its own strip. The 6px the
+   lane body used to add on top is folded in here instead, which keeps the head-to-first-card gap
+   at the same 16px the title has above it. */
+.uo-col-head { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; padding: 16px; }
 .up-sticky .uo-col-head {
   position: sticky; top: calc(var(--up-sticky-top) + var(--up-thead-off)); z-index: 4;
   background: var(--uo-col-bg); border-radius: 16px 16px 0 0;
@@ -84,7 +88,7 @@
 .uo-col-menu-wrap { margin-left: auto; position: relative; }
 
 .uo-col-body {
-  flex: 1 1 auto; padding: 6px 12px 0;
+  flex: 1 1 auto; padding: 0 12px;
   display: flex; flex-direction: column; gap: 12px;
 }
 
