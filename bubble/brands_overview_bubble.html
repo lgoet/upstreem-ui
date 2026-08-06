@@ -36,7 +36,6 @@
   data-gran-fn         = "bubble_fn_uboGranularity_[dynamic id]"
   data-submit-fn       = "bubble_fn_uboSubmitBrands_[dynamic id]"
   data-sort-fn         = "bubble_fn_uboSortTable_[dynamic id]"
-  data-search-fn       = "bubble_fn_uboSearch_[dynamic id]"
   data-status-fn       = "bubble_fn_uboStatus_[dynamic id]"
   data-export-fn       = "bubble_fn_uboExportTable_[dynamic id]"
   data-rowclick-fn     = "bubble_fn_uboRowClick_[dynamic id]"
@@ -47,12 +46,14 @@
 
   Each fires ONE RAW value via fn(value) — not JSON, no regex needed on your side:
 
+    NOTE: the toolbar Search is NOT in this list. It filters the rows already in the table, in the
+    browser, and fires nothing — there is no bubble_fn_uboSearch and no data-search-fn any more.
+    Matches are highlighted the same way every other table highlights them.
+
     gran         "day" | "week" | "month"
     submit       comma-joined company-id string, e.g. "12,47,90"
                  -> Bubble field type must be "text", NOT "list of texts"
     sort         "<field>_<dir>", field is visibility | rank | sentiment  (e.g. "rank_asc")
-    search       the search JSON string (same shape as every other table: query/query_folded/
-                 query_de/requestId) — this ONE is JSON, because search always has been
     status       "active" | "inactive"   -> refill the TABLE only, the chart does not change
     export       the instanceId
     rowclick     a company_id — fired by a TABLE ROW, a LEGEND item and a LANDSCAPE logo alike,
@@ -148,7 +149,7 @@
   })();
 
   Every key is applied on its own and a key you leave out stays as it was, so you can also run a
-  stripped copy of this step that carries only `table` + `totalCount` when sort, search or the
+  stripped copy of this step that carries only `table` + `totalCount` when sort or the
   Active/Inactive switch fires — the chart then does not refetch.
 
   ── Inactive brands — optional extra step ────────────────────────────────────
@@ -194,7 +195,6 @@
      data-gran-fn="bubble_fn_uboGranularity"
      data-submit-fn="bubble_fn_uboSubmitBrands"
      data-sort-fn="bubble_fn_uboSortTable"
-     data-search-fn="bubble_fn_uboSearch"
      data-status-fn="bubble_fn_uboStatus"
      data-export-fn="bubble_fn_uboExportTable"
      data-rowclick-fn="bubble_fn_uboRowClick"

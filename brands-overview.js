@@ -69,7 +69,7 @@
     UC.buildLineDatasets = function(){ return { labels: [], datasets: [] }; };
   }
 
-  var esc = UC.esc, isYes = UC.isYes, fmt1 = UC.fmt1, sentColor = UC.sentColor;
+  var esc = UC.esc, isYes = UC.isYes, fmt1 = UC.fmt1, sentColor = UC.sentColor, highlight = UC.highlight;
   var CHECK_SVG = UC.CHECK_SVG;
 
   /* ================================================================
@@ -636,14 +636,13 @@
     var isDark = isYes(root.getAttribute("data-isdark"));
     if (isDark) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
 
-    /* TWO firing shapes on purpose, and they are not interchangeable:
-       · fireRaw — every event of this component EXCEPT search sends a bare value ("day", a
-         company_id, "active"), exactly like visibility-chart, so the Bubble side needs no regex.
-         UC.makeFire cannot be used for these: it JSON.stringify()s its payload, which would turn
-         a company_id into the 4-character string "c1" WITH quotes and break every workflow reading
-         it (found live — the events arrived quoted before this split existed).
-       · fire (UC.makeFire) — search only, because search has always shipped a JSON object
-         (query/query_folded/query_de/requestId) and Bubble already parses it by regex there. */
+    /* ONE firing shape: every event of this component sends a bare value ("day", a company_id,
+       "active"), exactly like visibility-chart, so the Bubble side needs no regex. UC.makeFire is
+       deliberately not used: it JSON.stringify()s its payload, which would turn a company_id into
+       the 4-character string "c1" WITH quotes and break every workflow reading it (found live --
+       the events arrived quoted before this split existed).
+       Search used to be the one exception, firing a JSON payload through UC.makeFire; it filters
+       client-side now and sends nothing at all, so that second shape is gone. */
     function fireRaw(attr, fallbackName, value){
       var fnName = root.getAttribute(attr) || fallbackName;
       var fn = UC.resolveBubbleFn(fnName);
@@ -654,7 +653,6 @@
       }
       try { root.dispatchEvent(new CustomEvent(fallbackName, { detail: value, bubbles: true })); } catch(e){}
     }
-    var fire = UC.makeFire(root, { label: "brands-overview" });
 
     /* ---- persisted prefs (per instance) ---- */
     function key(n){ return "ubo_" + n + "__" + instanceId; }
@@ -918,7 +916,7 @@
       var h = '<div class="up-row" data-id="' + esc(id) + '">' +
         '<div class="up-td up-td-idx">' + pos + '</div>' +
         '<div class="up-td up-td-brand">' + logoHtml(r.logo_url || r.favicon_url) +
-          '<span class="ubo-brand-name">' + esc(r.name == null ? "" : r.name) + '</span>' +
+          '<span class="ubo-brand-name">' + highlight(r.name == null ? "" : r.name, state.query) + '</span>' +
           /* Fires the exact same event as the kebab menu's own Edit item (data-edit-fn/uboEdit) --
              this is a second entry point to the identical action, not a new one. Hover-reveal
              mirrors prompts-table's group-header Edit button exactly: icon + "Edit" label, 200ms
@@ -934,7 +932,7 @@
     function inactiveRowHtml(r){
       return '<div class="up-row" data-id="' + esc(String(r.company_id == null ? "" : r.company_id)) + '">' +
         '<div class="up-td up-td-brand">' + logoHtml(r.logo_url || r.favicon_url) +
-          '<span class="ubo-brand-name">' + esc(r.name == null ? "" : r.name) + '</span></div>' +
+          '<span class="ubo-brand-name">' + highlight(r.name == null ? "" : r.name, state.query) + '</span></div>' +
         '<div class="up-td up-td-deactivated"><span class="ubo-deact">' + esc(UC.fmtDate(r.deactivated_at) || "–") + '</span></div>' +
         actionsCell() + '</div>';
     }
@@ -953,6 +951,16 @@
       var q = (state.query || "").trim().toLowerCase();
       if (q) rows = rows.filter(function(r){ return String(r.name || "").toLowerCase().indexOf(q) > -1; });
       if (!rows.length){
+        /* A search that matches nothing is final the instant it is typed -- there is no delivery
+           pending, the rows are already here. Say so immediately instead of flashing the skeleton
+           through the grace window below, which would read as "still loading" on every keystroke
+           past the last match. */
+        if (q){
+          if (emptyGraceTimer){ clearTimeout(emptyGraceTimer); emptyGraceTimer = null; }
+          tableEl.innerHTML = headHtml() + '<div class="up-empty-mini">No matches</div>';
+          applyCols();
+          return;
+        }
         /* An empty delivery can be an interim "clearing" step before real data lands a beat later.
            Same short grace window visibility-chart uses before committing to "No data". */
         if (!emptyGraceTimer){
@@ -1322,15 +1330,41 @@
       window.addEventListener("resize", function(){ if (actOpenFor) closeActMenu(); });
     }
 
-    /* ---------- search ---------- */
-    var searchKit = UC.makeSearch ? UC.makeSearch({
-      root: root,
-      box: root.querySelector(".up-search"),
-      input: root.querySelector(".up-search-input"),
-      state: state, prefix: "ubo", instanceId: instanceId,
-      onRender: function(){ renderTable(); },
-      onFire: function(payload){ fire("data-search-fn", "uboSearch", payload); }
-    }) : null;
+    /* ---------- search (client-side) ----------
+       Filters the rows already in the table and fires nothing. Deliberately NOT UC.makeSearch:
+       that kit is built for the server-backed tables, so every keystroke sets state.loading = true
+       and waits for Bubble to deliver a filtered page. Here the whole brand list is already in the
+       browser, so there is nothing to wait for -- routing it through the kit would put the table
+       into a skeleton that never resolves (isLoading() honours state.loading as soon as the page
+       uses the explicit loading setter).
+
+       This also makes the search work at all: the kit was wired up but its onInput() was never
+       attached to the input -- every other table calls it from its own listener, this one never
+       did -- so typing set no query, filtered nothing and fired nothing. */
+    var searchWrap  = root.querySelector(".up-search");
+    var searchInput = root.querySelector(".up-search-input");
+    var searchClear = root.querySelector(".up-search-clear");
+    function syncSearch(){
+      if (searchWrap) searchWrap.classList.toggle("has-text", !!(searchInput && searchInput.value));
+    }
+    function setQuery(v){ state.query = v; syncSearch(); renderTable(); }
+    function toggleSearch(){
+      if (!searchWrap) return;
+      var open = !searchWrap.classList.contains("is-open");
+      searchWrap.classList.toggle("is-open", open);
+      if (open){ setTimeout(function(){ try { searchInput.focus(); } catch(e){} }, 60); }
+      else if (state.query){ searchInput.value = ""; setQuery(""); }   /* closing clears the filter */
+    }
+    function resetSearch(){
+      if (searchWrap) searchWrap.classList.remove("is-open", "has-text");
+      if (searchInput) searchInput.value = "";
+      state.query = "";
+    }
+    if (searchInput) searchInput.addEventListener("input", function(){ setQuery(this.value); });
+    if (searchClear) searchClear.addEventListener("click", function(){
+      if (!searchInput) return;
+      searchInput.value = ""; setQuery(""); try { searchInput.focus(); } catch(e){}
+    });
 
     /* ---------- click delegation ---------- */
     if (!root.__uboDelegated){
@@ -1383,11 +1417,10 @@
           return;
         }
         if (e.target.closest(".up-export, .ubo-export")){ fireRaw("data-export-fn", "uboExportTable", instanceId); return; }
-        /* The search button was never wired to the kit, so clicking it did nothing at all. */
         if (e.target.closest(".up-search-btn")){
           e.stopPropagation();
           closePops(null);
-          if (searchKit) searchKit.toggle();
+          toggleSearch();
           return;
         }
         /* Hide/Show the chart container — same toggle, same persistence shape and the same
@@ -1563,7 +1596,7 @@
         state.tableRows = []; state.inactiveRows = [];
         state.totalCount = null; state.totalCountInactive = null;
         state.hasLine = false; state.hasTable = false; state.linePending = false;
-        if (searchKit && searchKit.reset) searchKit.reset();
+        resetSearch();
         closePops(null);
         if (window.__uboCache){ try { delete window.__uboCache[instanceId]; } catch(e){} }
         populateSort(); populateCols(); populateFilter(); syncFilterBadge(); syncColsBadge();
