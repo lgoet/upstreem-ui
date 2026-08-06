@@ -78,6 +78,22 @@
   position: sticky; top: calc(var(--up-sticky-top) + var(--up-thead-off)); z-index: 4;
   background: var(--uo-col-bg); border-radius: 16px 16px 0 0;
 }
+/* The border-radius above rounds the header's own box, but that alone changes nothing on screen:
+   the lane's background runs the full height BEHIND the pinned header, so the two corner notches
+   just expose more of the same grey and the top edge reads as square. These two pieces paint the
+   page surface into exactly the area outside the 16px radius, which is what makes the corner
+   visible. Same trick core.css uses for a pinned .up-thead. Scoped away from the stacked layout,
+   where the header is position:static and the pseudo-elements would have nothing to anchor to. */
+.up-sticky:not(.is-stacked) .uo-col-head::before,
+.up-sticky:not(.is-stacked) .uo-col-head::after {
+  content: ""; position: absolute; top: 0; width: 16px; height: 16px; pointer-events: none; z-index: 1;
+}
+.up-sticky:not(.is-stacked) .uo-col-head::before {
+  left: 0;  background: radial-gradient(circle at bottom right, rgba(0,0,0,0) 16px, var(--up-surface) 16.5px);
+}
+.up-sticky:not(.is-stacked) .uo-col-head::after {
+  right: 0; background: radial-gradient(circle at bottom left,  rgba(0,0,0,0) 16px, var(--up-surface) 16.5px);
+}
 .uo-col-dot { width: 8px; height: 8px; border-radius: 999px; flex: 0 0 auto; }
 /* Same 14px/500 as .up-heading -- a column title is a heading, and the standalone version's
    13.5px/600 was the single biggest reason the board read as a different app. */
@@ -229,9 +245,11 @@
   transition: opacity 160ms ease; will-change: opacity;
 }
 .uo-modal {
-  position: fixed; top: 0; right: 0; bottom: 0; z-index: 9900; width: min(720px, 86%);
+  /* Floating card, not flush to the edges: 6px off the top, right and bottom, rounded and framed
+     all round. The 110% slide still clears the viewport with the inset in place. */
+  position: fixed; top: 6px; right: 6px; bottom: 6px; z-index: 9900; width: min(720px, 86%);
   display: none; flex-direction: column;
-  background: var(--vc-bg); border-left: 1px solid var(--vc-border);
+  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 16px;
   box-shadow: -12px 0 32px rgba(0,0,0,0.15); overflow: hidden;
   transform: translateX(110%); transition: transform 180ms ease-in;
   will-change: transform; backface-visibility: hidden;
