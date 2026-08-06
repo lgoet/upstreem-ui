@@ -2152,7 +2152,18 @@
     while (el && el !== document.body && el !== document.documentElement && guard++ < 40){
       var cs; try { cs = window.getComputedStyle(el); } catch(e){ break; }
       var oy = cs.overflowY;
-      if (oy === "auto" || oy === "scroll" || oy === "overlay") break;   // the scroll container: leave it
+      /* The real scroll container: leave it alone, everything above it is none of our business.
+         "Real" means it actually scrolls, not just that overflow-y computes to auto -- and those
+         two come apart constantly: per spec, a box with overflow-x:hidden and overflow-y:visible
+         computes overflow-y to AUTO. Host wrappers set overflow-x:hidden all the time for
+         responsive reasons, and such a wrapper is content-height, so it never scrolls -- but the
+         browser still treats it as the nearest scrollport, which means a sticky header inside it
+         has nothing to stick to and simply scrolls away. Bailing out here also left it clipping.
+         So: only stop at a box that genuinely has scrollable overflow; anything else counts as a
+         clipper and gets unclipped, which removes it as a scrollport too. */
+      var scrolls = (oy === "auto" || oy === "scroll" || oy === "overlay") &&
+                    el.scrollHeight > el.clientHeight + 1;
+      if (scrolls) break;
       var clips = (cs.overflow === "hidden" || cs.overflow === "clip" ||
                    cs.overflowX === "hidden" || cs.overflowX === "clip" ||
                    oy === "hidden" || oy === "clip");

@@ -216,25 +216,33 @@
    containing block of its own, while still carrying the .up-root token scope the drawer's colours
    come from. */
 .uo-portal { display: contents; }
-/* z-index 8000/8001: above the page, deliberately BELOW the host app's own drawers and their
-   backdrops (documented at ~9930, same reasoning as prompts-table's bulk bar). */
+/* Geometry, timings and stacking are the host app's own drawer system, copied deliberately so this
+   panel is indistinguishable from every other drawer in the product:
+     - edge to edge, no inset and no radius: full screen height, flush right
+     - closed at translateX(110%), 180ms ease-in out / 220ms cubic-bezier(.32,.72,0,1) in
+     - backdrop 160ms/200ms ease with a 1.5px blur
+     - z-index 9900/9895, one step under the app's lowest drawer pair (dz1 9910 / bz1 9905), so any
+       of the app's own drawers still opens on top of this one. */
 .uo-scrim {
-  position: fixed; inset: 0; z-index: 8000; display: none; background: transparent;
-  -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
-  opacity: 0; transition: opacity 220ms ease;
+  position: fixed; inset: 0; z-index: 9895; display: none; background: transparent;
+  opacity: 0; pointer-events: none;
+  transition: opacity 160ms ease; will-change: opacity;
 }
 .uo-modal {
-  /* full viewport height, unchanged width -- it is a page-level drawer, not a component overlay */
-  position: fixed; top: 6px; right: 6px; bottom: 6px; z-index: 8001; width: min(720px, 86%);
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 9900; width: min(720px, 86%);
   display: none; flex-direction: column;
-  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 16px;
-  box-shadow: 0 20px 48px rgba(0,0,0,.22); overflow: hidden;
-  transform: translateX(120%); transition: transform 260ms cubic-bezier(0.22,0.61,0.36,1);
+  background: var(--vc-bg); border-left: 1px solid var(--vc-border);
+  box-shadow: -12px 0 32px rgba(0,0,0,0.15); overflow: hidden;
+  transform: translateX(110%); transition: transform 180ms ease-in;
+  will-change: transform; backface-visibility: hidden;
 }
 .uo-root.detail-open .uo-scrim { display: block; }
 .uo-root.detail-open .uo-modal { display: flex; }
-.uo-root.detail-in .uo-scrim { opacity: 1; }
-.uo-root.detail-in .uo-modal { transform: translateX(0); }
+.uo-root.detail-in .uo-scrim {
+  opacity: 1; pointer-events: auto; transition: opacity 200ms ease;
+  -webkit-backdrop-filter: blur(1.5px); backdrop-filter: blur(1.5px);
+}
+.uo-root.detail-in .uo-modal { transform: translateX(0); transition: transform 220ms cubic-bezier(0.32, 0.72, 0, 1); }
 
 .uo-m-head { flex: 0 0 auto; padding: 16px 16px 14px; border-bottom: 1px solid var(--vc-border); position: relative; }
 .uo-m-actions { position: absolute; top: 12px; right: 12px; display: inline-flex; align-items: center; gap: 4px; }

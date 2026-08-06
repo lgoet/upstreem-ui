@@ -471,6 +471,7 @@
     portal.classList.add('detail-open');
     void modal.offsetWidth;
     requestAnimationFrame(function(){ portal.classList.add('detail-in'); });
+    lockPageScroll(true);
     modal.querySelector('#uo-m-close').addEventListener('click', closeDetail);
     var ign = modal.querySelector('#uo-m-ignore');
     if (ign) ign.addEventListener('click', function(){ emit('ignore_opportunity', { opportunity_id: id }); setStatus(id, 'ignored'); });
@@ -485,7 +486,26 @@
   function closeDetail(){
     S.detailId = null;
     portal.classList.remove('detail-in');
-    closeTimer = setTimeout(function(){ portal.classList.remove('detail-open'); if (modalEl) modalEl.innerHTML = ''; }, 280);
+    lockPageScroll(false);
+    // 200ms = the 180ms slide-out plus a small buffer, same number the host app's drawer uses
+    closeTimer = setTimeout(function(){ portal.classList.remove('detail-open'); if (modalEl) modalEl.innerHTML = ''; }, 200);
+  }
+  /* Scroll-lock, matching the host app's drawer system: while a drawer is open #main stops
+     scrolling, and its position is restored on close so the page does not jump. Everything here is
+     optional -- no #main (standalone page, a different host) simply means no lock. The class is
+     only lifted when NONE of the app's own drawers is open either, so closing this one cannot
+     unlock the page underneath one of theirs. */
+  var mainScrollTop = 0;
+  function lockPageScroll(on){
+    var main = document.getElementById('main');
+    if (!main) return;
+    var locked = main.classList.contains('drawer-locked');
+    if (on && !locked){ mainScrollTop = main.scrollTop; main.classList.add('drawer-locked'); }
+    else if (!on && locked){
+      if (document.querySelector('[id^="drawer-"].open')) return;   // one of the app's own is still up
+      main.classList.remove('drawer-locked');
+      main.scrollTop = mainScrollTop;
+    }
   }
 
   /* ---------- status change ---------- */
@@ -738,7 +758,10 @@
   }
   function resyncSticky(){ if (stickyWanted() !== root.classList.contains('up-sticky')) applySticky(); }
   [120, 400, 1000, 2500].forEach(function(ms){ setTimeout(resyncSticky, ms); });
-  window.addEventListener('scroll', resyncSticky, { passive: true });
+  /* On document in the CAPTURE phase, not on window: the host page scrolls an inner element
+     (#main), and an element's scroll event does not bubble -- a window listener would never hear
+     it. Capture on document sees every scroll in the page, whichever box does the scrolling. */
+  document.addEventListener('scroll', resyncSticky, { capture: true, passive: true });
 
   /* ---------- resize ---------- */
   var rzTimer = null;
