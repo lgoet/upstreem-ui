@@ -664,6 +664,11 @@
    anchors to whatever positioned ancestor happens to be further up the tree instead (root itself
    is position:relative), landing far from the Sorter button that opens it. */
 .upt-grp-sidesort { position: relative; flex: 0 0 auto; }
+/* Sort Groups sits at the LEFT edge of the sidelist -- the shared .up-menu default (right:0,
+   opening leftward toward the viewport edge) would push this dropdown away from the panel instead
+   of over it. Left-align it instead so it opens to the right, same direction as the panel's own
+   content. */
+.upt-grp-sidesort-menu { right: auto; left: 0; }
 /* Takes over the whole sidehead row when open -- see toggleGrpSideSearch() in prompts-table.js.
    No width check the way the toolbar's own .up-search/.is-searchtakeover has: this panel never has
    room to spare, so a takeover is the only layout that ever makes sense here. */
