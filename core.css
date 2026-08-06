@@ -1438,7 +1438,10 @@
 .up-ph-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .up-ph-left { display: flex; flex-direction: column; min-width: 0; }
 
-.up-ph-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+/* margin-bottom 8px (not the 12px heading->desc gets) -- the meta line reads as a label sitting
+   directly above the heading, not a peer paragraph, so it stays visually closer to it than the
+   heading is to the description below. */
+.up-ph-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 /* grayscale(1): a brand's own logo colour would otherwise compete with this being a quiet,
    secondary line above the real heading. */
 .up-ph-metalogo { width: 16px; height: 16px; display: block; flex: 0 0 auto; filter: grayscale(1); object-fit: cover; }
@@ -1446,7 +1449,9 @@
 
 .up-ph-heading { margin: 0 0 12px; font-size: 28px; font-weight: 500; color: var(--vc-text);
   letter-spacing: -0.5px; line-height: 1.2; }
-.up-ph-desc { margin: 0; font-size: 17px; font-weight: 400; color: var(--vc-muted); line-height: 1.4; }
+/* 15px puts the description at ~54% of the 28px heading -- inside the ~50-57% ratio typical for a
+   subtitle under an H1; 17px (61%) read a shade too close to the heading's own weight. */
+.up-ph-desc { margin: 0; font-size: 15px; font-weight: 400; color: var(--vc-muted); line-height: 1.4; }
 
 .up-ph-addbtn { flex: 0 0 auto; margin-top: -16px; }
 
