@@ -3845,6 +3845,7 @@
   /* ---------------- Chat-view topbar (chat name + chevron + inline rename) ---------------- */
   function cssEsc(v){ return (window.CSS && CSS.escape) ? CSS.escape(String(v)) : String(v).replace(/["\\]/g, '\\$&'); }
   var _heroEl       = root.querySelector('.am-hero');
+  var _composerAreaEl = root.querySelector('.am-composer-area');
   var elChatTitlebar= root.querySelector('#am-chat-titlebar');
   var elCtBack      = root.querySelector('#am-ct-back');
   var elCtName      = root.querySelector('#am-ct-name');
@@ -3929,6 +3930,11 @@
     if (root.classList.contains('has-messages') === on) return;
     if (!_heroEl || !_heroReady){ root.classList.toggle('has-messages', on); renderChatTitlebar(); return; }
     var from = _heroEl.getBoundingClientRect().height;
+    // the composer's resting Y position genuinely differs between the two states now (centred
+    // group on the start screen vs. pinned to the bottom once a chat is open) -- FLIP it exactly
+    // like the hero: measure before, toggle, then animate the delta away with a transform so it
+    // reads as one smooth 200ms move instead of a jump.
+    var composerFrom = _composerAreaEl ? _composerAreaEl.getBoundingClientRect().top : null;
     root.classList.toggle('has-messages', on);
     _heroEl.style.transition = 'none'; _heroEl.style.height = '';
     var to = _heroEl.getBoundingClientRect().height;
@@ -3938,6 +3944,19 @@
     _heroEl.style.height = to + 'px';
     clearTimeout(_heroEl._amT);
     _heroEl._amT = setTimeout(function(){ _heroEl.style.transition = ''; _heroEl.style.height = ''; }, 240);
+    if (_composerAreaEl && composerFrom != null){
+      var composerTo = _composerAreaEl.getBoundingClientRect().top;
+      var dy = composerFrom - composerTo;
+      if (Math.abs(dy) > 1){
+        _composerAreaEl.style.transition = 'none';
+        _composerAreaEl.style.transform = 'translateY(' + dy + 'px)';
+        void _composerAreaEl.offsetWidth;
+        _composerAreaEl.style.transition = 'transform 200ms ease';
+        _composerAreaEl.style.transform = '';
+        clearTimeout(_composerAreaEl._amT);
+        _composerAreaEl._amT = setTimeout(function(){ _composerAreaEl.style.transition = ''; }, 240);
+      }
+    }
     renderChatTitlebar();
   }
   window.__amSetHasMessages = setHasMessages;
@@ -4379,10 +4398,7 @@
     requestAnimationFrame(fit);
     window.addEventListener('load', function(){ fit(); setTimeout(fit, 60); setTimeout(fit, 200); setTimeout(fit, 450); });
     setTimeout(fit, 120); setTimeout(fit, 400);
-    // Boot is when Bubble is most likely to still be moving us (late header, a sibling group
-    // showing up) -- poll tight for the first few seconds, then relax once things have settled.
-    var _watchIv = setInterval(watch, 120);
-    setTimeout(function(){ clearInterval(_watchIv); _watchIv = setInterval(watch, 300); }, 4000);
+    setInterval(watch, 300);
     window.addEventListener('resize', fit);
     // a stray page nudge (the ~30px) snaps straight back to the top + refits
     window.addEventListener('scroll', function(){ if ((window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0) > 0) fit(); }, { passive: true });

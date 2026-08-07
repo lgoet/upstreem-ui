@@ -636,6 +636,11 @@
     var isDark = isYes(root.getAttribute("data-isdark"));
     if (isDark) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
 
+    /* The fader/cols count badges are plain position:absolute children poking -3px above their
+       button -- same escape-a-too-tight-Bubble-wrapper problem the popover menus have, just never
+       given the same fix here. Unclip once, unconditionally, like topics-manager.js's page does. */
+    UC.unclipAncestors(root, false);
+
     /* ONE firing shape: every event of this component sends a bare value ("day", a company_id,
        "active"), exactly like visibility-chart, so the Bubble side needs no regex. UC.makeFire is
        deliberately not used: it JSON.stringify()s its payload, which would turn a company_id into

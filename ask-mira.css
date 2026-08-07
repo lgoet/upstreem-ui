@@ -690,22 +690,24 @@
   /* Suggested questions */
   .am-suggested { max-width: 920px; margin: clamp(14px, 4vh, 36px) auto 0; width: 100%; }
   #ask-mira.has-messages .am-suggested { display: none; }
-  /* Start screen: instead of the categories sitting glued to the top of .am-chat with whatever's
-     left over as dead space below them, centre the {heading, categories} group inside .am-chat's
-     box and give the composer a fixed 128px gap below it -- reads as sitting nearer the middle of
-     the screen instead of stuck to the far bottom edge. (.am-composer-area is a flex sibling of
-     .am-chat, not a descendant, and .am-chat keeps flex:1 -- its box always ends exactly where the
-     composer begins, so this only repositions the categories *within* that box, not the composer
-     itself.) Skipped in .is-compact, which already has its own short-viewport layout. */
-  #ask-mira:not(.has-messages):not(.is-compact) .am-chat { display: flex; flex-direction: column; justify-content: center; }
-  #ask-mira:not(.has-messages):not(.is-compact) .am-suggested { margin-bottom: 128px; }
-  /* .am-chat's own box still ends exactly where it always did (see above), so pull the composer up
-     off that fixed bottom edge with a transform instead -- purely cosmetic, doesn't touch layout/
-     flex distribution, so nothing else can shift around it. Capped so it never floats up further
-     than 160px even on a very tall screen. Removing this on send is what .am-composer-area's own
-     transform transition (200ms ease, declared on the base rule) animates -- the "flies back down
-     to its normal spot" motion the start screen -> chat transition should have. */
-  #ask-mira:not(.has-messages):not(.is-compact) .am-composer-area { transform: translateY(calc(-1 * min(15vh, 160px))); }
+  /* Start screen: {heading+categories, composer} as ONE group, centred as a whole -- equal space
+     above the categories and below the composer, both measured to the edge of the component.
+     .am-composer-area is a flex sibling of .am-chat (not a descendant), so true group-centering
+     needs .am-chat to stop force-growing (flex:1, which always ends exactly at the composer
+     regardless of content) and instead size to its own content; margin-top:auto on it plus
+     margin-bottom:auto on the composer then split the leftover space in .am-shell equally between
+     "above the categories" and "below the composer" -- standard two-item flex centering, just
+     with the composer sitting outside the item that holds the visible content. The hero stays
+     pinned at the top throughout: it isn't part of this margin pair, so none of its space is up
+     for grabs. Skipped in .is-compact, which already has its own short-viewport layout (and would
+     otherwise be fighting this for the same leftover space on a short screen). */
+  /* padding-top/margin-top: 0 -- both would otherwise stack an extra, un-matched gap on TOP of the
+     centred group (an older rule's breathing room + .am-suggested's own default top margin), which
+     is exactly the kind of top/bottom asymmetry this is meant to avoid; the auto-margin is the only
+     source of space on either side now. */
+  #ask-mira:not(.has-messages):not(.is-compact) .am-chat { flex: 0 1 auto; margin-top: auto; padding-top: 0; }
+  #ask-mira:not(.has-messages):not(.is-compact) .am-suggested { margin-top: 0; margin-bottom: 128px; }
+  #ask-mira:not(.has-messages):not(.is-compact) .am-composer-area { margin-bottom: auto; }
   .am-welcome { margin: 0 0 40px; }
   .am-welcome-title {
     margin: 0;
@@ -976,7 +978,6 @@
     flex: 0 0 auto; position: relative; z-index: 2;
     padding: 10px clamp(14px, 3vw, 28px) clamp(12px, 2vw, 16px);
     background: linear-gradient(to top, var(--am-bg) 70%, transparent);
-    transition: transform 200ms ease;
   }
   /* ===== right-edge message navigation (scroll spy) ===== */
   .am-msgnav { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); z-index: 30; display: none; transition: opacity 180ms ease; }
