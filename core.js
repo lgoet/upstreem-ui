@@ -2161,9 +2161,23 @@
          has nothing to stick to and simply scrolls away. Bailing out here also left it clipping.
          So: only stop at a box that genuinely has scrollable overflow; anything else counts as a
          clipper and gets unclipped, which removes it as a scrollport too. */
-      var scrolls = (oy === "auto" || oy === "scroll" || oy === "overlay") &&
-                    el.scrollHeight > el.clientHeight + 1;
-      if (scrolls) break;
+      var canScrollY = (oy === "auto" || oy === "scroll" || oy === "overlay");
+      var scrolls = canScrollY && el.scrollHeight > el.clientHeight + 1;
+      /* "It does not overflow right now" is NOT the same as "it is not the scroll container".
+         Components boot before the page's data arrives, so the app's own scroll region is
+         routinely still empty at this moment -- and then this walked straight into it and wrote an
+         inline overflow:visible, which never comes back. The page loses its scroll container for
+         good: content spills into the document, which becomes the scroller instead, and the page
+         can be scrolled far past the end of the app's own content into empty space.
+         Reproduced: #main with overflow-y:auto, 800px tall, 500px of content at boot -> unclipped
+         -> still overflow:visible once 2300px of real content arrived, never scrolled again.
+         So also refuse to touch anything that CAN scroll vertically and is about as tall as the
+         viewport: that shape is an app scroll region, empty or not. The wrappers this function
+         exists for are short (a short component means a short Bubble wrapper), so this costs
+         nothing -- they stay unclipped exactly as before. */
+      var vpH = window.innerHeight || document.documentElement.clientHeight || 0;
+      var isPageScroller = canScrollY && vpH > 0 && el.clientHeight >= vpH * 0.8;
+      if (scrolls || isPageScroller) break;
       var clips = (cs.overflow === "hidden" || cs.overflow === "clip" ||
                    cs.overflowX === "hidden" || cs.overflowX === "clip" ||
                    oy === "hidden" || oy === "clip");
