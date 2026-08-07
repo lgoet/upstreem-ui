@@ -126,6 +126,19 @@
      containing block of its own. __uprInit marks it as done so uprRun's sweep skips it. */
   var portal = document.createElement('div');
   portal.className = 'up-root upr-root upr-portal';
+  /* Out of the page flow INLINE, not via the stylesheet. The classes above only keep this element
+     harmless while prompt-research.css is actually on the page: it is that file which supplies
+     .upr-portal{display:contents} and the position:fixed + display:none on the scrim and panel.
+     If it is missing (a pin that 404s, a page that loads the script but not the stylesheet), the
+     element falls back to core.css's .up-root{display:flex;width:100%} and the closed panel
+     renders as a plain static block at the end of <body> -- measured 414px of extra page height,
+     which is exactly the "you can keep scrolling past the end of the app into empty space" report.
+     A host box that is fixed and 0x0 cannot add height under ANY stylesheet. When the CSS is
+     present display:contents means no box is generated at all and these are simply ignored. */
+  portal.style.position = 'fixed';
+  portal.style.top = '0'; portal.style.left = '0';
+  portal.style.width = '0'; portal.style.height = '0';
+  portal.style.overflow = 'hidden';
   portal.__uprInit = true;
   portal.__uprOwner = root;
   var sideScrim = root.querySelector('.upr-side-scrim');

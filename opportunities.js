@@ -64,6 +64,17 @@
      uoRun's ".uo-root" sweep would come back and try to boot the portal as a second board. */
   var portal = document.createElement('div');
   portal.className = 'up-root uo-root uo-portal';
+  /* Out of the page flow INLINE, not via the stylesheet -- same reasoning as prompt-research.js's
+     portal. The classes only keep this harmless while opportunities.css is on the page: that file
+     supplies .uo-portal{display:contents} and the position:fixed + display:none on scrim and
+     drawer. Without it the element falls back to core.css's .up-root{display:flex;width:100%} and
+     the closed drawer becomes a plain static block at the end of <body>, adding real height to the
+     page and letting it scroll past the end of the app. Fixed and 0x0 cannot add height under any
+     stylesheet; with the CSS present display:contents generates no box and these are ignored. */
+  portal.style.position = 'fixed';
+  portal.style.top = '0'; portal.style.left = '0';
+  portal.style.width = '0'; portal.style.height = '0';
+  portal.style.overflow = 'hidden';
   portal.__uoInit = true;
   portal.__uoOwner = root;
   var scrimEl = root.querySelector('.uo-scrim');
