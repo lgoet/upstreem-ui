@@ -162,10 +162,13 @@
    .upr-shell first -- see prompt-research.js. Pinned against .upr-shell, which is already
    position:relative, and the offsets are measured from the component's own edge rather than from
    the shell's padding, so it really does sit in the corner. */
-.upr-history-entry { position: absolute; top: clamp(14px, 2vw, 22px); right: clamp(14px, 2vw, 22px); z-index: 6; display: flex; }
-@media (max-width: 720px){
-  .upr-history-entry { top: 12px; right: 12px; }
-}
+.upr-history-entry { position: absolute; top: 16px; right: 16px; z-index: 6; display: flex; }
+/* The results view has its own history button (#upr-open-history-results) inside the results
+   stage. This one is authored inside .upr-content, which .upr-root.is-results hides -- but the
+   boot script lifts it out to .upr-shell, so it escaped that rule and both showed at once.
+   Hide it explicitly in the states where .upr-content is not the visible view. */
+.upr-root.is-results .upr-history-entry,
+.upr-root.is-running .upr-history-entry { display: none; }
 /* Secondary button, same shape as core's .up-empty-btn so it reads as one family. */
 .upr-secondary-btn {
   height: 32px; padding: 0 12px; border: 1px solid var(--vc-border); border-radius: 8px;
@@ -348,7 +351,10 @@
 }
 .upr-root.is-results .upr-results-stage { display: flex; }
 .upr-results-stage > .upr-results-nav, .upr-results-stage > .up-head { flex: 0 0 auto; }
-.upr-results-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
+/* .upr-root.is-results sets the shell's padding to 0, so this row would otherwise sit flush
+   against the component edge. 16px top/left/right matches the inset the start view's history
+   button gets, so both views hold their top buttons at the same distance from the edge. */
+.upr-results-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 16px 16px 0; margin-bottom: 16px; }
 .upr-results-nav-right { display: flex; align-items: center; gap: 8px; }
 /* Context pills: market / keywords / business model / persona. Component-specific — nothing else
    in the app carries a "what was this query" strip. */

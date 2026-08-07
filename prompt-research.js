@@ -654,6 +654,12 @@
         '<span class="upr-dd-optlabel">' + esc(m.name) + ' <span class="upr-dd-meta">(' + esc(m.alpha2) + ')</span></span>' +
         '<span class="upr-flag">' + flagHtml(m.flag_url, m.name) + '</span></button>';
     }).join('') + '<div class="upr-dd-empty">No markets found</div>';
+    /* A market the host asked for wins over "just take the first option". The request usually
+       arrives before this list exists (Bubble fires setMarket from a run-JS step on page load),
+       so it is parked in _pendingMarket and claimed here -- this is the single point every path
+       into the dropdown goes through, whether the markets came from setMarkets() or from the
+       embedded #upr-markets-json tag at boot. */
+    if (_pendingMarket != null && applyMarket(_pendingMarket)){ _pendingMarket = null; return; }
     var first = list.querySelector('.upr-dd-option');
     if (first) setDropdownValue(dd, first);
   }
@@ -959,10 +965,7 @@
     if (!Array.isArray(items)) return;
     var tag = root.querySelector('#upr-markets-json') || document.getElementById('upr-markets-json');
     if (tag) tag.textContent = JSON.stringify(items);
-    renderMarketDropdown();
-    /* renderMarketDropdown() always selects the first option, so a market that was requested
-       before the list existed has to be re-applied here -- see _pendingMarket below. */
-    if (_pendingMarket != null && applyMarket(_pendingMarket)) _pendingMarket = null;
+    renderMarketDropdown();   // claims _pendingMarket itself, see there
   };
 
   /* ---------- settings the host sets from outside ----------
@@ -971,17 +974,18 @@
      of the file covers that part). So setMarket() remembers what was asked for and setMarkets()
      re-applies it once the options exist. */
   var _pendingMarket = null;
-  function applyMarket(v){
+  /* Pick the option whose alpha2 ("DE"), alpha3 ("DEU"), value or label ("Germany", "B2B")
+     matches, and select it through setDropdownValue -- the same path a real click takes, so the
+     trigger label, the checkmark and state[] all update exactly as if the user had chosen it. */
+  function selectDdValue(dd, v){
+    if (!dd) return false;
     var want = String(v && typeof v === 'object'
-      ? (v.alpha2 || v.alpha3 || v.value || v.market || v.name || '')
+      ? (v.alpha2 || v.alpha3 || v.value || v.market || v.business_model || v.name || '')
       : (v == null ? '' : v)).trim().toLowerCase();
     if (!want) return false;
-    var dd = root.querySelector('#upr-market-dd');
-    if (!dd) return false;
     var opts = Array.prototype.slice.call(dd.querySelectorAll('.upr-dd-option'));
     for (var i = 0; i < opts.length; i++){
       var o = opts[i];
-      // accept the alpha2 ("DE"), the alpha3 ("DEU") or the plain name ("Germany")
       var cand = [o.getAttribute('data-alpha2'), o.getAttribute('data-alpha3'),
                   o.getAttribute('data-value'), o.getAttribute('data-label')];
       for (var j = 0; j < cand.length; j++){
@@ -990,22 +994,30 @@
     }
     return false;
   }
-  api.setMarket = function(v){
+  function applyMarket(v){ return selectDdValue(root.querySelector('#upr-market-dd'), v); }
+  function coerce(v){
     if (typeof v === 'string'){
       var t = v.trim();
-      if (t.charAt(0) === '{' || t.charAt(0) === '['){ try { v = JSON.parse(t); } catch(e){} }
+      if (t.charAt(0) === '{' || t.charAt(0) === '['){ try { return JSON.parse(t); } catch(e){ return t; } }
     }
-    if (Array.isArray(v)) v = v[0];
+    return Array.isArray(v) ? v[0] : v;
+  }
+  api.setMarket = function(v){
+    v = coerce(v);
     _pendingMarket = v;
     if (applyMarket(v)) _pendingMarket = null;
   };
-  /* No visible control for this one -- it only rides along in the research payload. */
+  /* Business model is a plain three-option dropdown that is in the markup from the start, so no
+     pending dance is needed -- but it DOES have a visible control, which the first version of this
+     missed: it only wrote state.business_model, leaving the trigger stuck on "B2C". */
   api.setBusinessModel = function(v){
-    var s = String(v && typeof v === 'object' ? (v.business_model || v.value || '') : (v == null ? '' : v)).trim().toLowerCase();
-    if (s) state.business_model = s;
+    selectDdValue(root.querySelector('.upr-dd[data-name="business_model"]'), coerce(v));
   };
   api.setPersona = function(v){
-    state.persona = String(v == null ? '' : v).trim();
+    var s = String(v == null ? '' : v).trim();
+    state.persona = s;
+    var el = root.querySelector('.upr-persona-input, #upr-persona, [data-name="persona"] input');
+    if (el && 'value' in el) el.value = s;
   };
 
   renderSuggestions();
