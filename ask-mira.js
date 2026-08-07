@@ -4341,21 +4341,27 @@
   })();
 
 
-  /* #3 — Mobile: keep the component EXACTLY the height of the VISIBLE viewport (visualViewport).
-     - excludes the mobile address bar (100vh/100dvh would be too tall -> page scroll), so the
-       element can never be taller than the screen and the page never scrolls.
-     - shrinks when the keyboard opens, so the composer stays visible and the browser has no reason
-       to pan the page up (the ~50px upward shift).
+  /* #3 — Give ourselves a definite height, so .am-chat can scroll INSIDE us and the composer stays
+     pinned. Two hard rules here, both learned the painful way:
+
+       1. We never touch the host page's scrolling. No window.scrollTo, no resetting an ancestor's
+          scrollTop. Mira is ONE component inside a page that scrolls (#main in the Bubble app) —
+          where that page is scrolled to is none of our business.
+       2. Our height must not depend on where that page is scrolled to. getBoundingClientRect().top
+          is viewport-relative, so sizing against it made our height a function of the scroll
+          position: scrolling changed our height, our height changed the scroller's scrollHeight,
+          and that moved the scroll position again — a feedback loop with the scroller. That is what
+          let the page overshoot far past its end and then snap back to the bottom. Debouncing only
+          changed how chunky the loop felt; the fix is to not couple the two at all. So we measure
+          our offset inside the scroller's CONTENT, which is the same number at every scroll
+          position, and the page just scrolls normally underneath us.
+
      No position:fixed -> also works when a Bubble ancestor has a transform (which breaks fixed). */
   (function(){
     var vv = window.visualViewport;
-    // scroll/resize/visualViewport events can fire many times a second while the user is actively
-    // scrolling -- most visibly right as #main hits its scroll boundary and rubber-bands, which
-    // repeatedly nudges visualViewport.height (dynamic toolbar) and every ancestor's measured
-    // position. Calling fit() straight from each of those forces a synchronous reflow AND mutates
-    // this root's own height on every tick -- that changes #main's own scrollHeight mid-gesture,
-    // which is what caused the hard snap/jank the user hit. Route all of those through this debounce
-    // so fit() only actually runs once things have settled, not on every intermediate tick.
+    // window/visualViewport resize can burst (a resize drag, the keyboard sliding in) -- coalesce
+    // those. Nothing here is wired to scroll anymore, so this is only about not doing the same
+    // layout work 30x during one gesture.
     var _fitTimer = null;
     function scheduleFit(){
       if (_fitTimer) clearTimeout(_fitTimer);
@@ -4365,55 +4371,61 @@
     // A hidden element (Bubble group not shown yet) reports rect 0 -> measuring then would compute the
     // height against top:0 and leave it TOO TALL once shown (footer/hint pushed below the screen).
     function visible(){ return !!(root.offsetWidth || root.offsetHeight || root.getClientRects().length); }
-    function pinTop(){
-      // 'instant': Bubble may set scroll-behavior:smooth, which turns scrollTo into an ANIMATION —
-      // fit() would then measure a stale (negative) top and size the element too tall.
+    // Nearest ancestor that GENUINELY scrolls: real overflow AND more content than fits. Same test
+    // UC.unclipAncestors uses -- a wrapper that merely happens to have overflow:auto is not a
+    // scroll container, and treating it as one is how we mismeasured before.
+    function scrollerOf(){
+      var n = root.parentElement, g = 0;
+      while (n && n !== document.body && n !== document.documentElement && g++ < 25){
+        var oy = ''; try { oy = getComputedStyle(n).overflowY; } catch(_){}
+        if ((oy === 'auto' || oy === 'scroll' || oy === 'overlay') && n.scrollHeight > n.clientHeight + 1) return n;
+        n = n.parentElement;
+      }
+      return null;
+    }
+    // How far down the scroller's CONTENT we sit. Unlike getBoundingClientRect().top this is the
+    // same number no matter where the page is currently scrolled -- that is the whole point.
+    function offsetInContent(){
       try {
-        if ((window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0) > 0){
-          try { window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); } catch(_){ window.scrollTo(0, 0); }
-        }
-      } catch(_){}
-      // a Bubble page sometimes scrolls an inner container instead of the window -- but that
-      // container has to be a spurious wrapper with nothing genuine to scroll (scrollHeight ~=
-      // clientHeight), never a REAL scroll area with actual content (scrollHeight > clientHeight,
-      // e.g. the app's own #main). Resetting a real scroll container's scrollTop here fights the
-      // user's own scrolling (and, worse, an OS rubber-band bounce at the end of it) every time
-      // this runs, which is a much bigger bug than the stray-nudge case this exists to fix.
-      try {
-        var n = root.parentElement, g = 0;
-        while (n && n !== document.body && n !== document.documentElement && g++ < 25){
-          if (n.scrollTop > 0 && n.scrollHeight <= n.clientHeight + 1) n.scrollTop = 0;
-          n = n.parentElement;
-        }
-      } catch(_){}
+        var r = root.getBoundingClientRect(), sc = scrollerOf();
+        if (sc) return Math.max(0, Math.round(r.top - sc.getBoundingClientRect().top + sc.scrollTop));
+        return Math.max(0, Math.round(r.top + (window.pageYOffset || document.documentElement.scrollTop || 0)));
+      } catch(_){ return 0; }
     }
     function fit(){
       if (!visible()) return;
-      pinTop();
-      // Own exactly the space from our own top edge down to the bottom of the VISIBLE viewport, instead of
-      // relying on CSS height:100% (which needs a definite parent height and lets the Bubble page overflow
-      // by whatever sits above the element).
-      //   desktop -> innerHeight
-      //   mobile  -> visualViewport.height (excludes the address bar, shrinks with the keyboard)
-      // Subtracting our own top is essential in BOTH: if any Bubble chrome sits above us, a full-viewport
-      // height would push our footer (the "Mira answers based on..." hint) below the screen and make the
-      // page scrollable, which is what made it look cut off at the top.
-      var vh = Math.round((isSmall() && vv) ? vv.height : window.innerHeight);
-      var top = 0; try { top = Math.max(0, Math.round(root.getBoundingClientRect().top)); } catch(_){}
-      var dh = vh - top;
-      if (dh > 120){ root.style.height = dh + 'px'; root.style.maxHeight = dh + 'px'; }
+      // Phone with the keyboard open: visualViewport shrinks, so take exactly that and the composer
+      // stays on screen. This is the ONE case that needs an inline height on mobile -- otherwise the
+      // stylesheet's 100dvh already does the right thing with no JS in the loop at all.
+      if (isSmall() && vv && (window.innerHeight - vv.height) > 120){
+        var kh = Math.round(vv.height);
+        root.style.height = kh + 'px'; root.style.maxHeight = kh + 'px';
+        return;
+      }
+      if (isSmall()){ root.style.height = ''; root.style.maxHeight = ''; return; }
+      // Desktop: fill from our own place in the page down to the bottom of the screen. If Bubble
+      // chrome sits above us the page simply scrolls that bit -- normal, and far better than us
+      // trying to out-argue the page about its own scroll position.
+      var vh = Math.round(window.innerHeight);
+      var dh = vh - offsetInContent();
+      if (dh < 320) dh = vh;   // sitting too far down for "fill to the bottom" to mean anything -> take a full screen
+      root.style.height = dh + 'px'; root.style.maxHeight = dh + 'px';
     }
     // The height math only holds while our top edge and the viewport stay put. Bubble can move us later
     // (late header, async content, a scrolled ancestor, a group being shown) WITHOUT firing resize/scroll —
     // that left the element too tall: the "Mira answers based on..." hint sat below the screen and the page
     // became scrollable, so it looked cut off at the top until you interacted (which fired another fit()).
     // This watcher refits whenever our position or the viewport actually changes, so it self-corrects.
-    var _lt = null, _lh = null;
+    // Bubble can move us later (late header, async content, a group being shown) without firing
+    // resize. This watcher refits when that happens -- and it compares only scroll-INDEPENDENT
+    // numbers, so merely scrolling the page can never trigger a refit. That is what makes a plain
+    // 300ms poll safe here again.
+    var _lo = null, _lh = null;
     function watch(){
       if (!visible()) return;
-      var t; try { t = Math.round(root.getBoundingClientRect().top); } catch(_){ return; }
+      var o = offsetInContent();
       var h = Math.round(vv ? vv.height : window.innerHeight);
-      if (t !== _lt || h !== _lh){ _lt = t; _lh = h; scheduleFit(); }
+      if (o !== _lo || h !== _lh){ _lo = o; _lh = h; scheduleFit(); }
     }
     fit();
     requestAnimationFrame(fit);
@@ -4421,18 +4433,17 @@
     setTimeout(fit, 120); setTimeout(fit, 400);
     setInterval(watch, 300);
     window.addEventListener('resize', scheduleFit);
-    // a stray page nudge (the ~30px) snaps straight back to the top + refits -- debounced, since
-    // 'scroll' fires continuously while #main is actively scrolling/bouncing.
-    window.addEventListener('scroll', function(){ if ((window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0) > 0) scheduleFit(); }, { passive: true });
+    // Deliberately NO window 'scroll' listener and no vv 'scroll' listener: page scrolling must
+    // never make us re-measure or re-size. See the feedback-loop note at the top of this block.
     if (window.ResizeObserver){
       try { new ResizeObserver(watch).observe(document.documentElement); } catch(_){}
       try { new ResizeObserver(watch).observe(document.body); } catch(_){}
       // a sibling Bubble element resizing (its own late content, a group toggling) can shift OUR
-      // top without document/body ever changing size -- watch our own host container too.
+      // position without document/body ever changing size -- watch our own host container too.
       try { if (root.parentElement) new ResizeObserver(watch).observe(root.parentElement); } catch(_){}
     }
     window.addEventListener('orientationchange', function(){ setTimeout(fit, 60); setTimeout(fit, 250); });
-    if (vv){ vv.addEventListener('resize', scheduleFit); vv.addEventListener('scroll', scheduleFit); }
+    if (vv){ vv.addEventListener('resize', scheduleFit); }
     elTextarea.addEventListener('focus', function(){ fit(); setTimeout(fit, 60); setTimeout(fit, 250); setTimeout(fit, 500); });
     elTextarea.addEventListener('blur',  function(){ setTimeout(fit, 60); setTimeout(fit, 300); });
     // Bonus: let Chrome/Android resize the layout viewport for the keyboard instead of panning.
