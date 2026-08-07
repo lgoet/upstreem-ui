@@ -690,6 +690,22 @@
   /* Suggested questions */
   .am-suggested { max-width: 920px; margin: clamp(14px, 4vh, 36px) auto 0; width: 100%; }
   #ask-mira.has-messages .am-suggested { display: none; }
+  /* Start screen: instead of the categories sitting glued to the top of .am-chat with whatever's
+     left over as dead space below them, centre the {heading, categories} group inside .am-chat's
+     box and give the composer a fixed 128px gap below it -- reads as sitting nearer the middle of
+     the screen instead of stuck to the far bottom edge. (.am-composer-area is a flex sibling of
+     .am-chat, not a descendant, and .am-chat keeps flex:1 -- its box always ends exactly where the
+     composer begins, so this only repositions the categories *within* that box, not the composer
+     itself.) Skipped in .is-compact, which already has its own short-viewport layout. */
+  #ask-mira:not(.has-messages):not(.is-compact) .am-chat { display: flex; flex-direction: column; justify-content: center; }
+  #ask-mira:not(.has-messages):not(.is-compact) .am-suggested { margin-bottom: 128px; }
+  /* .am-chat's own box still ends exactly where it always did (see above), so pull the composer up
+     off that fixed bottom edge with a transform instead -- purely cosmetic, doesn't touch layout/
+     flex distribution, so nothing else can shift around it. Capped so it never floats up further
+     than 160px even on a very tall screen. Removing this on send is what .am-composer-area's own
+     transform transition (200ms ease, declared on the base rule) animates -- the "flies back down
+     to its normal spot" motion the start screen -> chat transition should have. */
+  #ask-mira:not(.has-messages):not(.is-compact) .am-composer-area { transform: translateY(calc(-1 * min(15vh, 160px))); }
   .am-welcome { margin: 0 0 40px; }
   .am-welcome-title {
     margin: 0;
@@ -960,6 +976,7 @@
     flex: 0 0 auto; position: relative; z-index: 2;
     padding: 10px clamp(14px, 3vw, 28px) clamp(12px, 2vw, 16px);
     background: linear-gradient(to top, var(--am-bg) 70%, transparent);
+    transition: transform 200ms ease;
   }
   /* ===== right-edge message navigation (scroll spy) ===== */
   .am-msgnav { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); z-index: 30; display: none; transition: opacity 180ms ease; }
@@ -1285,10 +1302,16 @@
   .am-settings-btn.is-open { background: var(--am-soft); border-color: #6f6f6f; }
   .am-settings-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .am-hl-panel {
-    margin: 0 16px 16px; border: 1px solid var(--am-border); border-radius: 12px; box-sizing: border-box;
-    background: var(--am-card); padding: 12px 14px; display: none; flex-direction: column; gap: 12px;
+    margin: 0 16px; border: 1px solid transparent; border-radius: 12px; box-sizing: border-box;
+    background: var(--am-card); padding: 0 14px; display: flex; flex-direction: column; gap: 12px;
+    max-height: 0; opacity: 0; overflow: hidden;
+    transition: max-height 200ms ease, opacity 200ms ease, padding 200ms ease, margin-bottom 200ms ease,
+                border-color 200ms ease, overflow 0s linear 0s;
   }
-  .am-hl-panel.is-open { display: flex; }
+  .am-hl-panel.is-open {
+    max-height: 320px; opacity: 1; padding: 12px 14px; margin-bottom: 16px; border-color: var(--am-border);
+    overflow: visible; transition-delay: 0s, 0s, 0s, 0s, 0s, 200ms;   /* overflow only flips once the grow settles, so nested dropdowns aren't clipped mid-animation */
+  }
   .am-set-row { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
   .am-set-label { font-size: 12px; font-weight: 600; color: var(--am-muted); }
   .am-dd { position: relative; width: 100%; }

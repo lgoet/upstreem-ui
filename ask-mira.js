@@ -415,7 +415,7 @@
   /* HTML sanitizer: rebuilds a clean tree from a strict whitelist.
      -> No <script>/<style>/<iframe>, no inline event handlers, no javascript: URLs. */
   var ALLOWED = {
-    P:[], BR:[], STRONG:[], B:[], EM:[], I:[], U:[], SPAN:['data-mira-sentiment','data-mira-source-signal','data-mira-entity-type','data-mira-evidence-id','data-mira-entity-id','data-mira-entity-key','data-mira-entity-url','data-mira-domain','data-mira-action','data-mira-action-id','data-mira-lead-url','data-mira-title','data-mira-reason'], CODE:[], PRE:[],
+    P:[], BR:[], STRONG:[], B:[], EM:[], I:[], U:[], SPAN:['data-mira-sentiment','data-mira-source-signal','data-mira-entity-type','data-mira-evidence-id','data-mira-entity-id','data-mira-entity-key','data-mira-entity-url','data-mira-domain','data-mira-action','data-mira-action-id','data-mira-lead-url','data-mira-title','data-mira-reason','data-mira-prompt-id','data-mira-prompt-run-id','data-mira-company-id'], CODE:[], PRE:[],
     H3:[], H4:[], UL:[], OL:[], LI:[], A:['href'], BLOCKQUOTE:[],
     TABLE:[], THEAD:[], TBODY:[], TR:[], TH:['colspan','rowspan'], TD:['colspan','rowspan']
   };
@@ -728,7 +728,7 @@
     types.forEach(function(t){ t = String(t||'').toLowerCase(); if (!t || seen[t]) return; seen[t] = 1; uniq.push(t); });
     if (!uniq.length) return '';
     var pills = uniq.map(function(t){ return evPill(t, ''); }).join('');
-    return '<div class="am-evidence">'+pills+'</div>';
+    return '<div class="am-evidence" data-explain="evidence">'+pills+'</div>';
   }
 
   function actionsHtml(m, role){
@@ -952,16 +952,45 @@
      The formatter now tags every clear mention; the UI just resolves the matching
      evidence_item by id/entity_id/entity_key/url/domain and styles it like a logo wrap. */
   var ACTION_BY_TYPE = { brand:'open_brand', competitor:'open_competitor', url:'open_url', domain:'open_domain', prompt:'open_prompt', response:'open_response', citation:'open_url' };
-  function resolveEntityItem(items, q){
+  var _ID_FIELDS_BY_TYPE = { prompt: 'prompt_id', response: 'prompt_run_id', prompt_run: 'prompt_run_id',
+                             brand: 'company_id', competitor: 'company_id' };
+  function resolveEntityItem(items, q, type){
     items = asArrayLoose(items);
     function find(test){ for (var i=0;i<items.length;i++){ if (items[i] && test(items[i])) return items[i]; } return null; }
     var hit = null;
     if (q.evId)  hit = find(function(it){ return it.id && String(it.id) === q.evId; });
     if (!hit && q.entId) hit = find(function(it){ return it.entity_id && String(it.entity_id) === q.entId; });
+    // some evidence_items only ever populate the type-specific id field (prompt_id/prompt_run_id/
+    // company_id), never the generic entity_id -- match the span's own id against THAT field too,
+    // since the span itself always carries the same value in data-mira-entity-id regardless of
+    // which backend field it came from.
+    if (!hit && q.entId && type){
+      var idField = _ID_FIELDS_BY_TYPE[type];
+      if (idField) hit = find(function(it){ return it[idField] && String(it[idField]) === q.entId; });
+    }
     if (!hit && q.key)   hit = find(function(it){ return it.entity_key && String(it.entity_key) === q.key; });
     if (!hit && q.url)   hit = find(function(it){ return (it.url && String(it.url) === q.url) || (it.entity_url && String(it.entity_url) === q.url); });
     if (!hit && q.domain)hit = find(function(it){ return it.domain && String(it.domain) === q.domain; });
     return hit;
+  }
+  // The evidence_items payload carries a generic entity_id PLUS type-specific id fields
+  // (prompt_id, prompt_run_id, company_id) -- which one is actually populated varies by type
+  // (url/domain never get entity_id, only entity_key/entity_url). Try every source in order
+  // instead of trusting a single field, so the id Bubble receives on click is never empty just
+  // because this particular type used a different field name upstream.
+  function _resolvedEntityId(item, q, type){
+    if (item.entity_id) return String(item.entity_id);
+    var specific = { prompt: item.prompt_id, response: item.prompt_run_id, prompt_run: item.prompt_run_id,
+                      brand: item.company_id, competitor: item.company_id }[type];
+    if (specific) return String(specific);
+    if (q.entId) return q.entId;
+    if (item.entity_key) return String(item.entity_key);
+    if (q.key) return q.key;
+    if (item.entity_url || item.url) return String(item.entity_url || item.url);
+    if (q.url) return q.url;
+    if (item.domain) return String(item.domain);
+    if (q.domain) return q.domain;
+    return '';
   }
   function decorateEntitySpans(container, items){
     var spans = container.querySelectorAll('span[data-mira-entity-type]');
@@ -975,7 +1004,16 @@
         url:    span.getAttribute('data-mira-entity-url') || '',
         domain: span.getAttribute('data-mira-domain') || ''
       };
-      var item = resolveEntityItem(items, q) || {};
+      // some builds only put a type-specific id attribute on the span (data-mira-prompt-id /
+      // data-mira-prompt-run-id / data-mira-company-id) instead of the generic
+      // data-mira-entity-id -- fold it into entId so every lookup below sees it the same way.
+      if (!q.entId){
+        var _typeAttr = { prompt: 'data-mira-prompt-id', response: 'data-mira-prompt-run-id',
+                           prompt_run: 'data-mira-prompt-run-id', brand: 'data-mira-company-id',
+                           competitor: 'data-mira-company-id' }[type];
+        if (_typeAttr) q.entId = span.getAttribute(_typeAttr) || '';
+      }
+      var item = resolveEntityItem(items, q, type) || {};
       var text = span.textContent || '';
       var logo = safeImgUrl(item.icon_url) || safeImgUrl(item.favicon_url);
       // response chips: resolve the model logo from the models registry (askMiraSetModels).
@@ -991,7 +1029,9 @@
       span.classList.add('am-logo-wrap');
       span.setAttribute('data-type', item.type || type);
       span.setAttribute('data-action', item.action || ACTION_BY_TYPE[type] || 'open_evidence');
-      if (item.entity_id || q.entId) span.setAttribute('data-entity-id', item.entity_id || q.entId);
+      var _rid = _resolvedEntityId(item, q, type);
+      if (_rid) span.setAttribute('data-entity-id', _rid);
+      else if (window.console) console.warn('[AskMira] evidence chip has no resolvable id -- type="'+type+'", text="'+text.slice(0,40)+'". The evidence_items entry is missing entity_id/prompt_id/company_id/entity_key and the span itself carries no data-mira-entity-id either.');
       if (item.id || q.evId) span.setAttribute('data-ev-id', item.id || q.evId);
       if (item.entity_key || q.key) span.setAttribute('data-entity-key', item.entity_key || q.key);
       if (item.entity_url || q.url) span.setAttribute('data-entity-url', item.entity_url || q.url);
@@ -1213,7 +1253,6 @@
   }
   // emit a JS event carrying the FULL action (type, action_key, payload) — Bubble fn + DOM CustomEvent
   function _emitMiraAction(action, btn){
-    try { console.log('[AskMira] action ->', action && action.type, '/', action && action.action_key, action); } catch(e){}
     var payloadJson; try { payloadJson = JSON.stringify(action); } catch(e){ payloadJson = ''; }
     var fnName = (typeof window.askMiraActionFn === 'string' && window.askMiraActionFn) ? window.askMiraActionFn : 'bubble_fn_miraAction';
     try { if (typeof window[fnName] === 'function') window[fnName](payloadJson); } catch(e){}   // Bubble JavaScript-to-Bubble element
@@ -1433,12 +1472,6 @@
       var tmp = document.createElement('div');
       tmp.innerHTML = sanitizeHtml(m.content_html);
       var terms = termsForMessage(m, poolTerms);
-      try {
-        var _ec = asArrayLoose(m.evidence_items).length;
-        var _own = buildLogoTerms(m.evidence_items).length;
-        var _pool = (poolTerms ? poolTerms.length : 0);
-        console.log('[AskMira] message '+(m.id||'')+' — own evidence_items:', _ec, '| own logo terms:', _own, '| session pool terms:', _pool);
-      } catch(e){}
       var hasEntitySpans = tmp.querySelector('span[data-mira-entity-type]');
       if (hasEntitySpans){
         decorateEntitySpans(tmp, m.evidence_items);   // new explicit-span path
@@ -1655,7 +1688,7 @@
       if (u.t === 'c'){ u.el.style.display = ''; }
       else if (u.t === 'b'){ u.el.style.display = ''; void u.el.offsetWidth; u.el.classList.add('on'); var _ob = u.el.classList && u.el.classList.contains('am-oppc-btn') ? u.el : (u.el.querySelector ? u.el.querySelector('.am-oppc-btn') : null); if (_ob) _ob.classList.add('on'); }  // reveal block: take space + fade (also mark inner oppc button so the typing-guard releases it)
       else { u.el.classList.add('on'); }
-      var d = u.t === 'b' ? 126 : (u.t === 'c' ? 36 : 11 + Math.random()*10);
+      var d = u.t === 'b' ? 82 : (u.t === 'c' ? 23 : 7 + Math.random()*6.5);   // 35% faster than the original 126/36/11-21
       setTimeout(tick, d);
     }
     tick();
@@ -1730,7 +1763,6 @@
       var _asstEls = elMessages.querySelectorAll('.am-msg.is-assistant:not(.am-msg-loading)');
       var _newBub = _asstEls.length ? _asstEls[_asstEls.length - 1].querySelector('.am-bubble') : null;
       if (_newBub){ _typeUnits = _prepTyping(_newBub); if (!_typeUnits.length) _typeUnits = null; }
-      try { console.log('[AskMira] render: typing new answer', _lastKey, '| force:', !!_forceTypeNext, 'append:', _isAppend, 'loadingDone:', _loadingDone, '| units:', _typeUnits ? _typeUnits.length : 0); } catch(e){}
       _typedKeys[_lastKey] = true;
       _forceTypeNext = false;                       // consume ONLY when we actually type a new answer
       if (_forceTimer){ clearTimeout(_forceTimer); _forceTimer = null; }
@@ -2564,7 +2596,6 @@
   /* ---------------- Public API ---------------- */
   function setLoading(v){
     S.isLoading = !!v;
-    try { console.log('[AskMira] setLoading('+S.isLoading+')'); } catch(e){}
     root.classList.toggle('is-loading', S.isLoading);
     elStatusText.textContent = S.isLoading ? 'Analyzing your workspace' : 'Ready';
     refreshSend();
@@ -2717,27 +2748,23 @@
     var _incoming = (Array.isArray(messages) ? messages : []);
     try {
       var _li = _incoming[_incoming.length - 1] || {};
-      console.log('[AskMira] setMessages received '+_incoming.length+' message(s) | last: role="'+(_li.role||'')+'" status="'+(_li.status||'')+'" contentLen='+String(_li.content||'').length);
       // pin down WHAT the opportunities field looks like on the last assistant message (before any coercion)
       var _la = null; for (var _i=_incoming.length-1; _i>=0; _i--){ if (_incoming[_i] && _incoming[_i].role==='assistant'){ _la = _incoming[_i]; break; } }
       if (_la){
         var _opN = _msgOpps(_la).length, _acN = _msgActs(_la).length;
         var _src = (_la.metadata && (_la.metadata.opportunities || _la.metadata.actions)) ? ' (read from metadata)' : '';
-        console.log('[AskMira] last assistant: opportunities='+_opN+' | actions='+_acN+_src);
       }
     } catch(e){}
     S.messages = _incoming.map(normalizeMessage);
     try {
       var _oppN = 0, _actN = 0, _withOpp = 0;
       S.messages.forEach(function(m){ var o = _msgOpps(m).length, a = _msgActs(m).length; _oppN += o; _actN += a; if (o) _withOpp++; });
-      console.log('[AskMira] setMessages: opportunities total='+_oppN+' (in '+_withOpp+' message(s)) | actions total='+_actN+'  — if these are 0, the fields did not arrive in the array.');
     } catch(e){}
     // A trailing assistant message with status "running" = the answer is still being generated.
     // Show the loading/thinking state instead of an empty bubble (survives reloads / re-fetches).
     var _last = S.messages[S.messages.length - 1];
     var _running = isPendingAssistant(_last);
     _pendingAnswer = _running;
-    try { console.log('[AskMira] loading state -> '+_running+(_running?'':' (last message is NOT a running assistant — if you expected the loader, the running assistant row did not arrive in the array)')); } catch(e){}
     if (_running){ S.messages.pop(); }
     // If a live answer arrives via setMessages without latency_ms, use the measured time.
     if (S.isLoading && _sendStartTs && !_running){
@@ -2780,7 +2807,6 @@
        last Mira message immediately. Returns true if it started typing. */
   window.askMiraExpectAnswer = function(){
     _forceTypeNext = true;
-    try { console.log('[AskMira] expectAnswer() armed — next new answer will type'); } catch(e){}
     if (_forceTimer) clearTimeout(_forceTimer);
     _forceTimer = setTimeout(function(){ _forceTypeNext = false; _forceTimer = null; }, 8000);
   };
@@ -2798,15 +2824,13 @@
           if (bub && !_typedKeys[dkey] && !bub.querySelector('.am-rv-w')){
             _typedKeys[dkey] = true;
             var units = _prepTyping(bub);
-            try { console.log('[AskMira] typeLastAnswer() -> typing', units.length, 'units (id='+id+')'); } catch(e){}
             if (units.length){ _startTyping(bub, units); }
             return;
           }
-          if (bub && _typedKeys[dkey]){ try { console.log('[AskMira] typeLastAnswer() — last answer already typed (id='+id+')'); } catch(e){} return; }
+          if (bub && _typedKeys[dkey]){ return; }
         }
-      } catch(e){ try { console.log('[AskMira] typeLastAnswer() error', e); } catch(_){} }
+      } catch(e){}
       if (tries < 30) setTimeout(attempt, 70);   // wait up to ~2s for an async reload to land
-      else { try { console.log('[AskMira] typeLastAnswer() — no assistant bubble found in #ask-mira'); } catch(e){} }
     }
     attempt();
     return true;
@@ -2843,7 +2867,7 @@
 
     var allAsst = messages.filter(function(m){ return m && String(m.role || 'assistant') === 'assistant'; });
     var withExtras = allAsst.filter(function(m){ return _msgOpps(m).length || _msgActs(m).length; });
-    if (!withExtras.length){ try { console.log('[AskMira] askMiraSetExtras: none of the messages carry opportunities/actions'); } catch(e){} return 0; }
+    if (!withExtras.length){ return 0; }
 
     var applied = 0; var doneEls = [];
     // 1) match each message to its DOM row by data-id (preferred, order-independent)
@@ -2867,13 +2891,11 @@
         }
       }
     }
-    try { console.log('[AskMira] askMiraSetExtras() -> injected extras into ' + applied + ' message(s)'); } catch(e){}
     return applied;
   };
   window.askMiraSetLoading = function(v){
     if (typeof v === 'string') v = (v === 'true' || v === '1' || v === 'yes');
     if (!v && _pendingAnswer){
-      try { console.log('[AskMira] askMiraSetLoading(false) ignored — a running assistant answer is still pending; keeping the loader. (It will clear automatically when the finished answer arrives.)'); } catch(e){}
       return;
     }
     setLoading(v);
@@ -2935,7 +2957,6 @@
       var hasOpp = (typeof r === 'string') && r.indexOf('"opportunities"') >= 0;
       var ok = true, err = '';
       if (typeof r === 'string'){ try { JSON.parse(r); } catch(e){ ok = false; err = String((e && e.message) || e); } }
-      console.log('[AskMira] FromEl("'+sel+'"): len='+(r.length||0)+' | JSON.parse(raw) OK: '+ok+(ok?'':' | error: '+err));
       if (typeof r === 'string' && hasOpp && !ok){
         var mp = /position (\d+)/.exec(err);
         if (mp){ var pos = +mp[1]; console.warn('[AskMira] FromEl: invalid JSON near -> …'+ r.slice(Math.max(0,pos-70), pos+70).replace(/\n/g,'\\n') +'…'); }
@@ -3053,7 +3074,6 @@
       };
     });
     S.models = map;
-    try { console.log('[AskMira] setModels received', Object.keys(map).length, 'models'); } catch(e){}
     renderMessages();   // refresh so response chips pick up the logos
   };
 
@@ -3078,7 +3098,6 @@
     if (typeof input === 'string'){ var p = looseJsonParse(input); arr = (p == null) ? [] : p; }
     if (arr && !Array.isArray(arr)) arr = arr.domains || arr.favicons || arr.sources || [];
     S.favicons = (Array.isArray(arr) ? arr : []).map(_normFavicon).filter(Boolean).slice(0, 20);
-    try { console.log('[AskMira] setFavicons received', S.favicons.length); } catch(e){}
     if (S.isLoading && S.toolState === 'sources') _tlStart();
   };
   // brand-logos pool (brand loader). Accepts an array / JSON string. Each item may be a
@@ -3102,7 +3121,6 @@
     if (typeof input === 'string'){ var p = looseJsonParse(input); arr = (p == null) ? [] : p; }
     if (arr && !Array.isArray(arr)) arr = arr.companies || arr.brands || arr.brandLogos || [];
     S.brandLogos = (Array.isArray(arr) ? arr : []).map(_normBrandLogo).filter(Boolean).slice(0, 20);
-    try { console.log('[AskMira] setBrandLogos received', S.brandLogos.length); } catch(e){}
     if (S.isLoading && S.toolState === 'brand') _tlStart();
   };
   window.askMiraSetCompanies = window.askMiraSetBrandLogos;   // alias for the "companies" payload
@@ -3122,7 +3140,6 @@
   window.askMiraSetTool = function(tool){
     var key = String(tool == null ? '' : tool).trim().toLowerCase();
     var st = _TOOL_STATE[key] || '';
-    try { console.log('[AskMira] setTool("'+key+'") -> '+(st||'(3-dot)')); } catch(e){}
     if (!S.isLoading){ S.currentTool = key; S.toolState = st; return; }
     var prevState = S.toolState;
     if (st && st === prevState){                 // same overarching state -> keep the running loader; cancel any queued switch
@@ -3461,34 +3478,23 @@
     }
   });
 
-  /* ---- Evidence hover -> RichTooltip (1.5s delay) ---- */
+  /* ---- Evidence hover -> explainer popover ----
+     Same body-mounted widget the table column-header info icons use (light preview panel style,
+     flips above the trigger when there isn't room below). The evidence row used to hover a
+     window.RichTooltip widget that was never actually defined anywhere in this codebase, so in
+     practice nothing showed on hover -- this is the first working version of it. */
   var EV_TIP_TITLE = 'Connected data points';
   var EV_TIP_TEXT = 'Mira used these parts of your AI Search data to build this answer. The listed items show which connected data types supported the response.';
-  var evTipTimer = null, evTipAnchor = null, evTipSeq = 0;
-  function hideEvTip(){
-    clearTimeout(evTipTimer); evTipTimer = null;
-    if (evTipAnchor){ evTipAnchor = null; if (window.RichTooltip && window.RichTooltip.hide) try { window.RichTooltip.hide(); } catch(e){} }
-  }
-  elMessages.addEventListener('mouseover', function(e){
-    var ev = e.target.closest('.am-evidence'); if (!ev) return;
-    if (e.relatedTarget && ev.contains(e.relatedTarget)) return; // moving within same row
-    if (evTipAnchor === ev) return;
-    clearTimeout(evTipTimer);
-    evTipTimer = setTimeout(function(){
-      if (!ev.isConnected) return;
-      if (!ev.id) ev.id = 'am-ev-tip-' + (++evTipSeq);
-      evTipAnchor = ev;
-      if (window.RichTooltip && window.RichTooltip.show) {
-        window.RichTooltip.show({ anchorId: ev.id, title: EV_TIP_TITLE, text: EV_TIP_TEXT, offset: 10 });
+  if (window.UpstreemCore && window.UpstreemCore.makeExplain){
+    window.UpstreemCore.makeExplain({
+      root: root,
+      getIsDark: function(){ return root.getAttribute('data-theme') === 'dark'; },
+      html: function(){
+        return '<div class="up-explain-h">' + esc(EV_TIP_TITLE) + '</div>' +
+               '<div class="up-explain-t">' + esc(EV_TIP_TEXT) + '</div>';
       }
-    }, 1000);
-  });
-  elMessages.addEventListener('mouseout', function(e){
-    var ev = e.target.closest('.am-evidence'); if (!ev) return;
-    if (e.relatedTarget && ev.contains(e.relatedTarget)) return; // still within row
-    hideEvTip();
-  });
-  elChat.addEventListener('scroll', function(){ if (evTipTimer || evTipAnchor) hideEvTip(); });
+    });
+  }
 
   function openPrev(){ renderPrevious(); root.classList.add('prev-open'); elPrevPanel.setAttribute('aria-hidden','false'); elPrevScrim.hidden = false; if (elPrevList) elPrevList.scrollTop = 0; }
   function closePrev(){ root.classList.remove('prev-open'); elPrevPanel.setAttribute('aria-hidden','true'); if (typeof openHlPanel === 'function') openHlPanel(false); }
@@ -4373,13 +4379,19 @@
     requestAnimationFrame(fit);
     window.addEventListener('load', function(){ fit(); setTimeout(fit, 60); setTimeout(fit, 200); setTimeout(fit, 450); });
     setTimeout(fit, 120); setTimeout(fit, 400);
-    setInterval(watch, 300);
+    // Boot is when Bubble is most likely to still be moving us (late header, a sibling group
+    // showing up) -- poll tight for the first few seconds, then relax once things have settled.
+    var _watchIv = setInterval(watch, 120);
+    setTimeout(function(){ clearInterval(_watchIv); _watchIv = setInterval(watch, 300); }, 4000);
     window.addEventListener('resize', fit);
     // a stray page nudge (the ~30px) snaps straight back to the top + refits
     window.addEventListener('scroll', function(){ if ((window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0) > 0) fit(); }, { passive: true });
     if (window.ResizeObserver){
       try { new ResizeObserver(watch).observe(document.documentElement); } catch(_){}
       try { new ResizeObserver(watch).observe(document.body); } catch(_){}
+      // a sibling Bubble element resizing (its own late content, a group toggling) can shift OUR
+      // top without document/body ever changing size -- watch our own host container too.
+      try { if (root.parentElement) new ResizeObserver(watch).observe(root.parentElement); } catch(_){}
     }
     window.addEventListener('orientationchange', function(){ setTimeout(fit, 60); setTimeout(fit, 250); });
     if (vv){ vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit); }
@@ -4392,16 +4404,6 @@
     } catch(_){}
   })();
 
-  // One-time boot log so you can confirm in the console WHICH build is live.
-  // If you don't see this line (or askMiraSetExtras shows "undefined"), an OLDER ask_mira.html
-  // is still pasted into your Bubble HTML element — re-paste the latest file.
-  try {
-    console.log('%c[AskMira] BUILD ✓ opportunities + actions rendering ENABLED',
-                'color:#fff;background:#2f6df6;padding:2px 6px;border-radius:4px;font-weight:bold');
-    console.log('[AskMira] API check — askMiraSetMessages:', typeof window.askMiraSetMessages,
-                '| askMiraSetExtras:', typeof window.askMiraSetExtras,
-                '| askMiraTypeLastAnswer:', typeof window.askMiraTypeLastAnswer);
-  } catch(e){}
   }
 
   amBoot(50);

@@ -26,6 +26,29 @@
      Chat-Bereich, Modell-/Detail-Dropdown, Chat-Kontextmenue, Voice und das Previous-Chats-Panel
      sind bewusst unveraendert.
 
+     ── Fixes/Aenderungen nach dem ersten Live-Test ──────────────────────────────
+     - Evidence-Chip-Klicks (open_prompt/open_url/open_domain/open_response/open_brand/
+       open_competitor): entity_id im bubble_fn_ask_mira_open_evidence-Payload kam manchmal leer
+       an. Ursache war der HTML-Sanitizer -- der hat data-mira-prompt-id/-prompt-run-id/-company-id
+       stillschweigend rausgefiltert, obwohl Mira sie im content_html mitschickt. Jetzt erlaubt,
+       plus eine Fallback-Kette (entity_id -> typspezifisches Feld -> Span-Attribut -> entity_key/
+       url/domain), damit die id auch dann steht, wenn evidence_items nur eins davon fuellt.
+       Payload-Form unveraendert.
+     - Highlight-Settings-Panel (in der Previous-Chats-Sidebar) oeffnet/schliesst jetzt mit
+       200ms ease statt display:none/flex-Sprung; Dropdown-Menues darin bleiben unclipped.
+     - Startbildschirm: Eingabefeld sitzt nicht mehr am reinen Seitenende, sondern mit festem
+       128px-Abstand unter den Kategorien, insgesamt mittiger. Beim Senden der ersten Nachricht
+       faehrt es mit 200ms ease an seine normale (untere) Position.
+     - Tipp-Geschwindigkeit neuer Antworten 35% schneller.
+     - Evidence-Hover-Tooltip ("Connected data points") nutzte window.RichTooltip -- das gab es im
+       Code nirgends, zeigte also nie etwas an. Läuft jetzt auf core's UC.makeExplain, dem gleichen
+       Popover wie die Tabellen-Header-Infos (flippt nach oben, wenn unten kein Platz ist).
+     - Root-Hoehen-Messung (das Skript, das Mira exakt auf die sichtbare Bubble-Flaeche zuschneidet)
+       reagiert jetzt schneller auf Verschiebungen kurz nach dem Laden (engeres Polling die ersten
+       4s) und beobachtet zusaetzlich die Groesse des Host-Elements, nicht nur Dokument/Body.
+     - Alle [AskMira]-Konsolen-Logs fuer den Normalbetrieb entfernt (Fehlermeldungen/Warnungen
+       bei echten Problemen -- kaputtes JSON, fehlende Elemente -- bleiben).
+
      ── Bubble element height ────────────────────────────────────────────────────
      FIXED height. Mira is a full-height app surface with its own internal scrolling (the chat
      scrolls, the composer and hero stay put). Fit-to-content would put the page scroll and the
