@@ -157,7 +157,14 @@
 @keyframes uprPulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
 
 /* ---------- "View previous researches" ---------- */
-.upr-history-entry { margin-top: 18px; display: flex; justify-content: center; }
+/* Top right of the content column, matching Ask Mira's "View Previous Chats". Absolute against
+   .upr-content (already position:relative above), so this needs no change to the Bubble markup --
+   the button element stays exactly where it is in the HTML. Back into the flow on narrow screens,
+   where an absolute button would sit on top of the title. */
+.upr-history-entry { position: absolute; top: 0; right: 0; z-index: 3; display: flex; }
+@media (max-width: 720px){
+  .upr-history-entry { position: static; margin-top: 18px; justify-content: center; }
+}
 /* Secondary button, same shape as core's .up-empty-btn so it reads as one family. */
 .upr-secondary-btn {
   height: 32px; padding: 0 12px; border: 1px solid var(--vc-border); border-radius: 8px;

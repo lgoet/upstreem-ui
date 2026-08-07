@@ -30,7 +30,8 @@
      implementations exist (STYLEGUIDE §25 step 2). */
   var API_NAMES = ["setRunning", "setIdle", "setError", "setComplete", "setPrompts",
                    "setResearchMeta", "setPreviousResearches", "openHistory", "closeHistory",
-                   "setTags", "setActionLoading", "setBusy", "setTheme", "setMarkets"];
+                   "setTags", "setActionLoading", "setBusy", "setTheme", "setMarkets",
+                   "setMarket", "setBusinessModel", "setPersona"];
   var __uprBootQueue = window.__uprBootQueue = window.__uprBootQueue || [];
   if (!window.__uprBootStubbed){
     window.__uprBootStubbed = true;
@@ -420,7 +421,34 @@
       main.scrollTop = mainScrollTop;
     }
   }
+  /* Everything about this panel -- that it is fixed, that it slides, that it is hidden while
+     closed -- lives in prompt-research.css. Without that file the component silently does nothing
+     visible, which is impossible to tell apart from a broken button. Probe once and say so
+     plainly. (.upr-portal{display:contents} is the cheapest sentinel the stylesheet provides.) */
+  var _cssWarned = false;
+  function stylesheetPresent(){
+    try {
+      var probe = document.createElement('div');
+      probe.className = 'upr-portal';
+      probe.style.cssText = 'position:absolute;left:-9999px;top:-9999px';
+      document.body.appendChild(probe);
+      var ok = window.getComputedStyle(probe).display === 'contents';
+      probe.parentNode.removeChild(probe);
+      return ok;
+    } catch(_){ return true; }   // can't tell -> don't cry wolf
+  }
+  function warnIfNoStylesheet(){
+    if (_cssWarned || stylesheetPresent()) return;
+    _cssWarned = true;
+    if (window.console) console.error(
+      '[prompt-research] prompt-research.css is NOT loaded on this page. The script runs, but ' +
+      'every panel it owns (previous-researches sidebar, dropdowns) has no styling and cannot ' +
+      'show itself. Check that the loader injects prompt-research.css and that the data-cdn-pin ' +
+      'commit actually serves it.');
+  }
+
   function openHistoryPanel(){
+    warnIfNoStylesheet();
     if (!sidePanel) return;
     if (sideCloseTimer){ clearTimeout(sideCloseTimer); sideCloseTimer = null; }
     portal.setAttribute('data-theme', isDark() ? 'dark' : 'light');
@@ -938,6 +966,52 @@
     var tag = root.querySelector('#upr-markets-json') || document.getElementById('upr-markets-json');
     if (tag) tag.textContent = JSON.stringify(items);
     renderMarketDropdown();
+    /* renderMarketDropdown() always selects the first option, so a market that was requested
+       before the list existed has to be re-applied here -- see _pendingMarket below. */
+    if (_pendingMarket != null && applyMarket(_pendingMarket)) _pendingMarket = null;
+  };
+
+  /* ---------- settings the host sets from outside ----------
+     Bubble runs these from run-JS steps on page load, i.e. usually BEFORE setMarkets() has
+     delivered the market list (and before this file has even booted -- the stub queue at the top
+     of the file covers that part). So setMarket() remembers what was asked for and setMarkets()
+     re-applies it once the options exist. */
+  var _pendingMarket = null;
+  function applyMarket(v){
+    var want = String(v && typeof v === 'object'
+      ? (v.alpha2 || v.alpha3 || v.value || v.market || v.name || '')
+      : (v == null ? '' : v)).trim().toLowerCase();
+    if (!want) return false;
+    var dd = root.querySelector('#upr-market-dd');
+    if (!dd) return false;
+    var opts = Array.prototype.slice.call(dd.querySelectorAll('.upr-dd-option'));
+    for (var i = 0; i < opts.length; i++){
+      var o = opts[i];
+      // accept the alpha2 ("DE"), the alpha3 ("DEU") or the plain name ("Germany")
+      var cand = [o.getAttribute('data-alpha2'), o.getAttribute('data-alpha3'),
+                  o.getAttribute('data-value'), o.getAttribute('data-label')];
+      for (var j = 0; j < cand.length; j++){
+        if (cand[j] && String(cand[j]).trim().toLowerCase() === want){ setDropdownValue(dd, o); return true; }
+      }
+    }
+    return false;
+  }
+  api.setMarket = function(v){
+    if (typeof v === 'string'){
+      var t = v.trim();
+      if (t.charAt(0) === '{' || t.charAt(0) === '['){ try { v = JSON.parse(t); } catch(e){} }
+    }
+    if (Array.isArray(v)) v = v[0];
+    _pendingMarket = v;
+    if (applyMarket(v)) _pendingMarket = null;
+  };
+  /* No visible control for this one -- it only rides along in the research payload. */
+  api.setBusinessModel = function(v){
+    var s = String(v && typeof v === 'object' ? (v.business_model || v.value || '') : (v == null ? '' : v)).trim().toLowerCase();
+    if (s) state.business_model = s;
+  };
+  api.setPersona = function(v){
+    state.persona = String(v == null ? '' : v).trim();
   };
 
   renderSuggestions();

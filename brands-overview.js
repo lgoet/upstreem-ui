@@ -641,6 +641,20 @@
        given the same fix here. Unclip once, unconditionally, like topics-manager.js's page does. */
     UC.unclipAncestors(root, false);
 
+    /* Soft-reload dim on sort. A sort re-orders the SAME rows, so what is on screen stays true and
+       should dim in place -- blanking to a skeleton reads as "the table broke" on every header
+       click. urls-table, domains-table and prompts-table have done it this way since the kit was
+       extracted; this table was simply never wired to it and kept falling into the skeleton branch
+       of renderTable() via isLoading(). See UC.makeSoftReload. */
+    var dim = UC.makeSoftReload(root);
+    var softReload = false;
+    function beginSortDim(){
+      var live = (state.status === "inactive") ? state.inactiveRows : state.tableRows;
+      softReload = !!(Array.isArray(live) && live.length);
+      dim.begin(softReload);
+    }
+    function endSortDim(){ softReload = false; dim.end(); }
+
     /* ONE firing shape: every event of this component sends a bare value ("day", a company_id,
        "active"), exactly like visibility-chart, so the Bubble side needs no regex. UC.makeFire is
        deliberately not used: it JSON.stringify()s its payload, which would turn a company_id into
@@ -946,7 +960,11 @@
       if (!isOwner()) return;
       var inactive = state.status === "inactive";
       var hasData = inactive ? true : state.hasTable;
-      if (isLoading() || !hasData){
+      /* While a sort is in flight the rows already on screen are still the right rows -- keep them
+         and let the .is-reloading dim carry the feedback instead of dropping into the skeleton. */
+      var liveRows = inactive ? (state.inactiveRows || []) : (state.tableRows || []);
+      var keepForSort = softReload && liveRows.length > 0;
+      if ((isLoading() || !hasData) && !keepForSort){
         if (emptyGraceTimer){ clearTimeout(emptyGraceTimer); emptyGraceTimer = null; }
         tableEl.innerHTML = skeletonHtml();
         applyCols();
@@ -1218,7 +1236,9 @@
     /* ---- sort ---- */
     var SORT_LABELS = [["visibility","Visibility"],["ranking","Ranking"],["sentiment","Sentiment"]];
     var SORT_OUT = { visibility: "visibility", ranking: "rank", sentiment: "sentiment" };
-    function fireSort(){ fireRaw("data-sort-fn", "uboSortTable", (SORT_OUT[sortField] || sortField) + "_" + sortDir); }
+    /* beginSortDim() sits inside fireSort() rather than at the three call sites (header click,
+       sort-menu option, direction switch) so no future one can forget it. */
+    function fireSort(){ beginSortDim(); fireRaw("data-sort-fn", "uboSortTable", (SORT_OUT[sortField] || sortField) + "_" + sortDir); }
     /* Clickable column headers, the same convention every other table in the app uses (urls-table,
        domains-table, prompts-table, responses-table) -- this table only ever had the Sort dropdown,
        which is still there and still works, but a header click is the expected affordance and
@@ -1627,9 +1647,10 @@
         if (tc != null) state.totalCount = tc;
         if (params.totalCountInactive != null) state.totalCountInactive = params.totalCountInactive;
         var tbl = (params.table != null) ? params.table : (params.brands != null ? params.brands : params.rows);
-        if (tbl != null){ state.tableRows = Array.isArray(tbl) ? tbl : []; state.hasTable = true; }
+        if (tbl != null){ state.tableRows = Array.isArray(tbl) ? tbl : []; state.hasTable = true; endSortDim(); }
         if (params.inactive != null){
           state.inactiveRows = Array.isArray(params.inactive) ? params.inactive : [];
+          endSortDim();
           if (state.totalCountInactive == null) state.totalCountInactive = state.inactiveRows.length;
         }
         if (params.series != null){
