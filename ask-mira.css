@@ -690,23 +690,23 @@
   /* Suggested questions */
   .am-suggested { max-width: 920px; margin: clamp(14px, 4vh, 36px) auto 0; width: 100%; }
   #ask-mira.has-messages .am-suggested { display: none; }
-  /* Start screen: {heading+categories, composer} as ONE group, centred as a whole -- equal space
-     above the categories and below the composer, both measured to the edge of the component.
-     .am-composer-area is a flex sibling of .am-chat (not a descendant), so true group-centering
-     needs .am-chat to stop force-growing (flex:1, which always ends exactly at the composer
-     regardless of content) and instead size to its own content; margin-top:auto on it plus
-     margin-bottom:auto on the composer then split the leftover space in .am-shell equally between
-     "above the categories" and "below the composer" -- standard two-item flex centering, just
-     with the composer sitting outside the item that holds the visible content. The hero stays
-     pinned at the top throughout: it isn't part of this margin pair, so none of its space is up
-     for grabs. Skipped in .is-compact, which already has its own short-viewport layout (and would
-     otherwise be fighting this for the same leftover space on a short screen). */
-  /* padding-top/margin-top: 0 -- both would otherwise stack an extra, un-matched gap on TOP of the
-     centred group (an older rule's breathing room + .am-suggested's own default top margin), which
-     is exactly the kind of top/bottom asymmetry this is meant to avoid; the auto-margin is the only
-     source of space on either side now. */
-  #ask-mira:not(.has-messages):not(.is-compact) .am-chat { flex: 0 1 auto; margin-top: auto; padding-top: 0; }
-  #ask-mira:not(.has-messages):not(.is-compact) .am-suggested { margin-top: 0; margin-bottom: 128px; }
+  /* Start screen: the WHOLE thing -- hero, heading+categories, composer -- centres as one block
+     inside the component, equal space from the true top edge and the true bottom edge (not "below
+     the topbar" as the top reference; the topbar is part of what's being centred, same as the
+     composer is). .am-shell is a flex column of exactly those 3 items; margin-top:auto on the
+     FIRST (hero) and margin-bottom:auto on the LAST (composer) splits .am-shell's leftover space
+     equally between "above hero" and "below composer" -- standard flex two-end centering. .am-chat
+     (the middle item) has to stop force-growing (flex:1, which always ends exactly at the composer
+     regardless of content) and instead size to its own content, or there's no leftover space left
+     for the auto-margins to claim. Skipped in .is-compact, which already has its own short-viewport
+     layout (and would otherwise be fighting this for the same leftover space on a short screen). */
+  /* padding/margin: 0 on chat/suggested -- .am-chat's own base padding (top AND bottom) and
+     .am-suggested's default top margin would otherwise stack extra, un-matched space inside the
+     centred block on top of the auto-margin centering; the 92px below the categories and the
+     auto-margins above hero / below composer are meant to be the ONLY sources of space now. */
+  #ask-mira:not(.has-messages):not(.is-compact) .am-hero { margin-top: auto; }
+  #ask-mira:not(.has-messages):not(.is-compact) .am-chat { flex: 0 1 auto; padding-top: 0; padding-bottom: 0; }
+  #ask-mira:not(.has-messages):not(.is-compact) .am-suggested { margin-top: 0; margin-bottom: 92px; }
   #ask-mira:not(.has-messages):not(.is-compact) .am-composer-area { margin-bottom: auto; }
   .am-welcome { margin: 0 0 40px; }
   .am-welcome-title {

@@ -3923,27 +3923,39 @@
   }
 
   // Toggle chat view + animate the hero collapse/expand (200ms). First (load-time) toggle is instant.
-  var _initialSettingsDone = false;
   function setHasMessages(on){
     on = !!on;
-    if (on){ _initialSettingsDone = true; if (elSettingsPanel && elSettingsPanel.classList.contains('is-open')) toggleSettings(false); }   // a loaded chat / first message -> tray stays closed
+    if (on){ if (elSettingsPanel && elSettingsPanel.classList.contains('is-open')) toggleSettings(false); }   // a loaded chat / first message -> tray stays closed
     if (root.classList.contains('has-messages') === on) return;
     if (!_heroEl || !_heroReady){ root.classList.toggle('has-messages', on); renderChatTitlebar(); return; }
     var from = _heroEl.getBoundingClientRect().height;
-    // the composer's resting Y position genuinely differs between the two states now (centred
-    // group on the start screen vs. pinned to the bottom once a chat is open) -- FLIP it exactly
-    // like the hero: measure before, toggle, then animate the delta away with a transform so it
-    // reads as one smooth 200ms move instead of a jump.
+    // hero and the composer both genuinely change Y position now (the whole {hero, categories,
+    // composer} block centres as one on the start screen, hero pinned flush to the top once a
+    // chat is open) -- FLIP each: measure before, toggle, then animate the delta away with a
+    // transform so it reads as one smooth 200ms move instead of a jump. Hero's own HEIGHT still
+    // FLIPs separately via .style.height (below) -- a transform for position and a height change
+    // for size don't conflict, they animate two different things at once.
+    var heroTopFrom = _heroEl.getBoundingClientRect().top;
     var composerFrom = _composerAreaEl ? _composerAreaEl.getBoundingClientRect().top : null;
     root.classList.toggle('has-messages', on);
     _heroEl.style.transition = 'none'; _heroEl.style.height = '';
     var to = _heroEl.getBoundingClientRect().height;
+    var heroTopTo = _heroEl.getBoundingClientRect().top;
     _heroEl.style.height = from + 'px';
     void _heroEl.offsetWidth;                                    // reflow so the start height sticks
     _heroEl.style.transition = 'height 200ms ease, padding 200ms ease';
     _heroEl.style.height = to + 'px';
     clearTimeout(_heroEl._amT);
     _heroEl._amT = setTimeout(function(){ _heroEl.style.transition = ''; _heroEl.style.height = ''; }, 240);
+    var heroDy = heroTopFrom - heroTopTo;
+    if (Math.abs(heroDy) > 1){
+      _heroEl.style.transform = 'translateY(' + heroDy + 'px)';
+      void _heroEl.offsetWidth;
+      _heroEl.style.transition = 'height 200ms ease, padding 200ms ease, transform 200ms ease';
+      _heroEl.style.transform = '';
+      clearTimeout(_heroEl._amT2);
+      _heroEl._amT2 = setTimeout(function(){ _heroEl.style.transform = ''; }, 240);
+    }
     if (_composerAreaEl && composerFrom != null){
       var composerTo = _composerAreaEl.getBoundingClientRect().top;
       var dy = composerFrom - composerTo;
@@ -4049,8 +4061,6 @@
   renderSuggested();
   setDetail(S.answerDetail || 'balanced', true);
   setModel(S.model || 'pro', true);
-  // open the tray ONLY for a genuine fresh/initial state — not when a chat is (about to be) loaded
-  setTimeout(function(){ var small = window.matchMedia && window.matchMedia('(max-width: 720px)').matches; if (!_initialSettingsDone && !small && !root.classList.contains('has-messages') && !(S.messages && S.messages.length)){ _initialSettingsDone = true; toggleSettings(true); } }, 450);
   renderPrevious();
   // Fallback: if no sessions payload ever arrives (e.g. user genuinely has no chats), stop the skeletons after a bit.
   setTimeout(function(){ if (!_prevLoaded){ _prevLoaded = true; renderPrevious(); } }, 6000);
@@ -4363,8 +4373,19 @@
           try { window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); } catch(_){ window.scrollTo(0, 0); }
         }
       } catch(_){}
-      // a Bubble page sometimes scrolls an inner container instead of the window
-      try { var n = root.parentElement, g = 0; while (n && n !== document.body && n !== document.documentElement && g++ < 25){ if (n.scrollTop > 0) n.scrollTop = 0; n = n.parentElement; } } catch(_){}
+      // a Bubble page sometimes scrolls an inner container instead of the window -- but that
+      // container has to be a spurious wrapper with nothing genuine to scroll (scrollHeight ~=
+      // clientHeight), never a REAL scroll area with actual content (scrollHeight > clientHeight,
+      // e.g. the app's own #main). Resetting a real scroll container's scrollTop here fights the
+      // user's own scrolling (and, worse, an OS rubber-band bounce at the end of it) every time
+      // this runs, which is a much bigger bug than the stray-nudge case this exists to fix.
+      try {
+        var n = root.parentElement, g = 0;
+        while (n && n !== document.body && n !== document.documentElement && g++ < 25){
+          if (n.scrollTop > 0 && n.scrollHeight <= n.clientHeight + 1) n.scrollTop = 0;
+          n = n.parentElement;
+        }
+      } catch(_){}
     }
     function fit(){
       if (!visible()) return;
