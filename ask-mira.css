@@ -1547,9 +1547,12 @@
   @media (max-width: 720px) {
     /* #3 — kein horizontales Scrollen: alles auf Containerbreite begrenzen */
     #ask-mira, .am-shell, .am-hero, .am-hero-inner, .am-chat, .am-messages, .am-composer-area { max-width: 100%; box-sizing: border-box; overflow-x: hidden; }
-    /* element fills the visible screen and is NEVER scrollable itself — only .am-chat scrolls.
-       (height:100% collapses against an indefinite Bubble parent, so use a definite viewport height) */
-    #ask-mira { height: 100vh; height: 100dvh; max-height: 100vh; max-height: 100dvh; overflow: hidden; }
+    /* NEVER scrollable itself — only .am-chat scrolls. The height comes from the host container,
+       exactly as on desktop: a viewport height here would overflow the Bubble group we sit in, and
+       that overflow lands in the page's scroll range as empty space past the end of the app. The
+       old "100% collapses against an indefinite Bubble parent" case is handled in JS now (fit()
+       falls back to a screenful only when the container really is auto-height). */
+    #ask-mira { height: 100%; max-height: 100%; overflow: hidden; }
     .am-bubble { overflow-wrap: break-word; }
 
     /* #9 — "View Previous" wird oben rechts zu "Chats" + Icon */

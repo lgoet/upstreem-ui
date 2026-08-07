@@ -4341,8 +4341,8 @@
   })();
 
 
-  /* #3 — Give ourselves a definite height, so .am-chat can scroll INSIDE us and the composer stays
-     pinned. Two hard rules here, both learned the painful way:
+  /* #3 — Height. .am-chat can only scroll INSIDE us if we have a definite one. Three hard rules,
+     all learned the painful way:
 
        1. We never touch the host page's scrolling. No window.scrollTo, no resetting an ancestor's
           scrollTop. Mira is ONE component inside a page that scrolls (#main in the Bubble app) —
@@ -4350,11 +4350,16 @@
        2. Our height must not depend on where that page is scrolled to. getBoundingClientRect().top
           is viewport-relative, so sizing against it made our height a function of the scroll
           position: scrolling changed our height, our height changed the scroller's scrollHeight,
-          and that moved the scroll position again — a feedback loop with the scroller. That is what
-          let the page overshoot far past its end and then snap back to the bottom. Debouncing only
-          changed how chunky the loop felt; the fix is to not couple the two at all. So we measure
-          our offset inside the scroller's CONTENT, which is the same number at every scroll
-          position, and the page just scrolls normally underneath us.
+          and that moved the scroll position again — a feedback loop with the scroller, which made
+          the page overshoot its end and snap back. Debouncing only changed how chunky the loop
+          felt; the fix was to not couple the two at all.
+       3. We must never be taller than the container the host put us in. Every viewport-derived
+          height (100vh, innerHeight, innerHeight-minus-something) violates this: the Bubble group
+          has its own height, and an element sticking out of its slot adds that overflow to
+          #main's scrollHeight — which is how the page ended up scrollable far past the app's own
+          content, into empty space. So we do not compute a height at all; we take the one the host
+          gives us, and only fall back to a screenful if the container is auto-height and we would
+          otherwise collapse to nothing.
 
      No position:fixed -> also works when a Bubble ancestor has a transform (which breaks fixed). */
   (function(){
@@ -4371,61 +4376,42 @@
     // A hidden element (Bubble group not shown yet) reports rect 0 -> measuring then would compute the
     // height against top:0 and leave it TOO TALL once shown (footer/hint pushed below the screen).
     function visible(){ return !!(root.offsetWidth || root.offsetHeight || root.getClientRects().length); }
-    // Nearest ancestor that GENUINELY scrolls: real overflow AND more content than fits. Same test
-    // UC.unclipAncestors uses -- a wrapper that merely happens to have overflow:auto is not a
-    // scroll container, and treating it as one is how we mismeasured before.
-    function scrollerOf(){
-      var n = root.parentElement, g = 0;
-      while (n && n !== document.body && n !== document.documentElement && g++ < 25){
-        var oy = ''; try { oy = getComputedStyle(n).overflowY; } catch(_){}
-        if ((oy === 'auto' || oy === 'scroll' || oy === 'overlay') && n.scrollHeight > n.clientHeight + 1) return n;
-        n = n.parentElement;
-      }
-      return null;
-    }
-    // How far down the scroller's CONTENT we sit. Unlike getBoundingClientRect().top this is the
-    // same number no matter where the page is currently scrolled -- that is the whole point.
-    function offsetInContent(){
-      try {
-        var r = root.getBoundingClientRect(), sc = scrollerOf();
-        if (sc) return Math.max(0, Math.round(r.top - sc.getBoundingClientRect().top + sc.scrollTop));
-        return Math.max(0, Math.round(r.top + (window.pageYOffset || document.documentElement.scrollTop || 0)));
-      } catch(_){ return 0; }
-    }
     function fit(){
       if (!visible()) return;
       // Phone with the keyboard open: visualViewport shrinks, so take exactly that and the composer
-      // stays on screen. This is the ONE case that needs an inline height on mobile -- otherwise the
-      // stylesheet's 100dvh already does the right thing with no JS in the loop at all.
+      // stays on screen. This is the ONE case worth overriding the host's height for.
       if (isSmall() && vv && (window.innerHeight - vv.height) > 120){
         var kh = Math.round(vv.height);
         root.style.height = kh + 'px'; root.style.maxHeight = kh + 'px';
         return;
       }
-      if (isSmall()){ root.style.height = ''; root.style.maxHeight = ''; return; }
-      // Desktop: fill from our own place in the page down to the bottom of the screen. If Bubble
-      // chrome sits above us the page simply scrolls that bit -- normal, and far better than us
-      // trying to out-argue the page about its own scroll position.
+      // Otherwise the HOST owns our height. Drop ours and take whatever the Bubble container gives
+      // us. Every earlier version computed a height from the viewport instead, which made us taller
+      // than the slot we were placed in -- and an element sticking out of its container is exactly
+      // what pushed #main's scrollHeight past the real end of the page and let it scroll into empty
+      // space below the app.
+      root.style.height = ''; root.style.maxHeight = '';
+      if (root.getBoundingClientRect().height >= 320) return;
+      // Only reachable when the host container is auto-height and we would collapse to nothing --
+      // then, and only then, claim a screenful so the chat is usable at all.
       var vh = Math.round(window.innerHeight);
-      var dh = vh - offsetInContent();
-      if (dh < 320) dh = vh;   // sitting too far down for "fill to the bottom" to mean anything -> take a full screen
-      root.style.height = dh + 'px'; root.style.maxHeight = dh + 'px';
+      root.style.height = vh + 'px'; root.style.maxHeight = vh + 'px';
     }
     // The height math only holds while our top edge and the viewport stay put. Bubble can move us later
     // (late header, async content, a scrolled ancestor, a group being shown) WITHOUT firing resize/scroll —
     // that left the element too tall: the "Mira answers based on..." hint sat below the screen and the page
     // became scrollable, so it looked cut off at the top until you interacted (which fired another fit()).
     // This watcher refits whenever our position or the viewport actually changes, so it self-corrects.
-    // Bubble can move us later (late header, async content, a group being shown) without firing
-    // resize. This watcher refits when that happens -- and it compares only scroll-INDEPENDENT
-    // numbers, so merely scrolling the page can never trigger a refit. That is what makes a plain
-    // 300ms poll safe here again.
-    var _lo = null, _lh = null;
+    // Bubble can resize our container later (late content, a group being shown). This watcher
+    // refits when that happens -- and it compares only scroll-INDEPENDENT numbers (an element's
+    // own height, the viewport), so merely scrolling the page can never trigger a refit. That is
+    // what makes a plain 300ms poll safe here.
+    var _lp = null, _lh = null;
     function watch(){
       if (!visible()) return;
-      var o = offsetInContent();
+      var p = root.parentElement ? Math.round(root.parentElement.getBoundingClientRect().height) : 0;
       var h = Math.round(vv ? vv.height : window.innerHeight);
-      if (o !== _lo || h !== _lh){ _lo = o; _lh = h; scheduleFit(); }
+      if (p !== _lp || h !== _lh){ _lp = p; _lh = h; scheduleFit(); }
     }
     fit();
     requestAnimationFrame(fit);
