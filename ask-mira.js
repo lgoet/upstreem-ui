@@ -3929,33 +3929,21 @@
     if (root.classList.contains('has-messages') === on) return;
     if (!_heroEl || !_heroReady){ root.classList.toggle('has-messages', on); renderChatTitlebar(); return; }
     var from = _heroEl.getBoundingClientRect().height;
-    // hero and the composer both genuinely change Y position now (the whole {hero, categories,
-    // composer} block centres as one on the start screen, hero pinned flush to the top once a
-    // chat is open) -- FLIP each: measure before, toggle, then animate the delta away with a
-    // transform so it reads as one smooth 200ms move instead of a jump. Hero's own HEIGHT still
-    // FLIPs separately via .style.height (below) -- a transform for position and a height change
-    // for size don't conflict, they animate two different things at once.
-    var heroTopFrom = _heroEl.getBoundingClientRect().top;
+    // hero (the topbar) never changes Y position -- it's pinned flush to the top always, in both
+    // states -- only its HEIGHT flips (hero-text vs. chat-titlebar content). The composer DOES
+    // change Y position (start screen centres it, chat view pins it to the bottom) -- FLIP that
+    // one: measure before, toggle, then animate the delta away with a transform so it reads as one
+    // smooth 200ms move instead of a jump.
     var composerFrom = _composerAreaEl ? _composerAreaEl.getBoundingClientRect().top : null;
     root.classList.toggle('has-messages', on);
     _heroEl.style.transition = 'none'; _heroEl.style.height = '';
     var to = _heroEl.getBoundingClientRect().height;
-    var heroTopTo = _heroEl.getBoundingClientRect().top;
     _heroEl.style.height = from + 'px';
     void _heroEl.offsetWidth;                                    // reflow so the start height sticks
     _heroEl.style.transition = 'height 200ms ease, padding 200ms ease';
     _heroEl.style.height = to + 'px';
     clearTimeout(_heroEl._amT);
     _heroEl._amT = setTimeout(function(){ _heroEl.style.transition = ''; _heroEl.style.height = ''; }, 240);
-    var heroDy = heroTopFrom - heroTopTo;
-    if (Math.abs(heroDy) > 1){
-      _heroEl.style.transform = 'translateY(' + heroDy + 'px)';
-      void _heroEl.offsetWidth;
-      _heroEl.style.transition = 'height 200ms ease, padding 200ms ease, transform 200ms ease';
-      _heroEl.style.transform = '';
-      clearTimeout(_heroEl._amT2);
-      _heroEl._amT2 = setTimeout(function(){ _heroEl.style.transform = ''; }, 240);
-    }
     if (_composerAreaEl && composerFrom != null){
       var composerTo = _composerAreaEl.getBoundingClientRect().top;
       var dy = composerFrom - composerTo;
@@ -4361,6 +4349,18 @@
      No position:fixed -> also works when a Bubble ancestor has a transform (which breaks fixed). */
   (function(){
     var vv = window.visualViewport;
+    // scroll/resize/visualViewport events can fire many times a second while the user is actively
+    // scrolling -- most visibly right as #main hits its scroll boundary and rubber-bands, which
+    // repeatedly nudges visualViewport.height (dynamic toolbar) and every ancestor's measured
+    // position. Calling fit() straight from each of those forces a synchronous reflow AND mutates
+    // this root's own height on every tick -- that changes #main's own scrollHeight mid-gesture,
+    // which is what caused the hard snap/jank the user hit. Route all of those through this debounce
+    // so fit() only actually runs once things have settled, not on every intermediate tick.
+    var _fitTimer = null;
+    function scheduleFit(){
+      if (_fitTimer) clearTimeout(_fitTimer);
+      _fitTimer = setTimeout(function(){ _fitTimer = null; fit(); }, 120);
+    }
     function isSmall(){ return !window.matchMedia || window.matchMedia('(max-width: 720px)').matches; }
     // A hidden element (Bubble group not shown yet) reports rect 0 -> measuring then would compute the
     // height against top:0 and leave it TOO TALL once shown (footer/hint pushed below the screen).
@@ -4413,16 +4413,17 @@
       if (!visible()) return;
       var t; try { t = Math.round(root.getBoundingClientRect().top); } catch(_){ return; }
       var h = Math.round(vv ? vv.height : window.innerHeight);
-      if (t !== _lt || h !== _lh){ _lt = t; _lh = h; fit(); }
+      if (t !== _lt || h !== _lh){ _lt = t; _lh = h; scheduleFit(); }
     }
     fit();
     requestAnimationFrame(fit);
     window.addEventListener('load', function(){ fit(); setTimeout(fit, 60); setTimeout(fit, 200); setTimeout(fit, 450); });
     setTimeout(fit, 120); setTimeout(fit, 400);
     setInterval(watch, 300);
-    window.addEventListener('resize', fit);
-    // a stray page nudge (the ~30px) snaps straight back to the top + refits
-    window.addEventListener('scroll', function(){ if ((window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0) > 0) fit(); }, { passive: true });
+    window.addEventListener('resize', scheduleFit);
+    // a stray page nudge (the ~30px) snaps straight back to the top + refits -- debounced, since
+    // 'scroll' fires continuously while #main is actively scrolling/bouncing.
+    window.addEventListener('scroll', function(){ if ((window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0) > 0) scheduleFit(); }, { passive: true });
     if (window.ResizeObserver){
       try { new ResizeObserver(watch).observe(document.documentElement); } catch(_){}
       try { new ResizeObserver(watch).observe(document.body); } catch(_){}
@@ -4431,7 +4432,7 @@
       try { if (root.parentElement) new ResizeObserver(watch).observe(root.parentElement); } catch(_){}
     }
     window.addEventListener('orientationchange', function(){ setTimeout(fit, 60); setTimeout(fit, 250); });
-    if (vv){ vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit); }
+    if (vv){ vv.addEventListener('resize', scheduleFit); vv.addEventListener('scroll', scheduleFit); }
     elTextarea.addEventListener('focus', function(){ fit(); setTimeout(fit, 60); setTimeout(fit, 250); setTimeout(fit, 500); });
     elTextarea.addEventListener('blur',  function(){ setTimeout(fit, 60); setTimeout(fit, 300); });
     // Bonus: let Chrome/Android resize the layout viewport for the keyboard instead of panning.
