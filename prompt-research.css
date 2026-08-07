@@ -157,13 +157,14 @@
 @keyframes uprPulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
 
 /* ---------- "View previous researches" ---------- */
-/* Top right of the content column, matching Ask Mira's "View Previous Chats". Absolute against
-   .upr-content (already position:relative above), so this needs no change to the Bubble markup --
-   the button element stays exactly where it is in the HTML. Back into the flow on narrow screens,
-   where an absolute button would sit on top of the title. */
-.upr-history-entry { position: absolute; top: 0; right: 0; z-index: 3; display: flex; }
+/* Very top right of the component, matching Ask Mira's "View Previous Chats". The button is
+   authored inside .upr-content (a centred 900px column), so the boot script lifts it up to
+   .upr-shell first -- see prompt-research.js. Pinned against .upr-shell, which is already
+   position:relative, and the offsets are measured from the component's own edge rather than from
+   the shell's padding, so it really does sit in the corner. */
+.upr-history-entry { position: absolute; top: clamp(14px, 2vw, 22px); right: clamp(14px, 2vw, 22px); z-index: 6; display: flex; }
 @media (max-width: 720px){
-  .upr-history-entry { position: static; margin-top: 18px; justify-content: center; }
+  .upr-history-entry { top: 12px; right: 12px; }
 }
 /* Secondary button, same shape as core's .up-empty-btn so it reads as one family. */
 .upr-secondary-btn {
@@ -522,7 +523,9 @@
    system: 6px off the top/right/bottom, 16px radius, slide in from the right, backdrop with a
    1.5px blur, and z-index 9900/9895 — one step under the app's lowest drawer pair (dz1 9910 /
    bz1 9905), so any of the app's own drawers still opens on top of this one. */
-.upr-portal { display: contents; }
+/* The scrim and panel below live inside the component root (see the "sidebar" note in
+   prompt-research.js). .upr-root.side-open / .side-in therefore match the root itself now -- there
+   is no separate host element on <body> any more, and no .upr-portal rule to go with it. */
 .upr-side-scrim {
   position: fixed; inset: 0; z-index: 9895; display: none; background: transparent;
   opacity: 0; pointer-events: none; transition: opacity 160ms ease; will-change: opacity;

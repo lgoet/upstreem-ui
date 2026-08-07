@@ -118,38 +118,31 @@
   var openHistoryResultsButton = root.querySelector('#upr-open-history-results');
   var backToStartButton   = root.querySelector('#upr-back-to-start');
 
-  /* ---------- sidebar portal ----------
-     Scrim + panel move to <body> so the sidebar spans the whole page rather than the component's
-     own box. position:fixed is only viewport-relative while no ancestor has a transform / filter /
-     will-change, and Bubble wrappers routinely have one — the same trap the opportunities drawer
-     hit. The host keeps .up-root/.upr-root so every colour token still resolves and the existing
-     state selectors keep matching; display:contents means it paints nothing and establishes no
-     containing block of its own. __uprInit marks it as done so uprRun's sweep skips it. */
-  var portal = document.createElement('div');
-  portal.className = 'up-root upr-root upr-portal';
-  /* Out of the page flow INLINE, not via the stylesheet. The classes above only keep this element
-     harmless while prompt-research.css is actually on the page: it is that file which supplies
-     .upr-portal{display:contents} and the position:fixed + display:none on the scrim and panel.
-     If it is missing (a pin that 404s, a page that loads the script but not the stylesheet), the
-     element falls back to core.css's .up-root{display:flex;width:100%} and the closed panel
-     renders as a plain static block at the end of <body> -- measured 414px of extra page height,
-     which is exactly the "you can keep scrolling past the end of the app into empty space" report.
-     A host box that is fixed and 0x0 cannot add height under ANY stylesheet. When the CSS is
-     present display:contents means no box is generated at all and these are simply ignored. */
-  portal.style.position = 'fixed';
-  portal.style.top = '0'; portal.style.left = '0';
-  portal.style.width = '0'; portal.style.height = '0';
-  portal.style.overflow = 'hidden';
-  portal.__uprInit = true;
-  portal.__uprOwner = root;
+  /* ---------- sidebar ----------
+     Scrim and panel stay INSIDE this component, exactly the way Ask Mira's "Previous chats" panel
+     works (.am-prev-scrim / .am-prev-panel live in #ask-mira, and #ask-mira.prev-open drives them).
+     They used to be moved into a host div on <body> so the drawer could span the whole page; that
+     host turned out to be a liability. Its harmlessness depended entirely on prompt-research.css
+     being on the page -- that file supplies its display:contents plus the position/hidden rules on
+     scrim and panel -- and without it the closed panel rendered as a plain static block at the end
+     of <body>, adding real height and letting the page scroll past the end of the app. Keeping the
+     panel in the component removes that whole failure mode: whatever the stylesheet does or does
+     not do, it can only ever affect this component's own box, which core.css already bounds.
+     `portal` stays as the name for the element carrying the side-open / side-in state classes --
+     it is the root now, so .upr-root.side-open still matches without a single selector changing. */
+  var portal = root;
   var sideScrim = root.querySelector('.upr-side-scrim');
   var sidePanel = root.querySelector('.upr-side');
-  if (sideScrim) portal.appendChild(sideScrim);
-  if (sidePanel) portal.appendChild(sidePanel);
-  Array.prototype.forEach.call(document.querySelectorAll('.upr-portal'), function(p){
-    if (!p.__uprOwner || !document.body.contains(p.__uprOwner)) { try { p.remove(); } catch(_){} }
-  });
-  try { document.body.appendChild(portal); } catch(_){}
+
+  /* Same idea for the history button: Ask Mira's "View Previous Chats" sits at the very top right
+     of the component, and this one should too. It is authored inside .upr-content (a centred
+     900px column, so its top-right is not the component's top-right), so move it up to .upr-shell
+     and let the CSS pin it -- that way the Bubble markup does not have to change. */
+  (function(){
+    var histEntry = root.querySelector('.upr-history-entry');
+    var shell = root.querySelector('.upr-shell');
+    if (histEntry && shell && histEntry.parentElement !== shell) shell.appendChild(histEntry);
+  })();
 
   /* ---------- state (unchanged from the standalone) ---------- */
   var fallbackMarkets = [
@@ -424,15 +417,16 @@
   /* Everything about this panel -- that it is fixed, that it slides, that it is hidden while
      closed -- lives in prompt-research.css. Without that file the component silently does nothing
      visible, which is impossible to tell apart from a broken button. Probe once and say so
-     plainly. (.upr-portal{display:contents} is the cheapest sentinel the stylesheet provides.) */
+     plainly. The sentinel is .upr-side's own position:fixed -- a bare div has position:static, so
+     if the stylesheet is on the page this comes back "fixed" and nothing is reported. */
   var _cssWarned = false;
   function stylesheetPresent(){
     try {
       var probe = document.createElement('div');
-      probe.className = 'upr-portal';
-      probe.style.cssText = 'position:absolute;left:-9999px;top:-9999px';
+      probe.className = 'upr-side';
+      probe.style.cssText = 'left:-9999px;top:-9999px';
       document.body.appendChild(probe);
-      var ok = window.getComputedStyle(probe).display === 'contents';
+      var ok = window.getComputedStyle(probe).position === 'fixed';
       probe.parentNode.removeChild(probe);
       return ok;
     } catch(_){ return true; }   // can't tell -> don't cry wolf
