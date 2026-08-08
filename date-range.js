@@ -104,8 +104,16 @@
     var CONTROLLERS = [];
 
     function initRoot(root) {
-      if (!root || root.__udrInit) return root && root.__udrCtrl;
-      root.__udrInit = true;
+      /* Keyed on the controller itself, NOT on a flag set up front. The flag used to be raised
+         here, on the first line -- but the controller is only built and registered ~370 lines
+         below, so anything throwing in between left the element permanently marked "initialised"
+         with no controller behind it. Every later initAll() then skipped it, CONTROLLERS stayed
+         empty, and resetUpstreemDateRangePicker() reported no picker for an element that is
+         plainly sitting there with the right id. Exactly the "(none yet)" case.
+         With the check on __udrCtrl a failed attempt leaves nothing behind, so the next initAll()
+         -- and every API call starts with one -- simply tries again. */
+      if (!root) return null;
+      if (root.__udrCtrl) return root.__udrCtrl;
 
       var MIN_DATE = parseIso(root.getAttribute("data-min-date")) || new Date(2024, 0, 1);
       var TODAY = startOfDay(new Date());
@@ -512,8 +520,18 @@
       }
       return hit;
     }
+    /* Per-root try/catch: one root failing to mount must not abort the sweep for the others, and
+       the reason has to end up in the console. Unguarded, a throw inside initRoot propagated out
+       of here and took the whole API call with it -- the reset that triggered the sweep never ran
+       and there was nothing to see but a picker that did not react. */
     function initAll() {
-      Array.prototype.forEach.call(document.querySelectorAll(".udr-root, [data-udr-root]"), initRoot);
+      Array.prototype.forEach.call(document.querySelectorAll(".udr-root, [data-udr-root]"), function (r) {
+        try { initRoot(r); }
+        catch (e) {
+          if (window.console) console.error("[date-range] mount failed for instance \"" +
+            (r && r.getAttribute ? (r.getAttribute("data-instance") || "(no id)") : "?") + "\":", e);
+        }
+      });
     }
 
     /* Same names the standalone exposed, so existing "Run JavaScript" steps keep working
