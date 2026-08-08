@@ -220,6 +220,28 @@
   var STORE = (window.__uptStore = window.__uptStore || {});
   var LOADING_EXPLICIT = (window.__uptLoadingExplicit = window.__uptLoadingExplicit || {});
 
+  /* ---------------- diagnostics ----------------
+     Records every controller boot and every outgoing event, with the call site that produced it.
+     Always on: two array pushes, nothing measurable at runtime, and it is the only thing that can
+     answer "which code path sent this event" on a real Bubble page, where the interesting fires
+     all happen during page load and nothing can be attached to the console in time.
+     Read it AFTER a page load with:  copy(JSON.stringify(window.__uptDebug, null, 2))
+     build     tells you which file version is actually live (rules out a stale CDN cache).
+     boots     one entry per makeController() run -- more than one means Bubble rebuilt the
+               element, and each rebuild is a fresh state that re-asks for everything.
+     fires     one entry per event, `from` is the frames above the fire call, so a repeated event
+               either shows the SAME frames (one path firing N times) or DIFFERENT ones. */
+  var DEBUG = (window.__uptDebug = window.__uptDebug || { build: "", boots: [], fires: [] });
+  DEBUG.build = "diag-1";
+  function noteBoot(id){
+    DEBUG.boots.push({ t: Math.round(performance.now()), instance: id, roots: document.querySelectorAll(".upt-root").length });
+  }
+  function noteFire(name){
+    var st = "";
+    try { throw new Error("x"); } catch(e){ st = e.stack || ""; }
+    DEBUG.fires.push({ t: Math.round(performance.now()), event: name, from: st.split("\n").slice(2, 8).join(" <- ") });
+  }
+
   /* Hideable columns. Prompt is deliberately absent — the table makes no sense without it. */
   var COLUMNS = [
     /* Visibility/Sentiment carry more header furniture now (logo/info-icon/sorter) than a plain
@@ -553,8 +575,13 @@
         groups: state.groups, groupsHasData: state.groupsHasData
       };
     }
-    /* shared event dispatch (core) */
-    var fire = UC.makeFire(root, { label: "prompts-table", eventPrefix: "upt-" });
+    /* shared event dispatch (core), wrapped so every outgoing event lands in window.__uptDebug
+       with the call site that produced it -- see the diagnostics block at module scope. */
+    var fireRaw = UC.makeFire(root, { label: "prompts-table", eventPrefix: "upt-" });
+    function fire(attr, fallbackName, payload){
+      noteFire(fallbackName);
+      return fireRaw(attr, fallbackName, payload);
+    }
 
     /* Same shared modal topics-manager's own "+ New Topic" uses (UC.makeTopicModal, core.js) —
        "Add Topic" in the bulk editor used to just hand off to "your own topic-creation UI" via a
@@ -4306,6 +4333,7 @@
     if (root.__uptController) return root.__uptController;
     var id = root.getAttribute("data-instance") || "default";
     if (id === "INSTANCE_ID") return null;   // placeholder not replaced yet
+    noteBoot(id);
     var ctrl = makeController(root);
     if (!ctrl) return null;
     root.__uptController = ctrl;
