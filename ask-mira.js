@@ -2013,6 +2013,20 @@
       elSuggGrid.style.height = h1 + 'px';
       elSuggGrid.style.opacity = '1';
       elSuggGrid.style.transform = 'translateY(0)';
+      /* Retarget once while the transition is still running. The four small category views are
+         laid out completely by the time h1 is measured, but the Reporting view is not: it carries
+         the range dropdown, the topic list and the report cards, and its final height only settles
+         a frame or two later. Animating to the stale h1 and then dropping the pin at the end made
+         it hitch and then jump the last stretch in one frame -- the "stutters, then shoots
+         through" the small cards never showed.
+         scrollHeight, not another unpin-and-measure: the box is overflow:hidden with a pinned
+         height, so scrollHeight already reports the content's own height without disturbing the
+         running transition. Assigning a new end value mid-flight is exactly what CSS transitions
+         are built for -- it interpolates on from wherever it currently is, no restart, no jump. */
+      galLater(function(){
+        var real = elSuggGrid.scrollHeight;
+        if (real && Math.abs(real - h1) > 2){ h1 = real; elSuggGrid.style.height = h1 + 'px'; }
+      }, 60);
       /* Height back to auto at the end: a pinned height would freeze the block at this size the
          next time the prompt list wraps to a different number of lines. */
       galLater(galReset, GAL_IN + 20);

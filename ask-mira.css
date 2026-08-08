@@ -1688,6 +1688,10 @@
   /* 15% down from 16px. This rule, not the .am-ghost-btn one above it, is what actually sizes the
      round chat bubble in the top-right corner -- the ID prefix outranks it. */
   #ask-mira .am-prev-btn .am-ic { width: 13.6px; height: 13.6px; }
+  /* Primary colour for BOTH parts. Scoped to .am-prev-btn, not .am-ghost-btn: that class is the
+     generic secondary button and its muted default is correct everywhere else. The icon needs no
+     rule of its own -- its stroke is currentColor. */
+  #ask-mira .am-prev-btn { color: var(--am-text); }
   /* mobile/compact chat topbar: 16px side padding so the back & "Chats" buttons don't touch the edges */
   #ask-mira.is-compact.has-messages .am-hero { padding-left: 16px; padding-right: 16px; }
   @media (max-width: 720px) {

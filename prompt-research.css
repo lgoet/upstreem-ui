@@ -178,6 +178,12 @@
   transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
 }
 .upr-secondary-btn:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); color: var(--vc-text); }
+/* The history buttons carry the primary colour on label AND icon (the icon's stroke is
+   currentColor, so one declaration covers both) -- same as Mira's "All Chats" opposite them.
+   Scoped to the two history triggers rather than put on .upr-secondary-btn itself: that class is
+   the generic secondary button and its muted default is right everywhere else it is used. */
+.upr-history-entry .upr-secondary-btn,
+#upr-open-history-results { color: var(--vc-text); }
 .upr-secondary-btn svg { width: 14px; height: 14px; display: block; flex: 0 0 auto; }
 
 /* ---------- composer ---------- */
