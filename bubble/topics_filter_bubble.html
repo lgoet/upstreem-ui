@@ -1,0 +1,87 @@
+<!-- ============================================================
+     Upstreem — Topics Filter (dropdown)
+     Paste this whole block into a Bubble HTML element.
+
+     The visible element is just the 32px trigger button; the panel is rendered by the script and
+     is absolutely positioned, so it does not affect the element's own box.
+     Bubble element size: FIT TO CONTENT, or a fixed 32px height. Make sure the group AROUND it
+     does not have "clip content" on — the script calls UC.unclipAncestors() for the usual cases.
+
+     ── Root attributes ─────────────────────────────────────────
+     data-instance     = "topics_v1_[dynamic id]"  unique per placement. Several of these on one
+                         page is the normal case; every API call below targets one by this id.
+     data-cdn-pin      = commit hash. NEVER leave blank: blank falls back to @main, and jsDelivr
+                         caches branch URLs for days.
+     data-isdark       = "yes" / "no"
+     data-isprocessing = "yes" while the page is fetching. Trigger goes inert, open panel closes.
+
+     ── Events to Bubble ────────────────────────────────────────
+     Create these as Toolbox "JavaScript to Bubble" elements (type: text) and put their names in
+     the attributes on the root div.
+
+       data-topics-fn    default bubble_fn_utfTopics    fires on EVERY selection change
+                         {"instance_id":"...","topic_ids":"id1,id2","tag_mode":"or","count":2}
+       data-newtopic-fn  default bubble_fn_utfNewTopic  fires when "New Topic" is saved
+                         {"name":"...","emoji":"...","hex_light":"#...","hex_dark":"#..."}
+
+     There is NO Apply button — every click publishes. The payload is always the FULL state, never
+     a delta, so a single dropped event cannot leave your filter out of sync with the UI.
+     tag_mode is "or" whenever fewer than two topics are selected: with one topic both modes
+     produce the same rows, so the payload says what actually applies.
+
+     If the function is missing the component still dispatches a "utf-topics" CustomEvent on the
+     root element with the same payload, so nothing is silently lost.
+
+     ── Control from "Run JavaScript" ───────────────────────────
+     setTopicsFilterTopics('topics_v1_dashboard', <list>)   feed the topics (array or JSON text)
+       Same shape your topics RPC already returns:
+       [{id, name, emoji, hex_light, hex_dark, is_active, created_at, prompt_count}, ...]
+       is_active:false entries are not offered. A selected topic that disappears from a later
+       delivery is dropped from the selection AND published, so the trigger can never count
+       something the list cannot show.
+
+     setTopicsFilterSelected('topics_v1_dashboard', 'id1,id2')   preselect, SILENT
+     setTopicsFilterMode('topics_v1_dashboard', 'and'|'or')      set match mode, SILENT
+     setTopicsFilterTheme('topics_v1_dashboard', 'dark'|'light')
+     resetTopicsFilter('topics_v1_dashboard')                    clear everything, SILENT
+
+     Silent is deliberate for all of these: you call them to mirror state Bubble already has.
+     Emitting would kick off a second page-wide refresh nobody asked for.
+
+     Every one of these accepts an exact id OR a prefix — resetTopicsFilter('topics_v1_') hits all
+     of them. And a call that arrives before its element exists is queued and replayed the moment
+     that picker mounts, so it does not matter whether the group is visible yet.
+
+     ── State across page changes ───────────────────────────────
+     Selection, match mode and sort survive Bubble swapping the element out and back in, keyed by
+     data-instance. In memory only, on purpose.
+     ============================================================ -->
+<div class="up-root utf-root"
+     data-instance="topics_v1_[dynamic id]"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="IS_DARK"
+     data-isprocessing="IS_PROCESSING"
+     data-topics-fn="bubble_fn_utfTopics"
+     data-newtopic-fn="bubble_fn_utfNewTopic"></div>
+
+<script>
+/* Loads this component's CSS/JS from jsDelivr, pinned to the commit hash in data-cdn-pin on the
+   root div above. Byte-for-byte the same loader every other component in this repo ships. */
+(function(){
+  function readPin(cls){
+    var els = document.getElementsByClassName(cls), i, p;
+    for (i = 0; i < els.length; i++){
+      p = (els[i].getAttribute("data-cdn-pin") || "").trim();
+      if (p && p !== "CDN_PIN") return p;
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("utf-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(url, make){ if (L[url]) return; L[url] = 1; make(url); }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+  css("core.css"); css("topics-filter.css");
+  js("core.js"); js("topics-filter.js");
+})();
+</script>

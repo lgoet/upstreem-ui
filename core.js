@@ -3775,10 +3775,47 @@
   }
   themeGuard();
 
+  /* ---------------- one dropdown open at a time, app-wide ----------------
+     Each open dropdown registers its panel element and a close callback. Opening a new one closes
+     every other open panel EXCEPT its own ancestors -- a menu opened from inside another menu is a
+     child and both have to stay up. Ancestry is read from the live DOM (panel.contains), not from
+     a declared parent, so nothing has to be wired up between components that know nothing about
+     each other.
+     Panels that live outside their trigger's DOM subtree (body-portaled ones) would look like
+     unrelated siblings here, so a caller can pass ownerEl -- the element the panel logically hangs
+     off -- and containment is tested against that instead. */
+  var OPEN_DD = [];
+  function ddClose(entry){
+    var i = OPEN_DD.indexOf(entry);
+    if (i >= 0) OPEN_DD.splice(i, 1);
+  }
+  function dropdownOpened(panel, close, ownerEl){
+    var self = { panel: panel, close: close, owner: ownerEl || panel };
+    for (var i = OPEN_DD.length - 1; i >= 0; i--){
+      var o = OPEN_DD[i];
+      if (o === self) continue;
+      /* keep it open if it is an ANCESTOR of the one being opened */
+      var isAncestor = false;
+      try { isAncestor = !!(o.panel && (o.panel.contains(self.owner) || o.panel.contains(panel))); } catch(e){}
+      if (isAncestor) continue;
+      OPEN_DD.splice(i, 1);
+      try { o.close(); } catch(e){}
+    }
+    OPEN_DD.push(self);
+    return function(){ ddClose(self); };
+  }
+  function closeAllDropdowns(){
+    var list = OPEN_DD.slice();
+    OPEN_DD.length = 0;
+    for (var i = 0; i < list.length; i++){ try { list[i].close(); } catch(e){} }
+  }
+
   window.UpstreemCore = {
     upstreemSetTheme: upstreemSetTheme,
     readPrefTheme: readPrefTheme,
     themeGuard: themeGuard,
+    dropdownOpened: dropdownOpened,
+    closeAllDropdowns: closeAllDropdowns,
     CITE_COLOR: CITE_COLOR,
     CITE_ALIAS: CITE_ALIAS,
     ALL_CITATION_TYPES: ALL_CITATION_TYPES,

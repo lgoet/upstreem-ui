@@ -1,0 +1,163 @@
+/* upstreem topics-filter.css — the Topics filter dropdown (prefix `utf`).
+   Requires core.css first: every colour here is a core token (--vc-*), this file defines no
+   palette of its own and carries no !important. Shape follows date-range.css so the two sit next
+   to each other in a filter row without looking like two different products. */
+
+/* ---------- trigger ---------- */
+.utf-root { display: inline-flex; width: fit-content; max-width: 100%; }
+.utf-wrap { position: relative; flex: 0 0 auto; }
+.utf-trigger {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 32px; padding: 0 10px;
+  border: 1px solid var(--vc-border); border-radius: 8px;
+  background: var(--vc-bg); color: var(--vc-muted);
+  font-family: inherit; font-size: 13px; font-weight: 500; line-height: 1;
+  white-space: nowrap; cursor: pointer; outline: 0;
+  transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
+}
+.utf-trigger:hover,
+.utf-wrap.is-open .utf-trigger {
+  color: var(--vc-text); background: var(--vc-heading-bg); border-color: var(--vc-hover-border);
+}
+.utf-trigger:focus-visible { border-color: var(--vc-hover-border); box-shadow: 0 0 0 2px var(--vc-heading-bg); }
+.utf-trigger svg { width: 16px; height: 16px; flex: 0 0 16px; fill: none; stroke: var(--vc-text); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+/* The label is the value, so it carries the primary colour while the rest of the button stays
+   muted -- same relationship the date-range trigger has. */
+.utf-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--vc-text); }
+.utf-chev { margin-left: -2px; }
+/* Exactly one topic selected: show its own dot instead of a count, so the trigger names the
+   filter rather than merely counting it. */
+.utf-trigger-dot { width: 8px; height: 8px; border-radius: 999px; flex: 0 0 8px; }
+.utf-root.is-processing .utf-trigger { pointer-events: none; }
+
+/* ---------- panel ----------
+   position:absolute inside .utf-wrap, exactly like every other dropdown in the repo
+   (STYLEGUIDE §14). The component calls UC.unclipAncestors() at boot so a short Bubble wrapper
+   cannot clip it. */
+.utf-menu {
+  position: absolute; top: calc(100% + 8px); left: 0; z-index: 60;
+  display: flex; flex-direction: column; width: 288px;
+  border: 1px solid var(--vc-border); border-radius: 16px;
+  background: var(--vc-bg); color: var(--vc-text);
+  box-shadow: 0 10px 28px rgba(0,0,0,.14);
+  opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none;
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+.utf-menu.is-shown { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+.utf-menu.is-right { left: auto; right: 0; }
+.up-root[data-theme="dark"] .utf-menu { border-color: #4a4a4a; box-shadow: 0 10px 28px rgba(0,0,0,.32); }
+
+/* ---------- head: search + sorter ---------- */
+.utf-head { display: flex; align-items: center; gap: 6px; padding: 8px 8px 6px; }
+.utf-search { position: relative; flex: 1 1 auto; min-width: 0; }
+.utf-search-in {
+  width: 100%; height: 32px; padding: 0 26px 0 28px; box-sizing: border-box;
+  border: 1px solid var(--vc-border); border-radius: 8px;
+  background: var(--vc-bg); color: var(--vc-text);
+  font-family: inherit; font-size: 13px; outline: 0;
+}
+.utf-search-in::placeholder { color: var(--vc-third); }
+.utf-search-in:focus { border-color: var(--vc-hover-border); }
+.utf-search-ic, .utf-search-clear {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  display: grid; place-items: center; color: var(--vc-third); pointer-events: none;
+}
+.utf-search-ic { left: 8px; width: 14px; height: 14px; }
+.utf-search-clear {
+  right: 6px; width: 16px; height: 16px; border: 0; padding: 0; border-radius: 4px;
+  background: transparent; cursor: pointer; pointer-events: auto; display: none;
+}
+.utf-search.has-text .utf-search-clear { display: grid; }
+.utf-search-clear:hover { color: var(--vc-text); }
+.utf-search-ic svg, .utf-search-clear svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.utf-sort { position: relative; flex: 0 0 auto; }
+.utf-sort-btn {
+  display: grid; place-items: center; width: 32px; height: 32px; padding: 0;
+  border: 1px solid var(--vc-border); border-radius: 8px;
+  background: var(--vc-bg); color: var(--vc-muted); cursor: pointer;
+  transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
+}
+.utf-sort-btn:hover, .utf-sort.is-open .utf-sort-btn { color: var(--vc-text); background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
+.utf-sort-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+/* Child of the topics panel -- the app-wide "one dropdown" rule in core keeps both open because
+   this one is nested inside the other (see UC.dropdownOpened). */
+.utf-sort-menu {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 3;
+  width: 148px; padding: 4px; border: 1px solid var(--vc-border); border-radius: 12px;
+  background: var(--vc-bg); box-shadow: 0 10px 24px rgba(0,0,0,.14);
+  display: none;
+}
+.utf-sort.is-open .utf-sort-menu { display: block; }
+.up-root[data-theme="dark"] .utf-sort-menu { border-color: #4a4a4a; box-shadow: 0 10px 24px rgba(0,0,0,.32); }
+.utf-sort-opt {
+  display: flex; align-items: center; width: 100%; height: 30px; padding: 0 8px;
+  border: 0; border-radius: 6px; background: transparent; color: var(--vc-text);
+  font-family: inherit; font-size: 12.5px; font-weight: 500; text-align: left; cursor: pointer;
+}
+.utf-sort-opt:hover { background: var(--vc-heading-bg); }
+.utf-sort-opt.is-on::after { content: ""; width: 6px; height: 6px; margin-left: auto; border-radius: 2px; background: var(--vc-text); }
+
+/* ---------- and/or ---------- */
+.utf-mode { display: flex; align-items: center; gap: 8px; padding: 0 10px 8px; }
+.utf-mode-lbl { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--vc-third); }
+.utf-seg {
+  display: inline-flex; align-items: center; height: 26px; padding: 2px; margin-left: auto;
+  border: 1px solid var(--vc-switch-border); border-radius: 8px; background: var(--vc-switch-bg);
+}
+.utf-seg-opt {
+  height: 22px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent;
+  color: var(--vc-muted); font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+.utf-seg-opt.is-on { background: var(--vc-bg); color: var(--vc-text); }
+/* Below two selected topics AND and OR describe the same result, so the control says so instead
+   of offering a choice that changes nothing. */
+.utf-mode.is-idle { opacity: .45; pointer-events: none; }
+
+.utf-sep { height: 1px; margin: 0 8px; background: var(--vc-border); }
+
+/* ---------- list ---------- */
+.utf-list { max-height: 264px; overflow: auto; padding: 6px; -webkit-overflow-scrolling: touch; }
+.utf-opt {
+  display: flex; align-items: center; gap: 8px; width: 100%; min-height: 32px; padding: 0 8px;
+  border: 0; border-radius: 8px; background: transparent; color: var(--vc-text);
+  font-family: inherit; font-size: 13px; font-weight: 500; text-align: left; cursor: pointer;
+}
+.utf-opt:hover, .utf-opt.is-cursor { background: var(--vc-heading-bg); }
+.utf-opt-dot { width: 8px; height: 8px; border-radius: 999px; flex: 0 0 8px; }
+.utf-opt-emoji { font-size: 13px; line-height: 1; flex: 0 0 auto; }
+.utf-opt-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.utf-opt-count { flex: 0 0 auto; color: var(--vc-third); font-size: 12px; font-variant-numeric: tabular-nums; }
+.utf-opt-check { flex: 0 0 16px; width: 16px; height: 16px; display: grid; place-items: center; color: var(--vc-text); opacity: 0; }
+.utf-opt.is-on .utf-opt-check { opacity: 1; }
+.utf-opt-check svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+/* The divider under the selected block only exists while something is selected AND unselected
+   topics follow it -- otherwise it would float under the last row. */
+.utf-pinsep { height: 1px; margin: 6px 8px; background: var(--vc-border); }
+.utf-empty { padding: 14px 10px; text-align: center; color: var(--vc-third); font-size: 12.5px; }
+
+/* ---------- foot ---------- */
+.utf-foot { display: flex; align-items: center; gap: 8px; padding: 8px; border-top: 1px solid var(--vc-border); }
+.utf-foot-btn {
+  height: 30px; padding: 0 10px; border: 1px solid var(--vc-border); border-radius: 8px;
+  background: var(--vc-bg); color: var(--vc-muted);
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: inherit; font-size: 12.5px; font-weight: 500; line-height: 1; cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+.utf-foot-btn:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); color: var(--vc-text); }
+.utf-foot-btn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.utf-clear { margin-left: auto; border-color: transparent; }
+.utf-clear:hover { border-color: var(--vc-border); }
+/* Nothing selected means nothing to clear -- hidden rather than disabled, a permanently dead
+   button in a 288px panel is just noise. */
+.utf-root:not(.has-sel) .utf-clear { display: none; }
+
+@media (max-width: 560px) {
+  .utf-menu { width: 264px; }
+  .utf-list { max-height: 216px; }
+}
+@media (prefers-reduced-motion: reduce){
+  .utf-menu, .utf-trigger, .utf-seg-opt { transition: none; }
+}
