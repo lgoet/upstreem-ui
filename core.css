@@ -8,6 +8,12 @@
 .up-root {
       --vc-text: #1f1f1b; --vc-muted: #6f737c; --vc-border: #e0e2e6;
       --vc-bg: #ffffff; --vc-heading-bg: #f5f5f5; --vc-sk: #e8e8e8; --up-surface: #ffffff;
+      /* One dropdown panel colour and one selected-row colour for the WHOLE app. Every component
+         that draws its own menu reads these instead of picking something close -- that drift is
+         exactly why the panels stopped matching each other. --up-sel-bg is deliberately
+         translucent so a selected row still shows the panel underneath rather than becoming a
+         solid block; it is the app's row-selection tone at 55% (light) / 60% (dark). */
+      --up-menu-bg: #ffffff; --up-sel-bg: rgba(245,245,245,0.55);
       --vc-switch-bg: #f5f5f5; --vc-switch-border: #e0e2e6; --vc-third: #9e9e9e;
       --vt-head-bg: rgba(245,245,245,0.3); --vt-logo-bg: #ffffff; --vt-row-hover: rgba(245,245,245,0.75);
       --vt-row-hover-solid: #f7f7f7;
@@ -37,6 +43,7 @@
     .up-root[data-theme="dark"] {
       --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #353535;
       --vc-bg: #1b1b1b; --vc-heading-bg: rgba(42,42,42,0.6); --vc-sk: #3a3a3a; --up-surface: #121212;
+      --up-menu-bg: #151515; --up-sel-bg: rgba(42,42,42,0.60);
       --vc-switch-bg: rgba(42,42,42,0.6); --vc-switch-border: #353535; --vc-third: #808080;
       --vt-head-bg: #121212; --vt-logo-bg: #e0e0e0; --vt-row-hover: rgba(42,42,42,0.6);
       --vt-row-hover-solid: #242424;
@@ -392,7 +399,24 @@
       background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 14px; box-shadow: 0 10px 28px rgba(0,0,0,.14); padding: 8px;
       opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none; transition: opacity 140ms ease, transform 140ms ease; }
     .up-menu.is-shown, .up-cols-menu.is-shown { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
-    .up-root[data-theme="dark"] .up-menu, .up-root[data-theme="dark"] .up-cols-menu { background: #151515; }
+    .up-root[data-theme="dark"] .up-menu, .up-root[data-theme="dark"] .up-cols-menu { background: var(--up-menu-bg); }
+
+    /* ---------------- shared selected row (sorters and any option list) ----------------
+       Put .up-optrow on a row that can be picked and .is-on when it is. Hover and selected are
+       the SAME tone on purpose: a row you are pointing at and a row that is chosen are both
+       "this one", and two different greys next to each other read as two different meanings.
+       Deliberately NOT used for selected brands / types / table settings / anything with a
+       switch -- those are multi-select lists where a filled row per entry is too busy. */
+    .up-optrow {
+      display: flex; align-items: center; gap: 8px; width: 100%;
+      border: 0; border-radius: 8px; background: transparent; color: var(--vc-text);
+      font-family: inherit; text-align: left; cursor: pointer;
+    }
+    .up-optrow:hover, .up-optrow.is-on { background: var(--up-sel-bg); }
+    /* 16x16 check, hard right -- the mark the component sorters already use. */
+    .up-optrow-check { margin-left: auto; width: 16px; height: 16px; flex: 0 0 16px; display: grid; place-items: center; color: var(--vc-text); opacity: 0; }
+    .up-optrow.is-on .up-optrow-check { opacity: 1; }
+    .up-optrow-check svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
     /* icon buttons have no border, so their open state is the background */
     .up-cols.is-open .up-cols-btn { color: var(--vc-text); background: var(--vc-heading-bg); }
     /* a column that is the last one left can't be switched off — an empty table helps nobody */

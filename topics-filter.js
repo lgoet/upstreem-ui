@@ -101,7 +101,14 @@
          line 2 column 5" this kept failing on, at the first indented key. A BOM and the invisible
          word-joiners Bubble's editor sometimes leaves behind do the same. Normalised here before
          anything else looks at the string. */
-      raw = raw.replace(/^\uFEFF/, "").replace(/[\u00A0\u2000-\u200D\u202F\u205F\u3000]/g, " ").trim();
+      raw = raw.replace(/^\uFEFF/, "").replace(/[\u00A0\u2000-\u200D\u202F\u205F\u3000]/g, " ")
+               /* Curly quotes. Bubble's editor turns " into a typographic pair, and JSON.parse
+                  only accepts the straight one -- which fails with the exact same "Expected
+                  property name" at the first key that NBSP indentation produces, so the message
+                  alone cannot tell the two apart. Both are normalised now. */
+               .replace(/[\u201C\u201D\u201E\u201F\u2033]/g, '"')
+               .replace(/[\u2018\u2019\u201A\u201B\u2032]/g, "'")
+               .trim();
       if (raw.indexOf("&") >= 0) {
         var dec = document.createElement("textarea");
         dec.innerHTML = raw;
@@ -110,8 +117,18 @@
       if (raw && raw.indexOf("TOPICS_JSON") < 0) {          // untouched placeholder = not filled in yet
         try { seeded = JSON.parse(raw); }
         catch (e) {
-          if (window.console) console.warn("[topics-filter] the embedded topics JSON of \"" +
-            instanceId + "\" is not valid JSON — ignored:", e.message);
+          if (window.console) {
+            /* The message alone has now cost several rounds: three different characters produce
+               the identical "Expected property name" at the identical position. So dump the head
+               of the string WITH code points -- that names the culprit outright instead of
+               leaving it to be guessed at. */
+            var head = raw.slice(0, 48), codes = [];
+            for (var ci = 0; ci < head.length && ci < 24; ci++) codes.push(head.charCodeAt(ci));
+            console.warn("[topics-filter] the embedded topics JSON of \"" + instanceId +
+              "\" is not valid JSON — ignored:", e.message,
+              "\n  first chars: " + JSON.stringify(head),
+              "\n  char codes:  " + codes.join(" "));
+          }
         }
       }
     }
@@ -186,8 +203,9 @@
     /* ---------------- render ---------------- */
     function renderSortMenu() {
       elSortMenu.innerHTML = SORTS.map(function (s) {
-        return '<button class="utf-sort-opt' + (s.key === sortKey ? " is-on" : "") +
-               '" type="button" role="menuitem" data-sort="' + s.key + '">' + esc(s.label) + '</button>';
+        return '<button class="up-optrow utf-sort-opt' + (s.key === sortKey ? " is-on" : "") +
+               '" type="button" role="menuitem" data-sort="' + s.key + '">' + esc(s.label) +
+               '<span class="up-optrow-check">' + ICON.check + '</span></button>';
       }).join("");
     }
     function optHtml(t, idx) {

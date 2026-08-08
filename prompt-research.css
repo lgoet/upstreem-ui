@@ -277,7 +277,7 @@
   transition: opacity 140ms ease, transform 140ms ease;
 }
 .upr-dd-menu.is-shown { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
-.up-root[data-theme="dark"] .upr-dd-menu { background: #151515; }
+.up-root[data-theme="dark"] .upr-dd-menu { background: var(--up-menu-bg); }
 .upr-dd-search-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-bottom: 8px; }
 .upr-dd-search-wrap { position: relative; }
 .upr-dd-search-wrap svg { position: absolute; right: 10px; top: 9px; width: 16px; height: 16px; color: var(--vc-third); pointer-events: none; }

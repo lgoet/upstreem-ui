@@ -107,7 +107,7 @@
   transition: opacity .14s ease, transform .14s ease;
 }
 .combo-filter-menu.is-shown { opacity: 1; pointer-events: auto; transform: translateY(0); }
-.up-root[data-theme="dark"] .combo-filter-menu { background: #151515; }
+.up-root[data-theme="dark"] .combo-filter-menu { background: var(--up-menu-bg); }
 .combo-filter.is-open .combo-filter-btn { color: var(--vc-text); background: var(--vc-heading-bg); }
 .combo-filter-head { display: flex; align-items: center; justify-content: space-between; padding: 4px 9px 6px; margin-bottom: 4px; }
 .combo-filter-title { font-size: 11px; font-weight: 600; color: var(--vc-muted); text-transform: uppercase; letter-spacing: 0.04em; }

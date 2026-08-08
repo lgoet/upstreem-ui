@@ -45,7 +45,7 @@
   position: absolute; top: calc(100% + 6px); left: 0; z-index: 60;
   display: flex; flex-direction: column; width: 300px; max-width: 92vw;
   border: 1px solid var(--vc-border); border-radius: 14px; padding: 10px;
-  background: var(--vc-bg); color: var(--vc-text);
+  background: var(--up-menu-bg); color: var(--vc-text);
   box-shadow: 0 16px 40px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.05);
   opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none;
   transition: opacity 120ms ease, transform 120ms ease;
@@ -116,25 +116,14 @@
 .utf-sort-menu {
   position: absolute; top: calc(100% + 6px); right: 0; z-index: 3;
   width: 148px; padding: 4px; border: 1px solid var(--vc-border); border-radius: 12px;
-  background: var(--vc-bg); box-shadow: 0 10px 24px rgba(0,0,0,.14);
+  background: var(--up-menu-bg); box-shadow: 0 10px 24px rgba(0,0,0,.14);
   display: none;
 }
 .utf-sort.is-open .utf-sort-menu { display: block; }
 .up-root[data-theme="dark"] .utf-sort-menu { border-color: #4a4a4a; box-shadow: 0 10px 24px rgba(0,0,0,.32); }
-.utf-sort-opt {
-  display: flex; align-items: center; width: 100%; height: 30px; padding: 0 9px;
-  border: 0; border-radius: 8px; background: transparent; color: var(--vc-text);
-  font-family: inherit; font-size: 12.5px; font-weight: 500; text-align: left; cursor: pointer;
-}
-.utf-sort-opt:hover { background: var(--vc-heading-bg); }
-.utf-sort-opt.is-on { color: var(--vc-text); }
-/* A check marks the active sort, not a coloured dot -- a dot beside a label reads as a status
-   light, which is not what this is. */
-.utf-sort-opt.is-on::after {
-  content: ""; margin-left: auto; width: 12px; height: 7px; flex: 0 0 12px;
-  border-left: 2px solid currentColor; border-bottom: 2px solid currentColor;
-  transform: rotate(-45deg) translate(1px, -2px);
-}
+/* Geometry only -- hover, selected tone and the 16x16 check all come from core's .up-optrow,
+   so this list can never drift away from every other sorter in the app. */
+.utf-sort-opt { height: 32px; padding: 0 9px; font-size: 12.5px; font-weight: 500; }
 
 /* ---------- list ---------- */
 .utf-list { display: flex; flex-direction: column; gap: 1px; max-height: 244px; overflow-y: auto; padding: 2px 0; }
@@ -143,8 +132,7 @@
   min-height: 34px; padding: 0 9px; border: 0; border-radius: 8px;
   background: transparent; color: var(--vc-text); cursor: pointer; font-family: inherit;
 }
-.utf-opt:hover, .utf-opt.is-cursor { background: var(--vc-heading-bg); }
-.utf-opt.is-on { background: var(--vc-heading-bg); }
+.utf-opt:hover, .utf-opt.is-cursor, .utf-opt.is-on { background: var(--up-sel-bg); }
 /* A real filled checkbox, not a check that appears out of nowhere: the row has to read as
    selectable before it is selected. */
 .utf-opt-cb { flex: 0 0 auto; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; color: #cfd2d7; }

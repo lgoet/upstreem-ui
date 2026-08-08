@@ -1517,7 +1517,7 @@
   #ask-mira[data-theme="dark"] .am-rep-topics-menu,
   #ask-mira[data-theme="dark"] .am-dd-menu,
   #ask-mira[data-theme="dark"] .am-cm,
-  #ask-mira[data-theme="dark"] .am-cm-submenu { background: #151515; }
+  #ask-mira[data-theme="dark"] .am-cm-submenu { background: var(--up-menu-bg); }
 
   /* scrollbars */
   #ask-mira .am-chat::-webkit-scrollbar,

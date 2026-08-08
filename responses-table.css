@@ -114,7 +114,7 @@
   border-radius: 12px; background: var(--up-surface); border: 1px solid var(--vc-border);
   box-shadow: 0 12px 32px rgba(17,18,20,.14); opacity: 0; pointer-events: none; transform: translateY(-4px) scale(.985);
   transition: opacity 140ms ease, transform 140ms ease; }
-.up-root[data-theme="dark"] .urt-fader-menu { background: #151515; }
+.up-root[data-theme="dark"] .urt-fader-menu { background: var(--up-menu-bg); }
 .urt-fader.is-open .urt-fader-menu { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); }
 
 .urt-fader-sec + .urt-fader-sec { margin-top: 20px; }
