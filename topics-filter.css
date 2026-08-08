@@ -4,8 +4,13 @@
    to each other in a filter row without looking like two different products. */
 
 /* ---------- trigger ---------- */
-.utf-root { display: inline-flex; width: fit-content; max-width: 100%; }
-.utf-wrap { position: relative; flex: 0 0 auto; }
+/* The root measures the TRIGGER and nothing else, so a Bubble element set to "fit to content"
+   ends up 32px high and as wide as the button -- not as wide as the open panel. The panel is
+   absolutely positioned and therefore outside the flow, so it contributes no size; height:32px is
+   stated anyway because an inline-flex box would otherwise inherit line-height slack from the
+   page and hand the parent a few stray pixels. */
+.utf-root { display: inline-flex; width: fit-content; max-width: 100%; height: 32px; }
+.utf-wrap { position: relative; flex: 0 0 auto; height: 32px; }
 .utf-trigger {
   display: inline-flex; align-items: center; gap: 8px;
   height: 32px; padding: 0 10px;
