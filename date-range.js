@@ -102,6 +102,8 @@
        later is worse than the default. */
     var STATE = window.__udrState || (window.__udrState = Object.create(null));
     var CONTROLLERS = [];
+    /* API calls that arrived before their picker existed, keyed by the id they asked for. */
+    var PENDING = {};
 
     function initRoot(root) {
       /* Keyed on the controller itself, NOT on a flag set up front. The flag used to be raised
@@ -496,6 +498,18 @@
       CONTROLLERS.push(ctrl);
 
       syncConfig(); paint(); render();
+
+      /* Drain anything that asked for this picker before it existed. Same exact-or-prefix rule the
+         live call uses, so a queued resetUpstreemDateRangePicker('dates_v2_') reaches it too. */
+      for (var pid in PENDING) {
+        if (!Object.prototype.hasOwnProperty.call(PENDING, pid)) continue;
+        if (instanceId !== pid && instanceId.indexOf(pid) !== 0) continue;
+        var pfn = PENDING[pid];
+        delete PENDING[pid];
+        try { pfn(ctrl); } catch (e) {
+          if (window.console) console.error("[date-range] queued call for \"" + pid + "\" failed:", e);
+        }
+      }
       return ctrl;
     }
 
@@ -514,9 +528,23 @@
       CONTROLLERS.forEach(function (c) {
         if (!id || c.instanceId === id || c.instanceId.indexOf(id) === 0) { fn(c); hit = true; }
       });
-      if (!hit && window.console) {
-        console.warn("[date-range] no picker matched \"" + id + "\". Mounted instances: " +
-          (CONTROLLERS.map(function (c) { return c.instanceId; }).join(", ") || "(none yet)"));
+      /* Nothing matched -- park it instead of dropping it. A Bubble workflow routinely calls this
+         while the group holding the picker is still hidden, and Bubble does not render a hidden
+         group's HTML at all, so there is genuinely no element yet: initRoot never even runs, which
+         is why the failure carries no mount error. Held here and replayed the moment a picker with
+         that id mounts (see the drain in initRoot), so the call order stops mattering. Latest wins
+         per id -- two resets queued for the same picker mean the same end state, not two runs. */
+      if (!hit && id) {
+        PENDING[id] = fn;
+        if (window.console) {
+          var roots = document.querySelectorAll(".udr-root, [data-udr-root]");
+          var ids = [];
+          for (var i = 0; i < roots.length; i++) ids.push(roots[i].getAttribute("data-instance") || "(no data-instance)");
+          console.warn("[date-range] \"" + id + "\" not mounted yet — queued, will run when it appears." +
+            "  Mounted: " + (CONTROLLERS.map(function (c) { return c.instanceId; }).join(", ") || "none") +
+            "  |  .udr-root elements in the DOM: " + roots.length +
+            (ids.length ? " (" + ids.join(", ") + ")" : ""));
+        }
       }
       return hit;
     }
