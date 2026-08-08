@@ -1965,20 +1965,28 @@
     elSuggGrid.style.transform = '';
     elSuggGrid.style.willChange = '';
   }
-  /* TWO phases, not one. The first version swapped the content immediately and then faded it up
-     from 0.4 while the box was still growing -- so the old content vanished in a single frame, the
-     new content appeared at 40% on top of a moving box, and the eye read the whole thing as a
-     stutter rather than a transition. There was never a moment where one thing was clearly
-     replacing another.
-     Now the old content leaves first (90ms, fade + 4px up), and only then does the content swap
-     happen -- unseen, at opacity 0. The new content enters from 6px below over 200ms while the
-     height runs to its new value on the same curve, so growth and arrival are one movement instead
-     of two competing ones.
-     opacity/transform are compositor properties and cost nothing per frame; height is the only one
-     that relayouts, which is why it is the only geometric property being animated. will-change is
-     set for the duration and removed after -- left on permanently it would keep a layer alive for
-     a block that is static almost all of the time. */
-  var GAL_OUT = 90, GAL_IN = 200;
+  /* Three strictly separated steps, never two things moving at once:
+        1. fade the old content out          150ms   (height stays pinned)
+        2. swap, then slide the height       200ms   (content invisible the whole way)
+        3. fade the new content in           150ms   (height already released)
+     Every earlier version overlapped the fade with the slide, and overlap is what read as
+     stuttering: the eye tracks two different rates at once and neither looks clean. Opening and
+     closing run the identical sequence, so a collapse is "content out, then slide shut" and an
+     expand is "slide open, then content in" -- which is exactly what it should look like from
+     either direction.
+
+     There is deliberately NO mid-flight retarget any more. The previous version re-read
+     scrollHeight at 60ms to correct the target, which helped nothing and actively broke closing:
+     scrollHeight is never smaller than the box's own clientHeight, so while the box was shrinking
+     it reported the CURRENT height, not the (smaller) target -- and the correction then pulled the
+     end value back up and stalled the collapse halfway. That is the "stutters on the way shut"
+     regression. The height is measured once, while the content is invisible and fully laid out,
+     and that value stands.
+
+     Height is the only property that relayouts; opacity is a compositor property and free.
+     will-change goes on for the duration and comes off after, so a block that is static almost
+     all of the time does not keep a layer alive. */
+  var GAL_FADE = 150, GAL_SLIDE = 200;
   function renderGallery(){
     if (!elSuggGrid || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)){
       return renderGalleryNow();
@@ -1989,48 +1997,40 @@
        and leave the element completely alone rather than pinning a height onto it. */
     if (!h0){ galReset(); return renderGalleryNow(); }
 
-    elSuggGrid.style.willChange = 'height, opacity, transform';
+    /* ---- 1. content out ---- */
+    elSuggGrid.style.willChange = 'height, opacity';
     elSuggGrid.style.overflow = 'hidden';
     elSuggGrid.style.height = h0 + 'px';
-    elSuggGrid.style.transition = 'opacity ' + GAL_OUT + 'ms ease, transform ' + GAL_OUT + 'ms ease';
+    elSuggGrid.style.transition = 'opacity ' + GAL_FADE + 'ms ease';
     elSuggGrid.style.opacity = '0';
-    elSuggGrid.style.transform = 'translateY(-4px)';
 
     galLater(function(){
+      /* ---- 2. swap (invisible) and slide ---- */
       renderGalleryNow();
       /* Measure the new content at its natural height, then put the old one back so there is a
-         value to transition FROM. Both writes happen before the browser paints, so the unpinned
-         state is never visible. */
+         value to transition FROM. Both writes land before the next paint, and the content is at
+         opacity 0 anyway, so the unpinned moment is never visible. */
       elSuggGrid.style.height = '';
       var h1 = elSuggGrid.getBoundingClientRect().height;
       elSuggGrid.style.height = h0 + 'px';
       elSuggGrid.style.transition = 'none';
-      elSuggGrid.style.transform = 'translateY(6px)';
       /* Forced reflow, not cosmetic: without it the browser coalesces the start and end values
          into one style recalc and the element jumps straight to the end with nothing to animate. */
       void elSuggGrid.offsetHeight;
-      elSuggGrid.style.transition = 'height ' + GAL_IN + 'ms ease, opacity ' + GAL_IN + 'ms ease, transform ' + GAL_IN + 'ms ease';
+      elSuggGrid.style.transition = 'height ' + GAL_SLIDE + 'ms ease';
       elSuggGrid.style.height = h1 + 'px';
-      elSuggGrid.style.opacity = '1';
-      elSuggGrid.style.transform = 'translateY(0)';
-      /* Retarget once while the transition is still running. The four small category views are
-         laid out completely by the time h1 is measured, but the Reporting view is not: it carries
-         the range dropdown, the topic list and the report cards, and its final height only settles
-         a frame or two later. Animating to the stale h1 and then dropping the pin at the end made
-         it hitch and then jump the last stretch in one frame -- the "stutters, then shoots
-         through" the small cards never showed.
-         scrollHeight, not another unpin-and-measure: the box is overflow:hidden with a pinned
-         height, so scrollHeight already reports the content's own height without disturbing the
-         running transition. Assigning a new end value mid-flight is exactly what CSS transitions
-         are built for -- it interpolates on from wherever it currently is, no restart, no jump. */
+
       galLater(function(){
-        var real = elSuggGrid.scrollHeight;
-        if (real && Math.abs(real - h1) > 2){ h1 = real; elSuggGrid.style.height = h1 + 'px'; }
-      }, 60);
-      /* Height back to auto at the end: a pinned height would freeze the block at this size the
-         next time the prompt list wraps to a different number of lines. */
-      galLater(galReset, GAL_IN + 20);
-    }, GAL_OUT);
+        /* ---- 3. content in ---- */
+        /* Height back to auto first: a pinned height would freeze the block at this size the next
+           time the prompt list wraps to a different number of lines. Safe to release here because
+           the slide has finished on exactly this value. */
+        elSuggGrid.style.transition = 'opacity ' + GAL_FADE + 'ms ease';
+        elSuggGrid.style.height = '';
+        elSuggGrid.style.opacity = '1';
+        galLater(galReset, GAL_FADE + 20);
+      }, GAL_SLIDE + 10);
+    }, GAL_FADE);
   }
   function renderGalleryNow(){
     var label = root.querySelector('#am-suggested-label');
