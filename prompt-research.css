@@ -183,7 +183,8 @@
    Scoped to the two history triggers rather than put on .upr-secondary-btn itself: that class is
    the generic secondary button and its muted default is right everywhere else it is used. */
 .upr-history-entry .upr-secondary-btn,
-#upr-open-history-results { color: var(--vc-text); }
+#upr-open-history-results,
+#upr-back-to-start { color: var(--vc-text); }
 .upr-secondary-btn svg { width: 14px; height: 14px; display: block; flex: 0 0 auto; }
 
 /* ---------- composer ---------- */
@@ -607,9 +608,22 @@
 @media (max-width: 560px) {
   .upr-composer { grid-template-columns: 1fr; }
   .upr-actions { justify-content: flex-end; }
-  .upr-box { --up-cols: minmax(0, 1fr) 150px; }
   .upr-box .up-th:nth-child(3), .upr-box .up-td:nth-child(3) { display: none; }
   .upr-side { width: 100%; right: 0; top: 0; bottom: 0; border-radius: 0; border-right: 0; }
+
+  /* Icon-only actions. At this width "Ignore"/"Track" cost more than they explain -- the x and the
+     check carry the same meaning, and the 150px the labels needed came straight out of the prompt
+     column, which is the one thing actually worth reading here. The labels sit in their own spans
+     precisely so they can be dropped without touching the icons.
+     88px is the column's real content: two 32px squares + the 8px between them + 8px padding on
+     each side. Written out rather than left to the old 150px so the prompt gets every pixel the
+     buttons no longer need. */
+  .upr-box { --up-cols: minmax(0, 1fr) 88px; }
+  .upr-row-btn > span { display: none; }
+  .upr-row-btn { width: 32px; padding: 0; gap: 0; }
+  .upr-row-btn.is-ignore, .upr-row-btn.is-accept { padding: 0; }
+  .upr-row-actions { gap: 8px; }
+  .upr-box .up-th:last-child, .upr-box .up-td:last-child { padding-left: 8px; padding-right: 8px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .upr-float-point, .upr-float-spark, .upr-loader-core, .upr-loader-ring,
