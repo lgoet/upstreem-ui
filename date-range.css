@@ -1,0 +1,160 @@
+/* upstreem date-range.css — the Date Range filter dropdown (prefix `udr`).
+   Requires core.css first: every colour here is a core token (--vc-*), this file defines no
+   palette of its own. The standalone this replaces carried a full parallel --udr-* palette plus a
+   dark-mode block that had to be kept in sync with core by hand; both are gone.
+
+   No Flatpickr. The calendar is this component's own markup, so there is not a single
+   !important in this file — the ~200 lines of override the standalone needed existed purely to
+   neutralise a third-party stylesheet. */
+
+/* ---------- trigger ----------
+   Same shape as core's .up-btn-sec (32px, 8px radius, 1px border) so it lines up with every other
+   filter control in a toolbar row. */
+.udr-root { display: inline-flex; width: fit-content; max-width: 100%; }
+.udr-wrap { position: relative; flex: 0 0 auto; }
+.udr-trigger {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 32px; padding: 0 10px;
+  border: 1px solid var(--vc-border); border-radius: 8px;
+  background: var(--vc-bg); color: var(--vc-muted);
+  font-family: inherit; font-size: 13px; font-weight: 500; line-height: 1;
+  white-space: nowrap; cursor: pointer; outline: 0;
+  transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
+}
+/* Hover and "panel is open" are deliberately the same state -- the open panel is the affordance,
+   a second distinct colour for it just reads as a third button style. */
+.udr-trigger:hover,
+.udr-wrap.is-open .udr-trigger {
+  color: var(--vc-text); background: var(--vc-heading-bg); border-color: var(--vc-hover-border);
+}
+.udr-trigger:focus-visible { border-color: var(--vc-hover-border); box-shadow: 0 0 0 2px var(--vc-heading-bg); }
+.udr-trigger svg { width: 16px; height: 16px; flex: 0 0 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+/* The label is the value, so it carries the primary colour even while the rest of the button is
+   muted -- same relationship the tables' heading/count pair has. */
+.udr-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--vc-text); }
+.udr-chev { margin-left: -2px; }
+/* Loading: no dimming or cursor change, just inert. A greyed-out filter reads as "broken" when the
+   only thing happening is that the table behind it is still fetching. */
+.udr-root.is-processing .udr-trigger { pointer-events: none; }
+
+/* ---------- panel ----------
+   position:absolute inside .udr-wrap, exactly like every other dropdown in the repo (STYLEGUIDE
+   §14). NOT body-mounted + position:fixed: a fixed panel has to chase its trigger with JS on every
+   scroll event, and that chase is always one frame behind, which is the drift core.js's makeFire
+   note describes. Absolute means the panel moves in the SAME paint as the trigger, for free.
+   The component calls UC.unclipAncestors() at boot so a short Bubble wrapper cannot clip it. */
+.udr-menu {
+  position: absolute; top: calc(100% + 8px); left: 0; z-index: 60;
+  display: flex; align-items: stretch; width: max-content;
+  padding: 6px; border: 1px solid var(--vc-border); border-radius: 16px;
+  background: var(--vc-bg); color: var(--vc-text);
+  box-shadow: 0 10px 28px rgba(0,0,0,.14);
+  opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none;
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+.udr-menu.is-shown { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+/* Flipped to the right edge when a left-aligned panel would leave the viewport. Set once on open,
+   never on scroll -- see the note above. */
+.udr-menu.is-right { left: auto; right: 0; }
+.up-root[data-theme="dark"] .udr-menu { border-color: #4a4a4a; box-shadow: 0 10px 28px rgba(0,0,0,.32); }
+.udr-menu, .udr-menu * { -webkit-user-select: none; user-select: none; }
+
+/* ---------- presets ---------- */
+.udr-presets { display: flex; flex-direction: column; width: 148px; flex: 0 0 148px; padding: 8px 6px; }
+.udr-presets-head {
+  padding: 3px 9px 9px; color: var(--vc-muted);
+  font-size: 11px; font-weight: 600; line-height: 1; letter-spacing: .04em; text-transform: uppercase;
+}
+.udr-preset {
+  display: flex; align-items: center; width: 100%; height: 34px; padding: 0 9px;
+  border: 0; border-radius: 8px; background: transparent; color: var(--vc-text);
+  font-family: inherit; font-size: 13px; font-weight: 500; text-align: left; cursor: pointer;
+}
+.udr-preset + .udr-preset { margin-top: 4px; }
+.udr-preset:hover, .udr-preset.is-active { background: var(--vc-heading-bg); }
+.udr-preset.is-active::after {
+  content: ""; width: 6px; height: 6px; margin-left: auto; border-radius: 2px; background: var(--vc-text);
+}
+.udr-reset {
+  display: flex; align-items: center; width: 100%; height: 34px; margin-top: auto; padding: 0 9px;
+  border: 0; border-radius: 8px; background: transparent; color: var(--vc-muted);
+  font-family: inherit; font-size: 13px; font-weight: 500; text-align: left; cursor: pointer;
+}
+.udr-reset:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
+.udr-divider { width: 1px; flex: 0 0 1px; margin: 6px 4px; background: var(--vc-border); }
+
+/* ---------- calendar ---------- */
+.udr-cal { display: flex; gap: 16px; padding: 4px 2px 2px; }
+.udr-month { width: 288px; flex: 0 0 288px; }
+.udr-month-head { position: relative; display: flex; align-items: center; justify-content: center; height: 44px; }
+.udr-month-title { color: var(--vc-text); font-size: 14px; font-weight: 500; }
+.udr-nav {
+  position: absolute; top: 6px; display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; padding: 0; border: 0; border-radius: 8px;
+  background: transparent; color: var(--vc-muted); cursor: pointer;
+}
+.udr-nav:hover:not(:disabled) { background: var(--vc-heading-bg); color: var(--vc-text); }
+.udr-nav:disabled { opacity: .35; cursor: default; }
+.udr-nav svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.udr-prev { left: 4px; }
+.udr-next { right: 4px; }
+/* Only the outer arrows are live in two-month mode -- the two grids always move together, so a
+   "next" on the left month and a "prev" on the right one would be the same action twice. */
+.udr-month:not(:first-child) .udr-prev,
+.udr-month:not(:last-child) .udr-next { display: none; }
+
+.udr-dows { display: grid; grid-template-columns: repeat(7, 40px); height: 32px; padding: 0 4px; }
+.udr-dow { display: flex; align-items: center; justify-content: center; color: var(--vc-muted); font-size: 11px; font-weight: 600; }
+/* Fixed 6 rows so the panel keeps its height across months -- a 5-row month would otherwise make
+   the whole dropdown jump by 40px when you page to it. */
+.udr-grid { display: grid; grid-template-columns: repeat(7, 40px); grid-auto-rows: 36px; row-gap: 4px; padding: 0 4px 4px; }
+.udr-day {
+  display: flex; align-items: center; justify-content: center;
+  width: 40px; height: 36px; padding: 0; border: 1px solid transparent; border-radius: 8px;
+  background: transparent; color: var(--vc-text);
+  font-family: inherit; font-size: 12px; font-weight: 500; cursor: pointer; outline: 0;
+  transition: background-color 90ms ease, color 90ms ease, border-color 90ms ease;
+}
+/* Empty placeholder, keeps the week alignment -- see the note in date-range.js's render(). */
+.udr-day.is-out { pointer-events: none; background: none; border-color: transparent; }
+.udr-day:hover:not(:disabled):not(.is-start):not(.is-end) { background: var(--vc-heading-bg); }
+.udr-day:focus-visible { border-color: var(--vc-hover-border); }
+.udr-day:disabled { color: var(--vc-third); opacity: .42; cursor: default; }
+/* The range is the cell background only. Square middle, rounded ends -- no overlapping shadows. */
+.udr-day.is-in { border-radius: 0; background: var(--vc-heading-bg); }
+.udr-day.is-start, .udr-day.is-end {
+  border-color: var(--vc-text); background: var(--vc-text); color: var(--vc-bg);
+}
+.udr-day.is-start:not(.is-end) { border-radius: 8px 0 0 8px; }
+.udr-day.is-end:not(.is-start) { border-radius: 0 8px 8px 0; }
+/* A range end landing on a row edge would otherwise show a half-open bar pointing at nothing. */
+.udr-day.is-start:nth-child(7n):not(.is-end),
+.udr-day.is-end:nth-child(7n+1):not(.is-start) { border-radius: 8px; }
+.udr-day.is-today { color: var(--vt-down); }
+.udr-day.is-today:not(.is-start):not(.is-end) { border-color: var(--vc-border); }
+.udr-day.is-today.is-start, .udr-day.is-today.is-end { color: var(--vt-down); }
+.up-root[data-theme="dark"] .udr-day.is-start,
+.up-root[data-theme="dark"] .udr-day.is-end { border-color: #e0e0e0; background: #e0e0e0; color: #1f1f1b; }
+.up-root[data-theme="dark"] .udr-day.is-today.is-start,
+.up-root[data-theme="dark"] .udr-day.is-today.is-end { color: var(--vt-down); }
+
+/* ---------- responsive ----------
+   Driven by a class the script sets from the VIEWPORT width, not a media query: the panel is
+   position:absolute and as wide as it wants to be, so its own box tells us nothing about whether
+   it still fits on screen. */
+.udr-menu.is-one-month .udr-month:last-child { display: none; }
+.udr-menu.is-one-month .udr-month:first-child .udr-next { display: flex; }
+.udr-menu.is-stacked { flex-direction: column; width: 304px; }
+.udr-menu.is-stacked .udr-cal { order: 1; }
+.udr-menu.is-stacked .udr-divider { order: 2; width: auto; height: 1px; flex: 0 0 1px; margin: 4px 6px; }
+.udr-menu.is-stacked .udr-presets {
+  order: 3; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 2px; row-gap: 4px; width: auto; flex: 0 0 auto; padding: 6px;
+}
+.udr-menu.is-stacked .udr-preset + .udr-preset { margin-top: 0; }
+.udr-menu.is-stacked .udr-presets-head { grid-column: 1 / -1; }
+.udr-menu.is-stacked .udr-reset { grid-column: 1 / -1; margin-top: 2px; }
+
+@media (prefers-reduced-motion: reduce){
+  .udr-menu, .udr-trigger, .udr-day { transition: none; }
+}

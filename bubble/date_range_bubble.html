@@ -1,0 +1,129 @@
+<!-- ============================================================
+     Upstreem — Date Range (filter dropdown)
+     Paste this whole block into a Bubble HTML element. The loader at the bottom pulls
+     core.css/core.js + date-range.css/js from jsDelivr, pinned to the commit in data-cdn-pin.
+
+     The visible element is just the 32px trigger button. The calendar panel is rendered by the
+     script into this element and shown on click — the markup below is deliberately only the root
+     div, there is nothing else for you to paste or keep in sync.
+
+     ── Migrated from the standalone date picker ─────────────────────────────────
+     THE BUBBLE CONTRACT IS UNCHANGED. Same three data-*-fn attributes, same JSON payload with the
+     same four keys, same two CustomEvents, and window.resetUpstreemDateRangePicker('your_id')
+     still behaves exactly as before (silent — see below). Existing workflows need no edit.
+
+     What changed inside:
+       - Flatpickr is gone. The calendar is the component's own code, so nothing is fetched from a
+         third-party CDN at runtime and a Flatpickr release can no longer break the styling. The
+         ~200 lines of !important that existed only to override its skin are gone with it.
+       - Colours come from core's --vc-* tokens, so the picker follows a theme switch. The
+         standalone wrote hex values inline with !important and did not.
+       - The panel is a normal absolutely-positioned dropdown instead of a body-mounted fixed
+         panel that chased its trigger with JS on every scroll event (STYLEGUIDE §14).
+       - The iframe-tree scan for bubble_fn_* and the 1200ms DOM re-scan interval are both gone;
+         core's resolveBubbleFn and UC.watchRoots cover the same ground.
+       - Grid is always 6 rows, so the panel keeps its height when you page to a 5-row month.
+       - Leading/trailing days of the neighbouring month are blank. In the two-month view they are
+         literally the same days as the other grid, so a range crossing the boundary used to be
+         painted twice and read as two separate ranges.
+       - Day cells are real buttons: Tab reaches them, arrow keys move across month boundaries.
+
+     ── Bubble dynamic values on the root element ────────────────────────────────
+     data-instance      = "ROOTID_[dynamic id]"  — unique per placement. This is the id you pass to
+                          resetUpstreemDateRangePicker(). Keep whatever you use today.
+     data-cdn-pin       = commit hash to load from. NEVER leave this empty: blank falls back to
+                          @main, and jsDelivr caches branch URLs for days.
+     data-isdark        = "yes" / "no"
+     data-isprocessing  = "yes" while the page is fetching. The trigger goes inert (no dimming,
+                          no cursor change — a greyed-out filter reads as broken when the only
+                          thing happening is that the table behind it is loading) and an open
+                          panel closes.
+
+     Optional, both have sensible defaults:
+     data-min-date          = "YYYY-MM-DD"  earliest selectable day. Default 2024-01-01.
+     data-max-span-months   = number        how far the second click may sit from the first.
+                              Default 6. Stops anyone accidentally asking for three years of rows.
+
+     ── Bubble element size ──────────────────────────────────────────────────────
+     FIT TO CONTENT, or a fixed 32px height. The element only ever contains the trigger button —
+     the panel is absolutely positioned and does not affect the element's own box.
+     Make sure the Bubble group AROUND it does not have "clip content" on, otherwise the open
+     panel gets cut off. The script calls UC.unclipAncestors() at boot to handle the usual cases.
+
+     ── Events to Bubble ─────────────────────────────────────────────────────────
+     Create these as Toolbox "JavaScript to Bubble" elements and put their names in the
+     data-*-fn attributes below. All three fire together on every committed change.
+
+       data-date-from-fn   receives a real DATE object   (type: date)
+       data-date-to-fn     receives a real DATE object   (type: date)
+       data-range-fn       receives a JSON TEXT string   (type: text)
+                           {"instance_id":"...","date_from":"YYYY-MM-DD",
+                            "date_to":"YYYY-MM-DD","event_id":"..."}
+
+     event_id is unique per change — use it as the trigger for your filter version counter if you
+     want to be certain two identical ranges in a row still count as two events.
+
+     If a function is missing the component still dispatches:
+       - a "change" CustomEvent on the root element
+       - an "upstreem:date-range" CustomEvent on window
+     both carrying the same payload object, so nothing is silently lost.
+
+     NOTHING is emitted on page load. The picker starts on "Last 7 Days" and stays quiet until the
+     user actually changes something — your page's own initial load already has the default range.
+
+     ── Control from "Run JavaScript" ────────────────────────────────────────────
+     resetUpstreemDateRangePicker('dates_v2_')   back to Last 7 Days, SILENT (no events).
+     resetUpstreemDateRangePicker()              same, for every picker on the page.
+       Silent is deliberate: you call this to realign the picker with a date change that already
+       happened somewhere else. Emitting here would kick off a second page-wide refresh nobody
+       asked for. The Reset button inside the panel DOES publish normally.
+       Returns true if it matched a picker, false if the id was not found.
+
+     setDateRangePreset('dates_v2_', 'last30')        set a preset, SILENT
+     setDateRangePreset('dates_v2_', 'last30', true)  set it AND publish
+       keys: 'last7' | 'last30' | 'last3' | 'last6'
+       Use the silent form to keep this picker in sync with e.g. an export dialog that shows the
+       same four presets.
+
+     setDateRangeTheme('dates_v2_', 'dark' | 'light')
+
+     All of these are stubbed and QUEUED before core.js finishes loading, then replayed in call
+     order — an early Bubble workflow cannot get lost.
+
+     ── State across page changes ────────────────────────────────────────────────
+     The chosen range survives Bubble swapping the element out and back in, keyed by
+     data-instance. In memory only, on purpose: a range restored from localStorage days later is
+     worse than the default.
+     ============================================================ -->
+<div class="up-root udr-root"
+     data-instance="ROOTID_[dynamic id]"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="IS_DARK"
+     data-isprocessing="IS_PROCESSING"
+     data-range-fn="bubble_fn_udr_date_range"
+     data-date-from-fn="bubble_fn_udr_date_from"
+     data-date-to-fn="bubble_fn_udr_date_to"></div>
+
+<script>
+/* Loads this component's CSS/JS from jsDelivr, pinned to the commit hash you put in data-cdn-pin
+   on the root div above (falls back to @main only if data-cdn-pin is left blank or at the literal
+   "CDN_PIN" placeholder — don't, see the note at the top). Byte-for-byte the same loader every
+   other component in this repo ships. */
+(function(){
+  function readPin(cls){
+    var els = document.getElementsByClassName(cls), i, p;
+    for (i = 0; i < els.length; i++){
+      p = (els[i].getAttribute("data-cdn-pin") || "").trim();
+      if (p && p !== "CDN_PIN") return p;
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("udr-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(url, make){ if (L[url]) return; L[url] = 1; make(url); }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+  css("core.css"); css("date-range.css");
+  js("core.js"); js("date-range.js");
+})();
+</script>
