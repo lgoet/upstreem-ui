@@ -76,6 +76,25 @@
     var open = false, sortOpen = false, cursor = -1;
     var isDark = false;
 
+    /* Topics authored straight into the element, so a page needs no Run-JavaScript step at all.
+       Read BEFORE the innerHTML assignment below, which would otherwise destroy the block.
+       type="application/json" on purpose: the browser does not execute it, so the array can
+       contain anything a topic name might contain without being parsed as code -- no escaping
+       rules to get wrong, unlike a value pasted into a JS call. A later
+       setTopicsFilterTopics() simply replaces whatever was seeded here. */
+    var seeded = null;
+    var seedEl = root.querySelector(".utf-topics-json");
+    if (seedEl) {
+      var raw = String(seedEl.textContent || "").trim();
+      if (raw && raw.indexOf("TOPICS_JSON") < 0) {          // untouched placeholder = not filled in yet
+        try { seeded = JSON.parse(raw); }
+        catch (e) {
+          if (window.console) console.warn("[topics-filter] the embedded topics JSON of \"" +
+            instanceId + "\" is not valid JSON — ignored:", e.message);
+        }
+      }
+    }
+
     root.classList.add("utf-root");
     root.innerHTML =
       '<div class="utf-wrap">' +
@@ -403,7 +422,9 @@
     root.__utfCtrl = ctrl;
     CONTROLLERS.push(ctrl);
 
-    syncConfig(); render();
+    syncConfig();
+    if (seeded) topics = Array.isArray(seeded) ? seeded : [];
+    render();
 
     for (var pid in PENDING) {
       if (!Object.prototype.hasOwnProperty.call(PENDING, pid)) continue;

@@ -62,7 +62,20 @@
      data-isdark="IS_DARK"
      data-isprocessing="IS_PROCESSING"
      data-topics-fn="bubble_fn_utfTopics"
-     data-newtopic-fn="bubble_fn_utfNewTopic"></div>
+     data-newtopic-fn="bubble_fn_utfNewTopic">
+  <!-- ── TOPICS HIER EINSETZEN ────────────────────────────────────────────────
+       Replace TOPICS_JSON below with the dynamic value of your topics RPC (the field that
+       returns the list as text). No quotes around it, no escaping — type="application/json"
+       means the browser never executes this, so a topic name may contain quotes, apostrophes
+       or slashes without breaking anything. That is the whole reason it lives here instead of
+       inside a Run-JavaScript call.
+       Left as-is (still saying TOPICS_JSON) it is simply ignored, and you can feed the list
+       with setTopicsFilterTopics() instead. A later setTopicsFilterTopics() always replaces
+       whatever was seeded here.
+       Shape: [{id, name, emoji, hex_light, hex_dark, is_active, created_at, prompt_count}, ...]
+       ──────────────────────────────────────────────────────────────────────── -->
+  <script class="utf-topics-json" type="application/json">TOPICS_JSON</script>
+</div>
 
 <script>
 /* Loads this component's CSS/JS from jsDelivr, pinned to the commit hash in data-cdn-pin on the
