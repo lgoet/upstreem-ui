@@ -775,8 +775,30 @@
     }, { passive: false, capture: true });
   }
 
-  /* Button tooltips, the app-wide way: one delegated [data-tip] handler per root. */
-  if (UC.makeTooltips){ UC.makeTooltips(root, isDark); UC.makeTooltips(portal, isDark); }
+  /* Button tooltips, the app-wide way: one delegated [data-tip] handler per root. Only root, not
+     also portal -- portal IS root now that the sidebar moved inline (see the "sidebar" note
+     above), and calling this twice on the same element double-registers the delegated listener. */
+  if (UC.makeTooltips){ UC.makeTooltips(root, isDark); }
+
+  /* ---------- column explainer: Est. Volume ----------
+     The results table's thead is static markup (bubble/prompt_research_bubble.html), never
+     touched by JS, unlike the tables that build their header from UC.makeColumns -- so the
+     .up-th-info icon is authored directly into the HTML instead of a headHtml() builder. Volume
+     has no counterpart in any other table, so this is a local copy, not something for core's
+     shared EXPLAIN_TEXT dict (that dict is for wording repeated across multiple tables). */
+  if (UC.makeExplain){
+    UC.makeExplain({
+      root: root, triggerSel: '.up-th-info', getIsDark: isDark,
+      html: function(kind){
+        if (kind !== 'volume') return '';
+        return '<div class="up-explain-vis"><span class="up-explain-row" style="gap:3px">' +
+                 '<span class="upr-volume-track" style="width:58px"><span class="upr-volume-seg is-filled" style="background:#9fd25d"></span><span class="upr-volume-seg is-filled" style="background:#9fd25d"></span><span class="upr-volume-seg is-filled" style="background:#9fd25d"></span><span class="upr-volume-seg" style="background:#e8eaee"></span></span>' +
+               '</span></div>' +
+               '<div class="up-explain-h">Est. Volume</div>' +
+               '<div class="up-explain-t">The estimated frequency that users actually use this or a very similar prompt.</div>';
+      }
+    });
+  }
 
   /* Theme mirror: Bubble sets data-isdark, core's CSS keys off data-theme. */
   function syncTheme(){

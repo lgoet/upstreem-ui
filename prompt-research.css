@@ -157,12 +157,12 @@
 @keyframes uprPulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
 
 /* ---------- "View previous researches" ---------- */
-/* Very top right of the component, matching Ask Mira's "View Previous Chats". The button is
-   authored inside .upr-content (a centred 900px column), so the boot script lifts it up to
-   .upr-shell first -- see prompt-research.js. Pinned against .upr-shell, which is already
-   position:relative, and the offsets are measured from the component's own edge rather than from
-   the shell's padding, so it really does sit in the corner. */
-.upr-history-entry { position: absolute; top: 16px; right: 16px; z-index: 6; display: flex; }
+/* Very top right of the component, flush against the true edges -- 0 inset, same as every other
+   component's toolbar (.up-root itself carries no padding of its own; a table's heading row sits
+   at the box's own edge, not offset from it). The button is authored inside .upr-content (a
+   centred 900px column), so the boot script lifts it up to .upr-shell first -- see
+   prompt-research.js. Pinned against .upr-shell, which is already position:relative. */
+.upr-history-entry { position: absolute; top: 0; right: 0; z-index: 6; display: flex; }
 /* The results view has its own history button (#upr-open-history-results) inside the results
    stage. This one is authored inside .upr-content, which .upr-root.is-results hides -- but the
    boot script lifts it out to .upr-shell, so it escaped that rule and both showed at once.
@@ -351,10 +351,10 @@
 }
 .upr-root.is-results .upr-results-stage { display: flex; }
 .upr-results-stage > .upr-results-nav, .upr-results-stage > .up-head { flex: 0 0 auto; }
-/* .upr-root.is-results sets the shell's padding to 0, so this row would otherwise sit flush
-   against the component edge. 16px top/left/right matches the inset the start view's history
-   button gets, so both views hold their top buttons at the same distance from the edge. */
-.upr-results-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 16px 16px 0; margin-bottom: 16px; }
+/* .upr-root.is-results already sets the shell's padding to 0, so this row sits flush against the
+   component's true edges with no padding of its own needed -- the same 0 inset the start view's
+   history button now uses. */
+.upr-results-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
 .upr-results-nav-right { display: flex; align-items: center; gap: 8px; }
 /* Context pills: market / keywords / business model / persona. Component-specific — nothing else
    in the app carries a "what was this query" strip. */

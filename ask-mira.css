@@ -84,11 +84,19 @@
   .am-hero {
     flex: 0 0 auto;
     position: relative; z-index: 2; overflow: visible;
-    padding: clamp(16px, 3vw, 24px) clamp(16px, 3vw, 28px) 28px;
+    /* 0 left/right/top -- flush against the component's true edges, same convention every other
+       component's toolbar uses (.up-root itself carries no padding of its own). Bottom stays: it's
+       breathing room before the chat/composer below, unrelated to how close the row sits to the
+       side edges. */
+    padding: 0 0 28px;
   }
   .am-hero-inner {
     display: flex; align-items: center; gap: 16px;
-    max-width: 920px; margin: 0 auto; width: 100%;
+    /* Full width, not capped to a centred 920px column -- .am-hero-text (logo + Ready + subline)
+       sits at the true left edge via its own flex:1 1 auto, .am-prev-btn at the true right edge.
+       Mirrors what #ask-mira.has-messages already does to this same rule (max-width:none) for the
+       chat-titlebar layout; the idle state gets the identical full-bleed treatment now. */
+    width: 100%;
   }
   .am-hero-text { flex: 1 1 auto; min-width: 0; cursor: pointer; }
   .am-title-row { display: flex; align-items: center; gap: 21px; flex-wrap: wrap; }
