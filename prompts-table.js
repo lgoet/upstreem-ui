@@ -415,6 +415,10 @@
       rows: [],
       totalCount: null,
       hasData: false,
+      /* "the automatic All-Prompts fetch has already gone out once" — see
+         ensureFlatDataForAllPrompts(). Deliberately NOT derivable from loading/hasData: it has to
+         survive setLoading("no") arriving before any rows do. */
+      flatAsked: false,
       loading: false,                       // intern (Suche/Pagination/Sort), startet immer frei
       /* true = the pending reload only reorders/re-windows the SAME result set (sort, paging),
          so the rows already on screen stay valid and merely dim. false = the result set itself
@@ -2331,6 +2335,14 @@
       state.groupsWide = !state.groupsWide;
       writeGroupsWide(state.groupsWide);
       root.classList.toggle("is-groups-wide", state.groupsWide);
+      /* The flat rows have to be requested on the SWITCH, not only from renderGroupWideBody().
+         That was the one place ensureFlatDataForAllPrompts() was ever called, so a page that
+         loaded straight into the other mode had only ever run the grouped-headers RPC -- flipping
+         the view then landed on "All Prompts" with state.rows still empty and nothing left that
+         would ask for them (selectAllPrompts() bailed out early because nothing was expanded).
+         Guarded by !expandedGroup because an open group renders its own rows from its own fetch;
+         the helper no-ops anyway once data exists or a fetch is in flight. */
+      if (groupingOn() && !state.expandedGroup) ensureFlatDataForAllPrompts();
       if (groupingOn()) renderGroups();
       /* .up-box's own width changes gradually as the sidepanel's 200ms CSS width transition runs
          (see .upt-grp-sidepanel) -- root's OUTER width never changes (the panel and box just
@@ -2687,16 +2699,19 @@
        same place Notion/Attio/HubSpot-style grouped list views put their own ungrouped/"all" entry,
        so it reads as the default rather than one option among many. Styled exactly like the
        untagged "No topic" row (plain .upt-grp-name, no chip) plus one thing neither topic nor
-       custom groups have: a small dot in the PRIMARY text colour (var(--vc-text), not a per-group
-       hex) -- not a colour identity like a real group's dot, just a plain bullet marking this as
-       the pinned "everything" entry. */
+       custom groups have: a small dot in the THIRD colour (var(--vc-third), not a per-group hex)
+       -- deliberately the quietest of the three text tones, because this dot is NOT a colour
+       identity the way a real group's dot is. Every other dot in this list means something
+       ("this group is orange"); this one only fills the slot so "All Prompts" lines up with the
+       rows under it. In --vc-text it competed with them for attention as if it were another
+       colour-coded group. */
     function renderGroupSidelist(rows){
       if (!elGrpSidelist) return;
       var allOpen = !state.expandedGroup;
       var allItem = '<div class="upt-grp-sideitem upt-grp-sideitem-all' + (allOpen ? " is-open" : "") +
         '" role="button" tabindex="0" data-grp-side="' + GRP_ALL_ID + '">' +
         '<span class="upt-grp-sidechip">' +
-          '<span class="upt-grp-cdot" style="background:var(--vc-text)"></span>' +
+          '<span class="upt-grp-cdot" style="background:var(--vc-third)"></span>' +
           '<span class="upt-grp-name">All Prompts</span>' +
         '</span>' +
       '</div>';
@@ -2728,7 +2743,16 @@
        state.loading, which is exactly what makes every call after it a no-op until real data (or a
        real empty answer) lands and flips state.hasData. */
     function ensureFlatDataForAllPrompts(){
-      if (state.hasData || isBusy()) return;
+      /* state.flatAsked, NOT isBusy() alone. isBusy() reads state.loading, and setLoading()
+         (setPromptsTableLoading, the API Bubble calls when ITS request finishes) clears
+         state.loading unconditionally -- see its own line. state.hasData is still false at that
+         moment, because the answer that arrived was the GROUPS one, not the flat rows. So the
+         guard fell open again on every loading:"no" Bubble sent during page load and this fired
+         uptSearch once more each time: measured 3 fires for one page load, exactly matching the
+         duplicate-RPC report. A latch of its own is the only guard the loading setter cannot
+         reopen; it's cleared where rows actually land, so a genuine later refresh still works. */
+      if (state.hasData || state.flatAsked || isBusy()) return;
+      state.flatAsked = true;
       search.run();
     }
     /* .up-tbody's content here is exactly what the flat table would put there for state.gRows —
@@ -2780,6 +2804,15 @@
        .upt-grp-rows entering/exiting block to animate) and falls back to the flat body. A no-op if
        All Prompts was already showing, so re-clicking it doesn't re-render for nothing. */
     function selectAllPrompts(){
+      /* The data request has to come BEFORE the "nothing changed" early return, not after it.
+         With the return on the first line, re-clicking an already-selected "All Prompts" was a
+         total no-op -- including the fetch. Arriving here from wide mode only the grouped-headers
+         RPC has run, so state.rows can still be empty, and that left "All Prompts" permanently
+         blank with no way for the user to ask for the rows again: every further click returned
+         here immediately. ensureFlatDataForAllPrompts() no-ops on its own once data exists or a
+         fetch is in flight, so running it unconditionally costs nothing and is exactly the part
+         that must still happen when the selection itself is unchanged. */
+      ensureFlatDataForAllPrompts();
       if (!state.expandedGroup) return;
       state.expandedGroup = null;
       state.gRows = []; state.gTotal = null; state.gReqId = null; state.gLoading = false; state.gPage = 1;
@@ -4123,6 +4156,7 @@
         if (params.rows != null){
           state.rows = Array.isArray(params.rows) ? params.rows : [];
           state.hasData = true;
+          state.flatAsked = false;   // rows landed; the one-shot latch has done its job
           /* An empty rows delivery with no accompanying total (e.g. every prompt just got
              deactivated, so the Active RPC now genuinely returns nothing) has no way to still
              imply a non-zero count for the tab it's FOR — left alone, the head count and "Select

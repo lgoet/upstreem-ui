@@ -28,7 +28,9 @@
   color: var(--vc-text); background: var(--vc-heading-bg); border-color: var(--vc-hover-border);
 }
 .udr-trigger:focus-visible { border-color: var(--vc-hover-border); box-shadow: 0 0 0 2px var(--vc-heading-bg); }
-.udr-trigger svg { width: 16px; height: 16px; flex: 0 0 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+/* Primary colour, not the button's muted currentColor -- the calendar glyph and the chevron read
+   as part of the value next to them, the way the standalone had them. */
+.udr-trigger svg { width: 16px; height: 16px; flex: 0 0 16px; fill: none; stroke: var(--vc-text); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 /* The label is the value, so it carries the primary colour even while the rest of the button is
    muted -- same relationship the tables' heading/count pair has. */
 .udr-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--vc-text); }
