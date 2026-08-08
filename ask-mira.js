@@ -1942,7 +1942,48 @@
       '</button>';
     }).join('');
   }
+  /* Opening or closing a category was a bare innerHTML swap: the card grid became the prompt list
+     in a single frame, while every other panel in the app moves over 200ms ease. The block's own
+     height is the one thing that actually changes, so that is what animates -- from the height
+     measured BEFORE the swap to the one measured after -- plus a short fade so the incoming
+     content does not pop in at full strength against a still-moving box.
+     Wrapped around renderGallery() rather than bolted onto the click handler on purpose: there are
+     five separate paths that re-render this block (category click, back button, report range,
+     topic reopen, reset to start), and every one of them is an open or a close from the user's
+     side. Doing it here is the only way "everywhere" actually means everywhere.
+     The forced reflow between the two height writes is required, not cosmetic: without it the
+     browser coalesces both into one style recalc and the element jumps straight to its end value
+     with nothing to transition from. */
+  var _galAnimTimer = null;
   function renderGallery(){
+    if (!elSuggGrid || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)){
+      return renderGalleryNow();
+    }
+    var h0 = elSuggGrid.getBoundingClientRect().height;
+    renderGalleryNow();
+    var h1 = elSuggGrid.getBoundingClientRect().height;
+    if (_galAnimTimer){ clearTimeout(_galAnimTimer); _galAnimTimer = null; }
+    /* Nothing measurable to move (first paint, hidden start screen, or a same-height re-render) --
+       leave the element completely alone rather than pinning a height on it. */
+    if (!h0 || !h1) return;
+    elSuggGrid.style.overflow = 'hidden';
+    elSuggGrid.style.height = h0 + 'px';
+    elSuggGrid.style.opacity = '0.4';
+    void elSuggGrid.offsetHeight;
+    elSuggGrid.style.transition = 'height 200ms ease, opacity 200ms ease';
+    elSuggGrid.style.height = h1 + 'px';
+    elSuggGrid.style.opacity = '1';
+    _galAnimTimer = setTimeout(function(){
+      _galAnimTimer = null;
+      /* Everything back off, including the height: a pinned height would freeze the block at its
+         old size the next time the prompt list wraps to a different number of lines. */
+      elSuggGrid.style.transition = '';
+      elSuggGrid.style.height = '';
+      elSuggGrid.style.overflow = '';
+      elSuggGrid.style.opacity = '';
+    }, 220);
+  }
+  function renderGalleryNow(){
     var label = root.querySelector('#am-suggested-label');
     var g = L().gallery || [];
     if (_galleryCat === null){
@@ -1972,7 +2013,10 @@
       return;
     }
     var cat = g[_galleryCat];
-    if (!cat){ _galleryCat = null; return renderGallery(); }
+    /* renderGalleryNow, not renderGallery: this is the same render correcting its own stale
+       category index, not a second open -- re-entering the animated wrapper here would measure a
+       half-built block as the "before" height. */
+    if (!cat){ _galleryCat = null; return renderGalleryNow(); }
     if (label) label.style.display = 'none';
     if (cat.reporting){
       var de = (L() === STR.de);

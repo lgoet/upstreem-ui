@@ -41,6 +41,13 @@
     height: 100%;
     min-height: 0;
     box-sizing: border-box;
+    /* The root paints the surface itself, like every other component's .up-root does. It used to
+       be transparent and let .am-shell inside it carry the colour -- which looks identical right
+       up until the host page's own background differs from --vc-bg, and then Mira is the only
+       component on the page showing the PAGE's dark grey instead of the palette's. That is the
+       "Mira is lighter than Prompt Research" case: same token on both sides, but only one of them
+       was actually painting it. */
+    background: var(--am-bg);
     color: var(--am-text);
     position: relative;
     overflow: hidden;
@@ -1671,7 +1678,9 @@
   #ask-mira.has-messages .am-prev-btn {
     margin-top: 0; align-self: center; flex: 0 0 auto; width: auto; padding: 0 10px; height: 32px;
   }
-  #ask-mira .am-prev-btn .am-ic { width: 16px; height: 16px; }   /* clock icon 16x16 (initial + topbar) */
+  /* 15% down from 16px. This rule, not the .am-ghost-btn one above it, is what actually sizes the
+     round chat bubble in the top-right corner -- the ID prefix outranks it. */
+  #ask-mira .am-prev-btn .am-ic { width: 13.6px; height: 13.6px; }
   /* mobile/compact chat topbar: 16px side padding so the back & "Chats" buttons don't touch the edges */
   #ask-mira.is-compact.has-messages .am-hero { padding-left: 16px; padding-right: 16px; }
   @media (max-width: 720px) {
