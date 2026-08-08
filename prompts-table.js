@@ -412,13 +412,16 @@
     function writeRowHeight(){ try { window.localStorage.setItem(rhKey(), state.rowHeight); } catch(e){} }
 
     var state = {
-      rows: [],
-      totalCount: null,
-      hasData: false,
+      /* Restored from STORE so a Bubble re-render of the HTML element continues this table
+         instead of restarting it -- see persist()'s own note for why that matters. */
+      rows: Array.isArray(saved.rows) ? saved.rows : [],
+      totalCount: saved.totalCount != null ? saved.totalCount : null,
+      hasData: !!saved.hasData,
       /* "the automatic All-Prompts fetch has already gone out once" — see
          ensureFlatDataForAllPrompts(). Deliberately NOT derivable from loading/hasData: it has to
-         survive setLoading("no") arriving before any rows do. */
-      flatAsked: false,
+         survive setLoading("no") arriving before any rows do, AND a re-render of the Bubble
+         element while the answer is still in flight (hence restored from STORE). */
+      flatAsked: !!saved.flatAsked,
       loading: false,                       // intern (Suche/Pagination/Sort), startet immer frei
       /* true = the pending reload only reorders/re-windows the SAME result set (sort, paging),
          so the rows already on screen stay valid and merely dim. false = the result set itself
@@ -457,8 +460,11 @@
          Grouping inactive prompts by topic answers a question nobody asks — you go to Inactive to
          see what you switched off, not to compare topic performance. */
       grouped: readGrouped(),
-      groups: [],                           // header rows from cached_prompt_topics_grouped_v1
-      groupsHasData: false,
+      /* Restored, same reason as rows/hasData above: a re-render of the Bubble element must not
+         make this boot re-ask for headers a previous boot already has. groupsHasData false here
+         is precisely what made render() fire uptGroups once per re-render. */
+      groups: Array.isArray(saved.groups) ? saved.groups : [],
+      groupsHasData: !!saved.groupsHasData,
       groupsLoading: false,
       groupSort: readGroupSort(),           // "count" (default) | "visibility" | "name"
       groupSortDir: readGroupSortDir(),     // "desc" (default) | "asc" -- direction for the Sorter above
@@ -519,6 +525,21 @@
       var pb = usableAttr(b, "IS_PROCESSING_2") ? isYes(b) : false;
       return pa || pb;
     }
+    /* Carries the DATA across a remount too, not just the filter/selection state.
+       Bubble re-renders its HTML element every time a dynamic expression inside it resolves --
+       data-instance, data-isdark, data-brand-name, data-brand-logo all are dynamic, and they
+       settle in stages during a page load. Each re-render throws the old .upt-root away and
+       makes a new one, so initRoot() builds a brand new controller with a brand new state. That
+       used to mean groupsHasData:false on every one of those boots, and render()'s
+       fetchGroupsInitial() branch fired uptGroups again each time: measured 4 groups RPCs for a
+       single page load, which is exactly the multi-boot count, not a loop.
+       Restoring rows/groups makes the second and later boots continuations of the same table
+       instead of fresh ones -- they already have their answer, so they ask no one. It is also
+       what the rest of this object already assumed: query, sortField, page and status were
+       always restored, so a remount was rebuilding the exact filter of a result set it then
+       threw away. Same instanceId means literally the same table, and Bubble delivers fresh rows
+       through render() regardless, so the worst case is one frame of the previous rows instead
+       of a skeleton -- strictly better than re-running every RPC on the page. */
     function persist(){
       STORE[instanceId] = {
         loading: state.extLoading, query: state.query,
@@ -526,7 +547,10 @@
         pageSize: state.pageSize, page: state.page,
         selected: state.selected, brandMentioned: state.brandMentioned,
         brands: state.brands, mentionSel: state.mentionSel, mentionApplied: state.mentionApplied,
-        status: state.status, topics: state.topics
+        status: state.status, topics: state.topics,
+        rows: state.rows, totalCount: state.totalCount, hasData: state.hasData,
+        flatAsked: state.flatAsked,
+        groups: state.groups, groupsHasData: state.groupsHasData
       };
     }
     /* shared event dispatch (core) */
@@ -2751,8 +2775,20 @@
          uptSearch once more each time: measured 3 fires for one page load, exactly matching the
          duplicate-RPC report. A latch of its own is the only guard the loading setter cannot
          reopen; it's cleared where rows actually land, so a genuine later refresh still works. */
-      if (state.hasData || state.flatAsked || isBusy()) return;
+      /* state.loading, NOT isBusy(). isBusy() also covers state.extLoading, which is Bubble's
+         generic "the page is fetching something" flag (data-isprocessing / setPromptsTableLoading)
+         and says nothing about whether the FLAT rows were ever asked for. In the inline view no
+         prompts request runs at all, so nothing ever sets that flag back to "no" -- it stayed
+         true, and switching to the sidelist then found the guard permanently shut: "All Prompts"
+         empty with no request in flight and no way to trigger one. state.loading is set by
+         search.run() itself, so it does mean "ours is out", and flatAsked covers the window after
+         setLoading() clears it. */
+      if (state.hasData || state.flatAsked || state.loading) return;
       state.flatAsked = true;
+      /* Straight into STORE: the request is out but its answer lands in whatever controller is
+         alive when it arrives. If Bubble re-renders its element in that window, the replacement
+         boots with flatAsked false and asks a second time for the same rows — measured. */
+      persist();
       search.run();
     }
     /* .up-tbody's content here is exactly what the flat table would put there for state.gRows —
@@ -4122,6 +4158,11 @@
            be different objects now. */
         state.expandedGroup = null;
         state.gRows = []; state.gTotal = null; state.gLoading = false;
+        /* Into STORE right here, not only via the render() API's own persist(): this is the ONLY
+           place groupsHasData ever becomes true, and a re-render of the Bubble element landing
+           between this answer and the next persist() would otherwise boot with no headers and
+           ask for them all over again — which is the duplicate-uptGroups case itself. */
+        persist();
         renderTable();
       },
       setGroupPrompts: function(rows, requestId){
