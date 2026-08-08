@@ -1954,34 +1954,69 @@
      The forced reflow between the two height writes is required, not cosmetic: without it the
      browser coalesces both into one style recalc and the element jumps straight to its end value
      with nothing to transition from. */
-  var _galAnimTimer = null;
+  var _galTimers = [];
+  function galClearTimers(){ for (var i = 0; i < _galTimers.length; i++) clearTimeout(_galTimers[i]); _galTimers = []; }
+  function galLater(fn, ms){ _galTimers.push(setTimeout(fn, ms)); }
+  function galReset(){
+    elSuggGrid.style.transition = '';
+    elSuggGrid.style.height = '';
+    elSuggGrid.style.overflow = '';
+    elSuggGrid.style.opacity = '';
+    elSuggGrid.style.transform = '';
+    elSuggGrid.style.willChange = '';
+  }
+  /* TWO phases, not one. The first version swapped the content immediately and then faded it up
+     from 0.4 while the box was still growing -- so the old content vanished in a single frame, the
+     new content appeared at 40% on top of a moving box, and the eye read the whole thing as a
+     stutter rather than a transition. There was never a moment where one thing was clearly
+     replacing another.
+     Now the old content leaves first (90ms, fade + 4px up), and only then does the content swap
+     happen -- unseen, at opacity 0. The new content enters from 6px below over 200ms while the
+     height runs to its new value on the same curve, so growth and arrival are one movement instead
+     of two competing ones.
+     opacity/transform are compositor properties and cost nothing per frame; height is the only one
+     that relayouts, which is why it is the only geometric property being animated. will-change is
+     set for the duration and removed after -- left on permanently it would keep a layer alive for
+     a block that is static almost all of the time. */
+  var GAL_OUT = 90, GAL_IN = 200;
   function renderGallery(){
     if (!elSuggGrid || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)){
       return renderGalleryNow();
     }
     var h0 = elSuggGrid.getBoundingClientRect().height;
-    renderGalleryNow();
-    var h1 = elSuggGrid.getBoundingClientRect().height;
-    if (_galAnimTimer){ clearTimeout(_galAnimTimer); _galAnimTimer = null; }
-    /* Nothing measurable to move (first paint, hidden start screen, or a same-height re-render) --
-       leave the element completely alone rather than pinning a height on it. */
-    if (!h0 || !h1) return;
+    galClearTimers();
+    /* Nothing measurable to move (first paint, or the start screen still hidden) -- render straight
+       and leave the element completely alone rather than pinning a height onto it. */
+    if (!h0){ galReset(); return renderGalleryNow(); }
+
+    elSuggGrid.style.willChange = 'height, opacity, transform';
     elSuggGrid.style.overflow = 'hidden';
     elSuggGrid.style.height = h0 + 'px';
-    elSuggGrid.style.opacity = '0.4';
-    void elSuggGrid.offsetHeight;
-    elSuggGrid.style.transition = 'height 200ms ease, opacity 200ms ease';
-    elSuggGrid.style.height = h1 + 'px';
-    elSuggGrid.style.opacity = '1';
-    _galAnimTimer = setTimeout(function(){
-      _galAnimTimer = null;
-      /* Everything back off, including the height: a pinned height would freeze the block at its
-         old size the next time the prompt list wraps to a different number of lines. */
-      elSuggGrid.style.transition = '';
+    elSuggGrid.style.transition = 'opacity ' + GAL_OUT + 'ms ease, transform ' + GAL_OUT + 'ms ease';
+    elSuggGrid.style.opacity = '0';
+    elSuggGrid.style.transform = 'translateY(-4px)';
+
+    galLater(function(){
+      renderGalleryNow();
+      /* Measure the new content at its natural height, then put the old one back so there is a
+         value to transition FROM. Both writes happen before the browser paints, so the unpinned
+         state is never visible. */
       elSuggGrid.style.height = '';
-      elSuggGrid.style.overflow = '';
-      elSuggGrid.style.opacity = '';
-    }, 220);
+      var h1 = elSuggGrid.getBoundingClientRect().height;
+      elSuggGrid.style.height = h0 + 'px';
+      elSuggGrid.style.transition = 'none';
+      elSuggGrid.style.transform = 'translateY(6px)';
+      /* Forced reflow, not cosmetic: without it the browser coalesces the start and end values
+         into one style recalc and the element jumps straight to the end with nothing to animate. */
+      void elSuggGrid.offsetHeight;
+      elSuggGrid.style.transition = 'height ' + GAL_IN + 'ms ease, opacity ' + GAL_IN + 'ms ease, transform ' + GAL_IN + 'ms ease';
+      elSuggGrid.style.height = h1 + 'px';
+      elSuggGrid.style.opacity = '1';
+      elSuggGrid.style.transform = 'translateY(0)';
+      /* Height back to auto at the end: a pinned height would freeze the block at this size the
+         next time the prompt list wraps to a different number of lines. */
+      galLater(galReset, GAL_IN + 20);
+    }, GAL_OUT);
   }
   function renderGalleryNow(){
     var label = root.querySelector('#am-suggested-label');

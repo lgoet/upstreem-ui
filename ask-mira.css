@@ -17,7 +17,14 @@
      The three values with no core counterpart (the Mira accent, the user-bubble tint and the two
      shadows) stay as they were. */
   #ask-mira {
-    --am-bg: var(--vc-bg);
+    /* --up-surface, NOT --vc-bg. Core keeps two different darks apart: --vc-bg (#1b1b1b) is the
+       CARD/panel colour, --up-surface (#121212) is the page behind them. --am-bg is Mira's page
+       background -- the shell, the composer-area fade, the composer in dark -- so it is the second
+       one. On --vc-bg the whole component sat a full step lighter than every other page in the app,
+       which is exactly the "Mira is brighter than Prompt Research" report: that component paints no
+       root background at all and simply lets the page's #121212 through. --am-card stays --vc-bg,
+       so cards still read as raised above the surface. */
+    --am-bg: var(--up-surface);
     --am-text: var(--vc-text);
     --am-muted: var(--vc-muted);
     --am-muted-2: var(--vc-third);
