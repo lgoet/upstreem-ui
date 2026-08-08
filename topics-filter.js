@@ -115,7 +115,26 @@
         raw = String(dec.value || raw).trim();
       }
       if (raw && raw.indexOf("TOPICS_JSON") < 0) {          // untouched placeholder = not filled in yet
-        try { seeded = JSON.parse(raw); }
+        /* Bubble emits a JS OBJECT LITERAL, not JSON: the keys carry no quotes at all
+           ([{ id: "0e62...", name: "SHK" }]). JSON.parse rejects that at the very first key, which
+           is the "Expected property name" this kept failing on -- and the message is identical to
+           the one an NBSP indent or a curly quote produces, which is why it took a code-point dump
+           to see. Quote the bare keys and parse again.
+           Only ever attempted AFTER a strict parse has already failed, and only kept if the repair
+           itself parses -- so well-formed JSON is never touched by this, and a genuinely broken
+           payload still reports its original error rather than a confusing second one. */
+        function quoteBareKeys(t) {
+          return t.replace(/([{,]\s*)([A-Za-z_$][A-Za-z0-9_$]*)\s*:/g, '$1"$2":');
+        }
+        try {
+          try { seeded = JSON.parse(raw); }
+          catch (strictErr) {
+            /* Strict parse failed -- try the repair, but report the ORIGINAL error if the repair
+               does not parse either, so a genuinely malformed payload is not disguised. */
+            try { seeded = JSON.parse(quoteBareKeys(raw)); }
+            catch (repairErr) { throw strictErr; }
+          }
+        }
         catch (e) {
           if (window.console) {
             /* The message alone has now cost several rounds: three different characters produce
