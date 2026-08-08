@@ -219,6 +219,15 @@
      living in the "shared" core.js file. */
   var STORE = (window.__uptStore = window.__uptStore || {});
   var LOADING_EXPLICIT = (window.__uptLoadingExplicit = window.__uptLoadingExplicit || {});
+  /* "a groups fetch for this instance is already on its way". Module scope on purpose: it has to
+     outlive the controller that started it. Bubble rebuilds its HTML element several times while
+     a page load settles (measured: 3 rebuilds at ~2.1s, ~4.7s and ~8.4s), and each rebuild makes a
+     fresh controller whose own state.groupsLoading knows nothing about the poll a previous one
+     already has running. Since bubble_fn_uptGroups itself only appeared at ~12.2s, all three polls
+     were still waiting -- and the moment it existed, all three resolved within the same 100ms tick
+     and each sent the event. Three identical fires, 6ms apart, same stack. Per-controller state
+     cannot see that; only something keyed by instanceId can. */
+  var GROUPS_PENDING = (window.__uptGroupsPending = window.__uptGroupsPending || {});
 
   /* ---------------- diagnostics ----------------
      Records every controller boot and every outgoing event, with the call site that produced it.
@@ -2810,7 +2819,18 @@
          empty with no request in flight and no way to trigger one. state.loading is set by
          search.run() itself, so it does mean "ours is out", and flatAsked covers the window after
          setLoading() clears it. */
-      if (state.hasData || state.flatAsked || state.loading) return;
+      /* "is there something to SHOW", not "did any delivery ever happen". state.hasData alone
+         flips true on any render() call carrying a rows field -- including rows:[] -- and in the
+         inline view that is exactly what arrives: the page-load delivery that belongs to the
+         grouped view, with no flat rows in it. Switching to the sidelist then found hasData true,
+         returned, and left "All Prompts" empty with nothing on its way. Confirmed from a real page
+         load: no uptSearch in the log at all, while the same code path in the other view fires it
+         normally.
+         flatAsked stays the loop guard for the genuine "there really are zero prompts" answer --
+         it is only cleared by a delivery that actually carries rows, so an empty one cannot make
+         this ask again and again. */
+      if (state.hasData && (state.rows || []).length) return;
+      if (state.flatAsked || state.loading) return;
       state.flatAsked = true;
       /* Straight into STORE: the request is out but its answer lands in whatever controller is
          alive when it arrives. If Bubble re-renders its element in that window, the replacement
@@ -3059,6 +3079,13 @@
       var fnName = root.getAttribute("data-groups-fn") || "uptGroups";
       var tries = 0;
       state.groupsLoading = true;
+      /* Before starting a poll, not after: the whole point is that a poll started by an EARLIER
+         controller for this same instance is still pending, and it will fire on its own once the
+         Bubble function shows up. Its answer reaches whichever controller is alive by then
+         (setGroups resolves by instanceId), so nothing is lost by not starting a second one.
+         state.groupsLoading is set above the check so this controller still renders as loading. */
+      if (GROUPS_PENDING[instanceId]) return;
+      GROUPS_PENDING[instanceId] = true;
       (function go(){
         if (UC.resolveBubbleFn(fnName) || tries++ >= 30){ fetchGroups(); return; }
         setTimeout(go, 100);
@@ -4181,6 +4208,7 @@
         state.groups = Array.isArray(rows) ? rows : [];
         state.groupsHasData = true;
         state.groupsLoading = false;
+        GROUPS_PENDING[instanceId] = false;   // the pending poll has landed; a later one may run
         /* A fresh header set invalidates whatever section was open — the sections themselves may
            be different objects now. */
         state.expandedGroup = null;
@@ -4224,7 +4252,10 @@
         if (params.rows != null){
           state.rows = Array.isArray(params.rows) ? params.rows : [];
           state.hasData = true;
-          state.flatAsked = false;   // rows landed; the one-shot latch has done its job
+          /* Only a delivery that actually carries rows releases the latch. An empty one is a
+             valid answer ("no prompts match") and must NOT re-open the automatic fetch, or the
+             pair would ping-pong forever. */
+          if (state.rows.length) state.flatAsked = false;
           /* An empty rows delivery with no accompanying total (e.g. every prompt just got
              deactivated, so the Active RPC now genuinely returns nothing) has no way to still
              imply a non-zero count for the tab it's FOR — left alone, the head count and "Select
