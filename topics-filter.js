@@ -32,8 +32,11 @@
     tag: '<svg viewBox="0 0 24 24"><path d="M20.59 13.41 13.42 20.6a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>',
     chev: '<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>',
     search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
-    x: '<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
-    sort: '<svg viewBox="0 0 24 24"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="15" y2="12"/><line x1="4" y1="17" x2="10" y2="17"/></svg>',
+    /* Same clear-X core's search fields use, stroke-width and all. */
+    x: '<svg viewBox="0 0 24 24" stroke-width="3.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+    /* The sorter glyph the rest of the app uses -- lines narrowing toward the CENTRE, not
+        left-aligned. Copied from prompts-table's GRPSIDE_SORT_ICON rather than drawn again. */
+    sort: '<svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>',
     check: '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>',
     cbOff: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/></svg>',
     cbOn:  '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M17.2 8.8 10.4 15.6 6.8 12" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
@@ -93,6 +96,12 @@
          on its own. The result parses to "Expected property name" at the first key. A textarea
          does the decoding with the browser's own table, so &quot; &amp; &#39; and the rest are all
          covered rather than a hand-written list of the ones I happened to think of. */
+      /* Bubble pretty-prints with NON-BREAKING spaces (U+00A0) in the indent, and JSON.parse
+         accepts only plain space/tab/CR/LF as whitespace -- that is the "Expected property name at
+         line 2 column 5" this kept failing on, at the first indented key. A BOM and the invisible
+         word-joiners Bubble's editor sometimes leaves behind do the same. Normalised here before
+         anything else looks at the string. */
+      raw = raw.replace(/^\uFEFF/, "").replace(/[\u00A0\u2000-\u200D\u202F\u205F\u3000]/g, " ").trim();
       if (raw.indexOf("&") >= 0) {
         var dec = document.createElement("textarea");
         dec.innerHTML = raw;
@@ -121,6 +130,7 @@
             '<span class="utf-search">' +
               '<input class="utf-search-in" type="text" placeholder="Search topics" aria-label="Search topics">' +
               '<span class="utf-search-ic">' + ICON.search + '</span>' +
+              '<button class="utf-search-x" type="button" aria-label="Clear search">' + ICON.x + '</button>' +
             '</span>' +
             '<span class="utf-sort">' +
               '<button class="utf-sort-btn" type="button" aria-label="Sort topics">' + ICON.sort + '</button>' +
@@ -131,8 +141,8 @@
           '<div class="utf-list" role="listbox" aria-multiselectable="true"></div>' +
           '<div class="utf-foot">' +
             '<span class="utf-seg" role="group" aria-label="Match mode">' +
-              '<button class="utf-seg-opt" type="button" data-mode="or">Any</button>' +
-              '<button class="utf-seg-opt" type="button" data-mode="and">All</button>' +
+              '<button class="utf-seg-opt" type="button" data-mode="or">Or</button>' +
+              '<button class="utf-seg-opt" type="button" data-mode="and">And</button>' +
             '</span>' +
             '<button class="utf-new" type="button">' + ICON.plus + '<span>New Topic</span></button>' +
           '</div>' +
@@ -281,7 +291,9 @@
         var r = elMenu.getBoundingClientRect();
         if (r.right > (window.innerWidth || document.documentElement.clientWidth) - 8) elMenu.classList.add("is-right");
         unregister = UC.dropdownOpened ? UC.dropdownOpened(elMenu, function () { setOpen(false); }, elTrigger) : null;
-        try { elSearchIn.focus({ preventScroll: true }); } catch (e) {}
+        /* Deliberately NOT focused: opening a filter should not put a keyboard cursor in a
+           field the user did not ask for -- it steals the page's scroll anchor on mobile and
+           makes Escape ambiguous. Typing still works, the list is one Tab away. */
       } else {
         setSortOpen(false);
         query = ""; elSearchIn.value = ""; elSearch.classList.remove("has-text");
@@ -299,7 +311,12 @@
 
     /* ---------------- interactions ---------------- */
     elTrigger.addEventListener("click", function (e) { e.stopPropagation(); setOpen(!open); });
-    elMenu.addEventListener("click", function (e) { e.stopPropagation(); });
+    elMenu.addEventListener("click", function (e) {
+      e.stopPropagation();
+      /* A click anywhere else in the panel dismisses the sorter -- the document-level handler
+         never sees these because of the stopPropagation above. */
+      if (sortOpen && !elSort.contains(e.target)) setSortOpen(false);
+    });
     document.addEventListener("click", function (e) {
       if (open && !root.contains(e.target)) setOpen(false);
       else if (sortOpen && !elSort.contains(e.target)) setSortOpen(false);
@@ -330,6 +347,11 @@
       renderList();
     });
 
+    root.querySelector(".utf-search-x").addEventListener("click", function (e) {
+      e.stopPropagation();
+      query = ""; elSearchIn.value = ""; elSearch.classList.remove("has-text");
+      cursor = -1; renderList(); try { elSearchIn.focus(); } catch (e2) {}
+    });
     root.querySelector(".utf-sort-btn").addEventListener("click", function (e) {
       e.stopPropagation(); setSortOpen(!sortOpen);
     });
