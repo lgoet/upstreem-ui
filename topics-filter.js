@@ -35,6 +35,8 @@
     x: '<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
     sort: '<svg viewBox="0 0 24 24"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="15" y2="12"/><line x1="4" y1="17" x2="10" y2="17"/></svg>',
     check: '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>',
+    cbOff: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/></svg>',
+    cbOn:  '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M17.2 8.8 10.4 15.6 6.8 12" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     plus: '<svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'
   };
 
@@ -86,6 +88,16 @@
     var seedEl = root.querySelector(".utf-topics-json");
     if (seedEl) {
       var raw = String(seedEl.textContent || "").trim();
+      /* Bubble HTML-escapes the dynamic value it drops in here, so every " arrives as &quot; --
+         and the content of a <script> element is raw text, which the browser never entity-decodes
+         on its own. The result parses to "Expected property name" at the first key. A textarea
+         does the decoding with the browser's own table, so &quot; &amp; &#39; and the rest are all
+         covered rather than a hand-written list of the ones I happened to think of. */
+      if (raw.indexOf("&") >= 0) {
+        var dec = document.createElement("textarea");
+        dec.innerHTML = raw;
+        raw = String(dec.value || raw).trim();
+      }
       if (raw && raw.indexOf("TOPICS_JSON") < 0) {          // untouched placeholder = not filled in yet
         try { seeded = JSON.parse(raw); }
         catch (e) {
@@ -103,29 +115,26 @@
           '<span class="utf-chev">' + ICON.chev + '</span>' +
         '</button>' +
         '<div class="utf-menu" role="dialog">' +
-          '<div class="utf-head">' +
+          /* Search row: input with the magnifier INSIDE on the right, and Clear as its own button
+             beside it -- the shape the app already uses, not an icon tucked into the field. */
+          '<div class="utf-search-row">' +
             '<span class="utf-search">' +
-              '<span class="utf-search-ic">' + ICON.search + '</span>' +
               '<input class="utf-search-in" type="text" placeholder="Search topics" aria-label="Search topics">' +
-              '<button class="utf-search-clear" type="button" aria-label="Clear search">' + ICON.x + '</button>' +
+              '<span class="utf-search-ic">' + ICON.search + '</span>' +
             '</span>' +
             '<span class="utf-sort">' +
-              '<button class="utf-sort-btn" type="button" data-tip="Sort topics" aria-label="Sort topics">' + ICON.sort + '</button>' +
+              '<button class="utf-sort-btn" type="button" aria-label="Sort topics">' + ICON.sort + '</button>' +
               '<div class="utf-sort-menu" role="menu"></div>' +
             '</span>' +
+            '<button class="utf-clear" type="button">Clear</button>' +
           '</div>' +
-          '<div class="utf-mode">' +
-            '<span class="utf-mode-lbl">Match</span>' +
+          '<div class="utf-list" role="listbox" aria-multiselectable="true"></div>' +
+          '<div class="utf-foot">' +
             '<span class="utf-seg" role="group" aria-label="Match mode">' +
               '<button class="utf-seg-opt" type="button" data-mode="or">Any</button>' +
               '<button class="utf-seg-opt" type="button" data-mode="and">All</button>' +
             '</span>' +
-          '</div>' +
-          '<div class="utf-sep"></div>' +
-          '<div class="utf-list" role="listbox" aria-multiselectable="true"></div>' +
-          '<div class="utf-foot">' +
-            '<button class="utf-foot-btn utf-new" type="button">' + ICON.plus + '<span>New Topic</span></button>' +
-            '<button class="utf-foot-btn utf-clear" type="button">Clear all</button>' +
+            '<button class="utf-new" type="button">' + ICON.plus + '<span>New Topic</span></button>' +
           '</div>' +
         '</div>' +
       '</div>';
@@ -138,7 +147,7 @@
     var elSearchIn= root.querySelector(".utf-search-in");
     var elSort    = root.querySelector(".utf-sort");
     var elSortMenu= root.querySelector(".utf-sort-menu");
-    var elMode    = root.querySelector(".utf-mode");
+    var elMode    = root.querySelector(".utf-foot");
     var elList    = root.querySelector(".utf-list");
     var unregister = null;
 
@@ -172,15 +181,21 @@
       }).join("");
     }
     function optHtml(t, idx) {
-      var em = t.emoji ? '<span class="utf-opt-emoji">' + esc(t.emoji) + '</span>'
-                       : '<span class="utf-opt-dot" style="background:' + esc(hex(t)) + '"></span>';
-      return '<button class="utf-opt' + (isSel(t.id) ? " is-on" : "") + (idx === cursor ? " is-cursor" : "") +
-             '" type="button" role="option" aria-selected="' + (isSel(t.id) ? "true" : "false") +
-             '" data-id="' + esc(t.id) + '" data-idx="' + idx + '">' +
-               em +
-               '<span class="utf-opt-name">' + esc(t.name) + '</span>' +
+      var on = isSel(t.id);
+      /* Checkbox left, then the colour chip, name, count -- the row shape the app already uses.
+         The chip is a rounded square, not a circle: that is what a topic looks like everywhere
+         else in this product, and it was the single biggest reason the first version read as
+         foreign. Emoji replaces the chip when the topic has one, same as Mira. */
+      var mark = t.emoji ? '<span class="utf-opt-emoji">' + esc(t.emoji) + '</span>'
+                         : '<span class="utf-opt-dot"></span>';
+      return '<button class="utf-opt' + (on ? " is-on" : "") + (idx === cursor ? " is-cursor" : "") +
+             '" type="button" role="option" aria-selected="' + (on ? "true" : "false") +
+             '" data-id="' + esc(t.id) + '" data-idx="' + idx + '" style="--utf-tc:' + esc(hex(t)) + '">' +
+               '<span class="utf-opt-cb">' + (on ? ICON.cbOn : ICON.cbOff) + '</span>' +
+               '<span class="utf-opt-main">' + mark +
+                 '<span class="utf-opt-name">' + esc(t.name) + '</span>' +
+               '</span>' +
                '<span class="utf-opt-count">' + toNum(t.prompt_count) + '</span>' +
-               '<span class="utf-opt-check">' + ICON.check + '</span>' +
              '</button>';
     }
     function renderList() {
@@ -313,10 +328,6 @@
       elSearch.classList.toggle("has-text", !!elSearchIn.value.length);
       cursor = -1;
       renderList();
-    });
-    elSearch.querySelector(".utf-search-clear").addEventListener("click", function () {
-      query = ""; elSearchIn.value = ""; elSearch.classList.remove("has-text");
-      renderList(); try { elSearchIn.focus(); } catch (e) {}
     });
 
     root.querySelector(".utf-sort-btn").addEventListener("click", function (e) {
