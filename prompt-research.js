@@ -805,7 +805,29 @@
      touched by JS, unlike the tables that build their header from UC.makeColumns -- so the
      .up-th-info icon is authored directly into the HTML instead of a headHtml() builder. Volume
      has no counterpart in any other table, so this is a local copy, not something for core's
-     shared EXPLAIN_TEXT dict (that dict is for wording repeated across multiple tables). */
+     shared EXPLAIN_TEXT dict (that dict is for wording repeated across multiple tables).
+
+     The trigger is INSERTED here rather than relied upon from the markup. bubble/*.html is a
+     fresh-install template: it is pasted into the page once, so anything added to it afterwards
+     never reaches a page that already exists. Adding the icon there alone meant the explainer
+     shipped but was unreachable -- there was no element to hover. Doing it from JS means the CDN
+     pin carries it on its own, with no edit needed on the Bubble side. No-op when the markup
+     already has one (a freshly pasted page, or a second boot after a re-render). */
+  (function(){
+    var ths = root.querySelectorAll(".up-th");
+    for (var i = 0; i < ths.length; i++){
+      var th = ths[i];
+      if (th.querySelector(".up-th-info")) continue;
+      if (String(th.textContent || "").trim().indexOf("Est. Volume") !== 0) continue;
+      var s = document.createElement("span");
+      s.className = "up-th-info";
+      s.setAttribute("data-explain", "volume");
+      s.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+        'stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/>' +
+        '<line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+      th.appendChild(s);
+    }
+  })();
   if (UC.makeExplain){
     UC.makeExplain({
       root: root, triggerSel: '.up-th-info', getIsDark: isDark,
