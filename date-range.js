@@ -115,7 +115,19 @@
          With the check on __udrCtrl a failed attempt leaves nothing behind, so the next initAll()
          -- and every API call starts with one -- simply tries again. */
       if (!root) return null;
-      if (root.__udrCtrl) return root.__udrCtrl;
+      /* Already built -- but make sure it is still IN the registry before handing it back.
+         forEachInstance prunes controllers whose root is not currently isConnected, and Bubble
+         detaches and re-attaches these elements constantly while a page settles. The controller
+         then left CONTROLLERS while root.__udrCtrl stayed on the element, so this early return
+         handed back a controller the API could no longer see and initRoot refused to rebuild it:
+         permanently invisible to resetUpstreemDateRangePicker even though the element is right
+         there, mounted and working. Measured on a real page: 21 roots in the DOM, "Mounted: none".
+         Re-adopting is enough -- the controller itself is still perfectly valid, it was only
+         dropped from the list. */
+      if (root.__udrCtrl) {
+        if (CONTROLLERS.indexOf(root.__udrCtrl) < 0) CONTROLLERS.push(root.__udrCtrl);
+        return root.__udrCtrl;
+      }
 
       var MIN_DATE = parseIso(root.getAttribute("data-min-date")) || new Date(2024, 0, 1);
       var TODAY = startOfDay(new Date());
