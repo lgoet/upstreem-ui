@@ -155,6 +155,19 @@
   }
   var elPrevScrim  = root.querySelector('#am-prev-scrim');
   var elOpenPrev   = root.querySelector('#am-open-prev');
+  /* Label + icon are patched here, not left to the markup. The root markup lives in a Bubble HTML
+     element the user pasted once; bubble/ask_mira_bubble.html is only the template for a FRESH
+     install, so a wording or icon change made there never reaches an existing page. Doing it from
+     JS means the CDN pin alone carries the change -- no Bubble-side edit. Idempotent, so a
+     re-render or a re-init cannot double-apply it. */
+  (function(){
+    if (!elOpenPrev) return;
+    var full = elOpenPrev.querySelector('.am-prev-label-full');
+    if (full) full.textContent = 'All Chats';
+    var ic = elOpenPrev.querySelector('.am-ic');
+    // feather message-circle (round). The square message-square is the one the composer uses.
+    if (ic) ic.innerHTML = '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>';
+  })();
   var elClosePrev  = root.querySelector('#am-close-prev');
   var elNewChat    = root.querySelector('#am-new-chat');
   var elHlBtn      = root.querySelector('#am-settings-btn');

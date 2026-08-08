@@ -84,11 +84,10 @@
   .am-hero {
     flex: 0 0 auto;
     position: relative; z-index: 2; overflow: visible;
-    /* 0 left/right/top -- flush against the component's true edges, same convention every other
-       component's toolbar uses (.up-root itself carries no padding of its own). Bottom stays: it's
-       breathing room before the chat/composer below, unrelated to how close the row sits to the
-       side edges. */
-    padding: 0 0 28px;
+    /* 16px on left/top/right, so the logo block and the "All Chats" button keep the same inset
+       from the component edge that the rest of the app's chrome has. Bottom stays larger: that is
+       breathing room before the chat/composer below, unrelated to the side inset. */
+    padding: 16px 16px 28px;
   }
   .am-hero-inner {
     display: flex; align-items: center; gap: 16px;
@@ -1663,7 +1662,7 @@
   #ask-mira.has-messages .am-hero,
   #ask-mira.is-compact.has-messages .am-hero {
     height: 53px; min-height: 53px;
-    padding: 8px clamp(0px, calc(3vw - 16px), 12px) 0;   /* +8px top, 16px less per side than the initial hero */
+    padding: 8px 16px 0;   /* same 16px side inset as the idle hero, so the bar does not shift sideways on the transition */
     display: flex; align-items: center;
   }
   #ask-mira.has-messages .am-hero-inner { max-width: none; gap: 12px; flex-wrap: nowrap; }

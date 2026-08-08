@@ -113,6 +113,26 @@
   /* grabbed BEFORE the portal move below — after it, root.querySelector no longer reaches
      anything inside the sidebar. */
   var historyCountEl      = root.querySelector('#upr-history-count');
+  /* Label + icon are patched from here rather than left to the markup: the root markup lives in a
+     Bubble HTML element the user pasted once, so a change in bubble/prompt_research_bubble.html
+     only reaches a FRESH install. From JS the CDN pin alone carries it. Idempotent by nature. */
+  (function(){
+    // feather message-circle (round) -- the round speech bubble, not the square message-square
+    var CHAT_ICON = '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>';
+    ['#upr-open-history', '#upr-open-history-results'].forEach(function(sel){
+      var btn = root.querySelector(sel);
+      if (!btn) return;
+      var svg = btn.querySelector('svg');
+      if (svg) svg.innerHTML = CHAT_ICON;
+      /* Only the text node carries the label -- replacing it directly leaves the <svg> alone,
+         which innerHTML/textContent on the button would not. */
+      for (var i = 0; i < btn.childNodes.length; i++){
+        var n = btn.childNodes[i];
+        if (n.nodeType === 3 && n.nodeValue.trim()) { n.nodeValue = 'Previous Researches'; return; }
+      }
+    });
+  })();
+
   var openHistoryButton   = root.querySelector('#upr-open-history');
   var closeHistoryButton  = root.querySelector('#upr-close-history');
   var openHistoryResultsButton = root.querySelector('#upr-open-history-results');
