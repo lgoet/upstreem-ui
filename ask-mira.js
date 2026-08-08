@@ -1954,9 +1954,34 @@
      The forced reflow between the two height writes is required, not cosmetic: without it the
      browser coalesces both into one style recalc and the element jumps straight to its end value
      with nothing to transition from. */
-  var _galTimers = [];
-  function galClearTimers(){ for (var i = 0; i < _galTimers.length; i++) clearTimeout(_galTimers[i]); _galTimers = []; }
+  var _galTimers = [], _galOff = [];
+  function galClearTimers(){
+    for (var i = 0; i < _galTimers.length; i++) clearTimeout(_galTimers[i]);
+    _galTimers = [];
+    for (var j = 0; j < _galOff.length; j++) _galOff[j]();
+    _galOff = [];
+  }
   function galLater(fn, ms){ _galTimers.push(setTimeout(fn, ms)); }
+  /* Chain the next phase on the transition's OWN end event, not on a timer set to the same
+     duration. A setTimeout always fires a little after the time it was given -- more under load --
+     so timer-chained phases leave a dead gap between one finishing and the next starting, and that
+     gap is exactly what reads as the movement "setting down" instead of flowing. transitionend
+     fires on the frame the transition actually completes. The timer stays only as a fallback for
+     the cases where no transitionend ever comes (a zero-length change, or a background tab that
+     never ran the animation at all). */
+  function galAfter(prop, ms, fn){
+    var spent = false;
+    function go(e){
+      if (e && (e.target !== elSuggGrid || e.propertyName !== prop)) return;
+      if (spent) return;
+      spent = true;
+      elSuggGrid.removeEventListener('transitionend', go);
+      fn();
+    }
+    elSuggGrid.addEventListener('transitionend', go);
+    _galOff.push(function(){ spent = true; elSuggGrid.removeEventListener('transitionend', go); });
+    galLater(go, ms + 40);
+  }
   function galReset(){
     elSuggGrid.style.transition = '';
     elSuggGrid.style.height = '';
@@ -1986,7 +2011,12 @@
      Height is the only property that relayouts; opacity is a compositor property and free.
      will-change goes on for the duration and comes off after, so a block that is static almost
      all of the time does not keep a layer alive. */
-  var GAL_FADE = 150, GAL_SLIDE = 200;
+  var GAL_FADE = 50, GAL_SLIDE = 150;
+  /* Not `ease` for the slide. `ease` is front-loaded -- it leaves at speed and spends its last
+     third barely moving, which on a height change reads as the box creeping the final pixels
+     rather than arriving. This curve accelerates gently and decelerates into the end, so the slide
+     lands instead of trailing off. It is the same curve the composer tray already uses. */
+  var GAL_EASE = 'cubic-bezier(.4,0,.2,1)';
   function renderGallery(){
     if (!elSuggGrid || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)){
       return renderGalleryNow();
@@ -2004,7 +2034,7 @@
     elSuggGrid.style.transition = 'opacity ' + GAL_FADE + 'ms ease';
     elSuggGrid.style.opacity = '0';
 
-    galLater(function(){
+    galAfter('opacity', GAL_FADE, function(){
       /* ---- 2. swap (invisible) and slide ---- */
       renderGalleryNow();
       /* Measure the new content at its natural height, then put the old one back so there is a
@@ -2017,10 +2047,10 @@
       /* Forced reflow, not cosmetic: without it the browser coalesces the start and end values
          into one style recalc and the element jumps straight to the end with nothing to animate. */
       void elSuggGrid.offsetHeight;
-      elSuggGrid.style.transition = 'height ' + GAL_SLIDE + 'ms ease';
+      elSuggGrid.style.transition = 'height ' + GAL_SLIDE + 'ms ' + GAL_EASE;
       elSuggGrid.style.height = h1 + 'px';
 
-      galLater(function(){
+      galAfter('height', GAL_SLIDE, function(){
         /* ---- 3. content in ---- */
         /* Height back to auto first: a pinned height would freeze the block at this size the next
            time the prompt list wraps to a different number of lines. Safe to release here because
@@ -2028,9 +2058,9 @@
         elSuggGrid.style.transition = 'opacity ' + GAL_FADE + 'ms ease';
         elSuggGrid.style.height = '';
         elSuggGrid.style.opacity = '1';
-        galLater(galReset, GAL_FADE + 20);
-      }, GAL_SLIDE + 10);
-    }, GAL_FADE);
+        galAfter('opacity', GAL_FADE, galReset);
+      });
+    });
   }
   function renderGalleryNow(){
     var label = root.querySelector('#am-suggested-label');
