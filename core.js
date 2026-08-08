@@ -3719,8 +3719,66 @@
   }
   window.upstreemSetTheme = upstreemSetTheme;
 
+  /* ---------------- theme guard (global, no per-component wiring) ----------------
+     Every component derives data-theme from the data-isdark attribute Bubble writes. The moment
+     Bubble re-renders an element, that attribute is briefly absent or empty -- and the usual
+     "if (isDark) set else REMOVE" then strips data-theme and the component paints its light
+     palette for a frame or two. That is the white flash: not a theme change, a theme momentarily
+     going missing.
+     localStorage.pref_theme is the app's own record of what the user actually chose, so it can
+     answer the question the attribute cannot at that instant. Two jobs:
+       - at load, stamp the stored theme on every .up-root, so a page opens dark instead of
+         opening light and correcting itself once Bubble's attributes arrive
+       - afterwards, whenever a root LOSES data-theme while the stored preference is dark, put it
+         back on the same frame the observer sees it go
+     Deliberately one-directional: it only ever restores what pref_theme says. A genuine switch to
+     light writes "light" to that key, and then this does nothing -- it cannot pin a page dark
+     against the user's own choice. A component that sets data-theme itself always wins; this only
+     fills the gap where the attribute is absent. */
+  function readPrefTheme(){
+    try { var v = String(window.localStorage.getItem("pref_theme") || "").trim().toLowerCase();
+          return (v === "dark" || v === "light") ? v : ""; } catch(e){ return ""; }
+  }
+  function stampTheme(el){
+    if (!el || !el.classList || !el.classList.contains("up-root")) return;
+    if (readPrefTheme() !== "dark") return;
+    if (el.getAttribute("data-theme") !== "dark") el.setAttribute("data-theme", "dark");
+  }
+  function themeGuard(){
+    if (window.__upThemeGuard) return;
+    window.__upThemeGuard = true;
+    function sweep(){
+      var all = document.querySelectorAll(".up-root");
+      for (var i = 0; i < all.length; i++) stampTheme(all[i]);
+    }
+    sweep();
+    try {
+      new MutationObserver(function(recs){
+        if (readPrefTheme() !== "dark") return;
+        for (var i = 0; i < recs.length; i++){
+          var r = recs[i];
+          if (r.type === "attributes"){ stampTheme(r.target); continue; }
+          for (var j = 0; j < r.addedNodes.length; j++){
+            var n = r.addedNodes[j];
+            if (n.nodeType !== 1) continue;
+            stampTheme(n);
+            if (n.querySelectorAll){
+              var kids = n.querySelectorAll(".up-root");
+              for (var k = 0; k < kids.length; k++) stampTheme(kids[k]);
+            }
+          }
+        }
+      }).observe(document.documentElement, {
+        subtree: true, childList: true, attributes: true, attributeFilter: ["data-theme"]
+      });
+    } catch(e){}
+  }
+  themeGuard();
+
   window.UpstreemCore = {
     upstreemSetTheme: upstreemSetTheme,
+    readPrefTheme: readPrefTheme,
+    themeGuard: themeGuard,
     CITE_COLOR: CITE_COLOR,
     CITE_ALIAS: CITE_ALIAS,
     ALL_CITATION_TYPES: ALL_CITATION_TYPES,

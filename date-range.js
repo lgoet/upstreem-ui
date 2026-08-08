@@ -491,13 +491,25 @@
       return ctrl;
     }
 
+    /* Exact match OR prefix. The standalone's documented call is
+       resetUpstreemDateRangePicker('dates_v2_') -- a PREFIX, which is why the id in the docs ends
+       in an underscore -- and this function compared with === only, so that documented form
+       matched nothing and returned false silently. Prefix can only widen the match, never break an
+       exact one, so both spellings now work.
+       And when nothing matches at all, say so with the ids that DO exist instead of returning a
+       quiet false: a reset that hits no picker is always a typo or a not-yet-mounted element, and
+       neither is diagnosable from a bare `false` in a Bubble workflow. */
     function forEachInstance(instanceId, fn) {
       var id = String(instanceId || "").trim();
       var hit = false;
       CONTROLLERS = CONTROLLERS.filter(function (c) { return c.root && c.root.isConnected; });
       CONTROLLERS.forEach(function (c) {
-        if (!id || c.instanceId === id) { fn(c); hit = true; }
+        if (!id || c.instanceId === id || c.instanceId.indexOf(id) === 0) { fn(c); hit = true; }
       });
+      if (!hit && window.console) {
+        console.warn("[date-range] no picker matched \"" + id + "\". Mounted instances: " +
+          (CONTROLLERS.map(function (c) { return c.instanceId; }).join(", ") || "(none yet)"));
+      }
       return hit;
     }
     function initAll() {
