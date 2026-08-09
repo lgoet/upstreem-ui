@@ -264,7 +264,7 @@
         tag_mode: mode,
         count: selected.length
       };
-      var name = root.getAttribute("data-topics-fn") || "utfTopics";
+      var name = root.getAttribute("data-topics-fn") || "bubble_fn_utfTopics";
       var fn = UC.resolveBubbleFn(name);
       var json; try { json = JSON.stringify(payload); } catch (e) { json = ""; }
       if (typeof fn === "function") { try { fn(json); } catch (e) {} }
@@ -395,7 +395,7 @@
     var topicModal = UC.makeTopicModal ? UC.makeTopicModal({
       getIsDark: function () { return isDark; },
       onSave: function (payload) {
-        var name = root.getAttribute("data-newtopic-fn") || "utfNewTopic";
+        var name = root.getAttribute("data-newtopic-fn") || "bubble_fn_utfNewTopic";
         var fn = UC.resolveBubbleFn(name);
         var json; try { json = JSON.stringify(payload); } catch (e) { json = ""; }
         if (typeof fn === "function") { try { fn(json); } catch (e) {} }
