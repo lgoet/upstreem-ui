@@ -637,7 +637,9 @@
    stays identical to the page headers on every other page without repeating their values. The
    page-header kit's own vertical padding is dropped here: this sits inside the component's shell,
    which already brings the page's top padding. */
-.upr-root .upr-pagehead { padding: 0 0 24px; }
+/* 16px above, matching core.css's .up-ph-root padding -- the heading block sat flush against
+   the top of the element while every page header in the app starts 16px down. */
+.upr-root .upr-pagehead { padding: 16px 0 24px; }
 
 /* The button used to be the first thing on the page and carried the page's own top padding. The
    page header now sits above it, so that padding would double up as a gap -- 16px is the standard
@@ -647,4 +649,4 @@
    above it, it came along and ended up under the heading. prompt-research.js lifts the element out
    to the root so this rule has something to anchor against. */
 .upr-root { position: relative; }
-.upr-root > .upr-history-entry { position: absolute; top: 16px; right: 16px; z-index: 7; padding-top: 0; }
+.upr-root > .upr-history-entry { position: absolute; top: 0; right: 0; z-index: 7; padding-top: 0; }

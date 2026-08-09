@@ -522,7 +522,6 @@
   #ask-mira .uo-status.is-open .uo-status-btn { background: var(--uo-soft-2); border-color: var(--uo-border-strong); color: var(--uo-text); }
   #ask-mira .uo-status-label { line-height: 1; }
   #ask-mira .uo-status-chev { width: 12px; height: 12px; margin-left: 1px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; opacity: 0.65; transition: transform .16s ease; }
-  #ask-mira .uo-status.is-open .uo-status-chev { transform: rotate(180deg); }
   #ask-mira .uo-status-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 40; min-width: 168px; padding: 5px; border: 1px solid var(--uo-border); border-radius: 12px; background: var(--uo-card); box-shadow: 0 14px 34px rgba(0,0,0,0.13); opacity: 0; transform: translateY(-4px) scale(0.98); transform-origin: top right; pointer-events: none; transition: opacity .14s ease, transform .14s ease; }
   #ask-mira .uo-status.is-open .uo-status-menu { opacity: 1; transform: none; pointer-events: auto; }
   #ask-mira .uo-status-opt { width: 100%; height: 32px; padding: 0 9px; border: 0; border-radius: 8px; background: transparent; display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 550; color: var(--uo-text); cursor: pointer; font-family: inherit; text-align: left; }
@@ -861,7 +860,6 @@
   #ask-mira[data-theme="dark"] .am-rep-range-wrap.is-open .am-rep-range:hover { background: var(--am-card); border-color: #707070; }
   .am-rep-cal { width: 15px; height: 15px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .am-rep-range-chev { width: 14px; height: 14px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; transition: transform 140ms ease; }
-  .am-rep-range-wrap.is-open .am-rep-range-chev { transform: rotate(180deg); }
   .am-rep-range-menu {
     position: absolute; top: calc(100% + 6px); right: 0; min-width: 184px; z-index: 60;
     background: var(--am-card); border: 1px solid var(--am-border); border-radius: 14px;
@@ -901,7 +899,6 @@
   /* one or more topics selected: colour ONLY the border (like the hover / open state), keep the bg */
   .am-rep-topics-wrap.has-sel .am-rep-topics-btn { border-color: #6f6f6f; }
   #ask-mira[data-theme="dark"] .am-rep-topics-wrap.has-sel .am-rep-topics-btn { border-color: #707070; }
-  .am-rep-topics-wrap.is-open .am-rep-range-chev { transform: rotate(180deg); }
 
   .am-rep-topics-search-row { display: flex; align-items: stretch; gap: 8px; margin-bottom: 6px; }
   .am-rep-topics-search { position: relative; flex: 1 1 auto; min-width: 0; }
@@ -1096,7 +1093,6 @@
   .am-model-ic svg { width: 20px; height: 20px; display: block; }
   .am-model-name { letter-spacing: -0.01em; }
   .am-model-chev { width: 14px; height: 14px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; opacity: 0.75; transition: transform .16s ease; }
-  .am-model.is-open .am-model-chev { transform: rotate(180deg); }
   .am-model-menu { position: absolute; bottom: calc(100% + 8px); right: 0; z-index: 60; width: 300px; max-width: 78vw; padding: 6px; border: 1px solid var(--am-border); border-radius: 14px; background: var(--am-card); box-shadow: 0 16px 40px rgba(0,0,0,0.16); opacity: 0; transform: translateY(6px) scale(0.98); transform-origin: bottom right; pointer-events: none; transition: opacity .15s ease, transform .15s ease; }
   .am-model.is-open .am-model-menu { opacity: 1; transform: none; pointer-events: auto; }
   .am-model-opt { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; border: 0; background: transparent; padding: 0 10px; border-radius: 10px; cursor: pointer; font-family: inherit; color: var(--am-text); transition: background .12s ease; }
@@ -1361,7 +1357,6 @@
   #ask-mira[data-theme="dark"] .am-dd.is-open .am-dd-trigger:hover { border-color: #707070; background: var(--am-card); box-shadow: none; }
   .am-dd-value { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
   .am-dd-chev { width: 16px; height: 16px; flex: 0 0 auto; color: #6b7280; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform 160ms ease; }
-  .am-dd.is-open .am-dd-chev { transform: rotate(180deg); }
   .am-dd-menu {
     position: absolute; left: 0; right: 0; top: calc(100% + 8px); z-index: 100;
     background: var(--am-card); border: 1px solid var(--am-border); border-radius: 14px;
@@ -1766,3 +1761,9 @@
 @media (max-width: 768px) {
   #ask-mira .am-ph-meta { display: none !important; }
 }
+
+/* No chevron in this app rotates when its dropdown opens -- the open panel is already the
+   affordance, and the spin was asked to go repeatedly. Five rules did it here (report range,
+   report topics, model picker, the generic .am-dd and the status pill); they are removed rather
+   than overridden so nothing re-introduces them by specificity. The collapse chevron on a
+   Previous-Chats SECTION stays: that one marks a collapsed/expanded section, not a dropdown. */

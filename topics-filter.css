@@ -122,7 +122,7 @@
 .utf-opt.is-checked, .utf-opt.is-cursor { background: var(--up-sel-bg); }
 .utf-opt-main { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; }
 /* Rounded SQUARE, 11px — a topic looks like this everywhere else in the product. */
-.utf-opt-dot { flex: 0 0 auto; width: 10px; height: 10px; border-radius: 5px; background: var(--utf-tc, var(--vc-muted)); }
+.utf-opt-dot { flex: 0 0 auto; width: 10px; height: 10px; border-radius: 4px; background: var(--utf-tc, var(--vc-muted)); }
 .utf-opt-emoji { flex: 0 0 auto; font-size: 14px; line-height: 1; }
 .utf-opt-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 500; }
 .utf-opt-count { flex: 0 0 auto; font-size: 12px; font-weight: 500; color: var(--vc-third); }

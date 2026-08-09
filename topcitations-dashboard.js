@@ -275,8 +275,11 @@
 
     /* ================= RIGHT: Top Domains / Top URLs table ================= */
     var ROW_GOTO = '<span class="up-row-goto">' + UC.GOTO_SVG + '</span>';
-    function trendChip(delta, suffix){
-      return UC.trendChip(delta, { decimals: true, suffix: suffix });
+    /* decimals defaults to true because most numbers here move in fractions. The SHARE column is
+       the exception: its value is printed as a whole percent, so a trend with a decimal on it read
+       as a different quantity than the number it sits next to. */
+    function trendChip(delta, suffix, decimals){
+      return UC.trendChip(delta, { decimals: decimals !== false, suffix: suffix });
     }
     function activeRows(){ return state.mode === "url" ? state.topUrls : state.topDomains; }
     function checkTrendFit(){
@@ -349,7 +352,7 @@
         }
         var shareRaw = isUrl ? r.global_share_pct : r.share_pct;
         var shareNull = (shareRaw == null || shareRaw === "");
-        var share = '<span class="tct-num' + (shareNull ? " is-empty" : "") + '">' + (shareNull ? "–" : fmtPct(shareRaw)) + '</span>' + trendChip(r.share_delta_pct, "%");
+        var share = '<span class="tct-num' + (shareNull ? " is-empty" : "") + '">' + (shareNull ? "–" : fmtPct(shareRaw)) + '</span>' + trendChip(r.share_delta_pct, "%", false);
         var used = (r.used_total != null) ? '<span class="tct-used">' + esc(fmtTotal(r.used_total)) + '</span>' : "";
         return '<div class="tct-row" data-id="' + esc(String(idKey == null ? "" : idKey)) + '">' +
           '<div class="tct-td tct-td-idx">' + pos + '</div>' +

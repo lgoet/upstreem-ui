@@ -4117,7 +4117,9 @@
      Attributes still win where they are set -- a component deliberately pinned to one theme keeps
      working -- so this is additive. localStorage.pref_theme is written too, which is what
      themeGuard already reads, so a Bubble re-render that repaints a root cannot undo it. */
-  var THEME = (window.__upTheme = window.__upTheme || { value: null, bound: false });
+  var THEME = (window.__upTheme = window.__upTheme || { value: null, bound: false, subs: [] });
+  /* For components that need to do more than have an attribute stamped on them. */
+  function onTheme(fn){ THEME.subs.push(fn); return function(){ var i = THEME.subs.indexOf(fn); if (i >= 0) THEME.subs.splice(i, 1); }; }
 
   function applyThemeTo(el, dark){
     if (!el || !el.classList || !el.classList.contains("up-root")) return;
@@ -4138,6 +4140,24 @@
        root, and carry the class themselves. */
     var portals = document.querySelectorAll(".uo-portal, .up-portal, .upr-portal");
     for (var p = 0; p < portals.length; p++) applyThemeTo(portals[p], dark);
+
+    /* Quick Actions predates the .up-root convention: its root is #mira-quick-actions and it does
+       not load core.js at all, so it can neither be found by the sweep above nor subscribe here.
+       Named explicitly, and its own setTheme is called too -- that is the API it exposes and it
+       also themes its overlay. This is the whole reason a page still had to call
+       MiraQuickActions.setTheme() by hand; it does not any more. */
+    var mqa = document.getElementById("mira-quick-actions");
+    if (mqa){
+      mqa.setAttribute("data-theme", THEME.value);
+      var mqaOv = mqa.querySelector(".mqa-overlay");
+      if (mqaOv) mqaOv.setAttribute("data-theme", THEME.value);
+    }
+    try {
+      if (window.MiraQuickActions && typeof window.MiraQuickActions.setTheme === "function")
+        window.MiraQuickActions.setTheme(THEME.value);
+    } catch(e){}
+
+    for (var t = 0; t < THEME.subs.length; t++){ try { THEME.subs[t](THEME.value); } catch(e){} }
 
     /* Anything Bubble builds AFTER the switch -- a re-rendered element, a drawer opening -- would
        otherwise come up in the old theme. One observer for the whole page, installed once. */
@@ -4194,6 +4214,7 @@
     topicsAge: topicsAge,
     topicsChanged: topicsChanged,
     setUpstreemTheme: setUpstreemTheme,
+    onTheme: onTheme,
     getUpstreemTheme: getUpstreemTheme,
     highlight: highlight,
     redditTitleHtml: redditTitleHtml,

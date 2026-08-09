@@ -643,15 +643,49 @@
     try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(t); return; } } catch(_){}
     try { var ta = document.createElement('textarea'); ta.value = t; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.focus(); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); } catch(_){}
   }
+  /* What lands on the clipboard is meant to be pasted into a brief, a ticket or a chat -- so it is
+     laid out with headings and blank lines, not run together. Sections with nothing in them are
+     dropped entirely rather than left as an empty heading. */
   function copyDetailText(it){
-    var topics = (it.topics || []).map(function(t){ return t.name; }).filter(Boolean).join(', ');
-    return (it.headline||'') + '\n' + (it.reason||'') +
-      '\n\n' + (it.lead_title||'') + '\n' + (it.lead_url||'') +
-      '\n\nTopics: ' + topics;
+    var lines = [];
+    function section(title, body){
+      if (!body) return;
+      if (lines.length) lines.push('');
+      lines.push(title); lines.push(body);
+    }
+    if (it.headline) lines.push(it.headline);
+    if (it.label) lines.push('(' + it.label + (it.priority_label ? ' — ' + POT_LABEL[potLevel(it)] : '') + ')');
+
+    section('Why this matters', it.reason || '');
+
+    var topics = (it.topics || []).map(function(t){ return t && (t.name || t); }).filter(Boolean);
+    section('Topics', topics.length ? topics.join(', ') : '');
+
+    var src = [];
+    if (it.lead_title) src.push(it.lead_title);
+    if (it.lead_domain) src.push(it.lead_domain);
+    if (it.lead_url) src.push(it.lead_url);
+    section('Source', src.join('\n'));
+
+    var comps = (it.competitors || []).map(function(c){ return c && (c.name || c); }).filter(Boolean);
+    section('Mentioned competitors', comps.length ? comps.join(', ') : '');
+
+    var meta = [];
+    if (it.status) meta.push('Status: ' + it.status);
+    if (it.effective_citation_type) meta.push('Citation type: ' + citePretty(it.effective_citation_type));
+    if (it.created_at) meta.push('Created: ' + fmtDate(it.created_at));
+    section('Details', meta.join('\n'));
+
+    return lines.join('\n');
   }
 
-  /* ---------- card / row click ---------- */
-  root.addEventListener('click', function(e){
+  /* ---------- card / row click ----------
+     Bound to the PORTAL as well as the root. The drawer's markup was moved into a body-level
+     portal so it can escape the host's stacking contexts -- which also took it out of reach of a
+     handler delegated on the root. Everything openDetail wires by hand (close, ignore, goto, the
+     status segments) kept working; everything that relied on this delegation did not, and that is
+     why the Copy button did nothing at all. Same function on both, so the two can never drift. */
+  function onRootClick(e){
     var kb = e.target.closest('.uo-col-kebab');
     if (kb){
       e.stopPropagation();
@@ -674,7 +708,19 @@
       var it = S.items.find(function(x){ return String(x.id) === String(S.detailId); });
       if (it){ copyText(copyDetailText(it)); }
       cp.classList.add('is-copied');
-      setTimeout(function(){ cp.classList.remove('is-copied'); }, 1200);
+      /* Same data-tip tooltip every other control in this app uses -- swapped to a confirmation
+         and put back afterwards, so the feedback is not only the icon flip. UC.makeTooltips reads
+         the attribute live, so nothing else has to be told about the change. */
+      var tipWas = cp.getAttribute('data-tip');
+      cp.setAttribute('data-tip', 'Copied');
+      /* Re-trigger the tip so the new text shows immediately: the pointer is already resting on
+         the button, so without a fresh enter event the tooltip would keep saying "Copy" until the
+         user moves away and back. */
+      try { cp.dispatchEvent(new MouseEvent("mouseover", { bubbles: true })); } catch(_){}
+      setTimeout(function(){
+        cp.classList.remove('is-copied');
+        if (tipWas != null) cp.setAttribute('data-tip', tipWas);
+      }, 1200);
       return;
     }
 
@@ -697,7 +743,9 @@
 
     var card = e.target.closest('.uo-card, .uo-row');
     if (card && root.querySelector('.uo-stage').contains(card)) { openDetail(card.getAttribute('data-id')); }
-  });
+  }
+  root.addEventListener('click', onRootClick);
+  portal.addEventListener('click', onRootClick);
   if (scrimEl) scrimEl.addEventListener('click', closeDetail);
   document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && S.detailId) closeDetail(); });
 

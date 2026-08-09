@@ -64,6 +64,15 @@
 /* Drop target: the lane tints and gets an inset ring rather than a real border, so the column does
    not change size mid-drag and shove the other lanes sideways. */
 .uo-col.is-drop-target { background: var(--vc-heading-bg); box-shadow: inset 0 0 0 2px var(--vc-hover-border); }
+/* The column head is sticky and paints its own opaque background, so it covered the top and side
+   strokes of the ring above -- the border appeared to exist only along the card area and stopped
+   dead where the title, count and kebab are. It gets the three strokes it hides, drawn on itself. */
+.uo-col.is-drop-target .uo-col-head {
+  box-shadow: inset 2px 0 0 var(--vc-hover-border),
+              inset -2px 0 0 var(--vc-hover-border),
+              inset 0 2px 0 var(--vc-hover-border);
+  background: var(--vc-heading-bg);
+}
 
 /* The lane header is this component's .up-thead: it pins directly under the sticky toolbar, so the
    lane you are scrolling through stays labelled. --up-thead-off is the toolbar's measured height,
