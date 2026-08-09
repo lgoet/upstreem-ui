@@ -3913,6 +3913,23 @@
       OPEN_DD.splice(i, 1);
       try { o.close(); } catch(e){}
     }
+    /* ...and the popover list too. POPOVERS lives on window, so this reaches popovers built by a
+       DIFFERENT core.js copy -- the case where a page carries two data-cdn-pin values and the
+       other copy's makePopover has no idea this registry exists. Same ancestor rule: a popover
+       whose menu CONTAINS the thing being opened is a parent and stays up. */
+    for (var k = 0; k < POPOVERS.length; k++){
+      var p = POPOVERS[k];
+      if (!p.wrap || !document.contains(p.wrap)){ POPOVERS.splice(k--, 1); continue; }
+      if (!p.wrap.classList.contains("is-open")) continue;
+      if (p.wrap === self.owner) continue;
+      var parent = false;
+      try { parent = !!(p.menu && (p.menu.contains(self.owner) || p.menu.contains(panel))); } catch(e){}
+      if (parent) continue;
+      p.wrap.classList.remove("is-open");
+      p.menu.classList.remove("is-shown");
+      p.menu.setAttribute("aria-hidden", "true");
+      if (p.onClose) { try { p.onClose(false); } catch(e){} }
+    }
     OPEN_DD.push(self);
     return function(){ ddClose(self); };
   }
@@ -3920,6 +3937,41 @@
     var list = OPEN_DD.slice();
     OPEN_DD.length = 0;
     for (var i = 0; i < list.length; i++){ try { list[i].close(); } catch(e){} }
+  }
+
+  /* The registry's OWN outside-press handler -- and the reason the topics panel stayed open while
+     the calendar opened, through three rounds of looking in the wrong place.
+
+     Until now this list had no outside-press handling at all: each component brought its own
+     document listener, and every one of them is bubble-phase. But openers all over this library
+     call e.stopPropagation() on their trigger (date-range.js:371 does, so does the topics trigger
+     itself), and a stopped event never reaches ANY of those listeners. So pressing the calendar
+     trigger was simply invisible to the topics panel, while the reverse worked -- makePopover
+     listens on pointerdown, which those triggers do not stop. Exactly the asymmetry that was
+     reported: topics -> calendar closed, calendar -> topics did not.
+
+     CAPTURE phase is the whole point. Capture runs on the way DOWN, before any target handler
+     exists to call stopPropagation, so no component can hide a press from this no matter what it
+     does with the event. pointerdown, not click, for the same reason makePopover uses it: the
+     decision belongs at gesture start, not wherever a drag happens to release.
+
+     A press INSIDE a dropdown's own panel or on its own trigger is not "outside" -- that is what
+     keeps a click on a topic row, or a second click on the trigger to toggle it shut, working. */
+  if (!window.__upDdOutsideBound){
+    window.__upDdOutsideBound = true;
+    document.addEventListener("pointerdown", function(e){
+      if (!OPEN_DD.length) return;
+      for (var i = OPEN_DD.length - 1; i >= 0; i--){
+        var o = OPEN_DD[i], inside = false;
+        try {
+          inside = !!((o.panel && o.panel.contains(e.target)) ||
+                      (o.owner && o.owner.contains(e.target)));
+        } catch(err){}
+        if (inside) continue;
+        OPEN_DD.splice(i, 1);
+        try { o.close(); } catch(err){}
+      }
+    }, true);
   }
 
   window.UpstreemCore = {
