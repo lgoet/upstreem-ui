@@ -169,7 +169,7 @@
       return (state[key] && state[key].length) ? state[key] : raw;
     }
     function syncChartSwitch(){
-      Array.prototype.slice.call(root.querySelectorAll(".up-seg-btn")).forEach(function(o){
+      Array.prototype.slice.call(root.querySelectorAll(".tcl-seg-btn")).forEach(function(o){
         var on = o.getAttribute("data-chart") === state.chartMode;
         o.classList.toggle("is-active", on);
         o.setAttribute("aria-selected", on ? "true" : "false");
@@ -649,7 +649,7 @@
           if (typeof mFn === "function"){ try { mFn(m, instanceId); } catch(err){} }
           return;
         }
-        var chartBtn = e.target.closest(".up-seg-btn");
+        var chartBtn = e.target.closest(".tcl-seg-btn");
         if (chartBtn){
           state.chartMode = chartBtn.getAttribute("data-chart");
           renderChartSide();

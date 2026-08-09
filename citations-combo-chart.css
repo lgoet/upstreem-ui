@@ -67,7 +67,7 @@
 .combo-root.is-hidden-view .combo-unit-left { margin-bottom: 0; }
 /* grey out the (now inactive) controls; the Hide/Show toggle stays active */
 .combo-root.is-hidden-view .cc-gran,
-.combo-root.is-hidden-view .up-seg,
+.combo-root.is-hidden-view .cc-seg,
 .combo-root.is-hidden-view .combo-filter,
 .combo-root.is-hidden-view .combo-maximize { opacity: 0.4; pointer-events: none; }
 

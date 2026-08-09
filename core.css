@@ -323,6 +323,11 @@
     .up-filter-check svg { width: 11px; height: 11px; display: none; }
     .up-filter-item.is-checked .up-filter-check svg { display: block; }
     .up-filter-item.is-checked .up-filter-check { background: var(--vc-text); border-color: var(--vc-text); }
+    /* Gewaehlte Zeile im TYPES-Dropdown traegt den App-Selected-Ton. Auf .up-filter-menu gescoped
+       und nicht auf .up-filter-item selbst: die Marken-Liste nutzt dieselbe Zeilenklasse, sitzt
+       aber in .up-ment-menu -- und dort waere eine gefuellte Zeile pro Eintrag zu unruhig, so war
+       die Vorgabe. Zwei Listen, dieselbe Zeile, ein bewusster Unterschied statt zweier Zufaelle. */
+    .up-filter-menu .up-filter-item.is-checked { background: var(--up-sel-bg); }
     .up-root[data-theme="dark"] .up-filter-item.is-checked .up-filter-check { color: #1f1f1b; }
     /* the dropdown shows the SAME chip the table uses — identical to TopCitations, so a type
        looks the same wherever it appears */
@@ -1222,20 +1227,30 @@
    "almost" it: components add .up-seg/.up-seg-btn, they do not restate the rules.
    NOTE this is a different control from .up-dense — that one is the full-width label switcher
    inside the Table Settings popover. */
-.up-seg { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-bg); border-radius: 8px; border: 0; height: 32px; flex: 0 0 auto; }
+.up-seg, .cc-seg, .ubo-seg, .tcl-seg { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-bg); border-radius: 8px; border: 0; height: 32px; flex: 0 0 auto; }
 /* gap + type spec: this control was lifted from an ICON-ONLY switcher, so a button carrying an icon
    AND a label had its two children touching, and its text fell back to whatever the page inherited.
    Both are set here rather than per component -- gap is a no-op on the single-child icon variants
    that already use this, and the type matches .vc-gran-btn, the app's other labelled switcher
    (STYLEGUIDE §2: switcher label 12px/500). */
-.up-seg-btn { height: 32px; padding: 0 10px; border: 1px solid transparent; border-radius: 8px; background: transparent;
+.up-seg-btn, .cc-seg-btn, .ubo-seg-btn, .tcl-seg-btn { height: 32px; padding: 0 10px; border: 1px solid transparent; border-radius: 8px; background: transparent;
   color: var(--vc-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
   gap: 7px; font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1; }
-.up-seg-btn svg { width: 16px; height: 16px; color: var(--vc-muted); display: block; }
-.up-seg-btn:hover, .up-seg-btn:hover svg { color: var(--vc-text); }
-.up-seg-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
-.up-seg-btn.is-active svg { color: var(--vc-text); }
-.up-root[data-theme="dark"] .up-seg-btn.is-active { background: #121212; border-color: #353535; }
+.up-seg-btn svg, .cc-seg-btn svg, .ubo-seg-btn svg, .tcl-seg-btn svg { width: 16px; height: 16px; color: var(--vc-muted); display: block; }
+.up-seg-btn:hover, .up-seg-btn:hover svg,
+.cc-seg-btn:hover, .cc-seg-btn:hover svg,
+.ubo-seg-btn:hover, .ubo-seg-btn:hover svg,
+.tcl-seg-btn:hover, .tcl-seg-btn:hover svg { color: var(--vc-text); }
+/* Die drei Aliase sind KEIN Stil-Duplikat, sondern der Verzicht auf eine Umbenennung: das
+   Markup dieser Switcher steht in der vom Nutzer eingefuegten Bubble-Seite, nicht in einer Datei
+   die ein CDN-Pin erreicht. Ein Rename hier haette deren Seiten zerlegt -- citations-combo-chart
+   bricht sogar seine ganze Initialisierung ab, wenn es seine Buttons nicht findet. */
+.up-seg-btn.is-active, .cc-seg-btn.is-active, .ubo-seg-btn.is-active, .tcl-seg-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
+.up-seg-btn.is-active svg, .cc-seg-btn.is-active svg, .ubo-seg-btn.is-active svg, .tcl-seg-btn.is-active svg { color: var(--vc-text); }
+[data-theme="dark"] .up-seg-btn.is-active,
+[data-theme="dark"] .cc-seg-btn.is-active,
+[data-theme="dark"] .ubo-seg-btn.is-active,
+[data-theme="dark"] .tcl-seg-btn.is-active { background: #121212; border-color: #353535; }
 
 /* ---------- "X mentioned?" yes/no cell ----------
    Shared by urls-table and responses-table (both had their own byte-identical copy under a local

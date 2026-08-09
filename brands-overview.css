@@ -81,7 +81,8 @@
 .ubo-root.is-hidden-view .vc-gran,
 .ubo-root.is-hidden-view .ubo-filter,
 .ubo-root.is-hidden-view .ubo-yaxis,
-.ubo-root.is-hidden-view .ubo-box-chart { transition: height 200ms ease, opacity 160ms ease; }
+.ubo-root.is-hidden-view .ubo-seg[aria-label="Chart type"] { opacity: 0.4; pointer-events: none; }
+.ubo-box-chart { transition: height 200ms ease, opacity 160ms ease; }
 
 /* ---------- which chart is on screen ---------- */
 .ubo-line-holder { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
@@ -250,3 +251,4 @@
 .ubo-root.is-narrow .ubo-mx-legend-x { grid-column: 1; }
 
 /* count on the tab you're NOT on (see syncStatusSwitch) */
+.ubo-seg-n { font-size: 11px; font-weight: 600; color: var(--vc-third); font-variant-numeric: tabular-nums; }
