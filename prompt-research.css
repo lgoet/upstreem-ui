@@ -642,5 +642,9 @@
 /* The button used to be the first thing on the page and carried the page's own top padding. The
    page header now sits above it, so that padding would double up as a gap -- 16px is the standard
    separation from the block above, matching the kit. */
-.upr-root .upr-pagehead + .upr-content .upr-history-entry,
-.upr-root .upr-history-entry { padding-top: 16px; }
+/* Anchored to the ROOT, at the page's top right -- the same place every other page puts its
+   top-right action. It used to be absolute inside .upr-content, so once the page header moved in
+   above it, it came along and ended up under the heading. prompt-research.js lifts the element out
+   to the root so this rule has something to anchor against. */
+.upr-root { position: relative; }
+.upr-root > .upr-history-entry { position: absolute; top: 16px; right: 16px; z-index: 7; padding-top: 0; }

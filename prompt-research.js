@@ -138,6 +138,23 @@
       });
     })();
 
+    /* The top-right action belongs to the PAGE, not to the start screen: it was absolutely
+       positioned inside .upr-content, so the new page header pushed it down with it. Lifted to
+       the root, where the CSS pins it to 16px from the top and right like every other page's. */
+    function liftHistoryButton(){
+      /* Any depth: in the template it sits under .upr-shell, not .upr-content -- a child selector
+         quietly matched nothing on the first attempt. */
+      var btn = root.querySelector(".upr-history-entry");
+      if (btn && btn.parentElement !== root) root.appendChild(btn);
+    }
+    /* Called again on a timer because later init steps re-render the shell and put the button back
+       where the markup had it -- verified: the class set on the line below was present while the
+       button had returned to .upr-shell. Cheap and idempotent: once it is a child of the root the
+       call does nothing. */
+    liftHistoryButton();
+    setTimeout(liftHistoryButton, 0);
+    setTimeout(liftHistoryButton, 400);
+
     /* Top-left of the page is this component's, so it carries the mobile sidebar clearance. */
     root.classList.add("up-sidebar-clear");
     if (UC.widthTiers) UC.widthTiers(root);

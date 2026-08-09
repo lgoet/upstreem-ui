@@ -241,6 +241,18 @@
    containing block of its own, while still carrying the .up-root token scope the drawer's colours
    come from. */
 .uo-portal { display: contents; }
+/* As a popover it needs a real box -- display:contents generates none, and the top layer has
+   nothing to promote. A transparent, click-through full-viewport frame; the scrim and the drawer
+   inside keep their own fixed positioning (no transform here, so "fixed" still means the
+   viewport) and take back pointer events for themselves. The UA's own popover styling (centred
+   auto margins, a border, a background) is undone in the same breath. */
+.uo-portal[popover] {
+  position: fixed; inset: 0; width: auto; height: auto; max-width: none; max-height: none;
+  margin: 0; padding: 0; border: 0; background: transparent; overflow: visible;
+  pointer-events: none; display: block;
+}
+.uo-portal[popover]:not(:popover-open) { display: none; }
+.uo-portal[popover] .uo-modal { pointer-events: auto; }
 /* Geometry, timings and stacking are the host app's own drawer system, copied deliberately so this
    panel is indistinguishable from every other drawer in the product:
      - edge to edge, no inset and no radius: full screen height, flush right

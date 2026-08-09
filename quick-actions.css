@@ -7,7 +7,11 @@
 #mira-quick-actions, .mqa-overlay {
   --am-text: #1f1f1b; --am-muted: #6f737c; --am-muted-2: #9ca3af;
   --am-border: #e5e7eb; --am-border-strong: #d9dde3;
-  --am-soft: #f7f8fa; --am-soft-2: #f3f4f6; --am-card: #ffffff;
+  --am-soft: #f7f8fa; --am-soft-2: #f3f4f6;
+  /* 60% white, not solid: the panel sits over its own blurred overlay, and at full opacity that
+     blur was doing nothing visible behind the card. Dark mode keeps its solid surface -- the same
+     translucency there just muddies the text. */
+  --am-card: rgba(255,255,255,0.60);
   --am-overlay: rgba(17,18,20,0.30);
   --am-shadow: 0 24px 64px rgba(17,18,20,0.18), 0 6px 16px rgba(17,18,20,0.07);
   /* Was referenced by three hover states (.mqa-chip-x, .mqa-clear, .mqa-recent-x) but never

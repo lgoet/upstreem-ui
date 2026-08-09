@@ -2309,8 +2309,26 @@
          exists for are short (a short component means a short Bubble wrapper), so this costs
          nothing -- they stay unclipped exactly as before. */
       var vpH = window.innerHeight || document.documentElement.clientHeight || 0;
-      var isPageScroller = canScrollY && vpH > 0 && el.clientHeight >= vpH * 0.8;
-      if (scrolls || isPageScroller) break;
+      /* Height ALONE decides this, deliberately without asking what overflow currently says.
+         The previous version required overflow-y to be auto/scroll right now -- and that is
+         exactly what let it destroy the page: while a drawer is open the app sets #main to
+         overflow:hidden, so at that moment the scroll region does NOT look scrollable, falls
+         through to the clips-branch below, and gets an inline overflow:visible written onto it.
+         Inline beats the stylesheet, so removing the lock class afterwards changes nothing and the
+         page can never be scrolled again -- the "it scrolls once after load and then never" report.
+         makeSticky calls this on every resize tick, so it only takes one such tick.
+         This function exists for SHORT host wrappers (a short component means a short wrapper);
+         nothing it legitimately needs to unclip is anywhere near viewport height. */
+      var isPageRegion = vpH > 0 && el.clientHeight >= vpH * 0.8;
+      if (isPageRegion){
+        /* Repair a page already broken earlier in this session by the old rule. */
+        if (el.hasAttribute("data-up-unclipped")){
+          el.style.overflow = el.getAttribute("data-up-unclipped") || "";
+          el.removeAttribute("data-up-unclipped");
+        }
+        break;
+      }
+      if (scrolls) break;
       var clips = (cs.overflow === "hidden" || cs.overflow === "clip" ||
                    cs.overflowX === "hidden" || cs.overflowX === "clip" ||
                    oy === "hidden" || oy === "clip");
