@@ -1993,6 +1993,35 @@
      user selection, not the initial render, narrowAt (default 768), vnarrowAt (default 500) }.
      Returns { selectPage(value, fireEvent), positionUnderline(item, animate) } so a caller can
      drive the same tab switch programmatically (e.g. a data-nav-fn response echoed back). */
+  /* is-narrow / is-vnarrow on a component root, measured off the ROOT's own box via ResizeObserver
+     rather than a CSS media query -- consistent with every other responsive decision in this repo,
+     and correct if a component ever sits in a narrower Bubble container than the full page.
+
+     This used to live INSIDE makePageNav, which is why the mobile clearance kept disappearing:
+     only three of the six page headers have a nav and therefore call it at all, and the two
+     components that draw their own header (ask-mira, prompt-research) never did. Everything else
+     silently never got the classes, so `.up-root.is-vnarrow` never matched and the 32px top
+     clearance for the sidebar toggle was simply absent. Standalone now, called by every one of
+     them. */
+  function widthTiers(root, cfg){
+    cfg = cfg || {};
+    if (!root || root.__upWidthTiers) return;
+    root.__upWidthTiers = true;
+    function apply(w){
+      root.classList.toggle("is-narrow",  w < (cfg.narrowAt  || 768));
+      root.classList.toggle("is-vnarrow", w < (cfg.vnarrowAt || 500));
+    }
+    /* Only measure if there IS a measurement. A root that has no layout yet -- booted inside a
+       Bubble group that is still hidden, or measured before the first paint -- reports width 0,
+       and 0 is smaller than every breakpoint, so a naive initial call would stamp BOTH narrow
+       classes onto a component that may well be full width. It then sits wrong until something
+       resizes it. The ResizeObserver below delivers the first real width on its own; letting it
+       do that is both simpler and correct. */
+    var w0 = root.getBoundingClientRect().width;
+    if (w0 > 0) apply(w0);
+    if (onResize) onResize(root, apply);
+  }
+
   function makePageNav(root, cfg){
     cfg = cfg || {};
     var nav = cfg.nav || root.querySelector(cfg.navSelector || ".up-ph-nav");
@@ -2059,11 +2088,8 @@
        header ever ends up in a narrower Bubble container than the full page (it doesn't today,
        but this kit isn't specific to that). */
     if (onResize){
-      onResize(root, function(w){
-        root.classList.toggle("is-narrow", w < (cfg.narrowAt || 768));
-        root.classList.toggle("is-vnarrow", w < (cfg.vnarrowAt || 500));
-        positionUnderline(nav.querySelector(".up-ph-navitem.is-selected"), false);
-      });
+      widthTiers(root, cfg);
+      onResize(root, function(){ positionUnderline(nav.querySelector(".up-ph-navitem.is-selected"), false); });
     }
 
     return { selectPage: selectPage, positionUnderline: positionUnderline };
@@ -4150,6 +4176,7 @@
     ensureEmojiLib: ensureEmojiLib,
     makeTopicModal: makeTopicModal,
     makePageNav: makePageNav,
+    widthTiers: widthTiers,
     spinOnce: spinOnce,
 
     /* ---- chart kits (see the big comment block above) ---- */

@@ -140,6 +140,10 @@
       attributes: true, attributeFilter: ["data-isdark", "data-brand-name", "data-brand-logo"]
     });
 
+    /* No page nav here, so nothing else would set the responsive tier classes -- and without
+       is-vnarrow the 32px top clearance for Bubble's mobile sidebar toggle never applies. */
+    if (UC.widthTiers) UC.widthTiers(root);
+
     if (UC.makeTooltips) UC.makeTooltips(root, function(){ return UC.isYes(root.getAttribute("data-isdark")); });
 
     var refreshBtn = root.querySelector(".dph-refreshbtn");

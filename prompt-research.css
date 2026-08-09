@@ -629,3 +629,12 @@
   .upr-float-point, .upr-float-spark, .upr-loader-core, .upr-loader-ring,
   .upr-skeleton-chip, .upr-start-btn.is-running svg { animation: none; }
 }
+
+
+/* ---------- page header ----------
+   Built by prompt-research.js (see the comment there for why it is not in the Bubble template).
+   Geometry only -- every colour and font size comes from core.css's .up-ph-* kit, so this block
+   stays identical to the page headers on every other page without repeating their values. The
+   page-header kit's own vertical padding is dropped here: this sits inside the component's shell,
+   which already brings the page's top padding. */
+.upr-root .upr-pagehead { padding: 0 0 24px; }

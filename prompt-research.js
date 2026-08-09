@@ -89,6 +89,59 @@
   };
 
   function initRoot(root, UC){
+    /* Page header, built HERE and not in the Bubble template on purpose. That template is a
+       fresh-install file: it is pasted once and later edits never reach a page that already
+       exists. Adding this block there would have shipped nothing to the live page. Built from JS,
+       it arrives with the CDN pin like every other fix.
+
+       Uses the core Page Header Kit classes (.up-ph-*), so it is the same meta/heading/description
+       block every other page in the app has -- not a lookalike that drifts on the next tweak. */
+    (function buildPageHeader(){
+      if (root.querySelector(".upr-pagehead")) return;
+      var brand = (root.getAttribute("data-brand-name") || "").trim();
+      if (brand === "BRAND_NAME") brand = "";
+      var logo  = (root.getAttribute("data-brand-logo") || "").trim();
+      if (logo === "BRAND_LOGO_URL") logo = "";
+
+      var head = document.createElement("div");
+      head.className = "up-ph-top upr-pagehead";
+      head.innerHTML =
+        '<div class="up-ph-left">' +
+          '<div class="up-ph-meta">' +
+            '<img class="up-ph-metalogo upr-ph-logo" alt=""' + (logo ? '' : ' style="display:none"') + '/>' +
+            '<span class="up-ph-metatxt"><span class="upr-ph-brand"></span>Workspace</span>' +
+          '</div>' +
+          '<h1 class="up-ph-heading">Prompt Research</h1>' +
+          '<p class="up-ph-desc">Find the prompts your audience actually asks AI, and turn the ones worth owning into tracked prompts.</p>' +
+        '</div>';
+      root.insertBefore(head, root.firstChild);
+
+      /* Bubble resolves these dynamic expressions AFTER the root is mounted -- it patches the
+         attribute in place rather than replacing the node -- so a one-shot read at init would
+         show an empty brand forever. Same observer every page header in this repo runs. */
+      var logoEl  = head.querySelector(".upr-ph-logo");
+      var brandEl = head.querySelector(".upr-ph-brand");
+      function syncBrand(){
+        var n = (root.getAttribute("data-brand-name") || "").trim();
+        if (n === "BRAND_NAME") n = "";
+        /* The trailing space belongs to the NAME, not to the markup: without a name the meta line
+           has to read "Workspace", not " Workspace". */
+        brandEl.textContent = n ? n + " " : "";
+        var l = (root.getAttribute("data-brand-logo") || "").trim();
+        if (l === "BRAND_LOGO_URL") l = "";
+        if (l){ logoEl.src = l; logoEl.style.display = ""; }
+        else { logoEl.removeAttribute("src"); logoEl.style.display = "none"; }
+      }
+      syncBrand();
+      new MutationObserver(syncBrand).observe(root, {
+        attributes: true, attributeFilter: ["data-brand-name", "data-brand-logo"]
+      });
+    })();
+
+    /* Top-left of the page is this component's, so it carries the mobile sidebar clearance. */
+    root.classList.add("up-sidebar-clear");
+    if (UC.widthTiers) UC.widthTiers(root);
+
 
   /* ---------- element handles ---------- */
   var textarea            = root.querySelector('.upr-textarea');

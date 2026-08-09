@@ -3978,6 +3978,48 @@
   var elHeroText = root.querySelector('.am-hero-text');
   if (elHeroText) elHeroText.addEventListener('click', goToStart);
 
+  /* Meta row above the mira wordmark -- brand logo + "<Brand> Workspace", the same line every
+     page header in the app carries. Built here rather than in the Bubble template because that
+     template is a fresh-install file: pasted once, and later edits never reach a page that
+     already exists. Uses the core Page Header Kit classes so it cannot drift from the others.
+     Inserted BEFORE .am-title-row, i.e. above the logo/Ready row, which stays exactly as it is. */
+  (function buildMetaRow(){
+    if (!elHeroText || elHeroText.querySelector('.am-ph-meta')) return;
+    var titleRow = elHeroText.querySelector('.am-title-row');
+    if (!titleRow) return;
+    var meta = document.createElement('div');
+    meta.className = 'up-ph-meta am-ph-meta';
+    meta.innerHTML =
+      '<img class="up-ph-metalogo am-ph-logo" alt="" style="display:none"/>' +
+      '<span class="up-ph-metatxt"><span class="am-ph-brand"></span>Workspace</span>';
+    elHeroText.insertBefore(meta, titleRow);
+
+    var logoEl  = meta.querySelector('.am-ph-logo');
+    var brandEl = meta.querySelector('.am-ph-brand');
+    function syncBrand(){
+      var n = (root.getAttribute('data-brand-name') || '').trim();
+      if (n === 'BRAND_NAME') n = '';
+      /* Trailing space belongs to the name: with no brand the line must read "Workspace". */
+      brandEl.textContent = n ? n + ' ' : '';
+      var l = (root.getAttribute('data-brand-logo') || '').trim();
+      if (l === 'BRAND_LOGO_URL') l = '';
+      if (l){ logoEl.src = l; logoEl.style.display = ''; }
+      else { logoEl.removeAttribute('src'); logoEl.style.display = 'none'; }
+    }
+    syncBrand();
+    /* Bubble patches these attributes in place after mount, so a one-shot read would leave the
+       brand blank for the whole session. */
+    new MutationObserver(syncBrand).observe(root, {
+      attributes: true, attributeFilter: ['data-brand-name', 'data-brand-logo']
+    });
+  })();
+
+  /* Mira draws the top-left of its page itself, so it carries the mobile sidebar clearance.
+     window.UpstreemCore, not a local UC: this runs at IIFE level, where the UC binding the boot
+     function makes is out of scope -- referencing it here would throw. */
+  root.classList.add('up-sidebar-clear');
+  if (window.UpstreemCore && window.UpstreemCore.widthTiers) window.UpstreemCore.widthTiers(root);
+
   /* ---------------- Chat-view topbar (chat name + chevron + inline rename) ---------------- */
   function cssEsc(v){ return (window.CSS && CSS.escape) ? CSS.escape(String(v)) : String(v).replace(/["\\]/g, '\\$&'); }
   var _heroEl       = root.querySelector('.am-hero');

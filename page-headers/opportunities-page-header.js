@@ -41,6 +41,9 @@
 
   function initRoot(root){
     var UC = window.UpstreemCore;
+    /* No page nav here, so nothing else would set the responsive tier classes -- and without
+       is-vnarrow the 32px top clearance for Bubble's mobile sidebar toggle never applies. */
+    if (UC.widthTiers) UC.widthTiers(root);
     var fire = UC.makeFire(root, { label: "opportunities-page-header", eventPrefix: "oph" });
 
     /* Same data-brand-name/-logo/-isdark re-sync as every other page header in this family --

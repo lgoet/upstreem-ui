@@ -112,13 +112,19 @@
     width: 100%;
   }
   .am-hero-text { flex: 1 1 auto; min-width: 0; cursor: pointer; }
-  .am-title-row { display: flex; align-items: center; gap: 21px; flex-wrap: wrap; }
+  /* 12px, same gap the kit puts between a heading and what follows it -- 21px was a one-off that
+     made the Ready pill read as a separate element rather than part of the title line. */
+  .am-title-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .am-brand { display: inline-flex; align-items: center; gap: 7px; min-width: 0; }
-  .am-logo-mark { width: 28px; height: 27px; flex: 0 0 auto; display: grid; place-items: center; color: var(--am-muted); transform: translateY(2px); }
+  .am-logo-mark { width: 28px; height: 28px; flex: 0 0 auto; display: grid; place-items: center; color: var(--am-muted); transform: translateY(1px); }
   .am-logo-mark svg { width: 26px; height: 25px; fill: currentColor; }
   .am-wordmark {
     font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-    font-size: clamp(25px, 2.8vw, 31px); line-height: 1;
+    /* 28px flat, the Page Header Kit's .up-ph-heading size -- "mira" IS this page's heading, so it
+       has to sit at the same optical weight as "Prompt Research" or "Dashboard" does on theirs.
+       The old clamp() made it drift between 25 and 31px with the viewport, which is why it never
+       quite lined up with the other pages. */
+    font-size: 28px; line-height: 1;
     font-weight: 500; letter-spacing: -0.01em; color: var(--am-text);
     font-feature-settings: "liga" 1, "calt" 1;
   }
@@ -133,7 +139,10 @@
     box-shadow: 0 0 0 0 rgba(46,194,126,0.5); animation: amDotPulse 2s ease-in-out infinite;
   }
   #ask-mira.is-loading .am-status-dot { background: var(--am-primary); box-shadow: 0 0 0 0 rgba(31,31,27,0.4); }
-  .am-subline { margin: 4px 0 0; font-size: 13px; line-height: 1.5; color: var(--am-muted); }
+  /* The description. 15px/1.4 and 12px below the title row are core.css's .up-ph-desc values --
+     matched by hand rather than by using the class, because this one also has to disappear in the
+     compact topbar mode below, which the kit knows nothing about. */
+  .am-subline { margin: 12px 0 0; font-size: 15px; line-height: 1.4; color: var(--am-muted); }
 
   .am-ghost-btn {
     height: 34px; padding: 0 12px; border: 1px solid var(--am-border);
@@ -1743,3 +1752,17 @@
   #ask-mira[data-theme="dark"] .am-icon-action[aria-expanded="true"] { background: #242424; color: #e0e0e0; }
   /* topic chips — dark mode (1:1 with the Opportunities page: white text, deeper tints) */
   #ask-mira[data-theme="dark"] .uo-tag { color: #e0e0e0; background: color-mix(in srgb, var(--uo-tag, #6b7280) 22%, transparent); border-color: color-mix(in srgb, var(--uo-tag, #6b7280) 45%, transparent); }
+
+
+/* ---------- page meta row (built by ask-mira.js) ----------
+   Brand logo + "<Brand> Workspace" above the mira wordmark, the same line every page header in the
+   app carries. Colour/size come from core.css's .up-ph-meta kit; only the two things the kit
+   cannot know are set here. */
+#ask-mira .am-ph-meta { margin-bottom: 8px; }
+/* The compact topbar collapses the whole hero into a 64px row -- logo, Ready pill and nothing
+   else. A meta line there would either break the height or squeeze the title, so it goes, exactly
+   like .am-subline already does. */
+#ask-mira.is-compact .am-ph-meta { display: none !important; }
+@media (max-width: 768px) {
+  #ask-mira .am-ph-meta { display: none !important; }
+}

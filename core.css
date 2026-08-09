@@ -1604,9 +1604,16 @@
    button can drop its trailing word here by wrapping it in a child with class up-ph-addbtn-full. */
 .up-root.is-narrow .up-ph-navitem { flex: 1 1 0; }
 .up-root.is-narrow .up-ph-addbtn-full { display: none; }
-/* is-vnarrow (<500px default): Bubble's mobile sidebar-toggle sits top-right below this width on
-   this app's pages -- extra top clearance so a page header doesn't collide with it. The Add
-   button's negative margin matches that extra clearance (-16 against the now-32px padding-top) so
-   it still lands at the same visual offset it has at every other width. */
-.up-root.is-vnarrow.up-ph-root { padding-top: 32px; }
+/* is-vnarrow (<500px default): below this width Bubble's mobile sidebar toggle -- a 32x32 button --
+   sits at the TOP LEFT of the page, over whatever the topmost component draws there. So the first
+   thing on the page needs 32px of clearance above it, or the heading ends up underneath the button.
+
+   .up-sidebar-clear is the general carrier: any component that renders the top-left of a page adds
+   it (ask-mira and prompt-research do, since they draw their own header instead of using a page
+   header). .up-ph-root gets it implicitly -- a page header is always the top of its page.
+
+   The Add button's negative margin cancels the extra clearance for itself (-16 against the now-32px
+   padding-top), so it still lands at the same visual offset it has at every other width. */
+.up-root.is-vnarrow.up-ph-root,
+.up-root.is-vnarrow.up-sidebar-clear { padding-top: 32px; }
 .up-root.is-vnarrow .up-ph-addbtn { margin-top: -16px; }
