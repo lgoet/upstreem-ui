@@ -124,7 +124,7 @@
        has to sit at the same optical weight as "Prompt Research" or "Dashboard" does on theirs.
        The old clamp() made it drift between 25 and 31px with the viewport, which is why it never
        quite lined up with the other pages. */
-    font-size: 28px; line-height: 1;
+    font-size: 30px; line-height: 1;
     font-weight: 500; letter-spacing: -0.01em; color: var(--am-text);
     font-feature-settings: "liga" 1, "calt" 1;
   }

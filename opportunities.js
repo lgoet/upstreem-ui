@@ -138,7 +138,11 @@
     return '<span class="up-logo-box has-img"><img src="'+esc(url)+'" alt="" referrerpolicy="no-referrer" loading="lazy" ' +
            'onerror="this.remove();this.parentNode.classList.remove(\'has-img\')">'+ltr+'</span>';
   }
-  var POT_LABEL = { 1: 'Minimal', 2: 'Low', 3: 'Medium', 4: 'High' };
+  /* Every one of these is worth doing -- the bars rank them, they do not grade them. The old set
+     (Minimal / Low / Medium / High) told a user that two thirds of their board was not worth the
+     effort, which is the opposite of what a backlog of opportunities is for. Renamed so the low
+     end reads as "small, quick" rather than "not important". */
+  var POT_LABEL = { 1: 'Quick win', 2: 'Solid', 3: 'Strong', 4: 'Top priority' };
   function potBars(lvl){
     var bars = '';
     for (var i=1;i<=4;i++) bars += '<span class="uo-pot-bar p'+i+(i<=lvl?' is-on':'')+'"></span>';
@@ -507,17 +511,45 @@
      only lifted when NONE of the app's own drawers is open either, so closing this one cannot
      unlock the page underneath one of theirs. */
   var mainScrollTop = 0;
+  /* THE page could not be scrolled any more -- and this is why. The lock was applied to #main as a
+     bare class with no record of WHO applied it, and the release refused to run whenever any
+     [id^="drawer-"].open existed. Two ways that ends with a permanently dead page:
+       - a host drawer that is .open (or stale-.open) at release time: our lock stays forever;
+       - Bubble discards and rebuilds this element while the drawer is open: closeDetail never
+         runs, the new instance knows nothing about the old lock, and #main keeps it for the
+         rest of the session.
+     Now the lock is stamped with data-uo-locked, so we only ever release our OWN, and boot()
+     below clears a leftover before anything else happens. */
   function lockPageScroll(on){
     var main = document.getElementById('main');
     if (!main) return;
-    var locked = main.classList.contains('drawer-locked');
-    if (on && !locked){ mainScrollTop = main.scrollTop; main.classList.add('drawer-locked'); }
-    else if (!on && locked){
-      if (document.querySelector('[id^="drawer-"].open')) return;   // one of the app's own is still up
-      main.classList.remove('drawer-locked');
-      main.scrollTop = mainScrollTop;
+    var ours = main.getAttribute('data-uo-locked') != null;
+    if (on){
+      if (ours) return;
+      mainScrollTop = main.scrollTop;
+      main.setAttribute('data-uo-locked', String(mainScrollTop));
+      main.classList.add('drawer-locked');
+    } else if (ours){
+      var top = Number(main.getAttribute('data-uo-locked')) || mainScrollTop || 0;
+      main.removeAttribute('data-uo-locked');
+      /* A host drawer of its own is up: leave the CLASS in place, it is theirs to lift now -- but
+         drop our claim either way, or nothing will ever release it again. */
+      if (!document.querySelector('[id^="drawer-"].open')){
+        main.classList.remove('drawer-locked');
+        main.scrollTop = top;
+      }
     }
   }
+  /* A lock left behind by a previous instance of this component (Bubble rebuilt the element while
+     the drawer was open) would otherwise make the page permanently unscrollable. No detail can be
+     open at this point -- this runs while the controller is still being built -- so any stamp we
+     find here is stale by definition. */
+  (function releaseStaleLock(){
+    var main = document.getElementById('main');
+    if (!main || main.getAttribute('data-uo-locked') == null) return;
+    main.removeAttribute('data-uo-locked');
+    if (!document.querySelector('[id^="drawer-"].open')) main.classList.remove('drawer-locked');
+  })();
 
   /* ---------- status change ---------- */
   function setStatus(id, statusKey){

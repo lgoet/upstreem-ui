@@ -1053,7 +1053,14 @@
              (re-hiding it on every loading=yes made it flicker out on each reload), but a reload
              showing nothing but skeleton must not offer a filter over an empty table. */
       var showsRows = state.hasData && !!(state.rows || []).length;
-      elBrand.classList.toggle("is-visible", !!valid && state.hasData && (showsRows || !isBusy()));
+      /* PAGE-LOAD RULE (asked for repeatedly, and this is the line that broke it): with no data
+         before the load, the toggle stays hidden until loading has actually finished -- not the
+         moment the first rows appear. The old condition showed it as soon as rows existed, even
+         mid-load, so it flashed in, went again on the next loading tick, and came back at the
+         end. Once it has settled ONCE, a later reload keeps it put: a refresh must not make it
+         disappear and reappear either. */
+      if (!isBusy() && state.hasData) state.brandSettled = true;
+      elBrand.classList.toggle("is-visible", !!valid && state.hasData && !!state.brandSettled);
       if (!valid) return;
       elBrandLbl.textContent = name + " mentioned";
       if (logo && logo !== "BRAND_LOGO"){ elBrandLogo.src = logo; elBrandLogo.style.display = "block"; }

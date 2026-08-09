@@ -638,3 +638,9 @@
    page-header kit's own vertical padding is dropped here: this sits inside the component's shell,
    which already brings the page's top padding. */
 .upr-root .upr-pagehead { padding: 0 0 24px; }
+
+/* The button used to be the first thing on the page and carried the page's own top padding. The
+   page header now sits above it, so that padding would double up as a gap -- 16px is the standard
+   separation from the block above, matching the kit. */
+.upr-root .upr-pagehead + .upr-content .upr-history-entry,
+.upr-root .upr-history-entry { padding-top: 16px; }

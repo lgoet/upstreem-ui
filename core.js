@@ -4085,6 +4085,68 @@
     for (var i = 0; i < q.length; i++){ try { setTopics(q[i], "setUpstreemTopics (queued)"); } catch(e){} }
   })();
 
+  /* ---------------------------------------------------------------------------------------------
+     Page-wide theme. Same shape as the topic store above, for the same reason: one call, every
+     component follows, including ones that mount later.
+
+     Until now each component had its own way in -- a data-isdark attribute Bubble had to patch on
+     every single element, plus a handful of per-component setters (setVisibilityChartTheme,
+     opportunitiesSetTheme, setTopicsFilterTheme, ...). Miss one and that component keeps the old
+     theme while the rest of the page has already switched, which is exactly the "some components
+     keep the old theme" symptom. There is no list to keep in sync here: every .up-root on the page
+     gets stamped, and a MutationObserver stamps any that appear afterwards.
+
+     Attributes still win where they are set -- a component deliberately pinned to one theme keeps
+     working -- so this is additive. localStorage.pref_theme is written too, which is what
+     themeGuard already reads, so a Bubble re-render that repaints a root cannot undo it. */
+  var THEME = (window.__upTheme = window.__upTheme || { value: null, bound: false });
+
+  function applyThemeTo(el, dark){
+    if (!el || !el.classList || !el.classList.contains("up-root")) return;
+    if (dark) el.setAttribute("data-theme", "dark");
+    else el.removeAttribute("data-theme");
+    /* Components read data-isdark in their own MutationObservers; keeping it in step means every
+       existing per-component sync path fires too, without touching any of them. */
+    el.setAttribute("data-isdark", dark ? "yes" : "no");
+  }
+
+  function setUpstreemTheme(t){
+    var dark = /^dark$/i.test(String(t == null ? "" : t).trim());
+    THEME.value = dark ? "dark" : "light";
+    try { localStorage.setItem("pref_theme", THEME.value); } catch(e){}
+    var roots = document.querySelectorAll(".up-root");
+    for (var i = 0; i < roots.length; i++) applyThemeTo(roots[i], dark);
+    /* Portalled surfaces (opportunities' drawer, the topic modal) live in <body>, outside any
+       root, and carry the class themselves. */
+    var portals = document.querySelectorAll(".uo-portal, .up-portal, .upr-portal");
+    for (var p = 0; p < portals.length; p++) applyThemeTo(portals[p], dark);
+
+    /* Anything Bubble builds AFTER the switch -- a re-rendered element, a drawer opening -- would
+       otherwise come up in the old theme. One observer for the whole page, installed once. */
+    if (!THEME.bound){
+      THEME.bound = true;
+      new MutationObserver(function(muts){
+        if (THEME.value == null) return;
+        var isDark = THEME.value === "dark";
+        for (var m = 0; m < muts.length; m++){
+          var added = muts[m].addedNodes;
+          for (var n = 0; n < added.length; n++){
+            var el = added[n];
+            if (!el || el.nodeType !== 1) continue;
+            applyThemeTo(el, isDark);
+            var inner = el.querySelectorAll ? el.querySelectorAll(".up-root") : [];
+            for (var q = 0; q < inner.length; q++) applyThemeTo(inner[q], isDark);
+          }
+        }
+      }).observe(document.documentElement, { childList: true, subtree: true });
+    }
+    return THEME.value;
+  }
+  function getUpstreemTheme(){ return THEME.value || readPrefTheme() || "light"; }
+
+  window.setUpstreemTheme = setUpstreemTheme;
+  window.getUpstreemTheme = getUpstreemTheme;
+
   window.UpstreemCore = {
     upstreemSetTheme: upstreemSetTheme,
     readPrefTheme: readPrefTheme,
@@ -4113,6 +4175,8 @@
     onTopics: onTopics,
     topicsAge: topicsAge,
     topicsChanged: topicsChanged,
+    setUpstreemTheme: setUpstreemTheme,
+    getUpstreemTheme: getUpstreemTheme,
     highlight: highlight,
     redditTitleHtml: redditTitleHtml,
     esc: esc,

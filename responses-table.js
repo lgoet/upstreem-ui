@@ -848,7 +848,14 @@
       var logo = root.getAttribute("data-brand-logo") || "";
       var valid = name && name !== "BRAND_NAME";
       var showsRows = state.hasData && !!(state.rows || []).length;
-      elBrand.classList.toggle("is-visible", !!valid && state.hasData && (showsRows || !isBusy()));
+      /* PAGE-LOAD RULE (asked for repeatedly, and this is the line that broke it): with no data
+         before the load, the toggle stays hidden until loading has actually finished -- not the
+         moment the first rows appear. The old condition showed it as soon as rows existed, even
+         mid-load, so it flashed in, went again on the next loading tick, and came back at the
+         end. Once it has settled ONCE, a later reload keeps it put: a refresh must not make it
+         disappear and reappear either. */
+      if (!isBusy() && state.hasData) state.brandSettled = true;
+      elBrand.classList.toggle("is-visible", !!valid && state.hasData && !!state.brandSettled);
       if (!valid) return;
       elBrandLbl.textContent = name + " mentioned";
       if (logo && logo !== "BRAND_LOGO"){ elBrandLogo.src = logo; elBrandLogo.style.display = "block"; }

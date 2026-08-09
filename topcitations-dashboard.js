@@ -492,7 +492,14 @@
              reload showing nothing but skeleton must not offer a filter over an empty table. */
       var busy = state.loading || state.optimisticLoading;
       var showsRows = state.hasTable && !!activeRows().length;
-      brandToggle.classList.toggle("is-visible", hasBrand && state.hasTable && (showsRows || !busy));
+      /* PAGE-LOAD RULE (asked for repeatedly, and this is the line that broke it): with no data
+         before the load, the toggle stays hidden until loading has actually finished -- not the
+         moment the first rows appear. The old condition showed it as soon as rows existed, even
+         mid-load, so it flashed in, went again on the next loading tick, and came back at the
+         end. Once it has settled ONCE, a later reload keeps it put: a refresh must not make it
+         disappear and reappear either. */
+      if (!busy && state.hasTable) state.brandSettled = true;
+      brandToggle.classList.toggle("is-visible", hasBrand && state.hasTable && !!state.brandSettled);
       if (!hasBrand) return;
       var lbl = brandToggle.querySelector(".tcd-brand-label");
       var logo = brandToggle.querySelector(".tcd-brand-logo");

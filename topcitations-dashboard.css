@@ -169,3 +169,21 @@
 /* skeleton rows come from UC.skeletonRows and carry the shared .up-tsk marker */
 .tct-row.up-tsk { cursor: default; }
 .tct-row.up-tsk:hover { background: transparent; }
+
+/* ---------- chart-header Reset ----------
+   Built by topcitations-dashboard.js (so existing embeds pick it up without re-pasting markup),
+   but no rule was ever written for it: the class did not exist in this file, so the button was
+   unstyled AND permanently visible -- the is-visible class the script toggles had nothing to
+   toggle against. Shape copied from the filter menu's own Reset so the two read as one control. */
+.tcd-chart-reset {
+  display: none; align-items: center; gap: 6px;
+  height: 28px; padding: 0 10px;
+  border: 1px solid var(--vc-border); border-radius: 8px;
+  background: var(--vc-bg); color: var(--vc-muted);
+  font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1;
+  cursor: pointer; white-space: nowrap;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+.tcd-chart-reset.is-visible { display: inline-flex; }
+.tcd-chart-reset:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); color: var(--vc-text); }
+.tcd-chart-reset svg { width: 13px; height: 13px; flex: 0 0 13px; display: block; }

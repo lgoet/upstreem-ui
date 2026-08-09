@@ -73,6 +73,10 @@
 .utf-search-row { display: flex; align-items: stretch; gap: 8px; margin-bottom: 6px; }
 /* Geometry lives in core's .up-ddsearch now -- this class only survives as a hook
    for the has-text toggle the script sets. */
+/* The sorter's own positioning context. WITHOUT this, .utf-sort-menu (position:absolute) walks up
+   to the next positioned ancestor -- .utf-wrap, the whole dropdown -- and opens under the PANEL
+   instead of under its own button. */
+.utf-sort { position: relative; flex: 0 0 auto; }
 .utf-sort-btn {
   display: grid; place-items: center; width: 32px; height: 32px; padding: 0;
   border: 1px solid transparent; border-radius: 8px;
@@ -111,11 +115,14 @@
    the companies and types lists must stay quiet. This list is not one of those: a selected topic
    carries --up-sel-bg, which is the app-wide selected tone (55%/60%), same as the sorters.
    Scoped here rather than added to .up-filter-item for exactly that reason. */
-.utf-opt { min-height: 34px; }
+/* 8px extra on the right so the count clears the list's scrollbar. The scrollbar is an overlay
+   on macOS but a real, space-taking one everywhere else, and it sat straight on top of the
+   number. */
+.utf-opt { min-height: 34px; padding-right: 16px; }
 .utf-opt.is-checked, .utf-opt.is-cursor { background: var(--up-sel-bg); }
 .utf-opt-main { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; }
 /* Rounded SQUARE, 11px — a topic looks like this everywhere else in the product. */
-.utf-opt-dot { flex: 0 0 auto; width: 11px; height: 11px; border-radius: 3px; background: var(--utf-tc, var(--vc-muted)); }
+.utf-opt-dot { flex: 0 0 auto; width: 10px; height: 10px; border-radius: 5px; background: var(--utf-tc, var(--vc-muted)); }
 .utf-opt-emoji { flex: 0 0 auto; font-size: 14px; line-height: 1; }
 .utf-opt-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 500; }
 .utf-opt-count { flex: 0 0 auto; font-size: 12px; font-weight: 500; color: var(--vc-third); }
