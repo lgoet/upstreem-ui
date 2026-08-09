@@ -127,10 +127,13 @@
 
 /* ---------- list ---------- */
 .utf-list { display: flex; flex-direction: column; gap: 4px; max-height: 244px; overflow-y: auto; padding: 2px 0; }
-/* Geometry only. The row IS core's .up-filter-item -- hover, checkbox and checked state all come
-   from there, exactly like the companies and types dropdowns. */
+/* Geometry and the SELECTED BACKGROUND. The row is core's .up-filter-item, so the checkbox and
+   hover come from there -- but core deliberately gives that class no checked background, because
+   the companies and types lists must stay quiet. This list is not one of those: a selected topic
+   carries --up-sel-bg, which is the app-wide selected tone (55%/60%), same as the sorters.
+   Scoped here rather than added to .up-filter-item for exactly that reason. */
 .utf-opt { min-height: 34px; }
-.utf-opt.is-cursor { background: var(--up-sel-bg); }
+.utf-opt.is-checked, .utf-opt.is-cursor { background: var(--up-sel-bg); }
 .utf-opt-main { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; }
 /* Rounded SQUARE, 11px — a topic looks like this everywhere else in the product. */
 .utf-opt-dot { flex: 0 0 auto; width: 11px; height: 11px; border-radius: 3px; background: var(--utf-tc, var(--vc-muted)); }
@@ -142,17 +145,6 @@
 
 /* ---------- foot: Any/All + New Topic ---------- */
 .utf-foot { display: flex; align-items: center; gap: 10px; margin: 6px -10px 0; padding: 10px 10px 0; border-top: 1px solid var(--vc-border); }
-.utf-seg { display: inline-flex; align-items: center; height: 32px; padding: 0; gap: 0; border: 0; border-radius: 8px; background: var(--vc-heading-bg); }
-.utf-seg-opt {
-  height: 32px; padding: 0 13px; border: 1px solid transparent; border-radius: 8px; background: transparent;
-  color: var(--vc-muted); font-family: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
-  display: inline-flex; align-items: center;
-}
-.utf-seg-opt:hover { color: var(--vc-text); }
-/* The selected pill has to lift off the PANEL, and the panel is --up-menu-bg (#151515 in dark),
-   not --vc-bg (#1b1b1b) -- against that the old value was almost invisible. --vc-heading-bg is
-   the app's raised-surface tone and works in both themes. */
-.utf-seg-opt.is-on { background: var(--vc-heading-bg); color: var(--vc-text); border-color: var(--vc-border); }
 .utf-new {
   margin-left: auto; height: 32px; padding: 0 11px; border: 1px solid var(--vc-border); border-radius: 8px;
   background: var(--vc-bg); color: var(--vc-text);
@@ -168,5 +160,4 @@
   .utf-list { max-height: 216px; }
 }
 @media (prefers-reduced-motion: reduce){
-  .utf-menu, .utf-trigger, .utf-seg-opt { transition: none; }
-}
+  .utf-menu, .utf-trigger, }

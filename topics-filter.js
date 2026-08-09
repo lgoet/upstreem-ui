@@ -37,7 +37,9 @@
     /* The sorter glyph the rest of the app uses -- lines narrowing toward the CENTRE, not
         left-aligned. Copied from prompts-table's GRPSIDE_SORT_ICON rather than drawn again. */
     sort: '<svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>',
-    check: '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>',
+    /* core's CHECK_SVG verbatim -- same glyph and the same stroke-width the companies and types
+       checkboxes draw, so the tick cannot look "a bit different" next to them. */
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
     cbOff: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/></svg>',
     cbOn:  '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M17.2 8.8 10.4 15.6 6.8 12" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     plus: '<svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'
@@ -176,9 +178,11 @@
           '</div>' +
           '<div class="utf-list" role="listbox" aria-multiselectable="true"></div>' +
           '<div class="utf-foot">' +
-            '<span class="utf-seg" role="group" aria-label="Match mode">' +
-              '<button class="utf-seg-opt" type="button" data-mode="or">Or</button>' +
-              '<button class="utf-seg-opt" type="button" data-mode="and">And</button>' +
+            /* core's .up-seg / .up-seg-btn -- the app's switcher, not a copy of it. The copy is
+               exactly why this ended up with a dark-mode selected colour no other switcher has. */
+            '<span class="up-seg" role="group" aria-label="Match mode">' +
+              '<button class="up-seg-btn" type="button" data-mode="or">Or</button>' +
+              '<button class="up-seg-btn" type="button" data-mode="and">And</button>' +
             '</span>' +
             '<button class="utf-new" type="button">' + ICON.plus + '<span>New Topic</span></button>' +
           '</div>' +
@@ -279,9 +283,9 @@
       /* Always live. It was disabled below two selections, but the mode is a persistent setting
          the user may want to set before picking anything -- and a control that greys itself out
          reads as broken. */
-      var opts = elMode.querySelectorAll(".utf-seg-opt");
+      var opts = elMode.querySelectorAll(".up-seg-btn");
       for (var i = 0; i < opts.length; i++) {
-        opts[i].classList.toggle("is-on", opts[i].getAttribute("data-mode") === mode);
+        opts[i].classList.toggle("is-active", opts[i].getAttribute("data-mode") === mode);
       }
     }
     function render() { renderList(); renderTrigger(); renderMode(); renderSortMenu(); }
