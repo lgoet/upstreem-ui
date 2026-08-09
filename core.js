@@ -4185,6 +4185,16 @@
   window.setUpstreemTheme = setUpstreemTheme;
   window.getUpstreemTheme = getUpstreemTheme;
 
+  /* Adopt the stored theme at LOAD, not only when a page calls setUpstreemTheme. Bubble rebuilds
+     an HTML element whenever a workflow touches its data -- selecting a topic rebuilds the date
+     picker sitting next to it -- and for the frame between insertion and Bubble resolving
+     data-isdark, the fresh root has no theme at all and paints light. In dark mode that is a white
+     flash on every single click. Binding here means the observer is already watching, so a root
+     that appears is stamped in the same task it is inserted, before it can be painted. */
+  try {
+    if (readPrefTheme() === "dark" && THEME.value == null) setUpstreemTheme("dark");
+  } catch(e){}
+
   window.UpstreemCore = {
     upstreemSetTheme: upstreemSetTheme,
     readPrefTheme: readPrefTheme,

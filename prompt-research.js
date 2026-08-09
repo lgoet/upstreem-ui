@@ -155,6 +155,15 @@
     setTimeout(liftHistoryButton, 0);
     setTimeout(liftHistoryButton, 400);
 
+    /* data-head-top="0" (or any CSS length) trims the space above the meta row, for a placement
+       where the Bubble element already brings its own top spacing. Default stays 16px, the value
+       core.css gives every page header. */
+    (function headTop(){
+      var v = (root.getAttribute("data-head-top") || "").trim();
+      if (!v) return;
+      root.style.setProperty("--upr-head-top", /^-?[0-9.]+$/.test(v) ? v + "px" : v);
+    })();
+
     /* Top-left of the page is this component's, so it carries the mobile sidebar clearance. */
     root.classList.add("up-sidebar-clear");
     if (UC.widthTiers) UC.widthTiers(root);

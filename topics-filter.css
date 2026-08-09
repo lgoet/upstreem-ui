@@ -43,7 +43,10 @@
   background: var(--vc-text); color: var(--up-menu-bg);
   font-size: 10px; font-weight: 500; line-height: 1; font-variant-numeric: tabular-nums;
 }
-.utf-root.is-processing .utf-trigger { pointer-events: none; }
+/* Shows that something is running WITHOUT taking the control away -- see the comment in
+   topics-filter.js. A hard pointer-events lock here meant one stuck data-isprocessing="yes"
+   bricked the dropdown for the whole session. */
+.utf-root.is-processing .utf-trigger { opacity: 0.72; }
 
 /* ---------- panel ----------
    Geometry taken from the app's existing topics dropdown (Mira's report filter), not invented:

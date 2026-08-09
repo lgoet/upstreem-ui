@@ -429,8 +429,17 @@
       if (wantDark !== isDark) { isDark = wantDark; }
       if (isDark) root.setAttribute("data-theme", "dark");
       else if (root.getAttribute("data-theme") !== "dark" || root.hasAttribute("data-isdark")) root.removeAttribute("data-theme");
+      /* is-processing is now PURELY cosmetic -- it neither closes the panel nor blocks a click.
+         Both of those were here and both were wrong for this control:
+           - closing on processing meant the panel shut on every single selection, because Bubble
+             flips the flag the moment the RPC starts. Picking three topics in a row was
+             impossible; the second click landed on a panel that had just closed.
+           - pointer-events:none on the trigger turned a stuck flag into a dead component. If
+             Bubble ever failed to set it back to "no" -- one missed workflow branch -- the
+             dropdown could not even be opened again for the rest of the session.
+         Neither is needed: emit() always sends the COMPLETE selection, never a delta, so a click
+         that lands mid-refresh cannot desync anything. The next click states the full truth again. */
       root.classList.toggle("is-processing", isYes(root.getAttribute("data-isprocessing")));
-      if (isYes(root.getAttribute("data-isprocessing"))) setOpen(false);
     }
     /* Own observer: core has watchRoots for elements appearing, but no shared attribute watcher,
        and Bubble delivers theme and busy state purely as attribute writes. */

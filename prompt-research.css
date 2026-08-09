@@ -637,9 +637,13 @@
    stays identical to the page headers on every other page without repeating their values. The
    page-header kit's own vertical padding is dropped here: this sits inside the component's shell,
    which already brings the page's top padding. */
-/* 16px above, matching core.css's .up-ph-root padding -- the heading block sat flush against
-   the top of the element while every page header in the app starts 16px down. */
-.upr-root .upr-pagehead { padding: 16px 0 24px; }
+/* 16px above, matching core.css's .up-ph-root padding. Measured side by side against a real
+   prompts-page-header in the same document: meta at 16px, heading at 60px, description at 139px
+   from the root's top edge -- identical numbers on both. If it still sits lower on the live page,
+   the extra comes from the Bubble element's OWN top spacing above this component, which nothing in
+   here can see; --upr-head-top is the knob for that, settable per placement via data-head-top. */
+.upr-root { --upr-head-top: 16px; }
+.upr-root .upr-pagehead { padding: var(--upr-head-top) 0 24px; }
 
 /* The button used to be the first thing on the page and carried the page's own top padding. The
    page header now sits above it, so that padding would double up as a gap -- 16px is the standard
