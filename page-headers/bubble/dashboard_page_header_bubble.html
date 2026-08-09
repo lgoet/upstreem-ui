@@ -53,6 +53,30 @@
       "runs_with_sentiment_prev": 22
     }]);
 
+  ⚠ EMPTY DYNAMIC VALUES — WRAP THE ARRAY IN QUOTES
+  ─────────────────────────────────────────────────
+  Bubble builds this step as TEXT. If a dynamic expression is empty (no previous period yet, a
+  brand with no runs, …) it leaves NOTHING behind, and the step reaches the browser as:
+
+    setDashboardPageHeaderKpis("ROOTID_xyz123", [{ "avg_rank": 3.51, "avg_rank_prev": , … }]);
+                                                                                     ↑
+                                        a JavaScript SYNTAX ERROR — "Unexpected token ','"
+
+  That kills the whole step before this component gets a say, so no CDN version can fix it from
+  the inside. The fix is one pair of quotes — turn the array from executable code into inert data:
+
+    setDashboardPageHeaderKpis("ROOTID_xyz123", "[{ \"avg_rank\": 3.51, \"avg_rank_prev\": , … }]");
+                                                ↑                                              ↑
+
+  The component then hands the string to UC.parseLoose (core.js), which fills every empty value
+  with null and also repairs the other four things Bubble does to a string: NBSP indentation,
+  curly quotes, HTML entities, and unquoted keys. A missing number simply renders no trend chip
+  instead of taking the page down.
+
+  In the Bubble editor the quotes go around the whole bracket expression in the step's text —
+  everything else stays exactly as it is. Passing a real array still works unchanged, so this is
+  worth doing only where empty values are actually possible.
+
   Only the first array element is read (kpis[0]) — every other field in it besides the six above
   (avg_visibility_pct/_delta_pct, avg_rank/_delta, avg_sentiment/_delta) is accepted but currently
   unused by this component; pass the whole object anyway so a future KPI can be added here without

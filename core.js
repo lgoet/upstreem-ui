@@ -53,6 +53,102 @@
   }
 
   function isYes(v){ return /^(1|true|yes|y)$/i.test(String(v == null ? "" : v).trim()); }
+
+  /* ---------------------------------------------------------------------------------------------
+     parseLoose(raw, label) -- parse a string Bubble built, not a string a JSON encoder built.
+
+     Every payload that arrives as text from a Bubble expression has been damaged in one of five
+     ways, and FOUR of them fail with the byte-identical message at the byte-identical position
+     ("Expected property name or '}' at line 2 column 5"), so the error alone can never tell them
+     apart. That cost several wrong diagnoses on the topics seed before a code-point dump settled
+     it. The five, in the order they are undone here:
+
+       1. BOM / NBSP / zero-width -- Bubble pretty-prints its indent with U+00A0, and JSON.parse
+          accepts only space, tab, CR, LF as whitespace.
+       2. Curly quotes -- Bubble's editor turns " into a typographic pair.
+       3. HTML entities -- a dynamic value dropped into markup arrives with &quot; and friends, and
+          the content of a <script> block is raw text the browser never decodes on its own.
+          Decoded through a textarea, i.e. the browser's own entity table, not a hand-written list.
+       4. Bare keys -- Bubble emits a JS OBJECT LITERAL: [{ id: "0e62", name: "SHK" }].
+       5. EMPTY VALUES -- an unfilled dynamic expression leaves nothing at all behind:
+          {"avg_rank_prev": , "x": 3}. This one is not even a repair of JSON, it is a repair of a
+          JS syntax error, and it is the reason a Run-JavaScript step can blow up before a single
+          line of component code runs. Filled with null.
+
+     Repairs 4 and 5 only ever run AFTER a strict parse has already failed, and the result is only
+     kept if the repaired text parses -- so well-formed JSON is never touched, and a genuinely
+     broken payload still reports its ORIGINAL error rather than a confusing second one. Returns
+     null and warns (with the code-point dump) when nothing works. Arrays/objects pass straight
+     through, so a caller can accept both shapes without branching. */
+  function parseLoose(raw, label){
+    if (raw == null) return null;
+    if (typeof raw === "object") return raw;               // already a value, nothing to parse
+    var s = String(raw)
+      /* Written as \u escapes on purpose: these characters are INVISIBLE, and a literal NBSP
+         or BOM sitting in this source file is one careless editor save away from disappearing
+         and taking the repair with it. */
+      .replace(/^\uFEFF/, "")
+      .replace(/[\u00A0\u2000-\u200D\u202F\u205F\u3000]/g, " ")
+      .replace(/[\u201C\u201D\u201E\u201F\u2033]/g, '"')
+      .replace(/[\u2018\u2019\u201A\u201B\u2032]/g, "'")
+      .trim();
+    if (!s) return null;
+    if (s.indexOf("&") >= 0){
+      var dec = document.createElement("textarea");
+      dec.innerHTML = s;
+      s = String(dec.value || s).trim();
+    }
+    /* Repairs 4 and 5 rewrite STRUCTURE, so they must never look inside a string VALUE -- a topic
+       named "Heating: , Solar" or a prompt text that ends in a colon would otherwise be silently
+       corrupted by the empty-value rule, and silently is the worst way for that to go wrong. So
+       walk the text once and split it into string literals (copied verbatim, backslash escapes
+       respected) and everything else; the regexes only ever see the everything-else. A plain
+       global .replace() cannot make that distinction. */
+    function fixCode(t){
+      return t
+        /* Bare keys -> quoted keys. */
+        .replace(/([{,]\s*)([A-Za-z_$][A-Za-z0-9_$]*)\s*:/g, '$1"$2":')
+        /* Empty value before the next comma or the closing brace/bracket -> null. */
+        .replace(/:\s*(?=[,}\]])/g, ": null")
+        /* Trailing comma left behind when the LAST value was the empty one. */
+        .replace(/,\s*(?=[}\]])/g, "");
+    }
+    function repair(t){
+      var out = "", buf = "", i = 0, n = t.length;
+      while (i < n){
+        if (t.charAt(i) === '"'){
+          var j = i + 1;
+          while (j < n){
+            var c = t.charAt(j);
+            if (c === "\\"){ j += 2; continue; }
+            j++;
+            if (c === '"') break;
+          }
+          out += fixCode(buf); buf = "";
+          out += t.slice(i, j);
+          i = j;
+        } else { buf += t.charAt(i); i++; }
+      }
+      return out + fixCode(buf);
+    }
+    try {
+      try { return JSON.parse(s); }
+      catch (strictErr){
+        try { return JSON.parse(repair(s)); }
+        catch (repairErr){ throw strictErr; }
+      }
+    } catch (e){
+      if (window.console){
+        var head = s.slice(0, 48), codes = [];
+        for (var ci = 0; ci < head.length && ci < 24; ci++) codes.push(head.charCodeAt(ci));
+        console.warn("[" + (label || "upstreem") + "] payload is not valid JSON — ignored: " + e.message +
+          "\n  first chars: " + JSON.stringify(head) +
+          "\n  char codes:  " + codes.join(" "));
+      }
+      return null;
+    }
+  }
+
   /* Wraps every occurrence of the active query in <mark>. Escapes FIRST, then inserts the
      markup — doing it the other way round would let a crafted domain inject HTML. */
   function highlight(text, q){
@@ -3848,6 +3944,7 @@
     DEFAULT_PAGE_SIZE: DEFAULT_PAGE_SIZE,
     fmtTotal: fmtTotal,
     isYes: isYes,
+    parseLoose: parseLoose,
     highlight: highlight,
     redditTitleHtml: redditTitleHtml,
     esc: esc,

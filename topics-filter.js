@@ -93,64 +93,12 @@
     var seedEl = root.querySelector(".utf-topics-json");
     if (seedEl) {
       var raw = String(seedEl.textContent || "").trim();
-      /* Bubble HTML-escapes the dynamic value it drops in here, so every " arrives as &quot; --
-         and the content of a <script> element is raw text, which the browser never entity-decodes
-         on its own. The result parses to "Expected property name" at the first key. A textarea
-         does the decoding with the browser's own table, so &quot; &amp; &#39; and the rest are all
-         covered rather than a hand-written list of the ones I happened to think of. */
-      /* Bubble pretty-prints with NON-BREAKING spaces (U+00A0) in the indent, and JSON.parse
-         accepts only plain space/tab/CR/LF as whitespace -- that is the "Expected property name at
-         line 2 column 5" this kept failing on, at the first indented key. A BOM and the invisible
-         word-joiners Bubble's editor sometimes leaves behind do the same. Normalised here before
-         anything else looks at the string. */
-      raw = raw.replace(/^\uFEFF/, "").replace(/[\u00A0\u2000-\u200D\u202F\u205F\u3000]/g, " ")
-               /* Curly quotes. Bubble's editor turns " into a typographic pair, and JSON.parse
-                  only accepts the straight one -- which fails with the exact same "Expected
-                  property name" at the first key that NBSP indentation produces, so the message
-                  alone cannot tell the two apart. Both are normalised now. */
-               .replace(/[\u201C\u201D\u201E\u201F\u2033]/g, '"')
-               .replace(/[\u2018\u2019\u201A\u201B\u2032]/g, "'")
-               .trim();
-      if (raw.indexOf("&") >= 0) {
-        var dec = document.createElement("textarea");
-        dec.innerHTML = raw;
-        raw = String(dec.value || raw).trim();
-      }
-      if (raw && raw.indexOf("TOPICS_JSON") < 0) {          // untouched placeholder = not filled in yet
-        /* Bubble emits a JS OBJECT LITERAL, not JSON: the keys carry no quotes at all
-           ([{ id: "0e62...", name: "SHK" }]). JSON.parse rejects that at the very first key, which
-           is the "Expected property name" this kept failing on -- and the message is identical to
-           the one an NBSP indent or a curly quote produces, which is why it took a code-point dump
-           to see. Quote the bare keys and parse again.
-           Only ever attempted AFTER a strict parse has already failed, and only kept if the repair
-           itself parses -- so well-formed JSON is never touched by this, and a genuinely broken
-           payload still reports its original error rather than a confusing second one. */
-        function quoteBareKeys(t) {
-          return t.replace(/([{,]\s*)([A-Za-z_$][A-Za-z0-9_$]*)\s*:/g, '$1"$2":');
-        }
-        try {
-          try { seeded = JSON.parse(raw); }
-          catch (strictErr) {
-            /* Strict parse failed -- try the repair, but report the ORIGINAL error if the repair
-               does not parse either, so a genuinely malformed payload is not disguised. */
-            try { seeded = JSON.parse(quoteBareKeys(raw)); }
-            catch (repairErr) { throw strictErr; }
-          }
-        }
-        catch (e) {
-          if (window.console) {
-            /* The message alone has now cost several rounds: three different characters produce
-               the identical "Expected property name" at the identical position. So dump the head
-               of the string WITH code points -- that names the culprit outright instead of
-               leaving it to be guessed at. */
-            var head = raw.slice(0, 48), codes = [];
-            for (var ci = 0; ci < head.length && ci < 24; ci++) codes.push(head.charCodeAt(ci));
-            console.warn("[topics-filter] the embedded topics JSON of \"" + instanceId +
-              "\" is not valid JSON — ignored:", e.message,
-              "\n  first chars: " + JSON.stringify(head),
-              "\n  char codes:  " + codes.join(" "));
-          }
-        }
+      /* Repair + parse live in core as UC.parseLoose -- this is not the only place a Bubble-built
+         string arrives (dashboard-page-header takes its KPI array the same way), and the five
+         kinds of damage Bubble does to such a string are worth fixing in exactly one place.
+         Untouched placeholder = the element was pasted but never filled in, which is not an error. */
+      if (raw && raw.indexOf("TOPICS_JSON") < 0) {
+        seeded = UC.parseLoose ? UC.parseLoose(raw, "topics-filter " + instanceId) : null;
       }
     }
 

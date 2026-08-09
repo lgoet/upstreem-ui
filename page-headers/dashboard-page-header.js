@@ -74,12 +74,25 @@
     return initRoot(r[0]);
   }
 
+  /* kpis may arrive as a real array OR as a STRING holding one. The string form exists because
+     Bubble builds the Run-JavaScript step as text: an unfilled dynamic expression leaves nothing
+     at all behind, so setDashboardPageHeaderKpis("id", [{"avg_rank_prev": , ...}]) reaches the
+     browser as a JS SYNTAX ERROR and the whole step dies before this file gets a say. Quoting the
+     array turns that from executable code into inert data, and UC.parseLoose puts the missing
+     values back as null (plus the usual Bubble damage: NBSP indents, curly quotes, entities,
+     unquoted keys). Passing a real array still works exactly as before -- parseLoose returns
+     objects untouched -- so nothing that already works needs changing. */
   function doSetKpis(id, kpis){
     var ctrl = resolve(id);
     if (!ctrl) return false;
-    ctrl.setKpis(kpis);
+    var list = UC.parseLoose ? UC.parseLoose(kpis, "dashboard-page-header") : kpis;
+    /* A single object instead of a one-element array is the other shape Bubble hands over easily;
+       accept it rather than render an empty strip over a punctuation detail. */
+    if (list && !isArr(list)) list = [list];
+    ctrl.setKpis(list);
     return true;
   }
+  function isArr(v){ return Object.prototype.toString.call(v) === "[object Array]"; }
 
   /* One controller object per root, cached on the root itself (ctrlProp) so a second resolve()
      call against the same still-live root reuses it instead of re-wiring listeners. */
