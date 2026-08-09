@@ -118,15 +118,23 @@
      data-isprocessing="IS_PROCESSING"
      data-topics-fn="bubble_fn_utfTopics"
      data-newtopic-fn="bubble_fn_utfNewTopic">
-  <!-- ── TOPICS HIER EINSETZEN ────────────────────────────────────────────────
-       Replace TOPICS_JSON below with the dynamic value of your topics RPC (the field that
-       returns the list as text). No quotes around it, no escaping — type="application/json"
-       means the browser never executes this, so a topic name may contain quotes, apostrophes
-       or slashes without breaking anything. That is the whole reason it lives here instead of
-       inside a Run-JavaScript call.
-       Left as-is (still saying TOPICS_JSON) it is simply ignored, and you can feed the list
-       with setTopicsFilterTopics() instead. A later setTopicsFilterTopics() always replaces
-       whatever was seeded here.
+  <!-- ── OPTIONAL, und normalerweise LEER LASSEN ──────────────────────────────
+       Since the page-wide store exists, this element needs NO topics input of its own. Leave
+       TOPICS_JSON standing (it is then ignored) or delete the line entirely, and let the page's
+       "Load Topics" event call setUpstreemTopics() -- see the header of this file. That is one
+       expression on the page instead of one per placement, and it is the only version that also
+       reaches pickers Bubble has not built yet.
+
+       Filling it in is still allowed and does exactly one thing: it paints a list before the
+       first setUpstreemTopics() arrives. Worth it only where there is no RPC at all, e.g. a page
+       carrying a fixed list. Be aware the seed does NOT resolve any earlier than the RPC does --
+       it is a Bubble dynamic expression like any other -- so on a normal page it mostly buys a
+       brief flash of whatever the list looked like at page build. The store always wins once it
+       has a value.
+
+       If you do fill it: no quotes around it, no escaping. type="application/json" means the
+       browser never executes this, so a topic name may contain quotes, apostrophes or slashes
+       without breaking anything.
        Shape: [{id, name, emoji, hex_light, hex_dark, is_active, created_at, prompt_count}, ...]
        ──────────────────────────────────────────────────────────────────────── -->
   <script class="utf-topics-json" type="application/json">TOPICS_JSON</script>
