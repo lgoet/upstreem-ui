@@ -53,29 +53,37 @@
       "runs_with_sentiment_prev": 22
     }]);
 
-  ⚠ EMPTY DYNAMIC VALUES — WRAP THE ARRAY IN QUOTES
-  ─────────────────────────────────────────────────
-  Bubble builds this step as TEXT. If a dynamic expression is empty (no previous period yet, a
-  brand with no runs, …) it leaves NOTHING behind, and the step reaches the browser as:
+  ⚠ EMPTY DYNAMIC VALUES — WRAP THE ARRAY IN BACKTICKS
+  ───────────────────────────────────────────────
+  Bubble builds this step as TEXT. An empty dynamic expression leaves NOTHING behind, so the step
+  reaches the browser as a JavaScript SYNTAX ERROR and dies before this component gets a say:
 
     setDashboardPageHeaderKpis("ROOTID_xyz123", [{ "avg_rank": 3.51, "avg_rank_prev": , … }]);
                                                                                      ↑
-                                        a JavaScript SYNTAX ERROR — "Unexpected token ','"
+                                                              SyntaxError: Unexpected token ','
 
-  That kills the whole step before this component gets a say, so no CDN version can fix it from
-  the inside. The fix is one pair of quotes — turn the array from executable code into inert data:
+  The fix is to make the array a STRING instead of code — but it has to be a BACKTICK string:
 
-    setDashboardPageHeaderKpis("ROOTID_xyz123", "[{ \"avg_rank\": 3.51, \"avg_rank_prev\": , … }]");
-                                                ↑                                              ↑
+    setDashboardPageHeaderKpis("ROOTID_xyz123", `[{
+      "avg_rank": 3.51, "avg_rank_prev": , …
+    }]`);
 
-  The component then hands the string to UC.parseLoose (core.js), which fills every empty value
-  with null and also repairs the other four things Bubble does to a string: NBSP indentation,
-  curly quotes, HTML entities, and unquoted keys. A missing number simply renders no trend chip
-  instead of taking the page down.
+  Two reasons quotes do not work here, both verified against the real payload:
+    • "…" and '…' END at the first matching quote inside, and this payload is full of them
+      (every JSON key carries a pair). → SyntaxError: Invalid or unexpected token
+    • A quoted JS string cannot span LINES at all, and Bubble pretty-prints the array across
+      several. → the same error, even with every inner quote escaped.
+  A backtick string has neither limit: it survives newlines and contains " freely. Nothing inside
+  the array needs escaping — paste it exactly as Bubble produced it, backticks around the whole
+  bracket expression and nothing else changed.
 
-  In the Bubble editor the quotes go around the whole bracket expression in the step's text —
-  everything else stays exactly as it is. Passing a real array still works unchanged, so this is
-  worth doing only where empty values are actually possible.
+  The component then hands the string to UC.parseLoose (core.js), which fills each empty value
+  with null and repairs the other four things Bubble does to such a string: NBSP indentation,
+  curly quotes, HTML entities, unquoted keys. A missing number simply renders no trend chip
+  instead of taking the page down. Passing a real array still works unchanged.
+
+  (Only caveat, and it cannot arise here: a backtick or a ${ } sequence INSIDE a value would end
+  the string early. KPI values are numbers and short flags, so there is nothing to hit.)
 
   Only the first array element is read (kpis[0]) — every other field in it besides the six above
   (avg_visibility_pct/_delta_pct, avg_rank/_delta, avg_sentiment/_delta) is accepted but currently
