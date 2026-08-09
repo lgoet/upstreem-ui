@@ -305,14 +305,19 @@
     .up-filter-title { font-size: 11px; font-weight: 600; color: var(--vc-muted); text-transform: uppercase; letter-spacing: 0.04em; }
     .up-filter-reset { border: 0; background: transparent; color: var(--vc-muted); font-family: inherit; font-size: 11px; font-weight: 500; cursor: pointer; padding: 2px 4px; border-radius: 6px; }
     .up-filter-reset:hover { color: var(--vc-text); }
-    .up-filter-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+    /* 4px between rows in every dropdown list. Was 2px here and something different in each
+       component -- one number, one place. */
+    .up-filter-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
     .up-filter-item { display: flex; align-items: center; gap: 10px; padding: 6px 9px; border-radius: 8px; cursor: pointer; min-width: 0; }
     .up-filter-item:hover { background: var(--vc-heading-bg); }
     .up-filter-check { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #fff; }
+    /* display:block, not inline: an inline SVG sits on the text baseline, which pushes the tick a
+       little low inside the 16px box -- the "not quite vertically centred" report. block + the
+       flex centring on the parent puts it on the true middle. */
     .up-filter-check svg { width: 11px; height: 11px; display: none; }
+    .up-filter-item.is-checked .up-filter-check svg { display: block; }
     .up-filter-item.is-checked .up-filter-check { background: var(--vc-text); border-color: var(--vc-text); }
     .up-root[data-theme="dark"] .up-filter-item.is-checked .up-filter-check { color: #1f1f1b; }
-    .up-filter-item.is-checked .up-filter-check svg { display: block; }
     /* the dropdown shows the SAME chip the table uses — identical to TopCitations, so a type
        looks the same wherever it appears */
     .up-filter-tag { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 7px;
@@ -413,6 +418,7 @@
       font-family: inherit; text-align: left; cursor: pointer;
     }
     .up-optrow:hover, .up-optrow.is-on { background: var(--up-sel-bg); }
+    .up-optrow + .up-optrow { margin-top: 4px; }
     /* 16x16 check, hard right -- the mark the component sorters already use. */
     .up-optrow-check { margin-left: auto; width: 16px; height: 16px; flex: 0 0 16px; display: grid; place-items: center; color: var(--vc-text); opacity: 0; }
     .up-optrow.is-on .up-optrow-check { opacity: 1; }

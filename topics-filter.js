@@ -211,12 +211,10 @@
         if (sortKey === "new")  return String(b.created_at || "").localeCompare(String(a.created_at || ""));
         return toNum(b.prompt_count) - toNum(a.prompt_count);
       });
-      /* Selected first, and stable within each block. Without this the topic you just ticked
-         jumps somewhere else the moment you type, which is the single most common annoyance in
-         filter dropdowns of this shape. */
-      var on = [], off = [];
-      list.forEach(function (t) { (isSel(t.id) ? on : off).push(t); });
-      return { on: on, off: off, all: on.concat(off) };
+      /* Order stays exactly as sorted -- ticking a topic must NOT move it. The companies and
+         types dropdowns behave this way and they are the reference; a row jumping out from under
+         the cursor is worse than having the selection spread through the list. */
+      return { on: [], off: list, all: list };
     }
 
     /* ---------------- render ---------------- */
@@ -235,15 +233,18 @@
          foreign. Emoji replaces the chip when the topic has one, same as Mira. */
       var mark = t.emoji ? '<span class="utf-opt-emoji">' + esc(t.emoji) + '</span>'
                          : '<span class="utf-opt-dot"></span>';
-      return '<button class="utf-opt' + (on ? " is-on" : "") + (idx === cursor ? " is-cursor" : "") +
-             '" type="button" role="option" aria-selected="' + (on ? "true" : "false") +
+      /* .up-filter-item / .up-filter-check straight from core -- the SAME checkbox the companies
+         and types dropdowns use, in both themes. Drawing an own one was the mistake: it looked
+         close in light mode and wrong in dark, because core flips the tick colour there. */
+      return '<div class="up-filter-item utf-opt' + (on ? " is-checked" : "") + (idx === cursor ? " is-cursor" : "") +
+             '" role="option" tabindex="0" aria-selected="' + (on ? "true" : "false") +
              '" data-id="' + esc(t.id) + '" data-idx="' + idx + '" style="--utf-tc:' + esc(hex(t)) + '">' +
-               '<span class="utf-opt-cb">' + (on ? ICON.cbOn : ICON.cbOff) + '</span>' +
+               '<span class="up-filter-check">' + ICON.check + '</span>' +
                '<span class="utf-opt-main">' + mark +
                  '<span class="utf-opt-name">' + esc(t.name) + '</span>' +
                '</span>' +
                '<span class="utf-opt-count">' + toNum(t.prompt_count) + '</span>' +
-             '</button>';
+             '</div>';
     }
     function renderList() {
       var v = visible();
@@ -252,9 +253,7 @@
         return;
       }
       var i = 0, html = "";
-      v.on.forEach(function (t) { html += optHtml(t, i++); });
-      if (v.on.length && v.off.length) html += '<div class="utf-pinsep"></div>';
-      v.off.forEach(function (t) { html += optHtml(t, i++); });
+      v.all.forEach(function (t) { html += optHtml(t, i++); });
       elList.innerHTML = html;
     }
     function renderTrigger() {
@@ -277,9 +276,9 @@
       }
     }
     function renderMode() {
-      /* Idle below two selections: with one topic "Any" and "All" produce the same rows, so the
-         control shows its state without inviting a choice that does nothing. */
-      elMode.classList.toggle("is-idle", selected.length < 2);
+      /* Always live. It was disabled below two selections, but the mode is a persistent setting
+         the user may want to set before picking anything -- and a control that greys itself out
+         reads as broken. */
       var opts = elMode.querySelectorAll(".utf-seg-opt");
       for (var i = 0; i < opts.length; i++) {
         opts[i].classList.toggle("is-on", opts[i].getAttribute("data-mode") === mode);
@@ -298,7 +297,7 @@
       var payload = {
         instance_id: instanceId,
         topic_ids: selected.join(","),
-        tag_mode: selected.length > 1 ? mode : "or",
+        tag_mode: mode,
         count: selected.length
       };
       var name = root.getAttribute("data-topics-fn") || "utfTopics";
