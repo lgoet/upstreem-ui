@@ -214,9 +214,15 @@
         if (mode === "edit" && topic) payload.id = String(topic.id);
         fire(mode === "edit" ? "data-edit-fn" : "data-add-fn",
              mode === "edit" ? "bubble_fn_utmEdit" : "bubble_fn_utmAdd", payload);
+        /* Bubble saves this, then re-runs the topics RPC and calls setUpstreemTopics --
+           which is what refreshes every topic picker on the page, here and elsewhere. */
+        if (UC.topicsChanged) UC.topicsChanged();
       },
       onDelete: function(topic){
         fire("data-delete-fn", "bubble_fn_utmDelete", { id: String(topic.id) });
+        /* Bubble saves this, then re-runs the topics RPC and calls setUpstreemTopics --
+           which is what refreshes every topic picker on the page, here and elsewhere. */
+        if (UC.topicsChanged) UC.topicsChanged();
       }
     });
 

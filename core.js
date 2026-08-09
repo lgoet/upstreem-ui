@@ -3974,6 +3974,91 @@
     }, true);
   }
 
+  /* ---------------------------------------------------------------------------------------------
+     Topic store -- ONE list of topics per page, shared by every picker on it.
+
+     Before this, each topics dropdown was fed individually: setTopicsFilterTopics(instanceId, ...)
+     once per instance, which meant the Bubble workflow had to name every placement and had to be
+     edited again whenever a new one appeared. Worse, it could only reach instances that already
+     existed: Bubble re-renders its HTML elements repeatedly while dynamic expressions resolve
+     (measured: three boots across ~8s), and anything inside a drawer is not built until the drawer
+     opens -- those placements simply missed the call and stayed empty.
+
+     A store fixes both. Bubble calls setUpstreemTopics(list) ONCE, no instance id. Consumers read
+     getTopics() when they mount -- whenever that happens to be -- and subscribe for later updates.
+
+     Lives on window, not in this closure: two elements with different data-cdn-pin values load
+     core.js twice, and two stores would put half the page's dropdowns on stale data. Same lesson
+     the dropdown registry above already cost.
+
+     Invalidation runs the other way: topicsChanged() calls a single well-known Bubble function,
+     bubble_fn_upTopicsChanged, which the page answers by re-running its RPC and calling
+     setUpstreemTopics again. Every component that creates, edits, deletes or reassigns a topic
+     calls it, so no mutation site needs to know which pickers exist -- one fan-in, one fan-out.
+     Resolved through resolveBubbleFn, i.e. across window.top and every reachable iframe, so it
+     works from inside a Bubble reusable element or popup where a page-level custom event cannot
+     be triggered directly. */
+  var TOPICS = (window.__upTopics = window.__upTopics || { list: [], at: 0, seq: 0, subs: [] });
+
+  function getTopics(){ return TOPICS.list.slice(); }
+  function topicsAge(){ return TOPICS.at ? (nowMs() - TOPICS.at) : Infinity; }
+  function nowMs(){ return (window.Date && Date.now) ? Date.now() : +new Date(); }
+
+  /* owner is the component root. A subscriber whose root has left the document is dropped on the
+     next publish -- Bubble discards and rebuilds these roots constantly, and without this the list
+     would grow one dead entry per rebuild for the life of the page. */
+  function onTopics(fn, owner){
+    var sub = { fn: fn, owner: owner || null };
+    TOPICS.subs.push(sub);
+    return function(){
+      var i = TOPICS.subs.indexOf(sub);
+      if (i >= 0) TOPICS.subs.splice(i, 1);
+    };
+  }
+
+  function setTopics(rows, label){
+    var list = parseLoose(rows, label || "topics");
+    if (!list) return false;
+    if (!isArray(list)) list = [list];
+    TOPICS.list = list;
+    TOPICS.at = nowMs();
+    TOPICS.seq++;
+    for (var i = TOPICS.subs.length - 1; i >= 0; i--){
+      var sub = TOPICS.subs[i];
+      if (sub.owner && !document.contains(sub.owner)){ TOPICS.subs.splice(i, 1); continue; }
+      try { sub.fn(list.slice()); } catch(e){
+        if (window.console) console.warn("[topics] a subscriber threw while updating:", e);
+      }
+    }
+    return true;
+  }
+
+  function topicsChanged(){
+    var fn = resolveBubbleFn("bubble_fn_upTopicsChanged");
+    if (typeof fn === "function"){ try { fn(""); } catch(e){} return true; }
+    if (window.console) {
+      console.info("[topics] bubble_fn_upTopicsChanged not found — the topic lists on this page " +
+        "will not refresh by themselves. Add a Toolbox \"JavaScript to Bubble\" element named " +
+        "upTopicsChanged (Trigger event checked) whose workflow re-runs the topics RPC and calls " +
+        "setUpstreemTopics(). See bubble/topics_filter_bubble.html.");
+    }
+    return false;
+  }
+
+  function isArray(v){ return Object.prototype.toString.call(v) === "[object Array]"; }
+
+  /* The global Bubble calls. Defined here rather than in a component, because the whole point is
+     that it belongs to no single one of them. A call that arrives before this file finished
+     loading lands in __upTopicsQueue (any component's boot stub can fill it) and is replayed now. */
+  window.setUpstreemTopics = function(rows){ return setTopics(rows, "setUpstreemTopics"); };
+  window.getUpstreemTopics = getTopics;
+  (function drainTopicsQueue(){
+    var q = window.__upTopicsQueue;
+    if (!q || !q.length) return;
+    window.__upTopicsQueue = [];
+    for (var i = 0; i < q.length; i++){ try { setTopics(q[i], "setUpstreemTopics (queued)"); } catch(e){} }
+  })();
+
   window.UpstreemCore = {
     upstreemSetTheme: upstreemSetTheme,
     readPrefTheme: readPrefTheme,
@@ -3997,6 +4082,11 @@
     fmtTotal: fmtTotal,
     isYes: isYes,
     parseLoose: parseLoose,
+    getTopics: getTopics,
+    setTopics: setTopics,
+    onTopics: onTopics,
+    topicsAge: topicsAge,
+    topicsChanged: topicsChanged,
     highlight: highlight,
     redditTitleHtml: redditTitleHtml,
     esc: esc,

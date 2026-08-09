@@ -33,7 +33,62 @@
      root element with the same payload, so nothing is silently lost.
 
      ── Control from "Run JavaScript" ───────────────────────────
+  ═══ FEEDING THE TOPICS: do it ONCE per page, not once per dropdown ════════════
+
+    setUpstreemTopics(<list>)        ← no instance id. THIS is the one you want.
+
+  One call feeds every topic picker on the page. Not just the ones that exist at that moment --
+  the list is kept in a page-wide store, and any picker built LATER reads it on mount. That last
+  part matters more than it sounds: Bubble re-renders its HTML elements repeatedly while dynamic
+  expressions resolve (measured: three rebuilds across ~8 seconds), and anything inside a drawer
+  is not built at all until the drawer opens. With the old per-instance setter those placements
+  simply missed the call and stayed empty.
+
+  ── The three things to build, once per page ──────────────────────────────────
+
+  1) A custom event "Load Topics", two steps:
+       Step 1  your topics RPC
+       Step 2  Run JavaScript:
+                 setUpstreemTopics(`[{ "id": "...", "name": "SHK", "emoji": null,
+                   "hex_light": "#9145e8", "hex_dark": "#9145e8", "is_active": true,
+                   "created_at": "...", "prompt_count": 9 }]`);
+
+     BACKTICKS around the array, not quotes. The payload is multi-line and full of " -- a quoted
+     JS string ends at the first inner quote and cannot span lines at all. Empty dynamic values
+     are handled: UC.parseLoose turns "key": , into null rather than letting the step die.
+
+  2) Page is loaded → Trigger custom event "Load Topics".
+
+  3) A Toolbox "JavaScript to Bubble" element named upTopicsChanged (tick "Trigger event", no
+     value), with one workflow:
+       When JavascriptToBubble upTopicsChanged event → Trigger custom event "Load Topics"
+
+     This is the invalidation channel, and it is why nothing else needs wiring. Every component
+     in this library that creates, edits, deletes or reassigns a topic calls
+     bubble_fn_upTopicsChanged() by itself after firing its own save event -- the New Topic
+     button here, topics-manager's add/edit/delete, the prompts table's Add Topic and bulk
+     assign. They fire their normal events so you can save; the refresh then runs on its own.
+
+     Resolved through window.top and every reachable iframe, so it works from inside a reusable
+     element or a popup -- where a page-level custom event cannot be triggered directly. The
+     JavaScript-to-Bubble element itself must sit ON THE PAGE, not inside the reusable element.
+
+  ── What is left for you to wire by hand ──────────────────────────────────────
+  Only changes that happen OUTSIDE these components and move prompt_count: a prompt created,
+  deleted or deactivated elsewhere. Add "Trigger custom event: Load Topics" at the end of those
+  workflows. One step, always the same one.
+
+  ── Adding another topics dropdown, anywhere ──────────────────────────────────
+  Place the element, set data-instance. That is all. No workflow edit, no extra line in the RPC
+  step, no new setter call.
+
+  ── The per-instance setter still exists ──────────────────────────────────────
      setTopicsFilterTopics('topics_v1_dashboard', <list>)   feed the topics (array or JSON text)
+                                                            ONLY for the rare case where one
+                                                            dropdown must show a DIFFERENT list
+                                                            than the rest of the page. It does not
+                                                            touch the store, so the next
+                                                            setUpstreemTopics() overwrites it.
        Same shape your topics RPC already returns:
        [{id, name, emoji, hex_light, hex_dark, is_active, created_at, prompt_count}, ...]
        is_active:false entries are not offered. A selected topic that disappears from a later

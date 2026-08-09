@@ -608,6 +608,10 @@
         p.new_topic_hex_light = payload.hex_light;
         p.new_topic_hex_dark = payload.hex_dark;
         fire("data-addtopics-fn", "uptAddTopics", p);
+        /* Bubble saves this, then re-runs the topics RPC and calls setUpstreemTopics --
+           which is what refreshes every topic picker on the page, here and elsewhere. */
+        if (UC.topicsChanged) UC.topicsChanged();
+
         /* Same stale-query trap as the inline create row below: the bulk panel's search box can
            still be holding a non-matching query from before this modal was opened, which would
            filter the freshly-updated topics list down to nothing once it lands. */
@@ -1522,6 +1526,9 @@
       p.tag_ids = tagIds.join(",");
       if (p.mode === "ids") p.prompt_ids = p.ids;
       fire("data-applybulktopics-fn", "uptApplyBulkTopics", p);
+      /* Assignments moved, so every topic's prompt_count just changed -- the counts shown in the
+         filter dropdowns are stale from this moment on. Same one-liner, same fan-in. */
+      if (UC.topicsChanged) UC.topicsChanged();
       /* Optimistic local update, same idea as the rest of the bar: only touches rows we have. */
       loadedSelectedRows().forEach(function(r){
         var tags = Array.isArray(r.tags) ? r.tags : (r.tags = []);

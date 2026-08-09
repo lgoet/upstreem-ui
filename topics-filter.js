@@ -15,6 +15,16 @@
   /* ---- boot stubs (STYLEGUIDE §25) --------------------------------------------------------
      Bubble fires workflows before this file finishes loading. The names have to exist from the
      first tick and replay in call order. */
+  /* setUpstreemTopics lives in core.js, not here -- but core.js can still be in flight when
+     Bubble fires its "Load Topics" step. Stub it into a queue core drains the moment it defines
+     the real one, so an early call is delayed rather than lost. Only installed if nothing owns
+     the name yet: if core.js already loaded, the real function must stay. */
+  if (!window.setUpstreemTopics) {
+    window.setUpstreemTopics = function (rows) {
+      (window.__upTopicsQueue = window.__upTopicsQueue || []).push(rows);
+    };
+  }
+
   var API_NAMES = ["setTopicsFilterTopics", "resetTopicsFilter", "setTopicsFilterSelected",
                    "setTopicsFilterMode", "setTopicsFilterTheme"];
   var Q = (window.__utfBootQueue = window.__utfBootQueue || []);
@@ -400,6 +410,12 @@
         var json; try { json = JSON.stringify(payload); } catch (e) { json = ""; }
         if (typeof fn === "function") { try { fn(json); } catch (e) {} }
         else if (window.console) console.warn("[topics-filter] " + name + " not found — the new topic reached no workflow.");
+        /* Tell the page its topic list is stale. Bubble saves the topic in the workflow above,
+           then re-runs the RPC and calls setUpstreemTopics -- which is what puts the new topic
+           into THIS dropdown and every other one, with a real id and a real prompt_count. This
+           component deliberately does not insert it locally: a hand-made row would carry no id,
+           so selecting it would send Bubble something it cannot resolve. */
+        if (UC.topicsChanged) UC.topicsChanged();
       }
     }) : null;
     root.querySelector(".utf-new").addEventListener("click", function () {
@@ -456,8 +472,19 @@
     CONTROLLERS.push(ctrl);
 
     syncConfig();
-    if (seeded) topics = Array.isArray(seeded) ? seeded : [];
+    /* Order matters: the page-wide store WINS over the seed block. The seed is the value baked
+       into the markup at page build, so it is the right thing for the very first paint -- but if
+       a "Load Topics" step already ran (or this instance is only being built now, several Bubble
+       re-renders in), the store holds the newer list and the seed would be a step backwards. */
+    var fromStore = UC.getTopics ? UC.getTopics() : [];
+    if (fromStore && fromStore.length) topics = fromStore;
+    else if (seeded) topics = Array.isArray(seeded) ? seeded : [];
     render();
+
+    /* ...and stay subscribed, so one setUpstreemTopics() call updates every picker on the page --
+       including this one if it mounts later, which is the case a per-instance setter could never
+       reach. Selection survives: setTopics keeps ids that are still in the list. */
+    if (UC.onTopics) UC.onTopics(function (list) { ctrl.setTopics(list); }, root);
 
     for (var pid in PENDING) {
       if (!Object.prototype.hasOwnProperty.call(PENDING, pid)) continue;
