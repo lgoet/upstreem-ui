@@ -2062,9 +2062,11 @@
     for (var i = 0; i < POPOVERS.length; i++){ if (POPOVERS[i].wrap === wrap){ POPOVERS.splice(i, 1); break; } }
     POPOVERS.push(rec);
 
+    var unreg = null;
     function isOpen(){ return wrap.classList.contains("is-open"); }
     function close(committed){
       if (!isOpen()) return;
+      if (unreg){ unreg(); unreg = null; }
       /* move focus off anything inside the menu BEFORE hiding it — a focused element inside a
          hidden subtree is an accessibility trap and keeps swallowing keystrokes */
       try {
@@ -2085,6 +2087,15 @@
          enough either: several openers call stopPropagation(), so that click never reaches the
          document handler — closing here is the reliable path. */
       closeAll(wrap, null);
+      /* ...and the OTHER registry too. Popovers close each other through closeAll above, but
+         dropdowns built without makePopover (the date range picker's twin, the topics filter)
+         register with UC.dropdownOpened instead -- two lists that did not know about each other,
+         so opening a calendar left a topics panel standing. Registering here puts every dropdown
+         in the app into ONE list regardless of how it was built: dropdownOpened closes the others
+         and hands back an unregister, which close() below calls. */
+      if (typeof dropdownOpened === "function"){
+        unreg = dropdownOpened(menu, function(){ close(false); }, wrap);
+      }
       wrap.classList.add("is-open");
       menu.classList.add("is-shown");
       menu.setAttribute("aria-hidden", "false");
