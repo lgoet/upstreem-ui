@@ -33,6 +33,16 @@
 /* Exactly one topic selected: show its own dot instead of a count, so the trigger names the
    filter rather than merely counting it. */
 .utf-trigger-dot { width: 8px; height: 8px; border-radius: 999px; flex: 0 0 8px; }
+/* Zaehler-Badge ab zwei Auswahlen. Gefuellte Scheibe in der Primaerfarbe, die Zahl darin in der
+   Flaeche des jeweils ANDEREN Themes -- also hell auf dunkel und dunkel auf hell, dieselbe
+   Umkehrung die die Checkbox im Panel macht. Feste 16px, damit der Trigger bei 2 und bei 12
+   gleich breit bleibt. */
+.utf-count {
+  flex: 0 0 16px; width: 16px; height: 16px; border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--vc-text); color: var(--up-menu-bg);
+  font-size: 10px; font-weight: 500; line-height: 1; font-variant-numeric: tabular-nums;
+}
 .utf-root.is-processing .utf-trigger { pointer-events: none; }
 
 /* ---------- panel ----------
@@ -129,4 +139,5 @@
   .utf-list { max-height: 216px; }
 }
 @media (prefers-reduced-motion: reduce){
-  .utf-menu, .utf-trigger, }
+  .utf-menu, .utf-trigger, .utf-sort-btn, .utf-clear, .utf-new { transition: none; }
+}

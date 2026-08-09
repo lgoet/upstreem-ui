@@ -3795,7 +3795,12 @@
      Panels that live outside their trigger's DOM subtree (body-portaled ones) would look like
      unrelated siblings here, so a caller can pass ownerEl -- the element the panel logically hangs
      off -- and containment is tested against that instead. */
-  var OPEN_DD = [];
+  /* Auf window, NICHT in dieser IIFE. Der Asset-Loader dedupliziert nach URL -- stehen auf einer
+     Seite zwei Elemente mit unterschiedlichem data-cdn-pin, laedt core.js ZWEIMAL, und jede Kopie
+     haette ihre eigene Liste. Genau daher blieb ein Topics-Panel offen waehrend der Kalender
+     aufging: die beiden Komponenten hingen an verschiedenen Registries. Auf window teilen sich
+     alle Kopien dieselbe. */
+  var OPEN_DD = (window.__upOpenDropdowns = window.__upOpenDropdowns || []);
   function ddClose(entry){
     var i = OPEN_DD.indexOf(entry);
     if (i >= 0) OPEN_DD.splice(i, 1);

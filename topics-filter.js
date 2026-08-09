@@ -265,6 +265,8 @@
       root.classList.toggle("has-sel", n > 0);
       var dot = elTrigger.querySelector(".utf-trigger-dot");
       if (dot) dot.parentNode.removeChild(dot);
+      var oldBadge = elTrigger.querySelector(".utf-count");
+      if (oldBadge) oldBadge.parentNode.removeChild(oldBadge);
       if (n === 1) {
         var t = null;
         for (var i = 0; i < topics.length; i++) if (topics[i].id === selected[0]) t = topics[i];
@@ -276,7 +278,17 @@
           elTrigger.insertBefore(s, elLabel);
         }
       } else {
-        elLabel.textContent = n ? ("Topics · " + n) : "Topics";
+        /* Ab zwei Auswahlen ein Zaehler-Badge statt "Topics · N": eine gefuellte Scheibe traegt die
+           Zahl schneller als ein Mitteltrenner, und der Trigger bleibt gleich breit egal ob 2
+           oder 12 gewaehlt sind. Bei genau einer Auswahl gewinnt der Topic-NAME oben -- ein
+           Badge mit einer 1 sagt weniger als das Wort. */
+        elLabel.textContent = "Topics";
+        if (n > 1){
+          var b = document.createElement("span");
+          b.className = "utf-count";
+          b.textContent = String(n);
+          elTrigger.insertBefore(b, elTrigger.querySelector(".utf-chev"));
+        }
       }
     }
     function renderMode() {
