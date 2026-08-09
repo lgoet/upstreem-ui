@@ -54,17 +54,7 @@
 
 /* ---------- chart type switch (Linechart | Landscape) + status switch (Active | Inactive) ----------
    Both are the app's standard segmented control, identical to .vc-gran / .upt-status. */
-.ubo-seg { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-bg);
-  border-radius: 8px; border: 0; height: 32px; flex: 0 0 auto; }
-.ubo-seg-btn { height: 32px; padding: 0 12px; border: 1px solid transparent; border-radius: 8px;
-  background: transparent; color: var(--vc-muted); cursor: pointer; font-family: inherit;
-  font-size: 12px; font-weight: 500; line-height: 1;
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
-.ubo-seg-btn:hover { color: var(--vc-text); }
-.ubo-seg-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
-.up-root[data-theme="dark"] .ubo-seg-btn.is-active { background: #121212; border-color: #353535; }
-.ubo-seg-btn svg { width: 14px; height: 14px; display: block; }
-
+.up-root[data-theme="dark"] 
 /* Y-axis switch — Landscape only. The line chart's gear ("Chart Settings") is meaningless for a
    scatter of logos; the one thing that IS adjustable here is what the Y axis plots. */
 .ubo-yaxis { display: none; align-items: center; }
@@ -91,8 +81,7 @@
 .ubo-root.is-hidden-view .vc-gran,
 .ubo-root.is-hidden-view .ubo-filter,
 .ubo-root.is-hidden-view .ubo-yaxis,
-.ubo-root.is-hidden-view .ubo-seg[aria-label="Chart type"] { opacity: 0.4; pointer-events: none; }
-.ubo-box-chart { transition: height 200ms ease, opacity 160ms ease; }
+.ubo-root.is-hidden-view .ubo-box-chart { transition: height 200ms ease, opacity 160ms ease; }
 
 /* ---------- which chart is on screen ---------- */
 .ubo-line-holder { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
@@ -261,4 +250,3 @@
 .ubo-root.is-narrow .ubo-mx-legend-x { grid-column: 1; }
 
 /* count on the tab you're NOT on (see syncStatusSwitch) */
-.ubo-seg-n { font-size: 11px; font-weight: 600; color: var(--vc-third); font-variant-numeric: tabular-nums; }

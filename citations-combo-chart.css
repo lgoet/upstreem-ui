@@ -67,7 +67,7 @@
 .combo-root.is-hidden-view .combo-unit-left { margin-bottom: 0; }
 /* grey out the (now inactive) controls; the Hide/Show toggle stays active */
 .combo-root.is-hidden-view .cc-gran,
-.combo-root.is-hidden-view .cc-seg,
+.combo-root.is-hidden-view .up-seg,
 .combo-root.is-hidden-view .combo-filter,
 .combo-root.is-hidden-view .combo-maximize { opacity: 0.4; pointer-events: none; }
 
@@ -141,15 +141,7 @@
 .cc-top-total { margin-right: auto; display: none; align-items: baseline; gap: 6px; }
 .cc-top-total .n { font-size: 16px; font-weight: 500; color: var(--vc-text); line-height: 1; }
 .cc-top-total .lbl { font-size: 12px; font-weight: 400; color: var(--vc-third); }
-.cc-seg { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-bg); border-radius: 8px; border: 0; height: 32px; flex: 0 0 auto; }
-.cc-seg-btn { height: 32px; padding: 0 12px; border: 1px solid transparent; border-radius: 8px; background: transparent;
-  color: var(--vc-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
-.cc-seg-btn svg { width: 14px; height: 14px; color: var(--vc-muted); display: block; }
-.cc-seg-btn:hover, .cc-seg-btn:hover svg { color: var(--vc-text); }
-.cc-seg-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
-.cc-seg-btn.is-active svg { color: var(--vc-text); }
-.up-root[data-theme="dark"] .cc-seg-btn.is-active { background: #121212; border-color: #353535; }
-
+.up-root[data-theme="dark"] 
 /* the chart body the type-chart kit renders into */
 .up-donut-body { width: 100%; position: relative; flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
 .up-donut-body > .up-bars, .up-donut-body > .up-donut-layout,

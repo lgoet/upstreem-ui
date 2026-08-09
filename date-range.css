@@ -46,9 +46,9 @@
    note describes. Absolute means the panel moves in the SAME paint as the trigger, for free.
    The component calls UC.unclipAncestors() at boot so a short Bubble wrapper cannot clip it. */
 .udr-menu {
-  position: absolute; top: calc(100% + 8px); left: 0; z-index: 60;
+  position: absolute; top: calc(100% + var(--up-dd-gap)); left: 0; z-index: 60;
   display: flex; align-items: stretch; width: max-content;
-  padding: 6px; border: 1px solid var(--vc-border); border-radius: 16px;
+  padding: var(--up-dd-pad); border: 1px solid var(--vc-border); border-radius: var(--up-dd-radius);
   background: var(--up-menu-bg); color: var(--vc-text);
   box-shadow: 0 10px 28px rgba(0,0,0,.14);
   opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none;
@@ -58,7 +58,6 @@
 /* Flipped to the right edge when a left-aligned panel would leave the viewport. Set once on open,
    never on scroll -- see the note above. */
 .udr-menu.is-right { left: auto; right: 0; }
-.up-root[data-theme="dark"] .udr-menu { border-color: #4a4a4a; box-shadow: 0 10px 28px rgba(0,0,0,.32); }
 .udr-menu, .udr-menu * { -webkit-user-select: none; user-select: none; }
 
 /* ---------- presets ---------- */
@@ -151,7 +150,7 @@
 .udr-menu.is-stacked .udr-divider { order: 2; width: auto; height: 1px; flex: 0 0 1px; margin: 4px 6px; }
 .udr-menu.is-stacked .udr-presets {
   order: 3; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: 2px; row-gap: 4px; width: auto; flex: 0 0 auto; padding: 6px;
+  column-gap: 2px; row-gap: 4px; width: auto; flex: 0 0 auto; padding: var(--up-dd-pad);
 }
 .udr-menu.is-stacked .udr-preset + .udr-preset { margin-top: 0; }
 .udr-menu.is-stacked .udr-presets-head { grid-column: 1 / -1; }

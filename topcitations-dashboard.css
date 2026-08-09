@@ -81,15 +81,7 @@
 /* This switch IS the app's icon segmented control — the rules moved to core as .up-seg so the
    responses table could use the identical thing instead of a lookalike. The tcl- selectors are
    kept as aliases of the core ones so the existing markup keeps working. */
-.tcl-seg { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-bg); border-radius: 8px; border: 0; height: 32px; flex: 0 0 auto; }
-.tcl-seg-btn { height: 32px; padding: 0 10px; border: 1px solid transparent; border-radius: 8px; background: transparent;
-  color: var(--vc-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
-.tcl-seg-btn svg { width: 16px; height: 16px; color: var(--vc-muted); display: block; }
-.tcl-seg-btn:hover, .tcl-seg-btn:hover svg { color: var(--vc-text); }
-.tcl-seg-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
-.tcl-seg-btn.is-active svg { color: var(--vc-text); }
-.up-root[data-theme="dark"] .tcl-seg-btn.is-active { background: #121212; border-color: #353535; }
-
+.up-root[data-theme="dark"] 
 /* Reset control next to the doughnut/bar switch — only shown while a type filter is applied
    (JS toggles is-visible, see syncFilterBadge). display:none by default rather than
    opacity/visibility: an invisible-but-present 32px control would still eat hover/click area and

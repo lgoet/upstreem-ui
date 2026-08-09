@@ -604,7 +604,7 @@
       /* Order, not just presence: the Y-axis switch sits LEFT of the Linechart|Landscape switch.
          Moving it here (rather than only inserting it when missing) means a placement that still
          has the old markup order gets corrected too, without a re-paste. */
-      var typeSeg = root.querySelector('.ubo-seg[aria-label="Chart type"]');
+      var typeSeg = root.querySelector('.up-seg[aria-label="Chart type"]');
       if (chartTools && ys && typeSeg && ys.nextElementSibling !== typeSeg){
         chartTools.insertBefore(ys, typeSeg);
       } else if (chartTools && ys && !ys.parentNode){
@@ -1028,7 +1028,7 @@
        component -- .ubo-heading-table/.ubo-head-sep/.ubo-head-count already existed in
        brands-overview.css, unused, until now. */
     (function(){
-      var seg = root.querySelector('.ubo-seg[aria-label="Brand status"]');
+      var seg = root.querySelector('.up-seg[aria-label="Brand status"]');
       if (!seg) return;
       var uboHead = seg.parentElement;
       if (!uboHead) return;

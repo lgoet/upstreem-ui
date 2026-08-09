@@ -165,10 +165,10 @@
           /* Search row: input with the magnifier INSIDE on the right, and Clear as its own button
              beside it -- the shape the app already uses, not an icon tucked into the field. */
           '<div class="utf-search-row">' +
-            '<span class="utf-search">' +
-              '<input class="utf-search-in" type="text" placeholder="Search topics" aria-label="Search topics">' +
-              '<span class="utf-search-ic">' + ICON.search + '</span>' +
-              '<button class="utf-search-x" type="button" aria-label="Clear search">' + ICON.x + '</button>' +
+            '<span class="up-ddsearch utf-search">' +
+              '<input class="up-ddsearch-in utf-search-in" type="text" placeholder="Search topics" aria-label="Search topics">' +
+              '<span class="up-ddsearch-ic">' + ICON.search + '</span>' +
+              '<button class="up-ddsearch-x utf-search-x" type="button" aria-label="Clear search">' + ICON.x + '</button>' +
             '</span>' +
             '<span class="utf-sort">' +
               '<button class="utf-sort-btn" type="button" aria-label="Sort topics">' + ICON.sort + '</button>' +

@@ -184,7 +184,7 @@
     var body = donutRoot ? donutRoot.querySelector(".up-donut-body") : null;
     var topTotal = donutRoot ? donutRoot.querySelector(".cc-top-total") : null;
     var topTotalN = topTotal ? topTotal.querySelector(".n") : null;
-    var segBtns = Array.prototype.slice.call(root.querySelectorAll(".cc-seg-btn"));
+    var segBtns = Array.prototype.slice.call(root.querySelectorAll(".up-seg-btn"));
     var lineWrap = root.querySelector(".up-line-wrap");
     var lineCanvas = root.querySelector(".up-line-canvas");
     var legendEl = root.querySelector(".up-legend");

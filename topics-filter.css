@@ -42,17 +42,16 @@
    position:absolute inside .utf-wrap (STYLEGUIDE §14); the component calls UC.unclipAncestors()
    at boot so a short Bubble wrapper cannot clip it. */
 .utf-menu {
-  position: absolute; top: calc(100% + 6px); left: 0; z-index: 60;
+  position: absolute; top: calc(100% + var(--up-dd-gap)); left: 0; z-index: 60;
   display: flex; flex-direction: column; width: 300px; max-width: 92vw;
-  border: 1px solid var(--vc-border); border-radius: 14px; padding: 10px;
+  border: 1px solid var(--vc-border); border-radius: var(--up-dd-radius); padding: var(--up-dd-pad);
   background: var(--up-menu-bg); color: var(--vc-text);
-  box-shadow: 0 16px 40px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.05);
+  box-shadow: var(--up-dd-shadow);
   opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none;
   transition: opacity 120ms ease, transform 120ms ease;
 }
 .utf-menu.is-shown { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
 .utf-menu.is-right { left: auto; right: 0; }
-.up-root[data-theme="dark"] .utf-menu { border-color: #4a4a4a; box-shadow: 0 16px 40px rgba(0,0,0,.4), 0 2px 8px rgba(0,0,0,.2); }
 /* Open and "has a selection" both mark the trigger through its border, the way the app already
    signals an active filter -- no separate accent colour. */
 .utf-wrap.is-open .utf-trigger, .utf-root.has-sel .utf-trigger { border-color: var(--vc-hover-border); color: var(--vc-text); }
@@ -62,37 +61,8 @@
 
 /* ---------- search row: input, sorter, Clear ---------- */
 .utf-search-row { display: flex; align-items: stretch; gap: 8px; margin-bottom: 6px; }
-.utf-search { position: relative; flex: 1 1 auto; min-width: 0; }
-.utf-search-in {
-  width: 100%; height: 32px; box-sizing: border-box; padding: 0 32px 0 11px;
-  border: 1px solid var(--vc-border); border-radius: 8px;
-  background: var(--vc-bg); color: var(--vc-text);
-  font-family: inherit; font-size: 12.5px; outline: none;
-  transition: border-color 150ms ease, background 150ms ease;
-}
-.utf-search-in::placeholder { color: var(--vc-third); }
-.utf-search-in:hover { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
-.utf-search-in:focus { border-color: var(--vc-hover-border); background: var(--vc-bg); }
-/* Magnifier on the RIGHT, inside the field -- that is where this app puts it. */
-.utf-search-ic {
-  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
-  width: 15px; height: 15px; color: var(--vc-third);
-  fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
-  pointer-events: none;
-}
-.utf-search-ic svg { width: 15px; height: 15px; display: block; }
-/* Same slot as the magnifier: once there is text the icon BECOMES the clear button rather than a
-   second control appearing beside it. */
-.utf-search-x {
-  position: absolute; right: 7px; top: 50%; transform: translateY(-50%);
-  display: none; place-items: center; width: 20px; height: 20px; padding: 0;
-  border: 0; border-radius: 5px; background: transparent; color: var(--vc-third); cursor: pointer;
-}
-.utf-search-x svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
-.utf-search-x:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
-.utf-search.has-text .utf-search-ic { display: none; }
-.utf-search.has-text .utf-search-x { display: grid; }
-.utf-sort { position: relative; flex: 0 0 auto; }
+/* Geometry lives in core's .up-ddsearch now -- this class only survives as a hook
+   for the has-text toggle the script sets. */
 .utf-sort-btn {
   display: grid; place-items: center; width: 32px; height: 32px; padding: 0;
   border: 1px solid transparent; border-radius: 8px;
@@ -114,13 +84,12 @@
 /* Child of the topics panel — core's one-dropdown rule keeps both open because this one is
    nested inside the other (see UC.dropdownOpened). */
 .utf-sort-menu {
-  position: absolute; top: calc(100% + 6px); right: 0; z-index: 3;
-  width: 148px; padding: 4px; border: 1px solid var(--vc-border); border-radius: 12px;
+  position: absolute; top: calc(100% + var(--up-dd-gap)); right: 0; z-index: 3;
+  width: 148px; padding: var(--up-dd-pad); border: 1px solid var(--vc-border); border-radius: var(--up-dd-radius);
   background: var(--up-menu-bg); box-shadow: 0 10px 24px rgba(0,0,0,.14);
   display: none;
 }
 .utf-sort.is-open .utf-sort-menu { display: block; }
-.up-root[data-theme="dark"] .utf-sort-menu { border-color: #4a4a4a; box-shadow: 0 10px 24px rgba(0,0,0,.32); }
 /* Geometry only -- hover, selected tone and the 16x16 check all come from core's .up-optrow,
    so this list can never drift away from every other sorter in the app. */
 .utf-sort-opt { height: 32px; padding: 0 9px; font-size: 12.5px; font-weight: 500; }
