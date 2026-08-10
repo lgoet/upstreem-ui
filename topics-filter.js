@@ -263,21 +263,27 @@
     }
     function groupsHtml() {
       if (!groupsOpen) return "";
-      var list = readCustomGroups();
+      var raw = readCustomGroups();
+      /* A grouping whose topics have all been deleted is dropped rather than listed. It cannot be
+         ticked and it carries no count to explain why, so leaving it in would be a dead row that
+         looks exactly like a working one. */
+      var list = raw.filter(function (g) { return groupTopicIds(g).length > 0; });
       /* The search filters groupings by name too. Typing narrows one list, not one of two. */
       var q = query.toLowerCase();
       if (q) list = list.filter(function (g) { return g.key.toLowerCase().indexOf(q) >= 0; });
       if (!list.length) {
+        var msg = q ? "No groupings match"
+                    : (raw.length ? "None apply to these topics" : "None saved yet");
         return '<div class="utf-grp-sec">' +
                  '<div class="utf-grp-head">Custom Groupings</div>' +
-                 '<div class="utf-grp-none">' +
-                   (readCustomGroups().length ? "No groupings match" : "None saved yet") +
-                 '</div>' +
+                 '<div class="utf-grp-none">' + msg + '</div>' +
                '</div>';
       }
+      /* No count on the right, unlike a topic row: a topic's number is how many prompts carry it,
+         which is a property of the topic. A grouping's would be how many of its topics happen to
+         still exist -- an artefact of this list, not information about the grouping. */
       var rows = list.map(function (g) {
         var on = groupOn(g);
-        var n = groupTopicIds(g).length;
         return '<div class="up-filter-item utf-opt utf-grp-opt' + (on ? " is-checked" : "") +
                '" role="option" tabindex="0" aria-selected="' + (on ? "true" : "false") +
                '" data-group="' + esc(g.key) + '">' +
@@ -286,7 +292,6 @@
                    '<span class="utf-grp-ic">' + ICON.group + '</span>' +
                    '<span class="utf-opt-name">' + esc(g.key) + '</span>' +
                  '</span>' +
-                 '<span class="utf-opt-count">' + n + '</span>' +
                '</div>';
       }).join("");
       return '<div class="utf-grp-sec">' +

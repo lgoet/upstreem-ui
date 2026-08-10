@@ -165,6 +165,9 @@
    these are a different KIND of thing, not more topics, and a gap on its own reads as scroll
    spacing once the list is long enough to move. */
 .utf-grp-sec { padding-bottom: 6px; margin-bottom: 4px; border-bottom: 1px solid var(--vc-border); }
+/* Without a count on the right the row still needs the same right padding as a topic row, so both
+   keep their names clear of the list's scrollbar and end on one edge. */
+.utf-grp-opt { padding-right: 16px; }
 /* The extra top padding is breathing room ABOVE the heading, not below it: the section is the
    first child of the list, so without it the label sits flush against the search row. */
 .utf-grp-head { padding: 7px 9px 5px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.05em;
