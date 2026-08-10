@@ -296,16 +296,22 @@
   transition: opacity 120ms ease, transform 120ms ease;
 }
 .uap-menu.is-shown { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
-.uap-pickwrap:last-of-type .uap-menu { left: auto; right: 0; }
+/* Both menus align LEFT with their own trigger. The topics menu was right-aligned as a guard
+   against overflowing the card; measured, it does not — the trigger sits far enough left that a
+   296px menu still ends inside the card, and two dropdowns that anchor differently read as a
+   mistake long before any overflow would. */
 .uap-search-row { display: flex; align-items: stretch; margin-bottom: 6px; }
 .uap-search { flex: 1 1 auto; min-width: 0; }
 .uap-list-opts { max-height: 236px; overflow-y: auto; overscroll-behavior: contain; }
-.uap-opt { min-height: 34px; padding-right: 12px; }
+.uap-opt { min-height: 34px; padding-right: 16px; }   /* .umk-opt, exactly */
 .uap-opt-main { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; }
-.uap-opt-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Explicit, like .umk-opt-name. Leaving it out inherits the CARD's font size, which is the page
+   size and visibly larger than every other dropdown in the app — that was the whole complaint. */
+.uap-opt-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; font-size: 14px; font-weight: 500; }
 .uap-opt-flag { width: 22px; height: 16px; flex: 0 0 22px; border-radius: 3px; }
-.uap-opt-count { color: var(--vc-muted); font-size: 12px; flex: 0 0 auto; }
-.uap-noopt { padding: 14px 8px; font-size: 12.5px; color: var(--vc-third); text-align: center; }
+.uap-opt-count { flex: 0 0 auto; font-size: 12px; font-weight: 500; color: var(--vc-third); }
+.uap-noopt { padding: 14px 8px; font-size: 13px; color: var(--vc-third); text-align: center; }
 
 .uap-cancel {
   height: 34px; padding: 0 14px; border-radius: 9px; border: 1px solid var(--vc-border);
