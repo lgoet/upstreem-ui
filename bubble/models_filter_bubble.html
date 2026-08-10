@@ -32,8 +32,11 @@
                             selection change. Default if left unset: bubble_fn_umfModels
                             {"instance_id":"...","model_keys":"gpt-5,claude-opus-5",
                              "select_mode":"multi","count":2,"team_id":"..."}
-       data-models-apply-fn OPTIONAL, page-level. Same payload, fired right after data-models-fn
-                            — see "Two channels" below.
+       data-models-apply-fn OPTIONAL, page-level. Same payload, fired right after data-models-fn.
+                            LEAVE IT EMPTY and the name is derived from data-models-fn by swapping
+                            umfModels for umfApply, which is the convention below anyway:
+                              bubble_fn_umfModels_prompts -> bubble_fn_umfApply_prompts
+                            Set it only when a placement needs a different name.
 
      There is NO Apply button — every click publishes. The payload is always the FULL state, never
      a delta, so a single dropped event cannot leave your filter out of sync with the UI.
@@ -131,8 +134,13 @@
      THE APPLY EVENT, name by name. Exactly the shape the topics dropdown uses, and for the same
      reason: the element inside the reusable cannot trigger a workflow on the page.
 
-       Element INSIDE the reusable      data-models-fn       = bubble_fn_umfModels_prompts
-       Element ON the page              data-models-apply-fn = bubble_fn_umfApply_prompts
+       Element INSIDE the reusable      named  umfModels_prompts
+       Element ON the page              named  umfApply_prompts
+
+     You only have to set data-models-fn. The apply name is DERIVED from it (umfModels ->
+     umfApply), so a second attribute per placement is not needed -- with eleven placements that
+     was eleven edits for a name that follows a rule anyway. data-models-apply-fn still wins if
+     you set it.
 
      Two different names on the same placement. The first stores model_keys and select_mode in the
      reusable's states, the second is what makes the table reload. Per page:

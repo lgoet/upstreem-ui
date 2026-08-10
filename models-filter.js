@@ -358,10 +358,27 @@
                                  A reusable cannot trigger a page-level workflow by itself.
          Fired in that order, both receiving the identical JSON. Optional: no attribute, no call. */
       if (!isLocal()) {
-        fireTo(root.getAttribute("data-models-fn") || "bubble_fn_umfModels", json, true, "data-models-fn");
-        fireTo(root.getAttribute("data-models-apply-fn"), json, false, "data-models-apply-fn");
+        var mainFn = root.getAttribute("data-models-fn") || "bubble_fn_umfModels";
+        fireTo(mainFn, json, true, "data-models-fn");
+        fireTo(applyFnName(mainFn), json, false, "data-models-apply-fn");
       }
       try { root.dispatchEvent(new CustomEvent("umf-models", { detail: payload, bubbles: true })); } catch (e) {}
+    }
+
+    /* The page-level channel. An explicit data-models-apply-fn always wins; with the attribute left
+       empty the name is DERIVED from data-models-fn by swapping umfModels for umfApply:
+
+         bubble_fn_umfModels_prompts   ->   bubble_fn_umfApply_prompts
+
+       That is exactly the convention the Bubble file documents, so deriving it costs nothing and
+       saves editing a second attribute on every placement (there are eleven of them on this app).
+       It is a convention, not magic: if the derived name has no element behind it, fireTo warns by
+       name instead of doing nothing, so a missing element still says so. A placement that wants a
+       different name just sets the attribute. */
+    function applyFnName(mainFn) {
+      var explicit = (root.getAttribute("data-models-apply-fn") || "").trim();
+      if (explicit) return explicit;
+      return mainFn.indexOf("umfModels") >= 0 ? mainFn.replace("umfModels", "umfApply") : "";
     }
 
     /* data-local="yes": the selection never leaves the page; the host reads the DOM event below.
@@ -378,11 +395,10 @@
       if (!name) {
         if (!required && !warnedApply && window.console) {
           warnedApply = true;
-          console.info("[models-filter] " + instanceId + ": " + label + " is empty, so no page-level " +
-            "workflow is being told about this change. Put the event name into that attribute on the " +
-            "root div, e.g. data-models-apply-fn=\"bubble_fn_umfApply_prompts\", and create a Toolbox " +
-            "\"JavaScript to Bubble\" element with that name ON THE PAGE (not inside the reusable), " +
-            "type text, Trigger event checked.");
+          console.info("[models-filter] " + instanceId + ": no page-level channel. " + label + " is " +
+            "empty and data-models-fn does not contain \"umfModels\", so no name could be derived " +
+            "either. Set " + label + " on the root div to the event that reloads the page, e.g. " +
+            "\"bubble_fn_umfApply_prompts\".");
         }
         return;
       }
@@ -682,13 +698,14 @@
     for (var i = 0; i < roots.length; i++) {
       var r = roots[i];
       var fnName = r.getAttribute("data-models-fn") || "bubble_fn_umfModels";
-      var apply = r.getAttribute("data-models-apply-fn") || "";
+      var explicit = (r.getAttribute("data-models-apply-fn") || "").trim();
+      var apply = explicit || (fnName.indexOf("umfModels") >= 0 ? fnName.replace("umfModels", "umfApply") : "");
       out.push({
         instance: r.getAttribute("data-instance"),
         local: r.getAttribute("data-local") || "(unset)",
         modelsFn: fnName,
         modelsFnLive: typeof UC.resolveBubbleFn(fnName) === "function",
-        applyFn: apply || "(EMPTY - nothing will be called)",
+        applyFn: apply ? (apply + (explicit ? "" : " (derived)")) : "(none)",
         applyFnLive: apply ? typeof UC.resolveBubbleFn(apply) === "function" : false,
         selected: r.__umfCtrl ? r.__umfCtrl.getSelected() : "(not mounted)",
         modelsLoaded: (UC.getModels ? UC.getModels().length : 0)
