@@ -297,6 +297,11 @@
      the palette is opened to do something, and a section of documentation is not that. Actions is
      the opposite case and does persist, see below. */
   var refListOpen = false;
+  /* One-shot: true only for the render right after a section was opened. Without it every rebuild
+     re-ran the expand keyframes, so closing an ENTRY made the whole list visibly spring open again
+     underneath it -- the animation was correct, it was just firing on renders that were not an
+     opening. Reset by refHtml/buildStatic as soon as the markup carrying it is out. */
+  var animSection = "";
   /* Actions, on the other hand, is a real preference: someone who never uses those four entries
      should not have to collapse them again on every page. localStorage, wrapped because Bubble can
      run this in contexts where storage throws (private mode, a sandboxed iframe). */
@@ -475,7 +480,7 @@
         '</span>' +
       '</button>';
     if (!refListOpen) return html + '</div>';
-    html += '<div class="mqa-fade">';
+    html += '<div class="mqa-fade' + (animSection === "ref" ? " is-anim" : "") + '">';
     REF.forEach(function(r){
       var on = (refOpen === r.id);
       var hint = (typeof r.hint === "function") ? r.hint() : (r.hint || "");
@@ -537,6 +542,7 @@
   }
   function toggleRefList(){
     refListOpen = !refListOpen;
+    animSection = refListOpen ? "ref" : "";
     /* Collapsing the section also collapses whatever entry was open inside it, so reopening starts
        from the list rather than from someone else's half-read paragraph. */
     if (!refListOpen) refOpen = null;
@@ -544,7 +550,30 @@
     refreshRows();
   }
   function toggleRef(id){
-    refOpen = (refOpen === id) ? null : id;
+    /* Closing gets a real collapse rather than a disappearance: keep the body in the DOM, run the
+       reverse keyframes on it, and only rebuild once they are done. Rebuilding immediately is what
+       made closing feel like a cut while opening slid. */
+    if (refOpen === id){
+      var body = actionsWrap.querySelector(".mqa-ref-item.is-open .mqa-ref-body");
+      var item = actionsWrap.querySelector(".mqa-ref-item.is-open");
+      if (body){
+        if (item) item.classList.remove("is-open");     // chevron flips with the movement, not after
+        body.classList.add("is-closing");
+        var done = false;
+        function finish(){
+          if (done) return; done = true;
+          refOpen = null; buildStatic(); refreshRows();
+        }
+        body.addEventListener("animationend", finish);
+        /* Fallback for a browser that never fires the event (reduced-motion turns the animation
+           off entirely, and then animationend legitimately never comes). */
+        setTimeout(finish, 260);
+        return;
+      }
+      refOpen = null;
+    } else {
+      refOpen = id;
+    }
     buildStatic();
     refreshRows();                        // rows moved: the arrow-key ring has to be rebuilt
     var el = actionsWrap.querySelector('[data-ref="' + id + '"]');
@@ -568,8 +597,8 @@
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
         '</span>' +
       '</button>';
-    if (!actionsOpen){ actionsWrap.innerHTML = html + '</div>'; return; }
-    html += '<div class="mqa-fade">';
+    if (!actionsOpen){ actionsWrap.innerHTML = html + '</div>'; animSection = ""; return; }
+    html += '<div class="mqa-fade' + (animSection === "act" ? " is-anim" : "") + '">';
     STATIC.forEach(function(a){
       html += '<button class="mqa-action" type="button" role="option" data-action="' + a.action + '">' +
         '<span class="mqa-action-ic">' + a.icon + '</span>' +
@@ -580,9 +609,11 @@
     });
     html += '</div></div>';
     actionsWrap.innerHTML = html;
+    animSection = "";
   }
   function toggleActions(){
     actionsOpen = !actionsOpen;
+    animSection = actionsOpen ? "act" : "";
     persistActions();
     buildStatic();
     refreshRows();

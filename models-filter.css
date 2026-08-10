@@ -148,7 +148,11 @@
    the tooltip carries the sentence. */
 .umf-seg-btn { flex: 1 1 0; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
 .umf-seg-ic { display: inline-flex; }
-.umf-seg-ic svg { width: 15px; height: 15px; display: block; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+/* Height-locked, width from the viewBox: the two glyphs are different widths on purpose (one dot
+   against three) and forcing them into one square would squash the triple. The dots are FILLED, so
+   the stroke rule the other icons in this file carry must not reach them -- with it every circle
+   grew a 2px outline and the three ran together. */
+.umf-seg-ic svg { height: 15px; width: auto; display: block; }
 
 /* Inactive models: shown for context, greyed, not selectable. The checkbox goes too, because a
    checkbox that cannot be ticked is an invitation to try. */

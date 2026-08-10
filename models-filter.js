@@ -55,12 +55,20 @@
     sort: '<svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>',
     /* core's CHECK_SVG verbatim, so the tick matches every other checked row in the app. */
     check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
-    /* Footer switcher. Feather "square" for single (one thing) and "copy" for multi (more than
-       one of the same thing) -- the same pair the app uses elsewhere for one-vs-many. */
-    single: '<svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="3"/></svg>',
-    /* Three stacked squares. Deliberately NOT Feather's "copy": that glyph already means brands
-       elsewhere in the app, and one icon may not carry two meanings. */
-    multi:  '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="13" height="13" rx="2.5"/><path d="M19 8v11a2 2 0 0 1-2 2H6"/><path d="M22.5 12v7a3 3 0 0 1-3 3h-9"/></svg>'
+    /* Footer switcher: one dot against three. Filled circles, not outlined shapes, because at this
+       size an outline of a 5px dot is a smudge.
+
+       These two do NOT use the 24-box every other icon here uses, and that is the point: rendered
+       at height 15 a 24-box scales by 0.625, so a gap authored as 4 units draws as 2.5px and the
+       spec cannot be met at all -- three dots with 4px between them simply do not fit across 15px.
+       The viewBox is therefore 1:1 with the rendered pixels (height 15, width auto), so r=2.5 is a
+       5px dot and a 9-unit centre distance is exactly 4px of clear space. */
+    single: '<svg viewBox="0 0 5 15"><circle cx="2.5" cy="7.5" r="2.5" fill="currentColor" stroke="none"/></svg>',
+    multi:  '<svg viewBox="0 0 23 15">' +
+              '<circle cx="2.5"  cy="7.5" r="2.5" fill="currentColor" stroke="none"/>' +
+              '<circle cx="11.5" cy="7.5" r="2.5" fill="currentColor" stroke="none"/>' +
+              '<circle cx="20.5" cy="7.5" r="2.5" fill="currentColor" stroke="none"/>' +
+            '</svg>'
   };
 
   var SORTS = [
@@ -189,7 +197,18 @@
        is still part of the vocabulary, and hiding it makes an older saved filter referring to it
        look like a bug rather than a deliberate state. They sort to the BOTTOM, render dimmed, and
        cannot be picked (see toggle) -- visible as context, not as a choice. */
-    function isActive(m) { return m.is_active !== false; }
+    /* Tolerant on purpose. A strict `!== false` only catches a real boolean, and Bubble hands this
+       field over as TEXT more often than not: "no", "false", "0", or an empty string all mean
+       inactive and all of them are truthy in JavaScript. That mismatch is why the inactive block
+       looked like it was not working at all -- every model came back active. */
+    function isActive(m) {
+      var v = m ? m.is_active : undefined;
+      if (v === undefined || v === null || v === "") return true;   // field absent: assume active
+      if (v === false || v === 0) return false;
+      if (v === true || v === 1) return true;
+      var t = String(v).trim().toLowerCase();
+      return !(t === "false" || t === "no" || t === "0" || t === "off" || t === "inactive");
+    }
     function visible() {
       var q = query.toLowerCase();
       var list = models.filter(function (m) {

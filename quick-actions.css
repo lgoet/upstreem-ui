@@ -391,6 +391,16 @@
   from { grid-template-rows: 0fr; opacity: 0; }
   to   { grid-template-rows: 1fr; opacity: 1; }
 }
+/* The same movement backwards. The node stays in the DOM until these keyframes finish; the script
+   waits for animationend before it rebuilds. */
+.mqa-ref-body.is-closing { animation: mqaBodyOut .18s cubic-bezier(.22,1,.36,1) both; }
+@keyframes mqaBodyOut {
+  from { grid-template-rows: 1fr; opacity: 1; }
+  to   { grid-template-rows: 0fr; opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce){
+  .mqa-fade.is-anim, .mqa-fade.is-anim .mqa-ref-item, .mqa-ref-body, .mqa-ref-body.is-closing { animation: none; }
+}
 .mqa-ref-inner { padding: 2px 10px 10px 36px; min-height: 0; overflow: hidden; }
 .mqa-ref-text { margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--am-muted); }
 
@@ -434,7 +444,12 @@
    through a grid track rather than max-height, because a max-height guess either clips a long
    paragraph or spends most of the transition on empty space. `1fr` resolves to the content's real
    height, so the timing is the same whether an entry is three lines or ten. */
-.mqa-fade { display: grid; grid-template-rows: 1fr; min-height: 0; animation: mqaExpand .18s cubic-bezier(.22,1,.36,1) both; }
+/* The expand keyframes run ONLY on the render that opened the section (.is-anim, set once by the
+   script). Every other rebuild -- opening an entry, closing one, a theme flip -- renders the same
+   markup without the class, so the list stays put instead of springing open again underneath
+   whatever the user just clicked. */
+.mqa-fade { display: grid; grid-template-rows: 1fr; min-height: 0; }
+.mqa-fade.is-anim { animation: mqaExpand .18s cubic-bezier(.22,1,.36,1) both; }
 .mqa-fade > * { min-height: 0; }
 @keyframes mqaExpand {
   from { grid-template-rows: 0fr; opacity: 0; }
@@ -442,7 +457,7 @@
 }
 /* The section's own list of entries and, one level down, a single entry's body. Same curve and
    duration, so opening an entry inside a section that is itself opening reads as one movement. */
-.mqa-refgroup.is-expanded .mqa-ref-item { animation: mqaRowIn .18s cubic-bezier(.22,1,.36,1) both; }
+.mqa-fade.is-anim .mqa-ref-item { animation: mqaRowIn .18s cubic-bezier(.22,1,.36,1) both; }
 @keyframes mqaRowIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 
 .mqa-acttop .mqa-ref-chev { transition: transform .16s ease; }
