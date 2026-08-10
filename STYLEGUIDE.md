@@ -2516,3 +2516,52 @@ nebeneinander, eine Ableitung würde also das falsche Ziel rufen. Dort greift nu
 **Beim Bauen einer neuen Komponente zu prüfen:** jeder Pfad, auf dem ein Event-Name ins Leere laufen
 kann, endet entweder in einem Aufruf oder in genau einer Konsolenzeile. Nie in beidem und nie in
 keinem von beidem.
+
+---
+
+## 47. Der Payload kommt durch ein Template-Literal — der Sanitizer muss das mitdenken
+
+Bubble übergibt jeden RPC-Payload in einem „Run JavaScript"-Step **in Backticks**:
+
+```js
+renderResponsesTable({ instanceId: "…", rows: `[RESPONSE]` });
+```
+
+Ein Template-Literal wird von der JS-Engine aufgelöst, **bevor** unsere Komponente den Text je zu
+sehen bekommt. Aus zwei Zeichen `\n`, die der RPC als Escape geschrieben hat, wird dabei ein echter
+Zeilenumbruch — und der steht dann mitten in einem JSON-String-Wert. JSON verbietet rohe
+Steuerzeichen in Strings, also scheitert der strikte Parse. Dasselbe gilt für `\t` und für jeden
+Backslash, der seine Escape-Bedeutung im Literal verliert.
+
+`UC.parseLoose` escaped solche Zeichen beim Reparieren wieder (`scanString`, Repair 7). Wer eine
+neue Komponente baut, muss dafür nichts tun — aber wer den Sanitizer anfasst, darf diese Reparatur
+nicht wegoptimieren. Erster Verbraucher, an dem es aufgefallen ist: `response_preview` in der
+Responses-Tabelle, das erste Feld der App mit mehrzeiligem Text.
+
+**Typografische Anführungszeichen werden NICHT normalisiert.** `„so ist das", sagte er` ist eine
+völlig legale Zeichenfolge in einem JSON-String. Wer sie global durch `"` ersetzt, schiebt zwei
+strukturell aussehende Anführungszeichen in einen Textwert; das vor dem Komma beendet den String
+dann mehrere hundert Zeichen zu früh. `repair()` behandelt sie nur dort als Struktur, wo sie
+außerhalb eines Literals stehen — dann können sie nichts anderes sein.
+
+**Und die Fehlermeldung meldet den Fehler der Reparatur, nicht den strikten.** Der strikte Fehler
+zeigt immer auf das, was Bubble zuerst verbogen hat — ein leerer Wert, ein unquotierter Key — und
+für jedes davon existiert eine Reparatur. Ihn zu drucken schickt einen auf die Jagd nach einem Bug,
+der längst gefixt ist. Aussagekräftig ist nur, warum der **reparierte** Text immer noch nicht
+parst, mitsamt den 60 Zeichen um die Fehlerstelle. Das hat eine ganze Runde gekostet.
+
+## 48. Neue Felder in einem Event-Payload gehören nach VORNE
+
+`JSON.stringify` schreibt Keys in Einfügereihenfolge. Ein Feld anzuhängen verschiebt damit jedes
+bestehende Feld weiter weg vom Ende des Strings — und Bubble-Workflows lesen Werte per Regex.
+
+Für die meisten Felder ist das egal, weil `(?<="key":")[^"]*` von der Position unabhängig ist. Für
+Werte, die selbst JSON enthalten, ist es das nicht: `uptGroups.groups` trägt ein JSON-Array als
+String, voller escapter Anführungszeichen, und die einzige Regel, die den Wert vollständig greift,
+reicht bis ans Ende des Payloads. `team_id` ans Ende zu hängen hat sich hinter diesen Wert gesetzt
+und die Extraktion still gebrochen: Custom Groupings wurden weiter gespeichert und in den Pickern
+weiter angezeigt, aber die Gruppenliste der Tabelle kam leer zurück.
+
+`makeFire` in core.js stellt `team_id` deshalb voran. Der Schwanz jedes Payloads bleibt damit
+byte-identisch zu dem Stand, bevor es Team-Scoping gab. Wer ein weiteres globales Feld ergänzt,
+macht es genauso.

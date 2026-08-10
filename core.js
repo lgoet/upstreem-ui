@@ -89,9 +89,12 @@
          and taking the repair with it. */
       .replace(/^\uFEFF/, "")
       .replace(/[\u00A0\u2000-\u200D\u202F\u205F\u3000]/g, " ")
-      .replace(/[\u201C\u201D\u201E\u201F\u2033]/g, '"')
-      .replace(/[\u2018\u2019\u201A\u201B\u2032]/g, "'")
       .trim();
+    /* Typographic quotes are deliberately NOT normalised here. \u201Eso ist das", said by a German
+       prompt, is a perfectly legal sequence of characters inside a JSON string -- rewriting it to
+       "so ist das" injects two structural-looking quotes into a text value, and the one before the
+       comma then ends the string 400 characters early. They are only ever worth repairing where
+       they stand in for STRUCTURE, which repair() below can tell and a blanket .replace() cannot. */
     if (!s) return null;
     if (s.indexOf("&") >= 0){
       var dec = document.createElement("textarea");
@@ -133,19 +136,49 @@
        quoted phrase right before a comma -- he said "hi", then left -- closes early here. That is
        ambiguous even by eye. This heuristic gets every real payload seen so far and, unlike the
        old behaviour, degrades to a partial parse instead of dropping the whole table. */
-    function scanString(t, i){
+    /* Repair 7: a RAW control character inside a string value -- almost always a newline.
+
+       Bubble hands the payload to a Run-JavaScript step inside BACKTICKS. A template literal is
+       parsed by the JS engine before the component ever sees it, and the engine resolves escape
+       sequences: a \n that the RPC wrote as two characters arrives here as one real line break,
+       sitting inside a quoted value. JSON forbids that, so the strict parse fails -- and the
+       repair used to fail too, because it copied the break through verbatim.
+
+       Same story for a lone backslash: `C:\Users` loses its escape meaning in the literal, and
+       whatever survives has to be re-escaped or JSON.parse rejects it.
+
+       This is why responses-table was the first component to break on it: response_preview is
+       the first field in this app that carries multi-line text. */
+    var CTRL = { "\n": "\\n", "\r": "\\r", "\t": "\\t", "\b": "\\b", "\f": "\\f" };
+    var DQUOTE = '"“”„‟″';
+    /* curly tells scanString the literal was OPENED by a typographic quote, which is the only case
+       where a typographic quote may also CLOSE it. Opened by a plain ", every „ and " inside is
+       ordinary text and gets copied through untouched. */
+    function scanString(t, i, curly){
       var n = t.length, j = i + 1, body = "";
       while (j < n){
         var c = t.charAt(j);
-        if (c === "\\"){ body += t.substr(j, 2); j += 2; continue; }
-        if (c === '"'){
+        if (c === "\\"){
+          var esc = t.charAt(j + 1);
+          /* A valid JSON escape survives byte for byte; a stray backslash becomes a literal one. */
+          if (esc !== "" && '"\\/bfnrtu'.indexOf(esc) >= 0){ body += t.substr(j, 2); j += 2; }
+          else { body += "\\\\"; j++; }
+          continue;
+        }
+        if (c < " "){
+          body += CTRL[c] || ("\\u" + ("000" + c.charCodeAt(0).toString(16)).slice(-4));
+          j++; continue;
+        }
+        if (c === '"' || (curly && DQUOTE.indexOf(c) >= 0)){
           var k = j + 1;
           while (k < n && /\s/.test(t.charAt(k))) k++;
           var nxt = t.charAt(k);
           if (k >= n || nxt === "," || nxt === ":" || nxt === "}" || nxt === "]"){
             return { end: j + 1, text: '"' + body + '"' };
           }
-          body += '\\"'; j++; continue;             // literal quote inside the value
+          if (c === '"'){ body += '\\"'; }          // literal quote inside the value
+          else { body += c; }                       // typographic quote: plain text, keep as is
+          j++; continue;
         }
         body += c; j++;
       }
@@ -154,8 +187,11 @@
     function repair(t){
       var out = "", buf = "", i = 0, n = t.length;
       while (i < n){
-        if (t.charAt(i) === '"'){
-          var lit = scanString(t, i);
+        var ch = t.charAt(i);
+        /* A typographic quote out here, in CODE position, cannot be prose -- it is standing in for
+           a structural quote, so open a literal on it. Inside a literal it is just a character. */
+        if (DQUOTE.indexOf(ch) >= 0){
+          var lit = scanString(t, i, ch !== '"');
           out += fixCode(buf); buf = "";
           out += lit.text;
           i = lit.end;
@@ -163,22 +199,31 @@
       }
       return out + fixCode(buf);
     }
-    try {
-      try { return JSON.parse(s); }
-      catch (strictErr){
-        try { return JSON.parse(repair(s)); }
-        catch (repairErr){ throw strictErr; }
-      }
-    } catch (e){
-      if (window.console){
-        var head = s.slice(0, 48), codes = [];
-        for (var ci = 0; ci < head.length && ci < 24; ci++) codes.push(head.charCodeAt(ci));
-        console.warn("[" + (label || "upstreem") + "] payload is not valid JSON — ignored: " + e.message +
-          "\n  first chars: " + JSON.stringify(head) +
-          "\n  char codes:  " + codes.join(" "));
-      }
-      return null;
+    var strictMsg = "", repairMsg = "", fixed = "";
+    try { return JSON.parse(s); }
+    catch (strictErr){
+      strictMsg = strictErr.message;
+      try { fixed = repair(s); return JSON.parse(fixed); }
+      catch (repairErr){ repairMsg = repairErr.message; }
     }
+    /* Report the REPAIR failure, not the strict one. The strict error is always about whatever
+       Bubble mangled first -- an empty value, an unquoted key -- and every one of those has a
+       repair. Printing it sends you hunting for a bug that is already fixed; the only message
+       that says anything is why the repaired text STILL does not parse. Print the neighbourhood
+       of that position too: "unexpected token" without the surrounding 60 characters is a riddle,
+       and a riddle in a console warning is the same as no warning at all. */
+    if (window.console){
+      var at = /position (\d+)/.exec(repairMsg), near = "";
+      if (at){
+        var p = +at[1];
+        near = "\n  around it:   …" + JSON.stringify(fixed.slice(Math.max(0, p - 60), p + 60)) + "…";
+      }
+      console.warn("[" + (label || "upstreem") + "] payload is not valid JSON — ignored." +
+        "\n  after repair: " + repairMsg + near +
+        "\n  strict parse: " + strictMsg + "  (repairable, not the cause)" +
+        "\n  first chars:  " + JSON.stringify(s.slice(0, 48)));
+    }
+    return null;
   }
 
   /* Repairs a render payload that Bubble handed over as TEXT instead of as code.
@@ -2237,10 +2282,24 @@
       /* team_id rides along on every event, so a Bubble workflow can check that what came back
          belongs to the team currently on screen instead of trusting arrival order. Added here,
          once, rather than in each component's payload -- and only when a team is actually known,
-         so nothing gains an empty field it has to ignore. */
+         so nothing gains an empty field it has to ignore.
+
+         PREPENDED, not appended, and that is not cosmetic. JSON.stringify writes keys in insertion
+         order, so appending moved every existing field one position up from the END of the string.
+         prompts-table's uptGroups payload carries `groups` as a JSON string nested inside the JSON
+         -- its value is full of escaped quotes, so the usual (?<="key":")[^"]* cannot read it and a
+         Bubble workflow has to grab it by reaching to the end of the payload instead. Appending
+         team_id put itself behind that and silently broke the extraction: custom groupings were
+         still written and still shown in the pickers, but the table's group list came back empty.
+         Prepending keeps the tail of every payload byte-identical to what it was before team
+         scoping existed. */
       try {
         var tid = getTeam();
-        if (tid && payload && typeof payload === "object" && payload.team_id == null) payload.team_id = tid;
+        if (tid && payload && typeof payload === "object" && payload.team_id == null) {
+          var withTeam = { team_id: tid }, pk;
+          for (pk in payload) if (Object.prototype.hasOwnProperty.call(payload, pk)) withTeam[pk] = payload[pk];
+          payload = withTeam;
+        }
       } catch(e){}
       var fnName = root.getAttribute(attr) || fallbackName;
       var fn = resolveBubbleFn(fnName);
