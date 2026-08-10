@@ -249,8 +249,18 @@
        Wired in JS rather than as an inline onerror/onload attribute: the handlers have to cope
        with an image that is ALREADY complete by the time the markup lands (a cached logo fires
        neither event), and that check has nowhere to live in an attribute. */
+    /* flagcdn is the app's flag source everywhere else (prompts-table, prompt-research and the
+       quick-actions palette all build their URLs from it), so a row that arrives without a
+       flag_url gets the same URL derived from its alpha2 rather than falling back to the bare
+       country code. The code fallback stays for the case that URL fails too. */
+    function flagUrlFor(m) {
+      var u = fixUrl(m.flag_url);
+      if (u) return u;
+      var k = keyOf(m).toLowerCase();
+      return k.length === 2 ? "https://flagcdn.com/" + k + ".svg" : "";
+    }
     function flagHtml(m, cls) {
-      var url = fixUrl(m.flag_url);
+      var url = flagUrlFor(m);
       /* The country code, not a first letter: a failed flag still tells you which market this is. */
       var initial = esc(keyOf(m) || "?");
       if (url && FLAG_OK[url]) cls += " has-img";
