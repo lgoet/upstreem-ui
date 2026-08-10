@@ -142,7 +142,7 @@
               '<button class="up-seg-btn" type="button" data-mode="or">Or</button>' +
               '<button class="up-seg-btn" type="button" data-mode="and">And</button>' +
             '</span>' +
-            '<button class="utf-new" type="button">' + ICON.plus + '<span>New Topic</span></button>' +
+            (wantsNewTopic() ? '<button class="utf-new" type="button">' + ICON.plus + '<span>New Topic</span></button>' : '') +
           '</div>' +
         '</div>' +
       '</div>';
@@ -291,14 +291,30 @@
          Fired in that order so the reusable's states are already set when the page reacts -- but
          the page element receives the identical JSON, so a workflow there never has to read those
          states at all. Optional: no attribute, no call, no warning. */
-      fireTo(root.getAttribute("data-topics-fn") || "bubble_fn_utfTopics", json, true);
-      fireTo(root.getAttribute("data-topics-apply-fn"), json, false);
+      /* data-local="yes": the selection never leaves the page. Used where the host reads it from
+         the DOM event below and turns it into something of its own -- Mira builds a sentence for
+         its report prompt out of it, there is no Bubble workflow to notify. Without this, an
+         unset data-topics-fn falls back to bubble_fn_utfTopics and a purely local picker would
+         start poking whatever workflow happens to own that name on the page. */
+      if (!isLocal()) {
+        fireTo(root.getAttribute("data-topics-fn") || "bubble_fn_utfTopics", json, true);
+        fireTo(root.getAttribute("data-topics-apply-fn"), json, false);
+      }
       try { root.dispatchEvent(new CustomEvent("utf-topics", { detail: payload, bubbles: true })); } catch (e) {}
     }
 
     /* required=false means the name is optional: only complain when an attribute was actually
        set and the function behind it is missing -- a typo stays loud, an unused channel stays
        quiet. */
+    function isLocal() { return isYes(root.getAttribute("data-local")); }
+    /* data-newtopic="no" (implied by data-local) drops the New Topic button entirely -- a picker
+       that only narrows an existing list has no business creating rows in it. */
+    function wantsNewTopic() {
+      var v = root.getAttribute("data-newtopic");
+      if (v != null && !isYes(v)) return false;
+      return !isLocal() || isYes(v);
+    }
+
     function fireTo(name, json, required) {
       if (!name) return;
       var fn = UC.resolveBubbleFn(name);
@@ -467,7 +483,8 @@
         pendingNewTopic = true;
       }
     }) : null;
-    root.querySelector(".utf-new").addEventListener("click", function () {
+    var elNew = root.querySelector(".utf-new");
+    if (elNew) elNew.addEventListener("click", function () {
       if (topicModal) topicModal.open("create");
       else if (window.console) console.warn("[topics-filter] UC.makeTopicModal missing — core.js is too old for the New Topic button.");
     });

@@ -881,77 +881,6 @@
   .am-rep-range-sep { height: 1px; background: var(--am-border); margin: 6px 4px; }
   .am-rep-range-lbl { max-width: 132px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-  /* ---- topics dropdown ---- */
-  /* ---- topics dropdown (app style) ---- */
-  .am-rep-topics-wrap { position: relative; flex: 0 0 auto; }
-  .am-rep-topics-menu {
-    position: absolute; top: calc(100% + 6px); right: 0; left: auto; width: 300px; max-width: 92vw; z-index: 60;
-    background: var(--am-card); border: 1px solid var(--am-border); border-radius: 14px;
-    box-shadow: 0 16px 40px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.05); padding: 10px;
-    opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none;
-    transition: opacity 120ms ease, transform 120ms ease;
-  }
-  .am-rep-topics-wrap.is-open .am-rep-topics-menu { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
-  .am-rep-topics-wrap.is-open .am-rep-topics-btn,
-  .am-rep-topics-wrap.is-open .am-rep-topics-btn:hover { background: var(--am-card); border-color: #6f6f6f; color: var(--am-text); box-shadow: none; }
-  #ask-mira[data-theme="dark"] .am-rep-topics-wrap.is-open .am-rep-topics-btn,
-  #ask-mira[data-theme="dark"] .am-rep-topics-wrap.is-open .am-rep-topics-btn:hover { background: var(--am-card); border-color: #707070; }
-  /* one or more topics selected: colour ONLY the border (like the hover / open state), keep the bg */
-  .am-rep-topics-wrap.has-sel .am-rep-topics-btn { border-color: #6f6f6f; }
-  #ask-mira[data-theme="dark"] .am-rep-topics-wrap.has-sel .am-rep-topics-btn { border-color: #707070; }
-
-  .am-rep-topics-search-row { display: flex; align-items: stretch; gap: 8px; margin-bottom: 6px; }
-  .am-rep-topics-search { position: relative; flex: 1 1 auto; min-width: 0; }
-  .am-rep-topics-input {
-    width: 100%; height: 32px; border: 1px solid var(--am-border); border-radius: 8px;
-    background: var(--am-card); color: var(--am-text); padding: 0 32px 0 11px;
-    font-family: inherit; font-size: 12.5px; outline: none;
-    transition: border-color 150ms ease, background 150ms ease;
-  }
-  .am-rep-topics-input::placeholder { color: var(--am-muted-2); }
-  .am-rep-topics-input:hover { border-color: #6f6f6f; background: var(--am-soft); }
-  .am-rep-topics-input:focus { border-color: #6f6f6f; background: var(--am-card); }
-  .am-rep-topics-search-ic { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: var(--am-muted-2); fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
-  .am-rep-topics-clear {
-    flex: 0 0 auto; height: 32px; padding: 0 12px; border: 1px solid transparent; border-radius: 8px;
-    background: #f5f5f5; color: var(--am-text); font-family: inherit; font-size: 12px; font-weight: 500;
-    cursor: pointer; transition: background 150ms ease, border-color 150ms ease;
-  }
-  .am-rep-topics-clear:hover { background: var(--am-soft); border-color: #6f6f6f; }
-  #ask-mira[data-theme="dark"] .am-rep-topics-clear { background: #242424; }
-
-  .am-rep-topics-list { display: flex; flex-direction: column; gap: 1px; max-height: 244px; overflow-y: auto; padding: 2px 0; }
-  .am-rep-topic-opt {
-    display: flex; align-items: center; gap: 11px; width: 100%; text-align: left;
-    min-height: 34px; border: 0; border-radius: 8px; background: transparent; color: var(--am-text);
-    padding: 0 9px; cursor: pointer; font-family: inherit;
-  }
-  .am-rep-topic-opt:hover { background: var(--am-soft); }
-  .am-rep-topic-opt.is-sel { background: var(--am-soft); }
-  .am-rep-topic-cb { flex: 0 0 auto; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; color: #cfd2d7; }
-  #ask-mira[data-theme="dark"] .am-rep-topic-cb { color: #5a5a5a; }
-  .am-rep-topic-opt.is-sel .am-rep-topic-cb { color: var(--am-text); }
-  .am-rep-topic-cb svg { width: 18px; height: 18px; fill: currentColor; stroke: none; }
-  .am-rep-topic-dot { flex: 0 0 auto; width: 11px; height: 11px; border-radius: 3px; background: var(--tc-l, var(--am-muted)); }
-  #ask-mira[data-theme="dark"] .am-rep-topic-dot { background: var(--tc-l, var(--am-muted)); }
-  .am-rep-topic-main { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; }
-  .am-rep-topic-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 500; }
-  .am-rep-topic-emoji { flex: 0 0 auto; font-size: 14px; line-height: 1; }
-  .am-rep-topic-count { flex: 0 0 auto; font-size: 12px; font-weight: 500; color: var(--am-muted-2); }
-
-  /* OR/AND — 1:1 wie der Board/List-Switcher (.uo-seg) in Opportunities */
-  .am-rep-topics-foot { display: flex; align-items: center; gap: 10px; margin: 6px -10px 0; padding: 10px 10px 0; border-top: 1px solid var(--am-border); }
-  .am-rep-mode { display: inline-flex; align-items: center; padding: 0; gap: 0; background: #f5f5f5; border-radius: 8px; border: 0; height: 32px; }
-  .am-rep-mode-opt {
-    height: 32px; padding: 0 13px; border: 1px solid transparent; border-radius: 8px; background: transparent;
-    color: var(--am-muted); font-family: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
-    display: inline-flex; align-items: center;
-  }
-  .am-rep-mode-opt:hover { color: var(--am-text); }
-  .am-rep-mode-opt.is-on { background: #ffffff; color: var(--am-text); border-color: var(--am-border); }
-  #ask-mira[data-theme="dark"] .am-rep-mode { background: #242424; }
-  #ask-mira[data-theme="dark"] .am-rep-mode-opt.is-on { background: #121212; color: #e0e0e0; border-color: #353535; }
-
   .am-rep-cards { display: flex; flex-direction: column; gap: 7px; margin-top: 14px; }
   .am-rep-card {
     position: relative; overflow: hidden;
@@ -1515,14 +1444,6 @@
   .am-cm-sub.flip-right:hover .am-cm-submenu { transform: translateX(0) scale(1); }
   .am-cm-empty { padding: 6px 9px; font-size: 12.5px; color: var(--am-muted-2); }
 
-  /* dark mode: all dropdown / popover menu backgrounds -> #151515 */
-  #ask-mira[data-theme="dark"] .am-url-pop,
-  #ask-mira[data-theme="dark"] .am-rep-range-menu,
-  #ask-mira[data-theme="dark"] .am-rep-topics-menu,
-  #ask-mira[data-theme="dark"] .am-dd-menu,
-  #ask-mira[data-theme="dark"] .am-cm,
-  #ask-mira[data-theme="dark"] .am-cm-submenu { background: var(--up-menu-bg); }
-
   /* scrollbars */
   #ask-mira .am-chat::-webkit-scrollbar,
   #ask-mira .am-prev-list::-webkit-scrollbar,
@@ -1767,3 +1688,9 @@
    report topics, model picker, the generic .am-dd and the status pill); they are removed rather
    than overridden so nothing re-introduces them by specificity. The collapse chevron on a
    Previous-Chats SECTION stays: that one marks a collapsed/expanded section, not a dropdown. */
+
+/* ---------- reporting topics picker ----------
+   The picker itself is the shared topics-filter component (topics-filter.css). Only its place in
+   the gallery header is Mira's business -- everything else it looks like is now decided in one
+   file for the whole app, which was the point of the swap. */
+#ask-mira .am-rep-topics { flex: 0 0 auto; }

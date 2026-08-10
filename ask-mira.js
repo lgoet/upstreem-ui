@@ -1799,7 +1799,6 @@
   var _reportRange = '30d';
   var _reportTopics = [];      // selected topic ids
   var _reportTopicMode = 'or'; // 'or' = any of, 'and' = all of
-  var _reportTopicQuery = '';  // topic search filter text
   function repQuarters(n){
     var now = new Date(), y = now.getFullYear(), q = Math.floor(now.getMonth()/3)+1, out = [];
     for (var i=0;i<n;i++){ out.push({ y:y, q:q }); q--; if (q<1){ q=4; y--; } }
@@ -1842,50 +1841,55 @@
     if (_reportTopics.length === 1){ var t = repTopicById(_reportTopics[0]); return t ? t.name : '1 topic'; }
     return _reportTopics.length + ' topics';
   }
+  /* The reporting topics picker IS the shared topics-filter component now (prefix utf), not a
+     hand-built copy of it. The copy was the reason a change to the app's dropdown had to be made
+     twice, and the second one was always the one that got forgotten.
+
+     Three things make it fit here without changing how reporting works:
+       data-local="yes"   nothing leaves the page. The selection is turned into a SENTENCE for the
+                          report prompt (repTopicClause below), there is no Bubble workflow to
+                          notify -- and without this an unset data-topics-fn would fall back to
+                          bubble_fn_utfTopics and start poking whatever owns that name.
+       data-newtopic="no" no New Topic button. This picker narrows an existing list; creating
+                          topics belongs to the pages that manage them.
+       data-instance      fixed, so the component's own store keeps the selection when the gallery
+                          re-renders -- which it does on every single interaction, destroying and
+                          rebuilding this node each time.
+     The topic list and the selection are pushed in after each render (see syncRepTopics), and the
+     selection comes back through the component's DOM event, wired once in initRoot. */
+  var REP_TOPICS_ID = "utf_mira_report";
   function repTopicsMarkup(de){
     if (!(S.topics && S.topics.length)) return '';
-    var sel = {}; _reportTopics.forEach(function(id){ sel[String(id)] = 1; });
-    var CB_OFF = '<svg viewBox="0 0 24 24"><path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>';
-    var CB_ON  = '<svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9 14l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>';
-    var rows = S.topics.map(function(t){
-      var on = sel[String(t.id)] ? ' is-sel' : '';
-      var cl = t.hex_light || '#1f1f1b', cd = t.hex_dark || '#dcdcdc';
-      var pc = (t.prompt_count != null) ? '<span class="am-rep-topic-count">('+esc(String(t.prompt_count))+')</span>' : '';
-      var em = t.emoji ? '<span class="am-rep-topic-emoji">'+esc(t.emoji)+'</span>' : '';
-      return '<button class="am-rep-topic-opt'+on+'" type="button" role="option" aria-selected="'+(on?'true':'false')+'" data-rep-topic="'+escAttr(t.id)+'" data-name="'+escAttr(t.name)+'" style="--tc-l:'+escAttr(cl)+';--tc-d:'+escAttr(cd)+'">'+
-        '<span class="am-rep-topic-cb">'+(on?CB_ON:CB_OFF)+'</span>'+
-        '<span class="am-rep-topic-dot"></span>'+
-        '<span class="am-rep-topic-main"><span class="am-rep-topic-name">'+esc(t.name)+'</span>'+ em +'</span>'+ pc +
-      '</button>';
-    }).join('');
-    var search = '<div class="am-rep-topics-search-row">'+
-      '<div class="am-rep-topics-search">'+
-        '<input class="am-rep-topics-input" type="text" data-rep-topic-search placeholder="Search topics" value="'+escAttr(_reportTopicQuery)+'" aria-label="Search topics">'+
-        '<svg class="am-rep-topics-search-ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'+
-      '</div>'+
-      '<button class="am-rep-topics-clear" type="button" data-rep-topic-clear>Clear</button>'+
-    '</div>';
-    var mode = '<div class="am-rep-mode" role="group">'+
-      '<button class="am-rep-mode-opt'+(_reportTopicMode==='or'?' is-on':'')+'" type="button" data-rep-mode="or">OR</button>'+
-      '<button class="am-rep-mode-opt'+(_reportTopicMode==='and'?' is-on':'')+'" type="button" data-rep-mode="and">AND</button>'+
-    '</div>';
-    var foot = '<div class="am-rep-topics-foot">'+ mode +'</div>';
-    return '<div class="am-rep-topics-wrap'+(_reportTopics.length ? ' has-sel' : '')+'">'+
-      '<button class="am-rep-range am-rep-topics-btn" type="button" data-rep-topics-toggle>'+
-        '<svg class="am-rep-cal" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>'+
-        '<span class="am-rep-range-lbl">'+esc(repTopicLabel())+'</span>'+
-        '<svg class="am-rep-range-chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>'+
-      '</button>'+
-      '<div class="am-rep-topics-menu">'+ search + '<div class="am-rep-topics-list" role="listbox" aria-multiselectable="true">'+ rows +'</div>'+ foot +'</div>'+
-    '</div>';
+    return '<div class="up-root utf-root am-rep-topics"' +
+             ' data-instance="' + REP_TOPICS_ID + '"' +
+             ' data-local="yes" data-newtopic="no"' +
+             ' data-isdark="' + (root.getAttribute('data-theme') === 'dark' ? 'yes' : 'no') + '"></div>';
   }
-  function applyTopicFilter(){
-    if (!elSuggGrid) return;
-    var q = (_reportTopicQuery || '').trim().toLowerCase();
-    var rows = elSuggGrid.querySelectorAll('.am-rep-topic-opt');
-    for (var i=0;i<rows.length;i++){
-      var nm = (rows[i].getAttribute('data-name') || '').toLowerCase();
-      rows[i].style.display = (!q || nm.indexOf(q) !== -1) ? '' : 'none';
+  /* Called right after the gallery paints. The component may have just been rebuilt from scratch,
+     so both the list and the current selection are handed over again; both setters are silent, so
+     this cannot loop back into a change event. */
+  function syncRepTopics(){
+    if (!elSuggGrid || !elSuggGrid.querySelector('.am-rep-topics')) return;
+    /* Twice: now and on the next tick. The picker may not have mounted yet at this instant, and
+       an unmounted instance QUEUES the call -- but that queue holds only one entry per instance,
+       so of the three setters below only the last would survive and the topic list would be the
+       one dropped. The second pass runs against a mounted picker and applies all three in order.
+       Both are idempotent, so doing it twice costs a render nobody sees. */
+    setTimeout(pushRepTopics, 0);
+    pushRepTopics();
+  }
+  function pushRepTopics(){
+    if (!elSuggGrid || !elSuggGrid.querySelector('.am-rep-topics')) return;
+    try {
+      if (window.console && window.__amDebugTopics) console.log('[ask-mira] push', (S.topics||[]).length, 'topics');
+      if (window.setTopicsFilterTopics) window.setTopicsFilterTopics(REP_TOPICS_ID, S.topics || []);
+      if (window.setTopicsFilterSelected) window.setTopicsFilterSelected(REP_TOPICS_ID, _reportTopics.join(','));
+      if (window.setTopicsFilterMode) window.setTopicsFilterMode(REP_TOPICS_ID, _reportTopicMode);
+      if (window.setTopicsFilterTheme) window.setTopicsFilterTheme(REP_TOPICS_ID, root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
+    } catch(e){
+      /* Not swallowed: a failure here means the picker silently shows nothing, which is far worse
+         than a line in the console. */
+      if (window.console) console.warn('[ask-mira] pushing topics into the picker failed:', e);
     }
   }
   function repTopicClause(de){
@@ -2131,6 +2135,9 @@
         '</button>';
       }).join('') + '</div>';
       elSuggGrid.innerHTML = rhtml;
+      /* The reporting branch returns HERE -- it never reaches the end of this function. That is
+         where the picker actually lives, so the hand-over has to happen on this path too. */
+      syncRepTopics();
       return;
     }
     var html = '<div class="am-gallery-head">'+
@@ -2148,6 +2155,9 @@
       '</div></div>';
     }).join('');
     elSuggGrid.innerHTML = html;
+    /* The picker was just rebuilt with the rest of the gallery -- hand it the list and the
+       current selection again. Both setters are silent, so this cannot echo back. */
+    syncRepTopics();
   }
 
   /* ---- Grok-style looping placeholder ---- */
@@ -3346,29 +3356,13 @@
     // reporting: date-range dropdown toggle
     var rtog = e.target.closest('[data-rep-range-toggle]');
     if (rtog){ e.stopPropagation(); var wrap = rtog.closest('.am-rep-range-wrap');
-      var tw = elSuggGrid.querySelector('.am-rep-topics-wrap.is-open'); if (tw) tw.classList.remove('is-open');
       if (wrap) wrap.classList.toggle('is-open'); return; }
     // reporting: range selected
     var ropt = e.target.closest('[data-rep-range]');
     if (ropt){ _reportRange = ropt.getAttribute('data-rep-range'); renderGallery(); return; }
-    // reporting: topics dropdown toggle
-    var ttog = e.target.closest('[data-rep-topics-toggle]');
-    if (ttog){ e.stopPropagation(); var twrap = ttog.closest('.am-rep-topics-wrap');
-      var rw = elSuggGrid.querySelector('.am-rep-range-wrap.is-open'); if (rw) rw.classList.remove('is-open');
-      if (twrap) twrap.classList.toggle('is-open'); return; }
-    function reopenTopics(){ renderGallery(); var w = elSuggGrid.querySelector('.am-rep-topics-wrap'); if (w) w.classList.add('is-open'); applyTopicFilter(); var si = elSuggGrid.querySelector('[data-rep-topic-search]'); if (si && _reportTopicQuery){ try { si.focus(); var v=si.value; si.value=''; si.value=v; } catch(e){} } }
-    // reporting: topic toggled
-    var topt = e.target.closest('[data-rep-topic]');
-    if (topt){ e.stopPropagation(); var id = topt.getAttribute('data-rep-topic');
-      var i = _reportTopics.map(String).indexOf(String(id));
-      if (i >= 0) _reportTopics.splice(i,1); else _reportTopics.push(id);
-      reopenTopics(); return; }
-    // reporting: and/or mode
-    var rmode = e.target.closest('[data-rep-mode]');
-    if (rmode){ e.stopPropagation(); _reportTopicMode = rmode.getAttribute('data-rep-mode'); reopenTopics(); return; }
-    // reporting: clear topics
-    var rclear = e.target.closest('[data-rep-topic-clear]');
-    if (rclear){ e.stopPropagation(); _reportTopics = []; reopenTopics(); return; }
+    /* Open/close, row toggling, search, Or/And and Clear are all the component's own doing now --
+       and crucially it does NOT re-render the gallery for any of them, which the old panel had to,
+       losing focus and scroll position on every single click. */
     // reporting: edit affordance -> fill the composer and focus so the user can edit before sending
     var redit = e.target.closest('[data-rep-edit]');
     if (redit){
@@ -3439,12 +3433,6 @@
     if (!elSuggGrid) return;
     var open = elSuggGrid.querySelector('.am-rep-range-wrap.is-open');
     if (open && !e.target.closest('.am-rep-range-wrap')) open.classList.remove('is-open');
-    var topen = elSuggGrid.querySelector('.am-rep-topics-wrap.is-open');
-    if (topen && !e.target.closest('.am-rep-topics-wrap')) topen.classList.remove('is-open');
-  });
-  if (elSuggGrid) elSuggGrid.addEventListener('input', function(e){
-    var si = e.target.closest('[data-rep-topic-search]');
-    if (si){ _reportTopicQuery = si.value || ''; applyTopicFilter(); }
   });
 
   /* ---- Message hover actions: copy / thumbs up / thumbs down ---- */
@@ -3975,6 +3963,14 @@
     closePrev();
   }
   elNewChat.addEventListener('click', goToStart);
+  /* The component always dispatches this, whether or not it also calls Bubble -- in local mode it
+     is the only channel. Delegated on the root so a rebuilt picker keeps being heard. */
+  root.addEventListener('utf-topics', function(e){
+    var d = e && e.detail; if (!d || d.instance_id !== REP_TOPICS_ID) return;
+    _reportTopics = String(d.topic_ids || '').split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+    _reportTopicMode = (d.tag_mode === 'and') ? 'and' : 'or';
+  });
+
   var elHeroText = root.querySelector('.am-hero-text');
   if (elHeroText) elHeroText.addEventListener('click', goToStart);
 
