@@ -23,9 +23,14 @@
 .uap-backdrop.is-closing { animation: uap-fade-out 140ms ease forwards; }
 
 /* Only the deltas from .up-topicmodal-card: this dialog is wider than a topic form, and it lays
-   its own blocks out in a column. Surface, border, radius, shadow, theme tokens: all inherited. */
-.uap-card {
-  max-width: 640px; box-sizing: border-box;
+   its own blocks out in a column. Surface, border, radius, shadow, theme tokens: all inherited.
+
+   The width is written on a TWO-class selector on purpose. core's .up-topicmodal-card caps at
+   420px, which is right for a topic form and far too narrow here, and a single-class rule only
+   beats it as long as this file happens to be the later stylesheet — a loader that dedupes by URL
+   or a page that pulls core again puts that in question. One extra class removes the question. */
+.uap-backdrop .uap-card {
+  width: 100%; max-width: 640px; box-sizing: border-box;
   padding: 16px;
   display: flex; flex-direction: column; gap: 32px;
   overflow: visible;
@@ -141,8 +146,10 @@
   display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
   font-size: 14px; font-weight: 500; color: var(--vc-text);
 }
-/* Empty means no heading at all, not a heading that says "empty". */
-.uap-listwrap.is-empty .uap-listhead { display: none; }
+/* Empty keeps the heading, quieted down: it labels the greyed rows underneath as "this is where
+   prompts land", which two anonymous grey bars on their own do not say. Third colour and normal
+   weight, so it sits behind the real count rather than competing with it. */
+.uap-listwrap.is-empty .uap-listhead { color: var(--vc-third); font-weight: 400; }
 .uap-clearall {
   margin-left: auto; border: 0; background: transparent; padding: 0;
   color: var(--vc-muted); font: inherit; font-size: 12px; font-weight: 500; cursor: pointer;

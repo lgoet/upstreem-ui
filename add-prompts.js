@@ -397,10 +397,9 @@
       M.listwrap.classList.remove("is-empty");
       el.innerHTML = S.rows.map(rowHtml).join("");
     }
-    /* No heading at all while the list is empty. "No prompts yet" in the same weight as the real
-       count made the emptiest state the loudest thing on the card. */
     M.count.textContent = S.rows.length
-      ? S.rows.length + (S.rows.length === 1 ? " prompt" : " prompts") : "";
+      ? S.rows.length + (S.rows.length === 1 ? " prompt" : " prompts")
+      : "No prompts yet";
     M.save.disabled = !S.rows.length || S.saving;
     M.save.textContent = S.rows.length ? "Add " + S.rows.length + (S.rows.length === 1 ? " prompt" : " prompts")
                                        : "Add prompts";
