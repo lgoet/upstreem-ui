@@ -136,7 +136,13 @@
          string arrives (dashboard-page-header takes its KPI array the same way), and the five
          kinds of damage Bubble does to such a string are worth fixing in exactly one place.
          Untouched placeholder = the element was pasted but never filled in, which is not an error. */
-      if (raw && raw.indexOf("TOPICS_JSON") < 0) {
+      /* Any bare ALL-CAPS token is an unreplaced Bubble placeholder, not data. Checking for one
+         specific name was the bug: markets-filter was derived from models-filter and kept looking
+         for MODELS_JSON, so MARKETS_JSON sailed through and every mount logged a parse error for
+         a state that is completely normal — the seed is empty whenever the page feeds the list
+         through setUpstreemMarkets() instead. Matching the SHAPE covers all three pickers and any
+         future one. */
+      if (raw && !/^[A-Z0-9_]+$/.test(raw)) {
         seeded = UC.parseLoose ? UC.parseLoose(raw, "topics-filter " + instanceId) : null;
       }
     }

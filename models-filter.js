@@ -135,7 +135,13 @@
     var seedEl = root.querySelector(".umf-models-json");
     if (seedEl) {
       var raw = String(seedEl.textContent || "").trim();
-      if (raw && raw.indexOf("MODELS_JSON") < 0) {
+      /* Any bare ALL-CAPS token is an unreplaced Bubble placeholder, not data. Checking for one
+         specific name was the bug: markets-filter was derived from models-filter and kept looking
+         for MODELS_JSON, so MARKETS_JSON sailed through and every mount logged a parse error for
+         a state that is completely normal — the seed is empty whenever the page feeds the list
+         through setUpstreemMarkets() instead. Matching the SHAPE covers all three pickers and any
+         future one. */
+      if (raw && !/^[A-Z0-9_]+$/.test(raw)) {
         seeded = UC.parseLoose ? UC.parseLoose(raw, "models-filter " + instanceId) : null;
       }
     }
