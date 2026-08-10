@@ -315,8 +315,23 @@
       return !isLocal() || isYes(v);
     }
 
+    /* Never return in silence on an empty name -- see STYLEGUIDE §46. The topics picker carries
+       the same two-channel design the models picker does, and there the unfilled
+       data-*-apply-fn attribute cost a debugging round: eleven placements, no page-level
+       workflow, and nothing anywhere saying so. Said once per instance, not per click.
+       No name is DERIVED here on purpose: this app's topics events are not uniformly named
+       (utfTopics_* alongside utfsettopics_*), so a guess would call the wrong thing. */
+    var warnedApply = false;
     function fireTo(name, json, required) {
-      if (!name) return;
+      if (!name) {
+        if (!required && !warnedApply && window.console) {
+          warnedApply = true;
+          console.info("[topics-filter] " + instanceId + ": data-topics-apply-fn is empty, so no " +
+            "page-level workflow hears about this change. That is fine when the page reads the " +
+            "selection out of the reusable's states; set the attribute if a table has to reload.");
+        }
+        return;
+      }
       var fn = UC.resolveBubbleFn(name);
       if (typeof fn === "function") { try { fn(json); } catch (e) {} return; }
       if (window.console) {

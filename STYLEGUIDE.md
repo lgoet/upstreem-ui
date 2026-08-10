@@ -2483,3 +2483,36 @@ wenn eine Blockade tatsaechlich AUF einem unserer Aufrufe liegt.
    gar nicht auf diese View) liefen hier im selben Block mit.
 3. Payload der Run-JS-Schritte kleiner halten: die Blockaden vor unserem ersten Aufruf sind Bubble
    beim Auswerten der RPC-Antwort und Bauen des Text-Ausdrucks.
+
+## 46. Eine fehlende Verdrahtung darf nie schweigen
+
+**Regel:** Wenn eine Komponente einen Bubble-Event-Namen aus einem Attribut liest und das Attribut
+leer ist, muss sie das sagen. Genau einmal pro Instanz, mit Instanz-Id, Attributnamen und einem
+Beispielwert. Ein `if (!name) return;` ohne Meldung ist verboten.
+
+**Warum die Regel existiert.** Das Models-Dropdown feuert auf zwei Kanälen: `data-models-fn` an das
+Element im Reusable, `data-models-apply-fn` an das Element auf der Seite. Der zweite blieb bei allen
+elf Platzierungen ungefüllt. Die Bubble-Events waren korrekt angelegt und lagen an der richtigen
+Stelle, nur wusste kein Element ihren Namen. `fireTo()` kehrte bei leerem Namen wortlos zurück, also
+war das Symptom "das Dropdown feuert nicht" und die Ursache stand nirgends.
+
+Von den drei möglichen Ausgängen war das der schlechteste:
+
+| Attribut | Verhalten vorher | Verhalten jetzt |
+|---|---|---|
+| richtig gesetzt | feuert | feuert |
+| falscher Name | warnt mit Namen | warnt mit Namen |
+| leer | **nichts, wortlos** | Hinweis mit Attributname und Beispiel |
+
+**Zweite Regel, wo die Namen einer Konvention folgen: leiten statt fordern.** Ein zweites Attribut
+pro Platzierung ist bei elf Platzierungen elf Edits für einen Namen, der ohnehin einer Regel folgt.
+Das Models-Dropdown leitet den Apply-Namen deshalb aus `data-models-fn` ab, indem es `umfModels`
+durch `umfApply` ersetzt. Ein explizit gesetztes Attribut gewinnt weiterhin.
+
+Ableiten ist nur erlaubt, wenn die Namen in der App tatsächlich einheitlich sind. Beim
+Topics-Dropdown wird bewusst NICHT abgeleitet: dort stehen `utfTopics_*` und `utfsettopics_*`
+nebeneinander, eine Ableitung würde also das falsche Ziel rufen. Dort greift nur die erste Regel.
+
+**Beim Bauen einer neuen Komponente zu prüfen:** jeder Pfad, auf dem ein Event-Name ins Leere laufen
+kann, endet entweder in einem Aufruf oder in genau einer Konsolenzeile. Nie in beidem und nie in
+keinem von beidem.
