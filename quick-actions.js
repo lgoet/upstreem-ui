@@ -96,6 +96,136 @@
     if (slot === "mentioning"){ var b = BRANDS.filter(function(x){ return String(x.id) === String(v) || x.name === v; })[0]; return b ? b.name : String(v); }
     return String(v).replace(/_/g," ");
   }
+  /* ---------- reference: the in-app glossary ----------
+     Sits ABOVE Actions in the same wrapper, so its visibility is Actions' visibility and cannot
+     drift from it: shown while idle and underneath results, hidden only in command mode ("/"),
+     where the whole panel belongs to the filter menu.
+
+     Every entry is one metric or one closed vocabulary. Clicking slides its explanation open; the
+     optional button underneath drops the reader straight into the palette query that shows the
+     thing being described, so reading and doing are one click apart.
+
+     `chips` is the list itself where the vocabulary IS the answer (citation types, URL types) --
+     rendered from the SAME constants the palette filters use above, never retyped. A hand-copied
+     second list is how a glossary starts lying: the day a type is added to URL_TYPES, this section
+     gains it too, or it is visibly missing from both.
+
+     `apply` mirrors what a user could type: { scope:"url", rank:"top" } is exactly /urls /top. */
+  var REF = [
+    {
+      id: "citation-types",
+      label: "Citation Types",
+      hint: function(){ return CITATION_TYPES.length + " kinds"; },
+      body: "What kind of source a citation came from. Every URL an AI answer cites is classified " +
+            "into exactly one of these, which is what makes \"where do the answers about us come " +
+            "from\" a question with a chart behind it.",
+      chips: function(){ return subOptions("types"); },
+      apply: { scope: "url" },
+      applyLabel: "Show URLs by citation type"
+    },
+    {
+      id: "url-types",
+      label: "URL Types",
+      hint: function(){ return URL_TYPES.length + " kinds"; },
+      body: "What kind of PAGE the cited URL is — independent of who published it. A competitor's " +
+            "pricing page and a magazine's ranking list are both citations, but they are not the " +
+            "same opportunity, and this is the field that tells them apart.",
+      chips: function(){ return subOptions("urltypes"); },
+      apply: { scope: "url", rank: "top" },
+      applyLabel: "Show top URLs"
+    },
+    {
+      id: "share",
+      label: "Share",
+      hint: "%",
+      body: "How much of ALL citations in the selected period went to this one URL, domain or " +
+            "brand. It is a share of the total, so every row's share adds up to 100% — a rising " +
+            "share means winning ground, not merely being cited more often while everyone else " +
+            "grows too. Domain Share is the same number computed inside one domain: how much of " +
+            "that domain's own citations a single URL carries.",
+      apply: { scope: "domain", rank: "top" },
+      applyLabel: "Show top domains"
+    },
+    {
+      id: "trend",
+      label: "Trend",
+      hint: "▲ ▼",
+      body: "The change against the PREVIOUS period of the same length — pick 30 days and the " +
+            "comparison is the 30 days before that. Shown as percentage points, not as a percentage " +
+            "of the old value: from 6% to 8% is +2, never +33%. No chip at all means the change " +
+            "rounds to zero, which is deliberately different from a chip showing 0."
+    },
+    {
+      id: "rank",
+      label: "Rank",
+      hint: "lower is better",
+      body: "The average position your brand takes in an answer that mentions it — 1 is the first " +
+            "brand named. This is the one metric in the app where DOWN is the improvement, so its " +
+            "trend chip is inverted: a falling rank number shows as a positive move. Shown to one " +
+            "decimal because real movements are smaller than a whole place.",
+      apply: { scope: "brand", rank: "top" },
+      applyLabel: "Show brands by rank"
+    },
+    {
+      id: "sentiment",
+      label: "Sentiment",
+      hint: "0 – 100",
+      body: "How positively your brand is described where it appears, on a 0–100 scale — 50 is " +
+            "neutral. It is measured only in answers that actually mention you, so it says nothing " +
+            "about how OFTEN that happens; a brand cited twice can have a better sentiment than one " +
+            "cited two hundred times. Read it next to Visibility, never instead of it."
+    },
+    {
+      id: "visibility",
+      label: "Visibility",
+      hint: "%",
+      body: "The share of runs for a prompt in which your brand was mentioned at all. 20% means one " +
+            "answer in five named you. This is the reach number; Rank and Sentiment describe what " +
+            "happened in those answers once you were in them.",
+      apply: { scope: "prompt", rank: "top" },
+      applyLabel: "Show top prompts"
+    },
+    {
+      id: "prompts-responses",
+      label: "Prompts vs Responses",
+      hint: "1 : many",
+      body: "A PROMPT is the question you track. A RESPONSE is one model's answer to it at one " +
+            "point in time, so a single prompt collects a new response per model per run. Every " +
+            "aggregate in the app — visibility, rank, sentiment — is computed across responses and " +
+            "then shown against the prompt, which is why a prompt's numbers move without the prompt " +
+            "itself ever changing."
+    },
+    {
+      id: "brand-mentions",
+      label: "Brand Mentions",
+      hint: "own vs competitor",
+      body: "Which tracked brands appear on a cited page. Your own brand and your competitors are " +
+            "the same kind of record with a different role, so a page can carry both — and the " +
+            "interesting pages are usually the ones that carry your competitors and not you.",
+      apply: { scope: "url" },
+      applyLabel: "Show URLs"
+    },
+    {
+      id: "topics",
+      label: "Topics",
+      hint: "Or / And",
+      body: "Your own labels on prompts — the app never invents them. Filtering by two topics in " +
+            "OR mode returns prompts carrying either; AND returns only prompts carrying both, which " +
+            "is usually a much smaller set than people expect the first time."
+    },
+    {
+      id: "models",
+      label: "Models",
+      hint: "Single / Multi",
+      body: "Which LLM produced a response. Single-select compares one model against the whole " +
+            "picture, multi-select pools several into one number. Two models rarely agree on who to " +
+            "cite, so a metric that looks flat across all models can hide a large move inside one."
+    }
+  ];
+  var REF_BY_ID = {}; REF.forEach(function(r){ REF_BY_ID[r.id] = r; });
+  var refOpen = null;   // id of the entry currently expanded — one at a time, like an accordion
+
+
   function anyFilter(){ return !!(FILTERS.scope || FILTERS.rank || FILTERS.type || FILTERS.urltype || FILTERS.market || FILTERS.mentioning); }
 
   function esc(s){ var d = document.createElement("div"); d.textContent = String(s == null ? "" : s); return d.innerHTML; }
@@ -239,8 +369,79 @@
       '<div class="mqa-empty-sub">Please try again.</div></div>';
   }
 
+  /* The reference list. One row per entry; the expanded body is a sibling DIV rather than a child
+     of the button, because a <button> may not contain another <button> and the body carries one. */
+  function refHtml(){
+    var html = '<div class="mqa-sep"></div><div class="mqa-group mqa-refgroup">' +
+               '<div class="mqa-group-head">Reference</div>';
+    REF.forEach(function(r){
+      var on = (refOpen === r.id);
+      var hint = (typeof r.hint === "function") ? r.hint() : (r.hint || "");
+      html += '<div class="mqa-ref-item' + (on ? " is-open" : "") + '">' +
+        '<button class="mqa-action mqa-ref" type="button" role="option" data-ref="' + escAttr(r.id) + '"' +
+                ' aria-expanded="' + (on ? "true" : "false") + '">' +
+          '<span class="mqa-action-ic mqa-ref-ic">' +
+            '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>' +
+          '</span>' +
+          '<span class="mqa-main"><span class="mqa-primary">' + esc(r.label) + '</span></span>' +
+          (hint ? '<span class="mqa-action-hint">' + esc(hint) + '</span>' : '') +
+          '<span class="mqa-ref-chev">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
+          '</span>' +
+        '</button>';
+      /* Only the OPEN entry's body is in the DOM. The alternative — every body present and hidden
+         by CSS — puts eleven paragraphs and two full colour legends into the palette on every
+         idle render, and the palette re-renders on every keystroke. */
+      if (on){
+        html += '<div class="mqa-ref-body">' +
+                  '<p class="mqa-ref-text">' + esc(r.body) + '</p>';
+        if (r.chips){
+          /* Straight from subOptions(), the same source the palette's own /citation-type and
+             /url-type menus read. A hand-copied second list is how a glossary starts lying. */
+          html += '<div class="mqa-ref-chips">';
+          r.chips().forEach(function(c){
+            html += '<span class="mqa-ref-chip">' + colorDot(c.dot || "#6f737c") + esc(c.label) + '</span>';
+          });
+          html += '</div>';
+        }
+        if (r.apply){
+          html += '<button class="mqa-ref-go" type="button" data-refgo="' + escAttr(r.id) + '">' +
+                    esc(r.applyLabel || "Show me") +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>' +
+                  '</button>';
+        }
+        html += '</div>';
+      }
+      html += '</div>';
+    });
+    return html + '</div>';
+  }
+
+  /* Turns a reference entry's `apply` into the same palette state the user could have typed —
+     { scope:"url", rank:"top" } is /urls /top. Deliberately routed through the existing FILTERS +
+     afterFilterChange() path rather than firing something of its own, so the button cannot drift
+     away from what the commands do. */
+  function applyRef(id){
+    var r = REF_BY_ID[id];
+    if (!r || !r.apply) return;
+    for (var slot in FILTERS) if (Object.prototype.hasOwnProperty.call(FILTERS, slot)) FILTERS[slot] = null;
+    for (var k in r.apply) if (Object.prototype.hasOwnProperty.call(r.apply, k)) FILTERS[k] = r.apply[k];
+    refOpen = null;                       // the reader is done reading — collapse behind them
+    input.value = ""; query = ""; syncPh();
+    renderChips(); buildStatic(); afterFilterChange();
+    try { input.focus(); } catch(_){}
+  }
+  function toggleRef(id){
+    refOpen = (refOpen === id) ? null : id;
+    buildStatic();
+    refreshRows();                        // rows moved: the arrow-key ring has to be rebuilt
+    var el = actionsWrap.querySelector('[data-ref="' + id + '"]');
+    if (el && refOpen && el.scrollIntoView) el.scrollIntoView({ block: "nearest" });
+  }
+
   function buildStatic(){
-    var html = '<div class="mqa-sep"></div><div class="mqa-group"><div class="mqa-group-head">Actions</div>';
+    var html = refHtml() +
+               '<div class="mqa-sep"></div><div class="mqa-group"><div class="mqa-group-head">Actions</div>';
     STATIC.forEach(function(a){
       html += '<button class="mqa-action" type="button" role="option" data-action="' + a.action + '">' +
         '<span class="mqa-action-ic">' + a.icon + '</span>' +
@@ -762,6 +963,9 @@
     if (el.hasAttribute("data-recent")){ applyRecent(+el.getAttribute("data-recent")); return; }
     if (el.hasAttribute("data-fav")){ applyFav(+el.getAttribute("data-fav")); return; }
     if (el.hasAttribute("data-cmd")){ applyCommand(el.getAttribute("data-cmd"), el.getAttribute("data-cmd-val")); return; }
+    /* Before the .mqa-action branch below: a reference row carries that class too (it is the same
+       row shape) but must expand instead of firing a Bubble action and closing the palette. */
+    if (el.hasAttribute("data-ref")){ toggleRef(el.getAttribute("data-ref")); return; }
     if (el.classList.contains("mqa-action")) selectStatic(el.getAttribute("data-action"));
     else selectResult(+el.getAttribute("data-ri"));
   }
@@ -956,6 +1160,11 @@
       if (rowMenuOpenKind === kind && rowMenuOpenIdx === idx) closeRowMenu(); else openRowMenu(kind, idx, menuBtn);
       return;
     }
+    /* The "show me" button inside an expanded reference body. Checked BEFORE the row lookup below,
+       because it sits in the .mqa-ref-item next to the row that opened it — without this the click
+       would fall through to that row and collapse the entry the user just acted on. */
+    var refGo = e.target.closest ? e.target.closest("[data-refgo]") : null;
+    if (refGo){ e.stopPropagation(); applyRef(refGo.getAttribute("data-refgo")); return; }
     var el = e.target.closest ? e.target.closest(".mqa-row, .mqa-action") : null; if (el) activate(el);
   });
   modal.addEventListener("mousemove", function(e){ var el = e.target.closest ? e.target.closest(".mqa-row, .mqa-action") : null; if (el){ var i = rows.indexOf(el); if (i >= 0 && i !== activeIndex) setActive(i); } });

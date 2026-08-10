@@ -365,3 +365,43 @@
   .mqa-overlay { padding: 8vh 10px 12px; }
   .mqa-modal { max-height: 80vh; }
 }
+
+/* ---------- reference: the in-app glossary ----------
+   Sits above Actions in the same wrapper and therefore inherits its visibility exactly: shown
+   while idle and underneath results, hidden only in command mode. The row is a plain .mqa-action, so
+   hover, the active highlight and keyboard navigation all come from there — only the chevron, the
+   expanded body and its chips are defined here. */
+.mqa-ref-item { display: block; }
+.mqa-ref-chev { flex: 0 0 auto; display: inline-flex; align-items: center; color: var(--am-muted-2); transition: transform .16s ease; }
+.mqa-ref-chev svg { width: 14px; height: 14px; display: block; }
+/* The ONE place a chevron rotation is right in this app: it is not signalling that a dropdown is
+   open — the panel does that — it is the accordion's own open/closed state on a row that stays
+   exactly where it is. */
+.mqa-ref-item.is-open .mqa-ref-chev { transform: rotate(180deg); }
+
+.mqa-ref-body {
+  padding: 2px 10px 10px 36px;   /* 36px lines the text up with the row label, past the icon */
+  animation: mqaRefIn .16s ease both;
+}
+@keyframes mqaRefIn { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+.mqa-ref-text { margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--am-muted); }
+
+/* Wraps to as many lines as it needs — the URL types are eleven entries and forcing them onto one
+   scrolling row would hide most of the vocabulary this section exists to show. */
+.mqa-ref-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+.mqa-ref-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 22px; padding: 0 8px; border-radius: 6px;
+  background: var(--am-soft); color: var(--am-text);
+  font-size: 11.5px; font-weight: 500; line-height: 1; white-space: nowrap;
+}
+
+.mqa-ref-go {
+  margin-top: 10px; display: inline-flex; align-items: center; gap: 5px;
+  height: 28px; padding: 0 9px 0 11px; border: 1px solid var(--am-border); border-radius: 8px;
+  background: var(--am-card); color: var(--am-text);
+  font-family: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
+  transition: background .14s ease, border-color .14s ease;
+}
+.mqa-ref-go:hover { background: var(--am-soft); border-color: var(--am-border-strong); }
+.mqa-ref-go svg { width: 13px; height: 13px; display: block; }
