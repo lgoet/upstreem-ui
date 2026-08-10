@@ -463,9 +463,10 @@
       '<button class="mqa-action mqa-ref mqa-reftop" type="button" role="option" data-reflist="1"' +
               ' aria-expanded="' + (refListOpen ? "true" : "false") + '">' +
         '<span class="mqa-action-ic mqa-ref-ic">' +
-          /* Books side by side with the last one leaning: the library glyph, not the single
-             open book. A shelf reads as "several things looked up", one book reads as "a manual". */
-          '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="4" height="16" rx="1"/><rect x="9" y="4" width="4" height="16" rx="1"/><path d="M16.5 5.6l3.4 1 -3.3 12.2 -3.4-1z"/></svg>' +
+          /* Feather "book-open", the same glyph the dashboard header's Docs button carries. Taken
+             from the set rather than drawn here: a hand-made icon never quite matches the stroke
+             weight and optical size of the ones around it. */
+          '<svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>' +
         '</span>' +
         '<span class="mqa-main"><span class="mqa-primary">Reference</span></span>' +
         '<span class="mqa-action-hint">' + REF.length + ' entries</span>' +
@@ -556,7 +557,10 @@
       '<button class="mqa-action mqa-ref mqa-acttop" type="button" role="option" data-actlist="1"' +
               ' aria-expanded="' + (actionsOpen ? "true" : "false") + '">' +
         '<span class="mqa-action-ic mqa-ref-ic">' +
-          '<svg viewBox="0 0 24 24"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>' +
+          /* Feather "command". NOT the zap glyph: that one is already "Add New Prompt", one row
+             below inside this very group, and a head row wearing its own child's icon reads as a
+             duplicate rather than as a heading. */
+          '<svg viewBox="0 0 24 24"><path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3z"/></svg>' +
         '</span>' +
         '<span class="mqa-main"><span class="mqa-primary">Actions</span></span>' +
         '<span class="mqa-action-hint">' + STATIC.length + ' entries</span>' +
