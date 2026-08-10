@@ -177,7 +177,7 @@
               '<button class="up-seg-btn" type="button" data-mode="and">And</button>' +
             '</span>' +
             '<span class="utf-foot-right">' +
-              '<button class="utf-grpbtn" type="button" data-tip="Custom groupings" aria-label="Custom groupings" aria-pressed="false">' +
+              '<button class="utf-grpbtn" type="button" data-tip="Show your saved groupings" aria-label="Custom groupings" aria-pressed="false">' +
                 ICON.group + '<span class="utf-grpbtn-dot"></span>' +
               '</button>' +
               (wantsNewTopic() ? '<button class="utf-new" type="button">' + ICON.plus + '<span>New Topic</span></button>' : '') +
@@ -662,6 +662,10 @@
       });
     } catch (e) {}
     if (UC.unclipAncestors) UC.unclipAncestors(root);
+    /* The app's shared tooltip. This file had no tooltips at all until the groupings button
+       arrived, so the data-tip on it did nothing on its own. Reads isDark through a getter rather
+       than a value because the theme can flip long after mount. */
+    if (UC.makeTooltips) UC.makeTooltips(root, function () { return isDark; });
 
     var ctrl = {
       root: root,

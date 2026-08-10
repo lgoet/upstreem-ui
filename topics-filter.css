@@ -165,13 +165,16 @@
    these are a different KIND of thing, not more topics, and a gap on its own reads as scroll
    spacing once the list is long enough to move. */
 .utf-grp-sec { padding-bottom: 6px; margin-bottom: 4px; border-bottom: 1px solid var(--vc-border); }
-.utf-grp-head { padding: 2px 9px 5px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.05em;
+/* The extra top padding is breathing room ABOVE the heading, not below it: the section is the
+   first child of the list, so without it the label sits flush against the search row. */
+.utf-grp-head { padding: 7px 9px 5px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.05em;
   text-transform: uppercase; color: var(--vc-third); }
 .utf-grp-none { padding: 4px 10px 8px; font-size: 12.5px; color: var(--vc-third); }
-/* The grouping's own glyph where a topic carries its colour chip: same slot, same 10px optical
-   weight, so the two row types line up on one left edge. */
+/* The grouping's own glyph where a topic carries its colour chip: same slot, so the two row types
+   line up on one left edge. Larger than the topic dot on purpose -- an outlined icon reads smaller
+   than a filled shape of the same box, and at 13px it disappeared next to the names. */
 .utf-grp-ic { flex: 0 0 auto; display: inline-flex; color: var(--vc-third); }
-.utf-grp-ic svg { width: 13px; height: 13px; display: block; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+.utf-grp-ic svg { width: 15px; height: 15px; display: block; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
 
 .utf-new {
   height: 32px; padding: 0 11px; border: 1px solid var(--vc-border); border-radius: 8px;
