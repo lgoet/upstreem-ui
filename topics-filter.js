@@ -436,7 +436,7 @@
 
     /* New Topic goes through core's shared modal — the same one topics-manager and the prompts
        table's bulk editor open, so a topic created here looks and behaves identically. */
-    var pendingNewTopic = "";
+    var pendingNewTopic = false;
     var topicModal = UC.makeTopicModal ? UC.makeTopicModal({
       getIsDark: function () { return isDark; },
       onSave: function (payload) {
@@ -455,7 +455,7 @@
            id to show on create, so closing on click would claim success before Bubble has one.
            The confirmation is the refreshed list arriving with this name in it; setTopics closes
            it then. core's own timeout stays as the fallback if the RPC never answers. */
-        pendingNewTopic = String(payload.name || "").trim().toLowerCase();
+        pendingNewTopic = true;
       }
     }) : null;
     root.querySelector(".utf-new").addEventListener("click", function () {
@@ -495,13 +495,18 @@
       instanceId: instanceId,
       setTopics: function (rows) {
         topics = Array.isArray(rows) ? rows.slice() : [];
-        /* A create counts as done once the name is actually in the list Bubble sent back. */
+        /* The ARRIVAL of a fresh list is the confirmation, not what is in it.
+           This used to look for the new name in the list, and that hung the modal open on
+           '\'f98()' -- any transformation on the way through Bubble (entity escaping, trimming,
+           a sanitiser touching punctuation) makes a name comparison miss, and a missed comparison
+           means the user sits in a modal that never closes. A name is data; whether the round
+           trip finished is not something data should decide.
+           If the create actually failed, the list simply comes back without the topic and the
+           user sees that -- which is the honest outcome, and better than a stuck dialog.
+           core's own timeout still covers the case where no list arrives at all. */
         if (pendingNewTopic && topicModal && topicModal.isOpen && topicModal.isOpen()) {
-          var arrived = false;
-          for (var pi = 0; pi < topics.length; pi++) {
-            if (String(topics[pi] && topics[pi].name || "").trim().toLowerCase() === pendingNewTopic) { arrived = true; break; }
-          }
-          if (arrived) { pendingNewTopic = ""; try { topicModal.close(); } catch (e) {} }
+          pendingNewTopic = false;
+          try { topicModal.close(); } catch (e) {}
         }
         /* Drop selections whose topic no longer exists, otherwise the trigger counts something
            the list cannot show and Clear all is the only way out. */
