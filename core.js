@@ -2147,6 +2147,29 @@
     };
   }
 
+  /* The "Sort by" popover's markup. Four components emitted this string character for character,
+     data-sortfield / data-sortdir hooks included -- and those hooks are what each component's own
+     click handler matches on, so the markup and the handlers had to stay in step across four
+     files by hand. One of them silently getting a different attribute name is a click that stops
+     working with nothing in the console.
+
+     fields is [{key, label}]. Nothing here reads component state; the caller passes the two values
+     that vary, which is what keeps this usable from a component with a different state shape. */
+  function sortMenuHtml(fields, sortField, sortDir){
+    var html = '<div class="up-pop-head">Sort by</div>';
+    html += (fields || []).map(function(f){
+      return '<div class="up-pop-opt' + (f.key === sortField ? " is-active" : "") + '" data-sortfield="' + f.key + '">' +
+               '<span>' + esc(f.label) + '</span>' +
+               '<span class="up-check">' + CHECK_SVG + '</span>' +
+             '</div>';
+    }).join("");
+    html += '<div class="up-pop-div"></div>' +
+      '<div class="up-pop-row"><span class="up-pop-label">Descending</span>' +
+        '<span class="up-switch' + (sortDir === "desc" ? " is-on" : "") + '" role="switch" data-sortdir></span>' +
+      '</div>';
+    return html;
+  }
+
   /* data-isdark (what Bubble sets) -> data-theme (what the CSS reads), plus "did it actually
      change" so the caller can skip the repaint work when it did not. Five components carried these
      seven lines character for character; the shape of the answer is what forced the duplication --
@@ -4703,6 +4726,7 @@
     makePageNav: makePageNav,
     makePageHeaderMeta: makePageHeaderMeta,
     syncTheme: syncTheme,
+    sortMenuHtml: sortMenuHtml,
     widthTiers: widthTiers,
     spinOnce: spinOnce,
 

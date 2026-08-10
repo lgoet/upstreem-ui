@@ -164,18 +164,10 @@
     var sortPop = elSort ? UC.makePopover({ wrap: elSort, menu: elSortMenu, opener: elSort.querySelector(".up-sort-btn"), group: "utm-" + instanceId }) : null;
     function populateSort(){
       if (!elSortMenu) return;
-      var html = '<div class="up-pop-head">Sort by</div>';
-      html += SORT_FIELDS.map(function(f){
-        return '<div class="up-pop-opt' + (f.key === state.sortField ? " is-active" : "") + '" data-sortfield="' + f.key + '">' +
-                 '<span>' + esc(f.label) + '</span>' +
-                 '<span class="up-check">' + CHECK_SVG + '</span>' +
-               '</div>';
-      }).join("");
-      html += '<div class="up-pop-div"></div>' +
-        '<div class="up-pop-row"><span class="up-pop-label">Descending</span>' +
-          '<span class="up-switch' + (state.sortDir === "desc" ? " is-on" : "") + '" role="switch" data-sortdir></span>' +
-        '</div>';
-      elSortMenu.innerHTML = html;
+      /* Shared markup: UC.sortMenuHtml. Four components built this string identically, including
+         the data-sortfield / data-sortdir hooks their click handlers match on -- so a change to
+         the markup here had to be made in four places or the handlers drifted apart from it. */
+      elSortMenu.innerHTML = UC.sortMenuHtml(SORT_FIELDS, state.sortField, state.sortDir);
     }
     function applySort(field, dir){
       state.sortField = field; state.sortDir = dir;
