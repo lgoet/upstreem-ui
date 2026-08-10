@@ -613,9 +613,11 @@
         p.new_topic_hex_light = payload.hex_light;
         p.new_topic_hex_dark = payload.hex_dark;
         fire("data-addtopics-fn", "uptAddTopics", p);
-        /* Bubble saves this, then re-runs the topics RPC and calls setUpstreemTopics --
-           which is what refreshes every topic picker on the page, here and elsewhere. */
-        if (UC.topicsChanged) UC.topicsChanged();
+        /* No topicsChanged() here -- see topics-filter.js for the full reasoning. In short: firing
+           a refresh straight after the mutation event RACES Bubble's own workflow. The refresh
+           reads the database before the write has committed and comes back with data that is one
+           step behind. Only Bubble knows when its write is done, so the refresh belongs at the END
+           of the workflow that performs it. */
 
         /* Same stale-query trap as the inline create row below: the bulk panel's search box can
            still be holding a non-matching query from before this modal was opened, which would
@@ -1538,9 +1540,9 @@
       p.tag_ids = tagIds.join(",");
       if (p.mode === "ids") p.prompt_ids = p.ids;
       fire("data-applybulktopics-fn", "uptApplyBulkTopics", p);
-      /* Assignments moved, so every topic's prompt_count just changed -- the counts shown in the
-         filter dropdowns are stale from this moment on. Same one-liner, same fan-in. */
-      if (UC.topicsChanged) UC.topicsChanged();
+      /* Assignments moved, so every topic's prompt_count just changed -- but asking for the
+         refresh here would race the very workflow that moves them (see topics-filter.js). The
+         reload belongs at the end of the bulk-apply workflow. */
       /* Optimistic local update, same idea as the rest of the bar: only touches rows we have. */
       loadedSelectedRows().forEach(function(r){
         var tags = Array.isArray(r.tags) ? r.tags : (r.tags = []);

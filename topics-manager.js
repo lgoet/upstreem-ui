@@ -214,15 +214,19 @@
         if (mode === "edit" && topic) payload.id = String(topic.id);
         fire(mode === "edit" ? "data-edit-fn" : "data-add-fn",
              mode === "edit" ? "bubble_fn_utmEdit" : "bubble_fn_utmAdd", payload);
-        /* Bubble saves this, then re-runs the topics RPC and calls setUpstreemTopics --
-           which is what refreshes every topic picker on the page, here and elsewhere. */
-        if (UC.topicsChanged) UC.topicsChanged();
+        /* No topicsChanged() here -- see topics-filter.js for the full reasoning. In short: firing
+           a refresh straight after the mutation event RACES Bubble's own workflow. The refresh
+           reads the database before the write has committed and comes back with data that is one
+           step behind. Only Bubble knows when its write is done, so the refresh belongs at the END
+           of the workflow that performs it. */
       },
       onDelete: function(topic){
         fire("data-delete-fn", "bubble_fn_utmDelete", { id: String(topic.id) });
-        /* Bubble saves this, then re-runs the topics RPC and calls setUpstreemTopics --
-           which is what refreshes every topic picker on the page, here and elsewhere. */
-        if (UC.topicsChanged) UC.topicsChanged();
+        /* No topicsChanged() here -- see topics-filter.js for the full reasoning. In short: firing
+           a refresh straight after the mutation event RACES Bubble's own workflow. The refresh
+           reads the database before the write has committed and comes back with data that is one
+           step behind. Only Bubble knows when its write is done, so the refresh belongs at the END
+           of the workflow that performs it. */
       }
     });
 
