@@ -450,7 +450,16 @@
            into THIS dropdown and every other one, with a real id and a real prompt_count. This
            component deliberately does not insert it locally: a hand-made row would carry no id,
            so selecting it would send Bubble something it cannot resolve. */
-        if (UC.topicsChanged) UC.topicsChanged();
+        /* NO topicsChanged() here, deliberately -- and this is the correction of an earlier
+           mistake. Firing it right after the create event starts a refresh that RACES the create
+           workflow: Bubble runs both, the refresh reads the database before the insert has
+           committed, and the list comes back without the new topic. The symptom is a list that is
+           always exactly one create behind. (An earlier version compared names to decide when to
+           close, which accidentally masked this by ignoring the too-early list and waiting for the
+           next one -- it looked better while being wrong for a second reason.)
+           Only Bubble knows when its own create is done, so only Bubble can order this: the create
+           workflow ends with "Trigger custom event: Load Topics". See the Bubble file.
+        */
         /* The modal deliberately stays open until the save is CONFIRMED -- there is no optimistic
            id to show on create, so closing on click would claim success before Bubble has one.
            The confirmation is the refreshed list arriving with this name in it; setTopics closes

@@ -36,6 +36,26 @@
      root element with the same payload, so nothing is silently lost.
 
      ── Control from "Run JavaScript" ───────────────────────────
+  ═══ NEW TOPIC: your create workflow must end with "Load Topics" ═══════════════
+
+  Saving in the New Topic dialog fires data-newtopic-fn and nothing else. The component does NOT
+  ask for a refresh itself -- it cannot, correctly: the refresh would start while the create
+  workflow is still running, read the database before the insert has committed, and come back with
+  a list that does not contain the new topic yet. The symptom of getting that wrong is a list that
+  is always exactly ONE create behind.
+
+  Only Bubble knows when its own create has finished, so the last step of the create workflow is:
+
+      Trigger custom event: "Load Topics"
+
+  ...the same event the page already has (RPC + setUpstreemTopics). That refreshed list is also
+  what CLOSES the dialog: it stays open, with its Save button disabled, until a list arrives -- so
+  it visibly waits for the round trip instead of claiming success early. If no list ever arrives,
+  core closes it after a few seconds so nobody is trapped.
+
+  This applies to any workflow that changes topics -- create, rename, delete, reassign. Put the
+  trigger at the END, after the data has actually changed.
+
   ═══ TWO CHANNELS: the reusable stores, the page reacts ════════════════════════
 
   A selection has two receivers, and one function call can only reach one element:
