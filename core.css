@@ -13,7 +13,7 @@
          exactly why the panels stopped matching each other. --up-sel-bg is deliberately
          translucent so a selected row still shows the panel underneath rather than becoming a
          solid block; it is the app's row-selection tone at 55% (light) / 60% (dark). */
-      --up-menu-bg: #ffffff; --up-sel-bg: rgba(245,245,245,0.55);
+      --up-menu-bg: #ffffff; --up-sel-bg: rgba(245,245,245,0.55); --up-menu-border: #e0e2e6;
       /* Dropdown-Geometrie. Vorher hatte jedes Panel eigene Werte -- 12 vs 14 Radius, 6 vs 8
          Padding, 6 vs 8 Abstand zum Trigger. Keiner davon war eine Design-Entscheidung, es waren
          Kopien die auseinandergelaufen sind. Eine Zahl je Groesse, hier. */
@@ -48,7 +48,7 @@
     .up-root[data-theme="dark"] {
       --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #353535;
       --vc-bg: #1b1b1b; --vc-heading-bg: rgba(42,42,42,0.6); --vc-sk: #3a3a3a; --up-surface: #121212;
-      --up-menu-bg: #151515; --up-sel-bg: rgba(42,42,42,0.60);
+      --up-menu-bg: #151515; --up-sel-bg: rgba(42,42,42,0.60); --up-menu-border: #454545;
       --up-dd-shadow: 0 10px 28px rgba(0,0,0,.32);
       --vc-switch-bg: rgba(42,42,42,0.6); --vc-switch-border: #353535; --vc-third: #808080;
       --vt-head-bg: #121212; --vt-logo-bg: #e0e0e0; --vt-row-hover: rgba(42,42,42,0.6);
@@ -1649,3 +1649,25 @@
 .up-root.is-vnarrow.up-ph-root,
 .up-root.is-vnarrow.up-sidebar-clear { padding-top: 32px; }
 .up-root.is-vnarrow .up-ph-addbtn { margin-top: -16px; }
+
+/* ======================================================================
+   Dropdown-Panel-Kante — EIN Ort, wie die Panel-Farbe daneben.
+
+   Gemessen auf der Live-Seite: das Panel ist #151515, der Drawer darunter #121212.
+   Drei Stufen von 255 -- die Flaeche verschwindet darin, und das liest sich als
+   "das Dropdown ist durchsichtig". Auf der Seite sind es sechs Stufen gegen
+   #1b1b1b, gerade genug, dass es dort nicht auffiel.
+
+   Die Panel-FARBE bleibt, wo sie ist: sie ist eine bewusste, app-weite
+   Entscheidung, und sie wegen eines Kontexts zu verschieben waere der falsche
+   Hebel. Was fehlte, ist die Kante. core hatte diese Aufhellung schon -- aber
+   nur fuer .up-filter-menu, und die Filter-Dropdowns, date-range und
+   add-prompts bringen eigene Menue-Klassen mit und wurden nie mitgenommen.
+   Deshalb hier alle an einer Stelle, statt die Regel ein siebtes Mal zu kopieren.
+   ====================================================================== */
+.up-root .up-filter-menu, .up-root .up-menu, .up-root .up-cols-menu,
+.up-root .up-sort-menu, .up-root .up-ment-menu, .up-root .up-pop,
+.up-root .utf-menu, .up-root .umf-menu, .up-root .umk-menu,
+.up-root .udr-menu, .up-root .uap-menu {
+  border-color: var(--up-menu-border);
+}
