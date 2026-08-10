@@ -22,6 +22,32 @@
 
    Date formatting also moved from German month abbreviations (Mär/Mai/Okt/Dez) to the app's
    English format -- the standalone was the only German-language surface in the product. */
+/* ---- boot stubs (STYLEGUIDE §25) ----------------------------------------------------------
+   Every other component in this repo installs these; this one never did, and it is the same
+   defect that produced "window.resetPromptsTable is not a function" on a page where the component
+   was not present: Bubble fires its workflow before -- or entirely without -- the element, the
+   name does not exist yet, and the whole Run-JavaScript step dies with an uncaught TypeError
+   instead of quietly doing nothing.
+
+   Two different situations, both covered:
+     - element exists, script still loading  -> the call queues and replays on init.
+     - element is not on this page at all    -> the call is a no-op with one console note. That is
+       the honest outcome: a workflow meant for another view has nothing to talk to here, and it
+       must not take the rest of the step down with it.
+   Installed before anything else in this file and guarded, so a second copy of the script (Bubble
+   re-injecting the markup) cannot reinstall a stub over a queue that already holds calls. */
+(function(){
+  var Q = (window.__uoBootQueue = window.__uoBootQueue || []);
+  if (window.__uoBootStubbed) return;
+  window.__uoBootStubbed = true;
+  ["opportunitiesSetItems", "opportunitiesSetLoading", "opportunitiesSetMode",
+   "opportunitiesSetShowIgnored", "opportunitiesSetVisibleBoards", "opportunitiesSetTheme",
+   "opportunitiesOpenDetail", "opportunitiesCloseDetail"].forEach(function(n){
+    if (typeof window[n] === "function") return;
+    window[n] = function(){ Q.push([n, [].slice.call(arguments)]); };
+  });
+})();
+
 (function(){
   "use strict";
 
@@ -904,6 +930,20 @@
   window.opportunitiesOpenDetail = openDetail;
   window.opportunitiesCloseDetail = closeDetail;
   window.opportunitiesGetState = function(){ return { mode: S.mode, visible: S.visible, query: S.query, count: S.items.length }; };
+
+  /* Replay whatever Bubble called while this file was still loading, in the order it arrived.
+     Cleared first so a second init cannot replay the same calls twice. */
+  (function drainBootQueue(){
+    var Q = window.__uoBootQueue;
+    if (!Q || !Q.length) return;
+    var pending = Q.splice(0, Q.length);
+    pending.forEach(function(c){
+      var fn = window[c[0]];
+      if (typeof fn === "function"){ try { fn.apply(null, c[1]); } catch(e){
+        if (window.console) console.warn("[opportunities] queued " + c[0] + " failed:", e);
+      } }
+    });
+  })();
   /* Diagnostic for "the headers don't pin on my page". position:sticky only reaches the viewport
      if nothing between this root and <html> scrolls, clips or establishes a containing block --
      the usual culprits in a host page are overflow:hidden, transform, filter and will-change on a
