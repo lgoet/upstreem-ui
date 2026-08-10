@@ -8,68 +8,27 @@
    card past a laptop's viewport before anything is in it. So the 32px gaps stay between the three
    REAL sections (head, body, foot) and the body carries its own smaller internal rhythm. */
 
-/* The dialog lives in the browser's TOP LAYER, via popover="manual" — the same move the
-   opportunities drawer needed (commit 9bfc83d) and for the same reason.
+/* NOTHING here positions or stacks the dialog. The root carries core's .up-topicmodal-backdrop
+   and the card carries .up-topicmodal-card, so the fixed overlay, the z-index, the scrim, the
+   dark-mode scrim, the show/hide semantics and the entrance all come from the shell this app
+   already uses for its topic modal.
 
-   A plain position:fixed overlay appended to <body> is at the mercy of the host page. Any ancestor
-   with a transform, filter, backdrop-filter, perspective or contain turns itself into the
-   containing block for fixed positioning, and then inset:0 stops meaning "the viewport" and starts
-   meaning "that ancestor's box" — which is how a centred modal ends up parked at the bottom left
-   of the page. z-index has the same problem from the other side: the number is compared inside the
-   host's stacking context, so a Bubble wrapper with a higher one lifts the whole page above us no
-   matter what we write.
+   Two earlier attempts did it differently and both were wrong. A local copy of core's values
+   re-derived positioning that core had already solved and got it wrong. Replacing that with a
+   top-layer popover fixed the stacking by leaving the document's stacking order entirely, which
+   put the dialog in front of everything including the host's own drawers. The shell is not this
+   file's business; only what is INSIDE the card is. */
 
-   The top layer is painted after the entire document and is not influenced by any ancestor, which
-   settles both at once. Feature-detected: without showPopover the element falls back to the plain
-   fixed overlay it was, driven by the hidden attribute.
-
-   The UA stylesheet gives [popover] its own box (fit-content, auto margins, a border, canvas
-   background), so those are reset here. And display is deliberately NOT a blanket `flex`: the UA
-   rule that hides a closed popover is weaker than any author display, so a blanket value would
-   leave the dialog on screen permanently. The closed state is matched explicitly instead. */
-.uap-backdrop {
-  position: fixed; inset: 0; z-index: 9940;
-  display: flex; align-items: center; justify-content: center;
-  width: 100%; height: 100%; max-width: none; max-height: none; margin: 0;
-  border: 0; padding: 24px; overflow: visible; color: inherit;
-  background: rgba(0,0,0,.30);
-  backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px);
-}
-.uap-backdrop[data-theme="dark"] { background: rgba(0,0,0,.35); }
-.uap-backdrop[popover]:not(:popover-open) { display: none; }
-.uap-backdrop[hidden] { display: none; }
-
-/* NOTHING about this dialog being visible may depend on an animation or a transition finishing.
-
-   The first version faded the backdrop in from opacity 0. The second turned it into a keyframe
-   animation. Both were measured in the harness and both failed the same way: when the frame loop
-   is throttled the clock never advances, the effect holds at its 0% state, and the modal sits at
-   opacity 0 while still covering the viewport and swallowing every click. Invisible AND blocking
-   is worse than no animation at all, and it is the kind of failure nobody can report usefully
-   because there is nothing to see.
-
-   So the rule this file follows: an entrance effect is allowed ONLY if its 0% state is already
-   visible. The card's 8px rise qualifies -- stalled, it is a card sitting 8px low, which nobody
-   notices. A fade does not qualify and is therefore not used on the way in. The backdrop simply
-   appears; it is a scrim, and a scrim that appears at once reads as intentional.
-
-   On the way OUT a fade is fine, because the setTimeout in close() is what actually hides the
-   element. A stalled exit animation costs the fade, not the closing. */
-@keyframes uap-rise-in { from { transform: translateY(8px) scale(.985); } }
-@keyframes uap-fade-out { to { opacity: 0; } }
-.uap-backdrop.is-open .uap-card { animation: uap-rise-in 160ms cubic-bezier(.2,.7,.3,1); }
+.uap-card { animation: uap-rise-in 160ms cubic-bezier(.2,.7,.3,1); }
 .uap-backdrop.is-closing { animation: uap-fade-out 140ms ease forwards; }
 
+/* Only the deltas from .up-topicmodal-card: this dialog is wider than a topic form, and it lays
+   its own blocks out in a column. Surface, border, radius, shadow, theme tokens: all inherited. */
 .uap-card {
-  width: 100%; max-width: 640px; max-height: calc(100vh - 48px);
-  box-sizing: border-box;
+  max-width: 640px; box-sizing: border-box;
   padding: 16px;
   display: flex; flex-direction: column; gap: 32px;
-  border-radius: 18px;
-  background: var(--up-surface); color: var(--vc-text);
-  border: 1px solid var(--vc-border);
-  box-shadow: 0 20px 48px rgba(0,0,0,.22);
-  font-family: inherit;
+  overflow: visible;
 }
 .uap-card.is-saving { pointer-events: none; opacity: .6; }
 
@@ -123,7 +82,6 @@
 }
 .uap-input:focus { outline: none; border-color: var(--vc-hover-border); }
 .uap-input::placeholder { color: var(--vc-third); }
-.uap-hint { margin-top: 8px; font-size: 11.5px; color: var(--vc-third); line-height: 1.4; }
 
 /* Bottom right of the field, not centred: it belongs to the end of what is being typed. */
 .uap-enter {
@@ -198,8 +156,12 @@
   max-height: 232px; overflow-y: auto; overscroll-behavior: contain;
 }
 .uap-listwrap.is-empty .uap-list { display: none; }
-.uap-listempty {
-  padding: 10px 2px; font-size: 12px; color: var(--vc-third);
+/* The empty state IS the filled state, drained of colour: two blanks the exact size of a row.
+   It shows the shape of what is about to appear without pretending to be content — a greyed-out
+   example prompt gets read as a real one and then people wonder why it will not delete. */
+.uap-listempty { display: flex; flex-direction: column; gap: 4px; }
+.uap-ghost {
+  height: 34px; border-radius: 9px; background: var(--vc-heading-bg); opacity: .55;
 }
 .uap-listwrap:not(.is-empty) .uap-listempty { display: none; }
 
@@ -222,6 +184,8 @@
 }
 .uap-rowmarket { display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto; }
 .uap-flag { width: 18px; height: 14px; border-radius: 3px; object-fit: cover; display: block; flex: 0 0 18px; }
+/* In the trigger the flag is the icon, so it takes the icon slot's size, not the row's. */
+.uap-trigger-ic .uap-flag { width: 20px; height: 14px; flex: 0 0 20px; }
 .uap-rowmarket-code { font-size: 11px; font-weight: 600; color: var(--vc-muted); letter-spacing: .02em; }
 
 .uap-rowbtn {
@@ -253,29 +217,48 @@
    the --up-dd-* tokens, same core .up-ddsearch row, same core .up-filter-item rows. The first
    version reinvented every one of those and read as foreign in both themes. */
 .uap-pickwrap { position: relative; display: inline-flex; align-items: center; }
+/* Values copied from .umk-trigger, not approximated. The first version guessed at them and every
+   single one was off: 9px radius instead of 8, 12.5px text instead of 13, transparent background
+   instead of --vc-bg, 6px gap instead of 8, and the icon slot had no fixed box at all. */
 .uap-trigger {
-  height: 32px; max-width: 220px; padding: 0 6px 0 10px;
-  display: inline-flex; align-items: center; gap: 6px;
-  border: 1px solid var(--vc-border); border-radius: 9px; background: transparent;
-  color: var(--vc-text); font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer;
-  overflow: hidden; transition: border-color 120ms ease, color 120ms ease;
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 32px; padding: 0 10px;
+  border: 1px solid var(--vc-border); border-radius: 8px;
+  background: var(--vc-bg); color: var(--vc-muted);
+  font-family: inherit; font-size: 13px; font-weight: 500; line-height: 1;
+  white-space: nowrap; cursor: pointer; outline: 0;
+  transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
 }
-.uap-trigger:hover { border-color: var(--vc-hover-border); }
+.uap-trigger:hover, .uap-pickwrap.is-open .uap-trigger {
+  color: var(--vc-text); background: var(--vc-heading-bg); border-color: var(--vc-hover-border);
+}
+.uap-trigger:focus-visible { border-color: var(--vc-hover-border); box-shadow: 0 0 0 2px var(--vc-heading-bg); }
+.uap-trigger svg { width: 16px; height: 16px; flex: 0 0 16px; fill: none; stroke: var(--vc-text);
+  stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 /* Open and "has a selection" both mark the trigger through its border, the way the app already
    signals an active filter — no separate accent colour. */
-.uap-pickwrap.is-open .uap-trigger, .uap-pickwrap.has-sel .uap-trigger {
-  border-color: var(--vc-hover-border); color: var(--vc-text);
+/* Fixed box, wide enough for the flag — without it the trigger jumps a pixel when the icon
+   swaps between the glyph and a flag. Same 20x16 the markets trigger uses. */
+.uap-trigger-ic { flex: 0 0 20px; width: 20px; height: 16px; display: inline-flex;
+  align-items: center; justify-content: center; }
+/* The label is the value, so it carries the primary colour while the rest stays muted. Capped so
+   a long market or topic name truncates instead of pushing the whole control wider. */
+.uap-label { min-width: 0; max-width: 160px; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; color: var(--vc-text); }
+
+/* Counter disc from two selections up, exactly like the topics filter: filled with the primary
+   colour, the number in the menu surface colour, fixed 16px so the trigger stays the same width
+   at 2 and at 12. */
+.uap-count {
+  flex: 0 0 16px; width: 16px; height: 16px; border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--vc-text); color: var(--up-menu-bg);
+  font-size: 10px; font-weight: 500; line-height: 1; font-variant-numeric: tabular-nums;
 }
-.uap-trigger-ic { display: inline-flex; align-items: center; flex: 0 0 auto; }
-.uap-trigger-ic svg { width: 14px; height: 14px; display: block; fill: none; stroke: currentColor;
-  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; color: var(--vc-muted); }
-.uap-label { display: inline-flex; align-items: center; gap: 4px; min-width: 0;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.uap-pickwrap:not(.has-sel) .uap-label { color: var(--vc-muted); }
 
 /* Both glyphs sit in the DOM and CSS swaps them. Rendering the X only on hover through JS would
    need listeners on a node that is rebuilt on every selection change, and the two would drift. */
-.uap-chev { position: relative; width: 16px; height: 16px; flex: 0 0 16px; margin-left: auto;
+.uap-chev { position: relative; width: 16px; height: 16px; flex: 0 0 16px; margin-left: -2px;
   display: inline-flex; align-items: center; justify-content: center; }
 .uap-chev-down, .uap-chev-x { position: absolute; inset: 0; display: inline-flex;
   align-items: center; justify-content: center; }
@@ -313,7 +296,7 @@
 .uap-opt { min-height: 34px; padding-right: 12px; }
 .uap-opt-main { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; }
 .uap-opt-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.uap-opt-flag { width: 22px; height: 16px; flex: 0 0 22px; }
+.uap-opt-flag { width: 22px; height: 16px; flex: 0 0 22px; border-radius: 3px; }
 .uap-opt-count { color: var(--vc-muted); font-size: 12px; flex: 0 0 auto; }
 .uap-noopt { padding: 14px 8px; font-size: 12.5px; color: var(--vc-third); text-align: center; }
 

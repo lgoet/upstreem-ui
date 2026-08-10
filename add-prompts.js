@@ -250,18 +250,19 @@
   var M = null;                 // the built DOM, or null before the first open
   var fire = null;              // UC.makeFire bound to the modal root, built with it
   var isOpen = false;           // the ONE source of truth for "is the dialog up"
-  /* Top layer if the browser has it, plain fixed overlay if not. Decided once, at build time. */
-  var USE_POPOVER = typeof HTMLElement !== "undefined" &&
-                    typeof HTMLElement.prototype.showPopover === "function";
 
-  function showShell() {
-    if (USE_POPOVER) { try { M.back.showPopover(); return; } catch (e) { /* already open */ } }
-    M.back.hidden = false;
-  }
-  function hideShell() {
-    if (USE_POPOVER) { try { M.back.hidePopover(); return; } catch (e) { /* already closed */ } }
-    M.back.hidden = true;
-  }
+  /* The shell is core's .up-topicmodal-backdrop, not a local copy of it and not a top-layer
+     popover. Both of those were mine and both were wrong.
+
+     The local copy re-derived positioning and stacking that core had already solved, and got them
+     wrong. The popover fixed the stacking by leaving the document's stacking order entirely --
+     which puts the dialog above EVERYTHING, including the host's own drawers, so it read as
+     floating too far in front. core's modal sits at z-index 100000, inside the document, exactly
+     where this app expects a modal to sit; it has been correct in this product for months.
+
+     So this file contributes layout INSIDE the card and nothing about where the card is. */
+  function showShell() { M.back.classList.add("is-shown"); }
+  function hideShell() { M.back.classList.remove("is-shown"); }
   var S = {
     tab: "manual",              // "manual" | "csv"
     rows: [],                   // [{ id, text, market }]
@@ -310,18 +311,30 @@
 
   /* Returns how many were turned away by the cap, so the caller can say so once instead of the
      component announcing a limit nobody has hit yet. */
+  /* Same prompt twice in one batch is always a mistake, never an intent -- and it is the single
+     most common thing a spreadsheet contains. Compared on the trimmed, case-folded text, which is
+     what "the same prompt" means to a person; whitespace and capitalisation are not a difference
+     worth creating a second row for. */
+  function normKey(t) { return String(t == null ? "" : t).trim().toLowerCase().replace(/\s+/g, " "); }
+
   function addRows(list) {
-    var dropped = 0;
+    var dropped = 0, dupes = 0, seen = {};
+    S.rows.forEach(function (r) { seen[normKey(r.text)] = 1; });
     list.forEach(function (r) {
       var t = String(r.text == null ? "" : r.text).trim();
       if (!t) return;
+      var k = normKey(t);
+      if (seen[k]) { dupes++; return; }
       if (S.rows.length >= MAX_PROMPTS) { dropped++; return; }
+      seen[k] = 1;
       S.rows.push({ id: "r" + (++seq), text: t, market: r.market || "" });
     });
-    if (dropped) S.capNote = dropped + (dropped === 1 ? " more row was left out"
-                                                     : " more rows were left out") +
-                             " — " + MAX_PROMPTS + " prompts per batch.";
-    return dropped;
+    var notes = [];
+    if (dupes)   notes.push(dupes + (dupes === 1 ? " duplicate skipped" : " duplicates skipped"));
+    if (dropped) notes.push(dropped + (dropped === 1 ? " more row left out" : " more rows left out") +
+                            " — " + MAX_PROMPTS + " prompts per batch");
+    S.capNote = notes.join(" · ");
+    return dropped + dupes;
   }
 
   /* ---------------- markup ---------------- */
@@ -410,17 +423,28 @@
     trg.querySelector(".uap-label").textContent = mk ? marketName(mk) : "Market";
     M.marketWrap.classList.toggle("has-sel", !!mk);
 
-    var ids = selectedTagIds(), tt = M.tagsTrigger;
-    tt.querySelector(".uap-trigger-ic").innerHTML = ICON.tag;
-    var lbl = tt.querySelector(".uap-label");
-    if (!ids.length) { lbl.textContent = "Topics"; }
-    else {
-      lbl.innerHTML = ids.slice(0, 2).map(function (id) {
-        var t = topicById(id); if (!t) return "";
-        var mark = t.emoji ? '<span class="uap-tagemoji">' + esc(t.emoji) + '</span>'
-                           : '<span class="uap-tagdot" style="background:' + esc(topicHex(t)) + '"></span>';
-        return '<span class="uap-tagchip">' + mark + esc(t.name || "") + '</span>';
-      }).join("") + (ids.length > 2 ? '<span class="uap-tagmore">+' + (ids.length - 2) + '</span>' : "");
+    /* Exactly what the topics filter does: at ONE selection the topic's own name wins, because a
+       badge showing a 1 says less than the word does; from TWO up the label goes back to "Topics"
+       and a filled counter disc carries the number, which keeps the trigger the same width at 2
+       and at 12. */
+    var ids = selectedTagIds(), tt = M.tagsTrigger, lbl = tt.querySelector(".uap-label");
+    var oldBadge = tt.querySelector(".uap-count");
+    if (oldBadge) oldBadge.parentNode.removeChild(oldBadge);
+    if (ids.length === 1) {
+      var t1 = topicById(ids[0]);
+      lbl.textContent = t1 ? String(t1.name || "1 Topic") : "1 Topic";
+      tt.querySelector(".uap-trigger-ic").innerHTML = t1 && t1.emoji
+        ? '<span class="uap-tagemoji">' + esc(t1.emoji) + '</span>'
+        : (t1 ? '<span class="uap-tagdot" style="background:' + esc(topicHex(t1)) + '"></span>' : ICON.tag);
+    } else {
+      lbl.textContent = "Topics";
+      tt.querySelector(".uap-trigger-ic").innerHTML = ICON.tag;
+      if (ids.length > 1) {
+        var b = document.createElement("span");
+        b.className = "uap-count";
+        b.textContent = String(ids.length);
+        tt.insertBefore(b, tt.querySelector(".uap-chev"));
+      }
     }
     M.tagsWrap.classList.toggle("has-sel", !!ids.length);
   }
@@ -517,16 +541,12 @@
     var back = document.createElement("div");
     /* up-root so core's theme sweep finds it, up-portal because it lives in <body> outside any
        component root -- setUpstreemTheme() looks for exactly those two. */
-    back.className = "up-root up-portal uap-backdrop";
+    back.className = "up-root up-portal up-topicmodal-backdrop uap-backdrop";
     back.setAttribute("role", "dialog");
     back.setAttribute("aria-modal", "true");
     back.setAttribute("aria-label", "Add prompts");
-    /* "manual", not "auto": auto lets the browser light-dismiss on any outside click and on
-       Escape, which would close the whole dialog when the user only meant to close an open
-       picker. The two-stage Escape and the backdrop click are handled below, deliberately. */
-    if (USE_POPOVER) back.setAttribute("popover", "manual");
     back.innerHTML =
-      '<div class="uap-card">' +
+      '<div class="up-topicmodal-card uap-card">' +
         '<div class="uap-head">' +
           '<div class="uap-heading">' +
             '<div class="uap-title">Add prompts</div>' +
@@ -549,7 +569,6 @@
             '<button type="button" class="uap-enter" data-act="commit" aria-label="Add this prompt" hidden>' +
               ICON.corner + '</button>' +
           '</div>' +
-          '<div class="uap-hint">Enter adds it to the list · Shift+Enter for a line break · paste several lines to add them all</div>' +
         '</div>' +
 
         '<div class="uap-input-csv">' +
@@ -564,11 +583,15 @@
 
         '<div class="uap-listwrap is-empty">' +
           '<div class="uap-listhead">' +
-            '<span class="uap-count">No prompts yet</span>' +
+            '<span class="uap-listcount"></span>' +
             '<button type="button" class="uap-clearall" data-act="clearall">Clear all</button>' +
           '</div>' +
           '<ul class="uap-list"></ul>' +
-          '<div class="uap-listempty">Prompts you add show up here before anything is saved.</div>' +
+          /* The empty state is the shape of the filled one, greyed out: two row-sized blanks. No
+             example prompts -- a greyed sentence that looks like a prompt gets read as one. */
+          '<div class="uap-listempty" aria-hidden="true">' +
+            '<span class="uap-ghost"></span><span class="uap-ghost"></span>' +
+          '</div>' +
           '<div class="uap-capnote" hidden></div>' +
         '</div>' +
 
@@ -608,7 +631,7 @@
       listwrap:   back.querySelector(".uap-listwrap"),
       capnote:    back.querySelector(".uap-capnote"),
       list:       back.querySelector(".uap-list"),
-      count:      back.querySelector(".uap-count"),
+      count:      back.querySelector(".uap-listcount"),
       enter:      back.querySelector(".uap-enter"),
       marketWrap:    back.querySelector('[data-pick="market"]'),
       marketTrigger: back.querySelector('[data-pick="market"] .uap-trigger'),
@@ -852,13 +875,11 @@
     S.opener = document.activeElement;
     M.card.classList.remove("is-saving");
     isOpen = true;
-    showShell();
     M.input.value = "";
     /* Both classes flip on THIS tick. Nothing here waits for a frame: the CSS in add-prompts.css
        animates over the visible resting state, so a throttled frame loop costs the fade, not the
        dialog. requestAnimationFrame was the first version and it deadlocked exactly that way. */
-    M.back.classList.remove("is-closing");
-    M.back.classList.add("is-open");
+    showShell();
     renderAll(); renderMenus();
     setTimeout(function () { if (S.tab === "manual") M.input.focus(); }, 60);
   }
@@ -867,12 +888,7 @@
     if (!M || !isOpen) return;
     isOpen = false;
     closePick();
-    M.back.classList.remove("is-open");
-    M.back.classList.add("is-closing");
-    /* The timeout is the authority on being gone, not the animation's end event: if the exit
-       animation never runs, animationend never fires and the dialog would stay on screen. */
-    var el = M.back;
-    setTimeout(function () { hideShell(); el.classList.remove("is-closing"); }, 160);
+    hideShell();
     if (S.opener && S.opener.focus) { try { S.opener.focus(); } catch (e) {} }
     S.opener = null;
   }
