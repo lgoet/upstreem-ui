@@ -8,14 +8,35 @@
    card past a laptop's viewport before anything is in it. So the 32px gaps stay between the three
    REAL sections (head, body, foot) and the body carries its own smaller internal rhythm. */
 
+/* The dialog lives in the browser's TOP LAYER, via popover="manual" — the same move the
+   opportunities drawer needed (commit 9bfc83d) and for the same reason.
+
+   A plain position:fixed overlay appended to <body> is at the mercy of the host page. Any ancestor
+   with a transform, filter, backdrop-filter, perspective or contain turns itself into the
+   containing block for fixed positioning, and then inset:0 stops meaning "the viewport" and starts
+   meaning "that ancestor's box" — which is how a centred modal ends up parked at the bottom left
+   of the page. z-index has the same problem from the other side: the number is compared inside the
+   host's stacking context, so a Bubble wrapper with a higher one lifts the whole page above us no
+   matter what we write.
+
+   The top layer is painted after the entire document and is not influenced by any ancestor, which
+   settles both at once. Feature-detected: without showPopover the element falls back to the plain
+   fixed overlay it was, driven by the hidden attribute.
+
+   The UA stylesheet gives [popover] its own box (fit-content, auto margins, a border, canvas
+   background), so those are reset here. And display is deliberately NOT a blanket `flex`: the UA
+   rule that hides a closed popover is weaker than any author display, so a blanket value would
+   leave the dialog on screen permanently. The closed state is matched explicitly instead. */
 .uap-backdrop {
   position: fixed; inset: 0; z-index: 9940;
   display: flex; align-items: center; justify-content: center;
-  padding: 24px;
+  width: 100%; height: 100%; max-width: none; max-height: none; margin: 0;
+  border: 0; padding: 24px; overflow: visible; color: inherit;
   background: rgba(0,0,0,.30);
   backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px);
 }
 .uap-backdrop[data-theme="dark"] { background: rgba(0,0,0,.35); }
+.uap-backdrop[popover]:not(:popover-open) { display: none; }
 .uap-backdrop[hidden] { display: none; }
 
 /* NOTHING about this dialog being visible may depend on an animation or a transition finishing.

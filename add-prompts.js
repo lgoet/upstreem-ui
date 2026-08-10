@@ -236,6 +236,19 @@
 
   var M = null;                 // the built DOM, or null before the first open
   var fire = null;              // UC.makeFire bound to the modal root, built with it
+  var isOpen = false;           // the ONE source of truth for "is the dialog up"
+  /* Top layer if the browser has it, plain fixed overlay if not. Decided once, at build time. */
+  var USE_POPOVER = typeof HTMLElement !== "undefined" &&
+                    typeof HTMLElement.prototype.showPopover === "function";
+
+  function showShell() {
+    if (USE_POPOVER) { try { M.back.showPopover(); return; } catch (e) { /* already open */ } }
+    M.back.hidden = false;
+  }
+  function hideShell() {
+    if (USE_POPOVER) { try { M.back.hidePopover(); return; } catch (e) { /* already closed */ } }
+    M.back.hidden = true;
+  }
   var S = {
     tab: "manual",              // "manual" | "csv"
     rows: [],                   // [{ id, text, market }]
@@ -440,6 +453,10 @@
     back.setAttribute("role", "dialog");
     back.setAttribute("aria-modal", "true");
     back.setAttribute("aria-label", "Add prompts");
+    /* "manual", not "auto": auto lets the browser light-dismiss on any outside click and on
+       Escape, which would close the whole dialog when the user only meant to close an open
+       picker. The two-stage Escape and the backdrop click are handled below, deliberately. */
+    if (USE_POPOVER) back.setAttribute("popover", "manual");
     back.innerHTML =
       '<div class="uap-card">' +
         '<div class="uap-head">' +
@@ -676,7 +693,7 @@
     }, true);
 
     document.addEventListener("keydown", function (e) {
-      if (!M || M.back.hidden) return;
+      if (!M || !isOpen) return;
       if (e.key === "Escape") {
         if (S.pick) { closePick(); return; }
         close();
@@ -732,7 +749,8 @@
 
     S.opener = document.activeElement;
     M.card.classList.remove("is-saving");
-    M.back.hidden = false;
+    isOpen = true;
+    showShell();
     M.input.value = "";
     /* Both classes flip on THIS tick. Nothing here waits for a frame: the CSS in add-prompts.css
        animates over the visible resting state, so a throttled frame loop costs the fade, not the
@@ -744,14 +762,15 @@
   }
 
   function close() {
-    if (!M || M.back.hidden) return;
+    if (!M || !isOpen) return;
+    isOpen = false;
     closePick();
     M.back.classList.remove("is-open");
     M.back.classList.add("is-closing");
     /* The timeout is the authority on being gone, not the animation's end event: if the exit
        animation never runs, animationend never fires and the dialog would stay on screen. */
     var el = M.back;
-    setTimeout(function () { el.hidden = true; el.classList.remove("is-closing"); }, 160);
+    setTimeout(function () { hideShell(); el.classList.remove("is-closing"); }, 160);
     if (S.opener && S.opener.focus) { try { S.opener.focus(); } catch (e) {} }
     S.opener = null;
   }
