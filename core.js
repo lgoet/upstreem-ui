@@ -149,6 +149,46 @@
     }
   }
 
+  /* Repairs a render payload that Bubble handed over as TEXT instead of as code.
+
+     Why this has to exist: Bubble builds a "Run JavaScript" step by pasting the RPC result into
+     the step's source as plain text. Any DOUBLE QUOTE inside a value then ends the surrounding JS
+     string early and the rest of the array becomes garbage — the step dies with
+     "SyntaxError: Unexpected token ']'" BEFORE any component code runs, so the table just stays
+     empty with nothing in the console pointing at it. Real, measured examples that killed a whole
+     page load:
+
+       "title":       mITSM x it-sa 2025 "KI sicher und effektiv einsetzen: …"
+       "description": Top 10 Audit Management Software 2026 — title: "Ju…
+
+     The same payload without a quote anywhere renders fine, which is exactly why this looks like
+     a random per-team failure until you diff the two payloads character by character.
+
+     The cure is on Bubble's side -- wrap the array in BACKTICKS so it is inert text rather than
+     code (see any bubble/*.html render section) -- but that only helps if this side then accepts
+     a string, which is what this function is for. parseLoose additionally repairs the four other
+     things Bubble does to such a string: empty values, NBSP indentation, curly quotes, HTML
+     entities, unquoted keys.
+
+     Returns a SHALLOW COPY when it changes anything -- the caller's object is left alone, since
+     components hold on to params and a surprise mutation there is its own class of bug. */
+  function normParams(params, label){
+    if (typeof params === "string"){
+      var parsed = parseLoose(params, label);
+      /* A bare array is the other easy mistake: renderFoo(`[ … ]`) instead of
+         renderFoo(`{"instanceId": …, "rows": [ … ]}`). Treat it as the rows list. */
+      params = isArr(parsed) ? { rows: parsed } : (parsed || {});
+    }
+    if (!params || typeof params !== "object") return params;
+    if (typeof params.rows !== "string") return params;
+    var out = {}, k;
+    for (k in params) if (Object.prototype.hasOwnProperty.call(params, k)) out[k] = params[k];
+    var rows = parseLoose(out.rows, (label || "upstreem") + " rows");
+    out.rows = isArr(rows) ? rows : (rows ? [rows] : []);
+    return out;
+  }
+  function isArr(v){ return Object.prototype.toString.call(v) === "[object Array]"; }
+
   /* Wraps every occurrence of the active query in <mark>. Escapes FIRST, then inserts the
      markup — doing it the other way round would let a crafted domain inject HTML. */
   function highlight(text, q){
@@ -1437,7 +1477,15 @@
 
     /* Expose the real implementations, then replay whatever Bubble queued against the stubs —
        in the order Bubble called them. */
-    Object.keys(cfg.api).forEach(function(name){ window[name] = cfg.api[name]; });
+    /* normParams sits on BOTH install paths, and it has to: this local install and the
+       parent/top forwarder further down are alternatives, not a chain -- whichever runs last owns
+       window[name]. Putting the repair only on the forwarder (the first attempt at this fix) meant
+       it never ran on a normal single-window page, which is every page that was actually broken. */
+    Object.keys(cfg.api).forEach(function(name){
+      var impl = cfg.api[name];
+      if ((cfg.forwardShape && cfg.forwardShape[name]) !== "params"){ window[name] = impl; return; }
+      window[name] = function(params){ return impl(normParams(params, cfg.rootClass)); };
+    });
     window[cfg.resolveLocal] = function(id){ return rootsWithId(id).length > 0; };
     /* cfg.onMount — hand the mount object to the component BEFORE the replay below.
        Every component writes `var mount = UC.makeMount({...})` and reads `mount.rootsWithId(...)`
@@ -1505,7 +1553,7 @@
             Object.keys(cfg.api).forEach(function(name){
               var shape = cfg.forwardShape && cfg.forwardShape[name];
               if (shape === "params"){
-                w[name] = function(params){ params = params || {}; return deliver(name, params.instanceId || "default", params); };
+                w[name] = function(params){ params = normParams(params, cfg.rootClass) || {}; return deliver(name, params.instanceId || "default", params); };
               } else if (shape === "id"){
                 w[name] = function(id){ return deliver(name, id || "default", id); };
               } else {
@@ -4307,6 +4355,7 @@
     fmtTotal: fmtTotal,
     isYes: isYes,
     parseLoose: parseLoose,
+    normParams: normParams,
     getTeam: getTeam,
     setUpstreemTeam: setUpstreemTeam,
     storeKey: storeKey,

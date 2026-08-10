@@ -8,10 +8,12 @@
   --am-text: #1f1f1b; --am-muted: #6f737c; --am-muted-2: #9ca3af;
   --am-border: #e5e7eb; --am-border-strong: #d9dde3;
   --am-soft: #f7f8fa; --am-soft-2: #f3f4f6;
-  /* 60% white, not solid: the panel sits over its own blurred overlay, and at full opacity that
-     blur was doing nothing visible behind the card. Dark mode keeps its solid surface -- the same
-     translucency there just muddies the text. */
-  --am-card: rgba(255,255,255,0.60);
+  /* --am-card is the PANEL surface and stays fully opaque -- the open panel has to be readable
+     over whatever the page puts behind it. The 60% white belongs to the closed trigger button
+     alone (--am-trigger-bg below); an earlier round put it on --am-card, which feeds both the
+     button AND the panel, so the whole popup went translucent. Keep the two separate. */
+  --am-card: #ffffff;
+  --am-trigger-bg: rgba(255,255,255,0.60);
   --am-overlay: rgba(17,18,20,0.30);
   --am-shadow: 0 24px 64px rgba(17,18,20,0.18), 0 6px 16px rgba(17,18,20,0.07);
   /* Was referenced by three hover states (.mqa-chip-x, .mqa-clear, .mqa-recent-x) but never
@@ -23,7 +25,7 @@
 #mira-quick-actions[data-theme="dark"], .mqa-overlay[data-theme="dark"] {
   --am-text: #e0e0e0; --am-muted: #a0a0a0; --am-muted-2: #6f6f6f;
   --am-border: #353535; --am-border-strong: #454545;
-  --am-soft: #1e1e1e; --am-soft-2: #242424; --am-card: #1a1a1a;
+  --am-soft: #1e1e1e; --am-soft-2: #242424; --am-card: #1a1a1a; --am-trigger-bg: #1a1a1a;
   --am-overlay: rgba(0,0,0,0.55);
   --am-shadow: 0 24px 64px rgba(0,0,0,0.55), 0 6px 16px rgba(0,0,0,0.4);
   --am-hover-bg: #262626;
@@ -35,7 +37,7 @@
 .mqa-trigger {
   display: inline-flex; align-items: center; gap: 8px; width: 100%;
   height: 34px; padding: 0 8px 0 10px; border: 1px solid var(--am-border); border-radius: 12px;
-  background: var(--am-card); color: var(--am-muted); font-family: var(--mqa-font); font-size: 13px; font-weight: 500;
+  background: var(--am-trigger-bg); color: var(--am-muted); font-family: var(--mqa-font); font-size: 13px; font-weight: 500;
   cursor: pointer; user-select: none; transition: background .14s ease, border-color .14s ease, color .14s ease;
 }
 .mqa-trigger:hover { background: var(--am-soft); border-color: var(--am-border-strong); color: var(--am-text); }
