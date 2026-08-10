@@ -19,7 +19,8 @@
      Create these as Toolbox "JavaScript to Bubble" elements (type: text) and put their names in
      the attributes on the root div.
 
-       data-topics-fn    default bubble_fn_utfTopics    fires on EVERY selection change
+       data-topics-fn    ONE NAME PER PLACEMENT -- see "Routing" below. Fires on EVERY
+                         selection change. Default if left unset: bubble_fn_utfTopics
                          {"instance_id":"...","topic_ids":"id1,id2","tag_mode":"or","count":2}
        data-newtopic-fn  default bubble_fn_utfNewTopic  fires when "New Topic" is saved
                          {"name":"...","emoji":"...","hex_light":"#...","hex_dark":"#..."}
@@ -33,6 +34,35 @@
      root element with the same payload, so nothing is silently lost.
 
      ── Control from "Run JavaScript" ───────────────────────────
+  ═══ ROUTING: one JavaScript-to-Bubble element PER PLACEMENT ═══════════════════
+
+  Give every placement its OWN function name, derived from the same dynamic id you already put in
+  data-instance:
+
+      data-instance="topics_prompts"
+      data-topics-fn="bubble_fn_utfTopics_topics_prompts"
+
+  Then the Prompts page carries a JavaScript-to-Bubble element named utfTopics_topics_prompts, and
+  its workflow refreshes the prompts table. Nothing else. No condition, no branching, no checking
+  which instance sent it.
+
+  Why not one shared element for all of them: nothing would fire that you did not want -- the event
+  is tied to the click, so only the dropdown the user actually operated calls anything, never the
+  others. But a shared name means a single workflow that has to work out WHICH consumer to refresh,
+  and with a dozen placements that becomes a dozen conditions on one workflow. One name per
+  placement removes the question instead of answering it.
+
+  The payload still carries instance_id, so a shared element remains a valid choice where two
+  dropdowns genuinely drive the SAME table (for example a mobile and a desktop copy of the toolbar)
+  -- there, one workflow for both is the point.
+
+  Wrong or missing name? The component says so by name in the console ("... not found — this change
+  reached no Bubble workflow."), so a typo shows up on the first click rather than as silence.
+
+  The JavaScript-to-Bubble element must sit ON THE PAGE, not inside the reusable that holds the
+  dropdown. The lookup walks window.top and every reachable frame, so it finds a page-level element
+  from inside a reusable -- but not the other way round.
+
   ═══ FEEDING THE TOPICS: do it ONCE per page, not once per dropdown ════════════
 
     setUpstreemTopics(<list>)        ← no instance id. THIS is the one you want.
@@ -116,7 +146,7 @@
      data-cdn-pin="CDN_PIN"
      data-isdark="IS_DARK"
      data-isprocessing="IS_PROCESSING"
-     data-topics-fn="bubble_fn_utfTopics"
+     data-topics-fn="bubble_fn_utfTopics_[dynamic id]"
      data-newtopic-fn="bubble_fn_utfNewTopic">
   <!-- ── OPTIONAL, und normalerweise LEER LASSEN ──────────────────────────────
        Since the page-wide store exists, this element needs NO topics input of its own. Leave
