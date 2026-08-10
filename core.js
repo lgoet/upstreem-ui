@@ -2147,6 +2147,23 @@
     };
   }
 
+  /* How much room is left between the heading and the toolbar -- the number every table's
+     fitToolbar() decides its responsive tiers from. Five components measured it identically.
+
+     Two things in here are easy to get wrong and were right in all five, so they are worth keeping
+     in one place: a toolbar that has not been laid out yet reports width 0, and returning 0 there
+     would collapse the toolbar on a phantom measurement, hence Infinity. And the search field is
+     measured as if it were already open, so opening it does not shift the tier underneath the
+     user's cursor. */
+  function headGap(elHeading, elHeadTools, elSearch, searchOpenWidth){
+    var h = elHeading && elHeading.getBoundingClientRect();
+    var tl = elHeadTools && elHeadTools.getBoundingClientRect();
+    if (!h || !tl || !tl.width) return Infinity;
+    var gap = tl.left - h.right;
+    if (elSearch && !elSearch.classList.contains("is-open")) gap -= (searchOpenWidth || 0);
+    return gap;
+  }
+
   /* The "Sort by" popover's markup. Four components emitted this string character for character,
      data-sortfield / data-sortdir hooks included -- and those hooks are what each component's own
      click handler matches on, so the markup and the handlers had to stay in step across four
@@ -4727,6 +4744,7 @@
     makePageHeaderMeta: makePageHeaderMeta,
     syncTheme: syncTheme,
     sortMenuHtml: sortMenuHtml,
+    headGap: headGap,
     widthTiers: widthTiers,
     spinOnce: spinOnce,
 

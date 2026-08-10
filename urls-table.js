@@ -1180,15 +1180,9 @@
     var SEARCH_OPEN_WIDTH = 202;
     var MOBILE_SEARCH_MAX = 640;   // below this component width an open search takes over the toolbar
     var TOOLBAR_TIERS = ["is-w3", "is-w2", "is-w1", "is-w0"];
-    function headGap(){
-      var h = elHeading && elHeading.getBoundingClientRect();
-      var tl = elHeadTools && elHeadTools.getBoundingClientRect();
-      if (!h || !tl || !tl.width) return Infinity;   // tools not laid out yet -> never hide on a phantom
-      var gap = tl.left - h.right;
-      // measure as if search were open, so the layout is stable across opening it
-      if (elSearch && !elSearch.classList.contains("is-open")) gap -= SEARCH_OPEN_WIDTH;
-      return gap;
-    }
+    /* Shared: UC.headGap. Five components measured this identically (urls-table differed only in
+       two comments). */
+    function headGap(){ return UC.headGap(elHeading, elHeadTools, elSearch, SEARCH_OPEN_WIDTH); }
     function fitToolbar(){
       if (!elHeading || !elHeadTools) return;
       if (root.classList.contains("is-searchtakeover")) return;   // search owns the row on mobile

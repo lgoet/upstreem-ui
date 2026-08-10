@@ -4108,14 +4108,9 @@
     var SEARCH_OPEN_WIDTH = 202;
     var MIN_HEAD_GAP = 64;
     var TOOLBAR_TIERS = ["is-w3", "is-w2", "is-w1", "is-w0"];   // is-w2 now applies: this table has the mentioned-brands dropdown too
-    function headGap(){
-      var h = elHeading && elHeading.getBoundingClientRect();
-      var tl = elHeadTools && elHeadTools.getBoundingClientRect();
-      if (!h || !tl || !tl.width) return Infinity;
-      var gap = tl.left - h.right;
-      if (elSearch && !elSearch.classList.contains("is-open")) gap -= SEARCH_OPEN_WIDTH;
-      return gap;
-    }
+    /* Shared: UC.headGap. Five components measured this identically (urls-table differed only in
+       two comments). */
+    function headGap(){ return UC.headGap(elHeading, elHeadTools, elSearch, SEARCH_OPEN_WIDTH); }
     function fitToolbar(){
       if (!elHeading || !elHeadTools) return;
       if (root.classList.contains("is-searchtakeover")) return;

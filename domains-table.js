@@ -1638,14 +1638,9 @@
     var SEARCH_OPEN_WIDTH = 202;
     var MOBILE_SEARCH_MAX = 640;
     var TOOLBAR_TIERS = ["is-w3", "is-w2", "is-w1", "is-w0"];
-    function headGap(){
-      var h = elHeading && elHeading.getBoundingClientRect();
-      var tl = elHeadTools && elHeadTools.getBoundingClientRect();
-      if (!h || !tl || !tl.width) return Infinity;
-      var gap = tl.left - h.right;
-      if (elSearch && !elSearch.classList.contains("is-open")) gap -= SEARCH_OPEN_WIDTH;
-      return gap;
-    }
+    /* Shared: UC.headGap. Five components measured this identically (urls-table differed only in
+       two comments). */
+    function headGap(){ return UC.headGap(elHeading, elHeadTools, elSearch, SEARCH_OPEN_WIDTH); }
     function fitToolbar(){
       if (!elHeading || !elHeadTools) return;
       if (root.classList.contains("is-searchtakeover")) return;
