@@ -4284,63 +4284,6 @@
   window.setUpstreemTeam = setUpstreemTeam;
   window.getUpstreemTeam = getTeam;
 
-  /* ---------------------------------------------------------------------------------------------
-     Safety net for a workflow that calls a component which is not on this page.
-
-     "window.resetPromptsTable is not a function" on ?view=opportunities is the shape of it: a
-     Bubble workflow built for one view runs on another, the component's script was never loaded
-     there, and an uncaught TypeError takes down the WHOLE Run-JavaScript step -- including the
-     steps after it, which may have had nothing to do with the missing component.
-
-     So: some time after the page has settled, any of these names still undefined gets a no-op that
-     says so once and returns false. Deliberately LATE (and only for names nobody owns), because a
-     component that IS on the page installs its own stub the moment its file executes, and that one
-     queues the call for replay -- a no-op installed early would silently swallow calls the real
-     component was about to receive. By this point, a name that is still missing is missing for
-     good.
-
-     This is a net, not a fix: the console line names the function so the stray workflow can be
-     found and conditioned properly. */
-  var GUARDED_APIS = [
-    "renderPromptsTable", "resetPromptsTable", "setPromptsTableLoading", "setPromptsTableTopics",
-    "setPromptsTableBrands", "setPromptsTableGroups", "setPromptsTableGroupPrompts",
-    "renderUrlsTable", "resetUrlsTable", "setUrlsTableLoading", "setUrlsTableBrands",
-    "renderDomainsTable", "resetDomainsTable", "setDomainsTableLoading", "setDomainsTableBrands",
-    "renderResponsesTable", "resetResponsesTable", "setResponsesTableLoading",
-    "setResponsesTableModels", "setResponsesTableBrands",
-    "renderTopCitations", "resetTopCitations", "setTopCitationsLoading",
-    "renderVisibilityChart", "setVisibilityChartTheme",
-    "renderCitationsComboChart", "renderBrandsOverview", "renderTopicsManager",
-    "setTopicsFilterTopics", "resetTopicsFilter", "setTopicsFilterSelected", "setTopicsFilterMode",
-    "setDashboardPageHeaderKpis", "resetUpstreemDateRangePicker",
-    "opportunitiesSetItems", "opportunitiesSetLoading", "opportunitiesSetTheme"
-  ];
-  function guardMissingApis(){
-    for (var i = 0; i < GUARDED_APIS.length; i++){
-      (function(name){
-        if (typeof window[name] === "function") return;
-        window[name] = function(){
-          if (!window[name].__warned){
-            window[name].__warned = true;
-            if (window.console) console.info("[upstreem] " + name + "() was called but its component " +
-              "is not on this page — ignored. A workflow from another view is probably running here; " +
-              "condition that step on the component being present.");
-          }
-          return false;
-        };
-        window[name].__upMissingGuard = true;
-      })(GUARDED_APIS[i]);
-    }
-  }
-  if (!window.__upApiGuardArmed){
-    window.__upApiGuardArmed = true;
-    /* 4s after the document is ready: long past any CDN round trip, so anything still absent is
-       absent by design. */
-    var armGuard = function(){ setTimeout(guardMissingApis, 4000); };
-    if (document.readyState === "complete" || document.readyState === "interactive") armGuard();
-    else document.addEventListener("DOMContentLoaded", armGuard);
-  }
-
   window.UpstreemCore = {
     upstreemSetTheme: upstreemSetTheme,
     readPrefTheme: readPrefTheme,
@@ -4367,7 +4310,6 @@
     getTeam: getTeam,
     setUpstreemTeam: setUpstreemTeam,
     storeKey: storeKey,
-    guardMissingApis: guardMissingApis,
     getTopics: getTopics,
     setTopics: setTopics,
     onTopics: onTopics,
