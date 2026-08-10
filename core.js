@@ -2620,9 +2620,29 @@
                    oy === "hidden" || oy === "clip");
       if (restore){
         if (el.hasAttribute("data-up-unclipped")){ el.style.overflow = el.getAttribute("data-up-unclipped") || ""; el.removeAttribute("data-up-unclipped"); }
-      } else if (clips && !el.hasAttribute("data-up-unclipped")){
-        el.setAttribute("data-up-unclipped", el.style.overflow || "");
-        el.style.overflow = "visible";
+        if (el.hasAttribute("data-up-lifted")){ el.style.zIndex = el.getAttribute("data-up-lifted") || ""; el.removeAttribute("data-up-lifted"); }
+      } else {
+        if (clips && !el.hasAttribute("data-up-unclipped")){
+          el.setAttribute("data-up-unclipped", el.style.overflow || "");
+          el.style.overflow = "visible";
+        }
+        /* Und die STAPELUNG, aus demselben Grund wie das Clipping.
+
+           Gemessen auf der Live-Seite: ein Dropdown im Drawer wurde ab halber Hoehe von
+           Nachbargruppen mit z-index 9 und 18 ueberdeckt -- obwohl das Panel selbst auf 99998
+           stand. Neun schlaegt 99998, wenn das Panel in einem Stacking-Context sitzt, der als
+           GANZES unter diesen Gruppen rangiert: der Bubble-Wrapper der Komponente hat einen
+           eigenen z-index, und innerhalb davon ist jede Zahl des Panels bedeutungslos. Genau
+           deshalb hat das Hochdrehen des Panels dreimal nichts gebracht.
+
+           Also den Wrapper heben, nicht das Panel. Nur Vorfahren mit einem EXPLIZITEN z-index
+           werden angefasst -- die ohne einen erzeugen keinen Stacking-Context und sind nicht das
+           Problem. Der alte Wert wird gespeichert, restore(true) setzt ihn zurueck. */
+        var zi = cs.zIndex;
+        if (zi && zi !== "auto" && !el.hasAttribute("data-up-lifted")){
+          el.setAttribute("data-up-lifted", el.style.zIndex || "");
+          el.style.zIndex = "99997";
+        }
       }
       el = el.parentElement;
     }
