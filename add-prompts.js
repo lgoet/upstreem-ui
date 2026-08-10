@@ -360,6 +360,11 @@
                      ' placeholder="Search ' + (kind === "market" ? "markets" : "topics") + '"' +
                      ' aria-label="Search ' + (kind === "market" ? "markets" : "topics") + '">' +
                    '<span class="up-ddsearch-ic">' + ICON.search + '</span>' +
+                   /* BOTH glyphs, always in the DOM. core swaps them through .has-text on the
+                      wrapper: .up-ddsearch.has-text hides the magnifier and shows this button.
+                      Shipping only the magnifier is why the field had no way to be cleared. */
+                   '<button class="up-ddsearch-x uap-search-x" type="button" aria-label="Clear search">' +
+                     ICON.x + '</button>' +
                  '</span>' +
                '</div>' +
                '<div class="uap-list-opts" role="listbox"></div>' +
@@ -503,8 +508,13 @@
       if (open) wrap.querySelector(".uap-list-opts").innerHTML = optsHtml(k);
     });
     if (S.pick) {
-      var inp = (S.pick === "market" ? M.marketWrap : M.tagsWrap).querySelector(".uap-search-in");
+      var owner = S.pick === "market" ? M.marketWrap : M.tagsWrap;
+      var inp = owner.querySelector(".uap-search-in");
       if (inp && inp.value !== S.pickQuery) inp.value = S.pickQuery;
+      /* The wrapper class is state, not a side effect of typing: a menu that reopens with a query
+         still in it must show the X, and one that was cleared must show the magnifier again. */
+      var wrap = owner.querySelector(".up-ddsearch");
+      if (wrap) wrap.classList.toggle("has-text", !!S.pickQuery.length);
       if (inp) inp.focus();
     }
   }
@@ -774,6 +784,18 @@
       var tab = e.target.closest ? e.target.closest("[data-tab]") : null;
       if (tab && back.contains(tab)) { S.tab = tab.getAttribute("data-tab"); closePick(); renderTabs(); return; }
 
+      var sx = e.target.closest ? e.target.closest(".uap-search-x") : null;
+      if (sx && back.contains(sx)) {
+        e.stopPropagation();
+        var sw = sx.closest(".up-ddsearch"), si = sw && sw.querySelector(".uap-search-in");
+        S.pickQuery = "";
+        if (si) si.value = "";
+        if (sw) sw.classList.remove("has-text");
+        renderMenus();
+        if (si) { try { si.focus(); } catch (e2) {} }
+        return;
+      }
+
       var opt = e.target.closest ? e.target.closest(".uap-opt") : null;
       if (opt && back.contains(opt)) {
         var val = opt.getAttribute("data-val");
@@ -787,7 +809,10 @@
 
     back.addEventListener("input", function (e) {
       if (e.target.classList && e.target.classList.contains("uap-search-in")) {
-        S.pickQuery = e.target.value; renderMenus();
+        S.pickQuery = e.target.value;
+        var wrap = e.target.closest(".up-ddsearch");
+        if (wrap) wrap.classList.toggle("has-text", !!e.target.value.length);
+        renderMenus();
       }
     });
 
