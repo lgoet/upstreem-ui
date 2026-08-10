@@ -391,18 +391,48 @@
      is exactly what made a row click (fired constantly, expected to feel instant) noticeably
      laggy despite there being no actual delay/debounce anywhere in the click handling itself. */
   var __resolvedFnCache = {};
+  /* The cache used to be authoritative: resolve once, return that same function forever. That is
+     wrong for Bubble, and it is the reason events "stopped arriving" after a while and why a
+     workflow could die with "Cannot read properties of null (reading 'element')".
+
+     A JavaScript-to-Bubble element publishes its function when it renders -- and Bubble DESTROYS
+     and re-renders elements constantly. The old function object survives as a closure over an
+     element that no longer exists; calling it reaches into a null element inside Bubble's own
+     workflow engine. From the outside it looks like the event was swallowed, and it never recovers,
+     because the cache kept handing back the same corpse.
+
+     So: a direct lookup ALWAYS wins, and the cache is only consulted when the name is not visible
+     directly -- and dropped as soon as it disagrees with what is live. The expensive part was never
+     the property read, it was the iframe walk below; that is still cached. */
   function resolveBubbleFn(fnName){
+    var live = window[fnName] || (window.parent && window.parent[fnName]) || (window.top && window.top[fnName]);
+    if (typeof live === "function"){
+      if (__resolvedFnCache[fnName] !== live) __resolvedFnCache[fnName] = live;
+      return live;
+    }
     var cached = __resolvedFnCache[fnName];
-    if (typeof cached === "function") return cached;
-    var fn = window[fnName] || (window.parent && window.parent[fnName]) || (window.top && window.top[fnName]);
-    if (typeof fn === "function"){ __resolvedFnCache[fnName] = fn; return fn; }
+    if (typeof cached === "function"){
+      /* Still reachable from the window it was found on? If its home frame is gone the reference
+         is a corpse -- drop it and fall through to a fresh walk rather than calling into it. */
+      try {
+        var home = cached.__upHome;
+        if (home && home.closed) { delete __resolvedFnCache[fnName]; }
+        else return cached;
+      } catch(e){ delete __resolvedFnCache[fnName]; }
+    }
     var start; try { start = window.top || window.parent || window; } catch(e){ start = window; }
     var queue = [start], seen = [];
     while (queue.length){
       var win = queue.shift();
       if (seen.indexOf(win) !== -1) continue;
       seen.push(win);
-      try { if (typeof win[fnName] === "function"){ __resolvedFnCache[fnName] = win[fnName]; return win[fnName]; } } catch(e){}
+      try {
+        if (typeof win[fnName] === "function"){
+          try { win[fnName].__upHome = win; } catch(e2){}
+          __resolvedFnCache[fnName] = win[fnName];
+          return win[fnName];
+        }
+      } catch(e){}
       var frames; try { frames = win.document.querySelectorAll("iframe"); } catch(e){ continue; }
       for (var i = 0; i < frames.length; i++){
         var cw; try { cw = frames[i].contentWindow; } catch(e){ cw = null; }
@@ -693,8 +723,8 @@
     /* Key format is deliberately "<pfx>_cols__<instanceId>", matching what the tables wrote
        before this machinery moved into core — changing it would silently throw away every user's
        saved column choices and drag widths on first load. */
-    function colsKey(){ return cfg.storePrefix + "_cols__" + cfg.instanceId; }
-    function widthsKey(){ return cfg.storePrefix + "_widths__" + cfg.instanceId; }
+    function colsKey(){ return storeKey(cfg.storePrefix + "_cols__" + cfg.instanceId); }
+    function widthsKey(){ return storeKey(cfg.storePrefix + "_widths__" + cfg.instanceId); }
 
     function readCols(){
       var out = {};
@@ -2116,6 +2146,14 @@
     var label = opts.label || "component";
     var evtPrefix = opts.eventPrefix || "";
     return function fire(attr, fallbackName, payload){
+      /* team_id rides along on every event, so a Bubble workflow can check that what came back
+         belongs to the team currently on screen instead of trusting arrival order. Added here,
+         once, rather than in each component's payload -- and only when a team is actually known,
+         so nothing gains an empty field it has to ignore. */
+      try {
+        var tid = getTeam();
+        if (tid && payload && typeof payload === "object" && payload.team_id == null) payload.team_id = tid;
+      } catch(e){}
       var fnName = root.getAttribute(attr) || fallbackName;
       var fn = resolveBubbleFn(fnName);
       var json; try { json = JSON.stringify(payload); } catch(e){ json = ""; }
@@ -4195,6 +4233,45 @@
     if (readPrefTheme() === "dark" && THEME.value == null) setUpstreemTheme("dark");
   } catch(e){}
 
+  /* ---------------------------------------------------------------------------------------------
+     Team scope for everything this library stores locally.
+
+     localStorage is shared across every team the same browser ever opens, so an unscoped key means
+     one team's saved state shows up for the next. The worst of these was prompts-table's
+     "promptGroups": custom groupings are lists of TAG IDS, and a tag id from team A resolves to
+     nothing in team B -- so the grouping did not just look wrong, it silently produced empty
+     groups. Column choices, drag widths, chart modes and sort preferences had the same leak, just
+     less visibly.
+
+     Every key now runs through storeKey(), which appends "@<team>". A page with no team yet gets
+     "@_" rather than the bare key, so an unscoped value can never be read back by accident once a
+     team IS known. Values written before this exist under the old names and are simply not found
+     any more -- which is the correct outcome, not a migration problem: they were the leak.
+
+     The team comes from setUpstreemTeam(id) or from a data-team attribute on any root, whichever
+     lands first. Changing it re-keys everything from the next read on. */
+  var TEAM = (window.__upTeam = window.__upTeam || { id: "" });
+  function getTeam(){
+    if (TEAM.id) return TEAM.id;
+    /* Declarative fallback: any component root may carry data-team, so a page that binds it in
+       the Property Editor needs no Run-JavaScript step at all. */
+    try {
+      var el = document.querySelector("[data-team]");
+      var v = el && String(el.getAttribute("data-team") || "").trim();
+      if (v && v !== "TEAM_ID") TEAM.id = v;
+    } catch(e){}
+    return TEAM.id;
+  }
+  function setUpstreemTeam(id){
+    var v = String(id == null ? "" : id).trim();
+    if (v === "TEAM_ID") v = "";
+    TEAM.id = v;
+    return v;
+  }
+  function storeKey(base){ return String(base) + "@" + (getTeam() || "_"); }
+  window.setUpstreemTeam = setUpstreemTeam;
+  window.getUpstreemTeam = getTeam;
+
   window.UpstreemCore = {
     upstreemSetTheme: upstreemSetTheme,
     readPrefTheme: readPrefTheme,
@@ -4218,6 +4295,9 @@
     fmtTotal: fmtTotal,
     isYes: isYes,
     parseLoose: parseLoose,
+    getTeam: getTeam,
+    setUpstreemTeam: setUpstreemTeam,
+    storeKey: storeKey,
     getTopics: getTopics,
     setTopics: setTopics,
     onTopics: onTopics,

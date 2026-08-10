@@ -321,10 +321,14 @@
        promptGroups = [{ "key": "SUV & Hybrid", "tag_ids": ["uuid1","uuid2"] }]
      Global, not per instance: a grouping the user invented is a property of how THEY think about
      their topics, not of one placement of the table. Never written to the database. */
-  var GROUPS_KEY = "promptGroups";
+  /* Team-scoped through UC.storeKey. This one mattered most: a custom grouping is a list of TAG
+     IDS, and a tag id from one team resolves to nothing in another -- so an unscoped key did not
+     just show the wrong grouping, it produced silently empty groups. */
+  function groupsKey(){ return (window.UpstreemCore && window.UpstreemCore.storeKey)
+    ? window.UpstreemCore.storeKey("promptGroups") : "promptGroups"; }
   function readCustomGroups(){
     try {
-      var raw = window.localStorage.getItem(GROUPS_KEY);
+      var raw = window.localStorage.getItem(groupsKey());
       if (!raw) return [];
       var arr = JSON.parse(raw);
       if (!Array.isArray(arr)) return [];
@@ -334,14 +338,15 @@
     } catch(e){ return []; }
   }
   function writeCustomGroups(list){
-    try { window.localStorage.setItem(GROUPS_KEY, JSON.stringify(list || [])); } catch(e){}
+    try { window.localStorage.setItem(groupsKey(), JSON.stringify(list || [])); } catch(e){}
   }
 
   function makeController(root){
     var instanceId = root.getAttribute("data-instance") || "default";
     var saved = STORE[instanceId] || {};
 
-    function gKey(k){ return "upt_" + k + "__" + instanceId; }
+    /* grouped / groupsort / groupsortdir / groupmode / groupswide all ride the same scope. */
+    function gKey(k){ return UC.storeKey("upt_" + k + "__" + instanceId); }
     function readGrouped(){
       try { return window.localStorage.getItem(gKey("grouped")) === "yes"; } catch(e){ return false; }
     }

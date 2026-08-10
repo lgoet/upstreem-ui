@@ -674,7 +674,7 @@
     }
 
     /* ---- persisted prefs (per instance) ---- */
-    function key(n){ return "ubo_" + n + "__" + instanceId; }
+    function key(n){ return UC.storeKey("ubo_" + n + "__" + instanceId); }
     function readLS(n, fallback){ try { var v = window.localStorage.getItem(key(n)); return v == null ? fallback : v; } catch(e){ return fallback; } }
     function writeLS(n, v){ try { window.localStorage.setItem(key(n), v); } catch(e){} }
     /* Page-wide, not per instance: core owns the preference and broadcasts changes, so setting the

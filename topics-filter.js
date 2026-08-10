@@ -274,6 +274,10 @@
         tag_mode: mode,
         count: selected.length
       };
+      /* Same team_id every other event carries (core adds it inside makeFire; this component
+         publishes directly, so it is added here). Lets the receiving workflow drop a payload that
+         belongs to a team the page has since navigated away from. */
+      try { var tid = UC.getTeam && UC.getTeam(); if (tid) payload.team_id = tid; } catch(e){}
       var name = root.getAttribute("data-topics-fn") || "bubble_fn_utfTopics";
       var fn = UC.resolveBubbleFn(name);
       var json; try { json = JSON.stringify(payload); } catch (e) { json = ""; }

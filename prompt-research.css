@@ -642,7 +642,7 @@
    from the root's top edge -- identical numbers on both. If it still sits lower on the live page,
    the extra comes from the Bubble element's OWN top spacing above this component, which nothing in
    here can see; --upr-head-top is the knob for that, settable per placement via data-head-top. */
-.upr-root { --upr-head-top: 16px; }
+.upr-root { --upr-head-top: 8px; }
 .upr-root .upr-pagehead { padding: var(--upr-head-top) 0 24px; }
 
 /* The button used to be the first thing on the page and carried the page's own top padding. The
