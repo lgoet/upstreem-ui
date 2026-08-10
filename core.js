@@ -113,20 +113,52 @@
         /* Trailing comma left behind when the LAST value was the empty one. */
         .replace(/,\s*(?=[}\]])/g, "");
     }
+    /* Repair 6: an UNESCAPED double quote inside a string value.
+
+       Bubble hands the RPC result over as text, and a quote that the source data carried lands
+       in the payload raw -- these are real titles that killed a whole page load:
+
+         "title":       mITSM x it-sa 2025 "KI sicher und effektiv einsetzen: …"
+         "description": Top 10 Audit Management Software 2026 — title: "Ju…
+
+       Naively scanning to "the next quote" ends the string at the inner one, so everything after
+       it parses as code and the payload is rejected. Nothing in the console says so, because the
+       Run-JS step's own toArr() catches the throw and returns [] -- an empty table with no error.
+
+       Tell the two apart by what FOLLOWS the quote: a real closing quote is followed (ignoring
+       whitespace) by a structural character -- , : } ] -- or by end of input. Anything else means
+       the quote was part of the text, so escape it and keep going.
+
+       Known limit, and it cannot be resolved without guessing: a value that genuinely ends a
+       quoted phrase right before a comma -- he said "hi", then left -- closes early here. That is
+       ambiguous even by eye. This heuristic gets every real payload seen so far and, unlike the
+       old behaviour, degrades to a partial parse instead of dropping the whole table. */
+    function scanString(t, i){
+      var n = t.length, j = i + 1, body = "";
+      while (j < n){
+        var c = t.charAt(j);
+        if (c === "\\"){ body += t.substr(j, 2); j += 2; continue; }
+        if (c === '"'){
+          var k = j + 1;
+          while (k < n && /\s/.test(t.charAt(k))) k++;
+          var nxt = t.charAt(k);
+          if (k >= n || nxt === "," || nxt === ":" || nxt === "}" || nxt === "]"){
+            return { end: j + 1, text: '"' + body + '"' };
+          }
+          body += '\\"'; j++; continue;             // literal quote inside the value
+        }
+        body += c; j++;
+      }
+      return { end: n, text: '"' + body + '"' };
+    }
     function repair(t){
       var out = "", buf = "", i = 0, n = t.length;
       while (i < n){
         if (t.charAt(i) === '"'){
-          var j = i + 1;
-          while (j < n){
-            var c = t.charAt(j);
-            if (c === "\\"){ j += 2; continue; }
-            j++;
-            if (c === '"') break;
-          }
+          var lit = scanString(t, i);
           out += fixCode(buf); buf = "";
-          out += t.slice(i, j);
-          i = j;
+          out += lit.text;
+          i = lit.end;
         } else { buf += t.charAt(i); i++; }
       }
       return out + fixCode(buf);
@@ -180,11 +212,19 @@
       params = isArr(parsed) ? { rows: parsed } : (parsed || {});
     }
     if (!params || typeof params !== "object") return params;
-    if (typeof params.rows !== "string") return params;
+    /* rows and brands are the two list fields that carry free text from the server, so they are
+       the two that can arrive damaged. Everything else in a render payload is an id or a number. */
+    var LISTS = ["rows", "brands"], needs = false, i;
+    for (i = 0; i < LISTS.length; i++) if (typeof params[LISTS[i]] === "string") needs = true;
+    if (!needs) return params;
     var out = {}, k;
     for (k in params) if (Object.prototype.hasOwnProperty.call(params, k)) out[k] = params[k];
-    var rows = parseLoose(out.rows, (label || "upstreem") + " rows");
-    out.rows = isArr(rows) ? rows : (rows ? [rows] : []);
+    for (i = 0; i < LISTS.length; i++){
+      var key = LISTS[i];
+      if (typeof out[key] !== "string") continue;
+      var v = parseLoose(out[key], (label || "upstreem") + " " + key);
+      out[key] = isArr(v) ? v : (v ? [v] : []);
+    }
     return out;
   }
   function isArr(v){ return Object.prototype.toString.call(v) === "[object Array]"; }
