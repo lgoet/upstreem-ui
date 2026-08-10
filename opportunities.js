@@ -922,9 +922,22 @@
      Names, signatures and semantics are byte-identical to the standalone. */
   function ingest(items){ S.items = (Array.isArray(items) ? items : []).map(function(it, i){ if (it.id == null) it.id = 'opp_' + i; return it; }); }
   window.opportunitiesSetItems = function(items){ if (typeof items === 'string') { var p = looseParse(items); items = Array.isArray(p) ? p : []; } S.loading = false; if (skelTimer){ clearTimeout(skelTimer); skelTimer = null; } ingest(items); if (S.detailId && !S.items.find(function(x){ return String(x.id)===String(S.detailId); })) closeDetail(); render(); };
-  window.opportunitiesSetLoading = function(v){ S.loading = !!v; render(); };
+  /* !!v war hier falsch, und zwar genau andersherum als gedacht: Bubble uebergibt "yes"/"no" als
+     TEXT, und !!"no" ist true -- der Aufruf mit "no" schaltete das Skelett AN statt aus. Kein
+     Fehler in der Konsole, das Board blieb einfach im Ladezustand haengen.
+
+     Nicht ueber UC: das var UC dieser Datei lebt in der Boot-Funktion und ist hier nicht im Scope.
+     window.UpstreemCore wird benutzt, wenn es da ist, sonst entscheidet die lokale Liste -- diese
+     Setter koennen laufen, bevor core geladen ist. */
+  function isYesVal(v){
+    if (window.UpstreemCore && window.UpstreemCore.isYes) return window.UpstreemCore.isYes(v);
+    if (typeof v === "boolean") return v;
+    var t = String(v == null ? "" : v).trim().toLowerCase();
+    return t === "yes" || t === "true" || t === "1";
+  }
+  window.opportunitiesSetLoading = function(v){ S.loading = isYesVal(v); render(); };
   window.opportunitiesSetMode = function(m){ if (m==='board'||m==='list'){ S.mode = m; root.querySelectorAll('.uo-mode .up-seg-btn').forEach(function(x){ x.classList.toggle('is-active', x.getAttribute('data-mode')===m); }); render(); } };
-  window.opportunitiesSetShowIgnored = function(v){ S.visible.ignored = !!v; var row = settingsPop.querySelector('[data-board="ignored"] .up-switch'); if (row) row.classList.toggle('is-on', S.visible.ignored); render(); };
+  window.opportunitiesSetShowIgnored = function(v){ S.visible.ignored = isYesVal(v);   /* gleicher Defekt wie oben */ var row = settingsPop.querySelector('[data-board="ignored"] .up-switch'); if (row) row.classList.toggle('is-on', S.visible.ignored); render(); };
   window.opportunitiesSetVisibleBoards = function(obj){ if (obj && typeof obj === 'object'){ ['pending','in_progress','done','ignored'].forEach(function(k){ if (k in obj){ S.visible[k] = !!obj[k]; var sw = settingsPop.querySelector('[data-board="'+k+'"] .up-switch'); if (sw) sw.classList.toggle('is-on', S.visible[k]); } }); render(); } };
   window.opportunitiesSetTheme = function(t){ root.setAttribute('data-theme', String(t).toLowerCase()==='dark' ? 'dark' : 'light'); if (String(t).toLowerCase() !== 'dark') root.removeAttribute('data-theme'); portal.setAttribute('data-theme', isDark() ? 'dark' : 'light'); };
   window.opportunitiesOpenDetail = openDetail;
