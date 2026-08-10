@@ -35,7 +35,14 @@
   /* ---- boot stubs (STYLEGUIDE §25) --------------------------------------------------------
      Bubble fires workflows before this file finishes loading. openAddPrompts in particular is
      wired to a button the user can hit during the first second of a page's life. */
-  var API_NAMES = ["openAddPrompts", "closeAddPrompts", "resetAddPrompts", "setAddPromptsTheme"];
+  /* One batch is capped. 100 is not a technical limit -- it is the point past which a single
+     Bubble workflow run stops being a sensible unit of work, and a 10.000-row import would sit
+     there building a payload nobody wants to debug. Nothing about the cap is shown until it is
+     actually reached; a counter that says "0 / 100" on an empty dialog is noise. */
+  var MAX_PROMPTS = 100;
+
+  var API_NAMES = ["openAddPrompts", "closeAddPrompts", "resetAddPrompts", "setAddPromptsTheme",
+                   "setUpstreemDefaultMarket"];
   var Q = (window.__uapBootQueue = window.__uapBootQueue || []);
   API_NAMES.forEach(function (n) {
     if (!window[n]) window[n] = function () { Q.push([n, [].slice.call(arguments)]); };
@@ -52,7 +59,11 @@
     tag:     '<svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>',
     search:  '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
     alert:   '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
-    file:    '<svg viewBox="0 0 24 24"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>'
+    file:    '<svg viewBox="0 0 24 24"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>',
+    chev:    '<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>',
+    /* Feather x at its own stroke weight, the clear glyph the other three pickers use. */
+    xThin:   '<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+    corner:  '<svg viewBox="0 0 24 24"><polyline points="9 10 4 15 9 20"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></svg>'
   };
 
   /* =============================================================================================
@@ -142,11 +153,13 @@
   var TEMPLATE_DELIM = ";";
   function templateCsv() {
     var d = TEMPLATE_DELIM;
+    /* Placeholders, not example prompts. A template full of plausible German prompts gets filled
+       in AROUND the examples and they end up imported as real rows. */
     var lines = [
       ["prompt_text", "market"],
-      ["Wer bietet Schulungen zur digitalen Prozessautomatisierung für Handwerker an?", "de"],
-      ["Which tools help small manufacturers automate quoting?", "us"],
-      ["Welche Anbieter für Werkstattsoftware sind empfehlenswert?", ""]
+      ["prompt text 1", "de"],
+      ["prompt text 2", ""],
+      ["prompt text 3", ""]
     ];
     return "﻿" + lines.map(function (r) {
       return r.map(function (c) { return csvCell(c, d); }).join(d);
@@ -181,7 +194,7 @@
     var grid = parseCsv(text, detectDelim(firstLine)).filter(function (r) {
       return r.some(function (c) { return String(c).trim() !== ""; });
     });
-    if (!grid.length) return { rows: [], skipped: 0, note: "Die Datei enthält keine Zeilen." };
+    if (!grid.length) return { rows: [], skipped: 0, note: "That file has no rows." };
 
     var head = grid[0].map(normHeader);
     var iText = -1, iMarket = -1, k;
@@ -196,7 +209,7 @@
          pastes out of a spreadsheet, and it needs no header to be unambiguous. */
       iText = 0; iMarket = grid[0].length > 1 ? 1 : -1;
       body = grid;
-      note = "Keine Kopfzeile erkannt, erste Spalte als Prompt gelesen.";
+      note = "No header row recognised, first column read as the prompt.";
     } else {
       body = grid.slice(1);
     }
@@ -254,7 +267,7 @@
     rows: [],                   // [{ id, text, market }]
     tags: {},                   // batch topics, id -> true
     market: "",                 // batch market (alpha2), applied to rows without one
-    csvNote: "", csvSkipped: 0, csvName: "",
+    csvNote: "", csvSkipped: 0, csvName: "", capNote: "",
     editing: null,              // row id being edited inline
     pick: null,                 // null | "market" | "tags"
     pickQuery: "",
@@ -262,6 +275,9 @@
     opener: null                // element to restore focus to on close
   };
   var seq = 0;
+  /* Set once per page load from Bubble. Lives on window so a second copy of this file (two
+     data-cdn-pin values on one page) sees the same value. */
+  var DEFAULT_MARKET = (window.__uapDefaultMarket || "");
 
   function marketName(a2) {
     if (!a2) return "";
@@ -292,15 +308,51 @@
     return Object.keys(S.tags).filter(function (k) { return S.tags[k]; });
   }
 
+  /* Returns how many were turned away by the cap, so the caller can say so once instead of the
+     component announcing a limit nobody has hit yet. */
   function addRows(list) {
+    var dropped = 0;
     list.forEach(function (r) {
       var t = String(r.text == null ? "" : r.text).trim();
       if (!t) return;
+      if (S.rows.length >= MAX_PROMPTS) { dropped++; return; }
       S.rows.push({ id: "r" + (++seq), text: t, market: r.market || "" });
     });
+    if (dropped) S.capNote = dropped + (dropped === 1 ? " more row was left out"
+                                                     : " more rows were left out") +
+                             " — " + MAX_PROMPTS + " prompts per batch.";
+    return dropped;
   }
 
   /* ---------------- markup ---------------- */
+
+  /* One picker: trigger plus menu, built exactly like markets-filter's. Both chevron glyphs live
+     in the DOM and CSS swaps them on hover — rendering the X through JS would need listeners on a
+     node that gets rebuilt on every selection change, and the two would drift apart. */
+  function pickerHtml(kind, icon, label, tip) {
+    return '<div class="uap-pickwrap" data-pick="' + kind + '">' +
+             '<button type="button" class="uap-trigger" data-act="pick-' + kind + '"' +
+               ' aria-haspopup="listbox" aria-expanded="false" data-tip="' + esc(tip) + '">' +
+               '<span class="uap-trigger-ic">' + icon + '</span>' +
+               '<span class="uap-label">' + esc(label) + '</span>' +
+               '<span class="uap-chev">' +
+                 '<span class="uap-chev-down">' + ICON.chev + '</span>' +
+                 '<span class="uap-chev-x" role="button" tabindex="-1" aria-label="Clear">' + ICON.xThin + '</span>' +
+               '</span>' +
+             '</button>' +
+             '<div class="uap-menu" role="dialog">' +
+               '<div class="uap-search-row">' +
+                 '<span class="up-ddsearch uap-search">' +
+                   '<input class="up-ddsearch-in uap-search-in" type="text"' +
+                     ' placeholder="Search ' + (kind === "market" ? "markets" : "topics") + '"' +
+                     ' aria-label="Search ' + (kind === "market" ? "markets" : "topics") + '">' +
+                   '<span class="up-ddsearch-ic">' + ICON.search + '</span>' +
+                 '</span>' +
+               '</div>' +
+               '<div class="uap-list-opts" role="listbox"></div>' +
+             '</div>' +
+           '</div>';
+  }
 
   function rowHtml(r) {
     var mk = r.market || S.market;
@@ -332,90 +384,106 @@
       M.listwrap.classList.remove("is-empty");
       el.innerHTML = S.rows.map(rowHtml).join("");
     }
+    /* No heading at all while the list is empty. "No prompts yet" in the same weight as the real
+       count made the emptiest state the loudest thing on the card. */
     M.count.textContent = S.rows.length
-      ? S.rows.length + (S.rows.length === 1 ? " prompt" : " prompts")
-      : "No prompts yet";
+      ? S.rows.length + (S.rows.length === 1 ? " prompt" : " prompts") : "";
     M.save.disabled = !S.rows.length || S.saving;
     M.save.textContent = S.rows.length ? "Add " + S.rows.length + (S.rows.length === 1 ? " prompt" : " prompts")
                                        : "Add prompts";
+    M.capnote.hidden = !S.capNote;
+    if (S.capNote) M.capnote.innerHTML = ICON.alert + '<span>' + esc(S.capNote) + '</span>';
+
+    /* The Enter affordance follows the field, not the list. */
+    if (M.enter) M.enter.hidden = !String(M.input.value || "").trim();
+
     var ed = el.querySelector(".uap-rowedit");
     if (ed) { autosize(ed); ed.focus(); ed.setSelectionRange(ed.value.length, ed.value.length); }
   }
 
-  function renderPickers() {
-    var mk = S.market;
-    M.marketBtn.innerHTML = mk
-      ? '<img class="uap-flag" src="' + esc(flagUrl(mk)) + '" alt="">' +
-        '<span class="uap-picklabel">' + esc(marketName(mk)) + '</span>'
-      : ICON.pin + '<span class="uap-picklabel is-empty">Market</span>';
-    M.marketBtn.classList.toggle("is-set", !!mk);
-    M.marketClear.hidden = !mk;
+  /* The trigger shows what is picked, exactly like the three filter dropdowns: the market's flag
+     and name, or the topics as chips. has-sel is what turns the chevron into the clear-X. */
+  function renderTriggers() {
+    var mk = S.market, trg = M.marketTrigger;
+    trg.querySelector(".uap-trigger-ic").innerHTML = mk
+      ? '<img class="uap-flag" src="' + esc(flagUrl(mk)) + '" alt="">' : ICON.pin;
+    trg.querySelector(".uap-label").textContent = mk ? marketName(mk) : "Market";
+    M.marketWrap.classList.toggle("has-sel", !!mk);
 
-    var ids = selectedTagIds();
-    if (!ids.length) {
-      M.tagsBtn.innerHTML = ICON.tag + '<span class="uap-picklabel is-empty">Topics</span>';
-      M.tagsBtn.classList.remove("is-set");
-    } else {
-      M.tagsBtn.classList.add("is-set");
-      M.tagsBtn.innerHTML = ids.slice(0, 3).map(function (id) {
-        var t = topicById(id);
-        if (!t) return "";
+    var ids = selectedTagIds(), tt = M.tagsTrigger;
+    tt.querySelector(".uap-trigger-ic").innerHTML = ICON.tag;
+    var lbl = tt.querySelector(".uap-label");
+    if (!ids.length) { lbl.textContent = "Topics"; }
+    else {
+      lbl.innerHTML = ids.slice(0, 2).map(function (id) {
+        var t = topicById(id); if (!t) return "";
         var mark = t.emoji ? '<span class="uap-tagemoji">' + esc(t.emoji) + '</span>'
                            : '<span class="uap-tagdot" style="background:' + esc(topicHex(t)) + '"></span>';
         return '<span class="uap-tagchip">' + mark + esc(t.name || "") + '</span>';
-      }).join("") + (ids.length > 3 ? '<span class="uap-tagmore">+' + (ids.length - 3) + '</span>' : "");
+      }).join("") + (ids.length > 2 ? '<span class="uap-tagmore">+' + (ids.length - 2) + '</span>' : "");
     }
-    M.tagsClear.hidden = !ids.length;
+    M.tagsWrap.classList.toggle("has-sel", !!ids.length);
   }
 
-  function pickMenuHtml() {
+  /* Rows are core's .up-filter-item with core's .up-filter-check -- the same checkbox the topics,
+     models and markets dropdowns use, in both themes. Drawing an own one was the first version's
+     mistake: it looked close in light mode and wrong in dark, because core flips the tick colour. */
+  function optsHtml(kind) {
     var q = S.pickQuery.toLowerCase();
-    if (S.pick === "market") {
+    if (kind === "market") {
       var list = (UC.getMarkets ? UC.getMarkets() : []).filter(function (m) {
-        if (!q) return true;
-        return String(m.name || "").toLowerCase().indexOf(q) >= 0 ||
-               String(m.alpha2 || "").toLowerCase().indexOf(q) >= 0;
+        return !q || String(m.name || "").toLowerCase().indexOf(q) >= 0 ||
+                     String(m.alpha2 || "").toLowerCase().indexOf(q) >= 0;
       });
-      if (!list.length) return '<div class="uap-pickempty">No markets found</div>';
+      if (!list.length) return '<div class="uap-noopt">No markets found</div>';
       return list.map(function (m) {
-        var a2 = String(m.alpha2 || "").toLowerCase();
-        return '<button type="button" class="up-optrow uap-pickopt' + (a2 === S.market ? " is-on" : "") +
+        var a2 = String(m.alpha2 || "").toLowerCase(), on = a2 === S.market;
+        return '<div class="up-filter-item uap-opt' + (on ? " is-checked" : "") +
+               '" role="option" tabindex="0" aria-selected="' + (on ? "true" : "false") +
                '" data-val="' + esc(a2) + '">' +
-                 '<img class="uap-flag" src="' + esc(flagUrl(a2)) + '" alt="">' +
-                 '<span class="uap-pickopt-name">' + esc(m.name || a2.toUpperCase()) + '</span>' +
-                 '<span class="up-optrow-check">' + UC.CHECK_SVG + '</span>' +
-               '</button>';
+                 '<span class="up-filter-check">' + UC.CHECK_SVG + '</span>' +
+                 '<span class="uap-opt-main">' +
+                   '<img class="uap-flag uap-opt-flag" src="' + esc(flagUrl(a2)) + '" alt="">' +
+                   '<span class="uap-opt-name">' + esc(m.name || a2.toUpperCase()) + '</span>' +
+                 '</span>' +
+                 '<span class="uap-opt-count">' + toNum(m.prompt_count) + '</span>' +
+               '</div>';
       }).join("");
     }
     var tl = (UC.getTopics ? UC.getTopics() : []).filter(function (t) {
       if (t.is_active === false) return false;
       return !q || String(t.name || "").toLowerCase().indexOf(q) >= 0;
     });
-    if (!tl.length) return '<div class="uap-pickempty">No topics found</div>';
+    if (!tl.length) return '<div class="uap-noopt">No topics found</div>';
     return tl.map(function (t) {
       var on = !!S.tags[t.id];
       var mark = t.emoji ? '<span class="uap-tagemoji">' + esc(t.emoji) + '</span>'
                          : '<span class="uap-tagdot" style="background:' + esc(topicHex(t)) + '"></span>';
-      return '<button type="button" class="up-optrow uap-pickopt' + (on ? " is-on" : "") +
-             '" data-val="' + esc(t.id) + '">' + mark +
-               '<span class="uap-pickopt-name">' + esc(t.name || "") + '</span>' +
-               '<span class="up-optrow-check">' + UC.CHECK_SVG + '</span>' +
-             '</button>';
+      return '<div class="up-filter-item uap-opt' + (on ? " is-checked" : "") +
+             '" role="option" tabindex="0" aria-selected="' + (on ? "true" : "false") +
+             '" data-val="' + esc(t.id) + '">' +
+               '<span class="up-filter-check">' + UC.CHECK_SVG + '</span>' +
+               '<span class="uap-opt-main">' + mark +
+                 '<span class="uap-opt-name">' + esc(t.name || "") + '</span>' +
+               '</span>' +
+             '</div>';
     }).join("");
   }
 
-  function renderPickMenu() {
-    if (!S.pick) { M.pick.hidden = true; M.pick.innerHTML = ""; return; }
-    M.pick.hidden = false;
-    M.pick.className = "uap-pickmenu is-" + S.pick;
-    M.pick.innerHTML =
-      '<div class="uap-picksearch">' + ICON.search +
-        '<input type="text" placeholder="' + (S.pick === "market" ? "Search markets" : "Search topics") +
-        '" value="' + esc(S.pickQuery) + '">' +
-      '</div>' +
-      '<div class="uap-picklist">' + pickMenuHtml() + '</div>';
-    var inp = M.pick.querySelector("input");
-    if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+  function renderMenus() {
+    ["market", "tags"].forEach(function (k) {
+      var wrap = k === "market" ? M.marketWrap : M.tagsWrap;
+      var open = S.pick === k;
+      wrap.classList.toggle("is-open", open);
+      wrap.querySelector(".uap-trigger").setAttribute("aria-expanded", open ? "true" : "false");
+      wrap.querySelector(".uap-menu").classList.toggle("is-shown", open);
+      if (open) wrap.querySelector(".uap-list-opts").innerHTML = optsHtml(k);
+    });
+    if (S.pick) {
+      var inp = (S.pick === "market" ? M.marketWrap : M.tagsWrap).querySelector(".uap-search-in");
+      if (inp && inp.value !== S.pickQuery) inp.value = S.pickQuery;
+      if (inp) inp.focus();
+    }
   }
 
   function renderCsvNote() {
@@ -423,7 +491,7 @@
     M.csvnote.hidden = false;
     var bits = [];
     if (S.csvName) bits.push(esc(S.csvName));
-    if (S.csvSkipped) bits.push(S.csvSkipped + (S.csvSkipped === 1 ? " Zeile übersprungen" : " Zeilen übersprungen"));
+    if (S.csvSkipped) bits.push(S.csvSkipped + (S.csvSkipped === 1 ? " row skipped" : " rows skipped"));
     if (S.csvNote) bits.push(esc(S.csvNote));
     M.csvnote.innerHTML = ICON.file + '<span>' + bits.join(" · ") + '</span>';
   }
@@ -436,7 +504,7 @@
     });
   }
 
-  function renderAll() { renderTabs(); renderList(); renderPickers(); renderCsvNote(); }
+  function renderAll() { renderTabs(); renderList(); renderTriggers(); renderCsvNote(); renderMenus(); }
 
   function autosize(ta) {
     ta.style.height = "auto";
@@ -473,7 +541,14 @@
         '</div>' +
 
         '<div class="uap-input-manual">' +
-          '<textarea class="uap-input" rows="1" placeholder="Type a prompt and press Enter"></textarea>' +
+          '<div class="uap-inputwrap">' +
+            '<textarea class="uap-input" rows="2" placeholder="Type a prompt and press Enter"></textarea>' +
+            /* The Enter affordance only exists while there is something to commit. An always-on
+               button reads as "the primary action" and competes with Add; appearing on the first
+               keystroke reads as "this is how you confirm", which is the whole point. */
+            '<button type="button" class="uap-enter" data-act="commit" aria-label="Add this prompt" hidden>' +
+              ICON.corner + '</button>' +
+          '</div>' +
           '<div class="uap-hint">Enter adds it to the list · Shift+Enter for a line break · paste several lines to add them all</div>' +
         '</div>' +
 
@@ -494,6 +569,7 @@
           '</div>' +
           '<ul class="uap-list"></ul>' +
           '<div class="uap-listempty">Prompts you add show up here before anything is saved.</div>' +
+          '<div class="uap-capnote" hidden></div>' +
         '</div>' +
 
         /* Market and Topics sit IN the footer rather than as two more stacked blocks. §27's 32px
@@ -502,16 +578,15 @@
            Batch controls left, actions right is also what every bulk-add dialog worth copying does
            -- they modify what the button is about to do, so they belong next to it. */
         '<div class="uap-foot">' +
+          /* Both pickers are the SAME control the markets and topics filters already use — the
+             trigger with the chevron that turns into a clear-X on hover once something is picked,
+             the core dropdown shell, core's search row, core's .up-filter-item rows with their
+             checkbox. The first version invented all of that locally and looked foreign, and it
+             also needed a separate clear-X button sitting awkwardly beside the trigger; in the
+             established control the chevron IS the clear button. */
           '<div class="uap-meta">' +
-            '<div class="uap-pickwrap">' +
-              '<button type="button" class="uap-pickbtn" data-act="pick-market" data-tip="Market for all new prompts"></button>' +
-              '<button type="button" class="uap-pickclear" data-act="clear-market" data-tip="Clear market" hidden>' + ICON.x + '</button>' +
-            '</div>' +
-            '<div class="uap-pickwrap">' +
-              '<button type="button" class="uap-pickbtn" data-act="pick-tags" data-tip="Topics for all new prompts"></button>' +
-              '<button type="button" class="uap-pickclear" data-act="clear-tags" data-tip="Clear topics" hidden>' + ICON.x + '</button>' +
-            '</div>' +
-            '<div class="uap-pickmenu" hidden></div>' +
+            pickerHtml("market", ICON.pin, "Market", "Market for all new prompts") +
+            pickerHtml("tags",   ICON.tag, "Topics", "Topics for all new prompts") +
           '</div>' +
           '<div class="uap-actions">' +
             '<button type="button" class="uap-cancel" data-act="close">Cancel</button>' +
@@ -531,13 +606,14 @@
       file:       back.querySelector(".uap-file"),
       csvnote:    back.querySelector(".uap-csvnote"),
       listwrap:   back.querySelector(".uap-listwrap"),
+      capnote:    back.querySelector(".uap-capnote"),
       list:       back.querySelector(".uap-list"),
       count:      back.querySelector(".uap-count"),
-      marketBtn:  back.querySelector('[data-act="pick-market"]'),
-      marketClear:back.querySelector('[data-act="clear-market"]'),
-      tagsBtn:    back.querySelector('[data-act="pick-tags"]'),
-      tagsClear:  back.querySelector('[data-act="clear-tags"]'),
-      pick:       back.querySelector(".uap-pickmenu"),
+      enter:      back.querySelector(".uap-enter"),
+      marketWrap:    back.querySelector('[data-pick="market"]'),
+      marketTrigger: back.querySelector('[data-pick="market"] .uap-trigger'),
+      tagsWrap:      back.querySelector('[data-pick="tags"]'),
+      tagsTrigger:   back.querySelector('[data-pick="tags"] .uap-trigger'),
       save:       back.querySelector(".uap-save")
     };
 
@@ -545,13 +621,23 @@
        root, in step with every other component's naming. */
     fire = UC.makeFire(back, "uap", { eventPrefix: "uap-" });
 
-    if (UC.makeTooltips) UC.makeTooltips(back, function () {
-      return UC.getUpstreemTheme ? UC.getUpstreemTheme() === "dark" : false;
-    });
+    /* Core's tooltip element lives in <body>. This dialog lives in the TOP LAYER, which is painted
+       after the whole document -- so a body-mounted tip is behind the modal by construction, and no
+       z-index can lift it, exactly the way no z-index could lift the modal above the host earlier.
+       The tip has to be inside the same top-layer subtree, so this dialog runs its own. */
+    if (UC.makeTooltips) {
+      var prevTip = window.__upTipEl, prevState = window.__upTipState;
+      window.__upTipEl = null; window.__upTipState = null;
+      UC.makeTooltips(back, function () {
+        return UC.getUpstreemTheme ? UC.getUpstreemTheme() === "dark" : false;
+      });
+      if (window.__upTipEl) back.appendChild(window.__upTipEl);
+      window.__upTipEl = prevTip; window.__upTipState = prevState;
+    }
     /* The stores fill in after the page's Run-JavaScript steps run, which can be after the modal
        was already built. Both pickers redraw on their own when that happens. */
-    if (UC.onMarkets) UC.onMarkets(function () { if (M) { renderPickers(); if (S.pick === "market") renderPickMenu(); } }, back);
-    if (UC.onTopics)  UC.onTopics(function ()  { if (M) { renderPickers(); if (S.pick === "tags")   renderPickMenu(); } }, back);
+    if (UC.onMarkets) UC.onMarkets(function () { if (M) { renderTriggers(); renderMenus(); } }, back);
+    if (UC.onTopics)  UC.onTopics(function ()  { if (M) { renderTriggers(); renderMenus(); } }, back);
     if (UC.onTheme)   UC.onTheme(function ()   { if (M) renderAll(); }, back);
 
     wire();
@@ -570,6 +656,7 @@
     addRows(lines.map(function (t) { return { text: t }; }));
     M.input.value = "";
     autosize(M.input);
+    M.enter.hidden = true;
     renderList();
     M.list.scrollTop = M.list.scrollHeight;
   }
@@ -581,20 +668,20 @@
     fr.onload = function () {
       var res;
       try { res = rowsFromCsv(decodeCsvBytes(fr.result)); }
-      catch (e) { res = { rows: [], skipped: 0, note: "Die Datei konnte nicht gelesen werden." }; }
+      catch (e) { res = { rows: [], skipped: 0, note: "That file could not be read." }; }
       S.csvNote = res.note; S.csvSkipped = res.skipped;
       addRows(res.rows);
-      if (!res.rows.length && !res.note) S.csvNote = "Keine verwertbaren Zeilen gefunden.";
+      if (!res.rows.length && !res.note) S.csvNote = "No usable rows found.";
       renderList(); renderCsvNote();
     };
     fr.onerror = function () {
-      S.csvNote = "Die Datei konnte nicht gelesen werden."; S.csvSkipped = 0;
+      S.csvNote = "That file could not be read."; S.csvSkipped = 0;
       renderCsvNote();
     };
     fr.readAsArrayBuffer(file);
   }
 
-  function closePick() { S.pick = null; S.pickQuery = ""; renderPickMenu(); }
+  function closePick() { S.pick = null; S.pickQuery = ""; renderMenus(); }
 
   function wire() {
     var back = M.back;
@@ -602,7 +689,10 @@
     /* Backdrop click closes, card click does not. */
     back.addEventListener("mousedown", function (e) { if (e.target === back) close(); });
 
-    M.input.addEventListener("input", function () { autosize(M.input); });
+    M.input.addEventListener("input", function () {
+      autosize(M.input);
+      M.enter.hidden = !String(M.input.value || "").trim();
+    });
     M.input.addEventListener("keydown", function (e) {
       if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); commitInput(); }
     });
@@ -634,13 +724,20 @@
         if (act === "template") { downloadCsv("upstreem-prompts-template.csv", templateCsv()); return; }
         if (act === "clearall") { S.rows = []; S.editing = null; renderList(); return; }
         if (act === "save")     { save(); return; }
-        if (act === "clear-market") { S.market = ""; renderPickers(); renderList(); return; }
-        if (act === "clear-tags")   { S.tags = {}; renderPickers(); return; }
+        if (act === "commit")   { commitInput(); M.input.focus(); return; }
         if (act === "pick-market" || act === "pick-tags") {
           var want = act === "pick-market" ? "market" : "tags";
+          /* Clicking the chevron area while something IS selected clears instead of opening --
+             the chevron has already turned into an X under the cursor, so opening the menu would
+             contradict what the button is showing. Same rule as the other three pickers. */
+          if (e.target.closest(".uap-chev") && btn.parentNode.classList.contains("has-sel")) {
+            if (want === "market") S.market = ""; else S.tags = {};
+            S.pick = null; renderTriggers(); renderList(); renderMenus();
+            return;
+          }
           S.pick = S.pick === want ? null : want;
           S.pickQuery = "";
-          renderPickMenu();
+          renderMenus();
           return;
         }
         if (act === "edit" || act === "del") {
@@ -655,19 +752,21 @@
       var tab = e.target.closest ? e.target.closest("[data-tab]") : null;
       if (tab && back.contains(tab)) { S.tab = tab.getAttribute("data-tab"); closePick(); renderTabs(); return; }
 
-      var opt = e.target.closest ? e.target.closest(".uap-pickopt") : null;
+      var opt = e.target.closest ? e.target.closest(".uap-opt") : null;
       if (opt && back.contains(opt)) {
         var val = opt.getAttribute("data-val");
-        if (S.pick === "market") { S.market = S.market === val ? "" : val; renderPickers(); renderList(); renderPickMenu(); }
-        else { if (S.tags[val]) delete S.tags[val]; else S.tags[val] = true; renderPickers(); renderPickMenu(); }
+        if (S.pick === "market") { S.market = S.market === val ? "" : val; renderTriggers(); renderList(); renderMenus(); }
+        else { if (S.tags[val]) delete S.tags[val]; else S.tags[val] = true; renderTriggers(); renderMenus(); }
         return;
       }
       /* A click anywhere else inside the card closes an open picker. */
-      if (S.pick && !(e.target.closest && e.target.closest(".uap-pickmenu"))) closePick();
+      if (S.pick && !(e.target.closest && e.target.closest(".uap-menu"))) closePick();
     });
 
-    M.pick.addEventListener("input", function (e) {
-      if (e.target.tagName === "INPUT") { S.pickQuery = e.target.value; renderPickMenu(); }
+    back.addEventListener("input", function (e) {
+      if (e.target.classList && e.target.classList.contains("uap-search-in")) {
+        S.pickQuery = e.target.value; renderMenus();
+      }
     });
 
     /* Inline row editing: blur or Enter commits, Escape drops the change. */
@@ -742,9 +841,12 @@
     opts = opts || {};
     if (!M) build();
     S.rows = []; S.tags = {}; S.market = ""; S.editing = null; S.saving = false;
-    S.csvNote = ""; S.csvSkipped = 0; S.csvName = "";
+    S.csvNote = ""; S.csvSkipped = 0; S.csvName = ""; S.capNote = "";
     S.tab = opts.tab === "csv" ? "csv" : "manual";
     S.pick = null; S.pickQuery = "";
+    /* Default market first, an explicit opts.market second. Both optional; neither is required
+       for the dialog to work, the market just starts empty then. */
+    if (DEFAULT_MARKET) S.market = DEFAULT_MARKET;
     if (opts.market) S.market = String(opts.market).toLowerCase();
 
     S.opener = document.activeElement;
@@ -757,7 +859,7 @@
        dialog. requestAnimationFrame was the first version and it deadlocked exactly that way. */
     M.back.classList.remove("is-closing");
     M.back.classList.add("is-open");
-    renderAll(); renderPickMenu();
+    renderAll(); renderMenus();
     setTimeout(function () { if (S.tab === "manual") M.input.focus(); }, 60);
   }
 
@@ -781,10 +883,16 @@
   window.closeAddPrompts = function () { close(); };
   window.resetAddPrompts = function () {
     S.rows = []; S.tags = {}; S.market = ""; S.editing = null;
-    S.csvNote = ""; S.csvSkipped = 0; S.csvName = "";
+    S.csvNote = ""; S.csvSkipped = 0; S.csvName = ""; S.capNote = "";
     if (M) renderAll();
   };
   window.setAddPromptsTheme = function (t) { if (UC.setUpstreemTheme) UC.setUpstreemTheme(t); };
+  /* The team's default market, as alpha-2. Prefills the picker every time the dialog opens; the
+     user can still change or clear it, and that choice lasts for that one batch. */
+  window.setUpstreemDefaultMarket = function (a2) {
+    DEFAULT_MARKET = String(a2 == null ? "" : a2).trim().toLowerCase();
+    window.__uapDefaultMarket = DEFAULT_MARKET;
+  };
 
   /* Drain anything that was called before this file finished loading. */
   if (Q.length) {

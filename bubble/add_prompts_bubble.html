@@ -75,6 +75,17 @@
      Same rule for topics if a workflow of yours creates one: end it with the RPC plus
      setUpstreemTopics(`[TOPICS]`).
 
+     ── The team's default market ───────────────────────────────
+     One Run-JavaScript step at page load, no instance id involved:
+
+         setUpstreemDefaultMarket("de");
+
+     Lowercase alpha-2. The market picker starts on it every time the dialog opens, and rows
+     imported from a CSV that carry their OWN market keep theirs — the default only fills the gaps.
+     The user can still change or clear it, and that choice lasts for that one batch.
+
+     Leave the call out and the picker simply starts empty; nothing else changes.
+
      ── Filling the pickers ─────────────────────────────────────
      The market and topics pickers read the page-level stores, so if the page already runs
 

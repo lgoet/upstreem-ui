@@ -109,9 +109,13 @@
 .uap-card.is-csv .uap-input-manual { display: none; }
 .uap-card.is-csv .uap-input-csv { display: block; }
 
+/* Twice the height it had. A two-line field says "a prompt is a sentence, not a keyword" before
+   anybody types, and the text still starts at the TOP LEFT and grows downward — a vertically
+   centred single line jumping to the top on the second line is the thing that reads as broken. */
+.uap-inputwrap { position: relative; }
 .uap-input {
   width: 100%; box-sizing: border-box; resize: none; overflow-y: auto;
-  min-height: 40px; max-height: 132px; padding: 10px 12px;
+  min-height: 80px; max-height: 200px; padding: 10px 44px 10px 12px;
   border: 1px solid var(--vc-border); border-radius: 10px;
   background: var(--vc-bg); color: var(--vc-text);
   font: inherit; font-size: 13.5px; line-height: 1.45;
@@ -120,6 +124,19 @@
 .uap-input:focus { outline: none; border-color: var(--vc-hover-border); }
 .uap-input::placeholder { color: var(--vc-third); }
 .uap-hint { margin-top: 8px; font-size: 11.5px; color: var(--vc-third); line-height: 1.4; }
+
+/* Bottom right of the field, not centred: it belongs to the end of what is being typed. */
+.uap-enter {
+  position: absolute; right: 8px; bottom: 8px;
+  width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--vc-border);
+  background: var(--vc-bg); color: var(--vc-muted); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: border-color 120ms ease, color 120ms ease;
+}
+.uap-enter[hidden] { display: none; }
+.uap-enter:hover { border-color: var(--vc-hover-border); color: var(--vc-text); }
+.uap-enter svg { width: 14px; height: 14px; display: block; fill: none; stroke: currentColor;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 .uap-drop {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
@@ -166,6 +183,8 @@
   display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
   font-size: 14px; font-weight: 500; color: var(--vc-text);
 }
+/* Empty means no heading at all, not a heading that says "empty". */
+.uap-listwrap.is-empty .uap-listhead { display: none; }
 .uap-clearall {
   margin-left: auto; border: 0; background: transparent; padding: 0;
   color: var(--vc-muted); font: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
@@ -180,10 +199,17 @@
 }
 .uap-listwrap.is-empty .uap-list { display: none; }
 .uap-listempty {
-  padding: 18px 12px; border-radius: 10px; border: 1px dashed var(--vc-border);
-  font-size: 12.5px; color: var(--vc-third); text-align: center;
+  padding: 10px 2px; font-size: 12px; color: var(--vc-third);
 }
 .uap-listwrap:not(.is-empty) .uap-listempty { display: none; }
+
+.uap-capnote {
+  margin-top: 8px; display: flex; align-items: center; gap: 6px;
+  font-size: 11.5px; color: var(--vc-third); line-height: 1.4;
+}
+.uap-capnote[hidden] { display: none; }
+.uap-capnote svg { width: 13px; height: 13px; flex: 0 0 13px; display: block; fill: none;
+  stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 .uap-row {
   display: flex; align-items: center; gap: 8px;
@@ -222,67 +248,74 @@
 .uap-meta { position: relative; display: flex; align-items: center; gap: 8px; min-width: 0; }
 .uap-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
 
+/* The pickers ARE the app's filter dropdown, not a lookalike: same trigger height and shape, same
+   chevron that becomes a clear-X on hover once something is selected, same menu shell built from
+   the --up-dd-* tokens, same core .up-ddsearch row, same core .up-filter-item rows. The first
+   version reinvented every one of those and read as foreign in both themes. */
 .uap-pickwrap { position: relative; display: inline-flex; align-items: center; }
-.uap-pickbtn {
-  height: 32px; max-width: 210px; padding: 0 10px;
+.uap-trigger {
+  height: 32px; max-width: 220px; padding: 0 6px 0 10px;
   display: inline-flex; align-items: center; gap: 6px;
   border: 1px solid var(--vc-border); border-radius: 9px; background: transparent;
   color: var(--vc-text); font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer;
-  overflow: hidden; transition: border-color 120ms ease;
+  overflow: hidden; transition: border-color 120ms ease, color 120ms ease;
 }
-.uap-pickbtn:hover { border-color: var(--vc-hover-border); }
-.uap-pickbtn > svg { width: 14px; height: 14px; flex: 0 0 14px; display: block; fill: none;
-  stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.uap-picklabel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.uap-picklabel.is-empty { color: var(--vc-muted); }
+.uap-trigger:hover { border-color: var(--vc-hover-border); }
+/* Open and "has a selection" both mark the trigger through its border, the way the app already
+   signals an active filter — no separate accent colour. */
+.uap-pickwrap.is-open .uap-trigger, .uap-pickwrap.has-sel .uap-trigger {
+  border-color: var(--vc-hover-border); color: var(--vc-text);
+}
+.uap-trigger-ic { display: inline-flex; align-items: center; flex: 0 0 auto; }
+.uap-trigger-ic svg { width: 14px; height: 14px; display: block; fill: none; stroke: currentColor;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; color: var(--vc-muted); }
+.uap-label { display: inline-flex; align-items: center; gap: 4px; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.uap-pickwrap:not(.has-sel) .uap-label { color: var(--vc-muted); }
 
-.uap-pickclear {
-  width: 22px; height: 22px; margin-left: -4px; border: 0; border-radius: 6px;
-  background: transparent; color: var(--vc-muted); cursor: pointer;
-  display: inline-flex; align-items: center; justify-content: center;
-  transition: color 120ms ease;
-}
-.uap-pickclear[hidden] { display: none; }
-.uap-pickclear:hover { color: var(--vc-text); }
-.uap-pickclear svg { width: 14px; height: 14px; display: block; fill: none; stroke: currentColor;
+/* Both glyphs sit in the DOM and CSS swaps them. Rendering the X only on hover through JS would
+   need listeners on a node that is rebuilt on every selection change, and the two would drift. */
+.uap-chev { position: relative; width: 16px; height: 16px; flex: 0 0 16px; margin-left: auto;
+  display: inline-flex; align-items: center; justify-content: center; }
+.uap-chev-down, .uap-chev-x { position: absolute; inset: 0; display: inline-flex;
+  align-items: center; justify-content: center; }
+.uap-chev-down svg { width: 14px; height: 14px; fill: none; stroke: var(--vc-muted);
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.uap-chev-x { opacity: 0; pointer-events: none; }
+.uap-chev-x svg { width: 14px; height: 14px; fill: none; stroke: var(--vc-muted);
   stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+/* Only once something is selected — clearing an empty filter is not an action. */
+.uap-pickwrap.has-sel .uap-trigger:hover .uap-chev-down { opacity: 0; }
+.uap-pickwrap.has-sel .uap-trigger:hover .uap-chev-x { opacity: 1; pointer-events: auto; }
+.uap-pickwrap.has-sel .uap-trigger:hover .uap-chev-x:hover svg { stroke: var(--vc-text); }
 
-.uap-tagchip {
-  display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto;
-  max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
+.uap-tagchip { display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto;
+  max-width: 84px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .uap-tagdot { width: 9px; height: 9px; border-radius: 3px; flex: 0 0 9px; display: block; }
 .uap-tagemoji { font-size: 12px; line-height: 1; flex: 0 0 auto; }
 .uap-tagmore { color: var(--vc-muted); flex: 0 0 auto; }
 
 /* Opens UPWARD: the triggers live in the footer, so a menu hanging below would leave the card. */
-.uap-pickmenu {
-  position: absolute; left: 0; bottom: calc(100% + 8px); z-index: 3;
-  width: 264px; padding: 6px;
-  border: 1px solid var(--vc-border); border-radius: 12px;
-  background: var(--vc-bg); box-shadow: 0 12px 28px rgba(0,0,0,.18);
+.uap-menu {
+  position: absolute; bottom: calc(100% + var(--up-dd-gap)); left: 0; z-index: 60;
+  display: flex; flex-direction: column; width: 296px; max-width: 84vw;
+  border: 1px solid var(--vc-border); border-radius: var(--up-dd-radius); padding: var(--up-dd-pad);
+  background: var(--up-menu-bg); color: var(--vc-text);
+  box-shadow: var(--up-dd-shadow);
+  opacity: 0; transform: translateY(4px) scale(0.985); pointer-events: none;
+  transition: opacity 120ms ease, transform 120ms ease;
 }
-.uap-pickmenu[hidden] { display: none; }
-.uap-pickmenu.is-tags { left: auto; right: 0; }
-
-.uap-picksearch {
-  display: flex; align-items: center; gap: 6px; padding: 0 8px; margin-bottom: 4px;
-  height: 32px; border: 1px solid var(--vc-border); border-radius: 9px; background: var(--vc-bg);
-}
-.uap-picksearch svg { width: 14px; height: 14px; flex: 0 0 14px; display: block; fill: none;
-  stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
-  color: var(--vc-third); }
-.uap-picksearch input {
-  flex: 1 1 auto; min-width: 0; border: 0; background: transparent; color: var(--vc-text);
-  font: inherit; font-size: 12.5px; outline: none;
-}
-.uap-picksearch input::placeholder { color: var(--vc-third); }
-
-.uap-picklist { max-height: 236px; overflow-y: auto; overscroll-behavior: contain; }
-.uap-pickopt { width: 100%; gap: 8px; }
-.uap-pickopt-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis;
-  white-space: nowrap; text-align: left; }
-.uap-pickempty { padding: 14px 8px; font-size: 12.5px; color: var(--vc-third); text-align: center; }
+.uap-menu.is-shown { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+.uap-pickwrap:last-of-type .uap-menu { left: auto; right: 0; }
+.uap-search-row { display: flex; align-items: stretch; margin-bottom: 6px; }
+.uap-search { flex: 1 1 auto; min-width: 0; }
+.uap-list-opts { max-height: 236px; overflow-y: auto; overscroll-behavior: contain; }
+.uap-opt { min-height: 34px; padding-right: 12px; }
+.uap-opt-main { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; }
+.uap-opt-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.uap-opt-flag { width: 22px; height: 16px; flex: 0 0 22px; }
+.uap-opt-count { color: var(--vc-muted); font-size: 12px; flex: 0 0 auto; }
+.uap-noopt { padding: 14px 8px; font-size: 12.5px; color: var(--vc-third); text-align: center; }
 
 .uap-cancel {
   height: 34px; padding: 0 14px; border-radius: 9px; border: 1px solid var(--vc-border);
