@@ -358,8 +358,8 @@
                                  A reusable cannot trigger a page-level workflow by itself.
          Fired in that order, both receiving the identical JSON. Optional: no attribute, no call. */
       if (!isLocal()) {
-        fireTo(root.getAttribute("data-models-fn") || "bubble_fn_umfModels", json, true);
-        fireTo(root.getAttribute("data-models-apply-fn"), json, false);
+        fireTo(root.getAttribute("data-models-fn") || "bubble_fn_umfModels", json, true, "data-models-fn");
+        fireTo(root.getAttribute("data-models-apply-fn"), json, false, "data-models-apply-fn");
       }
       try { root.dispatchEvent(new CustomEvent("umf-models", { detail: payload, bubbles: true })); } catch (e) {}
     }
@@ -369,13 +369,28 @@
        picker would start poking whatever workflow owns that name on the page. */
     function isLocal() { return isYes(root.getAttribute("data-local")); }
 
-    function fireTo(name, json, required) {
-      if (!name) return;
+    /* An UNSET apply channel used to return here without a word, which is the worst of the three
+       outcomes: a name that is wrong warns, a name that works fires, and a name that was never
+       filled in did nothing at all and looked exactly like a broken component. Said once per
+       instance now, not on every click. */
+    var warnedApply = false;
+    function fireTo(name, json, required, label) {
+      if (!name) {
+        if (!required && !warnedApply && window.console) {
+          warnedApply = true;
+          console.info("[models-filter] " + instanceId + ": " + label + " is empty, so no page-level " +
+            "workflow is being told about this change. Put the event name into that attribute on the " +
+            "root div, e.g. data-models-apply-fn=\"bubble_fn_umfApply_prompts\", and create a Toolbox " +
+            "\"JavaScript to Bubble\" element with that name ON THE PAGE (not inside the reusable), " +
+            "type text, Trigger event checked.");
+        }
+        return;
+      }
       var fn = UC.resolveBubbleFn(name);
       if (typeof fn === "function") { try { fn(json); } catch (e) {} return; }
       if (window.console) {
-        console.warn("[models-filter] " + name + " not found — this change reached no Bubble workflow." +
-          (required ? "" : " (data-models-apply-fn)"));
+        console.warn("[models-filter] " + name + " not found. This change reached no Bubble workflow." +
+          (required ? "" : " (" + label + ")"));
       }
     }
 
@@ -656,6 +671,31 @@
   };
   window.resetModelsFilter = function (instanceId) {
     initAll(); return forEachInstance(instanceId, function (c) { c.reset(); });
+  };
+
+  /* On-page diagnosis for the one question this component gets asked: "why did my workflow not
+     run". Prints what each instance actually reads off its own root and whether the two names
+     resolve to a live function right now, which is the whole chain in one line. */
+  window.__umfDebug = function () {
+    var roots = document.querySelectorAll(".umf-root, [data-umf-root]");
+    var out = [];
+    for (var i = 0; i < roots.length; i++) {
+      var r = roots[i];
+      var fnName = r.getAttribute("data-models-fn") || "bubble_fn_umfModels";
+      var apply = r.getAttribute("data-models-apply-fn") || "";
+      out.push({
+        instance: r.getAttribute("data-instance"),
+        local: r.getAttribute("data-local") || "(unset)",
+        modelsFn: fnName,
+        modelsFnLive: typeof UC.resolveBubbleFn(fnName) === "function",
+        applyFn: apply || "(EMPTY - nothing will be called)",
+        applyFnLive: apply ? typeof UC.resolveBubbleFn(apply) === "function" : false,
+        selected: r.__umfCtrl ? r.__umfCtrl.getSelected() : "(not mounted)",
+        modelsLoaded: (UC.getModels ? UC.getModels().length : 0)
+      });
+    }
+    if (window.console) console.table ? console.table(out) : console.log(out);
+    return out;
   };
 
   initAll();

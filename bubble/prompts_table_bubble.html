@@ -802,5 +802,22 @@
   function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
   css("core.css"); css("prompts-table.css");
   js("core.js"); js("prompts-table.js");
+
+  /* Boot stubs, installed HERE and not only inside prompts-table.js.
+     This inline script runs the moment Bubble injects the element; prompts-table.js arrives from
+     the CDN a good deal later. A "Run JavaScript" step that fires in between, which page-load
+     workflows routinely do, hits window.resetPromptsTable === undefined and throws
+     "resetPromptsTable is not a function". Nothing is broken by it, but it is noise in the console
+     and the call is lost.
+     Same queue name and same list prompts-table.js uses; the flag it checks is set here, so it
+     skips its own stubbing and its makeMount replays whatever queued up in the meantime. */
+  var Q = window.__uptBootQueue = window.__uptBootQueue || [];
+  if (!window.__uptBootStubbed){
+    window.__uptBootStubbed = true;
+    ["renderPromptsTable", "setPromptsTableLoading", "resetPromptsTable", "setPromptsTableTopics",
+     "setPromptsTableBrands", "setPromptsTableGroups", "setPromptsTableGroupPrompts"].forEach(function(n){
+      window[n] = function(){ Q.push([n, arguments]); };
+    });
+  }
 })();
 </script>
