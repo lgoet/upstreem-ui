@@ -5,7 +5,7 @@ und dann muessen die Klammern der Datei noch aufgehen. Ein zerhackter Kommentar 
 weil Prosa fast immer unbalancierte Klammern und Anfuehrungszeichen enthaelt."""
 import glob, sys
 bad = 0
-for f in sorted(glob.glob("*.css")):
+for f in sorted(glob.glob("*.css") + glob.glob("*/*.css") + glob.glob("*/*/*.css")):
     s = open(f, encoding="utf-8").read()
     out, i = [], 0
     while True:
