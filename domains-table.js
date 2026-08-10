@@ -1044,7 +1044,6 @@
            rows on screen while busy — a reload that still has its old rows keeps the toggle put
              (re-hiding it on every loading=yes made it flicker out on each reload), but a reload
              showing nothing but skeleton must not offer a filter over an empty table. */
-      var showsRows = state.hasData && !!(state.rows || []).length;
       /* PAGE-LOAD RULE (asked for repeatedly, and this is the line that broke it): with no data
          before the load, the toggle stays hidden until loading has actually finished -- not the
          moment the first rows appear. The old condition showed it as soon as rows existed, even
