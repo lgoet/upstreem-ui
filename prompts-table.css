@@ -95,14 +95,16 @@
    Landscape tile, not a circle: same shape the markets dropdown uses, so a flag looks the same
    wherever it appears in the app. A circle crops a flag to its middle, which is exactly where most
    of them carry nothing distinguishing -- DE, FR and IT all become a coloured disc.
-   20x14 rather than the dropdown's 22x16: this sits in a table row next to 13px text, and the
-   dropdown's size looked heavy against it. */
+   18x14 rather than the dropdown's 22x16: this sits in a table row next to the country code, and
+   the dropdown's size looked heavy against it. */
 .upt-market { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
-.upt-flag { width: 20px; height: 14px; border-radius: 3px; overflow: hidden; flex: 0 0 auto;
+.upt-flag { width: 18px; height: 14px; border-radius: 3px; overflow: hidden; flex: 0 0 auto;
   display: inline-flex; align-items: center; justify-content: center; line-height: 0;
   background: var(--vc-heading-bg); }
 .upt-flag img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.upt-market-code { font-size: 13px; font-weight: 500; color: var(--vc-text); letter-spacing: 0.02em; white-space: nowrap; }
+/* The code is a label on the flag, not a value of its own, so it steps back: secondary colour and
+   a size below the row's text, with the extra weight keeping it legible at that size. */
+.upt-market-code { font-size: 12px; font-weight: 600; color: var(--vc-muted); letter-spacing: 0.02em; white-space: nowrap; }
 
 /* ---------- created cell ---------- */
 .upt-date { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
