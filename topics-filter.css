@@ -161,7 +161,10 @@
 .utf-chev { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; }
 .utf-chev-down, .utf-chev-x { display: inline-flex; align-items: center; justify-content: center; }
 .utf-chev-x { display: none; }
-.utf-chev-x svg { width: 13px; height: 13px; }
+/* Scoped under the trigger so it outweighs the file's generic ".utf-trigger svg" rule, which
+   carries flex: 0 0 16px -- as a flex item the svg took its width from that basis and ignored a
+   plain width here. Both dimensions and the basis are stated, otherwise it comes out 16x13. */
+.utf-trigger .utf-chev-x svg { width: 14px; height: 14px; flex: 0 0 14px; }
 .utf-root.has-sel .utf-trigger:hover .utf-chev-down { display: none; }
 .utf-root.has-sel .utf-trigger:hover .utf-chev-x { display: inline-flex; }
 /* Secondary while it is merely offered, primary once the cursor is actually on it. The

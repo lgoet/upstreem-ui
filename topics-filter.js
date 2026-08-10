@@ -44,6 +44,11 @@
     search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
     /* Same clear-X core's search fields use, stroke-width and all. */
     x: '<svg viewBox="0 0 24 24" stroke-width="3.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+    /* Feather "x" at its own stroke weight, for the clear-X that replaces the chevron on hover.
+       The one above is the SEARCH field's clear icon and deliberately heavier (3.5) because it
+       sits inside an input at a smaller optical size. Reusing it on the trigger made a chunky
+       cross next to a 1.8-weight chevron. */
+    xThin: '<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
     /* The sorter glyph the rest of the app uses -- lines narrowing toward the CENTRE, not
         left-aligned. Copied from prompts-table's GRPSIDE_SORT_ICON rather than drawn again. */
     sort: '<svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>',
@@ -121,7 +126,7 @@
              is selected. */
           '<span class="utf-chev">' +
             '<span class="utf-chev-down">' + ICON.chev + '</span>' +
-            '<span class="utf-chev-x" role="button" tabindex="-1" aria-label="Clear selection">' + ICON.x + '</span>' +
+            '<span class="utf-chev-x" role="button" tabindex="-1" aria-label="Clear selection">' + ICON.xThin + '</span>' +
           '</span>' +
         '</button>' +
         '<div class="utf-menu" role="dialog">' +
@@ -461,7 +466,13 @@
       var next = b.getAttribute("data-mode");
       if (next === mode) return;
       mode = next;
-      commit();
+      persist(); render();
+      /* Only publish when the mode actually changes which prompts come back. With fewer than two
+         topics selected, Or and And describe the same set, so the switch is a preference the user
+         is setting ahead of time and not a filter change -- and a workflow that re-runs for an
+         identical result is a round trip for nothing. The next selection click sends the FULL
+         state including this mode, so Bubble is never left guessing. */
+      if (selected.length >= 2) emit();
     });
 
     function toggle(id) {

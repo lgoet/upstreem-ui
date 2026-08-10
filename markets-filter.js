@@ -57,6 +57,11 @@
     search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
     /* Same clear-X core's search fields use, stroke-width and all. */
     x: '<svg viewBox="0 0 24 24" stroke-width="3.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+    /* Feather "x" at its own stroke weight, for the clear-X that replaces the chevron on hover.
+       The one above is the SEARCH field's clear icon and deliberately heavier (3.5) because it
+       sits inside an input at a smaller optical size. Reusing it on the trigger made a chunky
+       cross next to a 1.8-weight chevron. */
+    xThin: '<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
     /* The sorter glyph the rest of the app uses -- lines narrowing toward the CENTRE. */
     sort: '<svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>',
     /* core's CHECK_SVG verbatim, so the tick matches every other checked row in the app. */
@@ -148,7 +153,7 @@
              that gets rebuilt on every selection change, and the two would drift apart. */
           '<span class="umk-chev">' +
             '<span class="umk-chev-down">' + ICON.chev + '</span>' +
-            '<span class="umk-chev-x" role="button" tabindex="-1" aria-label="Clear selection">' + ICON.x + '</span>' +
+            '<span class="umk-chev-x" role="button" tabindex="-1" aria-label="Clear selection">' + ICON.xThin + '</span>' +
           '</span>' +
         '</button>' +
         '<div class="umk-menu" role="dialog">' +
@@ -551,7 +556,11 @@
     elMode.addEventListener("click", function (e) {
       var b = e.target.closest ? e.target.closest("[data-mode]") : null;
       if (!b) return;
-      applyMode(b.getAttribute("data-mode"), true);
+      /* publish=false: the switch itself is not a filter change. Single and Multi return the same
+         rows as long as at most one market is selected, so the only case that reaches Bubble is the
+         one where switching to Single actually DROPS selections -- applyMode emits on its own
+         then. Firing on every click meant a workflow re-ran for a state it already had. */
+      applyMode(b.getAttribute("data-mode"), false);
     });
 
     /* Switching Multi -> Single with several markets selected has to drop some of them, and the
