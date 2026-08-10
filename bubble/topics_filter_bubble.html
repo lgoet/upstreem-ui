@@ -156,6 +156,14 @@
        something the list cannot show.
 
      setTopicsFilterSelected('topics_v1_dashboard', 'id1,id2')   preselect, SILENT
+     setTopicsFilterSelected('topics_v1_prompts', '')            CLEAR the selection, SILENT.
+                          Deselects everything and leaves tag_mode exactly as it was, and fires
+                          NEITHER data-topics-fn NOR data-topics-apply-fn -- so a "Reset filters"
+                          button can clear the dropdown without kicking off a reload the button's
+                          own workflow is already doing. Measured: selection "" / tag_mode still
+                          "and", zero events, badge and checkmarks gone, open panel stays open.
+                          resetTopicsFilter() is the other one: that also puts tag_mode back to
+                          "or" and closes the panel.
      setTopicsFilterMode('topics_v1_dashboard', 'and'|'or')      set match mode, SILENT
      setTopicsFilterTheme('topics_v1_dashboard', 'dark'|'light')
      resetTopicsFilter('topics_v1_dashboard')                    clear everything, SILENT
