@@ -1544,22 +1544,29 @@
 .up-ph-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 /* grayscale(1): a brand's own logo colour would otherwise compete with this being a quiet,
    secondary line above the real heading. */
-/* grayscale(1) alone cannot dim a BLACK logo -- black is already fully desaturated, so it came
+/* Tuned so pure BLACK lands on --vc-third (#808080, L=128) -- the colour of the label beside it.
+   grayscale(1) alone cannot dim black at all: black is already fully desaturated, so it came
    through at full strength next to nicely muted colourful ones. contrast() below 1 pulls every
-   luminance toward mid-grey, which is what actually lifts the black end; brightness() puts the
-   result back where the colourful logos already sat.
-   Measured through the same filter engine (canvas ctx.filter), luminance out of each input:
+   luminance toward mid-grey, which is what lifts the black end; brightness() places the result.
+
+   opacity() would hit the same number and leave colourful logos alone -- but it blends toward the
+   BACKGROUND. Measured on #121212, a black logo drops back to L=9 with it: invisible in dark
+   mode, which is the second half of the same bug. contrast/brightness works on the pixels, so the
+   same value comes out on either surface. Measured through the filter engine itself
+   (canvas ctx.filter), against white AND #121212:
      input        grayscale(1)   this
-     black             0          72
-     #222             34          92
-     brand blue      105         133
-     brand red        83         120
-     white           255         219
-   The meta text next to it is --vc-third at L=128, so a logo now lands just under the label it
-   belongs to instead of either shouting (black) or vanishing (black on dark). */
+     black             0         127   <- the target
+     #222             34         141
+     brand blue      105         171
+     brand red        83         163
+     white           255         235
+
+   The cost, named rather than hidden: no filter can tell a black logo from a blue one, so lifting
+   the black end lifts everything with it -- colourful logos come out paler than they were. Black
+   at the label's colour was the requirement; this is what it costs. */
 .up-ph-metalogo {
   width: 16px; height: 16px; display: block; flex: 0 0 auto; object-fit: cover;
-  filter: grayscale(1) contrast(0.5) brightness(1.15);
+  filter: grayscale(1) contrast(0.30) brightness(1.43);
 }
 .up-ph-metatxt { font-size: 12px; font-weight: 600; color: var(--vc-third); line-height: 1; }
 
