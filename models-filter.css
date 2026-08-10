@@ -180,5 +180,8 @@
 .umf-chev-x svg { width: 13px; height: 13px; }
 .umf-root.has-sel .umf-trigger:hover .umf-chev-down { display: none; }
 .umf-root.has-sel .umf-trigger:hover .umf-chev-x { display: inline-flex; }
-/* The X is the destructive half of the button, so it says so on hover. */
-.umf-root.has-sel .umf-trigger:hover .umf-chev-x svg { stroke: var(--vc-text); }
+/* Secondary while it is merely offered, primary once the cursor is actually on it. The
+   chevron it replaces is primary-coloured, so a primary X would read as the same control
+   having changed shape rather than as a second, optional one. */
+.umf-root.has-sel .umf-trigger:hover .umf-chev-x svg { stroke: var(--vc-muted); }
+.umf-root.has-sel .umf-trigger:hover .umf-chev-x:hover svg { stroke: var(--vc-text); }

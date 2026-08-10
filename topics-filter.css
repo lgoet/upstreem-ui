@@ -164,5 +164,8 @@
 .utf-chev-x svg { width: 13px; height: 13px; }
 .utf-root.has-sel .utf-trigger:hover .utf-chev-down { display: none; }
 .utf-root.has-sel .utf-trigger:hover .utf-chev-x { display: inline-flex; }
-/* The X is the destructive half of the button, so it says so on hover. */
-.utf-root.has-sel .utf-trigger:hover .utf-chev-x svg { stroke: var(--vc-text); }
+/* Secondary while it is merely offered, primary once the cursor is actually on it. The
+   chevron it replaces is primary-coloured, so a primary X would read as the same control
+   having changed shape rather than as a second, optional one. */
+.utf-root.has-sel .utf-trigger:hover .utf-chev-x svg { stroke: var(--vc-muted); }
+.utf-root.has-sel .utf-trigger:hover .utf-chev-x:hover svg { stroke: var(--vc-text); }
