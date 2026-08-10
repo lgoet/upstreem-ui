@@ -106,7 +106,21 @@
 
     var addBtn = root.querySelector(".up-ph-addbtn");
     if (addBtn){
-      addBtn.addEventListener("click", function(){ fire("data-add-fn", "pphAdd", {}); });
+      addBtn.addEventListener("click", function(){
+        /* The button used to hand the whole job to a Bubble workflow. It now opens the modal in
+           add-prompts.js, which is the thing the workflow was opening anyway -- one hop fewer, and
+           the dialog can be reached from Quick Actions with the same call.
+
+           The old event stays as the fallback, and that is not belt-and-braces: a page that has
+           not yet been given the add-prompts.js include would otherwise have a button that does
+           nothing at all, with nothing in the console to say why. Either it opens the modal or it
+           fires the event it always fired. */
+        if (typeof window.openAddPrompts === "function"){
+          window.openAddPrompts({ market: root.getAttribute("data-market") || "" });
+          return;
+        }
+        fire("data-add-fn", "pphAdd", {});
+      });
     }
     var refreshBtn = root.querySelector(".pph-refreshbtn");
     if (refreshBtn){

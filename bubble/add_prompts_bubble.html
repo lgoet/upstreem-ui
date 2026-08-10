@@ -1,0 +1,144 @@
+<!-- ============================================================
+     Upstreem — Add Prompts (modal)
+
+     Paste this block into ONE HTML element per page that needs the dialog. The element itself
+     renders nothing: it only loads the files and gives the modal a home. Size it 0×0 or 1×1 and
+     put it anywhere; the dialog builds itself into <body>.
+
+     ── What opens it ───────────────────────────────────────────
+     Nothing on this element. It is opened from JavaScript:
+
+         openAddPrompts();                       // manual tab
+         openAddPrompts({ tab: "csv" });         // start on the import tab
+         openAddPrompts({ market: "de" });       // preselect the batch market
+
+     The Add button in the prompts page header already calls this by itself — no workflow needed
+     any more. If add-prompts.js is NOT loaded on a page, that button falls back to the event it
+     always fired (data-add-fn / bubble_fn_pphAdd), so the old wiring keeps working untouched on
+     pages you have not migrated yet.
+
+     To open it from anywhere else (Quick Actions, a row action, a link), use a "Run JavaScript"
+     step with the same one-liner.
+
+     ── The event back to Bubble ────────────────────────────────
+     ONE Toolbox "JavaScript to Bubble" element, type text, "Trigger event" checked:
+
+         bubble_fn_uapAddPrompts
+
+     It fires ONCE per Add click, carrying the whole batch. One workflow run for fifty prompts,
+     not fifty — the same shape prompt-research's acceptAllSuggestedPrompts already uses.
+
+         {"team_id":"…",
+          "count":3,
+          "prompt_texts":["Wer bietet …?","Which tools …?","Welche Anbieter …?"],
+          "markets":["de","us",""],
+          "tag_ids":["t1,t2","t1,t2","t1,t2"],
+          "source":"csv"}
+
+     The three arrays are INDEX-ALIGNED and always the same length as count. Item i of
+     prompt_texts belongs to item i of markets and item i of tag_ids.
+
+       team_id       prepended by core, as on every other event.
+       markets       alpha-2, lowercase. Empty string when neither the row nor the batch picker
+                     gave one — decide server-side whether that is an error or a default.
+       tag_ids       comma-joined topic ids. Currently the same value on every row, because the
+                     topics picker applies to the whole batch; it is per-row anyway so a future
+                     per-row topic editor needs no payload change.
+       source        "manual" or "csv". Useful for analytics, ignore it if you do not care.
+
+     READING IT IN BUBBLE. markets and tag_ids are safe to pull with the usual regex:
+
+         (?<="markets":\[)[^\]]*            then split on ","
+         (?<="tag_ids":\[)[^\]]*            then split on ","
+         (?<="count":)[0-9]+
+
+     prompt_texts is NOT. Prompt text is free text: it contains commas, quotes and the occasional
+     line break, so a regex-and-split gets it wrong on exactly the prompts that matter. Parse the
+     payload as JSON on the Bubble side and read the list from there.
+
+     ── The refresh append, and it is not optional ──────────────
+     Creating prompts changes which markets the team has prompts for and how many each holds. The
+     component already calls upstreemMarketsChanged() for you, which fires:
+
+         bubble_fn_upMarketsChanged
+
+     Answer it the way you answer bubble_fn_upTopicsChanged: re-run the markets RPC and feed the
+     result back with setUpstreemMarkets(`[MARKETS]`). Without that step every markets dropdown on
+     the page keeps showing the list from page load, and a market that only exists because of the
+     prompts just created will not be offered at all.
+
+     Same rule for topics if a workflow of yours creates one: end it with the RPC plus
+     setUpstreemTopics(`[TOPICS]`).
+
+     ── Filling the pickers ─────────────────────────────────────
+     The market and topics pickers read the page-level stores, so if the page already runs
+
+         setUpstreemMarkets(`[MARKETS]`);
+         setUpstreemTopics(`[TOPICS]`);
+
+     at page load, this dialog needs nothing of its own. It subscribes to both stores, so a list
+     that arrives after the modal was built still shows up.
+
+     ══ THE CSV SIDE ══════════════════════════════════════════════════════════════
+
+     Reading and writing the file happens entirely in the browser. No upload, no plugin, no
+     workflow, no file ever leaves the machine until the user presses Add.
+
+     THE TEMPLATE the Download button hands out is semicolon-separated with a UTF-8 BOM:
+
+         prompt_text;market
+         Wer bietet Schulungen …?;de
+         Which tools help …?;us
+
+     Semicolons because that is what Excel in a German locale both expects and writes: a
+     comma-separated template drops every value into column A on the first double-click. The BOM is
+     what makes Excel read the file as UTF-8 rather than the system code page, which is what keeps
+     the umlauts. If your users are on an English Excel and complain, say so and it becomes a
+     one-line change.
+
+     WHAT THE IMPORTER ACCEPTS is deliberately wider than what it writes:
+
+       Delimiter   ; , tab or | — detected from the header row, not assumed.
+       Encoding    UTF-8 or Windows-1252. A file saved by Excel on Windows is usually the latter,
+                   and read as UTF-8 its umlauts turn to rubbish, so it is decoded as UTF-8 first
+                   and re-decoded as 1252 if that produced replacement characters.
+       Quoting     Full CSV quoting: delimiters, line breaks and doubled "" inside a quoted field.
+       Headers     prompt_text / prompt / text / query / frage for the text,
+                   market / markt / country / land / alpha2 / country_code for the market.
+                   Case, spaces and underscores are ignored.
+       No header   A file whose first row matches none of those is read as headerless data, first
+                   column as the prompt. Pasting a bare column of prompts into a file is the most
+                   common thing people try, and refusing it would be pedantry.
+       Market cell An alpha-2 code, or a full country name or alpha-3 that matches the markets
+                   list. Anything else imports the row WITHOUT a market rather than dropping it.
+       Empty rows  Skipped, and the count of skipped rows is shown under the drop zone.
+
+     Rows land in the same staged list as manually typed ones and can be edited or removed before
+     anything is sent.
+-->
+
+<div class="up-root uap-host"
+     data-cdn-pin="CDN_PIN"
+     style="width:0;height:0;overflow:hidden"></div>
+<script>
+/* Loads core plus this component from jsDelivr, pinned to the commit hash in data-cdn-pin on the
+   div above (falls back to @main only if left blank or at the literal "CDN_PIN" placeholder).
+   Byte-for-byte the same loader every other component in this repo ships. */
+(function(){
+  function readPin(cls){
+    var els = document.getElementsByClassName(cls), i, p;
+    for (i = 0; i < els.length; i++){
+      p = (els[i].getAttribute("data-cdn-pin") || "").trim();
+      if (p && p !== "CDN_PIN") return p;
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("uap-host") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(url, make){ if (L[url]) return; L[url] = 1; make(url); }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+  css("core.css"); css("add-prompts.css");
+  js("core.js"); js("add-prompts.js");
+})();
+</script>

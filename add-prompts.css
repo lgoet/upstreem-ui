@@ -1,0 +1,296 @@
+/* upstreem add-prompts.css — the "Add prompts" modal (prefix `uap`). Load core.css first.
+
+   Shell values are STYLEGUIDE §27 taken literally from .up-topicmodal-*: same backdrop, same card
+   radius and shadow, same 22px/500 heading with a 16px/400 third-colour subheading, same 32×32
+   close button pulled into the corner, same primary button. What differs is the vertical rhythm:
+   §27's 32px between every top-level block is written for a form with three of them. This dialog
+   has a header, a mode switcher, an input, a staged list and a footer, and five 32px gaps push the
+   card past a laptop's viewport before anything is in it. So the 32px gaps stay between the three
+   REAL sections (head, body, foot) and the body carries its own smaller internal rhythm. */
+
+.uap-backdrop {
+  position: fixed; inset: 0; z-index: 9940;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  background: rgba(0,0,0,.30);
+  backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px);
+}
+.uap-backdrop[data-theme="dark"] { background: rgba(0,0,0,.35); }
+.uap-backdrop[hidden] { display: none; }
+
+/* NOTHING about this dialog being visible may depend on an animation or a transition finishing.
+
+   The first version faded the backdrop in from opacity 0. The second turned it into a keyframe
+   animation. Both were measured in the harness and both failed the same way: when the frame loop
+   is throttled the clock never advances, the effect holds at its 0% state, and the modal sits at
+   opacity 0 while still covering the viewport and swallowing every click. Invisible AND blocking
+   is worse than no animation at all, and it is the kind of failure nobody can report usefully
+   because there is nothing to see.
+
+   So the rule this file follows: an entrance effect is allowed ONLY if its 0% state is already
+   visible. The card's 8px rise qualifies -- stalled, it is a card sitting 8px low, which nobody
+   notices. A fade does not qualify and is therefore not used on the way in. The backdrop simply
+   appears; it is a scrim, and a scrim that appears at once reads as intentional.
+
+   On the way OUT a fade is fine, because the setTimeout in close() is what actually hides the
+   element. A stalled exit animation costs the fade, not the closing. */
+@keyframes uap-rise-in { from { transform: translateY(8px) scale(.985); } }
+@keyframes uap-fade-out { to { opacity: 0; } }
+.uap-backdrop.is-open .uap-card { animation: uap-rise-in 160ms cubic-bezier(.2,.7,.3,1); }
+.uap-backdrop.is-closing { animation: uap-fade-out 140ms ease forwards; }
+
+.uap-card {
+  width: 100%; max-width: 640px; max-height: calc(100vh - 48px);
+  box-sizing: border-box;
+  padding: 16px;
+  display: flex; flex-direction: column; gap: 32px;
+  border-radius: 18px;
+  background: var(--up-surface); color: var(--vc-text);
+  border: 1px solid var(--vc-border);
+  box-shadow: 0 20px 48px rgba(0,0,0,.22);
+  font-family: inherit;
+}
+.uap-card.is-saving { pointer-events: none; opacity: .6; }
+
+/* ---- head ---- */
+.uap-head { display: flex; align-items: flex-start; gap: 12px; }
+.uap-heading { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.uap-title { font-size: 22px; font-weight: 500; line-height: 1.2; }
+.uap-sub { font-size: 16px; font-weight: 400; color: var(--vc-third); line-height: 1.3; }
+.uap-close {
+  margin: -8px -8px 0 0; margin-left: auto;
+  width: 32px; height: 32px; flex: 0 0 32px;
+  border: 0; border-radius: 9px; background: transparent; color: var(--vc-muted);
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+.uap-close:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
+.uap-close svg { width: 16px; height: 16px; display: block; fill: none; stroke: currentColor;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---- body: switcher, input, staged list ----
+   One flex column so the list can take the leftover height and scroll on its own. Everything
+   above it keeps its natural height, so a long list never pushes the input off the card. */
+.uap-tabs {
+  display: inline-flex; align-self: flex-start; gap: 2px; padding: 2px;
+  border-radius: 10px; background: var(--vc-switch-bg); border: 1px solid var(--vc-switch-border);
+}
+.uap-tab {
+  height: 28px; padding: 0 14px; border: 0; border-radius: 8px; background: transparent;
+  color: var(--vc-muted); font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+.uap-tab:hover { color: var(--vc-text); }
+.uap-tab.is-on { background: var(--vc-bg); color: var(--vc-text); box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+
+/* The two input modes swap; only one is in the layout at a time. */
+.uap-card .uap-input-csv { display: none; }
+.uap-card.is-csv .uap-input-manual { display: none; }
+.uap-card.is-csv .uap-input-csv { display: block; }
+
+.uap-input {
+  width: 100%; box-sizing: border-box; resize: none; overflow-y: auto;
+  min-height: 40px; max-height: 132px; padding: 10px 12px;
+  border: 1px solid var(--vc-border); border-radius: 10px;
+  background: var(--vc-bg); color: var(--vc-text);
+  font: inherit; font-size: 13.5px; line-height: 1.45;
+  transition: border-color 120ms ease;
+}
+.uap-input:focus { outline: none; border-color: var(--vc-hover-border); }
+.uap-input::placeholder { color: var(--vc-third); }
+.uap-hint { margin-top: 8px; font-size: 11.5px; color: var(--vc-third); line-height: 1.4; }
+
+.uap-drop {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  padding: 22px 16px; border-radius: 12px; cursor: pointer;
+  border: 1.5px dashed var(--vc-border); background: var(--vc-bg);
+  color: var(--vc-muted); text-align: center;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+.uap-drop:hover, .uap-drop:focus-visible, .uap-drop.is-over {
+  outline: none; border-color: var(--vc-hover-border); background: var(--vc-heading-bg);
+}
+.uap-drop svg { width: 22px; height: 22px; display: block; fill: none; stroke: currentColor;
+  stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.uap-droptext { font-size: 13px; }
+.uap-droptext b { font-weight: 600; color: var(--vc-text); }
+
+.uap-tmpl {
+  margin-top: 10px; height: 30px; padding: 0 10px 0 8px;
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--vc-border); border-radius: 9px; background: transparent;
+  color: var(--vc-muted); font: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
+  transition: border-color 120ms ease, color 120ms ease;
+}
+.uap-tmpl:hover { border-color: var(--vc-hover-border); color: var(--vc-text); }
+.uap-tmpl svg { width: 14px; height: 14px; display: block; fill: none; stroke: currentColor;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Every element in this file that JS toggles with the `hidden` attribute needs its own
+   [hidden] rule. The browser's default `[hidden] { display: none }` comes from the UA stylesheet
+   and loses to ANY author `display`, so a rule as innocent as `display: flex` two lines up
+   silently re-shows the element. That is exactly what happened to the two clear-X buttons: they
+   sat next to Market and Topics with nothing selected. */
+.uap-csvnote {
+  margin-top: 10px; display: flex; align-items: center; gap: 6px;
+  font-size: 11.5px; color: var(--vc-third); line-height: 1.4;
+}
+.uap-csvnote[hidden] { display: none; }
+.uap-csvnote svg { width: 13px; height: 13px; flex: 0 0 13px; display: block; fill: none;
+  stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---- staged list ---- */
+.uap-listwrap { display: flex; flex-direction: column; min-height: 0; }
+.uap-listhead {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+  font-size: 14px; font-weight: 500; color: var(--vc-text);
+}
+.uap-clearall {
+  margin-left: auto; border: 0; background: transparent; padding: 0;
+  color: var(--vc-muted); font: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
+}
+.uap-clearall:hover { color: var(--vc-text); }
+.uap-listwrap.is-empty .uap-clearall { display: none; }
+
+.uap-list {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column; gap: 4px;
+  max-height: 232px; overflow-y: auto; overscroll-behavior: contain;
+}
+.uap-listwrap.is-empty .uap-list { display: none; }
+.uap-listempty {
+  padding: 18px 12px; border-radius: 10px; border: 1px dashed var(--vc-border);
+  font-size: 12.5px; color: var(--vc-third); text-align: center;
+}
+.uap-listwrap:not(.is-empty) .uap-listempty { display: none; }
+
+.uap-row {
+  display: flex; align-items: center; gap: 8px;
+  min-height: 34px; padding: 5px 6px 5px 10px; border-radius: 9px;
+  background: var(--vc-heading-bg);
+}
+.uap-rowtext {
+  flex: 1 1 auto; min-width: 0; font-size: 13px; line-height: 1.35; color: var(--vc-text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.uap-rowmarket { display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto; }
+.uap-flag { width: 18px; height: 14px; border-radius: 3px; object-fit: cover; display: block; flex: 0 0 18px; }
+.uap-rowmarket-code { font-size: 11px; font-weight: 600; color: var(--vc-muted); letter-spacing: .02em; }
+
+.uap-rowbtn {
+  width: 26px; height: 26px; flex: 0 0 26px; border: 0; border-radius: 7px;
+  background: transparent; color: var(--vc-third); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 120ms ease, background 120ms ease, color 120ms ease;
+}
+.uap-row:hover .uap-rowbtn, .uap-rowbtn:focus-visible { opacity: 1; }
+.uap-rowbtn:hover { background: var(--vc-bg); color: var(--vc-text); }
+.uap-rowbtn svg { width: 14px; height: 14px; display: block; fill: none; stroke: currentColor;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.uap-rowedit {
+  width: 100%; box-sizing: border-box; resize: none; overflow-y: auto;
+  max-height: 132px; padding: 4px 6px; border: 1px solid var(--vc-hover-border); border-radius: 7px;
+  background: var(--vc-bg); color: var(--vc-text);
+  font: inherit; font-size: 13px; line-height: 1.35;
+}
+.uap-rowedit:focus { outline: none; }
+
+/* ---- foot: batch controls left, actions right ---- */
+.uap-foot { display: flex; align-items: center; gap: 12px; }
+.uap-meta { position: relative; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.uap-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+
+.uap-pickwrap { position: relative; display: inline-flex; align-items: center; }
+.uap-pickbtn {
+  height: 32px; max-width: 210px; padding: 0 10px;
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--vc-border); border-radius: 9px; background: transparent;
+  color: var(--vc-text); font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer;
+  overflow: hidden; transition: border-color 120ms ease;
+}
+.uap-pickbtn:hover { border-color: var(--vc-hover-border); }
+.uap-pickbtn > svg { width: 14px; height: 14px; flex: 0 0 14px; display: block; fill: none;
+  stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.uap-picklabel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.uap-picklabel.is-empty { color: var(--vc-muted); }
+
+.uap-pickclear {
+  width: 22px; height: 22px; margin-left: -4px; border: 0; border-radius: 6px;
+  background: transparent; color: var(--vc-muted); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: color 120ms ease;
+}
+.uap-pickclear[hidden] { display: none; }
+.uap-pickclear:hover { color: var(--vc-text); }
+.uap-pickclear svg { width: 14px; height: 14px; display: block; fill: none; stroke: currentColor;
+  stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+
+.uap-tagchip {
+  display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto;
+  max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.uap-tagdot { width: 9px; height: 9px; border-radius: 3px; flex: 0 0 9px; display: block; }
+.uap-tagemoji { font-size: 12px; line-height: 1; flex: 0 0 auto; }
+.uap-tagmore { color: var(--vc-muted); flex: 0 0 auto; }
+
+/* Opens UPWARD: the triggers live in the footer, so a menu hanging below would leave the card. */
+.uap-pickmenu {
+  position: absolute; left: 0; bottom: calc(100% + 8px); z-index: 3;
+  width: 264px; padding: 6px;
+  border: 1px solid var(--vc-border); border-radius: 12px;
+  background: var(--vc-bg); box-shadow: 0 12px 28px rgba(0,0,0,.18);
+}
+.uap-pickmenu[hidden] { display: none; }
+.uap-pickmenu.is-tags { left: auto; right: 0; }
+
+.uap-picksearch {
+  display: flex; align-items: center; gap: 6px; padding: 0 8px; margin-bottom: 4px;
+  height: 32px; border: 1px solid var(--vc-border); border-radius: 9px; background: var(--vc-bg);
+}
+.uap-picksearch svg { width: 14px; height: 14px; flex: 0 0 14px; display: block; fill: none;
+  stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+  color: var(--vc-third); }
+.uap-picksearch input {
+  flex: 1 1 auto; min-width: 0; border: 0; background: transparent; color: var(--vc-text);
+  font: inherit; font-size: 12.5px; outline: none;
+}
+.uap-picksearch input::placeholder { color: var(--vc-third); }
+
+.uap-picklist { max-height: 236px; overflow-y: auto; overscroll-behavior: contain; }
+.uap-pickopt { width: 100%; gap: 8px; }
+.uap-pickopt-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; text-align: left; }
+.uap-pickempty { padding: 14px 8px; font-size: 12.5px; color: var(--vc-third); text-align: center; }
+
+.uap-cancel {
+  height: 34px; padding: 0 14px; border-radius: 9px; border: 1px solid var(--vc-border);
+  background: transparent; color: var(--vc-muted);
+  font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer;
+  transition: border-color 120ms ease, color 120ms ease;
+}
+.uap-cancel:hover { border-color: var(--vc-hover-border); color: var(--vc-text); }
+.uap-save {
+  height: 34px; padding: 0 20px; border: 0; border-radius: 9px;
+  background: var(--vc-text); color: var(--up-surface); cursor: pointer;
+  font-family: inherit; font-size: 12.5px; font-weight: 600; transition: opacity 120ms ease;
+}
+.uap-save:hover:not(:disabled) { opacity: .88; }
+.uap-save:disabled { background: var(--vc-heading-bg); color: var(--vc-third); cursor: default; }
+
+/* ---- narrow ----
+   Under 560px the footer stops being one row: the batch controls need their full width, and a
+   primary action squeezed to three characters is worse than one on its own line. */
+@media (max-width: 560px) {
+  .uap-backdrop { padding: 12px; align-items: flex-end; }
+  .uap-card { max-height: calc(100vh - 24px); gap: 24px; border-radius: 16px; }
+  .uap-title { font-size: 19px; }
+  .uap-sub { font-size: 14px; }
+  .uap-foot { flex-direction: column; align-items: stretch; gap: 10px; }
+  .uap-meta { justify-content: flex-start; }
+  .uap-actions { margin-left: 0; }
+  .uap-cancel { flex: 0 0 auto; }
+  .uap-save { flex: 1 1 auto; }
+  .uap-pickmenu { width: min(264px, calc(100vw - 48px)); }
+  .uap-list { max-height: 180px; }
+}
