@@ -1,0 +1,157 @@
+/* upstreem models-filter.css — the LLM Models filter dropdown (prefix `umf`).
+   Requires core.css first: every colour here is a core token (--vc-*), this file defines no palette
+   of its own and carries no !important.
+
+   Geometry is topics-filter.css's, deliberately down to the pixel — the two sit in the same filter
+   row and must not read as two different controls. Only three things differ, and each has its own
+   comment: the logo tile (a model is recognised by its mark, not a colour), the provider label on
+   the right of a row, and the icon+label footer switcher. */
+
+/* ---------- trigger ---------- */
+/* The root measures the TRIGGER and nothing else, so a Bubble element set to "fit to content" ends
+   up 32px high and as wide as the button — not as wide as the open panel. The panel is absolutely
+   positioned and therefore contributes no size; height is stated anyway because an inline-flex box
+   would otherwise inherit line-height slack from the page. */
+.umf-root { display: inline-block; width: max-content; max-width: 100%; height: 32px; vertical-align: top; }
+.umf-wrap { position: relative; flex: 0 0 auto; height: 32px; }
+.umf-trigger {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 32px; padding: 0 10px;
+  border: 1px solid var(--vc-border); border-radius: 8px;
+  background: var(--vc-bg); color: var(--vc-muted);
+  font-family: inherit; font-size: 13px; font-weight: 500; line-height: 1;
+  white-space: nowrap; cursor: pointer; outline: 0;
+  transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
+}
+.umf-trigger:hover,
+.umf-wrap.is-open .umf-trigger {
+  color: var(--vc-text); background: var(--vc-heading-bg); border-color: var(--vc-hover-border);
+}
+.umf-trigger:focus-visible { border-color: var(--vc-hover-border); box-shadow: 0 0 0 2px var(--vc-heading-bg); }
+.umf-trigger svg { width: 16px; height: 16px; flex: 0 0 16px; fill: none; stroke: var(--vc-text); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+/* The icon slot swaps between the stack glyph and a model logo, so it needs a fixed box — without
+   it the trigger jumps a pixel or two when the selection goes from one model to two. */
+.umf-trigger-ic { flex: 0 0 16px; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; }
+/* The label is the value, so it carries the primary colour while the rest of the button stays
+   muted — the same relationship the topics and date-range triggers have. */
+.umf-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--vc-text); }
+.umf-chev { margin-left: -2px; }
+/* Counter disc from two selections up. Filled with the primary colour, the number in the surface
+   colour of the OTHER theme — the same inversion the checkbox in the panel makes. Fixed 16px so
+   the trigger stays the same width at 2 and at 12. */
+.umf-count {
+  flex: 0 0 16px; width: 16px; height: 16px; border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--vc-text); color: var(--up-menu-bg);
+  font-size: 10px; font-weight: 500; line-height: 1; font-variant-numeric: tabular-nums;
+}
+/* Shows that something is running WITHOUT taking the control away — see models-filter.js. A hard
+   pointer-events lock here would mean one stuck data-isprocessing="yes" bricks the dropdown. */
+.umf-root.is-processing .umf-trigger { opacity: 0.72; }
+
+/* ---------- logo tile ----------
+   The initial sits underneath and the <img> covers it, so a logo that 404s falls back to the
+   letter instead of a broken-image glyph — the img hides itself on error and reveals what was
+   always there. Both layers share the tile box, hence the absolute positioning. */
+.umf-opt-logo, .umf-trigger-logo { position: relative; display: inline-flex; flex: 0 0 auto; overflow: hidden; }
+.umf-opt-logo { width: 18px; height: 18px; border-radius: 5px; }
+.umf-trigger-logo { width: 16px; height: 16px; border-radius: 4px; }
+.umf-logo-fb {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  background: var(--vc-heading-bg); color: var(--vc-third);
+  font-size: 10px; font-weight: 600; line-height: 1;
+}
+.umf-logo-img { position: relative; width: 100%; height: 100%; object-fit: contain; display: block; }
+
+/* ---------- panel ----------
+   position:absolute inside .umf-wrap (STYLEGUIDE §14); the component calls UC.unclipAncestors() at
+   boot so a short Bubble wrapper cannot clip it. */
+.umf-menu {
+  position: absolute; top: calc(100% + var(--up-dd-gap)); left: 0; z-index: 60;
+  display: flex; flex-direction: column; width: 300px; max-width: 92vw;
+  border: 1px solid var(--vc-border); border-radius: var(--up-dd-radius); padding: var(--up-dd-pad);
+  background: var(--up-menu-bg); color: var(--vc-text);
+  box-shadow: var(--up-dd-shadow);
+  opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+.umf-menu.is-shown { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+.umf-menu.is-right { left: auto; right: 0; }
+/* Open and "has a selection" both mark the trigger through its border, the way the app already
+   signals an active filter — no separate accent colour. */
+.umf-wrap.is-open .umf-trigger, .umf-root.has-sel .umf-trigger { border-color: var(--vc-hover-border); color: var(--vc-text); }
+/* The chevron does NOT rotate on open. Dropdowns in this app do not do that. */
+
+/* ---------- search row: input, sorter, Clear ---------- */
+.umf-search-row { display: flex; align-items: stretch; gap: 8px; margin-bottom: 6px; }
+/* The sorter's own positioning context. WITHOUT this, .umf-sort-menu walks up to .umf-wrap and
+   opens under the PANEL instead of under its own button. */
+.umf-sort { position: relative; flex: 0 0 auto; }
+.umf-sort-btn {
+  display: grid; place-items: center; width: 32px; height: 32px; padding: 0;
+  border: 1px solid transparent; border-radius: 8px;
+  background: var(--vc-heading-bg); color: var(--vc-muted); cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+.umf-sort-btn:hover, .umf-sort.is-open .umf-sort-btn { border-color: var(--vc-hover-border); color: var(--vc-text); }
+.umf-sort-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.umf-clear {
+  flex: 0 0 auto; height: 32px; padding: 0 12px; border: 1px solid transparent; border-radius: 8px;
+  background: var(--vc-heading-bg); color: var(--vc-text);
+  font-family: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+.umf-clear:hover { border-color: var(--vc-hover-border); }
+/* Nothing selected means nothing to clear. */
+.umf-root:not(.has-sel) .umf-clear { display: none; }
+
+/* Child of the models panel — core's one-dropdown rule keeps both open because this one is nested
+   inside the other (see UC.dropdownOpened). */
+.umf-sort-menu {
+  position: absolute; top: calc(100% + var(--up-dd-gap)); right: 0; z-index: 3;
+  width: 148px; padding: var(--up-dd-pad); border: 1px solid var(--vc-border); border-radius: var(--up-dd-radius);
+  background: var(--up-menu-bg); box-shadow: 0 10px 24px rgba(0,0,0,.14);
+  display: none;
+}
+.umf-sort.is-open .umf-sort-menu { display: block; }
+/* Geometry only — hover, selected tone and the 16x16 check come from core's .up-optrow. */
+.umf-sort-opt { height: 32px; padding: 0 9px; font-size: 12.5px; font-weight: 500; }
+
+/* ---------- list ---------- */
+.umf-list { display: flex; flex-direction: column; gap: 4px; max-height: 244px; overflow-y: auto; padding: 2px 0; }
+/* The row is core's .up-filter-item, so checkbox and hover come from there. core deliberately gives
+   that class no checked background because the companies and types lists must stay quiet; this list
+   is not one of those, so a selected model carries --up-sel-bg like the topics picker.
+   16px on the right so the provider label clears the list's scrollbar — an overlay on macOS but a
+   real, space-taking one everywhere else. */
+.umf-opt { min-height: 34px; padding-right: 16px; }
+.umf-opt.is-checked, .umf-opt.is-cursor { background: var(--up-sel-bg); }
+.umf-opt-main { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; }
+.umf-opt-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 500; }
+/* Where the topics picker puts a usage count. A model has none, and the provider is the thing that
+   actually disambiguates two similarly named models. */
+.umf-opt-provider { flex: 0 0 auto; font-size: 12px; font-weight: 500; color: var(--vc-third); }
+.umf-empty { padding: 14px 10px; text-align: center; color: var(--vc-third); font-size: 12.5px; }
+
+/* ---------- foot: Single / Multi ----------
+   Icon above, label below. Stacking them is what keeps both halves the same width whatever the
+   words are, and it is what was asked for. The switcher itself is core's .up-seg, so its frame,
+   active tone and dark-mode behaviour cannot drift from every other switcher in the app — only the
+   inner layout is set here. */
+.umf-foot { display: flex; align-items: center; gap: 10px; margin: 6px -10px 0; padding: 10px 10px 0; border-top: 1px solid var(--vc-border); }
+.umf-seg { flex: 1 1 auto; }
+.umf-seg-btn {
+  flex: 1 1 0; height: auto; min-height: 44px; padding: 6px 8px;
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+}
+.umf-seg-ic { display: inline-flex; }
+.umf-seg-ic svg { width: 15px; height: 15px; display: block; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.umf-seg-lb { font-size: 11px; font-weight: 500; line-height: 1; }
+
+@media (max-width: 560px) {
+  .umf-menu { width: 272px; }
+  .umf-list { max-height: 216px; }
+}
+@media (prefers-reduced-motion: reduce){
+  .umf-menu, .umf-trigger, .umf-sort-btn, .umf-clear { transition: none; }
+}

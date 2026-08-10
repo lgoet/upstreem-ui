@@ -1,0 +1,168 @@
+<!-- ============================================================
+     Upstreem — Models Filter (dropdown)
+     Paste this whole block into a Bubble HTML element.
+
+     The visible element is just the 32px trigger button; the panel is rendered by the script and
+     is absolutely positioned, so it does not affect the element's own box.
+     Bubble element size: FIT TO CONTENT, or a fixed 32px height. Make sure the group AROUND it
+     does not have "clip content" on — the script calls UC.unclipAncestors() for the usual cases.
+
+     This is the twin of the Topics Filter and behaves the same everywhere it can. The three
+     deliberate differences:
+       • No "Add Model" button. Models are configuration, not user data.
+       • The footer switcher is SINGLE / MULTI select instead of Or / And.
+       • Exactly one model selected shows that model's LOGO in the trigger.
+
+     ── Root attributes ─────────────────────────────────────────
+     data-instance     = "models_v1_[dynamic id]"  unique per placement. Several of these on one
+                         page is the normal case; every API call below targets one by this id.
+     data-cdn-pin      = commit hash. NEVER leave blank: blank falls back to @main, and jsDelivr
+                         caches branch URLs for days.
+     data-isdark       = "yes" / "no"
+     data-isprocessing = "yes" while the page is fetching. Trigger dims; it stays usable on
+                         purpose — see the note at the bottom.
+     data-local        = "yes" if this picker must not talk to Bubble at all (host reads the DOM
+                         event instead). Leave unset for the normal case.
+
+     ── Events to Bubble ────────────────────────────────────────
+     Create these as Toolbox "JavaScript to Bubble" elements (type: text) and put their names in
+     the attributes on the root div.
+
+       data-models-fn       ONE NAME PER PLACEMENT — see "Routing" below. Fires on EVERY
+                            selection change. Default if left unset: bubble_fn_umfModels
+                            {"instance_id":"...","model_keys":"gpt-5,claude-opus-5",
+                             "select_mode":"multi","count":2,"team_id":"..."}
+       data-models-apply-fn OPTIONAL, page-level. Same payload, fired right after data-models-fn
+                            — see "Two channels" below.
+
+     There is NO Apply button — every click publishes. The payload is always the FULL state, never
+     a delta, so a single dropped event cannot leave your filter out of sync with the UI.
+
+     If the function is missing the component still dispatches a "umf-models" CustomEvent on the
+     root element with the same payload, so nothing is silently lost.
+
+     Regex for the Bubble side, same shape as everywhere else:
+       (?<="model_keys":")[^"]*      (?<="select_mode":")[^"]*      (?<="count":)[0-9]+
+
+     ══ FILLING THE LIST: one call for the whole page ═════════════════════════════
+
+     Do NOT feed each dropdown separately. Run this ONCE per page load, in a "Run JavaScript"
+     step, no instance id involved:
+
+         setUpstreemModels(`[MODELS]`);
+
+     Every models dropdown on the page reads that list when it mounts and stays subscribed, so a
+     placement that Bubble builds later — inside a drawer, or on one of its repeat re-renders —
+     still gets the list. That is the whole reason this is a page-level call: a per-instance setter
+     can only reach instances that already exist, and Bubble rebuilds these elements several times
+     while dynamic expressions resolve.
+
+     BACKTICKS around [MODELS], and do not wrap it in a toArr()-style helper. The component parses
+     the string itself through UC.parseLoose, which repairs what Bubble does to such a payload:
+     unescaped double quotes inside a value, empty values, trailing commas, NBSP indentation,
+     curly quotes, HTML entities, unquoted keys. A local `try { eval(...) } catch { return [] }`
+     helper turns any one of those into an empty list with nothing in the console — that exact
+     failure cost a full debugging round on the urls-table.
+
+     Row shape (straight from your RPC, no renaming needed):
+
+         key           Text     the id. This is what goes into model_keys in the payload.
+         display_name  Text     shown in the row and in the trigger
+         logo_url      Text     18x18 tile; a broken URL falls back to the first letter
+         provider      Text     shown right of the name, and searchable
+         is_active     Boolean  false = not offered at all
+
+     If a model list is genuinely static you can skip the JS entirely and paste the array into the
+     <script type="application/json"> block at the bottom of this element instead.
+
+     ── Control from "Run JavaScript" ───────────────────────────
+     All of these take the placement's data-instance value. A PREFIX also matches, so
+     "models_v1" hits every placement whose id starts with that.
+
+       setModelsFilterSelected("models_v1_abc", "gpt-5,claude-opus-5");   // silent, no event
+       setModelsFilterMode("models_v1_abc", "single");                    // "single" | "multi"
+       setModelsFilterTheme("models_v1_abc", "dark");
+       resetModelsFilter("models_v1_abc");                                // clears, SILENT
+       setModelsFilterModels("models_v1_abc", `[MODELS]`);                // one instance only
+
+     Clearing the selection without triggering a reload: setModelsFilterSelected(id, "").
+     A call that arrives before its element exists is queued and replayed on mount.
+
+     ══ SINGLE vs MULTI ═══════════════════════════════════════════════════════════
+
+     Multi (default) accumulates. Single keeps exactly one: clicking another model REPLACES the
+     current one rather than refusing the click — a click that visibly does nothing reads as a
+     broken control.
+
+     Switching Multi → Single while several are selected keeps THE LAST ONE SELECTED and drops the
+     rest. That is a real change to the filter, so it publishes like any other change; your
+     workflow will receive a payload with count:1. (Keeping the first instead would throw away the
+     user's most recent decision, and keeping "whichever sorts first" would be arbitrary.)
+
+     setModelsFilterMode() is silent — EXCEPT when it has to drop selections for the same reason,
+     because then the UI and Bubble would otherwise disagree about what is filtered.
+
+     ══ TWO CHANNELS: the reusable stores, the page reacts ════════════════════════
+
+     data-models-fn is the element INSIDE the reusable. It owns the selection: its workflow puts
+     model_keys and select_mode into the reusable's own states.
+
+     data-models-apply-fn is an element ON THE PAGE. It is what tells the table to reload. A
+     reusable cannot trigger a page-level workflow by itself, which is the entire reason this
+     second name exists.
+
+     Both receive the identical JSON, data-models-fn first, so the reusable's states are already
+     set when the page reacts — a workflow on the page never has to read those states.
+     Both are optional; an unset attribute is simply not called.
+
+     ══ ROUTING: one event name per placement ═════════════════════════════════════
+
+     If every placement fires the same name, every page that listens for it reacts — including the
+     ones whose dropdown the user did not touch. Give each placement its own:
+
+         Prompts page      data-models-fn = "bubble_fn_umfModels_prompts"
+         Responses page    data-models-fn = "bubble_fn_umfModels_responses"
+         Dashboard         data-models-fn = "bubble_fn_umfModels_dashboard"
+
+     ...and create the matching "JavaScript to Bubble" element on each page, with "Trigger event"
+     checked. instance_id is in the payload as well, so a shared name can still be filtered on —
+     but separate names are cheaper and do not fire workflows that then have to decide to do
+     nothing.
+-->
+
+<div class="up-root umf-root"
+     data-instance="models_v1_[dynamic id]"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="IS_DARK"
+     data-isprocessing="no"
+     data-models-fn="bubble_fn_umfModels"
+     data-models-apply-fn="">
+  <!-- Optional seed: paste a models array here for a page that needs no Run-JavaScript step at
+       all. type="application/json" means the browser does NOT execute it, so a display name can
+       contain anything without escaping rules to get wrong. A later setUpstreemModels() call
+       simply replaces whatever is seeded here — the store always wins over the seed.
+       Leave the MODELS_JSON placeholder untouched if you feed the list from JS. -->
+  <script class="umf-models-json" type="application/json">MODELS_JSON</script>
+</div>
+<script>
+/* Loads this component's CSS/JS from jsDelivr, pinned to the commit hash in data-cdn-pin on the
+   root div above (falls back to @main only if left blank or at the literal "CDN_PIN" placeholder).
+   Byte-for-byte the same loader every other component in this repo ships. */
+(function(){
+  function readPin(cls){
+    var els = document.getElementsByClassName(cls), i, p;
+    for (i = 0; i < els.length; i++){
+      p = (els[i].getAttribute("data-cdn-pin") || "").trim();
+      if (p && p !== "CDN_PIN") return p;
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("umf-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(url, make){ if (L[url]) return; L[url] = 1; make(url); }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+  css("core.css"); css("models-filter.css");
+  js("core.js"); js("models-filter.js");
+})();
+</script>

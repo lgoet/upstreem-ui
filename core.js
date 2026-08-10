@@ -4242,6 +4242,52 @@
   })();
 
   /* ---------------------------------------------------------------------------------------------
+     Model store -- the same shape as the topic store above, for the LLM model list.
+
+     Deliberately a second store rather than a generic one keyed by name: the two lists have
+     different shapes, different Bubble refresh workflows and different lifetimes (topics are user
+     data that changes all day, models are near-static config), and a shared bucket would make an
+     invalidation on one of them republish the other. The duplication is ~30 lines; the coupling
+     would be permanent. Everything else -- window scope against a double core.js load, subscriber
+     pruning by detached owner, the pre-load queue -- is identical for identical reasons, so read
+     the topic store's comment for the why. */
+  var MODELS = (window.__upModels = window.__upModels || { list: [], at: 0, seq: 0, subs: [] });
+
+  function getModels(){ return MODELS.list.slice(); }
+  function onModels(fn, owner){
+    var sub = { fn: fn, owner: owner || null };
+    MODELS.subs.push(sub);
+    return function(){
+      var i = MODELS.subs.indexOf(sub);
+      if (i >= 0) MODELS.subs.splice(i, 1);
+    };
+  }
+  function setModels(rows, label){
+    var list = parseLoose(rows, label || "models");
+    if (!list) return false;
+    if (!isArray(list)) list = [list];
+    MODELS.list = list;
+    MODELS.at = nowMs();
+    MODELS.seq++;
+    for (var i = MODELS.subs.length - 1; i >= 0; i--){
+      var sub = MODELS.subs[i];
+      if (sub.owner && !document.contains(sub.owner)){ MODELS.subs.splice(i, 1); continue; }
+      try { sub.fn(list.slice()); } catch(e){
+        if (window.console) console.warn("[models] a subscriber threw while updating:", e);
+      }
+    }
+    return true;
+  }
+  window.setUpstreemModels = function(rows){ return setModels(rows, "setUpstreemModels"); };
+  window.getUpstreemModels = getModels;
+  (function drainModelsQueue(){
+    var q = window.__upModelsQueue;
+    if (!q || !q.length) return;
+    window.__upModelsQueue = [];
+    for (var i = 0; i < q.length; i++){ try { setModels(q[i], "setUpstreemModels (queued)"); } catch(e){} }
+  })();
+
+  /* ---------------------------------------------------------------------------------------------
      Page-wide theme. Same shape as the topic store above, for the same reason: one call, every
      component follows, including ones that mount later.
 
@@ -4404,6 +4450,9 @@
     onTopics: onTopics,
     topicsAge: topicsAge,
     topicsChanged: topicsChanged,
+    getModels: getModels,
+    setModels: setModels,
+    onModels: onModels,
     setUpstreemTheme: setUpstreemTheme,
     onTheme: onTheme,
     getUpstreemTheme: getUpstreemTheme,
