@@ -47,14 +47,75 @@
     company_info:"Company Info", article:"Article", listicle:"Listicle", guide:"Guide", comparison:"Comparison",
     review:"Review", documentation:"Documentation", forum:"Forum", directory:"Directory", video:"Video",
     social_post:"Social Post", other:"Uncategorized" };
-  var URL_TYPE_COLOR = { homepage:"#b45309", product_service:"#c2683b", marketplace:"#9a5b2e", company_info:"#a16207",
-    article:"#047857", listicle:"#0e7490", guide:"#2563eb", comparison:"#4f46e5", review:"#6d28d9",
-    documentation:"#6d28d9", forum:"#9333ea", directory:"#a21caf", video:"#7c3aed", social_post:"#8b5cf6", other:"#6f737c" };
+  /* Both palettes are core.js's, value for value -- URL_TYPE and CITE_COLOR there. They are
+     MIRRORED rather than imported because this component is deliberately standalone: its Bubble
+     loader pulls only quick-actions.css/.js, no core, so that the palette works on a page that
+     embeds nothing else. The price is that these two tables have to be kept in step with core by
+     hand; that is why they are one block with this note on it instead of scattered lookups.
+
+     What changed here and why: this file used to carry ONE colour per type and no dark variant, so
+     a chip in the palette was a different colour from the same chip in the tables as soon as the
+     app was in dark mode -- and the citation hues were a second, older set entirely (#14b8a6 for
+     Editorial where core says #27a79b). Now: core's light value, core's dark value, core's names.
+
+     Citation types have no real dark variant in core either -- the same hue carries both themes,
+     and only the chip BACKGROUND changes. URL types do have one. */
+  var URL_TYPE_COLOR = {
+    homepage:        { c:"#b45309", cDark:"#fbbf24" },
+    product_service: { c:"#c2683b", cDark:"#fdba74" },
+    marketplace:     { c:"#9a5b2e", cDark:"#fcae6f" },
+    company_info:    { c:"#a16207", cDark:"#facc15" },
+    article:         { c:"#047857", cDark:"#6ee7b7" },
+    listicle:        { c:"#0e7490", cDark:"#67e8f9" },
+    guide:           { c:"#2563eb", cDark:"#93c5fd" },
+    comparison:      { c:"#4f46e5", cDark:"#a5b4fc" },
+    review:          { c:"#6d28d9", cDark:"#c4b5fd" },
+    documentation:   { c:"#6d28d9", cDark:"#c4b5fd" },
+    forum:           { c:"#9333ea", cDark:"#d8b4fe" },
+    directory:       { c:"#a21caf", cDark:"#f0abfc" },
+    video:           { c:"#7c3aed", cDark:"#c4b5fd" },
+    social_post:     { c:"#8b5cf6", cDark:"#ddd6fe" }
+  };
+  var OTHER_LIGHT = "#8c8f96", OTHER_DARK = "#a8abb2", CHIP_BG_DARK = "#242424";
   function urlTypeLabel(t){ return URL_TYPE_LABEL[t] || String(t||"").replace(/_/g," "); }
-  function urlTypeColor(t){ return URL_TYPE_COLOR[t] || "#6f737c"; }
-  // colours mirrored from the opportunities component so a type looks the same everywhere
-  var CITE_COLOR = { Editorial:"#14b8a6", UGC_Community:"#0ea5e9", Knowledge_Base:"#6366f1", Brand_Platform:"#d946ef", Institutional:"#64748b", Competition:"#f97316", You:"#f43f5e" };
-  function citeColor(c){ return CITE_COLOR[c] || "#6f737c"; }
+  /* base = the LIGHT hue always. The tinted background is mixed from it in both themes, so a
+     chip's fill stays the same family whatever the text colour does. */
+  function urlTypeBase(t){ var e = URL_TYPE_COLOR[t]; return e ? e.c : OTHER_LIGHT; }
+  function urlTypeColor(t){
+    var e = URL_TYPE_COLOR[t];
+    if (!e) return isDarkTheme() ? OTHER_DARK : OTHER_LIGHT;
+    return isDarkTheme() ? e.cDark : e.c;
+  }
+  var CITE_COLOR = {
+    Editorial:"#27a79b", UGC_Community:"#34a1d1", Knowledge_Base:"#797ad8",
+    Brand_Platform:"#bc69c9", Institutional:"#5e7eac", Competition:"#dd7e3e", You:"#d35f73"
+  };
+  function citeColor(c){ return CITE_COLOR[c] || OTHER_LIGHT; }
+  /* core's citeName in miniature: the RPC's raw keys are not what the app shows. */
+  var CITE_LABEL = {
+    UGC_Community:"UGC / Community", Knowledge_Base:"Knowledge-Base", Brand_Platform:"Brand Platforms"
+  };
+  function citeLabel(c){ return CITE_LABEL[c] || String(c || "").replace(/_/g, " "); }
+  function isDarkTheme(){ return root.getAttribute("data-theme") === "dark"; }
+  /* core's tint(), same maths -- a hex plus an alpha, so the chip fill is the type's own colour at
+     12% rather than a neutral grey that ignores the type entirely. */
+  function tint(hex, a){
+    var h = String(hex).replace("#", "");
+    if (h.length === 3) h = h.split("").map(function(x){ return x + x; }).join("");
+    var n = parseInt(h, 16);
+    return "rgba(" + ((n>>16)&255) + "," + ((n>>8)&255) + "," + (n&255) + "," + a + ")";
+  }
+  /* The chip the TABLES draw: colour on a tinted ground in light, colour on the flat dark chip
+     ground in dark. URL types carry a leading dot, citation types never do -- that is what keeps
+     the two vocabularies apart at a glance when they sit next to each other. Geometry copied from
+     core.css's .up-tag; the class is local because core.css is not loaded here. */
+  function tagHtml(label, color, base, withDot){
+    var bg = isDarkTheme() ? CHIP_BG_DARK : tint(base, 0.12);
+    return '<span class="mqa-tag" style="color:' + color + ';background:' + bg + '">' +
+             (withDot ? '<span class="mqa-tag-dot" style="background:' + color + '"></span>' : '') +
+             '<span class="mqa-tag-lbl">' + esc(label) + '</span>' +
+           '</span>';
+  }
   function citeDot(c){ return '<span class="mqa-ct-dot" style="background:' + citeColor(c) + '"></span>'; }
   function colorDot(color){ return '<span class="mqa-ct-dot" style="background:' + color + '"></span>'; }
   var MARKETS = ["de","us","gb","at","ch","fr","es","it","nl"];   // override via MiraQuickActions.setMarkets([...])
@@ -77,7 +138,7 @@
   var CMD_BY_ID = {}; COMMANDS.forEach(function(c){ CMD_BY_ID[c.id] = c; });
   var SLOT_LABEL = { scope:"", rank:"", type:"Citation", urltype:"URL", market:"Market", mentioning:"Mentioning" };
   function subOptions(kind){
-    if (kind === "types")    return CITATION_TYPES.map(function(t){ return { label: t.replace(/_/g," "), value: t, dot: citeColor(t) }; });
+    if (kind === "types")    return CITATION_TYPES.map(function(t){ return { label: citeLabel(t), value: t, dot: citeColor(t) }; });
     if (kind === "urltypes") return URL_TYPES.map(function(t){ return { label: urlTypeLabel(t), value: t, dot: urlTypeColor(t) }; });
     if (kind === "markets") return MARKETS.map(function(m){
       return { label: String(m).toUpperCase(), value: m, av: "https://flagcdn.com/" + String(m).toLowerCase() + ".svg", round: true };
@@ -116,10 +177,14 @@
       id: "citation-types",
       label: "Citation Types",
       hint: function(){ return CITATION_TYPES.length + " kinds"; },
-      body: "What kind of source a citation came from. Every URL an AI answer cites is classified " +
-            "into exactly one of these, which is what makes \"where do the answers about us come " +
-            "from\" a question with a chart behind it.",
-      chips: function(){ return subOptions("types"); },
+      body: "Citation Type classifies the SOURCE of a cited URL. Every URL an AI answer cites receives " +
+            "exactly one type. Use it to see which kinds of sources the answers about you are built from.",
+      chips: function(){
+        return CITATION_TYPES.map(function(t){
+          var col = citeColor(t);
+          return { label: citeLabel(t), color: col, base: col, dot: false };
+        });
+      },
       apply: { scope: "url" },
       applyLabel: "Show URLs by citation type"
     },
@@ -127,10 +192,15 @@
       id: "url-types",
       label: "URL Types",
       hint: function(){ return URL_TYPES.length + " kinds"; },
-      body: "What kind of PAGE the cited URL is — independent of who published it. A competitor's " +
-            "pricing page and a magazine's ranking list are both citations, but they are not the " +
-            "same opportunity, and this is the field that tells them apart.",
-      chips: function(){ return subOptions("urltypes"); },
+      body: "URL Type classifies the cited PAGE itself, independently of who published it. A competitor's " +
+            "pricing page and a magazine's ranking list are both citations, but they are different kinds " +
+            "of page and different opportunities. Citation Type describes the source, URL Type describes " +
+            "the page.",
+      chips: function(){
+        return URL_TYPES.map(function(t){
+          return { label: urlTypeLabel(t), color: urlTypeColor(t), base: urlTypeBase(t), dot: true };
+        });
+      },
       apply: { scope: "url", rank: "top" },
       applyLabel: "Show top URLs"
     },
@@ -138,11 +208,11 @@
       id: "share",
       label: "Share",
       hint: "%",
-      body: "How much of ALL citations in the selected period went to this one URL, domain or " +
-            "brand. It is a share of the total, so every row's share adds up to 100% — a rising " +
-            "share means winning ground, not merely being cited more often while everyone else " +
-            "grows too. Domain Share is the same number computed inside one domain: how much of " +
-            "that domain's own citations a single URL carries.",
+      body: "Share is the percentage of all citations in the selected period that point to one URL, " +
+            "domain or brand. Shares across all rows sum to 100%. A rising share means gaining ground " +
+            "relative to everything else, not simply being cited more often. Domain Share applies the " +
+            "same calculation inside a single domain: the percentage of that domain's own citations " +
+            "carried by one URL.",
       apply: { scope: "domain", rank: "top" },
       applyLabel: "Show top domains"
     },
@@ -150,19 +220,19 @@
       id: "trend",
       label: "Trend",
       hint: "▲ ▼",
-      body: "The change against the PREVIOUS period of the same length — pick 30 days and the " +
-            "comparison is the 30 days before that. Shown as percentage points, not as a percentage " +
-            "of the old value: from 6% to 8% is +2, never +33%. No chip at all means the change " +
-            "rounds to zero, which is deliberately different from a chip showing 0."
+      body: "Trend compares the selected period against the preceding period of equal length. A 30 day " +
+            "range is compared against the 30 days before it. Values are percentage points, not percent " +
+            "of the previous value: a move from 6% to 8% is shown as +2, never as +33%. No chip is shown " +
+            "when the change rounds to zero. "
     },
     {
       id: "rank",
       label: "Rank",
       hint: "lower is better",
-      body: "The average position your brand takes in an answer that mentions it — 1 is the first " +
-            "brand named. This is the one metric in the app where DOWN is the improvement, so its " +
-            "trend chip is inverted: a falling rank number shows as a positive move. Shown to one " +
-            "decimal because real movements are smaller than a whole place.",
+      body: "Rank is the average position your brand takes within an answer that mentions it. Position 1 " +
+            "is the first brand named. Lower is better, so the trend chip is inverted: a falling rank " +
+            "number is displayed as a positive move. Values are shown to one decimal because typical " +
+            "changes are smaller than a full position.",
       apply: { scope: "brand", rank: "top" },
       applyLabel: "Show brands by rank"
     },
@@ -170,18 +240,17 @@
       id: "sentiment",
       label: "Sentiment",
       hint: "0 – 100",
-      body: "How positively your brand is described where it appears, on a 0–100 scale — 50 is " +
-            "neutral. It is measured only in answers that actually mention you, so it says nothing " +
-            "about how OFTEN that happens; a brand cited twice can have a better sentiment than one " +
-            "cited two hundred times. Read it next to Visibility, never instead of it."
+      body: "Sentiment scores how positively your brand is described, on a scale from 0 to 100, where 50 " +
+            "is neutral. It is measured only in answers that mention your brand, so it carries no " +
+            "information about how often that happens. Read it alongside Visibility, not instead of it. "
     },
     {
       id: "visibility",
       label: "Visibility",
       hint: "%",
-      body: "The share of runs for a prompt in which your brand was mentioned at all. 20% means one " +
-            "answer in five named you. This is the reach number; Rank and Sentiment describe what " +
-            "happened in those answers once you were in them.",
+      body: "Visibility is the percentage of runs for a prompt in which your brand was mentioned at all. " +
+            "20% means one answer in five named you. Visibility measures reach. Rank and Sentiment " +
+            "describe what happened inside the answers that did mention you.",
       apply: { scope: "prompt", rank: "top" },
       applyLabel: "Show top prompts"
     },
@@ -189,19 +258,18 @@
       id: "prompts-responses",
       label: "Prompts vs Responses",
       hint: "1 : many",
-      body: "A PROMPT is the question you track. A RESPONSE is one model's answer to it at one " +
-            "point in time, so a single prompt collects a new response per model per run. Every " +
-            "aggregate in the app — visibility, rank, sentiment — is computed across responses and " +
-            "then shown against the prompt, which is why a prompt's numbers move without the prompt " +
-            "itself ever changing."
+      body: "A Prompt is the question you track. A Response is one model's answer to that prompt at one " +
+            "point in time. Each prompt collects one response per model per run, so the relationship is " +
+            "one to many. All aggregates in the app are computed across responses and displayed against " +
+            "the prompt. This is why a prompt's numbers change without the prompt itself being edited. "
     },
     {
       id: "brand-mentions",
       label: "Brand Mentions",
       hint: "own vs competitor",
-      body: "Which tracked brands appear on a cited page. Your own brand and your competitors are " +
-            "the same kind of record with a different role, so a page can carry both — and the " +
-            "interesting pages are usually the ones that carry your competitors and not you.",
+      body: "Brand Mentions lists which tracked brands appear on a cited page. Your own brand and your " +
+            "competitors are stored the same way and differ only by role, so a single page can carry " +
+            "both. Pages that mention competitors but not you are usually the ones worth acting on.",
       apply: { scope: "url" },
       applyLabel: "Show URLs"
     },
@@ -209,21 +277,23 @@
       id: "topics",
       label: "Topics",
       hint: "Or / And",
-      body: "Your own labels on prompts — the app never invents them. Filtering by two topics in " +
-            "OR mode returns prompts carrying either; AND returns only prompts carrying both, which " +
-            "is usually a much smaller set than people expect the first time."
+      body: "Topics are your own labels on prompts. The app never creates them. Filtering by two topics " +
+            "in Or mode returns prompts carrying either topic. And mode returns only prompts carrying " +
+            "both, which is usually a much smaller set. "
     },
     {
       id: "models",
       label: "Models",
       hint: "Single / Multi",
-      body: "Which LLM produced a response. Single-select compares one model against the whole " +
-            "picture, multi-select pools several into one number. Two models rarely agree on who to " +
-            "cite, so a metric that looks flat across all models can hide a large move inside one."
+      body: "Model identifies which LLM produced a response. Single select compares one model against the " +
+            "full picture. Multi select pools several models into one number. Models often disagree about " +
+            "which sources to cite, so a metric that looks flat across all models can hide a large " +
+            "movement inside one of them. "
     }
   ];
   var REF_BY_ID = {}; REF.forEach(function(r){ REF_BY_ID[r.id] = r; });
-  var refOpen = null;   // id of the entry currently expanded — one at a time, like an accordion
+  var refOpen = null;       // id of the entry currently expanded: one at a time, like an accordion
+  var refListOpen = false;  // the whole section starts collapsed, see refHtml()
 
 
   function anyFilter(){ return !!(FILTERS.scope || FILTERS.rank || FILTERS.type || FILTERS.urltype || FILTERS.market || FILTERS.mentioning); }
@@ -372,8 +442,23 @@
   /* The reference list. One row per entry; the expanded body is a sibling DIV rather than a child
      of the button, because a <button> may not contain another <button> and the body carries one. */
   function refHtml(){
-    var html = '<div class="mqa-sep"></div><div class="mqa-group mqa-refgroup">' +
-               '<div class="mqa-group-head">Reference</div>';
+    /* Collapsed by default, and it has to be: eleven rows opened straight into the palette turned
+       the first thing you see into a wall of documentation, above the four Actions people actually
+       came for. One row now, expanding to the list on click. */
+    var html = '<div class="mqa-sep"></div><div class="mqa-group mqa-refgroup' +
+               (refListOpen ? " is-expanded" : "") + '">' +
+      '<button class="mqa-action mqa-ref mqa-reftop" type="button" role="option" data-reflist="1"' +
+              ' aria-expanded="' + (refListOpen ? "true" : "false") + '">' +
+        '<span class="mqa-action-ic mqa-ref-ic">' +
+          '<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>' +
+        '</span>' +
+        '<span class="mqa-main"><span class="mqa-primary">Reference</span></span>' +
+        '<span class="mqa-action-hint">' + REF.length + ' entries</span>' +
+        '<span class="mqa-ref-chev">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
+        '</span>' +
+      '</button>';
+    if (!refListOpen) return html + '</div>';
     REF.forEach(function(r){
       var on = (refOpen === r.id);
       var hint = (typeof r.hint === "function") ? r.hint() : (r.hint || "");
@@ -396,12 +481,12 @@
         html += '<div class="mqa-ref-body">' +
                   '<p class="mqa-ref-text">' + esc(r.body) + '</p>';
         if (r.chips){
-          /* Straight from subOptions(), the same source the palette's own /citation-type and
-             /url-type menus read. A hand-copied second list is how a glossary starts lying. */
+          /* Same constants the palette's own /citation-type and /url-type menus read, drawn with
+             the same tagHtml() the rest of this file now uses -- so a type looks identical here,
+             in the filter menu, and in the tables. A hand-copied second list is how a glossary
+             starts lying. */
           html += '<div class="mqa-ref-chips">';
-          r.chips().forEach(function(c){
-            html += '<span class="mqa-ref-chip">' + colorDot(c.dot || "#6f737c") + esc(c.label) + '</span>';
-          });
+          r.chips().forEach(function(c){ html += tagHtml(c.label, c.color, c.base, c.dot); });
           html += '</div>';
         }
         if (r.apply){
@@ -430,6 +515,14 @@
     input.value = ""; query = ""; syncPh();
     renderChips(); buildStatic(); afterFilterChange();
     try { input.focus(); } catch(_){}
+  }
+  function toggleRefList(){
+    refListOpen = !refListOpen;
+    /* Collapsing the section also collapses whatever entry was open inside it, so reopening starts
+       from the list rather than from someone else's half-read paragraph. */
+    if (!refListOpen) refOpen = null;
+    buildStatic();
+    refreshRows();
   }
   function toggleRef(id){
     refOpen = (refOpen === id) ? null : id;
@@ -965,6 +1058,7 @@
     if (el.hasAttribute("data-cmd")){ applyCommand(el.getAttribute("data-cmd"), el.getAttribute("data-cmd-val")); return; }
     /* Before the .mqa-action branch below: a reference row carries that class too (it is the same
        row shape) but must expand instead of firing a Bubble action and closing the palette. */
+    if (el.hasAttribute("data-reflist")){ toggleRefList(); return; }
     if (el.hasAttribute("data-ref")){ toggleRef(el.getAttribute("data-ref")); return; }
     if (el.classList.contains("mqa-action")) selectStatic(el.getAttribute("data-action"));
     else selectResult(+el.getAttribute("data-ri"));
@@ -1238,6 +1332,11 @@
       theme = (String(theme || "").toLowerCase() === "dark") ? "dark" : "light";
       root.setAttribute("data-theme", theme);
       overlay.setAttribute("data-theme", theme);
+      /* Type chips carry their colour as an INLINE style, computed from the theme at render time,
+         so unlike everything else in this component they do not follow a data-theme flip on their
+         own. Rebuild the block that holds them; a switch with the reference section open otherwise
+         leaves the chips in the previous theme's palette. */
+      buildStatic();
     },
     // scope the recent searches to a team — call this on page load AND whenever the team changes,
     // otherwise one team's recents would show up for the next

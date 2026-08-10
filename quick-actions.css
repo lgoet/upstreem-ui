@@ -386,15 +386,9 @@
 @keyframes mqaRefIn { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
 .mqa-ref-text { margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--am-muted); }
 
-/* Wraps to as many lines as it needs — the URL types are eleven entries and forcing them onto one
+/* Wraps to as many lines as it needs. The URL types are fifteen entries, and forcing them onto one
    scrolling row would hide most of the vocabulary this section exists to show. */
 .mqa-ref-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
-.mqa-ref-chip {
-  display: inline-flex; align-items: center; gap: 5px;
-  height: 22px; padding: 0 8px; border-radius: 6px;
-  background: var(--am-soft); color: var(--am-text);
-  font-size: 11.5px; font-weight: 500; line-height: 1; white-space: nowrap;
-}
 
 .mqa-ref-go {
   margin-top: 10px; display: inline-flex; align-items: center; gap: 5px;
@@ -405,3 +399,24 @@
 }
 .mqa-ref-go:hover { background: var(--am-soft); border-color: var(--am-border-strong); }
 .mqa-ref-go svg { width: 13px; height: 13px; display: block; }
+
+/* The section's own head row. Same .mqa-action shape as everything else in the list, so it is
+   keyboard-reachable and highlights like a normal row; only the chevron marks it as expandable. */
+.mqa-reftop .mqa-ref-chev { transition: transform .16s ease; }
+.mqa-refgroup.is-expanded .mqa-reftop .mqa-ref-chev { transform: rotate(180deg); }
+/* Entries sit one step in from the section head, so an open section reads as a list belonging to
+   it rather than as more top-level rows. */
+.mqa-refgroup.is-expanded .mqa-ref-item .mqa-ref { padding-left: 26px; }
+.mqa-refgroup.is-expanded .mqa-ref-item .mqa-ref-body { padding-left: 52px; }
+
+/* The type chip, drawn exactly as the tables draw it: the type's own colour on a ground tinted
+   from that colour in light mode, on the flat dark chip ground in dark mode. Geometry is
+   core.css's .up-tag; the class is local because this component deliberately does not load
+   core.css (its Bubble loader pulls only quick-actions.css/.js). */
+.mqa-tag {
+  display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px;
+  border-radius: 7px; font-size: 12px; font-weight: 600; white-space: nowrap;
+  max-width: 100%; overflow: hidden;
+}
+.mqa-tag-dot { width: 6px; height: 6px; border-radius: 999px; flex: 0 0 auto; }
+.mqa-tag-lbl { overflow: hidden; text-overflow: ellipsis; }
