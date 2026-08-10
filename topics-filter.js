@@ -278,14 +278,35 @@
          publishes directly, so it is added here). Lets the receiving workflow drop a payload that
          belongs to a team the page has since navigated away from. */
       try { var tid = UC.getTeam && UC.getTeam(); if (tid) payload.team_id = tid; } catch(e){}
-      var name = root.getAttribute("data-topics-fn") || "bubble_fn_utfTopics";
-      var fn = UC.resolveBubbleFn(name);
       var json; try { json = JSON.stringify(payload); } catch (e) { json = ""; }
-      if (typeof fn === "function") { try { fn(json); } catch (e) {} }
-      else if (window.console) {
-        console.warn("[topics-filter] " + name + " not found — this change reached no Bubble workflow.");
-      }
+
+      /* TWO channels, because there are genuinely two receivers and one call can only reach one
+         element:
+           data-topics-fn        the element INSIDE the reusable. It owns the selection -- it is
+                                 what puts topic_ids and tag_mode into the reusable's own states.
+           data-topics-apply-fn  an element ON THE PAGE. It is what tells the table to reload.
+                                 A reusable cannot trigger a page-level workflow by itself, which
+                                 is the whole reason this second name exists; without it the only
+                                 way up was a counter state the page had to watch.
+         Fired in that order so the reusable's states are already set when the page reacts -- but
+         the page element receives the identical JSON, so a workflow there never has to read those
+         states at all. Optional: no attribute, no call, no warning. */
+      fireTo(root.getAttribute("data-topics-fn") || "bubble_fn_utfTopics", json, true);
+      fireTo(root.getAttribute("data-topics-apply-fn"), json, false);
       try { root.dispatchEvent(new CustomEvent("utf-topics", { detail: payload, bubbles: true })); } catch (e) {}
+    }
+
+    /* required=false means the name is optional: only complain when an attribute was actually
+       set and the function behind it is missing -- a typo stays loud, an unused channel stays
+       quiet. */
+    function fireTo(name, json, required) {
+      if (!name) return;
+      var fn = UC.resolveBubbleFn(name);
+      if (typeof fn === "function") { try { fn(json); } catch (e) {} return; }
+      if (window.console) {
+        console.warn("[topics-filter] " + name + " not found — this change reached no Bubble workflow." +
+          (required ? "" : " (data-topics-apply-fn)"));
+      }
     }
 
     function commit() { persist(); render(); emit(); }

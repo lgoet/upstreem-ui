@@ -22,6 +22,8 @@
        data-topics-fn    ONE NAME PER PLACEMENT -- see "Routing" below. Fires on EVERY
                          selection change. Default if left unset: bubble_fn_utfTopics
                          {"instance_id":"...","topic_ids":"id1,id2","tag_mode":"or","count":2}
+       data-topics-apply-fn  OPTIONAL, page-level. Same payload, fired right after
+                         data-topics-fn -- see "Two channels" below.
        data-newtopic-fn  default bubble_fn_utfNewTopic  fires when "New Topic" is saved
                          {"name":"...","emoji":"...","hex_light":"#...","hex_dark":"#..."}
 
@@ -34,6 +36,34 @@
      root element with the same payload, so nothing is silently lost.
 
      ── Control from "Run JavaScript" ───────────────────────────
+  ═══ TWO CHANNELS: the reusable stores, the page reacts ════════════════════════
+
+  A selection has two receivers, and one function call can only reach one element:
+
+    data-topics-fn        the element INSIDE the reusable. This is what puts topic_ids and
+                          tag_mode into the reusable's own states -- the selection itself.
+    data-topics-apply-fn  an element ON THE PAGE. This is what makes the table reload.
+
+  Both get the identical JSON, the reusable one first. That order means the reusable's states are
+  already set when the page reacts -- but the page element receives the whole payload anyway, so
+  its workflow never has to read those states.
+
+  Why two and not one: a reusable cannot trigger a page-level workflow by itself. Without this
+  second name the only way out of the reusable was a counter state the page had to sit and watch,
+  which is what this replaces.
+
+  data-topics-apply-fn is OPTIONAL. Leave it off where the reusable's own workflow is all you need;
+  nothing is called and nothing is logged. Set it to a name that does not exist and the console
+  says so on the first click.
+
+  Element setup, both of them: Trigger event ✅, Publish value ✅, value type TEXT. The name that
+  matters is the Toolbox element's SUFFIX -- suffix "utfTopicsApply_prompts" publishes
+  window.bubble_fn_utfTopicsApply_prompts. The editor's element name is what the workflow binds to
+  and does not have to match.
+
+  Two elements must never share a suffix: both publish the same global, the last one rendered wins,
+  and which that is changes between page loads.
+
   ═══ ROUTING: one JavaScript-to-Bubble element PER PLACEMENT ═══════════════════
 
   Give every placement its OWN function name, derived from the same dynamic id you already put in
@@ -147,6 +177,7 @@
      data-isdark="IS_DARK"
      data-isprocessing="IS_PROCESSING"
      data-topics-fn="bubble_fn_utfTopics_[dynamic id]"
+     data-topics-apply-fn="bubble_fn_utfTopicsApply_[dynamic id]"
      data-newtopic-fn="bubble_fn_utfNewTopic">
   <!-- ── OPTIONAL, und normalerweise LEER LASSEN ──────────────────────────────
        Since the page-wide store exists, this element needs NO topics input of its own. Leave
