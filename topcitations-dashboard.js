@@ -723,13 +723,11 @@
        data-processing purely via the attribute (no accompanying JS call) never got noticed here,
        unlike everywhere else in the library. */
     var themeObserver = new MutationObserver(function(){
-      var wantDark = isYes(root.getAttribute("data-isdark"));
-      var changed = false;
-      if (wantDark !== isDark){
-        isDark = wantDark;
-        if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
-        changed = true;
-      }
+      /* Shared: UC.syncTheme applies data-isdark to data-theme and reports whether it moved.
+         Five components had these seven lines character for character. */
+      var _th = UC.syncTheme(root, isDark);
+      isDark = _th.isDark;
+      var changed = _th.changed;
       if (!LOADING_EXPLICIT[instanceId]){
         var wantProc = readProcessing();
         if (wantProc !== state.loading){ state.loading = wantProc; changed = true; }

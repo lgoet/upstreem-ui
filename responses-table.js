@@ -1270,13 +1270,11 @@
     var explicitOverride = false;
     function isBusy(){ return !!state.loading || !!state.extLoading; }
     var syncFromAttrs = function(){
-      var wantDark = isYes(root.getAttribute("data-isdark"));
-      var changed = false;
-      if (wantDark !== isDark){
-        isDark = wantDark;
-        if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
-        changed = true;
-      }
+      /* Shared: UC.syncTheme applies data-isdark to data-theme and reports whether it moved.
+         Five components had these seven lines character for character. */
+      var _th = UC.syncTheme(root, isDark);
+      isDark = _th.isDark;
+      var changed = _th.changed;
       var procAttr = String(root.getAttribute("data-processing") || "") + "|" + String(root.getAttribute("data-processing2") || "");
       if (procAttr !== lastProcAttr){ lastProcAttr = procAttr; explicitOverride = false; }
       if (!explicitOverride){

@@ -2147,6 +2147,18 @@
     };
   }
 
+  /* data-isdark (what Bubble sets) -> data-theme (what the CSS reads), plus "did it actually
+     change" so the caller can skip the repaint work when it did not. Five components carried these
+     seven lines character for character; the shape of the answer is what forced the duplication --
+     it both mutates a local and reports a boolean, which is why it never got extracted before.
+     Returning the pair instead of mutating settles that. */
+  function syncTheme(root, wasDark){
+    var wantDark = isYes(root.getAttribute("data-isdark"));
+    if (wantDark === wasDark) return { isDark: wasDark, changed: false };
+    if (wantDark) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
+    return { isDark: wantDark, changed: true };
+  }
+
   /* The page header's brand meta: theme, brand name, brand logo. Six page headers had this
      character for character -- the third-largest duplicate in the repo, and the kind that drifts
      silently, because a fix applied to one of six looks done.
@@ -4690,6 +4702,7 @@
     makeTopicModal: makeTopicModal,
     makePageNav: makePageNav,
     makePageHeaderMeta: makePageHeaderMeta,
+    syncTheme: syncTheme,
     widthTiers: widthTiers,
     spinOnce: spinOnce,
 
