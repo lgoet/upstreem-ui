@@ -1,9 +1,14 @@
 <!-- ============================================================
      Upstreem — Add Prompts (modal)
 
-     Paste this block into ONE HTML element per page that needs the dialog. The element itself
-     renders nothing: it only loads the files and gives the modal a home. Size it 0×0 or 1×1 and
-     put it anywhere; the dialog builds itself into <body>.
+     YOU PROBABLY DO NOT NEED THIS FILE. The prompts page header already loads add-prompts.js and
+     add-prompts.css itself, because its Add button is what opens the dialog — putting the include
+     anywhere else would mean a button that works only if you remembered to place a second element.
+
+     Use this block only on a page that needs the dialog WITHOUT the prompts page header: a
+     dashboard shortcut, a Quick Actions entry, an empty-state button somewhere else. Paste it into
+     one HTML element, size it 0×0, put it anywhere. It renders nothing; the dialog builds itself
+     into <body>. Loading it twice on one page is harmless — the loader deduplicates by URL.
 
      ── What opens it ───────────────────────────────────────────
      Nothing on this element. It is opened from JavaScript:

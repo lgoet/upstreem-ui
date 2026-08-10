@@ -127,5 +127,11 @@
   function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
   css("core.css"); css("page-headers/prompts-page-header.css");
   js("core.js"); js("page-headers/prompts-page-header.js");
+  /* The Add button opens the Add-Prompts dialog, so this header brings it along. Loading it from
+     here rather than from an element of its own is the difference between "the button works" and
+     "the button works once you also place a second HTML element on the page" -- and a button that
+     silently falls back to the old event because someone forgot that element is exactly the kind
+     of half-wired state that costs a debugging round. */
+  css("add-prompts.css"); js("add-prompts.js");
 })();
 </script>
