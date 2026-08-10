@@ -1544,7 +1544,23 @@
 .up-ph-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 /* grayscale(1): a brand's own logo colour would otherwise compete with this being a quiet,
    secondary line above the real heading. */
-.up-ph-metalogo { width: 16px; height: 16px; display: block; flex: 0 0 auto; filter: grayscale(1); object-fit: cover; }
+/* grayscale(1) alone cannot dim a BLACK logo -- black is already fully desaturated, so it came
+   through at full strength next to nicely muted colourful ones. contrast() below 1 pulls every
+   luminance toward mid-grey, which is what actually lifts the black end; brightness() puts the
+   result back where the colourful logos already sat.
+   Measured through the same filter engine (canvas ctx.filter), luminance out of each input:
+     input        grayscale(1)   this
+     black             0          72
+     #222             34          92
+     brand blue      105         133
+     brand red        83         120
+     white           255         219
+   The meta text next to it is --vc-third at L=128, so a logo now lands just under the label it
+   belongs to instead of either shouting (black) or vanishing (black on dark). */
+.up-ph-metalogo {
+  width: 16px; height: 16px; display: block; flex: 0 0 auto; object-fit: cover;
+  filter: grayscale(1) contrast(0.5) brightness(1.15);
+}
 .up-ph-metatxt { font-size: 12px; font-weight: 600; color: var(--vc-third); line-height: 1; }
 
 .up-ph-heading { margin: 0 0 12px; font-size: 28px; font-weight: 500; color: var(--vc-text);
