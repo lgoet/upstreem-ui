@@ -117,7 +117,12 @@
       '<div class="utf-wrap">' +
         '<button class="utf-trigger" type="button" aria-haspopup="listbox" aria-expanded="false">' +
           ICON.tag + '<span class="utf-label">Topics</span>' +
-          '<span class="utf-chev">' + ICON.chev + '</span>' +
+          /* See models-filter.js: both glyphs in the DOM, CSS swaps them on hover once something
+             is selected. */
+          '<span class="utf-chev">' +
+            '<span class="utf-chev-down">' + ICON.chev + '</span>' +
+            '<span class="utf-chev-x" role="button" tabindex="-1" aria-label="Clear selection">' + ICON.x + '</span>' +
+          '</span>' +
         '</button>' +
         '<div class="utf-menu" role="dialog">' +
           /* Search row: input with the magnifier INSIDE on the right, and Clear as its own button
@@ -376,7 +381,19 @@
     }
 
     /* ---------------- interactions ---------------- */
-    elTrigger.addEventListener("click", function (e) { e.stopPropagation(); setOpen(!open); });
+    elTrigger.addEventListener("click", function (e) {
+      e.stopPropagation();
+      /* The chevron doubles as a clear button while a filter is active, same as in the models
+         picker. It does NOT toggle the panel: aiming at an X means "remove the filter". */
+      var onX = false;
+      try { onX = !!(e.target.closest && e.target.closest(".utf-chev-x")); } catch (err) {}
+      if (onX && root.classList.contains("has-sel")) {
+        selected = [];
+        commit();
+        return;
+      }
+      setOpen(!open);
+    });
     elMenu.addEventListener("click", function (e) {
       e.stopPropagation();
       /* A click anywhere else in the panel dismisses the sorter -- the document-level handler

@@ -136,7 +136,13 @@
         '<button class="umf-trigger" type="button" aria-haspopup="listbox" aria-expanded="false">' +
           '<span class="umf-trigger-ic">' + ICON.stack + '</span>' +
           '<span class="umf-label">Models</span>' +
-          '<span class="umf-chev">' + ICON.chev + '</span>' +
+          /* Both glyphs live in the DOM; CSS swaps them on hover once something is selected.
+             Rendering the X only on hover through JS would need mouseenter/mouseleave on a node
+             that gets rebuilt on every selection change, and the two would drift apart. */
+          '<span class="umf-chev">' +
+            '<span class="umf-chev-down">' + ICON.chev + '</span>' +
+            '<span class="umf-chev-x" role="button" tabindex="-1" aria-label="Clear selection">' + ICON.x + '</span>' +
+          '</span>' +
         '</button>' +
         '<div class="umf-menu" role="dialog">' +
           /* Search row: input with the magnifier INSIDE on the right, Clear as its own button
@@ -444,7 +450,22 @@
     }
 
     /* ---------------- interactions ---------------- */
-    elTrigger.addEventListener("click", function (e) { e.stopPropagation(); setOpen(!open); });
+    elTrigger.addEventListener("click", function (e) {
+      e.stopPropagation();
+      /* The chevron doubles as a clear button while a filter is active. Same effect as Clear in
+         the panel, and it deliberately does NOT toggle the panel: someone aiming at an X wants the
+         filter gone, not a dropdown opened or closed under their cursor.
+         Checked against the CLASS, not against a hover query: :hover cannot be read reliably on a
+         touch device, and there the X is simply never shown, so the condition is false anyway. */
+      var onX = false;
+      try { onX = !!(e.target.closest && e.target.closest(".umf-chev-x")); } catch (err) {}
+      if (onX && root.classList.contains("has-sel")) {
+        selected = [];
+        commit();
+        return;
+      }
+      setOpen(!open);
+    });
     elMenu.addEventListener("click", function (e) {
       e.stopPropagation();
       if (sortOpen && !elSort.contains(e.target)) setSortOpen(false);

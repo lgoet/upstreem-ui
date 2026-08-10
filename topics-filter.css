@@ -151,3 +151,18 @@
 @media (prefers-reduced-motion: reduce){
   .utf-menu, .utf-trigger, .utf-sort-btn, .utf-clear, .utf-new { transition: none; }
 }
+
+/* ---------- chevron doubles as Clear ----------
+   With a filter active, hovering the trigger turns the chevron into an X; clicking it clears the
+   selection, exactly like the Clear button inside the panel. Both glyphs sit in the same 16px box
+   so the swap costs no layout and the trigger cannot change width mid-hover.
+   Only while utf-root.has-sel: with nothing selected there is nothing to clear, and an X offering
+   to undo nothing is worse than no affordance at all. */
+.utf-chev { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; }
+.utf-chev-down, .utf-chev-x { display: inline-flex; align-items: center; justify-content: center; }
+.utf-chev-x { display: none; }
+.utf-chev-x svg { width: 13px; height: 13px; }
+.utf-root.has-sel .utf-trigger:hover .utf-chev-down { display: none; }
+.utf-root.has-sel .utf-trigger:hover .utf-chev-x { display: inline-flex; }
+/* The X is the destructive half of the button, so it says so on hover. */
+.utf-root.has-sel .utf-trigger:hover .utf-chev-x svg { stroke: var(--vc-text); }
