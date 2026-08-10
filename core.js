@@ -2465,6 +2465,11 @@
      (topics-manager, no data-sticky-top concept) still needs its sort/filter menus to escape a
      short host container, and shouldn't have to fake-enable sticky positioning just to get the
      side effect. */
+  /* On window: two data-cdn-pin values load core.js twice, and both copies must agree on which
+     boxes are scroll regions -- disagreeing is how one of them unclips what the other protects. */
+  var SCROLL_REGIONS = window.__upScrollRegions ||
+    (window.__upScrollRegions = (typeof WeakSet === "function" ? new WeakSet() : null));
+
   function unclipAncestors(root, restore){
     var el = root.parentElement, guard = 0;
     while (el && el !== document.body && el !== document.documentElement && guard++ < 40){
@@ -2493,27 +2498,35 @@
          viewport: that shape is an app scroll region, empty or not. The wrappers this function
          exists for are short (a short component means a short Bubble wrapper), so this costs
          nothing -- they stay unclipped exactly as before. */
-      var vpH = window.innerHeight || document.documentElement.clientHeight || 0;
-      /* Height ALONE decides this, deliberately without asking what overflow currently says.
-         The previous version required overflow-y to be auto/scroll right now -- and that is
-         exactly what let it destroy the page: while a drawer is open the app sets #main to
-         overflow:hidden, so at that moment the scroll region does NOT look scrollable, falls
-         through to the clips-branch below, and gets an inline overflow:visible written onto it.
-         Inline beats the stylesheet, so removing the lock class afterwards changes nothing and the
-         page can never be scrolled again -- the "it scrolls once after load and then never" report.
-         makeSticky calls this on every resize tick, so it only takes one such tick.
-         This function exists for SHORT host wrappers (a short component means a short wrapper);
-         nothing it legitimately needs to unclip is anywhere near viewport height. */
-      var isPageRegion = vpH > 0 && el.clientHeight >= vpH * 0.8;
-      if (isPageRegion){
-        /* Repair a page already broken earlier in this session by the old rule. */
+      /* WHICH ancestor is the page's scroll region, and which is just a clipper.
+
+         This used to be decided by HEIGHT: anything at least 80% of the viewport tall was assumed
+         to be a page region and left alone. That assumption was "a short component means a short
+         host wrapper" -- true until prompt-research was converted to page scrolling, at which
+         point its Bubble HTML wrapper became 1561px tall with overflow:hidden, got skipped as a
+         supposed page region, and kept clipping. Measured on the real page: the sticky toolbar had
+         position:sticky and top:16px and still scrolled away, because sticky is bounded by that
+         wrapper. Height never was the distinction.
+
+         The distinction is whether the box SCROLLS. #main computes overflow-y:auto; the HTML
+         wrapper computes hidden and always did. The one complication is that the app sets #main to
+         overflow:hidden while a drawer is open, so a snapshot taken at that moment would misread
+         it as a plain clipper -- which is what the height rule was really protecting against. So
+         the answer is remembered instead of re-derived: an element seen with scrollable overflow
+         even once is a scroll region for the life of the page, drawer or no drawer. */
+      var canScrollY2 = canScrollY;
+      if (canScrollY2 && SCROLL_REGIONS) { try { SCROLL_REGIONS.add(el); } catch(e){} }
+      var knownScroller = false;
+      if (SCROLL_REGIONS) { try { knownScroller = SCROLL_REGIONS.has(el); } catch(e){} }
+      if (canScrollY2 || knownScroller){
+        /* Repair a scroll region this function wrote onto before it knew better -- either under
+           the old height rule, or on a tick where a drawer had it locked to hidden. */
         if (el.hasAttribute("data-up-unclipped")){
           el.style.overflow = el.getAttribute("data-up-unclipped") || "";
           el.removeAttribute("data-up-unclipped");
         }
         break;
       }
-      if (scrolls) break;
       var clips = (cs.overflow === "hidden" || cs.overflow === "clip" ||
                    cs.overflowX === "hidden" || cs.overflowX === "clip" ||
                    oy === "hidden" || oy === "clip");
