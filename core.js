@@ -4288,6 +4288,64 @@
   })();
 
   /* ---------------------------------------------------------------------------------------------
+     Market store. Third store of the same shape, and it needs BOTH halves of the topic store's
+     design, not just the fan-out: a market row carries prompt_count, and the list only ever holds
+     markets the team has actually assigned prompts to. Adding or deleting a prompt therefore
+     changes this list, exactly the way creating a topic changes that one. marketsChanged() is the
+     fan-in for that -- one well-known Bubble function, answered by re-running the RPC and calling
+     setUpstreemMarkets again, so no mutation site has to know which pickers exist.
+     The model store deliberately has no such counterpart: models are near-static config that
+     nothing in the app creates. */
+  var MARKETS = (window.__upMarkets = window.__upMarkets || { list: [], at: 0, seq: 0, subs: [] });
+
+  function getMarkets(){ return MARKETS.list.slice(); }
+  function onMarkets(fn, owner){
+    var sub = { fn: fn, owner: owner || null };
+    MARKETS.subs.push(sub);
+    return function(){
+      var i = MARKETS.subs.indexOf(sub);
+      if (i >= 0) MARKETS.subs.splice(i, 1);
+    };
+  }
+  function setMarkets(rows, label){
+    var list = parseLoose(rows, label || "markets");
+    if (!list) return false;
+    if (!isArray(list)) list = [list];
+    MARKETS.list = list;
+    MARKETS.at = nowMs();
+    MARKETS.seq++;
+    for (var i = MARKETS.subs.length - 1; i >= 0; i--){
+      var sub = MARKETS.subs[i];
+      if (sub.owner && !document.contains(sub.owner)){ MARKETS.subs.splice(i, 1); continue; }
+      try { sub.fn(list.slice()); } catch(e){
+        if (window.console) console.warn("[markets] a subscriber threw while updating:", e);
+      }
+    }
+    return true;
+  }
+  function marketsChanged(){
+    var fn = resolveBubbleFn("bubble_fn_upMarketsChanged");
+    if (typeof fn === "function"){ try { fn(""); } catch(e){} return true; }
+    if (window.console) {
+      console.info("[markets] bubble_fn_upMarketsChanged not found. The market lists on this page " +
+        "will not refresh by themselves, so their prompt counts go stale as soon as a prompt is " +
+        "added or deleted. Add a Toolbox \"JavaScript to Bubble\" element named upMarketsChanged " +
+        "(Trigger event checked) whose workflow re-runs the markets RPC and calls " +
+        "setUpstreemMarkets(). See bubble/markets_filter_bubble.html.");
+    }
+    return false;
+  }
+  window.setUpstreemMarkets = function(rows){ return setMarkets(rows, "setUpstreemMarkets"); };
+  window.getUpstreemMarkets = getMarkets;
+  window.upstreemMarketsChanged = marketsChanged;
+  (function drainMarketsQueue(){
+    var q = window.__upMarketsQueue;
+    if (!q || !q.length) return;
+    window.__upMarketsQueue = [];
+    for (var i = 0; i < q.length; i++){ try { setMarkets(q[i], "setUpstreemMarkets (queued)"); } catch(e){} }
+  })();
+
+  /* ---------------------------------------------------------------------------------------------
      Page-wide theme. Same shape as the topic store above, for the same reason: one call, every
      component follows, including ones that mount later.
 
@@ -4453,6 +4511,10 @@
     getModels: getModels,
     setModels: setModels,
     onModels: onModels,
+    getMarkets: getMarkets,
+    setMarkets: setMarkets,
+    onMarkets: onMarkets,
+    marketsChanged: marketsChanged,
     setUpstreemTheme: setUpstreemTheme,
     onTheme: onTheme,
     getUpstreemTheme: getUpstreemTheme,
