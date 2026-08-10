@@ -1670,10 +1670,9 @@
 .up-root .utf-menu, .up-root .umf-menu, .up-root .umk-menu,
 .up-root .udr-menu, .up-root .uap-menu {
   border-color: var(--up-menu-border);
-  /* Ueber das Drawer-Band. Die 60, auf der die Panels standen, stammt aus der Zeit, als sie nur
-     gegen Geschwister in der eigenen Komponente antreten mussten -- in einem Drawer (9905-9930)
-     verlieren sie damit gegen alles, was der Drawer nach ihnen malt. 9940 liegt darueber und
-     unter dem Modal-Shell (100000), der weiter gewinnen muss. Ueber --up-menu-z pro Placement
-     nachjustierbar, falls ein Host noch hoeher baut. */
-  z-index: var(--up-menu-z, 9940);
+  /* Ganz nach oben, direkt unter die Bulk-Bar (99999) und den Modal-Shell (100000), die beide
+     weiter gewinnen muessen. 9940 reichte nicht: Teile des Drawers bauen hoeher als das
+     dokumentierte 9905-9930-Band, und eine Zahl, die man gegen einen fremden Host schaetzt, ist
+     immer die naechste Runde. Ueber --up-menu-z pro Placement nachjustierbar. */
+  z-index: var(--up-menu-z, 99998);
 }
