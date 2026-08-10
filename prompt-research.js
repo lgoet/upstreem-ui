@@ -389,6 +389,10 @@
     var isResults = name === 'results';
     var isError = name === 'error';
     root.setAttribute('data-research-state', name);
+    /* The toolbar only exists in the results view, so its height can only be measured once that
+       view is up — remeasure on every state change. applyStickyNow is a hoisted declaration and
+       guards on stickyKit, so an early call before init finishes is a no-op rather than a throw. */
+    setTimeout(applyStickyNow, 0);
     root.classList.toggle('is-running', isRunning);
     root.classList.toggle('is-results', isResults);
     root.classList.toggle('is-error', isError);
@@ -878,6 +882,25 @@
      also portal -- portal IS root now that the sidebar moved inline (see the "sidebar" note
      above), and calling this twice on the same element double-registers the delegated listener. */
   if (UC.makeTooltips){ UC.makeTooltips(root, isDark); }
+
+  /* ---------- sticky toolbar ----------
+     The same UC.makeSticky every big table uses: it pins .up-head at --up-sticky-top and keeps
+     --up-thead-off in sync with the toolbar's measured height, which is what the column header
+     above offsets itself by.
+
+     16px, written here and NOT read from an attribute. The tables expose data-sticky and
+     data-sticky-top because they sit on pages with different chrome above them; this component
+     fills its page and there is exactly one right answer, so a knob would only be a way to get
+     it wrong. Core's default of 171px is meant for a full app page with its own topbar, so the
+     value has to be set — leaving the attribute off would pin 155px too low. */
+  root.setAttribute("data-sticky-top", "16");
+  root.removeAttribute("data-sticky");
+  var stickyKit = UC.makeSticky ? UC.makeSticky(root, root.querySelector(".upr-results-stage .up-head")) : null;
+  function applyStickyNow(){ if (stickyKit) stickyKit.applySticky(); }
+  applyStickyNow();
+  /* applySticky decides on/off from a one-off viewport measurement, and the toolbar's height
+     changes when the results view appears at all — both need a re-run. */
+  window.addEventListener("resize", applyStickyNow);
 
   /* ---------- column explainer: Est. Volume ----------
      The results table's thead is static markup (bubble/prompt_research_bubble.html), never

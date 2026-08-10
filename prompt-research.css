@@ -23,25 +23,29 @@
    scroll contexts fighting each other inside a fixed-height Bubble element, which is exactly the
    "scrolling feels broken" report. Do not convert it again without also changing the Bubble
    element to fit-height. */
+/* This component used to be its own scroll box: fixed height, root scrolls on the start screen,
+   table body scrolls in results mode. It scrolls with the PAGE now, which is the only way the
+   toolbar can pin the way every big table's does -- position:sticky needs a scrollport it does
+   not own. Same conversion the opportunities board went through (commit 9bfc83d) and for the
+   same reason. The Bubble element has to be set to FIT TO CONTENT for this to take effect. */
 .upr-root {
-  height: 100%;
+  height: auto;
   min-height: 520px;
   padding: 0;
-  overflow: auto;
+  overflow: visible;
   /* Volume meter ramp: four steps from "barely searched" to "high demand". Kept as the standalone
      had them -- these are not the app's up/down colours and must not drift into them. */
   --upr-vol-1: #d2865d; --upr-vol-2: #d9b85d; --upr-vol-3: #9fd25d; --upr-vol-4: #60d25d;
   --upr-vol-track: #e8eaee;
 }
 .up-root[data-theme="dark"].upr-root { --upr-vol-track: #303030; }
-.upr-root.is-results, .upr-root.is-running { overflow: hidden; }
 .upr-root button, .upr-root input, .upr-root textarea { font-family: inherit; }
 
 /* ---------- hero shell ---------- */
 .upr-shell {
   width: 100%;
   height: auto;
-  min-height: 100%;
+  min-height: 520px;
   padding: clamp(24px, 4vw, 52px);
   display: flex;
   flex-direction: column;
@@ -50,7 +54,7 @@
   overflow: visible;
 }
 .upr-root.is-results .upr-shell,
-.upr-root.is-running .upr-shell { height: 100%; min-height: inherit; overflow: hidden; }
+.upr-root.is-running .upr-shell { min-height: 0; }
 /* A settings dropdown opens downwards inside a scroll box, so the shell needs somewhere to scroll
    to while one is open. Same trick the standalone used. */
 .upr-root.is-dd-open:not(.is-results):not(.is-running) .upr-shell { padding-bottom: 340px; }
@@ -353,8 +357,8 @@
 /* ---------- results ----------
    Fills the root; only the table body scrolls. Nav and toolbar are fixed rows above it. */
 .upr-results-stage {
-  width: 100%; height: 100%; min-height: 0; position: relative; z-index: 4;
-  display: none; flex-direction: column; overflow: hidden;
+  width: 100%; height: auto; min-height: 0; position: relative; z-index: 4;
+  display: none; flex-direction: column; overflow: visible;
 }
 .upr-root.is-results .upr-results-stage { display: flex; }
 .upr-results-stage > .upr-results-nav, .upr-results-stage > .up-head { flex: 0 0 auto; }
@@ -422,18 +426,19 @@
 .upr-menu-item.is-danger { color: #b0200c; }
 .upr-menu-item.is-danger:hover { background: color-mix(in srgb, #b0200c 8%, transparent); }
 /* Column widths for core's .up-thead/.up-row grid. Prompt gets the room, actions a fixed lane.
-   This box IS the scrollport in results mode (core's .up-box is overflow:hidden), so the column
-   header pins to its top rather than to the page. */
+   No scrollport here any more: the page scrolls, so core's .up-sticky .up-box (overflow:visible)
+   applies and the column header pins to the viewport under the toolbar instead of to this box. */
 .upr-box {
   --up-cols: minmax(0, 2.4fr) minmax(0, 1.7fr) 150px 200px;
-  flex: 0 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
+  flex: 0 0 auto;
 }
 /* --vt-head-bg is semi-transparent, which is fine for a header that never has anything behind it.
    Pinned, the rows slide underneath — so the same opaque base core paints under its own sticky
    thead goes here too. */
+/* Under the toolbar, not at the top of a box that no longer scrolls: the same offset every table
+   uses. --up-thead-off is the toolbar's measured height, kept in sync by UC.makeSticky. */
 .upr-box .up-thead {
-  position: sticky; top: 0; z-index: 2;
+  position: sticky; top: calc(var(--up-sticky-top) + var(--up-thead-off)); z-index: 5;
   background-image: linear-gradient(var(--vt-head-bg), var(--vt-head-bg));
   background-color: var(--vc-bg);
 }
