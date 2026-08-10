@@ -118,27 +118,7 @@
     /* Same data-brand-name/-logo/-isdark re-sync as prompts-page-header.js, same reason: Bubble
        can resolve those dynamic expressions after this root is already mounted, patching the
        attribute in place rather than replacing the node. */
-    var nameEl = root.querySelector(".pph-metaname");
-    var logoEl = root.querySelector(".up-ph-metalogo");
-    function syncFromAttrs(){
-      var wantDark = UC.isYes(root.getAttribute("data-isdark"));
-      if (wantDark) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
-
-      var name = root.getAttribute("data-brand-name") || "";
-      if (name === "BRAND_NAME") name = "";
-      if (nameEl) nameEl.textContent = name;
-
-      var logo = root.getAttribute("data-brand-logo") || "";
-      if (logo === "BRAND_LOGO_URL") logo = "";
-      if (logoEl){
-        if (logo){ logoEl.src = logo; logoEl.style.display = ""; }
-        else { logoEl.removeAttribute("src"); logoEl.style.display = "none"; }
-      }
-    }
-    syncFromAttrs();
-    new MutationObserver(syncFromAttrs).observe(root, {
-      attributes: true, attributeFilter: ["data-isdark", "data-brand-name", "data-brand-logo"]
-    });
+    UC.makePageHeaderMeta(root);
 
     /* No page nav here, so nothing else would set the responsive tier classes -- and without
        is-vnarrow the 32px top clearance for Bubble's mobile sidebar toggle never applies. */

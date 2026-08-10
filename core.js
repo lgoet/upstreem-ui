@@ -2147,6 +2147,42 @@
     };
   }
 
+  /* The page header's brand meta: theme, brand name, brand logo. Six page headers had this
+     character for character -- the third-largest duplicate in the repo, and the kind that drifts
+     silently, because a fix applied to one of six looks done.
+
+     Bubble sets these attributes on the root LATER and edits them in place rather than replacing
+     the node, so a one-shot read at init leaves the header showing nothing. The MutationObserver
+     is what makes it survive that, and it is exactly the guard the tables already use. */
+  function makePageHeaderMeta(root){
+    var nameEl = root.querySelector(".pph-metaname");
+    var logoEl = root.querySelector(".up-ph-metalogo");
+    function syncFromAttrs(){
+      var wantDark = isYes(root.getAttribute("data-isdark"));
+      if (wantDark) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
+
+      var name = root.getAttribute("data-brand-name") || "";
+      if (name === "BRAND_NAME") name = "";           // unreplaced Bubble placeholder, not a brand
+      if (nameEl) nameEl.textContent = name;
+
+      var logo = root.getAttribute("data-brand-logo") || "";
+      if (logo === "BRAND_LOGO_URL") logo = "";
+      if (logoEl){
+        /* display:none rather than just an unset src: src="" resolves to the page's own URL, fails
+           to load, and shows the browser's broken-image icon while the logo is still unresolved. */
+        if (logo){ logoEl.src = logo; logoEl.style.display = ""; }
+        else { logoEl.removeAttribute("src"); logoEl.style.display = "none"; }
+      }
+    }
+    syncFromAttrs();
+    try {
+      new MutationObserver(syncFromAttrs).observe(root, {
+        attributes: true, attributeFilter: ["data-isdark", "data-brand-name", "data-brand-logo"]
+      });
+    } catch(e){}
+    return { sync: syncFromAttrs };
+  }
+
   /* Page-header subpage nav: builds the sliding-tab row (see the Page Header Kit in core.css for
      the full markup contract) and wires click/keydown selection plus the width-driven is-narrow/
      is-vnarrow responsive tiers. Shared because every page-headers/* component needs the exact
@@ -4653,6 +4689,7 @@
     ensureEmojiLib: ensureEmojiLib,
     makeTopicModal: makeTopicModal,
     makePageNav: makePageNav,
+    makePageHeaderMeta: makePageHeaderMeta,
     widthTiers: widthTiers,
     spinOnce: spinOnce,
 
