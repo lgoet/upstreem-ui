@@ -29,6 +29,12 @@
 /* The label is the value, so it carries the primary colour while the rest of the button stays
    muted -- same relationship the date-range trigger has. */
 .utf-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--vc-text); }
+/* The label is the only free text in the trigger, so it is the only thing that can make the button
+   grow without bound: the root is width:max-content, so a long name pushes the whole control wider
+   until it hits the parent. Capped here instead, which truncates the NAME and leaves the icon,
+   counter and chevron intact. */
+.utf-label { max-width: 160px; white-space: nowrap; }
+
 .utf-chev { margin-left: -2px; }
 /* Exactly one topic selected: show its own dot instead of a count, so the trigger names the
    filter rather than merely counting it. */
@@ -132,10 +138,43 @@
 .utf-pinsep { height: 1px; margin: 5px 9px; background: var(--vc-border); }
 .utf-empty { padding: 14px 10px; text-align: center; color: var(--vc-third); font-size: 12.5px; }
 
-/* ---------- foot: Any/All + New Topic ---------- */
+/* ---------- foot: Any/All + groupings + New Topic ---------- */
 .utf-foot { display: flex; align-items: center; gap: 10px; margin: 6px -10px 0; padding: 10px 10px 0; border-top: 1px solid var(--vc-border); }
+/* The right-hand cluster is pushed as a group, so the grouping button keeps its place next to New
+   Topic whether or not New Topic is rendered at all (data-newtopic="no" drops it). */
+.utf-foot-right { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; }
+
+/* Grouping toggle. Icon button in the app's standard 32px box, with prompts-table's notify dot:
+   the same control in two places has to carry the same "there is something on" mark. */
+.utf-grpbtn {
+  position: relative; display: grid; place-items: center; width: 32px; height: 32px; padding: 0;
+  border: 1px solid var(--vc-border); border-radius: 8px;
+  background: var(--vc-bg); color: var(--vc-text); cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+.utf-grpbtn:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
+.utf-grpbtn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+/* Geometry copied from prompts-table's .upt-group-dot, down to the 6px and the corner offset. */
+.utf-grpbtn-dot { position: absolute; top: 5px; right: 5px; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--vc-text); opacity: 0; transition: opacity 120ms ease; }
+.utf-grpbtn.is-on { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
+.utf-grpbtn.is-on .utf-grpbtn-dot { opacity: 1; }
+
+/* ---------- custom groupings section ----------
+   Sits at the top of the list, above the topics, separated by a rule rather than by a gap alone:
+   these are a different KIND of thing, not more topics, and a gap on its own reads as scroll
+   spacing once the list is long enough to move. */
+.utf-grp-sec { padding-bottom: 6px; margin-bottom: 4px; border-bottom: 1px solid var(--vc-border); }
+.utf-grp-head { padding: 2px 9px 5px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--vc-third); }
+.utf-grp-none { padding: 4px 10px 8px; font-size: 12.5px; color: var(--vc-third); }
+/* The grouping's own glyph where a topic carries its colour chip: same slot, same 10px optical
+   weight, so the two row types line up on one left edge. */
+.utf-grp-ic { flex: 0 0 auto; display: inline-flex; color: var(--vc-third); }
+.utf-grp-ic svg { width: 13px; height: 13px; display: block; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+
 .utf-new {
-  margin-left: auto; height: 32px; padding: 0 11px; border: 1px solid var(--vc-border); border-radius: 8px;
+  height: 32px; padding: 0 11px; border: 1px solid var(--vc-border); border-radius: 8px;
   background: var(--vc-bg); color: var(--vc-text);
   display: inline-flex; align-items: center; gap: 6px;
   font-family: inherit; font-size: 12px; font-weight: 500; cursor: pointer;

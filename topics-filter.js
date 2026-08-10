@@ -57,8 +57,29 @@
     check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
     cbOff: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/></svg>',
     cbOn:  '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M17.2 8.8 10.4 15.6 6.8 12" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    plus: '<svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'
+    plus: '<svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+    /* prompts-table's GRP_ICON verbatim. The same control has to look the same in both places, and
+       these two are the only ones in the app that open custom groupings. */
+    group: '<svg viewBox="0 0 24 24" stroke-width="1.7"><rect x="3.75" y="5.25" width="16.5" height="5.25" rx="1.5"/><rect x="11.25" y="13.5" width="9" height="5.25" rx="1.5"/><polyline points="3.75,13.5 6.75,16.5 3.75,19.5"/></svg>'
   };
+
+  /* Custom groupings are written by the prompts table and read here. Same localStorage key, same
+     team scoping through UC.storeKey -- a grouping is a list of TAG IDS, and a tag id from one team
+     resolves to nothing in another, so an unscoped key would produce silently empty groupings.
+     Deliberately read on every render rather than cached: the prompts table can add or rename one
+     while this dropdown is open on the same page, and there is no event between the two. */
+  function groupsKey(){ return UC.storeKey ? UC.storeKey("promptGroups") : "promptGroups"; }
+  function readCustomGroups(){
+    try {
+      var raw = window.localStorage.getItem(groupsKey());
+      if (!raw) return [];
+      var arr = JSON.parse(raw);
+      if (!Array.isArray(arr)) return [];
+      return arr.filter(function (g) {
+        return g && typeof g.key === "string" && g.key && Array.isArray(g.tag_ids) && g.tag_ids.length;
+      });
+    } catch (e) { return []; }
+  }
 
   var SORTS = [
     { key: "used",  label: "Most used" },
@@ -96,6 +117,9 @@
     var sortKey = saved.sortKey || DEFAULT_SORT;
     var query = "";
     var open = false, sortOpen = false, cursor = -1;
+    /* Persisted with the rest of the instance state: Bubble rebuilds this element repeatedly, and
+       a section the user opened should not close itself on the next re-render. */
+    var groupsOpen = !!saved.groupsOpen;
     var isDark = false;
 
     /* Topics authored straight into the element, so a page needs no Run-JavaScript step at all.
@@ -152,7 +176,12 @@
               '<button class="up-seg-btn" type="button" data-mode="or">Or</button>' +
               '<button class="up-seg-btn" type="button" data-mode="and">And</button>' +
             '</span>' +
-            (wantsNewTopic() ? '<button class="utf-new" type="button">' + ICON.plus + '<span>New Topic</span></button>' : '') +
+            '<span class="utf-foot-right">' +
+              '<button class="utf-grpbtn" type="button" data-tip="Custom groupings" aria-label="Custom groupings" aria-pressed="false">' +
+                ICON.group + '<span class="utf-grpbtn-dot"></span>' +
+              '</button>' +
+              (wantsNewTopic() ? '<button class="utf-new" type="button">' + ICON.plus + '<span>New Topic</span></button>' : '') +
+            '</span>' +
           '</div>' +
         '</div>' +
       '</div>';
@@ -167,6 +196,7 @@
     var elSortMenu= root.querySelector(".utf-sort-menu");
     var elMode    = root.querySelector(".utf-foot");
     var elList    = root.querySelector(".utf-list");
+    var elGrpBtn  = root.querySelector(".utf-grpbtn");
     var unregister = null;
 
     /* ---------------- data helpers ---------------- */
@@ -218,15 +248,62 @@
                '<span class="utf-opt-count">' + toNum(t.prompt_count) + '</span>' +
              '</div>';
     }
+    /* A grouping is "selected" when every topic in it is. That is the only definition that makes
+       the row's checkbox honest: a partially selected grouping is not the state the row offers, it
+       is a state you can reach by ticking topics individually. Clicking therefore selects ALL of
+       its topics, or clears them if they were all on already. */
+    function groupTopicIds(g) {
+      var have = {};
+      topics.forEach(function (t) { have[t.id] = 1; });
+      return g.tag_ids.filter(function (id) { return have[id]; });
+    }
+    function groupOn(g) {
+      var ids = groupTopicIds(g);
+      return ids.length > 0 && ids.every(function (id) { return isSel(id); });
+    }
+    function groupsHtml() {
+      if (!groupsOpen) return "";
+      var list = readCustomGroups();
+      /* The search filters groupings by name too. Typing narrows one list, not one of two. */
+      var q = query.toLowerCase();
+      if (q) list = list.filter(function (g) { return g.key.toLowerCase().indexOf(q) >= 0; });
+      if (!list.length) {
+        return '<div class="utf-grp-sec">' +
+                 '<div class="utf-grp-head">Custom Groupings</div>' +
+                 '<div class="utf-grp-none">' +
+                   (readCustomGroups().length ? "No groupings match" : "None saved yet") +
+                 '</div>' +
+               '</div>';
+      }
+      var rows = list.map(function (g) {
+        var on = groupOn(g);
+        var n = groupTopicIds(g).length;
+        return '<div class="up-filter-item utf-opt utf-grp-opt' + (on ? " is-checked" : "") +
+               '" role="option" tabindex="0" aria-selected="' + (on ? "true" : "false") +
+               '" data-group="' + esc(g.key) + '">' +
+                 '<span class="up-filter-check">' + ICON.check + '</span>' +
+                 '<span class="utf-opt-main">' +
+                   '<span class="utf-grp-ic">' + ICON.group + '</span>' +
+                   '<span class="utf-opt-name">' + esc(g.key) + '</span>' +
+                 '</span>' +
+                 '<span class="utf-opt-count">' + n + '</span>' +
+               '</div>';
+      }).join("");
+      return '<div class="utf-grp-sec">' +
+               '<div class="utf-grp-head">Custom Groupings</div>' + rows +
+             '</div>';
+    }
     function renderList() {
       var v = visible();
+      var grp = groupsHtml();
       if (!v.all.length) {
-        elList.innerHTML = '<div class="utf-empty">' + (topics.length ? "No topics match" : "No topics yet") + '</div>';
+        elList.innerHTML = grp +
+          '<div class="utf-empty">' + (topics.length ? "No topics match" : "No topics yet") + '</div>';
         return;
       }
       var i = 0, html = "";
       v.all.forEach(function (t) { html += optHtml(t, i++); });
-      elList.innerHTML = html;
+      elList.innerHTML = grp + html;
     }
     function renderTrigger() {
       var n = selected.length;
@@ -268,10 +345,15 @@
         opts[i].classList.toggle("is-active", opts[i].getAttribute("data-mode") === mode);
       }
     }
-    function render() { renderList(); renderTrigger(); renderMode(); renderSortMenu(); }
+    function renderGroupsBtn() {
+      if (!elGrpBtn) return;
+      elGrpBtn.classList.toggle("is-on", groupsOpen);
+      elGrpBtn.setAttribute("aria-pressed", groupsOpen ? "true" : "false");
+    }
+    function render() { renderList(); renderTrigger(); renderMode(); renderSortMenu(); renderGroupsBtn(); }
 
     function persist() {
-      STATE[instanceId] = { selected: selected.slice(), mode: mode, sortKey: sortKey };
+      STATE[instanceId] = { selected: selected.slice(), mode: mode, sortKey: sortKey, groupsOpen: groupsOpen };
     }
 
     /* ---------------- publish ----------------
@@ -482,9 +564,31 @@
       commit();
     }
     elList.addEventListener("click", function (e) {
+      var g = e.target.closest ? e.target.closest("[data-group]") : null;
+      if (g) { toggleGroup(g.getAttribute("data-group")); return; }
       var b = e.target.closest ? e.target.closest(".utf-opt") : null;
       if (!b) return;
       toggle(b.getAttribute("data-id"));
+    });
+    function toggleGroup(key) {
+      var list = readCustomGroups(), g = null;
+      for (var i = 0; i < list.length; i++) if (list[i].key === key) g = list[i];
+      if (!g) return;
+      var ids = groupTopicIds(g);
+      if (!ids.length) return;                    // every topic in it has since been deleted
+      if (groupOn(g)) {
+        selected = selected.filter(function (id) { return ids.indexOf(id) < 0; });
+      } else {
+        ids.forEach(function (id) { if (selected.indexOf(id) < 0) selected.push(id); });
+      }
+      commit();
+    }
+
+    if (elGrpBtn) elGrpBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      groupsOpen = !groupsOpen;
+      cursor = -1;
+      persist(); renderList(); renderGroupsBtn();   // no selection changed: no event
     });
 
     root.querySelector(".utf-clear").addEventListener("click", function () {

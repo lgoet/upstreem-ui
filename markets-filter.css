@@ -37,6 +37,12 @@
 /* The label is the value, so it carries the primary colour while the rest of the button stays
    muted — the same relationship the topics and date-range triggers have. */
 .umk-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--vc-text); }
+/* The label is the only free text in the trigger, so it is the only thing that can make the button
+   grow without bound: the root is width:max-content, so a long name pushes the whole control wider
+   until it hits the parent. Capped here instead, which truncates the NAME and leaves the icon,
+   counter and chevron intact. */
+.umk-label { max-width: 160px; white-space: nowrap; }
+
 .umk-chev { margin-left: -2px; }
 /* Counter disc from two selections up. Filled with the primary colour, the number in the surface
    colour of the OTHER theme — the same inversion the checkbox in the panel makes. Fixed 16px so
