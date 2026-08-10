@@ -77,6 +77,10 @@
    anybody types, and the text still starts at the TOP LEFT and grows downward — a vertically
    centred single line jumping to the top on the second line is the thing that reads as broken. */
 .uap-inputwrap { position: relative; }
+/* display:block, and it matters. A textarea is inline-block by default, so the wrapper sits a few
+   pixels taller than the field itself — and the Enter button, which is positioned against the
+   WRAPPER, then ends up further from the field's bottom edge than from its right edge. */
+.uap-input { display: block; }
 .uap-input {
   width: 100%; box-sizing: border-box; resize: none; overflow-y: auto;
   min-height: 80px; max-height: 200px; padding: 10px 44px 10px 12px;
