@@ -792,6 +792,16 @@
       /* Granularity only means something for the time series — the matrix is a snapshot. */
       var gran = root.querySelector(".vc-gran");
       if (gran) gran.style.display = (chartMode === "line") ? "" : "none";
+
+      /* Y-axis switch: Landscape only. Written here from JS rather than left to the CSS rule
+         (.ubo-root.is-landscape .ubo-yaxis), which is what it was before and which did not hold on
+         the live page -- measured there: correct root class, is-landscape false, and the switcher
+         still computed display:block with no inline style in sight. Whatever swallows that rule,
+         the switcher's visibility is not worth another round of hunting for it: the same inline
+         write the granularity control right above already uses settles it, and it cannot be
+         out-specified by anything. */
+      var yax = root.querySelector(".ubo-yaxis");
+      if (yax) yax.style.display = (chartMode === "landscape") ? "inline-flex" : "none";
     }
     function renderChartSide(){
       if (!isOwner()) return;
