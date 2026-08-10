@@ -4043,6 +4043,18 @@
     window.__upDdOutsideBound = true;
     document.addEventListener("pointerdown", function(e){
       if (!OPEN_DD.length) return;
+      /* A press inside a body-mounted overlay is not "outside" anything. These layers are opened
+         BY a dropdown and live outside its DOM subtree by construction -- the topic modal opened
+         from the topics filter's New Topic button is the case that broke: pressing Save in the
+         modal read as a press outside the panel, so the panel shut behind it. Checked once for
+         the whole loop rather than per entry: an overlay is above everything, so it is outside
+         nothing. */
+      var inOverlay = false;
+      try {
+        inOverlay = !!(e.target.closest && e.target.closest(
+          ".up-topicmodal-backdrop, .up-modal, .up-portal, .uo-portal, .upr-portal, [popover]"));
+      } catch(err){}
+      if (inOverlay) return;
       for (var i = OPEN_DD.length - 1; i >= 0; i--){
         var o = OPEN_DD[i], inside = false;
         try {

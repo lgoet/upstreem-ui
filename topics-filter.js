@@ -352,7 +352,16 @@
          never sees these because of the stopPropagation above. */
       if (sortOpen && !elSort.contains(e.target)) setSortOpen(false);
     });
+    /* A body-mounted overlay is not "outside": the topic modal is opened BY the New Topic button
+       in this very panel and lives in <body> by construction, so every click in it -- including
+       Save -- read as a click outside and shut the panel behind it. core's registry handler grew
+       the same exemption; this is the component's own copy of the rule. */
+    function inOverlay(t) {
+      try { return !!(t && t.closest && t.closest(".up-topicmodal-backdrop, .up-modal, .up-portal, [popover]")); }
+      catch (e) { return false; }
+    }
     document.addEventListener("click", function (e) {
+      if (inOverlay(e.target)) return;
       if (open && !root.contains(e.target)) setOpen(false);
       else if (sortOpen && !elSort.contains(e.target)) setSortOpen(false);
     });
@@ -427,6 +436,7 @@
 
     /* New Topic goes through core's shared modal — the same one topics-manager and the prompts
        table's bulk editor open, so a topic created here looks and behaves identically. */
+    var pendingNewTopic = "";
     var topicModal = UC.makeTopicModal ? UC.makeTopicModal({
       getIsDark: function () { return isDark; },
       onSave: function (payload) {
@@ -441,6 +451,11 @@
            component deliberately does not insert it locally: a hand-made row would carry no id,
            so selecting it would send Bubble something it cannot resolve. */
         if (UC.topicsChanged) UC.topicsChanged();
+        /* The modal deliberately stays open until the save is CONFIRMED -- there is no optimistic
+           id to show on create, so closing on click would claim success before Bubble has one.
+           The confirmation is the refreshed list arriving with this name in it; setTopics closes
+           it then. core's own timeout stays as the fallback if the RPC never answers. */
+        pendingNewTopic = String(payload.name || "").trim().toLowerCase();
       }
     }) : null;
     root.querySelector(".utf-new").addEventListener("click", function () {
@@ -480,6 +495,14 @@
       instanceId: instanceId,
       setTopics: function (rows) {
         topics = Array.isArray(rows) ? rows.slice() : [];
+        /* A create counts as done once the name is actually in the list Bubble sent back. */
+        if (pendingNewTopic && topicModal && topicModal.isOpen && topicModal.isOpen()) {
+          var arrived = false;
+          for (var pi = 0; pi < topics.length; pi++) {
+            if (String(topics[pi] && topics[pi].name || "").trim().toLowerCase() === pendingNewTopic) { arrived = true; break; }
+          }
+          if (arrived) { pendingNewTopic = ""; try { topicModal.close(); } catch (e) {} }
+        }
         /* Drop selections whose topic no longer exists, otherwise the trigger counts something
            the list cannot show and Clear all is the only way out. */
         var ids = {};
