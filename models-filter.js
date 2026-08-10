@@ -42,6 +42,11 @@
   /* Survives a Bubble re-render of the element, keyed by instance: a rebuilt element must continue
      the filter, not restart it. */
   var STATE = (window.__umfStore = window.__umfStore || {});
+  /* URLs, die schon einmal erfolgreich geladen haben. Auf window, weil zwei data-cdn-pin-Werte
+     diese Datei zweimal laden koennen und beide Kopien vom selben Wissen profitieren sollen.
+     Beim echten Neuaufbau (neue Modelliste) wird die Kachel damit gar nicht erst gezeigt: das
+     Bild liegt im Browser-Cache, hat aber trotzdem keinen Zustand, den das frische Markup kennt. */
+  var LOGO_OK = (window.__umfLogoOk = window.__umfLogoOk || {});
 
   var ICON = {
     /* Feather "layers" -- the stack glyph. Feather has no icon literally called stack; layers is
@@ -259,6 +264,7 @@
     function logoHtml(m, cls) {
       var url = fixUrl(m.logo_url);
       var initial = esc(nameOf(m).charAt(0).toUpperCase() || "?");
+      if (url && LOGO_OK[url]) cls += " has-img";
       return '<span class="' + cls + ' umf-logo">' +
                '<span class="umf-logo-fb">' + initial + '</span>' +
                (url ? '<img class="umf-logo-img" src="' + esc(url) + '" alt="" loading="lazy">' : '') +
@@ -270,7 +276,7 @@
       for (var i = 0; i < imgs.length; i++) (function (img) {
         if (img.__umfWired) return;
         img.__umfWired = true;
-        function ok(){ var p = img.parentNode; if (p) p.classList.add("has-img"); }
+        function ok(){ var p = img.parentNode; if (p) p.classList.add("has-img"); LOGO_OK[img.src] = 1; }
         function bad(){ img.style.display = "none"; var p = img.parentNode; if (p) p.classList.remove("has-img"); }
         if (img.complete) { if (img.naturalWidth > 0) ok(); else bad(); return; }
         img.addEventListener("load", ok);
@@ -304,6 +310,23 @@
       elList.innerHTML = html;
       wireLogos(elList);
     }
+    /* Selection and cursor are CLASS changes, not a reason to rebuild the list.
+       Rebuilding innerHTML threw every <img> away and created a new one, so on each click the
+       logos went through their fallback tile again for a frame or two: that was the flicker.
+       The row ORDER never depends on the selection (see visible), so nothing has to move here. */
+    function syncRows() {
+      var rows = elList.querySelectorAll(".umf-opt");
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        var on = isSel(r.getAttribute("data-key"));
+        r.classList.toggle("is-checked", on);
+        r.setAttribute("aria-selected", on ? "true" : "false");
+        r.classList.toggle("is-cursor", Number(r.getAttribute("data-idx")) === cursor);
+      }
+    }
+    /* The trigger holds a logo too, so the same rule applies: only touch it when what it shows
+       actually changes. Without this the trigger's own logo blinked on every click. */
+    var lastTrigKey = null;
     function renderTrigger() {
       var n = selected.length;
       root.classList.toggle("has-sel", n > 0);
@@ -314,11 +337,14 @@
            so the trigger states the filter instead of counting it. */
         var m = byKey(selected[0]);
         elLabel.textContent = m ? nameOf(m) : "1 Model";
-        elTrigIc.innerHTML = m ? logoHtml(m, "umf-trigger-logo") : ICON.stack;
-        wireLogos(elTrigIc);
+        if (lastTrigKey !== selected[0]) {
+          lastTrigKey = selected[0];
+          elTrigIc.innerHTML = m ? logoHtml(m, "umf-trigger-logo") : ICON.stack;
+          wireLogos(elTrigIc);
+        }
       } else {
         elLabel.textContent = "Models";
-        elTrigIc.innerHTML = ICON.stack;
+        if (lastTrigKey !== null) { lastTrigKey = null; elTrigIc.innerHTML = ICON.stack; }
         /* From two selections up, a filled counter disc. Fixed width, so the trigger does not
            change size between 2 and 12. */
         if (n > 1) {
@@ -416,7 +442,8 @@
       }
     }
 
-    function commit() { persist(); render(); emit(); }
+    /* Everything a click can change: the ticks, the trigger, the footer. NOT the list markup. */
+    function commit() { persist(); syncRows(); renderTrigger(); renderMode(); emit(); }
 
     /* ---------------- open / close ---------------- */
     function setOpen(v) {
@@ -436,8 +463,11 @@
         /* Deliberately NOT focused -- see topics-filter.js for the reasoning. */
       } else {
         setSortOpen(false);
+        /* Only rebuild when the query actually had something in it. Closing a panel nobody typed
+           into would otherwise throw the identical markup away and take the logos with it. */
+        var hadQuery = !!query;
         query = ""; elSearchIn.value = ""; elSearch.classList.remove("has-text");
-        renderList();
+        if (hadQuery) renderList();
         if (unregister) { unregister(); unregister = null; }
       }
     }
@@ -490,7 +520,7 @@
         cursor = (e.key === "ArrowDown" ? cursor + 1 : cursor - 1);
         if (cursor < 0) cursor = rows.length - 1;
         if (cursor >= rows.length) cursor = 0;
-        renderList();
+        syncRows();
         var cur = elList.querySelector(".umf-opt.is-cursor");
         if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: "nearest" });
       } else if (e.key === "Enter" && cursor >= 0 && rows[cursor]) {
@@ -542,7 +572,7 @@
         selected = [selected[selected.length - 1]];
         dropped = true;
       }
-      persist(); render();
+      persist(); syncRows(); renderTrigger(); renderMode();
       if (publish || dropped) emit();
     }
 
@@ -619,7 +649,8 @@
         /* Honour the mode even when Bubble hands over more than one key in single mode -- the
            control must never display a state it would not let the user create. */
         if (mode === "single" && selected.length > 1) selected = [selected[selected.length - 1]];
-        persist(); render();                            // silent: this mirrors state Bubble already has
+        /* Same reasoning as commit: a selection arriving from Bubble is not a new list either. */
+        persist(); syncRows(); renderTrigger(); renderMode();   // silent: mirrors state Bubble has
       },
       setMode: function (m) { applyMode(m, false); },    // silent unless it had to drop a selection
       setTheme: function (t) { isDark = (String(t).toLowerCase() === "dark"); syncConfig(); render(); },
