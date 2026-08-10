@@ -185,8 +185,8 @@
           return { label: citeLabel(t), color: col, base: col, dot: false };
         });
       },
-      apply: { scope: "url" },
-      applyLabel: "Show URLs by citation type"
+      apply: { scope: "domain", rank: "top" },
+      applyLabel: "Show top domains"
     },
     {
       id: "url-types",
@@ -293,7 +293,20 @@
   ];
   var REF_BY_ID = {}; REF.forEach(function(r){ REF_BY_ID[r.id] = r; });
   var refOpen = null;       // id of the entry currently expanded: one at a time, like an accordion
-  var refListOpen = false;  // the whole section starts collapsed, see refHtml()
+  /* Reference ALWAYS starts collapsed, on every open of the palette. Deliberately not persisted:
+     the palette is opened to do something, and a section of documentation is not that. Actions is
+     the opposite case and does persist, see below. */
+  var refListOpen = false;
+  /* Actions, on the other hand, is a real preference: someone who never uses those four entries
+     should not have to collapse them again on every page. localStorage, wrapped because Bubble can
+     run this in contexts where storage throws (private mode, a sandboxed iframe). */
+  var ACT_KEY = "mqa_actions_open";
+  var actionsOpen = (function(){
+    try { return window.localStorage.getItem(ACT_KEY) !== "0"; } catch(e){ return true; }
+  })();
+  function persistActions(){
+    try { window.localStorage.setItem(ACT_KEY, actionsOpen ? "1" : "0"); } catch(e){}
+  }
 
 
   function anyFilter(){ return !!(FILTERS.scope || FILTERS.rank || FILTERS.type || FILTERS.urltype || FILTERS.market || FILTERS.mentioning); }
@@ -450,7 +463,9 @@
       '<button class="mqa-action mqa-ref mqa-reftop" type="button" role="option" data-reflist="1"' +
               ' aria-expanded="' + (refListOpen ? "true" : "false") + '">' +
         '<span class="mqa-action-ic mqa-ref-ic">' +
-          '<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>' +
+          /* Books side by side with the last one leaning: the library glyph, not the single
+             open book. A shelf reads as "several things looked up", one book reads as "a manual". */
+          '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="4" height="16" rx="1"/><rect x="9" y="4" width="4" height="16" rx="1"/><path d="M16.5 5.6l3.4 1 -3.3 12.2 -3.4-1z"/></svg>' +
         '</span>' +
         '<span class="mqa-main"><span class="mqa-primary">Reference</span></span>' +
         '<span class="mqa-action-hint">' + REF.length + ' entries</span>' +
@@ -459,6 +474,7 @@
         '</span>' +
       '</button>';
     if (!refListOpen) return html + '</div>';
+    html += '<div class="mqa-fade">';
     REF.forEach(function(r){
       var on = (refOpen === r.id);
       var hint = (typeof r.hint === "function") ? r.hint() : (r.hint || "");
@@ -478,7 +494,9 @@
          by CSS — puts eleven paragraphs and two full colour legends into the palette on every
          idle render, and the palette re-renders on every keystroke. */
       if (on){
-        html += '<div class="mqa-ref-body">' +
+        /* .mqa-ref-inner is what the grid track collapses: a grid item can animate from 0fr to
+           1fr, its own padding cannot. All the body's content therefore lives one level down. */
+        html += '<div class="mqa-ref-body"><div class="mqa-ref-inner">' +
                   '<p class="mqa-ref-text">' + esc(r.body) + '</p>';
         if (r.chips){
           /* Same constants the palette's own /citation-type and /url-type menus read, drawn with
@@ -495,11 +513,11 @@
                     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>' +
                   '</button>';
         }
-        html += '</div>';
+        html += '</div></div>';
       }
       html += '</div>';
     });
-    return html + '</div>';
+    return html + '</div></div>';
   }
 
   /* Turns a reference entry's `apply` into the same palette state the user could have typed —
@@ -534,7 +552,20 @@
 
   function buildStatic(){
     var html = refHtml() +
-               '<div class="mqa-sep"></div><div class="mqa-group"><div class="mqa-group-head">Actions</div>';
+      '<div class="mqa-sep"></div><div class="mqa-group mqa-actgroup' + (actionsOpen ? " is-expanded" : "") + '">' +
+      '<button class="mqa-action mqa-ref mqa-acttop" type="button" role="option" data-actlist="1"' +
+              ' aria-expanded="' + (actionsOpen ? "true" : "false") + '">' +
+        '<span class="mqa-action-ic mqa-ref-ic">' +
+          '<svg viewBox="0 0 24 24"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>' +
+        '</span>' +
+        '<span class="mqa-main"><span class="mqa-primary">Actions</span></span>' +
+        '<span class="mqa-action-hint">' + STATIC.length + ' entries</span>' +
+        '<span class="mqa-ref-chev">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
+        '</span>' +
+      '</button>';
+    if (!actionsOpen){ actionsWrap.innerHTML = html + '</div>'; return; }
+    html += '<div class="mqa-fade">';
     STATIC.forEach(function(a){
       html += '<button class="mqa-action" type="button" role="option" data-action="' + a.action + '">' +
         '<span class="mqa-action-ic">' + a.icon + '</span>' +
@@ -543,8 +574,14 @@
         '<span class="mqa-enter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>' +
       '</button>';
     });
-    html += '</div>';
+    html += '</div></div>';
     actionsWrap.innerHTML = html;
+  }
+  function toggleActions(){
+    actionsOpen = !actionsOpen;
+    persistActions();
+    buildStatic();
+    refreshRows();
   }
 
   /* ---------- state renders ---------- */
@@ -876,6 +913,10 @@
   }
   function afterFilterChange(){
     clearTimeout(debTimer);                                   // no stale keystroke search on top
+    /* A filter was applied, so the reader has moved on to results. Fold the reference away rather
+       than leaving a paragraph open above them. Only rebuild when something actually changed --
+       renderIdle() below does its own buildStatic(), and runSearch() must not lose the block. */
+    if (collapseReference()) buildStatic();
     if (FILTERS.rank || query.length >= MIN) runSearch();     // a click isn't typing -> no debounce needed
     else renderIdle();
   }
@@ -1058,6 +1099,7 @@
     if (el.hasAttribute("data-cmd")){ applyCommand(el.getAttribute("data-cmd"), el.getAttribute("data-cmd-val")); return; }
     /* Before the .mqa-action branch below: a reference row carries that class too (it is the same
        row shape) but must expand instead of firing a Bubble action and closing the palette. */
+    if (el.hasAttribute("data-actlist")){ toggleActions(); return; }
     if (el.hasAttribute("data-reflist")){ toggleRefList(); return; }
     if (el.hasAttribute("data-ref")){ toggleRef(el.getAttribute("data-ref")); return; }
     if (el.classList.contains("mqa-action")) selectStatic(el.getAttribute("data-action"));
@@ -1123,6 +1165,11 @@
   }
 
   /* ---------- open / close ---------- */
+  function collapseReference(){
+    if (!refListOpen && !refOpen) return false;
+    refListOpen = false; refOpen = null;
+    return true;
+  }
   function open(){
     if (isOpen) return; isOpen = true;
     overlay.setAttribute("data-theme", root.getAttribute("data-theme") || "light");
@@ -1131,6 +1178,12 @@
     overlay.style.zIndex = "2147483647";
     overlay.classList.add("is-open"); overlay.setAttribute("aria-hidden", "false");
     document.addEventListener("keydown", onKeydown, true);
+    /* Always closed on open: the palette is for doing, not for reading. buildStatic() has to run
+       here explicitly -- renderIdle() below only toggles the block's visibility and re-renders the
+       results area, it does not rebuild the Actions markup, so without this the section would come
+       back exactly as the previous session left it. */
+    collapseReference();
+    buildStatic();
     renderIdle();
     setTimeout(function(){ try { input.focus(); input.select(); } catch(_){} }, 20);
   }

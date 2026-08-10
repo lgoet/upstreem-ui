@@ -58,7 +58,9 @@
     /* Footer switcher. Feather "square" for single (one thing) and "copy" for multi (more than
        one of the same thing) -- the same pair the app uses elsewhere for one-vs-many. */
     single: '<svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="3"/></svg>',
-    multi:  '<svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>'
+    /* Three stacked squares. Deliberately NOT Feather's "copy": that glyph already means brands
+       elsewhere in the app, and one icon may not carry two meanings. */
+    multi:  '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="13" height="13" rx="2.5"/><path d="M19 8v11a2 2 0 0 1-2 2H6"/><path d="M22.5 12v7a3 3 0 0 1-3 3h-9"/></svg>'
   };
 
   var SORTS = [
@@ -150,12 +152,12 @@
                keeps both buttons the same width regardless of word length. */
             '<span class="up-seg umf-seg" role="group" aria-label="Selection mode">' +
               '<button class="up-seg-btn umf-seg-btn" type="button" data-mode="single"' +
-                ' data-tip="One model at a time — picking another replaces it">' +
-                '<span class="umf-seg-ic">' + ICON.single + '</span><span class="umf-seg-lb">Single</span>' +
+                ' aria-label="Single select" data-tip="Single select. Picking another model replaces the current one.">' +
+                '<span class="umf-seg-ic">' + ICON.single + '</span>' +
               '</button>' +
               '<button class="up-seg-btn umf-seg-btn" type="button" data-mode="multi"' +
-                ' data-tip="Combine several models in one filter">' +
-                '<span class="umf-seg-ic">' + ICON.multi + '</span><span class="umf-seg-lb">Multi</span>' +
+                ' aria-label="Multi select" data-tip="Multi select. Combine several models in one filter.">' +
+                '<span class="umf-seg-ic">' + ICON.multi + '</span>' +
               '</button>' +
             '</span>' +
           '</div>' +
@@ -183,16 +185,24 @@
       for (var i = 0; i < models.length; i++) if (keyOf(models[i]) === k) return models[i];
       return null;
     }
+    /* Inactive models stay in the list instead of vanishing from it. A model that was switched off
+       is still part of the vocabulary, and hiding it makes an older saved filter referring to it
+       look like a bug rather than a deliberate state. They sort to the BOTTOM, render dimmed, and
+       cannot be picked (see toggle) -- visible as context, not as a choice. */
+    function isActive(m) { return m.is_active !== false; }
     function visible() {
       var q = query.toLowerCase();
       var list = models.filter(function (m) {
-        if (m.is_active === false) return false;      // inactive models are simply not offered
         if (!q) return true;
         /* Provider is searchable too: typing "openai" should find the whole family, which is how
            anyone actually looks for a model. */
         return (nameOf(m) + " " + String(m.provider || "")).toLowerCase().indexOf(q) >= 0;
       });
       list.sort(function (a, b) {
+        /* Active before inactive, always, whatever the sort key says. The sort key then orders
+           inside each of the two blocks. */
+        var act = (isActive(a) ? 0 : 1) - (isActive(b) ? 0 : 1);
+        if (act !== 0) return act;
         if (sortKey === "name") return nameOf(a).localeCompare(nameOf(b));
         /* Provider first, then name inside it -- otherwise models from one provider scatter and
            the grouping the sort promises is not visible. */
@@ -210,23 +220,46 @@
                '<span class="up-optrow-check">' + ICON.check + '</span></button>';
       }).join("");
     }
-    /* A logo that fails to load must not leave a broken-image glyph in a filter row, so the
-       fallback (provider initial on a neutral tile) is always in the DOM and the <img> simply
-       hides itself on error. Same approach responses-table uses for its model chip. */
+    /* A logo that fails to load must not leave a broken-image glyph in a filter row, so the initial
+       on a neutral tile sits underneath as a fallback.
+
+       The tile is REMOVED again once the image actually loads. Leaving it visible was the bug: a
+       model logo is usually a transparent PNG, so the grey square showed through everywhere the
+       artwork was not opaque, and every row carried a visible box behind its logo. The tile now
+       only survives where it is genuinely needed, which is no URL or a URL that failed.
+
+       Wired in JS rather than as an inline onerror/onload attribute: the handlers have to cope
+       with an image that is ALREADY complete by the time the markup lands (a cached logo fires
+       neither event), and that check has nowhere to live in an attribute. */
     function logoHtml(m, cls) {
       var url = fixUrl(m.logo_url);
       var initial = esc(nameOf(m).charAt(0).toUpperCase() || "?");
-      return '<span class="' + cls + '">' +
+      return '<span class="' + cls + ' umf-logo">' +
                '<span class="umf-logo-fb">' + initial + '</span>' +
-               (url ? '<img class="umf-logo-img" src="' + esc(url) + '" alt="" loading="lazy" ' +
-                      'onerror="this.style.display=&quot;none&quot;">' : '') +
+               (url ? '<img class="umf-logo-img" src="' + esc(url) + '" alt="" loading="lazy">' : '') +
              '</span>';
+    }
+    function wireLogos(scope) {
+      if (!scope) return;
+      var imgs = scope.querySelectorAll(".umf-logo-img");
+      for (var i = 0; i < imgs.length; i++) (function (img) {
+        if (img.__umfWired) return;
+        img.__umfWired = true;
+        function ok(){ var p = img.parentNode; if (p) p.classList.add("has-img"); }
+        function bad(){ img.style.display = "none"; var p = img.parentNode; if (p) p.classList.remove("has-img"); }
+        if (img.complete) { if (img.naturalWidth > 0) ok(); else bad(); return; }
+        img.addEventListener("load", ok);
+        img.addEventListener("error", bad);
+      })(imgs[i]);
     }
     function optHtml(m, idx) {
       var k = keyOf(m);
       var on = isSel(k);
+      var off = !isActive(m);
       return '<div class="up-filter-item umf-opt' + (on ? " is-checked" : "") + (idx === cursor ? " is-cursor" : "") +
-             '" role="option" tabindex="0" aria-selected="' + (on ? "true" : "false") +
+             (off ? " is-inactive" : "") +
+             '" role="option" tabindex="' + (off ? "-1" : "0") + '" aria-disabled="' + (off ? "true" : "false") +
+             '" aria-selected="' + (on ? "true" : "false") +
              '" data-key="' + esc(k) + '" data-idx="' + idx + '">' +
                '<span class="up-filter-check">' + ICON.check + '</span>' +
                '<span class="umf-opt-main">' + logoHtml(m, "umf-opt-logo") +
@@ -244,6 +277,7 @@
       var i = 0, html = "";
       list.forEach(function (m) { html += optHtml(m, i++); });
       elList.innerHTML = html;
+      wireLogos(elList);
     }
     function renderTrigger() {
       var n = selected.length;
@@ -256,6 +290,7 @@
         var m = byKey(selected[0]);
         elLabel.textContent = m ? nameOf(m) : "1 Model";
         elTrigIc.innerHTML = m ? logoHtml(m, "umf-trigger-logo") : ICON.stack;
+        wireLogos(elTrigIc);
       } else {
         elLabel.textContent = "Models";
         elTrigIc.innerHTML = ICON.stack;
@@ -442,6 +477,10 @@
 
     function toggle(k) {
       if (!k) return;
+      var m = byKey(k);
+      /* An inactive model is shown but not selectable. Checked here rather than by leaving the
+         click handler unbound, so keyboard Enter is refused on the same rule as a mouse click. */
+      if (m && !isActive(m)) return;
       var i = selected.indexOf(k);
       if (i >= 0) {
         selected.splice(i, 1);

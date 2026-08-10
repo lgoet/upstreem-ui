@@ -125,9 +125,34 @@
          Dashboard         data-models-fn = "bubble_fn_umfModels_dashboard"
 
      ...and create the matching "JavaScript to Bubble" element on each page, with "Trigger event"
-     checked. instance_id is in the payload as well, so a shared name can still be filtered on —
-     but separate names are cheaper and do not fire workflows that then have to decide to do
-     nothing.
+     checked. instance_id is in the payload as well, so a shared name can still be filtered on, but
+     separate names are cheaper and do not fire workflows that then have to decide to do nothing.
+
+     THE APPLY EVENT, name by name. Exactly the shape the topics dropdown uses, and for the same
+     reason: the element inside the reusable cannot trigger a workflow on the page.
+
+       Element INSIDE the reusable      data-models-fn       = bubble_fn_umfModels_prompts
+       Element ON the page              data-models-apply-fn = bubble_fn_umfApply_prompts
+
+     Two different names on the same placement. The first stores model_keys and select_mode in the
+     reusable's states, the second is what makes the table reload. Per page:
+
+       Prompts     bubble_fn_umfModels_prompts     bubble_fn_umfApply_prompts
+       Responses   bubble_fn_umfModels_responses   bubble_fn_umfApply_responses
+       Dashboard   bubble_fn_umfModels_dashboard   bubble_fn_umfApply_dashboard
+
+     Both are Toolbox "JavaScript to Bubble" elements of type text with "Trigger event" checked.
+     The apply element lives on the PAGE, not in the reusable, or it cannot reach the page's
+     workflow. Both receive the identical JSON, so the apply workflow can read model_keys straight
+     out of its own value and does not have to reach into the reusable's states.
+
+     ══ INACTIVE MODELS ═══════════════════════════════════════════════════════════
+
+     A model with is_active false is still listed. It sorts below the active ones, renders dimmed
+     and cannot be picked. Hiding it outright was the alternative and it is worse: a saved filter
+     that still refers to a switched-off model would then look like a bug rather than a state you
+     can see. Its key survives in an existing selection until the next setUpstreemModels() drops it
+     from the list entirely.
 -->
 
 <div class="up-root umf-root"
