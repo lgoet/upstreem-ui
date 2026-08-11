@@ -1,0 +1,75 @@
+<meta charset="utf-8">
+<link rel="stylesheet" href="core.css?v=zfix">
+<style>
+  /* Nachbau der Host-App: die Seite scrollt nicht, #main scrollt, Drawer als FloatingGroup
+     auf 9910, plus eine Bubble-typische Focus-Group auf 9200. Der Komponenten-Wrapper traegt
+     einen eigenen z-index (5) -- genau die Konstellation, die 49e75db auf 99997 gehoben hat. */
+  html, body { height: 100%; margin: 0; font-family: system-ui, sans-serif; }
+  body { overflow: hidden; }
+  #main { height: 100vh; overflow: hidden auto; padding: 20px; }
+  .bubble-wrapper { position: relative; z-index: 5; overflow: hidden; padding: 12px; border: 1px dashed #bbb; }
+  .drawer { position: fixed; top: 0; right: 0; width: 420px; height: 100%; background: #123; color: #fff;
+            z-index: 9910; padding: 20px; display: none; }
+  .drawer.is-on { display: block; }
+  .focusgroup { position: fixed; top: 120px; left: 40px; width: 260px; height: 160px; background: #285;
+                color: #fff; z-index: 9200; padding: 12px; display: none; }
+  .focusgroup.is-on { display: block; }
+  #out { font: 12px/1.6 ui-monospace, monospace; white-space: pre-wrap; padding: 10px; background: #f6f6f6; }
+</style>
+<body>
+<div id="main">
+  <button onclick="run()">Test</button>
+  <div class="bubble-wrapper" id="wrap">
+    <div class="up-root uut-root" data-instance="z1" data-isdark="no">
+      <div class="up-head"><div class="up-heading">Probe</div></div>
+    </div>
+  </div>
+  <div id="out"></div>
+  <div style="height:1500px"></div>
+</div>
+<div class="drawer is-on" id="drawer">DRAWER (z 9910)</div>
+<div class="focusgroup is-on" id="fg">FOCUS GROUP (z 9200)</div>
+
+<script src="core.js?v=zfix"></script>
+<script>
+function run(){
+  var wrap = document.getElementById("wrap");
+  var root = document.querySelector(".up-root");
+  var out = [];
+  out.push("vor  unclipAncestors: wrapper z-index = " + getComputedStyle(wrap).zIndex +
+           ", data-up-lifted = " + wrap.getAttribute("data-up-lifted"));
+
+  window.UpstreemCore.unclipAncestors(root);
+
+  out.push("nach unclipAncestors: wrapper z-index = " + getComputedStyle(wrap).zIndex +
+           ", data-up-lifted = " + wrap.getAttribute("data-up-lifted"));
+
+  /* Der eigentliche Beweis: liegt der Drawer noch OBEN? elementFromPoint mitten im Drawer. */
+  var d = document.getElementById("drawer").getBoundingClientRect();
+  var hitDrawer = document.elementFromPoint(d.left + d.width/2, d.top + d.height/2);
+  var f = document.getElementById("fg").getBoundingClientRect();
+  var hitFg = document.elementFromPoint(f.left + f.width/2, f.top + f.height/2);
+  out.push("Treffer in der Drawer-Mitte  : " + (hitDrawer && (hitDrawer.id || hitDrawer.className)));
+  out.push("Treffer in der Focus-Group   : " + (hitFg && (hitFg.id || hitFg.className)));
+
+  /* Gegenprobe: den ALTEN Lift von Hand setzen und dieselben Punkte messen. */
+  wrap.setAttribute("data-up-lifted", wrap.style.zIndex || "");
+  wrap.style.zIndex = "99997";
+  var hitDrawer2 = document.elementFromPoint(d.left + d.width/2, d.top + d.height/2);
+  var hitFg2 = document.elementFromPoint(f.left + f.width/2, f.top + f.height/2);
+  out.push("--- Gegenprobe mit dem alten Lift (wrapper = 99997) ---");
+  out.push("Treffer in der Drawer-Mitte  : " + (hitDrawer2 && (hitDrawer2.id || hitDrawer2.className)));
+  out.push("Treffer in der Focus-Group   : " + (hitFg2 && (hitFg2.id || hitFg2.className)));
+
+  /* Und jetzt: raeumt der neue Sweep den fremden Lift wieder weg? */
+  window.UpstreemCore.unclipAncestors(root);
+  out.push("--- nach erneutem unclipAncestors (Sweep) ---");
+  out.push("wrapper z-index = " + getComputedStyle(wrap).zIndex +
+           ", data-up-lifted = " + wrap.getAttribute("data-up-lifted"));
+  var hitDrawer3 = document.elementFromPoint(d.left + d.width/2, d.top + d.height/2);
+  out.push("Treffer in der Drawer-Mitte  : " + (hitDrawer3 && (hitDrawer3.id || hitDrawer3.className)));
+
+  document.getElementById("out").textContent = out.join("\n");
+  return out.join("\n");
+}
+</script>

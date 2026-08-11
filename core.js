@@ -2559,6 +2559,19 @@
     (window.__upScrollRegions = (typeof WeakSet === "function" ? new WeakSet() : null));
 
   function unclipAncestors(root, restore){
+    /* Seitenweiter Ruecknahme-Sweep fuer data-up-lifted -- siehe die lange Begruendung weiter
+       unten in der Schleife. Der Lift ist raus; dieser Sweep raeumt weg, was eine aeltere
+       core.js aus einem anderen data-cdn-pin auf derselben Seite noch schreibt. Er laeuft
+       ueber das GANZE Dokument und nicht nur ueber die Vorfahren dieses Roots, weil der Lift
+       von jedem beliebigen Component-Mount stammen kann -- auch von einem, dessen Root
+       inzwischen weg ist. */
+    try {
+      var lifted = document.querySelectorAll("[data-up-lifted]");
+      for (var li = 0; li < lifted.length; li++){
+        lifted[li].style.zIndex = lifted[li].getAttribute("data-up-lifted") || "";
+        lifted[li].removeAttribute("data-up-lifted");
+      }
+    } catch(e){}
     var el = root.parentElement, guard = 0;
     while (el && el !== document.body && el !== document.documentElement && guard++ < 40){
       var cs; try { cs = window.getComputedStyle(el); } catch(e){ break; }
@@ -2618,31 +2631,33 @@
       var clips = (cs.overflow === "hidden" || cs.overflow === "clip" ||
                    cs.overflowX === "hidden" || cs.overflowX === "clip" ||
                    oy === "hidden" || oy === "clip");
+      /* ---- data-up-lifted: ZURUECKGENOMMEN, und darf nicht wiederkommen ----
+         Hier stand ein Block, der jedem Vorfahren mit explizitem z-index eine 99997 verpasst hat,
+         damit ein Dropdown im Drawer nicht mehr von Nachbargruppen ueberdeckt wird. Das hat die
+         gesamte App zerlegt: unclipAncestors laeuft beim MOUNT jeder Komponente, nicht erst beim
+         Oeffnen eines Menues. Also bekam der Bubble-Container, in dem die Komponente steckt,
+         dauerhaft 99997 -- und damit lag er ueber allem, was die App selbst noch aufmacht.
+         Drawer (z 9905-9930) und jede Focus-Group oeffneten weiterhin korrekt, wurden aber
+         HINTER diesem gehobenen Container gezeichnet und waren unsichtbar. Genau das Bild:
+         "die URL wird gesetzt, die Daten laden, aber der Drawer geht nicht auf".
+
+         Ein Dropdown-Problem rechtfertigt nie, fremde Stapelung dauerhaft umzuschreiben: dieses
+         Modul weiss nichts ueber die Ebenen der Host-App und kann darum nicht entscheiden, was
+         ueber was gehoert. Clipping aufzuheben ist lokal und reversibel, Stapelung zu heben ist
+         es nicht.
+
+         Aktiv aufraeumen statt nur weglassen: liegt auf der Seite noch eine aeltere core.js aus
+         einem anderen data-cdn-pin, setzt DIE den Lift weiter. Jeder Durchlauf hier nimmt darum
+         zurueck, was er an data-up-lifted findet -- egal wer es geschrieben hat. */
+      if (el.hasAttribute("data-up-lifted")){
+        el.style.zIndex = el.getAttribute("data-up-lifted") || "";
+        el.removeAttribute("data-up-lifted");
+      }
       if (restore){
         if (el.hasAttribute("data-up-unclipped")){ el.style.overflow = el.getAttribute("data-up-unclipped") || ""; el.removeAttribute("data-up-unclipped"); }
-        if (el.hasAttribute("data-up-lifted")){ el.style.zIndex = el.getAttribute("data-up-lifted") || ""; el.removeAttribute("data-up-lifted"); }
-      } else {
-        if (clips && !el.hasAttribute("data-up-unclipped")){
-          el.setAttribute("data-up-unclipped", el.style.overflow || "");
-          el.style.overflow = "visible";
-        }
-        /* Und die STAPELUNG, aus demselben Grund wie das Clipping.
-
-           Gemessen auf der Live-Seite: ein Dropdown im Drawer wurde ab halber Hoehe von
-           Nachbargruppen mit z-index 9 und 18 ueberdeckt -- obwohl das Panel selbst auf 99998
-           stand. Neun schlaegt 99998, wenn das Panel in einem Stacking-Context sitzt, der als
-           GANZES unter diesen Gruppen rangiert: der Bubble-Wrapper der Komponente hat einen
-           eigenen z-index, und innerhalb davon ist jede Zahl des Panels bedeutungslos. Genau
-           deshalb hat das Hochdrehen des Panels dreimal nichts gebracht.
-
-           Also den Wrapper heben, nicht das Panel. Nur Vorfahren mit einem EXPLIZITEN z-index
-           werden angefasst -- die ohne einen erzeugen keinen Stacking-Context und sind nicht das
-           Problem. Der alte Wert wird gespeichert, restore(true) setzt ihn zurueck. */
-        var zi = cs.zIndex;
-        if (zi && zi !== "auto" && !el.hasAttribute("data-up-lifted")){
-          el.setAttribute("data-up-lifted", el.style.zIndex || "");
-          el.style.zIndex = "99997";
-        }
+      } else if (clips && !el.hasAttribute("data-up-unclipped")){
+        el.setAttribute("data-up-unclipped", el.style.overflow || "");
+        el.style.overflow = "visible";
       }
       el = el.parentElement;
     }
