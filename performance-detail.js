@@ -96,7 +96,10 @@
     return '<span class="up-stack-item' + (logo ? " has-img" : "") + '">' +
              '<span class="up-stack-vis">' +
                '<span class="up-stack-ltr">' + esc(name.charAt(0) || "?") + '</span>' +
-               (logo ? '<img src="' + esc(logo) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
+               /* KEIN loading="lazy": dieser Block oeffnet sich unter dem Falz, und lazy heisst
+                  dort "erst laden, wenn jemand hinscrollt" -- die Kacheln blieben leer, obwohl
+                  die URLs korrekt waren. Es sind hoechstens sieben Bilder. */
+               (logo ? '<img src="' + esc(logo) + '" alt="" referrerpolicy="no-referrer"' +
                        ' onerror="this.closest(\'.up-stack-item\').classList.remove(\'has-img\'); this.remove()">' : "") +
              '</span>' +
            '</span>';
@@ -288,7 +291,6 @@
       var myIdx = -1;
       for (var i = 0; i < col.length; i++) if (String(col[i].company_id) === myId){ myIdx = i; break; }
       var leader = col[0], mine = myIdx >= 0 ? col[myIdx] : null;
-      var max = num(leader.visibility_pct) || 1;
 
       var head;
       if (myIdx === 0){
@@ -318,8 +320,6 @@
                    '<span class="upd-stand-idx">' + (realIdx + 1) + '</span>' +
                    brandChipHtml(c) +
                    '<span class="upd-stand-name">' + esc(String(c.name || "")) + '</span>' +
-                   '<span class="upd-stand-bar"><span class="upd-stand-fill" style="width:' +
-                     Math.max(2, Math.round((v / max) * 100)) + '%"></span></span>' +
                    '<span class="upd-stand-val up-num">' + fmtPctShort(v) + '</span>' +
                  '</div>';
         }).join("") + '</div>';
@@ -352,6 +352,23 @@
        requestId, Loading-Flag) -- die Variations liegen vollstaendig im Speicher, ein Rundgang
        zum Server waere hier reine Latenz. Markup und Auf-/Zuklappen sind trotzdem das geteilte
        .up-search, damit das Feld aussieht und sich anfuehlt wie ueberall sonst. */
+    /* Kleiner Ring statt Balken: ein Balken in einer Tabellenzelle laeuft ueber die ganze
+       Spaltenbreite und macht die Zeile unruhig, ein Ring bleibt ein Zeichen neben der Zahl.
+       Grauer Track, dunkler Bogen -- keine Farbe, weil Share of Voice keine Wertung ist.
+       Der Bogen startet oben: die -90-Grad-Drehung steckt im SVG, nicht in einer CSS-Transform,
+       damit er in beiden Themes und bei jeder Schriftgroesse gleich sitzt. */
+    var RING_R = 6, RING_C = 2 * Math.PI * RING_R;
+    function ringHtml(pct){
+      var p = pct == null || isNaN(pct) ? 0 : Math.max(0, Math.min(100, Number(pct)));
+      var an = (p / 100) * RING_C;
+      return '<span class="upd-ring" aria-hidden="true">' +
+        '<svg viewBox="0 0 16 16" width="16" height="16">' +
+          '<circle class="upd-ring-track" cx="8" cy="8" r="' + RING_R + '" fill="none" stroke-width="3"/>' +
+          '<circle class="upd-ring-fill" cx="8" cy="8" r="' + RING_R + '" fill="none" stroke-width="3"' +
+            ' stroke-dasharray="' + an.toFixed(2) + ' ' + (RING_C - an).toFixed(2) + '"' +
+            ' transform="rotate(-90 8 8)" stroke-linecap="round"/>' +
+        '</svg></span>';
+    }
     function varRows(){
       var list = state.variations || [];
       var q = state.varQuery.toLowerCase();
@@ -381,9 +398,8 @@
         return '<div class="up-row upd-vrow">' +
                  '<div class="up-td upd-td-name" data-tiptrunc>' + esc(String(v.name || "")) + '</div>' +
                  '<div class="up-td upd-td-sov">' +
-                   '<span class="upd-sov-bar"><span class="upd-sov-fill" style="width:' +
-                     Math.max(2, Math.min(100, Math.round(sov == null ? 0 : sov))) + '%"></span></span>' +
                    '<span class="up-num">' + (sov == null ? "-" : fmtPctShort(sov)) + '</span>' +
+                   ringHtml(sov) +
                  '</div>' +
                  '<div class="up-td upd-td-cnt">' +
                    '<span class="up-num">' + (cnt == null ? "-" : Math.round(cnt)) + '</span>' +
