@@ -55,6 +55,23 @@
   function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
   function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
 
+  /* ── Boot-Stubs für die drei seitenweiten Stores ────────────────────────────
+     core.js kommt über das Netz, der Page-Load-Workflow nicht. Ruft Bubble also setUpstreemTopics/
+     Markets/Brands, bevor core.js durch ist, ist die Funktion noch undefined: der Run-JS-Schritt
+     wirft, und der GANZE Aufruf ist weg. Die Seite sieht danach aus wie eine ohne Daten, und
+     nirgends steht ein Fehler.
+
+     Diese Stubs schreiben den Aufruf in eine Queue, die core.js beim Start leert. Sie stehen hier
+     und nicht in einer Komponente, weil hier der einzige Code der Seite läuft, der garantiert vor
+     jedem CDN-Script dran ist. Alle drei Stores, dieselbe Mechanik — kein Sonderweg für einen. */
+  ["Topics","Markets","Brands"].forEach(function(n){
+    var q = "__up" + n + "Queue";
+    window[q] = window[q] || [];
+    if (typeof window["setUpstreem" + n] !== "function"){
+      window["setUpstreem" + n] = function(rows){ window[q].push(rows); };
+    }
+  });
+
   /* core zuerst — async=false hält die Reihenfolge ein, die Komponenten brauchen core.js vorher.
      Die Liste darunter darf gekürzt werden auf das, was auf DIESER Page wirklich vorkommt; alles
      zu laden ist nur bequemer und kostet einmalig ein paar gecachte Requests. */
@@ -68,6 +85,10 @@
   css("urls-table.css");              js("urls-table.js");
   css("domains-table.css");           js("domains-table.js");
   css("topics-manager.css");          js("topics-manager.js");
+  css("responses-table.css");         js("responses-table.js");
+  css("brands-overview.css");         js("brands-overview.js");
+  css("performance-radar.css");       js("performance-radar.js");
+  css("quick-actions.css");           js("quick-actions.js");
 
   /* Chart.js vorwärmen. Ohne das wird es erst beim ERSTEN Chart-Render geholt — also mitten im
      Öffnen des ersten Drawers, der einen Chart enthält. Das data-Attribut ist genau das, worauf

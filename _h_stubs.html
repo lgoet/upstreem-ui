@@ -1,0 +1,49 @@
+<meta charset="utf-8">
+<body style="margin:0;padding:20px;font-family:system-ui,sans-serif">
+<pre id="out" style="font:11px/1.6 ui-monospace,monospace;background:#f6f6f6;padding:10px">läuft…</pre>
+
+<!-- Genau die Reihenfolge einer Bubble-Seite mit dem Header-Script:
+     1. Header-Script (Stubs)  2. Page-Load-Workflow (Run JS)  3. core.js ueber das Netz -->
+
+<script>
+/* 1. Header-Script, wortgleich der Block aus bubble/page_header_preload.html */
+["Topics","Markets","Brands"].forEach(function(n){
+  var q = "__up" + n + "Queue";
+  window[q] = window[q] || [];
+  if (typeof window["setUpstreem" + n] !== "function"){
+    window["setUpstreem" + n] = function(rows){ window[q].push(rows); };
+  }
+});
+</script>
+
+<script>
+/* 2. Page-Load-Workflow, VOR core.js -- ohne Stubs wuerde hier jeder der drei Aufrufe werfen */
+var LOG = [];
+[["Topics",  [{id:"t1", name:"Digitalisierung"}, {id:"t2", name:"Recruiting"}]],
+ ["Markets", [{id:"de", name:"Germany"}]],
+ ["Brands",  [{id:"b1", name:"Anfragenfluss", logo:"//example.com/a.png"},
+              {id:"b2", name:"LeeUp Media", logo:""}]]
+].forEach(function(pair){
+  try { window["setUpstreem" + pair[0]](pair[1]); LOG.push(pair[0] + ": durchgelaufen"); }
+  catch(e){ LOG.push(pair[0] + ": GEWORFEN -- " + e.message); }
+});
+</script>
+
+<script src="core.js?v=s1"></script>
+<script>
+setTimeout(function(){
+  var UC = window.UpstreemCore;
+  LOG.push("");
+  LOG.push("nach core.js -- Queues geleert?");
+  ["Topics","Markets","Brands"].forEach(function(n){
+    LOG.push("  __up" + n + "Queue: " + (window["__up" + n + "Queue"] || []).length + " (soll 0)");
+  });
+  LOG.push("Store-Inhalte:");
+  LOG.push("  Topics:  " + (UC.getTopics()  || []).length);
+  LOG.push("  Markets: " + (UC.getMarkets() || []).length);
+  LOG.push("  Brands:  " + (UC.getBrands()  || []).length);
+  var b = (UC.getBrands() || [])[0];
+  LOG.push("  Brand[0] normalisiert: " + JSON.stringify(b && {id:b.company_id, name:b.name, logo:b.logo_url}));
+  document.getElementById("out").textContent = LOG.join("\n");
+}, 300);
+</script>
