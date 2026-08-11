@@ -456,17 +456,10 @@
       } catch(e){}
     }
 
-    /* ---------------- heat ramp, read from CSS ---------------- */
-    function ramp(){
-      var cs = null;
-      try { cs = getComputedStyle(root); } catch(e){}
-      var out = [];
-      for (var i = 0; i < 5; i++){
-        var v = cs ? (cs.getPropertyValue("--uhm-h" + i) || "").trim() : "";
-        out.push(hexToRgb(v) || RAMP_FALLBACK[i]);
-      }
-      return out;
-    }
+    /* ---------------- heat ramp ----------------
+       Rampe und Interpolation liegen jetzt in core (UC.heatAt), weil der Detailbereich denselben
+       Farbwert fuer seine Kurve braucht. Hier bleibt nur, was wirklich diese Komponente ausmacht:
+       die entsaettigte Variante und der Schalter dazwischen. */
     /* Entsaettigte Skala: KEINE zweite Palette, sondern dieselbe Rampe ueber ihre wahrgenommene
        Helligkeit (BT.601) auf Grauwerte gezogen. Damit bleiben die Abstufungen exakt dieselben wie
        in der farbigen Variante -- eine handgewaehlte Grau-Palette daneben waere die naechste
@@ -476,14 +469,7 @@
       return [y, y, y];
     }
     function heatColor(t){
-      var s = ramp();
-      t = clamp(t, 0, 1);
-      var i = t * (s.length - 1), lo = Math.floor(i), hi = Math.min(s.length - 1, lo + 1), f = i - lo;
-      var out = [
-        Math.round(s[lo][0] + (s[hi][0] - s[lo][0]) * f),
-        Math.round(s[lo][1] + (s[hi][1] - s[lo][1]) * f),
-        Math.round(s[lo][2] + (s[hi][2] - s[lo][2]) * f)
-      ];
+      var out = UC.heatAt ? UC.heatAt(root, t) : RAMP_FALLBACK[Math.round(clamp(t, 0, 1) * 4)];
       return state.scale === "mono" ? desat(out) : out;
     }
     function emptyFill(){

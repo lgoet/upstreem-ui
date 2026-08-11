@@ -20,7 +20,8 @@
    --uhm-empty is the "no measurement" fill: a cell that exists because the matrix is dense, not
    because anything was measured. It has to be clearly quieter than stop 0. */
 .up-root.uhm-root {
-  --uhm-h0: #f0f3f8; --uhm-h1: #c8d4e5; --uhm-h2: #8aa4c4; --uhm-h3: #4a6e96; --uhm-h4: #1e3a5f;
+  /* Die fuenf Farbstufen stehen jetzt in core.css -- zwei Komponenten lesen sie. Hier bleibt nur,
+     was wirklich nur diese Komponente hat. */
   --uhm-empty: #f5f5f5;
   --uhm-lead: 176px;
   /* Panel-Radius 16 statt der App-Vorgabe 14. Ueber das vorhandene Token, nicht mit einer
@@ -29,7 +30,6 @@
   --up-dd-radius: 16px;
 }
 .up-root.uhm-root[data-theme="dark"] {
-  --uhm-h0: #1e2634; --uhm-h1: #283a58; --uhm-h2: #375582; --uhm-h3: #466ea8; --uhm-h4: #5587c8;
   --uhm-empty: #242424;
 }
 

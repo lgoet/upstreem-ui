@@ -529,6 +529,20 @@
        in prompts-table.css -- der Radar gab die Klasse also schon aus und bekam sie nur dann, wenn
        zufaellig auch die Prompts-Table auf der Seite lag. Dritter Verbraucher, also hierher. */
     .up-topicchip.is-static { cursor: default; }
+
+    /* ---------- Heat-Rampe ----------
+       Fuenf Stufen, in JS interpoliert (UC.heatAt). Sie stehen in CSS statt in einem JS-Blob,
+       damit Light und Dark EINE Palette aus der lebenden Kaskade sind statt zweier Listen, die
+       auseinanderlaufen. Seit der Detailbereich die Farbe der 65-Prozent-Zelle fuer seine
+       Kurve braucht, gibt es zwei Verbraucher -- und zwei Kopien einer Palette sind genau die
+       Stelle, an der die eine irgendwann eine andere Blaustufe hat als die andere. Auf .up-root,
+       damit jede Komponente sie erbt. */
+    .up-root {
+      --uhm-h0: #f0f3f8; --uhm-h1: #c8d4e5; --uhm-h2: #8aa4c4; --uhm-h3: #4a6e96; --uhm-h4: #1e3a5f;
+    }
+    .up-root[data-theme="dark"] {
+      --uhm-h0: #1e2634; --uhm-h1: #283a58; --uhm-h2: #375582; --uhm-h3: #466ea8; --uhm-h4: #5587c8;
+    }
     .up-topicchip-lbl { overflow: hidden; text-overflow: ellipsis; }
     .up-topicchip-check { display: inline-flex; align-items: center; justify-content: center;
       width: 0; height: 14px; border-radius: 4px; opacity: 0; overflow: hidden; flex: 0 0 auto;

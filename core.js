@@ -5053,6 +5053,45 @@
     TEAM.id = v;
     return v;
   }
+  /* ---------- Heat-Rampe ----------
+     Die fuenf Stufen stehen als --uhm-h0..--uhm-h4 in core.css, eine Reihe pro Theme. heatAt liest
+     sie aus der lebenden Kaskade des uebergebenen Elements und interpoliert linear -- so bekommt
+     jeder Verbraucher denselben Farbwert fuer denselben Anteil, ohne dass irgendwo eine zweite
+     Palette oder eine zweite Rechnung steht. Der Radar faerbt damit seine Zellen, der Detailbereich
+     seine Kurve mit dem Wert bei 0.65. */
+  var HEAT_FALLBACK = [[240,243,248],[200,212,229],[138,164,196],[74,110,150],[30,58,95]];
+  /* Streng, im Gegensatz zu tint/brighten/darken weiter oben: die kriegen ihre Farbe aus einer
+     Konstante und duerfen von gueltigem Hex ausgehen. Hier kommt der Wert aus getComputedStyle und
+     kann leer sein, wenn das Stylesheet noch nicht da ist -- dann muss null zurueck, damit der
+     Rueckfall greift statt NaN in die Interpolation zu laufen. */
+  function hexToRgb(h){
+    h = String(h == null ? "" : h).trim().replace("#", "");
+    if (h.length === 3) h = h.charAt(0)+h.charAt(0)+h.charAt(1)+h.charAt(1)+h.charAt(2)+h.charAt(2);
+    if (!/^[0-9a-f]{6}$/i.test(h)) return null;
+    var n = parseInt(h, 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+  function heatRamp(el){
+    var cs = null;
+    try { cs = getComputedStyle(el || document.documentElement); } catch(e){}
+    var out = [];
+    for (var i = 0; i < 5; i++){
+      var v = cs ? String(cs.getPropertyValue("--uhm-h" + i) || "").trim() : "";
+      out.push(hexToRgb(v) || HEAT_FALLBACK[i]);
+    }
+    return out;
+  }
+  function heatAt(el, t){
+    var s = heatRamp(el);
+    t = Math.max(0, Math.min(1, Number(t) || 0));
+    var i = t * (s.length - 1), lo = Math.floor(i), hi = Math.min(s.length - 1, lo + 1), f = i - lo;
+    return [
+      Math.round(s[lo][0] + (s[hi][0] - s[lo][0]) * f),
+      Math.round(s[lo][1] + (s[hi][1] - s[lo][1]) * f),
+      Math.round(s[lo][2] + (s[hi][2] - s[lo][2]) * f)
+    ];
+  }
+
   function storeKey(base){ return String(base) + "@" + (getTeam() || "_"); }
   window.setUpstreemTeam = setUpstreemTeam;
   window.getUpstreemTeam = getTeam;
@@ -5084,6 +5123,8 @@
     getTeam: getTeam,
     setUpstreemTeam: setUpstreemTeam,
     storeKey: storeKey,
+    heatRamp: heatRamp,
+    heatAt: heatAt,
     getTopics: getTopics,
     setTopics: setTopics,
     onTopics: onTopics,
