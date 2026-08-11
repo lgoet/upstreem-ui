@@ -1210,6 +1210,11 @@
     function emitCellClick(companyId, topicId){
       var payload = String(companyId == null ? "" : companyId) + "||" + String(topicId == null ? "" : topicId);
       var fnName = root.getAttribute("data-cell-fn") || "bubble_fn_heatmap_cell_clicked";
+      /* ZUERST den Detailbereich, DANN den Bubble-Workflow. Andersherum startet der Workflow seine
+         Run-JS-Schritte, waehrend die Auswahl hier noch nicht gesetzt ist -- und setSelection()
+         raeumt danach auf, was gerade angekommen ist. Das Ergebnis war ein Block, der dauerhaft im
+         Ladezustand stand, obwohl beide Aufrufe durchgelaufen waren. */
+      feedDetail(companyId, topicId);
       var fn = UC.resolveBubbleFn ? UC.resolveBubbleFn(fnName) : window[fnName];
       if (typeof fn === "function"){ try { fn(payload); } catch(e){} }
       else if (window.console){
@@ -1217,7 +1222,6 @@
           "reachable iframe — the cell click reached no Bubble workflow. Check the Toolbox element's name.");
       }
       try { root.dispatchEvent(new CustomEvent("uhmCellClick", { detail: { company_id: companyId, topic_id: topicId }, bubbles: true })); } catch(e){}
-      feedDetail(companyId, topicId);
       hideTip();
     }
 

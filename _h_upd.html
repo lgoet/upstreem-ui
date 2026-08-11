@@ -1,6 +1,6 @@
 <meta charset="utf-8">
-<link rel="stylesheet" href="core.css?v=d3">
-<link rel="stylesheet" href="performance-detail.css?v=d3">
+<link rel="stylesheet" href="core.css?v=d4">
+<link rel="stylesheet" href="performance-detail.css?v=d4">
 <body style="margin:0;padding:20px;font-family:system-ui,sans-serif;background:#fff">
 
 <div style="margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap">
@@ -9,6 +9,8 @@
   <button onclick="nachladen()">RPCs nachliefern (Kurve + Variations)</button>
   <button onclick="window.resetPerformanceDetail('d1')">reset</button>
   <button onclick="dark()">Dark umschalten</button>
+  <button onclick="umgekehrt()">UMGEKEHRTE Reihenfolge: erst RPCs, dann Klick</button>
+  <button onclick="doppelt()">Klick zweimal fuer DIESELBE Zelle</button>
 </div>
 <pre id="out" style="font:11px/1.6 ui-monospace,monospace;background:#f6f6f6;padding:10px;white-space:pre-wrap">bereit</pre>
 
@@ -16,8 +18,8 @@
   <div class="up-root upd-root" data-instance="d1" data-theme="light" data-cdn-pin=""></div>
 </div>
 
-<script src="core.js?v=d3"></script>
-<script src="performance-detail.js?v=d3"></script>
+<script src="core.js?v=d4"></script>
+<script src="performance-detail.js?v=d4"></script>
 <script>
 /* Events mitschreiben: reset() muss NULL feuern (STYLEGUIDE 25). */
 var EVENTS = [];
@@ -87,6 +89,17 @@ var SERIE = {
 function nachladen(){
   window.setPerformanceDetailSeries("d1", SERIE);
   window.setPerformanceDetailVariations("d1", VARIATIONS);
+}
+/* Der Fall des Users: Bubbles Run-JS-Schritte laufen los, bevor die Auswahl gesetzt ist. */
+function umgekehrt(){
+  window.resetPerformanceDetail("d1");
+  window.setPerformanceDetailSeries("d1", SERIE);
+  window.setPerformanceDetailVariations("d1", VARIATIONS);
+  klick();
+}
+/* Bubble ruft render* gern mehrfach -- der zweite Aufruf darf nichts wegwerfen. */
+function doppelt(){
+  klick(); nachladen(); klick();
 }
 function dark(){
   var r = document.querySelector(".upd-root");

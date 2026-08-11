@@ -129,6 +129,8 @@
       varQuery: "",
       loading: false, hasData: false, isDark: false
     };
+    /* Zwischenlager fuer Daten, die vor der Auswahl eintreffen. Siehe setSelection(). */
+    var VORAB = { variations: null, series: { topic: null, global: null }, globalKpis: null };
 
     /* -------- Markup. Die Bubble-Datei traegt nur das Wurzel-Div; alles darunter baut die
        Komponente selbst. Es gibt hier keine Stellen, an denen der Nutzer etwas einsetzen soll,
@@ -468,19 +470,38 @@
     if (UC.onResize) UC.onResize(root, function(){ try { line.resize(); } catch(e){} });
 
     /* ---------------- Oeffentliche Schnittstelle ---------------- */
+    function paarSchluessel(co, tp){
+      return String((co && co.company_id) || "") + "||" + String((tp && tp.topic_id) || "");
+    }
     function setSelection(p){
       p = p || {};
+      var neu = paarSchluessel(p.company, p.topic);
+      var alt = paarSchluessel(state.company, state.topic);
+      var wechsel = neu !== alt;
+
       state.company = p.company || null;
       state.topic   = p.topic || null;
       state.cell    = p.cell || null;
       state.column  = Array.isArray(p.topic_column) ? p.topic_column.slice() : [];
       state.row     = Array.isArray(p.brand_row) ? p.brand_row.slice() : [];
-      /* Eine neue Kombination heisst: alles Nachgeladene ist stale. Nicht stehen lassen -- sonst
-         zeigt der Block die Variations der vorigen Marke unter dem neuen Kopf, und das faellt
-         niemandem auf. */
-      state.series = { topic: null, global: null };
-      state.variations = null;
-      state.globalKpis = null;
+
+      /* Nur bei einer WIRKLICH anderen Kombination leeren. Sonst zeigte der Block die Variations
+         der vorigen Marke unter dem neuen Kopf -- aber ein zweiter Aufruf fuer dieselbe Zelle
+         (Bubble ruft render* gern mehrfach) darf nicht wegwerfen, was gerade geladen wurde. */
+      if (wechsel){
+        state.series = { topic: null, global: null };
+        state.variations = null;
+        state.globalKpis = null;
+      }
+      /* Was VOR der Auswahl ankam, gehoert zu genau dieser Auswahl: die Run-JS-Schritte des
+         Workflows und dieser Direktaufruf sind zwei Wege, deren Reihenfolge Bubble bestimmt.
+         Ohne dieses Zwischenlager blieb der Block im Ladezustand stehen, obwohl beide Aufrufe
+         durchgelaufen waren -- der haesslichste Fehler ueberhaupt, weil nichts danebengeht. */
+      if (VORAB.variations != null){ state.variations = VORAB.variations; VORAB.variations = null; }
+      if (VORAB.series.topic){ state.series.topic = VORAB.series.topic; VORAB.series.topic = null; }
+      if (VORAB.series.global){ state.series.global = VORAB.series.global; VORAB.series.global = null; }
+      if (VORAB.globalKpis){ state.globalKpis = VORAB.globalKpis; VORAB.globalKpis = null; }
+
       state.varQuery = ""; if (elSInput) elSInput.value = "";
       if (elSearch){ elSearch.classList.remove("has-text", "is-open"); }
       state.scope = "topic";
@@ -491,18 +512,22 @@
     }
     function setVariations(rows){
       if (typeof rows === "string"){ try { rows = JSON.parse(rows); } catch(e){ rows = null; } }
-      state.variations = Array.isArray(rows) ? rows : [];
+      var list = Array.isArray(rows) ? rows : [];
+      if (!state.company){ VORAB.variations = list; return; }
+      state.variations = list;
       renderVariations();
     }
     function setSeries(payload){
       if (typeof payload === "string"){ try { payload = JSON.parse(payload); } catch(e){ payload = null; } }
       if (!payload) return;
       var scope = payload.scope === "global" ? "global" : "topic";
+      if (!state.company){ VORAB.series[scope] = payload; return; }
       state.series[scope] = payload;
       renderChart();
     }
     function setGlobal(kpi){
       if (typeof kpi === "string"){ try { kpi = JSON.parse(kpi); } catch(e){ kpi = null; } }
+      if (!state.company){ VORAB.globalKpis = kpi || null; return; }
       state.globalKpis = kpi || null;
       if (state.scope === "global") renderKpis();
     }
@@ -516,6 +541,7 @@
       state.column = []; state.row = [];
       state.series = { topic: null, global: null };
       state.variations = null; state.globalKpis = null;
+      VORAB.variations = null; VORAB.series = { topic: null, global: null }; VORAB.globalKpis = null;
       state.varQuery = ""; state.scope = "topic";
       state.hasData = false; state.loading = false;
       if (elSInput) elSInput.value = "";
