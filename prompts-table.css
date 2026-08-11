@@ -775,7 +775,7 @@
 /* The topic chip is core's .up-topicchip (see grpHeadHtml) — nothing chip-shaped is redeclared
    here. Only the read-only variant's cursor needs a line -- core's .up-topicchip is already 28px
    by default now, matching .ust-tag (the per-prompt Topics cell's own pill height) everywhere. */
-.up-topicchip.is-static { cursor: default; }
+/* .up-topicchip.is-static steht jetzt in core.css: drei Komponenten geben die Klasse aus. */
 .upt-grp-name { font-size: 13.5px; font-weight: 500; color: var(--vc-text);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 

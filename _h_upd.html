@@ -1,0 +1,97 @@
+<meta charset="utf-8">
+<link rel="stylesheet" href="core.css?v=d1">
+<link rel="stylesheet" href="performance-detail.css?v=d1">
+<body style="margin:0;padding:20px;font-family:system-ui,sans-serif;background:#fff">
+
+<div style="margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap">
+  <button onclick="klick()">Zelle klicken (VW x E-Mobility)</button>
+  <button onclick="klick2()">andere Zelle (Anfragenfluss x SUV)</button>
+  <button onclick="nachladen()">RPCs nachliefern (Kurve + Variations)</button>
+  <button onclick="window.resetPerformanceDetail('d1')">reset</button>
+  <button onclick="dark()">Dark umschalten</button>
+</div>
+<pre id="out" style="font:11px/1.6 ui-monospace,monospace;background:#f6f6f6;padding:10px;white-space:pre-wrap">bereit</pre>
+
+<div style="max-width:900px">
+  <div class="up-root upd-root" data-instance="d1" data-theme="light" data-cdn-pin=""></div>
+</div>
+
+<script src="core.js?v=d1"></script>
+<script src="performance-detail.js?v=d1"></script>
+<script>
+/* Events mitschreiben: reset() muss NULL feuern (STYLEGUIDE 25). */
+var EVENTS = [];
+window.bubble_fn_updScope = function(p){ EVENTS.push(["scope", p]); };
+window.bubble_fn_updClose = function(p){ EVENTS.push(["close", p]); };
+
+/* Ein Ausschnitt eines Rasters, wie der Radar ihn beim Klick durchreicht. */
+var SPALTE = [
+  { company_id:"vw",  name:"Volkswagen",     favicon_url:"https://www.google.com/s2/favicons?domain=vw.de&sz=64",       visibility_pct:58.3, sentiment:64, avg_rank:2.1, mentions:69 },
+  { company_id:"bmw", name:"BMW",            favicon_url:"https://www.google.com/s2/favicons?domain=bmw.de&sz=64",      visibility_pct:71.0, sentiment:70, avg_rank:1.6, mentions:88 },
+  { company_id:"mb",  name:"Mercedes-Benz",  favicon_url:"https://www.google.com/s2/favicons?domain=mercedes-benz.de&sz=64", visibility_pct:64.2, sentiment:66, avg_rank:1.9, mentions:74 },
+  { company_id:"aud", name:"Audi",           favicon_url:"",                                                            visibility_pct:41.7, sentiment:58, avg_rank:2.8, mentions:44 },
+  { company_id:"por", name:"Porsche",        favicon_url:"",                                                            visibility_pct:33.3, sentiment:72, avg_rank:3.1, mentions:29 },
+  { company_id:"skd", name:"Skoda",          favicon_url:"",                                                            visibility_pct:12.5, sentiment:55, avg_rank:4.4, mentions:11 }
+];
+var ZEILE = [
+  { topic_id:"t1", name:"E-Mobility",      visibility_pct:58.3, visibility_delta_pct:4.2,  sentiment:64, sentiment_delta:2,  avg_rank:2.1, avg_rank_delta:-0.3, mentions:69, mentions_prev:61 },
+  { topic_id:"t2", name:"SUV",             visibility_pct:44.0, visibility_delta_pct:-1.8, sentiment:59, sentiment_delta:-3, avg_rank:2.9, avg_rank_delta:0.2,  mentions:52, mentions_prev:55 },
+  { topic_id:"t3", name:"Leasing",         visibility_pct:22.5, visibility_delta_pct:0,    sentiment:61, sentiment_delta:0,  avg_rank:3.6, avg_rank_delta:0,    mentions:18, mentions_prev:18 },
+  { topic_id:"t4", name:"Digitalisierung", visibility_pct:66.7, visibility_delta_pct:9.1,  sentiment:71, sentiment_delta:5,  avg_rank:1.7, avg_rank_delta:-0.6, mentions:81, mentions_prev:64 }
+];
+
+function klick(){
+  window.renderPerformanceDetail({
+    instanceId: "d1",
+    company: { company_id:"vw", name:"Volkswagen", favicon_url:"https://www.google.com/s2/favicons?domain=vw.de&sz=64" },
+    topic:   { topic_id:"t1", name:"E-Mobility", emoji:"⚡", color:"#2f6f4f" },
+    cell: ZEILE[0],
+    topic_column: SPALTE,
+    brand_row: ZEILE
+  });
+}
+/* Zweiter Klick: die Marke liegt hier NICHT in den Top 5, sie muss trotzdem in der Liste stehen. */
+function klick2(){
+  window.renderPerformanceDetail({
+    instanceId: "d1",
+    company: { company_id:"skd", name:"Skoda", favicon_url:"" },
+    topic:   { topic_id:"t2", name:"SUV", emoji:"🚙", color:"#8a4b9c" },
+    cell: { visibility_pct:12.5, visibility_delta_pct:-2.4, sentiment:55, sentiment_delta:-1, avg_rank:4.4, avg_rank_delta:0.5, mentions:11, mentions_prev:14 },
+    topic_column: SPALTE,
+    brand_row: ZEILE
+  });
+}
+
+/* Genau die Payloads aus der Anfrage. */
+var VARIATIONS = [
+  { company_id:"vw", name:"VW ID.7 Tourer",      mentioned_count:19, mentioned_runs:19, mentions_total:69, share_of_voice_pct:27.54, total_count:69 },
+  { company_id:"vw", name:"VW ID.4",             mentioned_count:9,  mentioned_runs:9,  mentions_total:69, share_of_voice_pct:13.04, total_count:69 },
+  { company_id:"vw", name:"VW ID. Buzz",         mentioned_count:7,  mentioned_runs:7,  mentions_total:69, share_of_voice_pct:10.14, total_count:69 },
+  { company_id:"vw", name:"Volkswagen ID. Buzz", mentioned_count:6,  mentioned_runs:6,  mentions_total:69, share_of_voice_pct:8.70,  total_count:69 },
+  { company_id:"vw", name:"VW ID.3",             mentioned_count:6,  mentioned_runs:6,  mentions_total:69, share_of_voice_pct:8.70,  total_count:69 },
+  { company_id:"vw", name:"Volkswagen ID.7",     mentioned_count:5,  mentioned_runs:5,  mentions_total:69, share_of_voice_pct:7.25,  total_count:69 },
+  { company_id:"vw", name:"VW Golf",             mentioned_count:4,  mentioned_runs:4,  mentions_total:69, share_of_voice_pct:5.80,  total_count:69 },
+  { company_id:"vw", name:"Volkswagen Tiguan",   mentioned_count:4,  mentioned_runs:4,  mentions_total:69, share_of_voice_pct:5.80,  total_count:69 },
+  { company_id:"vw", name:"VW Passat",           mentioned_count:3,  mentioned_runs:3,  mentions_total:69, share_of_voice_pct:4.35,  total_count:69 },
+  { company_id:"vw", name:"Volkswagen ID.4 GTX", mentioned_count:2,  mentioned_runs:2,  mentions_total:69, share_of_voice_pct:2.90,  total_count:69 }
+];
+var SERIE = {
+  mode: "visibility", company_id: "vw", scope: "topic",
+  series: [
+    { day:"2026-08-05", value:58.33 }, { day:"2026-08-06", value:50.00 },
+    { day:"2026-08-07", value:58.33 }, { day:"2026-08-08", value:58.33 },
+    { day:"2026-08-09", value:50.00 }, { day:"2026-08-10", value:50.00 },
+    { day:"2026-08-11", value:44.44 }
+  ]
+};
+function nachladen(){
+  window.setPerformanceDetailSeries("d1", SERIE);
+  window.setPerformanceDetailVariations("d1", VARIATIONS);
+}
+function dark(){
+  var r = document.querySelector(".upd-root");
+  r.setAttribute("data-theme", r.getAttribute("data-theme") === "dark" ? "light" : "dark");
+  window.setPerformanceDetailTheme("d1", r.getAttribute("data-theme"));
+  document.body.style.background = r.getAttribute("data-theme") === "dark" ? "#0f0f0f" : "#fff";
+}
+</script>

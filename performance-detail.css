@@ -1,0 +1,155 @@
+/* upstreem performance-detail.css — nur das, was DIESE Komponente zusaetzlich hat.
+
+   Bewusst NICHT hier: Tabellenrahmen (.up-table/.up-thead/.up-row/.up-th/.up-td), Suchfeld
+   (.up-search*), Segment-Switcher (.up-seg*), Icon-Button (.up-iconbtn), Zellen-Primitive
+   (.up-num/.up-sent/.up-rank-group), Trend-Chip (.up-trend), Chart-Rahmen (.up-line-*),
+   Marken-Kachel (.up-stack-*), Topic-Chip (.up-topicchip*), Leerzustand (.up-empty*). Das steht
+   alles in core.css und wird von dort benutzt. Eine zweite, fast identische Kopie ist genau der
+   Fehler aus STYLEGUIDE 25: sie weicht irgendwann um eine Deklaration ab, und niemand sieht beim
+   Schreiben, welche fehlt.
+   Alle Farben kommen aus den --vc-Tokens, damit Light und Dark ohne zweite Palette folgen. */
+
+.up-root.upd-root {
+  display: block;
+  background: var(--vc-bg);
+  border-radius: 12px;
+  border: 1px solid var(--vc-border);
+  overflow: hidden;
+}
+
+/* Leerzustand und Inhalt tauschen sich aus. Kein display:none auf dem Body allein: der Chart
+   braucht beim ersten Aufbau eine messbare Breite, und ein Canvas in einem versteckten Container
+   baut mit Breite 0. Deshalb haengt die Sichtbarkeit an der Wurzelklasse, und der Body ist erst
+   im DOM-Fluss, wenn wirklich etwas ausgewaehlt ist. */
+.upd-root .upd-body { display: none; }
+.upd-root .upd-empty { display: block; }
+.upd-root.has-selection .upd-body { display: block; }
+.upd-root.has-selection .upd-empty { display: none; }
+.upd-empty-title { font-size: 14px; font-weight: 500; color: var(--vc-text); }
+.upd-empty-sub { margin-top: 6px; font-size: 13px; color: var(--vc-muted); }
+
+/* ---------- Kopfzeile: Marke x Topic ---------- */
+.upd-head {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px; min-height: 56px;
+  border-bottom: 1px solid var(--vc-border);
+}
+.upd-title { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 auto; }
+.upd-brand { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+/* Die Kachel steht hier einzeln, nicht in einem Stapel: der 4px-Ring, den .up-stack-vis fuer den
+   ueberlappenden Stapel traegt, wuerde hier nur Platz fressen. */
+.upd-brand .up-stack-item { width: 24px; height: 24px; flex: 0 0 24px; }
+.upd-brand .up-stack-vis { box-shadow: none; border-radius: 7px; }
+.upd-brand .up-stack-item img { border-radius: 5px; }
+.upd-brand-name {
+  font-size: 14px; font-weight: 500; color: var(--vc-text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* Das Mal-Zeichen ist ein Bindeglied, kein Wert: Drittfarbe, damit es die beiden Namen nicht
+   optisch trennt, sondern verbindet. */
+.upd-x { font-size: 14px; color: var(--vc-third); flex: 0 0 auto; }
+.upd-topic { display: inline-flex; align-items: center; min-width: 0; }
+.upd-tools { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+
+/* ---------- KPI-Kacheln ---------- */
+.upd-kpis {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-bottom: 1px solid var(--vc-border);
+}
+/* Trenner zwischen den Kacheln, aber keiner vor der ersten: border-left auf allen ausser der
+   ersten statt border-right auf allen ausser der letzten -- so bleibt die rechte Aussenkante die
+   Kante der Karte. */
+.upd-kpi { padding: 14px 16px; min-width: 0; }
+.upd-kpi + .upd-kpi { border-left: 1px solid var(--vc-border); }
+.upd-kpi-lbl { font-size: 12px; font-weight: 400; color: var(--vc-muted); }
+.upd-kpi-val { margin-top: 6px; display: flex; align-items: center; gap: 8px; min-width: 0; }
+/* Der Wert traegt hier die groessere Stufe als in einer Tabellenzelle: er ist die Aussage der
+   Kachel, nicht ein Feld unter vielen. */
+.upd-kpi-val .up-num, .upd-kpi-val .up-sent-val { font-size: 18px; font-weight: 500; }
+.upd-kpi-val .up-rank-group .up-hash { width: 12px; height: 12px; }
+.upd-kpi-trend { display: inline-flex; align-items: center; }
+.upd-dash { font-size: 18px; color: var(--vc-third); }
+
+/* ---------- Standing auf diesem Topic ---------- */
+.upd-stand { padding: 14px 16px; border-bottom: 1px solid var(--vc-border); }
+.upd-stand:empty { display: none; padding: 0; border-bottom: 0; }
+.upd-stand-head { font-size: 13px; color: var(--vc-muted); }
+.upd-stand-head strong { font-weight: 550; color: var(--vc-text); }
+.upd-stand-list { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.upd-stand-row { display: flex; align-items: center; gap: 10px; height: 28px; }
+.upd-stand-idx {
+  flex: 0 0 18px; text-align: right;
+  font-size: 12px; font-weight: 500; color: var(--vc-third); font-variant-numeric: tabular-nums;
+}
+.upd-stand-row .up-stack-item { width: 20px; height: 20px; flex: 0 0 20px; }
+.upd-stand-row .up-stack-vis { box-shadow: none; border-radius: 6px; }
+.upd-stand-row .up-stack-item img { border-radius: 4px; }
+.upd-stand-name {
+  flex: 0 0 auto; max-width: 180px; font-size: 13px; font-weight: 400; color: var(--vc-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.upd-stand-bar {
+  flex: 1 1 auto; min-width: 40px; height: 6px; border-radius: 3px;
+  background: var(--vc-heading-bg); overflow: hidden;
+}
+.upd-stand-fill { display: block; height: 100%; border-radius: 3px; background: var(--vc-third); transition: width 240ms ease; }
+.upd-stand-val { flex: 0 0 auto; min-width: 46px; text-align: right; font-size: 13px; }
+/* Die eigene Marke ist die einzige Zeile in Primaerfarbe -- daran findet man sie, ohne die Liste
+   zu lesen. */
+.upd-stand-row.is-self .upd-stand-name { color: var(--vc-text); font-weight: 500; }
+.upd-stand-row.is-self .upd-stand-idx { color: var(--vc-text); }
+.upd-stand-row.is-self .upd-stand-fill { background: var(--vc-text); }
+
+/* ---------- Abschnitte ---------- */
+.upd-sec { padding: 14px 16px; }
+.upd-sec + .upd-sec { border-top: 1px solid var(--vc-border); }
+.upd-sec-head { display: flex; align-items: center; gap: 12px; min-height: 32px; }
+.upd-sec-titles { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; }
+.upd-sec-h { flex: 0 0 auto; }
+.upd-sec-sub { font-size: 12px; font-weight: 400; color: var(--vc-muted); }
+.upd-scope-note { margin-left: auto; flex: 0 0 auto; }
+.upd-chartsec .upd-linewrap { height: 220px; margin-top: 10px; }
+
+/* ---------- Variations ---------- */
+.upd-varsec .upd-sec-head { margin-bottom: 10px; }
+.upd-vartable { border: 1px solid var(--vc-border); border-radius: 10px; overflow: hidden; }
+/* 44px statt der 72px, die eine Datenzeile in den grossen Tabellen hat: hier stehen drei kurze
+   Werte pro Zeile, keine Chip-Stapel. */
+.upd-vrow { height: 44px; flex: 0 0 44px; }
+.upd-vartable .up-thead.upd-vrow { height: 38px; flex: 0 0 38px; }
+.upd-vartable .up-row { cursor: default; }
+/* Sieben Zeilen ganz, die achte angeschnitten: 7.5 x 44px. Genau daran sieht man, dass es
+   weitergeht -- ein sauberer Schnitt an der siebten Zeile sieht aus wie das Ende der Liste. */
+.upd-vbody { max-height: 330px; overflow-y: auto; overscroll-behavior: contain; }
+.upd-td-name { font-size: 13px; font-weight: 500; color: var(--vc-text); }
+.upd-td-name > * { min-width: 0; }
+.upd-td-sov { gap: 10px; }
+.upd-sov-bar {
+  flex: 1 1 auto; min-width: 32px; max-width: 72px; height: 6px; border-radius: 3px;
+  background: var(--vc-heading-bg); overflow: hidden;
+}
+.upd-sov-fill { display: block; height: 100%; border-radius: 3px; background: var(--vc-text); transition: width 240ms ease; }
+.upd-td-cnt { gap: 6px; }
+/* Der Bezugswert steht kleiner daneben, nicht als eigene Spalte: er erklaert die Zahl links,
+   er ist keine zweite Zahl. */
+.upd-of { font-size: 12px; font-weight: 400; color: var(--vc-third); white-space: nowrap; }
+
+/* ---------- Loading ---------- */
+.upd-root.is-loading .upd-kpis,
+.upd-root.is-loading .upd-stand { opacity: 0.55; transition: opacity 140ms ease; }
+
+/* ---------- Dark ---------- */
+.up-root.upd-root[data-theme="dark"] .upd-stand-fill { background: var(--vc-muted); }
+.up-root.upd-root[data-theme="dark"] .upd-stand-row.is-self .upd-stand-fill { background: var(--vc-text); }
+.up-root.upd-root[data-theme="dark"] .upd-sov-fill { background: var(--vc-text); }
+
+/* ---------- Schmal ----------
+   Unter 720px passen vier KPI-Kacheln nicht mehr nebeneinander, ohne dass die Zahl umbricht.
+   Zwei mal zwei statt vier mal eins, und die Trennlinien wandern entsprechend. */
+@media (max-width: 720px) {
+  .upd-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .upd-kpi:nth-child(odd) { border-left: 0; }
+  .upd-kpi:nth-child(n+3) { border-top: 1px solid var(--vc-border); }
+  .upd-head { flex-wrap: wrap; }
+  .upd-stand-name { max-width: 120px; }
+}

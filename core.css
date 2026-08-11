@@ -524,6 +524,11 @@
       transition: border-color 200ms cubic-bezier(.2,0,.38,.9); }
     .up-topicchip-e { font-size: 12px; line-height: 1; }
     .up-topicchip.is-on { border-color: var(--vc-text); }
+    /* Nicht anklickbare Variante: im Prompts-Popover sind die Chips Schalter, im Radar, im
+       Detailbereich und in einer Tabellenzelle sind sie reine Anzeige. Die Regel stand bisher nur
+       in prompts-table.css -- der Radar gab die Klasse also schon aus und bekam sie nur dann, wenn
+       zufaellig auch die Prompts-Table auf der Seite lag. Dritter Verbraucher, also hierher. */
+    .up-topicchip.is-static { cursor: default; }
     .up-topicchip-lbl { overflow: hidden; text-overflow: ellipsis; }
     .up-topicchip-check { display: inline-flex; align-items: center; justify-content: center;
       width: 0; height: 14px; border-radius: 4px; opacity: 0; overflow: hidden; flex: 0 0 auto;

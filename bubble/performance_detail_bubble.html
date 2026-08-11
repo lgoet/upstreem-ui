@@ -1,0 +1,146 @@
+<!--
+  UPSTREEM — PERFORMANCE DETAIL (Praefix upd)
+
+  Der Detailbereich unter dem Performance Radar. Zeigt EINE Brand-x-Topic-Kombination:
+  Kopfzeile, vier KPIs, das Standing der Marke auf diesem Topic, die Visibility-Kurve und die
+  Variations. Die URLs-Table darunter ist ein EIGENES Element (siehe "Aufbau in Bubble").
+
+  ── DAS WICHTIGSTE ZUERST ────────────────────────────────────────────────────
+  Kopfzeile, KPIs und Standing brauchen KEINEN Serveraufruf. Der Radar ruft
+  window.renderPerformanceDetail() beim Zellklick selbst und gibt die Zelle plus zwei Schnitte
+  seines Rasters mit. Der Block steht damit sofort. Nur Kurve, Variations und die URLs-Table
+  darunter kommen ueber RPCs nach.
+
+  Du musst dafuer NICHTS verdrahten. Der Radar sucht die Funktion auf window; ist dieses Element
+  nicht auf der Seite, passiert nichts und der Radar laeuft unveraendert weiter.
+
+  ── AUFBAU IN BUBBLE ─────────────────────────────────────────────────────────
+      Group "Detail"            sichtbar wenn Custom State "detail_open" = yes
+        HTML  Performance Detail      <- dieses Element
+        Group URLs
+          HTML  URLs Table            <- die bestehende Komponente, auf Topic + Brand gefiltert
+
+  Die Gruppe wird im Workflow "Zelle geklickt" sichtbar gemacht. Der Radar liefert dir dort
+  company_id und topic_id ueber sein bestehendes Event (bubble_fn_heatmap_cell_clicked, Format
+  "companyId||topicId") — daran aendert sich nichts.
+
+  ── ATTRIBUTE AUF DEM WURZEL-DIV ─────────────────────────────────────────────
+  | Attribut               | Pflicht | Bedeutung                                                |
+  |------------------------|---------|----------------------------------------------------------|
+  | data-instance          | ja      | frei gewaehlt, muss zu den Setter-Aufrufen passen        |
+  | data-cdn-pin           | ja      | Commit-Hash, identisch mit allen anderen Komponenten     |
+  | data-theme             | nein    | "light" / "dark"; sonst folgt es der Seite               |
+  | data-detail-instance   | -       | steht auf dem RADAR-Element, nicht hier: dorthin schreibt|
+  |                        |         | der Radar, welche data-instance er fuettern soll. Ohne   |
+  |                        |         | das Attribut nimmt er seine eigene.                      |
+  | data-scope-fn          | nein    | Standard bubble_fn_updScope                              |
+  | data-close-fn          | nein    | Standard bubble_fn_updClose                              |
+
+  ── EVENTS AUS DER KOMPONENTE (Toolbox "JavaScript to Bubble") ───────────────
+  | Event                | Wann                                   | Payload                                        |
+  |----------------------|----------------------------------------|------------------------------------------------|
+  | bubble_fn_updScope   | Umschalten auf einen Scope, dessen     | {"company_id":"…","topic_id":"…",              |
+  |                      | Kurve noch nicht geliefert wurde       |  "scope":"topic"|"global"}                     |
+  | bubble_fn_updClose   | Klick auf das X in der Kopfzeile       | {"company_id":"…","topic_id":"…"}              |
+
+  Beide als Toolbox-Element mit "Publish value" = yes, Typ Text. Auf updClose die Gruppe
+  ausblenden (Custom State zuruecksetzen), auf updScope die Kurve fuer den anderen Scope holen.
+
+  Die KPIs brauchen fuer "Global" KEINEN Aufruf: ohne echte Zahlen rechnet die Komponente den
+  Schnitt ueber alle Topics des Rasters und schreibt das auch dazu ("Average across all topics in
+  the radar"). Willst du die echten kontoweiten Zahlen zeigen, liefere sie mit
+  setPerformanceDetailGlobal() nach — dann verschwindet der Hinweis.
+
+  ── FUNKTIONEN IN DIE KOMPONENTE ─────────────────────────────────────────────
+  Alle Payloads nach STYLEGUIDE 47 in BACKTICKS uebergeben, nicht in eckigen Klammern:
+  ein roher Bubble-Ausdruck direkt als JavaScript bricht am ersten Anfuehrungszeichen im Text.
+
+  1) Variations (nach dem Zellklick holen)
+
+     window.setPerformanceDetailVariations("detail1", `[
+        RESPONSE
+     ]`);
+
+     Erwartete Felder pro Zeile: name, mentioned_count, share_of_voice_pct, total_count.
+     Zusaetzliche Felder stoeren nicht.
+
+  2) Kurve
+
+     window.setPerformanceDetailSeries("detail1", `{
+       "scope": "topic",
+       "company_id": "…",
+       "series": [ RESPONSE ]
+     }`);
+
+     series ist eine Liste aus {day, value}. scope ist "topic" oder "global" — die Komponente
+     merkt sich beide getrennt und schaltet ohne neuen Aufruf um, wenn sie schon da sind.
+
+  3) Optional: echte globale KPIs
+
+     window.setPerformanceDetailGlobal("detail1", `{
+       "visibility_pct": 47.9, "visibility_delta_pct": 2.9,
+       "sentiment": 64, "sentiment_delta": 1,
+       "avg_rank": 2.6, "avg_rank_delta": -0.2,
+       "mentions": 220, "mentions_prev": 198
+     }`);
+
+  4) Ladezustand und Zuruecksetzen
+
+     window.setPerformanceDetailLoading("detail1", "yes");   // dimmt KPIs, Kurve zeigt Skeleton
+     window.resetPerformanceDetail("detail1");               // leert alles, feuert KEINE Events
+
+  5) Nur falls du das Theme selbst steuerst
+
+     window.setPerformanceDetailTheme("detail1", "dark");
+
+  ── WORKFLOW "ZELLE GEKLICKT" ────────────────────────────────────────────────
+  Der Radar feuert bubble_fn_heatmap_cell_clicked mit "companyId||topicId". Darauf:
+    1. Custom State detail_open = yes                  (Gruppe wird sichtbar)
+    2. Custom States detail_company / detail_topic setzen
+    3. setPerformanceDetailLoading("detail1", "yes")
+    4. RPC Variations  -> setPerformanceDetailVariations(...)
+    5. RPC Kurve       -> setPerformanceDetailSeries(...)
+    6. RPC URLs        -> renderUrlsTable(...) fuer das Element darunter
+    7. setPerformanceDetailLoading("detail1", "no")
+
+  Schritt 1 und 2 laufen sofort; Kopf, KPIs und Standing stehen schon, bevor der erste RPC
+  zurueck ist. Das ist Absicht und der Grund fuer den Direktaufruf aus dem Radar.
+
+  ── DIE URLS-TABLE DARUNTER ──────────────────────────────────────────────────
+  Unveraendert die bestehende Komponente, nur mit einem anderen Datensatz: URLs, die in Prompts
+  dieses Topics zitiert wurden UND diese Marke erwaehnen. Der Marken-Filter in ihrer Toolbar ist
+  dort ohne Nutzen (es ist ja schon auf eine Marke gefiltert) — blende ihn ueber ihre eigenen
+  Attribute aus, statt die Komponente anzupassen.
+-->
+
+<div class="up-root upd-root"
+     data-instance="detail1"
+     data-cdn-pin="CDN_PIN"></div>
+
+<!-- Das Wurzel-Div ist bewusst leer: die Komponente baut ihren gesamten Innenaufbau selbst. Es
+     gibt hier keine Stelle, an der du etwas einsetzen sollst, und ein von Hand eingefuegter
+     Rahmen ist genau das Markup, das beim naechsten Einbau halb vergessen wird. -->
+
+<script>
+(function(){
+  /* Loader nach STYLEGUIDE 26: den Pin ueber getElementsByClassName lesen, NIEMALS ueber
+     document.currentScript — Bubble fuehrt Scripts nicht in DOM-Reihenfolge aus. */
+  function readPin(cls){
+    var els = document.getElementsByClassName(cls), i, p;
+    for (i = 0; i < els.length; i++){
+      p = els[i].getAttribute("data-cdn-pin");
+      if (p && p !== "CDN_" + "PIN") return p;
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("upd-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(url, make){ if (L[url]) return; L[url] = 1; make(url); }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+
+  /* core zuerst, async=false haelt die Reihenfolge ein. */
+  css("core.css");                    js("core.js");
+  css("performance-detail.css");      js("performance-detail.js");
+})();
+</script>

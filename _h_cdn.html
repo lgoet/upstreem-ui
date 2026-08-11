@@ -11,10 +11,23 @@ window.addEventListener("error", function(e){
 }, true);
 </script>
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@8adbee2/core.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@8adbee2/quick-actions.css">
-<script src="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@8adbee2/core.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@8adbee2/quick-actions.js"></script>
+
+
+
+<div id="mira-quick-actions" data-theme="light" data-team="t1"></div>
+<script>
+/* Pin aus der URL: ?pin=8adbee2 gegen ?pin=0b40a36, sonst identische Seite. */
+var PIN = new URLSearchParams(location.search).get("pin") || "8adbee2";
+var BASE = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + PIN + "/";
+var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+function once(u, make){ if (L[u]) return; L[u] = 1; make(u); }
+function css(f){ once(BASE + f, function(u){ var l = document.createElement("link"); l.rel="stylesheet"; l.href=u; document.head.appendChild(l); }); }
+function js(f){ once(BASE + f, function(u){ var s = document.createElement("script"); s.src=u; s.async=false; document.head.appendChild(s); }); }
+/* Quick Actions zuerst, wie im Header-Reusable -- OHNE core. */
+css("quick-actions.css"); js("quick-actions.js");
+/* Eine andere Komponente kommt spaeter, mit ihrem eigenen Loader-Block. */
+setTimeout(function(){ css("core.css"); js("core.js"); css("visibility-chart.css"); js("visibility-chart.js"); }, 1600);
+</script>
 
 <script>
 setTimeout(function(){
@@ -34,8 +47,10 @@ setTimeout(function(){
   document.body.appendChild(t);
   var dot = getComputedStyle(t.querySelector(".up-badge"));
   var vis = getComputedStyle(t.querySelector(".up-stack-vis"));
+  o.push("visibility-chart geladen: " + (typeof window.setVisibilityChartTheme === "function" ? "ja" : "NEIN"));
+  o.push("core.js-Tags: " + [].slice.call(document.querySelectorAll("script[src]")).filter(function(x){return /\/core\.js/.test(x.src);}).map(function(x){return x.src.split("@")[1];}).join(" + "));
   o.push("core.css greift: .up-badge.is-dot " + dot.width + "x" + dot.height +
          " (soll 6x6)   .up-stack-vis radius " + vis.borderRadius + " (soll 8px)");
   document.getElementById("out").textContent = o.join("\n");
-}, 1500);
+}, 4000);
 </script>

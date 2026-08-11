@@ -1132,6 +1132,56 @@
       });
     }
 
+    /* Den Detailbereich unter dem Radar direkt fuellen, ohne Umweg ueber den Server.
+       Kopf, KPIs und das Standing auf dem Topic stecken alle schon im Raster: die Zelle liefert
+       die Werte, die SPALTE die Wettbewerber auf diesem Topic, die ZEILE dieselbe Marke ueber alle
+       Topics. Damit steht der Block sofort, und die RPCs fuellen nur noch Kurve, Variations und
+       die URLs-Table darunter nach -- statt dass der Nutzer erst auf einen Ladebalken sieht fuer
+       Zahlen, die zwei Zentimeter weiter oben schon auf dem Schirm stehen.
+       Fehlt die Komponente auf der Seite, passiert hier gar nichts: der Radar funktioniert
+       unveraendert allein. */
+    function feedDetail(companyId, topicId){
+      var fn = window.renderPerformanceDetail;
+      if (typeof fn !== "function") return;
+      var co = companyById(companyId), tp = topicById(topicId);
+      if (!co || !tp) return;
+      var cell = state.cellMap[topicId + "|" + companyId] || null;
+      var hex = (state.isDark ? (tp.hexDark || tp.hexLight) : (tp.hexLight || tp.hexDark)) || "#6b7280";
+
+      /* Spalte: alle Marken auf DIESEM Topic. Zeile: diese Marke ueber alle Topics. Beide nur aus
+         dem, was gerade sichtbar ist -- was der Picker ausgeblendet hat, gehoert auch nicht in den
+         Vergleich darunter. */
+      var column = state.companies.map(function(c){
+        var cc = state.cellMap[topicId + "|" + c.id];
+        return cc ? {
+          company_id: c.id, name: c.name, favicon_url: c.logo,
+          visibility_pct: cc.visibility_pct, sentiment: cc.sentiment,
+          avg_rank: cc.avg_rank, mentions: cc.mentions
+        } : null;
+      }).filter(Boolean);
+      var row = state.topics.map(function(t){
+        var cc = state.cellMap[t.id + "|" + companyId];
+        return cc ? {
+          topic_id: t.id, name: t.name,
+          visibility_pct: cc.visibility_pct, visibility_delta_pct: cc.visibility_delta_pct,
+          sentiment: cc.sentiment, sentiment_delta: cc.sentiment_delta,
+          avg_rank: cc.avg_rank, avg_rank_delta: cc.avg_rank_delta,
+          mentions: cc.mentions, mentions_prev: cc.mentions_prev
+        } : null;
+      }).filter(Boolean);
+
+      try {
+        fn({
+          instanceId: root.getAttribute("data-detail-instance") || instanceId,
+          company: { company_id: co.id, name: co.name, favicon_url: co.logo },
+          topic:   { topic_id: tp.id, name: tp.name, emoji: tp.emoji, color: hex },
+          cell: cell, topic_column: column, brand_row: row
+        });
+      } catch(e){
+        if (window.console) console.warn("[performance-radar] renderPerformanceDetail threw:", e);
+      }
+    }
+
     function emitCellClick(companyId, topicId){
       var payload = String(companyId == null ? "" : companyId) + "||" + String(topicId == null ? "" : topicId);
       var fnName = root.getAttribute("data-cell-fn") || "bubble_fn_heatmap_cell_clicked";
@@ -1142,6 +1192,7 @@
           "reachable iframe — the cell click reached no Bubble workflow. Check the Toolbox element's name.");
       }
       try { root.dispatchEvent(new CustomEvent("uhmCellClick", { detail: { company_id: companyId, topic_id: topicId }, bubbles: true })); } catch(e){}
+      feedDetail(companyId, topicId);
       hideTip();
     }
 
