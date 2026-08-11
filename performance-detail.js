@@ -161,32 +161,37 @@
         '</div>' +
         '<div class="upd-kpis"></div>' +
         '<div class="upd-stand"></div>' +
-        '<div class="upd-sec upd-chartsec">' +
-          '<div class="upd-sec-head"><span class="up-heading upd-sec-h">Visibility over time</span>' +
-            '<span class="upd-sec-sub upd-scope-note"></span></div>' +
-          '<div class="up-line-wrap upd-linewrap"><canvas class="up-line-canvas"></canvas></div>' +
-        '</div>' +
-        '<div class="upd-sec upd-varsec">' +
-          '<div class="upd-sec-head">' +
-            '<div class="upd-sec-titles">' +
-              '<span class="up-heading upd-sec-h">Variations</span>' +
-              '<span class="upd-sec-sub">Different brand names used in AI responses</span>' +
-            '</div>' +
-            '<div class="up-search upd-search">' +
-              '<button class="up-iconbtn up-search-btn" type="button" data-tip="Search variations" aria-label="Search variations">' + SEARCH_SVG + '</button>' +
-              '<div class="up-search-box">' +
-                '<input class="up-search-input" type="text" autocomplete="off" spellcheck="false" placeholder="Search variations">' +
-                '<button class="up-search-clear" type="button" aria-label="Clear search">' + CLOSE_SVG + '</button>' +
+        /* Tabelle links, Kurve rechts, ein Trenner dazwischen. Die beiden gehoeren zusammen: die
+           Kurve zeigt den Verlauf, die Tabelle die Namen dahinter -- untereinander muss man
+           scrollen, um beides zu sehen. Unter der Schwelle stapelt es wieder, siehe is-narrow. */
+        '<div class="upd-split">' +
+          '<div class="upd-split-l upd-varsec">' +
+            '<div class="upd-sec-head">' +
+              '<div class="upd-sec-titles">' +
+                '<span class="up-heading upd-sec-h">Variations</span>' +
+                '<span class="upd-sec-sub">Different brand names used in AI responses</span>' +
+              '</div>' +
+              '<div class="up-search upd-search">' +
+                '<button class="up-iconbtn up-search-btn" type="button" data-tip="Search variations" aria-label="Search variations">' + SEARCH_SVG + '</button>' +
+                '<div class="up-search-box">' +
+                  '<input class="up-search-input" type="text" autocomplete="off" spellcheck="false" placeholder="Search variations">' +
+                  '<button class="up-search-clear" type="button" aria-label="Clear search">' + CLOSE_SVG + '</button>' +
+                '</div>' +
               '</div>' +
             '</div>' +
-          '</div>' +
-          '<div class="up-table upd-vartable">' +
-            '<div class="up-thead upd-vrow">' +
-              '<div class="up-th upd-th-name">Variation Name</div>' +
-              '<div class="up-th upd-th-sov">Share of Voice</div>' +
-              '<div class="up-th upd-th-cnt">Mention Count</div>' +
+            '<div class="up-table upd-vartable">' +
+              '<div class="up-thead upd-vrow">' +
+                '<div class="up-th upd-th-name">Variation Name</div>' +
+                '<div class="up-th upd-th-sov">Share of Voice</div>' +
+                '<div class="up-th upd-th-cnt">Mentions</div>' +
+              '</div>' +
+              '<div class="up-tbody upd-vbody"></div>' +
             '</div>' +
-            '<div class="up-tbody upd-vbody"></div>' +
+          '</div>' +
+          '<div class="upd-split-r upd-chartsec">' +
+            '<div class="upd-sec-head"><span class="up-heading upd-sec-h">Visibility over time</span>' +
+              '<span class="upd-sec-sub upd-scope-note"></span></div>' +
+            '<div class="up-line-wrap upd-linewrap"><canvas class="up-line-canvas"></canvas></div>' +
           '</div>' +
         '</div>' +
       '</div>';
@@ -205,7 +210,12 @@
 
     /* Drei Spalten, feste Anteile: der Name nimmt den Rest, die beiden Zahlenspalten sind so breit
        wie ihre Ueberschriften plus Luft. --up-cols ist die Variable, die .up-thead/.up-row lesen. */
-    root.querySelector(".upd-vartable").style.setProperty("--up-cols", "minmax(0,1fr) 150px 140px");
+    /* Schmaler als vorher: die Tabelle sitzt jetzt in 30 Prozent der Karte. Die beiden Zahlen-
+       spalten sind so breit wie ihr Inhalt plus Polster, den Rest nimmt der Name. */
+    root.querySelector(".upd-vartable").style.setProperty("--up-cols", "minmax(0,1fr) 108px 92px");
+    /* Umbruch nach Containerbreite, nicht nach Fensterbreite: die Komponente kann in einer
+       schmalen Bubble-Gruppe stecken, waehrend das Fenster breit ist. */
+    if (UC.widthTiers) UC.widthTiers(root, { narrowAt: 900, vnarrowAt: 560 });
 
     function darkNow(){ return state.isDark; }
     function isOwner(){ return root.__updController && root.__updController.__ctrlId === myCtrlId; }
@@ -370,8 +380,8 @@
       var an = (p / 100) * RING_C;
       return '<span class="upd-ring" aria-hidden="true">' +
         '<svg viewBox="0 0 16 16" width="16" height="16">' +
-          '<circle class="upd-ring-track" cx="8" cy="8" r="' + RING_R + '" fill="none" stroke-width="3"/>' +
-          '<circle class="upd-ring-fill" cx="8" cy="8" r="' + RING_R + '" fill="none" stroke-width="3"' +
+          '<circle class="upd-ring-track" cx="8" cy="8" r="' + RING_R + '" fill="none" stroke-width="2.4"/>' +
+          '<circle class="upd-ring-fill" cx="8" cy="8" r="' + RING_R + '" fill="none" stroke-width="2.4"' +
             ' stroke-dasharray="' + an.toFixed(2) + ' ' + (RING_C - an).toFixed(2) + '"' +
             ' transform="rotate(-90 8 8)" stroke-linecap="round"/>' +
         '</svg></span>';

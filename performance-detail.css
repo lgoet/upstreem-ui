@@ -109,15 +109,32 @@
 /* ---------- Abschnitte ---------- */
 .upd-sec { padding: 20px; }
 .upd-sec + .upd-sec { border-top: 1px solid var(--vc-border); }
+
+/* ---------- Tabelle links, Kurve rechts ----------
+   Der Trenner ist der border-left der rechten Spalte, keine eigene Linie: eine echte Trennlinie
+   zwischen zwei Flex-Kindern muesste als drittes Element mitlaufen und beim Umbruch von vertikal
+   auf horizontal umgebaut werden. So kippt sie einfach mit.
+   align-items:stretch, damit der Trenner ueber die volle Hoehe der hoeheren Seite laeuft -- sonst
+   endet er dort, wo die kuerzere Spalte aufhoert, und sieht aus wie ein Fehler. */
+.upd-split { display: flex; align-items: stretch; }
+.upd-split-l { flex: 0 0 30%; min-width: 0; padding: 20px; }
+.upd-split-r { flex: 1 1 auto; min-width: 0; padding: 20px; border-left: 1px solid var(--vc-border); }
+/* Unter 900px Containerbreite (nicht Fensterbreite) wieder untereinander: bei 30 Prozent von
+   weniger als 900px bleibt fuer den Namen der Variation nichts mehr uebrig. */
+.upd-root.is-narrow .upd-split { display: block; }
+.upd-root.is-narrow .upd-split-l,
+.upd-root.is-narrow .upd-split-r { flex: none; width: auto; }
+.upd-root.is-narrow .upd-split-r { border-left: 0; border-top: 1px solid var(--vc-border); }
 .upd-sec-head { display: flex; align-items: center; gap: 12px; min-height: 32px; }
 .upd-sec-titles { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; }
 .upd-sec-h { flex: 0 0 auto; }
 .upd-sec-sub { font-size: 12px; font-weight: 400; color: var(--vc-muted); }
 .upd-scope-note { margin-left: auto; flex: 0 0 auto; }
-.upd-chartsec .upd-linewrap { height: 220px; margin-top: 16px; }
+.upd-chartsec .upd-linewrap { height: 260px; margin-top: 16px; }
 
 /* ---------- Variations ---------- */
 .upd-varsec .upd-sec-head { margin-bottom: 14px; }
+.upd-split-l .upd-sec-sub { white-space: normal; }
 .upd-vartable { border: 1px solid var(--vc-border); border-radius: 10px; overflow: hidden; }
 /* 55px, genau der Compact-Modus der Prompts-Table. */
 .upd-vrow { height: 55px; flex: 0 0 55px; }
@@ -128,9 +145,10 @@
 .upd-vbody { max-height: 412.5px; overflow-y: auto; overscroll-behavior: contain; }
 .upd-td-name { font-size: 13px; font-weight: 500; color: var(--vc-text); }
 .upd-td-name > * { min-width: 0; }
-/* Prozentwert links, Ring rechts am Spaltenrand. Der Ring ist ein Zeichen neben der Zahl, kein
-   zweites Diagramm: er sagt "viel" oder "wenig" auf einen Blick, die Zahl sagt wie viel. */
-.upd-td-sov { justify-content: space-between; gap: 10px; }
+/* Zahl und Ring beide links, mit Abstand zum Namen davor. In einer 30-Prozent-Spalte zieht
+   space-between die beiden an die Aussenkanten und reisst ein Loch in die Zeile; linksbuendig
+   stehen die Prozentwerte aller Zeilen dagegen sauber untereinander. */
+.upd-td-sov { justify-content: flex-start; gap: 10px; }
 .upd-td-sov .up-num { font-variant-numeric: tabular-nums; }
 .upd-ring { flex: 0 0 auto; display: inline-flex; line-height: 0; }
 /* 40 Prozent groesser: 16 x 1.4 = 22.4. Die Groesse steht hier und nicht im SVG -- die viewBox
