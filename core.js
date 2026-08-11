@@ -2489,8 +2489,16 @@
          so opening a calendar left a topics panel standing. Registering here puts every dropdown
          in the app into ONE list regardless of how it was built: dropdownOpened closes the others
          and hands back an unregister, which close() below calls. */
-      if (typeof dropdownOpened === "function"){
-        unreg = dropdownOpened(menu, function(){ close(false); }, wrap);
+      /* Zur LAUFZEIT aufloesen, nicht die lokale Funktion nehmen. Eine Seite mit gemischten
+         data-cdn-pin-Werten traegt mehrere core.js-Kopien; jede Komponente haengt an der, die zu
+         ihrem Boot-Zeitpunkt da war. Genau daran ist der Kalender haengengeblieben, waehrend die
+         drei Filter -- die dropdownOpened selbst und frisch aufloesen -- laengst richtig liefen.
+         Die Registries liegen auf window und werden geteilt, es zaehlt also nur, welche
+         AUFRUFENDE Funktion gewinnt. */
+      var ddOpen = (window.UpstreemCore && window.UpstreemCore.dropdownOpened) ||
+                   (typeof dropdownOpened === "function" ? dropdownOpened : null);
+      if (ddOpen){
+        unreg = ddOpen(menu, function(){ close(false); }, wrap);
       }
       wrap.classList.add("is-open");
       menu.classList.add("is-shown");

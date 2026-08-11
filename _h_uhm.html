@@ -1,0 +1,145 @@
+<meta charset="utf-8">
+<link rel="stylesheet" href="core.css?v=3">
+<link rel="stylesheet" href="performance-radar.css?v=3">
+<style>
+  /* Copies the host app's shape: the PAGE does not scroll, #main does, and a drawer sits on top
+     at z 9905-9930 (see project_host_app_layout). Without this the dropdown-in-drawer stacking
+     is untestable locally. */
+  html, body { height: 100%; margin: 0; }
+  body { font-family: Geist, system-ui, sans-serif; background: #fafafa; overflow: hidden; }
+  #main { height: 100vh; overflow: hidden auto; padding: 24px; }
+  .harness-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+  .harness-bar button { font: 12px/1 Geist, sans-serif; padding: 7px 10px; border: 1px solid #ddd; background: #fff; border-radius: 7px; cursor: pointer; }
+  #log { margin-top: 16px; font: 11px/1.5 ui-monospace, monospace; white-space: pre-wrap; color: #444; max-height: 180px; overflow: auto; border-top: 1px solid #e0e0e0; padding-top: 8px; }
+  .drawer { position: fixed; top: 0; right: 0; width: 720px; height: 100%; background: #ffffff; z-index: 9910;
+            box-shadow: -8px 0 24px rgba(0,0,0,.18); padding: 24px; overflow: hidden auto; display: none; }
+  .drawer.is-on { display: block; }
+  .drawer-junk { position: absolute; left: 0; right: 0; top: 300px; height: 400px; background: rgba(0,120,255,.06); z-index: 9; }
+  .drawer-junk2 { position: absolute; left: 0; right: 0; top: 420px; height: 400px; background: rgba(255,0,0,.05); z-index: 18; }
+  body[data-dark="1"] { background: #121212; }
+  body[data-dark="1"] .drawer { background: #121212; }
+</style>
+<body>
+<div id="main">
+  <div class="harness-bar">
+    <button onclick="load()">render (full payload)</button>
+    <button onclick="loadCellsOnly()">render (cells only, legacy shape)</button>
+    <button onclick="window.setPerformanceRadarLoading('h1','yes')">loading yes</button>
+    <button onclick="window.setPerformanceRadarLoading('h1','no')">loading no</button>
+    <button onclick="window.resetPerformanceRadar('h1')">reset</button>
+    <button onclick="legacyRender()">legacy renderFestivalHeatmap_h1</button>
+    <button onclick="window.destroyHeatmapTooltip_h1()">legacy destroyHeatmapTooltip_h1</button>
+    <button onclick="toggleTheme()">theme</button>
+    <button onclick="toggleDrawer()">drawer</button>
+    <button onclick="document.getElementById('log').textContent=''">clear log</button>
+  </div>
+
+  <div class="up-root uhm-root"
+       data-instance="h1"
+       data-cdn-pin=""
+       data-isdark="no"
+       data-metric-fn="bubble_fn_uhmMetric"
+       data-select-fn="bubble_fn_uhmSelect"
+       data-cell-fn="bubble_fn_heatmap_cell_clicked">
+    <div class="up-head">
+      <div class="up-heading">Performance Chart</div>
+      <div class="up-head-tools">
+        <div class="uhm-metric up-seg" role="tablist" aria-label="Metric">
+          <button class="up-seg-btn is-active" data-metric="visibility" type="button" role="tab" aria-selected="true">Visibility</button>
+          <button class="up-seg-btn" data-metric="rank" type="button" role="tab" aria-selected="false">Ranking</button>
+          <button class="up-seg-btn" data-metric="sentiment" type="button" role="tab" aria-selected="false">Sentiment</button>
+        </div>
+        <div class="uhm-pick">
+          <button class="uhm-pick-btn up-iconbtn" type="button" data-tip="Brands &amp; Topics" aria-label="Choose brands and topics"></button>
+          <div class="uhm-pick-menu" role="menu" aria-hidden="true"></div>
+        </div>
+      </div>
+    </div>
+    <div class="uhm-box">
+      <div class="uhm-scroll">
+        <div class="uhm-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="log"></div>
+  <div style="height:1200px"></div>
+</div>
+
+<div class="drawer" id="drawer">
+  <div class="drawer-junk"></div>
+  <div class="drawer-junk2"></div>
+  <div class="up-root uhm-root"
+       data-instance="h2"
+       data-cdn-pin=""
+       data-isdark="no"
+       data-metric-fn="bubble_fn_uhmMetric"
+       data-select-fn="bubble_fn_uhmSelect">
+    <div class="up-head">
+      <div class="up-heading">Performance Chart</div>
+      <div class="up-head-tools">
+        <div class="uhm-metric up-seg" role="tablist" aria-label="Metric">
+          <button class="up-seg-btn is-active" data-metric="visibility" type="button" role="tab">Visibility</button>
+          <button class="up-seg-btn" data-metric="rank" type="button" role="tab">Ranking</button>
+          <button class="up-seg-btn" data-metric="sentiment" type="button" role="tab">Sentiment</button>
+        </div>
+        <div class="uhm-pick">
+          <button class="uhm-pick-btn up-iconbtn" type="button" data-tip="Brands &amp; Topics"></button>
+          <div class="uhm-pick-menu" role="menu" aria-hidden="true"></div>
+        </div>
+      </div>
+    </div>
+    <div class="uhm-box"><div class="uhm-scroll"><div class="uhm-grid"></div></div></div>
+  </div>
+</div>
+
+<script src="_h_uhm_payload.js"></script>
+<script>
+  function log(m){ var l = document.getElementById("log"); l.textContent += m + "\n"; l.scrollTop = l.scrollHeight; }
+  window.bubble_fn_uhmMetric = function(j){ log("uhmMetric  " + j); };
+  window.bubble_fn_uhmSelect = function(j){
+    log("uhmSelect  " + j);
+    /* Answer it like a real workflow would: narrow the payload to the chosen ids and re-render
+       after a short delay, so the soft dim + re-appear can actually be seen. */
+    var p = JSON.parse(j);
+    var tset = {}, cset = {};
+    p.topic_ids.split(",").forEach(function(x){ tset[x] = 1; });
+    p.company_ids.split(",").forEach(function(x){ cset[x] = 1; });
+    setTimeout(function(){
+      var src = window.UHM_PAYLOAD;
+      var next = JSON.parse(JSON.stringify(src));
+      next.instanceId = "h1";
+      next.cells = src.cells.filter(function(c){ return tset[c.topic_id] && cset[c.company_id]; });
+      next.selected_topics = src.available_topics.filter(function(t){ return tset[t.topic_id]; })
+        .map(function(t, i){ var o = JSON.parse(JSON.stringify(t)); o.selected_position = i + 1; return o; });
+      next.selected_companies = src.available_companies.filter(function(c){ return cset[c.company_id]; })
+        .map(function(c, i){ var o = JSON.parse(JSON.stringify(c)); o.selected_position = i + 1; return o; });
+      log("  -> answered with " + next.cells.length + " cells / " +
+          next.selected_topics.length + " topics / " + next.selected_companies.length + " brands");
+      window.renderPerformanceRadar(next);
+    }, 700);
+  };
+  window.bubble_fn_heatmap_cell_clicked = function(s){ log("CELL CLICK (raw string) " + s); };
+
+  function payload(id){ var p = JSON.parse(JSON.stringify(window.UHM_PAYLOAD)); p.instanceId = id; return p; }
+  function load(){ window.renderPerformanceRadar(payload("h1")); window.renderPerformanceRadar(payload("h2")); }
+  function loadCellsOnly(){
+    var p = payload("h1");
+    delete p.selected_topics; delete p.selected_companies;
+    delete p.available_topics; delete p.available_companies; delete p.selection;
+    window.renderPerformanceRadar(p);
+  }
+  function legacyRender(){
+    var p = payload("h1"); delete p.instanceId;
+    window.renderFestivalHeatmap_h1(p);
+    log("legacy render called");
+  }
+  function toggleTheme(){
+    var on = document.body.getAttribute("data-dark") !== "1";
+    document.body.setAttribute("data-dark", on ? "1" : "0");
+    window.upstreemSetTheme(on ? "yes" : "no");
+  }
+  function toggleDrawer(){ document.getElementById("drawer").classList.toggle("is-on"); }
+</script>
+<script src="core.js?v=3"></script>
+<script src="performance-radar.js?v=3"></script>
