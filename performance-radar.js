@@ -140,7 +140,28 @@
      --------------------------------------------------------------------------- */
   var METRIC_STORE = (window.__uhmMetric = window.__uhmMetric || {});
   var SCALE_STORE  = (window.__uhmScale  = window.__uhmScale  || {});   // "color" | "mono"
-  var WEIGHT_STORE = (window.__uhmWeight = window.__uhmWeight || {});   // Gewichtungsbalken an/aus
+  /* Die Auswahl selbst wird NICHT gespeichert -- sie kommt bei jedem Render aus dem Payload. Was
+     gemerkt wird, ist der Zustand des ERSTEN Renders pro Instanz: nur gegen den kann man sagen,
+     ob der Benutzer etwas veraendert hat. Ohne diesen Bezugspunkt war der Punkt am Trigger schon
+     beim Seitenaufbau an, weil "weniger ausgewaehlt als verfuegbar" auf jede normale Seite
+     zutrifft, sobald die Auswahlliste aus dem globalen Store kommt. */
+  var INIT_SEL = (window.__uhmInitSel = window.__uhmInitSel || {});
+  /* Der Gewichtungs-Schalter ueberlebt als EINZIGE Einstellung den Reload: er beschreibt, WIE VIEL
+     man sehen will, nicht was gerade untersucht wird. Metrik und Farbskala bleiben bewusst auf
+     window -- die gehoeren zur laufenden Frage und sollen beim naechsten Besuch im Standard
+     stehen. localStorage-Schluessel ueber UC.storeKey, damit er sich mit anderen Apps auf
+     derselben Domain nicht in die Quere kommt. */
+  function weightKey(instanceId){
+    var UCg = window.UpstreemCore;
+    var raw = "uhm_weights__" + instanceId;
+    return (UCg && UCg.storeKey) ? UCg.storeKey(raw) : raw;
+  }
+  function readWeights(instanceId){
+    try { return window.localStorage.getItem(weightKey(instanceId)) === "1"; } catch(e){ return false; }
+  }
+  function writeWeights(instanceId, on){
+    try { window.localStorage.setItem(weightKey(instanceId), on ? "1" : "0"); } catch(e){}
+  }
 
   /* Wie viele der vier Balken gefuellt sind. Referenz ist das Maximum der SICHTBAREN Matrix, nicht
      ein globaler Wert: die Frage, die die Balken beantworten sollen, ist "wie ungewoehnlich ist
@@ -332,7 +353,7 @@
       companyLimit: DEF_COMPANY_LIMIT,
       metric: METRIC_ALIAS[String(METRIC_STORE[instanceId] || "").toLowerCase()] || "visibility",
       scale: SCALE_STORE[instanceId] === "mono" ? "mono" : "color",
-      weights: WEIGHT_STORE[instanceId] === true,
+      weights: readWeights(instanceId),
       isDark: isYes(root.getAttribute("data-isdark")),
       loading: false,
       hasData: false,
@@ -577,6 +598,9 @@
       state.selCompanies = {}; state.companies.forEach(function(c){ state.selCompanies[c.id] = true; });
       state.appliedTopics    = state.topics.map(function(t){ return t.id; });
       state.appliedCompanies = state.companies.map(function(c){ return c.id; });
+      if (!INIT_SEL[instanceId] && state.topics.length && state.companies.length){
+        INIT_SEL[instanceId] = { topics: state.appliedTopics.slice(), companies: state.appliedCompanies.slice() };
+      }
 
       state.hasData = state.topics.length > 0 && state.companies.length > 0;
     }
@@ -882,8 +906,14 @@
           var hex = state.isDark ? (t.hexDark || t.hexLight) : (t.hexLight || t.hexDark);
           return topicChipHtml(t, hex, true);
         });
-      var dirty = !sameSet(selectedIds(state.selCompanies, state.availCompanies), state.appliedCompanies) ||
-                  !sameSet(selectedIds(state.selTopics, state.availTopics), state.appliedTopics);
+      /* Reset zeigt sich, sobald IRGENDETWAS vom Ausgangszustand abweicht -- der noch nicht
+         abgeschickte Entwurf ODER die bereits angewendete Auswahl. Vorher hing er nur am
+         Entwurf und verschwand damit direkt nach dem Apply, also genau dann, wenn man ihn
+         braucht. */
+      var draftT = selectedIds(state.selTopics, state.availTopics);
+      var draftC = selectedIds(state.selCompanies, state.availCompanies);
+      var dirty = !sameSet(draftC, state.appliedCompanies) || !sameSet(draftT, state.appliedTopics) ||
+                  changedFromInitial();
       elPickMenu.innerHTML =
         '<div class="uhm-pick-cols">' + brands + topics + '</div>' +
         '<div class="uhm-pick-foot">' +
@@ -953,24 +983,26 @@
       on = !!on;
       if (on === state.weights) return;
       state.weights = on;
-      WEIGHT_STORE[instanceId] = on;
+      writeWeights(instanceId, on);
       root.classList.toggle("has-weights", on);
       populateSettings();
       paintCells();
     }
 
+    /* Weicht die aktuell GEZEIGTE Auswahl vom ersten Render ab? Das ist die Frage, die der Punkt
+       am Trigger beantwortet -- nicht "sind weniger ausgewaehlt als verfuegbar". */
+    function changedFromInitial(){
+      var init = INIT_SEL[instanceId];
+      if (!init) return false;
+      return !sameSet(state.appliedTopics, init.topics) ||
+             !sameSet(state.appliedCompanies, init.companies);
+    }
     function syncPickBtn(){
       if (!elPick) return;
       var badge = elPick.querySelector(".up-badge");
-      /* "Filtered" means: fewer are on screen than are available. Showing the marker for the full
-         set would light the control up permanently and stop meaning anything.
-         Ein PUNKT, keine Zahl: hier gibt es zwei Achsen, und "Marken plus Topics" zu einer Zahl
-         addiert ("13") beantwortet keine Frage. Die Optik kommt aus core (.up-badge.is-dot) --
-         mein erster, frei nachgebauter Kreis war deutlich zu gross fuer den Trigger. */
-      var filtered = state.hasData &&
-        (state.companies.length < state.availCompanies.length || state.topics.length < state.availTopics.length);
-      elPick.classList.toggle("is-active", !!filtered);
-      if (badge) badge.classList.toggle("is-visible", !!filtered);
+      var changed = state.hasData && changedFromInitial();
+      elPick.classList.toggle("is-active", changed);
+      if (badge) badge.classList.toggle("is-visible", changed);
     }
 
     function applyPicker(){
@@ -1045,7 +1077,18 @@
           if (back) back.focus();
           return;
         }
-        if (e.target.closest("[data-pickreset]")){ resetDraft(); populatePicker(); return; }
+        if (e.target.closest("[data-pickreset]")){
+          /* Zurueck auf den Ausgangszustand und sofort anwenden -- ein Reset, der nur den Entwurf
+             zuruecksetzt und die angewendete Auswahl stehen laesst, waere kein Reset. */
+          var init = INIT_SEL[instanceId];
+          if (init){
+            state.selTopics = {};    init.topics.forEach(function(id){ state.selTopics[id] = true; });
+            state.selCompanies = {}; init.companies.forEach(function(id){ state.selCompanies[id] = true; });
+            populatePicker();
+            applyPicker();
+          } else { resetDraft(); populatePicker(); }
+          return;
+        }
         if (e.target.closest("[data-pickapply]")){ applyPicker(); return; }
         var item = e.target.closest(".up-filter-item[data-id]");
         if (item){

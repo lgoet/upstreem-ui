@@ -1232,10 +1232,20 @@
 .up-root[data-theme="dark"] .combo-filter-badge { color: #1f1f1b; }
 .up-badge.is-visible, .ubo-filter-badge.is-visible,
 .ubo-cols-badge.is-visible, .combo-filter-badge.is-visible { display: inline-flex; }
-/* Reine Markierung ohne Zahl: 8px Punkt, kein Text. Fuer Trigger, bei denen eine Zahl nichts
-   beantwortet -- der Radar-Picker hat zwei Achsen, "13" waere dort die Summe aus Aepfeln und
-   Birnen. */
-.up-badge.is-dot { min-width: 8px; width: 8px; height: 8px; padding: 0; top: 0; right: 0; }
+/* Reine Markierung ohne Zahl. Fuer Trigger, bei denen eine Zahl nichts beantwortet -- der
+   Radar-Picker hat zwei Achsen, "13" waere dort die Summe aus Aepfeln und Birnen.
+
+   Masse und Position sind NICHT neu gewaehlt, sondern die des Grouping-Buttons der Prompts-
+   Tabelle (.upt-group-dot): 6px, top/right 5px, --vc-text, per opacity eingeblendet. Ich hatte
+   hier 8px auf 0/0 frei nachgebaut, obwohl die Vorgabe im Repo lag -- .upt-group-dot haengt
+   deshalb jetzt als Alias mit dran, damit es EINE Sache ist und nicht wieder auseinanderlaeuft.
+   Sichtbar wird der Punkt ueber .is-visible (Badge) bzw. .is-on am Wrapper (Grouping-Button). */
+.up-badge.is-dot, .upt-group-dot {
+  min-width: 6px; width: 6px; height: 6px; padding: 0; top: 5px; right: 5px;
+  border-radius: 50%; background: var(--vc-text);
+  opacity: 0; transition: opacity 120ms ease;
+}
+.up-badge.is-dot.is-visible { display: block; opacity: 1; }
 
 .up-logo-box { width: 24px; height: 24px; border-radius: 8px; background: var(--vt-logo-bg); padding: 1px; flex: 0 0 auto;
   display: inline-flex; align-items: center; justify-content: center; position: relative; }

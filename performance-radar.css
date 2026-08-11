@@ -245,7 +245,10 @@
    currentColor: die Balken erben die Ink-Farbe der Zelle und stimmen damit auf hellen wie auf
    dunklen Fuellungen automatisch. */
 .uhm-w { position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
-  display: flex; align-items: center; gap: 2px; pointer-events: none; }
+  display: flex; flex-direction: column-reverse; align-items: stretch; gap: 2px; pointer-events: none; }
 .uhm-w i { width: 8px; height: 4px; border-radius: 2px; background: currentColor; opacity: 0.22; }
 .uhm-w i.is-on { opacity: 0.85; }
-.uhm-root.has-weights .uhm-cell { position: relative; padding-right: 46px; padding-left: 8px; }
+/* Gestapelt statt nebeneinander: column-REVERSE, damit sich der Balken von UNTEN nach oben
+   fuellt -- so liest er sich wie ein Pegel und nicht wie eine Liste. Der Block ist damit 8px
+   breit statt 38, die Zahl braucht rechts also viel weniger Platz. */
+.uhm-root.has-weights .uhm-cell { position: relative; padding-right: 24px; padding-left: 8px; }
