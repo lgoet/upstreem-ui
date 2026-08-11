@@ -88,12 +88,29 @@
 [data-theme="dark"] .mqa-ph-cmd { color: #4a4a4a; }
 
 /* avatar in a command sub-menu row (market flag / brand logo) */
+/* Marken- und Marktkachel, Form aus der Prompts-Table uebernommen: die Marke traegt die Kachel der
+   Brand-Mentions (dort .up-stack-vis), der Markt die Flaggenkachel (dort .upt-flag). Nachgebaut
+   statt importiert -- diese Datei laedt bewusst kein core.css und kennt die --vc-Tokens nicht,
+   siehe Kopf. Uebernommen ist die Geometrie, nicht die Groesse: 20px bleiben 20px. */
 .mqa-cmd-av {
-  flex: 0 0 auto; width: 20px; height: 20px; border-radius: 999px; overflow: hidden;
+  flex: 0 0 auto; width: 20px; height: 20px; border-radius: 6px; overflow: hidden;
   border: 1px solid var(--am-border); background: var(--am-soft-2);
-  display: inline-flex; align-items: center; justify-content: center;
+  display: inline-flex; align-items: center; justify-content: center; padding: 2px;
 }
-.mqa-cmd-av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* contain, nicht cover: ein Wortmarken-Logo ist breiter als hoch, und cover schneidet ihm links
+   und rechts die Haelfte ab. Genau dafuer steht es in der Tabelle auch auf contain. */
+.mqa-cmd-av img { width: 100%; height: 100%; object-fit: contain; border-radius: 4px; display: block; }
+/* Rueckfall ohne Logo: der Anfangsbuchstabe, wie in der Tabelle. Vorher stand hier ein "/", das
+   sah aus wie ein Befehl und nicht wie eine Marke ohne Bild. */
+.mqa-cmd-ltr { font-size: 10px; font-weight: 600; color: var(--am-muted); line-height: 1; text-transform: uppercase; }
+.mqa-cmd-av.has-img .mqa-cmd-ltr { display: none; }
+/* Flagge: flaches Rechteck im Seitenverhaeltnis der Tabelle (dort 18x14), auf 20px Breite
+   gerechnet. cover ist hier richtig -- eine Flagge soll die Kachel fuellen. */
+.mqa-cmd-av.is-flag {
+  width: 20px; height: 15px; border-radius: 3px; padding: 0;
+  background: var(--am-soft-2);
+}
+.mqa-cmd-av.is-flag img { object-fit: cover; border-radius: 0; }
 
 /* filter chips (set via "/" commands) */
 .mqa-chips { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
@@ -372,6 +389,11 @@
    hover, the active highlight and keyboard navigation all come from there — only the chevron, the
    expanded body and its chips are defined here. */
 .mqa-ref-item { display: block; }
+/* Die Eintraege sind Nachschlagewerk, nicht Handlung: sie treten hinter die Actions zurueck --
+   Sekundaerfarbe und ein Punkt kleiner als die 13.5px der uebrigen Zeilen. Aufgeklappt ist der
+   Eintrag das, was man gerade liest, und kommt nach vorn. */
+.mqa-ref-item .mqa-primary { font-size: 12.5px; color: var(--am-muted); transition: color .14s ease; }
+.mqa-ref-item.is-open .mqa-primary { color: var(--am-text); }
 .mqa-ref-chev { flex: 0 0 auto; display: inline-flex; align-items: center; color: var(--am-muted-2); transition: transform .16s ease; }
 .mqa-ref-chev svg { width: 14px; height: 14px; display: block; }
 /* The ONE place a chevron rotation is right in this app: it is not signalling that a dropdown is
@@ -401,7 +423,9 @@
 @media (prefers-reduced-motion: reduce){
   .mqa-fade.is-anim, .mqa-fade.is-anim .mqa-ref-item, .mqa-ref-body, .mqa-ref-body.is-closing { animation: none; }
 }
-.mqa-ref-inner { padding: 2px 10px 10px 36px; min-height: 0; overflow: hidden; }
+/* Ohne das fuehrende Icon beginnt das Label der Zeile an der Textkante, nicht mehr 26px weiter
+   rechts -- der Fliesstext darunter zieht mit, sonst haengt er im Nichts. */
+.mqa-ref-inner { padding: 2px 10px 10px 10px; min-height: 0; overflow: hidden; }
 .mqa-ref-text { margin: 0; font-size: 12.5px; line-height: 1.55; color: var(--am-muted); }
 
 /* Wraps to as many lines as it needs. The URL types are fifteen entries, and forcing them onto one
@@ -425,7 +449,7 @@
 /* Entries sit one step in from the section head, so an open section reads as a list belonging to
    it rather than as more top-level rows. */
 .mqa-refgroup.is-expanded .mqa-ref-item .mqa-ref { padding-left: 26px; }
-.mqa-refgroup.is-expanded .mqa-ref-item .mqa-ref-inner { padding-left: 52px; }
+.mqa-refgroup.is-expanded .mqa-ref-item .mqa-ref-inner { padding-left: 26px; }
 
 /* The type chip, drawn exactly as the tables draw it: the type's own colour on a ground tinted
    from that colour in light mode, on the flat dark chip ground in dark mode. Geometry is

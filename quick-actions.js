@@ -234,10 +234,12 @@
     if (kind === "types")    return CITATION_TYPES.map(function(t){ return { label: citeLabel(t), value: t, dot: citeColor(t) }; });
     if (kind === "urltypes") return URL_TYPES.map(function(t){ return { label: urlTypeLabel(t), value: t, dot: urlTypeColor(t) }; });
     if (kind === "markets") return MARKETS.map(function(m){
-      return { label: String(m).toUpperCase(), value: m, av: "https://flagcdn.com/" + String(m).toLowerCase() + ".svg", round: true };
+      return { label: String(m).toUpperCase(), value: m,
+               av: "https://flagcdn.com/" + String(m).toLowerCase() + ".svg", avKind: "flag" };
     });
     if (kind === "brands")  return BRANDS.map(function(b){
-      return { label: b.name, value: (b.id != null && b.id !== "") ? b.id : b.name, av: b.logo || b.favicon || "", round: true };
+      return { label: b.name, value: (b.id != null && b.id !== "") ? b.id : b.name,
+               av: b.logo || b.favicon || "", avKind: "brand" };
     });
     return [];
   }
@@ -580,9 +582,6 @@
       html += '<div class="mqa-ref-item' + (on ? " is-open" : "") + '">' +
         '<button class="mqa-action mqa-ref" type="button" role="option" data-ref="' + escAttr(r.id) + '"' +
                 ' aria-expanded="' + (on ? "true" : "false") + '">' +
-          '<span class="mqa-action-ic mqa-ref-ic">' +
-            '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>' +
-          '</span>' +
           '<span class="mqa-main"><span class="mqa-primary">' + esc(r.label) + '</span></span>' +
           (hint ? '<span class="mqa-action-hint">' + esc(hint) + '</span>' : '') +
           '<span class="mqa-ref-chev">' +
@@ -636,6 +635,9 @@
   function toggleRefList(){
     refListOpen = !refListOpen;
     animSection = refListOpen ? "ref" : "";
+    /* Immer nur eine der beiden Sektionen offen. Beide gleichzeitig ergeben eine Liste, die
+       laenger ist als das Panel, und dann sieht man von der gerade geoeffneten nichts mehr. */
+    if (refListOpen && actionsOpen){ actionsOpen = false; persistActions(); }
     /* Collapsing the section also collapses whatever entry was open inside it, so reopening starts
        from the list rather than from someone else's half-read paragraph. */
     if (!refListOpen) refOpen = null;
@@ -707,6 +709,7 @@
   function toggleActions(){
     actionsOpen = !actionsOpen;
     animSection = actionsOpen ? "act" : "";
+    if (actionsOpen && (refListOpen || refOpen)){ refListOpen = false; refOpen = null; }
     persistActions();
     buildStatic();
     refreshRows();
@@ -956,11 +959,29 @@
   });
 
   /* ---------- command dropdown ---------- */
-  function cmdRowHtml(label, hint, attrs, av, round, dot){
+  /* Marken- und Marktkachel, Geometrie wie in der Prompts-Table: die Marke bekommt die Kachel der
+     Brand-Mentions (.up-stack-vis -- abgerundetes Quadrat, contain statt cover, damit ein breites
+     Logo nicht beschnitten wird, Initial als Rueckfall), der Markt die Flaggenkachel (.upt-flag --
+     flaches Rechteck, cover). Nachgebaut statt importiert: quick-actions.css laedt bewusst kein
+     core.css und kennt die --vc-Tokens nicht, siehe Kopf dieser Datei. Die Groesse bleibt bei den
+     bisherigen 20px, nur die Form kommt aus der Tabelle. */
+  function avHtml(av, kind, label){
+    if (kind === "flag"){
+      return '<span class="mqa-cmd-av is-flag"><img src="' + escAttr(av) + '" alt="" loading="lazy"' +
+             ' onerror="this.style.display=\'none\'"></span>';
+    }
+    var initial = String(label || "").charAt(0) || "?";
+    return '<span class="mqa-cmd-av' + (av ? " has-img" : "") + '">' +
+             '<span class="mqa-cmd-ltr">' + esc(initial) + '</span>' +
+             (av ? '<img src="' + escAttr(av) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
+                   ' onerror="this.closest(\'.mqa-cmd-av\').classList.remove(\'has-img\'); this.remove()">' : "") +
+           '</span>';
+  }
+  function cmdRowHtml(label, hint, attrs, av, avKind, dot){
     var lead = dot
       ? '<span class="mqa-cmd-dotwrap"><span class="mqa-ct-dot" style="background:' + escAttr(dot) + '"></span></span>'
-      : (av
-        ? '<span class="mqa-cmd-av' + (round ? ' is-round' : '') + '"><img src="' + escAttr(av) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'"></span>'
+      : ((av || avKind === "brand")
+        ? avHtml(av, avKind, label)
         : '<span class="mqa-cmd-slash">/</span>');
     return '<button class="mqa-action" type="button" role="option" ' + attrs + '>' +
       lead +
@@ -991,7 +1012,7 @@
         }
         h1 += '<div class="mqa-empty">' + esc(msg) + '</div>';
       }
-      opts.forEach(function(o){ h1 += cmdRowHtml(o.label, "", 'data-cmd="' + cmd.id + '" data-cmd-val="' + escAttr(o.value) + '"', o.av, o.round, o.dot); });
+      opts.forEach(function(o){ h1 += cmdRowHtml(o.label, "", 'data-cmd="' + cmd.id + '" data-cmd-val="' + escAttr(o.value) + '"', o.av, o.avKind, o.dot); });
       showStatic(false); showRecent(false);
       resultsEl.innerHTML = h1 + '</div>'; state = "commands"; refreshRows(); setActive(0, false); scroll.scrollTop = 0;
       return true;
@@ -1261,6 +1282,13 @@
   function onInput(){
     var raw = input.value;
     syncPh();
+    /* Sobald gesucht wird, ist das Glossar im Weg: es steht ueber den Treffern und schiebt sie
+       aus dem Blick. Nur anfassen, wenn wirklich etwas offen ist -- onInput laeuft bei jedem
+       Tastendruck, und ein buildStatic() pro Anschlag waere verschenkt. */
+    if (raw && (refListOpen || refOpen)){
+      refListOpen = false; refOpen = null; animSection = "";
+      buildStatic();
+    }
     clearTimeout(debTimer);
     if (raw.charAt(0) === "/"){ query = ""; latestReqId = null; renderCommands(raw); return; }   // "/" -> command dropdown
     query = raw.trim();
