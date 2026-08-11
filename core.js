@@ -4341,20 +4341,28 @@
        Panel-Kanten zu den Trigger-Kanten. Die kleinere der beiden Distanzen ist die Kante, an der
        das Panel per CSS haengt -- an der wird es auch im Top Layer gehalten. Damit stimmt jedes
        Panel von selbst, auch ein zukuenftiges mit einer dritten Idee.
-       transform vorher neutralisieren: im Ruhezustand traegt das Panel translateY(-4px)
-       scale(0.985), und getBoundingClientRect rechnet das mit. Hier ist der Schreibzugriff auf
-       transform unbedenklich -- das Panel ist geschlossen und statisch, es laeuft keine
-       Transition, die abbrechen koennte. Spaeter (measure(), waehrend die Oeffnungsanimation
-       laeuft) waere er es NICHT; darum kommt die Groesse dort aus offsetWidth. */
-    var prevTransformInline = panel.style.transform;
-    panel.style.transform = "none";
+       Gemessen wird OHNE jeden Schreibzugriff auf transform. Der erste Ansatz war, transform zum
+       Messen kurz auf "none" zu setzen -- das ist hier besonders heikel, weil die drei
+       Filter-Dropdowns .is-shown BEREITS gesetzt haben, wenn sie dropdownOpened rufen: die
+       Einblend-Transition auf transform laeuft dann schon, und ein Schreibzugriff bricht sie ab.
+       Stattdessen offsetLeft/offsetTop/offsetWidth/offsetHeight gegen den offsetParent: das sind
+       Layoutwerte, per Definition transform-frei, und fuer ein absolut positioniertes Kind eines
+       position:relative-Wrappers ist offsetLeft exakt der benutzte left-Wert ab dessen Padding-
+       Kante. clientLeft/clientTop des offsetParent steuern dessen Rahmenbreite bei. */
+    function restBox(){
+      var op = panel.offsetParent;
+      if (!op) return panel.getBoundingClientRect();          // Notnagel, sollte nie greifen
+      var opr = op.getBoundingClientRect();
+      var l = opr.left + op.clientLeft + panel.offsetLeft;
+      var t = opr.top  + op.clientTop  + panel.offsetTop;
+      return { left: l, top: t, right: l + panel.offsetWidth, bottom: t + panel.offsetHeight };
+    }
     var r0 = owner.getBoundingClientRect();
-    var p0 = panel.getBoundingClientRect();
+    var p0 = restBox();
     var offLeft  = p0.left  - r0.left;
     var offRight = p0.right - r0.right;
     var offTop   = p0.top   - r0.top;
     var anchorRight = Math.abs(offRight) <= Math.abs(offLeft);
-    panel.style.transform = prevTransformInline;
 
     var prevPopover = panel.getAttribute("popover");
     var prev = { position: panel.style.position, left: panel.style.left, top: panel.style.top,
@@ -4476,9 +4484,25 @@
       if (p.onClose) { try { p.onClose(false); } catch(e){} }
     }
     OPEN_DD.push(self);
-    /* Erst hier, nachdem alle anderen zu sind: sonst wuerde ein gerade geschlossenes Panel sein
-       eigenes release() nach dem showPopover() dieses hier laufen lassen. */
-    menuEscape(self.panel, self.owner);
+    /* Einen Frame spaeter eskalieren, nicht sofort -- und das ist die Lehre aus einer ganzen
+       Fehlerrunde. Die Komponenten sind mit dem Oeffnen noch nicht fertig, wenn sie hier
+       ankommen: die drei Filter-Dropdowns und der Kalender entscheiden ERST DANACH, ob das Panel
+       an die rechte Kante kippt (.is-right), und mehrere fuellen ihre Liste ebenfalls erst
+       danach. Eine Messung in dieser Sekunde erwischt eine Ruhelage, die es gleich nicht mehr
+       gibt -- gemessen: der Kalender landete 366px daneben, weil .is-right nach der Messung kam.
+       Ein rAF spaeter steht der Zustand. Sichtbar ist die Verzoegerung nicht: das Panel blendet
+       ohnehin ueber 140ms ein.
+       setTimeout(0) und NICHT requestAnimationFrame: rAF laeuft nur, wenn das Dokument
+       tatsaechlich gezeichnet wird. In einem Hintergrund-Tab -- oder in einem Bubble-Reusable,
+       das gerade nicht sichtbar ist -- tickt es nicht, und das Panel wuerde nie eskalieren.
+       setTimeout reicht auch voellig: die Komponenten erledigen ihre Oeffnungsarbeit synchron im
+       selben Task, ein Makrotask danach ist der Zustand fertig.
+       Der Wiedereintritt wird geprueft -- bis dahin kann das Dropdown laengst wieder zu sein
+       (Doppelklick, oder ein anderes Dropdown das dieses schliesst). */
+    setTimeout(function(){
+      if (OPEN_DD.indexOf(self) === -1) return;      // inzwischen geschlossen
+      menuEscape(self.panel, self.owner);
+    }, 0);
     return function(){ ddClose(self); };
   }
   function closeAllDropdowns(){

@@ -32,6 +32,19 @@
       color: var(--vc-text); width: 100%; box-sizing: border-box; -webkit-font-smoothing: antialiased;
     }
 .up-root * { box-sizing: border-box; }
+
+/* ---------- [popover] auf UA-Neutral ----------
+   Ein Dropdown, das im Drawer in den Top Layer gehoben wird (UC.menuEscape), traegt kurzzeitig
+   das Attribut `popover`. Damit greift das UA-Stylesheet mit einem ganzen Satz eigener Vorgaben:
+   position/inset/margin/width/height/border/padding/background -- und `overflow: auto`.
+   Alles ausser overflow gewinnt unsere eigene Panel-Regel ohnehin; overflow deklariert kaum ein
+   Panel selbst, also schlug hier die UA-Vorgabe durch und machte aus jedem Panel einen
+   Scroll-Container. Gemessen: `overflow: visible -> auto` beim Oeffnen im Drawer, mit sichtbarer
+   Folge fuer die Flex-Panels (der Kalender legte sich neu aus).
+   Bewusst nur ein Attribut-Selektor (0,1,0) und ganz oben in der Datei: jede Komponentenregel --
+   gleiche Spezifitaet, aber spaeter, oder hoehere -- gewinnt weiterhin. Das hier raeumt nur den
+   UA-Default weg, es setzt nichts durch. */
+[popover] { overflow: visible; }
 /* Scroll-Chaining schuetzen — gegen fremdes Seiten-CSS, das `overscroll-behavior: contain`
    pauschal per `*` auf alles legt (der Bubble-Header dieser App tat/tut genau das ueber
    `[id*="allow_scroll"] *`). `contain` gehoert nur auf einen ECHTEN Scroll-Container, der die

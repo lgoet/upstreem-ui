@@ -1,0 +1,164 @@
+<!--
+  UPSTREEM — PERFORMANCE RADAR
+
+  A topic x brand heatmap. One row per topic, one column per brand, one cell per pair. The
+  switcher in the toolbar decides WHICH number the cells carry (Visibility / Ranking / Sentiment);
+  all three ride along in every cell, so switching is instant and needs no round trip. The fader
+  button next to it opens a two-column picker (Brands left, Topics right) that decides which rows
+  and columns exist at all — that one DOES need fresh data, so it fires an event.
+
+  ── MIGRATING FROM THE OLD STANDALONE HEATMAP ────────────────────────────────
+  The JS contract is unchanged on purpose. These three still exist with the same names and the
+  same shapes, so every workflow already wired to them keeps working:
+
+      window.renderFestivalHeatmap_[INSTANCE_ID](params)     — same params, same payload
+      window.destroyHeatmapTooltip_[INSTANCE_ID]()           — kills the tooltip
+      window.bubble_fn_heatmap_cell_clicked("companyId||topicId")   — cell click, PLAIN STRING
+
+  What changed on the Bubble side: replace the old <style>+<script> block with the markup below,
+  and delete the old window.HEATMAP_THEME assignment — colours now come from the app's own theme
+  (light/dark follows upstreemSetTheme, see below), not from a per-page palette blob.
+
+  ── Static markup only (bubble/STATISCHES_MARKUP_PFLICHT.md) ─────────────────
+  data-instance   = a fixed, per-placement unique string. NOT a Bubble dynamic expression.
+  data-cdn-pin    = commit hash to load from, e.g. "49e75db". Leave EMPTY (or leave the literal
+                    "CDN_PIN" placeholder) to load @main — but @main lags jsDelivr's cache, so a
+                    fresh fix may not be live yet even right after it is pushed. The loader script
+                    at the bottom reads this once and builds every asset URL from it.
+  data-isdark     = fixed "no". Switch themes with window.upstreemSetTheme("yes"/"no") from a
+                    Run-JavaScript step instead; every .up-root on the page follows.
+
+  ── Event names must be unique per placement ─────────────────────────────────
+  data-metric-fn  = "bubble_fn_uhmMetric_[dynamic id]"
+  data-select-fn  = "bubble_fn_uhmSelect_[dynamic id]"
+  data-cell-fn    = "bubble_fn_heatmap_cell_clicked"   (leave as-is unless you renamed it)
+
+  Payloads — all fn(json) with ONE argument, except the cell click:
+
+    metric   fn('{"team_id":"…","metric":"visibility"}')
+             metric: "visibility" | "rank" | "sentiment"
+             Fired on a switcher click. The chart has ALREADY redrawn when this arrives — no new
+             data is needed. Answer it only if you want to persist the choice.
+
+    select   fn('{"team_id":"…","company_ids":"id1,id2","topic_ids":"id3,id4"}')
+             Fired on Apply in the fader picker. This one DOES need an answer: run the RPC with
+             those ids and call renderPerformanceRadar() (or renderFestivalHeatmap_[ID]()) with
+             the result. The chart dims itself until the answer lands, and un-dims after 15s if
+             nothing comes, so a dead workflow shows as stale data rather than a frozen screen.
+
+    cell     bubble_fn_heatmap_cell_clicked("companyId||topicId")
+             ONE PLAIN STRING, not JSON — unchanged from the old standalone. Split on "||".
+
+  ── Filling the component ────────────────────────────────────────────────────
+  window.renderPerformanceRadar({
+    instanceId: "...",
+    metric: "visibility",            // optional; only honoured the FIRST time — after that the
+                                      // user's own switcher click owns it for this instance
+    cells: [ {                        // one entry per topic x brand pair, dense
+      topic_id, topic_name, topic_emoji, topic_hex_light, topic_hex_dark, topic_position,
+      company_id, company_name, logo_url, company_position, role,
+      visibility_pct, sentiment, avg_rank, mentions,
+      visibility_prev_pct, sentiment_prev, avg_rank_prev, mentions_prev,
+      visibility_delta_pct, sentiment_delta, avg_rank_delta,
+      heat_value_visibility, heat_value_sentiment, heat_value_rank    // 0..1, drives the shading
+    }, ... ],
+    ranges: { visibility_min, visibility_max, sentiment_min, sentiment_max, rank_min, rank_max },
+    selection: { topic_limit: 12, company_limit: 12 },   // caps the picker; see the note below
+    selected_topics:     [ { topic_id, name, emoji, hex_light, hex_dark, selected_position }, ... ],
+    selected_companies:  [ { company_id, name, logo_url, role, selected_position }, ... ],
+    available_topics:    [ { topic_id, name, emoji, hex_light, hex_dark, position }, ... ],
+    available_companies: [ { company_id, name, logo_url, role, position }, ... ]
+  });
+  window.setPerformanceRadarLoading("INSTANCE_ID", "yes" | "no");
+  window.resetPerformanceRadar("INSTANCE_ID");     // clears the matrix, closes the picker, kills
+                                                    // the tooltip — fires NO events
+
+  Notes on the payload:
+
+  · cells alone is enough to draw the matrix. selected_* / available_* are richer (they carry the
+    picker's full option lists), but a payload with only `cells` still renders — that is what the
+    old standalone sent, and a workflow still wired that way must not go blank.
+  · Without available_topics / available_companies the picker can only offer what is already on
+    screen, so there is nothing to swap IN. Send both lists to make the picker useful.
+  · heat_value_* is used for the shading when present, because it is computed against the whole
+    matrix server-side and stays stable when the picker removes the current maximum. Without it
+    the component normalises locally from `ranges`.
+  · selection.topic_limit / company_limit cap the picker. If they are absent the component uses
+    12 and 12 — the tighter grid (40px cells, 4px gaps) has room for roughly two more brand
+    columns than the old 76px layout at the same container width. If your RPC still sends 10,
+    the RPC wins: raise it there to actually get twelve.
+  · A brand/topic pair with mentions = 0 renders as an empty cell (no number, no hover, no click).
+    That is the honest signal: the row exists because the matrix is dense, not because anything
+    was measured.
+-->
+<div class="up-root uhm-root"
+     data-instance="INSTANCE_ID"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="no"
+     data-metric-fn="bubble_fn_uhmMetric"
+     data-select-fn="bubble_fn_uhmSelect"
+     data-cell-fn="bubble_fn_heatmap_cell_clicked">
+
+  <div class="up-head">
+    <div class="up-heading">Performance Chart</div>
+    <div class="up-head-tools">
+      <div class="uhm-metric up-seg" role="tablist" aria-label="Metric">
+        <button class="up-seg-btn is-active" data-metric="visibility" type="button" role="tab" aria-selected="true">Visibility</button>
+        <button class="up-seg-btn" data-metric="rank" type="button" role="tab" aria-selected="false">Ranking</button>
+        <button class="up-seg-btn" data-metric="sentiment" type="button" role="tab" aria-selected="false">Sentiment</button>
+      </div>
+      <div class="uhm-pick">
+        <button class="uhm-pick-btn up-iconbtn" type="button" data-tip="Brands &amp; Topics" aria-label="Choose brands and topics"></button>
+        <div class="uhm-pick-menu" role="menu" aria-hidden="true"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="uhm-box">
+    <div class="uhm-scroll">
+      <div class="uhm-grid"></div>
+    </div>
+  </div>
+</div>
+<script>
+/* Loads this component's CSS/JS from jsDelivr, pinned to the commit hash in data-cdn-pin on the
+   root div above (falls back to @main only if it is blank or still the literal "CDN_PIN"). The pin
+   is found BY CLASS, deliberately NOT via document.currentScript — Bubble injects an HTML element's
+   inline scripts in a way that leaves currentScript null/misattached, which silently sent every
+   file to @main (cached for hours) and made data-cdn-pin look like it did nothing. */
+(function(){
+  /* Boot stubs for the two PER-INSTANCE legacy names. performance-radar.js stubs the un-suffixed
+     names itself, but it cannot stub these: the instance id only exists here in the markup. Bubble
+     polls for a function by name and calls whichever is callable first, so without these a render
+     that fires before the CDN script has parsed is lost — the component would just sit empty.
+     The queue name must stay identical to the one in performance-radar.js. */
+  var q = window.__uhmBootQueue = window.__uhmBootQueue || [];
+  ["renderFestivalHeatmap_INSTANCE_ID", "destroyHeatmapTooltip_INSTANCE_ID"].forEach(function(n){
+    if (typeof window[n] !== "function"){
+      window[n] = function(){ q.push([n, arguments]); };
+      try { if (window.parent && window.parent !== window && typeof window.parent[n] !== "function") window.parent[n] = window[n]; } catch(e){}
+    }
+  });
+
+  function readPin(cls){
+    var els = document.getElementsByClassName(cls), i, p;
+    for (i = 0; i < els.length; i++){
+      p = (els[i].getAttribute("data-cdn-pin") || "").trim();
+      if (p && p !== "CDN_PIN") return p;
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("uhm-root") + "/";
+  /* Bubble re-injects this whole block every time the reusable re-renders (every drawer/view open).
+     Without this guard each re-run appended ANOTHER <link>+<script> for the SAME urls forever, and
+     a render-blocking stylesheet landing mid-animation is what made drawers "pop" instead of
+     animate. A re-rendered root is picked up by core.js's own root observer + heartbeat — the
+     scripts do not need evaluating again. */
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(url, make){ if (L[url]) return; L[url] = 1; make(url); }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+  css("core.css"); css("performance-radar.css");
+  js("core.js");   js("performance-radar.js");
+})();
+</script>

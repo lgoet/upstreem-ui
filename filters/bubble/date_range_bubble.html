@@ -123,7 +123,7 @@
   function once(url, make){ if (L[url]) return; L[url] = 1; make(url); }
   function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
   function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
-  css("core.css"); css("date-range.css");
-  js("core.js"); js("date-range.js");
+  css("core.css"); css("filters/date-range.css");
+  js("core.js"); js("filters/date-range.js");
 })();
 </script>
