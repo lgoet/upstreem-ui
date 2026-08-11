@@ -76,6 +76,7 @@
   var esc = UC.esc, isYes = UC.isYes, fmt1 = UC.fmt1, toNum = UC.toNum, sentColor = UC.sentColor;
   var HASH_SVG = UC.HASH_ICON ? UC.HASH_ICON.replace("<svg ", '<svg class="up-hash" ') : "";
   var CHECK_SVG = UC.CHECK_SVG;
+  var GEAR_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
   var X_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
 
   /* ---------------------------------------------------------------------------
@@ -128,9 +129,14 @@
   function rgbCss(rgb){ return "rgb(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + ")"; }
 
   /* ---------------------------------------------------------------------------
-     Per-instance persistence: which metric the user last picked. Survives Bubble
-     tearing the element down and rebuilding it (which it does on any dynamic
-     expression change), same idiom as every other component's *_STORE.
+     Per-instance persistence: metric, Farbskala und Gewichtungsbalken.
+
+     Bewusst auf `window` und NICHT im localStorage: das ueberlebt genau das, was es ueberleben
+     soll -- Bubble reisst das Element bei jeder Aenderung eines dynamischen Ausdrucks ab und baut
+     es neu auf, und ohne das waere jeder Drawer-Wechsel ein Zuruecksetzen auf Visibility. Ein
+     echter Seitenreload leert window und damit auch das hier: die Ansicht startet wieder im
+     Standard. Genau so gewollt -- eine Anzeigeeinstellung, die Wochen spaeter unbemerkt noch
+     steht, ist eine Falle.
      --------------------------------------------------------------------------- */
   var METRIC_STORE = (window.__uhmMetric = window.__uhmMetric || {});
   var SCALE_STORE  = (window.__uhmScale  = window.__uhmScale  || {});   // "color" | "mono"
@@ -338,6 +344,24 @@
     var elPick    = root.querySelector(".uhm-pick");
     var elPickBtn = root.querySelector(".uhm-pick-btn");
     var elPickMenu= root.querySelector(".uhm-pick-menu");
+    /* Der Settings-Block wird NACHGERUESTET, wenn er im Markup fehlt. Die Bubble-Vorlage ist eine
+       hand-eingefuegte Kopie: alles, was neu ins Markup kommt, erreicht ein bestehendes Element
+       erst, wenn jemand es dort einfuegt -- und bis dahin fehlt die Funktion kommentarlos. Der
+       CDN-Pin dagegen erreicht jedes Placement sofort. Dieselbe Ueberlegung, aus der core.js das
+       Fader-Icon aus JS schreibt statt es dem Markup zu ueberlassen.
+       Steht der Block schon da, wird nichts angefasst. */
+    var elTools = root.querySelector(".up-head-tools");
+    if (!root.querySelector(".uhm-set") && elTools){
+      var setWrap = document.createElement("div");
+      setWrap.className = "uhm-set";
+      setWrap.innerHTML =
+        '<button class="uhm-set-btn up-iconbtn" type="button" data-tip="Settings" aria-label="Settings">' +
+          GEAR_SVG +
+        '</button>' +
+        '<div class="uhm-set-menu up-menu" role="menu" aria-hidden="true"></div>';
+      var before = root.querySelector(".uhm-pick");
+      if (before) elTools.insertBefore(setWrap, before); else elTools.appendChild(setWrap);
+    }
     var elSet     = root.querySelector(".uhm-set");
     var elSetBtn  = root.querySelector(".uhm-set-btn");
     var elSetMenu = root.querySelector(".uhm-set-menu");

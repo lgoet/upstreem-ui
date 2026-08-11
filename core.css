@@ -457,6 +457,17 @@
     .up-optrow.is-on .up-optrow-check { opacity: 1; }
     .up-optrow-check svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
     /* icon buttons have no border, so their open state is the background */
+    /* ---------- Icon-Trigger: Hintergrund NUR im offenen Zustand ----------
+       Eine Regel fuer die ganze App statt einer pro Komponente. Jeder Popover-Wrapper bekommt
+       .is-open von UC.makePopover, jeder Icon-Trigger ist ein .up-iconbtn -- damit greift das
+       automatisch fuer jedes kuenftige Icon-Dropdown, ohne dass jemand daran denken muss.
+
+       Und die Unterscheidung, die dabei immer wieder verrutscht: "aktiv" ist NICHT "offen".
+       Ein BESCHRIFTETER Trigger (.up-filter-btn, .up-ment-btn: Text plus Chevron) traegt im
+       aktiven Zustand einen Hintergrund, weil man ihm sonst nicht ansieht, dass ein Filter
+       laeuft. Ein ICON-Button tut das nicht -- dort sagt das Badge, dass etwas gesetzt ist, und
+       ein dauerhaft gefuellter Button liest sich als "dieses Menue steht offen". */
+    .is-open > .up-iconbtn { color: var(--vc-text); background: var(--vc-heading-bg); }
     .up-cols.is-open .up-cols-btn { color: var(--vc-text); background: var(--vc-heading-bg); }
     /* a column that is the last one left can't be switched off — an empty table helps nobody */
     .up-pop-row.is-locked { opacity: .45; pointer-events: none; }

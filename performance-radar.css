@@ -129,8 +129,9 @@
 /* ---------- the fader picker ---------- */
 .uhm-pick { position: relative; flex: 0 0 auto; }
 .uhm-pick-btn { position: relative; }
-.uhm-pick.is-open .uhm-pick-btn,
-.uhm-pick.is-active .uhm-pick-btn { background: var(--vc-heading-bg); color: var(--vc-text); }
+/* Kein eigener Open- oder Active-Hintergrund mehr. Offen faerbt core (.is-open > .up-iconbtn),
+   und "aktiv" faerbt gar nicht -- das sagt der Punkt am Trigger. Meine .is-active-Regel hier war
+   ein Alleingang gegen die App-Konvention. */
 /* Badge am Fader-Trigger: core.css (.up-badge.is-dot). Mein erster, frei nachgebauter
    Kreis war zu gross -- die Vorgabe lag laengst da. */
 
@@ -234,7 +235,6 @@
    .up-switch -- identisch zu Table Settings und dem Chart-Settings-Menue der Linecharts. Hier
    steht nur, was diese eine Instanz zusaetzlich braucht. */
 .uhm-set { position: relative; flex: 0 0 auto; }
-.uhm-set.is-open .uhm-set-btn { background: var(--vc-heading-bg); color: var(--vc-text); }
 .uhm-set-menu { width: 268px; }
 .uhm-set-note { padding: 8px 10px 2px; font-size: 11.5px; line-height: 1.45; color: var(--vc-muted); }
 
