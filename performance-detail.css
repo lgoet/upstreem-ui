@@ -119,15 +119,13 @@
 /* ---------- Variations ---------- */
 .upd-varsec .upd-sec-head { margin-bottom: 14px; }
 .upd-vartable { border: 1px solid var(--vc-border); border-radius: 10px; overflow: hidden; }
-/* Kompakt wie der Compact-Modus der Prompts-Table, nur noch eine Stufe kleiner: dort traegt eine
-   Zeile Prompt-Text und Chip-Stapel, hier stehen drei kurze Werte. 36px ist die Hoehe, bei der
-   Text und Ring noch Luft haben und die Liste trotzdem als Liste liest. */
-.upd-vrow { height: 36px; flex: 0 0 36px; }
-.upd-vartable .up-thead.upd-vrow { height: 34px; flex: 0 0 34px; }
+/* 55px, genau der Compact-Modus der Prompts-Table. */
+.upd-vrow { height: 55px; flex: 0 0 55px; }
+.upd-vartable .up-thead.upd-vrow { height: 40px; flex: 0 0 40px; }
 .upd-vartable .up-row { cursor: default; }
-/* Sieben Zeilen ganz, die achte angeschnitten: 7.5 x 36px. Genau daran sieht man, dass es
+/* Sieben Zeilen ganz, die achte angeschnitten: 7.5 x 55px. Genau daran sieht man, dass es
    weitergeht -- ein sauberer Schnitt an der siebten Zeile sieht aus wie das Ende der Liste. */
-.upd-vbody { max-height: 270px; overflow-y: auto; overscroll-behavior: contain; }
+.upd-vbody { max-height: 412.5px; overflow-y: auto; overscroll-behavior: contain; }
 .upd-td-name { font-size: 13px; font-weight: 500; color: var(--vc-text); }
 .upd-td-name > * { min-width: 0; }
 /* Prozentwert links, Ring rechts am Spaltenrand. Der Ring ist ein Zeichen neben der Zahl, kein
@@ -135,7 +133,10 @@
 .upd-td-sov { justify-content: space-between; gap: 10px; }
 .upd-td-sov .up-num { font-variant-numeric: tabular-nums; }
 .upd-ring { flex: 0 0 auto; display: inline-flex; line-height: 0; }
-.upd-ring svg { display: block; }
+/* 40 Prozent groesser: 16 x 1.4 = 22.4. Die Groesse steht hier und nicht im SVG -- die viewBox
+   bleibt 16x16, alles darin skaliert proportional mit, und Radius und Strichstaerke muessen nicht
+   nachgerechnet werden. Ein Bruchteil-Pixel schadet einem SVG nicht, es rastert ohnehin frei. */
+.upd-ring svg { display: block; width: 22.4px; height: 22.4px; }
 .upd-ring-track { stroke: var(--vc-heading-bg); }
 .upd-ring-fill { stroke: var(--vc-text); transition: stroke-dasharray 240ms ease; }
 .upd-td-cnt { gap: 6px; }

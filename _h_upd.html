@@ -1,6 +1,6 @@
 <meta charset="utf-8">
-<link rel="stylesheet" href="core.css?v=d5">
-<link rel="stylesheet" href="performance-detail.css?v=d5">
+<link rel="stylesheet" href="core.css?v=d7">
+<link rel="stylesheet" href="performance-detail.css?v=d7">
 <body style="margin:0;padding:20px;font-family:system-ui,sans-serif;background:#fff">
 
 <div style="margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap">
@@ -11,6 +11,7 @@
   <button onclick="dark()">Dark umschalten</button>
   <button onclick="umgekehrt()">UMGEKEHRTE Reihenfolge: erst RPCs, dann Klick</button>
   <button onclick="doppelt()">Klick zweimal fuer DIESELBE Zelle</button>
+  <button onclick="fenster()">Fenster-Test: Rang 1..9 durchgehen</button>
 </div>
 <pre id="out" style="font:11px/1.6 ui-monospace,monospace;background:#f6f6f6;padding:10px;white-space:pre-wrap">bereit</pre>
 
@@ -18,8 +19,8 @@
   <div class="up-root upd-root" data-instance="d1" data-theme="light" data-cdn-pin=""></div>
 </div>
 
-<script src="core.js?v=d5"></script>
-<script src="performance-detail.js?v=d5"></script>
+<script src="core.js?v=d7"></script>
+<script src="performance-detail.js?v=d7"></script>
 <script>
 /* Events mitschreiben: reset() muss NULL feuern (STYLEGUIDE 25). */
 var EVENTS = [];
@@ -100,6 +101,28 @@ function umgekehrt(){
 /* Bubble ruft render* gern mehrfach -- der zweite Aufruf darf nichts wegwerfen. */
 function doppelt(){
   klick(); nachladen(); klick();
+}
+/* Neun Marken, damit sich das Fuenfer-Fenster an jedem Rang pruefen laesst. */
+var NEUN = [];
+for (var i = 0; i < 9; i++) NEUN.push({ company_id:"m"+i, name:"Marke "+(i+1), favicon_url:"", visibility_pct: 90 - i*9 });
+function zeigeRang(r){
+  window.renderPerformanceDetail({
+    instanceId: "d1",
+    company: { company_id:"m"+(r-1), name:"Marke "+r, favicon_url:"" },
+    topic:   { topic_id:"t1", name:"E-Mobility", emoji:"⚡", color:"#2f6f4f" },
+    cell: ZEILE[0], topic_column: NEUN, brand_row: ZEILE
+  });
+}
+async function fenster(){
+  var aus = [];
+  for (var r = 1; r <= 9; r++){
+    zeigeRang(r);
+    await new Promise(function(res){ setTimeout(res, 60); });
+    var raenge = [].slice.call(document.querySelectorAll(".upd-stand-idx")).map(function(e){ return e.textContent; });
+    var selbst = document.querySelector(".upd-stand-row.is-self .upd-stand-idx");
+    aus.push("Rang " + r + ": [" + raenge.join(",") + "]  eigene: " + (selbst ? selbst.textContent : "FEHLT"));
+  }
+  document.getElementById("out").textContent = aus.join("\n");
 }
 function dark(){
   var r = document.querySelector(".upd-root");

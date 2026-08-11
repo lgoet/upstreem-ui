@@ -305,10 +305,17 @@
         head = 'Not among the ' + col.length + ' brands tracked on this topic';
       }
 
-      /* Hoechstens fuenf Zeilen, und die eigene Marke ist immer dabei, auch wenn sie darunter
-         liegt. Eine Rangliste, in der die Marke fehlt, um die es geht, beantwortet nichts. */
-      var show = col.slice(0, 5);
-      if (mine && myIdx >= 5) show.push(mine);
+      /* Fuenf Zeilen, und die eigene Marke steht darin so mittig wie moeglich: zwei darueber, zwei
+         darunter. Das ist der Ausschnitt, der die Frage beantwortet -- wen habe ich gerade vor mir
+         und wer sitzt mir im Nacken. Eine Liste, die immer bei Rang 1 anfaengt, zeigt bei Rang 9
+         fuenf Marken, mit denen die eigene nichts zu tun hat.
+         Am Rand rutscht das Fenster nach innen statt ueber die Liste hinaus: bei Rang 2 also
+         1 bis 5, beim Letzten die letzten fuenf. Ist die Marke gar nicht in der Spalte, bleibt es
+         bei den Top 5. */
+      var FENSTER = 5;
+      var start = 0;
+      if (myIdx >= 0) start = Math.max(0, Math.min(myIdx - Math.floor(FENSTER / 2), col.length - FENSTER));
+      var show = col.slice(start, start + FENSTER);
 
       elStand.innerHTML =
         '<div class="upd-stand-head">' + head + '</div>' +
