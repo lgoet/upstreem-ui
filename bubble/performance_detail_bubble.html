@@ -15,10 +15,17 @@
   nicht auf der Seite, passiert nichts und der Radar laeuft unveraendert weiter.
 
   ── AUFBAU IN BUBBLE ─────────────────────────────────────────────────────────
-      Group "Detail"            sichtbar wenn Custom State "detail_open" = yes
-        HTML  Performance Detail      <- dieses Element
-        Group URLs
-          HTML  URLs Table            <- die bestehende Komponente, auf Topic + Brand gefiltert
+      Group "Performance"
+        HTML  Performance Radar
+        Group "Detail"          sichtbar wenn Custom State "detail_open" = yes
+          HTML  Performance Detail    <- dieses Element
+          Group URLs
+            HTML  URLs Table          <- die bestehende Komponente, auf Topic + Brand gefiltert
+
+  Radar und Detailbereich gehoeren in EINE gemeinsame Gruppe. Daran erkennt der Radar, welcher
+  Bereich zu ihm gehoert -- er geht von sich aus nach oben und nimmt den ersten Detailbereich, den
+  er in einem seiner Vorfahren findet. Mehrere Radar-Detail-Paare auf einer Seite treffen sich so
+  jeweils richtig, ohne dass irgendwo zwei Ids von Hand synchron gehalten werden muessen.
 
   Die Gruppe wird im Workflow "Zelle geklickt" sichtbar gemacht. Der Radar liefert dir dort
   company_id und topic_id ueber sein bestehendes Event (bubble_fn_heatmap_cell_clicked, Format
@@ -27,15 +34,15 @@
   ── ATTRIBUTE AUF DEM WURZEL-DIV ─────────────────────────────────────────────
   | Attribut               | Pflicht | Bedeutung                                                |
   |------------------------|---------|----------------------------------------------------------|
-  | data-instance          | ja      | frei gewaehlt, muss zu den Setter-Aufrufen passen. Liegt |
-  |                        |         | nur EIN Detailbereich auf der Seite, nimmt die Komponente|
-  |                        |         | ihn auch dann, wenn der Radar eine andere Id durchreicht |
-  |                        |         | -- die Id entscheidet erst, sobald mehrere da sind.      |
+  | data-instance          | ja      | frei gewaehlt, muss zu den SETTER-Aufrufen passen        |
+  |                        |         | (Variations, Kurve, Loading, Reset). Sie muss NICHT zur  |
+  |                        |         | Id des Radars passen: der Radar sucht seinen Detail-     |
+  |                        |         | bereich ueber die Position im Layout, nicht ueber die Id.|
   | data-cdn-pin           | ja      | Commit-Hash, identisch mit allen anderen Komponenten     |
   | data-theme             | nein    | "light" / "dark"; sonst folgt es der Seite               |
-  | data-detail-instance   | -       | steht auf dem RADAR-Element, nicht hier: dorthin schreibt|
-  |                        |         | der Radar, welche data-instance er fuettern soll. Ohne   |
-  |                        |         | das Attribut nimmt er seine eigene.                      |
+  | data-detail-instance   | -       | steht auf dem RADAR-Element, nicht hier. Nur noetig, wenn|
+  |                        |         | die Zuordnung ueber Kreuz laufen soll -- normal findet   |
+  |                        |         | der Radar den Bereich unter sich von allein.             |
   | data-scope-fn          | nein    | Standard bubble_fn_updScope                              |
   | data-close-fn          | nein    | Standard bubble_fn_updClose                              |
 

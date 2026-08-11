@@ -1140,6 +1140,31 @@
        Zahlen, die zwei Zentimeter weiter oben schon auf dem Schirm stehen.
        Fehlt die Komponente auf der Seite, passiert hier gar nichts: der Radar funktioniert
        unveraendert allein. */
+    /* Welcher Detailbereich gehoert zu DIESEM Radar? Nicht ueber gleiche data-instance-Werte --
+       das sind zwei Ids, die jemand von Hand synchron halten muesste, und genau daran ist es beim
+       ersten Einbau gescheitert. Die Antwort steht im Layout: es ist der Block, der raeumlich zu
+       diesem Radar gehoert. Also vom eigenen Wurzelelement nach oben gehen und im ersten Vorfahren,
+       der ueberhaupt einen enthaelt, den nehmen. Auf einer Seite mit mehreren Radar-Detail-Paaren
+       trifft das jedes Paar richtig, solange die beiden zusammen in einer Gruppe liegen -- und so
+       baut man sie ohnehin. data-detail-instance auf dem Radar hat weiterhin Vorrang, falls die
+       Zuordnung mal wirklich ueber Kreuz laufen soll. */
+    function nearestDetailInstance(){
+      try {
+        var node = root;
+        while (node && node !== document.body){
+          var hit = node.querySelector ? node.querySelector(".upd-root") : null;
+          if (hit) return hit.getAttribute("data-instance") || "default";
+          node = node.parentElement;
+        }
+        /* Kein gemeinsamer Vorfahre: dann der erste, der im Dokument NACH diesem Radar steht. */
+        var all = document.querySelectorAll(".upd-root");
+        for (var i = 0; i < all.length; i++){
+          if (root.compareDocumentPosition(all[i]) & 4) return all[i].getAttribute("data-instance") || "default";
+        }
+      } catch(e){}
+      return null;
+    }
+
     function feedDetail(companyId, topicId){
       var fn = window.renderPerformanceDetail;
       if (typeof fn !== "function") return;
@@ -1172,7 +1197,7 @@
 
       try {
         fn({
-          instanceId: root.getAttribute("data-detail-instance") || instanceId,
+          instanceId: root.getAttribute("data-detail-instance") || nearestDetailInstance() || instanceId,
           company: { company_id: co.id, name: co.name, favicon_url: co.logo },
           topic:   { topic_id: tp.id, name: tp.name, emoji: tp.emoji, color: hex },
           cell: cell, topic_column: column, brand_row: row
