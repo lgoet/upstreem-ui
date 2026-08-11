@@ -1482,10 +1482,23 @@
   };
   /* Und aus dem seitenweiten Store speisen. MiraQuickActions.setBrands() bleibt bestehen und
      funktioniert unveraendert -- der Store liefert nur zusaetzlich, und nur wenn er etwas hat. */
-  try {
+  (function subscribeBrands(triesLeft){
     var UCg = window.UpstreemCore;
-    if (UCg && UCg.brandsInto) UCg.brandsInto(root, function(list){ api.setBrands(list); });
-  } catch(_){}
+    /* core.js kann noch nicht da sein: die Palette laedt ueber denselben Loader, aber ein
+       anderes Bubble-Element kann sie frueher einfuegen. Kurz nachfassen statt still nichts zu
+       tun -- ohne das haette es keine Marken gegeben und die einzige Spur waere "No brands"
+       gewesen. */
+    if (!UCg || !UCg.brandsInto){
+      if (triesLeft > 0) setTimeout(function(){ subscribeBrands(triesLeft - 1); }, 150);
+      return;
+    }
+    /* OHNE owner. brandsInto raeumt ein Abo weg, sobald sein owner nicht mehr im Dokument
+       haengt -- richtig fuer eine Komponente pro Placement, falsch fuer diese hier: die Palette
+       ist ein Singleton auf window, und Bubble ersetzt ihr Wurzelelement bei jeder Aenderung
+       eines dynamischen Ausdrucks. Mit root als owner war das Abo nach dem ersten Rebuild weg,
+       und ein spaeteres setUpstreemBrands() erreichte sie nicht mehr. */
+    UCg.brandsInto(null, function(list){ api.setBrands(list); });
+  })(40);
 
   window.MiraQuickActions = api;
 })();
