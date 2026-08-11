@@ -4608,11 +4608,43 @@
     };
   }
 
+  /* Ein Array, das nur ein Array (oder einen JSON-String) enthaelt, ist immer ein Verpackungsfehler
+     an der Aufrufstelle: setUpstreemBrands([RESPONSE]) statt setUpstreemBrands(RESPONSE). Das Ergebnis
+     war besonders unangenehm: bei brands wurde jede Zeile reihum zu null gefiltert, der Store blieb
+     leer, und weder Aufruf- noch Ablehnungszaehler schlugen aus. Aufruf da, Daten weg, keine Spur.
+     Hier wird eine Ebene ausgepackt und laut protokolliert, statt still nichts zu tun.
+     Nur bei GENAU einem Element und nur wenn das Element wirklich eine Liste ist: eine echte
+     einelementige Zeilenliste ([{...}]) und ein einzelner Markt (["de"]) bleiben unangetastet. */
+  function unwrapOnce(list, label){
+    if (!isArray(list) || list.length !== 1) return list;
+    var only = list[0], inner = null;
+    if (isArray(only)) inner = only;
+    else if (typeof only === "string"){
+      try { var pp = parseLoose(only, label); if (isArray(pp)) inner = pp; } catch(e){}
+    }
+    if (!inner) return list;
+    if (window.console) console.warn("[" + label + "] the argument was a list wrapped in another " +
+      "list — unwrapped " + inner.length + " row(s). Fix the Run-JS step: setUpstreem" +
+      label.charAt(0).toUpperCase() + label.slice(1) + "(RESPONSE), not ([RESPONSE]).");
+    return inner;
+  }
+  /* Und der allgemeine Fall: es kam etwas an, uebrig blieb nichts. Das ist nie ein normaler
+     Zustand -- entweder stimmen die Feldnamen nicht oder die Struktur. Ohne diese Zeile sieht es
+     im UI aus wie "es gibt einfach keine Daten". */
+  function warnDropped(label, before, after){
+    if (before && !after && window.console){
+      console.warn("[" + label + "] " + before + " row(s) came in, 0 were usable — every row was " +
+        "dropped. A row needs at least an id/company_id or a name. Check the field names in the " +
+        "Run-JS payload.");
+    }
+  }
+
   function setTopics(rows, label){
     TOPICS.calls = (TOPICS.calls || 0) + 1;
     var list = parseLoose(rows, label || "topics");
     if (!list){ TOPICS.rejected = (TOPICS.rejected || 0) + 1; return false; }
     if (!isArray(list)) list = [list];
+    list = unwrapOnce(list, "topics");
     TOPICS.list = list;
     TOPICS.at = nowMs();
     TOPICS.seq++;
@@ -4723,6 +4755,7 @@
     var list = parseLoose(rows, label || "markets");
     if (!list){ MARKETS.rejected = (MARKETS.rejected || 0) + 1; return false; }
     if (!isArray(list)) list = [list];
+    list = unwrapOnce(list, "markets");
     MARKETS.list = list;
     MARKETS.at = nowMs();
     MARKETS.seq++;
@@ -4810,7 +4843,10 @@
     var list = parseLoose(rows, label || "brands");
     if (!list){ BRANDS.rejected = (BRANDS.rejected || 0) + 1; return false; }
     if (!isArray(list)) list = [list];
+    list = unwrapOnce(list, "brands");
+    var camein = list.length;
     list = list.map(normBrandRow).filter(Boolean);
+    warnDropped("brands", camein, list.length);
     BRANDS.list = list;
     BRANDS.at = nowMs();
     BRANDS.seq++;
