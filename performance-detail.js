@@ -52,7 +52,7 @@
      aelterer Pin als auf dieser Datei, fehlen Kits — und die Komponente starb frueher mit einem
      nackten "UC.x is not a function", das die Ursache nicht nennt. Einmal benennen, dann
      abstufen: ohne makeLine bleibt die Kurve leer, alles andere funktioniert weiter. */
-  var MISSING = ["makeMount", "makeLine", "buildLineDatasets", "makeTooltips", "makeFire", "trendChip",
+  var MISSING = ["makeMount", "makeLine", "buildLineDatasets", "makeTooltips", "makeExplain", "makeFire", "trendChip",
                  "sentColor", "esc", "fmt1"]
     .filter(function(k){ return typeof UC[k] !== "function"; });
   if (MISSING.length && window.console){
@@ -116,6 +116,24 @@
       '<span class="up-topicchip-lbl">' + esc(topic.name == null ? "" : topic.name) + '</span>' +
     '</span>';
   }
+
+  /* Spalten-Erklaerer wie in jeder Tabelle: das kleine "i" im Kopf, das den dunklen Kasten
+     oeffnet. Die Texte beantworten, was die Spalte MEINT -- nicht, wie sie heisst. */
+  var INFO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+  function thInfo(key){ return '<span class="up-th-info" data-explain="' + key + '">' + INFO_SVG + '</span>'; }
+  var VAR_EXPLAIN = {
+    name: { h: "Variation Name",
+            t: "The exact wording an AI response used for this brand. Models rarely stick to one " +
+               "spelling — every variation here counts as the same brand, and a name that never " +
+               "appears is a name the models do not associate with you." },
+    sov:  { h: "Share of Voice",
+            t: "How much of this brand's mentions on this topic used this exact wording. High " +
+               "numbers on one variation mean the models have settled on a name; a flat spread " +
+               "across many means they have not." },
+    cnt:  { h: "Mention Count",
+            t: "How many times this wording appeared, out of all mentions of the brand on this " +
+               "topic. The smaller the count, the less the share above rests on." }
+  };
 
   /* ============================================================================================
      Controller pro Root
@@ -191,9 +209,9 @@
           '</div>' +
           '<div class="up-table upd-vartable">' +
             '<div class="up-thead upd-vrow">' +
-              '<div class="up-th upd-th-name">Variation Name</div>' +
-              '<div class="up-th upd-th-sov">Share of Voice</div>' +
-              '<div class="up-th upd-th-cnt">Mention Count</div>' +
+              '<div class="up-th upd-th-name">Variation Name' + thInfo("name") + '</div>' +
+              '<div class="up-th upd-th-sov">Share of Voice' + thInfo("sov") + '</div>' +
+              '<div class="up-th upd-th-cnt">Mention Count' + thInfo("cnt") + '</div>' +
             '</div>' +
             '<div class="up-tbody upd-vbody"></div>' +
           '</div>' +
@@ -437,7 +455,8 @@
         var cnt = num(v.mentioned_count);
         var tot = num(v.total_count);
         return '<div class="up-row upd-vrow">' +
-                 '<div class="up-td upd-td-name" data-tiptrunc>' + highlight(String(v.name || ""), state.varQuery) + '</div>' +
+                 '<div class="up-td upd-td-name"><span class="upd-varname">' +
+                   highlight(String(v.name || ""), state.varQuery) + '</span></div>' +
                  '<div class="up-td upd-td-sov">' +
                    '<span class="up-num">' + (sov == null ? "-" : fmtPctShort(sov)) + '</span>' +
                    ringHtml(sov) +
@@ -543,7 +562,44 @@
       renderVariations(); try { elSInput.focus(); } catch(e){}
     });
 
-    if (UC.makeTooltips) UC.makeTooltips(root, darkNow);
+    /* Der geteilte Tooltip. showTipWide zeigt den vollen Text, unsuppress hebt die Stummschaltung
+       auf, die ein vorheriger Klick hinterlassen hat (STYLEGUIDE 30). */
+    var tips = UC.makeTooltips ? UC.makeTooltips(root, darkNow) : null;
+
+    if (UC.makeExplain){
+      UC.makeExplain({
+        root: root, getIsDark: darkNow,
+        html: function(key){
+          var e = VAR_EXPLAIN[key];
+          if (!e) return "";
+          return '<div class="up-explain-h">' + esc(e.h) + '</div>' +
+                 '<div class="up-explain-t">' + esc(e.t) + '</div>';
+        }
+      });
+    }
+
+    /* Voller Variationsname beim Hover -- aber NUR wenn er wirklich abgeschnitten ist. Deshalb
+       eine Messung (scrollWidth > clientWidth) statt eines Attributs: ein title= oder data-tip
+       wuerde auch dann feuern, wenn der Name vollstaendig dasteht. */
+    var nameTimer = null, nameEl = null;
+    root.addEventListener("mouseover", function(e){
+      var el = e.target.closest ? e.target.closest(".upd-varname") : null;
+      if (!el || !root.contains(el) || el === nameEl) return;
+      nameEl = el;
+      if (tips && tips.unsuppress) tips.unsuppress();
+      clearTimeout(nameTimer);
+      nameTimer = setTimeout(function(){
+        if (tips && tips.showTipWide && el.scrollWidth > el.clientWidth + 1) tips.showTipWide(el, el.textContent);
+      }, 400);
+    });
+    root.addEventListener("mouseout", function(e){
+      var el = e.target.closest ? e.target.closest(".upd-varname") : null;
+      if (!el || el !== nameEl) return;
+      var to = e.relatedTarget;
+      if (to && to.closest && to.closest(".upd-varname") === el) return;
+      nameEl = null; clearTimeout(nameTimer);
+      if (tips && tips.hideTip) tips.hideTip();
+    });
     if (UC.onResize) UC.onResize(root, function(){ try { line.resize(); } catch(e){} });
 
     /* ---------------- Oeffentliche Schnittstelle ---------------- */

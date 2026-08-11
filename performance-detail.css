@@ -173,7 +173,10 @@
    weitergeht -- ein sauberer Schnitt an der siebten Zeile sieht aus wie das Ende der Liste. */
 .upd-vbody { max-height: 412.5px; overflow-y: auto; overscroll-behavior: contain; }
 .upd-td-name { font-size: 13px; font-weight: 500; color: var(--vc-text); }
-.upd-td-name > * { min-width: 0; }
+/* Der Name sitzt in einem eigenen Span statt direkt in der Zelle: der Truncation-Tooltip misst
+   scrollWidth gegen clientWidth, und das geht nur an dem Element, das den Text wirklich
+   abschneidet -- nicht an der Zelle, die noch Polsterung drumherum hat. */
+.upd-varname { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Zahl links, Ring an der rechten Spaltenkante. Die 16px Abstand zum Zellenrand kommen aus der
    rechten Polsterung von .up-td (core.css: 0 16px 0 12px) -- kein zweiter Wert, der irgendwann
    von der Tabelle abweicht.
