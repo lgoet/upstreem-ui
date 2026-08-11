@@ -4314,10 +4314,47 @@
     try { fn(); } catch(e){}
   }
 
+  /* Die Quick-Actions-Palette muss GANZ vorne bleiben. Sie steht auf z-index 2147483647, und der
+     Top Layer schlaegt jede Zahl -- ein eskaliertes Dropdown lag damit vor der Palette. Statt die
+     Palette selbst in den Top Layer zu heben (ihr Overlay ist ein gewachsenes Vollbild-Layout, das
+     die UA-Regeln fuer [popover] -- margin:auto, width:fit-content, eigener Rahmen -- zerlegen
+     wuerden): waehrend sie offen ist, wird gar nicht erst eskaliert. Sie deckt ohnehin alles ab,
+     also gibt es dahinter nichts zu retten. Beim Oeffnen schliesst die Palette zusaetzlich alle
+     Dropdowns (quick-actions.js), damit kein bereits eskaliertes Panel in ihre Sitzung ueberlebt. */
+  function paletteOpen(){
+    try { return !!document.querySelector(".mqa-overlay.is-open"); } catch(e){ return false; }
+  }
+
   function menuEscape(panel, owner){
     if (!panel || !owner || typeof panel.showPopover !== "function") return null;
     if (panel.__upEscapeRelease) return null;
+    if (paletteOpen()) return null;
     if (!inOverlay(owner.parentElement || owner)) return null;
+
+    /* ---- Ausrichtung MESSEN, nicht annehmen ----
+       Die Panels der App liegen NICHT alle auf derselben Seite: .up-ment-menu und .up-filter-menu
+       stehen auf right:0, die drei Filter-Dropdowns, add-prompts und der Kalender auf left:0 --
+       und der Kalender kippt ueber .udr-menu.is-right situativ sogar um. Eine fest verdrahtete
+       Seite (der erste Versuch war "immer rechtsbuendig") reisst genau die left:0-Panels auf die
+       falsche Seite; sichtbar als "kurz richtig, dann springt es nach links".
+       Also wird die Ruhelage abgegriffen, bevor irgendetwas umgestellt wird: der Abstand der
+       Panel-Kanten zu den Trigger-Kanten. Die kleinere der beiden Distanzen ist die Kante, an der
+       das Panel per CSS haengt -- an der wird es auch im Top Layer gehalten. Damit stimmt jedes
+       Panel von selbst, auch ein zukuenftiges mit einer dritten Idee.
+       transform vorher neutralisieren: im Ruhezustand traegt das Panel translateY(-4px)
+       scale(0.985), und getBoundingClientRect rechnet das mit. Hier ist der Schreibzugriff auf
+       transform unbedenklich -- das Panel ist geschlossen und statisch, es laeuft keine
+       Transition, die abbrechen koennte. Spaeter (measure(), waehrend die Oeffnungsanimation
+       laeuft) waere er es NICHT; darum kommt die Groesse dort aus offsetWidth. */
+    var prevTransformInline = panel.style.transform;
+    panel.style.transform = "none";
+    var r0 = owner.getBoundingClientRect();
+    var p0 = panel.getBoundingClientRect();
+    var offLeft  = p0.left  - r0.left;
+    var offRight = p0.right - r0.right;
+    var offTop   = p0.top   - r0.top;
+    var anchorRight = Math.abs(offRight) <= Math.abs(offLeft);
+    panel.style.transform = prevTransformInline;
 
     var prevPopover = panel.getAttribute("popover");
     var prev = { position: panel.style.position, left: panel.style.left, top: panel.style.top,
@@ -4335,22 +4372,39 @@
     panel.style.right = "auto";
     panel.style.bottom = "auto";
 
+    /* Die Groesse kommt aus offsetWidth/offsetHeight, NICHT aus getBoundingClientRect -- und das
+       ist der Kern der Sache: das Panel traegt beim Oeffnen translateY(-4px) scale(0.985) und
+       faehrt das in 140ms auf die Identitaet. getBoundingClientRect rechnet den Transform mit,
+       eine damit gemessene Breite ist um 1.5% zu klein und die daraus berechnete Kante landet
+       2-3px daneben -- je nachdem, in welchem Moment der Animation gemessen wurde.
+       Der erste Reparaturversuch war, den Transform zum Messen kurz auf "none" zu setzen. Das
+       macht es schlimmer: transform IST die animierte Eigenschaft, ein Schreibzugriff darauf
+       bricht die laufende Transition ab. Gemessen: das Panel blieb dauerhaft auf scale(0.985)
+       stehen, obwohl .is-shown gesetzt war und die Regel gewann.
+       offsetWidth/offsetHeight sind Layoutwerte und per Definition transform-unabhaengig -- kein
+       Schreibzugriff noetig, keine Transition in Gefahr. Preis ist die Rundung auf ganze Pixel,
+       also maximal 1px, unsichtbar. */
+    var pw = 0, ph = 0;
+    function measure(){ pw = panel.offsetWidth; ph = panel.offsetHeight; }
+    measure();
+
     var raf = null;
     function place(){
       raf = null;
       if (!document.contains(owner)){ return; }
       var r = owner.getBoundingClientRect();
-      var gap = 6;
-      var pw = panel.offsetWidth, ph = panel.offsetHeight;
       var vw = window.innerWidth || document.documentElement.clientWidth;
       var vh = window.innerHeight || document.documentElement.clientHeight;
-      /* Die Menues sind im Ruhezustand rechtsbuendig zum Trigger (right:0). Das bleibt so, damit
-         sich im Drawer nichts anders anfuehlt als sonst. */
-      var left = r.right - pw;
-      if (left < 8) left = Math.min(r.left, vw - pw - 8);
+      /* An der gemessenen Kante halten. Bei einem rechts verankerten Panel aus der rechten Kante
+         rechnen, sonst waechst es bei nachtraeglich eingefuelltem Inhalt in die falsche Richtung
+         (die drei Filter-Panels und der Kalender bauen ihre Liste erst NACH dem Oeffnen). */
+      var left = anchorRight ? (r.right + offRight - pw) : (r.left + offLeft);
       left = Math.max(8, Math.min(left, vw - pw - 8));
-      var top = r.bottom + gap;
+      var top = r.top + offTop;
       if (top + ph > vh - 8){
+        /* Nach oben spiegeln, mit demselben Abstand zum Trigger. offTop ist der Abstand von der
+           Trigger-OBERkante, der reine Spalt darunter ist also offTop minus Triggerhoehe. */
+        var gap = offTop - r.height;
         var above = r.top - gap - ph;
         top = above >= 8 ? above : Math.max(8, vh - ph - 8);
       }
@@ -4364,9 +4418,18 @@
        hier bekannt sein muesste, welcher davon tatsaechlich scrollt. */
     window.addEventListener("scroll", schedule, true);
     window.addEventListener("resize", schedule);
+    /* Und auf Groessenaenderungen des Panels selbst: die drei Filter-Dropdowns, der Kalender und
+       add-prompts fuellen ihre Liste erst NACH dem Oeffnen, ein Suchfeld filtert sie danach weiter.
+       Ohne das bliebe die Position auf dem Mass des leeren Panels stehen. */
+    var ro = null;
+    if (window.ResizeObserver){
+      ro = new ResizeObserver(function(){ measure(); schedule(); });
+      try { ro.observe(panel); } catch(e){ ro = null; }
+    }
 
     panel.__upEscapeRelease = function release(){
       if (raf){ cancelAnimationFrame(raf); raf = null; }
+      if (ro){ try { ro.disconnect(); } catch(e){} ro = null; }
       window.removeEventListener("scroll", schedule, true);
       window.removeEventListener("resize", schedule);
       try { if (panel.matches(":popover-open")) panel.hidePopover(); } catch(e){}

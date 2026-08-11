@@ -1207,6 +1207,17 @@
   }
   function open(){
     if (isOpen) return; isOpen = true;
+    /* Erst alles andere zumachen. Ein Dropdown, das in einem Drawer geoeffnet wurde, liegt im
+       Top Layer des Browsers -- und der schlaegt jede z-index-Zahl, auch die 2147483647 dieses
+       Overlays. Es lag damit VOR der Palette. Die Palette ist ein Vollbild-Modus: dahinter soll
+       ohnehin nichts offen bleiben, also ist Zumachen die richtige Antwort und nicht ein weiterer
+       Stapelungs-Trick. core.js verweigert das Eskalieren zusaetzlich, solange dieses Overlay
+       .is-open traegt (siehe menuEscape/paletteOpen). */
+    try {
+      var UCg = window.UpstreemCore;
+      if (UCg && UCg.closePopovers) UCg.closePopovers(null, null);
+      if (UCg && UCg.closeAllDropdowns) UCg.closeAllDropdowns();
+    } catch(_){}
     overlay.setAttribute("data-theme", root.getAttribute("data-theme") || "light");
     // always bring to the very front: move to the end of <body> (wins ties at equal z-index) + max z-index
     try { document.body.appendChild(overlay); } catch(_){}

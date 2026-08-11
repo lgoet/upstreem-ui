@@ -1,52 +1,66 @@
 <meta charset="utf-8">
-<link rel="stylesheet" href="core.css?v=dd">
+<link rel="stylesheet" href="core.css?v=dd4">
+<link rel="stylesheet" href="date-range.css?v=dd4">
 <style>
-  /* Nachbau der echten Host-Geometrie, so wie sie der User auf der Live-Seite abgetastet hat:
-     Seite scrollt nicht, #main scrollt, Drawer als position:fixed FloatingGroup auf z 9910.
-     IM Drawer: der Bubble-Wrapper der Komponente (eigener z-index) und daneben zwei fremde
-     Gruppen auf z-index 9 und 18, die den unteren Teil des Panels ueberdecken -- genau das
-     gemessene Bild. */
+  /* Nachbau der echten Host-Geometrie: Seite scrollt nicht, #main scrollt, Drawer als
+     position:fixed FloatingGroup auf z 9910. IM Drawer der Bubble-Wrapper der Komponente und
+     daneben zwei fremde Gruppen auf z 9 und 18, die das Panel unten ueberdecken. */
   html, body { height: 100%; margin: 0; font-family: system-ui, sans-serif; }
   body { overflow: hidden; background: #eee; }
   #main { height: 100vh; overflow: hidden auto; padding: 20px; }
   .wrap { position: relative; z-index: 5; overflow: hidden; padding: 10px; border: 1px dashed #bbb; }
-
-  .drawer { position: fixed; top: 0; right: 0; width: 560px; height: 100%; background: #121212;
+  .drawer { position: fixed; top: 0; right: 0; width: 620px; height: 100%; background: #fff;
             z-index: 9910; padding: 20px; overflow: hidden auto; }
   .fremd  { position: absolute; left: 0; right: 0; height: 300px; background: rgba(255,80,80,.35); }
-  .fremd9 { top: 210px; z-index: 9; }
-  .fremd18{ top: 380px; z-index: 18; }
+  .fremd9 { top: 260px; z-index: 9; }
+  .fremd18{ top: 440px; z-index: 18; }
+  /* Quick-Actions-Overlay-Attrappe: exakt die Klassen und der z-index aus quick-actions.css */
+  .mqa-overlay { position: fixed; inset: 0; z-index: 2147483000; display: none; background: rgba(0,0,0,.5); }
+  .mqa-overlay.is-open { display: block; }
+  .mqa-modal { position: fixed; left: 50%; top: 120px; transform: translateX(-50%); width: 560px; height: 300px;
+               background: #fff; border-radius: 14px; z-index: 2147483001; padding: 16px; }
   #out { font: 11px/1.5 ui-monospace, monospace; white-space: pre-wrap; background: #fff; padding: 10px; }
   button { font: 12px system-ui; padding: 6px 10px; margin: 2px; }
+  .row { display: flex; gap: 8px; align-items: center; }
 </style>
 <body>
 <div id="main">
-  <button onclick="probe()">TEST</button>
+  <button onclick="probe().then(function(t){document.getElementById('out').textContent=t;})">TEST</button>
   <div class="wrap" id="pageWrap">
     <div class="up-root uut-root" id="pageRoot" data-instance="p1" data-isdark="no">
       <div class="up-head"><div class="up-heading">Auf der Seite</div>
-        <div class="up-head-tools">
+        <div class="up-head-tools row">
           <div class="up-ment" id="pageMent">
             <button class="up-ment-btn" type="button"><span class="up-ment-lbl">All Brands</span></button>
-            <div class="up-ment-menu" role="menu" aria-hidden="true" style="height:340px">Panel Seite</div>
+            <div class="up-ment-menu" role="menu" aria-hidden="true" style="height:300px">rechtsbuendig</div>
           </div>
         </div>
       </div>
     </div>
   </div>
   <div id="out"></div>
-  <div style="height:1400px"></div>
+  <div style="height:1200px"></div>
 </div>
 
 <div class="drawer" id="drawer">
-  <div class="wrap" style="background:#1b1b1b">
-    <div class="up-root uut-root" id="drawerRoot" data-instance="d1" data-isdark="yes" data-theme="dark">
-      <div class="up-head"><div class="up-heading" style="color:#fff">Im Drawer</div>
-        <div class="up-head-tools">
-          <div class="up-ment" id="drawerMent">
+  <div class="wrap">
+    <!-- rechtsbuendiges Panel (right:0), wie .up-ment-menu / .up-filter-menu -->
+    <div class="up-root uut-root" id="dRoot1" data-instance="d1" data-isdark="no">
+      <div class="up-head"><div class="up-heading">rechts verankert</div>
+        <div class="up-head-tools row">
+          <div class="up-ment" id="mentR">
             <button class="up-ment-btn" type="button"><span class="up-ment-lbl">All Brands</span></button>
-            <div class="up-ment-menu" role="menu" aria-hidden="true" style="height:340px">Panel Drawer</div>
+            <div class="up-ment-menu" role="menu" aria-hidden="true" style="height:300px">right:0</div>
           </div>
+        </div>
+      </div>
+    </div>
+    <!-- linksbuendiges Panel (left:0), wie .utf-menu / .umk-menu / .uap-menu / .udr-menu -->
+    <div class="up-root utf-root" id="dRoot2" data-instance="d2" data-isdark="no" style="margin-top:12px">
+      <div class="row" style="justify-content:flex-start">
+        <div class="udr-wrap" id="calWrap" style="position:relative">
+          <button class="udr-trigger" type="button" style="height:32px">Kalender</button>
+          <div class="udr-menu" role="dialog" aria-hidden="true" style="height:280px;width:300px">left:0 (Kalender)</div>
         </div>
       </div>
     </div>
@@ -56,71 +70,83 @@
   <div style="height:1400px"></div>
 </div>
 
-<script src="core.js?v=dd"></script>
+<div class="mqa-overlay" id="qa"><div class="mqa-modal">QUICK ACTIONS</div></div>
+
+<script src="core.js?v=dd4"></script>
 <script>
 var UC = window.UpstreemCore;
-var pagePop   = UC.makePopover({ wrap: document.getElementById("pageMent"),
-  menu: document.querySelector("#pageMent .up-ment-menu"), opener: document.querySelector("#pageMent .up-ment-btn") });
-var drawerPop = UC.makePopover({ wrap: document.getElementById("drawerMent"),
-  menu: document.querySelector("#drawerMent .up-ment-menu"), opener: document.querySelector("#drawerMent .up-ment-btn") });
-
-function snap(menu){
-  var cs = getComputedStyle(menu), r = menu.getBoundingClientRect();
-  return { popover: menu.getAttribute("popover"), open: menu.matches(":popover-open"),
-           position: cs.position, left: Math.round(r.left), top: Math.round(r.top),
-           w: Math.round(r.width), h: Math.round(r.height) };
+function pop(wrapId, menuSel, btnSel){
+  var w = document.getElementById(wrapId);
+  return UC.makePopover({ wrap: w, menu: w.querySelector(menuSel), opener: w.querySelector(btnSel) });
 }
-function hitAt(x, y){ var e = document.elementFromPoint(x, y); return e ? (e.id || e.className || e.tagName) : "null"; }
+var pagePop = pop("pageMent", ".up-ment-menu", ".up-ment-btn");
+var rPop    = pop("mentR",    ".up-ment-menu", ".up-ment-btn");
+var calPop  = pop("calWrap",  ".udr-menu",     ".udr-trigger");
+
+function box(el){ var r = el.getBoundingClientRect(); return {l:Math.round(r.left), t:Math.round(r.top), w:Math.round(r.width), r:Math.round(r.right)}; }
+function hitAt(x,y){ var e = document.elementFromPoint(x,y); return e ? (e.id || String(e.className) || e.tagName).slice(0,26) : "null"; }
 
 function probe(){
   var o = [];
-  var pageMenu = document.querySelector("#pageMent .up-ment-menu");
-  var drawMenu = document.querySelector("#drawerMent .up-ment-menu");
+  o.push("KONTROLLE viewport " + innerWidth + "x" + innerHeight + " | Mitte trifft: " + hitAt(innerWidth/2, innerHeight/2));
 
-  o.push("KONTROLLE viewport " + innerWidth + "x" + innerHeight +
-         "  |  Mitte trifft: " + hitAt(innerWidth/2, innerHeight/2));
-
-  o.push("\n--- A) Dropdown AUF DER SEITE (darf sich NICHT aendern) ---");
-  o.push("zu:  " + JSON.stringify(snap(pageMenu)));
-  pagePop.open();
-  o.push("auf: " + JSON.stringify(snap(pageMenu)));
-  pagePop.close();
-  o.push("zu:  " + JSON.stringify(snap(pageMenu)));
-
-  o.push("\n--- B) Dropdown IM DRAWER ---");
-  o.push("zu:  " + JSON.stringify(snap(drawMenu)));
-  drawerPop.open();
-  drawMenu.classList.add("is-shown");
-  var s = snap(drawMenu);
-  o.push("auf: " + JSON.stringify(s));
-  // Drei Punkte im Panel: oben, Mitte (ueber der z-9-Gruppe), unten (ueber der z-18-Gruppe)
-  ["oben","mitte","unten"].forEach(function(lbl, i){
-    var y = s.top + [10, s.h/2, s.h-10][i];
-    o.push("   Panel " + lbl.padEnd(6) + " y=" + Math.round(y) + " -> " + hitAt(s.left + s.w/2, y));
+  /* --- Ausrichtung: Ruhelage (CSS) vs. eskalierte Lage (Top Layer) --- */
+  [["rechts verankert (right:0)", rPop, document.querySelector("#mentR .up-ment-menu"), document.querySelector("#mentR .up-ment-btn")],
+   ["links verankert (left:0, Kalender)", calPop, document.querySelector("#calWrap .udr-menu"), document.querySelector("#calWrap .udr-trigger")]
+  ].forEach(function(t){
+    var name = t[0], p = t[1], menu = t[2], btn = t[3];
+    var trigBox = box(btn.parentElement);
+    // Ruhelage messen, ohne den closed-state transform
+    var pt = menu.style.transform; menu.style.transform = "none";
+    var rest = box(menu); menu.style.transform = pt;
+    p.open(); menu.classList.add("is-shown");
+    var esc = box(menu);
+    o.push("\n" + name);
+    o.push("   Trigger      l=" + trigBox.l + " r=" + trigBox.r);
+    o.push("   Ruhelage CSS l=" + rest.l + " r=" + rest.r + " w=" + rest.w);
+    o.push("   Top Layer    l=" + esc.l + " r=" + esc.r + " w=" + esc.w +
+           "   popover=" + menu.getAttribute("popover"));
+    o.push("   -> gleiche Seite? links " + (esc.l === rest.l ? "JA" : "nein (" + (esc.l-rest.l) + "px)") +
+           " | rechts " + (esc.r === rest.r ? "JA" : "nein (" + (esc.r-rest.r) + "px)"));
+    o.push("   Panel unten (ueber fremder Gruppe) -> " + hitAt(esc.l + esc.w/2, box(menu).t + menu.offsetHeight - 8));
+    p.close(); menu.classList.remove("is-shown");
   });
-  o.push("   Drawer-Rand (ausserhalb Panel) -> " + hitAt(document.getElementById("drawer").getBoundingClientRect().left + 20, innerHeight - 60));
 
-  o.push("\n--- C) Scroll-Nachfuehrung im Drawer ---");
-  var before = snap(drawMenu).top;
-  document.getElementById("drawer").scrollTop = 120;
-  document.getElementById("drawer").dispatchEvent(new Event("scroll", {bubbles:true}));
-  o.push("   vor Scroll top=" + before);
-
+  /* --- Nachtraeglich wachsender Inhalt --- */
+  o.push("\n--- Inhalt waechst NACH dem Oeffnen (ResizeObserver) ---");
+  var cm = document.querySelector("#calWrap .udr-menu");
+  var ct = box(document.querySelector("#calWrap .udr-trigger").parentElement);
+  calPop.open(); cm.classList.add("is-shown");
+  var vor = box(cm);
+  cm.style.width = "560px";
   return new Promise(function(res){
-    requestAnimationFrame(function(){ requestAnimationFrame(function(){
-      var after = snap(drawMenu).top;
-      o.push("   nach Scroll(120) top=" + after + "  delta=" + (after - before) + "  (erwartet ca. -120)");
+    setTimeout(function(){
+      var nach = box(cm);
+      o.push("   vor  l=" + vor.l + " w=" + vor.w + "   nach l=" + nach.l + " w=" + nach.w);
+      o.push("   linke Kante gehalten? " + (nach.l === vor.l ? "JA (links verankert, korrekt)" : "nein"));
+      cm.style.width = "420px";
+      calPop.close(); cm.classList.remove("is-shown");
 
-      o.push("\n--- D) Schliessen raeumt auf ---");
-      drawerPop.close();
-      drawMenu.classList.remove("is-shown");
-      o.push("   " + JSON.stringify(snap(drawMenu)));
-      o.push("   Reste im Dokument: [popover]=" + document.querySelectorAll("[popover]").length +
-             "  data-up-lifted=" + document.querySelectorAll("[data-up-lifted]").length);
-      document.getElementById("drawer").scrollTop = 0;
-      document.getElementById("out").textContent = o.join("\n");
+      /* --- Quick Actions muss vorne bleiben --- */
+      o.push("\n--- Quick Actions ---");
+      rPop.open(); document.querySelector("#mentR .up-ment-menu").classList.add("is-shown");
+      o.push("   Dropdown offen, popover=" + document.querySelector("#mentR .up-ment-menu").getAttribute("popover"));
+      document.getElementById("qa").classList.add("is-open");
+      // das macht quick-actions.js beim Oeffnen jetzt auch:
+      UC.closePopovers(null, null); UC.closeAllDropdowns();
+      var mm = document.querySelector(".mqa-modal").getBoundingClientRect();
+      o.push("   nach QA-Open: popover=" + document.querySelector("#mentR .up-ment-menu").getAttribute("popover") +
+             "  Reste=[popover]" + document.querySelectorAll("[popover]").length);
+      o.push("   Treffer in der QA-Modal-Mitte -> " + hitAt(mm.left + mm.width/2, mm.top + mm.height/2));
+      // und: waehrend QA offen ist, wird gar nicht erst eskaliert
+      rPop.open();
+      o.push("   Dropdown waehrend QA geoeffnet: popover=" +
+             document.querySelector("#mentR .up-ment-menu").getAttribute("popover") + " (erwartet: null)");
+      rPop.close();
+      document.getElementById("qa").classList.remove("is-open");
+      o.push("\n   Reste im Dokument: [popover]=" + document.querySelectorAll("[popover]").length);
       res(o.join("\n"));
-    }); });
+    }, 120);
   });
 }
 </script>
