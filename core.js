@@ -4615,6 +4615,26 @@
      Hier wird eine Ebene ausgepackt und laut protokolliert, statt still nichts zu tun.
      Nur bei GENAU einem Element und nur wenn das Element wirklich eine Liste ist: eine echte
      einelementige Zeilenliste ([{...}]) und ein einzelner Markt (["de"]) bleiben unangetastet. */
+  /* Was kam wirklich an? Ohne diese Notiz ist ein leerer Store nicht von einem falsch geformten
+     zu unterscheiden -- beide Male stehen 1 Aufruf, 0 Ablehnungen und 0 Zeilen da, und die
+     Fehlersuche faellt auf Raten zurueck. Kurz gehalten und rein beschreibend: nichts davon
+     landet im UI, es ist ausschliesslich fuer die Konsole gedacht. */
+  function shapeOf(raw){
+    try {
+      if (raw == null) return String(raw);
+      if (typeof raw === "string") return "string(" + raw.length + ") " + JSON.stringify(raw.slice(0, 160));
+      if (isArray(raw)){
+        var first = raw.length ? raw[0] : null;
+        var fd = first && typeof first === "object" && !isArray(first)
+          ? "keys=" + Object.keys(first).slice(0, 12).join(",")
+          : JSON.stringify(first);
+        return "array(" + raw.length + ") first: " + fd;
+      }
+      if (typeof raw === "object") return "object keys=" + Object.keys(raw).slice(0, 12).join(",");
+      return typeof raw + " " + String(raw).slice(0, 80);
+    } catch(e){ return "unreadable"; }
+  }
+
   function unwrapOnce(list, label){
     if (!isArray(list) || list.length !== 1) return list;
     var only = list[0], inner = null;
@@ -4641,10 +4661,12 @@
 
   function setTopics(rows, label){
     TOPICS.calls = (TOPICS.calls || 0) + 1;
+    TOPICS.lastShape = shapeOf(rows);
     var list = parseLoose(rows, label || "topics");
     if (!list){ TOPICS.rejected = (TOPICS.rejected || 0) + 1; return false; }
     if (!isArray(list)) list = [list];
     list = unwrapOnce(list, "topics");
+    TOPICS.lastIn = isArray(list) ? list.length : -1;
     TOPICS.list = list;
     TOPICS.at = nowMs();
     TOPICS.seq++;
@@ -4752,10 +4774,12 @@
   }
   function setMarkets(rows, label){
     MARKETS.calls = (MARKETS.calls || 0) + 1;
+    MARKETS.lastShape = shapeOf(rows);
     var list = parseLoose(rows, label || "markets");
     if (!list){ MARKETS.rejected = (MARKETS.rejected || 0) + 1; return false; }
     if (!isArray(list)) list = [list];
     list = unwrapOnce(list, "markets");
+    MARKETS.lastIn = isArray(list) ? list.length : -1;
     MARKETS.list = list;
     MARKETS.at = nowMs();
     MARKETS.seq++;
@@ -4840,10 +4864,12 @@
 
   function setBrands(rows, label){
     BRANDS.calls = (BRANDS.calls || 0) + 1;
+    BRANDS.lastShape = shapeOf(rows);
     var list = parseLoose(rows, label || "brands");
     if (!list){ BRANDS.rejected = (BRANDS.rejected || 0) + 1; return false; }
     if (!isArray(list)) list = [list];
     list = unwrapOnce(list, "brands");
+    BRANDS.lastIn = isArray(list) ? list.length : -1;
     var camein = list.length;
     list = list.map(normBrandRow).filter(Boolean);
     warnDropped("brands", camein, list.length);
@@ -5074,9 +5100,11 @@
     /* Diagnose fuer leere Zustaende: wie oft wurde der Setter gerufen, wie oft war die
        Payload unlesbar. Damit kann ein leerer Store sagen, WARUM er leer ist. */
     storeStats: function(){
-      return { topics:  { calls: TOPICS.calls  || 0, rejected: TOPICS.rejected  || 0, n: TOPICS.list.length  },
-               markets: { calls: MARKETS.calls || 0, rejected: MARKETS.rejected || 0, n: MARKETS.list.length },
-               brands:  { calls: BRANDS.calls  || 0, rejected: BRANDS.rejected  || 0, n: BRANDS.list.length  } };
+      function one(S){
+        return { calls: S.calls || 0, rejected: S.rejected || 0, n: S.list.length,
+                 rowsIn: S.lastIn == null ? null : S.lastIn, shape: S.lastShape || null };
+      }
+      return { topics: one(TOPICS), markets: one(MARKETS), brands: one(BRANDS) };
     },
     setBrands: setBrands,
     onBrands: onBrands,
