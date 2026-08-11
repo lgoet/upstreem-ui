@@ -4756,6 +4756,67 @@
   })();
 
   /* ---------------------------------------------------------------------------------------------
+     Brand store. Vierter Store derselben Bauart wie Topics und Markets, und aus demselben Grund:
+     mehrere Komponenten brauchen dieselbe Markenliste, und ohne Store haengt jede an ihrem eigenen
+     Bubble-Ausdruck -- eine neu angelegte oder deaktivierte Marke erreicht dann genau die
+     Placements, an die jemand gedacht hat.
+
+     Wie bei Markets gibt es BEIDE Richtungen: setUpstreemBrands(list) fuellt, brandsChanged() ist
+     die Gegenrichtung fuer jede Stelle, die Marken anlegt, umbenennt oder deaktiviert -- ein
+     bekannter Bubble-Funktionsname, beantwortet mit "RPC neu laufen lassen und setUpstreemBrands
+     rufen". Kein Mutationsort muss wissen, welche Picker es auf der Seite gibt.
+
+     Zeilenform (dieselbe, die renderPerformanceRadar in available_companies erwartet):
+       { company_id, name, logo_url, role: "own"|"competitor", position } */
+  var BRANDS = (window.__upBrands = window.__upBrands || { list: [], at: 0, seq: 0, subs: [] });
+
+  function getBrands(){ return BRANDS.list.slice(); }
+  function onBrands(fn, owner){
+    var sub = { fn: fn, owner: owner || null };
+    BRANDS.subs.push(sub);
+    return function(){
+      var i = BRANDS.subs.indexOf(sub);
+      if (i >= 0) BRANDS.subs.splice(i, 1);
+    };
+  }
+  function setBrands(rows, label){
+    var list = parseLoose(rows, label || "brands");
+    if (!list) return false;
+    if (!isArray(list)) list = [list];
+    BRANDS.list = list;
+    BRANDS.at = nowMs();
+    BRANDS.seq++;
+    for (var i = BRANDS.subs.length - 1; i >= 0; i--){
+      var sub = BRANDS.subs[i];
+      if (sub.owner && !document.contains(sub.owner)){ BRANDS.subs.splice(i, 1); continue; }
+      try { sub.fn(list.slice()); } catch(e){
+        if (window.console) console.warn("[brands] a subscriber threw while updating:", e);
+      }
+    }
+    return true;
+  }
+  function brandsChanged(){
+    var fn = resolveBubbleFn("bubble_fn_upBrandsChanged");
+    if (typeof fn === "function"){ try { fn(""); } catch(e){} return true; }
+    if (window.console) {
+      console.info("[brands] bubble_fn_upBrandsChanged not found. The brand pickers on this page " +
+        "will not refresh by themselves, so a newly added or deactivated brand only shows up after " +
+        "a reload. Add a Toolbox \"JavaScript to Bubble\" element named upBrandsChanged (Trigger " +
+        "event checked) whose workflow re-runs the brands RPC and calls setUpstreemBrands().");
+    }
+    return false;
+  }
+  window.setUpstreemBrands = function(rows){ return setBrands(rows, "setUpstreemBrands"); };
+  window.getUpstreemBrands = getBrands;
+  window.upstreemBrandsChanged = brandsChanged;
+  (function drainBrandsQueue(){
+    var q = window.__upBrandsQueue;
+    if (!q || !q.length) return;
+    window.__upBrandsQueue = [];
+    for (var i = 0; i < q.length; i++){ try { setBrands(q[i], "setUpstreemBrands (queued)"); } catch(e){} }
+  })();
+
+  /* ---------------------------------------------------------------------------------------------
      Page-wide theme. Same shape as the topic store above, for the same reason: one call, every
      component follows, including ones that mount later.
 
@@ -4925,6 +4986,10 @@
     setMarkets: setMarkets,
     onMarkets: onMarkets,
     marketsChanged: marketsChanged,
+    getBrands: getBrands,
+    setBrands: setBrands,
+    onBrands: onBrands,
+    brandsChanged: brandsChanged,
     setUpstreemTheme: setUpstreemTheme,
     onTheme: onTheme,
     getUpstreemTheme: getUpstreemTheme,

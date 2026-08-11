@@ -86,8 +86,8 @@
      where 11 fit before — the "two more" the redesign asked for, and it falls out of
      the geometry rather than being a second hardcoded cap.
      --------------------------------------------------------------------------- */
-  var LEAD_W      = 132;   // topic column
-  var LEAD_W_NARR = 104;
+  var LEAD_W      = 176;   // topic column -- laengere Topicnamen wurden bei 132 abgeschnitten
+  var LEAD_W_NARR = 132;
   var COL_MIN     = 60;    // a brand column never shrinks below this; past that the grid scrolls
   var GAP         = 4;
   /* Fallback caps for the picker when the payload carries no selection.*_limit. Ten was the old
@@ -133,6 +133,24 @@
      expression change), same idiom as every other component's *_STORE.
      --------------------------------------------------------------------------- */
   var METRIC_STORE = (window.__uhmMetric = window.__uhmMetric || {});
+  var SCALE_STORE  = (window.__uhmScale  = window.__uhmScale  || {});   // "color" | "mono"
+  var WEIGHT_STORE = (window.__uhmWeight = window.__uhmWeight || {});   // Gewichtungsbalken an/aus
+
+  /* Wie viele der vier Balken gefuellt sind. Referenz ist das Maximum der SICHTBAREN Matrix, nicht
+     ein globaler Wert: die Frage, die die Balken beantworten sollen, ist "wie ungewoehnlich ist
+     diese Zelle im Vergleich zu dem, was daneben steht". Alles ueber null bekommt mindestens einen
+     Balken -- sonst sieht "eine Erwaehnung" aus wie "keine". */
+  var WEIGHT_STEPS = 4;
+  function weightLevel(mentions, max){
+    var m = toNum(mentions);
+    if (m == null || m <= 0 || !max) return 0;
+    return Math.max(1, Math.min(WEIGHT_STEPS, Math.ceil((m / max) * WEIGHT_STEPS)));
+  }
+  function weightHtml(level){
+    var out = '<span class="uhm-w" aria-hidden="true">';
+    for (var i = 1; i <= WEIGHT_STEPS; i++) out += '<i' + (i <= level ? ' class="is-on"' : '') + '></i>';
+    return out + '</span>';
+  }
 
   /* ---------------------------------------------------------------------------
      Tooltip — ONE body-mounted chip for the whole page, exactly like the Landscape
@@ -162,9 +180,15 @@
   function metricRowsHtml(cell){
     var vis = cell.visibility_pct, sv = cell.sentiment, rv = cell.avg_rank;
     var ment = cell.mentions;
+    /* Drei Zellen pro Zeile, direkt ins Grid -- KEIN Wrapper-Element. Nur so teilen sich alle
+       Zeilen dieselben Spaltenkanten: Label, dann alle Werte auf einer x-Position, dann alle
+       Trends auf einer x-Position. Mit einem Wrapper pro Zeile waere jede Zeile ihr eigenes
+       Layout und die Zahlen wuerden versetzt stehen. Der Trend kommt NACH dem Wert, weil das die
+       Leserichtung ist: erst was es ist, dann wohin es geht. */
     function row(label, valHtml, trendHtml){
-      return '<div class="uhm-tip-row"><span class="uhm-tip-lbl">' + label + '</span>' +
-             '<span class="uhm-tip-val">' + (trendHtml || "") + valHtml + '</span></div>';
+      return '<span class="uhm-tip-lbl">' + label + '</span>' +
+             '<span class="uhm-tip-val">' + valHtml + '</span>' +
+             '<span class="uhm-tip-trend">' + (trendHtml || "") + '</span>';
     }
     var visHtml = vis == null ? '<span class="uhm-tip-empty">-</span>'
       : '<span class="up-num">' + fmtPctShort(vis) + '</span>';
@@ -292,6 +316,8 @@
       companies: [],         // columns, in render order
       availTopics: [],
       availCompanies: [],
+      payloadTopics: [],
+      payloadCompanies: [],
       selTopics: {},         // picker draft: id -> bool
       selCompanies: {},
       appliedTopics: [],     // what the last Apply actually sent, for the Reset affordance
@@ -299,6 +325,8 @@
       topicLimit: DEF_TOPIC_LIMIT,
       companyLimit: DEF_COMPANY_LIMIT,
       metric: METRIC_ALIAS[String(METRIC_STORE[instanceId] || "").toLowerCase()] || "visibility",
+      scale: SCALE_STORE[instanceId] === "mono" ? "mono" : "color",
+      weights: WEIGHT_STORE[instanceId] === true,
       isDark: isYes(root.getAttribute("data-isdark")),
       loading: false,
       hasData: false,
@@ -310,6 +338,9 @@
     var elPick    = root.querySelector(".uhm-pick");
     var elPickBtn = root.querySelector(".uhm-pick-btn");
     var elPickMenu= root.querySelector(".uhm-pick-menu");
+    var elSet     = root.querySelector(".uhm-set");
+    var elSetBtn  = root.querySelector(".uhm-set-btn");
+    var elSetMenu = root.querySelector(".uhm-set-menu");
     var elGrid    = root.querySelector(".uhm-grid");
     var elBox     = root.querySelector(".uhm-box");
     var elScroll  = root.querySelector(".uhm-scroll");
@@ -324,8 +355,15 @@
        silently stays on whatever version was pasted last (core.js says the same about
        SLIDERS_ICON at its definition). */
     if (elPickBtn && UC.SLIDERS_ICON && !elPickBtn.querySelector("svg")){
-      elPickBtn.innerHTML = UC.SLIDERS_ICON + '<span class="uhm-pick-badge"></span>';
+      elPickBtn.innerHTML = UC.SLIDERS_ICON + '<span class="up-badge is-dot"></span>';
     }
+
+    /* Store-Aenderungen ziehen den Picker nach: legt jemand woanders ein Topic an oder deaktiviert
+       eine Marke, ist die neue Liste hier sofort da -- ohne Reload und ohne dass die mutierende
+       Stelle wissen muss, dass es diesen Picker gibt. Die Abmeldung haengt am root, core raeumt
+       tote Abonnenten selbst weg. */
+    if (UC.onTopics) UC.onTopics(function(){ syncAvailable(); if (pickPop.isOpen()) populatePicker(); }, root);
+    if (UC.onBrands) UC.onBrands(function(){ syncAvailable(); if (pickPop.isOpen()) populatePicker(); }, root);
 
     if (UC.makeTooltips) UC.makeTooltips(root, function(){ return state.isDark; });
     if (UC.widthTiers) UC.widthTiers(root, { narrowAt: 760, vnarrowAt: 520 });
@@ -350,7 +388,11 @@
       root.__uhmThemeObs = true;
       try {
         new MutationObserver(function(){
-          if (syncTheme()){ paintCells(); if (elPick && elPick.classList.contains("is-open")) populatePicker(); }
+          if (syncTheme()){
+            paintCells();
+            if (elPick && elPick.classList.contains("is-open")) populatePicker();
+            if (elSet && elSet.classList.contains("is-open")) populateSettings();
+          }
         }).observe(root, { attributes: true, attributeFilter: ["data-isdark"] });
       } catch(e){}
     }
@@ -366,15 +408,24 @@
       }
       return out;
     }
+    /* Entsaettigte Skala: KEINE zweite Palette, sondern dieselbe Rampe ueber ihre wahrgenommene
+       Helligkeit (BT.601) auf Grauwerte gezogen. Damit bleiben die Abstufungen exakt dieselben wie
+       in der farbigen Variante -- eine handgewaehlte Grau-Palette daneben waere die naechste
+       Stelle, die auseinanderlaeuft. */
+    function desat(rgb){
+      var y = Math.round((rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000);
+      return [y, y, y];
+    }
     function heatColor(t){
       var s = ramp();
       t = clamp(t, 0, 1);
       var i = t * (s.length - 1), lo = Math.floor(i), hi = Math.min(s.length - 1, lo + 1), f = i - lo;
-      return [
+      var out = [
         Math.round(s[lo][0] + (s[hi][0] - s[lo][0]) * f),
         Math.round(s[lo][1] + (s[hi][1] - s[lo][1]) * f),
         Math.round(s[lo][2] + (s[hi][2] - s[lo][2]) * f)
       ];
+      return state.scale === "mono" ? desat(out) : out;
     }
     function emptyFill(){
       var cs = null;
@@ -492,10 +543,9 @@
       state.topics    = (selT.length ? selT : tFromCells).slice().sort(byPos);
       state.companies = (selC.length ? selC : cFromCells).slice().sort(byPos);
 
-      var avT = Array.isArray(params.available_topics) ? params.available_topics.map(normTopic).filter(Boolean) : [];
-      var avC = Array.isArray(params.available_companies) ? params.available_companies.map(normCompany).filter(Boolean) : [];
-      state.availTopics    = (avT.length ? avT : state.topics).slice().sort(byPos);
-      state.availCompanies = (avC.length ? avC : state.companies).slice().sort(byPos);
+      state.payloadTopics    = Array.isArray(params.available_topics) ? params.available_topics.map(normTopic).filter(Boolean) : [];
+      state.payloadCompanies = Array.isArray(params.available_companies) ? params.available_companies.map(normCompany).filter(Boolean) : [];
+      syncAvailable();
 
       /* Seed the picker draft from what is actually on screen, and remember it as the baseline
          the Reset button returns to. */
@@ -510,6 +560,34 @@
     /* =====================================================================
        Grid
        ===================================================================== */
+    /* ---- Was der Picker zur Auswahl stellt ----
+       Erste Wahl sind die seitenweiten Stores (UC.getTopics / UC.getBrands): dieselbe Liste, die
+       auch der Topics-Filter und die Prompts-Tabelle sehen, EIN Bubble-Ausdruck fuer die ganze
+       Seite, und ein neu angelegtes Topic erreicht diesen Picker mit. available_topics /
+       available_companies aus dem Payload sind der Rueckfall fuer Seiten ohne Store -- und was
+       gerade auf dem Schirm steht, ist der Rueckfall vom Rueckfall, damit die Liste nie leer ist.
+
+       Fuer Marken gab es diesen Store bis eben nicht; er ist jetzt in core (setUpstreemBrands /
+       upstreemBrandsChanged), gebaut wie der fuer Topics und Markets. */
+    function syncAvailable(){
+      var storeT = (UC.getTopics ? UC.getTopics() : []).map(normTopic).filter(Boolean);
+      var storeC = (UC.getBrands ? UC.getBrands() : []).map(normCompany).filter(Boolean);
+      var t = storeT.length ? storeT : (state.payloadTopics.length ? state.payloadTopics : state.topics);
+      var c = storeC.length ? storeC : (state.payloadCompanies.length ? state.payloadCompanies : state.companies);
+      /* Was auf dem Schirm steht, MUSS waehlbar bleiben -- sonst kann man eine Zeile, die der
+         Store nicht kennt, nicht mehr abwaehlen. */
+      state.availTopics    = mergeById(t, state.topics);
+      state.availCompanies = mergeById(c, state.companies);
+    }
+    function mergeById(primary, extra){
+      var seen = {}, out = [];
+      primary.concat(extra).forEach(function(x){
+        if (!x || seen[x.id]) return;
+        seen[x.id] = true; out.push(x);
+      });
+      return out.sort(byPos);
+    }
+
     function layoutKeyOf(){
       return state.topics.map(function(t){ return t.id; }).join(",") + "||" +
              state.companies.map(function(c){ return c.id; }).join(",");
@@ -540,44 +618,75 @@
       return '<div class="uhm-rowhead" data-topic="' + esc(t.id) + '">' + topicChipHtml(t, hex, true) + '</div>';
     }
 
+    /* Alles, was eine Zelle ausmacht -- Fuellung, Schriftfarbe, Text, Gewichtungsbalken -- in
+       EINEM Schritt. Rueckgabe ist ein HTML-Fragment, kein Style-Schreibzugriff im Nachhinein.
+       Genau daran hing der Fehler, dass die Zahlen erst weiss aufblitzten: .uhm-cell hat eine
+       transition auf color, der Default ist helle Schrift, und ein nachtraegliches Setzen der
+       richtigen Farbe hat diese Transition ausgeloest. Steht die Farbe schon im gelieferten
+       Markup, gibt es keinen Ausgangswert, von dem aus ueberblendet werden koennte. */
+    function cellInner(cell, metric, empty, maxMentions){
+      var on = hasValue(cell, metric);
+      if (!on) return { cls: " is-empty", style: "background:" + rgbCss(empty), html: "" };
+      var rgb;
+      if (metric === "sentiment"){
+        rgb = hexToRgb(sentColor(rawValue(cell, metric))) || empty;
+        /* Auch hier entsaettigen: eine Einstellung namens "Schwarzweiss", bei der die
+           Sentiment-Ansicht weiter bunt ist, waere keine. */
+        if (state.scale === "mono") rgb = desat(rgb);
+      } else {
+        rgb = heatColor(heatValue(cell, metric) || 0);
+      }
+      var html = cellText(cell, metric);
+      if (state.weights) html += weightHtml(weightLevel(cell.mentions, maxMentions));
+      return { cls: isLightFill(rgb) ? " is-onlight" : "", style: "background:" + rgbCss(rgb), html: html };
+    }
+    /* Bezugsgroesse der Gewichtungsbalken: das Maximum der aktuell sichtbaren Matrix. */
+    function maxMentions(){
+      var m = 0;
+      state.topics.forEach(function(t){
+        state.companies.forEach(function(c){
+          var v = toNum((state.cellMap[t.id + "|" + c.id] || {}).mentions);
+          if (v != null && v > m) m = v;
+        });
+      });
+      return m;
+    }
+
     function buildGrid(){
       applyTracks();
+      var metric = state.metric, empty = emptyFill(), mx = maxMentions();
       var html = '<div class="uhm-corner"></div>';
       state.companies.forEach(function(c){ html += colHeadHtml(c); });
       state.topics.forEach(function(t){
         html += rowHeadHtml(t);
         state.companies.forEach(function(c){
-          html += '<div class="uhm-cell" data-key="' + esc(t.id + "|" + c.id) + '"' +
-                  ' data-topic="' + esc(t.id) + '" data-company="' + esc(c.id) + '"></div>';
+          var key = t.id + "|" + c.id;
+          var v = cellInner(state.cellMap[key], metric, empty, mx);
+          html += '<div class="uhm-cell' + v.cls + '" data-key="' + esc(key) + '"' +
+                  ' data-topic="' + esc(t.id) + '" data-company="' + esc(c.id) + '"' +
+                  ' style="' + v.style + '">' + v.html + '</div>';
         });
       });
       elGrid.innerHTML = html;
       state.layoutKey = layoutKeyOf();
-      paintCells();
       runAppear();
     }
 
     /* Repaint WITHOUT touching the DOM structure — this is what makes the metric switch animate:
        the same nodes get a new background-color and the CSS transition on .uhm-cell does the rest.
-       A full rebuild would swap the nodes and there would be nothing to transition between. */
+       A full rebuild would swap the nodes and there would be nothing to transition between.
+       Beim ERSTEN Aufbau laeuft das bewusst nicht (siehe buildGrid) -- dort waere die Transition
+       kein Effekt, sondern ein Fehler. */
     function paintCells(){
-      var metric = state.metric;
-      var empty = emptyFill();
-      var emptyCss = rgbCss(empty);
-      var nodes = elGrid.querySelectorAll(".uhm-cell");
-      Array.prototype.forEach.call(nodes, function(el){
-        var key = el.getAttribute("data-key");
-        var cell = state.cellMap[key];
-        var on = hasValue(cell, metric);
-        var rgb;
-        if (!on){ rgb = empty; }
-        else if (metric === "sentiment"){ rgb = hexToRgb(sentColor(rawValue(cell, metric))) || empty; }
-        else { rgb = heatColor(heatValue(cell, metric) || 0); }
-        el.style.background = on ? rgbCss(rgb) : emptyCss;
-        el.classList.toggle("is-empty", !on);
-        el.classList.toggle("is-onlight", on && isLightFill(rgb));
-        el.innerHTML = on ? cellText(cell, metric) : "";
-        el.setAttribute("aria-hidden", on ? "false" : "true");
+      var metric = state.metric, empty = emptyFill(), mx = maxMentions();
+      Array.prototype.forEach.call(elGrid.querySelectorAll(".uhm-cell"), function(el){
+        var cell = state.cellMap[el.getAttribute("data-key")];
+        var v = cellInner(cell, metric, empty, mx);
+        el.style.background = v.style.slice("background:".length);
+        el.classList.toggle("is-empty", v.cls === " is-empty");
+        el.classList.toggle("is-onlight", v.cls === " is-onlight");
+        el.innerHTML = v.html;
+        el.setAttribute("aria-hidden", v.cls === " is-empty" ? "true" : "false");
       });
       /* Row/column headers carry the theme's topic colour, which flips with the theme. */
       Array.prototype.forEach.call(elGrid.querySelectorAll(".uhm-rowhead"), function(el){
@@ -754,7 +863,7 @@
       elPickMenu.innerHTML =
         '<div class="uhm-pick-cols">' + brands + topics + '</div>' +
         '<div class="uhm-pick-foot">' +
-          (dirty ? '<button class="up-pop-action" type="button" data-pickreset>Reset</button>' : '<span></span>') +
+          (dirty ? '<button class="up-pop-action" type="button" data-pickreset>Reset</button>' : '') +
           '<button class="up-filter-submit uhm-pick-apply" type="button" data-pickapply>Apply</button>' +
         '</div>';
     }
@@ -765,13 +874,75 @@
       return a.every(function(x){ return m[x]; });
     }
 
+    /* =====================================================================
+       Einstellungen (Zahnrad oben rechts)
+       Aufbau bewusst der der Table-Settings: .up-menu als Panel, .up-pop-head als
+       Abschnittstitel, .up-scale-opt/.up-scale-dots fuer die Farbskala (dieselben runden,
+       ueberlappenden Punkte wie im Chart-Settings-Menue der Linecharts) und .up-pop-row +
+       .up-switch fuer den Schalter. Nichts davon ist hier neu gebaut.
+       ===================================================================== */
+    var setPop = (elSet && elSetMenu)
+      ? UC.makePopover({ wrap: elSet, menu: elSetMenu, opener: elSetBtn, group: "uhm-" + instanceId })
+      : { open: function(){}, close: function(){}, toggle: function(){}, isOpen: function(){ return false; } };
+
+    /* Vier Punkte, aus derselben Rampe entnommen, die das Chart benutzt -- die Vorschau kann
+       darum gar nicht von der Wirklichkeit abweichen. Positionen 1..4 von 5 Stops, damit der
+       hellste (fast weisse) Stop die Vorschau nicht anfuehrt. */
+    function scaleDotsHtml(mono){
+      var stops = ramp(), out = "";
+      for (var i = 1; i < 5; i++){
+        var rgb = stops[i];
+        if (mono){ var y = Math.round((rgb[0]*299 + rgb[1]*587 + rgb[2]*114)/1000); rgb = [y,y,y]; }
+        out += '<span class="up-scale-dot" style="background:' + rgbCss(rgb) + '"></span>';
+      }
+      return '<span class="up-scale-dots">' + out + '</span>';
+    }
+    function scaleOptHtml(key, label, mono){
+      return '<div class="up-scale-opt' + (state.scale === key ? " is-active" : "") + '" data-scale="' + key + '">' +
+        '<div class="up-scale-opt-head"><span class="up-scale-opt-lbl">' + label + '</span>' +
+          '<span class="up-check">' + CHECK_SVG + '</span></div>' +
+        scaleDotsHtml(mono) + '</div>';
+    }
+    function populateSettings(){
+      if (!elSetMenu) return;
+      elSetMenu.innerHTML =
+        '<div class="up-pop-head">Color scale</div>' +
+        scaleOptHtml("color", "Default", false) +
+        scaleOptHtml("mono",  "Monochrome", true) +
+        '<div class="up-pop-div"></div>' +
+        '<div class="up-pop-row" data-weights role="button" tabindex="0">' +
+          '<span class="up-pop-label">Mentions weight</span>' +
+          '<span class="up-switch' + (state.weights ? " is-on" : "") + '"></span>' +
+        '</div>' +
+        '<div class="uhm-set-note">Vier Balken je Zelle, gefuellt nach Erwaehnungen im Verhaeltnis ' +
+        'zur staerksten Zelle. Zeigt, wie belastbar ein Wert ist.</div>';
+    }
+    function setScale(key){
+      key = key === "mono" ? "mono" : "color";
+      if (key === state.scale) return;
+      state.scale = key;
+      SCALE_STORE[instanceId] = key;
+      populateSettings();
+      paintCells();
+    }
+    function setWeights(on){
+      on = !!on;
+      if (on === state.weights) return;
+      state.weights = on;
+      WEIGHT_STORE[instanceId] = on;
+      root.classList.toggle("has-weights", on);
+      populateSettings();
+      paintCells();
+    }
+
     function syncPickBtn(){
       if (!elPick) return;
-      var badge = elPick.querySelector(".uhm-pick-badge");
+      var badge = elPick.querySelector(".up-badge");
       /* "Filtered" means: fewer are on screen than are available. Showing the marker for the full
          set would light the control up permanently and stop meaning anything.
-         A DOT, not a number: there are two axes here, and "brands + topics" summed into one
-         figure ("13") is a number that answers no question anyone has. */
+         Ein PUNKT, keine Zahl: hier gibt es zwei Achsen, und "Marken plus Topics" zu einer Zahl
+         addiert ("13") beantwortet keine Frage. Die Optik kommt aus core (.up-badge.is-dot) --
+         mein erster, frei nachgebauter Kreis war deutlich zu gross fuer den Trigger. */
       var filtered = state.hasData &&
         (state.companies.length < state.availCompanies.length || state.topics.length < state.availTopics.length);
       elPick.classList.toggle("is-active", !!filtered);
@@ -817,6 +988,20 @@
     root.addEventListener("click", function(e){
       var mb = e.target.closest("[data-metric]");
       if (mb && elSeg && elSeg.contains(mb)){ setMetric(mb.getAttribute("data-metric")); return; }
+
+      if (elSetBtn && e.target.closest(".uhm-set-btn")){
+        e.stopPropagation();
+        if (setPop.isOpen()){ setPop.close(false); return; }
+        populateSettings();
+        setPop.open();
+        return;
+      }
+      if (elSetMenu && elSetMenu.contains(e.target)){
+        var so = e.target.closest("[data-scale]");
+        if (so){ setScale(so.getAttribute("data-scale")); return; }
+        if (e.target.closest("[data-weights]")){ setWeights(!state.weights); return; }
+        return;
+      }
 
       if (elPickBtn && e.target.closest(".uhm-pick-btn")){
         e.stopPropagation();
@@ -986,6 +1171,7 @@
     };
 
     root.__uhmController = ctrl;
+    root.classList.toggle("has-weights", state.weights);
     syncSeg();
     if (elHeading && !elHeading.textContent.trim()) elHeading.textContent = "Performance Chart";
     renderSkeleton();

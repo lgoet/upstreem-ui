@@ -1,6 +1,6 @@
 <meta charset="utf-8">
-<link rel="stylesheet" href="core.css?v=4">
-<link rel="stylesheet" href="performance-radar.css?v=4">
+<link rel="stylesheet" href="core.css?v=7">
+<link rel="stylesheet" href="performance-radar.css?v=7">
 <style>
   /* Copies the host app's shape: the PAGE does not scroll, #main does, and a drawer sits on top
      at z 9905-9930 (see project_host_app_layout). Without this the dropdown-in-drawer stacking
@@ -49,6 +49,12 @@
           <button class="up-seg-btn" data-metric="rank" type="button" role="tab" aria-selected="false">Ranking</button>
           <button class="up-seg-btn" data-metric="sentiment" type="button" role="tab" aria-selected="false">Sentiment</button>
         </div>
+        <div class="uhm-set">
+          <button class="uhm-set-btn up-iconbtn" type="button" data-tip="Settings" aria-label="Settings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </button>
+          <div class="uhm-set-menu up-menu" role="menu" aria-hidden="true"></div>
+        </div>
         <div class="uhm-pick">
           <button class="uhm-pick-btn up-iconbtn" type="button" data-tip="Brands &amp; Topics" aria-label="Choose brands and topics"></button>
           <div class="uhm-pick-menu" role="menu" aria-hidden="true"></div>
@@ -82,6 +88,12 @@
           <button class="up-seg-btn is-active" data-metric="visibility" type="button" role="tab">Visibility</button>
           <button class="up-seg-btn" data-metric="rank" type="button" role="tab">Ranking</button>
           <button class="up-seg-btn" data-metric="sentiment" type="button" role="tab">Sentiment</button>
+        </div>
+        <div class="uhm-set">
+          <button class="uhm-set-btn up-iconbtn" type="button" data-tip="Settings" aria-label="Settings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </button>
+          <div class="uhm-set-menu up-menu" role="menu" aria-hidden="true"></div>
         </div>
         <div class="uhm-pick">
           <button class="uhm-pick-btn up-iconbtn" type="button" data-tip="Brands &amp; Topics"></button>
@@ -121,6 +133,23 @@
   };
   window.bubble_fn_heatmap_cell_clicked = function(s){ log("CELL CLICK (raw string) " + s); };
 
+  /* Boot-Stub fuer den Brand-Store. Bubble ruft setUpstreemBrands() im Page-Load-Workflow,
+     also regelmaessig BEVOR core.js geladen ist -- ohne diesen Stub ist der Aufruf verloren und
+     die Picker bleiben auf dem, was der Payload mitbringt. core.js leert die Queue beim Start.
+     Dasselbe Muster wie bei Topics und Markets (__upTopicsQueue / __upMarketsQueue). */
+  window.__upBrandsQueue = window.__upBrandsQueue || [];
+  if (typeof window.setUpstreemBrands !== "function"){
+    window.setUpstreemBrands = function(rows){ window.__upBrandsQueue.push(rows); };
+  }
+
+  window.setUpstreemBrands(JSON.stringify([
+    {company_id:"fd2f56a4-d11d-45a3-b10e-bd93a249b75f", name:"Anfragenfluss", role:"competitor", position:1,
+     logo_url:"https://www.google.com/s2/favicons?domain=anfragenfluss.de&sz=64"},
+    {company_id:"88640dff-6468-471a-bee4-6c17d2ed0399", name:"LeeUp Media", role:"own", position:2,
+     logo_url:"https://www.google.com/s2/favicons?domain=lee-up.de&sz=64"},
+    {company_id:"STORE-ONLY-1", name:"Enpal (nur aus dem Store)", role:"competitor", position:20, logo_url:""}
+  ]));
+
   function payload(id){ var p = JSON.parse(JSON.stringify(window.UHM_PAYLOAD)); p.instanceId = id; return p; }
   function load(){ window.renderPerformanceRadar(payload("h1")); window.renderPerformanceRadar(payload("h2")); }
   function loadCellsOnly(){
@@ -141,5 +170,5 @@
   }
   function toggleDrawer(){ document.getElementById("drawer").classList.toggle("is-on"); }
 </script>
-<script src="core.js?v=4"></script>
-<script src="performance-radar.js?v=4"></script>
+<script src="core.js?v=7"></script>
+<script src="performance-radar.js?v=7"></script>

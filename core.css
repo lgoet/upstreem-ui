@@ -1201,6 +1201,31 @@
 
 /* favicon holder with a letter fallback — a broken favicon used to leave an empty square, which
    reads as a loading glitch; the initial keeps every row visually complete */
+/* ---------- Zaehl-Badge am Icon-Button ----------
+   Der kleine Kreis oben rechts an einem Trigger ("N Filter aktiv"). Lag zweimal in
+   Komponenten-CSS (brands-overview, citations-combo-chart) und ist beim dritten Verbraucher
+   prompt zu gross und zu schwer geraten, weil ich ihn frei nachgebaut habe statt ihn zu nehmen.
+   Die beiden alten Klassennamen haengen als Aliase mit dran -- ihr Markup steht in vom Nutzer
+   eingefuegten Bubble-Seiten, ein Rename wuerde die zerlegen. */
+.up-badge, .ubo-filter-badge, .ubo-cols-badge, .combo-filter-badge {
+  position: absolute; top: -3px; right: -3px; z-index: 2;
+  min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
+  background: var(--vc-text); color: #e0e0e0;
+  font-family: inherit; font-size: 10px; font-weight: 600; line-height: 1;
+  display: none; align-items: center; justify-content: center;
+  font-variant-numeric: tabular-nums; pointer-events: none;
+}
+.up-root[data-theme="dark"] .up-badge,
+.up-root[data-theme="dark"] .ubo-filter-badge,
+.up-root[data-theme="dark"] .ubo-cols-badge,
+.up-root[data-theme="dark"] .combo-filter-badge { color: #1f1f1b; }
+.up-badge.is-visible, .ubo-filter-badge.is-visible,
+.ubo-cols-badge.is-visible, .combo-filter-badge.is-visible { display: inline-flex; }
+/* Reine Markierung ohne Zahl: 8px Punkt, kein Text. Fuer Trigger, bei denen eine Zahl nichts
+   beantwortet -- der Radar-Picker hat zwei Achsen, "13" waere dort die Summe aus Aepfeln und
+   Birnen. */
+.up-badge.is-dot { min-width: 8px; width: 8px; height: 8px; padding: 0; top: 0; right: 0; }
+
 .up-logo-box { width: 24px; height: 24px; border-radius: 8px; background: var(--vt-logo-bg); padding: 1px; flex: 0 0 auto;
   display: inline-flex; align-items: center; justify-content: center; position: relative; }
 .up-logo-box img { width: 22px; height: 22px; border-radius: 7px; object-fit: cover; display: block; }

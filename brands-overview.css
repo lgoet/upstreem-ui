@@ -225,16 +225,7 @@
 .up-filter-item.is-disabled:hover { background: transparent; }
 
 /* count badges on the fader + gear buttons — same pill as every other table's cols badge */
-.ubo-filter-badge, .ubo-cols-badge {
-  position: absolute; top: -3px; right: -3px; z-index: 2;
-  min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
-  background: var(--vc-text); color: #e0e0e0;
-  font-family: inherit; font-size: 10px; font-weight: 600; line-height: 1;
-  display: none; align-items: center; justify-content: center;
-  font-variant-numeric: tabular-nums; pointer-events: none;
-}
-.up-root[data-theme="dark"] .ubo-filter-badge, .up-root[data-theme="dark"] .ubo-cols-badge { color: #1f1f1b; }
-.ubo-filter-badge.is-visible, .ubo-cols-badge.is-visible { display: inline-flex; }
+/* Badge: jetzt core.css (.up-badge samt Aliasen fuer diese beiden Klassennamen). */
 
 /* Sort and Table Settings describe the ACTIVE table's metric columns — the Inactive view has
    none of them, so the controls are hidden rather than left there doing nothing. */

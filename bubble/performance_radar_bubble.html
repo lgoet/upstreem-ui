@@ -90,6 +90,35 @@
   · A brand/topic pair with mentions = 0 renders as an empty cell (no number, no hover, no click).
     That is the honest signal: the row exists because the matrix is dense, not because anything
     was measured.
+
+  ── Woraus der Picker seine Listen nimmt ─────────────────────────────────────
+  Erste Wahl sind die SEITENWEITEN Stores, nicht der Payload:
+
+    window.setUpstreemTopics(topicsJson);   // gibt es laengst, teilen sich alle Topic-Picker
+    window.setUpstreemBrands(brandsJson);   // NEU, gleiche Bauart
+      brandsJson: [ { company_id, name, logo_url, role: "own"|"competitor", position }, ... ]
+
+  Ein Aufruf pro Seite, kein instanceId, und jede Komponente die Marken oder Topics anbietet zieht
+  mit. available_topics / available_companies im Payload sind nur der Rueckfall fuer Seiten ohne
+  Store. Was gerade im Chart steht, bleibt immer waehlbar -- sonst koennte man eine Zeile, die der
+  Store nicht kennt, nicht mehr abwaehlen.
+
+  Gegenrichtung, wie bei Topics und Markets: legt eine Stelle in der App eine Marke an, benennt sie
+  um oder deaktiviert sie, ruft sie
+
+    window.upstreemBrandsChanged();
+
+  Dafuer ein Toolbox-Element "JavaScript to Bubble" namens upBrandsChanged anlegen (Trigger event
+  angehakt), dessen Workflow den Marken-RPC neu laufen laesst und setUpstreemBrands() ruft. Ohne
+  das gehen neue Marken erst nach einem Reload in den Pickern auf.
+
+  ── Einstellungen (Zahnrad oben rechts) ──────────────────────────────────────
+  Rein clientseitig, kein Event, pro Placement gemerkt:
+    Color scale       Default | Monochrome (dieselbe Rampe ueber ihre Helligkeit entsaettigt)
+    Mentions weight   vier Balken je Zelle, gefuellt nach Erwaehnungen im Verhaeltnis zur
+                      staerksten sichtbaren Zelle -- macht Ausreisser bei Ranking und Sentiment
+                      sichtbar, wo die Farbe allein nicht verraet, auf wie vielen Nennungen ein
+                      Wert beruht
 -->
 <div class="up-root uhm-root"
      data-instance="INSTANCE_ID"
@@ -106,6 +135,12 @@
         <button class="up-seg-btn is-active" data-metric="visibility" type="button" role="tab" aria-selected="true">Visibility</button>
         <button class="up-seg-btn" data-metric="rank" type="button" role="tab" aria-selected="false">Ranking</button>
         <button class="up-seg-btn" data-metric="sentiment" type="button" role="tab" aria-selected="false">Sentiment</button>
+      </div>
+      <div class="uhm-set">
+        <button class="uhm-set-btn up-iconbtn" type="button" data-tip="Settings" aria-label="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+        <div class="uhm-set-menu up-menu" role="menu" aria-hidden="true"></div>
       </div>
       <div class="uhm-pick">
         <button class="uhm-pick-btn up-iconbtn" type="button" data-tip="Brands &amp; Topics" aria-label="Choose brands and topics"></button>
@@ -139,6 +174,15 @@
       try { if (window.parent && window.parent !== window && typeof window.parent[n] !== "function") window.parent[n] = window[n]; } catch(e){}
     }
   });
+
+  /* Boot-Stub fuer den Brand-Store. Bubble ruft setUpstreemBrands() im Page-Load-Workflow,
+     also regelmaessig BEVOR core.js geladen ist -- ohne diesen Stub ist der Aufruf verloren und
+     die Picker bleiben auf dem, was der Payload mitbringt. core.js leert die Queue beim Start.
+     Dasselbe Muster wie bei Topics und Markets (__upTopicsQueue / __upMarketsQueue). */
+  window.__upBrandsQueue = window.__upBrandsQueue || [];
+  if (typeof window.setUpstreemBrands !== "function"){
+    window.setUpstreemBrands = function(rows){ window.__upBrandsQueue.push(rows); };
+  }
 
   function readPin(cls){
     var els = document.getElementsByClassName(cls), i, p;
