@@ -4806,6 +4806,26 @@
     }
     return false;
   }
+  /* Verteil-Kit. Eine Komponente sagt nur, WAS sie mit der Liste tut -- den Rest (sofort den
+     aktuellen Stand liefern, danach jede Aenderung, Abmeldung wenn der Root verschwindet) macht
+     das hier. Ohne das stuende in sieben Dateien dieselbe Schleife.
+
+     Rueckgabewert sagt, ob der Store schon etwas hatte. Wer den eigenen Run-JS-Setter als
+     Rueckfall behalten will, braucht ihn nicht abzufragen: der Store gewinnt einfach dadurch,
+     dass er spaeter oder gleich danach liefert. Ein leerer Store ueberschreibt NIE -- sonst
+     wuerde eine Seite ohne setUpstreemBrands() die per Run-JS gefuetterte Liste loeschen. */
+  function brandsInto(root, apply){
+    if (typeof apply !== "function") return false;
+    var had = false;
+    if (BRANDS.list.length){
+      try { apply(BRANDS.list.slice()); had = true; } catch(e){
+        if (window.console) console.warn("[brands] consumer threw on the initial list:", e);
+      }
+    }
+    onBrands(function(list){ if (list && list.length) apply(list); }, root);
+    return had;
+  }
+
   window.setUpstreemBrands = function(rows){ return setBrands(rows, "setUpstreemBrands"); };
   window.getUpstreemBrands = getBrands;
   window.upstreemBrandsChanged = brandsChanged;
@@ -4990,6 +5010,7 @@
     setBrands: setBrands,
     onBrands: onBrands,
     brandsChanged: brandsChanged,
+    brandsInto: brandsInto,
     setUpstreemTheme: setUpstreemTheme,
     onTheme: onTheme,
     getUpstreemTheme: getUpstreemTheme,

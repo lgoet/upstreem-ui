@@ -4374,6 +4374,13 @@
     noteBoot(id);
     var ctrl = makeController(root);
     if (!ctrl) return null;
+    /* Die Markenliste kommt seitenweit aus core (setUpstreemBrands), nicht mehr nur aus dem
+       eigenen Run-JS-Setter: EIN Aufruf pro Seite statt einer pro Placement, und eine neu
+       angelegte oder deaktivierte Marke erreicht jede Komponente, auch die, an die niemand
+       gedacht hat. Der komponenteneigene Setter bleibt als Rueckfall bestehen -- ein LEERER
+       Store ueberschreibt nichts, eine Seite ohne setUpstreemBrands() verhaelt sich also
+       unveraendert. */
+    if (UC.brandsInto) UC.brandsInto(root, function(list){ ctrl.update({ brands: list }); });
     root.__uptController = ctrl;
     watchRootRemoval(root);
     return ctrl;

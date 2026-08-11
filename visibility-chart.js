@@ -915,6 +915,11 @@
     root.__votBuilding = false;
     if (!ctrl) return null;
     if (root.__votController) return root.__votController;
+    /* Markenliste seitenweit aus core (setUpstreemBrands) statt nur aus dem eigenen Payload:
+       EIN Aufruf pro Seite, und eine neu angelegte oder deaktivierte Marke erreicht jeden Picker.
+       Der Payload-Weg (params.filterCompanies) bleibt als Rueckfall -- ein LEERER Store
+       ueberschreibt nichts. */
+    if (UC.brandsInto) UC.brandsInto(root, function(list){ ctrl.update({ filterCompanies: list }); });
     root.__votController = ctrl; root.__votId = id;
     if (root.__votPendingParams != null){ try { ctrl.update(root.__votPendingParams); } catch(e){} root.__votPendingParams = null; }
     if (root.__votPendingLoading != null){ try { ctrl.setLoading(root.__votPendingLoading); } catch(e){} root.__votPendingLoading = null; }

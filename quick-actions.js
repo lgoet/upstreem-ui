@@ -1451,8 +1451,13 @@
     // brands for "/mentioning" — feed these in once on page load (name + logo is enough)
     setBrands: function(list){
       try { if (typeof list === "string") list = JSON.parse(list); } catch(_){}
+      /* Feldnamen: die Palette hiess sie schon immer id/name/logo, der seitenweite Brand-Store in
+         core liefert company_id/name/logo_url. Beide werden gelesen, statt beim Abonnieren unten
+         zu mappen -- so nimmt setBrands() jede der beiden Formen an, egal wer sie schickt. */
       BRANDS = Array.isArray(list) ? list.filter(Boolean).map(function(b){
-        return { id: b.id != null ? b.id : "", name: String(b.name || b.label || ""), logo: b.logo || b.favicon || "" };
+        return { id: b.id != null ? b.id : (b.company_id != null ? b.company_id : ""),
+                 name: String(b.name || b.label || ""),
+                 logo: b.logo || b.favicon || b.logo_url || b.favicon_url || "" };
       }).filter(function(b){ return b.name; }) : [];
     },
     // let Bubble supply the real market list for "/market" (falls back to a sensible default)
@@ -1475,5 +1480,12 @@
     // (setResults also sanitizes internally, so passing a raw string as items works too)
     parseItems: function(items){ return coerceItems(items); }
   };
+  /* Und aus dem seitenweiten Store speisen. MiraQuickActions.setBrands() bleibt bestehen und
+     funktioniert unveraendert -- der Store liefert nur zusaetzlich, und nur wenn er etwas hat. */
+  try {
+    var UCg = window.UpstreemCore;
+    if (UCg && UCg.brandsInto) UCg.brandsInto(root, function(list){ api.setBrands(list); });
+  } catch(_){}
+
   window.MiraQuickActions = api;
 })();

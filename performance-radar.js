@@ -938,8 +938,8 @@
           '<span class="up-pop-label">Mentions weight</span>' +
           '<span class="up-switch' + (state.weights ? " is-on" : "") + '"></span>' +
         '</div>' +
-        '<div class="uhm-set-note">Vier Balken je Zelle, gefuellt nach Erwaehnungen im Verhaeltnis ' +
-        'zur staerksten Zelle. Zeigt, wie belastbar ein Wert ist.</div>';
+        '<div class="uhm-set-note">Four marks per cell, filled by mentions relative to the ' +
+        'strongest cell on screen. Shows how much a value is actually built on.</div>';
     }
     function setScale(key){
       key = key === "mono" ? "mono" : "color";

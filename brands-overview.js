@@ -1733,6 +1733,11 @@
     if (root.__uboController) return root.__uboController;
     var ctrl = makeController(root);
     if (!ctrl) return null;
+    /* Markenliste seitenweit aus core (setUpstreemBrands) statt nur aus dem eigenen Payload:
+       EIN Aufruf pro Seite, und eine neu angelegte oder deaktivierte Marke erreicht jeden Picker.
+       Der Payload-Weg (params.filterCompanies) bleibt als Rueckfall -- ein LEERER Store
+       ueberschreibt nichts. */
+    if (UC.brandsInto) UC.brandsInto(root, function(list){ ctrl.update({ filterCompanies: list }); });
     root.__uboController = ctrl;
     applyCache(root, ctrl);
     return ctrl;

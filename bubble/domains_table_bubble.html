@@ -1,4 +1,20 @@
 <!--
+
+  ── Marken kommen jetzt SEITENWEIT ───────────────────────────────────────────
+  Ein Aufruf pro Seite, nicht mehr einer pro Placement:
+
+      window.setUpstreemBrands(brandsJson);
+        brandsJson: [ { company_id, name, logo_url, role: "own"|"competitor", position }, ... ]
+
+  Jede Komponente mit einer Marken-Auswahlliste zieht daraus -- Tabellen, Charts, Quick Actions,
+  Performance Radar. Der komponenteneigene Setter weiter unten bleibt bestehen und funktioniert
+  unveraendert; er ist ab jetzt nur noch der Rueckfall. Ein LEERER Store ueberschreibt nie, eine
+  Seite ohne setUpstreemBrands() verhaelt sich also exakt wie vorher.
+
+  Gegenrichtung: wer eine Marke anlegt, umbenennt oder deaktiviert, ruft
+  window.upstreemBrandsChanged() -- dafuer ein Toolbox-Element "JavaScript to Bubble" namens
+  upBrandsChanged anlegen (Trigger event angehakt), dessen Workflow den Marken-RPC neu laufen
+  laesst und setUpstreemBrands() ruft. Ohne das erscheinen neue Marken erst nach einem Reload.
   UPSTREEM — DOMAINS TABLE
 
   Table only, mirrors the URLs table's structure/architecture with domains-table's own
