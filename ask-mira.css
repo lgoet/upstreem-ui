@@ -1686,18 +1686,8 @@
   #ask-mira[data-theme="dark"] .uo-tag { color: #e0e0e0; background: color-mix(in srgb, var(--uo-tag, #6b7280) 22%, transparent); border-color: color-mix(in srgb, var(--uo-tag, #6b7280) 45%, transparent); }
 
 
-/* ---------- page meta row (built by ask-mira.js) ----------
-   Brand logo + "<Brand> Workspace" above the mira wordmark, the same line every page header in the
-   app carries. Colour/size come from core.css's .up-ph-meta kit; only the two things the kit
-   cannot know are set here. */
-#ask-mira .am-ph-meta { margin-bottom: 8px; }
-/* The compact topbar collapses the whole hero into a 64px row -- logo, Ready pill and nothing
-   else. A meta line there would either break the height or squeeze the title, so it goes, exactly
-   like .am-subline already does. */
-#ask-mira.is-compact .am-ph-meta { display: none !important; }
-@media (max-width: 768px) {
-  #ask-mira .am-ph-meta { display: none !important; }
-}
+/* Die Meta-Zeile (Markenlogo + "<Marke> Workspace" ueber dem Schriftzug) ist entfernt, samt
+   ihrer drei Regeln. Sie wurde von ask-mira.js gebaut, dort steht die Begruendung. */
 
 /* No chevron in this app rotates when its dropdown opens -- the open panel is already the
    affordance, and the spin was asked to go repeatedly. Five rules did it here (report range,

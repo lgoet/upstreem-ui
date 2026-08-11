@@ -2047,37 +2047,41 @@
     elSuggGrid.style.overflow = '';
     elSuggGrid.style.opacity = '';
     elSuggGrid.style.transform = '';
+    elSuggGrid.style.contain = '';
+    elSuggGrid.style.clipPath = '';
     elSuggGrid.style.willChange = '';
     /* Die Bewegung ist vorbei -- was sich waehrenddessen angesammelt hat, laeuft jetzt. */
     _galBusy = false;
     galRunIdle();
   }
-  /* Three strictly separated steps, never two things moving at once:
-        1. fade the old content out          150ms   (height stays pinned)
-        2. swap, then slide the height       200ms   (content invisible the whole way)
-        3. fade the new content in           150ms   (height already released)
-     Every earlier version overlapped the fade with the slide, and overlap is what read as
-     stuttering: the eye tracks two different rates at once and neither looks clean. Opening and
-     closing run the identical sequence, so a collapse is "content out, then slide shut" and an
-     expand is "slide open, then content in" -- which is exactly what it should look like from
-     either direction.
+  /* EINE durchgehende Bewegung, kein Ablauf aus Phasen mehr.
 
-     There is deliberately NO mid-flight retarget any more. The previous version re-read
-     scrollHeight at 60ms to correct the target, which helped nothing and actively broke closing:
-     scrollHeight is never smaller than the box's own clientHeight, so while the box was shrinking
-     it reported the CURRENT height, not the (smaller) target -- and the correction then pulled the
-     end value back up and stalled the collapse halfway. That is the "stutters on the way shut"
-     regression. The height is measured once, while the content is invisible and fully laid out,
-     and that value stands.
+     Vorher liefen drei Schritte hintereinander -- Inhalt ausblenden, tauschen und Hoehe
+     schieben, Inhalt einblenden -- und jeder wurde am transitionend des vorigen gestartet. Das
+     heisst: zwischen den Schritten liegt jedes Mal ein Sprung zurueck ins JavaScript, und der
+     kostet mindestens einen Frame, in dem sich nichts bewegt. Zwei solche Nahtstellen in einer
+     Bewegung von 250ms sind genau das, was man als Stocken sieht. Die Trennung war urspruenglich
+     die Antwort auf ein Ueberlappen, das ebenfalls unruhig aussah; die Loesung ist aber keins
+     von beidem, sondern gar keine Naht.
 
-     Height is the only property that relayouts; opacity is a compositor property and free.
-     will-change goes on for the duration and comes off after, so a block that is static almost
-     all of the time does not keep a layer alive. */
-  var GAL_FADE = 50, GAL_SLIDE = 150;
-  /* Not `ease` for the slide. `ease` is front-loaded -- it leaves at speed and spends its last
-     third barely moving, which on a height change reads as the box creeping the final pixels
-     rather than arriving. This curve accelerates gently and decelerates into the end, so the slide
-     lands instead of trailing off. It is the same curve the composer tray already uses. */
+     Jetzt: einmal in JavaScript alles setzen, dann laeuft der Browser die Sache allein zu Ende.
+     Der Tausch passiert sofort, geklippt auf die alte Hoehe -- sichtbar wird davon nichts, weil
+     die Deckkraft im selben Zug auf 0 steht. Hoehe und Deckkraft starten danach GEMEINSAM aus
+     einer einzigen transition-Deklaration. Kein transitionend-Handler dazwischen, keine Timer-
+     Kette, nichts, was mitten in der Bewegung noch eine Entscheidung trifft.
+
+     contain:layout waehrend der Bewegung: die Hoehe ist die einzige Eigenschaft hier, die
+     wirklich neu layoutet, und ohne Containment zieht dieses Layout bei jedem Frame den Rest
+     der Seite mit durch. Mit Containment bleibt es im Block. Kommt am Ende wieder weg, damit
+     ein Element, das die meiste Zeit still steht, keine Sonderregel behaelt.
+
+     Die Deckkraft ist kuerzer als die Hoehe und startet mit einem kleinen Versatz: der Inhalt
+     soll auftauchen, waehrend die Box schon unterwegs ist, und vor ihr fertig sein -- sonst
+     sieht man am Ende noch etwas nachziehen, obwohl die Bewegung steht. */
+  var GAL_SLIDE = 220, GAL_FADE = 150, GAL_FADE_DELAY = 40;
+  /* Nicht `ease`. `ease` ist vorne schwer und verbringt sein letztes Drittel fast im Stillstand,
+     was bei einer Hoehe aussieht, als kroeche die Box die letzten Pixel. Diese Kurve zieht sanft
+     an und bremst ins Ziel -- dieselbe, die die Composer-Schublade schon benutzt. */
   var GAL_EASE = 'cubic-bezier(.4,0,.2,1)';
   function renderGallery(){
     if (!elSuggGrid || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)){
@@ -2085,49 +2089,55 @@
     }
     var h0 = elSuggGrid.getBoundingClientRect().height;
     galClearTimers();
-    /* Nothing measurable to move (first paint, or the start screen still hidden) -- render straight
-       and leave the element completely alone rather than pinning a height onto it. */
+    /* Nichts Messbares zu bewegen (erster Anstrich, oder der Startbildschirm ist noch verborgen)
+       -- direkt rendern und das Element in Ruhe lassen, statt ihm eine Hoehe aufzuzwingen. */
     if (!h0){ galReset(); return renderGalleryNow(); }
 
     /* Ab hier laeuft eine Bewegung: alles, was per galWhenIdle angemeldet wird, wartet auf ihr
        Ende. Gesetzt NACH dem h0-Ausstieg, denn der rendert ohne Animation durch. */
     _galBusy = true;
 
-    /* ---- 1. content out ---- */
-    elSuggGrid.style.willChange = 'height, opacity';
+    /* ---- Tausch, unsichtbar und auf die alte Hoehe geklippt ----
+       Geklippt wird mit clip-path, nicht mit overflow allein, und das ist der Kern der Sache:
+       der Topics-Picker in der Reporting-Leiste ruft beim Mount UC.unclipAncestors(). Das laeuft
+       vom Picker nach oben und setzt overflow:visible auf jeden Vorfahren, der klippt -- also
+       auch auf genau diesen Block, mitten in der Bewegung. Die Hoehe animierte dann zwar, aber
+       nichts wurde abgeschnitten: man sah eine wandernde Kante bei stehendem Inhalt statt eines
+       Slides, und darunter sprang das Layout. Kein Wettlauf mit einem !important, sondern eine
+       Eigenschaft, die der Sweep gar nicht anfasst. overflow bleibt zusaetzlich stehen, es
+       schadet nicht und traegt den Fall, in dem gar nicht unclipped wird. */
+    elSuggGrid.style.transition = 'none';
     elSuggGrid.style.overflow = 'hidden';
+    elSuggGrid.style.clipPath = 'inset(0)';
+    elSuggGrid.style.contain = 'layout';
+    elSuggGrid.style.willChange = 'height, opacity';
     elSuggGrid.style.height = h0 + 'px';
-    elSuggGrid.style.transition = 'opacity ' + GAL_FADE + 'ms ease';
     elSuggGrid.style.opacity = '0';
 
-    galAfter('opacity', GAL_FADE, function(){
-      /* ---- 2. swap (invisible) and slide ---- */
-      renderGalleryNow();
-      /* Measure the new content at its natural height, then put the old one back so there is a
-         value to transition FROM. Both writes land before the next paint, and the content is at
-         opacity 0 anyway, so the unpinned moment is never visible. */
-      elSuggGrid.style.height = '';
-      var h1 = elSuggGrid.getBoundingClientRect().height;
-      elSuggGrid.style.height = h0 + 'px';
-      elSuggGrid.style.transition = 'none';
-      /* Forced reflow, not cosmetic: without it the browser coalesces the start and end values
-         into one style recalc and the element jumps straight to the end with nothing to animate. */
-      void elSuggGrid.offsetHeight;
-      elSuggGrid.style.transition = 'height ' + GAL_SLIDE + 'ms ' + GAL_EASE;
-      elSuggGrid.style.height = h1 + 'px';
+    renderGalleryNow();
 
-      galAfter('height', GAL_SLIDE, function(){
-        /* ---- 3. content in ---- */
-        /* Height back to auto first: a pinned height would freeze the block at this size the next
-           time the prompt list wraps to a different number of lines. Safe to release here because
-           the slide has finished on exactly this value. */
-        elSuggGrid.style.transition = 'opacity ' + GAL_FADE + 'ms ease';
-        elSuggGrid.style.height = '';
-        elSuggGrid.style.opacity = '1';
-        galAfter('opacity', GAL_FADE, galReset);
-      });
-    });
+    /* Neue Hoehe frei messen, dann die alte zurueckschreiben, damit es einen Wert gibt, VON dem
+       aus animiert werden kann. Beide Schreibvorgaenge landen vor dem naechsten Anstrich, und
+       der Inhalt ist ohnehin unsichtbar -- der ungepinnte Moment ist nie zu sehen. */
+    elSuggGrid.style.height = '';
+    var h1 = elSuggGrid.getBoundingClientRect().height;
+    elSuggGrid.style.height = h0 + 'px';
+    /* Erzwungener Reflow, nicht kosmetisch: ohne ihn fasst der Browser Start- und Endwert zu
+       einem Style-Recalc zusammen und springt ohne Uebergang auf das Ziel. */
+    void elSuggGrid.offsetHeight;
+
+    /* ---- die eine Bewegung ---- */
+    elSuggGrid.style.transition =
+      'height ' + GAL_SLIDE + 'ms ' + GAL_EASE + ', ' +
+      'opacity ' + GAL_FADE + 'ms ease ' + GAL_FADE_DELAY + 'ms';
+    elSuggGrid.style.height = h1 + 'px';
+    elSuggGrid.style.opacity = '1';
+
+    /* Aufraeumen am Ende der laengeren der beiden, mit Timer als Rueckfall fuer den Fall, dass
+       nie ein transitionend kommt (Laenge null, oder ein Hintergrund-Tab). */
+    galAfter('height', GAL_SLIDE, galReset);
   }
+
   function renderGalleryNow(){
     var label = root.querySelector('#am-suggested-label');
     var g = L().gallery || [];
@@ -4036,41 +4046,12 @@
   var elHeroText = root.querySelector('.am-hero-text');
   if (elHeroText) elHeroText.addEventListener('click', goToStart);
 
-  /* Meta row above the mira wordmark -- brand logo + "<Brand> Workspace", the same line every
-     page header in the app carries. Built here rather than in the Bubble template because that
-     template is a fresh-install file: pasted once, and later edits never reach a page that
-     already exists. Uses the core Page Header Kit classes so it cannot drift from the others.
-     Inserted BEFORE .am-title-row, i.e. above the logo/Ready row, which stays exactly as it is. */
-  (function buildMetaRow(){
-    if (!elHeroText || elHeroText.querySelector('.am-ph-meta')) return;
-    var titleRow = elHeroText.querySelector('.am-title-row');
-    if (!titleRow) return;
-    var meta = document.createElement('div');
-    meta.className = 'up-ph-meta am-ph-meta';
-    meta.innerHTML =
-      '<img class="up-ph-metalogo am-ph-logo" alt="" style="display:none"/>' +
-      '<span class="up-ph-metatxt"><span class="am-ph-brand"></span>Workspace</span>';
-    elHeroText.insertBefore(meta, titleRow);
-
-    var logoEl  = meta.querySelector('.am-ph-logo');
-    var brandEl = meta.querySelector('.am-ph-brand');
-    function syncBrand(){
-      var n = (root.getAttribute('data-brand-name') || '').trim();
-      if (n === 'BRAND_NAME') n = '';
-      /* Trailing space belongs to the name: with no brand the line must read "Workspace". */
-      brandEl.textContent = n ? n + ' ' : '';
-      var l = (root.getAttribute('data-brand-logo') || '').trim();
-      if (l === 'BRAND_LOGO_URL') l = '';
-      if (l){ logoEl.src = l; logoEl.style.display = ''; }
-      else { logoEl.removeAttribute('src'); logoEl.style.display = 'none'; }
-    }
-    syncBrand();
-    /* Bubble patches these attributes in place after mount, so a one-shot read would leave the
-       brand blank for the whole session. */
-    new MutationObserver(syncBrand).observe(root, {
-      attributes: true, attributeFilter: ['data-brand-name', 'data-brand-logo']
-    });
-  })();
+  /* Hier stand die Meta-Zeile ueber dem mira-Schriftzug: Markenlogo plus "<Marke> Workspace",
+     dieselbe Zeile, die jede Seitenkopfzeile der App traegt. Auf Wunsch entfernt -- Mira ist
+     kein Seitenkopf, und die Zeile hat den Hero um eine Ebene beschwert, ohne etwas zu sagen,
+     das nicht ohnehin auf der Seite steht. Mit ihr faellt der MutationObserver auf
+     data-brand-name / data-brand-logo weg; die Attribute duerfen am Wurzel-Div stehen bleiben,
+     Mira liest sie nur nicht mehr. */
 
   /* Mira draws the top-left of its page itself, so it carries the mobile sidebar clearance.
      window.UpstreemCore, not a local UC: this runs at IIFE level, where the UC binding the boot

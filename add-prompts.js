@@ -411,10 +411,14 @@
     return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   }
   function lwSettle(wrap) {
+    wrap.classList.remove("is-resizing");
     wrap.style.transition = ""; wrap.style.height = "";
     wrap.style.overflow = ""; wrap.style.display = ""; wrap.style.willChange = "";
   }
   function lwAnimate(wrap, h0, h1) {
+    /* Haelt die Liste waehrend der Bewegung ungestaucht und ohne eigenen Scrollbalken --
+       sonst blitzt er auf, obwohl am Ende nichts zu scrollen ist. Siehe .is-resizing im CSS. */
+    wrap.classList.add("is-resizing");
     wrap.style.willChange = "height";
     wrap.style.overflow = "hidden";
     /* Beim Zuklappen muss der Kasten sichtbar bleiben, sonst ist er sofort weg und es gibt

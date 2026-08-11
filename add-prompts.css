@@ -152,6 +152,13 @@
    Kurve an einer Stelle definiert ist. */
 .uap-listwrap { display: flex; flex-direction: column; min-height: 0; }
 .uap-listwrap.is-empty { display: none; }
+/* Waehrend der Hoehenbewegung ist der Kasten kuerzer als sein Inhalt. Die Liste ist ein
+   Flex-Kind mit dem voreingestellten flex-shrink:1, wird also mitgestaucht -- und weil sie
+   overflow-y:auto hat, blitzt fuer die Dauer der Bewegung ihr Scrollbalken auf, obwohl am Ende
+   gar nichts zu scrollen ist. Beides hier abgestellt: nicht stauchen und nicht scrollen,
+   solange die Bewegung laeuft. Danach nimmt JS die Klasse wieder ab und der Balken erscheint
+   genau dann, wenn die Liste ihren Deckel wirklich erreicht hat. */
+.uap-listwrap.is-resizing .uap-list { overflow: hidden; flex-shrink: 0; }
 .uap-listhead {
   display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
   font-size: 14px; font-weight: 500; color: var(--vc-text);
