@@ -160,38 +160,39 @@
           '</div>' +
         '</div>' +
         '<div class="upd-kpis"></div>' +
-        '<div class="upd-stand"></div>' +
-        /* Tabelle links, Kurve rechts, ein Trenner dazwischen. Die beiden gehoeren zusammen: die
-           Kurve zeigt den Verlauf, die Tabelle die Namen dahinter -- untereinander muss man
-           scrollen, um beides zu sehen. Unter der Schwelle stapelt es wieder, siehe is-narrow. */
+        /* Rangliste links, Kurve rechts, ein Trenner dazwischen. Die beiden beantworten dieselbe
+           Frage aus zwei Richtungen: wo steht die Marke gerade, und wie ist sie dahin gekommen.
+           Untereinander muss man scrollen, um beides zu sehen. Unter der Schwelle stapelt es
+           wieder, siehe is-narrow. */
         '<div class="upd-split">' +
-          '<div class="upd-split-l upd-varsec">' +
-            '<div class="upd-sec-head">' +
-              '<div class="upd-sec-titles">' +
-                '<span class="up-heading upd-sec-h">Variations</span>' +
-                '<span class="upd-sec-sub">Different brand names used in AI responses</span>' +
-              '</div>' +
-              '<div class="up-search upd-search">' +
-                '<button class="up-iconbtn up-search-btn" type="button" data-tip="Search variations" aria-label="Search variations">' + SEARCH_SVG + '</button>' +
-                '<div class="up-search-box">' +
-                  '<input class="up-search-input" type="text" autocomplete="off" spellcheck="false" placeholder="Search variations">' +
-                  '<button class="up-search-clear" type="button" aria-label="Clear search">' + CLOSE_SVG + '</button>' +
-                '</div>' +
-              '</div>' +
-            '</div>' +
-            '<div class="up-table upd-vartable">' +
-              '<div class="up-thead upd-vrow">' +
-                '<div class="up-th upd-th-name">Variation Name</div>' +
-                '<div class="up-th upd-th-sov">Share of Voice</div>' +
-                '<div class="up-th upd-th-cnt">Mentions</div>' +
-              '</div>' +
-              '<div class="up-tbody upd-vbody"></div>' +
-            '</div>' +
-          '</div>' +
+          '<div class="upd-split-l upd-stand"></div>' +
           '<div class="upd-split-r upd-chartsec">' +
             '<div class="upd-sec-head"><span class="up-heading upd-sec-h">Visibility over time</span>' +
               '<span class="upd-sec-sub upd-scope-note"></span></div>' +
             '<div class="up-line-wrap upd-linewrap"><canvas class="up-line-canvas"></canvas></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="upd-sec upd-varsec">' +
+          '<div class="upd-sec-head">' +
+            '<div class="upd-sec-titles">' +
+              '<span class="up-heading upd-sec-h">Variations</span>' +
+              '<span class="upd-sec-sub">Different brand names used in AI responses</span>' +
+            '</div>' +
+            '<div class="up-search upd-search">' +
+              '<button class="up-iconbtn up-search-btn" type="button" data-tip="Search variations" aria-label="Search variations">' + SEARCH_SVG + '</button>' +
+              '<div class="up-search-box">' +
+                '<input class="up-search-input" type="text" autocomplete="off" spellcheck="false" placeholder="Search variations">' +
+                '<button class="up-search-clear" type="button" aria-label="Clear search">' + CLOSE_SVG + '</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="up-table upd-vartable">' +
+            '<div class="up-thead upd-vrow">' +
+              '<div class="up-th upd-th-name">Variation Name</div>' +
+              '<div class="up-th upd-th-sov">Share of Voice</div>' +
+              '<div class="up-th upd-th-cnt">Mention Count</div>' +
+            '</div>' +
+            '<div class="up-tbody upd-vbody"></div>' +
           '</div>' +
         '</div>' +
       '</div>';
@@ -210,9 +211,7 @@
 
     /* Drei Spalten, feste Anteile: der Name nimmt den Rest, die beiden Zahlenspalten sind so breit
        wie ihre Ueberschriften plus Luft. --up-cols ist die Variable, die .up-thead/.up-row lesen. */
-    /* Schmaler als vorher: die Tabelle sitzt jetzt in 30 Prozent der Karte. Die beiden Zahlen-
-       spalten sind so breit wie ihr Inhalt plus Polster, den Rest nimmt der Name. */
-    root.querySelector(".upd-vartable").style.setProperty("--up-cols", "minmax(0,1fr) 108px 92px");
+    root.querySelector(".upd-vartable").style.setProperty("--up-cols", "minmax(0,1fr) 150px 140px");
     /* Umbruch nach Containerbreite, nicht nach Fensterbreite: die Komponente kann in einer
        schmalen Bubble-Gruppe stecken, waehrend das Fenster breit ist. */
     if (UC.widthTiers) UC.widthTiers(root, { narrowAt: 900, vnarrowAt: 560 });
@@ -294,7 +293,12 @@
        Kostet keinen einzigen Serveraufruf: die Spalte des Rasters liegt schon vor. */
     function renderStanding(){
       var col = (state.column || []).filter(function(c){ return c && num(c.visibility_pct) != null; });
-      if (state.scope !== "topic" || !state.company || col.length < 2){ elStand.innerHTML = ""; return; }
+      if (state.scope !== "topic" || !state.company || col.length < 2){
+        elStand.innerHTML = "";
+        root.classList.add("no-stand");     // linke Spalte faellt weg, die Kurve nimmt die Breite
+        return;
+      }
+      root.classList.remove("no-stand");
       col.sort(function(a, b){ return num(b.visibility_pct) - num(a.visibility_pct); });
 
       var myId = String(state.company.company_id);
@@ -306,11 +310,13 @@
       if (myIdx === 0){
         head = '<strong>Leading</strong> this topic, ' +
                (col.length > 1 ? fmtPctShort(num(col[0].visibility_pct) - num(col[1].visibility_pct)) +
-                                 ' ahead of ' + esc(String(col[1].name || "")) : "");
+                                 ' ahead of <span class="upd-rk">#</span>2 ' + esc(String(col[1].name || "")) : "");
       } else if (mine){
         head = 'Rank <strong>' + (myIdx + 1) + '</strong> of ' + col.length + ' on this topic, ' +
                fmtPctShort(num(leader.visibility_pct) - num(mine.visibility_pct)) +
-               ' behind ' + esc(String(leader.name || ""));
+               /* Mit Rang davor: "behind Volvo" laesst offen, ob Volvo der Erste ist oder
+                  irgendwer dazwischen. Das Rautenzeichen in Drittfarbe, wie ueberall sonst. */
+               ' behind <span class="upd-rk">#</span>1 ' + esc(String(leader.name || ""));
       } else {
         head = 'Not among the ' + col.length + ' brands tracked on this topic';
       }
