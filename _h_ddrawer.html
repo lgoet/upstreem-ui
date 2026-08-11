@@ -1,0 +1,126 @@
+<meta charset="utf-8">
+<link rel="stylesheet" href="core.css?v=dd">
+<style>
+  /* Nachbau der echten Host-Geometrie, so wie sie der User auf der Live-Seite abgetastet hat:
+     Seite scrollt nicht, #main scrollt, Drawer als position:fixed FloatingGroup auf z 9910.
+     IM Drawer: der Bubble-Wrapper der Komponente (eigener z-index) und daneben zwei fremde
+     Gruppen auf z-index 9 und 18, die den unteren Teil des Panels ueberdecken -- genau das
+     gemessene Bild. */
+  html, body { height: 100%; margin: 0; font-family: system-ui, sans-serif; }
+  body { overflow: hidden; background: #eee; }
+  #main { height: 100vh; overflow: hidden auto; padding: 20px; }
+  .wrap { position: relative; z-index: 5; overflow: hidden; padding: 10px; border: 1px dashed #bbb; }
+
+  .drawer { position: fixed; top: 0; right: 0; width: 560px; height: 100%; background: #121212;
+            z-index: 9910; padding: 20px; overflow: hidden auto; }
+  .fremd  { position: absolute; left: 0; right: 0; height: 300px; background: rgba(255,80,80,.35); }
+  .fremd9 { top: 210px; z-index: 9; }
+  .fremd18{ top: 380px; z-index: 18; }
+  #out { font: 11px/1.5 ui-monospace, monospace; white-space: pre-wrap; background: #fff; padding: 10px; }
+  button { font: 12px system-ui; padding: 6px 10px; margin: 2px; }
+</style>
+<body>
+<div id="main">
+  <button onclick="probe()">TEST</button>
+  <div class="wrap" id="pageWrap">
+    <div class="up-root uut-root" id="pageRoot" data-instance="p1" data-isdark="no">
+      <div class="up-head"><div class="up-heading">Auf der Seite</div>
+        <div class="up-head-tools">
+          <div class="up-ment" id="pageMent">
+            <button class="up-ment-btn" type="button"><span class="up-ment-lbl">All Brands</span></button>
+            <div class="up-ment-menu" role="menu" aria-hidden="true" style="height:340px">Panel Seite</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="out"></div>
+  <div style="height:1400px"></div>
+</div>
+
+<div class="drawer" id="drawer">
+  <div class="wrap" style="background:#1b1b1b">
+    <div class="up-root uut-root" id="drawerRoot" data-instance="d1" data-isdark="yes" data-theme="dark">
+      <div class="up-head"><div class="up-heading" style="color:#fff">Im Drawer</div>
+        <div class="up-head-tools">
+          <div class="up-ment" id="drawerMent">
+            <button class="up-ment-btn" type="button"><span class="up-ment-lbl">All Brands</span></button>
+            <div class="up-ment-menu" role="menu" aria-hidden="true" style="height:340px">Panel Drawer</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="fremd fremd9"></div>
+  <div class="fremd fremd18"></div>
+  <div style="height:1400px"></div>
+</div>
+
+<script src="core.js?v=dd"></script>
+<script>
+var UC = window.UpstreemCore;
+var pagePop   = UC.makePopover({ wrap: document.getElementById("pageMent"),
+  menu: document.querySelector("#pageMent .up-ment-menu"), opener: document.querySelector("#pageMent .up-ment-btn") });
+var drawerPop = UC.makePopover({ wrap: document.getElementById("drawerMent"),
+  menu: document.querySelector("#drawerMent .up-ment-menu"), opener: document.querySelector("#drawerMent .up-ment-btn") });
+
+function snap(menu){
+  var cs = getComputedStyle(menu), r = menu.getBoundingClientRect();
+  return { popover: menu.getAttribute("popover"), open: menu.matches(":popover-open"),
+           position: cs.position, left: Math.round(r.left), top: Math.round(r.top),
+           w: Math.round(r.width), h: Math.round(r.height) };
+}
+function hitAt(x, y){ var e = document.elementFromPoint(x, y); return e ? (e.id || e.className || e.tagName) : "null"; }
+
+function probe(){
+  var o = [];
+  var pageMenu = document.querySelector("#pageMent .up-ment-menu");
+  var drawMenu = document.querySelector("#drawerMent .up-ment-menu");
+
+  o.push("KONTROLLE viewport " + innerWidth + "x" + innerHeight +
+         "  |  Mitte trifft: " + hitAt(innerWidth/2, innerHeight/2));
+
+  o.push("\n--- A) Dropdown AUF DER SEITE (darf sich NICHT aendern) ---");
+  o.push("zu:  " + JSON.stringify(snap(pageMenu)));
+  pagePop.open();
+  o.push("auf: " + JSON.stringify(snap(pageMenu)));
+  pagePop.close();
+  o.push("zu:  " + JSON.stringify(snap(pageMenu)));
+
+  o.push("\n--- B) Dropdown IM DRAWER ---");
+  o.push("zu:  " + JSON.stringify(snap(drawMenu)));
+  drawerPop.open();
+  drawMenu.classList.add("is-shown");
+  var s = snap(drawMenu);
+  o.push("auf: " + JSON.stringify(s));
+  // Drei Punkte im Panel: oben, Mitte (ueber der z-9-Gruppe), unten (ueber der z-18-Gruppe)
+  ["oben","mitte","unten"].forEach(function(lbl, i){
+    var y = s.top + [10, s.h/2, s.h-10][i];
+    o.push("   Panel " + lbl.padEnd(6) + " y=" + Math.round(y) + " -> " + hitAt(s.left + s.w/2, y));
+  });
+  o.push("   Drawer-Rand (ausserhalb Panel) -> " + hitAt(document.getElementById("drawer").getBoundingClientRect().left + 20, innerHeight - 60));
+
+  o.push("\n--- C) Scroll-Nachfuehrung im Drawer ---");
+  var before = snap(drawMenu).top;
+  document.getElementById("drawer").scrollTop = 120;
+  document.getElementById("drawer").dispatchEvent(new Event("scroll", {bubbles:true}));
+  o.push("   vor Scroll top=" + before);
+
+  return new Promise(function(res){
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){
+      var after = snap(drawMenu).top;
+      o.push("   nach Scroll(120) top=" + after + "  delta=" + (after - before) + "  (erwartet ca. -120)");
+
+      o.push("\n--- D) Schliessen raeumt auf ---");
+      drawerPop.close();
+      drawMenu.classList.remove("is-shown");
+      o.push("   " + JSON.stringify(snap(drawMenu)));
+      o.push("   Reste im Dokument: [popover]=" + document.querySelectorAll("[popover]").length +
+             "  data-up-lifted=" + document.querySelectorAll("[data-up-lifted]").length);
+      document.getElementById("drawer").scrollTop = 0;
+      document.getElementById("out").textContent = o.join("\n");
+      res(o.join("\n"));
+    }); });
+  });
+}
+</script>

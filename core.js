@@ -2469,6 +2469,7 @@
         if (a && menu.contains(a)){ if (rec.opener && rec.opener.focus) rec.opener.focus(); else a.blur(); }
         if (rec.opener && document.activeElement === rec.opener && rec.opener.blur) rec.opener.blur();
       } catch(e){}
+      dropEscape(menu);
       wrap.classList.remove("is-open");
       menu.classList.remove("is-shown");
       menu.setAttribute("aria-hidden", "true");
@@ -2505,6 +2506,7 @@
       if (group && p.group && p.group !== group) continue;
       if (!p.wrap.classList.contains("is-open")) continue;
       if (!document.contains(p.wrap)){ POPOVERS.splice(i--, 1); continue; }   // stale after a rebuild
+      dropEscape(p.menu);
       p.wrap.classList.remove("is-open");
       p.menu.classList.remove("is-shown");
       p.menu.setAttribute("aria-hidden", "true");
@@ -2529,6 +2531,7 @@
         if (!document.contains(p.wrap)){ POPOVERS.splice(i--, 1); continue; }
         if (!p.wrap.classList.contains("is-open")) continue;
         if (p.wrap.contains(e.target)) continue;   // press inside the trigger or the menu itself
+        dropEscape(p.menu);
         p.wrap.classList.remove("is-open");
         p.menu.classList.remove("is-shown");
         p.menu.setAttribute("aria-hidden", "true");
@@ -4262,9 +4265,122 @@
      aufging: die beiden Komponenten hingen an verschiedenen Registries. Auf window teilen sich
      alle Kopien dieselbe. */
   var OPEN_DD = (window.__upOpenDropdowns = window.__upOpenDropdowns || []);
+  /* ================================================================
+     menuEscape — ein Dropdown im Drawer sichtbar halten, OHNE die Stapelung der Host-App
+     anzufassen.
+
+     Vorgeschichte, damit das nicht ein viertes Mal falsch angegangen wird: das Panel stand
+     zuletzt auf z-index 99998 und wurde trotzdem ab halber Hoehe von Nachbargruppen des Drawers
+     mit z-index 9 und 18 ueberdeckt. Neun schlaegt 99998, wenn das Panel in einem
+     Stacking-Context sitzt, der als GANZES darunter rangiert -- innerhalb eines Kontexts ist die
+     Zahl des Panels gegenueber allem AUSSERHALB bedeutungslos. Drei Runden am Panel zu drehen
+     konnte darum nie wirken. Der naechste Versuch, den Vorfahren zu heben, hat die ganze App
+     lahmgelegt (siehe unclipAncestors) -- core.js kennt die Ebenen des Hosts nicht und darf sie
+     nicht umschreiben.
+
+     Der Ausweg ist der TOP LAYER: popover="manual" + showPopover() zeichnet das Element ueber
+     allem, komplett ausserhalb jeder z-index-Rechnung, und es bleibt dabei an seiner Stelle im
+     DOM -- also erbt es Theme und CSS-Variablen weiter aus .up-root, ohne Portal und ohne
+     Theme-Sync. Es wird NICHTS am Host geschrieben.
+
+     Bewusst nur dort, wo es gebraucht wird: nur wenn ein Vorfahr position:fixed ist oder einen
+     z-index ab 1000 traegt -- die Signatur eines Drawers / einer FloatingGroup. Auf einer
+     normalen Seite passiert gar nichts und die Menues bleiben, was sie sind: position:absolute
+     Kinder ihres Triggers, die beim Scrollen im selben Frame mitwandern, ohne eine Zeile JS.
+     Nur im Top Layer muss die Position nachgefuehrt werden, und nur dort ist das der Preis wert.
+     ================================================================ */
+  var OVERLAY_Z = 1000;
+  function inOverlay(el){
+    var guard = 0;
+    while (el && el !== document.body && el !== document.documentElement && guard++ < 60){
+      var cs; try { cs = window.getComputedStyle(el); } catch(e){ return false; }
+      if (cs.position === "fixed") return true;
+      var z = parseInt(cs.zIndex, 10);
+      if (!isNaN(z) && z >= OVERLAY_Z) return true;
+      el = el.parentElement;
+    }
+    return false;
+  }
+
+  /* Die Freigabe haengt am PANEL, nicht am Aufrufer: ein Menue wird an fuenf Stellen geschlossen
+     (makePopover.close, closeAll, der globale pointerdown-Handler, die POPOVERS-Schleife in
+     dropdownOpened, ddClose), und vier davon setzen nur Klassen. Wuerde die Freigabe nur an einer
+     davon haengen, bliebe das Panel unsichtbar im Top Layer stehen und wuerde Klicks fressen.
+     Eine Funktion, die JEDER Schliesspfad ruft, und die nichts tut wenn es nichts zu tun gibt. */
+  function dropEscape(panel){
+    if (!panel || !panel.__upEscapeRelease) return;
+    var fn = panel.__upEscapeRelease;
+    panel.__upEscapeRelease = null;
+    try { fn(); } catch(e){}
+  }
+
+  function menuEscape(panel, owner){
+    if (!panel || !owner || typeof panel.showPopover !== "function") return null;
+    if (panel.__upEscapeRelease) return null;
+    if (!inOverlay(owner.parentElement || owner)) return null;
+
+    var prevPopover = panel.getAttribute("popover");
+    var prev = { position: panel.style.position, left: panel.style.left, top: panel.style.top,
+                 right: panel.style.right, bottom: panel.style.bottom, margin: panel.style.margin,
+                 width: panel.style.width, maxHeight: panel.style.maxHeight };
+    panel.setAttribute("popover", "manual");
+    try { panel.showPopover(); } catch(e){
+      if (prevPopover == null) panel.removeAttribute("popover"); else panel.setAttribute("popover", prevPopover);
+      return null;
+    }
+    /* Der UA-Stylesheet gibt jedem [popover] margin:auto und inset:0 mit -- ohne das
+       Zuruecksetzen landet das Panel zentriert in der Mitte des Bildschirms. */
+    panel.style.margin = "0";
+    panel.style.position = "fixed";
+    panel.style.right = "auto";
+    panel.style.bottom = "auto";
+
+    var raf = null;
+    function place(){
+      raf = null;
+      if (!document.contains(owner)){ return; }
+      var r = owner.getBoundingClientRect();
+      var gap = 6;
+      var pw = panel.offsetWidth, ph = panel.offsetHeight;
+      var vw = window.innerWidth || document.documentElement.clientWidth;
+      var vh = window.innerHeight || document.documentElement.clientHeight;
+      /* Die Menues sind im Ruhezustand rechtsbuendig zum Trigger (right:0). Das bleibt so, damit
+         sich im Drawer nichts anders anfuehlt als sonst. */
+      var left = r.right - pw;
+      if (left < 8) left = Math.min(r.left, vw - pw - 8);
+      left = Math.max(8, Math.min(left, vw - pw - 8));
+      var top = r.bottom + gap;
+      if (top + ph > vh - 8){
+        var above = r.top - gap - ph;
+        top = above >= 8 ? above : Math.max(8, vh - ph - 8);
+      }
+      panel.style.left = Math.round(left) + "px";
+      panel.style.top = Math.round(top) + "px";
+    }
+    function schedule(){ if (raf) return; raf = requestAnimationFrame(place); }
+    place();
+
+    /* capture:true faengt das Scrollen JEDES Vorfahren -- Drawer, #main, Fenster -- ohne dass
+       hier bekannt sein muesste, welcher davon tatsaechlich scrollt. */
+    window.addEventListener("scroll", schedule, true);
+    window.addEventListener("resize", schedule);
+
+    panel.__upEscapeRelease = function release(){
+      if (raf){ cancelAnimationFrame(raf); raf = null; }
+      window.removeEventListener("scroll", schedule, true);
+      window.removeEventListener("resize", schedule);
+      try { if (panel.matches(":popover-open")) panel.hidePopover(); } catch(e){}
+      if (prevPopover == null) panel.removeAttribute("popover"); else panel.setAttribute("popover", prevPopover);
+      panel.style.position = prev.position; panel.style.left = prev.left; panel.style.top = prev.top;
+      panel.style.right = prev.right; panel.style.bottom = prev.bottom; panel.style.margin = prev.margin;
+    };
+    return panel.__upEscapeRelease;
+  }
+
   function ddClose(entry){
     var i = OPEN_DD.indexOf(entry);
     if (i >= 0) OPEN_DD.splice(i, 1);
+    if (entry) dropEscape(entry.panel);
   }
   function dropdownOpened(panel, close, ownerEl){
     var self = { panel: panel, close: close, owner: ownerEl || panel };
@@ -4290,12 +4406,16 @@
       var parent = false;
       try { parent = !!(p.menu && (p.menu.contains(self.owner) || p.menu.contains(panel))); } catch(e){}
       if (parent) continue;
+      dropEscape(p.menu);
       p.wrap.classList.remove("is-open");
       p.menu.classList.remove("is-shown");
       p.menu.setAttribute("aria-hidden", "true");
       if (p.onClose) { try { p.onClose(false); } catch(e){} }
     }
     OPEN_DD.push(self);
+    /* Erst hier, nachdem alle anderen zu sind: sonst wuerde ein gerade geschlossenes Panel sein
+       eigenes release() nach dem showPopover() dieses hier laufen lassen. */
+    menuEscape(self.panel, self.owner);
     return function(){ ddClose(self); };
   }
   function closeAllDropdowns(){
@@ -4766,6 +4886,8 @@
     placeMenu: placeMenu,
     makePopover: makePopover,
     closePopovers: closeAll,
+    menuEscape: menuEscape,
+    dropEscape: dropEscape,
     makeSticky: makeSticky,
     rafThrottle: rafThrottle,
     onResize: onResize,
