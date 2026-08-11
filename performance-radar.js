@@ -933,6 +933,26 @@
           if (METRIC_STORE[instanceId] == null) setMetric(params.metric, false);
         }
         ingest(params);
+        /* "Keine Daten" und "Payload kaputt" duerfen nicht dasselbe Bild ergeben. Ohne diese
+           Zeilen zeigt die Komponente in beiden Faellen "No data", und dann sucht man den Fehler
+           in der Datenbank statt im Run-JS-Step -- genau der stille Ausfall, den dieses Repo
+           schon zu oft hatte. Es wird NICHT protokolliert, dass die Matrix leer ist (das sieht
+           man ja), sondern nur, dass der Aufruf gar keine verwertbare Struktur mitbrachte. */
+        if (!state.hasData && window.console){
+          var cellsOk = params && Object.prototype.toString.call(params.cells) === "[object Array]";
+          if (!cellsOk){
+            var got;
+            try {
+              got = (params == null) ? String(params)
+                  : (typeof params !== "object") ? (typeof params + " " + String(params).slice(0, 80))
+                  : ("Objekt mit den Feldern [" + Object.keys(params).join(", ") + "]");
+            } catch(e){ got = "?"; }
+            console.error("[performance-radar] render ohne verwertbare Daten: `cells` fehlt oder ist " +
+              "kein Array. Erhalten: " + got + ". Haeufigste Ursache: der Payload wurde im Run-JS-Step " +
+              "nicht geparst (JSON.parse geworfen und der catch-Zweig hat ein leeres Objekt " +
+              "durchgereicht) -- die Matrix zeigt dann 'No data', obwohl die Daten existieren.");
+          }
+        }
         state.loading = false;
         root.classList.remove("is-loading");
         soft.end();
