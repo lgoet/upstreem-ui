@@ -179,6 +179,16 @@
    repo — see e.g. bubble/domains_table_bubble.html for the full rationale. Reads the pin by ID
    since this component is a page-level singleton, not a repeatable class-based root. */
 (function(){
+  /* Boot-Stub fuer den Brand-Store. Bubble ruft setUpstreemBrands() im Page-Load-Workflow, also
+     regelmaessig BEVOR core.js geladen ist. Ohne diesen Stub ist window.setUpstreemBrands zu dem
+     Zeitpunkt undefined, der Run-JS-Schritt wirft, und der GANZE Aufruf ist weg -- die Seite sieht
+     danach aus wie eine ohne Marken, ohne dass irgendwo ein Fehler steht. core.js leert die Queue
+     beim Start. Dasselbe Muster wie bei Topics und Markets (__upTopicsQueue / __upMarketsQueue). */
+  window.__upBrandsQueue = window.__upBrandsQueue || [];
+  if (typeof window.setUpstreemBrands !== "function"){
+    window.setUpstreemBrands = function(rows){ window.__upBrandsQueue.push(rows); };
+  }
+
   function readPin(){
     var el = document.getElementById("mira-quick-actions");
     var p = el ? (el.getAttribute("data-cdn-pin") || "").trim() : "";

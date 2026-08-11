@@ -1,13 +1,32 @@
 <meta charset="utf-8">
-<link rel="stylesheet" href="core.css?v=q3">
-<link rel="stylesheet" href="quick-actions.css?v=q3">
+<link rel="stylesheet" href="core.css?v=e1">
+<link rel="stylesheet" href="quick-actions.css?v=e1">
 <body style="margin:0;padding:20px;font-family:system-ui,sans-serif">
-<div style="margin-bottom:12px">
-  <button onclick="fuettern()">setUpstreemBrands (SPAETER, wie im Page-Load-Workflow)</button>
-  <button onclick="rebuild()">Bubble-Rebuild simulieren (Root ersetzen)</button>
-  <button onclick="probe().then(function(t){out.textContent=t;})">TEST</button>
-</div>
-<pre id="out" style="font:11px/1.6 ui-monospace,monospace;background:#f6f6f6;padding:10px"></pre>
+<pre id="out" style="font:11px/1.6 ui-monospace,monospace;background:#f6f6f6;padding:10px">läuft…</pre>
+
+<!-- Der echte Ablauf auf einer Seite OHNE Performance Radar: der Page-Load-Workflow feuert seinen
+     Run-JS-Schritt, bevor core.js geladen ist. Ohne Stub ist window.setUpstreemBrands undefined,
+     der Schritt wirft, und der ganze Aufruf ist weg -- Quick Actions steht dann bei "No brands
+     loaded", ohne dass irgendwo ein Fehler sichtbar wird. -->
+<script>
+var LOG = [];
+var GUARD = new URLSearchParams(location.search).get("guard") === "1";
+if (GUARD){
+  /* Genau die zwei Zeilen, die in den Run-JS-Schritt gehoeren. */
+  window.__upBrandsQueue = window.__upBrandsQueue || [];
+  window.setUpstreemBrands = window.setUpstreemBrands || function(rows){ window.__upBrandsQueue.push(rows); };
+}
+try {
+  window.setUpstreemBrands([
+    {id:"b1", name:"Anfragenfluss", logo:"https://www.google.com/s2/favicons?domain=anfragenfluss.de&sz=64"},
+    {id:"b2", name:"LeeUp Media",   logo:"//www.google.com/s2/favicons?domain=lee-up.de&sz=64"},
+    {id:"b3", name:"Candidate Flow", logo:""}
+  ]);
+  LOG.push("Run-JS (vor core.js): durchgelaufen");
+} catch(e){
+  LOG.push("Run-JS (vor core.js): GEWORFEN -- " + e.message);
+}
+</script>
 
 <div id="mira-quick-actions" data-theme="light" data-team="t1" data-cdn-pin="">
   <button class="mqa-trigger" type="button" aria-label="Open quick actions">
@@ -48,30 +67,12 @@
   </div>
 </div>
 
-<script src="core.js?v=q3"></script>
-<script src="quick-actions.js?v=q3"></script>
+<script src="core.js?v=e1"></script>
+<script src="quick-actions.js?v=e1"></script>
 <script>
 var out = document.getElementById("out");
-/* Genau die Reihenfolge der echten Seite: die Komponente laedt ZUERST, der Store wird erst im
-   Page-Load-Workflow gefuellt. Wenn das Abo das nicht mehr mitbekommt, steht "No brands loaded". */
-function fuettern(){
-  window.setUpstreemBrands(JSON.stringify([
-    {company_id:"b1", name:"Anfragenfluss", role:"competitor", position:1,
-     logo_url:"https://www.google.com/s2/favicons?domain=anfragenfluss.de&sz=64"},
-    {company_id:"b2", name:"LeeUp Media", role:"own", position:2,
-     logo_url:"https://www.google.com/s2/favicons?domain=lee-up.de&sz=64"},
-    {company_id:"b3", name:"Candidate Flow", role:"competitor", position:3, logo_url:""}
-  ]));
-}
-/* Bubble reisst das Wurzelelement bei jeder Aenderung eines dynamischen Ausdrucks ab. */
-function rebuild(){
-  var el = document.getElementById("mira-quick-actions");
-  var klon = el.cloneNode(true);
-  el.parentNode.replaceChild(klon, el);
-}
 function markenImMenue(){
   var api = window.MiraQuickActions;
-  var ov = document.querySelector(".mqa-overlay");
   api.open();
   var inp = document.querySelector(".mqa-input");
   inp.value = "/mentioning "; inp.dispatchEvent(new Event("input", {bubbles:true}));
@@ -79,16 +80,16 @@ function markenImMenue(){
     var txt = document.querySelector(".mqa-results").innerText;
     api.close();
     r(txt);
-  }, 150); });
+  }, 200); });
 }
-function probe(){
-  var o = [];
-  o.push("KONTROLLE  brandsInto=" + typeof UpstreemCore.brandsInto +
-         "  MiraQuickActions=" + typeof window.MiraQuickActions);
-  return markenImMenue().then(function(t){
-    o.push("Store-Inhalt: " + (UpstreemCore.getBrands()||[]).length + " Marken");
-    o.push("/mentioning zeigt: " + JSON.stringify(t.split("\n").slice(0,5).join(" | ")));
-    return o.join("\n");
+setTimeout(function(){
+  LOG.push("guard=" + (GUARD ? "an" : "aus"));
+  LOG.push("Store nach core.js: " + (UpstreemCore.getBrands()||[]).length + " Marken");
+  markenImMenue().then(function(t){
+    LOG.push("/mentioning zeigt: " + t.replace(/\n/g, " | "));
+    var l = (UpstreemCore.getBrands()||[])[1];
+    LOG.push("Feld-Normalisierung b2: " + JSON.stringify(l && {id:l.company_id, name:l.name, logo:l.logo_url}));
+    out.textContent = LOG.join("\n");
   });
-}
+}, 300);
 </script>

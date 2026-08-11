@@ -120,6 +120,24 @@
   function colorDot(color){ return '<span class="mqa-ct-dot" style="background:' + color + '"></span>'; }
   var MARKETS = ["de","us","gb","at","ch","fr","es","it","nl"];   // override via MiraQuickActions.setMarkets([...])
   var BRANDS  = [];                                               // fed in on page load via MiraQuickActions.setBrands([...])
+  /* ...ODER aus dem seitenweiten Store in core. Das Abo weiter unten liefert normalerweise; das
+     hier ist der ZWEITE Weg, und er ist der verlaesslichere: er fragt genau in dem Moment nach,
+     in dem die Liste gebraucht wird, statt sich darauf zu verlassen, dass zum Zeitpunkt des
+     Abonnierens schon alles an seinem Platz war. Auf einer Bubble-Seite haengt die Reihenfolge
+     von core.js, dieser Datei, dem Page-Load-Workflow und einem moeglichen Rebuild des
+     Wurzelelements an zu vielen Faedeln, um sie zu garantieren -- und ein Push, der einmal
+     danebengeht, ist danach fuer immer weg. Ein Pull kann das nicht passieren.
+     Ueberschreibt eine bereits gefuellte Liste nicht: wer setBrands() selbst ruft, behaelt sie. */
+  function pullBrands(){
+    if (BRANDS.length) return;
+    try {
+      var UCg = window.UpstreemCore;
+      if (UCg && UCg.getBrands){
+        var l = UCg.getBrands();
+        if (l && l.length) api.setBrands(l);
+      }
+    } catch(_){}
+  }
   var ALL_SCOPES = ["url","domain","brand","prompt"];
   var COMMANDS = [
     // step 1 — pick what we're talking about
@@ -885,6 +903,9 @@
 
     // sub-menu: "/type y" -> the citation types filtered by "y"
     if (cmd && cmd.sub && hasSpace){
+      /* Letzte Gelegenheit VOR dem Aufbau der Liste: der Store kann zwischen dem Oeffnen der
+         Palette und diesem Tastendruck gefuellt worden sein. */
+      if (cmd.sub === "brands" && !BRANDS.length) pullBrands();
       var opts = subOptions(cmd.sub).filter(function(o){ return !rest || o.label.toLowerCase().indexOf(rest) !== -1 || String(o.value).toLowerCase().indexOf(rest) !== -1; });
       var h1 = '<div class="mqa-group"><div class="mqa-group-head">' + esc(cmd.label) + '</div>';
       if (!opts.length) h1 += '<div class="mqa-empty">' + (cmd.sub === "brands" && !BRANDS.length ? "No brands loaded" : "No match") + '</div>';
@@ -1207,6 +1228,7 @@
   }
   function open(){
     if (isOpen) return; isOpen = true;
+    pullBrands();
     /* Erst alles andere zumachen. Ein Dropdown, das in einem Drawer geoeffnet wurde, liegt im
        Top Layer des Browsers -- und der schlaegt jede z-index-Zahl, auch die 2147483647 dieses
        Overlays. Es lag damit VOR der Palette. Die Palette ist ein Vollbild-Modus: dahinter soll
