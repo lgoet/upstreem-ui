@@ -943,7 +943,7 @@
        darum gar nicht von der Wirklichkeit abweichen. Positionen 1..4 von 5 Stops, damit der
        hellste (fast weisse) Stop die Vorschau nicht anfuehrt. */
     function scaleDotsHtml(mono){
-      var stops = ramp(), out = "";
+      var stops = (UC.heatRamp ? UC.heatRamp(root) : null) || RAMP_FALLBACK, out = "";
       for (var i = 1; i < 5; i++){
         var rgb = stops[i];
         if (mono){ var y = Math.round((rgb[0]*299 + rgb[1]*587 + rgb[2]*114)/1000); rgb = [y,y,y]; }
