@@ -555,11 +555,31 @@
     }
     return out;
   }
+  var warnedFallback = false;
   function each(id, fn){
     var list = rootsFor(id);
-    if (!list.length && window.console){
-      console.warn("[performance-detail] no element with data-instance=\"" + (id || "default") +
-        "\" on this page — the call was dropped.");
+    /* Kein Treffer, aber genau EIN Detailbereich auf der Seite: dann ist der gemeint. Der Radar
+       reicht standardmaessig seine eigene data-instance durch, und die ist praktisch nie dieselbe
+       wie die des Detail-Elements -- zwei Ids, die zueinander passen muessen, ohne dass irgendwo
+       steht, dass sie das muessen. Das war eine Falle im Standardfall, nicht eine Einstellung.
+       Die Id entscheidet weiterhin, sobald mehrere Bereiche auf der Seite liegen; nur dann ist
+       sie ueberhaupt eine Aussage. Einmal protokollieren, damit der Zusammenhang auffindbar
+       bleibt, aber nicht bei jedem Klick. */
+    if (!list.length){
+      var alle = document.querySelectorAll(".upd-root");
+      if (alle.length === 1){
+        if (!warnedFallback && window.console){
+          warnedFallback = true;
+          console.info("[performance-detail] call came in for data-instance=\"" + (id || "default") +
+            "\", the single detail element on this page carries \"" +
+            (alle[0].getAttribute("data-instance") || "default") + "\" — using it. Set matching " +
+            "data-instance values (or data-detail-instance on the radar) to make this explicit.");
+        }
+        list = [alle[0]];
+      } else if (window.console){
+        console.warn("[performance-detail] no element with data-instance=\"" + (id || "default") +
+          "\" on this page, and " + alle.length + " detail elements to choose from — the call was dropped.");
+      }
     }
     list.forEach(function(r){ initRoot(r); if (r.__updController) fn(r.__updController); });
   }

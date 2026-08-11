@@ -5,9 +5,9 @@ window.addEventListener("error", function(e){
   window.__ERR.push(((e.error && e.error.stack) || e.message || "?").split("\n").slice(0,5).join(" << "));
 }, true);
 </script>
-<link rel="stylesheet" href="core.css?v=14">
-<link rel="stylesheet" href="performance-radar.css?v=14">
-<link rel="stylesheet" href="performance-detail.css?v=14">
+<link rel="stylesheet" href="core.css?v=15">
+<link rel="stylesheet" href="performance-radar.css?v=15">
+<link rel="stylesheet" href="performance-detail.css?v=15">
 <style>
   /* Copies the host app's shape: the PAGE does not scroll, #main does, and a drawer sits on top
      at z 9905-9930 (see project_host_app_layout). Without this the dropdown-in-drawer stacking
@@ -101,7 +101,7 @@ window.addEventListener("error", function(e){
 </div>
 
 <div style="max-width:1000px;margin-top:16px">
-  <div class="up-root upd-root" data-instance="h1" data-theme="light" data-cdn-pin=""></div>
+  <div class="up-root upd-root" data-instance="performance_chart_workspace" data-theme="light" data-cdn-pin=""></div>
 </div>
 <script src="_h_uhm_payload.js"></script>
 <script>
@@ -168,6 +168,6 @@ window.addEventListener("error", function(e){
   }
   function toggleDrawer(){ document.getElementById("drawer").classList.toggle("is-on"); }
 </script>
-<script src="core.js?v=14"></script>
-<script src="performance-radar.js?v=14"></script>
-<script src="performance-detail.js?v=14"></script>
+<script src="core.js?v=15"></script>
+<script src="performance-radar.js?v=15"></script>
+<script src="performance-detail.js?v=15"></script>
