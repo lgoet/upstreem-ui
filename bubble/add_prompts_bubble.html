@@ -51,15 +51,32 @@
                      per-row topic editor needs no payload change.
        source        "manual" or "csv". Useful for analytics, ignore it if you do not care.
 
-     READING IT IN BUBBLE. markets and tag_ids are safe to pull with the usual regex:
+     READING IT IN BUBBLE. Der sichere Weg ist EIN Text-Parameter an den RPC, der den ganzen
+     Payload traegt, und JSON-Parsing auf der Serverseite. Das ist keine Bequemlichkeit: zwei der
+     fuenf Felder lassen sich per Regex gar nicht zeilenweise lesen, siehe unten.
 
-         (?<="markets":\[)[^\]]*            then split on ","
-         (?<="tag_ids":\[)[^\]]*            then split on ","
+     Diese drei sind unbedenklich, sie enthalten weder Komma noch Anfuehrungszeichen:
+
+         (?<="team_id":")[^"]*
          (?<="count":)[0-9]+
+         (?<="source":")[^"]*
 
-     prompt_texts is NOT. Prompt text is free text: it contains commas, quotes and the occasional
-     line break, so a regex-and-split gets it wrong on exactly the prompts that matter. Parse the
-     payload as JSON on the Bubble side and read the list from there.
+     tag_ids: NICHT den Rumpf holen und auf "," splitten. Jedes ELEMENT ist selbst eine
+     kommaverbundene Liste -- bei zwei gewaehlten Topics steht dort ["t1,t2","t1,t2"], und ein
+     Split auf "," macht daraus vier Stuecke statt zwei Zeilen. Da der Topics-Picker fuer den
+     ganzen Stapel gilt, ist auf allen Zeilen ohnehin derselbe Wert; nimm das erste Element:
+
+         (?<="tag_ids":\[")[^"]*            ergibt  t1,t2
+
+     markets: der Rumpf laesst sich holen, die Elemente kommen aber MIT Anfuehrungszeichen und
+     ein leerer Markt ist "" -- also nichts, was ein Split sauber trennt:
+
+         (?<="markets":\[)[^\]]*            ergibt  "de","us",""
+
+     prompt_texts: gar nicht per Regex. Prompt-Text ist Freitext mit Kommas und Anfuehrungszeichen,
+     und die Anfuehrungszeichen stehen im Payload escaped (\") -- ein Split trifft genau die
+     Prompts falsch, auf die es ankommt. Zeilenumbrueche koennen nicht vorkommen, die Komponente
+     macht daraus eigene Zeilen.
 
      ── The refresh append, and it is not optional ──────────────
      Creating prompts changes which markets the team has prompts for and how many each holds. The

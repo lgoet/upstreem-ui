@@ -1,0 +1,62 @@
+<meta charset="utf-8">
+<link rel="stylesheet" href="core.css?v=p1">
+<link rel="stylesheet" href="add-prompts.css?v=p1">
+<body style="margin:0;padding:20px;font-family:system-ui,sans-serif">
+
+<div style="margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap">
+  <button onclick="window.openAddPrompts()">Dialog oeffnen</button>
+  <button onclick="fuellen()">3 Prompts eintippen (mit Komma + Anfuehrungszeichen + Umbruch)</button>
+  <button onclick="speichern()">Speichern (Event feuern)</button>
+</div>
+<pre id="out" style="font:11px/1.6 ui-monospace,monospace;background:#f6f6f6;padding:10px;white-space:pre-wrap">bereit</pre>
+
+<script src="core.js?v=p1"></script>
+<script src="add-prompts.js?v=p1"></script>
+<script>
+/* Genau so heisst das Toolbox-Element. Wir fangen den ROHEN String ab, nicht das Objekt --
+   das ist der Text, den Bubble spaeter mit Regex liest. */
+var ROH = null;
+window.bubble_fn_uapAddPrompts = function(json){ ROH = json; zeigen(); };
+
+/* Damit die Picker Inhalt haben, so wie auf einer echten Seite. */
+window.setUpstreemTopics(`[
+  {"id":"t_aaa","name":"E-Mobility","emoji":"⚡","color":"#2f6f4f"},
+  {"id":"t_bbb","name":"Leasing","emoji":"","color":"#8a4b9c"}
+]`);
+window.setUpstreemMarkets(`[
+  {"code":"de","name":"Germany"},
+  {"code":"us","name":"United States"}
+]`);
+window.setUpstreemDefaultMarket("de");
+
+var TEXTE = [
+  'Welche Anbieter sind fuer "E-Autos" am besten, und warum?',
+  "Wer bietet Leasing an, inklusive Wartung, Versicherung?",
+  "Zeile eins\nZeile zwei"
+];
+function fuellen(){
+  var ta = document.querySelector(".uap-input");
+  if (!ta) return void (document.getElementById("out").textContent = "Dialog ist zu");
+  TEXTE.forEach(function(t){
+    ta.value = t;
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+    ta.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+  });
+  document.getElementById("out").textContent = "Zeilen im Dialog: " + document.querySelectorAll(".uap-row").length;
+}
+function speichern(){
+  var b = document.querySelector(".uap-save");
+  if (!b) return void (document.getElementById("out").textContent = "Dialog ist zu");
+  b.click();
+}
+function zeigen(){
+  var o = document.getElementById("out");
+  var p = null; try { p = JSON.parse(ROH); } catch(e){}
+  o.textContent =
+    "ROHER STRING (das liest Bubble):\n" + ROH +
+    "\n\nSchluessel in Reihenfolge:\n" + (p ? Object.keys(p).join(" | ") : "nicht parsebar") +
+    "\n\nLaengen: prompt_texts=" + (p ? p.prompt_texts.length : "?") +
+    " markets=" + (p ? p.markets.length : "?") +
+    " tag_ids=" + (p ? p.tag_ids.length : "?") + " count=" + (p ? p.count : "?");
+}
+</script>
