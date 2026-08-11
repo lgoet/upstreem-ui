@@ -183,13 +183,30 @@
       why: "This page's core.js predates the page-wide brand store. The data-cdn-pin on the " +
            "Quick Actions element still points at an older commit."
     };
-    var n = 0;
+    var n = 0, st = null;
     try { n = (UCg.getBrands() || []).length; } catch(e){}
-    if (!n) return {
-      txt: "No brands set on this page",
-      why: "The page-wide store is empty: setUpstreemBrands() was never called on this page, " +
-           "or it ran before core.js and threw."
-    };
+    try { st = UCg.storeStats ? UCg.storeStats() : null; } catch(e){}
+    if (!n){
+      /* Der Zaehler im Store trennt die beiden Faelle, die bisher gleich aussahen. */
+      if (st && st.brands.calls === 0) return {
+        txt: "No brands set on this page",
+        why: "setUpstreemBrands() has NEVER run on this page (0 calls). For comparison: " +
+             "setUpstreemTopics ran " + st.topics.calls + "x, setUpstreemMarkets " +
+             st.markets.calls + "x. If those are 0 too, this page runs none of the three — the " +
+             "Run-JS step is on another page or reusable. If only brands is 0, the step exists " +
+             "but does not cover this page."
+      };
+      if (st && st.brands.rejected) return {
+        txt: "Brand list could not be read",
+        why: "setUpstreemBrands() ran " + st.brands.calls + "x but " + st.brands.rejected +
+             " call(s) had a payload core could not parse — check the Run-JS step's argument."
+      };
+      return {
+        txt: "No brands set on this page",
+        why: "The page-wide store is empty" + (st ? " after " + st.brands.calls + " call(s)" : "") +
+             " — the call ran with an empty list, or it ran before core.js and threw."
+      };
+    }
     return {
       txt: "Brands not reaching the palette",
       why: "The store holds " + n + " brands but this palette has none — the pull in pullBrands() " +

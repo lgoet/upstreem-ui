@@ -4609,8 +4609,9 @@
   }
 
   function setTopics(rows, label){
+    TOPICS.calls = (TOPICS.calls || 0) + 1;
     var list = parseLoose(rows, label || "topics");
-    if (!list) return false;
+    if (!list){ TOPICS.rejected = (TOPICS.rejected || 0) + 1; return false; }
     if (!isArray(list)) list = [list];
     TOPICS.list = list;
     TOPICS.at = nowMs();
@@ -4718,8 +4719,9 @@
     };
   }
   function setMarkets(rows, label){
+    MARKETS.calls = (MARKETS.calls || 0) + 1;
     var list = parseLoose(rows, label || "markets");
-    if (!list) return false;
+    if (!list){ MARKETS.rejected = (MARKETS.rejected || 0) + 1; return false; }
     if (!isArray(list)) list = [list];
     MARKETS.list = list;
     MARKETS.at = nowMs();
@@ -4804,8 +4806,9 @@
   }
 
   function setBrands(rows, label){
+    BRANDS.calls = (BRANDS.calls || 0) + 1;
     var list = parseLoose(rows, label || "brands");
-    if (!list) return false;
+    if (!list){ BRANDS.rejected = (BRANDS.rejected || 0) + 1; return false; }
     if (!isArray(list)) list = [list];
     list = list.map(normBrandRow).filter(Boolean);
     BRANDS.list = list;
@@ -5032,6 +5035,13 @@
     onMarkets: onMarkets,
     marketsChanged: marketsChanged,
     getBrands: getBrands,
+    /* Diagnose fuer leere Zustaende: wie oft wurde der Setter gerufen, wie oft war die
+       Payload unlesbar. Damit kann ein leerer Store sagen, WARUM er leer ist. */
+    storeStats: function(){
+      return { topics:  { calls: TOPICS.calls  || 0, rejected: TOPICS.rejected  || 0, n: TOPICS.list.length  },
+               markets: { calls: MARKETS.calls || 0, rejected: MARKETS.rejected || 0, n: MARKETS.list.length },
+               brands:  { calls: BRANDS.calls  || 0, rejected: BRANDS.rejected  || 0, n: BRANDS.list.length  } };
+    },
     setBrands: setBrands,
     onBrands: onBrands,
     brandsChanged: brandsChanged,
