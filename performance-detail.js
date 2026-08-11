@@ -52,7 +52,7 @@
      aelterer Pin als auf dieser Datei, fehlen Kits — und die Komponente starb frueher mit einem
      nackten "UC.x is not a function", das die Ursache nicht nennt. Einmal benennen, dann
      abstufen: ohne makeLine bleibt die Kurve leer, alles andere funktioniert weiter. */
-  var MISSING = ["makeMount", "makeLine", "buildLineDatasets", "makeTooltips", "trendChip",
+  var MISSING = ["makeMount", "makeLine", "buildLineDatasets", "makeTooltips", "makeFire", "trendChip",
                  "sentColor", "esc", "fmt1"]
     .filter(function(k){ return typeof UC[k] !== "function"; });
   if (MISSING.length && window.console){
@@ -412,18 +412,14 @@
       state.isDark = attr ? (attr === "dark") : !!(document.documentElement.getAttribute("data-theme") === "dark");
     }
 
-    /* ---------------- Events an Bubble ---------------- */
-    function fire(attr, fallback, payload){
-      var fnName = root.getAttribute(attr) || fallback;
-      var fn = UC.resolveBubbleFn ? UC.resolveBubbleFn(fnName) : window[fnName];
-      if (typeof fn === "function"){ try { fn(JSON.stringify(payload)); } catch(e){} return true; }
-      /* Eine fehlende Verdrahtung darf nicht schweigen (STYLEGUIDE 46). */
-      if (window.console){
-        console.warn("[performance-detail] " + fnName + " not found on window/parent/top. The " +
-          "action ran in the component but reached no Bubble workflow. Check the Toolbox element's name.");
-      }
-      return false;
-    }
+    /* ---------------- Events an Bubble ----------------
+       UC.makeFire nach STYLEGUIDE 13: EIN JSON-String als einziges Argument, Funktionssuche ueber
+       iframe-Grenzen, console.warn bei fehlender Verdrahtung, zusaetzlich ein CustomEvent am Root.
+       Es haengt ausserdem team_id vorne an, damit ein Workflow pruefen kann, ob die Antwort zum
+       gerade sichtbaren Team gehoert. Selbst geschrieben war das dreimal weniger als das hier. */
+    var fire = UC.makeFire
+      ? UC.makeFire(root, { label: "performance-detail", eventPrefix: "upd-" })
+      : function(){ };
 
     /* ---------------- Verdrahtung ---------------- */
     elScope.addEventListener("click", function(e){
