@@ -69,6 +69,9 @@
   }
 
   var esc = UC.esc, fmt1 = UC.fmt1, sentColor = UC.sentColor, toNum = UC.toNum;
+  /* Trefferhervorhebung aus dem Core -- dieselbe <mark class="up-hl">-Markierung, die die
+     Tabellen in ihren Suchergebnissen setzen. */
+  var highlight = UC.highlight || function(t){ return esc(t); };
   var HASH_SVG = UC.HASH_ICON ? UC.HASH_ICON.replace('<svg ', '<svg class="up-hash" ') : "";
 
   /* Formatierung nach STYLEGUIDE 1c: Prozente ohne Nachkommastelle, wenn sie ganz sind. */
@@ -328,7 +331,9 @@
          Am Rand rutscht das Fenster nach innen statt ueber die Liste hinaus: bei Rang 2 also
          1 bis 5, beim Letzten die letzten fuenf. Ist die Marke gar nicht in der Spalte, bleibt es
          bei den Top 5. */
-      var FENSTER = 5;
+      /* Sieben statt fuenf: neben der Kurve ist die Spalte hoch genug dafuer, und zwei Plaetze
+         mehr zeigen im Zweifel den ganzen relevanten Ausschnitt statt eines Anschnitts. */
+      var FENSTER = 7;
       var start = 0;
       if (myIdx >= 0) start = Math.max(0, Math.min(myIdx - Math.floor(FENSTER / 2), col.length - FENSTER));
       var show = col.slice(start, start + FENSTER);
@@ -419,7 +424,7 @@
         var cnt = num(v.mentioned_count);
         var tot = num(v.total_count);
         return '<div class="up-row upd-vrow">' +
-                 '<div class="up-td upd-td-name" data-tiptrunc>' + esc(String(v.name || "")) + '</div>' +
+                 '<div class="up-td upd-td-name" data-tiptrunc>' + highlight(String(v.name || ""), state.varQuery) + '</div>' +
                  '<div class="up-td upd-td-sov">' +
                    '<span class="up-num">' + (sov == null ? "-" : fmtPctShort(sov)) + '</span>' +
                    ringHtml(sov) +

@@ -118,7 +118,12 @@
    align-items:stretch, damit der Trenner ueber die volle Hoehe der hoeheren Seite laeuft -- sonst
    endet er dort, wo die kuerzere Spalte aufhoert, und sieht aus wie ein Fehler. */
 .upd-split { display: flex; align-items: stretch; border-bottom: 1px solid var(--vc-border); }
-.upd-split-l { flex: 0 0 30%; min-width: 0; padding: 20px; }
+/* Die Kurve rechts ist hoeher als die Liste links. Ohne Zentrierung klebt die Liste oben und
+   darunter steht eine Handbreit Nichts -- mittig sitzt sie auf der Achse des Charts. */
+.upd-split-l {
+  flex: 0 0 30%; min-width: 0; padding: 20px;
+  display: flex; flex-direction: column; justify-content: center;
+}
 .upd-split-r { flex: 1 1 auto; min-width: 0; padding: 20px; border-left: 1px solid var(--vc-border); }
 /* Ohne Rangliste (Scope "Global" oder weniger als zwei Marken auf dem Topic) gibt es links
    nichts zu zeigen -- dann faellt die Spalte weg und die Kurve nimmt die ganze Breite. */
@@ -140,19 +145,21 @@
 /* ---------- Variations ---------- */
 .upd-varsec .upd-sec-head { margin-bottom: 14px; }
 .upd-vartable { border: 1px solid var(--vc-border); border-radius: 10px; overflow: hidden; }
-/* 45px: eine Stufe unter dem Compact-Modus der Prompts-Table (55px). Dort traegt eine Zeile
-   Prompt-Text und Chip-Stapel, hier stehen drei kurze Werte. */
-.upd-vrow { height: 45px; flex: 0 0 45px; }
+/* 55px, genau der Compact-Modus der Prompts-Table. */
+/* Die Zeilenregel steht bewusst mit .upd-vartable davor: .up-row aus core.css hat dieselbe
+   Spezifitaet wie ein blosses .upd-vrow, und bei Gleichstand entscheidet die Ladereihenfolge --
+   ein Stylesheet, das nach diesem hier landet, holt sonst die 72px aus core zurueck. */
+.upd-vartable .up-row.upd-vrow { height: 55px; flex: 0 0 55px; }
 .upd-vartable .up-thead.upd-vrow { height: 40px; flex: 0 0 40px; }
 .upd-vartable .up-row { cursor: default; }
-/* Sieben Zeilen ganz, die achte angeschnitten: 7.5 x 45px. Genau daran sieht man, dass es
+/* Sieben Zeilen ganz, die achte angeschnitten: 7.5 x 55px. Genau daran sieht man, dass es
    weitergeht -- ein sauberer Schnitt an der siebten Zeile sieht aus wie das Ende der Liste. */
-.upd-vbody { max-height: 337.5px; overflow-y: auto; overscroll-behavior: contain; }
+.upd-vbody { max-height: 412.5px; overflow-y: auto; overscroll-behavior: contain; }
 .upd-td-name { font-size: 13px; font-weight: 500; color: var(--vc-text); }
 .upd-td-name > * { min-width: 0; }
 /* Zahl und Ring beide links, mit Abstand zum Namen davor. Linksbuendig stehen die Prozentwerte
    aller Zeilen sauber untereinander; space-between wuerde sie an die Spaltenkanten ziehen. */
-.upd-td-sov { justify-content: flex-start; gap: 10px; }
+.upd-td-sov { justify-content: flex-start; gap: 18px; }
 .upd-td-sov .up-num { font-variant-numeric: tabular-nums; }
 .upd-ring { flex: 0 0 auto; display: inline-flex; line-height: 0; }
 /* 40 Prozent groesser: 16 x 1.4 = 22.4. Die Groesse steht hier und nicht im SVG -- die viewBox
