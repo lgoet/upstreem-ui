@@ -413,9 +413,14 @@
     }
     function renderVariations(){
       if (state.variations == null){
+        /* rowClass MIT up-row und cellClass MIT up-td: daran haengen das Spaltenraster
+           (--up-cols), die Polsterung und die Zeilenhoehe. Ohne sie stand der Skeleton ohne Grid
+           da -- drei Balken untereinander statt in den Spalten der Tabelle. Die Balkenbreiten
+           entsprechen dem, was spaeter wirklich dort steht: Name lang, Prozent kurz, Anzahl kurz. */
         elVBody.innerHTML = UC.skeletonRows
-          ? UC.skeletonRows({ count: 5, cols: [{ w: 180, jitter: 60 }, { w: 60 }, { w: 40 }],
-                              rowClass: "upd-vrow", cellClass: "" })
+          ? UC.skeletonRows({ count: 6,
+                              cols: [{ w: 120, jitter: 40 }, { w: 44 }, { w: 28 }],
+                              rowClass: "up-row upd-vrow", cellClass: "up-td" })
           : "";
         return;
       }
