@@ -1,88 +1,21 @@
-<!-- ============================================================
-     Upstreem — Ask Mira (the agent)
-     Paste this whole block into a Bubble HTML element. The loader at the bottom pulls
-     core.css/core.js + ask-mira.css/js from jsDelivr, pinned to the commit in data-cdn-pin.
+<meta charset="utf-8">
+<!-- Reihenfolge wie in einem Loader-Block: core zuerst. -->
+<link rel="stylesheet" href="core.css?v=r2">
+<link rel="stylesheet" href="ask-mira.css?v=r2">
+<link rel="stylesheet" id="tf" href="filters/topics-filter.css?v=r2">
+<body style="margin:0;padding:20px;font-family:system-ui,sans-serif;background:#0f0f0f">
 
-     Ported from the standalone ask_mira.html. The LOGIC IS UNTOUCHED: every window.askMira*
-     method, every bubble_fn_ask_mira_* call, every CustomEvent name and every payload key is
-     byte-identical, so the existing Bubble workflows keep working without a single change.
+<div style="margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap">
+  <button onclick="rein()">In Reporting-Kategorie</button>
+  <button onclick="messen()">MESSEN</button>
+  <button onclick="ohneCss()">topics-filter.css ABWERFEN (Kontrolltest)</button>
+</div>
+<pre id="out" style="font:11px/1.6 ui-monospace,monospace;background:#f6f6f6;padding:10px;white-space:pre-wrap">bereit</pre>
 
-     ── Bubble dynamic values on the root element ────────────────────────────────
-     data-instance = "ROOTID_[dynamic id]"
-     data-cdn-pin  = commit hash to load from. NEVER leave this empty: blank falls back to @main,
-                     and jsDelivr caches branch URLs for days.
-     data-isdark   = "yes" / "no"   (askMiraSetTheme("dark"|"light") also works)
-
-     ── Was gegenueber dem Standalone anders ist ─────────────────────────────────
-     - Farben kommen aus core (--vc-*). Das eigene Palettenset wird nur noch abgeleitet, keine
-       einzige der ~370 Regeln wurde angefasst: Chat, Antwort-Tabellen und die Brand-/Prompt-/
-       Response-/URL-Highlight-Chips sind unveraendert.
-     - Das zweite Theme-System (OS prefers-color-scheme) ist raus. core's data-theme fuehrt, sonst
-       hattest du bei dunklem OS ein helles App-Fenster mit dunklem Agent-Panel.
-     - Die drei Highlight-Dropdowns laufen auf UC.makePopover (Aussenklick, Escape, gegenseitiges
-       Schliessen aus core statt zwei eigener document-Listener).
-     - Die Buttons der Komponenten-Chrome haben das App-Tooltip statt title=.
-     - Stub-Queue: askMira*-Aufrufe vor dem Laden von core.js gehen nicht mehr verloren.
-     Chat-Bereich, Modell-/Detail-Dropdown, Chat-Kontextmenue, Voice und das Previous-Chats-Panel
-     sind bewusst unveraendert.
-
-     ── Fixes/Aenderungen nach dem ersten Live-Test ──────────────────────────────
-     - Evidence-Chip-Klicks (open_prompt/open_url/open_domain/open_response/open_brand/
-       open_competitor): entity_id im bubble_fn_ask_mira_open_evidence-Payload kam manchmal leer
-       an. Ursache war der HTML-Sanitizer -- der hat data-mira-prompt-id/-prompt-run-id/-company-id
-       stillschweigend rausgefiltert, obwohl Mira sie im content_html mitschickt. Jetzt erlaubt,
-       plus eine Fallback-Kette (entity_id -> typspezifisches Feld -> Span-Attribut -> entity_key/
-       url/domain), damit die id auch dann steht, wenn evidence_items nur eins davon fuellt.
-       Payload-Form unveraendert.
-     - Highlight-Settings-Panel (in der Previous-Chats-Sidebar) oeffnet/schliesst jetzt mit
-       200ms ease statt display:none/flex-Sprung; Dropdown-Menues darin bleiben unclipped.
-     - Startbildschirm: Eingabefeld sitzt nicht mehr am reinen Seitenende, sondern mit festem
-       128px-Abstand unter den Kategorien, insgesamt mittiger. Beim Senden der ersten Nachricht
-       faehrt es mit 200ms ease an seine normale (untere) Position.
-     - Tipp-Geschwindigkeit neuer Antworten 35% schneller.
-     - Evidence-Hover-Tooltip ("Connected data points") nutzte window.RichTooltip -- das gab es im
-       Code nirgends, zeigte also nie etwas an. Läuft jetzt auf core's UC.makeExplain, dem gleichen
-       Popover wie die Tabellen-Header-Infos (flippt nach oben, wenn unten kein Platz ist).
-     - Root-Hoehen-Messung (das Skript, das Mira exakt auf die sichtbare Bubble-Flaeche zuschneidet)
-       reagiert jetzt schneller auf Verschiebungen kurz nach dem Laden (engeres Polling die ersten
-       4s) und beobachtet zusaetzlich die Groesse des Host-Elements, nicht nur Dokument/Body.
-     - Alle [AskMira]-Konsolen-Logs fuer den Normalbetrieb entfernt (Fehlermeldungen/Warnungen
-       bei echten Problemen -- kaputtes JSON, fehlende Elemente -- bleiben).
-
-     ── Bubble element height ────────────────────────────────────────────────────
-     FIXED height. Mira is a full-height app surface with its own internal scrolling (the chat
-     scrolls, the composer and hero stay put). Fit-to-content would put the page scroll and the
-     chat scroll in the same place.
-
-     ── Data in (unchanged from the standalone) ──────────────────────────────────
-     askMiraSetMessages / askMiraAddMessage / askMiraExpectAnswer / askMiraTypeLastAnswer
-     askMiraSetExtras / askMiraSetLoading / askMiraSetPreviousChats / askMiraSetProjects
-     askMiraSetTopics / askMiraSetActiveChat / askMiraSetTitlePending / askMiraSetExportPending
-     askMiraClearInput / askMiraSetTheme / askMiraSetMarket / askMiraSetSettings
-     askMiraSetModels / askMiraSetFavicons / askMiraSetBrandLogos (alias askMiraSetCompanies)
-     askMiraSetTool / askMiraGetState / askMiraOpportunityResult
-     askMiraResolveVoice / askMiraRejectVoice / askMiraSetTranscript / askMiraVoiceCancel
-     …plus every *FromEl variant and the auto-bind on #mira-*-data elements, all as before.
-
-     Every one of these is stubbed and QUEUED before core.js finishes loading, then replayed in
-     call order — new in this port, and the reason an early Bubble workflow no longer gets lost.
-
-     ── Events to Bubble (all unchanged) ─────────────────────────────────────────
-       bubble_fn_ask_mira_send                     bubble_fn_ask_mira_feedback
-       bubble_fn_ask_mira_select_chat              bubble_fn_ask_mira_new_chat
-       bubble_fn_ask_mira_settings_change          bubble_fn_ask_mira_suggested_question
-       bubble_fn_ask_mira_open_evidence            bubble_fn_ask_mira_export_pdf
-       bubble_fn_ask_mira_create_opportunity       bubble_fn_ask_mira_move_opportunity_status
-       bubble_fn_ask_mira_opportunity_created      bubble_fn_miraAction  (or window.askMiraActionFn)
-       bubble_fn_ask_mira_voice / _voice_start / _voice_cancel / _voice_error
-       bubble_fn_ask_mira_rename_chat / _delete_chat / _pin_chat / _move_chat
-       bubble_fn_ask_mira_create_project / _rename_project / _delete_project
-     Each falls back to a window CustomEvent when the function is missing, exactly as before.
-     ============================================================ -->
-<div class="up-root am-root" id="ask-mira"
-     data-instance="ROOTID_[dynamic id]"
-     data-cdn-pin="CDN_PIN"
-     data-isdark="IS_DARK">
+<div id="host" style="width:1240px;margin:0 auto"><div class="up-root am-root" id="ask-mira"
+     data-instance="m1"
+     data-cdn-pin=""
+     data-isdark="yes">
   <div class="am-shell">
 
     <!-- ===================== HERO ===================== -->
@@ -266,29 +199,50 @@
     </aside>
 
   </div>
-</div>
+</div></div>
+
+<script src="core.js?v=r2"></script>
+<script src="filters/topics-filter.js?v=r2"></script>
+<script src="ask-mira.js?v=r2"></script>
 <script>
-/* Loads this component's CSS/JS from jsDelivr, pinned to data-cdn-pin on the root div above.
-   Same loader every other component in this repo ships. */
-(function(){
-  function readPin(cls){
-    var els = document.getElementsByClassName(cls), i, p;
-    for (i = 0; i < els.length; i++){
-      p = (els[i].getAttribute("data-cdn-pin") || "").trim();
-      if (p && p !== "CDN_PIN") return p;
-    }
-    return "main";
+window.setUpstreemTopics(`[
+  {"id":"t_a","name":"E-Mobility","emoji":"⚡","color":"#2f6f4f"},
+  {"id":"t_b","name":"Leasing","emoji":"","color":"#8a4b9c"}
+]`);
+
+function rein(){
+  var cards = document.querySelectorAll("#ask-mira .am-cat-card");
+  for (var i = 0; i < cards.length; i++){
+    if (/Reporting/i.test(cards[i].textContent)) { cards[i].click(); return; }
   }
-  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("am-root") + "/";
-  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
-  function once(url, make){ if (L[url]) return; L[url] = 1; make(url); }
-  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
-  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
-  css("core.css"); css("ask-mira.css");
-  js("core.js");   js("ask-mira.js");
-  /* Der Topics-Picker in der Reporting-Leiste IST die geteilte topics-filter-Komponente. Mira hat
-     sie eingehaengt, aber nie mitgeliefert -- sie stand nur da, wenn zufaellig ein anderes Element
-     auf derselben Seite sie geladen hat. Wer eine Komponente einhaengt, liefert sie auch aus. */
-  css("filters/topics-filter.css"); js("filters/topics-filter.js");
-})();
+  document.getElementById("out").textContent = "keine Reporting-Karte gefunden (" + cards.length + " Karten)";
+}
+function ohneCss(){
+  var l = document.getElementById("tf");
+  if (l) l.remove();
+  document.getElementById("out").textContent = "topics-filter.css entfernt -- jetzt MESSEN";
+}
+function messen(){
+  var bar = document.querySelector(".am-rep-head");
+  if (!bar) return void (document.getElementById("out").textContent = "keine .am-rep-head -- erst in die Kategorie");
+  function b(sel){ var e = bar.querySelector(sel); if(!e) return "fehlt";
+    var r = e.getBoundingClientRect(); var c = getComputedStyle(e);
+    return { l: Math.round(r.left), r: Math.round(r.right), w: Math.round(r.width),
+             display: c.display, width: c.width, flex: c.flex }; }
+  var br = bar.getBoundingClientRect();
+  var tw = bar.querySelector(".am-rep-topics");
+  document.getElementById("out").textContent = JSON.stringify({
+    css_geladen: !!document.getElementById("tf"),
+    leiste:  { l: Math.round(br.left), r: Math.round(br.right), w: Math.round(br.width) },
+    back:    b(".am-gallery-back"),
+    titel:   b(".am-gallery-cat-title"),
+    spacer:  b(".am-rep-spacer"),
+    topics:  b(".am-rep-topics"),
+    trigger: b(".am-rep-topics .utf-trigger"),
+    datum:   b(".am-rep-range-wrap"),
+    datumRagtRaus: bar.querySelector(".am-rep-range-wrap")
+      ? Math.round(bar.querySelector(".am-rep-range-wrap").getBoundingClientRect().right - br.right) : null,
+    welcheRegelGewinnt: tw ? getComputedStyle(tw).width + " / " + getComputedStyle(tw).display : "-"
+  }, null, 1);
+}
 </script>

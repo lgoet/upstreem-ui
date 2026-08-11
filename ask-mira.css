@@ -1698,4 +1698,14 @@
    The picker itself is the shared topics-filter component (topics-filter.css). Only its place in
    the gallery header is Mira's business -- everything else it looks like is now decided in one
    file for the whole app, which was the point of the swap. */
-#ask-mira .am-rep-topics { flex: 0 0 auto; }
+/* Breite und Anzeige hier MIT festnageln, nicht nur flex. Das Element traegt beide Klassen,
+   up-root und utf-root, und beide Regeln sind 0,1,0 -- gleich stark, also entscheidet allein die
+   Ladereihenfolge der Dateien. Kommt topics-filter.css nicht als Letztes (oder gar nicht: kein
+   Loader im Repo liefert sie mit, Mira haengt die Komponente nur ein), gewinnt core.css mit
+   .up-root{display:flex;width:100%} -- und dann frisst der Picker die ganze Leiste, der Spacer
+   davor schrumpft auf 0, Topics klebt am Titel und der Datums-Button wird rechts aus der Leiste
+   geschoben. Gemessen: 920px statt 107px breit, Datum 374px ausserhalb.
+
+   Der Selektor hier ist 1,1,0 und schlaegt beide, egal in welcher Reihenfolge geladen wird. Eine
+   Leiste darf nicht davon abhaengen, in welcher Sekunde welche Datei ankommt. */
+#ask-mira .am-rep-topics { flex: 0 0 auto; display: inline-block; width: max-content; max-width: 100%; height: 32px; vertical-align: top; }
