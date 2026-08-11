@@ -344,7 +344,9 @@
           var v = num(c.visibility_pct) || 0;
           var self = String(c.company_id) === myId;
           var realIdx = col.indexOf(c);
-          return '<div class="upd-stand-row' + (self ? " is-self" : "") + '">' +
+          return '<div class="upd-stand-row' + (self ? " is-self" : "") + '" role="button" tabindex="0"' +
+                   ' data-cid="' + esc(String(c.company_id)) + '"' +
+                   ' data-cname="' + esc(String(c.name || "")) + '">' +
                    '<span class="upd-stand-idx">' + (realIdx + 1) + '</span>' +
                    brandChipHtml(c) +
                    '<span class="upd-stand-name">' + esc(String(c.name || "")) + '</span>' +
@@ -484,6 +486,26 @@
           company_id: state.company.company_id, topic_id: state.topic.topic_id, scope: next
         });
       }
+    });
+
+    /* Klick auf eine Marke in der Rangliste. Traegt das Topic mit: die Frage ist nie "diese Marke",
+       sondern immer "diese Marke AUF diesem Topic" -- ohne topic_id muesste der Workflow raten. */
+    elStand.addEventListener("click", function(e){
+      var row = e.target.closest ? e.target.closest(".upd-stand-row") : null;
+      if (!row) return;
+      fire("data-company-fn", "bubble_fn_updCompanyClick", {
+        company_id: row.getAttribute("data-cid"),
+        company_name: row.getAttribute("data-cname"),
+        topic_id: state.topic ? state.topic.topic_id : ""
+      });
+    });
+    /* Tastatur: die Zeile ist ein Button, also muss sie auch auf Enter und Leertaste hoeren. */
+    elStand.addEventListener("keydown", function(e){
+      if (e.key !== "Enter" && e.key !== " ") return;
+      var row = e.target.closest ? e.target.closest(".upd-stand-row") : null;
+      if (!row) return;
+      e.preventDefault();
+      row.click();
     });
 
     root.querySelector(".upd-close").addEventListener("click", function(){

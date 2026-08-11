@@ -151,16 +151,30 @@
      window -- die gehoeren zur laufenden Frage und sollen beim naechsten Besuch im Standard
      stehen. localStorage-Schluessel ueber UC.storeKey, damit er sich mit anderen Apps auf
      derselben Domain nicht in die Quere kommt. */
-  function weightKey(instanceId){
-    var UCg = window.UpstreemCore;
+  /* OHNE UC.storeKey, und das ist der Punkt: storeKey haengt die Team-Id an den Schluessel, und
+     die steht beim Boot dieser Komponente noch nicht fest -- setUpstreemTeam kommt aus dem
+     Page-Load-Workflow und damit spaeter. Gelesen wurde also unter "...@_", geschrieben nach dem
+     Umschalten unter "...@team_abc", und der naechste Seitenaufbau fand nichts. Die Einstellung
+     war die ganze Zeit gespeichert, nur unter einem Schluessel, den niemand mehr gesucht hat.
+     Ein Anzeigeschalter gehoert ohnehin nicht hinter die Team-Trennung: er sagt, wie ICH die
+     Heatmap sehen will, nicht welche Daten darin stehen.
+     Der alte Schluessel wird beim Lesen noch mitgenommen, damit ein Wert, der es doch einmal
+     hineingeschafft hat, nicht verloren geht. */
+  function weightKeys(instanceId){
     var raw = "uhm_weights__" + instanceId;
-    return (UCg && UCg.storeKey) ? UCg.storeKey(raw) : raw;
+    var UCg = window.UpstreemCore;
+    return { plain: raw, legacy: (UCg && UCg.storeKey) ? UCg.storeKey(raw) : null };
   }
   function readWeights(instanceId){
-    try { return window.localStorage.getItem(weightKey(instanceId)) === "1"; } catch(e){ return false; }
+    try {
+      var k = weightKeys(instanceId);
+      var v = window.localStorage.getItem(k.plain);
+      if (v == null && k.legacy) v = window.localStorage.getItem(k.legacy);
+      return v === "1";
+    } catch(e){ return false; }
   }
   function writeWeights(instanceId, on){
-    try { window.localStorage.setItem(weightKey(instanceId), on ? "1" : "0"); } catch(e){}
+    try { window.localStorage.setItem(weightKeys(instanceId).plain, on ? "1" : "0"); } catch(e){}
   }
 
   /* Wie viele der vier Balken gefuellt sind. Referenz ist das Maximum der SICHTBAREN Matrix, nicht
