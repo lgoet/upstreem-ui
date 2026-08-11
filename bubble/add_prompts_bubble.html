@@ -37,36 +37,40 @@
           "count":3,
           "prompt_texts":["Wer bietet …?","Which tools …?","Welche Anbieter …?"],
           "markets":["de","us",""],
-          "tag_ids":["t1,t2","t1,t2","t1,t2"],
+          "tag_ids":"t1,t2",
           "source":"csv"}
 
-     The three arrays are INDEX-ALIGNED and always the same length as count. Item i of
-     prompt_texts belongs to item i of markets and item i of tag_ids.
+     ZWEI Listen und ein Skalar. prompt_texts und markets sind INDEX-ALIGNED und immer so lang
+     wie count: Element i von prompt_texts gehoert zu Element i von markets. tag_ids gilt fuer
+     den ganzen Stapel und ist deshalb ein einzelner Wert, keine Liste.
 
        team_id       prepended by core, as on every other event.
-       markets       alpha-2, lowercase. Empty string when neither the row nor the batch picker
-                     gave one — decide server-side whether that is an error or a default.
-       tag_ids       comma-joined topic ids. Currently the same value on every row, because the
-                     topics picker applies to the whole batch; it is per-row anyway so a future
-                     per-row topic editor needs no payload change.
+       markets       alpha-2, lowercase. Eine Liste, weil der Markt wirklich pro Zeile sein kann:
+                     die CSV-Vorlage hat dafuer eine eigene Spalte, importierte Zeilen behalten
+                     ihren eigenen Markt, und der Batch-Picker fuellt nur die Luecken. Leerer
+                     String, wenn weder Zeile noch Picker einen gab — ob das ein Fehler oder ein
+                     Default ist, entscheidest du serverseitig.
+       tag_ids       Kommaverbundene Topic-Ids fuer den GANZEN Stapel, leer wenn keins gewaehlt
+                     wurde. Kein Array: der Topics-Picker gilt fuer alle Zeilen, und es gibt
+                     nirgends eine Quelle fuer zeilenweise Topics — weder im Dialog noch als
+                     CSV-Spalte. Frueher stand hier derselbe String N-mal wiederholt; das hat
+                     einen Zeilenbezug behauptet, den es nicht gibt.
        source        "manual" or "csv". Useful for analytics, ignore it if you do not care.
 
      READING IT IN BUBBLE. Der sichere Weg ist EIN Text-Parameter an den RPC, der den ganzen
      Payload traegt, und JSON-Parsing auf der Serverseite. Das ist keine Bequemlichkeit: zwei der
      fuenf Felder lassen sich per Regex gar nicht zeilenweise lesen, siehe unten.
 
-     Diese drei sind unbedenklich, sie enthalten weder Komma noch Anfuehrungszeichen:
+     Diese vier sind unbedenklich, keiner der Werte enthaelt ein Anfuehrungszeichen:
 
          (?<="team_id":")[^"]*
          (?<="count":)[0-9]+
+         (?<="tag_ids":")[^"]*             ergibt  t1,t2   (leer, wenn kein Topic gewaehlt)
          (?<="source":")[^"]*
 
-     tag_ids: NICHT den Rumpf holen und auf "," splitten. Jedes ELEMENT ist selbst eine
-     kommaverbundene Liste -- bei zwei gewaehlten Topics steht dort ["t1,t2","t1,t2"], und ein
-     Split auf "," macht daraus vier Stuecke statt zwei Zeilen. Da der Topics-Picker fuer den
-     ganzen Stapel gilt, ist auf allen Zeilen ohnehin derselbe Wert; nimm das erste Element:
-
-         (?<="tag_ids":\[")[^"]*            ergibt  t1,t2
+     tag_ids traegt die Kommas IM Wert -- das ist die Liste der Topic-Ids und genau so gewollt.
+     Nicht weiter zerlegen, es sei denn du willst die Ids einzeln; dann auf "," splitten, und
+     zwar auf diesem Wert, nicht auf dem Payload.
 
      markets: der Rumpf laesst sich holen, die Elemente kommen aber MIT Anfuehrungszeichen und
      ein leerer Markt ist "" -- also nichts, was ein Split sauber trennt:

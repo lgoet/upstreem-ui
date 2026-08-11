@@ -858,13 +858,26 @@
     var tags = selectedTagIds().join(",");
     var payload = {
       count: S.rows.length,
-      /* Three arrays of the SAME length, index-aligned. Nested objects would put a JSON string
-         inside a JSON string, and reading one of those out of a Bubble workflow means matching to
-         the end of the payload -- the exact shape that broke uptGroups (STYLEGUIDE §48). Flat
-         arrays are what prompt-research's acceptAllSuggestedPrompts already hands over. */
+      /* Zwei Listen gleicher Laenge, index-aligned, und EIN Skalar. Verschachtelte Objekte wuerden
+         einen JSON-String in den JSON-String legen; so etwas aus einem Bubble-Workflow zu lesen
+         heisst bis zum Ende des Payloads zu matchen -- genau die Form, an der uptGroups zerbrochen
+         ist (STYLEGUIDE 48). Flache Listen sind auch das, was prompt-research's
+         acceptAllSuggestedPrompts schon uebergibt.
+
+         prompt_texts und markets sind zu Recht Listen: der Text ist ohnehin pro Zeile, und der
+         Markt kann es sein -- die CSV-Vorlage hat dafuer eine eigene Spalte, importierte Zeilen
+         behalten ihren eigenen Markt und der Batch-Picker fuellt nur die Luecken.
+
+         tag_ids ist bewusst KEINE Liste. Der Topics-Picker gilt fuer den ganzen Stapel, es gibt
+         nirgends eine Quelle fuer zeilenweise Topics: nicht im Dialog, nicht in der CSV-Spalte.
+         Vorher stand hier S.rows.map(function(){ return tags; }) -- eine Abbildung, die ihre
+         Zeile nicht einmal entgegennahm und denselben String N-mal wiederholte. Das behauptet
+         einen Zeilenbezug, den es nicht gibt, und zwingt die Gegenseite zu einer Extraktion, die
+         das erste Element herausschneiden muss. Kommt eines Tages ein Editor fuer Topics pro
+         Zeile, wird hier wieder eine Liste daraus -- dann aber mit echtem Grund. */
       prompt_texts: S.rows.map(function (r) { return r.text; }),
       markets:      S.rows.map(function (r) { return r.market || S.market || ""; }),
-      tag_ids:      S.rows.map(function () { return tags; }),
+      tag_ids:      tags,
       source:       S.tab === "csv" ? "csv" : "manual"
     };
 
