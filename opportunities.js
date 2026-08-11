@@ -185,6 +185,8 @@
      effort, which is the opposite of what a backlog of opportunities is for. Renamed so the low
      end reads as "small, quick" rather than "not important". */
   var POT_LABEL = { 1: 'Quick win', 2: 'Solid', 3: 'Strong', 4: 'Top priority' };
+  /* Wie viele Wettbewerber im Detail sichtbar sind, bevor der Rest hinter den Zaehler geht. */
+  var COMP_CAP = 3;
   function potBars(lvl){
     var bars = '';
     for (var i=1;i<=4;i++) bars += '<span class="uo-pot-bar p'+i+(i<=lvl?' is-on':'')+'"></span>';
@@ -467,9 +469,27 @@
       metaItem('Created', esc(fmtDate(item.created_at)))+
     '</div>';
 
-    var compList = comps.length ? '<div class="uo-m-section-title">Mentioned competitors</div><div class="uo-comp-list">'+
+    /* Gedeckelt auf drei. Die Liste ist ein vertikaler Stack mit rund 44px pro Zeile -- bei
+       zwoelf erwaehnten Wettbewerbern schiebt sie alles unter sich aus der Karte heraus, und
+       genau das ist der Grund, warum die aufgeklappte Karte abgeschnitten aussah. Drei Zeilen
+       plus Zaehler ist auch die Form, die alle anderen Marken-Stapel in der App haben (siehe
+       UC.brandStack).
+
+       Versteckt wird per Klasse, NICHT per slice: data-comp-idx muss weiter der Position in
+       item.mentioned_competitors entsprechen, sonst feuert der Klick auf den falschen Namen.
+       Der Zaehler addiert zwei Dinge, die der Nutzer nicht auseinanderhalten muss -- was hier
+       nur eingeklappt ist, und was der Server gar nicht erst mitgeschickt hat. Nur wenn etwas
+       eingeklappt ist, laesst sich der Zaehler auch aufklappen. */
+    var localMore = Math.max(0, comps.length - COMP_CAP);
+    var moreTotal = localMore + Math.max(0, compMore);
+    var moreChip = !moreTotal ? ''
+      : localMore
+        ? '<button type="button" class="uo-comp-more" data-comp-expand data-comp-rest="'+Math.max(0, compMore)+'">+'+moreTotal+' more</button>'
+        : '<span class="uo-comp-more">+'+moreTotal+' more</span>';
+
+    var compList = comps.length ? '<div class="uo-m-section-title">Mentioned competitors</div><div class="uo-comp-list'+(localMore ? ' is-capped' : '')+'">'+
       comps.map(function(c, i){ return '<div class="uo-comp" data-comp-idx="'+i+'" role="button" tabindex="0">'+favHtml(c.favicon_url, c.name)+'<span class="uo-comp-name">'+esc(c.name)+'</span></div>'; }).join('')+
-      (compMore > 0 ? '<span class="uo-comp-more">+'+compMore+' more</span>' : '')+
+      moreChip+
       '</div>' : '';
 
     var statusKey = statusKeyOf(item);
@@ -755,6 +775,25 @@
       e.stopPropagation();
       var its = S.items.find(function(x){ return String(x.id) === String(S.detailId); });
       if (its){ emit('open_url', { opportunity_id: S.detailId, lead_url: its.lead_url, lead_title: its.lead_title, lead_domain: its.lead_domain }); }
+      return;
+    }
+
+    /* Vor der Wettbewerber-Zeile pruefen: der Zaehler liegt in derselben Liste, und ein Klick
+       darauf soll aufklappen statt ein competitor_click auf den falschen Namen zu feuern. */
+    var compEx = e.target.closest('[data-comp-expand]');
+    if (compEx){
+      e.stopPropagation();
+      var lst = compEx.closest('.uo-comp-list');
+      if (lst) lst.classList.remove('is-capped');
+      /* Aufklappen zeigt nur, was auch da ist. Hat der Server zusaetzlich gekuerzt, bleibt
+         dessen Rest stehen -- jetzt als reiner Text, weil daran nichts mehr zu klicken ist.
+         Den Zaehler hier ersatzlos zu entfernen wuerde behaupten, die Liste sei vollstaendig. */
+      var rest = Number(compEx.getAttribute('data-comp-rest')) || 0;
+      if (!rest){ compEx.remove(); return; }
+      var still = document.createElement('span');
+      still.className = 'uo-comp-more';
+      still.textContent = '+' + rest + ' more';
+      compEx.parentNode.replaceChild(still, compEx);
       return;
     }
 

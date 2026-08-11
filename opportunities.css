@@ -339,7 +339,15 @@
 .uo-comp .up-logo-box { width: 22px; height: 22px; border-radius: 6px; }
 .uo-comp .up-logo-box img { width: 20px; height: 20px; border-radius: 5px; }
 .uo-comp-name { font-size: 14px; font-weight: 500; color: var(--vc-text); }
-.uo-comp-more { display: inline-flex; align-self: flex-start; align-items: center; height: 28px; padding: 0 12px; border-radius: 8px; background: var(--vc-heading-bg); color: var(--vc-muted); font-size: 12px; font-weight: 500; }
+/* Der Deckel steckt in der Klasse, nicht im Markup: die Zeilen 4..n bleiben im DOM, damit
+   data-comp-idx weiter der Position in mentioned_competitors entspricht. nth-of-type statt
+   nth-child, weil der Zaehler als letztes Kind in derselben Liste sitzt und ein nth-child(n+4)
+   ihn mit verstecken wuerde -- ausgerechnet den, der das Aufklappen ausloest. */
+.uo-comp-list.is-capped > div.uo-comp:nth-of-type(n+4) { display: none; }
+.uo-comp-more { display: inline-flex; align-self: flex-start; align-items: center; height: 28px; padding: 0 12px; border: 0; border-radius: 8px; background: var(--vc-heading-bg); color: var(--vc-muted); font-family: inherit; font-size: 12px; font-weight: 500; }
+/* Nur die aufklappbare Variante ist ein Button und darf sich auch so anfuehlen. */
+button.uo-comp-more { cursor: pointer; transition: background 140ms ease, color 140ms ease; }
+button.uo-comp-more:hover { background: var(--vt-row-hover); color: var(--vc-text); }
 
 .uo-meta-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 0 18px; }
 .uo-meta-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--vc-border); }

@@ -559,7 +559,12 @@
   #ask-mira .uo-comp { display: inline-flex; align-items: center; gap: 9px; padding: 8px 11px; border: 1px solid var(--uo-border); border-radius: 11px; background: var(--uo-card); }
   #ask-mira .uo-comp .uo-fav, #ask-mira .uo-comp .uo-fav-fb { width: 20px; height: 20px; border-radius: 6px; }
   #ask-mira .uo-comp-name { font-size: 13px; font-weight: 500; color: var(--uo-text); }
-  #ask-mira .uo-comp-more { display: inline-flex; align-items: center; height: 36px; padding: 0 12px; border-radius: 11px; background: var(--uo-soft-2); color: var(--uo-muted); font-size: 12.5px; font-weight: 600; }
+  /* Deckel bei drei Chips. nth-of-type auf span, weil der aufklappbare Zaehler ein button ist
+     und ein nth-child(n+4) ausgerechnet ihn mit verstecken wuerde. */
+  #ask-mira .uo-comp-list.is-capped > span.uo-comp:nth-of-type(n+4) { display: none; }
+  #ask-mira .uo-comp-more { display: inline-flex; align-items: center; height: 36px; padding: 0 12px; border: 0; border-radius: 11px; background: var(--uo-soft-2); color: var(--uo-muted); font-family: inherit; font-size: 12.5px; font-weight: 600; }
+  #ask-mira button.uo-comp-more { cursor: pointer; transition: background 140ms ease, color 140ms ease; }
+  #ask-mira button.uo-comp-more:hover { background: var(--uo-soft); color: var(--uo-text); }
 
   /* topic chips — reused 1:1 from the Opportunities module */
   #ask-mira .uo-tags { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 18px; }

@@ -33,6 +33,20 @@
     }
 .up-root * { box-sizing: border-box; }
 
+/* ---------- [data-align] Ausrichtung in einer zu breiten Wirtsbox ----------
+   Ein Filter schrumpft auf die Breite seines Triggers. Steckt er in einer Bubble-Box, die
+   breiter gezogen ist als dieser Trigger -- und das ist der Normalfall, weil die Box von Hand
+   auf eine runde Zahl gezogen wird --, sitzt der Trigger am LINKEN Rand dieser Box. In einer
+   rechtsbuendigen Leiste sieht das aus, als haenge der Filter weit links, obwohl er formal
+   richtig steht: sichtbar ist der Trigger, gemessen wird die Box.
+
+   data-align="right" klebt die Komponente an die rechte Kante ihrer Wirtsbox, ohne dass die Box
+   selbst passend gezogen werden muss. Bewusst opt-in: bestehende Platzierungen stehen links in
+   einer Toolbar und sollen genau da bleiben. Hoehe und Umbruchverhalten bleiben unberuehrt, es
+   wechselt nur die Ausrichtung im Fluss. */
+.up-root[data-align="right"]  { display: block; width: max-content; max-width: 100%; margin-left: auto; }
+.up-root[data-align="center"] { display: block; width: max-content; max-width: 100%; margin-left: auto; margin-right: auto; }
+
 /* ---------- [popover] auf UA-Neutral ----------
    Ein Dropdown, das im Drawer in den Top Layer gehoben wird (UC.menuEscape), traegt kurzzeitig
    das Attribut `popover`. Damit greift das UA-Stylesheet mit einem ganzen Satz eigener Vorgaben:

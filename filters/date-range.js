@@ -413,9 +413,29 @@
         /* Left-aligned unless that would run off screen. Decided once per open; the panel is
            absolute, so it stays glued to the trigger from here on without any scroll handler. */
         menu.classList.remove("is-right");
+        menu.style.marginLeft = "";
+        menu.style.marginRight = "";
         var tr = trigger.getBoundingClientRect();
         var vw = document.documentElement.clientWidth || window.innerWidth;
-        if (tr.left + menu.offsetWidth > vw - 8) menu.classList.add("is-right");
+        var mw = menu.offsetWidth;
+        var rechts = tr.left + mw > vw - 8;
+        if (rechts) menu.classList.add("is-right");
+        /* Umklappen allein reicht nicht. Das Panel ist mit zwei Monaten rund 760px breit -- steht
+           der Trigger weit rechts in einer Leiste, passt es weder links- noch rechtsbuendig, und
+           die rechtsbuendige Variante haengt dann links aus dem Fenster heraus. Also nach der
+           Entscheidung nachmessen und den Rest hineinschieben.
+
+           Der Schub muss auf der Seite sitzen, an der das Panel verankert ist: bei left:0 wirkt
+           nur margin-left, bei right:0 nur margin-right (und dort mit umgekehrtem Vorzeichen).
+           Rand statt left/right, damit die absolute Verankerung am Trigger erhalten bleibt -- so
+           wandert das Panel beim Scrollen weiter mit, ganz ohne Scroll-Handler. */
+        var mr = menu.getBoundingClientRect();
+        var schub = (mr.left < 8) ? (8 - mr.left) : (mr.right > vw - 8 ? (vw - 8 - mr.right) : 0);
+        if (schub){
+          schub = Math.round(schub);
+          if (rechts) menu.style.marginRight = (-schub) + "px";
+          else menu.style.marginLeft = schub + "px";
+        }
       });
 
       menu.addEventListener("click", function (e) {

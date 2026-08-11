@@ -1,0 +1,133 @@
+<meta charset="utf-8">
+<link rel="stylesheet" href="core.css?v=c1">
+<link rel="stylesheet" href="opportunities.css?v=c1">
+<body style="margin:0;padding:20px;font-family:system-ui,sans-serif;background:#fff">
+
+<div style="margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap">
+  <button onclick="laden(12,12)">12 Wettbewerber (alle geliefert)</button>
+  <button onclick="laden(2,2)">nur 2 (kein Zaehler)</button>
+  <button onclick="laden(3,3)">genau 3 (kein Zaehler)</button>
+  <button onclick="laden(5,40)">5 geliefert, 40 gezaehlt (Server hat gekuerzt)</button>
+  <button onclick="oeffnen()">Detail oeffnen</button>
+  <button onclick="messen()">MESSEN</button>
+</div>
+<pre id="out" style="font:11px/1.6 ui-monospace,monospace;background:#f6f6f6;padding:10px;white-space:pre-wrap">bereit</pre>
+
+<div class="up-root uo-root"
+     data-instance="o1"
+     data-cdn-pin=""
+     data-isdark="no"
+     data-sticky-top="16">
+
+  <div class="up-head uo-head">
+    <div class="up-heading has-count">
+      <span class="up-head-label">Active Opportunities</span>
+      <span class="up-head-sep"></span>
+      <span class="up-head-count uo-total">0</span>
+    </div>
+
+    <div class="up-head-tools">
+      <div class="up-search">
+        <button class="up-search-btn up-iconbtn" type="button" data-tip="Search" aria-label="Search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+        <div class="up-search-box">
+          <input class="up-search-input" type="text" placeholder="Search opportunities..." autocomplete="off" spellcheck="false" aria-label="Search opportunities"/>
+          <button class="up-search-clear" type="button" aria-label="Clear search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="uo-popwrap">
+        <button class="uo-sort-btn up-iconbtn" type="button" data-tip="Sort" aria-label="Sort" aria-haspopup="menu" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+        </button>
+        <div class="up-menu uo-sort-pop" role="menu" aria-hidden="true">
+          <div class="up-pop-head">Sort by</div>
+          <div class="up-pop-opt is-active" role="menuitem" data-sort="priority">Priority<svg class="up-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="up-pop-opt" role="menuitem" data-sort="newest">Newest<svg class="up-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="up-pop-div"></div>
+          <div class="up-pop-row uo-toggle-external"><span class="up-pop-label">External only</span><span class="up-switch uo-switch-external" role="switch"></span></div>
+        </div>
+      </div>
+
+      <div class="up-seg uo-mode" role="tablist" aria-label="View">
+        <button class="up-seg-btn is-active" type="button" role="tab" data-mode="board" data-tip="Board view">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1.5"/><rect x="14" y="3" width="7" height="11" rx="1.5"/></svg>Board</button>
+        <button class="up-seg-btn" type="button" role="tab" data-mode="list" data-tip="List view">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>List</button>
+      </div>
+
+      <div class="uo-popwrap">
+        <button class="uo-settings-btn up-iconbtn" type="button" data-tip="Board settings" aria-label="Board settings" aria-haspopup="menu" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+        <div class="up-menu uo-settings-pop" role="menu" aria-hidden="true">
+          <div class="up-pop-head">Lanes</div>
+          <div class="up-pop-row" data-board="pending"><span class="up-pop-label"><span class="uo-col-dot" style="background:#9ca3af;"></span>Pending</span><span class="up-switch is-on" role="switch"></span></div>
+          <div class="up-pop-row" data-board="in_progress"><span class="up-pop-label"><span class="uo-col-dot" style="background:#2384E2;"></span>In Progress</span><span class="up-switch is-on" role="switch"></span></div>
+          <div class="up-pop-row" data-board="done"><span class="up-pop-label"><span class="uo-col-dot" style="background:#15803d;"></span>Done</span><span class="up-switch is-on" role="switch"></span></div>
+          <div class="up-pop-row" data-board="ignored"><span class="up-pop-label"><span class="uo-col-dot" style="background:#b4451f;"></span>Ignored</span><span class="up-switch" role="switch"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- opportunities.js renders the lanes / list into this. -->
+  <div class="uo-stage"></div>
+
+  <div class="uo-scrim"></div>
+  <div class="uo-modal" role="dialog" aria-modal="true"></div>
+
+  <!-- Optional: paste a JSON array here to render without a Run-JS step (useful while designing). -->
+  <script class="uo-data-json" type="application/json">[]</script>
+</div>
+
+<script src="core.js?v=c1"></script>
+<script src="opportunities.js?v=c1"></script>
+<script>
+var EVENTS = [];
+window.bubble_fn_opportunity_competitor_click = function(p){ EVENTS.push(["competitor", p]); };
+
+var NAMEN = ["Volvo","BMW","Mercedes-Benz","Audi","Porsche","Skoda","Seat","Opel","Ford","Toyota","Kia","Hyundai"];
+function laden(n, total){
+  EVENTS = [];
+  var comps = [];
+  for (var i = 0; i < n; i++) comps.push({ company_id:"c"+i, name:NAMEN[i], favicon_url:"" });
+  window.opportunitiesSetItems([{
+    id: "opp1", headline: "Missing on the comparison pages", label: "Content gap",
+    reason: "Competitors dominate the buying-guide sources for this topic.",
+    status: "pending", priority_label: "High", priority_score: 8.4,
+    competitor_count: total, mentioned_competitors: comps,
+    global_share_pct: 12.5, gap: -8.2, your_conversion: 4.1, avg_competitor_conversion: 12.3,
+    trend_pct: 2.1, market: "Germany", effective_citation_type: "editorial",
+    lead_title: "Best EVs 2026", lead_domain: "example.com", lead_url: "https://example.com/evs",
+    created_at: "2026-08-01T10:00:00Z", supporting_urls_count: 4
+  }]);
+}
+function oeffnen(){ window.opportunitiesOpenDetail("opp1"); }
+
+function messen(){
+  var lst = document.querySelector(".uo-comp-list");
+  if (!lst) return void (document.getElementById("out").textContent = "keine Liste -- Detail offen?");
+  var alle = [].slice.call(lst.querySelectorAll(".uo-comp"));
+  var sicht = alle.filter(function(e){ return e.offsetParent !== null; });
+  var chip = lst.querySelector(".uo-comp-more");
+  var body = document.querySelector(".uo-m-body");
+  var out = {
+    imDom: alle.length, sichtbar: sicht.length,
+    sichtbareNamen: sicht.map(function(e){ return e.querySelector(".uo-comp-name").textContent; }),
+    zaehler: chip ? chip.textContent : "keiner",
+    zaehlerIstButton: chip ? chip.tagName : "-",
+    idxDerSichtbaren: sicht.map(function(e){ return e.getAttribute("data-comp-idx"); }),
+    listenHoehe: lst.getBoundingClientRect().height
+  };
+  if (body){
+    out.bodyScrollH = body.scrollHeight; out.bodyClientH = body.clientHeight;
+    out.laeuftUeber = body.scrollHeight > body.clientHeight;
+  }
+  out.events = EVENTS;
+  document.getElementById("out").textContent = JSON.stringify(out, null, 1);
+}
+</script>

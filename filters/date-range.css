@@ -10,8 +10,14 @@
 /* ---------- trigger ----------
    Same shape as core's .up-btn-sec (32px, 8px radius, 1px border) so it lines up with every other
    filter control in a toolbar row. */
-.udr-root { display: inline-flex; width: fit-content; max-width: 100%; }
-.udr-wrap { position: relative; flex: 0 0 auto; }
+/* Gleiche Huelle wie topics-, markets- und models-filter: inline-BLOCK mit ausgeschriebener
+   Hoehe und vertical-align:top. Diese Datei war als einzige der vier eine inline-FLEX-Box auf
+   baseline -- und eine baseline-ausgerichtete Inline-Box haengt in einer Toolbar-Zeile neben
+   Geschwistern auf top ein paar Pixel tiefer, sobald in derselben Zeile noch Text mit anderer
+   line-height steht. Vier Filter, die nebeneinander in dieselbe Leiste gehoeren, brauchen
+   dieselbe Huelle; welcher davon zuerst gebaut wurde, darf man der Leiste nicht ansehen. */
+.udr-root { display: inline-block; width: max-content; max-width: 100%; height: 32px; vertical-align: top; }
+.udr-wrap { position: relative; flex: 0 0 auto; height: 32px; }
 .udr-trigger {
   display: inline-flex; align-items: center; gap: 8px;
   height: 32px; padding: 0 10px;
