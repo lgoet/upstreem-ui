@@ -4,6 +4,39 @@
    and every bubble_fn_* it calls. See bubble/quick_actions_bubble.html for the migration notes
    and the full attribute/event documentation. */
 (function(){
+  /* Der Loader dieses Elements laedt als EINZIGER der 15 Komponenten kein core.js mit -- er holt
+     nur quick-actions.css/js. Auf einer Seite, auf der sonst keine upstreem-Komponente liegt,
+     existiert damit gar kein window.UpstreemCore, also auch kein Marken-Store: /mentioning stand
+     dort immer auf "No brands loaded", voellig unabhaengig davon, was setUpstreemBrands() getan
+     hat. Genau deshalb funktionierten Topics und Markets: deren Filter bringen ihren Core selbst
+     mit. Die Palette holt core.js jetzt aus demselben Pin nach, aus dem sie selbst kommt -- ohne
+     dass irgendwo in Bubble ein Block neu eingesetzt werden muss.
+     core.css bleibt bewusst aussen vor: die Palette bringt ihr eigenes Styling mit, ein
+     zusaetzliches Stylesheet wuerde ihr Aussehen veraendern. */
+  var SELF_SRC = (document.currentScript && document.currentScript.src) || "";
+  function ensureCore(){
+    if (window.UpstreemCore) return;
+    var m = /^(.*\/)quick-actions\.js(?:\?.*)?$/.exec(SELF_SRC);
+    if (!m) return;                                   // lokaler Harness / eigener Pfad: nichts tun
+    var url = m[1] + "core.js";
+    /* Nicht nur auf den eigenen Marker pruefen: ein anderes Element kann core.js gerade erst
+       eingehaengt haben, ohne dass es schon ausgefuehrt wurde -- window.UpstreemCore ist dann
+       noch undefined, das Script-Tag aber da. Ohne diesen Blick liefe core.js zweimal. */
+    var sc0 = document.querySelectorAll("script[src]");
+    for (var i = 0; i < sc0.length; i++){
+      if (/\/core\.js(?:\?|$)/.test(sc0[i].getAttribute("src") || "")) return;
+    }
+    var sc = document.createElement("script");
+    sc.src = url; sc.async = false;
+    sc.setAttribute("data-up-core", url);
+    sc.onerror = function(){
+      if (window.console) console.warn("[quick-actions] could not load core.js from " + url +
+        " — the page-wide brand store stays unavailable and /mentioning will have no brands.");
+    };
+    document.head.appendChild(sc);
+  }
+  ensureCore();
+
   var root = document.getElementById('mira-quick-actions');
   if (!root || root.__mqaInit) return; root.__mqaInit = true;
 
@@ -137,6 +170,31 @@
         if (l && l.length) api.setBrands(l);
       }
     } catch(_){}
+  }
+  /* "No brands loaded" hat drei voellig verschiedene Ursachen, und alle drei sahen bisher gleich
+     aus -- man konnte an der Palette nicht ablesen, ob core zu alt ist, ob die Seite nie Marken
+     gesetzt hat, oder ob der Store voll ist und nur hier nichts ankommt. Genau das ist die Art
+     stiller Ausfall, die eine Fehlersuche zum Raten macht. */
+  function brandsEmpty(){
+    var UCg = window.UpstreemCore;
+    if (!UCg) return { txt: "Core not loaded", why: "window.UpstreemCore is missing on this page." };
+    if (!UCg.getBrands) return {
+      txt: "Brand store missing — update this element's CDN pin",
+      why: "This page's core.js predates the page-wide brand store. The data-cdn-pin on the " +
+           "Quick Actions element still points at an older commit."
+    };
+    var n = 0;
+    try { n = (UCg.getBrands() || []).length; } catch(e){}
+    if (!n) return {
+      txt: "No brands set on this page",
+      why: "The page-wide store is empty: setUpstreemBrands() was never called on this page, " +
+           "or it ran before core.js and threw."
+    };
+    return {
+      txt: "Brands not reaching the palette",
+      why: "The store holds " + n + " brands but this palette has none — the pull in pullBrands() " +
+           "did not take. Two core.js copies under different data-cdn-pin values would do this."
+    };
   }
   var ALL_SCOPES = ["url","domain","brand","prompt"];
   var COMMANDS = [
@@ -908,7 +966,14 @@
       if (cmd.sub === "brands" && !BRANDS.length) pullBrands();
       var opts = subOptions(cmd.sub).filter(function(o){ return !rest || o.label.toLowerCase().indexOf(rest) !== -1 || String(o.value).toLowerCase().indexOf(rest) !== -1; });
       var h1 = '<div class="mqa-group"><div class="mqa-group-head">' + esc(cmd.label) + '</div>';
-      if (!opts.length) h1 += '<div class="mqa-empty">' + (cmd.sub === "brands" && !BRANDS.length ? "No brands loaded" : "No match") + '</div>';
+      if (!opts.length){
+        var msg = "No match";
+        if (cmd.sub === "brands" && !BRANDS.length){
+          var be = brandsEmpty(); msg = be.txt;
+          if (window.console) console.warn("[quick-actions] /mentioning has no brands: " + be.why);
+        }
+        h1 += '<div class="mqa-empty">' + esc(msg) + '</div>';
+      }
       opts.forEach(function(o){ h1 += cmdRowHtml(o.label, "", 'data-cmd="' + cmd.id + '" data-cmd-val="' + escAttr(o.value) + '"', o.av, o.round, o.dot); });
       showStatic(false); showRecent(false);
       resultsEl.innerHTML = h1 + '</div>'; state = "commands"; refreshRows(); setActive(0, false); scroll.scrollTop = 0;
@@ -1511,6 +1576,7 @@
        tun -- ohne das haette es keine Marken gegeben und die einzige Spur waere "No brands"
        gewesen. */
     if (!UCg || !UCg.brandsInto){
+      ensureCore();
       if (triesLeft > 0) setTimeout(function(){ subscribeBrands(triesLeft - 1); }, 150);
       return;
     }

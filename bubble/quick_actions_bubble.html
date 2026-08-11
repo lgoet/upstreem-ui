@@ -199,6 +199,10 @@
   function once(url, make){ if (L[url]) return; L[url] = 1; make(url); }
   function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
   function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+  /* core.js zuerst -- der Marken-Store (setUpstreemBrands) lebt dort, und dieser Loader war der
+     einzige, der ihn nicht mitgeladen hat. core.css bleibt aussen vor: die Palette bringt ihr
+     eigenes Styling mit. */
+  js("core.js");
   css("quick-actions.css");
   js("quick-actions.js");
 })();

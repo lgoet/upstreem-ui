@@ -1,32 +1,10 @@
 <meta charset="utf-8">
-<link rel="stylesheet" href="core.css?v=e3">
-<link rel="stylesheet" href="quick-actions.css?v=e3">
+<link rel="stylesheet" href="quick-actions.css?v=n2">
 <body style="margin:0;padding:20px;font-family:system-ui,sans-serif">
 <pre id="out" style="font:11px/1.6 ui-monospace,monospace;background:#f6f6f6;padding:10px">läuft…</pre>
 
-<!-- Der echte Ablauf auf einer Seite OHNE Performance Radar: der Page-Load-Workflow feuert seinen
-     Run-JS-Schritt, bevor core.js geladen ist. Ohne Stub ist window.setUpstreemBrands undefined,
-     der Schritt wirft, und der ganze Aufruf ist weg -- Quick Actions steht dann bei "No brands
-     loaded", ohne dass irgendwo ein Fehler sichtbar wird. -->
-<script>
-var LOG = [];
-var GUARD = new URLSearchParams(location.search).get("guard") === "1";
-if (GUARD){
-  /* Genau die zwei Zeilen, die in den Run-JS-Schritt gehoeren. */
-  window.__upBrandsQueue = window.__upBrandsQueue || [];
-  window.setUpstreemBrands = window.setUpstreemBrands || function(rows){ window.__upBrandsQueue.push(rows); };
-}
-try {
-  window.setUpstreemBrands([
-    {id:"b1", name:"Anfragenfluss", logo:"https://www.google.com/s2/favicons?domain=anfragenfluss.de&sz=64"},
-    {id:"b2", name:"LeeUp Media",   logo:"//www.google.com/s2/favicons?domain=lee-up.de&sz=64"},
-    {id:"b3", name:"Candidate Flow", logo:""}
-  ]);
-  LOG.push("Run-JS (vor core.js): durchgelaufen");
-} catch(e){
-  LOG.push("Run-JS (vor core.js): GEWORFEN -- " + e.message);
-}
-</script>
+<!-- Die echte Seite: Quick Actions ist die EINZIGE upstreem-Komponente darauf. Kein core.js im
+     Markup, genau wie im Loader-Block des Elements. Bisher gab es hier nie einen Marken-Store. -->
 
 <div id="mira-quick-actions" data-theme="light" data-team="t1" data-cdn-pin="">
   <button class="mqa-trigger" type="button" aria-label="Open quick actions">
@@ -67,10 +45,9 @@ try {
   </div>
 </div>
 
-<script src="core.js?v=e3"></script>
-<script src="quick-actions.js?v=e3"></script>
+<script src="quick-actions.js?v=n2"></script>
 <script>
-var out = document.getElementById("out");
+var LOG = [];
 function markenImMenue(){
   var api = window.MiraQuickActions;
   api.open();
@@ -82,14 +59,20 @@ function markenImMenue(){
     r(txt);
   }, 200); });
 }
+/* Der Page-Load-Workflow des Users, mit genau seiner Feldform {id, logo, name}. */
 setTimeout(function(){
-  LOG.push("guard=" + (GUARD ? "an" : "aus"));
-  LOG.push("Store nach core.js: " + (UpstreemCore.getBrands()||[]).length + " Marken");
+  LOG.push("core nachgeladen? " + (window.UpstreemCore ? "ja" : "NEIN"));
+  try {
+    window.setUpstreemBrands([
+      {id:"b1", name:"Anfragenfluss", logo:"https://www.google.com/s2/favicons?domain=anfragenfluss.de&sz=64"},
+      {id:"b2", name:"LeeUp Media",   logo:"//www.google.com/s2/favicons?domain=lee-up.de&sz=64"},
+      {id:"b3", name:"Candidate Flow", logo:""}
+    ]);
+    LOG.push("setUpstreemBrands: durchgelaufen");
+  } catch(e){ LOG.push("setUpstreemBrands: GEWORFEN -- " + e.message); }
   markenImMenue().then(function(t){
     LOG.push("/mentioning zeigt: " + t.replace(/\n/g, " | "));
-    var l = (UpstreemCore.getBrands()||[])[1];
-    LOG.push("Feld-Normalisierung b2: " + JSON.stringify(l && {id:l.company_id, name:l.name, logo:l.logo_url}));
-    out.textContent = LOG.join("\n");
+    document.getElementById("out").textContent = LOG.join("\n");
   });
-}, 300);
+}, 900);
 </script>
