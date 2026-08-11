@@ -174,9 +174,13 @@
 .upd-vbody { max-height: 412.5px; overflow-y: auto; overscroll-behavior: contain; }
 .upd-td-name { font-size: 13px; font-weight: 500; color: var(--vc-text); }
 .upd-td-name > * { min-width: 0; }
-/* Zahl und Ring beide links, mit Abstand zum Namen davor. Linksbuendig stehen die Prozentwerte
-   aller Zeilen sauber untereinander; space-between wuerde sie an die Spaltenkanten ziehen. */
+/* Zahl links, Ring an der rechten Spaltenkante. Die 16px Abstand zum Zellenrand kommen aus der
+   rechten Polsterung von .up-td (core.css: 0 16px 0 12px) -- kein zweiter Wert, der irgendwann
+   von der Tabelle abweicht.
+   margin-left:auto statt space-between: kaeme in dieser Zelle je ein drittes Element dazu, wuerde
+   space-between es in die Mitte setzen; so bleibt die Zahl links und der Ring rechts. */
 .upd-td-sov { justify-content: flex-start; gap: 18px; }
+.upd-td-sov .upd-ring { margin-left: auto; }
 .upd-td-sov .up-num { font-variant-numeric: tabular-nums; }
 .upd-ring { flex: 0 0 auto; display: inline-flex; line-height: 0; }
 /* 40 Prozent groesser: 16 x 1.4 = 22.4. Die Groesse steht hier und nicht im SVG -- die viewBox
