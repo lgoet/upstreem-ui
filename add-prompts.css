@@ -145,36 +145,31 @@
   stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 /* ---- staged list ---- */
+/* Leer heisst leer: kein Kasten, keine Ueberschrift, keine Platzhalterbalken. Der Bereich
+   existiert erst, wenn ein Prompt drin steht -- deshalb faellt er im leeren Zustand komplett
+   aus dem Fluss und der Dialog ist so hoch wie Eingabefeld plus Fusszeile.
+   overflow und height setzt JS waehrend der Bewegung; hier steht nur der Uebergang, damit die
+   Kurve an einer Stelle definiert ist. */
 .uap-listwrap { display: flex; flex-direction: column; min-height: 0; }
+.uap-listwrap.is-empty { display: none; }
 .uap-listhead {
   display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
   font-size: 14px; font-weight: 500; color: var(--vc-text);
 }
-/* Empty keeps the heading, quieted down: it labels the greyed rows underneath as "this is where
-   prompts land", which two anonymous grey bars on their own do not say. Third colour and normal
-   weight, so it sits behind the real count rather than competing with it. */
-.uap-listwrap.is-empty .uap-listhead { color: var(--vc-third); font-weight: 400; }
 .uap-clearall {
   margin-left: auto; border: 0; background: transparent; padding: 0;
   color: var(--vc-muted); font: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
 }
 .uap-clearall:hover { color: var(--vc-text); }
-.uap-listwrap.is-empty .uap-clearall { display: none; }
 
+/* 232px ist die Grenze, ab der die Liste selbst scrollt statt den Dialog weiter wachsen zu
+   lassen. Die Hoehenanimation laeuft deshalb von selbst aus: sobald der Inhalt hier anschlaegt,
+   aendert sich die gemessene Zielhoehe nicht mehr und es gibt nichts mehr zu bewegen. */
 .uap-list {
   list-style: none; margin: 0; padding: 0;
   display: flex; flex-direction: column; gap: 4px;
   max-height: 232px; overflow-y: auto; overscroll-behavior: contain;
 }
-.uap-listwrap.is-empty .uap-list { display: none; }
-/* The empty state IS the filled state, drained of colour: two blanks the exact size of a row.
-   It shows the shape of what is about to appear without pretending to be content — a greyed-out
-   example prompt gets read as a real one and then people wonder why it will not delete. */
-.uap-listempty { display: flex; flex-direction: column; gap: 4px; }
-.uap-ghost {
-  height: 34px; border-radius: 9px; background: var(--vc-heading-bg); opacity: .55;
-}
-.uap-listwrap:not(.is-empty) .uap-listempty { display: none; }
 
 .uap-capnote {
   margin-top: 8px; display: flex; align-items: center; gap: 6px;

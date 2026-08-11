@@ -1905,7 +1905,10 @@
        so of the three setters below only the last would survive and the topic list would be the
        one dropped. The second pass runs against a mounted picker and applies all three in order.
        Both are idempotent, so doing it twice costs a render nobody sees. */
-    setTimeout(pushRepTopics, 0);
+    /* galWhenIdle statt setTimeout(...,0): laeuft die Galerie gerade, wartet der zweite Durchgang
+       auf das Ende der Bewegung statt sich in ihre ersten Frames zu legen. Ausserhalb einer
+       Animation verhaelt es sich wie vorher. Siehe die Begruendung bei _galIdleQueue. */
+    galWhenIdle(pushRepTopics);
     pushRepTopics();
   }
   function pushRepTopics(){
@@ -1989,11 +1992,33 @@
      browser coalesces both into one style recalc and the element jumps straight to its end value
      with nothing to transition from. */
   var _galTimers = [], _galOff = [];
+  /* Arbeit, die waehrend der Bewegung NICHT laufen darf.
+     syncRepTopics setzte seinen zweiten Durchgang per setTimeout(...,0) ab. Der laeuft im
+     naechsten Task -- und das ist exakt der Task, in dem der 150ms-Slide seine ersten Frames
+     zeichnet. Dieser Durchgang schiebt vier Setter in die Topics-Komponente, die sich daraufhin
+     samt Menue neu aufbaut. Layout und Paint dieser Arbeit teilen sich die Frames mit der
+     laufenden Hoehenanimation, und genau so fuehlt sich "es stockt zwischendurch" an.
+
+     Der Aufschub ist kein fester Timer, sondern haengt am Ende der Bewegung: solange animiert
+     wird, sammelt sich die Arbeit hier und laeuft, wenn galReset die Animation abraeumt. Wird die
+     Animation abgebrochen (zweiter Klick mitten hinein), laeuft sie sofort -- verloren gehen darf
+     sie nie, sonst steht der Picker ohne Liste da. */
+  var _galBusy = false, _galIdleQueue = [];
+  function galRunIdle(){
+    var q = _galIdleQueue; _galIdleQueue = [];
+    for (var i = 0; i < q.length; i++){ try { q[i](); } catch(e){} }
+  }
+  function galWhenIdle(fn){
+    if (!_galBusy){ setTimeout(fn, 0); return; }
+    _galIdleQueue.push(fn);
+  }
   function galClearTimers(){
     for (var i = 0; i < _galTimers.length; i++) clearTimeout(_galTimers[i]);
     _galTimers = [];
     for (var j = 0; j < _galOff.length; j++) _galOff[j]();
     _galOff = [];
+    _galBusy = false;
+    galRunIdle();
   }
   function galLater(fn, ms){ _galTimers.push(setTimeout(fn, ms)); }
   /* Chain the next phase on the transition's OWN end event, not on a timer set to the same
@@ -2023,6 +2048,9 @@
     elSuggGrid.style.opacity = '';
     elSuggGrid.style.transform = '';
     elSuggGrid.style.willChange = '';
+    /* Die Bewegung ist vorbei -- was sich waehrenddessen angesammelt hat, laeuft jetzt. */
+    _galBusy = false;
+    galRunIdle();
   }
   /* Three strictly separated steps, never two things moving at once:
         1. fade the old content out          150ms   (height stays pinned)
@@ -2060,6 +2088,10 @@
     /* Nothing measurable to move (first paint, or the start screen still hidden) -- render straight
        and leave the element completely alone rather than pinning a height onto it. */
     if (!h0){ galReset(); return renderGalleryNow(); }
+
+    /* Ab hier laeuft eine Bewegung: alles, was per galWhenIdle angemeldet wird, wartet auf ihr
+       Ende. Gesetzt NACH dem h0-Ausstieg, denn der rendert ohne Animation durch. */
+    _galBusy = true;
 
     /* ---- 1. content out ---- */
     elSuggGrid.style.willChange = 'height, opacity';

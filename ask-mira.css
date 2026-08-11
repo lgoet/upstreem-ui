@@ -865,10 +865,18 @@
   #ask-mira[data-theme="dark"] .am-rep-range-wrap.is-open .am-rep-range:hover { background: var(--am-card); border-color: #707070; }
   .am-rep-cal { width: 15px; height: 15px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .am-rep-range-chev { width: 14px; height: 14px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; transition: transform 140ms ease; }
+  /* Panelfarbe, Rahmen, Radius und Padding aus den Core-Tokens, nicht aus der --am-Palette.
+     Dieses Menue steht in der Reporting-Leiste unmittelbar NEBEN dem Topics-Picker, und der ist
+     die geteilte Komponente und zeichnet sich aus --up-menu-*. Im Dark Mode standen dadurch zwei
+     Panels nebeneinander, die sich sichtbar unterschieden: gemessen #1b1b1b zu #151515 beim
+     Hintergrund und #353535 zu #454545 beim Rahmen. core.css schreibt zu genau diesen Tokens,
+     dass es EINE Panelfarbe fuer die ganze App gibt und das Auseinanderlaufen der Grund war,
+     warum die Panels irgendwann nicht mehr zueinander passten. Hier ist es besonders sichtbar,
+     weil beide gleichzeitig aufgehen koennen. */
   .am-rep-range-menu {
-    position: absolute; top: calc(100% + 6px); right: 0; min-width: 184px; z-index: 60;
-    background: var(--am-card); border: 1px solid var(--am-border); border-radius: 14px;
-    box-shadow: 0 12px 32px rgba(0,0,0,0.14); padding: 6px;
+    position: absolute; top: calc(100% + var(--up-dd-gap)); right: 0; min-width: 184px; z-index: 60;
+    background: var(--up-menu-bg); border: 1px solid var(--up-menu-border); border-radius: var(--up-dd-radius);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.14); padding: var(--up-dd-pad);
     opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none;
     transition: opacity 120ms ease, transform 120ms ease; max-height: 320px; overflow-y: auto;
   }
@@ -878,12 +886,15 @@
     padding: 0 9px; display: flex; align-items: center; gap: 8px; cursor: pointer;
     font-family: inherit; font-size: 13.5px; font-weight: 500; text-align: left;
   }
-  .am-rep-range-opt:hover { background: var(--am-soft); }
+  /* Auch innen die Core-Tokens: die Zeilenmarkierung und der Trenner muessen zur Panelfarbe
+     passen, die eine Zeile darueber jetzt aus --up-menu-bg kommt. --am-soft war auf die alte
+     --am-card-Flaeche abgestimmt und sitzt auf der neuen sichtbar daneben. */
+  .am-rep-range-opt:hover { background: var(--up-sel-bg); }
   .am-rep-range-opt.is-sel { font-weight: 650; }
   .am-rep-range-check { margin-left: auto; flex: 0 0 auto; display: inline-flex; opacity: 0; color: var(--am-text); }
   .am-rep-range-opt.is-sel .am-rep-range-check { opacity: 1; }
   .am-rep-range-check svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
-  .am-rep-range-sep { height: 1px; background: var(--am-border); margin: 6px 4px; }
+  .am-rep-range-sep { height: 1px; background: var(--up-menu-border); margin: 7px 4px; }
   .am-rep-range-lbl { max-width: 132px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   .am-rep-cards { display: flex; flex-direction: column; gap: 7px; margin-top: 14px; }

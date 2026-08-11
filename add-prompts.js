@@ -393,8 +393,50 @@
            '</li>';
   }
 
+  /* ---------------- Hoehenanimation des Listenbereichs ----------------
+     Der Bereich hat im leeren Zustand keine Hoehe (display:none). Kommt der erste Prompt, waechst
+     er von 0 auf seine echte Hoehe; jeder weitere schiebt ihn um eine Zeile weiter, bis .uap-list
+     an ihren max-height-Deckel stoesst und stattdessen scrollt -- ab da ist die gemessene
+     Zielhoehe konstant und es bewegt sich nichts mehr.
+
+     Gemessen wird zweimal um den Render herum: vorher der Ist-Wert, nachher der freie Soll-Wert.
+     Genau das Muster, das Miras Galerie schon benutzt; ein zweiter Mechanismus fuer dieselbe
+     Aufgabe waere die Stelle, an der die beiden Kurven irgendwann auseinanderlaufen.
+
+     Laeuft schon eine Bewegung, ist der Ist-Wert die aktuelle Zwischenhoehe -- schnelles Tippen
+     kettet dadurch weich weiter, statt bei jedem Prompt neu anzusetzen. */
+  var LIST_MS = 180, LIST_EASE = "cubic-bezier(.4,0,.2,1)";
+  var _lwTimer = null;
+  function lessMotion() {
+    return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }
+  function lwSettle(wrap) {
+    wrap.style.transition = ""; wrap.style.height = "";
+    wrap.style.overflow = ""; wrap.style.display = ""; wrap.style.willChange = "";
+  }
+  function lwAnimate(wrap, h0, h1) {
+    wrap.style.willChange = "height";
+    wrap.style.overflow = "hidden";
+    /* Beim Zuklappen muss der Kasten sichtbar bleiben, sonst ist er sofort weg und es gibt
+       nichts zu bewegen. Das display kommt am Ende mit lwSettle wieder raus. */
+    if (!h1) wrap.style.display = "flex";
+    wrap.style.height = h0 + "px";
+    /* Erzwungener Reflow, nicht kosmetisch: ohne ihn fasst der Browser Start- und Endwert zu
+       einem Style-Recalc zusammen und springt ohne Uebergang auf das Ziel. */
+    void wrap.offsetHeight;
+    wrap.style.transition = "height " + LIST_MS + "ms " + LIST_EASE;
+    wrap.style.height = h1 + "px";
+    clearTimeout(_lwTimer);
+    _lwTimer = setTimeout(function () { lwSettle(wrap); }, LIST_MS + 40);
+  }
+
   function renderList() {
-    var el = M.list;
+    var el = M.list, wrap = M.listwrap;
+    /* Nur animieren, wenn der Dialog wirklich offen ist -- beim Aufbau waere das Wachsen
+       Teil des Erscheinens und saehe aus wie ein Ruckler. */
+    var bewegt = !!(isOpen && wrap && !lessMotion());
+    var h0 = bewegt ? wrap.getBoundingClientRect().height : 0;
+
     if (!S.rows.length) {
       el.innerHTML = "";
       M.listwrap.classList.add("is-empty");
@@ -416,6 +458,14 @@
 
     var ed = el.querySelector(".uap-rowedit");
     if (ed) { autosize(ed); ed.focus(); ed.setSelectionRange(ed.value.length, ed.value.length); }
+
+    /* Erst jetzt messen: der Inhalt steht, autosize hat die Textarea auf ihre Zeilenzahl
+       gebracht. Vorher waere die Zielhoehe die von gestern. */
+    if (!bewegt) return;
+    clearTimeout(_lwTimer);
+    lwSettle(wrap);                                   /* frei messen, ohne Reste der letzten Bewegung */
+    var h1 = wrap.getBoundingClientRect().height;
+    if (Math.abs(h1 - h0) > 1) lwAnimate(wrap, h0, h1);
   }
 
   /* The trigger shows what is picked, exactly like the three filter dropdowns: the market's flag
@@ -596,11 +646,12 @@
             '<button type="button" class="uap-clearall" data-act="clearall">Clear all</button>' +
           '</div>' +
           '<ul class="uap-list"></ul>' +
-          /* The empty state is the shape of the filled one, greyed out: two row-sized blanks. No
-             example prompts -- a greyed sentence that looks like a prompt gets read as one. */
-          '<div class="uap-listempty" aria-hidden="true">' +
-            '<span class="uap-ghost"></span><span class="uap-ghost"></span>' +
-          '</div>' +
+          /* Kein Platzhalter mehr. Frueher standen hier zwei graue Balken plus die Ueberschrift
+             "No prompts yet" -- eine Vorschau auf eine Liste, die es noch nicht gibt. Solange
+             nichts eingetippt ist, ist der Dialog jetzt nur Eingabefeld und Fusszeile; der
+             Listenbereich waechst erst, wenn er etwas zu zeigen hat. Das ist auch der Grund,
+             warum das Aufgehen ueberhaupt animierbar wurde: von null auf die echte Hoehe ist
+             eine Bewegung, von Platzhalter auf Inhalt waere nur ein Austausch gewesen. */
           '<div class="uap-capnote" hidden></div>' +
         '</div>' +
 
@@ -924,6 +975,10 @@
   function close() {
     if (!M || !isOpen) return;
     isOpen = false;
+    /* Eine laufende Hoehenanimation abraeumen. Sonst traegt der Kasten beim naechsten Oeffnen die
+       Inline-Hoehe von eben und der Dialog geht auf einer fremden Groesse auf. */
+    clearTimeout(_lwTimer);
+    if (M.listwrap) lwSettle(M.listwrap);
     closePick();
     hideShell();
     if (S.opener && S.opener.focus) { try { S.opener.focus(); } catch (e) {} }
