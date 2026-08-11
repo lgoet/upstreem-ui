@@ -4,7 +4,10 @@
   Ein Aufruf pro Seite, nicht mehr einer pro Placement:
 
       window.setUpstreemBrands(brandsJson);
-        brandsJson: [ { company_id, name, logo_url, role: "own"|"competitor", position }, ... ]
+        Feldnamen frei: {id|company_id, name|label, logo|logo_url|favicon|favicon_url} -- der Store
+        normalisiert und legt jede Zeile unter ALLEN diesen Namen ab, damit jede Komponente
+        findet, was sie sucht. Zusatzfelder (role, position, ...) bleiben erhalten.
+        Protokoll-relative Logo-URLs ("//cdn...") werden auf https:// gezogen.
 
   Jede Komponente mit einer Marken-Auswahlliste zieht daraus -- Tabellen, Charts, Quick Actions,
   Performance Radar. Der komponenteneigene Setter weiter unten bleibt bestehen und funktioniert

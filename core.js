@@ -4779,10 +4779,35 @@
       if (i >= 0) BRANDS.subs.splice(i, 1);
     };
   }
+  /* Eine Marke, viele Feldnamen. Quick Actions hiess sie immer id/name/logo, die Tabellen und
+     Charts lesen company_id/name/logo_url oder favicon_url, brandStack faellt auf favicon
+     zurueck. Wer den Store fuellt, kann das nicht wissen und soll es auch nicht muessen -- also
+     wird HIER einmal normalisiert und jede Zeile traegt danach ALLE gebraeuchlichen Namen mit
+     demselben Wert. Ohne das haette dieselbe Liste in einer Komponente funktioniert und in der
+     naechsten leere Logos oder gar keine Eintraege ergeben, ohne dass irgendwo etwas gemeldet
+     wird -- genau die Sorte stiller Ausfall, die hier nicht mehr vorkommen soll.
+     Zusatzfelder (role, position, was auch immer) bleiben unangetastet. */
+  function normBrandRow(b){
+    if (!b || typeof b !== "object") return null;
+    var id   = b.company_id != null ? b.company_id : (b.id != null ? b.id : "");
+    var name = b.name != null ? b.name : (b.label != null ? b.label : "");
+    var logo = b.logo_url || b.logo || b.favicon_url || b.favicon || "";
+    /* Protokoll-relativ ("//cdn...") bricht in manchen Bubble-Kontexten -- derselbe Fix, den
+       brandStack in core schon fuer seine Chips macht. Bubble liefert Datei-URLs genau so. */
+    if (String(logo).indexOf("//") === 0) logo = "https:" + logo;
+    var out = {}, k;
+    for (k in b) if (Object.prototype.hasOwnProperty.call(b, k)) out[k] = b[k];
+    out.company_id = String(id); out.id = out.company_id;
+    out.name = String(name);
+    out.logo_url = logo; out.logo = logo; out.favicon_url = logo; out.favicon = logo;
+    return (out.company_id || out.name) ? out : null;
+  }
+
   function setBrands(rows, label){
     var list = parseLoose(rows, label || "brands");
     if (!list) return false;
     if (!isArray(list)) list = [list];
+    list = list.map(normBrandRow).filter(Boolean);
     BRANDS.list = list;
     BRANDS.at = nowMs();
     BRANDS.seq++;
