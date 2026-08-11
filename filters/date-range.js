@@ -187,18 +187,53 @@
          unconditional call topics-manager and brands-overview make. */
       if (UC.unclipAncestors) UC.unclipAncestors(root, false);
 
-      var pop = UC.makePopover({
-        wrap: wrap, menu: menu, opener: trigger,
-        onClose: function () {
-          /* A half-made selection dies with the panel -- committing one click as a range would
-             invent an end date the user never picked. */
-          pendingStart = null; hoverDate = null;
-          trigger.setAttribute("aria-expanded", "false");
-          menu.setAttribute("aria-hidden", "true");
-          viewMonth = monthOf(committed.to, -1);
-          render();
+      /* ---------- open/close ----------
+         Hand-rolled setOpen() statt UC.makePopover, und zwar aus EINEM Grund: es macht diesen
+         Kalender strukturell identisch zu den drei Filter-Dropdowns (topics/models/markets), die
+         alle direkt UC.dropdownOpened rufen.
+
+         Der Unterschied war nicht kosmetisch. `UC` ist die Referenz, die diese Datei beim Boot
+         auf window.UpstreemCore vorgefunden hat. Traegt auch nur EIN Element auf der Seite einen
+         anderen data-cdn-pin, laedt dessen Loader eine zweite core.js unter einer zweiten URL --
+         die Dedupe-Registry greift nur pro URL -- und dann haengt jede Komponente an der Kopie,
+         die zu IHREM Boot-Zeitpunkt gerade da war. makePopover schliesst dabei ueber eine
+         Closure in seiner eigenen Kopie ab: der Kalender lief damit weiter auf altem Code,
+         waehrend die drei Filter laengst den neuen benutzten. Genau das Bild "drei Dropdowns
+         gehen, der Kalender nicht".
+
+         dropdownOpened wird darum bei jedem Oeffnen frisch von window.UpstreemCore geholt. Die
+         Registries selbst (OPEN_DD, POPOVERS) liegen ohnehin auf window und werden von allen
+         Kopien geteilt -- es zaehlt also nur, dass die AUFRUFENDE Funktion aktuell ist. */
+      var isPanelOpen = false, unregister = null;
+      function setOpen(v) {
+        v = !!v;
+        if (isPanelOpen === v) return;
+        isPanelOpen = v;
+        wrap.classList.toggle("is-open", v);
+        menu.classList.toggle("is-shown", v);
+        menu.setAttribute("aria-hidden", v ? "false" : "true");
+        trigger.setAttribute("aria-expanded", v ? "true" : "false");
+        if (v) {
+          var U = window.UpstreemCore || UC;
+          unregister = U.dropdownOpened
+            ? U.dropdownOpened(menu, function () { setOpen(false); }, trigger)
+            : null;
+          return;
         }
-      });
+        if (unregister) { unregister(); unregister = null; }
+        /* Fokus raus, BEVOR aria-hidden greift -- der Kalender laesst Tage per Pfeiltasten
+           fokussieren, und ein fokussiertes Element in einem aria-hidden-Teilbaum schluckt
+           Tastatureingaben. makePopover hat das erledigt, hier steht es jetzt selbst. */
+        try { if (menu.contains(document.activeElement)) trigger.focus(); } catch (e) {}
+        /* A half-made selection dies with the panel -- committing one click as a range would
+           invent an end date the user never picked. */
+        pendingStart = null; hoverDate = null;
+        viewMonth = monthOf(committed.to, -1);
+        render();
+      }
+      var pop = { open: function () { setOpen(true); },
+                  close: function () { setOpen(false); },
+                  isOpen: function () { return isPanelOpen; } };
 
       function isProcessing() { return UC.isYes(root.getAttribute("data-isprocessing")); }
       function monthOf(d, offset) {
@@ -442,6 +477,14 @@
 
       /* Arrow keys move day to day across month boundaries -- the reason the cells are real
          buttons rather than the divs the third-party widget rendered. */
+      /* Escape schliesst -- kam vorher von makePopover, steht jetzt hier. Capture-Phase und auf
+         document, damit es auch greift wenn der Fokus gar nicht im Panel sitzt (das Panel zieht
+         den Fokus bewusst nicht an sich). */
+      document.addEventListener("keydown", function (e) {
+        if (!isPanelOpen) return;
+        if (e.key === "Escape" || e.keyCode === 27) setOpen(false);
+      }, true);
+
       menu.addEventListener("keydown", function (e) {
         var day = e.target.closest && e.target.closest(".udr-day");
         if (!day) return;
