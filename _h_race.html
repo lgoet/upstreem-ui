@@ -1,0 +1,61 @@
+<meta charset="utf-8">
+<link rel="stylesheet" href="quick-actions.css?v=r1">
+<body style="margin:0;padding:20px;font-family:system-ui,sans-serif">
+<pre id="out" style="font:11px/1.6 ui-monospace,monospace;background:#f6f6f6;padding:10px;white-space:pre-wrap">läuft…</pre>
+
+<!-- Die Seite, an der es zerbrochen ist: Quick Actions rendert zuerst (Header-Reusable), eine
+     andere Komponente kommt kurz danach mit ihrem eigenen Loader. Beide wollen core.js. Traegt
+     sich die Palette nicht in die gemeinsame Registry ein, holt der zweite Loader core.js noch
+     einmal -- und die Komponenten-JS kann vor ihrem Core laufen. -->
+
+<div id="mira-quick-actions" data-theme="light" data-team="t1" data-cdn-pin="">
+  <button class="mqa-trigger" type="button" aria-label="Open quick actions">
+    <span class="mqa-trigger-label">Quick Actions</span>
+  </button>
+  <div class="mqa-overlay" role="presentation" aria-hidden="true">
+    <div class="mqa-modal" role="dialog" aria-modal="true" aria-label="Quick actions">
+      <div class="mqa-search">
+        <span class="mqa-chips" id="mqa-chips"></span>
+        <span class="mqa-inputwrap">
+          <input class="mqa-input" type="text" autocomplete="off" spellcheck="false" aria-label="Search" />
+          <span class="mqa-ph" id="mqa-ph" aria-hidden="true">Search…</span>
+        </span>
+        <span class="mqa-ph-cmd" id="mqa-ph-cmd" aria-hidden="true">/ for filters</span>
+        <span class="mqa-kbd mqa-esc" id="mqa-esc">esc</span>
+        <button class="mqa-fav is-hidden" type="button" id="mqa-fav" aria-pressed="false" aria-label="Save as Favorite"></button>
+        <button class="mqa-clear is-hidden" type="button" id="mqa-clear" aria-label="Reset search"></button>
+      </div>
+      <button class="mqa-entercta is-hidden" type="button" id="mqa-entercta"></button>
+      <div class="mqa-scroll"><div class="mqa-results" aria-live="polite"></div></div>
+      <div class="mqa-recent-wrap" id="mqa-recent"></div>
+      <div class="mqa-actions-wrap"></div>
+    </div>
+  </div>
+</div>
+
+<script src="quick-actions.js?v=r1"></script>
+
+<script>
+/* Wortgleich der Loader-Block einer beliebigen anderen Komponente, inklusive der Registry. */
+setTimeout(function anderesElement(){
+  var base = location.origin + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(url, make){ if (L[url]) return; L[url] = 1; make(url); }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+  css("core.css"); js("core.js");
+}, 300);
+
+setTimeout(function(){
+  var tags = [].slice.call(document.querySelectorAll("script[src]"))
+              .filter(function(s){ return /\/core\.js(\?|$)/.test(s.getAttribute("src") || ""); });
+  var o = [];
+  o.push("core.js-Script-Tags: " + tags.length + "   (muss 1 sein)");
+  tags.forEach(function(t){ o.push("   " + t.getAttribute("src") + (t.hasAttribute("data-up-core") ? "   [von der Palette]" : "   [vom Komponenten-Loader]")); });
+  o.push("Registry-Eintraege fuer core.js: " +
+    Object.keys(window.__upAssetsLoaded || {}).filter(function(k){ return /core\.js/.test(k); }).length);
+  o.push("window.UpstreemCore: " + typeof window.UpstreemCore);
+  o.push("Marken-Store erreichbar: " + (window.UpstreemCore && window.UpstreemCore.getBrands ? "ja" : "nein"));
+  document.getElementById("out").textContent = o.join("\n");
+}, 2200);
+</script>

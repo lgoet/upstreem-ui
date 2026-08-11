@@ -1,0 +1,41 @@
+<meta charset="utf-8">
+<body style="margin:0;padding:20px;font-family:system-ui,sans-serif">
+<pre id="out" style="font:11px/1.6 ui-monospace,monospace;background:#f6f6f6;padding:10px;white-space:pre-wrap">läuft…</pre>
+
+<!-- Die echten Dateien vom Pin, nicht die lokalen. Wenn core.js beim Laden wirft, initialisiert
+     danach keine einzige Komponente mehr, und die Seite sieht unformatiert aus. -->
+<script>
+var FEHLER = [];
+window.addEventListener("error", function(e){
+  FEHLER.push((e.filename || "?").split("/").pop() + ":" + e.lineno + "  " + e.message);
+}, true);
+</script>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@8adbee2/core.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@8adbee2/quick-actions.css">
+<script src="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@8adbee2/core.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@8adbee2/quick-actions.js"></script>
+
+<script>
+setTimeout(function(){
+  var UC = window.UpstreemCore, o = [];
+  o.push("JS-Fehler beim Laden: " + (FEHLER.length ? "\n  " + FEHLER.join("\n  ") : "keine"));
+  o.push("window.UpstreemCore: " + typeof UC);
+  if (UC){
+    var fehlt = ["makeMount","makePopover","brandStack","sentColor","getBrands","getTopics",
+                 "storeStats","makeTooltips","makeColumns","makePager","unclipAncestors"]
+                .filter(function(k){ return typeof UC[k] === "undefined"; });
+    o.push("fehlende Kits: " + (fehlt.length ? fehlt.join(", ") : "keine"));
+  }
+  /* Greift core.css? Eine Regel daraus gegen ein Testelement pruefen. */
+  var t = document.createElement("div");
+  t.className = "up-root"; t.style.position = "absolute"; t.style.left = "-9999px";
+  t.innerHTML = '<span class="up-badge is-dot"></span><span class="up-stack-item"><span class="up-stack-vis"></span></span>';
+  document.body.appendChild(t);
+  var dot = getComputedStyle(t.querySelector(".up-badge"));
+  var vis = getComputedStyle(t.querySelector(".up-stack-vis"));
+  o.push("core.css greift: .up-badge.is-dot " + dot.width + "x" + dot.height +
+         " (soll 6x6)   .up-stack-vis radius " + vis.borderRadius + " (soll 8px)");
+  document.getElementById("out").textContent = o.join("\n");
+}, 1500);
+</script>

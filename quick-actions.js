@@ -14,28 +14,44 @@
      core.css bleibt bewusst aussen vor: die Palette bringt ihr eigenes Styling mit, ein
      zusaetzliches Stylesheet wuerde ihr Aussehen veraendern. */
   var SELF_SRC = (document.currentScript && document.currentScript.src) || "";
+  function coreDa(){
+    if (window.UpstreemCore) return true;
+    /* Die Registry, ueber die sich alle Loader gegenseitig sehen. Ein Eintrag darin heisst: eine
+       Komponente hat core.js schon angefordert, es laeuft nur noch nicht. */
+    var reg = window.__upAssetsLoaded, k;
+    if (reg) for (k in reg) if (/\/core\.js(?:\?|$)/.test(k)) return true;
+    var sc = document.querySelectorAll("script[src]");
+    for (var i = 0; i < sc.length; i++){
+      if (/\/core\.js(?:\?|$)/.test(sc[i].getAttribute("src") || "")) return true;
+    }
+    return false;
+  }
   function ensureCore(){
-    if (window.UpstreemCore) return;
+    if (coreDa()) return;
     var m = /^(.*\/)quick-actions\.js(?:\?.*)?$/.exec(SELF_SRC);
     if (!m) return;                                   // lokaler Harness / eigener Pfad: nichts tun
     var url = m[1] + "core.js";
-    /* Nicht nur auf den eigenen Marker pruefen: ein anderes Element kann core.js gerade erst
-       eingehaengt haben, ohne dass es schon ausgefuehrt wurde -- window.UpstreemCore ist dann
-       noch undefined, das Script-Tag aber da. Ohne diesen Blick liefe core.js zweimal. */
-    var sc0 = document.querySelectorAll("script[src]");
-    for (var i = 0; i < sc0.length; i++){
-      if (/\/core\.js(?:\?|$)/.test(sc0[i].getAttribute("src") || "")) return;
-    }
+    /* MIT Eintrag in die gemeinsame Registry. Ohne den holt der naechste Komponenten-Loader
+       dieselbe Datei ein zweites Mal, core.js laeuft doppelt, und weil beide Ketten ihr eigenes
+       async=false haben, kann eine Komponenten-JS vor ihrem Core dran sein. Die Komponente
+       initialisiert dann nicht und ihr Markup steht unformatiert da. Genau das ist passiert. */
+    var reg = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+    if (reg[url]) return;
+    reg[url] = 1;
     var sc = document.createElement("script");
     sc.src = url; sc.async = false;
-    sc.setAttribute("data-up-core", url);
+    sc.setAttribute("data-up-core", "1");
     sc.onerror = function(){
       if (window.console) console.warn("[quick-actions] could not load core.js from " + url +
         " — the page-wide brand store stays unavailable and /mentioning will have no brands.");
     };
     document.head.appendChild(sc);
   }
-  ensureCore();
+  /* Nachfassen, nicht vorpreschen. Auf einer normalen Seite bringt eine andere Komponente core.js
+     mit; die Palette darf dieses Rennen nicht gewinnen, sonst laedt sie es aus IHREM Pin, waehrend
+     der Rest der Seite auf einem anderen steht. Nur wenn nach dem Seitenaufbau immer noch keiner
+     da ist -- die Palette also allein auf der Seite liegt -- springt sie ein. */
+  setTimeout(ensureCore, 1200);
 
   var root = document.getElementById('mira-quick-actions');
   if (!root || root.__mqaInit) return; root.__mqaInit = true;
@@ -1374,28 +1390,44 @@
     clearAll();
   }
   /* ---------- filter tooltip: hover "/ for filters" ---------- */
+  /* Format der Spalten-Explainer aus dem Core (.up-explain): dunkle Karte, helle Beispielplatte
+     oben, darunter Ueberschrift und ein Fliesstext, mit einer Spitze auf das Element, das sie
+     geoeffnet hat. Vorher war das hier ein eigenes Tooltip-Format -- heller Grund, drei Absaetze,
+     eigene Rundung -- und damit das einzige Erklaerfeld der App, das anders aussah.
+     Die Farben stehen literal da, wie im Core auch: die Karte haengt ausserhalb der Wurzel, die
+     Variablen der Komponente reichen nicht bis hierher. Genau daran war die dunkle Variante des
+     Core-Explainers schon einmal unsichtbar geworden. */
   var tipEl = document.createElement("div");
   tipEl.className = "mqa-tip";
   tipEl.innerHTML =
-    '<div class="mqa-tip-h">Filters</div>' +
-    '<div class="mqa-tip-flow">' +
-      '<span class="mqa-tip-key">/</span><span class="mqa-tip-arrow">→</span>' +
-      '<span class="mqa-mini">URLs</span><span class="mqa-tip-arrow">→</span>' +
-      '<span class="mqa-mini">Type You</span>' +
+    '<div class="mqa-tip-vis">' +
+      '<div class="mqa-tip-flow">' +
+        '<span class="mqa-tip-key">/</span><span class="mqa-tip-arrow">→</span>' +
+        '<span class="mqa-mini">URLs</span><span class="mqa-tip-arrow">→</span>' +
+        '<span class="mqa-mini">Type You</span>' +
+      '</div>' +
     '</div>' +
-    '<p>Type <b>/</b> to pick what you\'re looking for — URLs, brands, domains or prompts.</p>' +
-    '<p>Then stack filters: <b>/type</b>, <b>/market</b>, <b>/mentioning</b>, or sort with <b>/top</b> and <b>/trending</b>.</p>' +
-    '<p>Each pick becomes a chip. Keep typing to search inside them, <b>backspace</b> removes the last one.</p>';
+    '<div class="mqa-tip-h">Filters</div>' +
+    '<div class="mqa-tip-t">Type / to pick what you are looking for, then stack filters like ' +
+      '/type, /market or /mentioning. Every pick becomes a chip; keep typing to search inside ' +
+      'them, backspace removes the last one.</div>';
   overlay.appendChild(tipEl);
   function showTip(){
     if (!phCmdEl) return;
+    /* Das Theme muss mitwandern: die Karte haengt am Overlay, nicht an der Wurzel, und der
+       Core-Explainer schaltet ueber genau dieses Attribut auf die helle Variante um. */
+    try { tipEl.setAttribute("data-theme", root.getAttribute("data-theme") || "light"); } catch(e){}
     tipEl.classList.add("is-on");
     var r = phCmdEl.getBoundingClientRect(), t = tipEl.getBoundingClientRect();
     var pad = 8, left = r.left + r.width / 2 - t.width / 2;
     left = Math.max(pad, Math.min(left, window.innerWidth - t.width - pad));
-    var top = r.bottom + 8;                                   // below the hint
-    if (top + t.height > window.innerHeight - pad) top = r.top - t.height - 8;   // flip above if needed
+    var top = r.bottom + 10, flip = false;                    // unter dem Hinweis
+    if (top + t.height > window.innerHeight - pad){ top = r.top - t.height - 10; flip = true; }
+    tipEl.classList.toggle("is-flipped", flip);
     tipEl.style.left = Math.round(left) + "px"; tipEl.style.top = Math.round(top) + "px";
+    /* Die Spitze zeigt auf den Hinweis, nicht auf die Mitte der Karte -- bei angestossenem
+       linken oder rechten Rand faellt beides auseinander. */
+    tipEl.style.setProperty("--mqa-caret", Math.round(r.left + r.width / 2 - left) + "px");
   }
   function hideTip(){ tipEl.classList.remove("is-on"); }
   if (phCmdEl){
@@ -1621,7 +1653,9 @@
        tun -- ohne das haette es keine Marken gegeben und die einzige Spur waere "No brands"
        gewesen. */
     if (!UCg || !UCg.brandsInto){
-      ensureCore();
+      /* Hier NICHT ensureCore() rufen. Das lief ab dem ersten Tastendruck der Seite und hat der
+         Palette das Laderennen gegen die anderen Komponenten gewinnen lassen. Der verzoegerte
+         Aufruf oben reicht: dieses Abo fasst 40 mal nach und ist noch da, wenn core spaeter kommt. */
       if (triesLeft > 0) setTimeout(function(){ subscribeBrands(triesLeft - 1); }, 150);
       return;
     }
