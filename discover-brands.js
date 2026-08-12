@@ -80,7 +80,8 @@
     var UC = window.UpstreemCore;
     var esc = UC.esc;
 
-    var MISSING = ["makeMount", "makeFire", "makeSearch", "makePopover", "makeTooltips", "esc", "storeKey"]
+    var MISSING = ["makeMount", "makeFire", "makeSearch", "makePopover", "makeTooltips", "makeSticky",
+                   "makeExplain", "rafThrottle", "esc", "storeKey"]
       .filter(function (k) { return typeof UC[k] !== "function"; });
     if (MISSING.length && window.console) {
       console.error("[discover-brands] The core.js on this page is OLDER than discover-brands.js and " +
@@ -124,8 +125,11 @@
           '<span class="up-heading">Discover Untracked Brands</span>' +
           '<span class="udb-total is-sk" data-total></span>' +
           '<div class="up-head-tools">' +
-            '<button type="button" class="udb-matched is-on" data-matched aria-pressed="true" ' +
-              'data-tip="Matched Brands">' +
+            /* KEIN data-tip hier. Der Knopf hat schon die Erklaerkarte (UC.makeExplain weiter
+               unten), und data-tip haengt zusaetzlich den kleinen dunklen Chip aus UC.makeTooltips
+               daran -- dann standen zwei Tooltips gleichzeitig unter dem Knopf. Genau einer pro
+               Element. */
+            '<button type="button" class="udb-matched is-on" data-matched aria-pressed="true">' +
               '<span class="udb-cb">' + ICON.check + '</span><span>Matched Brands</span>' +
             '</button>' +
             '<div class="up-search">' +
@@ -143,7 +147,7 @@
           '</div>' +
         '</div>' +
 
-        '<div class="udb-box">' +
+        '<div class="up-box udb-box">' +
           '<div class="up-table" data-table></div>' +
           '<div class="udb-loading" data-loading aria-live="polite">' +
             '<div class="udb-loading-inner">' +
@@ -175,7 +179,7 @@
         root: root, getIsDark: isDark, triggerSel: "[data-matched]",
         html: function () {
           return '<div class="up-explain-h">Matched Brands</div>' +
-                 '<div class="up-explain-t">On: only brands where a cited domain could be assigned to the name — ' +
+                 '<div class="up-explain-t">On: only brands where a cited domain could be assigned to the name, ' +
                  'the safer list. Off: brands are matched on the name alone, which finds more but also ' +
                  'catches look-alikes.</div>';
         }
@@ -218,6 +222,32 @@
         populateCols(); colsPop.open();
       });
 
+      /* ---------------- Suche ----------------
+         UC.makeSearch haengt seine Listener NICHT selbst an -- es gibt toggle/onInput/cancel nur
+         zurueck, und die Komponente verdrahtet sie. Hier fehlte genau das: das Suchfeld war
+         gebaut und gestylt, aber Lupe, Tippen und das X hingen an nichts. Das Feld sah benutzbar
+         aus und tat nichts -- der schlechteste Zustand von allen. Gleiche Verdrahtung wie in
+         urls-table. */
+      root.querySelector(".up-search-btn").addEventListener("click", function (e) {
+        e.stopPropagation();
+        colsPop.close(false);
+        search.toggle();
+      });
+      elSearchIn.addEventListener("input", function () { search.onInput(); });
+      elSearchIn.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") { e.stopPropagation(); search.toggle(); }
+      });
+      root.querySelector(".up-search-clear").addEventListener("click", function (e) {
+        e.stopPropagation();
+        /* Schmal ist das offene Feld die ganze Werkzeugleiste -- dort schliesst das X die Suche,
+           statt nur den Text zu loeschen. Sonst bliebe ein leeres Feld ueber der Tabelle stehen. */
+        if (root.classList.contains("is-searchtakeover")) { search.toggle(); return; }
+        elSearchIn.value = ""; state.query = "";
+        elSearch.classList.remove("has-text");
+        search.cancel(); search.run();
+        try { elSearchIn.focus(); } catch (e2) {}
+      });
+
       /* ---------------- Matched-Schalter ---------------- */
       elMatched.addEventListener("click", function () {
         state.matched = !state.matched;
@@ -246,6 +276,16 @@
       if (window.ResizeObserver) { try { new ResizeObserver(onResize).observe(root); } catch (e) {} }
       window.addEventListener("resize", onResize);
 
+      /* Sticky-Kopf. Genau wie in jeder anderen Tabelle ueber UC.makeSticky, NICHT von Hand:
+         das Kit setzt die Klasse nur ab 1000px Seitenbreite (darunter kaempft ein klebender Kopf
+         mit den zusammenklappenden Filtern), liest data-sticky / data-sticky-top, misst die Hoehe
+         der Kopfzeile in --up-thead-off -- ohne das landet der Spaltenkopf UNTER der Kopfzeile
+         statt darunter -- und loest die Bubble-Wrapper aus ihrem overflow:hidden, in dem sonst
+         sowohl das Kleben als auch das Zahnrad-Menue steckenbleibt. */
+      var sticky = UC.makeSticky(root, root.querySelector(".up-head"));
+      window.addEventListener("resize", UC.rafThrottle(sticky.applySticky));
+      sticky.applySticky();
+
       /* ---------------- Ladeflaeche ---------------- */
       var stepIdx = 0, stepTimer = null;
       function stepTick() {
@@ -263,7 +303,14 @@
       }
       function setLoading(on) {
         on = !!on;
-        if (on === state.loading) return;
+        /* Gegen die KLASSE pruefen, nicht gegen state.loading. UC.makeSearch schreibt bei jeder
+           Suche selbst state.loading = true (dort ist das Flag fuer die Dimm-Mechanik der grossen
+           Tabellen gedacht), ohne die Ladeflaeche einzuschalten. Haenge der Waechter am Flag,
+           waere es nach der ersten Suche dauerhaft true -- und ein spaeteres
+           setDiscoverBrandsLoading("yes") aus Bubble liefe wirkungslos ins Leere, der Nutzer saehe
+           beim Umschalten von Matched Brands keinen Ladezustand mehr. Die Klasse ist das, was
+           wirklich sichtbar ist, also entscheidet sie. */
+        if (on === root.classList.contains("is-loading")) { state.loading = on; return; }
         state.loading = on;
         root.classList.toggle("is-loading", on);
         clearInterval(stepTimer);
@@ -336,13 +383,21 @@
           elTable.innerHTML = head +
             '<div class="up-empty">' +
               '<div class="up-empty-ic">' + ICON.empty + "</div>" +
+              /* Drei verschiedene Gruende, nichts zu zeigen, und drei verschiedene Texte. Der
+                 dritte ist der wichtigste: solange NIE Daten ankamen, darf hier keine Aussage
+                 ueber das Ergebnis stehen. Vorher stand da "Every brand we could match to a domain
+                 is already tracked" -- ein Befund, den zu dem Zeitpunkt niemand kennt, weil der
+                 Scan noch laeuft oder gar nicht erst angelaufen ist. Ein ausgefallener Aufruf sah
+                 damit genauso aus wie ein sauberes Ergebnis. */
               '<div class="up-empty-h">' + (state.query ? "No brand matches your search" :
-                (state.hasData ? "No untracked brands found" : "Nothing to show yet")) + "</div>" +
+                (state.hasData ? "No untracked brands found" : "No results yet")) + "</div>" +
               '<div class="up-empty-t">' + (state.query
                 ? "Try a shorter search term."
-                : (state.matched
-                    ? "Every brand we could match to a domain is already tracked. Turn off Matched Brands to match on names alone."
-                    : "No brand names were found in your AI answers for this period.")) + "</div>" +
+                : !state.hasData
+                  ? "The scan has not returned anything yet. Refresh the page if this stays empty."
+                  : (state.matched
+                      ? "Every brand we could match to a domain is already tracked. Turn off Matched Brands to match on names alone."
+                      : "No brand names were found in your AI answers for this period.")) + "</div>" +
             "</div>";
           return;
         }
@@ -365,7 +420,13 @@
          er ausfaellt (im Test-Harness feuert er nachweislich gar nicht, auch die vom Standard
          garantierte Erstzustellung nicht), stuende die Tabelle sonst dauerhaft in der falschen
          Stufe. measure() bricht ab, sobald sich nichts geaendert hat, kostet hier also nichts. */
-      function render() { measure(); renderTotal(); renderTable(); }
+      function render() {
+        measure(); renderTotal(); renderTable();
+        /* Die Kopfzeile kann ihre Hoehe zwischen zwei Rendern aendern (Totalcount vom Skelett
+           auf echten Text, Suchfeld auf-/zugeklappt). Ohne das Nachmessen bleibt der
+           Spaltenkopf am alten Versatz kleben. */
+        if (root.classList.contains("up-sticky")) sticky.syncTheadOffset();
+      }
 
       /* ---------------- Klicks in der Tabelle ---------------- */
       elTable.addEventListener("click", function (e) {
@@ -426,8 +487,15 @@
         setLoading: function (v) { setLoading(UC.isYes(v)); },
         reset: function () {
           state.rows = []; state.totalResponses = null; state.hasData = false;
-          state.query = ""; if (elSearchIn) elSearchIn.value = "";
-          if (search && search.reset) { try { search.reset(); } catch (e) {} }
+          /* makeSearch hat KEIN reset() -- der alte Aufruf lief in ein undefined und wurde vom
+             try verschluckt, das Feld blieb also offen und mit Text stehen. Von Hand zuruecksetzen
+             und die laufende Entprellung abbrechen, sonst feuert nach dem Reset noch die alte
+             Anfrage nach. */
+          state.query = "";
+          if (elSearchIn) elSearchIn.value = "";
+          if (elSearch) elSearch.classList.remove("is-open", "has-text");
+          root.classList.remove("is-searchtakeover");
+          search.cancel();
           setLoading(false); render();
         },
         setTheme: function (t) { if (UC.setUpstreemTheme) UC.setUpstreemTheme(t); }

@@ -45,15 +45,17 @@
 .udb-cb svg { width: 10px; height: 10px; display: block; }
 .udb-matched.is-on .udb-cb { background: var(--vc-text); border-color: var(--vc-text); color: var(--vc-bg); }
 
-/* ---------- Tabellenkasten ---------- */
-.udb-box {
-  position: relative; border: 1px solid var(--vc-border); border-radius: 12px;
-  background: var(--vc-bg); overflow: hidden;
-}
-/* Sticky-Kopf. Der Kasten selbst darf dafuer NICHT overflow:hidden auf der Y-Achse haben, sonst
-   klebt nichts -- der Radius wird darum ueber den Kasten geclippt und der Kopf sitzt im
-   normalen Seitenfluss. --up-sticky-top kommt aus core und ist die Hoehe der Floating-Topbar. */
-.udb-root .up-thead { position: sticky; top: var(--up-sticky-top); z-index: 3; }
+/* ---------- Tabellenkasten ----------
+   Rahmen, Radius (16) und Sticky-Mechanik kommen KOMPLETT aus core: .up-box am Kasten,
+   .up-sticky an der Wurzel. Hier stand vorher ein Eigenbau mit Radius 12 und einer eigenen
+   sticky-Regel auf var(--up-sticky-top) -- und das war doppelt falsch. Der Radius wich von der
+   App ab, und --up-sticky-top ist der Abstand zur schwebenden Seiten-Topbar (171px): als `top`
+   eines Elements INNERHALB des Kastens schiebt dieser Wert den Spaltenkopf 171px nach unten,
+   also mitten in die Tabelle. Genau so sah es auch aus.
+   core loest beides zusammen: .up-sticky nimmt dem Kasten das overflow:hidden (sonst klemmt der
+   Kopf fest), zieht den Rahmen auf Kopf und Koerper um und rundet die Ecken dort nach. Nichts
+   davon gehoert in diese Datei. */
+.udb-box { position: relative; }
 
 /* ---------- Spaltenraster ----------
    EINE Quelle fuer Kopf und Zeilen. Die drei Varianten unterscheiden sich nur darin, welche
@@ -139,13 +141,25 @@
    wechselnde Statuszeile), weil dieselbe Wartezeit dahintersteht: der RPC laeuft bei grossen
    Teams 20-30 Sekunden. Ein Skelett aus grauen Balken behauptet in dieser Zeit, es kaeme gleich
    etwas; diese Flaeche sagt, dass gerechnet wird. */
-.udb-loading {
-  position: absolute; inset: 0; z-index: 4; display: grid; place-items: center;
+/* Die Ladeflaeche liegt IM FLUSS, nicht als position:absolute ueber der Tabelle.
+   Als Ueberlagerung war sie unbrauchbar, sobald schon Daten dastanden: der Kasten behielt die
+   Hoehe der alten Tabelle (gemessen 1848px bei 30 Zeilen), die Flaeche erbte sie ueber inset:0,
+   und place-items:center setzte die Animation in deren Mitte -- bei 720px Fensterhoehe also rund
+   300px unterhalb des Sichtfelds. Wer Matched Brands umschaltete, sah 20 bis 30 Sekunden lang ein
+   leeres Rechteck: nicht von einem Ausfall zu unterscheiden.
+   Im Fluss bestimmt die Flaeche die Hoehe des Kastens selbst, die Animation steht also immer da,
+   wo der Nutzer hinsieht. Die Tabelle geht dafuer auf display:none -- durchsichtig genuegt nicht,
+   sie wuerde ihren Platz weiter belegen und das Problem bliebe.
+   Das Einblenden laeuft als Animation statt als Transition: aus display:none heraus gibt es keinen
+   Startwert, gegen den eine Transition laufen koennte. */
+.udb-loading { display: none; }
+.udb-root.is-loading .udb-loading {
+  display: grid; place-items: center; min-height: 420px;
   padding: clamp(24px, 4vw, 48px); background: var(--vc-bg);
-  opacity: 0; pointer-events: none; transition: opacity 260ms ease;
 }
-.udb-root.is-loading .udb-loading { opacity: 1; pointer-events: auto; }
-.udb-root.is-loading .up-table, .udb-root.is-loading .up-empty { opacity: 0; }
+.udb-root.is-loading .udb-loading-inner { animation: udbLoadIn 260ms ease both; }
+@keyframes udbLoadIn { from { opacity: 0; } to { opacity: 1; } }
+.udb-root.is-loading .up-table, .udb-root.is-loading .up-empty { display: none; }
 .udb-loading-inner { display: flex; flex-direction: column; align-items: center; text-align: center;
   width: min(100%, 420px); }
 
