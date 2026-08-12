@@ -2199,6 +2199,29 @@
     return { isDark: wantDark, changed: true };
   }
 
+  /* "War das eine reine Theme-Aenderung?" -- fuer die Observer, die Theme und Ladezustand am
+     selben Attributfilter haengen haben.
+
+     Diese Observer laufen bei JEDER beobachteten Aenderung und lesen dann data-processing frisch
+     aus dem DOM. Bei einem Datenwechsel ist das genau richtig. Bei einem Theme-Wechsel ist es ein
+     Fehler: setUpstreemTheme schreibt data-isdark auf jede Wurzel der Seite, der Observer wacht
+     auf und wendet nebenbei einen Ladezustand an, den niemand angefordert hat. Steht Bubbles
+     data-processing in dem Moment noch auf yes -- und das ist der Normalfall, solange kein
+     Workflow es zurueckgesetzt hat --, geht die Komponente beim Themewechsel in den Ladezustand
+     und bleibt dort, bis Bubble das Attribut zufaellig wieder anfasst. Genau das Bild: nach dem
+     Umschalten haengen mehrere Komponenten im Skeleton.
+
+     Die Mutationsliste weiss, was passiert ist. Waren es ausschliesslich Theme-Attribute, hat der
+     Ladezustand in diesem Durchlauf nichts verloren. */
+  function themeOnly(muts){
+    if (!muts || !muts.length) return false;
+    for (var i = 0; i < muts.length; i++){
+      var n = muts[i] && muts[i].attributeName;
+      if (n !== "data-isdark" && n !== "data-theme") return false;
+    }
+    return true;
+  }
+
   /* The page header's brand meta: theme, brand name, brand logo. Six page headers had this
      character for character -- the third-largest duplicate in the repo, and the kind that drifts
      silently, because a fix applied to one of six looks done.
@@ -5221,6 +5244,7 @@
     makePageNav: makePageNav,
     makePageHeaderMeta: makePageHeaderMeta,
     syncTheme: syncTheme,
+    themeOnly: themeOnly,
     sortMenuHtml: sortMenuHtml,
     headGap: headGap,
     widthTiers: widthTiers,

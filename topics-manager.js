@@ -314,12 +314,14 @@
     /* ---------------- external loading / theme attrs ---------------- */
     var explicitOverride = false;
     var lastProcAttr = String(root.getAttribute("data-processing") || "") + "|" + String(root.getAttribute("data-processing2") || "");
-    function syncFromAttrs(){
+    function syncFromAttrs(muts){
       /* Shared: UC.syncTheme applies data-isdark to data-theme and reports whether it moved.
          Five components had these seven lines character for character. */
       var _th = UC.syncTheme(root, isDark);
       isDark = _th.isDark;
       var changed = _th.changed;
+      /* Reiner Themewechsel: Ladezustand nicht anfassen. Siehe UC.themeOnly. */
+      if (UC.themeOnly && UC.themeOnly(muts)){ if (changed) render(); return; }
       var procAttr = String(root.getAttribute("data-processing") || "") + "|" + String(root.getAttribute("data-processing2") || "");
       if (procAttr !== lastProcAttr){ lastProcAttr = procAttr; explicitOverride = false; }
       if (!explicitOverride){

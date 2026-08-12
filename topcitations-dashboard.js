@@ -721,12 +721,14 @@
        urls-table.js/domains-table.js/visibility-chart.js. Without this, a page that flips
        data-processing purely via the attribute (no accompanying JS call) never got noticed here,
        unlike everywhere else in the library. */
-    var themeObserver = new MutationObserver(function(){
+    var themeObserver = new MutationObserver(function(muts){
       /* Shared: UC.syncTheme applies data-isdark to data-theme and reports whether it moved.
          Five components had these seven lines character for character. */
       var _th = UC.syncTheme(root, isDark);
       isDark = _th.isDark;
       var changed = _th.changed;
+      /* Reiner Themewechsel: Ladezustand nicht anfassen. Siehe UC.themeOnly. */
+      if (UC.themeOnly && UC.themeOnly(muts)){ if (changed) render(); return; }
       if (!LOADING_EXPLICIT[instanceId]){
         var wantProc = readProcessing();
         if (wantProc !== state.loading){ state.loading = wantProc; changed = true; }

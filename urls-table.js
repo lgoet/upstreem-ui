@@ -1142,12 +1142,17 @@
        Chart-Komponente, deren set*Loading("no") gleichzeitig geplant war. */
     function isBusy(){ return !!state.loading || !!state.extLoading; }
     /* theme + processing attributes */
-    var syncFromAttrs = function(){
+    var syncFromAttrs = function(muts){
       /* Shared: UC.syncTheme applies data-isdark to data-theme and reports whether it moved.
          Five components had these seven lines character for character. */
       var _th = UC.syncTheme(root, isDark);
       isDark = _th.isDark;
       var changed = _th.changed;
+      /* War es NUR ein Themewechsel, wird der Ladezustand unten nicht angefasst. setUpstreemTheme
+         schreibt data-isdark auf jede Wurzel der Seite; ohne diesen Ausstieg liest der Beobachter
+         bei jedem Umschalten data-processing frisch aus dem DOM und wendet einen Ladezustand an,
+         den niemand angefordert hat. Siehe UC.themeOnly. */
+      if (UC.themeOnly && UC.themeOnly(muts)){ if (changed) render(); return; }
       var procAttr = String(root.getAttribute("data-processing") || "") + "|" +
                      String(root.getAttribute("data-processing2") || "");
       if (procAttr !== lastProcAttr){

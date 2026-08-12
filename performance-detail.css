@@ -114,9 +114,12 @@
   flex: 1 1 auto; min-width: 0; font-size: 13px; font-weight: 400; color: var(--vc-muted);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+/* Gedaempft wie der Name daneben. Der Wert stand vorher in der Primaerfarbe und war damit die
+   einzige Spalte, die auf jeder Zeile gleich laut war -- die eigene Marke hob sich dann nur noch
+   ueber den Namen ab, nicht mehr ueber die Zeile. Die is-self-Regel unten holt beides zurueck. */
 .upd-stand-val {
   flex: 0 0 auto; min-width: 52px; text-align: right; font-size: 13px;
-  font-variant-numeric: tabular-nums;
+  color: var(--vc-muted); font-variant-numeric: tabular-nums;
 }
 /* Die eigene Marke ist die einzige Zeile in Primaerfarbe -- daran findet man sie, ohne die Liste
    zu lesen. */

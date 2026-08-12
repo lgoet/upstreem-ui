@@ -566,13 +566,36 @@
        auf, die ein vorheriger Klick hinterlassen hat (STYLEGUIDE 30). */
     var tips = UC.makeTooltips ? UC.makeTooltips(root, darkNow) : null;
 
+    /* Jede Erklaerkarte in dieser App faengt mit einer Beispielansicht an -- erst zeigen, wie die
+       Spalte aussieht, dann sagen, was sie bedeutet. Sechs andere Komponenten machen das so
+       (urls-table, prompts-table, responses-table, brands-overview, prompt-research,
+       opportunities); diese beiden hier hatten nur Ueberschrift und Text und sahen deshalb
+       neben den anderen wie eine andere Sorte Tooltip aus.
+
+       Die Plaettchen sind aus DENSELBEN Bausteinen gebaut wie die echten Zellen -- derselbe
+       Ring, dieselbe up-num, dasselbe "of N". Ein nachgemaltes Beispiel waere die Stelle, an
+       der Karte und Spalte irgendwann auseinanderlaufen. */
+    function varVisual(key){
+      if (key === "sov"){
+        return '<span class="up-explain-row"><span class="up-num">27.5%</span>' + ringHtml(27.5) + '</span>' +
+               '<span class="up-explain-row"><span class="up-num">8.7%</span>' + ringHtml(8.7) + '</span>';
+      }
+      if (key === "cnt"){
+        return '<span class="up-explain-row"><span class="up-num">19</span>' +
+               '<span class="upd-of">of 69</span></span>';
+      }
+      return '<span class="up-explain-row">VW ID.7 Tourer</span>' +
+             '<span class="up-explain-row">Volkswagen ID.7</span>';
+    }
+
     if (UC.makeExplain){
       UC.makeExplain({
         root: root, getIsDark: darkNow,
         html: function(key){
           var e = VAR_EXPLAIN[key];
           if (!e) return "";
-          return '<div class="up-explain-h">' + esc(e.h) + '</div>' +
+          return '<div class="up-explain-vis">' + varVisual(key) + '</div>' +
+                 '<div class="up-explain-h">' + esc(e.h) + '</div>' +
                  '<div class="up-explain-t">' + esc(e.t) + '</div>';
         }
       });
@@ -687,6 +710,21 @@
       root.setAttribute("data-theme", String(v) === "dark" || v === true ? "dark" : "light");
       render();
     }
+
+    /* Auf den Themewechsel hoeren, nicht nur auf den eigenen Setter.
+
+       Diese Komponente hatte als einzige der Familie KEINEN Beobachter auf dem Wurzel-Div. Sie
+       liest das Theme in render() -- aber render() lief bei einem globalen Wechsel nie, weil
+       setUpstreemTheme nur das Attribut schreibt und keine Komponenten-API ruft. Ergebnis: die
+       CSS-Flaechen kippten sofort (die haengen am Attribut), waehrend alles JS-Gezeichnete auf
+       der alten Seite blieb -- am deutlichsten die Gitterlinien der Kurve, die weiter in
+       Dunkelfarben standen, obwohl die Karte hell war.
+
+       Derselbe Filter wie bei den Geschwistern, plus data-theme: applyThemeTo schreibt beide,
+       und ein Beobachter, der nur eins davon kennt, ist genau die Sorte halbe Verdrahtung, die
+       hier gefehlt hat. */
+    new MutationObserver(function(){ render(); })
+      .observe(root, { attributes: true, attributeFilter: ["data-isdark", "data-theme"] });
 
     var ctrl = {
       __ctrlId: myCtrlId,
