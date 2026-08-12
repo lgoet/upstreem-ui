@@ -891,6 +891,17 @@
          `clip` sidesteps the conflict entirely instead of working around it with corner masks. */
       overflow: clip;
     }
+    /* ---------- Rang-/Indexspalte ("#") ----------
+       Die feste, nie ausblendbare Spalte ganz links, die UC.makeColumns ueber cfg.leadWidth als
+       eigenen Track anlegt. Stand bis eben nur in brands-overview.css; discover-brands ist der
+       zweite Verbraucher, also gehoert es nach §25 hierher -- sonst haette die zweite Tabelle
+       wieder ihre eigene Schriftgroesse und Farbe bekommen, und genau so entstehen die
+       Unterschiede zwischen Tabellen, die gleich aussehen sollen.
+       Die Kopfzelle traegt UC.HASH_ICON, nicht das Zeichen "#". */
+    .up-th-idx, .up-td-idx { justify-content: center; padding: 0; }
+    .up-th-idx svg { width: 14px; height: 14px; display: block; }
+    .up-td-idx { font-size: 12px; color: var(--vc-muted); font-variant-numeric: tabular-nums; }
+
     .up-table { width: 100%; display: flex; flex-direction: column; background: var(--vc-bg); }
     /* Column widths come from --up-cols, which UC.makeColumns' applyCols() writes ONCE on the
        root. Every header and row inherits it, so changing the layout is a single style write
@@ -1293,7 +1304,7 @@
    prompt zu gross und zu schwer geraten, weil ich ihn frei nachgebaut habe statt ihn zu nehmen.
    Die beiden alten Klassennamen haengen als Aliase mit dran -- ihr Markup steht in vom Nutzer
    eingefuegten Bubble-Seiten, ein Rename wuerde die zerlegen. */
-.up-badge, .ubo-filter-badge, .ubo-cols-badge, .combo-filter-badge {
+.up-badge, .ubo-filter-badge, .ubo-cols-badge, .udb-cols-badge, .combo-filter-badge {
   position: absolute; top: -3px; right: -3px; z-index: 2;
   min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
   background: var(--vc-text); color: #e0e0e0;
@@ -1304,9 +1315,10 @@
 .up-root[data-theme="dark"] .up-badge,
 .up-root[data-theme="dark"] .ubo-filter-badge,
 .up-root[data-theme="dark"] .ubo-cols-badge,
+.up-root[data-theme="dark"] .udb-cols-badge,
 .up-root[data-theme="dark"] .combo-filter-badge { color: #1f1f1b; }
 .up-badge.is-visible, .ubo-filter-badge.is-visible,
-.ubo-cols-badge.is-visible, .combo-filter-badge.is-visible { display: inline-flex; }
+.ubo-cols-badge.is-visible, .udb-cols-badge.is-visible, .combo-filter-badge.is-visible { display: inline-flex; }
 /* Reine Markierung ohne Zahl. Fuer Trigger, bei denen eine Zahl nichts beantwortet -- der
    Radar-Picker hat zwei Achsen, "13" waere dort die Summe aus Aepfeln und Birnen.
 

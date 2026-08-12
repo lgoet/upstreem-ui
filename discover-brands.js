@@ -54,18 +54,34 @@
     empty:  '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.7"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>'
   };
 
-  /* Spalten. `hideable` steuert nur, ob die Spalte im Einstellungsmenue auftaucht: #, Brand und
-     Track sind das Geruest der Tabelle und lassen sich nicht abschalten. `dropAt` ist die
-     Reihenfolge, in der bei zu wenig Platz automatisch abgeworfen wird. */
+  /* Spalten in der Form, die UC.makeColumns erwartet: NUR die mittleren, abschaltbaren Spalten.
+     Die Indexspalte davor kommt ueber cfg.leadWidth, die Markenspalte ueber cfg.firstKey, die
+     Track-Spalte dahinter baut das Kit selbst (cfg.actionsMin).
+
+     Hier stand vorher ein eigenes COLUMNS-Format mit `hideable` und selbstgebauten Abwurfstufen,
+     dazu ein handgeschriebenes grid-template-columns in drei Varianten und ein eigenes
+     Einstellungsmenue aus .up-filter-item mit Haekchen -- das sah dann auch komplett anders aus
+     als das Zahnrad-Menue jeder anderen Tabelle, weil core dort .up-pop-row mit .up-switch und
+     einem "Select all" baut. Nichts davon war noetig. Meine Begruendung dafuer ("die Indexspalte
+     passt nicht in das Modell des Kits") war schlicht falsch: cfg.leadWidth existiert genau fuer
+     diesen Fall, der Kommentar in core.js nennt woertlich brands-overviews "#"-Rangzelle.
+
+     `prio` ist die Abwurfreihenfolge des Kits: kleinste Zahl faellt zuerst. Domain vor Mentioned
+     Count, wie vorgegeben. */
+  /* `min` MUSS die Untergrenze aus `w` sein, nicht kleiner. Das Kit rechnet beim Abwerfen mit
+     `min`, das Raster bodenet aber bei der Zahl aus `w` -- stehen da verschiedene Werte, glaubt
+     die Rechnung, es passe noch, waehrend die Spuren schon breiter sind als der Kasten. Ich hatte
+     100/120/140 gegen 112/132/150 stehen: gemessen 5px Ueberlauf bei 700px Breite, und zwar genau
+     die Differenz. Core beschreibt denselben Fehler im Kommentar zu minNarrow. */
   var COLUMNS = [
-    { key: "idx",      label: "#",               hideable: false },
-    { key: "brand",    label: "Brand",           hideable: false },
-    { key: "vis",      label: "Visibility",      hideable: true },
-    { key: "mentions", label: "Mentioned Count", hideable: true, dropAt: "vnar" },
-    { key: "domain",   label: "Domain",          hideable: true, dropAt: "nar" },
-    { key: "action",   label: "",                hideable: false }
+    { key: "vis",      label: "Visibility",      w: "minmax(112px, 0.7fr)", min: 112, prio: 30 },
+    { key: "mentions", label: "Mentioned Count", w: "minmax(132px, 0.8fr)", min: 132, prio: 20 },
+    { key: "domain",   label: "Domain",          w: "minmax(150px, 1fr)",   min: 150, prio: 10 }
   ];
-  var NAR = 860, VNAR = 660;   // Containerbreiten, ab denen abgeworfen wird
+  var IDX_W = 44;        // feste Breite der "#"-Spalte, wie in brands-overview
+  /* Mindestbreite der Track-Spalte: reicht fuer den quadratischen Knopf plus Luft. Die
+     tatsaechliche Breite kommt aus der `auto`-Seite des Tracks, also aus dem Knopf selbst. */
+  var TRACK_MIN = 56;
 
   function udbBoot(n) {
     if (!window.UpstreemCore) {
@@ -81,7 +97,7 @@
     var esc = UC.esc;
 
     var MISSING = ["makeMount", "makeFire", "makeSearch", "makePopover", "makeTooltips", "makeSticky",
-                   "makeExplain", "rafThrottle", "esc", "storeKey"]
+                   "makeExplain", "makeColumns", "widthTiers", "onResize", "rafThrottle", "esc", "storeKey"]
       .filter(function (k) { return typeof UC[k] !== "function"; });
     if (MISSING.length && window.console) {
       console.error("[discover-brands] The core.js on this page is OLDER than discover-brands.js and " +
@@ -97,28 +113,13 @@
       var state = {
         rows: [], totalResponses: null,
         query: "", matched: true,
-        loading: false, hasData: false,
-        cols: {}, nar: false, vnar: false
+        /* Startet im Ladezustand. Der Scan laeuft 20 bis 30 Sekunden, und bis zur ersten Antwort
+           gibt es NICHTS zu zeigen -- ohne das stand hier der Leerzustand, was aussah, als waere
+           die Suche schon gelaufen und habe nichts gefunden. Der erste render() schaltet ab. */
+        loading: true, hasData: false,
+        cols: {}, widths: {}
       };
 
-      /* Spaltenwahl haelt pro Instanz, wie in jeder anderen Tabelle. */
-      var STORE = UC.storeKey ? UC.storeKey("udb-cols", instanceId) : null;
-      (function readCols() {
-        var d = {};
-        COLUMNS.forEach(function (c) { d[c.key] = true; });
-        state.cols = d;
-        if (!STORE) return;
-        try {
-          var raw = JSON.parse(localStorage.getItem(STORE) || "null");
-          if (raw && typeof raw === "object") {
-            COLUMNS.forEach(function (c) { if (c.hideable && raw[c.key] === false) state.cols[c.key] = false; });
-          }
-        } catch (e) {}
-      })();
-      function writeCols() {
-        if (!STORE) return;
-        try { localStorage.setItem(STORE, JSON.stringify(state.cols)); } catch (e) {}
-      }
 
       root.innerHTML =
         '<div class="up-head">' +
@@ -141,7 +142,10 @@
               '</div>' +
             '</div>' +
             '<div class="up-cols">' +
-              '<button type="button" class="up-iconbtn up-cols-btn" data-tip="Table settings" aria-label="Table settings">' + ICON.gear + '</button>' +
+              '<button type="button" class="up-iconbtn up-cols-btn" data-tip="Table settings" aria-label="Table settings">' + ICON.gear +
+                /* Das Abzeichen am Zahnrad, wenn der Nutzer Spalten abgeschaltet hat -- syncColsBadge()
+                   aus dem Kit schaltet es. Ohne dieses Span lief der Aufruf ins Leere. */
+                '<span class="udb-cols-badge"></span></button>' +
               '<div class="up-menu up-cols-menu" data-colsmenu></div>' +
             '</div>' +
           '</div>' +
@@ -193,28 +197,48 @@
         onFire: function (payload) { fire("data-search-fn", "udbSearch", payload); }
       });
 
-      /* ---------------- Einstellungen ---------------- */
+      /* ---------------- Einstellungen ----------------
+         Das ganze Tabellengeruest kommt aus UC.makeColumns: Rasterberechnung, Abwerfen bei
+         Platzmangel, der Ziehgriff an der Markenspalte und das Zahnrad-Menue. Damit sieht das
+         Menue aus wie in jeder anderen Tabelle -- .up-pop-row mit .up-switch und "Select all" --
+         statt wie die Haekchenliste, die ich hier vorher selbst gebaut hatte. */
+      var colsKit = UC.makeColumns({
+        root: root, state: state, columns: COLUMNS,
+        storePrefix: "udb", instanceId: instanceId,
+        firstKey: "brand", firstMin: 160,
+        /* Die "#"-Spalte: feste Breite, nie ausblendbar, nie ziehbar. Genau der Fall, fuer den
+           cfg.leadWidth in core existiert. */
+        leadWidth: IDX_W,
+        actionsMin: TRACK_MIN,
+        badgeSel: ".udb-cols-badge", cellPrefixes: ["up", "udb"],
+        onChange: function () { renderTable(); }
+      });
+      state.cols = colsKit.readCols();
+      state.widths = colsKit.readWidths();
+      var applyCols = colsKit.applyCols, startResize = colsKit.startResize;
+      var populateCols = colsKit.populateCols, toggleCol = colsKit.toggleCol;
+      var selectAllCols = colsKit.selectAllCols, syncColsBadge = colsKit.syncColsBadge;
+      var visibleCols = colsKit.visibleCols;
+      function colOn(k) { return state.cols[k] !== false; }
+
+      /* Ziehgriff an der Markenspalte, wie in jeder anderen Tabelle. */
+      root.addEventListener("pointerdown", function (e) {
+        var grip = e.target.closest(".up-grip");
+        if (grip) startResize(e, grip);
+      });
+
       var colsPop = UC.makePopover({
         wrap: root.querySelector(".up-cols"),
         menu: elColsMenu,
         opener: root.querySelector(".up-cols-btn"),
         group: "udb-" + instanceId
       });
-      function populateCols() {
-        elColsMenu.innerHTML =
-          '<div class="up-pop-head">Columns</div>' +
-          COLUMNS.filter(function (c) { return c.hideable; }).map(function (c) {
-            return '<div class="up-filter-item' + (state.cols[c.key] ? " is-checked" : "") + '" data-col="' + c.key + '">' +
-              '<span class="up-filter-check">' + ICON.check + '</span>' +
-              '<span class="up-filter-label">' + esc(c.label) + '</span></div>';
-          }).join("");
-      }
       elColsMenu.addEventListener("click", function (e) {
-        var it = e.target.closest("[data-col]");
-        if (!it) return;
-        var k = it.getAttribute("data-col");
-        state.cols[k] = !state.cols[k];
-        writeCols(); populateCols(); render();
+        if (e.target.closest("[data-colsall]")) { selectAllCols(); populateCols(); return; }
+        var row = e.target.closest("[data-col]");
+        if (!row) return;
+        toggleCol(row.getAttribute("data-col"));
+        populateCols();
       });
       root.querySelector(".up-cols-btn").addEventListener("click", function (e) {
         e.stopPropagation();
@@ -259,22 +283,23 @@
         fire("data-matched-fn", "udbMatched", { matched: state.matched ? "yes" : "no" });
       });
 
-      /* ---------------- Breite ---------------- */
-      /* Setzt nur die Stufe und meldet, OB sich etwas geaendert hat -- rendern tut der Aufrufer.
-         Sonst haetten wir eine Schleife: render() ruft measure(), measure() riefe render(). */
-      function measure() {
-        var w = root.clientWidth || 0;
-        if (!w) return false;
-        var nar = w < NAR, vnar = w < VNAR;
-        if (nar === state.nar && vnar === state.vnar) return false;
-        state.nar = nar; state.vnar = vnar;
-        root.classList.toggle("is-nar", nar);
-        root.classList.toggle("is-vnar", vnar);
-        return true;
-      }
-      function onResize() { if (measure()) renderTable(); }
-      if (window.ResizeObserver) { try { new ResizeObserver(onResize).observe(root); } catch (e) {} }
-      window.addEventListener("resize", onResize);
+      /* ---------------- Breite ----------------
+         Das Abwerfen der Spalten macht applyCols() aus dem Kit: es misst den Container, rechnet
+         gegen die Mindestbreiten und schreibt das Raster als --up-cols auf die Wurzel. Hier stand
+         vorher eine eigene Messung mit zwei Schwellen und drei handgeschriebenen
+         grid-template-columns, die mit den anderen Tabellen nichts gemeinsam hatte. */
+      /* Die Stufenklassen is-narrow / is-vnarrow setzt UC.widthTiers, NICHT diese Datei.
+         Ich hatte hier erst is-t2 gesetzt (das heisst in urls-table und domains-table "Aktions-
+         spalte ganz ausblenden" -- der Track-Knopf ist hier aber der Grund fuer die Tabelle) und
+         danach is-narrow von Hand bei 720px. Beides war falsch: is-narrow ist eine KLASSE VON
+         CORE. makeColumns liest sie in seiner eigenen Rasterrechnung, mein Toggle hat der
+         Spaltenlogik also eine andere Stufe untergeschoben als die, in der sie sich glaubte --
+         messbar als 5px Ueberlauf, weil die Rechnung von anderen Spuren ausging als das Raster.
+         Jetzt setzt widthTiers die Klassen (768 / 500) und das Kit sieht dieselbe Stufe wie das
+         CSS. Der Track-Knopf haengt an is-narrow, die Aktionsspur bleibt immer im Template und
+         ihre `auto`-Seite folgt der echten Knopfbreite. */
+      UC.widthTiers(root);
+      UC.onResize(root, function () { applyCols(); });
 
       /* Sticky-Kopf. Genau wie in jeder anderen Tabelle ueber UC.makeSticky, NICHT von Hand:
          das Kit setzt die Klasse nur ab 1000px Seitenbreite (darunter kaempft ein klebender Kopf
@@ -314,23 +339,17 @@
         state.loading = on;
         root.classList.toggle("is-loading", on);
         clearInterval(stepTimer);
-        if (on) {
-          stepIdx = 0; elLText.textContent = STEPS[0];
-          elLText.classList.remove("is-out", "is-in");
-          stepTimer = setInterval(stepTick, STEP_MS);
-          elTotal.classList.add("is-sk"); elTotal.textContent = "";
-        }
+        if (on) startStepTimer();
+      }
+      function startStepTimer() {
+        clearInterval(stepTimer);
+        stepIdx = 0; elLText.textContent = STEPS[0];
+        elLText.classList.remove("is-out", "is-in");
+        stepTimer = setInterval(stepTick, STEP_MS);
+        elTotal.classList.add("is-sk"); elTotal.textContent = "";
       }
 
       /* ---------------- Rendern ---------------- */
-      function visibleColumns() {
-        return COLUMNS.filter(function (c) {
-          if (c.hideable && state.cols[c.key] === false) return false;
-          if (c.dropAt === "nar" && (state.nar || state.vnar)) return false;
-          if (c.dropAt === "vnar" && state.vnar) return false;
-          return true;
-        });
-      }
       /* Der Suchtext filtert HIER, nicht nur serverseitig: die Liste ist auf 30 Zeilen begrenzt und
          liegt komplett im Browser, also darf das Feld sofort wirken statt auf eine Antwort zu
          warten. Das Event geht trotzdem raus -- der Server kann die Auswahl breiter fassen. */
@@ -344,40 +363,69 @@
       }
       function initials(name) { return esc(String(name || "?").trim().charAt(0).toUpperCase() || "?"); }
 
-      function cellHtml(c, r, i) {
-        if (c.key === "idx")   return '<span class="udb-idx">' + (i + 1) + "</span>";
-        if (c.key === "brand") return '<span class="udb-brand">' +
-          '<span class="udb-logo">' + (r.favicon
-            ? '<img src="' + esc(r.favicon) + '" alt="" loading="lazy" referrerpolicy="no-referrer" ' +
-              'onerror="this.remove()" />'
-            : initials(r.name)) + "</span>" +
-          '<span class="udb-name" title="' + esc(r.name) + '">' + esc(r.name) + "</span></span>";
-        /* Ohne Nachkommastelle, wie vorgegeben. Math.round und nicht abschneiden: 4.84 ist naeher
-           an 5 als an 4, und die Zahl steht neben einer Rangfolge. */
-        if (c.key === "vis")   return '<span class="up-num">' +
+      /* Jede Zelle traegt ihren Spaltenschluessel als Klasse (up-th-<key> / up-td-<key>) -- danach
+         blendet applyCols() aus dem Kit sie ein und aus. Vorher hiessen sie udb-h-* / udb-c-*, was
+         das Kit nicht kennt.
+
+         Gebaut wird aus visibleCols(), also aus der ABWAHL DES NUTZERS -- nicht aus
+         effectiveCols(), das zusaetzlich die Breite einrechnet. Der Unterschied ist nicht
+         kosmetisch: effectiveCols() misst, und beim allerersten Render steht die Messung noch
+         nicht (das Markup wurde gerade erst geschrieben). Der Kopf entstand dann aus einer zu
+         kleinen Breite mit 4 Zellen, waehrend applyCols() eine Zeile spaeter mit der richtigen
+         Breite 6 Spuren schrieb -- die Tabelle stand mit zwei fehlenden Spalten da, bis irgendein
+         zweiter Render sie zufaellig geradezog. Alle Spalten bauen und applyCols() ausblenden
+         lassen ist genau das, wofuer das Kit die Zellen mit ihrem Schluessel markiert; so macht es
+         auch brands-overview. */
+      function cellHtml(c, r) {
+        if (c.key === "vis") return '<span class="up-num' + (r.visibility_pct == null ? " is-empty" : "") + '">' +
           (r.visibility_pct == null ? "–" : Math.round(r.visibility_pct) + "%") + "</span>";
-        if (c.key === "mentions") return '<span class="up-num">' +
+        if (c.key === "mentions") return '<span class="up-num' + (r.mentioned_count == null ? " is-empty" : "") + '">' +
           (r.mentioned_count == null ? "–" : r.mentioned_count) + "</span>";
         if (c.key === "domain") {
-          if (!r.domain) return '<span class="udb-dom-none">–</span>';
+          if (!r.domain) return '<span class="up-num is-empty">–</span>';
           return '<span class="udb-domwrap">' +
             '<span class="udb-dom" title="' + esc(r.domain) + '">' + esc(r.domain) + "</span>" +
             '<button type="button" class="udb-go" data-go="' + esc(r.url) + '" ' +
               'data-tip="Open in new tab" aria-label="Open ' + esc(r.domain) + ' in a new tab">' + ICON.goto + "</button>" +
             "</span>";
         }
-        if (c.key === "action") return '<button type="button" class="udb-track" data-track="' + esc(r.id) + '">' +
-          ICON.check + '<span class="udb-track-label">Track</span></button>';
         return "";
       }
 
-      function renderTable() {
-        var cols = visibleColumns();
-        var rows = filtered();
+      function headHtml() {
+        var h = '<div class="up-thead">' +
+          /* Ikone statt des Zeichens "#", genau wie die Rangspalte in brands-overview. */
+          '<div class="up-th up-th-idx">' + UC.HASH_ICON + "</div>" +
+          '<div class="up-th up-th-brand">Brand</div>';
+        visibleCols().forEach(function (c) {
+          h += '<div class="up-th up-th-' + c.key + '">' + esc(c.label) + "</div>";
+        });
+        return h + '<div class="up-th up-th-act"></div></div>';
+      }
 
-        var head = '<div class="up-thead">' + cols.map(function (c) {
-          return '<div class="up-th udb-h-' + c.key + '">' + esc(c.label) + "</div>";
-        }).join("") + "</div>";
+      function rowHtml(r, i) {
+        var h = '<div class="up-row">' +
+          '<div class="up-td up-td-idx">' + (i + 1) + "</div>" +
+          '<div class="up-td up-td-brand">' +
+            '<span class="up-logo-box' + (r.favicon ? " has-img" : "") + '">' +
+              (r.favicon
+                ? '<img src="' + esc(r.favicon) + '" alt="" loading="lazy" referrerpolicy="no-referrer" ' +
+                  'onerror="this.style.visibility=\'hidden\'" />'
+                : initials(r.name)) +
+            "</span>" +
+            '<span class="udb-name" title="' + esc(r.name) + '">' + esc(r.name) + "</span>" +
+          "</div>";
+        visibleCols().forEach(function (c) {
+          h += '<div class="up-td up-td-' + c.key + '">' + cellHtml(c, r) + "</div>";
+        });
+        return h + '<div class="up-td up-td-act">' +
+          '<button type="button" class="udb-track" data-track="' + esc(r.id) + '">' +
+          ICON.check + '<span class="udb-track-label">Track</span></button></div></div>';
+      }
+
+      function renderTable() {
+        var rows = filtered();
+        var head = headHtml();
 
         if (!rows.length) {
           elTable.innerHTML = head +
@@ -399,14 +447,13 @@
                       ? "Every brand we could match to a domain is already tracked. Turn off Matched Brands to match on names alone."
                       : "No brand names were found in your AI answers for this period.")) + "</div>" +
             "</div>";
+          applyCols(); syncColsBadge();
           return;
         }
 
-        elTable.innerHTML = head + '<div class="up-tbody">' + rows.map(function (r, i) {
-          return '<div class="up-row">' + cols.map(function (c) {
-            return '<div class="up-td udb-c-' + c.key + '">' + cellHtml(c, r, i) + "</div>";
-          }).join("") + "</div>";
-        }).join("") + "</div>";
+        elTable.innerHTML = head + '<div class="up-tbody">' +
+          rows.map(rowHtml).join("") + "</div>";
+        applyCols(); syncColsBadge();
       }
 
       function renderTotal() {
@@ -421,7 +468,7 @@
          garantierte Erstzustellung nicht), stuende die Tabelle sonst dauerhaft in der falschen
          Stufe. measure() bricht ab, sobald sich nichts geaendert hat, kostet hier also nichts. */
       function render() {
-        measure(); renderTotal(); renderTable();
+        renderTotal(); renderTable();
         /* Die Kopfzeile kann ihre Hoehe zwischen zwei Rendern aendern (Totalcount vom Skelett
            auf echten Text, Suchfeld auf-/zugeklappt). Ohne das Nachmessen bleibt der
            Spaltenkopf am alten Versatz kleben. */
@@ -503,7 +550,11 @@
       root.__udbController = ctrl;
       root.__udbResolveLocal = function (id) { return (root.getAttribute("data-instance") || "default") === id; };
 
-      measure();
+      /* Ladezustand von Anfang an: root.classList und der Statustakt muessen zum state.loading
+         aus dem Zustandsobjekt passen, sonst zeigt setLoading(false) beim ersten Render ins
+         Leere. */
+      root.classList.add("is-loading");
+      startStepTimer();
       render();
     }
 

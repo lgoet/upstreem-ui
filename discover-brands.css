@@ -58,43 +58,19 @@
 .udb-box { position: relative; }
 
 /* ---------- Spaltenraster ----------
-   EINE Quelle fuer Kopf und Zeilen. Die drei Varianten unterscheiden sich nur darin, welche
-   Spalten ueberhaupt vorkommen; die Reihenfolge und die festen Breiten bleiben gleich, damit beim
-   Umschalten nichts wandert, was bleibt. */
-.udb-root .up-thead, .udb-root .up-row {
-  display: grid;
-  grid-template-columns: 52px minmax(160px, 1fr) 116px 132px minmax(150px, 0.8fr) 108px;
-  align-items: center;
-}
-/* Domain faellt zuerst: sie ist die breiteste Spalte und die einzige, deren Inhalt auch in der
-   Markenzeile darueber steckt (die Domain ist die des Markeneintrags). */
-.udb-root.is-nar .up-thead, .udb-root.is-nar .up-row {
-  grid-template-columns: 52px minmax(140px, 1fr) 104px 124px 108px;
-}
-/* Dann Mentioned Count. # , Brand, Visibility und Track bleiben IMMER stehen -- ohne die vier
-   ist die Tabelle keine Tabelle mehr, sondern eine Namensliste. */
-.udb-root.is-vnar .up-thead, .udb-root.is-vnar .up-row {
-  grid-template-columns: 40px minmax(120px, 1fr) 84px 44px;
-}
-.udb-root.is-nar  .udb-c-domain,   .udb-root.is-nar  .udb-h-domain   { display: none; }
-.udb-root.is-vnar .udb-c-mentions, .udb-root.is-vnar .udb-h-mentions { display: none; }
+   Steht NICHT mehr hier. Das Raster schreibt UC.makeColumns als --up-cols auf die Wurzel, und
+   .up-thead/.up-row in core.css lesen es. Vorher standen an dieser Stelle drei von Hand
+   gepflegte grid-template-columns plus zwei is-nar/is-vnar-Regeln zum Ausblenden -- eine zweite,
+   voellig eigene Mechanik neben der, die jede andere Tabelle benutzt. Nebenwirkung dieser
+   Handarbeit: kein Ziehen der Spaltenbreite, weil dafuer der Kit-Zustand fehlte.
+   Die "#"-Spalte laeuft ueber cfg.leadWidth, die Track-Spalte ueber cfg.actionsMin.
+   .up-td-idx / .up-th-idx / .up-logo-box stehen in core.css. */
 
 /* Diese Tabelle hat keinen Zeilenklick -- nur der Track-Knopf und der Domain-Pfeil sind
    anklickbar. Der Zeiger darf das nicht anders behaupten. */
 .udb-root .up-row { height: 60px; flex: 0 0 60px; cursor: default; }
-.udb-root .up-th, .udb-root .up-td { padding: 0 12px; }
 
 /* ---------- Zellen ---------- */
-.udb-idx { font-size: 12.5px; font-weight: 500; color: var(--vc-third); font-variant-numeric: tabular-nums; }
-
-.udb-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.udb-logo {
-  width: 26px; height: 26px; flex: 0 0 26px; border-radius: 7px; overflow: hidden;
-  background: var(--vt-logo-bg); border: 1px solid var(--vc-border);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 600; color: var(--vc-muted);
-}
-.udb-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .udb-name { font-size: 13.5px; font-weight: 500; color: var(--vc-text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 
@@ -111,12 +87,11 @@
   opacity: 0; transition: opacity .14s ease, color .14s ease, background .14s ease;
 }
 .udb-go svg { width: 14px; height: 14px; display: block; }
-.udb-c-domain:hover .udb-go, .udb-go:focus-visible { opacity: 1; }
+.up-td-domain:hover .udb-go, .udb-go:focus-visible { opacity: 1; }
 .udb-go:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
-.udb-c-domain:hover .udb-dom { color: var(--vc-text); }
-/* Ohne Domain steht ein Strich, kein leeres Feld -- leer und "nichts zugeordnet" duerfen nicht
-   gleich aussehen. */
-.udb-dom-none { font-size: 13px; color: var(--vc-third); }
+.up-td-domain:hover .udb-dom { color: var(--vc-text); }
+/* Der Strich bei fehlender Domain kommt jetzt aus core (.up-num.is-empty), wie in jeder anderen
+   Tabelle -- vorher war es eine eigene Klasse mit eigener Schriftgroesse. */
 
 /* ---------- Track-Knopf ---------- */
 .udb-track {
@@ -131,10 +106,11 @@
 .udb-track svg { width: 13px; height: 13px; flex: 0 0 13px; display: block; }
 .udb-track:disabled { background: var(--vc-heading-bg); color: var(--vc-third); cursor: default; }
 /* Schmal: nur noch das Icon, quadratisch. Die Beschriftung faellt weg, nicht der Knopf -- er ist
-   der einzige Grund, warum diese Tabelle ueberhaupt da ist. */
-.udb-root.is-vnar .udb-track { width: 32px; height: 32px; padding: 0; gap: 0; }
-.udb-root.is-vnar .udb-track-label { display: none; }
-.udb-root.is-vnar .udb-c-action { justify-content: center; padding: 0 6px; }
+   der einzige Grund, warum diese Tabelle ueberhaupt da ist. Die Stufe kommt aus core
+   Eigene Klasse, NICHT core's is-t2: das heisst dort "Aktionsspalte ganz ausblenden". */
+.udb-root.is-narrow .udb-track { width: 32px; height: 32px; padding: 0; gap: 0; }
+.udb-root.is-narrow .udb-track-label { display: none; }
+.udb-root.is-narrow .up-td-act { justify-content: center; padding: 0 6px; }
 
 /* ---------- Ladeflaeche ----------
    Bauart aus prompt-research uebernommen (schwebender Kern mit zwei pulsenden Ringen plus eine
