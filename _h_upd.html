@@ -1,6 +1,6 @@
 <meta charset="utf-8">
-<link rel="stylesheet" href="core.css?v=f4">
-<link rel="stylesheet" href="performance-detail.css?v=f4">
+<link rel="stylesheet" href="core.css?v=g1">
+<link rel="stylesheet" href="performance-detail.css?v=g1">
 <body style="margin:0;padding:20px;font-family:system-ui,sans-serif;background:#fff">
 
 <div style="margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap">
@@ -19,13 +19,14 @@
   <div class="up-root upd-root" data-instance="d1" data-theme="light" data-cdn-pin=""></div>
 </div>
 
-<script src="core.js?v=f4"></script>
-<script src="performance-detail.js?v=f4"></script>
+<script src="core.js?v=g1"></script>
+<script src="performance-detail.js?v=g1"></script>
 <script>
 /* Events mitschreiben: reset() muss NULL feuern (STYLEGUIDE 25). */
 var EVENTS = [];
 window.bubble_fn_updScope = function(p){ EVENTS.push(["scope", p]); };
 window.bubble_fn_updClose = function(p){ EVENTS.push(["close", p]); };
+window.bubble_fn_updCompanyClick = function(p){ EVENTS.push(["company", p, typeof p]); };
 
 /* Ein Ausschnitt eines Rasters, wie der Radar ihn beim Klick durchreicht. */
 var SPALTE = [

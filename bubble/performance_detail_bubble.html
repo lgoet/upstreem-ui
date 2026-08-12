@@ -45,16 +45,28 @@
   |                        |         | der Radar den Bereich unter sich von allein.             |
   | data-scope-fn          | nein    | Standard bubble_fn_updScope                              |
   | data-close-fn          | nein    | Standard bubble_fn_updClose                              |
+  | data-company-fn        | nein    | Standard bubble_fn_updCompanyClick                       |
 
   ── EVENTS AUS DER KOMPONENTE (Toolbox "JavaScript to Bubble") ───────────────
   | Event                | Wann                                   | Payload                                        |
   |----------------------|----------------------------------------|------------------------------------------------|
-  | bubble_fn_updScope   | Umschalten auf einen Scope, dessen     | {"company_id":"…","topic_id":"…",              |
-  |                      | Kurve noch nicht geliefert wurde       |  "scope":"topic"|"global"}                     |
-  | bubble_fn_updClose   | Klick auf das X in der Kopfzeile       | {"company_id":"…","topic_id":"…"}              |
+  | bubble_fn_updScope        | Umschalten auf einen Scope, dessen | {"company_id":"…","topic_id":"…",         |
+  |                           | Kurve noch nicht geliefert wurde   |  "scope":"topic"|"global"}                |
+  | bubble_fn_updClose        | Klick auf das X in der Kopfzeile   | {"company_id":"…","topic_id":"…"}         |
+  | bubble_fn_updCompanyClick | Klick auf eine Marke in der        | die company_id als BLANKER TEXT,          |
+  |                           | Rangliste (Maus oder Enter)        | z. B.  bmw                                |
 
-  Beide als Toolbox-Element mit "Publish value" = yes, Typ Text. Auf updClose die Gruppe
+  Alle drei als Toolbox-Element mit "Publish value" = yes, Typ Text. Auf updClose die Gruppe
   ausblenden (Custom State zuruecksetzen), auf updScope die Kurve fuer den anderen Scope holen.
+
+  ACHTUNG bei updCompanyClick: der Wert ist KEIN JSON, sondern nur die Id. Keine Regex noetig,
+  der Wert des Toolbox-Elements IST die company_id. Damit faehrt hier auch nichts anderes mit --
+  keine team_id, kein topic_id. Auf welchem Topic der Detailbereich steht, weiss dein Workflow
+  aus dem Custom State, den er beim Zellklick ohnehin gesetzt hat.
+
+  Das weicht bewusst von der Hausregel ab, dass ein Event EIN JSON-String ist (STYLEGUIDE 13).
+  Der zweite Ausnahmefall steht daneben: der Zellklick des Radars gibt seit jeher
+  "companyId||topicId" als blanken Text.
 
   Die KPIs brauchen fuer "Global" KEINEN Aufruf: ohne echte Zahlen rechnet die Komponente den
   Schnitt ueber alle Topics des Rasters und schreibt das auch dazu ("Average across all topics in

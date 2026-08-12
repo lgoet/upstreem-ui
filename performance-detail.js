@@ -518,16 +518,44 @@
       }
     });
 
-    /* Klick auf eine Marke in der Rangliste. Traegt das Topic mit: die Frage ist nie "diese Marke",
-       sondern immer "diese Marke AUF diesem Topic" -- ohne topic_id muesste der Workflow raten. */
+    /* Klick auf eine Marke in der Rangliste. Uebergibt NUR die company_id als blanken Text --
+       kein JSON, ausdrueckliche Vorgabe.
+
+       Damit weicht dieser eine Event von STYLEGUIDE 13 ab (ein Event = EIN JSON-String). Der
+       Praezedenzfall steht daneben: der Zellklick des Radars gibt seit jeher "companyId||topicId"
+       als blanken Text. Der Preis ist, dass hier nichts mehr mitfahren kann -- weder team_id noch
+       topic_id --, ein Workflow also aus seinen eigenen Custom States wissen muss, auf welchem
+       Topic der Detailbereich gerade steht. Das ist der Fall, weil derselbe Workflow sie beim
+       Zellklick ohnehin gesetzt hat.
+
+       Nicht ueber UC.makeFire: das prependet team_id und macht JSON daraus, genau das soll hier
+       nicht passieren. Stattdessen dieselbe Aufloesung wie beim Radar -- ueber alle erreichbaren
+       Frames suchen, genau einmal warnen, wenn niemand zuhoert, und den DOM-Event als Rueckfall
+       trotzdem mit dem vollen Objekt feuern. */
+    function fireCompanyClick(row){
+      var cid = row.getAttribute("data-cid") || "";
+      var fnName = root.getAttribute("data-company-fn") || "bubble_fn_updCompanyClick";
+      var fn = UC.resolveBubbleFn ? UC.resolveBubbleFn(fnName) : window[fnName];
+      if (typeof fn === "function"){ try { fn(cid); } catch(e){} }
+      else if (window.console){
+        console.warn("[performance-detail] " + fnName + " not found on window/parent/top or any " +
+          "reachable iframe — the row click reached no Bubble workflow. Check the Toolbox element's name.");
+      }
+      /* Der DOM-Event behaelt das volle Objekt: er ist nicht der Bubble-Vertrag, sondern der Weg
+         fuer alles andere auf der Seite, und dort kostet mehr Information nichts. */
+      try {
+        root.dispatchEvent(new CustomEvent("updCompanyClick", { bubbles: true, detail: {
+          company_id: cid,
+          company_name: row.getAttribute("data-cname") || "",
+          topic_id: state.topic ? state.topic.topic_id : ""
+        }}));
+      } catch(e){}
+    }
+
     elStand.addEventListener("click", function(e){
       var row = e.target.closest ? e.target.closest(".upd-stand-row") : null;
       if (!row) return;
-      fire("data-company-fn", "bubble_fn_updCompanyClick", {
-        company_id: row.getAttribute("data-cid"),
-        company_name: row.getAttribute("data-cname"),
-        topic_id: state.topic ? state.topic.topic_id : ""
-      });
+      fireCompanyClick(row);
     });
     /* Tastatur: die Zeile ist ein Button, also muss sie auch auf Enter und Leertaste hoeren. */
     elStand.addEventListener("keydown", function(e){
