@@ -172,11 +172,17 @@
             '<span class="upd-x">&times;</span>' +
             '<span class="upd-topic"></span>' +
           '</div>' +
+          /* Der Scope-Umschalter (This Topic | Global) ist vorerst raus. Er war schluessig, solange
+             man nur auf die Kurve schaut -- die Rangliste daneben ist aber eine Aussage UEBER DIESES
+             TOPIC ("Rang 6 von 10 auf diesem Topic"), und die gibt es global nicht. Sie verschwand
+             darum beim Umschalten samt ihrer Spalte, und der Bereich sah in den zwei Zustaenden
+             verschieden aus, ohne dass der Umschalter das ankuendigt.
+
+             Nur das Bedienelement ist weg, nicht die Mechanik: state.scope, setPerformanceDetailSeries
+             mit seinem scope-Feld, setPerformanceDetailGlobal und der updScope-Event stehen
+             unveraendert. Zurueckholen heisst, diese vier Zeilen wieder einzusetzen -- vorausgesetzt,
+             es gibt bis dahin eine Antwort darauf, was links neben einer globalen Kurve steht. */
           '<div class="upd-tools">' +
-            '<div class="up-seg upd-scope" role="tablist">' +
-              '<button class="up-seg-btn is-active" type="button" data-scope="topic">This Topic</button>' +
-              '<button class="up-seg-btn" type="button" data-scope="global">Global</button>' +
-            '</div>' +
             '<button class="up-iconbtn upd-close" type="button" data-tip="Close details" aria-label="Close details">' + CLOSE_SVG + '</button>' +
           '</div>' +
         '</div>' +
@@ -305,9 +311,13 @@
         kpiTile("Mentions", mentHtml, t ? t(mentDelta, {}) : "",
                 "How many times the brand was named. Higher means the other numbers rest on more data.");
 
-      elNote.textContent = state.scope === "global"
-        ? (src.derived ? "Average across all topics in the radar" : "Across all tracked prompts")
-        : "";
+      /* Der Hinweis gehoert zum Scope-Umschalter und ist mit ihm raus. Die Zeile bleibt
+         defensiv, damit ein wieder eingesetzter Umschalter sie sofort wieder fuellt. */
+      if (elNote){
+        elNote.textContent = state.scope === "global"
+          ? (src.derived ? "Average across all topics in the radar" : "Across all tracked prompts")
+          : "";
+      }
     }
 
     /* ---------------- Standing auf diesem Topic ----------------
@@ -499,8 +509,11 @@
       ? UC.makeFire(root, { label: "performance-detail", eventPrefix: "upd-" })
       : function(){ };
 
-    /* ---------------- Verdrahtung ---------------- */
-    elScope.addEventListener("click", function(e){
+    /* ---------------- Verdrahtung ----------------
+       Der Scope-Umschalter ist aus dem Markup raus (siehe dort). Die Verdrahtung bleibt stehen
+       und haengt sich nur an, wenn es ihn gibt -- so ist das Zurueckholen eine Markup-Aenderung
+       und keine zweite Baustelle im JavaScript. */
+    if (elScope) elScope.addEventListener("click", function(e){
       var btn = e.target.closest ? e.target.closest("[data-scope]") : null;
       if (!btn) return;
       var next = btn.getAttribute("data-scope");
@@ -694,8 +707,10 @@
       state.varQuery = ""; if (elSInput) elSInput.value = "";
       if (elSearch){ elSearch.classList.remove("has-text", "is-open"); }
       state.scope = "topic";
-      var all = elScope.querySelectorAll(".up-seg-btn");
-      for (var i = 0; i < all.length; i++) all[i].classList.toggle("is-active", all[i].getAttribute("data-scope") === "topic");
+      if (elScope){
+        var all = elScope.querySelectorAll(".up-seg-btn");
+        for (var i = 0; i < all.length; i++) all[i].classList.toggle("is-active", all[i].getAttribute("data-scope") === "topic");
+      }
       state.hasData = !!(state.company && state.topic);
       render();
     }
