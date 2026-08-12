@@ -239,8 +239,14 @@
 .up-explain[data-theme="dark"] .upd-explain-vis .upd-ring-fill  { stroke: #f0f0f0; }
 
 /* ---------- Loading ---------- */
-.upd-root.is-loading .upd-kpis,
-.upd-root.is-loading .upd-stand { opacity: 0.55; transition: opacity 140ms ease; }
+/* Kein Dimmen mehr. Gedimmt hiess: die Zahlen der VORIGEN Zelle stehen weiter da, nur blasser --
+   und blasse alte Zahlen sind schlimmer als gar keine, weil man ihnen nicht ansieht, dass sie
+   nicht mehr gelten. Beide Bloecke zeigen jetzt echte Skelette (siehe kpiSkeleton /
+   standSkeleton), also gibt es nichts mehr zu dimmen.
+   Die Skelettzeile der Rangliste hat dieselbe Hoehe und dasselbe Raster wie die echte, damit beim
+   Umschalten nichts springt -- nur ohne Hover und ohne Zeiger, sie ist nicht anklickbar. */
+.upd-stand-row.is-sk { cursor: default; }
+.upd-stand-row.is-sk:hover { background: transparent; }
 
 /* ---------- Dark ---------- */
 .up-root.upd-root[data-theme="dark"] .upd-ring-track { stroke: var(--vc-border); }

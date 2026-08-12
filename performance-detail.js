@@ -284,7 +284,46 @@
                '</div>' +
              '</div>';
     }
+    /* ---------------- Ladezustand fuer KPIs und Rangliste ----------------
+       Bisher hing am Ladezustand nur die Kurve; KPIs und Rangliste wurden gedimmt und zeigten
+       weiter die Zahlen der vorigen Zelle. Beim Zellwechsel stand damit ein Teil des Bereichs
+       schon auf den neuen Daten, waehrend daneben noch die alten standen -- und alte Zahlen zu
+       zeigen ist schlimmer als gar keine, weil man ihnen nicht ansieht, dass sie von gestern sind.
+
+       Die Skelette haben die Form ihrer echten Geschwister: vier Kacheln in derselben Reihe,
+       sieben Zeilen mit Rang, Logo, Name und Wert. Bausteine aus core (up-sk-lbl/-dot/-pct), damit
+       das Schimmern ueberall dasselbe ist. */
+    /* Sieben statt fuenf: neben der Kurve ist die Spalte hoch genug dafuer, und zwei Plaetze mehr
+       zeigen im Zweifel den ganzen relevanten Ausschnitt statt eines Anschnitts. Steht hier oben,
+       weil das Skelett dieselbe Zeilenzahl braucht wie die echte Liste -- sonst springt die Hoehe
+       in dem Moment, in dem die Daten ankommen. */
+    var FENSTER = 7;
+
+    function kpiSkeleton(){
+      var tile = '<div class="upd-kpi">' +
+                   '<div class="upd-kpi-lbl"><span class="up-sk-lbl" style="width:62px"></span></div>' +
+                   '<div class="upd-kpi-val"><span class="up-sk-lbl" style="width:54px;height:18px"></span></div>' +
+                 '</div>';
+      return tile + tile + tile + tile;
+    }
+    function standSkeleton(){
+      var rows = "";
+      for (var i = 0; i < FENSTER; i++){
+        /* Namen unterschiedlich lang, sonst liest sich der Block wie ein Balkendiagramm. */
+        var w = [96, 74, 112, 88, 68, 104, 82][i % 7];
+        rows += '<div class="upd-stand-row is-sk">' +
+                  '<span class="up-sk-lbl" style="width:10px"></span>' +
+                  '<span class="up-sk-dot" style="width:22px;height:22px;border-radius:6px"></span>' +
+                  '<span class="up-sk-lbl" style="width:' + w + 'px"></span>' +
+                  '<span class="up-sk-pct" style="width:38px;margin-left:auto"></span>' +
+                '</div>';
+      }
+      return '<div class="upd-stand-head"><span class="up-sk-lbl" style="width:210px"></span></div>' +
+             '<div class="upd-stand-list">' + rows + '</div>';
+    }
+
     function renderKpis(){
+      if (state.loading){ elKpis.innerHTML = kpiSkeleton(); return; }
       var src = kpiSource(), k = src.kpi;
       var vis = num(k.visibility_pct), sv = num(k.sentiment), rv = num(k.avg_rank);
       var ment = num(k.mentions), mentPrev = num(k.mentions_prev);
@@ -323,6 +362,11 @@
     /* ---------------- Standing auf diesem Topic ----------------
        Kostet keinen einzigen Serveraufruf: die Spalte des Rasters liegt schon vor. */
     function renderStanding(){
+      if (state.loading){
+        root.classList.remove("no-stand");   // die Spalte bleibt stehen, sonst springt das Layout
+        elStand.innerHTML = standSkeleton();
+        return;
+      }
       var col = (state.column || []).filter(function(c){ return c && num(c.visibility_pct) != null; });
       if (state.scope !== "topic" || !state.company || col.length < 2){
         elStand.innerHTML = "";
@@ -359,9 +403,6 @@
          Am Rand rutscht das Fenster nach innen statt ueber die Liste hinaus: bei Rang 2 also
          1 bis 5, beim Letzten die letzten fuenf. Ist die Marke gar nicht in der Spalte, bleibt es
          bei den Top 5. */
-      /* Sieben statt fuenf: neben der Kurve ist die Spalte hoch genug dafuer, und zwei Plaetze
-         mehr zeigen im Zweifel den ganzen relevanten Ausschnitt statt eines Anschnitts. */
-      var FENSTER = 7;
       var start = 0;
       if (myIdx >= 0) start = Math.max(0, Math.min(myIdx - Math.floor(FENSTER / 2), col.length - FENSTER));
       var show = col.slice(start, start + FENSTER);
@@ -738,6 +779,12 @@
     function setLoading(v){
       state.loading = UC.isYes ? UC.isYes(v) : (String(v) === "yes" || v === true);
       root.classList.toggle("is-loading", state.loading);
+      /* Alle drei, nicht nur die Kurve: KPIs und Rangliste haben jetzt eigene Skelette, und ein
+         Bereich, in dem ein Teil laedt und der Rest noch die Zahlen der vorigen Zelle zeigt,
+         sieht kaputt aus. Nur die drei neu zeichnen, nicht render() -- das wuerde auch Kopfzeile
+         und Variations anfassen, die von dieser Ladephase gar nicht betroffen sind. */
+      renderKpis();
+      renderStanding();
       renderChart();
     }
     function reset(){
