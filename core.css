@@ -359,11 +359,19 @@
     .up-filter-check svg { width: 11px; height: 11px; display: none; }
     .up-filter-item.is-checked .up-filter-check svg { display: block; }
     .up-filter-item.is-checked .up-filter-check { background: var(--vc-text); border-color: var(--vc-text); }
-    /* Gewaehlte Zeile im TYPES-Dropdown traegt den App-Selected-Ton. Auf .up-filter-menu gescoped
-       und nicht auf .up-filter-item selbst: die Marken-Liste nutzt dieselbe Zeilenklasse, sitzt
-       aber in .up-ment-menu -- und dort waere eine gefuellte Zeile pro Eintrag zu unruhig, so war
-       die Vorgabe. Zwei Listen, dieselbe Zeile, ein bewusster Unterschied statt zweier Zufaelle. */
-    .up-filter-menu .up-filter-item.is-checked { background: var(--up-sel-bg); }
+    /* Gewaehlte Zeile traegt den App-Selected-Ton -- im Types-Dropdown immer, in einer
+       Marken-Liste nur auf Ansage.
+
+       Der Unterschied ist nicht kosmetisch, er haengt am Ausgangszustand: wo nichts vorbelegt
+       ist (die Filter der Tabellen starten auf "All Brands"), markiert die gefuellte Zeile die
+       wenigen Dinge, die der Nutzer selbst gewaehlt hat -- das ist genau die Auskunft, die man
+       dort sucht. Wo dagegen ALLE Marken vorbelegt sind (Visibility-Chart, Heatmap: dort ist
+       die Liste die Legende und startet vollstaendig angehakt), waere jede Zeile gefuellt und
+       die Markierung sagt nichts mehr, sie macht das Panel nur unruhig.
+
+       Darum eine Klasse, die die Komponente selbst setzt, statt einer Regel, die raet. */
+    .up-filter-menu .up-filter-item.is-checked,
+    .up-filter-list.is-fill-checked .up-filter-item.is-checked { background: var(--up-sel-bg); }
     .up-root[data-theme="dark"] .up-filter-item.is-checked .up-filter-check { color: #1f1f1b; }
     /* the dropdown shows the SAME chip the table uses — identical to TopCitations, so a type
        looks the same wherever it appears */

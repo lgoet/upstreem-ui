@@ -975,7 +975,7 @@
           '</div>'
         : '';
       elMentMenu.innerHTML = head + search +
-        '<div class="up-filter-list up-ment-list">' + items +
+        '<div class="up-filter-list up-ment-list is-fill-checked">' + items +
           '<div class="up-ment-noresult" style="display:none">No matches</div></div>' +
         '<button class="up-filter-submit" type="button" data-mentapply>Apply</button>';
       applyMentFilter();

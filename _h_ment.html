@@ -1,0 +1,40 @@
+<meta charset="utf-8">
+<link rel="stylesheet" href="core.css?v=m1">
+<body style="margin:0;padding:20px;font-family:system-ui,sans-serif">
+<pre id="out" style="font:11px/1.6 ui-monospace,monospace;background:#f6f6f6;padding:10px;white-space:pre-wrap">bereit</pre>
+
+<!-- Links: Tabellen-Filter (nichts vorbelegt) -> gefuellte Auswahlzeile erwuenscht.
+     Rechts: Chart-Legende (alles vorbelegt) -> keine Fuellung. Gleiches Markup bis auf die Klasse. -->
+<div class="up-root" data-instance="a">
+  <div class="up-menu up-ment-menu" style="position:static;opacity:1;pointer-events:auto">
+    <div class="up-filter-list up-ment-list is-fill-checked" id="tabelle">
+      <div class="up-filter-item is-checked"><span class="up-filter-check"></span><span>Volkswagen</span></div>
+      <div class="up-filter-item"><span class="up-filter-check"></span><span>BMW</span></div>
+    </div>
+  </div>
+  <div class="up-menu up-ment-menu" style="position:static;opacity:1;pointer-events:auto">
+    <div class="up-filter-list up-ment-list" id="chart">
+      <div class="up-filter-item is-checked"><span class="up-filter-check"></span><span>Volkswagen</span></div>
+      <div class="up-filter-item is-checked"><span class="up-filter-check"></span><span>BMW</span></div>
+    </div>
+  </div>
+  <div class="up-menu up-filter-menu" style="position:static;opacity:1;pointer-events:auto">
+    <div class="up-filter-list" id="types">
+      <div class="up-filter-item is-checked"><span class="up-filter-check"></span><span>Article</span></div>
+    </div>
+  </div>
+</div>
+<script src="core.js?v=m1"></script>
+<script>
+setTimeout(function(){
+  function bg(sel){ return getComputedStyle(document.querySelector(sel)).backgroundColor; }
+  var sel = getComputedStyle(document.querySelector(".up-root")).getPropertyValue("--up-sel-bg").trim();
+  document.getElementById("out").textContent = JSON.stringify({
+    tokenSelBg: sel,
+    tabelleGewaehlt: bg("#tabelle .up-filter-item.is-checked"),
+    tabelleOffen:   bg("#tabelle .up-filter-item:not(.is-checked)"),
+    chartGewaehlt:  bg("#chart .up-filter-item.is-checked"),
+    typesGewaehlt:  bg("#types .up-filter-item.is-checked")
+  }, null, 1);
+}, 400);
+</script>

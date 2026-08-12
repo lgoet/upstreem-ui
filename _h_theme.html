@@ -1,7 +1,7 @@
 <meta charset="utf-8">
-<link rel="stylesheet" href="core.css?v=t1">
-<link rel="stylesheet" href="urls-table.css?v=t1">
-<link rel="stylesheet" href="performance-detail.css?v=t1">
+<link rel="stylesheet" href="core.css?v=t3">
+<link rel="stylesheet" href="urls-table.css?v=t3">
+<link rel="stylesheet" href="performance-detail.css?v=t3">
 <body style="margin:0;padding:20px;font-family:system-ui,sans-serif">
 <div style="margin-bottom:12px;display:flex;gap:6px">
   <button onclick="window.setUpstreemTheme('dark')">dark</button>
@@ -14,6 +14,16 @@
 <div class="up-root uut-root" data-instance="u1" data-isdark="no" data-processing="yes"></div>
 <div class="up-root upd-root" data-instance="d1" data-isdark="no"></div>
 
-<script src="core.js?v=t1"></script>
-<script src="urls-table.js?v=t1"></script>
-<script src="performance-detail.js?v=t1"></script>
+<script src="core.js?v=t3"></script>
+<script src="urls-table.js?v=t3"></script>
+<script src="performance-detail.js?v=t3"></script>
+
+<script>
+window.setUrlsTableBrands("u1", [
+  {"company_id":"vw","name":"Volkswagen","logo_url":""},
+  {"company_id":"bmw","name":"BMW","logo_url":""},
+  {"company_id":"mb","name":"Mercedes-Benz","logo_url":""}
+]);
+window.renderUrlsTable({ instanceId: "u1", rows: [], totalCount: 0 });
+window.setUrlsTableLoading("u1", "no");
+</script>
