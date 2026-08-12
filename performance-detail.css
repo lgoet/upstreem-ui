@@ -222,6 +222,12 @@
 .upd-explain-vis .up-num { font-size: 14px; font-weight: 500; color: inherit; }
 .upd-explain-vis .upd-of { font-size: 12px; color: rgba(31,31,27,0.55); }
 .upd-explain-vis .up-explain-row { gap: 6px; }
+/* Die Share-of-Voice-Zeile steht weiter auseinander als die Mention-Count-Zeile: dort sind Zahl
+   und "of N" ein zusammenhaengender Wert, hier sind es zwei Darstellungen derselben Groesse und
+   duerfen als zwei Dinge lesbar sein. In der Zelle darunter uebernimmt das margin-left:auto, das
+   den Ring an den rechten Zellenrand schiebt -- die Platte hat keinen Rand, an den sich etwas
+   schieben liesse, also steht die Zahl hier. */
+.upd-explain-vis .upd-explain-sov { gap: 32px; }
 /* Der Ring behaelt seine echte Groesse. Die geteilte Regel .up-explain-row svg setzt 14px und ist
    genauso stark wie .upd-ring svg -- ohne diese Zeile entschiede die Ladereihenfolge. */
 .upd-explain-vis .upd-ring svg { width: 22.4px; height: 22.4px; }

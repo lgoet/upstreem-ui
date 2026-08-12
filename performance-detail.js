@@ -579,7 +579,7 @@
       if (key === "sov"){
         /* Eine Zahl, dahinter derselbe Ring wie in der Zelle -- nicht zwei Zeilen. Die Platte
            soll die Spalte zeigen, nicht ihre Spannweite vorfuehren. */
-        return '<span class="up-explain-row"><span class="up-num">62.5%</span>' + ringHtml(62.5) + '</span>';
+        return '<span class="up-explain-row upd-explain-sov"><span class="up-num">62.5%</span>' + ringHtml(62.5) + '</span>';
       }
       if (key === "cnt"){
         return '<span class="up-explain-row"><span class="up-num">19</span>' +
