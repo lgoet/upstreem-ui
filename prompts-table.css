@@ -341,7 +341,7 @@
 .upt-topicsearch-wrap { flex: 1 1 auto; min-width: 0; display: flex; align-items: center;
   height: 32px; padding: 0 4px 0 10px; border-radius: 9px;
   border: 1px solid var(--vc-border); background: transparent; }
-.upt-topicsearch-wrap:focus-within { border-color: var(--vc-hover-border); }
+.upt-topicsearch-wrap:focus-within { border-color: var(--up-focus); box-shadow: 0 0 0 4px var(--up-focus-ring); outline: 0; }
 .upt-topicsearch-in { flex: 1 1 auto; min-width: 0; height: 100%; padding: 0;
   border: 0; background: transparent; outline: none;
   font-family: inherit; font-size: 12.5px; color: var(--vc-text); }
@@ -1031,7 +1031,7 @@
 .upt-gm-more:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
 .upt-gm-search-in { flex: 1 1 auto; height: 36px; padding: 0 34px 0 12px; border: 1px solid var(--vc-border);
   border-radius: 9px; background: transparent; color: var(--vc-text); font: inherit; font-size: 14px; outline: 0; }
-.upt-gm-search-in:focus { border-color: var(--vc-hover-border); }
+.upt-gm-search-in:focus { border-color: var(--up-focus); box-shadow: 0 0 0 4px var(--up-focus-ring); outline: 0; }
 .upt-gm-clear { position: absolute; right: 6px; width: 24px; height: 24px; border: 0; border-radius: 6px;
   padding: 0; background: transparent; color: var(--vc-muted); cursor: pointer;
   display: none; align-items: center; justify-content: center; }

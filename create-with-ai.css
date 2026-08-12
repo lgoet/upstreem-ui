@@ -34,6 +34,24 @@
   --uca-scrim: rgba(0,0,0,0.60);
   --uca-shadow: 0 24px 64px rgba(0,0,0,0.55), 0 6px 16px rgba(0,0,0,0.4);
 }
+/* TOP LAYER, nicht z-index. Der Opportunity-Drawer liegt selbst im Top Layer (popover="manual"),
+   und dagegen gewinnt keine Zahl -- der Top Layer wird nach dem gesamten Dokument gezeichnet.
+   Genau das war der Fehler: das Popup laesst sich aus dem Drawer heraus oeffnen und verschwand
+   dahinter, obwohl es auf z-index 2147483000 stand.
+   Innerhalb des Top Layers entscheidet die Reihenfolge der Befoerderung, nicht eine Zahl: was
+   zuletzt geoeffnet wurde, liegt oben. Der Drawer ist beim Oeffnen dieses Popups laengst da, das
+   Popup landet also darueber; Quick Actions wird danach geoeffnet und landet darueber.
+   display:block muss sein -- .up-portal ist display:contents und erzeugt keine Box, der Top Layer
+   haette also nichts zu befoerdern. Die UA-Vorgaben fuer [popover] (zentrierte Raender, Rahmen,
+   Hintergrund) werden im selben Zug weggeraeumt. */
+.uca-portal[popover] {
+  position: fixed; inset: 0; width: auto; height: auto; max-width: none; max-height: none;
+  margin: 0; padding: 0; border: 0; background: transparent; overflow: visible;
+  pointer-events: none; display: block;
+}
+.uca-portal[popover]:not(:popover-open) { display: none; }
+.uca-portal[popover] .uca-overlay, .uca-portal[popover] .uca-toast { pointer-events: auto; }
+
 .uca-overlay {
   position: fixed; inset: 0; z-index: 2147483000;
   display: none; align-items: center; justify-content: center; padding: 20px;
@@ -115,7 +133,8 @@
   transition: border-color .14s ease, background .14s ease;
 }
 .uca-input::placeholder { color: var(--vc-third); }
-.uca-input:hover, .uca-input:focus { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
+.uca-input:hover { border-color: var(--vc-hover-border); }
+.uca-input:focus { border-color: var(--up-focus); box-shadow: 0 0 0 4px var(--up-focus-ring); outline: 0; }
 
 /* Laufender Platzhalter, gleiche Bauart wie Miras Eingabezeile. Groesse, Farbe und Zeilenhoehe
    sind absichtlich identisch mit dem echten ::placeholder -- der Wechsel beim Fokussieren soll
@@ -323,7 +342,8 @@
   transition: border-color .14s ease, background .14s ease;
 }
 .uca-bld-input::placeholder { color: var(--vc-third); }
-.uca-bld-input:hover, .uca-bld-input:focus { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
+.uca-bld-input:hover { border-color: var(--vc-hover-border); }
+.uca-bld-input:focus { border-color: var(--up-focus); box-shadow: 0 0 0 4px var(--up-focus-ring); outline: 0; }
 .uca-bld-add {
   flex: 0 0 auto; height: 40px; padding: 0 16px; border-radius: 12px; border: 0;
   background: var(--vc-text); color: var(--vc-bg); font: inherit; font-size: 13.5px; font-weight: 560;

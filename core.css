@@ -24,6 +24,9 @@
       --vt-row-hover-solid: #f7f7f7;
       --vt-up: #2ea84a; --vt-down: #b0200c;
       --vc-hover-border: #6f6f6f;
+      /* Fokusfarbe der Eingabefelder. Dasselbe Blau, das die App fuer "In Progress" benutzt --
+         eine Akzentfarbe, nicht zwei. Der Ring ist derselbe Ton bei 18%. */
+      --up-focus: #2384E2; --up-focus-ring: rgba(35,132,226,0.18);
       /* Sticky-Header: Abstand von oben in px = Hoehe der Floating-Topbar. Wird auch ueber
          data-sticky-top am Root gesetzt (siehe oben bei den dynamischen Werten). */
       --up-sticky-top: 171px; --up-thead-off: 32px;
@@ -82,6 +85,36 @@
       --vt-row-hover-solid: #242424;
       --vt-up: #60d25d; --vt-down: #d25d5d;
       --vc-hover-border: #707070;
+      /* Auf dunklem Grund braucht der Ring mehr Deckkraft, sonst verschwindet er im Panel. */
+      --up-focus: #4a9eff; --up-focus-ring: rgba(74,158,255,0.26);
+    }
+
+    /* ---------- Fokus-Ring fuer Eingabefelder ----------
+       EIN Fokuszustand fuer die ganze App: blauer Rand plus ein 4px weicher Auslauf dahinter.
+       Vorher war der Fokus in jeder Komponente die Hover-Randfarbe, teils zusaetzlich mit einem
+       Hintergrundwechsel. Beides ist falsch: der Hover-Rand sagt "der Mauszeiger ist hier", nicht
+       "hier landet deine Eingabe" -- man konnte einem Feld nicht ansehen, ob es den Fokus hat,
+       solange die Maus darauf stand. Und ein Hintergrundwechsel beim Fokussieren laesst das Feld
+       beim Hineinklicken die Farbe wechseln, was sonst nirgends in der App passiert.
+
+       .up-field ist eine ZUSATZKLASSE auf dem Eingabefeld, keine Ersetzung: Rahmen, Radius und
+       Groesse bleiben beim Feld selbst, hier steht nur der Fokuszustand. Der Rand faerbt sich um,
+       der box-shadow legt den Auslauf dahinter, und outline:0 nimmt den doppelten Ring des
+       Browsers weg -- der Ersatz ist sichtbarer als das Original, es geht also nichts verloren.
+       Wer eine echte Tastatur-Navigation ohne Maus prueft: der Ring erscheint bei :focus, also
+       auch beim Tabben. */
+    .up-field:focus, .up-field:focus-visible,
+    .up-fieldwrap:focus-within {
+      border-color: var(--up-focus);
+      box-shadow: 0 0 0 4px var(--up-focus-ring);
+      outline: 0;
+    }
+    /* Hover darf den Fokus nicht ueberschreiben: die Hover-Regel eines Feldes steht meistens in
+       der Komponentendatei und laedt damit NACH core. Gleiche Spezifitaet haette bedeutet, dass
+       die Ladereihenfolge entscheidet -- derselbe Fehler, der hier schon dreimal aufgetreten ist.
+       Die doppelte Klasse hebt die Spezifitaet an, statt sich auf die Reihenfolge zu verlassen. */
+    .up-field.up-field:focus, .up-field.up-field:focus-visible {
+      border-color: var(--up-focus); box-shadow: 0 0 0 4px var(--up-focus-ring);
     }
 
     /* ---------- toolbar ---------- */
@@ -425,7 +458,7 @@
       color: var(--vc-text); font: inherit; font-size: 13px; outline: 0;
     }
     .up-ment-search::placeholder { color: var(--vc-third); }
-    .up-ment-search:focus { border-color: var(--vc-hover-border); }
+    .up-ment-search:focus { border-color: var(--up-focus); box-shadow: 0 0 0 4px var(--up-focus-ring); outline: 0; }
     .up-ment-searchwrap { position: relative; margin: 0 0 8px; flex: 0 0 auto; }
     .up-ment-searchwrap .up-ment-search { margin: 0; padding-right: 30px; }
     .up-ment-searchclear {
@@ -511,7 +544,7 @@
     }
     .up-ddsearch-in::placeholder { color: var(--vc-third); }
     .up-ddsearch-in:hover { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
-    .up-ddsearch-in:focus { border-color: var(--vc-hover-border); background: var(--vc-bg); }
+    .up-ddsearch-in:focus { border-color: var(--up-focus); box-shadow: 0 0 0 4px var(--up-focus-ring); outline: 0; }
     .up-ddsearch-ic {
       position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
       width: 15px; height: 15px; color: var(--vc-third); pointer-events: none;

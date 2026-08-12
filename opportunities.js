@@ -257,7 +257,12 @@
 
   /* Small dark tooltip chips on every icon button, wired the app-wide way: makeTooltips installs a
      delegated [data-tip] handler on the root, so markup only carries the attribute. */
-  if (UC.makeTooltips) UC.makeTooltips(root, isDark);
+  /* ZWEIMAL, und das ist der Punkt: makeTooltips haengt EINEN delegierten Listener an den Knoten,
+     den es bekommt. Scrim und Detail-Karte sind aber weiter oben nach .uo-portal am <body>
+     umgezogen -- sie sind keine Nachfahren von root mehr, und der Listener sah sie nie. Ergebnis:
+     die Knoepfe oben rechts in der Detailansicht (Ignore, Open URL, Close) trugen ihr data-tip,
+     zeigten aber nichts an, waehrend dieselben Chips auf dem Board funktionierten. */
+  if (UC.makeTooltips){ UC.makeTooltips(root, isDark); UC.makeTooltips(portal, isDark); }
 
   /* ---------- card ---------- */
   function cardHtml(item){

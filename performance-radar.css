@@ -170,12 +170,18 @@
    Topics-Popover der Prompts-Tabelle. Und Apply behaelt seine Breite, wenn Reset dazukommt:
    flex-shrink 0 statt der Default-Schrumpfung, sonst wurde der Button beim Erscheinen des
    Reset-Buttons schmaler und ragte rechts aus dem Panel. */
+/* Apply oben, Reset 8px darunter, beide ueber die volle Breite.
+   Vorher standen sie nebeneinander und rechtsbuendig. Das hat sich zweimal gerochen: der Reset
+   wanderte um Apply herum, und sobald die Fusszeile schmaler wurde als beide Knoepfe zusammen,
+   schob flex-end den ERSTEN Knopf links aus dem Menue heraus (kein Umbruch, kein min-width:0 --
+   ein rechtsbuendiger Flex-Container laesst nach links ueberlaufen). Gestapelt kann das
+   strukturell nicht mehr passieren, egal wie schmal das Menue wird. */
 .uhm-pick-foot {
-  display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+  display: flex; flex-direction: column; align-items: stretch; gap: 8px;
   padding: 8px 8px 0; margin-top: 8px; border-top: 1px solid var(--vc-border);
 }
-.uhm-pick-apply { width: auto; min-width: 96px; margin-top: 0; padding: 0 16px; flex: 0 0 auto; }
-.uhm-pick-foot .up-pop-action { flex: 0 0 auto; }
+.uhm-pick-apply { width: 100%; min-width: 0; margin-top: 0; padding: 0 16px; flex: 0 0 auto; }
+.uhm-pick-foot .up-pop-action { width: 100%; flex: 0 0 auto; }
 
 /* ---------- tooltip ----------
    Body-mounted (the grid box clips for its rounded corners), theme carried on the element itself

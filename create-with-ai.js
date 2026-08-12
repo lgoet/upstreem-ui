@@ -303,6 +303,16 @@
     document.body.appendChild(portal);
     portal._ucaRoot = root;
 
+    /* Top Layer statt z-index -- siehe die Begruendung bei .uca-portal[popover] in der CSS.
+       "manual", damit der Browser nicht licht-schliesst: Scrim und Escape erledigen das Schliessen
+       bereits, und ein Auto-Dismiss wuerde das Popup bei jedem Klick DARIN zumachen.
+       Feature-erkannt: wo showPopover fehlt, bleibt alles wie zuvor, also body-montiert auf
+       z-index 2147483000. */
+    var kannPopover = typeof portal.showPopover === "function" && typeof portal.hidePopover === "function";
+    if (kannPopover){ try { portal.setAttribute("popover", "manual"); } catch(e){ kannPopover = false; } }
+    function portalZeigen(){ if (kannPopover){ try { portal.showPopover(); } catch(e){} } }
+    function portalVerstecken(){ if (kannPopover){ try { portal.hidePopover(); } catch(e){} } }
+
     /* Nur VERWAISTE Portale wegraeumen (deren Wurzel ein Bubble-Rerender entfernt hat). Andere
        lebende Instanzen bleiben stehen -- in einer Repeating Group sind das die Nachbarzeilen. */
     Array.prototype.slice.call(document.querySelectorAll("body > .uca-portal")).forEach(function(n){
@@ -706,12 +716,14 @@
         });
       } catch(e){}
       readAttrs(); renderAll();
+      portalZeigen();
       elOverlay.classList.add("is-open");
       _lastFocus = document.activeElement;
       document.addEventListener("keydown", onKey);
     }
     function close(){
       elOverlay.classList.remove("is-open");
+      portalVerstecken();
       closeHow();
       document.removeEventListener("keydown", onKey);
       backToMain();

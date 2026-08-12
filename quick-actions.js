@@ -1369,6 +1369,12 @@
     overlay.setAttribute("data-theme", root.getAttribute("data-theme") || "light");
     // always bring to the very front: move to the end of <body> (wins ties at equal z-index) + max z-index
     try { document.body.appendChild(overlay); } catch(_){}
+    /* Top Layer statt z-index -- siehe .mqa-overlay[popover] in der CSS. "manual", weil Escape
+       und der Aussenklick das Schliessen schon selbst erledigen. Feature-erkannt: ohne
+       showPopover bleibt alles wie zuvor. */
+    if (typeof overlay.showPopover === "function"){
+      try { overlay.setAttribute("popover", "manual"); overlay.showPopover(); } catch(_){}
+    }
     overlay.style.zIndex = "2147483647";
     overlay.classList.add("is-open"); overlay.setAttribute("aria-hidden", "false");
     document.addEventListener("keydown", onKeydown, true);
@@ -1386,6 +1392,9 @@
     recentPush(); _lastCompleted = null;
     if (!isOpen) return; isOpen = false;
     overlay.classList.remove("is-open"); overlay.setAttribute("aria-hidden", "true");
+    if (overlay.hasAttribute("popover") && typeof overlay.hidePopover === "function"){
+      try { overlay.hidePopover(); } catch(_){}
+    }
     document.removeEventListener("keydown", onKeydown, true);
     clearAll();
   }

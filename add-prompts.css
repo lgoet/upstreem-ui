@@ -89,7 +89,7 @@
   font: inherit; font-size: 13.5px; line-height: 1.45;
   transition: border-color 120ms ease;
 }
-.uap-input:focus { outline: none; border-color: var(--vc-hover-border); }
+.uap-input:focus { border-color: var(--up-focus); box-shadow: 0 0 0 4px var(--up-focus-ring); outline: 0; }
 .uap-input::placeholder { color: var(--vc-third); }
 
 /* Bottom right of the field, not centred: it belongs to the end of what is being typed. */

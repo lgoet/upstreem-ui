@@ -52,6 +52,22 @@
 .mqa-trigger .mqa-kbd { border: 0; }
 
 /* ---------- overlay + modal ---------- */
+/* TOP LAYER. Create with AI liegt seit dem Drawer-Fix selbst im Top Layer, und der wird nach
+   dem ganzen Dokument gezeichnet -- eine z-index-Zahl kaeme dagegen nicht an. Innerhalb des Top
+   Layers gewinnt, was zuletzt geoeffnet wurde: die Palette geht immer NACH dem auf, was sie
+   ueberdeckt, und liegt damit von selbst oben. Ohne diese Regel waere sie unter dem Popup
+   verschwunden. */
+.mqa-overlay[popover] {
+  /* width/height MUESSEN mit zurueck: das UA-Stylesheet setzt fuer [popover] fit-content, und das
+     schlaegt durch, weil .mqa-overlay selbst nur inset deklariert. Die Palette schrumpfte damit auf
+     ihre Inhaltsgroesse und deckte den Rest der Seite nicht mehr ab -- im Harness gemessen, sie
+     tauchte im Trefferstapel der Bildschirmmitte gar nicht mehr auf. */
+  position: fixed; inset: 0; width: auto; height: auto;
+  max-width: none; max-height: none; margin: 0; padding: 12vh 16px 16px;
+  border: 0; background: var(--am-overlay); overflow: visible;
+}
+.mqa-overlay[popover]:not(:popover-open) { display: none; }
+
 .mqa-overlay {
   position: fixed; inset: 0; z-index: 2147483000; display: none;
   align-items: flex-start; justify-content: center; padding: 12vh 16px 16px;
