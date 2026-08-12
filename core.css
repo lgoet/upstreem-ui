@@ -898,9 +898,16 @@
        wieder ihre eigene Schriftgroesse und Farbe bekommen, und genau so entstehen die
        Unterschiede zwischen Tabellen, die gleich aussehen sollen.
        Die Kopfzelle traegt UC.HASH_ICON, nicht das Zeichen "#". */
-    .up-th-idx, .up-td-idx { justify-content: center; padding: 0; }
+    /* Doppelte Klasse als Spezifitaets-Anker. .up-th und .up-td setzen selbst padding
+       (0 16px 0 12px) und stehen in dieser Datei WEITER UNTEN -- bei gleicher Spezifitaet
+       gewinnt die spaetere Regel, die Zahl sass also 2px links neben der Mitte statt darin.
+       In brands-overview.css fiel das nicht auf, weil dort .ubo-root davor stand und damit
+       ohnehin die hoehere Spezifitaet hatte; beim Umzug hierher ist die weggefallen.
+       Verdoppeln statt Verschieben: eine Regel, die nur durch ihre Position gewinnt, kippt
+       beim naechsten Umsortieren wieder. */
+    .up-th-idx.up-th-idx, .up-td-idx.up-td-idx { justify-content: center; padding: 0; }
     .up-th-idx svg { width: 14px; height: 14px; display: block; }
-    .up-td-idx { font-size: 12px; color: var(--vc-muted); font-variant-numeric: tabular-nums; }
+    .up-td-idx.up-td-idx { font-size: 12px; color: var(--vc-muted); font-variant-numeric: tabular-nums; }
 
     .up-table { width: 100%; display: flex; flex-direction: column; background: var(--vc-bg); }
     /* Column widths come from --up-cols, which UC.makeColumns' applyCols() writes ONCE on the

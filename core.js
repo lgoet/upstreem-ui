@@ -847,7 +847,14 @@
   function makeColumns(cfg){
     var root = cfg.root, state = cfg.state, COLUMNS = cfg.columns;
     var FIRST = cfg.firstKey || "domain";
-    var FIRST_MIN = cfg.firstMin || 220, ACTIONS_MIN = cfg.actionsMin || 100;
+    var FIRST_MIN = cfg.firstMin || 220;
+    /* cfg.actionsMin darf wie cfg.leadWidth eine FUNKTION sein, damit eine Tabelle die Breite der
+       Aktionsspalte pro Stufe aendern kann (discover-brands: der Track-Knopf traegt breit eine
+       Beschriftung und wird schmal quadratisch). */
+    function ACTIONS_MIN_F(){
+      var v = (typeof cfg.actionsMin === "function") ? cfg.actionsMin() : cfg.actionsMin;
+      return v || 100;
+    }
     /* cfg.leadWidth — a fixed, never-hidden, never-resized track BEFORE the resizable lead column
        (brands-overview's "#" rank cell). Without it such a table could not use this kit at all and
        had to hand-roll its own grid template, which is how it ended up with no column resizing.
@@ -917,7 +924,7 @@
          columns off-screen, which is the bug this exists to prevent. */
       var reserve = 24 + cols.length;
       var budget = cw - LEAD() - firstWidth(cw) - reserve;
-      if (!cfg.noActions && !root.classList.contains("is-t2")) budget -= ACTIONS_MIN;
+      if (!cfg.noActions && !root.classList.contains("is-t2")) budget -= ACTIONS_MIN_F();
       var need = 0;
       cols.forEach(function(c){ need += colMin(c.key); });
       if (need <= budget) return cols;
@@ -976,7 +983,7 @@
        longer disagree. */
     function colMin(key){
       if (key === FIRST) return FIRST_MIN;
-      if (key === "actions") return ACTIONS_MIN;
+      if (key === "actions") return ACTIONS_MIN_F();
       var c = COLUMNS.filter(function(x){ return x.key === key; })[0];
       if (c && c.minNarrow != null && root.classList.contains("is-vnarrow")) return c.minNarrow;
       return (c && c.min) || 100;
@@ -1043,7 +1050,7 @@
            pinned lead column plus the other minimums from pushing Actions outside the box. */
         var othersMin = 0;
         cols.forEach(function(c){ othersMin += colMin(c.key); });
-        if (!cfg.noActions && !root.classList.contains("is-t2")) othersMin += ACTIONS_MIN;
+        if (!cfg.noActions && !root.classList.contains("is-t2")) othersMin += ACTIONS_MIN_F();
         if (cw) firstPx = Math.max(FIRST_MIN, Math.min(W[FIRST], cw - LEAD() - othersMin));
       }
       var lw = LEAD();
@@ -1053,7 +1060,17 @@
         parts.push(pinned ? "minmax(" + colMin(c.key) + "px, 1fr)" : colTrack(c));
       });
       if (!cfg.noActions && !root.classList.contains("is-t2")){
-        parts.push(pinned ? ACTIONS_MIN + "px" : "minmax(" + ACTIONS_MIN + "px, auto)");
+        /* FESTE Spur, kein minmax(...,auto). `auto` heisst "so breit wie der Inhalt", und .up-thead
+           und jede .up-row sind EIGENE Grid-Container: jeder loest sein `auto` aus dem eigenen
+           Inhalt auf. Die Kopfzelle der Aktionsspalte ist leer, die Zellen darunter enthalten den
+           Knopf -- die beiden Raster koennen damit gar nicht uebereinstimmen. Gemessen in
+           discover-brands: Aktionsspur im Kopf 56px, in der Zeile 106px, und weil die Differenz
+           sich auf die fr-Spuren verteilt, wanderten alle Kopfspalten nach rechts (bis 50px
+           Versatz an der letzten). Den anderen Tabellen ist es nur nie aufgefallen, weil ihre
+           Aktionszelle ein Icon-Knopf ist, der SCHMALER als actionsMin bleibt -- dort gewinnt
+           ohnehin immer die Untergrenze, und beide Raster kommen zufaellig auf dieselbe Zahl.
+           Fuer die faellt sich hier nichts, die Zahl ist dieselbe. */
+        parts.push(ACTIONS_MIN_F() + "px");
       }
       var tpl = parts.join(" ");
       /* The track list goes on the ROOT as --up-cols; core.css has .up-thead/.up-row read it via

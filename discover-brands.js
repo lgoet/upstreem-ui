@@ -51,7 +51,8 @@
     search: '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.9"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>',
     x:      '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>',
     radar:  '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4.5"></circle><line x1="12" y1="12" x2="19" y2="7"></line></svg>',
-    empty:  '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.7"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>'
+    empty:  '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.7"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>',
+    info:   '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>'
   };
 
   /* Spalten in der Form, die UC.makeColumns erwartet: NUR die mittleren, abschaltbaren Spalten.
@@ -79,9 +80,9 @@
     { key: "domain",   label: "Domain",          w: "minmax(150px, 1fr)",   min: 150, prio: 10 }
   ];
   var IDX_W = 44;        // feste Breite der "#"-Spalte, wie in brands-overview
-  /* Mindestbreite der Track-Spalte: reicht fuer den quadratischen Knopf plus Luft. Die
-     tatsaechliche Breite kommt aus der `auto`-Seite des Tracks, also aus dem Knopf selbst. */
-  var TRACK_MIN = 56;
+  /* Breite der Track-Spalte. Feste Zahlen, keine inhaltsabhaengige Spur: Kopf und Zeilen sind
+     getrennte Raster und wuerden ein `auto` verschieden aufloesen (siehe Kommentar in core.js). */
+  var TRACK_WIDE = 108, TRACK_NARROW = 56;
 
   function udbBoot(n) {
     if (!window.UpstreemCore) {
@@ -133,6 +134,11 @@
             '<button type="button" class="udb-matched is-on" data-matched aria-pressed="true">' +
               '<span class="udb-cb">' + ICON.check + '</span><span>Matched Brands</span>' +
             '</button>' +
+            /* Die Erklaerung haengt am ⓘ-Icon, nicht am Knopf -- dasselbe .up-th-info, das in den
+               Tabellenkoepfen jeder anderen Komponente steht. Vorher lag makeExplain auf dem Knopf
+               selbst: dieselbe Karte, aber ohne das Icon, an dem man sie ueberhaupt erwartet, und
+               sie sprang beim blossen Ueberfahren des Schalters auf. */
+            '<span class="up-th-info udb-info" data-explain="matched">' + ICON.info + '</span>' +
             '<div class="up-search">' +
               '<button type="button" class="up-iconbtn up-search-btn" aria-label="Search">' + ICON.search + '</button>' +
               '<div class="up-search-box">' +
@@ -180,7 +186,7 @@
       /* Der Tooltip erklaert die Mechanik, nicht den Knopf. "Matched Brands" allein sagt keinem,
          was passiert, wenn man es abschaltet -- und genau das ist die Frage. */
       UC.makeExplain({
-        root: root, getIsDark: isDark, triggerSel: "[data-matched]",
+        root: root, getIsDark: isDark, triggerSel: ".up-th-info",
         html: function () {
           return '<div class="up-explain-h">Matched Brands</div>' +
                  '<div class="up-explain-t">On: only brands where a cited domain could be assigned to the name, ' +
@@ -209,7 +215,9 @@
         /* Die "#"-Spalte: feste Breite, nie ausblendbar, nie ziehbar. Genau der Fall, fuer den
            cfg.leadWidth in core existiert. */
         leadWidth: IDX_W,
-        actionsMin: TRACK_MIN,
+        /* Breit traegt der Track-Knopf seine Beschriftung, schmal ist er quadratisch -- die Spur
+           folgt dem. Als Funktion, weil das Kit sie bei jeder Rasterrechnung neu abfragt. */
+        actionsMin: function () { return root.classList.contains("is-narrow") ? TRACK_NARROW : TRACK_WIDE; },
         badgeSel: ".udb-cols-badge", cellPrefixes: ["up", "udb"],
         onChange: function () { renderTable(); }
       });
