@@ -52,7 +52,9 @@
     x:      '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>',
     radar:  '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4.5"></circle><line x1="12" y1="12" x2="19" y2="7"></line></svg>',
     empty:  '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.7"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>',
-    info:   '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>'
+    /* Feather "box" als neutrales Markenlogo im Erklaerbeispiel. Nichts selbstgezeichnetes und
+       nichts, was nach einer echten Firma aussieht -- es steht nur fuer "irgendeine Marke". */
+    brand:  '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.9"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>'
   };
 
   /* Spalten in der Form, die UC.makeColumns erwartet: NUR die mittleren, abschaltbaren Spalten.
@@ -189,7 +191,10 @@
              hatte nur die beiden Textzeilen -- selbes Bauteil, aber ohne die Platte sieht sie aus
              wie ein gewoehnlicher Tooltip statt wie die Erklaerer ueberall sonst. */
           return '<div class="up-explain-vis">' +
-                   '<span class="up-explain-row">' + ICON.check + '<span>Notion &middot; notion.com</span></span>' +
+                   '<span class="up-explain-row">' +
+                     '<span class="udb-explain-logo">' + ICON.brand + '</span>' +
+                     '<span>Acme Inc. &middot; acme.com</span>' +
+                   '</span>' +
                  '</div>' +
                  '<div class="up-explain-h">Matched Brands</div>' +
                  '<div class="up-explain-t">On: only brands where a cited domain could be assigned to the name, ' +

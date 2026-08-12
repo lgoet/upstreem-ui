@@ -45,6 +45,16 @@
 .udb-cb svg { width: 10px; height: 10px; display: block; }
 .udb-matched.is-on .udb-cb { background: var(--vc-text); border-color: var(--vc-text); color: var(--vc-bg); }
 
+/* Das Platzhalterlogo im Erklaerbeispiel. Grau und ohne Fuellung -- es soll als Beispiel lesbar
+   sein und nicht als echte Marke. Die Platte darunter (.up-explain-vis) ist in beiden Themes
+   hell, die Farbe ist darum fest und nicht aus den Theme-Tokens. */
+.udb-explain-logo {
+  width: 18px; height: 18px; flex: 0 0 18px; border-radius: 5px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: #f0f0ef; color: #8a8a85;
+}
+.udb-explain-logo svg { width: 12px; height: 12px; display: block; }
+
 /* ---------- Tabellenkasten ----------
    Rahmen, Radius (16) und Sticky-Mechanik kommen KOMPLETT aus core: .up-box am Kasten,
    .up-sticky an der Wurzel. Hier stand vorher ein Eigenbau mit Radius 12 und einer eigenen

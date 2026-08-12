@@ -67,6 +67,27 @@
              ONE PLAIN STRING, not JSON — unchanged from the old standalone. Split on "||".
 
   ── Filling the component ────────────────────────────────────────────────────
+  EMPFOHLEN: den Rohtext uebergeben und die Komponente parsen lassen. EIN Run-JavaScript-Schritt,
+  eine Zeile, kein JSON.parse im Workflow:
+
+      window.renderPerformanceRadar({ instanceId: "ROOTID_[dynamic id]", raw: `[RPC-Ergebnis]` });
+
+  Warum das der bessere Weg ist: der Text kommt auf dem Weg durch Bubble nicht immer heil an.
+  Zwei Faelle sind belegt, beide passieren VOR der Komponente und beide sind von hier aus nicht
+  zu verhindern -- aber aufzufangen:
+
+    * Ein JSON-null wird gelegentlich als GAR NICHTS durchgereicht, dann steht im Text
+      `"avg_rank_prev": ,` und JSON.parse wirft. Die Komponente setzt solche Stellen auf null.
+    * Der Text wird ab einer bestimmten Laenge ABGESCHNITTEN (beobachtet bei rund 114.000
+      Zeichen) und endet mitten in einer Zelle. Die Komponente schneidet dann hinter der letzten
+      VOLLSTAENDIGEN Zelle ab und zeigt, was angekommen ist. Lieber eine Matrix mit 80 statt 100
+      Zeilen als ein ewiger Ladezustand.
+
+  Beides wird in der Konsole als Warnung protokolliert, damit es nicht unbemerkt bleibt: leise
+  weniger Daten anzuzeigen waere genauso schlecht wie gar nichts anzuzeigen. Kommt gar nichts
+  Verwertbares an, steht "No data for this period" -- nie ein haengender Ladezustand.
+
+  Der alte Weg mit einem fertigen Objekt funktioniert unveraendert weiter:
   window.renderPerformanceRadar({
     instanceId: "...",
     metric: "visibility",            // optional; only honoured the FIRST time — after that the

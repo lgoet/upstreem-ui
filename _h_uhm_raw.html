@@ -1,0 +1,39 @@
+<meta charset="utf-8">
+<link rel="stylesheet" href="core.css?v=r1">
+<link rel="stylesheet" href="performance-radar.css?v=r1">
+<body style="margin:0;padding:20px;font-family:sans-serif">
+<!-- Harness fuer den Rohtext-Weg von renderPerformanceRadar: prueft, dass ein Payload mit
+     leeren Werten und ein ABGESCHNITTENER Payload trotzdem zu einer sichtbaren Matrix fuehren. -->
+<div class="up-root uhm-root" data-instance="r1" data-isdark="no" data-sticky-top="16"
+     data-metric-fn="bubble_fn_uhmMetric"
+     data-select-fn="bubble_fn_uhmSelect">
+  <div class="up-head">
+    <div class="up-heading">Performance Chart</div>
+    <div class="up-head-tools">
+      <div class="uhm-metric up-seg" role="tablist" aria-label="Metric">
+        <button class="up-seg-btn is-active" data-metric="visibility" type="button" role="tab">Visibility</button>
+        <button class="up-seg-btn" data-metric="rank" type="button" role="tab">Ranking</button>
+        <button class="up-seg-btn" data-metric="sentiment" type="button" role="tab">Sentiment</button>
+      </div>
+      <div class="uhm-pick">
+        <button class="uhm-pick-btn up-iconbtn" type="button" data-tip="Brands &amp; Topics"></button>
+        <div class="uhm-pick-menu" role="menu" aria-hidden="true"></div>
+      </div>
+    </div>
+  </div>
+  <div class="uhm-box"><div class="uhm-scroll"><div class="uhm-grid"></div></div></div>
+</div>
+
+<script src="core.js?v=r1"></script>
+<script src="performance-radar.js?v=r1"></script>
+<script>
+window.__ev = [];
+["uhmMetric","uhmSelect"].forEach(function(n){ window["bubble_fn_"+n] = function(p){ window.__ev.push([n,p]); }; });
+
+window.__hole = function(name){
+  var x = new XMLHttpRequest();
+  x.open("GET", name, false);
+  x.send(null);
+  return x.responseText;
+};
+</script>
