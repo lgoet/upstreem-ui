@@ -64,7 +64,14 @@
 
     var addBtn = root.querySelector(".up-ph-addbtn");
     if (addBtn){
-      addBtn.addEventListener("click", function(){ fire("data-add-fn", "bphAdd", {}); });
+      addBtn.addEventListener("click", function(){
+        /* Gleiche Reihenfolge wie im Prompts-Seitenkopf: liegt add-brand.js auf der Seite, oeffnet
+           der Knopf den Dialog; die Komponente feuert das Add-Event dann selbst. Ist die Datei
+           nicht eingebunden, bleibt das alte Event -- sonst haette diese Seite einen Knopf, der
+           nichts tut und in der Konsole auch nicht sagt warum. */
+        if (typeof window.openAddBrand === "function"){ window.openAddBrand(); return; }
+        fire("data-add-fn", "bphAdd", {});
+      });
     }
     var refreshBtn = root.querySelector(".bph-refreshbtn");
     if (refreshBtn){

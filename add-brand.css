@@ -1,0 +1,102 @@
+/* upstreem add-brand.css — der "Add Brand"-Dialog (Praefix uab). Braucht core.css.
+
+   Die Schale ist NICHT die Sache dieser Datei: die Wurzel traegt core's
+   .up-topicmodal-backdrop, die Karte .up-topicmodal-card. Damit kommen Overlay, z-index, Scrim,
+   Dark-Mode-Scrim, Radius, Schatten und die Show/Hide-Semantik aus dem Rahmen, den die App
+   ohnehin fuer ihre Modale benutzt -- genau wie bei add-prompts, dessen Kopfkommentar erklaert,
+   warum ein lokaler Nachbau und ein Top-Layer-Popover beide der falsche Weg waren.
+
+   Hier steht nur, was INNERHALB der Karte anders ist als im Topic-Formular. */
+
+.uab-card { animation: uab-rise-in 160ms cubic-bezier(.2,.7,.3,1); }
+.uab-backdrop.is-closing { animation: uab-fade-out 140ms ease forwards; }
+@keyframes uab-rise-in { from { opacity: 0; transform: translateY(8px) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes uab-fade-out { to { opacity: 0; } }
+
+/* Schmaler als add-prompts: dort steht eine Liste, hier zwei Felder. Zwei-Klassen-Selektor, weil
+   core's .up-topicmodal-card eine eigene Breite setzt und gleiche Spezifitaet die Reihenfolge
+   entscheiden liesse. */
+.uab-backdrop .uab-card {
+  width: 100%; max-width: 520px; box-sizing: border-box;
+  padding: 16px;
+  display: flex; flex-direction: column; gap: 32px;
+  overflow: visible;
+}
+.uab-card.is-saving { pointer-events: none; opacity: .6; }
+
+/* ---- Kopf (STYLEGUIDE 27: 22px/500 Heading, 16px/400 Subheading in Drittfarbe) ---- */
+.uab-head { display: flex; align-items: flex-start; gap: 12px; }
+.uab-heading { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.uab-title { font-size: 22px; font-weight: 500; line-height: 1.2; }
+.uab-sub { font-size: 16px; font-weight: 400; color: var(--vc-third); line-height: 1.3; }
+
+/* ---- Koerper ----
+   Die 32px aus 27 stehen zwischen Kopf, Koerper und Fuss. Innerhalb des Koerpers ist der Rhythmus
+   kleiner, sonst schiebt sich ein Dialog mit zwei Feldern unnoetig auseinander. */
+.uab-body { display: flex; flex-direction: column; gap: 24px; }
+.uab-field { display: flex; flex-direction: column; gap: 8px; }
+.uab-label { font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.2; }
+/* Der Hinweis steht direkt unter dem Label, nicht darunter mit vollem Feldabstand: er gehoert zum
+   Label, nicht zum Feld. Darum eigener Wrapper mit 4px statt der 8px des Feld-Gaps. */
+.uab-labelwrap { display: flex; flex-direction: column; gap: 4px; }
+.uab-hint { font-size: 12.5px; font-weight: 400; color: var(--vc-third); line-height: 1.4; }
+
+.uab-inwrap { position: relative; display: block; }
+.uab-in {
+  width: 100%; height: 40px; box-sizing: border-box;
+  padding: 0 12px;
+  border: 1px solid var(--vc-border); border-radius: 9px;
+  background: var(--up-surface); color: var(--vc-text);
+  font-family: inherit; font-size: 14px; line-height: 1;
+  outline: 0; transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+.uab-in::placeholder { color: var(--vc-third); }
+.uab-in:hover { border-color: var(--vc-hover-border); }
+/* Fokus-Ring aus core, ueber die --up-focus-Tokens. Kein Hintergrundwechsel. */
+.uab-in:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+
+/* Das Favicon sitzt IM Feld, nicht daneben: es gehoert zum eingegebenen Wert und soll nicht
+   aussehen wie ein zweites Control. 40px Einzug links macht ihm Platz. */
+.uab-inwrap.has-icon .uab-in { padding-left: 40px; }
+.uab-fav {
+  position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+  width: 20px; height: 20px; border-radius: 5px; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--vc-third); pointer-events: none;
+}
+.uab-fav img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.uab-fav svg { width: 15px; height: 15px; display: block; fill: none; stroke: currentColor;
+  stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Zeichenzaehler unter dem Feld, rechtsbuendig. Er faerbt sich erst am Limit ein -- ein dauerhaft
+   roter Zaehler waere eine Warnung ohne Anlass. */
+.uab-count { align-self: flex-end; font-size: 12px; font-weight: 500; color: var(--vc-third);
+  font-variant-numeric: tabular-nums; line-height: 1; }
+.uab-count.is-full { color: var(--vt-down); }
+
+/* ---- Fehlerzustand ----
+   Der Rahmen faerbt sich UND es steht ein Satz darunter. Nur ein roter Rahmen sagt "irgendetwas
+   stimmt hier nicht", aber nicht was -- und bei einer Domain ist genau das die Frage. */
+.uab-err { display: none; font-size: 12.5px; font-weight: 400; color: var(--vt-down); line-height: 1.4; }
+.uab-field.is-err .uab-err { display: block; }
+.uab-field.is-err .uab-in { border-color: var(--vt-down); }
+.uab-field.is-err .uab-in:focus { border-color: var(--vt-down); box-shadow: 0 0 0 var(--up-focus-w) rgba(176,32,12,0.16); }
+.up-root[data-theme="dark"] .uab-field.is-err .uab-in:focus { box-shadow: 0 0 0 var(--up-focus-w) rgba(210,93,93,0.24); }
+
+/* ---- Fuss ---- */
+.uab-foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.uab-cancel {
+  height: 34px; padding: 0 16px; border: 1px solid var(--vc-border); border-radius: 9px;
+  background: transparent; color: var(--vc-text); cursor: pointer;
+  font-family: inherit; font-size: 12.5px; font-weight: 600;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.uab-cancel:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
+/* Der Add-Knopf ist .up-topicmodal-save aus core -- hier steht nur, dass er nicht per margin-left
+   nach rechts geschoben wird, das macht hier justify-content der Fusszeile. */
+.uab-foot .up-topicmodal-save { margin-left: 0; }
+
+@media (max-width: 520px) {
+  .uab-foot { flex-direction: column-reverse; align-items: stretch; }
+  .uab-foot .uab-cancel, .uab-foot .up-topicmodal-save { width: 100%; }
+}

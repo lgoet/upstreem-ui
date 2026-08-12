@@ -37,11 +37,57 @@
     nav     {"page":"tracked"}  -> fires on every tab click, AFTER the sliding indicator has
                                    already been told to animate to it. One of exactly two values:
                                    tracked | discover.
-    add     {}                  -> "Add Brand" button. No fields at all — this component's whole
-                                   job here is "tell Bubble the button was clicked", not to carry
-                                   any data along with it.
+    add     {}                  -> NUR NOCH RUECKFALL. Der Loader unten zieht add-brand.js mit,
+                                   und damit oeffnet der Knopf den Dialog, statt dieses Event zu
+                                   feuern. Es bleibt bestehen fuer den Fall, dass die Datei fehlt:
+                                   dann haette der Knopf sonst gar keine Wirkung, und in der
+                                   Konsole staende auch nichts dazu. Deinen alten Workflow darauf
+                                   kannst du abschalten, aber nicht loeschen.
     refresh {}                  -> the icon-only Refresh button. Same "no fields" shape as add —
                                    this component does not reload anything itself.
+
+  ══ DER ADD-BRAND-DIALOG ══════════════════════════════════════════════════════
+  Kommt ueber den Loader unten mit (add-brand.css / add-brand.js) und hat KEIN eigenes
+  Bubble-Element: er baut sich beim ersten Oeffnen selbst nach <body>. Der Add-Knopf oben oeffnet
+  ihn, du musst dafuer nichts verdrahten.
+
+  ── Das Event, auf das du antwortest ─────────────────────────────────────────
+      bubble_fn_uabAddBrand   EIN JSON-String, wie ueberall:
+
+          {"team_id":"…","name":"Apple","domain":"apple.com"}
+
+  Toolbox-Element "JavaScript to Bubble", Publish value = yes, Typ Text. Die Werte holst du wie
+  gewohnt per Regex heraus:
+
+      name    (?<="name":")[^"]*
+      domain  (?<="domain":")[^"]*
+
+  DIE DOMAIN KOMMT SCHON FERTIG AN. Die Find&Replace-Kette, die bisher in deinem Workflow stand
+  (https:// weg, www. weg, Schraegstrich am Ende weg), ist nicht mehr noetig -- und der Dialog kann
+  zusaetzlich etwas, das sie nicht konnte: er schneidet einen Pfad ab. Aus
+  https://www.apple.com/de/store/ wird apple.com, aus HTTP://Example.CO.UK/pfad?x=1 wird
+  example.co.uk.
+
+  ── Vorausgefuellt oeffnen ───────────────────────────────────────────────────
+  Ein Run-JavaScript-Schritt, keine Instanz-Id:
+
+      openAddBrand({ name: `[Name]`, domain: `[Domain]` });
+
+  Beide Felder bleiben editierbar; der Fokus springt ins Domainfeld, wenn schon ein Name steht.
+  Die Domain laeuft durch dieselbe Normalisierung wie eine Eingabe von Hand, ein voller Link aus
+  einem RPC steht also sauber im Feld. Bubble reicht Run-JS-Werte gern als String durch -- ein
+  JSON-String als einziges Argument wird darum auch akzeptiert.
+
+  Weiter: closeAddBrand()  schliesst,  resetAddBrand()  leert beide Felder.
+
+  ── Was der Dialog selbst prueft ─────────────────────────────────────────────
+  Name und Domain muessen gefuellt sein, die Domain muss ein gueltiges Format haben. Sonst faerbt
+  sich das betroffene Feld und darunter steht, was fehlt -- das Event feuert dann NICHT und der
+  Dialog bleibt offen. Geprueft wird die Form (mindestens ein Punkt, erlaubte Zeichen, Endung ab
+  zwei Buchstaben), bewusst keine TLD-Liste: die veraltet, und ein Tippfehler darin sperrt eine
+  echte Marke aus.
+
+  Name maximal 75 Zeichen mit Zaehler unter dem Feld, Domain maximal 300.
 
   Regex reference for a Bubble "extract" step:
     (?<="page":")[^"]*
@@ -112,5 +158,9 @@
   function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
   css("core.css"); css("page-headers/brands-page-header.css");
   js("core.js"); js("page-headers/brands-page-header.js");
+  /* Der Add-Brand-Dialog. Er gehoert hierher und nicht in ein eigenes Bubble-Element: er hat kein
+     sichtbares Element, sein Ausloeser ist der Add-Knopf oben, und ohne diese zwei Zeilen faellt
+     der Knopf still auf das alte bphAdd-Event zurueck. */
+  css("add-brand.css"); js("add-brand.js");
 })();
 </script>
