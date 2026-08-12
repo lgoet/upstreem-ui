@@ -134,11 +134,6 @@
             '<button type="button" class="udb-matched is-on" data-matched aria-pressed="true">' +
               '<span class="udb-cb">' + ICON.check + '</span><span>Matched Brands</span>' +
             '</button>' +
-            /* Die Erklaerung haengt am ⓘ-Icon, nicht am Knopf -- dasselbe .up-th-info, das in den
-               Tabellenkoepfen jeder anderen Komponente steht. Vorher lag makeExplain auf dem Knopf
-               selbst: dieselbe Karte, aber ohne das Icon, an dem man sie ueberhaupt erwartet, und
-               sie sprang beim blossen Ueberfahren des Schalters auf. */
-            '<span class="up-th-info udb-info" data-explain="matched">' + ICON.info + '</span>' +
             '<div class="up-search">' +
               '<button type="button" class="up-iconbtn up-search-btn" aria-label="Search">' + ICON.search + '</button>' +
               '<div class="up-search-box">' +
@@ -186,9 +181,17 @@
       /* Der Tooltip erklaert die Mechanik, nicht den Knopf. "Matched Brands" allein sagt keinem,
          was passiert, wenn man es abschaltet -- und genau das ist die Frage. */
       UC.makeExplain({
-        root: root, getIsDark: isDark, triggerSel: ".up-th-info",
+        root: root, getIsDark: isDark, triggerSel: "[data-matched]",
         html: function () {
-          return '<div class="up-explain-h">Matched Brands</div>' +
+          /* MIT .up-explain-vis, der hellen Beispielplatte oben. Genau daran erkennt man diese
+             Karte als Erklaerer: in jedem Tabellenkopf steht dort ein Beispiel des Wertes, den die
+             Spalte zeigt, und darunter Ueberschrift und Text auf dem dunklen Grund. Meine Karte
+             hatte nur die beiden Textzeilen -- selbes Bauteil, aber ohne die Platte sieht sie aus
+             wie ein gewoehnlicher Tooltip statt wie die Erklaerer ueberall sonst. */
+          return '<div class="up-explain-vis">' +
+                   '<span class="up-explain-row">' + ICON.check + '<span>Notion &middot; notion.com</span></span>' +
+                 '</div>' +
+                 '<div class="up-explain-h">Matched Brands</div>' +
                  '<div class="up-explain-t">On: only brands where a cited domain could be assigned to the name, ' +
                  'the safer list. Off: brands are matched on the name alone, which finds more but also ' +
                  'catches look-alikes.</div>';

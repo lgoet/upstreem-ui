@@ -45,14 +45,6 @@
 .udb-cb svg { width: 10px; height: 10px; display: block; }
 .udb-matched.is-on .udb-cb { background: var(--vc-text); border-color: var(--vc-text); color: var(--vc-bg); }
 
-/* Das ⓘ-Icon neben dem Matched-Schalter ist dasselbe .up-th-info wie in den Tabellenkoepfen.
-   Dort ist es per Vorgabe unsichtbar und erscheint erst beim Ueberfahren der Kopfzelle
-   (.up-th:hover .up-th-info) -- in der Werkzeugleiste gibt es aber kein .up-th, es waere also
-   dauerhaft unsichtbar. Hier steht es darum fest sichtbar. Das margin-left:auto aus core wird
-   ebenfalls zurueckgenommen: in einer Kopfzelle schiebt es das Icon an den rechten Rand, in der
-   Werkzeugleiste wuerde es alles danach nach rechts druecken. */
-.udb-info.udb-info { opacity: 1; margin-left: 0; }
-
 /* ---------- Tabellenkasten ----------
    Rahmen, Radius (16) und Sticky-Mechanik kommen KOMPLETT aus core: .up-box am Kasten,
    .up-sticky an der Wurzel. Hier stand vorher ein Eigenbau mit Radius 12 und einer eigenen
@@ -140,6 +132,10 @@
 .udb-root.is-loading .udb-loading {
   display: grid; place-items: center; min-height: 420px;
   padding: clamp(24px, 4vw, 48px); background: var(--vc-bg);
+  /* Dieselben 16px wie der Tabellenkasten. Im Sticky-Modus nimmt .up-sticky dem Kasten sein
+     overflow:hidden, die Flaeche wird also nicht mehr von aussen rund geschnitten und muss ihren
+     Radius selbst mitbringen. */
+  border-radius: 16px;
 }
 .udb-root.is-loading .udb-loading-inner { animation: udbLoadIn 260ms ease both; }
 @keyframes udbLoadIn { from { opacity: 0; } to { opacity: 1; } }
