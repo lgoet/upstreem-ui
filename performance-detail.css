@@ -114,18 +114,24 @@
   flex: 1 1 auto; min-width: 0; font-size: 13px; font-weight: 400; color: var(--vc-muted);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-/* Gedaempft wie der Name daneben. Der Wert stand vorher in der Primaerfarbe und war damit die
-   einzige Spalte, die auf jeder Zeile gleich laut war -- die eigene Marke hob sich dann nur noch
-   ueber den Namen ab, nicht mehr ueber die Zeile. Die is-self-Regel unten holt beides zurueck. */
+/* Gedaempft wie der Name daneben. Der Wert stand in der Primaerfarbe und war damit die einzige
+   Spalte, die auf jeder Zeile gleich laut war -- die eigene Marke hob sich nur noch ueber den
+   Namen ab, nicht mehr ueber die Zeile. Die is-self-Regel unten holt beides zurueck.
+
+   Die Farbe steht auf .upd-stand-val.up-num, nicht auf .upd-stand-val allein: die Zelle traegt
+   BEIDE Klassen, und core setzt .up-num{color:var(--vc-text)}. Beide waeren 0,1,0 -- gleich
+   stark, also entschiede die Reihenfolge der Dateien, welche gewinnt. Mit der Doppelklasse
+   (0,2,0) ist die Frage nicht mehr zu stellen. */
 .upd-stand-val {
   flex: 0 0 auto; min-width: 52px; text-align: right; font-size: 13px;
-  color: var(--vc-muted); font-variant-numeric: tabular-nums;
+  font-variant-numeric: tabular-nums;
 }
+.upd-stand-val.up-num { color: var(--vc-muted); font-weight: 400; }
 /* Die eigene Marke ist die einzige Zeile in Primaerfarbe -- daran findet man sie, ohne die Liste
    zu lesen. */
 .upd-stand-row.is-self .upd-stand-name { color: var(--vc-text); font-weight: 500; }
 .upd-stand-row.is-self .upd-stand-idx { color: var(--vc-text); }
-.upd-stand-row.is-self .upd-stand-val { color: var(--vc-text); font-weight: 500; }
+.upd-stand-row.is-self .upd-stand-val.up-num { color: var(--vc-text); font-weight: 500; }
 
 /* ---------- Abschnitte ---------- */
 .upd-sec { padding: 20px; }
@@ -199,6 +205,32 @@
 /* Der Bezugswert steht kleiner daneben, nicht als eigene Spalte: er erklaert die Zahl links,
    er ist keine zweite Zahl. */
 .upd-of { font-size: 12px; font-weight: 400; color: var(--vc-third); white-space: nowrap; }
+
+/* ---------- Beispielplatten in der Erklaerkarte ----------
+   Die Karte wird von UC.makeExplain an den body gehaengt, also ausserhalb jeder .up-root. Dort
+   loest KEIN --vc-Token auf: der Ring waere ohne Strich, das "of N" ohne Farbe. Beides bekommt
+   hier feste Werte, und zwar zweimal -- die Karte ist invertiert, im hellen Theme ist die Platte
+   dunkel und umgekehrt.
+
+   Die Platte soll aussehen wie die Zeile darunter, nur eine Spur groesser: 13px statt der 12px,
+   die die geteilte Regel setzt. Nur hier, damit die Erklaerkarten der anderen Komponenten
+   unveraendert bleiben. */
+.upd-explain-vis .up-explain-row { font-size: 13px; }
+/* Zahl und Nebentext exakt wie in der Zelle darunter: 14px / 12px, und derselbe 6px-Abstand
+   zwischen beiden wie in .upd-td-cnt. Nur die Farben sind gedreht, weil die Platte invertiert
+   ist -- die Groessen sollen sich nicht unterscheiden, sonst ist es kein Beispiel mehr. */
+.upd-explain-vis .up-num { font-size: 14px; font-weight: 500; color: inherit; }
+.upd-explain-vis .upd-of { font-size: 12px; color: rgba(31,31,27,0.55); }
+.upd-explain-vis .up-explain-row { gap: 6px; }
+/* Der Ring behaelt seine echte Groesse. Die geteilte Regel .up-explain-row svg setzt 14px und ist
+   genauso stark wie .upd-ring svg -- ohne diese Zeile entschiede die Ladereihenfolge. */
+.upd-explain-vis .upd-ring svg { width: 22.4px; height: 22.4px; }
+.upd-explain-vis .upd-ring-track { stroke: #e0e2e6; }
+.upd-explain-vis .upd-ring-fill  { stroke: #1f1f1b; }
+/* Dark: die Platte ist dunkel, also drehen sich Ring und Nebentext mit. */
+.up-explain[data-theme="dark"] .upd-explain-vis .upd-of { color: rgba(240,240,240,0.55); }
+.up-explain[data-theme="dark"] .upd-explain-vis .upd-ring-track { stroke: #3a3a3a; }
+.up-explain[data-theme="dark"] .upd-explain-vis .upd-ring-fill  { stroke: #f0f0f0; }
 
 /* ---------- Loading ---------- */
 .upd-root.is-loading .upd-kpis,

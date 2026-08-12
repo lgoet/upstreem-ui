@@ -577,15 +577,16 @@
        der Karte und Spalte irgendwann auseinanderlaufen. */
     function varVisual(key){
       if (key === "sov"){
-        return '<span class="up-explain-row"><span class="up-num">27.5%</span>' + ringHtml(27.5) + '</span>' +
-               '<span class="up-explain-row"><span class="up-num">8.7%</span>' + ringHtml(8.7) + '</span>';
+        /* Eine Zahl, dahinter derselbe Ring wie in der Zelle -- nicht zwei Zeilen. Die Platte
+           soll die Spalte zeigen, nicht ihre Spannweite vorfuehren. */
+        return '<span class="up-explain-row"><span class="up-num">62.5%</span>' + ringHtml(62.5) + '</span>';
       }
       if (key === "cnt"){
         return '<span class="up-explain-row"><span class="up-num">19</span>' +
                '<span class="upd-of">of 69</span></span>';
       }
-      return '<span class="up-explain-row">VW ID.7 Tourer</span>' +
-             '<span class="up-explain-row">Volkswagen ID.7</span>';
+      return '<span class="up-explain-row">Mercedes S500</span>' +
+             '<span class="up-explain-row">Mercedes E Class</span>';
     }
 
     if (UC.makeExplain){
@@ -594,7 +595,11 @@
         html: function(key){
           var e = VAR_EXPLAIN[key];
           if (!e) return "";
-          return '<div class="up-explain-vis">' + varVisual(key) + '</div>' +
+          /* upd-explain-vis als Marke: die Erklaerkarte haengt im body, ausserhalb jeder
+             .up-root -- die --vc-Tokens loesen dort NICHT auf. Ring und "of N" brauchen deshalb
+             eigene Farben, und die Schriftgroesse laesst sich nur hier anheben, ohne die
+             Erklaerkarten der sechs anderen Komponenten mitzuziehen. */
+          return '<div class="up-explain-vis upd-explain-vis">' + varVisual(key) + '</div>' +
                  '<div class="up-explain-h">' + esc(e.h) + '</div>' +
                  '<div class="up-explain-t">' + esc(e.t) + '</div>';
         }
