@@ -24,9 +24,10 @@
       --vt-row-hover-solid: #f7f7f7;
       --vt-up: #2ea84a; --vt-down: #b0200c;
       --vc-hover-border: #6f6f6f;
-      /* Fokusfarbe der Eingabefelder. Dasselbe Blau, das die App fuer "In Progress" benutzt --
-         eine Akzentfarbe, nicht zwei. Der Ring ist derselbe Ton bei 18%. */
-      --up-focus: #2384E2; --up-focus-ring: rgba(35,132,226,0.18);
+      /* Fokusfarbe der Eingabefelder. Der Ring ist derselbe Ton, nur transparent -- eine Farbe,
+         zwei Deckkraefte. --up-focus-w steht hier und nicht in den Regeln, weil die Ringbreite
+         sonst in zehn Dateien einzeln stuende und beim naechsten Mal auseinanderliefe. */
+      --up-focus: #4A9EFF; --up-focus-ring: rgba(74,158,255,0.20); --up-focus-w: 2px;
       /* Sticky-Header: Abstand von oben in px = Hoehe der Floating-Topbar. Wird auch ueber
          data-sticky-top am Root gesetzt (siehe oben bei den dynamischen Werten). */
       --up-sticky-top: 171px; --up-thead-off: 32px;
@@ -86,7 +87,7 @@
       --vt-up: #60d25d; --vt-down: #d25d5d;
       --vc-hover-border: #707070;
       /* Auf dunklem Grund braucht der Ring mehr Deckkraft, sonst verschwindet er im Panel. */
-      --up-focus: #4a9eff; --up-focus-ring: rgba(74,158,255,0.26);
+      --up-focus: #6DB2FF; --up-focus-ring: rgba(109,178,255,0.28);
     }
 
     /* ---------- Fokus-Ring fuer Eingabefelder ----------
@@ -106,7 +107,7 @@
     .up-field:focus, .up-field:focus-visible,
     .up-fieldwrap:focus-within {
       border-color: var(--up-focus);
-      box-shadow: 0 0 0 4px var(--up-focus-ring);
+      box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring);
       outline: 0;
     }
     /* Hover darf den Fokus nicht ueberschreiben: die Hover-Regel eines Feldes steht meistens in
@@ -114,7 +115,7 @@
        die Ladereihenfolge entscheidet -- derselbe Fehler, der hier schon dreimal aufgetreten ist.
        Die doppelte Klasse hebt die Spezifitaet an, statt sich auf die Reihenfolge zu verlassen. */
     .up-field.up-field:focus, .up-field.up-field:focus-visible {
-      border-color: var(--up-focus); box-shadow: 0 0 0 4px var(--up-focus-ring);
+      border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring);
     }
 
     /* ---------- toolbar ---------- */
@@ -458,7 +459,7 @@
       color: var(--vc-text); font: inherit; font-size: 13px; outline: 0;
     }
     .up-ment-search::placeholder { color: var(--vc-third); }
-    .up-ment-search:focus { border-color: var(--up-focus); box-shadow: 0 0 0 4px var(--up-focus-ring); outline: 0; }
+    .up-ment-search:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); outline: 0; }
     .up-ment-searchwrap { position: relative; margin: 0 0 8px; flex: 0 0 auto; }
     .up-ment-searchwrap .up-ment-search { margin: 0; padding-right: 30px; }
     .up-ment-searchclear {
@@ -544,7 +545,7 @@
     }
     .up-ddsearch-in::placeholder { color: var(--vc-third); }
     .up-ddsearch-in:hover { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
-    .up-ddsearch-in:focus { border-color: var(--up-focus); box-shadow: 0 0 0 4px var(--up-focus-ring); outline: 0; }
+    .up-ddsearch-in:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); outline: 0; }
     .up-ddsearch-ic {
       position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
       width: 15px; height: 15px; color: var(--vc-third); pointer-events: none;

@@ -1370,7 +1370,7 @@
   .am-prev-project.is-collapsed .am-prev-proj-folder .am-fc { display: inline-flex; }
   .am-prev-proj-title { font-size: 13px; font-weight: 600; color: var(--am-text); flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .am-prev-proj-input { flex: 1 1 auto; min-width: 0; height: 26px; box-sizing: border-box; font-size: 13px; font-weight: 600; color: var(--am-text); font-family: inherit; background: var(--am-bg); border: 1px solid var(--am-border-strong); border-radius: 6px; padding: 0 6px; outline: none; display: none; }
-  .am-prev-proj-input:focus { border-color: var(--up-focus); box-shadow: 0 0 0 4px var(--up-focus-ring); outline: 0; }
+  .am-prev-proj-input:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); outline: 0; }
   .am-prev-proj-actions, .am-prev-proj-edit-actions { display: none; flex: 0 0 auto; align-items: center; gap: 2px; }
   .am-prev-proj-head:hover .am-prev-proj-actions { display: inline-flex; }
   .am-prev-project.is-editing .am-prev-proj-actions, .am-prev-project.is-editing .am-prev-proj-title, .am-prev-project.is-editing .am-prev-proj-folder { display: none; }
@@ -1397,7 +1397,7 @@
     font-family: inherit; background: var(--am-bg); border: 1px solid var(--am-border-strong);
     border-radius: 6px; padding: 0 6px; outline: none; display: none;
   }
-  .am-prev-item-input:focus { border-color: var(--up-focus); box-shadow: 0 0 0 4px var(--up-focus-ring); outline: 0; }
+  .am-prev-item-input:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); outline: 0; }
   .am-prev-actions, .am-prev-edit-actions { display: none; flex: 0 0 auto; align-items: center; gap: 2px; }
   .am-prev-item:hover .am-prev-actions, .am-prev-item.is-menu-open .am-prev-actions { display: inline-flex; }
   /* touch: don't reveal actions on hover (that causes the iOS "first tap = hover, second tap = click"
@@ -1597,7 +1597,7 @@
     padding: 0 10px; border: 1px solid var(--am-border-strong); border-radius: 8px;
     background: var(--am-card); color: var(--am-text); font-size: 14px; font-weight: 600; font-family: inherit; outline: none;
   }
-  .am-ct-input:focus { border-color: var(--up-focus); box-shadow: 0 0 0 4px var(--up-focus-ring); outline: 0; }
+  .am-ct-input:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); outline: 0; }
   .am-ct-edit-actions { display: none; align-items: center; gap: 5px; margin-left: 6px; }   /* +2px flex gap = 8px from the input */
   .am-ct-mini {
     width: 28px; height: 28px; flex: 0 0 auto; border: 1px solid var(--am-border); border-radius: 8px; background: var(--am-card);

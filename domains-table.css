@@ -337,7 +337,7 @@
   background: transparent; width: 200px; box-sizing: border-box;
   transition: border-color 120ms ease; }
 .udt-sub-search:hover { border-color: var(--vc-hover-border); }
-.udt-sub-search:focus-within { border-color: var(--up-focus); box-shadow: 0 0 0 4px var(--up-focus-ring); outline: 0; }
+.udt-sub-search:focus-within { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); outline: 0; }
 .udt-sub-search-ic { width: 15px; height: 15px; flex: 0 0 15px; color: var(--vc-muted); }
 .udt-sub-search-ic svg { width: 15px; height: 15px; display: block; }
 .udt-sub-search-in { flex: 1 1 auto; min-width: 0; border: 0; outline: none; background: transparent;

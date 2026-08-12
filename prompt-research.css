@@ -202,7 +202,7 @@
   padding: 16px; display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: end;
   position: relative; transition: border-color 170ms ease, box-shadow 170ms ease;
 }
-.upr-composer:focus-within { border-color: var(--up-focus); box-shadow: 0 0 0 4px var(--up-focus-ring); outline: 0; }
+.upr-composer:focus-within { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); outline: 0; }
 .upr-textarea {
   width: 100%; min-height: 90px; max-height: 180px; resize: none; border: 0; outline: 0;
   background: transparent; color: var(--vc-text); font-size: 15px; line-height: 1.45; font-weight: 400; padding: 0;
