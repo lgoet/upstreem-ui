@@ -1,0 +1,119 @@
+<!--
+  UPSTREEM — DISCOVER UNTRACKED BRANDS (Praefix udb)
+
+  Zeigt die wichtigsten Marken, die in den AI-Antworten des Teams vorkommen, aber NICHT getrackt
+  werden -- absteigend nach Visibility, immer nur die Spitze, die der RPC liefert (aktuell 30).
+  Jede Zeile hat einen Track-Knopf.
+
+  ── BEWUSST NICHT VORHANDEN ──────────────────────────────────────────────────
+  Keine Sortierung, keine Pagination, kein Zeilenklick. Die Reihenfolge IST die Aussage der
+  Tabelle ("das sind die wichtigsten"); ein zweiter Sortierschluessel wuerde sie zerreden, und
+  eine zweite Seite gibt es nicht, weil der Server schon nur die Spitze schickt.
+
+  ── ATTRIBUTE AUF DEM WURZEL-DIV ─────────────────────────────────────────────
+  | Attribut       | Pflicht | Bedeutung                                           |
+  |----------------|---------|-----------------------------------------------------|
+  | data-instance  | ja      | frei gewaehlt, muss zu den Aufrufen unten passen     |
+  | data-cdn-pin   | ja      | Commit-Hash, identisch mit allen anderen Komponenten |
+  | data-isdark    | nein    | "yes" / "no", sonst folgt es dem Seiten-Theme        |
+  | data-search-fn | nein    | Standard bubble_fn_udbSearch                         |
+  | data-matched-fn| nein    | Standard bubble_fn_udbMatched                        |
+  | data-track-fn  | nein    | Standard bubble_fn_udbTrack                          |
+
+  ── DER LADEZUSTAND IST HIER KEIN DETAIL ─────────────────────────────────────
+  Der RPC laeuft bei grossen Teams 20-30 Sekunden. Setz darum als ERSTEN Schritt deines Workflows:
+
+      setDiscoverBrandsLoading("brands1", "yes");
+
+  Dann laeuft eine Flaeche mit einer wechselnden Statuszeile, bis renderDiscoverBrands() kommt --
+  das beendet den Ladezustand von selbst, du brauchst kein "no" hinterher. Ein Skelett aus grauen
+  Balken waere hier falsch: es behauptet, es kaeme gleich etwas.
+
+  ── DATEN HEREIN ─────────────────────────────────────────────────────────────
+  Payload nach STYLEGUIDE 47 in BACKTICKS.
+
+      window.renderDiscoverBrands(`{
+        "instanceId": "brands1",
+        "rows": [ RESPONSE ],
+        "total_responses": 62
+      }`);
+
+  EIN Argument, die Instanz steckt DARIN -- gleiche Form wie renderDomainsTable und jede andere
+  Tabelle. Die beiden Setter unten nehmen die Instanz dagegen als erstes Argument, auch das wie
+  ueberall sonst.
+
+  Erwartete Felder pro Zeile -- genau die Form, die der RPC schon liefert:
+
+      name              Markenname
+      visibility_pct    Zahl, wird ohne Nachkommastelle angezeigt
+      mentioned_count   Zahl
+      runs_total        Zahl. Rueckfall fuer "Total Responses analyzed", falls du
+                        total_responses nicht mitgibst -- steht ohnehin in jeder Zeile.
+      recognized_urls   Liste. Die Tabelle nimmt den ERSTEN Eintrag und liest daraus
+                        domain, root_url und favicon_url. Leere Liste heisst: kein
+                        Domain-Treffer, die Zelle zeigt dann einen Strich.
+
+  Weitere Aufrufe:
+
+      window.setDiscoverBrandsLoading("brands1", "yes" | "no");
+      window.resetDiscoverBrands("brands1");     // leert alles, feuert KEINE Events
+
+  ── EVENTS AUS DER KOMPONENTE ────────────────────────────────────────────────
+  Alle als EIN JSON-String, Toolbox "JavaScript to Bubble", Publish value = yes, Typ Text.
+
+  | Funktion              | Wann                        | Payload                                  |
+  |-----------------------|-----------------------------|------------------------------------------|
+  | bubble_fn_udbSearch   | Suchfeld, entprellt         | {"team_id":"…","q":"…"}                  |
+  | bubble_fn_udbMatched  | Matched-Schalter geklickt   | {"team_id":"…","matched":"yes"|"no"}     |
+  | bubble_fn_udbTrack    | Track-Knopf in einer Zeile  | {"team_id":"…","name":"…","domain":"…"}  |
+
+  ZUM SUCHFELD: die Tabelle filtert die 30 Zeilen SOFORT im Browser und schickt das Event
+  trotzdem. Du musst darauf nicht antworten -- tu es nur, wenn dein RPC breiter suchen soll als
+  die 30 Zeilen, die gerade dastehen.
+
+  ZUM MATCHED-SCHALTER: der aendert die serverseitige Auswahl, nicht nur die Anzeige. Die
+  Komponente geht darum beim Klick von selbst in den Ladezustand und wartet auf neue Daten. Dein
+  Workflow MUSS antworten, sonst bleibt die Flaeche stehen.
+    matched = yes  ->  nur Marken, denen eine zitierte Domain klar zugeordnet werden konnte
+    matched = no   ->  reines Matching auf den Namen: findet mehr, faengt aber auch Namensvettern
+
+  ZUM TRACK-KNOPF: er sperrt sich sofort nach dem Klick, damit niemand zweimal drueckt. Lauf am
+  Ende deines Track-Workflows renderDiscoverBrands() erneut -- die angelegte Marke ist dann
+  getrackt und faellt aus der Liste.
+
+  ── HOEHE DES BUBBLE-ELEMENTS ────────────────────────────────────────────────
+  Fit height. Die Tabelle hat keine Pagination und waechst mit der Zeilenzahl.
+-->
+
+<div class="up-root udb-root"
+     data-instance="brands1"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="IS_DARK"
+     data-search-fn="bubble_fn_udbSearch"
+     data-matched-fn="bubble_fn_udbMatched"
+     data-track-fn="bubble_fn_udbTrack"></div>
+
+<!-- Das Wurzel-Div ist bewusst leer: die Komponente baut ihren gesamten Innenaufbau selbst. -->
+
+<script>
+(function(){
+  /* Loader nach STYLEGUIDE 26: den Pin ueber getElementsByClassName lesen, NIEMALS ueber
+     document.currentScript — Bubble fuehrt Scripts nicht in DOM-Reihenfolge aus. */
+  function readPin(cls){
+    var els = document.getElementsByClassName(cls), i, p;
+    for (i = 0; i < els.length; i++){
+      p = els[i].getAttribute("data-cdn-pin");
+      if (p && p !== "CDN_" + "PIN") return p;
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("udb-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(url, make){ if (L[url]) return; L[url] = 1; make(url); }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+
+  css("core.css");            js("core.js");
+  css("discover-brands.css"); js("discover-brands.js");
+})();
+</script>

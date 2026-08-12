@@ -1,0 +1,194 @@
+/* upstreem discover-brands.css — "Discover Untracked Brands" (Praefix udb). Braucht core.css.
+
+   Tabellenrahmen, Kopfzeile, Suche, Menue-Schale, Leerzustand und Sticky-Header kommen aus core
+   (.up-table / .up-thead / .up-row / .up-th / .up-td / .up-head / .up-search / .up-menu).
+   Hier steht nur, was diese Tabelle eigen hat: das Spaltenraster, die Ladeflaeche und die drei
+   Zelltypen (Marke, Domain mit Aufruf-Pfeil, Track-Knopf).
+
+   ── Warum das Raster hier von Hand steht und nicht aus UC.makeColumns kommt ──
+   makeColumns legt das Layout als EINE fuehrende Spalte plus Rest plus Aktionsspalte an. Diese
+   Tabelle beginnt aber mit einer Indexspalte (#), die weder die fuehrende Datenspalte ist noch
+   sich ziehen laesst -- sie passt in dieses Modell nicht hinein. Dazu kommt: es gibt hier keine
+   Sortierung, keine Pagination und kein Spaltenziehen, also faellt der groesste Teil des Kits
+   ohnehin weg, und die Abwurfreihenfolge ist vorgegeben (erst Domain, dann Mentioned) statt
+   automatisch. Das Menue selbst benutzt die Core-Primitive, nur die Rasterrechnung ist eigen. */
+
+.udb-root { position: relative; }
+
+/* ---------- Kopfzeile ---------- */
+/* Steht neben der Ueberschrift, nicht darunter: es ist die Bezugsgroesse fuer jede Prozentzahl
+   in der Tabelle und gehoert damit in dieselbe Zeile wie der Titel. */
+.udb-total { font-size: 13px; font-weight: 400; color: var(--vc-muted); white-space: nowrap;
+  margin-left: 12px; flex: 0 0 auto; }
+.udb-total.is-sk { width: 168px; height: 13px; border-radius: 4px; background: var(--vc-sk);
+  animation: uutpulse 1.2s ease-in-out infinite; }
+
+/* Der Matched-Schalter ist ein Knopf mit Checkbox, kein nacktes Kontrollkaestchen: er sitzt in
+   einer Reihe mit Suche und Zahnrad und muss dieselbe 32px-Hoehe und dieselbe Trefferflaeche
+   haben wie die beiden. */
+.udb-matched {
+  display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px;
+  border: 1px solid var(--vc-border); border-radius: 8px;
+  background: var(--vc-bg); color: var(--vc-muted);
+  font-family: inherit; font-size: 13px; font-weight: 500; line-height: 1;
+  white-space: nowrap; cursor: pointer; outline: 0; flex: 0 0 auto;
+  transition: background .14s ease, border-color .14s ease, color .14s ease;
+}
+.udb-matched:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); color: var(--vc-text); }
+.udb-matched.is-on { color: var(--vc-text); }
+.udb-cb {
+  width: 16px; height: 16px; flex: 0 0 16px; border-radius: 5px;
+  border: 1px solid var(--vc-border); background: var(--vc-bg);
+  display: inline-flex; align-items: center; justify-content: center; color: transparent;
+  transition: background .14s ease, border-color .14s ease, color .14s ease;
+}
+.udb-cb svg { width: 10px; height: 10px; display: block; }
+.udb-matched.is-on .udb-cb { background: var(--vc-text); border-color: var(--vc-text); color: var(--vc-bg); }
+
+/* ---------- Tabellenkasten ---------- */
+.udb-box {
+  position: relative; border: 1px solid var(--vc-border); border-radius: 12px;
+  background: var(--vc-bg); overflow: hidden;
+}
+/* Sticky-Kopf. Der Kasten selbst darf dafuer NICHT overflow:hidden auf der Y-Achse haben, sonst
+   klebt nichts -- der Radius wird darum ueber den Kasten geclippt und der Kopf sitzt im
+   normalen Seitenfluss. --up-sticky-top kommt aus core und ist die Hoehe der Floating-Topbar. */
+.udb-root .up-thead { position: sticky; top: var(--up-sticky-top); z-index: 3; }
+
+/* ---------- Spaltenraster ----------
+   EINE Quelle fuer Kopf und Zeilen. Die drei Varianten unterscheiden sich nur darin, welche
+   Spalten ueberhaupt vorkommen; die Reihenfolge und die festen Breiten bleiben gleich, damit beim
+   Umschalten nichts wandert, was bleibt. */
+.udb-root .up-thead, .udb-root .up-row {
+  display: grid;
+  grid-template-columns: 52px minmax(160px, 1fr) 116px 132px minmax(150px, 0.8fr) 108px;
+  align-items: center;
+}
+/* Domain faellt zuerst: sie ist die breiteste Spalte und die einzige, deren Inhalt auch in der
+   Markenzeile darueber steckt (die Domain ist die des Markeneintrags). */
+.udb-root.is-nar .up-thead, .udb-root.is-nar .up-row {
+  grid-template-columns: 52px minmax(140px, 1fr) 104px 124px 108px;
+}
+/* Dann Mentioned Count. # , Brand, Visibility und Track bleiben IMMER stehen -- ohne die vier
+   ist die Tabelle keine Tabelle mehr, sondern eine Namensliste. */
+.udb-root.is-vnar .up-thead, .udb-root.is-vnar .up-row {
+  grid-template-columns: 40px minmax(120px, 1fr) 84px 44px;
+}
+.udb-root.is-nar  .udb-c-domain,   .udb-root.is-nar  .udb-h-domain   { display: none; }
+.udb-root.is-vnar .udb-c-mentions, .udb-root.is-vnar .udb-h-mentions { display: none; }
+
+/* Diese Tabelle hat keinen Zeilenklick -- nur der Track-Knopf und der Domain-Pfeil sind
+   anklickbar. Der Zeiger darf das nicht anders behaupten. */
+.udb-root .up-row { height: 60px; flex: 0 0 60px; cursor: default; }
+.udb-root .up-th, .udb-root .up-td { padding: 0 12px; }
+
+/* ---------- Zellen ---------- */
+.udb-idx { font-size: 12.5px; font-weight: 500; color: var(--vc-third); font-variant-numeric: tabular-nums; }
+
+.udb-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.udb-logo {
+  width: 26px; height: 26px; flex: 0 0 26px; border-radius: 7px; overflow: hidden;
+  background: var(--vt-logo-bg); border: 1px solid var(--vc-border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 600; color: var(--vc-muted);
+}
+.udb-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.udb-name { font-size: 13.5px; font-weight: 500; color: var(--vc-text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+/* ---------- Domain mit Aufruf-Pfeil ----------
+   Der Pfeil erscheint beim Ueberfahren der ZELLE, belegt seinen Platz aber immer: erschiene er
+   aus dem Nichts, rueckte der Domaintext bei jedem Hover zur Seite. */
+.udb-domwrap { display: flex; align-items: center; gap: 6px; min-width: 0; width: 100%; }
+.udb-dom { font-size: 13px; color: var(--vc-muted); white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; min-width: 0; }
+.udb-go {
+  width: 22px; height: 22px; flex: 0 0 22px; border: 0; border-radius: 6px; padding: 0;
+  background: transparent; color: var(--vc-third); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity .14s ease, color .14s ease, background .14s ease;
+}
+.udb-go svg { width: 14px; height: 14px; display: block; }
+.udb-c-domain:hover .udb-go, .udb-go:focus-visible { opacity: 1; }
+.udb-go:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
+.udb-c-domain:hover .udb-dom { color: var(--vc-text); }
+/* Ohne Domain steht ein Strich, kein leeres Feld -- leer und "nichts zugeordnet" duerfen nicht
+   gleich aussehen. */
+.udb-dom-none { font-size: 13px; color: var(--vc-third); }
+
+/* ---------- Track-Knopf ---------- */
+.udb-track {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 30px; padding: 0 12px; border: 0; border-radius: 8px;
+  background: var(--vc-text); color: var(--vc-bg);
+  font-family: inherit; font-size: 12.5px; font-weight: 600; line-height: 1;
+  cursor: pointer; outline: 0; white-space: nowrap;
+  transition: opacity .14s ease;
+}
+.udb-track:hover { opacity: .88; }
+.udb-track svg { width: 13px; height: 13px; flex: 0 0 13px; display: block; }
+.udb-track:disabled { background: var(--vc-heading-bg); color: var(--vc-third); cursor: default; }
+/* Schmal: nur noch das Icon, quadratisch. Die Beschriftung faellt weg, nicht der Knopf -- er ist
+   der einzige Grund, warum diese Tabelle ueberhaupt da ist. */
+.udb-root.is-vnar .udb-track { width: 32px; height: 32px; padding: 0; gap: 0; }
+.udb-root.is-vnar .udb-track-label { display: none; }
+.udb-root.is-vnar .udb-c-action { justify-content: center; padding: 0 6px; }
+
+/* ---------- Ladeflaeche ----------
+   Bauart aus prompt-research uebernommen (schwebender Kern mit zwei pulsenden Ringen plus eine
+   wechselnde Statuszeile), weil dieselbe Wartezeit dahintersteht: der RPC laeuft bei grossen
+   Teams 20-30 Sekunden. Ein Skelett aus grauen Balken behauptet in dieser Zeit, es kaeme gleich
+   etwas; diese Flaeche sagt, dass gerechnet wird. */
+.udb-loading {
+  position: absolute; inset: 0; z-index: 4; display: grid; place-items: center;
+  padding: clamp(24px, 4vw, 48px); background: var(--vc-bg);
+  opacity: 0; pointer-events: none; transition: opacity 260ms ease;
+}
+.udb-root.is-loading .udb-loading { opacity: 1; pointer-events: auto; }
+.udb-root.is-loading .up-table, .udb-root.is-loading .up-empty { opacity: 0; }
+.udb-loading-inner { display: flex; flex-direction: column; align-items: center; text-align: center;
+  width: min(100%, 420px); }
+
+.udb-mark { width: 132px; height: 132px; position: relative; display: grid; place-items: center; margin-bottom: 20px; }
+.udb-core {
+  width: 60px; height: 60px; border-radius: 20px;
+  background: linear-gradient(180deg, var(--vc-bg), var(--vc-heading-bg));
+  border: 1px solid var(--vc-border);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 18px 54px rgba(31,31,27,0.10);
+  display: grid; place-items: center; position: relative; z-index: 3; color: var(--vc-text);
+  animation: udbFloat 3.2s ease-in-out infinite;
+}
+.udb-core::before { content: ""; position: absolute; inset: 8px; border-radius: 14px; border: 1px solid var(--vc-border); }
+.udb-core svg { width: 20px; height: 20px; display: block; }
+.udb-ring { position: absolute; inset: 16px; border-radius: 999px; border: 1px solid var(--vc-border); }
+.udb-ring.r1 { animation: udbRing 2.8s ease-in-out infinite; }
+.udb-ring.r2 { inset: 3px; animation: udbRing 3.7s ease-in-out infinite reverse; }
+@keyframes udbFloat { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-4px) scale(1.018); } }
+@keyframes udbRing { 0%, 100% { transform: scale(0.96); opacity: 0.42; } 50% { transform: scale(1.04); opacity: 0.84; } }
+/* Die Flaeche bleibt im DOM, damit sie ein- und ausblenden kann. Ihre drei Endlosanimationen
+   wuerden den Compositor sonst die ganze Seitenlebensdauer beschaeftigen -- als Ruckeln beim
+   Scrollen spuerbar. Aus, sobald nicht wirklich geladen wird. Gleiche Begruendung wie in
+   prompt-research. */
+.udb-root:not(.is-loading) .udb-core, .udb-root:not(.is-loading) .udb-ring { animation: none; }
+
+.udb-ltitle { font-size: 14.5px; font-weight: 500; color: var(--vc-text); }
+/* Feste Hoehe und eine Zeile: der Text wechselt, und ohne feste Hoehe huepfte alles darunter
+   bei jedem Wechsel. */
+.udb-lloop { position: relative; height: 19px; overflow: hidden; width: 100%; margin-top: 8px; }
+.udb-ltext {
+  position: absolute; left: 0; right: 0; top: 0; white-space: nowrap;
+  font-size: 13px; color: var(--vc-muted); transform: translateY(0); opacity: 1;
+  transition: transform 260ms cubic-bezier(0.22,1,0.36,1), opacity 210ms ease-out;
+}
+.udb-ltext.is-out { transform: translateY(-95%); opacity: 0; }
+.udb-ltext.is-in  { transform: translateY(95%);  opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .udb-core, .udb-ring { animation: none !important; }
+  .udb-ltext { transition: none; }
+}
+
+/* ---------- Mobil ---------- */
+@media (max-width: 560px) {
+  .udb-total { margin-left: 0; width: 100%; order: 3; }
+  .udb-root .up-head { flex-wrap: wrap; height: auto; row-gap: 8px; }
+}
