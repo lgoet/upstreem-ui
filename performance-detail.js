@@ -735,6 +735,19 @@
         state.series = { topic: null, global: null };
         state.variations = null;
         state.globalKpis = null;
+        /* Und SOFORT in den Ladezustand, ohne auf Bubble zu warten.
+
+           Der Radar ruft diese Funktion synchron im Klick; der Workflow, dessen erster Schritt
+           setPerformanceDetailLoading("yes") ist, startet erst danach -- und zwischen Klick und
+           erstem Run-JS-Schritt liegen in Bubble ein bis zwei Sekunden. In dieser Luecke standen
+           KPIs und Rangliste schon auf der neuen Zelle, sprangen dann ins Skelett und kamen
+           gleich darauf zurueck. Dreimal wechseln fuer einen Klick.
+
+           Wer die Auswahl wechselt, weiss selbst, dass ab jetzt geladen wird -- dafuer braucht es
+           keine Nachricht von aussen. Bubbles setLoading("yes") bleibt trotzdem gueltig und
+           schadet nicht, es setzt dann nur noch einmal, was schon steht. */
+        state.loading = true;
+        root.classList.add("is-loading");
       }
       /* Was VOR der Auswahl ankam, gehoert zu genau dieser Auswahl: die Run-JS-Schritte des
          Workflows und dieser Direktaufruf sind zwei Wege, deren Reihenfolge Bubble bestimmt.
@@ -755,12 +768,24 @@
       state.hasData = !!(state.company && state.topic);
       render();
     }
+    /* Sicherheitsnetz gegen einen Workflow, der sein setLoading("no") vergisst: sobald BEIDE
+       nachgereichten Teile da sind -- Variations und die Kurve fuer den aktuellen Scope -- gibt es
+       nichts mehr zu laden, also raus aus dem Ladezustand. Beide, nicht eins von beiden, sonst
+       verschwindet das Skelett, waehrend der andere Teil noch unterwegs ist.
+       Der ausdrueckliche Aufruf von aussen bleibt der normale Weg; das hier faengt nur den Fall,
+       in dem er ausbleibt und der Block sonst fuer immer im Skelett stuende. */
+    function ladezustandPruefen(){
+      if (!state.loading) return;
+      if (state.variations && state.series[state.scope]) setLoading(false);
+    }
+
     function setVariations(rows){
       if (typeof rows === "string"){ try { rows = JSON.parse(rows); } catch(e){ rows = null; } }
       var list = Array.isArray(rows) ? rows : [];
       if (!state.company){ VORAB.variations = list; return; }
       state.variations = list;
       renderVariations();
+      ladezustandPruefen();
     }
     function setSeries(payload){
       if (typeof payload === "string"){ try { payload = JSON.parse(payload); } catch(e){ payload = null; } }
@@ -769,6 +794,7 @@
       if (!state.company){ VORAB.series[scope] = payload; return; }
       state.series[scope] = payload;
       renderChart();
+      ladezustandPruefen();
     }
     function setGlobal(kpi){
       if (typeof kpi === "string"){ try { kpi = JSON.parse(kpi); } catch(e){ kpi = null; } }
