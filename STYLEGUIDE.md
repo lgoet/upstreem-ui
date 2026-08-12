@@ -1649,8 +1649,13 @@ Dark Mode: `--up-surface: #1b1b1b` (Karten-Hintergrund).
   zwischen Heading und Subheading): **16px, Weight 400, Drittfarbe** (`--vc-third`). Nicht jedes
   Popup braucht eine — das Token existiert, damit ein künftiges nicht wieder Größe/Farbe/Gewicht
   neu erfindet.
-- Close-Button: **32×32px** Container, **16×16px** Icon, `margin: -8px -8px 0 0` — zieht den
-  Button trotz der 16px Karten-Padding näher an die wirkliche Ecke, statt sichtbar "freizuschweben".
+- Close-Button: **`.up-popup-close` aus core.css nehmen**, nicht selbst bauen. 32×32px Container,
+  16×16px Icon, `margin: -8px -8px 0 0` — zieht den Button trotz der 16px Karten-Padding näher an
+  die wirkliche Ecke, statt sichtbar "freizuschweben".
+  Entscheidend ist, was NICHT drinsteht: **kein Rahmen, auch nicht im Hover.** Der Hover ist
+  ausschließlich Fläche (`--vc-heading-bg`) plus Primärfarbe, wie bei `.up-iconbtn`. Ein Rahmen,
+  der erst beim Überfahren erscheint, lässt den Knopf springen und kommt sonst nirgends in der App
+  vor. `.up-topicmodal-close` ist derselbe Knopf unter dem alten Namen und bleibt gültig.
 
 **Feld-Headings** (z. B. "Name", "Appearance" innerhalb der Karte): **14px, Weight 500,
 Primärfarbe** (`--vc-text`, NICHT Mutedfarbe — der User liest diese Labels bei jedem Öffnen).

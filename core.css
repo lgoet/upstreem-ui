@@ -1560,11 +1560,17 @@
 .up-topicmodal-sub { font-size: 16px; font-weight: 400; color: var(--vc-third); margin: 0; line-height: 1.3; }
 /* 32x32 hit target, pulled -8px top/right via margin so it visually sits close to the card's true
    corner despite the card's own 16px padding — a plain 16px inset read as floating, not anchored. */
-.up-topicmodal-close { flex: 0 0 auto; width: 32px; height: 32px; margin: -8px -8px 0 0; border: 0; border-radius: 9px;
+/* .up-popup-close ist der allgemeine Name: JEDES Popup/Modal nimmt diesen Knopf, statt sich einen
+   eigenen zu bauen. Wichtig daran ist, was NICHT drinsteht -- kein Rahmen, auch nicht im Hover.
+   Ein Rahmen, der erst beim Ueberfahren erscheint, laesst den Knopf springen und ist im ganzen
+   Rest der App nirgends so; der Hover ist ueberall nur Flaeche + Primaerfarbe (siehe .up-iconbtn).
+   .up-topicmodal-close bleibt als Zweitname bestehen, damit bestehendes Markup weiterlaeuft. */
+.up-popup-close, .up-topicmodal-close { flex: 0 0 auto; width: 32px; height: 32px; margin: -8px -8px 0 0; border: 0; border-radius: 9px;
   background: transparent; color: var(--vc-muted); cursor: pointer;
-  display: inline-flex; align-items: center; justify-content: center; }
-.up-topicmodal-close svg { width: 16px; height: 16px; display: block; }
-.up-topicmodal-close:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background .14s ease, color .14s ease; }
+.up-popup-close svg, .up-topicmodal-close svg { width: 16px; height: 16px; display: block; }
+.up-popup-close:hover, .up-topicmodal-close:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
 
 .up-topicmodal-body { display: flex; flex-direction: column; gap: 32px; }
 .up-topicmodal-field { display: flex; flex-direction: column; gap: 8px; }

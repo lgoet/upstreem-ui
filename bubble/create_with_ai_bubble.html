@@ -1,0 +1,144 @@
+<!--
+  UPSTREEM — CREATE WITH AI (Praefix uca)
+
+  Ein Knopf an einer Empfehlung. Er oeffnet ein Popup, in dem der Nutzer Anweisungen, interne
+  Links, Ausgabeformat und den KI-Assistenten waehlt; der Knopf unten baut daraus einen fertigen
+  Prompt und oeffnet den Assistenten damit.
+
+  ── WAS SICH GEGENUEBER DER ALTEN FASSUNG AENDERT ────────────────────────────
+  Das war bisher EIN Block: Markup, CSS und JS zusammen in einem Bubble-HTML-Element, rund 45 KB
+  pro Platzierung. Jetzt ist es eine Komponente wie alle anderen -- unten steht ein leeres Div und
+  ein Loader, alles Weitere kommt vom CDN.
+
+  Drei Gruende, warum das nicht nur Ordnung ist:
+   · Aenderungen kommen ueber den Pin an. Vorher musste jede Platzierung neu eingefuegt werden.
+   · jQuery Migrate auf der Bubble-Seite las den alten Block, stolperte ueber die
+     selbstschliessenden SVG-Tags und schickte daraufhin das KOMPLETTE Markup an
+     /bug/client_log -- 146 KB pro Meldung. Ein leeres Div hat nichts mehr zu melden.
+   · Farben, Schrift und der Schliessen-Knopf kommen aus core. Vorher lief hier ein zweites,
+     parallel gepflegtes Farbset (--am-*), das gegenueber der App auseinanderlaufen konnte.
+
+  DIE API IST UNVERAENDERT. Jede window.createWithAi*-Funktion, jeder bubble_fn_*-Aufruf und jeder
+  Payload-Schluessel heissen und verhalten sich wie zuvor. Deine bestehenden Workflows laufen
+  weiter, ohne dass du einen davon anfasst.
+
+  ── ATTRIBUTE AUF DEM WURZEL-DIV ─────────────────────────────────────────────
+  | Attribut            | Pflicht | Bedeutung                                              |
+  |---------------------|---------|--------------------------------------------------------|
+  | data-cdn-pin        | ja      | Commit-Hash, identisch mit allen anderen Komponenten   |
+  | data-url            | nein    | Quell-URL dieser Empfehlung                            |
+  | data-title          | nein    | Seitentitel der Quelle                                 |
+  | data-citation-type  | nein    | "You" = diese Seite verbessern, sonst = eigene Version |
+  | data-brand          | nein    | Name der eigenen Marke                                 |
+  | data-summary        | nein    | Markenkontext, den upstreem speichert (Freitext)       |
+  | data-isdark         | nein    | "yes" / "no"                                           |
+
+  Alle data-Felder sind optional: was fehlt, kannst du per run-JS nachreichen (siehe unten). Was
+  gesetzt ist, gewinnt gegenueber dem gemeinsamen Fallback-Kontext.
+
+  ACHTUNG, das ist neu: der Markenkontext steht jetzt in data-summary, NICHT mehr in einem
+  <script type="text/plain">-Block im Markup. Ein Attribut vertraegt Zeilenumbrueche und
+  Anfuehrungszeichen problemlos, wenn Bubble den Wert einsetzt -- der Script-Block war nur noetig,
+  solange das Markup von Hand eingefuegt wurde.
+
+  ── IN EINER REPEATING GROUP ─────────────────────────────────────────────────
+  Genau dafuer ist die Komponente gebaut, und sie braucht dort KEINE data-instance. Jede Zeile
+  bekommt beim Mounten eine eigene UID. Adressierbar sind die Instanzen ueber
+  window.createWithAi[UID]; ohne UID trifft ein Aufruf die zuletzt lebende Instanz -- was fuer
+  "oeffne das Popup fuer die Zeile, auf die gerade geklickt wurde" genau richtig ist.
+
+  ── FUNKTIONEN IN DIE KOMPONENTE ─────────────────────────────────────────────
+  Payloads nach STYLEGUIDE 47 in BACKTICKS, nicht in eckigen Klammern.
+
+  1) Oeffnen und dabei fuellen (der uebliche Weg)
+
+     window.createWithAiOpen({
+       url: `[Quell-URL]`,
+       citation_type: `[Citation Type]`,
+       lead_title: `[Seitentitel]`,
+       own_brand_name: `[Markenname]`,
+       own_brand_summary: `[Markenkontext]`
+     });
+
+  2) Nur fuellen, ohne zu oeffnen
+
+     window.createWithAiSetContext({ ... });          // gleiche Felder wie oben
+
+  3) Interne Links nachliefern (die Komponente fragt beim Oeffnen des Link-Builders danach)
+
+     window.createWithAiSetYouUrls(`[
+       {"url":"https://…","title":"Pricing"}, ...
+     ]`);
+
+  4) Weitere
+
+     window.createWithAiClose();
+     window.createWithAiSetTheme("dark");             // ohne UID: alle Instanzen der Seite
+     window.createWithAiGetPrompt();                  // liefert den fertigen Prompt als Text
+
+  Jede dieser Funktionen nimmt optional eine UID als ERSTES Argument, wenn du eine bestimmte
+  Instanz meinst:  window.createWithAiOpen("uca_abc_123", { ... })
+
+  ── EVENTS AUS DER KOMPONENTE ────────────────────────────────────────────────
+  | Funktion                          | Wann                          | Payload                    |
+  |-----------------------------------|-------------------------------|----------------------------|
+  | bubble_fn_get_you_urls            | Link-Builder wird geoeffnet   | die UID als blanker Text   |
+  | bubble_fn_create_with_ai_open     | Klick auf "Open in …"         | JSON, siehe unten          |
+  | bubble_fn_create_with_ai_ready    | Instanz ist gemountet         | die UID als blanker Text   |
+
+     create_with_ai_open:
+       {"assistant":"claude","url":"…","citation_type":"You","prompt_url":"https://claude.ai/new?q=…"}
+
+  Auf bubble_fn_get_you_urls antwortest du mit createWithAiSetYouUrls(...) -- die UID kommt als
+  Wert an, gib sie als erstes Argument zurueck, wenn mehrere Instanzen auf der Seite liegen.
+  Fehlt eine dieser Toolbox-Funktionen, feuert die Komponente stattdessen ein DOM-CustomEvent
+  gleichen Inhalts und laeuft normal weiter.
+
+  ── THEME ────────────────────────────────────────────────────────────────────
+  Das Popup haengt aus gutem Grund am <body> (Bubble-Vorfahren clippen und stapeln sonst dagegen)
+  und liegt dort in einem .up-root.up-portal-Wrapper. Damit erfasst es window.setUpstreemTheme()
+  von selbst, wie jedes andere portalisierte Menue der App -- createWithAiSetTheme brauchst du nur,
+  wenn du das Theme dieser Komponente getrennt steuern willst.
+
+  ── HOEHE DES BUBBLE-ELEMENTS ────────────────────────────────────────────────
+  Fit height, fit width. Sichtbar ist nur der Knopf (32px hoch); das Popup liegt im Overlay und
+  braucht im Element selbst keinen Platz.
+-->
+
+<div class="up-root uca-root"
+     data-cdn-pin="CDN_PIN"
+     data-url="URL"
+     data-title="TITLE"
+     data-citation-type="TYPE"
+     data-brand="BRAND"
+     data-summary="SUMMARY"
+     data-isdark="IS_DARK"></div>
+
+<!-- Das Wurzel-Div ist bewusst leer: die Komponente baut ihren gesamten Innenaufbau selbst. Es
+     gibt hier keine Stelle, an der du etwas einsetzen sollst. Die Platzhalter oben (URL, TITLE,
+     TYPE, BRAND, SUMMARY) ersetzt du mit "Insert dynamic data"; laesst du einen stehen, wird er
+     als leer behandelt und nicht als Text angezeigt. -->
+
+<script>
+(function(){
+  /* Loader nach STYLEGUIDE 26: den Pin ueber getElementsByClassName lesen, NIEMALS ueber
+     document.currentScript — Bubble fuehrt Scripts nicht in DOM-Reihenfolge aus. */
+  function readPin(cls){
+    var els = document.getElementsByClassName(cls), i, p;
+    for (i = 0; i < els.length; i++){
+      p = els[i].getAttribute("data-cdn-pin");
+      if (p && p !== "CDN_" + "PIN") return p;
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("uca-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(url, make){ if (L[url]) return; L[url] = 1; make(url); }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+
+  /* core zuerst, async=false haelt die Reihenfolge ein. */
+  css("core.css");             js("core.js");
+  css("create-with-ai.css");   js("create-with-ai.js");
+})();
+</script>

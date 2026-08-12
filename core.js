@@ -765,7 +765,12 @@
   function makeExplain(cfg){
     var root = cfg.root;
     var el = document.createElement("div");
-    el.className = "up-explain";
+    /* cfg.cls haengt eine Marker-Klasse an die Karte. Sie liegt im <body>, ausserhalb jeder
+       .up-root -- ohne eine eigene Klasse kann ein Konsument sie also gar nicht ansprechen, und
+       wer eine breitere Karte braucht (create-with-ai zeigt ein dreizeiliges Codebeispiel, das in
+       248px nicht lesbar umbricht) muesste die Breite fuer ALLE sieben Konsumenten aendern.
+       Weglassen ergibt exakt das bisherige Markup. */
+    el.className = "up-explain" + (cfg.cls ? " " + cfg.cls : "");
     document.body.appendChild(el);
     var openFor = null;
     function hide(){ el.classList.remove("is-on"); openFor = null; }

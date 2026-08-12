@@ -1,0 +1,398 @@
+/* upstreem create-with-ai.css — Praefix uca. Braucht core.css.
+
+   Die Komponente ist ein Trigger-Button plus ein Popup. Das Popup wird nach <body> gehaengt
+   (Bubble-Vorfahren clippen und stapeln sonst dagegen) und liegt darum in einem
+   .up-root.up-portal-Wrapper: der traegt die --vc-Tokens und das data-theme, genau wie bei jedem
+   anderen portalisierten Menue der App. Deshalb steht hier kein eigenes Farbset mehr -- die
+   frueheren --am-*-Variablen waren eine zweite, parallel gepflegte Palette. */
+
+/* ---------- Wurzel + Trigger ---------- */
+.uca-root { display: inline-block; width: max-content; max-width: 100%; }
+
+.uca-trigger {
+  display: inline-flex; align-items: center; gap: 7px; white-space: nowrap;
+  height: 32px; padding: 0 13px; border: 0; border-radius: 8px;
+  background: var(--vc-text); color: var(--vc-bg);
+  font: inherit; font-size: 13.5px; font-weight: 560; letter-spacing: .1px; cursor: pointer;
+  transition: opacity .14s ease;
+}
+.uca-trigger:hover { opacity: .9; }
+
+/* Der Stern ist eine Maske, keine Bildfarbe -- so folgt er der Textfarbe und stimmt in beiden
+   Themes, ohne ein zweites Asset. */
+.uca-star {
+  display: inline-block; width: 15px; height: 15px; flex: 0 0 auto; background-color: currentColor;
+  -webkit-mask: var(--uca-star) center / contain no-repeat; mask: var(--uca-star) center / contain no-repeat;
+}
+
+/* ---------- Portal-Wrapper, Overlay, Karte ---------- */
+.uca-portal {
+  --uca-scrim: rgba(17,18,20,0.34);
+  --uca-shadow: 0 24px 64px rgba(17,18,20,0.18), 0 6px 16px rgba(17,18,20,0.07);
+}
+.uca-portal[data-theme="dark"] {
+  --uca-scrim: rgba(0,0,0,0.60);
+  --uca-shadow: 0 24px 64px rgba(0,0,0,0.55), 0 6px 16px rgba(0,0,0,0.4);
+}
+.uca-overlay {
+  position: fixed; inset: 0; z-index: 2147483000;
+  display: none; align-items: center; justify-content: center; padding: 20px;
+  background: var(--uca-scrim); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+  opacity: 0; transition: opacity .2s ease;
+}
+.uca-overlay.is-open { display: flex; opacity: 1; }
+.uca-modal {
+  position: relative; width: min(600px, 100%); max-height: min(92vh, 900px);
+  display: flex; flex-direction: column;
+  background: var(--vc-bg); color: var(--vc-text);
+  border: 1px solid var(--vc-border); border-radius: 18px; box-shadow: var(--uca-shadow); overflow: hidden;
+  transform: translateY(8px) scale(.985); opacity: 0;
+  transition: transform .24s cubic-bezier(.22,1,.36,1), opacity .2s ease;
+}
+.uca-overlay.is-open .uca-modal { transform: none; opacity: 1; }
+
+/* Alle Eingaben und Knoepfe erben die Schrift. Ohne das faellt <input> auf die Browserschrift
+   zurueck, und der Platzhalter wechselt beim Fokussieren sichtbar die Schriftart -- er sah dann
+   kleiner aus, obwohl beide 14px sind. Das war der eigentliche Grund, nicht die Groesse. */
+.uca-portal input, .uca-portal button, .uca-portal textarea, .uca-root button { font-family: inherit; }
+
+/* ---------- Kopfzeile ---------- */
+.uca-head {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between;
+  padding: 16px; border-bottom: 1px solid var(--vc-border);
+}
+.uca-head-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
+/* Heading nach STYLEGUIDE 27, zwei Punkt kleiner als die 22px des Topic-Modals: dessen Titel ist
+   eine kurze Zeile, hier steht ein ganzer Satz ("Create your own version") neben zwei Knoepfen. */
+.uca-action {
+  display: inline-flex; align-items: center; gap: 10px; min-width: 0;
+  color: var(--vc-text); font-size: 20px; font-weight: 500; line-height: 1.2; letter-spacing: -.2px;
+}
+.uca-action-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.uca-action-ic { width: 19px; height: 19px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; color: var(--vc-text); }
+.uca-action-ic svg { width: 19px; height: 19px; }
+.uca-help {
+  width: 26px; height: 26px; border: 0; border-radius: 8px; background: transparent;
+  color: var(--vc-third); cursor: pointer; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: color .14s ease, background .14s ease;
+}
+.uca-help svg { width: 16px; height: 16px; display: block; }
+.uca-help:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
+/* Der Schliessen-Knopf ist .up-popup-close aus core -- hier steht nur noch, dass sein 18px-Icon
+   groesser ist als die 16px des Standards. */
+.uca-head .up-popup-close svg { width: 18px; height: 18px; }
+
+/* ---------- Koerper ---------- */
+.uca-body { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; padding: 22px 22px 12px; }
+.uca-body::-webkit-scrollbar { width: 10px; }
+.uca-body::-webkit-scrollbar-thumb { background: var(--vc-border); border-radius: 999px; border: 3px solid var(--vc-bg); }
+
+/* Quelle: Favicon links, Titel ueber Domain. Keine Karte, kein Trenner. */
+.uca-source { display: flex; align-items: center; gap: 12px; }
+.uca-fav {
+  width: 34px; height: 34px; flex: 0 0 auto; border-radius: 8px; overflow: hidden;
+  display: flex; align-items: center; justify-content: center; color: var(--vc-third);
+}
+.uca-fav img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.uca-fav svg { width: 20px; height: 20px; }
+.uca-source-meta { min-width: 0; flex: 1 1 auto; }
+.uca-source-title { font-size: 15.5px; font-weight: 600; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.uca-source-url { font-size: 13.5px; color: var(--vc-muted); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.uca-section { margin-top: 26px; }
+.uca-source + .uca-section { margin-top: 44px; }
+/* Feld-Heading nach STYLEGUIDE 27: 14px, Weight 500, Primaerfarbe. */
+.uca-label { font-size: 14px; font-weight: 500; color: var(--vc-text); margin-bottom: 14px; }
+
+/* ---------- Anweisungsfeld ---------- */
+.uca-input-row { display: flex; gap: 8px; }
+.uca-input-wrap { position: relative; flex: 1 1 auto; min-width: 0; }
+.uca-input {
+  width: 100%; height: 40px; padding: 0 38px 0 14px;
+  border: 1px solid var(--vc-border); border-radius: 12px; background: var(--up-surface);
+  color: var(--vc-text); font-size: 14px; outline: none;
+  transition: border-color .14s ease, background .14s ease;
+}
+.uca-input::placeholder { color: var(--vc-third); }
+.uca-input:hover, .uca-input:focus { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
+
+/* Laufender Platzhalter, gleiche Bauart wie Miras Eingabezeile. Groesse, Farbe und Zeilenhoehe
+   sind absichtlich identisch mit dem echten ::placeholder -- der Wechsel beim Fokussieren soll
+   nicht zu sehen sein. */
+.uca-ph-loop {
+  position: absolute; left: 14px; right: 38px; top: 50%; height: 20px; margin-top: -10px;
+  overflow: hidden; pointer-events: none; display: none;
+}
+.uca-input-wrap.loop-on .uca-ph-loop { display: block; }
+.uca-ph-text {
+  position: absolute; left: 0; top: 0; right: 0; line-height: 20px;
+  font-family: inherit; font-size: 14px; font-weight: 400; color: var(--vc-third);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transform: translateY(0); opacity: 1;
+  transition: transform 260ms cubic-bezier(0.22,1,0.36,1), opacity 210ms ease-out;
+  will-change: transform, opacity;
+}
+.uca-ph-text.is-out { transform: translateY(-92%); opacity: 0; }
+.uca-ph-text.is-in  { transform: translateY(92%);  opacity: 0; }
+
+.uca-bulb {
+  position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
+  width: 28px; height: 28px; border: 0; border-radius: 8px; background: transparent;
+  color: var(--vc-third); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity .14s ease, color .14s ease, background .14s ease;
+}
+.uca-bulb svg { width: 16px; height: 16px; display: block; }
+.uca-input-wrap:hover .uca-bulb, .uca-input:focus ~ .uca-bulb, .uca-bulb.is-on { opacity: 1; pointer-events: auto; }
+.uca-bulb:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
+.uca-bulb.is-on { color: var(--vc-text); }
+@media (hover: none) { .uca-bulb { opacity: 1; pointer-events: auto; } }
+
+.uca-apply {
+  flex: 0 0 auto; height: 40px; padding: 0 18px; border-radius: 12px;
+  border: 1px solid var(--vc-border); background: var(--up-surface); color: var(--vc-text);
+  font: inherit; font-size: 13.5px; font-weight: 560; cursor: pointer;
+  transition: background .14s ease, border-color .14s ease;
+}
+.uca-apply:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
+
+.uca-suggests { display: none; flex-wrap: wrap; align-items: center; gap: 7px; margin-top: 11px; }
+.uca-suggests.is-open { display: flex; }
+.uca-suggest {
+  display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 8px;
+  border: 0; background: transparent; color: var(--vc-muted);
+  font: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
+  transition: background .14s ease, color .14s ease;
+}
+.uca-suggest:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
+.uca-suggest.is-used { opacity: .35; pointer-events: none; }
+
+.uca-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.uca-tags:empty { margin-top: 0; }
+.uca-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 6px 6px 12px; border-radius: 8px; background: var(--vc-heading-bg); border: 1px solid var(--vc-border);
+  color: var(--vc-text); font-size: 12.5px; font-weight: 500; animation: ucaTagIn .18s ease;
+}
+@keyframes ucaTagIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+.uca-tag-x {
+  width: 20px; height: 20px; border-radius: 6px; border: 0; background: transparent; cursor: pointer;
+  color: var(--vc-muted); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
+  transition: background .14s ease, color .14s ease;
+}
+.uca-tag-x svg { width: 14px; height: 14px; }
+.uca-tag-x:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
+
+/* ---------- Interne Links ---------- */
+.uca-links-entry {
+  width: 100%; margin-top: 26px; display: flex; align-items: center; gap: 12px; text-align: left;
+  padding: 13px 14px; border: 1px solid var(--vc-border); border-radius: 12px; background: var(--up-surface);
+  color: var(--vc-text); font: inherit; cursor: pointer; transition: border-color .14s ease, background .14s ease;
+}
+.uca-links-entry:hover { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
+.uca-portal[data-theme="dark"] .uca-links-entry { background: transparent; }
+.uca-portal[data-theme="dark"] .uca-links-entry:hover { background: var(--vc-heading-bg); }
+.uca-links-ic { width: 30px; height: 30px; flex: 0 0 auto; border-radius: 8px; background: var(--vc-heading-bg); color: var(--vc-text); display: inline-flex; align-items: center; justify-content: center; }
+.uca-links-ic svg { width: 16px; height: 16px; }
+.uca-links-meta { min-width: 0; flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px; }
+.uca-links-title { font-size: 13.5px; font-weight: 580; line-height: 1.2; }
+.uca-links-sub { font-size: 11.5px; color: var(--vc-muted); line-height: 1.25; }
+.uca-links-count { font-size: 12px; font-weight: 560; color: var(--vc-text); background: var(--vc-heading-bg); border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
+.uca-links-count:empty { display: none; }
+.uca-links-chev { color: var(--vc-third); flex: 0 0 auto; display: inline-flex; }
+.uca-links-chev svg { width: 16px; height: 16px; }
+
+/* ---------- Ausgabeformat ---------- */
+.uca-format { margin-top: 26px; }
+.uca-format-label { font-size: 12px; color: var(--vc-muted); font-weight: 500; margin-bottom: 10px; }
+.uca-format-seg { display: inline-flex; padding: 0; gap: 0; background: var(--vc-heading-bg); border-radius: 8px; height: 32px; }
+.uca-fmt {
+  position: relative; height: 32px; padding: 0 14px; border: 1px solid transparent; border-radius: 8px; background: transparent;
+  color: var(--vc-muted); font: inherit; font-size: 13px; font-weight: 550; cursor: pointer; white-space: nowrap;
+  display: inline-flex; align-items: center;
+  transition: background .14s ease, color .14s ease, border-color .14s ease;
+}
+.uca-fmt:hover { color: var(--vc-text); }
+.uca-fmt.is-active { background: var(--up-surface); color: var(--vc-text); border-color: var(--vc-border); }
+
+/* ---------- Erklaerkarte der Formate ----------
+   Das ist die App-Erklaerkarte (.up-explain aus core), nicht mehr ein eigener Tooltip-Typ. Sie
+   haengt im <body>, ausserhalb jeder .up-root -- die --vc-Tokens loesen dort NICHT auf, jede Farbe
+   hier muss literal sein. Gleiche Begruendung wie bei .upd-explain-vis im Performance-Detail.
+   Breiter als die 248px des Standards, weil ein dreizeiliges Codebeispiel sonst mitten im Tag
+   umbricht und dann weder als Markdown noch als HTML lesbar ist. */
+.up-explain.uca-explain { width: 320px; }
+.uca-explain .up-explain-vis { padding: 10px 12px; gap: 3px; align-items: stretch; }
+.uca-sample {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11.5px; line-height: 1.65; white-space: pre; overflow-x: auto;
+  color: #1f1f1b;
+}
+.uca-sample::-webkit-scrollbar { height: 0; }
+.up-explain[data-theme="dark"] .uca-sample { color: #e8e8e8; }
+/* Markdown-Auszeichnung und HTML-Tags eingefaerbt, damit man auf einen Blick sieht, WAS das
+   Format in den Text schreibt -- darum geht es bei der Wahl. Plain text bleibt bewusst einfarbig:
+   dass dort nichts eingefaerbt ist, IST die Aussage. */
+.uca-sy-mark { color: #7c3aed; }
+.uca-sy-tag  { color: #7c3aed; }
+.uca-sy-attr { color: #b45309; }
+.uca-sy-str  { color: #15803d; }
+.up-explain[data-theme="dark"] .uca-sy-mark { color: #c4b5fd; }
+.up-explain[data-theme="dark"] .uca-sy-tag  { color: #c4b5fd; }
+.up-explain[data-theme="dark"] .uca-sy-attr { color: #fcd34d; }
+.up-explain[data-theme="dark"] .uca-sy-str  { color: #86efac; }
+
+/* ---------- Schema-Checkbox ---------- */
+.uca-cb-row {
+  width: 100%; margin-top: 26px; display: flex; align-items: flex-start; gap: 11px; text-align: left;
+  padding: 0; border: 0; background: transparent; color: var(--vc-text); font: inherit; cursor: pointer;
+}
+.uca-cb {
+  width: 18px; height: 18px; flex: 0 0 auto; margin-top: 1px; border-radius: 6px;
+  border: 1px solid var(--vc-border); background: var(--up-surface);
+  display: inline-flex; align-items: center; justify-content: center; color: transparent;
+  transition: background .14s ease, border-color .14s ease, color .14s ease;
+}
+.uca-cb svg { width: 11px; height: 11px; display: block; }
+.uca-cb-row:hover .uca-cb { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
+.uca-cb-row.is-checked .uca-cb { background: var(--vc-text); border-color: var(--vc-text); color: var(--vc-bg); }
+.uca-cb-meta { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.uca-cb-label { font-size: 13px; font-weight: 600; line-height: 1.25; }
+.uca-cb-sub { font-size: 11.5px; color: var(--vc-muted); line-height: 1.4; }
+
+/* ---------- Assistenten ---------- */
+.uca-assistants { display: grid; grid-template-columns: repeat(2, 1fr); grid-auto-rows: 1fr; gap: 12px; }
+.uca-assistant {
+  display: flex; align-items: center; gap: 12px; height: 100%;
+  padding: 15px 46px 15px 15px; border: 1px solid var(--vc-border); border-radius: 14px; background: var(--up-surface);
+  color: var(--vc-text); font: inherit; cursor: pointer; text-align: left; position: relative;
+  transition: border-color .14s ease, background .14s ease;
+}
+.uca-assistant:hover { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
+.uca-assistant.is-selected { border-color: var(--vc-hover-border); background: var(--up-surface); }
+.uca-ai-logo { width: 32px; height: 32px; flex: 0 0 auto; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.uca-ai-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.uca-ai-meta { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.uca-ai-name { font-size: 14px; font-weight: 580; line-height: 1.15; }
+.uca-ai-desc { font-size: 11.5px; color: var(--vc-muted); line-height: 1.3; }
+.uca-ai-check {
+  position: absolute; top: 50%; right: 14px; transform: translateY(-50%); width: 16px; height: 16px; border-radius: 999px;
+  background: var(--vc-text); color: var(--vc-bg); display: none; align-items: center; justify-content: center;
+}
+.uca-ai-check svg { width: 11px; height: 11px; }
+.uca-assistant.is-selected .uca-ai-check { display: inline-flex; }
+
+/* ---------- Fusszeile ---------- */
+.uca-foot { flex: 0 0 auto; padding: 18px 22px 22px; border-top: 1px solid var(--vc-border); background: var(--vc-bg); }
+.uca-primary {
+  width: 100%; height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+  border: 0; border-radius: 12px; background: var(--vc-text); color: var(--vc-bg);
+  font: inherit; font-size: 14.5px; font-weight: 580; cursor: pointer; transition: opacity .14s ease;
+}
+.uca-primary:hover { opacity: .9; }
+.uca-primary .uca-star { width: 16px; height: 16px; }
+.uca-note { font-size: 11.5px; color: var(--vc-muted); text-align: center; margin-top: 18px; }
+.uca-secondary { display: flex; gap: 10px; margin-top: 18px; }
+.uca-ghost {
+  flex: 1 1 0; height: 38px; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  border: 1px solid var(--vc-border); border-radius: 12px; background: var(--up-surface); color: var(--vc-muted);
+  font: inherit; font-size: 13px; font-weight: 520; cursor: pointer;
+  transition: background .14s ease, color .14s ease, border-color .14s ease;
+}
+.uca-ghost svg { width: 15px; height: 15px; }
+.uca-ghost:hover { background: var(--vc-heading-bg); color: var(--vc-text); border-color: var(--vc-hover-border); }
+
+/* ---------- Link-Builder (fuellt dieselbe Karte) ---------- */
+.uca-builder { display: none; flex-direction: column; min-height: 0; flex: 1 1 auto; padding: 18px 22px 20px; }
+.uca-modal.uca-in-builder .uca-head, .uca-modal.uca-in-builder .uca-body, .uca-modal.uca-in-builder .uca-foot { display: none; }
+.uca-modal.uca-in-builder .uca-builder { display: flex; }
+.uca-bld-head { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.uca-bld-back {
+  width: 32px; height: 32px; border-radius: 8px; border: 0; background: transparent; color: var(--vc-text);
+  cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+  transition: background .14s ease;
+}
+.uca-bld-back svg { width: 16px; height: 16px; }
+.uca-bld-back:hover { background: var(--vc-heading-bg); }
+.uca-bld-count { font-size: 13px; font-weight: 600; color: var(--vc-text); font-variant-numeric: tabular-nums; }
+.uca-bld-explain { flex: 0 0 auto; font-size: 12px; line-height: 1.5; color: var(--vc-muted); margin-bottom: 14px; }
+.uca-bld-search { flex: 0 0 auto; display: flex; gap: 8px; margin-bottom: 12px; }
+.uca-bld-input {
+  flex: 1 1 auto; min-width: 0; height: 40px; padding: 0 14px; border: 1px solid var(--vc-border); border-radius: 12px;
+  background: var(--up-surface); color: var(--vc-text); font-size: 14px; outline: none;
+  transition: border-color .14s ease, background .14s ease;
+}
+.uca-bld-input::placeholder { color: var(--vc-third); }
+.uca-bld-input:hover, .uca-bld-input:focus { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
+.uca-bld-add {
+  flex: 0 0 auto; height: 40px; padding: 0 16px; border-radius: 12px; border: 0;
+  background: var(--vc-text); color: var(--vc-bg); font: inherit; font-size: 13.5px; font-weight: 560;
+  cursor: pointer; transition: opacity .14s ease;
+}
+.uca-bld-add:hover { opacity: .9; }
+.uca-bld-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; margin: 0 -4px; padding: 0 4px; }
+.uca-bld-list::-webkit-scrollbar { width: 10px; }
+.uca-bld-list::-webkit-scrollbar-thumb { background: var(--vc-border); border-radius: 999px; border: 3px solid var(--vc-bg); }
+.uca-bld-row {
+  width: 100%; display: flex; align-items: center; gap: 11px; text-align: left; margin-bottom: 2px;
+  padding: 8px 10px; border: 0; border-radius: 10px; background: transparent;
+  color: var(--vc-text); font: inherit; cursor: pointer; position: relative; transition: background .12s ease;
+}
+.uca-bld-row:hover { background: var(--vc-heading-bg); }
+.uca-bld-row.is-selected { background: var(--up-sel-bg); }
+.uca-bld-row.is-disabled { opacity: .4; pointer-events: none; }
+.uca-bld-fav { width: 30px; height: 30px; flex: 0 0 auto; border-radius: 8px; overflow: hidden; background: var(--vc-heading-bg); border: 1px solid var(--vc-border); display: flex; align-items: center; justify-content: center; color: var(--vc-third); }
+.uca-bld-fav img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.uca-bld-fav svg { width: 15px; height: 15px; }
+.uca-bld-fav, .uca-bld-meta, .uca-bld-check { pointer-events: none; }
+.uca-bld-meta { min-width: 0; flex: 1 1 auto; padding-right: 22px; display: flex; flex-direction: column; gap: 1px; }
+.uca-bld-title { font-size: 13px; font-weight: 550; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.uca-bld-url { font-size: 11.5px; color: var(--vc-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.uca-bld-check {
+  position: absolute; top: 50%; right: 10px; transform: translateY(-50%); width: 16px; height: 16px;
+  color: var(--vc-text); display: none; align-items: center; justify-content: center;
+}
+.uca-bld-check svg { width: 15px; height: 15px; }
+.uca-bld-row.is-selected .uca-bld-check { display: inline-flex; }
+.uca-bld-empty { font-size: 12.5px; color: var(--vc-muted); padding: 8px 10px; }
+.uca-bld-skel { width: 100%; display: flex; align-items: center; gap: 11px; margin-bottom: 2px; padding: 8px 10px; }
+.uca-bld-skel-fav { width: 30px; height: 30px; border-radius: 8px; flex: 0 0 auto; }
+.uca-bld-skel-lines { flex: 1 1 auto; display: flex; flex-direction: column; gap: 6px; }
+.uca-bld-skel-l1 { height: 11px; width: 60%; border-radius: 4px; }
+.uca-bld-skel-l2 { height: 10px; width: 40%; border-radius: 4px; }
+.uca-skel { background: var(--vc-sk); animation: ucaShimmer 1.2s ease-in-out infinite; }
+@keyframes ucaShimmer { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+
+/* ---------- How-Panel ---------- */
+.uca-how {
+  position: absolute; top: 68px; left: 16px; right: 16px; z-index: 5;
+  max-width: 400px; padding: 16px 18px; border-radius: var(--up-dd-radius);
+  background: var(--up-menu-bg); border: 1px solid var(--up-menu-border); box-shadow: var(--up-dd-shadow);
+  font-size: 13.5px; line-height: 1.5; color: var(--vc-muted);
+  display: none; opacity: 0; transform: translateY(-4px); transition: opacity .16s ease, transform .16s ease;
+  max-height: 62vh; overflow-y: auto;
+}
+.uca-how.is-open { display: block; opacity: 1; transform: none; }
+.uca-how-title { font-size: 14.5px; font-weight: 600; color: var(--vc-text); margin-bottom: 8px; }
+
+/* ---------- Toast ---------- */
+.uca-toast {
+  position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(8px); z-index: 2147483001;
+  padding: 10px 16px; border-radius: 8px; background: var(--vc-text); color: var(--vc-bg);
+  font-size: 13px; font-weight: 520; opacity: 0; pointer-events: none;
+  transition: opacity .2s ease, transform .2s ease;
+}
+.uca-toast.is-on { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ---------- Mobil ---------- */
+@media (max-width: 768px) {
+  .uca-root { display: block; width: auto; text-align: right; }
+  .uca-trigger { width: 32px; height: 32px; min-width: 32px; padding: 0; gap: 0; justify-content: center; overflow: hidden; font-size: 0; line-height: 0; }
+  .uca-trigger .uca-star { width: 16px; height: 16px; }
+}
+@media (max-width: 460px) {
+  .uca-overlay { padding: 0; align-items: stretch; height: 100vh; height: 100dvh; }
+  .uca-modal { width: 100%; height: 100vh; height: 100dvh; max-height: none; border-radius: 0; }
+  .uca-action { font-size: 18px; }
+  .uca-assistants { grid-template-columns: 1fr; }
+}
