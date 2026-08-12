@@ -771,7 +771,14 @@
        248px nicht lesbar umbricht) muesste die Breite fuer ALLE sieben Konsumenten aendern.
        Weglassen ergibt exakt das bisherige Markup. */
     el.className = "up-explain" + (cfg.cls ? " " + cfg.cls : "");
-    document.body.appendChild(el);
+    /* cfg.mount — wohin die Karte gehaengt wird, Standard <body>.
+       Noetig geworden, sobald ein Konsument im TOP LAYER liegt: der wird nach dem gesamten
+       Dokument gezeichnet, und eine Karte am body verschwindet dahinter, egal welchen z-index sie
+       traegt (create-with-ai, nachdem sein Popup wegen des Opportunity-Drawers dorthin musste).
+       Die Karte gehoert dann IN das Element, das befoerdert wurde. position:fixed meint darin
+       weiterhin den Viewport, solange auf dem Weg dorthin kein transform steht -- die Positions-
+       rechnung unten bleibt also unveraendert. */
+    (cfg.mount || document.body).appendChild(el);
     var openFor = null;
     function hide(){ el.classList.remove("is-on"); openFor = null; }
     function show(trigger){

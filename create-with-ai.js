@@ -363,8 +363,12 @@
     }
     function isDark(){ return portal.getAttribute("data-theme") === "dark"; }
 
-    /* ---- Erklaerkarte der Formate: das App-Popover, kein eigener Tooltip-Typ ---- */
-    UC.makeExplain({ root: elFormatSeg, cls: "uca-explain", getIsDark: isDark, html: explainHtml });
+    /* ---- Erklaerkarte der Formate: das App-Popover, kein eigener Tooltip-Typ ----
+       mount: portal, nicht der Standard <body>. Das Popup liegt im Top Layer (siehe oben), und
+       der wird nach dem gesamten Dokument gezeichnet -- eine Karte am body lag dahinter, mit
+       z-index 2147483001 genauso wie mit jeder anderen Zahl. Sie muss IN das befoerderte Element,
+       dann faehrt sie mit. */
+    UC.makeExplain({ root: elFormatSeg, cls: "uca-explain", mount: portal, getIsDark: isDark, html: explainHtml });
 
     /* ---- kleine Helfer ---- */
     function looseParse(v){
