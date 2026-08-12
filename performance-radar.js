@@ -146,6 +146,11 @@
      beim Seitenaufbau an, weil "weniger ausgewaehlt als verfuegbar" auf jede normale Seite
      zutrifft, sobald die Auswahlliste aus dem globalen Store kommt. */
   var INIT_SEL = (window.__uhmInitSel = window.__uhmInitSel || {});
+
+  /* Wie lange der Ladezustand ohne Antwort stehen bleiben darf, bevor die Komponente selbst sagt,
+     dass nichts angekommen ist. Grosszuegig gewaehlt: der RPC hinter dieser Matrix darf dauern,
+     eine zu kurze Frist wuerde einen langsamen, aber gesunden Aufruf als Fehler ausgeben. */
+  var LADE_TIMEOUT = 25000;
   /* Der Gewichtungs-Schalter ueberlebt als EINZIGE Einstellung den Reload: er beschreibt, WIE VIEL
      man sehen will, nicht was gerade untersucht wird. Metrik und Farbskala bleiben bewusst auf
      window -- die gehoeren zur laufenden Frage und sollen beim naechsten Besuch im Standard
@@ -350,6 +355,7 @@
     var instanceId = root.getAttribute("data-instance") || "default";
     var fire = UC.makeFire(root, { label: "performance-radar", eventPrefix: "uhm" });
 
+    var ladeWacht = null;
     var state = {
       cells: [],
       cellMap: {},
@@ -805,7 +811,7 @@
        Kasten und muss erfahren, ob nichts gemessen wurde oder ob seine Auswahl zu eng ist --
        "No data" allein beantwortet keine der beiden Fragen. Der zweite Satz haengt darum davon
        ab, ob ueberhaupt Achsen da sind. */
-    function renderEmpty(){
+    function renderEmpty(keineAntwort){
       var achsenDa = state.topics.length > 0 && state.companies.length > 0;
       elGrid.style.gridTemplateColumns = "1fr";
       elGrid.innerHTML =
@@ -815,10 +821,12 @@
             '<rect x="3" y="3" width="18" height="18" rx="2.5"></rect>' +
             '<line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="3" x2="9" y2="21"></line>' +
           "</svg></div>" +
-          '<div class="up-empty-h">No data for this period</div>' +
-          '<div class="up-empty-t">' + (achsenDa
+          '<div class="up-empty-h">' + (keineAntwort ? "Could not load the matrix" : "No data for this period") + "</div>" +
+          '<div class="up-empty-t">' + (keineAntwort
+            ? "The data never arrived. Reload the page, and if it keeps happening check the workflow behind this chart."
+            : (achsenDa
             ? "None of the selected brands were measured on these topics. Try a longer period, or pick other brands and topics with the filter above."
-            : "Nothing has been measured yet. Once prompts have run, the matrix fills up here.") +
+            : "Nothing has been measured yet. Once prompts have run, the matrix fills up here.")) +
           "</div>" +
         "</div>";
       state.layoutKey = "";
@@ -1369,10 +1377,35 @@
       setLoading: function(on){
         state.loading = !!on;
         root.classList.toggle("is-loading", state.loading);
+        clearTimeout(ladeWacht);
         if (!state.loading) soft.end();
         if (state.loading && !state.hasData) renderSkeleton();
+        /* Notbremse. Der Ladezustand endet normalerweise dadurch, dass renderPerformanceRadar()
+           kommt -- aber wenn dieser Aufruf ausbleibt, haengt das Skelett unbegrenzt. Genau das
+           passiert, wenn der Render-Schritt im Bubble-Workflow an einer Bedingung haengt, die bei
+           leerem Ergebnis nicht zutrifft ("only when result's count > 0"): der RPC laeuft durch,
+           liefert nichts, und der Schritt, der den Ladezustand beenden wuerde, wird uebersprungen.
+           Nach dieser Zeit sagt die Komponente selbst, dass nichts angekommen ist. Das ersetzt den
+           fehlenden Schritt nicht, aber es macht ihn sichtbar statt ihn als ewiges Skelett zu
+           tarnen. */
+        if (state.loading){
+          ladeWacht = setTimeout(function(){
+            if (!state.loading) return;
+            state.loading = false;
+            root.classList.remove("is-loading");
+            soft.end();
+            if (!state.hasData) renderEmpty(true);
+            if (window.console){
+              console.warn("[performance-radar] setLoading('yes') kam, aber innerhalb von " +
+                (LADE_TIMEOUT / 1000) + "s kein renderPerformanceRadar(). Haeufigste Ursache: der " +
+                "Render-Schritt im Workflow haengt an einer Bedingung, die bei leerem Ergebnis " +
+                "nicht zutrifft -- dann endet der Ladezustand nie von selbst.");
+            }
+          }, LADE_TIMEOUT);
+        }
       },
       reset: function(){
+        clearTimeout(ladeWacht);
         state.cells = []; state.cellMap = {};
         state.topics = []; state.companies = [];
         state.availTopics = []; state.availCompanies = [];
