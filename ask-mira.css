@@ -1091,7 +1091,10 @@
   #ask-mira:not(.has-messages) .am-messages { display: none; }
   #ask-mira:not(.has-messages) .am-chat { flex: 1 1 0; min-height: 0; overflow-y: auto; padding-top: clamp(24px, 5vh, 56px); }
   #ask-mira:not(.has-messages) .am-composer-area { margin-top: 0; }
-  .am-composer:focus-within { border-color: #c9cdd4; box-shadow: 0 0 0 3px rgba(31,31,27,0.045), var(--am-shadow-sm); }
+  /* Der Ruhe-Schatten des Composers bleibt hinter dem Fokusring stehen, sonst springt die
+     Eingabezeile beim Hineinklicken flach. Dark Mode braucht keine eigene Regel mehr: die
+     --up-focus-Tokens kippen ueber .up-root[data-theme] von selbst. */
+  .am-composer:focus-within { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring), var(--am-shadow-sm); }
   .am-textarea {
     width: 100%; min-height: 26px; max-height: 200px; resize: none;
     border: 0; outline: 0; background: transparent; color: var(--am-text);
@@ -1679,7 +1682,6 @@
   #ask-mira[data-theme="dark"] .am-bubble span[data-mira-source-signal="unclear"] { background: rgba(251,191,36,0.13);  color:#fde68a; }
 
   /* Dark-mode hover / focus parity with prompt research */
-  #ask-mira[data-theme="dark"] .am-composer:focus-within { border-color: #555; box-shadow: 0 0 0 3px rgba(255,255,255,0.06), var(--am-shadow-sm); }
   #ask-mira[data-theme="dark"] .am-icon-action:hover { background: #2a2a2a; color: #e0e0e0; }
   #ask-mira[data-theme="dark"] .am-icon-action[aria-expanded="true"] { background: #242424; color: #e0e0e0; }
   /* topic chips — dark mode (1:1 with the Opportunities page: white text, deeper tints) */

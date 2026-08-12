@@ -1613,7 +1613,7 @@
 .up-topicmodal-label { font-size: 14px; font-weight: 500; color: var(--vc-text); }
 .up-topicmodal-name { height: 36px; padding: 0 12px; border: 1px solid var(--vc-border); border-radius: 9px;
   background: transparent; color: var(--vc-text); font: inherit; font-size: 14px; outline: 0; width: 100%; }
-.up-topicmodal-name:focus { border-color: var(--vc-hover-border); }
+.up-topicmodal-name:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 
 /* Appearance row: emoji + color trigger buttons. */
 .up-topicmodal-approw { display: flex; align-items: center; gap: 8px; }

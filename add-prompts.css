@@ -218,7 +218,9 @@
   background: var(--vc-bg); color: var(--vc-text);
   font: inherit; font-size: 13px; line-height: 1.35;
 }
-.uap-rowedit:focus { outline: none; }
+/* Vorher stand hier nur outline:none. Das Feld hatte damit ueberhaupt keine Fokusanzeige --
+   schlimmer als eine falsche Farbe, weil beim Tabben nicht zu sehen war, wo man ist. */
+.uap-rowedit:focus { outline: 0; border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 
 /* ---- foot: batch controls left, actions right ---- */
 .uap-foot { display: flex; align-items: center; gap: 12px; }

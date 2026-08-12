@@ -133,8 +133,13 @@
   transition: border-color .14s ease, background .14s ease;
 }
 .uca-input::placeholder { color: var(--vc-third); }
-.uca-input:hover { border-color: var(--vc-hover-border); }
-.uca-input:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); outline: 0; }
+/* Doppelte Klasse mit Absicht. Die ALTE Fassung dieser Komponente war ein Monolith mit
+   eigenem <style>-Block, und dessen Regeln (gleiche Spezifitaet, aber spaeter im
+   Dokument) gewinnen gegen diese Datei. Liegt irgendwo auf der Seite noch so ein altes
+   Element, faerbte es JEDES .uca-input der Seite mit -- auch die der neuen
+   Komponente. Der Hintergrund wird darum ausdruecklich gesetzt statt nur weggelassen. */
+.uca-input.uca-input:hover { border-color: var(--vc-hover-border); background: var(--up-surface); }
+.uca-input.uca-input:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); background: var(--up-surface); outline: 0; }
 
 /* Laufender Platzhalter, gleiche Bauart wie Miras Eingabezeile. Groesse, Farbe und Zeilenhoehe
    sind absichtlich identisch mit dem echten ::placeholder -- der Wechsel beim Fokussieren soll
@@ -342,8 +347,13 @@
   transition: border-color .14s ease, background .14s ease;
 }
 .uca-bld-input::placeholder { color: var(--vc-third); }
-.uca-bld-input:hover { border-color: var(--vc-hover-border); }
-.uca-bld-input:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); outline: 0; }
+/* Doppelte Klasse mit Absicht. Die ALTE Fassung dieser Komponente war ein Monolith mit
+   eigenem <style>-Block, und dessen Regeln (gleiche Spezifitaet, aber spaeter im
+   Dokument) gewinnen gegen diese Datei. Liegt irgendwo auf der Seite noch so ein altes
+   Element, faerbte es JEDES .uca-bld-input der Seite mit -- auch die der neuen
+   Komponente. Der Hintergrund wird darum ausdruecklich gesetzt statt nur weggelassen. */
+.uca-bld-input.uca-bld-input:hover { border-color: var(--vc-hover-border); background: var(--up-surface); }
+.uca-bld-input.uca-bld-input:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); background: var(--up-surface); outline: 0; }
 .uca-bld-add {
   flex: 0 0 auto; height: 40px; padding: 0 16px; border-radius: 12px; border: 0;
   background: var(--vc-text); color: var(--vc-bg); font: inherit; font-size: 13.5px; font-weight: 560;
