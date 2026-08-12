@@ -887,8 +887,34 @@
       '</div>';
     }
 
+    /* Jeder Klick auf einen Eintrag baut das Menue komplett neu -- anders bekaeme man den Zaehler,
+       die Kappungs-Sperre der anderen Eintraege und den Reset-Knopf nicht mit. Der Neuaufbau wirft
+       aber auch die beiden Scroll-Container weg, und der Ersatz startet bei 0. Wer weit unten in
+       den Topics etwas anhakte, landete darum jedes Mal wieder ganz oben. Die Scrollposition wird
+       deshalb ueber den Neuaufbau getragen, pro Spalte getrennt. */
+    function pickScrollLesen(){
+      var s = {};
+      if (!elPickMenu) return s;
+      Array.prototype.forEach.call(elPickMenu.querySelectorAll(".uhm-pick-col"), function(col){
+        var list = col.querySelector(".uhm-pick-list");
+        if (list) s[col.getAttribute("data-col")] = list.scrollTop;
+      });
+      return s;
+    }
+    function pickScrollSchreiben(s){
+      if (!elPickMenu || !s) return;
+      Array.prototype.forEach.call(elPickMenu.querySelectorAll(".uhm-pick-col"), function(col){
+        var list = col.querySelector(".uhm-pick-list");
+        var v = s[col.getAttribute("data-col")];
+        /* Nach einer Suche ist die Liste kuerzer als vorher; ohne die Klammer scrollte sie sonst
+           auf einen Wert, den es nicht mehr gibt, und stand danach am unteren Anschlag. */
+        if (list && v) list.scrollTop = Math.min(v, Math.max(0, list.scrollHeight - list.clientHeight));
+      });
+    }
+
     function populatePicker(){
       if (!elPickMenu) return;
+      var scrollStand = pickScrollLesen();
       if (!state.availCompanies.length && !state.availTopics.length){
         elPickMenu.innerHTML = '<div class="up-ment-empty">Nothing to pick yet</div>';
         return;
@@ -917,9 +943,10 @@
       elPickMenu.innerHTML =
         '<div class="uhm-pick-cols">' + brands + topics + '</div>' +
         '<div class="uhm-pick-foot">' +
-          (dirty ? '<button class="up-pop-action" type="button" data-pickreset>Reset</button>' : '') +
           '<button class="up-filter-submit uhm-pick-apply" type="button" data-pickapply>Apply</button>' +
+          (dirty ? '<button class="up-pop-action" type="button" data-pickreset>Reset</button>' : '') +
         '</div>';
+      pickScrollSchreiben(scrollStand);
     }
 
     function sameSet(a, b){
@@ -1026,6 +1053,10 @@
         render();
       }
       soft.begin(state.hasData);
+      /* VOR dem Bubble-Event leeren, aus demselben Grund wie beim Zellklick: der Workflow startet
+         seine Run-JS-Schritte sofort, und ein Reset danach wuerde wegraeumen, was gerade
+         angekommen ist. */
+      resetDetail();
       fire("data-select-fn", "uhmSelect", { company_ids: cIds.join(","), topic_ids: tIds.join(",") });
       pickPop.close(true);
       syncPickBtn();
@@ -1165,6 +1196,26 @@
       return null;
     }
 
+    function detailInstance(){
+      return root.getAttribute("data-detail-instance") || nearestDetailInstance() || instanceId;
+    }
+
+    /* Nach einem Apply zeigen die Achsen etwas anderes als vorher. Die Zelle, auf der der
+       Detailbereich steht, kann gerade weggefiltert worden sein -- und selbst wenn sie bleibt,
+       gehoert der Vergleich darunter (Spalte = alle Marken auf dem Topic, Zeile = diese Marke
+       ueber alle Topics) zum alten Raster. Der Bereich wird darum geleert, statt eine Auswertung
+       stehen zu lassen, die zur neuen Auswahl nicht mehr passt.
+       Der Radar macht das selbst, weil er es ohnehin ist, der den Detailbereich fuellt. Die
+       SICHTBARKEIT der Bubble-Gruppe darum herum kann er nicht anfassen, das ist ein Custom
+       State -- dafuer braucht der uhmSelect-Workflow einen eigenen Schritt. */
+    function resetDetail(){
+      var fn = window.resetPerformanceDetail;
+      if (typeof fn !== "function") return;
+      try { fn(detailInstance()); } catch(e){
+        if (window.console) console.warn("[performance-radar] resetPerformanceDetail threw:", e);
+      }
+    }
+
     function feedDetail(companyId, topicId){
       var fn = window.renderPerformanceDetail;
       if (typeof fn !== "function") return;
@@ -1197,7 +1248,7 @@
 
       try {
         fn({
-          instanceId: root.getAttribute("data-detail-instance") || nearestDetailInstance() || instanceId,
+          instanceId: detailInstance(),
           company: { company_id: co.id, name: co.name, favicon_url: co.logo },
           topic:   { topic_id: tp.id, name: tp.name, emoji: tp.emoji, color: hex },
           cell: cell, topic_column: column, brand_row: row

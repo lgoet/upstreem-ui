@@ -46,6 +46,23 @@
              the result. The chart dims itself until the answer lands, and un-dims after 15s if
              nothing comes, so a dead workflow shows as stale data rather than a frozen screen.
 
+             DER DETAILBEREICH WIRD DABEI VON SELBST GELEERT. Der Radar ruft
+             resetPerformanceDetail() fuer den Bereich unter sich, unmittelbar bevor er dieses
+             Event feuert — du brauchst dafuer KEINEN Run-JS-Schritt. Grund: nach dem Apply zeigen
+             die Achsen etwas anderes. Die Zelle, auf der der Detailbereich stand, kann gerade
+             weggefiltert worden sein, und selbst wenn sie bleibt, gehoert der Vergleich darunter
+             zum alten Raster.
+
+             Was der Radar NICHT kann, ist die Bubble-Gruppe um den Detailbereich ausblenden --
+             das ist ein Custom State. Ohne einen eigenen Schritt bleibt ein leerer Block stehen.
+             Haeng darum als ERSTEN Schritt dieses Workflows an:
+
+                 Set state  detail_open = no      (auf der Gruppe/Seite, die du ohnehin nutzt)
+
+             Willst du dasselbe von Hand ausloesen, etwa aus einem anderen Workflow:
+
+                 window.resetPerformanceDetail("detail1");     // Instanz des Detail-Elements
+
     cell     bubble_fn_heatmap_cell_clicked("companyId||topicId")
              ONE PLAIN STRING, not JSON — unchanged from the old standalone. Split on "||".
 
