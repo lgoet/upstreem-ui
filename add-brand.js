@@ -18,7 +18,7 @@
 (function () {
   "use strict";
 
-  var API_NAMES = ["openAddBrand", "closeAddBrand", "resetAddBrand"];
+  var API_NAMES = ["openAddBrand", "closeAddBrand", "resetAddBrand", "addBrandSuccess", "addBrandError"];
   var Q = (window.__uabBootQueue = window.__uabBootQueue || []);
   API_NAMES.forEach(function (n) {
     if (!window[n]) window[n] = function () { Q.push([n, [].slice.call(arguments)]); };
@@ -26,6 +26,13 @@
 
   var MAX_NAME = 75;
   var MAX_DOMAIN = 300;
+
+  /* Notbremse fuer den Ladezustand. Der Bubble-Workflow antwortet mit addBrandSuccess() oder
+     addBrandError(); tut er beides nicht -- Workflow abgebrochen, RPC im Timeout, Schritt
+     vergessen --, haenge der Dialog sonst unbegrenzt im Spinner und der Nutzer koennte weder
+     abbrechen noch es erneut versuchen. Nach dieser Zeit endet der Ladezustand von selbst und
+     sagt, dass die Marke TROTZDEM angelegt worden sein kann: alles andere waere geraten. */
+  var TIMEOUT_MS = 20000;
 
   var ICON = {
     x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
@@ -52,7 +59,7 @@
     }
 
     var M = null, fire = null, isOpen = false, opener = null;
-    var S = { name: "", domain: "", touched: false };
+    var S = { name: "", domain: "", touched: false, saving: false };
 
     /* ---------------------------------------------------------------------
        Domain: normalisieren und pruefen
@@ -137,9 +144,16 @@
 
           '</div>' +
 
+          /* Die Fehlermeldung des Workflows steht UNTER den Feldern, direkt ueber der Fusszeile:
+             sie gehoert zum Absenden, nicht zu einem einzelnen Feld. */
+          '<div class="uab-formerr" data-formerr></div>' +
+
           '<div class="uab-foot">' +
             '<button type="button" class="uab-cancel" data-act="close">Cancel</button>' +
-            '<button type="button" class="up-topicmodal-save" data-act="add">Add Brand</button>' +
+            '<button type="button" class="up-topicmodal-save uab-save" data-act="add">' +
+              '<span class="uab-spin" aria-hidden="true"></span>' +
+              '<span data-savelabel>Add Brand</span>' +
+            '</button>' +
           '</div>' +
 
         '</div>';
@@ -154,7 +168,9 @@
         fName: back.querySelector('[data-field="name"]'),
         fDomain: back.querySelector('[data-field="domain"]'),
         count: back.querySelector("[data-count]"),
-        fav: back.querySelector("[data-fav]")
+        fav: back.querySelector("[data-fav]"),
+        save: back.querySelector(".uab-save"),
+        formErr: back.querySelector("[data-formerr]")
       };
 
       /* eventPrefix "uab-", damit das DOM-Ersatzereignis uab-bubble_fn_uabAddBrand heisst -- im
@@ -171,12 +187,12 @@
 
       M.name.addEventListener("input", function () {
         S.name = M.name.value;
-        renderCount();
+        renderCount(); setFormErr("");
         if (S.touched) validate();
       });
       M.domain.addEventListener("input", function () {
         S.domain = M.domain.value;
-        renderFav();
+        renderFav(); setFormErr("");
         if (S.touched) validate();
       });
       /* Erst beim Verlassen normalisieren, nicht bei jedem Tastendruck: waehrend des Tippens
@@ -191,7 +207,10 @@
       M.name.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); M.domain.focus(); } });
     }
 
-    function onKey(e) { if (e.key === "Escape" && isOpen) close(); }
+    /* Escape schliesst nicht, waehrend der Workflow laeuft: der Klick ist ueber .is-saving
+       ohnehin gesperrt, und ein offener Weg nur ueber die Tastatur waere ein Zustand, den man
+       versehentlich trifft und in dem man dann nicht mehr erfaehrt, ob es geklappt hat. */
+    function onKey(e) { if (e.key === "Escape" && isOpen && !S.saving) close(); }
 
     /* ---------------------------------------------------------------------
        Rendern
@@ -230,6 +249,30 @@
       field.classList.toggle("is-err", !!msg);
       field.querySelector("[data-err]").textContent = msg || "";
     }
+    /* Die Meldung des Workflows, unter den Feldern. Getrennt von den Feldfehlern: die sagen "das
+       hast du falsch eingegeben", diese sagt "der Server konnte es nicht anlegen". */
+    function setFormErr(msg) {
+      if (!M) return;
+      M.formErr.textContent = msg || "";
+      M.card.classList.toggle("has-formerr", !!msg);
+    }
+
+    var saveTimer = null;
+    function setSaving(on) {
+      S.saving = !!on;
+      M.card.classList.toggle("is-saving", S.saving);
+      M.save.disabled = S.saving;
+      M.back.querySelector("[data-savelabel]").textContent = S.saving ? "Adding…" : "Add Brand";
+      clearTimeout(saveTimer);
+      if (S.saving) {
+        setFormErr("");
+        saveTimer = setTimeout(function () {
+          if (!S.saving) return;
+          setSaving(false);
+          setFormErr("No answer from the server. The brand may still have been created — close this and refresh before trying again.");
+        }, TIMEOUT_MS);
+      }
+    }
 
     /* Liefert true, wenn alles passt. Faerbt dabei die Felder ein -- beides in einer Funktion,
        damit "geprueft" und "angezeigt" nicht auseinanderlaufen koennen. */
@@ -260,8 +303,8 @@
       S.name = M.name.value; S.domain = M.domain.value; S.touched = false;
 
       setErr(M.fName, ""); setErr(M.fDomain, "");
+      setFormErr(""); setSaving(false);
       renderCount(); renderFav();
-      M.card.classList.remove("is-saving");
 
       opener = document.activeElement;
       isOpen = true;
@@ -276,6 +319,7 @@
     function close() {
       if (!M || !isOpen) return;
       isOpen = false;
+      setSaving(false);                 // raeumt auch die Notbremse ab
       document.removeEventListener("keydown", onKey);
       M.back.classList.add("is-closing");
       M.back.classList.remove("is-shown");
@@ -284,6 +328,7 @@
     }
 
     function submit() {
+      if (S.saving) return;             // kein Doppelklick waehrend der Workflow laeuft
       S.touched = true;                 // ab jetzt zeigen die Felder Fehler auch beim Tippen
       if (!validate()) {
         var bad = M.back.querySelector(".uab-field.is-err .uab-in");
@@ -300,8 +345,15 @@
       /* makeFire und nicht resolveBubbleFn: nur makeFire stellt team_id voran, macht EINEN
          JSON-String daraus (STYLEGUIDE 13), warnt genau einmal wenn niemand zuhoert, und
          verschickt das DOM-Ersatzereignis. */
+      /* Ladezustand VOR dem Feuern. Bubble startet seine Schritte sofort, und ein Workflow, der
+         schnell antwortet, wuerde sonst addBrandSuccess() rufen, bevor der Zustand ueberhaupt
+         gesetzt ist -- der Dialog haenge dann im Spinner, obwohl alles fertig ist. Dieselbe
+         Reihenfolge wie beim Radar-Zellklick, aus demselben Grund. */
+      setSaving(true);
       fire("data-add-fn", "bubble_fn_uabAddBrand", payload);
-      close();
+      /* Der Dialog schliesst NICHT selbst. Er wartet auf addBrandSuccess() oder addBrandError()
+         aus dem Workflow -- das Anlegen dauert ein paar Sekunden, und ein Dialog, der sofort
+         zugeht, behauptet einen Erfolg, den noch niemand kennt. */
     }
 
     /* ---------------------------------------------------------------------
@@ -316,6 +368,19 @@
       open(opts);
     };
     window.closeAddBrand = function () { close(); };
+
+    /* Die beiden Antworten des Workflows. Beide beenden den Ladezustand -- der Unterschied ist
+       nur, ob der Dialog zugeht oder mit einer Meldung stehen bleibt. */
+    window.addBrandSuccess = function () { if (!M) return; setSaving(false); close(); };
+    window.addBrandError = function (msg) {
+      if (!M) return;
+      setSaving(false);
+      /* Ein leerer Aufruf darf nicht in einem stillen Dialog enden: dann steht wenigstens da,
+         DASS es nicht geklappt hat. */
+      var t = String(msg == null ? "" : msg).trim();
+      setFormErr(t || "Could not add this brand. Please try again.");
+      M.name.focus();
+    };
     window.resetAddBrand = function () {
       if (!M) return;
       M.name.value = ""; M.domain.value = "";

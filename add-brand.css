@@ -87,8 +87,42 @@
 .uab-field.is-err .uab-in:focus { border-color: var(--vt-down); box-shadow: 0 0 0 var(--up-focus-w) rgba(176,32,12,0.16); }
 .up-root[data-theme="dark"] .uab-field.is-err .uab-in:focus { box-shadow: 0 0 0 var(--up-focus-w) rgba(210,93,93,0.24); }
 
+/* ---- Meldung des Workflows ----
+   Steht unter den Feldern, ueber der Fusszeile, und nimmt nur Platz weg, wenn sie etwas sagt.
+   Der Rahmen macht sie als Block lesbar, ohne dass die Karte dafuer wachsen muesste. */
+.uab-formerr {
+  display: none;
+  padding: 10px 12px; border-radius: 9px;
+  border: 1px solid var(--vt-down); background: rgba(176,32,12,0.06);
+  color: var(--vt-down); font-size: 12.5px; font-weight: 500; line-height: 1.45;
+}
+.uab-card.has-formerr .uab-formerr { display: block; }
+.up-root[data-theme="dark"] .uab-formerr { background: rgba(210,93,93,0.10); }
+
 /* ---- Fuss ---- */
 .uab-foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+
+/* ---- Ladezustand ----
+   Die Felder werden gedimmt und unklickbar, der Knopf traegt den Spinner. Der Dialog bleibt
+   dabei OFFEN und ganz sichtbar: das Anlegen dauert Sekunden, und ein Dialog, der in dieser Zeit
+   verschwindet, behauptet einen Erfolg, den noch niemand kennt. */
+.uab-card.is-saving .uab-body,
+.uab-card.is-saving .uab-head { pointer-events: none; opacity: .55; }
+.uab-card.is-saving .uab-cancel { pointer-events: none; opacity: .55; }
+
+.uab-save { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.uab-save:disabled { cursor: default; }
+/* Der Spinner belegt seinen Platz erst im Ladezustand -- sonst sitzt die Beschriftung im
+   Ruhezustand aus der Mitte. */
+.uab-spin { display: none; width: 13px; height: 13px; flex: 0 0 13px;
+  border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%;
+  animation: uab-spin 640ms linear infinite; opacity: .85; }
+.uab-card.is-saving .uab-spin { display: block; }
+@keyframes uab-spin { to { transform: rotate(360deg); } }
+/* Der gespeicherte Knopf bleibt in der Primaerfarbe, nicht ausgegraut: er ist der einzige Teil
+   der Karte, der gerade AKTIV etwas tut. core's :disabled-Regel wuerde ihn grau faerben. */
+.uab-card.is-saving .uab-save:disabled { background: var(--vc-text); color: var(--up-surface); opacity: .9; }
+@media (prefers-reduced-motion: reduce) { .uab-spin { animation-duration: 2s; } }
 .uab-cancel {
   height: 34px; padding: 0 16px; border: 1px solid var(--vc-border); border-radius: 9px;
   background: transparent; color: var(--vc-text); cursor: pointer;

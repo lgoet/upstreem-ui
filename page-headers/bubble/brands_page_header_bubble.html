@@ -68,6 +68,31 @@
   https://www.apple.com/de/store/ wird apple.com, aus HTTP://Example.CO.UK/pfad?x=1 wird
   example.co.uk.
 
+  ── DER DIALOG SCHLIESST SICH NICHT SELBST ───────────────────────────────────
+  Nach dem Klick auf Add geht er in den Ladezustand: Felder gedimmt und gesperrt, der Knopf traegt
+  einen Spinner und heisst "Adding…", Escape und Aussenklick sind gesperrt. Er wartet auf DEINE
+  Antwort. Das ist Absicht -- das Anlegen dauert Sekunden, und ein Dialog, der sofort zugeht,
+  behauptet einen Erfolg, den noch niemand kennt.
+
+  Haeng darum ans ENDE deines Workflows einen Run-JavaScript-Schritt:
+
+      Erfolgsweg            addBrandSuccess();
+      Fehlerweg             addBrandError(`[Fehlermeldung]`);
+
+  addBrandSuccess() beendet den Ladezustand und schliesst den Dialog. Deine Notification zeigst du
+  wie gehabt im Workflow -- der Dialog macht dazu nichts.
+
+  addBrandError(text) beendet den Ladezustand und zeigt den Text als roten Block unter den Feldern.
+  Der Dialog bleibt offen und die Eingaben stehen noch da, der Nutzer kann also direkt korrigieren;
+  sobald er in einem Feld tippt, verschwindet die Meldung. Rufst du addBrandError() OHNE Text,
+  steht dort "Could not add this brand. Please try again." -- ein stiller Dialog waere der
+  schlechteste Ausgang.
+
+  NOTBREMSE: bleibt beides aus -- Workflow abgebrochen, RPC im Timeout, Schritt vergessen --,
+  endet der Ladezustand nach 20 Sekunden von selbst und der Dialog sagt, dass die Marke TROTZDEM
+  angelegt worden sein kann. Verlass dich nicht darauf, aber sie verhindert, dass jemand vor einem
+  ewigen Spinner sitzt.
+
   ── Vorausgefuellt oeffnen ───────────────────────────────────────────────────
   Ein Run-JavaScript-Schritt, keine Instanz-Id:
 
