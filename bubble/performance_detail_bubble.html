@@ -39,6 +39,9 @@
   |                        |         | Id des Radars passen: der Radar sucht seinen Detail-     |
   |                        |         | bereich ueber die Position im Layout, nicht ueber die Id.|
   | data-cdn-pin           | ja      | Commit-Hash, identisch mit allen anderen Komponenten     |
+  | data-isdark            | nein    | "yes" / "no", von Bubble gesetzt. Ohne folgt der Bereich |
+  |                        |         | dem Seiten-Theme -- mit reagiert er auch auf einen       |
+  |                        |         | Wechsel, den Bubble nur ueber dieses Attribut meldet.    |
   | data-theme             | nein    | "light" / "dark"; sonst folgt es der Seite               |
   | data-detail-instance   | -       | steht auf dem RADAR-Element, nicht hier. Nur noetig, wenn|
   |                        |         | die Zuordnung ueber Kreuz laufen soll -- normal findet   |
@@ -46,6 +49,19 @@
   | data-scope-fn          | nein    | Standard bubble_fn_updScope                              |
   | data-close-fn          | nein    | Standard bubble_fn_updClose                              |
   | data-company-fn        | nein    | Standard bubble_fn_updCompanyClick                       |
+
+  Die drei -fn-Attribute stehen jetzt AUSGESCHRIEBEN auf dem Wurzel-Div, so wie bei jeder anderen
+  Komponente. Sie waren vorher nur hier in der Tabelle erwaehnt und das Div trug sie nicht -- die
+  Komponente fiel damit still auf ihre eingebauten Standardnamen zurueck. Das faellt bei EINEM
+  Detailbereich nicht auf, aber zwei auf derselben Seite haetten sich dieselben Event-Namen
+  geteilt, und beide Workflows waeren bei jedem Klick gelaufen.
+
+  Brauchst du zwei, haeng an jeden Namen einen Zusatz -- dasselbe Muster wie in den Tabellen:
+
+      data-scope-fn="bubble_fn_updScope_[dynamic id]"
+
+  Das Toolbox-Element auf der Seite muss dann genauso heissen. Bei nur einem Detailbereich laesst
+  du die Namen wie sie sind.
 
   ── EVENTS AUS DER KOMPONENTE (Toolbox "JavaScript to Bubble") ───────────────
   | Event                | Wann                                   | Payload                                        |
@@ -137,7 +153,11 @@
 
 <div class="up-root upd-root"
      data-instance="detail1"
-     data-cdn-pin="CDN_PIN"></div>
+     data-cdn-pin="CDN_PIN"
+     data-isdark="IS_DARK"
+     data-scope-fn="bubble_fn_updScope"
+     data-close-fn="bubble_fn_updClose"
+     data-company-fn="bubble_fn_updCompanyClick"></div>
 
 <!-- Das Wurzel-Div ist bewusst leer: die Komponente baut ihren gesamten Innenaufbau selbst. Es
      gibt hier keine Stelle, an der du etwas einsetzen sollst, und ein von Hand eingefuegter
