@@ -26,7 +26,11 @@
 
 /* ---- Kopf (STYLEGUIDE 27: 22px/500 Heading, 16px/400 Subheading in Drittfarbe) ---- */
 .uab-head { display: flex; align-items: flex-start; gap: 12px; }
-.uab-heading { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+/* Der Heading-Block nimmt den ganzen freien Platz, damit der Schliessen-Knopf an der rechten
+   Kante klebt statt direkt neben dem Text zu haengen. Ohne das steht das X mitten im Kopf, weil
+   .up-popup-close aus core selbst kein margin-left:auto mitbringt -- die Ausrichtung ist Sache
+   des Kopfes, nicht des Knopfes. */
+.uab-heading { display: flex; flex-direction: column; gap: 8px; min-width: 0; flex: 1 1 auto; }
 .uab-title { font-size: 22px; font-weight: 500; line-height: 1.2; }
 .uab-sub { font-size: 16px; font-weight: 400; color: var(--vc-third); line-height: 1.3; }
 

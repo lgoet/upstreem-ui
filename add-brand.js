@@ -210,10 +210,20 @@
       var url = domainOk(d) ? faviconFor(d) : "";
       if (M.fav.getAttribute("data-src") === url) return;   // nicht bei jedem Tastendruck neu laden
       M.fav.setAttribute("data-src", url);
-      M.fav.innerHTML = url
-        ? '<img src="' + esc(url) + '" alt="" referrerpolicy="no-referrer" ' +
-          "onerror=\"this.parentNode.innerHTML='" + ICON.globe.replace(/'/g, "&#39;") + "'\" />"
-        : ICON.globe;
+      if (!url) { M.fav.innerHTML = ICON.globe; return; }
+      /* Das <img> wird gebaut, nicht als HTML-Text zusammengesetzt. Der Rueckfall auf den Globus
+         hing vorher in einem inline onerror="...", und darin steckte das SVG als String -- dessen
+         erstes DOPPELTES Anfuehrungszeichen (viewBox="0 0 24 24") beendete das Attribut, und der
+         Rest des SVG landete als Muell-Attribute im img-Tag. Sichtbar wurde davon ein Stueck
+         Text neben dem Favicon. Escapen waere hier das falsche Pflaster: ein Handler gehoert an
+         das Element, nicht in einen String. */
+      M.fav.innerHTML = "";
+      var img = document.createElement("img");
+      img.alt = "";
+      img.referrerPolicy = "no-referrer";
+      img.onerror = function () { M.fav.innerHTML = ICON.globe; };
+      img.src = url;
+      M.fav.appendChild(img);
     }
 
     function setErr(field, msg) {
