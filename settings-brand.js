@@ -130,7 +130,7 @@
     var saved = { models: [], marketId: "", businessModel: "", industry: "", summary: "" };
     var draft = { models: [], marketId: "", businessModel: "", industry: "", summary: "" };
     var meta  = { brandName: "", brandLogo: "", teamName: "", teamId: "",
-                  modelLimit: 3, canManage: true, markets: [], industries: INDUSTRIES.slice(), logoFileName: "" };
+                  modelLimit: 3, canManage: true, markets: [], marketsRaw: [], industries: INDUSTRIES.slice(), logoFileName: "" };
     var loading = false;
 
     function isDark(){ return UC.isYes(root.getAttribute("data-isdark")); }
@@ -191,6 +191,13 @@
       if (UC.storeStats){ try { voll = UC.storeStats().allMarkets.n || 0; } catch(e){ voll = 0; } }
       var raw = (voll && UC.getAllMarkets) ? UC.getAllMarkets() : [];
       if (!raw.length){ raw = pendingAll(); if (raw.length) quelle = "warteschlange"; }
+      /* Eine Liste im Payload kommt VOR der gefilterten. Sie ist eine ausdrueckliche Angabe des
+         Aufrufers, die gefilterte Liste nur das, was zufaellig fuer die Tabellenfilter im Store
+         liegt -- die hat hier einen Eintrag und ist damit unbrauchbar. Andersherum gewann dieser
+         eine Eintrag gegen eine vollstaendig uebergebene Liste. */
+      if (!raw.length && meta.marketsRaw && meta.marketsRaw.length){
+        raw = meta.marketsRaw; quelle = "payload";
+      }
       if (!raw.length){ raw = UC.getMarkets ? UC.getMarkets() : []; if (raw.length) quelle = "gefiltert"; }
       if (!raw.length) return meta.markets;
       /* Einmal pro Sitzung in die Konsole schreiben, WOHER die Liste kommt. Ohne das ist "zu wenige
@@ -208,7 +215,10 @@
              ? "Quelle ist die WARTESCHLANGE -- das geladene core.js kennt setAllMarkets nicht " +
                "(alter data-cdn-pin an irgendeiner Komponente dieser Seite). Die Liste stimmt, " +
                "aber der Store bleibt leer."
-             : "Quelle ist die GEFILTERTE Liste -- setUpstreemAllMarkets hat nichts geliefert."));
+           : quelle === "payload" ? "Quelle ist die Liste aus dem renderSettingsBrand-Aufruf."
+             : "Quelle ist die GEFILTERTE Liste -- setUpstreemAllMarkets hat nichts geliefert. " +
+               "Wenn diese Seite keinen solchen Aufruf hat, gib die volle Liste direkt mit: " +
+               "renderSettingsBrand({ instanceId: ..., markets: [...] })."));
       }
       return raw.map(function(m){
         var a2 = String(m.alpha2 || m.alpha3 || "").toLowerCase();
@@ -278,7 +288,7 @@
                 '<div class="usb-rowdesc">To edit your primary tracking and display name, or to add ' +
                   'matching aliases, use the button on the right.</div>' +
               '</div>' +
-              '<div class="usb-rowctl">' +
+              '<div class="usb-rowctl usb-skelbox usb-skelbox">' +
                 '<button class="up-btn-sec usb-btn" type="button" data-edit-brand>' +
                   ICON.edit + '<span class="usb-editbtn-lbl">Edit brand</span></button>' +
               '</div>' +
@@ -290,9 +300,9 @@
                 '<div class="usb-rowdesc">Change your logo to personalize your workspace. ' +
                   'Square images work best. PNG or SVG, up to 1 MB.</div>' +
               '</div>' +
-              '<div class="usb-rowctl usb-logoctl">' +
-                '<div class="usb-logoprev" data-logo-prev></div>' +
-                '<div class="usb-logoforms">' +
+              '<div class="usb-rowctl usb-skelbox usb-logoctl">' +
+                '<div class="usb-logoprev usb-skelbox usb-skelbox" data-logo-prev></div>' +
+                '<div class="usb-logoforms usb-skelbox usb-skelbox">' +
                   '<div class="usb-uploadrow">' +
                     '<button class="up-btn-sec usb-btn" type="button" data-logo-pick>' +
                       ICON.upload + '<span>Upload</span></button>' +
@@ -327,9 +337,9 @@
                 '<div class="usb-rowtitle">Manage AI Models</div>' +
                 '<div class="usb-rowdesc" data-model-desc></div>' +
               '</div>' +
-              '<span class="usb-count" data-model-count>0/0</span>' +
+              '<span class="usb-count usb-skelbox usb-skelbox" data-model-count>0/0</span>' +
             '</div>' +
-            '<div class="usb-models" data-models></div>' +
+            '<div class="usb-models usb-skelbox" data-models></div>' +
             '<div class="usb-savebar">' +
               '<span class="usb-savehint" data-models-hint></span>' +
               '<button class="usb-savebtn" type="button" data-models-save disabled>Save models</button>' +
@@ -350,7 +360,7 @@
                 '<div class="usb-rowdesc">Your preset primary market focus. New prompts start here ' +
                   'unless you pick a different one.</div>' +
               '</div>' +
-              '<div class="usb-rowctl">' + ddHtml("market", "Select a market", "Search markets", "Default market", ICON.pin) + '</div>' +
+              '<div class="usb-rowctl usb-skelbox usb-skelbox">' + ddHtml("market", "Select a market", "Search markets", "Default market", ICON.pin) + '</div>' +
             '</div>' +
 
             '<div class="usb-div"></div>' +
@@ -360,7 +370,7 @@
                 '<div class="usb-rowtitle">Business Model</div>' +
                 '<div class="usb-rowdesc">Your target audience.</div>' +
               '</div>' +
-              '<div class="usb-rowctl">' +
+              '<div class="usb-rowctl usb-skelbox usb-skelbox">' +
                 '<div class="up-dense usb-dense" role="radiogroup" aria-label="Business model" data-business></div>' +
               '</div>' +
             '</div>' +
@@ -372,7 +382,7 @@
                 '<div class="usb-rowtitle">Brand Industry</div>' +
                 '<div class="usb-rowdesc">Your preset primary brand industry.</div>' +
               '</div>' +
-              '<div class="usb-rowctl">' + ddHtml("industry", "Select an industry", "Search industries", "Brand industry", "") + '</div>' +
+              '<div class="usb-rowctl usb-skelbox usb-skelbox">' + ddHtml("industry", "Select an industry", "Search industries", "Brand industry", "") + '</div>' +
             '</div>' +
 
             '<div class="usb-div"></div>' +
@@ -388,7 +398,7 @@
                   'context source when generating tailored research prompts, insights and AI ' +
                   'analyses. If your focus or product offering changes, update it here.</div>' +
               '</div>' +
-              '<div class="usb-sumwrap">' +
+              '<div class="usb-sumwrap usb-skelbox usb-skelbox">' +
                 '<textarea class="up-field usb-sumin" rows="6" spellcheck="true" ' +
                   'placeholder="Describe what your company does…" aria-label="Brand summary" data-summary></textarea>' +
               '</div>' +
@@ -412,7 +422,7 @@
                 '<div class="usb-rowtitle">Leave Team</div>' +
                 '<div class="usb-rowdesc">You lose access to this workspace. Other members keep theirs.</div>' +
               '</div>' +
-              '<div class="usb-rowctl">' +
+              '<div class="usb-rowctl usb-skelbox usb-skelbox">' +
                 '<button class="usb-dangerbtn" type="button" data-leave>' + ICON.logout + '<span>Leave team</span></button>' +
               '</div>' +
             '</div>' +
@@ -423,7 +433,7 @@
                 '<div class="usb-rowdesc">Deletes the workspace and every brand, prompt and report ' +
                   'in it, for everyone. This cannot be undone.</div>' +
               '</div>' +
-              '<div class="usb-rowctl">' +
+              '<div class="usb-rowctl usb-skelbox usb-skelbox">' +
                 '<button class="usb-dangerbtn is-hard" type="button" data-delete>' + ICON.trash + '<span>Delete team</span></button>' +
               '</div>' +
             '</div>' +
@@ -997,6 +1007,9 @@
         var markets = p.markets;
         if (typeof markets === "string") markets = UC.parseBubbleJson(markets);
         if (Array.isArray(markets)){
+          /* Roh mitfuehren: marketList() normalisiert selbst und braucht alpha2/prompt_count so,
+             wie sie aus der RPC kommen. meta.markets bleibt die bereits umgeformte Fassung. */
+          meta.marketsRaw = markets;
           meta.markets = markets.map(function(m){
             return { id: String(m.id != null ? m.id : (m.alpha2 != null ? m.alpha2 : m.name)),
                      name: m.name || "", score: m.score == null ? null : m.score };
@@ -1018,17 +1031,16 @@
         root.__usbLoading = false;
         render();
       },
-      /* Was vom Server kommt, bekommt im Ladezustand ein Skelett -- die Auswahlfelder, die
-         Modell-Kacheln, das Logo und die Zusammenfassung. Ueberschriften und Beschreibungen sind
-         fest verdrahtet und bleiben stehen; ein Skelett darueber waere gelogen. */
+      /* Was vom Server kommt, traegt usb-skelbox FEST im Markup -- die Klasse tut nur unter
+         .is-loading etwas. Sie beim Umschalten anzuheften war falsch: kommt setLoading("yes")
+         bevor die Komponente ihr Markup gebaut hat (der Normalfall, der Ladezustand steht ja VOR
+         der Abfrage), findet der Selektor nichts, und das spaetere render() ueberschreibt die
+         Klassen ohnehin wieder. Genau deshalb war nie ein Skelett zu sehen. */
       setLoading: function(on){
         loading = UC.isYes(on);
         root.__usbLoading = loading;
         root.classList.toggle("is-loading", loading);
-        Array.prototype.forEach.call(
-          root.querySelectorAll(".usb-rowctl, .usb-models, .usb-logoprev, .usb-logoforms, " +
-                                ".usb-sumwrap, .usb-count"),
-          function(el){ el.classList.add("usb-skelbox"); });
+
         /* Waehrend geladen wird, ist jeder Speichern-Knopf gesperrt. Sonst kann der Nutzer ein
            zweites Mal speichern, bevor die erste Antwort da ist, und die zweite Antwort
            ueberschreibt die erste. */
