@@ -120,7 +120,10 @@
   font: inherit; transition: border-color 120ms ease, background 120ms ease, opacity 120ms ease;
 }
 .usb-model:hover { border-color: var(--vc-hover-border); }
-.usb-model.is-on { border-color: var(--vc-text); background: var(--vc-heading-bg); }
+/* Weicher als vorher: --vc-text als Rahmen ist der staerkste Ton der Palette und laesst eine
+   gewaehlte Kachel wie einen Fehlerzustand aussehen. --vc-hover-border ist derselbe Ton, den auch
+   Hover benutzt, nur bleibend -- ausgewaehlt heisst hier "eingerastet", nicht "Achtung". */
+.usb-model.is-on { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
 /* Gesperrt heisst sichtbar abgeschaltet. Ein Schalter, der auf Klick nichts tut und auch nicht
    sagt warum, ist schlimmer als einer, der grau ist und einen Tooltip hat. */
 .usb-model.is-locked { opacity: .45; cursor: not-allowed; }
@@ -128,7 +131,10 @@
 .usb-model:focus-visible { outline: 0; border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 .usb-model-logo {
   width: 28px; height: 28px; flex: 0 0 28px; border-radius: 8px; overflow: hidden;
-  background: var(--vt-logo-bg); border: 1px solid var(--vc-border); display: grid; place-items: center;
+  /* KEIN --vt-logo-bg. Das Token ist fuer Markenlogos gedacht, die oft transparent sind und eine
+     helle Unterlage brauchen -- im Dark Mode ist es darum #e0e0e0. Die Modell-Logos hier bringen
+     ihren eigenen Hintergrund mit; eine helle Kachel darunter sticht heraus wie ein Fehler. */
+  background: var(--vc-heading-bg); border: 1px solid var(--vc-border); display: grid; place-items: center;
 }
 .usb-model-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .usb-model-txt { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1 1 auto; }
@@ -136,8 +142,8 @@
 .usb-model-prov { font-size: 12px; color: var(--vc-third); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Der Haken belegt seinen Platz immer. Sonst ruecken Name und Logo bei jedem Umschalten um 18px
    zur Seite und das Raster zappelt beim Durchklicken. */
-.usb-model-check { flex: 0 0 18px; width: 18px; height: 18px; color: var(--vc-text); opacity: 0; transition: opacity 120ms ease; }
-.usb-model-check svg { width: 18px; height: 18px; display: block; }
+.usb-model-check { flex: 0 0 16px; width: 16px; height: 16px; color: var(--vc-text); opacity: 0; transition: opacity 120ms ease; }
+.usb-model-check svg { width: 16px; height: 16px; display: block; }
 .usb-model.is-on .usb-model-check { opacity: 1; }
 .usb-modelsempty { font-size: 13px; color: var(--vc-third); padding: 0 0 16px; }
 
@@ -223,8 +229,15 @@
   display: block; }
 .usb-sumlogo.is-empty { display: none; }
 .usb-sumwrap { position: relative; }
+/* Farben ausdruecklich aus den Tokens. Ohne sie nimmt das textarea die Browser-Vorgabe -- also
+   weiss, auch im Dark Mode. Rahmen und Fokusring wie bei jedem anderen Feld der App. */
 .usb-sumin { width: 100%; min-height: 132px; padding: 10px 12px; border-radius: 10px;
-  font-family: inherit; font-size: 13.5px; line-height: 1.55; resize: vertical; display: block; }
+  border: 1px solid var(--vc-border); background: var(--vc-bg); color: var(--vc-text);
+  font-family: inherit; font-size: 13.5px; line-height: 1.55; resize: vertical; display: block;
+  outline: 0; transition: border-color 150ms ease, box-shadow 150ms ease; }
+.usb-sumin::placeholder { color: var(--vc-third); }
+.usb-sumin:hover { border-color: var(--vc-hover-border); }
+.usb-sumin:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 /* Der native Ziehgriff ist ein hauchduenner Schatten und auf hellem Grund praktisch unsichtbar.
    Chrome laesst sich der Griff nicht umfaerben, also wird der native ausgeblendet und der
    vertraute Diagonalstrich als eigenes Element daruebergelegt. pointer-events:none, damit das
