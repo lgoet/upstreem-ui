@@ -1822,10 +1822,14 @@
         '<div class="up-empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' +
           '<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>' +
         '<div class="up-empty-h">' + (filtered ? "No matching prompts" : "No prompts yet") + '</div>' +
+        /* "search and filters", nicht nur "search": der Zustand wird auch von einem gesetzten
+           Mentioned-Filter ausgeloest, bei leerem Suchfeld. Der Text behauptete dann, die Suche
+           sei schuld, und der Knopf hiess "Clear search", obwohl er beides raeumt. Die drei
+           Schwestertabellen schreiben an derselben Stelle seit jeher "Clear filters". */
         '<div class="up-empty-t">' + (filtered
-          ? "Nothing matches the current search."
+          ? "Nothing matches the current search and filters."
           : "Prompts appear here once your team has added them.") + '</div>' +
-        (filtered ? '<button class="up-empty-btn" type="button" data-clearall>Clear search</button>' : "") +
+        (filtered ? '<button class="up-empty-btn" type="button" data-clearall>Clear filters</button>' : "") +
       '</div>';
     }
 

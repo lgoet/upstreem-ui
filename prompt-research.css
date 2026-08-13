@@ -666,3 +666,11 @@
    to the root so this rule has something to anchor against. */
 .upr-root { position: relative; }
 .upr-root > .upr-history-entry { position: absolute; top: 0; right: 0; z-index: 7; padding-top: 0; }
+
+/* Die Vorschau-Leiste in der Erklaerkarte. Die Karte haengt am document.body, dort loesen die
+   --upr-vol-*-Tokens nicht auf -- darum feste Werte, aber MIT Dark-Pendant. Vorher standen sie
+   inline im JS und blieben im Dark Mode hell. */
+.up-explain .upr-vol-demo .upr-volume-seg { background: #e8eaee; }
+.up-explain .upr-vol-demo .upr-volume-seg.is-filled { background: #9fd25d; }
+.up-explain[data-theme="dark"] .upr-vol-demo .upr-volume-seg { background: #303030; }
+.up-explain[data-theme="dark"] .upr-vol-demo .upr-volume-seg.is-filled { background: #9fd25d; }

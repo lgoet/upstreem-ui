@@ -75,9 +75,15 @@
   var HASH_SVG = UC.HASH_ICON ? UC.HASH_ICON.replace('<svg ', '<svg class="up-hash" ') : "";
 
   /* Formatierung nach STYLEGUIDE 1c: Prozente ohne Nachkommastelle, wenn sie ganz sind. */
-  function fmtPctShort(v){
+  /* absolut=true fuer einen echten Sichtbarkeitswert, false/weggelassen fuer eine DIFFERENZ.
+     Der Unterschied ist keine Kosmetik: bei v = 0.03 zeigte die Radar-Zelle "<1%" und die Kachel
+     daneben "0%" -- dieselbe Zahl, zwei Aussagen, auf einem Bildschirm. Bei einem absoluten Wert
+     ist die gerundete 0 eine Luege ("die Marke kommt nicht vor"), bei einer Differenz dagegen
+     richtig: "0% behind" heisst gleichauf, "<1% behind" waere Unsinn. */
+  function fmtPctShort(v, absolut){
     if (v == null || isNaN(v)) return "-";
     var n = Number(v);
+    if (absolut && n > 0 && Math.round(n) === 0) return "<1%";
     return (Math.abs(n - Math.round(n)) < 0.05 ? String(Math.round(n)) : fmt1(n)) + "%";
   }
   function num(v){ var n = toNum ? toNum(v) : (v == null ? null : Number(v)); return (n == null || isNaN(n)) ? null : n; }
@@ -330,7 +336,7 @@
       var mentDelta = (ment != null && mentPrev != null) ? (ment - mentPrev) : null;
       var dash = '<span class="upd-dash">-</span>';
 
-      var visHtml  = vis == null ? dash : '<span class="up-num">' + fmtPctShort(vis) + '</span>';
+      var visHtml  = vis == null ? dash : '<span class="up-num">' + fmtPctShort(vis, true) + '</span>';
       var sentHtml = sv == null ? dash
         : '<span class="up-sent"><span class="up-sent-dot" style="background:' + sentColor(sv) + '"></span>' +
           '<span class="up-sent-val">' + Math.round(sv) + '</span></span>';
@@ -419,7 +425,7 @@
                    '<span class="upd-stand-idx">' + (realIdx + 1) + '</span>' +
                    brandChipHtml(c) +
                    '<span class="upd-stand-name">' + esc(String(c.name || "")) + '</span>' +
-                   '<span class="upd-stand-val up-num">' + fmtPctShort(v) + '</span>' +
+                   '<span class="upd-stand-val up-num">' + fmtPctShort(v, true) + '</span>' +
                  '</div>';
         }).join("") + '</div>';
     }
@@ -509,7 +515,7 @@
                  '<div class="up-td upd-td-name"><span class="upd-varname">' +
                    highlight(String(v.name || ""), state.varQuery) + '</span></div>' +
                  '<div class="up-td upd-td-sov">' +
-                   '<span class="up-num">' + (sov == null ? "-" : fmtPctShort(sov)) + '</span>' +
+                   '<span class="up-num">' + (sov == null ? "-" : fmtPctShort(sov, true)) + '</span>' +
                    ringHtml(sov) +
                  '</div>' +
                  '<div class="up-td upd-td-cnt">' +

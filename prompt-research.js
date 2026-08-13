@@ -936,7 +936,11 @@
       html: function(kind){
         if (kind !== 'volume') return '';
         return '<div class="up-explain-vis"><span class="up-explain-row" style="gap:3px">' +
-                 '<span class="upr-volume-track" style="width:58px"><span class="upr-volume-seg is-filled" style="background:#9fd25d"></span><span class="upr-volume-seg is-filled" style="background:#9fd25d"></span><span class="upr-volume-seg is-filled" style="background:#9fd25d"></span><span class="upr-volume-seg" style="background:#e8eaee"></span></span>' +
+                 /* Farben in CSS, nicht inline: das leere Segment war auf #e8eaee festgeschrieben und
+                    blieb damit im Dark Mode hell, waehrend dieselbe Leiste in der echten Spalte
+                    dunkel ist. NICHT auf --upr-vol-* umstellen -- die Karte haengt am body, dort
+                    loesen die Tokens nicht auf und die Segmente waeren in beiden Themes unsichtbar. */
+                 '<span class="upr-volume-track upr-vol-demo" style="width:58px"><span class="upr-volume-seg is-filled"></span><span class="upr-volume-seg is-filled"></span><span class="upr-volume-seg is-filled"></span><span class="upr-volume-seg"></span></span>' +
                '</span></div>' +
                '<div class="up-explain-h">Est. Volume</div>' +
                '<div class="up-explain-t">The estimated frequency that users actually use this or a very similar prompt.</div>';

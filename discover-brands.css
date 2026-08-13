@@ -53,6 +53,10 @@
   display: inline-flex; align-items: center; justify-content: center;
   background: #f0f0ef; color: #8a8a85;
 }
+/* Auch diese Karte haengt am body und wird im Dark Mode dunkel. Ein hellgrauer Kasten mit
+   hellgrauem Zeichen darauf ist dort das hellste Element der Platte. */
+.up-explain[data-theme="dark"] .udb-explain-logo { background: #303030; color: #9e9e9e;
+}
 .udb-explain-logo svg { width: 12px; height: 12px; display: block; }
 
 /* ---------- Tabellenkasten ----------
