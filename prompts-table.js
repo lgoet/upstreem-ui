@@ -1468,9 +1468,13 @@
       var n = stagedCount();
       menu.innerHTML =
         ((state.topics || []).length
-          ? '<div class="upt-topichead">' +
+          /* Suchtext und has-text MITRENDERN. renderTopicMenu laeuft bei jedem render() und bei
+             jedem Klick im Balken; ohne diese beiden Stellen stand danach ein leeres Suchfeld
+             ueber einer weiterhin gefilterten Chipliste, und das Loesch-X war weg (es haengt an
+             .has-text, prompts-table.css:360). Gleiche Bauart wie domains-table.js:480. */
+          ? '<div class="upt-topichead' + (topicQuery ? " has-text" : "") + '">' +
               '<div class="upt-topicsearch-wrap">' +
-                '<input class="upt-topicsearch-in" type="text" placeholder="Search or create topics..." autocomplete="off" spellcheck="false"/>' +
+                '<input class="upt-topicsearch-in" type="text" placeholder="Search or create topics..." autocomplete="off" spellcheck="false" value="' + esc(topicQuery) + '"/>' +
                 '<button class="upt-topicsearch-clear" type="button" data-topic-search-clear aria-label="Clear search">' + CLOSE_SVG + '</button>' +
               '</div>' +
               '<button class="upt-topicreset" type="button" data-topic-reset>Reset</button>' +

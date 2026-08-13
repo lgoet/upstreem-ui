@@ -775,10 +775,17 @@
     }
     @media (prefers-reduced-motion: reduce){ .vot-scale-btn, .ccl-settings-btn, .ubo-scale-btn { transition-duration: 1ms; } }
 
+    /* Wer eine Palette aufmacht, macht sie VOLLSTAENDIG auf. Dieses Menue haengt am body und
+       erbt darum nichts von .up-root. Die vier Geometrie-Tokens fehlten: --up-dd-radius,
+       --up-dd-pad und --up-dd-shadow loesten nicht auf, also stand das Panel scharfkantig,
+       schattenlos und ohne Innenabstand da, und --up-sel-bg fehlte, also faerbte sich keine
+       Zeile beim Ueberfahren. Werte 1:1 aus dem .up-root-Block oben. */
     .up-scale-menu {
       --vc-text: #1f1f1b; --vc-muted: #6f737c; --vc-third: #9e9e9e; --vc-border: #e0e2e6;
       --vc-heading-bg: #f5f5f5; --vc-hover-border: #6f6f6f; --vc-bg: #ffffff;
       --vc-switch-bg: #f5f5f5; --vc-switch-border: #e0e2e6;
+      --up-dd-radius: 14px; --up-dd-pad: 8px; --up-dd-shadow: 0 10px 28px rgba(0,0,0,.14);
+      --up-sel-bg: rgba(245,245,245,0.55);
       position: fixed; z-index: 100050; width: 248px;
       background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: var(--up-dd-radius);
       box-shadow: var(--up-dd-shadow); padding: var(--up-dd-pad);
@@ -795,6 +802,7 @@
       --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-third: #808080; --vc-border: #454545;
       --vc-heading-bg: rgba(42,42,42,0.6); --vc-hover-border: #707070; --vc-bg: #1b1b1b;
       --vc-switch-bg: rgba(42,42,42,0.6); --vc-switch-border: #353535;
+      --up-dd-shadow: 0 10px 28px rgba(0,0,0,.32); --up-sel-bg: rgba(42,42,42,0.60);
     }
     /* .up-dense-btn.is-active's own dark override above is scoped to .up-root — this menu lives
        outside it, so the Line Width switch needs its own copy of the same colors. */

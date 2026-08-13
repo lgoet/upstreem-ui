@@ -289,6 +289,13 @@
   width: 100%; height: 34px; border: 1px solid var(--vc-border); border-radius: 8px;
   background: var(--vc-bg); color: var(--vc-text); padding: 0 32px 0 10px; font-size: 12.5px; outline: none;
 }
+/* outline: none ohne Ersatz war eine Sackgasse: prompt-research.js fokussiert dieses Feld 80ms
+   nach dem Trigger-Klick, der Cursor steht also darin und das Feld sieht unveraendert aus.
+   Derselbe Fehler war in add-prompts.css schon einmal behoben. */
+.upr-dd-search:hover { border-color: var(--vc-hover-border); }
+.upr-dd-search:focus {
+  border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); outline: 0;
+}
 .upr-dd-search::placeholder { color: var(--vc-third); }
 .upr-dd-clear {
   height: 34px; border: 0; border-radius: 8px; padding: 0 10px;

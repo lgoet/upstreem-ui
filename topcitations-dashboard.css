@@ -74,14 +74,15 @@
 .tcd-heading-right { display: flex; align-items: center; }
 .tcd-head-sep { width: 4px; height: 4px; border-radius: 50%; background: var(--vc-muted); margin: 0 8px; flex: 0 0 auto; display: none; }
 .tcd-head-count { font-size: 14px; font-weight: 500; color: var(--vc-muted); display: none; }
-.tcd-head-count.is-sk { width: 28px; height: 14px; border-radius: 4px; background: var(--vc-sk); animation: tcdpulse 1.2s ease-in-out infinite; }
+/* uutpulse, nicht tcdpulse: den Keyframe gab es nie, das Rechteck stand still, waehrend
+   dasselbe Element in fuenf anderen Komponenten pulsiert. Definiert in core.css:1146. */
+.tcd-head-count.is-sk { width: 28px; height: 14px; border-radius: 4px; background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
 .tcd-heading-right.has-count .tcd-head-sep, .tcd-heading-right.has-count .tcd-head-count { display: block; }
 
 /* ================= LEFT: doughnut/bar chart ================= */
 /* This switch IS the app's icon segmented control — the rules moved to core as .up-seg so the
    responses table could use the identical thing instead of a lookalike. The tcl- selectors are
    kept as aliases of the core ones so the existing markup keeps working. */
-.up-root[data-theme="dark"] 
 /* Reset control next to the doughnut/bar switch — only shown while a type filter is applied
    (JS toggles is-visible, see syncFilterBadge). display:none by default rather than
    opacity/visibility: an invisible-but-present 32px control would still eat hover/click area and
