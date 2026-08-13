@@ -268,6 +268,14 @@
       var key = LISTS[i];
       if (typeof out[key] !== "string") continue;
       var v = parseLoose(out[key], (label || "upstreem") + " " + key);
+      /* Scheitert das Parsen, wurde daraus bisher schlicht [] -- und damit sah ein zerrissener
+         Payload fuer JEDE Komponente exakt aus wie ein leeres Ergebnis. parseLoose warnt zwar in
+         der Konsole, aber die Komponente bekommt nur die leere Liste zu sehen und meldet
+         zufrieden "keine Daten". Das leere Array bleibt (sonst muesste jeder Aufrufer mit null
+         rechnen), aber ab jetzt liegt ein Vermerk daneben: wer __parseError prueft, kann
+         "kaputt" von "leer" unterscheiden. Rein additiv -- wer es nicht prueft, verhaelt sich
+         Zeile fuer Zeile wie vorher. */
+      if (v == null && String(out[key]).trim()) out.__parseError = true;
       out[key] = isArr(v) ? v : (v ? [v] : []);
     }
     return out;

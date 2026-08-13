@@ -453,9 +453,14 @@
                  is already tracked" -- ein Befund, den zu dem Zeitpunkt niemand kennt, weil der
                  Scan noch laeuft oder gar nicht erst angelaufen ist. Ein ausgefallener Aufruf sah
                  damit genauso aus wie ein sauberes Ergebnis. */
-              '<div class="up-empty-h">' + (state.query ? "No brand matches your search" :
-                (state.hasData ? "No untracked brands found" : "No results yet")) + "</div>" +
-              '<div class="up-empty-t">' + (state.query
+              /* Vierter Fall, seit der Parse-Fehler nicht mehr als "leer" durchgeht: die Daten
+                 KAMEN an, waren aber unlesbar. Das ist ein Fehler und muss auch so heissen. */
+              '<div class="up-empty-h">' + (state.parseError ? "Could not read the results" :
+                (state.query ? "No brand matches your search" :
+                (state.hasData ? "No untracked brands found" : "No results yet"))) + "</div>" +
+              '<div class="up-empty-t">' + (state.parseError
+                ? "The data arrived in a form this component could not parse. See the browser console for details."
+                : state.query
                 ? "Try a shorter search term."
                 : !state.hasData
                   ? "The scan has not returned anything yet. Refresh the page if this stays empty."
@@ -535,7 +540,19 @@
         render: function (p) {
           p = p || {};
           var list = p.rows != null ? p.rows : p.brands;
-          if (typeof list === "string") list = UC.parseLoose ? UC.parseLoose(list) : null;
+          /* normParams in core hat den Text schon geparst; scheiterte das, liegt hier eine leere
+             Liste UND ein __parseError-Vermerk. Ohne den sah ein zerrissener Payload genauso aus
+             wie ein sauberes leeres Ergebnis, und die Ansicht behauptete "No untracked brands
+             found" -- ein Befund, den zu dem Zeitpunkt niemand hat. */
+          state.parseError = !!p.__parseError;
+          if (state.parseError){
+            state.rows = [];
+            if (window.console) console.error("discover-brands: die Zeilen liessen sich nicht lesen. " +
+              "Die Konsolenwarnung darueber zeigt, an welcher Stelle das JSON gerissen ist.");
+            setLoading(false);
+            render();
+            return;
+          }
           state.rows = normRows(list);
           state.hasData = true;
           /* runs_total steht in jeder Zeile und ist ueberall gleich -- als Rueckfall, wenn der
@@ -549,7 +566,7 @@
         },
         setLoading: function (v) { setLoading(UC.isYes(v)); },
         reset: function () {
-          state.rows = []; state.totalResponses = null; state.hasData = false;
+          state.rows = []; state.totalResponses = null; state.hasData = false; state.parseError = false;
           /* makeSearch hat KEIN reset() -- der alte Aufruf lief in ein undefined und wurde vom
              try verschluckt, das Feld blieb also offen und mit Text stehen. Von Hand zuruecksetzen
              und die laufende Entprellung abbrechen, sonst feuert nach dem Reset noch die alte
