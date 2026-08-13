@@ -680,14 +680,7 @@
 /* Takes over the whole sidehead row when open -- see toggleGrpSideSearch() in prompts-table.js.
    No width check the way the toolbar's own .up-search/.is-searchtakeover has: this panel never has
    room to spare, so a takeover is the only layout that ever makes sense here. */
-.upt-grp-sidesearch-box { display: none; align-items: center; flex: 1 1 auto; min-width: 0;
-  padding: 0 8px; border-radius: 9px; }
-/* Gleiche Bauart wie .up-search-box in core: das Feld selbst ist randlos, der Ring haengt an der
-   Box, und zwar als outline statt border, damit die Zeile beim Fokus nicht um 2px waechst. */
-.upt-grp-sidesearch-box:focus-within {
-  outline: 1px solid var(--up-focus);
-  box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring);
-}
+.upt-grp-sidesearch-box { display: none; align-items: center; flex: 1 1 auto; min-width: 0; }
 .upt-grp-sidehead.is-searching .upt-grp-sidehead-lbl,
 .upt-grp-sidehead.is-searching .upt-grp-sidetools { display: none; }
 .upt-grp-sidehead.is-searching .upt-grp-sidesearch-box { display: flex; }
