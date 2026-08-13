@@ -795,6 +795,57 @@
       syncMeta();
     }
 
+    /* ---------------- Werte aus data-Attributen ----------------
+       Der Grund, warum das hier liegt und nicht im Run-JS: ein Wert, der als Quelltext in einen
+       JS-String eingesetzt wird, bricht ihn, sobald er ein Anfuehrungszeichen oder einen
+       Zeilenumbruch enthaelt. Ein Teamname mit " oder eine mehrzeilige Zusammenfassung reichen,
+       und der GANZE Schritt wird nicht mehr geparst -- dann laeuft auch setUpstreemAllMarkets
+       nicht mehr, was wie ein zweiter, unabhaengiger Fehler aussieht.
+       Als Attribut kann das nicht passieren: Bubble schreibt den Wert selbst ins Markup und
+       kodiert ihn dabei, der Browser gibt ihn ueber getAttribute unveraendert zurueck. Dieselbe
+       Bauart wie data-brand-name in jedem Seitenkopf.
+       Der Run-JS-Aufruf bleibt fuer die Modelle (echtes Array) und als Uebersteuerung bestehen.
+
+       Die Attribute heissen data-brand-*, nicht data-market/data-summary: der Root traegt sonst
+       dieselben Namen wie die Marker im eigenen Markup, und ein document.querySelector faengt den
+       Root statt des Feldes. Genau darueber bin ich beim Testen gestolpert. */
+    var ATTRS = [
+      ["data-brand-name",   function(v){ meta.brandName = v; }],
+      ["data-brand-logo",   function(v){ meta.brandLogo = v; }],
+      ["data-team-id",      function(v){ meta.teamId = v; }],
+      ["data-team-name",    function(v){ meta.teamName = v; }],
+      ["data-brand-market",       function(v){ saved.marketId = v.trim().toLowerCase(); draft.marketId = saved.marketId; }],
+      ["data-brand-business",     function(v){ saved.businessModel = v.trim().toLowerCase(); draft.businessModel = saved.businessModel; }],
+      ["data-brand-industry",     function(v){ saved.industry = v; draft.industry = v; }],
+      ["data-brand-summary",      function(v){ saved.summary = v; draft.summary = v; }],
+      /* Kommagetrennt, weil eine Bubble-Liste sich mit :join with genau so ausgeben laesst.
+         Leere Eintraege fliegen raus, damit ein Trennzeichen am Ende keine leere Zeile erzeugt. */
+      ["data-brand-industries",   function(v){
+        meta.industries = v.split(",").map(function(x){ return x.trim(); }).filter(Boolean);
+      }]
+    ];
+    function readAttrs(){
+      var got = false;
+      for (var i = 0; i < ATTRS.length; i++){
+        var raw = root.getAttribute(ATTRS[i][0]);
+        if (raw == null) continue;
+        var v = String(raw);
+        /* Ein nicht ersetzter Bubble-Platzhalter ist KEIN Wert. Ohne diese Zeile stuende im
+           Markennamen woertlich "BRAND_NAME", bis der Ausdruck aufloest. */
+        if (/^[A-Z_]{3,}$/.test(v.trim())) continue;
+        ATTRS[i][1](v);
+        got = true;
+      }
+      return got;
+    }
+    if (readAttrs()) { /* gleich gerendert, siehe render() weiter unten */ }
+    if (window.MutationObserver){
+      new MutationObserver(function(){ if (readAttrs()) render(); }).observe(root, {
+        attributes: true,
+        attributeFilter: ATTRS.map(function(a){ return a[0]; })
+      });
+    }
+
     UC.widthTiers(root);
     UC.onResize(root, function(){ UC.widthTiers(root); });
     UC.unclipAncestors(root, false);

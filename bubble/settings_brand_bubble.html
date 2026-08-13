@@ -57,55 +57,46 @@
       Bestaetigung vollstaendig durchlaufen -- du brauchst keinen weiteren Sicherheitsdialog.
 
   ── Fuellen ──────────────────────────────────────────────────────────────────
-  window.renderSettingsBrand({
-    instanceId: "…",
-    brand: { name: "LeeUp Media", logo: "https://…" },
-    team:  { id: "1712…x99", name: "LeeUp Media" },
+  Die einzelnen Werte kommen als data-Attribute ins Markup, NICHT ueber Run-JS. Grund: ein Wert,
+  der als Quelltext in einen JS-String eingesetzt wird, bricht ihn, sobald er ein
+  Anfuehrungszeichen oder einen Zeilenumbruch enthaelt -- ein Teamname mit " oder eine mehrzeilige
+  Zusammenfassung reichen. Dann wird der GANZE Schritt nicht mehr geparst, und alles darin faellt
+  aus, auch setUpstreemAllMarkets. Als Attribut kann das nicht passieren: Bubble schreibt den Wert
+  selbst ins Markup und kodiert ihn dabei.
 
-    models: [ … ],  die Zeilen der Modelle-RPC, unveraendert. Gelesen werden:
-             model_key, display_name, provider, logo_url, sort_order,
-             currently_tracking   ob der Schalter an ist (NICHT is_model_active)
-             can_toggle           darf der Nutzer diese Karte ueberhaupt schalten
-             disabled_reason      Grund fuer den Tooltip der gesperrten Karte
-             active_models_limit  das Limit, aus der ERSTEN Zeile gelesen
-             user_can_manage      false schaltet den ganzen Abschnitt schreibgeschuetzt
-             model_limit im Payload uebersteuert active_models_limit, falls du es brauchst.
+    data-brand-name        Name der Marke
+    data-brand-logo        Logo-URL
+    data-team-id           Team-ID, geht in die Leave/Delete-Events
+    data-team-name         Teamname, muss im Danger-Dialog getippt werden
+    data-brand-market      Alpha-2 des Standardmarkts, z.B. "de"
+    data-brand-business    "b2b" | "b2c" | "hybrid"
+    data-brand-industry    die gewaehlte Branche
+    data-brand-industries  Auswahlliste, kommagetrennt. In Bubble mit :join with ", "
+    data-brand-summary     die Zusammenfassung, darf mehrzeilig sein
 
-    market: "de",   nur der Alpha-2-Code.
+  Alle duerfen dynamische Ausdruecke sein und spaeter aufloesen -- die Komponente beobachtet die
+  Attribute und zeichnet neu, sobald sich eines aendert.
 
-                    Die LISTE kommt seitenweit aus dem Core-Store, und es gibt ZWEI davon:
-                      setUpstreemMarkets(`[MARKETS]`)      die gefilterte Liste -- nur Maerkte,
-                                                           zu denen es Prompts gibt, mit
-                                                           prompt_count. Fuer die Filter ueber
-                                                           den Tabellen.
-                      setUpstreemAllMarkets(`[ALL]`)       der volle Katalog. Fuer Auswahlfelder,
-                                                           in denen man etwas NEUES anlegt:
-                                                           dieser Dialog und Add Prompts.
-                    Diese Seite liest die volle Liste. Ist setUpstreemAllMarkets nie gerufen
-                    worden, faellt sie auf die gefilterte zurueck.
+  Ueber Run-JS kommt nur, was kein Attribut sein kann:
 
-                    WICHTIG: schick KEINE markets-Liste mehr im renderSettingsBrand-Aufruf mit.
-                    Der Store gewinnt; eine Liste im Payload greift nur noch, wenn der Store
-                    leer ist. Steht bei dir noch eine aus einer aelteren Fassung drin, schadet
-                    sie zwar nicht mehr, ist aber tot.
+      window.setUpstreemAllMarkets(`[Ergebnis der Markt-RPC]`);
 
-    business_model: "b2b",
-    industries: [ "Consulting & Agencys", "SaaS & Software", … ],
-    industry:   "Consulting & Agencys",
-                Im Dropdown steht unten ein Feld fuer eine eigene Branche, hoechstens 48 Zeichen.
-                Sie landet im selben industry-Feld des usbMeta-Events -- du bekommst also einen
-                freien Text, keinen Schluessel aus deiner Liste. Wenn du das serverseitig
-                einschraenken willst, pruefe dort gegen deine Liste.
+      var RAW = `[Ergebnis der Modelle-RPC]`.replace(/:\s*([,}\]])/g, ": null$1");
+      var models = [];
+      try { models = JSON.parse(RAW); } catch (e) { console.error("[settings] models: " + e.message); }
+      window.renderSettingsBrand({ instanceId: "settings_brand", models: models });
 
-    summary: "…"
-  });
+  Beide Werte sind JSON aus einer RPC und gehoeren in Backticks. Die replace-Zeile ist derselbe
+  Sanitizer wie ueberall: sie setzt einen Schluessel, auf den direkt , } oder ] folgt, auf null --
+  Bubble laesst JSON-null sonst spurlos verschwinden.
+
   window.setSettingsBrandLoading("INSTANCE_ID", "yes" | "no");
   window.setSettingsBrandLogo("INSTANCE_ID", "https://…", "datei.png");
-  window.resetSettingsBrand("INSTANCE_ID");   /* schliesst den Danger-Dialog und alle Dropdowns */
+  window.resetSettingsBrand("INSTANCE_ID");
 
-  Jedes Feld ist einzeln optional: was nicht im Payload steht, bleibt wie es war. Ein Aufruf mit
-  nur { instanceId, summary } aktualisiert also ausschliesslich die Zusammenfassung. Das ist der
-  saubere Weg, eine Speicher-Bestaetigung zurueckzuspielen, ohne die ganze Seite neu zu setzen.
+  renderSettingsBrand versteht weiterhin brand/team/market/business_model/industry/summary im
+  Payload. Das uebersteuert die Attribute und ist der Weg, eine Speicher-Bestaetigung
+  zurueckzuspielen: { instanceId, summary } aktualisiert nur die Zusammenfassung.
 
   ── Beim Seitenwechsel ───────────────────────────────────────────────────────
   Der Danger-Dialog haengt am document.body, nicht im Markup dieser Komponente, damit ihn kein
@@ -119,6 +110,15 @@
      data-instance="settings_brand"
      data-cdn-pin="CDN_PIN"
      data-isdark="no"
+     data-brand-name="BRAND_NAME"
+     data-brand-logo="BRAND_LOGO_URL"
+     data-team-id="TEAM_ID"
+     data-team-name="TEAM_NAME"
+     data-brand-market="de"
+     data-brand-business="b2b"
+     data-brand-industry="INDUSTRY"
+     data-brand-industries="Consulting &amp; Agencys, SaaS &amp; Software"
+     data-brand-summary="SUMMARY"
      data-editbrand-fn="bubble_fn_usbEditBrand_ID"
      data-logofile-fn="bubble_fn_usbLogoFile_ID"
      data-logourl-fn="bubble_fn_usbLogoUrl_ID"
