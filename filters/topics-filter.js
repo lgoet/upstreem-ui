@@ -10,7 +10,31 @@
    so a missed event cannot desync Bubble from the UI. */
 (function () {
   var UC = window.UpstreemCore;
-  if (!UC) { if (window.console) console.error("UpstreemCore (core.js) not loaded"); return; }
+  /* ---- Boot-Stubs, VOR der core-Pruefung ------------------------------------------
+     Frueher stand dieser Block DAHINTER: war core.js noch nicht da, kehrte die Datei
+     vorher zurueck und legte gar keine Stubs an -- genau der Fall, fuer den sie da sind.
+     Als "setUpstreemDefaultMarket is not defined" in add-prompts real geworden.
+     Die Stubs brauchen UC nicht, sie merken einen Aufruf nur vor. */
+  var API_NAMES = ["setTopicsFilterTopics", "resetTopicsFilter", "setTopicsFilterSelected",
+                   "setTopicsFilterMode", "setTopicsFilterTheme"];
+  var Q = (window.__utfBootQueue = window.__utfBootQueue || []);
+  API_NAMES.forEach(function (n) {
+    if (!window[n]) window[n] = function () { Q.push([n, [].slice.call(arguments)]); };
+  });
+
+  /* Nicht aufgeben: Bubble haengt die Skripte per jQuery .html() ein, die Reihenfolge ist
+     nicht garantiert. Ein einmaliger Fehlschlag hiess bisher: Komponente tot bis zum
+     Neuladen. Gleiche Bauart wie in date-range.js. */
+  if (!UC) {
+    (function warte(n){
+      if (window.UpstreemCore){ UC = window.UpstreemCore; utfStart(); return; }
+      if (n <= 0){ if (window.console) console.error("UpstreemCore (core.js) not loaded"); return; }
+      setTimeout(function(){ warte(n - 1); }, 100);
+    })(30);
+    return;
+  }
+
+  function utfStart(){
 
   /* ---- boot stubs (STYLEGUIDE §25) --------------------------------------------------------
      Bubble fires workflows before this file finishes loading. The names have to exist from the
@@ -25,12 +49,6 @@
     };
   }
 
-  var API_NAMES = ["setTopicsFilterTopics", "resetTopicsFilter", "setTopicsFilterSelected",
-                   "setTopicsFilterMode", "setTopicsFilterTheme"];
-  var Q = (window.__utfBootQueue = window.__utfBootQueue || []);
-  API_NAMES.forEach(function (n) {
-    if (!window[n]) window[n] = function () { Q.push([n, [].slice.call(arguments)]); };
-  });
 
   var CONTROLLERS = [];
   var PENDING = {};
@@ -811,4 +829,7 @@
       catch (e) { if (window.console) console.error("[topics-filter] queued " + entry[0] + " failed:", e); }
     });
   }
+  }   /* Ende utfStart */
+
+  utfStart();
 })();

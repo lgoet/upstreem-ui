@@ -1,0 +1,36 @@
+<!doctype html><meta charset="utf-8"><title>Filter-Boot ohne core</title>
+<link rel="stylesheet" href="core.css"><link rel="stylesheet" href="filters/markets-filter.css">
+<link rel="stylesheet" href="filters/models-filter.css">
+<link rel="stylesheet" href="filters/topics-filter.css">
+<body style="padding:24px;background:#fff">
+<div class="up-root umk-root" id="mk" data-instance="mk" data-isdark="no"></div>
+<div class="up-root umf-root" id="mf" data-instance="mf" data-isdark="no"></div>
+<div class="up-root utf-root" id="tf" data-instance="tf" data-isdark="no"></div>
+
+<!-- Die drei Filter ZUERST, core.js absichtlich erst spaeter: genau die Reihenfolge,
+     die Bubble hin und wieder produziert. -->
+<script src="filters/markets-filter.js"></script>
+<script src="filters/models-filter.js"></script>
+<script src="filters/topics-filter.js"></script>
+<script>
+  window.__stubTest = {
+    stubsDa: ["setMarketsFilterMarkets","setModelsFilterModels","setTopicsFilterTopics",
+              "resetMarketsFilter","resetModelsFilter","resetTopicsFilter"]
+              .filter(function(n){ return typeof window[n] === "function"; }),
+    gerendertVorCore: document.querySelectorAll(".umk-root button, .umf-root button, .utf-root button").length
+  };
+  /* Aufrufe waehrend core.js noch fehlt -- muessen in der Warteschlange landen, nicht werfen. */
+  try {
+    window.setMarketsFilterMarkets("mk", '[{"id":"m1","name":"Germany","code":"de"},{"id":"m2","name":"France","code":"fr"}]');
+    window.setModelsFilterModels("mf", '[{"key":"gpt","display_name":"GPT-5"},{"key":"cla","display_name":"Claude"}]');
+    window.setTopicsFilterTopics("tf", '[{"id":"t1","name":"Marketing"},{"id":"t2","name":"Produkt"}]');
+    window.__stubTest.aufrufOk = true;
+  } catch (e) { window.__stubTest.aufrufOk = String(e); }
+</script>
+<script>
+  /* core.js kommt 400ms zu spaet -- der Wiederholversuch muss das auffangen. */
+  setTimeout(function(){
+    var s = document.createElement("script");
+    s.src = "core.js"; document.body.appendChild(s);
+  }, 400);
+</script>
