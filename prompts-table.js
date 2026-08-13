@@ -105,9 +105,23 @@
         return '<span class="ust-tag up-chiphover" style="--ust-tag-color:'+esc(t.color)+';">'+(t.emoji?'<span class="ust-tag-emoji">'+esc(t.emoji)+'</span>':'')+'<span class="ust-tag-label">'+esc(t.name)+'</span></span>';
       }
 
-      function layout(st){
+      /* Dieselbe Entscheidung wie vorher, nur nicht mehr pro Zelle einzeln.
+         layoutOne() enthaelt die unveraenderte Logik und bleibt der Notweg; layoutMany() macht
+         dasselbe fuer viele Zellen in drei Phasen: erst alles zuruecksetzen, dann alles messen,
+         dann alles setzen. Der Unterschied liegt allein darin, WANN gemessen wird.
+
+         Vorher rief init() pro Zelle layout(), und layout() schrieb, las und schrieb wieder.
+         Jeder Wechsel zwingt den Browser zu einem vollstaendigen Layout des Tabellenkoerpers --
+         bei 100 Zeilen mit vier Chips gemessene 1100 bis 1300 ms, und das nach JEDEM Sortieren,
+         Suchen, Blaettern und Gruppe-Oeffnen. Ein einzelnes Layout kostet rund 30 ms.
+
+         Der Lauf haengt an requestAnimationFrame, also VOR dem naechsten Zeichnen -- es blitzen
+         keine ungekuerzten Chips auf. Ist die Spalte beim ersten Lauf noch 0 breit (das Raster
+         steht dann erst), passiert nichts; der ResizeObserver an der Zeile holt es nach, sobald
+         die Breite da ist. Genau so war es vorher auch. */
+      function layoutOne(st){
         var row=st.row, more=st.moreEl, tags=st.tagEls, n=tags.length;
-        if(!row.isConnected) return;
+        if(!row || !row.isConnected) return;
         var avail=row.clientWidth; if(avail<=0||!n) return;
         for(var k=0;k<n;k++) tags[k].style.display='';
         more.style.display='none';
@@ -123,6 +137,70 @@
         }
         var hidden=n-shown;
         if(hidden<=0) more.style.display='none'; else more.textContent='+'+hidden;
+      }
+
+      function layoutMany(liste){
+        var arbeit=[], i, k;
+        /* Phase 1, nur schreiben: alles sichtbar machen, damit Phase 2 die ungekuerzten
+           Breiten misst. */
+        for(i=0;i<liste.length;i++){
+          var st=liste[i];
+          if(!st.row || !st.row.isConnected || !st.tagEls.length) continue;
+          for(k=0;k<st.tagEls.length;k++) st.tagEls[k].style.display='';
+          st.moreEl.style.display='none';
+          arbeit.push(st);
+        }
+        /* Phase 2, nur lesen: ein erzwungenes Layout fuer den ganzen Block statt eines pro Zelle. */
+        for(i=0;i<arbeit.length;i++){
+          var a=arbeit[i];
+          a.__avail=a.row.clientWidth;
+          a.__w=[];
+          for(k=0;k<a.tagEls.length;k++) a.__w[k]=a.tagEls[k].offsetWidth;
+        }
+        /* Zwischenschritt: nur die Zellen, die wirklich ueberlaufen, bekommen das "+N" -- erst
+           alle beschriften, dann alle Breiten davon messen. */
+        var ueber=[];
+        for(i=0;i<arbeit.length;i++){
+          var b=arbeit[i], nb=b.tagEls.length, total=0;
+          for(k=0;k<nb;k++) total+=b.__w[k]+(k>0?GAP:0);
+          if(b.__avail>0 && total>b.__avail){
+            b.moreEl.textContent='+'+nb;
+            b.moreEl.style.display='';
+            ueber.push(b);
+          }
+        }
+        for(i=0;i<ueber.length;i++) ueber[i].__moreW=ueber[i].moreEl.offsetWidth;
+        /* Phase 3, nur schreiben. */
+        for(i=0;i<ueber.length;i++){
+          var c=ueber[i], nc=c.tagEls.length;
+          var budget=c.__avail-c.__moreW-GAP, used=0, shown=0;
+          for(k=0;k<nc;k++){
+            var add=(shown>0?GAP:0)+c.__w[k];
+            if(used+add<=budget){ used+=add; c.tagEls[k].style.display=''; shown++; }
+            else { for(var y=k;y<nc;y++) c.tagEls[y].style.display='none'; break; }
+          }
+          var hidden=nc-shown;
+          if(hidden<=0) c.moreEl.style.display='none'; else c.moreEl.textContent='+'+hidden;
+        }
+      }
+
+      var offen=[], rafId=null;
+      function layout(st){
+        if(!st) return;
+        if(offen.indexOf(st)===-1) offen.push(st);
+        if(rafId) return;
+        var raf = window.requestAnimationFrame || function(f){ return setTimeout(f,16); };
+        rafId = raf(function(){
+          rafId=null;
+          var liste=offen; offen=[];
+          try { layoutMany(liste); }
+          catch(e){
+            /* Notweg: schlaegt der gebuendelte Lauf aus irgendeinem Grund fehl, macht es die
+               alte Fassung Zelle fuer Zelle. Lieber langsam als abgeschnittene Chips ohne "+N". */
+            if(window.console) console.warn('[topics] gebuendeltes Layout fehlgeschlagen, einzeln:', e);
+            for(var i=0;i<liste.length;i++){ try { layoutOne(liste[i]); } catch(e2){} }
+          }
+        });
       }
 
       function showPopup(st){
