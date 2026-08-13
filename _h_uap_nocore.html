@@ -1,0 +1,14 @@
+<!doctype html><meta charset="utf-8"><title>add-prompts ohne core.js</title>
+<pre id="o"></pre>
+<!-- core.js fehlt ABSICHTLICH: genau der Fall, in dem der Stub-Block frueher nie angelegt wurde
+     und Bubbles Pageload-Schritt "setUpstreemDefaultMarket is not defined" warf. -->
+<script src="add-prompts.js"></script>
+<script>
+var z = [];
+try { window.setUpstreemDefaultMarket("de"); z.push("setUpstreemDefaultMarket: kein Wurf"); }
+catch(e){ z.push("setUpstreemDefaultMarket GEWORFEN: " + e.message); }
+try { window.openAddPrompts(); z.push("openAddPrompts: kein Wurf"); }
+catch(e){ z.push("openAddPrompts GEWORFEN: " + e.message); }
+z.push("Warteschlange: " + ((window.__uapBootQueue||[]).length) + " vorgemerkt");
+document.getElementById("o").textContent = z.join("\n");
+</script>

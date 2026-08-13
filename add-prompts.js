@@ -27,26 +27,44 @@
    ran. The four things that actually break real spreadsheets are handled explicitly — see the CSV
    section below; each one of them is a silent data-corruption bug if it is skipped. */
 (function () {
-  var UC = window.UpstreemCore;
-  if (!UC) { if (window.console) console.error("UpstreemCore (core.js) not loaded"); return; }
-
-  var esc = UC.esc, toNum = UC.toNum;
-
   /* ---- boot stubs (STYLEGUIDE §25) --------------------------------------------------------
      Bubble fires workflows before this file finishes loading. openAddPrompts in particular is
-     wired to a button the user can hit during the first second of a page's life. */
-  /* One batch is capped. 100 is not a technical limit -- it is the point past which a single
-     Bubble workflow run stops being a sensible unit of work, and a 10.000-row import would sit
-     there building a payload nobody wants to debug. Nothing about the cap is shown until it is
-     actually reached; a counter that says "0 / 100" on an empty dialog is noise. */
-  var MAX_PROMPTS = 100;
+     wired to a button the user can hit during the first second of a page's life.
 
+     VOR der UC-Pruefung, und das ist der Punkt. Frueher stand dieser Block DAHINTER: war core.js
+     noch nicht da, kehrte die Datei vorher zurueck und legte gar keine Stubs an -- obwohl der
+     Kommentar darueber genau diesen Fall beschreibt. Gemeldet als
+     "setUpstreemDefaultMarket is not defined" beim Seitenaufbau. Die Stubs brauchen UC nicht,
+     sie merken einen Aufruf nur vor. */
   var API_NAMES = ["openAddPrompts", "closeAddPrompts", "resetAddPrompts", "setAddPromptsTheme",
                    "setUpstreemDefaultMarket"];
   var Q = (window.__uapBootQueue = window.__uapBootQueue || []);
   API_NAMES.forEach(function (n) {
     if (!window[n]) window[n] = function () { Q.push([n, [].slice.call(arguments)]); };
   });
+
+  /* Und weiter versuchen, statt aufzugeben. Bubble haengt die Skripte per jQuery .html() ein,
+     was die Reihenfolge nicht garantiert -- diese Datei kann vor core.js laufen. Ein einmaliger
+     Fehlschlag hiess bisher: Komponente tot bis zum Neuladen. Gleiche Bauart wie in
+     date-range.js und den anderen 26 Dateien dieser Familie. */
+  function uapBoot(triesLeft){
+    if (!window.UpstreemCore){
+      if (triesLeft > 0){ setTimeout(function(){ uapBoot(triesLeft - 1); }, 100); return; }
+      if (window.console) console.error("UpstreemCore (core.js) not loaded");
+      return;
+    }
+    uapStart();
+  }
+
+  function uapStart(){
+  var UC = window.UpstreemCore;
+
+  var esc = UC.esc, toNum = UC.toNum;
+  /* One batch is capped. 100 is not a technical limit -- it is the point past which a single
+     Bubble workflow run stops being a sensible unit of work, and a 10.000-row import would sit
+     there building a payload nobody wants to debug. Nothing about the cap is shown until it is
+     actually reached; a counter that says "0 / 100" on an empty dialog is noise. */
+  var MAX_PROMPTS = 100;
 
   var ICON = {
     /* All Feather, taken from the set. */
@@ -1019,4 +1037,7 @@
      likely to be changed later, and they are worth testing without a file picker. */
   window.__uapCsv = { parse: parseCsv, decode: decodeCsvBytes, detect: detectDelim,
                       rows: rowsFromCsv, template: templateCsv };
+  }   /* Ende uapStart */
+
+  uapBoot(30);
 })();
