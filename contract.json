@@ -429,7 +429,6 @@
   "data-side",
   "data-slider",
   "data-sort",
-  "data-sort-fn",
   "data-sortcol",
   "data-sortfield",
   "data-src",
@@ -438,7 +437,6 @@
   "data-sticky-top",
   "data-sub-for",
   "data-subdisp",
-  "data-submit-fn",
   "data-subpage",
   "data-subsize",
   "data-subtype",
@@ -2236,7 +2234,7 @@
   "fnattrs": 59,
   "globals": 108,
   "payloadkeys": 57,
-  "dataattrs": 151,
+  "dataattrs": 149,
   "klassen": 1708,
   "keyframes": 50
  }

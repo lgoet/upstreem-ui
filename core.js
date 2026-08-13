@@ -5578,6 +5578,35 @@
     return;
   }
 
+  /* Nicht nur MELDEN, dass ein Pin haengt, sondern sagen WELCHER. Zwei Quellen: die URL der
+     Datei, die gerade zurueckgewiesen wurde (document.currentScript zeigt beim Zuweisen auf die
+     alte core.js selbst), und alle Wurzeln, deren data-cdn-pin leer ist -- das sind die
+     Bubble-Elemente, die "@main" ziehen. Ohne das heisst die Warnung nur "irgendwo auf dieser
+     Seite", und man sucht sie einzeln durch. */
+  function schuldiger(){
+    var teile = [];
+    try {
+      var cs = document.currentScript;
+      if (cs && cs.src) teile.push("Abgewiesen: " + cs.src);
+    } catch(e){}
+    try {
+      var leer = [];
+      var roots = document.querySelectorAll("[data-cdn-pin]");
+      for (var i = 0; i < roots.length; i++){
+        if (!String(roots[i].getAttribute("data-cdn-pin") || "").trim()){
+          /* up-root traegt jede Wurzel, es benennt nichts. Die Komponentenklasse (dph-root, upt-root,
+             ...) ist die, mit der man das Element in Bubble wiederfindet. */
+          var kl = String(roots[i].className || "").split(/\s+/).filter(function(c){
+            return /-root$/.test(c) && c !== "up-root"; })[0];
+          leer.push(kl || roots[i].id || "?");
+        }
+      }
+      if (leer.length) teile.push("Leerer data-cdn-pin an: " + leer.join(", "));
+    } catch(e){}
+    if (!teile.length) teile.push("Ein data-cdn-pin auf dieser Seite ist veraltet oder leer.");
+    return " " + teile.join(" | ");
+  }
+
   var aktuell = API;
   try {
     Object.defineProperty(window, "UpstreemCore", {
@@ -5588,7 +5617,7 @@
         if (b < aktuell.BUILD){
           if (window.console) console.warn("upstreem: eine aeltere core.js (" +
             (b < 0 ? "ohne BUILD" : b) + ") wollte die geladene Fassung " + aktuell.BUILD +
-            " ersetzen und wurde abgewiesen. Ein data-cdn-pin auf dieser Seite ist veraltet oder leer.");
+            " ersetzen und wurde abgewiesen." + schuldiger());
           return;
         }
         aktuell = wert;

@@ -42,6 +42,35 @@
   var UC = window.UpstreemCore;
   var esc = UC.esc, isYes = UC.isYes, resolveBubbleFn = UC.resolveBubbleFn, fmt1 = UC.fmt1, CHECK_SVG = UC.CHECK_SVG;
 
+  /* ---- Ein Weg nach draussen, und er ist nicht stumm ------------------------------------------
+     Sechs Stellen hatten dasselbe Handmuster:
+         var fn = resolveBubbleFn(name);
+         if (typeof fn === "function"){ try { fn(x); } catch(e){} }
+     Zwei stille Ausfaelle darin. Fehlt die Bubble-Funktion, passiert schlicht NICHTS -- der Nutzer
+     klickt auf Sortieren oder Export und die App tut so, als waere nichts gewesen. Und wirft der
+     Workflow, faengt das leere catch den Fehler weg, sodass auch in der Konsole nichts steht.
+     Beides ist hier jetzt eine Meldung wert.
+
+     Warum nicht UC.makeFire wie ueberall sonst: makeFire schickt EINEN JSON-String (§13), diese
+     sechs Events erwarten seit jeher einen rohen Wert ("visibility_desc", eine ID, eine
+     Kommaliste). Ein Wechsel wuerde den Vertrag brechen. Die Nutzlast bleibt darum Zeichen fuer
+     Zeichen dieselbe -- nur der Ausfall ist ab jetzt hoerbar. */
+  function votFire(root, attr, standardName, wert){
+    var name = root.getAttribute(attr) || standardName;
+    var fn = resolveBubbleFn(name);
+    if (typeof fn !== "function"){
+      if (window.console) console.error("visibility-chart: " + name + " ist nicht da, " +
+        "die Aktion verpufft. Entweder fehlt der Toolbox-Event in Bubble oder " + attr +
+        " zeigt auf einen anderen Namen.");
+      return false;
+    }
+    try { fn(wert); return true; }
+    catch(e){
+      if (window.console) console.error("visibility-chart: " + name + " hat geworfen:", e);
+      return false;
+    }
+  }
+
   /* ================= data prep =================
      The series→datasets mapping, the fallback palette and the four colour scales all live in
      core.js now (UC.buildLineDatasets / UC.LINE_PALETTE / UC.COLOR_SCALES / UC.SCALE_ORDER):
@@ -268,9 +297,7 @@
         row.addEventListener("mouseenter", function(){ line.highlight(id); });
         row.addEventListener("mouseleave", function(){ line.highlight(null); });
         row.addEventListener("click", function(){
-          var fnName = root.getAttribute("data-rowclick-fn") || "bubble_fn_votRowClick";
-          var fn = resolveBubbleFn(fnName);
-          if (typeof fn === "function"){ try { fn(id); } catch(e){} }
+          votFire(root, "data-rowclick-fn", "bubble_fn_votRowClick", id);
         });
       });
       checkBrandWidth();
@@ -593,9 +620,7 @@
       var ids = Object.keys(filterSel).filter(function(k){ return filterSel[k]; });
       USER_FILTERED[instanceId] = true;
       var payload = ids.join(",");
-      var fnName = root.getAttribute("data-submit-fn") || "bubble_fn_votSubmitCompanies";
-      var fn = resolveBubbleFn(fnName);
-      if (typeof fn === "function"){ try { fn(payload); } catch(e){} }
+      votFire(root, "data-submit-fn", "bubble_fn_votSubmitCompanies", payload);
       if (filterWrap) setPopOpen(filterWrap, false);
     }
     if (filterWrap && !filterWrap.__votOutsideBound){
@@ -610,10 +635,8 @@
     var SORT_LABELS = [["visibility","Visibility"],["ranking","Ranking"],["sentiment","Sentiment"]];
     var SORT_OUT_FIELD = { visibility: "visibility", ranking: "rank", sentiment: "sentiment" };
     function fireSort(){
-      var fnName = root.getAttribute("data-sort-fn") || "bubble_fn_votSortTable";
-      var fn = resolveBubbleFn(fnName);
       var outField = SORT_OUT_FIELD[sortField] || sortField;
-      if (typeof fn === "function"){ try { fn(outField + "_" + sortDir); } catch(e){} }
+      votFire(root, "data-sort-fn", "bubble_fn_votSortTable", outField + "_" + sortDir);
     }
     function populateSort(){
       if (!sortMenu) return;
@@ -649,9 +672,7 @@
           var g = granBtn.getAttribute("data-gran");
           if (g === curGran) return;
           curGran = g; GRAN_STORE[instanceId] = g; GRAN_PICKED[instanceId] = true; syncGranActive();
-          var gFnName = root.getAttribute("data-gran-fn") || "bubble_fn_votGranularity";
-          var gFn = resolveBubbleFn(gFnName);
-          if (typeof gFn === "function"){ try { gFn(g); } catch(err){} }
+          votFire(root, "data-gran-fn", "bubble_fn_votGranularity", g);
           return;
         }
         if (e.target.closest(".vot-maximize")){
@@ -662,15 +683,11 @@
           return;
         }
         if (e.target.closest(".vot-goto")){
-          var goFnName = root.getAttribute("data-goto-fn") || "bubble_fn_votGoTo";
-          var goFn = resolveBubbleFn(goFnName);
-          if (typeof goFn === "function"){ try { goFn(instanceId); } catch(err){} }
+          votFire(root, "data-goto-fn", "bubble_fn_votGoTo", instanceId);
           return;
         }
         if (e.target.closest(".vot-export")){
-          var exFnName = root.getAttribute("data-export-fn") || "bubble_fn_votExportTable";
-          var exFn = resolveBubbleFn(exFnName);
-          if (typeof exFn === "function"){ try { exFn(instanceId); } catch(err){} }
+          votFire(root, "data-export-fn", "bubble_fn_votExportTable", instanceId);
           return;
         }
         if (e.target.closest(".vot-filter-btn")){
