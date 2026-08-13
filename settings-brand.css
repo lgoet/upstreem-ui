@@ -151,33 +151,18 @@
    Nur Breite und die Flaggenzeile. Trigger, Menue, Zeilen, Haken, Suchfeld und der offene Zustand
    kommen unveraendert aus core -- inklusive der Tatsache, dass der Chevron sich NICHT dreht und der
    offene Trigger einen grauen Hintergrund bekommt statt eines farbigen Rahmens. */
-/* Trigger Wert fuer Wert aus .umk-trigger (filters/markets-filter.css), dem Dropdown, das ueber
-   jeder Tabelle steht. Kein eigener Entwurf: 32px, 1px Rahmen in der Rahmenfarbe, Radius 8,
-   Grundfarbe --vc-muted, Hover UND offen bekommen --vc-heading-bg plus --vc-hover-border. Der
-   Chevron dreht sich nicht.
+/* KEINE Regel auf dem Knopf. Er ist .up-ment-btn aus core -- derselbe, der ueber jeder Tabelle
+   steht. Jedes Mal, wenn ich hier etwas eigenes hingeschrieben habe, war es falsch.
+   Das Einzige, was diese Seite braucht, ist eine Mindestbreite: in einer Werkzeugleiste darf der
+   Knopf so breit sein wie sein Text, in einer Formularzeile sollen beide Auswahlfelder gleich
+   breit unter- und nebeneinander stehen. */
+.usb-dd { flex: 0 0 auto; }
+.usb-dd .up-ment-btn { min-width: 220px; justify-content: space-between; }
+.usb-dd .up-ment-menu { min-width: 260px; }
+/* Liste 256px statt der 216px, die markets-filter nutzt: hier kommt darunter keine zweite
+   Sektion, also ist der Platz da. */
+.usb-dd .up-ment-list { max-height: 256px; }
 
-   Dupliziert statt geteilt, weil dieselben Werte bereits in vier Dateien stehen (markets-,
-   models-, topics-filter und add-prompts). Das gehoert nach core -- als EINE Klasse, die alle
-   fuenf benutzen. Bis dahin ist eine exakte Kopie besser als ein fuenfter eigener Entwurf. */
-.usb-dd .usb-ddbtn {
-  display: inline-flex; align-items: center; gap: 8px; min-width: 220px; height: 32px;
-  padding: 0 10px; justify-content: space-between;
-  border: 1px solid var(--vc-border); border-radius: 8px; background: var(--vc-bg);
-  color: var(--vc-muted); font-family: inherit; font-size: 13px; font-weight: 500; line-height: 1;
-  white-space: nowrap; cursor: pointer; outline: 0;
-  transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
-}
-.usb-dd .usb-ddbtn:hover,
-.usb-dd.is-open .usb-ddbtn,
-.usb-dd.is-active .usb-ddbtn { color: var(--vc-text); background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
-.usb-dd .up-filter-btn-chev { width: 16px; height: 16px; flex: 0 0 16px; }
-.usb-dd .up-filter-btn-chev svg { width: 16px; height: 16px; display: block; }
-
-/* Suchzeile und Liste im Rhythmus der Menues: 8px unter der Suche, die Liste selbst 256px hoch
-   bevor sie scrollt. Der Wert ist markets-filters 216px plus die 40px, die hier gefehlt haben --
-   dieses Menue hat keine zweite Sektion darunter, also ist der Platz da. */
-.usb-ddsearchrow { flex: 0 0 auto; display: flex; margin-bottom: 8px; }
-.usb-dd .up-filter-list { max-height: 256px; }
 .usb-opt { justify-content: space-between; }
 .usb-opt-main { display: inline-flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto; }
 .usb-opt-name { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -200,11 +185,9 @@
 .usb-ddcustom-lbl { font-size: 11px; font-weight: 600; color: var(--vc-muted);
   text-transform: uppercase; letter-spacing: .04em; padding: 0 1px; }
 .usb-ddcustom-row { display: flex; align-items: center; gap: 6px; }
-.usb-ddcustom-in { flex: 1 1 auto; min-width: 0; height: 32px; padding: 0 10px;
-  border: 1px solid var(--vc-border); border-radius: 9px; background: transparent;
-  color: var(--vc-text); font: inherit; font-size: 13px; }
-.usb-ddcustom-in::placeholder { color: var(--vc-third); }
-.usb-ddcustom-in:focus { outline: 0; border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+/* Das Feld ist .up-ment-search aus core, dasselbe wie die Suche darueber -- hier nur die Breite,
+   damit der Add-Knopf danebenpasst. */
+.usb-ddcustom-in { flex: 1 1 auto; min-width: 0; }
 .usb-ddcustom-add { flex: 0 0 auto; height: 32px; padding: 0 12px; border: 0; border-radius: 9px;
   background: var(--vc-text); color: var(--vc-bg); font: inherit; font-size: 13px; font-weight: 500;
   cursor: pointer; }

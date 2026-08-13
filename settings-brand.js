@@ -123,27 +123,31 @@
     }
 
     /* ---------------- Geruest ---------------- */
-    function ddHtml(kind, placeholder, searchLabel){
-      return '<div class="up-filter usb-dd" data-dd="' + kind + '">' +
-        '<button class="up-filter-btn usb-ddbtn" type="button" data-dd-btn aria-haspopup="listbox" aria-expanded="false">' +
-          '<span class="up-filter-btn-lbl" data-dd-label>' + esc(placeholder) + '</span>' +
-          '<span class="up-filter-btn-chev">' + ICON.chev + '</span>' +
+    /* Das Dropdown der App, Knoten fuer Knoten wie der "All Brands"-Filter ueber den Tabellen:
+       .up-ment als Huelle, .up-ment-btn als Knopf mit .up-ment-lbl und .up-ment-chev, .up-ment-menu
+       als Liste, darin .up-filter-head / .up-ment-searchwrap / .up-filter-list / .up-filter-item.
+       KEINE eigene Regel auf dem Knopf -- er ist rahmenlos (1px transparent, damit die Breite
+       steht), 32px hoch, 12px/500, und wird im offenen Zustand grau hinterlegt. Genau das ist der
+       Unterschied zu allem, was ich hier vorher gebaut hatte. */
+    function ddHtml(kind, placeholder, searchLabel, title){
+      return '<div class="up-ment usb-dd" data-dd="' + kind + '">' +
+        '<button class="up-ment-btn" type="button" data-dd-btn aria-haspopup="menu" aria-expanded="false">' +
+          '<span class="up-ment-lbl" data-dd-label>' + esc(placeholder) + '</span>' +
+          '<svg class="up-ment-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
         '</button>' +
-        '<div class="up-filter-menu usb-ddmenu" role="listbox" aria-hidden="true">' +
-          '<div class="usb-ddsearchrow">' +
-            '<span class="up-ddsearch">' +
-              '<input class="up-ddsearch-in" type="text" placeholder="' + esc(searchLabel) + '" ' +
-                'autocomplete="off" spellcheck="false" aria-label="' + esc(searchLabel) + '"/>' +
-              '<span class="up-ddsearch-ic">' + ICON.search + '</span>' +
-              '<button class="up-ddsearch-x" type="button" aria-label="Clear search">' + ICON.x + '</button>' +
-            '</span>' +
+        '<div class="up-ment-menu usb-ddmenu" role="menu" aria-hidden="true">' +
+          '<div class="up-filter-head"><span class="up-filter-title">' + esc(title) + '</span></div>' +
+          '<div class="up-ment-searchwrap">' +
+            '<input class="up-ment-search" type="text" placeholder="' + esc(searchLabel) + '" ' +
+              'autocomplete="off" spellcheck="false" aria-label="' + esc(searchLabel) + '"/>' +
+            '<button class="up-ment-searchclear" type="button" aria-label="Clear search">' + ICON.x + '</button>' +
           '</div>' +
-          '<div class="up-filter-list" data-dd-list></div>' +
+          '<div class="up-filter-list up-ment-list" data-dd-list></div>' +
           (kind === "industry"
             ? '<div class="usb-ddcustom">' +
-                '<div class="usb-ddcustom-lbl">Not listed? Add your own</div>' +
+                '<div class="up-filter-title">Not listed? Add your own</div>' +
                 '<div class="usb-ddcustom-row">' +
-                  '<input class="usb-ddcustom-in" type="text" maxlength="' + IND_MAX + '" ' +
+                  '<input class="up-ment-search usb-ddcustom-in" type="text" maxlength="' + IND_MAX + '" ' +
                     'placeholder="Your industry" autocomplete="off" spellcheck="false" ' +
                     'aria-label="Custom industry" data-dd-custom/>' +
                   '<button class="usb-ddcustom-add" type="button" data-dd-customadd disabled>Add</button>' +
@@ -241,7 +245,7 @@
                 '<div class="usb-rowdesc">Your preset primary market focus. New prompts start here ' +
                   'unless you pick a different one.</div>' +
               '</div>' +
-              '<div class="usb-rowctl">' + ddHtml("market", "Select a market", "Search markets") + '</div>' +
+              '<div class="usb-rowctl">' + ddHtml("market", "Select a market", "Search markets", "Default market") + '</div>' +
             '</div>' +
 
             '<div class="usb-div"></div>' +
@@ -263,7 +267,7 @@
                 '<div class="usb-rowtitle">Brand Industry</div>' +
                 '<div class="usb-rowdesc">Your preset primary brand industry.</div>' +
               '</div>' +
-              '<div class="usb-rowctl">' + ddHtml("industry", "Select an industry", "Search industries") + '</div>' +
+              '<div class="usb-rowctl">' + ddHtml("industry", "Select an industry", "Search industries", "Brand industry") + '</div>' +
             '</div>' +
 
             '<div class="usb-div"></div>' +
@@ -461,11 +465,10 @@
     function makeDropdown(kind, cfg){
       var wrap = root.querySelector('[data-dd="' + kind + '"]');
       var btn  = wrap.querySelector("[data-dd-btn]");
-      var menu = wrap.querySelector(".up-filter-menu");
+      var menu = wrap.querySelector(".up-ment-menu");
       var list = wrap.querySelector("[data-dd-list]");
-      var srch = wrap.querySelector(".up-ddsearch");
-      var sin  = wrap.querySelector(".up-ddsearch-in");
-      var sx   = wrap.querySelector(".up-ddsearch-x");
+      var sin  = wrap.querySelector(".up-ment-search");
+      var sx   = wrap.querySelector(".up-ment-searchclear");
       var lbl  = wrap.querySelector("[data-dd-label]");
       var q = "";
 
@@ -477,7 +480,6 @@
       function setQ(v){
         q = v;
         sin.value = v;
-        srch.classList.toggle("has-text", !!v);
         paint();
       }
       function paint(){
