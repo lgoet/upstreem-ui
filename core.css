@@ -780,6 +780,14 @@
        --up-dd-pad und --up-dd-shadow loesten nicht auf, also stand das Panel scharfkantig,
        schattenlos und ohne Innenabstand da, und --up-sel-bg fehlte, also faerbte sich keine
        Zeile beim Ueberfahren. Werte 1:1 aus dem .up-root-Block oben. */
+    /* Ein Dropdown-Knopf, dessen Inhalt noch unterwegs ist (makePopover cfg.canOpen).
+       Gedimmt statt versteckt: der Knopf soll an seinem Platz bleiben, damit die Werkzeugleiste
+       nicht springt, sobald die Daten da sind. */
+    .up-iconbtn.is-disabled, .up-filter-btn.is-disabled, .up-ment-btn.is-disabled,
+    .up-ddtrigger.is-disabled, .combo-filter-btn.is-disabled, .ccl-settings-btn.is-disabled {
+      opacity: .45; pointer-events: none; cursor: default;
+    }
+
     .up-scale-menu {
       --vc-text: #1f1f1b; --vc-muted: #6f737c; --vc-third: #9e9e9e; --vc-border: #e0e2e6;
       --vc-heading-bg: #f5f5f5; --vc-hover-border: #6f6f6f; --vc-bg: #ffffff;

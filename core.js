@@ -2502,7 +2502,7 @@
      Registration is page-global so ONE document click listener serves every popover on the page,
      instead of one listener per menu per instance as before.
 
-     cfg: { wrap, menu, opener?, onClose?(committed), group? }
+     cfg: { wrap, menu, opener?, onClose?(committed), group?, canOpen?() }
        wrap   — the position:relative element that gets .is-open
        menu   — the position:absolute child that gets .is-shown + aria-hidden
        opener — the trigger button (focus is moved off it before hiding, so the menu can't be
@@ -2516,7 +2516,8 @@
   function makePopover(cfg){
     var wrap = cfg.wrap, menu = cfg.menu;
     if (!wrap || !menu) return { open: function(){}, close: function(){}, toggle: function(){}, isOpen: function(){ return false; } };
-    var rec = { wrap: wrap, menu: menu, opener: cfg.opener || null, onClose: cfg.onClose || null, group: cfg.group || null };
+    var opener = cfg.opener || null;
+    var rec = { wrap: wrap, menu: menu, opener: opener, onClose: cfg.onClose || null, group: cfg.group || null };
     for (var i = 0; i < POPOVERS.length; i++){ if (POPOVERS[i].wrap === wrap){ POPOVERS.splice(i, 1); break; } }
     POPOVERS.push(rec);
 
@@ -2538,8 +2539,27 @@
       menu.setAttribute("aria-hidden", "true");
       if (rec.onClose) { try { rec.onClose(!!committed); } catch(e){} }
     }
+    /* Ein Dropdown, dessen Inhalt noch unterwegs ist, darf sich nicht oeffnen lassen. Sonst
+       klappt ein 8px hoher, leerer Kasten auf, und das sieht nach kaputt aus, obwohl nur die
+       Daten fehlen. cfg.canOpen() beantwortet genau diese Frage; fehlt sie, aendert sich nichts.
+       WICHTIG: leer und ladend sind zwei verschiedene Zustaende. Ein Dropdown, das legitim leer
+       ist, soll sich weiterhin oeffnen lassen und "keine Eintraege" zeigen -- die Entscheidung
+       trifft die Komponente, nicht diese Funktion. */
+    function canOpen(){
+      if (typeof cfg.canOpen !== "function") return true;
+      try { return cfg.canOpen() !== false; } catch(e){ return true; }
+    }
+    /* Den Knopf mitfuehren, damit der Grund sichtbar ist statt nur spuerbar: wer klickt und
+       nichts passiert, haelt das fuer einen Fehler. */
+    function syncOpener(){
+      if (!opener) return;
+      var zu = !canOpen();
+      opener.classList.toggle("is-disabled", zu);
+      opener.setAttribute("aria-disabled", zu ? "true" : "false");
+    }
     function open(){
       if (isOpen()) return;
+      if (!canOpen()){ syncOpener(); return; }
       /* Closes EVERY other popover on the page, not just this component's. Two dropdowns open at
          once is never wanted, and scoping this by group meant a menu in one component stayed open
          while you opened one in another. Relying on the outside-click listener for that is not
@@ -2568,7 +2588,9 @@
       menu.setAttribute("aria-hidden", "false");
     }
     function toggle(){ if (isOpen()) close(false); else open(); }
-    return { open: open, close: close, toggle: toggle, isOpen: isOpen, el: wrap };
+    syncOpener();
+    return { open: open, close: close, toggle: toggle, isOpen: isOpen,
+             syncOpener: syncOpener, el: wrap };
   }
   function closeAll(exceptWrap, group){
     for (var i = 0; i < POPOVERS.length; i++){

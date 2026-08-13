@@ -516,6 +516,9 @@
     }
     function populateFilter(datasets){
       if (!filterMenu) return;
+      /* Der Knopf muss mitziehen, sobald Daten da sind -- sonst bleibt er gesperrt, obwohl
+         das Menue laengst Inhalt haette. */
+      if (filterPop && filterPop.syncOpener) filterPop.syncOpener();
       syncFilterBadge(datasets);
       if (!datasets || !datasets.length){ filterMenu.innerHTML = '<div class="combo-filter-empty">No series</div>'; return; }
       var anyHidden = datasets.some(function(ds){ return hiddenSeries[ds.__id]; });
@@ -558,7 +561,19 @@
        focus escape, Escape key and the single page-wide outside-click listener come from core.
        This component previously toggled `display` directly, which broke §6 — the menu now stays
        in the layout and animates via .is-shown like every other dropdown. */
-    var filterPop = UC.makePopover({ wrap: filterWrap, menu: filterMenu, opener: filterBtn, group: "cc-" + instanceId });
+    /* Solange die Serien noch unterwegs sind, laesst sich das Menue nicht oeffnen. Vorher klappte
+       waehrend des Ladens ein 8px hoher, leerer Kasten auf -- das sieht nach kaputt aus, obwohl
+       nur die Daten fehlen. Sind die Serien DA und trotzdem leer, geht es auf und zeigt
+       "No series": leer und ladend duerfen nie gleich aussehen. */
+    var filterPop = UC.makePopover({
+      wrap: filterWrap, menu: filterMenu, opener: filterBtn, group: "cc-" + instanceId,
+      canOpen: function(){
+        /* hasData, nicht die Serienliste: sind die Daten DA und trotzdem keine Serien dabei,
+           soll sich das Menue oeffnen und "No series" zeigen. Gesperrt wird nur, solange
+           ueberhaupt noch nichts angekommen ist. */
+        return !!state.hasData;
+      }
+    });
     if (filterBtn && filterWrap && !filterBtn.__ccBound){
       filterBtn.__ccBound = true;
       filterBtn.addEventListener("click", function(e){ e.stopPropagation(); filterPop.toggle(); });
