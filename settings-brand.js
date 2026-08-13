@@ -275,10 +275,12 @@
             ? '<div class="usb-ddcustom">' +
                 '<div class="up-filter-title">Not listed? Add your own</div>' +
                 '<div class="usb-ddcustom-row">' +
-                  '<input class="up-ment-search usb-ddcustom-in" type="text" maxlength="' + IND_MAX + '" ' +
-                    'placeholder="Your industry" autocomplete="off" spellcheck="false" ' +
-                    'aria-label="Custom industry" data-dd-custom/>' +
-                  '<button class="usb-ddcustom-clear" type="button" aria-label="Clear">' + ICON.x + '</button>' +
+                  '<span class="usb-ddcustom-field">' +
+                    '<input class="up-ment-search usb-ddcustom-in" type="text" maxlength="' + IND_MAX + '" ' +
+                      'placeholder="Your industry" autocomplete="off" spellcheck="false" ' +
+                      'aria-label="Custom industry" data-dd-custom/>' +
+                    '<button class="usb-ddcustom-clear" type="button" aria-label="Clear">' + ICON.x + '</button>' +
+                  '</span>' +
                   '<button class="usb-ddcustom-add" type="button" data-dd-customadd disabled>Add</button>' +
                 '</div>' +
               '</div>'

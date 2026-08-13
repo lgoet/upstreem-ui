@@ -185,20 +185,24 @@
    am Rand des Menues, sah er aus wie ein Knopf, der nicht mehr dazugehoert -- er stand buendig an
    der Panelkante und gehoerte optisch weder zum Feld noch zum Menue. Ein Feld mit Knopf darin ist
    ein Bedienelement, nicht zwei. */
-.usb-ddcustom-row { position: relative; display: block; }
-.usb-ddcustom-in { width: 100%; min-width: 0; padding-right: 78px; }
-/* Das X sitzt links vom Add-Knopf und erscheint nur, wenn etwas drinsteht -- dieselbe Regel wie
-   bei den Suchfeldern, nur ueber den Nachbarn statt ueber die direkte Geschwisterschaft, weil
-   hier der Add-Knopf dazwischen liegt. */
-.usb-ddcustom-clear { position: absolute; top: 50%; right: 52px; transform: translateY(-50%);
+/* Feld und Knopf sind zwei Bedienelemente nebeneinander: Eingabe, 8px, Add. Der Knopf gehoert
+   NICHT ins Feld -- das X gehoert hinein, ein Knopf mit eigener Beschriftung daneben.
+   Das Feld traegt einen eigenen Wrapper, damit das X am rechten Rand DES FELDES sitzt und nicht
+   am Rand der ganzen Zeile. */
+.usb-ddcustom-row { display: flex; align-items: center; gap: 8px; }
+.usb-ddcustom-field { position: relative; flex: 1 1 auto; min-width: 0; display: block; }
+/* 34px rechts, wie in den Suchfeldern: der Text muss VOR dem X enden, sonst schreibt man beim
+   Tippen sichtbar darunter. Die Core-Regel dafuer haengt an .up-ment-searchwrap, und dieses Feld
+   steht nicht darin. */
+.usb-ddcustom-in { width: 100%; min-width: 0; padding-right: 34px; }
+.usb-ddcustom-clear { position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
   display: none; align-items: center; justify-content: center; width: 20px; height: 20px;
-  padding: 0; border: 0; background: none; color: var(--vc-third); cursor: pointer; }
+  padding: 0; border: 0; background: none; color: var(--vc-muted); cursor: pointer; }
 .usb-ddcustom-clear svg { width: 13px; height: 13px; display: block; }
 .usb-ddcustom-clear:hover { color: var(--vc-text); }
 .usb-ddcustom-in:not(:placeholder-shown) ~ .usb-ddcustom-clear { display: inline-flex; }
-.usb-ddcustom-add { position: absolute; top: 50%; right: 4px; transform: translateY(-50%);
-  height: 24px; padding: 0 10px; border: 0; border-radius: 6px;
-  background: var(--vc-text); color: var(--vc-bg); font: inherit; font-size: 12px; font-weight: 500;
+.usb-ddcustom-add { flex: 0 0 auto; height: 32px; padding: 0 14px; border: 0; border-radius: 8px;
+  background: var(--vc-text); color: var(--vc-bg); font: inherit; font-size: 13px; font-weight: 500;
   line-height: 1; cursor: pointer; }
 .usb-ddcustom-add:disabled { opacity: .35; cursor: default; }
 

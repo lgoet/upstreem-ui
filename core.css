@@ -461,7 +461,9 @@
     .up-ment-search::placeholder { color: var(--vc-third); }
     .up-ment-search:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); outline: 0; }
     .up-ment-searchwrap { position: relative; margin: 0 0 8px; flex: 0 0 auto; }
-    .up-ment-searchwrap .up-ment-search { margin: 0; padding-right: 30px; }
+    /* 34 statt 30: das X sitzt 6px vom Rand und ist 20px breit, es endet also bei 26. Mit 30 stand
+   der letzte Buchstabe direkt an seiner Kante und wirkte, als liefe der Text darunter. */
+    .up-ment-searchwrap .up-ment-search { margin: 0; padding-right: 34px; }
     .up-ment-searchclear {
       position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
       width: 20px; height: 20px; border: 0; border-radius: 6px; background: transparent;
@@ -569,7 +571,7 @@
        zweites Bedienelement daneben auftaucht. */
     .up-ddsearch { position: relative; flex: 1 1 auto; min-width: 0; }
     .up-ddsearch-in {
-      width: 100%; height: 32px; box-sizing: border-box; padding: 0 32px 0 11px;
+      width: 100%; height: 32px; box-sizing: border-box; padding: 0 36px 0 11px;
       border: 1px solid var(--vc-border); border-radius: 8px;
       background: var(--vc-bg); color: var(--vc-text);
       font-family: inherit; font-size: 12.5px; outline: none;
