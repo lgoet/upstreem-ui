@@ -1,0 +1,29 @@
+<!doctype html><meta charset="utf-8">
+<title>Persistenz-Harness</title>
+<link rel="stylesheet" href="core.css?v=p1">
+<link rel="stylesheet" href="prompts-table.css?v=p1">
+<style>body{font:14px system-ui;margin:16px;background:#fff}#log{white-space:pre;font:12px monospace}</style>
+<!-- Das Team kommt SPAETER, genau wie in Bubble: beim Boot ist es unbekannt. -->
+<div class="up-root upt-root" data-instance="pp1" data-isdark="no"></div>
+<div id="log"></div>
+<script src="core.js?v=p1"></script>
+<script src="prompts-table.js?v=p1"></script>
+<script>
+window.__events = [];
+["uptSearch","uptSort","uptPage","uptRowClick","uptGrouping"].forEach(function(n){
+  window["bubble_fn_" + n] = function(j){ window.__events.push([n, j]); };
+});
+/* Bubble meldet das Team erst nach dem Boot -- genau die Reihenfolge, an der es scheiterte. */
+setTimeout(function(){ if (window.UpstreemCore) window.UpstreemCore.setUpstreemTeam
+  ? null : null; if (window.setUpstreemTeam) window.setUpstreemTeam("team-42"); }, 250);
+window.ROWS = [
+  { prompt_id:"p1", prompt_text:"Erster Prompt", user_rank:1, user_sentiment:70, has_user_brand:"yes" },
+  { prompt_id:"p2", prompt_text:"Zweiter Prompt", user_rank:3, user_sentiment:40, has_user_brand:"no" }
+];
+window.addEventListener("load", function(){
+  setTimeout(function(){
+    window.renderPromptsTable({ instanceId:"pp1", rows: window.ROWS, totalCount: 2 });
+    document.getElementById("log").textContent = "bereit";
+  }, 400);
+});
+</script>

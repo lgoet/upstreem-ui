@@ -196,7 +196,10 @@
     var instanceId = root.getAttribute("data-instance") || "default";
     var myCtrlId = "cc_" + Math.random().toString(36).slice(2) + "_" + Date.now();
     var savedMode = null;
-    try { savedMode = window.localStorage.getItem(UC.storeKey("cc_chart_mode__" + instanceId)); } catch(e){}
+    /* prefKey statt storeKey, siehe core.js: beim Boot fehlt die Team-Id, gelesen und geschrieben
+       wurde unter verschiedenen Schluesseln. */
+    try { savedMode = UC.prefGet ? UC.prefGet(UC.prefKey("cc_chart_mode__" + instanceId))
+                                 : window.localStorage.getItem("cc_chart_mode__" + instanceId); } catch(e){}
     var startMode = (savedMode === "bar" || savedMode === "doughnut") ? savedMode : "doughnut";
 
     var isDark = isYes(root.getAttribute("data-isdark"));
@@ -675,7 +678,8 @@
       setMode: function(m){
         if (m !== "bar" && m !== "doughnut") return;
         state.chartMode = m;
-        try { window.localStorage.setItem(UC.storeKey("cc_chart_mode__" + instanceId), m); } catch(e){}
+        try { UC.prefSet ? UC.prefSet(UC.prefKey("cc_chart_mode__" + instanceId), m)
+                         : window.localStorage.setItem("cc_chart_mode__" + instanceId, m); } catch(e){}
         syncSwitch(); renderDonutSide();
       },
       reset: function(){

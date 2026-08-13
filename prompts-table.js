@@ -346,27 +346,34 @@
     var saved = STORE[instanceId] || {};
 
     /* grouped / groupsort / groupsortdir / groupmode / groupswide all ride the same scope. */
-    function gKey(k){ return UC.storeKey("upt_" + k + "__" + instanceId); }
+    /* prefKey, NICHT storeKey: das Team-Suffix ist beim Boot noch nicht bekannt, also wurde unter
+       einem anderen Schluessel gelesen als geschrieben -- die Gruppierung stand nach jedem
+       Seitenaufruf wieder auf "no". Es sind Ansichtsvorlieben, keine Teamdaten. Die eigenen
+       Gruppierungen unten (groupsKey) bleiben team-gebunden, die enthalten Tag-Ids. */
+    function gKey(k){ return UC.prefKey ? UC.prefKey("upt_" + k + "__" + instanceId)
+                                        : ("upt_" + k + "__" + instanceId); }
+    function gGet(k){ return UC.prefGet ? UC.prefGet(gKey(k))
+                                        : (function(){ try { return window.localStorage.getItem(gKey(k)); } catch(e){ return null; } })(); }
     function readGrouped(){
-      try { return window.localStorage.getItem(gKey("grouped")) === "yes"; } catch(e){ return false; }
+      try { return gGet("grouped") === "yes"; } catch(e){ return false; }
     }
     function writeGrouped(v){
       try { window.localStorage.setItem(gKey("grouped"), v ? "yes" : "no"); } catch(e){}
     }
     function readGroupSort(){
       try {
-        var v = window.localStorage.getItem(gKey("groupsort"));
+        var v = gGet("groupsort");
         return (v === "visibility" || v === "name") ? v : "count";
       } catch(e){ return "count"; }
     }
     function writeGroupSort(v){ try { window.localStorage.setItem(gKey("groupsort"), v); } catch(e){} }
     function readGroupSortDir(){
-      try { return window.localStorage.getItem(gKey("groupsortdir")) === "asc" ? "asc" : "desc"; } catch(e){ return "desc"; }
+      try { return gGet("groupsortdir") === "asc" ? "asc" : "desc"; } catch(e){ return "desc"; }
     }
     function writeGroupSortDir(v){ try { window.localStorage.setItem(gKey("groupsortdir"), v); } catch(e){} }
     function readGroupMode(){
       try {
-        var v = window.localStorage.getItem(gKey("groupmode"));
+        var v = gGet("groupmode");
         return (v === "topics" || v === "custom") ? v : "both";
       } catch(e){ return "both"; }
     }
@@ -376,7 +383,7 @@
        missing key isn't the same thing as a stored "no". */
     function readGroupsWide(){
       try {
-        var v = window.localStorage.getItem(gKey("groupswide"));
+        var v = gGet("groupswide");
         if (v == null) return true;
         return v === "yes";
       } catch(e){ return true; }

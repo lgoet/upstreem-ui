@@ -867,14 +867,14 @@
     /* Key format is deliberately "<pfx>_cols__<instanceId>", matching what the tables wrote
        before this machinery moved into core — changing it would silently throw away every user's
        saved column choices and drag widths on first load. */
-    function colsKey(){ return storeKey(cfg.storePrefix + "_cols__" + cfg.instanceId); }
-    function widthsKey(){ return storeKey(cfg.storePrefix + "_widths__" + cfg.instanceId); }
+    function colsKey(){ return prefKey(cfg.storePrefix + "_cols__" + cfg.instanceId); }
+    function widthsKey(){ return prefKey(cfg.storePrefix + "_widths__" + cfg.instanceId); }
 
     function readCols(){
       var out = {};
       COLUMNS.forEach(function(c){ out[c.key] = true; });
       try {
-        var raw = window.localStorage.getItem(colsKey());
+        var raw = prefGet(colsKey());
         if (raw){
           var parsed = JSON.parse(raw);
           COLUMNS.forEach(function(c){ if (parsed[c.key] === false) out[c.key] = false; });
@@ -884,7 +884,7 @@
     }
     function writeCols(){ try { window.localStorage.setItem(colsKey(), JSON.stringify(state.cols)); } catch(e){} }
     function readWidths(){
-      try { var raw = window.localStorage.getItem(widthsKey()); return raw ? JSON.parse(raw) : {}; }
+      try { var raw = prefGet(widthsKey()); return raw ? JSON.parse(raw) : {}; }
       catch(e){ return {}; }
     }
     function writeWidths(){ try { window.localStorage.setItem(widthsKey(), JSON.stringify(state.widths)); } catch(e){} }
@@ -5251,6 +5251,41 @@
   }
 
   function storeKey(base){ return String(base) + "@" + (getTeam() || "_"); }
+
+  /* Ansichts-Einstellungen bekommen KEIN Team-Suffix. Das war der Fehler: storeKey haengt die
+     Team-Id an, und die ist beim Boot noch nicht bekannt. Gelesen wurde also unter "…@_",
+     geschrieben spaeter unter "…@<team>" -- zwei Schluessel, nichts kam zurueck. Betroffen war
+     alles Gespeicherte auf einmal: Spaltensichtbarkeit, Spaltenbreiten, Gruppierung, Wide-Modus,
+     Zeilenhoehe, Seitengroesse, Diagrammtyp.
+
+     Team-Bindung ist fuer diese Werte auch inhaltlich falsch. Es sind Ansichtsvorlieben eines
+     Geraets, keine Teamdaten -- welche Spalten jemand sieht, ist dieselbe Entscheidung, egal in
+     welchem Team er gerade steht. Team-gebunden bleibt, was echte Fremddaten enthaelt: die
+     eigenen Gruppierungen in prompts-table (eine Liste von Tag-Ids), die weiterhin ueber
+     storeKey laufen.
+
+     Der Rueckfall holt einmalig, was unter einem Team-Suffix liegengeblieben ist. Ohne ihn waeren
+     die Einstellungen zwar wieder stabil, aber alles vor diesem Stand Gespeicherte einmal weg. */
+  function prefKey(base){ return String(base); }
+  function prefGet(base){
+    try {
+      var ls = window.localStorage; if (!ls) return null;
+      var v = ls.getItem(base);
+      if (v != null) return v;
+      var pre = base + "@";
+      for (var i = 0; i < ls.length; i++){
+        var n = ls.key(i);
+        if (n && n.length > pre.length && n.slice(0, pre.length) === pre){
+          var alt2 = ls.getItem(n);
+          if (alt2 != null){ try { ls.setItem(base, alt2); } catch(e){} return alt2; }
+        }
+      }
+    } catch(e){}
+    return null;
+  }
+  function prefSet(base, value){
+    try { window.localStorage.setItem(String(base), String(value)); } catch(e){}
+  }
   window.setUpstreemTeam = setUpstreemTeam;
   window.getUpstreemTeam = getTeam;
 
@@ -5281,6 +5316,9 @@
     getTeam: getTeam,
     setUpstreemTeam: setUpstreemTeam,
     storeKey: storeKey,
+    prefKey: prefKey,
+    prefGet: prefGet,
+    prefSet: prefSet,
     heatRamp: heatRamp,
     heatAt: heatAt,
     getTopics: getTopics,

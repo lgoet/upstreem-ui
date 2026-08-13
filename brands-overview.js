@@ -674,8 +674,15 @@
     }
 
     /* ---- persisted prefs (per instance) ---- */
-    function key(n){ return UC.storeKey("ubo_" + n + "__" + instanceId); }
-    function readLS(n, fallback){ try { var v = window.localStorage.getItem(key(n)); return v == null ? fallback : v; } catch(e){ return fallback; } }
+    /* prefKey statt storeKey: die Team-Id ist beim Boot noch nicht da, also wurde unter einem
+       anderen Schluessel gelesen als geschrieben und keine dieser Einstellungen kam zurueck. */
+    function key(n){ return UC.prefKey ? UC.prefKey("ubo_" + n + "__" + instanceId)
+                                       : ("ubo_" + n + "__" + instanceId); }
+    function readLS(n, fallback){
+      var v = UC.prefGet ? UC.prefGet(key(n))
+                         : (function(){ try { return window.localStorage.getItem(key(n)); } catch(e){ return null; } })();
+      return v == null ? fallback : v;
+    }
     function writeLS(n, v){ try { window.localStorage.setItem(key(n), v); } catch(e){} }
     /* Page-wide, not per instance: core owns the preference and broadcasts changes, so setting the
        scale in visibility-chart's gear applies here too (and the other way round). */
