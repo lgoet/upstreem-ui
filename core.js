@@ -4844,6 +4844,44 @@
     }
     return true;
   }
+  /* ---------- zweiter Markt-Store: die VOLLE Liste ----------
+     MARKETS oben ist die Liste, die in den Filter-Dropdowns ueber den Tabellen steht: nur Maerkte,
+     zu denen es ueberhaupt Prompts gibt, mit prompt_count. Das ist richtig fuer einen Filter --
+     ein Markt ohne Daten waere dort eine Zeile, die garantiert nichts findet.
+     Beim ANLEGEN ist es falsch: im Add-Prompts-Dialog und in den Einstellungen soll der Nutzer
+     jeden Markt waehlen koennen, auch einen, in dem er noch nichts hat. Sonst kann er nie einen
+     neuen anfangen.
+     Darum zwei Stores statt eines Flags: ALL_MARKETS wird von setUpstreemAllMarkets gefuellt und
+     faellt auf MARKETS zurueck, solange niemand ihn gesetzt hat. Eine Seite, die den neuen Setter
+     noch nicht ruft, verhaelt sich damit exakt wie vorher. */
+  var ALL_MARKETS = { list: [], at: 0, seq: 0, subs: [], calls: 0, rejected: 0 };
+  function setAllMarkets(rows, label){
+    ALL_MARKETS.calls = (ALL_MARKETS.calls || 0) + 1;
+    var list = parseLoose(rows, label || "all-markets");
+    if (!list){ ALL_MARKETS.rejected = (ALL_MARKETS.rejected || 0) + 1; return false; }
+    if (!isArray(list)) list = [list];
+    list = unwrapOnce(list, "all-markets");
+    ALL_MARKETS.list = list;
+    ALL_MARKETS.at = nowMs();
+    ALL_MARKETS.seq++;
+    for (var i = ALL_MARKETS.subs.length - 1; i >= 0; i--){
+      var sub = ALL_MARKETS.subs[i];
+      if (sub.owner && !document.contains(sub.owner)){ ALL_MARKETS.subs.splice(i, 1); continue; }
+      try { sub.fn(list.slice()); } catch(e){
+        if (window.console) console.warn("[all-markets] a subscriber threw while updating:", e);
+      }
+    }
+    return true;
+  }
+  function getAllMarkets(){ return (ALL_MARKETS.list.length ? ALL_MARKETS.list : MARKETS.list).slice(); }
+  function onAllMarkets(fn, owner){
+    ALL_MARKETS.subs.push({ fn: fn, owner: owner || null });
+    MARKETS.subs.push({ fn: function(){ try { fn(getAllMarkets()); } catch(e){} }, owner: owner || null });
+    return function(){
+      for (var i = 0; i < ALL_MARKETS.subs.length; i++) if (ALL_MARKETS.subs[i].fn === fn){ ALL_MARKETS.subs.splice(i, 1); break; }
+    };
+  }
+
   function marketsChanged(){
     var fn = resolveBubbleFn("bubble_fn_upMarketsChanged");
     if (typeof fn === "function"){ try { fn(""); } catch(e){} return true; }
@@ -4857,6 +4895,9 @@
     return false;
   }
   window.setUpstreemMarkets = function(rows){ return setMarkets(rows, "setUpstreemMarkets"); };
+  /* Die VOLLE Marktliste, unabhaengig davon, ob es dort schon Prompts gibt. Wer sie nicht setzt,
+     bekommt ueberall weiter die gefilterte Liste -- getAllMarkets faellt darauf zurueck. */
+  window.setUpstreemAllMarkets = function(rows){ return setAllMarkets(rows, "setUpstreemAllMarkets"); };
   window.getUpstreemMarkets = getMarkets;
   window.upstreemMarketsChanged = marketsChanged;
   (function drainMarketsQueue(){
@@ -5187,6 +5228,9 @@
     onModels: onModels,
     getMarkets: getMarkets,
     setMarkets: setMarkets,
+    setAllMarkets: setAllMarkets,
+    getAllMarkets: getAllMarkets,
+    onAllMarkets: onAllMarkets,
     onMarkets: onMarkets,
     marketsChanged: marketsChanged,
     getBrands: getBrands,

@@ -42,6 +42,18 @@
   }
 
   var MAX_LOGO_BYTES = 1024 * 1024;
+  /* Deckel fuer die selbst eingetippte Branche. 48 Zeichen sind genug fuer "Industry &
+     Manufacturing" mit Luft, und kurz genug, dass die Zeile im Dropdown und im Trigger nicht
+     umbricht. Der Wert steht auch als maxlength am Feld, damit der Browser schon abschneidet. */
+  var IND_MAX = 48;
+  /* disabled_reason aus der RPC in einen Satz, den ein Nutzer versteht. Ein unbekannter Grund
+     faellt auf den allgemeinen Satz zurueck, statt den rohen Schluessel anzuzeigen. */
+  var REASON = {
+    model_inactive: "This model is not available yet.",
+    plan_limit:     "Your plan does not include this model.",
+    not_allowed:    "Your plan does not include this model.",
+    no_permission:  "Only admins can change the tracked models."
+  };
   var LOGO_TYPES = ["image/png", "image/svg+xml"];
 
   var ICON = {
@@ -73,7 +85,7 @@
     var saved = { models: [], marketId: "", businessModel: "", industry: "", summary: "" };
     var draft = { models: [], marketId: "", businessModel: "", industry: "", summary: "" };
     var meta  = { brandName: "", brandLogo: "", teamName: "", teamId: "",
-                  modelLimit: 3, markets: [], industries: [], logoFileName: "" };
+                  modelLimit: 3, canManage: true, markets: [], industries: [], logoFileName: "" };
     var loading = false;
 
     function isDark(){ return UC.isYes(root.getAttribute("data-isdark")); }
@@ -96,7 +108,7 @@
        gewinnt die. Ein LEERER Store ueberschreibt damit nichts. */
     function marketList(){
       if (meta.markets.length) return meta.markets;
-      var raw = UC.getMarkets ? UC.getMarkets() : [];
+      var raw = UC.getAllMarkets ? UC.getAllMarkets() : (UC.getMarkets ? UC.getMarkets() : []);
       return raw.map(function(m){
         var a2 = String(m.alpha2 || m.alpha3 || "").toLowerCase();
         return { id: a2, name: m.name || a2.toUpperCase(),
@@ -127,6 +139,17 @@
             '</span>' +
           '</div>' +
           '<div class="up-filter-list" data-dd-list></div>' +
+          (kind === "industry"
+            ? '<div class="usb-ddcustom">' +
+                '<div class="usb-ddcustom-lbl">Not listed? Add your own</div>' +
+                '<div class="usb-ddcustom-row">' +
+                  '<input class="usb-ddcustom-in" type="text" maxlength="' + IND_MAX + '" ' +
+                    'placeholder="Your industry" autocomplete="off" spellcheck="false" ' +
+                    'aria-label="Custom industry" data-dd-custom/>' +
+                  '<button class="usb-ddcustom-add" type="button" data-dd-customadd disabled>Add</button>' +
+                '</div>' +
+              '</div>'
+            : "") +
         '</div>' +
       '</div>';
     }
@@ -382,11 +405,17 @@
 
       elModels.innerHTML = draft.models.length
         ? draft.models.map(function(m){
-            var locked = full && !m.active;
+            /* Drei Gruende, warum eine Karte nicht schaltbar ist, und jeder bekommt seinen eigenen
+               Satz. "Gesperrt" ohne Begruendung ist die Variante, ueber die sich jeder aergert. */
+            var why = "";
+            if (!meta.canManage) why = "Only admins can change the tracked models.";
+            else if (m.canToggle === false) why = REASON[m.reason] || "This model is not available on your plan.";
+            else if (full && !m.active) why = "Your plan allows " + lim + " active models. Turn one off first.";
+            var locked = !!why;
             return '<button class="usb-model' + (m.active ? " is-on" : "") + (locked ? " is-locked" : "") + '" ' +
                 'type="button" role="switch" aria-checked="' + (m.active ? "true" : "false") + '" ' +
                 'data-model="' + esc(m.key) + '"' +
-                (locked ? ' aria-disabled="true" data-tip="Your plan allows ' + esc(String(lim)) + ' active models. Turn one off first."' : "") + '>' +
+                (locked ? ' aria-disabled="true" data-tip="' + esc(why) + '"' : "") + '>' +
               '<span class="usb-model-logo">' +
                 (m.logo_url ? '<img src="' + esc(m.logo_url) + '" alt="" onerror="this.remove();"/>' : "") +
               '</span>' +
@@ -483,6 +512,34 @@
         if (e.key !== "Enter" && e.key !== " ") return;
         e.preventDefault(); pick(e.target.closest(".usb-opt"));
       });
+      /* Eigene Branche eintippen. Der Knopf bleibt gesperrt, solange das Feld leer ist oder der
+         Text schon in der Liste steht -- sonst legt man ein Duplikat an, das sich vom Original
+         nur durch Gross- und Kleinschreibung unterscheidet. */
+      var cin = wrap.querySelector("[data-dd-custom]");
+      var cadd = wrap.querySelector("[data-dd-customadd]");
+      if (cin && cadd){
+        function customOk(){
+          var v = cin.value.trim();
+          if (!v) return false;
+          var have = cfg.items().some(function(it){
+            return String(cfg.value(it)).toLowerCase() === v.toLowerCase();
+          });
+          return !have;
+        }
+        cin.addEventListener("input", function(){ cadd.disabled = !customOk(); });
+        cin.addEventListener("keydown", function(e){
+          if (e.key !== "Enter") return;
+          e.preventDefault();
+          if (customOk()) cadd.click();
+        });
+        cadd.addEventListener("click", function(){
+          if (!customOk()) return;
+          var v = cin.value.trim().slice(0, IND_MAX);
+          cin.value = ""; cadd.disabled = true;
+          pop.close();
+          cfg.onCustom(v);
+        });
+      }
       return { sync: function(){ syncLabel(); if (pop.isOpen()) paint(); } };
     }
 
@@ -515,7 +572,13 @@
       body: function(x){ return '<span class="usb-opt-main"><span class="usb-opt-name">' + esc(x) + '</span></span>'; },
       selected: function(){ return draft.industry; },
       selectedLabel: function(){ return draft.industry ? esc(draft.industry) : ""; },
-      onPick: function(v){ draft.industry = v; ddIndustry.sync(); syncMeta(); }
+      onPick: function(v){ draft.industry = v; ddIndustry.sync(); syncMeta(); },
+      onCustom: function(v){
+        /* Die eigene Branche wandert in die Liste, damit sie beim naechsten Oeffnen oben
+           mitsteht und nicht wie ein Fremdkoerper nur im Trigger klebt. */
+        if (meta.industries.indexOf(v) === -1) meta.industries.push(v);
+        draft.industry = v; ddIndustry.sync(); syncMeta();
+      }
     });
 
     /* ---------------- Meta: geaendert? ---------------- */
@@ -695,7 +758,8 @@
         if (dlg) dlg.setAttribute("data-theme", isDark() ? "dark" : "light");
       }).observe(root, { attributes: true, attributeFilter: ["data-isdark", "data-theme"] });
     }
-    if (UC.onMarkets) UC.onMarkets(function(){ ddMarket.sync(); }, root);
+    if (UC.onAllMarkets) UC.onAllMarkets(function(){ ddMarket.sync(); }, root);
+    else if (UC.onMarkets) UC.onMarkets(function(){ ddMarket.sync(); }, root);
     render();
 
     return {
@@ -707,14 +771,39 @@
         if (team.name != null)  meta.teamName = String(team.name);
         if (team.id != null)    meta.teamId = String(team.id);
 
+        /* Die Modellzeilen kommen so, wie die RPC sie liefert. Jede Zeile traegt neben dem Modell
+           auch den Plan-Kontext (active_models_limit, user_can_manage) -- der ist in allen Zeilen
+           gleich, wird also aus der ersten gelesen. Eigene Feldnamen bleiben als Rueckfall
+           bestehen, damit ein handgeschriebener Aufruf weiter funktioniert.
+
+           currently_tracking ist der Schalter, nicht is_model_active: letzteres sagt, ob das
+           Modell ueberhaupt angeboten wird. Ein Modell mit is_model_active=false ist nicht
+           "ausgeschaltet", es steht gar nicht zur Verfuegung -- can_toggle sagt das direkt. */
         var models = p.models;
         if (typeof models === "string") models = UC.parseBubbleJson(models);
-        if (Array.isArray(models)){
+        if (Array.isArray(models) && models.length){
+          var first = models[0] || {};
+          if (first.active_models_limit != null) meta.modelLimit = UC.toNum(first.active_models_limit) || 0;
+          if (first.user_can_manage != null) meta.canManage = first.user_can_manage !== false;
+
           saved.models = models.map(function(m){
-            return { key: String(m.key || m.model || ""), display_name: m.display_name || m.name || "",
-                     logo_url: m.logo_url || "", provider: m.provider || "",
-                     active: UC.isYes(m.active) || m.active === true };
-          }).filter(function(m){ return !!m.key; });
+            var on = m.currently_tracking != null ? m.currently_tracking === true
+                   : (m.active != null ? (UC.isYes(m.active) || m.active === true) : false);
+            /* can_toggle deckt beide Richtungen ab. Fehlt es (handgeschriebener Aufruf), darf
+               geschaltet werden -- sonst waere eine Liste ohne diese Felder komplett tot. */
+            var toggle = m.can_toggle != null ? m.can_toggle !== false : true;
+            return {
+              key: String(m.model_key || m.key || m.model || ""),
+              display_name: m.display_name || m.name || "",
+              logo_url: m.logo_url || "",
+              provider: m.provider || "",
+              active: on,
+              canToggle: toggle,
+              reason: m.disabled_reason || "",
+              sort: UC.toNum(m.sort_order) || 0
+            };
+          }).filter(function(m){ return !!m.key; })
+            .sort(function(a, b){ return a.sort - b.sort; });
           draft.models = cloneModels(saved.models);
         }
         if (p.model_limit != null) meta.modelLimit = UC.toNum(p.model_limit) || 0;

@@ -1,7 +1,7 @@
 <meta charset="utf-8">
-<link rel="stylesheet" href="core.css?v=s10">
-<link rel="stylesheet" href="page-headers/settings-page-header.css?v=s10">
-<link rel="stylesheet" href="settings-brand.css?v=s10">
+<link rel="stylesheet" href="core.css?v=s11">
+<link rel="stylesheet" href="page-headers/settings-page-header.css?v=s11">
+<link rel="stylesheet" href="settings-brand.css?v=s11">
 <style>
   /* Form der echten Bubble-Seite: der Koerper scrollt nicht, #main scrollt. */
   html, body { margin: 0; height: 100%; }
@@ -12,7 +12,7 @@
 </style>
 
 <div id="main">
-  <div class="up-root sph-root"
+  <div class="up-root up-ph-root sph-root"
        data-instance="set1" data-isdark="no"
        data-brand-name="LeeUp Media"
        data-brand-logo="https://www.google.com/s2/favicons?domain=leeup.de&sz=128"
@@ -20,7 +20,7 @@
        data-nav-fn="bubble_fn_sphNav">
     <div class="up-ph-top">
       <div class="up-ph-left">
-        <div class="up-ph-meta"><img class="up-ph-metalogo"/><span class="up-ph-metatxt">Organisation</span></div>
+        <div class="up-ph-meta"><img class="up-ph-metalogo" alt="" style="display:none"/><span class="up-ph-metatxt"><span class="pph-metaname"></span> Organisation</span></div>
         <h1 class="up-ph-heading">Settings</h1>
         <p class="up-ph-desc">Manage your brand, your team and your plan.</p>
       </div>
@@ -46,9 +46,9 @@
   <button onclick="console.log(JSON.stringify(window.__ev,null,1))">Events</button>
 </div>
 
-<script src="core.js?v=s10"></script>
-<script src="page-headers/settings-page-header.js?v=s10"></script>
-<script src="settings-brand.js?v=s10"></script>
+<script src="core.js?v=s11"></script>
+<script src="page-headers/settings-page-header.js?v=s11"></script>
+<script src="settings-brand.js?v=s11"></script>
 <script>
 window.__ev = [];
 ["sphNav","usbEditBrand","usbLogoUpload","usbLogoUrl","usbModels","usbMarket",
@@ -58,7 +58,8 @@ window.__ev = [];
 
 window.__load = function(){
   /* Marktliste seitenweit, wie in der echten App: EIN Aufruf, alle Komponenten sehen sie. */
-  setUpstreemMarkets([
+  /* VOLLE Liste fuer Auswahlfelder, gefilterte fuer die Tabellen-Filter. */
+  setUpstreemAllMarkets([
     { alpha2: "DE", name: "Germany", prompt_count: 88, flag_url: "https://flagcdn.com/de.svg" },
     { alpha2: "AT", name: "Austria", prompt_count: 41 },
     { alpha2: "CH", name: "Switzerland", prompt_count: 37 },
@@ -70,14 +71,32 @@ window.__load = function(){
     instanceId: "set1",
     brand: { name: "LeeUp Media", logo: "https://www.google.com/s2/favicons?domain=leeup.de&sz=128" },
     team:  { id: "team_1", name: "LeeUp Media" },
-    model_limit: 3,
     models: [
-      { key: "gpt-4o",     display_name: "GPT-4o",           provider: "OpenAI",    logo_url: "https://www.google.com/s2/favicons?domain=openai.com&sz=64",    active: "yes" },
-      { key: "claude",     display_name: "Claude Sonnet",    provider: "Anthropic", logo_url: "https://www.google.com/s2/favicons?domain=anthropic.com&sz=64", active: "yes" },
-      { key: "gemini",     display_name: "Gemini 2.0 Flash", provider: "Google",    logo_url: "https://www.google.com/s2/favicons?domain=google.com&sz=64",    active: "yes" },
-      { key: "perplexity", display_name: "Perplexity",       provider: "Perplexity",logo_url: "https://www.google.com/s2/favicons?domain=perplexity.ai&sz=64", active: "no" },
-      { key: "grok",       display_name: "Grok",             provider: "xAI",       logo_url: "",                                                             active: "no" },
-      { key: "llama",      display_name: "Llama 3.3",        provider: "Meta",      logo_url: "https://www.google.com/s2/favicons?domain=meta.com&sz=64",      active: "no" }
+      { model_key:"chatgpt",    provider:"OpenAI",     display_name:"ChatGPT",
+        logo_url:"https://cdn-icons-png.freepik.com/512/12222/12222588.png",
+        active_models_limit:3, active_models_count:3, user_can_manage:true, sort_order:1,
+        is_model_active:true, is_allowed_by_plan:true, currently_tracking:true,
+        can_enable:false, can_disable:true, can_toggle:true, disabled_reason:null },
+      { model_key:"google-aio", provider:"Google",     display_name:"Google AI Overviews",
+        logo_url:"https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg",
+        active_models_limit:3, active_models_count:3, user_can_manage:true, sort_order:2,
+        is_model_active:true, is_allowed_by_plan:true, currently_tracking:true,
+        can_enable:false, can_disable:true, can_toggle:true, disabled_reason:null },
+      { model_key:"perplexity", provider:"Perplexity", display_name:"Perplexity",
+        logo_url:"https://registry.npmmirror.com/@lobehub/icons-static-png/latest/files/dark/perplexity-color.png",
+        active_models_limit:3, active_models_count:3, user_can_manage:true, sort_order:3,
+        is_model_active:true, is_allowed_by_plan:true, currently_tracking:true,
+        can_enable:false, can_disable:true, can_toggle:true, disabled_reason:null },
+      { model_key:"gemini",     provider:"Google",     display_name:"Gemini",
+        logo_url:"https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/llm_logos/gemini_logo.webp",
+        active_models_limit:3, active_models_count:3, user_can_manage:true, sort_order:4,
+        is_model_active:false, is_allowed_by_plan:true, currently_tracking:false,
+        can_enable:false, can_disable:false, can_toggle:false, disabled_reason:"model_inactive" },
+      { model_key:"deepseek",   provider:"DeepSeek",   display_name:"DeepSeek",
+        logo_url:"https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/llm_logos/icons8-deepseek-96.svg",
+        active_models_limit:3, active_models_count:3, user_can_manage:true, sort_order:5,
+        is_model_active:false, is_allowed_by_plan:true, currently_tracking:false,
+        can_enable:false, can_disable:false, can_toggle:false, disabled_reason:"model_inactive" }
     ],
     market: "de",
     business_model: "b2b",

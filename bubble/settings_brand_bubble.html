@@ -62,19 +62,36 @@
     brand: { name: "LeeUp Media", logo: "https://…" },
     team:  { id: "1712…x99", name: "LeeUp Media" },
 
-    model_limit: 3,
-    models: [ { key, display_name, logo_url, provider, active }, … ],
-             active: "yes"/"no" oder true/false. key ist der Schluessel, den du im
-             usbModels-Event zurueckbekommst.
+    models: [ … ],  die Zeilen der Modelle-RPC, unveraendert. Gelesen werden:
+             model_key, display_name, provider, logo_url, sort_order,
+             currently_tracking   ob der Schalter an ist (NICHT is_model_active)
+             can_toggle           darf der Nutzer diese Karte ueberhaupt schalten
+             disabled_reason      Grund fuer den Tooltip der gesperrten Karte
+             active_models_limit  das Limit, aus der ERSTEN Zeile gelesen
+             user_can_manage      false schaltet den ganzen Abschnitt schreibgeschuetzt
+             model_limit im Payload uebersteuert active_models_limit, falls du es brauchst.
 
-    market: "de",   nur der Alpha-2-Code. Die LISTE der Maerkte kommt NICHT hier rein, sondern
-                    seitenweit aus dem Core-Store: setUpstreemMarkets(`[MARKETS]`), genau wie
-                    fuer jede andere Komponente mit einer Marktauswahl. Ein Aufruf pro Seite,
-                    und ein neu angelegter Markt erreicht alle auf einmal. Schluessel ist alpha2.
+    market: "de",   nur der Alpha-2-Code.
+
+                    Die LISTE kommt seitenweit aus dem Core-Store, und es gibt ZWEI davon:
+                      setUpstreemMarkets(`[MARKETS]`)      die gefilterte Liste -- nur Maerkte,
+                                                           zu denen es Prompts gibt, mit
+                                                           prompt_count. Fuer die Filter ueber
+                                                           den Tabellen.
+                      setUpstreemAllMarkets(`[ALL]`)       der volle Katalog. Fuer Auswahlfelder,
+                                                           in denen man etwas NEUES anlegt:
+                                                           dieser Dialog und Add Prompts.
+                    Diese Seite liest die volle Liste. Ist setUpstreemAllMarkets nie gerufen
+                    worden, faellt sie auf die gefilterte zurueck -- eine Seite ohne den neuen
+                    Aufruf verhaelt sich also wie vorher, zeigt dann aber nur Maerkte mit Daten.
 
     business_model: "b2b",
     industries: [ "Consulting & Agencys", "SaaS & Software", … ],
     industry:   "Consulting & Agencys",
+                Im Dropdown steht unten ein Feld fuer eine eigene Branche, hoechstens 48 Zeichen.
+                Sie landet im selben industry-Feld des usbMeta-Events -- du bekommst also einen
+                freien Text, keinen Schluessel aus deiner Liste. Wenn du das serverseitig
+                einschraenken willst, pruefe dort gegen deine Liste.
 
     summary: "…"
   });

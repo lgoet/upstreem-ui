@@ -12,10 +12,10 @@
 .usb-root { display: block; width: 100%; box-sizing: border-box; }
 .usb-root * { box-sizing: border-box; }
 
-/* margin:0 auto zentriert die Seite. 720px ist die Lesebreite: ohne Deckel laeuft eine
-   Formularseite bis zur Fensterbreite auseinander und das Bedienelement steht einen halben Meter
-   rechts von seiner Beschriftung. */
-.usb-body { display: flex; flex-direction: column; gap: 40px; max-width: 720px; margin: 0 auto; }
+/* 720px ist die Lesebreite: ohne Deckel laeuft eine Formularseite bis zur Fensterbreite
+   auseinander und das Bedienelement steht einen halben Meter rechts von seiner Beschriftung.
+   Linksbuendig, nicht zentriert -- die Seite steht in derselben Spalte wie jede andere. */
+.usb-body { display: flex; flex-direction: column; gap: 40px; max-width: 720px; }
 
 /* ---------- Abschnitt ---------- */
 .usb-sec { display: flex; flex-direction: column; gap: 12px; }
@@ -62,7 +62,9 @@
 .usb-editbtn-lbl { overflow: hidden; text-overflow: ellipsis; max-width: 22ch; }
 
 /* ---------- Logo ---------- */
-.usb-logoctl { align-items: flex-start; gap: 16px; }
+/* Untereinander statt nebeneinander: Vorschau oben, darunter der Upload-Knopf, darunter der
+   eingeklappte Link-Weg. Nebeneinander konkurrierten Bild und Knopf um dieselbe Blickzeile. */
+.usb-logoctl { flex-direction: column; align-items: flex-start; gap: 12px; }
 .usb-logoprev {
   width: 56px; height: 56px; flex: 0 0 56px; border-radius: 12px; overflow: hidden;
   border: 1px solid var(--vc-border); background: var(--vc-heading-bg); display: grid; place-items: center;
@@ -89,8 +91,19 @@
 .usb-linktoggle-chev { width: 14px; height: 14px; display: inline-flex; transition: transform 160ms ease; }
 .usb-linktoggle-chev svg { width: 14px; height: 14px; display: block; }
 .usb-linktoggle.is-open .usb-linktoggle-chev { transform: rotate(180deg); }
+/* [hidden] setzt display:none, aber nur mit der Spezifitaet des Browser-Stylesheets. Eine eigene
+   display-Regel auf derselben Klasse gewinnt und der Bereich stand offen, obwohl das Attribut
+   gesetzt war. Darum die versteckte Variante ausdruecklich. */
 .usb-linkbox { display: flex; align-items: center; gap: 8px; }
-.usb-urlin { height: 32px; width: 240px; min-width: 0; padding: 0 10px; border-radius: 9px; font-size: 13px; }
+.usb-linkbox[hidden] { display: none; }
+/* Ein ganz normales Eingabefeld: 1px Rahmen in der Rahmenfarbe, sonst nichts. .up-field brachte
+   hier einen zu schweren Rahmen mit, weil es fuer die Suchfelder in den Menues gedacht ist. */
+.usb-urlin { flex: 1 1 auto; height: 32px; width: 240px; min-width: 0; padding: 0 10px;
+  border: 1px solid var(--vc-border); border-radius: 9px; background: transparent;
+  color: var(--vc-text); font: inherit; font-size: 13px; }
+.usb-urlin::placeholder { color: var(--vc-third); }
+.usb-urlin:hover { border-color: var(--vc-hover-border); }
+.usb-urlin:focus { outline: 0; border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 
 /* ---------- Modelle ---------- */
 .usb-count {
@@ -138,7 +151,16 @@
    Nur Breite und die Flaggenzeile. Trigger, Menue, Zeilen, Haken, Suchfeld und der offene Zustand
    kommen unveraendert aus core -- inklusive der Tatsache, dass der Chevron sich NICHT dreht und der
    offene Trigger einen grauen Hintergrund bekommt statt eines farbigen Rahmens. */
-.usb-dd .usb-ddbtn { min-width: 220px; justify-content: space-between; }
+/* In einem Formular ist der Trigger ein FELD, kein Werkzeugleisten-Knopf: sichtbarer Rahmen,
+   heller Grund, Chevron rechts. Der Core-Trigger ist absichtlich rahmenlos, weil er ueber
+   Tabellen zwischen anderen Icon-Knoepfen steht -- hier steht er neben Textfeldern und muss wie
+   eines aussehen. Menue, Zeilen, Haken und Suche bleiben unveraendert die aus core. */
+.usb-dd .usb-ddbtn { min-width: 220px; height: 32px; padding: 0 8px 0 12px;
+  justify-content: space-between; border: 1px solid var(--vc-border); border-radius: 9px;
+  background: transparent; }
+.usb-dd .usb-ddbtn:hover { border-color: var(--vc-hover-border); background: transparent; }
+.usb-dd.is-open .usb-ddbtn { border-color: var(--vc-hover-border); background: transparent; }
+.usb-dd.is-active .usb-ddbtn { background: transparent; }
 .usb-dd .up-filter-btn-lbl { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
 .usb-dd .up-filter-btn-lbl.is-empty { color: var(--vc-third); }
 .usb-ddsearchrow { flex: 0 0 auto; display: flex; margin-bottom: 8px; }
@@ -152,6 +174,23 @@
   box-shadow: 0 0 0 1px rgba(0,0,0,.08); display: block; }
 .usb-flag-btn { margin-right: 0; }
 .usb-ddempty { font-size: 13px; color: var(--vc-third); padding: 8px 9px; }
+
+/* Eigene Branche eintippen. Unten im Menue, durch eine Linie abgesetzt: es ist die Ausnahme,
+   nicht die erste Wahl, und soll die Liste darueber nicht zerreissen. */
+.usb-ddcustom { flex: 0 0 auto; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--vc-border);
+  display: flex; flex-direction: column; gap: 6px; }
+.usb-ddcustom-lbl { font-size: 11px; font-weight: 600; color: var(--vc-muted);
+  text-transform: uppercase; letter-spacing: .04em; padding: 0 1px; }
+.usb-ddcustom-row { display: flex; align-items: center; gap: 6px; }
+.usb-ddcustom-in { flex: 1 1 auto; min-width: 0; height: 32px; padding: 0 10px;
+  border: 1px solid var(--vc-border); border-radius: 9px; background: transparent;
+  color: var(--vc-text); font: inherit; font-size: 13px; }
+.usb-ddcustom-in::placeholder { color: var(--vc-third); }
+.usb-ddcustom-in:focus { outline: 0; border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+.usb-ddcustom-add { flex: 0 0 auto; height: 32px; padding: 0 12px; border: 0; border-radius: 9px;
+  background: var(--vc-text); color: var(--vc-bg); font: inherit; font-size: 13px; font-weight: 500;
+  cursor: pointer; }
+.usb-ddcustom-add:disabled { opacity: .4; cursor: default; }
 
 /* ---------- Zusammenfassung ----------
    Als einziger Block ueber die volle Breite: ein mehrzeiliges Textfeld in einer 220px-Spalte waere
