@@ -1353,10 +1353,21 @@
                   : (typeof params !== "object") ? (typeof params + " " + String(params).slice(0, 80))
                   : ("Objekt mit den Feldern [" + Object.keys(params).join(", ") + "]");
             } catch(e){ got = "?"; }
+            var nurId = (params && typeof params === "object" &&
+                         Object.keys(params).length === 1 && params.instanceId);
             console.error("[performance-radar] render ohne verwertbare Daten: `cells` fehlt oder ist " +
-              "kein Array. Erhalten: " + got + ". Haeufigste Ursache: der Payload wurde im Run-JS-Step " +
-              "nicht geparst (JSON.parse geworfen und der catch-Zweig hat ein leeres Objekt " +
-              "durchgereicht) -- die Matrix zeigt dann 'No data', obwohl die Daten existieren.");
+              "kein Array. Erhalten: " + got + "." +
+              (nurId
+                /* Genau dieses Bild entsteht, wenn im Run-JS-Schritt noch ein eigenes JSON.parse
+                   steht: wirft es, reicht der catch-Zweig ein Objekt mit nur der instanceId durch
+                   und der Rohtext ist WEG, bevor die Komponente ihn retten koennte. Die Meldung
+                   nennt darum die Loesung, statt nur das Symptom zu beschreiben. */
+                ? " Im Run-JS-Schritt steht offenbar noch ein eigenes JSON.parse. Ersetze den " +
+                  "GESAMTEN Inhalt des Schritts durch diese eine Zeile, dann parst die Komponente " +
+                  "selbst und faengt abgeschnittene oder lueckenhafte Payloads ab:\n" +
+                  "  window.renderPerformanceRadar({ instanceId: \"" + (params.instanceId || "ROOTID_…") +
+                  "\", raw: `[RPC-Ergebnis]` });"
+                : " Die Matrix zeigt 'No data', obwohl die Daten existieren koennen."));
           }
         }
         state.loading = false;
