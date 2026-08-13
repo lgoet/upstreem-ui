@@ -182,7 +182,14 @@
 
     function marketList(){
       var quelle = "voll";
-      var raw = UC.getAllMarkets ? UC.getAllMarkets() : [];
+      /* NICHT einfach getAllMarkets() nehmen: core.js faellt darin still auf die gefilterte Liste
+         zurueck, wenn der volle Store leer ist. Der Rueckgabewert ist also nie leer, und die
+         Warteschlange darunter wurde nie erreicht -- die Auswahl zeigte eine Liste mit einem
+         Eintrag und meldete trotzdem "Quelle ist die VOLLE Liste". Der Store wird deshalb ueber
+         storeStats() gefragt, das die beiden auseinanderhaelt. */
+      var voll = 0;
+      if (UC.storeStats){ try { voll = UC.storeStats().allMarkets.n || 0; } catch(e){ voll = 0; } }
+      var raw = (voll && UC.getAllMarkets) ? UC.getAllMarkets() : [];
       if (!raw.length){ raw = pendingAll(); if (raw.length) quelle = "warteschlange"; }
       if (!raw.length){ raw = UC.getMarkets ? UC.getMarkets() : []; if (raw.length) quelle = "gefiltert"; }
       if (!raw.length) return meta.markets;
@@ -1011,10 +1018,17 @@
         root.__usbLoading = false;
         render();
       },
+      /* Was vom Server kommt, bekommt im Ladezustand ein Skelett -- die Auswahlfelder, die
+         Modell-Kacheln, das Logo und die Zusammenfassung. Ueberschriften und Beschreibungen sind
+         fest verdrahtet und bleiben stehen; ein Skelett darueber waere gelogen. */
       setLoading: function(on){
         loading = UC.isYes(on);
         root.__usbLoading = loading;
         root.classList.toggle("is-loading", loading);
+        Array.prototype.forEach.call(
+          root.querySelectorAll(".usb-rowctl, .usb-models, .usb-logoprev, .usb-logoforms, " +
+                                ".usb-sumwrap, .usb-count"),
+          function(el){ el.classList.add("usb-skelbox"); });
         /* Waehrend geladen wird, ist jeder Speichern-Knopf gesperrt. Sonst kann der Nutzer ein
            zweites Mal speichern, bevor die erste Antwort da ist, und die zweite Antwort
            ueberschreibt die erste. */

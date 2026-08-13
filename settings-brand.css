@@ -326,3 +326,25 @@
 .usb-root.is-vnarrow .usb-dense { width: 100%; }
 .usb-root.is-vnarrow .usb-dense .up-dense-btn { flex: 1 1 0; padding: 0 6px; }
 .usb-root.is-vnarrow .usb-logoctl { flex-direction: column; }
+
+/* ---------- Ladezustand ----------
+   Solange geladen wird, steht ueberall ein Skelett statt eines Wertes. Vorher passierte sichtbar
+   gar nichts: die Seite zeigte die alten Werte weiter, und man konnte nicht unterscheiden, ob sie
+   noch stimmen oder gerade neu geholt werden.
+   Gebaut als Ueberlagerung, nicht als Ersatzmarkup: jede Zeile behaelt ihre echte Hoehe, also
+   springt beim Umschalten nichts. --vc-sk und die upskt-Animation sind dieselben wie in den
+   Tabellen-Skeletten. */
+.usb-root.is-loading .usb-skelbox { position: relative; }
+.usb-root.is-loading .usb-skelbox > * { visibility: hidden; }
+.usb-root.is-loading .usb-skelbox::before {
+  content: ""; position: absolute; inset: 0; border-radius: 8px;
+  background: var(--vc-sk); overflow: hidden;
+}
+.usb-root.is-loading .usb-skelbox::after {
+  content: ""; position: absolute; inset: 0; border-radius: 8px;
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.16) 50%, rgba(255,255,255,0) 100%);
+  transform: translateX(-100%); animation: upskt 1200ms linear infinite;
+}
+/* Die Ueberschriften und Beschreibungen bleiben stehen: sie sind fest, nicht geladen. Nur was vom
+   Server kommt, wird verdeckt. */
+.usb-root.is-loading .usb-savebtn { pointer-events: none; opacity: .5; }
