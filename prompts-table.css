@@ -161,6 +161,10 @@
   --vc-text: #1f1f1b; --vc-muted: #6f737c; --vc-border: #e7e9ec;
   --vc-heading-bg: #f5f5f5; --vc-switch-bg: #f5f5f5; --vc-third: #9e9e9e;
   --vc-hover-border: #6f6f6f; --up-surface: #ffffff;
+  /* Fokus-Tokens gehoeren mit in diese Liste. Die Bar haengt am body, nicht unter .up-root, wo sie
+     definiert sind. Fehlen sie, ist var(--up-focus) leer und die :focus-within-Regel des
+     Topic-Suchfeldes ist ungueltig -- sie steht dann zwar in der Datei, tut aber nichts. */
+  --up-focus: #4A9EFF; --up-focus-ring: rgba(74,158,255,0.20); --up-focus-w: 2px;
   /* The one gap used on BOTH sides of every separator inside the bar — see STYLEGUIDE "Abstände
      an Separatoren". Hardcoding it per rule is what left the panel at 12px while the head and
      foot sat at 10px, which only became obvious once a picker opened and stacked three of those
@@ -250,6 +254,7 @@
   --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #353535;
   --vc-heading-bg: rgba(42,42,42,0.6); --vc-switch-bg: rgba(42,42,42,0.6); --vc-third: #808080;
   --vc-hover-border: #707070; --up-surface: #151515;
+  --up-focus: #6DB2FF; --up-focus-ring: rgba(109,178,255,0.28);
   /* This is the actual "blurry border" — the frosted ::before ring, not any dropdown menu's plain
      border (those live in core.css and were already fixed separately). A BLACK tint at any opacity
      still reads as "the same dark nothing" against an already-dark page, no matter how much you
