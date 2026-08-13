@@ -32,6 +32,22 @@
 (function(){
   "use strict";
 
+  /* Bubble ruft setSettingsBrandLoading/renderSettingsBrand aus einem Workflow-Schritt, der beim
+     Seitenaufbau laufen kann -- also bevor diese Datei ueberhaupt vom CDN da ist. Ohne diese
+     Stubs wirft der Aufruf "is not a function" und ist weg: der Ladezustand kommt nie an, und die
+     Modelle auch nicht. Genau das war der Grund, warum die Seite "0/3 models" zeigte, obwohl der
+     Workflow-Schritt die Daten korrekt geholt hat. Jede andere Komponente dieser Familie hat
+     diesen Block seit Langem (prompts-table.js:11), hier fehlte er.
+     Die Aufrufe werden gemerkt und abgearbeitet, sobald die echten Funktionen stehen. */
+  var __usbBootQueue = window.__usbBootQueue = window.__usbBootQueue || [];
+  if (!window.__usbBootStubbed){
+    window.__usbBootStubbed = true;
+    ["renderSettingsBrand", "setSettingsBrandLoading", "setSettingsBrandLogo",
+     "resetSettingsBrand"].forEach(function(n){
+      window[n] = function(){ __usbBootQueue.push([n, arguments]); };
+    });
+  }
+
   function usbBoot(triesLeft){
     if (!window.UpstreemCore){
       if (triesLeft > 0){ setTimeout(function(){ usbBoot(triesLeft - 1); }, 100); return; }
@@ -813,7 +829,10 @@
     }
 
     function render(){
-      root.classList.toggle("is-loading", !!loading);
+      /* Der Ladezustand haengt am Root, nicht an dieser Closure. Sonst kann ein spaeteres render()
+         die Klasse wieder abraeumen, obwohl setLoading("yes") sie gerade gesetzt hat -- genau so
+         verschwand der Ladezustand des Pageloads wieder. */
+      root.classList.toggle("is-loading", !!root.__usbLoading);
       renderBrand();
       renderModels();
       renderBusiness();
@@ -955,10 +974,12 @@
         if (p.summary != null){ saved.summary = String(p.summary); draft.summary = saved.summary; }
 
         loading = false;
+        root.__usbLoading = false;
         render();
       },
       setLoading: function(on){
         loading = UC.isYes(on);
+        root.__usbLoading = loading;
         root.classList.toggle("is-loading", loading);
         /* Waehrend geladen wird, ist jeder Speichern-Knopf gesperrt. Sonst kann der Nutzer ein
            zweites Mal speichern, bevor die erste Antwort da ist, und die zweite Antwort
@@ -994,14 +1015,7 @@
       onMount: function(m){ mount = m; },
       rootClass: "usb-root", notPortal: true,
       ctrlProp: "__usbController", resolveLocal: "__usbResolveLocal", queue: "__usbBootQueue",
-      initRoot: function(root){
-        if (root.__usbController) return root.__usbController;
-        var id = root.getAttribute("data-instance") || "default";
-        if (id === "INSTANCE_ID") return null;
-        var ctrl = makeController(root);
-        root.__usbController = ctrl;
-        return ctrl;
-      },
+      initRoot: initRootNow,
       api: {
         renderSettingsBrand: doRender,
         setSettingsBrandLoading: doLoading,
@@ -1011,10 +1025,34 @@
       forwardShape: { renderSettingsBrand: "params", resetSettingsBrand: "id" }
     });
   }
+  /* Der Root wird hier notfalls SOFORT aufgebaut. Sonst geht der allererste Aufruf verloren: der
+     Pageload-Schritt legt setSettingsBrandLoading("...","yes") in die Warteschlange, die beim Laden
+     abgearbeitet wird -- aber zu dem Zeitpunkt hat der Root noch keinen Controller, resolve() gab
+     null zurueck, und der Aufruf verschwand kommentarlos. Genau so sah es aus wie ein toter
+     Ladezustand. */
   function resolve(id){
-    if (!mount) return null;
-    var r = mount.rootsWithId(String(id || "").trim());
-    return r.length ? (r[0].__usbController || null) : null;
+    id = String(id || "").trim();
+    /* Ohne mount NICHT aufgeben: die Warteschlange wird abgearbeitet, waehrend makeMount noch
+       laeuft -- die Zuweisung an `mount` passiert erst danach. Frueher gab resolve() in genau
+       diesem Moment null zurueck, und der erste Aufruf des Pageloads war weg. */
+    var r = mount ? mount.rootsWithId(id) : rootsById(id);
+    if (!r.length) return null;
+    return r[0].__usbController || initRootNow(r[0]);
+  }
+  function rootsById(id){
+    var out = [], all = document.querySelectorAll(".usb-root");
+    for (var i = 0; i < all.length; i++){
+      if ((all[i].getAttribute("data-instance") || "default") === id) out.push(all[i]);
+    }
+    return out;
+  }
+  function initRootNow(root){
+    if (root.__usbController) return root.__usbController;
+    var id = root.getAttribute("data-instance") || "default";
+    if (id === "INSTANCE_ID") return null;
+    var ctrl = makeController(root);
+    root.__usbController = ctrl;
+    return ctrl;
   }
   function doRender(params){
     var UCl = window.UpstreemCore;

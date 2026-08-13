@@ -76,16 +76,19 @@
   Alle duerfen dynamische Ausdruecke sein und spaeter aufloesen -- die Komponente beobachtet die
   Attribute und zeichnet neu, sobald sich eines aendert.
 
-  Ueber Run-JS kommt nur, was kein Attribut sein kann:
+  Die Marktliste kommt NICHT hierher. Sie steht seitenweit im Store: ein
+  window.setUpstreemAllMarkets(...) beim Seitenaufbau, und jede Komponente liest sie von dort --
+  dieselbe wie in add-prompts und den Markt-Filtern. Diese Seite liest UC.getAllMarkets() und
+  horcht auf Aenderungen, ein zweiter Aufruf hier waere dieselbe RPC ein zweites Mal.
 
-      window.setUpstreemAllMarkets(`[Ergebnis der Markt-RPC]`);
+  Ueber Run-JS kommt nur, was kein Attribut sein kann:
 
       var RAW = `[Ergebnis der Modelle-RPC]`.replace(/:\s*([,}\]])/g, ": null$1");
       var models = [];
       try { models = JSON.parse(RAW); } catch (e) { console.error("[settings] models: " + e.message); }
       window.renderSettingsBrand({ instanceId: "settings_brand", models: models });
 
-  Beide Werte sind JSON aus einer RPC und gehoeren in Backticks. Die replace-Zeile ist derselbe
+  Der Wert ist JSON aus einer RPC und gehoert in Backticks. Die replace-Zeile ist derselbe
   Sanitizer wie ueberall: sie setzt einen Schluessel, auf den direkt , } oder ] folgt, auf null --
   Bubble laesst JSON-null sonst spurlos verschwinden.
 
@@ -143,6 +146,16 @@
       window.__upstreemMarketQueue.push({ all: false, rows: rows }); return true;
     };
   }
+  /* Dasselbe fuer die Setter dieser Komponente. Der Pageload-Workflow ruft
+     setSettingsBrandLoading und renderSettingsBrand, bevor settings-brand.js vom CDN da ist --
+     ohne diese Stubs wirft der Aufruf "is not a function" und ist verloren. Genau daran lagen der
+     tote Ladezustand und die leere Modell-Liste. */
+  window.__usbBootQueue = window.__usbBootQueue || [];
+  ["renderSettingsBrand", "setSettingsBrandLoading", "setSettingsBrandLogo", "resetSettingsBrand"]
+    .forEach(function(n){
+      if (typeof window[n] === "function") return;
+      window[n] = function(){ window.__usbBootQueue.push([n, arguments]); };
+    });
   var root = document.querySelector(".usb-root[data-cdn-pin]");
   var pin = root ? String(root.getAttribute("data-cdn-pin") || "").trim() : "";
   if (!pin || pin === "CDN_PIN") pin = "main";
