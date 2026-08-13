@@ -4917,7 +4917,12 @@
   (function(){
     var q = window.__upstreemMarketQueue;
     if (!q || !q.length) return;
-    window.__upstreemMarketQueue = [];
+    /* Die Warteschlange wird NICHT geleert. Laedt eine Seite core.js zweimal -- zwei Komponenten
+       mit verschiedenem data-cdn-pin -- dann bekommt die zweite Fassung einen frischen, leeren
+       Store, waehrend die erste die Aufrufe schon verbraucht hatte. Der Store, den die Komponenten
+       danach lesen, meldet "Aufrufe 0", und die volle Marktliste ist nirgends mehr zu finden.
+       Bleiben die Eintraege liegen, kann jede spaetere Fassung sie noch abholen; ein doppeltes
+       Setzen derselben Liste kostet nichts. */
     for (var i = 0; i < q.length; i++){
       try {
         if (q[i] && q[i].all) setAllMarkets(q[i].rows, "setUpstreemAllMarkets (nachgeholt)");

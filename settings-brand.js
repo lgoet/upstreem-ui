@@ -131,7 +131,12 @@
     var draft = { models: [], marketId: "", businessModel: "", industry: "", summary: "" };
     var meta  = { brandName: "", brandLogo: "", teamName: "", teamId: "",
                   modelLimit: 3, canManage: true, markets: [], marketsRaw: [], industries: INDUSTRIES.slice(), logoFileName: "" };
-    var loading = false;
+    /* Der Ladezustand ist der ANFANGSZUSTAND, nicht der Ausnahmefall. Ab dem Moment, in dem die
+       Komponente steht, sind Skelette zu sehen -- und sie bleiben, bis ausdruecklich
+       setSettingsBrandLoading(..., "no") kommt. Nur so gibt es nie den Zwischenzustand, in dem
+       leere Felder wie echte, leere Werte aussehen. Auch ein render() beendet ihn nicht: die Daten
+       koennen in mehreren Aufrufen eintreffen, und wer fertig ist, weiss nur der Aufrufer. */
+    var loading = true;
 
     function isDark(){ return UC.isYes(root.getAttribute("data-isdark")); }
     function cloneModels(list){ return list.map(function(m){ var c = {}; for (var k in m) c[k] = m[k]; return c; }); }
@@ -879,6 +884,9 @@
       });
     }
 
+    root.__usbLoading = true;
+    root.classList.add("is-loading");
+
     function render(){
       /* Der Ladezustand haengt am Root, nicht an dieser Closure. Sonst kann ein spaeteres render()
          die Klasse wieder abraeumen, obwohl setLoading("yes") sie gerade gesetzt hat -- genau so
@@ -1027,8 +1035,6 @@
         if (p.industry != null){ saved.industry = String(p.industry); draft.industry = saved.industry; }
         if (p.summary != null){ saved.summary = String(p.summary); draft.summary = saved.summary; }
 
-        loading = false;
-        root.__usbLoading = false;
         render();
       },
       /* Was vom Server kommt, traegt usb-skelbox FEST im Markup -- die Klasse tut nur unter
