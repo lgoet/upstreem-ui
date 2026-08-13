@@ -90,6 +90,41 @@
   window.resetPerformanceRadar("INSTANCE_ID");     // clears the matrix, closes the picker, kills
                                                     // the tooltip — fires NO events
 
+  ── Der Render-Schritt in Bubble ─────────────────────────────────────────────
+  Bubble reicht den RPC-Text als Quelltext in den Run-JS-Schritt. Auf dem Weg dorthin geht zweierlei
+  kaputt, beides in der Praxis beobachtet und beides NICHT im Payload der Datenbank:
+
+    1. JSON-null verschwindet spurlos. Aus  "avg_rank_prev": null,  wird  "avg_rank_prev": ,
+       Das ist kein gueltiges JSON mehr, JSON.parse wirft, und der Schritt bricht samt aller
+       Folgeaktionen ab. Betroffen sind die _prev-, _delta- und heat_value_-Felder, sobald eine
+       Zelle keine Vorperiode hat (Marke mit 0 Erwaehnungen im Vorzeitraum). Deshalb faellt es
+       nicht beim Bauen auf, sondern erst wenn sich die Daten aendern.
+
+    2. Manche Workflows liefern das blanke Zellen-Array statt des Objekts. Setzt man darauf
+       .instanceId, kommt in der Komponente {0, 1, ... 63, instanceId} an und `cells` fehlt.
+
+  Der Render-Schritt faengt beides ab, gleiche Bauart wie in brands_overview_bubble.html:
+
+      var RAW = `[RPC-Ergebnis]`.replace(/:\s*([,}\]])/g, ": null$1");
+      var data = JSON.parse(RAW);
+      var payload = Array.isArray(data) ? { cells: data } : data;
+      payload.instanceId = "ROOTID_[dynamic id]";
+      window.renderPerformanceRadar(payload);
+
+  Die replace-Zeile setzt einen Schluessel, auf den direkt , } oder ] folgt, auf null. Heiles JSON
+  laesst sie unangetastet.
+
+  WICHTIG: das gilt fuer JEDEN Run-JS-Schritt, der diese RPC liest, nicht nur den ersten. Auf der
+  Performance-Seite sind das ueblicherweise zwei (Radar und Performance Detail) plus je einer fuer
+  Page load und View-Wechsel. Bleibt einer auf dem alten JSON.parse stehen, rendert der Radar zwar,
+  aber der uebersehene Schritt bricht weiter ab und was er befuellt bleibt leer. Der Stack zeigt
+  dann `<anonymous>:1:20`, also Zeile 1 Spalte 20 und damit die Position von JSON.parse in einem
+  Schritt, in dem die replace-Zeile fehlt.
+
+  Die saubere Loesung an der Quelle waere jsonb_strip_nulls() in der RPC: dann stehen die leeren
+  Felder gar nicht erst im Text und Bubble kann nichts daran verstuemmeln. Der Sanitizer bleibt
+  trotzdem sinnvoll, weil er Fall 2 mit abdeckt.
+
   Notes on the payload:
 
   · cells alone is enough to draw the matrix. selected_* / available_* are richer (they carry the
