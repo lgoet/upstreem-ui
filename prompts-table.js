@@ -2433,7 +2433,18 @@
          would ask for them (selectAllPrompts() bailed out early because nothing was expanded).
          Guarded by !expandedGroup because an open group renders its own rows from its own fetch;
          the helper no-ops anyway once data exists or a fetch is in flight. */
-      if (groupingOn() && !state.expandedGroup) ensureFlatDataForAllPrompts();
+      /* Riegel loesen, BEVOR gefragt wird. flatAsked steht seit dem Seitenaufbau: die Komponente
+         hat dort im Wide-Modus schon einmal gefragt, und wenn die Antwort leer war oder ausblieb,
+         setzt nur eine Lieferung MIT Zeilen den Riegel zurueck. Beim Umschalten fiel
+         ensureFlatDataForAllPrompts() darum sofort wieder raus -- keine Anfrage, keine Zeilen,
+         keine Gesamtzahl, und die Paginierung blieb ein leerer Streifen, bis der Nutzer eine
+         Gruppe oeffnete und wieder zuruecksprang.
+         Der Riegel ist gegen automatisches Ping-Pong gedacht, nicht gegen eine Nutzeraktion.
+         Ein Klick auf den Umschalter ist eine, also darf er genau eine neue Anfrage ausloesen. */
+      if (groupingOn() && !state.expandedGroup){
+        state.flatAsked = false;
+        ensureFlatDataForAllPrompts();
+      }
       if (groupingOn()) renderGroups();
       /* .up-box's own width changes gradually as the sidepanel's 200ms CSS width transition runs
          (see .upt-grp-sidepanel) -- root's OUTER width never changes (the panel and box just
@@ -2926,6 +2937,10 @@
          here immediately. ensureFlatDataForAllPrompts() no-ops on its own once data exists or a
          fetch is in flight, so running it unconditionally costs nothing and is exactly the part
          that must still happen when the selection itself is unchanged. */
+      /* Gleicher Grund wie im Umschalter: ein Klick auf "All Prompts" ist eine Nutzeraktion und
+         darf den Riegel loesen. Ohne das blieb der Bereich leer, wenn die erste Anfrage beim
+         Seitenaufbau ohne Zeilen zurueckkam. */
+      state.flatAsked = false;
       ensureFlatDataForAllPrompts();
       if (!state.expandedGroup) return;
       state.expandedGroup = null;
