@@ -3864,7 +3864,13 @@
         if (!isOwner() || !canvas) return;
         buildWhenSized(built);
         verify(built);
-      })["catch"](function(){});
+      })["catch"](function(err){
+        /* Nicht still. clearExtras() hat Skelett und Leerflaeche vorher entfernt, die Legende
+           steht schon -- bei einer Ablehnung bliebe eine Legende ueber einem blanken Canvas
+           stehen, und das sieht aus wie ein leerer Datensatz statt wie ein Ladefehler. */
+        if (window.console) console.error("[chart] Chart.js konnte nicht geladen werden. Das " +
+          "Diagramm bleibt leer -- das ist KEIN fehlender Datensatz. Fehler:", err);
+      });
     }
 
     return {
@@ -4113,7 +4119,13 @@
               } : undefined }
           });
         } catch(err){}
-      })["catch"](function(){});
+      })["catch"](function(err){
+        /* Nicht still. clearExtras() hat Skelett und Leerflaeche vorher entfernt, die Legende
+           steht schon -- bei einer Ablehnung bliebe eine Legende ueber einem blanken Canvas
+           stehen, und das sieht aus wie ein leerer Datensatz statt wie ein Ladefehler. */
+        if (window.console) console.error("[chart] Chart.js konnte nicht geladen werden. Das " +
+          "Diagramm bleibt leer -- das ist KEIN fehlender Datensatz. Fehler:", err);
+      });
     }
 
     function renderBars(d){
