@@ -1,0 +1,83 @@
+<!--
+  UPSTREEM — SETTINGS PAGE HEADER
+
+  Der Seitenkopf der Einstellungen. Meta-Zeile, Ueberschrift, Beschreibung und die Unternavigation
+  mit drei Reitern: Your Brand, Team Organisation, Billing.
+
+  Besonderheit gegenueber den anderen Seitenkoepfen: der erste Reiter zeigt das LOGO der Marke
+  statt eines Icons. Die URL kommt aus data-brand-logo, demselben Attribut, das auch die Meta-Zeile
+  speist. Ist es leer oder laedt das Bild nicht, steht dort ein Ersatz-Icon; der Reiter ist nie
+  ohne Zeichen.
+
+  ── Statisches Markup, Pflicht (bubble/STATISCHES_MARKUP_PFLICHT.md) ─────────
+  data-instance    = feste, pro Platzierung eindeutige Zeichenkette. KEIN dynamischer Ausdruck.
+  data-cdn-pin     = Commit-Hash, aus dem geladen wird, z.B. "a0571a1". Leer lassen (oder den
+                     Platzhalter "CDN_PIN" stehen lassen) laedt @main -- aber @main haengt hinter
+                     dem jsDelivr-Cache, ein frischer Fix ist dort nicht sofort live.
+  data-isdark      = fest "no". Theme wird ueber window.upstreemSetTheme("yes"/"no") gewechselt.
+  data-brand-name  = dynamischer Ausdruck, Name der Marke. Fuellt die Meta-Zeile.
+  data-brand-logo  = dynamischer Ausdruck, Logo-URL. Fuellt die Meta-Zeile UND den ersten Reiter.
+  data-page        = welcher Reiter beim Laden aktiv ist: "brand" | "team" | "billing".
+                     Weglassen heisst "brand".
+
+  ── Event ────────────────────────────────────────────────────────────────────
+  data-nav-fn = "bubble_fn_sphNav_[dynamic id]"
+
+    fn('{"page":"team"}')     page: "brand" | "team" | "billing"
+
+    Der Reiter ist bereits umgeschaltet, wenn das Event ankommt -- der Unterstrich wandert ohne
+    Serverantwort. Beantworte es damit, die passende Gruppe einzublenden, etwa ueber denselben
+    Custom State, den showView(...) sonst setzt.
+
+  ── Wichtig, sonst bleibt der Reiter ohne Logo ───────────────────────────────
+  data-brand-logo darf ein dynamischer Ausdruck sein, der erst spaeter aufloest. Die Komponente
+  beobachtet das Attribut und baut die Navigation neu, sobald die URL eintrifft. Der ausgewaehlte
+  Reiter bleibt dabei erhalten.
+
+  ── Markup ───────────────────────────────────────────────────────────────────
+-->
+<div class="up-root sph-root"
+     data-instance="settings_header"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="no"
+     data-brand-name="BRAND_NAME"
+     data-brand-logo="BRAND_LOGO"
+     data-page="brand"
+     data-nav-fn="bubble_fn_sphNav_ID">
+  <div class="up-ph-top">
+    <div class="up-ph-left">
+      <div class="up-ph-meta">
+        <img class="up-ph-metalogo"/>
+        <span class="up-ph-metatxt">Organisation</span>
+      </div>
+      <h1 class="up-ph-heading">Settings</h1>
+      <p class="up-ph-desc">Manage your brand, your team and your plan.</p>
+    </div>
+  </div>
+  <div class="up-ph-nav" role="tablist"></div>
+</div>
+
+<script>
+/* Laedt core.js zuerst, dann die Komponente, beide vom Commit in data-cdn-pin. Der Pin wird ueber
+   die Klasse gelesen, nicht ueber document.currentScript: Bubble fuehrt dieses Skript in einem
+   Kontext aus, in dem currentScript null sein kann. */
+(function(){
+  var root = document.querySelector(".sph-root[data-cdn-pin]");
+  var pin = root ? String(root.getAttribute("data-cdn-pin") || "").trim() : "";
+  if (!pin || pin === "CDN_PIN") pin = "main";
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + pin + "/";
+  function css(href){
+    if (document.querySelector('link[href="' + href + '"]')) return;
+    var l = document.createElement("link"); l.rel = "stylesheet"; l.href = href;
+    document.head.appendChild(l);
+  }
+  function js(src, done){
+    if (document.querySelector('script[src="' + src + '"]')) { done && done(); return; }
+    var s = document.createElement("script"); s.src = src; s.onload = function(){ done && done(); };
+    document.head.appendChild(s);
+  }
+  css(base + "core.css");
+  css(base + "page-headers/settings-page-header.css");
+  js(base + "core.js", function(){ js(base + "page-headers/settings-page-header.js"); });
+})();
+</script>

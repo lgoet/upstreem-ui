@@ -1,0 +1,23 @@
+/* upstreem settings-page-header.css — Meta, Ueberschrift, Beschreibung, Nav und Unterstrich kommen
+   alle aus dem Page Header Kit in core.css. Hier steht nur, was diese Seite wirklich eigen hat:
+   der erste Reiter zeigt das Markenlogo statt eines Icons.
+
+   Warum ueberhaupt eine eigene Regel: .up-ph-navicon dimensioniert im Core nur SVG
+   (.up-ph-navicon svg { width:16px; height:16px }). Ein <img> ohne Groessenangabe kaeme in seiner
+   natuerlichen Aufloesung und wuerde die Reiterzeile aufreissen -- bei einem 512px-Logo um mehr
+   als das Dreissigfache. */
+.sph-navlogo {
+  width: 16px; height: 16px; display: block; flex: 0 0 auto;
+  object-fit: cover; border-radius: 4px;
+}
+
+/* Anders als .up-ph-metalogo BEWUSST ohne grayscale-Filter. Die Meta-Zeile darueber ist eine
+   ruhige Nebenzeile, dort soll die Markenfarbe der Ueberschrift nicht die Schau stehlen. Hier ist
+   das Logo das Erkennungszeichen des Reiters -- entfaerbt waere es von den beiden Feather-Icons
+   daneben kaum noch zu unterscheiden.
+
+   Der ausgegraute Zustand der nicht gewaehlten Reiter wird darum ueber die Deckkraft gemacht, nicht
+   ueber die Farbe: color faerbt nur currentColor und damit ausschliesslich die SVGs, ein Bild
+   bliebe davon unberuehrt und der Reiter saehe als einziger immer aktiv aus. */
+.up-ph-navitem:not(.is-selected) .sph-navlogo { opacity: .55; transition: opacity 120ms ease; }
+.up-ph-navitem:not(.is-selected):hover .sph-navlogo { opacity: 1; }

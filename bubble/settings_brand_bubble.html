@@ -1,0 +1,145 @@
+<!--
+  UPSTREEM — SETTINGS / YOUR BRAND
+
+  Die erste Unterseite der Einstellungen. Vier Abschnitte: Brand Settings, Model Settings,
+  Meta Settings, Danger Zone.
+
+  ── Was hier bearbeitet wird und was nicht ───────────────────────────────────
+  Name und Matching Aliases werden NICHT hier bearbeitet. Der Knopf feuert nur usbEditBrand; der
+  Editor dafuer ist ein eigener Dialog auf deiner Seite. Alles andere wird hier bearbeitet und
+  EINZELN gespeichert: pro Feld ein Event, kein gemeinsames "Save all". Die Felder haengen nicht
+  voneinander ab, und ein Sammel-Speichern wuerde bei einem fehlgeschlagenen Feld die anderen mit
+  zurueckrollen.
+
+  ── Statisches Markup, Pflicht (bubble/STATISCHES_MARKUP_PFLICHT.md) ─────────
+  data-instance    = feste, pro Platzierung eindeutige Zeichenkette. KEIN dynamischer Ausdruck.
+  data-cdn-pin     = Commit-Hash, z.B. "a0571a1". Leer oder "CDN_PIN" laedt @main.
+  data-isdark      = fest "no". Theme ueber window.upstreemSetTheme("yes"/"no").
+
+  ── Events, alle fn(json) mit EINEM Argument ─────────────────────────────────
+
+  data-editbrand-fn   = "bubble_fn_usbEditBrand_[dynamic id]"
+      fn('{}')
+      Der Nutzer will Name und Aliases bearbeiten. Oeffne deinen eigenen Editor.
+
+  data-logoupload-fn  = "bubble_fn_usbLogoUpload_[dynamic id]"
+      fn('{}')
+      Der Nutzer hat auf Upload geklickt. Oeffne dein Bubble-File-Uploader-Element.
+      DIESE KOMPONENTE LAEDT NICHTS HOCH -- sie kann keinen Speicherort und keine Rechte kennen.
+      Wenn die Datei liegt, melde das Ergebnis zurueck:
+          window.setSettingsBrandLogo("INSTANCE_ID", "https://…/logo.png", "logo.png");
+      Der zweite Parameter ist die anzuzeigende URL, der dritte der Dateiname neben dem Knopf.
+
+  data-logourl-fn     = "bubble_fn_usbLogoUrl_[dynamic id]"
+      fn('{"url":"https://…/logo.png"}')
+      Der Weg ohne Upload: eine Bild-URL wurde eingetragen und gespeichert. Uebernimm sie und
+      bestaetige mit setSettingsBrandLogo(), damit die Vorschau umspringt.
+
+  data-models-fn      = "bubble_fn_usbModels_[dynamic id]"
+      fn('{"model_keys":"gpt-4o,claude,gemini"}')
+      Die vollstaendige neue Auswahl als kommagetrennte Liste, nicht die Aenderung. In Bubble mit
+      ":split by" Komma zu einer echten Liste machen. Ueber dem Limit laesst die Komponente kein
+      weiteres Modell zu, du musst das nicht noch einmal pruefen -- solltest es serverseitig aber
+      trotzdem, ein Klick im DOM ist keine Berechtigung.
+
+  data-market-fn      = "bubble_fn_usbMarket_[dynamic id]"     fn('{"market_id":"de"}')
+  data-business-fn    = "bubble_fn_usbBusiness_[dynamic id]"   fn('{"business_model":"b2b"}')
+                        business_model: "b2b" | "b2c" | "hybrid"
+  data-industry-fn    = "bubble_fn_usbIndustry_[dynamic id]"   fn('{"industry":"Consulting & Agencys"}')
+  data-summary-fn     = "bubble_fn_usbSummary_[dynamic id]"    fn('{"summary":"…"}')
+                        Feuert erst beim Klick auf "Save summary", nicht bei jedem Tastendruck.
+
+  data-leave-fn       = "bubble_fn_usbLeaveTeam_[dynamic id]"
+  data-delete-fn      = "bubble_fn_usbDeleteTeam_[dynamic id]"
+      fn('{"team_id":"…","team_name":"…"}')
+      Beide feuern ERST, wenn der Nutzer den Teamnamen korrekt getippt hat. Delete zusaetzlich
+      erst nach einem zweiten Klick auf denselben Knopf. Kommt eines dieser Events an, ist die
+      Bestaetigung vollstaendig durchlaufen -- du brauchst keinen weiteren Sicherheitsdialog.
+
+  ── Fuellen ──────────────────────────────────────────────────────────────────
+  window.renderSettingsBrand({
+    instanceId: "…",
+    brand: { name: "LeeUp Media", logo: "https://…" },
+    team:  { id: "1712…x99", name: "LeeUp Media" },
+
+    model_limit: 3,
+    models: [ { key, display_name, logo_url, provider, active }, … ],
+             active: "yes"/"no" oder true/false. key ist der Schluessel, den du im
+             usbModels-Event zurueckbekommst.
+
+    markets:   [ { id, name, score }, … ],   score ist optional und steht rechts in der Liste
+    market_id: "de",
+
+    business_model: "b2b",
+    industries: [ "Consulting & Agencys", "SaaS & Software", … ],
+    industry:   "Consulting & Agencys",
+
+    summary: "…"
+  });
+  window.setSettingsBrandLoading("INSTANCE_ID", "yes" | "no");
+  window.setSettingsBrandLogo("INSTANCE_ID", "https://…", "datei.png");
+  window.resetSettingsBrand("INSTANCE_ID");   /* schliesst den Danger-Dialog und alle Dropdowns */
+
+  Jedes Feld ist einzeln optional: was nicht im Payload steht, bleibt wie es war. Ein Aufruf mit
+  nur { instanceId, summary } aktualisiert also ausschliesslich die Zusammenfassung. Das ist der
+  saubere Weg, eine Speicher-Bestaetigung zurueckzuspielen, ohne die ganze Seite neu zu setzen.
+
+  ── Beim Seitenwechsel ───────────────────────────────────────────────────────
+  Der Danger-Dialog haengt am document.body, nicht im Markup dieser Komponente, damit ihn kein
+  overflow:hidden eines Vorfahren abschneidet. Verlaesst der Nutzer die Seite, waehrend der Dialog
+  offen ist, ruf window.resetSettingsBrand("INSTANCE_ID") -- sonst steht er ueber der neuen
+  Ansicht.
+
+  ── Markup ───────────────────────────────────────────────────────────────────
+-->
+<div class="up-root usb-root"
+     data-instance="settings_brand"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="no"
+     data-editbrand-fn="bubble_fn_usbEditBrand_ID"
+     data-logoupload-fn="bubble_fn_usbLogoUpload_ID"
+     data-logourl-fn="bubble_fn_usbLogoUrl_ID"
+     data-models-fn="bubble_fn_usbModels_ID"
+     data-market-fn="bubble_fn_usbMarket_ID"
+     data-business-fn="bubble_fn_usbBusiness_ID"
+     data-industry-fn="bubble_fn_usbIndustry_ID"
+     data-summary-fn="bubble_fn_usbSummary_ID"
+     data-leave-fn="bubble_fn_usbLeaveTeam_ID"
+     data-delete-fn="bubble_fn_usbDeleteTeam_ID"></div>
+
+<script>
+(function(){
+  var root = document.querySelector(".usb-root[data-cdn-pin]");
+  var pin = root ? String(root.getAttribute("data-cdn-pin") || "").trim() : "";
+  if (!pin || pin === "CDN_PIN") pin = "main";
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + pin + "/";
+  function css(href){
+    if (document.querySelector('link[href="' + href + '"]')) return;
+    var l = document.createElement("link"); l.rel = "stylesheet"; l.href = href;
+    document.head.appendChild(l);
+  }
+  function js(src, done){
+    if (document.querySelector('script[src="' + src + '"]')) { done && done(); return; }
+    var s = document.createElement("script"); s.src = src; s.onload = function(){ done && done(); };
+    document.head.appendChild(s);
+  }
+  css(base + "core.css");
+  css(base + "settings-brand.css");
+  js(base + "core.js", function(){ js(base + "settings-brand.js"); });
+})();
+</script>
+
+<!--
+  ── Der Render-Schritt in Bubble ─────────────────────────────────────────────
+  Bubble reicht den RPC-Text als Quelltext in den Run-JS-Schritt, und dabei geht JSON-null
+  verloren: aus  "score": null,  wird  "score": ,  und JSON.parse wirft. Gleiche Bauart wie in
+  brands_overview_bubble.html:
+
+      var RAW = `[RPC-Ergebnis]`.replace(/:\s*([,}\]])/g, ": null$1");
+      var payload = JSON.parse(RAW);
+      payload.instanceId = "settings_brand";
+      window.renderSettingsBrand(payload);
+
+  Die replace-Zeile setzt einen Schluessel, auf den direkt , } oder ] folgt, auf null. Heiles JSON
+  laesst sie unangetastet. Sie gehoert in JEDEN Run-JS-Schritt, der diese RPC liest.
+-->

@@ -1,0 +1,93 @@
+<meta charset="utf-8">
+<link rel="stylesheet" href="core.css?v=s4">
+<link rel="stylesheet" href="page-headers/settings-page-header.css?v=s4">
+<link rel="stylesheet" href="settings-brand.css?v=s4">
+<style>
+  /* Form der echten Bubble-Seite: der Koerper scrollt nicht, #main scrollt. */
+  html, body { margin: 0; height: 100%; }
+  body { font-family: Geist, system-ui, sans-serif; overflow: hidden; background: #fff; }
+  #main { height: 100vh; overflow-y: auto; padding: 24px 24px 400px; box-sizing: border-box; }
+  #bar { position: fixed; right: 12px; bottom: 12px; z-index: 99999; display: flex; gap: 6px; }
+  #bar button { font: 12px sans-serif; padding: 6px 10px; border-radius: 8px; border: 1px solid #ccc; background: #fff; cursor: pointer; }
+</style>
+
+<div id="main">
+  <div class="up-root sph-root"
+       data-instance="set1" data-isdark="no"
+       data-brand-name="LeeUp Media"
+       data-brand-logo="https://www.google.com/s2/favicons?domain=leeup.de&sz=128"
+       data-page="brand"
+       data-nav-fn="bubble_fn_sphNav">
+    <div class="up-ph-top">
+      <div class="up-ph-left">
+        <div class="up-ph-meta"><img class="up-ph-metalogo"/><span class="up-ph-metatxt">Organisation</span></div>
+        <h1 class="up-ph-heading">Settings</h1>
+        <p class="up-ph-desc">Manage your brand, your team and your plan.</p>
+      </div>
+    </div>
+    <div class="up-ph-nav" role="tablist"></div>
+  </div>
+
+  <div class="up-root usb-root"
+       data-instance="set1" data-isdark="no"
+       data-editbrand-fn="bubble_fn_usbEditBrand"
+       data-logoupload-fn="bubble_fn_usbLogoUpload"
+       data-logourl-fn="bubble_fn_usbLogoUrl"
+       data-models-fn="bubble_fn_usbModels"
+       data-market-fn="bubble_fn_usbMarket"
+       data-business-fn="bubble_fn_usbBusiness"
+       data-industry-fn="bubble_fn_usbIndustry"
+       data-summary-fn="bubble_fn_usbSummary"
+       data-leave-fn="bubble_fn_usbLeaveTeam"
+       data-delete-fn="bubble_fn_usbDeleteTeam"></div>
+</div>
+
+<div id="bar">
+  <button onclick="window.__load()">Daten</button>
+  <button onclick="window.upstreemSetTheme(document.querySelector('.usb-root').getAttribute('data-isdark')==='yes'?'no':'yes')">Theme</button>
+  <button onclick="console.log(JSON.stringify(window.__ev,null,1))">Events</button>
+</div>
+
+<script src="core.js?v=s4"></script>
+<script src="page-headers/settings-page-header.js?v=s4"></script>
+<script src="settings-brand.js?v=s4"></script>
+<script>
+window.__ev = [];
+["sphNav","usbEditBrand","usbLogoUpload","usbLogoUrl","usbModels","usbMarket",
+ "usbBusiness","usbIndustry","usbSummary","usbLeaveTeam","usbDeleteTeam"].forEach(function(n){
+  window["bubble_fn_" + n] = function(p){ window.__ev.push([n, p]); };
+});
+
+window.__load = function(){
+  renderSettingsBrand({
+    instanceId: "set1",
+    brand: { name: "LeeUp Media", logo: "https://www.google.com/s2/favicons?domain=leeup.de&sz=128" },
+    team:  { id: "team_1", name: "LeeUp Media" },
+    model_limit: 3,
+    models: [
+      { key: "gpt-4o",     display_name: "GPT-4o",           provider: "OpenAI",    logo_url: "https://www.google.com/s2/favicons?domain=openai.com&sz=64",    active: "yes" },
+      { key: "claude",     display_name: "Claude Sonnet",    provider: "Anthropic", logo_url: "https://www.google.com/s2/favicons?domain=anthropic.com&sz=64", active: "yes" },
+      { key: "gemini",     display_name: "Gemini 2.0 Flash", provider: "Google",    logo_url: "https://www.google.com/s2/favicons?domain=google.com&sz=64",    active: "yes" },
+      { key: "perplexity", display_name: "Perplexity",       provider: "Perplexity",logo_url: "https://www.google.com/s2/favicons?domain=perplexity.ai&sz=64", active: "no" },
+      { key: "grok",       display_name: "Grok",             provider: "xAI",       logo_url: "",                                                             active: "no" },
+      { key: "llama",      display_name: "Llama 3.3",        provider: "Meta",      logo_url: "https://www.google.com/s2/favicons?domain=meta.com&sz=64",      active: "no" }
+    ],
+    markets: [
+      { id: "de", name: "Germany", score: 88 }, { id: "at", name: "Austria", score: 41 },
+      { id: "ch", name: "Switzerland", score: 37 }, { id: "us", name: "United States", score: 12 },
+      { id: "uk", name: "United Kingdom", score: 9 }, { id: "fr", name: "France", score: 6 },
+      { id: "nl", name: "Netherlands", score: 4 }, { id: "es", name: "Spain", score: 3 }
+    ],
+    market_id: "de",
+    business_model: "b2b",
+    industries: ["Consulting & Agencys", "SaaS & Software", "E-Commerce & Retail",
+                 "Finance & Insurance", "Health & Pharma", "Industry & Manufacturing",
+                 "Media & Publishing", "Travel & Hospitality"],
+    industry: "Consulting & Agencys",
+    summary: "LeeUp Media is a Hamburg-based consulting agency for AI-driven search visibility. " +
+             "We help mid-sized brands understand how large language models describe them, and " +
+             "we build the content and PR programmes that move those answers."
+  });
+};
+setTimeout(window.__load, 200);
+</script>
