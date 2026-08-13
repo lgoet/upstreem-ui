@@ -76,6 +76,28 @@
   Alle duerfen dynamische Ausdruecke sein und spaeter aufloesen -- die Komponente beobachtet die
   Attribute und zeichnet neu, sobald sich eines aendert.
 
+  ── Die Marktliste braucht einen Stub IM SEITENKOPF ──────────────────────────
+  Zeigt die Diagnose beim Oeffnen der Marktauswahl "Aufrufe 0", dann ist der Aufruf gar nicht bei
+  core.js angekommen: setUpstreemAllMarkets existiert zu dem Zeitpunkt noch nicht, der Aufruf wirft
+  "is not a function" und reisst den Rest desselben Workflow-Schrittes mit.
+
+  Der Stub gehoert deshalb an die frueheste Stelle der Seite -- in Bubble unter
+  Settings > SEO/metatags > "Script/meta tags in header":
+
+      <script>
+      (function(){
+        var q = window.__upstreemMarketQueue = window.__upstreemMarketQueue || [];
+        if (typeof window.setUpstreemAllMarkets !== "function")
+          window.setUpstreemAllMarkets = function(rows){ q.push({ all: true,  rows: rows }); return true; };
+        if (typeof window.setUpstreemMarkets !== "function")
+          window.setUpstreemMarkets    = function(rows){ q.push({ all: false, rows: rows }); return true; };
+      })();
+      </script>
+
+  core.js holt beim Laden nach, was dort gemerkt wurde. Der Stub im Loader dieser Komponente
+  reicht dafuer NICHT: er laeuft erst, wenn das Element gerendert wird, und der Pageload-Workflow
+  ist frueher dran.
+
   Die Marktliste kommt NICHT hierher. Sie steht seitenweit im Store: ein
   window.setUpstreemAllMarkets(...) beim Seitenaufbau, und jede Komponente liest sie von dort --
   dieselbe wie in add-prompts und den Markt-Filtern. Diese Seite liest UC.getAllMarkets() und
@@ -83,14 +105,22 @@
 
   Ueber Run-JS kommt nur, was kein Attribut sein kann:
 
-      var RAW = `[Ergebnis der Modelle-RPC]`.replace(/:\s*([,}\]])/g, ": null$1");
+      var RAW = `[Ergebnis der Modelle-RPC]`
+        .replace(/:\s*([,}\]])/g, ": null$1")
+        .replace(/:\s*(yes|no)\s*([,}\]])/g, function(_, v, t){ return ": " + (v === "yes") + t; });
       var models = [];
       try { models = JSON.parse(RAW); } catch (e) { console.error("[settings] models: " + e.message); }
       window.renderSettingsBrand({ instanceId: "settings_brand", models: models });
 
-  Der Wert ist JSON aus einer RPC und gehoert in Backticks. Die replace-Zeile ist derselbe
-  Sanitizer wie ueberall: sie setzt einen Schluessel, auf den direkt , } oder ] folgt, auf null --
-  Bubble laesst JSON-null sonst spurlos verschwinden.
+  Der Wert ist JSON aus einer RPC und gehoert in Backticks. Die beiden replace-Zeilen sind der
+  Sanitizer, und beide reparieren einen Bubble-Transportschaden am JSON:
+
+    Zeile 1  Ein Schluessel, auf den direkt , } oder ] folgt, bekommt null. Bubble laesst JSON-null
+             sonst spurlos verschwinden:  "rank_prev": ,
+    Zeile 2  Ein nacktes yes/no wird zu true/false. Bubble schreibt einen Boolean als yes bzw. no
+             OHNE Anfuehrungszeichen ins JSON:  "user_can_manage": yes,   Das ist kein gueltiges
+             JSON, und JSON.parse bricht genau dort ab ("Unexpected token 'y'"). Ein echter
+             Textwert "yes" steht in Anfuehrungszeichen und bleibt unberuehrt.
 
   window.setSettingsBrandLoading("INSTANCE_ID", "yes" | "no");
   window.setSettingsBrandLogo("INSTANCE_ID", "https://…", "datei.png");

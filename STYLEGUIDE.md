@@ -2524,6 +2524,29 @@ keinem von beidem.
 
 ---
 
+## 46b. Bubble schreibt Booleans als nacktes yes/no ins JSON
+
+Ein Boolean aus einer RPC kommt nicht als `true`, sondern als `yes` bzw. `no` — **ohne
+Anfuehrungszeichen**:
+
+```
+"user_can_manage": yes,
+```
+
+Das ist kein gueltiges JSON. `JSON.parse` bricht genau dort ab, mit
+`Unexpected token 'y'`, und der ganze Datensatz ist weg — dieselbe Bauart wie das
+verschluckte `null` aus §46. Der Sanitizer bekommt darum eine zweite Zeile:
+
+```js
+var RAW = `[RPC-Ergebnis]`
+  .replace(/:\s*([,}\]])/g, ": null$1")
+  .replace(/:\s*(yes|no)\s*([,}\]])/g, function(_, v, t){ return ": " + (v === "yes") + t; });
+```
+
+Ein echter Textwert `"yes"` steht in Anfuehrungszeichen und bleibt unberuehrt — gepruefter
+Kontrolltest mit `"note":"say yes, then no"`, der Text kommt unveraendert an. Beide Zeilen
+gehoeren in JEDEN Run-JS-Schritt, der eine RPC liest, nicht nur in den, der gerade kaputtging.
+
 ## 47. Der Payload kommt durch ein Template-Literal — der Sanitizer muss das mitdenken
 
 Bubble übergibt jeden RPC-Payload in einem „Run JavaScript"-Step **in Backticks**:
