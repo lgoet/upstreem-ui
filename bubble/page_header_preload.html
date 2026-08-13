@@ -52,7 +52,23 @@
      ihre URLs als "schon geladen" und tun gar nichts mehr — das ist der ganze Trick. */
   var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
   function once(url, make){ if (L[url]) return; L[url] = 1; make(url); }
-  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  /* Nicht mehr render-blockierend. Ein per JS eingehaengtes <link rel=stylesheet> blockiert das
+     erste Zeichnen genauso wie ein statisches -- bei zwanzig Dateien hintereinander ist das der
+     Grund, warum der Seitenaufbau nach dem Ausrollen dieses Preloads spuerbar traeger wurde
+     (STYLEGUIDE 2345, eigene Meldung des Nutzers). media="print" nimmt das Blatt aus der
+     Bildschirm-Auswertung, es laedt also im Hintergrund; onload schaltet auf "all" und ab da
+     gilt es normal. Verfuegbarkeit unveraendert, nur die Blockade faellt weg.
+     Der Timer ist die Absicherung: feuert onload aus irgendeinem Grund nicht, waere das Blatt
+     dauerhaft nur fuer den Druck gueltig und die Komponente stuende ungestylt da. Nach zwei
+     Sekunden wird darum in jedem Fall geschaltet -- schlimmstenfalls doppelt, das schadet nicht. */
+  function css(f){ once(base + f, function(u){
+    var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u;
+    l.media = "print";
+    var an = function(){ l.media = "all"; };
+    l.onload = an;
+    setTimeout(an, 2000);
+    document.head.appendChild(l);
+  }); }
   function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
 
   /* ── Boot-Stubs für die drei seitenweiten Stores ────────────────────────────
