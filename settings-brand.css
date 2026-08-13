@@ -155,6 +155,8 @@
    Topics und dem Kalender: Icon, Beschriftung, Chevron, so breit wie sein Inhalt. Auch keine
    Mindestbreite -- die haette ihn wieder zu einem Formular-Select gemacht, und genau das war der
    Fehler in den Runden davor. */
+/* Ein leerer Icon-Platz darf keine Luecke lassen: die Branche hat kein Icon, nur Text. */
+.up-ddtrigger-ic:empty { display: none; }
 .usb-dd .up-ment-menu { min-width: 260px; right: auto; left: 0; }
 .usb-dd .up-ment-list { max-height: 256px; }
 

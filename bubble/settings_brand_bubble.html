@@ -82,8 +82,12 @@
                                                            in denen man etwas NEUES anlegt:
                                                            dieser Dialog und Add Prompts.
                     Diese Seite liest die volle Liste. Ist setUpstreemAllMarkets nie gerufen
-                    worden, faellt sie auf die gefilterte zurueck -- eine Seite ohne den neuen
-                    Aufruf verhaelt sich also wie vorher, zeigt dann aber nur Maerkte mit Daten.
+                    worden, faellt sie auf die gefilterte zurueck.
+
+                    WICHTIG: schick KEINE markets-Liste mehr im renderSettingsBrand-Aufruf mit.
+                    Der Store gewinnt; eine Liste im Payload greift nur noch, wenn der Store
+                    leer ist. Steht bei dir noch eine aus einer aelteren Fassung drin, schadet
+                    sie zwar nicht mehr, ist aber tot.
 
     business_model: "b2b",
     industries: [ "Consulting & Agencys", "SaaS & Software", … ],
