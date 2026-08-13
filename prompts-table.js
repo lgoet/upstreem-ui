@@ -4321,7 +4321,13 @@
         /* Deliberately narrow: only the bulk-topic popover state + selection, per explicit user
            request — NOT search/sort/paging/status/widths, which used to also get wiped here and
            surprised the user by silently flipping the table back to the Active tab. */
-        var hadSelection = state.selectAllMatching || Object.keys(state.selected || {}).length > 0;
+        /* gSelectAllGroup gehoert dazu: im Gruppierungsmodus kann eine GANZE Gruppe ausgewaehlt
+           sein, ohne dass state.selected einen einzigen Eintrag hat. Die Bulk-Bar steht dann
+           trotzdem da (bulkCount() zaehlt genau diesen Fall zuerst), reset() hielt sie aber fuer
+           einen Leerlauf und ging raus, ohne etwas zu schliessen. clearSelection() stellt seit
+           jeher die vollstaendige Frage -- reset() stellt sie jetzt auch. */
+        var hadSelection = state.selectAllMatching || state.gSelectAllGroup ||
+                           Object.keys(state.selected || {}).length > 0;
         var hadTopicMenu = topicMenuOpen();
         var hadModal = addTopicModal.isOpen();
         /* True no-op when there's nothing to reset — the caller is expected to fire this on every
@@ -4329,7 +4335,7 @@
            persist()+render() round trip here matters for how often this realistically fires. */
         if (!hadSelection && !hadTopicMenu && !hadModal) return true;
 
-        state.selected = {}; invalidateSelectAll();
+        state.selected = {}; invalidateSelectAll();   /* setzt gSelectAllGroup mit zurueck */
         if (hadTopicMenu) setTopicMenuOpen(false);
         /* Separate from the bulk topic panel above — this is the "Add Topic" modal, which can be
            open on its own (it isn't nested inside the bulk bar's is-topics state). */
@@ -4408,6 +4414,22 @@
   }
   function watchRootRemoval(root){
     LIVE_ROOTS.push(root);
+    /* Der Beobachter unten reicht nicht: showView("brands") blendet eine Bubble-Gruppe aus, und
+       je nachdem, welchen Vorfahren Bubble dabei umschaltet, entsteht im beobachteten Teilbaum
+       gar keine Mutation. Die Bulk-Bar haengt ausserdem am document.body, liegt also gar nicht
+       in der ausgeblendeten Gruppe und bleibt einfach stehen.
+       UC.onViewChange haengt sich an showView selbst -- das ist die Stelle, an der der Wechsel
+       wirklich stattfindet, und sie ist nicht davon abhaengig, wie Bubble das Verstecken
+       umsetzt. Einmal pro Datei, nicht pro Wurzel. */
+    if (!watchRootRemoval.__viewHooked && UC.onViewChange){
+      watchRootRemoval.__viewHooked = true;
+      UC.onViewChange(function(){
+        for (var i = 0; i < LIVE_ROOTS.length; i++){
+          var c = LIVE_ROOTS[i] && LIVE_ROOTS[i].__uptController;
+          if (c && c.reset) { try { c.reset(); } catch(e){} }
+        }
+      });
+    }
     if (rootWatcher) return;
     rootWatcher = new MutationObserver(scheduleHideCheck);
     rootWatcher.observe(document.body, {

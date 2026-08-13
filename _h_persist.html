@@ -1,15 +1,20 @@
 <!doctype html><meta charset="utf-8">
 <title>Persistenz-Harness</title>
-<link rel="stylesheet" href="core.css?v=p1">
-<link rel="stylesheet" href="prompts-table.css?v=p1">
+<link rel="stylesheet" href="core.css?v=p3">
+<link rel="stylesheet" href="prompts-table.css?v=p3">
 <style>body{font:14px system-ui;margin:16px;background:#fff}#log{white-space:pre;font:12px monospace}</style>
 <!-- Das Team kommt SPAETER, genau wie in Bubble: beim Boot ist es unbekannt. -->
 <div class="up-root upt-root" data-instance="pp1" data-isdark="no"></div>
 <div id="log"></div>
-<script src="core.js?v=p1"></script>
-<script src="prompts-table.js?v=p1"></script>
+<script src="core.js?v=p3"></script>
+<script src="prompts-table.js?v=p3"></script>
 <script>
 window.__events = [];
+/* Die Host-App definiert showView SPAETER als core.js -- genau wie Bubble. */
+setTimeout(function(){
+  window.__viewCalls = [];
+  window.showView = function(name){ window.__viewCalls.push(name); };
+}, 120);
 ["uptSearch","uptSort","uptPage","uptRowClick","uptGrouping"].forEach(function(n){
   window["bubble_fn_" + n] = function(j){ window.__events.push([n, j]); };
 });

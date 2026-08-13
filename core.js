@@ -4576,6 +4576,51 @@
     }, 0);
     return function(){ ddClose(self); };
   }
+  /* ---------- Ansichtswechsel der Host-App ----------
+     Die App wechselt die Ansicht mit showView("brands"). Fuer eine Komponente ist das unsichtbar:
+     Bubble blendet eine Gruppe aus, und was am document.body haengt -- Popover, Bulk-Bars,
+     Dialoge -- bleibt einfach stehen, weil es gar nicht in der ausgeblendeten Gruppe liegt.
+     Der Beobachter, der versteckte Wurzeln erkennt, greift nicht zuverlaessig: je nachdem,
+     welchen Vorfahren Bubble umschaltet, entsteht im beobachteten Teilbaum keine Mutation.
+
+     Darum hier der direkte Weg: showView wird umschlossen, sobald es existiert. Der Wrapper
+     ruft das Original unveraendert auf und meldet den Wechsel vorher an alle Angemeldeten.
+     Kein Poll im Betrieb, kein Umschreiben fremder Logik, kein veraendertes Verhalten von
+     showView selbst.
+
+     Kommt showView erst spaeter (die Host-App definiert es in einem eigenen Skript), wird es
+     kurz gesucht und danach aufgegeben -- ohne showView gibt es auch nichts zu melden. */
+  var VIEW_SUBS = [];
+  function onViewChange(fn){
+    if (typeof fn === "function") VIEW_SUBS.push(fn);
+    return function(){ var i = VIEW_SUBS.indexOf(fn); if (i >= 0) VIEW_SUBS.splice(i, 1); };
+  }
+  function fireViewChange(name){
+    closeAllDropdowns();
+    for (var i = VIEW_SUBS.length - 1; i >= 0; i--){
+      try { VIEW_SUBS[i](name); }
+      catch(e){ if (window.console) console.warn("[view] ein Aufraeumer hat geworfen:", e); }
+    }
+  }
+  function wrapShowView(){
+    var orig = window.showView;
+    if (typeof orig !== "function") return false;
+    if (orig.__upWrapped) return true;
+    var wrapped = function(){
+      try { fireViewChange(arguments.length ? String(arguments[0]) : ""); } catch(e){}
+      return orig.apply(this, arguments);
+    };
+    wrapped.__upWrapped = true;
+    wrapped.__upOriginal = orig;
+    try { window.showView = wrapped; } catch(e){ return false; }
+    return true;
+  }
+  (function watchForShowView(triesLeft){
+    if (wrapShowView()) return;
+    if (triesLeft <= 0) return;
+    setTimeout(function(){ watchForShowView(triesLeft - 1); }, 200);
+  })(50);
+
   function closeAllDropdowns(){
     var list = OPEN_DD.slice();
     OPEN_DD.length = 0;
@@ -5295,6 +5340,8 @@
     themeGuard: themeGuard,
     dropdownOpened: dropdownOpened,
     closeAllDropdowns: closeAllDropdowns,
+    onViewChange: onViewChange,
+    fireViewChange: fireViewChange,
     CITE_COLOR: CITE_COLOR,
     CITE_ALIAS: CITE_ALIAS,
     ALL_CITATION_TYPES: ALL_CITATION_TYPES,
