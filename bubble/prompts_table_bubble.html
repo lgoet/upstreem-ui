@@ -244,16 +244,21 @@
   overflow:hidden ancestor), not inside this component's own root — so if the user navigates to a
   different page/reusable while either is open, they're left floating over whatever Bubble shows
   next. Two layers of defense:
-    1. Automatic: if this component's root element is ever actually removed from the DOM (a
-       repeating structure re-rendering, a conditional "only when" going false), it's detected and
-       cleaned up on its own — no action needed on your side.
-    2. Bubble reusable elements are more often just hidden (display:none) than removed outright,
-       which layer 1 can't see. For that case, call window.resetPromptsTable("INSTANCE_ID") from a
-       "user leaves this page" workflow event — it closes the Add Topic modal if open, closes the
-       bulk topic panel, and clears the selection (which hides the bulk bar). Checks first: if
-       nothing is selected and neither the topic panel nor the Add Topic modal is open, it's a true
-       no-op (no persist, no re-render) — cheap and safe to call unconditionally, e.g. on every
-       search/filter change, not just on page-leave.
+    1. Automatic: the component watches its own root and raeumt selbst auf, sobald der Root
+       ENTFERNT wird (repeating structure rendert neu, ein "only when" wird falsch) ODER
+       VERSTECKT (display:none oder visibility:hidden an der Gruppe darum, was ein Seitenwechsel
+       mit showView(...) genau so macht). Du brauchst dafuer keinen Schritt in Bubble.
+
+       Erkannt wird der UEBERGANG sichtbar -> versteckt, nicht der Dauerzustand. Kommt die Ansicht
+       zurueck, ist die Tabelle sofort wieder normal bedienbar; das Panel bleibt zu, weil auch die
+       Auswahl geleert wurde.
+
+    2. Der manuelle Weg bleibt: window.resetPromptsTable("INSTANCE_ID") tut dasselbe von Hand --
+       schliesst das Add-Topic-Modal, schliesst das Bulk-Topic-Panel und leert die Auswahl (womit
+       die Bulk-Bar verschwindet). Sinnvoll, wenn du unabhaengig von der Sichtbarkeit aufraeumen
+       willst. Prueft zuerst: ist nichts ausgewaehlt und weder Panel noch Modal offen, ist es ein
+       echter No-op (kein persist, kein Re-Render) -- billig und gefahrlos, auch bei jedem
+       Suchlauf-/Filterwechsel aufrufbar.
 
        NOTE: this deliberately does NOT touch search/sort/paging/status/column widths — it only
        resets popover/selection state. If you also want the table itself back to its default view

@@ -4347,25 +4347,62 @@
      reusable is swapped back in, but when it's actually removed from the DOM (repeating
      structures, conditional "only when" visibility) neither the bulk bar nor the Add Topic
      modal — both parented to document.body — would otherwise ever notice, and they'd sit
-     orphaned over whatever page Bubble shows next. This only catches genuine removal; a
-     display:none-style hide (no DOM change) still needs the manual window.resetPromptsTable(id)
-     fallback wired to a "user leaves this page" Bubble workflow. */
+     orphaned over whatever page Bubble shows next.
+
+     Verstecken zaehlt genauso wie Entfernen. Ein Seitenwechsel in dieser App (showView(...))
+     entfernt die Tabelle NICHT aus dem DOM, er blendet die Bubble-Gruppe darum aus. Das ist eine
+     Attributaenderung an einem Vorfahren, kein childList-Ereignis -- der Beobachter hat es darum
+     frueher nicht gesehen, und Bulk-Bar samt Topic-Panel standen weiter ueber der neuen Ansicht.
+     Deshalb hier zusaetzlich attributes auf style/class/hidden.
+
+     Zwei Vorkehrungen, damit das auf einer lebhaften Bubble-Seite nichts kostet:
+       - Der eigentliche Test laeuft gebuendelt in einem 60ms-Timer, nicht pro Mutation. Bubble
+         schreibt beim Umschalten dutzende Attribute; daraus wird EIN Durchlauf.
+       - Gemessen wird zuerst getClientRects().length, das ist der billige Teil. getComputedStyle
+         (fuer visibility, das vererbt wird und darum auch Vorfahren abdeckt) nur, wenn der
+         billige Test noch sichtbar sagt.
+     Gefeuert wird nur auf dem UEBERGANG sichtbar -> versteckt, gemerkt in __uptHidden. Sonst
+     liefe reset() bei jeder Attributaenderung erneut, solange die Seite weg ist.
+
+     reset() ist ein echter No-op, wenn nichts offen ist, deshalb braucht es hier keine zweite
+     Abfrage auf "ist ueberhaupt was auf". */
   var LIVE_ROOTS = [];
   var rootWatcher = null;
+  var hideCheckTimer = null;
+  function rootIsHidden(r){
+    if (!r.getClientRects().length) return true;
+    return window.getComputedStyle(r).visibility === "hidden";
+  }
+  function scheduleHideCheck(){
+    if (hideCheckTimer) return;
+    hideCheckTimer = setTimeout(function(){
+      hideCheckTimer = null;
+      for (var i = LIVE_ROOTS.length - 1; i >= 0; i--){
+        var r = LIVE_ROOTS[i];
+        var ctrl = r.__uptController;
+        if (!r.isConnected){
+          LIVE_ROOTS.splice(i, 1);
+          if (ctrl && ctrl.reset) ctrl.reset();
+          continue;
+        }
+        var hidden = rootIsHidden(r);
+        if (hidden && !r.__uptHidden){
+          r.__uptHidden = true;
+          if (ctrl && ctrl.reset) ctrl.reset();
+        } else if (!hidden && r.__uptHidden){
+          r.__uptHidden = false;
+        }
+      }
+    }, 60);
+  }
   function watchRootRemoval(root){
     LIVE_ROOTS.push(root);
     if (rootWatcher) return;
-    rootWatcher = new MutationObserver(function(){
-      for (var i = LIVE_ROOTS.length - 1; i >= 0; i--){
-        var r = LIVE_ROOTS[i];
-        if (!r.isConnected){
-          LIVE_ROOTS.splice(i, 1);
-          var ctrl = r.__uptController;
-          if (ctrl && ctrl.reset) ctrl.reset();
-        }
-      }
+    rootWatcher = new MutationObserver(scheduleHideCheck);
+    rootWatcher.observe(document.body, {
+      childList: true, subtree: true,
+      attributes: true, attributeFilter: ["style", "class", "hidden"]
     });
-    rootWatcher.observe(document.body, { childList: true, subtree: true });
   }
   function initRoot(root){
     if (root.__uptController) return root.__uptController;
