@@ -151,16 +151,11 @@
    Nur Breite und die Flaggenzeile. Trigger, Menue, Zeilen, Haken, Suchfeld und der offene Zustand
    kommen unveraendert aus core -- inklusive der Tatsache, dass der Chevron sich NICHT dreht und der
    offene Trigger einen grauen Hintergrund bekommt statt eines farbigen Rahmens. */
-/* KEINE Regel auf dem Knopf. Er ist .up-ment-btn aus core -- derselbe, der ueber jeder Tabelle
-   steht. Jedes Mal, wenn ich hier etwas eigenes hingeschrieben habe, war es falsch.
-   Das Einzige, was diese Seite braucht, ist eine Mindestbreite: in einer Werkzeugleiste darf der
-   Knopf so breit sein wie sein Text, in einer Formularzeile sollen beide Auswahlfelder gleich
-   breit unter- und nebeneinander stehen. */
-.usb-dd { flex: 0 0 auto; }
-.usb-dd .up-ment-btn { min-width: 220px; justify-content: space-between; }
-.usb-dd .up-ment-menu { min-width: 260px; }
-/* Liste 256px statt der 216px, die markets-filter nutzt: hier kommt darunter keine zweite
-   Sektion, also ist der Platz da. */
+/* KEINE Regel auf dem Knopf. Er ist .up-ddtrigger aus core, derselbe wie bei Markets, Models,
+   Topics und dem Kalender: Icon, Beschriftung, Chevron, so breit wie sein Inhalt. Auch keine
+   Mindestbreite -- die haette ihn wieder zu einem Formular-Select gemacht, und genau das war der
+   Fehler in den Runden davor. */
+.usb-dd .up-ment-menu { min-width: 260px; right: auto; left: 0; }
 .usb-dd .up-ment-list { max-height: 256px; }
 
 .usb-opt { justify-content: space-between; }

@@ -529,6 +529,38 @@
     .up-pop-row.is-locked { opacity: .45; pointer-events: none; }
 
 
+    /* ---------- Filter-Trigger, der Knopf VOR jedem Dropdown ----------
+       Markets, Models, Topics und der Kalender haben diesen Knopf bisher jeder in seiner eigenen
+       Datei stehen -- vier byte-identische Kopien. Beim fuenften Verbraucher (Settings) kommt er
+       nach core, statt ein fuenftes Mal abgeschrieben zu werden (STYLEGUIDE 25).
+
+       Die Form ist: [Icon] [Beschriftung] [Chevron], zusammengepackt und nur so breit wie sein
+       Inhalt. NICHT ein breiter Kasten mit dem Chevron am rechten Rand -- das ist ein
+       Formular-Select und sieht in dieser App an keiner Stelle so aus.
+       Rahmen sichtbar, Grundfarbe --vc-muted, im Hover und offen --vc-heading-bg mit
+       --vc-hover-border. Der Chevron dreht sich nicht. */
+    .up-ddtrigger {
+      display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px;
+      border: 1px solid var(--vc-border); border-radius: 8px; background: var(--vc-bg);
+      color: var(--vc-muted); font-family: inherit; font-size: 13px; font-weight: 500;
+      line-height: 1; white-space: nowrap; cursor: pointer; outline: 0;
+      transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
+    }
+    .up-ddtrigger:hover,
+    .up-ddwrap.is-open .up-ddtrigger,
+    .up-ddwrap.has-sel .up-ddtrigger {
+      color: var(--vc-text); background: var(--vc-heading-bg); border-color: var(--vc-hover-border);
+    }
+    .up-ddtrigger:focus-visible { border-color: var(--vc-hover-border); box-shadow: 0 0 0 2px var(--vc-heading-bg); }
+    .up-ddtrigger svg { width: 16px; height: 16px; flex: 0 0 16px; display: block; }
+    .up-ddtrigger-ic { display: inline-flex; align-items: center; flex: 0 0 auto; }
+    .up-ddtrigger-ic img { width: 20px; height: 14px; border-radius: 3px; object-fit: cover; display: block; }
+    .up-ddtrigger-lbl { overflow: hidden; text-overflow: ellipsis; max-width: 22ch; }
+    /* margin-left:-2px wie in den vier Filtern: der Chevron hat als Glyph links Luft in sich, ohne
+       die Korrektur sieht der Abstand zur Beschriftung groesser aus als der zum Icon. */
+    .up-ddtrigger-chev { margin-left: -2px; flex: 0 0 16px; }
+    .up-ddwrap { position: relative; display: inline-flex; flex: 0 0 auto; }
+
     /* ---------- search field INSIDE a dropdown ----------
        Ein anderes Tier als .up-search im Tabellen-Header: das dort faehrt aus einem Icon auf und
        lebt in einer Toolbar; dieses steht dauerhaft offen im Panel. Deshalb ein eigener Typ statt

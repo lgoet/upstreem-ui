@@ -60,6 +60,8 @@
     edit:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
     upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
     brand:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
+    pin:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+    briefcase: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>',
     chev:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>',
     search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
     x:      '<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
@@ -129,11 +131,15 @@
        KEINE eigene Regel auf dem Knopf -- er ist rahmenlos (1px transparent, damit die Breite
        steht), 32px hoch, 12px/500, und wird im offenen Zustand grau hinterlegt. Genau das ist der
        Unterschied zu allem, was ich hier vorher gebaut hatte. */
-    function ddHtml(kind, placeholder, searchLabel, title){
-      return '<div class="up-ment usb-dd" data-dd="' + kind + '">' +
-        '<button class="up-ment-btn" type="button" data-dd-btn aria-haspopup="menu" aria-expanded="false">' +
-          '<span class="up-ment-lbl" data-dd-label>' + esc(placeholder) + '</span>' +
-          '<svg class="up-ment-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
+    /* Der Filter-Trigger aus core: .up-ddwrap > .up-ddtrigger mit [Icon] [Text] [Chevron],
+       genau wie Markets, Models, Topics und der Kalender. Das Menue darunter ist .up-ment-menu
+       mit .up-ment-searchwrap und .up-filter-list, ebenfalls unveraendert aus core. */
+    function ddHtml(kind, placeholder, searchLabel, title, icon){
+      return '<div class="up-ddwrap usb-dd" data-dd="' + kind + '">' +
+        '<button class="up-ddtrigger" type="button" data-dd-btn aria-haspopup="menu" aria-expanded="false">' +
+          '<span class="up-ddtrigger-ic" data-dd-icon>' + icon + '</span>' +
+          '<span class="up-ddtrigger-lbl" data-dd-label>' + esc(placeholder) + '</span>' +
+          '<svg class="up-ddtrigger-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
         '</button>' +
         '<div class="up-ment-menu usb-ddmenu" role="menu" aria-hidden="true">' +
           '<div class="up-filter-head"><span class="up-filter-title">' + esc(title) + '</span></div>' +
@@ -245,7 +251,7 @@
                 '<div class="usb-rowdesc">Your preset primary market focus. New prompts start here ' +
                   'unless you pick a different one.</div>' +
               '</div>' +
-              '<div class="usb-rowctl">' + ddHtml("market", "Select a market", "Search markets", "Default market") + '</div>' +
+              '<div class="usb-rowctl">' + ddHtml("market", "Select a market", "Search markets", "Default market", ICON.pin) + '</div>' +
             '</div>' +
 
             '<div class="usb-div"></div>' +
@@ -267,7 +273,7 @@
                 '<div class="usb-rowtitle">Brand Industry</div>' +
                 '<div class="usb-rowdesc">Your preset primary brand industry.</div>' +
               '</div>' +
-              '<div class="usb-rowctl">' + ddHtml("industry", "Select an industry", "Search industries", "Brand industry") + '</div>' +
+              '<div class="usb-rowctl">' + ddHtml("industry", "Select an industry", "Search industries", "Brand industry", ICON.briefcase) + '</div>' +
             '</div>' +
 
             '<div class="usb-div"></div>' +
@@ -470,6 +476,7 @@
       var sin  = wrap.querySelector(".up-ment-search");
       var sx   = wrap.querySelector(".up-ment-searchclear");
       var lbl  = wrap.querySelector("[data-dd-label]");
+      var ic   = wrap.querySelector("[data-dd-icon]");
       var q = "";
 
       var pop = UC.makePopover({
@@ -499,9 +506,11 @@
       }
       function syncLabel(){
         var t = cfg.selectedLabel();
-        lbl.innerHTML = t || esc(cfg.placeholder);
-        lbl.classList.toggle("is-empty", !t);
-        wrap.classList.toggle("is-active", !!cfg.selected());
+        lbl.textContent = t || cfg.placeholder;
+        /* Bewusst KEIN has-sel: bei den vier Filtern bedeutet die graue Fuellung "ein Filter ist
+           gesetzt", also ein Zustand, den man wieder loeswerden kann. Hier hat jedes Feld immer
+           einen Wert -- dauerhaft grau gefuellt hiesse, der Zustand sagt gar nichts mehr. */
+        if (ic && cfg.icon) ic.innerHTML = cfg.icon();
       }
       btn.addEventListener("click", function(){
         if (pop.isOpen()){ pop.close(); return; }
@@ -568,9 +577,11 @@
       selected: function(){ return draft.marketId; },
       selectedLabel: function(){
         var m = findMarket(draft.marketId);
-        if (!m) return "";
-        return '<img class="usb-flag usb-flag-btn" src="' + esc(flagUrl(m.id)) + '" alt="" onerror="this.style.visibility=&quot;hidden&quot;"/>' +
-               '<span>' + esc(m.name || String(m.id).toUpperCase()) + '</span>';
+        return m ? (m.name || String(m.id).toUpperCase()) : "";
+      },
+      icon: function(){
+        var m = findMarket(draft.marketId);
+        return m ? '<img src="' + esc(flagUrl(m.id)) + '" alt="" onerror="this.style.visibility=&quot;hidden&quot;"/>' : ICON.pin;
       },
       onPick: function(v){ draft.marketId = v; ddMarket.sync(); syncMeta(); }
     });
@@ -581,7 +592,8 @@
       value: function(x){ return x; },
       body: function(x){ return '<span class="usb-opt-main"><span class="usb-opt-name">' + esc(x) + '</span></span>'; },
       selected: function(){ return draft.industry; },
-      selectedLabel: function(){ return draft.industry ? esc(draft.industry) : ""; },
+      selectedLabel: function(){ return draft.industry || ""; },
+      icon: function(){ return ICON.briefcase; },
       onPick: function(v){ draft.industry = v; ddIndustry.sync(); syncMeta(); },
       onCustom: function(v){
         /* Die eigene Branche wandert in die Liste, damit sie beim naechsten Oeffnen oben
