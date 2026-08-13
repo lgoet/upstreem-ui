@@ -282,6 +282,31 @@
   }
   function isArr(v){ return Object.prototype.toString.call(v) === "[object Array]"; }
 
+  /* ---- trailing(fn, ms) ----------------------------------------------------------------------
+     Nur der letzte Aufruf einer schnellen Folge kommt durch, mit SEINEN Argumenten. Gedacht fuer
+     Filter, die bei jeder Auswahl einen Server-Aufruf ausloesen: wer waehrend einer laufenden
+     Ladung drei Themen anklickt und dann den Modus umstellt, hat vier Aufrufe getreten, von denen
+     drei schon veraltet sind, bevor die Antwort kommt.
+
+     Das ist NUR erlaubt, wenn jeder Aufruf den VOLLSTAENDIGEN Zustand traegt und kein Delta --
+     sonst gingen die uebersprungenen Schritte verloren. Die drei Filter erfuellen das seit jeher
+     ("Always the whole state, never a delta"), darum greift es hier.
+
+     Die Zeit ist bewusst kurz: 250ms sind unter der Schwelle, ab der eine einzelne Auswahl sich
+     traege anfuehlt, aber lang genug, um zusammengehoerende Klicks einzufangen. */
+  function trailing(fn, ms){
+    var timer = null, letzte = null;
+    return function(){
+      letzte = arguments;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(function(){
+        timer = null;
+        var a = letzte; letzte = null;
+        fn.apply(null, a);
+      }, ms == null ? 250 : ms);
+    };
+  }
+
   /* Wraps every occurrence of the active query in <mark>. Escapes FIRST, then inserts the
      markup — doing it the other way round would let a crafted domain inject HTML. */
   function highlight(text, q){
@@ -5560,7 +5585,8 @@
     getLineWidthPref: getLineWidthPref,
     setLineWidthPref: setLineWidthPref,
     lineWidthSectionHtml: lineWidthSectionHtml,
-    getColorScalePref: getColorScalePref, setColorScalePref: setColorScalePref
+    getColorScalePref: getColorScalePref, setColorScalePref: setColorScalePref,
+    trailing: trailing
   };
 
   /* ---- Verdraengungssperre -------------------------------------------------------------------
