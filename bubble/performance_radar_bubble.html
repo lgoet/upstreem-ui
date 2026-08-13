@@ -66,60 +66,7 @@
     cell     bubble_fn_heatmap_cell_clicked("companyId||topicId")
              ONE PLAIN STRING, not JSON — unchanged from the old standalone. Split on "||".
 
-  ── Run-JS "Render" step (paste as-is, drop your RPC expression into the slot) ──
-  Gleiche Bauart wie in brands-overview und visibility-chart: ein Sanitizer vor dem Parsen, dann
-  der Aufruf mit Wiederholung, falls die Komponente noch nicht geladen ist.
-
-  (function () {
-    // --- Sanitizer: rohen/kaputten Bubble-Output -> gueltiges Objekt ---
-    function toObj(raw) {
-      var s = String(raw == null ? "" : raw).trim();
-      if (!s) return {};
-      s = s.replace(/:\s*([,}\]])/g, ": null$1");
-      s = s.replace(/,\s*([}\]])/g, "$1");
-      var o;
-      try { o = eval("(" + s + ")"); } catch (e) { return {}; }
-      // Je nachdem, welchen Ausdruck der Schritt fuettert, kommt entweder das ganze Objekt oder
-      // NUR die Zellenliste an. Ein blankes Array landete sonst als {0:…,1:…,2:…} in der
-      // Komponente, und die sucht `cells`.
-      if (Object.prototype.toString.call(o) === "[object Array]") return { cells: o };
-      return (o && typeof o === "object") ? o : {};
-    }
-    var payload = toObj(`[RPC-Ergebnis]`);
-    payload.instanceId = "ROOTID_[dynamic id]";
-
-    var t = 0;
-    (function go () {
-      var fn = window.renderPerformanceRadar
-            || (window.parent && window.parent.renderPerformanceRadar)
-            || (window.top && window.top.renderPerformanceRadar);
-      if (typeof fn === "function") { fn(payload); return; }
-      if (t++ < 60) setTimeout(go, 100);
-    })();
-  })();
-
-  WOFUER DIE ERSTE ERSETZUNG DA IST -- das ist kein Schoenheitsfehler, sondern der Grund, warum
-  ein blankes JSON.parse hier irgendwann kippt: ein JSON-null aus der RPC kommt auf dem Weg durch
-  Bubble als GAR NICHTS an. Im Text steht dann
-
-      "avg_rank_prev": ,
-
-  und JSON.parse wirft "Unexpected token ','". Betroffen sind genau die Felder, die leer sein
-  duerfen: avg_rank_prev, sentiment_prev, avg_rank_delta, sentiment_delta, heat_value_rank,
-  heat_value_sentiment. Solange kein Team eine Zelle ohne Vorperiode hat, faellt es nie auf --
-  es kippt in dem Moment, in dem die ERSTEN Nullwerte in den Daten auftauchen (eine Marke mit 0
-  Erwaehnungen im Vorzeitraum). Die Ersetzung macht daraus wieder `null`, und `null` ist genau
-  das, was die Komponente erwartet: sie prueft ueberall auf != null und zeichnet dort einen
-  Strich statt einer Zahl.
-
-  Die zweite Ersetzung raeumt ein Komma vor einer schliessenden Klammer weg -- derselbe Fall am
-  Ende einer Liste.
-
-  eval statt JSON.parse ist Absicht und in allen Komponenten dieses Repos so: der Sanitizer soll
-  auch durchkommen, wenn Bubble Schluessel ohne Anfuehrungszeichen liefert. Die Quelle ist die
-  eigene RPC, kein Fremdinhalt.
-
-  Der Weg mit einem selbst gebauten Objekt funktioniert unveraendert weiter:
+  ── Filling the component ────────────────────────────────────────────────────
   window.renderPerformanceRadar({
     instanceId: "...",
     metric: "visibility",            // optional; only honoured the FIRST time — after that the

@@ -121,17 +121,10 @@
 .uhm-sk-logo { width: 28px; height: 28px; border-radius: 8px; background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
 .uhm-sk-bar { width: 44px; height: 9px; border-radius: 4px; background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
 .uhm-sk-chip { width: 88px; height: 28px; border-radius: 8px; background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
-/* Der Leerzustand ist der Block aus core (.up-empty: Icon, Ueberschrift, Text, alles zentriert).
-   Hier stand `display: flex` OHNE flex-direction -- also eine ZEILE: Icon, Ueberschrift und Text
-   nebeneinander statt gestapelt, und die Zentrierung aus core (text-align, margin:0 auto am Icon)
-   lief ins Leere. Die Regel stammt aus der Zeit, als der Leerzustand eine einzelne Textzeile war,
-   und ist beim Umbau auf den Block nicht mitgezogen worden. Ebenso die Schriftgroesse und -farbe:
-   die haben .up-empty-h und .up-empty-t ueberschrieben, die Ueberschrift sah aus wie Fliesstext.
-   grid + place-items:center stapelt und zentriert in beiden Achsen; alles Weitere kommt aus core. */
-.uhm-empty { min-height: 220px; display: grid; place-items: center; }
-/* Ohne Begrenzung laeuft der Erklaertext ueber die volle Breite der Matrix -- bei zehn Marken
-   sind das weit ueber 1000px und eine einzige, kaum lesbare Zeile. */
-.uhm-empty .up-empty-t { max-width: 420px; margin-bottom: 0; }
+.uhm-empty {
+  min-height: 220px; display: flex; align-items: center; justify-content: center;
+  color: var(--vc-muted); font-size: 13px;
+}
 
 /* "Waiting for fresh data after an Apply" — the app's standard soft dim, not a skeleton. The rows
    on screen are still true, they are just about to be replaced. */

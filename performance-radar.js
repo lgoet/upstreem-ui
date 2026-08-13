@@ -602,13 +602,7 @@
         INIT_SEL[instanceId] = { topics: state.appliedTopics.slice(), companies: state.appliedCompanies.slice() };
       }
 
-      /* Die Zellen MUESSEN mitgezaehlt werden, nicht nur die Achsen. Der RPC schickt bei einem
-         Team ohne Messwerte `cells: []`, aber sehr wohl selected_topics und selected_companies --
-         Achsen ohne Inhalt. Ohne die dritte Bedingung war hasData damit true, die Komponente baute
-         ein vollstaendiges Raster aus lauter LEEREN Kacheln, und das ist von ihrem eigenen
-         Skelett nicht zu unterscheiden: es sah aus, als haenge sie im Ladezustand. Gemessen: 64
-         Zellen, kein Ladezustand, kein Hinweis. */
-      state.hasData = state.topics.length > 0 && state.companies.length > 0 && state.cells.length > 0;
+      state.hasData = state.topics.length > 0 && state.companies.length > 0;
     }
 
     /* =====================================================================
@@ -800,27 +794,9 @@
       elGrid.innerHTML = html;
       state.layoutKey = "";
     }
-    /* Derselbe Block wie in den Tabellen (Icon, Ueberschrift, Satz) statt einer grauen Zeile
-       "No data". Der Unterschied ist nicht Kosmetik: der Nutzer steht hier vor einem leeren
-       Kasten und muss erfahren, ob nichts gemessen wurde oder ob seine Auswahl zu eng ist --
-       "No data" allein beantwortet keine der beiden Fragen. Der zweite Satz haengt darum davon
-       ab, ob ueberhaupt Achsen da sind. */
     function renderEmpty(){
-      var achsenDa = state.topics.length > 0 && state.companies.length > 0;
       elGrid.style.gridTemplateColumns = "1fr";
-      elGrid.innerHTML =
-        '<div class="uhm-empty up-empty">' +
-          '<div class="up-empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
-            'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' +
-            '<rect x="3" y="3" width="18" height="18" rx="2.5"></rect>' +
-            '<line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="3" x2="9" y2="21"></line>' +
-          "</svg></div>" +
-          '<div class="up-empty-h">No data for this period</div>' +
-          '<div class="up-empty-t">' + (achsenDa
-            ? "None of the selected brands were measured on these topics. Try a longer period, or pick other brands and topics with the filter above."
-            : "Nothing has been measured yet. Once prompts have run, the matrix fills up here.") +
-          "</div>" +
-        "</div>";
+      elGrid.innerHTML = '<div class="uhm-empty">No data</div>';
       state.layoutKey = "";
     }
 
@@ -1371,12 +1347,6 @@
         root.classList.toggle("is-loading", state.loading);
         if (!state.loading) soft.end();
         if (state.loading && !state.hasData) renderSkeleton();
-        /* Ausschalten, ohne dass je Daten kamen: dann steht das SKELETT noch da -- graue Kacheln
-           ohne Ladezustand, also genau das Bild, das wie ewiges Laden aussieht. Vorher blieb es
-           stehen, weil setLoading nur die Klasse umschaltete und das Zeichnen dem naechsten
-           render() ueberliess -- das aber nie kam, wenn der Payload unterwegs kaputtging.
-           Ein "fertig" ohne Daten ist ein Kein-Ergebnis und muss auch so aussehen. */
-        if (!state.loading && !state.hasData) renderEmpty();
       },
       reset: function(){
         state.cells = []; state.cellMap = {};
