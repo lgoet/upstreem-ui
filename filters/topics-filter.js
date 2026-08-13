@@ -388,18 +388,7 @@
     /* ---------------- publish ----------------
        Always the whole state, never a delta: a single dropped event would otherwise leave Bubble
        filtering on something the UI no longer shows. */
-    /* Nur der letzte Aufruf einer schnellen Folge geht raus -- siehe UC.trailing in core.js.
-       Wer waehrend einer laufenden Ladung drei Eintraege anklickt und dann den Modus umstellt, hat
-       vier Server-Aufrufe getreten, von denen drei schon veraltet sind, bevor die Antwort da ist.
-       Erlaubt ist das nur, weil emitJetzt() IMMER den vollstaendigen Zustand schickt und nie ein
-       Delta: der letzte Aufruf traegt alles, was die uebersprungenen getragen haetten. Die Anzeige
-       selbst bleibt unverzoegert -- render() laeuft weiter sofort, nur das Feuern wartet.
-
-       Faellt UC.trailing aus (aeltere core.js auf der Seite), wird direkt gefeuert. Lieber vier
-       Aufrufe als kein einziger. */
-    var emit = UC.trailing ? UC.trailing(emitJetzt, 250) : emitJetzt;
-
-    function emitJetzt() {
+    function emit() {
       var payload = {
         instance_id: instanceId,
         topic_ids: selected.join(","),
