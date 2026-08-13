@@ -801,8 +801,12 @@
     }
 
     function render(){
+      /* Solange geladen wird, gewinnt der Ladezustand -- auch wenn schon Daten dastehen. Sonst
+         zeichnet der naechste render() waehrend eines laufenden Ladevorgangs die ALTEN Zahlen
+         ueber das Skelett, und man sieht wieder Werte, die gerade ersetzt werden. */
+      if (state.loading){ renderSkeleton(); syncPickBtn(); return; }
       if (!state.hasData){
-        if (state.loading) renderSkeleton(); else renderEmpty();
+        renderEmpty();
         syncPickBtn();
         return;
       }
@@ -1342,11 +1346,19 @@
         render();
         if (pickPop.isOpen()) populatePicker();
       },
+      /* Das Skelett gehoert bei JEDEM Ladevorgang gezeigt, nicht nur beim allerersten. Die
+         Bedingung !state.hasData machte diesen Setter nach dem ersten Datensatz wirkungslos: die
+         Klasse is-loading wurde gesetzt, aber niemand zeichnete etwas. Fuer den Aufrufer sah das
+         aus, als tue die Funktion gar nichts -- und die Heatmap zeigte weiter die alten Zahlen,
+         waehrend die neuen unterwegs waren.
+         soft (das Dimmen bei komponenteneigenen Nachladungen) bleibt davon unberuehrt: das hier
+         ist der ausdrueckliche Aufruf von aussen, und der bedeutet "zeig den Ladezustand". */
       setLoading: function(on){
         state.loading = !!on;
         root.classList.toggle("is-loading", state.loading);
-        if (!state.loading) soft.end();
-        if (state.loading && !state.hasData) renderSkeleton();
+        if (!state.loading){ soft.end(); render(); return; }
+        soft.end();
+        renderSkeleton();
       },
       reset: function(){
         state.cells = []; state.cellMap = {};
