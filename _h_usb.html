@@ -1,7 +1,7 @@
 <meta charset="utf-8">
-<link rel="stylesheet" href="core.css?v=s9">
-<link rel="stylesheet" href="page-headers/settings-page-header.css?v=s9">
-<link rel="stylesheet" href="settings-brand.css?v=s9">
+<link rel="stylesheet" href="core.css?v=s10">
+<link rel="stylesheet" href="page-headers/settings-page-header.css?v=s10">
+<link rel="stylesheet" href="settings-brand.css?v=s10">
 <style>
   /* Form der echten Bubble-Seite: der Koerper scrollt nicht, #main scrollt. */
   html, body { margin: 0; height: 100%; }
@@ -46,9 +46,9 @@
   <button onclick="console.log(JSON.stringify(window.__ev,null,1))">Events</button>
 </div>
 
-<script src="core.js?v=s9"></script>
-<script src="page-headers/settings-page-header.js?v=s9"></script>
-<script src="settings-brand.js?v=s9"></script>
+<script src="core.js?v=s10"></script>
+<script src="page-headers/settings-page-header.js?v=s10"></script>
+<script src="settings-brand.js?v=s10"></script>
 <script>
 window.__ev = [];
 ["sphNav","usbEditBrand","usbLogoUpload","usbLogoUrl","usbModels","usbMarket",
@@ -57,6 +57,15 @@ window.__ev = [];
 });
 
 window.__load = function(){
+  /* Marktliste seitenweit, wie in der echten App: EIN Aufruf, alle Komponenten sehen sie. */
+  setUpstreemMarkets([
+    { alpha2: "DE", name: "Germany", prompt_count: 88, flag_url: "https://flagcdn.com/de.svg" },
+    { alpha2: "AT", name: "Austria", prompt_count: 41 },
+    { alpha2: "CH", name: "Switzerland", prompt_count: 37 },
+    { alpha2: "US", name: "United States", prompt_count: 12 },
+    { alpha2: "GB", name: "United Kingdom", prompt_count: 9 },
+    { alpha2: "FR", name: "France", prompt_count: 6 }
+  ]);
   renderSettingsBrand({
     instanceId: "set1",
     brand: { name: "LeeUp Media", logo: "https://www.google.com/s2/favicons?domain=leeup.de&sz=128" },
@@ -70,13 +79,7 @@ window.__load = function(){
       { key: "grok",       display_name: "Grok",             provider: "xAI",       logo_url: "",                                                             active: "no" },
       { key: "llama",      display_name: "Llama 3.3",        provider: "Meta",      logo_url: "https://www.google.com/s2/favicons?domain=meta.com&sz=64",      active: "no" }
     ],
-    markets: [
-      { id: "de", name: "Germany", score: 88 }, { id: "at", name: "Austria", score: 41 },
-      { id: "ch", name: "Switzerland", score: 37 }, { id: "us", name: "United States", score: 12 },
-      { id: "uk", name: "United Kingdom", score: 9 }, { id: "fr", name: "France", score: 6 },
-      { id: "nl", name: "Netherlands", score: 4 }, { id: "es", name: "Spain", score: 3 }
-    ],
-    market_id: "de",
+    market: "de",
     business_model: "b2b",
     industries: ["Consulting & Agencys", "SaaS & Software", "E-Commerce & Retail",
                  "Finance & Insurance", "Health & Pharma", "Industry & Manufacturing",

@@ -67,8 +67,10 @@
              active: "yes"/"no" oder true/false. key ist der Schluessel, den du im
              usbModels-Event zurueckbekommst.
 
-    markets:   [ { id, name, score }, … ],   score ist optional und steht rechts in der Liste
-    market_id: "de",
+    market: "de",   nur der Alpha-2-Code. Die LISTE der Maerkte kommt NICHT hier rein, sondern
+                    seitenweit aus dem Core-Store: setUpstreemMarkets(`[MARKETS]`), genau wie
+                    fuer jede andere Komponente mit einer Marktauswahl. Ein Aufruf pro Seite,
+                    und ein neu angelegter Markt erreicht alle auf einmal. Schluessel ist alpha2.
 
     business_model: "b2b",
     industries: [ "Consulting & Agencys", "SaaS & Software", … ],

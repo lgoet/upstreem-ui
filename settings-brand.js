@@ -87,8 +87,26 @@
       }
       return "https://flagcdn.com/" + String(a2).toLowerCase() + ".svg";
     }
+
+    /* Die Marktliste kommt aus dem seitenweiten Core-Store, den setUpstreemMarkets fuellt -- so wie
+       bei jeder anderen Komponente, die Maerkte anbietet. EIN Aufruf pro Seite statt einer Liste
+       im Payload jeder Komponente, und ein neu angelegter Markt erreicht alle auf einmal.
+       Schluessel ist alpha2, genau wie in markets-filter und add-prompts.
+       meta.markets ist nur der Rueckfall: schickt jemand doch eine eigene Liste im Payload mit,
+       gewinnt die. Ein LEERER Store ueberschreibt damit nichts. */
+    function marketList(){
+      if (meta.markets.length) return meta.markets;
+      var raw = UC.getMarkets ? UC.getMarkets() : [];
+      return raw.map(function(m){
+        var a2 = String(m.alpha2 || m.alpha3 || "").toLowerCase();
+        return { id: a2, name: m.name || a2.toUpperCase(),
+                 score: m.prompt_count == null ? null : UC.toNum(m.prompt_count) };
+      }).filter(function(m){ return !!m.id; });
+    }
     function findMarket(id){
-      for (var i = 0; i < meta.markets.length; i++) if (String(meta.markets[i].id) === String(id)) return meta.markets[i];
+      if (!id) return null;
+      var list = marketList();
+      for (var i = 0; i < list.length; i++) if (String(list[i].id) === String(id).toLowerCase()) return list[i];
       return null;
     }
 
@@ -470,7 +488,7 @@
 
     var ddMarket = makeDropdown("market", {
       placeholder: "Select a market", empty: "No markets found",
-      items: function(){ return meta.markets; },
+      items: marketList,
       search: function(m){ return (m.name || "") + " " + (m.id || ""); },
       value: function(m){ return m.id; },
       body: function(m){
@@ -677,7 +695,7 @@
         if (dlg) dlg.setAttribute("data-theme", isDark() ? "dark" : "light");
       }).observe(root, { attributes: true, attributeFilter: ["data-isdark", "data-theme"] });
     }
-    if (UC.onMarkets) UC.onMarkets(function(){ ddMarket.sync(); });
+    if (UC.onMarkets) UC.onMarkets(function(){ ddMarket.sync(); }, root);
     render();
 
     return {
@@ -709,7 +727,10 @@
                      name: m.name || "", score: m.score == null ? null : m.score };
           });
         }
-        if (p.market_id != null){ saved.marketId = String(p.market_id); draft.marketId = saved.marketId; }
+        /* market ist der neue, kurze Weg: nur der Alpha-2-Code. market_id bleibt als Alias
+           bestehen, damit ein bereits verdrahteter Aufruf nicht bricht. */
+        var mk = p.market != null ? p.market : p.market_id;
+        if (mk != null){ saved.marketId = String(mk).trim().toLowerCase(); draft.marketId = saved.marketId; }
         if (p.business_model != null){ saved.businessModel = String(p.business_model).toLowerCase(); draft.businessModel = saved.businessModel; }
 
         var inds = p.industries;
