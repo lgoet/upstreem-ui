@@ -275,6 +275,7 @@
                   '<input class="up-ment-search usb-ddcustom-in" type="text" maxlength="' + IND_MAX + '" ' +
                     'placeholder="Your industry" autocomplete="off" spellcheck="false" ' +
                     'aria-label="Custom industry" data-dd-custom/>' +
+                  '<button class="usb-ddcustom-clear" type="button" aria-label="Clear">' + ICON.x + '</button>' +
                   '<button class="usb-ddcustom-add" type="button" data-dd-customadd disabled>Add</button>' +
                 '</div>' +
               '</div>'
@@ -655,6 +656,13 @@
          Text schon in der Liste steht -- sonst legt man ein Duplikat an, das sich vom Original
          nur durch Gross- und Kleinschreibung unterscheidet. */
       var cin = wrap.querySelector("[data-dd-custom]");
+      /* Leeren wie in jedem Suchfeld der App. Das Feld hat einen Add-Knopf, aber kein X zu haben
+         hiess: eine getippte Branche liess sich nur zeichenweise wieder loswerden. */
+      var ccx = wrap.querySelector(".usb-ddcustom-clear");
+      if (ccx) ccx.addEventListener("click", function(e){
+        e.preventDefault(); e.stopPropagation();
+        cin.value = ""; cin.dispatchEvent(new Event("input", { bubbles: true })); cin.focus();
+      });
       var cadd = wrap.querySelector("[data-dd-customadd]");
       if (cin && cadd){
         function customOk(){
