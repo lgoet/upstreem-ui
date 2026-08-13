@@ -77,7 +77,13 @@
       if (!s) return {};
       s = s.replace(/:\s*([,}\]])/g, ": null$1");
       s = s.replace(/,\s*([}\]])/g, "$1");
-      try { return eval("(" + s + ")"); } catch (e) { return {}; }
+      var o;
+      try { o = eval("(" + s + ")"); } catch (e) { return {}; }
+      // Je nachdem, welchen Ausdruck der Schritt fuettert, kommt entweder das ganze Objekt oder
+      // NUR die Zellenliste an. Ein blankes Array landete sonst als {0:…,1:…,2:…} in der
+      // Komponente, und die sucht `cells`.
+      if (Object.prototype.toString.call(o) === "[object Array]") return { cells: o };
+      return (o && typeof o === "object") ? o : {};
     }
     var payload = toObj(`[RPC-Ergebnis]`);
     payload.instanceId = "ROOTID_[dynamic id]";
