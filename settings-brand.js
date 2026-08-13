@@ -112,6 +112,19 @@
     function marketList(){
       var raw = UC.getAllMarkets ? UC.getAllMarkets() : (UC.getMarkets ? UC.getMarkets() : []);
       if (!raw.length) return meta.markets;
+      /* Einmal pro Sitzung in die Konsole schreiben, WOHER die Liste kommt. Ohne das ist "zu wenige
+         Maerkte" nicht von "falsche Komponente" zu unterscheiden, und genau daran haben wir zwei
+         Runden verloren. */
+      if (!marketList._said && window.console && UC.storeStats){
+        marketList._said = true;
+        var st = UC.storeStats();
+        console.info("[settings-brand] Marktliste: " + raw.length + " Eintraege. " +
+          "Store allMarkets: " + st.allMarkets.n + " (Aufrufe " + st.allMarkets.calls +
+          ", abgelehnt " + st.allMarkets.rejected + "), " +
+          "Store markets (gefiltert): " + st.markets.n + ". " +
+          (st.allMarkets.n ? "Quelle ist die VOLLE Liste."
+                           : "Quelle ist die GEFILTERTE Liste -- setUpstreemAllMarkets hat nichts geliefert."));
+      }
       return raw.map(function(m){
         var a2 = String(m.alpha2 || m.alpha3 || "").toLowerCase();
         return { id: a2, name: m.name || a2.toUpperCase(),

@@ -4858,7 +4858,15 @@
   function setAllMarkets(rows, label){
     ALL_MARKETS.calls = (ALL_MARKETS.calls || 0) + 1;
     var list = parseLoose(rows, label || "all-markets");
-    if (!list){ ALL_MARKETS.rejected = (ALL_MARKETS.rejected || 0) + 1; return false; }
+    if (!list){
+      ALL_MARKETS.rejected = (ALL_MARKETS.rejected || 0) + 1;
+      /* Stiller Ausfall ist hier besonders teuer: der Store bleibt leer, getAllMarkets faellt auf
+         die GEFILTERTE Liste zurueck, und die Auswahl zeigt kommentarlos zu wenige Maerkte. Ohne
+         diese Zeile sieht das aus wie ein Fehler in der Komponente. */
+      if (window.console) console.warn("[all-markets] Payload unlesbar, Store bleibt leer -- die " +
+        "volle Marktliste kommt nirgends an. Erhalten: " + shapeOf(rows));
+      return false;
+    }
     if (!isArray(list)) list = [list];
     list = unwrapOnce(list, "all-markets");
     ALL_MARKETS.list = list;
@@ -5241,7 +5249,8 @@
         return { calls: S.calls || 0, rejected: S.rejected || 0, n: S.list.length,
                  rowsIn: S.lastIn == null ? null : S.lastIn, shape: S.lastShape || null };
       }
-      return { topics: one(TOPICS), markets: one(MARKETS), brands: one(BRANDS) };
+      return { topics: one(TOPICS), markets: one(MARKETS),
+               allMarkets: one(ALL_MARKETS), brands: one(BRANDS) };
     },
     setBrands: setBrands,
     onBrands: onBrands,
