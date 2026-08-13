@@ -1,20 +1,21 @@
 /* upstreem settings-brand.css — die "Your Brand"-Seite der Einstellungen.
-   Farben, Schrift, Fokusring und Grundklassen kommen aus core.css (.up-root, .up-field,
-   .up-btn-sec, .up-seg, .up-menu). Hier steht das Seitenlayout: Abschnitt, Karte, Zeile.
 
-   Bauprinzip, an Linear und Notion angelehnt: EIN Rhythmus fuer die ganze Seite. Ein Abschnitt hat
-   eine Ueberschrift mit einer erklaerenden Zeile darunter, danach genau eine Karte. In der Karte
-   liegen Zeilen, links der Text, rechts das Bedienelement, zwischen zwei Zeilen eine Linie. Wer
-   hier etwas Neues einbaut, nimmt dieselben drei Bausteine und erfindet keinen vierten. */
+   Dropdown, Suchfeld im Dropdown und der Business-Model-Schalter kommen VOLLSTAENDIG aus core:
+   .up-filter / .up-filter-btn / .up-filter-menu / .up-filter-item / .up-filter-check,
+   .up-ddsearch samt Lupe-X-Wechsel, .up-dense / .up-dense-btn / .is-active. Hier steht dazu nur,
+   was diese Seite ergaenzt: Flaggen in den Marktzeilen und die Breite der beiden Trigger.
+
+   Bauprinzip, an Linear und Notion angelehnt: Abschnitt mit Ueberschrift und erklaerender Zeile,
+   darunter genau eine Karte, in der Karte Zeilen mit Text links und Bedienelement rechts, dazu
+   je Karte eine Speicherleiste unten. Wer hier etwas Neues einbaut, nimmt dieselben Bausteine. */
 
 .usb-root { display: block; width: 100%; box-sizing: border-box; }
 .usb-root * { box-sizing: border-box; }
 
-/* 720px ist die Lesebreite dieser Seite. Formularseiten laufen ohne Deckel bis zur Fensterbreite
-   auseinander, und dann steht das Bedienelement einen halben Meter rechts von seiner Beschriftung.
-   Der Wert kommt aus derselben Ueberlegung wie bei Linear und Notion: die Zeile soll in einem
-   Blick lesbar bleiben. */
-.usb-body { display: flex; flex-direction: column; gap: 40px; max-width: 720px; }
+/* margin:0 auto zentriert die Seite. 720px ist die Lesebreite: ohne Deckel laeuft eine
+   Formularseite bis zur Fensterbreite auseinander und das Bedienelement steht einen halben Meter
+   rechts von seiner Beschriftung. */
+.usb-body { display: flex; flex-direction: column; gap: 40px; max-width: 720px; margin: 0 auto; }
 
 /* ---------- Abschnitt ---------- */
 .usb-sec { display: flex; flex-direction: column; gap: 12px; }
@@ -23,64 +24,81 @@
 .usb-secsub { font-size: 13px; font-weight: 400; color: var(--vc-third); margin: 0; line-height: 1.45; }
 
 /* ---------- Karte ---------- */
-.usb-card {
-  border: 1px solid var(--vc-border); border-radius: 16px; background: var(--vc-bg);
-  padding: 4px 16px;
-}
+.usb-card { border: 1px solid var(--vc-border); border-radius: 16px; background: var(--vc-bg); padding: 4px 16px; }
 .usb-div { height: 1px; background: var(--vc-border); margin: 0 -16px; }
 
-/* ---------- Zeile ----------
-   align-items:flex-start, nicht center: sobald die Beschreibung links zweizeilig wird, saehe ein
-   zentriertes Bedienelement rechts aus, als gehoere es zwischen die beiden Zeilen. Oben
-   ausgerichtet steht es auf der Hoehe des Titels, zu dem es gehoert. */
+/* align-items:flex-start, nicht center: wird die Beschreibung links zweizeilig, saehe ein
+   zentriertes Bedienelement rechts aus, als gehoere es zwischen die beiden Zeilen. */
 .usb-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; padding: 16px 0; }
 .usb-rowtext { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 auto; }
 .usb-rowtitle { font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.35; }
 .usb-rowdesc { font-size: 13px; font-weight: 400; color: var(--vc-muted); line-height: 1.5; max-width: 46ch; }
 .usb-rowctl { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; padding-top: 1px; }
-
 .usb-cardhead { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 16px 0 12px; }
 
-/* ---------- Knoepfe ---------- */
-.usb-editbtn, .usb-uploadbtn, .usb-urlsave, .usb-sumsave {
-  display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px;
-  white-space: nowrap;
+/* ---------- Speicherleiste ----------
+   Je Karte eine, oben durch eine Linie abgesetzt. Der Nutzer stellt in Meta Settings ueblicherweise
+   mehreres hintereinander um; ein Knopf pro Feld waere ein Knopf pro Gedanke. */
+.usb-savebar {
+  display: flex; align-items: center; justify-content: flex-end; gap: 12px;
+  padding: 12px 0; margin: 0 -16px; padding-left: 16px; padding-right: 16px;
+  border-top: 1px solid var(--vc-border);
 }
-.usb-editbtn svg, .usb-uploadbtn svg { width: 15px; height: 15px; flex: 0 0 auto; display: block; }
-/* Der Markenname im Knopf kann beliebig lang sein. Ohne Deckel schiebt er die ganze Zeile
-   auseinander und die Karte laeuft rechts aus dem Layout. */
+.usb-savehint { font-size: 12px; color: var(--vc-third); margin-right: auto; }
+.usb-savehint.is-dirty { color: var(--vc-text); }
+.usb-savebtn {
+  height: 32px; padding: 0 14px; border-radius: 9px; cursor: pointer; white-space: nowrap;
+  border: 0; background: var(--vc-text); color: var(--vc-bg);
+  font: inherit; font-size: 13px; font-weight: 500; transition: opacity 120ms ease;
+}
+.usb-savebtn:disabled { opacity: .4; cursor: default; }
+.usb-savebtn:not(:disabled):hover { opacity: .88; }
+.usb-savebtn:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+
+/* ---------- Knoepfe ---------- */
+.usb-btn { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; white-space: nowrap; }
+.usb-btn svg { width: 15px; height: 15px; flex: 0 0 auto; display: block; }
+/* Der Markenname im Knopf kann beliebig lang sein; ohne Deckel schiebt er die Zeile auseinander. */
 .usb-editbtn-lbl { overflow: hidden; text-overflow: ellipsis; max-width: 22ch; }
 
 /* ---------- Logo ---------- */
 .usb-logoctl { align-items: flex-start; gap: 16px; }
 .usb-logoprev {
   width: 56px; height: 56px; flex: 0 0 56px; border-radius: 12px; overflow: hidden;
-  border: 1px solid var(--vc-border); background: var(--vc-heading-bg);
-  display: grid; place-items: center;
+  border: 1px solid var(--vc-border); background: var(--vc-heading-bg); display: grid; place-items: center;
 }
 .usb-logoprev img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.usb-logoprev.is-empty svg, .usb-logoprev.is-broken svg { width: 20px; height: 20px; color: var(--vc-third); }
+.usb-logoprev.is-empty svg { width: 20px; height: 20px; color: var(--vc-third); }
 .usb-logoforms { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .usb-uploadrow { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.usb-filename { font-size: 13px; color: var(--vc-third); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 22ch; }
+.usb-filename { font-size: 13px; color: var(--vc-third); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 20ch; }
 .usb-filename.is-set { color: var(--vc-muted); }
-/* Die Trennzeile ist bewusst klein und in der dritten Farbe: sie ist kein Label, sondern eine
-   Ueberleitung zwischen zwei gleichwertigen Wegen zum selben Ziel. */
-.usb-orline { font-size: 12px; color: var(--vc-third); }
-.usb-urlrow { display: flex; align-items: center; gap: 8px; }
-.usb-urlin { height: 32px; width: 260px; min-width: 0; padding: 0 10px; border-radius: 9px; font-size: 13px; }
+/* Das echte Datei-Feld ist unsichtbar, aber NICHT display:none: ein display:none-Input laesst sich
+   in manchen Browsern nicht per click() oeffnen. */
+.usb-fileinput { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.usb-fileerr { font-size: 12px; color: var(--vt-down); line-height: 1.4; }
 
-/* ---------- Modelle ----------
-   Der Zaehler ist die Regel des Abschnitts, darum sitzt er oben rechts auf Augenhoehe mit dem
-   Titel und nicht unter den Karten. Ist das Limit erreicht, wird er farbig -- das ist die einzige
-   Stelle, an der die Seite von sich aus die Aufmerksamkeit sucht. */
+/* Der Link-Weg ist die Ausnahme, nicht der Regelfall -- eingeklappt hinter einer Zeile, die wie
+   ein Textlink aussieht und nicht wie ein zweiter gleichwertiger Knopf. */
+.usb-linktoggle {
+  display: inline-flex; align-items: center; gap: 4px; align-self: flex-start;
+  border: 0; background: transparent; padding: 0; cursor: pointer;
+  font: inherit; font-size: 12px; color: var(--vc-third);
+}
+.usb-linktoggle:hover { color: var(--vc-text); }
+.usb-linktoggle-chev { width: 14px; height: 14px; display: inline-flex; transition: transform 160ms ease; }
+.usb-linktoggle-chev svg { width: 14px; height: 14px; display: block; }
+.usb-linktoggle.is-open .usb-linktoggle-chev { transform: rotate(180deg); }
+.usb-linkbox { display: flex; align-items: center; gap: 8px; }
+.usb-urlin { height: 32px; width: 240px; min-width: 0; padding: 0 10px; border-radius: 9px; font-size: 13px; }
+
+/* ---------- Modelle ---------- */
 .usb-count {
   flex: 0 0 auto; font-size: 13px; font-weight: 500; color: var(--vc-muted);
   font-variant-numeric: tabular-nums; height: 24px; padding: 0 8px; border-radius: 7px;
   background: var(--vc-heading-bg); display: inline-flex; align-items: center;
 }
-.usb-count.is-full { color: var(--up-focus); background: var(--up-focus-ring); }
-
+.usb-count.is-full { color: var(--vc-text); }
 .usb-models { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 0 0 16px; }
 .usb-model {
   display: flex; align-items: center; gap: 10px; text-align: left; width: 100%;
@@ -89,105 +107,75 @@
   font: inherit; transition: border-color 120ms ease, background 120ms ease, opacity 120ms ease;
 }
 .usb-model:hover { border-color: var(--vc-hover-border); }
-.usb-model.is-on { border-color: var(--up-focus); background: var(--up-focus-ring); }
-/* Gesperrt heisst sichtbar abgeschaltet, nicht unsichtbar. Ein Schalter, der auf Klick nichts tut
-   und auch nicht sagt warum, ist schlimmer als einer, der grau ist und einen Tooltip hat. */
+.usb-model.is-on { border-color: var(--vc-text); background: var(--vc-heading-bg); }
+/* Gesperrt heisst sichtbar abgeschaltet. Ein Schalter, der auf Klick nichts tut und auch nicht
+   sagt warum, ist schlimmer als einer, der grau ist und einen Tooltip hat. */
 .usb-model.is-locked { opacity: .45; cursor: not-allowed; }
 .usb-model.is-locked:hover { border-color: var(--vc-border); }
 .usb-model:focus-visible { outline: 0; border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
-
 .usb-model-logo {
   width: 28px; height: 28px; flex: 0 0 28px; border-radius: 8px; overflow: hidden;
-  background: var(--vt-logo-bg); border: 1px solid var(--vc-border);
-  display: grid; place-items: center;
+  background: var(--vt-logo-bg); border: 1px solid var(--vc-border); display: grid; place-items: center;
 }
 .usb-model-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .usb-model-txt { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1 1 auto; }
 .usb-model-name { font-size: 13.5px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .usb-model-prov { font-size: 12px; color: var(--vc-third); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* Der Haken belegt seinen Platz immer, auch ausgeschaltet. Sonst ruecken Name und Logo bei jedem
-   Umschalten um 18px zur Seite, und das Raster zappelt beim Durchklicken. */
-.usb-model-check { flex: 0 0 18px; width: 18px; height: 18px; color: var(--up-focus); opacity: 0; transition: opacity 120ms ease; }
+/* Der Haken belegt seinen Platz immer. Sonst ruecken Name und Logo bei jedem Umschalten um 18px
+   zur Seite und das Raster zappelt beim Durchklicken. */
+.usb-model-check { flex: 0 0 18px; width: 18px; height: 18px; color: var(--vc-text); opacity: 0; transition: opacity 120ms ease; }
 .usb-model-check svg { width: 18px; height: 18px; display: block; }
 .usb-model.is-on .usb-model-check { opacity: 1; }
 .usb-modelsempty { font-size: 13px; color: var(--vc-third); padding: 0 0 16px; }
 
-/* ---------- Segmentierte Auswahl ---------- */
-.usb-seg { display: inline-flex; align-items: center; gap: 2px; padding: 2px; border-radius: 10px;
-  border: 1px solid var(--vc-border); background: var(--vc-switch-bg); }
-.usb-seg-btn {
-  height: 28px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent;
-  color: var(--vc-muted); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
-  white-space: nowrap; transition: background 120ms ease, color 120ms ease;
-}
-.usb-seg-btn:hover { color: var(--vc-text); }
-.usb-seg-btn.is-on { background: var(--up-surface, #fff); color: var(--vc-text); box-shadow: 0 1px 2px rgba(0,0,0,.06); }
-.usb-seg-btn:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+/* ---------- Schalter (Core .up-dense) ----------
+   Nur die Breite: core gibt .up-dense width:100 Prozent, hier soll er so breit sein wie sein
+   Inhalt, weil er rechts in einer Zeile steht und nicht ueber eine Menuespalte. */
+.usb-dense { width: auto; }
+.usb-dense .up-dense-btn { flex: 0 0 auto; padding: 0 12px; font-size: 13px; }
 
-/* ---------- Dropdown ---------- */
-.usb-dd { position: relative; }
-.usb-ddbtn {
-  display: inline-flex; align-items: center; justify-content: space-between; gap: 8px;
-  height: 32px; min-width: 220px; padding: 0 8px 0 12px; border-radius: 9px; cursor: pointer;
-  border: 1px solid var(--vc-border); background: transparent; color: var(--vc-text);
-  font: inherit; font-size: 13px; transition: border-color 120ms ease;
-}
-.usb-ddbtn:hover { border-color: var(--vc-hover-border); }
-.usb-dd.is-open .usb-ddbtn { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
-.usb-ddbtn-lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.usb-ddbtn-lbl.is-empty { color: var(--vc-third); }
-.usb-ddbtn-chev { flex: 0 0 16px; width: 16px; height: 16px; color: var(--vc-muted); transition: transform 160ms ease; }
-.usb-ddbtn-chev svg { width: 16px; height: 16px; display: block; }
-.usb-dd.is-open .usb-ddbtn-chev { transform: rotate(180deg); }
-
-.usb-ddmenu {
-  position: absolute; top: calc(100% + 6px); right: 0; width: 280px; z-index: 40;
-  padding: var(--up-dd-pad); border-radius: var(--up-dd-radius);
-  display: flex; flex-direction: column; gap: var(--up-dd-gap);
-}
-.usb-ddsearch {
-  display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px;
-  border: 1px solid var(--vc-border); border-radius: 9px; flex: 0 0 auto;
-}
-.usb-ddsearch:focus-within { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
-.usb-ddsearch-ic { flex: 0 0 15px; width: 15px; height: 15px; color: var(--vc-third); }
-.usb-ddsearch-ic svg { width: 15px; height: 15px; display: block; }
-.usb-ddsearch-in { flex: 1 1 auto; min-width: 0; height: 30px; padding: 0; border: 0;
-  background: transparent; color: var(--vc-text); font: inherit; font-size: 13px; outline: 0; }
-.usb-ddsearch-in::placeholder { color: var(--vc-third); }
-
-.usb-ddlist { max-height: 264px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
-.usb-ddopt {
-  display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 8px; border-radius: 8px;
-  cursor: pointer; font-size: 13px; color: var(--vc-text);
-}
-.usb-ddopt:hover { background: var(--vc-heading-bg); }
-.usb-ddopt:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
-.usb-ddopt-lbl { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.usb-ddopt-meta { flex: 0 0 auto; font-size: 12px; color: var(--vc-third); font-variant-numeric: tabular-nums; }
-.usb-ddopt-check { flex: 0 0 16px; width: 16px; height: 16px; color: var(--up-focus); opacity: 0; }
-.usb-ddopt-check svg { width: 16px; height: 16px; display: block; }
-.usb-ddopt.is-on .usb-ddopt-check { opacity: 1; }
-.usb-ddempty { font-size: 13px; color: var(--vc-third); padding: 8px; }
+/* ---------- Dropdown (Core .up-filter) ----------
+   Nur Breite und die Flaggenzeile. Trigger, Menue, Zeilen, Haken, Suchfeld und der offene Zustand
+   kommen unveraendert aus core -- inklusive der Tatsache, dass der Chevron sich NICHT dreht und der
+   offene Trigger einen grauen Hintergrund bekommt statt eines farbigen Rahmens. */
+.usb-dd .usb-ddbtn { min-width: 220px; justify-content: space-between; }
+.usb-dd .up-filter-btn-lbl { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.usb-dd .up-filter-btn-lbl.is-empty { color: var(--vc-third); }
+.usb-ddsearchrow { flex: 0 0 auto; display: flex; margin-bottom: 8px; }
+.usb-opt { justify-content: space-between; }
+.usb-opt-main { display: inline-flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto; }
+.usb-opt-name { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.usb-opt-count { flex: 0 0 auto; font-size: 12px; color: var(--vc-third); font-variant-numeric: tabular-nums; }
+/* Flagge wie in add-prompts: 16x12 mit leichtem Rahmen, damit eine weisse Fahne nicht im
+   Kartenhintergrund verschwindet. */
+.usb-flag { width: 16px; height: 12px; flex: 0 0 16px; object-fit: cover; border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.08); display: block; }
+.usb-flag-btn { margin-right: 0; }
+.usb-ddempty { font-size: 13px; color: var(--vc-third); padding: 8px 9px; }
 
 /* ---------- Zusammenfassung ----------
-   Als einziger Block ueber die volle Breite statt Text links, Feld rechts: ein mehrzeiliges
-   Textfeld in einer 220px-Spalte waere unbenutzbar. */
+   Als einziger Block ueber die volle Breite: ein mehrzeiliges Textfeld in einer 220px-Spalte waere
+   unbenutzbar.
+   font-family ausdruecklich, weil ein textarea die Seitenschrift NICHT erbt, sondern auf Monospace
+   faellt. */
 .usb-sumblock { display: flex; flex-direction: column; gap: 10px; padding: 16px 0; }
-/* font-family ausdruecklich: ein <textarea> erbt die Seitenschrift NICHT, sondern faellt auf die
-   Monospace-Voreinstellung des Browsers zurueck. Bei den einzeiligen Feldern faellt das kaum auf,
-   in einem sechszeiligen Fliesstext sofort. */
+.usb-sumwrap { position: relative; }
 .usb-sumin { width: 100%; min-height: 132px; padding: 10px 12px; border-radius: 10px;
-  font-family: inherit; font-size: 13.5px; line-height: 1.55; resize: vertical; }
-.usb-sumfoot { display: flex; align-items: center; justify-content: flex-end; gap: 12px; }
-.usb-sumhint { font-size: 12px; color: var(--vc-third); }
-.usb-sumhint.is-dirty { color: var(--up-focus); }
-.usb-sumsave:disabled { opacity: .5; cursor: default; }
+  font-family: inherit; font-size: 13.5px; line-height: 1.55; resize: vertical; display: block; }
+/* Der native Ziehgriff ist ein hauchduenner Schatten und auf hellem Grund praktisch unsichtbar.
+   Chrome laesst sich der Griff nicht umfaerben, also wird der native ausgeblendet und der
+   vertraute Diagonalstrich als eigenes Element daruebergelegt. pointer-events:none, damit das
+   Ziehen weiter das echte textarea trifft. */
+.usb-sumin::-webkit-resizer { display: none; }
+.usb-sumwrap::after {
+  content: ""; position: absolute; right: 5px; bottom: 6px; width: 10px; height: 10px;
+  pointer-events: none; opacity: .55;
+  background:
+    linear-gradient(135deg, transparent 0 45%, var(--vc-third) 45% 58%, transparent 58% 100%),
+    linear-gradient(135deg, transparent 0 70%, var(--vc-third) 70% 83%, transparent 83% 100%);
+}
 
-/* ---------- Danger Zone ----------
-   Rot bleibt auf Rahmen, Titel und Knopf beschraenkt. Eine flaechig rot hinterlegte Karte liest
-   sich wie eine Fehlermeldung, dabei ist hier nichts kaputt: es sind zwei Aktionen, die man
-   bewusst waehlen kann. */
+/* ---------- Danger Zone ---------- */
 .usb-sectitle-danger { color: var(--vt-down); }
 .usb-card-danger { border-color: color-mix(in srgb, var(--vt-down) 32%, var(--vc-border)); }
 .usb-dangerbtn {
@@ -204,10 +192,9 @@
 .usb-dangerbtn:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) color-mix(in srgb, var(--vt-down) 24%, transparent); }
 
 /* ---------- Danger-Dialog (STYLEGUIDE 27) ----------
-   Werte 1:1 aus dem Popup-Template: Scrim 30 Prozent plus 1.5px Blur, Karte mit EINEM
-   Padding-Wert und EINEM Gap zwischen allen Bloecken, 22px/500 Ueberschrift, 16px Radius.
-   Lokal dupliziert statt aus core geholt, weil dies ein anderer Modaltyp ist als der
-   Topic-Editor -- nach 27 wird erst beim zweiten Verbraucher extrahiert. */
+   Scrim und Kartenwerte aus dem Template. Abweichung mit Absicht: statt eines Icons in der Ecke
+   traegt der Dialog ein 64px hohes Kopfband in Signalfarbe mit weisser Ueberschrift. Er soll auf
+   den ersten Blick anders aussehen als jeder andere Dialog der App, nicht erst beim Lesen. */
 .usb-dlg-backdrop {
   position: fixed; inset: 0; z-index: 2147483200;
   display: grid; place-items: center; padding: 24px;
@@ -223,10 +210,8 @@
   /* Ohne diese drei traegt das Feld im Dialog keinen Fokusring: die Karte haengt am body, also
      ausserhalb von .up-root, wo die Tokens definiert sind, und var(--up-focus) waere leer. */
   --up-focus: #4A9EFF; --up-focus-ring: rgba(74,158,255,0.20); --up-focus-w: 2px;
-  width: 100%; max-width: 440px; max-height: calc(100vh - 48px); overflow-y: auto;
-  display: flex; flex-direction: column; gap: 32px;
-  padding: 16px; border-radius: 16px;
-  background: var(--up-surface); border: 1px solid var(--vc-border);
+  width: 100%; max-width: 440px; max-height: calc(100vh - 48px); overflow: hidden auto;
+  border-radius: 16px; background: var(--up-surface); border: 1px solid var(--vc-border);
   color: var(--vc-text); font-family: Geist, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   box-shadow: 0 18px 48px rgba(0,0,0,.18);
   transform: translateY(6px) scale(.985); transition: transform 160ms ease;
@@ -235,56 +220,59 @@
 .usb-dlg-backdrop[data-theme="dark"] .usb-dlg {
   --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-third: #808080; --vc-border: #353535;
   --vc-heading-bg: rgba(42,42,42,0.6); --vc-hover-border: #707070; --up-surface: #1b1b1b;
-  --vt-down: #e06a58;
+  --vt-down: #c8321c;
   --up-focus: #6DB2FF; --up-focus-ring: rgba(109,178,255,0.28);
 }
 @media (prefers-reduced-motion: reduce){ .usb-dlg-backdrop, .usb-dlg { transition-duration: 1ms; } }
 .usb-dlg * { box-sizing: border-box; }
 
-.usb-dlg-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.usb-dlg-heading { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
-.usb-dlg-badge {
-  flex: 0 0 32px; width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center;
-  background: color-mix(in srgb, var(--vt-down) 12%, transparent); color: var(--vt-down);
+.usb-dlg-band {
+  height: 64px; flex: 0 0 64px; background: var(--vt-down);
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 0 16px;
 }
-.usb-dlg-badge svg { width: 17px; height: 17px; display: block; }
-.usb-dlg-title { font-size: 22px; font-weight: 500; margin: 0 0 8px; line-height: 1.25; }
-.usb-dlg-sub { font-size: 16px; font-weight: 400; color: var(--vc-third); margin: 0; line-height: 1.35; }
-.usb-dlg-close { margin: -8px -8px 0 0; }
+.usb-dlg-title { font-size: 22px; font-weight: 500; color: #fff; margin: 0; line-height: 1.2;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.usb-dlg-close {
+  flex: 0 0 32px; width: 32px; height: 32px; margin-right: -6px; border: 0; border-radius: 8px;
+  background: transparent; color: rgba(255,255,255,.82); cursor: pointer;
+  display: grid; place-items: center; transition: background 120ms ease, color 120ms ease;
+}
+.usb-dlg-close:hover { background: rgba(255,255,255,.16); color: #fff; }
 .usb-dlg-close svg { width: 18px; height: 18px; display: block; }
 
+.usb-dlg-body { display: flex; flex-direction: column; gap: 32px; padding: 16px; }
+.usb-dlg-sub { font-size: 16px; font-weight: 400; color: var(--vc-third); margin: 0; line-height: 1.35; }
 .usb-dlg-field { display: flex; flex-direction: column; gap: 8px; }
 .usb-dlg-lbl { font-size: 13px; color: var(--vc-muted); }
 .usb-dlg-lbl b { color: var(--vc-text); font-weight: 500; }
-.usb-dlg-in { height: 36px; padding: 0 12px; border-radius: 9px; font-size: 13.5px;
+.usb-dlg-in { height: 36px; padding: 0 12px; border-radius: 9px; font: inherit; font-size: 13.5px;
   border: 1px solid var(--vc-border); background: transparent; color: var(--vc-text); }
 .usb-dlg-in:focus { outline: 0; border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
-
 .usb-dlg-foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
 .usb-dlg-go {
   height: 36px; padding: 0 14px; border-radius: 9px; cursor: pointer; white-space: nowrap;
   border: 1px solid var(--vt-down); background: var(--vt-down); color: #fff;
-  font: inherit; font-size: 13.5px; font-weight: 500;
-  transition: background 120ms ease, opacity 120ms ease;
+  font: inherit; font-size: 13.5px; font-weight: 500; transition: background 120ms ease, opacity 120ms ease;
 }
 .usb-dlg-go:disabled { opacity: .4; cursor: default; }
 .usb-dlg-go:not(:disabled):hover { background: color-mix(in srgb, var(--vt-down) 86%, #000); }
 /* Der scharfe Zustand aendert die Beschriftung, nicht nur die Farbe. Ein Knopf, der bei gleichem
    Text ploetzlich etwas anderes tut, ist genau die Falle, die der zweite Klick verhindern soll. */
-.usb-dlg-go.is-armed { background: color-mix(in srgb, var(--vt-down) 78%, #000); box-shadow: 0 0 0 3px color-mix(in srgb, var(--vt-down) 22%, transparent); }
+.usb-dlg-go.is-armed { background: color-mix(in srgb, var(--vt-down) 78%, #000);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--vt-down) 22%, transparent); }
 
-/* ---------- schmal ----------
-   Unter is-narrow kippt jede Zeile auf zwei Ebenen: Text oben, Bedienelement darunter linksbuendig.
-   Nebeneinander bliebe fuer die Beschreibung sonst eine Spalte von wenigen Zeichen. */
+/* ---------- schmal ---------- */
 .usb-root.is-narrow .usb-row,
 .usb-root.is-narrow .usb-cardhead { flex-direction: column; align-items: stretch; gap: 12px; }
 .usb-root.is-narrow .usb-rowctl { justify-content: flex-start; }
 .usb-root.is-narrow .usb-rowdesc { max-width: none; }
 .usb-root.is-narrow .usb-models { grid-template-columns: minmax(0, 1fr); }
-.usb-root.is-narrow .usb-ddbtn { min-width: 0; width: 100%; }
-.usb-root.is-narrow .usb-ddmenu { width: 100%; right: auto; left: 0; }
+.usb-root.is-narrow .usb-dd { width: 100%; }
+.usb-root.is-narrow .usb-dd .usb-ddbtn { min-width: 0; width: 100%; }
+.usb-root.is-narrow .usb-dd .up-filter-menu { right: auto; left: 0; min-width: 0; width: 100%; }
 .usb-root.is-narrow .usb-urlin { width: 100%; }
-.usb-root.is-narrow .usb-urlrow { width: 100%; }
-.usb-root.is-vnarrow .usb-seg { width: 100%; }
-.usb-root.is-vnarrow .usb-seg-btn { flex: 1 1 0; padding: 0 6px; }
+.usb-root.is-narrow .usb-linkbox { width: 100%; }
+.usb-root.is-vnarrow .usb-dense { width: 100%; }
+.usb-root.is-vnarrow .usb-dense .up-dense-btn { flex: 1 1 0; padding: 0 6px; }
 .usb-root.is-vnarrow .usb-logoctl { flex-direction: column; }

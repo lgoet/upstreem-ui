@@ -6,10 +6,12 @@
 
   ── Was hier bearbeitet wird und was nicht ───────────────────────────────────
   Name und Matching Aliases werden NICHT hier bearbeitet. Der Knopf feuert nur usbEditBrand; der
-  Editor dafuer ist ein eigener Dialog auf deiner Seite. Alles andere wird hier bearbeitet und
-  EINZELN gespeichert: pro Feld ein Event, kein gemeinsames "Save all". Die Felder haengen nicht
-  voneinander ab, und ein Sammel-Speichern wuerde bei einem fehlgeschlagenen Feld die anderen mit
-  zurueckrollen.
+  Editor dafuer ist ein eigener Dialog auf deiner Seite.
+
+  Model Settings und Meta Settings haben je EINEN Speichern-Knopf. Aenderungen laufen bis dahin in
+  einen Entwurf und feuern nichts. Der Nutzer stellt in Meta Settings ueblicherweise mehreres
+  hintereinander um, und vier einzelne Serverrunden dafuer waeren vier Gelegenheiten, auf halbem
+  Weg stehen zu bleiben.
 
   ── Statisches Markup, Pflicht (bubble/STATISCHES_MARKUP_PFLICHT.md) ─────────
   data-instance    = feste, pro Platzierung eindeutige Zeichenkette. KEIN dynamischer Ausdruck.
@@ -22,32 +24,30 @@
       fn('{}')
       Der Nutzer will Name und Aliases bearbeiten. Oeffne deinen eigenen Editor.
 
-  data-logoupload-fn  = "bubble_fn_usbLogoUpload_[dynamic id]"
-      fn('{}')
-      Der Nutzer hat auf Upload geklickt. Oeffne dein Bubble-File-Uploader-Element.
-      DIESE KOMPONENTE LAEDT NICHTS HOCH -- sie kann keinen Speicherort und keine Rechte kennen.
-      Wenn die Datei liegt, melde das Ergebnis zurueck:
+  data-logofile-fn    = "bubble_fn_usbLogoFile_[dynamic id]"
+      fn('{"name":"logo.png","type":"image/png","size":21544,"data":"data:image/png;base64,…"}')
+      Der Nutzer hat eine Datei gewaehlt. Die Komponente hat Typ und Groesse bereits geprueft
+      (PNG oder SVG, hoechstens 1 MB) und zeigt die Vorschau schon an -- kommt dieses Event an,
+      ist die Datei gueltig. `data` ist eine Data-URL, die Bubble direkt ablegen kann. Melde die
+      endgueltige URL danach zurueck:
           window.setSettingsBrandLogo("INSTANCE_ID", "https://…/logo.png", "logo.png");
-      Der zweite Parameter ist die anzuzeigende URL, der dritte der Dateiname neben dem Knopf.
 
   data-logourl-fn     = "bubble_fn_usbLogoUrl_[dynamic id]"
       fn('{"url":"https://…/logo.png"}')
-      Der Weg ohne Upload: eine Bild-URL wurde eingetragen und gespeichert. Uebernimm sie und
-      bestaetige mit setSettingsBrandLogo(), damit die Vorschau umspringt.
+      Der eingeklappte Weg ohne Upload: eine Bild-URL wurde eingetragen.
 
   data-models-fn      = "bubble_fn_usbModels_[dynamic id]"
       fn('{"model_keys":"gpt-4o,claude,gemini"}')
-      Die vollstaendige neue Auswahl als kommagetrennte Liste, nicht die Aenderung. In Bubble mit
-      ":split by" Komma zu einer echten Liste machen. Ueber dem Limit laesst die Komponente kein
-      weiteres Modell zu, du musst das nicht noch einmal pruefen -- solltest es serverseitig aber
-      trotzdem, ein Klick im DOM ist keine Berechtigung.
+      Feuert ERST beim Klick auf "Save models", nicht bei jedem Umschalten. Die VOLLSTAENDIGE neue
+      Auswahl als kommagetrennte Liste, nicht die Aenderung. In Bubble mit ":split by" Komma zu
+      einer Liste machen. Ueber dem Limit laesst die Komponente kein weiteres Modell zu -- pruefe
+      es serverseitig trotzdem, ein Klick im DOM ist keine Berechtigung.
 
-  data-market-fn      = "bubble_fn_usbMarket_[dynamic id]"     fn('{"market_id":"de"}')
-  data-business-fn    = "bubble_fn_usbBusiness_[dynamic id]"   fn('{"business_model":"b2b"}')
-                        business_model: "b2b" | "b2c" | "hybrid"
-  data-industry-fn    = "bubble_fn_usbIndustry_[dynamic id]"   fn('{"industry":"Consulting & Agencys"}')
-  data-summary-fn     = "bubble_fn_usbSummary_[dynamic id]"    fn('{"summary":"…"}')
-                        Feuert erst beim Klick auf "Save summary", nicht bei jedem Tastendruck.
+  data-meta-fn        = "bubble_fn_usbMeta_[dynamic id]"
+      fn('{"market_id":"de","business_model":"b2b","industry":"Consulting & Agencys","summary":"…"}')
+      EIN Event fuer den ganzen Meta-Settings-Block, gefeuert beim Klick auf "Save settings".
+      Markt, Business Model, Industry und Summary laufen bis dahin in einen Entwurf. business_model
+      ist "b2b" | "b2c" | "hybrid".
 
   data-leave-fn       = "bubble_fn_usbLeaveTeam_[dynamic id]"
   data-delete-fn      = "bubble_fn_usbDeleteTeam_[dynamic id]"
@@ -97,13 +97,10 @@
      data-cdn-pin="CDN_PIN"
      data-isdark="no"
      data-editbrand-fn="bubble_fn_usbEditBrand_ID"
-     data-logoupload-fn="bubble_fn_usbLogoUpload_ID"
+     data-logofile-fn="bubble_fn_usbLogoFile_ID"
      data-logourl-fn="bubble_fn_usbLogoUrl_ID"
      data-models-fn="bubble_fn_usbModels_ID"
-     data-market-fn="bubble_fn_usbMarket_ID"
-     data-business-fn="bubble_fn_usbBusiness_ID"
-     data-industry-fn="bubble_fn_usbIndustry_ID"
-     data-summary-fn="bubble_fn_usbSummary_ID"
+     data-meta-fn="bubble_fn_usbMeta_ID"
      data-leave-fn="bubble_fn_usbLeaveTeam_ID"
      data-delete-fn="bubble_fn_usbDeleteTeam_ID"></div>
 
