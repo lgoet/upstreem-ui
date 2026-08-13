@@ -2444,7 +2444,18 @@
       var fnName = root.getAttribute(attr) || fallbackName;
       var fn = resolveBubbleFn(fnName);
       var json; try { json = JSON.stringify(payload); } catch(e){ json = ""; }
-      if (typeof fn === "function"){ try { fn(json); } catch(e){} }
+      /* Der Wurf der Bubble-Funktion darf NICHT still verschwinden. Der Nicht-gefunden-Zweig
+         darunter warnt ausfuehrlich, dieser hier schwieg -- und das ist der teurere Fall: eine
+         Komponente, die vor dem Feuern einen Ladezustand setzt und auf ein Erfolgsereignis
+         wartet, dreht dann endlos, ohne Meldung im UI und ohne Meldung in der Konsole. Die
+         Ausfuehrung laeuft weiter wie bisher, es kommt nur die Zeile dazu. */
+      if (typeof fn === "function"){
+        try { fn(json); }
+        catch(e){
+          if (window.console) console.warn("[" + label + "] " + fnName + " hat geworfen. Das Event " +
+            "wurde ausgeloest, der Bubble-Workflow ist aber nicht durchgelaufen. Fehler:", e);
+        }
+      }
       else if (window.console) {
         console.warn("[" + label + "] " + fnName + " not found on window/parent/top or any reachable " +
           "iframe — this action reached no Bubble workflow. Check the Toolbox element's name.");

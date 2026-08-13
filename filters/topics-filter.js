@@ -780,8 +780,13 @@
 
   window.setTopicsFilterTopics = function (instanceId, rows) {
     initAll();
+    /* parseLoose, nicht JSON.parse: ein Themenname traegt dasselbe unescapte Anfuehrungszeichen,
+       das die urls-table einmal lahmgelegt hat, und Bubble liefert regelmaessig ein Objektliteral
+       mit blanken Schluesseln. Ein blankes JSON.parse im try/catch verschluckt dann die ganze
+       Liste, danach steht das Dropdown leer da UND der Seitenfilter setzt sich still zurueck.
+       Wortgleich mit markets-filter.js und models-filter.js. */
     var list = rows;
-    if (typeof list === "string") { try { list = JSON.parse(list); } catch (e) { list = []; } }
+    if (typeof list === "string") list = (UC.parseLoose ? UC.parseLoose(list, "topics-filter") : null) || [];
     return forEachInstance(instanceId, function (c) { c.setTopics(list); });
   };
   window.setTopicsFilterSelected = function (instanceId, csv) {
