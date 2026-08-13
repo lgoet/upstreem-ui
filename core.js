@@ -4906,6 +4906,26 @@
   /* Die VOLLE Marktliste, unabhaengig davon, ob es dort schon Prompts gibt. Wer sie nicht setzt,
      bekommt ueberall weiter die gefilterte Liste -- getAllMarkets faellt darauf zurueck. */
   window.setUpstreemAllMarkets = function(rows){ return setAllMarkets(rows, "setUpstreemAllMarkets"); };
+  /* Vorgemerkte Aufrufe nachholen. Ein Run-JS-Schritt beim Seitenaufbau kann laufen, BEVOR core.js
+     fertig geladen ist -- dann gibt es window.setUpstreemAllMarkets noch nicht, der Aufruf wirft,
+     und der Store bleibt fuer den Rest der Sitzung leer. Genau dieser Fall sah aus wie "die
+     Komponente zeigt die falsche Liste": Aufrufe 0, abgelehnt 0, und der Rueckfall lieferte
+     kommentarlos die gefilterte Liste.
+     Der Loader in bubble/settings_brand_bubble.html legt darum VOR core.js einen Stub an, der
+     Aufrufe in diese Warteschlange schiebt. Hier werden sie eingeloest, in der Reihenfolge, in der
+     sie kamen. Dieselbe Bauart wie die Boot-Stubs der Komponenten (UC.makeMount). */
+  (function(){
+    var q = window.__upstreemMarketQueue;
+    if (!q || !q.length) return;
+    window.__upstreemMarketQueue = [];
+    for (var i = 0; i < q.length; i++){
+      try {
+        if (q[i] && q[i].all) setAllMarkets(q[i].rows, "setUpstreemAllMarkets (nachgeholt)");
+        else setMarkets(q[i].rows, "setUpstreemMarkets (nachgeholt)");
+      } catch(e){}
+    }
+    if (window.console) console.info("[markets] " + q.length + " vorgemerkte Aufruf(e) nachgeholt.");
+  })();
   window.getUpstreemMarkets = getMarkets;
   window.upstreemMarketsChanged = marketsChanged;
   (function drainMarketsQueue(){

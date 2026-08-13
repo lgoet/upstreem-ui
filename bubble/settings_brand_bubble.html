@@ -129,6 +129,22 @@
 
 <script>
 (function(){
+  /* Stub VOR core.js: ein Run-JS-Schritt beim Seitenaufbau kann frueher laufen als core.js. Ohne
+     diesen Stub wirft setUpstreemAllMarkets("...") mit "is not a function", der Store bleibt leer,
+     und die Marktauswahl zeigt kommentarlos die gefilterte Liste. Der Aufruf wird hier gemerkt und
+     von core.js nachgeholt, sobald es da ist. */
+  if (typeof window.setUpstreemAllMarkets !== "function"){
+    window.__upstreemMarketQueue = window.__upstreemMarketQueue || [];
+    window.setUpstreemAllMarkets = function(rows){
+      window.__upstreemMarketQueue.push({ all: true, rows: rows }); return true;
+    };
+  }
+  if (typeof window.setUpstreemMarkets !== "function"){
+    window.__upstreemMarketQueue = window.__upstreemMarketQueue || [];
+    window.setUpstreemMarkets = function(rows){
+      window.__upstreemMarketQueue.push({ all: false, rows: rows }); return true;
+    };
+  }
   var root = document.querySelector(".usb-root[data-cdn-pin]");
   var pin = root ? String(root.getAttribute("data-cdn-pin") || "").trim() : "";
   if (!pin || pin === "CDN_PIN") pin = "main";
