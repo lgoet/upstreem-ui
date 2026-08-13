@@ -355,7 +355,7 @@
 .upt-topicsearch-clear { flex: 0 0 20px; width: 20px; height: 20px; border: 0; border-radius: 6px;
   background: transparent; color: var(--vc-muted); cursor: pointer; padding: 0; margin-left: 4px;
   display: inline-flex; align-items: center; justify-content: center; visibility: hidden; }
-.upt-topicsearch-clear svg { width: 12px; height: 12px; display: block; }
+.upt-topicsearch-clear svg { width: 13px; height: 13px; display: block; }
 .upt-topicsearch-clear:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
 .upt-topichead.has-text .upt-topicsearch-clear { visibility: visible; }
 /* Same rest/hover idiom as every other button in here (transparent -> --vc-heading-bg on hover,
@@ -693,10 +693,10 @@
   border: 0; background: transparent; color: var(--vc-text); font: inherit; font-size: 13px; outline: 0; }
 .upt-grp-sidesearch-in::placeholder { color: var(--vc-third); }
 /* Slot always reserved (visibility, not display) so nothing shifts when the x appears/disappears. */
-.upt-grp-sidesearch-clear { flex: 0 0 24px; width: 24px; height: 24px; border: 0; border-radius: 7px;
+.upt-grp-sidesearch-clear { flex: 0 0 20px; width: 20px; height: 20px; border: 0; border-radius: 6px;
   background: transparent; color: var(--vc-muted); cursor: pointer; padding: 0; margin-left: 4px;
   display: inline-flex; align-items: center; justify-content: center; }
-.upt-grp-sidesearch-clear svg { width: 16px; height: 16px; display: block; }
+.upt-grp-sidesearch-clear svg { width: 13px; height: 13px; display: block; }
 .upt-grp-sidesearch-clear:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
 .upt-grp-sidelist { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0;
   overflow-y: auto; overflow-x: hidden; }
@@ -1037,11 +1037,11 @@
 .upt-gm-search-in { flex: 1 1 auto; height: 36px; padding: 0 34px 0 12px; border: 1px solid var(--vc-border);
   border-radius: 9px; background: transparent; color: var(--vc-text); font: inherit; font-size: 14px; outline: 0; }
 .upt-gm-search-in:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); outline: 0; }
-.upt-gm-clear { position: absolute; right: 6px; width: 24px; height: 24px; border: 0; border-radius: 6px;
+.upt-gm-clear { position: absolute; right: 6px; width: 20px; height: 20px; border: 0; border-radius: 6px;
   padding: 0; background: transparent; color: var(--vc-muted); cursor: pointer;
   display: none; align-items: center; justify-content: center; }
 .upt-gm-clear.is-on { display: inline-flex; }
-.upt-gm-clear svg { width: 12px; height: 12px; display: block; }
+.upt-gm-clear svg { width: 13px; height: 13px; display: block; }
 .upt-gm-clear:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
 .upt-gm-list { display: flex; flex-wrap: wrap; gap: 8px; }
 

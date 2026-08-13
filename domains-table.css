@@ -343,11 +343,15 @@
 .udt-sub-search-in { flex: 1 1 auto; min-width: 0; border: 0; outline: none; background: transparent;
   font: inherit; font-size: 12.5px; font-weight: 500; color: var(--vc-text); padding: 0; }
 .udt-sub-search-in::placeholder { color: var(--vc-third); font-weight: 400; }
-.udt-sub-search-x { display: none; width: 16px; height: 16px; flex: 0 0 16px; padding: 0; border: 0;
-  background: transparent; color: var(--vc-muted); cursor: pointer; }
-.udt-sub-search-x svg { width: 16px; height: 16px; display: block; }
+/* Masse wie .up-ment-searchclear in core.css: 20px Knopf, 13px Zeichen, 6px Radius.
+   Das ist das X aus dem All-Brands-Dropdown, und es ist das Mass fuer JEDES Loesch-X
+   in einem Eingabefeld. Vorher hatte fast jede Komponente ihr eigenes. */
+.udt-sub-search-x { display: none; width: 20px; height: 20px; flex: 0 0 20px; padding: 0; border: 0;
+  border-radius: 6px; background: transparent; color: var(--vc-muted); cursor: pointer;
+  align-items: center; justify-content: center; }
+.udt-sub-search-x svg { width: 13px; height: 13px; display: block; }
 .udt-sub-search-x:hover { color: var(--vc-text); }
-.udt-sub-search.has-text .udt-sub-search-x { display: block; }
+.udt-sub-search.has-text .udt-sub-search-x { display: inline-flex; }
 
 /* ---------- footer ---------- */
 /* Reuses the table's own .up-pagesize / .up-pager / .up-page primitives verbatim - a pager that

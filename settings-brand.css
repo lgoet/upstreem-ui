@@ -197,7 +197,7 @@
 .usb-ddcustom-in { width: 100%; min-width: 0; padding-right: 34px; }
 .usb-ddcustom-clear { position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
   display: none; align-items: center; justify-content: center; width: 20px; height: 20px;
-  padding: 0; border: 0; background: none; color: var(--vc-muted); cursor: pointer; }
+  padding: 0; border: 0; border-radius: 6px; background: none; color: var(--vc-muted); cursor: pointer; }
 .usb-ddcustom-clear svg { width: 13px; height: 13px; display: block; }
 .usb-ddcustom-clear:hover { color: var(--vc-text); }
 .usb-ddcustom-in:not(:placeholder-shown) ~ .usb-ddcustom-clear { display: inline-flex; }

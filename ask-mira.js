@@ -2866,7 +2866,28 @@
         var j = i + 1;
         while (j < s.length && (s.charAt(j) === ' ' || s.charAt(j) === '\t' || s.charAt(j) === '\n' || s.charAt(j) === '\r')) j++;
         var nxt = j < s.length ? s.charAt(j) : '';
-        if (nxt === ':' || nxt === ',' || nxt === '}' || nxt === ']' || nxt === ''){ inStr = false; out += c; }
+        var ende = (nxt === ':' || nxt === '}' || nxt === ']' || nxt === '');
+        /* Das Komma allein reicht NICHT als Beleg fuer ein Stringende. Genau daran ist ein Chat
+           gescheitert: im Text stand  ...im Prompt "beste lead agentur solar", obwohl 65%...
+           Das schliessende Anfuehrungszeichen der Phrase steht direkt vor einem Komma, also hielt
+           die Heuristik es fuer das Ende des Wertes -- ab da war alles verschoben und der ganze
+           Datensatz unlesbar.
+           Nach einem ECHTEN Wertende folgt immer der naechste Schluessel oder Wert, nie ein
+           Buchstabe: ein Schluessel steht in Anfuehrungszeichen, ein Wert beginnt mit " { [ einer
+           Ziffer oder true/false/null. Steht dort ein Wort wie "obwohl", ist das Komma Teil des
+           Textes und das Anfuehrungszeichen gehoert escaped. */
+        if (!ende && nxt === ','){
+          var k = j + 1;
+          while (k < s.length && (s.charAt(k) === ' ' || s.charAt(k) === '\t' ||
+                                  s.charAt(k) === '\n' || s.charAt(k) === '\r')) k++;
+          var danach = k < s.length ? s.charAt(k) : '';
+          ende = (danach === '"' || danach === '{' || danach === '[' ||
+                  danach === '}' || danach === ']' || danach === '' ||
+                  danach === '-' || (danach >= '0' && danach <= '9') ||
+                  s.substr(k, 4) === 'true' || s.substr(k, 4) === 'null' ||
+                  s.substr(k, 5) === 'false');
+        }
+        if (ende){ inStr = false; out += c; }
         else { out += '\\"'; }   // literal quote inside the value -> escape it
         continue;
       }
@@ -2958,7 +2979,7 @@
       if (parsed == null){
         console.warn('[AskMira] askMiraSetMessages: could not parse the payload — leaving messages unchanged. '+
           'Likely the JSON was truncated in transport or contains characters that broke it. '+
-          'Tip: pass the payload base64-encoded with a "b64:" prefix to make it bulletproof. (length='+messages.length+')');
+          'Ein unescaptes Anfuehrungszeichen im Text repariert die Komponente selbst; haelt der Payload trotzdem nicht, ist er unterwegs abgeschnitten worden. (Laenge='+messages.length+')');
         return; // keep whatever is currently shown instead of blanking the chat
       }
       messages = parsed;
@@ -3122,7 +3143,7 @@
     if (typeof chats === 'string'){
       var parsed = looseJsonParse(chats);
       if (parsed == null){
-        console.warn('[AskMira] askMiraSetPreviousChats: could not parse the payload (truncated or special chars). Tip: use a "b64:" base64 prefix. (length='+chats.length+')');
+        console.warn('[AskMira] askMiraSetPreviousChats: Payload nicht lesbar. Ein unescaptes Anfuehrungszeichen im Text repariert die Komponente selbst; haelt der Payload trotzdem nicht, ist er unterwegs abgeschnitten worden. (Laenge='+chats.length+')');
         return;
       }
       chats = parsed;
@@ -3135,7 +3156,7 @@
     if (typeof projects === 'string'){
       var parsed = looseJsonParse(projects);
       if (parsed == null){
-        console.warn('[AskMira] askMiraSetProjects: could not parse the payload. Tip: use a "b64:" base64 prefix.');
+        console.warn('[AskMira] askMiraSetProjects: Payload nicht lesbar. Ein unescaptes Anfuehrungszeichen im Text repariert die Komponente selbst; haelt der Payload trotzdem nicht, ist er unterwegs abgeschnitten worden.');
         return;
       }
       projects = parsed;
@@ -3148,7 +3169,7 @@
     if (typeof topics === 'string'){
       var parsed = looseJsonParse(topics);
       if (parsed == null){
-        console.warn('[AskMira] askMiraSetTopics: could not parse the payload. Tip: use a "b64:" base64 prefix.');
+        console.warn('[AskMira] askMiraSetTopics: Payload nicht lesbar. Ein unescaptes Anfuehrungszeichen im Text repariert die Komponente selbst; haelt der Payload trotzdem nicht, ist er unterwegs abgeschnitten worden.');
         return;
       }
       topics = parsed;
@@ -3182,7 +3203,7 @@
       if (typeof r === 'string' && hasOpp && !ok){
         var mp = /position (\d+)/.exec(err);
         if (mp){ var pos = +mp[1]; console.warn('[AskMira] FromEl: invalid JSON near -> …'+ r.slice(Math.max(0,pos-70), pos+70).replace(/\n/g,'\\n') +'…'); }
-        console.warn('[AskMira] Raw text HAS opportunities but is not valid JSON (transport/escaping). Bulletproof fix: put  "b64:" + base64(JSON)  into the element instead of the raw JSON.');
+        console.warn('[AskMira] Der Rohtext enthaelt opportunities, ist aber kein gueltiges JSON. Ein unescaptes Anfuehrungszeichen im Text repariert die Komponente selbst; haelt der Payload trotzdem nicht, ist er unterwegs abgeschnitten worden.');
       }
     } catch(e){}
     window.askMiraSetMessages(r);
