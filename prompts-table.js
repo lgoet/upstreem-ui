@@ -3206,7 +3206,11 @@
          is still in flight, which reads as "nothing happened" rather than "loading". */
       if (isBusy()){ elHeadCount.textContent = ""; elHeadCount.classList.add("is-sk"); return; }
       var totalForView = currentTotal();
-      var n = (totalForView != null) ? totalForView : (state.hasData ? state.rows.length : null);
+      /* Eine LEERE Zeilenliste belegt keine Gesamtzahl. state.rows.length waere dann 0, und die
+         0 stuende im Kopf, obwohl sie nirgends herkommt -- nur die Abwesenheit von Zeilen ist
+         belegt, nicht die Abwesenheit von Prompts. Ohne belegte Zahl bleibt es beim Skelett. */
+      var n = (totalForView != null) ? totalForView
+            : ((state.hasData && state.rows.length) ? state.rows.length : null);
       if (n == null){ elHeadCount.textContent = ""; elHeadCount.classList.add("is-sk"); return; }
       elHeadCount.textContent = UC.fmtTotal(n);
       elHeadCount.classList.remove("is-sk");
@@ -4268,6 +4272,10 @@
         }
         if (params.requestId != null && search.latestReqId() != null && String(params.requestId) !== String(search.latestReqId())) return;
         if (params.rows != null){
+          /* VOR dem Setzen merken: die 0 unten darf nur fallen, wenn es schon einmal Daten gab.
+             state.hasData steht eine Zeile spaeter auf true, die Bedingung waere sonst immer
+             erfuellt. */
+          var hatteVorherDaten = state.hasData;
           state.rows = Array.isArray(params.rows) ? params.rows : [];
           state.hasData = true;
           /* Only a delivery that actually carries rows releases the latch. An empty one is a
@@ -4280,7 +4288,13 @@
              all N" kept showing whatever was there before the change. Only defaults the total for
              whichever tab this delivery is actually for; an explicit totalCount/totalCountInactive
              in the same payload always wins over this. */
-          if (!state.rows.length){
+          /* ...aber nur, wenn vorher schon einmal Daten dastanden. Dann ist die leere Lieferung
+             eine echte Aussage ueber eine echte Aenderung ("alle deaktiviert"), und 0 ist die
+             Wahrheit. Beim ALLERERSTEN Laden ist sie eine Erfindung: da hat der Aufrufer die
+             Zeilen geliefert und die Gesamtzahl noch nicht, und der Kopf behauptete 0, obwohl
+             niemand das gesagt hat. Genau so sah es beim Oeffnen im Gruppierungsmodus aus, wo
+             die erste Lieferung regelmaessig leer ist. */
+          if (!state.rows.length && hatteVorherDaten){
             if (params.totalCount == null && state.status === "active") state.totalCount = 0;
             if (params.totalCountInactive == null && state.status === "inactive") state.totalCountInactive = 0;
           }

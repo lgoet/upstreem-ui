@@ -186,11 +186,16 @@ window.bubble_fn_uptBulkStatus = function(j){ window.__events.push(['bulkstatus'
 window.bubble_fn_uptBulkDelete = function(j){ window.__events.push(['bulkdelete',j]); };
 window.bubble_fn_uptAddTopics = function(j){ window.__events.push(['addtopics',j]); };
 window.bubble_fn_uptApplyBulkTopics = function(j){ window.__events.push(['applybulktopics',j]); };
+/* ?nodata=1 unterdrueckt das automatische Rendern. Ohne diesen Schalter ist die erste Lieferung
+   nie wirklich die erste, und genau der Zustand (frisch geoeffnet, noch keine Zahl bekannt) ist
+   der, in dem der Kopfzaehler eine 0 erfunden hat. window.__load() rendert dann von Hand. */
+window.__load = function(){
+  window.setPromptsTableTopics('pt1', window.TOPICS);
+  window.setPromptsTableBrands('pt1', window.BRANDS);
+  window.renderPromptsTable({ instanceId:'pt1', rows: window.ROWS, totalCount: 2 });
+};
 window.addEventListener('load', function(){
-  setTimeout(function(){
-    window.setPromptsTableTopics('pt1', window.TOPICS);
-    window.setPromptsTableBrands('pt1', window.BRANDS);
-    window.renderPromptsTable({ instanceId:'pt1', rows: window.ROWS, totalCount: 2 });
-  }, 300);
+  if (/[?&]nodata=1/.test(location.search)) return;
+  setTimeout(window.__load, 300);
 });
 </script>
