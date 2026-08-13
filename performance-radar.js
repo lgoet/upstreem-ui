@@ -780,8 +780,16 @@
     }
 
     /* Skeleton: same pulse token every other component uses (--vc-sk + uutpulse). */
+    /* Das Skelett bekommt die Hoehe, die vorher dastand. Ein Ladezustand, der die Seite
+       zusammenschnurren oder aufspringen laesst, ist selbst eine Stoerung -- und beim Zurueckkommen
+       springt sie ein zweites Mal. Die Zeilenzahl kommt darum aus den zuletzt gezeigten Themen,
+       nicht aus einer festen 7. Gab es noch nie Daten, bleibt es beim Vorgabemass.
+       Nur die Zeilen, nicht die Spalten: die Spaltenbreite ist ein Raster mit minmax(), da wuerde
+       eine abweichende Spaltenzahl die Breite verschieben statt sie zu erhalten. */
     function renderSkeleton(){
       var rows = 7, cols = 6;
+      var vorher = (state.topics || []).length;
+      if (vorher > 0) rows = vorher;
       elGrid.style.gridTemplateColumns = (root.classList.contains("is-narrow") ? LEAD_W_NARR : LEAD_W) +
         "px repeat(" + cols + ", minmax(" + COL_MIN + "px, 1fr))";
       elGrid.style.gap = GAP + "px";
@@ -792,6 +800,11 @@
         for (var k = 0; k < cols; k++) html += '<div class="uhm-cell is-sk"></div>';
       }
       elGrid.innerHTML = html;
+      /* Die Zeilenzahl allein trifft die Hoehe nur ungefaehr: die echten Zeilenkoepfe tragen
+         Themen-Chips, die Skelettbalken sind ein paar Pixel flacher. Darum zusaetzlich die
+         zuletzt gemessene echte Hoehe als Mindestmass -- damit steht das Skelett exakt so hoch
+         wie das, was es ersetzt, und die Seite springt beim Hin- und Herwechseln nicht. */
+      elGrid.style.minHeight = state.lastGridH ? (state.lastGridH + "px") : "";
       state.layoutKey = "";
     }
     function renderEmpty(){
@@ -810,9 +823,12 @@
         syncPickBtn();
         return;
       }
+      elGrid.style.minHeight = "";
       var key = layoutKeyOf();
       if (key === state.layoutKey && elGrid.querySelector(".uhm-cell:not(.is-sk)")) paintCells();
       else buildGrid();
+      /* Fuer das naechste Skelett merken, wie hoch die echten Daten stehen. */
+      try { state.lastGridH = Math.round(elGrid.getBoundingClientRect().height) || 0; } catch(e){}
       syncPickBtn();
     }
 
