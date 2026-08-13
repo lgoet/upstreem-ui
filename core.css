@@ -171,7 +171,22 @@
       transition: width .22s cubic-bezier(.22,1,.36,1), opacity .16s ease, margin-left .22s cubic-bezier(.22,1,.36,1);
       margin-left: 0;
     }
-    .up-search.is-open .up-search-box { width: 200px; opacity: 1; pointer-events: auto; margin-left: 2px; }
+    .up-search.is-open .up-search-box {
+      width: 216px; opacity: 1; pointer-events: auto; margin-left: 2px; padding: 0 8px;
+      border-radius: 9px;
+    }
+    /* Der Fokusring sitzt auf der BOX, nicht auf dem Feld, denn das Feld ist randlos (siehe
+       gleich darunter) und traegt nichts, woran ein Ring haengen koennte. Bewusst outline statt
+       border: das Feld faehrt seine Breite an, und eine Border wuerde 2px Layout kosten, die im
+       geschlossenen Zustand (width 0) als Strich stehen blieben. Ein outline liegt ausserhalb der
+       Border-Box, kostet kein Layout und folgt trotzdem dem border-radius.
+       Die 216px sind 200 Textbreite plus die 8px Innenabstand je Seite, damit der Ring nicht am
+       Text klebt. Der Abstand ist immer da, nicht erst im Fokus, sonst ruckt der Text beim
+       Reinklicken. */
+    .up-search.is-open .up-search-box:focus-within {
+      outline: 1px solid var(--up-focus);
+      box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring);
+    }
     /* No box/border — just free text like Notion's in-table search. */
     .up-search-input {
       flex: 1 1 auto; min-width: 0; height: 32px; padding: 0;
