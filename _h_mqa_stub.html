@@ -1,0 +1,34 @@
+<!doctype html><meta charset="utf-8"><title>MQA Boot-Stub</title>
+<link rel="stylesheet" href="core.css"><link rel="stylesheet" href="quick-actions.css">
+<div id="mira-quick-actions" data-theme="light" data-team="t1">
+  <button class="mqa-trigger">Suche</button>
+  <div class="mqa-overlay"></div>
+</div>
+<pre id="log" style="font:12px monospace"></pre>
+<script>
+/* Der Workflow-Schritt laeuft VOR quick-actions.js -- genau der Fall aus der Doku. */
+window.__mqaBootQueue = window.__mqaBootQueue || [];
+if (!window.MiraQuickActions){
+  var st = {};
+  ["open","close","clear","setTheme","setTeam","setBrands","setMarkets",
+   "setLoading","setResults","setError","parseItems"].forEach(function(n){
+    st[n] = function(){ window.__mqaBootQueue.push([n, [].slice.call(arguments)]); };
+  });
+  st.__isStub = true; window.MiraQuickActions = st;
+}
+window.__frueh = [];
+try {
+  window.MiraQuickActions.setResults({ requestId: "r1", items: [{ title: "Treffer A" }] });
+  window.__frueh.push("kein Wurf");
+} catch(e){ window.__frueh.push("GEWORFEN: " + e.message); }
+</script>
+<script src="core.js"></script>
+<script src="quick-actions.js"></script>
+<script>
+window.addEventListener("load", function(){
+  document.getElementById("log").textContent =
+    "frueher Aufruf: " + window.__frueh.join(" | ") +
+    "\nRest in der Warteschlange: " + (window.__mqaBootQueue||[]).length +
+    "\nAPI ist Stub: " + !!(window.MiraQuickActions && window.MiraQuickActions.__isStub);
+});
+</script>

@@ -53,6 +53,26 @@
      da ist -- die Palette also allein auf der Seite liegt -- springt sie ein. */
   setTimeout(ensureCore, 1200);
 
+  /* Boot-Stubs. window.MiraQuickActions entsteht erst ganz unten in dieser Datei -- ein
+     Workflow-Schritt, der frueher MiraQuickActions.setResults(...) ruft, wirft "Cannot read
+     properties of undefined" und reisst den Rest des Schrittes mit. Das Stub-Objekt merkt den
+     Aufruf vor; nach der echten Zuweisung wird die Warteschlange in Aufrufreihenfolge
+     abgearbeitet. Jede andere Komponente dieser Familie hat den Block seit Langem
+     (prompts-table.js:11), hier fehlte er ganz.
+     Nur stubben, wenn noch niemand den Namen besitzt: laeuft diese Datei ein zweites Mal, darf
+     die echte Fassung nicht ueberschrieben werden. */
+  var MQA_API = ["open", "close", "clear", "setTheme", "setTeam", "setBrands", "setMarkets",
+                 "setLoading", "setResults", "setError", "parseItems"];
+  var MQA_Q = (window.__mqaBootQueue = window.__mqaBootQueue || []);
+  if (!window.MiraQuickActions){
+    var stub = {};
+    MQA_API.forEach(function(n){
+      stub[n] = function(){ MQA_Q.push([n, [].slice.call(arguments)]); };
+    });
+    stub.__isStub = true;
+    window.MiraQuickActions = stub;
+  }
+
   var root = document.getElementById('mira-quick-actions');
   if (!root || root.__mqaInit) return; root.__mqaInit = true;
 
@@ -1677,4 +1697,16 @@
   })(40);
 
   window.MiraQuickActions = api;
+  /* Nachholen, was waehrend des Ladens aufgelaufen ist -- in der Reihenfolge, in der es kam.
+     Ein Wurf in einem der Aufrufe darf die restliche Warteschlange nicht mitnehmen, aber auch
+     nicht still verschwinden. */
+  if (MQA_Q.length){
+    var offen = MQA_Q.splice(0, MQA_Q.length);
+    for (var qi = 0; qi < offen.length; qi++){
+      try { api[offen[qi][0]].apply(api, offen[qi][1]); }
+      catch(e){ if (window.console) console.warn("[MQA] vorgemerkter Aufruf " + offen[qi][0] +
+        " ist fehlgeschlagen:", e); }
+    }
+    if (window.console) console.info("[MQA] " + offen.length + " vorgemerkte(r) Aufruf(e) nachgeholt.");
+  }
 })();

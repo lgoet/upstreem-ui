@@ -199,6 +199,22 @@
   function once(url, make){ if (L[url]) return; L[url] = 1; make(url); }
   function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
   function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+
+  /* Stub VOR der CDN-Datei. Ein Workflow-Schritt, der MiraQuickActions.setResults(...) ruft, kann
+     frueher laufen als quick-actions.js -- dann wirft der Aufruf "Cannot read properties of
+     undefined" und reisst den Rest des Schrittes mit. Der Stub in quick-actions.js selbst greift
+     dafuer zu spaet: er entsteht erst, wenn die Datei da ist. Dieser hier laeuft, sobald das
+     Element gerendert wird. quick-actions.js holt die gemerkten Aufrufe nach. */
+  window.__mqaBootQueue = window.__mqaBootQueue || [];
+  if (!window.MiraQuickActions){
+    var mqaStub = {};
+    ["open","close","clear","setTheme","setTeam","setBrands","setMarkets",
+     "setLoading","setResults","setError","parseItems"].forEach(function(n){
+      mqaStub[n] = function(){ window.__mqaBootQueue.push([n, [].slice.call(arguments)]); };
+    });
+    mqaStub.__isStub = true;
+    window.MiraQuickActions = mqaStub;
+  }
   /* core.js zuerst -- der Marken-Store (setUpstreemBrands) lebt dort, und dieser Loader war der
      einzige, der ihn nicht mitgeladen hat. core.css bleibt aussen vor: die Palette bringt ihr
      eigenes Styling mit. */
