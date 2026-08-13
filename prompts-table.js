@@ -4503,6 +4503,20 @@
      reset() ist ein echter No-op, wenn nichts offen ist, deshalb braucht es hier keine zweite
      Abfrage auf "ist ueberhaupt was auf". */
   var LIVE_ROOTS = [];
+  /* Beobachtet style/class/hidden NUR auf den Wurzeln und deren Vorfahren -- die einzigen
+     Knoten, an denen ein Verstecken ueberhaupt stattfinden kann. Mehrfachaufrufe sind harmlos:
+     MutationObserver.observe auf demselben Knoten mit denselben Optionen ersetzt die alte
+     Registrierung, statt eine zweite anzulegen. */
+  function beobachteVorfahren(){
+    if (!rootWatcher) return;
+    for (var i = 0; i < LIVE_ROOTS.length; i++){
+      var n = LIVE_ROOTS[i];
+      while (n && n.nodeType === 1 && n !== document.documentElement){
+        try { rootWatcher.observe(n, { attributes: true, attributeFilter: ["style", "class", "hidden"] }); } catch(e){}
+        n = n.parentNode;
+      }
+    }
+  }
   var rootWatcher = null;
   var hideCheckTimer = null;
   function rootIsHidden(r){
@@ -4533,6 +4547,7 @@
   }
   function watchRootRemoval(root){
     LIVE_ROOTS.push(root);
+    beobachteVorfahren();
     /* Der Beobachter unten reicht nicht: showView("brands") blendet eine Bubble-Gruppe aus, und
        je nachdem, welchen Vorfahren Bubble dabei umschaltet, entsteht im beobachteten Teilbaum
        gar keine Mutation. Die Bulk-Bar haengt ausserdem am document.body, liegt also gar nicht
@@ -4551,10 +4566,17 @@
     }
     if (rootWatcher) return;
     rootWatcher = new MutationObserver(scheduleHideCheck);
-    rootWatcher.observe(document.body, {
-      childList: true, subtree: true,
-      attributes: true, attributeFilter: ["style", "class", "hidden"]
-    });
+    /* Frueher lag hier attributes:true auf dem GANZEN body. Gefragt ist aber nur eine einzige
+       Sache -- wurde meine eigene Wurzel versteckt -- und Bubble schreibt waehrend jeder
+       Animation, jedem Drawer und jedem Hover irgendwo style-Attribute. Jede dieser Aenderungen
+       weckte den Beobachter, obwohl sie die Tabelle nichts angeht.
+
+       Das Verstecken passiert immer an der Wurzel selbst oder an einem ihrer Vorfahren; ein
+       Geschwisterknoten kann sie nicht ausblenden. Also wird genau diese Kette beobachtet, und
+       zwar erst dann, wenn es eine Wurzel gibt. childList bleibt body-weit -- ein neu
+       eingehaengter Root muss weiterhin gefunden werden, und dafuer gibt es keinen engeren Ort. */
+    rootWatcher.observe(document.body, { childList: true, subtree: true });
+    beobachteVorfahren();
   }
   function initRoot(root){
     if (root.__uptController) return root.__uptController;
