@@ -319,6 +319,18 @@
     for (var i = 0; i < list.length; i++) if (String(list[i].id) === String(id)) return list[i];
     return null;
   }
+  /* Schreibt das aktuelle Theme auf einen Knoten. Der Dialog haengt im <body>, ausserhalb jeder
+     Komponentenwurzel; core's Theme-Beobachter faende ihn zwar, aber erst NACH dem Einhaengen --
+     und bis dahin greift die Light-Palette. Im Dark Mode war das ein sehr heller Feldrahmen auf
+     dunklem Grund, sichtbar bis der Beobachter nachzog. */
+  function applyThemeOn(el) {
+    if (!el) return;
+    var dark = UC.getUpstreemTheme ? UC.getUpstreemTheme() === "dark" : false;
+    if (dark) el.setAttribute("data-theme", "dark");
+    else el.removeAttribute("data-theme");
+  }
+  function applyTheme() { if (M) applyThemeOn(M.back); }
+
   function topicHex(t) {
     var dark = UC.getUpstreemTheme ? UC.getUpstreemTheme() === "dark" : false;
     return (dark ? t.hex_dark : t.hex_light) || t.hex_light || t.hex_dark || "#808080";
@@ -701,6 +713,8 @@
       '</div>';
 
     document.body.appendChild(back);
+    /* Vor dem ersten Anzeigen faerben, nicht danach -- siehe applyTheme(). */
+    applyThemeOn(back);
 
     M = {
       back: back,
@@ -983,6 +997,12 @@
     if (opts.market) S.market = String(opts.market).toLowerCase();
 
     S.opener = document.activeElement;
+    /* Das Theme JETZT setzen, nicht auf den nachlaufenden Sweep warten. Der Dialog haengt im
+       <body>, ausserhalb jeder Komponentenwurzel -- data-theme kam bisher erst, wenn core's
+       Theme-Beobachter den frischen Knoten bemerkt hatte. Bis dahin galt die Light-Palette, und
+       im Dark Mode sah man fuer einen Moment einen sehr hellen Feldrahmen auf dunklem Grund.
+       Dieselbe Zeile wie in UC.makeTopicModal, aus demselben Grund. */
+    applyTheme();
     M.card.classList.remove("is-saving");
     isOpen = true;
     M.input.value = "";
@@ -1016,7 +1036,9 @@
     S.csvNote = ""; S.csvSkipped = 0; S.csvName = ""; S.capNote = "";
     if (M) renderAll();
   };
-  window.setAddPromptsTheme = function (t) { if (UC.setUpstreemTheme) UC.setUpstreemTheme(t); };
+  /* applyTheme() zusaetzlich, damit ein Themewechsel bei OFFENEM Dialog sofort greift und nicht
+     erst, wenn core's Sweep den Portal-Knoten wieder erwischt. */
+  window.setAddPromptsTheme = function (t) { if (UC.setUpstreemTheme) UC.setUpstreemTheme(t); applyTheme(); };
   /* The team's default market, as alpha-2. Prefills the picker every time the dialog opens; the
      user can still change or clear it, and that choice lasts for that one batch. */
   window.setUpstreemDefaultMarket = function (a2) {

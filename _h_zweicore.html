@@ -1,0 +1,20 @@
+<!doctype html><meta charset="utf-8"><title>Zwei core.js auf einer Seite</title>
+<link rel="stylesheet" href="core.css">
+<link rel="stylesheet" href="page-headers/dashboard-page-header.css">
+<!-- core_alt.js liegt nicht im Repo. Vor dem Oeffnen anlegen:
+       git show 1e25aa4:core.js > core_alt.js
+     Das ist die Fassung vom 10.08.2026, VOR makePageHeaderMeta -- also genau das, was ein
+     leerer data-cdn-pin ueber "@main" aus einem alten Cache liefern kann. -->
+<body style="padding:24px;background:#fff">
+<div class="up-root dph-root" id="dh" data-instance="dh" data-brand-name="Acme" data-isdark="no"></div>
+<script>
+  window.__warn = [];
+  var _w = console.warn; console.warn = function(){ window.__warn.push([].join.call(arguments," ")); _w.apply(console, arguments); };
+</script>
+<!-- Genau die Bubble-Lage: die RICHTIG gepinnte core.js zuerst, danach eine Komponente
+     mit leerem Pin, deren "@main" aus einem alten Cache kommt. -->
+<script src="core.js"></script>
+<script>window.__nachNeu = { build: window.UpstreemCore.BUILD, meta: typeof window.UpstreemCore.makePageHeaderMeta };</script>
+<script src="core_alt.js"></script>
+<script>window.__nachAlt = { build: window.UpstreemCore.BUILD, meta: typeof window.UpstreemCore.makePageHeaderMeta };</script>
+<script src="page-headers/dashboard-page-header.js"></script>

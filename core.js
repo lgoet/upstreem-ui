@@ -5191,7 +5191,13 @@
   }
 
   function setUpstreemTheme(t){
-    var dark = /^dark$/i.test(String(t == null ? "" : t).trim());
+    /* "dark"/"light" UND die Bubble-Form "yes"/"no". Bisher galt nur /^dark$/i, also machte
+       setUpstreemTheme("yes") -- die Form, die jeder Bubble-Workflow liefert -- daraus HELL.
+       Aufgefallen an add-prompts: setAddPromptsTheme("yes") schaltete den Dialog auf die helle
+       Palette, bis der Theme-Waechter das kurz darauf zurueckdrehte. Genau der helle Feldrahmen,
+       der beim Oeffnen im Dark Mode fuer einen Moment zu sehen war. */
+    var roh = String(t == null ? "" : t).trim();
+    var dark = /^dark$/i.test(roh) || /^(yes|y|true|1)$/i.test(roh);
     THEME.value = dark ? "dark" : "light";
     try { localStorage.setItem("pref_theme", THEME.value); } catch(e){}
     var roots = document.querySelectorAll(".up-root");
@@ -5368,7 +5374,12 @@
   window.setUpstreemTeam = setUpstreemTeam;
   window.getUpstreemTeam = getTeam;
 
-  window.UpstreemCore = {
+  /* BUILD: Datum dieser Fassung als Zahl. Wird von der Verdraengungssperre unten gelesen -- bei
+     jeder Aenderung an core.js mit hochziehen (Format JJJJMMTT, zweistellig zaehlend). */
+  var BUILD = 20260813;
+
+  var API = {
+    BUILD: BUILD,
     upstreemSetTheme: upstreemSetTheme,
     readPrefTheme: readPrefTheme,
     themeGuard: themeGuard,
@@ -5543,4 +5554,49 @@
     lineWidthSectionHtml: lineWidthSectionHtml,
     getColorScalePref: getColorScalePref, setColorScalePref: setColorScalePref
   };
+
+  /* ---- Verdraengungssperre -------------------------------------------------------------------
+     Eine Bubble-Seite kann core.js MEHRFACH laden: jede Komponente hat ihren eigenen
+     data-cdn-pin, und ein leer gelassener Pin zieht "@main" -- was jsDelivr und der Browser aus
+     einem tagealten Cache liefern duerfen. Bisher gewann schlicht die zuletzt eingetroffene
+     Kopie, also je nach Netzlaufzeit auch mal die aelteste. Auf dem einen Rechner lief damit die
+     neue Fassung, auf dem naechsten eine von vor einer Woche -- und Komponenten mit korrektem
+     Pin starben an Kits, die es in DIESER core.js noch nicht gab ("UC.makePageHeaderMeta is not
+     a function" im Dashboard, obwohl der Pin des Seitenkopfs stimmte).
+
+     Ab hier gilt: die hoechste BUILD-Nummer gewinnt, unabhaengig von der Ankunftsreihenfolge.
+     Zwei Richtungen, weil aeltere Fassungen diese Regel selbst nicht kennen:
+       - Kommt diese Datei NACH einer neueren an, tritt sie zurueck.
+       - Kommt sie davor, schuetzt ein Setter den Platz gegen spaeter eintreffende aeltere Kopien.
+     Der Setter laesst jede NEUERE Zuweisung durch; er blockiert nichts ausser Rueckschritten. */
+  var vorhanden = window.UpstreemCore;
+  var vorhandenBuild = (vorhanden && typeof vorhanden.BUILD === "number") ? vorhanden.BUILD : -1;
+
+  if (vorhandenBuild > BUILD){
+    if (window.console) console.warn("upstreem: core.js " + BUILD + " tritt hinter die bereits " +
+      "geladene Fassung " + vorhandenBuild + " zurueck (mehrere data-cdn-pins auf dieser Seite).");
+    return;
+  }
+
+  var aktuell = API;
+  try {
+    Object.defineProperty(window, "UpstreemCore", {
+      configurable: true,
+      get: function(){ return aktuell; },
+      set: function(wert){
+        var b = (wert && typeof wert.BUILD === "number") ? wert.BUILD : -1;
+        if (b < aktuell.BUILD){
+          if (window.console) console.warn("upstreem: eine aeltere core.js (" +
+            (b < 0 ? "ohne BUILD" : b) + ") wollte die geladene Fassung " + aktuell.BUILD +
+            " ersetzen und wurde abgewiesen. Ein data-cdn-pin auf dieser Seite ist veraltet oder leer.");
+          return;
+        }
+        aktuell = wert;
+      }
+    });
+  } catch(e){
+    /* defineProperty kann an einer bereits nicht-konfigurierbaren Eigenschaft scheitern. Dann
+       eben ohne Schutz zuweisen -- lieber eine ungeschuetzte core.js als gar keine. */
+    window.UpstreemCore = API;
+  }
 })();
