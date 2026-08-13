@@ -105,7 +105,9 @@
 
   Der Render-Schritt faengt beides ab, gleiche Bauart wie in brands_overview_bubble.html:
 
-      var RAW = `[RPC-Ergebnis]`.replace(/:\s*([,}\]])/g, ": null$1");
+      var RAW = `[RPC-Ergebnis]`
+        .replace(/:\s*([,}\]])/g, ": null$1")
+        .replace(/:\s*(yes|no)\s*([,}\]])/g, function(_, v, t){ return ": " + (v === "yes") + t; });
       var data = JSON.parse(RAW);
       var payload = Array.isArray(data) ? { cells: data } : data;
       payload.instanceId = "ROOTID_[dynamic id]";
@@ -240,7 +242,10 @@
     var els = document.getElementsByClassName(cls), i, p;
     for (i = 0; i < els.length; i++){
       p = (els[i].getAttribute("data-cdn-pin") || "").trim();
-      if (p && p !== "CDN_PIN") return p;
+      /* Gespaltener Platzhalter: wer "CDN_PIN" global im Element ersetzt, wuerde sonst auch diesen
+         Waechter treffen -- der Vergleich waere dann pin === "<der Hash>" und der Loader liefe
+         dauerhaft auf @main, obwohl ein Pin gesetzt ist. */
+      if (p && p !== "CDN_" + "PIN") return p;
     }
     return "main";
   }

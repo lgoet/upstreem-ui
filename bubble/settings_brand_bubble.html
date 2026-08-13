@@ -49,6 +49,14 @@
       Markt, Business Model, Industry und Summary laufen bis dahin in einen Entwurf. business_model
       ist "b2b" | "b2c" | "hybrid".
 
+  data-saved-fn       = "bubble_fn_usbSaved_[dynamic id]"
+      fn('{"block":"models"}')     block: "models" | "meta"
+      Feuert direkt nach einem erfolgreichen Klick auf einen der beiden Speichern-Knoepfe, noch
+      bevor der Server geantwortet hat. Gedacht fuer die Rueckmeldung "Changes saved". Fehlt das
+      Attribut, meldet die Konsole bei jedem Speichern "usbSaved not found on window/parent/top" --
+      die Komponente selbst funktioniert weiter, der Knopf graut aus und "Unsaved changes"
+      verschwindet.
+
   data-leave-fn       = "bubble_fn_usbLeaveTeam_[dynamic id]"
   data-delete-fn      = "bubble_fn_usbDeleteTeam_[dynamic id]"
       fn('{"team_id":"…","team_name":"…"}')
@@ -155,6 +163,7 @@
      data-logourl-fn="bubble_fn_usbLogoUrl_ID"
      data-models-fn="bubble_fn_usbModels_ID"
      data-meta-fn="bubble_fn_usbMeta_ID"
+     data-saved-fn="bubble_fn_usbSaved_ID"
      data-leave-fn="bubble_fn_usbLeaveTeam_ID"
      data-delete-fn="bubble_fn_usbDeleteTeam_ID"></div>
 
@@ -188,7 +197,10 @@
     });
   var root = document.querySelector(".usb-root[data-cdn-pin]");
   var pin = root ? String(root.getAttribute("data-cdn-pin") || "").trim() : "";
-  if (!pin || pin === "CDN_PIN") pin = "main";
+  /* Gespaltener Platzhalter: wer "CDN_PIN" global im Element ersetzt, wuerde sonst auch diesen
+     Waechter treffen -- der Vergleich waere dann pin === "<der Hash>" und der Loader liefe
+     dauerhaft auf @main, obwohl ein Pin gesetzt ist. */
+  if (!pin || pin === "CDN_" + "PIN") pin = "main";
   var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + pin + "/";
   function css(href){
     if (document.querySelector('link[href="' + href + '"]')) return;
@@ -212,7 +224,9 @@
   verloren: aus  "score": null,  wird  "score": ,  und JSON.parse wirft. Gleiche Bauart wie in
   brands_overview_bubble.html:
 
-      var RAW = `[RPC-Ergebnis]`.replace(/:\s*([,}\]])/g, ": null$1");
+      var RAW = `[RPC-Ergebnis]`
+        .replace(/:\s*([,}\]])/g, ": null$1")
+        .replace(/:\s*(yes|no)\s*([,}\]])/g, function(_, v, t){ return ": " + (v === "yes") + t; });
       var payload = JSON.parse(RAW);
       payload.instanceId = "settings_brand";
       window.renderSettingsBrand(payload);

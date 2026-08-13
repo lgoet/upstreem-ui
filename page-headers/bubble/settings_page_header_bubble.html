@@ -67,7 +67,10 @@
 (function(){
   var root = document.querySelector(".sph-root[data-cdn-pin]");
   var pin = root ? String(root.getAttribute("data-cdn-pin") || "").trim() : "";
-  if (!pin || pin === "CDN_PIN") pin = "main";
+  /* Gespaltener Platzhalter: wer "CDN_PIN" global im Element ersetzt, wuerde sonst auch diesen
+     Waechter treffen -- der Vergleich waere dann pin === "<der Hash>" und der Loader liefe
+     dauerhaft auf @main, obwohl ein Pin gesetzt ist. */
+  if (!pin || pin === "CDN_" + "PIN") pin = "main";
   var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + pin + "/";
   function css(href){
     if (document.querySelector('link[href="' + href + '"]')) return;

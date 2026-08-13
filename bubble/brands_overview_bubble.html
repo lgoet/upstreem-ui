@@ -120,13 +120,25 @@
 
   (function () {
     // --- Sanitizer: rohen/kaputten Bubble-Output -> gueltige Arrays ---
-    function toArr(raw) {
+    function toArr(raw, slot) {
       var s = String(raw == null ? "" : raw).trim();
       if (!s) return [];
       if (s[0] === "{") s = "[" + s + "]";
       s = s.replace(/:\s*([,}\]])/g, ": null$1");
+      /* Zweite Sanitizer-Zeile (STYLEGUIDE 46b): Bubble schreibt einen Boolean als nacktes yes
+         bzw. no ohne Anfuehrungszeichen. Ohne diese Zeile bricht der Datensatz beim ersten
+         Boolean-Feld -- und weil der catch unten leer war, lautlos. */
+      s = s.replace(/:\s*(yes|no)\s*([,}\]])/g, function(_, v, t){ return ": " + (v === "yes") + t; });
       s = s.replace(/,\s*([}\]])/g, "$1");
-      try { return eval("(" + s + ")"); } catch (e) { return []; }
+      try { return eval("(" + s + ")"); }
+      catch (e) {
+        /* Nicht still. Ein leeres Array sieht danach aus wie "keine Daten", und genau diese
+           Verwechslung kostet beim Suchen die meiste Zeit. */
+        if (window.console) console.error("[brands-overview] Der Slot \"" + (slot || "?") +
+          "\" liess sich nicht lesen und wird als leer behandelt. Fehler: " + e.message +
+          " -- Anfang: " + s.slice(0, 120));
+        return [];
+      }
     }
     // --- Sanitizer: rohen/leeren Bubble-Output -> gueltige Zahl ---
     function toNum(raw) {
@@ -140,19 +152,19 @@
       granularity: ``,
       totalCount: toNum(``),
       totalCountInactive: toNum(``),
-      series: toArr(`[]`),
+      series: toArr(`[]`, "series"),
 
 
-      companies: toArr(`[]`),
+      companies: toArr(`[]`, "companies"),
 
 
-      table: toArr(`[]`),
+      table: toArr(`[]`, "table"),
 
 
-      filterCompanies: toArr(`[]`),
+      filterCompanies: toArr(`[]`, "filterCompanies"),
 
 
-      inactive: toArr(`[]`)
+      inactive: toArr(`[]`, "inactive")
     };
 
     var t = 0;
@@ -351,7 +363,10 @@
     var els = document.getElementsByClassName(cls), i, p;
     for (i = 0; i < els.length; i++){
       p = (els[i].getAttribute("data-cdn-pin") || "").trim();
-      if (p && p !== "CDN_PIN") return p;
+      /* Gespaltener Platzhalter: wer "CDN_PIN" global im Element ersetzt, wuerde sonst auch diesen
+         Waechter treffen -- der Vergleich waere dann pin === "<der Hash>" und der Loader liefe
+         dauerhaft auf @main, obwohl ein Pin gesetzt ist. */
+      if (p && p !== "CDN_" + "PIN") return p;
     }
     return "main";
   }

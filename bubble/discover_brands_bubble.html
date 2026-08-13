@@ -16,6 +16,10 @@
   | data-instance  | ja      | frei gewaehlt, muss zu den Aufrufen unten passen     |
   | data-cdn-pin   | ja      | Commit-Hash, identisch mit allen anderen Komponenten |
   | data-isdark    | nein    | "yes" / "no", sonst folgt es dem Seiten-Theme        |
+  | data-sticky    | nein    | "yes" / "no". Tabellenkopf bleibt beim Scrollen stehen |
+  | data-sticky-top| nein    | Abstand von oben in px, an dem er haengt (z.B. "171"). |
+  |                |         | Muss zur Hoehe der fixierten Seitenkopfzeile passen,   |
+  |                |         | sonst klebt er darunter oder verschwindet dahinter.    |
   | data-search-fn | nein    | Standard bubble_fn_udbSearch                         |
   | data-matched-fn| nein    | Standard bubble_fn_udbMatched                        |
   | data-track-fn  | nein    | Standard bubble_fn_udbTrack                          |
@@ -103,7 +107,10 @@
   function readPin(cls){
     var els = document.getElementsByClassName(cls), i, p;
     for (i = 0; i < els.length; i++){
-      p = els[i].getAttribute("data-cdn-pin");
+      /* trim: ein Leerzeichen aus der Bubble-Konstante ergaebe sonst .../upstreem-ui@ abc /core.js,
+         jsDelivr antwortet mit 404, und weder CSS noch JS landen -- das Element bleibt leer.
+         Ohne trim greift auch der @main-Rueckfall nicht, weil "   " truthy ist. */
+      p = (els[i].getAttribute("data-cdn-pin") || "").trim();
       if (p && p !== "CDN_" + "PIN") return p;
     }
     return "main";

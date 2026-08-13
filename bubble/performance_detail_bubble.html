@@ -170,7 +170,10 @@
   function readPin(cls){
     var els = document.getElementsByClassName(cls), i, p;
     for (i = 0; i < els.length; i++){
-      p = els[i].getAttribute("data-cdn-pin");
+      /* trim: ein Leerzeichen aus der Bubble-Konstante ergaebe sonst .../upstreem-ui@ abc /core.js,
+         jsDelivr antwortet mit 404, und weder CSS noch JS landen -- das Element bleibt leer.
+         Ohne trim greift auch der @main-Rueckfall nicht, weil "   " truthy ist. */
+      p = (els[i].getAttribute("data-cdn-pin") || "").trim();
       if (p && p !== "CDN_" + "PIN") return p;
     }
     return "main";

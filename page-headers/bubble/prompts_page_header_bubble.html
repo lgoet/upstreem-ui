@@ -110,7 +110,10 @@
     var els = document.getElementsByClassName(cls), i, p;
     for (i = 0; i < els.length; i++){
       p = (els[i].getAttribute("data-cdn-pin") || "").trim();
-      if (p && p !== "CDN_PIN") return p;
+      /* Gespaltener Platzhalter: wer "CDN_PIN" global im Element ersetzt, wuerde sonst auch diesen
+         Waechter treffen -- der Vergleich waere dann pin === "<der Hash>" und der Loader liefe
+         dauerhaft auf @main, obwohl ein Pin gesetzt ist. */
+      if (p && p !== "CDN_" + "PIN") return p;
     }
     return "main";
   }

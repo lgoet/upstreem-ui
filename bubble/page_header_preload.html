@@ -63,7 +63,8 @@
 
      Diese Stubs schreiben den Aufruf in eine Queue, die core.js beim Start leert. Sie stehen hier
      und nicht in einer Komponente, weil hier der einzige Code der Seite läuft, der garantiert vor
-     jedem CDN-Script dran ist. Alle drei Stores, dieselbe Mechanik — kein Sonderweg für einen. */
+     jedem CDN-Script dran ist. Drei davon teilen sich die Mechanik; der vierte, setUpstreemAllMarkets, braucht
+     eine eigene Form und steht darum darunter. */
   ["Topics","Markets","Brands"].forEach(function(n){
     var q = "__up" + n + "Queue";
     window[q] = window[q] || [];
@@ -71,6 +72,17 @@
       window["setUpstreem" + n] = function(rows){ window[q].push(rows); };
     }
   });
+  /* setUpstreemAllMarkets ist ein VIERTER Store, nicht dieselbe Mechanik: er hat eine eigene
+     Warteschlange mit einer anderen Form ({all:true, rows}), weil core.js darin gefilterte und
+     volle Marktliste auseinanderhalten muss. Die Schleife oben kann ihn deshalb nicht mitnehmen.
+     Fehlt er, zeigt jede Auswahl mit voller Marktliste kommentarlos die GEFILTERTE Liste, und die
+     Diagnose meldet "Aufrufe 0". */
+  window.__upstreemMarketQueue = window.__upstreemMarketQueue || [];
+  if (typeof window.setUpstreemAllMarkets !== "function"){
+    window.setUpstreemAllMarkets = function(rows){
+      window.__upstreemMarketQueue.push({ all: true, rows: rows }); return true;
+    };
+  }
 
   /* core zuerst — async=false hält die Reihenfolge ein, die Komponenten brauchen core.js vorher.
      Die Liste darunter darf gekürzt werden auf das, was auf DIESER Page wirklich vorkommt; alles
@@ -89,6 +101,17 @@
   css("brands-overview.css");         js("brands-overview.js");
   css("performance-radar.css");       js("performance-radar.js");
   css("quick-actions.css");           js("quick-actions.js");
+  /* Nachgetragen: diese acht fehlten und wurden darum erst beim Oeffnen ihres Drawers geholt --
+     ein render-blockendes <link> mitten in der Oeffnungsanimation. Wer eine neue Komponente baut,
+     traegt sie hier ein. */
+  css("performance-detail.css");      js("performance-detail.js");
+  css("discover-brands.css");         js("discover-brands.js");
+  css("settings-brand.css");          js("settings-brand.js");
+  css("opportunities.css");           js("opportunities.js");
+  css("ask-mira.css");                js("ask-mira.js");
+  css("prompt-research.css");         js("prompt-research.js");
+  css("add-prompts.css");             js("add-prompts.js");
+  css("create-with-ai.css");          js("create-with-ai.js");
 
   /* Chart.js vorwärmen. Ohne das wird es erst beim ERSTEN Chart-Render geholt — also mitten im
      Öffnen des ersten Drawers, der einen Chart enthält. Das data-Attribut ist genau das, worauf

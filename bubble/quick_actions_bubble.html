@@ -192,7 +192,10 @@
   function readPin(){
     var el = document.getElementById("mira-quick-actions");
     var p = el ? (el.getAttribute("data-cdn-pin") || "").trim() : "";
-    return (p && p !== "CDN_PIN") ? p : "main";
+    /* Gespaltener Platzhalter: wer "CDN_PIN" global im Element ersetzt, wuerde sonst auch diesen
+       Waechter treffen -- der Vergleich waere dann pin === "<der Hash>" und der Loader liefe
+       dauerhaft auf @main, obwohl ein Pin gesetzt ist. */
+    return (p && p !== "CDN_" + "PIN") ? p : "main";
   }
   var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin() + "/";
   var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
