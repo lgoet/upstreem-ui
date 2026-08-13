@@ -348,3 +348,12 @@
 /* Die Ueberschriften und Beschreibungen bleiben stehen: sie sind fest, nicht geladen. Nur was vom
    Server kommt, wird verdeckt. */
 .usb-root.is-loading .usb-savebtn { pointer-events: none; opacity: .5; }
+
+/* Das Modell-Skelett stand Kante an Kante auf dem Separator darunter. Die Flaeche deckt den
+   ganzen Container ab, und der hatte unten keinen Abstand -- bei sichtbaren Kacheln faellt das
+   nicht auf, als durchgehende graue Flaeche schon. */
+.usb-models { padding-bottom: 16px; }
+/* Die Skelettflaeche deckt inset:0 ab, also auch dieses Padding -- sie muss ausdruecklich 16px
+   frueher enden, sonst liegt sie weiterhin Kante an Kante auf dem Separator. */
+.usb-root.is-loading .usb-models.usb-skelbox::before,
+.usb-root.is-loading .usb-models.usb-skelbox::after { bottom: 16px; }

@@ -4854,7 +4854,14 @@
      Darum zwei Stores statt eines Flags: ALL_MARKETS wird von setUpstreemAllMarkets gefuellt und
      faellt auf MARKETS zurueck, solange niemand ihn gesetzt hat. Eine Seite, die den neuen Setter
      noch nicht ruft, verhaelt sich damit exakt wie vorher. */
-  var ALL_MARKETS = { list: [], at: 0, seq: 0, subs: [], calls: 0, rejected: 0 };
+  /* Am window, nicht in dieser Closure -- genau wie MARKETS eine Zeile weiter oben. Laedt eine
+     Seite core.js mehr als einmal (ein Element mit leerem data-cdn-pin holt @main, ein anderes
+     seinen Pin), gibt es zwei Closures. Mit einem Store IN der Closure fuellt der Aufruf den einen
+     und die Komponente liest den anderen: "Aufrufe 0", volle Liste nirgends, waehrend die
+     GEFILTERTE Liste funktioniert -- die lag von Anfang an am window. Genau dieses Bild hatten
+     wir, und es hat mich vier Runden gekostet. */
+  var ALL_MARKETS = (window.__upAllMarkets = window.__upAllMarkets ||
+    { list: [], at: 0, seq: 0, subs: [], calls: 0, rejected: 0 });
   function setAllMarkets(rows, label){
     ALL_MARKETS.calls = (ALL_MARKETS.calls || 0) + 1;
     var list = parseLoose(rows, label || "all-markets");
@@ -4931,6 +4938,20 @@
     }
     if (window.console) console.info("[markets] " + q.length + " vorgemerkte Aufruf(e) nachgeholt.");
   })();
+  /* Zum Nachsehen in der Konsole: UpstreemCore.dumpMarkets() zeigt beide Listen nebeneinander.
+     Ohne das ist "zu wenige Maerkte" nicht von "falsche Liste" zu unterscheiden. */
+  function dumpMarkets(){
+    var voll = ALL_MARKETS.list, gef = MARKETS.list;
+    if (window.console){
+      console.info("VOLL (setUpstreemAllMarkets): " + voll.length + " Eintraege, " +
+        ALL_MARKETS.calls + " Aufruf(e), " + ALL_MARKETS.rejected + " abgelehnt");
+      if (console.table && voll.length) console.table(voll.slice(0, 400));
+      console.info("GEFILTERT (setUpstreemMarkets): " + gef.length + " Eintraege");
+      if (console.table && gef.length) console.table(gef.slice(0, 400));
+      console.info("Warteschlange: " + ((window.__upstreemMarketQueue || []).length) + " Eintrag/Eintraege");
+    }
+    return { voll: voll.slice(), gefiltert: gef.slice() };
+  }
   window.getUpstreemMarkets = getMarkets;
   window.upstreemMarketsChanged = marketsChanged;
   (function drainMarketsQueue(){
@@ -5269,6 +5290,7 @@
     getBrands: getBrands,
     /* Diagnose fuer leere Zustaende: wie oft wurde der Setter gerufen, wie oft war die
        Payload unlesbar. Damit kann ein leerer Store sagen, WARUM er leer ist. */
+    dumpMarkets: dumpMarkets,
     storeStats: function(){
       function one(S){
         return { calls: S.calls || 0, rejected: S.rejected || 0, n: S.list.length,
