@@ -70,6 +70,34 @@
     check:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
   };
 
+  /* Feste Branchenliste. Sie kommt nicht aus Bubble, weil sie sich praktisch nie aendert und
+     jeder Weg dorthin (Attribut, Payload) nur eine weitere Stelle waere, an der etwas fehlen kann.
+     Wer etwas anderes braucht, tippt es unten im Dropdown selbst ein -- das Feld gibt es dafuer.
+     Aendert sich die Liste doch einmal, wird sie hier geaendert; ein Payload mit industries
+     uebersteuert sie weiterhin. */
+  var INDUSTRIES = [
+    "Agriculture & Food",
+    "Automotive & Mobility",
+    "Construction & Real Estate",
+    "Consulting & Agencys",
+    "E-Commerce & Retail",
+    "Education & Training",
+    "Energy & Utilities",
+    "Fashion & Beauty",
+    "Finance & Insurance",
+    "Health & Pharma",
+    "Hospitality & Gastronomy",
+    "Industry & Manufacturing",
+    "Legal & Compliance",
+    "Logistics & Transport",
+    "Media & Publishing",
+    "Non-Profit & Public Sector",
+    "SaaS & Software",
+    "Sports & Fitness",
+    "Telecommunications",
+    "Travel & Tourism"
+  ];
+
   var BUSINESS = [
     { value: "b2b",    label: "B2B" },
     { value: "b2c",    label: "B2C" },
@@ -86,7 +114,7 @@
     var saved = { models: [], marketId: "", businessModel: "", industry: "", summary: "" };
     var draft = { models: [], marketId: "", businessModel: "", industry: "", summary: "" };
     var meta  = { brandName: "", brandLogo: "", teamName: "", teamId: "",
-                  modelLimit: 3, canManage: true, markets: [], industries: [], logoFileName: "" };
+                  modelLimit: 3, canManage: true, markets: [], industries: INDUSTRIES.slice(), logoFileName: "" };
     var loading = false;
 
     function isDark(){ return UC.isYes(root.getAttribute("data-isdark")); }
@@ -816,13 +844,14 @@
       ["data-team-name",    function(v){ meta.teamName = v; }],
       ["data-brand-market",       function(v){ saved.marketId = v.trim().toLowerCase(); draft.marketId = saved.marketId; }],
       ["data-brand-business",     function(v){ saved.businessModel = v.trim().toLowerCase(); draft.businessModel = saved.businessModel; }],
-      ["data-brand-industry",     function(v){ saved.industry = v; draft.industry = v; }],
-      ["data-brand-summary",      function(v){ saved.summary = v; draft.summary = v; }],
-      /* Kommagetrennt, weil eine Bubble-Liste sich mit :join with genau so ausgeben laesst.
-         Leere Eintraege fliegen raus, damit ein Trennzeichen am Ende keine leere Zeile erzeugt. */
-      ["data-brand-industries",   function(v){
-        meta.industries = v.split(",").map(function(x){ return x.trim(); }).filter(Boolean);
-      }]
+      ["data-brand-industry",     function(v){
+        saved.industry = v; draft.industry = v;
+        /* Eine gespeicherte Branche, die nicht in der festen Liste steht (frueher selbst
+           eingetippt), gehoert trotzdem ins Dropdown -- sonst zeigt der Trigger einen Wert, den
+           die Liste darunter nicht kennt. */
+        if (v && meta.industries.indexOf(v) === -1) meta.industries.push(v);
+      }],
+      ["data-brand-summary",      function(v){ saved.summary = v; draft.summary = v; }]
     ];
     function readAttrs(){
       var got = false;
