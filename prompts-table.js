@@ -912,7 +912,15 @@
       } else {
         rows.forEach(function(r){ state.selected[String(r.prompt_id)] = true; });
       }
-      persist(); renderTable(); syncSelectAll(); fireSelect(); syncStagedTopicsToSelection();
+      /* syncRowChecks statt renderTable: die Auswahl aendert Haken und Zeilenklasse, nicht den
+         Inhalt. Der volle Neuaufbau liess bei jedem Klick auf die Kopf-Checkbox alle Markenlogos
+         neu laden und alle Themen-Chips neu vermessen -- sichtbares Flackern, und die
+         Chip-Vermessung ist die teuerste Schleife dieser Datei.
+         syncRowChecks setzt genau das Noetige (is-checked, aria-checked, Haken-SVG, is-selected)
+         und wird direkt darunter fuer diesen Zweck beschrieben; die Einzel-Checkbox der Zeile
+         benutzt sie seit jeher. Der Gruppierungsfall kommt hier nicht an, der Zweig oben kehrt
+         vorher zurueck und rendert selbst. */
+      persist(); syncRowChecks(); syncSelectAll(); fireSelect(); syncStagedTopicsToSelection();
     }
     /* Updates the checkboxes in place instead of re-rendering the table.
        renderTable() replaces elTbody.innerHTML wholesale, which recreates every <img> in every
