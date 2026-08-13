@@ -225,10 +225,15 @@
                "Wenn diese Seite keinen solchen Aufruf hat, gib die volle Liste direkt mit: " +
                "renderSettingsBrand({ instanceId: ..., markets: [...] })."));
       }
+      /* Keine Zahl hinter dem Namen, wenn die VOLLE Liste die Quelle ist. Dort steht bei fast
+         jedem Land eine 0 -- eine Spalte aus Nullen sagt nichts und liest sich wie ein Defekt.
+         In den Tabellenfiltern ist die Zahl sinnvoll, weil die Liste dort nur Maerkte enthaelt,
+         in denen tatsaechlich etwas laeuft. */
+      var mitZahl = (quelle === "gefiltert");
       return raw.map(function(m){
         var a2 = String(m.alpha2 || m.alpha3 || "").toLowerCase();
         return { id: a2, name: m.name || a2.toUpperCase(),
-                 score: m.prompt_count == null ? null : UC.toNum(m.prompt_count) };
+                 score: (mitZahl && m.prompt_count != null) ? UC.toNum(m.prompt_count) : null };
       }).filter(function(m){ return !!m.id; });
     }
     function findMarket(id){
