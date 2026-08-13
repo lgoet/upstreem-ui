@@ -153,8 +153,38 @@
        aus einer aelteren Fassung noch eine markets-Liste im renderSettingsBrand-Aufruf stehen hat,
        sah dauerhaft diese kurze Liste, obwohl setUpstreemAllMarkets laengst die volle geliefert
        hatte. Eine Liste im Payload greift jetzt nur noch, wenn der Store leer ist. */
+    /* Die volle Liste notfalls SELBST aus der Warteschlange holen.
+       Der Aufruf beim Seitenaufbau landet in window.__upstreemMarketQueue, wenn er kommt, bevor
+       core.js da ist -- und core.js holt ihn nach. Ist auf der Seite aber ein core.js von einem
+       aelteren Pin geladen (irgendeine andere Komponente mit altem data-cdn-pin gewinnt das
+       Rennen), dann kennt dieses core.js setAllMarkets ueberhaupt nicht: die Warteschlange bleibt
+       liegen, der Store zeigt "Aufrufe 0", und die Auswahl faellt kommentarlos auf die gefilterte
+       Liste zurueck. Genau dieses Bild hatten wir.
+       Statt darauf zu warten, dass jede Seite den richtigen Pin hat, liest die Komponente die
+       liegengebliebenen Zeilen hier direkt. */
+    function pendingAll(){
+      var q = window.__upstreemMarketQueue;
+      if (!q || !q.length) return [];
+      for (var i = q.length - 1; i >= 0; i--){
+        if (!q[i] || !q[i].all) continue;
+        var rows = q[i].rows;
+        if (typeof rows === "string"){
+          var txt = rows
+            .replace(/:\s*([,}\]])/g, ": null$1")
+            .replace(/:\s*(yes|no)\s*([,}\]])/g, function(_, v, t){ return ": " + (v === "yes") + t; });
+          try { rows = JSON.parse(txt); }
+          catch(e){ rows = UC.parseBubbleJson ? UC.parseBubbleJson(rows) : null; }
+        }
+        if (Array.isArray(rows) && rows.length) return rows;
+      }
+      return [];
+    }
+
     function marketList(){
-      var raw = UC.getAllMarkets ? UC.getAllMarkets() : (UC.getMarkets ? UC.getMarkets() : []);
+      var quelle = "voll";
+      var raw = UC.getAllMarkets ? UC.getAllMarkets() : [];
+      if (!raw.length){ raw = pendingAll(); if (raw.length) quelle = "warteschlange"; }
+      if (!raw.length){ raw = UC.getMarkets ? UC.getMarkets() : []; if (raw.length) quelle = "gefiltert"; }
       if (!raw.length) return meta.markets;
       /* Einmal pro Sitzung in die Konsole schreiben, WOHER die Liste kommt. Ohne das ist "zu wenige
          Maerkte" nicht von "falsche Komponente" zu unterscheiden, und genau daran haben wir zwei
@@ -166,8 +196,12 @@
           "Store allMarkets: " + st.allMarkets.n + " (Aufrufe " + st.allMarkets.calls +
           ", abgelehnt " + st.allMarkets.rejected + "), " +
           "Store markets (gefiltert): " + st.markets.n + ". " +
-          (st.allMarkets.n ? "Quelle ist die VOLLE Liste."
-                           : "Quelle ist die GEFILTERTE Liste -- setUpstreemAllMarkets hat nichts geliefert."));
+          (quelle === "voll" ? "Quelle ist die VOLLE Liste."
+           : quelle === "warteschlange"
+             ? "Quelle ist die WARTESCHLANGE -- das geladene core.js kennt setAllMarkets nicht " +
+               "(alter data-cdn-pin an irgendeiner Komponente dieser Seite). Die Liste stimmt, " +
+               "aber der Store bleibt leer."
+             : "Quelle ist die GEFILTERTE Liste -- setUpstreemAllMarkets hat nichts geliefert."));
       }
       return raw.map(function(m){
         var a2 = String(m.alpha2 || m.alpha3 || "").toLowerCase();
