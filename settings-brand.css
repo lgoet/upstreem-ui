@@ -151,19 +151,33 @@
    Nur Breite und die Flaggenzeile. Trigger, Menue, Zeilen, Haken, Suchfeld und der offene Zustand
    kommen unveraendert aus core -- inklusive der Tatsache, dass der Chevron sich NICHT dreht und der
    offene Trigger einen grauen Hintergrund bekommt statt eines farbigen Rahmens. */
-/* In einem Formular ist der Trigger ein FELD, kein Werkzeugleisten-Knopf: sichtbarer Rahmen,
-   heller Grund, Chevron rechts. Der Core-Trigger ist absichtlich rahmenlos, weil er ueber
-   Tabellen zwischen anderen Icon-Knoepfen steht -- hier steht er neben Textfeldern und muss wie
-   eines aussehen. Menue, Zeilen, Haken und Suche bleiben unveraendert die aus core. */
-.usb-dd .usb-ddbtn { min-width: 220px; height: 32px; padding: 0 8px 0 12px;
-  justify-content: space-between; border: 1px solid var(--vc-border); border-radius: 9px;
-  background: transparent; }
-.usb-dd .usb-ddbtn:hover { border-color: var(--vc-hover-border); background: transparent; }
-.usb-dd.is-open .usb-ddbtn { border-color: var(--vc-hover-border); background: transparent; }
-.usb-dd.is-active .usb-ddbtn { background: transparent; }
-.usb-dd .up-filter-btn-lbl { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
-.usb-dd .up-filter-btn-lbl.is-empty { color: var(--vc-third); }
+/* Trigger Wert fuer Wert aus .umk-trigger (filters/markets-filter.css), dem Dropdown, das ueber
+   jeder Tabelle steht. Kein eigener Entwurf: 32px, 1px Rahmen in der Rahmenfarbe, Radius 8,
+   Grundfarbe --vc-muted, Hover UND offen bekommen --vc-heading-bg plus --vc-hover-border. Der
+   Chevron dreht sich nicht.
+
+   Dupliziert statt geteilt, weil dieselben Werte bereits in vier Dateien stehen (markets-,
+   models-, topics-filter und add-prompts). Das gehoert nach core -- als EINE Klasse, die alle
+   fuenf benutzen. Bis dahin ist eine exakte Kopie besser als ein fuenfter eigener Entwurf. */
+.usb-dd .usb-ddbtn {
+  display: inline-flex; align-items: center; gap: 8px; min-width: 220px; height: 32px;
+  padding: 0 10px; justify-content: space-between;
+  border: 1px solid var(--vc-border); border-radius: 8px; background: var(--vc-bg);
+  color: var(--vc-muted); font-family: inherit; font-size: 13px; font-weight: 500; line-height: 1;
+  white-space: nowrap; cursor: pointer; outline: 0;
+  transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
+}
+.usb-dd .usb-ddbtn:hover,
+.usb-dd.is-open .usb-ddbtn,
+.usb-dd.is-active .usb-ddbtn { color: var(--vc-text); background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
+.usb-dd .up-filter-btn-chev { width: 16px; height: 16px; flex: 0 0 16px; }
+.usb-dd .up-filter-btn-chev svg { width: 16px; height: 16px; display: block; }
+
+/* Suchzeile und Liste im Rhythmus der Menues: 8px unter der Suche, die Liste selbst 256px hoch
+   bevor sie scrollt. Der Wert ist markets-filters 216px plus die 40px, die hier gefehlt haben --
+   dieses Menue hat keine zweite Sektion darunter, also ist der Platz da. */
 .usb-ddsearchrow { flex: 0 0 auto; display: flex; margin-bottom: 8px; }
+.usb-dd .up-filter-list { max-height: 256px; }
 .usb-opt { justify-content: space-between; }
 .usb-opt-main { display: inline-flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto; }
 .usb-opt-name { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -177,8 +191,12 @@
 
 /* Eigene Branche eintippen. Unten im Menue, durch eine Linie abgesetzt: es ist die Ausnahme,
    nicht die erste Wahl, und soll die Liste darueber nicht zerreissen. */
-.usb-ddcustom { flex: 0 0 auto; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--vc-border);
-  display: flex; flex-direction: column; gap: 6px; }
+/* Separator-Rhythmus wie im STYLEGUIDE: DERSELBE Abstand ueber und unter der Linie, und die
+   Ueberschrift bekommt darunter denselben Wert. 8px/6px waren zwei verschiedene, zu enge Werte. */
+.usb-ddcustom { --usb-sep-gap: 12px;
+  flex: 0 0 auto; margin-top: var(--usb-sep-gap); padding-top: var(--usb-sep-gap);
+  border-top: 1px solid var(--vc-border);
+  display: flex; flex-direction: column; gap: var(--usb-sep-gap); }
 .usb-ddcustom-lbl { font-size: 11px; font-weight: 600; color: var(--vc-muted);
   text-transform: uppercase; letter-spacing: .04em; padding: 0 1px; }
 .usb-ddcustom-row { display: flex; align-items: center; gap: 6px; }
@@ -197,7 +215,17 @@
    unbenutzbar.
    font-family ausdruecklich, weil ein textarea die Seitenschrift NICHT erbt, sondern auf Monospace
    faellt. */
+/* Der Deckel von 46ch gilt fuer die Zeilen mit Bedienelement rechts -- dort teilt sich die
+   Breite. Dieser Block hat das Feld UNTER dem Text, die Beschreibung darf also die volle Breite
+   nehmen statt auf halber Strecke umzubrechen. */
 .usb-sumblock { display: flex; flex-direction: column; gap: 10px; padding: 16px 0; }
+.usb-sumblock .usb-rowdesc { max-width: none; }
+/* Das Markenlogo vor der Ueberschrift: der Block heisst "<Marke> Summary", also gehoert das
+   Zeichen der Marke davor, so wie in der Meta-Zeile des Seitenkopfs. */
+.usb-sumtitlerow { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.usb-sumlogo { width: 18px; height: 18px; flex: 0 0 18px; border-radius: 4px; object-fit: cover;
+  display: block; }
+.usb-sumlogo.is-empty { display: none; }
 .usb-sumwrap { position: relative; }
 .usb-sumin { width: 100%; min-height: 132px; padding: 10px 12px; border-radius: 10px;
   font-family: inherit; font-size: 13.5px; line-height: 1.55; resize: vertical; display: block; }

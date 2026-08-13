@@ -62,7 +62,7 @@
 
     function brandIcon(){
       var url = String(root.getAttribute("data-brand-logo") || "").trim();
-      if (!url || url === "BRAND_LOGO") return ICON_BRAND_FALLBACK;
+      if (!url || url === "BRAND_LOGO_URL" || url === "BRAND_LOGO") return ICON_BRAND_FALLBACK;
       return '<img class="sph-navlogo" src="' + UC.esc(url) + '" alt="" ' +
              'onerror="this.style.display=&quot;none&quot;"/>';
     }

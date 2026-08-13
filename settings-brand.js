@@ -270,7 +270,10 @@
 
             '<div class="usb-sumblock">' +
               '<div class="usb-rowtext">' +
-                '<div class="usb-rowtitle" data-sum-title>Brand Summary</div>' +
+                '<div class="usb-sumtitlerow">' +
+                  '<img class="usb-sumlogo is-empty" alt="" data-sum-logo/>' +
+                  '<span class="usb-rowtitle" data-sum-title>Brand Summary</span>' +
+                '</div>' +
                 '<div class="usb-rowdesc">Your brand summary tells the system what your company ' +
                   'does: its products, services and industry focus. It is used as an additional ' +
                   'context source when generating tailored research prompts, insights and AI ' +
@@ -330,6 +333,7 @@
     var elMetaSave   = root.querySelector("[data-meta-save]");
     var elMetaHint   = root.querySelector("[data-meta-hint]");
     var elSumTitle   = root.querySelector("[data-sum-title]");
+    var elSumLogo    = root.querySelector("[data-sum-logo]");
     var elLogoPrev   = root.querySelector("[data-logo-prev]");
     var elLogoFile   = root.querySelector("[data-logo-file]");
     var elLogoErr    = root.querySelector("[data-logo-err]");
@@ -343,6 +347,10 @@
     function renderBrand(){
       elEditLbl.textContent = "Edit " + (meta.brandName || "your brand");
       elSumTitle.textContent = meta.brandName ? meta.brandName + " Summary" : "Brand Summary";
+      if (elSumLogo){
+        if (meta.brandLogo){ elSumLogo.src = meta.brandLogo; elSumLogo.classList.remove("is-empty"); }
+        else { elSumLogo.removeAttribute("src"); elSumLogo.classList.add("is-empty"); }
+      }
       if (meta.brandLogo){
         elLogoPrev.innerHTML = '<img src="' + esc(meta.brandLogo) + '" alt=""/>';
         elLogoPrev.classList.remove("is-empty");
@@ -595,6 +603,13 @@
       elMetaHint.classList.toggle("is-dirty", d);
     }
 
+    /* Ein zweites, eigenes Event nur fuer die Rueckmeldung. Es traegt KEINE Daten, sondern sagt
+       nur, welcher Block gespeichert wurde -- damit ein Bubble-Workflow den vorhandenen Tooltip
+       ("Changes saved") ausloesen kann, ohne den Speicher-Workflow selbst anfassen zu muessen.
+       Getrennt vom Speicher-Event, weil der Tooltip sofort kommen soll und nicht erst, wenn der
+       Server geantwortet hat: der Nutzer hat geklickt, die Aenderung ist uebernommen. */
+    function saved_(block){ fire("data-saved-fn", "usbSaved", { block: block }); }
+
     /* ---------------- Klicks ---------------- */
     root.addEventListener("click", function(e){
       var t = e.target;
@@ -621,6 +636,7 @@
         renderModels();
         fire("data-models-fn", "usbModels",
              { model_keys: draft.models.filter(function(m){ return m.active; }).map(function(m){ return m.key; }).join(",") });
+        saved_(  "models" );
         return;
       }
       var bz = t.closest("[data-biz]");
@@ -634,6 +650,7 @@
           market_id: draft.marketId, business_model: draft.businessModel,
           industry: draft.industry, summary: draft.summary
         });
+        saved_( "meta" );
         return;
       }
       if (t.closest("[data-leave]")){ openDanger("leave"); return; }
@@ -831,7 +848,17 @@
         loading = false;
         render();
       },
-      setLoading: function(on){ loading = UC.isYes(on); root.classList.toggle("is-loading", loading); },
+      setLoading: function(on){
+        loading = UC.isYes(on);
+        root.classList.toggle("is-loading", loading);
+        /* Waehrend geladen wird, ist jeder Speichern-Knopf gesperrt. Sonst kann der Nutzer ein
+           zweites Mal speichern, bevor die erste Antwort da ist, und die zweite Antwort
+           ueberschreibt die erste. */
+        Array.prototype.forEach.call(root.querySelectorAll(".usb-savebtn"), function(b){
+          if (loading) b.disabled = true;
+        });
+        if (!loading){ renderModels(); syncMeta(); }
+      },
       setLogo: function(url, fileName){
         if (url != null) meta.brandLogo = String(url);
         if (fileName != null) meta.logoFileName = String(fileName);
