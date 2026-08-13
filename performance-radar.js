@@ -1353,21 +1353,10 @@
                   : (typeof params !== "object") ? (typeof params + " " + String(params).slice(0, 80))
                   : ("Objekt mit den Feldern [" + Object.keys(params).join(", ") + "]");
             } catch(e){ got = "?"; }
-            var nurId = (params && typeof params === "object" &&
-                         Object.keys(params).length === 1 && params.instanceId);
             console.error("[performance-radar] render ohne verwertbare Daten: `cells` fehlt oder ist " +
-              "kein Array. Erhalten: " + got + "." +
-              (nurId
-                /* Genau dieses Bild entsteht, wenn im Run-JS-Schritt noch ein eigenes JSON.parse
-                   steht: wirft es, reicht der catch-Zweig ein Objekt mit nur der instanceId durch
-                   und der Rohtext ist WEG, bevor die Komponente ihn retten koennte. Die Meldung
-                   nennt darum die Loesung, statt nur das Symptom zu beschreiben. */
-                ? " Im Run-JS-Schritt steht offenbar noch ein eigenes JSON.parse. Ersetze den " +
-                  "GESAMTEN Inhalt des Schritts durch diese eine Zeile, dann parst die Komponente " +
-                  "selbst und faengt abgeschnittene oder lueckenhafte Payloads ab:\n" +
-                  "  window.renderPerformanceRadar({ instanceId: \"" + (params.instanceId || "ROOTID_…") +
-                  "\", raw: `[RPC-Ergebnis]` });"
-                : " Die Matrix zeigt 'No data', obwohl die Daten existieren koennen."));
+              "kein Array. Erhalten: " + got + ". Haeufigste Ursache: der Payload wurde im Run-JS-Step " +
+              "nicht geparst (JSON.parse geworfen und der catch-Zweig hat ein leeres Objekt " +
+              "durchgereicht) -- die Matrix zeigt dann 'No data', obwohl die Daten existieren.");
           }
         }
         state.loading = false;
@@ -1382,6 +1371,12 @@
         root.classList.toggle("is-loading", state.loading);
         if (!state.loading) soft.end();
         if (state.loading && !state.hasData) renderSkeleton();
+        /* Ausschalten, ohne dass je Daten kamen: dann steht das SKELETT noch da -- graue Kacheln
+           ohne Ladezustand, also genau das Bild, das wie ewiges Laden aussieht. Vorher blieb es
+           stehen, weil setLoading nur die Klasse umschaltete und das Zeichnen dem naechsten
+           render() ueberliess -- das aber nie kam, wenn der Payload unterwegs kaputtging.
+           Ein "fertig" ohne Daten ist ein Kein-Ergebnis und muss auch so aussehen. */
+        if (!state.loading && !state.hasData) renderEmpty();
       },
       reset: function(){
         state.cells = []; state.cellMap = {};
@@ -1426,80 +1421,8 @@
     return out;
   }
 
-  /* ---------- robustParse ----------
-     Nimmt den ROHTEXT, wie Bubble ihn durchreicht, und macht daraus ein Objekt. Drei Stufen, in
-     dieser Reihenfolge, jede nur wenn die vorige nicht gereicht hat:
-
-       1. JSON.parse. Im Normalfall ist hier Schluss.
-       2. Leere Werte fuellen. Bubble reicht ein JSON-null gelegentlich als GAR NICHTS durch, dann
-          steht da `"avg_rank_prev": ,` -- ungueltig. Der Ausdruck trifft nur einen Schluessel,
-          auf den direkt ein Komma, } oder ] folgt; ein `": ,"` INNERHALB eines Textwertes bleibt
-          unangetastet, weil JSON Anfuehrungszeichen strikt abwechselt.
-       3. Retten, was da ist. Ist der Text abgeschnitten (Laengenbegrenzung auf dem Weg durch
-          Bubble), endet er mitten in einem Objekt. Dann wird hinter dem letzten VOLLSTAENDIGEN
-          Eintrag von `cells` abgeschnitten und die Struktur geschlossen. Das Ergebnis ist eine
-          Matrix mit weniger Zeilen -- aber sichtbar, statt gar nichts.
-
-     Warum das hier steht und nicht im Run-JS-Schritt: ein Reparaturversuch, der in einem
-     Bubble-Textfeld lebt, ist weder versioniert noch testbar, und genau daran ist die letzte
-     Runde gescheitert. Hier laeuft er gegen den Harness. */
-  function robustParse(raw){
-    var txt = String(raw == null ? "" : raw);
-    var out = { data: null, repariert: false, gerettet: 0, verloren: 0 };
-    if (!txt) return out;
-
-    try { out.data = JSON.parse(txt); return out; } catch (e) {}
-
-    var fixed = txt.replace(/("(?:[^"\\]|\\.)*"\s*:)\s*(?=[,}\]])/g, "$1 null");
-    if (fixed !== txt){
-      out.repariert = true;
-      try { out.data = JSON.parse(fixed); return out; } catch (e2) {}
-    }
-
-    /* Abgeschnitten. Der letzte vollstaendige Zelleneintrag endet an einem "}", auf das (nach
-       Leerzeichen) ein "," oder "]" folgt -- oder, wenn der Schnitt mitten im letzten Objekt
-       liegt, ist es schlicht das letzte "}" im Text. Alles danach ist Bruchstueck. */
-    var start = fixed.indexOf('"cells"');
-    var open = start >= 0 ? fixed.indexOf("[", start) : -1;
-    if (open < 0) return out;
-    var last = fixed.lastIndexOf("}");
-    if (last <= open) return out;
-    var salvage = fixed.slice(0, last + 1) + "]}";
-    try {
-      var d = JSON.parse(salvage);
-      out.data = d;
-      out.gerettet = (d && d.cells && d.cells.length) || 0;
-      out.verloren = -1;   // Gesamtzahl unbekannt, der Rest fehlt ja
-      return out;
-    } catch (e3) {}
-    return out;
-  }
-
   function apiRender(params){
     params = params || {};
-    /* Rohtext statt Objekt: entweder direkt als String uebergeben, oder in params.raw/params.payload.
-       Damit kann der Run-JS-Schritt in Bubble eine Zeile bleiben und muss nichts selbst parsen. */
-    var rawIn = (typeof params === "string") ? params
-              : (typeof params.raw === "string") ? params.raw
-              : (typeof params.payload === "string") ? params.payload : null;
-    if (rawIn != null){
-      var pr = robustParse(rawIn);
-      if (!pr.data){
-        if (window.console) console.error("[performance-radar] Payload unlesbar. Laenge " +
-          String(rawIn).length + ", Anfang: " + String(rawIn).slice(0, 120));
-        params = (typeof params === "string") ? {} : params;
-      } else {
-        var id0 = (typeof params === "object" && params.instanceId) || pr.data.instanceId;
-        params = pr.data;
-        if (id0) params.instanceId = id0;
-        if (window.console && (pr.repariert || pr.gerettet)){
-          console.warn("[performance-radar] Payload musste repariert werden" +
-            (pr.repariert ? " (leere Werte auf null gesetzt)" : "") +
-            (pr.gerettet ? "; abgeschnitten, " + pr.gerettet + " vollstaendige Zellen gerettet" : "") +
-            ". Ursache liegt vor der Komponente -- der Text kommt so aus Bubble an.");
-        }
-      }
-    }
     var id = params.instanceId || "default";
     var list = ctrlsFor(id);
     /* A payload whose instanceId matches nothing still has to land somewhere: a single placement
