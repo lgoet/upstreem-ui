@@ -19,6 +19,11 @@
       return;
     }
     var UC = window.UpstreemCore;
+    /* Laut sagen, WAS fehlt. Ein "undefined is not a function" schickt einen auf die Suche im
+       falschen File; der Name des fehlenden Kits zeigt direkt auf den veralteten Pin. */
+    var fehlt = ["makePageHeaderMeta", "makePageNav", "spinOnce", "makeTooltips"].filter(function(n){ return !UC[n]; });
+    if (fehlt.length && window.console) console.error("upstreem: core.js ist zu alt, es fehlen: " +
+      fehlt.join(", ") + ". data-cdn-pin dieses Page-Headers auf einen aktuellen Commit setzen.");
     pfphRun();
     if (UC.watchRoots) UC.watchRoots("pfph-root", pfphRun);
     [100, 300, 800, 1800].forEach(function(ms){ setTimeout(pfphRun, ms); });
@@ -43,7 +48,12 @@
        Bubble can resolve those dynamic expressions after this root is already mounted, patching
        the attribute in place rather than replacing the node, so a one-shot read at init would
        miss it. */
-    UC.makePageHeaderMeta(root);
+    /* Fehlt das Kit, ist eine ALTE core.js geladen -- typisch bei leerem data-cdn-pin: dann zieht
+       der Loader "@main", und jsDelivr/Browser liefern das aus einem bis zu tagealten Cache. Auf
+       einem Rechner laeuft die neue Fassung, auf dem naechsten die alte. Frueher riss der TypeError
+       hier den ganzen initRoot mit: keine Meta-Zeile, keine Nav, und weil dieses Kit auch die
+       data-isdark-Nachsynchronisierung macht, beim ersten Laden auch das falsche Theme. */
+    if (UC.makePageHeaderMeta) UC.makePageHeaderMeta(root);
   }
 
   pfphBoot(30);

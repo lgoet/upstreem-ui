@@ -41,6 +41,12 @@
   function dphRun(){
     UC = window.UpstreemCore;
 
+    /* Laut sagen, WAS fehlt. Ein "undefined is not a function" schickt einen auf die Suche im
+       falschen File; der Name des fehlenden Kits zeigt direkt auf den veralteten Pin. */
+    var fehlt = ["makePageHeaderMeta", "makePageNav", "spinOnce", "makeTooltips"].filter(function(n){ return !UC[n]; });
+    if (fehlt.length && window.console) console.error("upstreem: core.js ist zu alt, es fehlen: " +
+      fehlt.join(", ") + ". data-cdn-pin dieses Page-Headers auf einen aktuellen Commit setzen.");
+
     mount = UC.makeMount({
       /* onMount: makeMount replays Bubble's queued setDashboardPageHeaderKpis calls while it is
          still constructing, i.e. before `mount` below has been assigned -- capturing it via this
@@ -118,7 +124,12 @@
     /* Same data-brand-name/-logo/-isdark re-sync as prompts-page-header.js, same reason: Bubble
        can resolve those dynamic expressions after this root is already mounted, patching the
        attribute in place rather than replacing the node. */
-    UC.makePageHeaderMeta(root);
+    /* Fehlt das Kit, ist eine ALTE core.js geladen -- typisch bei leerem data-cdn-pin: dann zieht
+       der Loader "@main", und jsDelivr/Browser liefern das aus einem bis zu tagealten Cache. Auf
+       einem Rechner laeuft die neue Fassung, auf dem naechsten die alte. Frueher riss der TypeError
+       hier den ganzen initRoot mit: keine Meta-Zeile, keine Nav, und weil dieses Kit auch die
+       data-isdark-Nachsynchronisierung macht, beim ersten Laden auch das falsche Theme. */
+    if (UC.makePageHeaderMeta) UC.makePageHeaderMeta(root);
 
     /* No page nav here, so nothing else would set the responsive tier classes -- and without
        is-vnarrow the 32px top clearance for Bubble's mobile sidebar toggle never applies. */
