@@ -214,7 +214,10 @@
     .up-sec-titles { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; }
     .up-sec-h { flex: 0 0 auto; }
     .up-sec-sub { font-size: 12px; font-weight: 400; color: var(--vc-muted); }
-    .up-vartable { border: 1px solid var(--vc-border); border-radius: 10px; overflow: hidden; }
+    /* 16px wie jeder andere Container mit Rahmen in dieser App (.up-box). Vorher 10 -- ein
+       kleinerer Innenradius wirkt nur dort richtig, wo ein groesserer Rahmen direkt aussen
+       anliegt; hier liegt Polsterung dazwischen, und dann liest sich die Abweichung als Fehler. */
+    .up-vartable { border: 1px solid var(--vc-border); border-radius: 16px; overflow: hidden; }
     /* Mit .up-vartable davor, weil .up-row aus core dieselbe Spezifitaet haette und dann die
        Ladereihenfolge entscheiden wuerde -- STYLEGUIDE: nie ueber die Reihenfolge gewinnen. */
     .up-vartable .up-row.up-vrow { height: 55px; flex: 0 0 55px; }

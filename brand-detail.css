@@ -23,7 +23,10 @@
    box-sizing, damit die 20px Polsterung INNEN liegen und die Karte nicht breiter wird als ihr
    Platz. */
 .ubd-card {
-  border: 1px solid var(--vc-border); border-radius: 12px; background: var(--vc-bg);
+  /* 16px wie .up-box in core -- das ist der Radius jedes aeusseren Containers in dieser App.
+     Die 12px hier waren mein eigener Wert. Dass diese Regel Rahmen, Hintergrund und Radius
+     selbst setzt statt .up-box zu benutzen, ist ein Nachbau; siehe die Notiz unten. */
+  border: 1px solid var(--vc-border); border-radius: 16px; background: var(--vc-bg);
   /* Rundum 16px -- dasselbe Mass, mit dem der Variations-Abschnitt im Radar-Detail polstert.
      Vorher standen hier 20px an den Seiten und unten; im Variations-Modus ergab das einen
      anderen Rand als auf der Radar-Seite, obwohl es dieselbe Tabelle ist. */
