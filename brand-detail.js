@@ -188,6 +188,9 @@
       wrap: elChart, canvas: elCanvas, legend: null,
       isDark: darkNow, isOwner: function () { return true; },
       gran: function () { return state.gran; },
+      /* Nur Visibility ist ein Prozentwert. Rang ist eine Position, Sentiment eine Punktzahl auf
+         der 0-100-Skala -- an beide gehoert kein Prozentzeichen. */
+      unit: function () { return modeOf(state.mode).fmt === "pct" ? "%" : ""; },
       watermark: false
     });
 

@@ -449,15 +449,10 @@
     }
     function renderVariations(){
       if (state.variations == null){
-        /* rowClass MIT up-row und cellClass MIT up-td: daran haengen das Spaltenraster
-           (--up-cols), die Polsterung und die Zeilenhoehe. Ohne sie stand der Skeleton ohne Grid
-           da -- drei Balken untereinander statt in den Spalten der Tabelle. Die Balkenbreiten
-           entsprechen dem, was spaeter wirklich dort steht: Name lang, Prozent kurz, Anzahl kurz. */
-        elVBody.innerHTML = UC.skeletonRows
-          ? UC.skeletonRows({ count: 6,
-                              cols: [{ w: 120, jitter: 40 }, { w: 44 }, { w: 28 }],
-                              rowClass: "up-row upd-vrow", cellClass: "up-td" })
-          : "";
+        /* Skelett aus DEMSELBEN Kit wie die Zeilen. Der eigene skeletonRows-Aufruf, der hier
+           stand, gab allen drei Zellen nur .up-td -- ohne die Spaltenbreiten stand die
+           Namensspalte zu breit und alles dahinter versetzt. */
+        elVBody.innerHTML = UC.variationRows(null, { rowClass: "up-vrow upd-vrow" });
         return;
       }
       var rows = varRows();

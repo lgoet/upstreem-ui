@@ -3641,6 +3641,13 @@
      The component builds {labels, datasets}; datasets must carry __id / __baseColor / __favicon.
      Returns { render, skeleton, empty, destroy, resize, relayoutLegend, chart }. */
   function makeLine(cfg){
+    /* Standard bleibt Prozent -- alle bestehenden Aufrufer erwarten das. Als Funktion, weil
+       der Modus in brand-detail zwischen zwei Renders wechselt. */
+    function einheit(){
+      var u = cfg && cfg.unit;
+      if (typeof u === "function") u = u();
+      return typeof u === "string" ? u : "%";
+    }
     var wrap = cfg.wrap, canvas = cfg.canvas, legendEl = cfg.legend || null;
     var isDark = cfg.isDark || function(){ return false; };
     var isOwner = cfg.isOwner || function(){ return true; };
@@ -3821,7 +3828,10 @@
                             } } },
               y: { min:0, max:yMax, beginAtZero:true,
                    afterBuildTicks: function(scale){ var m = scale.max || 1; scale.ticks = [{value:0},{value:m/3},{value:2*m/3},{value:m}]; },
-                   ticks: { color: tc.muted, callback: function(v){ return Math.round(v) + "%"; } },
+                   /* Die Einheit kommt vom Aufrufer. Rang und Sentiment sind KEINE Prozente --
+                      ein hart verdrahtetes "%" schrieb an jede Achse ein Zeichen, das dort nicht
+                      hingehoert. Ohne Angabe bleibt es Prozent, das ist der haeufigste Fall. */
+                   ticks: { color: tc.muted, callback: function(v){ return Math.round(v) + einheit(); } },
                    grid: { display:false }, border: { display:false } }
             },
             elements: { point: { radius: 0 } }
@@ -3988,7 +3998,7 @@
         : "display:none;";
       el.querySelector(".up-tt-lbl").style.color = nameColor;
       el.querySelector(".up-tt-lbl").textContent = chart.data.labels[i] || "";
-      el.querySelector(".up-tt-val").textContent = Number(val).toFixed(2) + "%";
+      el.querySelector(".up-tt-val").textContent = Number(val).toFixed(2) + einheit();
       var cx = chart.canvas.offsetLeft, cy = chart.canvas.offsetTop, ca = chart.chartArea;
       var caretX = cx + tooltip.caretX, caretY = cy + tooltip.caretY, m = 12;
       el.style.left = "0px"; el.style.top = "0px";
