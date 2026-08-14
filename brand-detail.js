@@ -176,6 +176,7 @@
       company: null,
       series: null,        /* zuletzt empfangene Serie, mitsamt ihrem eigenen mode */
       variations: null,
+      error: null,          /* Text statt Skelett, wenn ein Payload unlesbar war */
       varQuery: "",
       loading: false,
       hasData: false
@@ -249,6 +250,9 @@
 
     function renderChart() {
       if (!CHART_MODES[state.mode]) return;
+      /* Der Fehlerfall kommt VOR dem Skelett: sonst laeuft der Ladezustand endlos weiter und
+         sieht aus wie "gleich da", obwohl nichts mehr kommt. */
+      if (state.error) { line.empty(state.error); return; }
       if (state.loading || !state.hasData) { line.skeleton(); return; }
       var p = state.series;
       /* Eine Serie aus einem anderen Modus ist eine Antwort, die waehrend des Wechsels unterwegs
@@ -400,11 +404,22 @@
       root: root,
       setSeries: function (payload) {
         var p = UC.parseLoose ? UC.parseLoose(payload, "brand-detail series") : payload;
-        if (p && !isArr(p) && typeof p === "object") {
+        /* Ein Payload, den parseLoose nicht lesen konnte, darf NICHT stillschweigend verpuffen.
+           Vorher blieb in dem Fall loading auf true stehen und das Skelett lief endlos -- von
+           aussen nicht von "laedt noch" zu unterscheiden. Dasselbe gilt fuer ein Objekt ohne
+           series-Feld: p.series.map haette geworfen und den ganzen Run-JS-Step mitgerissen. */
+        var ok = p && !isArr(p) && typeof p === "object" && isArr(p.series);
+        if (ok) {
           state.series = p;
           state.hasData = true;
-          state.loading = false;
+          state.error = null;
+        } else {
+          state.series = null;
+          state.error = (p && p.__parseError) || !p
+            ? "The chart data could not be read."
+            : "The chart data arrived without a series.";
         }
+        state.loading = false;
         render();
       },
       setCompany: function (payload) {
@@ -427,7 +442,7 @@
         state.loading = false; state.mode = "visibility"; state.gran = "day";
         /* Auch die Suche zuruecksetzen: sonst zeigt die naechste Marke eine gefilterte Liste,
            ohne dass irgendwo ein Suchbegriff zu sehen waere. */
-        state.varQuery = "";
+        state.varQuery = ""; state.error = null;
         if (elSInput) { elSInput.value = ""; }
         if (elSearch) { elSearch.classList.remove("is-open", "has-text"); }
         render();
