@@ -82,6 +82,15 @@
      hier frueher stand, war eine nackte Tabelle ohne Kopf und ohne Suche.
      scope "overall": im Radar-Detail geht es um EIN Thema, hier um die ganze Marke. Nur dieses
      Wort unterscheidet die Erklaertexte, alles andere ist identisch. */
+  /* Modus und Granularitaet leben AUSSERHALB des Controllers, pro data-instance. Bubble haengt
+     das HTML-Element bei jedem Filterwechsel neu ein (jQuery .html()); dabei entsteht ein neuer
+     Root, initRoot laeuft von vorn, und ein state.mode im Controller waere jedes Mal wieder
+     "visibility". Genau daran lag das Zuruecksprungen des Switchers -- nicht an reset und nicht
+     an setSeries, die ich beide vorher verdaechtigt habe. visibility-chart macht es seit langem
+     so (window.__votGran), aus demselben Grund. */
+  var MODE_STORE = (window.__ubdMode = window.__ubdMode || {});
+  var GRAN_STORE = (window.__ubdGran = window.__ubdGran || {});
+
   var VAR_SCOPE = "overall";
   var VARSEC = UC.variationsSection ? UC.variationsSection({ prefix: "ubd", scope: VAR_SCOPE }) : "";
   var VAR_EXPLAIN = UC.variationsExplain ? UC.variationsExplain(VAR_SCOPE) : {};
@@ -171,8 +180,8 @@
     var elSInput  = elSearch ? elSearch.querySelector(".up-search-input") : null;
 
     var state = {
-      mode: "visibility",
-      gran: "day",
+      mode: MODE_STORE[instanceId] || "visibility",
+      gran: GRAN_STORE[instanceId] || "day",
       company: null,
       series: null,        /* zuletzt empfangene Serie, mitsamt ihrem eigenen mode */
       variations: null,
@@ -215,7 +224,7 @@
       var s = state.series;
       var neu = UC.granAvailability(root, (s && s.series) || [], state.gran);
       if (neu !== state.gran) {
-        state.gran = neu;
+        state.gran = neu; GRAN_STORE[instanceId] = neu;
         syncGran();
         fire("data-gran-fn", "bubble_fn_ubdGran", { mode: state.mode, gran: neu });
       }
@@ -436,7 +445,7 @@
       /* Neuer Modus, neue Kurve: der Merker faellt, damit eine noch nicht gelieferte Serie als
          "Waiting for ..." erscheint und nicht als stehengebliebene Kurve des alten Modus. */
       letzteKurve = false;
-      state.mode = key;
+      state.mode = key; MODE_STORE[instanceId] = key;
       if (CHART_MODES[key]) { state.hasData = false; state.series = null; }
       render();
       fire("data-mode-fn", "bubble_fn_ubdMode", { mode: key, gran: state.gran });
@@ -447,7 +456,7 @@
       if (!b) return;
       var g = b.getAttribute("data-gran");
       if (g === state.gran) return;
-      state.gran = g;
+      state.gran = g; GRAN_STORE[instanceId] = g;
       state.hasData = false; state.series = null;
       render();
       fire("data-gran-fn", "bubble_fn_ubdGran", { mode: state.mode, gran: g });
@@ -472,7 +481,7 @@
              Wochenkurve daneben liegt. Dieselben Feldnamen wie im visibility-chart: granularity,
              gran als Alternative. */
           var g = UC.normGran ? UC.normGran(p.granularity != null ? p.granularity : p.gran) : null;
-          if (g) state.gran = g;
+          if (g) { state.gran = g; GRAN_STORE[instanceId] = g; }
           /* Der Modus wird hier NICHT angefasst. Er wechselt ausschliesslich durch einen Klick
              auf den Switcher oder durch resetBrandDetail. Ein Workflow, der beim Filterwechsel
              erst die Visibility-Serie nachschiebt, liess den Switcher sonst kurz dorthin springen
