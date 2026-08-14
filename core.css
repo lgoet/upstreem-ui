@@ -1851,13 +1851,13 @@
    the black end lifts everything with it -- colourful logos come out paler than they were. Black
    at the label's colour was the requirement; this is what it costs. */
 .up-ph-metalogo {
-  width: 16px; height: 16px; display: block; flex: 0 0 auto; object-fit: cover;
+  width: 15px; height: 15px; display: block; flex: 0 0 auto; object-fit: cover;
   /* 4px, damit das Logo nicht als scharfkantiges Quadrat neben dem runden Rest der Zeile sitzt.
      Deckt auch den eingebauten Seitenkopf in prompt-research ab -- der nutzt dieselbe Klasse. */
   border-radius: 4px;
   filter: grayscale(1) contrast(0.30) brightness(1.43);
 }
-.up-ph-metatxt { font-size: 12px; font-weight: 600; color: var(--vc-third); line-height: 1; }
+.up-ph-metatxt { font-size: 12px; font-weight: 500; color: var(--vc-third); line-height: 1; }
 
 .up-ph-heading { margin: 0 0 12px; font-size: 28px; font-weight: 500; color: var(--vc-text);
   letter-spacing: -0.5px; line-height: 1.2; }

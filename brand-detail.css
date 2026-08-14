@@ -24,7 +24,10 @@
    Platz. */
 .ubd-card {
   border: 1px solid var(--vc-border); border-radius: 12px; background: var(--vc-bg);
-  padding: 16px 20px 20px; width: 100%; box-sizing: border-box;
+  /* Rundum 16px -- dasselbe Mass, mit dem der Variations-Abschnitt im Radar-Detail polstert.
+     Vorher standen hier 20px an den Seiten und unten; im Variations-Modus ergab das einen
+     anderen Rand als auf der Radar-Seite, obwohl es dieselbe Tabelle ist. */
+  padding: 16px; width: 100%; box-sizing: border-box;
 }
 .ubd-head { display: flex; align-items: center; gap: 12px; min-height: 32px; }
 .ubd-title { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto; }
