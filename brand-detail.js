@@ -192,6 +192,12 @@
          der 0-100-Skala -- an beide gehoert kein Prozentzeichen. */
       unit: function () { return modeOf(state.mode).fmt === "pct" ? "%" : ""; },
       /* "Share:" passt nur zur Visibility. Der Rang ist eine Position, das Sentiment eine Note. */
+      /* Rang IMMER mit einer Nachkommastelle -- "3" und "3.0" im selben Chart lesen sich wie
+         zwei Genauigkeiten. Sentiment ist eine ganze Note, Visibility traegt zwei Stellen. */
+      decimals: function () {
+        var f = modeOf(state.mode).fmt;
+        return f === "rank" ? 1 : (f === "sent" ? 0 : 2);
+      },
       tipLabel: function () {
         var f = modeOf(state.mode).fmt;
         return f === "rank" ? "Rank:" : (f === "sent" ? "Sentiment:" : "Share:");

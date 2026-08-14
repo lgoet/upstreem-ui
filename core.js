@@ -3309,9 +3309,13 @@
   /* einheitFn/labelFn kommen als Parameter herein: diese Funktion liegt NEBEN makeLine, nicht
      darin -- ein Zugriff auf dessen cfg waere hier nicht sichtbar. Genau daran hing, dass die
      Achse schon ohne Prozentzeichen auskam und der Tooltip trotzdem eines schrieb. */
-  function makeLineTooltip(wrap, getIsDark, getGran, einheitFn, labelFn){
+  function makeLineTooltip(wrap, getIsDark, getGran, einheitFn, labelFn, nachkommaFn){
     function ttEinheit(){ var u = einheitFn && einheitFn(); return typeof u === "string" ? u : "%"; }
     function ttLabel(){ var l = labelFn && labelFn(); return typeof l === "string" ? l : "Share:"; }
+    /* Nachkommastellen sagt der Aufrufer. Ohne Angabe zwei -- so war es, als der Tooltip nur
+       Prozentwerte kannte. Ein Rang zeigt IMMER eine Stelle, auch bei glatt 3: "3" und "3.0"
+       nebeneinander in derselben Spalte liest sich wie zwei verschiedene Genauigkeiten. */
+    function ttNachkomma(){ var n = nachkommaFn && nachkommaFn(); return typeof n === "number" ? n : 2; }
     var pos = { x:null, y:null }, target = { x:0, y:0 }, running = false, visible = false;
     var FOLLOW = 0.18;
     function loop(){
@@ -3819,7 +3823,7 @@
             transitions: { highlight: { animation: { duration: 200, easing: "easeOutQuad" } } },
             interaction: { mode: "index", intersect: false },
             layout: { padding: { top: 8, right: 2, bottom: 0, left: 0 } },
-            plugins: { legend: { display: false }, tooltip: { enabled: false, external: makeLineTooltip(wrap, isDark, cfg.gran, einheit, cfg.tipLabel) } },
+            plugins: { legend: { display: false }, tooltip: { enabled: false, external: makeLineTooltip(wrap, isDark, cfg.gran, einheit, cfg.tipLabel, cfg.decimals) } },
             scales: {
               x: { grid: { display:false }, offset: single, border: { display:true, color: tc.border, width:1 },
                    ticks: { autoSkip:true, maxTicksLimit:X_MAX_TICKS, maxRotation:0, color: tc.muted,
@@ -4005,9 +4009,8 @@
       el.querySelector(".up-tt-lbl").textContent = chart.data.labels[i] || "";
       /* Zwei Nachkommastellen nur beim Prozentwert. Ein Rang von 3.1 als "3.10" zu schreiben
          taeuscht eine Genauigkeit vor, die die Zahl nicht hat. */
-      var e = ttEinheit();
       el.querySelector(".up-tt-val").textContent =
-        (e === "%" ? Number(val).toFixed(2) : String(Math.round(Number(val) * 10) / 10)) + e;
+        Number(val).toFixed(ttNachkomma()) + ttEinheit();
       var sub = el.querySelector(".up-tt-sub");
       if (sub) sub.textContent = ttLabel();
       var cx = chart.canvas.offsetLeft, cy = chart.canvas.offsetTop, ca = chart.chartArea;

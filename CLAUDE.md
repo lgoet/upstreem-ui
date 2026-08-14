@@ -94,6 +94,26 @@ Jede Bubble-Doku braucht **beide** Sanitizer-Zeilen (§46):
 
 ---
 
+## 2b. Zahlenformate: pro Kennzahl festgelegt
+
+| Kennzahl | Einheit | Nachkommastellen | Beispiel |
+|---|---|---|---|
+| Visibility / Share of Voice | `%` | 1 in Zellen, 2 im Chart-Tooltip | `34.3%`, `34.30%` |
+| Rank | keine | **immer 1**, auch bei glatt 3 | `3.0`, `3.1` |
+| Sentiment | keine | 0 (ganze Note auf 0-100) | `76` |
+| Mention Count | keine | 0 | `214` |
+| Trend (Delta) | `%` nur beim Prozentwert | 1 | `4.7%`, `0.3` |
+
+Rang und Sentiment sind **keine Prozentwerte**. Wer eine Achse, einen Tooltip oder eine Zelle
+baut, gibt die Einheit mit: `UC.makeLine` kennt `cfg.unit`, `cfg.decimals`, `cfg.tipLabel`, alle
+drei auch als Funktion, wenn der Modus zur Laufzeit wechselt. Ohne Angabe bleibt es bei Prozent
+mit zwei Stellen -- das ist der Rueckfall fuer die bestehenden Aufrufer, kein Standard fuer neue.
+
+Beim Rang ist WENIGER besser: `UC.trendChip(delta, { inverted: true })`, sonst zeigt der Pfeil in
+die falsche Richtung.
+
+---
+
 ## 3. Verifikation: gemessen, nicht gelesen
 
 Kein Fix gilt als fertig, bevor er im lokalen Harness (`_h_*.html`, `python3 -m http.server`)
