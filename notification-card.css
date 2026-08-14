@@ -1,0 +1,174 @@
+/* upstreem notification-card.css — die schwebende Benachrichtigung (Praefix `unc`).
+   Braucht core.css: Farben aus --vc-*, die drei Knopfarten (.up-iconbtn, .up-btn-sec) von dort.
+   Hier steht nur, was es nirgends sonst gibt: die Karte, ihre Zierschichten und die Einblendung. */
+
+/* ---- Der schwebende Rahmen --------------------------------------------------------------------
+   32px zu beiden Kanten, wie vorgegeben. z-index 2147483500 liegt ueber allem in dieser App --
+   das create-with-ai-Modal steht auf 2147483000, dessen Toast und die Dropdowns auf ...001 --
+   aber UNTER quick-actions (2147483600). Das ist der einzige Bereich, der noch darueber gehoert.
+   Kein pointer-events auf der Wurzel: solange keine Karte offen ist, darf hier nichts klickbar
+   sein, sonst faengt ein unsichtbares Feld unten rechts Klicks der App ab. */
+.unc-root {
+  position: fixed; right: 32px; bottom: 32px; z-index: 2147483500;
+  pointer-events: none;
+}
+.unc-root.is-open { pointer-events: auto; }
+.unc-root:not(.is-open) .unc-card { display: none; }
+
+.unc-card {
+  position: relative; width: 384px; box-sizing: border-box; overflow: hidden;
+  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 16px;
+  /* Drei Lagen, damit die Karte nicht auf der Flaeche klebt: eine harte Kante, ein mittlerer und
+     ein weit gestreuter Schatten. Ein einzelner Schatten sieht bei dieser Groesse aus wie ein
+     Rahmen. */
+  box-shadow: 0 1px 2px rgba(31,31,31,0.05),
+              0 12px 28px -8px rgba(31,31,31,0.16),
+              0 32px 64px -24px rgba(31,31,31,0.22);
+  /* 420ms mit dieser Kurve: schnell heraus, weich hinein -- die Karte soll auffallen, ohne zu
+     springen. `both` haelt den Anfangszustand, sonst blitzt sie vor dem ersten Bild auf. */
+  animation: unc-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes unc-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+/* Rueckwaerts beim Schliessen, halb so lang -- Verschwinden darf schneller sein als Erscheinen. */
+.unc-root.is-closing .unc-card {
+  animation: unc-out 180ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+@keyframes unc-out {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateY(8px) scale(0.99); }
+}
+/* Wer Bewegung abgestellt hat, bekommt sie nicht: die Karte ist eine Meldung, keine Animation. */
+@media (prefers-reduced-motion: reduce) {
+  .unc-card, .unc-root.is-closing .unc-card { animation: none; }
+}
+
+/* ---- Zierschichten ---------------------------------------------------------------------------
+   Alle drei ohne Mauszeiger-Ereignisse und unter dem Inhalt. Sie stehen als eigene Elemente im
+   Markup, weil drei Lagen mit ::before/::after nicht gehen. */
+.unc-wash, .unc-rules, .unc-hair { position: absolute; pointer-events: none; }
+.unc-wash {
+  inset: 0 0 auto 0; height: 168px;
+  background: radial-gradient(120% 100% at 100% 0%,
+    rgba(31,31,31,0.07) 0%, rgba(31,31,31,0.015) 45%, rgba(31,31,31,0) 75%);
+}
+.unc-rules {
+  inset: 0;
+  background-image: repeating-linear-gradient(90deg,
+    rgba(31,31,31,0.03) 0px, rgba(31,31,31,0.03) 1px, transparent 1px, transparent 28px);
+}
+.unc-hair {
+  top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 30%,
+    rgba(255,255,255,0.9) 70%, rgba(255,255,255,0) 100%);
+}
+/* Im Dark Mode sind alle drei Lagen aus dunkler Tinte gebaut und damit unsichtbar bis stoerend --
+   die Lichtkante wird zu einem grauen Strich. Also weg und stattdessen ein Hauch Helligkeit. */
+.up-root[data-theme="dark"] .unc-wash {
+  background: radial-gradient(120% 100% at 100% 0%,
+    rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.012) 45%, rgba(255,255,255,0) 75%);
+}
+.up-root[data-theme="dark"] .unc-rules {
+  background-image: repeating-linear-gradient(90deg,
+    rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 28px);
+}
+.up-root[data-theme="dark"] .unc-hair {
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.10) 30%,
+    rgba(255,255,255,0.10) 70%, rgba(255,255,255,0) 100%);
+}
+
+/* ---- Kopfzeile -------------------------------------------------------------------------------
+   40px hoch, links das Logo, rechts das X. Links 16px wie der Rumpf, rechts nur 12px: der
+   Icon-Knopf hat eigene Polsterung, und 16 sahen daneben nach 20 aus. */
+.unc-head {
+  position: relative; display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; height: 40px; padding: 0 12px 0 16px;
+  border-bottom: 1px solid var(--vc-border);
+}
+.unc-logo { height: 14px; width: auto; display: block; opacity: 0.9; }
+/* Das X ist kleiner als der Standard-Icon-Knopf (32px): in einer 40px-Zeile waere der zu
+   wuchtig. Radius 7 statt 8, damit er bei 24px nicht rund wirkt. */
+.unc-card .up-iconbtn.unc-x { width: 24px; height: 24px; border-radius: 7px; }
+.unc-card .up-iconbtn.unc-x svg { width: 11px; height: 11px; }
+
+/* ---- Rumpf ----------------------------------------------------------------------------------- */
+.unc-body { position: relative; display: flex; align-items: flex-start; gap: 14px; padding: 16px; }
+/* Die Symbolflaeche traegt IMMER das dunkle Grau, unabhaengig vom Thema: sie ist die Marke in
+   dieser Karte, und ein im Dark Mode helles Feld waere ein zweiter Akzent neben dem Knopf.
+   Die Lichtkante innen laesst die Flaeche gewoelbt wirken statt aufgeklebt. */
+.unc-tile {
+  flex: 0 0 auto; width: 44px; height: 44px; border-radius: 11px;
+  display: grid; place-items: center; color: #ffffff;
+  background: linear-gradient(155deg, #333333 0%, #1f1f1f 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
+}
+.unc-tile svg { width: 20px; height: 20px; display: block; }
+/* padding-top 1px: die Grossbuchstaben der Typzeile sitzen optisch zu hoch gegen die Flaeche. */
+.unc-txt { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding-top: 1px; }
+.unc-type {
+  font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px; font-weight: 500; letter-spacing: 0.09em; text-transform: uppercase;
+  color: var(--vc-third);
+}
+.unc-title {
+  font-size: 15px; font-weight: 600; letter-spacing: -0.012em; line-height: 1.25;
+  color: var(--vc-text);
+}
+/* text-wrap: pretty verhindert eine einzelne Silbe in der letzten Zeile. Browser ohne die
+   Eigenschaft ignorieren sie, der Umbruch bleibt dann der normale. */
+.unc-desc {
+  font-size: 13px; font-weight: 400; line-height: 1.5; color: var(--vc-muted);
+  text-wrap: pretty;
+}
+
+/* ---- Fusszeile -------------------------------------------------------------------------------
+   Ohne Meta-Zeile: die Knoepfe stehen rechts, also schiebt sie flex-end dorthin. Kommt spaeter
+   eine Meta-Zeile links dazu, wird daraus space-between und sonst nichts. */
+.unc-foot {
+  position: relative; display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+  padding: 12px 16px; border-top: 1px solid var(--vc-border);
+  background: linear-gradient(180deg, rgba(31,31,31,0.012) 0%, rgba(31,31,31,0.03) 100%);
+}
+.up-root[data-theme="dark"] .unc-foot {
+  background: linear-gradient(180deg, rgba(255,255,255,0.01) 0%, rgba(255,255,255,0.025) 100%);
+}
+/* Der zweite Knopf ist die leise Antwort: kein Rahmen, keine Flaeche, bis man darauf zeigt.
+   .up-btn-sec bringt Hoehe, Schrift und Radius mit -- hier fallen nur Rahmen und Farbe weg. */
+.unc-foot .up-btn-sec.unc-second {
+  height: 28px; padding: 0 10px; border-radius: 8px;
+  border-color: transparent; background: transparent; color: var(--vc-muted);
+  font-size: 12.5px;
+}
+.unc-foot .up-btn-sec.unc-second:hover {
+  color: var(--vc-text); background: var(--vc-heading-bg); border-color: transparent;
+}
+/* Der Hauptknopf ist ein <a>, damit target=_blank und die Mitteltaste des Browsers wirken --
+   ein <button> mit window.open waere beides nicht. Deshalb traegt er die Knopf-Geometrie selbst
+   statt .up-btn: das setzt Dinge, die auf einem Link nicht greifen (appearance, font-family). */
+.unc-primary {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 28px; padding: 0 13px; border-radius: 8px; box-sizing: border-box;
+  font-family: inherit; font-size: 12.5px; font-weight: 500; line-height: 1;
+  text-decoration: none; cursor: pointer; white-space: nowrap;
+  border: 1px solid var(--vc-border); background: var(--vc-bg); color: var(--vc-text);
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+.unc-primary:hover { background: var(--vc-heading-bg); }
+/* Dunkel bei feature, announcement und security -- dort ist die Nachricht dringend genug, dass
+   der Knopf die Aufmerksamkeit bekommt. Die Farben sind fest und nicht aus --vc-*: der Knopf
+   soll in beiden Themen derselbe dunkle Block sein, wie die Symbolflaeche darueber. */
+.unc-primary.is-dark {
+  background: #1f1f1f; border-color: #1f1f1f; color: #ffffff;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
+}
+.unc-primary.is-dark:hover { background: #333333; border-color: #333333; }
+
+/* ---- Schmale Breiten -------------------------------------------------------------------------
+   Unter 440px passt eine 384px-Karte mit 32px Rand nicht mehr: sie spannt sich dann von Kante zu
+   Kante mit 16px Luft, wie in der Vorlage vorgegeben. */
+@media (max-width: 440px) {
+  .unc-root { left: 16px; right: 16px; bottom: 16px; }
+  .unc-card { width: auto; }
+}

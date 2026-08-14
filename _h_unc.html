@@ -1,0 +1,37 @@
+<!doctype html><meta charset="utf-8"><title>notification-card</title>
+<style>body{margin:0;font-family:Geist,system-ui;height:220vh;background:#fafafa}
+ .bar{padding:16px;display:flex;gap:8px;flex-wrap:wrap}button{padding:6px 10px}</style>
+<div class="bar">
+  <button onclick="zeige('feature')">feature</button>
+  <button onclick="zeige('announcement')">announcement</button>
+  <button onclick="zeige('maintenance')">maintenance</button>
+  <button onclick="zeige('security')">security</button>
+  <button onclick="zeige('tip')">tip</button>
+  <button onclick="zeige('unbekannt')">unbekannter Typ</button>
+  <button onclick="mehrere()">3 auf einmal (Prio)</button>
+  <button onclick="kaputt()">kaputtes JSON</button>
+  <button onclick="resetUpstreemNotifications('n1')">reset</button>
+  <button onclick="document.querySelector('.up-root').setAttribute('data-theme',
+    document.querySelector('.up-root').getAttribute('data-theme')==='dark'?'light':'dark')">dark</button>
+</div>
+<div class="up-root unc-root" data-instance="n1" data-theme="light"
+     data-logo="https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-lockup-1f1f1f.svg"
+     data-dismiss-fn="bubble_fn_uncDismiss"></div>
+<link rel="stylesheet" href="core.css?v=u1">
+<link rel="stylesheet" href="notification-card.css?v=u1">
+<script src="core.js?v=u1"></script>
+<script src="notification-card.js?v=u1"></script>
+<script>
+window.__events = [];
+window.bubble_fn_uncDismiss = function(v){ window.__events.push(v); };
+function karte(t, prio, id){ return {
+  id: id || ("id-"+t), title: "Mira is live", color: "#111827",
+  body: "Mira, your AI Search Data Agent, is now available.\nAsk questions about Visibility, competitors, citations, URLs, sources and opportunities — directly from your upstreem data.",
+  cta_label: "Big Update!", cta_url: "https://app.upstreem.ai/?view=ask-mira",
+  notification_type: t, priority: prio || 110, created_at: "2026-06-25T06:27:45.469339+00:00" }; }
+function zeige(t){ setUpstreemNotifications("n1", JSON.stringify([karte(t)])); }
+function mehrere(){ setUpstreemNotifications("n1", JSON.stringify([
+  karte("tip", 10, "a"), karte("security", 200, "b"), karte("feature", 110, "c")])); }
+function kaputt(){ setUpstreemNotifications("n1", "{das ist kein json"); }
+zeige("feature");
+</script>

@@ -5465,7 +5465,21 @@
     /* Feather "info" -- die Erklaer-Raute in Tabellenkoepfen. Geometrie wortgleich zu der, die
        performance-detail bisher als eigene Konstante trug. */
     info:     '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/>' +
-              '<line x1="12" y1="8" x2="12.01" y2="8"/>'
+              '<line x1="12" y1="8" x2="12.01" y2="8"/>',
+    /* Fuenf Symbole fuer die Benachrichtigungstypen. Feather-Bauart: 24er viewBox, runde Enden,
+       currentColor. sparkle und bulb hat Feather nicht -- die Geometrie stammt aus der
+       Design-Vorlage und folgt derselben Strichstaerke, damit sie neben den anderen nicht
+       auffallen. sparkle ist gefuellt, deshalb fill statt stroke am Pfad selbst. */
+    sparkle:  '<path d="M12 3 L13.6 9.2 L20 11 L13.6 12.8 L12 19 L10.4 12.8 L4 11 L10.4 9.2 Z" ' +
+              'fill="currentColor" stroke="none"/>',
+    broadcast:'<circle cx="12" cy="12" r="2.1" fill="currentColor" stroke="none"/>' +
+              '<path d="M8.4 8.4a5 5 0 0 0 0 7.2M15.6 15.6a5 5 0 0 0 0-7.2"/>' +
+              '<path d="M5.6 5.6a9 9 0 0 0 0 12.8M18.4 18.4a9 9 0 0 0 0-12.8" opacity="0.45"/>',
+    clock:    '<circle cx="12" cy="12" r="7.2"/><path d="M12 8.4V12l2.8 1.8"/>',
+    shieldCheck: '<path d="M12 3.2 5.5 5.8v5.4c0 3.6 2.6 6.9 6.5 8.4 3.9-1.5 6.5-4.8 6.5-8.4V5.8Z"/>' +
+              '<path d="M9.2 11.8 11.4 14l3.6-3.9"/>',
+    bulb:     '<path d="M9.4 16.4a5.4 5.4 0 1 1 5.2 0"/><path d="M9.6 16.4h4.8"/>' +
+              '<path d="M10.4 19h3.2"/>'
   };
   /* ---- Mentioned-Brands-Dropdown: die zwei Teile, die in allen vier Tabellen gleich sind ------
      mentFilter(menu, query)  blendet die Eintraege aus, die nicht zur Suche passen, und schaltet

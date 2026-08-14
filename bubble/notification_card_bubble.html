@@ -1,0 +1,140 @@
+<!-- ==========================================================================================
+     upstreem — In-App Notification (Praefix `unc`)
+
+     Eine schwebende Karte unten rechts, 32px zu beiden Kanten. Zeigt EINE Benachrichtigung; sind
+     mehrere offen, gewinnt die hoechste `priority` und bei Gleichstand die neuere `created_at`.
+     Ein Stapel ist bewusst nicht gebaut.
+
+     Dieses HTML-Element traegt NUR das Wurzel-Div. Alles darunter baut die Komponente selbst.
+
+     ── FRISCHE INSTALLATION ──────────────────────────────────────────────────────────────────
+     Diese Datei ist eine VORLAGE. Aenderungen daran erreichen ein bereits eingebautes Element
+     NICHT -- dort muss dasselbe von Hand nachgezogen werden.
+
+     Das Element gehoert auf die Seite (oder in ein Reusable, das auf jeder Seite liegt), NICHT in
+     eine Gruppe mit overflow oder eigenem z-index: die Karte ist position:fixed und wuerde davon
+     eingefangen.
+
+     ── ATTRIBUTE ─────────────────────────────────────────────────────────────────────────────
+       data-instance      eindeutig pro Platzierung. Alle Setter sprechen ueber diese ID.
+       data-cdn-pin       Commit-Hash. NIEMALS leer lassen: leer zieht "@main", und das liefern
+                          jsDelivr und der Browser aus einem bis zu tagealten Cache.
+       data-isdark        "yes"/"no". Steuert Dark Mode.
+       data-logo          URL des upstreem-Schriftzugs fuer die Kopfzeile. Fehlt sie, bleibt die
+                          Zeile leer statt ein kaputtes Bild zu zeigen.
+       data-dismiss-fn    Standardname bubble_fn_uncDismiss
+
+     ── EVENT (JavaScriptToBubble, Value type: TEXT) ───────────────────────────────────────────
+       bubble_fn_uncDismiss   {"id":"<notification id>","reason":"close|secondary|primary"}
+
+     Feuert an drei Stellen, immer mit demselben Payload-Aufbau:
+       close      Klick auf das X oben rechts
+       secondary  Klick auf den linken Knopf (Later / Dismiss / That was me)
+       primary    Klick auf den Hauptknopf -- der Link ist da schon geoeffnet
+
+     `reason` ist da, damit du unterscheiden kannst: "primary" heisst gehandelt, "close" und
+     "secondary" heissen weggeklickt. Willst du das nicht trennen, ignoriere das Feld.
+
+     WICHTIG: Die Karte merkt sich das Wegklicken nur fuer diese Sitzung. Nach einem Seitenwechsel
+     kaeme dieselbe Nachricht wieder -- die dauerhafte Ablage gehoert in deinen Workflow
+     (Zeile in notification_reads schreiben oder ein dismissed_at setzen). Ohne diesen Schritt
+     erscheint die Karte bei jedem Seitenaufbau erneut.
+
+     ── DATEN HEREIN ──────────────────────────────────────────────────────────────────────────
+       setUpstreemNotifications(instanceId, payload)
+         Liste ODER eine einzelne Zeile -- beides wird angenommen. Gelesen werden:
+           id                 Pflicht. Ohne id wird die Zeile verworfen (sie waere nicht
+                              wegklickbar, weil das Dismiss-Event sie nicht benennen koennte).
+           title              Ueberschrift
+           body               Beschreibung. \n im Text wird zu einem Zeilenumbruch.
+           cta_label          Beschriftung des Hauptknopfs. Fehlt sie, steht dort "Open".
+           cta_url            Ziel des Hauptknopfs, oeffnet in einem neuen Tab. Fehlt sie,
+                              erscheint der Knopf gar nicht.
+           notification_type  feature | announcement | maintenance | security | tip
+                              Bestimmt Symbol, Bezeichnung, den Text des zweiten Knopfs und ob der
+                              Hauptknopf dunkel oder umrandet ist. Ein unbekannter Typ zeigt ein
+                              neutrales Info-Zeichen und den Typ als Bezeichnung -- die Nachricht
+                              geht dadurch nicht verloren.
+           priority           Zahl. Hoeher gewinnt.
+           created_at         Zeitstempel. Entscheidet bei gleicher priority.
+         `color` wird ignoriert -- das Aussehen haengt am Typ.
+
+       dismissUpstreemNotification(instanceId, notificationId)
+         Karte von aussen schliessen, etwa nachdem ein Workflow sie serverseitig als gelesen
+         markiert hat. Ohne zweites Argument verschwinden alle.
+
+       resetUpstreemNotifications(instanceId)
+
+     ── DIE FUENF TYPEN ───────────────────────────────────────────────────────────────────────
+       feature       Funkelstern    Later          Hauptknopf dunkel
+       announcement  Funkwellen     Dismiss        Hauptknopf dunkel
+       maintenance   Uhr            Dismiss        Hauptknopf umrandet
+       security      Schild+Haken   That was me    Hauptknopf dunkel
+       tip           Gluehbirne     Dismiss        Hauptknopf umrandet
+
+     Umrandet bei maintenance und tip, weil die Nachricht dort nicht dringend ist -- ein dunkler
+     Knopf waere ein Drangeln.
+
+     ── SANITIZER (STYLEGUIDE §46) ────────────────────────────────────────────────────────────
+     Baust du den Payload in einem Run-JavaScript aus dynamischen Ausdruecken zusammen, nimm
+     BACKTICKS und kein JSON.stringify. Dann ist der Payload ein Text, und ein leerer Wert oder
+     ein unquotierter Schluessel toetet den Step nicht -- parseLoose in core repariert das:
+
+       setUpstreemNotifications("app_notifications", `[
+         {
+           "id": "ID",
+           "title": "TITLE",
+           "body": "BODY",
+           "cta_label": "CTA_LABEL",
+           "cta_url": "CTA_URL",
+           "notification_type": "TYPE",
+           "priority": PRIORITY,
+           "created_at": "CREATED_AT"
+         }
+       ]`);
+
+     Mit JSON.stringify({...}) statt Backticks wirft Bubble bei jedem leeren Wert
+     "Unexpected token" -- der Step laeuft dann gar nicht.
+
+     ── EINBAU IN KUERZE ──────────────────────────────────────────────────────────────────────
+     1. Dieses HTML-Element auf die Seite, data-instance, data-cdn-pin und data-logo setzen.
+     2. Ein JavaScriptToBubble-Element anlegen (Suffix uncDismiss, Value type TEXT,
+        Trigger event an).
+     3. Workflow darauf: id und reason aus dem Wert lesen, die Nachricht fuer diesen Nutzer als
+        gelesen ablegen. OHNE diesen Schritt kommt die Karte nach jedem Seitenaufbau wieder.
+     4. Beim Seitenaufbau die offenen Benachrichtigungen laden und ueber
+        setUpstreemNotifications hereingeben.
+     ========================================================================================== -->
+
+<div class="up-root unc-root"
+     data-instance="INSTANCE_ID"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="IS_DARK"
+     data-logo="LOGO_URL"
+     data-dismiss-fn="bubble_fn_uncDismiss"></div>
+
+<script>
+(function(){
+  /* Loader nach STYLEGUIDE 26: den Pin ueber getElementsByClassName lesen, NIEMALS ueber
+     document.currentScript — Bubble fuehrt Scripts nicht in DOM-Reihenfolge aus. */
+  function readPin(cls){
+    var els = document.getElementsByClassName(cls), i, p;
+    for (i = 0; i < els.length; i++){
+      /* trim: ein Leerzeichen aus der Bubble-Konstante ergaebe sonst .../upstreem-ui@ abc /core.js,
+         jsDelivr antwortet mit 404, und weder CSS noch JS landen. */
+      p = (els[i].getAttribute("data-cdn-pin") || "").trim();
+      if (p && p !== "CDN_" + "PIN") return p;
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("unc-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(url, make){ if (L[url]) return; L[url] = 1; make(url); }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+
+  /* core zuerst, async=false haelt die Reihenfolge ein. */
+  css("core.css");                js("core.js");
+  css("notification-card.css");   js("notification-card.js");
+})();
+</script>

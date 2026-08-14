@@ -7,6 +7,7 @@
   "bubble_fn_uapAddPrompts",
   "bubble_fn_ubdGran",
   "bubble_fn_ubdMode",
+  "bubble_fn_uncDismiss",
   "bubble_fn_updClose",
   "bubble_fn_updScope",
   "bubble_fn_utmDelete",
@@ -105,6 +106,7 @@
   "data-date-to-fn",
   "data-delete-fn",
   "data-dimension-fn",
+  "data-dismiss-fn",
   "data-docs-fn",
   "data-edit-fn",
   "data-editbrand-fn",
@@ -396,6 +398,7 @@
   "data-key",
   "data-linewidth",
   "data-local",
+  "data-logo",
   "data-market",
   "data-markets-apply-fn",
   "data-markets-fn",
@@ -1398,6 +1401,7 @@
   "up-bars",
   "up-bars-sk",
   "up-box",
+  "up-btn",
   "up-btn-sec",
   "up-chart-empty",
   "up-check",
@@ -2237,6 +2241,8 @@
   "udtSubIn",
   "udtSubOut",
   "uhmpop",
+  "unc-in",
+  "unc-out",
   "uoCardIn",
   "up-ph-spin",
   "uprCoreFloat",
@@ -2252,12 +2258,12 @@
   "uutpulse"
  ],
  "_zaehlung": {
-  "events": 88,
-  "fnattrs": 60,
+  "events": 89,
+  "fnattrs": 61,
   "globals": 108,
   "payloadkeys": 59,
-  "dataattrs": 151,
-  "klassen": 1722,
-  "keyframes": 50
+  "dataattrs": 152,
+  "klassen": 1723,
+  "keyframes": 52
  }
 }
