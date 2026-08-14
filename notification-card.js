@@ -227,6 +227,9 @@
 
   var mount = UC.makeMount ? UC.makeMount({
     rootClass: "unc-root",
+    /* Der Name, unter dem Bubble fragen kann, ob es hier eine Karte gibt. Fehlt er, setzt
+       makeMount window[undefined] -- siehe die Notiz dort. */
+    resolveLocal: "__uncResolveLocal",
     init: initRoot,
     api: {
       setUpstreemNotifications:    function (id, payload) { return each(id, function (c) { c.set(payload); }); },

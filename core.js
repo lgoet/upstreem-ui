@@ -1619,7 +1619,12 @@
       if ((cfg.forwardShape && cfg.forwardShape[name]) !== "params"){ window[name] = impl; return; }
       window[name] = function(params){ return impl(normParams(params, cfg.rootClass)); };
     });
-    window[cfg.resolveLocal] = function(id){ return rootsWithId(id).length > 0; };
+    /* Nur setzen, wenn ein Name da ist. Ohne cfg.resolveLocal war das window[undefined] -- und
+       window.undefined ist unbeschreibbar, der TypeError riss makeMount MITTEN im Aufbau ab.
+       Die Komponente mountete dann nie, ohne dass die Meldung darauf hinwies. */
+    if (cfg.resolveLocal) {
+      window[cfg.resolveLocal] = function(id){ return rootsWithId(id).length > 0; };
+    }
     /* cfg.onMount — hand the mount object to the component BEFORE the replay below.
        Every component writes `var mount = UC.makeMount({...})` and reads `mount.rootsWithId(...)`
        inside the very api functions passed in here. The replay runs while makeMount is still
