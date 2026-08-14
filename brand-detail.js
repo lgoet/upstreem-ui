@@ -504,9 +504,13 @@
       reset: function () {
         state.series = null; state.variations = null; state.hasData = false;
         state.loading = false;
-        /* resetBrandDetail ist der EINE Ort, an dem der Modus zurueckgesetzt werden darf -- ein
-           vollstaendiger Neuanfang. Ueberall sonst bleibt er stehen, auch beim Filterwechsel. */
-        state.mode = "visibility"; state.gran = "day"; letzteKurve = false;
+        /* Auch reset laesst den Modus stehen. Das klang nach dem einen Ort, an dem ein
+           Zuruecksetzen richtig ist -- aber der Filter-Workflow ruft reset, und danach kam die
+           Rank-Serie in eine Komponente, die auf Visibility stand: "Waiting for visibility data",
+           obwohl die richtigen Daten da waren. Zusammen mit setSeries, das den Modus ebenfalls
+           nicht anfasst, wechselt er jetzt ausschliesslich durch einen Klick auf den Switcher.
+           letzteKurve faellt trotzdem: die Daten sind weg, also darf keine alte Kurve stehen. */
+        letzteKurve = false;
         /* Auch die Suche zuruecksetzen: sonst zeigt die naechste Marke eine gefilterte Liste,
            ohne dass irgendwo ein Suchbegriff zu sehen waere. */
         state.varQuery = ""; state.error = null;
