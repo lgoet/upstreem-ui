@@ -1564,6 +1564,7 @@
   "up-scale-opt",
   "up-scale-opt-head",
   "up-scale-opt-lbl",
+  "up-scroll",
   "up-search",
   "up-search-box",
   "up-search-btn",
@@ -2239,7 +2240,7 @@
   "globals": 108,
   "payloadkeys": 57,
   "dataattrs": 151,
-  "klassen": 1709,
+  "klassen": 1710,
   "keyframes": 50
  }
 }

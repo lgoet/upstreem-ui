@@ -1899,3 +1899,24 @@
      immer die naechste Runde. Ueber --up-menu-z pro Placement nachjustierbar. */
   z-index: var(--up-menu-z, 99998);
 }
+
+/* ---- .up-scroll ------------------------------------------------------------------------------
+   Die schmale, dezente Scrollbar des Hauses. Stand in fuenf Dateien fast gleich -- die
+   Unterschiede waren zufaellig, die FARBEN aber nicht: drei Komponenten ziehen sie aus der
+   Haus-Palette (--vc-*), ask-mira und quick-actions aus ihrer eigenen (--am-*). Eine Klasse mit
+   festen Farben haette die beiden anders aussehen lassen.
+
+   Darum: Geometrie fest, Farbe ueber zwei Variablen mit Rueckfall. Wer nichts setzt, bekommt die
+   Haus-Toene; wer eine eigene Palette fuehrt, setzt --up-scroll-thumb und --up-scroll-track auf
+   dem eigenen Wurzelelement und behaelt sein Aussehen.
+
+   Firefox kennt ::-webkit-scrollbar nicht und nimmt scrollbar-width/scrollbar-color -- beide
+   Zeilen gehoeren zusammen, sonst ist es in einem der beiden Browser unveraendert breit. */
+.up-scroll { scrollbar-width: thin;
+  scrollbar-color: var(--up-scroll-thumb, var(--vc-border)) var(--up-scroll-track, transparent); }
+.up-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+.up-scroll::-webkit-scrollbar-track { background: var(--up-scroll-track, transparent); }
+.up-scroll::-webkit-scrollbar-thumb { background: var(--up-scroll-thumb, var(--vc-border));
+  border-radius: 999px; }
+.up-scroll::-webkit-scrollbar-thumb:hover { background: var(--up-scroll-thumb-hover, var(--vc-hover-border)); }
+.up-scroll::-webkit-scrollbar-corner { background: transparent; }
