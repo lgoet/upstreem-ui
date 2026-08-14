@@ -77,6 +77,15 @@
 
   var GRANS = [{ key: "day", label: "Day" }, { key: "week", label: "Week" }, { key: "month", label: "Month" }];
 
+  /* Der Variations-Abschnitt kommt KOMPLETT aus core: Ueberschrift, Untertitel, Suchfeld und der
+     Tabellenkopf mit den drei Erklaer-Rauten. Genau derselbe Aufruf steht im Radar-Detail -- was
+     hier frueher stand, war eine nackte Tabelle ohne Kopf und ohne Suche.
+     scope "overall": im Radar-Detail geht es um EIN Thema, hier um die ganze Marke. Nur dieses
+     Wort unterscheidet die Erklaertexte, alles andere ist identisch. */
+  var VAR_SCOPE = "overall";
+  var VARSEC = UC.variationsSection ? UC.variationsSection({ prefix: "ubd", scope: VAR_SCOPE }) : "";
+  var VAR_EXPLAIN = UC.variationsExplain ? UC.variationsExplain(VAR_SCOPE) : {};
+
   function num(v) { var n = Number(v); return isFinite(n) ? n : null; }
 
 
@@ -132,7 +141,7 @@
         '</div>' +
 
         '<div class="ubd-chartwrap"><canvas class="ubd-canvas"></canvas></div>' +
-        '<div class="ubd-varwrap"></div>' +
+        '<div class="ubd-varwrap">' + VARSEC + '</div>' +
       '</div>';
   }
 
@@ -154,7 +163,9 @@
     var elTrend   = root.querySelector(".ubd-kpi-trend");
     var elCanvas  = root.querySelector(".ubd-canvas");
     var elChart   = root.querySelector(".ubd-chartwrap");
-    var elVars    = root.querySelector(".ubd-varwrap");
+    var elVBody   = root.querySelector(".ubd-vbody");
+    var elSearch  = root.querySelector(".ubd-search");
+    var elSInput  = elSearch ? elSearch.querySelector(".up-search-input") : null;
 
     var state = {
       mode: "visibility",
@@ -162,6 +173,7 @@
       company: null,
       series: null,        /* zuletzt empfangene Serie, mitsamt ihrem eigenen mode */
       variations: null,
+      varQuery: "",
       loading: false,
       hasData: false
     };
@@ -264,11 +276,89 @@
        UC.variationRows baut die Zeilen -- dasselbe Kit, das der Radar-Detail benutzt. Gefiltert
        wird hier: die Suche haengt an DIESEM Feld, das Kit soll keinen Zustand kennen. Solange es
        hier noch kein Suchfeld gibt, ist die Suche leer und alle Zeilen kommen durch. */
+    /* Der Marken-RPC liefert nur Name und Anzahl. Anteil und Bezugsgroesse rechnen wir hier aus
+       der Summe: ueber ALLE Variationen einer Marke summiert sich die Anzahl genau zu deren
+       Erwaehnungen, der Anteil ist also nicht geschaetzt, sondern die Definition. Bringt der
+       Payload die Felder doch mit (wie im Radar-Detail), gewinnen sie -- gerechnet wird nur, was
+       fehlt. Ohne das stuende in der Spalte "Share of Voice" dauerhaft ein Strich, und eine leere
+       Spalte sieht aus wie ein Fehler. */
+    function varsMitAnteil() {
+      var list = state.variations || [];
+      var summe = 0, i;
+      for (i = 0; i < list.length; i++) { var c = num(list[i].mentioned_count); if (c != null) summe += c; }
+      /* Gefiltert wird ERST hier, nach der Summe: sonst waeren die Prozente beim Tippen
+         ploetzlich Anteile an den Treffern statt an der Marke, und dieselbe Zeile zeigte ohne
+         Suche 27,8% und mit Suche 100%. Das Kit filtert nicht, es hebt den Treffer nur hervor. */
+      var q = String(state.varQuery || "").toLowerCase();
+      if (q) list = list.filter(function (v) {
+        return String(v.name || "").toLowerCase().indexOf(q) !== -1;
+      });
+      return list.map(function (v) {
+        var c = num(v.mentioned_count);
+        var sov = num(v.share_of_voice_pct);
+        return {
+          name: v.name,
+          mentioned_count: v.mentioned_count,
+          share_of_voice_pct: sov != null ? sov : (summe > 0 && c != null ? (c / summe) * 100 : null),
+          mentions_total: num(v.mentions_total) != null ? v.mentions_total : (summe || null)
+        };
+      });
+    }
+
     function renderVariations() {
-      elVars.innerHTML = UC.variationRows(state.loading ? null : state.variations, {
-        query: "",
-        rowClass: "ubd-vrow",
-        emptyText: "No variations recorded for this brand."
+      if (!elVBody) return;
+      /* Waehrend des Ladens Skelett-Zeilen im Spaltenraster -- dieselben Balkenbreiten wie im
+         Radar-Detail: Name lang, Anteil kurz, Anzahl kurz. */
+      if (state.loading || state.variations == null) {
+        elVBody.innerHTML = UC.skeletonRows
+          ? UC.skeletonRows({ count: 6, cols: [{ w: 120, jitter: 40 }, { w: 44 }, { w: 28 }],
+                              rowClass: "up-row up-vrow ubd-vrow", cellClass: "up-td" })
+          : "";
+        return;
+      }
+      elVBody.innerHTML = UC.variationRows(varsMitAnteil(), {
+        query: state.varQuery,
+        rowClass: "up-vrow ubd-vrow",
+        emptyText: state.varQuery ? "No variation matches this search."
+                                  : "No variations recorded for this brand."
+      });
+    }
+
+    /* Suche: lokal, ohne Debounce -- die Liste liegt vollstaendig im Speicher, ein Rundgang zum
+       Server waere reine Latenz. Auf-/Zuklappen ist das geteilte .up-search aus core, damit sich
+       das Feld anfuehlt wie in jeder anderen Tabelle. */
+    if (elSearch && elSInput) {
+      elSearch.querySelector(".up-search-btn").addEventListener("click", function () {
+        var open = !elSearch.classList.contains("is-open");
+        elSearch.classList.toggle("is-open", open);
+        if (open) { setTimeout(function () { try { elSInput.focus(); } catch (e) {} }, 60); }
+        else if (state.varQuery) {
+          state.varQuery = ""; elSInput.value = "";
+          elSearch.classList.remove("has-text"); renderVariations();
+        }
+      });
+      elSInput.addEventListener("input", function () {
+        state.varQuery = String(elSInput.value || "").trim();
+        elSearch.classList.toggle("has-text", !!elSInput.value.length);
+        renderVariations();
+      });
+      elSearch.querySelector(".up-search-clear").addEventListener("click", function () {
+        state.varQuery = ""; elSInput.value = ""; elSearch.classList.remove("has-text");
+        renderVariations(); try { elSInput.focus(); } catch (e) {}
+      });
+    }
+
+    /* Die drei Erklaer-Rauten im Tabellenkopf. Dieselbe Karte wie ueberall (UC.makeExplain), die
+       Texte kommen aus core -- sonst erklaert dieselbe Spalte an zwei Orten Verschiedenes. */
+    if (UC.makeExplain) {
+      UC.makeExplain({
+        root: root, getIsDark: darkNow,
+        html: function (key) {
+          var e = VAR_EXPLAIN[key];
+          if (!e) return "";
+          return '<div class="up-explain-h">' + esc(e.h) + '</div>' +
+                 '<div class="up-explain-t">' + esc(e.t) + '</div>';
+        }
       });
     }
 
@@ -328,6 +418,11 @@
       reset: function () {
         state.series = null; state.variations = null; state.hasData = false;
         state.loading = false; state.mode = "visibility"; state.gran = "day";
+        /* Auch die Suche zuruecksetzen: sonst zeigt die naechste Marke eine gefilterte Liste,
+           ohne dass irgendwo ein Suchbegriff zu sehen waere. */
+        state.varQuery = "";
+        if (elSInput) { elSInput.value = ""; }
+        if (elSearch) { elSearch.classList.remove("is-open", "has-text"); }
         render();
       },
       destroy: function () { try { line.destroy && line.destroy(); } catch (e) {} }

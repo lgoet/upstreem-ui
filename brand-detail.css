@@ -9,7 +9,12 @@
    visibility-chart. Hier steht darum NUR die Positionierung -- kein Rahmen, keine Farbe, keine
    Hoehe. Was hier frueher stand, war ein Nachbau, der an fuenf Stellen anders aussah als das
    Original. */
-.ubd-seg { margin: 0 0 12px; }
+/* fit-content: .up-seg ist ein Flex-Container und nimmt sonst die volle Breite des Elternteils,
+   wodurch sich die vier Knoepfe ueber die ganze Karte strecken. Der Schalter soll nur so breit
+   sein wie seine Beschriftungen. 16px links und rechts je Knopf -- die Beschriftungen sind hier
+   laenger als die zweistelligen Zustaende, fuer die der Standardabstand gedacht ist. */
+.ubd-seg { margin: 0 0 12px; width: fit-content; }
+.ubd-seg .up-seg-btn { padding-left: 16px; padding-right: 16px; }
 
 /* ---- Karte ----------------------------------------------------------------------------------- */
 .ubd-card {
@@ -19,9 +24,9 @@
 .ubd-head { display: flex; align-items: center; gap: 12px; min-height: 32px; }
 .ubd-title { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto; }
 /* 4px Radius wie das Logo in der Meta-Zeile der Seitenkoepfe -- dasselbe Bauteil, dieselbe Kante. */
-.ubd-logo { width: 20px; height: 20px; border-radius: 4px; object-fit: cover; flex: 0 0 auto; display: block; }
+.ubd-logo { width: 18px; height: 18px; border-radius: 4px; object-fit: cover; flex: 0 0 auto; display: block; }
 .ubd-heading {
-  font-size: 15px; font-weight: 500; color: var(--vc-text);
+  font-size: 14px; font-weight: 500; color: var(--vc-text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .ubd-head .vc-gran { flex: 0 0 auto; }
@@ -31,17 +36,19 @@
    von oben nach unten liest, soll erst die Zahl und dann den Verlauf sehen.
    baseline-Ausrichtung, damit der Trend-Chip auf der Grundlinie der Zahl sitzt und nicht auf
    halber Hoehe schwebt. */
-.ubd-kpi { display: flex; align-items: center; gap: 8px; margin: 12px 0 4px; min-height: 34px; }
+/* 16px unter der Zahl bis zur Kurve: die beiden gehoeren zusammen, aber die Zahl braucht Luft,
+   sonst klebt sie auf der oberen Gitterlinie. */
+.ubd-kpi { display: flex; align-items: center; gap: 8px; margin: 10px 0 16px; min-height: 30px; }
 /* Der INHALT kommt aus den Core-Bauteilen: .up-num, .up-sent mit Punkt, .up-rank-group mit Raute
    -- dieselben, die jede Tabellenzelle benutzt. Hier wird nur die Schrift groesser gestellt, damit
    die Zahl ueber der Kurve als Zusammenfassung liest. Alles andere -- Farbe, Punkt, Raute,
    Abstaende -- bleibt beim Original, sonst sieht dieselbe Zahl an zwei Orten verschieden aus. */
-.ubd-kpi-val { font-size: 26px; line-height: 1.1; letter-spacing: -0.5px; }
+.ubd-kpi-val { font-size: 21px; line-height: 1.15; letter-spacing: -0.4px; }
 .ubd-kpi-val .up-num { font-size: inherit; font-weight: 500; letter-spacing: inherit;
   font-variant-numeric: tabular-nums; }
 .ubd-kpi-val .up-sent-val { font-size: inherit; font-weight: 500; font-variant-numeric: tabular-nums; }
-.ubd-kpi-val .up-sent-dot { width: 10px; height: 10px; }
-.ubd-kpi-val .up-hash { width: 18px; height: 18px; }
+.ubd-kpi-val .up-sent-dot { width: 9px; height: 9px; }
+.ubd-kpi-val .up-hash { width: 16px; height: 16px; }
 /* Der Trend-Chip bleibt in SEINER Groesse -- er ist eine Randnotiz zur Zahl, keine zweite Zahl. */
 .ubd-kpi-trend { display: inline-flex; align-items: center; }
 
@@ -58,13 +65,17 @@
 .ubd-root.is-variations .ubd-chartwrap { display: none; }
 .ubd-root.is-variations .ubd-varwrap { display: block; }
 
-/* Drei Spalten, weil UC.variationRows drei Zellen baut: Name, Anteil (Ring plus Prozent),
-   Anzahl. Die Zellklassen kommen aus core (.up-var-name/-sov/-cnt), nur das Raster ist hier --
-   im Radar-Detail steht dieselbe Tabelle in einer schmaleren Spalte und braucht andere Breiten. */
-.ubd-vrow { display: grid; grid-template-columns: 1fr 90px 90px; align-items: center; min-height: 40px; }
+/* Der ganze Abschnitt -- Ueberschrift, Untertitel, Suchfeld, Tabellenrahmen und Zeilenhoehen --
+   kommt aus core (UC.variationsSection, .up-varsec). Hier steht nur das Spaltenraster: im
+   Radar-Detail steht dieselbe Tabelle in einer schmaleren Spalte und braucht andere Breiten. */
+.ubd-vrow { display: grid; grid-template-columns: 1fr 120px 120px; align-items: center; }
 .ubd-vrow .up-var-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ubd-vrow .up-var-sov { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
 .ubd-vrow .up-var-cnt { display: flex; align-items: baseline; justify-content: flex-end; gap: 4px; }
+/* Die Kopfzellen sitzen im selben Raster wie die Datenzellen -- Anteil und Anzahl rechtsbuendig,
+   damit Ueberschrift und Zahl auf derselben Kante stehen. */
+.ubd-vrow .up-th-vsov, .ubd-vrow .up-th-vcnt { justify-content: flex-end; }
+.ubd-varsec { margin-top: 4px; }
 
 /* ---- Schmale Breiten -------------------------------------------------------------------------
    Unter 560px wandert der Granularitaets-Switcher unter die Ueberschrift statt sie zu quetschen.

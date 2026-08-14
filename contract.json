@@ -1575,6 +1575,10 @@
   "up-search-btn",
   "up-search-clear",
   "up-search-input",
+  "up-sec-h",
+  "up-sec-head",
+  "up-sec-sub",
+  "up-sec-titles",
   "up-seg",
   "up-seg-btn",
   "up-sent",
@@ -1620,6 +1624,8 @@
   "up-th-mentioned",
   "up-th-mentlbl",
   "up-th-sub",
+  "up-th-vcnt",
+  "up-th-vsov",
   "up-thead",
   "up-thsort",
   "up-thsort-down",
@@ -1666,6 +1672,9 @@
   "up-varring",
   "up-varring-fill",
   "up-varring-track",
+  "up-varsec",
+  "up-vartable",
+  "up-vrow",
   "upd-",
   "upd-body",
   "upd-brand",
@@ -2254,7 +2263,7 @@
   "globals": 108,
   "payloadkeys": 59,
   "dataattrs": 151,
-  "klassen": 1719,
+  "klassen": 1728,
   "keyframes": 50
  }
 }

@@ -203,6 +203,20 @@
 
     /* ---------- column info icon + explainer tooltip ---------- */
     
+    /* ---- Variations-Abschnitt (aus performance-detail nach core, zweiter Verbraucher
+       brand-detail). Kopfzeile, Untertitel und Tabellenrahmen stehen hier; die Spaltenbreiten
+       bleiben bei der jeweiligen Komponente, weil die Tabelle dort verschieden breit steht. */
+    .up-sec-head { display: flex; align-items: center; gap: 12px; min-height: 32px; margin-bottom: 14px; }
+    .up-sec-titles { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; }
+    .up-sec-h { flex: 0 0 auto; }
+    .up-sec-sub { font-size: 12px; font-weight: 400; color: var(--vc-muted); }
+    .up-vartable { border: 1px solid var(--vc-border); border-radius: 10px; overflow: hidden; }
+    /* Mit .up-vartable davor, weil .up-row aus core dieselbe Spezifitaet haette und dann die
+       Ladereihenfolge entscheiden wuerde -- STYLEGUIDE: nie ueber die Reihenfolge gewinnen. */
+    .up-vartable .up-row.up-vrow { height: 55px; flex: 0 0 55px; }
+    .up-vartable .up-thead.up-vrow { height: 40px; flex: 0 0 40px; }
+    .up-vartable .up-row { cursor: default; }
+
     .up-th-info {
       width: 14px; height: 14px; flex: 0 0 14px; margin-left: auto;
       color: var(--vc-third); opacity: 0; transition: opacity .14s ease;

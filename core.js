@@ -5409,7 +5409,11 @@
     chevronRight: '<polyline points="9 18 15 12 9 6"/>',
     search:   '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
     plus:     '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
-    minus:    '<line x1="5" y1="12" x2="19" y2="12"/>'
+    minus:    '<line x1="5" y1="12" x2="19" y2="12"/>',
+    /* Feather "info" -- die Erklaer-Raute in Tabellenkoepfen. Geometrie wortgleich zu der, die
+       performance-detail bisher als eigene Konstante trug. */
+    info:     '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/>' +
+              '<line x1="12" y1="8" x2="12.01" y2="8"/>'
   };
   /* ---- Mentioned-Brands-Dropdown: die zwei Teile, die in allen vier Tabellen gleich sind ------
      mentFilter(menu, query)  blendet die Eintraege aus, die nicht zur Suche passen, und schaltet
@@ -5468,6 +5472,72 @@
           ' transform="rotate(-90 8 8)" stroke-linecap="round"/>' +
       '</svg></span>';
   }
+  /* ---- Variations-Abschnitt (Kopf + Suche + Tabellenkopf) ------------------------------------
+     Bisher stand dieser Block wortgleich in performance-detail.js. Zweiter Verbraucher ist
+     brand-detail, also gehoert er nach §25 hierher -- sonst haben zwei Seiten dieselbe Tabelle mit
+     verschiedenen Ueberschriften, Erklaertexten und Spaltenbreiten.
+
+     `pfx` haengt an jede Klasse zusaetzlich eine komponenteneigene an (upd-/ubd-), damit jede Seite
+     die Spaltenbreiten ihres Rasters selbst setzen kann -- im Radar-Detail steht die Tabelle in
+     einer schmaleren Spalte als auf der Markenseite. Aussehen, Texte und Aufbau kommen von hier.
+     `scope` faellt in die Erklaertexte ein: im Radar-Detail geht es um EIN Thema, auf der
+     Markenseite um alle. */
+  function variationsExplain(scope){
+    var wo = scope || "on this topic";
+    return {
+      name: { h: "Variation Name",
+              t: "The exact wording an AI response used for this brand. Models rarely stick to one " +
+                 "spelling \u2014 every variation here counts as the same brand, and a name that " +
+                 "never appears is a name the models do not associate with you." },
+      sov:  { h: "Share of Voice",
+              t: "How much of this brand's mentions " + wo + " used this exact wording. High " +
+                 "numbers on one variation mean the models have settled on a name; a flat spread " +
+                 "across many means they have not." },
+      cnt:  { h: "Mention Count",
+              t: "How many times this wording appeared, out of all mentions of the brand " + wo +
+                 ". The smaller the count, the less the share above rests on." }
+    };
+  }
+
+  function variationsSection(opts){
+    opts = opts || {};
+    var pfx = opts.prefix || "up";
+    var sub = opts.subtitle == null ? "Different brand names used in AI responses" : opts.subtitle;
+    var search = opts.search === false ? "" :
+      '<div class="up-search ' + pfx + '-search">' +
+        '<button class="up-iconbtn up-search-btn" type="button" data-tip="Search variations" ' +
+                'aria-label="Search variations">' + icon("search", 2) + '</button>' +
+        '<div class="up-search-box">' +
+          '<input class="up-search-input" type="text" autocomplete="off" spellcheck="false" ' +
+                 'placeholder="Search variations">' +
+          '<button class="up-search-clear" type="button" aria-label="Clear search">' +
+            icon("x", 2) + '</button>' +
+        '</div>' +
+      '</div>';
+    function th(key, label, cls){
+      return '<div class="up-th ' + cls + '">' + esc(label) +
+               '<span class="up-th-info" data-explain="' + key + '">' + icon("info", 2) + '</span>' +
+             '</div>';
+    }
+    return '' +
+      '<div class="up-varsec ' + pfx + '-varsec">' +
+        '<div class="up-sec-head ' + pfx + '-sec-head">' +
+          '<div class="up-sec-titles">' +
+            '<span class="up-heading up-sec-h">' + esc(opts.title || "Variations") + '</span>' +
+            (sub ? '<span class="up-sec-sub">' + esc(sub) + '</span>' : "") +
+          '</div>' + search +
+        '</div>' +
+        '<div class="up-vartable ' + pfx + '-vartable">' +
+          '<div class="up-thead up-vrow ' + pfx + '-vrow">' +
+            th("name", "Variation Name", "up-th-vname") +
+            th("sov",  "Share of Voice",  "up-th-vsov") +
+            th("cnt",  "Mention Count",   "up-th-vcnt") +
+          '</div>' +
+          '<div class="up-tbody up-vbody ' + pfx + '-vbody"></div>' +
+        '</div>' +
+      '</div>';
+  }
+
   function variationRows(list, opts){
     opts = opts || {};
     var rows = list || [];
@@ -5548,6 +5618,8 @@
     icon: icon,
     fmtPctShort: fmtPctShort,
     variationRows: variationRows,
+    variationsSection: variationsSection,
+    variationsExplain: variationsExplain,
     mentFilter: mentFilter,
     mentHead: mentHead,
     upstreemSetTheme: upstreemSetTheme,
