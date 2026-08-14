@@ -2779,8 +2779,6 @@
     var GRP_ALL_ID = "__all__";
     function grpFootHtml(){
       var total = toNum(state.gTotal) || 0;
-      if (window.console) console.log("[prompts-table] drilldown pager for group \"" + state.expandedGroup +
-        "\" rendering with state.gTotal =", state.gTotal, "(shown as", total + ")");
       var cur = state.gPage;
       var pageCount = Math.max(1, Math.ceil(total / state.gPageSize));
       var from = (cur - 1) * state.gPageSize;

@@ -61,6 +61,16 @@
 .up-row:hover .upt-check:not(.is-checked) { border-color: var(--vc-third); }
 .up-th .upt-check { margin-right: 8px; }
 
+/* Im Gruppenmodus hat die Auswahl-Checkbox im Tabellenkopf keine sinnvolle Bedeutung mehr: was
+   auf dem Schirm steht, sind Gruppen mit je eigener Kopf-Checkbox, und "alles auswaehlen" ueber
+   sie hinweg meint je nach geoeffneter Gruppe etwas anderes. Sie stand darum haeufig auf einem
+   Zustand, der zu nichts Sichtbarem passte. Ausgeblendet statt entfernt, damit die Logik in
+   syncSelectAll/toggleSelectAll unveraendert bleibt -- sie greift weiter, sobald Grouping aus ist.
+   Ausnahme: in der breiten Gruppenansicht mit geoeffneter Gruppe zeigt die Tabelle wieder eine
+   flache Liste, und dort ist die Checkbox das richtige Bedienelement. */
+.up-root.is-grouped .up-th .upt-check[data-selectall] { display: none; }
+.up-root.is-grouped.is-groups-wide .up-th .upt-check[data-selectall] { display: inline-flex; }
+
 /* ---------- prompt cell ----------
    72px default (2-line clamp) / 55px compact (1-line) / dynamic (auto height, full text) — the
    only genuinely new row-height mode this app has, wired via UC.makeColumns' rowHeightSwitch. */
