@@ -573,6 +573,12 @@
          blow up the payload, and they'd go stale against rows that changed since. Any change to
          the query invalidates it (see invalidateSelectAll). */
       selectAllMatching: false,
+      /* Ausschluss-Set fuer den Filter-Modus. Solange selectAllMatching oder gSelectAllGroup
+         steht, ist die Auswahl ein PRAEDIKAT ("alle passenden"), kein Listenzustand -- ein Klick
+         auf eine Zeile kann das nicht ausdruecken, also wandert sie hier hinein statt den Modus
+         zu kippen. Immer klein: der Nutzer klickt von Hand ab, und diese Zeilen waren zwangs-
+         laeufig geladen. Wird zusammen mit dem Modus geleert, siehe invalidateSelectAll(). */
+      excluded: {},
       topics: saved.topics || [],           // full topic list for the bulk editor, filled once
       stagedTopicIds: null,                 // {id: true, ...} — the topic editor's draft selection
 
@@ -876,10 +882,29 @@
       fire("data-select-fn", "uptSelect", p);
     }
     function toggleSelectRow(id){
-      /* A manual tick while "select all N matching" is active can't be expressed by that flag
-         (it means "all of them except this one", which isn't a filter predicate) — so it drops
-         back to an explicit id-based selection instead of silently keeping the stale N. */
-      if (state.selectAllMatching) invalidateSelectAll();
+      /* Ein Klick auf eine einzelne Zeile laesst sich nicht mehr als Filter ausdruecken ("alle
+         ausser dieser" ist kein Praedikat), also faellt der Modus auf eine Liste konkreter IDs
+         zurueck. Neu ist, WAS dann in dieser Liste steht.
+
+         Frueher blieb state.selected stehen -- und damit kamen die Zeilen zurueck, die der Nutzer
+         VOR dem "Select all N" von Hand angehakt hatte. Er waehlte 15 auf Seite 1, dann alle 100,
+         klickte auf Seite 3 eine an und las "16 selected": die 15 waren gedanklich laengst vom
+         "alle 100" ueberschrieben, tauchten aber wieder auf. Fuer niemanden nachvollziehbar.
+
+         Jetzt beginnt die Auswahl in dem Moment neu, in dem der Filtermodus faellt -- uebrig
+         bleibt genau die angeklickte Zeile, also "1 selected". Das ist der Zwischenschritt zum
+         Ausschluss-Modell (dort bliebe der Modus stehen und die Zeile wanderte in eine
+         Ausschlussliste); bis dahin ist es wenigstens erwartbar. */
+      if (state.selectAllMatching || state.gSelectAllGroup){
+        /* Der Modus BLEIBT. "Alle 100 ausser dieser einen" ist immer noch ein Filter, nur mit
+           Ausnahmeliste -- der Server bekommt sie als excluded_ids und zieht sie beim Aufloesen
+           ab. Frueher kippte der Modus hier und der alte Einzelzustand kam zurueck: 15 von
+           Seite 1 plus die neue ergaben "16 selected", obwohl die 15 laengst ueberschrieben
+           waren. */
+        if (state.excluded[id]) delete state.excluded[id]; else state.excluded[id] = true;
+        persist(); syncRowChecks(); syncSelectAll(); fireSelect(); syncStagedTopicsToSelection();
+        return;
+      }
       if (state.selected[id]) delete state.selected[id]; else state.selected[id] = true;
       persist(); syncRowChecks(); syncSelectAll(); fireSelect(); syncStagedTopicsToSelection();
     }
@@ -957,7 +982,8 @@
          darum ueber einen anderen Weg, die Zeile aber nie ihr is-selected: Haekchen gesetzt,
          Zeile ungefaerbt. root deckt beide Faelle ab, und die Schleife ist idempotent. */
       Array.prototype.forEach.call(root.querySelectorAll("[data-select]"), function(b){
-        var on = alleGewaehlt() || !!state.selected[b.getAttribute("data-select")];
+        var bid = b.getAttribute("data-select");
+        var on = (alleGewaehlt() && !state.excluded[bid]) || !!state.selected[bid];
         b.classList.toggle("is-checked", on);
         b.setAttribute("aria-checked", on ? "true" : "false");
         b.innerHTML = on ? CHECK_SVG : "";
@@ -1114,7 +1140,12 @@
       var t = currentTotal();
       return t != null && t > (state.rows || []).length;
     }
-    function invalidateSelectAll(){ state.selectAllMatching = false; state.gSelectAllGroup = null; }
+    /* excluded MUSS hier mit fallen. Es gibt Pfade, auf denen der Modus faellt, state.selected
+       aber absichtlich stehen bleibt -- ueberlebte der Ausschluss, wuerden IDs ausgeschlossen,
+       die niemand mehr abgewaehlt hat. Unsichtbar und spaeter kaum zu finden. */
+    function invalidateSelectAll(){
+      state.selectAllMatching = false; state.gSelectAllGroup = null; state.excluded = {};
+    }
     function groupPageFullySelected(){
       var rows = state.gRows || [];
       if (!state.expandedGroup || !rows.length) return false;
@@ -1169,22 +1200,34 @@
     function selectionPayload(){
       if (state.gSelectAllGroup){
         var g = (state.groups || []).filter(function(x){ return groupId(x) === state.gSelectAllGroup; })[0];
-        return { mode: "filter_group", count: gSelectAllGroupTotal(), group_key: state.gSelectAllGroup,
+        return { mode: "filter_group", count: bulkCount(), group_key: state.gSelectAllGroup,
                  tag_ids: g ? groupTagIds(g).join(",") : "", tagmode: "and",
                  is_custom: g && isYes2(g.is_custom) ? "yes" : "no",
-                 untagged: g && isYes2(g.is_untagged) ? "yes" : "no" };
+                 untagged: g && isYes2(g.is_untagged) ? "yes" : "no",
+                 excluded_ids: excludedIds().join(",") };
       }
       if (state.selectAllMatching){
-        return { mode: "filter", count: currentTotal() || 0,
+        /* count ist bewusst bulkCount() und nicht currentTotal(): der Nutzer hat die Zahl vor
+           dem Klick gelesen, und sie muss der Menge entsprechen, die nach dem Abzug von
+           excluded_ids wirklich angefasst wird. excluded_ids ist IMMER dabei, notfalls leer --
+           ein fehlendes Feld reisst den Run-JS-Step in Bubble. */
+        return { mode: "filter", count: bulkCount(),
                  query: state.query, brand_mentioned: state.brandMentioned,
-                 status: state.status, order: orderValue(state.sortField, state.sortDir) };
+                 status: state.status, order: orderValue(state.sortField, state.sortDir),
+                 excluded_ids: excludedIds().join(",") };
       }
       var ids = selectedIds();
-      return { mode: "ids", count: ids.length, ids: ids.join(",") };
+      return { mode: "ids", count: ids.length, ids: ids.join(","), excluded_ids: "" };
     }
+    function excludedIds(){ return Object.keys(state.excluded || {}); }
     function bulkCount(){
-      if (state.gSelectAllGroup) return gSelectAllGroupTotal();
-      return state.selectAllMatching ? (currentTotal() || 0) : selectedIds().length;
+      /* Im Filter-Modus zaehlt die Gesamtzahl MINUS der von Hand abgewaehlten. Genau die Zahl,
+         die der Server nach dem Abziehen von excluded_ids anfassen wird -- Anzeige und Wirkung
+         duerfen hier nicht auseinanderlaufen. */
+      var aus = excludedIds().length;
+      if (state.gSelectAllGroup) return Math.max(0, gSelectAllGroupTotal() - aus);
+      if (state.selectAllMatching) return Math.max(0, (currentTotal() || 0) - aus);
+      return selectedIds().length;
     }
 
     var elBulk = null;
@@ -1910,7 +1953,7 @@
       /* "Select all N matching" only ever set the flag, never backfilled state.selected for rows
          that weren't loaded yet — a page turn or a bigger page size brings in rows this flag
          should already cover, but that individually never got a state.selected[id]=true entry. */
-      var checked = alleGewaehlt() || !!state.selected[id];
+      var checked = (alleGewaehlt() && !state.excluded[id]) || !!state.selected[id];
       var text = String(r.prompt_text == null ? "" : r.prompt_text);
       return '<div class="up-row' + (checked ? " is-selected" : "") + '" data-id="' + esc(id) + '" tabindex="0" role="button">' +
         '<div class="up-td upt-td-prompt">' +
