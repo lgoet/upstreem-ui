@@ -208,9 +208,13 @@
       elSecond.textContent = t.zweit;
       elPrim.textContent = String(n.cta_label == null ? "Open" : n.cta_label);
       var url = String(n.cta_url == null ? "" : n.cta_url).trim();
-      /* Ohne Ziel kein Knopf: ein Link, der nirgends hinfuehrt, ist schlimmer als keiner. */
-      if (url) { elPrim.setAttribute("href", url); elPrim.style.display = ""; }
-      else { elPrim.removeAttribute("href"); elPrim.style.display = "none"; }
+      /* Ohne Ziel bleibt der Knopf da und schliesst nur -- "Got It!" ist genau das: eine
+         Bestaetigung ohne Ziel. Ein href wird dann nicht gesetzt, damit der Browser keinen leeren
+         Tab oeffnet; das Klick-Ereignis raeumt die Karte trotzdem weg.
+         Erst wenn AUCH die Beschriftung fehlt, verschwindet er: dann gibt es nichts zu sagen. */
+      if (url) { elPrim.setAttribute("href", url); elPrim.setAttribute("target", "_blank"); }
+      else { elPrim.removeAttribute("href"); elPrim.removeAttribute("target"); }
+      elPrim.style.display = String(n.cta_label == null ? "" : n.cta_label).trim() ? "" : "none";
       elPrim.classList.toggle("is-dark", !!t.dunkel);
 
       var lg = logoQuelle();
