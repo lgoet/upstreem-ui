@@ -56,6 +56,12 @@
    Zahl aus einem anderen Modus stehen zu lassen. */
 .ubd-root.is-novalue .ubd-kpi { display: none; }
 
+/* Im Variations-Modus faellt die ganze Kopfzeile weg. Zwei Gruende, beide sichtbar:
+   die Ueberschrift stuende doppelt da (der Variations-Abschnitt bringt seine eigene mit),
+   und der Granularitaets-Schalter haette nichts zu schalten -- er gehoert zur Kurve, und
+   die ist hier nicht da. Ein Schalter ohne Wirkung ist schlimmer als keiner. */
+.ubd-root.is-variations .ubd-head { display: none; }
+
 /* ---- Chart / Variations ----------------------------------------------------------------------
    Immer nur eines von beiden. Die Hoehe steht am Wrapper und nicht am Canvas: Chart.js schreibt
    dem Canvas seine Pixelmasse selbst, und eine Hoehe direkt darauf kaempft dagegen an. */
