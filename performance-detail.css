@@ -41,6 +41,14 @@
   display: flex; align-items: center; gap: 12px;
   padding: 16px 20px; min-height: 64px;
   border-bottom: 1px solid var(--vc-border);
+  /* Feste 16px, NICHT --up-sticky-top. Das Token traegt die Hoehe der Bubble-Kopfleiste und gilt
+     fuer Elemente, die direkt im Seitenfluss haengen -- dieser Kopf sitzt in einer Karte, sein
+     Bezugspunkt ist ein anderer, und mit dem Token landete er rund 60px zu tief. 16px halten ihn
+     knapp unter der Oberkante des Sichtfelds.
+     z-index unter dem der Tabellenkoepfe (6): scrollt die urls-Tabelle darunter vorbei, soll ihr
+     Kopf davor liegen. Hintergrund ist Pflicht, sonst scheint der Inhalt durch. */
+  position: sticky; top: 16px; z-index: 4;
+  background: var(--vc-bg);
 }
 .upd-title { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 auto; }
 .upd-brand { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }

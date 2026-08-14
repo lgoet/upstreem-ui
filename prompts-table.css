@@ -97,6 +97,20 @@
   min-height: 55px;   /* never shorter than Compact, however short the prompt is */
 }
 .upt-root.is-rh-dynamic .up-row:not(.up-tsk) .up-td { height: auto; padding-top: 14px; padding-bottom: 14px; }
+
+/* Trennlinie im Dynamic-Modus als box-shadow statt border-bottom.
+   Warum: hier bestimmt der INHALT die Zeilenhoehe, und umbrechender Text liefert regelmaessig
+   krumme Werte (54.5px, 81.33px). Eine border-bottom auf einem Element mit gebrochener Hoehe
+   faellt beim Runden auf das Geraetepixel gelegentlich ganz weg -- immer nur bei einzelnen
+   Zeilen, nie bei allen, und reproduzierbar genau dann, wenn eine Zeile umbricht. Genau das
+   gemeldete Bild: "maximal 2 Stueck, Rest bleibt".
+   box-shadow wird nicht auf ganze Pixel gerundet und ueberlebt gebrochene Hoehen. Die border
+   wird dafuer abgeschaltet, sonst staende an den unauffaelligen Zeilen eine doppelte Linie. */
+.upt-root.is-rh-dynamic .up-row {
+  border-bottom: 0;
+  box-shadow: 0 1px 0 0 var(--vc-border);
+}
+.upt-root.is-rh-dynamic .up-tbody > .up-row:last-child { box-shadow: none; }
 .upt-root.is-rh-dynamic .upt-prompt-text { -webkit-line-clamp: unset; display: block; white-space: normal; overflow: visible; }
 /* selected rows keep a persistent tint, same colour the hover state already uses.
    Spezifitaet ueber .upt-root hochgezogen: in der breiten Gruppenansicht setzen spaetere Regeln

@@ -1390,7 +1390,10 @@
          Group-scoped variant (data-bulk-group-all) mirrors it one level down: the group's own
          total (state.gTotal) instead of the whole active set (currentTotal()). */
       var escape = "";
-      if (isAll) escape = '<button class="upt-bulkbar-link" type="button" data-bulk-undoall>Undo</button>';
+      /* "Reset" und nicht "Undo": der Knopf stellt keinen Vorzustand wieder her, er raeumt die
+         Auswahl ab. "Undo" versprach ein Zurueckspulen, das es hier nie gab -- und genau daran
+         hat sich der Zustand aufgehaengt, den es frueher stehen liess. */
+      if (isAll) escape = '<button class="upt-bulkbar-link" type="button" data-bulk-undoall>Reset</button>';
       else if (hasMorePages() && pageFullySelected()) escape = '<button class="upt-bulkbar-link" type="button" data-bulk-all>Select all ' +
         /* fmtInt, not fmtTotal: fmtTotal abbreviates (1000 -> "1k"), and "Select all 1k prompts"
            reads like a rounded guess when it is in fact an exact figure. */
