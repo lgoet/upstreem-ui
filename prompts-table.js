@@ -883,6 +883,25 @@
       if (state.selected[id]) delete state.selected[id]; else state.selected[id] = true;
       persist(); syncRowChecks(); syncSelectAll(); fireSelect(); syncStagedTopicsToSelection();
     }
+    /* Gilt "alles ausgewaehlt" fuer eine Zeile, die noch gar keinen eigenen Eintrag in
+       state.selected hat? Zwei Faelle, und nur der erste war bisher verdrahtet:
+
+         selectAllMatching   die flache Tabelle, "Select all N prompts". Ein Seitenwechsel oder
+                             eine groessere Seite bringt Zeilen herein, die dieses Haekchen
+                             abdeckt, die aber nie einzeln eingetragen wurden.
+         gSelectAllGroup     dasselbe fuer eine Gruppe, "Select all 55 prompts" im Drilldown.
+                             Fehlte hier -- darum sahen Seite 2 und jede vergroesserte Seite im
+                             Gruppenmodus unausgewaehlt aus, obwohl die Auswahl logisch stand
+                             (die Bulk-Leiste zeigte die volle Zahl, die Zeilen waren blass).
+
+       Die Gruppenauswahl gilt nur, solange genau DIESE Gruppe offen ist -- gSelectAllGroup haelt
+       den Gruppenschluessel, und die Zeilen auf dem Schirm gehoeren zu state.expandedGroup. Bei
+       einer anderen Gruppe waere das Faerben schlicht falsch. */
+    function alleGewaehlt(){
+      if (state.selectAllMatching) return true;
+      return !!state.gSelectAllGroup && state.gSelectAllGroup === state.expandedGroup;
+    }
+
     function toggleSelectAll(){
       /* Wide grouping view reuses this exact header checkbox (.up-thead is unchanged there, see
          renderGroupWideBody) -- but while a real group is open, the rows on screen are that
@@ -920,7 +939,13 @@
          und wird direkt darunter fuer diesen Zweck beschrieben; die Einzel-Checkbox der Zeile
          benutzt sie seit jeher. Der Gruppierungsfall kommt hier nicht an, der Zweig oben kehrt
          vorher zurueck und rendert selbst. */
-      persist(); syncRowChecks(); syncSelectAll(); fireSelect(); syncStagedTopicsToSelection();
+      /* Auch die Kopf-Checkbox der offenen Gruppe nachziehen. syncRowChecks() fasst nur die
+         Zeilen an; die Gruppen-Kopfzeile wird sonst erst beim naechsten vollen renderTable()
+         neu gebaut. Ohne das blieb sie nach einem Abwaehlen ueber den Tabellenkopf auf
+         "ausgewaehlt" stehen, obwohl darunter keine Zeile mehr markiert war. */
+      persist(); syncRowChecks(); syncSelectAll();
+      if (state.expandedGroup) syncGroupHeadCheckbox(state.expandedGroup);
+      fireSelect(); syncStagedTopicsToSelection();
     }
     /* Updates the checkboxes in place instead of re-rendering the table.
        renderTable() replaces elTbody.innerHTML wholesale, which recreates every <img> in every
@@ -928,7 +953,7 @@
        this with its brand list ("rebuilding made every row flash for a frame"). */
     function syncRowChecks(){
       Array.prototype.forEach.call(elTbody.querySelectorAll("[data-select]"), function(b){
-        var on = state.selectAllMatching || !!state.selected[b.getAttribute("data-select")];
+        var on = alleGewaehlt() || !!state.selected[b.getAttribute("data-select")];
         b.classList.toggle("is-checked", on);
         b.setAttribute("aria-checked", on ? "true" : "false");
         b.innerHTML = on ? CHECK_SVG : "";
@@ -1876,7 +1901,7 @@
       /* "Select all N matching" only ever set the flag, never backfilled state.selected for rows
          that weren't loaded yet — a page turn or a bigger page size brings in rows this flag
          should already cover, but that individually never got a state.selected[id]=true entry. */
-      var checked = state.selectAllMatching || !!state.selected[id];
+      var checked = alleGewaehlt() || !!state.selected[id];
       var text = String(r.prompt_text == null ? "" : r.prompt_text);
       return '<div class="up-row' + (checked ? " is-selected" : "") + '" data-id="' + esc(id) + '" tabindex="0" role="button">' +
         '<div class="up-td upt-td-prompt">' +
