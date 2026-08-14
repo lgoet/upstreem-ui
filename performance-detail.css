@@ -26,12 +26,6 @@
 .upd-root.has-selection .upd-body { display: block; }
 .upd-root.has-selection .upd-empty { display: none; }
 
-/* Waehrend geladen wird und noch keine Auswahl steht, gibt es nichts zu sagen -- "Pick a cell"
-   waere in dem Moment eine Aufforderung an jemanden, der gerade wartet. Der Hinweis verschwindet
-   und ein Skelett haelt die Hoehe, wie ueberall sonst im Haus. Sobald eine Auswahl steht, greift
-   .has-selection ohnehin und der Hinweis ist weg. */
-.upd-root.is-loading .upd-empty { display: none; }
-.upd-root.is-loading:not(.has-selection) .upd-body { display: block; }
 
 .upd-empty-title { font-size: 14px; font-weight: 500; color: var(--vc-text); }
 .upd-empty-sub { margin-top: 6px; font-size: 13px; color: var(--vc-muted); }
@@ -41,14 +35,6 @@
   display: flex; align-items: center; gap: 12px;
   padding: 16px 20px; min-height: 64px;
   border-bottom: 1px solid var(--vc-border);
-  /* Feste 16px, NICHT --up-sticky-top. Das Token traegt die Hoehe der Bubble-Kopfleiste und gilt
-     fuer Elemente, die direkt im Seitenfluss haengen -- dieser Kopf sitzt in einer Karte, sein
-     Bezugspunkt ist ein anderer, und mit dem Token landete er rund 60px zu tief. 16px halten ihn
-     knapp unter der Oberkante des Sichtfelds.
-     z-index unter dem der Tabellenkoepfe (6): scrollt die urls-Tabelle darunter vorbei, soll ihr
-     Kopf davor liegen. Hintergrund ist Pflicht, sonst scheint der Inhalt durch. */
-  position: sticky; top: 16px; z-index: 4;
-  background: var(--vc-bg);
 }
 .upd-title { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 auto; }
 .upd-brand { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
@@ -278,3 +264,16 @@
   .upd-head { flex-wrap: wrap; }
   .upd-stand-name { max-width: 120px; }
 }
+
+/* Ladezustand ohne Auswahl: der Platzhalter bleibt an seinem Platz und in seiner Groesse, seine
+   beiden Textzeilen werden nur zu Balken. Frueher stand hier eine Regel, die den GANZEN Body
+   einblendete -- damit lief das Skelett ueber Kopfzeile und KPIs, und weil sie display:block
+   erzwang, verlor der Body sein eigenes Layout: Ueberschrift zu tief, Kopfzeile zu hoch, KPIs
+   nicht mehr mittig. Eine Zeile, drei sichtbare Fehler. */
+.upd-root.is-loading:not(.has-selection) .upd-empty-title,
+.upd-root.is-loading:not(.has-selection) .upd-empty-sub {
+  color: transparent; border-radius: 6px; background: var(--vc-heading-bg);
+  animation: upskt 1.2s ease-in-out infinite;
+}
+.upd-root.is-loading:not(.has-selection) .upd-empty-title { max-width: 180px; }
+.upd-root.is-loading:not(.has-selection) .upd-empty-sub { max-width: 420px; }

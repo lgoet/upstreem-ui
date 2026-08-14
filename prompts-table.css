@@ -111,6 +111,15 @@
   box-shadow: 0 1px 0 0 var(--vc-border);
 }
 .upt-root.is-rh-dynamic .up-tbody > .up-row:last-child { box-shadow: none; }
+
+/* In der breiten Gruppenansicht schneidet der Spaltencontainer den Schatten ab -- dort blieben
+   damit ALLE Linien weg. Er ist dort auch nicht noetig: die Zeilen stehen in einem eigenen
+   Scrollbereich mit anderer Hoehenberechnung, das Rundungsproblem tritt nur im flachen Body auf.
+   Also dort zurueck auf die gewoehnliche border. */
+.upt-root.is-rh-dynamic.is-groups-wide .up-row {
+  box-shadow: none;
+  border-bottom: 1px solid var(--vc-border);
+}
 .upt-root.is-rh-dynamic .upt-prompt-text { -webkit-line-clamp: unset; display: block; white-space: normal; overflow: visible; }
 /* selected rows keep a persistent tint, same colour the hover state already uses.
    Spezifitaet ueber .upt-root hochgezogen: in der breiten Gruppenansicht setzen spaetere Regeln
