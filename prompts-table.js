@@ -952,7 +952,11 @@
        row — the brand logos then visibly flash while they re-decode. urls-table already learned
        this with its brand list ("rebuilding made every row flash for a frame"). */
     function syncRowChecks(){
-      Array.prototype.forEach.call(elTbody.querySelectorAll("[data-select]"), function(b){
+      /* root statt elTbody. In der breiten Gruppenansicht stehen die Zeilen NICHT in elTbody --
+         renderGroupWideBody baut einen eigenen Container. Die Checkboxen dort bekamen ihren Haken
+         darum ueber einen anderen Weg, die Zeile aber nie ihr is-selected: Haekchen gesetzt,
+         Zeile ungefaerbt. root deckt beide Faelle ab, und die Schleife ist idempotent. */
+      Array.prototype.forEach.call(root.querySelectorAll("[data-select]"), function(b){
         var on = alleGewaehlt() || !!state.selected[b.getAttribute("data-select")];
         b.classList.toggle("is-checked", on);
         b.setAttribute("aria-checked", on ? "true" : "false");
@@ -987,7 +991,12 @@
     function syncSelCount(){
       var el = root.querySelector(".upt-selcount");
       if (!el) return;
-      var n = selectedIds().length;
+      /* bulkCount(), nicht selectedIds().length. Der Chip zaehlte nur die einzeln angehakten
+         Zeilen und wusste nichts von "Select all N prompts" -- wer 15 anhakte und dann alle 50
+         waehlte, las weiterhin "15 selected", waehrend die Bulk-Leiste daneben korrekt 50 zeigte.
+         Zwei Zaehler fuer dieselbe Auswahl, und einer davon log. bulkCount() ist die Stelle, die
+         selectAllMatching und gSelectAllGroup schon kennt; ab jetzt lesen beide von dort. */
+      var n = bulkCount();
       el.classList.toggle("is-on", n > 0);
       /* Only ever written while there IS a selection: the chip fades out over ~200ms, and
          rewriting it to "0 selected" first meant you watched the number drop to zero before it
