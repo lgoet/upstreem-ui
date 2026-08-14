@@ -129,6 +129,7 @@
   "data-newtopic-fn",
   "data-openurl-fn",
   "data-page-fn",
+  "data-range-apply-fn",
   "data-range-fn",
   "data-refresh-fn",
   "data-rowclick-fn",
@@ -412,6 +413,7 @@
   "data-preset",
   "data-processing",
   "data-processing2",
+  "data-range-apply-fn",
   "data-range-fn",
   "data-recent",
   "data-recent-rm",
@@ -2232,10 +2234,10 @@
  ],
  "_zaehlung": {
   "events": 85,
-  "fnattrs": 59,
+  "fnattrs": 60,
   "globals": 108,
   "payloadkeys": 57,
-  "dataattrs": 149,
+  "dataattrs": 150,
   "klassen": 1709,
   "keyframes": 50
  }

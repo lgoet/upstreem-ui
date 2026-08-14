@@ -54,14 +54,35 @@
      Create these as Toolbox "JavaScript to Bubble" elements and put their names in the
      data-*-fn attributes below. All three fire together on every committed change.
 
-       data-date-from-fn   receives a real DATE object   (type: date)
-       data-date-to-fn     receives a real DATE object   (type: date)
-       data-range-fn       receives a JSON TEXT string   (type: text)
-                           {"instance_id":"...","date_from":"YYYY-MM-DD",
-                            "date_to":"YYYY-MM-DD","event_id":"..."}
+       data-date-from-fn    receives a real DATE object   (type: date)
+       data-date-to-fn      receives a real DATE object   (type: date)
+       data-range-fn        receives a JSON TEXT string   (type: text)
+                            {"instance_id":"...","date_from":"YYYY-MM-DD",
+                             "date_to":"YYYY-MM-DD","event_id":"..."}
+       data-range-apply-fn  receives the SAME JSON TEXT string   (type: text)   OPTIONAL
 
      event_id is unique per change — use it as the trigger for your filter version counter if you
      want to be certain two identical ranges in a row still count as two events.
+
+     ── Why there are two JSON channels ──────────────────────────────────────────
+     Same split the topics, markets and models filters already use, and for the same reason:
+
+       data-range-fn        an element INSIDE the reusable. It owns the selection and writes it
+                            into the reusable's own states.
+       data-range-apply-fn  an element ON THE PAGE. It is what tells the table to reload. A
+                            reusable cannot trigger a page-level workflow by itself — that is the
+                            whole reason this second name exists, and why this component used to
+                            need a filter-version counter state as a detour.
+
+     Fired in that order, so the reusable's states are already set when the page reacts. Both get
+     the IDENTICAL JSON, so a workflow on the second channel never has to read those states.
+
+     Optional: leave the attribute off and nothing is called and nothing is logged — a page that
+     still drives its reload through a counter keeps working exactly as before. There is no
+     default name on purpose: an invented one would silently hit nothing on a page that has never
+     heard of it.
+
+     Fires on EVERY change that alters the data — a preset, a custom range, a reset.
 
      If a function is missing the component still dispatches:
        - a "change" CustomEvent on the root element
@@ -102,7 +123,8 @@
      data-isprocessing="IS_PROCESSING"
      data-range-fn="bubble_fn_udr_date_range"
      data-date-from-fn="bubble_fn_udr_date_from"
-     data-date-to-fn="bubble_fn_udr_date_to"></div>
+     data-date-to-fn="bubble_fn_udr_date_to"
+     data-range-apply-fn="bubble_fn_udr_apply_dashboard"></div>
 
 <script>
 /* Loads this component's CSS/JS from jsDelivr, pinned to the commit hash you put in data-cdn-pin

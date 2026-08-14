@@ -399,6 +399,28 @@
           console.warn("[date-range] " + (root.getAttribute("data-range-fn") || "bubble_fn_udr_date_range") +
             " not found on window/parent/top — this change reached no Bubble workflow.");
         }
+        /* ZWEITER KANAL, wie ihn die drei anderen Filter seit jeher haben (data-topics-apply-fn
+           und Geschwister). Der Unterschied ist nicht technisch, sondern wer zuhoert:
+
+             data-range-fn        das Element IM Reusable. Es besitzt die Auswahl und schreibt sie
+                                  in die eigenen States des Reusables.
+             data-range-apply-fn  ein Element AUF DER SEITE. Es sagt der Tabelle, dass sie neu
+                                  laden soll. Ein Reusable kann keinen seitenweiten Workflow
+                                  ausloesen -- genau darum gibt es diesen zweiten Namen, und genau
+                                  darum brauchte es hier bisher einen Zaehler-State als Umweg.
+
+           Dieselbe Reihenfolge wie bei topics: erst das Reusable, damit dessen States gesetzt
+           sind, wenn die Seite reagiert. Beide bekommen das IDENTISCHE JSON, ein Workflow am
+           zweiten Kanal muss also nie in die States des Reusables hineinlesen.
+
+           Optional: ohne Attribut kein Aufruf und keine Warnung -- wer weiter mit dem Zaehler
+           arbeitet, merkt von der Erweiterung nichts. Kein Standardname als Rueckfall, denn ein
+           erfundener Name wuerde auf einer Seite, die ihn nicht kennt, still ins Leere laufen. */
+        var applyName = root.getAttribute("data-range-apply-fn");
+        if (applyName && !callFn("data-range-apply-fn", null, json) && window.console) {
+          console.warn("[date-range] " + applyName + " ist gesetzt, aber nicht auffindbar — " +
+            "diese Aenderung hat keinen seitenweiten Workflow erreicht.");
+        }
       }
 
       /* ---------- interaction ---------- */
