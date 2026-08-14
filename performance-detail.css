@@ -41,6 +41,20 @@
   display: flex; align-items: center; gap: 12px;
   padding: 16px 20px; min-height: 64px;
   border-bottom: 1px solid var(--vc-border);
+  /* Bleibt beim Scrollen oben stehen: wer sich durch die Variationen arbeitet, verliert sonst aus
+     dem Blick, welche Marke und welches Thema er gerade liest. NUR diese Zeile, die KPIs darunter
+     scrollen mit -- sie sind Inhalt, keine Beschriftung.
+
+     --up-sticky-top ist dasselbe Token, an dem sich die Tabellenkoepfe im Haus ausrichten; es
+     traegt die Hoehe der Bubble-Kopfleiste. Die urls-Tabelle weiter unten auf der Seite behaelt
+     ihre eigene klebende Leiste: beide haengen an DEMSELBEN Scroll-Container, kleben also auf
+     derselben Linie, und weil sie nacheinander vorbeiscrollen sind sie nie gleichzeitig dort.
+     Der z-index bleibt bewusst unter dem der Tabellenkoepfe (6): scrollt eine Tabelle unter diese
+     Zeile, soll ihr Kopf davor liegen, nicht dahinter.
+
+     Der Hintergrund ist Pflicht -- ohne ihn scheint der Inhalt beim Vorbeischieben durch. */
+  position: sticky; top: var(--up-sticky-top); z-index: 4;
+  background: var(--vc-bg);
 }
 .upd-title { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 auto; }
 .upd-brand { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
