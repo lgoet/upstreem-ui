@@ -98,8 +98,13 @@
 }
 .upt-root.is-rh-dynamic .up-row:not(.up-tsk) .up-td { height: auto; padding-top: 14px; padding-bottom: 14px; }
 .upt-root.is-rh-dynamic .upt-prompt-text { -webkit-line-clamp: unset; display: block; white-space: normal; overflow: visible; }
-/* selected rows keep a persistent tint, same colour the hover state already uses */
-.up-row.is-selected, .up-row.is-selected:hover { background: var(--vt-row-hover); }
+/* selected rows keep a persistent tint, same colour the hover state already uses.
+   Spezifitaet ueber .upt-root hochgezogen: in der breiten Gruppenansicht setzen spaetere Regeln
+   einen eigenen Zeilenhintergrund, und bei gleicher Spezifitaet gewann die zuletzt notierte --
+   Haekchen gesetzt, Zeile ungefaerbt. Nach Hausregel ueber Spezifitaet geloest, nicht ueber die
+   Reihenfolge im Stylesheet. */
+.upt-root .up-row.is-selected,
+.upt-root .up-row.is-selected:hover { background: var(--vt-row-hover); }
 
 /* ---------- market flag ----------
    Landscape tile, not a circle: same shape the markets dropdown uses, so a flag looks the same

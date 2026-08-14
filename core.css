@@ -1077,7 +1077,11 @@
        once at the row's actual outer edge, is immune to both: it does not care how many cells are
        hidden or how their individual heights were rounded. */
     .up-row { border-bottom: 1px solid var(--vc-border); }
-    .up-tbody .up-row:last-child { border-bottom: none; }
+    /* > und nicht bloss ein Nachfahren-Selektor. Ohne den Kind-Kombinator traf die Regel JEDE
+       .up-row, die letztes Kind ihres Elternteils ist -- in der Gruppenansicht also die letzte
+       Zeile JEDER Gruppe, denn die stehen in .upt-grp-rows-Containern innerhalb von .up-tbody.
+       Genau das gemeldete Bild: hier und da fehlt eine Trennlinie, aber nicht ueberall. */
+    .up-tbody > .up-row:last-child { border-bottom: none; }
 
     
     /* Letter fallback: a broken/missing favicon used to leave an empty square, which reads as a
