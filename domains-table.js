@@ -87,8 +87,8 @@
      CSS custom property for a keyframe's duration, so the two are kept in sync by hand. */
   var SUB_ANIM_MS = 200;
   var CHEV_SVG = '<svg class="udt-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
-  var SUB_SEARCH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
-  var SUB_X_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  var SUB_SEARCH_SVG = UC.icon("search", 2);
+  var SUB_X_SVG = UC.icon("x", 2.2);
   /* Feather's "link" icon — the hover-reveal "Show Pages" row control (item 10). Chosen over the
      GOTO_SVG diagonal arrow already used elsewhere because that arrow means "leave this page /
      open the domain", and this control means the opposite: stay here, open the drilldown. */

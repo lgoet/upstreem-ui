@@ -82,7 +82,7 @@
     /* The sorter glyph the rest of the app uses -- lines narrowing toward the CENTRE. */
     sort: '<svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>',
     /* core's CHECK_SVG verbatim, so the tick matches every other checked row in the app. */
-    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+    check: UC.icon("check", 3),
     /* Footer switcher: one dot against three. Filled circles, not outlined shapes, because at this
        size an outline of a 5px dot is a smudge.
 

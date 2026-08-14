@@ -1231,9 +1231,9 @@
     }
 
     var elBulk = null;
-    var CLOSE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+    var CLOSE_SVG = UC.icon("x", 2.4);
     var TAG_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>';
-    var PLUS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+    var PLUS_SVG = UC.icon("plus", 2);
     var TRASH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
     var SMILE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>';
     /* First stop of the tag creator this table will eventually need in full — for now it lives
@@ -1657,7 +1657,7 @@
         '<div class="upt-topiclist' + (n >= TOPIC_MAX ? " is-full" : "") + '">' + topicListHtml() + '</div>' +
         '<div class="upt-topicfoot">' +
           '<button class="up-btn-sec upt-topicadd" type="button" data-topic-add>' +
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+            UC.icon("plus", 2) +
             'Add Topic</button>' +
           '<button class="upt-topicapply" type="button" data-topic-apply' + (n === 0 ? " disabled" : "") + '>Apply</button>' +
         '</div>';
@@ -1912,7 +1912,7 @@
               '<span class="up-topicmodal-label">Topics</span>' +
               '<div class="upt-et-current up-topiclist"></div>' +
               '<button class="up-btn-sec upt-et-addbtn" type="button" data-et-addtoggle>' +
-                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+                UC.icon("plus", 2) +
                 'Add Topics</button>' +
               '<div class="upt-et-addwrap"><div class="upt-et-addlist up-topiclist"></div></div>' +
             '</div>' +
@@ -2023,9 +2023,9 @@
        Sorter needs its own classes (see below) so it doesn't collide with the flat table's own
        .up-sort-btn click handling, but it should still look like the same control. */
     var GRPSIDE_SORT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>';
-    var GRPSIDE_ADD_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+    var GRPSIDE_ADD_ICON = UC.icon("plus", 2);
     /* Same magnifier glyph the toolbar's own .up-search-btn uses -- one search icon everywhere. */
-    var GRPSIDE_SEARCH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
+    var GRPSIDE_SEARCH_ICON = UC.icon("search", 2);
     var elGrpWrap = null, elGrpMenu = null;
     (function(){
       if (!elHeadTools) return;
@@ -2285,7 +2285,7 @@
        draws, because a topic has to look like itself everywhere. The colour picker is the same
        TOPIC_COLOR_PALETTE grid the inline topic creator uses. Nothing here is a look-alike. */
     var GRP_MAX_TOPICS = 3;
-    var GM_SEARCH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
+    var GM_SEARCH_SVG = UC.icon("search", 2);
     var GRP_TOPICS_COLLAPSED = 10;   /* show this many, then a "Show all" button */
     var grpModal = null, grpPicked = {}, grpColor = null, grpColorOpen = false,
         grpNameTouched = false, grpQuery = "", grpSearchOpen = false, grpShowAll = false,
