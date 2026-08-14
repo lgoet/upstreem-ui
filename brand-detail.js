@@ -491,7 +491,11 @@
       setLoading: function (v) { state.loading = isYes(v); render(); },
       reset: function () {
         state.series = null; state.variations = null; state.hasData = false;
-        state.loading = false; state.mode = "visibility"; state.gran = "day";
+        state.loading = false;
+        /* Modus und Granularitaet bleiben stehen. Sie sind eine Wahl des Nutzers, keine Daten --
+           und reset() laeuft bei jedem externen Filterwechsel. Vorher sprang der Switcher dabei
+           auf Visibility und, sobald die Rank-Serie ankam, wieder zurueck: ein Flackern, das
+           aussieht wie ein Fehler in der Komponente. */
         /* Auch die Suche zuruecksetzen: sonst zeigt die naechste Marke eine gefilterte Liste,
            ohne dass irgendwo ein Suchbegriff zu sehen waere. */
         state.varQuery = ""; state.error = null;
