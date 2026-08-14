@@ -25,6 +25,14 @@
 .upd-root .upd-empty { display: block; }
 .upd-root.has-selection .upd-body { display: block; }
 .upd-root.has-selection .upd-empty { display: none; }
+
+/* Waehrend geladen wird und noch keine Auswahl steht, gibt es nichts zu sagen -- "Pick a cell"
+   waere in dem Moment eine Aufforderung an jemanden, der gerade wartet. Der Hinweis verschwindet
+   und ein Skelett haelt die Hoehe, wie ueberall sonst im Haus. Sobald eine Auswahl steht, greift
+   .has-selection ohnehin und der Hinweis ist weg. */
+.upd-root.is-loading .upd-empty { display: none; }
+.upd-root.is-loading:not(.has-selection) .upd-body { display: block; }
+
 .upd-empty-title { font-size: 14px; font-weight: 500; color: var(--vc-text); }
 .upd-empty-sub { margin-top: 6px; font-size: 13px; color: var(--vc-muted); }
 

@@ -506,11 +506,14 @@
           '</div>';
         return;
       }
-      /* total_count ist die Bezugsgroesse fuer Mention Count, share_of_voice_pct kommt fertig. */
+      /* mentions_total ist die Bezugsgroesse fuer Mention Count, share_of_voice_pct kommt fertig.
+         NICHT total_count: das zaehlt die verschiedenen Variationen, nicht die Erwaehnungen --
+         "3 of 12" las sich damit als "3 von 12 Erwaehnungen", gemeint waren aber 12 Variationen.
+         Zwei Groessen mit aehnlichem Namen, und die falsche stand im Nenner. */
       elVBody.innerHTML = rows.map(function(v){
         var sov = num(v.share_of_voice_pct);
         var cnt = num(v.mentioned_count);
-        var tot = num(v.total_count);
+        var tot = num(v.mentions_total);
         return '<div class="up-row upd-vrow">' +
                  '<div class="up-td upd-td-name"><span class="upd-varname">' +
                    highlight(String(v.name || ""), state.varQuery) + '</span></div>' +

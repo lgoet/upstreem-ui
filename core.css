@@ -1791,6 +1791,9 @@
    at the label's colour was the requirement; this is what it costs. */
 .up-ph-metalogo {
   width: 16px; height: 16px; display: block; flex: 0 0 auto; object-fit: cover;
+  /* 4px, damit das Logo nicht als scharfkantiges Quadrat neben dem runden Rest der Zeile sitzt.
+     Deckt auch den eingebauten Seitenkopf in prompt-research ab -- der nutzt dieselbe Klasse. */
+  border-radius: 4px;
   filter: grayscale(1) contrast(0.30) brightness(1.43);
 }
 .up-ph-metatxt { font-size: 12px; font-weight: 600; color: var(--vc-third); line-height: 1; }
