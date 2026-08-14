@@ -3918,8 +3918,19 @@
           renderGroups(); return;
         }
         if (e.target.closest("[data-bulk-undoall]")){
+          /* Undo raeumt ALLES ab, nicht nur den Filtermodus. Frueher fiel nur das Kennzeichen und
+             state.selected blieb stehen -- also kamen die Zeilen zurueck, die der Nutzer VOR dem
+             "Select all N" von Hand angehakt hatte. Er las dann "15 selected" und sah auf der
+             Seite, auf der er gerade stand, etwas voellig anderes. "Select all 100 rueckgaengig"
+             heisst null, nicht ein halb vergessener Zwischenstand von vor drei Klicks.
+
+             syncRowChecks() fehlte ausserdem ganz: die Haken und Zeilenfarben der sichtbaren
+             Seite wurden nie nachgezogen. Darum blieben sie stehen, bis ein Seitenwechsel neu
+             rendern liess -- genau das gemeldete "auf Seite 3 sind noch 14 markiert". */
+          state.selected = {};
           invalidateSelectAll();
-          persist(); renderBulkBar(); syncSelCount(); fireSelect(); syncStagedTopicsToSelection();
+          persist(); syncRowChecks(); renderBulkBar(); syncSelCount(); syncSelectAll();
+          fireSelect(); syncStagedTopicsToSelection();
           if (groupingOn()) renderGroups(); return;
         }
         if (e.target.closest("[data-bulk-topics]")){ setTopicMenuOpen(!topicMenuOpen()); return; }
