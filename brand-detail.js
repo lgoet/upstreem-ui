@@ -284,9 +284,13 @@
       if (state.error) { line.empty(state.error); return; }
       if (state.loading || !state.hasData) { line.skeleton(); return; }
       var p = state.series;
-      /* Eine Serie aus einem anderen Modus ist eine Antwort, die waehrend des Wechsels unterwegs
-         war. Sie gehoert nicht unter diese Ueberschrift -- also Skelett statt falscher Kurve. */
-      if (p && p.mode && p.mode !== state.mode) { line.skeleton(); return; }
+      /* Eine Serie aus einem anderen Modus kann hier nur noch stehen, wenn setSeries den Modus
+         nicht uebernehmen konnte (etwa "variations" im Serien-Payload). Dann Text statt Skelett:
+         ein Ladezustand, den nichts mehr beendet, sieht aus wie "gleich da" und ist es nicht. */
+      if (p && p.mode && p.mode !== state.mode) {
+        line.empty("The chart data belongs to another view.");
+        return;
+      }
       if (!p || !p.series || !p.series.length) { line.empty(); return; }
 
       /* buildLineDatasets erwartet die company_id an jedem Punkt und das Feld visibility_pct --
@@ -297,8 +301,12 @@
       var pts = p.series.map(function (x) {
         /* dayKey normalisiert, bevor der Punkt ins Dataset geht: die X-Achse gruppiert nach
            diesem Wert, und ein Datum mit Uhrzeit ergaebe pro Zeitstempel eine eigene Kategorie. */
+        /* Ein leerer Wert ist hier eine Null, kein Loch: der RPC liefert fuer einen Tag ohne
+           Erwaehnungen nichts, gemeint ist aber "an dem Tag war es 0". Eine Luecke in der Kurve
+           liest sich stattdessen wie "keine Daten". */
+        var w = num(x.value);
         return { company_id: cid, day: UC.dayKey ? UC.dayKey(x.day) : x.day,
-                 visibility_pct: num(x.value) };
+                 visibility_pct: w == null ? 0 : w };
       });
       var rgb = UC.heatAt ? UC.heatAt(root, 0.65) : [100, 132, 168];
       var farbe = "rgb(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + ")";
@@ -452,6 +460,11 @@
              gran als Alternative. */
           var g = UC.normGran ? UC.normGran(p.granularity != null ? p.granularity : p.gran) : null;
           if (g) state.gran = g;
+          /* Der gelieferte Modus gewinnt genauso. Vorher blieb state.mode stehen, und renderChart
+             verwarf die Serie als "Antwort aus einem anderen Modus" -- Skelett ohne Ende, weil in
+             dieser Lage nie eine passende Serie nachkommt. Genau das passiert bei jedem externen
+             Filterwechsel: der Workflow laedt Visibility, die Komponente stand auf Rank. */
+          if (CHART_MODES[p.mode] && p.mode !== state.mode) state.mode = p.mode;
         } else {
           state.series = null;
           state.error = (p && p.__parseError) || !p
