@@ -22,7 +22,11 @@
    baut mit Breite 0. Deshalb haengt die Sichtbarkeit an der Wurzelklasse, und der Body ist erst
    im DOM-Fluss, wenn wirklich etwas ausgewaehlt ist. */
 .upd-root .upd-body { display: none; }
-.upd-root .upd-empty { display: block; }
+/* text-align mit dazu: die Core-Klasse .up-empty zentriert ihren Inhalt ueber ihr eigenes
+   Layout, und die display-Angabe hier setzt das ausser Kraft. Ohne diese Zeile faellt die
+   Zentrierung still weg -- unauffaellig, solange die Kinder volle Breite haben, sichtbar sobald
+   eines eine max-width bekommt (der Skelettbalken sass darum links, der Text mittig). */
+.upd-root .upd-empty { display: block; text-align: center; }
 .upd-root.has-selection .upd-body { display: block; }
 .upd-root.has-selection .upd-empty { display: none; }
 
@@ -266,16 +270,21 @@
 }
 
 /* Ladezustand ohne Auswahl: der Platzhalter bleibt an seinem Platz und in seiner Groesse, seine
-   beiden Textzeilen werden nur zu Balken. Frueher stand hier eine Regel, die den GANZEN Body
-   einblendete -- damit lief das Skelett ueber Kopfzeile und KPIs, und weil sie display:block
-   erzwang, verlor der Body sein eigenes Layout: Ueberschrift zu tief, Kopfzeile zu hoch, KPIs
-   nicht mehr mittig. Eine Zeile, drei sichtbare Fehler. */
+   beiden Textzeilen werden zu ruhigen Balken.
+
+   KEINE Animation: upskt schiebt einen Schimmer von links nach rechts -- richtig fuer
+   Tabellenzeilen, die gleich gefuellt werden, falsch fuer einen Platzhalter, der auf einen Klick
+   wartet.
+
+   inline-block, damit die Balken dem text-align: center des Platzhalters folgen. Ein Block mit
+   max-width bliebe links stehen, waehrend der Text daneben mittig sitzt -- genau das war zu
+   sehen. .upd-empty bekommt sein text-align hier explizit, weil die display-Angabe weiter oben
+   das Layout der Core-Klasse .up-empty ausser Kraft setzt und deren Zentrierung damit still
+   wegfaellt. */
 .upd-root.is-loading:not(.has-selection) .upd-empty-title,
 .upd-root.is-loading:not(.has-selection) .upd-empty-sub {
+  display: inline-block;
   color: transparent; border-radius: 6px; background: var(--vc-heading-bg);
-  /* KEINE Animation. upskt schiebt einen Schimmer von links nach rechts -- richtig fuer
-     Tabellenzeilen, die gleich mit Inhalt gefuellt werden, falsch fuer einen Platzhalter, der
-     mittig steht und auf einen Klick wartet. Ein ruhiger Balken sagt dasselbe ohne Unruhe. */
 }
-.upd-root.is-loading:not(.has-selection) .upd-empty-title { max-width: 180px; }
-.upd-root.is-loading:not(.has-selection) .upd-empty-sub { max-width: 420px; }
+.upd-root.is-loading:not(.has-selection) .upd-empty-title { width: 180px; }
+.upd-root.is-loading:not(.has-selection) .upd-empty-sub { width: 320px; max-width: 90%; }
