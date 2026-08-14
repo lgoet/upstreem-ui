@@ -3306,7 +3306,12 @@
   /* index-mode tooltip: every series at the hovered day, sorted desc, with a date header and
      favicon rows. Eases toward its target instead of snapping, so sweeping across the chart reads
      as one object following the cursor rather than a box teleporting per data point. */
-  function makeLineTooltip(wrap, getIsDark, getGran){
+  /* einheitFn/labelFn kommen als Parameter herein: diese Funktion liegt NEBEN makeLine, nicht
+     darin -- ein Zugriff auf dessen cfg waere hier nicht sichtbar. Genau daran hing, dass die
+     Achse schon ohne Prozentzeichen auskam und der Tooltip trotzdem eines schrieb. */
+  function makeLineTooltip(wrap, getIsDark, getGran, einheitFn, labelFn){
+    function ttEinheit(){ var u = einheitFn && einheitFn(); return typeof u === "string" ? u : "%"; }
+    function ttLabel(){ var l = labelFn && labelFn(); return typeof l === "string" ? l : "Share:"; }
     var pos = { x:null, y:null }, target = { x:0, y:0 }, running = false, visible = false;
     var FOLLOW = 0.18;
     function loop(){
@@ -3814,7 +3819,7 @@
             transitions: { highlight: { animation: { duration: 200, easing: "easeOutQuad" } } },
             interaction: { mode: "index", intersect: false },
             layout: { padding: { top: 8, right: 2, bottom: 0, left: 0 } },
-            plugins: { legend: { display: false }, tooltip: { enabled: false, external: makeLineTooltip(wrap, isDark, cfg.gran) } },
+            plugins: { legend: { display: false }, tooltip: { enabled: false, external: makeLineTooltip(wrap, isDark, cfg.gran, einheit, cfg.tipLabel) } },
             scales: {
               x: { grid: { display:false }, offset: single, border: { display:true, color: tc.border, width:1 },
                    ticks: { autoSkip:true, maxTicksLimit:X_MAX_TICKS, maxRotation:0, color: tc.muted,
@@ -3998,7 +4003,13 @@
         : "display:none;";
       el.querySelector(".up-tt-lbl").style.color = nameColor;
       el.querySelector(".up-tt-lbl").textContent = chart.data.labels[i] || "";
-      el.querySelector(".up-tt-val").textContent = Number(val).toFixed(2) + einheit();
+      /* Zwei Nachkommastellen nur beim Prozentwert. Ein Rang von 3.1 als "3.10" zu schreiben
+         taeuscht eine Genauigkeit vor, die die Zahl nicht hat. */
+      var e = ttEinheit();
+      el.querySelector(".up-tt-val").textContent =
+        (e === "%" ? Number(val).toFixed(2) : String(Math.round(Number(val) * 10) / 10)) + e;
+      var sub = el.querySelector(".up-tt-sub");
+      if (sub) sub.textContent = ttLabel();
       var cx = chart.canvas.offsetLeft, cy = chart.canvas.offsetTop, ca = chart.chartArea;
       var caretX = cx + tooltip.caretX, caretY = cy + tooltip.caretY, m = 12;
       el.style.left = "0px"; el.style.top = "0px";

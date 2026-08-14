@@ -191,6 +191,11 @@
       /* Nur Visibility ist ein Prozentwert. Rang ist eine Position, Sentiment eine Punktzahl auf
          der 0-100-Skala -- an beide gehoert kein Prozentzeichen. */
       unit: function () { return modeOf(state.mode).fmt === "pct" ? "%" : ""; },
+      /* "Share:" passt nur zur Visibility. Der Rang ist eine Position, das Sentiment eine Note. */
+      tipLabel: function () {
+        var f = modeOf(state.mode).fmt;
+        return f === "rank" ? "Rank:" : (f === "sent" ? "Sentiment:" : "Share:");
+      },
       watermark: false
     });
 
