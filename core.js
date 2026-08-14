@@ -5392,9 +5392,41 @@
      Aenderung wieder eine Wanderung durch fuenf Dateien. */
   var EMPTY_GRACE_MS = 500;
 
+  /* ---- icon(name, strokeWidth) --------------------------------------------------------------
+     Feather-Geometrie an einer Stelle, Strichstaerke am Aufrufort. Die Trennung ist der Punkt:
+     dieselben Icons stehen heute in zehn Dateien, aber NICHT als blosse Kopien -- ein X in einem
+     16px-Knopf traegt 2.2, eines in einem 32px-Knopf 2.6, und das ist Absicht, kein Wildwuchs.
+     Eine Vereinheitlichung auf einen Wert wuerde ein Dutzend Stellen anders aussehen lassen.
+
+     Was hier zusammenlaeuft, ist die FORM. Wer ein Icon korrigiert oder ein neues aufnimmt,
+     trifft damit alle Verbraucher, ohne dass jemand seine Strichstaerke verliert.
+
+     Bestehende Komponenten bleiben unangetastet -- das Kit steht bereit, es zwingt niemanden. */
+  var ICON_PATHS = {
+    x:        '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+    check:    '<polyline points="20 6 9 17 4 12"/>',
+    chevronDown:  '<polyline points="6 9 12 15 18 9"/>',
+    chevronRight: '<polyline points="9 18 15 12 9 6"/>',
+    search:   '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+    plus:     '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+    minus:    '<line x1="5" y1="12" x2="19" y2="12"/>'
+  };
+  function icon(name, strokeWidth){
+    var d = ICON_PATHS[name];
+    if (!d){
+      if (window.console) console.error("upstreem: kein Icon namens \"" + name + "\" -- " +
+        "vorhanden sind: " + Object.keys(ICON_PATHS).join(", "));
+      return "";
+    }
+    var w = (strokeWidth == null) ? 2 : strokeWidth;
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + w +
+           '" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
+  }
+
   var API = {
     BUILD: BUILD,
     EMPTY_GRACE_MS: EMPTY_GRACE_MS,
+    icon: icon,
     upstreemSetTheme: upstreemSetTheme,
     readPrefTheme: readPrefTheme,
     themeGuard: themeGuard,
