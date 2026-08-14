@@ -132,20 +132,24 @@
        Strich am unteren Rand: eine verwaiste Karte, deren drei Zeilen leer geblieben sind.
        data-unc-instance am Element, damit hier nur die eigene entfernt wird und nicht die einer
        zweiten Platzierung auf derselben Seite. */
-    var alt = document.querySelectorAll('.unc-card[data-unc-instance="' + instanceId + '"]');
+    var alt = document.querySelectorAll('.up-portal[data-unc-instance="' + instanceId + '"]');
     for (var a = 0; a < alt.length; a++) {
       if (alt[a].parentNode) alt[a].parentNode.removeChild(alt[a]);
     }
 
+    /* Zwei Ebenen: aussen ein Traeger mit up-root UND up-portal, innen die Karte.
+       up-root bringt die --vc-Variablen und das Thema mit -- die Karte haengt am body und wuerde
+       sonst nichts davon erben. up-root bringt aber AUCH eine eigene Positionierung mit, und die
+       hat die Karte plattgedrueckt: gemessen 1695x2px ueber die ganze Breite, weil left und top
+       damit auf -32px standen. up-portal setzt display:contents -- der Traeger bildet also keine
+       Box, gibt Thema und Variablen aber nach innen weiter. Genau dafuer steht die Klasse in core
+       ("carries the theme + CSS vars to the portaled menus"). */
     var traeger = document.createElement("div");
+    traeger.className = "up-root up-portal";
+    traeger.setAttribute("data-unc-instance", instanceId);
     traeger.innerHTML = shell();
-    var karte = traeger.firstChild;
-    karte.setAttribute("data-unc-instance", instanceId);
-    /* KEIN up-portal an der Karte: die Klasse setzt in core display:contents -- gedacht fuer den
-       Wrapper eines Portals, der selbst keine Box bilden soll. An der Karte nimmt sie ihr genau
-       das, was sie braucht: eine Box mit Groesse. Sie stand hier, weil ich den Namen aus
-       makeMount uebernommen habe, ohne nachzusehen, was er tut. */
-    (document.body || document.documentElement).appendChild(karte);
+    var karte = traeger.querySelector(".unc-card");
+    (document.body || document.documentElement).appendChild(traeger);
 
     var elCard   = karte;
 
@@ -155,8 +159,9 @@
        Attribut zur Laufzeit um. */
     function syncTheme() {
       var dunkel = root.getAttribute("data-theme") === "dark" || isYes(root.getAttribute("data-isdark"));
-      elCard.classList.add("up-root");
-      elCard.setAttribute("data-theme", dunkel ? "dark" : "light");
+      /* Das Thema gehoert an den Traeger: dort sitzt up-root, von dort erben die --vc-Variablen
+         nach innen. An der Karte selbst hat up-root ihre Geometrie zerstoert. */
+      traeger.setAttribute("data-theme", dunkel ? "dark" : "light");
     }
     var elLogo   = karte.querySelector(".unc-logo");
     var elTile   = karte.querySelector(".unc-tile");
@@ -259,7 +264,7 @@
       reset: function () { state.list = []; state.weg = {}; render(); },
       /* Beim Abbau die Karte mitnehmen -- sie haengt am body und bliebe sonst stehen, wenn
          Bubble die Wurzel entfernt. */
-      destroy: function () { if (elCard && elCard.parentNode) elCard.parentNode.removeChild(elCard); }
+      destroy: function () { if (traeger && traeger.parentNode) traeger.parentNode.removeChild(traeger); }
     };
 
     root.__uncController = ctrl;
