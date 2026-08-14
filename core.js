@@ -5562,20 +5562,33 @@
     return Math.round((b - a) / 86400000) + 1;
   }
 
+  /* Ueber drei Monaten ist eine Tageskurve unlesbar: 90 und mehr Punkte auf einer Chartbreite,
+     die Achse beschriftet ohnehin nur vier Stellen. 92 Tage, damit drei Monate selbst noch als
+     Tageskurve gehen und erst DARUEBER gesperrt wird. */
+  var GRAN_DAY_MAX = 92;
+
   function granAvailability(root, series, aktuell){
     var spanne = granRangeDays(series);
     var btns = root ? [].slice.call(root.querySelectorAll(".vc-gran-btn")) : [];
-    var neu = aktuell || "day";
+    var erlaubt = {};
     btns.forEach(function(bn){
       var g = bn.getAttribute("data-gran");
       /* Nur sperren, wenn ueberhaupt Daten da sind (spanne > 0) -- sonst waeren beim ersten
          Rendern alle Stufen ausser Day gesperrt, bevor die Serie ankommt. */
-      var aus = (g === "week" && spanne > 0 && spanne < 8) ||
+      var aus = (g === "day"   && spanne > GRAN_DAY_MAX) ||
+                (g === "week"  && spanne > 0 && spanne < 8) ||
                 (g === "month" && spanne > 0 && spanne < 31);
       bn.classList.toggle("is-disabled", aus);
       if (aus) bn.setAttribute("aria-disabled", "true"); else bn.removeAttribute("aria-disabled");
-      if (aus && g === neu) neu = "day";
+      erlaubt[g] = !aus;
     });
+    /* Faellt die aktive Stufe weg, die naechste erlaubte nehmen -- nicht blind "day". Bei einer
+       Spanne ueber drei Monaten ist day selbst gesperrt, und ein Rueckfall dorthin haette den
+       Schalter auf einen ausgegrauten Knopf gesetzt. */
+    var neu = aktuell || "day";
+    if (erlaubt[neu] === false) {
+      neu = ["week", "month", "day"].filter(function(g){ return erlaubt[g]; })[0] || "day";
+    }
     return neu;
   }
 

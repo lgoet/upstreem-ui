@@ -510,15 +510,17 @@
         render();
       },
       setLoading: function (v) { state.loading = isYes(v); render(); },
-      reset: function () {
+      reset: function (hart) {
         state.series = null; state.variations = null; state.hasData = false;
         state.loading = false;
-        /* Auch reset laesst den Modus stehen. Das klang nach dem einen Ort, an dem ein
-           Zuruecksetzen richtig ist -- aber der Filter-Workflow ruft reset, und danach kam die
-           Rank-Serie in eine Komponente, die auf Visibility stand: "Waiting for visibility data",
-           obwohl die richtigen Daten da waren. Zusammen mit setSeries, das den Modus ebenfalls
-           nicht anfasst, wechselt er jetzt ausschliesslich durch einen Klick auf den Switcher.
-           letzteKurve faellt trotzdem: die Daten sind weg, also darf keine alte Kurve stehen. */
+        /* Ohne Argument laesst reset Modus und Granularitaet stehen: der Filter-Workflow ruft es
+           bei jedem Wechsel, und der Nutzer soll dabei nicht aus seiner Ansicht geworfen werden.
+           MIT "yes" ist es ein echter Neuanfang -- Visibility, Tagesaufloesung, Store geleert. Das
+           ist der Fall, den ein Zuruecksetzen-Knopf braucht. */
+        if (isYes(hart)) {
+          state.mode = "visibility"; state.gran = "day";
+          MODE_STORE[instanceId] = "visibility"; GRAN_STORE[instanceId] = "day";
+        }
         letzteKurve = false;
         /* Auch die Suche zuruecksetzen: sonst zeigt die naechste Marke eine gefilterte Liste,
            ohne dass irgendwo ein Suchbegriff zu sehen waere. */
@@ -550,7 +552,9 @@
       setBrandDetailCompany:    function (id, p) { return each(id, function (c) { c.setCompany(p); }); },
       setBrandDetailVariations: function (id, p) { return each(id, function (c) { c.setVariations(p); }); },
       setBrandDetailLoading:    function (id, v) { return each(id, function (c) { c.setLoading(v); }); },
-      resetBrandDetail:         function (id)    { return each(id, function (c) { c.reset(); }); }
+      /* Zweites Argument "yes" setzt auch Modus und Granularitaet zurueck. Ohne bleibt die
+         Ansicht des Nutzers stehen -- siehe die Begruendung an reset(). */
+      resetBrandDetail:         function (id, hart) { return each(id, function (c) { c.reset(hart); }); }
     }
   });
 
