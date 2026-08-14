@@ -252,28 +252,15 @@
     }
 
     /* ---- Variations -------------------------------------------------------------------------
-       Vorlaeufig hier, absichtlich schlank gehalten: die Tabelle im Radar-Detail kann mehr
-       (Suche, Ring, Sortierung) und ist der Kandidat fuer UC.makeVariations. Bis beide Seiten
-       stehen, waere ein Kit aus EINEM Verbraucher geraten -- §25 sagt: extrahieren beim zweiten,
-       und der zweite ist genau diese Datei. Der Umbau ist der naechste Schritt. */
+       UC.variationRows baut die Zeilen -- dasselbe Kit, das der Radar-Detail benutzt. Gefiltert
+       wird hier: die Suche haengt an DIESEM Feld, das Kit soll keinen Zustand kennen. Solange es
+       hier noch kein Suchfeld gibt, ist die Suche leer und alle Zeilen kommen durch. */
     function renderVariations() {
-      var rows = state.variations;
-      if (state.loading || rows == null) {
-        elVars.innerHTML = UC.skeletonRows ? UC.skeletonRows(5) : "";
-        return;
-      }
-      if (!rows.length) {
-        elVars.innerHTML = '<div class="up-empty-mini">No variations recorded for this brand.</div>';
-        return;
-      }
-      elVars.innerHTML = rows.map(function (v) {
-        return '<div class="up-row ubd-vrow">' +
-                 '<div class="up-td ubd-td-name">' + esc(String(v.name || "")) + '</div>' +
-                 '<div class="up-td ubd-td-cnt"><span class="up-num">' +
-                   (num(v.mentioned_count) == null ? "–" : Math.round(num(v.mentioned_count))) +
-                 '</span></div>' +
-               '</div>';
-      }).join("");
+      elVars.innerHTML = UC.variationRows(state.loading ? null : state.variations, {
+        query: "",
+        rowClass: "ubd-vrow",
+        emptyText: "No variations recorded for this brand."
+      });
     }
 
     /* ---- Bedienung --------------------------------------------------------------------------

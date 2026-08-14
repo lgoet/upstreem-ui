@@ -1,0 +1,119 @@
+<!-- ==========================================================================================
+     upstreem — Brand Detail (Praefix `ubd`)
+
+     Der Kopfbereich der Marken-Detailseite: ein Switcher mit vier Ansichten, darunter eine Karte
+     mit Ueberschrift, grosser Kennzahl und Kurve. Im vierten Modus tritt an die Stelle der Kurve
+     die Variantentabelle.
+
+     Dieses HTML-Element traegt NUR das Wurzel-Div. Alles darunter baut die Komponente selbst --
+     hier ist keine Stelle, an der von Hand etwas eingesetzt werden soll.
+
+     ── FRISCHE INSTALLATION ──────────────────────────────────────────────────────────────────
+     Diese Datei ist eine VORLAGE. Aenderungen daran erreichen ein bereits eingebautes Element
+     NICHT -- dort muss dasselbe von Hand nachgezogen werden.
+
+     ── ATTRIBUTE ─────────────────────────────────────────────────────────────────────────────
+       data-instance      eindeutig pro Platzierung. Alle Setter sprechen ueber diese ID.
+       data-cdn-pin       Commit-Hash. NIEMALS leer lassen: leer zieht "@main", und das liefern
+                          jsDelivr und der Browser aus einem bis zu tagealten Cache. Eine zweite,
+                          aeltere Kopie auf derselben Seite kann eine korrekt gepinnte Komponente
+                          aushebeln -- core.js meldet das in der Konsole, sobald es passiert.
+       data-isdark        "yes"/"no". Steuert Dark Mode.
+       data-isprocessing  "yes"/"no". Optional; solange "yes", zeigt die Karte ihr Skelett.
+
+     Die Event-Namen sind ebenfalls Attribute, damit mehrere Seiten dieselbe Komponente mit
+     eigenen Workflows benutzen koennen:
+       data-mode-fn       Standardname bubble_fn_ubdMode
+       data-gran-fn       Standardname bubble_fn_ubdGran
+
+     ── EVENTS (JavaScriptToBubble, Value type: TEXT) ─────────────────────────────────────────
+     Beide bekommen EINEN JSON-Text (STYLEGUIDE §13). Beide tragen mode UND gran, damit ein
+     Workflow nie einen der beiden Werte aus einem State nachschlagen muss:
+
+       bubble_fn_ubdMode   {"mode":"visibility|rank|sentiment|variations","gran":"day|week|month"}
+                           Feuert, wenn der Nutzer die Ansicht wechselt.
+       bubble_fn_ubdGran   {"mode":"...","gran":"..."}
+                           Feuert beim Wechsel der Granularitaet.
+
+     Beide bedeuten dasselbe fuer dich: LADE NEU. Der Unterschied steht nur im Payload, damit du
+     bei Bedarf unterschiedlich reagieren kannst -- etwa den Varianten-RPC nur beim Moduswechsel
+     auf "variations" anzustossen.
+
+     WICHTIG: Die Komponente wechselt die Ansicht SOFORT und fragt erst danach. Sie zeigt bis zur
+     Antwort ihr Skelett. Es gibt also keinen Zustand, in dem sie auf dich wartet, ohne dass der
+     Nutzer das sieht.
+
+     ── DATEN HEREIN ──────────────────────────────────────────────────────────────────────────
+       setBrandDetailCompany(instanceId, payload)
+         Die Zeile aus dem Marken-RPC, als Text oder als Liste mit einer Zeile -- beides wird
+         angenommen. Gelesen werden: name, logo_url, avg_visibility_pct, avg_visibility_delta_pct,
+         avg_rank, avg_rank_delta, avg_sentiment, avg_sentiment_delta.
+
+       setBrandDetailSeries(instanceId, payload)
+         {"mode":"visibility","series":[{"day":"2026-08-08","value":38.54}, ...],
+          "company_id":"..."}
+         EIN Modus pro Aufruf. Der mode im Payload MUSS zum gewaehlten Modus passen -- eine Antwort
+         aus einem anderen Modus wird verworfen und das Skelett bleibt stehen. Das ist Absicht:
+         sonst laege eine Rang-Kurve unter der Visibility-Ueberschrift, wenn zwei Antworten sich
+         ueberholen.
+
+       setBrandDetailVariations(instanceId, rows)
+         Die Varianten dieser Marke, GESAMT (nicht pro Thema). Erwartet name und mentioned_count.
+
+       setBrandDetailLoading(instanceId, "yes"|"no")
+       resetBrandDetail(instanceId)
+
+     ── SANITIZER (STYLEGUIDE §46) ────────────────────────────────────────────────────────────
+     Baust du den Payload in einem Run-JavaScript aus dynamischen Ausdruecken zusammen, brauchen
+     die Zeilen BEIDE Ersetzungen. Bubble laesst einen leeren Wert als NICHTS stehen ("key": ,)
+     und schreibt Ja/Nein unquotiert als yes/no -- beides ist kein gueltiges JSON:
+
+       var roh = `PAYLOAD_HIER`
+         .replace(/:\s*([,}\]])/g, ": null$1")
+         .replace(/:\s*(yes|no)\s*([,}\]])/g, function(_, v, t){ return ": " + (v === "yes") + t; });
+       setBrandDetailSeries("brand_detail_page", roh);
+
+     ── EINBAU IN KUERZE ──────────────────────────────────────────────────────────────────────
+     1. Dieses HTML-Element auf die Seite, data-instance und data-cdn-pin setzen.
+     2. Zwei JavaScriptToBubble-Elemente anlegen (Suffix ubdMode und ubdGran, Value type TEXT,
+        Trigger event an).
+     3. Je einen Workflow: mode/gran aus dem Wert lesen, passenden RPC laden, Ergebnis ueber
+        setBrandDetailSeries bzw. setBrandDetailVariations zurueckgeben.
+     4. Beim Seitenaufbau einmal setBrandDetailCompany und setBrandDetailSeries mit mode
+        "visibility" -- das ist der Startzustand der Komponente.
+     ========================================================================================== -->
+
+<div class="up-root ubd-root"
+     data-instance="INSTANCE_ID"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="IS_DARK"
+     data-isprocessing="IS_PROCESSING"
+     data-mode-fn="bubble_fn_ubdMode"
+     data-gran-fn="bubble_fn_ubdGran"></div>
+
+<script>
+(function(){
+  /* Loader nach STYLEGUIDE 26: den Pin ueber getElementsByClassName lesen, NIEMALS ueber
+     document.currentScript — Bubble fuehrt Scripts nicht in DOM-Reihenfolge aus. */
+  function readPin(cls){
+    var els = document.getElementsByClassName(cls), i, p;
+    for (i = 0; i < els.length; i++){
+      /* trim: ein Leerzeichen aus der Bubble-Konstante ergaebe sonst .../upstreem-ui@ abc /core.js,
+         jsDelivr antwortet mit 404, und weder CSS noch JS landen -- das Element bleibt leer.
+         Ohne trim greift auch der @main-Rueckfall nicht, weil "   " truthy ist. */
+      p = (els[i].getAttribute("data-cdn-pin") || "").trim();
+      if (p && p !== "CDN_" + "PIN") return p;
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("ubd-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(url, make){ if (L[url]) return; L[url] = 1; make(url); }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+
+  /* core zuerst, async=false haelt die Reihenfolge ein. */
+  css("core.css");             js("core.js");
+  css("brand-detail.css");     js("brand-detail.js");
+})();
+</script>

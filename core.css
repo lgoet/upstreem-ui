@@ -1920,3 +1920,20 @@
   border-radius: 999px; }
 .up-scroll::-webkit-scrollbar-thumb:hover { background: var(--up-scroll-thumb-hover, var(--vc-hover-border)); }
 .up-scroll::-webkit-scrollbar-corner { background: transparent; }
+
+/* ---- Variantentabelle (UC.variationRows) -----------------------------------------------------
+   Die Klassen, die das Kit ausgibt. Standen als .upd-* in performance-detail und gelten jetzt fuer
+   beide Verbraucher -- der Ring hat keine Farbe im SVG, er holt sie von hier; ohne diese Regeln
+   waere er unsichtbar.
+
+   Kein Farbton fuer den Bogen: Share of Voice ist keine Wertung, sondern ein Anteil. Ein gruener
+   oder roter Ring wuerde eine Aussage treffen, die die Zahl nicht hergibt. */
+.up-varname { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.up-varring { display: inline-flex; align-items: center; flex: 0 0 auto; line-height: 0; }
+/* 40 Prozent groesser: 16 x 1.4 = 22.4. Die Groesse steht hier und nicht im SVG -- die viewBox
+   bleibt 16x16, alles darin skaliert proportional mit, und Radius und Strichstaerke muessen nicht
+   nachgerechnet werden. */
+.up-varring svg { display: block; width: 22.4px; height: 22.4px; }
+.up-varring-track { stroke: var(--vc-heading-bg); }
+.up-varring-fill { stroke: var(--vc-text); transition: stroke-dasharray 240ms ease; }
+.up-var-of { font-size: 12px; font-weight: 400; color: var(--vc-third); white-space: nowrap; }

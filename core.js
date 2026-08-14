@@ -5426,6 +5426,81 @@
      Beschriftung des Knopfes. Die haengen an den Event-Vertraegen der jeweiligen Tabelle und
      unterscheiden sich echt -- prompts-table nennt sein Event anders als urls-table. Ein Kit, das
      die auch noch verschluckt, waere vier Sonderfaelle unter einem Namen. */
+  /* ---- variationRows(list, opts) -------------------------------------------------------------
+     Die Variantentabelle: eine Zeile je Schreibweise, mit Anteil (Ring plus Prozent) und Anzahl.
+     Steht im Radar-Detail seit jeher und wird jetzt auch auf der Marken-Detailseite gebraucht --
+     zwei Verbraucher, also nach core (§25).
+
+     Gibt HTML zurueck und nimmt nichts an, was mit Zustand zu tun hat: die Suche filtert der
+     Aufrufer, weil sie an SEINEM Suchfeld haengt. Das Kit kennt nur Zeilen und die Frage, ob
+     gerade gesucht wird -- davon haengt nur der Leertext ab.
+
+     opts.query      aktuelle Suche; nur fuer die Hervorhebung und den Leertext
+     opts.rowClass   zusaetzliche Klasse an der Zeile (upd-vrow bzw. ubd-vrow), damit jede Seite
+                     ihr eigenes Spaltenraster behaelt
+     opts.emptyText  Leertext ohne Suche. Mit Suche steht immer derselbe Satz da.
+
+     mentions_total ist die Bezugsgroesse fuer "3 of 12", NICHT total_count -- das zaehlt die
+     verschiedenen Varianten, nicht die Erwaehnungen. Zwei Groessen mit aehnlichem Namen, und die
+     falsche stand hier einmal im Nenner. */
+  /* Prozent kurz: ganze Zahl wenn der Nachkommateil unter 0.05 liegt, sonst eine Stelle. "<1%"
+     statt "0%", wenn ein echter Anteil unter ein halbes Prozent faellt -- eine 0 waere dort die
+     falsche Aussage. Stand lokal in performance-detail und wird vom Variations-Kit gebraucht. */
+  function fmtPctShort(v, absolut){
+    if (v == null || isNaN(v)) return "-";
+    var n = Number(v);
+    if (absolut && n > 0 && Math.round(n) === 0) return "<1%";
+    return (Math.abs(n - Math.round(n)) < 0.05 ? String(Math.round(n)) : fmt1(n)) + "%";
+  }
+
+  var VAR_RING_R = 6, VAR_RING_C = 2 * Math.PI * VAR_RING_R;
+  function variationRing(pct){
+    var p = pct == null || isNaN(pct) ? 0 : Math.max(0, Math.min(100, Number(pct)));
+    var an = (p / 100) * VAR_RING_C;
+    /* Ring statt Balken: ein Balken laeuft ueber die ganze Spaltenbreite und macht die Zeile
+       unruhig. Die -90-Grad-Drehung steckt im SVG, nicht in einer CSS-Transform, damit der Bogen
+       in beiden Themes und bei jeder Schriftgroesse an derselben Stelle beginnt. */
+    return '<span class="up-varring" aria-hidden="true">' +
+      '<svg viewBox="0 0 16 16" width="16" height="16">' +
+        '<circle class="up-varring-track" cx="8" cy="8" r="' + VAR_RING_R + '" fill="none" stroke-width="2.4"/>' +
+        '<circle class="up-varring-fill" cx="8" cy="8" r="' + VAR_RING_R + '" fill="none" stroke-width="2.4"' +
+          ' stroke-dasharray="' + an.toFixed(2) + ' ' + (VAR_RING_C - an).toFixed(2) + '"' +
+          ' transform="rotate(-90 8 8)" stroke-linecap="round"/>' +
+      '</svg></span>';
+  }
+  function variationRows(list, opts){
+    opts = opts || {};
+    var rows = list || [];
+    var q = String(opts.query || "");
+    var rowCls = "up-row" + (opts.rowClass ? " " + opts.rowClass : "");
+    if (rows === null || list == null){
+      return skeletonRows({ count: 6, cols: [{ w: 120, jitter: 40 }, { w: 44 }, { w: 28 }],
+                            rowClass: rowCls, cellClass: "up-td" });
+    }
+    if (!rows.length){
+      return '<div class="up-empty-mini">' +
+        (q ? "No variation matches this search."
+           : (opts.emptyText || "No variations recorded.")) + '</div>';
+    }
+    return rows.map(function(v){
+      var sov = toNum(v.share_of_voice_pct);
+      var cnt = toNum(v.mentioned_count);
+      var tot = toNum(v.mentions_total);
+      return '<div class="' + rowCls + '">' +
+               '<div class="up-td up-var-name"><span class="up-varname">' +
+                 (q ? highlight(String(v.name || ""), q) : esc(String(v.name || ""))) + '</span></div>' +
+               '<div class="up-td up-var-sov">' +
+                 '<span class="up-num">' + (sov == null ? "-" : fmtPctShort(sov, true)) + '</span>' +
+                 variationRing(sov) +
+               '</div>' +
+               '<div class="up-td up-var-cnt">' +
+                 '<span class="up-num">' + (cnt == null ? "-" : Math.round(cnt)) + '</span>' +
+                 (tot != null ? '<span class="up-var-of">of ' + Math.round(tot) + '</span>' : "") +
+               '</div>' +
+             '</div>';
+    }).join("");
+  }
+
   function mentFilter(menu, query){
     if (!menu) return query || "";
     var inp = menu.querySelector(".up-ment-search");
@@ -5471,6 +5546,8 @@
     BUILD: BUILD,
     EMPTY_GRACE_MS: EMPTY_GRACE_MS,
     icon: icon,
+    fmtPctShort: fmtPctShort,
+    variationRows: variationRows,
     mentFilter: mentFilter,
     mentHead: mentHead,
     upstreemSetTheme: upstreemSetTheme,

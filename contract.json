@@ -1658,6 +1658,15 @@
   "up-tsk",
   "up-tsk-bar",
   "up-tsk-logo",
+  "up-var-cnt",
+  "up-var-name",
+  "up-var-of",
+  "up-var-sov",
+  "up-varname",
+  "up-varring",
+  "up-varring-fill",
+  "up-varring-track",
+  "upd-",
   "upd-body",
   "upd-brand",
   "upd-brand-name",
@@ -2245,7 +2254,7 @@
   "globals": 108,
   "payloadkeys": 59,
   "dataattrs": 151,
-  "klassen": 1710,
+  "klassen": 1719,
   "keyframes": 50
  }
 }
