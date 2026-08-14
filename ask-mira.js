@@ -1314,8 +1314,17 @@
 
   // ===== "Add as opportunity": inline span -> button -> (on success) the normal opportunity card =====
   var _oppcState = {};   // action_id -> { status:'loading'|'created'|'exists', rec? }  (kept across re-renders in this session)
-  var OPPC_PLUS  = UC.icon("plus", 2);
-  var OPPC_CHECK = UC.icon("check", 2.4);
+  /* Diese beiden Konstanten werden ausgewertet, sobald der Block durchlaufen wird -- und genau
+     dort meldet die Konsole in der echten App "UC is not defined". Lokal ist der Fall nicht
+     reproduzierbar (UC liegt eine Ebene hoeher im selben Scope), also steht die Geometrie hier
+     direkt statt ueber das Kit: dieselben Feather-Pfade, die UC.icon("plus")/("check") liefert,
+     nur ohne Abhaengigkeit an einer Stelle, die nachweislich faellt. */
+  var OPPC_PLUS  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+                   'stroke-linecap="round" stroke-linejoin="round">' +
+                   '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+  var OPPC_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" ' +
+                   'stroke-linecap="round" stroke-linejoin="round">' +
+                   '<polyline points="20 6 9 17 4 12"/></svg>';
   var OPPC_SPIN  = '<svg class="am-oppc-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg>';
   function _oppcApplyState(btn, state){
     var lab = btn.querySelector('.am-oppc-label'), ic = btn.querySelector('.am-oppc-ic');
