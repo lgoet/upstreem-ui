@@ -1,0 +1,96 @@
+/* upstreem brand-detail.css — Kopfbereich der Marken-Detailseite (Praefix `ubd`).
+   Braucht core.css: alle Farben kommen aus den --vc-* Tokens, die Zeilen- und Zahlenklassen
+   (.up-row, .up-td, .up-num, .up-sent, .up-empty-mini) ebenfalls. Hier steht nur, was es
+   nirgends sonst gibt -- der Vier-Wege-Switcher und die KPI-Zeile ueber der Kurve. */
+
+/* ---- Switcher --------------------------------------------------------------------------------
+   Linksbuendig ueber der Karte, nicht darin: er wechselt den INHALT der Karte, steht also
+   ausserhalb. 32px hoch wie jeder andere Segmented-Control im Haus. */
+.ubd-switch { display: flex; gap: 4px; margin: 0 0 12px; }
+.ubd-switch-btn {
+  height: 32px; padding: 0 12px; border-radius: 8px;
+  border: 1px solid transparent; background: transparent;
+  font: inherit; font-size: 13px; font-weight: 500; color: var(--vc-third);
+  cursor: pointer; white-space: nowrap;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+.ubd-switch-btn:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
+.ubd-switch-btn.is-active {
+  background: var(--vc-heading-bg); border-color: var(--vc-border); color: var(--vc-text);
+}
+.ubd-switch-btn:focus-visible {
+  outline: 0; border-color: var(--up-focus);
+  box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring);
+}
+
+/* ---- Karte ----------------------------------------------------------------------------------- */
+.ubd-card {
+  border: 1px solid var(--vc-border); border-radius: 12px; background: var(--vc-bg);
+  padding: 16px 20px 20px;
+}
+.ubd-head { display: flex; align-items: center; gap: 12px; min-height: 32px; }
+.ubd-title { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto; }
+/* 4px Radius wie das Logo in der Meta-Zeile der Seitenkoepfe -- dasselbe Bauteil, dieselbe Kante. */
+.ubd-logo { width: 20px; height: 20px; border-radius: 4px; object-fit: cover; flex: 0 0 auto; display: block; }
+.ubd-heading {
+  font-size: 15px; font-weight: 500; color: var(--vc-text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ---- Granularitaets-Switcher ---------------------------------------------------------------- */
+.ubd-gran { display: inline-flex; gap: 2px; flex: 0 0 auto; }
+.ubd-gran-btn {
+  height: 28px; padding: 0 10px; border-radius: 7px;
+  border: 1px solid transparent; background: transparent;
+  font: inherit; font-size: 12px; font-weight: 500; color: var(--vc-third);
+  cursor: pointer; transition: background-color 150ms ease, color 150ms ease;
+}
+.ubd-gran-btn:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
+.ubd-gran-btn.is-active { background: var(--vc-heading-bg); color: var(--vc-text); }
+.ubd-gran-btn:focus-visible {
+  outline: 0; border-color: var(--up-focus);
+  box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring);
+}
+
+/* ---- KPI-Zeile -------------------------------------------------------------------------------
+   Die grosse Zahl steht ueber der Kurve, nicht daneben: sie ist deren Zusammenfassung, und wer
+   von oben nach unten liest, soll erst die Zahl und dann den Verlauf sehen.
+   baseline-Ausrichtung, damit der Trend-Chip auf der Grundlinie der Zahl sitzt und nicht auf
+   halber Hoehe schwebt. */
+.ubd-kpi { display: flex; align-items: baseline; gap: 8px; margin: 12px 0 4px; min-height: 34px; }
+.ubd-kpi-val {
+  font-size: 26px; font-weight: 500; color: var(--vc-text);
+  letter-spacing: -0.5px; line-height: 1.1;
+  /* Ziffern gleicher Breite: ohne das springt die Zahl beim Wechsel zwischen Werten wie 9.9 und
+     10.0 seitlich, und der Trend-Chip dahinter wandert mit. */
+  font-variant-numeric: tabular-nums;
+}
+.ubd-kpi-trend { display: inline-flex; align-items: center; }
+
+/* Im Variations-Modus gibt es keine einzelne Kennzahl -- die Zeile faellt ganz weg, statt eine
+   Zahl aus einem anderen Modus stehen zu lassen. */
+.ubd-root.is-novalue .ubd-kpi { display: none; }
+
+/* ---- Chart / Variations ----------------------------------------------------------------------
+   Immer nur eines von beiden. Die Hoehe steht am Wrapper und nicht am Canvas: Chart.js schreibt
+   dem Canvas seine Pixelmasse selbst, und eine Hoehe direkt darauf kaempft dagegen an. */
+.ubd-chartwrap { position: relative; height: 260px; }
+.ubd-canvas { display: block; width: 100%; height: 100%; }
+.ubd-varwrap { display: none; }
+.ubd-root.is-variations .ubd-chartwrap { display: none; }
+.ubd-root.is-variations .ubd-varwrap { display: block; }
+
+.ubd-vrow { display: grid; grid-template-columns: 1fr auto; align-items: center; min-height: 40px; }
+.ubd-td-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ubd-td-cnt { text-align: right; }
+
+/* ---- Schmale Breiten -------------------------------------------------------------------------
+   Unter 560px wandert der Granularitaets-Switcher unter die Ueberschrift statt sie zu quetschen.
+   Der Modus-Switcher darf scrollen -- vier Beschriftungen nebeneinander passen sonst nicht, und
+   ein Umbruch in zwei Reihen sieht aus wie zwei Gruppen. */
+@media (max-width: 560px) {
+  .ubd-head { flex-wrap: wrap; }
+  .ubd-gran { width: 100%; }
+  .ubd-switch { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .ubd-chartwrap { height: 220px; }
+}
