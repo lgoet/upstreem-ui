@@ -126,9 +126,21 @@
        dieser Vorfahre der Bezugsrahmen UND sein overflow:hidden schneidet die Karte auf die
        Groesse des 1x1-Hosts. Genau das war der Fall, in dem die Karte im DOM stand, offen war und
        trotzdem nicht zu sehen. */
+    /* Erst aufraeumen: Bubble haengt das Wurzel-Element bei jedem Filter- oder Seitenwechsel neu
+       ein. Dabei ist __uncController weg, initRoot laeuft von vorn -- und die Karte des vorigen
+       Laufs haengt weiter am body, ohne Controller und ohne Inhalt. Genau das war der schmale
+       Strich am unteren Rand: eine verwaiste Karte, deren drei Zeilen leer geblieben sind.
+       data-unc-instance am Element, damit hier nur die eigene entfernt wird und nicht die einer
+       zweiten Platzierung auf derselben Seite. */
+    var alt = document.querySelectorAll('.unc-card[data-unc-instance="' + instanceId + '"]');
+    for (var a = 0; a < alt.length; a++) {
+      if (alt[a].parentNode) alt[a].parentNode.removeChild(alt[a]);
+    }
+
     var traeger = document.createElement("div");
     traeger.innerHTML = shell();
     var karte = traeger.firstChild;
+    karte.setAttribute("data-unc-instance", instanceId);
     /* KEIN up-portal an der Karte: die Klasse setzt in core display:contents -- gedacht fuer den
        Wrapper eines Portals, der selbst keine Box bilden soll. An der Karte nimmt sie ihr genau
        das, was sie braucht: eine Box mit Groesse. Sie stand hier, weil ich den Namen aus
