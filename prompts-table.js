@@ -3360,7 +3360,7 @@
             emptyGraceTimer = null;
             if (isBusy() || !state.hasData || state.rows.length) return;
             renderEmptyState(false);
-          }, 600);
+          }, (UC.EMPTY_GRACE_MS || 500));
         }
         return;
       }

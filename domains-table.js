@@ -781,7 +781,7 @@
             emptyGraceTimer = null;
             if (isBusy() || !state.hasData || state.rows.length) return;   // state moved on already
             renderEmptyState(false);
-          }, 600);   // matches the app-wide empty-grace window (see core.js's makeEmptyGrace)
+          }, (UC.EMPTY_GRACE_MS || 500));   // matches the app-wide empty-grace window (see core.js's makeEmptyGrace)
         }
         return;
       }

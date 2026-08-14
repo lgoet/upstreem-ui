@@ -5386,8 +5386,15 @@
      jeder Aenderung an core.js mit hochziehen (Format JJJJMMTT, zweistellig zaehlend). */
   var BUILD = 20260813;
 
+  /* Wartezeit, bevor eine Komponente "keine Daten" zeigt. Verhindert, dass ein noch laufender
+     Ladevorgang fuer einen Moment als leeres Ergebnis aufblitzt. Stand in fuenf Dateien einzeln
+     -- zufaellig ueberall auf demselben Wert, aber ohne gemeinsamen Ort waere die naechste
+     Aenderung wieder eine Wanderung durch fuenf Dateien. */
+  var EMPTY_GRACE_MS = 500;
+
   var API = {
     BUILD: BUILD,
+    EMPTY_GRACE_MS: EMPTY_GRACE_MS,
     upstreemSetTheme: upstreemSetTheme,
     readPrefTheme: readPrefTheme,
     themeGuard: themeGuard,

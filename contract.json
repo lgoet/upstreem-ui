@@ -413,6 +413,7 @@
   "data-preset",
   "data-processing",
   "data-processing2",
+  "data-range-apply-delay",
   "data-range-apply-fn",
   "data-range-fn",
   "data-recent",
@@ -2237,7 +2238,7 @@
   "fnattrs": 60,
   "globals": 108,
   "payloadkeys": 57,
-  "dataattrs": 150,
+  "dataattrs": 151,
   "klassen": 1709,
   "keyframes": 50
  }

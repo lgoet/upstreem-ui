@@ -1012,7 +1012,7 @@
             if (isLoading() || (Array.isArray(live) && live.length && !q)) return;
             tableEl.innerHTML = headHtml() + '<div class="up-empty-mini">' + (q ? "No matches" : "No data") + '</div>';
             applyCols();
-          }, 600);
+          }, (UC.EMPTY_GRACE_MS || 500));
         }
         return;
       }
