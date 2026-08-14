@@ -51,24 +51,30 @@
    -- dieselben, die jede Tabellenzelle benutzt. Hier wird nur die Schrift groesser gestellt, damit
    die Zahl ueber der Kurve als Zusammenfassung liest. Alles andere -- Farbe, Punkt, Raute,
    Abstaende -- bleibt beim Original, sonst sieht dieselbe Zahl an zwei Orten verschieden aus. */
-.ubd-kpi-val { font-size: 21px; line-height: 1.15; letter-spacing: -0.4px; }
+.ubd-kpi-val { font-size: 23px; line-height: 1.15; letter-spacing: -0.4px; }
 .ubd-kpi-val .up-num { font-size: inherit; font-weight: 500; letter-spacing: inherit;
   font-variant-numeric: tabular-nums; }
 /* Sentiment eine Stufe groesser als in einer Tabellenzelle -- aber VOLLSTAENDIG, nicht nur die
-   Schrift. Die Pille aus core misst 24px Hoehe bei 13px Schrift; 15px ergibt Faktor 15/13, und
-   in genau dem Verhaeltnis wachsen Hoehe (28), Innenabstand (7), Eckenradius (7), der Abstand
-   zum Punkt (7) und der Punkt selbst (7 bei 2.5 Radius). Nur die Schrift anzuheben wuerde die
+   Schrift. Die Pille aus core misst 24px Hoehe bei 13px Schrift; 17px ergibt Faktor 17/13, und
+   in genau dem Verhaeltnis wachsen Hoehe (31), Innenabstand (8), Eckenradius (8), der Abstand
+   zum Punkt (8) und der Punkt selbst (8 bei 2.6 Radius). Nur die Schrift anzuheben wuerde die
    Pille sprengen: der Text stiesse oben und unten an den Rahmen, und aus dem abgerundeten
    Quadrat des Punktes wuerde bei falschem Radius ein Kreis.
    Der Rang bleibt beim Core-Mass -- dort waechst die nackte Zahl (.up-num) ohnehin auf 21px,
    und die Raute ist auf sie abgestimmt. */
-.ubd-kpi-val .up-sent { height: 28px; padding: 0 7px; border-radius: 7px; gap: 7px; }
-.ubd-kpi-val .up-sent-val { font-size: 15px; }
-.ubd-kpi-val .up-sent-dot { width: 7px; height: 7px; border-radius: 2.5px; }
+/* Raute im Verhaeltnis zur Zahl: core setzt 12px bei 13px Zellschrift, hier 21 bei 23. Ohne das
+   sitzt eine 12px-Raute neben einer 23px-Zahl und sieht aus wie ein Fehler. */
+.ubd-kpi-val .up-hash { width: 21px; height: 21px; }
+.ubd-kpi-val .up-sent { height: 31px; padding: 0 8px; border-radius: 8px; gap: 8px; }
+.ubd-kpi-val .up-sent-val { font-size: 17px; }
+.ubd-kpi-val .up-sent-dot { width: 8px; height: 8px; border-radius: 2.6px; }
 /* Der Trend bleibt eine Randnotiz zur Zahl, keine zweite Zahl -- aber einen Punkt groesser als
    in einer Tabellenzelle, weil die Zahl daneben hier deutlich groesser ist. */
 .ubd-kpi-trend { display: inline-flex; align-items: center; }
-.ubd-kpi-trend .up-trend { font-size: 14px; }
+/* Schrift und Pfeil einen Punkt groesser als in einer Tabellenzelle, beide zusammen: das Icon
+   misst im Core 16px bei 13px Text, hier 17 bei 15. */
+.ubd-kpi-trend .up-trend { font-size: 15px; }
+.ubd-kpi-trend .up-trend svg { width: 17px; height: 17px; }
 
 /* Im Variations-Modus gibt es keine einzelne Kennzahl -- die Zeile faellt ganz weg, statt eine
    Zahl aus einem anderen Modus stehen zu lassen. */
