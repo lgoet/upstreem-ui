@@ -17,9 +17,14 @@
 .ubd-seg .up-seg-btn { padding-left: 16px; padding-right: 16px; }
 
 /* ---- Karte ----------------------------------------------------------------------------------- */
+/* width:100% ist hier nicht Kosmetik: die Karte hatte vorher keine eigene Breite. Im
+   Kurven-Modus spannte das Canvas (width:100%) sie auf, im Variations-Modus fiel sie auf die
+   Breite ihrer Polsterung zusammen -- und die Tabelle darin lief rechts aus dem Bild.
+   box-sizing, damit die 20px Polsterung INNEN liegen und die Karte nicht breiter wird als ihr
+   Platz. */
 .ubd-card {
   border: 1px solid var(--vc-border); border-radius: 12px; background: var(--vc-bg);
-  padding: 16px 20px 20px;
+  padding: 16px 20px 20px; width: 100%; box-sizing: border-box;
 }
 .ubd-head { display: flex; align-items: center; gap: 12px; min-height: 32px; }
 .ubd-title { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto; }
@@ -46,9 +51,13 @@
 .ubd-kpi-val { font-size: 21px; line-height: 1.15; letter-spacing: -0.4px; }
 .ubd-kpi-val .up-num { font-size: inherit; font-weight: 500; letter-spacing: inherit;
   font-variant-numeric: tabular-nums; }
-.ubd-kpi-val .up-sent-val { font-size: inherit; font-weight: 500; font-variant-numeric: tabular-nums; }
+/* Dieselben Verhaeltnisse wie in den KPI-Kacheln des Radar-Details: der Sentiment-Wert steht
+   zwei Stufen kleiner als die nackte Zahl (die Pille mit Punkt traegt optisch mehr Gewicht), und
+   die Raute misst zwei Drittel der Zahl. Nur die Grundgroesse ist hier hoeher, weil diese Zahl
+   ueber der Kurve die Aussage der ganzen Karte ist. */
+.ubd-kpi-val .up-sent-val { font-size: 19px; font-weight: 500; font-variant-numeric: tabular-nums; }
 .ubd-kpi-val .up-sent-dot { width: 9px; height: 9px; }
-.ubd-kpi-val .up-hash { width: 16px; height: 16px; }
+.ubd-kpi-val .up-hash { width: 14px; height: 14px; }
 /* Der Trend-Chip bleibt in SEINER Groesse -- er ist eine Randnotiz zur Zahl, keine zweite Zahl. */
 .ubd-kpi-trend { display: inline-flex; align-items: center; }
 
@@ -71,16 +80,9 @@
 .ubd-root.is-variations .ubd-chartwrap { display: none; }
 .ubd-root.is-variations .ubd-varwrap { display: block; }
 
-/* Der ganze Abschnitt -- Ueberschrift, Untertitel, Suchfeld, Tabellenrahmen und Zeilenhoehen --
-   kommt aus core (UC.variationsSection, .up-varsec). Hier steht nur das Spaltenraster: im
-   Radar-Detail steht dieselbe Tabelle in einer schmaleren Spalte und braucht andere Breiten. */
-.ubd-vrow { display: grid; grid-template-columns: 1fr 120px 120px; align-items: center; }
-.ubd-vrow .up-var-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ubd-vrow .up-var-sov { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
-.ubd-vrow .up-var-cnt { display: flex; align-items: baseline; justify-content: flex-end; gap: 4px; }
-/* Die Kopfzellen sitzen im selben Raster wie die Datenzellen -- Anteil und Anzahl rechtsbuendig,
-   damit Ueberschrift und Zahl auf derselben Kante stehen. */
-.ubd-vrow .up-th-vsov, .ubd-vrow .up-th-vcnt { justify-content: flex-end; }
+/* Die Variantentabelle kommt VOLLSTAENDIG aus core: Zellbreiten, Schriftgroessen, der Ring,
+   das kleine "of N", die Zeilenhoehen. Hier steht nichts mehr -- was hier stand, war ein Raster
+   aus eigenen Spaltenbreiten, und genau daran lief die Tabelle rechts aus der Karte heraus. */
 .ubd-varsec { margin-top: 4px; }
 
 /* ---- Schmale Breiten -------------------------------------------------------------------------

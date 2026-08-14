@@ -97,8 +97,11 @@
     /* inverted (nicht invert) und decimals -- beides heisst im Kit genau so. Ohne decimals rundet
        trendChip auf ganze Zahlen, aus -4.74 wuerde "5". Und beim Rang ist WENIGER besser, darum
        die Umkehr: ein negatives Delta ist dort eine Verbesserung. */
+    /* Genau die Optionen, die der Radar-Detail benutzt: decimals, und beim Prozentwert das
+       Prozentzeichen -- NICHT "pp". Dieselbe Zahl darf an zwei Orten nicht zwei Einheiten
+       tragen. Beim Rang ist WENIGER besser, darum dort die Umkehr. */
     return UC.trendChip(d, { inverted: mode.fmt === "rank", decimals: true,
-                             suffix: mode.fmt === "pct" ? "pp" : "" });
+                             suffix: mode.fmt === "pct" ? "%" : "" });
   }
 
   function ubdRun() { /* Platzhalter -- makeMount uebernimmt das Einhaengen, siehe unten. */ }
@@ -226,7 +229,11 @@
         return '<span class="up-rank-group">' + HASH + '<span class="up-num">' +
                  (Math.round(v * 10) / 10).toFixed(1) + '</span></span>';
       }
-      return '<span class="up-num">' + (Math.round(v * 10) / 10).toFixed(1) + '%</span>';
+      /* fmtPctShort wie im Radar-Detail: unter einem Prozent steht "<1%" statt eines
+         gerundeten "0%", das nach "gar nicht" aussieht. */
+      return '<span class="up-num">' +
+               (UC.fmtPctShort ? UC.fmtPctShort(v, true) : (Math.round(v * 10) / 10).toFixed(1) + "%") +
+             '</span>';
     }
 
     function renderKpi() {

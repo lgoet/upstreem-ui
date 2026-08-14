@@ -1625,6 +1625,7 @@
   "up-th-mentlbl",
   "up-th-sub",
   "up-th-vcnt",
+  "up-th-vname",
   "up-th-vsov",
   "up-thead",
   "up-thsort",
@@ -1672,8 +1673,8 @@
   "up-varring",
   "up-varring-fill",
   "up-varring-track",
-  "up-varsec",
   "up-vartable",
+  "up-vbody",
   "up-vrow",
   "upd-",
   "upd-body",
@@ -2263,7 +2264,7 @@
   "globals": 108,
   "payloadkeys": 59,
   "dataattrs": 151,
-  "klassen": 1728,
+  "klassen": 1729,
   "keyframes": 50
  }
 }

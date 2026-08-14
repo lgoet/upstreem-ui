@@ -215,7 +215,46 @@
        Ladereihenfolge entscheiden wuerde -- STYLEGUIDE: nie ueber die Reihenfolge gewinnen. */
     .up-vartable .up-row.up-vrow { height: 55px; flex: 0 0 55px; }
     .up-vartable .up-thead.up-vrow { height: 40px; flex: 0 0 40px; }
+    /* .up-row ist in dieser App ein GRID mit var(--up-cols) -- das Spaltenraster der grossen
+       Tabellen. Die Variationstabelle hat kein solches Raster, sie hat drei feste Zellen. Ohne
+       diese Zeile erbt sie das Grid der zuletzt definierten Tabelle und schiebt ihre Zellen in
+       fremde Spalten. Mit .up-vartable davor, damit die Spezifitaet hoeher liegt als die
+       Grid-Regel und nicht die Ladereihenfolge entscheidet. */
+    .up-vartable .up-row.up-vrow, .up-vartable .up-thead.up-vrow { display: flex; }
     .up-vartable .up-row { cursor: default; }
+    /* Sieben Zeilen ganz, die achte angeschnitten: 7.5 x 55px. Daran sieht man, dass es
+       weitergeht -- ein sauberer Schnitt sieht aus wie das Ende der Liste. */
+    .up-vbody { max-height: 412.5px; overflow-y: auto; overscroll-behavior: contain; }
+    /* Die drei Zellbreiten. Der Name nimmt den Rest, die beiden Zahlenspalten stehen fest --
+       sonst schiebt ein langer Variantenname die rechte Spalte aus der Tabelle heraus.
+       min-width:0 am Namen, sonst weigert sich die Flex-Box zu schrumpfen und die Zeile laeuft
+       ueber die rechte Kante hinaus. */
+    .up-var-name { flex: 1 1 auto; min-width: 0;
+      font-size: 13px; font-weight: 500; color: var(--vc-text); }
+    .up-th-vname { flex: 1 1 auto; min-width: 0; }
+    .up-var-sov, .up-th-vsov { flex: 0 0 150px; }
+    .up-var-cnt, .up-th-vcnt { flex: 0 0 150px; }
+    /* Der Name sitzt in einem eigenen Span: der Truncation-Tooltip misst scrollWidth gegen
+       clientWidth, und das geht nur an dem Element, das den Text wirklich abschneidet. */
+    .up-varname { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    /* Zahl links, Ring an der rechten Spaltenkante. Die 16px zum Zellenrand kommen aus der
+       Polsterung von .up-td -- kein zweiter Wert, der irgendwann abweicht. margin-left:auto
+       statt space-between: kaeme ein drittes Element dazu, saesse es sonst in der Mitte. */
+    .up-var-sov { justify-content: flex-start; gap: 18px; }
+    .up-var-sov .up-varring { margin-left: auto; }
+    .up-var-sov .up-num { font-variant-numeric: tabular-nums; }
+    .up-varring { flex: 0 0 auto; display: inline-flex; line-height: 0; }
+    /* 40 Prozent groesser: 16 x 1.4 = 22.4. Die Groesse steht hier und nicht im SVG -- die
+       viewBox bleibt 16x16, Radius und Strichstaerke muessen nicht nachgerechnet werden. */
+    .up-varring svg { display: block; width: 22.4px; height: 22.4px; }
+    .up-varring-track { stroke: var(--vc-heading-bg); }
+    .up-varring-fill { stroke: var(--vc-text); transition: stroke-dasharray 240ms ease; }
+    .up-var-cnt { gap: 6px; }
+    /* Der Bezugswert steht kleiner daneben, nicht als eigene Spalte: er erklaert die Zahl links,
+       er ist keine zweite Zahl. */
+    .up-var-of { font-size: 12px; font-weight: 400; color: var(--vc-third); white-space: nowrap; }
+    .up-root[data-theme="dark"] .up-varring-track { stroke: var(--vc-border); }
+    .up-root[data-theme="dark"] .up-varring-fill { stroke: var(--vc-text); }
 
     .up-th-info {
       width: 14px; height: 14px; flex: 0 0 14px; margin-left: auto;
