@@ -273,7 +273,9 @@
 .upd-root.is-loading:not(.has-selection) .upd-empty-title,
 .upd-root.is-loading:not(.has-selection) .upd-empty-sub {
   color: transparent; border-radius: 6px; background: var(--vc-heading-bg);
-  animation: upskt 1.2s ease-in-out infinite;
+  /* KEINE Animation. upskt schiebt einen Schimmer von links nach rechts -- richtig fuer
+     Tabellenzeilen, die gleich mit Inhalt gefuellt werden, falsch fuer einen Platzhalter, der
+     mittig steht und auf einen Klick wartet. Ein ruhiger Balken sagt dasselbe ohne Unruhe. */
 }
 .upd-root.is-loading:not(.has-selection) .upd-empty-title { max-width: 180px; }
 .upd-root.is-loading:not(.has-selection) .upd-empty-sub { max-width: 420px; }

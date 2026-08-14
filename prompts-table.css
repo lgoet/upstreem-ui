@@ -105,21 +105,15 @@
    Zeilen, nie bei allen, und reproduzierbar genau dann, wenn eine Zeile umbricht. Genau das
    gemeldete Bild: "maximal 2 Stueck, Rest bleibt".
    box-shadow wird nicht auf ganze Pixel gerundet und ueberlebt gebrochene Hoehen. Die border
-   wird dafuer abgeschaltet, sonst staende an den unauffaelligen Zeilen eine doppelte Linie. */
-.upt-root.is-rh-dynamic .up-row {
+   wird dafuer abgeschaltet, sonst staende an den unauffaelligen Zeilen eine doppelte Linie.
+   Der Selektor greift NUR auf direkte Kinder von .up-tbody -- also den flachen Body. Zeilen in
+   Gruppen-Containern und in der breiten Ansicht behalten ihre gewoehnliche border: dort schneidet
+   der jeweilige Container den Schatten ab, und das Rundungsproblem gibt es nur im flachen Body. */
+.upt-root.is-rh-dynamic .up-tbody > .up-row {
   border-bottom: 0;
   box-shadow: 0 1px 0 0 var(--vc-border);
 }
 .upt-root.is-rh-dynamic .up-tbody > .up-row:last-child { box-shadow: none; }
-
-/* In der breiten Gruppenansicht schneidet der Spaltencontainer den Schatten ab -- dort blieben
-   damit ALLE Linien weg. Er ist dort auch nicht noetig: die Zeilen stehen in einem eigenen
-   Scrollbereich mit anderer Hoehenberechnung, das Rundungsproblem tritt nur im flachen Body auf.
-   Also dort zurueck auf die gewoehnliche border. */
-.upt-root.is-rh-dynamic.is-groups-wide .up-row {
-  box-shadow: none;
-  border-bottom: 1px solid var(--vc-border);
-}
 .upt-root.is-rh-dynamic .upt-prompt-text { -webkit-line-clamp: unset; display: block; white-space: normal; overflow: visible; }
 /* selected rows keep a persistent tint, same colour the hover state already uses.
    Spezifitaet ueber .upt-root hochgezogen: in der breiten Gruppenansicht setzen spaetere Regeln
