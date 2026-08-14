@@ -13,7 +13,7 @@
    wodurch sich die vier Knoepfe ueber die ganze Karte strecken. Der Schalter soll nur so breit
    sein wie seine Beschriftungen. 16px links und rechts je Knopf -- die Beschriftungen sind hier
    laenger als die zweistelligen Zustaende, fuer die der Standardabstand gedacht ist. */
-.ubd-seg { margin: 0 0 12px; width: fit-content; }
+.ubd-seg { margin: 0 0 16px; width: fit-content; }
 .ubd-seg .up-seg-btn { padding-left: 16px; padding-right: 16px; }
 
 /* ---- Karte ----------------------------------------------------------------------------------- */
