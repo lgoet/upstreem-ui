@@ -269,22 +269,18 @@
   .upd-stand-name { max-width: 120px; }
 }
 
-/* Ladezustand ohne Auswahl: der Platzhalter bleibt an seinem Platz und in seiner Groesse, seine
-   beiden Textzeilen werden zu ruhigen Balken.
+/* Ladezustand ohne Auswahl: ein einzelner Balken an der Stelle der Ueberschrift, mittig. Die
+   Unterzeile bleibt im Ladezustand ganz weg -- zwei Balken untereinander lasen sich wie Inhalt,
+   der gleich kommt, obwohl hier nur auf einen Klick gewartet wird.
 
-   KEINE Animation: upskt schiebt einen Schimmer von links nach rechts -- richtig fuer
-   Tabellenzeilen, die gleich gefuellt werden, falsch fuer einen Platzhalter, der auf einen Klick
-   wartet.
+   KEINE Animation: upskt schiebt einen Schimmer von links nach rechts, richtig fuer Tabellenzeilen
+   die gleich gefuellt werden, falsch fuer einen ruhenden Platzhalter.
 
-   inline-block, damit die Balken dem text-align: center des Platzhalters folgen. Ein Block mit
-   max-width bliebe links stehen, waehrend der Text daneben mittig sitzt -- genau das war zu
-   sehen. .upd-empty bekommt sein text-align hier explizit, weil die display-Angabe weiter oben
-   das Layout der Core-Klasse .up-empty ausser Kraft setzt und deren Zentrierung damit still
-   wegfaellt. */
-.upd-root.is-loading:not(.has-selection) .upd-empty-title,
-.upd-root.is-loading:not(.has-selection) .upd-empty-sub {
-  display: inline-block;
+   inline-block, damit der Balken dem text-align: center des Platzhalters folgt -- ein Block mit
+   Breite bliebe links stehen. .upd-empty bekommt sein text-align weiter oben explizit, weil die
+   dortige display-Angabe das Layout der Core-Klasse .up-empty ausser Kraft setzt. */
+.upd-root.is-loading:not(.has-selection) .upd-empty-title {
+  display: inline-block; width: 180px;
   color: transparent; border-radius: 6px; background: var(--vc-heading-bg);
 }
-.upd-root.is-loading:not(.has-selection) .upd-empty-title { width: 180px; }
-.upd-root.is-loading:not(.has-selection) .upd-empty-sub { width: 320px; max-width: 90%; }
+.upd-root.is-loading:not(.has-selection) .upd-empty-sub { display: none; }
