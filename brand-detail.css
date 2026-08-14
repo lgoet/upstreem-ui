@@ -51,11 +51,17 @@
 .ubd-kpi-val { font-size: 21px; line-height: 1.15; letter-spacing: -0.4px; }
 .ubd-kpi-val .up-num { font-size: inherit; font-weight: 500; letter-spacing: inherit;
   font-variant-numeric: tabular-nums; }
-/* Sentiment und Rang werden hier NICHT vergroessert. Beide sind fertige Bauteile mit eigener
-   Geometrie: .up-sent ist eine Pille mit fester Hoehe (24px), Rahmen und einem 6px-Punkt, die
-   Rang-Raute ist auf die Zahl daneben abgestimmt. Eine groessere Schrift sprengt die Pille, ein
-   groesserer Punkt macht aus dem abgerundeten Quadrat einen Kreis -- und dann sieht dieselbe
-   Zahl hier anders aus als in jeder Tabelle. Nur die nackte Zahl (.up-num) waechst. */
+/* Sentiment eine Stufe groesser als in einer Tabellenzelle -- aber VOLLSTAENDIG, nicht nur die
+   Schrift. Die Pille aus core misst 24px Hoehe bei 13px Schrift; 15px ergibt Faktor 15/13, und
+   in genau dem Verhaeltnis wachsen Hoehe (28), Innenabstand (7), Eckenradius (7), der Abstand
+   zum Punkt (7) und der Punkt selbst (7 bei 2.5 Radius). Nur die Schrift anzuheben wuerde die
+   Pille sprengen: der Text stiesse oben und unten an den Rahmen, und aus dem abgerundeten
+   Quadrat des Punktes wuerde bei falschem Radius ein Kreis.
+   Der Rang bleibt beim Core-Mass -- dort waechst die nackte Zahl (.up-num) ohnehin auf 21px,
+   und die Raute ist auf sie abgestimmt. */
+.ubd-kpi-val .up-sent { height: 28px; padding: 0 7px; border-radius: 7px; gap: 7px; }
+.ubd-kpi-val .up-sent-val { font-size: 15px; }
+.ubd-kpi-val .up-sent-dot { width: 7px; height: 7px; border-radius: 2.5px; }
 /* Der Trend bleibt eine Randnotiz zur Zahl, keine zweite Zahl -- aber einen Punkt groesser als
    in einer Tabellenzelle, weil die Zahl daneben hier deutlich groesser ist. */
 .ubd-kpi-trend { display: inline-flex; align-items: center; }
