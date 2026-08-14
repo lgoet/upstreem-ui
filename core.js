@@ -3354,7 +3354,13 @@
         var icon = ds.__favicon
           ? '<img src="' + esc(ds.__favicon) + '" width="16" height="16" style="border-radius:4px;display:block;object-fit:cover" onerror="this.style.visibility=\'hidden\'"/>'
           : '<span style="width:16px;height:16px;border-radius:4px;background:' + ds.__baseColor + ';display:block"></span>';
-        var val = fmtPct(dp.parsed.y);
+        /* HIER steht der Wert des Linechart-Tooltips -- nicht in makeDonutTooltip, wo ich ihn
+           zuerst gesucht habe. fmtPct haengt fest ein Prozentzeichen an; Rang und Sentiment
+           sind keine Prozentwerte. Ohne Angabe bleibt es bei fmtPct, damit sich fuer die
+           bestehenden Charts nichts aendert. */
+        var val = (einheitFn || nachkommaFn)
+          ? Number(dp.parsed.y).toFixed(ttNachkomma()) + ttEinheit()
+          : fmtPct(dp.parsed.y);
         return '<div style="display:flex;align-items:center;gap:8px;margin-top:8px">' +
             '<span style="flex:0 0 16px;display:flex">' + icon + '</span>' +
             '<span style="flex:1 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:' + textColor + '">' + esc(truncate(ds.label, 32)) + '</span>' +
@@ -4007,12 +4013,7 @@
         : "display:none;";
       el.querySelector(".up-tt-lbl").style.color = nameColor;
       el.querySelector(".up-tt-lbl").textContent = chart.data.labels[i] || "";
-      /* Zwei Nachkommastellen nur beim Prozentwert. Ein Rang von 3.1 als "3.10" zu schreiben
-         taeuscht eine Genauigkeit vor, die die Zahl nicht hat. */
-      el.querySelector(".up-tt-val").textContent =
-        Number(val).toFixed(ttNachkomma()) + ttEinheit();
-      var sub = el.querySelector(".up-tt-sub");
-      if (sub) sub.textContent = ttLabel();
+      el.querySelector(".up-tt-val").textContent = Number(val).toFixed(2) + "%";
       var cx = chart.canvas.offsetLeft, cy = chart.canvas.offsetTop, ca = chart.chartArea;
       var caretX = cx + tooltip.caretX, caretY = cy + tooltip.caretY, m = 12;
       el.style.left = "0px"; el.style.top = "0px";
