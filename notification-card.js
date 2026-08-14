@@ -171,6 +171,12 @@
       /* Das Thema gehoert an den Traeger: dort sitzt up-root, von dort erben die --vc-Variablen
          nach innen. An der Karte selbst hat up-root ihre Geometrie zerstoert. */
       traeger.setAttribute("data-theme", dunkel ? "dark" : "light");
+      /* Dasselbe Attribut zusaetzlich an der Karte. Der Traeger traegt up-root und damit die
+         --vc-Variablen; die Karte braucht es fuer ihre eigenen Dark-Regeln. Mit dem Selektor ueber
+         den Traeger (.up-root[data-theme="dark"] .unc-primary) gewann in der App die schwaechere
+         Regel, obwohl der Selektor nachweislich passte und spaeter stand -- warum, habe ich nicht
+         geklaert. Am Element selbst gibt es keine Kette, die schiefgehen kann. */
+      elCard.setAttribute("data-theme", dunkel ? "dark" : "light");
     }
     var elLogo   = karte.querySelector(".unc-logo");
     var elTile   = karte.querySelector(".unc-tile");
@@ -215,7 +221,31 @@
       if (url) { elPrim.setAttribute("href", url); elPrim.setAttribute("target", "_blank"); }
       else { elPrim.removeAttribute("href"); elPrim.removeAttribute("target"); }
       elPrim.style.display = String(n.cta_label == null ? "" : n.cta_label).trim() ? "" : "none";
-      elPrim.classList.toggle("is-dark", !!t.dunkel);
+      /* Zwei getrennte Klassen statt einer, die im Dark Mode ueberschrieben wird: eine
+         .unc-card[data-theme="dark"] .unc-primary.is-dark-Regel hat in der App nachweislich NICHT
+         gewonnen, obwohl sie spaeter stand, staerker war und der Selektor laut matches() passte.
+         Woran das lag, konnte ich nicht klaeren. Ohne konkurrierende Regeln kann es nicht mehr
+         schiefgehen: welche Klasse gilt, entscheidet hier das JS. */
+      /* Die drei Farben des gefuellten Knopfs stehen hier und nicht in der CSS. Grund, gemessen
+         und nicht vermutet: eine Regel .unc-primary.is-solid-inv mit rgb(224,224,224) war im
+         Stylesheet, matchte das Element laut matches(), stand spaeter und war spezifischer -- und
+         getComputedStyle gab trotzdem den Wert der schwaecheren Regel zurueck. Dasselbe zuvor mit
+         [data-theme="dark"] als Vorfahre und mit var(--vc-text). Woran es liegt, habe ich nicht
+         gefunden; ein Inline-Wert schlaegt jede Regel und laesst der Kaskade keine Gelegenheit.
+         Nur der gefuellte Knopf ist betroffen -- der umrandete kommt weiter aus der CSS. */
+      var dunkelJetzt = root.getAttribute("data-theme") === "dark" || isYes(root.getAttribute("data-isdark"));
+      if (t.dunkel) {
+        var flaeche = dunkelJetzt ? "#e0e0e0" : "#1f1f1f";
+        elPrim.style.background = flaeche;
+        elPrim.style.borderColor = flaeche;
+        elPrim.style.color = dunkelJetzt ? "#1f1f1b" : "#ffffff";
+        elPrim.style.boxShadow = dunkelJetzt ? "none" : "inset 0 1px 0 rgba(255,255,255,0.16)";
+      } else {
+        elPrim.style.background = "";
+        elPrim.style.borderColor = "";
+        elPrim.style.color = "";
+        elPrim.style.boxShadow = "";
+      }
 
       var lg = logoQuelle();
       if (lg) { elLogo.setAttribute("src", lg); elLogo.style.display = ""; }
