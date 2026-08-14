@@ -54,6 +54,8 @@
   function ubdStart() {
   var UC = window.UpstreemCore;
   var esc = UC.esc, isYes = UC.isYes;
+  /* Dieselbe Raute wie in jeder Rang-Zelle -- .up-hash traegt Groesse und Farbe aus core.css. */
+  var HASH = UC.HASH_ICON ? UC.HASH_ICON.replace("<svg ", '<svg class="up-hash" ') : "";
 
   /* Die vier Ansichten. `metric` benennt das Feld im Marken-RPC, `fmt` sagt, wie die grosse Zahl
      oben links aussieht -- Prozent mit einer Nachkommastelle, Rang als 1,0-Zahl, Sentiment als
@@ -77,15 +79,6 @@
 
   function num(v) { var n = Number(v); return isFinite(n) ? n : null; }
 
-  /* Die grosse Zahl oben links. Ein fehlender Wert wird zum Gedankenstrich, nicht zu "0" oder
-     "NaN" -- eine 0 waere eine Aussage, die die Daten nicht hergeben. */
-  function bigValue(mode, kpi) {
-    var v = num(kpi && kpi[mode.metric]);
-    if (v == null) return "–";
-    if (mode.fmt === "pct")  return (Math.round(v * 10) / 10).toFixed(1) + "%";
-    if (mode.fmt === "rank") return (Math.round(v * 10) / 10).toFixed(1);
-    return String(Math.round(v));
-  }
 
   /* Beim Rang ist WENIGER besser -- ein negatives Delta ist also eine Verbesserung. UC.trendChip
      kennt diese Umkehr ueber invert, damit der Pfeil nicht in die falsche Richtung zeigt. */
@@ -108,9 +101,13 @@
      ============================================================================================ */
   function shell() {
     return '' +
-      '<div class="ubd-switch" role="tablist">' +
+      /* .up-seg/.up-seg-btn und .vc-gran/.vc-gran-btn sind die Haus-Bauteile aus core.css --
+         derselbe Segmented-Control, den opportunities benutzt, und derselbe
+         Granularitaets-Schalter wie in visibility-chart. Hier steht deshalb nur die
+         Positionierung, kein eigenes Aussehen. */
+      '<div class="up-seg ubd-seg" role="tablist">' +
         MODES.map(function (m) {
-          return '<button class="ubd-switch-btn" type="button" role="tab" data-mode="' + m.key + '">' +
+          return '<button class="up-seg-btn" type="button" role="tab" data-mode="' + m.key + '">' +
                    esc(m.label) + '</button>';
         }).join("") +
       '</div>' +
@@ -121,9 +118,9 @@
             '<img class="ubd-logo" alt="" onerror="this.style.display=&quot;none&quot;"/>' +
             '<span class="ubd-heading"></span>' +
           '</div>' +
-          '<div class="ubd-gran" role="group" aria-label="Granularity">' +
+          '<div class="vc-gran" role="group" aria-label="Granularity">' +
             GRANS.map(function (g) {
-              return '<button class="ubd-gran-btn" type="button" data-gran="' + g.key + '">' +
+              return '<button class="vc-gran-btn" type="button" data-gran="' + g.key + '">' +
                        esc(g.label) + '</button>';
             }).join("") +
           '</div>' +
@@ -149,8 +146,8 @@
 
     var fire = UC.makeFire(root, { label: "brand-detail", eventPrefix: "ubd" });
 
-    var elSwitch  = root.querySelector(".ubd-switch");
-    var elGran    = root.querySelector(".ubd-gran");
+    var elSwitch  = root.querySelector(".ubd-seg");
+    var elGran    = root.querySelector(".vc-gran");
     var elLogo    = root.querySelector(".ubd-logo");
     var elHeading = root.querySelector(".ubd-heading");
     var elVal     = root.querySelector(".ubd-kpi-val");
@@ -180,14 +177,14 @@
 
     /* ---- Rendern ---------------------------------------------------------------------------- */
     function syncSwitch() {
-      Array.prototype.forEach.call(elSwitch.querySelectorAll("[data-mode]"), function (b) {
+      Array.prototype.forEach.call(elSwitch.querySelectorAll(".up-seg-btn"), function (b) {
         var on = b.getAttribute("data-mode") === state.mode;
         b.classList.toggle("is-active", on);
         b.setAttribute("aria-selected", on ? "true" : "false");
       });
     }
     function syncGran() {
-      Array.prototype.forEach.call(elGran.querySelectorAll("[data-gran]"), function (b) {
+      Array.prototype.forEach.call(elGran.querySelectorAll(".vc-gran-btn"), function (b) {
         b.classList.toggle("is-active", b.getAttribute("data-gran") === state.gran);
       });
     }
@@ -201,6 +198,25 @@
       elHeading.textContent = m.heading;
     }
 
+    /* Die grosse Zahl benutzt DIESELBEN Bauteile wie jede Tabellenzelle: Sentiment als .up-sent
+       mit farbigem Punkt, Rang als .up-rank-group mit vorangestellter Raute. Nur die Schriftgroesse
+       ist hier groesser -- das Muster bleibt, damit dieselbe Zahl ueberall gleich aussieht. */
+    function kpiInner(m, kpi) {
+      var v = num(kpi && kpi[m.metric]);
+      if (v == null) return '<span class="up-num">–</span>';
+      if (m.fmt === "sent") {
+        return '<span class="up-sent">' +
+                 '<span class="up-sent-dot" style="background:' + (UC.sentColor ? UC.sentColor(v) : "") + '"></span>' +
+                 '<span class="up-sent-val">' + Math.round(v) + '</span>' +
+               '</span>';
+      }
+      if (m.fmt === "rank") {
+        return '<span class="up-rank-group">' + HASH + '<span class="up-num">' +
+                 (Math.round(v * 10) / 10).toFixed(1) + '</span></span>';
+      }
+      return '<span class="up-num">' + (Math.round(v * 10) / 10).toFixed(1) + '%</span>';
+    }
+
     function renderKpi() {
       var m = modeOf(state.mode);
       /* Im Variations-Modus gibt es keine einzelne Kennzahl -- die Zeile verschwindet ganz, statt
@@ -208,14 +224,7 @@
       if (!CHART_MODES[state.mode]) { root.classList.add("is-novalue"); return; }
       root.classList.remove("is-novalue");
       var kpi = state.company || {};
-      elVal.textContent = bigValue(m, kpi);
-      elVal.className = "ubd-kpi-val" + (m.fmt === "sent" ? " up-sent" : "");
-      if (m.fmt === "sent" && UC.sentColor) {
-        var v = num(kpi[m.metric]);
-        elVal.style.color = v == null ? "" : UC.sentColor(v);
-      } else {
-        elVal.style.color = "";
-      }
+      elVal.innerHTML = kpiInner(m, kpi);
       elTrend.innerHTML = trendHtml(m, kpi);
     }
 

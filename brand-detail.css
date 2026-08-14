@@ -3,25 +3,13 @@
    (.up-row, .up-td, .up-num, .up-sent, .up-empty-mini) ebenfalls. Hier steht nur, was es
    nirgends sonst gibt -- der Vier-Wege-Switcher und die KPI-Zeile ueber der Kurve. */
 
-/* ---- Switcher --------------------------------------------------------------------------------
-   Linksbuendig ueber der Karte, nicht darin: er wechselt den INHALT der Karte, steht also
-   ausserhalb. 32px hoch wie jeder andere Segmented-Control im Haus. */
-.ubd-switch { display: flex; gap: 4px; margin: 0 0 12px; }
-.ubd-switch-btn {
-  height: 32px; padding: 0 12px; border-radius: 8px;
-  border: 1px solid transparent; background: transparent;
-  font: inherit; font-size: 13px; font-weight: 500; color: var(--vc-third);
-  cursor: pointer; white-space: nowrap;
-  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
-}
-.ubd-switch-btn:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
-.ubd-switch-btn.is-active {
-  background: var(--vc-heading-bg); border-color: var(--vc-border); color: var(--vc-text);
-}
-.ubd-switch-btn:focus-visible {
-  outline: 0; border-color: var(--up-focus);
-  box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring);
-}
+/* ---- Switcher und Granularitaet --------------------------------------------------------------
+   BEIDE kommen fertig aus core.css: .up-seg/.up-seg-btn ist derselbe Segmented-Control, den
+   opportunities benutzt, .vc-gran/.vc-gran-btn derselbe Granularitaets-Schalter wie im
+   visibility-chart. Hier steht darum NUR die Positionierung -- kein Rahmen, keine Farbe, keine
+   Hoehe. Was hier frueher stand, war ein Nachbau, der an fuenf Stellen anders aussah als das
+   Original. */
+.ubd-seg { margin: 0 0 12px; }
 
 /* ---- Karte ----------------------------------------------------------------------------------- */
 .ubd-card {
@@ -36,35 +24,25 @@
   font-size: 15px; font-weight: 500; color: var(--vc-text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-
-/* ---- Granularitaets-Switcher ---------------------------------------------------------------- */
-.ubd-gran { display: inline-flex; gap: 2px; flex: 0 0 auto; }
-.ubd-gran-btn {
-  height: 28px; padding: 0 10px; border-radius: 7px;
-  border: 1px solid transparent; background: transparent;
-  font: inherit; font-size: 12px; font-weight: 500; color: var(--vc-third);
-  cursor: pointer; transition: background-color 150ms ease, color 150ms ease;
-}
-.ubd-gran-btn:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
-.ubd-gran-btn.is-active { background: var(--vc-heading-bg); color: var(--vc-text); }
-.ubd-gran-btn:focus-visible {
-  outline: 0; border-color: var(--up-focus);
-  box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring);
-}
+.ubd-head .vc-gran { flex: 0 0 auto; }
 
 /* ---- KPI-Zeile -------------------------------------------------------------------------------
    Die grosse Zahl steht ueber der Kurve, nicht daneben: sie ist deren Zusammenfassung, und wer
    von oben nach unten liest, soll erst die Zahl und dann den Verlauf sehen.
    baseline-Ausrichtung, damit der Trend-Chip auf der Grundlinie der Zahl sitzt und nicht auf
    halber Hoehe schwebt. */
-.ubd-kpi { display: flex; align-items: baseline; gap: 8px; margin: 12px 0 4px; min-height: 34px; }
-.ubd-kpi-val {
-  font-size: 26px; font-weight: 500; color: var(--vc-text);
-  letter-spacing: -0.5px; line-height: 1.1;
-  /* Ziffern gleicher Breite: ohne das springt die Zahl beim Wechsel zwischen Werten wie 9.9 und
-     10.0 seitlich, und der Trend-Chip dahinter wandert mit. */
-  font-variant-numeric: tabular-nums;
-}
+.ubd-kpi { display: flex; align-items: center; gap: 8px; margin: 12px 0 4px; min-height: 34px; }
+/* Der INHALT kommt aus den Core-Bauteilen: .up-num, .up-sent mit Punkt, .up-rank-group mit Raute
+   -- dieselben, die jede Tabellenzelle benutzt. Hier wird nur die Schrift groesser gestellt, damit
+   die Zahl ueber der Kurve als Zusammenfassung liest. Alles andere -- Farbe, Punkt, Raute,
+   Abstaende -- bleibt beim Original, sonst sieht dieselbe Zahl an zwei Orten verschieden aus. */
+.ubd-kpi-val { font-size: 26px; line-height: 1.1; letter-spacing: -0.5px; }
+.ubd-kpi-val .up-num { font-size: inherit; font-weight: 500; letter-spacing: inherit;
+  font-variant-numeric: tabular-nums; }
+.ubd-kpi-val .up-sent-val { font-size: inherit; font-weight: 500; font-variant-numeric: tabular-nums; }
+.ubd-kpi-val .up-sent-dot { width: 10px; height: 10px; }
+.ubd-kpi-val .up-hash { width: 18px; height: 18px; }
+/* Der Trend-Chip bleibt in SEINER Groesse -- er ist eine Randnotiz zur Zahl, keine zweite Zahl. */
 .ubd-kpi-trend { display: inline-flex; align-items: center; }
 
 /* Im Variations-Modus gibt es keine einzelne Kennzahl -- die Zeile faellt ganz weg, statt eine
@@ -94,7 +72,7 @@
    ein Umbruch in zwei Reihen sieht aus wie zwei Gruppen. */
 @media (max-width: 560px) {
   .ubd-head { flex-wrap: wrap; }
-  .ubd-gran { width: 100%; }
-  .ubd-switch { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .ubd-head .vc-gran { width: 100%; }
+  .ubd-seg { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .ubd-chartwrap { height: 220px; }
 }
