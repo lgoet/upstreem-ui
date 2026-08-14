@@ -254,6 +254,10 @@
     .up-varring-track { stroke: var(--vc-heading-bg); }
     .up-varring-fill { stroke: var(--vc-text); transition: stroke-dasharray 240ms ease; }
     .up-var-cnt { gap: 6px; }
+    /* Im Skelett sitzen die Balken dort, wo spaeter die Werte stehen: in den Zahlenspalten
+       rechts. Ohne das wandert der Balken nach links und das Skelett kuendigt eine andere
+       Tabelle an als die, die kommt. */
+    .up-tsk .up-var-sov, .up-tsk .up-var-cnt { justify-content: flex-end; }
     /* Der Bezugswert steht kleiner daneben, nicht als eigene Spalte: er erklaert die Zahl links,
        er ist keine zweite Zahl. */
     .up-var-of { font-size: 12px; font-weight: 400; color: var(--vc-third); white-space: nowrap; }

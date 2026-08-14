@@ -5560,8 +5560,14 @@
     var q = String(opts.query || "");
     var rowCls = "up-row" + (opts.rowClass ? " " + opts.rowClass : "");
     if (rows === null || list == null){
-      return skeletonRows({ count: 6, cols: [{ w: 120, jitter: 40 }, { w: 44 }, { w: 28 }],
-                            rowClass: rowCls, cellClass: "up-td" });
+      /* Die Skelettzellen tragen DIESELBEN Zellklassen wie die echten Zeilen. Ohne sie haetten
+         sie nur .up-td und damit keine Spaltenbreiten -- das Skelett stand dann breiter und
+         versetzt zu der Tabelle, die es ankuendigt. Die Balken sitzen rechtsbuendig, wo die
+         Zahlen spaeter stehen. */
+      return skeletonRows({ count: 6, rowClass: rowCls, cellClass: "up-td",
+                            cols: [{ w: 120, jitter: 40, cls: "up-var-name" },
+                                   { w: 44,  cls: "up-var-sov" },
+                                   { w: 28,  cls: "up-var-cnt" }] });
     }
     if (!rows.length){
       return '<div class="up-empty-mini">' +

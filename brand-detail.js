@@ -323,11 +323,11 @@
       if (!elVBody) return;
       /* Waehrend des Ladens Skelett-Zeilen im Spaltenraster -- dieselben Balkenbreiten wie im
          Radar-Detail: Name lang, Anteil kurz, Anzahl kurz. */
+      /* Skelett ueber DASSELBE Kit wie die Zeilen: variationRows(null) liefert es mit den
+         richtigen Zellklassen. Ein eigener skeletonRows-Aufruf hier hatte genau die Breiten
+         nicht, an denen die Spalten haengen. */
       if (state.loading || state.variations == null) {
-        elVBody.innerHTML = UC.skeletonRows
-          ? UC.skeletonRows({ count: 6, cols: [{ w: 120, jitter: 40 }, { w: 44 }, { w: 28 }],
-                              rowClass: "up-row up-vrow ubd-vrow", cellClass: "up-td" })
-          : "";
+        elVBody.innerHTML = UC.variationRows(null, { rowClass: "up-vrow ubd-vrow" });
         return;
       }
       elVBody.innerHTML = UC.variationRows(varsMitAnteil(), {
