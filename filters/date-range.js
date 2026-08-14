@@ -417,9 +417,31 @@
            arbeitet, merkt von der Erweiterung nichts. Kein Standardname als Rueckfall, denn ein
            erfundener Name wuerde auf einer Seite, die ihn nicht kennt, still ins Leere laufen. */
         var applyName = root.getAttribute("data-range-apply-fn");
-        if (applyName && !callFn("data-range-apply-fn", null, json) && window.console) {
-          console.warn("[date-range] " + applyName + " ist gesetzt, aber nicht auffindbar — " +
-            "diese Aenderung hat keinen seitenweiten Workflow erreicht.");
+        if (applyName) {
+          /* Aufschub, und zwar mit Absicht. Die drei Aufrufe darueber stossen je einen
+             Bubble-Workflow an; die laufen ASYNCHRON in Bubbles eigener Warteschlange, waehrend
+             der JS-Aufruf sofort zurueckkehrt. Feuert Apply in derselben Millisekunde mit, laedt
+             die Seite nach, BEVOR der Workflow im Reusable seine States geschrieben hat -- man
+             sieht dann die neue Granularitaet neben den alten Daten. Genau so gemeldet.
+
+             Die anderen Filter haben dieselbe Konstruktion, dort steht aber nur EIN Workflow
+             vorweg statt drei; die Race existiert auch da, sie schlaegt nur seltener zu.
+
+             Das ist eine Heuristik, keine Garantie -- JS kann nicht wissen, wann Bubble seine
+             Warteschlange geleert hat. 120ms sind reichlich fuer drei State-Zuweisungen und
+             bleiben unter der Schwelle, ab der sich ein Klick traege anfuehlt. Wem das nicht
+             genuegt, stellt es per data-range-apply-delay ein; 0 feuert wieder sofort.
+
+             Der saubere Weg bleibt, die Werte aus DIESEM JSON zu lesen statt aus den States des
+             Reusables -- date_from und date_to stehen darin. Dann muss nichts synchron sein. */
+          var verzug = parseInt(root.getAttribute("data-range-apply-delay"), 10);
+          if (!isFinite(verzug) || verzug < 0) verzug = 120;
+          setTimeout(function () {
+            if (!callFn("data-range-apply-fn", null, json) && window.console) {
+              console.warn("[date-range] " + applyName + " ist gesetzt, aber nicht auffindbar — " +
+                "diese Aenderung hat keinen seitenweiten Workflow erreicht.");
+            }
+          }, verzug);
         }
       }
 

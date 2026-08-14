@@ -84,6 +84,17 @@
 
      Fires on EVERY change that alters the data — a preset, a custom range, a reset.
 
+     ── Timing ───────────────────────────────────────────────────────────────────
+     The apply call is deliberately held back by 120ms. The three calls above it each kick off a
+     Bubble workflow, and those run ASYNCHRONOUSLY in Bubble's own queue while the JS call returns
+     immediately. Firing apply in the same millisecond made the page reload BEFORE the workflow
+     inside the reusable had written its states — you saw the new granularity next to the old
+     data. Adjust with data-range-apply-delay (milliseconds, 0 fires immediately).
+
+     This is a heuristic, not a guarantee: JS cannot know when Bubble has drained its queue. The
+     robust route is to read date_from/date_to out of THIS payload instead of the reusable's
+     states — then nothing has to be in sync at all.
+
      If a function is missing the component still dispatches:
        - a "change" CustomEvent on the root element
        - an "upstreem:date-range" CustomEvent on window
@@ -124,7 +135,8 @@
      data-range-fn="bubble_fn_udr_date_range"
      data-date-from-fn="bubble_fn_udr_date_from"
      data-date-to-fn="bubble_fn_udr_date_to"
-     data-range-apply-fn="bubble_fn_udr_apply_dashboard"></div>
+     data-range-apply-fn="bubble_fn_udr_apply_dashboard"
+     data-range-apply-delay="120"></div>
 
 <script>
 /* Loads this component's CSS/JS from jsDelivr, pinned to the commit hash you put in data-cdn-pin
