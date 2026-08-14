@@ -5411,6 +5411,50 @@
     plus:     '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
     minus:    '<line x1="5" y1="12" x2="19" y2="12"/>'
   };
+  /* ---- Mentioned-Brands-Dropdown: die zwei Teile, die in allen vier Tabellen gleich sind ------
+     mentFilter(menu, query)  blendet die Eintraege aus, die nicht zur Suche passen, und schaltet
+                              die "keine Treffer"-Zeile. Gibt die uebernommene Suche zurueck, damit
+                              der Aufrufer sie in seinem eigenen mentQuery halten kann.
+     mentHead(menu, brands, selected)  baut die Kopfzeile mit Titel und Reset/Select-all.
+
+     Beide standen in urls-, domains-, prompts- und responses-table Zeichen fuer Zeichen gleich --
+     mit EINEM Unterschied: domains-table fehlte die Null-Pruefung auf das Menue. Ein unvollstaendig
+     eingehaengter Root (Bubble ersetzt Markup mitten im Rendern) haette dort geworfen, in den
+     anderen drei nicht. Die Pruefung ist hier drin, also gilt sie jetzt fuer alle.
+
+     Was NICHT hierher kommt: die Zustandsfelder (mentionSel/mentionApplied), das Feuern und die
+     Beschriftung des Knopfes. Die haengen an den Event-Vertraegen der jeweiligen Tabelle und
+     unterscheiden sich echt -- prompts-table nennt sein Event anders als urls-table. Ein Kit, das
+     die auch noch verschluckt, waere vier Sonderfaelle unter einem Namen. */
+  function mentFilter(menu, query){
+    if (!menu) return query || "";
+    var inp = menu.querySelector(".up-ment-search");
+    var q = inp ? inp.value : (query || "");
+    var needle = String(q || "").trim().toLowerCase();
+    var items = menu.querySelectorAll(".up-filter-item[data-brand]");
+    var shown = 0;
+    Array.prototype.forEach.call(items, function(it){
+      var match = !needle || (it.getAttribute("data-name") || "").indexOf(needle) > -1;
+      it.style.display = match ? "" : "none";
+      if (match) shown++;
+    });
+    var nr = menu.querySelector(".up-ment-noresult");
+    if (nr) nr.style.display = (items.length && shown === 0) ? "" : "none";
+    return q;
+  }
+  function mentHead(menu, brands, selected){
+    if (!menu) return;
+    var head = menu.querySelector(".up-filter-head");
+    if (!head) return;
+    var list = brands || [];
+    var sel = selected || {};
+    var selCount = Object.keys(sel).filter(function(k){ return sel[k]; }).length;
+    head.innerHTML = '<span class="up-filter-title">Mentioned brands</span>' +
+      (selCount
+         ? '<button class="up-pop-action" type="button" data-mentreset>Reset</button>'
+         : (list.length ? '<button class="up-pop-action" type="button" data-mentall>Select all</button>' : ""));
+  }
+
   function icon(name, strokeWidth){
     var d = ICON_PATHS[name];
     if (!d){
@@ -5427,6 +5471,8 @@
     BUILD: BUILD,
     EMPTY_GRACE_MS: EMPTY_GRACE_MS,
     icon: icon,
+    mentFilter: mentFilter,
+    mentHead: mentHead,
     upstreemSetTheme: upstreemSetTheme,
     readPrefTheme: readPrefTheme,
     themeGuard: themeGuard,

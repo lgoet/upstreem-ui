@@ -587,33 +587,12 @@
         '<button class="up-filter-submit" type="button" data-mentapply>Apply</button>';
       applyMentFilter();
     }
-    function applyMentFilter(){
-      if (!elMentMenu) return;   // a stale/incomplete root copy may be missing this markup
-      var inp = elMentMenu.querySelector(".up-ment-search");
-      if (inp) mentQuery = inp.value;
-      var q = (mentQuery || "").trim().toLowerCase();
-      var items = elMentMenu.querySelectorAll(".up-filter-item[data-brand]");
-      var shown = 0;
-      Array.prototype.forEach.call(items, function(it){
-        var match = !q || (it.getAttribute("data-name") || "").indexOf(q) > -1;
-        it.style.display = match ? "" : "none";
-        if (match) shown++;
-      });
-      var nr = elMentMenu.querySelector(".up-ment-noresult");
-      if (nr) nr.style.display = (items.length && shown === 0) ? "" : "none";
-    }
+    /* Sucht in der Markenliste des Dropdowns -- siehe UC.mentFilter in core.js. Das Kit gibt die
+       uebernommene Sucheingabe zurueck, damit sie hier im eigenen mentQuery weiterlebt. */
+    function applyMentFilter(){ mentQuery = UC.mentFilter(elMentMenu, mentQuery); }
     /* Refresh only the dropdown's head (Reset / Select all) after an in-place (de)select. */
-    function syncMentHead(){
-      if (!elMentMenu) return;   // a stale/incomplete root copy may be missing this markup
-      var head = elMentMenu.querySelector(".up-filter-head");
-      if (!head) return;
-      var list = state.brands || [];
-      var selCount = Object.keys(state.mentionSel).filter(function(k){ return state.mentionSel[k]; }).length;
-      head.innerHTML = '<span class="up-filter-title">Mentioned brands</span>' +
-        (selCount
-           ? '<button class="up-pop-action" type="button" data-mentreset>Reset</button>'
-           : (list.length ? '<button class="up-pop-action" type="button" data-mentall>Select all</button>' : ""));
-    }
+    /* Kopfzeile des Dropdowns (Titel + Reset/Select all) -- siehe UC.mentHead in core.js. */
+    function syncMentHead(){ UC.mentHead(elMentMenu, state.brands, state.mentionSel); }
     function syncMentLabel(){
       if (!elMent || !elMentLbl) return;   // a stale/incomplete root copy may be missing this markup
       var keys = Object.keys(state.mentionApplied).filter(function(k){ return state.mentionApplied[k]; });
