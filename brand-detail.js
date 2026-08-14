@@ -266,7 +266,10 @@
       var cid = p.company_id != null ? p.company_id
               : ((state.company && state.company.company_id) || "series");
       var pts = p.series.map(function (x) {
-        return { company_id: cid, day: x.day, visibility_pct: num(x.value) };
+        /* dayKey normalisiert, bevor der Punkt ins Dataset geht: die X-Achse gruppiert nach
+           diesem Wert, und ein Datum mit Uhrzeit ergaebe pro Zeitstempel eine eigene Kategorie. */
+        return { company_id: cid, day: UC.dayKey ? UC.dayKey(x.day) : x.day,
+                 visibility_pct: num(x.value) };
       });
       var rgb = UC.heatAt ? UC.heatAt(root, 0.65) : [100, 132, 168];
       var farbe = "rgb(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + ")";

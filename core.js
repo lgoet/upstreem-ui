@@ -3136,15 +3136,31 @@
   }
   function truncate(s, n){ s = String(s == null ? "" : s); return s.length > n ? s.slice(0, n-1) + "…" : s; }
   var MONTHS_LONG = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  /* Bringt alles, was als Tagesangabe hereinkommt, auf YYYY-MM-DD. Der RPC liefert ISO, aber ein
+     Bubble-Ausdruck kann ein formatiertes Datum schicken ("Aug 8, 2026 12:00 am"). Vorher gab
+     chartDateFmt so einen String ROH zurueck -- dann stand in einer Achse ein Datum mit Uhrzeit,
+     waehrend alle anderen Charts "8 Aug 2026" zeigten. Der Date-Rueckfall greift nur dort, wo
+     vorher der rohe String stand; ein bereits gueltiges ISO-Datum laeuft unveraendert durch. */
+  function dayKey(day){
+    var t = String(day == null ? "" : day).trim();
+    if (!t) return "";
+    var m = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return m[1] + "-" + m[2] + "-" + m[3];
+    var d = new Date(t);
+    if (isNaN(d.getTime())) return t;
+    function zwei(n){ return (n < 10 ? "0" : "") + n; }
+    return d.getFullYear() + "-" + zwei(d.getMonth() + 1) + "-" + zwei(d.getDate());
+  }
+
   function chartDateFmt(day){
-    var m = String(day || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+    var m = dayKey(day).match(/^(\d{4})-(\d{2})-(\d{2})/);
     if (!m) return String(day || "");
     return parseInt(m[3],10) + " " + MONTHS[parseInt(m[2],10)-1] + " " + m[1];
   }
   /* Tooltip header date. At month granularity a full "1 Jul 2026" reads wrong for what is really
      a whole-month bucket, so it collapses to just the month name. */
   function chartDateTitle(day, gran){
-    var m = String(day || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+    var m = dayKey(day).match(/^(\d{4})-(\d{2})-(\d{2})/);
     if (!m) return String(day || "");
     if (gran === "month") return MONTHS_LONG[parseInt(m[2],10)-1] || chartDateFmt(day);
     return chartDateFmt(day);
@@ -5619,6 +5635,7 @@
     fmtPctShort: fmtPctShort,
     variationRows: variationRows,
     variationRing: variationRing,
+    dayKey: dayKey,
     variationsSection: variationsSection,
     variationsExplain: variationsExplain,
     mentFilter: mentFilter,
