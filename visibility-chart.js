@@ -164,17 +164,11 @@
     }
     function granBtnsLive(){ return Array.prototype.slice.call(root.querySelectorAll(".vc-gran-btn")); }
     function syncGranActive(){ granBtnsLive().forEach(function(bn){ bn.classList.toggle("is-active", bn.getAttribute("data-gran") === curGran); }); }
+    /* Die Schwellen stehen in core (UC.granAvailability) -- brand-detail sperrt mit denselben
+       Zahlen. Was hier stand, war die Vorlage dafuer. */
     function applyGranAvailability(){
-      var r = seriesRangeDays();
-      var btns = granBtnsLive();
-      btns.forEach(function(bn){
-        var g = bn.getAttribute("data-gran");
-        var dis = (g === "week" && r > 0 && r < 8) || (g === "month" && r > 0 && r < 31);
-        bn.classList.toggle("is-disabled", dis);
-        if (dis) bn.setAttribute("aria-disabled", "true"); else bn.removeAttribute("aria-disabled");
-      });
-      var activeBtn = btns.filter(function(bn){ return bn.getAttribute("data-gran") === curGran; })[0];
-      if (activeBtn && activeBtn.classList.contains("is-disabled")){ curGran = "day"; GRAN_STORE[instanceId] = "day"; syncGranActive(); }
+      var neu = UC.granAvailability(root, state.series, curGran);
+      if (neu !== curGran){ curGran = neu; GRAN_STORE[instanceId] = neu; syncGranActive(); }
     }
 
     /* ---------- the line chart, from the shared kit ----------

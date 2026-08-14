@@ -5523,6 +5523,40 @@
      einer schmaleren Spalte als auf der Markenseite. Aussehen, Texte und Aufbau kommen von hier.
      `scope` faellt in die Erklaertexte ein: im Radar-Detail geht es um EIN Thema, auf der
      Markenseite um alle. */
+  /* ---- Granularitaets-Verfuegbarkeit --------------------------------------------------------
+     Welche Stufe waehlbar ist, haengt an der Spanne der gelieferten Serie: unter acht Tagen ist
+     eine Wochenkurve ein einziger Punkt, unter einem Monat eine Monatskurve genauso. Beide
+     Schwellen kommen aus visibility-chart, wo sie zuerst standen -- sie stehen jetzt hier, damit
+     brand-detail nicht mit anderen Zahlen sperrt als das Chart daneben.
+
+     Rueckgabe: die Stufe, die danach aktiv sein soll. War die bisherige gesperrt, ist das "day". */
+  function granRangeDays(series){
+    var tage = [];
+    (series || []).forEach(function(p){ if (p && p.day != null) tage.push(dayKey(p.day)); });
+    if (!tage.length) return 0;
+    tage.sort();
+    var a = Date.parse(tage[0]), b = Date.parse(tage[tage.length - 1]);
+    if (isNaN(a) || isNaN(b)) return tage.length;
+    return Math.round((b - a) / 86400000) + 1;
+  }
+
+  function granAvailability(root, series, aktuell){
+    var spanne = granRangeDays(series);
+    var btns = root ? [].slice.call(root.querySelectorAll(".vc-gran-btn")) : [];
+    var neu = aktuell || "day";
+    btns.forEach(function(bn){
+      var g = bn.getAttribute("data-gran");
+      /* Nur sperren, wenn ueberhaupt Daten da sind (spanne > 0) -- sonst waeren beim ersten
+         Rendern alle Stufen ausser Day gesperrt, bevor die Serie ankommt. */
+      var aus = (g === "week" && spanne > 0 && spanne < 8) ||
+                (g === "month" && spanne > 0 && spanne < 31);
+      bn.classList.toggle("is-disabled", aus);
+      if (aus) bn.setAttribute("aria-disabled", "true"); else bn.removeAttribute("aria-disabled");
+      if (aus && g === neu) neu = "day";
+    });
+    return neu;
+  }
+
   function variationsExplain(scope){
     var wo = scope || "on this topic";
     return {
@@ -5666,6 +5700,8 @@
     fmtPctShort: fmtPctShort,
     variationRows: variationRows,
     variationRing: variationRing,
+    granAvailability: granAvailability,
+    granRangeDays: granRangeDays,
     dayKey: dayKey,
     variationsSection: variationsSection,
     variationsExplain: variationsExplain,

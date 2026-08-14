@@ -206,6 +206,21 @@
     });
 
     /* ---- Rendern ---------------------------------------------------------------------------- */
+    /* Dieselben Schwellen wie im visibility-chart: unter acht Tagen keine Wochen-, unter einem
+       Monat keine Monatskurve. Faellt die aktive Stufe weg, springt der Schalter auf Day und die
+       Komponente holt die Serie in dieser Stufe nach -- sonst zeigte sie eine Kurve, deren Stufe
+       nicht mehr waehlbar ist. */
+    function syncGranAvailability() {
+      if (!UC.granAvailability) return;
+      var s = state.series;
+      var neu = UC.granAvailability(root, (s && s.series) || [], state.gran);
+      if (neu !== state.gran) {
+        state.gran = neu;
+        syncGran();
+        fire("data-gran-fn", "bubble_fn_ubdGran", { mode: state.mode, gran: neu });
+      }
+    }
+
     function syncSwitch() {
       Array.prototype.forEach.call(elSwitch.querySelectorAll(".up-seg-btn"), function (b) {
         var on = b.getAttribute("data-mode") === state.mode;
@@ -296,7 +311,8 @@
 
     function render() {
       root.classList.toggle("is-variations", state.mode === "variations");
-      syncSwitch(); syncGran(); renderHead(); renderKpi(); renderChart();
+      syncSwitch(); syncGran(); syncGranAvailability();
+      renderHead(); renderKpi(); renderChart();
       if (state.mode === "variations") renderVariations();
     }
 
