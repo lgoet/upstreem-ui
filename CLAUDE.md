@@ -123,7 +123,23 @@ Kein Fix gilt als fertig, bevor er im lokalen Harness (`_h_*.html`, `python3 -m 
   Ergebnis, wenn die alte Fassung im selben Aufbau das Gegenteil zeigt. Sonst hat man die eigene
   Messung gemessen. (Zwei Fehlschlüsse in dieser Sitzung: ein 48px breites Browserfenster, das wie
   ein Layoutfehler aussah, und eine gecachte CSS, die den Fix verschluckte.)
-- **Cache bumpen** (`?v=…` im Harness), sonst misst man die alte Datei.
+- **Frische der geladenen Datei BEWEISEN, nicht bumpen und hoffen.** Ein `?v=…` im Harness ist
+  kein Beweis: er hat mehrfach in derselben Sitzung nicht gewirkt, und drei Runden Diagnose gingen
+  gegen eine veraltete Datei. Vor dem ersten Messwert prüfen, dass die geänderte Zeile wirklich
+  angekommen ist:
+
+  ```javascript
+  // CSS: steht die neue Regel im geladenen Stylesheet?
+  [].some.call(document.styleSheets, function (ss) {
+    try { return [].some.call(ss.cssRules, function (r) {
+      return (r.cssText || "").indexOf("DIE-NEUE-REGEL") >= 0; }); } catch (e) { return false; }
+  })
+  // JS: ist der neue Zweig aktiv? Am Ergebnis prüfen, das es vorher NICHT gab —
+  // etwa an einer Klasse oder einem Attribut, das die alte Fassung nicht setzte.
+  ```
+
+  Kommt `false`, ist jeder weitere Messwert wertlos. Dann Dateinamen ändern (`_h_x2.html`), nicht
+  nur die Version — das umgeht jeden Cache zuverlässig.
 - **Nichts annehmen, was messbar ist.** Nicht die Einrückung zählen, um einen Scope zu bestimmen —
   laden und schauen. Nicht vermuten, eine Trennlinie sei verloren — nachsehen, ob der Nachbar
   schon eine hat, sonst stehen am Ende zwei.
