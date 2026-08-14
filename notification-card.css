@@ -20,8 +20,8 @@
 .unc-card:not(.is-shown) { display: none; }
 
 .unc-card {
-  position: fixed; right: 32px; bottom: 32px; z-index: 2147483500;
-  width: 384px; box-sizing: border-box; overflow: hidden;
+  position: fixed; right: 16px; bottom: 16px; z-index: 2147483500;
+  width: 424px; box-sizing: border-box; overflow: hidden;
   background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 16px;
   /* Drei Lagen, damit die Karte nicht auf der Flaeche klebt: eine harte Kante, ein mittlerer und
      ein weit gestreuter Schatten. Ein einzelner Schatten sieht bei dieser Groesse aus wie ein
@@ -59,11 +59,10 @@
   background: radial-gradient(120% 100% at 100% 0%,
     rgba(31,31,31,0.07) 0%, rgba(31,31,31,0.015) 45%, rgba(31,31,31,0) 75%);
 }
-.unc-rules {
-  inset: 0;
-  background-image: repeating-linear-gradient(90deg,
-    rgba(31,31,31,0.03) 0px, rgba(31,31,31,0.03) 1px, transparent 1px, transparent 28px);
-}
+/* Die Linien sind ein SVG, kein Hintergrundmuster: sieben gebogene Kurven laufen sich mit einem
+   repeating-linear-gradient nicht nachbauen. fill:none und die Strichfarbe stehen hier statt am
+   Element, damit das Dark-Mode-Gegenstueck nur eine Zeile braucht. */
+.unc-rules { inset: 0; width: 100%; height: 100%; fill: none; stroke: rgba(31,31,31,0.05); stroke-width: 1; }
 .unc-hair {
   top: 0; left: 0; right: 0; height: 1px;
   background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 30%,
@@ -75,10 +74,7 @@
   background: radial-gradient(120% 100% at 100% 0%,
     rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.012) 45%, rgba(255,255,255,0) 75%);
 }
-.up-root[data-theme="dark"] .unc-rules {
-  background-image: repeating-linear-gradient(90deg,
-    rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 28px);
-}
+.up-root[data-theme="dark"] .unc-rules { stroke: rgba(255,255,255,0.05); }
 .up-root[data-theme="dark"] .unc-hair {
   background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.10) 30%,
     rgba(255,255,255,0.10) 70%, rgba(255,255,255,0) 100%);
@@ -104,10 +100,21 @@
    dieser Karte, und ein im Dark Mode helles Feld waere ein zweiter Akzent neben dem Knopf.
    Die Lichtkante innen laesst die Flaeche gewoelbt wirken statt aufgeklebt. */
 .unc-tile {
-  flex: 0 0 auto; width: 44px; height: 44px; border-radius: 11px;
-  display: grid; place-items: center; color: #ffffff;
-  background: linear-gradient(155deg, #333333 0%, #1f1f1f 100%);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
+  flex: 0 0 auto; width: 44px; height: 44px; border-radius: 11px; box-sizing: border-box;
+  display: grid; place-items: center; color: #1f1f1f;
+  background: linear-gradient(150deg, #ffffff 0%, #efeeeb 100%);
+  border: 1px solid rgba(31,31,31,0.11);
+  /* Zwei Schatten: die Lichtkante innen laesst die Flaeche gewoelbt wirken, der weiche darunter
+     hebt sie von der Karte ab. Ohne den zweiten liegt sie flach auf. */
+  box-shadow: inset 0 1px 0 #ffffff, 0 1px 2px rgba(31,31,31,0.05);
+}
+/* Im Dark Mode waere ein weisses Feld der hellste Punkt der Karte und zoege alle Aufmerksamkeit.
+   Dieselbe Bauart, nur aus der dunklen Palette: heller als die Karte, aber nicht leuchtend. */
+.up-root[data-theme="dark"] .unc-tile {
+  color: var(--vc-text);
+  background: linear-gradient(150deg, #2a2a2a 0%, #1e1e1e 100%);
+  border-color: rgba(255,255,255,0.10);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 1px 2px rgba(0,0,0,0.3);
 }
 .unc-tile svg { width: 20px; height: 20px; display: block; }
 /* padding-top 1px: die Grossbuchstaben der Typzeile sitzen optisch zu hoch gegen die Flaeche. */
@@ -173,6 +180,6 @@
 /* ---- Schmale Breiten -------------------------------------------------------------------------
    Unter 440px passt eine 384px-Karte mit 32px Rand nicht mehr: sie spannt sich dann von Kante zu
    Kante mit 16px Luft, wie in der Vorlage vorgegeben. */
-@media (max-width: 440px) {
+@media (max-width: 480px) {
   .unc-card { left: 16px; right: 16px; bottom: 16px; width: auto; }
 }

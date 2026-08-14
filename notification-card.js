@@ -86,7 +86,16 @@
            Oberkante. Sie stehen im Markup und nicht als Pseudo-Elemente, weil drei Schichten
            mit ::before/::after nicht gehen. */
         '<span class="unc-wash" aria-hidden="true"></span>' +
-        '<span class="unc-rules" aria-hidden="true"></span>' +
+        /* Sieben geschwungene Haarlinien, je 55px auf x versetzt, von unten links nach oben
+           rechts. preserveAspectRatio="none" laesst sie mit der Karte mitziehen, statt bei einer
+           anderen Breite abzuschneiden -- die Karte ist 424 breit, die viewBox 384. */
+        '<svg class="unc-rules" aria-hidden="true" width="100%" height="100%" ' +
+              'viewBox="0 0 384 200" preserveAspectRatio="none">' +
+          [-40, 15, 70, 125, 180, 235, 290].map(function (x) {
+            return '<path d="M' + x + ' 215 C ' + (x + 110) + ' 175, ' + (x + 182) + ' 102, ' +
+                   (x + 230) + ' -20"/>';
+          }).join("") +
+        '</svg>' +
         '<span class="unc-hair" aria-hidden="true"></span>' +
 
         '<div class="unc-head">' +
