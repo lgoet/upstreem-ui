@@ -8,15 +8,17 @@
    aber UNTER quick-actions (2147483600). Das ist der einzige Bereich, der noch darueber gehoert.
    Kein pointer-events auf der Wurzel: solange keine Karte offen ist, darf hier nichts klickbar
    sein, sonst faengt ein unsichtbares Feld unten rechts Klicks der App ab. */
-.unc-root {
-  position: fixed; right: 32px; bottom: 32px; z-index: 2147483500;
-  pointer-events: none;
-}
+/* Die Positionierung sitzt an der KARTE, nicht an der Wurzel. Bubble setzt der Wurzel ein
+   eigenes position:relative -- damit bezog sich right/bottom auf das 1x1-Hostelement und die
+   Karte landete 32px ausserhalb davon, bei x/y = -32. Die Wurzel bleibt deshalb unberuehrt: sie
+   ist nur der Anker fuer den Loader, und was Bubble mit ihr macht, ist dann gleichgueltig. */
+.unc-root { pointer-events: none; }
 .unc-root.is-open { pointer-events: auto; }
 .unc-root:not(.is-open) .unc-card { display: none; }
 
 .unc-card {
-  position: relative; width: 384px; box-sizing: border-box; overflow: hidden;
+  position: fixed; right: 32px; bottom: 32px; z-index: 2147483500;
+  width: 384px; box-sizing: border-box; overflow: hidden;
   background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 16px;
   /* Drei Lagen, damit die Karte nicht auf der Flaeche klebt: eine harte Kante, ein mittlerer und
      ein weit gestreuter Schatten. Ein einzelner Schatten sieht bei dieser Groesse aus wie ein
@@ -169,6 +171,5 @@
    Unter 440px passt eine 384px-Karte mit 32px Rand nicht mehr: sie spannt sich dann von Kante zu
    Kante mit 16px Luft, wie in der Vorlage vorgegeben. */
 @media (max-width: 440px) {
-  .unc-root { left: 16px; right: 16px; bottom: 16px; }
-  .unc-card { width: auto; }
+  .unc-card { left: 16px; right: 16px; bottom: 16px; width: auto; }
 }

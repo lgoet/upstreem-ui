@@ -14,11 +14,15 @@
   <button onclick="document.querySelector('.up-root').setAttribute('data-theme',
     document.querySelector('.up-root').getAttribute('data-theme')==='dark'?'light':'dark')">dark</button>
 </div>
-<div class="up-root unc-root" data-instance="n1" data-theme="light"
+<!-- Baut die Bubble-Lage nach: ein 1x1-Host, und die Wurzel bekommt von aussen
+     position:relative aufgezwungen -- genau das, was in der App passiert. -->
+<div style="width:1px;height:1px;overflow:hidden">
+<div class="up-root unc-root" style="position:relative" data-instance="n1" data-theme="light"
      data-logo="https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-lockup-1f1f1f.svg"
      data-dismiss-fn="bubble_fn_uncDismiss"></div>
+</div>
 <link rel="stylesheet" href="core.css?v=u1">
-<link rel="stylesheet" href="notification-card.css?v=u1">
+<link rel="stylesheet" href="notification-card.css?v=fx2">
 <script src="core.js?v=rl1"></script>
 <script src="notification-card.js?v=mm1"></script>
 <script>
