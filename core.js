@@ -96,6 +96,17 @@
        comma then ends the string 400 characters early. They are only ever worth repairing where
        they stand in for STRUCTURE, which repair() below can tell and a blanket .replace() cannot. */
     if (!s) return null;
+    /* Doppelt verpackt: ein Run-JS-Step, der JSON.stringify UM einen Payload legt, der schon Text
+       ist. Das Ergebnis ist ein String, dessen erstes Zeichen ein Anfuehrungszeichen ist und der
+       escapte Anfuehrungszeichen enthaelt -- gueltiges JSON, aber ein String statt eines Objekts.
+       Einmal auspacken, statt es als "kein JSON" abzulehnen: der Aufrufer hat einen Fehler
+       gemacht, nicht die Daten. Nur bei genau diesem Muster, damit ein Textwert nicht zerlegt wird. */
+    if (s.charAt(0) === '"' && s.charAt(s.length - 1) === '"' && s.indexOf('\\"') >= 0){
+      try {
+        var innen = JSON.parse(s);
+        if (typeof innen === "string" && /^\s*[\[{]/.test(innen)) s = innen.trim();
+      } catch (e) {}
+    }
     if (s.indexOf("&") >= 0){
       var dec = document.createElement("textarea");
       dec.innerHTML = s;
