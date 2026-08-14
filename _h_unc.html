@@ -16,15 +16,18 @@
 </div>
 <!-- Baut die Bubble-Lage nach: ein 1x1-Host, und die Wurzel bekommt von aussen
      position:relative aufgezwungen -- genau das, was in der App passiert. -->
-<div style="width:1px;height:1px;overflow:hidden">
+<!-- Der schlimmste Fall, den Bubble baut: ein Vorfahre mit transform (Animation) und
+     overflow:hidden. transform macht ihn zum Bezugsrahmen fuer position:fixed, sein overflow
+     beschneidet dann alles darin auf 1x1 -- die Karte ist im DOM, offen und trotzdem nicht da. -->
+<div style="transform: translateZ(0); overflow: hidden; width:1px; height:1px">
 <div class="up-root unc-root" style="position:relative" data-instance="n1" data-theme="light"
      data-logo="https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-lockup-1f1f1f.svg"
      data-dismiss-fn="bubble_fn_uncDismiss"></div>
 </div>
 <link rel="stylesheet" href="core.css?v=u1">
-<link rel="stylesheet" href="notification-card.css?v=fx2">
+<link rel="stylesheet" href="notification-card.css?v=pt1">
 <script src="core.js?v=rl1"></script>
-<script src="notification-card.js?v=mm1"></script>
+<script src="notification-card.js?v=pt3"></script>
 <script>
 window.__events = [];
 window.bubble_fn_uncDismiss = function(v){ window.__events.push(v); };

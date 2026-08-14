@@ -118,16 +118,41 @@
     var instanceId = root.getAttribute("data-instance") || "default";
     if (instanceId === "INSTANCE_ID") return null;   /* Platzhalter noch nicht ersetzt */
 
-    root.innerHTML = shell();
+    /* Die Karte entsteht direkt am body, nicht im Wurzel-Element. Vorher stand sie erst dort und
+       wanderte danach -- beim zweiten initRoot-Lauf (watchRoots und die Nachzuender rufen es
+       mehrfach) fand der Aufruf seine Elemente dann nicht mehr und lief auf null.
+       Am body, weil position:fixed sich auf das Fenster bezieht -- ausser ein Vorfahre hat
+       transform, filter oder contain. Bubble setzt transform auf animierte Gruppen; dann wird
+       dieser Vorfahre der Bezugsrahmen UND sein overflow:hidden schneidet die Karte auf die
+       Groesse des 1x1-Hosts. Genau das war der Fall, in dem die Karte im DOM stand, offen war und
+       trotzdem nicht zu sehen. */
+    var traeger = document.createElement("div");
+    traeger.innerHTML = shell();
+    var karte = traeger.firstChild;
+    /* KEIN up-portal an der Karte: die Klasse setzt in core display:contents -- gedacht fuer den
+       Wrapper eines Portals, der selbst keine Box bilden soll. An der Karte nimmt sie ihr genau
+       das, was sie braucht: eine Box mit Groesse. Sie stand hier, weil ich den Namen aus
+       makeMount uebernommen habe, ohne nachzusehen, was er tut. */
+    (document.body || document.documentElement).appendChild(karte);
 
-    var elCard   = root.querySelector(".unc-card");
-    var elLogo   = root.querySelector(".unc-logo");
-    var elTile   = root.querySelector(".unc-tile");
-    var elType   = root.querySelector(".unc-type");
-    var elTitle  = root.querySelector(".unc-title");
-    var elDesc   = root.querySelector(".unc-desc");
-    var elSecond = root.querySelector(".unc-second");
-    var elPrim   = root.querySelector(".unc-primary");
+    var elCard   = karte;
+
+
+    /* Das Thema steht als data-theme auf der Wurzel; die Karte haengt jetzt daneben und wuerde die
+       Dark-Mode-Regeln nicht erben. Also spiegeln, und zwar bei jedem Render: Bubble schaltet das
+       Attribut zur Laufzeit um. */
+    function syncTheme() {
+      var dunkel = root.getAttribute("data-theme") === "dark" || isYes(root.getAttribute("data-isdark"));
+      elCard.classList.add("up-root");
+      elCard.setAttribute("data-theme", dunkel ? "dark" : "light");
+    }
+    var elLogo   = karte.querySelector(".unc-logo");
+    var elTile   = karte.querySelector(".unc-tile");
+    var elType   = karte.querySelector(".unc-type");
+    var elTitle  = karte.querySelector(".unc-title");
+    var elDesc   = karte.querySelector(".unc-desc");
+    var elSecond = karte.querySelector(".unc-second");
+    var elPrim   = karte.querySelector(".unc-primary");
 
     var state = { list: [], aktuell: null, weg: {} };
 
@@ -143,7 +168,7 @@
     function render() {
       var n = waehle((state.list || []).filter(function (x) { return !state.weg[x.id]; }));
       state.aktuell = n;
-      if (!n) { root.classList.remove("is-open"); return; }
+      if (!n) { root.classList.remove("is-open"); elCard.classList.remove("is-shown"); return; }
 
       var t = typOf(n.notification_type);
       elTile.innerHTML = UC.icon ? UC.icon(t.icon, 1.5) : "";
@@ -166,7 +191,10 @@
       if (lg) { elLogo.setAttribute("src", lg); elLogo.style.display = ""; }
       else { elLogo.style.display = "none"; }
 
+      syncTheme();
       root.classList.add("is-open");
+      /* Die Karte haengt nicht mehr unter der Wurzel, also traegt sie die Sichtbarkeit selbst. */
+      elCard.classList.add("is-shown");
     }
 
     /* Ein Grund pro Weg hinaus, damit der Workflow unterscheiden kann: das X ist ein Wegklicken,
@@ -177,15 +205,15 @@
       state.weg[n.id] = 1;
       /* Erst die Rueckwaerts-Animation, dann neu rendern: ein Sprung waere hier das Einzige an
          der Karte, das nicht weich ist. 180ms wie in der Vorlage. */
-      root.classList.add("is-closing");
+      elCard.classList.add("is-closing");
       setTimeout(function () {
-        root.classList.remove("is-closing");
+        elCard.classList.remove("is-closing");
         render();
       }, 180);
       fire("data-dismiss-fn", "bubble_fn_uncDismiss", { id: n.id, reason: grund });
     }
 
-    root.querySelector(".unc-x").addEventListener("click", function () { schliessen("close"); });
+    karte.querySelector(".unc-x").addEventListener("click", function () { schliessen("close"); });
     elSecond.addEventListener("click", function () { schliessen("secondary"); });
     /* Der Hauptknopf ist ein echter Link mit target=_blank -- kein preventDefault, damit der
        Browser ihn oeffnet (und der Nutzer ihn mit der Mitteltaste in einem eigenen Tab kann).
@@ -217,7 +245,9 @@
         render();
       },
       reset: function () { state.list = []; state.weg = {}; render(); },
-      destroy: function () {}
+      /* Beim Abbau die Karte mitnehmen -- sie haengt am body und bliebe sonst stehen, wenn
+         Bubble die Wurzel entfernt. */
+      destroy: function () { if (elCard && elCard.parentNode) elCard.parentNode.removeChild(elCard); }
     };
 
     root.__uncController = ctrl;

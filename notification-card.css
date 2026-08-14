@@ -12,9 +12,12 @@
    eigenes position:relative -- damit bezog sich right/bottom auf das 1x1-Hostelement und die
    Karte landete 32px ausserhalb davon, bei x/y = -32. Die Wurzel bleibt deshalb unberuehrt: sie
    ist nur der Anker fuer den Loader, und was Bubble mit ihr macht, ist dann gleichgueltig. */
+/* Die Wurzel ist nur der Anker fuer den Loader -- die Karte haengt am body. Nichts an ihr darf
+   Klicks fangen oder Platz brauchen. */
 .unc-root { pointer-events: none; }
-.unc-root.is-open { pointer-events: auto; }
-.unc-root:not(.is-open) .unc-card { display: none; }
+/* Sichtbarkeit ueber eine Klasse AN DER KARTE: sie steht nicht mehr unter der Wurzel, ein
+   .unc-root:not(.is-open) .unc-card griffe dort nicht mehr. */
+.unc-card:not(.is-shown) { display: none; }
 
 .unc-card {
   position: fixed; right: 32px; bottom: 32px; z-index: 2147483500;
@@ -35,7 +38,7 @@
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 /* Rueckwaerts beim Schliessen, halb so lang -- Verschwinden darf schneller sein als Erscheinen. */
-.unc-root.is-closing .unc-card {
+.unc-card.is-closing {
   animation: unc-out 180ms cubic-bezier(0.4, 0, 1, 1) both;
 }
 @keyframes unc-out {
@@ -44,7 +47,7 @@
 }
 /* Wer Bewegung abgestellt hat, bekommt sie nicht: die Karte ist eine Meldung, keine Animation. */
 @media (prefers-reduced-motion: reduce) {
-  .unc-card, .unc-root.is-closing .unc-card { animation: none; }
+  .unc-card, .unc-card.is-closing { animation: none; }
 }
 
 /* ---- Zierschichten ---------------------------------------------------------------------------
