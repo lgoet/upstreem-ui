@@ -277,6 +277,11 @@
       elTrend.innerHTML = trendHtml(m, kpi);
     }
 
+    /* Merkt sich, ob in diesem Modus schon einmal eine Kurve stand. Nur dann darf eine Serie aus
+       einem fremden Modus stillschweigend verworfen werden -- sonst bliebe die Karte leer, ohne
+       dass jemand erfaehrt, worauf sie wartet. */
+    var letzteKurve = false;
+
     function renderChart() {
       if (!CHART_MODES[state.mode]) return;
       /* Der Fehlerfall kommt VOR dem Skelett: sonst laeuft der Ladezustand endlos weiter und
@@ -287,10 +292,15 @@
       /* Eine Serie aus einem anderen Modus kann hier nur noch stehen, wenn setSeries den Modus
          nicht uebernehmen konnte (etwa "variations" im Serien-Payload). Dann Text statt Skelett:
          ein Ladezustand, den nichts mehr beendet, sieht aus wie "gleich da" und ist es nicht. */
+      /* Eine Serie aus einem anderen Modus wird verworfen, nicht angezeigt -- und sie darf den
+         Ladezustand nicht verlaengern. Steht schon eine Kurve, bleibt die stehen (besser als ein
+         Skelett, das nichts mehr beendet); gab es noch keine, steht dort Text. Das ist der Fall,
+         der vorher endlos geladen hat. */
       if (p && p.mode && p.mode !== state.mode) {
-        line.empty("The chart data belongs to another view.");
+        if (!letzteKurve) line.empty("Waiting for " + modeOf(state.mode).label.toLowerCase() + " data.");
         return;
       }
+      letzteKurve = true;
       if (!p || !p.series || !p.series.length) { line.empty(); return; }
 
       /* buildLineDatasets erwartet die company_id an jedem Punkt und das Feld visibility_pct --
@@ -423,6 +433,9 @@
       if (!b) return;
       var key = b.getAttribute("data-mode");
       if (key === state.mode) return;
+      /* Neuer Modus, neue Kurve: der Merker faellt, damit eine noch nicht gelieferte Serie als
+         "Waiting for ..." erscheint und nicht als stehengebliebene Kurve des alten Modus. */
+      letzteKurve = false;
       state.mode = key;
       if (CHART_MODES[key]) { state.hasData = false; state.series = null; }
       render();
@@ -460,11 +473,10 @@
              gran als Alternative. */
           var g = UC.normGran ? UC.normGran(p.granularity != null ? p.granularity : p.gran) : null;
           if (g) state.gran = g;
-          /* Der gelieferte Modus gewinnt genauso. Vorher blieb state.mode stehen, und renderChart
-             verwarf die Serie als "Antwort aus einem anderen Modus" -- Skelett ohne Ende, weil in
-             dieser Lage nie eine passende Serie nachkommt. Genau das passiert bei jedem externen
-             Filterwechsel: der Workflow laedt Visibility, die Komponente stand auf Rank. */
-          if (CHART_MODES[p.mode] && p.mode !== state.mode) state.mode = p.mode;
+          /* Der Modus wird hier NICHT angefasst. Er wechselt ausschliesslich durch einen Klick
+             auf den Switcher oder durch resetBrandDetail. Ein Workflow, der beim Filterwechsel
+             erst die Visibility-Serie nachschiebt, liess den Switcher sonst kurz dorthin springen
+             und danach zurueck -- ein Flackern, das aussieht wie ein Fehler. */
         } else {
           state.series = null;
           state.error = (p && p.__parseError) || !p
@@ -492,10 +504,9 @@
       reset: function () {
         state.series = null; state.variations = null; state.hasData = false;
         state.loading = false;
-        /* Modus und Granularitaet bleiben stehen. Sie sind eine Wahl des Nutzers, keine Daten --
-           und reset() laeuft bei jedem externen Filterwechsel. Vorher sprang der Switcher dabei
-           auf Visibility und, sobald die Rank-Serie ankam, wieder zurueck: ein Flackern, das
-           aussieht wie ein Fehler in der Komponente. */
+        /* resetBrandDetail ist der EINE Ort, an dem der Modus zurueckgesetzt werden darf -- ein
+           vollstaendiger Neuanfang. Ueberall sonst bleibt er stehen, auch beim Filterwechsel. */
+        state.mode = "visibility"; state.gran = "day"; letzteKurve = false;
         /* Auch die Suche zuruecksetzen: sonst zeigt die naechste Marke eine gefilterte Liste,
            ohne dass irgendwo ein Suchbegriff zu sehen waere. */
         state.varQuery = ""; state.error = null;
