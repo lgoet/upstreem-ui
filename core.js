@@ -5618,6 +5618,7 @@
     icon: icon,
     fmtPctShort: fmtPctShort,
     variationRows: variationRows,
+    variationRing: variationRing,
     variationsSection: variationsSection,
     variationsExplain: variationsExplain,
     mentFilter: mentFilter,

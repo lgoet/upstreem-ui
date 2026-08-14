@@ -43,7 +43,7 @@
    halber Hoehe schwebt. */
 /* 16px unter der Zahl bis zur Kurve: die beiden gehoeren zusammen, aber die Zahl braucht Luft,
    sonst klebt sie auf der oberen Gitterlinie. */
-.ubd-kpi { display: flex; align-items: center; gap: 8px; margin: 10px 0 16px; min-height: 30px; }
+.ubd-kpi { display: flex; align-items: center; gap: 12px; margin: 10px 0 16px; min-height: 30px; }
 /* Der INHALT kommt aus den Core-Bauteilen: .up-num, .up-sent mit Punkt, .up-rank-group mit Raute
    -- dieselben, die jede Tabellenzelle benutzt. Hier wird nur die Schrift groesser gestellt, damit
    die Zahl ueber der Kurve als Zusammenfassung liest. Alles andere -- Farbe, Punkt, Raute,
@@ -51,15 +51,15 @@
 .ubd-kpi-val { font-size: 21px; line-height: 1.15; letter-spacing: -0.4px; }
 .ubd-kpi-val .up-num { font-size: inherit; font-weight: 500; letter-spacing: inherit;
   font-variant-numeric: tabular-nums; }
-/* Dieselben Verhaeltnisse wie in den KPI-Kacheln des Radar-Details: der Sentiment-Wert steht
-   zwei Stufen kleiner als die nackte Zahl (die Pille mit Punkt traegt optisch mehr Gewicht), und
-   die Raute misst zwei Drittel der Zahl. Nur die Grundgroesse ist hier hoeher, weil diese Zahl
-   ueber der Kurve die Aussage der ganzen Karte ist. */
-.ubd-kpi-val .up-sent-val { font-size: 19px; font-weight: 500; font-variant-numeric: tabular-nums; }
-.ubd-kpi-val .up-sent-dot { width: 9px; height: 9px; }
-.ubd-kpi-val .up-hash { width: 14px; height: 14px; }
-/* Der Trend-Chip bleibt in SEINER Groesse -- er ist eine Randnotiz zur Zahl, keine zweite Zahl. */
+/* Sentiment und Rang werden hier NICHT vergroessert. Beide sind fertige Bauteile mit eigener
+   Geometrie: .up-sent ist eine Pille mit fester Hoehe (24px), Rahmen und einem 6px-Punkt, die
+   Rang-Raute ist auf die Zahl daneben abgestimmt. Eine groessere Schrift sprengt die Pille, ein
+   groesserer Punkt macht aus dem abgerundeten Quadrat einen Kreis -- und dann sieht dieselbe
+   Zahl hier anders aus als in jeder Tabelle. Nur die nackte Zahl (.up-num) waechst. */
+/* Der Trend bleibt eine Randnotiz zur Zahl, keine zweite Zahl -- aber einen Punkt groesser als
+   in einer Tabellenzelle, weil die Zahl daneben hier deutlich groesser ist. */
 .ubd-kpi-trend { display: inline-flex; align-items: center; }
+.ubd-kpi-trend .up-trend { font-size: 14px; }
 
 /* Im Variations-Modus gibt es keine einzelne Kennzahl -- die Zeile faellt ganz weg, statt eine
    Zahl aus einem anderen Modus stehen zu lassen. */

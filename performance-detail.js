@@ -127,19 +127,10 @@
      oeffnet. Die Texte beantworten, was die Spalte MEINT -- nicht, wie sie heisst. */
   var INFO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
   function thInfo(key){ return '<span class="up-th-info" data-explain="' + key + '">' + INFO_SVG + '</span>'; }
-  var VAR_EXPLAIN = {
-    name: { h: "Variation Name",
-            t: "The exact wording an AI response used for this brand. Models rarely stick to one " +
-               "spelling — every variation here counts as the same brand, and a name that never " +
-               "appears is a name the models do not associate with you." },
-    sov:  { h: "Share of Voice",
-            t: "How much of this brand's mentions on this topic used this exact wording. High " +
-               "numbers on one variation mean the models have settled on a name; a flat spread " +
-               "across many means they have not." },
-    cnt:  { h: "Mention Count",
-            t: "How many times this wording appeared, out of all mentions of the brand on this " +
-               "topic. The smaller the count, the less the share above rests on." }
-  };
+  /* Die Erklaertexte kommen aus core -- dieselben, die brand-detail zeigt. Sonst erklaert
+     dieselbe Spalte an zwei Orten Verschiedenes. */
+  var VAR_EXPLAIN = UC.variationsExplain("on this topic");
+
 
   /* ============================================================================================
      Controller pro Root
@@ -205,28 +196,10 @@
             '<div class="up-line-wrap upd-linewrap"><canvas class="up-line-canvas"></canvas></div>' +
           '</div>' +
         '</div>' +
-        '<div class="upd-sec upd-varsec">' +
-          '<div class="upd-sec-head">' +
-            '<div class="upd-sec-titles">' +
-              '<span class="up-heading upd-sec-h">Variations</span>' +
-              '<span class="upd-sec-sub">Different brand names used in AI responses</span>' +
-            '</div>' +
-            '<div class="up-search upd-search">' +
-              '<button class="up-iconbtn up-search-btn" type="button" data-tip="Search variations" aria-label="Search variations">' + SEARCH_SVG + '</button>' +
-              '<div class="up-search-box">' +
-                '<input class="up-search-input" type="text" autocomplete="off" spellcheck="false" placeholder="Search variations">' +
-                '<button class="up-search-clear" type="button" aria-label="Clear search">' + CLOSE_SVG + '</button>' +
-              '</div>' +
-            '</div>' +
-          '</div>' +
-          '<div class="up-table upd-vartable">' +
-            '<div class="up-thead upd-vrow">' +
-              '<div class="up-th upd-th-name">Variation Name' + thInfo("name") + '</div>' +
-              '<div class="up-th upd-th-sov">Share of Voice' + thInfo("sov") + '</div>' +
-              '<div class="up-th upd-th-cnt">Mention Count' + thInfo("cnt") + '</div>' +
-            '</div>' +
-            '<div class="up-tbody upd-vbody"></div>' +
-          '</div>' +
+        /* Der ganze Abschnitt kommt aus core (UC.variationsSection): Ueberschrift, Untertitel,
+           Suchfeld, Tabellenkopf mit den drei Erklaer-Rauten. Genau derselbe Aufruf steht in
+           brand-detail -- eine Tabelle, eine Quelle. */
+        UC.variationsSection({ prefix: "upd", scope: "on this topic" }) +
         '</div>' +
       '</div>';
 
@@ -468,18 +441,6 @@
        Grauer Track, dunkler Bogen -- keine Farbe, weil Share of Voice keine Wertung ist.
        Der Bogen startet oben: die -90-Grad-Drehung steckt im SVG, nicht in einer CSS-Transform,
        damit er in beiden Themes und bei jeder Schriftgroesse gleich sitzt. */
-    var RING_R = 6, RING_C = 2 * Math.PI * RING_R;
-    function ringHtml(pct){
-      var p = pct == null || isNaN(pct) ? 0 : Math.max(0, Math.min(100, Number(pct)));
-      var an = (p / 100) * RING_C;
-      return '<span class="upd-ring" aria-hidden="true">' +
-        '<svg viewBox="0 0 16 16" width="16" height="16">' +
-          '<circle class="upd-ring-track" cx="8" cy="8" r="' + RING_R + '" fill="none" stroke-width="2.4"/>' +
-          '<circle class="upd-ring-fill" cx="8" cy="8" r="' + RING_R + '" fill="none" stroke-width="2.4"' +
-            ' stroke-dasharray="' + an.toFixed(2) + ' ' + (RING_C - an).toFixed(2) + '"' +
-            ' transform="rotate(-90 8 8)" stroke-linecap="round"/>' +
-        '</svg></span>';
-    }
     function varRows(){
       var list = state.variations || [];
       var q = state.varQuery.toLowerCase();
@@ -506,27 +467,10 @@
           '</div>';
         return;
       }
-      /* mentions_total ist die Bezugsgroesse fuer Mention Count, share_of_voice_pct kommt fertig.
-         NICHT total_count: das zaehlt die verschiedenen Variationen, nicht die Erwaehnungen --
-         "3 of 12" las sich damit als "3 von 12 Erwaehnungen", gemeint waren aber 12 Variationen.
-         Zwei Groessen mit aehnlichem Namen, und die falsche stand im Nenner. */
-      elVBody.innerHTML = rows.map(function(v){
-        var sov = num(v.share_of_voice_pct);
-        var cnt = num(v.mentioned_count);
-        var tot = num(v.mentions_total);
-        return '<div class="up-row upd-vrow">' +
-                 '<div class="up-td upd-td-name"><span class="upd-varname">' +
-                   highlight(String(v.name || ""), state.varQuery) + '</span></div>' +
-                 '<div class="up-td upd-td-sov">' +
-                   '<span class="up-num">' + (sov == null ? "-" : fmtPctShort(sov, true)) + '</span>' +
-                   ringHtml(sov) +
-                 '</div>' +
-                 '<div class="up-td upd-td-cnt">' +
-                   '<span class="up-num">' + (cnt == null ? "-" : Math.round(cnt)) + '</span>' +
-                   (tot != null ? '<span class="upd-of">of ' + Math.round(tot) + '</span>' : "") +
-                 '</div>' +
-               '</div>';
-      }).join("");
+      /* UC.variationRows baut die Zeilen -- dasselbe Kit, das brand-detail benutzt. Was hier
+         frueher stand, war die Vorlage dafuer; sie ist wortgleich nach core gewandert. */
+      elVBody.innerHTML = UC.variationRows(rows, { query: state.varQuery,
+                                                   rowClass: "up-vrow upd-vrow" });
     }
 
     /* ---------------- Gesamt-Render ---------------- */
@@ -670,11 +614,11 @@
       if (key === "sov"){
         /* Eine Zahl, dahinter derselbe Ring wie in der Zelle -- nicht zwei Zeilen. Die Platte
            soll die Spalte zeigen, nicht ihre Spannweite vorfuehren. */
-        return '<span class="up-explain-row upd-explain-sov"><span class="up-num">62.5%</span>' + ringHtml(62.5) + '</span>';
+        return '<span class="up-explain-row upd-explain-sov"><span class="up-num">62.5%</span>' + (UC.variationRing ? UC.variationRing(62.5) : "") + '</span>';
       }
       if (key === "cnt"){
         return '<span class="up-explain-row"><span class="up-num">19</span>' +
-               '<span class="upd-of">of 69</span></span>';
+               '<span class="up-var-of">of 69</span></span>';
       }
       return '<span class="up-explain-row">Mercedes S500</span>' +
              '<span class="up-explain-row">Mercedes E Class</span>';
@@ -702,7 +646,7 @@
        wuerde auch dann feuern, wenn der Name vollstaendig dasteht. */
     var nameTimer = null, nameEl = null;
     root.addEventListener("mouseover", function(e){
-      var el = e.target.closest ? e.target.closest(".upd-varname") : null;
+      var el = e.target.closest ? e.target.closest(".up-varname") : null;
       if (!el || !root.contains(el) || el === nameEl) return;
       nameEl = el;
       if (tips && tips.unsuppress) tips.unsuppress();
@@ -712,10 +656,10 @@
       }, 400);
     });
     root.addEventListener("mouseout", function(e){
-      var el = e.target.closest ? e.target.closest(".upd-varname") : null;
+      var el = e.target.closest ? e.target.closest(".up-varname") : null;
       if (!el || el !== nameEl) return;
       var to = e.relatedTarget;
-      if (to && to.closest && to.closest(".upd-varname") === el) return;
+      if (to && to.closest && to.closest(".up-varname") === el) return;
       nameEl = null; clearTimeout(nameTimer);
       if (tips && tips.hideTip) tips.hideTip();
     });
