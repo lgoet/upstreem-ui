@@ -225,40 +225,34 @@
     return ctrl;
   }
 
-  var mount = UC.makeMount ? UC.makeMount({
-    rootClass: "unc-root",
-    /* Der Name, unter dem Bubble fragen kann, ob es hier eine Karte gibt. Fehlt er, setzt
-       makeMount window[undefined] -- siehe die Notiz dort. */
-    resolveLocal: "__uncResolveLocal",
-    init: initRoot,
-    api: {
-      setUpstreemNotifications:    function (id, payload) { return each(id, function (c) { c.set(payload); }); },
-      dismissUpstreemNotification: function (id, notifId) { return each(id, function (c) { c.dismiss(notifId); }); },
-      resetUpstreemNotifications:  function (id)          { return each(id, function (c) { c.reset(); }); }
-    }
-  }) : null;
-
   function each(id, fn) {
     var roots = document.getElementsByClassName("unc-root");
     for (var i = 0; i < roots.length; i++) {
       var r = roots[i];
-      if (id != null && r.getAttribute("data-instance") !== String(id)) continue;
+      if (id != null && (r.getAttribute("data-instance") || "default") !== String(id)) continue;
       var c = r.__uncController || initRoot(r);
       if (c) fn(c);
     }
   }
 
-  API_NAMES.forEach(function (n) {
-    window[n] = function () {
-      var a = [].slice.call(arguments);
-      if (n === "setUpstreemNotifications")    return each(a[0], function (c) { c.set(a[1]); });
-      if (n === "dismissUpstreemNotification") return each(a[0], function (c) { c.dismiss(a[1]); });
-      return each(a[0], function (c) { c.reset(); });
-    };
+  /* Der vollstaendige makeMount-Aufruf, wie in den anderen acht Komponenten. Beim ersten Versuch
+     hatte ich die Haelfte weggelassen -- init statt initRoot, kein ctrlProp, kein queue, kein
+     resolveLocal. makeMount uebernimmt damit das Einhaengen, das Abspielen der Boot-Warteschlange
+     und die Setter auf window; ein eigener Nachbau davon waere ein zweiter Weg fuer dasselbe. */
+  var mount;
+  mount = UC.makeMount({
+    onMount: function (m) { mount = m; },
+    rootClass: "unc-root", notPortal: true,
+    ctrlProp: "__uncController",
+    resolveLocal: "__uncResolveLocal",
+    queue: "__uncBootQueue",
+    initRoot: initRoot,
+    api: {
+      setUpstreemNotifications:    function (id, p)  { return each(id, function (c) { c.set(p); }); },
+      dismissUpstreemNotification: function (id, nid){ return each(id, function (c) { c.dismiss(nid); }); },
+      resetUpstreemNotifications:  function (id)     { return each(id, function (c) { c.reset(); }); }
+    }
   });
-
-  /* Die Aufrufe, die vor dem Laden dieser Datei kamen, jetzt abarbeiten. */
-  while (Q.length) { var q = Q.shift(); try { window[q[0]].apply(null, q[1]); } catch (e) {} }
 
   if (UC.watchRoots) UC.watchRoots("unc-root", function () {
     var roots = document.getElementsByClassName("unc-root");
