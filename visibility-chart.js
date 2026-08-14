@@ -138,13 +138,8 @@
       if (isNaN(a) || isNaN(b)) return days.length;
       return Math.round((b - a) / 86400000) + 1;
     }
-    function normGran(v){
-      v = String(v == null ? "" : v).toLowerCase().trim();
-      if (v.indexOf("month") === 0 || v === "mon" || v === "m") return "month";
-      if (v.indexOf("week") === 0 || v === "w") return "week";
-      if (v.indexOf("day") === 0 || v === "daily" || v === "d") return "day";
-      return null;
-    }
+    /* Steht jetzt in core -- brand-detail liest dieselben Schreibweisen. */
+    var normGran = UC.normGran;
     function inferGran(series){
       var seen = {};
       (series || []).forEach(function(p){ if (p && p.day != null) seen[String(p.day)] = 1; });

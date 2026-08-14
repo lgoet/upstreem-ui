@@ -5530,6 +5530,17 @@
      brand-detail nicht mit anderen Zahlen sperrt als das Chart daneben.
 
      Rueckgabe: die Stufe, die danach aktiv sein soll. War die bisherige gesperrt, ist das "day". */
+  /* Nimmt entgegen, was ein Bubble-Ausdruck liefert: "Day", "weekly", "M", "month" -- alles
+     landet auf day/week/month. null, wenn nichts Erkennbares kommt; dann behaelt der Aufrufer
+     seinen Stand, statt auf einen Standard zu springen. Stand als normGran in visibility-chart. */
+  function normGran(v){
+    v = String(v == null ? "" : v).toLowerCase().trim();
+    if (v.indexOf("month") === 0 || v === "mon" || v === "m") return "month";
+    if (v.indexOf("week") === 0 || v === "w") return "week";
+    if (v.indexOf("day") === 0 || v === "daily" || v === "d") return "day";
+    return null;
+  }
+
   function granRangeDays(series){
     var tage = [];
     (series || []).forEach(function(p){ if (p && p.day != null) tage.push(dayKey(p.day)); });
@@ -5701,6 +5712,7 @@
     variationRows: variationRows,
     variationRing: variationRing,
     granAvailability: granAvailability,
+    normGran: normGran,
     granRangeDays: granRangeDays,
     dayKey: dayKey,
     variationsSection: variationsSection,

@@ -446,6 +446,12 @@
           state.series = p;
           state.hasData = true;
           state.error = null;
+          /* Die gelieferte Granularitaet gewinnt: wenn der Workflow automatisch auf Woche oder
+             Monat wechselt, muss der Schalter das zeigen -- sonst steht dort Day, waehrend eine
+             Wochenkurve daneben liegt. Dieselben Feldnamen wie im visibility-chart: granularity,
+             gran als Alternative. */
+          var g = UC.normGran ? UC.normGran(p.granularity != null ? p.granularity : p.gran) : null;
+          if (g) state.gran = g;
         } else {
           state.series = null;
           state.error = (p && p.__parseError) || !p
