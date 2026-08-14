@@ -206,6 +206,10 @@
     /* ---- Variations-Abschnitt (aus performance-detail nach core, zweiter Verbraucher
        brand-detail). Kopfzeile, Untertitel und Tabellenrahmen stehen hier; die Spaltenbreiten
        bleiben bei der jeweiligen Komponente, weil die Tabelle dort verschieden breit steht. */
+    /* Der Abschnitt polstert sich selbst. Vorher hing die Polsterung an einer Klasse der
+       aufrufenden Komponente -- beim Umzug nach core fiel sie weg, und der Abschnitt klebte an
+       allen vier Kanten. Steht sie hier, kann das keiner Seite mehr passieren. */
+    .up-varsec { padding: 16px; }
     .up-sec-head { display: flex; align-items: center; gap: 12px; min-height: 32px; margin-bottom: 14px; }
     .up-sec-titles { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; }
     .up-sec-h { flex: 0 0 auto; }

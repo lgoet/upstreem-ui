@@ -1673,6 +1673,7 @@
   "up-varring",
   "up-varring-fill",
   "up-varring-track",
+  "up-varsec",
   "up-vartable",
   "up-vbody",
   "up-vrow",
@@ -2256,7 +2257,7 @@
   "globals": 108,
   "payloadkeys": 59,
   "dataattrs": 151,
-  "klassen": 1721,
+  "klassen": 1722,
   "keyframes": 50
  }
 }

@@ -83,7 +83,9 @@
 /* Die Variantentabelle kommt VOLLSTAENDIG aus core: Zellbreiten, Schriftgroessen, der Ring,
    das kleine "of N", die Zeilenhoehen. Hier steht nichts mehr -- was hier stand, war ein Raster
    aus eigenen Spaltenbreiten, und genau daran lief die Tabelle rechts aus der Karte heraus. */
-.ubd-varsec { margin-top: 4px; }
+/* Hier KEINE Polsterung: der Abschnitt steht in der Karte, und die polstert schon. Ohne diese
+   Zeile stuenden 20px der Karte und 16px des Abschnitts uebereinander. */
+.ubd-varsec { padding: 0; margin-top: 4px; }
 
 /* ---- Schmale Breiten -------------------------------------------------------------------------
    Unter 560px wandert der Granularitaets-Switcher unter die Ueberschrift statt sie zu quetschen.
