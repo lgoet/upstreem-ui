@@ -449,6 +449,21 @@
               state.mode === "signup" ? String(elName.value || "").trim() : "");
       fireRoh("data-password-fn", "uauPassword", String(elPw.value || ""));
 
+      /* Der Ladezustand kommt SOFORT, unabhaengig von einer etwaigen Verzoegerung darunter:
+         zwischen Klick und Reaktion darf nichts liegen, sonst klickt der Nutzer ein zweites Mal. */
+      setBusy(true);
+
+      /* Verzoegerung vor dem Submit, per data-submit-delay einstellbar, Standard 0.
+         Die drei Aufrufe laufen synchron im selben Schritt durch, und Bubble startet den
+         Workflow danach -- die States sollten also stehen. Sollte. Nachgewiesen ist das nicht,
+         und ein sporadisch leeres Passwort sieht aus wie falsche Zugangsdaten, nicht wie ein
+         Zeitproblem. Wer das beobachtet, setzt hier 300 und hat Ruhe; der Nutzer merkt es nicht,
+         weil der Ladezustand schon laeuft. */
+      var verzug = UC.toNum ? (UC.toNum(attr("data-submit-delay")) || 0) : 0;
+      if (verzug > 0){ setTimeout(sendeJetzt, verzug); } else { sendeJetzt(); }
+    }
+
+    function sendeJetzt(){
       fire("data-submit-fn", "uauSubmit", {
         mode: state.mode,
         /* Immer dabei, auch leer. Ein Feld, das mal da ist und mal nicht, zwingt jeden
@@ -461,7 +476,6 @@
         email: String(elMail.value || "").trim(),
         opt_in: elCheck.checked ? "yes" : "no"
       });
-      setBusy(true);
     }
 
     function setMode(m){

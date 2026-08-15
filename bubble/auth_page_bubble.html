@@ -18,6 +18,12 @@
                        auf derselben Seite.
        data-logo       URL des upstreem-Schriftzugs, 18px hoch dargestellt. Fehlt sie, bleibt
                        die Stelle leer statt ein kaputtes Bild zu zeigen.
+       data-submit-delay  Millisekunden zwischen uauName/uauPassword und uauSubmit. Standard 0.
+                       Die drei Aufrufe laufen synchron durch, die States sollten also stehen,
+                       wenn der Submit-Workflow startet. Kommt bei dir sporadisch ein leeres
+                       Passwort an -- was sich wie "falsche Zugangsdaten" anfuehlt und nicht wie
+                       ein Zeitproblem -- setze hier 300. Der Nutzer merkt davon nichts, der
+                       Ladezustand laeuft ab dem Klick.
        data-bg         URL des blauen Hintergrundbildes fuer die rechte Spalte. Fehlt sie,
                        bleibt der Farbverlauf allein stehen -- die Spalte sieht ruhiger aus,
                        aber nicht kaputt.
