@@ -757,8 +757,72 @@
        Server geantwortet hat: der Nutzer hat geklickt, die Aenderung ist uebernommen. */
     function saved_(block){ fire("data-saved-fn", "usbSaved", { block: block }); }
 
+    /* ================= Ladezustand und Sperre =================
+       Gespeichert wird nicht in einem Rutsch: das Event geht an Bubble, Bubble schreibt, laedt den
+       Team-Header neu und gibt die frischen Daten hierher zurueck. In dieser Zeit darf niemand
+       weiterstellen -- eine zweite Aenderung waere gegen einen Stand gemacht, den der Server schon
+       nicht mehr hat, und die zurueckkommenden Daten wuerden sie kommentarlos ueberschreiben.
+
+       Gesperrt wird mit `inert`: das nimmt Klicks UND Tastaturfokus, anders als pointer-events,
+       das ein Tab-durch-die-Felder ungehindert durchlaesst. Die CSS-Regel daneben ist der
+       Rueckfall fuer Browser ohne inert-Unterstuetzung. */
+    var busyTimer = null;
+    /* Kein Hoffen auf die Rueckmeldung. Bleibt sie aus -- Workflow-Fehler, abgebrochene RPC, ein
+       Run-JavaScript-Schritt, der nie gebaut wurde -- waere die Komponente ohne diesen Wecker
+       dauerhaft tot: gesperrt, mit Skelett, ohne ein Wort dazu. 12s sind grosszuegig fuer
+       Speichern plus Header-RPC und kurz genug, dass es nicht wie ein Absturz wirkt. */
+    var BUSY_MAX = 12000;
+
+    function stuck(text){
+      var el = root.querySelector(".usb-stuck");
+      if (!text){ if (el) el.parentNode.removeChild(el); return; }
+      if (!el){
+        el = document.createElement("div");
+        el.className = "usb-stuck";
+        el.setAttribute("role", "status");
+        root.insertBefore(el, root.firstChild);
+      }
+      el.textContent = text;
+    }
+
+    function applyLoading(on){
+      loading = UC.isYes(on);
+      root.__usbLoading = loading;
+      root.classList.toggle("is-loading", loading);
+      root.classList.toggle("is-busy", loading);
+      if (loading) root.setAttribute("inert", ""); else root.removeAttribute("inert");
+
+      if (busyTimer){ clearTimeout(busyTimer); busyTimer = null; }
+      if (loading){
+        /* Offene Dropdowns zu, bevor gesperrt wird: ein Menue, das unter inert stehen bleibt,
+           laesst sich weder bedienen noch schliessen. */
+        if (UC.closePopovers) UC.closePopovers();
+        busyTimer = setTimeout(function(){
+          busyTimer = null;
+          root.classList.remove("is-busy");
+          root.removeAttribute("inert");
+          stuck("Saving is taking longer than expected. Your last change may not have been stored - reload the page to see the current state.");
+        }, BUSY_MAX);
+      } else {
+        stuck("");
+      }
+
+      /* Speichern-Knoepfe zusaetzlich hart auf disabled. Die Sperre oben faellt nach BUSY_MAX
+         wieder weg, dieser Zustand nicht -- er wird beim Entsperren aus dem Entwurf neu bestimmt. */
+      Array.prototype.forEach.call(root.querySelectorAll(".usb-savebtn"), function(b){
+        if (loading) b.disabled = true;
+      });
+      if (!loading){ renderModels(); syncMeta(); }
+    }
+
     /* ---------------- Klicks ---------------- */
     root.addEventListener("click", function(e){
+      /* Der Waechter gehoert HIERHIN und nicht nur an inert/pointer-events. Beide fangen den
+         echten Mausklick, aber ein element.click() aus Code laeuft ungehindert durch -- gemessen
+         in _h_usb2: gesperrt wechselte die Modellauswahl trotzdem von 0/3 auf 1/3. In dieser
+         Komponente gibt es genau so einen Aufruf (Enter im Logo-URL-Feld ruft den Speichern-Knopf),
+         und Browser ohne inert-Unterstuetzung haetten ohnehin nur die Maussperre. */
+      if (loading) return;
       var t = e.target;
       if (t.closest("[data-edit-brand]")){ fire("data-editbrand-fn", "usbEditBrand", {}); return; }
       if (t.closest("[data-logo-pick]")){ elFileIn.click(); return; }
@@ -784,6 +848,11 @@
         fire("data-models-fn", "usbModels",
              { model_keys: draft.models.filter(function(m){ return m.active; }).map(function(m){ return m.key; }).join(",") });
         saved_(  "models" );
+        /* Selbst sperren, nicht auf Bubble warten. Der Run-JavaScript-Schritt mit
+           setSettingsBrandLoading("yes") ist der uebliche erste Schritt des Workflows -- aber
+           liegt er irgendwo weiter hinten, klafft dazwischen ein Fenster, in dem weitergeklickt
+           werden kann. Doppelt gesetzt schadet nichts, ungesetzt schon. */
+        applyLoading("yes");
         return;
       }
       var bz = t.closest("[data-biz]");
@@ -798,12 +867,13 @@
           industry: draft.industry, summary: draft.summary
         });
         saved_( "meta" );
+        applyLoading("yes");     /* siehe Models-Save: die Sperre haengt nicht an Bubbles Timing */
         return;
       }
       if (t.closest("[data-leave]")){ openDanger("leave"); return; }
       if (t.closest("[data-delete]")){ openDanger("delete"); return; }
     });
-    elSummary.addEventListener("input", syncMeta);
+    elSummary.addEventListener("input", function(){ if (!loading) syncMeta(); });
     elUrlIn.addEventListener("keydown", function(e){
       if (e.key === "Enter"){ e.preventDefault(); root.querySelector("[data-logo-save]").click(); }
     });
@@ -1060,19 +1130,7 @@
          bevor die Komponente ihr Markup gebaut hat (der Normalfall, der Ladezustand steht ja VOR
          der Abfrage), findet der Selektor nichts, und das spaetere render() ueberschreibt die
          Klassen ohnehin wieder. Genau deshalb war nie ein Skelett zu sehen. */
-      setLoading: function(on){
-        loading = UC.isYes(on);
-        root.__usbLoading = loading;
-        root.classList.toggle("is-loading", loading);
-
-        /* Waehrend geladen wird, ist jeder Speichern-Knopf gesperrt. Sonst kann der Nutzer ein
-           zweites Mal speichern, bevor die erste Antwort da ist, und die zweite Antwort
-           ueberschreibt die erste. */
-        Array.prototype.forEach.call(root.querySelectorAll(".usb-savebtn"), function(b){
-          if (loading) b.disabled = true;
-        });
-        if (!loading){ renderModels(); syncMeta(); }
-      },
+      setLoading: applyLoading,
       setLogo: function(url, fileName){
         if (url != null) meta.brandLogo = String(url);
         if (fileName != null) meta.logoFileName = String(fileName);
@@ -1082,6 +1140,10 @@
       reset: function(){
         closeDanger();
         if (UC.closePopovers) UC.closePopovers();
+        /* Die Sperre gehoert zum Zustand und muss hier mit weg. Sonst kaeme eine Komponente, die
+           beim Speichern haengengeblieben ist, auch nach einem Reset gesperrt zurueck. */
+        applyLoading("no");
+        stuck("");
         elUrlIn.value = "";
         elLinkBox.hidden = true;
         elLinkTgl.classList.remove("is-open");

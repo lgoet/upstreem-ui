@@ -383,3 +383,24 @@
    frueher enden, sonst liegt sie weiterhin Kante an Kante auf dem Separator. */
 .usb-root.is-loading .usb-models.usb-skelbox::before,
 .usb-root.is-loading .usb-models.usb-skelbox::after { bottom: 16px; }
+
+/* Waehrend gespeichert wird, ist die ganze Seite gesperrt. Die eigentliche Sperre ist das
+   inert-Attribut, das JS setzt -- es nimmt Klicks UND Tastaturfokus. Diese Regel ist der
+   Rueckfall fuer Browser ohne inert: sie haelt wenigstens die Maus fern.
+   Der Grund fuer die Sperre steht in settings-brand.js bei applyLoading: eine zweite Aenderung
+   waere gegen einen Stand gemacht, den der Server schon nicht mehr hat. */
+.usb-root.is-busy { pointer-events: none; }
+
+/* Bleibt die Rueckmeldung aus, faellt die Sperre nach 12s von selbst -- und dann muss dastehen,
+   warum. Ohne diese Zeile saehe die entsperrte Komponente aus wie ein normal gespeicherter
+   Zustand, obwohl niemand weiss, ob geschrieben wurde.
+   Gelbtoene direkt statt aus --vc-*: die Palette hat keinen Warnton, und einer aus --vc-neg waere
+   ein Fehler, den es hier nicht gibt. Es ist ein Hinweis, kein Absturz. */
+.usb-stuck {
+  margin: 0 0 12px; padding: 9px 12px; border-radius: 9px;
+  border: 1px solid rgba(180, 130, 20, .28); background: rgba(232, 176, 48, .10);
+  color: var(--vc-text); font-size: 12.5px; line-height: 1.45;
+}
+.usb-root[data-theme="dark"] .usb-stuck {
+  border-color: rgba(232, 176, 48, .30); background: rgba(232, 176, 48, .12);
+}

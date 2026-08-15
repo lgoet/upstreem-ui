@@ -2488,6 +2488,60 @@
     };
   }
 
+  /* ── Signalbruecke: ein Workflow sagt der Seite Bescheid ─────────────────────────────────────
+     Der Fall: In den Einstellungen wird gespeichert, und der Team-Header oben auf der Seite zeigt
+     danach noch die alten Daten. Der Speichern-Workflow haengt aber am Element in den
+     Einstellungen -- von dort erreicht kein Bubble-Workflow ein Custom Event der Seite.
+
+     Diese Funktion ist der Umweg dorthin, und sie gehoert bewusst NICHT in eine Komponente:
+
+       1. Sie wird aus einem Run-JavaScript-Schritt gerufen, NACHDEM der Speicher-Schritt
+          durchgelaufen ist. Wuerde die Komponente das Signal selbst beim Klick feuern, liefen
+          Speichern und Neuladen des Headers gleichzeitig -- und der Header holte mit guter
+          Wahrscheinlichkeit noch den alten Stand.
+       2. Sie liegt in core, damit `upstreemSignal` auf JEDER Seite existiert. Eine eigene
+          Komponente waere ein zweites Element mit eigenem Pin, und wo es fehlt, stirbt der
+          Run-JavaScript-Schritt an "is not a function" -- samt aller Schritte dahinter.
+
+     Auf Bubble-Seite steht dem EIN JavaScriptToBubble-Element gegenueber (bubble_fn_upSignal),
+     dessen Workflow ueber `channel` verzweigt. Ein Kanal pro Anlass, ein Element fuer alle. */
+  var SIGNAL_FN = "bubble_fn_upSignal";
+  function upstreemSignal(channel, detail){
+    channel = String(channel == null ? "" : channel).trim();
+    if (!channel){
+      if (window.console) console.warn("[signal] ohne Kanal gerufen — nichts gesendet.");
+      return false;
+    }
+    var payload = { team_id: getTeam() || "", channel: channel,
+                    detail: detail == null ? "" : String(detail) };
+    var json; try { json = JSON.stringify(payload); } catch(e){ json = ""; }
+
+    /* Beim Seitenaufbau kann der Schritt laufen, bevor Bubble das Toolbox-Element gebaut hat.
+       Ohne diese Wiederholung ginge genau das erste Signal verloren -- und ausgerechnet das ist
+       der Fall "Seite oeffnen, Daten holen". 20 x 150ms = 3s, danach eine deutliche Meldung
+       statt stillem Verschwinden. */
+    var versuche = 20;
+    (function versuch(){
+      var fn = resolveBubbleFn(SIGNAL_FN);
+      if (typeof fn === "function"){
+        try { fn(json); }
+        catch(e){
+          if (window.console) console.warn("[signal] " + SIGNAL_FN + " hat geworfen. Das Signal '" +
+            channel + "' wurde ausgeloest, der Bubble-Workflow ist aber nicht durchgelaufen:", e);
+        }
+        return;
+      }
+      if (--versuche > 0){ setTimeout(versuch, 150); return; }
+      if (window.console) console.warn("[signal] " + SIGNAL_FN + " gibt es auf dieser Seite nicht — " +
+        "das Signal '" + channel + "' hat keinen Workflow erreicht. Fehlt das JavaScriptToBubble-" +
+        "Element mit diesem Namen?");
+    })();
+    return true;
+  }
+  /* Global, nicht nur auf UC: der Aufruf steht in einem Bubble-Run-JavaScript-Schritt, und dort
+     ist die kurze Form die, die man beim Lesen des Workflows noch versteht. */
+  window.upstreemSignal = upstreemSignal;
+
   /* Dropdown menus stay exactly where they are in the markup: a plain position:absolute child of a
      position:relative wrapper (.up-sort / .up-filter / .up-cols / .up-ment, etc. — all already
      position:relative in core.css, all with the menu positioned via `top:calc(100% + Npx); right:0`).
@@ -5878,6 +5932,7 @@
     makeClipTip: makeClipTip,
     SLIDERS_ICON: SLIDERS_ICON,
     makeFire: makeFire,
+    upstreemSignal: upstreemSignal,
     makePortal: makePortal,
     placeMenu: placeMenu,
     makePopover: makePopover,

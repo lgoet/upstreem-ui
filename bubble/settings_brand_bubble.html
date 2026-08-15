@@ -64,6 +64,55 @@
       erst nach einem zweiten Klick auf denselben Knopf. Kommt eines dieser Events an, ist die
       Bestaetigung vollstaendig durchlaufen -- du brauchst keinen weiteren Sicherheitsdialog.
 
+  ── Der Speicher-Rundlauf: Settings -> Seite -> Header -> zurueck ────────────
+  Nach dem Speichern zeigt der Team-Header oben auf der Seite noch die alten Daten. Der
+  Speicher-Workflow haengt aber an diesem Element -- von hier erreicht kein Bubble-Workflow ein
+  Custom Event der Seite. Die Bruecke dorthin ist upstreemSignal aus core.js.
+
+  EINMAL PRO SEITE anzulegen, nicht pro Element:
+    Ein JavaScriptToBubble-Element namens  bubble_fn_upSignal  (Value type TEXT, Trigger event an).
+    Es bekommt   {"team_id":"…","channel":"account_updated","detail":"meta"}
+    channel  :extract with Regex  "channel":"([^"]*)"   :first item
+    detail   :extract with Regex  "detail":"([^"]*)"    :first item   (hier "meta" oder "models")
+
+  Der Ablauf, Schritt fuer Schritt:
+
+    1. Nutzer klickt Save.
+       -> usbMeta bzw. usbModels feuert. Die Komponente sperrt sich im selben Moment SELBST:
+          Skelett an, Klicks und Tastatur aus. Dafuer ist nichts zu tun.
+    2. Workflow am usbMeta-Element:
+       Schritt 1  Run javascript:  setSettingsBrandLoading("<instance>", "yes")
+                  (schadet nicht doppelt, deckt aber den Fall ab, dass der Nutzer die Seite
+                   zwischendurch wechselt und die Komponente neu aufgebaut wird)
+       Schritt 2  die Daten schreiben (RPC / Make changes)
+       Schritt 3  Run javascript:  upstreemSignal("account_updated", "meta")
+                  ERST HIER, nicht frueher. Feuerte die Komponente das Signal selbst beim Klick,
+                  liefen Schreiben und Header-Neuladen gleichzeitig, und der Header holte mit
+                  guter Wahrscheinlichkeit noch den alten Stand.
+    3. Workflow am bubble_fn_upSignal-Element (auf der SEITE, nicht im Element):
+       Only when: channel is "account_updated"
+       -> Team-Header-RPC neu holen, Header setzen.
+    4. Am Ende DESSELBEN Workflows, wenn die Header-Daten da sind:
+       Run javascript:  renderSettingsBrand({... frische Werte ...})
+       Run javascript:  setSettingsBrandLoading("<instance>", "no")
+       Der zweite Aufruf ist der, der die Sperre loest. Ohne ihn bleibt die Komponente gesperrt,
+       bis der eingebaute Wecker nach 12s von selbst entsperrt und eine gelbe Hinweiszeile zeigt
+       ("Saving is taking longer than expected"). Das ist die Notbremse, nicht der Normalweg --
+       steht die Zeile im Alltag da, fehlt Schritt 4.
+
+  Waehrend der Sperre ist die ganze Komponente inert: kein Klick, kein Tabben, kein Tippen. Das
+  ist Absicht -- eine Aenderung, die waehrenddessen gemacht wird, waere gegen einen Stand gemacht,
+  den der Server schon nicht mehr hat, und die zurueckkommenden Daten wuerden sie kommentarlos
+  ueberschreiben.
+
+  upstreemSignal ist nicht auf die Einstellungen beschraenkt. Der Kanal ist frei waehlbar, und ein
+  weiterer Anlass braucht kein zweites Element -- nur einen weiteren Zweig im selben Workflow:
+    upstreemSignal("topics_changed")     upstreemSignal("brands_changed")
+
+  Liegt kein bubble_fn_upSignal auf der Seite, stirbt der Run-JavaScript-Schritt NICHT: die
+  Funktion existiert ueberall, wo core.js geladen ist, versucht es 3s lang und schreibt dann eine
+  Warnung in die Konsole. Der Rest des Schrittes laeuft weiter.
+
   ── Fuellen ──────────────────────────────────────────────────────────────────
   Die einzelnen Werte kommen als data-Attribute ins Markup, NICHT ueber Run-JS. Grund: ein Wert,
   der als Quelltext in einen JS-String eingesetzt wird, bricht ihn, sobald er ein
