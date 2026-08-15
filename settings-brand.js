@@ -167,17 +167,45 @@
     return p;
   }
 
+  /* Bubble baut das HTML-Element neu auf, sobald sich eine Reusable-Property aendert -- und genau
+     das passiert am Ende des Speicher-Rundlaufs. initRoot laeuft dann frisch, der Controller ist
+     leer. Die Meta-Werte kommen ueber die data-Attribute von selbst zurueck; die Modellliste
+     kommt NUR ueber renderSettingsBrand und war damit weg: nach jedem Meta-Save stand da 0/3,
+     obwohl der Meta-Save mit den Modellen nichts zu tun hat.
+     Darum liegt sie ausserhalb des Controllers, an der Instanz-Kennung -- dasselbe Muster wie
+     der Modus in brand-detail. Gemessen in _h_mod2: Ladezyklus und Attribut-Neuschrift lassen
+     die Karten stehen, die Neu-Injektion loeschte sie. */
+  var MODELS_STORE = (window.__usbModels = window.__usbModels || {});
+
   function makeController(root){
     var UC = window.UpstreemCore;
     var esc = UC.esc;
     var fire = UC.makeFire(root, { label: "settings-brand", eventPrefix: "usb" });
+    var instanceId = root.getAttribute("data-instance") || "default";
+
+    /* Der Vorrat gilt nur fuer DAS Team, zu dem er aufgenommen wurde. Ohne diese Pruefung
+       stuenden nach einem Teamwechsel kurz die Modelle des alten Teams da -- falsche Daten sind
+       schlimmer als der Ladezustand, den sie ueberbruecken sollen. */
+    var teamJetzt = String(root.getAttribute("data-team-id") || "").trim();
+    var vorrat = MODELS_STORE[instanceId];
+    if (vorrat && vorrat.teamId && teamJetzt && vorrat.teamId !== teamJetzt) vorrat = null;
 
     /* saved = was der Server zuletzt bestaetigt hat, draft = was auf dem Bildschirm steht.
        Der Speichern-Knopf vergleicht die beiden; ohne diese Trennung gaebe es kein "geaendert". */
-    var saved = { models: [], marketId: "", businessModel: "", industry: "", summary: "" };
-    var draft = { models: [], marketId: "", businessModel: "", industry: "", summary: "" };
+    var saved = { models: vorrat ? cloneModels(vorrat.models) : [], marketId: "", businessModel: "", industry: "", summary: "" };
+    var draft = { models: vorrat ? cloneModels(vorrat.models) : [], marketId: "", businessModel: "", industry: "", summary: "" };
     var meta  = { brandName: "", brandLogo: "", teamName: "", teamId: "",
-                  modelLimit: 3, canManage: true, markets: [], marketsRaw: [], industries: INDUSTRIES.slice(), logoFileName: "" };
+                  modelLimit: vorrat ? vorrat.limit : 3,
+                  canManage: vorrat ? vorrat.canManage : true,
+                  markets: [], marketsRaw: [], industries: INDUSTRIES.slice(), logoFileName: "" };
+
+    /* Nach jedem Eintreffen frischer Modelle den Vorrat nachziehen -- NICHT den Entwurf: eine
+       ungespeicherte Auswahl soll eine Neu-Injektion nicht ueberleben, sonst zeigt die Seite
+       "Unsaved changes" fuer etwas, das der Nutzer in einem anderen Leben angeklickt hat. */
+    function merkeModelle(){
+      MODELS_STORE[instanceId] = { models: cloneModels(saved.models), limit: meta.modelLimit,
+                                   canManage: meta.canManage, teamId: meta.teamId || teamJetzt };
+    }
     /* Der Ladezustand ist der ANFANGSZUSTAND, nicht der Ausnahmefall. Ab dem Moment, in dem die
        Komponente steht, sind Skelette zu sehen -- und sie bleiben, bis ausdruecklich
        setSettingsBrandLoading(..., "no") kommt. Nur so gibt es nie den Zwischenzustand, in dem
@@ -252,26 +280,11 @@
       }
       if (!raw.length){ raw = UC.getMarkets ? UC.getMarkets() : []; if (raw.length) quelle = "gefiltert"; }
       if (!raw.length) return meta.markets;
-      /* Einmal pro Sitzung in die Konsole schreiben, WOHER die Liste kommt. Ohne das ist "zu wenige
-         Maerkte" nicht von "falsche Komponente" zu unterscheiden, und genau daran haben wir zwei
-         Runden verloren. */
-      if (!marketList._said && window.console && UC.storeStats){
-        marketList._said = true;
-        var st = UC.storeStats();
-        console.info("[settings-brand] Marktliste: " + raw.length + " Eintraege. " +
-          "Store allMarkets: " + st.allMarkets.n + " (Aufrufe " + st.allMarkets.calls +
-          ", abgelehnt " + st.allMarkets.rejected + "), " +
-          "Store markets (gefiltert): " + st.markets.n + ". " +
-          (quelle === "voll" ? "Quelle ist die VOLLE Liste."
-           : quelle === "warteschlange"
-             ? "Quelle ist die WARTESCHLANGE -- das geladene core.js kennt setAllMarkets nicht " +
-               "(alter data-cdn-pin an irgendeiner Komponente dieser Seite). Die Liste stimmt, " +
-               "aber der Store bleibt leer."
-           : quelle === "payload" ? "Quelle ist die Liste aus dem renderSettingsBrand-Aufruf."
-             : "Quelle ist die GEFILTERTE Liste -- setUpstreemAllMarkets hat nichts geliefert. " +
-               "Wenn diese Seite keinen solchen Aufruf hat, gib die volle Liste direkt mit: " +
-               "renderSettingsBrand({ instanceId: ..., markets: [...] })."));
-      }
+      /* Die Herkunftsmeldung ist raus: sie war eine Diagnosehilfe fuer eine Runde, in der die
+         Marktliste leer blieb, und stand seitdem bei JEDEM Seitenaufbau in der Konsole der
+         ausgelieferten App. Debug-Ausgaben gehoeren nicht in die Auslieferung -- wer die Herkunft
+         wieder braucht, liest sie ueber UC.storeStats() von Hand aus.
+         `quelle` bleibt, es steuert unten die Zahl hinter dem Namen. */
       /* Keine Zahl hinter dem Namen, wenn die VOLLE Liste die Quelle ist. Dort steht bei fast
          jedem Land eine 0 -- eine Spalte aus Nullen sagt nichts und liest sich wie ein Defekt.
          In den Tabellenfiltern ist die Zahl sinnvoll, weil die Liste dort nur Maerkte enthaelt,
@@ -809,7 +822,18 @@
        ("Changes saved") ausloesen kann, ohne den Speicher-Workflow selbst anfassen zu muessen.
        Getrennt vom Speicher-Event, weil der Tooltip sofort kommen soll und nicht erst, wenn der
        Server geantwortet hat: der Nutzer hat geklickt, die Aenderung ist uebernommen. */
-    function saved_(block){ fire("data-saved-fn", "usbSaved", { block: block }); }
+    function saved_(block){
+      /* Den fertigen Satz mitschicken, nicht nur den Block. Sonst muss ihn jeder Workflow aus
+         zwei Bedingungen selbst zusammenbauen, und der Markenname steht in Bubble an der Stelle
+         gar nicht ohne Umweg zur Verfuegung -- die Komponente kennt ihn ohnehin. */
+      var marke = String(meta.brandName || "").trim();
+      var was   = block === "models" ? "models" : "settings";
+      fire("data-saved-fn", "usbSaved", {
+        block: block,
+        brand_name: marke,
+        message: (marke ? marke + " " : "") + was + " updated"
+      });
+    }
 
     /* ================= Ladezustand und Sperre =================
        Gespeichert wird nicht in einem Rutsch: das Event geht an Bubble, Bubble schreibt, laedt den
@@ -901,6 +925,10 @@
       }
       if (t.closest("[data-models-save]")){
         saved.models = cloneModels(draft.models);
+        /* Sofort merken, nicht erst wenn der Server antwortet: der Rundlauf baut das Element neu
+           auf, und bis die frischen Modelle zurueck sind, ist der Vorrat das Einzige, was die
+           Karten am Leben haelt. */
+        merkeModelle();
         renderModels();
         fire("data-models-fn", "usbModels",
              { model_keys: draft.models.filter(function(m){ return m.active; }).map(function(m){ return m.key; }).join(",") });
@@ -1154,8 +1182,9 @@
           }).filter(function(m){ return !!m.key; })
             .sort(function(a, b){ return a.sort - b.sort; });
           draft.models = cloneModels(saved.models);
+          merkeModelle();
         }
-        if (p.model_limit != null) meta.modelLimit = UC.toNum(p.model_limit) || 0;
+        if (p.model_limit != null){ meta.modelLimit = UC.toNum(p.model_limit) || 0; merkeModelle(); }
 
         var markets = p.markets;
         if (typeof markets === "string") markets = UC.parseBubbleJson(markets);

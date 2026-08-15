@@ -50,12 +50,25 @@
       ist "b2b" | "b2c" | "hybrid".
 
   data-saved-fn       = "bubble_fn_usbSaved_[dynamic id]"
-      fn('{"block":"models"}')     block: "models" | "meta"
-      Feuert direkt nach einem erfolgreichen Klick auf einen der beiden Speichern-Knoepfe, noch
-      bevor der Server geantwortet hat. Gedacht fuer die Rueckmeldung "Changes saved". Fehlt das
-      Attribut, meldet die Konsole bei jedem Speichern "usbSaved not found on window/parent/top" --
-      die Komponente selbst funktioniert weiter, der Knopf graut aus und "Unsaved changes"
-      verschwindet.
+      fn('{"block":"meta","brand_name":"Acme","message":"Acme settings updated"}')
+      block: "models" | "meta"
+
+      DAS ist das Event fuer die Notification. Es feuert direkt nach dem Klick auf einen der
+      beiden Speichern-Knoepfe -- absichtlich sofort und nicht erst, wenn der Server geantwortet
+      hat: der Nutzer hat geklickt, die Aenderung ist uebernommen, und eine Rueckmeldung, die
+      zwei Sekunden auf eine RPC wartet, wirkt wie ein Fehler.
+
+      `message` ist der fertige Satz, damit der Workflow nichts zusammenbauen muss:
+        meta   -> "<Marke> settings updated"    ohne Markennamen: "settings updated"
+        models -> "<Marke> models updated"      ohne Markennamen: "models updated"
+      `brand_name` steht zusaetzlich einzeln drin, falls du einen eigenen Text formulierst.
+
+      Workflow: message extrahieren und in deine Notification geben.
+        message :extract with Regex  "message":"([^"]*)"  :first item
+
+      Fehlt das Attribut, meldet die Konsole bei jedem Speichern "usbSaved not found on
+      window/parent/top" -- die Komponente selbst funktioniert weiter, der Knopf graut aus und
+      "Unsaved changes" verschwindet. Es ist also optional, aber ohne es bleibt jeder Save stumm.
 
   data-leave-fn       = "bubble_fn_usbLeaveTeam_[dynamic id]"
   data-delete-fn      = "bubble_fn_usbDeleteTeam_[dynamic id]"
