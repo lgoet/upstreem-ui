@@ -83,6 +83,15 @@
     '<path fill="#FBBC05" d="M5.27 14.27a7.2 7.2 0 0 1 0-4.54V6.62H1.29a12 12 0 0 0 0 10.76l3.98-3.11z"/>' +
     '<path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.44-3.44C17.95 1.19 15.24 0 12 0A12 12 0 0 0 1.29 6.62l3.98 3.11C6.22 6.86 8.87 4.75 12 4.75z"/></svg>';
 
+  /* Sonne und Mond, Feather-Geometrie. Nicht ueber UC.icon: die Icon-Namen dort sind nicht
+     garantiert vorhanden, und ein leerer Knopf auf der Anmeldeseite waere schlechter als zwei
+     Pfade hier. Strichstaerke und Rundungen wie im Rest des Satzes. */
+  var SUN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+    'stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/>' +
+    '<path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2' +
+    'M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+  var MOON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+    'stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
   var LOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
     'stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/>' +
     '<path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
@@ -203,24 +212,41 @@
     var busyTimer = null;
 
     function attr(n, f){ var v = root.getAttribute(n); return (v == null || v === "" || /^[A-Z_]{3,}$/.test(v)) ? (f || "") : v; }
-    /* Zwei Quellen, und data-theme hat Vorrang: die Seite lief schon im Dunkeln, bevor es
-       data-isdark hier gab -- gesetzt von aussen, direkt als data-theme. Wer nur eine der beiden
-       liest, macht die andere kaputt. */
+    /* ── Theme ────────────────────────────────────────────────────────────────
+       Die Seite bestimmt es selbst, in dieser Reihenfolge:
+         1. was schon am Element steht (core hat es beim Laden gesetzt)
+         2. die gemerkte Wahl aus localStorage -- derselbe Schluessel wie im Rest der App
+         3. die Einstellung des Betriebssystems
+       Erst dann data-isdark, falls es doch jemand setzt.
+       Der Schluessel heisst pref_theme und gehoert core (setUpstreemTheme schreibt ihn). Einen
+       eigenen zu fuehren hiesse, dass die Anmeldeseite eine andere Wahl merkt als die App
+       dahinter -- der Nutzer stellte dunkel ein und saehe beim naechsten Login wieder hell. */
     function istDunkel(){
       if (root.getAttribute("data-theme") === "dark") return true;
-      return UC.isYes(root.getAttribute("data-isdark"));
+      var roh = root.getAttribute("data-isdark");
+      if (roh != null && roh !== "" && !/^[A-Z_]{3,}$/.test(roh)) return UC.isYes(roh);
+      try {
+        var g = localStorage.getItem("pref_theme");
+        if (g === "dark") return true;
+        if (g === "light") return false;
+      } catch(e){}
+      try { return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches); }
+      catch(e){ return false; }
     }
     /* data-theme ist der Schalter, an dem die --vc-*-Tokens in core haengen.
        NUR anfassen, wenn data-isdark ueberhaupt gesetzt ist. Ohne diese Bedingung raeumte die
        Funktion ein von aussen gesetztes data-theme weg und die Seite waere schlagartig hell --
        genau der Fall, der hier vorlag. */
     function syncTheme(){
-      var roh = root.getAttribute("data-isdark");
-      var gesetzt = roh != null && roh !== "" && !/^[A-Z_]{3,}$/.test(roh);
       var d = istDunkel();
-      if (gesetzt){
-        if (UC.isYes(roh)) root.setAttribute("data-theme", "dark");
-        else root.removeAttribute("data-theme");
+      if (d) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
+      var b = root.querySelector("[data-theme-btn]");
+      if (b){
+        /* Das Icon zeigt, WOHIN der Klick fuehrt, nicht wo man ist: im Hellen ein Mond
+           ("dunkel machen"). Andersherum haetten Nutzer den Zustand gelesen und geklickt, um ihn
+           zu behalten. */
+        b.innerHTML = d ? SUN_SVG : MOON_SVG;
+        b.setAttribute("aria-label", d ? "Switch to light mode" : "Switch to dark mode");
       }
       var l = root.querySelector(".uau-logo");
       if (l && l.tagName === "IMG"){
@@ -268,7 +294,10 @@
       return '' +
       '<div class="uau-card"' + (bg ? ' data-hasbg="1"' : '') + '>' +
         '<div class="uau-form">' +
-          (logo ? '<img class="uau-logo" src="' + esc(logo) + '" alt="upstreem"/>' : '<div class="uau-logo"></div>') +
+          '<div class="uau-top">' +
+            (logo ? '<img class="uau-logo" src="' + esc(logo) + '" alt="upstreem"/>' : '<span class="uau-logo"></span>') +
+            '<button class="uau-themebtn" type="button" data-theme-btn aria-label="Switch theme"></button>' +
+          '</div>' +
           '<div class="uau-mid">' +
             '<div class="uau-block uau-stack">' +
               /* Formular und Erfolg liegen uebereinander im selben Raster -- so behaelt die Karte
@@ -576,10 +605,22 @@
     /* Unter 900px stapeln die Spalten (siehe CSS). Ueber den Beobachter statt einer
        Media-Query, weil dieses Element in Bubble auch in einem schmalen Container liegen kann --
        dann sagt die Fensterbreite das Falsche. */
-    function messeBreite(){ root.classList.toggle("is-narrow", root.clientWidth < 900); }
+    /* 1100 und nicht 900. Gerechnet, nicht geraten: der Formularblock ist 440px breit, dazu bis
+       zu 2x64px Polster -- die linke Spalte braucht also rund 570px, um nicht zu quetschen. Zwei
+       gleiche Spalten plus die 32px Kartenpolster sind damit rund 1170px. Bei 900 war die linke
+       Spalte laengst auf 450px zusammengedrueckt, waehrend rechts noch ein Bild stand. */
+    function messeBreite(){ root.classList.toggle("is-narrow", root.clientWidth < 1100); }
     messeBreite();
+    /* Drei Wege, weil einer allein gemessen NICHT gereicht hat: bei einem Viewport-Wechsel von
+       1440 auf 1000 blieb is-narrow aus, obwohl clientWidth 1000 war und UC.onResize existiert.
+       Woran das liegt, habe ich nicht aufgeklaert -- ein eigener ResizeObserver auf dem Element
+       tut es zuverlaessig, und window.resize deckt den Fall ab, dass es keinen gibt.
+       Mehrfache Aufrufe schaden nicht: messeBreite setzt nur eine Klasse anhand einer Zahl. */
     if (UC.onResize) UC.onResize(root, messeBreite);
-    else window.addEventListener("resize", messeBreite);
+    if (window.ResizeObserver){
+      try { new ResizeObserver(messeBreite).observe(root); } catch(e){}
+    }
+    window.addEventListener("resize", messeBreite);
 
     /* ── Durchlaufende Vorschlaege, Mechanik 1:1 aus ask-mira (phStart/phTick) ──
        4000ms Takt, 240ms bis zum Textwechsel -- das ist der Punkt, an dem die alte Zeile oben
@@ -629,6 +670,19 @@
       var m = modeAusUrl();
       if (m) setMode(m);
     });
+
+    root.querySelector("[data-theme-btn]").addEventListener("click", function(){
+      var neuDunkel = !istDunkel();
+      /* Ueber core, nicht per Attribut: setUpstreemTheme schreibt den localStorage, faerbt JEDE
+         .up-root der Seite und benachrichtigt die Abonnenten. Nur dieses Element umzustellen
+         hiesse, dass ein anderer Baustein daneben hell bliebe. */
+      if (UC.setUpstreemTheme) UC.setUpstreemTheme(neuDunkel ? "dark" : "light");
+      else if (window.setUpstreemTheme) window.setUpstreemTheme(neuDunkel ? "dark" : "light");
+      else { if (neuDunkel) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme"); }
+      syncTheme();
+    });
+    /* Stellt jemand anders das Theme um, zieht das Logo und das Icon hier mit. */
+    if (UC.onTheme) UC.onTheme(syncTheme);
 
     syncTheme();
     if (window.MutationObserver){

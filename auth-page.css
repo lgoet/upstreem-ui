@@ -65,8 +65,27 @@
   padding: clamp(28px, 3.6vw, 52px) clamp(28px, 4.4vw, 64px);
   min-width: 0;
 }
-.uau-logo { align-self: flex-start; height: 18px; width: auto; flex: 0 0 auto; }
+/* Logo links, Theme-Schalter rechts, beide in EINER Zeile -- der Knopf sitzt damit auf der
+   Innenkante des Formularpolsters, nicht am Bildschirmrand. */
+.uau-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex: 0 0 auto; }
+.uau-logo { height: 18px; width: auto; flex: 0 0 auto; display: block; }
 .uau-logo svg, .uau-logo img { height: 18px; width: auto; display: block; }
+/* Geometrie wie .up-iconbtn in core: 32px, Radius 8, 16px Icon. Eine eigene Klasse nur, weil
+   .up-iconbtn seinen Hover-Hintergrund aus --vc-heading-bg zieht, und der ist auf der weissen
+   Anmeldeseite fast unsichtbar. */
+.uau-themebtn {
+  width: 32px; height: 32px; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; border-radius: 8px; background: transparent; color: var(--vc-muted);
+  cursor: pointer; padding: 0;
+  transition: background var(--uau-t) var(--uau-ease), color var(--uau-t) var(--uau-ease);
+}
+.uau-themebtn:hover { color: var(--vc-text); background: var(--uau-hover); }
+.uau-root[data-theme="dark"] .uau-themebtn:hover { background: var(--vc-heading-bg); }
+.uau-themebtn svg { width: 16px; height: 16px; display: block; }
+.uau-themebtn:focus-visible {
+  outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring);
+}
 
 /* Der mittlere Block sitzt senkrecht in der Mitte und traegt die ganze Bewegung. */
 .uau-mid { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; min-height: 0; }
@@ -392,6 +411,17 @@
    die Struktur des Bildes sichtbar bleibt und keine tote Flaeche entsteht.
    Die Werte sind hoch (0.72 bis 0.88), weil die Vorlage ein sehr helles Blau-Weiss ist -- bei
    0.5 blieb sie im Dunkeln ein leuchtender Block neben einer dunklen Formularseite. */
+/* Der dunkle Seitenhintergrund steht hier und nicht in core: --vc-bg ist dort #1b1b1b, und
+   das ist fuer eine vollflaechige Anmeldeseite eine Spur zu hell -- auf einer 1440x900-Flaeche
+   ohne jedes andere Element wirkt derselbe Ton anders als in einer Kachel zwischen Kacheln. */
+.uau-root[data-theme="dark"],
+.uau-root[data-theme="dark"] .uau-card { background: #121212; }
+/* Die Eingabefelder heben sich sonst nicht mehr ab: --vc-bg waere heller als die Flaeche
+   dahinter, das Feld saehe aus wie ein Kasten AUF der Seite statt wie ein Feld IN ihr. */
+.uau-root[data-theme="dark"] .uau-input { background-color: #121212; }
+.uau-root[data-theme="dark"] .uau-google { background: #121212; }
+.uau-root[data-theme="dark"] .uau-google:hover:not(:disabled) { background: var(--vc-heading-bg); }
+
 .uau-root[data-theme="dark"] .uau-panel {
   background-color: #16203a;
   background-image: linear-gradient(180deg, rgba(12,17,32,.72), rgba(10,14,28,.88) 70%),
@@ -464,7 +494,11 @@
   grid-template-columns: 1fr; min-height: 100vh; height: auto;
 }
 .uau-root.is-narrow .uau-form { padding: clamp(20px, 6vw, 36px); }
-.uau-root.is-narrow .uau-panel { border-radius: 20px; min-height: 320px; }
+/* Der Werbeblock verschwindet, statt sich zusammenzuquetschen. Ein schmales Bild mit
+   umgebrochener Ueberschrift sagt nichts mehr aus, und wer sich auf einem Telefon anmeldet,
+   will das Feld sehen und nicht die Werbung darunter wegscrollen. */
+.uau-root.is-narrow .uau-panel { display: none; }
+.uau-root.is-narrow .uau-card { gap: 0; }
 .uau-root.is-narrow .uau-block { max-width: none; }
 .uau-root.is-narrow .uau-mid { justify-content: flex-start; padding-top: 28px; }
 
