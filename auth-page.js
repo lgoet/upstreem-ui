@@ -146,12 +146,26 @@
     try {
       if (!window.history || !window.history.replaceState) return;
       var u = new URL(window.location.href);
-      /* Liegt der Modus im Pfad, bleibt der Pfad die Wahrheit -- ein zusaetzlicher Parameter
-         daneben waere eine zweite Angabe, die der ersten widersprechen kann. */
       var pfad = String(u.pathname || "").toLowerCase().replace(/\/+$/, "");
-      if (/\/(signup|login|signin)$/.test(pfad)) return;
-      if (u.searchParams.get("mode") === m) return;
-      u.searchParams.set("mode", m);
+      var pfadModus = /\/signup$/.test(pfad) ? "signup"
+                    : (/\/(login|signin)$/.test(pfad) ? "login" : "");
+
+      if (pfadModus === m){
+        /* Der Pfad sagt schon das Richtige. Ein Parameter daneben waere eine zweite Angabe
+           derselben Sache -- und ein ?mode=signup auf /signup sieht nach einem Fehler aus. Ein
+           frueher gesetzter Parameter muss aber weg, sonst bleibt er als Widerspruch stehen. */
+        if (u.searchParams.get("mode") == null) return;
+        u.searchParams.delete("mode");
+      } else {
+        /* Der Modus weicht vom Pfad ab -- oder der Pfad sagt gar nichts. Dann MUSS er in die
+           Adresse. Ohne das ueberlebt der Wechsel kein Neuladen: wer auf /signup in den Login
+           geht und F5 drueckt, landete wieder im Signup, und die Adresse log ueber das, was zu
+           sehen ist. /signup?mode=login liest sich sperrig, ist aber ehrlich.
+           Wenn dir die saubere Adresse wichtiger ist: lege eine zweite Bubble-Seite /login an
+           und lass den uauMode-Workflow dorthin navigieren. Dann greift dieser Zweig nie. */
+        if (u.searchParams.get("mode") === m) return;
+        u.searchParams.set("mode", m);
+      }
       window.history[neuerEintrag ? "pushState" : "replaceState"]({}, "", u.toString());
     } catch(e){}
   }
