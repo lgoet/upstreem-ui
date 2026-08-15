@@ -411,16 +411,9 @@
    die Struktur des Bildes sichtbar bleibt und keine tote Flaeche entsteht.
    Die Werte sind hoch (0.72 bis 0.88), weil die Vorlage ein sehr helles Blau-Weiss ist -- bei
    0.5 blieb sie im Dunkeln ein leuchtender Block neben einer dunklen Formularseite. */
-/* Der dunkle Seitenhintergrund steht hier und nicht in core: --vc-bg ist dort #1b1b1b, und
-   das ist fuer eine vollflaechige Anmeldeseite eine Spur zu hell -- auf einer 1440x900-Flaeche
-   ohne jedes andere Element wirkt derselbe Ton anders als in einer Kachel zwischen Kacheln. */
-.uau-root[data-theme="dark"],
-.uau-root[data-theme="dark"] .uau-card { background: #121212; }
-/* Die Eingabefelder heben sich sonst nicht mehr ab: --vc-bg waere heller als die Flaeche
-   dahinter, das Feld saehe aus wie ein Kasten AUF der Seite statt wie ein Feld IN ihr. */
-.uau-root[data-theme="dark"] .uau-input { background-color: #121212; }
-.uau-root[data-theme="dark"] .uau-google { background: #121212; }
-.uau-root[data-theme="dark"] .uau-google:hover:not(:disabled) { background: var(--vc-heading-bg); }
+/* Kein eigener dunkler Ton mehr. Seite, Karte, Felder und der Google-Knopf lesen --vc-bg,
+   also #1b1b1b wie der Rest der App -- ein Sonderwert nur hier waere genau die Abweichung, die
+   beim naechsten Palettenwechsel uebrig bleibt. */
 
 .uau-root[data-theme="dark"] .uau-panel {
   background-color: #16203a;
