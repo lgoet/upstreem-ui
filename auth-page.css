@@ -270,6 +270,46 @@
 }
 .uau-foot button:hover { opacity: .7; }
 
+/* ---------- Einzug beim Seitenaufbau ----------
+   Drei Stufen, nicht sieben: Ueberschrift samt Unterzeile, dann der ganze Bedienteil, dann die
+   Fusszeile. Feiner gestaffelt wirkt es nicht sorgfaeltiger, sondern langsam -- und auf einer
+   Anmeldeseite will niemand einer Animation zusehen, bevor er tippen darf.
+   Das Logo ist bewusst nicht dabei: es steht sofort, damit die Seite von der ersten Bildaenderung
+   an erkennbar ist.
+
+   backwards als fill-mode ist der Punkt, an dem so etwas sonst kaputtgeht: ohne ihn stehen die
+   Bloecke waehrend ihrer Verzoegerung sichtbar da und springen erst danach auf opacity 0 -- man
+   sieht die fertige Seite kurz aufblitzen. Mit backwards gilt der Startwert schon vor dem Beginn.
+
+   Die Klasse traegt der Root und faellt nach dem letzten Durchlauf wieder ab (siehe JS). Sie
+   darf nicht dauerhaft stehen bleiben: die spaeteren Zustaende dieser Seite -- Namensfeld,
+   Fehlerzeilen, Erfolgsblock -- haben ihre eigenen Uebergaenge, und eine Animation daneben
+   liefe ihnen ins Bild. */
+@keyframes uau-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+.uau-root.is-entering .uau-h1,
+.uau-root.is-entering .uau-sub,
+.uau-root.is-entering .uau-fields,
+.uau-root.is-entering .uau-opts,
+.uau-root.is-entering .uau-primary,
+.uau-root.is-entering .uau-or,
+.uau-root.is-entering .uau-google,
+.uau-root.is-entering .uau-foot {
+  animation: uau-rise var(--uau-t) var(--uau-ease) backwards;
+}
+/* Stufe 1: die Anrede. Stufe 2: alles, womit man etwas tut. Stufe 3: der Hinweis unten.
+   90ms Versatz -- weniger verschmilzt zu einem Block, mehr zerfaellt in Einzelteile. */
+.uau-root.is-entering .uau-h1,
+.uau-root.is-entering .uau-sub      { animation-delay: 0ms; }
+.uau-root.is-entering .uau-fields,
+.uau-root.is-entering .uau-opts,
+.uau-root.is-entering .uau-primary,
+.uau-root.is-entering .uau-or,
+.uau-root.is-entering .uau-google   { animation-delay: 90ms; }
+.uau-root.is-entering .uau-foot     { animation-delay: 180ms; }
+
 /* ---------- Erfolgszustand ----------
    Ersetzt den Formularblock an Ort und Stelle. Beide Bloecke liegen im selben Raster uebereinander,
    damit die Karte beim Wechsel ihre Hoehe behaelt und nichts springt. */
@@ -366,4 +406,7 @@
 @media (prefers-reduced-motion: reduce) {
   .uau-root { --uau-t: 1ms; }
   .uau-spin { animation: none; }
+  /* Der Einzug faellt ganz weg statt nur schnell zu sein: eine Bewegung von 1ms ist immer noch
+     eine Bewegung, und genau die ist hier abbestellt. */
+  .uau-root.is-entering * { animation: none; }
 }

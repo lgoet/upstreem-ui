@@ -414,6 +414,20 @@
     setMode(attr("data-mode", "login") === "signup" ? "signup" : "login");
     render();
 
+    /* Einzug beim Aufbau, blockweise (Regeln in der CSS). Erst im naechsten Frame, sonst faellt
+       der Klassenwechsel mit dem ersten Zeichnen zusammen und der Browser fasst beides zu einem
+       Schritt zusammen -- die Animation liefe dann gar nicht.
+       Die Klasse faellt nach dem letzten Durchlauf wieder ab: 200ms Dauer plus 180ms Versatz,
+       plus etwas Luft. Ein fester Wecker und nicht animationend, weil das Ereignis fuer JEDEN
+       der acht Bloecke einzeln kommt und man dann mitzaehlen muesste. */
+    root.classList.add("is-entering");
+    /* Der Wecker laeuft SOFORT los, nicht hinter requestAnimationFrame. rAF feuert nicht, solange
+       der Tab im Hintergrund liegt -- die Klasse waere dann nie wieder abgefallen und die
+       Animationsregeln blieben dauerhaft ueber den spaeteren Uebergaengen dieser Seite liegen.
+       Gemessen: mit rAF davor stand is-entering nach einer halben Sekunde noch.
+       460ms = 200ms Dauer + 180ms Versatz der letzten Stufe + Luft. */
+    setTimeout(function(){ root.classList.remove("is-entering"); }, 460);
+
     return {
       root: root,
       setMode: function(m){ setMode(m); },
