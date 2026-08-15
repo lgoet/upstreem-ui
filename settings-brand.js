@@ -828,11 +828,16 @@
          gar nicht ohne Umweg zur Verfuegung -- die Komponente kennt ihn ohnehin. */
       var marke = String(meta.brandName || "").trim();
       var was   = block === "models" ? "models" : "settings";
-      fire("data-saved-fn", "usbSaved", {
-        block: block,
-        brand_name: marke,
-        message: (marke ? marke + " " : "") + was + " updated"
-      });
+      var satz  = (marke ? marke + " " : "") + was + " updated";
+      /* Die Rueckmeldung zeigt die Komponente SELBST -- derselbe Toast wie beim Kopieren in den
+         Tabellen. Ueber Bubble zu gehen hiesse, fuer eine Bestaetigung ein Element, einen
+         Workflow und eine Serverrunde zu brauchen; sichtbar waere sie dann spaeter als die
+         Aenderung, die sie bestaetigt.
+         Geprueft statt direkt gerufen: ein aelteres core.js von einem anderen Pin auf derselben
+         Seite kennt toast nicht, und der TypeError naehme den Rest dieser Funktion mit -- also
+         auch das usbSaved-Event darunter. */
+      if (UC.toast) UC.toast(satz, { icon: "check" });
+      fire("data-saved-fn", "usbSaved", { block: block, brand_name: marke, message: satz });
     }
 
     /* ================= Ladezustand und Sperre =================

@@ -2488,6 +2488,34 @@
     };
   }
 
+  /* ── Toast ───────────────────────────────────────────────────────────────────────────────────
+     showMacToast liegt NICHT in diesem Repo, sondern im Seitenkopf der Bubble-App. Genau deshalb
+     steht der Aufruf hier und nicht viermal einzeln: er muss defensiv sein (Seite ohne die
+     Funktion, Funktion wirft), und eine kaputte Rueckmeldung darf niemals die Aktion mitreissen,
+     die sie bestaetigen soll. domains-table und urls-table haben dieselbe Zeile bisher je selbst
+     getragen; sie duerfen so bleiben, neue Aufrufer nehmen diesen Weg.
+
+     Rueckgabe sagt, ob der Toast wirklich rausging -- ein Aufrufer, der eine Rueckmeldung
+     garantieren muss, kann daran erkennen, dass die Seite keine hat. */
+  function toast(text, opts){
+    opts = opts || {};
+    var t = String(text == null ? "" : text).trim();
+    if (!t) return false;
+    try {
+      if (typeof window.showMacToast === "function"){
+        window.showMacToast(t, { icon: opts.icon || "check",
+                                 timeout: opts.timeout == null ? 2000 : opts.timeout });
+        return true;
+      }
+    } catch(e){
+      if (window.console) console.warn("[toast] showMacToast hat geworfen:", e);
+      return false;
+    }
+    if (window.console) console.warn("[toast] Auf dieser Seite gibt es kein showMacToast — die " +
+      "Meldung \"" + t + "\" wurde nirgends angezeigt.");
+    return false;
+  }
+
   /* ── Signalbruecke: ein Workflow sagt der Seite Bescheid ─────────────────────────────────────
      Der Fall: In den Einstellungen wird gespeichert, und der Team-Header oben auf der Seite zeigt
      danach noch die alten Daten. Der Speichern-Workflow haengt aber am Element in den
@@ -5932,6 +5960,7 @@
     makeClipTip: makeClipTip,
     SLIDERS_ICON: SLIDERS_ICON,
     makeFire: makeFire,
+    toast: toast,
     upstreemSignal: upstreemSignal,
     makePortal: makePortal,
     placeMenu: placeMenu,

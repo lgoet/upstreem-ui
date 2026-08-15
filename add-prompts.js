@@ -984,6 +984,15 @@
        first version of this function shipped a payload no other event in the app has. */
     fire("data-add-fn", "bubble_fn_uapAddPrompts", payload);
 
+    /* Die Rueckmeldung kommt von hier, nicht aus einem Bubble-Workflow: der Dialog schliesst im
+       naechsten Schritt, und ohne ein Wort dazu sieht das Verschwinden aus wie ein Abbruch.
+       Derselbe Toast wie beim Kopieren in den Tabellen.
+       Abgesichert wie marketsChanged darunter: liegt auf der Seite ein aelteres core.js (irgendeine
+       Komponente mit altem data-cdn-pin gewinnt das Rennen), kennt es toast nicht. Ohne die
+       Pruefung wuerde der TypeError den Rest dieser Funktion mitnehmen -- und damit close(). Der
+       Dialog bliebe offen, obwohl die Prompts laengst gefeuert sind. */
+    if (UC.toast) UC.toast(payload.count + " prompt" + (payload.count === 1 ? "" : "s") + " added", { icon: "check" });
+
     /* Adding prompts changes which markets the team has and how many prompts each holds, so the
        markets pickers have to be told (see the market store's comment in core.js). */
     if (UC.marketsChanged) { try { UC.marketsChanged(); } catch (e) {} }
