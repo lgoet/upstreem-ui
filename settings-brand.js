@@ -57,6 +57,17 @@
     usbRun();
   }
 
+  /* EIN Schalter fuer den Datei-Upload. Aus, solange es keinen Ort gibt, an den die Datei gehen
+     koennte: der Weg schickt sie als Data-URL durch ein Bubble-Event, und ohne einen Workflow, der
+     sie ablegt, waere der Knopf ein Versprechen ohne Deckung -- man waehlt eine Datei und nichts
+     passiert. Der Link-Weg deckt denselben Zweck ab, bis der Upload nach Supabase steht.
+
+     Der Code drumherum bleibt vollstaendig: Markup, Groessen- und Typpruefung, das Event, der
+     Setter. Nur sichtbar und bedienbar ist er nicht. Wieder anschalten heisst: hier auf true,
+     sonst nichts. Deshalb steht das an EINER Stelle und nicht als display:none in der CSS --
+     unsichtbar allein waere nicht unbenutzbar, der Datei-Dialog liesse sich weiter ueber die
+     Tastatur oeffnen und das Event weiter ausloesen. */
+  var LOGO_UPLOAD = false;
   var MAX_LOGO_BYTES = 1024 * 1024;
   /* Deckel fuer die selbst eingetippte Branche. 48 Zeichen sind genug fuer "Industry &
      Manufacturing" mit Luft, und kurz genug, dass die Zeile im Dropdown und im Trigger nicht
@@ -370,24 +381,37 @@
             '<div class="usb-row">' +
               '<div class="usb-rowtext">' +
                 '<div class="usb-rowtitle">Brand Logo</div>' +
+                /* Der Satz haengt am selben Schalter: "PNG or SVG, up to 1 MB" beschreibt eine
+                   Dateiauswahl, die es ohne Upload nicht gibt -- er wuerde nach einem Knopf
+                   suchen lassen, der nicht da ist. */
                 '<div class="usb-rowdesc">Change your logo to personalize your workspace. ' +
-                  'Square images work best. PNG or SVG, up to 1 MB.</div>' +
+                  'Square images work best. ' +
+                  (LOGO_UPLOAD ? 'PNG or SVG, up to 1 MB.'
+                               : 'Paste a direct link to your image file.') + '</div>' +
               '</div>' +
               '<div class="usb-rowctl usb-skelbox usb-logoctl">' +
                 '<div class="usb-logoprev usb-skelbox usb-skelbox" data-logo-prev></div>' +
                 '<div class="usb-logoforms usb-skelbox usb-skelbox">' +
-                  '<div class="usb-uploadrow">' +
+                  /* hidden statt weggelassen: die Elementreferenzen weiter unten bleiben damit
+                     gueltig, und Wiedereinschalten ist wirklich nur der Schalter. */
+                  '<div class="usb-uploadrow"' + (LOGO_UPLOAD ? "" : " hidden") + '>' +
                     '<button class="up-btn-sec usb-btn" type="button" data-logo-pick>' +
                       ICON.upload + '<span>Upload</span></button>' +
                     '<span class="usb-filename" data-logo-file>No file selected</span>' +
                     '<input class="usb-fileinput" type="file" accept=".png,.svg,image/png,image/svg+xml" ' +
-                      'data-logo-input aria-hidden="true" tabindex="-1"/>' +
+                      'data-logo-input aria-hidden="true" tabindex="-1"' +
+                      (LOGO_UPLOAD ? "" : " disabled") + '/>' +
                   '</div>' +
-                  '<button class="usb-linktoggle" type="button" data-link-toggle aria-expanded="false">' +
+                  /* Ohne Upload gibt es kein "instead" -- der Link IST der Weg. Der Aufklapper
+                     verschwindet und das Feld steht offen da, sonst waere der einzige Weg zum
+                     Logo hinter einem Klick versteckt, der nach einer Ausweichloesung klingt. */
+                  '<button class="usb-linktoggle" type="button" data-link-toggle' +
+                    ' aria-expanded="' + (LOGO_UPLOAD ? "false" : "true") + '"' +
+                    (LOGO_UPLOAD ? "" : " hidden") + '>' +
                     '<span class="usb-linktoggle-chev">' + ICON.chev + '</span>' +
                     '<span>Use an image link instead</span>' +
                   '</button>' +
-                  '<div class="usb-linkbox" data-link-box hidden>' +
+                  '<div class="usb-linkbox" data-link-box' + (LOGO_UPLOAD ? " hidden" : "") + '>' +
                     '<input class="up-field usb-urlin" type="url" spellcheck="false" autocomplete="off" ' +
                       'placeholder="https://…" aria-label="Logo image URL" data-logo-url/>' +
                     '<button class="up-btn-sec usb-btn" type="button" data-logo-save>Use link</button>' +
@@ -908,7 +932,9 @@
       if (loading) return;
       var t = e.target;
       if (t.closest("[data-edit-brand]")){ fire("data-editbrand-fn", "usbEditBrand", {}); return; }
-      if (t.closest("[data-logo-pick]")){ elFileIn.click(); return; }
+      /* Der Schalter wird auch hier geprueft, nicht nur im Markup. Ein hidden-Attribut ist eine
+         Anzeigeentscheidung; wer die Devtools offen hat, klickt trotzdem. */
+      if (t.closest("[data-logo-pick]")){ if (LOGO_UPLOAD) elFileIn.click(); return; }
       if (t.closest("[data-logo-save]")){
         var url = String(elUrlIn.value || "").trim();
         if (!url){ elUrlIn.focus(); return; }
@@ -1236,7 +1262,9 @@
         applyLoading("no");
         stuck("");
         elUrlIn.value = "";
-        elLinkBox.hidden = true;
+        /* Ohne Upload bleibt das Linkfeld offen -- zuklappen wuerde den einzigen Weg zum Logo
+           wegnehmen, und der Aufklapper dafuer ist ausgeblendet. */
+        elLinkBox.hidden = LOGO_UPLOAD;
         elLinkTgl.classList.remove("is-open");
         elLinkTgl.setAttribute("aria-expanded", "false");
         logoError("");

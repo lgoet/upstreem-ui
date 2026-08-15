@@ -73,6 +73,10 @@
 .usb-logoprev.is-empty svg { width: 20px; height: 20px; color: var(--vc-third); }
 .usb-logoforms { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .usb-uploadrow { display: flex; align-items: center; gap: 10px; min-width: 0; }
+/* [hidden] setzt display:none nur mit der schwaechsten Spezifitaet -- jede eigene display-Regel
+   schlaegt es. Gemessen: die Reihe stand trotz hidden-Attribut sichtbar da. Beide Elemente
+   brauchen die Ausnahme also ausdruecklich, sonst ist der LOGO_UPLOAD-Schalter wirkungslos. */
+.usb-uploadrow[hidden], .usb-linktoggle[hidden] { display: none; }
 .usb-filename { font-size: 13px; color: var(--vc-third); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 20ch; }
 .usb-filename.is-set { color: var(--vc-muted); }
 /* Das echte Datei-Feld ist unsichtbar, aber NICHT display:none: ein display:none-Input laesst sich
