@@ -1,0 +1,159 @@
+<!-- ==========================================================================================
+     upstreem — Auth Page: Login und Signup (Praefix `uau`)
+
+     Die GANZE Seite ist dieses eine HTML-Element. Es bringt seinen eigenen Hintergrund, die
+     Karte, beide Spalten und die Fusszeile mit -- auf der Bubble-Seite gehoert nichts darum
+     herum. Setze das Element auf volle Breite und volle Hoehe, ohne eigenes Padding.
+
+     ── FRISCHE INSTALLATION ──────────────────────────────────────────────────────────────────
+     Diese Datei ist eine VORLAGE. Aenderungen daran erreichen ein bereits eingebautes Element
+     NICHT -- dort muss dasselbe von Hand nachgezogen werden.
+
+     ── ATTRIBUTE ─────────────────────────────────────────────────────────────────────────────
+       data-instance   eindeutig pro Platzierung. Alle Setter sprechen ueber diese ID.
+       data-cdn-pin    Commit-Hash. NIEMALS leer lassen: leer zieht "@main", und das liefern
+                       jsDelivr und der Browser aus einem bis zu tagealten Cache.
+       data-mode       "login" (Standard) oder "signup". Bestimmt, womit die Seite startet.
+                       Kann aus einem URL-Parameter kommen, dann landen /login und /signup
+                       auf derselben Seite.
+       data-logo       URL des upstreem-Schriftzugs, 18px hoch dargestellt. Fehlt sie, bleibt
+                       die Stelle leer statt ein kaputtes Bild zu zeigen.
+       data-bg         URL des blauen Hintergrundbildes fuer die rechte Spalte. Fehlt sie,
+                       bleibt der Farbverlauf allein stehen -- die Spalte sieht ruhiger aus,
+                       aber nicht kaputt.
+
+     ── EVENTS (JavaScriptToBubble, Value type TEXT, Trigger event an) ────────────────────────
+
+       data-submit-fn  = "bubble_fn_uauSubmit_[dynamic id]"
+         {"team_id":"","mode":"signup","full_name":"Alex Meier","email":"alex@company.com",
+          "password":"…","opt_in":"yes"}
+
+         Feuert NUR, wenn die Pruefung im Browser durchgelaufen ist. Danach geht die Seite von
+         selbst in den Ladezustand: Knopf mit Spinner, alle Felder gesperrt. Aus dem kommt sie
+         ausschliesslich durch setAuthPageError oder setAuthPageDone zurueck.
+
+         mode       "login" | "signup"
+         full_name  nur im Signup gefuellt, im Login immer ""
+         opt_in     "yes" | "no" -- der Haken links unten. Im Login heisst er "Remember me",
+                    im Signup "Send me product updates". EIN Feld, zwei Bedeutungen, je nach
+                    mode -- lies es zusammen mit mode aus.
+
+         Extraktion (jedes Feld einzeln):
+           mode      :extract with Regex  "mode":"([^"]*)"       :first item
+           full_name :extract with Regex  "full_name":"([^"]*)"  :first item
+           email     :extract with Regex  "email":"([^"]*)"      :first item
+           opt_in    :extract with Regex  "opt_in":"([^"]*)"     :first item
+
+         DAS PASSWORT NICHT PER REGEX LESEN und nirgends protokollieren. Es kann jedes Zeichen
+         enthalten, auch Anfuehrungszeichen -- "password":"([^"]*)" schneidet dann mittendrin ab,
+         und der Nutzer bekommt "falsches Passwort" fuer ein richtiges. Gib den GANZEN Payload
+         als einen Text-Parameter an deinen Auth-Endpunkt und lies ihn dort serverseitig als
+         JSON. Das ist auch der einzige Weg, bei dem das Passwort nicht als Bubble-State
+         zwischengelagert wird.
+
+       data-google-fn  = "bubble_fn_uauGoogle_[dynamic id]"
+         {"team_id":"","mode":"login"}     Startet den OAuth-Fluss.
+
+       data-mode-fn    = "bubble_fn_uauMode_[dynamic id]"
+         {"team_id":"","mode":"signup"}
+         Der Nutzer hat unten auf "Sign up" / "Sign in" geklickt. Die Seite hat schon
+         umgeschaltet -- du musst nichts zurueckgeben. Nur verdrahten, wenn die URL mitwandern
+         soll (Go to page /signup) oder du den Wechsel zaehlen willst.
+
+       data-side-fn    = "bubble_fn_uauSide_[dynamic id]"
+         {"team_id":"","mode":"login","email":"alex@company.com"}
+         Der Link rechts neben dem Haken: "Forgot password?" im Login, "Need help?" im Signup.
+         Die eingetippte Adresse faehrt mit, damit der Zuruecksetzen-Fluss nicht noch einmal
+         danach fragen muss.
+
+     ── DATEN HEREIN ──────────────────────────────────────────────────────────────────────────
+
+       setAuthPageMode(instanceId, "login"|"signup")
+         Umschalten von aussen. Fehler des anderen Modus werden dabei verworfen.
+
+       setAuthPageLoading(instanceId, "yes"|"no")
+         Nur noetig, wenn du den Ladezustand selbst steuern willst -- der Klick setzt ihn bereits.
+
+       setAuthPageError(instanceId, feld, text)
+         DER wichtigste Aufruf. Er beendet den Ladezustand IMMER, auch bei unbekanntem Feld.
+           feld = "email" | "password" | "name"   -> rote Zeile unter genau diesem Feld
+           feld = ""                              -> Fehlerkasten ueber dem Feldstapel
+         Beispiele:
+           setAuthPageError("auth", "email", "We do not know this address.")
+           setAuthPageError("auth", "password", "That password is not correct.")
+           setAuthPageError("auth", "", "Too many attempts. Try again in a few minutes.")
+
+       setAuthPageDone(instanceId, titel, text)
+         Ersetzt das Formular durch den Erfolgsblock, an Ort und Stelle, ohne Sprung.
+           setAuthPageDone("auth", "Welcome aboard", "Check your inbox to confirm your email.")
+         Fuer einen Login, der direkt weiterleitet, brauchst du das nicht -- dann navigiere
+         einfach; der Ladezustand bleibt bis zum Seitenwechsel stehen, und das ist richtig.
+
+       resetAuthPage(instanceId)
+         Felder leeren, Fehler weg, zurueck aus dem Erfolgsblock.
+
+     ── DIE NOTBREMSE ─────────────────────────────────────────────────────────────────────────
+     Kommt nach dem Absenden 20 Sekunden lang weder setAuthPageError noch setAuthPageDone,
+     entsperrt sich die Seite von selbst und zeigt "That took longer than expected."
+     Das ist die Notbremse, nicht der Normalweg. Steht der Satz im Alltag da, fehlt in deinem
+     Workflow der Rueckweg -- ein Auth-Workflow braucht IMMER einen Fehlerzweig, sonst dreht der
+     Knopf bei jedem Tippfehler im Passwort zwanzig Sekunden ins Leere.
+
+     ── WAS DIE SEITE SELBST PRUEFT ───────────────────────────────────────────────────────────
+     Name vorhanden (nur Signup), E-Mail grob auf Form, Passwort vorhanden und im Signup
+     mindestens 8 Zeichen. Dazu die Staerkeanzeige unter dem Passwortfeld (nur Signup).
+
+     Das ist Bequemlichkeit, KEINE Sicherheit: der Code laeuft im Browser des Nutzers und laesst
+     sich dort abschalten. Jede dieser Regeln muss serverseitig ein zweites Mal stehen.
+
+     Die Laengenregel gilt bewusst nur beim Anlegen. Im Login waere sie falsch -- ein bestehendes
+     Konto kann ein kuerzeres Passwort haben, und dann verweigerte die Seite die Anmeldung fuer
+     etwas, das der Nutzer gar nicht mehr aendern kann.
+
+     ── EINBAU IN KUERZE ──────────────────────────────────────────────────────────────────────
+     1. Element auf die Seite, volle Breite und Hoehe, kein Padding drumherum.
+        data-instance, data-cdn-pin, data-logo, data-bg setzen.
+     2. Vier JavaScriptToBubble-Elemente anlegen (uauSubmit, uauGoogle, uauMode, uauSide).
+        uauSubmit ist Pflicht, die anderen drei nach Bedarf.
+     3. Workflow auf uauSubmit: den GANZEN Wert als einen Text-Parameter an deinen
+        Auth-Endpunkt. Erfolgszweig -> navigieren oder setAuthPageDone.
+        FEHLERZWEIG -> setAuthPageError. Ohne ihn laeuft jeder Fehlversuch in die Notbremse.
+     4. data-mode aus dem URL-Parameter binden, wenn /login und /signup dieselbe Seite sind.
+     ========================================================================================== -->
+
+<div class="up-root uau-root"
+     data-instance="INSTANCE_ID"
+     data-cdn-pin="CDN_PIN"
+     data-mode="login"
+     data-logo="LOGO_URL"
+     data-bg="BG_URL"
+     data-submit-fn="bubble_fn_uauSubmit"
+     data-google-fn="bubble_fn_uauGoogle"
+     data-mode-fn="bubble_fn_uauMode"
+     data-side-fn="bubble_fn_uauSide"></div>
+
+<script>
+(function(){
+  /* Loader nach STYLEGUIDE 26: den Pin ueber getElementsByClassName lesen, NIEMALS ueber
+     document.currentScript — Bubble fuehrt Scripts nicht in DOM-Reihenfolge aus. */
+  function readPin(cls){
+    var els = document.getElementsByClassName(cls), i, p;
+    for (i = 0; i < els.length; i++){
+      /* trim: ein Leerzeichen aus der Bubble-Konstante ergaebe sonst .../upstreem-ui@ abc /core.js,
+         jsDelivr antwortet mit 404, und weder CSS noch JS landen. */
+      p = (els[i].getAttribute("data-cdn-pin") || "").trim();
+      if (p && p !== "CDN_" + "PIN") return p;
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("uau-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(url, make){ if (L[url]) return; L[url] = 1; make(url); }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+
+  /* core zuerst, async=false haelt die Reihenfolge ein. */
+  css("core.css");        js("core.js");
+  css("auth-page.css");   js("auth-page.js");
+})();
+</script>
