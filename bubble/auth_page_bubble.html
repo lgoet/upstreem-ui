@@ -48,9 +48,12 @@
          token      der Einladungstoken aus ?token= -- leer heisst "normale Anmeldung".
                     Immer dabei, auch leer: ein Feld, das mal fehlt, zwingt jeden Workflow zu
                     einer Fallunterscheidung beim Auslesen.
-         opt_in     "yes" | "no" -- der Haken links unten. Im Login heisst er "Remember me",
-                    im Signup "Send me product updates". EIN Feld, zwei Bedeutungen, je nach
-                    mode -- lies es zusammen mit mode aus.
+         opt_in     "yes" | "no" -- der Haken "Send me product updates". Nur im Signup sichtbar
+                    und UNGEHAKT vorbelegt: eine vorangekreuzte Box ist als Einwilligung nach
+                    DSGVO nicht gueltig, die muss aktiv erfolgen. Im Login gibt es den Haken
+                    nicht, dort kommt immer "no" -- ignoriere das Feld dort.
+                    Speichere die Einwilligung MIT Zeitpunkt (marketing_opt_in_at). Ohne den
+                    laesst sich spaeter nicht belegen, wann sie erteilt wurde.
 
          Extraktion (jedes Feld einzeln):
            mode   :extract with Regex  "mode":"([^"]*)"    :first item

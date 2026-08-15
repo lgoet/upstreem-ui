@@ -348,7 +348,10 @@
                   '</label>' +
                 '</div>' +
                 '<div class="uau-opts">' +
-                  '<label class="uau-check"><input type="checkbox" checked data-check/>' +
+                  /* Ungehakt. Eine vorangekreuzte Box ist als Einwilligung fuer Produkt-Mails nach DSGVO
+                     nicht gueltig -- die muss aktiv erfolgen. Der Design-Handoff sah "checked by
+                     default" vor, das gilt fuer ein "Remember me", nicht fuer eine Einwilligung. */
+                  '<label class="uau-check"><input type="checkbox" data-check/>' +
                     '<span data-check-txt></span></label>' +
                   '<button class="uau-side" type="button" data-side></button>' +
                 '</div>' +
@@ -747,7 +750,7 @@
         setBusy(false);
         state.done = false; state.errs = {}; state.formErr = "";
         elName.value = elMail.value = elPw.value = "";
-        elCheck.checked = true;
+        elCheck.checked = false;
         elPaneDone.classList.add("is-off");
         elPaneDone.setAttribute("aria-hidden", "true");
         elPaneForm.classList.remove("is-off");
