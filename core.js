@@ -4988,6 +4988,11 @@
      loading lands in __upTopicsQueue (any component's boot stub can fill it) and is replayed now. */
   window.setUpstreemTopics = function(rows){ return setTopics(rows, "setUpstreemTopics"); };
   window.getUpstreemTopics = getTopics;
+  /* Global, wie upstreemMarketsChanged und upstreemBrandsChanged. Hier fehlte es als einziges der
+     drei, und das ist beim Verdrahten sofort aufgefallen: in einem Bubble-Run-JavaScript steht die
+     kurze Form, nicht der Umweg ueber UpstreemCore. Drei Geschwister, die verschieden zu rufen
+     sind, sind drei Gelegenheiten fuer einen Tippfehler, der still nichts tut. */
+  window.upstreemTopicsChanged = topicsChanged;
   (function drainTopicsQueue(){
     var q = window.__upTopicsQueue;
     if (!q || !q.length) return;
