@@ -48,6 +48,7 @@
       hallo: "Hi,", h1: "Welcome Back",
       sub: "Sign in to win AI Search.",
       check: "Remember me", side: "Forgot password?",
+      pwHint: "Your password",
       cta: "Sign in", ctaBusy: "Signing in",
       footTxt: "Don’t have an account?", footLink: "Sign up"
     },
@@ -55,6 +56,7 @@
       hallo: "Hey there,", h1: "Let’s get you set up",
       sub: "Sign up to win AI Search.",
       check: "Send me product updates", side: "",
+      pwHint: "At least 8 characters",
       cta: "Create account", ctaBusy: "Creating account",
       footTxt: "Already have an account?", footLink: "Sign in"
     }
@@ -201,6 +203,31 @@
     var busyTimer = null;
 
     function attr(n, f){ var v = root.getAttribute(n); return (v == null || v === "" || /^[A-Z_]{3,}$/.test(v)) ? (f || "") : v; }
+    /* Zwei Quellen, und data-theme hat Vorrang: die Seite lief schon im Dunkeln, bevor es
+       data-isdark hier gab -- gesetzt von aussen, direkt als data-theme. Wer nur eine der beiden
+       liest, macht die andere kaputt. */
+    function istDunkel(){
+      if (root.getAttribute("data-theme") === "dark") return true;
+      return UC.isYes(root.getAttribute("data-isdark"));
+    }
+    /* data-theme ist der Schalter, an dem die --vc-*-Tokens in core haengen.
+       NUR anfassen, wenn data-isdark ueberhaupt gesetzt ist. Ohne diese Bedingung raeumte die
+       Funktion ein von aussen gesetztes data-theme weg und die Seite waere schlagartig hell --
+       genau der Fall, der hier vorlag. */
+    function syncTheme(){
+      var roh = root.getAttribute("data-isdark");
+      var gesetzt = roh != null && roh !== "" && !/^[A-Z_]{3,}$/.test(roh);
+      var d = istDunkel();
+      if (gesetzt){
+        if (UC.isYes(roh)) root.setAttribute("data-theme", "dark");
+        else root.removeAttribute("data-theme");
+      }
+      var l = root.querySelector(".uau-logo");
+      if (l && l.tagName === "IMG"){
+        var neu = (d && attr("data-logo-dark")) || attr("data-logo");
+        if (neu && l.getAttribute("src") !== neu) l.setAttribute("src", neu);
+      }
+    }
 
     root.innerHTML = shell();
 
@@ -233,7 +260,10 @@
     function feld(el){ return el.closest(".uau-field"); }
 
     function shell(){
-      var logo = attr("data-logo");
+      /* Im Dunkeln ein eigenes Logo, wenn eines hinterlegt ist. Ohne Rueckfall auf die helle
+         Fassung waere die Ecke leer -- ein fehlendes Dark-Logo darf nicht heissen, dass gar
+         keines dasteht. */
+      var logo = (istDunkel() && attr("data-logo-dark")) || attr("data-logo");
       var bg   = attr("data-bg");
       return '' +
       '<div class="uau-card"' + (bg ? ' data-hasbg="1"' : '') + '>' +
@@ -310,7 +340,10 @@
           '<div class="uau-foot"><span data-foot-txt></span>' +
             '<button type="button" data-foot-btn></button></div>' +
         '</div>' +
-        '<div class="uau-panel"' + (bg ? ' style="background-image: linear-gradient(180deg, rgba(255,255,255,.5), rgba(255,255,255,.16) 60%), url(' + esc(bg).replace(/[()]/g, "") + ')"' : '') + '>' +
+        /* Das Bild kommt als CSS-Variable, nicht als fertiger background-image-Wert: der Verlauf
+           darueber unterscheidet sich zwischen hell und dunkel, und ein Inline-Stil haette jede
+           Dark-Mode-Regel geschlagen. So bleibt die Bildquelle hier und die Tonung in der CSS. */
+        '<div class="uau-panel"' + (bg ? ' style="--uau-bgimg: url(&quot;' + esc(bg) + '&quot;)"' : '') + '>' +
           '<h2 class="uau-panel-h">AI Search Analytics.<br>Made simple.</h2>' +
           '<p class="uau-panel-b">See in seconds how often AI Search recommends your brand.</p>' +
           '<div class="uau-prompt">' +
@@ -344,6 +377,10 @@
          erzeugen -- und der Nutzer legt ein Konto mit einem Passwort an, das er anderswo schon
          benutzt. */
       elPw.setAttribute("autocomplete", state.mode === "signup" ? "new-password" : "current-password");
+      /* "At least 8 characters" ist eine Anforderung an ein NEUES Passwort. Im Login steht sie
+         wie eine Bedingung fuers Anmelden da -- wer ein aelteres, kuerzeres Passwort hat, liest
+         dort, dass er sich nicht anmelden kann. */
+      elPw.setAttribute("placeholder", t.pwHint);
       elNameWrap.classList.toggle("is-on", state.mode === "signup");
       /* Ein ausgeblendetes Feld darf nicht per Tabulator erreichbar bleiben. */
       elName.disabled = state.mode !== "signup";
@@ -592,6 +629,13 @@
       var m = modeAusUrl();
       if (m) setMode(m);
     });
+
+    syncTheme();
+    if (window.MutationObserver){
+      new MutationObserver(syncTheme).observe(root, {
+        attributes: true, attributeFilter: ["data-isdark", "data-logo", "data-logo-dark"]
+      });
+    }
 
     render();
 

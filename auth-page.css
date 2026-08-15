@@ -378,8 +378,32 @@
   gap: clamp(16px, 1.8vw, 26px); text-align: center;
   padding: clamp(32px, 4vw, 64px) clamp(28px, 3.6vw, 56px);
   background-color: #cfd8ea;
-  background-image: linear-gradient(180deg, rgba(255,255,255,.5), rgba(255,255,255,.16) 60%);
+  /* Der Verlauf liegt UEBER dem Bild (--uau-bgimg, vom JS gesetzt). Steht keine Bildquelle da,
+     bleibt der Verlauf allein -- ruhiger, aber nicht kaputt. */
+  background-image: linear-gradient(180deg, rgba(255,255,255,.5), rgba(255,255,255,.16) 60%),
+                    var(--uau-bgimg, none);
   background-size: cover; background-position: center;
+  transition: background-color var(--uau-t) var(--uau-ease);
+}
+/* ── Dark Mode ──────────────────────────────────────────────────────────────────────────────
+   Dasselbe Bild, andere Tonung. Ein zweites, dunkles Bild waere ein zweiter Link, den jemand
+   pflegen muss -- und beim naechsten Markenwechsel waere einer davon veraltet. Der Verlauf hier
+   ist deshalb kein Aufhellen mehr, sondern eine dunkle Decke: oben etwas durchlaessiger, damit
+   die Struktur des Bildes sichtbar bleibt und keine tote Flaeche entsteht.
+   Die Werte sind hoch (0.72 bis 0.88), weil die Vorlage ein sehr helles Blau-Weiss ist -- bei
+   0.5 blieb sie im Dunkeln ein leuchtender Block neben einer dunklen Formularseite. */
+.uau-root[data-theme="dark"] .uau-panel {
+  background-color: #16203a;
+  background-image: linear-gradient(180deg, rgba(12,17,32,.72), rgba(10,14,28,.88) 70%),
+                    var(--uau-bgimg, none);
+}
+.uau-root[data-theme="dark"] .uau-panel-h { color: #e8ecf6; }
+.uau-root[data-theme="dark"] .uau-panel-b { color: #a8b3cc; }
+/* Der Prompt-Balken traegt --vc-bg und --vc-border, wechselt also von selbst mit. Nur sein
+   Schatten muss dunkler werden: ein blauschwarzer Schlagschatten auf dunklem Grund ist
+   unsichtbar, und die Kante wirkt dann aufgeklebt. */
+.uau-root[data-theme="dark"] .uau-prompt {
+  box-shadow: 0 2px 4px rgba(0,0,0,.28), 0 18px 40px rgba(0,0,0,.38);
 }
 .uau-panel-h {
   margin: 0;

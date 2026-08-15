@@ -16,6 +16,12 @@
        data-mode       "login" (Standard) oder "signup". Bestimmt, womit die Seite startet.
                        Kann aus einem URL-Parameter kommen, dann landen /login und /signup
                        auf derselben Seite.
+       data-isdark     "yes"/"no". Schaltet die --vc-*-Tokens auf dunkel und tont das
+                       Hintergrundbild der rechten Spalte ab. Aenderungen wirken sofort, das
+                       Attribut wird beobachtet -- ein Umschalten braucht keinen Neuaufbau.
+       data-logo-dark  Optional: eigener Schriftzug fuer den Dark Mode. Fehlt er, wird data-logo
+                       auch dort genommen -- ein fehlendes Dark-Logo darf nicht heissen, dass
+                       gar keines dasteht.
        data-logo       URL des upstreem-Schriftzugs, 18px hoch dargestellt. Fehlt sie, bleibt
                        die Stelle leer statt ein kaputtes Bild zu zeigen.
        data-submit-delay  Millisekunden zwischen uauName/uauPassword und uauSubmit. Standard 0.
@@ -24,9 +30,10 @@
                        Passwort an -- was sich wie "falsche Zugangsdaten" anfuehlt und nicht wie
                        ein Zeitproblem -- setze hier 300. Der Nutzer merkt davon nichts, der
                        Ladezustand laeuft ab dem Klick.
-       data-bg         URL des blauen Hintergrundbildes fuer die rechte Spalte. Fehlt sie,
-                       bleibt der Farbverlauf allein stehen -- die Spalte sieht ruhiger aus,
-                       aber nicht kaputt.
+       data-bg         URL des blauen Hintergrundbildes fuer die rechte Spalte. EIN Link fuer
+                       beide Modi: im Dunkeln legt die CSS eine dunkle Decke darueber, statt ein
+                       zweites Bild zu verlangen. Fehlt die URL, bleibt der Farbverlauf allein
+                       stehen -- die Spalte sieht ruhiger aus, aber nicht kaputt.
 
      ── EVENTS (JavaScriptToBubble, Value type TEXT, Trigger event an) ────────────────────────
 
@@ -159,6 +166,8 @@
      data-cdn-pin="CDN_PIN"
      data-mode="login"
      data-logo="LOGO_URL"
+     data-logo-dark="LOGO_DARK_URL"
+     data-isdark="IS_DARK"
      data-bg="BG_URL"
      data-name-fn="bubble_fn_uauName"
      data-password-fn="bubble_fn_uauPassword"
