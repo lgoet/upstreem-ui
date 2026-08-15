@@ -231,7 +231,7 @@
 .uau-form-el { display: contents; }
 
 /* ---------- Optionszeile ---------- */
-.uau-opts { margin-top: 14px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.uau-opts { margin-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 /* Ohne Haken bleibt nur der Link -- der gehoert dann rechts, nicht an den linken Rand, wo
    gerade noch etwas anderes stand. */
 .uau-opts.is-solo { justify-content: flex-end; }
@@ -295,7 +295,9 @@
    der ist 32px hoch, transparent und sitzt in einer Werkzeugleiste. Das hier ist der gefuellte
    Hauptknopf einer Seite, 40px, und es gibt in core keinen solchen. Siehe Kopf dieser Datei. */
 .uau-primary {
-  margin-top: 22px; height: 40px; width: 100%;
+  /* 12px wie ueberall im Stapel. Der Handoff hatte 14 und 22 -- drei verschiedene Abstaende
+     auf zwoelf Zentimetern, ohne dass einer davon etwas Eigenes aussagt. Ein Rhythmus. */
+  margin-top: 12px; height: 40px; width: 100%;
   border: 0; border-radius: 12px;
   background: var(--vc-text); color: var(--vc-bg);
   font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: -.01em;
