@@ -247,6 +247,13 @@
                 '<h1 class="uau-h1"><span data-hallo></span><br><span data-h1></span></h1>' +
                 '<div class="uau-sub" data-sub></div>' +
                 '<div class="uau-formerr" data-formerr><div><div class="uau-formerr-in" data-formerr-txt></div></div></div>' +
+                /* Ein echtes <form> um Felder und Hauptknopf. Chrome warnt sonst "Password field
+                   is not contained in a form", und das ist keine Formalie: Passwortverwalter
+                   erkennen Anmeldemasken ueber genau diese Struktur. Ohne sie bieten sie das
+                   Speichern nach dem Signup nicht an und fuellen beim Login nicht aus.
+                   action und method bleiben leer, novalidate schaltet die Browser-Blasen ab --
+                   die Pruefung steht hier, mit eigenen Meldungen an den Feldern. */
+                '<form class="uau-form-el" novalidate data-form>' +
                 '<div class="uau-fields">' +
                   '<label class="uau-field uau-collapse" data-w-name>' +
                     '<span class="uau-collapse-in">' +
@@ -270,7 +277,7 @@
                   '<label class="uau-field">' +
                     '<span class="uau-label">Password</span>' +
                     '<input class="up-field uau-input" type="password" name="password" ' +
-                      'placeholder="At least 8 characters" data-f-pw/>' +
+                      'autocomplete="current-password" placeholder="At least 8 characters" data-f-pw/>' +
                     '<span class="uau-err"><span data-e-pw></span></span>' +
                     '<span class="uau-strength" data-strength><div><span class="uau-strength-in">' +
                       '<span class="uau-bars">' +
@@ -286,11 +293,12 @@
                     '<span data-check-txt></span></label>' +
                   '<button class="uau-side" type="button" data-side></button>' +
                 '</div>' +
-                '<button class="uau-primary" type="button" data-primary>' +
+                '<button class="uau-primary" type="submit" data-primary>' +
                   '<span class="uau-spin"></span><span data-primary-txt></span></button>' +
                 '<div class="uau-or"><span>or</span></div>' +
                 '<button class="uau-google" type="button" data-google>' + G_SVG +
                   '<span>Continue with Google</span></button>' +
+                '</form>' +
               '</div>' +
               '<div class="uau-pane is-off" data-pane-done aria-hidden="true">' +
                 '<span class="uau-done-ic">' + CHECK_SVG + '</span>' +
@@ -331,6 +339,11 @@
       elPrimTxt.textContent = state.busy ? t.ctaBusy : t.cta;
       elFootTxt.textContent = t.footTxt;
       elFootBtn.textContent = t.footLink;
+      /* current-password beim Anmelden, new-password beim Anlegen. Ohne den Unterschied schlaegt
+         der Passwortverwalter im Signup ein BESTEHENDES Passwort vor statt ein neues zu
+         erzeugen -- und der Nutzer legt ein Konto mit einem Passwort an, das er anderswo schon
+         benutzt. */
+      elPw.setAttribute("autocomplete", state.mode === "signup" ? "new-password" : "current-password");
       elNameWrap.classList.toggle("is-on", state.mode === "signup");
       /* Ein ausgeblendetes Feld darf nicht per Tabulator erreichbar bleiben. */
       elName.disabled = state.mode !== "signup";
@@ -501,7 +514,13 @@
       fire("data-side-fn", "uauSide", { mode: state.mode, token: state.token,
                                         email: String(elMail.value || "").trim() });
     });
-    elPrimary.addEventListener("click", absenden);
+    /* Das Formular ist ab jetzt der Weg: Klick auf den Knopf UND Enter im Feld loesen beide ein
+       submit aus. Der eigene Enter-Handler von frueher ist damit weg -- er haette jetzt doppelt
+       gefeuert. preventDefault, weil hier nichts an einen Server geschickt wird. */
+    root.querySelector("[data-form]").addEventListener("submit", function(e){
+      e.preventDefault();
+      absenden();
+    });
     elGoogle.addEventListener("click", function(){
       if (state.busy || state.done) return;
       fire("data-google-fn", "uauGoogle", { mode: state.mode, token: state.token,
@@ -515,12 +534,7 @@
     });
     elMail.addEventListener("input", function(){ if (state.errs.mail){ delete state.errs.mail; zeigeFehler(); } });
     elName.addEventListener("input", function(){ if (state.errs.name){ delete state.errs.name; zeigeFehler(); } });
-    /* Enter im Formular sendet ab -- der Standard bei jeder Anmeldemaske. */
-    root.addEventListener("keydown", function(e){
-      if (e.key !== "Enter") return;
-      if (!e.target.closest || !e.target.closest(".uau-input")) return;
-      e.preventDefault(); absenden();
-    });
+
 
     /* Unter 900px stapeln die Spalten (siehe CSS). Ueber den Beobachter statt einer
        Media-Query, weil dieses Element in Bubble auch in einem schmalen Container liegen kann --

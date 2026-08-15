@@ -204,6 +204,11 @@
   transition: color var(--uau-t) var(--uau-ease);
 }
 
+/* Das <form> ist nur eine Huelle fuer Passwortverwalter und den Enter-Standard -- es darf am
+   Layout nichts aendern. display:contents nimmt es aus dem Kasten heraus, seine Kinder liegen
+   weiter direkt im Block. */
+.uau-form-el { display: contents; }
+
 /* ---------- Optionszeile ---------- */
 .uau-opts { margin-top: 14px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .uau-check { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
