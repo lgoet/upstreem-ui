@@ -4390,23 +4390,25 @@
        offsetParent ist null, sobald irgendein Vorfahr display:none traegt -- genau das ist ein
        Bubble-View, der gerade nicht dran ist. Kein URL-Parameter, kein neues Attribut, nichts,
        was auf Bubble-Seite gepflegt werden muesste. */
-    function sichtbar(){
-      return !!(root.offsetParent || root.getClientRects().length);
-    }
-    /* Sichtbar-Werden nachziehen. Ohne das fehlten die Gruppen-Header genau dann, wenn man auf
-       die Prompts-Ansicht wechselt, ohne dass Bubble erneut rendert -- also im Normalfall.
-       IntersectionObserver statt eines Intervalls: er meldet sich von selbst und kostet nichts,
-       solange nichts passiert. Fehlt er (sehr alter Browser), wird ohne Sichtpruefung geholt --
-       lieber eine RPC zu viel als eine Tabelle ohne Gruppen. */
+    /* Holt die Gruppen, sobald die Tabelle WIRKLICH im Blickfeld steht -- und keine Sekunde
+       frueher. IntersectionObserver statt einer eigenen Sichtpruefung, weil er unabhaengig davon
+       greift, WIE der Host die Ansicht wegblendet: display:none, Hoehe 0, aus dem Bild geschoben,
+       hinter einem anderen Container. Eine Pruefung auf offsetParent kennt nur den ersten Fall
+       und liess die RPC auf jeder Seite mitlaufen.
+       Fehlt der Beobachter (sehr alter Browser), wird sofort geholt -- lieber eine RPC zu viel
+       als eine Tabelle ohne Gruppen. */
     function warteAufSicht(){
       if (state.sichtWatch) return;
       if (!window.IntersectionObserver){ state.sichtWatch = 1; fetchGroupsInitial(); return; }
       state.sichtWatch = new IntersectionObserver(function(eintraege){
         for (var i = 0; i < eintraege.length; i++){
           if (!eintraege[i].isIntersecting) continue;
-          state.sichtWatch.disconnect();
+          if (state.sichtWatch && state.sichtWatch.disconnect) state.sichtWatch.disconnect();
           state.sichtWatch = null;
-          render();          /* nicht direkt holen: render() prueft alle Bedingungen erneut */
+          /* Bedingungen erneut pruefen: zwischen dem Aufsetzen des Beobachters und diesem Moment
+             koennen die Gruppen laengst angekommen sein (der Nutzer schaltet um, ein Setter
+             liefert sie). Ohne die Pruefung waere das eine zweite, ueberfluessige RPC. */
+          if (state.darfHolen && groupingOn() && !state.groupsHasData && !state.groupsLoading) fetchGroupsInitial();
           return;
         }
       });
@@ -4432,8 +4434,13 @@
          und er sagt es, indem er renderPromptsTable ruft (der Startup-Schritt der Ansicht). Bis
          dahin holt sie nichts. Jeder andere Weg zu fetchGroups() ist ein Klick des Nutzers -- der
          setzt voraus, dass die Tabelle sichtbar ist, und braucht diese Pruefung deshalb nicht. */
-      if (state.darfHolen && sichtbar() && groupingOn() && !state.groupsHasData && !state.groupsLoading) fetchGroupsInitial();
-      else if (state.darfHolen && !sichtbar() && groupingOn() && !state.groupsHasData) warteAufSicht();
+      /* NIE direkt holen. Frueher stand hier ein direkter fetchGroupsInitial()-Aufruf, spaeter
+         einer mit Sichtbarkeitspruefung ueber offsetParent -- beides feuerte weiterhin auf jeder
+         Seite, weil der Pageload-Workflow renderPromptsTable ueberall ruft und offsetParent nur
+         display:none erkennt. Wie ein Host seine Ansichten wegblendet, ist nicht vorhersagbar.
+         Der einzige Weg fuehrt jetzt ueber den Beobachter: der meldet sich, wenn das Element
+         wirklich im Blickfeld steht, und sonst nie. */
+      if (state.darfHolen && groupingOn() && !state.groupsHasData && !state.groupsLoading) warteAufSicht();
       renderStatusTabs(); renderBulkBar();
       if (root.classList.contains("up-sticky")) syncTheadOffset();
     }
