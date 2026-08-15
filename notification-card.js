@@ -66,10 +66,42 @@
   function num(v) { var n = Number(v); return isFinite(n) ? n : null; }
   function isArr(v) { return Object.prototype.toString.call(v) === "[object Array]"; }
 
+  /* Ein Zeitpunkt aus Bubble kann als ISO-Text, als Sekunden- oder als Millisekunden-Stempel
+     kommen -- je nachdem, ob der Ausdruck :formatted as, unix oder das rohe Feld liefert. Alle
+     drei werden angenommen, damit die Verdrahtung nicht an einer Formatierung haengt. */
+  function zeit(v) {
+    if (v == null || v === "") return null;
+    var n = Number(v);
+    if (isFinite(n) && n > 0) return n > 1e11 ? n : n * 1000;   /* > 1e11 sind Millisekunden */
+    var t = Date.parse(String(v));
+    return isFinite(t) ? t : null;
+  }
+  /* Geplante Nachrichten bleiben bis zu ihrem Termin unsichtbar.
+     Ein Wert, den zeit() NICHT lesen kann, gilt als faellig. Andersherum waere schlimmer: ein
+     Datum in einem unerwarteten Format wuerde die Nachricht dauerhaft unterdruecken, ohne dass
+     irgendwo etwas davon zu sehen ist -- und eine Ankuendigung, die niemand je erhaelt, faellt
+     erst auf, wenn jemand danach fragt. */
+  function faellig(n, jetzt) {
+    var s = zeit(n && n.starts_at);
+    return s == null || s <= jetzt;
+  }
+  /* Wann die naechste noch nicht faellige Nachricht dran waere -- null, wenn keine wartet. */
+  function naechsterTermin(liste, jetzt) {
+    var min = null;
+    (liste || []).forEach(function (n) {
+      var s = zeit(n && n.starts_at);
+      if (s != null && s > jetzt && (min == null || s < min)) min = s;
+    });
+    return min;
+  }
+
   /* Die neueste, wichtigste Nachricht zuerst. priority schlaegt created_at -- so kann ein
      Sicherheitshinweis eine aeltere Ankuendigung ueberholen, ohne dass Bubble sortieren muss. */
   function waehle(liste) {
-    var arr = (liste || []).filter(function (n) { return n && n.id != null; });
+    var jetzt = new Date().getTime();
+    var arr = (liste || []).filter(function (n) {
+      return n && n.id != null && faellig(n, jetzt);
+    });
     arr.sort(function (a, b) {
       var pa = num(a.priority) || 0, pb = num(b.priority) || 0;
       if (pa !== pb) return pb - pa;
@@ -186,7 +218,7 @@
     var elSecond = karte.querySelector(".unc-second");
     var elPrim   = karte.querySelector(".unc-primary");
 
-    var state = { list: [], aktuell: null, weg: {} };
+    var state = { list: [], aktuell: null, weg: {}, weckerId: 0 };
 
     var fire = UC.makeFire ? UC.makeFire(root, instanceId) : function () {};
 
@@ -198,8 +230,23 @@
        nur in dieser Sitzung: die dauerhafte Ablage macht der Workflow serverseitig, sonst kaeme
        eine geloeschte Nachricht nach einem Seitenwechsel wieder. */
     function render() {
-      var n = waehle((state.list || []).filter(function (x) { return !state.weg[x.id]; }));
+      var offen = (state.list || []).filter(function (x) { return !state.weg[x.id]; });
+      var n = waehle(offen);
       state.aktuell = n;
+
+      /* Eine geplante Nachricht soll auch auf einer Seite erscheinen, die schon offen steht --
+         ohne diesen Wecker waere sie erst nach dem naechsten Seitenaufbau da, und bei einer App,
+         die man den ganzen Tag offen laesst, hiesse das: gar nicht.
+         Nur EIN Wecker, auf den naechsten faelligen Termin. Auf 24h gedeckelt, weil setTimeout
+         oberhalb von rund 24,8 Tagen ueberlaeuft und dann SOFORT feuert -- ein Termin in drei
+         Wochen wuerde die Karte also augenblicklich zeigen. Nach 24h wird schlicht neu gerechnet. */
+      if (state.weckerId) { clearTimeout(state.weckerId); state.weckerId = 0; }
+      var next = naechsterTermin(offen, new Date().getTime());
+      if (next != null) {
+        var wartet = Math.max(1000, Math.min(next - new Date().getTime(), 24 * 3600 * 1000));
+        state.weckerId = setTimeout(function () { state.weckerId = 0; render(); }, wartet);
+      }
+
       if (!n) { root.classList.remove("is-open"); elCard.classList.remove("is-shown"); return; }
 
       var t = typOf(n.notification_type);

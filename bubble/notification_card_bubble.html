@@ -48,8 +48,17 @@
            title              Ueberschrift
            body               Beschreibung. \n im Text wird zu einem Zeilenumbruch.
            cta_label          Beschriftung des Hauptknopfs. Fehlt sie, steht dort "Open".
-           cta_url            Ziel des Hauptknopfs, oeffnet in einem neuen Tab. Fehlt sie,
-                              erscheint der Knopf gar nicht.
+           cta_url            Ziel des Hauptknopfs, oeffnet IMMER in einem neuen Tab. Leer ist
+                              erlaubt: der Knopf bleibt stehen und raeumt die Karte nur weg --
+                              genau das ist "Got It!". Erst wenn auch cta_label fehlt,
+                              verschwindet er, dann gibt es nichts zu sagen.
+           starts_at          Optional. Liegt der Zeitpunkt in der Zukunft, wird die Nachricht
+                              NICHT gezeigt -- sie erscheint von selbst, sobald er erreicht ist,
+                              auch ohne Seitenaufbau. ISO-Text, Sekunden- oder
+                              Millisekunden-Stempel, alle drei werden gelesen.
+                              Ein Wert, der sich nicht lesen laesst, gilt als faellig: ein Datum
+                              in einem unerwarteten Format soll eine Ankuendigung nicht dauerhaft
+                              unterdruecken, ohne dass irgendwo etwas davon zu sehen waere.
            notification_type  feature | announcement | maintenance | security | tip
                               Bestimmt Symbol, Bezeichnung, den Text des zweiten Knopfs und ob der
                               Hauptknopf dunkel oder umrandet ist. Ein unbekannter Typ zeigt ein
@@ -87,6 +96,7 @@
            "body": "BODY",
            "cta_label": "CTA_LABEL",
            "cta_url": "CTA_URL",
+           "starts_at": "STARTS_AT",
            "notification_type": "TYPE",
            "priority": PRIORITY,
            "created_at": "CREATED_AT"
