@@ -134,6 +134,39 @@
    wechselt die Farbe genau in dem Moment, in dem der Nutzer den Fehler beheben will. */
 .uau-field.is-err .uau-input:not(:focus) { border-color: var(--vc-neg, #c8412e); }
 
+/* ---------- festgesetzte Adresse (Einladung) ----------
+   Das Feld bleibt lesbar und fokussierbar, es ist nur nicht aenderbar. Deshalb kein
+   disabled-Aussehen: halbdurchsichtig wuerde heissen "hier steht nichts Wichtiges", dabei ist
+   genau das der Wert, um den es geht. Stattdessen der ruhige Flaechenton der App und ein
+   Schloss rechts im Feld. */
+.uau-inwrap { position: relative; display: block; }
+.uau-lock {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  width: 15px; height: 15px; color: var(--vc-third); pointer-events: none;
+  opacity: 0; transition: opacity var(--uau-t) var(--uau-ease);
+}
+.uau-lock svg { width: 15px; height: 15px; display: block; }
+.uau-field.is-fixed .uau-lock { opacity: 1; }
+.uau-field.is-fixed .uau-input {
+  background-color: var(--vc-heading-bg); color: var(--vc-muted);
+  padding-right: 36px;   /* Platz fuer das Schloss, sonst laeuft eine lange Adresse darunter */
+  cursor: default;
+}
+/* Kein Fokusring auf einem Feld, das sich nicht aendern laesst: der Ring verspricht
+   "hier landet deine Eingabe", und das stimmt hier nicht. Doppelte Klasse gegen die
+   core-Regel .up-field.up-field:focus, sonst entschiede die Ladereihenfolge. */
+.uau-field.is-fixed .uau-input.up-field:focus,
+.uau-field.is-fixed .uau-input.up-field:focus-visible {
+  border-color: var(--vc-border); box-shadow: none;
+}
+.uau-fixed {
+  display: grid; grid-template-rows: 0fr; opacity: 0;
+  transition: grid-template-rows var(--uau-t) var(--uau-ease), opacity var(--uau-t) var(--uau-ease);
+}
+.uau-fixed > span { overflow: hidden; min-height: 0; display: block;
+  font-size: 12px; line-height: 1.4; color: var(--vc-muted); padding-top: 5px; }
+.uau-fixed.is-on { grid-template-rows: 1fr; opacity: 1; }
+
 /* Fehlerzeile unter dem Feld, gleiche Mechanik wie oben. */
 .uau-err {
   display: grid; grid-template-rows: 0fr; opacity: 0;

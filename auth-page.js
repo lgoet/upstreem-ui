@@ -25,7 +25,7 @@
   if (!window.__uauBootStubbed){
     window.__uauBootStubbed = true;
     ["renderAuthPage", "setAuthPageMode", "setAuthPageLoading", "setAuthPageError",
-     "setAuthPageDone", "resetAuthPage"].forEach(function(n){
+     "setAuthPageDone", "setAuthPageInvite", "resetAuthPage"].forEach(function(n){
       window[n] = function(){ BOOTQ.push([n, arguments]); };
     });
   }
@@ -81,6 +81,9 @@
     '<path fill="#FBBC05" d="M5.27 14.27a7.2 7.2 0 0 1 0-4.54V6.62H1.29a12 12 0 0 0 0 10.76l3.98-3.11z"/>' +
     '<path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.44-3.44C17.95 1.19 15.24 0 12 0A12 12 0 0 0 1.29 6.62l3.98 3.11C6.22 6.86 8.87 4.75 12 4.75z"/></svg>';
 
+  var LOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+    'stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/>' +
+    '<path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
   var CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" ' +
     'stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
   var MIC_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
@@ -108,7 +111,49 @@
     if (/\d/.test(pw)) p++;
     if (/[^A-Za-z0-9]/.test(pw)) p++;
     if (pw.length < 8) return 1;                 /* zu kurz bleibt schwach, egal wie bunt */
-    return Math.max(1, Math.min(4, p - 1));
+    /* Ohne Abzug. Mit p-1 landete "Abcdefgh1" -- acht Zeichen, Gross, Klein, Ziffer -- auf
+       "Fair", und das ist zu streng: ein Balken, der solide Passwoerter tadelt, erzieht nur
+       dazu, ihn zu ignorieren. Jetzt: 8 Zeichen allein "Weak", plus Gross/Klein oder Ziffer
+       "Fair", beides "Good", dazu Laenge oder Sonderzeichen "Strong". */
+    return Math.max(1, Math.min(4, p));
+  }
+
+  /* ── URL ──────────────────────────────────────────────────────────────────
+     Die Seite liest ihren Modus aus der Adresse und schreibt ihn zurueck, wenn keiner dasteht.
+     Damit ist ein Link auf /?mode=signup teilbar und der Zurueck-Knopf tut, was er soll.
+     Gelesen wird auch der PFAD: endet er auf /signup oder /login, gilt das, ohne dass ein
+     Parameter noetig waere. So kann dieselbe Bubble-Seite unter beiden Adressen liegen. */
+  function urlParam(name){
+    try {
+      var m = new RegExp("[?&]" + name + "=([^&#]*)").exec(window.location.search);
+      return m ? decodeURIComponent(m[1].replace(/\+/g, " ")) : "";
+    } catch(e){ return ""; }
+  }
+  function modeAusUrl(){
+    var p = String(urlParam("mode") || "").toLowerCase();
+    if (p === "signup" || p === "login") return p;
+    try {
+      var pfad = String(window.location.pathname || "").toLowerCase().replace(/\/+$/, "");
+      if (/\/signup$/.test(pfad)) return "signup";
+      if (/\/login$/.test(pfad) || /\/signin$/.test(pfad)) return "login";
+    } catch(e){}
+    return "";
+  }
+  /* replaceState und nicht pushState beim ERSTEN Setzen: der Nutzer hat den Modus nicht gewaehlt,
+     also gehoert dafuer kein Eintrag in den Verlauf -- ein Zurueck-Klick landete sonst auf
+     derselben Seite. Beim Wechsel per Klick ist es umgekehrt, siehe unten. */
+  function urlSetzen(m, neuerEintrag){
+    try {
+      if (!window.history || !window.history.replaceState) return;
+      var u = new URL(window.location.href);
+      /* Liegt der Modus im Pfad, bleibt der Pfad die Wahrheit -- ein zusaetzlicher Parameter
+         daneben waere eine zweite Angabe, die der ersten widersprechen kann. */
+      var pfad = String(u.pathname || "").toLowerCase().replace(/\/+$/, "");
+      if (/\/(signup|login|signin)$/.test(pfad)) return;
+      if (u.searchParams.get("mode") === m) return;
+      u.searchParams.set("mode", m);
+      window.history[neuerEintrag ? "pushState" : "replaceState"]({}, "", u.toString());
+    } catch(e){}
   }
 
   function makeController(root){
@@ -116,7 +161,8 @@
     var esc = UC.esc;
     var fire = UC.makeFire(root, { label: "auth-page", eventPrefix: "uau" });
 
-    var state = { mode: "login", busy: false, done: false, errs: {}, formErr: "" };
+    var state = { mode: "login", busy: false, done: false, errs: {}, formErr: "",
+                  token: "", mailFest: false };
     var busyTimer = null;
 
     function attr(n, f){ var v = root.getAttribute(n); return (v == null || v === "" || /^[A-Z_]{3,}$/.test(v)) ? (f || "") : v; }
@@ -142,6 +188,8 @@
     var elFormErrT= root.querySelector("[data-formerr-txt]");
     var elStrength= root.querySelector("[data-strength]");
     var elStrTxt  = root.querySelector("[data-strength-txt]");
+    var elMailWrap= root.querySelector("[data-w-mail]");
+    var elMailFix = root.querySelector("[data-mailfix]");
     var elPaneForm= root.querySelector("[data-pane-form]");
     var elPaneDone= root.querySelector("[data-pane-done]");
     var elDoneH   = root.querySelector("[data-done-h]");
@@ -173,11 +221,16 @@
                       '<span class="uau-err"><span data-e-name></span></span>' +
                     '</span>' +
                   '</label>' +
-                  '<label class="uau-field">' +
+                  '<label class="uau-field" data-w-mail>' +
                     '<span class="uau-label">Work email</span>' +
-                    '<input class="up-field uau-input" type="email" name="email" autocomplete="email" ' +
-                      'placeholder="alex@company.com" data-f-mail/>' +
+                    '<span class="uau-inwrap">' +
+                      '<input class="up-field uau-input" type="email" name="email" autocomplete="email" ' +
+                        'placeholder="alex@company.com" data-f-mail/>' +
+                      '<span class="uau-lock" data-lock aria-hidden="true">' + LOCK_SVG + '</span>' +
+                    '</span>' +
                     '<span class="uau-err"><span data-e-mail></span></span>' +
+                    '<span class="uau-fixed" data-mailfix><span>' +
+                      'This invitation is tied to this address.</span></span>' +
                   '</label>' +
                   '<label class="uau-field">' +
                     '<span class="uau-label">Password</span>' +
@@ -294,7 +347,28 @@
       }
     }
 
-    function render(){ renderTexte(); zeigeFehler(); renderStaerke(); }
+    /* Eine Einladung gilt genau einer Adresse. Das Feld bleibt sichtbar und lesbar -- der
+       Nutzer soll ja pruefen koennen, WELCHE Adresse gemeint ist -- aber es ist festgesetzt.
+       readonly und nicht disabled: ein disabled-Feld wird beim Absenden nicht mitgeschickt, ist
+       nicht fokussierbar und wird von Bildschirmlesern uebersprungen. readonly laesst all das
+       zu und verhindert nur das Aendern. */
+    function renderMailFest(){
+      elMail.readOnly = state.mailFest;
+      elMailWrap.classList.toggle("is-fixed", state.mailFest);
+      elMailFix.classList.toggle("is-on", state.mailFest);
+    }
+
+    function setToken(tok, mail){
+      state.token = String(tok == null ? "" : tok).trim();
+      var m = String(mail == null ? "" : mail).trim();
+      if (m){ elMail.value = m; state.mailFest = true; }
+      /* Ohne Adresse keine Festsetzung: ein Token allein sagt nicht, WELCHE Adresse gemeint ist,
+         und ein leeres Feld zu sperren waere eine Sackgasse. */
+      else state.mailFest = false;
+      renderMailFest();
+    }
+
+    function render(){ renderTexte(); zeigeFehler(); renderStaerke(); renderMailFest(); }
 
     /* ---------------- Pruefen ---------------- */
     function pruefe(){
@@ -326,6 +400,10 @@
       if (!pruefe()) return;
       fire("data-submit-fn", "uauSubmit", {
         mode: state.mode,
+        /* Immer dabei, auch leer. Ein Feld, das mal da ist und mal nicht, zwingt jeden
+           Bubble-Workflow zu einer Fallunterscheidung beim Auslesen -- leer heisst schlicht
+           "normale Anmeldung ohne Einladung". */
+        token: state.token,
         full_name: state.mode === "signup" ? String(elName.value || "").trim() : "",
         email: String(elMail.value || "").trim(),
         password: String(elPw.value || ""),
@@ -348,15 +426,20 @@
     elFootBtn.addEventListener("click", function(){
       var neu = state.mode === "login" ? "signup" : "login";
       setMode(neu);
-      fire("data-mode-fn", "uauMode", { mode: neu });
+      /* Hier MIT Verlaufseintrag: der Nutzer hat den Wechsel ausgeloest, also soll der
+         Zurueck-Knopf ihn zuruecknehmen. */
+      urlSetzen(neu, true);
+      fire("data-mode-fn", "uauMode", { mode: neu, token: state.token });
     });
     elSide.addEventListener("click", function(){
-      fire("data-side-fn", "uauSide", { mode: state.mode, email: String(elMail.value || "").trim() });
+      fire("data-side-fn", "uauSide", { mode: state.mode, token: state.token,
+                                        email: String(elMail.value || "").trim() });
     });
     elPrimary.addEventListener("click", absenden);
     elGoogle.addEventListener("click", function(){
       if (state.busy || state.done) return;
-      fire("data-google-fn", "uauGoogle", { mode: state.mode });
+      fire("data-google-fn", "uauGoogle", { mode: state.mode, token: state.token,
+                                            email: String(elMail.value || "").trim() });
     });
     elPw.addEventListener("input", function(){
       renderStaerke();
@@ -411,7 +494,25 @@
       });
     }
 
-    setMode(attr("data-mode", "login") === "signup" ? "signup" : "login");
+    /* Reihenfolge mit Absicht: das Attribut ist der Vorgabewert aus Bubble, die Adresse schlaegt
+       ihn. Ein geteilter Link auf ?mode=signup soll gewinnen, egal was im Element steht. */
+    setMode(modeAusUrl() || (attr("data-mode", "login") === "signup" ? "signup" : "login"));
+    /* Steht nichts in der Adresse, traegt die Seite ihren Modus nach -- ohne Verlaufseintrag,
+       der Nutzer hat ihn ja nicht gewaehlt. */
+    if (!modeAusUrl()) urlSetzen(state.mode, false);
+
+    /* Einladung. Beide Schreibweisen werden gelesen: die Doku nennt mail, email ist die Form,
+       die im Rest der App steht -- an einem Einladungslink soll das nicht scheitern. */
+    setToken(urlParam("token") || attr("data-token"),
+             urlParam("mail") || urlParam("email") || attr("data-email"));
+
+    /* Zurueck- und Vorwaerts-Knopf des Browsers. Ohne das zeigt die Seite nach einem Zurueck
+       weiter den alten Modus, waehrend die Adresse schon den anderen nennt. */
+    window.addEventListener("popstate", function(){
+      var m = modeAusUrl();
+      if (m) setMode(m);
+    });
+
     render();
 
     /* Einzug beim Aufbau, blockweise (Regeln in der CSS). Erst im naechsten Frame, sonst faellt
@@ -431,7 +532,8 @@
 
     return {
       root: root,
-      setMode: function(m){ setMode(m); },
+      setMode: function(m){ setMode(m); urlSetzen(m, false); },
+      setInvite: function(tok, mail){ setToken(tok, mail); return true; },
       setLoading: function(on){ setBusy(UC.isYes(on)); },
       setError: function(feldName, text){
         /* Ein Fehler beendet den Ladezustand IMMER. Sonst haette eine Antwort, die einen Fehler
@@ -487,6 +589,7 @@
         setAuthPageLoading: doLoading,
         setAuthPageError: doError,
         setAuthPageDone: doDone,
+        setAuthPageInvite: doInvite,
         resetAuthPage: doReset
       },
       forwardShape: { renderAuthPage: "params", resetAuthPage: "id" }
@@ -526,6 +629,7 @@
   function doLoading(id, on){ var c = resolve(id); return c ? (c.setLoading(on), true) : false; }
   function doError(id, feld, text){ var c = resolve(id); return c ? c.setError(feld, text) : false; }
   function doDone(id, titel, text){ var c = resolve(id); return c ? c.setDone(titel, text) : false; }
+  function doInvite(id, token, mail){ var c = resolve(id); return c ? c.setInvite(token, mail) : false; }
   function doReset(id){ var c = resolve(id); return c ? c.reset() : false; }
 
   uauBoot(30);
