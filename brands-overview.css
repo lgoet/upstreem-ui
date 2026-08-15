@@ -252,3 +252,8 @@
 
 /* count on the tab you're NOT on (see syncStatusSwitch) */
 .ubo-seg-n { font-size: 11px; font-weight: 600; color: var(--vc-third); font-variant-numeric: tabular-nums; }
+/* Seit syncStatusSwitch die Zahlen leert, steht hier ein leerer Span -- und ein leeres Kind
+   loest den gap des Knopfes trotzdem aus. Das sah wie zu viel Polsterung rechts aus, war aber
+   der Abstand zu etwas Unsichtbarem. Dieselbe Regel hat .ubo-status-tag oben schon aus genau
+   demselben Grund. */
+.ubo-seg-n:empty { display: none; }
