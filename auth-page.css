@@ -81,7 +81,6 @@
   transition: background var(--uau-t) var(--uau-ease), color var(--uau-t) var(--uau-ease);
 }
 .uau-themebtn:hover { color: var(--vc-text); background: var(--uau-hover); }
-.uau-root[data-theme="dark"] .uau-themebtn:hover { background: var(--vc-heading-bg); }
 .uau-themebtn svg { width: 16px; height: 16px; display: block; }
 .uau-themebtn:focus-visible {
   outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring);
@@ -137,7 +136,10 @@
   display: flex; flex-direction: column; gap: 7px; }
 .uau-field.uau-collapse.is-on { grid-template-rows: 1fr; opacity: 1; margin-top: 0; pointer-events: auto; }
 
-.uau-label { font-size: 12px; font-weight: 600; color: var(--vc-label, #4b5057); }
+/* --vc-label gibt es in core NICHT -- der Rueckfall #4b5057 griff also immer und war im
+   Dunkeln viel zu dunkel. Der Sekundaerton der App ist --vc-muted (#6f737c hell, #a0a0a0
+   dunkel), und der gehoert hierher. */
+.uau-label { font-size: 12px; font-weight: 600; color: var(--vc-muted); }
 .uau-input {
   height: 40px; width: 100%;
   border: 1px solid var(--vc-border); border-radius: 12px;
@@ -230,6 +232,9 @@
 
 /* ---------- Optionszeile ---------- */
 .uau-opts { margin-top: 14px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+/* Ohne Haken bleibt nur der Link -- der gehoert dann rechts, nicht an den linken Rand, wo
+   gerade noch etwas anderes stand. */
+.uau-opts.is-solo { justify-content: flex-end; }
 .uau-check { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
 /* Die native Checkbox sieht auf jedem Betriebssystem anders aus und passt zu keinem davon zur
    App. accent-color faerbt nur die Fuellung, Form und Haken bleiben fremd. Also selbst gezeichnet,
@@ -262,11 +267,17 @@
      zum ICON.check dieser Datei und zu core: polyline 20 6 / 9 17 / 4 12, Strichstaerke 2.4. */
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
 }
+/* Im Dunkeln ist die gefuellte Box --vc-text, also HELL (#e0e0e0) -- ein weisser Haken darauf
+   ist unsichtbar. Zwei data-URIs statt currentColor, weil ein Hintergrundbild keine Farbe vom
+   Element erbt. */
+.uau-root[data-theme="dark"] .uau-check input:checked {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231b1b1b' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+}
 .uau-check input:focus-visible {
   outline: 0; border-color: var(--up-focus);
   box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring);
 }
-.uau-check span { font-size: 13px; color: var(--vc-label, #4b5057); }
+.uau-check span { font-size: 13px; color: var(--vc-muted); }
 .uau-side {
   font-size: 13px; font-weight: 500; color: var(--vc-muted);
   background: none; border: 0; padding: 0; cursor: pointer; font-family: inherit;
@@ -414,6 +425,11 @@
 /* Kein eigener dunkler Ton mehr. Seite, Karte, Felder und der Google-Knopf lesen --vc-bg,
    also #1b1b1b wie der Rest der App -- ein Sonderwert nur hier waere genau die Abweichung, die
    beim naechsten Palettenwechsel uebrig bleibt. */
+
+/* --uau-hover ist #f7f8fa, ein Hellgrau. Im Dunkeln blitzte der Google-Knopf beim Ueberfahren
+   also weiss auf. EINMAL umdefiniert statt an jeder Stelle einzeln -- alles, was den Ton nutzt,
+   zieht damit mit (Google-Knopf und Theme-Schalter). */
+.uau-root[data-theme="dark"] { --uau-hover: var(--vc-heading-bg); }
 
 .uau-root[data-theme="dark"] .uau-panel {
   background-color: #16203a;

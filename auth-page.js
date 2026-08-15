@@ -47,7 +47,7 @@
     login: {
       hallo: "Hi,", h1: "Welcome Back",
       sub: "Sign in to win AI Search.",
-      check: "Remember me", side: "Forgot password?",
+      check: "", side: "Forgot password?",
       pwHint: "Your password",
       cta: "Sign in", ctaBusy: "Signing in",
       footTxt: "Don’t have an account?", footLink: "Sign up"
@@ -393,11 +393,16 @@
       root.querySelector("[data-hallo]").textContent = t.hallo;
       elH1.textContent = t.h1;
       elSub.textContent = t.sub;
-      elCheckTxt.textContent = t.check;
       /* Ein leerer side-Text heisst: es gibt hier nichts anzubieten. Der Knopf verschwindet dann
          ganz, statt als unsichtbare Klickflaeche stehen zu bleiben. */
       elSide.textContent = t.side;
       elSide.hidden = !t.side;
+      /* Kein Haken im Login: das Supabase-Plugin bietet keine Session-Dauer an, und ein Schalter,
+         der nichts tut, ist schlimmer als keiner. Im Signup bleibt er -- dort steuert er die
+         Einwilligung fuer Produkt-Mails. */
+      elCheck.closest(".uau-check").hidden = !t.check;
+      elCheckTxt.textContent = t.check;
+      root.querySelector(".uau-opts").classList.toggle("is-solo", !t.check);
       elPrimTxt.textContent = state.busy ? t.ctaBusy : t.cta;
       elFootTxt.textContent = t.footTxt;
       elFootBtn.textContent = t.footLink;
