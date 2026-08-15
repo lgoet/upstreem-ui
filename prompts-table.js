@@ -587,6 +587,9 @@
          Grouping inactive prompts by topic answers a question nobody asks — you go to Inactive to
          see what you switched off, not to compare topic performance. */
       grouped: readGrouped(),
+      /* Der Riegel gegen selbsttaetiges Nachladen, siehe render(). Startet false und wird von
+         update() auf true gesetzt, also beim ersten renderPromptsTable. */
+      darfHolen: false,
       /* Restored, same reason as rows/hasData above: a re-render of the Bubble element must not
          make this boot re-ask for headers a previous boot already has. groupsHasData false here
          is precisely what made render() fire uptGroups once per re-render. */
@@ -4389,7 +4392,16 @@
          can't fire again from any later render() call -- every other path to fetchGroups() is a
          direct, immediate, user-triggered call elsewhere (the toggle, the checkbox, saving a
          custom group), correctly NOT going through this retry-aware wrapper. */
-      if (groupingOn() && !state.groupsHasData && !state.groupsLoading) fetchGroupsInitial();
+      /* state.darfHolen ist der Riegel davor: Bubble baut dieses Element auf JEDER Seite, nicht
+         nur in der Prompts-Ansicht. Ohne den Riegel holte die Tabelle beim Seitenaufbau ihre
+         Gruppen -- und weil groupingOn() den Zustand aus dem localStorage der letzten Sitzung
+         liest, passierte das ausgerechnet nur bei Nutzern, die Gruppierung eingeschaltet hatten.
+         Ergebnis: die Gruppen-RPC lief auf jeder Seite mit, ohne dass die Tabelle je zu sehen war.
+         Die Tabelle darf nicht selbst entscheiden, wann sie dran ist. Das weiss nur der Aufrufer,
+         und er sagt es, indem er renderPromptsTable ruft (der Startup-Schritt der Ansicht). Bis
+         dahin holt sie nichts. Jeder andere Weg zu fetchGroups() ist ein Klick des Nutzers -- der
+         setzt voraus, dass die Tabelle sichtbar ist, und braucht diese Pruefung deshalb nicht. */
+      if (state.darfHolen && groupingOn() && !state.groupsHasData && !state.groupsLoading) fetchGroupsInitial();
       renderStatusTabs(); renderBulkBar();
       if (root.classList.contains("up-sticky")) syncTheadOffset();
     }
@@ -4439,6 +4451,10 @@
       },
       update: function(params){
         params = params || {};
+        /* Ab jetzt darf die Tabelle von sich aus nachladen -- vorher nicht. Siehe die Erklaerung
+           an state.darfHolen: Bubble baut das Element auf JEDER Seite, aber renderPromptsTable
+           kommt nur, wenn die Prompts-Ansicht wirklich dran ist. */
+        state.darfHolen = true;
         if (params.isDark != null){
           isDark = isYes(params.isDark);
           if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
