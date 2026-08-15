@@ -236,6 +236,11 @@
    gerade noch etwas anderes stand. */
 .uau-opts.is-solo { justify-content: flex-end; }
 .uau-check { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+/* [hidden] setzt display:none nur mit der schwaechsten Spezifitaet -- jede eigene display-Regel
+   schlaegt es. Ohne diese Zeile stand im Login die leere Checkbox allein da, ohne Text daneben.
+   Derselbe Fehler wie bei .usb-uploadrow in settings-brand; wer display setzt, muss die
+   Ausnahme mitschreiben. */
+.uau-check[hidden], .uau-side[hidden] { display: none; }
 /* Die native Checkbox sieht auf jedem Betriebssystem anders aus und passt zu keinem davon zur
    App. accent-color faerbt nur die Fuellung, Form und Haken bleiben fremd. Also selbst gezeichnet,
    in derselben Sprache wie der Rest: abgerundetes Quadrat wie .up-sent-dot, gefuellt in
