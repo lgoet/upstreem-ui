@@ -965,7 +965,16 @@
       prompt_texts: S.rows.map(function (r) { return r.text; }),
       markets:      S.rows.map(function (r) { return r.market || S.market || ""; }),
       tag_ids:      tags,
-      source:       S.tab === "csv" ? "csv" : "manual"
+      /* Wie der Text in den Dialog kam -- getippt oder aus einer CSV. Das ist eine Eingabeart,
+         keine Herkunft, und es steht deshalb in einem eigenen Feld: `source` kennt nur zwei
+         gueltige Werte, und "csv" ist keiner davon. VOR source, damit source das letzte Feld des
+         Payloads bleibt -- eine Extraktion, die bis zum Ende schneidet, bricht sonst. */
+      input_method: S.tab === "csv" ? "csv" : "manual",
+      /* Immer user_generated. Beides -- Tippen und CSV-Import -- ist vom Nutzer erstellt; der
+         Unterschied zu ai_generated ist, WER den Text formuliert hat, nicht ueber welches Feld er
+         hereinkam. Vorher stand hier "manual" bzw. "csv", also zwei Werte, die die Gegenseite
+         ueberhaupt nicht kennt. */
+      source:       "user_generated"
     };
 
     /* Through UC.makeFire, not by resolving the name here. makeFire is what prepends team_id, what

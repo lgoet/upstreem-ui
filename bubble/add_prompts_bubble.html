@@ -55,7 +55,13 @@
                      nirgends eine Quelle fuer zeilenweise Topics — weder im Dialog noch als
                      CSV-Spalte. Frueher stand hier derselbe String N-mal wiederholt; das hat
                      einen Zeilenbezug behauptet, den es nicht gibt.
-       source        "manual" or "csv". Useful for analytics, ignore it if you do not care.
+       input_method  "manual" oder "csv" — wie der Text in den Dialog kam. Fuer Auswertungen,
+                     ignorierbar. Hiess frueher `source` und trug dieselben zwei Werte.
+       source        IMMER "user_generated". Das Feld hat genau zwei gueltige Werte,
+                     ai_generated und user_generated, und dieser Dialog erzeugt nur den zweiten:
+                     ob getippt oder aus einer CSV — den Text hat der Nutzer formuliert.
+                     ACHTUNG bei einer bestehenden Verdrahtung: bis Commit 5580a50 stand hier
+                     "manual" bzw. "csv". Wer darauf verzweigt, muss das umstellen.
 
      READING IT IN BUBBLE. Der sichere Weg ist EIN Text-Parameter an den RPC, der den ganzen
      Payload traegt, und JSON-Parsing auf der Serverseite. Das ist keine Bequemlichkeit: zwei der
