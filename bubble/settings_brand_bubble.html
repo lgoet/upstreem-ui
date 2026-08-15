@@ -92,13 +92,24 @@
     3. Workflow am bubble_fn_upSignal-Element (auf der SEITE, nicht im Element):
        Only when: channel is "account_updated"
        -> Team-Header-RPC neu holen, Header setzen.
-    4. Am Ende DESSELBEN Workflows, wenn die Header-Daten da sind:
-       Run javascript:  renderSettingsBrand({... frische Werte ...})
+    4. Am Ende DESSELBEN Workflows, wenn die Header-Daten da sind, genau EIN Schritt:
        Run javascript:  setSettingsBrandLoading("<instance>", "no")
-       Der zweite Aufruf ist der, der die Sperre loest. Ohne ihn bleibt die Komponente gesperrt,
-       bis der eingebaute Wecker nach 12s von selbst entsperrt und eine gelbe Hinweiszeile zeigt
-       ("Saving is taking longer than expected"). Das ist die Notbremse, nicht der Normalweg --
-       steht die Zeile im Alltag da, fehlt Schritt 4.
+
+       Kein renderSettingsBrand. Die Werte stehen zu diesem Zeitpunkt schon im Element: sie
+       kommen als data-Attribute aus den Reusable-Properties (siehe "Fuellen" weiter unten), und
+       die Komponente beobachtet diese Attribute und zeichnet von selbst neu, sobald Bubble sie
+       neu schreibt. Dieser Aufruf sagt nur "die Daten sind jetzt da" und loest die Sperre.
+
+       EINE Ausnahme: die Modellauswahl steht in KEINEM Attribut, sie kommt nur ueber
+       renderSettingsBrand. Beim Speichern der Modelle braucht es das trotzdem nicht -- die
+       Komponente hat die Auswahl beim Klick selbst uebernommen, die Anzeige stimmt also schon.
+       Noetig wird es nur, wenn der Server die Auswahl KORRIGIERT (Planlimit, ein Modell nicht
+       mehr verfuegbar). Dann in Schritt 4 zusaetzlich renderSettingsBrand mit der models-Liste,
+       sonst zeigt die Seite eine Auswahl, die der Server so nicht gespeichert hat.
+
+       Ohne ihn bleibt die Komponente gesperrt, bis der eingebaute Wecker nach 12s von selbst
+       entsperrt und eine gelbe Hinweiszeile zeigt ("Saving is taking longer than expected").
+       Das ist die Notbremse, nicht der Normalweg -- steht die Zeile im Alltag da, fehlt Schritt 4.
 
   Waehrend der Sperre ist die ganze Komponente inert: kein Klick, kein Tabben, kein Tippen. Das
   ist Absicht -- eine Aenderung, die waehrenddessen gemacht wird, waere gegen einen Stand gemacht,
