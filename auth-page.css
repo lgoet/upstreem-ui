@@ -24,17 +24,18 @@
 .uau-root {
   --uau-t: 200ms;
   --uau-ease: cubic-bezier(.4, 0, .2, 1);
-  /* Der Seitenhintergrund. Eigener Token, weil das der einzige Ort der App ist, an dem etwas
-     hinter einer Karte liegt -- --vc-heading-bg waere zu hell und wuerde die Karte verschlucken. */
-  --uau-page: #e9ebef;
   --uau-navy: #152142;
   --uau-navy-soft: #3a4767;
   --uau-hover: #f7f8fa;
 
   min-height: 100vh;
-  display: flex; align-items: center; justify-content: center;
-  padding: clamp(16px, 3vw, 56px);
-  background: var(--uau-page);
+  display: flex; align-items: stretch; justify-content: center;
+  /* Kein Rand um die Karte: die Seite IST die Karte. Der graue Seitenhintergrund des Handoffs
+     entfaellt damit -- er war ein Passepartout fuer eine 1440x900-Flaeche, und die gibt es hier
+     nicht mehr. Der einzige verbliebene Abstand sind die 16px im Kartenpolster, und die halten
+     den Werbeblock rechts vom Bildschirmrand weg. */
+  padding: 0;
+  background: var(--vc-bg);
   color: var(--vc-text);
   font-family: inherit;
   -webkit-font-smoothing: antialiased;
@@ -44,16 +45,15 @@
 
 /* ---------- Karte ---------- */
 .uau-card {
-  width: min(1440px, 100%);
-  aspect-ratio: 1440 / 900;
-  min-height: 640px;
+  width: 100%;
+  min-height: 100vh;
   display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
   padding: 16px;
   background: var(--vc-bg);
-  border-radius: clamp(12px, 1.4vw, 20px);
   overflow: hidden;
-  box-shadow: 0 1px 2px rgba(15,17,21,.04), 0 40px 90px rgba(23,37,84,.16);
 }
+/* Kein Radius, kein Schatten, kein Seitenverhaeltnis mehr: beides beschrieb eine Karte, die auf
+   einer Flaeche liegt. Sie liegt jetzt auf nichts -- sie ist die Flaeche. */
 
 /* ---------- linke Spalte ---------- */
 .uau-form {
@@ -296,7 +296,9 @@
    Unter 900px stapelt der Handoff die Spalten. Der Werbeblock steht dann UNTER dem Formular und
    nicht daneben: wer sich auf einem Telefon anmeldet, will das Feld sehen, nicht die Werbung. */
 .uau-root.is-narrow .uau-card {
-  grid-template-columns: 1fr; aspect-ratio: auto; min-height: 0;
+  /* Gestapelt bestimmt der Inhalt die Hoehe. min-height: 100vh bliebe zwar richtig, wenn wenig
+     drinsteht, wuerde aber bei viel Inhalt zusaetzlich zur Inhaltshoehe wirken. */
+  grid-template-columns: 1fr; min-height: 100vh; height: auto;
 }
 .uau-root.is-narrow .uau-form { padding: clamp(20px, 6vw, 36px); }
 .uau-root.is-narrow .uau-panel { border-radius: 20px; min-height: 320px; }
