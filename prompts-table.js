@@ -590,7 +590,6 @@
       /* Der Riegel gegen selbsttaetiges Nachladen, siehe render(). Startet false und wird von
          update() auf true gesetzt, also beim ersten renderPromptsTable. */
       darfHolen: false,
-      sichtWatch: null,
       /* Restored, same reason as rows/hasData above: a re-render of the Bubble element must not
          make this boot re-ask for headers a previous boot already has. groupsHasData false here
          is precisely what made render() fire uptGroups once per re-render. */
@@ -4383,38 +4382,6 @@
     window.addEventListener("resize", UC.rafThrottle(function(){ _sticky.applySticky(); }));
     _sticky.applySticky();
 
-    /* Der eigentliche Riegel. state.darfHolen allein reichte nicht: der Pageload-Workflow ruft
-       renderPromptsTable auf JEDER Seite (sichtbar am eigenen Log "sending N rows"), nicht nur in
-       der Prompts-Ansicht -- der Riegel ging also ueberall auf, und die Gruppen-RPC lief mit,
-       ohne dass die Tabelle je zu sehen war.
-       offsetParent ist null, sobald irgendein Vorfahr display:none traegt -- genau das ist ein
-       Bubble-View, der gerade nicht dran ist. Kein URL-Parameter, kein neues Attribut, nichts,
-       was auf Bubble-Seite gepflegt werden muesste. */
-    /* Holt die Gruppen, sobald die Tabelle WIRKLICH im Blickfeld steht -- und keine Sekunde
-       frueher. IntersectionObserver statt einer eigenen Sichtpruefung, weil er unabhaengig davon
-       greift, WIE der Host die Ansicht wegblendet: display:none, Hoehe 0, aus dem Bild geschoben,
-       hinter einem anderen Container. Eine Pruefung auf offsetParent kennt nur den ersten Fall
-       und liess die RPC auf jeder Seite mitlaufen.
-       Fehlt der Beobachter (sehr alter Browser), wird sofort geholt -- lieber eine RPC zu viel
-       als eine Tabelle ohne Gruppen. */
-    function warteAufSicht(){
-      if (state.sichtWatch) return;
-      if (!window.IntersectionObserver){ state.sichtWatch = 1; fetchGroupsInitial(); return; }
-      state.sichtWatch = new IntersectionObserver(function(eintraege){
-        for (var i = 0; i < eintraege.length; i++){
-          if (!eintraege[i].isIntersecting) continue;
-          if (state.sichtWatch && state.sichtWatch.disconnect) state.sichtWatch.disconnect();
-          state.sichtWatch = null;
-          /* Bedingungen erneut pruefen: zwischen dem Aufsetzen des Beobachters und diesem Moment
-             koennen die Gruppen laengst angekommen sein (der Nutzer schaltet um, ein Setter
-             liefert sie). Ohne die Pruefung waere das eine zweite, ueberfluessige RPC. */
-          if (state.darfHolen && groupingOn() && !state.groupsHasData && !state.groupsLoading) fetchGroupsInitial();
-          return;
-        }
-      });
-      state.sichtWatch.observe(root);
-    }
-
     function render(){
       renderTable(); renderCount(); syncHeadSorters(); syncColsBadge(); syncSelectAll(); syncBrand();
       syncMentLabel();
@@ -4425,22 +4392,11 @@
          can't fire again from any later render() call -- every other path to fetchGroups() is a
          direct, immediate, user-triggered call elsewhere (the toggle, the checkbox, saving a
          custom group), correctly NOT going through this retry-aware wrapper. */
-      /* state.darfHolen ist der Riegel davor: Bubble baut dieses Element auf JEDER Seite, nicht
-         nur in der Prompts-Ansicht. Ohne den Riegel holte die Tabelle beim Seitenaufbau ihre
-         Gruppen -- und weil groupingOn() den Zustand aus dem localStorage der letzten Sitzung
-         liest, passierte das ausgerechnet nur bei Nutzern, die Gruppierung eingeschaltet hatten.
-         Ergebnis: die Gruppen-RPC lief auf jeder Seite mit, ohne dass die Tabelle je zu sehen war.
-         Die Tabelle darf nicht selbst entscheiden, wann sie dran ist. Das weiss nur der Aufrufer,
-         und er sagt es, indem er renderPromptsTable ruft (der Startup-Schritt der Ansicht). Bis
-         dahin holt sie nichts. Jeder andere Weg zu fetchGroups() ist ein Klick des Nutzers -- der
-         setzt voraus, dass die Tabelle sichtbar ist, und braucht diese Pruefung deshalb nicht. */
-      /* NIE direkt holen. Frueher stand hier ein direkter fetchGroupsInitial()-Aufruf, spaeter
-         einer mit Sichtbarkeitspruefung ueber offsetParent -- beides feuerte weiterhin auf jeder
-         Seite, weil der Pageload-Workflow renderPromptsTable ueberall ruft und offsetParent nur
-         display:none erkennt. Wie ein Host seine Ansichten wegblendet, ist nicht vorhersagbar.
-         Der einzige Weg fuehrt jetzt ueber den Beobachter: der meldet sich, wenn das Element
-         wirklich im Blickfeld steht, und sonst nie. */
-      if (state.darfHolen && groupingOn() && !state.groupsHasData && !state.groupsLoading) warteAufSicht();
+      /* state.darfHolen ist der einzige Riegel, und er geht nur ueber view_active auf (siehe
+         update()). Zwei Versuche davor haben es anders probiert und beide scheiterten an
+         derselben Sache: die Tabelle ist auch dann sichtbar und befuellt, wenn ihre Ansicht nicht
+         dran ist. Kein aus dem DOM ablesbares Merkmal unterscheidet die beiden Faelle. */
+      if (state.darfHolen && groupingOn() && !state.groupsHasData && !state.groupsLoading) fetchGroupsInitial();
       renderStatusTabs(); renderBulkBar();
       if (root.classList.contains("up-sticky")) syncTheadOffset();
     }
@@ -4490,10 +4446,16 @@
       },
       update: function(params){
         params = params || {};
-        /* Ab jetzt darf die Tabelle von sich aus nachladen -- vorher nicht. Siehe die Erklaerung
-           an state.darfHolen: Bubble baut das Element auf JEDER Seite, aber renderPromptsTable
-           kommt nur, wenn die Prompts-Ansicht wirklich dran ist. */
-        state.darfHolen = true;
+        /* NUR dieses Feld oeffnet den Riegel. Gemessen wurde, warum jedes andere Kriterium
+           versagt: renderPromptsTable laeuft auf jeder Seite, und die Tabelle ist dabei technisch
+           voll sichtbar (1756x1131, display:flex, visibility:visible, kein versteckender Vorfahr)
+           -- der Host nimmt die nicht aktive Ansicht also weder aus dem Layout noch aus dem Bild.
+           Damit kann die Komponente unmoeglich selbst erkennen, ob sie gerade dran ist. Das weiss
+           nur der Aufrufer, und er sagt es hier.
+           Fehlt das Feld, bleibt der Riegel zu: die Tabelle holt dann nie von sich aus Gruppen.
+           Ein Klick auf den Gruppierungsschalter holt sie weiterhin sofort -- der setzt voraus,
+           dass jemand die Tabelle vor sich hat. */
+        if (params.view_active != null) state.darfHolen = isYes(params.view_active);
         if (params.isDark != null){
           isDark = isYes(params.isDark);
           if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
