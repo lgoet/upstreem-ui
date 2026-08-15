@@ -12,7 +12,8 @@
   if (!window.__uptBootStubbed){
     window.__uptBootStubbed = true;
     ["renderPromptsTable", "setPromptsTableLoading", "resetPromptsTable", "setPromptsTableTopics", "setPromptsTableBrands",
-     "setPromptsTableGroups", "setPromptsTableGroupPrompts"].forEach(function(n){
+     "setPromptsTableGroups", "setPromptsTableGroupPrompts",
+     "setPromptsTableViewActive"].forEach(function(n){
       window[n] = function(){ __uptBootQueue.push([n, arguments]); };
     });
   }
@@ -4444,6 +4445,13 @@
         }
         renderCount();
       },
+      setViewActive: function(on){
+        state.darfHolen = isYes(on);
+        /* Sofort nachziehen: der Aufruf kommt, wenn die Ansicht geoeffnet wird, und die Daten
+           koennen von einem frueheren Seitenaufbau laengst dastehen. Ohne dieses render() haette
+           die Tabelle ihre Gruppen erst beim naechsten beliebigen Neuzeichnen geholt. */
+        if (state.darfHolen) render();
+      },
       update: function(params){
         params = params || {};
         /* NUR dieses Feld oeffnet den Riegel. Gemessen wurde, warum jedes andere Kriterium
@@ -4776,6 +4784,12 @@
     return true;
   }
   function doLoading(id, on){ var c = resolve(id); if (!c) return false; c.setLoading(on); return true; }
+  /* Sagt der Tabelle, dass ihre Ansicht jetzt dran ist. Gehoert als erster Schritt in den
+     Workflow, der die Ansicht oeffnet -- vor die Custom Events, die die Daten holen.
+     Eigener Aufruf statt eines Feldes im Render-Payload, weil der Render-Aufruf ueber mehrere
+     Custom Events verteilt sein kann und derselbe Aufruf auch beim Seitenaufbau anderer Seiten
+     laeuft. Dieser hier laeuft nur dort, wo er steht. */
+  function doViewActive(id, on){ var c = resolve(id); if (!c) return false; c.setViewActive(on); return true; }
   /* Fills the bulk topic editor. Accepts an array or a JSON string of
      {id, name, emoji, hex_light, hex_dark} — the same shape the rows' own `tags` use, so you can
      feed it straight from your topics table. Load it once on page load, like the brand lists in
@@ -4829,7 +4843,8 @@
     initRoot: initRoot,
     api: { renderPromptsTable: doRender, setPromptsTableLoading: doLoading, resetPromptsTable: doReset,
            setPromptsTableTopics: doTopics, setPromptsTableBrands: doBrands,
-           setPromptsTableGroups: doGroups, setPromptsTableGroupPrompts: doGroupPrompts },
+           setPromptsTableGroups: doGroups, setPromptsTableGroupPrompts: doGroupPrompts,
+           setPromptsTableViewActive: doViewActive },
     forwardShape: { renderPromptsTable: "params", resetPromptsTable: "id" }
   });
   function rootsWithId(id){ return mount.rootsWithId(id); }
