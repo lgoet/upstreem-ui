@@ -123,6 +123,42 @@
     { value: "hybrid", label: "Hybrid (B2B & B2C)" }
   ];
 
+  /* Das Business Model kommt aus einem Bubble-Option-Set, und ein Bubble-Ausdruck liefert dort
+     standardmaessig den ANZEIGETEXT, nicht den technischen Wert: "Hybrid (B2B & B2C)" statt
+     "hybrid". Gemessen: mit dem Anzeigetext war anschliessend KEIN Knopf aktiv, und zwar
+     kommentarlos -- die Seite sah aus, als haette der Nutzer nie etwas gewaehlt.
+     Darum wird hier beides akzeptiert. Unbekanntes gibt "" zurueck und nicht etwa den ersten
+     Knopf: ein falsch markierter Knopf ist schlimmer als ein leerer, weil er beim naechsten
+     Speichern einen Wert schreibt, den niemand gewaehlt hat. */
+  function normBiz(v, warnen){
+    var s = String(v == null ? "" : v).trim().toLowerCase();
+    if (!s) return "";
+    for (var i = 0; i < BUSINESS.length; i++){
+      if (BUSINESS[i].value === s || BUSINESS[i].label.toLowerCase() === s) return BUSINESS[i].value;
+    }
+    /* Tolerant fuer die Schreibweisen, die beim Umbenennen eines Option-Sets entstehen:
+       "Hybrid", "Hybrid (B2B and B2C)", "B2B & B2C", "both". */
+    if (s.indexOf("hybrid") === 0 || s === "b2b & b2c" || s === "b2b and b2c" || s === "both") return "hybrid";
+    if (warnen && window.console){
+      console.warn("[settings-brand] Business Model \"" + v + "\" ist keiner der drei Werte " +
+        "(b2b / b2c / hybrid) und auch keine ihrer Beschriftungen — es bleibt keiner ausgewaehlt.");
+    }
+    return "";
+  }
+
+  /* Ein team_-Praefix vor bekannten Feldern abstreifen. Die RPC liefert ihre Spalten als
+     team_business_model / team_market / team_summary; ohne diese Zeile las die Komponente
+     schlicht nichts und zeigte leere Felder, als waere nie etwas gespeichert worden. */
+  var TEAM_PREFIX = ["business_model", "market", "market_id", "industry", "summary",
+                     "brand_name", "brand_logo", "name", "id"];
+  function stripTeamPrefix(p){
+    for (var i = 0; i < TEAM_PREFIX.length; i++){
+      var k = TEAM_PREFIX[i];
+      if (p["team_" + k] != null && p[k] == null) p[k] = p["team_" + k];
+    }
+    return p;
+  }
+
   function makeController(root){
     var UC = window.UpstreemCore;
     var esc = UC.esc;
@@ -1009,7 +1045,7 @@
       ["data-team-id",      function(v){ meta.teamId = v; }],
       ["data-team-name",    function(v){ meta.teamName = v; }],
       ["data-brand-market",       function(v){ saved.marketId = v.trim().toLowerCase(); draft.marketId = saved.marketId; }],
-      ["data-brand-business",     function(v){ saved.businessModel = v.trim().toLowerCase(); draft.businessModel = saved.businessModel; }],
+      ["data-brand-business",     function(v){ saved.businessModel = normBiz(v, true); draft.businessModel = saved.businessModel; }],
       ["data-brand-industry",     function(v){
         saved.industry = v; draft.industry = v;
         /* Eine gespeicherte Branche, die nicht in der festen Liste steht (frueher selbst
@@ -1056,7 +1092,7 @@
 
     return {
       render: function(p){
-        p = p || {};
+        p = stripTeamPrefix(p || {});
         var brand = p.brand || {}, team = p.team || {};
         if (brand.name != null) meta.brandName = String(brand.name);
         if (brand.logo != null) meta.brandLogo = String(brand.logo);
@@ -1115,7 +1151,7 @@
            bestehen, damit ein bereits verdrahteter Aufruf nicht bricht. */
         var mk = p.market != null ? p.market : p.market_id;
         if (mk != null){ saved.marketId = String(mk).trim().toLowerCase(); draft.marketId = saved.marketId; }
-        if (p.business_model != null){ saved.businessModel = String(p.business_model).toLowerCase(); draft.businessModel = saved.businessModel; }
+        if (p.business_model != null){ saved.businessModel = normBiz(p.business_model, true); draft.businessModel = saved.businessModel; }
 
         var inds = p.industries;
         if (typeof inds === "string") inds = UC.parseBubbleJson(inds);
