@@ -25,43 +25,68 @@
      ── EVENTS (JavaScriptToBubble, Value type TEXT, Trigger event an) ────────────────────────
 
        data-submit-fn  = "bubble_fn_uauSubmit_[dynamic id]"
-         {"team_id":"","mode":"signup","full_name":"Alex Meier","email":"alex@company.com",
-          "password":"…","opt_in":"yes"}
+         {"team_id":"","mode":"signup","token":"INV-abc123","email":"alex@company.com","opt_in":"yes"}
 
          Feuert NUR, wenn die Pruefung im Browser durchgelaufen ist. Danach geht die Seite von
          selbst in den Ladezustand: Knopf mit Spinner, alle Felder gesperrt. Aus dem kommt sie
          ausschliesslich durch setAuthPageError oder setAuthPageDone zurueck.
 
          mode       "login" | "signup"
-         full_name  nur im Signup gefuellt, im Login immer ""
+         token      der Einladungstoken aus ?token= -- leer heisst "normale Anmeldung".
+                    Immer dabei, auch leer: ein Feld, das mal fehlt, zwingt jeden Workflow zu
+                    einer Fallunterscheidung beim Auslesen.
          opt_in     "yes" | "no" -- der Haken links unten. Im Login heisst er "Remember me",
                     im Signup "Send me product updates". EIN Feld, zwei Bedeutungen, je nach
                     mode -- lies es zusammen mit mode aus.
 
          Extraktion (jedes Feld einzeln):
-           mode      :extract with Regex  "mode":"([^"]*)"       :first item
-           full_name :extract with Regex  "full_name":"([^"]*)"  :first item
-           email     :extract with Regex  "email":"([^"]*)"      :first item
-           opt_in    :extract with Regex  "opt_in":"([^"]*)"     :first item
+           mode   :extract with Regex  "mode":"([^"]*)"    :first item
+           token  :extract with Regex  "token":"([^"]*)"   :first item
+           email  :extract with Regex  "email":"([^"]*)"   :first item
+           opt_in :extract with Regex  "opt_in":"([^"]*)"  :first item
 
-         DAS PASSWORT NICHT PER REGEX LESEN und nirgends protokollieren. Es kann jedes Zeichen
-         enthalten, auch Anfuehrungszeichen -- "password":"([^"]*)" schneidet dann mittendrin ab,
-         und der Nutzer bekommt "falsches Passwort" fuer ein richtiges. Gib den GANZEN Payload
-         als einen Text-Parameter an deinen Auth-Endpunkt und lies ihn dort serverseitig als
-         JSON. Das ist auch der einzige Weg, bei dem das Passwort nicht als Bubble-State
-         zwischengelagert wird.
+         Alle vier sind sicher per Regex lesbar: keiner dieser Werte kann ein Anfuehrungszeichen
+         enthalten.
+
+         Passwort und Name stehen NICHT in diesem Payload -- sie kommen als eigene Events, siehe
+         unten. Grund: beide duerfen Anfuehrungszeichen enthalten, und die werden in einem
+         JSON-Text zu \" -- eine Regex-Extraktion schnitte dann mittendrin ab. Der Nutzer bekaeme
+         "falsches Passwort" fuer ein richtiges, und zwar nur manchmal.
+
+       data-name-fn      = "bubble_fn_uauName_[dynamic id]"
+       data-password-fn  = "bubble_fn_uauPassword_[dynamic id]"
+         ROHER WERT, kein JSON. Der Wert IST der Name bzw. das Passwort -- keine Extraktion,
+         keine Regex, kein Abschneiden moeglich. In Bubble also schlicht:
+           This JavaScriptToBubble's value
+
+         Beide feuern UNMITTELBAR VOR uauSubmit. Bubble arbeitet die Aufrufe nacheinander ab,
+         die States stehen also, wenn der Submit-Workflow laeuft. Lies sie dort aus den States,
+         nicht aus dem uauSubmit-Payload -- dort sind sie nicht drin.
+
+         uauName ist im Login-Modus ein leerer Text. Das ist kein Fehler, dort gibt es kein
+         Namensfeld.
+
+         Beide Elemente sind PFLICHT, wenn du uauSubmit verdrahtest. Fehlt eines, meldet die
+         Konsole "nicht gefunden" und der Wert erreicht keinen Workflow -- der Login schluege
+         dann bei jedem Versuch fehl, ohne dass die Ursache sichtbar waere.
+
+         Das Passwort liegt zwischen diesen beiden Schritten als Bubble-State vor. Setze es im
+         Erfolgs- wie im Fehlerzweig ausdruecklich wieder auf leer, damit es nicht bis zum
+         naechsten Seitenwechsel dort stehen bleibt.
 
        data-google-fn  = "bubble_fn_uauGoogle_[dynamic id]"
-         {"team_id":"","mode":"login"}     Startet den OAuth-Fluss.
+         {"team_id":"","mode":"login","token":"INV-abc123","email":"alex@company.com"}
+         Startet den OAuth-Fluss. Die Adresse faehrt mit, damit du serverseitig pruefen kannst,
+         ob der Google-Account zur Einladung passt.
 
        data-mode-fn    = "bubble_fn_uauMode_[dynamic id]"
-         {"team_id":"","mode":"signup"}
+         {"team_id":"","mode":"signup","token":"INV-abc123"}
          Der Nutzer hat unten auf "Sign up" / "Sign in" geklickt. Die Seite hat schon
          umgeschaltet -- du musst nichts zurueckgeben. Nur verdrahten, wenn die URL mitwandern
          soll (Go to page /signup) oder du den Wechsel zaehlen willst.
 
        data-side-fn    = "bubble_fn_uauSide_[dynamic id]"
-         {"team_id":"","mode":"login","email":"alex@company.com"}
+         {"team_id":"","mode":"login","token":"","email":"alex@company.com"}
          Der Link rechts neben dem Haken: "Forgot password?" im Login, "Need help?" im Signup.
          Die eingetippte Adresse faehrt mit, damit der Zuruecksetzen-Fluss nicht noch einmal
          danach fragen muss.
@@ -113,11 +138,13 @@
      ── EINBAU IN KUERZE ──────────────────────────────────────────────────────────────────────
      1. Element auf die Seite, volle Breite und Hoehe, kein Padding drumherum.
         data-instance, data-cdn-pin, data-logo, data-bg setzen.
-     2. Vier JavaScriptToBubble-Elemente anlegen (uauSubmit, uauGoogle, uauMode, uauSide).
-        uauSubmit ist Pflicht, die anderen drei nach Bedarf.
-     3. Workflow auf uauSubmit: den GANZEN Wert als einen Text-Parameter an deinen
-        Auth-Endpunkt. Erfolgszweig -> navigieren oder setAuthPageDone.
+     2. JavaScriptToBubble-Elemente anlegen. PFLICHT: uauName, uauPassword, uauSubmit.
+        Nach Bedarf: uauGoogle, uauMode, uauSide.
+     3. Workflow auf uauSubmit: mode/token/email/opt_in aus dem Wert extrahieren, Name und
+        Passwort aus den States der beiden anderen Elemente nehmen.
+        Erfolgszweig -> navigieren oder setAuthPageDone.
         FEHLERZWEIG -> setAuthPageError. Ohne ihn laeuft jeder Fehlversuch in die Notbremse.
+        In BEIDEN Zweigen den Passwort-State wieder leeren.
      4. data-mode aus dem URL-Parameter binden, wenn /login und /signup dieselbe Seite sind.
      ========================================================================================== -->
 
@@ -127,6 +154,8 @@
      data-mode="login"
      data-logo="LOGO_URL"
      data-bg="BG_URL"
+     data-name-fn="bubble_fn_uauName"
+     data-password-fn="bubble_fn_uauPassword"
      data-submit-fn="bubble_fn_uauSubmit"
      data-google-fn="bubble_fn_uauGoogle"
      data-mode-fn="bubble_fn_uauMode"

@@ -175,6 +175,27 @@
     var esc = UC.esc;
     var fire = UC.makeFire(root, { label: "auth-page", eventPrefix: "uau" });
 
+    /* Ein Event, dessen Wert der Wert IST -- kein JSON drumherum, keine Extraktion noetig.
+       makeFire kann das nicht: es verpackt immer als JSON und haengt team_id davor. Fuer
+       Passwort und Name ist genau diese Verpackung das Problem, also hier der direkte Weg.
+       Nicht still scheitern: wer den Namen nicht findet, bekommt dieselbe deutliche Meldung
+       wie bei makeFire -- ein Passwort, das nirgends ankommt, sieht sonst aus wie ein
+       fehlgeschlagener Login. */
+    function fireRoh(attr, fallback, wert){
+      var fnName = root.getAttribute(attr) || fallback;
+      var fn = UC.resolveBubbleFn ? UC.resolveBubbleFn(fnName) : window[fnName];
+      if (typeof fn !== "function"){
+        if (window.console) console.warn("[auth-page] " + fnName + " nicht gefunden — dieser Wert " +
+          "hat keinen Bubble-Workflow erreicht. Fehlt das JavaScriptToBubble-Element?");
+        return false;
+      }
+      try { fn(String(wert == null ? "" : wert)); return true; }
+      catch(e){
+        if (window.console) console.warn("[auth-page] " + fnName + " hat geworfen:", e);
+        return false;
+      }
+    }
+
     var state = { mode: "login", busy: false, done: false, errs: {}, formErr: "",
                   token: "", mailFest: false };
     var busyTimer = null;
@@ -412,15 +433,32 @@
     function absenden(){
       if (state.busy || state.done) return;
       if (!pruefe()) return;
+      /* ── Warum Passwort und Name NICHT im JSON stehen ─────────────────────────
+         Beide duerfen jedes Zeichen enthalten, auch Anfuehrungszeichen. In einem JSON-Text
+         werden die zu \" -- und eine Bubble-Extraktion mit "password":"([^\"]*)" schneidet
+         dann mittendrin ab. Der Nutzer bekaeme "falsches Passwort" fuer ein richtiges, und zwar
+         nur manchmal, was die schlimmste Sorte Fehler ist.
+         Ein Text-Parameter mit serverseitigem Parsen loeste das auch, steht hier aber nicht zur
+         Verfuegung. Also gehen die beiden als ROHER Wert durch je ein eigenes Event: dort IST
+         der Wert die ganze Nachricht, es gibt nichts zu suchen und nichts abzuschneiden.
+
+         Reihenfolge ist Absicht: erst die Rohwerte, dann der Submit. Bubble arbeitet diese
+         Aufrufe nacheinander ab, die beiden States stehen also, bevor der Submit-Workflow
+         laeuft. Andersherum laese er sie leer. */
+      fireRoh("data-name-fn", "uauName",
+              state.mode === "signup" ? String(elName.value || "").trim() : "");
+      fireRoh("data-password-fn", "uauPassword", String(elPw.value || ""));
+
       fire("data-submit-fn", "uauSubmit", {
         mode: state.mode,
         /* Immer dabei, auch leer. Ein Feld, das mal da ist und mal nicht, zwingt jeden
            Bubble-Workflow zu einer Fallunterscheidung beim Auslesen -- leer heisst schlicht
            "normale Anmeldung ohne Einladung". */
         token: state.token,
-        full_name: state.mode === "signup" ? String(elName.value || "").trim() : "",
+        /* email steht hier weiter drin: eine Adresse kann kein Anfuehrungszeichen enthalten,
+           die Extraktion ist also sicher. Sie faehrt zusaetzlich in uauPassword-Naehe nirgends
+           mit -- ein Feld, zwei Quellen waere eine zu viel. */
         email: String(elMail.value || "").trim(),
-        password: String(elPw.value || ""),
         opt_in: elCheck.checked ? "yes" : "no"
       });
       setBusy(true);
