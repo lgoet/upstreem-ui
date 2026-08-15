@@ -100,7 +100,18 @@
   function waehle(liste) {
     var jetzt = new Date().getTime();
     var arr = (liste || []).filter(function (n) {
-      return n && n.id != null && faellig(n, jetzt);
+      /* id != null reichte nicht: ein Bubble-Ausdruck ohne Treffer liefert keine leere Liste,
+         sondern eine Zeile mit lauter leeren Feldern -- {"id":"","title":"", ...}. Ein leerer
+         String ist nicht null, also kam die als gueltige Karte durch und stand als leerer Kasten
+         auf dem Bildschirm.
+         Ebenso raus: Zeilen ohne jeden Text. Eine Karte, die weder Ueberschrift noch Beschreibung
+         hat, kann nichts mitteilen -- sie ist ein Rahmen mit einem Schliessen-Knopf. */
+      if (!n) return false;
+      if (!String(n.id == null ? "" : n.id).trim()) return false;
+      var text = String(n.title == null ? "" : n.title).trim() ||
+                 String(n.body  == null ? "" : n.body ).trim();
+      if (!text) return false;
+      return faellig(n, jetzt);
     });
     arr.sort(function (a, b) {
       var pa = num(a.priority) || 0, pb = num(b.priority) || 0;
