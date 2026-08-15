@@ -23,6 +23,10 @@
 
 .uau-root {
   --uau-t: 200ms;
+  /* Der Einzug beim Aufbau hat seine EIGENE Dauer. Er darf laenger sein als ein Zustandswechsel:
+     dort wartet jemand auf eine Reaktion, hier sieht er der Seite beim Ankommen zu. Die 200ms
+     der Uebergaenge bleiben davon unberuehrt. */
+  --uau-in: 420ms;
   --uau-ease: cubic-bezier(.4, 0, .2, 1);
   --uau-navy: #152142;
   --uau-navy-soft: #3a4767;
@@ -286,7 +290,9 @@
    Fehlerzeilen, Erfolgsblock -- haben ihre eigenen Uebergaenge, und eine Animation daneben
    liefe ihnen ins Bild. */
 @keyframes uau-rise {
-  from { opacity: 0; transform: translateY(8px); }
+  /* 18px statt 8: der kurze Weg war bei 420ms kaum noch als Bewegung zu erkennen, die Bloecke
+     blendeten eher auf, als dass sie kamen. */
+  from { opacity: 0; transform: translateY(18px); }
   to   { opacity: 1; transform: none; }
 }
 .uau-root.is-entering .uau-h1,
@@ -297,18 +303,19 @@
 .uau-root.is-entering .uau-or,
 .uau-root.is-entering .uau-google,
 .uau-root.is-entering .uau-foot {
-  animation: uau-rise var(--uau-t) var(--uau-ease) backwards;
+  animation: uau-rise var(--uau-in) var(--uau-ease) backwards;
 }
 /* Stufe 1: die Anrede. Stufe 2: alles, womit man etwas tut. Stufe 3: der Hinweis unten.
-   90ms Versatz -- weniger verschmilzt zu einem Block, mehr zerfaellt in Einzelteile. */
+   130ms Versatz. Er waechst mit der Dauer mit: bliebe er bei 90ms, ueberlappten sich die Stufen
+   bei 420ms so stark, dass wieder ein einziger Block daraus wuerde. */
 .uau-root.is-entering .uau-h1,
 .uau-root.is-entering .uau-sub      { animation-delay: 0ms; }
 .uau-root.is-entering .uau-fields,
 .uau-root.is-entering .uau-opts,
 .uau-root.is-entering .uau-primary,
 .uau-root.is-entering .uau-or,
-.uau-root.is-entering .uau-google   { animation-delay: 90ms; }
-.uau-root.is-entering .uau-foot     { animation-delay: 180ms; }
+.uau-root.is-entering .uau-google   { animation-delay: 130ms; }
+.uau-root.is-entering .uau-foot     { animation-delay: 260ms; }
 
 /* ---------- Erfolgszustand ----------
    Ersetzt den Formularblock an Ort und Stelle. Beide Bloecke liegen im selben Raster uebereinander,

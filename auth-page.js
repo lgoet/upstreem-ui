@@ -425,8 +425,9 @@
        der Tab im Hintergrund liegt -- die Klasse waere dann nie wieder abgefallen und die
        Animationsregeln blieben dauerhaft ueber den spaeteren Uebergaengen dieser Seite liegen.
        Gemessen: mit rAF davor stand is-entering nach einer halben Sekunde noch.
-       460ms = 200ms Dauer + 180ms Versatz der letzten Stufe + Luft. */
-    setTimeout(function(){ root.classList.remove("is-entering"); }, 460);
+       760ms = 420ms Dauer + 260ms Versatz der letzten Stufe + Luft. Steht der Wert zu niedrig,
+       schneidet das Entfernen der Klasse die letzte Stufe mitten in der Bewegung ab. */
+    setTimeout(function(){ root.classList.remove("is-entering"); }, 760);
 
     return {
       root: root,
