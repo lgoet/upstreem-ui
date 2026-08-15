@@ -62,14 +62,22 @@
      Manufacturing" mit Luft, und kurz genug, dass die Zeile im Dropdown und im Trigger nicht
      umbricht. Der Wert steht auch als maxlength am Feld, damit der Browser schon abschneidet. */
   var IND_MAX = 48;
-  /* disabled_reason aus der RPC in einen Satz, den ein Nutzer versteht. Ein unbekannter Grund
-     faellt auf den allgemeinen Satz zurueck, statt den rohen Schluessel anzuzeigen. */
+  /* disabled_reason aus der RPC in einen Satz, den ein Nutzer versteht. */
   var REASON = {
     model_inactive: "This model is not available yet.",
     plan_limit:     "Your plan does not include this model.",
     not_allowed:    "Your plan does not include this model.",
-    no_permission:  "Only admins can change the tracked models."
+    no_permission:  "Only admins can change the tracked models.",
+    /* Der haeufigste Grund ueberhaupt, und ausgerechnet er fehlte: das letzte aktive Modell laesst
+       sich nicht abwaehlen. Ohne diesen Eintrag fiel er auf den Plan-Satz zurueck und behauptete
+       etwas, das nicht stimmt -- der Nutzer hat das Modell ja gerade aktiv. */
+    minimum_one_model_required: "At least one model has to stay active. Turn on another one first.",
+    minimum_one_model:          "At least one model has to stay active. Turn on another one first."
   };
+  /* Ein unbekannter Grund darf KEINE Ursache erfinden. Vorher stand hier "not available on your
+     plan" -- das ist geraten, und geraten war es in genau dem Fall falsch, der am haeufigsten
+     vorkommt. Lieber ein Satz, der nur sagt, was sichtbar ist. */
+  var REASON_FALLBACK = "This model cannot be changed right now.";
   var LOGO_TYPES = ["image/png", "image/svg+xml"];
 
   var ICON = {
@@ -588,13 +596,23 @@
                Satz. "Gesperrt" ohne Begruendung ist die Variante, ueber die sich jeder aergert. */
             var why = "";
             if (!meta.canManage) why = "Only admins can change the tracked models.";
-            else if (m.canToggle === false) why = REASON[m.reason] || "This model is not available on your plan.";
+            else if (m.canToggle === false) why = REASON[m.reason] || REASON_FALLBACK;
             else if (full && !m.active) why = "Your plan allows " + lim + " active models. Turn one off first.";
-            var locked = !!why;
-            return '<button class="usb-model' + (m.active ? " is-on" : "") + (locked ? " is-locked" : "") + '" ' +
+
+            /* NICHT schaltbar und NICHT verfuegbar sind zwei verschiedene Dinge, und sie duerfen
+               nicht gleich aussehen. Das letzte aktive Modell ist beides: aktiv getrackt und
+               nicht abwaehlbar. Ausgegraut wie ein gesperrtes Modell sah es aus, als liefe es
+               gar nicht -- dabei ist es das einzige, das laeuft.
+               Also: ausgegraut nur, wenn das Modell AUS ist. Ist es an, bleibt die Karte normal
+               und traegt nur is-fixed: kein Hover, kein Klick, aber der Haken steht. */
+            var starr  = !!why;
+            var locked = starr && !m.active;
+            var fixed  = starr && m.active;
+            return '<button class="usb-model' + (m.active ? " is-on" : "") +
+                (locked ? " is-locked" : "") + (fixed ? " is-fixed" : "") + '" ' +
                 'type="button" role="switch" aria-checked="' + (m.active ? "true" : "false") + '" ' +
                 'data-model="' + esc(m.key) + '"' +
-                (locked ? ' aria-disabled="true" data-tip="' + esc(why) + '"' : "") + '>' +
+                (starr ? ' aria-disabled="true" data-tip="' + esc(why) + '"' : "") + '>' +
               /* Nur wenn es ein Logo gibt. Ein leeres Kaestchen als Platzhalter sieht aus wie ein
                  Bild, das nicht geladen hat. */
               (m.logo_url ? '<span class="usb-model-logo"><img src="' + esc(m.logo_url) + '" alt="" ' +
@@ -872,7 +890,10 @@
       }
       var mb = t.closest("[data-model]");
       if (mb){
-        if (mb.classList.contains("is-locked")) return;
+        /* is-fixed muss hier mit hinein: die Karte sieht normal aus, ist aber genauso wenig
+           schaltbar wie eine gesperrte. Ohne diese Zeile liesse sich das letzte aktive Modell
+           abwaehlen, obwohl der Tooltip das Gegenteil sagt. */
+        if (mb.classList.contains("is-locked") || mb.classList.contains("is-fixed")) return;
         var key = mb.getAttribute("data-model");
         draft.models.forEach(function(m){ if (m.key === key) m.active = !m.active; });
         renderModels();
