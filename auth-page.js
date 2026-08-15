@@ -45,7 +45,7 @@
 
   var TEXTE = {
     login: {
-      hallo: "Holla,", h1: "Welcome Back",
+      hallo: "Hi,", h1: "Welcome Back",
       sub: "Sign in to win AI Search.",
       check: "Remember me", side: "Forgot password?",
       cta: "Sign in", ctaBusy: "Signing in",
@@ -54,13 +54,24 @@
     signup: {
       hallo: "Hey there,", h1: "Let’s get you set up",
       sub: "Sign up to win AI Search.",
-      check: "Send me product updates", side: "Need help?",
+      check: "Send me product updates", side: "",
       cta: "Create account", ctaBusy: "Creating account",
       footTxt: "Already have an account?", footLink: "Sign in"
     }
   };
 
   var STAERKE = ["", "Weak", "Fair", "Good", "Strong"];
+
+  /* Die Vorschlaege im Werbeblock rechts. Fuenf, weil vier zu schnell wiederkehren und sechs bei
+     4s Takt eine halbe Minute bis zur Wiederholung brauchen -- laenger, als jemand auf einer
+     Anmeldeseite steht. */
+  var VORSCHLAEGE = [
+    "How visible is my brand in ChatGPT?",
+    "What can I do right now to improve?",
+    "Build an AI visibility report for my marketing team",
+    "Which competitors outrank me in AI Search?",
+    "Where does Perplexity get its sources from?"
+  ];
 
   /* Die Google-Marke, vier Farben, wie vorgegeben. Nicht ueber UC.icon: das ist ein Feather-Satz
      aus einfarbigen Strichzeichnungen, und ein Markenzeichen gehoert nicht hineingemischt. */
@@ -205,10 +216,9 @@
         '</div>' +
         '<div class="uau-panel"' + (bg ? ' style="background-image: linear-gradient(180deg, rgba(255,255,255,.5), rgba(255,255,255,.16) 60%), url(' + esc(bg).replace(/[()]/g, "") + ')"' : '') + '>' +
           '<h2 class="uau-panel-h">AI Search Analytics.<br>Made simple.</h2>' +
-          '<p class="uau-panel-b">See in seconds how often ChatGPT, Gemini and Perplexity ' +
-            'recommend your brand.</p>' +
+          '<p class="uau-panel-b">See in seconds how often AI Search recommends your brand.</p>' +
           '<div class="uau-prompt">' +
-            '<span class="uau-prompt-t">How visible is my brand in ChatGPT?</span>' +
+            '<span class="uau-prompt-t"><span data-ph></span></span>' +
             '<span class="uau-prompt-c">' +
               '<span class="uau-mic">' + MIC_SVG + '</span>' +
               '<span class="uau-send">' + UP_SVG + '</span>' +
@@ -226,7 +236,10 @@
       elH1.textContent = t.h1;
       elSub.textContent = t.sub;
       elCheckTxt.textContent = t.check;
+      /* Ein leerer side-Text heisst: es gibt hier nichts anzubieten. Der Knopf verschwindet dann
+         ganz, statt als unsichtbare Klickflaeche stehen zu bleiben. */
       elSide.textContent = t.side;
+      elSide.hidden = !t.side;
       elPrimTxt.textContent = state.busy ? t.ctaBusy : t.cta;
       elFootTxt.textContent = t.footTxt;
       elFootBtn.textContent = t.footLink;
@@ -367,6 +380,36 @@
     messeBreite();
     if (UC.onResize) UC.onResize(root, messeBreite);
     else window.addEventListener("resize", messeBreite);
+
+    /* ── Durchlaufende Vorschlaege, Mechanik 1:1 aus ask-mira (phStart/phTick) ──
+       4000ms Takt, 240ms bis zum Textwechsel -- das ist der Punkt, an dem die alte Zeile oben
+       aus dem Bild ist. Dann springt das Element ohne Uebergang nach unten, bekommt den neuen
+       Text, und erst der erzwungene Reflow (offsetWidth) macht die Rueckfahrt wieder animierbar.
+       Ohne diesen Reflow fasst der Browser Wegnehmen und Zuruecksetzen der Klasse zu einem
+       Schritt zusammen und es bewegt sich nichts. */
+    var phEl = root.querySelector("[data-ph]"), phIdx = 0, phTimer = null;
+    function phTick(){
+      phEl.classList.add("is-out");
+      setTimeout(function(){
+        phIdx = (phIdx + 1) % VORSCHLAEGE.length;
+        phEl.style.transition = "none";
+        phEl.classList.remove("is-out"); phEl.classList.add("is-in");
+        phEl.textContent = VORSCHLAEGE[phIdx];
+        void phEl.offsetWidth;
+        phEl.style.transition = "";
+        phEl.classList.remove("is-in");
+      }, 240);
+    }
+    if (phEl){
+      phEl.textContent = VORSCHLAEGE[0];
+      phTimer = setInterval(phTick, 4000);
+      /* Im Hintergrund weiterlaufen zu lassen kostet Rechenzeit fuer etwas, das niemand sieht --
+         und auf einem Telefon heisst das Akku. */
+      document.addEventListener("visibilitychange", function(){
+        if (document.hidden){ if (phTimer){ clearInterval(phTimer); phTimer = null; } }
+        else if (!phTimer) phTimer = setInterval(phTick, 4000);
+      });
+    }
 
     setMode(attr("data-mode", "login") === "signup" ? "signup" : "login");
     render();

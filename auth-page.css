@@ -146,7 +146,10 @@
 }
 .uau-strength > div { overflow: hidden; min-height: 0; }
 .uau-strength.is-on { grid-template-rows: 1fr; opacity: 1; }
-.uau-strength-in { padding-top: 8px; display: flex; align-items: center; gap: 10px; }
+/* Oben UND unten 8px: die Anzeige soll zwischen Feld und Optionszeile gleich viel Luft haben,
+   sonst klebt sie an der Zeile darunter. Der Abstand sitzt hier und nicht als margin am Stapel,
+   weil der Block eingeklappt ist, solange nichts getippt wurde -- ein margin waere dann sichtbar. */
+.uau-strength-in { padding: 8px 0; display: flex; align-items: center; gap: 10px; }
 .uau-bars { display: flex; gap: 4px; flex: 1 1 auto; }
 .uau-bar {
   height: 4px; flex: 1 1 0; border-radius: 999px; background: var(--vc-sk);
@@ -167,7 +170,41 @@
 /* ---------- Optionszeile ---------- */
 .uau-opts { margin-top: 14px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .uau-check { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
-.uau-check input { width: 16px; height: 16px; accent-color: var(--vc-text); cursor: pointer; margin: 0; }
+/* Die native Checkbox sieht auf jedem Betriebssystem anders aus und passt zu keinem davon zur
+   App. accent-color faerbt nur die Fuellung, Form und Haken bleiben fremd. Also selbst gezeichnet,
+   in derselben Sprache wie der Rest: abgerundetes Quadrat wie .up-sent-dot, gefuellt in
+   --vc-text, der Haken ist der Feather-Haken aus core als Hintergrundbild.
+   appearance:none nimmt das Original weg -- ohne die Zeile liegen beide uebereinander. */
+.uau-check input {
+  appearance: none; -webkit-appearance: none;
+  width: 16px; height: 16px; margin: 0; flex: 0 0 auto; cursor: pointer;
+  border: 1px solid var(--vc-border); border-radius: 5px;
+  /* background-color einzeln, NICHT als background-Kurzform: mit einem var() darin liess sich
+     die Farbe im ungehakten Zustand nicht mehr zuruecksetzen -- gemessen blieb das Kaestchen
+     dunkel, obwohl nur die :checked-Regel sie setzt. */
+  background-color: var(--vc-bg);
+  background-repeat: no-repeat; background-position: center; background-size: 11px 11px;
+  transition: background-color var(--uau-t) var(--uau-ease),
+              border-color var(--uau-t) var(--uau-ease);
+}
+/* Der ungehakte Zustand AUSDRUECKLICH, nicht als Rueckfall auf die Basisregel: gemessen blieb
+   das Kaestchen dort dunkel. :not(:checked) und :checked schliessen einander aus, die
+   Ladereihenfolge entscheidet also nichts -- anders als bei gleich spezifischen Regeln, die
+   beide gelten koennen. */
+.uau-check input:not(:checked) {
+  background-color: var(--vc-bg); border-color: var(--vc-border); background-image: none;
+}
+.uau-check input:hover { border-color: var(--vc-hover-border, var(--vc-third)); }
+.uau-check input:checked {
+  background-color: var(--vc-text); border-color: var(--vc-text);
+  /* Der Haken als data-URI, weil ein Pseudo-Element an input nicht geht. Geometrie identisch
+     zum ICON.check dieser Datei und zu core: polyline 20 6 / 9 17 / 4 12, Strichstaerke 2.4. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+}
+.uau-check input:focus-visible {
+  outline: 0; border-color: var(--up-focus);
+  box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring);
+}
 .uau-check span { font-size: 13px; color: var(--vc-label, #4b5057); }
 .uau-side {
   font-size: 13px; font-weight: 500; color: var(--vc-muted);
@@ -265,8 +302,12 @@
   letter-spacing: -.03em; color: var(--uau-navy);
 }
 .uau-panel-b {
-  margin: 0; font-size: clamp(14px, 1.25vw, 19px); line-height: 1.4;
-  color: var(--uau-navy-soft); max-width: 34ch; text-wrap: pretty;
+  /* 64px links und rechts statt max-width 34ch: die Zeichenbegrenzung brach den kurzen Satz
+     mitten im Gedanken um, sobald die Spalte breiter wurde. Der Rand bestimmt jetzt die Breite,
+     nicht die Zeichenzahl. */
+  margin: 0 auto; padding: 0 64px;
+  font-size: clamp(14px, 1.25vw, 19px); line-height: 1.4;
+  color: var(--uau-navy-soft); max-width: none; text-wrap: pretty;
 }
 .uau-prompt {
   margin-top: clamp(4px, .8vw, 10px); width: 100%; max-width: 520px;
@@ -276,10 +317,23 @@
   padding-left: clamp(16px, 1.5vw, 22px);
   box-shadow: 0 2px 4px rgba(15,17,21,.05), 0 18px 40px rgba(23,37,84,.14);
 }
+/* Der durchlaufende Vorschlagstext. Werte 1:1 aus ask-mira.css (.am-ph-text): 260ms
+   cubic-bezier(0.22,1,0.36,1) fuer die Bewegung, 210ms ease-out fuer die Deckkraft, 92% Weg.
+   Nicht neu erfunden -- es soll DERSELBE Effekt sein, nicht ein aehnlicher. */
 .uau-prompt-t {
-  font-size: clamp(13px, 1.1vw, 17px); color: var(--vc-text); text-align: left;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  position: relative; height: 1.5em; overflow: hidden;
+  font-size: clamp(13px, 1.1vw, 17px); line-height: 1.5; text-align: left; min-width: 0;
 }
+.uau-prompt-t span {
+  position: absolute; left: 0; top: 0; right: 0;
+  color: var(--vc-text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transform: translateY(0); opacity: 1;
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1), opacity 210ms ease-out;
+  will-change: transform, opacity;
+}
+.uau-prompt-t span.is-out { transform: translateY(-92%); opacity: 0; }
+.uau-prompt-t span.is-in  { transform: translateY(92%);  opacity: 0; }
 .uau-prompt-c { display: flex; align-items: center; gap: 7px; }
 .uau-mic, .uau-send {
   width: clamp(34px, 2.9vw, 42px); height: clamp(34px, 2.9vw, 42px);
