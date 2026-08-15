@@ -62,7 +62,11 @@
 /* ---------- linke Spalte ---------- */
 .uau-form {
   display: flex; flex-direction: column;
-  padding: clamp(28px, 3.6vw, 52px) clamp(28px, 4.4vw, 64px);
+  /* Senkrecht an vh, waagerecht an vw. Der Handoff nahm fuer BEIDE Richtungen die Breite --
+     auf einem breiten, flachen Fenster (1440x700, also ein 13-Zoll-Laptop mit Browserleiste)
+     ergab das 52px oben und unten, obwohl gerade die Hoehe knapp ist. Gemessen brauchte die
+     Seite dort 714px und hatte 700. */
+  padding: clamp(20px, 4vh, 52px) clamp(28px, 4.4vw, 64px);
   min-width: 0;
 }
 /* Logo links, Theme-Schalter rechts, beide in EINER Zeile -- der Knopf sitzt damit auf der
@@ -92,7 +96,9 @@
 
 .uau-h1 {
   margin: 0;
-  font-size: clamp(28px, 3.1vw, 44px); line-height: 1.06;
+  /* min(vw, vh): auf einem flachen Fenster darf die Ueberschrift nicht 44px hoch bleiben und
+     den Rest hinausdruecken. Die Untergrenze 26px haelt sie lesbar. */
+  font-size: clamp(26px, min(3.1vw, 4.6vh), 44px); line-height: 1.06;
   font-weight: 600; letter-spacing: -.025em; color: var(--vc-text);
 }
 .uau-sub {
@@ -120,7 +126,9 @@
 }
 
 /* ---------- Felder ---------- */
-.uau-fields { margin-top: 26px; display: flex; flex-direction: column; gap: 12px; }
+/* Auch dieser Abstand gibt auf flachen Fenstern nach -- 26px zwischen Unterzeile und erstem
+   Feld sind Luxus, wenn die Seite sonst scrollt. */
+.uau-fields { margin-top: clamp(14px, 2.8vh, 26px); display: flex; flex-direction: column; gap: 12px; }
 .uau-field { display: flex; flex-direction: column; gap: 7px; }
 /* Ein- und Ausblenden des Namensfeldes beim Moduswechsel. 0fr->1fr statt height, weil die
    Zielhoehe hier niemand kennt: mit Fehlertext ist das Feld hoeher als ohne. */
@@ -309,7 +317,7 @@
 .uau-primary:hover:not(:disabled) { opacity: .9; }
 .uau-primary:disabled { opacity: .55; cursor: default; }
 .uau-google {
-  margin-top: 18px; height: 40px; width: 100%;
+  margin-top: clamp(12px, 2vh, 18px); height: 40px; width: 100%;
   border: 1px solid var(--vc-border); border-radius: 12px;
   background: var(--vc-bg); color: var(--vc-text);
   font-family: inherit; font-size: 14px; font-weight: 600;
@@ -334,14 +342,15 @@
 
 /* ---------- Trenner ---------- */
 .uau-or {
-  margin-top: 18px;
+  margin-top: clamp(12px, 2vh, 18px);
   display: grid; grid-template-columns: 1fr auto 1fr; gap: 14px; align-items: center;
 }
 .uau-or::before, .uau-or::after { content: ""; height: 1px; background: var(--vc-border); }
 .uau-or span { font-size: 13px; color: var(--vc-third); }
 
 /* ---------- Fusszeile ---------- */
-.uau-foot { flex: 0 0 auto; font-size: 13px; color: var(--vc-muted); padding-top: 24px; }
+.uau-foot { flex: 0 0 auto; font-size: 13px; color: var(--vc-muted);
+  padding-top: clamp(12px, 2.5vh, 24px); }
 .uau-foot button {
   font: inherit; font-weight: 600; color: var(--vc-text);
   background: none; border: 0; padding: 0; margin-left: 4px; cursor: pointer;
