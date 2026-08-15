@@ -590,6 +590,7 @@
       /* Der Riegel gegen selbsttaetiges Nachladen, siehe render(). Startet false und wird von
          update() auf true gesetzt, also beim ersten renderPromptsTable. */
       darfHolen: false,
+      sichtWatch: null,
       /* Restored, same reason as rows/hasData above: a re-render of the Bubble element must not
          make this boot re-ask for headers a previous boot already has. groupsHasData false here
          is precisely what made render() fire uptGroups once per re-render. */
@@ -4382,6 +4383,36 @@
     window.addEventListener("resize", UC.rafThrottle(function(){ _sticky.applySticky(); }));
     _sticky.applySticky();
 
+    /* Der eigentliche Riegel. state.darfHolen allein reichte nicht: der Pageload-Workflow ruft
+       renderPromptsTable auf JEDER Seite (sichtbar am eigenen Log "sending N rows"), nicht nur in
+       der Prompts-Ansicht -- der Riegel ging also ueberall auf, und die Gruppen-RPC lief mit,
+       ohne dass die Tabelle je zu sehen war.
+       offsetParent ist null, sobald irgendein Vorfahr display:none traegt -- genau das ist ein
+       Bubble-View, der gerade nicht dran ist. Kein URL-Parameter, kein neues Attribut, nichts,
+       was auf Bubble-Seite gepflegt werden muesste. */
+    function sichtbar(){
+      return !!(root.offsetParent || root.getClientRects().length);
+    }
+    /* Sichtbar-Werden nachziehen. Ohne das fehlten die Gruppen-Header genau dann, wenn man auf
+       die Prompts-Ansicht wechselt, ohne dass Bubble erneut rendert -- also im Normalfall.
+       IntersectionObserver statt eines Intervalls: er meldet sich von selbst und kostet nichts,
+       solange nichts passiert. Fehlt er (sehr alter Browser), wird ohne Sichtpruefung geholt --
+       lieber eine RPC zu viel als eine Tabelle ohne Gruppen. */
+    function warteAufSicht(){
+      if (state.sichtWatch) return;
+      if (!window.IntersectionObserver){ state.sichtWatch = 1; fetchGroupsInitial(); return; }
+      state.sichtWatch = new IntersectionObserver(function(eintraege){
+        for (var i = 0; i < eintraege.length; i++){
+          if (!eintraege[i].isIntersecting) continue;
+          state.sichtWatch.disconnect();
+          state.sichtWatch = null;
+          render();          /* nicht direkt holen: render() prueft alle Bedingungen erneut */
+          return;
+        }
+      });
+      state.sichtWatch.observe(root);
+    }
+
     function render(){
       renderTable(); renderCount(); syncHeadSorters(); syncColsBadge(); syncSelectAll(); syncBrand();
       syncMentLabel();
@@ -4401,7 +4432,8 @@
          und er sagt es, indem er renderPromptsTable ruft (der Startup-Schritt der Ansicht). Bis
          dahin holt sie nichts. Jeder andere Weg zu fetchGroups() ist ein Klick des Nutzers -- der
          setzt voraus, dass die Tabelle sichtbar ist, und braucht diese Pruefung deshalb nicht. */
-      if (state.darfHolen && groupingOn() && !state.groupsHasData && !state.groupsLoading) fetchGroupsInitial();
+      if (state.darfHolen && sichtbar() && groupingOn() && !state.groupsHasData && !state.groupsLoading) fetchGroupsInitial();
+      else if (state.darfHolen && !sichtbar() && groupingOn() && !state.groupsHasData) warteAufSicht();
       renderStatusTabs(); renderBulkBar();
       if (root.classList.contains("up-sticky")) syncTheadOffset();
     }
