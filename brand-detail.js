@@ -191,6 +191,26 @@
       hasData: false
     };
 
+    /* Der Ladezustand kommt auf ZWEI Wegen: als Attribut vom Loader (data-processing, so wie in
+       brands-overview und citations-combo-chart) und als Aufruf setBrandDetailLoading. Bisher las
+       diese Komponente nur den Aufruf -- ein Element, das seinen Ladezustand ueber das Attribut
+       fuehrt, liess den KPI mit dem alten Wert stehen, waehrend daneben das Chart-Skelett lief.
+       data-isprocessing wird mitgelesen, weil der Loader beide Schreibweisen kennt und ein
+       Attributname, an dem es still scheitert, schwer zu finden ist. */
+    function readProcessing(){
+      var namen = ["data-processing", "data-processing2", "data-isprocessing"];
+      for (var i = 0; i < namen.length; i++){
+        var v = root.getAttribute(namen[i]);
+        if (v == null || v === "" || /^[A-Z_0-9]{3,}$/.test(v)) continue;
+        if (isYes(v)) return true;
+      }
+      return false;
+    }
+    /* Wer setBrandDetailLoading einmal gerufen hat, fuehrt den Zustand von da an selbst. Sonst
+       ueberschrieben sich Attribut und Aufruf gegenseitig, je nachdem was zuletzt kam. */
+    var LOADING_EXPLICIT = (window.__ubdLoadingExplicit = window.__ubdLoadingExplicit || {});
+    function istLaden(){ return LOADING_EXPLICIT[instanceId] ? !!state.loading : readProcessing(); }
+
     function darkNow() { return isYes(root.getAttribute("data-isdark")); }
 
     var line = UC.makeLine({
@@ -292,7 +312,7 @@
          Instanz nicht fand. Das Chart zeigte trotzdem sein Skelett, weil es auf !hasData prueft,
          und der KPI daneben stand mit einem Gedankenstrich. Zwei Anzeigen fuer denselben Zustand,
          die sich widersprechen -- jetzt haengen beide an derselben Frage. */
-      if (state.loading || !state.hasData) {
+      if (istLaden() || !state.hasData) {
         elVal.innerHTML = '<span class="up-tsk-bar"></span>';
         elTrend.innerHTML = '<span class="up-tsk-bar"></span>';
         return;
@@ -312,7 +332,7 @@
       /* Der Fehlerfall kommt VOR dem Skelett: sonst laeuft der Ladezustand endlos weiter und
          sieht aus wie "gleich da", obwohl nichts mehr kommt. */
       if (state.error) { line.empty(state.error); return; }
-      if (state.loading || !state.hasData) { line.skeleton(); return; }
+      if (istLaden() || !state.hasData) { line.skeleton(); return; }
       var p = state.series;
       /* Eine Serie aus einem anderen Modus kann hier nur noch stehen, wenn setSeries den Modus
          nicht uebernehmen konnte (etwa "variations" im Serien-Payload). Dann Text statt Skelett:
@@ -525,7 +545,10 @@
         state.loading = false;
         render();
       },
-      setLoading: function (v) { state.loading = isYes(v); render(); },
+      setLoading: function (v) {
+        LOADING_EXPLICIT[instanceId] = true;
+        state.loading = isYes(v); render();
+      },
       reset: function (hart) {
         state.series = null; state.variations = null; state.hasData = false;
         state.loading = false;
@@ -549,6 +572,14 @@
     };
 
     root.__ubdController = ctrl;
+    /* Aendert der Loader sein Attribut, muss die Komponente das sehen -- sonst bliebe das
+       Skelett stehen oder erschiene nie. */
+    if (window.MutationObserver){
+      new MutationObserver(function(){ if (!LOADING_EXPLICIT[instanceId]) render(); })
+        .observe(root, { attributes: true,
+                         attributeFilter: ["data-processing", "data-processing2", "data-isprocessing"] });
+    }
+
     render();
     return ctrl;
   }
