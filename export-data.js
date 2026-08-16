@@ -600,6 +600,27 @@
       if (state.processing) return;   // already sent, ignore a repeat click
       var fnName = root.getAttribute("data-export-fn") || "bubble_fn_upstreemExport";
       var fn = resolveBubbleFn(fnName);
+      /* Rueckfall auf den Namen OHNE Instanz-Suffix. Beim Nutzer stand data-export-fn auf
+         bubble_fn_upstreemExport_prompt_runs, das JavaScriptToBubble-Element hiess aber
+         bubble_fn_upstreemExport -- ein Element fuer alle Platzierungen, was voellig in Ordnung
+         ist: der Payload traegt export_type, der Workflow weiss also, worum es geht.
+         Ohne diesen Rueckfall scheitert jede Platzierung, deren Suffix nicht exakt zum
+         Elementnamen passt, und der Fehler sieht aus wie "Export tut nichts". */
+      if (typeof fn !== "function"){
+        /* Auf den GRUNDNAMEN zurueck, nicht per Regex das letzte Stueck abschneiden: das Suffix
+           kann selbst Unterstriche enthalten (_prompt_runs), und dann bliebe
+           bubble_fn_upstreemExport_prompt uebrig -- wieder kein Treffer. */
+        var ohneSuffix = "bubble_fn_upstreemExport";
+        if (ohneSuffix !== fnName && fnName.indexOf(ohneSuffix) === 0){
+          var alt2 = resolveBubbleFn(ohneSuffix);
+          if (typeof alt2 === "function"){
+            if (window.console) console.info("[upstreem-export] " + fnName + " gibt es nicht, " +
+              ohneSuffix + " schon — dieser wird benutzt. Wenn jede Platzierung ihren eigenen " +
+              "Workflow bekommen soll, benenne das Element entsprechend.");
+            fn = alt2; fnName = ohneSuffix;
+          }
+        }
+      }
       /* Same shape as every other component here (see Mira's miraAction): ONE JSON string as the
          single argument, values pulled out on the Bubble side by regex. A Toolbox
          "Javascript to Bubble" element only captures the first argument anyway. */
