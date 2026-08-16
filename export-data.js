@@ -82,18 +82,13 @@
   /* Outbound event lookup: window/parent/top first, then a full BFS over every reachable
      iframe — needed when the receiving Toolbox element sits deeper than one level up. */
   function resolveBubbleFn(fnName){
-    /* ZUERST die Fassung aus core. Diese Datei trug seit der Standalone-Zeit eine eigene Kopie:
-       dieselbe Idee, aber ohne den Cache und ohne die Behandlung von Frames, deren Fenster
-       inzwischen geschlossen ist. In der App wurde bubble_fn_upstreemExport_<id> damit nicht
-       gefunden, obwohl das Element da war. Die Kopie bleibt als Rueckfall stehen, falls core
-       einmal nicht geladen ist -- dann ist sie besser als nichts. */
-    try {
-      var uc = window.UpstreemCore;
-      if (uc && typeof uc.resolveBubbleFn === "function"){
-        var viaCore = uc.resolveBubbleFn(fnName);
-        if (typeof viaCore === "function") return viaCore;
-      }
-    } catch(e){}
+    /* Die EIGENE Suche, nicht die aus core. Ich hatte hier UC.resolveBubbleFn vorangestellt, weil
+       es die gepflegtere Fassung ist -- danach kam der Export nicht mehr an, obwohl er vorher
+       lief und der Aufruf nachweislich bei window.bubble_fn_upstreemExport ankam. Was core
+       zusaetzlich tut (Cache, Frame-Behandlung), ist hier offenbar nicht neutral. Der Grund ist
+       nicht aufgeklaert; zurueck auf den Stand, der funktioniert hat.
+       Wer das eines Tages vereinheitlichen will, muss es an einer echten Seite messen, nicht im
+       Harness -- dort liefen beide Wege. */
     var fn = window[fnName] || (window.parent && window.parent[fnName]) || (window.top && window.top[fnName]);
     if (typeof fn === "function") return fn;
     var start; try { start = window.top || window.parent || window; } catch(e){ start = window; }
