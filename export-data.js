@@ -471,7 +471,22 @@
     /* Nichts mehr zurueckzuschieben -- der Picker gehoert dieser Komponente und bleibt, wo er ist.
        Die Funktion bleibt als leerer Aufruf bestehen, damit die beiden Aufrufstellen unveraendert
        lesbar sind. */
-    function returnCalendar(){ elCustomBtn.classList.remove("is-cal-open"); }
+    /* Beim Schliessen des Dialogs muss auch das Kalenderfeld zu. Sonst bleibt das Panel offen im
+       Dokument stehen -- es haengt in .udr-wrap innerhalb des Dialogs, wandert also mit ihm aus
+       dem Bild, ist aber beim naechsten Oeffnen sofort wieder aufgeklappt.
+       Ueber den Trigger, nicht ueber die Klassen: der Picker haelt seinen Zustand intern
+       (setOpen), und ein von aussen entferntes is-open liesse ihn glauben, er sei noch offen --
+       der naechste Klick wuerde dann zumachen statt aufmachen. Sein Controller bietet kein
+       close() an, der Trigger schaltet aber um, und aria-expanded sagt verlaesslich, ob das
+       noetig ist. */
+    function closeCalendar(){
+      var trig = elCalSlot.querySelector(".udr-trigger");
+      if (trig && trig.getAttribute("aria-expanded") === "true"){
+        try { trig.click(); } catch(e){}
+      }
+      elCustomBtn.classList.remove("is-cal-open");
+    }
+    function returnCalendar(){ closeCalendar(); }
 
     // the picker announces every committed range on window — that's our custom-range input
     if (!root.__uexRangeBound){
@@ -540,8 +555,9 @@
       btn.setAttribute("aria-expanded", "false");
       state.open = false;
       if (state.processing) setProcessing(false);   // defensive: don't leave a stale timer/state behind
-      // give the fade-out time before the calendar jumps back to its own place
-      setTimeout(returnCalendar, 160);
+      /* SOFORT, nicht verzoegert: das Panel soll mit dem Dialog verschwinden, nicht erst danach.
+         Zurueckzuschieben gibt es nichts mehr -- der Kalender gehoert dieser Komponente. */
+      closeCalendar();
     }
 
     function setProcessing(on){
