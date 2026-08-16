@@ -36,7 +36,7 @@
   ];
 
   var CHECK_SVG = '<span class="uex-opt-check" aria-hidden="true">' +
-    '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></span>';
+    '<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg></span>';
 
   function isYes(v){ return /^(1|true|yes|y)$/i.test(String(v == null ? "" : v).trim()); }
   function esc(s){
@@ -177,7 +177,7 @@
              der Knopf sprang und sah aus wie nirgends sonst in der App. */
           '<button class="up-popup-close uex-close" type="button" aria-label="Close">' +
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
-              'stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg>' +
+              'stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>' +
           '</button>' +
         '</div>' +
         '<div class="uex-body">' +
@@ -198,7 +198,7 @@
                 '</svg>' +
                 '<span class="uex-opt-label uex-custom-text">Custom range</span>' +
                 '<span class="uex-opt-check" aria-hidden="true">' +
-                  '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>' +
+                  '<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg>' +
                 '</span>' +
               '</button>' +
               '<div class="uex-cal-slot"></div>' +

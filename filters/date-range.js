@@ -89,7 +89,7 @@
     ];
     var DEFAULT_PRESET = "last7";
 
-    var ICON_CAL  = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
+    var ICON_CAL  = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>';
     var ICON_CHEV = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
     function navIcon(dir) {
       var pts = dir === "left" ? "15 18 9 12 15 6" : "9 18 15 12 9 6";

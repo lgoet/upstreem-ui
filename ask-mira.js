@@ -82,36 +82,36 @@
   /* ---------------- Inline icon set (no external libs) ---------------- */
   var ICON = {
     user: '<svg viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
-    trend: '<svg viewBox="0 0 24 24"><path d="M22 7 13.5 15.5 8.5 10.5 2 17"/><path d="M16 7h6v6"/></svg>',
+    trend: '<svg viewBox="0 0 24 24"><path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/></svg>',
     source: '<svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>',
     flag: '<svg viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></svg>',
     smile: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01M15 9h.01"/></svg>',
-    clock: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
-    copy: '<svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
-    download: '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
-    zap: '<svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
-    maximize: '<svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>',
-    globe: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
-    link: '<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
-    fileText: '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',
-    star: '<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+    clock: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+    copy: '<svg viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /> <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>',
+    download: '<svg viewBox="0 0 24 24"><path d="M12 15V3" /> <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /> <path d="m7 10 5 5 5-5" /></svg>',
+    zap: '<svg viewBox="0 0 24 24"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z" /></svg>',
+    maximize: '<svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3" /> <path d="M21 8V5a2 2 0 0 0-2-2h-3" /> <path d="M3 16v3a2 2 0 0 0 2 2h3" /> <path d="M16 21h3a2 2 0 0 0 2-2v-3" /></svg>',
+    globe: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /> <path d="M2 12h20" /></svg>',
+    link: '<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /> <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>',
+    fileText: '<svg viewBox="0 0 24 24"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" /> <path d="M14 2v5a1 1 0 0 0 1 1h5" /> <path d="M10 9H8" /> <path d="M16 13H8" /> <path d="M16 17H8" /></svg>',
+    star: '<svg viewBox="0 0 24 24"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" /></svg>',
     swords: '<svg viewBox="0 0 24 24"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" y1="19" x2="19" y2="13"/><line x1="16" y1="16" x2="20" y2="20"/><line x1="19" y1="21" x2="21" y2="19"/><polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5"/><line x1="5" y1="14" x2="9" y2="18"/><line x1="7" y1="17" x2="4" y2="20"/><line x1="3" y1="19" x2="5" y2="21"/></svg>',
-    prompt: '<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+    prompt: '<svg viewBox="0 0 24 24"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" /></svg>',
     citation: '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>',
     competitor: '<svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
     recommendation: '<svg viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 3h6c0-1.5.5-2.5 1-3a7 7 0 0 0-4-12z"/></svg>',
     brand: '<svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 8.3 8 11 4.6-2.7 8-6 8-11V5z"/></svg>',
     thumbsUp: '<svg viewBox="0 0 24 24"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>',
     thumbsDown: '<svg viewBox="0 0 24 24"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>',
-    check: '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>',
-    trash: '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+    check: '<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg>',
+    trash: '<svg viewBox="0 0 24 24"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /> <path d="M3 6h18" /> <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>',
     pencil: '<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
-    x: '<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+    x: '<svg viewBox="0 0 24 24"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>',
     telescope: '<svg viewBox="0 0 24 24"><path d="m10.065 12.493-6.18 1.318a.934.934 0 0 1-1.108-.702l-.537-2.15a1.07 1.07 0 0 1 .691-1.265l13.504-4.44"/><path d="m13.56 11.747 4.332-.924"/><path d="m16 21-3.105-6.21"/><path d="M16.485 5.94a2 2 0 0 1 1.455-2.425l1.09-.272a1 1 0 0 1 1.212.727l1.515 6.06a1 1 0 0 1-.727 1.213l-1.09.272a2 2 0 0 1-2.425-1.455z"/><path d="m6.158 8.633 1.114 4.456"/><path d="m8 21 3.105-6.21"/><circle cx="12" cy="13" r="2"/></svg>',
-    settings: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
-    chevron: '<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>',
-    chevronRight: '<svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>',
-    dots: '<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg>',
+    settings: '<svg viewBox="0 0 24 24"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>',
+    chevron: '<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>',
+    chevronRight: '<svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></svg>',
+    dots: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>',
     folderOpen: '<svg viewBox="0 0 24 24"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg>',
     folder: '<svg viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>',
     pin: '<svg viewBox="0 0 24 24"><g transform="rotate(45 12 12)"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></g></svg>',
@@ -388,11 +388,11 @@
   };
   var SUGG_ICONS = [ICON.trend, ICON.source, ICON.competitor, ICON.smile, ICON.clock];
   var GALLERY_ICONS = [
-    '<svg viewBox="0 0 24 24"><path d="M22 7 13.5 15.5 8.5 10.5 2 17"/><path d="M16 7h6v6"/></svg>',
+    '<svg viewBox="0 0 24 24"><path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/></svg>',
     '<svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>',
-    '<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
-    '<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
-    '<svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>'
+    '<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /> <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>',
+    '<svg viewBox="0 0 24 24"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" /></svg>',
+    '<svg viewBox="0 0 24 24"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2" /></svg>'
   ];
 
   var lang = 'en';
@@ -419,7 +419,7 @@
     var ms = (typeof raw === 'number') ? raw : parseFloat(String(raw == null ? '' : raw).replace(',', '.').replace(/[^0-9.]/g, ''));
     if (!isFinite(ms) || ms <= 0) return '';
     return '<div class="am-thought"><span>' + esc(formatThought(ms)) + '</span>' +
-           '<svg class="am-thought-chev" viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg></div>';
+           '<svg class="am-thought-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg></div>';
   }
 
   /* ---------------- Helpers ---------------- */
@@ -1093,7 +1093,7 @@
       '<button class="uo-status-btn" type="button" aria-haspopup="true" aria-expanded="false" title="Change status">'+
         '<span class="uo-status-dot" style="--uo-stat:'+meta.color+';"></span>'+
         '<span class="uo-status-label">'+esc(meta.label)+'</span>'+
-        '<svg class="uo-status-chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>'+
+        '<svg class="uo-status-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>'+
       '</button>'+
       '<div class="uo-status-menu" role="menu">'+statusOptionsHtml(key)+'</div>'+
     '</div>';
@@ -1134,8 +1134,8 @@
     if (!item || typeof item !== 'object') return '';
     var trendUp = Number(item.trend_pct) >= 0;
     var gapNeg  = Number(item.gap) < 0;
-    var arrowUp   = '<svg viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>';
-    var arrowDown = '<svg viewBox="0 0 24 24"><line x1="7" y1="7" x2="17" y2="17"/><polyline points="17 7 17 17 7 17"/></svg>';
+    var arrowUp   = '<svg viewBox="0 0 24 24"><path d="M7 7h10v10" /> <path d="M7 17 17 7" /></svg>';
+    var arrowDown = '<svg viewBox="0 0 24 24"><path d="m7 7 10 10" /> <path d="M17 7v10H7" /></svg>';
     var comps = asArrayLoose(item.mentioned_competitors);
     var compTotal = Number(item.competitor_count); if (!isFinite(compTotal)) compTotal = comps.length;
     var compMore = compTotal - comps.length;
@@ -1960,8 +1960,8 @@
   // Mobile-only quick actions (ChatGPT-style shortcuts). Reuse the exact desktop prompts.
   var _QA_IC = {
     report: '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
-    smile:  '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>',
-    trend:  '<svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>',
+    smile:  '<svg viewBox="0 0 24 24"><path d="M15 10V9" /> <path d="M16.472 15a6 6 0 01-8.943 0" /> <path d="M9 10V9" /> <circle cx="12" cy="12" r="10" /></svg>',
+    trend:  '<svg viewBox="0 0 24 24"><path d="M16 7h6v6" /> <path d="m22 7-8.5 8.5-5-5L2 17" /></svg>',
     eye:    '<svg viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>'
   };
   var QUICK_ACTIONS = {
@@ -2156,7 +2156,7 @@
         return '<button class="am-cat-card'+(full ? ' am-cat-card-full' : '')+'" type="button" data-cat="'+i+'">'+
           '<span class="am-cat-ic">'+(GALLERY_ICONS[i] || ICON.trend)+'</span>'+
           '<span class="am-cat-name">'+esc(cat.name)+'</span>'+
-          '<span class="am-cat-chev"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span>'+
+          '<span class="am-cat-chev"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></svg></span>'+
         '</button>';
       }
       var repIdx = -1;
@@ -2167,7 +2167,7 @@
           '<span class="am-cat-ic">'+(GALLERY_ICONS[repIdx] || ICON.fileText)+'</span>'+
           '<span class="am-cat-text"><span class="am-cat-label">'+esc(g[repIdx].name)+'</span>'+
             '<span class="am-cat-desc">'+esc(g[repIdx].desc || 'Full reports on your AI visibility')+'</span></span>'+
-          '<span class="am-cat-chev"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span>'+
+          '<span class="am-cat-chev"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></svg></span>'+
         '</button>';
       }
       html += '<div class="am-cat-grid">' + g.map(function(cat, i){
@@ -2191,18 +2191,18 @@
         var grp = o.group || 'd';
         if (grp !== prevGroup){ menu += '<div class="am-rep-range-sep"></div>'; prevGroup = grp; }
         menu += '<button class="am-rep-range-opt'+(o.id===_reportRange?' is-sel':'')+'" type="button" data-rep-range="'+escAttr(o.id)+'">'+esc(o.label)+
-          '<span class="am-rep-range-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span></button>';
+          '<span class="am-rep-range-check"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg></span></button>';
       });
       var rhtml = '<div class="am-gallery-head am-rep-head">'+
-        '<button class="am-gallery-back" type="button" data-gallery-back><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg><span>'+esc(L().galleryBack || 'All categories')+'</span></button>'+
+        '<button class="am-gallery-back" type="button" data-gallery-back><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></svg><span>'+esc(L().galleryBack || 'All categories')+'</span></button>'+
         '<span class="am-gallery-cat-title">'+esc(cat.name)+'</span>'+
         '<span class="am-rep-spacer"></span>'+
         repTopicsMarkup(de)+
         '<div class="am-rep-range-wrap">'+
           '<button class="am-rep-range" type="button" data-rep-range-toggle>'+
-            '<svg class="am-rep-cal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'+
+            '<svg class="am-rep-cal" viewBox="0 0 24 24"><path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>'+
             '<span class="am-rep-range-lbl">'+esc(repRangeLabel())+'</span>'+
-            '<svg class="am-rep-range-chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>'+
+            '<svg class="am-rep-range-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>'+
           '</button>'+
           '<div class="am-rep-range-menu">'+menu+'</div>'+
         '</div>'+
@@ -2212,7 +2212,7 @@
           '<span class="am-rep-ic">'+(ICON[r.icon] || ICON.trend)+'</span>'+
           '<span class="am-rep-text"><span class="am-rep-label">'+esc(r.label)+'</span><span class="am-rep-desc">'+esc(r.desc || '')+'</span></span>'+
           '<span class="am-rep-edit" data-rep-edit role="button" tabindex="-1" aria-label="Edit prompt" title="Edit prompt">'+ICON.pencil+'</span>'+
-          '<span class="am-rep-go"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span>'+
+          '<span class="am-rep-go"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></svg></span>'+
         '</button>';
       }).join('') + '</div>';
       elSuggGrid.innerHTML = rhtml;
@@ -2222,7 +2222,7 @@
       return;
     }
     var html = '<div class="am-gallery-head">'+
-      '<button class="am-gallery-back" type="button" data-gallery-back><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg><span>'+esc(L().galleryBack || 'All categories')+'</span></button>'+
+      '<button class="am-gallery-back" type="button" data-gallery-back><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></svg><span>'+esc(L().galleryBack || 'All categories')+'</span></button>'+
       '<span class="am-gallery-cat-title">'+esc(cat.name)+'</span>'+
     '</div>';
     html += (cat.subs || []).map(function(sub){
@@ -2231,7 +2231,7 @@
           var label = (q && typeof q === 'object') ? (q.label || q.prompt || '') : q;
           var prompt = (q && typeof q === 'object') ? (q.prompt || q.label || '') : q;
           return '<button class="am-gallery-prompt" type="button" data-q="'+escAttr(prompt)+'"><span>'+esc(label)+'</span>'+
-            '<span class="am-gallery-prompt-chev"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span></button>';
+            '<span class="am-gallery-prompt-chev"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></svg></span></button>';
         }).join('')+
       '</div></div>';
     }).join('');
@@ -2609,7 +2609,7 @@
     elDetailMenu.innerHTML = ['short','balanced','detailed'].map(function(k){
       return '<button class="am-model-opt am-detail-opt" type="button" role="menuitemradio" data-detail="'+k+'">'+
         '<span class="am-model-opt-main"><span class="am-model-opt-name">'+esc(lb[k])+'</span></span>'+
-        '<svg class="am-model-check" viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg>'+
+        '<svg class="am-model-check" viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" /></svg>'+
       '</button>';
     }).join('');
   }
@@ -2641,7 +2641,7 @@
       '<span class="am-model-opt-main"><span class="am-model-opt-name">'+esc(m.name)+'</span>'+
         (m.desc ? '<span class="am-model-opt-desc">'+esc(m.desc)+'</span>' : '')+
       '</span>'+
-      '<svg class="am-model-check" viewBox="0 0 24 24" fill="none"><polyline points="20 6 9 17 4 12"/></svg>'+
+      '<svg class="am-model-check" viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" /></svg>'+
     '</button>';
   }
   if (elModelMenu) elModelMenu.innerHTML = _modelOptHtml('pro') + _modelOptHtml('flash');
@@ -2716,7 +2716,7 @@
   }
 
   /* ===== "Ask Mira" selection -> quoted gray chip (prompt_research X-delete mechanic) ===== */
-  var QUOTE_X = '<svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+  var QUOTE_X = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>';
 
   function getQuoteValue(){
     if (!elQuoteSlot) return '';
@@ -2764,7 +2764,7 @@
   elAskSel.type = 'button';
   elAskSel.className = 'am-ask-sel';
   elAskSel.id = 'am-ask-sel';
-  elAskSel.innerHTML = '<svg class="am-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Ask Mira</span>';
+  elAskSel.innerHTML = '<svg class="am-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z" /></svg><span>Ask Mira</span>';
   root.appendChild(elAskSel);
 
   var _askSelText = '';
@@ -3618,7 +3618,7 @@
   }
   function showUrlPop(wrap){
     var visit = visitUrlFor(wrap);
-    var iconVisit = '<svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
+    var iconVisit = '<svg viewBox="0 0 24 24"><path d="M15 3h6v6" /> <path d="M10 14 21 3" /> <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></svg>';
     var iconDetail = '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
     urlPop.innerHTML =
       '<button type="button" data-pop="detail" class="is-primary">'+iconDetail+'<span>'+esc(L().urlDetail)+'</span></button>' +

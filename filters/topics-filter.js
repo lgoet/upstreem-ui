@@ -58,24 +58,24 @@
 
   var ICON = {
     tag: '<svg viewBox="0 0 24 24"><path d="M20.59 13.41 13.42 20.6a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>',
-    chev: '<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>',
-    search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+    chev: '<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>',
+    search: '<svg viewBox="0 0 24 24"><path d="m21 21-4.34-4.34" /> <circle cx="11" cy="11" r="8" /></svg>',
     /* Same clear-X core's search fields use, stroke-width and all. */
-    x: '<svg viewBox="0 0 24 24" stroke-width="3.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+    x: '<svg viewBox="0 0 24 24" stroke-width="3.5"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>',
     /* Feather "x" at its own stroke weight, for the clear-X that replaces the chevron on hover.
        The one above is the SEARCH field's clear icon and deliberately heavier (3.5) because it
        sits inside an input at a smaller optical size. Reusing it on the trigger made a chunky
        cross next to a 1.8-weight chevron. */
-    xThin: '<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+    xThin: '<svg viewBox="0 0 24 24"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>',
     /* The sorter glyph the rest of the app uses -- lines narrowing toward the CENTRE, not
         left-aligned. Copied from prompts-table's GRPSIDE_SORT_ICON rather than drawn again. */
-    sort: '<svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>',
+    sort: '<svg viewBox="0 0 24 24"><path d="M2 5h20"/><path d="M6 12h12"/><path d="M9 19h6"/></svg>',
     /* core's CHECK_SVG verbatim -- same glyph and the same stroke-width the companies and types
        checkboxes draw, so the tick cannot look "a bit different" next to them. */
     check: UC.icon("check", 3),
     cbOff: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/></svg>',
     cbOn:  '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M17.2 8.8 10.4 15.6 6.8 12" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    plus: '<svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+    plus: '<svg viewBox="0 0 24 24"><path d="M5 12h14" /> <path d="M12 5v14" /></svg>',
     /* prompts-table's GRP_ICON verbatim. The same control has to look the same in both places, and
        these two are the only ones in the app that open custom groupings. */
     group: '<svg viewBox="0 0 24 24" stroke-width="1.7"><rect x="3.75" y="5.25" width="16.5" height="5.25" rx="1.5"/><rect x="11.25" y="13.5" width="9" height="5.25" rx="1.5"/><polyline points="3.75,13.5 6.75,16.5 3.75,19.5"/></svg>'

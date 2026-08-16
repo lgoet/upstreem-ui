@@ -82,14 +82,14 @@
      Bestehende Einbauten bleiben unberuehrt: ist ein .mqa-trigger schon da, wird nichts gebaut. */
   var MQA_MARKUP =
     '<button class="mqa-trigger" type="button" aria-label="Open quick actions">' +
-      '<svg class="mqa-trigger-ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>' +
+      '<svg class="mqa-trigger-ic" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>' +
       '<span class="mqa-trigger-label">Quick Actions</span>' +
       '<span class="mqa-kbd" data-kbd>\u2318K</span>' +
     '</button>' +
     '<div class="mqa-overlay" role="presentation" aria-hidden="true">' +
       '<div class="mqa-modal" role="dialog" aria-modal="true" aria-label="Quick actions">' +
         '<div class="mqa-search">' +
-          '<svg class="mqa-search-ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>' +
+          '<svg class="mqa-search-ic" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>' +
           '<span class="mqa-chips" id="mqa-chips"></span>' +
           '<span class="mqa-inputwrap">' +
             '<input class="mqa-input" type="text" autocomplete="off" spellcheck="false" placeholder="" aria-label="Search" />' +
@@ -98,14 +98,14 @@
           '<span class="mqa-ph-cmd" id="mqa-ph-cmd" aria-hidden="true">/ for filters</span>' +
           '<span class="mqa-kbd mqa-esc" id="mqa-esc">esc</span>' +
           '<button class="mqa-fav is-hidden" type="button" id="mqa-fav" aria-pressed="false" aria-label="Save as Favorite">' +
-            '<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>' +
+            '<svg viewBox="0 0 24 24"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" /></svg>' +
           '</button>' +
           '<button class="mqa-clear is-hidden" type="button" id="mqa-clear" aria-label="Reset search">' +
-            '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>' +
+            '<svg viewBox="0 0 24 24"><path d="M10 11v6" /> <path d="M14 11v6" /> <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /> <path d="M3 6h18" /> <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>' +
           '</button>' +
         '</div>' +
         '<button class="mqa-entercta is-hidden" type="button" id="mqa-entercta">Press' +
-          '<span class="mqa-kbd"><svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 10 4 15 9 20"></polyline><path d="M20 4v7a4 4 0 0 1-4 4H4"></path></svg>Enter</span>' +
+          '<span class="mqa-kbd"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4v7a4 4 0 0 1-4 4H4" /> <path d="m9 10-5 5 5 5" /></svg>Enter</span>' +
         'to search</button>' +
         '<div class="mqa-scroll"><div class="mqa-results" aria-live="polite"></div></div>' +
         '<div class="mqa-recent-wrap" id="mqa-recent"></div>' +
@@ -143,12 +143,12 @@
   var TYPE_LABEL    = { brand:"Brands", domain:"Domains", url:"URLs", prompt:"Prompts" };
   var TYPE_SINGULAR = { brand:"Brand",  domain:"Domain",  url:"URL",  prompt:"Prompt" };
 
-  var GLOBE = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
+  var GLOBE = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /> <path d="M2 12h20" /></svg>';
   var STATIC = [
-    { action:"add_new_prompt",  label:"Add New Prompt",  hint:"", icon:'<svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>' },
-    { action:"add_new_brand",   label:"Add New Brand",   hint:"", icon:'<svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' },
-    { action:"export_data",     label:"Export Your Data",hint:"", icon:'<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' },
-    { action:"edit_your_brand", label:"Edit Your Brand", hint:"", icon:'<svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' }
+    { action:"add_new_prompt",  label:"Add New Prompt",  hint:"", icon:'<svg viewBox="0 0 24 24"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z" /></svg>' },
+    { action:"add_new_brand",   label:"Add New Brand",   hint:"", icon:'<svg viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /> <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>' },
+    { action:"export_data",     label:"Export Your Data",hint:"", icon:'<svg viewBox="0 0 24 24"><path d="M12 15V3" /> <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /> <path d="m7 10 5 5 5-5" /></svg>' },
+    { action:"edit_your_brand", label:"Edit Your Brand", hint:"", icon:'<svg viewBox="0 0 24 24"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/></svg>' }
   ];
 
   var isOpen = false, query = "", latestReqId = null, state = "idle", debTimer = 0, _lastCompleted = null;
@@ -583,13 +583,13 @@
   // what the number actually means depends on the type:
   //   url/domain -> share of citations, brand -> share of voice, prompt -> your own visibility
   var METRIC_LABEL = { url: "Share", domain: "Share", brand: "Share", prompt: "Visibility" };
-  var ARR_UP   = '<svg viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>';
-  var ARR_DOWN = '<svg viewBox="0 0 24 24"><line x1="7" y1="7" x2="17" y2="17"/><polyline points="17 7 17 17 7 17"/></svg>';
-  var DASH     = '<svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+  var ARR_UP   = '<svg viewBox="0 0 24 24"><path d="M7 7h10v10" /> <path d="M7 17 17 7" /></svg>';
+  var ARR_DOWN = '<svg viewBox="0 0 24 24"><path d="m7 7 10 10" /> <path d="M17 7v10H7" /></svg>';
+  var DASH     = '<svg viewBox="0 0 24 24"><path d="M5 12h14" /></svg>';
   // per-row "more" menu — see rowHtml()/the row-menu block near the bottom of this file
-  var MORE_SVG   = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>';
-  var OPEN_SVG   = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
-  var NEWTAB_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
+  var MORE_SVG   = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>';
+  var OPEN_SVG   = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /> <path d="m12 5 7 7-7 7" /></svg>';
+  var NEWTAB_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6" /> <path d="M10 14 21 3" /> <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></svg>';
   function trendHtml(v){
     if (v == null || v === "" || isNaN(Number(v))) return '<span class="mqa-trend is-flat">' + DASH + '</span>';   // no trend
     var n = Number(v), a = Math.abs(n);
@@ -628,7 +628,7 @@
       metricHtml(item) +
       '<span class="mqa-type">' + TYPE_SINGULAR[type] + '</span>' +
       '<span class="mqa-rowmenu-btn" role="button" tabindex="-1" aria-label="More options" aria-haspopup="true">' + MORE_SVG + '</span>' +
-      '<span class="mqa-enter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>' +
+      '<span class="mqa-enter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg></span>' +
     '</button>';
   }
 
@@ -675,12 +675,12 @@
           /* Feather "book-open", the same glyph the dashboard header's Docs button carries. Taken
              from the set rather than drawn here: a hand-made icon never quite matches the stroke
              weight and optical size of the ones around it. */
-          '<svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>' +
+          '<svg viewBox="0 0 24 24"><path d="M12 5v16" /> <path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z" /></svg>' +
         '</span>' +
         '<span class="mqa-main"><span class="mqa-primary">Reference</span></span>' +
         '<span class="mqa-action-hint">' + REF.length + ' entries</span>' +
         '<span class="mqa-ref-chev">' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>' +
         '</span>' +
       '</button>';
     if (!refListOpen) return html + '</div>';
@@ -694,7 +694,7 @@
           '<span class="mqa-main"><span class="mqa-primary">' + esc(r.label) + '</span></span>' +
           (hint ? '<span class="mqa-action-hint">' + esc(hint) + '</span>' : '') +
           '<span class="mqa-ref-chev">' +
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>' +
           '</span>' +
         '</button>';
       /* Only the OPEN entry's body is in the DOM. The alternative — every body present and hidden
@@ -717,7 +717,7 @@
         if (r.apply){
           html += '<button class="mqa-ref-go" type="button" data-refgo="' + escAttr(r.id) + '">' +
                     esc(r.applyLabel || "Show me") +
-                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg>' +
                   '</button>';
         }
         html += '</div></div>';
@@ -793,12 +793,12 @@
           /* Feather "command". NOT the zap glyph: that one is already "Add New Prompt", one row
              below inside this very group, and a head row wearing its own child's icon reads as a
              duplicate rather than as a heading. */
-          '<svg viewBox="0 0 24 24"><path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3z"/></svg>' +
+          '<svg viewBox="0 0 24 24"><path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" /></svg>' +
         '</span>' +
         '<span class="mqa-main"><span class="mqa-primary">Actions</span></span>' +
         '<span class="mqa-action-hint">' + STATIC.length + ' entries</span>' +
         '<span class="mqa-ref-chev">' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>' +
         '</span>' +
       '</button>';
     if (!actionsOpen){ actionsWrap.innerHTML = html + '</div>'; animSection = ""; return; }
@@ -808,7 +808,7 @@
         '<span class="mqa-action-ic">' + a.icon + '</span>' +
         '<span class="mqa-main"><span class="mqa-primary">' + esc(a.label) + '</span></span>' +
         (a.hint ? '<span class="mqa-action-hint">' + esc(a.hint) + '</span>' : '') +
-        '<span class="mqa-enter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>' +
+        '<span class="mqa-enter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg></span>' +
       '</button>';
     });
     html += '</div></div>';
@@ -842,7 +842,7 @@
     _viewed.unshift(copy);
     _viewed = _viewed.slice(0, VIEWED_MAX);
   }
-  var CLOCK = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>';
+  var CLOCK = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>';
   function recentLoad(){ return _recent; }
   function recentSave(list){ _recent = list; }
   function recentKey(e){ return (e.query || "") + "|" + [e.scope, e.rank, e.type, e.market, e.mentioning].join("|"); }
@@ -864,7 +864,7 @@
      Bubble's iframe preview), so every access is wrapped: a failure degrades to "no favourites",
      never to a broken palette. */
   var FAV_MAX = 5;
-  var STAR = '<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+  var STAR = '<svg viewBox="0 0 24 24"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" /></svg>';
   var favEl = overlay.querySelector("#mqa-fav");
   function favStoreKey(){ return "mqa_fav_" + (TEAM || "_"); }
   function favLoad(){
@@ -926,7 +926,7 @@
     FILTERS = saved;
     return out;
   }
-  var ENTER_CHEV = '<span class="mqa-enter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>';
+  var ENTER_CHEV = '<span class="mqa-enter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg></span>';
   function entryLineHtml(e){
     return '<span class="mqa-main"><span class="mqa-primary mqa-recent-line">' + miniChips(e) +
       (e.query ? '<span class="mqa-recent-q">' + esc(e.query) + '</span>' : '') + '</span></span>';
@@ -977,7 +977,7 @@
       '</span>' +
       '<span class="mqa-type">' + (TYPE_SINGULAR[item.type] || "") + '</span>' +
       '<span class="mqa-rowmenu-btn" role="button" tabindex="-1" aria-label="More options" aria-haspopup="true">' + MORE_SVG + '</span>' +
-      '<span class="mqa-enter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>' +
+      '<span class="mqa-enter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg></span>' +
     '</button>';
   }
   function applyEntry(e){
@@ -1047,7 +1047,7 @@
     if (clearEl) clearEl.classList.toggle("is-hidden", !busy);
   }
   if (clearEl) clearEl.addEventListener("click", function(e){ e.stopPropagation(); clearAll(); input.focus(); });
-  var XSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  var XSVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>';
   function renderChips(){
     var h = "";
     ["scope","rank","type","urltype","market","mentioning"].forEach(function(slot){
@@ -1096,7 +1096,7 @@
       lead +
       '<span class="mqa-main"><span class="mqa-primary"' + (dot ? ' style="color:' + escAttr(dot) + '"' : '') + '>' + esc(label) + '</span></span>' +
       (hint ? '<span class="mqa-cmd-hint">' + esc(hint) + '</span>' : '') +
-      '<span class="mqa-enter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>' +
+      '<span class="mqa-enter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg></span>' +
     '</button>';
   }
   // returns true when the input is in command mode and the list was rendered

@@ -125,7 +125,7 @@
 
   /* Spalten-Erklaerer wie in jeder Tabelle: das kleine "i" im Kopf, das den dunklen Kasten
      oeffnet. Die Texte beantworten, was die Spalte MEINT -- nicht, wie sie heisst. */
-  var INFO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+  var INFO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /></svg>';
   function thInfo(key){ return '<span class="up-th-info" data-explain="' + key + '">' + INFO_SVG + '</span>'; }
   /* Die Erklaertexte kommen aus core -- dieselben, die brand-detail zeigt. Sonst erklaert
      dieselbe Spalte an zwei Orten Verschiedenes. */

@@ -45,16 +45,16 @@
 
   var SV = 'fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"';
   var ICON = {
-    check:  '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="2.6"><polyline points="20 6 9 17 4 12"></polyline></svg>',
-    goto:   '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.9"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>',
+    check:  '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="2.6"><path d="M20 6 9 17l-5-5" /></svg>',
+    goto:   '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.9"><path d="M15 3h6v6" /> <path d="M10 14 21 3" /> <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></svg>',
     gear:   '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.8"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>',
-    search: '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.9"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>',
-    x:      '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>',
-    radar:  '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4.5"></circle><line x1="12" y1="12" x2="19" y2="7"></line></svg>',
-    empty:  '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.7"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>',
+    search: '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.9"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>',
+    x:      '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="2"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>',
+    radar:  '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.8"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+    empty:  '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.7"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>',
     /* Feather "box" als neutrales Markenlogo im Erklaerbeispiel. Nichts selbstgezeichnetes und
        nichts, was nach einer echten Firma aussieht -- es steht nur fuer "irgendeine Marke". */
-    brand:  '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.9"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>'
+    brand:  '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.9"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /> <path d="m3.3 7 8.7 5 8.7-5" /> <path d="M12 22V12" /></svg>'
   };
 
   /* Spalten in der Form, die UC.makeColumns erwartet: NUR die mittleren, abschaltbaren Spalten.

@@ -532,7 +532,7 @@
           ? '<img class="combo-filter-favicon" src="' + esc(ds.__favicon) + '" onerror="this.style.visibility=\'hidden\'"/>'
           : '<span class="combo-filter-dot" style="background:' + ds.__baseColor + '"></span>';
         return '<div class="combo-filter-item ' + (checked ? "is-checked" : "") + '" data-id="' + esc(String(ds.__id)) + '" style="--cc-fltclr:' + ds.__baseColor + '" title="' + esc(ds.label) + '">' +
-          '<span class="combo-filter-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>' +
+          '<span class="combo-filter-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg></span>' +
           icon + '<span class="combo-filter-name">' + esc(ds.label) + '</span></div>';
       }).join("");
       filterMenu.innerHTML = head + items;

@@ -70,18 +70,18 @@
 
   var ICON = {
     /* Feather "map-pin". Taken from the set, not drawn here. */
-    pin: '<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
-    chev: '<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>',
-    search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+    pin: '<svg viewBox="0 0 24 24"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" /> <circle cx="12" cy="10" r="3" /></svg>',
+    chev: '<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>',
+    search: '<svg viewBox="0 0 24 24"><path d="m21 21-4.34-4.34" /> <circle cx="11" cy="11" r="8" /></svg>',
     /* Same clear-X core's search fields use, stroke-width and all. */
-    x: '<svg viewBox="0 0 24 24" stroke-width="3.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+    x: '<svg viewBox="0 0 24 24" stroke-width="3.5"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>',
     /* Feather "x" at its own stroke weight, for the clear-X that replaces the chevron on hover.
        The one above is the SEARCH field's clear icon and deliberately heavier (3.5) because it
        sits inside an input at a smaller optical size. Reusing it on the trigger made a chunky
        cross next to a 1.8-weight chevron. */
-    xThin: '<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+    xThin: '<svg viewBox="0 0 24 24"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>',
     /* The sorter glyph the rest of the app uses -- lines narrowing toward the CENTRE. */
-    sort: '<svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>',
+    sort: '<svg viewBox="0 0 24 24"><path d="M2 5h20"/><path d="M6 12h12"/><path d="M9 19h6"/></svg>',
     /* core's CHECK_SVG verbatim, so the tick matches every other checked row in the app. */
     check: UC.icon("check", 3),
     /* Footer switcher: one dot against three. Filled circles, not outlined shapes, because at this

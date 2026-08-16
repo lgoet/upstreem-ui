@@ -150,7 +150,7 @@
     improve_existing_content: '<path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>'
   };
   var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  var INFO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+  var INFO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /></svg>';
 
   /* ---------- helpers ---------- */
   function esc(v){ var d = document.createElement('div'); d.textContent = String(v == null ? '' : v); return d.innerHTML; }
@@ -277,7 +277,7 @@
         '<div class="uo-source-meta"><span class="uo-source-title">'+esc(item.lead_title||'')+'</span><span class="uo-source-domain">'+esc(item.lead_domain||'')+'</span></div>'+
       '</div>'+
       (item.topics && item.topics.length ? '<div class="uo-tags">'+tagPills(item.topics)+'</div>' : '')+
-      '<div class="uo-card-foot"><span class="uo-date"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'+esc(fmtDate(item.created_at))+'</span></div>'+
+      '<div class="uo-card-foot"><span class="uo-date"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v3"/><path d="M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>'+esc(fmtDate(item.created_at))+'</span></div>'+
     '</div>';
   }
 
@@ -347,7 +347,7 @@
          table group headers, where a control that appears and disappears read as a glitch. */
       var menu = '<div class="uo-col-menu-wrap">'+
         '<button class="uo-col-kebab up-iconbtn" type="button" data-col="'+col.key+'" data-tip="Column actions" aria-label="Column actions" aria-haspopup="menu">'+
-          '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg></button>'+
+          '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>'+
         '<div class="up-menu uo-col-menu" role="menu" aria-hidden="true">'+
           COLUMNS.filter(function(t){ return t.key !== col.key; }).map(function(t){
             return '<div class="up-pop-opt" role="menuitem" data-from="'+col.key+'" data-to="'+t.key+'"><span class="up-pop-label"><span class="uo-col-dot" style="background:'+t.dot+';"></span>Move all to '+t.label+'</span></div>';
@@ -514,8 +514,8 @@
     return '<div class="uo-m-head">'+
         '<div class="uo-m-actions">'+
           '<button class="uo-m-act up-iconbtn" id="uo-m-ignore" type="button" data-tip="Ignore" aria-label="Ignore opportunity"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="5.6" y1="5.6" x2="18.4" y2="18.4"/></svg></button>'+
-          '<button class="uo-m-act up-iconbtn" id="uo-m-goto" type="button" data-tip="Open URL" aria-label="Open URL"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></button>'+
-          '<button class="uo-m-act up-iconbtn" id="uo-m-close" type="button" data-tip="Close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'+
+          '<button class="uo-m-act up-iconbtn" id="uo-m-goto" type="button" data-tip="Open URL" aria-label="Open URL"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6" /> <path d="M10 14 21 3" /> <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></svg></button>'+
+          '<button class="uo-m-act up-iconbtn" id="uo-m-close" type="button" data-tip="Close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg></button>'+
         '</div>'+
         '<div class="uo-m-source">'+favHtml(item.lead_favicon, item.lead_domain)+
           '<div class="uo-m-source-meta">'+
@@ -530,7 +530,7 @@
           '<div class="uo-m-titlerow"><h2 class="uo-m-title">'+esc(item.headline||'')+'</h2>'+
             '<button class="uo-copy uo-m-copy up-iconbtn" type="button" data-copy="detail" data-tip="Copy" aria-label="Copy">'+
               '<svg class="uo-copy-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'+
-              '<svg class="uo-copy-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'+
+              '<svg class="uo-copy-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>'+
             '</button></div>'+
           '<p class="uo-m-reason">'+esc(item.reason||'')+'</p>'+
         '</div>'+
