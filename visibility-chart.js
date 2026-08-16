@@ -627,6 +627,26 @@
       var outField = SORT_OUT_FIELD[sortField] || sortField;
       votFire(root, "data-sort-fn", "bubble_fn_votSortTable", outField + "_" + sortDir);
     }
+
+    /* Oeffnet den Export-Dialog. Dieselbe Mechanik wie in responses-table, urls-table,
+       domains-table und prompts-table: der Dialog ist eine eigene Komponente auf der Seite, und
+       data-export-instance sagt, welche gemeint ist. Diese Komponente feuerte bisher nur ihr
+       eigenes Export-Event und hatte gar keinen Weg zum Dialog. */
+    function openExport(){
+      var id = String(root.getAttribute("data-export-instance") || "").trim();
+      var fn = window.upstreemExportOpen || (window.parent && window.parent.upstreemExportOpen) || (window.top && window.top.upstreemExportOpen);
+      if (typeof fn !== "function"){
+        if (window.console) console.warn("[visibility-chart] window.upstreemExportOpen nicht gefunden — liegt die Export-Komponente auf dieser Seite, und ist ihr Element SICHTBAR?");
+        return false;
+      }
+      if (!id || id === "EXPORT_INSTANCE_ID"){
+        if (window.console) console.warn("[visibility-chart] data-export-instance ist nicht gesetzt.");
+        return false;
+      }
+      try { fn(id); } catch(e){}
+      return true;
+    }
+
     function populateSort(){
       if (!sortMenu) return;
       /* uses core.css's shared .up-pop-* / .up-check option rows — this file used to carry a
@@ -676,6 +696,7 @@
           return;
         }
         if (e.target.closest(".vot-export")){
+          openExport();
           votFire(root, "data-export-fn", "bubble_fn_votExportTable", instanceId);
           return;
         }

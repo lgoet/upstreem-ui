@@ -624,6 +624,26 @@
       }, 60);
     }
 
+
+    /* Oeffnet den Export-Dialog. Dieselbe Mechanik wie in responses-table, urls-table,
+       domains-table und prompts-table: der Dialog ist eine eigene Komponente auf der Seite, und
+       data-export-instance sagt, welche gemeint ist. Diese Komponente feuerte bisher nur ihr
+       eigenes Export-Event und hatte gar keinen Weg zum Dialog. */
+    function openExport(){
+      var id = String(root.getAttribute("data-export-instance") || "").trim();
+      var fn = window.upstreemExportOpen || (window.parent && window.parent.upstreemExportOpen) || (window.top && window.top.upstreemExportOpen);
+      if (typeof fn !== "function"){
+        if (window.console) console.warn("[topcitations-dashboard] window.upstreemExportOpen nicht gefunden — liegt die Export-Komponente auf dieser Seite, und ist ihr Element SICHTBAR?");
+        return false;
+      }
+      if (!id || id === "EXPORT_INSTANCE_ID"){
+        if (window.console) console.warn("[topcitations-dashboard] data-export-instance ist nicht gesetzt.");
+        return false;
+      }
+      try { fn(id); } catch(e){}
+      return true;
+    }
+
     function render(){
       if (root.__tcdController && root.__tcdController.__ctrlId !== myCtrlId) return;
       renderChartSide();
@@ -681,6 +701,7 @@
         }
         var exportBtnEl = e.target.closest(".tcd-export");
         if (exportBtnEl){
+          openExport();
           var eFnName = root.getAttribute("data-export-fn") || "bubble_fn_tcdExportTable";
           var eFn = resolveBubbleFn(eFnName);
           if (typeof eFn === "function"){ try { eFn(instanceId); } catch(err){} }

@@ -701,6 +701,25 @@
     ];
     var METRIC_COLS = COLS_ALL.filter(function(c){ return c.key !== "deactivated"; });
 
+    /* Oeffnet den Export-Dialog. Dieselbe Mechanik wie in responses-table, urls-table,
+       domains-table und prompts-table: der Dialog ist eine eigene Komponente auf der Seite, und
+       data-export-instance sagt, welche gemeint ist. Diese Komponente feuerte bisher nur ihr
+       eigenes Export-Event und hatte gar keinen Weg zum Dialog. */
+    function openExport(){
+      var id = String(root.getAttribute("data-export-instance") || "").trim();
+      var fn = window.upstreemExportOpen || (window.parent && window.parent.upstreemExportOpen) || (window.top && window.top.upstreemExportOpen);
+      if (typeof fn !== "function"){
+        if (window.console) console.warn("[brands-overview] window.upstreemExportOpen nicht gefunden — liegt die Export-Komponente auf dieser Seite, und ist ihr Element SICHTBAR?");
+        return false;
+      }
+      if (!id || id === "EXPORT_INSTANCE_ID"){
+        if (window.console) console.warn("[brands-overview] data-export-instance ist nicht gesetzt.");
+        return false;
+      }
+      try { fn(id); } catch(e){}
+      return true;
+    }
+
     function readProcessing(){
       var a = root.getAttribute("data-processing"), b = root.getAttribute("data-processing2");
       var pa = (a === "IS_PROCESSING" || a == null) ? false : isYes(a);
@@ -1456,7 +1475,12 @@
           if (actOpenFor === rid) closeActMenu(); else openActMenu(actBtn, rid);
           return;
         }
-        if (e.target.closest(".up-export, .ubo-export")){ fireRaw("data-export-fn", "uboExportTable", instanceId); return; }
+        if (e.target.closest(".up-export, .ubo-export")){
+          /* Erst den Dialog, dann das eigene Event: wer data-export-instance gesetzt hat,
+             bekommt den Dialog; das Event bleibt fuer bestehende Verdrahtungen bestehen. */
+          openExport();
+          fireRaw("data-export-fn", "uboExportTable", instanceId); return;
+        }
         if (e.target.closest(".up-search-btn")){
           e.stopPropagation();
           closePops(null);

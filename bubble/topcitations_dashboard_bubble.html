@@ -13,6 +13,10 @@
                     yet even right after it's pushed. The loader script at the bottom reads this
                     once and builds every asset URL from it.
   data-isdark     = "yes" / "no"
+  data-export-instance = die instanceId der EXPORT-Komponente auf derselben Seite. Ohne sie
+                         oeffnet der Export-Knopf keinen Dialog -- er feuert dann nur das eigene
+                         Export-Event. Das Element der Export-Komponente muss in Bubble SICHTBAR
+                         sein, sonst veroeffentlicht Bubble ihre Funktionen nicht.
   data-processing  = "yes" / "no"   loading state, source 1 (ORed together)
   data-processing2 = "yes" / "no"   loading state, source 2 (ORed together)
 
@@ -75,6 +79,7 @@
      data-instance="INSTANCE_ID"
      data-cdn-pin="CDN_PIN"
      data-isdark="IS_DARK"
+     data-export-instance="EXPORT_INSTANCE_ID"
      data-processing="IS_PROCESSING"
      data-processing2="IS_PROCESSING_2"
      data-mode-fn="bubble_fn_tcdMode"
