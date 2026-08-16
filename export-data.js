@@ -188,10 +188,12 @@
           '</button>' +
         '</div>' +
         '<div class="uex-body">' +
-          '<div class="uex-section">' +
-            '<span class="uex-label">What to export</span>' +
-            '<div class="uex-grid is-types"></div>' +
-          '</div>' +
+          /* Zeitraum ZUERST. Nicht aus Gewohnheit, sondern weil der Kalender sein Panel unter
+             dem Custom-Knopf oeffnet und dafuer Platz braucht: stand der Block unten, blieben
+             darunter rund 290px, und der Picker wich nach oben aus und legte sich ueber den
+             Dialog. Die Alternative waere gewesen, diesen einen Dialog anders zu platzieren als
+             jedes andere Popup der App -- genau die Ausnahme, die der Styleguide verhindern soll.
+             Die Zusammenfassung bleibt beim Zeitraum, sie nennt beides. */
           '<div class="uex-section">' +
             '<span class="uex-label">Time range</span>' +
             '<div class="uex-grid is-presets"></div>' +
@@ -209,6 +211,10 @@
               '<div class="uex-cal-slot"></div>' +
             '</div>' +
             '<div class="uex-summary"></div>' +
+          '</div>' +
+          '<div class="uex-section">' +
+            '<span class="uex-label">What to export</span>' +
+            '<div class="uex-grid is-types"></div>' +
           '</div>' +
         '</div>' +
         '<div class="uex-foot">' +

@@ -58,11 +58,6 @@
        dann nach oben aus und legt sich ueber den Dialog, statt 4px darunter zu stehen.
        Oben verankert liegt der Knopf hoch genug, dass das Panel nach unten passt.
        align-items schlaegt die Core-Regel ueber die doppelte Klasse, nicht ueber die Reihenfolge. */
-    /* NICHT ueber align-items. Gemessen: der Dialog klebte danach links am Rand -- die Achsen
-       liegen hier anders, als die Regel vermuten laesst. Stattdessen bleibt die Zentrierung des
-       Core-Popups unangetastet und die Karte schiebt sich selbst nach oben (margin-bottom: auto
-       weiter unten). Das ist der Weg, der keine Annahme ueber die Flex-Richtung macht. */
-    padding-top: 24px; padding-bottom: 24px;
   }
   .uex-dialog.uex-dialog {
     max-width: 520px;
@@ -70,10 +65,10 @@
        so tief, dass das Panel keinen Platz hat. 78vh laesst rund ein Fuenftel des Fensters frei,
        und das reicht dem Kalender. Der Inhalt scrollt ohnehin. */
     max-height: min(78vh, 720px);
-    /* Schiebt die Karte an den oberen Rand, ohne die Ausrichtung des Containers anzufassen:
-       der freie Platz sammelt sich unten. Genau den braucht der Kalender -- er oeffnet sein
-       Panel unter dem Custom-Knopf und weicht nach oben aus, wenn darunter zu wenig ist. */
-    margin-bottom: auto;
+    /* Kein margin-bottom:auto mehr. Das schob die Karte nach oben, um dem Kalender Platz zu
+       machen -- und machte diesen einen Dialog zur Ausnahme unter allen Popups der App. Die
+       eigentliche Ursache war eine andere (die fehlende .udr-wrap-Zeile weiter unten); der
+       Platz reicht auch zentriert. */
     /* Der Inhalt scrollt, nicht die Karte: sonst wandert die Fusszeile mit dem Scrollen weg.
        gap 0, weil die Abschnitte ihre Abstaende selbst tragen (siehe .uex-section). */
     padding: 0; gap: 0; overflow: hidden;
