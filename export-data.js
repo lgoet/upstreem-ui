@@ -374,12 +374,26 @@
         elCalSlot.innerHTML = "";
         elCalSlot.appendChild(d);
       }
-      /* Aufbau anstossen: resetUpstreemDateRangePicker ruft intern initAll() und findet damit
-         auch ein Element, das gerade erst eingehaengt wurde. Ohne den Anstoss wartete der Picker
-         auf den naechsten Durchlauf des Intervalls -- bis zu 1,5s mit einem leeren Kasten. */
-      try { if (window.resetUpstreemDateRangePicker) window.resetUpstreemDateRangePicker(calendarId()); } catch(e){}
+      /* Aufbau anstossen und das ERGEBNIS pruefen, nicht den Aufruf. resetUpstreemDateRangePicker
+         ruft intern initAll(), fand das gerade eingehaengte Element aber nachweislich nicht --
+         gemessen beim Nutzer: 23 Picker gemountet, der eigene nicht dabei, und der Aufruf legte
+         nur einen PENDING-Eintrag samt Konsolenwarnung an.
+         Warum initAll() es uebersieht, ist nicht geklaert. Statt darauf zu wetten wird jetzt in
+         kurzen Abstaenden nachgesehen, ob der Controller steht, und notfalls erneut angestossen.
+         Das Intervall in date-range.js laeuft ohnehin alle 1,5s -- spaetestens dort ist er da. */
+      var versuche = 0;
+      (function anstossen(){
+        try { if (window.resetUpstreemDateRangePicker) window.resetUpstreemDateRangePicker(calendarId()); } catch(e){}
+        var cal = findCalendar();
+        if (cal && cal.__udrCtrl){ fertig(cal); return; }
+        if (++versuche < 12){ setTimeout(anstossen, 150); return; }
+        fertig(findCalendar());
+      })();
+    }
+    /* Zweiter Teil von adoptCalendar, aufgerufen sobald der Picker steht oder endgueltig fehlt. */
+    function fertig(cal){
       var note = elCustomWrap.querySelector(".uex-cal-missing");
-      if (!findCalendar()){
+      if (!cal){
         /* date-range.js ist nicht geladen. Dann fehlt der Loader-Block, und das gehoert gesagt --
            ein stumm ausgegrauter Knopf sieht aus wie eine Design-Entscheidung. */
         elCustomBtn.disabled = true;
