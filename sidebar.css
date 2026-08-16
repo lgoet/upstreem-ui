@@ -1,0 +1,263 @@
+/* upstreem sidebar.css — die App-Navigation (Praefix `usn`). Braucht core.css.
+
+   ── Was aus core kommt und hier NICHT steht ──────────────────────────────────
+   Die Dropdowns sind .up-filter-menu mit .up-ddsearch, die Zeilen darin .up-pop-opt mit
+   .up-pop-head als Abschnittsueberschrift und .up-check als Haken. Die Logos sind .up-logo-box,
+   die Team-Chips neben "Teams" .up-stack aus UC.brandStack, die Scrollflaechen .up-scroll.
+   Farben aus --vc-*, Icons aus UC.icon. Hier steht nur die Sidebar selbst.
+
+   ── Zwei Ausbaustufen, drei Zustaende ────────────────────────────────────────
+   .usn-bar          250px, Logo mit Text, Abschnittsueberschriften, Zaehler, Team-Chips
+   .usn-bar.is-mini   64px, nur Icons; Ueberschriften, Zaehler und Chips fallen weg -- auf
+                      64px waeren sie abgeschnitten, und ein halber Zaehler ist schlechter
+                      als keiner
+   .usn-bar.is-hidden die Leiste ist herausgefahren, nur der schwebende Knopf steht da
+
+   Der Uebergang laeuft ueber --usn-t (200ms) und betrifft width, transform und opacity.
+   Die Breite geht zusaetzlich als --up-sidebar-w an <html>, damit der Seiteninhalt ohne
+   Umweg ueber einen Workflow mitwandern kann. */
+
+.usn-root { display: block; width: 0; height: 0; overflow: hidden; }
+
+.usn-bar, .usn-fab, .usn-scrim {
+  --usn-t: 200ms;
+  --usn-ease: cubic-bezier(.4, 0, .2, 1);
+  --usn-w: 250px;
+  --usn-mini: 64px;
+  /* Eigener Flaechenton: die Leiste liegt NEBEN dem Inhalt, nicht darin, und --vc-heading-bg
+     waere dafuer zu hell -- man saehe die Kante nicht. Die beiden Werte sind vorgegeben. */
+  --usn-bg: #f5f5f5;
+  font-family: inherit;
+  -webkit-font-smoothing: antialiased;
+  box-sizing: border-box;
+}
+.usn-bar *, .usn-bar *::before, .usn-bar *::after { box-sizing: border-box; }
+.usn-bar[data-theme="dark"], .usn-fab[data-theme="dark"], .usn-scrim[data-theme="dark"] { --usn-bg: #1b1b1b; }
+
+/* ---------- die Leiste ---------- */
+/* z-index 9900: knapp UNTER dem Drawer-Band der App (9905-9930). Ein Drawer, der ueber der
+   Navigation liegt, ist gewollt -- eine Navigation ueber dem Drawer waere es nicht.
+   .check_reinvention meldet hier .up-search (Slide-out-Suche) -- Fehlalarm: die Gemeinsamkeit
+   ist "etwas faehrt animiert in der Breite", das Bauteil selbst ist ein Eingabefeld. */
+.usn-bar {
+  position: fixed; left: 0; top: 0; bottom: 0; z-index: 9900;
+  width: var(--usn-w);
+  display: flex; flex-direction: column;
+  padding: 16px;
+  background: var(--usn-bg); color: var(--vc-text);
+  /* Keine Rahmen, keine Schatten -- ausdruecklich so gewollt. Die Flaeche trennt. */
+  border: 0; box-shadow: none;
+  transition: width var(--usn-t) var(--usn-ease), transform var(--usn-t) var(--usn-ease);
+  overflow: visible;   /* die Dropdowns duerfen herausragen */
+}
+.usn-bar.is-mini { width: var(--usn-mini); padding: 16px 12px; }
+/* Im hint-Zustand faehrt die Leiste nach links heraus, statt zu verschwinden: display:none
+   koennte man nicht animieren, und ein Sprung waere genau das, was hier nicht sein soll. */
+.usn-bar.is-hidden { transform: translateX(-100%); }
+
+/* Was im Mini-Zustand verschwindet. Die Deckkraft geht in 60% der Zeit, die Breite ueber die
+   volle -- sonst quetscht sich der Text noch sichtbar zusammen, bevor er geht. */
+.usn-txt, .usn-fade {
+  transition: opacity calc(var(--usn-t) * .6) var(--usn-ease);
+}
+/* flex: 0 0 0 und nicht nur width: 0 -- ohne das waechst .usn-txt (flex: 1 1 auto) wieder in
+   den freien Platz, und das Icon steht dann nicht mittig in den 64px, sondern links am Rand. */
+.usn-bar.is-mini .usn-txt,
+.usn-bar.is-mini .usn-fade { opacity: 0; flex: 0 0 0; width: 0; overflow: hidden; pointer-events: none; }
+/* Die Abschnittsueberschrift ist ein Block: Breite 0 nimmt ihr nicht die Hoehe, sie muss
+   zusaetzlich zusammenfallen. Die Bloecke bleiben trotzdem getrennt -- das macht der Abstand
+   zwischen ihnen. */
+.usn-bar.is-mini .usn-head { opacity: 0; height: 0; padding: 0; overflow: hidden; }
+
+/* ---------- Team-Kopf ---------- */
+.usn-top { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; min-width: 0; }
+/* .check_reinvention meldet .up-seg-btn (Segmented-Control-Knopf) fuer .usn-team und .usn-item.
+   Das ist ein Fehlalarm ueber die gemeinsamen Eigenschaften "Knopf ohne Rahmen mit Radius":
+   .up-seg-btn ist eine Haelfte eines Umschalters in einer Schiene mit eigenem Hintergrund, mit
+   fester Hoehe 32 und einem is-active, das eine WEISSE Flaeche mit Rahmen setzt. Ein Nav-Punkt
+   ist keine Umschalthaelfte.
+   Das naechstliegende echte Bauteil waere .up-pop-opt (die Zeile im Dropdown, 13.5px/500,
+   Radius 9, gap 10 -- dieselbe Sprache, deshalb hier dieselben Werte). Uebernommen ist es
+   trotzdem nicht: .up-pop-opt haengt an --up-sel-bg, und das ist ein durchscheinendes #f5f5f5,
+   das auf der Leistenflaeche (ebenfalls #f5f5f5) restlos verschwindet. Ein Hover, den man nicht
+   sieht, ist schlechter als eine eigene Klasse. */
+.usn-team {
+  flex: 1 1 auto; min-width: 0;
+  display: flex; align-items: center; gap: 10px;
+  height: 40px; padding: 0 6px; margin-left: -6px;
+  border: 0; border-radius: 9px; background: transparent;
+  font: inherit; color: var(--vc-text); cursor: pointer; text-align: left;
+  transition: background var(--usn-t) var(--usn-ease);
+}
+.usn-team:hover { background: var(--vc-heading-bg); }
+/* gap: 0 -- die Luecken zwischen den Flex-Kindern bleiben sonst stehen, auch wenn die Kinder
+   selbst 0 breit sind, und das Icon steht dann um genau diese Luecke neben der Mitte. */
+.usn-bar.is-mini .usn-team { padding: 0; margin-left: 0; gap: 0; justify-content: center; }
+.usn-teamlogo { flex: 0 0 24px; display: inline-flex; }
+.usn-teamname {
+  flex: 1 1 auto; min-width: 0;
+  font-size: 14px; font-weight: 500; line-height: 1.2;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.usn-team .usn-sw { width: 14px; height: 14px; flex: 0 0 14px; color: var(--vc-third); }
+.usn-team .usn-sw svg { width: 14px; height: 14px; display: block; }
+
+/* Ein-/Ausklappen: das Bauteil ist .up-iconbtn aus core (32x32, Radius 8, transparent, gedaempft,
+   Hover auf Flaeche). Hier steht NUR, was auf dieser Flaeche anders sein muss: der Hover-Ton.
+   --vc-heading-bg ist ein durchscheinendes #f5f5f5 und damit auf der ebenfalls #f5f5f5-hellen
+   Leiste unsichtbar. Spezifitaet statt Ladereihenfolge, deshalb mit .usn-bar davor. */
+.usn-bar .up-iconbtn { transition: background var(--usn-t) var(--usn-ease), color var(--usn-t) var(--usn-ease); }
+.usn-bar .up-iconbtn:hover { background: var(--vc-bg); color: var(--vc-text); }
+.usn-toggle { flex: 0 0 32px; }
+/* [hidden] ist die schwaechste Regel im Feld: die display-Angabe darueber wuerde sie schlagen.
+   Deshalb hier ausdruecklich zurueck auf none. */
+.usn-toggle[hidden] { display: none; }
+/* Im Mini-Zustand rutscht der Knopf unter den Namen, sonst waere die Zeile fuer 64px zu eng. */
+.usn-bar.is-mini .usn-top { flex-direction: column; gap: 6px; }
+
+/* ---------- Quick Actions ---------- */
+/* Leer, solange das Element noch nicht umgehaengt ist: dann darf hier auch kein Abstand stehen. */
+.usn-qa { flex: 0 0 auto; }
+.usn-qa:not(:empty) { margin-top: 16px; }
+
+/* ---------- Menue ---------- */
+.usn-nav { margin-top: 16px; flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+.usn-block + .usn-block { margin-top: 16px; }
+/* Abschnittsueberschrift in derselben Sprache wie .up-pop-head in core: 11px, versal,
+   gesperrt, Sekundaerton. */
+.usn-head {
+  display: block; padding: 0 8px 6px;
+  font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--vc-muted); white-space: nowrap;
+  transition: opacity calc(var(--usn-t) * .6) var(--usn-ease);
+}
+.usn-item {
+  width: 100%; display: flex; align-items: center; gap: 10px;
+  height: 36px; padding: 0 8px;
+  border: 0; border-radius: 9px; background: transparent;
+  font: inherit; font-size: 13.5px; font-weight: 500; color: var(--vc-text);
+  cursor: pointer; text-align: left;
+  transition: background var(--usn-t) var(--usn-ease), color var(--usn-t) var(--usn-ease);
+}
+.usn-item + .usn-item { margin-top: 2px; }
+.usn-item:hover { background: var(--vc-bg); }
+/* Der aktive Punkt traegt Flaeche UND Gewicht -- Farbe allein reicht nicht, wenn jemand sie
+   nicht unterscheiden kann. */
+.usn-item.is-active { background: var(--vc-bg); font-weight: 600; }
+.usn-ic { position: relative; width: 17px; height: 17px; flex: 0 0 17px; color: var(--vc-muted); display: inline-flex; }
+.usn-ic svg { width: 17px; height: 17px; display: block; }
+/* Mira ist eine Wortmarke: das Bild liegt UEBER dem Rueckfall-Symbol, nicht daneben, und
+   verdeckt es. Faellt das Bild aus, faellt has-mira mit -- dann steht der Stern wieder da. */
+.usn-mira { position: absolute; inset: 0; width: 17px; height: 17px; display: block; object-fit: contain; }
+.usn-ic.has-mira svg { visibility: hidden; }
+.usn-item.is-active .usn-ic { color: var(--vc-text); }
+.usn-txt { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.usn-count {
+  flex: 0 0 auto; font-size: 12px; font-weight: 500; color: var(--vc-third);
+  font-variant-numeric: tabular-nums;
+}
+.usn-count:empty { display: none; }
+.usn-chips { flex: 0 0 auto; display: inline-flex; align-items: center; }
+/* Die Chips sitzen in einem 36px-Knopf, nicht in einer Tabellenzeile: der Ring, mit dem sie
+   sich sonst voneinander abheben, muss die Farbe der Leiste haben, nicht die des Inhalts. */
+.usn-chips .up-stack-vis { box-shadow: 0 0 0 2px var(--usn-bg); }
+.usn-bar.is-mini .usn-item { justify-content: center; padding: 0; gap: 0; }
+
+/* ---------- Konto ---------- */
+.usn-accwrap { flex: 0 0 auto; margin-top: 16px; }
+.usn-acc {
+  width: 100%; display: flex; align-items: center; gap: 10px;
+  padding: 8px; border: 0; border-radius: 10px; background: transparent;
+  font: inherit; color: var(--vc-text); cursor: pointer; text-align: left;
+  transition: background var(--usn-t) var(--usn-ease);
+}
+.usn-acc:hover { background: var(--vc-bg); }
+.usn-bar.is-mini .usn-acc { justify-content: center; padding: 8px 0; gap: 0; }
+/* Der Kreis traegt die Initialen; ein Bild legt sich per position darueber, damit beim
+   Ausfall des Bildes wieder der Buchstabe steht und nicht ein leerer Kreis. */
+.usn-av {
+  position: relative;
+  width: 30px; height: 30px; flex: 0 0 30px; border-radius: 50%;
+  background: var(--vc-text); color: var(--vc-bg);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11.5px; font-weight: 600; letter-spacing: .02em; overflow: hidden;
+}
+.usn-av img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.usn-acc-txt { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.usn-acc-name { font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.usn-acc-mail { font-size: 11.5px; color: var(--vc-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.usn-acc-more { flex: 0 0 16px; width: 16px; height: 16px; color: var(--vc-third); }
+.usn-acc-more svg { width: 16px; height: 16px; display: block; }
+
+/* ---------- Dropdowns ----------
+   Die Panels sind .up-filter-menu aus core. Hier steht nur, wo sie sitzen und wie breit sie
+   sind: das Team-Menue oeffnet unter dem Kopf, das Konto-Menue ueber dem Konto.
+   Die Selektoren tragen .usn-bar mit, damit sie die Platzierung von .up-filter-menu
+   (top/right aus core) ueber die Spezifitaet schlagen und nicht ueber die Ladereihenfolge. */
+.usn-pop { position: relative; }
+.usn-bar .usn-menu { width: 300px; min-width: 0; max-width: calc(100vw - 32px); }
+.usn-bar .usn-menu.is-team { top: calc(100% + 6px); bottom: auto; left: 0; right: auto; }
+.usn-bar .usn-menu.is-acc { top: auto; bottom: calc(100% + 6px); left: 0; right: auto; }
+/* Im Mini-Zustand ist links kein Platz -- die Panels klappen nach rechts neben die Leiste.
+   20px und nicht 8px: das Prozent bezieht sich auf den Wrapper, und der endet 12px vor der
+   Kante der Leiste (deren Polsterung im Mini-Zustand). 12 + 8 ergibt die 8px Luft, die auch
+   unter dem Kopf stehen. */
+.usn-bar.is-mini .usn-menu.is-team { left: calc(100% + 20px); }
+.usn-bar.is-mini .usn-menu.is-acc { left: calc(100% + 20px); bottom: 0; }
+/* Die Liste scrollt, nicht das ganze Panel: Suche und Fussknopf bleiben stehen. */
+.usn-teamlist { flex: 1 1 auto; min-height: 0; overflow-y: auto; margin: 6px -2px 0; padding: 0 2px; }
+.usn-none { padding: 14px 10px; font-size: 13px; color: var(--vc-muted); }
+
+/* Teamzeile: 64px, Logo links, Name ueber Domain, Haken rechts. */
+.usn-teamrow { display: flex; align-items: center; gap: 12px; height: 64px; padding: 0 10px; }
+.usn-teamrow-txt { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.usn-teamrow-name { font-size: 13.5px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.usn-teamrow-dom { font-size: 12px; color: var(--vc-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Trennlinie und Fussknopf im Team-Menue. */
+.usn-menu-foot { flex: 0 0 auto; border-top: 1px solid var(--up-menu-border); margin-top: var(--up-dd-pad); padding-top: var(--up-dd-pad); }
+.usn-newteam {
+  width: 100%; display: flex; align-items: center; gap: 9px;
+  padding: 9px 10px; border: 0; border-radius: 9px; background: transparent;
+  font: inherit; font-size: 13.5px; font-weight: 500; color: var(--vc-text); cursor: pointer;
+  transition: background var(--usn-t) var(--usn-ease);
+}
+.usn-newteam:hover { background: var(--up-sel-bg); }
+.usn-newteam svg { width: 15px; height: 15px; display: block; flex: 0 0 15px; color: var(--vc-muted); }
+/* Abschnitte im Konto-Menue: dieselbe Trennlinie, damit beide Menues gleich lesen. */
+.usn-sec + .usn-sec { border-top: 1px solid var(--up-menu-border); margin-top: var(--up-dd-pad); padding-top: var(--up-dd-pad); }
+.usn-menu .up-pop-opt svg { width: 15px; height: 15px; display: block; flex: 0 0 15px; color: var(--vc-muted); }
+.usn-menu .up-pop-opt-l { display: inline-flex; align-items: center; gap: 9px; min-width: 0; }
+
+/* ---------- schwebender Knopf (hint) ----------
+   Auch das ist ein .up-iconbtn; abweichend sind nur Lage, Flaeche und Groesse. 36 statt 32,
+   weil er auf dem Telefon mit dem Finger getroffen werden muss -- und dann ALLE Werte im
+   selben Verhaeltnis: Radius 8 -> 9, Symbol 16 -> 18. */
+/* Doppelte Klasse im Selektor, damit Groesse, Flaeche und display gegen .up-iconbtn ueber die
+   Spezifitaet gewinnen und nicht ueber die Ladereihenfolge. */
+.up-iconbtn.usn-fab {
+  position: fixed; left: 12px; top: 12px; z-index: 9902;
+  width: 36px; height: 36px; border-radius: 9px;
+  background: var(--usn-bg); color: var(--vc-text);
+  display: none;
+  /* Der einzige Schatten der Komponente: dieser Knopf liegt UEBER dem Inhalt und braucht eine
+     Kante, sonst verschwimmt er auf einer hellen Seite. */
+  box-shadow: 0 1px 2px rgba(0,0,0,.10), 0 6px 16px rgba(0,0,0,.10);
+}
+.up-iconbtn.usn-fab.is-on { display: inline-flex; }
+.up-iconbtn.usn-fab svg { width: 18px; height: 18px; display: block; }
+
+/* Schleier hinter der ausgefahrenen Leiste im hint-Zustand. Werte wie beim Popup-Schleier in
+   core, damit beide gleich aussehen. */
+.usn-scrim {
+  position: fixed; inset: 0; z-index: 9899;
+  background: rgba(0,0,0,.30);
+  backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px);
+  opacity: 0; pointer-events: none;
+  transition: opacity var(--usn-t) var(--usn-ease);
+}
+.usn-scrim.is-on { opacity: 1; pointer-events: auto; }
+.usn-scrim[data-theme="dark"] { background: rgba(0,0,0,.45); }
+
+@media (prefers-reduced-motion: reduce) {
+  .usn-bar, .usn-fab, .usn-scrim { --usn-t: 1ms; }
+}

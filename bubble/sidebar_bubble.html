@@ -1,0 +1,169 @@
+<!--
+  UPSTREEM — SIDEBAR
+
+  Ersetzt die Floating Group. Das HTML-Element auf der Seite zeigt NICHTS und ist 0x0 -- die
+  Leiste selbst haengt an <body> und ist position:fixed. Das Element darf deshalb irgendwo im
+  Seitenkopf liegen; wo genau, ist egal.
+
+  WICHTIG: Das Element muss in Bubble auf SICHTBAR stehen. Ein unsichtbares Element
+  veroeffentlicht seine bubble_fn_*-Funktionen nicht -- kein Klick in der Navigation erreicht
+  dann einen Workflow, und zwar ohne jede Meldung. Es nimmt keinen Platz ein, es muss nur
+  sichtbar geschaltet sein.
+
+  ── Drei Zustaende, ueber die Fensterbreite ──────────────────────────────────
+    >= 900px   wide   250px breit, mit Text
+    >= 500px   mini    64px breit, nur Icons
+    <  500px   hint   Leiste ausgefahren, oben links ein schwebender Knopf; ein Tipp darauf
+                      faehrt sie ueber den Inhalt, ein Tipp daneben wieder ein
+
+  Der Wechsel ist 200ms animiert. Zwischen wide und mini kann man zusaetzlich von Hand
+  schalten (das Symbol oben rechts); diese Wahl wird pro Platzierung gespeichert und faellt
+  weg, sobald das Fenster in eine andere Groessenklasse kommt.
+
+  ── Der Seiteninhalt wandert mit, OHNE Workflow ──────────────────────────────
+  Die Komponente schreibt die aktuelle Breite als CSS-Variable an <html>:
+
+      --up-sidebar-w   "250px" | "64px" | "0px"
+
+  Im Seitenkopf einmal hinterlegen (Settings -> SEO/metatags -> Script in the header):
+
+      <style>
+        #main { padding-left: var(--up-sidebar-w, 250px); transition: padding-left 200ms cubic-bezier(.4,0,.2,1); }
+      </style>
+
+  Damit laeuft der Inhalt synchron zur Leiste. Wer statt dessen mit Bubble-States arbeiten
+  will, nimmt das Event usnState (unten) -- beides zugleich ist unnoetig.
+
+  ── Bubble dynamic values on the root element ────────────────────────────────
+  data-instance        = "ROOTID_[dynamic id]"   eindeutig pro Platzierung
+  data-isdark          = "yes" / "no"            (nur Rueckfall; das Theme kommt aus core)
+  data-team-id         = Current User's team's unique id -- welches Team oben steht
+  data-active          = welcher Punkt hervorgehoben ist, siehe Schluessel unten
+  data-prompt-count    = Zahl neben "Prompt Insights" (leer lassen = kein Zaehler)
+  data-mira-icon       = OPTIONAL. Beide Mira-Zeichen stehen fest im Code; diese beiden
+  data-mira-icon-dark    Attribute sind nur da, um sie im Notfall zu ueberschreiben.
+
+  Die Schluessel fuer data-active und fuer das Nav-Event:
+
+      dashboard | prompts | citations | brands
+      performance | opportunities | research | mira
+      teams | settings
+
+  ── Events ───────────────────────────────────────────────────────────────────
+  Ein Name pro Platzierung. Bubble kann pro bubble_fn_*-Name nur EINEN Workflow verdrahten.
+
+  data-nav-fn     = "bubble_fn_usnNav_[dynamic id]"
+      {"team_id":"...","key":"citations"}
+      key  ->  (?<="key":")[^"]*
+      Der einzige Pflicht-Workflow. Darin die Navigation ausloesen (Go to page bzw. den
+      State setzen, der eure Seiten umschaltet).
+
+  data-team-fn    = "bubble_fn_usnTeam_[dynamic id]"
+      {"team_id":"1712...","team_id":"..."}  -- team_id ist die NEUE Auswahl
+      team_id  ->  (?<="team_id":")[^"]*
+      Teamwechsel: das gewaehlte Team am User speichern und die Seite neu laden.
+
+  data-profile-fn = "bubble_fn_usnProfile_[dynamic id]"
+      {"team_id":"...","action":"billing"}
+      action  ->  (?<="action":")[^"]*
+      action ist einer von: preferences | team | billing | logout | new_team | theme
+      Bei action = "theme" kommt zusaetzlich value = light | dark | system. Das Umschalten
+      selbst macht die Komponente bereits; dieser Aufruf ist nur da, damit ihr die Wahl am
+      User speichern koennt. Wer bubble_fn_theme_pref schon verdrahtet hat, bekommt den Wert
+      ohnehin ueber core und kann action="theme" hier ignorieren.
+
+  data-state-fn   = "bubble_fn_usnState_[dynamic id]"
+      {"team_id":"...","mode":"mini","visible":"yes","px":64}
+      mode     ->  (?<="mode":")[^"]*
+      visible  ->  (?<="visible":")[^"]*
+      px       ->  (?<="px":)[0-9]+
+      OPTIONAL. Feuert einmal beim Aufbau und danach nur, wenn sich wirklich etwas aendert.
+      Nur noetig, wenn Bubble-Elemente auf die Breite reagieren sollen; fuer das Verschieben
+      des Inhalts reicht --up-sidebar-w oben.
+
+  Alle vier feuern zusaetzlich ein gleichnamiges CustomEvent am Traeger-Element, falls etwas
+  anderes auf der Seite mithoeren will.
+
+  ── Setter (Run javascript) ──────────────────────────────────────────────────
+  setSidebarTeams("INSTANCE_ID", teamsJson)
+      Die Teamliste fuer den Schalter oben. Ein JSON-Array:
+      [{"id":"1712...","name":"Upstreem","favicon_url":"https://.../f.png","domain":"upstreem.ai"}]
+      Baut das mit "Search for Teams :format as text" und dieser Zeile pro Eintrag:
+          {"id":"This Team's unique id","name":"This Team's name",
+           "favicon_url":"This Team's favicon","domain":"This Team's domain"}
+      Trennzeichen: , -- und das Ganze in eckige Klammern:
+          [Search for Teams:format as text]
+      PFLICHT-Sanitizer davor, wie in jeder anderen Komponente hier (STYLEGUIDE 46):
+          .replace(/:\s*([,}\]])/g, ": null$1")
+          .replace(/:\s*(yes|no)\s*([,}\]])/g, function(_, v, t){ return ": " + (v === "yes") + t; })
+      Ohne setSidebarTeams steht oben nur das Logo aus data-team-id, und die Chips neben
+      "Teams" bleiben leer. Der Rest der Leiste funktioniert.
+
+  setSidebarUser("INSTANCE_ID", userJson)
+      {"name":"Lukas Gotzkes","email":"l@upstreem.ai","avatar_url":"https://..."}
+      Ohne avatar_url stehen die Initialen im Kreis.
+
+  setSidebarActive("INSTANCE_ID", "citations")     hervorgehobener Punkt
+  setSidebarCount("INSTANCE_ID", "128")            Zahl neben "Prompt Insights"
+  setSidebarOpen("INSTANCE_ID", "yes"|"no")        Leiste auf/zu (Telefon: ein-/ausfahren)
+  resetSidebar("INSTANCE_ID")                      zurueck auf ausgeklappt
+
+  Die Namen sind bereits als Stubs belegt, bevor die Dateien geladen sind -- ein Aufruf im
+  Pageload geht also nicht verloren, er wird nachgeholt.
+
+  ── Quick Actions ────────────────────────────────────────────────────────────
+  Liegt das Quick-Actions-Element (#mira-quick-actions) auf der Seite, haengt die Sidebar es
+  von selbst unter den Team-Kopf. Es wird UMGEHAENGT, nicht nachgebaut: sein Workflow, seine
+  Zuhoerer und sein Overlay bleiben unangetastet. Nichts zu tun -- ausser das Element auf der
+  Seite zu lassen. Liegt keines da, bleibt der Platz leer und die Leiste rueckt zusammen.
+
+  ── Theme ────────────────────────────────────────────────────────────────────
+  Die Eintraege Light / Dark / System im Konto-Menue rufen setUpstreemTheme aus core. Das
+  faerbt die ganze Seite, schreibt die Wahl in den localStorage und meldet sie ueber
+  bubble_fn_theme_pref zurueck. "System" loescht die gespeicherte Wahl wieder, damit die
+  Seite der Einstellung des Betriebssystems folgt.
+
+  ACHTUNG, zwei verschiedene Werte -- nicht verwechseln:
+    usnProfile mit action="theme"  ->  value ist light | dark | SYSTEM.
+                                       Das ist die WAHL des Nutzers. Die gehoert in
+                                       user_settings.theme.
+    bubble_fn_theme_pref           ->  bekommt nur light | dark, also die aufgeloeste Farbe.
+                                       Die gehoert in den State is_dark, nicht in die Datenbank.
+  Wer theme_pref in user_settings speichert, macht aus "System" dauerhaft "Dark" -- naemlich
+  genau das, was das Betriebssystem in dem Moment gerade sagte.
+-->
+<div class="up-root usn-root"
+     data-instance="INSTANCE_ID"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="IS_DARK"
+     data-team-id="TEAM_ID"
+     data-active="dashboard"
+     data-prompt-count=""
+     data-nav-fn="bubble_fn_usnNav"
+     data-team-fn="bubble_fn_usnTeam"
+     data-profile-fn="bubble_fn_usnProfile"
+     data-state-fn="bubble_fn_usnState">
+</div>
+
+<script>
+(function(){
+  /* Loader nach STYLEGUIDE 26: den Pin ueber getElementsByClassName lesen, NIEMALS ueber
+     document.currentScript — Bubble fuehrt Scripts nicht in DOM-Reihenfolge aus. */
+  function readPin(cls){
+    var els = document.getElementsByClassName(cls), i, p;
+    for (i = 0; i < els.length; i++){
+      p = (els[i].getAttribute("data-cdn-pin") || "").trim();
+      if (p && p !== "CDN_" + "PIN") return p;
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("usn-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(url, make){ if (L[url]) return; L[url] = 1; make(url); }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+
+  css("core.css");     js("core.js");
+  css("sidebar.css");  js("sidebar.js");
+})();
+</script>

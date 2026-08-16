@@ -1,0 +1,76 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>sidebar harness</title>
+<style>
+  html, body { margin:0; padding:0; height:100%; font-family:system-ui,sans-serif; }
+  /* Wie in der Bubble-App: der Inhalt scrollt in #main und wandert mit --up-sidebar-w. */
+  #main { min-height:100%; padding-left: var(--up-sidebar-w, 250px);
+          transition: padding-left 200ms cubic-bezier(.4,0,.2,1); box-sizing:border-box; }
+  #inner { padding:24px; }
+  pre { font:11px/1.5 ui-monospace,monospace; background:#f6f6f6; padding:10px; white-space:pre-wrap; }
+</style>
+<body>
+<div id="main"><div id="inner">
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+    <button onclick="setUpstreemTheme('dark')">dark</button>
+    <button onclick="setUpstreemTheme('light')">light</button>
+    <button onclick="setSidebarActive('s1','citations')">active=citations</button>
+    <button onclick="setSidebarCount('s1','128')">count=128</button>
+    <button onclick="setSidebarOpen('s1','no')">open=no</button>
+    <button onclick="setSidebarOpen('s1','yes')">open=yes</button>
+    <button onclick="resetSidebar('s1')">reset</button>
+  </div>
+  <pre id="out">bereit</pre>
+  <div style="height:1200px"></div>
+</div></div>
+
+<div class="up-root usn-root" data-instance="s1" data-isdark="no"
+     data-team-id="t2" data-active="dashboard" data-prompt-count="42"
+     data-nav-fn="bubble_fn_usnNav"
+     data-team-fn="bubble_fn_usnTeam"
+     data-profile-fn="bubble_fn_usnProfile"
+     data-state-fn="bubble_fn_usnState"></div>
+
+<script>
+window.__ev = [];
+function log(){ var o=document.getElementById("out"); if(o) o.textContent = window.__ev.slice(-8).join("\n"); }
+["usnNav","usnTeam","usnProfile","usnState"].forEach(function(n){
+  window["bubble_fn_"+n] = function(j){ window.__ev.push(n+" "+j); log(); };
+});
+window.bubble_fn_theme_pref = function(v){ window.__ev.push("theme_pref "+v); log(); };
+
+/* Frische BEWEISEN statt hoffen: alles per fetch(no-store) holen und inline einsetzen.
+   Ein ?v=-Anhang hat in diesem Repo mehrfach nicht gewirkt. */
+(function(){
+  var files = ["core.css","sidebar.css","core.js","sidebar.js"];
+  var texts = {};
+  Promise.all(files.map(function(f){
+    return fetch(f + "?nocache=" + Math.random(), { cache: "no-store" })
+      .then(function(r){ return r.text(); }).then(function(t){ texts[f] = t; });
+  })).then(function(){
+    files.forEach(function(f){
+      var el;
+      if (/\.css$/.test(f)){ el = document.createElement("style"); }
+      else { el = document.createElement("script"); }
+      el.textContent = texts[f];
+      document.head.appendChild(el);
+    });
+    window.__geladen = { core_js: texts["core.js"].length, sidebar_js: texts["sidebar.js"].length,
+                         sidebar_css: texts["sidebar.css"].length };
+    setTimeout(los, 60);
+  });
+})();
+
+function los(){
+  window.setSidebarTeams("s1", [
+    {"id":"t1","name":"Acme Analytics","favicon_url":"","domain":"acme.com"},
+    {"id":"t2","name":"Upstreem","favicon_url":"","domain":"upstreem.ai"},
+    {"id":"t3","name":"Northwind Trading","favicon_url":"","domain":"northwind.io"},
+    {"id":"t4","name":"Globex","favicon_url":"","domain":"globex.co"},
+    {"id":"t5","name":"Initech","favicon_url":"","domain":"initech.dev"},
+    {"id":"t6","name":"Umbrella Health","favicon_url":"","domain":"umbrella.health"}
+  ]);
+  window.setSidebarUser("s1", {"name":"Lukas Gotzkes","email":"l@upstreem.ai","avatar_url":""});
+  window.__ev.push("setter durch"); log();
+}
+</script>

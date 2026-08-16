@@ -4581,6 +4581,13 @@
     if (!panel || !owner || typeof panel.showPopover !== "function") return null;
     if (panel.__upEscapeRelease) return null;
     if (paletteOpen()) return null;
+    /* Ausdrueckliche Abwahl fuer Panels, die selbst schon in einer Overlay-Flaeche haengen und
+       dort nichts zu befreien haben. inOverlay() sagt nur "ein Vorfahre ist position:fixed" --
+       fuer die Sidebar trifft das zu (die Leiste IST fixed), aber sie schneidet nichts ab und
+       ihre Menues liegen ohnehin ueber allem. Die Eskalation friert die Position dagegen auf den
+       Messwert beim Oeffnen ein; bei einer Leiste, die ihre Breite animiert, landet das Panel
+       dann sichtbar daneben (gemessen: 246px statt 72px neben der eingeklappten Leiste). */
+    if (panel.getAttribute("data-up-noescape") != null) return null;
     if (!inOverlay(owner.parentElement || owner)) return null;
 
     /* ---- Ausrichtung MESSEN, nicht annehmen ----
