@@ -331,18 +331,22 @@
        zweites, unsichtbares Element -- und wo es fehlte, stand "Date picker not found".
        Diese Komponente legt sich ihren Picker jetzt selbst an: ein .udr-root im Slot, aufgebaut
        von filters/date-range.js. Deren Datei wird dabei NICHT angefasst; benutzt werden nur ihre
-       oeffentlichen Wege -- resetUpstreemDateRangePicker stoesst den Aufbau an, __udrCtrl ist der
-       fertige Controller, und das Fenster-Ereignis upstreem:date-range meldet jede bestaetigte
-       Auswahl zurueck. Panelposition, Presets, Grenzen und die drei bubble_fn_udr_*-Workflows
+       oeffentlichen Wege -- date-range.js sucht von sich aus nach neuen .udr-root-Elementen,
+       __udrCtrl ist der fertige Controller, und das Fenster-Ereignis upstreem:date-range meldet
+       jede bestaetigte Auswahl zurueck. Panelposition, Presets, Grenzen und die drei bubble_fn_udr_*-Workflows
        bleiben damit genau die, die sich bewaehrt haben. */
     var calBuilt = false;
     /* Eigene Kennung, abgeleitet von der Instanz: zwei Export-Elemente auf einer Seite bekommen
        so zwei Picker, die sich nicht gegenseitig umstellen. data-calendar-id wird weiterhin
        gelesen -- wer schon ein Element verdrahtet hat, behaelt es. */
+    /* Die Kennung des eigenen Pickers IST die Instanz-Kennung. Ein Praefix davor war unnoetig:
+       date-range sucht nur unter .udr-root-Elementen, und das Export-Element traegt diese Klasse
+       nicht -- eine Kollision ist damit ausgeschlossen. Gleiche Kennung heisst: in der Konsole
+       steht der Name, den man auch im Editor sieht. */
     function calendarId(){
       var vorgabe = String(root.getAttribute("data-calendar-id") || "").trim();
       if (vorgabe && vorgabe !== "dates_v2_export") return vorgabe;
-      return "uex_cal_" + instanceId;
+      return instanceId;
     }
     function findCalendar(){
       var id = calendarId();
@@ -374,19 +378,18 @@
         elCalSlot.innerHTML = "";
         elCalSlot.appendChild(d);
       }
-      /* Aufbau anstossen und das ERGEBNIS pruefen, nicht den Aufruf. resetUpstreemDateRangePicker
-         ruft intern initAll(), fand das gerade eingehaengte Element aber nachweislich nicht --
-         gemessen beim Nutzer: 23 Picker gemountet, der eigene nicht dabei, und der Aufruf legte
-         nur einen PENDING-Eintrag samt Konsolenwarnung an.
-         Warum initAll() es uebersieht, ist nicht geklaert. Statt darauf zu wetten wird jetzt in
-         kurzen Abstaenden nachgesehen, ob der Controller steht, und notfalls erneut angestossen.
-         Das Intervall in date-range.js laeuft ohnehin alle 1,5s -- spaetestens dort ist er da. */
+      /* KEIN resetUpstreemDateRangePicker mehr. Der Aufruf sollte den Aufbau anstossen, fand das
+         Element aber nicht -- und jeder Fehlversuch schrieb eine lange Warnung in die Konsole.
+         Mit den Wiederholungen wurden daraus zwoelf Warnungen pro Oeffnen.
+         Das Element steht im DOM; date-range.js sucht ohnehin alle 1,5s nach neuen Wurzeln und
+         baut sie auf. Hier wird nur noch abgewartet, ob der Controller erscheint. Bis zu 20
+         Versuche a 150ms sind 3 Sekunden -- laenger als der Takt dort, also reicht es in jedem
+         Fall, und zwar ohne eine einzige Zeile in der Konsole. */
       var versuche = 0;
-      (function anstossen(){
-        try { if (window.resetUpstreemDateRangePicker) window.resetUpstreemDateRangePicker(calendarId()); } catch(e){}
+      (function warten(){
         var cal = findCalendar();
         if (cal && cal.__udrCtrl){ fertig(cal); return; }
-        if (++versuche < 12){ setTimeout(anstossen, 150); return; }
+        if (++versuche < 20){ setTimeout(warten, 150); return; }
         fertig(findCalendar());
       })();
     }
