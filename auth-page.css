@@ -129,7 +129,15 @@
 /* Auch dieser Abstand gibt auf flachen Fenstern nach -- 26px zwischen Unterzeile und erstem
    Feld sind Luxus, wenn die Seite sonst scrollt. */
 .uau-fields { margin-top: clamp(14px, 2.8vh, 26px); display: flex; flex-direction: column; gap: 12px; }
-.uau-field { display: flex; flex-direction: column; gap: 7px; }
+/* KEIN gap. Der galt auch fuer die eingeklappten Kinder -- Fehlerzeile, Staerkeanzeige,
+   Einladungshinweis sind 0 hoch, erzeugten aber trotzdem je 7px Abstand. Das Passwortfeld
+   traegt zwei davon, das E-Mail-Feld ebenfalls, das Namensfeld eines: die Container waren also
+   unterschiedlich viel hoeher als ihr sichtbarer Inhalt, und die zwischen den Containern
+   gemessenen 12px sahen deshalb ungleich aus.
+   Der Abstand sitzt jetzt dort, wo er mit verschwindet: 7px unter der Beschriftung, und alles
+   Einklappbare traegt sein Polster INNEN, hinter dem overflow:hidden. */
+.uau-field { display: flex; flex-direction: column; }
+.uau-label + * { margin-top: 7px; }
 /* Ein- und Ausblenden des Namensfeldes beim Moduswechsel. 0fr->1fr statt height, weil die
    Zielhoehe hier niemand kennt: mit Fehlertext ist das Feld hoeher als ohne. */
 .uau-field.uau-collapse {
@@ -141,7 +149,7 @@
               margin-top var(--uau-t) var(--uau-ease);
 }
 .uau-field.uau-collapse > .uau-collapse-in { overflow: hidden; min-height: 0;
-  display: flex; flex-direction: column; gap: 7px; }
+  display: flex; flex-direction: column; }
 .uau-field.uau-collapse.is-on { grid-template-rows: 1fr; opacity: 1; margin-top: 0; pointer-events: auto; }
 
 /* --vc-label gibt es in core NICHT -- der Rueckfall #4b5057 griff also immer und war im
