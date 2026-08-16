@@ -42,7 +42,11 @@ window.bubble_fn_theme_pref = function(v){ window.__ev.push("theme_pref "+v); lo
 /* Frische BEWEISEN statt hoffen: alles per fetch(no-store) holen und inline einsetzen.
    Ein ?v=-Anhang hat in diesem Repo mehrfach nicht gewirkt. */
 (function(){
-  var files = ["core.css","sidebar.css","core.js","sidebar.js"];
+  /* Reihenfolge ABSICHTLICH andersherum als in der Vorlage: core.css NACH sidebar.css.
+     Genau so kam es auf der Bubble-Seite an, und genau so fiel die Leiste um -- .up-portal
+     (display:contents) und .up-root (position:relative) gewannen ueber die Reihenfolge.
+     Wer hier die bequeme Reihenfolge misst, misst sein eigenes Glueck. */
+  var files = ["sidebar.css","core.css","core.js","sidebar.js"];
   var texts = {};
   Promise.all(files.map(function(f){
     return fetch(f + "?nocache=" + Math.random(), { cache: "no-store" })

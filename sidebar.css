@@ -17,7 +17,22 @@
    Die Breite geht zusaetzlich als --up-sidebar-w an <html>, damit der Seiteninhalt ohne
    Umweg ueber einen Workflow mitwandern kann. */
 
-.usn-root { display: block; width: 0; height: 0; overflow: hidden; }
+/* ── Warum die Lage-Regeln hier dreifache Klassen tragen ──────────────────────
+   Leiste, Knopf und Schleier haengen an <body> und tragen `up-root up-portal`. Beide Klassen
+   MUESSEN dran sein: `up-root` traegt die Farbtoken, und setUpstreemTheme faerbt genau diese
+   beiden Klassen (es sucht `.up-root` und `.uo-portal, .up-portal, .upr-portal`) -- ohne sie
+   bliebe die Leiste im Dark Mode hell.
+   Beide bringen aber auch Layout mit: `.up-root` setzt display:flex, position:relative,
+   width:100%, und `.up-portal` setzt display:contents -- die Klasse markiert sonst nur den
+   Traeger eines ausgelagerten Menues, der KEINE Box bauen soll.
+   Auf der echten Seite gemessen: die Leiste hatte gar keine Box mehr (0x0, position:relative,
+   display:contents), ihre Kinder waren ins <body> gerutscht, zu sehen war nichts. Im lokalen
+   Harness fiel das nicht auf, weil dort core.css VOR dieser Datei stand und die gleiche
+   Spezifitaet ueber die Reihenfolge entschieden wurde. Diese Reihenfolge ist in Bubble nicht
+   festgelegt: jedes Element bringt seinen eigenen Loader mit, und wer core.css zuerst anfordert,
+   haengt davon ab, welches Element Bubble zuerst aufbaut.
+   Also ueber die Spezifitaet, wie es die Hausregel verlangt -- kein !important. */
+.up-root.usn-root { display: block; width: 0; height: 0; min-height: 0; overflow: hidden; flex: 0 0 auto; }
 
 .usn-bar, .usn-fab, .usn-scrim {
   --usn-t: 200ms;
@@ -39,21 +54,21 @@
    Navigation liegt, ist gewollt -- eine Navigation ueber dem Drawer waere es nicht.
    .check_reinvention meldet hier .up-search (Slide-out-Suche) -- Fehlalarm: die Gemeinsamkeit
    ist "etwas faehrt animiert in der Breite", das Bauteil selbst ist ein Eingabefeld. */
-.usn-bar {
+.up-root.up-portal.usn-bar {
   position: fixed; left: 0; top: 0; bottom: 0; z-index: 9900;
-  width: var(--usn-w);
-  display: flex; flex-direction: column;
-  padding: 16px;
+  width: var(--usn-w); max-width: none; min-width: 0; height: auto;
+  display: flex; flex-direction: column; align-items: stretch;
+  margin: 0; padding: 16px;
   background: var(--usn-bg); color: var(--vc-text);
   /* Keine Rahmen, keine Schatten -- ausdruecklich so gewollt. Die Flaeche trennt. */
   border: 0; box-shadow: none;
   transition: width var(--usn-t) var(--usn-ease), transform var(--usn-t) var(--usn-ease);
   overflow: visible;   /* die Dropdowns duerfen herausragen */
 }
-.usn-bar.is-mini { width: var(--usn-mini); padding: 16px 12px; }
+.up-root.up-portal.usn-bar.is-mini { width: var(--usn-mini); padding: 16px 12px; }
 /* Im hint-Zustand faehrt die Leiste nach links heraus, statt zu verschwinden: display:none
    koennte man nicht animieren, und ein Sprung waere genau das, was hier nicht sein soll. */
-.usn-bar.is-hidden { transform: translateX(-100%); }
+.up-root.up-portal.usn-bar.is-hidden { transform: translateX(-100%); }
 
 /* Was im Mini-Zustand verschwindet. Die Deckkraft geht in 60% der Zeit, die Breite ueber die
    volle -- sonst quetscht sich der Text noch sichtbar zusammen, bevor er geht. */
@@ -234,28 +249,29 @@
    selben Verhaeltnis: Radius 8 -> 9, Symbol 16 -> 18. */
 /* Doppelte Klasse im Selektor, damit Groesse, Flaeche und display gegen .up-iconbtn ueber die
    Spezifitaet gewinnen und nicht ueber die Ladereihenfolge. */
-.up-iconbtn.usn-fab {
+.up-root.up-portal.usn-fab {
   position: fixed; left: 12px; top: 12px; z-index: 9902;
-  width: 36px; height: 36px; border-radius: 9px;
-  background: var(--usn-bg); color: var(--vc-text);
+  width: 36px; height: 36px; min-width: 0; border-radius: 9px; border: 0; padding: 0;
+  background: var(--usn-bg); color: var(--vc-text); cursor: pointer;
+  align-items: center; justify-content: center;
   display: none;
   /* Der einzige Schatten der Komponente: dieser Knopf liegt UEBER dem Inhalt und braucht eine
      Kante, sonst verschwimmt er auf einer hellen Seite. */
   box-shadow: 0 1px 2px rgba(0,0,0,.10), 0 6px 16px rgba(0,0,0,.10);
 }
-.up-iconbtn.usn-fab.is-on { display: inline-flex; }
-.up-iconbtn.usn-fab svg { width: 18px; height: 18px; display: block; }
+.up-root.up-portal.usn-fab.is-on { display: inline-flex; }
+.up-root.up-portal.usn-fab svg { width: 18px; height: 18px; display: block; }
 
 /* Schleier hinter der ausgefahrenen Leiste im hint-Zustand. Werte wie beim Popup-Schleier in
    core, damit beide gleich aussehen. */
-.usn-scrim {
-  position: fixed; inset: 0; z-index: 9899;
+.up-root.up-portal.usn-scrim {
+  position: fixed; inset: 0; z-index: 9899; width: auto; height: auto; display: block; margin: 0;
   background: rgba(0,0,0,.30);
   backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px);
   opacity: 0; pointer-events: none;
   transition: opacity var(--usn-t) var(--usn-ease);
 }
-.usn-scrim.is-on { opacity: 1; pointer-events: auto; }
+.up-root.up-portal.usn-scrim.is-on { opacity: 1; pointer-events: auto; }
 .usn-scrim[data-theme="dark"] { background: rgba(0,0,0,.45); }
 
 @media (prefers-reduced-motion: reduce) {
