@@ -474,6 +474,19 @@
     var lastFocus = null;
     function openPopup(){
       if (state.open) return;
+      /* Das eigene Overlay MUSS im Dokument haengen. Auf einer Seite mit mehreren Elementen
+         derselben data-instance -- beim Nutzer sechs -- raeumt jeder neu gebaute Controller die
+         Overlays "seiner" Instanz weg, auch die seiner Geschwister. Der Controller, der dann
+         oeffnet, setzte is-open auf einem Knoten, der nicht mehr im Dokument war: kein Fehler,
+         keine Warnung, kein Dialog. Genau das Bild.
+         Wieder anhaengen statt neu bauen -- alle Verweise und Zuhoerer bleiben damit gueltig. */
+      if (!overlay.isConnected){
+        var fremd = document.querySelectorAll('.uex-overlay[data-uex-instance="' + instanceId + '"]');
+        for (var f = 0; f < fremd.length; f++){
+          if (fremd[f] !== overlay && fremd[f].parentNode) fremd[f].parentNode.removeChild(fremd[f]);
+        }
+        document.body.appendChild(overlay);
+      }
       syncTheme();
       /* Der Kalender ist Beiwerk, das Oeffnen ist die Hauptsache. Wirft irgendetwas beim Anlegen
          oder Suchen des Pickers, kam der Dialog frueher gar nicht mehr hoch -- gemessen beim
