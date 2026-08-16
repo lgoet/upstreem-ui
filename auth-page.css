@@ -247,7 +247,11 @@
 .uau-form-el { display: contents; }
 
 /* ---------- Optionszeile ---------- */
-.uau-opts { margin-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+/* 27 und nicht 32: der Passwort-Container endet 5px unter seinem Eingabefeld -- gemessen,
+   der Rest stammt aus den eingeklappten Elementen darunter, die trotz Hoehe 0 nicht bei exakt
+   0 enden. Sichtbar sind damit 32px zwischen Feld und Haken, genau wie zwischen Haken und
+   Knopf. Der Wert ist auf das Ergebnis kalibriert, nicht auf die Rechnung. */
+.uau-opts { margin-top: 27px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 /* Ohne Haken bleibt nur der Link -- der gehoert dann rechts, nicht an den linken Rand, wo
    gerade noch etwas anderes stand. */
 .uau-opts.is-solo { justify-content: flex-end; }
@@ -312,8 +316,10 @@
    Hauptknopf einer Seite, 40px, und es gibt in core keinen solchen. Siehe Kopf dieser Datei. */
 .uau-primary {
   /* 12px wie ueberall im Stapel. Der Handoff hatte 14 und 22 -- drei verschiedene Abstaende
-     auf zwoelf Zentimetern, ohne dass einer davon etwas Eigenes aussagt. Ein Rhythmus. */
-  margin-top: 12px; height: 40px; width: 100%;
+     auf zwoelf Zentimetern, ohne dass einer davon etwas Eigenes aussagt. Ein Rhythmus.
+     32px hier und an .uau-opts: Passwortfeld, Einwilligung und Hauptknopf stehen damit gleich
+     weit auseinander, und der Block hebt sich vom dichteren Feldstapel darueber ab. */
+  margin-top: 32px; height: 40px; width: 100%;
   border: 0; border-radius: 12px;
   background: var(--vc-text); color: var(--vc-bg);
   font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: -.01em;

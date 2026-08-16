@@ -5398,6 +5398,31 @@
     }
     return THEME.value;
   }
+
+  /* Das Theme beim Laden von core SELBST herstellen, ohne auf einen Aufruf zu warten.
+     Der Waechter darueber ist gut, hing aber INNERHALB von setUpstreemTheme: er wurde erst
+     installiert, wenn jemand die Funktion rief, und er tut nichts, solange THEME.value null ist.
+     Auf einer Seite, die den Aufruf nicht oder erst spaet macht, kam damit jede spaeter gebaute
+     Komponente im falschen Theme hoch -- und weil Bubble staendig Elemente neu baut, sah das
+     nach Zufall aus: hier hell, da dunkel.
+     Die Wahl steht ohnehin im localStorage, geschrieben von setUpstreemTheme. Sie hier zu lesen
+     ist kein neuer Zustand, sondern derselbe, nur frueher. Ohne gespeicherte Wahl entscheidet
+     die Einstellung des Betriebssystems -- und wer beides nicht hat, bleibt hell wie bisher. */
+  (function themeBeimStart(){
+    if (window.__upThemeBooted) return;
+    window.__upThemeBooted = true;
+    var wahl = null;
+    try { wahl = localStorage.getItem("pref_theme"); } catch(e){}
+    if (wahl !== "dark" && wahl !== "light"){
+      try {
+        if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) wahl = "dark";
+      } catch(e){}
+    }
+    /* Ohne jede Angabe NICHT eingreifen: dann bleibt es beim Verhalten von vorher, und eine
+       Seite, die ihr Theme selbst per Attribut setzt, wird nicht ueberschrieben. */
+    if (wahl !== "dark" && wahl !== "light") return;
+    try { setUpstreemTheme(wahl); } catch(e){}
+  })();
   function getUpstreemTheme(){ return THEME.value || readPrefTheme() || "light"; }
 
   window.setUpstreemTheme = setUpstreemTheme;
