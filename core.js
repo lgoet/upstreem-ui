@@ -5575,7 +5575,7 @@
 
   /* BUILD: Datum dieser Fassung als Zahl. Wird von der Verdraengungssperre unten gelesen -- bei
      jeder Aenderung an core.js mit hochziehen (Format JJJJMMTT, zweistellig zaehlend). */
-  var BUILD = 20260813;
+  var BUILD = 20260816;
 
   /* Wartezeit, bevor eine Komponente "keine Daten" zeigt. Verhindert, dass ein noch laufender
      Ladevorgang fuer einen Moment als leeres Ergebnis aufblitzt. Stand in fuenf Dateien einzeln
@@ -5584,7 +5584,7 @@
   var EMPTY_GRACE_MS = 500;
 
   /* ---- icon(name, strokeWidth) --------------------------------------------------------------
-     Feather-Geometrie an einer Stelle, Strichstaerke am Aufrufort. Die Trennung ist der Punkt:
+     Lucide-Geometrie an einer Stelle, Strichstaerke am Aufrufort. Die Trennung ist der Punkt:
      dieselben Icons stehen heute in zehn Dateien, aber NICHT als blosse Kopien -- ein X in einem
      16px-Knopf traegt 2.2, eines in einem 32px-Knopf 2.6, und das ist Absicht, kein Wildwuchs.
      Eine Vereinheitlichung auf einen Wert wuerde ein Dutzend Stellen anders aussehen lassen.
@@ -5594,62 +5594,82 @@
 
      Bestehende Komponenten bleiben unangetastet -- das Kit steht bereit, es zwingt niemanden. */
   var ICON_PATHS = {
-    x:        '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
-    check:    '<polyline points="20 6 9 17 4 12"/>',
-    chevronDown:  '<polyline points="6 9 12 15 18 9"/>',
-    chevronRight: '<polyline points="9 18 15 12 9 6"/>',
-    search:   '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
-    plus:     '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
-    minus:    '<line x1="5" y1="12" x2="19" y2="12"/>',
-    /* ── Navigation ────────────────────────────────────────────────────────────
-       Feather-Geometrie, 24er Raster, unveraendert uebernommen. Aufgenommen fuer die Sidebar,
-       aber bewusst hier und nicht dort: ein Icon, das nur eine Komponente kennt, ist beim
-       naechsten Verbraucher wieder eine eigene Konstante -- genau der Wildwuchs, den dieses Kit
-       beenden soll. */
-    home:     '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>' +
-              '<polyline points="9 22 9 12 15 12 15 22"/>',
-    zap:      '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
-    globe:    '<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>' +
-              '<path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
-    copy:     '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>' +
-              '<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
-    barChart2:'<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>' +
-              '<line x1="6" y1="20" x2="6" y2="14"/>',
-    clipboard:'<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>' +
-              '<rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>',
-    folder:   '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
-    settings: '<circle cx="12" cy="12" r="3"/>' +
-              '<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
-    /* creditCard und nicht "dollar": Feather hat kein Dollar-Symbol, und credit-card ist das
+    /* ── Lucide 1.31.0 ─────────────────────────────────────────────────────────
+       Umgestellt von Feather auf Lucide. Beide Saetze teilen Raster 24, runde Enden und die
+       Strichlogik, deshalb passt jeder Pfad ohne Umrechnung in dieselbe Huelle -- Aufrufer mit
+       eigener Strichstaerke bleiben unveraendert.
+       Die SCHLUESSEL bleiben, wo Lucide anders heisst: home (house), barChart2
+       (chart-no-axes-column), moreHorizontal (ellipsis), sparkle (sparkles), broadcast
+       (radio-tower), bulb (lightbulb). Ein Schluesselwechsel haette jeden Aufrufer gebrochen,
+       ohne dass sich am Bild etwas aendert.
+       Die Pfade sind woertlich aus lucide-static uebernommen, nicht nachgezeichnet. */
+    x:        '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    check:    '<path d="M20 6 9 17l-5-5"/>',
+    chevronDown:  '<path d="m6 9 6 6 6-6"/>',
+    chevronRight: '<path d="m9 18 6-6-6-6"/>',
+    search:   '<path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/>',
+    plus:     '<path d="M5 12h14"/><path d="M12 5v14"/>',
+    minus:    '<path d="M5 12h14"/>',
+    /* ── Navigation ──────────────────────────────────────────────────────────── */
+    home:     '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/>' +
+              '<path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    zap:      '<path d="M15.914 4a1.5 1.5 0 0 0-2.474-1.561l-9 9A1.5 1.5 0 0 0 5.5 14h4.002a.5.5 0 0 1 .471.666L8.086 20a1.5 1.5 0 0 0 2.475 1.56l9-9A1.5 1.5 0 0 0 18.5 10h-3.997a.5.5 0 0 1-.472-.667z"/>',
+    globe:    '<circle cx="12" cy="12" r="10"/>' +
+              '<path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
+    copy:     '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>' +
+              '<path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+    barChart2:'<path d="M5 21v-6"/><path d="M12 21V3"/><path d="M19 21V9"/>',
+    clipboard:'<rect width="8" height="4" x="8" y="2" rx="1" ry="1"/>' +
+              '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>',
+    folder:   '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
+    settings: '<path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/>' +
+              '<circle cx="12" cy="12" r="3"/>',
+    /* creditCard und nicht "dollar": Lucide hat kein Dollar-Symbol, und credit-card ist das
        Zeichen, das jede App fuer Abrechnung nimmt. */
-    creditCard:'<rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>' +
-              '<line x1="1" y1="10" x2="23" y2="10"/>',
-    logOut:   '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>' +
-              '<polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
+    creditCard:'<rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>',
+    logOut:   '<path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>' +
+              '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>',
     moreHorizontal: '<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>' +
               '<circle cx="5" cy="12" r="1"/>',
-    /* Zwei Chevrons uebereinander -- das Zeichen fuer einen Kontextwechsler, wie es Linear und
-       GitHub am Team- bzw. Repository-Schalter benutzen. In Feather gibt es das als
-       chevrons-up-down nicht, wohl aber die beiden Haelften; hier zusammengesetzt. */
-    chevronUpDown: '<polyline points="7 15 12 20 17 15"/><polyline points="7 9 12 4 17 9"/>',
-    /* Feather "info" -- die Erklaer-Raute in Tabellenkoepfen. Geometrie wortgleich zu der, die
-       performance-detail bisher als eigene Konstante trug. */
-    info:     '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/>' +
-              '<line x1="12" y1="8" x2="12.01" y2="8"/>',
-    /* Fuenf Symbole fuer die Benachrichtigungstypen. Feather-Bauart: 24er viewBox, runde Enden,
-       currentColor. sparkle und bulb hat Feather nicht -- die Geometrie stammt aus der
-       Design-Vorlage und folgt derselben Strichstaerke, damit sie neben den anderen nicht
-       auffallen. sparkle ist gefuellt, deshalb fill statt stroke am Pfad selbst. */
-    sparkle:  '<path d="M12 3 L13.6 9.2 L20 11 L13.6 12.8 L12 19 L10.4 12.8 L4 11 L10.4 9.2 Z" ' +
-              'fill="currentColor" stroke="none"/>',
-    broadcast:'<circle cx="12" cy="12" r="2.1" fill="currentColor" stroke="none"/>' +
-              '<path d="M8.4 8.4a5 5 0 0 0 0 7.2M15.6 15.6a5 5 0 0 0 0-7.2"/>' +
-              '<path d="M5.6 5.6a9 9 0 0 0 0 12.8M18.4 18.4a9 9 0 0 0 0-12.8" opacity="0.45"/>',
-    clock:    '<circle cx="12" cy="12" r="7.2"/><path d="M12 8.4V12l2.8 1.8"/>',
-    shieldCheck: '<path d="M12 3.2 5.5 5.8v5.4c0 3.6 2.6 6.9 6.5 8.4 3.9-1.5 6.5-4.8 6.5-8.4V5.8Z"/>' +
-              '<path d="M9.2 11.8 11.4 14l3.6-3.9"/>',
-    bulb:     '<path d="M9.4 16.4a5.4 5.4 0 1 1 5.2 0"/><path d="M9.6 16.4h4.8"/>' +
-              '<path d="M10.4 19h3.2"/>'
+    /* Zwei Chevrons uebereinander -- das Zeichen fuer einen Kontextwechsler. */
+    chevronsUpDown: '<path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/>',
+    /* Alter Name, gleiche Form. chevronUpDown hiess das hier, bevor Lucide den Satz stellte;
+       der Schluessel bleibt, damit kein Aufrufer bricht. */
+    chevronUpDown: '<path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/>',
+    /* Wie chevronsUpDown, aber die beiden Haelften stehen 3 Rastereinheiten weiter auseinander
+       (je 1.5 nach aussen). Bewusst KEINE Lucide-Geometrie, sondern eine Variante davon: im
+       Team-Schalter der Sidebar standen die Pfeile zu dicht beieinander. Woanders nicht
+       benutzen -- wer den Standard will, nimmt chevronsUpDown. */
+    chevronsUpDownWide: '<path d="m7 16.5 5 5 5-5"/><path d="m7 7.5 5-5 5 5"/>',
+    /* Rahmen mit senkrechter Trennlinie -- das Sidebar-Symbol. */
+    panelLeft:'<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/>',
+    squareStack:'<path d="M4 10c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2"/>' +
+              '<path d="M10 16c-1.1 0-2-.9-2-2v-4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2"/>' +
+              '<rect width="8" height="8" x="14" y="14" rx="2"/>',
+    bolt:     '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>' +
+              '<circle cx="12" cy="12" r="4"/>',
+    listTodo: '<path d="M13 5h8"/><path d="M13 12h8"/><path d="M13 19h8"/>' +
+              '<path d="m3 17 2 2 4-4"/><rect x="3" y="4" width="6" height="6" rx="1"/>',
+    scanSearch:'<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/>' +
+              '<path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/>' +
+              '<circle cx="12" cy="12" r="3"/><path d="m16 16-1.9-1.9"/>',
+    chartColumnUp:'<path d="M13 17V9"/><path d="M18 17V5"/>' +
+              '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M8 17v-3"/>',
+    /* Die Erklaer-Raute in Tabellenkoepfen. */
+    info:     '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+    /* Fuenf Symbole fuer die Benachrichtigungstypen. sparkle heisst in Lucide sparkles und ist
+       dort eine Strichform, keine gefuellte -- der Schluessel bleibt, das Bild aendert sich. */
+    sparkle:  '<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>' +
+              '<path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/>',
+    broadcast:'<path d="M4.9 16.1C1 12.2 1 5.8 4.9 1.9"/>' +
+              '<path d="M7.8 4.7a6.14 6.14 0 0 0-.8 7.5"/><circle cx="12" cy="9" r="2"/>' +
+              '<path d="M16.2 4.8c2 2 2.26 5.11.8 7.47"/><path d="M19.1 1.9a9.96 9.96 0 0 1 0 14.1"/>' +
+              '<path d="M9.5 18h5"/><path d="m8 22 4-11 4 11"/>',
+    clock:    '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+    shieldCheck:'<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>' +
+              '<path d="m9 12 2 2 4-4"/>',
+    bulb:     '<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/>' +
+              '<path d="M9 18h6"/><path d="M10 22h4"/>'
   };
   /* ---- Mentioned-Brands-Dropdown: die zwei Teile, die in allen vier Tabellen gleich sind ------
      mentFilter(menu, query)  blendet die Eintraege aus, die nicht zur Suche passen, und schaltet

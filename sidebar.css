@@ -141,14 +141,20 @@
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 /* 12px vom Namen, damit der Doppelpfeil zum Namen gehoert und nicht zum Rand. */
-.usn-team .usn-sw { width: 14px; height: 14px; flex: 0 0 14px; margin-left: 12px; color: var(--vc-third); }
-.usn-team .usn-sw svg { width: 14px; height: 14px; display: block; }
+.usn-team .usn-sw { width: 16px; height: 16px; flex: 0 0 16px; margin-left: 12px; color: var(--vc-third); }
+.usn-team .usn-sw svg { width: 16px; height: 16px; display: block; }
 
 /* Ein-/Ausklappen: das Bauteil ist .up-iconbtn aus core (32x32, Radius 8, transparent, gedaempft,
    Hover auf Flaeche). Hier steht NUR, was auf dieser Flaeche anders sein muss: der Hover-Ton.
    --vc-heading-bg ist ein durchscheinendes #f5f5f5 und damit auf der ebenfalls #f5f5f5-hellen
    Leiste unsichtbar. Spezifitaet statt Ladereihenfolge, deshalb mit .usn-bar davor. */
 .usn-bar .up-iconbtn { transition: background var(--usn-t) var(--usn-ease), color var(--usn-t) var(--usn-ease); }
+/* Doppelte Klasse am Knopf, damit die Farbe auch gegen `.is-open > .up-iconbtn` aus core
+   steht. Diese Regel faerbt den Trigger eines offenen Dropdowns -- der Einklapp-Knopf ist aber
+   nur ein Geschwister des Team-Knopfes im selben Wrapper, kein Trigger. Ohne das wurde er
+   primaerfarben, sobald der Team-Schalter offen war. */
+.usn-bar .up-iconbtn.usn-toggle { color: var(--vc-third); }
+.usn-bar .up-iconbtn.usn-toggle:hover { background: var(--vc-bg); color: var(--vc-text); }
 .usn-bar .up-iconbtn:hover { background: var(--vc-bg); color: var(--vc-text); }
 /* Ganz nach rechts: der Knopf gehoert an die Kante der Leiste, nicht hinter den Teamnamen.
    Damit steht er immer 8px vom rechten Rand, und der Abstand zum Doppelpfeil ist mindestens

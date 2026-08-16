@@ -53,7 +53,7 @@
   /* Die drei Bloecke. key ist der Wert, der im Event landet und den setSidebarActive erwartet. */
   var BLOECKE = [
     { head: "Database", items: [
-      { key: "dashboard",  label: "Dashboard",       icon: "house" },
+      { key: "dashboard",  label: "Dashboard",       icon: "home" },
       { key: "prompts",    label: "Prompt Insights", icon: "zap", count: true },
       { key: "citations",  label: "Citations",       icon: "globe" },
       { key: "brands",     label: "Brands",          icon: "squareStack" }
@@ -84,61 +84,6 @@
     { items: [{ key: "logout", label: "Log out", icon: "logOut" }] }
   ];
 
-  /* ── Lucide statt Feather, nur in dieser Komponente ──────────────────────────
-     Die Hausregel sagt Feather ueber UC.icon; das hier ist eine ausdrueckliche Ausnahme auf
-     Wunsch, zum Ansehen. Die Pfade sind woertlich aus lucide-static 1.31.0 uebernommen (nicht
-     nachgezeichnet) -- Lucide teilt Rasterbreite 24, runde Enden und die Strichlogik mit
-     Feather, deshalb passen sie ohne Umrechnung in dieselbe Huelle wie UC.icon sie baut.
-     Bewusst NICHT in core: dort steht der Feather-Satz, den alle anderen Komponenten benutzen.
-     Zwei Saetze in einer Datei waeren ein Bruch, zwei Saetze in einer App sind eine Entscheidung
-     -- faellt sie fuer Lucide, wandert dieser Block nach core und die anderen Komponenten
-     ziehen mit. Bis dahin bleibt er hier, wo er niemanden sonst trifft. */
-  var LUCIDE = {
-    house:     '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/>' +
-               '<path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
-    zap:       '<path d="M15.914 4a1.5 1.5 0 0 0-2.474-1.561l-9 9A1.5 1.5 0 0 0 5.5 14h4.002a.5.5 0 0 1 .471.666L8.086 20a1.5 1.5 0 0 0 2.475 1.56l9-9A1.5 1.5 0 0 0 18.5 10h-3.997a.5.5 0 0 1-.472-.667z"/>',
-    globe:     '<circle cx="12" cy="12" r="10"/>' +
-               '<path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
-    squareStack:'<path d="M4 10c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2"/>' +
-               '<path d="M10 16c-1.1 0-2-.9-2-2v-4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2"/>' +
-               '<rect width="8" height="8" x="14" y="14" rx="2"/>',
-    chartColumnUp:'<path d="M13 17V9"/><path d="M18 17V5"/>' +
-               '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M8 17v-3"/>',
-    listTodo:  '<path d="M13 5h8"/><path d="M13 12h8"/><path d="M13 19h8"/>' +
-               '<path d="m3 17 2 2 4-4"/><rect x="3" y="4" width="6" height="6" rx="1"/>',
-    scanSearch:'<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/>' +
-               '<path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/>' +
-               '<circle cx="12" cy="12" r="3"/><path d="m16 16-1.9-1.9"/>',
-    folder:    '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
-    bolt:      '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>' +
-               '<circle cx="12" cy="12" r="4"/>',
-    creditCard:'<rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>',
-    logOut:    '<path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>' +
-               '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>',
-    ellipsis:  '<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
-    chevronsUpDown:'<path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/>',
-    search:    '<path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/>',
-    x:         '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
-    check:     '<path d="M20 6 9 17l-5-5"/>',
-    plus:      '<path d="M5 12h14"/><path d="M12 5v14"/>',
-    sparkles:  '<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>' +
-               '<path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/>',
-    panelLeft: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/>'
-  };
-  /* Dieselbe Huelle, die UC.icon baut -- gleiche viewBox, gleiche Enden, gleiche Strichstaerke.
-     Nur die Pfade kommen aus einem anderen Satz. */
-  function lucide(name, strichstaerke){
-    var d = LUCIDE[name];
-    if (!d){
-      if (window.console) console.error("[sidebar] kein Lucide-Icon namens \"" + name + "\" -- " +
-        "vorhanden sind: " + Object.keys(LUCIDE).join(", "));
-      return "";
-    }
-    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' +
-      (strichstaerke == null ? 1.8 : strichstaerke) +
-      '" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
-  }
-
   /* Mira ist eine Wortmarke, kein Feather-Symbol -- deshalb zwei Bilddateien statt eines Pfades.
      Fest im Code und nicht ueber ein Bubble-Attribut: die Marke aendert sich nicht pro
      Platzierung, und ein leeres Attribut haette hier ein leeres Icon bedeutet. Ueberschreibbar
@@ -149,7 +94,7 @@
 
   /* Feather hat kein Sidebar-Symbol, hier stand deshalb eine handgezeichnete Form. Lucide hat
      eine: panel-left. Damit ist auch dieses Icon aus einem Satz und nicht mehr selbst gemalt. */
-  var BAR_SVG = lucide("panelLeft", 1.8);
+  var BAR_SVG = null;   /* gebaut in makeController, sobald UC da ist */
 
   /* Bubble liefert Bild-URLs oft ohne Protokoll (//49eae...). Auf einer https-Seite laeuft das,
      im lokalen Harness nicht -- und ein fehlendes Logo sieht aus wie ein Fehler, obwohl nur zwei
@@ -176,6 +121,8 @@
     var UC = window.UpstreemCore;
     var esc = UC.esc;
     var instanceId = root.getAttribute("data-instance") || "default";
+    /* Erst hier, nicht auf Modulebene: UC steht beim Laden dieser Datei noch nicht fest. */
+    if (!BAR_SVG) BAR_SVG = UC.icon("panelLeft", 1.8);
     var fire = UC.makeFire(root, { label: "sidebar", eventPrefix: "" });
 
     function attr(n, f){
@@ -190,11 +137,11 @@
            Faellt das Bild aus, nimmt es sich samt der Klasse weg und der Stern wird sichtbar --
            ein leerer Platz neben einem Menuepunkt sieht aus, als fehle etwas. Gleiche Bauart
            wie .up-logo-box mit has-img. */
-        return lucide("sparkles", 1.8) +
+        return UC.icon("sparkle", 1.8) +
           '<img class="usn-mira" src="' + esc(q) + '" alt="" ' +
           'onerror="this.parentNode.classList.remove(\'has-mira\');this.remove()"/>';
       }
-      return lucide(name, 1.8);
+      return UC.icon(name, 1.8);
     }
     /* .up-logo-box aus core: ein Element, Buchstabe darunter, Bild darueber. Faellt das Bild
        aus, verliert die Box has-img und der Buchstabe wird sichtbar. */
@@ -311,8 +258,8 @@
     var elAccName  = bar.querySelector("[data-acc-name]");
     var elAccMail  = bar.querySelector("[data-acc-mail]");
 
-    bar.querySelector("[data-team-sw]").innerHTML = ic("chevronsUpDown");
-    bar.querySelector("[data-acc-more]").innerHTML = ic("ellipsis");
+    bar.querySelector("[data-team-sw]").innerHTML = ic("chevronsUpDownWide");
+    bar.querySelector("[data-acc-more]").innerHTML = ic("moreHorizontal");
     elToggle.innerHTML = BAR_SVG;
 
     /* ---------------- Breite ---------------- */
