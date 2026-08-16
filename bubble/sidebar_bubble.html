@@ -40,6 +40,8 @@
   data-team-id         = Current User's team's unique id -- welches Team oben steht
   data-active          = welcher Punkt hervorgehoben ist, siehe Schluessel unten
   data-prompt-count    = Zahl neben "Prompt Insights" (leer lassen = kein Zaehler)
+  data-export-instance = data-instance des Export-Elements dieser Seite. Wird an Quick Actions
+                         durchgereicht, damit "Export Your Data" den Export-Dialog oeffnet.
   data-mira-icon       = OPTIONAL. Beide Mira-Zeichen stehen fest im Code; diese beiden
   data-mira-icon-dark    Attribute sind nur da, um sie im Notfall zu ueberschreiben.
 
@@ -112,10 +114,16 @@
   Pageload geht also nicht verloren, er wird nachgeholt.
 
   ── Quick Actions ────────────────────────────────────────────────────────────
-  Liegt das Quick-Actions-Element (#mira-quick-actions) auf der Seite, haengt die Sidebar es
-  von selbst unter den Team-Kopf. Es wird UMGEHAENGT, nicht nachgebaut: sein Workflow, seine
-  Zuhoerer und sein Overlay bleiben unangetastet. Nichts zu tun -- ausser das Element auf der
-  Seite zu lassen. Liegt keines da, bleibt der Platz leer und die Leiste rueckt zusammen.
+  DU BRAUCHST DAFUER KEIN EIGENES ELEMENT MEHR. Die Sidebar legt den Rahmen selbst an und laedt
+  quick-actions.css/js ueber ihren Loader mit; das Markup baut quick-actions.js. data-theme und
+  das aktuelle Team reicht die Sidebar durch, Favoriten bleiben also pro Team getrennt.
+
+  Liegt bereits ein eigenes Quick-Actions-Element auf der Seite, wird DIESES umgehaengt statt
+  ein zweites gebaut -- sein Workflow, seine Zuhoerer und sein Overlay bleiben unangetastet.
+
+  Damit "Export Your Data" den Export-Dialog oeffnet, muss data-export-instance am Root oben
+  gesetzt sein (dieselbe Kennung wie bei den anderen Komponenten). Ohne die Angabe feuert der
+  Punkt weiterhin nur bubble_fn_qa_export_data.
 
   ── Theme ────────────────────────────────────────────────────────────────────
   Die Eintraege Light / Dark / System im Konto-Menue rufen setUpstreemTheme aus core. Das
@@ -139,6 +147,7 @@
      data-team-id="TEAM_ID"
      data-active="dashboard"
      data-prompt-count=""
+     data-export-instance="EXPORT_INSTANCE_ID"
      data-nav-fn="bubble_fn_usnNav"
      data-team-fn="bubble_fn_usnTeam"
      data-profile-fn="bubble_fn_usnProfile"
@@ -163,7 +172,11 @@
   function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
   function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
 
-  css("core.css");     js("core.js");
-  css("sidebar.css");  js("sidebar.js");
+  css("core.css");           js("core.js");
+  css("sidebar.css");        js("sidebar.js");
+  /* Quick Actions gehoert zur Leiste: die Sidebar legt den Rahmen an, quick-actions.js baut den
+     Inhalt. Liegt schon ein eigenes Quick-Actions-Element auf der Seite, wird DAS umgehaengt --
+     die Dateien sind dann ohnehin geladen und der Loader holt sie kein zweites Mal. */
+  css("quick-actions.css");  js("quick-actions.js");
 })();
 </script>

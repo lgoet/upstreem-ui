@@ -3,7 +3,7 @@
    from the standalone version, including the JS event names, the window.MiraQuickActions API,
    and every bubble_fn_* it calls. See bubble/quick_actions_bubble.html for the migration notes
    and the full attribute/event documentation. */
-(function(){
+(function mqaBoot(){
   /* Der Loader dieses Elements laedt als EINZIGER der 15 Komponenten kein core.js mit -- er holt
      nur quick-actions.css/js. Auf einer Seite, auf der sonst keine upstreem-Komponente liegt,
      existiert damit gar kein window.UpstreemCore, also auch kein Marken-Store: /mentioning stand
@@ -73,8 +73,58 @@
     window.MiraQuickActions = stub;
   }
 
+  /* ---------- Markup ----------
+     Das Markup stand bisher NUR in bubble/quick_actions_bubble.html. Damit konnte die Palette
+     ausschliesslich dort entstehen, wo jemand diese 39 Zeilen von Hand eingesetzt hatte -- die
+     Sidebar konnte sie nicht selbst aufbauen, ohne die Zeilen ein zweites Mal zu fuehren.
+     Jetzt steht die Vorlage hier, und wer die Palette will, braucht nur noch den Rahmen:
+         <div id="mira-quick-actions"></div>
+     Bestehende Einbauten bleiben unberuehrt: ist ein .mqa-trigger schon da, wird nichts gebaut. */
+  var MQA_MARKUP =
+    '<button class="mqa-trigger" type="button" aria-label="Open quick actions">' +
+      '<svg class="mqa-trigger-ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>' +
+      '<span class="mqa-trigger-label">Quick Actions</span>' +
+      '<span class="mqa-kbd" data-kbd>\u2318K</span>' +
+    '</button>' +
+    '<div class="mqa-overlay" role="presentation" aria-hidden="true">' +
+      '<div class="mqa-modal" role="dialog" aria-modal="true" aria-label="Quick actions">' +
+        '<div class="mqa-search">' +
+          '<svg class="mqa-search-ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>' +
+          '<span class="mqa-chips" id="mqa-chips"></span>' +
+          '<span class="mqa-inputwrap">' +
+            '<input class="mqa-input" type="text" autocomplete="off" spellcheck="false" placeholder="" aria-label="Search" />' +
+            '<span class="mqa-ph" id="mqa-ph" aria-hidden="true">Search brands, domains, URLs, prompts\u2026</span>' +
+          '</span>' +
+          '<span class="mqa-ph-cmd" id="mqa-ph-cmd" aria-hidden="true">/ for filters</span>' +
+          '<span class="mqa-kbd mqa-esc" id="mqa-esc">esc</span>' +
+          '<button class="mqa-fav is-hidden" type="button" id="mqa-fav" aria-pressed="false" aria-label="Save as Favorite">' +
+            '<svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>' +
+          '</button>' +
+          '<button class="mqa-clear is-hidden" type="button" id="mqa-clear" aria-label="Reset search">' +
+            '<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>' +
+          '</button>' +
+        '</div>' +
+        '<button class="mqa-entercta is-hidden" type="button" id="mqa-entercta">Press' +
+          '<span class="mqa-kbd"><svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="9 10 4 15 9 20"></polyline><path d="M20 4v7a4 4 0 0 1-4 4H4"></path></svg>Enter</span>' +
+        'to search</button>' +
+        '<div class="mqa-scroll"><div class="mqa-results" aria-live="polite"></div></div>' +
+        '<div class="mqa-recent-wrap" id="mqa-recent"></div>' +
+        '<div class="mqa-actions-wrap"></div>' +
+      '</div>' +
+    '</div>';
+
   var root = document.getElementById('mira-quick-actions');
-  if (!root || root.__mqaInit) return; root.__mqaInit = true;
+  /* Nicht still aufgeben, wenn der Rahmen noch fehlt: Bubble baut die Seite in Schueben auf, und
+     die Sidebar legt ihren Rahmen erst an, wenn sie selbst steht. Frueher war die Palette in
+     diesem Fall fuer immer weg -- diese Datei lief genau einmal. */
+  if (!root){
+    var v = (window.__mqaWarten = (window.__mqaWarten || 0) + 1);
+    if (v <= 40) setTimeout(mqaBoot, 150);
+    else if (window.console) console.warn("[quick-actions] kein Element mit id=\"mira-quick-actions\" auf der Seite.");
+    return;
+  }
+  if (root.__mqaInit) return; root.__mqaInit = true;
+  if (!root.querySelector('.mqa-trigger')) root.innerHTML = MQA_MARKUP;
 
   var trigger  = root.querySelector('.mqa-trigger');
   var overlay  = root.querySelector('.mqa-overlay');

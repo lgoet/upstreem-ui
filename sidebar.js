@@ -166,6 +166,9 @@
       offen: false,          /* nur im hint-Zustand: faehrt die Leiste ueber den Inhalt */
       aktiv: attr("data-active", "dashboard"),
       teams: [], team: null,
+      /* Getrennt vom Inhalt: "noch nichts angekommen" ist ein anderer Zustand als "angekommen
+         und leer". Nur der erste zeigt Skelette -- der zweite zeigt, was da ist. */
+      teamsDa: false, userDa: false,
       user: { name: "", email: "", avatar: "" },
       count: attr("data-prompt-count"),
       suche: "",
@@ -301,9 +304,18 @@
     /* ---------------- Zeichnen ---------------- */
     function renderTeam(){
       var t = state.team || {};
+      if (!state.teamsDa && !t.name){
+        elTeamLogo.innerHTML = '<span class="usn-sk"></span>';
+        elTeamName.innerHTML = '<span class="usn-sk"></span>';
+        elTeamBtn.removeAttribute("title");
+        if (typeof qaAufbauen === "function") qaAufbauen(0);
+        return;
+      }
       elTeamLogo.innerHTML = logoHtml(t.name, t.favicon_url);
       elTeamName.textContent = t.name || "";
       elTeamBtn.setAttribute("title", t.name || "");
+      /* Die Palette speichert Favoriten pro Team -- ihr data-team muss also mitwandern. */
+      if (typeof qaAufbauen === "function") qaAufbauen(0);
     }
     function renderNav(){
       elNav.innerHTML = BLOECKE.map(function(b){
@@ -328,10 +340,18 @@
       var el = elNav.querySelector("[data-chips]");
       if (!el) return;
       var liste = state.teams || [];
+      if (!state.teamsDa){ el.innerHTML = '<span class="usn-sk usn-sk-chips"></span>'; return; }
       el.innerHTML = liste.length ? UC.brandStack(liste, liste.length, { max: 3 }) : "";
     }
     function renderAcc(){
       var u = state.user || {};
+      if (!state.userDa){
+        elAv.innerHTML = '<span class="usn-sk"></span>';
+        elAccName.innerHTML = '<span class="usn-sk"></span>';
+        elAccMail.innerHTML = '<span class="usn-sk"></span>';
+        elAcc.removeAttribute("title");
+        return;
+      }
       var q = url(u.avatar);
       /* Initialen als Grundlage, das Bild darueber -- faellt es aus, steht wieder der Buchstabe
          da statt eines leeren Kreises. Gleiche Bauart wie .up-logo-box. */
@@ -514,23 +534,36 @@
     window.addEventListener("resize", function(){ anwenden(); });
     /* Theme-Wechsel: das Mira-Symbol hat zwei Fassungen, und der Haken im Konto-Menue muss
        mitwandern. */
-    UC.onTheme(function(){ renderNav(); if (popAcc.isOpen()) renderAccMenu(); });
+    UC.onTheme(function(){ renderNav(); qaAufbauen(0); if (popAcc.isOpen()) renderAccMenu(); });
 
     /* Quick Actions steht als eigenes Element auf der Seite. Es wird hierher UMGEHAENGT, nicht
        nachgebaut -- ein Umzug laesst seinen Controller, seine Zuhoerer und sein Overlay
        unangetastet. Bubble baut die Seite in Schueben auf, deshalb 25 Versuche ueber 5s. */
-    (function qaHolen(versuche){
+    /* Erst kurz warten, ob die Seite ein eigenes Quick-Actions-Element mitbringt (Bubble baut in
+       Schueben auf), dann selbst eines anlegen. Ohne das Warten stuenden auf einer Seite, die
+       ihres nur spaeter einhaengt, am Ende zwei Elemente mit derselben id. */
+    function qaAufbauen(wartenNoch){
       var ziel = bar.querySelector("[data-qa]");
+      if (!ziel) return;
       var qa = document.getElementById("mira-quick-actions");
-      if (qa && ziel && qa.parentNode !== ziel){ ziel.appendChild(qa); return; }
-      if (versuche > 0){ setTimeout(function(){ qaHolen(versuche - 1); }, 200); return; }
-      /* Nach 5s aufgeben -- aber nicht stumm. Eine leere Stelle, wo Quick Actions stehen soll,
-         sieht aus wie ein Layoutfehler; die Ursache ist fast immer, dass das Element gar nicht
-         auf der Seite liegt (oder unter einer anderen id). */
-      if (window.console) console.warn("[sidebar] #mira-quick-actions nicht gefunden — das " +
-        "Quick-Actions-Element muss auf derselben Seite liegen, dann haengt die Sidebar es von " +
-        "selbst unter den Team-Kopf.");
-    })(25);
+      if (!qa && wartenNoch > 0){ setTimeout(function(){ qaAufbauen(wartenNoch - 1); }, 150); return; }
+      if (!qa){
+        /* Keins auf der Seite: dann legt die Sidebar den Rahmen an. Gefuellt wird er von
+           quick-actions.js -- das Markup steht dort, nicht hier. Zwei Kopien derselben 39 Zeilen
+           waeren genau der Nachbau, den die Hausregel verbietet. */
+        qa = document.createElement("div");
+        qa.id = "mira-quick-actions";
+        ziel.appendChild(qa);
+      } else if (qa.parentNode !== ziel) ziel.appendChild(qa);
+      /* Theme, Team und Export-Kennung durchreichen: die Palette liest sie von ihrem eigenen
+         Element, und wenn die Sidebar sie anlegt, kennt sie sie sonst nicht. */
+      qa.setAttribute("data-theme", bar.getAttribute("data-theme") === "dark" ? "dark" : "light");
+      var team = (state.team && state.team.id) || attr("data-team-id");
+      if (team) qa.setAttribute("data-team", team);
+      var exp = attr("data-export-instance");
+      if (exp) qa.setAttribute("data-export-instance", exp);
+    }
+    qaAufbauen(10);
 
     renderTeam(); renderNav(); renderAcc();
     /* Die Panels stehen von Anfang an im Layout, also auch von Anfang an gefuellt -- sonst
@@ -557,13 +590,16 @@
           return false;
         }
         state.teams = l;
+        state.teamsDa = true;
         var cur = attr("data-team-id");
         var treffer = state.teams.filter(function(t){ return String(t.id) === cur; })[0];
         /* Ohne data-team-id das erste Team: eine Leiste ohne Namen oben sieht kaputt aus, und
            die Liste kommt ohnehin mit dem aktuellen Team zuerst. */
         state.team = treffer || state.teams[0] || null;
         renderTeam(); renderChips();
-        if (popTeam.isOpen()) renderTeamMenu();
+        /* Immer neu zeichnen, nicht nur wenn offen: sonst steht im Panel noch "No teams found"
+           aus dem Moment vor den Daten, bis es einmal geoeffnet wurde. */
+        renderTeamMenu();
         return true;
       },
       setUser: function(u){
@@ -577,6 +613,7 @@
             "Der bisherige Kopf bleibt stehen. Payload:", u);
           return false;
         }
+        state.userDa = true;
         state.user = {
           name: String(p.name || p.full_name || ""),
           email: String(p.email || ""),

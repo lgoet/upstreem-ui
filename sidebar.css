@@ -86,7 +86,10 @@
 .usn-bar.is-mini .usn-head { opacity: 0; height: 0; padding: 0; overflow: hidden; }
 
 /* ---------- Team-Kopf ---------- */
-.usn-top { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; min-width: 0; }
+/* 32px Luft zwischen dem Doppelpfeil und dem Einklapp-Knopf -- der Mindestabstand, ueber den
+   der Teamname niemals hinauswaechst. 26 und nicht 32, weil der Team-Knopf rechts noch seine
+   eigenen 6px Polsterung mitbringt: 26 + 6 = die 32, die man sieht. Gemessen. */
+.usn-top { display: flex; align-items: center; gap: 26px; flex: 0 0 auto; min-width: 0; }
 /* .check_reinvention meldet .up-seg-btn (Segmented-Control-Knopf) fuer .usn-team und .usn-item.
    Das ist ein Fehlalarm ueber die gemeinsamen Eigenschaften "Knopf ohne Rahmen mit Radius":
    .up-seg-btn ist eine Haelfte eines Umschalters in einer Schiene mit eigenem Hintergrund, mit
@@ -97,25 +100,40 @@
    trotzdem nicht: .up-pop-opt haengt an --up-sel-bg, und das ist ein durchscheinendes #f5f5f5,
    das auf der Leistenflaeche (ebenfalls #f5f5f5) restlos verschwindet. Ein Hover, den man nicht
    sieht, ist schlechter als eine eigene Klasse. */
+/* flex: 0 1 auto und NICHT 1 1 auto: der Knopf ist so breit wie sein Inhalt und schrumpft nur,
+   wenn der Platz knapp wird. Waechst er, wandert der Doppelpfeil an den rechten Rand -- gewollt
+   ist, dass er dicht am Namen steht. Die Abstaende stehen als eigene Margins an den Kindern
+   statt als ein gemeinsames gap: logo->Name 10, Name->Pfeil 32, zwei verschiedene Werte. */
 .usn-team {
-  flex: 1 1 auto; min-width: 0;
-  display: flex; align-items: center; gap: 10px;
+  flex: 0 1 auto; min-width: 0;
+  display: flex; align-items: center; gap: 0;
   height: 40px; padding: 0 6px; margin-left: -6px;
   border: 0; border-radius: 9px; background: transparent;
   font: inherit; color: var(--vc-text); cursor: pointer; text-align: left;
   transition: background var(--usn-t) var(--usn-ease);
 }
-.usn-team:hover { background: var(--vc-heading-bg); }
+/* --vc-heading-bg ist ein durchscheinendes #f5f5f5 und auf der gleichfarbigen Leiste nicht zu
+   sehen. Dieselbe Flaeche wie der aktive Menuepunkt, dazu die Chevrons in der Primaerfarbe. */
+.usn-team:hover { background: var(--vc-bg); }
+.usn-team:hover .usn-sw { color: var(--vc-text); }
 /* gap: 0 -- die Luecken zwischen den Flex-Kindern bleiben sonst stehen, auch wenn die Kinder
    selbst 0 breit sind, und das Icon steht dann um genau diese Luecke neben der Mitte. */
 .usn-bar.is-mini .usn-team { padding: 0; margin-left: 0; gap: 0; justify-content: center; }
+/* Im Mini-Zustand muessen auch die Margins weg, sonst steht das Logo um genau diese Werte
+   neben der Mitte -- die Elemente sind dort 0 breit, ihre Abstaende aber nicht. */
+.usn-bar.is-mini .usn-teamname,
+.usn-bar.is-mini .usn-team .usn-sw { margin-left: 0; }
+.usn-bar.is-mini .usn-team { flex: 1 1 auto; }
 .usn-teamlogo { flex: 0 0 24px; display: inline-flex; }
+/* Nie umbrechen, nie herausragen: schrumpfen und mit Auslassungspunkten enden. min-width: 0
+   ist dafuer Pflicht -- ein Flex-Kind schrumpft sonst nicht unter seine Inhaltsbreite, und der
+   Name schoebe den Doppelpfeil aus der Leiste heraus. */
 .usn-teamname {
-  flex: 1 1 auto; min-width: 0;
+  flex: 0 1 auto; min-width: 0; margin-left: 10px;
   font-size: 14px; font-weight: 500; line-height: 1.2;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.usn-team .usn-sw { width: 14px; height: 14px; flex: 0 0 14px; color: var(--vc-third); }
+.usn-team .usn-sw { width: 14px; height: 14px; flex: 0 0 14px; margin-left: 32px; color: var(--vc-third); }
 .usn-team .usn-sw svg { width: 14px; height: 14px; display: block; }
 
 /* Ein-/Ausklappen: das Bauteil ist .up-iconbtn aus core (32x32, Radius 8, transparent, gedaempft,
@@ -148,7 +166,9 @@
 
 /* ---------- Menue ---------- */
 .usn-nav { margin-top: 64px; flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; }
-.usn-block + .usn-block { margin-top: 16px; }
+/* 64px auch zwischen Database / Workspace / Organisation -- derselbe Abstand wie zwischen
+   Kopf, Quick Actions und Menue. Alle groesseren Gruppen stehen gleich weit auseinander. */
+.usn-block + .usn-block { margin-top: 64px; }
 /* Abschnittsueberschrift in derselben Sprache wie .up-pop-head in core: 11px, versal,
    gesperrt, Sekundaerton. */
 .usn-head {
@@ -193,11 +213,36 @@
   font-variant-numeric: tabular-nums;
 }
 .usn-count:empty { display: none; }
-.usn-chips { flex: 0 0 auto; display: inline-flex; align-items: center; }
+/* KEINE Hoverstates auf der Logo-Vorschau. .up-stack bringt Anheben, Spreizen und den
+   Marken-Tooltip mit -- alles richtig in einer Tabellenzeile, hier falsch: die Chips sind
+   Beiwerk in einem Knopf, kein eigenes Ziel. pointer-events:none nimmt Hover UND Tooltip auf
+   einmal und laesst den Klick zum Menuepunkt darunter durch. */
+.usn-chips { flex: 0 0 auto; display: inline-flex; align-items: center; pointer-events: none; }
 /* Die Chips sitzen in einem 36px-Knopf, nicht in einer Tabellenzeile: der Ring, mit dem sie
    sich sonst voneinander abheben, muss die Farbe der Leiste haben, nicht die des Inhalts. */
 .usn-chips .up-stack-vis { box-shadow: 0 0 0 2px var(--usn-bg); }
 .usn-bar.is-mini .usn-item { justify-content: center; padding: 0; gap: 0; }
+
+/* ---------- Skelette ----------
+   Solange die Daten nicht da sind, steht an ihrer Stelle ein Balken -- kein leerer Platz und
+   kein Fragezeichen. Geometrie und Ton wie die Tabellenskelette in core: --vc-sk, Radius 6,
+   dieselbe Wanderung. */
+.usn-sk { display: block; border-radius: 6px; background: var(--vc-sk); position: relative; overflow: hidden; }
+.usn-sk::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent);
+  transform: translateX(-100%); animation: usn-sk-lauf 1.4s ease-in-out infinite;
+}
+.usn-bar[data-theme="dark"] .usn-sk::after { background: linear-gradient(90deg, transparent, rgba(255,255,255,.10), transparent); }
+@keyframes usn-sk-lauf { to { transform: translateX(100%); } }
+.usn-teamlogo .usn-sk { width: 24px; height: 24px; border-radius: 8px; }
+.usn-teamname .usn-sk { width: 96px; height: 13px; }
+.usn-av .usn-sk { width: 30px; height: 30px; border-radius: 50%; }
+.usn-acc-name .usn-sk { width: 92px; height: 12px; }
+.usn-acc-mail .usn-sk { width: 116px; height: 10px; margin-top: 3px; }
+.usn-sk-chips { width: 58px; height: 14px; border-radius: 7px; }
+/* Im Mini-Zustand traegt nur das Logo bzw. der Kreis ein Skelett -- die Textbalken liegen in
+   Elementen, die dort ohnehin auf Breite 0 stehen. */
 
 /* ---------- Konto ---------- */
 .usn-accwrap { flex: 0 0 auto; margin-top: 16px; }
@@ -263,6 +308,16 @@
 .usn-newteam svg { width: 15px; height: 15px; display: block; flex: 0 0 15px; color: var(--vc-muted); }
 /* Abschnitte im Konto-Menue: dieselbe Trennlinie, damit beide Menues gleich lesen. */
 .usn-sec + .usn-sec { border-top: 1px solid var(--up-menu-border); margin-top: var(--up-dd-pad); padding-top: var(--up-dd-pad); }
+/* Abstaende in beiden Panels. core gibt .up-pop-head unten 8px und den Zeilen gar keinen
+   Abstand zueinander -- fuer einen Sorter mit drei Zeilen reicht das, fuer ein Menue mit
+   Abschnitten klebt es. Hier: 12px unter der Ueberschrift, 4px zwischen den Zeilen. Die
+   Aenderung bleibt auf .usn-menu beschraenkt, die Sorter der App behalten ihre Werte. */
+/* display: block ist hier der eigentliche Fix. .up-pop-head ist ein span, also inline -- eine
+   senkrechte Polsterung an einem Inline-Element vergroessert zwar seinen Kasten, schiebt aber
+   nichts weg. Gemessen: mit padding allein blieb der Abstand zur ersten Zeile unveraendert. */
+.usn-menu .up-pop-head { display: block; padding-bottom: 12px; }
+.usn-menu .up-pop-opt + .up-pop-opt { margin-top: 4px; }
+.usn-menu .usn-teamrow + .usn-teamrow { margin-top: 4px; }
 .usn-menu .up-pop-opt svg { width: 15px; height: 15px; display: block; flex: 0 0 15px; color: var(--vc-muted); }
 .usn-menu .up-pop-opt-l { display: inline-flex; align-items: center; gap: 9px; min-width: 0; }
 
