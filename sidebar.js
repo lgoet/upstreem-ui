@@ -523,7 +523,13 @@
       var ziel = bar.querySelector("[data-qa]");
       var qa = document.getElementById("mira-quick-actions");
       if (qa && ziel && qa.parentNode !== ziel){ ziel.appendChild(qa); return; }
-      if (versuche > 0) setTimeout(function(){ qaHolen(versuche - 1); }, 200);
+      if (versuche > 0){ setTimeout(function(){ qaHolen(versuche - 1); }, 200); return; }
+      /* Nach 5s aufgeben -- aber nicht stumm. Eine leere Stelle, wo Quick Actions stehen soll,
+         sieht aus wie ein Layoutfehler; die Ursache ist fast immer, dass das Element gar nicht
+         auf der Seite liegt (oder unter einer anderen id). */
+      if (window.console) console.warn("[sidebar] #mira-quick-actions nicht gefunden — das " +
+        "Quick-Actions-Element muss auf derselben Seite liegen, dann haengt die Sidebar es von " +
+        "selbst unter den Team-Kopf.");
     })(25);
 
     renderTeam(); renderNav(); renderAcc();

@@ -24,8 +24,17 @@
   <div style="height:1200px"></div>
 </div></div>
 
+<!-- Quick Actions in echt: die Sidebar haengt dieses Element unter den Team-Kopf um. -->
+<div id="mira-quick-actions" data-theme="light" data-team="" data-export-instance="export_x">
+  <button class="mqa-trigger" type="button" aria-label="Open quick actions">
+    <svg class="mqa-trigger-ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+    <span class="mqa-trigger-label">Quick Actions</span>
+    <span class="mqa-kbd" data-kbd>&#8984;K</span>
+  </button>
+</div>
+
 <div class="up-root usn-root" data-instance="s1" data-isdark="no"
-     data-team-id="t2" data-active="dashboard" data-prompt-count="42"
+     data-team-id="ca880309-251e-4513-8901-8c5f8583f624" data-active="dashboard" data-prompt-count="42"
      data-nav-fn="bubble_fn_usnNav"
      data-team-fn="bubble_fn_usnTeam"
      data-profile-fn="bubble_fn_usnProfile"
@@ -46,7 +55,7 @@ window.bubble_fn_theme_pref = function(v){ window.__ev.push("theme_pref "+v); lo
      Genau so kam es auf der Bubble-Seite an, und genau so fiel die Leiste um -- .up-portal
      (display:contents) und .up-root (position:relative) gewannen ueber die Reihenfolge.
      Wer hier die bequeme Reihenfolge misst, misst sein eigenes Glueck. */
-  var files = ["sidebar.css","core.css","core.js","sidebar.js"];
+  var files = ["sidebar.css","core.css","quick-actions.css","core.js","sidebar.js"];
   var texts = {};
   Promise.all(files.map(function(f){
     return fetch(f + "?nocache=" + Math.random(), { cache: "no-store" })
@@ -67,12 +76,16 @@ window.bubble_fn_theme_pref = function(v){ window.__ev.push("theme_pref "+v); lo
 
 function los(){
   window.setSidebarTeams("s1", [
-    {"id":"t1","name":"Acme Analytics","favicon_url":"","domain":"acme.com"},
-    {"id":"t2","name":"Upstreem","favicon_url":"","domain":"upstreem.ai"},
-    {"id":"t3","name":"Northwind Trading","favicon_url":"","domain":"northwind.io"},
-    {"id":"t4","name":"Globex","favicon_url":"","domain":"globex.co"},
-    {"id":"t5","name":"Initech","favicon_url":"","domain":"initech.dev"},
-    {"id":"t6","name":"Umbrella Health","favicon_url":"","domain":"umbrella.health"}
+    {"id": "877c649c-f5f2-44e9-bb04-155f5bf44e70", "name": "Mercedes Benz", "domain": "mercedes-benz.de", "favicon_url": "//49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png"},
+    {"id": "e7755829-5b36-4267-8eb1-69ff47bf0564", "name": "Parookaville", "domain": "parookaville.com", "favicon_url": "https://www.google.com/s2/favicons?domain=parookaville.com&sz=64"},
+    {"id": "15bf54d6-6653-4f6f-bb3e-f7dac654db03", "name": "HOLY", "domain": "holy.de", "favicon_url": "https://www.google.com/s2/favicons?domain=weareholy.com&sz=64"},
+    {"id": "eee8727a-ee98-4d2a-a25e-f3ca8fce8307", "name": "Allianz", "domain": "allianz.de", "favicon_url": "https://www.google.com/s2/favicons?domain=allianz.de&sz=64"},
+    {"id": "ca880309-251e-4513-8901-8c5f8583f624", "name": "LeeUp Media", "domain": "lee-up.de", "favicon_url": "https://www.google.com/s2/favicons?domain=lee-up.de&sz=64"},
+    {"id": "2735aac6-d2cb-4110-976c-f6ac4dec8d5a", "name": "upstreem", "domain": "upstreem.ai", "favicon_url": "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-mark-square-1f1f1f.svg"},
+    {"id": "cf31a5d4-8671-4d4e-9c34-29df6d7f3502", "name": "digitallotsen", "domain": "digitallotsen.com", "favicon_url": "https://www.google.com/s2/favicons?domain=digitallotsen.com&sz=64"},
+    {"id": "772e30a7-3356-4e0d-8edb-5d43717176cb", "name": "MotelOne", "domain": "motel-one.com", "favicon_url": "https://www.google.com/s2/favicons?domain=motel-one.com&sz=64"},
+    {"id": "664f8efe-0269-4603-9f94-3312226ad5fc", "name": "HUBie", "domain": "sac-hub.com", "favicon_url": "https://www.google.com/s2/favicons?domain=sac-hub.com&sz=64"},
+    {"id": "f95f59c3-4871-49e6-afaf-409bb090e472", "name": "Der Sanitätscoach", "domain": "sanitaetscoach.de", "favicon_url": "https://www.google.com/s2/favicons?domain=sanitaetscoach.de&sz=64"}
   ]);
   window.setSidebarUser("s1", {"name":"Lukas Gotzkes","email":"l@upstreem.ai","avatar_url":""});
   window.__ev.push("setter durch"); log();

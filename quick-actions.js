@@ -482,10 +482,33 @@
     if (typeof window.bubble_fn_quick_actions_search === "function"){ try { window.bubble_fn_quick_actions_search(JSON.stringify(detail)); } catch(_){} }
     try { window.dispatchEvent(new CustomEvent(name, { detail: detail })); } catch(_){}
   }
+  /* Export laeuft ueber DIESELBE Komponente wie ueberall sonst: window.upstreemExportOpen mit der
+     Kennung aus data-export-instance. Frueher feuerte hier nur bubble_fn_qa_export_data, also ein
+     eigener Weg fuer dieselbe Sache -- und der oeffnete keinen Dialog, sondern was auch immer auf
+     Bubble-Seite daran haengt.
+     Gibt es keine Kennung oder keine Export-Komponente auf der Seite, bleibt es beim alten Event:
+     eine bestehende Verdrahtung darf durch diese Aenderung nicht ausfallen. */
+  function oeffneExport(){
+    var id = String((root.getAttribute("data-export-instance") || "")).trim();
+    if (!id || id === "EXPORT_INSTANCE_ID") return false;
+    var fn = window.upstreemExportOpen || (window.parent && window.parent.upstreemExportOpen) ||
+             (window.top && window.top.upstreemExportOpen);
+    if (typeof fn !== "function"){
+      if (window.console) console.warn("[quick-actions] window.upstreemExportOpen nicht gefunden — liegt die Export-Komponente auf dieser Seite, und ist ihr Element SICHTBAR?");
+      return false;
+    }
+    try { fn(id); } catch(_){ return false; }
+    return true;
+  }
   // one distinct event per static action (no value)
   function fireStatic(action){
     var base = { add_new_prompt:"qa_add_prompt", add_new_brand:"qa_add_brand", export_data:"qa_export_data", edit_your_brand:"qa_edit_brand" }[action];
     if (!base) return;
+    /* Entweder Dialog ODER altes Event -- nie beides, sonst laeuft der Export doppelt. */
+    if (action === "export_data" && oeffneExport()){
+      try { window.dispatchEvent(new CustomEvent("mira_" + base)); } catch(_){}
+      return;
+    }
     var fn = "bubble_fn_" + base;
     if (typeof window[fn] === "function"){ try { window[fn](); } catch(_){} }
     try { window.dispatchEvent(new CustomEvent("mira_" + base)); } catch(_){}

@@ -58,14 +58,15 @@
   position: fixed; left: 0; top: 0; bottom: 0; z-index: 9900;
   width: var(--usn-w); max-width: none; min-width: 0; height: auto;
   display: flex; flex-direction: column; align-items: stretch;
-  margin: 0; padding: 16px;
+  /* Oben knapp, damit die Leiste wirklich oben anfaengt; seitlich und unten bleibt es bei 16. */
+  margin: 0; padding: 8px 16px 16px;
   background: var(--usn-bg); color: var(--vc-text);
   /* Keine Rahmen, keine Schatten -- ausdruecklich so gewollt. Die Flaeche trennt. */
   border: 0; box-shadow: none;
   transition: width var(--usn-t) var(--usn-ease), transform var(--usn-t) var(--usn-ease);
   overflow: visible;   /* die Dropdowns duerfen herausragen */
 }
-.up-root.up-portal.usn-bar.is-mini { width: var(--usn-mini); padding: 16px 12px; }
+.up-root.up-portal.usn-bar.is-mini { width: var(--usn-mini); padding: 8px 12px 16px; }
 /* Im hint-Zustand faehrt die Leiste nach links heraus, statt zu verschwinden: display:none
    koennte man nicht animieren, und ein Sprung waere genau das, was hier nicht sein soll. */
 .up-root.up-portal.usn-bar.is-hidden { transform: translateX(-100%); }
@@ -132,18 +133,28 @@
 
 /* ---------- Quick Actions ---------- */
 /* Leer, solange das Element noch nicht umgehaengt ist: dann darf hier auch kein Abstand stehen. */
+/* 64px zwischen den drei Regionen (Kopf / Quick Actions / Menue). Leer bleibt der Block
+   abstandslos -- ein Loch von 64px, wo nichts steht, waere kein Abstand, sondern ein Fehler. */
 .usn-qa { flex: 0 0 auto; }
-.usn-qa:not(:empty) { margin-top: 16px; }
+.usn-qa:not(:empty) { margin-top: 64px; }
+/* Im Mini-Zustand bleibt vom Quick-Actions-Knopf nur die Lupe. Sein eigenes CSS gibt ihm
+   width:100% mit Beschriftung und Tastenkuerzel -- in 40px Innenbreite bricht die Zeile um und
+   das Kuerzel haengt aus der Leiste heraus (gemessen). Die Regeln stehen HIER und nicht in
+   quick-actions.css: die Komponente liegt auch auf Seiten ohne Sidebar, und dort ist an ihr
+   nichts zu aendern. Spezifitaet ueber .usn-bar.is-mini, kein !important. */
+.usn-bar.is-mini .mqa-trigger { padding: 0; gap: 0; justify-content: center; }
+.usn-bar.is-mini .mqa-trigger-label,
+.usn-bar.is-mini .mqa-trigger .mqa-kbd { display: none; }
 
 /* ---------- Menue ---------- */
-.usn-nav { margin-top: 16px; flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+.usn-nav { margin-top: 64px; flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; }
 .usn-block + .usn-block { margin-top: 16px; }
 /* Abschnittsueberschrift in derselben Sprache wie .up-pop-head in core: 11px, versal,
    gesperrt, Sekundaerton. */
 .usn-head {
   display: block; padding: 0 8px 6px;
   font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
-  color: var(--vc-muted); white-space: nowrap;
+  color: var(--vc-third); white-space: nowrap;
   transition: opacity calc(var(--usn-t) * .6) var(--usn-ease);
 }
 .usn-item {
@@ -155,7 +166,11 @@
   transition: background var(--usn-t) var(--usn-ease), color var(--usn-t) var(--usn-ease);
 }
 .usn-item + .usn-item { margin-top: 2px; }
-.usn-item:hover { background: var(--vc-bg); }
+/* Der Hover ist genau die halbe Staerke des aktiven Zustands: dieselbe Farbe, halb
+   deckend. Damit bleibt "worauf zeige ich" und "wo bin ich" unterscheidbar, ohne einen
+   zweiten Ton zu erfinden. */
+.usn-item:hover { background: color-mix(in srgb, var(--vc-bg) 50%, transparent); }
+.usn-item.is-active:hover { background: var(--vc-bg); }
 /* Der aktive Punkt traegt Flaeche UND Gewicht -- Farbe allein reicht nicht, wenn jemand sie
    nicht unterscheiden kann. */
 .usn-item.is-active { background: var(--vc-bg); font-weight: 600; }
@@ -167,6 +182,12 @@
 .usn-ic.has-mira svg { visibility: hidden; }
 .usn-item.is-active .usn-ic { color: var(--vc-text); }
 .usn-txt { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Optische Korrektur, 1px nach unten. Geometrisch stimmt es bereits -- gemessen: die Tintenmitte
+   des Labels liegt 0.3px unter der Icon-Mitte, beide Kaesten sind mittig im 36px-Knopf. Das
+   Auge liest die Zeile trotzdem als zu hoch, weil die Unterlaengen im Zeilenkasten Platz
+   beanspruchen, den die Buchstaben hier gar nicht ausfuellen. Nur das Label der Menuepunkte,
+   nicht Teamname und Konto -- die stehen fuer sich und haben kein Icon daneben. */
+.usn-item > .usn-txt { position: relative; top: 1px; }
 .usn-count {
   flex: 0 0 auto; font-size: 12px; font-weight: 500; color: var(--vc-third);
   font-variant-numeric: tabular-nums;
@@ -202,7 +223,9 @@
 .usn-acc-name { font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .usn-acc-mail { font-size: 11.5px; color: var(--vc-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .usn-acc-more { flex: 0 0 16px; width: 16px; height: 16px; color: var(--vc-third); }
-.usn-acc-more svg { width: 16px; height: 16px; display: block; }
+/* Senkrecht statt waagerecht: das ist die Form, die in Konto-Menues ueblich ist.
+   Gedreht statt ein zweites Icon aufzunehmen -- die Geometrie ist dieselbe. */
+.usn-acc-more svg { width: 16px; height: 16px; display: block; transform: rotate(90deg); }
 
 /* ---------- Dropdowns ----------
    Die Panels sind .up-filter-menu aus core. Hier steht nur, wo sie sitzen und wie breit sie

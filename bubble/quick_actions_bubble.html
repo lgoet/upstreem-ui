@@ -133,8 +133,18 @@
        localStorage under "mqa_fav_<team id>" — so favourites survive a reload (unlike Recent
        Searches, which stay session-only on purpose) but never leak between teams. Switching
        teams via MiraQuickActions.setTeam() switches the list with it.
+
+     ── "Export Your Data" ─────────────────────────────────────────────────
+     Der Punkt oeffnet den Export-Dialog der Export-Komponente, genau wie die Export-Knoepfe in
+     brands-overview, responses-table und den anderen. Dafuer muss oben
+     data-export-instance auf die data-instance des Export-Elements dieser Seite zeigen.
+
+     Ohne diese Angabe bleibt es beim alten Verhalten: es feuert nur bubble_fn_qa_export_data,
+     und was passiert, haengt an dem Workflow, den du daran gehaengt hast. Beides zugleich
+     passiert nie -- sonst liefe der Export doppelt.
      ============================================================ -->
-<div id="mira-quick-actions" data-theme="light" data-team="" data-cdn-pin="CDN_PIN">
+<div id="mira-quick-actions" data-theme="light" data-team="" data-cdn-pin="CDN_PIN"
+     data-export-instance="EXPORT_INSTANCE_ID">
   <button class="mqa-trigger" type="button" aria-label="Open quick actions">
     <svg class="mqa-trigger-ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
     <span class="mqa-trigger-label">Quick Actions</span>
