@@ -181,7 +181,15 @@
        jede mit eigenen Zuhoerern. */
     ["usn-bar", "usn-fab", "usn-scrim"].forEach(function(k){
       var alt = document.querySelectorAll("." + k + "[data-usn-instance=\"" + instanceId + "\"]");
-      for (var i = 0; i < alt.length; i++) if (alt[i].parentNode) alt[i].parentNode.removeChild(alt[i]);
+      for (var i = 0; i < alt.length; i++){
+        /* Quick Actions ZUERST herausholen. Die Palette wurde in die alte Leiste umgehaengt und
+           waere mit ihr geloescht worden -- genau das sah man beim Seitenaufbau: kurz da, dann
+           weg, sobald Bubble das Traegerelement neu injizierte. Sie wandert an <body> und wird
+           gleich darauf in die neue Leiste geholt. */
+        var pal = alt[i].querySelector && alt[i].querySelector("#mira-quick-actions");
+        if (pal) document.body.appendChild(pal);
+        if (alt[i].parentNode) alt[i].parentNode.removeChild(alt[i]);
+      }
     });
 
     var bar = document.createElement("div");
@@ -543,6 +551,11 @@
        Schueben auf), dann selbst eines anlegen. Ohne das Warten stuenden auf einer Seite, die
        ihres nur spaeter einhaengt, am Ende zwei Elemente mit derselben id. */
     function qaAufbauen(wartenNoch){
+      /* Eine abgehaengte Leiste ist tot und fasst nichts mehr an. Ohne diese Zeile holte der
+         Wachposten der ALTEN Leiste die Palette in seinen laengst entfernten Container zurueck --
+         und damit aus dem Dokument heraus. Gemessen nach einer Neu-Injektion: null Paletten im
+         Dokument, obwohl die neue Leiste sie gerade uebernommen hatte. */
+      if (!document.contains(bar)) return;
       var ziel = bar.querySelector("[data-qa]");
       if (!ziel) return;
       var qa = document.getElementById("mira-quick-actions");
@@ -564,6 +577,18 @@
       if (exp) qa.setAttribute("data-export-instance", exp);
     }
     qaAufbauen(10);
+    /* Und ein Wachposten darauf. Die Palette kann ihren Platz auf zwei Wegen verlieren: die
+       Leiste wird neu gebaut (oben abgefangen), oder Bubble baut SEIN Element neu, in dem sie
+       urspruenglich lag. Ein leerer Platz an dieser Stelle sieht aus wie ein Layoutfehler --
+       also nachfassen, sobald er leer wird. */
+    try {
+      var qaSlot = bar.querySelector("[data-qa]");
+      if (qaSlot && window.MutationObserver){
+        new MutationObserver(function(){
+          if (!qaSlot.firstElementChild) qaAufbauen(6);
+        }).observe(qaSlot, { childList: true });
+      }
+    } catch(e){}
 
     renderTeam(); renderNav(); renderAcc();
     /* Die Panels stehen von Anfang an im Layout, also auch von Anfang an gefuellt -- sonst

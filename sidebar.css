@@ -86,10 +86,11 @@
 .usn-bar.is-mini .usn-head { opacity: 0; height: 0; padding: 0; overflow: hidden; }
 
 /* ---------- Team-Kopf ---------- */
-/* 32px Luft zwischen dem Doppelpfeil und dem Einklapp-Knopf -- der Mindestabstand, ueber den
-   der Teamname niemals hinauswaechst. 26 und nicht 32, weil der Team-Knopf rechts noch seine
-   eigenen 6px Polsterung mitbringt: 26 + 6 = die 32, die man sieht. Gemessen. */
-.usn-top { display: flex; align-items: center; gap: 26px; flex: 0 0 auto; min-width: 0; }
+/* Negative Seitenraender: die Leiste polstert mit 16, die Kopfzeile soll aber 8 zu den
+   Kanten haben -- Teamknopf links, Einklapp-Knopf rechts. 16 - 8 = 8.
+   gap: 10 und nicht 16, weil der Team-Knopf rechts noch seine eigenen 6px Polsterung
+   mitbringt: 10 + 6 = die 16, die man zwischen Doppelpfeil und Knopf sieht. Gemessen. */
+.usn-top { display: flex; align-items: center; gap: 10px; margin: 0 -8px; flex: 0 0 auto; min-width: 0; }
 /* .check_reinvention meldet .up-seg-btn (Segmented-Control-Knopf) fuer .usn-team und .usn-item.
    Das ist ein Fehlalarm ueber die gemeinsamen Eigenschaften "Knopf ohne Rahmen mit Radius":
    .up-seg-btn ist eine Haelfte eines Umschalters in einer Schiene mit eigenem Hintergrund, mit
@@ -107,7 +108,9 @@
 .usn-team {
   flex: 0 1 auto; min-width: 0;
   display: flex; align-items: center; gap: 0;
-  height: 40px; padding: 0 6px; margin-left: -6px;
+  /* 32 und nicht 40: derselbe Kasten wie der Einklapp-Knopf daneben, damit beide oben auf
+     derselben Kante von 8px sitzen. Das 24er Logo hat darin ringsum 4px Luft. */
+  height: 32px; padding: 0 6px;
   border: 0; border-radius: 9px; background: transparent;
   font: inherit; color: var(--vc-text); cursor: pointer; text-align: left;
   transition: background var(--usn-t) var(--usn-ease);
@@ -118,12 +121,16 @@
 .usn-team:hover .usn-sw { color: var(--vc-text); }
 /* gap: 0 -- die Luecken zwischen den Flex-Kindern bleiben sonst stehen, auch wenn die Kinder
    selbst 0 breit sind, und das Icon steht dann um genau diese Luecke neben der Mitte. */
-.usn-bar.is-mini .usn-team { padding: 0; margin-left: 0; gap: 0; justify-content: center; }
-/* Im Mini-Zustand muessen auch die Margins weg, sonst steht das Logo um genau diese Werte
-   neben der Mitte -- die Elemente sind dort 0 breit, ihre Abstaende aber nicht. */
+/* Im Mini-Zustand ist der Teamknopf ein Quadrat wie der Einklapp-Knopf darunter -- vorher war
+   er so breit wie sein Logo (24) und 40 hoch, die Hoverflaeche also ein hochkant stehendes
+   Rechteck. Die Margins muessen dort ebenfalls weg: die Elemente sind 0 breit, ihre Abstaende
+   waren es nicht, und das Logo stand um genau diese Werte neben der Mitte. */
+.usn-bar.is-mini .usn-team {
+  flex: 0 0 auto; width: 32px; height: 32px; padding: 0; margin: 0; gap: 0; justify-content: center;
+}
+.usn-bar.is-mini .usn-top { margin: 0; }
 .usn-bar.is-mini .usn-teamname,
 .usn-bar.is-mini .usn-team .usn-sw { margin-left: 0; }
-.usn-bar.is-mini .usn-team { flex: 1 1 auto; }
 .usn-teamlogo { flex: 0 0 24px; display: inline-flex; }
 /* Nie umbrechen, nie herausragen: schrumpfen und mit Auslassungspunkten enden. min-width: 0
    ist dafuer Pflicht -- ein Flex-Kind schrumpft sonst nicht unter seine Inhaltsbreite, und der
@@ -133,7 +140,8 @@
   font-size: 14px; font-weight: 500; line-height: 1.2;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.usn-team .usn-sw { width: 14px; height: 14px; flex: 0 0 14px; margin-left: 32px; color: var(--vc-third); }
+/* 12px vom Namen, damit der Doppelpfeil zum Namen gehoert und nicht zum Rand. */
+.usn-team .usn-sw { width: 14px; height: 14px; flex: 0 0 14px; margin-left: 12px; color: var(--vc-third); }
 .usn-team .usn-sw svg { width: 14px; height: 14px; display: block; }
 
 /* Ein-/Ausklappen: das Bauteil ist .up-iconbtn aus core (32x32, Radius 8, transparent, gedaempft,
@@ -142,7 +150,10 @@
    Leiste unsichtbar. Spezifitaet statt Ladereihenfolge, deshalb mit .usn-bar davor. */
 .usn-bar .up-iconbtn { transition: background var(--usn-t) var(--usn-ease), color var(--usn-t) var(--usn-ease); }
 .usn-bar .up-iconbtn:hover { background: var(--vc-bg); color: var(--vc-text); }
-.usn-toggle { flex: 0 0 32px; }
+/* Ganz nach rechts: der Knopf gehoert an die Kante der Leiste, nicht hinter den Teamnamen.
+   Damit steht er immer 8px vom rechten Rand, und der Abstand zum Doppelpfeil ist mindestens
+   16px -- genau 16, sobald der Name den Platz ausfuellt. */
+.usn-toggle { flex: 0 0 32px; margin-left: auto; }
 /* [hidden] ist die schwaechste Regel im Feld: die display-Angabe darueber wuerde sie schlagen.
    Deshalb hier ausdruecklich zurueck auf none. */
 .usn-toggle[hidden] { display: none; }
@@ -151,10 +162,10 @@
 
 /* ---------- Quick Actions ---------- */
 /* Leer, solange das Element noch nicht umgehaengt ist: dann darf hier auch kein Abstand stehen. */
-/* 64px zwischen den drei Regionen (Kopf / Quick Actions / Menue). Leer bleibt der Block
-   abstandslos -- ein Loch von 64px, wo nichts steht, waere kein Abstand, sondern ein Fehler. */
+/* 32px zwischen den Regionen (Kopf / Quick Actions / Menue). Leer bleibt der Block
+   abstandslos -- ein Loch, wo nichts steht, waere kein Abstand, sondern ein Fehler. */
 .usn-qa { flex: 0 0 auto; }
-.usn-qa:not(:empty) { margin-top: 64px; }
+.usn-qa:not(:empty) { margin-top: 32px; }
 /* Im Mini-Zustand bleibt vom Quick-Actions-Knopf nur die Lupe. Sein eigenes CSS gibt ihm
    width:100% mit Beschriftung und Tastenkuerzel -- in 40px Innenbreite bricht die Zeile um und
    das Kuerzel haengt aus der Leiste heraus (gemessen). Die Regeln stehen HIER und nicht in
@@ -165,10 +176,10 @@
 .usn-bar.is-mini .mqa-trigger .mqa-kbd { display: none; }
 
 /* ---------- Menue ---------- */
-.usn-nav { margin-top: 64px; flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; }
-/* 64px auch zwischen Database / Workspace / Organisation -- derselbe Abstand wie zwischen
-   Kopf, Quick Actions und Menue. Alle groesseren Gruppen stehen gleich weit auseinander. */
-.usn-block + .usn-block { margin-top: 64px; }
+.usn-nav { margin-top: 32px; flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+/* Derselbe Abstand wie zwischen Kopf, Quick Actions und Menue: alle groesseren Gruppen
+   stehen gleich weit auseinander. */
+.usn-block + .usn-block { margin-top: 32px; }
 /* Abschnittsueberschrift in derselben Sprache wie .up-pop-head in core: 11px, versal,
    gesperrt, Sekundaerton. */
 .usn-head {
