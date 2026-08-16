@@ -1,0 +1,127 @@
+<!--
+  UPSTREEM — EXPORT DATA POPUP
+
+  Only the trigger button is visible in the page flow; the popup itself is appended to <body>
+  so no Bubble container with overflow:hidden can clip it.
+
+  ── Bubble dynamic values on the root element ────────────────────────────────
+  data-instance      = "ROOTID_[dynamic id]"   unique per placement of this reusable
+  data-isdark        = "yes" / "no"
+  data-token         = export_accesstoken
+  data-export-type   = which type is preselected: prompts | prompt_runs | domains | urls | brands
+  data-calendar-id   = OPTIONAL und in aller Regel weglassen. Die Komponente legt sich ihren
+                       Kalender selbst an. Nur setzen, wenn ein BESTEHENDER Picker auf der Seite
+                       benutzt werden soll -- siehe "Kalender" unten.
+  data-min-date      = OPTIONAL, frueheste waehlbare Kalenderwoche als YYYY-MM-DD. Ohne Angabe
+                       gilt die Untergrenze des Pickers (1. Januar 2024).
+
+  ── Event name must be unique per placement ──────────────────────────────────
+  data-export-fn="bubble_fn_upstreemExport_[dynamic id]"
+  Same reasoning as the other components: Bubble can only wire ONE workflow per
+  bubble_fn_* name, so two placements sharing a name would fire the same (wrong for one
+  of them) workflow.
+
+  Fires ONE JSON string — same shape as the other components here (cf. Mira's miraAction):
+
+    {"export_type":"urls","date_from":"2026-01-23","date_to":"2026-07-23",
+     "from_unix":1769122800000,"to_unix":1784930400000,
+     "date_range":-182,"token":"tok_abc123"}
+
+    export_type   prompts | prompt_runs | domains | urls | brands
+    date_from     YYYY-MM-DD
+    date_to       YYYY-MM-DD
+    from_unix     start of date_from, UTC midnight, Unix milliseconds — use this (not
+    to_unix       date_range) to build a backend date filter, no arithmetic required.
+                  Both are START of day IN UTC — NOT the browser's local midnight. That
+                  distinction matters: local midnight in any UTC+ timezone lands on the
+                  PREVIOUS UTC calendar day, which is exactly what made every export land
+                  one day earlier than selected before this was fixed.
+                  Both are START of day, so to_unix is the start of the LAST included day.
+                  For an inclusive upper bound use `< to_unix + 86400000` (one day in ms).
+    date_range    NEGATIVE, inclusive day count — "Last 7 Days" sends -7, not 7 or -6.
+                  Informational only now that from_unix/to_unix exist; not meant to be
+                  added to a timestamp (a days-vs-milliseconds mismatch there is exactly
+                  what made every export collapse to "today and yesterday" before).
+    token         the access token
+
+  Toolbox: Value type text. Pull the values out with the usual regex:
+
+    export_type  ->  (?<="export_type":")[^"]*
+    date_from    ->  (?<="date_from":")[^"]*
+    from_unix    ->  (?<="from_unix":)[0-9]+
+    to_unix      ->  (?<="to_unix":)[0-9]+
+    date_to      ->  (?<="date_to":")[^"]*
+    date_range   ->  (?<="date_range":)[0-9]+
+    token        ->  (?<="token":")[^"]*
+
+  Also dispatches a bubbling `upstreem-export` CustomEvent with the same payload as
+  `detail`, in case anything else on the page wants to listen.
+
+  ── Kalender ─────────────────────────────────────────────────────────────────
+  DU MUSST NICHTS TUN. Die Komponente legt sich ihren eigenen Date-Range-Picker in den Dialog
+  und baut ihn ueber filters/date-range.js auf -- dieselbe Datei, dieselbe Logik, dieselben drei
+  bubble_fn_udr_*-Workflows wie ueberall sonst.
+
+  Frueher brauchte es dafuer ein zweites, unsichtbares Picker-Element auf JEDER Seite
+  (dates_v2_export), dessen Knoten beim Oeffnen in den Dialog geschoben und beim Schliessen
+  zurueckgeschoben wurde. Fehlte es, stand im Dialog "Date picker not found". Das ist weg.
+
+  Der Loader unten laedt filters/date-range.js mit -- ohne die Datei gibt es keinen Kalender,
+  und der Dialog sagt das dann ausdruecklich statt den Knopf stumm auszugrauen.
+
+  Die Kennung des eigenen Pickers ist "uex_cal_<deine instance>". Zwei Export-Elemente auf einer
+  Seite bekommen so zwei Picker, die sich nicht gegenseitig umstellen.
+
+  ── Opening without the button ───────────────────────────────────────────────
+  window.upstreemExportOpen("INSTANCE_ID");
+  window.upstreemExportOpen("INSTANCE_ID", { export_type: "domains", token: "..." });
+  window.upstreemExportClose("INSTANCE_ID");
+  window.upstreemExportSetContext("INSTANCE_ID", { export_type: "urls", token: "..." });
+
+  ── Processing state ──────────────────────────────────────────────────────────
+  Clicking Export does NOT close the dialog. It fires the event below, then greys out the
+  body, disables every control (including Cancel/Escape/backdrop), and swaps the Export
+  icon for a spinner — the dialog stays open and locked until you call:
+
+    window.upstreemExportResolve("INSTANCE_ID");
+
+  from a Run Javascript step once your export workflow has actually finished. That call ends
+  the processing state and closes the dialog. There's a 90s safety-net timeout that ends
+  processing on its own (with a console.warn) if resolve() never arrives — e.g. because the
+  export function name below isn't wired up on the Bubble side — so the dialog can't get
+  stuck open forever, but 90s is generous and should never fire for a real export.
+-->
+<div class="up-root uex-root"
+     data-instance="INSTANCE_ID"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="IS_DARK"
+     data-token="EXPORT_ACCESSTOKEN"
+     data-export-type="EXPORT_TYPE"
+     data-export-fn="bubble_fn_upstreemExport">
+</div>
+
+<script>
+(function(){
+  /* Loader nach STYLEGUIDE 26: den Pin ueber getElementsByClassName lesen, NIEMALS ueber
+     document.currentScript — Bubble fuehrt Scripts nicht in DOM-Reihenfolge aus. */
+  function readPin(cls){
+    var els = document.getElementsByClassName(cls), i, p;
+    for (i = 0; i < els.length; i++){
+      p = (els[i].getAttribute("data-cdn-pin") || "").trim();
+      if (p && p !== "CDN_" + "PIN") return p;
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("uex-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(url, make){ if (L[url]) return; L[url] = 1; make(url); }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+
+  /* core zuerst, dann der Kalender, dann diese Komponente. async=false haelt die Reihenfolge ein.
+     filters/date-range.js ist PFLICHT -- ohne sie hat der Dialog keinen Kalender. */
+  css("core.css");                    js("core.js");
+  css("filters/date-range.css");      js("filters/date-range.js");
+  css("export-data.css");             js("export-data.js");
+})();
+</script>

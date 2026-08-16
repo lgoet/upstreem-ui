@@ -1,0 +1,221 @@
+
+  .uex-root, .uex-overlay, .uex-overlay * { box-sizing: border-box; }
+  /* Same token names and values as the Create-with-AI popup, so both read as one UI. */
+  /* Kein eigener Tokensatz mehr. Die Standalone-Fassung fuehrte --am-* mit eigenen Hex-Werten
+     und einem eigenen Dark-Block -- zwei Paletten in einer App laufen genau so lange gleich, bis
+     jemand eine davon anfasst. Alles kommt jetzt aus core (--vc-*), das Umschalten macht ohnehin
+     .up-root[data-theme="dark"].
+     Die drei Werte darunter gibt es in core nicht: der Schleier hinter dem Dialog, sein Schatten
+     und der Ton fuer den zweiten Knopf. */
+  .uex-root, .uex-overlay {
+    --uex-scrim: rgba(17,18,20,0.34);
+    --uex-shadow: 0 24px 64px rgba(17,18,20,0.18), 0 6px 16px rgba(17,18,20,0.07);
+    --uex-t: 200ms;
+    --uex-ease: cubic-bezier(.4, 0, .2, 1);
+    font-family: inherit;
+    -webkit-font-smoothing: antialiased;
+  }
+  .uex-overlay[data-theme="dark"], .up-root[data-theme="dark"] .uex-root {
+    --uex-scrim: rgba(0,0,0,0.60);
+    --uex-shadow: 0 24px 64px rgba(0,0,0,0.55), 0 6px 16px rgba(0,0,0,0.4);
+  }
+
+  /* ---------- trigger button (the only thing visible in the page flow) ---------- */
+  .uex-root { display: inline-flex; width: fit-content; max-width: 100%; height: 32px; }
+  /* .check_reinvention.py meldet das als moeglichen Zwilling von .up-seg-btn -- ist es nicht:
+     der ist transparent und sitzt in einem Segmented-Control. Das hier ist ein gefuellter
+     Aktionsknopf in einer Werkzeugleiste. Gleiche Hoehe und gleicher Radius sind Absicht, damit
+     er sich neben den anderen Leistenknoepfen einreiht. */
+  .uex-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    height: 32px; padding: 0 8px;
+    border: 0; border-radius: 8px;
+    background: var(--vc-text); color: var(--vc-bg);
+    font: inherit; font-size: 12px; font-weight: 560; line-height: 1;
+    white-space: nowrap; cursor: pointer; outline: 0;
+    transition: opacity var(--uex-t) var(--uex-ease);
+  }
+  .uex-btn:hover { opacity: .9; }
+  .uex-btn:focus-visible { box-shadow: 0 0 0 2px rgba(31,31,27,0.12); }
+  .uex-btn-ic {
+    width: 16px; height: 16px; flex: 0 0 16px;
+    fill: none; stroke: currentColor; stroke-width: 1.8;
+    stroke-linecap: round; stroke-linejoin: round;
+  }
+
+  /* ---------- overlay + dialog (appended to <body>) ---------- */
+  .uex-overlay {
+    /* position und inset ausdruecklich, weil .up-root am selben Element sein eigenes Positioning
+       mitbringt. Ohne diese Zeile sass das Overlay im Fluss statt ueber der Seite -- derselbe
+       Fehler, der notification-card einmal zu einem 2px-Strich gemacht hat. */
+    position: fixed; inset: 0; z-index: 2147482500;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    background: var(--uex-scrim);
+    opacity: 0; visibility: hidden; pointer-events: none;
+    transition: opacity var(--uex-t) var(--uex-ease), visibility 0s linear var(--uex-t);
+  }
+  .uex-overlay.is-open {
+    opacity: 1; visibility: visible; pointer-events: auto;
+    transition: opacity var(--uex-t) var(--uex-ease), visibility 0s;
+  }
+  .uex-dialog {
+    position: relative; width: min(480px, 100%); max-height: min(92vh, 900px);
+    display: flex; flex-direction: column;
+    background: var(--vc-bg); color: var(--vc-text);
+    border: 1px solid var(--vc-border); border-radius: 16px;
+    box-shadow: var(--uex-shadow); overflow: hidden;
+    transform: translateY(8px) scale(.985); opacity: 0;
+    transition: transform .24s cubic-bezier(.22,1,.36,1), opacity var(--uex-t) var(--uex-ease);
+  }
+  .uex-overlay.is-open .uex-dialog { transform: none; opacity: 1; }
+
+  .uex-head {
+    flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 8px 8px 14px; border-bottom: 1px solid var(--vc-border);
+  }
+  .uex-title { font-size: 16px; font-weight: 600; line-height: 1.2; }
+  .uex-close {
+    width: 32px; height: 32px; border-radius: 8px; border: 1px solid transparent; background: transparent;
+    color: var(--vc-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+    transition: background var(--uex-t) var(--uex-ease), color var(--uex-t) var(--uex-ease), border-color var(--uex-t) var(--uex-ease);
+  }
+  .uex-close svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; }
+  .uex-close:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); color: var(--vc-text); }
+
+  .uex-body { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; padding: 22px 22px 18px; }
+  /* ---------- processing state: export was sent, waiting on window.upstreemExportResolve() ---------- */
+  .uex-body.is-processing { opacity: 0.42; pointer-events: none; filter: grayscale(0.3); transition: opacity var(--uex-t) var(--uex-ease); }
+  .uex-close:disabled { opacity: 0.35; pointer-events: none; }
+  .uex-submit:disabled { opacity: 0.7; cursor: default; }
+  .uex-spin {
+    display: inline-block;
+    width: 16px; height: 16px; flex: 0 0 16px;
+    border-radius: 999px; border: 2px solid rgba(255,255,255,0.35); border-top-color: currentColor;
+    animation: uex-spin 0.7s linear infinite;
+  }
+  @keyframes uex-spin { to { transform: rotate(360deg); } }
+  /* separator sits inside .uex-body, so it automatically stops at the body's 22px side padding */
+  .uex-section + .uex-section {
+    margin-top: 22px; padding-top: 22px;
+    border-top: 1px solid var(--vc-border);
+  }
+  .uex-label {
+    display: block; margin-bottom: 12px;
+    color: var(--vc-muted);
+    font-size: 11.5px; font-weight: 600; line-height: 1;
+    letter-spacing: .04em; text-transform: uppercase;
+  }
+
+  /* ---------- option buttons (types + presets share one look) ----------
+     Card + rounded check badge, same pattern as the AI-assistant picker in Create with AI:
+     hover and selected both go to --vc-hover-border, the fill stays --vc-bg, and the
+     selection is carried by the badge rather than by a heavier background. */
+  .uex-grid { display: grid; gap: 8px; }
+  .uex-grid.is-types { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .uex-grid.is-presets { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .uex-opt {
+    position: relative;
+    display: flex; align-items: center; gap: 10px;
+    min-height: 46px; padding: 12px 38px 12px 14px;
+    border: 1px solid var(--vc-border); border-radius: 12px;
+    background: var(--vc-bg); color: var(--vc-text);
+    font: inherit; font-size: 13.5px; font-weight: 520; line-height: 1.15;
+    text-align: left; cursor: pointer; outline: 0;
+    transition: border-color var(--uex-t) var(--uex-ease), background var(--uex-t) var(--uex-ease);
+  }
+  .uex-opt:hover { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
+  .uex-opt.is-active { border-color: var(--vc-hover-border); background: var(--vc-bg); font-weight: 580; }
+  .uex-opt-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .uex-opt-check {
+    position: absolute; top: 50%; right: 14px; transform: translateY(-50%);
+    width: 16px; height: 16px; border-radius: 999px;
+    background: var(--vc-text); color: var(--vc-bg);
+    display: none; align-items: center; justify-content: center;
+  }
+  .uex-opt-check svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+  .uex-opt.is-active .uex-opt-check { display: inline-flex; }
+
+  /* ---------- custom range (the adopted picker hides behind this button) ---------- */
+  .uex-custom-wrap { position: relative; margin-top: 8px; }
+  .uex-custom-btn { width: 100%; }
+  .uex-custom-btn > svg {
+    width: 16px; height: 16px; flex: 0 0 16px;
+    fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
+  }
+  /* Der Kalender gehoert jetzt DIESER Komponente: sie legt sich ihr eigenes .udr-root hier
+     hinein, statt ein fremdes von der Seite zu holen und nach dem Schliessen zurueckzuschieben.
+     Damit entfaellt das externe dates_v2_export-Element samt der Fehlermeldung, wenn es fehlt.
+     Der Aufbau bleibt aber derselbe wie vorher: der Picker liegt UNSICHTBAR ueber dem
+     gestalteten Knopf und bekommt die Klicks -- der Knopf darunter ist reine Anzeige. Das ist
+     kein Umweg, sondern noetig: der Picker schliesst sein Panel ueber einen Klick-Wachter am
+     Dokument, sobald der Klick ausserhalb seiner eigenen Wurzel landet. Ein eigener Knopf
+     daneben wuerde also immer schliessen-und-wieder-oeffnen, und das Panel liesse sich nie
+     zuklappen. Laesst man den Trigger des Pickers den Klick nehmen, bleibt sein Umschalten heil. */
+  .uex-cal-slot {
+    position: absolute; left: 0; top: 0; right: 0; height: 100%;
+    opacity: 0; z-index: 2; overflow: hidden;
+  }
+  .uex-custom-btn { pointer-events: none; }   /* visual only — the slot above handles input */
+  /* hover has to come from the wrapper, since the button itself never sees the pointer */
+  .uex-custom-wrap:hover .uex-custom-btn { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
+  /* Der Picker oeffnet sein Panel 4px unter seinem TRIGGER. Der ist fest 32px hoch, dieser Knopf
+     ist hoeher -- das Panel begann also im Knopf und ueberlappte ihn. Den Trigger auf die volle
+     Knopfgroesse zu ziehen legt das Panel exakt 4px darunter. */
+  .uex-cal-slot [data-udr-root],
+  .uex-cal-slot .udr-trigger { height: 100% !important; width: 100% !important; }
+  /* While the calendar is open the row sits half-way between the resting border and the selected
+     one, so it reads as "in use" without claiming to be the committed selection. The two values
+     sind die vorab gerechneten Mittelwerte zwischen --vc-border und --vc-hover-border je Thema --
+     bewusst als feste Werte und nicht als color-mix() zur Laufzeit, das hier auf die schlichte
+     Rahmenfarbe aufloeste. */
+  .uex-custom-btn.is-cal-open { border-color: #a7a8aa; }
+  .uex-overlay[data-theme="dark"] .uex-custom-btn.is-cal-open { border-color: #525252; }
+/* Der Picker baut sein eigenes Markup in den Slot. Er soll die Flaeche ausfuellen und sonst
+   nichts von sich zeigen -- sichtbar ist der Knopf darunter. */
+.uex-cal-slot > .udr-root { height: 100%; width: 100%; }
+  .uex-cal-missing {
+    display: block; margin-top: 10px;
+    font-size: 11.5px; color: var(--vc-third);
+  }
+  /* The date picker appends its panel to <body> with z-index 2147482000 — below this popup's
+     overlay (2147482500), so it opened behind the dialog. Lift it for as long as the popup is
+     open. Deliberately targeting EVERY .udr-panel rather than looking one up by instance id:
+     Bubble rebuilds can leave more than one panel in the document, and picking "the first match"
+     silently raised the wrong (stale, hidden) one while the live panel stayed behind. The class
+     is only on <body> while a popup is open, so nothing leaks into normal picker use. */
+  body.uex-popup-open .udr-panel { z-index: 2147482600 !important; }
+
+  .uex-summary {
+    margin-top: 18px; padding: 12px 14px;
+    border-radius: 12px; background: var(--vc-heading-bg);
+    color: var(--vc-muted); font-size: 12px; line-height: 1.5;
+  }
+  .uex-summary b { color: var(--vc-text); font-weight: 600; }
+
+  /* ---------- footer (same pattern as the Create-with-AI popup) ---------- */
+  .uex-foot { flex: 0 0 auto; padding: 18px 22px 22px; border-top: 1px solid var(--vc-border); background: var(--vc-bg); }
+  .uex-submit {
+    width: 100%; height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+    border: 1px solid var(--vc-text); border-radius: 12px;
+    background: var(--vc-text); color: var(--vc-bg);
+    font: inherit; font-size: 14.5px; font-weight: 580; cursor: pointer;
+    transition: opacity var(--uex-t) var(--uex-ease);
+  }
+  .uex-submit:hover { opacity: .9; }
+  .uex-submit svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .uex-secondary { display: flex; gap: 8px; margin-top: 8px; }
+  .uex-cancel {
+    flex: 1 1 0; height: 38px; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    border: 1px solid var(--vc-border); border-radius: 12px;
+    background: var(--vc-bg); color: var(--vc-muted);
+    font: inherit; font-size: 13px; font-weight: 520; cursor: pointer;
+    transition: background var(--uex-t) var(--uex-ease), color var(--uex-t) var(--uex-ease), border-color var(--uex-t) var(--uex-ease);
+  }
+  .uex-cancel:hover { background: var(--vc-heading-bg); color: var(--vc-text); border-color: var(--vc-hover-border); }
+
+  @media (max-width: 560px) {
+    .uex-overlay { padding: 0; }
+    .uex-dialog { width: 100%; height: 100vh; height: 100dvh; max-height: none; border-radius: 0; border: 0; }
+    .uex-grid.is-types { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
