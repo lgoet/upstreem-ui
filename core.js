@@ -5594,6 +5594,37 @@
     search:   '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
     plus:     '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
     minus:    '<line x1="5" y1="12" x2="19" y2="12"/>',
+    /* ── Navigation ────────────────────────────────────────────────────────────
+       Feather-Geometrie, 24er Raster, unveraendert uebernommen. Aufgenommen fuer die Sidebar,
+       aber bewusst hier und nicht dort: ein Icon, das nur eine Komponente kennt, ist beim
+       naechsten Verbraucher wieder eine eigene Konstante -- genau der Wildwuchs, den dieses Kit
+       beenden soll. */
+    home:     '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>' +
+              '<polyline points="9 22 9 12 15 12 15 22"/>',
+    zap:      '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+    globe:    '<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>' +
+              '<path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+    copy:     '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>' +
+              '<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+    barChart2:'<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>' +
+              '<line x1="6" y1="20" x2="6" y2="14"/>',
+    clipboard:'<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>' +
+              '<rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>',
+    folder:   '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
+    settings: '<circle cx="12" cy="12" r="3"/>' +
+              '<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+    /* creditCard und nicht "dollar": Feather hat kein Dollar-Symbol, und credit-card ist das
+       Zeichen, das jede App fuer Abrechnung nimmt. */
+    creditCard:'<rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>' +
+              '<line x1="1" y1="10" x2="23" y2="10"/>',
+    logOut:   '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>' +
+              '<polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
+    moreHorizontal: '<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>' +
+              '<circle cx="5" cy="12" r="1"/>',
+    /* Zwei Chevrons uebereinander -- das Zeichen fuer einen Kontextwechsler, wie es Linear und
+       GitHub am Team- bzw. Repository-Schalter benutzen. In Feather gibt es das als
+       chevrons-up-down nicht, wohl aber die beiden Haelften; hier zusammengesetzt. */
+    chevronUpDown: '<polyline points="7 15 12 20 17 15"/><polyline points="7 9 12 4 17 9"/>',
     /* Feather "info" -- die Erklaer-Raute in Tabellenkoepfen. Geometrie wortgleich zu der, die
        performance-detail bisher als eigene Konstante trug. */
     info:     '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/>' +
