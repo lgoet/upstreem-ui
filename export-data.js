@@ -387,11 +387,19 @@
          Fall, und zwar ohne eine einzige Zeile in der Konsole. */
       var versuche = 0;
       (function warten(){
-        var cal = findCalendar();
-        if (cal && cal.__udrCtrl){ fertig(cal); return; }
+        var cal = null;
+        try { cal = findCalendar(); } catch(e){}
+        if (cal && cal.__udrCtrl){ sicherFertig(cal); return; }
         if (++versuche < 20){ setTimeout(warten, 150); return; }
-        fertig(findCalendar());
+        sicherFertig(cal);
       })();
+    }
+    /* Die Warteschleife laeuft verzoegert und damit ausserhalb des try in openPopup -- ein Wurf
+       hier landete sonst als unbehandelter Fehler in der Konsole und liess den Custom-Bereich in
+       einem halben Zustand zurueck. */
+    function sicherFertig(cal){
+      try { fertig(cal); }
+      catch(e){ if (window.console) console.warn("[upstreem-export] Kalender-Nachbereitung:", e); }
     }
     /* Zweiter Teil von adoptCalendar, aufgerufen sobald der Picker steht oder endgueltig fehlt. */
     function fertig(cal){
@@ -467,8 +475,16 @@
     function openPopup(){
       if (state.open) return;
       syncTheme();
-      adoptCalendar();
-      renderAll();
+      /* Der Kalender ist Beiwerk, das Oeffnen ist die Hauptsache. Wirft irgendetwas beim Anlegen
+         oder Suchen des Pickers, kam der Dialog frueher gar nicht mehr hoch -- gemessen beim
+         Nutzer: is-open blieb false, kein Inline-Stil, der Dialog unsichtbar da. Ein Fehler hier
+         darf hoechstens den Custom-Bereich kosten, nie den ganzen Export. */
+      try { adoptCalendar(); }
+      catch(e){
+        if (window.console) console.warn("[upstreem-export] Kalender konnte nicht vorbereitet " +
+          "werden — der Dialog oeffnet trotzdem, nur der Custom-Bereich fehlt:", e);
+      }
+      try { renderAll(); } catch(e){}
       lastFocus = document.activeElement;
       overlay.inert = false;
       overlay.setAttribute("aria-hidden", "false");
