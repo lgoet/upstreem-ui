@@ -166,15 +166,25 @@
        --vc-*-Tokens stehen genau dort. Ohne die Klasse erbte der Dialog nichts und fiel auf die
        Rueckfallwerte zurueck; gemessen kam er fast schwarz heraus, obwohl kein Dark Mode aktiv
        war. Dasselbe Muster wie bei notification-card, die ebenfalls an <body> baut. */
-    overlay.className = "up-root uex-overlay";
+    /* Das Core-Popup, nicht ein eigenes. .up-topicmodal-backdrop bringt Schleier, Weichzeichner,
+       Einblendung und den Dark-Mode mit; .up-topicmodal-card die Karte samt Palette, Radius,
+       Schatten und Auftauchbewegung. Vorher stand hier ein Nachbau mit eigenen Werten -- andere
+       Deckkraft, kein Blur, andere Kurve. Genau das, was der Styleguide verbietet. */
+    overlay.className = "up-root up-portal up-topicmodal-backdrop uex-overlay";
     overlay.setAttribute("aria-hidden", "true");
     overlay.inert = true;
     overlay.innerHTML =
-      '<div class="uex-dialog" role="dialog" aria-modal="true" aria-label="Export data">' +
-        '<div class="uex-head">' +
-          '<span class="uex-title">Export Data</span>' +
-          '<button class="uex-close" type="button" aria-label="Close">' +
-            '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg>' +
+      '<div class="up-topicmodal-card uex-dialog" role="dialog" aria-modal="true" aria-label="Export data">' +
+        '<div class="up-topicmodal-head uex-head">' +
+          '<div class="up-topicmodal-heading">' +
+            '<h2 class="up-topicmodal-title">Export Data</h2>' +
+          '</div>' +
+          /* .up-popup-close ist der Knopf JEDES Popups: kein Rahmen, Hover nur Flaeche und
+             Primaerfarbe. Der eigene hatte einen Rahmen, der erst beim Ueberfahren erschien --
+             der Knopf sprang und sah aus wie nirgends sonst in der App. */
+          '<button class="up-popup-close uex-close" type="button" aria-label="Close">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+              'stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg>' +
           '</button>' +
         '</div>' +
         '<div class="uex-body">' +
@@ -501,17 +511,8 @@
       lastFocus = document.activeElement;
       overlay.inert = false;
       overlay.setAttribute("aria-hidden", "false");
-      overlay.classList.add("is-open");
-      /* Deckkraft und Sichtbarkeit direkt am Element, nicht nur ueber die Klasse. Die CSS-Regel
-         .uex-overlay.uex-overlay.is-open setzt opacity:1, matcht nachweislich (matches() true,
-         nur zwei Regeln im Blatt, die spezifischere gewinnt auf dem Papier) -- und trotzdem kam
-         der berechnete Wert als 0 heraus, auch 500ms nach einem erzwungenen Klassen-Toggle.
-         Woran das liegt, habe ich nicht aufgeklaert; derselbe Effekt ist in dieser Datei und in
-         auth-page zweimal aufgetreten. Ein Inline-Stil schlaegt jede Regel und macht den Dialog
-         verlaesslich sichtbar. Die Klasse bleibt, weil andere Regeln daran haengen. */
-      overlay.style.opacity = "1";
-      overlay.style.visibility = "visible";
-      overlay.style.pointerEvents = "auto";
+      /* is-shown ist der Zustand des Core-Popups, is-open bleibt fuer die eigenen Regeln. */
+      overlay.classList.add("is-open", "is-shown");
       document.body.classList.add("uex-popup-open");   // lifts the picker's panel above us
       btn.setAttribute("aria-expanded", "true");
       state.open = true;
@@ -526,15 +527,7 @@
           else btn.focus({ preventScroll: true });
         } catch(e){ try { document.activeElement.blur(); } catch(e2){} }
       }
-      overlay.classList.remove("is-open");
-      /* Die Inline-Werte von openPopup wieder abraeumen, sonst bliebe der Dialog sichtbar. Ueber
-         die Uebergangsdauer verzoegert, damit das Ausblenden noch zu sehen ist. */
-      overlay.style.opacity = "0";
-      overlay.style.pointerEvents = "none";
-      clearTimeout(overlay.__uexHideTimer);
-      overlay.__uexHideTimer = setTimeout(function(){
-        if (!state.open) overlay.style.visibility = "hidden";
-      }, 220);
+      overlay.classList.remove("is-open", "is-shown");
       overlay.setAttribute("aria-hidden", "true");
       overlay.inert = true;
       document.body.classList.remove("uex-popup-open");

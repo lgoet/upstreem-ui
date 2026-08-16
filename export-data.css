@@ -43,53 +43,23 @@
     stroke-linecap: round; stroke-linejoin: round;
   }
 
-  /* ---------- overlay + dialog (appended to <body>) ---------- */
-  /* DOPPELTE Klasse, nicht einfach. .up-root aus core setzt am selben Element position:relative,
-     und beide Selektoren haben dieselbe Spezifitaet -- dann entscheidet die Ladereihenfolge, und
-     die ist bei diesem Loader nicht verlaesslich: core.css wird nur EINMAL geladen, von wem auch
-     immer zuerst, und kann damit nach export-data.css im Dokument stehen.
-     Gemessen genau so: position kam als relative heraus, das Overlay sass im Fluss statt ueber
-     der Seite, und der Dialog war unsichtbar da. */
-  .uex-overlay.uex-overlay {
-    position: fixed; inset: 0; z-index: 2147482500;
-    display: flex; align-items: center; justify-content: center;
-    padding: 24px;
-    background: var(--uex-scrim);
-    opacity: 0; visibility: hidden; pointer-events: none;
-    transition: opacity var(--uex-t) var(--uex-ease), visibility 0s linear var(--uex-t);
+  /* ---------- Dialog ----------
+     Schleier, Weichzeichner, Einblendung, Karte, Kopfzeile und Schliessknopf kommen aus core
+     (.up-topicmodal-backdrop / -card / -head / -title / .up-popup-close). Hier steht nur noch,
+     was DIESER Dialog anders braucht: er ist breiter als die 420px der Vorlage, weil drei
+     Typ-Kacheln nebeneinander passen muessen, und er hat eine feste Fusszeile.
+     Vorher stand hier ein kompletter Nachbau mit eigenen Werten -- 34%-Schleier ohne Blur,
+     eigene Kurve, ein Schliessknopf mit Hover-Rahmen. Genau das, was der Styleguide verbietet. */
+  .uex-overlay.uex-overlay { z-index: 2147482500; }
+  .uex-dialog.uex-dialog {
+    max-width: 520px;
+    /* Der Inhalt scrollt, nicht die Karte: sonst wandert die Fusszeile mit dem Scrollen weg.
+       gap 0, weil die Abschnitte ihre Abstaende selbst tragen (siehe .uex-section). */
+    padding: 0; gap: 0; overflow: hidden;
   }
-  /* Ebenfalls verdoppelt. Die Basisregel darueber traegt jetzt .uex-overlay.uex-overlay -- eine
-     einfache .uex-overlay.is-open haette dieselbe Spezifitaet und muesste sich wieder auf die
-     Reihenfolge verlassen. Gemessen: is-open war gesetzt, opacity blieb trotzdem 0. */
-  .uex-overlay.uex-overlay.is-open {
-    opacity: 1; visibility: visible; pointer-events: auto;
-    transition: opacity var(--uex-t) var(--uex-ease), visibility 0s;
-  }
-  .uex-dialog {
-    position: relative; width: min(480px, 100%); max-height: min(92vh, 900px);
-    display: flex; flex-direction: column;
-    background: var(--vc-bg); color: var(--vc-text);
-    border: 1px solid var(--vc-border); border-radius: 16px;
-    box-shadow: var(--uex-shadow); overflow: hidden;
-    transform: translateY(8px) scale(.985); opacity: 0;
-    transition: transform .24s cubic-bezier(.22,1,.36,1), opacity var(--uex-t) var(--uex-ease);
-  }
-  .uex-overlay.uex-overlay.is-open .uex-dialog { transform: none; opacity: 1; }
+  .uex-head { padding: 14px 14px 0 14px; }
 
-  .uex-head {
-    flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between;
-    padding: 8px 8px 8px 14px; border-bottom: 1px solid var(--vc-border);
-  }
-  .uex-title { font-size: 16px; font-weight: 600; line-height: 1.2; }
-  .uex-close {
-    width: 32px; height: 32px; border-radius: 8px; border: 1px solid transparent; background: transparent;
-    color: var(--vc-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
-    transition: background var(--uex-t) var(--uex-ease), color var(--uex-t) var(--uex-ease), border-color var(--uex-t) var(--uex-ease);
-  }
-  .uex-close svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; }
-  .uex-close:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); color: var(--vc-text); }
-
-  .uex-body { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; padding: 22px 22px 18px; }
+  .uex-body { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; padding: 22px 16px 18px; }
   /* ---------- processing state: export was sent, waiting on window.upstreemExportResolve() ---------- */
   .uex-body.is-processing { opacity: 0.42; pointer-events: none; filter: grayscale(0.3); transition: opacity var(--uex-t) var(--uex-ease); }
   .uex-close:disabled { opacity: 0.35; pointer-events: none; }
@@ -106,6 +76,11 @@
     margin-top: 22px; padding-top: 22px;
     border-top: 1px solid var(--vc-border);
   }
+  /* Der Kalender oeffnet sein Panel 4px unter seinem TRIGGER. Der ist fest 32px hoch, die Zeile
+     hier ist hoeher -- ohne diese Regel begann das Panel im Knopf statt darunter. Beide Selektoren
+     noetig: das eigene .udr-root traegt die Klasse, ein von aussen vorgegebenes den Marker. */
+  .uex-cal-slot > .udr-root, .uex-cal-slot [data-udr-root],
+  .uex-cal-slot .udr-trigger { height: 100%; width: 100%; }
   .uex-label {
     display: block; margin-bottom: 12px;
     color: var(--vc-muted);
@@ -168,8 +143,8 @@
   /* Der Picker oeffnet sein Panel 4px unter seinem TRIGGER. Der ist fest 32px hoch, dieser Knopf
      ist hoeher -- das Panel begann also im Knopf und ueberlappte ihn. Den Trigger auf die volle
      Knopfgroesse zu ziehen legt das Panel exakt 4px darunter. */
-  .uex-cal-slot [data-udr-root],
-  .uex-cal-slot .udr-trigger { height: 100% !important; width: 100% !important; }
+  /* Regel steht weiter oben, zusammen mit der Begruendung. Hier stand sie ein zweites Mal, mit
+     !important -- das verbietet CLAUDE.md, und noetig war es nie: es gibt keine Gegenregel. */
   /* While the calendar is open the row sits half-way between the resting border and the selected
      one, so it reads as "in use" without claiming to be the committed selection. The two values
      sind die vorab gerechneten Mittelwerte zwischen --vc-border und --vc-hover-border je Thema --
@@ -179,7 +154,7 @@
   .uex-overlay[data-theme="dark"] .uex-custom-btn.is-cal-open { border-color: #525252; }
 /* Der Picker baut sein eigenes Markup in den Slot. Er soll die Flaeche ausfuellen und sonst
    nichts von sich zeigen -- sichtbar ist der Knopf darunter. */
-.uex-cal-slot > .udr-root { height: 100%; width: 100%; }
+
   .uex-cal-missing {
     display: block; margin-top: 10px;
     font-size: 11.5px; color: var(--vc-third);
@@ -190,7 +165,11 @@
      Bubble rebuilds can leave more than one panel in the document, and picking "the first match"
      silently raised the wrong (stale, hidden) one while the live panel stayed behind. The class
      is only on <body> while a popup is open, so nothing leaks into normal picker use. */
-  body.uex-popup-open .udr-panel { z-index: 2147482600 !important; }
+  /* Doppelte Klasse statt !important: das Panel setzt seinen z-index in einer eigenen Regel,
+     und die hat dieselbe Spezifitaet wie eine einfache body-Regel hier. CLAUDE.md verbietet
+     !important -- ueber Spezifitaet loesen ist ohnehin der verlaesslichere Weg, weil er nicht
+     von der Ladereihenfolge abhaengt. */
+  body.uex-popup-open .udr-panel.udr-panel { z-index: 2147482600; }
 
   .uex-summary {
     margin-top: 18px; padding: 12px 14px;
@@ -200,7 +179,7 @@
   .uex-summary b { color: var(--vc-text); font-weight: 600; }
 
   /* ---------- footer (same pattern as the Create-with-AI popup) ---------- */
-  .uex-foot { flex: 0 0 auto; padding: 18px 22px 22px; border-top: 1px solid var(--vc-border); background: var(--vc-bg); }
+  .uex-foot { flex: 0 0 auto; padding: 16px; border-top: 1px solid var(--vc-border); background: var(--up-surface); }
   .uex-submit {
     width: 100%; height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 9px;
     border: 1px solid var(--vc-text); border-radius: 12px;
