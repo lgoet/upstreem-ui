@@ -213,12 +213,10 @@
 .usn-ic.has-mira svg { visibility: hidden; }
 .usn-item.is-active .usn-ic { color: var(--vc-text); }
 .usn-txt { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* Optische Korrektur, 1px nach unten. Geometrisch stimmt es bereits -- gemessen: die Tintenmitte
-   des Labels liegt 0.3px unter der Icon-Mitte, beide Kaesten sind mittig im 36px-Knopf. Das
-   Auge liest die Zeile trotzdem als zu hoch, weil die Unterlaengen im Zeilenkasten Platz
-   beanspruchen, den die Buchstaben hier gar nicht ausfuellen. Nur das Label der Menuepunkte,
-   nicht Teamname und Konto -- die stehen fuer sich und haben kein Icon daneben. */
-.usn-item > .usn-txt { position: relative; top: 1px; }
+/* Hier stand eine optische Korrektur von 1px nach unten. Sie galt fuer die Feather-Icons; mit
+   den Lucide-Formen ist die Zeile damit zu tief, also wieder auf die geometrische Mitte. Der
+   Wert bleibt als Stellschraube stehen -- er ist Augenmass, keine Messung. */
+.usn-item > .usn-txt { position: relative; top: 0; }
 .usn-count {
   flex: 0 0 auto; font-size: 12px; font-weight: 500; color: var(--vc-third);
   font-variant-numeric: tabular-nums;
@@ -232,6 +230,11 @@
 /* Die Chips sitzen in einem 36px-Knopf, nicht in einer Tabellenzeile: der Ring, mit dem sie
    sich sonst voneinander abheben, muss die Farbe der Leiste haben, nicht die des Inhalts. */
 .usn-chips .up-stack-vis { box-shadow: 0 0 0 2px var(--usn-bg); }
+/* 27 statt 28. Faktor 0.964 -- der Radius geht anteilig mit (8 -> 7.7). Polsterung (2px) und
+   der Ueberlappungsversatz (-4px) bleiben: beides sind ganzzahlige Pixelwerte, die eine
+   Aenderung von 3.6% nicht ueberleben, und der Versatz haengt zusaetzlich am Ring. */
+.usn-chips .up-stack-item { width: 27px; height: 27px; flex: 0 0 27px; }
+.usn-chips .up-stack-vis { border-radius: 7.7px; }
 .usn-bar.is-mini .usn-item { justify-content: center; padding: 0; gap: 0; }
 
 /* ---------- Skelette ----------

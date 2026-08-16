@@ -59,9 +59,9 @@
       { key: "brands",     label: "Brands",          icon: "squareStack" }
     ]},
     { head: "Workspace", items: [
-      { key: "performance",   label: "Performance",     icon: "chartColumn" },
+      { key: "performance",   label: "Performance",     icon: "chartColumnUp" },
       { key: "opportunities", label: "Opportunities",   icon: "listTodo" },
-      { key: "research",      label: "Prompt Research", icon: "clipboard" },
+      { key: "research",      label: "Prompt Research", icon: "scanSearch" },
       { key: "mira",          label: "Mira",            icon: "mira" }
     ]},
     { head: "Organisation", items: [
@@ -102,11 +102,13 @@
     squareStack:'<path d="M4 10c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2"/>' +
                '<path d="M10 16c-1.1 0-2-.9-2-2v-4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2"/>' +
                '<rect width="8" height="8" x="14" y="14" rx="2"/>',
-    chartColumn:'<path d="M5 21v-6"/><path d="M12 21V3"/><path d="M19 21V9"/>',
+    chartColumnUp:'<path d="M13 17V9"/><path d="M18 17V5"/>' +
+               '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M8 17v-3"/>',
     listTodo:  '<path d="M13 5h8"/><path d="M13 12h8"/><path d="M13 19h8"/>' +
                '<path d="m3 17 2 2 4-4"/><rect x="3" y="4" width="6" height="6" rx="1"/>',
-    clipboard: '<rect width="8" height="4" x="8" y="2" rx="1" ry="1"/>' +
-               '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>',
+    scanSearch:'<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/>' +
+               '<path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/>' +
+               '<circle cx="12" cy="12" r="3"/><path d="m16 16-1.9-1.9"/>',
     folder:    '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
     bolt:      '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>' +
                '<circle cx="12" cy="12" r="4"/>',
