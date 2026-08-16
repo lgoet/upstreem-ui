@@ -630,7 +630,9 @@
     document.addEventListener("keydown", function(e){
       if (e.key === "Escape" && state.open && !state.processing){
         // let the calendar close its own panel first if that's what's open
-        var calPanel = document.querySelector(".udr-panel.is-open");
+        /* .udr-menu, nicht .udr-panel -- den Selektor gibt es nicht, die Pruefung lief also
+           immer ins Leere und Escape schloss den Dialog samt offenem Kalender. */
+        var calPanel = document.querySelector(".udr-menu.is-shown, .udr-wrap.is-open");
         if (calPanel) return;
         closePopup();
       }

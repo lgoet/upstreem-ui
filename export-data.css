@@ -50,9 +50,30 @@
      Typ-Kacheln nebeneinander passen muessen, und er hat eine feste Fusszeile.
      Vorher stand hier ein kompletter Nachbau mit eigenen Werten -- 34%-Schleier ohne Blur,
      eigene Kurve, ein Schliessknopf mit Hover-Rahmen. Genau das, was der Styleguide verbietet. */
-  .uex-overlay.uex-overlay { z-index: 2147482500; }
+  .uex-overlay.uex-overlay {
+    z-index: 2147482500;
+    /* OBEN verankert statt zentriert. Das Core-Popup zentriert, und das ist fuer eine Karte ohne
+       eigenes Aufklappmenue auch richtig -- hier nicht: der Kalender oeffnet sein Panel unter dem
+       Custom-Knopf, und bei zentriertem Dialog blieben darunter nur rund 150px. Der Picker weicht
+       dann nach oben aus und legt sich ueber den Dialog, statt 4px darunter zu stehen.
+       Oben verankert liegt der Knopf hoch genug, dass das Panel nach unten passt.
+       align-items schlaegt die Core-Regel ueber die doppelte Klasse, nicht ueber die Reihenfolge. */
+    /* NICHT ueber align-items. Gemessen: der Dialog klebte danach links am Rand -- die Achsen
+       liegen hier anders, als die Regel vermuten laesst. Stattdessen bleibt die Zentrierung des
+       Core-Popups unangetastet und die Karte schiebt sich selbst nach oben (margin-bottom: auto
+       weiter unten). Das ist der Weg, der keine Annahme ueber die Flex-Richtung macht. */
+    padding-top: 24px; padding-bottom: 24px;
+  }
   .uex-dialog.uex-dialog {
     max-width: 520px;
+    /* Die Karte darf nicht bis zum unteren Rand wachsen -- sonst steht der Custom-Knopf wieder
+       so tief, dass das Panel keinen Platz hat. 78vh laesst rund ein Fuenftel des Fensters frei,
+       und das reicht dem Kalender. Der Inhalt scrollt ohnehin. */
+    max-height: min(78vh, 720px);
+    /* Schiebt die Karte an den oberen Rand, ohne die Ausrichtung des Containers anzufassen:
+       der freie Platz sammelt sich unten. Genau den braucht der Kalender -- er oeffnet sein
+       Panel unter dem Custom-Knopf und weicht nach oben aus, wenn darunter zu wenig ist. */
+    margin-bottom: auto;
     /* Der Inhalt scrollt, nicht die Karte: sonst wandert die Fusszeile mit dem Scrollen weg.
        gap 0, weil die Abschnitte ihre Abstaende selbst tragen (siehe .uex-section). */
     padding: 0; gap: 0; overflow: hidden;
@@ -79,7 +100,13 @@
   /* Der Kalender oeffnet sein Panel 4px unter seinem TRIGGER. Der ist fest 32px hoch, die Zeile
      hier ist hoeher -- ohne diese Regel begann das Panel im Knopf statt darunter. Beide Selektoren
      noetig: das eigene .udr-root traegt die Klasse, ein von aussen vorgegebenes den Marker. */
+  /* Die GANZE Kette muss auf Knopfhoehe: root -> wrap -> trigger. Das Panel haengt in .udr-wrap
+     und oeffnet 4px unter dem TRIGGER; war der wrap nicht gestreckt, blieb der Trigger bei seinen
+     festen 32px und das Panel begann 7px UEBER der Knopfunterkante -- gemessen -7 statt +4.
+     .udr-wrap fehlte in der Standalone-Fassung, deshalb hat die Positionierung dort nie
+     gestimmt. */
   .uex-cal-slot > .udr-root, .uex-cal-slot [data-udr-root],
+  .uex-cal-slot .udr-wrap,
   .uex-cal-slot .udr-trigger { height: 100%; width: 100%; }
   .uex-label {
     display: block; margin-bottom: 12px;
@@ -159,17 +186,15 @@
     display: block; margin-top: 10px;
     font-size: 11.5px; color: var(--vc-third);
   }
-  /* The date picker appends its panel to <body> with z-index 2147482000 — below this popup's
-     overlay (2147482500), so it opened behind the dialog. Lift it for as long as the popup is
-     open. Deliberately targeting EVERY .udr-panel rather than looking one up by instance id:
-     Bubble rebuilds can leave more than one panel in the document, and picking "the first match"
-     silently raised the wrong (stale, hidden) one while the live panel stayed behind. The class
-     is only on <body> while a popup is open, so nothing leaks into normal picker use. */
+  /* Das Panel heisst .udr-menu, nicht .udr-panel. Die Standalone-Fassung zielte durchgehend auf
+     einen Selektor, den es gar nicht gibt -- die Anhebung hat also nie gewirkt, und der Kalender
+     lag nur deshalb nicht hinter dem Dialog, weil er in .udr-wrap steckt und nicht an <body>
+     haengt. Die Regel bleibt als Absicherung, jetzt mit dem richtigen Namen. */
   /* Doppelte Klasse statt !important: das Panel setzt seinen z-index in einer eigenen Regel,
      und die hat dieselbe Spezifitaet wie eine einfache body-Regel hier. CLAUDE.md verbietet
      !important -- ueber Spezifitaet loesen ist ohnehin der verlaesslichere Weg, weil er nicht
      von der Ladereihenfolge abhaengt. */
-  body.uex-popup-open .udr-panel.udr-panel { z-index: 2147482600; }
+  body.uex-popup-open .udr-menu.udr-menu { z-index: 2147482600; }
 
   .uex-summary {
     margin-top: 18px; padding: 12px 14px;
