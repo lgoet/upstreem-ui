@@ -113,26 +113,12 @@
   function makeController(root){
     var instanceId = root.getAttribute("data-instance") || "default";
     var saved = STORE[instanceId] || {};
-    /* Der Knopf kommt aus der Komponente, nicht aus dem Bubble-Markup. In der Standalone-Fassung
-       stand er im HTML des Elements -- damit haette jede Aenderung daran von Hand in jedes
-       bestehende Element nachgezogen werden muessen (bubble/*.html ist eine Vorlage, siehe die
-       anderen Komponenten). Ein vorhandener Knopf wird respektiert, wer ihn im Markup hat,
-       behaelt ihn. */
+    /* KEIN Knopf. Diese Komponente ist nur der Dialog -- geoeffnet wird sie von den
+       Export-Knoepfen der anderen Komponenten ueber upstreemExportOpen(instanceId). Das Element
+       auf der Seite ist ein reiner Traeger und soll nichts anzeigen und nichts anklickbar machen.
+       Ein Knopf im Markup wird trotzdem respektiert: wer die Standalone-Fassung eingebaut hat,
+       behaelt ihn, ohne etwas nachziehen zu muessen. */
     var btn = root.querySelector(".uex-btn");
-    if (!btn){
-      btn = document.createElement("button");
-      btn.className = "uex-btn";
-      btn.type = "button";
-      btn.setAttribute("aria-haspopup", "dialog");
-      btn.setAttribute("aria-expanded", "false");
-      btn.innerHTML =
-        '<svg class="uex-btn-ic" viewBox="0 0 24 24" aria-hidden="true">' +
-          '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>' +
-          '<polyline points="7 10 12 15 17 10"></polyline>' +
-          '<line x1="12" y1="15" x2="12" y2="3"></line>' +
-        '</svg><span class="uex-btn-label">Export</span>';
-      root.appendChild(btn);
-    }
 
     var isDark = isYes(root.getAttribute("data-isdark"));
     if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
@@ -422,7 +408,9 @@
        einem halben Zustand zurueck. */
     function sicherFertig(cal){
       try { fertig(cal); }
-      catch(e){ if (window.console) console.warn("[upstreem-export] Kalender-Nachbereitung:", e); }
+      /* Still: der Custom-Bereich zeigt im Dialog selbst, ob er benutzbar ist. Eine
+         Konsolenzeile daneben ist Debug-Ausgabe in der ausgelieferten App. */
+      catch(e){}
     }
     /* Zweiter Teil von adoptCalendar, aufgerufen sobald der Picker steht oder endgueltig fehlt. */
     function fertig(cal){
@@ -531,10 +519,9 @@
          Nutzer: is-open blieb false, kein Inline-Stil, der Dialog unsichtbar da. Ein Fehler hier
          darf hoechstens den Custom-Bereich kosten, nie den ganzen Export. */
       try { adoptCalendar(); }
-      catch(e){
-        if (window.console) console.warn("[upstreem-export] Kalender konnte nicht vorbereitet " +
-          "werden — der Dialog oeffnet trotzdem, nur der Custom-Bereich fehlt:", e);
-      }
+      /* Still, aus demselben Grund. Der Dialog oeffnet, und fehlt der Kalender, steht das
+         als Hinweis unter dem Custom-Knopf. */
+      catch(e){}
       try { renderAll(); } catch(e){}
       lastFocus = document.activeElement;
       overlay.inert = false;
@@ -542,7 +529,7 @@
       /* is-shown ist der Zustand des Core-Popups, is-open bleibt fuer die eigenen Regeln. */
       overlay.classList.add("is-open", "is-shown");
       document.body.classList.add("uex-popup-open");   // lifts the picker's panel above us
-      btn.setAttribute("aria-expanded", "true");
+      if (btn) btn.setAttribute("aria-expanded", "true");
       state.open = true;
       try { overlay.querySelector(".uex-submit").focus({ preventScroll: true }); } catch(e){}
     }
@@ -552,14 +539,14 @@
       if (overlay.contains(document.activeElement)){
         try {
           if (lastFocus && lastFocus.isConnected) lastFocus.focus({ preventScroll: true });
-          else btn.focus({ preventScroll: true });
+          else if (btn) btn.focus({ preventScroll: true });
         } catch(e){ try { document.activeElement.blur(); } catch(e2){} }
       }
       overlay.classList.remove("is-open", "is-shown");
       overlay.setAttribute("aria-hidden", "true");
       overlay.inert = true;
       document.body.classList.remove("uex-popup-open");
-      btn.setAttribute("aria-expanded", "false");
+      if (btn) btn.setAttribute("aria-expanded", "false");
       state.open = false;
       if (state.processing) setProcessing(false);   // defensive: don't leave a stale timer/state behind
       /* SOFORT, nicht verzoegert: das Panel soll mit dem Dialog verschwinden, nicht erst danach.
@@ -637,15 +624,14 @@
         // "clicking Export just closes the popup and nothing happens" — the dialog used to close
         // unconditionally regardless of whether Bubble ever received anything. Check that a
         // Toolbox "Javascript to Bubble" element exposes exactly this name.
-        var vorhanden = [];
-        try {
-          for (var k in window) if (/^bubble_fn_/.test(k)) vorhanden.push(k);
-        } catch(e){}
-        console.warn("[upstreem-export] " + fnName + " nicht gefunden — der Export-Workflow wurde " +
-          "nicht ausgeloest. Der Dialog bleibt sichtbar im Ladezustand und faellt nach 90s zurueck, " +
-          "statt still zu schliessen.\nGefundene bubble_fn_* in diesem Fenster: " +
-          (vorhanden.length ? vorhanden.join(", ") : "keine") +
-          "\nStimmt data-export-fn am Element mit dem Namen des JavaScriptToBubble-Elements ueberein?");
+        /* Knapp und ohne Namensliste. Die Liste war eine Diagnosehilfe fuer eine Runde und
+           haette sonst bei jedem Fehlversuch zweihundert Namen in die Konsole geschrieben.
+           Die Meldung selbst bleibt: ein Export, der stumm nichts tut, ist der schlimmere Fall.
+           Haeufigste Ursache, gemessen: das Element ist unsichtbar -- Bubble veroeffentlicht
+           bubble_fn_* nur fuer sichtbare Elemente. */
+        console.warn("[upstreem-export] " + fnName + " nicht gefunden. Ist das " +
+          "JavaScriptToBubble-Element auf dieser Seite SICHTBAR? Unsichtbare Elemente " +
+          "veroeffentlichen ihre Funktion nicht.");
       }
       try {
         root.dispatchEvent(new CustomEvent("upstreem-export", { detail: payload, bubbles: true }));
@@ -654,7 +640,8 @@
     }
 
     /* ---------------- listeners ---------------- */
-    btn.addEventListener("click", function(e){ e.preventDefault(); e.stopPropagation(); openPopup(); });
+    /* Nur wenn es einen gibt -- siehe oben. */
+    if (btn) btn.addEventListener("click", function(e){ e.preventDefault(); e.stopPropagation(); openPopup(); });
 
     overlay.addEventListener("click", function(e){
       if (state.processing) return;   // locked until window.upstreemExportResolve() is called

@@ -1,8 +1,16 @@
 <!--
   UPSTREEM — EXPORT DATA POPUP
 
-  Only the trigger button is visible in the page flow; the popup itself is appended to <body>
-  so no Bubble container with overflow:hidden can clip it.
+  Das Element auf der Seite zeigt NICHTS -- kein Knopf, keine Flaeche. Es ist ein reiner
+  Traeger; der Dialog haengt an <body>, damit kein Bubble-Container mit overflow:hidden ihn
+  abschneiden kann. Geoeffnet wird er von den Export-Knoepfen der anderen Komponenten:
+
+    window.upstreemExportOpen("DEINE_INSTANCE")
+
+  WICHTIG: Das Element muss in Bubble auf SICHTBAR stehen. Ein unsichtbares Element
+  veroeffentlicht seine bubble_fn_*-Funktionen nicht -- der Export-Workflow wird dann nie
+  gefunden, und der Dialog haengt im Ladezustand, ohne dass etwas passiert. Es nimmt keinen
+  Platz ein, es muss nur sichtbar geschaltet sein.
 
   ── Bubble dynamic values on the root element ────────────────────────────────
   data-instance      = "ROOTID_[dynamic id]"   unique per placement of this reusable

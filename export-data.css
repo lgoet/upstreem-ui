@@ -20,8 +20,14 @@
     --uex-shadow: 0 24px 64px rgba(0,0,0,0.55), 0 6px 16px rgba(0,0,0,0.4);
   }
 
-  /* ---------- trigger button (the only thing visible in the page flow) ---------- */
-  .uex-root { display: inline-flex; width: fit-content; max-width: 100%; height: 32px; }
+  /* ---------- Traeger ----------
+     Das Element auf der Seite zeigt NICHTS. Die Komponente ist nur der Dialog; geoeffnet wird sie
+     von den Export-Knoepfen der anderen Komponenten ueber upstreemExportOpen(instanceId).
+     Nicht display:none: das Element muss in Bubble SICHTBAR bleiben, sonst veroeffentlicht Bubble
+     seine bubble_fn_*-Funktionen nicht und der Export-Workflow wird nie gefunden. Genau daran hat
+     es zuletzt gehangen. Also null Groesse statt versteckt.
+     Die Knopf-Regeln darunter bleiben fuer den Fall, dass jemand einen im Markup hat. */
+  .uex-root { display: block; width: 0; height: 0; overflow: hidden; }
   /* .check_reinvention.py meldet das als moeglichen Zwilling von .up-seg-btn -- ist es nicht:
      der ist transparent und sitzt in einem Segmented-Control. Das hier ist ein gefuellter
      Aktionsknopf in einer Werkzeugleiste. Gleiche Hoehe und gleicher Radius sind Absicht, damit
