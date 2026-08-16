@@ -193,8 +193,9 @@
             '<div class="uex-custom-wrap">' +
               '<button class="uex-opt uex-custom-btn" type="button">' +
                 '<svg viewBox="0 0 24 24" aria-hidden="true">' +
-                  '<rect x="3" y="4" width="18" height="17" rx="2"></rect>' +
-                  '<path d="M16 2v4M8 2v4M3 10h18"></path>' +
+                  '<path d="M8 2v3"></path><path d="M16 2v3"></path>' +
+                  '<rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M3 9h18"></path>' +
+                  
                 '</svg>' +
                 '<span class="uex-opt-label uex-custom-text">Custom range</span>' +
                 '<span class="uex-opt-check" aria-hidden="true">' +
@@ -214,9 +215,9 @@
           '<button class="uex-submit" type="button">' +
             '<span class="uex-submit-icon">' +
               '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+                '<path d="M12 15V3"></path>' +
                 '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>' +
-                '<polyline points="7 10 12 15 17 10"></polyline>' +
-                '<line x1="12" y1="15" x2="12" y2="3"></line>' +
+                '<path d="m7 10 5 5 5-5"></path>' +
               '</svg>' +
             '</span>' +
             '<span class="uex-submit-text">Export</span>' +
@@ -254,9 +255,9 @@
     var SPINNER_SVG = '<span class="uex-spin" aria-hidden="true"></span>';
     var EXPORT_SVG =
       '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+        '<path d="M12 15V3"></path>' +
         '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>' +
-        '<polyline points="7 10 12 15 17 10"></polyline>' +
-        '<line x1="12" y1="15" x2="12" y2="3"></line>' +
+        '<path d="m7 10 5 5 5-5"></path>' +
       '</svg>';
 
     function syncTheme(){

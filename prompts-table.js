@@ -1970,7 +1970,7 @@
     function renderEmptyState(filtered){
       elTbody.innerHTML = '<div class="up-empty">' +
         '<div class="up-empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' +
-          '<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>' +
+          '<path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg></div>' +
         '<div class="up-empty-h">' + (filtered ? "No matching prompts" : "No prompts yet") + '</div>' +
         /* "search and filters", nicht nur "search": der Zustand wird auch von einem gesetzten
            Mentioned-Filter ausgeloest, bei leerem Suchfeld. Der Text behauptete dann, die Suche
@@ -2920,7 +2920,7 @@
            missing. */
         elTbody.innerHTML = '<div class="up-empty">' +
           '<div class="up-empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' +
-            '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></div>' +
+            '<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg></div>' +
           '<div class="up-empty-h">No groups</div>' +
           '<div class="up-empty-t">' + ((state.query || state.brandMentioned)
             ? "No topic group matches the current search."

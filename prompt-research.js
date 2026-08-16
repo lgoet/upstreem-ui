@@ -74,21 +74,21 @@
     search:      ic('<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/>' +
                     '<path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/>' +
                     '<circle cx="12" cy="12" r="3"/><path d="m16 16-1.9-1.9"/>'),
-    clock:       ic('<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>'),
-    x:           ic('<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'),
-    trash:       ic('<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>'),
-    send:        ic('<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>'),
-    chevronDown: ic('<polyline points="6 9 12 15 18 9"/>'),
-    chevronUp:   ic('<polyline points="18 15 12 9 6 15"/>'),
-    arrowLeft:   ic('<line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>'),
-    alignLeft:   ic('<line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/>'),
-    more:        ic('<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>'),
-    checkCircle: ic('<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>'),
-    tag:         ic('<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>'),
-    briefcase:   ic('<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>'),
-    user:        ic('<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>'),
-    check:       ic('<polyline points="20 6 9 17 4 12"/>'),
-    gotoArrow:   ic('<line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/>'),
+    clock:       ic('<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>'),
+    x:           ic('<path d="M18 6 6 18" /> <path d="m6 6 12 12" />'),
+    trash:       ic('<path d="M10 11v6" /> <path d="M14 11v6" /> <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /> <path d="M3 6h18" /> <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />'),
+    send:        ic('<path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/>'),
+    chevronDown: ic('<path d="m6 9 6 6 6-6" />'),
+    chevronUp:   ic('<path d="m18 15-6-6-6 6" />'),
+    arrowLeft:   ic('<path d="m12 19-7-7 7-7" /> <path d="M19 12H5" />'),
+    alignLeft:   ic('<path d="M21 5H3" /> <path d="M15 12H3" /> <path d="M17 19H3" />'),
+    more:        ic('<circle cx="12" cy="12" r="1" /> <circle cx="19" cy="12" r="1" /> <circle cx="5" cy="12" r="1" />'),
+    checkCircle: ic('<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>'),
+    tag:         ic('<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/>'),
+    briefcase:   ic('<path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/>'),
+    user:        ic('<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>'),
+    check:       ic('<path d="M20 6 9 17l-5-5" />'),
+    gotoArrow:   ic('<path d="M7 7h10v10" /> <path d="M7 17 17 7" />'),
     sliders:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="4" y1="8" x2="20" y2="8"/><circle cx="9" cy="8" r="2.2"/><line x1="4" y1="16" x2="20" y2="16"/><circle cx="15" cy="16" r="2.2"/></svg>'
   };
 
@@ -201,7 +201,7 @@
      only reaches a FRESH install. From JS the CDN pin alone carries it. Idempotent by nature. */
   (function(){
     // feather message-circle (round) -- the round speech bubble, not the square message-square
-    var CHAT_ICON = '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>';
+    var CHAT_ICON = '<path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719" />';
     ['#upr-open-history', '#upr-open-history-results'].forEach(function(sel){
       var btn = root.querySelector(sel);
       if (!btn) return;
