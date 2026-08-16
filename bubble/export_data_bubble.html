@@ -15,11 +15,15 @@
   data-min-date      = OPTIONAL, frueheste waehlbare Kalenderwoche als YYYY-MM-DD. Ohne Angabe
                        gilt die Untergrenze des Pickers (1. Januar 2024).
 
-  ── Event name must be unique per placement ──────────────────────────────────
-  data-export-fn="bubble_fn_upstreemExport_[dynamic id]"
-  Same reasoning as the other components: Bubble can only wire ONE workflow per
-  bubble_fn_* name, so two placements sharing a name would fire the same (wrong for one
-  of them) workflow.
+  ── EIN Event fuer alle Platzierungen ────────────────────────────────────────
+  data-export-fn="bubble_fn_upstreemExport"
+
+  OHNE Instanz-Suffix, anders als bei den meisten Komponenten hier. Der Grund: der Payload
+  traegt export_type, der Workflow verzweigt also ohnehin danach. Fuenf gleiche Workflows, die
+  sich nur im Namen unterscheiden, sind mehr Pflege und eine Fehlerquelle mehr.
+
+  Ein Suffix darf trotzdem dranstehen -- die Komponente faellt still auf den Grundnamen zurueck,
+  wenn es den Namen mit Suffix nicht gibt.
 
   Fires ONE JSON string — same shape as the other components here (cf. Mira's miraAction):
 

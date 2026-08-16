@@ -613,12 +613,11 @@
         var ohneSuffix = "bubble_fn_upstreemExport";
         if (ohneSuffix !== fnName && fnName.indexOf(ohneSuffix) === 0){
           var alt2 = resolveBubbleFn(ohneSuffix);
-          if (typeof alt2 === "function"){
-            if (window.console) console.info("[upstreem-export] " + fnName + " gibt es nicht, " +
-              ohneSuffix + " schon — dieser wird benutzt. Wenn jede Platzierung ihren eigenen " +
-              "Workflow bekommen soll, benenne das Element entsprechend.");
-            fn = alt2; fnName = ohneSuffix;
-          }
+          /* Still. Der Rueckfall ist der Normalfall, nicht die Ausnahme: EIN
+             JavaScriptToBubble-Element fuer alle Platzierungen ist hier die richtige Verdrahtung,
+             weil der Payload export_type traegt und der Workflow danach verzweigt. Eine Warnung
+             dafuer waere Meckern ueber etwas, das stimmt. */
+          if (typeof alt2 === "function"){ fn = alt2; fnName = ohneSuffix; }
         }
       }
       /* Same shape as every other component here (see Mira's miraAction): ONE JSON string as the
