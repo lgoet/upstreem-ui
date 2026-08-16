@@ -281,6 +281,16 @@
          eine Zahl aus einem anderen Modus stehen zu lassen. */
       if (!CHART_MODES[state.mode]) { root.classList.add("is-novalue"); return; }
       root.classList.remove("is-novalue");
+      /* Waehrend geladen wird ein Skelett statt eines Gedankenstrichs. Der Strich ist die
+         Anzeige fuer "es gibt hier keinen Wert" -- ihn auch fuers Warten zu benutzen, macht aus
+         zwei verschiedenen Lagen dieselbe Anzeige, und der Nutzer sieht nicht, ob er auf etwas
+         wartet oder ob nichts kommt. Der Balken ist der Core-Skelettbalken .up-tsk-bar, nur in
+         KPI-Groesse (siehe CSS); die Chart-Flaeche darunter zeigt ohnehin schon ihr eigenes. */
+      if (state.loading) {
+        elVal.innerHTML = '<span class="up-tsk-bar"></span>';
+        elTrend.innerHTML = '<span class="up-tsk-bar"></span>';
+        return;
+      }
       var kpi = state.company || {};
       elVal.innerHTML = kpiInner(m, kpi);
       elTrend.innerHTML = trendHtml(m, kpi);

@@ -55,6 +55,13 @@
    die Zahl ueber der Kurve als Zusammenfassung liest. Alles andere -- Farbe, Punkt, Raute,
    Abstaende -- bleibt beim Original, sonst sieht dieselbe Zahl an zwei Orten verschieden aus. */
 .ubd-kpi-val { font-size: 23px; line-height: 1.15; letter-spacing: -0.4px; }
+/* Skelett fuer die grosse Kennzahl und ihren Trend. .up-tsk-bar bringt Farbe, Radius und das
+   Pulsieren aus core mit -- hier steht nur die Groesse, weil der Balken in einer Tabellenzelle
+   12px hoch ist und neben einer 23px-Zahl verloren waere. Die Breiten sind grob so gewaehlt,
+   wie die echten Werte ausfallen ("34.3%" und ein Trend-Chip), damit beim Eintreffen der Daten
+   moeglichst wenig springt. */
+.ubd-kpi-val .up-tsk-bar   { height: 24px; width: 88px; border-radius: 6px; }
+.ubd-kpi-trend .up-tsk-bar { height: 18px; width: 58px; border-radius: 5px; }
 .ubd-kpi-val .up-num { font-size: inherit; font-weight: 500; letter-spacing: inherit;
   font-variant-numeric: tabular-nums; }
 /* Sentiment eine Stufe groesser als in einer Tabellenzelle -- aber VOLLSTAENDIG, nicht nur die
