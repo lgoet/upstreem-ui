@@ -15,15 +15,18 @@
   data-min-date      = OPTIONAL, frueheste waehlbare Kalenderwoche als YYYY-MM-DD. Ohne Angabe
                        gilt die Untergrenze des Pickers (1. Januar 2024).
 
-  ── EIN Event fuer alle Platzierungen ────────────────────────────────────────
-  data-export-fn="bubble_fn_upstreemExport"
+  ── Event, ein Name pro Platzierung ──────────────────────────────────────────
+  data-export-fn="bubble_fn_upstreemExport_[dynamic id]"
 
-  OHNE Instanz-Suffix, anders als bei den meisten Komponenten hier. Der Grund: der Payload
-  traegt export_type, der Workflow verzweigt also ohnehin danach. Fuenf gleiche Workflows, die
-  sich nur im Namen unterscheiden, sind mehr Pflege und eine Fehlerquelle mehr.
+  Wie bei jeder anderen Komponente hier: Bubble kann pro bubble_fn_*-Name nur EINEN Workflow
+  verdrahten, zwei Platzierungen mit demselben Namen fuehren also in denselben (fuer eine davon
+  falschen) Workflow.
 
-  Ein Suffix darf trotzdem dranstehen -- die Komponente faellt still auf den Grundnamen zurueck,
-  wenn es den Namen mit Suffix nicht gibt.
+  Der Name muss EXAKT dem JavaScriptToBubble-Element entsprechen. Wird er nicht gefunden, sagt
+  die Konsole das samt einer Liste aller vorhandenen bubble_fn_*-Namen. Es gibt bewusst KEINEN
+  Rueckfall auf einen aehnlichen Namen: ein solcher Rueckfall hat den Aufruf schon einmal still
+  an ein gleichnamiges Element ohne Workflow geleitet, und der Export tat nichts, ohne eine
+  einzige Meldung.
 
   Fires ONE JSON string — same shape as the other components here (cf. Mira's miraAction):
 

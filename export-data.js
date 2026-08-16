@@ -595,26 +595,12 @@
       if (state.processing) return;   // already sent, ignore a repeat click
       var fnName = root.getAttribute("data-export-fn") || "bubble_fn_upstreemExport";
       var fn = resolveBubbleFn(fnName);
-      /* Rueckfall auf den Namen OHNE Instanz-Suffix. Beim Nutzer stand data-export-fn auf
-         bubble_fn_upstreemExport_prompt_runs, das JavaScriptToBubble-Element hiess aber
-         bubble_fn_upstreemExport -- ein Element fuer alle Platzierungen, was voellig in Ordnung
-         ist: der Payload traegt export_type, der Workflow weiss also, worum es geht.
-         Ohne diesen Rueckfall scheitert jede Platzierung, deren Suffix nicht exakt zum
-         Elementnamen passt, und der Fehler sieht aus wie "Export tut nichts". */
-      if (typeof fn !== "function"){
-        /* Auf den GRUNDNAMEN zurueck, nicht per Regex das letzte Stueck abschneiden: das Suffix
-           kann selbst Unterstriche enthalten (_prompt_runs), und dann bliebe
-           bubble_fn_upstreemExport_prompt uebrig -- wieder kein Treffer. */
-        var ohneSuffix = "bubble_fn_upstreemExport";
-        if (ohneSuffix !== fnName && fnName.indexOf(ohneSuffix) === 0){
-          var alt2 = resolveBubbleFn(ohneSuffix);
-          /* Still. Der Rueckfall ist der Normalfall, nicht die Ausnahme: EIN
-             JavaScriptToBubble-Element fuer alle Platzierungen ist hier die richtige Verdrahtung,
-             weil der Payload export_type traegt und der Workflow danach verzweigt. Eine Warnung
-             dafuer waere Meckern ueber etwas, das stimmt. */
-          if (typeof alt2 === "function"){ fn = alt2; fnName = ohneSuffix; }
-        }
-      }
+      /* KEIN Rueckfall auf einen anderen Namen. Ich hatte einen eingebaut, als der Name mit
+         Suffix nicht gefunden wurde -- und damit ging der Aufruf still an ein gleichnamiges
+         Element ohne Workflow. Der Export tat nichts, ohne eine einzige Meldung, und die
+         Ursache war unter dem Rueckfall begraben.
+         Wird der konfigurierte Name nicht gefunden, ist das ein Fehler und gehoert gemeldet --
+         so wie in jeder anderen Komponente hier auch. */
       /* Same shape as every other component here (see Mira's miraAction): ONE JSON string as the
          single argument, values pulled out on the Bubble side by regex. A Toolbox
          "Javascript to Bubble" element only captures the first argument anyway. */
