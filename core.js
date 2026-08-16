@@ -5377,6 +5377,19 @@
 
     for (var t = 0; t < THEME.subs.length; t++){ try { THEME.subs[t](THEME.value); } catch(e){} }
 
+    /* Rueckkanal nach Bubble. Ohne ihn kennt die App den Zustand nicht: der Schalter auf der
+       Anmeldeseite schreibt den localStorage, aber ein Bubble-State oder ein Feld in der
+       Datenbank erfaehrt davon nichts.
+       NICHT beim Start: dort stellt core nur wieder her, was ohnehin gespeichert war, und ein
+       Event wuerde den Wert aus der Datenbank ueberschreiben, bevor der Pageload-Workflow ihn
+       ueberhaupt gesetzt hat. Nur echte Wechsel melden. */
+    if (!THEME.booting){
+      try {
+        var meld = resolveBubbleFn("bubble_fn_theme_pref");
+        if (typeof meld === "function") meld(THEME.value);
+      } catch(e){}
+    }
+
     /* Anything Bubble builds AFTER the switch -- a re-rendered element, a drawer opening -- would
        otherwise come up in the old theme. One observer for the whole page, installed once. */
     if (!THEME.bound){
@@ -5421,7 +5434,9 @@
     /* Ohne jede Angabe NICHT eingreifen: dann bleibt es beim Verhalten von vorher, und eine
        Seite, die ihr Theme selbst per Attribut setzt, wird nicht ueberschrieben. */
     if (wahl !== "dark" && wahl !== "light") return;
+    THEME.booting = true;
     try { setUpstreemTheme(wahl); } catch(e){}
+    THEME.booting = false;
   })();
   function getUpstreemTheme(){ return THEME.value || readPrefTheme() || "light"; }
 
