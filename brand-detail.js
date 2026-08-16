@@ -286,7 +286,13 @@
          zwei verschiedenen Lagen dieselbe Anzeige, und der Nutzer sieht nicht, ob er auf etwas
          wartet oder ob nichts kommt. Der Balken ist der Core-Skelettbalken .up-tsk-bar, nur in
          KPI-Groesse (siehe CSS); die Chart-Flaeche darunter zeigt ohnehin schon ihr eigenes. */
-      if (state.loading) {
+      /* DIESELBE Bedingung wie das Chart-Skelett eine Funktion weiter unten. state.loading allein
+         reichte nicht: der Ladezustand kommt ueber setBrandDetailLoading, und der Aufruf erreicht
+         die Komponente nicht in jedem Aufbau -- gemessen gab er false zurueck, weil resolve() die
+         Instanz nicht fand. Das Chart zeigte trotzdem sein Skelett, weil es auf !hasData prueft,
+         und der KPI daneben stand mit einem Gedankenstrich. Zwei Anzeigen fuer denselben Zustand,
+         die sich widersprechen -- jetzt haengen beide an derselben Frage. */
+      if (state.loading || !state.hasData) {
         elVal.innerHTML = '<span class="up-tsk-bar"></span>';
         elTrend.innerHTML = '<span class="up-tsk-bar"></span>';
         return;
