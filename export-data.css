@@ -44,10 +44,13 @@
   }
 
   /* ---------- overlay + dialog (appended to <body>) ---------- */
-  .uex-overlay {
-    /* position und inset ausdruecklich, weil .up-root am selben Element sein eigenes Positioning
-       mitbringt. Ohne diese Zeile sass das Overlay im Fluss statt ueber der Seite -- derselbe
-       Fehler, der notification-card einmal zu einem 2px-Strich gemacht hat. */
+  /* DOPPELTE Klasse, nicht einfach. .up-root aus core setzt am selben Element position:relative,
+     und beide Selektoren haben dieselbe Spezifitaet -- dann entscheidet die Ladereihenfolge, und
+     die ist bei diesem Loader nicht verlaesslich: core.css wird nur EINMAL geladen, von wem auch
+     immer zuerst, und kann damit nach export-data.css im Dokument stehen.
+     Gemessen genau so: position kam als relative heraus, das Overlay sass im Fluss statt ueber
+     der Seite, und der Dialog war unsichtbar da. */
+  .uex-overlay.uex-overlay {
     position: fixed; inset: 0; z-index: 2147482500;
     display: flex; align-items: center; justify-content: center;
     padding: 24px;
@@ -55,7 +58,10 @@
     opacity: 0; visibility: hidden; pointer-events: none;
     transition: opacity var(--uex-t) var(--uex-ease), visibility 0s linear var(--uex-t);
   }
-  .uex-overlay.is-open {
+  /* Ebenfalls verdoppelt. Die Basisregel darueber traegt jetzt .uex-overlay.uex-overlay -- eine
+     einfache .uex-overlay.is-open haette dieselbe Spezifitaet und muesste sich wieder auf die
+     Reihenfolge verlassen. Gemessen: is-open war gesetzt, opacity blieb trotzdem 0. */
+  .uex-overlay.uex-overlay.is-open {
     opacity: 1; visibility: visible; pointer-events: auto;
     transition: opacity var(--uex-t) var(--uex-ease), visibility 0s;
   }
@@ -68,7 +74,7 @@
     transform: translateY(8px) scale(.985); opacity: 0;
     transition: transform .24s cubic-bezier(.22,1,.36,1), opacity var(--uex-t) var(--uex-ease);
   }
-  .uex-overlay.is-open .uex-dialog { transform: none; opacity: 1; }
+  .uex-overlay.uex-overlay.is-open .uex-dialog { transform: none; opacity: 1; }
 
   .uex-head {
     flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between;

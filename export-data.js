@@ -217,6 +217,15 @@
           '</div>' +
         '</div>' +
       '</div>';
+    /* Verwaiste Overlays derselben Instanz wegraeumen. Bubble baut diese Elemente staendig neu
+       auf, und jeder Aufbau haengte bisher ein weiteres Overlay an <body> -- gemessen 36 Stueck
+       bei 14 Elementen. Das ist nicht nur Speicher: die alten reagieren weiter auf Escape und
+       auf ihre eigenen Klicks, und welches davon upstreemExportOpen erwischt, ist Zufall. */
+    var alt = document.querySelectorAll('.uex-overlay[data-uex-instance="' + instanceId + '"]');
+    for (var a = 0; a < alt.length; a++){
+      if (alt[a].parentNode) alt[a].parentNode.removeChild(alt[a]);
+    }
+    overlay.setAttribute("data-uex-instance", instanceId);
     document.body.appendChild(overlay);
 
     var elTypes   = overlay.querySelector(".uex-grid.is-types");
@@ -447,6 +456,16 @@
       overlay.inert = false;
       overlay.setAttribute("aria-hidden", "false");
       overlay.classList.add("is-open");
+      /* Deckkraft und Sichtbarkeit direkt am Element, nicht nur ueber die Klasse. Die CSS-Regel
+         .uex-overlay.uex-overlay.is-open setzt opacity:1, matcht nachweislich (matches() true,
+         nur zwei Regeln im Blatt, die spezifischere gewinnt auf dem Papier) -- und trotzdem kam
+         der berechnete Wert als 0 heraus, auch 500ms nach einem erzwungenen Klassen-Toggle.
+         Woran das liegt, habe ich nicht aufgeklaert; derselbe Effekt ist in dieser Datei und in
+         auth-page zweimal aufgetreten. Ein Inline-Stil schlaegt jede Regel und macht den Dialog
+         verlaesslich sichtbar. Die Klasse bleibt, weil andere Regeln daran haengen. */
+      overlay.style.opacity = "1";
+      overlay.style.visibility = "visible";
+      overlay.style.pointerEvents = "auto";
       document.body.classList.add("uex-popup-open");   // lifts the picker's panel above us
       btn.setAttribute("aria-expanded", "true");
       state.open = true;
@@ -462,6 +481,14 @@
         } catch(e){ try { document.activeElement.blur(); } catch(e2){} }
       }
       overlay.classList.remove("is-open");
+      /* Die Inline-Werte von openPopup wieder abraeumen, sonst bliebe der Dialog sichtbar. Ueber
+         die Uebergangsdauer verzoegert, damit das Ausblenden noch zu sehen ist. */
+      overlay.style.opacity = "0";
+      overlay.style.pointerEvents = "none";
+      clearTimeout(overlay.__uexHideTimer);
+      overlay.__uexHideTimer = setTimeout(function(){
+        if (!state.open) overlay.style.visibility = "hidden";
+      }, 220);
       overlay.setAttribute("aria-hidden", "true");
       overlay.inert = true;
       document.body.classList.remove("uex-popup-open");
