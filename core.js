@@ -2559,6 +2559,17 @@
       } catch(e){}
       var fnName = root.getAttribute(attr) || fallbackName;
       var fn = resolveBubbleFn(fnName);
+      /* Der Rueckfall ohne Praefix findet nichts: Bubble veroeffentlicht bubble_fn_<name>, der
+         Rueckfallname hier ist aber der nackte Ereignisname (usnLogout). Fehlt das Attribut am
+         Element -- und es fehlt regelmaessig, weil bubble/*.html nur eine Vorlage ist und ein
+         bestehendes Element neue Attribute nicht von selbst bekommt --, lief der Aufruf ins
+         Leere, obwohl der Workflow da war. Also einmal mit Praefix nachfassen, bevor gewarnt
+         wird. Der gemeldete Name in der Warnung ist dann der, der wirklich gesucht wurde. */
+      if (typeof fn !== "function" && fnName.indexOf("bubble_fn_") !== 0){
+        var mitPraefix = "bubble_fn_" + fnName;
+        var fn2 = resolveBubbleFn(mitPraefix);
+        if (typeof fn2 === "function"){ fn = fn2; fnName = mitPraefix; }
+      }
       var json; try { json = JSON.stringify(payload); } catch(e){ json = ""; }
       /* Der Wurf der Bubble-Funktion darf NICHT still verschwinden. Der Nicht-gefunden-Zweig
          darunter warnt ausfuehrlich, dieser hier schwieg -- und das ist der teurere Fall: eine

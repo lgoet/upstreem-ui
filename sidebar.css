@@ -332,15 +332,23 @@
 .usn-pin-x:hover { color: var(--vc-text); }
 .usn-bar.is-mini .usn-pin-x { display: none; }
 /* ---- Umsortieren per Ziehen ----
-   Die gezogene Zeile wird durchscheinend, die Zielkante zeigt eine Linie. Kein Geisterbild und
-   kein Verschieben der Zeile selbst: bei fuenf Eintraegen reicht die Kante, und alles andere
-   waere Bewegung ohne Nutzen. */
+   Die gezogene Zeile wandert im DOM mit und wird an ihrer jeweiligen Stelle zum grauen
+   Platzhalter -- die Liste steht also immer schon so, wie sie nach dem Loslassen aussieht.
+   Gleiche Bauart und gleiche Toene wie die Custom Groupings in prompts-table (.upt-group-sk-*),
+   damit sich zwei Listen, die dasselbe tun, auch gleich anfuehlen. */
 .usn-pin { cursor: pointer; }
 .usn-bar.is-pindrag { cursor: grabbing; }
 .usn-bar.is-pindrag .usn-pin { cursor: grabbing; }
-.usn-pin.is-dragging { opacity: .45; }
-.usn-pin.is-dropbefore { box-shadow: inset 0 2px 0 0 var(--vc-text); }
-.usn-pin.is-dropafter { box-shadow: inset 0 -2px 0 0 var(--vc-text); }
+.usn-pin-sk-ic, .usn-pin-sk-txt { display: none; background: var(--vc-border); border-radius: 4px; }
+.usn-pin.is-dragging { border: 1px solid var(--vc-border); }
+/* Beim Ziehen tritt der Platzhalter an die Stelle des Inhalts. Der echte Inhalt geht weg, statt
+   nur durchscheinend zu werden: ein halbdurchsichtiger Name neben einem grauen Balken waere
+   zwei Aussagen auf einmal. */
+.usn-pin.is-dragging > .usn-pin-ic,
+.usn-pin.is-dragging > .usn-txt,
+.usn-pin.is-dragging > .usn-pin-x { display: none; }
+.usn-pin.is-dragging > .usn-pin-sk-ic { display: block; width: 17px; height: 17px; border-radius: 5px; flex: 0 0 17px; }
+.usn-pin.is-dragging > .usn-pin-sk-txt { display: block; width: 55%; height: 12px; }
 /* Waehrend des Ziehens keine Textauswahl -- sonst markiert der Zeiger die Namen. */
 .usn-bar.is-pindrag, .usn-bar.is-pindrag * { user-select: none; -webkit-user-select: none; }
 

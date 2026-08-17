@@ -396,12 +396,18 @@
        ist .up-logo-box aus core -- beim Prompt die Flagge des Marktes, sonst Logo bzw. Favicon.
        Faellt es aus, bleibt der Anfangsbuchstabe. */
     function pinHtml(pin, i){
+      /* Die zwei Skelett-Kaesten stehen im Markup und sind unsichtbar, bis die Zeile gezogen
+         wird. Dann treten sie an die Stelle von Bild, Name und x -- dieselbe Bauart wie bei den
+         Custom Groupings, wo die gezogene Zeile ebenfalls zum grauen Platzhalter wird. Sie
+         werden NICHT beim Ziehen erzeugt: ein Element, das mitten in einer Zeigerbewegung
+         entsteht, kostet einen Layoutdurchgang genau im falschen Moment. */
       return '<button class="usn-item usn-pin" type="button" data-pin="' + i + '" ' +
-        'title="' + esc(pin.label || "") + '">' +
+        'data-pinid="' + esc(pin.type + ":" + pin.id) + '" title="' + esc(pin.label || "") + '">' +
         '<span class="usn-pin-ic">' + logoHtml(pin.label, pin.logo) + '</span>' +
         '<span class="usn-txt">' + esc(pin.label || "") + '</span>' +
         '<span class="usn-pin-x" data-unpin="' + i + '" role="button" tabindex="-1" ' +
         'aria-label="Remove from pinned">' + ic("x") + '</span>' +
+        '<span class="usn-pin-sk-ic"></span><span class="usn-pin-sk-txt"></span>' +
       '</button>';
     }
     function navItemHtml(it){
@@ -765,51 +771,54 @@
        wie die Spaltenbreiten in den Tabellen.
        Erst nach 4px Bewegung wird es ein Ziehen: ein Klick soll ein Klick bleiben. */
     var zieh = null, gezogen = false;
+    /* Die gezogene Zeile wird im DOM VERSCHOBEN, sobald der Zeiger die Mitte einer anderen Zeile
+       passiert -- dieselbe Mechanik wie in der Gruppierungsliste. Damit steht die Liste immer
+       schon so, wie sie nach dem Loslassen aussieht, und die gezogene Zeile selbst ist an genau
+       dieser Stelle ein grauer Platzhalter. Kein Geisterbild, keine Einfuegelinie.
+       Zeiger-Ereignisse statt der HTML5-Drag-API: die zeichnet ein eigenes Geisterbild und laesst
+       sich in einem position:fixed-Container schlecht fuehren. */
     function pinZiehStart(e, knopf){
-      var body = knopf.parentNode;
-      zieh = { von: parseInt(knopf.getAttribute("data-pin"), 10), knopf: knopf, body: body,
-               y0: e.clientY, aktiv: false, ziel: null };
+      zieh = { knopf: knopf, body: knopf.parentNode, y0: e.clientY, aktiv: false };
       try { knopf.setPointerCapture(e.pointerId); } catch(x){}
     }
     function pinZiehBewegt(e){
       if (!zieh) return;
       if (!zieh.aktiv){
+        /* Erst nach 4px ist es ein Ziehen -- ein Klick soll ein Klick bleiben. */
         if (Math.abs(e.clientY - zieh.y0) < 4) return;
         zieh.aktiv = true;
         zieh.knopf.classList.add("is-dragging");
         bar.classList.add("is-pindrag");
       }
-      /* Das Ziel ist die Zeile, ueber deren Mitte der Zeiger steht. */
       var zeilen = [].slice.call(zieh.body.querySelectorAll(".usn-pin"));
-      var ziel = zieh.von;
       for (var i = 0; i < zeilen.length; i++){
-        var r = zeilen[i].getBoundingClientRect();
-        if (e.clientY >= r.top && e.clientY <= r.bottom){ ziel = i; break; }
-        if (e.clientY < r.top && i === 0){ ziel = 0; break; }
-        if (e.clientY > r.bottom && i === zeilen.length - 1) ziel = zeilen.length - 1;
-      }
-      if (ziel !== zieh.ziel){
-        zieh.ziel = ziel;
-        zeilen.forEach(function(z, i){
-          z.classList.toggle("is-dropbefore", zieh.aktiv && i === ziel && ziel < zieh.von);
-          z.classList.toggle("is-dropafter",  zieh.aktiv && i === ziel && ziel > zieh.von);
-        });
+        var z = zeilen[i];
+        if (z === zieh.knopf) continue;
+        var r = z.getBoundingClientRect();
+        if (e.clientY < r.top || e.clientY > r.bottom) continue;
+        var davor = (e.clientY - r.top) < r.height / 2;
+        zieh.body.insertBefore(zieh.knopf, davor ? z : z.nextSibling);
+        break;
       }
     }
     function pinZiehEnde(){
       if (!zieh) return;
       var z = zieh; zieh = null;
       bar.classList.remove("is-pindrag");
-      if (!z.aktiv) return;                          /* war nur ein Klick, nichts zu tun */
-      /* Nach einem Ziehen folgt ein click auf derselben Zeile. Der darf das Event nicht
-         ausloesen -- die Marke haelt genau diesen einen Klick auf. Sie kann nicht am Knopf
-         haengen, weil renderNav() ihn gleich ersetzt. */
+      z.knopf.classList.remove("is-dragging");
+      if (!z.aktiv) return;                          /* war nur ein Klick */
+      /* Nach einem Ziehen folgt ein click auf derselben Zeile. Der darf nichts ausloesen -- die
+         Marke haelt genau diesen einen Klick auf. Sie kann nicht am Knopf haengen, weil
+         renderNav() ihn gleich ersetzt. */
       gezogen = true;
-      if (z.ziel != null && z.ziel !== z.von){
-        var p = state.pins.splice(z.von, 1)[0];
-        state.pins.splice(z.ziel, 0, p);
-        pinsSchreiben(state.pins);
-      }
+      /* Die neue Reihenfolge steht im DOM, nicht in einem gemerkten Index. */
+      var reihe = [].map.call(z.body.querySelectorAll(".usn-pin"), function(k){
+        return k.getAttribute("data-pinid");
+      });
+      state.pins.sort(function(a, b){
+        return reihe.indexOf(a.type + ":" + a.id) - reihe.indexOf(b.type + ":" + b.id);
+      });
+      pinsSchreiben(state.pins);
       renderNav();
     }
     function pinEntfernen(i){
