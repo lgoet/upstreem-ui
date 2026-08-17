@@ -1,0 +1,18 @@
+<meta charset="utf-8"><title>pin check 2</title>
+<body style="font:13px ui-monospace,monospace;padding:16px">
+<pre id="out">laeuft</pre>
+<script>
+var PIN=(new URLSearchParams(location.search)).get("pin")||"bc766e2";
+var FILES=["add-brand.css", "add-brand.js", "add-prompts.css", "add-prompts.js", "ask-mira.css", "ask-mira.js", "auth-page.css", "auth-page.js", "brand-detail.css", "brand-detail.js", "brands-overview.css", "brands-overview.js", "bubble/diagnostics/_diagnose_chart_console.js", "bubble/diagnostics/_diagnose_drawer_console.js", "bubble/diagnostics/_diagnose_rpc_to_render.js", "bubble/diagnostics/_diagnose_view_console.js", "citations-combo-chart.css", "citations-combo-chart.js", "core.css", "core.js", "create-with-ai.css", "create-with-ai.js", "discover-brands.css", "discover-brands.js", "domains-table.css", "domains-table.js", "export-data.css", "export-data.js", "filters/date-range.css", "filters/date-range.js", "filters/markets-filter.css", "filters/markets-filter.js", "filters/models-filter.css", "filters/models-filter.js", "filters/topics-filter.css", "filters/topics-filter.js", "notification-card.css", "notification-card.js", "opportunities.css", "opportunities.js", "page-headers/brands-page-header.css", "page-headers/brands-page-header.js", "page-headers/citations-page-header.css", "page-headers/citations-page-header.js", "page-headers/dashboard-page-header.css", "page-headers/dashboard-page-header.js", "page-headers/opportunities-page-header.js", "page-headers/performance-page-header.js", "page-headers/prompts-page-header.css", "page-headers/prompts-page-header.js", "page-headers/settings-page-header.css", "page-headers/settings-page-header.js", "performance-detail.css", "performance-detail.js", "performance-radar.css", "performance-radar.js", "prompt-research.css", "prompt-research.js", "prompts-table.css", "prompts-table.js", "quick-actions.css", "quick-actions.js", "responses-table.css", "responses-table.js", "settings-brand.css", "settings-brand.js", "sidebar.css", "sidebar.js", "topcitations-dashboard.css", "topcitations-dashboard.js", "topics-manager.css", "topics-manager.js", "urls-table.css", "urls-table.js", "visibility-chart.css", "visibility-chart.js"], kaputt=[], ok=0, fertig=0;
+var out=document.getElementById("out");
+FILES.forEach(function(f){
+  fetch("https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@"+PIN+"/"+f,{cache:"no-store"})
+   .then(function(r){return r.text()})
+   .then(function(t){ if(t.length<200 && /Failed to fetch|not found/i.test(t)) kaputt.push(f); else ok++; })
+   .catch(function(e){ kaputt.push(f+" (fetch)"); })
+   .then(function(){ fertig++;
+     out.textContent="PIN "+PIN+"\n"+fertig+"/"+FILES.length+"  ok "+ok+"  KAPUTT "+kaputt.length+
+       (fertig===FILES.length ? "\n\n"+kaputt.join("\n") : "");
+     if(fertig===FILES.length) window.__fertig={ok:ok,kaputt:kaputt}; });
+});
+</script>

@@ -166,6 +166,21 @@ Vor jedem Commit zusätzlich `.contract_snapshot.py` / `.contract_diff.py`: **0 
 
 1. `git push origin main` als eigener Bash-Block
 2. **Commit-gepinnte** jsDelivr-URLs für jede geänderte Datei — nie `@main`
+2b. **Pin purgen und prüfen, bevor er übergeben wird.** jsDelivr merkt sich einen fehlgeschlagenen
+   GitHub-Abruf **pro Datei und pro Commit**. Wird ein frischer Pin angefragt, während GitHub
+   gerade drosselt, liefert jede dieser Dateien dauerhaft `Failed to fetch … from GitHub` — mit
+   Status 200 und 54 Zeichen Text, also nicht als 404 erkennbar. Trifft es `core.js`, ist die
+   ganze App tot, und es sieht aus wie ein kaputter Commit. Genau das ist am 17.08. passiert.
+
+   ```
+   _h_pin_purge.html?pin=<hash>     purgt alle ausgelieferten Dateien und prueft danach
+   _h_pin_check2.html?pin=<hash>     prueft nur, 76 Dateien parallel, meldet die kaputten
+   ```
+
+   Übergeben wird ein Pin erst bei **0 kaputten Dateien**. Der Purge ist `pending`, wirkt also
+   mit Verzögerung — nach dem Purge einmal warten und erneut prüfen. Ein einzelner Abruf als
+   Beweis reicht nicht: am 17.08. lieferten `sidebar.css` und `sidebar.js` längst, während
+   `core.js` am selben Pin noch scheiterte.
 3. Explizit benennen, was **Bubble-seitig** zu tun ist (neues Attribut, neuer Event, Workflow-Schritt)
 4. Was gemessen wurde, mit Zahlen. Was nicht geprüft werden konnte, ebenfalls — offen und benannt.
 
