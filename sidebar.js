@@ -91,6 +91,15 @@
      Auf Modulebene und nicht im Controller: die Zustandsvorbelegung greift schon darauf zu, und
      eine var-Zuweisung weiter unten waere zu diesem Zeitpunkt noch undefined. */
   var AKTIV_SYNONYM = { research: "prompt-research" };
+  /* Was aus Bubble kommt, ist ein State-Wert -- und der heisst dort gern "Dashboard" oder
+     "Prompt Research", nicht "dashboard" bzw. "prompt-research". Traf er nicht genau, wurde
+     nichts hervorgehoben: bei einem Wechsel setzt die Leiste den Punkt selbst, beim Seitenaufbau
+     kommt er aber nur aus dem Attribut -- genau deshalb war Dashboard nach dem Laden nicht aktiv.
+     Also klein schreiben, Rand abschneiden, Leerzeichen zu Bindestrichen. */
+  function aktivNorm(v){
+    var t = String(v == null ? "" : v).trim().toLowerCase().replace(/\s+/g, "-");
+    return AKTIV_SYNONYM[t] || t;
+  }
 
   /* Genau die Schluessel, die usnNav.key ausgibt -- data-active nimmt dieselben. Ein Wert, der
      hier nicht vorkommt, hebt nichts hervor; das darf nicht stumm passieren. */
@@ -250,7 +259,7 @@
       klasse: "",            /* wide | mini | hint -- aus der Fensterbreite */
       eingeklappt: prefLesen(),
       offen: false,          /* nur im hint-Zustand: faehrt die Leiste ueber den Inhalt */
-      aktiv: (function(){ var a = attr("data-active", "dashboard"); return AKTIV_SYNONYM[a] || a; })(),
+      aktiv: aktivNorm(attr("data-active", "dashboard")) || "dashboard",
       teams: vorrat.teams || [], team: vorrat.team || null,
       /* Getrennt vom Inhalt: "noch nichts angekommen" ist ein anderer Zustand als "angekommen
          und leer". Nur der erste zeigt Skelette -- der zweite zeigt, was da ist. */
@@ -403,7 +412,7 @@
       /* Beim Wechsel zwischen wide und mini muessen die Gruppenhoehen neu gesetzt werden --
          im Mini-Zustand ohne Grenze, danach wieder mit der gemessenen. */
       if (typeof hoehenSetzen === "function") setTimeout(hoehenSetzen, 0);
-      if (typeof tipsSchalten === "function") tipsSchalten(mini);
+      if (typeof tipsSchalten === "function") tipsSchalten();
       elToggle.hidden = hint;
       elToggle.setAttribute("aria-label", mini ? "Expand sidebar" : "Collapse sidebar");
 
@@ -427,7 +436,32 @@
       if (melden === false){ state.gemeldet = schluessel; return; }
       if (schluessel === state.gemeldet) return;
       state.gemeldet = schluessel;
-      fire("data-state-fn", "usnState", payload);
+      stateMelden(payload);
+    }
+
+    /* Der Zustand ist der EINZIGE Aufruf, der beim Seitenaufbau zu FRUEH kommen kann: die Leiste
+       steht nach 60ms, Bubble veroeffentlicht seine bubble_fn_* aber erst, wenn das Toolbox-Element
+       fertig aufgebaut ist. Vorher lief der Aufruf ins Leere, und der State blieb auf seinem
+       Anfangswert -- sichtbar daran, dass die Leiste nach einem Neuladen richtig eingeklappt war,
+       der Bubble-State aber weiter "yes" sagte.
+       Also nachfassen statt einmal versuchen: 20 Anlaeufe im Abstand von 150ms, dasselbe Muster wie
+       upstreemSignal in core. Ist inzwischen ein neuerer Zustand faellig, wird der alte verworfen --
+       ein veralteter Wert, der nachtraeglich ankommt, waere schlimmer als keiner. */
+    var stateLauf = 0;
+    function stateMelden(payload){
+      var meineRunde = ++stateLauf;
+      var name = attr("data-state-fn") || "bubble_fn_usnState";
+      function versuch(uebrig){
+        if (meineRunde !== stateLauf) return;          /* ueberholt, es gilt ein neuerer Zustand */
+        var fn = null;
+        try { fn = UC.resolveBubbleFn && UC.resolveBubbleFn(name); } catch(e){}
+        if (typeof fn === "function"){ fire("data-state-fn", "usnState", payload); return; }
+        if (uebrig > 0){ setTimeout(function(){ versuch(uebrig - 1); }, 150); return; }
+        /* Nach 3s aufgeben -- und dann EINMAL ueber fire melden, damit die gewohnte Warnung samt
+           Namensliste in der Konsole steht. */
+        fire("data-state-fn", "usnState", payload);
+      }
+      versuch(20);
     }
 
     /* ---------------- Zeichnen ---------------- */
@@ -523,7 +557,7 @@
       }).join("");
       renderChips();
       hoehenSetzen();
-      if (typeof tipsSchalten === "function") tipsSchalten(bar.classList.contains("is-mini"));
+      if (typeof tipsSchalten === "function") tipsSchalten();
     }
     /* Die Hoehe wird GEMESSEN und als Zahl gesetzt: von auto auf 0 gibt es keinen Uebergang, und
        ein geschaetzter Maximalwert laesst die Gruppe erst spaet in Bewegung kommen. */
@@ -795,9 +829,8 @@
         for (var i = 0; i < muts.length; i++){
           var n = muts[i].attributeName;
           if (n === "data-active"){
-            var k = attr("data-active", "dashboard");
-            k = AKTIV_SYNONYM[k] || k;
-            if (k && k !== state.aktiv){ state.aktiv = k; renderNav(); }
+            var k = aktivNorm(attr("data-active", "dashboard")) || "dashboard";
+            if (k !== state.aktiv){ state.aktiv = k; renderNav(); }
           } else if (n === "data-prompt-count"){
             var z = attr("data-prompt-count");
             if (z !== state.count || !state.countDa){
@@ -821,17 +854,16 @@
     /* Der Tooltip-Chip des Hauses. Ein Aufruf, der Rest laeuft delegiert ueber [data-tip] --
        auch fuer Punkte, die es beim Aufbau noch nicht gab (Pins). */
     if (UC.makeTooltips) UC.makeTooltips(bar, function(){ return bar.getAttribute("data-theme") === "dark"; });
-    /* Menuepunkte, Teamknopf und Konto bekommen ihren Chip NUR im eingeklappten Zustand: dort ist
-       allein das Icon zu sehen. Ausgeklappt steht der Name daneben, ein Chip mit demselben Wort
-       waere Doppelung. Die Beschriftung liegt darum in data-tiplabel, und data-tip wird zu- und
-       weggeschaltet -- CSS kann ein Attribut nicht loeschen.
-       Die angehefteten Eintraege sind die Ausnahme: ihre Namen sind lang und werden auch in der
-       breiten Leiste abgeschnitten, dort ist der Chip also immer richtig. */
-    function tipsSchalten(mini){
+    /* Der Chip gilt in BEIDEN Zustaenden. Zuerst war er nur im eingeklappten gesetzt -- Gedanke
+       war, dass ein Chip mit demselben Wort neben dem sichtbaren Namen Doppelung ist. In der
+       Benutzung ist er auch ausgeklappt richtig: er steht rechts neben der Leiste, nicht auf ihr,
+       und lange Namen sind dort ohnehin abgeschnitten. Die Beschriftung liegt weiter in
+       data-tiplabel, weil sie im Markup entsteht und data-tip erst daraus gesetzt wird. */
+    function tipsSchalten(){
       var els = bar.querySelectorAll("[data-tiplabel]");
       for (var i = 0; i < els.length; i++){
         var e = els[i], t = e.getAttribute("data-tiplabel");
-        if (mini && t) e.setAttribute("data-tip", t); else e.removeAttribute("data-tip");
+        if (t) e.setAttribute("data-tip", t); else e.removeAttribute("data-tip");
       }
     }
 
@@ -1059,8 +1091,7 @@
         return true;
       },
       setActive: function(k){
-        var v = String(k || "");
-        state.aktiv = AKTIV_SYNONYM[v] || v;
+        state.aktiv = aktivNorm(k) || "dashboard";
         renderNav(); return true;
       },
       setCount: function(n){

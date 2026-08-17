@@ -1,0 +1,130 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>uo-scrim: kostet der Blur waehrend der Rutschbewegung?</title>
+<link rel="stylesheet" href="core.css?sb=1">
+<link rel="stylesheet" href="opportunities.css?sb=1">
+<style>
+  html,body{margin:0;background:#fff;font:13px system-ui}
+  /* Realistischer Wirtsseiten-Hintergrund: viele Knoten, Text, Farben, Verlauf -- genau das,
+     was ein backdrop-filter abgreifen und filtern muesste. Statisch, wie auf der echten Seite
+     waehrend die Schublade aufgeht. */
+  #bg{padding:12px;display:grid;grid-template-columns:repeat(6,1fr);gap:8px;
+      background:linear-gradient(135deg,#eef,#fee 40%,#efe)}
+  #bg .card{border:1px solid #ccd;border-radius:10px;padding:10px;background:#fff;
+            box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  #bg .card b{display:block;font-size:12px}
+  #bg .card span{font-size:11px;color:#667}
+  #out{position:fixed;left:8px;top:8px;z-index:200000;background:#fff;border:1px solid #333;
+       padding:8px;white-space:pre;font:11px ui-monospace,monospace;max-height:92vh;overflow:auto}
+</style>
+<div id="bg"></div>
+<pre id="out">running…</pre>
+<script>
+var bg = document.getElementById("bg"), out = document.getElementById("out");
+for (var i = 0; i < 600; i++){
+  var d = document.createElement("div"); d.className = "card";
+  d.innerHTML = "<b>Row " + i + " headline text</b><span>some secondary copy, 34.3% share, rank 3.0</span>";
+  bg.appendChild(d);
+}
+
+/* Frischebeweis (CLAUDE.md 3): steht die Regel mit dem Filter im GELADENEN Stylesheet? */
+function ruleText(sel){
+  var found = null;
+  [].forEach.call(document.styleSheets, function(ss){
+    try { [].forEach.call(ss.cssRules, function(r){
+      if ((r.selectorText||"") === sel) found = r.cssText; }); } catch(e){}
+  });
+  return found;
+}
+
+/* Portal wie opportunities.js es baut: display:contents-Wirt in <body>, popover=manual,
+   Schleier z 9895 + Panel z 9900 darin. */
+var portal = document.createElement("div");
+portal.className = "up-root uo-root uo-portal";
+portal.style.position = "fixed"; portal.style.top = "0"; portal.style.left = "0";
+portal.style.width = "0"; portal.style.height = "0"; portal.style.overflow = "hidden";
+var scrim = document.createElement("div"); scrim.className = "uo-scrim";
+var modal = document.createElement("div"); modal.className = "uo-modal";
+var inner = "";
+for (var k = 0; k < 40; k++) inner += "<div style='padding:10px;border-bottom:1px solid #eee'>Drawer line " + k + " with some text</div>";
+modal.innerHTML = "<div class='uo-m-head'>Drawer</div><div class='uo-m-body'>" + inner + "</div>";
+portal.appendChild(scrim); portal.appendChild(modal);
+document.body.appendChild(portal);
+var canPop = typeof portal.showPopover === "function";
+if (canPop) portal.setAttribute("popover", "manual");
+
+var MODE = "ship";           /* ship | noblur | delayed */
+var extra = document.createElement("style");
+document.head.appendChild(extra);
+function applyMode(m){
+  MODE = m;
+  if (m === "noblur")
+    extra.textContent = ".uo-root.detail-in .uo-scrim{-webkit-backdrop-filter:none;backdrop-filter:none}";
+  else if (m === "delayed")
+    /* der vorgeschlagene Fix: Blur erst nach der Bewegung */
+    extra.textContent = ".uo-root.detail-in .uo-scrim{transition:opacity 200ms ease, backdrop-filter 120ms ease 220ms}";
+  else extra.textContent = "";
+}
+
+function openDrawer(){
+  if (canPop) { try { portal.showPopover(); } catch(_){} }
+  portal.classList.add("detail-open");
+  requestAnimationFrame(function(){ portal.classList.add("detail-in"); });
+}
+function closeDrawer(){
+  portal.classList.remove("detail-in");
+  setTimeout(function(){
+    portal.classList.remove("detail-open");
+    if (canPop) { try { portal.hidePopover(); } catch(_){} }
+  }, 200);
+}
+
+/* Ein Zyklus: Frames NUR waehrend der 220ms-Bewegung messen. */
+function cycle(){
+  return new Promise(function(res){
+    var deltas = [], last = 0, t0 = 0, started = false;
+    openDrawer();
+    function fr(now){
+      if (!started){ started = true; last = now; t0 = now; requestAnimationFrame(fr); return; }
+      deltas.push(now - last); last = now;
+      if (now - t0 < 240) requestAnimationFrame(fr);
+      else { closeDrawer(); setTimeout(function(){ res(deltas); }, 420); }
+    }
+    requestAnimationFrame(fr);
+  });
+}
+async function phase(name, mode, n){
+  applyMode(mode);
+  var all = [];
+  for (var i = 0; i < n; i++) all = all.concat(await cycle());
+  var s = all.slice().sort(function(a,b){return a-b;});
+  var mean = all.reduce(function(a,b){return a+b;},0)/all.length;
+  return { name:name, frames:all.length, mean:+mean.toFixed(2),
+           p50:+s[(s.length*0.5)|0].toFixed(2), p90:+s[(s.length*0.9)|0].toFixed(2),
+           max:+s[s.length-1].toFixed(2), over20:all.filter(function(d){return d>20;}).length,
+           over33:all.filter(function(d){return d>33;}).length };
+}
+
+(async function(){
+  var pre = { detailInRule: ruleText(".uo-root.detail-in .uo-scrim"),
+              supported: CSS.supports("backdrop-filter","blur(1.5px)"),
+              popover: canPop, dpr: devicePixelRatio, vw: innerWidth, vh: innerHeight };
+  /* Belegen, dass der Filter im ship-Modus waehrend der Bewegung WIRKLICH aktiv ist. */
+  applyMode("ship"); openDrawer();
+  await new Promise(function(r){ setTimeout(r, 90); });   /* mitten in der 220ms-Bewegung */
+  var cs = getComputedStyle(scrim), cm = getComputedStyle(modal);
+  pre.midMove = { scrimFilter: cs.backdropFilter || cs.webkitBackdropFilter,
+                  scrimOpacity: cs.opacity, scrimZ: cs.zIndex,
+                  modalTransform: cm.transform, modalZ: cm.zIndex };
+  closeDrawer(); await new Promise(function(r){ setTimeout(r, 500); });
+
+  var res = [];
+  res.push(await phase("A ship (Blur gleichzeitig)", "ship",    12));
+  res.push(await phase("B ohne Blur (Gegenprobe)",   "noblur",  12));
+  res.push(await phase("C Fix: Blur verzoegert",     "delayed", 12));
+  res.push(await phase("A2 ship (Wiederholung)",     "ship",    12));
+  res.push(await phase("B2 ohne Blur",               "noblur",  12));
+  out.textContent = JSON.stringify({ pre: pre, phases: res }, null, 1);
+  window.__probe = { pre: pre, phases: res };
+})();
+</script>

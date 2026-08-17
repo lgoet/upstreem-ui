@@ -190,6 +190,11 @@
   border-color: var(--vc-border); color: var(--vc-muted);
 }
 .usn-bar .mqa-trigger:hover { background: transparent; border-color: var(--vc-hover-border); color: var(--vc-text); }
+/* Waehrend des Aufklappens ist der Knopf einen Moment zu schmal fuer "Quick Actions" plus
+   Tastenkuerzel -- der Text brach dann sichtbar in eine zweite Zeile um und der Knopf wuchs mit.
+   Nichts umbrechen, ueberzaehliges abschneiden: die Breite steht nach 200ms ohnehin. */
+.usn-bar .mqa-trigger { white-space: nowrap; overflow: hidden; }
+.usn-bar .mqa-trigger-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .usn-bar .mqa-trigger-ic { color: inherit; }
 .usn-bar .mqa-trigger .mqa-kbd { color: var(--vc-muted); background: transparent; }
 .usn-bar .mqa-trigger:hover .mqa-kbd { color: var(--vc-text); }
