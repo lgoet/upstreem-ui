@@ -34,7 +34,7 @@
        sind. Ohne Stubs geht der erste Aufruf verloren -- und das ist genau der, der die Teams
        liefert. */
     ["setSidebarTeams", "setSidebarUser", "setSidebarActive", "setSidebarCount",
-     "setSidebarOpen", "resetSidebar"].forEach(function(n){
+     "setSidebarOpen", "resetSidebar", "setSidebarReady"].forEach(function(n){
       window[n] = function(){ BOOTQ.push([n, arguments]); };
     });
   }
@@ -298,6 +298,15 @@
          Die Pins koennen hier noch leer sein, wenn das Team erst spaeter eintrifft; pinsNachziehen
          holt sie dann nach. */
       pins: pinsLesen(), zu: zuLesen(),
+      /* Alles auf einmal statt nacheinander. Die dynamischen Teile der Leiste kommen aus vier
+         verschiedenen Quellen (Teams, Nutzer, Prompt-Zaehler, Marken-Store) und trafen beim
+         Seitenaufbau in vier verschiedenen Momenten ein -- man sah vier Skelette einzeln
+         umspringen. Bis zur Enthuellung zeigt jeder Teil sein Skelett, auch wenn seine Daten
+         schon da sind; danach zeigt jeder, was er hat.
+         Ausgeloest wird sie vom ersten Setter (Sammelfenster, siehe SAMMELFENSTER_MS), von
+         setSidebarReady() oder spaetestens von der Notbremse -- eine Leiste, die auf einen
+         Aufruf wartet, der nie kommt, darf nicht ewig im Skelett stehen. */
+      enthuellt: !!vorrat.enthuellt,
       gemeldet: ""           /* zuletzt gefeuerter usnState-Payload, siehe anwenden() */
     };
 
@@ -491,7 +500,7 @@
     /* ---------------- Zeichnen ---------------- */
     function renderTeam(){
       var t = state.team || {};
-      if (!state.teamsDa && !t.name){
+      if (!state.enthuellt || (!state.teamsDa && !t.name)){
         elTeamLogo.innerHTML = '<span class="usn-sk"></span>';
         elTeamName.innerHTML = '<span class="usn-sk"></span>';
         elTeamBtn.removeAttribute("data-tiplabel"); elTeamBtn.removeAttribute("data-tip");
@@ -542,10 +551,10 @@
     function navItemHtml(it){
       var extra = "";
       if (it.count) extra = '<span class="usn-count usn-fade" data-count>' +
-        (state.countDa ? esc(state.count || "")
+        (state.countDa && state.enthuellt ? esc(state.count || "")
                        : (state.countErwartet ? '<span class="usn-sk"></span>' : "")) + '</span>';
       if (it.brands) extra = '<span class="usn-count usn-fade" data-brandcount>' +
-        (state.brandsDa ? esc(state.brands == null ? "" : String(state.brands))
+        (state.brandsDa && state.enthuellt ? esc(state.brands == null ? "" : String(state.brands))
                         : '<span class="usn-sk"></span>') + '</span>';
       if (it.chips) extra = '<span class="usn-chips usn-fade" data-chips></span>';
       /* data-tip statt title: der Browser-Tooltip erscheint verzoegert, an der Maus und in
@@ -621,12 +630,12 @@
       var el = elNav.querySelector("[data-chips]");
       if (!el) return;
       var liste = state.teams || [];
-      if (!state.teamsDa){ el.innerHTML = '<span class="usn-sk usn-sk-chips"></span>'; return; }
+      if (!state.teamsDa || !state.enthuellt){ el.innerHTML = '<span class="usn-sk usn-sk-chips"></span>'; return; }
       el.innerHTML = liste.length ? UC.brandStack(liste, liste.length, { max: 3 }) : "";
     }
     function renderAcc(){
       var u = state.user || {};
-      if (!state.userDa){
+      if (!state.userDa || !state.enthuellt){
         elAv.innerHTML = '<span class="usn-sk"></span>';
         elAccName.innerHTML = '<span class="usn-sk"></span>';
         elAccMail.innerHTML = '<span class="usn-sk"></span>';
@@ -861,7 +870,9 @@
               state.countErwartet = true;
               if (z !== "") state.countDa = true;
               var el = elNav.querySelector("[data-count]");
-              if (el) el.innerHTML = state.countDa ? esc(state.count)
+              /* Auch hier die Enthuellung abfragen: dieser Schnellweg schreibt direkt in die
+                 Zelle und ging sonst am gemeinsamen Reveal vorbei. */
+              if (el) el.innerHTML = (state.countDa && state.enthuellt) ? esc(state.count)
                                                   : '<span class="usn-sk"></span>';
             }
           } else if (n === "data-team-id"){
@@ -890,6 +901,31 @@
        abgeschnitten. Sie tragen ihr data-tip direkt im Markup (siehe pinHtml) und kommen in dieser
        Schleife gar nicht vor -- die sieht nur data-tiplabel. Deshalb steht hier auch keine
        Ausnahme: es gibt nichts auszunehmen. */
+    /* Der Auslöser ist setSidebarReady() am Ende des Pageload-Workflows. Alles andere ist
+       Rueckfall, damit eine Installation ohne diesen Aufruf nicht im Skelett stehenbleibt:
+
+         SAMMELFENSTER_MS  ab dem ERSTEN Setter. Gemessen an einem Pageload mit vier Aufrufen im
+                           Abstand von 400 bis 500ms: mit 220ms enthuellte die Leiste nach dem
+                           ersten und die drei anderen sprangen danach einzeln um -- genau das,
+                           was nicht sein soll. 1500ms deckt die ganze Kette ab.
+         NOTBREMSE_MS      ab dem Bau der Leiste. Kommt gar kein Setter, steht dort "keine Daten"
+                           statt eines ewigen Skeletts.
+
+       Wer setSidebarReady() ruft, wartet auf keines von beidem. */
+    var SAMMELFENSTER_MS = 1500, NOTBREMSE_MS = 4000;
+    var sammelUhr = null;
+    function enthuellen(){
+      if (sammelUhr){ clearTimeout(sammelUhr); sammelUhr = null; }
+      if (state.enthuellt) return;
+      state.enthuellt = true; vorrat.enthuellt = true;
+      renderTeam(); renderChips(); renderAcc(); renderNav();
+    }
+    function enthuellenAnstossen(){
+      if (state.enthuellt || sammelUhr) return;
+      sammelUhr = setTimeout(function(){ sammelUhr = null; enthuellen(); }, SAMMELFENSTER_MS);
+    }
+    setTimeout(function(){ enthuellen(); }, NOTBREMSE_MS);
+
     function tipsSchalten(){
       var mini = bar.classList.contains("is-mini");
       var els = bar.querySelectorAll("[data-tiplabel]");
@@ -1006,6 +1042,7 @@
     function brandsUebernehmen(liste){
       if (!Array.isArray(liste)) return;
       state.brands = liste.length; state.brandsDa = true;
+      enthuellenAnstossen();
       vorrat.brands = state.brands; vorrat.brandsDa = true;
       var el = elNav.querySelector("[data-brandcount]");
       if (el) el.textContent = String(state.brands);
@@ -1088,6 +1125,7 @@
         }
         state.teams = l;
         state.teamsDa = true;
+        enthuellenAnstossen();
         vorrat.teams = l; vorrat.teamsDa = true;
         var cur = attr("data-team-id");
         var treffer = state.teams.filter(function(t){ return String(t.id) === cur; })[0];
@@ -1113,6 +1151,7 @@
           return false;
         }
         state.userDa = true;
+        enthuellenAnstossen();
         state.user = {
           name: String(p.name || p.full_name || ""),
           email: String(p.email || ""),
@@ -1122,11 +1161,17 @@
         renderAcc();
         return true;
       },
+      /* Sagt: der Pageload ist durch. Was bis hier nicht angekommen ist, kommt auch nicht mehr --
+         also alles zeigen, statt weiter auf Skelette zu warten. Gehoert als LETZTER Schritt in den
+         Pageload-Workflow. Ohne den Aufruf enthuellt das Sammelfenster nach dem ersten Setter,
+         das ist der Normalfall; der Aufruf ist die Zusicherung, kein Muss. */
+      setReady: function(){ enthuellen(); return true; },
       setActive: function(k){
         state.aktiv = aktivNorm(k) || "dashboard";
         renderNav(); return true;
       },
       setCount: function(n){
+        enthuellenAnstossen();
         state.count = (n == null || n === "") ? "" : String(n);
         /* Ein Setter-Aufruf ist eine Antwort -- auch eine leere. Danach kein Skelett mehr. */
         state.countDa = true;
@@ -1168,7 +1213,8 @@
         setSidebarActive: doActive,
         setSidebarCount: doCount,
         setSidebarOpen: doOpen,
-        resetSidebar: doReset
+        resetSidebar: doReset,
+        setSidebarReady: doReady
       },
       forwardShape: { resetSidebar: "id" }
     });
@@ -1207,6 +1253,16 @@
   function doCount(id, n){ var c = resolve(id); return c ? c.setCount(n) : fehlt(id); }
   function doOpen(id, v){ var c = resolve(id); return c ? c.setOpen(v) : fehlt(id); }
   function doReset(id){ var c = resolve(id); return c ? c.reset() : fehlt(id); }
+  /* Ohne id: alle Leisten auf der Seite. Der Pageload-Workflow kennt die Instanz-ID nicht
+     zwingend, und es gibt ohnehin nur eine Navigation. */
+  function doReady(id){
+    if (id){ var c = resolve(id); return c ? c.setReady() : fehlt(id); }
+    var n = 0;
+    [].forEach.call(document.querySelectorAll(".usn-root"), function(r){
+      var ctrl = r.__usnController; if (ctrl && ctrl.setReady){ ctrl.setReady(); n++; }
+    });
+    return n > 0;
+  }
 
   usnBoot(30);
 })();

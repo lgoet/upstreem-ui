@@ -4552,7 +4552,18 @@
             pendingAutoStageName = null;
           }
         }
-        if (params.rows != null){ state.loading = false; state.softReload = false; endSoftReload(); }
+        /* Zeilen sind die Antwort, auf die der Ladezustand gewartet hat -- ALLE Ladezustaende,
+           nicht nur der eigene. state.extLoading blieb bisher stehen, sobald irgendwann einmal
+           setPromptsTableLoading(id,"yes") gerufen worden war: explicitOverride schaltet danach
+           den Attributweg ab, und ohne ein ausdrueckliches "no" endete das Skelett nie. Genau der
+           gemeldete Fall -- die Daten kommen an, der Refresh laeuft, die Tabelle dreht weiter.
+           Die Hausregel dazu steht in CLAUDE.md: ein Ladezustand muss IMMER enden. Wer nach dem
+           Rendern erneut laden will, ruft setLoading("yes") danach -- das ist ein Aufruf, kein
+           Zustand, der von selbst haengenbleibt. */
+        if (params.rows != null){
+          state.loading = false; state.softReload = false; endSoftReload();
+          state.extLoading = false;
+        }
         if (!explicitOverride && hasProcessingAttr()) state.extLoading = readProcessing();
         persist(); render();
       },

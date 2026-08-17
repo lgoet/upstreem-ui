@@ -224,6 +224,19 @@
   Danach kommt bubble_fn_theme_pref von selbst und setzt is_dark -- ein eigener Schritt dafuer
   ist unnoetig. Beim Start meldet core NICHT, dort stellt es nur wieder her, was gespeichert war.
 
+  ── setSidebarReady: alles auf einmal aus dem Ladezustand ────────────────────
+  Die dynamischen Teile kommen aus vier Quellen (Teams, Nutzer, Prompt-Zaehler, Marken-Store) und
+  trafen beim Seitenaufbau in vier verschiedenen Momenten ein -- vier Skelette sprangen einzeln um.
+  Deshalb zeigt jeder Teil sein Skelett, bis EIN Signal kommt. Als LETZTEN Schritt in den
+  Pageload-Workflow:
+
+      window.setSidebarReady();      // ohne Instanz-ID: gilt fuer jede Leiste auf der Seite
+
+  Gemessen mit vier Settern im Abstand von 400 bis 500ms: mit dem Aufruf gehen alle acht Skelette
+  in EINEM Schritt weg. Ohne ihn greift ein Rueckfall (1500ms ab dem ersten Setter, Notbremse 4s
+  ab dem Bau) -- der verhindert ein ewiges Skelett, aber in der Messung blieb es dabei bei
+  gestaffelten Uebergaengen. Der Aufruf ist also nicht Zierde, sondern der eigentliche Weg.
+
   ── Setter (Run javascript) sind jetzt optional ───────────────────────────────
   setSidebarActive und setSidebarCount braucht man nicht mehr: data-active und
   data-prompt-count werden live gelesen. Was weiter ueber Setter kommt, sind Teams und Nutzer

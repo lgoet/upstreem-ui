@@ -1292,7 +1292,11 @@
         }
         if (params.brand_name != null) root.setAttribute("data-brand-name", String(params.brand_name));
         if (params.brand_logo != null) root.setAttribute("data-brand-logo", String(params.brand_logo));
-        if (params.rows != null){ state.loading = false; state.softReload = false; dim.end(); }
+        /* Zeilen sind die Antwort, auf die JEDER Ladezustand gewartet hat, auch der
+           ausdrueckliche. Blieb state.extLoading stehen, drehte die Tabelle nach einem
+           setLoading("yes") ohne passendes "no" fuer immer weiter -- derselbe Fall wie in
+           prompts-table, dort gemeldet. CLAUDE.md: ein Ladezustand muss IMMER enden. */
+        if (params.rows != null){ state.loading = false; state.softReload = false; dim.end(); state.extLoading = false; }
         if (!explicitOverride && hasProcessingAttr()) state.extLoading = readProcessing();
         persist(); render();
       },

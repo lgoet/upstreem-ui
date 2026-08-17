@@ -3,6 +3,27 @@
 (function(){
   "use strict";
 
+  /* ── Nur EINE core.js pro Seite ────────────────────────────────────────────────────────────
+     BUILD: Datum dieser Fassung als Zahl, Format JJJJMMTT (zweistellig zaehlend). Bei jeder
+     Aenderung an core.js mit hochziehen.
+
+     Warum die Sperre GANZ oben steht und nicht erst bei der Zuweisung von window.UpstreemCore:
+     der Loader jeder Komponente entdoppelt nach URL. Zwei Elemente mit verschiedenen data-cdn-pin
+     ergeben zwei verschiedene URLs -- also laeuft core.js ZWEIMAL, und beide Male vollstaendig.
+     Die Verdraengungssperre weiter unten schuetzt nur window.UpstreemCore. Alles andere lief
+     doppelt: window.setUpstreemTheme wurde von der zweiten Fassung ueberschrieben, und die haelt
+     ihren EIGENEN THEME-Zustand mit einer eigenen Abonnentenliste. Komponenten, die sich bei der
+     ersten Fassung angemeldet hatten, hoerten einen Themenwechsel danach nie wieder -- die
+     Flaechen wechselten trotzdem, weil der Durchlauf ueber die Attribute alle Wurzeln erfasst.
+     Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
+     Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
+     Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
+  var BUILD = 20260817;
+  try {
+    var schonDa = window.UpstreemCore;
+    if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
+  } catch(e){}
+
   var CITE_COLOR = {
     "Editorial":"#27a79b", "UGC / Community":"#34a1d1", "Knowledge-Base":"#797ad8",
     "Brand Platforms":"#bc69c9", "Institutional":"#5e7eac", "Competition":"#dd7e3e", "You":"#d35f73"
@@ -5942,9 +5963,9 @@
   window.setUpstreemTeam = setUpstreemTeam;
   window.getUpstreemTeam = getTeam;
 
-  /* BUILD: Datum dieser Fassung als Zahl. Wird von der Verdraengungssperre unten gelesen -- bei
-     jeder Aenderung an core.js mit hochziehen (Format JJJJMMTT, zweistellig zaehlend). */
-  var BUILD = 20260816;
+  /* BUILD steht ganz oben in dieser Datei, zusammen mit der Sperre, die eine zweite Ausfuehrung
+     verhindert. Hier stand die Zuweisung frueher -- an dieser Stelle ist es zu spaet, da haben die
+     Beobachter und Boot-Laeufe schon gearbeitet. */
 
   /* Wartezeit, bevor eine Komponente "keine Daten" zeigt. Verhindert, dass ein noch laufender
      Ladevorgang fuer einen Moment als leeres Ergebnis aufblitzt. Stand in fuenf Dateien einzeln

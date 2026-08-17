@@ -3,7 +3,7 @@
 #main{min-height:100%;padding-left:var(--up-sidebar-w,250px)} pre{padding:10px;white-space:pre-wrap}</style>
 <body><div id="main"><pre id="out">laeuft</pre></div>
 <div id="mira-quick-actions" data-theme="light" data-team=""></div>
-<div class="up-root usn-root" data-instance="s9" data-isdark="no"
+<div class="up-root usn-root" data-instance="s9" data-prompt-count="" data-isdark="no"
      data-team-id="ca880309-251e-4513-8901-8c5f8583f624" data-active="dashboard"
      data-nav-fn="bubble_fn_usnNav"></div>
 <script>
@@ -23,6 +23,21 @@ try { localStorage.removeItem("pref_theme"); } catch(e){}
       var j=document.createElement("script"); j.textContent=texts["core.js"]; document.head.appendChild(j);
       setUpstreemTheme("system");
       var j2=document.createElement("script"); j2.textContent=texts["sidebar.js"]; document.head.appendChild(j2);
+      /* Setter zeitlich versetzt, wie ein Pageload-Workflow sie feuert. */
+      setTimeout(function(){ window.setSidebarTeams("s9", JSON.stringify([
+        {id:"ca880309-251e-4513-8901-8c5f8583f624", name:"LeeUp Media", domain:"lee-up.de", favicon_url:""}])); }, 200);
+      setTimeout(function(){ window.setSidebarUser("s9", JSON.stringify({name:"Lukas", email:"l@upstreem.ai"})); }, 700);
+      setTimeout(function(){ window.setUpstreemBrands([{company_id:"a"},{company_id:"b"}]); }, 1100);
+      setTimeout(function(){ window.setSidebarCount("s9","42"); }, 1500);
+      setTimeout(function(){ window.setSidebarReady(); }, 1600);
+      /* Zwischenstaende protokollieren: wann verschwindet welches Skelett? */
+      window.__verlauf=[];
+      var t0=Date.now();
+      var uhr=setInterval(function(){
+        var bar=document.querySelector(".usn-bar"); if(!bar) return;
+        window.__verlauf.push({ ms: Date.now()-t0, skelette: bar.querySelectorAll(".usn-sk").length });
+      }, 100);
+      setTimeout(function(){ clearInterval(uhr); }, 3000);
       setTimeout(function(){
         var bar=document.querySelector(".usn-bar"), m=bar?bar.querySelector(".usn-mira"):null;
         var acc=bar?bar.querySelector(".usn-accwrap"):null, nav=bar?bar.querySelector(".usn-nav"):null;
@@ -34,8 +49,9 @@ try { localStorage.removeItem("pref_theme"); } catch(e){}
           mira_src: m?(m.getAttribute("src")||"").split("/").pop():"kein bild",
           abstand_nav_zu_konto: (nav&&acc)?Math.round(acc.getBoundingClientRect().top-nav.getBoundingClientRect().bottom):null,
           margin_top: acc?getComputedStyle(acc).marginTop:null };
+        res.verlauf = window.__verlauf.filter(function(v,i,a){ return i===0 || v.skelette!==a[i-1].skelette; });
         document.getElementById("out").textContent=JSON.stringify(res,null,1); window.__fertig=res;
-      }, 1200);
+      }, 3200);
   });
 })();
 </script>

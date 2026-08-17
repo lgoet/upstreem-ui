@@ -1275,7 +1275,11 @@
         /* Ankommende Zeilen beenden nur das selbst ausgeloeste Nachladen. Ein extern gesetzter
            Ladezustand bleibt stehen, bis Bubble ihn selbst aufhebt — sonst wuerde diese Tabelle
            den Skeleton frueher verlassen als die Charts daneben. */
-        if (params.rows != null){ state.loading = false; state.softReload = false; dim.end(); }
+        /* Zeilen sind die Antwort, auf die JEDER Ladezustand gewartet hat, auch der
+           ausdrueckliche. Blieb state.extLoading stehen, drehte die Tabelle nach einem
+           setLoading("yes") ohne passendes "no" fuer immer weiter -- derselbe Fall wie in
+           prompts-table, dort gemeldet. CLAUDE.md: ein Ladezustand muss IMMER enden. */
+        if (params.rows != null){ state.loading = false; state.softReload = false; dim.end(); state.extLoading = false; }
         if (!explicitOverride && hasProcessingAttr()) state.extLoading = readProcessing();
         persist(); render();
       },
