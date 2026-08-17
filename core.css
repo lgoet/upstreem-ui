@@ -268,6 +268,25 @@
     /* Der Bezugswert steht kleiner daneben, nicht als eigene Spalte: er erklaert die Zahl links,
        er ist keine zweite Zahl. */
     .up-var-of { font-size: 12px; font-weight: 400; color: var(--vc-third); white-space: nowrap; }
+
+    /* ---- Variantentabelle auf schmalen Breiten ----------------------------------------------
+       Die zwei Zahlenspalten stehen fest auf je 150px. Auf einem Telefon ist das der ganze
+       Bildschirm: bei 360px Traegerbreite bleiben dem Namen 326 - 300 = 26px. Das ist keine
+       Spalte mehr, das ist ein Rest, und der Name ist die Spalte, um die es hier geht.
+       Nur is-vnarrow, gemessen an der EIGENEN Box (UC.widthTiers) und nicht am Fenster. NICHT
+       zusaetzlich is-narrow: das greift je Komponente ab 560 bis 768px, und dort ist Platz --
+       eine Verengung waere Schaden ohne Not.
+
+       Der Ring fliegt raus. Er ist die zweite Darstellung derselben Zahl, die unmittelbar links
+       daneben steht: wenn Platz fehlt, geht die Wiederholung und nicht der Wert.
+       Der Mention Count faellt ganz weg. Ausdruecklich so gewollt -- lieber eine Zahl weniger als
+       ein Name, von dem drei Buchstaben und Punkte zu sehen sind.
+       Die 130px sind gemessen, nicht gerundet: "Share of Voice" plus die Erklaer-Raute plus
+       12/16 Polsterung und 6 Abstand brauchen 129px. Mit 96px war die SPALTENUEBERSCHRIFT
+       abgeschnitten -- dann verschiebt man das Problem nur von der Zeile in den Kopf. */
+    .up-root.is-vnarrow .up-var-sov .up-varring { display: none; }
+    .up-root.is-vnarrow .up-var-sov, .up-root.is-vnarrow .up-th-vsov { flex: 0 0 130px; }
+    .up-root.is-vnarrow .up-var-cnt, .up-root.is-vnarrow .up-th-vcnt { display: none; }
     .up-root[data-theme="dark"] .up-varring-track { stroke: var(--vc-border); }
     .up-root[data-theme="dark"] .up-varring-fill { stroke: var(--vc-text); }
 

@@ -1,0 +1,42 @@
+<meta charset="utf-8"><title>pin speed</title>
+<body style="font:13px ui-monospace,monospace;padding:16px">
+<pre id="out">laeuft</pre>
+<script>
+/* Wie lange braucht der Pin wirklich, und wie viel geht ueber die Leitung? jsDelivr setzt
+   timing-allow-origin, also liefert die Resource-Timing-API auch transferSize und
+   encodedBodySize fuer die fremde Herkunft. Zwei Durchlaeufe: der erste trifft einen kalten
+   Edge (MISS), der zweite einen warmen. Der Unterschied sagt, ob "langsam" die CDN ist oder
+   die Dateigroesse. */
+var PIN=(new URLSearchParams(location.search)).get("pin")||"c416fbd";
+var FILES=["core.js","core.css","sidebar.js","sidebar.css","quick-actions.js","quick-actions.css",
+           "prompts-table.js","prompts-table.css","brands-overview.js","visibility-chart.js"];
+var out=document.getElementById("out");
+function lauf(runde){
+  var t0=performance.now();
+  return Promise.all(FILES.map(function(f){
+    var url="https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@"+PIN+"/"+f+(runde===2?"":"");
+    var s=performance.now();
+    return fetch(url,{cache:"no-store"}).then(function(r){return r.arrayBuffer()})
+      .then(function(b){ return { f:f, ms:Math.round(performance.now()-s), bytes:b.byteLength }; });
+  })).then(function(rows){
+    var gesamt=Math.round(performance.now()-t0);
+    /* Uebertragene Groesse aus der Resource-Timing-API dazuholen -- b.byteLength ist entpackt. */
+    var timing={};
+    performance.getEntriesByType("resource").forEach(function(e){
+      var n=e.name.split("/").pop();
+      if (e.transferSize) timing[n]=timing[n]||{transfer:e.transferSize, encoded:e.encodedBodySize, dur:Math.round(e.duration)};
+    });
+    return { runde:runde, gesamt_ms:gesamt, dateien:rows.map(function(r){
+      var t=timing[r.f]||{};
+      return r.f+"  "+r.ms+"ms  entpackt "+Math.round(r.bytes/1024)+"kB"+
+             (t.transfer?"  uebertragen "+Math.round(t.transfer/1024)+"kB":"  (keine Timing-Daten)");
+    })};
+  });
+}
+lauf(1).then(function(a){ out.textContent="RUNDE 1 (kalt) gesamt "+a.gesamt_ms+"ms\n"+a.dateien.join("\n");
+  return lauf(2).then(function(b){
+    out.textContent += "\n\nRUNDE 2 (warm) gesamt "+b.gesamt_ms+"ms\n"+b.dateien.join("\n");
+    window.__speed={kalt:a,warm:b};
+  });
+});
+</script>
