@@ -4074,6 +4074,17 @@
       if (!isOwner() || !chart || !lastBuilt) return;
       build(lastBuilt);
     });
+    /* Dasselbe beim Themenwechsel, und aus demselben Grund: die Farben von Linie, Punkten, Achsen
+       und Raster entstehen in build() aus themeColors(), also aus isDark() -- ohne einen Anlass
+       zum Neuzeichnen bleiben sie stehen, waehrend die Karte ringsum ueber CSS laengst gewechselt
+       hat. Ein Chart in der falschen Farbe in einer richtig gefaerbten Karte.
+       Hier im Kit und nicht in den fuenf Komponenten: jede haette denselben Beobachter gebraucht,
+       und eine haette ihn irgendwann nicht bekommen. Genau das war der Fall -- brand-detail hatte
+       data-isdark nicht einmal im Filter. */
+    onTheme(function(){
+      if (!isOwner() || !chart || !lastBuilt) return;
+      build(lastBuilt);
+    });
 
     function themeColors(){
       return isDark()
@@ -4497,6 +4508,17 @@
        below) can tell "same slices/bars, just different selection" from "genuinely new data" —
        only the former is safe to patch in place. */
     var lastKeys = null, lastMode = null;
+    /* Was zuletzt gezeichnet wurde, damit ein Themenwechsel es wiederholen kann. Die Farben von
+       Ringsegmenten, Balken, Beschriftung und Rahmen entstehen beim Zeichnen aus isDark() -- ohne
+       Wiederholung bleiben sie stehen, waehrend die Karte ringsum ueber CSS laengst wechselt.
+       Dieselbe Ueberlegung wie in makeLine, nur braucht der Doughnut seine Daten zurueck: er hat
+       kein lastBuilt wie die Linie. */
+    var letzteZeichnung = null;
+    onTheme(function(){
+      if (!isOwner() || !letzteZeichnung) return;
+      if (letzteZeichnung.art === "donut") renderDonut(letzteZeichnung.daten);
+      else renderBars(letzteZeichnung.daten);
+    });
     function keysOf(d){ return (d || []).map(function(it){ return it.key; }).join(""); }
 
     function destroy(){
@@ -4524,6 +4546,7 @@
       if (!isOwner()) return;
       destroy();
       d = d || [];
+      letzteZeichnung = { art: "donut", daten: d };
       lastKeys = keysOf(d); lastMode = "donut";
       if (isEmpty(d)){ empty(); return; }
       body.innerHTML =
@@ -4594,6 +4617,7 @@
     function renderBars(d){
       if (!isOwner()) return;
       destroy();
+      letzteZeichnung = { art: "bars", daten: d };
       d = (d || []).slice().sort(function(a, b){ return b.share - a.share; });
       if (isEmpty(d)){ empty(); return; }
       lastKeys = keysOf(d); lastMode = "bar";

@@ -586,9 +586,13 @@
     /* Aendert der Loader sein Attribut, muss die Komponente das sehen -- sonst bliebe das
        Skelett stehen oder erschiene nie. */
     if (window.MutationObserver){
-      new MutationObserver(function(){ if (!LOADING_EXPLICIT[instanceId]) render(); })
-        .observe(root, { attributes: true,
-                         attributeFilter: ["data-processing", "data-processing2", "data-isprocessing"] });
+      /* data-isdark gehoert MIT in den Filter: die Ueberschriften, die KPI-Zeile und die Legende
+         entstehen in render() und lasen den Wert bisher nur beim ersten Bau. Die Kurve selbst
+         zeichnet das Kit von sich aus neu -- makeLine haengt seit dieser Runde an UC.onTheme. */
+      new MutationObserver(function(){
+        if (!LOADING_EXPLICIT[instanceId]) render();
+      }).observe(root, { attributes: true,
+                         attributeFilter: ["data-isdark", "data-processing", "data-processing2", "data-isprocessing"] });
     }
 
     render();
