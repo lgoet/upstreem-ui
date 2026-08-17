@@ -40,7 +40,8 @@
   width: 16px; height: 16px; flex: 0 0 16px; border-radius: 5px;
   border: 1px solid var(--vc-border); background: var(--vc-bg);
   display: inline-flex; align-items: center; justify-content: center; color: transparent;
-  transition: background .14s ease, border-color .14s ease, color .14s ease;
+  /* Timing aus core, damit alle Kaestchen der App gleich schnell sind. */
+  transition: background var(--up-cb-t) var(--up-cb-ease), border-color var(--up-cb-t) var(--up-cb-ease), color var(--up-cb-t) var(--up-cb-ease);
 }
 .udb-cb svg { width: 10px; height: 10px; display: block; }
 .udb-matched.is-on .udb-cb { background: var(--vc-text); border-color: var(--vc-text); color: var(--vc-bg); }

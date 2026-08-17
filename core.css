@@ -28,6 +28,10 @@
          zwei Deckkraefte. --up-focus-w steht hier und nicht in den Regeln, weil die Ringbreite
          sonst in zehn Dateien einzeln stuende und beim naechsten Mal auseinanderliefe. */
       --up-focus: #4A9EFF; --up-focus-ring: rgba(74,158,255,0.20); --up-focus-w: 2px;
+      /* Kaestchen: EIN Timing fuer alle Haken der App. Die Anmeldeseite hatte es zuerst (dort
+         --uau-t), die Tabellen und die Dropdown-Haken hatten gar keinen Uebergang und sprangen.
+         Zwei Werte an einer Stelle, damit sie nicht wieder auseinanderlaufen. */
+      --up-cb-t: 140ms; --up-cb-ease: cubic-bezier(.4, 0, .2, 1);
       /* Sticky-Header: Abstand von oben in px = Hoehe der Floating-Topbar. Wird auch ueber
          data-sticky-top am Root gesetzt (siehe oben bei den dynamischen Werten). */
       --up-sticky-top: 171px; --up-thead-off: 32px;
@@ -450,12 +454,17 @@
     .up-filter-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
     .up-filter-item { display: flex; align-items: center; gap: 10px; padding: 6px 9px; border-radius: 8px; cursor: pointer; min-width: 0; }
     .up-filter-item:hover { background: var(--vc-heading-bg); }
-    .up-filter-check { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #fff; }
+    .up-filter-check { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #fff;
+      transition: background-color var(--up-cb-t) var(--up-cb-ease), border-color var(--up-cb-t) var(--up-cb-ease); }
     /* display:block, not inline: an inline SVG sits on the text baseline, which pushes the tick a
        little low inside the 16px box -- the "not quite vertically centred" report. block + the
        flex centring on the parent puts it on the true middle. */
-    .up-filter-check svg { width: 11px; height: 11px; display: none; }
-    .up-filter-item.is-checked .up-filter-check svg { display: block; }
+    /* Der Haken wird ein- und ausgeblendet statt per display umgeschaltet -- display kennt
+       keinen Zwischenschritt, und genau das war das Springen. Er waechst dabei aus 70%: dieselbe
+       Bewegung wie beim Oeffnen der Dropdown-Panels, nur kleiner. */
+    .up-filter-check svg { width: 11px; height: 11px; display: block; opacity: 0; transform: scale(.7);
+      transition: opacity var(--up-cb-t) var(--up-cb-ease), transform var(--up-cb-t) var(--up-cb-ease); }
+    .up-filter-item.is-checked .up-filter-check svg { opacity: 1; transform: scale(1); }
     .up-filter-item.is-checked .up-filter-check { background: var(--vc-text); border-color: var(--vc-text); }
     /* Gewaehlte Zeile traegt den App-Selected-Ton -- im Types-Dropdown immer, in einer
        Marken-Liste nur auf Ansage.
@@ -763,9 +772,10 @@
        Haken -- deshalb sah jeder Sorter anders aus als die Filterlisten daneben.
        .up-pop-opt ist der geteilte Optionstyp: diese eine Regel erreicht jeden Sorter der App. */
     .up-pop-opt:hover, .up-pop-opt.is-active { background: var(--up-sel-bg); }
-    .up-pop-opt .up-check { width: 16px; height: 16px; color: var(--vc-text); opacity: 0; flex: 0 0 auto; }
+    .up-pop-opt .up-check { width: 16px; height: 16px; color: var(--vc-text); opacity: 0; flex: 0 0 auto;
+      transform: scale(.7); transition: opacity var(--up-cb-t) var(--up-cb-ease), transform var(--up-cb-t) var(--up-cb-ease); }
     .up-pop-opt .up-check svg { width: 16px; height: 16px; display: block; }
-    .up-pop-opt.is-active .up-check { opacity: 1; }
+    .up-pop-opt.is-active .up-check { opacity: 1; transform: scale(1); }
     .up-pop-div { height: 1px; background: var(--vc-border); margin: 7px 4px; }
     .up-pop-sub { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--vc-muted); padding: 8px 10px 14px; }
     .up-dense { display: inline-flex; width: 100%; padding: 0; gap: 0; background: var(--vc-switch-bg); border-radius: 8px; height: 34px; }
@@ -905,9 +915,10 @@
     .up-scale-opt:hover, .up-scale-opt.is-active { background: var(--up-sel-bg); }
     .up-scale-opt-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
     .up-scale-opt-lbl { font-size: 13.5px; font-weight: 500; color: var(--vc-text); }
-    .up-scale-opt .up-check { width: 16px; height: 16px; color: var(--vc-text); opacity: 0; flex: 0 0 auto; }
+    .up-scale-opt .up-check { width: 16px; height: 16px; color: var(--vc-text); opacity: 0; flex: 0 0 auto;
+      transform: scale(.7); transition: opacity var(--up-cb-t) var(--up-cb-ease), transform var(--up-cb-t) var(--up-cb-ease); }
     .up-scale-opt .up-check svg { width: 16px; height: 16px; display: block; }
-    .up-scale-opt.is-active .up-check { opacity: 1; }
+    .up-scale-opt.is-active .up-check { opacity: 1; transform: scale(1); }
     /* "Nebeneinander, etwas übereinandergeschoben, mit sichtbarem Gap dazwischen" — each dot overlaps
        the previous by a third, with a background-colored ring (border) standing in for the gap, so the
        seam between colors stays visible even though the dots physically overlap (the same idiom as an

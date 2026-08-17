@@ -48,7 +48,16 @@
   width: var(--upt-check-size); height: var(--upt-check-size); border-radius: 5px;
   border: 1.5px solid var(--vc-border); flex: 0 0 auto; cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center; color: #fff;
+  /* Timing aus core (--up-cb-t), damit alle Kaestchen der App gleich schnell sind. Vorher hatte
+     dieses gar keinen Uebergang und sprang, waehrend das der Anmeldeseite weich lief. */
+  transition: background-color var(--up-cb-t) var(--up-cb-ease), border-color var(--up-cb-t) var(--up-cb-ease);
 }
+/* Der Haken waechst aus 70% ein statt zu erscheinen -- dieselbe Bewegung wie im Filter. */
+.upt-check svg { opacity: 0; transform: scale(.7);
+  transition: opacity var(--up-cb-t) var(--up-cb-ease), transform var(--up-cb-t) var(--up-cb-ease); }
+.upt-check.is-checked svg { opacity: 1; transform: scale(1); }
+.upt-check.is-indeterminate svg { opacity: 0; }
+.upt-check.is-indeterminate::after { transition: opacity var(--up-cb-t) var(--up-cb-ease); }
 /* Invisible hit-target extension — the box itself stays the same visual size, but a click up to
    8px outside it still lands here instead of missing. A ::before is part of its host's hit-test
    area without being a separate element clicks could land "on" instead. */

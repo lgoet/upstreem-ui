@@ -70,6 +70,12 @@
     ]}
   ];
 
+  /* Genau die Schluessel, die usnNav.key ausgibt -- data-active nimmt dieselben. Ein Wert, der
+     hier nicht vorkommt, hebt nichts hervor; das darf nicht stumm passieren. */
+  var NAV_KEYS = BLOECKE.reduce(function(a, b){
+    return a.concat(b.items.map(function(it){ return it.key; }));
+  }, []);
+
   var KONTO = [
     { head: "Account Settings", items: [
       { key: "preferences", label: "Account Preferences", icon: "bolt" },
@@ -173,7 +179,13 @@
          "noch nichts da" von "da und leer". */
       brands: null, brandsDa: false,
       user: { name: "", email: "", avatar: "" },
+      /* Zwei Fragen, zwei Flaggen. Traegt das Element das Attribut ueberhaupt, will die Seite
+         einen Zaehler -- dann steht bis zum ersten Wert ein Skelett. Fehlt das Attribut ganz,
+         gibt es keinen Zaehler und auch kein Skelett. Sonst haette eine Seite, die bewusst ohne
+         Zahl arbeitet, dort fuer immer einen laufenden Balken. */
+      countErwartet: root.hasAttribute("data-prompt-count"),
       count: attr("data-prompt-count"),
+      countDa: attr("data-prompt-count") !== "",
       suche: "",
       gemeldet: ""           /* zuletzt gefeuerter usnState-Payload, siehe anwenden() */
     };
@@ -328,13 +340,27 @@
       /* Die Palette speichert Favoriten pro Team -- ihr data-team muss also mitwandern. */
       if (typeof qaAufbauen === "function") qaAufbauen(0);
     }
+    /* Ein data-active, das keinem Nav-Schluessel entspricht, hebt nichts hervor -- und das sieht
+       aus wie ein Fehler in der Leiste, obwohl der Wert daneben liegt. Einmal sagen, welche
+       Schluessel es gibt. */
+    var aktivGemeldet = "";
+    function aktivPruefen(){
+      if (!state.aktiv || NAV_KEYS.indexOf(state.aktiv) >= 0) return;
+      if (aktivGemeldet === state.aktiv) return;
+      aktivGemeldet = state.aktiv;
+      if (window.console) console.warn("[sidebar] \"" + state.aktiv + "\" ist kein Menuepunkt. " +
+        "Moeglich sind: " + NAV_KEYS.join(", "));
+    }
     function renderNav(){
+      aktivPruefen();
       elNav.innerHTML = BLOECKE.map(function(b){
         return '<div class="usn-block">' +
           '<span class="usn-head">' + esc(b.head) + '</span>' +
           b.items.map(function(it){
             var extra = "";
-            if (it.count) extra = '<span class="usn-count usn-fade" data-count>' + esc(state.count || "") + '</span>';
+            if (it.count) extra = '<span class="usn-count usn-fade" data-count>' +
+              (state.countDa ? esc(state.count || "")
+                             : (state.countErwartet ? '<span class="usn-sk"></span>' : "")) + '</span>';
             if (it.brands) extra = '<span class="usn-count usn-fade" data-brandcount>' +
               (state.brandsDa ? esc(state.brands == null ? "" : String(state.brands))
                               : '<span class="usn-sk"></span>') + '</span>';
@@ -561,10 +587,13 @@
             if (k && k !== state.aktiv){ state.aktiv = k; renderNav(); }
           } else if (n === "data-prompt-count"){
             var z = attr("data-prompt-count");
-            if (z !== state.count){
+            if (z !== state.count || !state.countDa){
               state.count = z;
+              state.countErwartet = true;
+              if (z !== "") state.countDa = true;
               var el = elNav.querySelector("[data-count]");
-              if (el) el.textContent = state.count;
+              if (el) el.innerHTML = state.countDa ? esc(state.count)
+                                                  : '<span class="usn-sk"></span>';
             }
           } else if (n === "data-team-id"){
             var t = attr("data-team-id");
@@ -704,6 +733,8 @@
       setActive: function(k){ state.aktiv = String(k || ""); renderNav(); return true; },
       setCount: function(n){
         state.count = (n == null || n === "") ? "" : String(n);
+        /* Ein Setter-Aufruf ist eine Antwort -- auch eine leere. Danach kein Skelett mehr. */
+        state.countDa = true;
         var el = elNav.querySelector("[data-count]");
         if (el) el.textContent = state.count;
         return true;

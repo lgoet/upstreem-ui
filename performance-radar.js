@@ -413,7 +413,10 @@
        JS/CSS while the Bubble markup is a hand-pasted copy, so an icon that only lives in markup
        silently stays on whatever version was pasted last (core.js says the same about
        SLIDERS_ICON at its definition). */
-    if (elPickBtn && UC.SLIDERS_ICON && !elPickBtn.querySelector("svg")){
+    /* IMMER schreiben, nicht nur in einen leeren Knopf. Der Vorbehalt war der Grund, warum das
+       Fader-Zeichen hier auf dem Stand blieb, den das Bubble-Markup gerade trug: der CDN-Pin
+       liefert JS/CSS, das Markup ist eine handgemachte Kopie. */
+    if (elPickBtn && UC.SLIDERS_ICON){
       elPickBtn.innerHTML = UC.SLIDERS_ICON + '<span class="up-badge is-dot"></span>';
     }
 

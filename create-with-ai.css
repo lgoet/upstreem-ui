@@ -275,7 +275,8 @@
   width: 18px; height: 18px; flex: 0 0 auto; margin-top: 1px; border-radius: 6px;
   border: 1px solid var(--vc-border); background: var(--up-surface);
   display: inline-flex; align-items: center; justify-content: center; color: transparent;
-  transition: background .14s ease, border-color .14s ease, color .14s ease;
+  /* Timing aus core, damit alle Kaestchen der App gleich schnell sind. */
+  transition: background var(--up-cb-t) var(--up-cb-ease), border-color var(--up-cb-t) var(--up-cb-ease), color var(--up-cb-t) var(--up-cb-ease);
 }
 .uca-cb svg { width: 11px; height: 11px; display: block; }
 .uca-cb-row:hover .uca-cb { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }

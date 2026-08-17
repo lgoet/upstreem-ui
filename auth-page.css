@@ -275,8 +275,10 @@
      dunkel, obwohl nur die :checked-Regel sie setzt. */
   background-color: var(--vc-bg);
   background-repeat: no-repeat; background-position: center; background-size: 11px 11px;
-  transition: background-color var(--uau-t) var(--uau-ease),
-              border-color var(--uau-t) var(--uau-ease);
+  /* Timing aus core (--up-cb-t) statt aus dem eigenen --uau-t: dieses Kaestchen war das
+     Vorbild fuer alle anderen, jetzt teilen sie eine Quelle. */
+  transition: background-color var(--up-cb-t) var(--up-cb-ease),
+              border-color var(--up-cb-t) var(--up-cb-ease);
 }
 /* Der ungehakte Zustand AUSDRUECKLICH, nicht als Rueckfall auf die Basisregel: gemessen blieb
    das Kaestchen dort dunkel. :not(:checked) und :checked schliessen einander aus, die
