@@ -1323,6 +1323,34 @@
 
 /* ---------- line chart ---------- */
 .up-line-wrap { position: relative; flex: 1 1 auto; min-height: 0; width: 100%; }
+
+/* ---- Wasserzeichen im Liniendiagramm --------------------------------------------------------
+   Das Div setzt core.js (injectWatermark) leer ein, alles Sichtbare steht hier -- so wechselt die
+   Datei beim Themenwechsel von selbst mit, sobald setUpstreemTheme data-theme umstellt.
+
+   Zur Groesse, weil sie nicht mehr die alte ist und das erklaert werden muss: das frueher inline
+   gezeichnete Zeichen hatte ein Seitenverhaeltnis von 3.84 (707 zu 184), die Lockup-Datei hat
+   7.04 (760.5 zu 108) -- sie ist deutlich flacher. "Gleiche Groesse" geht damit nicht auf beiden
+   Achsen. Gemessen wurde die TINTE, also der wirklich bedeckte Bereich, per Pixelabtastung:
+     alt, Kasten 150 x 39.04   ->  Tinte 147 x 28
+     neu, Kasten 150 x 21.31   ->  Tinte 141 x 22   (gleiche Breite, 21% flacher)
+     neu, Kasten 275 x 39.04   ->  Tinte 258 x 40   (gleiche Hoehe, 75% breiter)
+   Genommen ist der Kasten mit der GLEICHEN FLAECHE: 173 x 24.57 ergibt Tinte etwa 163 x 25, also
+   beide Achsen innerhalb von zehn Prozent des alten Zeichens. Lage (top 47%, mittig) und
+   Deckkraft (0.05) sind unveraendert.
+
+   background-size: contain und nicht 100% 100%: die Datei behaelt ihr Verhaeltnis, auch wenn
+   jemand den Kasten spaeter anfasst. */
+.upstreem-watermark {
+  position: absolute; top: 47%; left: 50%; transform: translate(-50%, -50%);
+  width: 173px; height: 24.57px;
+  opacity: 0.05; pointer-events: none; z-index: 2;
+  background-repeat: no-repeat; background-position: center; background-size: contain;
+  background-image: url("https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-lockup-1f1f1f.svg");
+}
+.up-root[data-theme="dark"] .upstreem-watermark {
+  background-image: url("https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-lockup-e0e0e0.svg");
+}
 .up-line-canvas { display: block; width: 100% !important; height: 100% !important; }
 .up-line-empty { position: absolute; left: 0; right: 0; top: 58%; transform: translateY(-50%); display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--vc-muted); }
 

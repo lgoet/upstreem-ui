@@ -239,7 +239,10 @@
         var f = modeOf(state.mode).fmt;
         return f === "rank" ? "Rank:" : (f === "sent" ? "Sentiment:" : "Share:");
       },
-      watermark: false
+      /* watermark stand hier auf false und fehlte damit als einziger Linienchart der App. Kein
+         Grund war notiert -- die Kurve hat dieselbe Groesse wie im visibility-chart, also traegt
+         sie das Zeichen auch. */
+      watermark: true
     });
 
     /* ---- Rendern ---------------------------------------------------------------------------- */

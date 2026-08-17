@@ -229,7 +229,9 @@
       wrap: lineWrap, canvas: lineCv, legend: null,
       isDark: darkNow, isOwner: isOwner,
       gran: function(){ return "day"; },
-      watermark: false
+      /* "in jedem Linechart" -- auch hier. Die Kurve ist 260px hoch (.upd-chartsec .upd-linewrap),
+         also in derselben Groessenordnung wie die anderen; das Zeichen sitzt nicht im Weg. */
+      watermark: true
     });
 
     /* ---------------- KPIs ----------------
