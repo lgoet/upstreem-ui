@@ -477,6 +477,28 @@
 
     var elHeadCount = root.querySelector(".up-head-count");
     var elTbody     = root.querySelector(".up-tbody");
+    /* Fehlt der Zeilenbereich, wird er angelegt statt die Komponente sterben zu lassen. Das Markup
+       steht im Bubble-Element, also in einer handgemachten Kopie -- wer beim Einfuegen eine Zeile
+       verliert, hat sonst keinen Fehler im UI, sondern einen Wurf in initRoot. Und der reisst den
+       ganzen Run-JS-Schritt mit, also auch die Setter der Komponenten darunter. Acht Stellen
+       schreiben in elTbody, die erste wuerde werfen.
+       Der Platz ist eindeutig: in .up-table hinter .up-thead. Ohne .up-table bleibt nur die
+       Meldung -- dann fehlt mehr als eine Zeile, und Raten macht es schlimmer. */
+    if (!elTbody){
+      var tab = root.querySelector(".up-table");
+      if (tab){
+        elTbody = document.createElement("div");
+        elTbody.className = "up-tbody";
+        tab.appendChild(elTbody);
+        if (window.console) console.warn("[prompts-table] .up-tbody fehlte im Markup und wurde " +
+          "angelegt. Bitte im Bubble-Element nachziehen -- bubble/prompts_table_bubble.html hat es.");
+      } else if (window.console){
+        console.error("[prompts-table] .up-tbody UND .up-table fehlen in data-instance " +
+          JSON.stringify(root.getAttribute("data-instance")) + ". Die Tabelle kann nicht zeichnen; " +
+          "das Markup im Bubble-Element ist unvollstaendig.");
+        return null;
+      }
+    }
     var elFoot      = root.querySelector(".up-foot");
     var elSearch    = root.querySelector(".up-search");
     var elSearchIn  = root.querySelector(".up-search-input");

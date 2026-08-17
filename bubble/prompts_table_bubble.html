@@ -115,9 +115,25 @@
   ── Bulk actions (the floating bar, shown while rows are selected) ────────────
   Both carry the SELECTION in one of two shapes. Branch your workflow on "mode":
 
-    mode:"ids"     {"mode":"ids","count":12,"ids":"id1,id2,…"}
+    mode:"ids"     {"mode":"ids","count":12,"ids":"id1,id2,…","excluded_ids":""}
     mode:"filter"  {"mode":"filter","count":1240,"query":"…","brand_mentioned":"yes",
-                    "status":"active","order":"visibility_desc"}
+                    "status":"active","order":"visibility_desc","excluded_ids":"id7,id9"}
+    mode:"filter_group"
+                   {"mode":"filter_group","count":18,"group_key":"…","tag_ids":"…",
+                    "tagmode":"and","is_custom":"no","untagged":"no","excluded_ids":"id7"}
+
+  ── excluded_ids MUSS ausgewertet werden ─────────────────────────────────────
+  Bei "Select all N" kann der Nutzer danach einzelne Zeilen wieder ABWAEHLEN. Die Komponente
+  schickt sie als excluded_ids mit -- eine Liste von Kennungen, kommagetrennt, IMMER dabei, im
+  ids-Modus leer. Der Server muss sie beim Aufloesen des Praedikats abziehen:
+
+      ... where <die Bedingungen aus dem Payload> and prompt.id not in (excluded_ids)
+
+  Wer das Feld ignoriert, fasst genau die Zeilen an, die der Nutzer ausgenommen hat -- und die
+  Zahl im Balken (count) hat sie schon abgezogen, die Anzeige stimmt also nicht mit der Wirkung
+  ueberein. Das faellt erst auf, wenn jemand abwaehlt, und dann sieht es wie ein Serverfehler aus.
+
+      excluded_ids  ->  (?<="excluded_ids":")[^"]*
 
   "filter" appears only after the user takes the "Select all N prompts" link. That link is
   offered ONLY once the header checkbox has selected the whole visible page AND more pages exist
@@ -226,6 +242,7 @@
     (?<="prompt_text":")[^"]*
     (?<="brand_mentioned":")[^"]*                           (?<="status":")[^"]*
     (?<="mode":")[^"]*         (?<="ids":")[^"]*            (?<="tag_ids":")[^"]*
+    (?<="excluded_ids":")[^"]*                              (?<="group_key":")[^"]*
     (?<="prompt_ids":")[^"]*   (?<="new_topic_name":")[^"]*
     (?<="new_topic_emoji":")[^"]*     (?<="new_topic_hex_light":")[^"]*  (?<="new_topic_hex_dark":")[^"]*
     (?<="brands":")[^"]*
@@ -834,7 +851,22 @@
      by core.js's own root observer + 1.5s heartbeat, it does not need the scripts evaluated
      again (verified against a root injected with the scripts deliberately run only once). */
   var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
-  function once(url, make){ if (L[url]) return; L[url] = 1; make(url); }
+  /* Entdoppelt nach DATEINAME, nicht nach URL. Zwei Elemente mit verschiedenen data-cdn-pin
+     ergeben zwei URLs fuer dieselbe Datei -- vorher lud der Loader dann beide: core.js lief
+     zweimal, und core.css stand zweimal im Dokument, wobei die spaetere die fruehere ueberschrieb.
+     Wer gewinnt, entschied die Reihenfolge, in der Bubble die Elemente baut.
+     Der erste Pin gewinnt jetzt, und ein zweiter wird gemeldet -- sonst sucht man den Unterschied
+     zwischen zwei Seiten, auf denen dieselbe Version verschiedene Dinge tut. */
+  function once(url, make){
+    var name = url.slice(url.lastIndexOf("/") + 1);
+    if (L[name]){
+      if (L[name] !== url && window.console) console.warn("upstreem: " + name +
+        " ist schon von einem anderen Pin geladen. Geladen bleibt " + L[name] +
+        ", ignoriert wird " + url + ". Setzt alle Elemente auf denselben Pin.");
+      return;
+    }
+    L[name] = url; make(url);
+  }
   function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
   function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
   css("core.css"); css("prompts-table.css");

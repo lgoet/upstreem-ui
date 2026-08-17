@@ -51,7 +51,22 @@
   /* Dieselbe Registry, die die Loader in den Komponenten benutzen. Dadurch sehen die dort später
      ihre URLs als "schon geladen" und tun gar nichts mehr — das ist der ganze Trick. */
   var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
-  function once(url, make){ if (L[url]) return; L[url] = 1; make(url); }
+  /* Entdoppelt nach DATEINAME, nicht nach URL. Zwei Elemente mit verschiedenen data-cdn-pin
+     ergeben zwei URLs fuer dieselbe Datei -- vorher lud der Loader dann beide: core.js lief
+     zweimal, und core.css stand zweimal im Dokument, wobei die spaetere die fruehere ueberschrieb.
+     Wer gewinnt, entschied die Reihenfolge, in der Bubble die Elemente baut.
+     Der erste Pin gewinnt jetzt, und ein zweiter wird gemeldet -- sonst sucht man den Unterschied
+     zwischen zwei Seiten, auf denen dieselbe Version verschiedene Dinge tut. */
+  function once(url, make){
+    var name = url.slice(url.lastIndexOf("/") + 1);
+    if (L[name]){
+      if (L[name] !== url && window.console) console.warn("upstreem: " + name +
+        " ist schon von einem anderen Pin geladen. Geladen bleibt " + L[name] +
+        ", ignoriert wird " + url + ". Setzt alle Elemente auf denselben Pin.");
+      return;
+    }
+    L[name] = url; make(url);
+  }
   /* Nicht mehr render-blockierend. Ein per JS eingehaengtes <link rel=stylesheet> blockiert das
      erste Zeichnen genauso wie ein statisches -- bei zwanzig Dateien hintereinander ist das der
      Grund, warum der Seitenaufbau nach dem Ausrollen dieses Preloads spuerbar traeger wurde
