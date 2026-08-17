@@ -275,11 +275,34 @@
 /* Der aktive Punkt traegt Flaeche UND Gewicht -- Farbe allein reicht nicht, wenn jemand sie
    nicht unterscheiden kann. */
 .usn-item.is-active { background: var(--usn-sel); font-weight: 600; }
-.usn-ic { position: relative; width: 17px; height: 17px; flex: 0 0 17px; color: var(--vc-muted); display: inline-flex; }
+/* Die Icon-Spalte ist 22px breit, das Symbol darin bleibt 17px und sitzt mittig. 22, weil in
+   derselben Spalte auch die Marken-Logos der angehefteten Zeilen stehen -- und die brauchen die
+   Platte und den Rand aus den Tabellen, sonst sehen sie anders aus als dort. Eine gemeinsame
+   Spaltenbreite ist die einzige Art, Symbol und Logo auf dieselbe Kante zu bringen UND die
+   Beschriftungen aller Zeilen an derselben Stelle beginnen zu lassen. */
+.usn-ic { position: relative; width: 22px; height: 22px; flex: 0 0 22px; color: var(--vc-muted);
+  display: inline-flex; align-items: center; justify-content: center; }
 .usn-ic svg { width: 17px; height: 17px; display: block; }
-/* Mira ist eine Wortmarke: das Bild liegt UEBER dem Rueckfall-Symbol, nicht daneben, und
-   verdeckt es. Faellt das Bild aus, faellt has-mira mit -- dann steht der Stern wieder da. */
-.usn-mira { position: absolute; inset: 0; width: 17px; height: 17px; display: block; object-fit: contain; }
+/* Mira ist eine Wortmarke: die Maske liegt UEBER dem Rueckfall-Symbol, nicht daneben, und
+   verdeckt es. has-mira kommt erst, wenn die Datei geladen ist (miraLaden in sidebar.js) --
+   bleibt sie aus, steht der Stern weiter da. */
+/* Die Wortmarke ist ein Bild mit eigener Farbe: hell #1f1f1f, dunkel #e0e0e0. Das sind genau die
+   Werte von --vc-text -- also der Ton der AKTIVEN Zeile. Ihre Nachbarn im Ruhezustand tragen
+   --vc-muted, und deshalb stand die Marke im Dunkelmodus heller als alles um sie herum. Das war
+   der gemeldete Farbfehler; die Zuordnung hell/dunkel war richtig.
+   Eine Maske waere der saubere Weg gewesen (dann traegt die Marke currentColor wie jedes Symbol),
+   geht hier aber nicht: die Datei liegt auf Bubbles CDN ohne CORS-Header, und ein fremdes SVG wird
+   als mask-image verworfen. Gemessen: die Stelle blieb leer, waehrend dieselbe Maske als
+   data:-URL malt -- also die Herkunft, nicht die Syntax.
+   Bleibt brightness. Die Faktoren sind gerechnet, weil die Datei genau einen Grauwert traegt:
+     hell    31 (#1f1f1f)  ->  111 (--vc-muted #6f737c):  111/31  = 3.58
+     dunkel  224 (#e0e0e0) ->  160 (--vc-muted #a0a0a0):  160/224 = 0.714
+   In der aktiven Zeile KEIN Filter: dort ist der Zielton --vc-text, und den traegt die Datei schon.
+   17px mittig in der 22px-Spalte, wie das Symbol darunter. */
+.usn-mira { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 17px; height: 17px; display: block; object-fit: contain; filter: brightness(3.58); }
+.usn-bar[data-theme="dark"] .usn-mira { filter: brightness(0.714); }
+.usn-item.is-active .usn-mira { filter: none; }
 .usn-ic.has-mira svg { visibility: hidden; }
 .usn-item.is-active .usn-ic { color: var(--vc-text); }
 .usn-txt { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -303,19 +326,21 @@
 /* 27 statt 28. Faktor 0.964 -- der Radius geht anteilig mit (8 -> 7.7). Polsterung (2px) und
    der Ueberlappungsversatz (-4px) bleiben: beides sind ganzzahlige Pixelwerte, die eine
    Aenderung von 3.6% nicht ueberleben, und der Versatz haengt zusaetzlich am Ring. */
-.usn-chips .up-stack-item { width: 27px; height: 27px; flex: 0 0 27px; }
-.usn-chips .up-stack-vis { border-radius: 7.7px; }
-/* Der helle Rahmen um die Logos, und warum er nur im Dunkelmodus auffiel.
-   Gemessen in beiden Themen: die Geometrie ist identisch (2px Polsterung plus 1px Rahmen, also
-   3px sichtbarer Rand um ein 21px-Bild in einer 27px-Kachel). Nur der Kontrast ist es nicht:
-     hell    Platte #ffffff auf einer Leiste in #f5f5f5   -> 10 Stufen, unsichtbar
-     dunkel  Platte #e0e0e0 auf einer Leiste in #1b1b1b   -> 197 Stufen, ein weisser Kasten
-   Die Platte selbst bleibt (--vt-logo-bg ist im Dunkeln absichtlich hell: viele Favicons sind
-   transparente PNGs mit dunkler Zeichnung und waeren auf dunklem Grund unlesbar). Sie darf nur
-   nicht mehr als RAND ringsum stehen. Also 1px statt 2px Polsterung und kein Rahmen -- genau das
-   Mass, das .up-logo-box im Team-Umschalter direkt darueber hat. Das Bild waechst dabei von 21
-   auf 25px und fuellt die Kachel; hinter einem transparenten Logo liegt die Platte weiter. */
-.usn-chips .up-stack-vis { padding: 1px; border: 0; }
+/* Ein Mass fuer alle Logos der Leiste, und es ist das Bauteil aus den Tabellen -- nur kleiner.
+   Faktor 22/28 = 0.786 auf ALLE Werte von .up-stack-vis:
+     Radius 8 -> 6.3, Polsterung 2 -> 1.6, Bildradius 6 -> 4.7, Buchstabe 10 -> 7.9,
+     Ueberlappung -4 -> -3.1.
+   Der Ring bleibt bei 2px in --usn-bg und wird NICHT mitskaliert: er trennt hier gegen die Leiste
+   und nicht gegen eine Tabellenzeile, dafuer stand die 2 schon da.
+   Warum 22 und nicht die 27 von vorher: mit 27 und 1px Polsterung war das Bild 25px und damit
+   deutlich groesser als in jeder Tabelle -- das war der Fehler der letzten Runde. Bei 22 sind es
+   16.8px. Das liegt zwischen den 21px der alten Chips und den 15.6px der alten Pin-Logos, also
+   genau dort, wo ein Logo der Tabellen bei dieser Zeilenhoehe landet. */
+.usn-chips .up-stack-item { width: 22px; height: 22px; flex: 0 0 22px; }
+.usn-chips .up-stack-item + .up-stack-item { margin-left: -3.1px; }
+.usn-chips .up-stack-vis { border-radius: 6.3px; padding: 1.6px; border: 1px solid var(--vc-border); }
+.usn-chips .up-stack-item img { border-radius: 4.7px; }
+.usn-chips .up-stack-ltr { font-size: 7.9px; }
 .usn-bar.is-mini .usn-item { justify-content: center; padding: 0; gap: 0; }
 
 /* ---------- Skelette ----------
@@ -352,13 +377,17 @@
    Dieselbe Zeile wie ein Menuepunkt, nur mit einem Bild statt eines Icons und einem X rechts.
    Das X erscheint wie der Chevron der Ueberschrift: beim Hover, mit Verzoegerung. */
 .usn-pin { position: relative; }
-.usn-pin-ic { flex: 0 0 17px; width: 17px; height: 17px; display: inline-flex; align-items: center; }
+.usn-pin-ic { flex: 0 0 22px; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; }
 /* Das 24er .up-logo-box auf die 17px der Icon-Spalte bringen -- so stehen Bild und Icon der
    anderen Zeilen auf derselben Kante. Alle Werte im selben Verhaeltnis: Radius 8 -> 5.7,
    Bild 22 -> 15.6. */
-.usn-pin-ic .up-logo-box { width: 17px; height: 17px; flex: 0 0 17px; border-radius: 5.7px; padding: 1px; }
-.usn-pin-ic .up-logo-box img { width: 15.6px; height: 15.6px; border-radius: 5px; }
-.usn-pin-ic .up-logo-ltr { font-size: 9px; }
+/* Dieselben Werte wie die Team-Chips darueber: 22px, Polsterung 1.6, Rahmen 1, Radius 6.3,
+   Bildradius 4.7. Das Bild waechst dabei von 15.6 auf 16.8px und bekommt die helle Platte samt
+   Rand, die es in den Tabellen auch hat -- vorher war es ein nacktes Bild ohne beides. */
+.usn-pin-ic .up-logo-box { width: 22px; height: 22px; flex: 0 0 22px; border-radius: 6.3px;
+  padding: 1.6px; border: 1px solid var(--vc-border); }
+.usn-pin-ic .up-logo-box img { width: 100%; height: 100%; border-radius: 4.7px; }
+.usn-pin-ic .up-logo-ltr { font-size: 7.9px; }
 /* Dasselbe Bauteil noch eine Stufe kleiner: im Konto-Menue sind die Icons 15px (siehe
    .usn-menu .up-pop-opt svg weiter unten), nicht 17. Faktor 15/24 auf ALLE Werte:
    Radius 8 -> 5, Bild 22 -> 13.75, Bildradius 7 -> 4.4, Buchstabe 11 -> 7. */

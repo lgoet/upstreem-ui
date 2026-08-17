@@ -183,7 +183,11 @@
         /* Der Funkelstern aus core liegt darunter, das Bild darueber und blendet ihn aus.
            Faellt das Bild aus, nimmt es sich samt der Klasse weg und der Stern wird sichtbar --
            ein leerer Platz neben einem Menuepunkt sieht aus, als fehle etwas. Gleiche Bauart
-           wie .up-logo-box mit has-img. */
+           wie .up-logo-box mit has-img.
+           Bild und nicht Maske: als Maske haette die Wortmarke die Farbe der Zeile getragen, aber
+           die Datei liegt auf Bubbles CDN ohne CORS-Header, und ein fremdes SVG wird als
+           mask-image verworfen. Gegenprobe mit derselben Maske als data:-URL: die malt. Den Ton
+           macht deshalb ein brightness-Filter in der CSS. */
         return UC.icon("sparkle", 1.8) +
           '<img class="usn-mira" src="' + esc(q) + '" alt="" ' +
           'onerror="this.parentNode.classList.remove(\'has-mira\');this.remove()"/>';
