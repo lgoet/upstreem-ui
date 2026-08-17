@@ -2154,7 +2154,9 @@
           var open = grpRowMenu === g.key;
           return '<div class="up-pop-row upt-group-item' + (open ? " is-menuopen" : "") +
               (g.hidden ? "" : " is-draggable") + '"' +
-              (g.hidden ? "" : ' draggable="true" data-grp-drag="' + esc(g.key) + '"') + '>' +
+              /* KEIN draggable-Attribut: das Umsortieren laeuft ueber Zeiger-Ereignisse,
+                 und mit draggable startet der Browser zusaetzlich seine eigene Drag-Sitzung. */
+              (g.hidden ? "" : ' data-grp-drag="' + esc(g.key) + '"') + '>' +
             '<span class="upt-grp-cdot" style="background:' + esc(g.color || "#6b7280") + '"></span>' +
             '<span class="up-pop-label">' + esc(g.key) + '</span>' +
             /* Only ever shown via .is-dragging (see CSS) -- static placeholders for the dragged
@@ -2204,10 +2206,11 @@
       elGrpWrap.classList.toggle("is-on", groupingOn());
     }
 
-    /* Reads the CURRENT DOM order of [data-grp-drag] rows (which dragover has already been
-       live-moving, see below) and writes it back as the stored order -- hidden groupings are
-       appended after, in whatever relative order they already had (they are never part of the
-       draggable set, so their order among themselves never changes). */
+    /* Liest die AKTUELLE DOM-Reihenfolge der [data-grp-drag]-Zeilen -- die Zeigerbewegung hat sie
+       waehrend des Ziehens schon live verschoben, siehe unten -- und schreibt sie als gespeicherte
+       Reihenfolge zurueck. Verborgene Gruppierungen haengen danach, in ihrer bisherigen relativen
+       Ordnung: sie sind nie Teil des Ziehens, ihre Reihenfolge untereinander aendert sich also
+       nicht. */
     function commitDragOrder(){
       var all = readCustomGroups();
       var byKey = {};
@@ -2220,14 +2223,19 @@
       var newOrder = visibleKeys.map(function(k){ return byKey[k]; }).filter(Boolean).concat(hidden);
       writeCustomGroups(newOrder);
     }
-    /* Native HTML5 drag-and-drop, delegated on the menu itself (it survives every
-       populateGroupMenu() re-render -- only its innerHTML is replaced, never the node, and
-       nothing here calls populateGroupMenu() mid-drag). Hidden groupings have no [draggable] (see
-       populateGroupMenu), so they are simply not valid drag sources or drop targets.
-       The dragged row is physically moved in the DOM on every dragover (the standard "list
-       shifts to show where it'll land" reorder feel), not just marked with an insertion line --
-       .is-dragging's own skeleton-placeholder look (see CSS) travels along with it. */
-    var grpDragKey = null;
+    /* Umsortieren per ZEIGER-Ereignissen, nicht ueber die HTML5-Drag-API. Die hing hier hakelig:
+       sie zeichnet ein eigenes Geisterbild, meldet dragover nur in Intervallen und nur ueber
+       gueltigen Zielen, und jeder Schritt braucht ein preventDefault. Mit pointerdown/move/up
+       laeuft es so fluessig wie die angehefteten Eintraege in der Sidebar -- gleiche Mechanik,
+       gleiches Gefuehl.
+       Delegiert am Menue selbst: das ueberlebt jedes populateGroupMenu(), weil nur sein innerHTML
+       ersetzt wird, nie der Knoten. Verborgene Gruppierungen tragen kein data-grp-drag und sind
+       damit weder Quelle noch Ziel.
+       Die gezogene Zeile wird im DOM VERSCHOBEN, sobald der Zeiger die Mitte einer anderen
+       passiert -- die Liste steht also immer schon so, wie sie nach dem Loslassen aussieht, und
+       die gezogene Zeile ist an genau dieser Stelle ein grauer Platzhalter (.is-dragging, siehe
+       CSS). Erst nach 4px Bewegung wird es ein Ziehen, sonst bliebe kein Klick uebrig. */
+    var grpZieh = null, grpGezogen = false;
     function grpClearDragClasses(){
       if (!elGrpMenu) return;
       Array.prototype.forEach.call(elGrpMenu.querySelectorAll("[data-grp-drag]"), function(r){
@@ -2235,33 +2243,56 @@
       });
     }
     if (elGrpMenu){
-      elGrpMenu.addEventListener("dragstart", function(e){
-        var row = e.target.closest && e.target.closest("[data-grp-drag]");
-        if (!row){ e.preventDefault(); return; }
-        grpDragKey = row.getAttribute("data-grp-drag");
-        row.classList.add("is-dragging");
-        try { e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", grpDragKey); } catch(err){}
+      elGrpMenu.addEventListener("pointerdown", function(e){
+        if (!e.target.closest) return;
+        /* Auge, Kebab und das Zeilenmenue ziehen nicht. */
+        if (e.target.closest(".upt-group-eye, .upt-group-more, .upt-group-rowmenu")) return;
+        var row = e.target.closest("[data-grp-drag]");
+        if (!row) return;
+        grpZieh = { row: row, body: row.parentNode, y0: e.clientY, aktiv: false };
+        try { row.setPointerCapture(e.pointerId); } catch(err){}
       });
-      elGrpMenu.addEventListener("dragover", function(e){
-        if (!grpDragKey) return;
-        var row = e.target.closest && e.target.closest("[data-grp-drag]");
-        if (!row || row.getAttribute("data-grp-drag") === grpDragKey) return;
-        e.preventDefault();
-        var dragged = elGrpMenu.querySelector(".upt-group-item.is-dragging");
-        if (!dragged) return;
-        var r2 = row.getBoundingClientRect();
-        var before = (e.clientY - r2.top) < r2.height / 2;
-        row.parentNode.insertBefore(dragged, before ? row : row.nextSibling);
+      elGrpMenu.addEventListener("pointermove", function(e){
+        if (!grpZieh) return;
+        if (!grpZieh.aktiv){
+          if (Math.abs(e.clientY - grpZieh.y0) < 4) return;
+          grpZieh.aktiv = true;
+          grpZieh.row.classList.add("is-dragging");
+        }
+        var zeilen = Array.prototype.slice.call(grpZieh.body.querySelectorAll("[data-grp-drag]"));
+        for (var i = 0; i < zeilen.length; i++){
+          var z = zeilen[i];
+          if (z === grpZieh.row) continue;
+          var r = z.getBoundingClientRect();
+          if (e.clientY < r.top || e.clientY > r.bottom) continue;
+          var davor = (e.clientY - r.top) < r.height / 2;
+          grpZieh.body.insertBefore(grpZieh.row, davor ? z : z.nextSibling);
+          break;
+        }
       });
-      /* Whichever fires -- a real drop, or dragend after being released outside any row -- the
-         DOM is already showing the live position, so both just commit it. */
-      elGrpMenu.addEventListener("drop", function(e){ if (grpDragKey) e.preventDefault(); });
-      elGrpMenu.addEventListener("dragend", function(){
-        if (grpDragKey) commitDragOrder();
-        grpDragKey = null;
+      function grpZiehEnde(){
+        if (!grpZieh) return;
+        var z = grpZieh; grpZieh = null;
+        z.row.classList.remove("is-dragging");
+        if (!z.aktiv) return;                       /* war nur ein Klick */
+        /* Nach dem Ziehen folgt ein click auf derselben Zeile -- der darf die Gruppierung nicht
+           auswaehlen. Die Marke haelt genau diesen einen Klick auf; am Knoten kann sie nicht
+           haengen, weil populateGroupMenu() ihn gleich ersetzt. */
+        grpGezogen = true;
+        commitDragOrder();
         grpClearDragClasses();
         populateGroupMenu();
-      });
+      }
+      elGrpMenu.addEventListener("pointerup", grpZiehEnde);
+      elGrpMenu.addEventListener("pointercancel", grpZiehEnde);
+      /* Im capture, damit der Klick vor allen anderen Zuhoerern im Menue aufgehalten wird. */
+      elGrpMenu.addEventListener("click", function(e){
+        if (!grpGezogen) return;
+        grpGezogen = false;
+        if (e.target.closest && e.target.closest("[data-grp-drag]")){
+          e.stopPropagation(); e.preventDefault();
+        }
+      }, true);
     }
 
 

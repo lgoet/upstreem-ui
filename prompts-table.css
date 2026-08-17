@@ -1013,6 +1013,10 @@
 .upt-group-item { gap: 8px; justify-content: flex-start; position: relative; }
 .upt-group-item .up-pop-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .upt-group-item.is-draggable { cursor: grab; }
+/* Waehrend des Ziehens: Greifhand und keine Textauswahl. Ohne das markiert der Zeiger die
+   Gruppennamen, weil ohne draggable-Attribut auch die Auswahlsperre des Browsers wegfaellt. */
+.upt-group-item.is-dragging, .upt-group-list:has(.is-dragging) .upt-group-item { cursor: grabbing; }
+.upt-group-list:has(.is-dragging), .upt-group-list:has(.is-dragging) * { user-select: none; -webkit-user-select: none; }
 /* The dragged row becomes its own placeholder rather than just dimming: real content (dot, name,
    eye, menu) hides, two static skeleton blocks take its place, gray border marks the slot. Pure
    CSS class toggle -- no innerHTML swap/restore needed, so a cancelled drag (dropped outside any
