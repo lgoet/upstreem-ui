@@ -299,9 +299,12 @@
     var line = UC.makeLine({
       wrap: lineWrap, canvas: lineCanvas, legend: legendEl,
       isDark: darkNow, isOwner: isOwner,
-      gran: function(){ return curGran; }
+      gran: function(){ return curGran; },
+      /* Eine Nachkommastelle -- vorgegeben, fuer Linie und Doughnut derselbe Wert. */
+      decimals: 1
     });
     var typeChart = UC.makeTypeChart({
+      decimals: 1,
       body: body, isDark: darkNow, isOwner: isOwner,
       mode: function(){ return state.dataMode; },
       chartMode: function(){ return state.chartMode; },

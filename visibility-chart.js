@@ -179,7 +179,9 @@
     var line = UC.makeLine({
       wrap: lineWrap, canvas: lineCanvas, legend: legendEl,
       isDark: darkNow, isOwner: isOwner,
-      gran: function(){ return curGran; }
+      gran: function(){ return curGran; },
+      /* Ohne Nachkommastellen -- vorgegeben. Der Standard des Kits waere zwei. */
+      decimals: 0
     });
 
     /* ---------- render (two independent halves) ---------- */

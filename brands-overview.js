@@ -396,7 +396,7 @@
       if (!pt){ hideTip(); return; }
       var el = ensureTip();
       el.setAttribute("data-theme", isDark() ? "dark" : "light");
-      var vis  = pt.x != null ? UC.fmtPct(pt.x) : "–";
+      var vis  = pt.x != null ? UC.fmtPct(pt.x, 1) : "–";   /* eine Stelle, wie in der Tabelle */
       var sv   = pt.sentiment, rv = pt.avg_rank;
       var sentHtml = (sv == null) ? '<span class="ubo-mxtip-empty">–</span>'
         : '<span class="up-sent"><span class="up-sent-dot" style="background:' + sentColor(sv) + '"></span>' +
@@ -755,7 +755,9 @@
     /* ---------- charts ---------- */
     var line = UC.makeLine({
       wrap: lineWrap, canvas: lineCanvas, legend: legendEl,
-      isDark: darkNow, isOwner: isOwner, gran: function(){ return curGran; }
+      isDark: darkNow, isOwner: isOwner, gran: function(){ return curGran; },
+      /* Eine Nachkommastelle -- vorgegeben. */
+      decimals: 1
     });
     var matrix = makeMatrix({
       wrap: mxWrap, canvas: mxCanvas, isDark: darkNow, isOwner: isOwner,
@@ -958,7 +960,7 @@
       var pos = (r.position != null) ? Number(r.position) : (i + 1);
       var visNull = (r.visibility_pct == null || r.visibility_pct === "");
       var vis = '<span class="up-num' + (visNull ? " is-empty" : "") + '">' +
-        (visNull ? "–" : UC.fmtPct(r.visibility_pct)) + '</span>' +
+        (visNull ? "–" : UC.fmtPct(r.visibility_pct, 1)) + '</span>' +
         UC.trendChip(r.visibility_delta_pct, { decimals: false, inverted: false, suffix: "%" });
       var rank = '<span class="up-rank-group">' + HASH_ICON + '<span class="up-num">' + fmt1(r.avg_rank) + '</span></span>' +
         UC.trendChip(r.avg_rank_delta, { decimals: true, inverted: true });

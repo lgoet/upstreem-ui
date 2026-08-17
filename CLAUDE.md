@@ -98,16 +98,30 @@ Jede Bubble-Doku braucht **beide** Sanitizer-Zeilen (§46):
 
 | Kennzahl | Einheit | Nachkommastellen | Beispiel |
 |---|---|---|---|
-| Visibility / Share of Voice | `%` | 1 in Zellen, 2 im Chart-Tooltip | `34.3%`, `34.30%` |
+| Visibility / Share of Voice | `%` | 1 in Zellen | `34.3%` |
 | Rank | keine | **immer 1**, auch bei glatt 3 | `3.0`, `3.1` |
 | Sentiment | keine | 0 (ganze Note auf 0-100) | `76` |
 | Mention Count | keine | 0 | `214` |
 | Trend (Delta) | `%` nur beim Prozentwert | 1 | `4.7%`, `0.3` |
 
+**Chart-Tooltips: pro Chart festgelegt, nicht global.** Der Standard des Kits ist 2 — der ist
+nirgends erwuenscht, also immer mitgeben:
+
+| Chart | Nachkommastellen |
+|---|---|
+| Visibility Chart, Linie | 0 |
+| Top Citations Dashboard, Doughnut | 0 |
+| Citations Combo Chart, Linie und Doughnut | 1 |
+| Brands Overview, Linie und Landscape | 1 |
+
+`UC.fmtPct(v)` rundet auf 0 — fuer die Visibility-Zelle und den Landscape-Tooltip in
+brands-overview `UC.fmtPct(v, 1)`.
+
 Rang und Sentiment sind **keine Prozentwerte**. Wer eine Achse, einen Tooltip oder eine Zelle
 baut, gibt die Einheit mit: `UC.makeLine` kennt `cfg.unit`, `cfg.decimals`, `cfg.tipLabel`, alle
-drei auch als Funktion, wenn der Modus zur Laufzeit wechselt. Ohne Angabe bleibt es bei Prozent
-mit zwei Stellen -- das ist der Rueckfall fuer die bestehenden Aufrufer, kein Standard fuer neue.
+drei auch als Funktion oder als Zahl. `UC.makeTypeChart` kennt `cfg.decimals` fuer den
+Doughnut-Tooltip. Ohne Angabe bleibt es bei Prozent mit zwei Stellen -- der Rueckfall aus der
+Zeit, als es nur eine Genauigkeit gab, und fuer keinen Chart der App richtig.
 
 Beim Rang ist WENIGER besser: `UC.trendChip(delta, { inverted: true })`, sonst zeigt der Pfeil in
 die falsche Richtung.

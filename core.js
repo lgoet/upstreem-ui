@@ -3256,10 +3256,18 @@
      rounds to 1 and prints "1%". (Was `v < 1`, which wrongly swallowed 0.5-0.99 into "<1%".)
      Axis TICKS are the one exception and stay plain: a tick labelled 0 is a scale position, not
      a measurement. */
-  function fmtPct(v){
+  /* nachkomma ist OPTIONAL und standardmaessig 0 -- so bleibt jeder bestehende Aufrufer, wie er
+     ist. Wer eine Stelle braucht (Visibility in der Brands-Tabelle und im Landscape-Tooltip),
+     gibt sie mit. Die "<1%"-Regel gilt nur ohne Nachkommastellen: mit einer Stelle steht dort
+     ohnehin 0.4% statt einer irreleitenden 0. */
+  function fmtPct(v, nachkomma){
     v = Number(v) || 0;
-    if (v > 0 && Math.round(v) === 0) return "<1%";
-    return Math.round(v) + "%";
+    var n = nachkomma > 0 ? nachkomma : 0;
+    if (!n){
+      if (v > 0 && Math.round(v) === 0) return "<1%";
+      return Math.round(v) + "%";
+    }
+    return v.toFixed(n) + "%";
   }
 
   /* Turns a raw [{type, share_pct}] breakdown into the [{name, share, color}] the doughnut/bar
@@ -3516,7 +3524,13 @@
     /* Nachkommastellen sagt der Aufrufer. Ohne Angabe zwei -- so war es, als der Tooltip nur
        Prozentwerte kannte. Ein Rang zeigt IMMER eine Stelle, auch bei glatt 3: "3" und "3.0"
        nebeneinander in derselben Spalte liest sich wie zwei verschiedene Genauigkeiten. */
-    function ttNachkomma(){ var n = nachkommaFn && nachkommaFn(); return typeof n === "number" ? n : 2; }
+    /* Zahl ODER Funktion. Vorher nur Funktion -- eine mitgegebene Zahl warf beim ersten Hover,
+       und das ist genau die Form, die man beim Verdrahten zuerst probiert. */
+    function ttNachkomma(){
+      if (typeof nachkommaFn === "number") return nachkommaFn;
+      var n = nachkommaFn && nachkommaFn();
+      return typeof n === "number" ? n : 2;
+    }
     var pos = { x:null, y:null }, target = { x:0, y:0 }, running = false, visible = false;
     var FOLLOW = 0.18;
     function loop(){
@@ -4171,7 +4185,14 @@
     }
   };
 
-  function makeDonutTooltip(container, getIsDark, getMode){
+  /* nachkomma: Zahl oder Funktion. Ohne Angabe zwei -- so war es, als der Tooltip nur
+     Prozentwerte in einer Genauigkeit kannte. */
+  function makeDonutTooltip(container, getIsDark, getMode, nachkomma){
+    function ttNachkomma(){
+      if (typeof nachkomma === "number") return nachkomma;
+      var n = nachkomma && nachkomma();
+      return typeof n === "number" ? n : 2;
+    }
     var state = { x:0, y:0, raf:null };
     function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
     function lerp(a, b, t){ return a + (b-a)*t; }
@@ -4214,7 +4235,7 @@
         : "display:none;";
       el.querySelector(".up-tt-lbl").style.color = nameColor;
       el.querySelector(".up-tt-lbl").textContent = chart.data.labels[i] || "";
-      el.querySelector(".up-tt-val").textContent = Number(val).toFixed(2) + "%";
+      el.querySelector(".up-tt-val").textContent = Number(val).toFixed(ttNachkomma()) + "%";
       var cx = chart.canvas.offsetLeft, cy = chart.canvas.offsetTop, ca = chart.chartArea;
       var caretX = cx + tooltip.caretX, caretY = cy + tooltip.caretY, m = 12;
       el.style.left = "0px"; el.style.top = "0px";
@@ -4270,7 +4291,9 @@
   /* ---------- makeTypeChart ----------
      One controller for both the doughnut and the bar view of the same [{name, share, color}] data,
      because a component always has both behind one switcher.
-     cfg: { body, isDark(), isOwner(), mode(), total(), centerLabel, collapseAt, availHeight() }
+     cfg: { body, isDark(), isOwner(), mode(), total(), centerLabel, collapseAt, availHeight(),
+            decimals }   -- decimals sind die Nachkommastellen im Tooltip, Zahl oder Funktion;
+            ohne Angabe zwei, und das ist nirgends erwuenscht, also immer mitgeben
      Returns { renderDonut, renderBars, skeleton, empty, destroy, applyCollapse, resize, chart }. */
   function makeTypeChart(cfg){
     var body = cfg.body;
@@ -4279,7 +4302,7 @@
     var total = cfg.total || function(){ return 0; };
     var collapseAt = cfg.collapseAt != null ? cfg.collapseAt : 420;
     var chart = null;
-    var donutTooltip = makeDonutTooltip(body, isDark, cfg.mode);
+    var donutTooltip = makeDonutTooltip(body, isDark, cfg.mode, cfg.decimals);
     /* Tracks what the LAST full render actually drew, so updateColors() (a dim-only re-colour, see
        below) can tell "same slices/bars, just different selection" from "genuinely new data" —
        only the former is safe to patch in place. */

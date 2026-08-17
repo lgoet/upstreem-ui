@@ -186,6 +186,8 @@
     function isOwner(){ return !root.__tcdController || root.__tcdController.__ctrlId === myCtrlId; }
     function darkNow(){ return isDark; }
     var typeChart = UC.makeTypeChart({
+      /* Ohne Nachkommastellen -- vorgegeben. */
+      decimals: 0,
       body: body, isDark: darkNow, isOwner: isOwner,
       mode: function(){ return state.mode; },
       chartMode: function(){ return state.chartMode; },
