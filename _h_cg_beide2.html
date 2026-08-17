@@ -1,0 +1,43 @@
+<meta charset="utf-8"><title>beide Orte, ein Speicher</title>
+<style>html,body{margin:0;font-family:system-ui,sans-serif;background:#fff}
+#log{position:fixed;left:0;bottom:0;width:100%;max-height:20%;overflow:auto;font:10px/1.4 ui-monospace,monospace;background:#f6f6f6;padding:6px;white-space:pre-wrap;z-index:99999;border-top:1px solid #ddd}
+#b{padding:16px 16px 24%}</style>
+<body><pre id="log">laeuft</pre>
+<div id="b">
+  <div class="up-root utm-root" data-instance="tm" data-isdark="no">
+    <div class="up-head"><div class="up-heading"><span class="up-head-label">Topics</span><span class="up-head-sep"></span><span class="up-head-count"></span></div>
+      <div class="up-head-tools"><button class="up-export utm-addbtn" type="button" data-topic-add-new><span>Add Topic</span></button></div></div>
+    <div class="utm-chipgrid"></div>
+  </div>
+  <div style="height:24px"></div>
+  <div class="up-root upt-root" data-instance="pt" data-isdark="no">
+    <div class="up-head"><div class="up-heading"><span class="up-head-label">Prompts</span><span class="up-head-sep"></span><span class="up-head-count"></span></div>
+      <div class="up-head-tools">
+        <div class="up-cols"><button class="up-cols-btn up-iconbtn" type="button" data-tip="Table Settings"></button><div class="up-cols-menu" role="menu" aria-hidden="true"></div></div>
+      </div></div>
+    <div class="up-table"><div class="up-thead"></div><div class="up-tbody"></div></div>
+  </div>
+</div>
+<link rel="stylesheet" href="core.css?frisch=beide2">
+<link rel="stylesheet" href="topics-manager.css?frisch=beide2">
+<link rel="stylesheet" href="prompts-table.css?frisch=beide2">
+<script>
+window.__fehler=[]; window.addEventListener("error",function(e){window.__fehler.push(String(e.message)+" @"+e.lineno)});
+function log(s){ document.getElementById("log").textContent += "\n"+s; }
+try{ localStorage.setItem("pref_theme","light"); }catch(e){}
+try{ localStorage.removeItem("promptGroups@_"); }catch(e){}
+</script>
+<script src="core.js?frisch=beide2"></script>
+<script src="topics-manager.js?frisch=beide2"></script>
+<script src="prompts-table.js?frisch=beide2"></script>
+<script>
+var TOPICS=[{id:"t1",name:"Sedans",emoji:"🚗",hex_light:"#1b6eda",prompt_count:42},
+            {id:"t2",name:"SUVs",emoji:"🚙",hex_light:"#108440",prompt_count:31},
+            {id:"t3",name:"Hybrid",emoji:"🔋",hex_light:"#8d6a11",prompt_count:18}];
+setTimeout(function(){
+  window.renderTopicsManager({ instanceId:"tm", topics: TOPICS });
+  window.renderPromptsTable({ instanceId:"pt", rows: [], totalCount: 0 });
+  window.setPromptsTableTopics && window.setPromptsTableTopics("pt", TOPICS);
+  setTimeout(function(){ window.__bereit=true; log("beide gerendert, Fehler: "+JSON.stringify(window.__fehler)); }, 600);
+}, 600);
+</script>

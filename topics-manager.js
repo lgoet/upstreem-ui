@@ -160,6 +160,133 @@
       elGrid.innerHTML = shown.map(chipHtml).join("");
     }
 
+    /* ==================== Custom Groupings ====================================================
+       Eine Gruppierung ist eine benannte Kombination aus bis zu drei Themen -- ein Prompt zaehlt
+       dazu, wenn er ALLE traegt. Es ist dieselbe Sache, die das Gruppierungs-Dropdown der
+       prompts-table verwaltet, und sie liegt im SELBEN Speicher (UC.cgRead/cgWrite, teambezogen):
+       was hier entsteht, steht dort sofort im Dropdown und umgekehrt.
+       Geteilt sind ausserdem das Anlegen-Fenster (UC.makeGroupingModal), die Zeilenbausteine
+       (UC.cgDotHtml/cgEyeHtml/cgMoreHtml) und das Umsortieren (UC.cgDragList). Hier steht nur, was
+       diesen Ort ausmacht: eine Uebersicht in Listenform statt einer Zeile im Popover, mit den
+       Themen als Chips daneben.
+
+       Der Abschnitt wird per JS gebaut und nicht ins Bubble-Markup gelegt: bubble/*.html ist eine
+       Vorlage fuer Neuinstallationen, ein bestehendes Element bekommt daraus nichts. Waere er nur
+       dort, muesste jede Platzierung von Hand nachgezogen werden. */
+    var CG_MENU = null;     /* Schluessel der Zeile, deren Dreipunktmenue offen ist */
+    var elCg = null, elCgList = null, elCgCount = null;
+
+    function cgAufbauen(){
+      if (!elGrid || !elGrid.parentNode) return;
+      elCg = root.querySelector(".utm-cg");
+      if (!elCg){
+        elCg = document.createElement("div");
+        elCg.className = "utm-cg";
+        elCg.innerHTML =
+          '<div class="up-head utm-cg-head">' +
+            '<div class="up-heading has-count">' +
+              '<span class="up-head-label">Custom Groupings</span>' +
+              '<span class="up-head-sep"></span>' +
+              '<span class="up-head-count utm-cg-count"></span>' +
+            '</div>' +
+            '<div class="up-head-tools">' +
+              '<button class="up-export utm-cg-addbtn" type="button" data-cg-new>' +
+                UC.icon("plus", 1.8) + '<span>New Grouping</span>' +
+              '</button>' +
+            '</div>' +
+          '</div>' +
+          /* up-cg-list: daran haengen die Regeln fuer den Zieh-Zustand (Greifhand, keine
+             Textauswahl), dieselben wie an der Liste im Dropdown. */
+          '<div class="utm-cg-list up-cg-list"></div>';
+        /* Direkt unter der Themenliste, wie bestellt. */
+        elGrid.parentNode.insertBefore(elCg, elGrid.nextSibling);
+      }
+      elCgList = elCg.querySelector(".utm-cg-list");
+      elCgCount = elCg.querySelector(".utm-cg-count");
+      /* Das Ziehen haengt an der LISTE, nicht an den Zeilen: die Liste ueberlebt jedes
+         Neuzeichnen, weil nur ihr innerHTML getauscht wird. */
+      UC.cgDragList(elCgList, {
+        rowSel: "[data-grp-drag]",
+        noDragSel: ".up-cg-eye, .up-cg-more, .up-cg-rowmenu",
+        onOrder: function(keys){ UC.cgApplyOrder(keys); },
+        onDrop: function(){ renderCg(); }
+      });
+    }
+
+    /* Die Themen einer Gruppierung als Chips -- dasselbe .up-topicchip, das die Auswahl im
+       Fenster zeigt, nur ohne Haken und ohne Klickflaeche: hier ist es Anzeige, keine Wahl.
+       Ein Thema, das es nicht mehr gibt (geloescht, nachdem die Gruppierung entstand), wird als
+       solches benannt statt stillschweigend zu fehlen -- sonst zeigt eine Gruppe aus drei Themen
+       plotzlich zwei Chips und sieht wie ein Fehler aus. */
+    function cgChipsHtml(g){
+      return (g.tag_ids || []).map(function(id){
+        var t = null;
+        for (var i = 0; i < state.topics.length; i++){
+          if (String(state.topics[i].id) === String(id)){ t = state.topics[i]; break; }
+        }
+        if (!t){
+          return '<span class="up-topicchip utm-cg-chip is-gone" title="This topic no longer exists">' +
+            '<span class="up-topicchip-lbl">Deleted topic</span></span>';
+        }
+        var color = String(t.hex_light || t.hex_dark || "#6b7280");
+        if (color.charAt(0) !== "#") color = "#" + color;
+        return '<span class="up-topicchip utm-cg-chip" style="--ust-tag-color:' + esc(color) + '">' +
+          (t.emoji ? '<span class="up-topicchip-e">' + esc(t.emoji) + '</span>' : "") +
+          '<span class="up-topicchip-lbl">' + esc(t.name == null ? "" : t.name) + '</span>' +
+        '</span>';
+      }).join("");
+    }
+
+    function cgRowHtml(g){
+      var aus = !!g.hidden;
+      /* up-cg-row ist die KIT-Klasse: an ihr haengen in core.css die Regeln, die vom Zustand der
+         Zeile abhaengen -- Hover deckt Auge und Kebab auf, das Ziehen macht die Zeile zum
+         Platzhalter. Ohne sie blieben die Aktionen unsichtbar; genau das war beim ersten Durchlauf
+         der Fall. is-draggable gibt die Greifhand, wie im Dropdown der Tabelle. */
+      return '<div class="utm-cg-row up-cg-row' + (aus ? " is-hidden" : " is-draggable") +
+          (CG_MENU === g.key ? " is-menuopen" : "") + '"' +
+          /* Verborgene Gruppierungen tragen kein data-grp-drag: etwas umzusortieren, das man
+             gerade nicht sieht, ist ein Ergebnis, das man erst spaeter bemerkt. */
+          (aus ? "" : ' data-grp-drag="' + esc(g.key) + '"') + '>' +
+        UC.cgDotHtml(g.color) +
+        '<span class="utm-cg-name">' + esc(g.key) + '</span>' +
+        '<span class="utm-cg-chips">' + cgChipsHtml(g) + '</span>' +
+        '<span class="utm-cg-actions">' + UC.cgEyeHtml(g) + UC.cgMoreHtml(g, CG_MENU) + '</span>' +
+        /* Nur ueber .is-dragging sichtbar: der graue Platzhalter fuer die gezogene Zeile. Steht im
+           Markup statt beim Ziehen erzeugt zu werden -- ein Element, das mitten in einer
+           Zeigerbewegung entsteht, kostet einen Layoutdurchgang im falschen Moment. */
+        '<span class="utm-cg-sk-dot up-cg-sk-dot"></span>' +
+        '<span class="utm-cg-sk-text up-cg-sk-text"></span>' +
+      '</div>';
+    }
+
+    function renderCg(){
+      if (!elCgList) return;
+      var liste = UC.cgRead();
+      /* Verborgene nach unten, sichtbare in ihrer gespeicherten Reihenfolge -- dieselbe Sortierung
+         wie im Dropdown der prompts-table. */
+      var sichtbar = liste.filter(function(g){ return !g.hidden; });
+      var verborgen = liste.filter(function(g){ return g.hidden; });
+      var alle = sichtbar.concat(verborgen);
+      if (elCgCount) elCgCount.textContent = alle.length ? String(alle.length) : "";
+      if (!alle.length){
+        elCgList.innerHTML = '<div class="utm-cg-empty">' +
+          '<span class="utm-cg-empty-t">No custom groupings yet</span>' +
+          '<span class="utm-cg-empty-s">Combine up to ' + UC.CG_MAX_TOPICS +
+            ' topics into one group. A prompt counts towards it only if it carries all of them.</span>' +
+          '</div>';
+        return;
+      }
+      elCgList.innerHTML = alle.map(cgRowHtml).join("");
+    }
+
+    var cgModal = UC.makeGroupingModal({
+      getIsDark: function(){ return isDark; },
+      getTopics: function(){ return state.topics || []; },
+      topicId: function(t){ return String(t && t.id); },
+      onSave: function(){ renderCg(); }
+    });
+
     /* ---------------- sort dropdown ---------------- */
     var sortPop = elSort ? UC.makePopover({ wrap: elSort, menu: elSortMenu, opener: elSort.querySelector(".up-sort-btn"), group: "utm-" + instanceId }) : null;
     function populateSort(){
@@ -291,6 +418,38 @@
     document.addEventListener("click", function(e){
       if (!root.contains(e.target)) return;   // elSortMenu is a plain child of root, not portaled (STYLEGUIDE §14)
       if (e.target.closest("[data-topic-add-new]")){ topicModal.open("create", null); return; }
+      /* ---- Custom Groupings ----
+         Der Reihenfolge nach: erst die Knoepfe IN der Zeile, dann die Zeile selbst. Umgekehrt
+         schluckte ein Klick auf das Auge die Zeilenaktion. */
+      if (e.target.closest("[data-cg-new]")){ CG_MENU = null; renderCg(); cgModal.open(null); return; }
+      var cgEye = e.target.closest("[data-grp-eye]");
+      if (cgEye){
+        UC.cgSetHidden(cgEye.getAttribute("data-grp-eye"));
+        CG_MENU = null; renderCg(); return;
+      }
+      var cgMore = e.target.closest("[data-grp-rowmenu]");
+      if (cgMore){
+        var mk = cgMore.getAttribute("data-grp-rowmenu");
+        CG_MENU = (CG_MENU === mk) ? null : mk;
+        renderCg(); return;
+      }
+      var cgEdit = e.target.closest("[data-grp-edit]");
+      if (cgEdit){
+        var edk = cgEdit.getAttribute("data-grp-edit");
+        var eintrag = UC.cgFind(edk);
+        CG_MENU = null; renderCg();
+        if (eintrag) cgModal.open(eintrag);
+        return;
+      }
+      var cgDel = e.target.closest("[data-grp-del]");
+      if (cgDel){
+        var dk = cgDel.getAttribute("data-grp-del");
+        UC.cgDelete(dk);
+        CG_MENU = null; renderCg(); return;
+      }
+      /* Klick irgendwo sonst im Abschnitt schliesst ein offenes Zeilenmenue -- dasselbe Verhalten
+         wie bei jedem Dropdown der App. */
+      if (CG_MENU && elCg && elCg.contains(e.target)){ CG_MENU = null; renderCg(); }
       if (e.target.closest(".up-search-btn")){ search.toggle(); return; }
       if (e.target.closest(".up-search-clear")){
         elSearchIn.value = ""; state.query = ""; elSearch.classList.remove("has-text");
@@ -338,6 +497,8 @@
     function render(){
       renderCount();
       renderChips();
+      cgAufbauen();
+      renderCg();
       populateSort();
       applyResponsive();
     }

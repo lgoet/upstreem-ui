@@ -4,6 +4,17 @@
    has what's genuinely specific to the Prompts table: the checkbox, the prompt cell (clamp +
    3-way row height), the market flag, and the date cell. */
 
+/* .check_reinvention meldet in dieser Datei zehn Stellen als Nachbau (.upt-brand-toggle,
+   .upt-status-btn, .upt-bulkbar-x, .upt-topicsearch-clear, .upt-topiccreate, .upt-topiccreate-pick,
+   .upt-topicapply, .upt-selcount-clear, .upt-grp-sidesearch-clear, .upt-grp-menubtn). Alle
+   Fehlalarme derselben Art: der Vergleich laeuft ueber "hat Hintergrund, Rahmen, Radius, Hoehe und
+   transition", und das trifft jeden Knopf und jedes Eingabefeld. Wo es ein Kit-Bauteil gibt, wird
+   es benutzt -- .up-iconbtn, .up-btn, .up-btn-sec, .up-pop-opt, .up-menu, .up-switch, .up-dense,
+   .up-topicchip, .up-topicmodal-* und seit dieser Runde die .up-cg-*/.up-cgm-*-Teile der
+   Gruppierungen. Was hier eigene Klassen hat, weicht in Hoehe, Zustandslogik oder Ort ab; die
+   Begruendung steht jeweils darueber.
+   Die Treffer sind alt und tauchen auf, weil die Datei fuer den Umzug der Gruppierungen angefasst
+   wurde. */
 .upt-root { --upt-check-size: 18px; }
 
 /* ---------- brand mentioned (quick toggle) ----------
@@ -426,7 +437,6 @@
 /* The chip itself is core's .up-topicchip now, dark mode included ([data-theme="dark"]
    .up-topicchip in core.css) — this file only keeps the cap-dimming hook on its own list class. */
 .upt-topiclist.is-full .up-topicchip:not(.is-on) { opacity: .4; cursor: default; pointer-events: none; }
-.upt-topicmenu-empty { padding: 14px 8px; text-align: center; font-size: 12.5px; color: var(--vc-muted); }
 /* No matches for the typed query -> the obvious next move is creating it, offered right where
    the empty state would otherwise sit — together with the start of the fuller tag creator this
    table will need later: an emoji and a color picked right alongside the name. */
@@ -454,32 +464,6 @@
   margin-top: var(--upt-sep-gap); padding-top: var(--upt-sep-gap);
   border-top: 1px solid var(--vc-border);
   display: flex; justify-content: center; }
-/* Rows are tone scales (vibrant / muted / deep), columns are hues — read down for a mood,
-   across for a color. Centred, because a left-aligned 8-wide grid under a full-width row above
-   it looked like it had fallen over. */
-.upt-colorgrid { display: grid; grid-template-columns: repeat(10, 34px); gap: 6px; }
-/* The 34x34 cell is the hit target and carries the hover, the blob inside is just the colour —
-   splitting them is what lets the swatch stay a fixed size while the cell gets a proper
-   button-sized surface, instead of a small dot you have to aim at.
-   Transparent border reserved at rest (not added on hover) so the hover state doesn't shift
-   the swatch by the border's own width. */
-.upt-colorcell { width: 34px; height: 34px; padding: 0; border: 1px solid transparent; border-radius: 8px;
-  background: transparent; cursor: pointer;
-  display: inline-flex; align-items: center; justify-content: center;
-  transition: background 120ms ease, border-color 120ms ease; }
-.upt-colorcell:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
-/* No inset ring and no fractional-px spread: an inset shadow on a 20px circle plus a 3.5px
-   outer ring is what made these look soft/smeared rather than crisp. The blob is now a plain
-   filled circle at whole-pixel size, and selection is shown INSIDE it. */
-.upt-colorblob { width: 22px; height: 22px; border-radius: 50%; display: inline-flex;
-  align-items: center; justify-content: center; flex: 0 0 auto; color: #fff; }
-.upt-colorblob svg { width: 12px; height: 12px; display: block; stroke: currentColor; stroke-width: 4; }
-/* Fixed ink, not per-swatch contrast-solved: white in light mode, primary text in dark. Same rule
-   as core's canonical picker (up-topicmodal-colorblob) -- two selectors because this cell shows up
-   both inside .up-root (the inline topic creator) and inside the body-mounted group-modal
-   backdrop, which carries its own data-theme rather than inheriting .up-root's. */
-.up-root[data-theme="dark"] .upt-colorblob,
-.upt-gm-backdrop[data-theme="dark"] .upt-colorblob { color: var(--vc-text); }
 /* Wider and shallower than the library's default: the panel is ~760px across, so a narrow tall
    picker wasted most of it and pushed the bar down the screen. --num-columns is the supported
    knob for this (the grid is shadow DOM, so plain CSS can't reach in). */
@@ -1012,24 +996,10 @@
    takes the auto margin instead of the gap doing it. */
 .upt-group-item { gap: 8px; justify-content: flex-start; position: relative; }
 .upt-group-item .up-pop-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.upt-group-item.is-draggable { cursor: grab; }
-/* Waehrend des Ziehens: Greifhand und keine Textauswahl. Ohne das markiert der Zeiger die
-   Gruppennamen, weil ohne draggable-Attribut auch die Auswahlsperre des Browsers wegfaellt. */
-.upt-group-item.is-dragging, .upt-group-list:has(.is-dragging) .upt-group-item { cursor: grabbing; }
-.upt-group-list:has(.is-dragging), .upt-group-list:has(.is-dragging) * { user-select: none; -webkit-user-select: none; }
-/* The dragged row becomes its own placeholder rather than just dimming: real content (dot, name,
-   eye, menu) hides, two static skeleton blocks take its place, gray border marks the slot. Pure
-   CSS class toggle -- no innerHTML swap/restore needed, so a cancelled drag (dropped outside any
-   target, Escape) can never leave the row stuck mid-swap. Not animated: a shimmering skeleton
-   reads as "loading", which this is not. */
-.upt-group-item.is-dragging { border: 1px solid var(--vc-border); border-radius: 8px; cursor: grabbing; }
-.upt-group-item.is-dragging > .upt-grp-cdot,
-.upt-group-item.is-dragging > .up-pop-label,
-.upt-group-item.is-dragging > .upt-group-eye,
-.upt-group-item.is-dragging > .upt-group-more { display: none; }
-.upt-group-sk-dot, .upt-group-sk-text { display: none; background: var(--vc-border); border-radius: 4px; }
-.upt-group-item.is-dragging > .upt-group-sk-dot { display: block; width: 8px; height: 8px; border-radius: 4px; flex: 0 0 auto; }
-.upt-group-item.is-dragging > .upt-group-sk-text { display: block; width: 45%; height: 12px; }
+/* Das Auge traegt den auto-Rand, damit das Paar Auge+Kebab als eine Einheit rechts steht -- in
+   dieser Zeile gibt es keinen eigenen Behaelter dafuer (im topics-manager schon, dort sitzt die
+   Ausrichtung an .utm-cg-actions). Masse und Verhalten der beiden Knoepfe: core.css. */
+.upt-group-item .up-cg-eye { margin-left: auto; }
 /* "Only show custom groupings" — same visual pill the toolbar's "Brand mentioned" toggle uses
    (32px, rounded, filled background once yes/no, same .upt-brand-check glyph), but its OWN class
    rather than literally .upt-brand-toggle: that class is also the target of the toolbar's
@@ -1059,53 +1029,6 @@
    for free, no separate drag-state CSS needed. */
 .upt-group-list { display: flex; flex-direction: column; gap: 4px; }
 
-/* ---------- "New grouping" popup: shell + chips are core's, only the layout here is local ---------- */
-.upt-gm-backdrop .up-topicmodal-card { max-width: 560px; }
-.upt-gm-labelrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.upt-gm-count { font-size: 12px; font-weight: 500; color: var(--vc-muted); font-variant-numeric: tabular-nums; }
-/* Hidden until the magnifier is clicked — with a handful of topics a permanent search field is
-   just a field nobody needs. */
-.upt-gm-search { position: relative; display: none; align-items: center; }
-.upt-gm-search.is-open { display: flex; }
-.upt-gm-right { display: inline-flex; align-items: center; gap: 8px; }
-.upt-gm-searchbtn { width: 26px; height: 26px; border: 0; border-radius: 7px; padding: 0;
-  background: transparent; color: var(--vc-muted); cursor: pointer;
-  display: inline-flex; align-items: center; justify-content: center; }
-.upt-gm-searchbtn svg { width: 14px; height: 14px; display: block; }
-.upt-gm-searchbtn:hover, .upt-gm-searchbtn.is-open { color: var(--vc-text); background: var(--vc-heading-bg); }
-/* Expanded list scrolls instead of growing without limit — 100 topics must not push the footer
-   off screen. */
-.upt-gm-list.is-scroll { max-height: 240px; overflow-y: auto; }
-.upt-gm-more { width: 100%; height: 30px; border: 0; border-radius: 8px; background: transparent;
-  color: var(--vc-muted); font-family: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; }
-.upt-gm-more:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
-.upt-gm-search-in { flex: 1 1 auto; height: 36px; padding: 0 34px 0 12px; border: 1px solid var(--vc-border);
-  border-radius: 9px; background: transparent; color: var(--vc-text); font: inherit; font-size: 14px; outline: 0; }
-.upt-gm-search-in:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); outline: 0; }
-.upt-gm-clear { position: absolute; right: 6px; width: 20px; height: 20px; border: 0; border-radius: 6px;
-  padding: 0; background: transparent; color: var(--vc-muted); cursor: pointer;
-  display: none; align-items: center; justify-content: center; }
-.upt-gm-clear.is-on { display: inline-flex; }
-.upt-gm-clear svg { width: 13px; height: 13px; display: block; }
-.upt-gm-clear:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
-.upt-gm-list { display: flex; flex-wrap: wrap; gap: 8px; }
-
-.upt-gm-namerow { display: flex; align-items: center; gap: 8px; }
-.upt-gm-colorwrap { flex: 0 0 auto; }
-.upt-gm-dotbtn { width: 36px; height: 36px; padding: 0; border-radius: 9px; border: 1px solid var(--vc-border);
-  background: transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
-.upt-gm-dotbtn:hover, .upt-gm-colorwrap.is-open .upt-gm-dotbtn { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
-.upt-gm-dot { width: 16px; height: 16px; border-radius: 50%; display: block; border: 1px solid rgba(0,0,0,.14); }
-/* Centered (same reasoning as .upt-topicpickpanel above: a left-aligned grid under a full-width
-   row looks like it fell over) and smooth: max-height/opacity animate together on open, driven by
-   .is-open added a frame after mount (see openGroupModal's data-gm-colorbtn handler) so there is
-   an actual "before" state to transition FROM. Because the panel node itself is never recreated
-   (only its innerHTML), the rest of the popup -- everything below it in the modal -- reflows in
-   step with the same 200ms ease instead of snapping to the new height. */
-.upt-gm-colorpanel { display: flex; justify-content: center;
-  max-height: 0; opacity: 0; overflow: hidden; margin-top: 0;
-  transition: max-height 200ms ease, opacity 200ms ease, margin-top 200ms ease; }
-.upt-gm-colorpanel.is-open { max-height: 160px; opacity: 1; margin-top: 10px; }
 /* Masse/Position: core.css (.up-badge.is-dot traegt diese Klasse als Alias). Hier bleibt nur,
    WANN er sichtbar wird -- das ist komponentenspezifisch. */
 .upt-group-dot { position: absolute; }
@@ -1117,47 +1040,3 @@
   .upt-grp-kpi { min-width: 58px; }
 }
 
-/* 6px colour dot in front of a custom group's name — the mix of its topics' colours, or whatever
-   the user picked in the popup. Topic groups carry their emoji+colour chip instead. */
-.upt-grp-cdot { width: 8px; height: 8px; border-radius: 4px; flex: 0 0 auto; display: block; }
-
-/* Row actions on a custom grouping: a three-dot trigger that fades in on hover (and stays while
-   its menu is open), replacing the always-visible X. The menu opens to the LEFT because the row
-   already sits at the right edge of a 340px popover. */
-/* Eye toggle sits before the three-dot trigger; it carries the auto-margin so the pair stays
-   right-aligned as one unit. Always visible (it is state, not an action). */
-.upt-group-eye { width: 24px; height: 24px; flex: 0 0 auto; margin-left: auto; border: 0;
-  border-radius: 6px; padding: 0; background: transparent; color: var(--vc-muted); cursor: pointer;
-  display: inline-flex; align-items: center; justify-content: center;
-  opacity: 0; transition: opacity 120ms ease, color 120ms ease, background 120ms ease; }
-.upt-group-eye svg { width: 14px; height: 14px; display: block; }
-/* Same hover-reveal as the three-dot trigger next to it -- an action row that's all-icons-visible
-   at rest read busier than the rest of this popover. A hidden grouping still reads as hidden while
-   collapsed (the dimmed name/dot below), so nothing is lost by hiding the toggle itself too. */
-.upt-group-item:hover .upt-group-eye,
-.upt-group-item.is-menuopen .upt-group-eye { opacity: 1; }
-.upt-group-eye:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
-.upt-group-eye.is-off { color: var(--vc-third); }
-/* A hidden grouping reads as hidden in the list too. */
-.upt-group-item:has(.upt-group-eye.is-off) .up-pop-label { opacity: .45; }
-.upt-group-item:has(.upt-group-eye.is-off) .upt-grp-cdot { opacity: .45; }
-.upt-group-more { width: 24px; height: 24px; flex: 0 0 auto; margin-left: 0; border: 0;
-  border-radius: 6px; padding: 0; background: transparent; color: var(--vc-muted); cursor: pointer;
-  display: inline-flex; align-items: center; justify-content: center;
-  opacity: 0; transition: opacity 120ms ease, color 120ms ease, background 120ms ease; }
-.upt-group-more svg { width: 14px; height: 14px; display: block; }
-.upt-group-item:hover .upt-group-more,
-.upt-group-item.is-menuopen .upt-group-more { opacity: 1; }
-.upt-group-more:hover, .upt-group-item.is-menuopen .upt-group-more { color: var(--vc-text); background: var(--vc-heading-bg); }
-/* core's .up-menu shell, not another hand-drawn panel — same frame, shadow, radius and
-   open/close transition as every other dropdown. Only its anchoring is local. */
-/* .up-pop-opt is space-between (label left, a check right) — with a plain action list and no
-   check, the label ended up stretched across a too-tall row. flex-start + a tighter row is what
-   every other action menu in the app looks like. */
-.upt-group-rowmenu { top: calc(100% - 2px); right: 4px; left: auto; width: 128px; padding: 6px;
-  display: flex; flex-direction: column; gap: 2px; }
-/* 32px, flat, not padding-derived -- every menu row in this app is 32px, this one drifted to
-   whatever 7px vertical padding happened to compute to. */
-.upt-group-rowmenu .up-pop-opt { justify-content: flex-start; height: 32px; padding: 0 10px; font-size: 13px; }
-.upt-group-rowmenu .up-pop-opt.is-danger { color: #b0200c; }
-.upt-group-rowmenu .up-pop-opt.is-danger:hover { background: rgba(176,32,12,.08); }

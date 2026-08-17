@@ -82,6 +82,22 @@
     })();
   })();
 
+  ── Custom Groupings: nichts zu tun, aber gut zu wissen ──────────────────────
+  Unter der Themenliste steht ein zweiter Abschnitt "Custom Groupings". Eine Gruppierung ist eine
+  benannte Kombination aus bis zu drei Themen -- ein Prompt zaehlt dazu, wenn er ALLE traegt.
+  Anlegen, bearbeiten, verstecken, umsortieren und loeschen laeuft komplett hier, ohne Workflow und
+  ohne Datenbank: die Liste liegt im localStorage, teambezogen (UC.storeKey("promptGroups")).
+
+  WICHTIG: es ist DERSELBE Speicher, den das Gruppierungs-Dropdown der Prompts-Tabelle benutzt. Was
+  hier entsteht, steht dort sofort in der Liste und umgekehrt -- kein Abgleich, keine zweite Quelle.
+  Das Anlegen-Fenster, der Farbpunkt, das Auge, das Dreipunktmenue und das Umsortieren sind
+  buchstaeblich dasselbe Stueck Code (UC.makeGroupingModal und die UC.cg*-Bausteine in core.js).
+
+  Der Abschnitt wird von der Komponente selbst gebaut, nicht aus dem Markup unten. Ein bestehendes
+  Element bekommt ihn also mit dem naechsten CDN-Pin, ohne dass hier etwas nachgezogen werden muss.
+  Was er braucht: die Themenliste. Die kommt ueber renderTopicsManager, also ueber den Schritt, der
+  ohnehin laeuft -- ohne Themen zeigt der Abschnitt seinen Leerzustand.
+
   ── Loading state — own Run-JS step, same reasoning as every other component ─
   (function () {
     const INSTANCE_ID = `INSTANCE_ID`;
@@ -137,6 +153,9 @@
   </div>
 
   <div class="utm-chipgrid"></div>
+  <!-- Der Abschnitt "Custom Groupings" wird von der Komponente selbst gebaut, wenn er fehlt --
+       dieses leere Geruest ist nur da, damit man ihn im Bubble-Editor sieht. Weglassen ist
+       ausdruecklich in Ordnung. -->
 </div>
 <script>
 /* Loads this component's CSS/JS from jsDelivr, pinned to the commit hash you put in data-cdn-pin on

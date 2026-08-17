@@ -6058,6 +6058,15 @@
     clock:    '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
     shieldCheck:'<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>' +
               '<path d="m9 12 2 2 4-4"/>',
+    /* Aus prompts-table hierher: die Verwaltung der Gruppierungen braucht sie an zwei Orten, und
+       "nie selbst gezeichnet" heisst auch "nicht zweimal als Konstante in zwei Dateien". Alle vier
+       sind Lucide auf dem 24er Raster, unveraendert uebernommen. */
+    eye: '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>',
+    eyeOff: '<path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/>',
+    /* square-pen: Rahmen plus Stift. Dasselbe Zeichen, das das Zeilenmenue der Tabelle traegt. */
+    squarePen: '<path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/>',
+    /* refresh-cw, fuer "Generate More" in der Gruppenzeile. */
+    refreshCw: '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
     bulb:     '<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/>' +
               '<path d="M9 18h6"/><path d="M10 22h4"/>'
   };
@@ -6322,6 +6331,474 @@
            '" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
   }
 
+  /* ══ Custom Groupings ═══════════════════════════════════════════════════════════════════════
+     Eine Gruppierung ist eine benannte Kombination aus bis zu drei Themen: ein Prompt zaehlt zur
+     Gruppe, wenn er ALLE davon traegt. Sie lebt im localStorage, teambezogen, ohne Backend --
+     genau wie bisher in prompts-table, wo dieses Stueck entstanden ist.
+
+     Warum es hier steht: es gibt die Verwaltung an ZWEI Orten (das Dropdown der prompts-table und
+     der Abschnitt im topics-manager), und "1:1 dasselbe" ist nur zu halten, wenn es EIN Stueck Code
+     ist. Eine Kopie waere schon beim naechsten Feinschliff auseinandergelaufen.
+     Der Speicherschluessel ist derselbe wie vorher (storeKey("promptGroups")) -- eine Gruppierung,
+     die im topics-manager entsteht, steht damit sofort im Dropdown der Tabelle und umgekehrt. */
+  function cgKey(){ return storeKey("promptGroups"); }
+  function cgRead(){
+    try {
+      var raw = window.localStorage.getItem(cgKey());
+      if (!raw) return [];
+      var arr = JSON.parse(raw);
+      if (!Array.isArray(arr)) return [];
+      /* Dieselbe Pruefung wie bisher: ein Eintrag ohne Namen oder ohne Themen ist keiner. */
+      return arr.filter(function(g){
+        return g && typeof g.key === "string" && g.key && isArr(g.tag_ids) && g.tag_ids.length;
+      });
+    } catch(e){ return []; }
+  }
+  function cgWrite(list){
+    try { window.localStorage.setItem(cgKey(), JSON.stringify(list || [])); } catch(e){}
+  }
+  /* Kanalweiser Mittelwert der Themenfarben. Eine Gruppe aus einem blauen und einem gruenen Thema
+     liest sich als das Blaugruen dazwischen -- das ist, wie "die gehoeren zusammen" aussehen soll.
+     Ueberschreiben kann man es in der Farbwahl weiterhin. */
+  function cgMixHex(list){
+    var cols = (list || []).map(function(h){
+      h = String(h || "").replace("#", "");
+      if (h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+      return /^[0-9a-fA-F]{6}$/.test(h) ? h : null;
+    }).filter(Boolean);
+    if (!cols.length) return TOPIC_COLOR_PALETTE[0];
+    var r=0, g=0, b=0;
+    cols.forEach(function(h){
+      r += parseInt(h.slice(0,2),16); g += parseInt(h.slice(2,4),16); b += parseInt(h.slice(4,6),16);
+    });
+    function two(n){ n = Math.round(n / cols.length).toString(16); return n.length < 2 ? "0"+n : n; }
+    return "#" + two(r) + two(g) + two(b);
+  }
+
+  var CG_MAX_TOPICS = 3;
+  var CG_TOPICS_COLLAPSED = 10;   /* soviele zeigen, dann ein "Show all"-Knopf */
+
+  /* Das Anlegen-/Bearbeiten-Fenster. Aufruf:
+       var m = UC.makeGroupingModal({
+         getIsDark:  fn -> bool,
+         getTopics:  fn -> [ {name, emoji, hex_light, hex_dark, ...} ],
+         topicId:    fn(t) -> string        (optional; Standard sucht die ueblichen Felder ab)
+         onSave:     fn({ key, tag_ids, color })   -- Speichern liegt beim Aufrufer, weil beide
+                     Orte danach etwas anderes tun (die Tabelle holt Gruppen nachladen, der
+                     Manager zeichnet nur seine Liste neu)
+       });
+       m.open();            neu anlegen
+       m.open(eintrag);     bearbeiten
+     Die Klassen tragen doppelte Namen (.up-cgm-* UND .upt-gm-*): die Regeln dazu standen in
+     prompts-table.css und liegen jetzt in core.css, mit beiden Selektoren in derselben Regel. So
+     bleibt die Tabelle pixelgleich, der Manager bekommt dasselbe Aussehen, und kein Klassenname
+     verschwindet aus dem Vertrag. */
+  function makeGroupingModal(cfg){
+    cfg = cfg || {};
+    var getIsDark = cfg.getIsDark || function(){ return false; };
+    var getTopics = cfg.getTopics || function(){ return []; };
+    var idOf = cfg.topicId || function(t){
+      return String((t && (t.topic_id || t.tag_id || t.id || t.name)) || "");
+    };
+    var onSave = cfg.onSave || function(){};
+    var SEARCH_SVG = icon("search", 2);
+
+    var modal = null, picked = {}, farbe = null, farbOffen = false,
+        nameBeruehrt = false, suche = "", sucheOffen = false, alleZeigen = false,
+        bearbeitet = null;   /* der Eintrag, der bearbeitet wird, oder null */
+
+    function pickedIds(){
+      return getTopics().map(idOf).filter(function(id){ return picked[id]; });
+    }
+    function topicById(id){
+      return getTopics().filter(function(t){ return idOf(t) === id; })[0];
+    }
+    function autoColor(){
+      return cgMixHex(pickedIds().map(function(id){
+        var t = topicById(id); return t && (t.hex_light || t.hex_dark);
+      }));
+    }
+    function autoName(){
+      return pickedIds().map(function(id){
+        var t = topicById(id); return t ? String(t.name == null ? "" : t.name) : "";
+      }).filter(Boolean).join(" & ");
+    }
+    /* Der Platzhalter im Namensfeld ist ein ZUFAELLIGES Paar echter Themennamen dieser Seite --
+       "Sedans & SUVs" waere erfunden und saehe wie ein Vorschlag aus, den es gar nicht gibt.
+       Unter zwei Themen gibt es kein Paar, dann der neutrale Text. Exakt die Fassung, die in
+       prompts-table stand. */
+    function platzhalter(){
+      var names = getTopics().map(function(t){ return String(t.name == null ? "" : t.name); })
+                             .filter(Boolean);
+      if (names.length < 2) return "Group name…";
+      var i = Math.floor(Math.random() * names.length);
+      var j = Math.floor(Math.random() * (names.length - 1));
+      if (j >= i) j += 1;
+      return names[i] + " & " + names[j];
+    }
+
+    function chipHtml(t){
+      var id = idOf(t), on = !!picked[id];
+      var color = String(t.hex_light || t.hex_dark || "#6b7280");
+      if (color.charAt(0) !== "#") color = "#" + color;
+      return '<button type="button" class="up-topicchip up-chiphover' + (on ? " is-on" : "") +
+        '" data-gm-topic="' + esc(id) + '" style="--ust-tag-color:' + esc(color) + '">' +
+        (t.emoji ? '<span class="up-topicchip-e">' + esc(t.emoji) + '</span>' : "") +
+        '<span class="up-topicchip-lbl">' + esc(t.name == null ? "" : t.name) + '</span>' +
+        '<span class="up-topicchip-check' + (on ? " is-on" : "") + '">' + CHECK_SVG + '</span>' +
+      '</button>';
+    }
+
+    function renderBody(animateList){
+      if (!modal) return;
+      var n = pickedIds().length, voll = n >= CG_MAX_TOPICS;
+      var q = suche.trim().toLowerCase();
+      var gefunden = getTopics().filter(function(t){
+        return !q || String(t.name || "").toLowerCase().indexOf(q) > -1;
+      });
+      /* Eingeklappt, damit zehn Themen keine Wand werden; ausgeklappt wird die Liste ein
+         Scrollbereich, statt hundert Themen aus dem Fenster zu schieben. */
+      var verborgen = Math.max(0, gefunden.length - CG_TOPICS_COLLAPSED);
+      var sichtbar = (alleZeigen || !verborgen) ? gefunden : gefunden.slice(0, CG_TOPICS_COLLAPSED);
+      var list = modal.querySelector(".up-cgm-list");
+      if (list){
+        list.className = "up-cgm-list upt-gm-list up-topiclist" + (voll ? " is-full" : "") +
+                         (alleZeigen ? " is-scroll" : "");
+        var html = sichtbar.length ? sichtbar.map(chipHtml).join("")
+                                   : '<div class="up-cgm-empty upt-topicmenu-empty">No topics match</div>';
+        /* Dieselbe Mechanik wie im Popover: Chips, die verrutschen, weil ein Haken erscheint,
+           gleiten an ihren neuen Platz statt zu springen. */
+        if (animateList && typeof flipReplace === "function") flipReplace(list, html, "[data-gm-topic]");
+        else list.innerHTML = html;
+      }
+      var moreBtn = modal.querySelector(".up-cgm-more");
+      if (moreBtn){
+        var zeigen = verborgen > 0 && !alleZeigen;
+        moreBtn.style.display = zeigen ? "" : "none";
+        moreBtn.textContent = zeigen ? ("Show all " + gefunden.length + " topics") : "";
+      }
+      var sw = modal.querySelector(".up-cgm-search");
+      if (sw) sw.classList.toggle("is-open", sucheOffen);
+      var sbtn = modal.querySelector(".up-cgm-searchbtn");
+      if (sbtn) sbtn.classList.toggle("is-open", sucheOffen);
+      var cnt = modal.querySelector(".up-cgm-count");
+      if (cnt) cnt.textContent = n + "/" + CG_MAX_TOPICS;
+
+      var nameEl = modal.querySelector(".up-cgm-name-in");
+      /* Vorbelegt aus den gewaehlten Themen ("Sedans & SUVs"), bis der Nutzer selbst tippt. */
+      if (nameEl && !nameBeruehrt) nameEl.value = autoName();
+      if (nameEl && bearbeitet && !nameEl.value) nameEl.value = bearbeitet.key;
+      var col = farbe || autoColor();
+      var dot = modal.querySelector(".up-cgm-dot");
+      if (dot) dot.style.background = col;
+
+      var wrap = modal.querySelector(".up-cgm-colorwrap");
+      if (wrap) wrap.classList.toggle("is-open", farbOffen);
+      /* Das Panel selbst wird nie neu erzeugt (nur sein innerHTML), damit ein nach dem Einhaengen
+         gesetztes .is-open jeden Neuaufbau ueberlebt -- eine Farbwahl frischt nur den Haken auf und
+         spielt die Eingangsbewegung nicht erneut. */
+      var panel = modal.querySelector(".up-cgm-colorpanel");
+      if (panel){
+        if (farbOffen){
+          panel.innerHTML = '<div class="up-cgm-colorgrid upt-colorgrid">' + TOPIC_COLOR_PALETTE.map(function(hx){
+              var on = hx === col;
+              return '<button type="button" class="up-cgm-colorcell upt-colorcell" data-gm-color="' + esc(hx) + '"' +
+                ' aria-label="' + esc(hx) + '" aria-pressed="' + (on ? "true" : "false") + '">' +
+                '<span class="up-cgm-colorblob upt-colorblob" style="background:' + esc(hx) + '">' +
+                  (on ? CHECK_SVG : "") + '</span>' +
+              '</button>';
+            }).join("") + '</div>';
+        } else { panel.innerHTML = ""; panel.classList.remove("is-open"); }
+      }
+      var sub = modal.querySelector(".up-cgm-submit");
+      if (sub) sub.disabled = !(nameEl && nameEl.value.trim() && n);
+    }
+
+    function zu(){
+      if (!modal) return;
+      modal.classList.remove("is-shown");
+      var m = modal;
+      setTimeout(function(){ if (m && m.parentNode) m.parentNode.removeChild(m); }, 160);
+      modal = null;
+      document.removeEventListener("keydown", taste, true);
+    }
+    function taste(e){ if (e.key === "Escape"){ e.stopPropagation(); zu(); } }
+
+    function auf(eintrag){
+      zu();
+      bearbeitet = eintrag || null;
+      picked = {}; farbe = bearbeitet ? (bearbeitet.color || null) : null;
+      farbOffen = false; nameBeruehrt = !!bearbeitet;
+      suche = ""; sucheOffen = false; alleZeigen = false;
+      if (bearbeitet) (bearbeitet.tag_ids || []).forEach(function(id){ picked[String(id)] = true; });
+      modal = document.createElement("div");
+      modal.className = "up-topicmodal-backdrop up-cgm-backdrop upt-gm-backdrop";
+      if (getIsDark()) modal.setAttribute("data-theme", "dark");
+      modal.innerHTML =
+        '<div class="up-topicmodal-card" role="dialog" aria-modal="true" aria-label="' +
+            (bearbeitet ? "Edit Grouping" : "New Grouping") + '">' +
+          '<div class="up-topicmodal-head">' +
+            '<div class="up-topicmodal-heading">' +
+              '<h3 class="up-topicmodal-title">' + (bearbeitet ? "Edit Grouping" : "New Grouping") + '</h3>' +
+              '<p class="up-topicmodal-sub">Combine several topics into one group. A prompt counts ' +
+                'towards the group only if it carries <strong>all</strong> of the topics.</p>' +
+            '</div>' +
+            '<button class="up-topicmodal-close" type="button" data-gm-close aria-label="Close">' + CLOSE_SVG_TM + '</button>' +
+          '</div>' +
+          '<div class="up-topicmodal-body">' +
+            '<div class="up-topicmodal-field">' +
+              '<div class="up-cgm-labelrow upt-gm-labelrow">' +
+                '<span class="up-topicmodal-label">Topics</span>' +
+                '<span class="up-cgm-right upt-gm-right">' +
+                  '<button class="up-cgm-searchbtn upt-gm-searchbtn" type="button" data-gm-searchtoggle aria-label="Search topics">' +
+                    SEARCH_SVG + '</button>' +
+                  '<span class="up-cgm-count upt-gm-count">0/' + CG_MAX_TOPICS + '</span>' +
+                '</span>' +
+              '</div>' +
+              '<div class="up-cgm-search upt-gm-search">' +
+                '<input class="up-cgm-search-in upt-gm-search-in" type="text" placeholder="Search topics…" autocomplete="off" spellcheck="false"/>' +
+                '<button class="up-cgm-clear upt-gm-clear" type="button" data-gm-clear aria-label="Clear search">' + CLOSE_SVG_TM + '</button>' +
+              '</div>' +
+              '<div class="up-cgm-list upt-gm-list up-topiclist"></div>' +
+              '<button class="up-cgm-more upt-gm-more" type="button" data-gm-more></button>' +
+            '</div>' +
+            '<div class="up-topicmodal-field">' +
+              '<span class="up-topicmodal-label">Group name</span>' +
+              '<div class="up-cgm-namerow upt-gm-namerow">' +
+                '<div class="up-cgm-colorwrap upt-gm-colorwrap">' +
+                  '<button class="up-cgm-dotbtn upt-gm-dotbtn" type="button" data-gm-colorbtn aria-label="Group color">' +
+                    '<span class="up-cgm-dot upt-gm-dot"></span></button>' +
+                '</div>' +
+                '<input class="up-topicmodal-name up-cgm-name-in upt-gm-name-in" type="text" placeholder="' +
+                  esc(platzhalter()) + '" autocomplete="off" spellcheck="false"/>' +
+              '</div>' +
+              '<div class="up-cgm-colorpanel upt-gm-colorpanel"></div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="up-topicmodal-foot">' +
+            '<button class="up-topicmodal-save up-cgm-submit upt-gm-submit" type="button" data-gm-submit disabled>' +
+              (bearbeitet ? "Save" : "Create grouping") + '</button>' +
+          '</div>' +
+        '</div>';
+      document.body.appendChild(modal);
+      renderBody();
+      requestAnimationFrame(function(){ if (modal) modal.classList.add("is-shown"); });
+      document.addEventListener("keydown", taste, true);
+
+      modal.addEventListener("input", function(e){
+        if (e.target.classList.contains("up-cgm-name-in")){ nameBeruehrt = true; renderBody(); return; }
+        if (e.target.classList.contains("up-cgm-search-in")){ suche = e.target.value; renderBody(); return; }
+      });
+      modal.addEventListener("click", function(e){
+        if (e.target === modal){ zu(); return; }
+        if (e.target.closest("[data-gm-close]")){ zu(); return; }
+        if (e.target.closest("[data-gm-more]")){ alleZeigen = true; renderBody(); return; }
+        if (e.target.closest("[data-gm-searchtoggle]")){
+          sucheOffen = !sucheOffen;
+          if (!sucheOffen) suche = "";
+          renderBody();
+          if (sucheOffen){
+            var si2 = modal.querySelector(".up-cgm-search-in");
+            if (si2) setTimeout(function(){ try { si2.focus(); } catch(x){} }, 60);
+          }
+          return;
+        }
+        if (e.target.closest("[data-gm-clear]")){
+          suche = "";
+          var si = modal.querySelector(".up-cgm-search-in");
+          if (si){ si.value = ""; si.focus(); }
+          renderBody(); return;
+        }
+        if (e.target.closest("[data-gm-colorbtn]")){
+          var warOffen = farbOffen;
+          farbOffen = !farbOffen;
+          renderBody();
+          /* Aufgehen wird animiert, in zwei Schritten: erst eingeklappt einhaengen, dann im
+             naechsten Bild .is-open -- sonst hat der Browser kein "davor" zum Ueberblenden.
+             Derselbe Trick wie beim Fenster selbst mit .is-shown. Zugehen ist ohne Bewegung. */
+          if (!warOffen && farbOffen){
+            var p0 = modal.querySelector(".up-cgm-colorpanel");
+            if (p0) requestAnimationFrame(function(){ p0.classList.add("is-open"); });
+          }
+          return;
+        }
+        var cc = e.target.closest("[data-gm-color]");
+        /* Bleibt beim Waehlen offen -- wie die Emoji- und Farbwahl ueberall sonst. */
+        if (cc){ farbe = cc.getAttribute("data-gm-color"); renderBody(); return; }
+        var chip = e.target.closest("[data-gm-topic]");
+        if (chip){
+          var tid = chip.getAttribute("data-gm-topic");
+          if (picked[tid]) delete picked[tid];
+          else if (pickedIds().length < CG_MAX_TOPICS) picked[tid] = true;
+          else return;                       /* an der Grenze; .is-full sagt es schon optisch */
+          renderBody(true);
+          return;
+        }
+        if (e.target.closest("[data-gm-submit]")){
+          var nameEl = modal.querySelector(".up-cgm-name-in");
+          var name = nameEl ? nameEl.value.trim() : "";
+          var ids = pickedIds();
+          if (!name || !ids.length) return;
+          var eintragNeu = { key: name, tag_ids: ids, color: farbe || autoColor() };
+          /* Beim Umbenennen ersetzt der neue Eintrag den alten -- und ein bestehender gleichen
+             Namens wird ueberschrieben, nicht verdoppelt. Die Reihenfolge bleibt sonst erhalten:
+             wer bearbeitet, will seine Gruppe nicht ans Ende geschoben sehen. */
+          var altKey = bearbeitet ? bearbeitet.key : null;
+          var liste = cgRead();
+          var pos = -1, i;
+          for (i = 0; i < liste.length; i++) if (liste[i].key === altKey){ pos = i; break; }
+          var ohne = liste.filter(function(g){ return g.key !== name && g.key !== altKey; });
+          if (pos >= 0 && pos <= ohne.length) ohne.splice(pos, 0, eintragNeu);
+          else ohne.push(eintragNeu);
+          /* Ein verstecktes bleibt versteckt. */
+          if (bearbeitet && bearbeitet.hidden) eintragNeu.hidden = true;
+          cgWrite(ohne);
+          zu();
+          try { onSave(eintragNeu); } catch(x){}
+          return;
+        }
+      });
+    }
+
+    return { open: auf, close: zu, isOpen: function(){ return !!modal; } };
+  }
+
+  /* ---- Bausteine einer Gruppierungs-Zeile ---------------------------------------------------
+     Punkt, Auge und Dreipunktmenue sehen an beiden Orten gleich aus, also stehen sie hier. Die
+     Klassen sind doppelt (Kit-Name plus der alte .upt-group-*-Name), damit die Regeln der
+     prompts-table weiter greifen und kein Name aus dem Vertrag faellt. */
+  function cgDotHtml(color){
+    return '<span class="up-cg-dot upt-grp-cdot" style="background:' + esc(color || "#6b7280") + '"></span>';
+  }
+  function cgEyeHtml(g){
+    var aus = !!(g && g.hidden);
+    return '<button class="up-cg-eye upt-group-eye' + (aus ? " is-off" : "") + '" type="button" ' +
+      'data-grp-eye="' + esc(g.key) + '" aria-label="' + (aus ? "Show grouping" : "Hide grouping") +
+      '" aria-pressed="' + (aus ? "true" : "false") + '">' + icon(aus ? "eyeOff" : "eye", 2) + '</button>';
+  }
+  /* offen: der Schluessel, dessen Zeilenmenue steht -- oder null. Das Menue oeffnet nach LINKS,
+     weil die Zeile am rechten Rand ihres Behaelters sitzt. */
+  function cgMoreHtml(g, offen){
+    var auf = offen === g.key;
+    return '<button class="up-cg-more upt-group-more" type="button" data-grp-rowmenu="' + esc(g.key) +
+        '" aria-label="Group actions" aria-haspopup="menu">' + icon("moreHorizontal", 2) + '</button>' +
+      (auf ? '<div class="up-menu up-cg-rowmenu upt-group-rowmenu is-shown" role="menu">' +
+          '<div class="up-pop-opt" data-grp-edit="' + esc(g.key) + '">Edit</div>' +
+          '<div class="up-pop-opt is-danger" data-grp-del="' + esc(g.key) + '">Delete</div>' +
+        '</div>' : "");
+  }
+
+  /* ---- Umsortieren per Zeiger --------------------------------------------------------------
+     Nicht die HTML5-Drag-API: die zeichnet ein eigenes Geisterbild, meldet dragover nur in
+     Intervallen und nur ueber gueltigen Zielen, und jeder Schritt braucht ein preventDefault --
+     im Ergebnis hakelig. pointerdown/move/up laeuft so fluessig wie die angehefteten Eintraege der
+     Sidebar, und es ist dieselbe Mechanik.
+     Delegiert am BEHAELTER, nicht an den Zeilen: der ueberlebt jedes Neuzeichnen, weil nur sein
+     innerHTML ersetzt wird. Die gezogene Zeile wird im DOM verschoben, sobald der Zeiger die Mitte
+     einer anderen passiert -- die Liste steht also immer schon so, wie sie nach dem Loslassen
+     aussieht. Erst nach 4px Bewegung wird es ein Ziehen, sonst bliebe kein Klick uebrig.
+     cfg: { rowSel, noDragSel, onOrder(keys), onDrop() } */
+  function cgDragList(container, cfg){
+    if (!container || container.__upCgDrag) return;
+    container.__upCgDrag = true;
+    cfg = cfg || {};
+    var rowSel = cfg.rowSel || "[data-grp-drag]";
+    var attr = rowSel.replace(/^\[|\]$/g, "");
+    var noDrag = cfg.noDragSel || ".up-cg-eye, .up-cg-more, .up-cg-rowmenu";
+    var zieh = null, gezogen = false;
+    function klassenWeg(){
+      [].forEach.call(container.querySelectorAll(rowSel), function(r){ r.classList.remove("is-dragging"); });
+    }
+    container.addEventListener("pointerdown", function(e){
+      if (!e.target.closest) return;
+      if (e.target.closest(noDrag)) return;          /* Auge, Kebab und Menue ziehen nicht */
+      var row = e.target.closest(rowSel);
+      if (!row) return;
+      zieh = { row: row, body: row.parentNode, y0: e.clientY, aktiv: false };
+      try { row.setPointerCapture(e.pointerId); } catch(err){}
+    });
+    container.addEventListener("pointermove", function(e){
+      if (!zieh) return;
+      if (!zieh.aktiv){
+        if (Math.abs(e.clientY - zieh.y0) < 4) return;
+        zieh.aktiv = true;
+        zieh.row.classList.add("is-dragging");
+      }
+      var zeilen = [].slice.call(zieh.body.querySelectorAll(rowSel));
+      for (var i = 0; i < zeilen.length; i++){
+        var z = zeilen[i];
+        if (z === zieh.row) continue;
+        var r = z.getBoundingClientRect();
+        if (e.clientY < r.top || e.clientY > r.bottom) continue;
+        var davor = (e.clientY - r.top) < r.height / 2;
+        zieh.body.insertBefore(zieh.row, davor ? z : z.nextSibling);
+        break;
+      }
+    });
+    function ende(){
+      if (!zieh) return;
+      var z = zieh; zieh = null;
+      z.row.classList.remove("is-dragging");
+      if (!z.aktiv) return;                          /* war nur ein Klick */
+      /* Nach dem Ziehen folgt ein click auf derselben Zeile -- der darf nicht auch noch etwas
+         auswaehlen. Die Marke haelt genau diesen einen Klick auf; am Knoten kann sie nicht haengen,
+         weil das Neuzeichnen ihn gleich ersetzt. */
+      gezogen = true;
+      var keys = [].map.call(container.querySelectorAll(rowSel), function(el){
+        return el.getAttribute(attr.split("=")[0]);
+      });
+      klassenWeg();
+      if (cfg.onOrder) cfg.onOrder(keys);
+      if (cfg.onDrop) cfg.onDrop();
+    }
+    container.addEventListener("pointerup", ende);
+    container.addEventListener("pointercancel", ende);
+    /* Im capture, damit der Klick vor allen anderen Zuhoerern aufgehalten wird. */
+    container.addEventListener("click", function(e){
+      if (!gezogen) return;
+      gezogen = false;
+      if (e.target.closest && e.target.closest(rowSel)){ e.stopPropagation(); e.preventDefault(); }
+    }, true);
+  }
+  /* ---- Die drei Schreiboperationen ----------------------------------------------------------
+     Sie standen als vier gleiche filter()-Zeilen in prompts-table und waeren im topics-manager ein
+     zweites Mal entstanden. Jede schreibt selbst und gibt die neue Liste zurueck, damit der
+     Aufrufer nicht erneut lesen muss. */
+  function cgFind(key){
+    var l = cgRead();
+    for (var i = 0; i < l.length; i++) if (l[i].key === key) return l[i];
+    return null;
+  }
+  /* hidden: true versteckt, false LOESCHT das Feld statt es auf false zu setzen -- der Eintrag
+     bleibt damit so schmal wie der, den das Fenster schreibt, und ein Vergleich der beiden Formen
+     faellt nicht auf. Ohne Argument wird umgeschaltet. */
+  function cgSetHidden(key, hidden){
+    var liste = cgRead().map(function(g){
+      if (g.key !== key) return g;
+      var soll = (hidden == null) ? !g.hidden : !!hidden;
+      if (soll) g.hidden = true; else delete g.hidden;
+      return g;
+    });
+    cgWrite(liste);
+    return liste;
+  }
+  function cgDelete(key){
+    var liste = cgRead().filter(function(g){ return g.key !== key; });
+    cgWrite(liste);
+    return liste;
+  }
+
+  /* Die neue Reihenfolge festschreiben: sichtbare in der uebergebenen Ordnung, verborgene
+     dahinter in ihrer bisherigen relativen Ordnung -- sie sind nie Teil des Ziehens. */
+  function cgApplyOrder(keys){
+    var alle = cgRead(), nach = {};
+    alle.forEach(function(g){ nach[g.key] = g; });
+    var verborgen = alle.filter(function(g){ return g.hidden; });
+    cgWrite((keys || []).map(function(k){ return nach[k]; })
+              .filter(function(g){ return g && !g.hidden; }).concat(verborgen));
+  }
+
+
   var API = {
     BUILD: BUILD,
     EMPTY_GRACE_MS: EMPTY_GRACE_MS,
@@ -6470,6 +6947,20 @@
     swatchInk: swatchInk,
     ensureEmojiLib: ensureEmojiLib,
     makeTopicModal: makeTopicModal,
+    /* Custom Groupings: ein Speicher, ein Fenster, zwei Orte. */
+    cgRead: cgRead,
+    cgWrite: cgWrite,
+    cgMixHex: cgMixHex,
+    CG_MAX_TOPICS: CG_MAX_TOPICS,
+    makeGroupingModal: makeGroupingModal,
+    cgDotHtml: cgDotHtml,
+    cgEyeHtml: cgEyeHtml,
+    cgMoreHtml: cgMoreHtml,
+    cgDragList: cgDragList,
+    cgApplyOrder: cgApplyOrder,
+    cgFind: cgFind,
+    cgSetHidden: cgSetHidden,
+    cgDelete: cgDelete,
     makePageNav: makePageNav,
     makePageHeaderMeta: makePageHeaderMeta,
     syncTheme: syncTheme,

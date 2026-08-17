@@ -2064,3 +2064,151 @@
 .up-varring-track { stroke: var(--vc-heading-bg); }
 .up-varring-fill { stroke: var(--vc-text); transition: stroke-dasharray 240ms ease; }
 .up-var-of { font-size: 12px; font-weight: 400; color: var(--vc-third); white-space: nowrap; }
+
+/* ══ Custom Groupings ═══════════════════════════════════════════════════════════════════════════
+   Diese Regeln standen in prompts-table.css und sind hierher GEWANDERT, Werte unveraendert. Grund:
+   die Verwaltung der Gruppierungen gibt es an zwei Orten (Dropdown der prompts-table, Abschnitt im
+   topics-manager), und "1:1 dasselbe" ist nur zu halten, wenn es EINE Regel ist.
+
+   Jede Regel traegt beide Selektoren: den alten .upt-*-Namen und den Kit-Namen .up-cgm-*. Das
+   Markup aus UC.makeGroupingModal setzt beide Klassen. Damit bleibt die Tabelle pixelgleich, der
+   Manager bekommt dasselbe Aussehen ohne zweite Kopie, und kein Klassenname verschwindet aus dem
+   Vertrag -- .contract_diff zaehlt entfernte Klassen als Alarm, und zu Recht: an einem
+   .upt-gm-*-Namen kann fremdes CSS in der Bubble-App haengen.
+   Das Farbraster (.upt-colorgrid und Geschwister) ist mitgewandert, weil der Themen-Ersteller der
+   prompts-table es ebenfalls benutzt: es war schon vor dieser Runde an zwei Stellen im Einsatz und
+   stand trotzdem in einer Komponentendatei. */
+/* ---------- "New grouping" popup: shell + chips are core's, only the layout here is local ---------- */
+.upt-gm-backdrop .up-topicmodal-card, .up-cgm-backdrop .up-topicmodal-card { max-width: 560px; }
+.upt-gm-labelrow, .up-cgm-labelrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.upt-gm-count, .up-cgm-count { font-size: 12px; font-weight: 500; color: var(--vc-muted); font-variant-numeric: tabular-nums; }
+/* Hidden until the magnifier is clicked — with a handful of topics a permanent search field is
+   just a field nobody needs. */
+.upt-gm-search, .up-cgm-search { position: relative; display: none; align-items: center; }
+.upt-gm-search.is-open, .up-cgm-search.is-open { display: flex; }
+.upt-gm-right, .up-cgm-right { display: inline-flex; align-items: center; gap: 8px; }
+.upt-gm-searchbtn, .up-cgm-searchbtn { width: 26px; height: 26px; border: 0; border-radius: 7px; padding: 0;
+  background: transparent; color: var(--vc-muted); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; }
+.upt-gm-searchbtn svg, .up-cgm-searchbtn svg { width: 14px; height: 14px; display: block; }
+.upt-gm-searchbtn:hover, .up-cgm-searchbtn:hover, .upt-gm-searchbtn.is-open, .up-cgm-searchbtn.is-open { color: var(--vc-text); background: var(--vc-heading-bg); }
+/* Expanded list scrolls instead of growing without limit — 100 topics must not push the footer
+   off screen. */
+.upt-gm-list.is-scroll, .up-cgm-list.is-scroll { max-height: 240px; overflow-y: auto; }
+.upt-gm-more, .up-cgm-more { width: 100%; height: 30px; border: 0; border-radius: 8px; background: transparent;
+  color: var(--vc-muted); font-family: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; }
+.upt-gm-more:hover, .up-cgm-more:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
+.upt-gm-search-in, .up-cgm-search-in { flex: 1 1 auto; height: 36px; padding: 0 34px 0 12px; border: 1px solid var(--vc-border);
+  border-radius: 9px; background: transparent; color: var(--vc-text); font: inherit; font-size: 14px; outline: 0; }
+.upt-gm-search-in:focus, .up-cgm-search-in:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); outline: 0; }
+.upt-gm-clear, .up-cgm-clear { position: absolute; right: 6px; width: 20px; height: 20px; border: 0; border-radius: 6px;
+  padding: 0; background: transparent; color: var(--vc-muted); cursor: pointer;
+  display: none; align-items: center; justify-content: center; }
+.upt-gm-clear.is-on, .up-cgm-clear.is-on { display: inline-flex; }
+.upt-gm-clear svg, .up-cgm-clear svg { width: 13px; height: 13px; display: block; }
+.upt-gm-clear:hover, .up-cgm-clear:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
+.upt-gm-list, .up-cgm-list { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.upt-gm-namerow, .up-cgm-namerow { display: flex; align-items: center; gap: 8px; }
+.upt-gm-colorwrap, .up-cgm-colorwrap { flex: 0 0 auto; }
+.upt-gm-dotbtn, .up-cgm-dotbtn { width: 36px; height: 36px; padding: 0; border-radius: 9px; border: 1px solid var(--vc-border);
+  background: transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.upt-gm-dotbtn:hover, .up-cgm-dotbtn:hover, .upt-gm-colorwrap.is-open .upt-gm-dotbtn, .up-cgm-colorwrap.is-open .up-cgm-dotbtn { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
+.upt-gm-dot, .up-cgm-dot { width: 16px; height: 16px; border-radius: 50%; display: block; border: 1px solid rgba(0,0,0,.14); }
+/* Centered (same reasoning as .upt-topicpickpanel above: a left-aligned grid under a full-width
+   row looks like it fell over) and smooth: max-height/opacity animate together on open, driven by
+   .is-open added a frame after mount (see openGroupModal's data-gm-colorbtn handler) so there is
+   an actual "before" state to transition FROM. Because the panel node itself is never recreated
+   (only its innerHTML), the rest of the popup -- everything below it in the modal -- reflows in
+   step with the same 200ms ease instead of snapping to the new height. */
+.upt-gm-colorpanel, .up-cgm-colorpanel { display: flex; justify-content: center;
+  max-height: 0; opacity: 0; overflow: hidden; margin-top: 0;
+  transition: max-height 200ms ease, opacity 200ms ease, margin-top 200ms ease; }
+.upt-gm-colorpanel.is-open, .up-cgm-colorpanel.is-open { max-height: 160px; opacity: 1; margin-top: 10px; }
+/* Rows are tone scales (vibrant / muted / deep), columns are hues — read down for a mood,
+   across for a color. Centred, because a left-aligned 8-wide grid under a full-width row above
+   it looked like it had fallen over. */
+.upt-colorgrid, .up-cgm-colorgrid { display: grid; grid-template-columns: repeat(10, 34px); gap: 6px; }
+/* The 34x34 cell is the hit target and carries the hover, the blob inside is just the colour —
+   splitting them is what lets the swatch stay a fixed size while the cell gets a proper
+   button-sized surface, instead of a small dot you have to aim at.
+   Transparent border reserved at rest (not added on hover) so the hover state doesn't shift
+   the swatch by the border's own width. */
+.upt-colorcell, .up-cgm-colorcell { width: 34px; height: 34px; padding: 0; border: 1px solid transparent; border-radius: 8px;
+  background: transparent; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background 120ms ease, border-color 120ms ease; }
+.upt-colorcell:hover, .up-cgm-colorcell:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
+/* No inset ring and no fractional-px spread: an inset shadow on a 20px circle plus a 3.5px
+   outer ring is what made these look soft/smeared rather than crisp. The blob is now a plain
+   filled circle at whole-pixel size, and selection is shown INSIDE it. */
+.upt-colorblob, .up-cgm-colorblob { width: 22px; height: 22px; border-radius: 50%; display: inline-flex;
+  align-items: center; justify-content: center; flex: 0 0 auto; color: #fff; }
+.upt-colorblob svg, .up-cgm-colorblob svg { width: 12px; height: 12px; display: block; stroke: currentColor; stroke-width: 4; }
+/* Fixed ink, not per-swatch contrast-solved: white in light mode, primary text in dark. Same rule
+   as core's canonical picker (up-topicmodal-colorblob) -- two selectors because this cell shows up
+   both inside .up-root (the inline topic creator) and inside the body-mounted group-modal
+   backdrop, which carries its own data-theme rather than inheriting .up-root's. */
+.up-root[data-theme="dark"] .upt-colorblob,
+.up-root[data-theme="dark"] .up-cgm-colorblob,
+.upt-gm-backdrop[data-theme="dark"] .upt-colorblob, .up-cgm-backdrop[data-theme="dark"] .up-cgm-colorblob { color: var(--vc-text); }
+.upt-topicmenu-empty, .up-cgm-empty { padding: 14px 8px; text-align: center; font-size: 12.5px; color: var(--vc-muted); }
+
+/* ---------- Zeile einer Gruppierung: Punkt, Auge, Dreipunktmenue, Zieh-Platzhalter ------------
+   Auch das gab es nur in prompts-table.css und wird jetzt an zwei Orten gebraucht. Gewandert mit
+   den Werten, die dort erprobt sind, und mit beiden Klassennamen je Regel.
+   Neu ist EINE Klasse: .up-cg-row. Sie markiert "das ist eine Gruppierungs-Zeile" und traegt die
+   Regeln, die vom Zustand der ZEILE abhaengen (Hover deckt Auge und Menue auf, das Ziehen macht die
+   Zeile zum Platzhalter). Vorher hingen die an .upt-group-item, also am Zeilentyp des Popovers --
+   im topics-manager ist die Zeile eine andere, die Regeln sind dieselben. Beide Orte setzen die
+   Klasse zusaetzlich zu ihrer eigenen. */
+.upt-grp-cdot, .up-cg-dot { width: 8px; height: 8px; border-radius: 4px; flex: 0 0 auto; display: block; }
+
+/* Auge und Kebab: 24x24, gedaempft, erscheinen erst beim Hover der Zeile -- eine Aktionszeile, in
+   der bei Ruhe alle Symbole stehen, liest sich unruhiger als der Rest. Ein verstecktes Grouping
+   bleibt trotzdem als versteckt erkennbar (gedimmter Name und Punkt weiter unten). */
+.upt-group-eye, .up-cg-eye,
+.upt-group-more, .up-cg-more { width: 24px; height: 24px; flex: 0 0 auto; border: 0;
+  border-radius: 6px; padding: 0; background: transparent; color: var(--vc-muted); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 120ms ease, color 120ms ease, background 120ms ease; }
+.upt-group-eye svg, .up-cg-eye svg,
+.upt-group-more svg, .up-cg-more svg { width: 14px; height: 14px; display: block; }
+.up-cg-row:hover .up-cg-eye, .up-cg-row.is-menuopen .up-cg-eye,
+.up-cg-row:hover .up-cg-more, .up-cg-row.is-menuopen .up-cg-more { opacity: 1; }
+.up-cg-eye:hover, .up-cg-more:hover,
+.up-cg-row.is-menuopen .up-cg-more { color: var(--vc-text); background: var(--vc-heading-bg); }
+.upt-group-eye.is-off, .up-cg-eye.is-off { color: var(--vc-third); }
+/* Ein verstecktes Grouping liest sich auch in der Liste als versteckt. */
+.up-cg-row:has(.up-cg-eye.is-off) .up-pop-label,
+.up-cg-row:has(.up-cg-eye.is-off) .up-cg-dot { opacity: .45; }
+
+/* core's .up-menu ist die Huelle -- gleicher Rahmen, Schatten, Radius und Uebergang wie jedes
+   andere Dropdown. Nur die Verankerung ist hier. Oeffnet nach LINKS, weil die Zeile am rechten
+   Rand ihres Behaelters sitzt. */
+.upt-group-rowmenu, .up-cg-rowmenu { top: calc(100% - 2px); right: 4px; left: auto; width: 128px; padding: 6px;
+  display: flex; flex-direction: column; gap: 2px; }
+/* 32px, flach, nicht aus Polsterung gerechnet -- jede Menuezeile dieser App ist 32px hoch. */
+.upt-group-rowmenu .up-pop-opt, .up-cg-rowmenu .up-pop-opt { justify-content: flex-start; height: 32px; padding: 0 10px; font-size: 13px; }
+.upt-group-rowmenu .up-pop-opt.is-danger, .up-cg-rowmenu .up-pop-opt.is-danger { color: #b0200c; }
+.upt-group-rowmenu .up-pop-opt.is-danger:hover, .up-cg-rowmenu .up-pop-opt.is-danger:hover { background: rgba(176,32,12,.08); }
+
+/* Beim Ziehen wird die Zeile ihr eigener Platzhalter, statt nur zu dimmen: der echte Inhalt
+   verschwindet, zwei graue Bloecke treten an seine Stelle, ein Rahmen markiert den Platz. Reiner
+   Klassenwechsel, kein innerHTML-Tausch -- ein abgebrochenes Ziehen (ausserhalb losgelassen,
+   Escape) kann die Zeile also nicht halb umgebaut hinterlassen. NICHT animiert: ein pulsendes
+   Skelett liest sich als "laedt", und das ist es nicht. */
+.up-cg-row.is-draggable { cursor: grab; }
+.up-cg-row.is-dragging { border: 1px solid var(--vc-border); border-radius: 8px; cursor: grabbing; }
+.up-cg-row.is-dragging > .up-cg-dot,
+.up-cg-row.is-dragging > .up-pop-label,
+.up-cg-row.is-dragging > .up-cg-eye,
+.up-cg-row.is-dragging > .up-cg-more { display: none; }
+.upt-group-sk-dot, .up-cg-sk-dot,
+.upt-group-sk-text, .up-cg-sk-text { display: none; background: var(--vc-border); border-radius: 4px; }
+.up-cg-row.is-dragging > .up-cg-sk-dot { display: block; width: 8px; height: 8px; border-radius: 4px; flex: 0 0 auto; }
+.up-cg-row.is-dragging > .up-cg-sk-text { display: block; width: 45%; height: 12px; }
+/* Greifhand und keine Textauswahl, solange irgendwo gezogen wird: ohne draggable-Attribut faellt
+   auch die Auswahlsperre des Browsers weg, und der Zeiger markiert die Namen. */
+.up-cg-list:has(.is-dragging) .up-cg-row { cursor: grabbing; }
+.up-cg-list:has(.is-dragging), .up-cg-list:has(.is-dragging) * { user-select: none; -webkit-user-select: none; }

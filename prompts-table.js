@@ -403,21 +403,15 @@
   /* Team-scoped through UC.storeKey. This one mattered most: a custom grouping is a list of TAG
      IDS, and a tag id from one team resolves to nothing in another -- so an unscoped key did not
      just show the wrong grouping, it produced silently empty groups. */
-  function groupsKey(){ return (window.UpstreemCore && window.UpstreemCore.storeKey)
-    ? window.UpstreemCore.storeKey("promptGroups") : "promptGroups"; }
+  /* Speicher der Gruppierungen: liegt in core, damit der topics-manager DIESELBE Liste sieht --
+     eine Gruppierung, die dort entsteht, steht sofort in diesem Dropdown und umgekehrt. Die beiden
+     Namen bleiben als Weiterleitung stehen: sie kommen in dieser Datei ein Dutzend Mal vor, und
+     eine Umbenennung waere Aenderung ohne Gewinn. */
   function readCustomGroups(){
-    try {
-      var raw = window.localStorage.getItem(groupsKey());
-      if (!raw) return [];
-      var arr = JSON.parse(raw);
-      if (!Array.isArray(arr)) return [];
-      return arr.filter(function(g){
-        return g && typeof g.key === "string" && g.key && Array.isArray(g.tag_ids) && g.tag_ids.length;
-      });
-    } catch(e){ return []; }
+    return (window.UpstreemCore && window.UpstreemCore.cgRead) ? window.UpstreemCore.cgRead() : [];
   }
   function writeCustomGroups(list){
-    try { window.localStorage.setItem(groupsKey(), JSON.stringify(list || [])); } catch(e){}
+    if (window.UpstreemCore && window.UpstreemCore.cgWrite) window.UpstreemCore.cgWrite(list);
   }
 
   function makeController(root){
@@ -428,7 +422,7 @@
     /* prefKey, NICHT storeKey: das Team-Suffix ist beim Boot noch nicht bekannt, also wurde unter
        einem anderen Schluessel gelesen als geschrieben -- die Gruppierung stand nach jedem
        Seitenaufruf wieder auf "no". Es sind Ansichtsvorlieben, keine Teamdaten. Die eigenen
-       Gruppierungen unten (groupsKey) bleiben team-gebunden, die enthalten Tag-Ids. */
+       Gruppierungen bleiben team-gebunden (UC.cgRead/cgWrite in core), die enthalten Tag-Ids. */
     function gKey(k){ return UC.prefKey ? UC.prefKey("upt_" + k + "__" + instanceId)
                                         : ("upt_" + k + "__" + instanceId); }
     function gGet(k){ return UC.prefGet ? UC.prefGet(gKey(k))
@@ -2172,28 +2166,23 @@
            being dragged or not. */
         var visible = custom.filter(function(g){ return !g.hidden; });
         var hidden = custom.filter(function(g){ return g.hidden; });
-        h += '<div class="upt-group-list">' + visible.concat(hidden).map(function(g){
+        h += '<div class="upt-group-list up-cg-list">' + visible.concat(hidden).map(function(g){
           var open = grpRowMenu === g.key;
-          return '<div class="up-pop-row upt-group-item' + (open ? " is-menuopen" : "") +
+          return '<div class="up-pop-row upt-group-item up-cg-row' + (open ? " is-menuopen" : "") +
               (g.hidden ? "" : " is-draggable") + '"' +
               /* KEIN draggable-Attribut: das Umsortieren laeuft ueber Zeiger-Ereignisse,
                  und mit draggable startet der Browser zusaetzlich seine eigene Drag-Sitzung. */
               (g.hidden ? "" : ' data-grp-drag="' + esc(g.key) + '"') + '>' +
-            '<span class="upt-grp-cdot" style="background:' + esc(g.color || "#6b7280") + '"></span>' +
+            UC.cgDotHtml(g.color) +
             '<span class="up-pop-label">' + esc(g.key) + '</span>' +
             /* Only ever shown via .is-dragging (see CSS) -- static placeholders for the dragged
                row's own slot, swapped in with a pure class toggle rather than an innerHTML swap. */
-            '<span class="upt-group-sk-dot"></span><span class="upt-group-sk-text"></span>' +
-            '<button class="upt-group-eye' + (g.hidden ? " is-off" : "") + '" type="button" data-grp-eye="' + esc(g.key) + '"' +
-              ' aria-label="' + (g.hidden ? "Show grouping" : "Hide grouping") + '" aria-pressed="' + (g.hidden ? "true" : "false") + '">' +
-              (g.hidden ? EYE_OFF_SVG : EYE_SVG) + '</button>' +
-            '<button class="upt-group-more" type="button" data-grp-rowmenu="' + esc(g.key) + '" aria-label="Group actions" aria-haspopup="menu">' + GRP_MORE_SVG + '</button>' +
-            /* Opens to the LEFT: this row already sits at the right edge of a 340px popover, so a
-               right-opening menu would leave the panel. */
-            (open ? '<div class="up-menu upt-group-rowmenu is-shown" role="menu">' +
-                '<div class="up-pop-opt" data-grp-edit="' + esc(g.key) + '">Edit</div>' +
-                '<div class="up-pop-opt is-danger" data-grp-del="' + esc(g.key) + '">Delete</div>' +
-              '</div>' : "") +
+            '<span class="upt-group-sk-dot up-cg-sk-dot"></span>' +
+            '<span class="upt-group-sk-text up-cg-sk-text"></span>' +
+            UC.cgEyeHtml(g) +
+            /* Oeffnet nach LINKS: die Zeile sitzt am rechten Rand eines 340px-Popovers, ein nach
+               rechts aufgehendes Menue waere ausserhalb. Markup und Regeln in core. */
+            UC.cgMoreHtml(g, grpRowMenu) +
           '</div>';
         }).join("") + '</div>';
       }
@@ -2323,272 +2312,26 @@
        -- the SAME chip, with the same sliding checkbox, that this component's own topic popover
        draws, because a topic has to look like itself everywhere. The colour picker is the same
        TOPIC_COLOR_PALETTE grid the inline topic creator uses. Nothing here is a look-alike. */
-    var GRP_MAX_TOPICS = 3;
-    var GM_SEARCH_SVG = UC.icon("search", 2);
-    var GRP_TOPICS_COLLAPSED = 10;   /* show this many, then a "Show all" button */
-    var grpModal = null, grpPicked = {}, grpColor = null, grpColorOpen = false,
-        grpNameTouched = false, grpQuery = "", grpSearchOpen = false, grpShowAll = false,
-        grpEditKey = null;   /* non-null => editing that existing group instead of creating one */
-    function closeGroupModal(){
-      if (!grpModal) return;
-      grpModal.classList.remove("is-shown");
-      var m = grpModal;
-      setTimeout(function(){ if (m && m.parentNode) m.parentNode.removeChild(m); }, 160);
-      grpModal = null;
-      document.removeEventListener("keydown", grpModalKey, true);
-    }
-    function grpModalKey(e){ if (e.key === "Escape"){ e.stopPropagation(); closeGroupModal(); } }
-
-    function grpPickedIds(){
-      return (state.topics || []).map(topicId).filter(function(id){ return grpPicked[id]; });
-    }
-    function grpTopicById(id){
-      return (state.topics || []).filter(function(t){ return topicId(t) === id; })[0];
-    }
-    /* Average of the picked topics' own colours, channel by channel. A group of blue-ish and
-       green-ish topics reads as the blue-green between them, which is what "these belong
-       together" should look like; the user can still override it in the picker. */
-    function mixHex(list){
-      var cols = list.map(function(h){
-        h = String(h || "").replace("#", "");
-        if (h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
-        return /^[0-9a-fA-F]{6}$/.test(h) ? h : null;
-      }).filter(Boolean);
-      if (!cols.length) return TOPIC_COLOR_PALETTE[0];
-      var r=0,g=0,b=0;
-      cols.forEach(function(h){
-        r += parseInt(h.slice(0,2),16); g += parseInt(h.slice(2,4),16); b += parseInt(h.slice(4,6),16);
-      });
-      function two(n){ n = Math.round(n / cols.length).toString(16); return n.length < 2 ? "0"+n : n; }
-      return "#" + two(r) + two(g) + two(b);
-    }
-    function grpAutoColor(){
-      return mixHex(grpPickedIds().map(function(id){
-        var t = grpTopicById(id); return t && (t.hex_light || t.hex_dark);
-      }));
-    }
-    function grpAutoName(){
-      return grpPickedIds().map(function(id){
-        var t = grpTopicById(id); return t ? String(t.name == null ? "" : t.name) : "";
-      }).filter(Boolean).join(" & ");
-    }
-
-    function grpChipHtml(t){
-      var id = topicId(t), on = !!grpPicked[id];
-      var color = String(t.hex_light || t.hex_dark || "#6b7280");
-      if (color.charAt(0) !== "#") color = "#" + color;
-      return '<button type="button" class="up-topicchip up-chiphover' + (on ? " is-on" : "") +
-        '" data-gm-topic="' + esc(id) + '" style="--ust-tag-color:' + esc(color) + '">' +
-        (t.emoji ? '<span class="up-topicchip-e">' + esc(t.emoji) + '</span>' : "") +
-        '<span class="up-topicchip-lbl">' + esc(t.name == null ? "" : t.name) + '</span>' +
-        '<span class="up-topicchip-check' + (on ? " is-on" : "") + '">' + CHECK_SVG + '</span>' +
-      '</button>';
-    }
-    function renderGroupModalBody(animateList){
-      if (!grpModal) return;
-      var picked = grpPickedIds(), n = picked.length, full = n >= GRP_MAX_TOPICS;
-
-      var q = grpQuery.trim().toLowerCase();
-      var shown = (state.topics || []).filter(function(t){
-        return !q || String(t.name || "").toLowerCase().indexOf(q) > -1;
-      });
-      /* Collapsed by default so ten topics do not become a wall; expanding turns the list into a
-         scroll container rather than letting 100 topics push the popup off screen. */
-      var hidden = Math.max(0, shown.length - GRP_TOPICS_COLLAPSED);
-      var visible = (grpShowAll || !hidden) ? shown : shown.slice(0, GRP_TOPICS_COLLAPSED);
-      var list = grpModal.querySelector(".upt-gm-list");
-      if (list){
-        list.className = "upt-gm-list up-topiclist" + (full ? " is-full" : "") + (grpShowAll ? " is-scroll" : "");
-        var html = visible.length
-          ? visible.map(grpChipHtml).join("")
-          : '<div class="upt-topicmenu-empty">No topics match</div>';
-        /* Exactly the popover's mechanic, from the same helper — the chips that shift because a
-           checkbox appeared slide to their new places instead of jumping. */
-        if (animateList) UC.flipReplace(list, html, "[data-gm-topic]");
-        else list.innerHTML = html;
+    /* ---- Custom Groupings: Speicher und Fenster kommen aus core ----------------------------
+       Hier standen rund 260 Zeilen: der Speicher, das Anlegen-Fenster mit Themenauswahl, Suche,
+       Show-More, Zaehler, Namensvorschlag, Farbmischung und Farbwahl. Dasselbe Stueck braucht der
+       topics-manager, und "1:1 gleich" ist nur zu halten, wenn es EIN Stueck Code ist -- also liegt
+       es jetzt in core (UC.makeGroupingModal, UC.cgRead/cgWrite). Die CSS ist mitgewandert und
+       traegt dort beide Klassennamen, damit diese Tabelle pixelgleich bleibt.
+       Was hier bleibt, ist die Verdrahtung: was NACH dem Speichern passiert, ist pro Ort anders --
+       die Tabelle zeichnet ihr Dropdown neu und holt die Gruppen nach. */
+    var GRP_MAX_TOPICS = UC.CG_MAX_TOPICS;
+    var grpModalCtl = UC.makeGroupingModal({
+      getIsDark: function(){ return isDark; },
+      getTopics: function(){ return state.topics || []; },
+      topicId: topicId,
+      onSave: function(){
+        populateGroupMenu();
+        if (groupingOn()) fetchGroups();
       }
-      var moreBtn = grpModal.querySelector(".upt-gm-more");
-      if (moreBtn){
-        var showMore = hidden > 0 && !grpShowAll;
-        moreBtn.style.display = showMore ? "" : "none";
-        moreBtn.textContent = showMore ? ("Show all " + shown.length + " topics") : "";
-      }
-      var sw = grpModal.querySelector(".upt-gm-search");
-      if (sw) sw.classList.toggle("is-open", grpSearchOpen);
-      var sbtn = grpModal.querySelector(".upt-gm-searchbtn");
-      if (sbtn) sbtn.classList.toggle("is-open", grpSearchOpen);
-      var cnt = grpModal.querySelector(".upt-gm-count");
-      if (cnt) cnt.textContent = n + "/" + GRP_MAX_TOPICS;
-
-      var nameEl = grpModal.querySelector(".upt-gm-name-in");
-      /* Prefilled from the picked topics ("Sedans & SUVs") until the user types their own. */
-      if (nameEl && !grpNameTouched) nameEl.value = grpAutoName();
-      if (nameEl && grpEditKey && !nameEl.value) nameEl.value = grpEditKey;
-      var col = grpColor || grpAutoColor();
-      var dot = grpModal.querySelector(".upt-gm-dot");
-      if (dot) dot.style.background = col;
-
-      var wrap = grpModal.querySelector(".upt-gm-colorwrap");
-      if (wrap) wrap.classList.toggle("is-open", grpColorOpen);
-      /* .upt-gm-colorpanel itself is never recreated (only its innerHTML), so an .is-open class
-         added after mount (see the data-gm-colorbtn handler) survives every re-render while the
-         picker stays open -- picking a color just refreshes the grid's checkmark, it does not
-         replay the entrance animation. */
-      var panel = grpModal.querySelector(".upt-gm-colorpanel");
-      if (panel){
-        if (grpColorOpen){
-          panel.innerHTML = '<div class="upt-colorgrid">' + TOPIC_COLOR_PALETTE.map(function(hx){
-              var on = hx === col;
-              return '<button type="button" class="upt-colorcell" data-gm-color="' + esc(hx) + '"' +
-                ' aria-label="' + esc(hx) + '" aria-pressed="' + (on ? "true" : "false") + '">' +
-                '<span class="upt-colorblob" style="background:' + esc(hx) + '">' +
-                  (on ? CHECK_SVG : "") + '</span>' +
-              '</button>';
-            }).join("") + '</div>';
-        } else {
-          panel.classList.remove("is-open");
-          panel.innerHTML = "";
-        }
-      }
-      var clr = grpModal.querySelector(".upt-gm-clear");
-      if (clr) clr.classList.toggle("is-on", !!grpQuery);
-
-      var submit = grpModal.querySelector(".upt-gm-submit");
-      if (submit) submit.disabled = !(n > 0 && nameEl && nameEl.value.trim());
-    }
-    /* Two random topic names for the placeholder, so the field shows the shape of a good name
-       ("Sedans & Hybrid") rather than an abstract instruction. */
-    function grpPlaceholder(){
-      var names = (state.topics || []).map(function(t){ return String(t.name == null ? "" : t.name); }).filter(Boolean);
-      if (names.length < 2) return "Group name…";
-      var i = Math.floor(Math.random() * names.length);
-      var j = Math.floor(Math.random() * (names.length - 1));
-      if (j >= i) j += 1;
-      return names[i] + " & " + names[j];
-    }
-    function openGroupModal(editing){
-      closeGroupModal();
-      grpEditKey = editing ? editing.key : null;
-      grpPicked = {}; grpColor = editing ? (editing.color || null) : null;
-      grpColorOpen = false; grpNameTouched = !!editing;
-      grpQuery = ""; grpSearchOpen = false; grpShowAll = false;
-      if (editing) (editing.tag_ids || []).forEach(function(id){ grpPicked[String(id)] = true; });
-      grpModal = document.createElement("div");
-      grpModal.className = "up-topicmodal-backdrop upt-gm-backdrop";
-      if (isDark) grpModal.setAttribute("data-theme", "dark");
-      grpModal.innerHTML =
-        '<div class="up-topicmodal-card" role="dialog" aria-modal="true" aria-label="New Grouping">' +
-          '<div class="up-topicmodal-head">' +
-            '<div class="up-topicmodal-heading">' +
-              '<h3 class="up-topicmodal-title">' + (grpEditKey ? "Edit Grouping" : "New Grouping") + '</h3>' +
-              '<p class="up-topicmodal-sub">Combine several topics into one group. A prompt counts ' +
-                'towards the group only if it carries <strong>all</strong> of the topics.</p>' +
-            '</div>' +
-            '<button class="up-topicmodal-close" type="button" data-gm-close aria-label="Close">' + CLOSE_SVG + '</button>' +
-          '</div>' +
-          '<div class="up-topicmodal-body">' +
-            '<div class="up-topicmodal-field">' +
-              '<div class="upt-gm-labelrow">' +
-                '<span class="up-topicmodal-label">Topics</span>' +
-                '<span class="upt-gm-right">' +
-                  '<button class="upt-gm-searchbtn" type="button" data-gm-searchtoggle aria-label="Search topics">' + GM_SEARCH_SVG + '</button>' +
-                  '<span class="upt-gm-count">0/' + GRP_MAX_TOPICS + '</span>' +
-                '</span>' +
-              '</div>' +
-              '<div class="upt-gm-search">' +
-                '<input class="upt-gm-search-in" type="text" placeholder="Search topics…" autocomplete="off" spellcheck="false"/>' +
-                '<button class="upt-gm-clear" type="button" data-gm-clear aria-label="Clear search">' + CLOSE_SVG + '</button>' +
-              '</div>' +
-              '<div class="upt-gm-list up-topiclist"></div>' +
-              '<button class="upt-gm-more" type="button" data-gm-more></button>' +
-            '</div>' +
-            '<div class="up-topicmodal-field">' +
-              '<span class="up-topicmodal-label">Group name</span>' +
-              '<div class="upt-gm-namerow">' +
-                '<div class="upt-gm-colorwrap">' +
-                  '<button class="upt-gm-dotbtn" type="button" data-gm-colorbtn aria-label="Group color">' +
-                    '<span class="upt-gm-dot"></span></button>' +
-                '</div>' +
-                '<input class="up-topicmodal-name upt-gm-name-in" type="text" placeholder="' + esc(grpPlaceholder()) + '" autocomplete="off" spellcheck="false"/>' +
-              '</div>' +
-              '<div class="upt-gm-colorpanel"></div>' +
-            '</div>' +
-          '</div>' +
-          '<div class="up-topicmodal-foot">' +
-            '<button class="up-topicmodal-save upt-gm-submit" type="button" data-gm-submit disabled>' + (grpEditKey ? "Save" : "Create group") + '</button>' +
-          '</div>' +
-        '</div>';
-      document.body.appendChild(grpModal);
-      renderGroupModalBody();
-      requestAnimationFrame(function(){ if (grpModal) grpModal.classList.add("is-shown"); });
-      document.addEventListener("keydown", grpModalKey, true);
-
-      grpModal.addEventListener("input", function(e){
-        if (e.target.classList.contains("upt-gm-name-in")){ grpNameTouched = true; renderGroupModalBody(); return; }
-        if (e.target.classList.contains("upt-gm-search-in")){ grpQuery = e.target.value; renderGroupModalBody(); return; }
-      });
-      grpModal.addEventListener("click", function(e){
-        if (e.target === grpModal){ closeGroupModal(); return; }
-        if (e.target.closest("[data-gm-close]")){ closeGroupModal(); return; }
-        if (e.target.closest("[data-gm-more]")){ grpShowAll = true; renderGroupModalBody(); return; }
-        if (e.target.closest("[data-gm-searchtoggle]")){
-          grpSearchOpen = !grpSearchOpen;
-          if (!grpSearchOpen) grpQuery = "";
-          renderGroupModalBody();
-          if (grpSearchOpen){
-            var si2 = grpModal.querySelector(".upt-gm-search-in");
-            if (si2) setTimeout(function(){ try { si2.focus(); } catch(e){} }, 60);
-          }
-          return;
-        }
-        if (e.target.closest("[data-gm-clear]")){
-          grpQuery = "";
-          var si = grpModal.querySelector(".upt-gm-search-in");
-          if (si){ si.value = ""; si.focus(); }
-          renderGroupModalBody(); return;
-        }
-        if (e.target.closest("[data-gm-colorbtn]")){
-          var wasOpen = grpColorOpen;
-          grpColorOpen = !grpColorOpen;
-          renderGroupModalBody();
-          /* Opening animates in (two-phase: mount collapsed, THEN add .is-open next frame so the
-             browser actually has a "before" state to transition from -- same trick the modal
-             itself uses for .is-shown). Closing is instant; only "einblenden" was asked for. */
-          if (!wasOpen && grpColorOpen){
-            var p0 = grpModal.querySelector(".upt-gm-colorpanel");
-            if (p0) requestAnimationFrame(function(){ p0.classList.add("is-open"); });
-          }
-          return;
-        }
-        var cc = e.target.closest("[data-gm-color]");
-        /* Stays open on pick -- same as the emoji/color pickers everywhere else in this table. */
-        if (cc){ grpColor = cc.getAttribute("data-gm-color"); renderGroupModalBody(); return; }
-        var chip = e.target.closest("[data-gm-topic]");
-        if (chip){
-          var tid = chip.getAttribute("data-gm-topic");
-          if (grpPicked[tid]) delete grpPicked[tid];
-          else if (grpPickedIds().length < GRP_MAX_TOPICS) grpPicked[tid] = true;
-          else return;                       // at the cap; .is-full already says so visually
-          renderGroupModalBody(true);
-          return;
-        }
-        if (e.target.closest("[data-gm-submit]")){
-          var nameEl = grpModal.querySelector(".upt-gm-name-in");
-          var name = nameEl ? nameEl.value.trim() : "";
-          var ids = grpPickedIds();
-          if (!name || !ids.length) return;
-          var all = readCustomGroups().filter(function(g){
-            return g.key !== name && g.key !== grpEditKey;   // renaming replaces the old entry
-          });
-          all.push({ key: name, tag_ids: ids, color: grpColor || grpAutoColor() });
-          writeCustomGroups(all);            // localStorage only — no backend call, by design
-          closeGroupModal();
-          populateGroupMenu();
-          if (groupingOn()) fetchGroups();
-          return;
-        }
-      });
-    }
+    });
+    function openGroupModal(editing){ grpModalCtl.open(editing || null); }
+    function closeGroupModal(){ grpModalCtl.close(); }
 
     /* ============================================================================
        GROUPED-BY-TOPIC VIEW
@@ -2602,12 +2345,6 @@
     var GRP_CHEV = '<svg class="upt-grp-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>';
     /* Prompts first and default: "how many prompts is this topic actually about" is the question
        people open the grouped view with; visibility is the follow-up. */
-    /* Feather "refresh-cw". */
-    var GEN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /> <path d="M21 3v5h-5" /> <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /> <path d="M8 16H3v5" /></svg>';
-    var GRP_EDIT_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/></svg>';
-    var EYE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /> <circle cx="12" cy="12" r="3" /></svg>';
-    var EYE_OFF_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" /> <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" /> <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" /> <path d="m2 2 20 20" /></svg>';
-    var GRP_MORE_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>';
     var grpRowMenu = null;   /* group key whose row menu is open, or null */
     /* Which kind of section the view shows. "topics" = the RPC's default (one group per topic +
        untagged), "custom" = only the user's own groupings, "both" = the union (default). Set via
@@ -3433,6 +3170,11 @@
          belegt, nicht die Abwesenheit von Prompts. Ohne belegte Zahl bleibt es beim Skelett. */
       var n = (totalForView != null) ? totalForView
             : ((state.hasData && state.rows.length) ? state.rows.length : null);
+      /* Fehlt der Zaehler im Markup, wird hier nichts gesetzt statt geworfen: das Markup ist eine
+         handgemachte Kopie im Bubble-Element, und ein Wurf in dieser Funktion nimmt den ganzen
+         Render mit -- inklusive der Zeilen, die schon da waeren. Gleiche Ueberlegung wie beim
+         fehlenden .up-tbody weiter oben. */
+      if (!elHeadCount) return;
       if (n == null){ elHeadCount.textContent = ""; elHeadCount.classList.add("is-sk"); return; }
       elHeadCount.textContent = UC.fmtTotal(n);
       elHeadCount.classList.remove("is-sk");
@@ -3809,13 +3551,9 @@
         }
         var ge2 = e.target.closest("[data-grp-eye]");
         if (ge2){
-          var ek2 = ge2.getAttribute("data-grp-eye");
-          writeCustomGroups(readCustomGroups().map(function(g){
-            if (g.key !== ek2) return g;
-            var n = { key: g.key, tag_ids: g.tag_ids, color: g.color };
-            if (!g.hidden) n.hidden = true;      // toggle; hidden groups are simply not sent as p_groups
-            return n;
-          }));
+          /* Umschalten liegt in core (UC.cgSetHidden): derselbe Griff steckt im topics-manager,
+             und hidden wird dort ebenso GELOESCHT statt auf false gesetzt. */
+          UC.cgSetHidden(ge2.getAttribute("data-grp-eye"));
           populateGroupMenu();
           if (groupingOn()) fetchGroups();
           return;
@@ -3832,14 +3570,14 @@
           var ek = ge.getAttribute("data-grp-edit");
           grpRowMenu = null;
           if (grpPop) grpPop.close(false);
-          openGroupModal(readCustomGroups().filter(function(x){ return x.key === ek; })[0] || null);
+          openGroupModal(UC.cgFind(ek));
           return;
         }
         var gd = e.target.closest("[data-grp-del]");
         if (gd){
           var delKey = gd.getAttribute("data-grp-del");
           grpRowMenu = null;
-          writeCustomGroups(readCustomGroups().filter(function(g){ return g.key !== delKey; }));
+          UC.cgDelete(delKey);
           populateGroupMenu();
           if (groupingOn()) fetchGroups();
           return;
@@ -3880,7 +3618,7 @@
         var hek = grpHeadEdit.getAttribute("data-grp-headedit");
         grpActionMenu = null;
         if (groupingOn()) renderGroups();
-        openGroupModal(readCustomGroups().filter(function(x){ return x.key === hek; })[0] || null);
+        openGroupModal(UC.cgFind(hek));
         return;
       }
       var grpHeadDel = e.target.closest("[data-grp-headdel]");

@@ -45,3 +45,62 @@
 /* Topic create/edit modal moved to core.css (.up-topicmodal-*) — prompts-table's "Add Topic"
    button now opens the exact same shared UC.makeTopicModal instance this page uses. See core.css
    for the CSS and STYLEGUIDE §27 for the design rationale. */
+
+/* ==================== Custom Groupings ========================================================
+   Der Abschnitt sitzt direkt unter der Themenliste. Er baut nichts nach: der Kopf ist .up-head mit
+   .up-heading/.up-head-count wie oben, der Knopf ist .up-export wie "Add Topic", die Chips sind
+   .up-topicchip aus core, und Punkt, Auge, Dreipunktmenue samt Zieh-Platzhalter kommen als
+   .up-cg-*-Bauteile ebenfalls aus core -- dieselben, die das Gruppierungs-Dropdown der
+   prompts-table benutzt. Hier steht nur, was diesen Ort ausmacht: die Zeile als Listenzeile mit
+   Chips daneben statt als schmale Popover-Zeile.
+
+   Der Trennstrich und der Abstand oben spiegeln .utm-chipgrid: der Abschnitt ist der naechste
+   Block derselben Seite, nicht eine eigene Karte. Kein zweiter Rahmen, kein Schatten. */
+.utm-cg { border-top: 1px solid var(--vc-border); padding-top: 20px; }
+/* Der Kopf ist flacher als der der Seite: das ist eine Abschnittsueberschrift, keine Seitenkopfzeile.
+   .up-head bringt display:flex und die Ausrichtung mit, hier bleibt die Hoehe. */
+.utm-cg-head { min-height: 32px; margin-bottom: 12px; }
+.utm-cg-head .up-head-label { font-size: 14px; }
+/* Derselbe gefuellte Knopf wie "Add Topic", nur eine Stufe kleiner: er ist die Aktion eines
+   Abschnitts, nicht der Seite. Faktor 32/36 auf ALLE Werte des Bauteils -- Hoehe 36 -> 32,
+   Polsterung 0 14 -> 0 12, Symbol 15 -> 14. */
+.utm-cg-addbtn { height: 32px; padding: 0 12px; }
+.utm-cg-addbtn svg { width: 14px; height: 14px; }
+
+.utm-cg-list { display: flex; flex-direction: column; gap: 4px; }
+
+/* Die Zeile: 40px, Radius 9 wie .up-pop-opt, Hover auf --up-sel-bg wie jede Menuezeile der App.
+   position:relative, weil das Dreipunktmenue absolut daran haengt (core.css .up-cg-rowmenu). */
+.utm-cg-row {
+  position: relative; display: flex; align-items: center; gap: 10px;
+  min-height: 40px; padding: 0 8px 0 10px; border-radius: 9px;
+  transition: background 120ms ease;
+}
+.utm-cg-row:hover, .utm-cg-row.is-menuopen { background: var(--up-sel-bg); }
+.utm-cg-name { font-size: 13.5px; font-weight: 500; color: var(--vc-text);
+  flex: 0 0 auto; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Die Themen der Gruppierung. Sie duerfen umbrechen, wenn der Name lang ist -- lieber zwei Zeilen
+   als abgeschnittene Chips, denn WELCHE Themen drin sind, ist der Inhalt dieser Zeile. */
+.utm-cg-chips { flex: 1 1 auto; min-width: 0; display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 0; }
+/* Anzeige, keine Wahl: der Chip aus core, nur ohne Zeigerhand und ohne Hover. */
+.utm-cg-chip { cursor: default; pointer-events: none; }
+/* Ein Thema, das es nicht mehr gibt: gedaempft und ohne Farbe, damit es nicht wie ein echtes
+   aussieht. Benannt wird es im JS ("Deleted topic"). */
+.utm-cg-chip.is-gone { border-style: dashed; color: var(--vc-muted);
+  border-color: var(--vc-border); background: transparent; }
+/* Auge und Kebab als ein Paar rechts. Der auto-Rand sitzt am Behaelter, nicht am Auge -- anders als
+   im Popover der prompts-table, wo es keinen Behaelter gibt. */
+.utm-cg-actions { flex: 0 0 auto; margin-left: auto; display: inline-flex; align-items: center; gap: 2px; }
+
+/* Leerzustand: sagt, was eine Gruppierung IST, statt nur "keine da". Wer den Abschnitt zum ersten
+   Mal sieht, hat die Frage, nicht die Liste. */
+.utm-cg-empty { display: flex; flex-direction: column; gap: 4px; padding: 14px 10px 18px; }
+.utm-cg-empty-t { font-size: 13px; font-weight: 500; color: var(--vc-text); }
+.utm-cg-empty-s { font-size: 12.5px; color: var(--vc-muted); line-height: 1.45; max-width: 520px; }
+
+/* Auf schmalen Breiten wandern die Chips unter den Namen: nebeneinander bleibt bei drei Chips und
+   einem langen Namen nichts von beidem lesbar. Gemessen an der EIGENEN Box (is-narrow kommt von
+   UC.widthTiers), nicht am Fenster. */
+.up-root.is-narrow .utm-cg-row { flex-wrap: wrap; padding-top: 6px; padding-bottom: 6px; }
+.up-root.is-narrow .utm-cg-chips { flex: 1 1 100%; order: 3; padding-top: 2px; }
+.up-root.is-narrow .utm-cg-name { max-width: none; flex: 1 1 auto; }
