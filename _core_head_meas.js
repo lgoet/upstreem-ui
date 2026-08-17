@@ -1807,91 +1807,49 @@
     ".upt-grp-sidesort-btn":
       '<path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/>'
   };
-  /* EIN Selektor fuer alles, nicht einer pro Knopfklasse. Vorher lief pro Durchlauf ein
-     querySelectorAll je Eintrag -- bei 19 Eintraegen also 19 Durchsuchungen des ganzen Dokuments.
-     Jetzt eine, danach wird am Element entschieden, welcher Eintrag gilt. */
-  var TOOLBAR_ALLE = null;
-  function toolbarSelektor(){
-    if (TOOLBAR_ALLE) return TOOLBAR_ALLE;
-    var teile = [], k;
-    for (k in TOOLBAR_ICONS) if (Object.prototype.hasOwnProperty.call(TOOLBAR_ICONS, k)) teile.push("." + k);
-    for (k in TOOLBAR_SEL) if (Object.prototype.hasOwnProperty.call(TOOLBAR_SEL, k)) teile.push(k);
-    TOOLBAR_ALLE = teile.join(",");
-    return TOOLBAR_ALLE;
-  }
-  function toolbarSchluessel(el){
-    /* Die Selektor-Eintraege gehen VOR den Klassen-Eintraegen: der Balken-Umschalter traegt beide
-       Male dieselbe Klasse, nur der Selektor trifft die richtige Haelfte. */
-    var k;
-    for (k in TOOLBAR_SEL){
-      if (!Object.prototype.hasOwnProperty.call(TOOLBAR_SEL, k)) continue;
-      try { if (el.matches(k)) return { key: k, pfad: TOOLBAR_SEL[k] }; } catch(e){}
-    }
+  function stampToolbarIcons(wurzel){
+    var ziel = wurzel || document;
+    var k, els, i, b, strich;
     for (k in TOOLBAR_ICONS){
       if (!Object.prototype.hasOwnProperty.call(TOOLBAR_ICONS, k)) continue;
-      if (el.classList.contains(k)) return { key: k, pfad: TOOLBAR_ICONS[k] };
+      try { els = ziel.querySelectorAll("." + k); } catch(e){ continue; }
+      for (i = 0; i < els.length; i++){
+        b = els[i];
+        if (b.getAttribute("data-up-ic") === k) continue;
+        /* Die Strichstaerke aus dem vorhandenen SVG uebernehmen: das X im Suchfeld traegt 2.2,
+           die anderen 2, und das ist Absicht -- ein einheitlicher Wert wuerde ein halbes Dutzend
+           Knoepfe anders aussehen lassen. */
+        strich = (b.querySelector("svg") && b.querySelector("svg").getAttribute("stroke-width")) || "2";
+        /* Nur das SVG tauschen, alles andere im Knopf bleibt (Badges, Punkte, Beschriftungen). */
+        var alt = b.querySelector("svg");
+        var neu = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + strich +
+          '" stroke-linecap="round" stroke-linejoin="round">' + TOOLBAR_ICONS[k] + '</svg>';
+        if (alt){ alt.outerHTML = neu; } else { b.insertAdjacentHTML("afterbegin", neu); }
+        b.setAttribute("data-up-ic", k);
+      }
     }
-    return null;
-  }
-  function stampToolbarIcons(wurzel){
-    var ziel = wurzel || document, els;
-    try { els = ziel.querySelectorAll(toolbarSelektor()); } catch(e){ return; }
-    for (var i = 0; i < els.length; i++){
-      var b = els[i];
-      var t = toolbarSchluessel(b);
-      if (!t || b.getAttribute("data-up-ic") === t.key) continue;
-      var alt = b.querySelector("svg");
-      /* Die Strichstaerke aus dem vorhandenen SVG uebernehmen: das X im Suchfeld traegt 2.2,
-         die anderen 2, und das ist Absicht -- ein einheitlicher Wert wuerde ein halbes Dutzend
-         Knoepfe anders aussehen lassen. */
-      var strich = (alt && alt.getAttribute("stroke-width")) || "2";
-      var neu = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + strich +
-        '" stroke-linecap="round" stroke-linejoin="round">' + t.pfad + '</svg>';
-      /* Nur das SVG tauschen, alles andere im Knopf bleibt (Badges, Punkte, Beschriftungen). */
-      if (alt){ alt.outerHTML = neu; } else { b.insertAdjacentHTML("afterbegin", neu); }
-      b.setAttribute("data-up-ic", t.key);
+    for (k in TOOLBAR_SEL){
+      if (!Object.prototype.hasOwnProperty.call(TOOLBAR_SEL, k)) continue;
+      try { els = ziel.querySelectorAll(k); } catch(e){ continue; }
+      for (i = 0; i < els.length; i++){
+        b = els[i];
+        if (b.getAttribute("data-up-ic") === k) continue;
+        var av = b.querySelector("svg");
+        strich = (av && av.getAttribute("stroke-width")) || "2";
+        var nv = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + strich +
+          '" stroke-linecap="round" stroke-linejoin="round">' + TOOLBAR_SEL[k] + '</svg>';
+        if (av){ av.outerHTML = nv; } else { b.insertAdjacentHTML("afterbegin", nv); }
+        b.setAttribute("data-up-ic", k);
+      }
     }
   }
   /* Beim Laden und danach: Bubble baut Elemente in Schueben und spaeter erneut auf. */
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function(){ stampToolbarIcons(); });
   else stampToolbarIcons();
   [60, 250, 700, 1500, 3000].forEach(function(ms){ setTimeout(function(){ stampToolbarIcons(); }, ms); });
-  /* ── Der Beobachter, und warum er so aussieht ─────────────────────────────────────────────
-     Hier stand ein MutationObserver auf document.documentElement mit childList+subtree, der bei
-     JEDER Mutation sofort stampToolbarIcons() rief. Das war eine echte Bremse fuer die ganze App,
-     und zwar aus drei Gruenden zugleich:
-       1. Er feuerte bei jeder DOM-Aenderung irgendwo auf der Seite -- und eine Bubble-Seite
-          aendert dauernd etwas.
-       2. Jeder Lauf durchsuchte das Dokument 19 Mal (ein querySelectorAll pro Knopfklasse).
-       3. Er trieb sich selbst an: das Ersetzen des SVG ist selbst eine childList-Mutation.
-     Am schlimmsten traf es die Chart-Tooltips. Deren external-Handler schreibt bei JEDER
-     Mausbewegung el.innerHTML neu -- also 19 dokumentweite Suchen pro Mausbewegung, waehrend
-     gleichzeitig eine rAF-Schleife das Tooltip bewegen soll. Genau das war das Ruckeln.
-     Jetzt: nur auf HINZUGEKOMMENE Elemente reagieren (ein Attribut- oder Textwechsel bringt keine
-     neuen Knoepfe), gebuendelt auf einen Lauf je 250ms, und die eigenen Mutationen mit
-     takeRecords() wegwerfen, damit der Lauf sich nicht selbst nachtriggert. */
   if (window.MutationObserver){
-    var stampGeplant = false;
-    var stampObs = new MutationObserver(function(muts){
-      if (stampGeplant) return;
-      var neueElemente = false;
-      for (var i = 0; i < muts.length && !neueElemente; i++){
-        var an = muts[i].addedNodes;
-        for (var j = 0; j < an.length; j++){
-          if (an[j].nodeType === 1){ neueElemente = true; break; }
-        }
-      }
-      if (!neueElemente) return;
-      stampGeplant = true;
-      setTimeout(function(){
-        stampGeplant = false;
-        stampToolbarIcons();
-        /* Die Mutationen, die der Lauf selbst erzeugt hat, verwerfen -- sonst haengt an jedem
-           getauschten Icon sofort der naechste Lauf. */
-        try { stampObs.takeRecords(); } catch(e){}
-      }, 250);
-    });
-    stampObs.observe(document.documentElement, { childList: true, subtree: true });
+    new MutationObserver(function(){ stampToolbarIcons(); })
+      .observe(document.documentElement, { childList: true, subtree: true });
   }
 
   /* Tooltip for text that is clamped/ellipsised — shows the full string only when it actually
@@ -3575,45 +3533,29 @@
     }
     var pos = { x:null, y:null }, target = { x:0, y:0 }, running = false, visible = false;
     var FOLLOW = 0.18;
-    /* Das Tooltip-Element GEMERKT, nicht pro Frame gesucht. Die Schleife lief mit einem
-       querySelector pro Frame -- 60 Suchen je Sekunde, in denen sich nichts aendert. */
-    var ttEl = null;
-    /* Kennung des zuletzt gezeichneten Inhalts. Chart.js ruft diesen Handler bei JEDER
-       Mausbewegung ueber dem Chart, auch wenn derselbe Punkt aktiv bleibt. Vorher wurde dabei
-       jedes Mal el.innerHTML neu geschrieben (samt aller <img> im Tooltip) und unmittelbar danach
-       getBoundingClientRect gelesen -- ein erzwungener Layoutdurchgang pro Mausbewegung. Mit der
-       Kennung passiert das nur noch, wenn sich der Inhalt wirklich aendert, also beim Wechsel auf
-       einen anderen Punkt. Die gemessene Groesse wird gleich mitgemerkt. */
-    var letzteKennung = null, letzteBreite = 0, letzteHoehe = 0;
     function loop(){
+      var el = wrap.querySelector(".up-line-tt");
       if (pos.x == null){ pos.x = target.x; pos.y = target.y; }
       pos.x += (target.x - pos.x) * FOLLOW;
       pos.y += (target.y - pos.y) * FOLLOW;
-      if (ttEl) ttEl.style.transform = "translate3d(" + pos.x + "px," + pos.y + "px,0)";
+      if (el) el.style.transform = "translate3d(" + pos.x + "px," + pos.y + "px,0)";
       var dx = Math.abs(target.x - pos.x), dy = Math.abs(target.y - pos.y);
       if (visible || dx > 0.4 || dy > 0.4){ requestAnimationFrame(loop); }
       else { running = false; }
     }
     return function(context){
       var chart = context.chart, tooltip = context.tooltip;
-      var el = ttEl && ttEl.parentNode === wrap ? ttEl : wrap.querySelector(".up-line-tt");
+      var el = wrap.querySelector(".up-line-tt");
       if (!el){
         el = document.createElement("div");
         el.className = "up-line-tt";
         el.style.cssText = "position:absolute;left:0;top:0;pointer-events:none;z-index:9999;opacity:0;transform:translate3d(0,0,0);transition:opacity 120ms ease;";
         wrap.appendChild(el);
-        letzteKennung = null;         /* neues Element, alte Kennung gilt nicht mehr */
       }
-      ttEl = el;
       if (tooltip.opacity === 0){ el.style.opacity = "0"; visible = false; pos.x = null; pos.y = null; return; }
       var dps = (tooltip.dataPoints || []).filter(function(dp){ return dp && dp.parsed && dp.parsed.y != null; });
       if (!dps.length){ el.style.opacity = "0"; visible = false; pos.x = null; pos.y = null; return; }
       var dark = !!getIsDark();
-      /* Aendert sich der Inhalt ueberhaupt? Punktindex, Theme und die Menge der sichtbaren Reihen
-         bestimmen ihn vollstaendig. Ist alles gleich, wird nur noch die Zielposition gesetzt --
-         kein innerHTML, kein Layout, kein Neuaufbau der Bilder. */
-      var kennung = dps[0].dataIndex + "|" + (dark ? "d" : "l") + "|" +
-        dps.map(function(dp){ return dp.datasetIndex + ":" + dp.parsed.y; }).join(",");
       var boxBg = dark ? "#121212" : "#ffffff";
       var boxBorder = dark ? "" : "border:1px solid #e0e2e6;";
       var boxShadow = dark ? "box-shadow:0 4px 14px rgba(0,0,0,.25);" : "box-shadow:0 4px 14px rgba(0,0,0,.10);";
@@ -3622,8 +3564,7 @@
       var dayLabel = chart.data.labels[dps[0].dataIndex];
       dps = dps.slice().sort(function(a, b){ return b.parsed.y - a.parsed.y; });
       var ff = "Geist,system-ui,-apple-system,Segoe UI,Roboto,Arial";
-      var neuGezeichnet = kennung !== letzteKennung;
-      var rows = !neuGezeichnet ? "" : dps.map(function(dp){
+      var rows = dps.map(function(dp){
         var ds = dp.dataset;
         var icon = ds.__favicon
           ? '<img src="' + esc(ds.__favicon) + '" width="16" height="16" style="border-radius:4px;display:block;object-fit:cover" onerror="this.style.visibility=\'hidden\'"/>'
@@ -3641,26 +3582,18 @@
             '<span style="flex:0 0 auto;margin-left:77px;color:' + textColor + ';font-weight:500">' + val + '</span>' +
           '</div>';
       }).join("");
-      if (neuGezeichnet){
-        el.innerHTML =
-          '<div style="background:' + boxBg + ';color:' + textColor + ';' + boxBorder + 'border-radius:16px;padding:10px 12px;font-family:' + ff + ';font-size:13px;line-height:1.35;' + boxShadow + 'white-space:nowrap;min-width:220px;">' +
-            '<div style="color:' + mutedColor + ';font-size:11px">' + esc(chartDateTitle(dayLabel, getGran ? getGran() : "day")) + '</div>' +
-            rows +
-          '</div>';
-        letzteKennung = kennung;
-        /* Genau EINMAL messen, direkt nach dem Neuaufbau -- und das Ergebnis behalten. Vorher lief
-           diese Messung bei jeder Mausbewegung, jedes Mal als erzwungener Layoutdurchgang.
-           EIN getBoundingClientRect fuer beide Maasse, nicht offsetWidth plus offsetHeight: das
-           waeren zwei Zugriffe fuer denselben Layoutdurchgang. Der laufende translate3d faelscht
-           die Maasse nicht -- verschieben veraendert keine Groesse. */
-        var mass = el.getBoundingClientRect();
-        letzteBreite = mass.width; letzteHoehe = mass.height;
-      }
+      el.innerHTML =
+        '<div style="background:' + boxBg + ';color:' + textColor + ';' + boxBorder + 'border-radius:16px;padding:10px 12px;font-family:' + ff + ';font-size:13px;line-height:1.35;' + boxShadow + 'white-space:nowrap;min-width:220px;">' +
+          '<div style="color:' + mutedColor + ';font-size:11px">' + esc(chartDateTitle(dayLabel, getGran ? getGran() : "day")) + '</div>' +
+          rows +
+        '</div>';
       var cx = chart.canvas.offsetLeft, cy = chart.canvas.offsetTop, ca = chart.chartArea;
       var caretX = cx + (tooltip.caretX != null ? tooltip.caretX : dps[0].element.x), m = 16;
-      var tx = (caretX + letzteBreite + m > cx + ca.right) ? (caretX - letzteBreite - m) : (caretX + m);
-      tx = Math.max(cx + ca.left, Math.min(tx, cx + ca.right - letzteBreite));
-      var ty = Math.max(cy + ca.top, Math.min(cy + ca.top + 8, cy + ca.bottom - letzteHoehe));
+      el.style.left = "0px"; el.style.top = "0px";
+      var rect = el.getBoundingClientRect();
+      var tx = (caretX + rect.width + m > cx + ca.right) ? (caretX - rect.width - m) : (caretX + m);
+      tx = Math.max(cx + ca.left, Math.min(tx, cx + ca.right - rect.width));
+      var ty = Math.max(cy + ca.top, Math.min(cy + ca.top + 8, cy + ca.bottom - rect.height));
       target.x = tx; target.y = ty;
       if (pos.x == null){ pos.x = tx; pos.y = ty; el.style.transform = "translate3d(" + tx + "px," + ty + "px,0)"; }
       el.style.opacity = "1"; visible = true;
@@ -4263,51 +4196,28 @@
     var state = { x:0, y:0, raf:null };
     function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
     function lerp(a, b, t){ return a + (b-a)*t; }
-    /* Element und Kinder GEMERKT statt bei jedem Aufruf gesucht, und die Themefarben nur neu
-       geschrieben, wenn sich das Theme wirklich geaendert hat. Dieser Handler laeuft bei JEDER
-       Mausbewegung ueber dem Doughnut; vorher waren das acht querySelector, vier vollstaendige
-       cssText-Schreibzugriffe und ein erzwungener Layoutdurchgang pro Bewegung. */
-    var el = null, kBox = null, kTitle = null, kSub = null, kVal = null, kDot = null, kLbl = null;
-    var letztesTheme = null, letzteKennung = null, letzteBreite = 0, letzteHoehe = 0;
     return function(context){
       var chart = context.chart, tooltip = context.tooltip;
+      var el = container.querySelector(".up-donut-tt");
       var dark = !!getIsDark();
-      if (!el || !el.parentNode){
-        el = container.querySelector(".up-donut-tt");
-      }
       if (!el){
         el = document.createElement("div");
         el.className = "up-donut-tt";
-        /* KEINE transition auf transform: die Bewegung macht die rAF-Schleife unten selbst. Beides
-           zugleich heisst, dass der Browser zu jedem neuen Wert eine eigene Interpolation startet,
-           waehrend die Schleife schon interpoliert -- zwei Bewegungen gegeneinander, und genau so
-           sah es auch aus. Die Deckkraft bleibt bei der CSS-Transition, die animiert niemand sonst. */
-        el.style.cssText = "position:absolute;left:0;top:0;pointer-events:none;z-index:9999;opacity:0;transform:translate3d(0,0,0);transition:opacity 120ms ease;";
+        el.style.cssText = "position:absolute;pointer-events:none;z-index:9999;opacity:0;transform:translate3d(0,0,0);transition:opacity 120ms ease, transform 120ms ease;";
         el.innerHTML = '<div class="up-tt-box"><div class="up-tt-title"><span class="up-tt-dot"></span><span class="up-tt-lbl"></span></div><div class="up-tt-sub">Share:</div><div class="up-tt-val"></div></div>';
         chart.canvas.parentNode.appendChild(el);
-        kBox = null; letztesTheme = null; letzteKennung = null;
       }
-      if (!kBox){
-        kBox = el.querySelector(".up-tt-box"); kTitle = el.querySelector(".up-tt-title");
-        kSub = el.querySelector(".up-tt-sub"); kVal = el.querySelector(".up-tt-val");
-        kDot = el.querySelector(".up-tt-dot"); kLbl = el.querySelector(".up-tt-lbl");
-      }
+      /* Re-applied on every call, not just at creation: styling it once left the tooltip stuck on
+         whatever theme happened to be active the first time it was ever shown. */
+      var boxBg = dark ? "#121212" : "#ffffff";
+      var boxBorder = dark ? "" : "border:1px solid #e0e2e6;";
+      var boxShadow = dark ? "box-shadow:0 4px 14px rgba(0,0,0,.25);" : "box-shadow:0 4px 14px rgba(0,0,0,.10);";
       var textColor = dark ? "#e6e6e6" : "#1f1f1b";
-      /* Die Farben MUESSEN nachgezogen werden -- einmalig beim Anlegen liess den Tooltip auf dem
-         Theme haengen, das beim ersten Zeigen gerade galt. Nur eben nicht bei jeder Bewegung,
-         sondern beim Wechsel. */
-      if (letztesTheme !== (dark ? "d" : "l")){
-        letztesTheme = dark ? "d" : "l";
-        var boxBg = dark ? "#121212" : "#ffffff";
-        var boxBorder = dark ? "" : "border:1px solid #e0e2e6;";
-        var boxShadow = dark ? "box-shadow:0 4px 14px rgba(0,0,0,.25);" : "box-shadow:0 4px 14px rgba(0,0,0,.10);";
-        var mutedColor = dark ? "#8a8a8a" : "#6f737c";
-        kBox.style.cssText = "background:" + boxBg + ";color:" + textColor + ";" + boxBorder + "border-radius:16px;padding:12px 14px;font-family:Geist,system-ui,-apple-system,Segoe UI,Roboto,Arial;font-size:13px;line-height:1.35;" + boxShadow + "white-space:nowrap;";
-        kTitle.style.cssText = "display:flex;align-items:center;gap:6px;font-weight:600;margin-bottom:6px;";
-        kSub.style.cssText = "color:" + mutedColor + ";font-size:11px;";
-        kVal.style.cssText = "color:" + textColor + ";";
-        letzteKennung = null;         /* Groesse kann sich mit dem Rahmen geaendert haben */
-      }
+      var mutedColor = dark ? "#8a8a8a" : "#6f737c";
+      el.querySelector(".up-tt-box").style.cssText = "background:" + boxBg + ";color:" + textColor + ";" + boxBorder + "border-radius:16px;padding:12px 14px;font-family:Geist,system-ui,-apple-system,Segoe UI,Roboto,Arial;font-size:13px;line-height:1.35;" + boxShadow + "white-space:nowrap;";
+      el.querySelector(".up-tt-title").style.cssText = "display:flex;align-items:center;gap:6px;font-weight:600;margin-bottom:6px;";
+      el.querySelector(".up-tt-sub").style.cssText = "color:" + mutedColor + ";font-size:11px;";
+      el.querySelector(".up-tt-val").style.cssText = "color:" + textColor + ";";
       if (tooltip.opacity === 0){ el.style.opacity = "0"; return; }
       var i = (tooltip.dataPoints && tooltip.dataPoints[0] && tooltip.dataPoints[0].dataIndex) || 0;
       var od = chart.data.datasets[0].originalData;
@@ -4320,30 +4230,21 @@
       var realColors = chart.data.datasets[0].__realColors;
       var nameColor = (realColors && realColors[i]) || sliceColor;
       var isUrlMode = getMode && getMode() === "url";
-      /* Inhalt nur neu schreiben, wenn er sich aendert. Solange der Zeiger im selben Segment
-         bleibt, feuert Chart.js weiter -- der Text ist dann aber derselbe. */
-      var kennung = i + "|" + (isUrlMode ? "u" : "n") + "|" + sliceColor + "|" + nameColor + "|" + val;
-      if (kennung !== letzteKennung){
-        letzteKennung = kennung;
-        kDot.style.cssText = isUrlMode
-          ? "width:6px;height:6px;border-radius:999px;flex:0 0 auto;background:" + sliceColor + ";display:inline-block;"
-          : "display:none;";
-        kLbl.style.color = nameColor;
-        kLbl.textContent = chart.data.labels[i] || "";
-        kVal.textContent = Number(val).toFixed(ttNachkomma()) + "%";
-        /* Genau EINMAL messen, direkt nach der Aenderung -- ein Aufruf fuer beide Maasse. Der
-           laufende translate3d faelscht sie nicht: verschieben veraendert keine Groesse, das
-           Zuruecksetzen von left/top vorher ist damit ueberfluessig. */
-        var dmass = el.getBoundingClientRect();
-        letzteBreite = dmass.width; letzteHoehe = dmass.height;
-      }
+      el.querySelector(".up-tt-dot").style.cssText = isUrlMode
+        ? "width:6px;height:6px;border-radius:999px;flex:0 0 auto;background:" + sliceColor + ";display:inline-block;"
+        : "display:none;";
+      el.querySelector(".up-tt-lbl").style.color = nameColor;
+      el.querySelector(".up-tt-lbl").textContent = chart.data.labels[i] || "";
+      el.querySelector(".up-tt-val").textContent = Number(val).toFixed(ttNachkomma()) + "%";
       var cx = chart.canvas.offsetLeft, cy = chart.canvas.offsetTop, ca = chart.chartArea;
       var caretX = cx + tooltip.caretX, caretY = cy + tooltip.caretY, m = 12;
-      var tx = (caretX + letzteBreite + m > cx + ca.right) ? (caretX - letzteBreite - m) : (caretX + m);
-      tx = clamp(tx, cx + ca.left + m, cx + ca.right - letzteBreite - m);
-      var ty = caretY - letzteHoehe - m;
+      el.style.left = "0px"; el.style.top = "0px";
+      var rect = el.getBoundingClientRect();
+      var tx = (caretX + rect.width + m > cx + ca.right) ? (caretX - rect.width - m) : (caretX + m);
+      tx = clamp(tx, cx + ca.left + m, cx + ca.right - rect.width - m);
+      var ty = caretY - rect.height - m;
       if (ty < cy + ca.top + m) ty = caretY + m;
-      ty = clamp(ty, cy + ca.top + m, cy + ca.bottom - letzteHoehe - m);
+      ty = clamp(ty, cy + ca.top + m, cy + ca.bottom - rect.height - m);
       if (state.raf) cancelAnimationFrame(state.raf);
       var sx = state.x || tx, sy = state.y || ty, st = performance.now(), d = 120;
       function stepFn(now){

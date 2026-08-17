@@ -1,0 +1,25 @@
+<!doctype html><html><head><meta charset="utf-8"><title>perf</title></head>
+<body>
+<div id="dom"></div>
+<div class="up-root" id="tb">
+  <button class="up-sort-btn"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M1 1"/></svg></button>
+  <button class="up-cols-btn"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M1 1"/></svg></button>
+  <button class="up-search-btn"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M1 1"/></svg></button>
+  <button class="up-search-clear"><svg viewBox="0 0 24 24" stroke-width="2.2"><path d="M1 1"/></svg></button>
+  <button class="urt-fader-btn"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M1 1"/></svg></button>
+</div>
+<script>
+// Realistischer Bubble-DOM: viele Knoten, tief verschachtelt
+(function(){
+  var host = document.getElementById("dom"), html = [];
+  for (var i=0;i<400;i++){
+    html.push('<div class="bubble-group g'+i+'"><div class="row"><span class="cell">x'+i+
+      '</span><span class="cell"><i class="ic"></i></span><span class="cell">y</span>'+
+      '<span class="cell">z</span><span class="cell">w</span></div></div>');
+  }
+  host.innerHTML = html.join("");
+  window.__nodeCount = document.getElementsByTagName("*").length;
+})();
+</script>
+<script src="_core_head_meas.js"></script>
+</body></html>
