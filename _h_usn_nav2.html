@@ -1,0 +1,166 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>sidebar harness</title>
+<style>
+  html, body { margin:0; padding:0; height:100%; font-family:system-ui,sans-serif; }
+  /* Wie in der Bubble-App: der Inhalt scrollt in #main und wandert mit --up-sidebar-w. */
+  #main { min-height:100%; padding-left: var(--up-sidebar-w, 250px);
+          transition: padding-left 200ms cubic-bezier(.4,0,.2,1); box-sizing:border-box; }
+  #inner { padding:24px; }
+  pre { font:11px/1.5 ui-monospace,monospace; background:#f6f6f6; padding:10px; white-space:pre-wrap; }
+</style>
+<body>
+<div id="main"><div id="inner">
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+    <button onclick="setUpstreemTheme('dark')">dark</button>
+    <button onclick="setUpstreemTheme('light')">light</button>
+    <button onclick="setSidebarActive('s1','citations')">active=citations</button>
+    <button onclick="setSidebarCount('s1','128')">count=128</button>
+    <button onclick="setSidebarOpen('s1','no')">open=no</button>
+    <button onclick="setSidebarOpen('s1','yes')">open=yes</button>
+    <button onclick="resetSidebar('s1')">reset</button>
+  </div>
+  <pre id="out">bereit</pre>
+  <div style="height:1200px"></div>
+</div></div>
+
+<!-- Wie auf der echten Seite: die Palette liegt als eigenes Element da und wird umgehaengt. -->
+<div id="mira-quick-actions" data-theme="light" data-team=""></div>
+
+<div class="up-root usn-root" data-instance="s1" data-isdark="no"
+     data-team-id="ca880309-251e-4513-8901-8c5f8583f624" data-active="dashboard" data-prompt-count="42" data-export-instance="export_x"
+     data-nav-fn="bubble_fn_usnNav"
+     data-team-fn="bubble_fn_usnTeam"
+     data-account-fn="bubble_fn_usnAccount"
+     data-theme-fn="bubble_fn_usnTheme"
+     data-logout-fn="bubble_fn_usnLogout"
+     data-newteam-fn="bubble_fn_usnNewTeam"
+     data-pinned-fn="bubble_fn_usnPinned"
+     data-state-fn="bubble_fn_usnState"></div>
+
+<script>
+window.__ev = [];
+/* Angeheftete Eintraege liegen im localStorage -- fuer den Test vier verschiedene Typen. */
+try { localStorage.setItem("usn_pins__s1@ca880309-251e-4513-8901-8c5f8583f624", JSON.stringify([
+  {type:"brand", id:"b1", label:"Mercedes Benz", logo:""},
+  {type:"domain", id:"auto-motor-sport.de", label:"auto-motor-sport.de", logo:""},
+  {type:"url", id:"https://x.de/a", label:"Die zehn besten Elektroautos 2026 im Vergleich", logo:""},
+  {type:"prompt", id:"p9", label:"Welches Elektroauto hat die beste Reichweite?", logo:"https://flagcdn.com/de.svg"}
+])); localStorage.setItem("usn_pins__s1@FREMDES-TEAM", JSON.stringify([
+  {type:"brand", id:"darf-nicht-auftauchen", label:"FREMDES TEAM", logo:""}
+])); localStorage.removeItem("usn_closed__s1"); } catch(e){}
+function log(){ var o=document.getElementById("out"); if(o) o.textContent = window.__ev.slice(-8).join("\n"); }
+["usnNav","usnTeam","usnAccount","usnTheme","usnLogout","usnNewTeam","usnState","usnPinned"].forEach(function(n){
+  window["bubble_fn_"+n] = function(j){ if (n === "usnNav") window.__letzte = j; window.__ev.push(n+" "+j); log(); };
+});
+window.bubble_fn_theme_pref = function(v){ window.__ev.push("theme_pref "+v); log(); };
+
+/* Frische BEWEISEN statt hoffen: alles per fetch(no-store) holen und inline einsetzen.
+   Ein ?v=-Anhang hat in diesem Repo mehrfach nicht gewirkt. */
+(function(){
+  /* Reihenfolge ABSICHTLICH andersherum als in der Vorlage: core.css NACH sidebar.css.
+     Genau so kam es auf der Bubble-Seite an, und genau so fiel die Leiste um -- .up-portal
+     (display:contents) und .up-root (position:relative) gewannen ueber die Reihenfolge.
+     Wer hier die bequeme Reihenfolge misst, misst sein eigenes Glueck. */
+  var files = ["sidebar.css","core.css","quick-actions.css","core.js","sidebar.js","quick-actions.js"];
+  var texts = {};
+  Promise.all(files.map(function(f){
+    return fetch(f + "?nocache=" + Math.random(), { cache: "no-store" })
+      .then(function(r){ return r.text(); }).then(function(t){ texts[f] = t; });
+  })).then(function(){
+    files.forEach(function(f){
+      var el;
+      if (/\.css$/.test(f)){ el = document.createElement("style"); }
+      else { el = document.createElement("script"); }
+      el.textContent = texts[f];
+      document.head.appendChild(el);
+    });
+    window.__geladen = { core_js: texts["core.js"].length, sidebar_js: texts["sidebar.js"].length,
+                         sidebar_css: texts["sidebar.css"].length };
+    setTimeout(los, 1200);   /* Verzoegert, damit die Skelette messbar sind */
+  });
+})();
+
+function navPruefung(){
+  var res = {};
+  /* 1. Was geht RAUS, wenn man auf Prompt Research klickt? */
+  var el = document.querySelector('[data-nav-key="research"]') ||
+           document.querySelector('[data-nav-key="prompt-research"]');
+  res.attribut_im_dom = el ? el.getAttribute("data-nav-key") : "KEIN ELEMENT";
+  window.__letzte = null;
+  if (el) el.click();
+  res.event = window.__letzte || "KEIN EVENT";
+  /* 2. Was kommt REIN? Alle vier Schreibweisen muessen den Punkt hervorheben. */
+  var wurzel = document.querySelector(".usn-root");
+  ["research", "prompt-research", "Prompt Research", "PROMPT-RESEARCH"].forEach(function(v){
+    wurzel.setAttribute("data-active", v);
+  });
+  res.aktiv_nach_attribut = {};
+  ["research", "prompt-research", "Prompt Research", "PROMPT-RESEARCH", "dashboard"].forEach(function(v){
+    wurzel.setAttribute("data-active", v);
+    var a = document.querySelector(".usn-item.is-active, [data-nav-key].is-active");
+    res.aktiv_nach_attribut[v] = a ? a.getAttribute("data-nav-key") : "KEINER AKTIV";
+  });
+  window.__navPruefung = res;
+  return res;
+}
+function alleKlicken(){
+  var res = [], sichtbar = [];
+  var items = document.querySelectorAll("[data-nav-key]");
+  for (var i = 0; i < items.length; i++){
+    var k = items[i].getAttribute("data-nav-key");
+    var r = items[i].getBoundingClientRect();
+    sichtbar.push(k + " " + Math.round(r.left) + "," + Math.round(r.top) + " " + Math.round(r.width) + "x" + Math.round(r.height));
+    window.__letzte = null;
+    items[i].click();
+    res.push({ attribut: k, payload: window.__letzte });
+  }
+  window.__navTest = { anzahl: items.length, geometrie: sichtbar, ergebnis: res };
+  return window.__navTest;
+}
+function los(){
+  /* Zustand VOR den Settern festhalten -- durch die Werkzeugkette kommt keine Messung schnell
+     genug, um die Skelette live zu erwischen. */
+  window.__skelVorher = {
+    anzahl: document.querySelectorAll(".usn-sk").length,
+    orte: [].map.call(document.querySelectorAll(".usn-sk"), function(e){ return e.parentNode.className; }),
+    teamname: document.querySelector(".usn-teamname").innerHTML,
+    accMail: document.querySelector(".usn-acc-mail").innerHTML
+  };
+  window.setSidebarTeams("s1", [
+    {"id": "877c649c-f5f2-44e9-bb04-155f5bf44e70", "name": "Mercedes Benz", "domain": "mercedes-benz.de", "favicon_url": "//49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png"},
+    {"id": "e7755829-5b36-4267-8eb1-69ff47bf0564", "name": "Parookaville", "domain": "parookaville.com", "favicon_url": "https://www.google.com/s2/favicons?domain=parookaville.com&sz=64"},
+    {"id": "15bf54d6-6653-4f6f-bb3e-f7dac654db03", "name": "HOLY", "domain": "holy.de", "favicon_url": "https://www.google.com/s2/favicons?domain=weareholy.com&sz=64"},
+    {"id": "eee8727a-ee98-4d2a-a25e-f3ca8fce8307", "name": "Allianz", "domain": "allianz.de", "favicon_url": "https://www.google.com/s2/favicons?domain=allianz.de&sz=64"},
+    {"id": "ca880309-251e-4513-8901-8c5f8583f624", "name": "LeeUp Media", "domain": "lee-up.de", "favicon_url": "https://www.google.com/s2/favicons?domain=lee-up.de&sz=64"},
+    {"id": "2735aac6-d2cb-4110-976c-f6ac4dec8d5a", "name": "upstreem", "domain": "upstreem.ai", "favicon_url": "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-mark-square-1f1f1f.svg"},
+    {"id": "cf31a5d4-8671-4d4e-9c34-29df6d7f3502", "name": "digitallotsen", "domain": "digitallotsen.com", "favicon_url": "https://www.google.com/s2/favicons?domain=digitallotsen.com&sz=64"},
+    {"id": "772e30a7-3356-4e0d-8edb-5d43717176cb", "name": "MotelOne", "domain": "motel-one.com", "favicon_url": "https://www.google.com/s2/favicons?domain=motel-one.com&sz=64"},
+    {"id": "664f8efe-0269-4603-9f94-3312226ad5fc", "name": "HUBie", "domain": "sac-hub.com", "favicon_url": "https://www.google.com/s2/favicons?domain=sac-hub.com&sz=64"},
+    {"id": "f95f59c3-4871-49e6-afaf-409bb090e472", "name": "Der Sanitätscoach", "domain": "sanitaetscoach.de", "favicon_url": "https://www.google.com/s2/favicons?domain=sanitaetscoach.de&sz=64"}
+  ]);
+  window.setSidebarUser("s1", {"name":"Lukas Gotzkes","email":"l@upstreem.ai","avatar_url":""});
+  /* Marken-Store von core -- daraus zieht die Sidebar den Brands-Zaehler. */
+  window.setUpstreemBrands([{"company_id":"a","name":"Mercedes"},{"company_id":"b","name":"BMW"},{"company_id":"c","name":"Audi"},{"company_id":"d","name":"VW"},{"company_id":"e","name":"Porsche"},{"company_id":"f","name":"Tesla"},{"company_id":"g","name":"Volvo"}]);
+  window.__brandsNachSetter = { rueckgabe: undefined, store: (window.getUpstreemBrands ? (window.getUpstreemBrands()||[]).length : "keine Fn"),
+                                anzeige: (document.querySelector("[data-brandcount]")||{}).innerHTML };
+  window.__skelNachher = { anzahl: document.querySelectorAll(".usn-sk").length,
+                           teamname: document.querySelector(".usn-teamname").textContent };
+  window.__ev.push("setter durch"); log();
+  /* Bubble injiziert das Traegerelement waehrend des Ladens neu -- genau der Moment, in dem die
+     Palette bisher verschwand. */
+  setTimeout(function(){
+    var alt = document.querySelector(".usn-root");
+    var neu = alt.cloneNode(true);
+    alt.parentNode.replaceChild(neu, alt);
+    setTimeout(function(){
+      window.__nachReinjektion = {
+        paletten: document.querySelectorAll("#mira-quick-actions").length,
+        imSlot: !!(document.querySelector("[data-qa]") && document.querySelector("[data-qa]").firstElementChild),
+        trigger: document.querySelectorAll(".mqa-trigger").length,
+        baren: document.querySelectorAll(".usn-bar").length
+      };
+    }, 900);
+  }, 300);
+}
+</script>

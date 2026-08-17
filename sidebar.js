@@ -69,7 +69,8 @@
     { head: "Workspace", items: [
       { key: "performance",   label: "Performance",     icon: "chartColumnUp" },
       { key: "opportunities", label: "Opportunities",   icon: "listTodo" },
-      { key: "prompt-research", label: "Prompt Research", icon: "scanSearch" },
+      /* Schluessel "research", nicht "prompt-research" -- siehe AKTIV_SYNONYM weiter unten. */
+      { key: "research",      label: "Prompt Research", icon: "scanSearch" },
       { key: "mira",          label: "Mira",            icon: "mira" }
     ]},
     { head: "Organisation", items: [
@@ -85,12 +86,17 @@
      der aelteste, weil Neues oben einsortiert wird. */
   var PIN_MAX = 5;
 
-  /* Alter Schluessel als Synonym: research hiess der Punkt, bevor er prompt-research wurde. Wer
-     den alten Wert noch in einem Bubble-State hat, bekommt den Punkt weiterhin hervorgehoben. Das
-     EVENT sendet unveraendert prompt-research.
+  /* "prompt-research" als Synonym auf "research".
+     Warum in dieser Richtung: der Punkt hiess von Anfang an "research", und die Bubble-Workflows
+     sind darauf gebaut. In 5081167 habe ich den Schluessel auf "prompt-research" umbenannt --
+     gefragt war das Icon, nicht der Schluessel. Damit traf der eine Zweig im Navigations-Workflow
+     nicht mehr, und nur dieser Punkt tat nichts. Der Versuch danach, das mit einem Synonym zu
+     heilen, ging in die falsche Richtung: er half data-active, also dem Weg HINEIN. Das EVENT
+     sendete weiter den neuen Namen. Jetzt steht der Schluessel wieder auf "research", und der
+     neue Name wird auf dem Weg hinein weiter akzeptiert.
      Auf Modulebene und nicht im Controller: die Zustandsvorbelegung greift schon darauf zu, und
      eine var-Zuweisung weiter unten waere zu diesem Zeitpunkt noch undefined. */
-  var AKTIV_SYNONYM = { research: "prompt-research" };
+  var AKTIV_SYNONYM = { "prompt-research": "research" };
   /* Was aus Bubble kommt, ist ein State-Wert -- und der heisst dort gern "Dashboard" oder
      "Prompt Research", nicht "dashboard" bzw. "prompt-research". Traf er nicht genau, wurde
      nichts hervorgehoben: bei einem Wechsel setzt die Leiste den Punkt selbst, beim Seitenaufbau
