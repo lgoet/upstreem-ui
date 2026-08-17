@@ -42,12 +42,24 @@
   /* Eigener Flaechenton: die Leiste liegt NEBEN dem Inhalt, nicht darin, und --vc-heading-bg
      waere dafuer zu hell -- man saehe die Kante nicht. Die beiden Werte sind vorgegeben. */
   --usn-bg: #f5f5f5;
+  /* Flaeche fuer Hover und Aktivzustand auf der Leiste. Sie MUSS je Thema aus einem anderen
+     Token kommen, und das ist keine Bequemlichkeit:
+       hell   Leiste #f5f5f5, --vc-bg #ffffff        -> 10 Stufen Unterschied, sichtbar
+       dunkel Leiste #1b1b1b, --vc-bg #1b1b1b        -> 0 Stufen, der Zustand war UNSICHTBAR
+     Gemessen: im Dunkelmodus malte der aktive Punkt rgb(27,27,27) auf eine Leiste in
+     rgb(27,27,27). Im Dunkeln liefert --up-sel-bg (rgba(42,42,42,.6), die Auswahlflaeche der
+     Menuezeilen der App) den Schritt -- ueber #1b1b1b ergibt das ~#242424. Umgekehrt waere
+     --up-sel-bg im Hellen rgba(245,245,245,.55) und damit genauso unsichtbar. Genau dieselbe
+     Falle wie bei .up-pop-opt weiter unten, nur mit dem jeweils anderen Token. */
+  --usn-sel: var(--vc-bg);
   font-family: inherit;
   -webkit-font-smoothing: antialiased;
   box-sizing: border-box;
 }
 .usn-bar *, .usn-bar *::before, .usn-bar *::after { box-sizing: border-box; }
-.usn-bar[data-theme="dark"], .usn-fab[data-theme="dark"], .usn-scrim[data-theme="dark"] { --usn-bg: #1b1b1b; }
+.usn-bar[data-theme="dark"], .usn-fab[data-theme="dark"], .usn-scrim[data-theme="dark"] {
+  --usn-bg: #1b1b1b; --usn-sel: var(--up-sel-bg);
+}
 
 /* ---------- die Leiste ---------- */
 /* z-index 9900: knapp UNTER dem Drawer-Band der App (9905-9930). Ein Drawer, der ueber der
@@ -118,7 +130,7 @@
 }
 /* --vc-heading-bg ist ein durchscheinendes #f5f5f5 und auf der gleichfarbigen Leiste nicht zu
    sehen. Dieselbe Flaeche wie der aktive Menuepunkt, dazu die Chevrons in der Primaerfarbe. */
-.usn-team:hover { background: var(--vc-bg); }
+.usn-team:hover { background: var(--usn-sel); }
 .usn-team:hover .usn-sw { color: var(--vc-text); }
 /* gap: 0 -- die Luecken zwischen den Flex-Kindern bleiben sonst stehen, auch wenn die Kinder
    selbst 0 breit sind, und das Icon steht dann um genau diese Luecke neben der Mitte. */
@@ -157,8 +169,8 @@
 /* Radius 12 wie alle Flaechen der Leiste -- das Kit gibt .up-iconbtn 8 mit. */
 .usn-bar .up-iconbtn { border-radius: 12px; }
 .usn-bar .up-iconbtn.usn-toggle { color: var(--vc-third); }
-.usn-bar .up-iconbtn.usn-toggle:hover { background: var(--vc-bg); color: var(--vc-text); }
-.usn-bar .up-iconbtn:hover { background: var(--vc-bg); color: var(--vc-text); }
+.usn-bar .up-iconbtn.usn-toggle:hover { background: var(--usn-sel); color: var(--vc-text); }
+.usn-bar .up-iconbtn:hover { background: var(--usn-sel); color: var(--vc-text); }
 /* Ganz nach rechts: der Knopf gehoert an die Kante der Leiste, nicht hinter den Teamnamen.
    Damit steht er immer 8px vom rechten Rand, und der Abstand zum Doppelpfeil ist mindestens
    16px -- genau 16, sobald der Name den Platz ausfuellt. */
@@ -258,11 +270,11 @@
 /* Der Hover ist genau die halbe Staerke des aktiven Zustands: dieselbe Farbe, halb
    deckend. Damit bleibt "worauf zeige ich" und "wo bin ich" unterscheidbar, ohne einen
    zweiten Ton zu erfinden. */
-.usn-item:hover { background: color-mix(in srgb, var(--vc-bg) 50%, transparent); }
-.usn-item.is-active:hover { background: var(--vc-bg); }
+.usn-item:hover { background: color-mix(in srgb, var(--usn-sel) 50%, transparent); }
+.usn-item.is-active:hover { background: var(--usn-sel); }
 /* Der aktive Punkt traegt Flaeche UND Gewicht -- Farbe allein reicht nicht, wenn jemand sie
    nicht unterscheiden kann. */
-.usn-item.is-active { background: var(--vc-bg); font-weight: 600; }
+.usn-item.is-active { background: var(--usn-sel); font-weight: 600; }
 .usn-ic { position: relative; width: 17px; height: 17px; flex: 0 0 17px; color: var(--vc-muted); display: inline-flex; }
 .usn-ic svg { width: 17px; height: 17px; display: block; }
 /* Mira ist eine Wortmarke: das Bild liegt UEBER dem Rueckfall-Symbol, nicht daneben, und
@@ -380,7 +392,7 @@
   font: inherit; color: var(--vc-text); cursor: pointer; text-align: left;
   transition: background var(--usn-t) var(--usn-ease);
 }
-.usn-acc:hover { background: var(--vc-bg); }
+.usn-acc:hover { background: var(--usn-sel); }
 .usn-bar.is-mini .usn-acc { justify-content: center; padding: 8px 0; gap: 0; }
 /* Der Kreis traegt die Initialen; ein Bild legt sich per position darueber, damit beim
    Ausfall des Bildes wieder der Buchstabe steht und nicht ein leerer Kreis. */
