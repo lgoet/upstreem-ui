@@ -31,13 +31,16 @@
      data-team-id="ca880309-251e-4513-8901-8c5f8583f624" data-active="dashboard" data-prompt-count="42" data-export-instance="export_x"
      data-nav-fn="bubble_fn_usnNav"
      data-team-fn="bubble_fn_usnTeam"
-     data-profile-fn="bubble_fn_usnProfile"
+     data-account-fn="bubble_fn_usnAccount"
+     data-theme-fn="bubble_fn_usnTheme"
+     data-logout-fn="bubble_fn_usnLogout"
+     data-newteam-fn="bubble_fn_usnNewTeam"
      data-state-fn="bubble_fn_usnState"></div>
 
 <script>
 window.__ev = [];
 function log(){ var o=document.getElementById("out"); if(o) o.textContent = window.__ev.slice(-8).join("\n"); }
-["usnNav","usnTeam","usnProfile","usnState"].forEach(function(n){
+["usnNav","usnTeam","usnAccount","usnTheme","usnLogout","usnNewTeam","usnState"].forEach(function(n){
   window["bubble_fn_"+n] = function(j){ window.__ev.push(n+" "+j); log(); };
 });
 window.bubble_fn_theme_pref = function(v){ window.__ev.push("theme_pref "+v); log(); };
@@ -90,6 +93,10 @@ function los(){
     {"id": "f95f59c3-4871-49e6-afaf-409bb090e472", "name": "Der Sanitätscoach", "domain": "sanitaetscoach.de", "favicon_url": "https://www.google.com/s2/favicons?domain=sanitaetscoach.de&sz=64"}
   ]);
   window.setSidebarUser("s1", {"name":"Lukas Gotzkes","email":"l@upstreem.ai","avatar_url":""});
+  /* Marken-Store von core -- daraus zieht die Sidebar den Brands-Zaehler. */
+  window.setUpstreemBrands([{"company_id":"a","name":"Mercedes"},{"company_id":"b","name":"BMW"},{"company_id":"c","name":"Audi"},{"company_id":"d","name":"VW"},{"company_id":"e","name":"Porsche"},{"company_id":"f","name":"Tesla"},{"company_id":"g","name":"Volvo"}]);
+  window.__brandsNachSetter = { rueckgabe: undefined, store: (window.getUpstreemBrands ? (window.getUpstreemBrands()||[]).length : "keine Fn"),
+                                anzeige: (document.querySelector("[data-brandcount]")||{}).innerHTML };
   window.__skelNachher = { anzahl: document.querySelectorAll(".usn-sk").length,
                            teamname: document.querySelector(".usn-teamname").textContent };
   window.__ev.push("setter durch"); log();

@@ -160,6 +160,9 @@
    Damit steht er immer 8px vom rechten Rand, und der Abstand zum Doppelpfeil ist mindestens
    16px -- genau 16, sobald der Name den Platz ausfuellt. */
 .usn-toggle { flex: 0 0 32px; margin-left: auto; }
+/* Das Zeichen selbst kleiner als die 16 des Kits -- der Knopf bleibt 32 gross und damit gut
+   treffbar, nur das Symbol darin tritt zurueck. */
+.usn-bar .usn-toggle svg { width: 14px; height: 14px; }
 /* [hidden] ist die schwaechste Regel im Feld: die display-Angabe darueber wuerde sie schlagen.
    Deshalb hier ausdruecklich zurueck auf none. */
 .usn-toggle[hidden] { display: none; }
@@ -172,6 +175,19 @@
    abstandslos -- ein Loch, wo nichts steht, waere kein Abstand, sondern ein Fehler. */
 .usn-qa { flex: 0 0 auto; }
 .usn-qa:not(:empty) { margin-top: 32px; }
+/* Der Knopf traegt die Werte eines Menuepunktes: 36 hoch, Radius 9, gedaempfte Schrift, und
+   auf dieser Flaeche KEINEN eigenen Hintergrund -- sein weisses --am-trigger-bg stach als
+   Kachel heraus. Sichtbar bleibt der Rahmen; beim Hover geht Text und Icon auf die
+   Primaerfarbe, wie bei den Menuepunkten. */
+.usn-bar .mqa-trigger {
+  height: 36px; border-radius: 9px; background: transparent;
+  border-color: var(--vc-border); color: var(--vc-muted);
+}
+.usn-bar .mqa-trigger:hover { background: transparent; border-color: var(--vc-hover-border); color: var(--vc-text); }
+.usn-bar .mqa-trigger-ic { color: inherit; }
+.usn-bar .mqa-trigger .mqa-kbd { color: var(--vc-muted); background: transparent; }
+.usn-bar .mqa-trigger:hover .mqa-kbd { color: var(--vc-text); }
+
 /* Im Mini-Zustand bleibt vom Quick-Actions-Knopf nur die Lupe. Sein eigenes CSS gibt ihm
    width:100% mit Beschriftung und Tastenkuerzel -- in 40px Innenbreite bricht die Zeile um und
    das Kuerzel haengt aus der Leiste heraus (gemessen). Die Regeln stehen HIER und nicht in
@@ -261,6 +277,7 @@
 .usn-acc-name .usn-sk { width: 92px; height: 12px; }
 .usn-acc-mail .usn-sk { width: 116px; height: 10px; margin-top: 3px; }
 .usn-sk-chips { width: 58px; height: 14px; border-radius: 7px; }
+.usn-count .usn-sk { width: 22px; height: 11px; }
 /* Im Mini-Zustand traegt nur das Logo bzw. der Kreis ein Skelett -- die Textbalken liegen in
    Elementen, die dort ohnehin auf Breite 0 stehen. */
 

@@ -1078,13 +1078,19 @@
     .up-root.is-resizing .up-row { cursor: col-resize; }
     .up-th.is-sortable:hover { color: var(--vc-text); }
 
-    /* header sorter: two 14px chevrons stacked, pulled together by 2px each */
-    .up-thsort { display: inline-flex; flex-direction: column; align-items: center; flex: 0 0 auto; line-height: 0; }
+    /* Kopf-Sortierer: EIN 14px-Zeichen. Ungeordnet arrow-down-up, sortiert der Pfeil in die
+       tatsaechliche Richtung -- vorher standen zwei Chevrons uebereinander, von denen einer
+       hervorgehoben war. Das Zeichen schreibt UC.makeHeadSort zur Laufzeit hinein. */
+    .up-thsort { display: inline-flex; align-items: center; flex: 0 0 auto; line-height: 0; }
     .up-thsort svg { width: 14px; height: 14px; display: block; color: var(--vc-third); transition: color 120ms ease; }
-    .up-thsort .up-thsort-up { margin-bottom: -2px; }
-    .up-thsort .up-thsort-down { margin-top: -2px; }
-    .up-thsort.is-asc .up-thsort-up { color: var(--vc-text); }
-    .up-thsort.is-desc .up-thsort-down { color: var(--vc-text); }
+    .up-thsort.is-asc svg, .up-thsort.is-desc svg { color: var(--vc-text); }
+    /* Rueckfall fuer noch nicht ueberschriebenes Markup: ein bestehendes Bubble-Element traegt
+       weiter die zwei Chevrons .up-thsort-up/.up-thsort-down. Sie wuerden nebeneinander stehen,
+       bis makeHeadSort das erste Mal laeuft -- bis dahin nur den ersten zeigen. Die beiden
+       Klassennamen bleiben deshalb ausdruecklich in Gebrauch, auch wenn das Repo sie nicht mehr
+       erzeugt: sie stehen in Markup, das kein CDN-Pin erreicht. */
+    .up-thsort .up-thsort-up { margin: 0; }
+    .up-thsort .up-thsort-down { display: none; }
     /* the sub-label that appears when a column is sorted by its secondary key (Share → Trend) */
     .up-th-sub { font-size: 11px; font-weight: 500; color: var(--vc-text); }
 

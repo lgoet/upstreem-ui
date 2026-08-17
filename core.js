@@ -1431,6 +1431,20 @@
      Clicking a column header walks that column's cycle (e.g. share:desc -> share:asc ->
      share_trend:desc …) and falls back to the table's default once the cycle is exhausted.
      cfg: { root, state, cycles, defaultSort, trendField, onSort } */
+  /* Der Sortierer im Tabellenkopf. Ein Zeichen statt zwei gestapelten Chevrons: ungeordnet
+     arrow-down-up, sortiert der Pfeil in die tatsaechliche Richtung. Geschrieben wird es hier zur
+     LAUFZEIT und nicht im Markup -- in vier der fuenf Tabellen steht der Kopf als handgemachte
+     Kopie im Bubble-Element, und was nur dort stuende, erreicht kein CDN-Pin. */
+  var SORT_ICONS = {
+    neutral: '<path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/>',
+    asc:     '<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>',
+    desc:    '<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>'
+  };
+  function sortIconHtml(zustand){
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+      'stroke-linecap="round" stroke-linejoin="round">' + (SORT_ICONS[zustand] || SORT_ICONS.neutral) + '</svg>';
+  }
+
   function makeHeadSort(cfg){
     var root = cfg.root, state = cfg.state;
     var TREND = cfg.trendField || null;   // a second sort key that shares the Share column
@@ -1443,6 +1457,13 @@
           ? (state.sortField === "share" || state.sortField === TREND)
           : (state.sortField === col);
         if (owns) el.classList.add(state.sortDir === "asc" ? "is-asc" : "is-desc");
+        /* Das Zeichen selbst nachziehen. Nur schreiben, wenn es sich aendert -- sonst haengt an
+           jedem Sortierklick ein innerHTML fuer jede Spalte. */
+        var soll = owns ? (state.sortDir === "asc" ? "asc" : "desc") : "neutral";
+        if (el.getAttribute("data-sortic") !== soll){
+          el.setAttribute("data-sortic", soll);
+          el.innerHTML = sortIconHtml(soll);
+        }
         var th = el.closest(".up-th");
         if (th) th.setAttribute("aria-sort", owns ? (state.sortDir === "asc" ? "ascending" : "descending") : "none");
       });
@@ -1754,11 +1775,13 @@
      getIsDark() is only the fallback: the theme is read from the hovered button's own .up-root
      first, so two roots on one page in different themes each get the right chip.
      Signature and return shape are unchanged, so existing call sites keep working as-is. */
-  /* The app's filter/"fader" glyph (feather `sliders`, vertical). Components that own a filter
-     trigger should WRITE this into the button from JS rather than relying on the markup carrying
-     it: the CDN pin ships JS/CSS, while the Bubble markup is a hand-made copy, so an icon that
-     lives only in markup silently stays on whatever version was pasted last. */
-  var SLIDERS_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 8h4" /> <path d="M12 21v-9" /> <path d="M12 8V3" /> <path d="M17 16h4" /> <path d="M19 12V3" /> <path d="M19 21v-5" /> <path d="M3 14h4" /> <path d="M5 10V3" /> <path d="M5 21v-7" /></svg>';
+  /* Das Filter-/Fader-Zeichen der App. Komponenten mit einem Filter-Trigger sollen es aus dem
+     JS in den Knopf SCHREIBEN und sich nicht auf das Markup verlassen: der CDN-Pin liefert
+     JS/CSS, das Bubble-Markup ist eine handgemachte Kopie -- ein Icon, das nur im Markup steht,
+     bleibt stumm auf dem Stand, den jemand zuletzt eingefuegt hat.
+     Lucide settings-2 (zwei Regler mit Knoepfen) statt sliders-vertical: die neun Striche des
+     Faders wirkten bei 15px wie ein Gitter. */
+  var SLIDERS_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 17H5"/><path d="M19 7h-9"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>';
 
   /* Tooltip for text that is clamped/ellipsised — shows the full string only when it actually
      does not fit. prompts-table grew this first; responses-table needs the identical behaviour

@@ -56,12 +56,12 @@
       { key: "dashboard",  label: "Dashboard",       icon: "home" },
       { key: "prompts",    label: "Prompt Insights", icon: "zap", count: true },
       { key: "citations",  label: "Citations",       icon: "globe" },
-      { key: "brands",     label: "Brands",          icon: "squareStack" }
+      { key: "brands",     label: "Brands",          icon: "squareStack", brands: true }
     ]},
     { head: "Workspace", items: [
       { key: "performance",   label: "Performance",     icon: "chartColumnUp" },
       { key: "opportunities", label: "Opportunities",   icon: "listTodo" },
-      { key: "research",      label: "Prompt Research", icon: "scanSearch" },
+      { key: "prompt-research", label: "Prompt Research", icon: "scanSearch" },
       { key: "mira",          label: "Mira",            icon: "mira" }
     ]},
     { head: "Organisation", items: [
@@ -168,6 +168,10 @@
       /* Getrennt vom Inhalt: "noch nichts angekommen" ist ein anderer Zustand als "angekommen
          und leer". Nur der erste zeigt Skelette -- der zweite zeigt, was da ist. */
       teamsDa: false, userDa: false,
+      /* Der Marken-Zaehler kommt aus dem Store von core (setUpstreemBrands), nicht aus einem
+         eigenen Setter -- die Liste liegt auf der Seite ohnehin. brandsDa trennt wieder
+         "noch nichts da" von "da und leer". */
+      brands: null, brandsDa: false,
       user: { name: "", email: "", avatar: "" },
       count: attr("data-prompt-count"),
       suche: "",
@@ -331,6 +335,9 @@
           b.items.map(function(it){
             var extra = "";
             if (it.count) extra = '<span class="usn-count usn-fade" data-count>' + esc(state.count || "") + '</span>';
+            if (it.brands) extra = '<span class="usn-count usn-fade" data-brandcount>' +
+              (state.brandsDa ? esc(state.brands == null ? "" : String(state.brands))
+                              : '<span class="usn-sk"></span>') + '</span>';
             if (it.chips) extra = '<span class="usn-chips usn-fade" data-chips></span>';
             return '<button class="usn-item' + (it.key === state.aktiv ? " is-active" : "") + '" ' +
               'type="button" data-nav-key="' + esc(it.key) + '" title="' + esc(it.label) + '">' +
@@ -478,7 +485,7 @@
         fire("data-team-fn", "usnTeam", { team_id: id });
         return;
       }
-      if (t.closest("[data-newteam]")){ menuZu(); fire("data-profile-fn", "usnProfile", { action: "new_team" }); return; }
+      if (t.closest("[data-newteam]")){ menuZu(); fire("data-newteam-fn", "usnNewTeam", {}); return; }
 
       var ak = t.closest("[data-acc-key]");
       if (ak){
@@ -496,11 +503,15 @@
             try { localStorage.removeItem("pref_theme"); } catch(e){}
           } else if (window.setUpstreemTheme) window.setUpstreemTheme(key);
           renderAccMenu(); renderNav();
-          fire("data-profile-fn", "usnProfile", { action: "theme", value: key });
+          fire("data-theme-fn", "usnTheme", { value: key });
           return;
         }
         menuZu();
-        fire("data-profile-fn", "usnProfile", { action: key });
+        /* Drei Wege statt einem: die drei Einstellungspunkte teilen ein Event mit action,
+           Theme und Abmelden haben ihr eigenes. Vorher lief alles ueber usnProfile, und der
+           Workflow musste erst per Bedingung auseinandersortieren, was gemeint war. */
+        if (key === "logout") fire("data-logout-fn", "usnLogout", {});
+        else fire("data-account-fn", "usnAccount", { action: key });
         return;
       }
 
@@ -535,6 +546,36 @@
       if (popTeam.isOpen() || popAcc.isOpen()) return;
       if (state.klasse === "hint" && state.offen){ state.offen = false; anwenden(); }
     });
+    /* ── Attribute am Traegerelement live mitlesen ─────────────────────────────
+       data-active, data-prompt-count und data-team-id sind dynamische Bubble-Werte. Bisher las
+       die Komponente sie EINMAL beim Aufbau -- aendert Bubble den Wert danach (anderer Menuepunkt,
+       neue Promptzahl), kam davon nichts an, und man brauchte fuer jede Aenderung einen
+       Run-JS-Schritt. Ein Beobachter erspart genau den: was im Element steht, gilt.
+       Die Setter bleiben trotzdem -- wer lieber aus einem Workflow schiebt, kann das weiter tun. */
+    if (window.MutationObserver){
+      new MutationObserver(function(muts){
+        for (var i = 0; i < muts.length; i++){
+          var n = muts[i].attributeName;
+          if (n === "data-active"){
+            var k = attr("data-active", "dashboard");
+            if (k && k !== state.aktiv){ state.aktiv = k; renderNav(); }
+          } else if (n === "data-prompt-count"){
+            var z = attr("data-prompt-count");
+            if (z !== state.count){
+              state.count = z;
+              var el = elNav.querySelector("[data-count]");
+              if (el) el.textContent = state.count;
+            }
+          } else if (n === "data-team-id"){
+            var t = attr("data-team-id");
+            var neu = (state.teams || []).filter(function(x){ return String(x.id) === t; })[0];
+            if (neu && (!state.team || String(state.team.id) !== t)){ state.team = neu; renderTeam(); renderTeamMenu(); }
+          }
+        }
+      }).observe(root, { attributes: true,
+        attributeFilter: ["data-active", "data-prompt-count", "data-team-id"] });
+    }
+
     /* Nur am Fenster horchen, NICHT per ResizeObserver an der Leiste: die Leiste aendert ihre
        Breite selbst, ein Beobachter an ihr wuerde anwenden() waehrend des Uebergangs in jedem
        Frame erneut aufrufen. */
@@ -542,6 +583,20 @@
     /* Theme-Wechsel: das Mira-Symbol hat zwei Fassungen, und der Haken im Konto-Menue muss
        mitwandern. */
     UC.onTheme(function(){ renderNav(); qaAufbauen(0); if (popAcc.isOpen()) renderAccMenu(); });
+
+    /* Der Marken-Store von core: Startwert holen, dann auf Aenderungen hoeren. onBrands nimmt
+       den Root als Besitzer, damit das Abo mit dem Element verschwindet. */
+    function brandsUebernehmen(liste){
+      if (!Array.isArray(liste)) return;
+      state.brands = liste.length; state.brandsDa = true;
+      var el = elNav.querySelector("[data-brandcount]");
+      if (el) el.textContent = String(state.brands);
+    }
+    try {
+      var jetztBrands = window.getUpstreemBrands && window.getUpstreemBrands();
+      if (Array.isArray(jetztBrands) && jetztBrands.length) brandsUebernehmen(jetztBrands);
+      if (UC.onBrands) UC.onBrands(brandsUebernehmen, root);
+    } catch(e){}
 
     /* Quick Actions steht als eigenes Element auf der Seite. Es wird hierher UMGEHAENGT, nicht
        nachgebaut -- ein Umzug laesst seinen Controller, seine Zuhoerer und sein Overlay

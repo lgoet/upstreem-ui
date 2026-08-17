@@ -45,10 +45,17 @@
   data-mira-icon       = OPTIONAL. Beide Mira-Zeichen stehen fest im Code; diese beiden
   data-mira-icon-dark    Attribute sind nur da, um sie im Notfall zu ueberschreiben.
 
+  data-active, data-prompt-count und data-team-id werden LIVE mitgelesen: aendert Bubble den
+  dynamischen Wert, zieht die Leiste nach, ohne dass irgendein Workflow etwas rufen muss. Die
+  Setter setSidebarActive / setSidebarCount gibt es weiter, gebraucht werden sie nicht mehr.
+
+  Die Zahl neben "Brands" holt sich die Leiste selbst aus dem Marken-Store von core
+  (setUpstreemBrands) -- dafuer ist nichts zu tun, die Liste liegt auf der Seite ohnehin.
+
   Die Schluessel fuer data-active und fuer das Nav-Event:
 
       dashboard | prompts | citations | brands
-      performance | opportunities | research | mira
+      performance | opportunities | prompt-research | mira
       teams | settings
 
   ── Events ───────────────────────────────────────────────────────────────────
@@ -65,14 +72,22 @@
       team_id  ->  (?<="team_id":")[^"]*
       Teamwechsel: das gewaehlte Team am User speichern und die Seite neu laden.
 
-  data-profile-fn = "bubble_fn_usnProfile_[dynamic id]"
+  data-account-fn = "bubble_fn_usnAccount_[dynamic id]"
       {"team_id":"...","action":"billing"}
       action  ->  (?<="action":")[^"]*
-      action ist einer von: preferences | team | billing | logout | new_team | theme
-      Bei action = "theme" kommt zusaetzlich value = light | dark | system. Das Umschalten
-      selbst macht die Komponente bereits; dieser Aufruf ist nur da, damit ihr die Wahl am
-      User speichern koennt. Wer bubble_fn_theme_pref schon verdrahtet hat, bekommt den Wert
-      ohnehin ueber core und kann action="theme" hier ignorieren.
+      Die drei Einstellungspunkte im Konto-Menue: preferences | team | billing.
+
+  data-theme-fn   = "bubble_fn_usnTheme_[dynamic id]"
+      {"team_id":"...","value":"system"}
+      value  ->  (?<="value":")[^"]*
+      light | dark | system. Umgeschaltet hat die Komponente schon -- der Aufruf ist nur da,
+      damit ihr die WAHL am User speichern koennt.
+
+  data-logout-fn  = "bubble_fn_usnLogout_[dynamic id]"
+      {"team_id":"..."}   -- kein weiterer Wert, der Klick allein ist die Nachricht
+
+  data-newteam-fn = "bubble_fn_usnNewTeam_[dynamic id]"
+      {"team_id":"..."}   -- "Create a new team" im Team-Schalter, ebenfalls ohne Wert
 
   data-state-fn   = "bubble_fn_usnState_[dynamic id]"
       {"team_id":"...","mode":"mini","visible":"yes","px":64}
@@ -83,8 +98,8 @@
       Nur noetig, wenn Bubble-Elemente auf die Breite reagieren sollen; fuer das Verschieben
       des Inhalts reicht --up-sidebar-w oben.
 
-  Alle vier feuern zusaetzlich ein gleichnamiges CustomEvent am Traeger-Element, falls etwas
-  anderes auf der Seite mithoeren will.
+  Alle feuern zusaetzlich ein gleichnamiges CustomEvent am Traeger-Element, falls etwas anderes
+  auf der Seite mithoeren will.
 
   ── Setter (Run javascript) ──────────────────────────────────────────────────
   setSidebarTeams("INSTANCE_ID", teamsJson)
@@ -132,13 +147,18 @@
   Seite der Einstellung des Betriebssystems folgt.
 
   ACHTUNG, zwei verschiedene Werte -- nicht verwechseln:
-    usnProfile mit action="theme"  ->  value ist light | dark | SYSTEM.
+    usnTheme.value                 ->  light | dark | SYSTEM.
                                        Das ist die WAHL des Nutzers. Die gehoert in
                                        user_settings.theme.
     bubble_fn_theme_pref           ->  bekommt nur light | dark, also die aufgeloeste Farbe.
                                        Die gehoert in den State is_dark, nicht in die Datenbank.
   Wer theme_pref in user_settings speichert, macht aus "System" dauerhaft "Dark" -- naemlich
   genau das, was das Betriebssystem in dem Moment gerade sagte.
+
+  ── Setter (Run javascript) sind jetzt optional ───────────────────────────────
+  setSidebarActive und setSidebarCount braucht man nicht mehr: data-active und
+  data-prompt-count werden live gelesen. Was weiter ueber Setter kommt, sind Teams und Nutzer
+  -- die sind Listen bzw. Objekte und passen nicht in ein Attribut.
 -->
 <div class="up-root usn-root"
      data-instance="INSTANCE_ID"
@@ -150,7 +170,10 @@
      data-export-instance="EXPORT_INSTANCE_ID"
      data-nav-fn="bubble_fn_usnNav"
      data-team-fn="bubble_fn_usnTeam"
-     data-profile-fn="bubble_fn_usnProfile"
+     data-account-fn="bubble_fn_usnAccount"
+     data-theme-fn="bubble_fn_usnTheme"
+     data-logout-fn="bubble_fn_usnLogout"
+     data-newteam-fn="bubble_fn_usnNewTeam"
      data-state-fn="bubble_fn_usnState">
 </div>
 

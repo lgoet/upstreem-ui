@@ -1294,12 +1294,22 @@
       SORT_STORE[instanceId] = { field: sortField, dir: sortDir };
       populateSort(); fireSort(); renderTable();
     }
-    var THSORT_UP = '<svg class="up-thsort-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6" /></svg>';
-    var THSORT_DOWN = '<svg class="up-thsort-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>';
+    /* Ein Zeichen, drei Zustaende -- dieselbe Form, die UC.makeHeadSort in die anderen Tabellen
+       schreibt (Lucide arrow-down-up / arrow-up / arrow-down). */
+    var THSORT = {
+      neutral: '<path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/>',
+      asc:     '<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>',
+      desc:    '<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>'
+    };
+    function thsortSvg(z){
+      return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+        'stroke-linecap="round" stroke-linejoin="round">' + THSORT[z] + '</svg>';
+    }
     function sortChevronHtml(col){
       var on = sortField === col;
+      var z = on ? (sortDir === "asc" ? "asc" : "desc") : "neutral";
       return '<span class="up-thsort' + (on ? (sortDir === "asc" ? " is-asc" : " is-desc") : "") +
-        '" data-for="' + col + '">' + THSORT_UP + THSORT_DOWN + '</span>';
+        '" data-for="' + col + '" data-sortic="' + z + '">' + thsortSvg(z) + '</span>';
     }
     function populateSort(){
       if (!sortMenu) return;
