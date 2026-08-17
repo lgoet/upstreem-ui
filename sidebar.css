@@ -336,6 +336,12 @@
 .usn-pin-ic .up-logo-box { width: 17px; height: 17px; flex: 0 0 17px; border-radius: 5.7px; padding: 1px; }
 .usn-pin-ic .up-logo-box img { width: 15.6px; height: 15.6px; border-radius: 5px; }
 .usn-pin-ic .up-logo-ltr { font-size: 9px; }
+/* Dasselbe Bauteil noch eine Stufe kleiner: im Konto-Menue sind die Icons 15px (siehe
+   .usn-menu .up-pop-opt svg weiter unten), nicht 17. Faktor 15/24 auf ALLE Werte:
+   Radius 8 -> 5, Bild 22 -> 13.75, Bildradius 7 -> 4.4, Buchstabe 11 -> 7. */
+.usn-menu .up-logo-box.usn-acc-logo { width: 15px; height: 15px; flex: 0 0 15px; border-radius: 5px; padding: 1px; }
+.usn-menu .up-logo-box.usn-acc-logo img { width: 13.75px; height: 13.75px; border-radius: 4.4px; }
+.usn-menu .up-logo-box.usn-acc-logo .up-logo-ltr { font-size: 7px; }
 .usn-pin-x {
   flex: 0 0 14px; width: 14px; height: 14px; display: inline-flex; align-items: center; justify-content: center;
   color: var(--vc-third); opacity: 0; cursor: pointer;

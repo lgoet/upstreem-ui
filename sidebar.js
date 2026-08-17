@@ -115,7 +115,11 @@
 
   var KONTO = [
     { head: "Account Settings", items: [
-      { key: "preferences", label: "Account Preferences", icon: "bolt" },
+      /* Schluessel bleibt "preferences". Das Etikett ist neu, der Schluessel nicht -- an dem
+         haengt der Bubble-Workflow, und eine Umbenennung hat genau bei Prompt Research einen
+         Zweig stumm gelegt (siehe AKTIV_SYNONYM). logo: statt icon: -- die Zeile zeigt das
+         Markenlogo des Teams, dasselbe wie der Umschalter oben. */
+      { key: "preferences", label: "Your Brand", logo: true },
       { key: "team",        label: "Team Organisation",   icon: "folder" },
       { key: "billing",     label: "Billing",             icon: "creditCard" }
     ]},
@@ -188,11 +192,14 @@
     }
     /* .up-logo-box aus core: ein Element, Buchstabe darunter, Bild darueber. Faellt das Bild
        aus, verliert die Box has-img und der Buchstabe wird sichtbar. */
-    function logoHtml(name, u){
+    /* extra: zusaetzliche Klasse am Kasten, wenn das 24er Bauteil auf eine andere Groesse
+       gebracht wird (Pin-Zeile, Konto-Menue). */
+    function logoHtml(name, u, extra){
       var q = url(u);
+      var kl = "up-logo-box" + (extra ? " " + extra : "");
       var ltr = '<span class="up-logo-ltr">' + esc(String(name || "?").trim().charAt(0) || "?") + '</span>';
-      if (!q) return '<span class="up-logo-box">' + ltr + '</span>';
-      return '<span class="up-logo-box has-img"><img src="' + esc(q) + '" alt="" referrerpolicy="no-referrer" ' +
+      if (!q) return '<span class="' + kl + '">' + ltr + '</span>';
+      return '<span class="' + kl + ' has-img"><img src="' + esc(q) + '" alt="" referrerpolicy="no-referrer" ' +
         'onerror="this.remove();this.parentNode.classList.remove(\'has-img\')"/>' + ltr + '</span>';
     }
 
@@ -675,7 +682,11 @@
             var an = s.theme && it.key === th;
             return '<div class="up-pop-opt' + (an ? " is-active" : "") + '" ' +
               'data-acc-key="' + esc(it.key) + '"' + (s.theme ? ' data-theme-key="1"' : "") + '>' +
-              '<span class="up-pop-opt-l">' + (it.icon ? ic(it.icon) : "") + esc(it.label) + '</span>' +
+              '<span class="up-pop-opt-l">' +
+                (it.logo ? logoHtml((state.team || {}).name, (state.team || {}).favicon_url, "usn-acc-logo")
+                         : (it.icon ? ic(it.icon) : "")) +
+                esc(it.label) +
+              '</span>' +
               (s.theme ? '<span class="up-check">' + ic("check") + '</span>' : "") +
             '</div>';
           }).join("") +

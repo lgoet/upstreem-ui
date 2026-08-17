@@ -2719,6 +2719,17 @@
          Komponente, die vor dem Feuern einen Ladezustand setzt und auf ein Erfolgsereignis
          wartet, dreht dann endlos, ohne Meldung im UI und ohne Meldung in der Konsole. Die
          Ausfuehrung laeuft weiter wie bisher, es kommt nur die Zeile dazu. */
+      /* ── Diagnose auf Zuruf ────────────────────────────────────────────────────────────────
+         window.upstreemTrace(true) in der Konsole oder in einem Run-JS-Schritt, danach meldet
+         JEDES Event dieser App, was es sendet und ob es einen Empfaenger gefunden hat. Aus
+         geschaltet steht nichts in der Konsole -- die ausgelieferte App bleibt still.
+         Der Grund fuer den Schalter: bei "der Menuepunkt tut nichts" ist die entscheidende Frage,
+         ob das Event ueberhaupt rausgeht und mit welchem Wert. Ohne ihn kostet das jedes Mal eine
+         Runde Raten. */
+      if (window.__upTrace && window.console){
+        console.log("[trace] " + label + " -> " + fnName +
+          (typeof fn === "function" ? " (Empfaenger da)" : " (KEIN EMPFAENGER)") + " " + json);
+      }
       if (typeof fn === "function"){
         try { fn(json); }
         catch(e){
@@ -5775,6 +5786,15 @@
 
   window.setUpstreemTheme = setUpstreemTheme;
   window.getUpstreemTheme = getUpstreemTheme;
+
+  /* Schalter fuer die Event-Diagnose in makeFire. Global, weil er aus der Konsole und aus einem
+     Run-JS-Schritt erreichbar sein muss; standardmaessig aus. Rueckgabe ist der neue Zustand,
+     damit man in Bubble sieht, dass der Aufruf angekommen ist. */
+  window.upstreemTrace = function(an){
+    window.__upTrace = (an === undefined) ? true : !!an;
+    if (window.console) console.log("[trace] " + (window.__upTrace ? "an" : "aus"));
+    return window.__upTrace;
+  };
 
   /* Adopt the stored theme at LOAD, not only when a page calls setUpstreemTheme. Bubble rebuilds
      an HTML element whenever a workflow touches its data -- selecting a topic rebuilds the date

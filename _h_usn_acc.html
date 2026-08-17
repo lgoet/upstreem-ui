@@ -81,6 +81,29 @@ window.bubble_fn_theme_pref = function(v){ window.__ev.push("theme_pref "+v); lo
   });
 })();
 
+function kontoPruefung(){
+  /* Menue oeffnen, damit renderAccMenu laeuft -- es rendert erst beim Oeffnen. */
+  document.querySelector(".usn-acc").click();
+  var res = { zeilen: [], trace: [] };
+  document.querySelectorAll("[data-acc-key]").forEach(function(z){
+    var box = z.querySelector(".up-logo-box"), img = z.querySelector(".up-logo-box img"), sv = z.querySelector("svg");
+    var t = z.textContent.trim();
+    var cs = box ? getComputedStyle(box) : null, ci = img ? getComputedStyle(img) : null;
+    res.zeilen.push({ key: z.getAttribute("data-acc-key"), text: t,
+      logo: box ? (Math.round(parseFloat(cs.width)) + "x" + Math.round(parseFloat(cs.height)) + " r" + cs.borderRadius) : "kein logo",
+      bild: img ? (Math.round(parseFloat(ci.width)) + "x" + Math.round(parseFloat(ci.height)) + " src=" + (img.getAttribute("src")||"").slice(-28)) : "kein bild",
+      svg: sv ? Math.round(sv.getBoundingClientRect().width) + "px" : "kein svg" });
+  });
+  /* Trace einschalten und einen Klick durchschicken -- was steht in der Konsole? */
+  var alt = console.log; console.log = function(){ res.trace.push([].join.call(arguments, " ")); alt.apply(console, arguments); };
+  window.upstreemTrace(true);
+  document.querySelector('[data-nav-key="research"]').click();
+  window.upstreemTrace(false);
+  document.querySelector('[data-nav-key="dashboard"]').click();
+  console.log = alt;
+  window.__kontoPruefung = res;
+  return res;
+}
 function navPruefung(){
   var res = {};
   /* 1. Was geht RAUS, wenn man auf Prompt Research klickt? */
