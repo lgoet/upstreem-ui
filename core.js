@@ -1782,6 +1782,19 @@
     "up-search-btn":'<path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/>',
     "up-search-clear":'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>'
   };
+  /* Dieselben drei Formen tragen in den anderen Komponenten eigene Klassennamen. Sie stehen hier
+     und nicht je Komponente, weil sie dieselbe Sache bedeuten: sortieren, einstellen, filtern.
+     Wer eine neue Toolbar baut, haengt seinen Knopf an eine dieser drei Listen. */
+  ["ubo-sort-btn", "uo-sort-btn", "vot-sort-btn"].forEach(function(k){
+    TOOLBAR_ICONS[k] = TOOLBAR_ICONS["up-sort-btn"];
+  });
+  ["ccl-settings-btn", "ubo-scale-btn", "vot-scale-btn", "uhm-set-btn"].forEach(function(k){
+    TOOLBAR_ICONS[k] = TOOLBAR_ICONS["up-cols-btn"];
+  });
+  ["combo-filter-btn", "tcd-filter-btn", "ubo-filter-btn", "vot-filter-btn",
+   "upr-settings-toggle"].forEach(function(k){
+    TOOLBAR_ICONS[k] = TOOLBAR_ICONS["urt-fader-btn"];
+  });
   function stampToolbarIcons(wurzel){
     var ziel = wurzel || document;
     var k, els, i, b, strich;
