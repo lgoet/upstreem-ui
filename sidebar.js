@@ -85,6 +85,13 @@
      der aelteste, weil Neues oben einsortiert wird. */
   var PIN_MAX = 5;
 
+  /* Alter Schluessel als Synonym: research hiess der Punkt, bevor er prompt-research wurde. Wer
+     den alten Wert noch in einem Bubble-State hat, bekommt den Punkt weiterhin hervorgehoben. Das
+     EVENT sendet unveraendert prompt-research.
+     Auf Modulebene und nicht im Controller: die Zustandsvorbelegung greift schon darauf zu, und
+     eine var-Zuweisung weiter unten waere zu diesem Zeitpunkt noch undefined. */
+  var AKTIV_SYNONYM = { research: "prompt-research" };
+
   /* Genau die Schluessel, die usnNav.key ausgibt -- data-active nimmt dieselben. Ein Wert, der
      hier nicht vorkommt, hebt nichts hervor; das darf nicht stumm passieren. */
   var NAV_KEYS = BLOECKE.reduce(function(a, b){
@@ -243,7 +250,7 @@
       klasse: "",            /* wide | mini | hint -- aus der Fensterbreite */
       eingeklappt: prefLesen(),
       offen: false,          /* nur im hint-Zustand: faehrt die Leiste ueber den Inhalt */
-      aktiv: attr("data-active", "dashboard"),
+      aktiv: (function(){ var a = attr("data-active", "dashboard"); return AKTIV_SYNONYM[a] || a; })(),
       teams: vorrat.teams || [], team: vorrat.team || null,
       /* Getrennt vom Inhalt: "noch nichts angekommen" ist ein anderer Zustand als "angekommen
          und leer". Nur der erste zeigt Skelette -- der zweite zeigt, was da ist. */
@@ -323,6 +330,18 @@
         '<div class="up-filter-menu usn-menu is-acc" data-acc-menu aria-hidden="true" data-up-noescape></div>' +
       '</div>';
 
+    /* Zustand VOR dem Einhaengen setzen. Sonst steht die Leiste einen Frame lang auf ihrer
+       Grundbreite von 250px und faellt danach auf 64 -- sichtbar als kurzes Aufklappen bei jedem
+       Neuaufbau des Elements, und Bubble baut es bei jeder Navigation neu.
+       Ein Uebergang muss dafuer NICHT abgeschaltet werden: ein frisch eingefuegtes Element
+       animiert nichts, es hat keinen Vorzustand. Genau das war der Fehler -- nicht der Uebergang,
+       sondern die zweite Zustandsaenderung nach dem Einhaengen. */
+    (function ersterZustand(){
+      var w = window.innerWidth || document.documentElement.clientWidth || 0;
+      var k = w >= BREIT ? "wide" : (w >= MINI ? "mini" : "hint");
+      if (k === "hint") bar.classList.add("is-hidden");
+      else if (k === "mini" || state.eingeklappt) bar.classList.add("is-mini");
+    })();
     document.body.appendChild(scrim);
     document.body.appendChild(bar);
     document.body.appendChild(fab);
@@ -384,6 +403,7 @@
       /* Beim Wechsel zwischen wide und mini muessen die Gruppenhoehen neu gesetzt werden --
          im Mini-Zustand ohne Grenze, danach wieder mit der gemessenen. */
       if (typeof hoehenSetzen === "function") setTimeout(hoehenSetzen, 0);
+      if (typeof tipsSchalten === "function") tipsSchalten(mini);
       elToggle.hidden = hint;
       elToggle.setAttribute("aria-label", mini ? "Expand sidebar" : "Collapse sidebar");
 
@@ -416,13 +436,14 @@
       if (!state.teamsDa && !t.name){
         elTeamLogo.innerHTML = '<span class="usn-sk"></span>';
         elTeamName.innerHTML = '<span class="usn-sk"></span>';
-        elTeamBtn.removeAttribute("title");
+        elTeamBtn.removeAttribute("data-tiplabel"); elTeamBtn.removeAttribute("data-tip");
         if (typeof qaAufbauen === "function") qaAufbauen(0);
         return;
       }
       elTeamLogo.innerHTML = logoHtml(t.name, t.favicon_url);
       elTeamName.textContent = t.name || "";
-      elTeamBtn.setAttribute("title", t.name || "");
+      elTeamBtn.setAttribute("data-tiplabel", t.name || "");
+      elTeamBtn.setAttribute("data-tip-place", "right");
       /* Die Palette speichert Favoriten pro Team -- ihr data-team muss also mitwandern. */
       if (typeof qaAufbauen === "function") qaAufbauen(0);
       /* Und die Pins gehoeren zum Team: beim ersten bekannten Team laden, bei jedem Wechsel
@@ -451,7 +472,8 @@
          werden NICHT beim Ziehen erzeugt: ein Element, das mitten in einer Zeigerbewegung
          entsteht, kostet einen Layoutdurchgang genau im falschen Moment. */
       return '<button class="usn-item usn-pin" type="button" data-pin="' + i + '" ' +
-        'data-pinid="' + esc(pin.type + ":" + pin.id) + '" title="' + esc(pin.label || "") + '">' +
+        'data-pinid="' + esc(pin.type + ":" + pin.id) + '" data-tip="' + esc(pin.label || "") + '" ' +
+        'data-tip-place="right">' +
         '<span class="usn-pin-ic">' + logoHtml(pin.label, pin.logo) + '</span>' +
         '<span class="usn-txt">' + esc(pin.label || "") + '</span>' +
         '<span class="usn-pin-x" data-unpin="' + i + '" role="button" tabindex="-1" ' +
@@ -468,8 +490,14 @@
         (state.brandsDa ? esc(state.brands == null ? "" : String(state.brands))
                         : '<span class="usn-sk"></span>') + '</span>';
       if (it.chips) extra = '<span class="usn-chips usn-fade" data-chips></span>';
+      /* data-tip statt title: der Browser-Tooltip erscheint verzoegert, an der Maus und in
+         Systemoptik. data-tip ist der Chip des Hauses (.up-tip), und data-tip-place="right"
+         setzt ihn neben den Punkt -- unter einem Icon steht in der eingeklappten Leiste schon
+         das naechste. Im ausgeklappten Zustand nimmt die CSS den Chip weg: dort steht der Name
+         ja daneben. */
       return '<button class="usn-item' + (it.key === state.aktiv ? " is-active" : "") + '" ' +
-        'type="button" data-nav-key="' + esc(it.key) + '" title="' + esc(it.label) + '">' +
+        'type="button" data-nav-key="' + esc(it.key) + '" data-tiplabel="' + esc(it.label) + '" ' +
+        'data-tip-place="right">' +
         '<span class="usn-ic' + (it.icon === "mira" ? " has-mira" : "") + '">' + ic(it.icon) + '</span>' +
         '<span class="usn-txt">' + esc(it.label) + '</span>' + extra + '</button>';
     }
@@ -495,6 +523,7 @@
       }).join("");
       renderChips();
       hoehenSetzen();
+      if (typeof tipsSchalten === "function") tipsSchalten(bar.classList.contains("is-mini"));
     }
     /* Die Hoehe wird GEMESSEN und als Zahl gesetzt: von auto auf 0 gibt es keinen Uebergang, und
        ein geschaetzter Maximalwert laesst die Gruppe erst spaet in Bewegung kommen. */
@@ -543,7 +572,7 @@
         elAv.innerHTML = '<span class="usn-sk"></span>';
         elAccName.innerHTML = '<span class="usn-sk"></span>';
         elAccMail.innerHTML = '<span class="usn-sk"></span>';
-        elAcc.removeAttribute("title");
+        elAcc.removeAttribute("data-tiplabel"); elAcc.removeAttribute("data-tip");
         return;
       }
       var q = url(u.avatar);
@@ -553,7 +582,8 @@
         (q ? '<img src="' + esc(q) + '" alt="" referrerpolicy="no-referrer" onerror="this.remove()"/>' : "");
       elAccName.textContent = u.name || u.email || "";
       elAccMail.textContent = u.email || "";
-      elAcc.setAttribute("title", u.email || u.name || "");
+      elAcc.setAttribute("data-tiplabel", u.email || u.name || "");
+      elAcc.setAttribute("data-tip-place", "right");
     }
 
     /* ---------------- Menues ---------------- */
@@ -766,6 +796,7 @@
           var n = muts[i].attributeName;
           if (n === "data-active"){
             var k = attr("data-active", "dashboard");
+            k = AKTIV_SYNONYM[k] || k;
             if (k && k !== state.aktiv){ state.aktiv = k; renderNav(); }
           } else if (n === "data-prompt-count"){
             var z = attr("data-prompt-count");
@@ -785,6 +816,23 @@
         }
       }).observe(root, { attributes: true,
         attributeFilter: ["data-active", "data-prompt-count", "data-team-id"] });
+    }
+
+    /* Der Tooltip-Chip des Hauses. Ein Aufruf, der Rest laeuft delegiert ueber [data-tip] --
+       auch fuer Punkte, die es beim Aufbau noch nicht gab (Pins). */
+    if (UC.makeTooltips) UC.makeTooltips(bar, function(){ return bar.getAttribute("data-theme") === "dark"; });
+    /* Menuepunkte, Teamknopf und Konto bekommen ihren Chip NUR im eingeklappten Zustand: dort ist
+       allein das Icon zu sehen. Ausgeklappt steht der Name daneben, ein Chip mit demselben Wort
+       waere Doppelung. Die Beschriftung liegt darum in data-tiplabel, und data-tip wird zu- und
+       weggeschaltet -- CSS kann ein Attribut nicht loeschen.
+       Die angehefteten Eintraege sind die Ausnahme: ihre Namen sind lang und werden auch in der
+       breiten Leiste abgeschnitten, dort ist der Chip also immer richtig. */
+    function tipsSchalten(mini){
+      var els = bar.querySelectorAll("[data-tiplabel]");
+      for (var i = 0; i < els.length; i++){
+        var e = els[i], t = e.getAttribute("data-tiplabel");
+        if (mini && t) e.setAttribute("data-tip", t); else e.removeAttribute("data-tip");
+      }
     }
 
     /* Nur am Fenster horchen, NICHT per ResizeObserver an der Leiste: die Leiste aendert ihre
@@ -1010,7 +1058,11 @@
         renderAcc();
         return true;
       },
-      setActive: function(k){ state.aktiv = String(k || ""); renderNav(); return true; },
+      setActive: function(k){
+        var v = String(k || "");
+        state.aktiv = AKTIV_SYNONYM[v] || v;
+        renderNav(); return true;
+      },
       setCount: function(n){
         state.count = (n == null || n === "") ? "" : String(n);
         /* Ein Setter-Aufruf ist eine Antwort -- auch eine leere. Danach kein Skelett mehr. */

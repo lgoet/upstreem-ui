@@ -1,0 +1,89 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>usn-scrim Ruhezustand: kostet er pro Frame?</title>
+<link rel="stylesheet" href="core.css?sp=1">
+<link rel="stylesheet" href="sidebar.css?sp=1">
+<style>
+  html,body{margin:0;background:#fff;font:12px system-ui}
+  #churn{position:relative;width:100vw;height:100vh;overflow:hidden;display:grid;
+         grid-template-columns:repeat(40,1fr);grid-auto-rows:18px}
+  #churn i{display:block;background:#eee}
+  #out{position:fixed;left:8px;top:8px;z-index:200000;background:#fff;border:1px solid #333;
+       padding:8px;white-space:pre;font:12px ui-monospace,monospace}
+</style>
+<div id="churn"></div>
+<pre id="out">running…</pre>
+<script>
+var churn = document.getElementById("churn"), out = document.getElementById("out");
+var cells = [];
+for (var i = 0; i < 2400; i++){ var c = document.createElement("i"); churn.appendChild(c); cells.push(c); }
+
+/* Frischebeweis: enthaelt die GELADENE sidebar.css die Regel mit dem Filter? (CLAUDE.md 3) */
+function ruleText(sel){
+  var found = null;
+  [].forEach.call(document.styleSheets, function(ss){
+    try { [].forEach.call(ss.cssRules, function(r){
+      if ((r.selectorText||"") === sel) found = r.cssText; }); } catch(e){}
+  });
+  return found;
+}
+
+/* EIN Schleier -- genau so viele wie die echte App hat. */
+var ov = document.createElement("div");
+ov.className = "up-root up-portal usn-scrim";
+
+var t = 0;
+function tick(){
+  t++;
+  var base = (t*600) % cells.length;
+  for (var j = 0; j < 600; j++){
+    var c = cells[(base+j) % cells.length];
+    c.style.background = "hsl(" + ((t*7 + j) % 360) + ",70%,80%)";
+  }
+}
+function phase(name, setup, ms){
+  return new Promise(function(res){
+    setup();
+    var deltas = [], last = performance.now(), t0 = last;
+    function fr(now){
+      deltas.push(now - last); last = now; tick();
+      if (now - t0 < ms) requestAnimationFrame(fr);
+      else {
+        deltas = deltas.slice(5);
+        var s = deltas.slice().sort(function(a,b){return a-b;});
+        var mean = deltas.reduce(function(a,b){return a+b;},0)/deltas.length;
+        res({ name:name, frames:deltas.length, mean:+mean.toFixed(2),
+              p50:+s[(s.length*0.5)|0].toFixed(2), p90:+s[(s.length*0.9)|0].toFixed(2),
+              max:+s[s.length-1].toFixed(2), over20:deltas.filter(function(d){return d>20;}).length });
+      }
+    }
+    requestAnimationFrame(fr);
+  });
+}
+function detach(){ if (ov.parentNode) ov.parentNode.removeChild(ov); }
+function closed(){ detach(); ov.classList.remove("is-on"); document.body.appendChild(ov); }
+function shown(){ detach(); document.body.appendChild(ov); ov.classList.add("is-on"); }
+/* Gegenprobe: derselbe Knoten, aber OHNE Filter -- trennt "Filter kostet" von "Knoten kostet". */
+function closedNoFilter(){ closed(); ov.style.backdropFilter = "none"; ov.style.webkitBackdropFilter = "none"; }
+function resetFilter(){ ov.style.backdropFilter = ""; ov.style.webkitBackdropFilter = ""; }
+
+(async function(){
+  var pre = { rule: ruleText(".up-root.up-portal.usn-scrim"),
+              supported: CSS.supports("backdrop-filter","blur(1.5px)"),
+              dpr: window.devicePixelRatio, vw: innerWidth, vh: innerHeight };
+  var res = [];
+  res.push(await phase("A  ohne Schleier",        function(){ resetFilter(); detach(); }, 3000));
+  res.push(await phase("B  Ruhezustand (op:0)",   function(){ resetFilter(); closed(); }, 3000));
+  res.push(await phase("C  offen (is-on)",        function(){ resetFilter(); shown(); },  3000));
+  res.push(await phase("D  Ruhe, Filter aus",     closedNoFilter,                          3000));
+  res.push(await phase("A2 ohne Schleier",        function(){ resetFilter(); detach(); }, 3000));
+  res.push(await phase("B2 Ruhezustand (op:0)",   function(){ resetFilter(); closed(); }, 3000));
+  closed(); resetFilter();
+  var comp = getComputedStyle(ov);
+  pre.ruhezustand = { opacity: comp.opacity, display: comp.display, visibility: comp.visibility,
+                      backdropFilter: comp.backdropFilter || comp.webkitBackdropFilter,
+                      zIndex: comp.zIndex, position: comp.position };
+  out.textContent = JSON.stringify({ pre: pre, phases: res }, null, 1);
+  window.__probe = { pre: pre, phases: res };
+})();
+</script>

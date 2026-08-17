@@ -1,0 +1,140 @@
+<meta charset="utf-8">
+<link rel="stylesheet" href="core.css">
+<link rel="stylesheet" href="prompts-table.css">
+<body style="margin:0;padding:20px;font-family:sans-serif">
+<div style="position:fixed;top:0;right:0;z-index:99999;background:#fff;border:1px solid #000;padding:8px;font:12px monospace">
+  <button id="b1">width-anim (IST)</button>
+  <button id="b2">transform-anim (FIX)</button>
+  <button id="b3">no-anim (Kontrolle)</button>
+  <pre id="out"></pre>
+</div>
+
+<div class="up-root upt-root is-grouped" id="root" data-instance="pt1" data-isdark="no" style="--up-cols: minmax(280px,2.2fr) minmax(13%,150px) minmax(72px,0.5fr) minmax(96px,0.6fr) minmax(13%,1fr) minmax(11%,1fr) minmax(104px,0.7fr) minmax(104px,0.7fr)">
+  <div class="upt-grp-widewrap" id="wrap">
+    <div class="upt-grp-sidepanel" id="panel">
+      <div class="upt-grp-sidehead"><span class="upt-grp-sidehead-lbl">Topics</span></div>
+      <div class="upt-grp-sidelist" id="sidelist"></div>
+    </div>
+    <div class="up-box">
+      <div class="up-table">
+        <div class="up-thead">
+          <div class="up-th"><span class="up-th-txt">Prompt</span></div>
+          <div class="up-th"><span class="up-th-txt">Visibility</span></div>
+          <div class="up-th"><span class="up-th-txt">Rank</span></div>
+          <div class="up-th"><span class="up-th-txt">Sentiment</span></div>
+          <div class="up-th"><span class="up-th-txt">Brand Mentions</span></div>
+          <div class="up-th"><span class="up-th-txt">Topics</span></div>
+          <div class="up-th"><span class="up-th-txt">Market</span></div>
+          <div class="up-th"><span class="up-th-txt">Created</span></div>
+        </div>
+        <div class="up-tbody" id="tbody"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* Realistische Zeile: langer ellipsis-Text, Sentiment-Pille, 4er Logo-Stapel, Topic-Chips.
+   Genau die Elemente, deren Neuvermessung der Pruefer als Kostentreiber nennt. */
+var N = Number((location.search.match(/rows=(\d+)/)||[])[1] || 100);
+function stack(){
+  var s = '<span class="up-stack">';
+  for (var i=0;i<4;i++) s += '<span class="up-stack-item"><span class="up-stack-vis"><img class="up-stack-img" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt=""></span></span>';
+  return s + '</span>';
+}
+var rows = "";
+for (var i=0;i<N;i++){
+  rows += '<div class="up-row" data-id="r'+i+'" tabindex="0" role="button">'
+   + '<div class="up-td upt-td-prompt"><span class="upt-check"></span><span class="upt-prompt-wrap"><span class="upt-prompt-text">beste SUV-Modelle mit Allradantrieb fuer den Winter in Deutschland und Oesterreich Nr. '+i+'</span></span></div>'
+   + '<div class="up-td upt-td-visibility"><span class="up-barwrap"><span class="up-bar"><span class="up-bar-fill" style="width:42%"></span></span><span class="up-barval">42.3%</span></span></div>'
+   + '<div class="up-td upt-td-rank"><span class="up-rankval">3.0</span></div>'
+   + '<div class="up-td upt-td-sentiment"><span class="up-sent"><span class="up-sent-dot"></span><span class="up-sent-val">76</span></span></div>'
+   + '<div class="up-td upt-td-brands">'+stack()+'</div>'
+   + '<div class="up-td upt-td-topics"><span class="up-chip">SUV</span><span class="up-chip">Winter</span></div>'
+   + '<div class="up-td upt-td-market"><span class="up-mkt">DE</span></div>'
+   + '<div class="up-td upt-td-created"><span class="upt-date">Aug 1, 2026</span></div>'
+   + '</div>';
+}
+document.getElementById("tbody").innerHTML = rows;
+var sl = "";
+for (var g=0;g<14;g++) sl += '<div class="upt-grp-siderow"><span class="upt-grp-sidename">Topic '+g+'</span></div>';
+document.getElementById("sidelist").innerHTML = sl;
+
+var root = document.getElementById("root"), panel = document.getElementById("panel"), wrap = document.getElementById("wrap");
+var out = document.getElementById("out");
+
+/* Variante FIX: Breite sofort, Einfahren per transform, Platz einmalig per margin geschaltet. */
+var fixCss = document.createElement("style");
+fixCss.textContent =
+ '.mode-fix .upt-grp-widewrap { transition: none !important; }' +
+ '.mode-fix .upt-grp-sidepanel { width: max(256px,20%) !important; margin-left: calc(-1 * max(256px,20%));' +
+ '  transform: translateX(-100%); transition: transform 200ms ease, opacity 160ms ease !important; }' +
+ '.mode-fix.is-groups-wide .upt-grp-sidepanel { margin-left: 0; transform: translateX(0); }';
+document.head.appendChild(fixCss);
+var noCss = document.createElement("style");
+noCss.textContent = '.mode-none .upt-grp-sidepanel, .mode-none .upt-grp-widewrap { transition: none !important; }';
+document.head.appendChild(noCss);
+
+function measure(mode, cb){
+  root.classList.remove("mode-fix","mode-none","is-groups-wide");
+  if (mode==="fix") root.classList.add("mode-fix");
+  if (mode==="none") root.classList.add("mode-none");
+  /* Layout stabilisieren, dann erst messen. */
+  root.getBoundingClientRect();
+  var frames = [], last = performance.now(), t0 = last, running = true;
+  var longTasks = [];
+  var po = null;
+  try { po = new PerformanceObserver(function(l){ l.getEntries().forEach(function(e){ longTasks.push(Math.round(e.duration)); }); }); po.observe({entryTypes:["longtask"]}); } catch(e){}
+  function tick(){
+    var now = performance.now();
+    frames.push(now - last); last = now;
+    if (now - t0 < 400) requestAnimationFrame(tick);
+    else {
+      if (po) po.disconnect();
+      frames.shift();
+      var max = 0, sum = 0;
+      frames.forEach(function(d){ if (d>max) max=d; sum+=d; });
+      cb({ mode: mode, rows: N, frames: frames.length, avgMs: +(sum/frames.length).toFixed(1),
+           maxMs: +max.toFixed(1), over32: frames.filter(function(d){return d>32;}).length,
+           longTasks: longTasks });
+    }
+  }
+  requestAnimationFrame(function(){ root.classList.add("is-groups-wide"); requestAnimationFrame(tick); });
+}
+function run(mode){ measure(mode, function(r){ out.textContent += JSON.stringify(r) + "\n"; window.__last = r; (window.__all = window.__all||[]).push(r); }); }
+/* Selbstlauf: die Messreihe startet ohne Klick und meldet das Ergebnis per GET zurueck, damit sie
+   auch dann ankommt, wenn der Tab danach woanders hin navigiert wird. */
+function report(o){ try { new Image().src = "/__result?" + encodeURIComponent(JSON.stringify(o)); } catch(e){} }
+function autoRun(){
+  var proof = getComputedStyle(panel).transitionProperty;
+  /* Kosten EINES erzwungenen Relayouts bei geaenderter Panel-Breite = was der Browser pro
+     Animationsframe leisten muss. Ohne rAF, damit es auch im verdeckten Tab messbar ist. */
+  function layoutCost(px){
+    panel.style.transition = "none"; panel.style.width = px + "px";
+    var t = performance.now();
+    root.getBoundingClientRect();
+    document.querySelector(".up-tbody").lastElementChild.getBoundingClientRect();
+    return performance.now() - t;
+  }
+  layoutCost(140); layoutCost(0);          /* zwei Aufwaermrunden, Ergebnis verworfen */
+  var costs = [];
+  for (var f = 0; f < 14; f++) costs.push(+layoutCost(Math.round(280 * f / 13)).toFixed(2));
+  var sum = costs.reduce(function(a,b){ return a+b; }, 0);
+  panel.style.width = ""; panel.style.transition = "";
+  report({ rows: document.querySelectorAll(".up-row").length, proofTransition: proof,
+           rowContain: getComputedStyle(document.querySelector(".up-row")).contain,
+           perFrameMs: costs, sum14FramesMs: +sum.toFixed(2), maxFrameMs: Math.max.apply(null, costs) });
+  /* Danach die echte Animation: rAF-Abstaende, falls der Tab sichtbar ist. */
+  ["ist","fix","none"].forEach(function(m, i){
+    setTimeout(function(){
+      root.classList.remove("is-groups-wide","mode-fix","mode-none");
+      setTimeout(function(){ measure(m, report); }, 120);
+    }, 600 + i * 900);
+  });
+}
+setTimeout(autoRun, 400);
+document.getElementById("b1").onclick = function(){ run("ist"); };
+document.getElementById("b2").onclick = function(){ run("fix"); };
+document.getElementById("b3").onclick = function(){ run("none"); };
+window.__run = run;
+</script>

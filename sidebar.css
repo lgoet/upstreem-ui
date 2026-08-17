@@ -67,6 +67,7 @@
   overflow: visible;   /* die Dropdowns duerfen herausragen */
 }
 .up-root.up-portal.usn-bar.is-mini { width: var(--usn-mini); padding: 8px 12px 16px; }
+
 /* Im hint-Zustand faehrt die Leiste nach links heraus, statt zu verschwinden: display:none
    koennte man nicht animieren, und ein Sprung waere genau das, was hier nicht sein soll. */
 .up-root.up-portal.usn-bar.is-hidden { transform: translateX(-100%); }
@@ -168,8 +169,11 @@
 /* [hidden] ist die schwaechste Regel im Feld: die display-Angabe darueber wuerde sie schlagen.
    Deshalb hier ausdruecklich zurueck auf none. */
 .usn-toggle[hidden] { display: none; }
-/* Im Mini-Zustand rutscht der Knopf unter den Namen, sonst waere die Zeile fuer 64px zu eng. */
+/* Im Mini-Zustand rutscht der Knopf unter den Namen, sonst waere die Zeile fuer 64px zu eng.
+   Und margin-left MUSS dort weg: in einer Spalte schiebt auto den Knopf an die rechte Kante --
+   gemessen stand er auf Mitte 222 statt 125, waehrend alles andere mittig sass. */
 .usn-bar.is-mini .usn-top { flex-direction: column; gap: 6px; }
+.usn-bar.is-mini .usn-toggle { margin-left: 0; }
 
 /* ---------- Quick Actions ---------- */
 /* Leer, solange das Element noch nicht umgehaengt ist: dann darf hier auch kein Abstand stehen. */
@@ -310,6 +314,11 @@
 
 /* Die Pinned-Gruppe wird nur gezeichnet, wenn etwas angeheftet ist -- der leere Block faellt
    im JS heraus, hier braucht es keine Regel dafuer. */
+
+/* Der Tooltip-Chip gehoert in den eingeklappten Zustand: dort ist nur das Icon zu sehen.
+   Ausgeklappt steht der Name daneben, ein Chip mit demselben Wort waere Doppelung. Deshalb
+   nimmt die Leiste dort ihre eigenen data-tip-Attribute wieder weg -- das macht das JS, weil
+   CSS ein Attribut nicht loeschen kann; hier steht nur der Hinweis darauf. */
 
 /* ---------- Angeheftete Eintraege ----------
    Dieselbe Zeile wie ein Menuepunkt, nur mit einem Bild statt eines Icons und einem X rechts.

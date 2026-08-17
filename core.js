@@ -1947,6 +1947,35 @@
       tip.style.left = "0px"; tip.style.top = "0px";
       var tr = tip.getBoundingClientRect();
       var vw = window.innerWidth || document.documentElement.clientWidth;
+      var vh = window.innerHeight || document.documentElement.clientHeight;
+      /* data-tip-place="right": rechts NEBEN dem Ausloeser statt darunter. Gebraucht von der
+         eingeklappten Sidebar -- dort ist unterhalb eines Icons schon das naechste Icon, ein
+         Tooltip darunter wuerde es verdecken und beim Weiterfahren flackern. Reicht der Platz
+         rechts nicht, kippt er nach links; passt beides nicht, bleibt es beim Platz darunter. */
+      if (S.btn.getAttribute("data-tip-place") === "right"){
+        /* offsetWidth/offsetHeight statt der Rechtecke: die Einblendung laeuft ueber transform,
+           und ein Rechteck mitten in dieser Bewegung ist um die halbe Verschiebung falsch --
+           gemessen sass der Chip dadurch 4px zu tief. Layoutwerte kennen keinen transform. */
+        var tw = tip.offsetWidth, th = tip.offsetHeight;
+        var lx = r.right + 8;
+        if (lx + tw + 6 > vw){
+          var links = r.left - 8 - tw;
+          lx = links >= 6 ? links : Math.max(6, vw - tw - 6);
+        }
+        tip.style.left = lx + "px";
+        tip.style.top = Math.max(6, Math.min(r.top + r.height / 2 - th / 2, vh - th - 6)) + "px";
+        /* Die Grundregel von .up-tip schiebt den Chip um 4px nach unten und faehrt ihn von dort
+           ein. Rechts angesetzt ist das falsch: er soll auf der Mitte des Ausloesers sitzen, und
+           gemessen sass er dadurch 4px zu tief. Also keine Verschiebung -- und den Uebergang auf
+           transform gleich mit weg, sonst ruckt der Chip die 4px noch sichtbar zurueck, statt
+           gleich richtig zu stehen. Eingeblendet wird allein ueber die Deckkraft.
+           Inline und nicht per Klasse: eine Regel mit .up-tip.is-right verlor gegen die
+           Grundregel, gemessen blieb translateY(4px) aktiv. */
+        tip.style.transitionProperty = "opacity";
+        tip.style.transform = "none";
+        S.placedRect = r;
+        return;
+      }
       /* the wide variant left-aligns to the trigger (long text, centring looks arbitrary),
          the normal chip centres under it */
       var left = S.wide ? r.left : (r.left + r.width / 2 - tr.width / 2);
@@ -1959,6 +1988,9 @@
       /* clear any leftover inline transform from the scroll nudge, otherwise it would beat the
          CSS translateY fade-out and the chip would just blink off */
       tip.style.transform = "";
+      /* Die Sonderbehandlung der rechten Platzierung zuruecknehmen -- der naechste Chip kann
+         wieder unter seinem Ausloeser sitzen und soll dann normal einfahren. */
+      tip.style.transitionProperty = "";
       tip.classList.remove("is-on"); tip.classList.remove("is-wide");
     }
     function paint(el, text, wide){
@@ -1974,6 +2006,7 @@
       var dark = host ? host.getAttribute("data-theme") === "dark" : !!(getIsDark && getIsDark());
       tip.textContent = text;
       tip.classList.toggle("is-wide", !!wide);
+
       S.wide = !!wide;
       tip.setAttribute("data-theme", dark ? "dark" : "light");
       tip.classList.add("is-on");

@@ -1287,6 +1287,10 @@
     /* wider, wrapping variant for the full URL title (which can be long) */
     .up-tip.is-wide { height: auto; white-space: normal; max-width: 340px; padding: 6px 9px; line-height: 1.35; align-items: flex-start; }
     .up-tip.is-on { opacity: 1; transform: translateY(0); }
+    /* Rechts angesetzt bekommt der Chip KEINE Verschiebung: er sitzt auf der Mitte des
+       Ausloesers, und die Grundregel oben wuerde ihn um 4px nach unten schieben. Den Wert setzt
+       placeTip() direkt am Element -- eine Regel hier verlor gegen die Grundregel, gemessen blieb
+       transform: translateY(4px) aktiv. Eingeblendet wird allein ueber die Deckkraft. */
     .up-tip[data-theme="dark"] { background: #f0f0f0; color: #1f1f1b; }
     /* Tooltips keep the same dark card in both themes: they float above the page, not inside
        the surface, so inverting them made them read as a different component. */
