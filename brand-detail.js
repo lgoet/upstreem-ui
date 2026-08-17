@@ -167,6 +167,14 @@
 
     var fire = UC.makeFire(root, { label: "brand-detail", eventPrefix: "ubd" });
 
+    /* Schmale Breiten ueber die EIGENE Box, nicht ueber eine Media Query auf das Fenster -- so
+       macht es jede andere Komponente im Repo (UC.widthTiers). Hier stand eine @media-Regel, und
+       die traf daneben: dieses Detail liegt in einem Drawer, der auf einem 1440er Bildschirm
+       schmal sein kann. Dann griff die Regel nicht, obwohl es genau der Fall ist, fuer den sie
+       gedacht war. 560 statt der 768 des Kits: erst dort wird es fuer Ueberschrift plus Schalter
+       in einer Zeile wirklich knapp -- gemessen, siehe .ubd-head in der CSS. */
+    UC.widthTiers(root, { narrowAt: 560 });
+
     var elSwitch  = root.querySelector(".ubd-seg");
     var elGran    = root.querySelector(".vc-gran");
     var elLogo    = root.querySelector(".ubd-logo");

@@ -118,12 +118,24 @@
 .ubd-root .ubd-varsec { padding: 0; margin-top: 4px; }
 
 /* ---- Schmale Breiten -------------------------------------------------------------------------
-   Unter 560px wandert der Granularitaets-Switcher unter die Ueberschrift statt sie zu quetschen.
+   .ubd-root.is-narrow statt @media (max-width: 560px): gemessen wird die EIGENE Box (UC.widthTiers
+   in brand-detail.js), nicht das Fenster. Das Detail liegt in einem Drawer, der auf einem breiten
+   Bildschirm schmal sein kann -- da griff die Fenster-Abfrage nicht, obwohl es genau der Fall ist,
+   fuer den sie gedacht war. So macht es auch jede andere Komponente im Repo.
+
+   Der Granularitaets-Schalter bleibt so lange in der Zeile der Ueberschrift, wie beide dort
+   hineinpassen, und rutscht erst darunter, wenn es eng wird. Gemessen: der Schalter braucht 168px,
+   die Ueberschrift "Visibility over Time" 123px plus 18px Logo, 8px Abstand und 12px zwischen
+   beiden -- unter etwa 330px Innenbreite geht es nicht mehr in eine Zeile.
+   Der Umbruch kommt NICHT von width: 100% am Schalter. Das stand hier und war der Grund, warum die
+   graue Schiene auf dem Telefon ueber die ganze Breite lief: .vc-gran ist ein Segmented-Control aus
+   core mit flex: 0 0 auto, also inhaltsbreit -- wer ihm 100% gibt, sprengt das Bauteil. Stattdessen
+   hat die Ueberschrift eine Untergrenze: kann sie nicht weiter schrumpfen, bricht der Schalter um.
+   Und dann rechts, nicht links -- margin-left: auto gilt in beiden Faellen.
    Der Modus-Switcher darf scrollen -- vier Beschriftungen nebeneinander passen sonst nicht, und
    ein Umbruch in zwei Reihen sieht aus wie zwei Gruppen. */
-@media (max-width: 560px) {
-  .ubd-head { flex-wrap: wrap; }
-  .ubd-head .vc-gran { width: 100%; }
-  .ubd-seg { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .ubd-chartwrap { height: 220px; }
-}
+.ubd-root.is-narrow .ubd-head { flex-wrap: wrap; }
+.ubd-root.is-narrow .ubd-head .ubd-title { min-width: 160px; }
+.ubd-root.is-narrow .ubd-head .vc-gran { margin-left: auto; }
+.ubd-root.is-narrow .ubd-seg { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.ubd-root.is-narrow .ubd-chartwrap { height: 220px; }

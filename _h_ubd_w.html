@@ -1,0 +1,29 @@
+<!doctype html><meta charset="utf-8"><title>brand-detail</title>
+<link rel="stylesheet" href="core.css?frisch=ubd3">
+<link rel="stylesheet" href="brand-detail.css?frisch=ubd3">
+<body style="padding:24px;background:#fff">
+<script>window.__W = (new URLSearchParams(location.search)).get("w") || "900";</script>
+<div id="box">
+  <div class="up-root ubd-root" data-instance="bd1" data-isdark="no"></div>
+</div>
+<script>document.getElementById("box").style.maxWidth = window.__W + "px";</script>
+<script src="core.js?frisch=ubd3"></script>
+<script src="brand-detail.js?frisch=ubd3"></script>
+<script>
+  window.__ev = [];
+  ["ubdMode","ubdGran"].forEach(function(k){ window["bubble_fn_"+k] = function(j){ window.__ev.push([k, j]); }; });
+  setBrandDetailCompany("bd1", JSON.stringify([{
+    company_id:"c1", name:"Parookaville",
+    logo_url:"https://www.google.com/s2/favicons?domain=parookaville.com&sz=64",
+    avg_visibility_pct:34.25, avg_visibility_delta_pct:-4.74,
+    avg_rank:3.08, avg_rank_delta:-0.08,
+    avg_sentiment:75.74, avg_sentiment_delta:1.87 }]));
+  setBrandDetailSeries("bd1", JSON.stringify({ mode:"visibility", company_id:"c1", series:[
+    {day:"2026-08-08",value:38.54},{day:"2026-08-09",value:35.60},{day:"2026-08-10",value:32.81},
+    {day:"2026-08-11",value:38.74},{day:"2026-08-12",value:32.98},{day:"2026-08-13",value:32.80},
+    {day:"2026-08-14",value:24.81}]}));
+  setBrandDetailVariations("bd1", JSON.stringify([
+    {name:"Parookaville Festival", mentioned_count:214},
+    {name:"parookaville.com", mentioned_count:98},
+    {name:"PAROOKAVILLE", mentioned_count:41}]));
+</script>
