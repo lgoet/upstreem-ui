@@ -876,11 +876,20 @@
        Benutzung ist er auch ausgeklappt richtig: er steht rechts neben der Leiste, nicht auf ihr,
        und lange Namen sind dort ohnehin abgeschnitten. Die Beschriftung liegt weiter in
        data-tiplabel, weil sie im Markup entsteht und data-tip erst daraus gesetzt wird. */
+    /* Tooltips NUR im Mini-Zustand. Dort steht neben dem Icon kein Text, der Tooltip ist also die
+       einzige Beschriftung. In der breiten Leiste steht der Name in der Zeile -- ein Tooltip, der
+       vorliest, was man liest, ist nur Bewegung.
+       Die angehefteten Zeilen sind ausgenommen und behalten ihren Tooltip in JEDEM Zustand: ihr
+       Text ist oft laenger als die Zeile (eine ganze URL, eine Prompt-Frage) und wird
+       abgeschnitten. Sie tragen ihr data-tip direkt im Markup (siehe pinHtml) und kommen in dieser
+       Schleife gar nicht vor -- die sieht nur data-tiplabel. Deshalb steht hier auch keine
+       Ausnahme: es gibt nichts auszunehmen. */
     function tipsSchalten(){
+      var mini = bar.classList.contains("is-mini");
       var els = bar.querySelectorAll("[data-tiplabel]");
       for (var i = 0; i < els.length; i++){
         var e = els[i], t = e.getAttribute("data-tiplabel");
-        if (t) e.setAttribute("data-tip", t); else e.removeAttribute("data-tip");
+        if (mini && t) e.setAttribute("data-tip", t); else e.removeAttribute("data-tip");
       }
     }
 

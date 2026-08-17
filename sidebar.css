@@ -305,6 +305,17 @@
    Aenderung von 3.6% nicht ueberleben, und der Versatz haengt zusaetzlich am Ring. */
 .usn-chips .up-stack-item { width: 27px; height: 27px; flex: 0 0 27px; }
 .usn-chips .up-stack-vis { border-radius: 7.7px; }
+/* Der helle Rahmen um die Logos, und warum er nur im Dunkelmodus auffiel.
+   Gemessen in beiden Themen: die Geometrie ist identisch (2px Polsterung plus 1px Rahmen, also
+   3px sichtbarer Rand um ein 21px-Bild in einer 27px-Kachel). Nur der Kontrast ist es nicht:
+     hell    Platte #ffffff auf einer Leiste in #f5f5f5   -> 10 Stufen, unsichtbar
+     dunkel  Platte #e0e0e0 auf einer Leiste in #1b1b1b   -> 197 Stufen, ein weisser Kasten
+   Die Platte selbst bleibt (--vt-logo-bg ist im Dunkeln absichtlich hell: viele Favicons sind
+   transparente PNGs mit dunkler Zeichnung und waeren auf dunklem Grund unlesbar). Sie darf nur
+   nicht mehr als RAND ringsum stehen. Also 1px statt 2px Polsterung und kein Rahmen -- genau das
+   Mass, das .up-logo-box im Team-Umschalter direkt darueber hat. Das Bild waechst dabei von 21
+   auf 25px und fuellt die Kachel; hinter einem transparenten Logo liegt die Platte weiter. */
+.usn-chips .up-stack-vis { padding: 1px; border: 0; }
 .usn-bar.is-mini .usn-item { justify-content: center; padding: 0; gap: 0; }
 
 /* ---------- Skelette ----------
