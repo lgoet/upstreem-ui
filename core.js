@@ -1852,10 +1852,77 @@
       b.setAttribute("data-up-ic", t.key);
     }
   }
+  /* ---- Reihenfolge der Toolbar-Knoepfe -------------------------------------------------------
+     Dieselbe Lage wie bei den Icons: die Reihenfolge steht im handgemachten Bubble-Markup und
+     weicht dort je Komponente ab. Also ordnet core sie zur Laufzeit, sonst muesste jede der elf
+     Kopfzeilen von Hand nachgezogen werden -- und die naechste Kopie faengt wieder von vorn an.
+     Von links: sortieren, filtern (Fader), suchen, einstellen. Von rechts gelesen ist das die
+     abgesprochene Regel -- der Fader steht vor dem Sorter, der Einstellungsknopf ganz rechts.
+     Rang bekommen NUR diese vier Rollen. Markenschalter, Granularitaet, Segment-Umschalter,
+     Export, Maximieren und Oeffnen behalten ihren Platz: die Rollen werden auf genau die Plaetze
+     zurueckgeschrieben, die sie vorher gemeinsam belegt haben. Deshalb bleiben Visibility Chart,
+     Prompts, Domains und URLs unangetastet -- dort stimmt es schon. */
+  var TOOLBAR_ORDNUNG = [
+    { rang: 10, sel: ".up-sort, .ubo-sort, .vot-sort, .uo-sort-btn" },
+    /* Fader und Markenfilter mit Reglerzeichen. .uhm-pick ("Brands & Topics") gehoert hier hin:
+       im Performance Radar ist er der Filter, und der Einstellungsknopf muss rechts von ihm. */
+    { rang: 20, sel: ".urt-fader, .vot-filter, .ubo-filter, .tcd-filter, .combo-filter, .uhm-pick" },
+    { rang: 30, sel: ".up-search" },
+    /* Nicht dabei: .vot-scale-btn, .ubo-scale-btn und .ccl-settings-btn. Die tragen dasselbe
+       Zahnrad, sitzen aber IM Diagrammfeld und nicht in der Kopfzeile -- ein Rang waere hier
+       eine Regel, die nie greift und beim naechsten Lesen in die Irre fuehrt. */
+    { rang: 40, sel: ".up-cols, .ubo-cols, .uhm-set, .uo-settings-btn" }
+  ];
+  var TOOLBAR_LEISTEN = ".up-head-tools, .vot-head-tools, .ubo-head-tools, .tcd-head-tools, .combo-head-tools";
+  function toolbarRang(el){
+    var i;
+    for (i = 0; i < TOOLBAR_ORDNUNG.length; i++){
+      try { if (el.matches(TOOLBAR_ORDNUNG[i].sel)) return TOOLBAR_ORDNUNG[i].rang; } catch(e){}
+    }
+    /* Opportunities steckt den Sorter in ein neutrales .uo-popwrap -- die Rolle steht erst am
+       Knopf darin. Nur das ERSTE Kind ansehen, nie den Teilbaum: in den Menues stecken Suchfelder
+       und Einstellungszeilen, die sonst den Rang der Huelle verfaelschen wuerden. */
+    var k = el.firstElementChild;
+    if (k) for (i = 0; i < TOOLBAR_ORDNUNG.length; i++){
+      try { if (k.matches(TOOLBAR_ORDNUNG[i].sel)) return TOOLBAR_ORDNUNG[i].rang; } catch(e){}
+    }
+    return 0;
+  }
+  function orderToolbars(wurzel){
+    var ziel = wurzel || document, leisten;
+    try { leisten = ziel.querySelectorAll(TOOLBAR_LEISTEN); } catch(e){ return; }
+    for (var i = 0; i < leisten.length; i++){
+      var box = leisten[i], kinder = box.children;
+      var plaetze = [], rollen = [], j;
+      for (j = 0; j < kinder.length; j++){
+        var r = toolbarRang(kinder[j]);
+        if (!r) continue;
+        plaetze.push(j);
+        rollen.push({ el: kinder[j], rang: r, j: j });
+      }
+      if (rollen.length < 2) continue;
+      /* Gleicher Rang: alte Reihenfolge behalten, damit zwei Knoepfe derselben Rolle nicht
+         hin und her springen. */
+      rollen.sort(function(a, b){ return a.rang - b.rang || a.j - b.j; });
+      var stimmt = true;
+      for (j = 0; j < rollen.length; j++){
+        if (rollen[j].j !== plaetze[j]){ stimmt = false; break; }
+      }
+      /* Stimmt es schon, nichts anfassen: jedes Verschieben ist eine childList-Mutation, und der
+         Beobachter unten haengt daran. Ohne diese Bremse triebe sich der Lauf selbst an. */
+      if (stimmt) continue;
+      var soll = [].slice.call(kinder);
+      for (j = 0; j < rollen.length; j++) soll[plaetze[j]] = rollen[j].el;
+      /* appendChild verschiebt, es kopiert nicht -- Listener, offene Menues und Zustandsklassen
+         bleiben am Knopf. Nach dem Durchlauf steht genau die Sollreihenfolge. */
+      for (j = 0; j < soll.length; j++) box.appendChild(soll[j]);
+    }
+  }
   /* Beim Laden und danach: Bubble baut Elemente in Schueben und spaeter erneut auf. */
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function(){ stampToolbarIcons(); });
-  else stampToolbarIcons();
-  [60, 250, 700, 1500, 3000].forEach(function(ms){ setTimeout(function(){ stampToolbarIcons(); }, ms); });
+  function toolbarLauf(){ stampToolbarIcons(); orderToolbars(); }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function(){ toolbarLauf(); });
+  else toolbarLauf();
+  [60, 250, 700, 1500, 3000].forEach(function(ms){ setTimeout(function(){ toolbarLauf(); }, ms); });
   /* ── Der Beobachter, und warum er so aussieht ─────────────────────────────────────────────
      Hier stand ein MutationObserver auf document.documentElement mit childList+subtree, der bei
      JEDER Mutation sofort stampToolbarIcons() rief. Das war eine echte Bremse fuer die ganze App,
@@ -1886,6 +1953,7 @@
       setTimeout(function(){
         stampGeplant = false;
         stampToolbarIcons();
+        orderToolbars();
         /* Die Mutationen, die der Lauf selbst erzeugt hat, verwerfen -- sonst haengt an jedem
            getauschten Icon sofort der naechste Lauf. */
         try { stampObs.takeRecords(); } catch(e){}

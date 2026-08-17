@@ -133,18 +133,8 @@
     </div>
 
     <div class="up-head-tools">
-      <div class="up-search">
-        <button class="up-search-btn up-iconbtn" type="button" data-tip="Search" aria-label="Search">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34" /> <circle cx="11" cy="11" r="8" /></svg>
-        </button>
-        <div class="up-search-box">
-          <input class="up-search-input" type="text" placeholder="Search opportunities..." autocomplete="off" spellcheck="false" aria-label="Search opportunities"/>
-          <button class="up-search-clear" type="button" aria-label="Clear search">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>
-          </button>
-        </div>
-      </div>
-
+      <!-- Sorter vor der Suche: dieselbe Reihenfolge wie in allen anderen Kopfzeilen.
+           core.js ordnet die Leiste zur Laufzeit ohnehin (orderToolbars). -->
       <div class="uo-popwrap">
         <button class="uo-sort-btn up-iconbtn" type="button" data-tip="Sort" aria-label="Sort" aria-haspopup="menu" aria-expanded="false">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></svg>
@@ -155,6 +145,18 @@
           <div class="up-pop-opt" role="menuitem" data-sort="newest">Newest<svg class="up-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg></div>
           <div class="up-pop-div"></div>
           <div class="up-pop-row uo-toggle-external"><span class="up-pop-label">External only</span><span class="up-switch uo-switch-external" role="switch"></span></div>
+        </div>
+      </div>
+
+      <div class="up-search">
+        <button class="up-search-btn up-iconbtn" type="button" data-tip="Search" aria-label="Search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34" /> <circle cx="11" cy="11" r="8" /></svg>
+        </button>
+        <div class="up-search-box">
+          <input class="up-search-input" type="text" placeholder="Search opportunities..." autocomplete="off" spellcheck="false" aria-label="Search opportunities"/>
+          <button class="up-search-clear" type="button" aria-label="Clear search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>
+          </button>
         </div>
       </div>
 

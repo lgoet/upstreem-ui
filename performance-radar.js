@@ -394,8 +394,11 @@
           GEAR_SVG +
         '</button>' +
         '<div class="uhm-set-menu up-menu" role="menu" aria-hidden="true"></div>';
-      var before = root.querySelector(".uhm-pick");
-      if (before) elTools.insertBefore(setWrap, before); else elTools.appendChild(setWrap);
+      /* Hinten anhaengen, nicht vor .uhm-pick: der Einstellungsknopf steht in jeder Kopfzeile
+         ganz rechts. Hier stand ein insertBefore(.uhm-pick) -- und weil das Markup der
+         eingebauten Elemente den Block gar nicht enthaelt, entstand genau dort die falsche
+         Reihenfolge, die core.js sonst gleich wieder umsortieren muesste. */
+      elTools.appendChild(setWrap);
     }
     var elSet     = root.querySelector(".uhm-set");
     var elSetBtn  = root.querySelector(".uhm-set-btn");

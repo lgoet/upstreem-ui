@@ -228,20 +228,23 @@
         <div class="up-ment-menu" role="menu" aria-hidden="true"></div>
       </div>
 
-      <!-- feather "sliders" — the SAME filter glyph visibility-chart / topcitations / combo-chart
+      <!-- Reihenfolge: Sorter VOR dem Fader, also von rechts gelesen der Fader vor dem Sorter.
+           core.js ordnet die Leiste zur Laufzeit ohnehin (orderToolbars) -- hier steht sie richtig,
+           damit eine Neuinstallation nicht erst umsortiert werden muss. -->
+      <div class="up-sort">
+        <button class="up-sort-btn up-iconbtn" type="button" data-tip="Sort" aria-label="Sort">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></svg>
+        </button>
+        <div class="up-sort-menu" role="menu" aria-hidden="true"></div>
+      </div>
+
+      <!-- lucide "settings-2" — the SAME filter glyph visibility-chart / topcitations / combo-chart
            use. .up-iconbtn makes it behave like every other toolbar icon button. -->
       <div class="urt-fader">
         <button class="urt-fader-btn up-iconbtn" type="button" data-tip="Filter by rank &amp; sentiment" aria-label="Filter by rank and sentiment" aria-haspopup="menu" aria-expanded="false">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 17H5"/><path d="M19 7h-9"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
         </button>
         <div class="urt-fader-menu" role="menu" aria-hidden="true"></div>
-      </div>
-
-      <div class="up-sort">
-        <button class="up-sort-btn up-iconbtn" type="button" data-tip="Sort" aria-label="Sort">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></svg>
-        </button>
-        <div class="up-sort-menu" role="menu" aria-hidden="true"></div>
       </div>
 
       <div class="up-search">
