@@ -1,0 +1,129 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>watchRoots kosten hochaufgeloest</title>
+<body>
+<div class="upt-root"><div class="up-tbody" id="tb"></div></div>
+<pre id="out" style="padding:16px;white-space:pre-wrap;font-size:13px">laedt…</pre>
+<script src="core.js?m=watchcost2"></script>
+<script>
+var L = [], out = document.getElementById("out");
+function log(s){ L.push(s); out.textContent = L.join("\n"); }
+var UC = window.UpstreemCore;
+
+var SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5"/></svg>';
+function rowHtml(i){
+  return '<div class="up-row" data-id="p' + i + '" tabindex="0" role="button">' +
+    '<div class="up-td upt-td-prompt"><span class="upt-check">' + SVG + '</span>' +
+    '<span class="upt-prompt-wrap"><span class="upt-prompt-text">Welche Marke ist die beste Wahl fuer ' + i + '?</span></span>' +
+    '<span class="up-row-goto">' + SVG + '</span></div>' +
+    '<div class="up-td upt-td-visibility"><span class="up-trend"><span class="up-trend-ic">' + SVG + '</span><span class="up-trend-val">4.7%</span></span><span class="upt-num">34.3%</span></div>' +
+    '<div class="up-td upt-td-rank"><span class="upt-num">3.0</span></div>' +
+    '<div class="up-td upt-td-sentiment"><span class="up-sent"><span class="up-sent-dot"></span><span class="up-sent-val">76</span></span></div>' +
+    '<div class="up-td upt-td-brands"><span class="up-bstack"><span class="up-bav"><img alt=""></span><span class="up-bav"><img alt=""></span><span class="up-bav"><img alt=""></span><span class="up-bmore">+4</span></span></div>' +
+    '<div class="up-td upt-td-topics"><span class="ust-cell"><span class="ust-chip"><span class="ust-chip-t">Topic A</span></span><span class="ust-chip"><span class="ust-chip-t">Topic B</span></span><span class="ust-more">+2</span></span></div>' +
+    '<div class="up-td upt-td-market"><span class="up-flag"><img alt=""></span><span class="upt-mkt">Germany</span></div>' +
+    '<div class="up-td upt-td-created"><span class="upt-date">17 Aug 2026</span></div></div>';
+}
+var HTML = "";
+for (var i = 0; i < 50; i++) HTML += rowHtml(i);
+var tb = document.getElementById("tb");
+tb.innerHTML = HTML;
+var ROWS = [].slice.call(tb.children);
+log("Zeilen " + ROWS.length + ", Knoten/Zeile " + ROWS[0].querySelectorAll("*").length);
+
+var SELS = ["pph-root","udr-root","utf-root","umf-root","umk-root","upt-root","unc-root"];
+var ALL  = SELS.map(function(s){ return "." + s; }).join(",");
+
+/* 1:1 die Schleife aus core.js:3190-3199, ueber die 50 Zeilen eines Renders */
+function istZustand(){
+  for (var j = 0; j < ROWS.length; j++){
+    var n = ROWS[j];
+    for (var w = 0; w < SELS.length; w++){
+      var sel = SELS[w];
+      if ((n.classList && n.classList.contains(sel)) ||
+          (n.querySelector && n.querySelector("." + sel))) return true;
+    }
+  }
+  return false;
+}
+/* die Fix-Variante des Pruefers */
+function fixZustand(){
+  for (var j = 0; j < ROWS.length; j++){
+    var n = ROWS[j];
+    if ((n.matches && n.matches(ALL)) || (n.querySelector && n.querySelector(ALL))) return true;
+  }
+  return false;
+}
+/* dritte Variante: querySelectorAll-frei, nur ein einziger Test am Container-Elternteil.
+   Nur zur Einordnung der Groessenordnung. */
+function bench(fn, reps){
+  var t = performance.now();
+  for (var k = 0; k < reps; k++) fn();
+  return (performance.now() - t) / reps;   /* ms pro Tabellen-Render */
+}
+function med(f, reps){
+  var a = [];
+  for (var r = 0; r < 9; r++) a.push(bench(f, reps));
+  a.sort(function(x,y){ return x-y; });
+  return a[4];
+}
+/* aufwaermen */
+bench(istZustand, 200); bench(fixZustand, 200);
+
+var mIst = med(istZustand, 500);
+var mFix = med(fixZustand, 500);
+log("");
+log("Ist  (7 Selektoren x 50 Knoten = 350 querySelector): " + (mIst*1000).toFixed(1) + " us pro Tabellen-Render");
+log("Fix  (1 Komma-Selektor x 50 Knoten =  50 querySelector): " + (mFix*1000).toFixed(1) + " us pro Tabellen-Render");
+log("Differenz: " + ((mIst-mFix)*1000).toFixed(1) + " us pro Render");
+log("");
+/* Bezugsgroesse: was kostet der Render selbst? */
+var mRender = med(function(){ tb.innerHTML = HTML; }, 50);
+log("Bezug: elTbody.innerHTML = 50 Zeilen  -> " + (mRender*1000).toFixed(1) + " us");
+log("Anteil des Observers am Render: " + (mIst/mRender*100).toFixed(1) + " %");
+log("");
+/* Und was der 1.5s-Heartbeat kostet, den derselbe Mechanismus ohnehin faehrt: 7x initAll */
+log("DONE");
+</script>
+<script>
+/* Gegentest der Ueberraschung: skaliert der Komma-Selektor wirklich so schlecht? */
+function loop(sel){
+  return function(){
+    for (var j = 0; j < ROWS.length; j++){
+      var n = ROWS[j];
+      if (n.matches(sel) || n.querySelector(sel)) return true;
+    }
+    return false;
+  };
+}
+var one = "." + SELS[0];
+var two = SELS.slice(0,2).map(function(s){return "."+s;}).join(",");
+var three = SELS.slice(0,3).map(function(s){return "."+s;}).join(",");
+[["1 Klasse", one], ["2er-Liste", two], ["3er-Liste", three], ["7er-Liste", ALL]].forEach(function(p){
+  bench(loop(p[1]), 200);
+  log("  querySelector(" + p[0] + ") x 50 Knoten: " + (med(loop(p[1]), 500)*1000).toFixed(1) + " us");
+});
+/* und die Ist-Schleife noch einmal, aber mit nur EINEM Watcher — muss ~1/7 sein */
+function istN(k){
+  return function(){
+    for (var j = 0; j < ROWS.length; j++){
+      var n = ROWS[j];
+      for (var w = 0; w < k; w++){
+        var sel = SELS[w];
+        if ((n.classList && n.classList.contains(sel)) || (n.querySelector && n.querySelector("." + sel))) return true;
+      }
+    }
+    return false;
+  };
+}
+bench(istN(1), 200);
+log("  Ist-Schleife mit 1 Watcher: " + (med(istN(1), 500)*1000).toFixed(1) + " us");
+log("  Ist-Schleife mit 7 Watchern: " + (med(istN(7), 500)*1000).toFixed(1) + " us");
+/* 250 Zeilen statt 50 — obere Grenze */
+var BIG = ""; for (var q = 0; q < 250; q++) BIG += rowHtml(q);
+tb.innerHTML = BIG; ROWS = [].slice.call(tb.children);
+bench(istN(7), 100);
+log("  250 Zeilen, 7 Watcher, Ist: " + (med(istN(7), 200)*1000).toFixed(1) + " us");
+log("  250 Zeilen, Fix (7er-Liste): " + (med(loop(ALL), 200)*1000).toFixed(1) + " us");
+log("GEGENTEST DONE");
+</script>

@@ -180,19 +180,58 @@
     function prefLesen(){ try { return localStorage.getItem(PREF) === "yes"; } catch(e){ return false; } }
     function prefSchreiben(v){ try { localStorage.setItem(PREF, v ? "yes" : "no"); } catch(e){} }
 
-    /* Angeheftete Eintraege und zugeklappte Gruppen liegen ebenfalls im localStorage, pro
-       Instanz. Beides ist eine Entscheidung des Nutzers und soll den Seitenwechsel ueberleben.
-       Kaputter Inhalt (von Hand editiert, halb geschrieben) faellt still weg -- ein Fehler im
+    /* ── Was ins localStorage gehoert, und unter welchem Schluessel ────────────────
+       Zwei verschiedene Dinge, zwei verschiedene Regeln -- die Begruendung steht in core bei
+       storeKey():
+       - Zugeklappte Gruppen und der Mini-Zustand sind ANSICHTSVORLIEBEN eines Geraets. Welche
+         Gruppe jemand zugeklappt hat, ist dieselbe Entscheidung, egal in welchem Team er steht.
+         Kein Team im Schluessel.
+       - Angeheftete Eintraege sind ECHTE TEAMDATEN: Marken-, Prompt-, Domain- und URL-Kennungen
+         gehoeren genau einem Team. Sie duerfen NIE ueber Teams hinweg auftauchen -- ein Pin aus
+         Team A waere in Team B eine Kennung, die es dort nicht gibt.
+       Und die Falle, in die core bei genau dieser Sache schon einmal gelaufen ist: die Team-Id ist
+       beim Aufbau noch nicht immer bekannt. Wer dann unter "…@_" liest und spaeter unter
+       "…@<team>" schreibt, hat zwei Schluessel und nie etwas zurueckbekommen. Deshalb wird hier
+       gar nichts geladen, solange kein Team da ist -- und nachgeladen, sobald es eintrifft.
+       Kaputter Inhalt (von Hand editiert, halb geschrieben) faellt still weg: ein Fehler im
        Speicher darf die Leiste nicht mitnehmen. */
-    var PIN_KEY = "usn_pins__" + instanceId;
-    var ZU_KEY  = "usn_closed__" + instanceId;
+    var ZU_KEY = "usn_closed__" + instanceId;
+    /* Reihenfolge ist entscheidend: das ANGEZEIGTE Team gilt, nicht das Attribut. Beim Wechsel im
+       Schalter stellt die Leiste sofort um, Bubble zieht data-team-id erst nach dem Neuladen nach --
+       gemessen: mit dem Attribut zuerst blieben die Pins des alten Teams stehen und wurden im
+       neuen Team weitergeschrieben. state.team stammt beim Aufbau ohnehin aus data-team-id, die
+       Reihenfolge verliert also nichts. */
+    function teamJetzt(){
+      if (state && state.team && state.team.id) return String(state.team.id);
+      var t = attr("data-team-id");
+      if (t) return t;
+      try { var g = UC.getUpstreemTeam && UC.getUpstreemTeam(); if (g) return String(g); } catch(e){}
+      return "";
+    }
+    function pinKey(){
+      var t = teamJetzt();
+      return t ? ("usn_pins__" + instanceId + "@" + t) : null;
+    }
     function pinsLesen(){
+      var k = pinKey();
+      if (!k) return [];
       try {
-        var r = JSON.parse(localStorage.getItem(PIN_KEY) || "[]");
+        var r = JSON.parse(localStorage.getItem(k) || "[]");
         return Array.isArray(r) ? r.filter(function(x){ return x && x.type && x.id != null; }) : [];
       } catch(e){ return []; }
     }
-    function pinsSchreiben(l){ try { localStorage.setItem(PIN_KEY, JSON.stringify(l)); } catch(e){} }
+    /* Ein Topf ohne Team aus der ersten Fassung dieser Funktion. Er wird NICHT uebernommen: die
+       Pins darin gehoeren zu einem Team, das niemand mehr kennt, und sie irgendeinem zuzuordnen
+       waere genau die Vermischung, die hier nicht passieren darf. Also weg damit. */
+    try { localStorage.removeItem("usn_pins__" + instanceId); } catch(e){}
+
+    function pinsSchreiben(l){
+      var k = pinKey();
+      /* Ohne Team NICHT schreiben. Ein Schluessel ohne Team waere ein Topf, aus dem jedes Team
+         liest -- genau das, was hier nicht passieren darf. */
+      if (!k) return;
+      try { localStorage.setItem(k, JSON.stringify(l)); } catch(e){}
+    }
     function zuLesen(){
       try { var r = JSON.parse(localStorage.getItem(ZU_KEY) || "[]"); return Array.isArray(r) ? r : []; }
       catch(e){ return []; }
@@ -222,7 +261,9 @@
       count: attr("data-prompt-count"),
       countDa: attr("data-prompt-count") !== "",
       suche: "",
-      /* Angeheftete Eintraege und zugeklappte Gruppen -- beide aus dem localStorage, siehe oben. */
+      /* Angeheftete Eintraege und zugeklappte Gruppen -- beide aus dem localStorage, siehe oben.
+         Die Pins koennen hier noch leer sein, wenn das Team erst spaeter eintrifft; pinsNachziehen
+         holt sie dann nach. */
       pins: pinsLesen(), zu: zuLesen(),
       gemeldet: ""           /* zuletzt gefeuerter usnState-Payload, siehe anwenden() */
     };
@@ -353,7 +394,12 @@
          Uebergang automatisch synchron zur Leiste. */
       try { document.documentElement.style.setProperty("--up-sidebar-w", px + "px"); } catch(e){}
 
+      /* wide und hint sind fuer Bubble da: sie bilden die zwei States der App direkt ab, ohne dass
+         ein Workflow erst aus mode etwas ableiten muss. visible bleibt, was es war -- "belegt die
+         Leiste Platz im Layout" -- damit bestehende Verdrahtungen weiterlaufen. */
       var payload = { mode: hint ? "hint" : (mini ? "mini" : "wide"),
+                      wide: (!hint && !mini) ? "yes" : "no",
+                      hint: hint ? "yes" : "no",
                       visible: hint ? "no" : "yes", px: px };
       var schluessel = payload.mode + "|" + payload.visible + "|" + payload.px;
       /* Nur bei echter Aenderung feuern. anwenden() laeuft an jedem resize-Tick, und ein Event
@@ -379,6 +425,9 @@
       elTeamBtn.setAttribute("title", t.name || "");
       /* Die Palette speichert Favoriten pro Team -- ihr data-team muss also mitwandern. */
       if (typeof qaAufbauen === "function") qaAufbauen(0);
+      /* Und die Pins gehoeren zum Team: beim ersten bekannten Team laden, bei jedem Wechsel
+         umschalten. */
+      pinsNachziehen();
     }
     /* Ein data-active, das keinem Nav-Schluessel entspricht, hebt nichts hervor -- und das sieht
        aus wie ein Fehler in der Leiste, obwohl der Wert daneben liegt. Einmal sagen, welche
@@ -746,6 +795,15 @@
        mitwandern. */
     UC.onTheme(function(){ renderNav(); qaAufbauen(0); if (popAcc.isOpen()) renderAccMenu(); });
 
+    /* Welches Team gerade in state.pins steht. null heisst: noch nichts geladen. */
+    var pinsFuerTeam = null;
+    function pinsNachziehen(){
+      var t = teamJetzt();
+      if (!t || t === pinsFuerTeam) return;
+      pinsFuerTeam = t;
+      state.pins = pinsLesen();
+      renderNav();
+    }
     function pinHinzu(p){
       if (!p || !p.type || p.id == null) return false;
       var id = String(p.id);

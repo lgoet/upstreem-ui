@@ -1,0 +1,88 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>backdrop-layer probe</title>
+<link rel="stylesheet" href="core.css?probe=1">
+<style>
+  html,body{margin:0;background:#fff;font:12px system-ui}
+  #churn{position:relative;width:100vw;height:100vh;overflow:hidden;display:grid;
+         grid-template-columns:repeat(40,1fr);grid-auto-rows:18px}
+  #churn i{display:block;background:#eee}
+  #out{position:fixed;left:8px;top:8px;z-index:200000;background:#fff;border:1px solid #333;
+       padding:8px;white-space:pre;font:12px ui-monospace,monospace}
+</style>
+<div id="churn"></div>
+<pre id="out">running…</pre>
+<script>
+var churn = document.getElementById("churn"), out = document.getElementById("out");
+var cells = [];
+for (var i = 0; i < 2400; i++){ var c = document.createElement("i"); churn.appendChild(c); cells.push(c); }
+
+/* Beweis, dass die geladene core.css die Regel wirklich enthaelt (CLAUDE.md 3) */
+function ruleFound(sub){
+  return [].some.call(document.styleSheets, function(ss){
+    try { return [].some.call(ss.cssRules, function(r){
+      return (r.cssText||"").indexOf(sub) >= 0; }); } catch(e){ return false; }
+  });
+}
+
+var overlays = [];
+for (var k = 0; k < 4; k++){
+  var o = document.createElement("div");
+  o.className = "up-root up-portal up-topicmodal-backdrop probe-ov";
+  o.innerHTML = '<div class="up-topicmodal-card"><h2 class="up-topicmodal-title">Probe '+k+'</h2></div>';
+  overlays.push(o);
+}
+
+var t = 0;
+function tick(){
+  t++;
+  /* grosser Repaint-Bereich pro Frame: 600 Zellen wechseln die Farbe */
+  var base = (t*600) % cells.length;
+  for (var j = 0; j < 600; j++){
+    var c = cells[(base+j) % cells.length];
+    c.style.background = "hsl(" + ((t*7 + j) % 360) + ",70%,80%)";
+  }
+}
+
+function phase(name, setup, ms){
+  return new Promise(function(res){
+    setup();
+    var deltas = [], last = performance.now(), t0 = last;
+    function fr(now){
+      deltas.push(now - last); last = now; tick();
+      if (now - t0 < ms) requestAnimationFrame(fr);
+      else {
+        deltas = deltas.slice(5);                  /* Einschwingen weg */
+        var s = deltas.slice().sort(function(a,b){return a-b;});
+        var mean = deltas.reduce(function(a,b){return a+b;},0)/deltas.length;
+        res({ name:name, frames:deltas.length, mean:+mean.toFixed(2),
+              p50:+s[(s.length*0.5)|0].toFixed(2), p90:+s[(s.length*0.9)|0].toFixed(2),
+              max:+s[s.length-1].toFixed(2),
+              over20:deltas.filter(function(d){return d>20;}).length });
+      }
+    }
+    requestAnimationFrame(fr);
+  });
+}
+
+function detach(){ overlays.forEach(function(o){ if (o.parentNode) o.parentNode.removeChild(o); }); }
+function attachClosed(){ detach(); overlays.forEach(function(o){ o.classList.remove("is-shown"); document.body.appendChild(o); }); }
+function attachShown(){ detach(); overlays.forEach(function(o){ document.body.appendChild(o); o.classList.add("is-shown"); }); }
+
+(async function(){
+  var pre = { ruleBackdropFilter: ruleFound("up-topicmodal-backdrop") && ruleFound("backdrop-filter"),
+              cssBackdropSupported: CSS.supports("backdrop-filter","blur(1.5px)") };
+  var res = [];
+  /* A/B/C und dann noch einmal A, um Drift/Thermik auszuschliessen */
+  res.push(await phase("A none",        detach,       3000));
+  res.push(await phase("B closed x4",   attachClosed, 3000));
+  res.push(await phase("C shown x4",    attachShown,  3000));
+  res.push(await phase("A2 none",       detach,       3000));
+  res.push(await phase("B2 closed x4",  attachClosed, 3000));
+  var comp = getComputedStyle(overlays[0]);
+  pre.closedComputed = { opacity: comp.opacity, display: comp.display,
+                         visibility: comp.visibility, backdropFilter: comp.backdropFilter || comp.webkitBackdropFilter };
+  out.textContent = JSON.stringify({ pre: pre, phases: res }, null, 1);
+  window.__probe = { pre: pre, phases: res };
+})();
+</script>

@@ -1,0 +1,50 @@
+<!doctype html><meta charset="utf-8"><title>Observer-Zaehlung</title>
+<!-- Zaehlt, wie oft core.js auf einer Seite mit MEHREREN Komponenten wirklich ausgewertet wird,
+     und wie viele Beobachter dabei auf documentElement landen. Der Loader ist 1:1 die
+     once()/__upAssetsLoaded-Logik aus bubble/*.html, nur mit lokalem Basispfad. -->
+<div class="combo-root up-root" data-cdn-pin="deadbeef"></div>
+<div class="ubd-root up-root" data-cdn-pin="deadbeef"></div>
+<div class="upt-root up-root" data-cdn-pin="deadbeef"></div>
+<div class="urt-root up-root" data-cdn-pin="deadbeef"></div>
+<pre id="out">…</pre>
+<script>
+/* Messinstrument VOR core.js: jeder observe()-Aufruf auf documentElement wird protokolliert. */
+window.__obsCalls = [];
+var origObserve = MutationObserver.prototype.observe;
+MutationObserver.prototype.observe = function(t, o){
+  if (t === document.documentElement) {
+    window.__obsCalls.push({ opts: JSON.stringify(o), stack: (new Error()).stack.split("\n")[2] || "" });
+  }
+  return origObserve.apply(this, arguments);
+};
+/* Zaehlt core.js-Auswertungen: eine Kopie, die laeuft, erhoeht den Zaehler. */
+window.__coreEvals = 0;
+</script>
+<script>
+/* --- Loader, wie in bubble/*.html (once/__upAssetsLoaded), viermal aufgerufen wie bei vier
+       Komponenten auf einer Seite mit demselben Pin. --- */
+function readPin(cls){
+  var els = document.getElementsByClassName(cls), i, p;
+  for (i = 0; i < els.length; i++){ p = (els[i].getAttribute("data-cdn-pin")||"").trim();
+    if (p && p !== "CDN_"+"PIN") return p; }
+  return "main";
+}
+var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+function once(url, make){ if (L[url]) return; L[url] = 1; make(url); }
+function js(base, f){ once(base + f, function(u){ var s=document.createElement("script"); s.src=u; s.async=false; document.head.appendChild(s); }); }
+["combo-root","ubd-root","upt-root","urt-root"].forEach(function(cls){
+  var base = "./";                       // statt jsDelivr; readPin bleibt identisch
+  readPin(cls);
+  js(base, "core.js");
+});
+</script>
+<script>
+setTimeout(function(){
+  var tags = [].slice.call(document.querySelectorAll('script[src*="core.js"]'));
+  document.getElementById("out").textContent =
+    "core.js-Script-Tags eingefuegt: " + tags.length + "\n" +
+    "observe(documentElement)-Aufrufe: " + window.__obsCalls.length + "\n" +
+    window.__obsCalls.map(function(c,i){ return "  " + (i+1) + ") " + c.opts; }).join("\n") + "\n" +
+    "UpstreemCore BUILD: " + (window.UpstreemCore && window.UpstreemCore.BUILD);
+}, 800);
+</script>

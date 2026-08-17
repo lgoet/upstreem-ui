@@ -98,13 +98,20 @@
       prompt die unique id, bei domain die Domain, bei url die URL.
 
   data-state-fn   = "bubble_fn_usnState_[dynamic id]"
-      {"team_id":"...","mode":"mini","visible":"yes","px":64}
-      mode     ->  (?<="mode":")[^"]*
-      visible  ->  (?<="visible":")[^"]*
-      px       ->  (?<="px":)[0-9]+
+      {"team_id":"...","mode":"mini","wide":"no","hint":"no","visible":"yes","px":64}
+      mode     ->  (?<="mode":")[^"]*      wide | mini | hint
+      wide     ->  (?<="wide":")[^"]*      yes NUR im 250px-Zustand
+      hint     ->  (?<="hint":")[^"]*      yes NUR im Telefon-Zustand
+      visible  ->  (?<="visible":")[^"]*   belegt die Leiste Platz im Layout? (im hint-Zustand no)
+      px       ->  (?<="px":)[0-9]+        250 | 64 | 0 -- die tatsaechliche Breite
       OPTIONAL. Feuert einmal beim Aufbau und danach nur, wenn sich wirklich etwas aendert.
-      Nur noetig, wenn Bubble-Elemente auf die Breite reagieren sollen; fuer das Verschieben
-      des Inhalts reicht --up-sidebar-w oben.
+
+      wide und hint sind dafuer da, ZWEI Bubble-States direkt zu setzen, ohne dass ein Workflow
+      erst aus mode etwas ableiten muss:
+          Set state sidebar_visible = wide     (yes = grosse Leiste, no = kleine)
+          Set state hint_only       = hint
+      Fuer den Rand des Inhalts NICHT die Breite von Hand nachbauen -- px mitnehmen oder, besser,
+      --up-sidebar-w im Seitenkopf benutzen. Die Leiste ist im Mini-Zustand 64px breit, nicht 58.
 
   Alle feuern zusaetzlich ein gleichnamiges CustomEvent am Traeger-Element, falls etwas anderes
   auf der Seite mithoeren will.

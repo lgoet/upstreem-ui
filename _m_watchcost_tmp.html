@@ -1,0 +1,130 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>watchRoots observer kosten</title>
+<style>
+  body { margin:0; font-family: system-ui, Arial; background:#fff; }
+  #tb { display:block; }
+  pre { padding:16px; white-space:pre-wrap; font-size:13px; }
+</style>
+<body>
+<div class="upt-root" id="root">
+  <div class="up-tbody" id="tb"></div>
+</div>
+<pre id="out">laedt…</pre>
+<script src="core.js?m=watchcost1"></script>
+<script>
+var L = [], out = document.getElementById("out");
+function log(s){ L.push(s); out.textContent = L.join("\n"); }
+
+/* Frische BEWEISEN: watchRoots muss exportiert sein, sonst ist jede Messung wertlos. */
+var UC = window.UpstreemCore || window.UC;
+log("UC vorhanden: " + !!UC + " | watchRoots: " + (UC && typeof UC.watchRoots));
+
+/* --- realistische Prompts-Zeile, nach prompts-table.js rowHtml nachgebaut --- */
+var SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">' +
+          '<path d="M20 6 9 17l-5-5"/></svg>';
+function rowHtml(i){
+  return '<div class="up-row" data-id="p' + i + '" tabindex="0" role="button">' +
+    '<div class="up-td upt-td-prompt">' +
+      '<span class="upt-check" role="checkbox" tabindex="0">' + SVG + '</span>' +
+      '<span class="upt-prompt-wrap"><span class="upt-prompt-text">Welche Marke ist die beste Wahl fuer ' + i + '?</span></span>' +
+      '<span class="up-row-goto">' + SVG + '</span>' +
+    '</div>' +
+    '<div class="up-td upt-td-visibility"><span class="up-trend"><span class="up-trend-ic">' + SVG + '</span><span class="up-trend-val">4.7%</span></span><span class="upt-num">34.3%</span></div>' +
+    '<div class="up-td upt-td-rank"><span class="upt-num">3.0</span></div>' +
+    '<div class="up-td upt-td-sentiment"><span class="up-sent"><span class="up-sent-dot"></span><span class="up-sent-val">76</span></span></div>' +
+    '<div class="up-td upt-td-brands"><span class="up-bstack">' +
+      '<span class="up-bav"><img alt=""></span><span class="up-bav"><img alt=""></span>' +
+      '<span class="up-bav"><img alt=""></span><span class="up-bmore">+4</span></span></div>' +
+    '<div class="up-td upt-td-topics"><span class="ust-cell"><span class="ust-chip"><span class="ust-chip-t">Topic A</span></span>' +
+      '<span class="ust-chip"><span class="ust-chip-t">Topic B</span></span><span class="ust-more">+2</span></span></div>' +
+    '<div class="up-td upt-td-market"><span class="up-flag"><img alt=""></span><span class="upt-mkt">Germany</span></div>' +
+    '<div class="up-td upt-td-created"><span class="upt-date">17 Aug 2026</span></div>' +
+  '</div>';
+}
+var PAGE = 50, HTML = "";
+for (var i = 0; i < PAGE; i++) HTML += rowHtml(i);
+
+var tb = document.getElementById("tb");
+tb.innerHTML = HTML;
+log("Zeilen: " + tb.children.length +
+    " | Elementknoten pro Zeile: " + tb.children[0].querySelectorAll("*").length +
+    " | Knoten gesamt im tbody: " + tb.querySelectorAll("*").length);
+
+/* --- 7 Watcher wie auf einer Prompts-Seite: pph, udr, utf, umf, umk, upt, unc --- */
+var SELS = ["pph-root","udr-root","utf-root","umf-root","umk-root","upt-root","unc-root"];
+var initCalls = 0;
+SELS.forEach(function(s){ UC.watchRoots(s, function(){ initCalls++; }); });
+var G = window.__upRootWatch;
+log("registrierte Watcher: " + G.watchers.length + " | Observer: " + !!G.obs + " | Intervall: " + !!G.iv);
+
+/* querySelector-Zaehler, um die behaupteten Aufrufzahlen zu pruefen */
+var qsCount = 0, realQS = Element.prototype.querySelector;
+Element.prototype.querySelector = function(s){ qsCount++; return realQS.call(this, s); };
+
+/* --- Messung: innerHTML + der Microtask, in dem der Observer laeuft --- */
+function once(){
+  return new Promise(function(res){
+    var t = performance.now();
+    tb.innerHTML = HTML;                 /* queued den MutationObserver-Microtask */
+    Promise.resolve().then(function(){   /* laeuft NACH dem Observer-Callback */
+      res(performance.now() - t);
+    });
+  });
+}
+function med(a){ a = a.slice().sort(function(x,y){ return x-y; }); return a[a.length>>1]; }
+
+/* Variante C: der vorgeschlagene Fix — ein Komma-Selektor, ein Test pro Knoten */
+var ALL = SELS.map(function(s){ return "." + s; }).join(",");
+function makeFixObs(){
+  return new MutationObserver(function(muts){
+    for (var i = 0; i < muts.length; i++){
+      var added = muts[i].addedNodes;
+      for (var j = 0; j < added.length; j++){
+        var n = added[j];
+        if (n.nodeType !== 1) continue;
+        if ((n.matches && n.matches(ALL)) || (n.querySelector && n.querySelector(ALL))) return;
+      }
+    }
+  });
+}
+
+async function run(){
+  var N = 60, warm = 15, a, k;
+
+  /* A) Kontrolle: Observer abgeklemmt — misst nur innerHTML-Parsen */
+  G.obs.disconnect();
+  for (k = 0; k < warm; k++) await once();
+  a = []; qsCount = 0;
+  for (k = 0; k < N; k++) a.push(await once());
+  var ctrl = med(a); var qsCtrl = qsCount / N;
+  log("A) OHNE Observer      median " + ctrl.toFixed(3) + " ms/Render, querySelector/Render " + qsCtrl.toFixed(1));
+
+  /* B) Ist-Zustand: der echte core.js-Observer wieder an document.body */
+  G.obs.observe(document.body, { childList: true, subtree: true });
+  for (k = 0; k < warm; k++) await once();
+  a = []; qsCount = 0; initCalls = 0;
+  for (k = 0; k < N; k++) a.push(await once());
+  var now = med(a); var qsNow = qsCount / N;
+  log("B) core.js Ist         median " + now.toFixed(3) + " ms/Render, querySelector/Render " + qsNow.toFixed(1) +
+      " | onFound-Aufrufe im Zeitraum: " + initCalls);
+
+  /* C) Fix-Variante: gleicher Aufbau, ein Komma-Selektor */
+  G.obs.disconnect();
+  var fx = makeFixObs();
+  fx.observe(document.body, { childList: true, subtree: true });
+  for (k = 0; k < warm; k++) await once();
+  a = []; qsCount = 0;
+  for (k = 0; k < N; k++) a.push(await once());
+  var fix = med(a); var qsFix = qsCount / N;
+  fx.disconnect();
+  log("C) Komma-Selektor-Fix  median " + fix.toFixed(3) + " ms/Render, querySelector/Render " + qsFix.toFixed(1));
+
+  log("");
+  log("Observer-Aufschlag Ist  = " + (now - ctrl).toFixed(3) + " ms je Tabellen-Render");
+  log("Observer-Aufschlag Fix  = " + (fix - ctrl).toFixed(3) + " ms");
+  log("Ersparnis des Fixes     = " + (now - fix).toFixed(3) + " ms je Render");
+  log("DONE");
+}
+run().catch(function(e){ log("FEHLER " + e); });
+</script>
