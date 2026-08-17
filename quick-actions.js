@@ -590,6 +590,8 @@
   var MORE_SVG   = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>';
   var OPEN_SVG   = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /> <path d="m12 5 7 7-7 7" /></svg>';
   var NEWTAB_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6" /> <path d="M10 14 21 3" /> <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></svg>';
+  /* Lucide pin -- fuer "Pin to sidebar" im Zeilenmenue. */
+  var PIN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>';
   function trendHtml(v){
     if (v == null || v === "" || isNaN(Number(v))) return '<span class="mqa-trend is-flat">' + DASH + '</span>';   // no trend
     var n = Number(v), a = Math.abs(n);
@@ -1260,7 +1262,9 @@
       '<button class="mqa-rowmenu-opt" type="button" data-rowmenu-act="open">' +
         '<span class="mqa-rowmenu-opt-ic">' + OPEN_SVG + '</span>Open</button>' +
       '<button class="mqa-rowmenu-opt" type="button" data-rowmenu-act="newtab">' +
-        '<span class="mqa-rowmenu-opt-ic">' + NEWTAB_SVG + '</span>Open in new tab</button>';
+        '<span class="mqa-rowmenu-opt-ic">' + NEWTAB_SVG + '</span>Open in new tab</button>' +
+      '<button class="mqa-rowmenu-opt" type="button" data-rowmenu-act="pin">' +
+        '<span class="mqa-rowmenu-opt-ic">' + PIN_SVG + '</span>Pin to sidebar</button>';
     overlay.appendChild(rowMenuEl);
     rowMenuEl.addEventListener("click", function(e){
       var b = e.target.closest ? e.target.closest("[data-rowmenu-act]") : null;
@@ -1274,10 +1278,39 @@
         else { var v = _viewed[idx]; if (v){ _rowData.push(v); selectResult(_rowData.length - 1); } }   // same path activate() already uses for a viewed row
       } else if (act === "newtab"){
         var it = itemForMenu(kind, idx); if (it) openItemInNewTab(it);
+      } else if (act === "pin"){
+        var it2 = itemForMenu(kind, idx); if (it2) pinToSidebar(it2);
       }
     });
     return rowMenuEl;
   }
+  /* An die Sidebar uebergeben. Die Palette weiss nichts von ihr und soll es auch nicht: sie ruft
+     eine globale Funktion, wenn es eine gibt. Liegt keine Sidebar auf der Seite, sagt sie das
+     einmal in der Konsole statt stumm nichts zu tun.
+     Uebergeben wird genau das, was die Leiste zum Zeichnen braucht -- Typ, Kennung, Beschriftung
+     und Bild. Die Kennung ist dieselbe, die selectResult() an Bubble meldet, damit ein Klick in
+     der Leiste denselben Wert liefert wie ein Klick in der Palette. */
+  function pinToSidebar(it){
+    var typ = it.type, id = "", label = "", logo = "";
+    if (typ === "brand"){       id = it.id;     label = it.name || "";            logo = it.logo || ""; }
+    else if (typ === "domain"){ id = it.domain; label = it.domain || "";          logo = it.favicon || ""; }
+    else if (typ === "url"){    id = it.url;    label = it.title || it.url || ""; logo = it.favicon || ""; }
+    else if (typ === "prompt"){ id = it.id;     label = it.prompt_text || "";
+      /* Beim Prompt ist die Flagge des Marktes das Bild -- dieselbe Quelle wie in der Zeile. */
+      logo = it.market ? ("https://flagcdn.com/" + String(it.market).toLowerCase() + ".svg") : ""; }
+    else return;
+    var fn = window.upstreemPinToSidebar ||
+             (window.parent && window.parent.upstreemPinToSidebar) ||
+             (window.top && window.top.upstreemPinToSidebar);
+    if (typeof fn !== "function"){
+      if (window.console) console.warn("[quick-actions] keine Sidebar auf dieser Seite -- " +
+        "window.upstreemPinToSidebar fehlt, der Eintrag wurde nicht angeheftet.");
+      return;
+    }
+    try { fn({ type: typ, id: String(id == null ? "" : id), label: label, logo: logo }); } catch(e){}
+    close();
+  }
+
   function positionRowMenu(btn){
     var r = btn.getBoundingClientRect(), t = rowMenuEl.getBoundingClientRect();
     var pad = 8, left = r.right - t.width;

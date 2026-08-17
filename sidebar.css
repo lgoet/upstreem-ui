@@ -111,7 +111,7 @@
   /* 32 und nicht 40: derselbe Kasten wie der Einklapp-Knopf daneben, damit beide oben auf
      derselben Kante von 8px sitzen. Das 24er Logo hat darin ringsum 4px Luft. */
   height: 32px; padding: 0 6px;
-  border: 0; border-radius: 9px; background: transparent;
+  border: 0; border-radius: 12px; background: transparent;
   font: inherit; color: var(--vc-text); cursor: pointer; text-align: left;
   transition: background var(--usn-t) var(--usn-ease);
 }
@@ -153,6 +153,8 @@
    steht. Diese Regel faerbt den Trigger eines offenen Dropdowns -- der Einklapp-Knopf ist aber
    nur ein Geschwister des Team-Knopfes im selben Wrapper, kein Trigger. Ohne das wurde er
    primaerfarben, sobald der Team-Schalter offen war. */
+/* Radius 12 wie alle Flaechen der Leiste -- das Kit gibt .up-iconbtn 8 mit. */
+.usn-bar .up-iconbtn { border-radius: 12px; }
 .usn-bar .up-iconbtn.usn-toggle { color: var(--vc-third); }
 .usn-bar .up-iconbtn.usn-toggle:hover { background: var(--vc-bg); color: var(--vc-text); }
 .usn-bar .up-iconbtn:hover { background: var(--vc-bg); color: var(--vc-text); }
@@ -180,7 +182,7 @@
    Kachel heraus. Sichtbar bleibt der Rahmen; beim Hover geht Text und Icon auf die
    Primaerfarbe, wie bei den Menuepunkten. */
 .usn-bar .mqa-trigger {
-  height: 36px; border-radius: 9px; background: transparent;
+  height: 36px; border-radius: 12px; background: transparent;
   border-color: var(--vc-border); color: var(--vc-muted);
 }
 .usn-bar .mqa-trigger:hover { background: transparent; border-color: var(--vc-hover-border); color: var(--vc-text); }
@@ -204,16 +206,41 @@
 .usn-block + .usn-block { margin-top: 32px; }
 /* Abschnittsueberschrift in derselben Sprache wie .up-pop-head in core: 11px, versal,
    gesperrt, Sekundaerton. */
+/* Die Ueberschrift ist ein Knopf: Beschriftung links, Chevron rechts. Der Chevron erscheint
+   erst beim Hover und mit 220ms Verzoegerung -- im Ruhezustand soll die Leiste ruhig bleiben,
+   und ein Zeichen, das beim Vorbeifahren aufblitzt, ist Unruhe. Beim Verlassen geht er sofort. */
 .usn-head {
-  display: block; padding: 0 8px 6px;
-  font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
-  color: var(--vc-third); white-space: nowrap;
-  transition: opacity calc(var(--usn-t) * .6) var(--usn-ease);
+  width: 100%; display: flex; align-items: center; gap: 6px;
+  padding: 0 8px 6px; border: 0; background: transparent; cursor: pointer;
+  font: inherit; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--vc-third); white-space: nowrap; text-align: left;
+  transition: opacity calc(var(--usn-t) * .6) var(--usn-ease), color var(--usn-t) var(--usn-ease);
 }
+.usn-head:hover { color: var(--vc-muted); }
+.usn-head-lbl { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.usn-head-chev {
+  flex: 0 0 14px; width: 14px; height: 14px; display: inline-flex; color: var(--vc-third);
+  opacity: 0; transition: opacity 140ms var(--usn-ease), transform var(--usn-t) var(--usn-ease);
+}
+.usn-head-chev svg { width: 14px; height: 14px; display: block; }
+.usn-head:hover .usn-head-chev { opacity: 1; transition-delay: 220ms, 0ms; }
+/* Zugeklappt zeigt der Chevron nach rechts und bleibt sichtbar -- sonst waere der Zustand nur an
+   der fehlenden Liste zu erkennen. */
+.usn-block.is-closed .usn-head-chev { opacity: 1; transform: rotate(-90deg); transition-delay: 0ms; }
+
+/* Der Inhalt faehrt ueber die gemessene Hoehe zu (JS setzt max-height in px). overflow:hidden
+   nur im geschlossenen Zustand: offen wuerde es die Hoverflaeche der letzten Zeile abschneiden. */
+.usn-block-body { max-height: none; transition: max-height var(--usn-t) var(--usn-ease); }
+.usn-block.is-closed .usn-block-body { overflow: hidden; }
+.usn-bar.is-mini .usn-head-chev { display: none; }
+/* Im Mini-Zustand bleibt jede Gruppe offen: dort ist die Ueberschrift weg, es gaebe also keinen
+   Weg zurueck. Die Hoehe raeumt das JS aus dem inline-Stil (hoehenSetzen) -- eine Regel hier
+   koennte den inline-Wert nur mit !important schlagen, und das ist verboten. */
+.usn-bar.is-mini .usn-block-body { overflow: visible; }
 .usn-item {
   width: 100%; display: flex; align-items: center; gap: 10px;
   height: 36px; padding: 0 8px;
-  border: 0; border-radius: 9px; background: transparent;
+  border: 0; border-radius: 12px; background: transparent;
   font: inherit; font-size: 13.5px; font-weight: 500; color: var(--vc-text);
   cursor: pointer; text-align: left;
   transition: background var(--usn-t) var(--usn-ease), color var(--usn-t) var(--usn-ease);
@@ -281,11 +308,35 @@
 /* Im Mini-Zustand traegt nur das Logo bzw. der Kreis ein Skelett -- die Textbalken liegen in
    Elementen, die dort ohnehin auf Breite 0 stehen. */
 
+/* Die Pinned-Gruppe wird nur gezeichnet, wenn etwas angeheftet ist -- der leere Block faellt
+   im JS heraus, hier braucht es keine Regel dafuer. */
+
+/* ---------- Angeheftete Eintraege ----------
+   Dieselbe Zeile wie ein Menuepunkt, nur mit einem Bild statt eines Icons und einem X rechts.
+   Das X erscheint wie der Chevron der Ueberschrift: beim Hover, mit Verzoegerung. */
+.usn-pin { position: relative; }
+.usn-pin-ic { flex: 0 0 17px; width: 17px; height: 17px; display: inline-flex; align-items: center; }
+/* Das 24er .up-logo-box auf die 17px der Icon-Spalte bringen -- so stehen Bild und Icon der
+   anderen Zeilen auf derselben Kante. Alle Werte im selben Verhaeltnis: Radius 8 -> 5.7,
+   Bild 22 -> 15.6. */
+.usn-pin-ic .up-logo-box { width: 17px; height: 17px; flex: 0 0 17px; border-radius: 5.7px; padding: 1px; }
+.usn-pin-ic .up-logo-box img { width: 15.6px; height: 15.6px; border-radius: 5px; }
+.usn-pin-ic .up-logo-ltr { font-size: 9px; }
+.usn-pin-x {
+  flex: 0 0 14px; width: 14px; height: 14px; display: inline-flex; align-items: center; justify-content: center;
+  color: var(--vc-third); opacity: 0; cursor: pointer;
+  transition: opacity 140ms var(--usn-ease), color var(--usn-t) var(--usn-ease);
+}
+.usn-pin-x svg { width: 12px; height: 12px; display: block; }
+.usn-pin:hover .usn-pin-x { opacity: 1; transition-delay: 220ms, 0ms; }
+.usn-pin-x:hover { color: var(--vc-text); }
+.usn-bar.is-mini .usn-pin-x { display: none; }
+
 /* ---------- Konto ---------- */
 .usn-accwrap { flex: 0 0 auto; margin-top: 16px; }
 .usn-acc {
   width: 100%; display: flex; align-items: center; gap: 10px;
-  padding: 8px; border: 0; border-radius: 10px; background: transparent;
+  padding: 8px; border: 0; border-radius: 12px; background: transparent;
   font: inherit; color: var(--vc-text); cursor: pointer; text-align: left;
   transition: background var(--usn-t) var(--usn-ease);
 }
@@ -329,7 +380,7 @@
 .usn-none { padding: 14px 10px; font-size: 13px; color: var(--vc-muted); }
 
 /* Teamzeile: 64px, Logo links, Name ueber Domain, Haken rechts. */
-.usn-teamrow { display: flex; align-items: center; gap: 12px; height: 64px; padding: 0 10px; }
+.usn-teamrow { display: flex; align-items: center; gap: 12px; height: 64px; padding: 0 10px; border-radius: 12px; }
 .usn-teamrow-txt { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .usn-teamrow-name { font-size: 13.5px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .usn-teamrow-dom { font-size: 12px; color: var(--vc-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -337,7 +388,7 @@
 .usn-menu-foot { flex: 0 0 auto; border-top: 1px solid var(--up-menu-border); margin-top: var(--up-dd-pad); padding-top: var(--up-dd-pad); }
 .usn-newteam {
   width: 100%; display: flex; align-items: center; gap: 9px;
-  padding: 9px 10px; border: 0; border-radius: 9px; background: transparent;
+  padding: 9px 10px; border: 0; border-radius: 12px; background: transparent;
   font: inherit; font-size: 13.5px; font-weight: 500; color: var(--vc-text); cursor: pointer;
   transition: background var(--usn-t) var(--usn-ease);
 }
@@ -366,7 +417,7 @@
    Spezifitaet gewinnen und nicht ueber die Ladereihenfolge. */
 .up-root.up-portal.usn-fab {
   position: fixed; left: 12px; top: 12px; z-index: 9902;
-  width: 36px; height: 36px; min-width: 0; border-radius: 9px; border: 0; padding: 0;
+  width: 36px; height: 36px; min-width: 0; border-radius: 12px; border: 0; padding: 0;
   background: var(--usn-bg); color: var(--vc-text); cursor: pointer;
   align-items: center; justify-content: center;
   display: none;

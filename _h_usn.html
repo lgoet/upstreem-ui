@@ -35,12 +35,20 @@
      data-theme-fn="bubble_fn_usnTheme"
      data-logout-fn="bubble_fn_usnLogout"
      data-newteam-fn="bubble_fn_usnNewTeam"
+     data-pinned-fn="bubble_fn_usnPinned"
      data-state-fn="bubble_fn_usnState"></div>
 
 <script>
 window.__ev = [];
+/* Angeheftete Eintraege liegen im localStorage -- fuer den Test vier verschiedene Typen. */
+try { localStorage.setItem("usn_pins__s1", JSON.stringify([
+  {type:"brand", id:"b1", label:"Mercedes Benz", logo:""},
+  {type:"domain", id:"auto-motor-sport.de", label:"auto-motor-sport.de", logo:""},
+  {type:"url", id:"https://x.de/a", label:"Die zehn besten Elektroautos 2026 im Vergleich", logo:""},
+  {type:"prompt", id:"p9", label:"Welches Elektroauto hat die beste Reichweite?", logo:"https://flagcdn.com/de.svg"}
+])); localStorage.removeItem("usn_closed__s1"); } catch(e){}
 function log(){ var o=document.getElementById("out"); if(o) o.textContent = window.__ev.slice(-8).join("\n"); }
-["usnNav","usnTeam","usnAccount","usnTheme","usnLogout","usnNewTeam","usnState"].forEach(function(n){
+["usnNav","usnTeam","usnAccount","usnTheme","usnLogout","usnNewTeam","usnState","usnPinned"].forEach(function(n){
   window["bubble_fn_"+n] = function(j){ window.__ev.push(n+" "+j); log(); };
 });
 window.bubble_fn_theme_pref = function(v){ window.__ev.push("theme_pref "+v); log(); };

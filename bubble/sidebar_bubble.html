@@ -89,6 +89,14 @@
   data-newteam-fn = "bubble_fn_usnNewTeam_[dynamic id]"
       {"team_id":"..."}   -- "Create a new team" im Team-Schalter, ebenfalls ohne Wert
 
+  data-pinned-fn  = "bubble_fn_usnPinned_[dynamic id]"
+      {"team_id":"...","type":"domain","id":"auto-motor-sport.de"}
+      type  ->  (?<="type":")[^"]*
+      id    ->  (?<="id":")[^"]*
+      Klick auf einen angehefteten Eintrag. type ist prompt | brand | domain | url, id ist
+      dieselbe Kennung, die Quick Actions beim Anklicken derselben Zeile meldet: bei brand und
+      prompt die unique id, bei domain die Domain, bei url die URL.
+
   data-state-fn   = "bubble_fn_usnState_[dynamic id]"
       {"team_id":"...","mode":"mini","visible":"yes","px":64}
       mode     ->  (?<="mode":")[^"]*
@@ -140,6 +148,24 @@
   gesetzt sein (dieselbe Kennung wie bei den anderen Komponenten). Ohne die Angabe feuert der
   Punkt weiterhin nur bubble_fn_qa_export_data.
 
+  ── Angeheftete Eintraege ("Pinned") ─────────────────────────────────────────
+  In Quick Actions hat jede Ergebniszeile im Drei-Punkte-Menue den Punkt "Pin to sidebar". Der
+  Eintrag landet in einer eigenen Gruppe unter Organisation, mit Bild und einzeiligem Namen --
+  beim Prompt die Flagge des Marktes, bei Domain und URL das Favicon, bei einer Marke ihr Logo.
+
+  Hoechstens fuenf. Wird ein sechster angeheftet, faellt der letzte der Liste heraus, also der
+  aelteste -- Neues kommt oben dazu. Gespeichert wird im localStorage des Browsers, pro
+  Platzierung; auf Bubble-Seite ist dafuer NICHTS zu tun. Entfernt wird ueber das x, das rechts
+  in der Zeile erscheint, wenn der Zeiger einen Moment darauf liegt.
+
+  Zu tun ist nur eines: den Workflow hinter data-pinned-fn anlegen, damit ein Klick irgendwo
+  hinfuehrt.
+
+  ── Gruppen einklappen ───────────────────────────────────────────────────────
+  Ein Klick auf eine Gruppenueberschrift klappt sie zu (200ms). Der Chevron dazu erscheint erst,
+  wenn der Zeiger einen Moment auf der Ueberschrift liegt. Welche Gruppen zu sind, steht im
+  localStorage -- auch dafuer ist Bubble-seitig nichts zu tun.
+
   ── Theme ────────────────────────────────────────────────────────────────────
   Die Eintraege Light / Dark / System im Konto-Menue rufen setUpstreemTheme aus core. Das
   faerbt die ganze Seite, schreibt die Wahl in den localStorage und meldet sie ueber
@@ -174,6 +200,7 @@
      data-theme-fn="bubble_fn_usnTheme"
      data-logout-fn="bubble_fn_usnLogout"
      data-newteam-fn="bubble_fn_usnNewTeam"
+     data-pinned-fn="bubble_fn_usnPinned"
      data-state-fn="bubble_fn_usnState">
 </div>
 

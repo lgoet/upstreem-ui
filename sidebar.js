@@ -75,8 +75,15 @@
     { head: "Organisation", items: [
       { key: "teams",    label: "Teams",    icon: "folder", chips: true },
       { key: "settings", label: "Settings", icon: "bolt" }
-    ]}
+    ]},
+    /* Die angehefteten Eintraege. Der Block hat keine festen Punkte -- er kommt aus dem
+       localStorage und wird gar nicht gezeichnet, solange nichts angeheftet ist. */
+    { head: "Pinned", pinned: true, items: [] }
   ];
+
+  /* Hoechstens fuenf. Wird ein sechster angeheftet, faellt der LETZTE der Liste heraus -- also
+     der aelteste, weil Neues oben einsortiert wird. */
+  var PIN_MAX = 5;
 
   /* Genau die Schluessel, die usnNav.key ausgibt -- data-active nimmt dieselben. Ein Wert, der
      hier nicht vorkommt, hebt nichts hervor; das darf nicht stumm passieren. */
@@ -173,6 +180,25 @@
     function prefLesen(){ try { return localStorage.getItem(PREF) === "yes"; } catch(e){ return false; } }
     function prefSchreiben(v){ try { localStorage.setItem(PREF, v ? "yes" : "no"); } catch(e){} }
 
+    /* Angeheftete Eintraege und zugeklappte Gruppen liegen ebenfalls im localStorage, pro
+       Instanz. Beides ist eine Entscheidung des Nutzers und soll den Seitenwechsel ueberleben.
+       Kaputter Inhalt (von Hand editiert, halb geschrieben) faellt still weg -- ein Fehler im
+       Speicher darf die Leiste nicht mitnehmen. */
+    var PIN_KEY = "usn_pins__" + instanceId;
+    var ZU_KEY  = "usn_closed__" + instanceId;
+    function pinsLesen(){
+      try {
+        var r = JSON.parse(localStorage.getItem(PIN_KEY) || "[]");
+        return Array.isArray(r) ? r.filter(function(x){ return x && x.type && x.id != null; }) : [];
+      } catch(e){ return []; }
+    }
+    function pinsSchreiben(l){ try { localStorage.setItem(PIN_KEY, JSON.stringify(l)); } catch(e){} }
+    function zuLesen(){
+      try { var r = JSON.parse(localStorage.getItem(ZU_KEY) || "[]"); return Array.isArray(r) ? r : []; }
+      catch(e){ return []; }
+    }
+    function zuSchreiben(l){ try { localStorage.setItem(ZU_KEY, JSON.stringify(l)); } catch(e){} }
+
     var vorrat = speicher(instanceId);
     var state = {
       klasse: "",            /* wide | mini | hint -- aus der Fensterbreite */
@@ -196,6 +222,8 @@
       count: attr("data-prompt-count"),
       countDa: attr("data-prompt-count") !== "",
       suche: "",
+      /* Angeheftete Eintraege und zugeklappte Gruppen -- beide aus dem localStorage, siehe oben. */
+      pins: pinsLesen(), zu: zuLesen(),
       gemeldet: ""           /* zuletzt gefeuerter usnState-Payload, siehe anwenden() */
     };
 
@@ -312,6 +340,9 @@
       fab.classList.toggle("is-on", hint && !state.offen);
       scrim.classList.toggle("is-on", hint && state.offen);
 
+      /* Beim Wechsel zwischen wide und mini muessen die Gruppenhoehen neu gesetzt werden --
+         im Mini-Zustand ohne Grenze, danach wieder mit der gemessenen. */
+      if (typeof hoehenSetzen === "function") setTimeout(hoehenSetzen, 0);
       elToggle.hidden = hint;
       elToggle.setAttribute("aria-label", mini ? "Expand sidebar" : "Collapse sidebar");
 
@@ -360,28 +391,87 @@
       if (window.console) console.warn("[sidebar] \"" + state.aktiv + "\" ist kein Menuepunkt. " +
         "Moeglich sind: " + NAV_KEYS.join(", "));
     }
+    /* Ein angehefteter Eintrag: Bild vorne, einzeiliger Name, rechts das X zum Entfernen.
+       Dieselbe Zeilenform wie ein Menuepunkt, damit die Gruppe kein Fremdkoerper ist. Das Bild
+       ist .up-logo-box aus core -- beim Prompt die Flagge des Marktes, sonst Logo bzw. Favicon.
+       Faellt es aus, bleibt der Anfangsbuchstabe. */
+    function pinHtml(pin, i){
+      return '<button class="usn-item usn-pin" type="button" data-pin="' + i + '" ' +
+        'title="' + esc(pin.label || "") + '">' +
+        '<span class="usn-pin-ic">' + logoHtml(pin.label, pin.logo) + '</span>' +
+        '<span class="usn-txt">' + esc(pin.label || "") + '</span>' +
+        '<span class="usn-pin-x" data-unpin="' + i + '" role="button" tabindex="-1" ' +
+        'aria-label="Remove from pinned">' + ic("x") + '</span>' +
+      '</button>';
+    }
+    function navItemHtml(it){
+      var extra = "";
+      if (it.count) extra = '<span class="usn-count usn-fade" data-count>' +
+        (state.countDa ? esc(state.count || "")
+                       : (state.countErwartet ? '<span class="usn-sk"></span>' : "")) + '</span>';
+      if (it.brands) extra = '<span class="usn-count usn-fade" data-brandcount>' +
+        (state.brandsDa ? esc(state.brands == null ? "" : String(state.brands))
+                        : '<span class="usn-sk"></span>') + '</span>';
+      if (it.chips) extra = '<span class="usn-chips usn-fade" data-chips></span>';
+      return '<button class="usn-item' + (it.key === state.aktiv ? " is-active" : "") + '" ' +
+        'type="button" data-nav-key="' + esc(it.key) + '" title="' + esc(it.label) + '">' +
+        '<span class="usn-ic' + (it.icon === "mira" ? " has-mira" : "") + '">' + ic(it.icon) + '</span>' +
+        '<span class="usn-txt">' + esc(it.label) + '</span>' + extra + '</button>';
+    }
     function renderNav(){
       aktivPruefen();
       elNav.innerHTML = BLOECKE.map(function(b){
-        return '<div class="usn-block">' +
-          '<span class="usn-head">' + esc(b.head) + '</span>' +
-          b.items.map(function(it){
-            var extra = "";
-            if (it.count) extra = '<span class="usn-count usn-fade" data-count>' +
-              (state.countDa ? esc(state.count || "")
-                             : (state.countErwartet ? '<span class="usn-sk"></span>' : "")) + '</span>';
-            if (it.brands) extra = '<span class="usn-count usn-fade" data-brandcount>' +
-              (state.brandsDa ? esc(state.brands == null ? "" : String(state.brands))
-                              : '<span class="usn-sk"></span>') + '</span>';
-            if (it.chips) extra = '<span class="usn-chips usn-fade" data-chips></span>';
-            return '<button class="usn-item' + (it.key === state.aktiv ? " is-active" : "") + '" ' +
-              'type="button" data-nav-key="' + esc(it.key) + '" title="' + esc(it.label) + '">' +
-              '<span class="usn-ic' + (it.icon === "mira" ? " has-mira" : "") + '">' + ic(it.icon) + '</span>' +
-              '<span class="usn-txt">' + esc(it.label) + '</span>' + extra + '</button>';
-          }).join("") +
+        /* Die Pinned-Gruppe entsteht nur, wenn etwas angeheftet ist -- eine Ueberschrift ohne
+           Inhalt ist kein Abschnitt, sondern ein Loch. */
+        if (b.pinned && !state.pins.length) return "";
+        var zu = state.zu.indexOf(b.head) >= 0;
+        var inhalt = b.pinned ? state.pins.map(pinHtml).join("")
+                              : b.items.map(navItemHtml).join("");
+        /* Die Ueberschrift ist ein Knopf: ein Klick klappt die Gruppe zu. Der Chevron erscheint
+           erst beim Hover, mit Verzoegerung -- im Ruhezustand soll die Leiste ruhig bleiben. */
+        return '<div class="usn-block' + (zu ? " is-closed" : "") + '" data-block="' + esc(b.head) + '">' +
+          '<button class="usn-head usn-fade" type="button" data-head="' + esc(b.head) + '" ' +
+          'aria-expanded="' + (zu ? "false" : "true") + '">' +
+            '<span class="usn-head-lbl">' + esc(b.head) + '</span>' +
+            '<span class="usn-head-chev">' + ic("chevronDown") + '</span>' +
+          '</button>' +
+          '<div class="usn-block-body" data-body>' + inhalt + '</div>' +
         '</div>';
       }).join("");
       renderChips();
+      hoehenSetzen();
+    }
+    /* Die Hoehe wird GEMESSEN und als Zahl gesetzt: von auto auf 0 gibt es keinen Uebergang, und
+       ein geschaetzter Maximalwert laesst die Gruppe erst spaet in Bewegung kommen. */
+    function hoehenSetzen(){
+      /* Im Mini-Zustand hat keine Gruppe eine Grenze: die Ueberschrift ist dort weg, es gaebe
+         also keinen Weg zurueck aus dem zugeklappten Zustand. Den inline-Wert leeren statt ihn
+         per CSS zu ueberschreiben -- dafuer braeuchte es !important. */
+      var mini = bar.classList.contains("is-mini");
+      [].forEach.call(elNav.querySelectorAll(".usn-block"), function(bl){
+        var body = bl.querySelector("[data-body]");
+        if (!body) return;
+        if (mini){ body.style.maxHeight = ""; return; }
+        body.style.maxHeight = bl.classList.contains("is-closed") ? "0px" : body.scrollHeight + "px";
+      });
+    }
+    function gruppeSchalten(head){
+      var i = state.zu.indexOf(head);
+      if (i >= 0) state.zu.splice(i, 1); else state.zu.push(head);
+      zuSchreiben(state.zu);
+      var bl = null;
+      [].forEach.call(elNav.querySelectorAll("[data-block]"), function(x){
+        if (x.getAttribute("data-block") === head) bl = x;
+      });
+      if (!bl) return;
+      var body = bl.querySelector("[data-body]");
+      var zu = state.zu.indexOf(head) >= 0;
+      /* Vor dem Zuklappen die gemessene Hoehe setzen, sonst faellt der Kasten von auto auf 0 und
+         der Uebergang hat keinen Startwert. */
+      if (zu){ body.style.maxHeight = body.scrollHeight + "px"; void body.offsetHeight; }
+      bl.classList.toggle("is-closed", zu);
+      bl.querySelector("[data-head]").setAttribute("aria-expanded", zu ? "false" : "true");
+      body.style.maxHeight = zu ? "0px" : body.scrollHeight + "px";
     }
     /* Die Team-Vorschau neben "Teams": UC.brandStack, dieselben Chips wie die erwaehnten Marken
        in den Tabellen. Drei Logos, der Rest als "+N". */
@@ -550,6 +640,20 @@
         return;
       }
 
+      var hd = t.closest("[data-head]");
+      if (hd){ gruppeSchalten(hd.getAttribute("data-head")); return; }
+
+      /* Das X liegt IM Pin-Knopf -- also zuerst pruefen, sonst loest beides aus. */
+      var ux = t.closest("[data-unpin]");
+      if (ux){ pinEntfernen(parseInt(ux.getAttribute("data-unpin"), 10)); return; }
+      var pb = t.closest("[data-pin]");
+      if (pb){
+        var pin = state.pins[parseInt(pb.getAttribute("data-pin"), 10)];
+        if (pin) fire("data-pinned-fn", "usnPinned", { type: pin.type, id: pin.id });
+        if (state.klasse === "hint"){ state.offen = false; anwenden(); }
+        return;
+      }
+
       var nb = t.closest("[data-nav-key]");
       if (nb){
         var k = nb.getAttribute("data-nav-key");
@@ -621,6 +725,34 @@
     /* Theme-Wechsel: das Mira-Symbol hat zwei Fassungen, und der Haken im Konto-Menue muss
        mitwandern. */
     UC.onTheme(function(){ renderNav(); qaAufbauen(0); if (popAcc.isOpen()) renderAccMenu(); });
+
+    function pinHinzu(p){
+      if (!p || !p.type || p.id == null) return false;
+      var id = String(p.id);
+      /* Schon angeheftet? Dann nach oben holen statt doppelt fuehren. */
+      state.pins = state.pins.filter(function(x){ return !(x.type === p.type && String(x.id) === id); });
+      state.pins.unshift({ type: p.type, id: id, label: String(p.label || id), logo: String(p.logo || "") });
+      /* Ueber der Grenze faellt der LETZTE der Liste heraus -- also der aelteste, weil Neues oben
+         einsortiert wird. */
+      if (state.pins.length > PIN_MAX) state.pins = state.pins.slice(0, PIN_MAX);
+      pinsSchreiben(state.pins);
+      /* Die Gruppe aufklappen, wenn gerade etwas hineingelegt wurde: ein Anheften in eine
+         zugeklappte Gruppe sieht aus, als haette es nicht gewirkt. */
+      var iz = state.zu.indexOf("Pinned");
+      if (iz >= 0){ state.zu.splice(iz, 1); zuSchreiben(state.zu); }
+      renderNav();
+      if (UC.toast) UC.toast("Pinned to sidebar", { icon: "check" });
+      return true;
+    }
+    function pinEntfernen(i){
+      if (!(i >= 0) || !state.pins[i]) return;
+      state.pins.splice(i, 1);
+      pinsSchreiben(state.pins);
+      renderNav();
+    }
+    /* Der Weg, den quick-actions ruft. Auf window, weil die Palette die Leiste nicht kennt und
+       nicht kennen soll. */
+    window.upstreemPinToSidebar = function(p){ return pinHinzu(p); };
 
     /* Der Marken-Store von core: Startwert holen, dann auf Aenderungen hoeren. onBrands nimmt
        den Root als Besitzer, damit das Abo mit dem Element verschwindet. */
