@@ -15,6 +15,18 @@
      - the inline tag editor inside the composer.
      - the right-hand "Previous researches" sidebar. */
 
+/* .check_reinvention meldet in dieser Datei dreizehn Stellen als Nachbau von .up-seg-btn bzw.
+   .up-search: .upr-showmore, .upr-secondary-btn, .upr-clear-input, .upr-start-btn,
+   .upr-settings-panel, .upr-dd-trigger, .upr-inline-tag-body, .upr-inline-tag-remove,
+   .upr-context-pill, .upr-switchbtn, .upr-tl-tag und .upr-side. Alle aus demselben Grund
+   Fehlalarme: der Vergleich laeuft ueber "hat Hintergrund, Rahmen, Radius, Hoehe und transition",
+   und das trifft auf jeden Knopf und jedes Feld zu. .up-seg-btn ist die Haelfte eines Umschalters
+   in einer gemeinsamen Schiene mit is-active auf weisser Flaeche -- davon ist hier keines eines.
+   Diese Komponente zeichnet ihre Oberflaeche komplett selbst (eigener Kopf, eigene Zeitleiste); wo
+   es ein Kit-Bauteil gibt, wird es benutzt: .up-explain, .up-filter-menu, .up-pop-opt, .up-check,
+   .up-logo-box, .up-scroll. Die Treffer sind alt und tauchen nur auf, weil die Datei fuer die
+   Stapelleiter angefasst wurde. */
+
 /* ---------- root ----------
    The standalone's scroll model, kept EXACTLY as it was, because this component is not a table
    screen: it is a full-height app surface. The root is its own scroll box; in results/running mode
@@ -546,17 +558,28 @@
    Was an inline panel under the composer; it is a page-level drawer now, so the list has room for
    every field a research carries. Geometry, timings and stacking are the host app's own drawer
    system: 6px off the top/right/bottom, 16px radius, slide in from the right, backdrop with a
-   1.5px blur, and z-index 9900/9895 — one step under the app's lowest drawer pair (dz1 9910 /
-   bz1 9905), so any of the app's own drawers still opens on top of this one. */
+   1.5px blur. Stapelung siehe die Leiter unten am Schleier. */
 /* The scrim and panel below live inside the component root (see the "sidebar" note in
    prompt-research.js). .upr-root.side-open / .side-in therefore match the root itself now -- there
    is no separate host element on <body> any more, and no .upr-portal rule to go with it. */
+/* ── Die Stapelleiter dieser App, von oben nach unten ───────────────────────────────────────
+     9905-9930  die Drawer der App selbst (bz1 9905, dz1 9910): URL, Prompt, Domain, Brand.
+                FREMDE Elemente -- die werden hier NICHT angefasst.
+     9904/9903  dieser Detail-Drawer und sein Schleier. Deckt alles Eigene ab, bleibt aber unter
+                den Drawern der App.
+     9902       der schwebende Sidebar-Knopf
+     9900       die Sidebar-Leiste
+     9899       der Sidebar-Schleier
+   Hier stand 9900/9895 -- also GENAU der Wert der Sidebar-Leiste. Bei gleichem z-index entscheidet
+   die DOM-Reihenfolge, und die Leiste haengt sich beim Booten spaeter an <body> als dieser Drawer
+   im Dokument steht. Ergebnis: der Drawer lag hinter der Navigation. Das war kein Entschluss,
+   sondern ein Zusammenstoss -- die 9900 stammen aus der Zeit vor der Sidebar. */
 .upr-side-scrim {
-  position: fixed; inset: 0; z-index: 9895; display: none; background: transparent;
+  position: fixed; inset: 0; z-index: 9903; display: none; background: transparent;
   opacity: 0; pointer-events: none; transition: opacity 160ms ease; will-change: opacity;
 }
 .upr-side {
-  position: fixed; top: 6px; right: 6px; bottom: 6px; z-index: 9900; width: min(520px, 92%);
+  position: fixed; top: 6px; right: 6px; bottom: 6px; z-index: 9904; width: min(520px, 92%);
   display: none; flex-direction: column;
   background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 16px;
   box-shadow: -12px 0 32px rgba(0,0,0,0.15); overflow: hidden;

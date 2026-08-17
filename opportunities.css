@@ -14,6 +14,11 @@
    tooltip systems). The component's JS behaviour, its event contract and its public API are
    unchanged; this was a purely visual migration. */
 
+/* .check_reinvention meldet fuer .uo-modal das Bauteil .up-search -- Fehlalarm ueber die
+   gemeinsamen Eigenschaften overflow, transition und width. .up-search ist ein Eingabefeld, das in
+   der Breite aufklappt; .uo-modal ist ein Drawer, der von rechts hereinfaehrt. Gemeinsam ist nur,
+   dass beide ihre Breite animieren. */
+
 /* ---------- root ----------
    .up-root supplies every colour token, the font stack and the flex column; only the padding and
    the two genuinely local tokens live here. Kept as a separate class from .up-root so a future
@@ -272,17 +277,28 @@
      - edge to edge, no inset and no radius: full screen height, flush right
      - closed at translateX(110%), 180ms ease-in out / 220ms cubic-bezier(.32,.72,0,1) in
      - backdrop 160ms/200ms ease with a 1.5px blur
-     - z-index 9900/9895, one step under the app's lowest drawer pair (dz1 9910 / bz1 9905), so any
-       of the app's own drawers still opens on top of this one. */
+     - Stapelung siehe die Leiter unten am Schleier. */
+/* ── Die Stapelleiter dieser App, von oben nach unten ───────────────────────────────────────
+     9905-9930  die Drawer der App selbst (bz1 9905, dz1 9910): URL, Prompt, Domain, Brand.
+                FREMDE Elemente -- die werden hier NICHT angefasst.
+     9904/9903  dieser Detail-Drawer und sein Schleier. Deckt alles Eigene ab, bleibt aber unter
+                den Drawern der App.
+     9902       der schwebende Sidebar-Knopf
+     9900       die Sidebar-Leiste
+     9899       der Sidebar-Schleier
+   Hier stand 9900/9895 -- also GENAU der Wert der Sidebar-Leiste. Bei gleichem z-index entscheidet
+   die DOM-Reihenfolge, und die Leiste haengt sich beim Booten spaeter an <body> als dieser Drawer
+   im Dokument steht. Ergebnis: der Drawer lag hinter der Navigation. Das war kein Entschluss,
+   sondern ein Zusammenstoss -- die 9900 stammen aus der Zeit vor der Sidebar. */
 .uo-scrim {
-  position: fixed; inset: 0; z-index: 9895; display: none; background: transparent;
+  position: fixed; inset: 0; z-index: 9903; display: none; background: transparent;
   opacity: 0; pointer-events: none;
   transition: opacity 160ms ease; will-change: opacity;
 }
 .uo-modal {
   /* Floating card, not flush to the edges: 6px off the top, right and bottom, rounded and framed
      all round. The 110% slide still clears the viewport with the inset in place. */
-  position: fixed; top: 6px; right: 6px; bottom: 6px; z-index: 9900; width: min(720px, 86%);
+  position: fixed; top: 6px; right: 6px; bottom: 6px; z-index: 9904; width: min(720px, 86%);
   display: none; flex-direction: column;
   background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 16px;
   box-shadow: -12px 0 32px rgba(0,0,0,0.15); overflow: hidden;
