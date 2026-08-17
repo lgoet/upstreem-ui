@@ -372,15 +372,22 @@
     document.body.appendChild(bar);
     document.body.appendChild(fab);
     /* Die Leiste haengt an <body>, also ausserhalb jeder Wurzel, die der Theme-Durchlauf beim
-       Setzen schon gesehen hat. Einmal von Hand nachziehen, was gerade gilt. */
+       Setzen schon gesehen hat. Einmal von Hand nachziehen, was gerade gilt.
+       Gefragt wird UC.getUpstreemTheme(), NICHT der localStorage. Der ist bei der Wahl "System"
+       naemlich absichtlich leer -- und dann blieb die Leiste hell, waehrend die ganze App dunkel
+       war. Zu sehen war das an der Mira-Wortmarke: die haengt an data-theme der Leiste und stand
+       im Dunkelmodus in der hellen Fassung. Der Rest der Leiste faerbt ueber dieselben Attribute,
+       fiel aber weniger auf.
+       Beide Zustaende setzen, nicht nur dunkel: die Elemente werden bei einem Neuaufbau erneut
+       erzeugt, und ein stehengebliebenes data-theme waere derselbe Fehler in der anderen
+       Richtung. Gleiche Bauart wie applyThemeTo in core. */
     try {
-      var jetzt = null;
-      try { jetzt = localStorage.getItem("pref_theme"); } catch(e){}
-      if (jetzt === "dark"){
-        [bar, fab, scrim].forEach(function(el){
-          el.setAttribute("data-theme", "dark"); el.setAttribute("data-isdark", "yes");
-        });
-      }
+      var dunkelJetzt = (UC.getUpstreemTheme ? UC.getUpstreemTheme() : "light") === "dark";
+      [bar, fab, scrim].forEach(function(el){
+        if (dunkelJetzt) el.setAttribute("data-theme", "dark");
+        else el.removeAttribute("data-theme");
+        el.setAttribute("data-isdark", dunkelJetzt ? "yes" : "no");
+      });
     } catch(e){}
 
     var elTop      = bar.querySelector("[data-top]");

@@ -1,0 +1,41 @@
+<meta charset="utf-8"><title>sidebar bei system-theme</title>
+<style>html,body{margin:0;height:100%;font:12px ui-monospace,monospace}
+#main{min-height:100%;padding-left:var(--up-sidebar-w,250px)} pre{padding:10px;white-space:pre-wrap}</style>
+<body><div id="main"><pre id="out">laeuft</pre></div>
+<div id="mira-quick-actions" data-theme="light" data-team=""></div>
+<div class="up-root usn-root" data-instance="s9" data-isdark="no"
+     data-team-id="ca880309-251e-4513-8901-8c5f8583f624" data-active="dashboard"
+     data-nav-fn="bubble_fn_usnNav"></div>
+<script>
+["usnNav","usnTheme","usnState","usnPinned","usnTeam","usnAccount","usnLogout","usnNewTeam"].forEach(function(n){
+  window["bubble_fn_"+n]=function(){};
+});
+/* DER FALL: Wahl "System". Genau dann ist der localStorage leer -- und die Leiste entsteht
+   erst danach. Vorher las sie den localStorage und blieb hell. */
+try { localStorage.removeItem("pref_theme"); } catch(e){}
+(function(){
+  var files=["sidebar.css","core.css","core.js","sidebar.js"], texts={};
+  Promise.all(files.map(function(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"})
+    .then(function(r){return r.text()}).then(function(t){texts[f]=t}); })).then(function(){
+      /* core zuerst, dann system setzen -- danach erst sidebar.js, wie auf der echten Seite:
+         der Pageload-Workflow laeuft, bevor das Sidebar-Element fertig gebaut ist. */
+      [ "sidebar.css","core.css" ].forEach(function(f){ var s=document.createElement("style"); s.textContent=texts[f]; document.head.appendChild(s); });
+      var j=document.createElement("script"); j.textContent=texts["core.js"]; document.head.appendChild(j);
+      setUpstreemTheme("system");
+      var j2=document.createElement("script"); j2.textContent=texts["sidebar.js"]; document.head.appendChild(j2);
+      setTimeout(function(){
+        var bar=document.querySelector(".usn-bar"), m=bar?bar.querySelector(".usn-mira"):null;
+        var acc=bar?bar.querySelector(".usn-accwrap"):null, nav=bar?bar.querySelector(".usn-nav"):null;
+        var res={ system_ist: (window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light",
+          getUpstreemTheme: getUpstreemTheme(),
+          localStorage: (function(){try{return localStorage.getItem("pref_theme")}catch(e){return "?"}})(),
+          bar_theme: bar?bar.getAttribute("data-theme"):"keine bar",
+          bar_bg: bar?getComputedStyle(bar).backgroundColor:null,
+          mira_src: m?(m.getAttribute("src")||"").split("/").pop():"kein bild",
+          abstand_nav_zu_konto: (nav&&acc)?Math.round(acc.getBoundingClientRect().top-nav.getBoundingClientRect().bottom):null,
+          margin_top: acc?getComputedStyle(acc).marginTop:null };
+        document.getElementById("out").textContent=JSON.stringify(res,null,1); window.__fertig=res;
+      }, 1200);
+  });
+})();
+</script>

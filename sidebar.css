@@ -425,7 +425,11 @@
 .usn-bar.is-pindrag, .usn-bar.is-pindrag * { user-select: none; -webkit-user-select: none; }
 
 /* ---------- Konto ---------- */
-.usn-accwrap { flex: 0 0 auto; margin-top: 16px; }
+/* 64px zwischen dem letzten Eintrag der Navigation und der Konto-Zeile, nicht 16. Die Zeile
+   gehoert nicht zur Liste darueber -- sie ist der Ausgang aus der App, und dieser Abstand ist
+   das, was das sagt. Es ist ein MINDEST-Abstand: reicht die Liste bis nach unten, scrollt sie in
+   .usn-nav, und die 64px bleiben trotzdem stehen, weil sie ausserhalb des Scrollbereichs liegen. */
+.usn-accwrap { flex: 0 0 auto; margin-top: 64px; }
 .usn-acc {
   width: 100%; display: flex; align-items: center; gap: 10px;
   padding: 8px; border: 0; border-radius: 12px; background: transparent;
