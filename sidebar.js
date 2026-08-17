@@ -47,6 +47,14 @@
     usnRun();
   }
 
+  /* Bubble baut das Traegerelement waehrend des Seitenaufbaus neu auf. Der neue Controller
+     faengt bei null an -- Teamname und Konto standen also kurz richtig da und wurden dann wieder
+     zu Skeletten, weil die Daten am ALTEN Controller hingen. Sie liegen deshalb hier, ausserhalb
+     des Controllers, nach Instanz getrennt. Dasselbe Muster wie MODELS_STORE in settings-brand,
+     wo die Modelle nach dem Speichern verschwanden. */
+  var STORE = window.__usnStore = window.__usnStore || {};
+  function speicher(id){ return STORE[id] || (STORE[id] = {}); }
+
   var BREIT = 900, MINI = 500;
   var W_WIDE = 250, W_MINI = 64;
 
@@ -165,20 +173,21 @@
     function prefLesen(){ try { return localStorage.getItem(PREF) === "yes"; } catch(e){ return false; } }
     function prefSchreiben(v){ try { localStorage.setItem(PREF, v ? "yes" : "no"); } catch(e){} }
 
+    var vorrat = speicher(instanceId);
     var state = {
       klasse: "",            /* wide | mini | hint -- aus der Fensterbreite */
       eingeklappt: prefLesen(),
       offen: false,          /* nur im hint-Zustand: faehrt die Leiste ueber den Inhalt */
       aktiv: attr("data-active", "dashboard"),
-      teams: [], team: null,
+      teams: vorrat.teams || [], team: vorrat.team || null,
       /* Getrennt vom Inhalt: "noch nichts angekommen" ist ein anderer Zustand als "angekommen
          und leer". Nur der erste zeigt Skelette -- der zweite zeigt, was da ist. */
-      teamsDa: false, userDa: false,
+      teamsDa: !!vorrat.teamsDa, userDa: !!vorrat.userDa,
       /* Der Marken-Zaehler kommt aus dem Store von core (setUpstreemBrands), nicht aus einem
          eigenen Setter -- die Liste liegt auf der Seite ohnehin. brandsDa trennt wieder
          "noch nichts da" von "da und leer". */
-      brands: null, brandsDa: false,
-      user: { name: "", email: "", avatar: "" },
+      brands: vorrat.brands == null ? null : vorrat.brands, brandsDa: !!vorrat.brandsDa,
+      user: vorrat.user || { name: "", email: "", avatar: "" },
       /* Zwei Fragen, zwei Flaggen. Traegt das Element das Attribut ueberhaupt, will die Seite
          einen Zaehler -- dann steht bis zum ersten Wert ein Skelett. Fehlt das Attribut ganz,
          gibt es keinen Zaehler und auch kein Skelett. Sonst haette eine Seite, die bewusst ohne
@@ -506,7 +515,7 @@
         var neu = (state.teams || []).filter(function(x){ return String(x.id) === id; })[0];
         /* Sofort umstellen, nicht auf die Antwort warten: der Teamwechsel laedt die halbe Seite
            neu, und eine Leiste, die dabei den alten Namen zeigt, sieht aus wie ein Fehlklick. */
-        if (neu){ state.team = neu; renderTeam(); }
+        if (neu){ state.team = neu; vorrat.team = neu; renderTeam(); }
         menuZu();
         fire("data-team-fn", "usnTeam", { team_id: id });
         return;
@@ -618,6 +627,7 @@
     function brandsUebernehmen(liste){
       if (!Array.isArray(liste)) return;
       state.brands = liste.length; state.brandsDa = true;
+      vorrat.brands = state.brands; vorrat.brandsDa = true;
       var el = elNav.querySelector("[data-brandcount]");
       if (el) el.textContent = String(state.brands);
     }
@@ -699,11 +709,13 @@
         }
         state.teams = l;
         state.teamsDa = true;
+        vorrat.teams = l; vorrat.teamsDa = true;
         var cur = attr("data-team-id");
         var treffer = state.teams.filter(function(t){ return String(t.id) === cur; })[0];
         /* Ohne data-team-id das erste Team: eine Leiste ohne Namen oben sieht kaputt aus, und
            die Liste kommt ohnehin mit dem aktuellen Team zuerst. */
         state.team = treffer || state.teams[0] || null;
+        vorrat.team = state.team;
         renderTeam(); renderChips();
         /* Immer neu zeichnen, nicht nur wenn offen: sonst steht im Panel noch "No teams found"
            aus dem Moment vor den Daten, bis es einmal geoeffnet wurde. */
@@ -727,6 +739,7 @@
           email: String(p.email || ""),
           avatar: String(p.avatar_url || p.avatar || "")
         };
+        vorrat.user = state.user; vorrat.userDa = true;
         renderAcc();
         return true;
       },

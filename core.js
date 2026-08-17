@@ -1431,20 +1431,6 @@
      Clicking a column header walks that column's cycle (e.g. share:desc -> share:asc ->
      share_trend:desc …) and falls back to the table's default once the cycle is exhausted.
      cfg: { root, state, cycles, defaultSort, trendField, onSort } */
-  /* Der Sortierer im Tabellenkopf. Ein Zeichen statt zwei gestapelten Chevrons: ungeordnet
-     arrow-down-up, sortiert der Pfeil in die tatsaechliche Richtung. Geschrieben wird es hier zur
-     LAUFZEIT und nicht im Markup -- in vier der fuenf Tabellen steht der Kopf als handgemachte
-     Kopie im Bubble-Element, und was nur dort stuende, erreicht kein CDN-Pin. */
-  var SORT_ICONS = {
-    neutral: '<path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/>',
-    asc:     '<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>',
-    desc:    '<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>'
-  };
-  function sortIconHtml(zustand){
-    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
-      'stroke-linecap="round" stroke-linejoin="round">' + (SORT_ICONS[zustand] || SORT_ICONS.neutral) + '</svg>';
-  }
-
   function makeHeadSort(cfg){
     var root = cfg.root, state = cfg.state;
     var TREND = cfg.trendField || null;   // a second sort key that shares the Share column
@@ -1457,13 +1443,6 @@
           ? (state.sortField === "share" || state.sortField === TREND)
           : (state.sortField === col);
         if (owns) el.classList.add(state.sortDir === "asc" ? "is-asc" : "is-desc");
-        /* Das Zeichen selbst nachziehen. Nur schreiben, wenn es sich aendert -- sonst haengt an
-           jedem Sortierklick ein innerHTML fuer jede Spalte. */
-        var soll = owns ? (state.sortDir === "asc" ? "asc" : "desc") : "neutral";
-        if (el.getAttribute("data-sortic") !== soll){
-          el.setAttribute("data-sortic", soll);
-          el.innerHTML = sortIconHtml(soll);
-        }
         var th = el.closest(".up-th");
         if (th) th.setAttribute("aria-sort", owns ? (state.sortDir === "asc" ? "ascending" : "descending") : "none");
       });
@@ -1782,6 +1761,57 @@
      Lucide settings-2 (zwei Regler mit Knoepfen) statt sliders-vertical: die neun Striche des
      Faders wirkten bei 15px wie ein Gitter. */
   var SLIDERS_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 17H5"/><path d="M19 7h-9"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>';
+
+  /* ---- Icon-Knoepfe der Tabellen-Toolbar ----------------------------------------------------
+     Sorter, Tabelleneinstellungen und Fader sitzen als Markup IM Bubble-Element. Der CDN-Pin
+     liefert JS und CSS, das Markup ist eine handgemachte Kopie -- ein Icon, das nur dort steht,
+     bleibt fuer immer auf dem Stand, den jemand zuletzt eingefuegt hat. Deshalb schreibt core sie
+     zur LAUFZEIT hinein, wie SLIDERS_ICON es fuer den Fader schon vorgemacht hat.
+     Der Gruppierungsknopf (.upt-group-btn) ist ausdruecklich NICHT dabei: sein Zeichen bleibt.
+     data-up-ic merkt sich, was schon steht -- ohne die Marke schriebe jeder Durchlauf erneut. */
+  var TOOLBAR_ICONS = {
+    /* Sortieren: arrow-down-up. Vorher stand hier der Trichter mit drei Linien -- der ist die
+       Filterform und stand am Sortierknopf falsch. */
+    "up-sort-btn":  '<path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/>',
+    /* Tabelleneinstellungen: Lucide settings. Das alte Zahnrad war das von Feather, mit mehr
+       Zacken -- daran hat man den Unterschied gesehen. */
+    "up-cols-btn":  '<path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/>',
+    /* Fader: settings-2, zwei Regler mit Knoepfen. */
+    "urt-fader-btn":'<path d="M14 17H5"/><path d="M19 7h-9"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/>',
+    /* Suche und Schliessen im Suchfeld -- dieselbe Begruendung, dieselbe Stelle. */
+    "up-search-btn":'<path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/>',
+    "up-search-clear":'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>'
+  };
+  function stampToolbarIcons(wurzel){
+    var ziel = wurzel || document;
+    var k, els, i, b, strich;
+    for (k in TOOLBAR_ICONS){
+      if (!Object.prototype.hasOwnProperty.call(TOOLBAR_ICONS, k)) continue;
+      try { els = ziel.querySelectorAll("." + k); } catch(e){ continue; }
+      for (i = 0; i < els.length; i++){
+        b = els[i];
+        if (b.getAttribute("data-up-ic") === k) continue;
+        /* Die Strichstaerke aus dem vorhandenen SVG uebernehmen: das X im Suchfeld traegt 2.2,
+           die anderen 2, und das ist Absicht -- ein einheitlicher Wert wuerde ein halbes Dutzend
+           Knoepfe anders aussehen lassen. */
+        strich = (b.querySelector("svg") && b.querySelector("svg").getAttribute("stroke-width")) || "2";
+        /* Nur das SVG tauschen, alles andere im Knopf bleibt (Badges, Punkte, Beschriftungen). */
+        var alt = b.querySelector("svg");
+        var neu = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + strich +
+          '" stroke-linecap="round" stroke-linejoin="round">' + TOOLBAR_ICONS[k] + '</svg>';
+        if (alt){ alt.outerHTML = neu; } else { b.insertAdjacentHTML("afterbegin", neu); }
+        b.setAttribute("data-up-ic", k);
+      }
+    }
+  }
+  /* Beim Laden und danach: Bubble baut Elemente in Schueben und spaeter erneut auf. */
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function(){ stampToolbarIcons(); });
+  else stampToolbarIcons();
+  [60, 250, 700, 1500, 3000].forEach(function(ms){ setTimeout(function(){ stampToolbarIcons(); }, ms); });
+  if (window.MutationObserver){
+    new MutationObserver(function(){ stampToolbarIcons(); })
+      .observe(document.documentElement, { childList: true, subtree: true });
+  }
 
   /* Tooltip for text that is clamped/ellipsised — shows the full string only when it actually
      does not fit. prompts-table grew this first; responses-table needs the identical behaviour
