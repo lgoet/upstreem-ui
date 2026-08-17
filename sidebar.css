@@ -331,6 +331,18 @@
 .usn-pin:hover .usn-pin-x { opacity: 1; transition-delay: 220ms, 0ms; }
 .usn-pin-x:hover { color: var(--vc-text); }
 .usn-bar.is-mini .usn-pin-x { display: none; }
+/* ---- Umsortieren per Ziehen ----
+   Die gezogene Zeile wird durchscheinend, die Zielkante zeigt eine Linie. Kein Geisterbild und
+   kein Verschieben der Zeile selbst: bei fuenf Eintraegen reicht die Kante, und alles andere
+   waere Bewegung ohne Nutzen. */
+.usn-pin { cursor: pointer; }
+.usn-bar.is-pindrag { cursor: grabbing; }
+.usn-bar.is-pindrag .usn-pin { cursor: grabbing; }
+.usn-pin.is-dragging { opacity: .45; }
+.usn-pin.is-dropbefore { box-shadow: inset 0 2px 0 0 var(--vc-text); }
+.usn-pin.is-dropafter { box-shadow: inset 0 -2px 0 0 var(--vc-text); }
+/* Waehrend des Ziehens keine Textauswahl -- sonst markiert der Zeiger die Namen. */
+.usn-bar.is-pindrag, .usn-bar.is-pindrag * { user-select: none; -webkit-user-select: none; }
 
 /* ---------- Konto ---------- */
 .usn-accwrap { flex: 0 0 auto; margin-top: 16px; }

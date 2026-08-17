@@ -610,7 +610,10 @@
         fire("data-team-fn", "usnTeam", { team_id: id });
         return;
       }
-      if (t.closest("[data-newteam]")){ menuZu(); fire("data-newteam-fn", "usnNewTeam", {}); return; }
+      /* action mitgeben, obwohl es nur einen Fall gibt: ein Payload aus nichts als team_id
+         laesst sich in Bubble schlecht auf einen Wert abbilden, und die Ereignisse, die beim
+         Nutzer schon laufen, tragen alle einen. */
+      if (t.closest("[data-newteam]")){ menuZu(); fire("data-newteam-fn", "usnNewTeam", { action: "new_team" }); return; }
 
       var ak = t.closest("[data-acc-key]");
       if (ak){
@@ -635,7 +638,7 @@
         /* Drei Wege statt einem: die drei Einstellungspunkte teilen ein Event mit action,
            Theme und Abmelden haben ihr eigenes. Vorher lief alles ueber usnProfile, und der
            Workflow musste erst per Bedingung auseinandersortieren, was gemeint war. */
-        if (key === "logout") fire("data-logout-fn", "usnLogout", {});
+        if (key === "logout") fire("data-logout-fn", "usnLogout", { action: "logout" });
         else fire("data-account-fn", "usnAccount", { action: key });
         return;
       }
@@ -648,6 +651,7 @@
       if (ux){ pinEntfernen(parseInt(ux.getAttribute("data-unpin"), 10)); return; }
       var pb = t.closest("[data-pin]");
       if (pb){
+        if (gezogen){ gezogen = false; return; }      /* der Klick gehoert zum Ziehen davor */
         var pin = state.pins[parseInt(pb.getAttribute("data-pin"), 10)];
         if (pin) fire("data-pinned-fn", "usnPinned", { type: pin.type, id: pin.id });
         if (state.klasse === "hint"){ state.offen = false; anwenden(); }
@@ -674,6 +678,16 @@
       var s = elTeamMenu.querySelector("[data-search]");
       if (s){ s.focus(); try { s.setSelectionRange(pos, pos); } catch(x){} }
     });
+
+    bar.addEventListener("pointerdown", function(e){
+      if (!e.target.closest) return;
+      if (e.target.closest("[data-unpin]")) return;          /* das x zieht nicht */
+      var k = e.target.closest("[data-pin]");
+      if (k) pinZiehStart(e, k);
+    });
+    bar.addEventListener("pointermove", pinZiehBewegt);
+    bar.addEventListener("pointerup", pinZiehEnde);
+    bar.addEventListener("pointercancel", pinZiehEnde);
 
     fab.addEventListener("click", function(){ state.offen = !state.offen; anwenden(); });
     scrim.addEventListener("click", function(){ state.offen = false; anwenden(); });
@@ -743,6 +757,60 @@
       renderNav();
       if (UC.toast) UC.toast("Pinned to sidebar", { icon: "check" });
       return true;
+    }
+    /* ---- Pins umsortieren ----
+       Eigene Zeiger-Behandlung statt der HTML5-Drag-API: die braucht ein draggable-Attribut,
+       zeichnet ein eigenes Geisterbild und laesst sich in einem position:fixed-Container nur mit
+       Muehe an der richtigen Stelle halten. Hier reicht pointerdown/move/up -- dieselbe Bauart
+       wie die Spaltenbreiten in den Tabellen.
+       Erst nach 4px Bewegung wird es ein Ziehen: ein Klick soll ein Klick bleiben. */
+    var zieh = null, gezogen = false;
+    function pinZiehStart(e, knopf){
+      var body = knopf.parentNode;
+      zieh = { von: parseInt(knopf.getAttribute("data-pin"), 10), knopf: knopf, body: body,
+               y0: e.clientY, aktiv: false, ziel: null };
+      try { knopf.setPointerCapture(e.pointerId); } catch(x){}
+    }
+    function pinZiehBewegt(e){
+      if (!zieh) return;
+      if (!zieh.aktiv){
+        if (Math.abs(e.clientY - zieh.y0) < 4) return;
+        zieh.aktiv = true;
+        zieh.knopf.classList.add("is-dragging");
+        bar.classList.add("is-pindrag");
+      }
+      /* Das Ziel ist die Zeile, ueber deren Mitte der Zeiger steht. */
+      var zeilen = [].slice.call(zieh.body.querySelectorAll(".usn-pin"));
+      var ziel = zieh.von;
+      for (var i = 0; i < zeilen.length; i++){
+        var r = zeilen[i].getBoundingClientRect();
+        if (e.clientY >= r.top && e.clientY <= r.bottom){ ziel = i; break; }
+        if (e.clientY < r.top && i === 0){ ziel = 0; break; }
+        if (e.clientY > r.bottom && i === zeilen.length - 1) ziel = zeilen.length - 1;
+      }
+      if (ziel !== zieh.ziel){
+        zieh.ziel = ziel;
+        zeilen.forEach(function(z, i){
+          z.classList.toggle("is-dropbefore", zieh.aktiv && i === ziel && ziel < zieh.von);
+          z.classList.toggle("is-dropafter",  zieh.aktiv && i === ziel && ziel > zieh.von);
+        });
+      }
+    }
+    function pinZiehEnde(){
+      if (!zieh) return;
+      var z = zieh; zieh = null;
+      bar.classList.remove("is-pindrag");
+      if (!z.aktiv) return;                          /* war nur ein Klick, nichts zu tun */
+      /* Nach einem Ziehen folgt ein click auf derselben Zeile. Der darf das Event nicht
+         ausloesen -- die Marke haelt genau diesen einen Klick auf. Sie kann nicht am Knopf
+         haengen, weil renderNav() ihn gleich ersetzt. */
+      gezogen = true;
+      if (z.ziel != null && z.ziel !== z.von){
+        var p = state.pins.splice(z.von, 1)[0];
+        state.pins.splice(z.ziel, 0, p);
+        pinsSchreiben(state.pins);
+      }
+      renderNav();
     }
     function pinEntfernen(i){
       if (!(i >= 0) || !state.pins[i]) return;

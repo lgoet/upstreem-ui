@@ -1795,6 +1795,18 @@
    "upr-settings-toggle"].forEach(function(k){
     TOOLBAR_ICONS[k] = TOOLBAR_ICONS["urt-fader-btn"];
   });
+  /* Knoepfe, die sich nicht ueber die Klasse allein ansprechen lassen: der Umschalter
+     Doughnut/Balken traegt beide Male dieselbe Klasse und unterscheidet sich nur am
+     data-chart. Deshalb ein zweiter Satz mit vollen Selektoren. */
+  var TOOLBAR_SEL = {
+    /* chart-bar-big: liegende Balken mit Achse. Vorher stand hier align-left, also drei Linien
+       ohne Achse -- als Diagramm-Zeichen zu wenig. */
+    '.cc-seg-btn[data-chart="bar"], .tcl-seg-btn[data-chart="bar"]':
+      '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><rect x="7" y="13" width="9" height="4" rx="1"/><rect x="7" y="5" width="12" height="4" rx="1"/>',
+    /* Der Sortierknopf in der Gruppierungsliste -- dieselbe Form wie in der Topbar. */
+    ".upt-grp-sidesort-btn":
+      '<path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/>'
+  };
   function stampToolbarIcons(wurzel){
     var ziel = wurzel || document;
     var k, els, i, b, strich;
@@ -1813,6 +1825,20 @@
         var neu = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + strich +
           '" stroke-linecap="round" stroke-linejoin="round">' + TOOLBAR_ICONS[k] + '</svg>';
         if (alt){ alt.outerHTML = neu; } else { b.insertAdjacentHTML("afterbegin", neu); }
+        b.setAttribute("data-up-ic", k);
+      }
+    }
+    for (k in TOOLBAR_SEL){
+      if (!Object.prototype.hasOwnProperty.call(TOOLBAR_SEL, k)) continue;
+      try { els = ziel.querySelectorAll(k); } catch(e){ continue; }
+      for (i = 0; i < els.length; i++){
+        b = els[i];
+        if (b.getAttribute("data-up-ic") === k) continue;
+        var av = b.querySelector("svg");
+        strich = (av && av.getAttribute("stroke-width")) || "2";
+        var nv = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + strich +
+          '" stroke-linecap="round" stroke-linejoin="round">' + TOOLBAR_SEL[k] + '</svg>';
+        if (av){ av.outerHTML = nv; } else { b.insertAdjacentHTML("afterbegin", nv); }
         b.setAttribute("data-up-ic", k);
       }
     }

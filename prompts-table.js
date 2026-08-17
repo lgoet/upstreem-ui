@@ -2006,7 +2006,9 @@
     /* Same three-line glyph .up-sort-btn already uses elsewhere — a second, differently-scoped
        Sorter needs its own classes (see below) so it doesn't collide with the flat table's own
        .up-sort-btn click handling, but it should still look like the same control. */
-    var GRPSIDE_SORT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h20"/><path d="M6 12h12"/><path d="M9 19h6"/></svg>';
+    /* arrow-down-up wie an jedem anderen Sortierknopf der App. Hier stand der Filter-Trichter --
+       dieselbe Verwechslung wie in der Topbar. */
+    var GRPSIDE_SORT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></svg>';
     var GRPSIDE_ADD_ICON = UC.icon("plus", 2);
     /* Same magnifier glyph the toolbar's own .up-search-btn uses -- one search icon everywhere. */
     var GRPSIDE_SEARCH_ICON = UC.icon("search", 2);
