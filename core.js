@@ -5672,9 +5672,29 @@
        Palette, bis der Theme-Waechter das kurz darauf zurueckdrehte. Genau der helle Feldrahmen,
        der beim Oeffnen im Dark Mode fuer einen Moment zu sehen war. */
     var roh = String(t == null ? "" : t).trim();
-    var dark = /^dark$/i.test(roh) || /^(yes|y|true|1)$/i.test(roh);
+    /* "system"/"auto" ist die dritte Wahl im Konto-Menue und stand bisher NICHT hier -- alles, was
+       nicht dark/yes/true/1 traf, wurde still HELL. setUpstreemTheme("system") schaltete also auf
+       hell, und ein Workflow, der die gespeicherte Wahl des Nutzers durchreicht, kippte damit jedes
+       Mal die ganze App. Genau der Weg, auf dem "ich stelle das Theme um und alles wird komisch"
+       entsteht: die Wahl heisst system, angewendet wird hell, der Rueckkanal meldet hell, und das
+       schreibt die Wahl in der Datenbank kaputt.
+       Jetzt wird system aufgeloest wie im Konto-Menue: nach der Einstellung des Betriebssystems,
+       und die gespeicherte Wahl wird danach GELOESCHT -- sonst haette der naechste Seitenaufbau
+       eine feste Farbe statt der Systemfarbe. Leerer Wert bleibt absichtlich hell: den liefert ein
+       nicht gesetztes Bubble-Feld, und daraus darf nicht plotzlich Dunkel werden. */
+    var systemWahl = /^(system|auto)$/i.test(roh);
+    var dark;
+    if (systemWahl){
+      try { dark = !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches); }
+      catch(e){ dark = false; }
+    } else {
+      dark = /^dark$/i.test(roh) || /^(yes|y|true|1)$/i.test(roh);
+    }
     THEME.value = dark ? "dark" : "light";
-    try { localStorage.setItem("pref_theme", THEME.value); } catch(e){}
+    try {
+      if (systemWahl) localStorage.removeItem("pref_theme");
+      else localStorage.setItem("pref_theme", THEME.value);
+    } catch(e){}
     var roots = document.querySelectorAll(".up-root");
     for (var i = 0; i < roots.length; i++) applyThemeTo(roots[i], dark);
     /* Portalled surfaces (opportunities' drawer, the topic modal) live in <body>, outside any

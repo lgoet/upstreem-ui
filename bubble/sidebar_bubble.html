@@ -191,6 +191,39 @@
   Wer theme_pref in user_settings speichert, macht aus "System" dauerhaft "Dark" -- naemlich
   genau das, was das Betriebssystem in dem Moment gerade sagte.
 
+  ── Die drei Speicher, und wer welchen schreibt ──────────────────────────────
+  Es gibt drei Orte, an denen das Theme steht. Sie muessen zusammenpassen, und jeder hat GENAU
+  eine Quelle:
+
+    user_settings.theme   light | dark | system     die WAHL          <- usnTheme.value
+    State is_dark         yes | no                  die FARBE         <- bubble_fn_theme_pref
+    localStorage          "dark" | "light" | leer   die Farbe fuers   <- schreibt core selbst,
+      pref_theme                                    naechste Laden       niemand sonst
+
+  Schreiben beide Kanaele dasselbe Feld, kaempfen sie: bei "System" meldet usnTheme "system" und
+  theme_pref direkt danach "dark" -- am Ende steht "dark" in der Datenbank und der naechste
+  Seitenaufbau ist fest dunkel. Genau so entsteht das Zurueckspringen.
+
+  Workflow 1, bei usnTheme  -- EIN Schritt, kein Run-JavaScript:
+      Make changes to Current User: theme = (?<="value":")[^"]*
+  Die Leiste hat die Farbe beim Eintreffen des Events laengst gesetzt. Ein setUpstreemTheme im
+  selben Workflow ist der zweite Schreiber und damit der Fehler.
+
+  Workflow 2, bei bubble_fn_theme_pref -- ebenfalls EIN Schritt:
+      Set state is_dark = (dieser Wert ist "dark")   also yes bei dark, no bei light
+  Damit ziehen die Bubble-eigenen Elemente und jedes data-isdark im Loader mit.
+
+  Workflow 3, Page load -- ein Run-JavaScript, VOR dem ersten Rendern:
+      setUpstreemTheme("Current User's theme")     // light | dark | system, roh durchreichen
+  "system" darf seit dieser Runde roh hineingehen: core loest es nach der Systemeinstellung auf
+  und loescht pref_theme, damit die Seite dem Betriebssystem folgt. Vorher wurde daraus still
+  HELL -- gemessen auf einem Rechner mit dunklem System: data-isdark "no", localStorage "light",
+  und der Rueckkanal meldete "light". Wer diesen Wert in user_settings zurueckschrieb, hatte die
+  Wahl des Nutzers ueberschrieben. Nur ein LEERER Wert bleibt hell, denn den liefert ein nicht
+  gesetztes Feld.
+  Danach kommt bubble_fn_theme_pref von selbst und setzt is_dark -- ein eigener Schritt dafuer
+  ist unnoetig. Beim Start meldet core NICHT, dort stellt es nur wieder her, was gespeichert war.
+
   ── Setter (Run javascript) sind jetzt optional ───────────────────────────────
   setSidebarActive und setSidebarCount braucht man nicht mehr: data-active und
   data-prompt-count werden live gelesen. Was weiter ueber Setter kommt, sind Teams und Nutzer

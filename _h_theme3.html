@@ -1,0 +1,28 @@
+<meta charset="utf-8"><title>theme dreiklang</title>
+<body style="font:12px ui-monospace,monospace;padding:14px">
+<pre id="out">laeuft</pre>
+<div class="up-root" data-instance="t1" data-isdark="no" style="padding:8px">Testwurzel</div>
+<script>
+/* Was Bubble sieht: bubble_fn_theme_pref ist der Kanal fuer is_dark. Mitschreiben. */
+window.__pref=[];
+window.bubble_fn_theme_pref=function(v){ window.__pref.push(v); };
+</script>
+<script src="core.js?frisch=th3"></script>
+<script>
+function stand(){
+  var r=document.querySelector(".up-root");
+  var ls; try{ ls=localStorage.getItem("pref_theme"); }catch(e){ ls="?" }
+  return { data_theme:r.getAttribute("data-theme"), data_isdark:r.getAttribute("data-isdark"),
+           localStorage:ls, letzter_pref:window.__pref[window.__pref.length-1]||null };
+}
+var res={};
+var sysDunkel=!!(window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches);
+res["_system_ist"]= sysDunkel?"dark":"light";
+["dark","light","system","yes","no","dark",""].forEach(function(v,i){
+  window.__pref.length=0;
+  setUpstreemTheme(v);
+  res[i+". setUpstreemTheme('"+v+"')"]=stand();
+});
+document.getElementById("out").textContent=JSON.stringify(res,null,1);
+window.__fertig=res;
+</script>

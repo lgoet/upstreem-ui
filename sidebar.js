@@ -761,15 +761,10 @@
         if (ak.getAttribute("data-theme-key")){
           /* Ueber setUpstreemTheme, nicht per Attribut: das schreibt den localStorage, faerbt
              JEDE .up-root der Seite und meldet sich ueber bubble_fn_theme_pref zurueck.
-             "System" heisst: der Einstellung des Betriebssystems folgen -- deshalb setzen und
-             die gespeicherte Wahl danach wieder loeschen, sonst haette der naechste
-             Seitenaufbau eine feste Wahl statt der Systemfarbe. */
-          if (key === "system"){
-            var sysDunkel = false;
-            try { sysDunkel = !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches); } catch(e){}
-            if (window.setUpstreemTheme) window.setUpstreemTheme(sysDunkel ? "dark" : "light");
-            try { localStorage.removeItem("pref_theme"); } catch(e){}
-          } else if (window.setUpstreemTheme) window.setUpstreemTheme(key);
+             Auch "system" geht direkt dorthin -- die Aufloesung nach der Systemeinstellung und das
+             Loeschen der gespeicherten Wahl stehen seit dieser Runde in core. Hier stand beides
+             ein zweites Mal, und eine Regel an zwei Orten laeuft irgendwann auseinander. */
+          if (window.setUpstreemTheme) window.setUpstreemTheme(key);
           renderAccMenu(); renderNav();
           fire("data-theme-fn", "usnTheme", { value: key });
           return;
