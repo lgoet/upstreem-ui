@@ -177,13 +177,14 @@
 .usn-toggle { flex: 0 0 32px; margin-left: auto; }
 /* Das Zeichen selbst kleiner als die 16 des Kits -- der Knopf bleibt 32 gross und damit gut
    treffbar, nur das Symbol darin tritt zurueck. */
-/* 14 x 14: das Zeichen ist quadratisch (viewBox 16x16, layout-sidebar-inset aus Bootstrap Icons,
-   siehe ICON_FILLED in core), die Groesse steht hier.
+/* 16 x 16: das Zeichen ist quadratisch (viewBox 16x16, layout-sidebar-inset aus Bootstrap Icons,
+   siehe ICON_FILLED in core), die Groesse steht hier. 1:1 mit dem viewBox, die Pfade werden also
+   gar nicht skaliert -- die Haarlinien des Rahmens bleiben genau einen Pixel breit.
    50 Prozent Deckkraft im RUHEZUSTAND, beim Hover voll: der Umschalter soll die Leiste nicht
    anfuehren, sondern dort sein, wenn man ihn sucht. Die Farbe wechselt dabei wie bisher von der
    Dritt- auf die Primaerfarbe (zwei Zeilen weiter oben), die Deckkraft kommt dazu. */
 .usn-bar .usn-toggle svg {
-  width: 14px; height: 14px; opacity: .5;
+  width: 16px; height: 16px; opacity: .5;
   transition: opacity var(--usn-t) var(--usn-ease);
 }
 .usn-bar .up-iconbtn.usn-toggle:hover svg { opacity: 1; }
