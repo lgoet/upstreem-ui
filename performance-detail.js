@@ -93,7 +93,6 @@
     return vals.reduce(function(a, b){ return a + b; }, 0) / vals.length;
   }
 
-  var SEARCH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
   var CLOSE_SVG  = UC.icon("x", 2);
 
   /* Markenkachel: dieselbe Geometrie wie der Brand-Mentions-Chip in den Tabellen

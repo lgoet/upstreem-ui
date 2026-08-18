@@ -156,7 +156,9 @@
   function esc(v){ var d = document.createElement('div'); d.textContent = String(v == null ? '' : v); return d.innerHTML; }
   function looseParse(s){ if (typeof s !== 'string') return s; try { return JSON.parse(s); } catch(e){ return null; } }
   function fmtDate(iso){ if(!iso) return ''; var d = new Date(iso); if (isNaN(d.getTime())) return String(iso); return MONTHS[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear(); }
-  function isDark(){ return UC.isYes(root.getAttribute('data-isdark')) || root.getAttribute('data-theme') === 'dark'; }
+  /* UC.themeParam statt isYes: kennt core ein Thema, gewinnt core -- das Attribut ist nur die
+     Momentaufnahme aus dem Lauf des Workflows. */
+  function isDark(){ return UC.themeParam(root.getAttribute('data-isdark')) || root.getAttribute('data-theme') === 'dark'; }
   function citePretty(c){ return UC.citeName ? UC.citeName(c) : String(c||'').replace(/_/g,' '); }
   function citeColor(c){ return UC.typeColor ? UC.typeColor(c, 'citation', isDark()) : 'var(--vc-muted)'; }
   function recIcon(t){ return REC_ICON[t] || REC_ICON.get_listed; }

@@ -1203,7 +1203,10 @@
       document.addEventListener("pointerup", up);
       e.preventDefault();
     }
-    var COMFY_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/></svg>';
+    /* Zwei Striche gegen drei -- geraeumig gegen dicht. Als <path> geschrieben wie sein
+       Gegenstueck darunter: dieselbe Form zweimal verschieden zu notieren, laedt dazu ein, nur
+       eine der beiden nachzuziehen. */
+    var COMFY_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8h16"/><path d="M4 16h16"/></svg>';
     var COMPACT_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/></svg>';
     function populateCols(){
       var menu = root.querySelector(".up-cols-menu");
@@ -1849,6 +1852,26 @@
   };
   /* settings-2, dieselbe Form wie der Fader der Tabellen. */
   TOOLBAR_SEL["#am-settings-toggle"] = TOOLBAR_ICONS["urt-fader-btn"];
+
+  /* ---- Beschriftung derselben Knoepfe -------------------------------------------------------
+     Aus demselben Grund wie die Icons: das data-tip steht im handgemachten Bubble-Markup, und ein
+     Element, das vor dem Attribut gebaut wurde, bekommt es nie nach. Genau das war im
+     topics-manager zu sehen -- die Vorlage trug "Sort" und "Search", das eingebaute Element nicht.
+     GESETZT WIRD NUR, WAS FEHLT: wo eine Komponente eine genauere Beschriftung mitbringt
+     ("Chart Settings" neben "Table Settings"), bleibt ihre stehen. */
+  var TOOLBAR_TIPS = {
+    "up-sort-btn": "Sort", "ubo-sort-btn": "Sort", "uo-sort-btn": "Sort", "vot-sort-btn": "Sort",
+    "up-search-btn": "Search",
+    "up-cols-btn": "Table Settings", "ubo-cols-btn": "Table Settings",
+    "ubo-scale-btn": "Chart Settings", "vot-scale-btn": "Chart Settings",
+    "ccl-settings-btn": "Chart Settings", "uhm-set-btn": "Settings",
+    "uo-settings-btn": "Board Settings",
+    "combo-filter-btn": "Filter brands", "ubo-filter-btn": "Filter brands",
+    "vot-filter-btn": "Filter brands", "tcd-filter-btn": "Filter",
+    "upr-settings-toggle": "Research settings"
+  };
+  /* Das x im Suchfeld bekommt ausdruecklich keins: es sitzt im Feld, sein Zweck steht daneben,
+     und ein Chip ueber einem gerade getippten Text ist im Weg. */
   /* EIN Selektor fuer alles, nicht einer pro Knopfklasse. Vorher lief pro Durchlauf ein
      querySelectorAll je Eintrag -- bei 19 Eintraegen also 19 Durchsuchungen des ganzen Dokuments.
      Jetzt eine, danach wird am Element entschieden, welcher Eintrag gilt. */
@@ -1896,6 +1919,14 @@
       /* Nur das SVG tauschen, alles andere im Knopf bleibt (Badges, Punkte, Beschriftungen). */
       if (alt){ alt.outerHTML = neu; } else { b.insertAdjacentHTML("afterbegin", neu); }
       b.setAttribute("data-up-ic", t.key);
+      /* Beschriftung nachtragen, falls keine da ist -- siehe TOOLBAR_TIPS. aria-label bekommt
+         denselben Text, wenn auch das fehlt: ein Knopf, der nur aus einem Zeichen besteht, hat
+         sonst fuer einen Screenreader keinen Namen. */
+      var tip = TOOLBAR_TIPS[t.key];
+      if (tip && !b.getAttribute("data-tip")){
+        b.setAttribute("data-tip", tip);
+        if (!b.getAttribute("aria-label")) b.setAttribute("aria-label", tip);
+      }
     }
   }
   /* ---- Reihenfolge der Toolbar-Knoepfe -------------------------------------------------------

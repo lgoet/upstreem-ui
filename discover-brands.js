@@ -139,7 +139,7 @@
               '<span class="udb-cb">' + ICON.check + '</span><span>Matched Brands</span>' +
             '</button>' +
             '<div class="up-search">' +
-              '<button type="button" class="up-iconbtn up-search-btn" aria-label="Search">' + ICON.search + '</button>' +
+              '<button type="button" class="up-iconbtn up-search-btn" aria-label="Search" data-tip="Search">' + ICON.search + '</button>' +
               '<div class="up-search-box">' +
                 '<input class="up-search-input up-field" type="text" placeholder="Search brands…" ' +
                   'autocomplete="off" spellcheck="false" />' +
@@ -147,7 +147,7 @@
               '</div>' +
             '</div>' +
             '<div class="up-cols">' +
-              '<button type="button" class="up-iconbtn up-cols-btn" data-tip="Table settings" aria-label="Table settings">' + ICON.gear +
+              '<button type="button" class="up-iconbtn up-cols-btn" data-tip="Table Settings" aria-label="Table settings">' + ICON.gear +
                 /* Das Abzeichen am Zahnrad, wenn der Nutzer Spalten abgeschaltet hat -- syncColsBadge()
                    aus dem Kit schaltet es. Ohne dieses Span lief der Aufruf ins Leere. */
                 '<span class="udb-cols-badge"></span></button>' +
@@ -179,7 +179,9 @@
       var elSearchIn= root.querySelector(".up-search-input");
 
       var fire = UC.makeFire(root, "udb", { eventPrefix: "udb-" });
-      function isDark() { return UC.isYes(root.getAttribute("data-isdark")) || root.getAttribute("data-theme") === "dark"; }
+      /* UC.themeParam statt isYes: kennt core ein Thema, gewinnt core -- das Attribut ist nur
+         die Momentaufnahme aus dem Lauf des Workflows. */
+      function isDark() { return UC.themeParam(root.getAttribute("data-isdark")) || root.getAttribute("data-theme") === "dark"; }
       UC.makeTooltips(root, isDark);
 
       /* Der Tooltip erklaert die Mechanik, nicht den Knopf. "Matched Brands" allein sagt keinem,

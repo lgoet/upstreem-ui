@@ -1150,7 +1150,7 @@
       var wantsScope = !FILTERS.scope && COMMANDS.some(function(c){
         return c.slot !== "scope" && (c.id.indexOf(head) === 0 || c.label.toLowerCase().indexOf(head) === 0);
       });
-      h = '<div class="mqa-empty">' + (wantsScope ? "Pick a type first — URLs, Brands, Domains or Prompts" : "No command") + '</div>';
+      h = '<div class="mqa-empty">' + (wantsScope ? "Pick a type first – URLs, Brands, Domains or Prompts" : "No command") + '</div>';
     } else {
       var groups = [["Metrics", ["scope","type","urltype","market","mentioning"]], ["Performance", ["rank"]]];
       groups.forEach(function(g){

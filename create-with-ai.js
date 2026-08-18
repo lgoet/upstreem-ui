@@ -160,7 +160,7 @@
           '<div class="uca-head-title">' +
             '<span class="uca-action">' +
               '<span class="uca-action-ic" data-action-ic></span>' +
-              '<span class="uca-action-text" data-action-label>—</span>' +
+              '<span class="uca-action-text" data-action-label>–</span>' +
             "</span>" +
             '<button class="uca-help" type="button" data-help aria-label="How Create with AI works">' + HELP_SVG + "</button>" +
           "</div>" +
@@ -171,8 +171,8 @@
           '<div class="uca-source">' +
             '<div class="uca-fav" data-fav></div>' +
             '<div class="uca-source-meta">' +
-              '<div class="uca-source-title" data-source-title>—</div>' +
-              '<div class="uca-source-url" data-source-url>—</div>' +
+              '<div class="uca-source-title" data-source-title>–</div>' +
+              '<div class="uca-source-url" data-source-url>–</div>' +
             "</div>" +
           "</div>" +
 

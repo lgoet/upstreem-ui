@@ -302,7 +302,9 @@
 
   /* ---------- helpers ---------- */
   function esc(v){ return UC.esc ? UC.esc(v) : String(v == null ? '' : v); }
-  function isDark(){ return UC.isYes(root.getAttribute('data-isdark')) || root.getAttribute('data-theme') === 'dark'; }
+  /* UC.themeParam statt isYes: kennt core ein Thema, gewinnt core -- das Attribut ist nur die
+     Momentaufnahme aus dem Lauf des Workflows. */
+  function isDark(){ return UC.themeParam(root.getAttribute('data-isdark')) || root.getAttribute('data-theme') === 'dark'; }
   function readJsonScript(id, fallback){
     try {
       var tag = root.querySelector('#' + id) || document.getElementById(id);
@@ -479,7 +481,7 @@
   /* core's .up-topicchip, the same chip the prompts table and the topics manager draw, instead of
      the standalone's parallel .upr-tag-pill implementation. */
   function renderTags(tags){
-    if (!Array.isArray(tags) || !tags.length) return '<span class="upr-cell-empty">—</span>';
+    if (!Array.isArray(tags) || !tags.length) return '<span class="upr-cell-empty">–</span>';
     return '<div class="upr-tags-list">' + tags.map(function(tag){
       return '<span class="up-topicchip" style="--ust-tag-color:' + esc(makeColor(tag.hex_light, '#6b7280')) + ';">' +
         (tag.emoji ? '<span class="up-topicchip-e">' + esc(tag.emoji) + '</span>' : '') +

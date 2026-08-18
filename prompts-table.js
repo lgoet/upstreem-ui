@@ -244,7 +244,7 @@
 
         row.innerHTML='';
         if(!tags.length){
-          row.innerHTML='<span class="ust-empty"><span class="ust-empty-dash">—</span>' +
+          row.innerHTML='<span class="ust-empty"><span class="ust-empty-dash">–</span>' +
             '<span class="ust-empty-add"><span>+</span><span>Add</span></span></span>';
           return;
         }
@@ -2147,7 +2147,7 @@
         '</div>';
       /* Grouping is an Active-view feature; say so instead of silently doing nothing. */
       if (state.status === "inactive"){
-        h += '<div class="upt-group-note">Active view only — inactive prompts stay ungrouped.</div>';
+        h += '<div class="upt-group-note">Active view only – inactive prompts stay ungrouped.</div>';
       }
       h += '<div class="up-pop-div"></div><div class="up-pop-sub">Sort groups by</div><div class="up-dense">' +
         GRP_SORTS.map(function(o){

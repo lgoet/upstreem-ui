@@ -210,7 +210,8 @@
        Dark-Mode-Regeln nicht erben. Also spiegeln, und zwar bei jedem Render: Bubble schaltet das
        Attribut zur Laufzeit um. */
     function syncTheme() {
-      var dunkel = root.getAttribute("data-theme") === "dark" || isYes(root.getAttribute("data-isdark"));
+      /* UC.themeParam statt isYes: kennt core ein Thema, gewinnt core. */
+      var dunkel = root.getAttribute("data-theme") === "dark" || UC.themeParam(root.getAttribute("data-isdark"));
       /* Das Thema gehoert an den Traeger: dort sitzt up-root, von dort erben die --vc-Variablen
          nach innen. An der Karte selbst hat up-root ihre Geometrie zerstoert. */
       traeger.setAttribute("data-theme", dunkel ? "dark" : "light");
@@ -291,7 +292,7 @@
          [data-theme="dark"] als Vorfahre und mit var(--vc-text). Woran es liegt, habe ich nicht
          gefunden; ein Inline-Wert schlaegt jede Regel und laesst der Kaskade keine Gelegenheit.
          Nur der gefuellte Knopf ist betroffen -- der umrandete kommt weiter aus der CSS. */
-      var dunkelJetzt = root.getAttribute("data-theme") === "dark" || isYes(root.getAttribute("data-isdark"));
+      var dunkelJetzt = root.getAttribute("data-theme") === "dark" || UC.themeParam(root.getAttribute("data-isdark"));
       if (t.dunkel) {
         var flaeche = dunkelJetzt ? "#e0e0e0" : "#1f1f1f";
         elPrim.style.background = flaeche;

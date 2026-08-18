@@ -219,7 +219,10 @@
     var LOADING_EXPLICIT = (window.__ubdLoadingExplicit = window.__ubdLoadingExplicit || {});
     function istLaden(){ return LOADING_EXPLICIT[instanceId] ? !!state.loading : readProcessing(); }
 
-    function darkNow() { return isYes(root.getAttribute("data-isdark")); }
+    /* Ueber UC.themeParam und nicht ueber das Attribut allein: kennt core ein Thema, gewinnt
+       core. Das Attribut ist die Momentaufnahme aus dem Lauf des Workflows -- steht die App
+       inzwischen anders, dreht die Komponente sich damit selbst zurueck. */
+    function darkNow() { return UC.themeParam(root.getAttribute("data-isdark")); }
 
     var line = UC.makeLine({
       wrap: elChart, canvas: elCanvas, legend: null,

@@ -1,0 +1,41 @@
+<meta charset="utf-8"><title>export-data thema</title>
+<style>body{margin:0;font:12px ui-monospace,monospace;padding:12px}pre{white-space:pre-wrap;background:#111;color:#eee;padding:10px}</style>
+<body>
+<div class="up-root uex-root"
+     data-instance="ex1"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="IS_DARK"
+     data-token="EXPORT_ACCESSTOKEN"
+     data-export-type="EXPORT_TYPE"
+     data-export-fn="bubble_fn_upstreemExport">
+</div>
+
+
+<pre id="out">laeuft</pre>
+<script>
+window.__fehler=[]; window.addEventListener("error",function(e){window.__fehler.push(String(e.message))});
+(function(){
+  var files=["core.css","export-data.css","core.js", (/alt=1/.test(location.search)?"_alt_uex.js":"export-data.js")], t={};
+  Promise.all(files.map(function(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"})
+    .then(function(r){return r.text()}).then(function(x){t[f]=x}); })).then(function(){
+      files.forEach(function(f){ var e=document.createElement(/\.css$/.test(f)?"style":"script"); e.textContent=t[f]; document.head.appendChild(e); });
+      setTimeout(function(){
+        var root=document.querySelector(".uex-root");
+        /* Die App steht auf HELL -- so wie nach einem Klick auf "Light" in der Leiste. */
+        window.setUpstreemTheme("light");
+        /* Und jetzt kommt ein Aufruf mit dem VERALTETEN is_dark=yes, wie ihn ein Workflow
+           mitbringt, der vor dem Wechsel gestartet ist. */
+        root.setAttribute("data-isdark","yes");
+        setTimeout(function(){
+          var res={ fehler: window.__fehler,
+            theme_der_app: window.getUpstreemTheme(),
+            attribut: root.getAttribute("data-isdark"),
+            data_theme_der_komponente: root.getAttribute("data-theme"),
+            /* Erwartet: die Komponente bleibt hell, obwohl das Attribut yes sagt. */
+            bleibt_hell: root.getAttribute("data-theme") !== "dark" };
+          document.getElementById("out").textContent=JSON.stringify(res,null,1); window.__fertig=res;
+        }, 900);
+      }, 900);
+    });
+})();
+</script>

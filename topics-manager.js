@@ -48,14 +48,20 @@
   ];
   var DEFAULT_SORT = { field: "usage", dir: "desc" };
 
-  var PLUS_SVG = UC.icon("plus", 1.8);
 
   function makeController(root){
     var instanceId = root.getAttribute("data-instance") || "default";
     var saved = STORE[instanceId] || {};
 
-    var isDark = isYes(root.getAttribute("data-isdark"));
+    /* UC.themeParam statt isYes: kennt core ein Thema, gewinnt core -- das Attribut ist nur die
+       Momentaufnahme aus dem Lauf des Workflows. */
+    var isDark = UC.themeParam(root.getAttribute("data-isdark"));
     if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
+
+    /* Die Kopfzeile traegt data-tip an Sortieren und Suchen -- ohne diesen Aufruf zeigt sie
+       nichts an. Als einzige Komponente der App hatte diese hier keine Tooltips: das Attribut
+       stand im Markup, der Zuhoerer dazu fehlte. */
+    if (UC.makeTooltips) UC.makeTooltips(root, function(){ return isDark; });
 
     /* This page has no sticky header (no data-sticky-top concept), so it never calls
        UC.makeSticky — but the sort dropdown is still a plain position:absolute child that needs

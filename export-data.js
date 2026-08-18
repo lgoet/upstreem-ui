@@ -39,6 +39,14 @@
     '<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg></span>';
 
   function isYes(v){ return /^(1|true|yes|y)$/i.test(String(v == null ? "" : v).trim()); }
+  /* Kennt core ein Thema, gewinnt core: data-isdark ist die Momentaufnahme aus dem Moment, in dem
+     der Bubble-Workflow lief, und wer sie direkt ins data-theme schreibt, dreht sich beim naechsten
+     Aufruf selbst zurueck. Diese Datei haelt keine UC-Variable -- sie kommt ohne core aus --,
+     deshalb der direkte Griff mit Rueckfall auf das Attribut. */
+  function dunkelJetzt(v){
+    var C = window.UpstreemCore;
+    return (C && C.themeParam) ? C.themeParam(v) : isYes(v);
+  }
   function esc(s){
     return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){
       return { "&":"&amp;", "<":"&lt;", ">":"&gt;", "\"":"&quot;" }[c];
@@ -120,7 +128,7 @@
        behaelt ihn, ohne etwas nachziehen zu muessen. */
     var btn = root.querySelector(".uex-btn");
 
-    var isDark = isYes(root.getAttribute("data-isdark"));
+    var isDark = dunkelJetzt(root.getAttribute("data-isdark"));
     if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
 
     var today = startOfDay(new Date());
@@ -261,7 +269,7 @@
       '</svg>';
 
     function syncTheme(){
-      var dark = isYes(root.getAttribute("data-isdark"));
+      var dark = dunkelJetzt(root.getAttribute("data-isdark"));
       isDark = dark;
       if (dark){ root.setAttribute("data-theme","dark"); overlay.setAttribute("data-theme","dark"); }
       else { root.removeAttribute("data-theme"); overlay.removeAttribute("data-theme"); }
@@ -817,9 +825,26 @@
   else initAll();
   [30, 100, 250, 500, 1000, 1800].forEach(function(ms){ setTimeout(initAll, ms); });
   setInterval(initAll, 1500);   // cheap no-op once initialised; catches late Bubble rebuilds
-  new MutationObserver(function(muts){
+  /* Gebuendelt auf einen Lauf je 250ms und danach takeRecords -- derselbe Umbau, den der
+     Icon-Stempel in core schon hinter sich hat. Ungebuendelt lief initAll() (mit einem
+     dokumentweiten querySelectorAll) bei JEDER Mutation irgendwo auf der Seite: die
+     Chart-Tooltips schreiben bei jeder Mausbewegung ihr innerHTML neu, also lief diese Suche
+     mehrmals pro Mausbewegung mit. Ein spaet eingehaengtes Element wird 250ms spaeter gefunden,
+     und das faellt niemandem auf -- die Suche im Animationsfenster fiel auf. */
+  var uexGeplant = false;
+  var uexObs = new MutationObserver(function(muts){
+    if (uexGeplant) return;
     for (var i = 0; i < muts.length; i++){
-      if (muts[i].addedNodes && muts[i].addedNodes.length){ initAll(); return; }
+      if (muts[i].addedNodes && muts[i].addedNodes.length){
+        uexGeplant = true;
+        setTimeout(function(){
+          uexGeplant = false;
+          initAll();
+          try { uexObs.takeRecords(); } catch(e){}
+        }, 250);
+        return;
+      }
     }
-  }).observe(document.documentElement, { childList: true, subtree: true });
+  });
+  uexObs.observe(document.documentElement, { childList: true, subtree: true });
 })();

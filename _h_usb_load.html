@@ -1,0 +1,132 @@
+<meta charset="utf-8">
+<link rel="stylesheet" href="core.css?v=s41">
+<link rel="stylesheet" href="page-headers/settings-page-header.css?v=s41">
+<link rel="stylesheet" href="settings-brand.css?v=s41">
+<style>
+  /* Form der echten Bubble-Seite: der Koerper scrollt nicht, #main scrollt. */
+  html, body { margin: 0; height: 100%; }
+  body { font-family: Geist, system-ui, sans-serif; overflow: hidden; background: #fff; }
+  #main { height: 100vh; overflow-y: auto; padding: 24px 24px 400px; box-sizing: border-box; }
+  #bar { position: fixed; right: 12px; bottom: 12px; z-index: 99999; display: flex; gap: 6px; }
+  #bar button { font: 12px sans-serif; padding: 6px 10px; border-radius: 8px; border: 1px solid #ccc; background: #fff; cursor: pointer; }
+</style>
+
+<div id="main">
+  <div class="up-root up-ph-root sph-root"
+       data-instance="set1" data-isdark="no"
+       data-brand-name="LeeUp Media"
+       data-brand-logo="https://www.google.com/s2/favicons?domain=leeup.de&sz=128"
+       data-page="brand"
+       data-nav-fn="bubble_fn_sphNav">
+    <div class="up-ph-top">
+      <div class="up-ph-left">
+        <div class="up-ph-meta"><img class="up-ph-metalogo" alt="" style="display:none"/><span class="up-ph-metatxt"><span class="pph-metaname"></span> Organisation</span></div>
+        <h1 class="up-ph-heading">Settings</h1>
+        <p class="up-ph-desc">Manage your brand, your team and your plan.</p>
+      </div>
+    </div>
+    <div class="up-ph-nav" role="tablist"></div>
+  </div>
+
+  <div class="up-root usb-root"
+       data-instance="set1" data-isdark="no"
+       data-brand-name="LeeUp &quot;Media&quot; GmbH"
+       data-brand-logo="https://www.google.com/s2/favicons?domain=leeup.de&amp;sz=128"
+       data-team-id="team_1" data-team-name="LeeUp &quot;Media&quot; GmbH"
+       data-brand-market="de" data-brand-business="b2b" data-brand-industry="Consulting &amp; Agencys"
+       data-brand-summary="Zeile eins mit &quot;Anfuehrungszeichen&quot;.&#10;Zeile zwei nach einem Umbruch."
+       data-editbrand-fn="bubble_fn_usbEditBrand"
+       data-logoupload-fn="bubble_fn_usbLogoUpload"
+       data-logourl-fn="bubble_fn_usbLogoUrl"
+       data-logofile-fn="bubble_fn_usbLogoFile"
+       data-models-fn="bubble_fn_usbModels"
+       data-meta-fn="bubble_fn_usbMeta"
+       data-leave-fn="bubble_fn_usbLeaveTeam"
+       data-delete-fn="bubble_fn_usbDeleteTeam"></div>
+</div>
+
+<div id="bar">
+  <button onclick="window.__load()">Daten</button>
+  <button onclick="window.upstreemSetTheme(document.querySelector('.usb-root').getAttribute('data-isdark')==='yes'?'no':'yes')">Theme</button>
+  <button onclick="console.log(JSON.stringify(window.__ev,null,1))">Events</button>
+</div>
+
+<script>
+/* Kontrolltest fuer den Boot-Stub: dieser Block laeuft VOR core.js und settings-brand.js, genau
+   wie Bubbles Pageload-Workflow. Ohne Stub/Queue wirft er "is not a function" und der Ladezustand
+   sowie die Modelle kommen nie an. */
+window.__usbBootQueue = window.__usbBootQueue || [];
+["renderSettingsBrand","setSettingsBrandLoading","setSettingsBrandLogo","resetSettingsBrand"]
+  .forEach(function(n){ if (typeof window[n] !== "function")
+    window[n] = function(){ window.__usbBootQueue.push([n, arguments]); }; });
+window.__preboot = [];
+try { setSettingsBrandLoading("set1", "yes"); window.__preboot.push("loading ok"); }
+catch(e){ window.__preboot.push("loading FEHLER: " + e.message); }
+</script>
+<script>
+window.__GELADEN = Promise.all(["core.js","page-headers/settings-page-header.js",
+   (/alt=1/.test(location.search) ? "_alt_usb.js" : "settings-brand.js")].map(function(f){
+  return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){return r.text()});
+})).then(function(t){ t.forEach(function(x){ var e=document.createElement("script"); e.textContent=x; document.head.appendChild(e); }); });
+</script>
+<script>
+window.__ev = [];
+["sphNav","usbEditBrand","usbLogoUpload","usbLogoUrl","usbModels","usbMarket",
+ "usbMeta","usbLogoFile","usbLeaveTeam","usbDeleteTeam"].forEach(function(n){
+  window["bubble_fn_" + n] = function(p){ window.__ev.push([n, p]); };
+});
+
+window.__load = function(){
+  /* Marktliste seitenweit, wie in der echten App: EIN Aufruf, alle Komponenten sehen sie. */
+  /* VOLLE Liste fuer Auswahlfelder, gefilterte fuer die Tabellen-Filter. */
+  setUpstreemAllMarkets([
+    { alpha2: "DE", name: "Germany", prompt_count: 88, flag_url: "https://flagcdn.com/de.svg" },
+    { alpha2: "AT", name: "Austria", prompt_count: 41 },
+    { alpha2: "CH", name: "Switzerland", prompt_count: 37 },
+    { alpha2: "US", name: "United States", prompt_count: 12 },
+    { alpha2: "GB", name: "United Kingdom", prompt_count: 9 },
+    { alpha2: "FR", name: "France", prompt_count: 6 }
+  ]);
+  renderSettingsBrand({
+    instanceId: "set1",
+    models: [
+      { model_key:"chatgpt",    provider:"OpenAI",     display_name:"ChatGPT",
+        logo_url:"https://cdn-icons-png.freepik.com/512/12222/12222588.png",
+        active_models_limit:3, active_models_count:3, user_can_manage:true, sort_order:1,
+        is_model_active:true, is_allowed_by_plan:true, currently_tracking:true,
+        can_enable:false, can_disable:true, can_toggle:true, disabled_reason:null },
+      { model_key:"google-aio", provider:"Google",     display_name:"Google AI Overviews",
+        logo_url:"https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg",
+        active_models_limit:3, active_models_count:3, user_can_manage:true, sort_order:2,
+        is_model_active:true, is_allowed_by_plan:true, currently_tracking:true,
+        can_enable:false, can_disable:true, can_toggle:true, disabled_reason:null },
+      { model_key:"perplexity", provider:"Perplexity", display_name:"Perplexity",
+        logo_url:"https://registry.npmmirror.com/@lobehub/icons-static-png/latest/files/dark/perplexity-color.png",
+        active_models_limit:3, active_models_count:3, user_can_manage:true, sort_order:3,
+        is_model_active:true, is_allowed_by_plan:true, currently_tracking:true,
+        can_enable:false, can_disable:true, can_toggle:true, disabled_reason:null },
+      { model_key:"gemini",     provider:"Google",     display_name:"Gemini",
+        logo_url:"https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/llm_logos/gemini_logo.webp",
+        active_models_limit:3, active_models_count:3, user_can_manage:true, sort_order:4,
+        is_model_active:false, is_allowed_by_plan:true, currently_tracking:false,
+        can_enable:false, can_disable:false, can_toggle:false, disabled_reason:"model_inactive" },
+      { model_key:"deepseek",   provider:"DeepSeek",   display_name:"DeepSeek",
+        logo_url:"https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/llm_logos/icons8-deepseek-96.svg",
+        active_models_limit:3, active_models_count:3, user_can_manage:true, sort_order:5,
+        is_model_active:false, is_allowed_by_plan:true, currently_tracking:false,
+        can_enable:false, can_disable:false, can_toggle:false, disabled_reason:"model_inactive" }
+    ],
+  });
+};
+/* Die Daten kommen erst, wenn die Dateien da sind -- und ABSICHTLICH ohne
+   setSettingsBrandLoading("no"): genau der Workflow, in dem der Schritt fehlt. */
+window.__GELADEN.then(function(){ setTimeout(function(){ window.__load();
+  setTimeout(function(){
+    var root=document.querySelector(".usb-root")||document.querySelector(".up-root");
+    window.__mess={ datei:(/alt=1/.test(location.search)?"alt":"neu"),
+      inert: root.hasAttribute("inert"), is_loading: root.classList.contains("is-loading"),
+      is_busy: root.classList.contains("is-busy"),
+      skelette: root.querySelectorAll(".usb-skelbox, .up-sk").length };
+  }, 900);
+}, 300); });
+</script>

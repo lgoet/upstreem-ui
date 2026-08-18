@@ -546,7 +546,11 @@
         '</span></div>';
       var search = '<div class="up-ment-searchwrap">' +
           '<input class="up-ment-search" type="text" placeholder="Search companies..." autocomplete="off" spellcheck="false" value="' + esc(filterQuery) + '"/>' +
-          '<button class="up-ment-searchclear" type="button" aria-label="Clear company search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
+          '<button class="up-ment-searchclear" type="button" aria-label="Clear company search">' +
+            /* UC.icon statt eines eigenen Kreuzes: dieselbe Form wie jedes andere x der App,
+               Strichstaerke 2.2 wie bisher -- das Zeichen sitzt in einem Feld und ist dort
+               optisch kleiner. */
+            UC.icon("x", 2.2) + '</button>' +
         '</div>';
       var items = list.map(function(c){
         var id = String(c.company_id);

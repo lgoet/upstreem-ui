@@ -224,7 +224,9 @@
        koennen in mehreren Aufrufen eintreffen, und wer fertig ist, weiss nur der Aufrufer. */
     var loading = true;
 
-    function isDark(){ return UC.isYes(root.getAttribute("data-isdark")); }
+    /* UC.themeParam statt isYes: kennt core ein Thema, gewinnt core -- das Attribut ist nur die
+       Momentaufnahme aus dem Lauf des Workflows. */
+    function isDark(){ return UC.themeParam(root.getAttribute("data-isdark")); }
     function cloneModels(list){ return list.map(function(m){ var c = {}; for (var k in m) c[k] = m[k]; return c; }); }
     function keysOf(list){ return list.filter(function(m){ return m.active; }).map(function(m){ return m.key; }).sort().join(","); }
     function flagUrl(a2){
@@ -1239,6 +1241,13 @@
         if (Array.isArray(inds)) meta.industries = inds.map(function(x){ return typeof x === "string" ? x : (x && x.name) || ""; }).filter(Boolean);
         if (p.industry != null){ saved.industry = String(p.industry); draft.industry = saved.industry; }
         if (p.summary != null){ saved.summary = String(p.summary); draft.summary = saved.summary; }
+
+        /* Ein Render-Aufruf IST das Ende des Ladens: die Daten sind da. Vorher endete der
+           Ladezustand nur ueber setSettingsBrandLoading("no") -- fehlt dieser Schritt in einem
+           Workflow, blieb die Seite sichtbar, aber dauerhaft mit inert gesperrt, also nicht
+           bedienbar, und nichts wies darauf hin. Dieselbe Regel wie in den Tabellen: was Daten
+           bekommt, hoert auf zu laden. */
+        applyLoading("no");
 
         render();
       },

@@ -1,0 +1,20 @@
+<meta charset="utf-8"><title>syntax aller geaenderten dateien</title>
+<style>body{margin:0;font:12px ui-monospace,monospace;padding:10px}pre{white-space:pre-wrap;background:#111;color:#eee;padding:10px}</style>
+<body><pre id="out">laeuft</pre>
+<script>
+var DATEIEN = ["core.js","prompts-table.js","prompt-research.js","create-with-ai.js","quick-actions.js",
+ "visibility-chart.js","opportunities.js","brand-detail.js","discover-brands.js","notification-card.js",
+ "responses-table.js","performance-detail.js","export-data.js","settings-brand.js","topics-manager.js",
+ "filters/topics-filter.js","filters/markets-filter.js","filters/models-filter.js","sidebar.js"];
+Promise.all(DATEIEN.map(function(f){
+  return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){return r.text()}).then(function(t){
+    /* new Function PARST die Datei, ohne sie auszufuehren -- ein Syntaxfehler wirft hier. */
+    try { new Function(t); return f+": ok ("+t.length+")"; }
+    catch(e){ return f+": SYNTAXFEHLER " + e.message; }
+  });
+})).then(function(z){
+  var schlecht = z.filter(function(x){ return x.indexOf("SYNTAX") >= 0; });
+  document.getElementById("out").textContent = (schlecht.length ? "KAPUTT:\n"+schlecht.join("\n")+"\n\n" : "alle sauber\n\n") + z.join("\n");
+  window.__fertig = { kaputt: schlecht, alle: z.length };
+});
+</script>
