@@ -23,12 +23,15 @@
       --vt-head-bg: rgba(245,245,245,0.3); --vt-logo-bg: #ffffff; --vt-row-hover: rgba(245,245,245,0.75);
       --vt-row-hover-solid: #f7f7f7;
       --vt-up: #2ea84a; --vt-down: #b0200c;
-      /* Markenauszeichnung im Antworttext: neben dem Zitat-Chip als etwas anderes lesbar, ohne
-         den Absatz zu zerreissen. Aus --vt-up abgeleitet, stark verduennt. */
-      --vt-brand-bg: color-mix(in srgb, var(--vt-up) 8%, transparent);
-      --vt-brand-bg-hover: color-mix(in srgb, var(--vt-up) 15%, transparent);
-      --vt-brand-border: color-mix(in srgb, var(--vt-up) 34%, transparent);
-      --vt-brand-border-hover: color-mix(in srgb, var(--vt-up) 58%, transparent);
+      /* Markenauszeichnung im Antworttext. Die Farbe ist die der alten Response-Elemente,
+         wortgleich uebernommen -- Orange, nicht das Gruen der Trendpfeile: eine Marke im Text ist
+         keine Bewertung. Der Hintergrund liegt 10 Prozentpunkte unter dem ersten Ansatz (8 -> 6,
+         hover 15 -> 12), damit der Absatz beim Lesen nicht gestreift wirkt. */
+      --vt-brand: rgba(255, 165, 0, 1);
+      --vt-brand-bg: color-mix(in srgb, var(--vt-brand) 6%, transparent);
+      --vt-brand-bg-hover: color-mix(in srgb, var(--vt-brand) 12%, transparent);
+      --vt-brand-border: color-mix(in srgb, var(--vt-brand) 55%, transparent);
+      --vt-brand-border-hover: var(--vt-brand);
       --vc-hover-border: #6f6f6f;
       /* Fokusfarbe der Eingabefelder. Der Ring ist derselbe Ton, nur transparent -- eine Farbe,
          zwei Deckkraefte. --up-focus-w steht hier und nicht in den Regeln, weil die Ringbreite
@@ -95,11 +98,13 @@
       --vt-head-bg: #121212; --vt-logo-bg: #e0e0e0; --vt-row-hover: rgba(42,42,42,0.6);
       --vt-row-hover-solid: #242424;
       --vt-up: #60d25d; --vt-down: #d25d5d;
-      /* Im Dunkeln braucht dieselbe Farbe mehr Deckung, sonst verschwindet sie im Grund. */
-      --vt-brand-bg: color-mix(in srgb, var(--vt-up) 14%, transparent);
-      --vt-brand-bg-hover: color-mix(in srgb, var(--vt-up) 24%, transparent);
-      --vt-brand-border: color-mix(in srgb, var(--vt-up) 42%, transparent);
-      --vt-brand-border-hover: color-mix(in srgb, var(--vt-up) 66%, transparent);
+      /* Im Dunkeln ein aufgehellter Ton mit weniger Deckung -- auch das wortgleich aus den alten
+         Elementen. Der Hintergrund darf hier etwas mehr tragen, sonst verschwindet er im Grund. */
+      --vt-brand: rgba(255, 190, 60, 0.85);
+      --vt-brand-bg: color-mix(in srgb, var(--vt-brand) 10%, transparent);
+      --vt-brand-bg-hover: color-mix(in srgb, var(--vt-brand) 18%, transparent);
+      --vt-brand-border: color-mix(in srgb, var(--vt-brand) 60%, transparent);
+      --vt-brand-border-hover: var(--vt-brand);
       --vc-hover-border: #707070;
       /* Auf dunklem Grund braucht der Ring mehr Deckkraft, sonst verschwindet er im Panel. */
       --up-focus: #6DB2FF; --up-focus-ring: rgba(109,178,255,0.28);
@@ -2399,9 +2404,14 @@
    ResizeObserver und ein MutationObserver nachfuehrten -- weil ein CSS-Rahmen am umbrechenden
    Inline-Element unten abgeschnitten wurde. Der Chip hier bricht nicht um (white-space: nowrap),
    damit ist der Rahmen wieder CSS und die zwei Beobachter entfallen. */
-.up-rb-brand { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px;
-  margin: 0 1px; border: 1px solid var(--vt-brand-border); border-radius: 7px;
-  background: var(--vt-brand-bg); vertical-align: -4px; cursor: pointer; white-space: nowrap;
+/* 26px statt 22 (Vorgabe: 4px hoeher) und ein 2px gestrichelter Rahmen -- die Strichelung ist die
+   Idee der alten Elemente, dort noch als eingebettetes SVG mit zwei Beobachtern, weil ein
+   CSS-Rahmen am umbrechenden Inline-Element abgeschnitten wurde. Der Chip hier bricht nicht um
+   (white-space: nowrap), damit genuegt border-style: dashed.
+   vertical-align: -6px statt -4: der Chip ist 4px hoeher geworden und saesse sonst zu hoch. */
+.up-rb-brand { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 8px;
+  margin: 0 1px; border: 2px dashed var(--vt-brand-border); border-radius: 8px;
+  background: var(--vt-brand-bg); vertical-align: -6px; cursor: pointer; white-space: nowrap;
   box-sizing: border-box; transition: background 120ms ease, border-color 120ms ease; }
 .up-rb-brand:hover { background: var(--vt-brand-bg-hover); border-color: var(--vt-brand-border-hover); }
 .up-rb-brand:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 1px; }

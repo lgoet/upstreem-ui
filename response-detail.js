@@ -90,7 +90,9 @@
           '<span class="urd-sec-title">Mentions</span>' +
           '<span class="urd-sec-desc">What tracked brands are mentioned in this response</span>' +
         '</div></div>' +
-        '<div class="urd-card"><div class="urd-ments"></div></div>' +
+        /* Keine Karte um die Chips: sie tragen selbst schon einen Rahmen, und ein Rahmen im
+           Rahmen liest sich als zwei Ebenen, wo es nur eine gibt. */
+        '<div class="urd-ments"></div>' +
       '</div>' +
 
       '<div class="urd-sect urd-sect-body">' +
@@ -98,7 +100,25 @@
           '<span class="urd-sec-title">Full Response</span>' +
           '<span class="urd-sec-desc">The complete answer as the model returned it</span>' +
         '</div></div>' +
-        '<div class="urd-card urd-body"><div class="up-rb"></div></div>' +
+        /* Der Antworttext liest sich wie eine Nachricht -- also bekommt er auch den Absender:
+           links das Modell-Logo, daneben sein Name. Die Idee stammt aus den alten Elementen, dort
+           war es ein loses Bild neben dem Kasten. */
+        '<div class="urd-msg">' +
+          '<div class="urd-msg-av"></div>' +
+          '<div class="urd-msg-col">' +
+            '<div class="urd-msg-top">' +
+              '<span class="urd-msg-who"></span>' +
+                /* wrap + menu, wie UC.makePopover es erwartet: der Wrap traegt is-open, das Menue
+                 haengt darin und wird von core positioniert und geschlossen. */
+              '<span class="urd-hlwrap">' +
+                '<button class="up-iconbtn urd-hlbtn" type="button" data-tip="Highlights"' +
+                  ' aria-label="Highlight settings"></button>' +
+                '<div class="urd-hlpop up-pop"></div>' +
+              '</span>' +
+            '</div>' +
+            '<div class="urd-card urd-body"><div class="up-rb"></div></div>' +
+          '</div>' +
+        '</div>' +
       '</div>' +
 
       '<div class="urd-sect urd-sect-cites">' +
@@ -135,6 +155,11 @@
     var elKpis   = root.querySelector(".urd-kpis");
     var elMents  = root.querySelector(".urd-ments");
     var elBody   = root.querySelector(".up-rb");
+    var elAv     = root.querySelector(".urd-msg-av");
+    var elWho    = root.querySelector(".urd-msg-who");
+    var elHlBtn  = root.querySelector(".urd-hlbtn");
+    var elHlWrap = root.querySelector(".urd-hlwrap");
+    var elHlPop  = root.querySelector(".urd-hlpop");
     var elGrid   = root.querySelector(".urd-cites-grid");
     var elList   = root.querySelector(".urd-cites-list");
     var elSeg    = root.querySelector(".urd-viewseg");
@@ -142,8 +167,35 @@
     var isDark = UC.themeParam(root.getAttribute("data-isdark"));
     if (isDark) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
 
+    /* Die Einstellungen der Hervorhebungen. Sie gelten fuer den Nutzer, nicht fuer die Instanz,
+       also liegen sie in den Einstellungen (localStorage ueber UC.prefGet/prefSet, teambezogen) --
+       wer sie einmal setzt, findet sie auf der naechsten Antwort wieder. */
+    var HL_KEY = "urdHighlights";
+    var HL_MODES = [
+      { key: "all",   label: "All mentions",         desc: "Every time a brand appears" },
+      { key: "first", label: "First mention only",   desc: "Once per brand" },
+      { key: "own",   label: "Your brand only",      desc: "Competitors stay plain" },
+      { key: "none",  label: "Off",                  desc: "No brand highlighting" }
+    ];
+    function hlLesen() {
+      var v = null;
+      try { v = UC.prefGet ? UC.prefGet(UC.prefKey ? UC.prefKey(HL_KEY) : HL_KEY) : null; } catch (e) {}
+      var o = null;
+      try { o = v ? JSON.parse(v) : null; } catch (e) { o = null; }
+      var modus = o && o.brands;
+      var gueltig = HL_MODES.some(function (m) { return m.key === modus; });
+      return { brands: gueltig ? modus : "first", cites: !(o && o.cites === false) };
+    }
+    function hlSchreiben() {
+      try {
+        if (UC.prefSet) UC.prefSet(UC.prefKey ? UC.prefKey(HL_KEY) : HL_KEY,
+          JSON.stringify({ brands: state.hl.brands, cites: state.hl.cites }));
+      } catch (e) {}
+    }
+
     var state = {
       view: VIEW_STORE[instanceId] || "grid",
+      hl: hlLesen(),
       data: null, loading: false, hasData: false, error: null
     };
 
@@ -244,16 +296,36 @@
       if (zeit) teile.push('<span class="urd-kpi-time" data-tip="' +
         esc(String(d.run_at || "")) + '">' + esc(zeit) + "</span>");
       if (d.market) teile.push(UC.marketChip(d.market));
-      /* Die Themen der Frage, wenn sie mitkommen: dasselbe Bauteil wie in der Prompts-Tabelle. */
       if (isArr(d.tags) && d.tags.length) {
-        teile.push('<span class="urd-tags">' + d.tags.map(function (t) {
-          if (!t || !t.name) return "";
-          return '<span class="up-tag">' +
-            (t.emoji ? '<span class="up-tag-lbl">' + esc(t.emoji) + " </span>" : "") +
-            '<span class="up-tag-lbl">' + esc(t.name) + "</span></span>";
-        }).join("") + "</span>");
+        teile.push('<span class="urd-tags">' + d.tags.map(topicChip).join("") + "</span>");
       }
-      elKpis.innerHTML = teile.join("");
+      /* Ein Trenner zwischen den Angaben. Ohne ihn standen Modell, Zeit, Market und Themen als
+         eine Reihe da und lasen sich als ein zusammenhaengender Satz. */
+      elKpis.innerHTML = teile.join('<span class="urd-kpi-sep" aria-hidden="true"></span>');
+    }
+
+    /* Ein Thema als .up-topicchip aus core -- dasselbe Bauteil und dieselbe Farbe wie in der
+       Prompts-Tabelle, im Radar und im Topics-Manager. Die Farbe steht NICHT im Payload: sie kommt
+       aus dem seitenweiten Themen-Store, nachgeschlagen ueber die id. Fehlt der Store, bleibt der
+       Chip beim Grau aus dem Bauteil -- lesbar, nur ohne Zuordnung.
+       is-static, weil ein Thema hier reine Anzeige ist und keinen Klick traegt. */
+    function topicFarbe(id) {
+      var liste = UC.getTopics ? UC.getTopics() : null;
+      if (!liste || !id) return "";
+      for (var i = 0; i < liste.length; i++) {
+        var t = liste[i];
+        if (t && String(t.id) === String(id)) return String(t.color || "");
+      }
+      return "";
+    }
+    function topicChip(t) {
+      if (!t || !t.name) return "";
+      var farbe = topicFarbe(t.id);
+      return '<span class="up-topicchip is-static"' +
+               (farbe ? ' style="--ust-tag-color:' + esc(farbe) + '"' : "") + ">" +
+               (t.emoji ? '<span class="up-topicchip-e">' + esc(t.emoji) + "</span>" : "") +
+               '<span class="up-topicchip-lbl">' + esc(t.name) + "</span>" +
+             "</span>";
     }
 
     /* ---- Mentions ------------------------------------------------------------------------- */
@@ -311,7 +383,98 @@
         text: text,
         citations: d.citations,
         companies: d.companies,
-        model: d.model
+        model: d.model,
+        brandMode: state.hl.brands,
+        cites: state.hl.cites,
+        ownIds: eigeneIds(d)
+      });
+    }
+
+    /* Welche Marke ist die eigene? Das companies-Array sagt es nicht -- die Rolle steht nur an
+       den Erwaehnungen der Zitationen (role: "own"). Von dort kommt die Menge der eigenen ids, und
+       das ist der einzige Ort in den Daten, der es hergibt. */
+    function eigeneIds(d) {
+      var out = null;
+      (isArr(d && d.citations) ? d.citations : []).forEach(function (c) {
+        (isArr(c && c.mentions) ? c.mentions : []).forEach(function (m) {
+          if (m && m.role === "own" && m.company_id) {
+            if (!out) out = {};
+            out[String(m.company_id)] = true;
+          }
+        });
+      });
+      return out;
+    }
+
+    /* Absender der Nachricht: Logo und Name des Modells, beides aus dem Modell-Store (UC.modelChip
+       liefert genau das Paar). Der Chip wird auseinandergenommen, weil das Logo hier gross links
+       neben der Karte steht und der Name darueber. */
+    function renderAbsender() {
+      if (istLaden() || !state.data || state.error) {
+        elAv.innerHTML = '<span class="urd-sk urd-sk-av"></span>';
+        elWho.innerHTML = '<span class="urd-sk urd-sk-who"></span>';
+        elHlBtn.hidden = true;
+        return;
+      }
+      elHlBtn.hidden = false;
+      if (!elHlBtn.innerHTML) elHlBtn.innerHTML = UC.icon("settings", 2);
+      var chip = document.createElement("div");
+      chip.innerHTML = UC.modelChip(state.data.model, { full: true });
+      var logo = chip.querySelector(".up-ment-logo");
+      var name = chip.querySelector(".up-ment-name");
+      elAv.innerHTML = logo ? logo.outerHTML : "";
+      elWho.textContent = name ? name.textContent : String(state.data.model || "");
+    }
+
+    /* ---- Das Menue der Hervorhebungen (10) --------------------------------------------------
+       Ein kleines Menue an der Kopfzeile der Antwort. UC.makePopover uebernimmt Positionierung,
+       Schliessen bei Klick daneben und Escape -- dasselbe Verhalten wie jedes andere Menue der App. */
+    function hlMenuHtml() {
+      return '<div class="urd-hlgrp">' +
+          '<div class="urd-hlhead">Brand highlights</div>' +
+          HL_MODES.map(function (m) {
+            return '<button type="button" class="urd-hlopt' +
+              (state.hl.brands === m.key ? " is-on" : "") + '" data-hl="' + m.key + '">' +
+              '<span class="urd-hlradio"></span>' +
+              '<span class="urd-hltxt"><span class="urd-hllbl">' + esc(m.label) + "</span>" +
+              '<span class="urd-hldesc">' + esc(m.desc) + "</span></span></button>";
+          }).join("") +
+        "</div>" +
+        '<div class="urd-hlsep"></div>' +
+        '<div class="urd-hlgrp">' +
+          '<div class="urd-hlhead">Citations</div>' +
+          '<button type="button" class="urd-hlopt" data-cites="1">' +
+            '<span class="urd-hlcheck' + (state.hl.cites ? " is-on" : "") + '">' +
+              UC.icon("check", 3) + "</span>" +
+            '<span class="urd-hltxt"><span class="urd-hllbl">Show citation chips</span>' +
+            '<span class="urd-hldesc">Sources stay listed below either way</span></span></button>' +
+        "</div>";
+    }
+    var hlPop = UC.makePopover ? UC.makePopover({
+      wrap: elHlWrap, menu: elHlPop, opener: elHlBtn
+    }) : null;
+    if (hlPop) {
+      elHlBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        elHlPop.innerHTML = hlMenuHtml();
+        hlPop.toggle();
+      });
+      elHlPop.addEventListener("click", function (e) {
+        var opt = e.target.closest ? e.target.closest("[data-hl]") : null;
+        if (opt) {
+          state.hl.brands = opt.getAttribute("data-hl");
+          hlSchreiben();
+          elHlPop.innerHTML = hlMenuHtml();
+          renderBody();
+          return;
+        }
+        var cb = e.target.closest ? e.target.closest("[data-cites]") : null;
+        if (cb) {
+          state.hl.cites = !state.hl.cites;
+          hlSchreiben();
+          elHlPop.innerHTML = hlMenuHtml();
+          renderBody();
+        }
       });
     }
 
@@ -384,7 +547,7 @@
                  "</div>" +
                  '<div class="urd-cc-title">' + esc(titelOf(c)) + "</div>" +
                  (desc ? '<div class="urd-cc-desc">' + esc(desc) + "</div>" : '<div class="urd-cc-desc"></div>') +
-                 '<div class="urd-cc-foot">' + UC.brandStack(c.mentions) + "</div>" +
+                 '<div class="urd-cc-foot">' + UC.brandStack(c.mentions, null, { max: 12 }) + "</div>" +
                "</div>";
       }).join("");
 
@@ -403,6 +566,20 @@
       }).join("");
 
       spaltenSetzen(liste.length);
+      markenPassen();
+    }
+
+    /* Die Marken im Fuss einer Kachel: so viele, wie neben dem freien Rand Platz haben, der Rest
+       als "+N". UC.stackFit misst das nach dem Einfuegen -- vorher stehen die echten Breiten nicht
+       fest, und sie haengen an der Spaltenzahl, die selbst an der Breite haengt.
+       32px bleiben links frei (Vorgabe), damit die Chips nicht bis an die Kante des Titels
+       darueber heranlaufen. */
+    var MARKEN_RESERVE = 32;
+    function markenPassen() {
+      if (!UC.stackFit) return;
+      [].forEach.call(elGrid.querySelectorAll(".urd-cc-foot .up-stack"), function (st) {
+        UC.stackFit(st, { reserve: MARKEN_RESERVE });
+      });
     }
 
     function spaltenSetzen(anzahl) {
@@ -423,6 +600,7 @@
     function render() {
       syncSeg();
       renderHead();
+      renderAbsender();
       renderMents();
       renderBody();
       renderCites();
@@ -440,7 +618,7 @@
         syncSeg();
         /* Die Spaltenzahl haengt an der Kachelmenge und muss nach dem Umschalten neu stehen:
            im Listenmodus ist das Raster verborgen und meldet Breite 0. */
-        if (k === "grid" && state.data) spaltenSetzen((state.data.citations || []).length);
+        if (k === "grid" && state.data) { spaltenSetzen((state.data.citations || []).length); markenPassen(); }
         fire("data-view-fn", "urdView", { view: k });
         return;
       }
@@ -502,7 +680,7 @@
 
     /* Die Spaltenzahl haengt an der Breite der eigenen Box. */
     if (UC.onResize) UC.onResize(root, function () {
-      if (state.data && state.view === "grid") spaltenSetzen((state.data.citations || []).length);
+      if (state.data && state.view === "grid") { spaltenSetzen((state.data.citations || []).length); markenPassen(); }
       popZu();
     });
 

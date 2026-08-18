@@ -15,7 +15,7 @@
    der Kartenueberschrift (14px) und eine unter dem Seitentitel -- die Antwort ist ein Detail einer
    Seite, nicht die Seite. Der Klick geht nach Bubble, also traegt er auch den Zeiger. */
 .urd-head { display: flex; flex-direction: column; gap: 12px; }
-.urd-prompt { font-size: 20px; font-weight: 500; line-height: 1.4; letter-spacing: -0.015em;
+.urd-prompt { font-size: 22px; font-weight: 500; line-height: 1.4; letter-spacing: -0.015em;
   color: var(--vc-text); margin: 0; cursor: pointer; border-radius: 8px;
   transition: color 120ms ease; }
 .urd-prompt:hover { color: var(--vc-muted); }
@@ -24,8 +24,14 @@
 /* ---- KPI-Zeile: Modell, Zeit, Market ----
    16px zwischen den Angaben, damit jede fuer sich lesbar bleibt; der Trenner ist Weissraum und
    kein Strich, wie in der Kopfzeile der Antwortkarten. */
-.urd-kpis { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; min-height: 20px; }
+/* 16px ist der Standardabstand der App zwischen zwei Angaben einer Kopfzeile. Der Trenner selbst
+   traegt keinen eigenen Abstand -- er sitzt in der Luecke, die es ohnehin gibt. */
+.urd-kpis { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; min-height: 24px; }
 .urd-kpi-time { font-size: 12px; font-weight: 500; color: var(--vc-muted); white-space: nowrap; }
+/* 1px breit, 14px hoch: hoch genug, um zwischen zwei 28px-Chips als Trennung zu wirken, und
+   niedrig genug, dass er nicht selbst wie ein Rahmen aussieht. */
+.urd-kpi-sep { width: 1px; height: 14px; flex: 0 0 1px; background: var(--vc-border);
+  border-radius: 1px; }
 .urd-tags { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
 /* ---- Abschnittskopf (Mentions, Full Response, Citations) ----
@@ -47,10 +53,15 @@
    deshalb flex-wrap und keine Spalten: eine Rasterung mit fester Spaltenzahl laesst bei drei
    Marken zwei Luecken und bei fuenfzehn eine Wand. */
 .urd-ments { display: flex; flex-wrap: wrap; gap: 8px; }
-/* Der Chip selbst ist .up-entchip aus core (Logo + Name, 28px, Radius 8) plus .up-chiphover fuers
-   Hover. Hier steht nur, was diese Stelle braucht: bei zehn bis fuenfzehn Marken -- der Ausnahme,
-   die es aber gibt -- darf ein Chip nicht breiter werden als die Karte. */
-.urd-ment { max-width: 100%; }
+/* Der Chip ist .up-entchip aus core plus .up-chiphover. Hier steht die groessere Stufe: Logo 20
+   statt 18, Text 14.5 statt 13. Nach Regel 1 der CLAUDE.md ziehen ALLE Werte mit -- Chiphoehe
+   28 -> 32, Radius 8 -> 9, Bild im Logo 16 -> 18, Radien im Logo im selben Verhaeltnis.
+   Ohne das Mitziehen stiess der groessere Text an den Rahmen des Chips. */
+.urd-ment { max-width: 100%; height: 32px; padding: 0 12px 0 6px; border-radius: 9px; }
+.urd-ment .up-ment-logo { width: 20px; height: 20px; border-radius: 5.6px; }
+.urd-ment .up-ment-logo img { width: 18px; height: 18px; border-radius: 4.5px; }
+.urd-ment .up-model-ltr { font-size: 11px; }
+.urd-ment .up-ment-name { font-size: 14.5px; }
 /* Kein Treffer: derselbe Ton wie jeder leere Zustand der App, nur ohne Bild -- der Abschnitt ist
    eine Zeile hoch und braucht keine halbe Karte Luft. */
 .urd-empty { font-size: 13px; font-weight: 400; color: var(--vc-muted); padding: 2px 0; }
@@ -59,8 +70,62 @@
    Die Karte ist der Rahmen, .up-rb aus core der Inhalt. Hier steht nur, dass der Text nicht
    ausbricht: eine Tabelle darin scrollt in ihrem eigenen Rahmen (up-rb-tablewrap), und der
    Container muss das zulassen, ohne selbst breit zu werden. */
+/* Die Antwort als Nachricht: links das Logo des Modells wie ein Profilbild, rechts daneben der
+   Name und darunter die Karte mit dem Text. 12px zwischen Logo und Spalte, damit das Logo als
+   Absender neben der Karte steht und nicht als Teil von ihr. */
+.urd-msg { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
+.urd-msg-av { flex: 0 0 auto; margin-top: 2px; }
+/* Das Logo ist .up-ment-logo aus core, hier eine Stufe groesser: 32 statt 18. Faktor 32/18 auf
+   alle Werte -- Radius 5 -> 8.9, Bild 16 -> 28.4, Polsterung 1 -> 1.8. */
+.urd-msg-av .up-ment-logo { width: 32px; height: 32px; border-radius: 8.9px; padding: 1.8px; }
+.urd-msg-av .up-ment-logo img { width: 28.4px; height: 28.4px; border-radius: 7.1px; }
+.urd-msg-col { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1 1 auto; }
+.urd-msg-top { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  min-height: 20px; }
+.urd-msg-who { font-size: 13px; font-weight: 500; color: var(--vc-text); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; }
 .urd-body { position: relative; min-width: 0; }
 .urd-body .up-rb { max-width: 100%; }
+
+/* ---- Menue der Hervorhebungen (Punkt 10) -----------------------------------------------------
+   Der Knopf ist der Zahnrad-Knopf der App: 28px, Radius 8, Icon in Sekundaerfarbe, Hover wie
+   ueberall. .up-pop und die Positionierung kommen aus core (UC.makePopover). */
+.urd-hlwrap { position: relative; flex: 0 0 auto; }
+/* Der Knopf ist .up-iconbtn aus core -- 32px, Radius 8, Icon 16px, Hover und Dunkelmodus
+   inklusive. Hier steht nur der offene Zustand, den das Bauteil nicht kennt. */
+.urd-hlwrap.is-open .up-iconbtn { background: var(--vc-heading-bg); color: var(--vc-text); }
+.urd-hlbtn[hidden] { display: none; }
+
+.urd-hlpop { position: absolute; top: calc(100% + 6px); right: 0; z-index: 30; min-width: 248px;
+  background: var(--up-surface, var(--vc-bg)); border: 1px solid var(--vc-border);
+  border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,0.14); padding: 6px;
+  display: none; flex-direction: column; box-sizing: border-box; }
+.urd-hlwrap.is-open .urd-hlpop { display: flex; }
+.urd-hlgrp { display: flex; flex-direction: column; gap: 1px; }
+.urd-hlhead { font-size: 11px; font-weight: 600; color: var(--vc-third); letter-spacing: 0.04em;
+  text-transform: uppercase; padding: 6px 8px 4px; }
+.urd-hlsep { height: 1px; background: var(--vc-border); margin: 6px 4px; flex: 0 0 1px; }
+.urd-hlopt { display: flex; align-items: flex-start; gap: 9px; width: 100%; border: 0;
+  background: transparent; font: inherit; text-align: left; padding: 7px 8px; border-radius: 8px;
+  cursor: pointer; color: var(--vc-text); }
+.urd-hlopt:hover { background: var(--vc-heading-bg); }
+/* Der Punkt zeigt die Wahl -- ein Ring, gefuellt wenn aktiv. Dasselbe Bild wie in den
+   Einstellungen der App: kein Haken, weil sich die vier Modi ausschliessen. */
+.urd-hlradio { width: 15px; height: 15px; border-radius: 999px; flex: 0 0 15px; margin-top: 2px;
+  border: 1.5px solid var(--vc-border); box-sizing: border-box; position: relative; }
+.urd-hlopt.is-on .urd-hlradio { border-color: var(--vc-text); }
+.urd-hlopt.is-on .urd-hlradio::after { content: ""; position: absolute; inset: 3px;
+  border-radius: 999px; background: var(--vc-text); }
+/* Der Haken dagegen ist ein Schalter: an oder aus, keine Auswahl aus mehreren. */
+.urd-hlcheck { width: 15px; height: 15px; border-radius: 5px; flex: 0 0 15px; margin-top: 2px;
+  border: 1.5px solid var(--vc-border); box-sizing: border-box; display: inline-flex;
+  align-items: center; justify-content: center; color: var(--up-surface, #fff); }
+.urd-hlcheck svg { width: 10px; height: 10px; display: none; }
+.urd-hlcheck.is-on { background: var(--vc-text); border-color: var(--vc-text); }
+.urd-hlcheck.is-on svg { display: block; }
+.urd-hltxt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.urd-hllbl { font-size: 13px; font-weight: 500; color: var(--vc-text); }
+.urd-hldesc { font-size: 11.5px; font-weight: 400; color: var(--vc-muted); line-height: 1.35; }
 
 /* ---- Citations ----
    Zwei Ansichten derselben Liste. Der Umschalter ist .up-seg aus core. */
@@ -71,7 +136,9 @@
 /* Karte: Werte aus .urt-card (responses-table), damit eine Quellenkachel hier so aussieht wie
    dort. Nur die Hoehe ist anders -- eine Quelle traegt Titel und Beschreibung, keine Kennzahlen,
    und 200px waeren zur Haelfte leer. */
-.urd-cite-card { display: flex; flex-direction: column; min-width: 0; min-height: 152px;
+/* min-height 184 statt 152 (Vorgabe: 32px hoeher) -- die Beschreibung bekommt damit ihre zwei
+   Zeilen auch dann, wenn der Titel nur eine braucht, und der Fuss steht auf gleicher Hoehe. */
+.urd-cite-card { display: flex; flex-direction: column; min-width: 0; min-height: 184px;
   padding: 16px; border-radius: 14px; border: 1px solid var(--vc-border); background: var(--vc-bg);
   cursor: pointer; transition: background 120ms ease; box-sizing: border-box; }
 .urd-cite-card:hover { background: var(--vt-row-hover); }
@@ -90,8 +157,10 @@
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   flex: 1 1 auto; }
 /* Die Marken stehen rechts unten -- wie im Fuss der Antwortkarten. */
+/* Rechtsbuendig wie im Fuss der Antwortkarten, und links bleiben 32px frei (Vorgabe): UC.stackFit
+   rechnet diesen Rand mit und zeigt nur so viele Marken, wie davor Platz haben. */
 .urd-cc-foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px;
-  margin-top: 12px; min-height: 24px; }
+  margin-top: 12px; min-height: 24px; padding-left: 32px; box-sizing: border-box; }
 
 /* Liste: keine Rasterlinien, keine Spalten. Eine Quellenliste, wie man sie aus Chatbots kennt --
    Favicon, Titel, Marken, mit Luft dazwischen. Getrennt wird durch Abstand, nicht durch Striche;
@@ -118,14 +187,16 @@
 .urd-sk-kpi { height: 18px; width: 108px; border-radius: 6px; }
 .urd-sk-ment { height: 28px; width: 148px; border-radius: 8px; }
 .urd-sk-line { height: 14px; margin-bottom: 10px; border-radius: 6px; }
-.urd-sk-card { height: 152px; border-radius: 14px; }
+.urd-sk-card { height: 184px; border-radius: 14px; }
+.urd-sk-av { width: 32px; height: 32px; border-radius: 8.9px; }
+.urd-sk-who { display: block; height: 13px; width: 96px; border-radius: 5px; }
 
 /* ---- Schmal ----
    Gemessen an der EIGENEN Box (UC.widthTiers), nicht am Fenster: diese Seite kann in einem Drawer
    stehen, der auf einem breiten Bildschirm schmal ist. Genau das fehlte den alten
    Response-Elementen komplett -- sie hatten keine einzige Regel fuer schmale Breiten. */
 .urd-root.is-narrow { gap: 24px; }
-.urd-root.is-narrow .urd-prompt { font-size: 17px; }
+.urd-root.is-narrow .urd-prompt { font-size: 18px; }
 .urd-root.is-narrow .urd-card { padding: 14px; border-radius: 14px; }
 /* Der Umschalter rutscht unter die Ueberschrift, sobald beides nicht mehr nebeneinander passt. */
 .urd-root.is-narrow .urd-sec { flex-direction: column; align-items: stretch; gap: 12px; }
@@ -134,7 +205,7 @@
 /* Bei einer Spalte ist die Kachel nur noch ein breiter Streifen: die Beschreibung darf dann drei
    Zeilen nehmen, sonst steht darunter Luft. */
 .urd-root.is-narrow .urd-cc-desc { -webkit-line-clamp: 3; }
-.urd-root.is-vnarrow .urd-prompt { font-size: 16px; }
+.urd-root.is-vnarrow .urd-prompt { font-size: 17px; }
 .urd-root.is-vnarrow .urd-kpis { gap: 10px; }
 /* Ganz schmal darf der Chip die volle Breite der Karte nehmen, statt den Namen zu kappen. */
 .urd-root.is-vnarrow .urd-ment { max-width: 100%; }

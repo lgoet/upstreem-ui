@@ -877,6 +877,52 @@
     return out;
   }
 
+  /* Aus einem fertigen .up-stack so viele Chips zeigen, wie in die verfuegbare Breite passen --
+     der Rest wird zu "+N". brandStack kann nur eine feste Zahl (max 4); im Fuss einer Kachel
+     haengt die Zahl aber an der Kachelbreite, und die haengt an der Spaltenzahl.
+     Gemessen wird nach dem Einfuegen, weil erst dann die echten Breiten feststehen. cfg.reserve
+     haelt links Platz frei (in der Kachel 32px, damit der Titel darueber nicht bis an die Chips
+     heranlaeuft). */
+  function stackFit(stack, cfg){
+    if (!stack) return 0;
+    cfg = cfg || {};
+    var items = [].slice.call(stack.querySelectorAll(".up-stack-item"));
+    var more = stack.querySelector(".up-stack-more");
+    if (!items.length) return 0;
+    var platz = (stack.parentNode ? stack.parentNode.clientWidth : 0) - (cfg.reserve || 0);
+    if (platz <= 0) return items.length;
+    /* Alle erst zeigen, sonst messe ich die Breite eines schon gekuerzten Stapels. */
+    items.forEach(function (it) { it.style.display = ""; });
+    /* Die Gesamtzahl steht NICHT an den Chips: brandStack rendert hoechstens seine max und schreibt
+       den Rest schon als "+N". Ohne diese Zahl haette stackFit ein vorhandenes "+4" fuer ueberzaehlig
+       gehalten und ausgeblendet -- gemessen: 8 Erwaehnungen, 4 Chips, "+4" verschwand. */
+    var restVorher = 0;
+    if (more){
+      var mm = /(\d+)/.exec(more.textContent || "");
+      restVorher = mm ? parseInt(mm[1], 10) : 0;
+      more.style.display = "none";
+    }
+    var gesamt = cfg.total ? Math.max(cfg.total, items.length) : items.length + restVorher;
+    var sichtbar = items.length;
+    /* Von hinten wegnehmen, bis es passt. Ein Chip ueberlappt den vorigen um 4px (up-stack-item
+       + up-stack-item hat margin-left -4), deshalb wird gemessen und nicht gerechnet. */
+    while (sichtbar > 1 && stack.scrollWidth > platz){
+      sichtbar--;
+      items[sichtbar].style.display = "none";
+      if (more){
+        more.style.display = "";
+        more.textContent = "+" + (gesamt - sichtbar);
+      }
+    }
+    if (more && gesamt - sichtbar > 0){
+      more.style.display = "";
+      more.textContent = "+" + (gesamt - sichtbar);
+    } else if (more){
+      more.style.display = "none";
+    }
+    return sichtbar;
+  }
+
   function rbSplitRow(line){
     var s = String(line || "").trim();
     if (s.charAt(0) === "|") s = s.slice(1);
@@ -1008,7 +1054,17 @@
      gegen "Aurora Solar"), Wortgrenzen ueber Unicode-Klassen statt \b (\b kennt kein "ü"),
      und je Marke nur das ERSTE Vorkommen -- ein Text, der eine Marke zwanzigmal nennt, waere
      sonst zwanzigmal unterbrochen. */
-  function rbBrands(rootEl, companies){
+  function rbBrands(rootEl, companies, cfg){
+    cfg = cfg || {};
+    /* Modus aus den Einstellungen: "all" jede Erwaehnung, "first" nur die erste je Marke,
+       "own" nur die eigene Marke, "none" keine. Ohne Angabe bleibt es bei "first" -- so haben es
+       die alten Elemente gemacht, und ein Text, der eine Marke zwanzigmal nennt, waere sonst
+       zwanzigmal unterbrochen. */
+    var modus = cfg.mode === "all" || cfg.mode === "own" || cfg.mode === "none" ? cfg.mode : "first";
+    if (modus === "none") return 0;
+    /* Welche ist die eigene? Das companies-Array sagt es nicht -- die Rolle steht nur an den
+       Erwaehnungen der Zitationen (role: "own"). Von dort kommt die Menge der eigenen ids. */
+    var eigene = cfg.ownIds && typeof cfg.ownIds === "object" ? cfg.ownIds : null;
     var items = (isArr(companies) ? companies : []).map(function (c) {
       return {
         roh: String((c && (c.brand_name_raw || c.name)) || "").trim(),
@@ -1016,7 +1072,14 @@
         id: String((c && c.company_id) || ""),
         icon: String((c && c.favicon_url) || "")
       };
-    }).filter(function (x) { return x.roh; });
+    }).filter(function (x) {
+      if (!x.roh) return false;
+      if (modus !== "own") return true;
+      /* Ohne bekannte eigene id waere "nur die eigene" gleichbedeutend mit "keine" -- dann lieber
+         alle zeigen als stumm nichts, und einmal sagen warum. */
+      if (!eigene) return true;
+      return !!eigene[x.id];
+    });
     if (!rootEl || !items.length) return 0;
 
     items.sort(function (a, b) { return b.roh.length - a.roh.length; });
@@ -1053,7 +1116,7 @@
       while ((m = re.exec(text)) !== null){
         var gefunden = m[1], k = gefunden.toLowerCase();
         if (m.index > letzte) frag.appendChild(document.createTextNode(text.slice(letzte, m.index)));
-        if (gesehen[k]){
+        if (modus === "first" && gesehen[k]){
           frag.appendChild(document.createTextNode(gefunden));
         } else {
           gesehen[k] = true;
@@ -1063,7 +1126,11 @@
           chip.setAttribute("role", "button");
           chip.setAttribute("tabindex", "0");
           chip.setAttribute("data-rb-brand", e.id || "");
-          if (e.name && e.name !== gefunden) chip.setAttribute("data-tip", e.name);
+          /* Tooltip an JEDER Marke. Vorher stand er nur dort, wo sich der Anzeigename von der
+             Schreibweise im Text unterschied -- bei "LeeUp Media" gegen "LeeUP Media" also
+             zufaellig ja, bei "Anfragenfluss" gegen "Anfragenfluss" zufaellig nein. Von aussen
+             sah das aus, als haette nur die eigene Marke einen. */
+          chip.setAttribute("data-tip", e.name || gefunden);
           if (e.icon){
             var img = document.createElement("img");
             img.className = "up-rb-brand-ic"; img.alt = ""; img.loading = "lazy";
@@ -1097,7 +1164,15 @@
     if (!hostEl) return { html: "", brands: 0, cites: 0, tables: 0 };
     var idx = rbCiteIndex(cfg.citations);
     hostEl.innerHTML = rbBlocks(text, idx);
-    var marken = rbBrands(hostEl, cfg.companies);
+    /* Zitat-Chips abschalten heisst: der Chip wird zu seinem Text. Die Quelle bleibt im Abschnitt
+       "Citations" sichtbar, im Lauftext steht dann nur noch die Adresse. */
+    if (cfg.cites === false){
+      [].forEach.call(hostEl.querySelectorAll(".up-rb-cite"), function (c) {
+        var t = c.querySelector(".up-rb-cite-txt");
+        c.parentNode.replaceChild(document.createTextNode(t ? t.textContent : ""), c);
+      });
+    }
+    var marken = rbBrands(hostEl, cfg.companies, { mode: cfg.brandMode, ownIds: cfg.ownIds });
     return {
       html: hostEl.innerHTML,
       brands: marken,
@@ -2642,8 +2717,12 @@
       if (!S.btn) return;
       tip.style.transform = "";
       var r = S.btn.getBoundingClientRect();
-      tip.style.left = "0px"; tip.style.top = "0px";
-      var tr = tip.getBoundingClientRect();
+      /* Die Masse ueber offsetWidth/offsetHeight, NICHT indem der Tooltip zum Messen nach 0,0
+         geschoben wird. Das alte Vorgehen setzte left und top auf 0, las die Groesse und setzte
+         danach die echte Position -- zeichnete der Browser dazwischen einen Frame, blitzte der
+         Tooltip in der linken oberen Ecke auf. Beim Scrollen lief das alle 150ms, und genau das
+         war das "Springen nach oben". offsetWidth/offsetHeight brauchen keine Verschiebung. */
+      var tr = { width: tip.offsetWidth, height: tip.offsetHeight };
       var vw = window.innerWidth || document.documentElement.clientWidth;
       var vh = window.innerHeight || document.documentElement.clientHeight;
       /* data-tip-place="right": rechts NEBEN dem Ausloeser statt darunter. Gebraucht von der
@@ -2678,7 +2757,13 @@
          the normal chip centres under it */
       var left = S.wide ? r.left : (r.left + r.width / 2 - tr.width / 2);
       tip.style.left = Math.max(6, Math.min(left, vw - tr.width - 6)) + "px";
-      tip.style.top = (r.bottom + 8) + "px";
+      /* Unter dem Ausloeser, solange dort Platz ist -- sonst darueber. Vorher stand er immer
+         darunter und lief am unteren Rand aus dem Bild: der Tooltip war dann da, aber nicht zu
+         sehen, was von "springt weg" nicht zu unterscheiden ist. */
+      var untenNoetig = r.bottom + 8 + tr.height + 6;
+      tip.style.top = (untenNoetig <= vh || r.top - 8 - tr.height < 6)
+        ? (r.bottom + 8) + "px"
+        : (r.top - 8 - tr.height) + "px";
       S.placedRect = r;
     }
     function hideTip(){
@@ -2780,9 +2865,21 @@
           repositionRaf = null;
           if (!S.btn || !S.placedRect) return;
           var r = S.btn.getBoundingClientRect();
+          /* Ist der Ausloeser aus dem Bild gescrollt, hat ein Tooltip an seiner Stelle keinen
+             Sinn mehr -- er stand vorher irgendwo am Rand und zeigte auf nichts. */
+          var vh = window.innerHeight || document.documentElement.clientHeight;
+          if (r.bottom < 0 || r.top > vh){ hideTip(); return; }
           tip.style.transform = "translate(" + Math.round(r.left - S.placedRect.left) + "px," + Math.round(r.top - S.placedRect.top) + "px)";
           clearTimeout(settleTimer);
-          settleTimer = setTimeout(function(){ if (S.btn) placeTip(); }, 150);
+          /* Das Nachsetzen erst, wenn das Scrollen WIRKLICH ruht. Vorher lief es stur 150ms nach
+             dem letzten Frame -- bei laufendem Scrollen also mitten in der Bewegung, und dann
+             kaempften zwei Positionen um dasselbe Element: das Transform folgte der alten
+             Verankerung, placeTip setzte eine neue. Das war das Springen. */
+          settleTimer = setTimeout(function(){
+            if (!S.btn) return;
+            if (Date.now() - S.lastScrollAt < 140){ return; }
+            placeTip();
+          }, 160);
         });
       }, { capture: true, passive: true });
       window.addEventListener("blur", hideTip);
@@ -7720,6 +7817,7 @@
     respBody: respBody,
     rbShowUrl: rbShowUrl,
     rbCleanUrl: rbCleanUrl,
+    stackFit: stackFit,
     skeletonRows: skeletonRows,
     makeColumns: makeColumns,
     makeSearch: makeSearch,

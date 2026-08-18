@@ -53,6 +53,12 @@ document.getElementById("wurzel").setAttribute("data-isdark", __dunkel ? "yes" :
 </script>
 <script src="_h_urd_daten.js"></script>
 <script>
+/* Nur mit ?raf=timer: requestAnimationFrame auf einen Timer umbiegen. Im verdeckten Browser-Pane
+   ist rAF pausiert, und das Nachfuehren des Tooltips beim Scrollen haengt daran -- ohne diesen
+   Ersatz messe ich die Drosselung des Panes statt den Code. Ersetzt wird nur die Taktquelle. */
+if (/raf=timer/.test(location.search)) {
+  window.requestAnimationFrame = function (fn) { return setTimeout(function () { fn(Date.now()); }, 16); };
+}
 /* Frische beweisen statt hoffen: alles per fetch(no-store) inline, kein <link>/<script src>. */
 window.__GELADEN = Promise.all(["core.css","response-detail.css","core.js","response-detail.js"].map(function(f){
   return fetch(f + "?n=" + Math.random(), { cache: "no-store" }).then(function(r){ return r.text(); })

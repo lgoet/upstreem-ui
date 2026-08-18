@@ -1,0 +1,44 @@
+<meta charset="utf-8"><title>Tooltip beim Scrollen</title>
+<style>html,body{margin:0;background:#eee}iframe{width:1100px;height:700px;border:0;display:block}</style>
+<body><iframe id="f"></iframe>
+<script>
+var f = document.getElementById("f");
+f.src = "_h_urd_runjs.html" + location.search;
+/* Der Test laeuft HIER und schreibt sein Ergebnis in __tipErg -- im verdeckten Pane sind Timer
+   gedrosselt, also darf die Messung nicht auf einen Aufruf von aussen warten. */
+var n = 0;
+var warte = setInterval(function(){
+  var w = f.contentWindow, d = f.contentDocument;
+  if (++n > 60){ clearInterval(warte); window.__tipErg = { fehler: "nicht bereit" }; return; }
+  if (!(w && w.__bereit)) return;
+  clearInterval(warte);
+  var main = d.getElementById("main");
+  var ziel = d.querySelector(".up-rb-brand[data-tip]");
+  if (!ziel){ window.__tipErg = { fehler: "kein Ziel" }; return; }
+  ziel.scrollIntoView({ block: "center" });
+  setTimeout(function(){
+    ziel.dispatchEvent(new w.MouseEvent("mouseover", { bubbles: true }));
+    setTimeout(function(){
+      var tip = w.document.querySelector(".up-tip");
+      if (!tip){ window.__tipErg = { fehler: "kein Tooltip" }; return; }
+      function dy(){ var t = tip.getBoundingClientRect(), z = ziel.getBoundingClientRect();
+        return Math.round(t.top - z.bottom); }
+      var reihe = [dy()], k = 0;
+      var iv = setInterval(function(){
+        main.scrollTop += 40; k++;
+        reihe.push(dy());
+        if (k >= 8){
+          clearInterval(iv);
+          setTimeout(function(){
+            reihe.push(dy());
+            var min = Math.min.apply(null, reihe), max = Math.max.apply(null, reihe);
+            window.__tipErg = { datei: /alt=1/.test(location.search) ? "ALT" : "NEU",
+              dy: reihe, spanne: max - min, deckkraft: w.getComputedStyle(tip).opacity,
+              offen: tip.classList.contains("is-on") };
+          }, 500);
+        }
+      }, 180);
+    }, 350);
+  }, 500);
+}, 300);
+</script>
