@@ -1,0 +1,100 @@
+<meta charset="utf-8"><title>domain-detail mit Run-JS</title>
+<style>
+  /* Form der echten Seite: der Koerper scrollt nicht, #main scrollt, die Leiste haelt links Platz. */
+  html, body { margin: 0; height: 100%; font-family: Geist, system-ui, sans-serif; }
+  body { overflow: hidden; background: #fff; }
+  #main { height: 100vh; overflow-y: auto; padding: 24px; box-sizing: border-box; }
+  #bar { position: fixed; right: 12px; bottom: 12px; z-index: 999; display: flex; gap: 6px; flex-wrap: wrap; max-width: 60vw; }
+  #bar button { font: 12px ui-monospace, monospace; padding: 6px 9px; border-radius: 8px; border: 1px solid #ccc; background: #fff; cursor: pointer; }
+  #out { position: fixed; left: 12px; bottom: 12px; z-index: 999; font: 11px ui-monospace, monospace;
+         background: #111; color: #eee; padding: 8px; max-width: 34vw; max-height: 40vh; overflow: auto; white-space: pre-wrap; }
+  .schmal #main { max-width: 560px; }
+</style>
+<body>
+<div id="main">
+  <div class="up-root udd-root" data-instance="domain_detail_page" data-isdark="no" data-brand="LeeUp Media"
+       data-mode-fn="bubble_fn_uddMode" data-gran-fn="bubble_fn_uddGran" data-scope-fn="bubble_fn_uddScope"></div>
+</div>
+<div id="bar">
+  <button onclick="laden()">Daten</button>
+  <button onclick="urls()">URL-Serie</button>
+  <button onclick="setDomainDetailLoading('d1','yes')">loading yes</button>
+  <button onclick="resetDomainDetail('d1')">reset</button>
+  <button onclick="thema()">dark/light</button>
+  <button onclick="document.body.classList.toggle('schmal')">schmal</button>
+  <button onclick="mess().then(function(t){document.getElementById('out').textContent=t;})">MESSEN</button>
+</div>
+<pre id="out">laeuft</pre>
+<script>
+window.__ev = []; window.__fehler = [];
+window.addEventListener("error", function(e){ window.__fehler.push(String(e.message)); });
+["uddMode","uddGran","uddScope"].forEach(function(n){ window["bubble_fn_"+n] = function(p){ window.__ev.push([n, p]); }; });
+try { localStorage.setItem("pref_theme","light"); } catch(e){}
+</script>
+<script src="_h_udd_daten.js"></script>
+<script>
+/* Frische beweisen statt hoffen: alles per fetch(no-store) inline, kein <link>/<script src>. */
+window.__GELADEN = Promise.all(["core.css","domain-detail.css","core.js","domain-detail.js"].map(function(f){
+  return fetch(f + "?n=" + Math.random(), { cache: "no-store" }).then(function(r){ return r.text(); })
+    .then(function(t){ return [f, t]; });
+})).then(function(paare){
+  paare.forEach(function(p){
+    var e = document.createElement(/\.css$/.test(p[0]) ? "style" : "script");
+    e.textContent = p[1]; document.head.appendChild(e);
+  });
+});
+
+function laden(){ window.setDomainDetail("domain_detail_page", JSON.stringify(window.UDD_MAIN)); }
+function urls(){ window.setDomainDetailUrls("domain_detail_page", JSON.stringify(window.UDD_URLS)); }
+function thema(){
+  var r = document.querySelector(".udd-root");
+  window.setUpstreemTheme(r.getAttribute("data-theme") === "dark" ? "light" : "dark");
+}
+
+/* Der statische Start, wie ihn der Pageload-Workflow feuert: erst die Hauptdaten, dann die
+   URL-Serie. */
+/* Statt der Harness-Aufrufe: GENAU der Run-JS-Schritt, der nach Bubble geht. */
+window.__GELADEN.then(function(){
+  var s = document.createElement("script"); s.src = "_h_udd_runjs.js?n=" + Math.random();
+  s.onload = function(){ setTimeout(function(){ window.__bereit = true; }, 900); };
+  document.head.appendChild(s);
+});
+
+function mess(){
+  return new Promise(function(r){
+    var root = document.querySelector(".udd-root");
+    function q(s){ return root.querySelector(s); }
+    function box(s){ var e = q(s); if (!e) return null; var b = e.getBoundingClientRect();
+      return { b: Math.round(b.width), h: Math.round(b.height), oben: Math.round(b.top) }; }
+    var karten = [].map.call(root.querySelectorAll(".udd-card"), function(k){ return k.getBoundingClientRect(); });
+    var res = {
+      fehler: window.__fehler,
+      ereignisse: window.__ev,
+      klassen: root.className,
+      /* 32px zwischen den Karten -- gemessen, nicht aus der Regel gelesen */
+      gap_1_2: karten[1] ? Math.round(karten[1].top - karten[0].bottom) : null,
+      gap_2_3: karten[2] ? Math.round(karten[2].top - karten[1].bottom) : null,
+      kpi_sichtbar: q(".udd-kpi") ? !q(".udd-kpi").hidden : null,
+      kpi_wert: q(".udd-kpi-val") ? q(".udd-kpi-val").textContent.trim() : null,
+      kpi_trend: q(".udd-kpi-trend") ? q(".udd-kpi-trend").textContent.trim() : null,
+      heading: q(".udd-heading") ? q(".udd-heading").textContent : null,
+      scope_sichtbar: q(".udd-scope") ? !q(".udd-scope").hidden : null,
+      canvas: box(".udd-canvas"),
+      linien: (function(){ try { var c = q(".udd-canvas"); var ch = c && Chart.getChart(c);
+        return ch ? ch.data.datasets.length : null; } catch(e){ return "?"; } })(),
+      linienfarben: (function(){ try { var c = q(".udd-canvas"); var ch = c && Chart.getChart(c);
+        return ch ? ch.data.datasets.map(function(d){ return d.borderColor; }) : null; } catch(e){ return null; } })(),
+      trichter_stufen: root.querySelectorAll(".udd-fn-col").length,
+      trichter_baender: root.querySelectorAll(".udd-fn-band").length,
+      trichter_werte: [].map.call(root.querySelectorAll(".udd-fn-val"), function(e){ return e.textContent; }),
+      trichter_unter: [].map.call(root.querySelectorAll(".udd-fn-sub"), function(e){ return e.textContent; }),
+      trichter_labels: [].map.call(root.querySelectorAll(".udd-fn-label"), function(e){ return e.textContent; }),
+      balken: root.querySelectorAll(".up-bar-row").length,
+      balken_labelspalte: !!root.querySelector(".up-bars.has-labelcol"),
+      balken_namen: [].map.call(root.querySelectorAll(".up-bar-labeltxt"), function(e){ return e.textContent; }),
+      balken_breiten: [].map.call(root.querySelectorAll(".up-bar-fill"), function(e){ return e.style.width; })
+    };
+    r(JSON.stringify(res, null, 1));
+  });
+}
+</script>

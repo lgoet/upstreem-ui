@@ -1,0 +1,13 @@
+<meta charset="utf-8"><title>run-js im Rahmen</title>
+<style>html,body{margin:0;background:#eee}iframe{width:1180px;height:1400px;border:0;display:block}</style>
+<body><iframe id="f" src="_h_udd_runjs.html"></iframe>
+<script>
+document.getElementById("f").addEventListener("load", function(){
+  var f=document.getElementById("f");
+  var i=setInterval(function(){
+    var w=f.contentWindow;
+    if (w.__bereit && w.mess){ clearInterval(i); setTimeout(function(){ w.mess().then(function(t){ window.__mess=t; }); }, 1400); }
+  },300);
+  setTimeout(function(){ clearInterval(i); if(!window.__mess) window.__mess="nicht bereit"; }, 18000);
+});
+</script>
