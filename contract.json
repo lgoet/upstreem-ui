@@ -1187,6 +1187,7 @@
   "uca-tags",
   "uca-toast",
   "uca-trigger",
+  "uca-trigger-",
   "udb-box",
   "udb-cb",
   "udb-cols-badge",
@@ -2403,7 +2404,7 @@
   "globals": 137,
   "payloadkeys": 66,
   "dataattrs": 172,
-  "klassen": 1777,
+  "klassen": 1778,
   "keyframes": 56
  }
 }

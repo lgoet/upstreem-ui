@@ -21,6 +21,17 @@
    links 7 gegen rechts 8). Zwei Faelle desselben Knopfes mit zwei Werten: genau das, was ein
    Bauteil verhindern soll. */
 .uca-trigger { white-space: nowrap; }
+/* Und dieselben Werte noch einmal mit ZWEI Klassen (0,2,0). Nicht doppelt gemoppelt, sondern
+   Notwehr: liegt auf der Seite noch eine AELTERE create-with-ai.css (zwei Elemente mit
+   verschiedenen data-cdn-pin, und der Loader in aelterem Markup entdoppelt nach URL statt nach
+   Dateiname), dann steht dort ein .uca-trigger-Block mit 13px Polsterung und 13.5px Schrift.
+   Der hat dieselbe Spezifitaet wie .up-export (0,1,0), und dann entscheidet die Ladereihenfolge --
+   genau das, was hier nie entscheiden darf. Mit .uca-root davor gewinnen diese Werte immer.
+   Die Zahlen sind die von .up-export; wer dort etwas aendert, aendert es hier mit. */
+.uca-root .uca-trigger {
+  height: 32px; padding: 0 8px; gap: 8px; border-radius: 8px;
+  font-size: 12px; font-weight: 560; letter-spacing: normal; line-height: 1;
+}
 
 /* Das Zeichen ist jetzt Lucide astroid aus UC.icon -- vorher lag hier eine PNG-Maske von
    img.icons8.com, also ein fremder Server im Ladepfad eines Knopfes, der in jeder Tabelle steht.
