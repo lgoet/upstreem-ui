@@ -213,7 +213,10 @@
 /* 32px zwischen den Regionen (Kopf / Quick Actions / Menue). Leer bleibt der Block
    abstandslos -- ein Loch, wo nichts steht, waere kein Abstand, sondern ein Fehler. */
 .usn-qa { flex: 0 0 auto; }
-.usn-qa:not(:empty) { margin-top: 32px; }
+/* 24 statt 32, auf Ansage -- derselbe Schritt wie unter Quick Actions. Die beiden Abstaende
+   oben (Kopfleiste -> Quick Actions -> erste Gruppe) sind das Geruest der Leiste und muessen
+   gleich bleiben; wer einen aendert, aendert beide. */
+.usn-qa:not(:empty) { margin-top: 24px; }
 /* Der Knopf traegt die Werte eines Menuepunktes: 36 hoch, Radius 9, gedaempfte Schrift, und
    auf dieser Flaeche KEINEN eigenen Hintergrund -- sein weisses --am-trigger-bg stach als
    Kachel heraus. Sichtbar bleibt der Rahmen; beim Hover geht Text und Icon auf die
@@ -242,7 +245,7 @@
 .usn-bar.is-mini .mqa-trigger .mqa-kbd { display: none; }
 
 /* ---------- Menue ---------- */
-.usn-nav { margin-top: 32px; flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+.usn-nav { margin-top: 24px; flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; }
 /* Derselbe Abstand wie zwischen Kopf, Quick Actions und Menue: alle groesseren Gruppen
    stehen gleich weit auseinander. */
 .usn-block + .usn-block { margin-top: 32px; }
