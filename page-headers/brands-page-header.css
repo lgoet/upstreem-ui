@@ -8,12 +8,9 @@
    as a direct sibling would space THREE children apart across the whole row instead of keeping
    the two buttons next to each other on the right.
 
-   Any vertical offset lives on THIS wrapper, never on the button. At the default width there is
-   none to apply (core's 16px top padding needs no compensating), but under is-vnarrow core adds
-   extra top clearance for Bubble's mobile sidebar-toggle and the wrapper cancels it below. Left on
-   the button alone it would only shift Add, leaving Refresh (its sibling, no such margin of its
-   own) lower and out of line with it. Same fix prompts-page-header.css applies for the same
-   button pairing. */
+   Any vertical offset lives on THIS wrapper, never on the button -- auf dem Knopf allein wuerde er
+   nur Add verschieben und Refresh (sein Nachbar, ohne diesen Rand) daneben tiefer stehen lassen.
+   Es gibt aber keinen mehr abzuziehen: die Zusatzpolsterung im schmalen Fenster ist am 18.08. aus
+   core entfernt worden, und mit ihr die -16px, die hier standen. */
 .bph-topright { display: flex; align-items: center; gap: 8px; margin-top: 0; }
 .up-root .bph-topright .up-ph-addbtn { margin-top: 0; }
-.up-root.is-vnarrow .bph-topright { margin-top: -16px; }

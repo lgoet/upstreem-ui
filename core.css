@@ -1995,19 +1995,21 @@
    button can drop its trailing word here by wrapping it in a child with class up-ph-addbtn-full. */
 .up-root.is-narrow .up-ph-navitem { flex: 1 1 0; }
 .up-root.is-narrow .up-ph-addbtn-full { display: none; }
-/* is-vnarrow (<500px default): below this width Bubble's mobile sidebar toggle -- a 32x32 button --
-   sits at the TOP LEFT of the page, over whatever the topmost component draws there. So the first
-   thing on the page needs 32px of clearance above it, or the heading ends up underneath the button.
+/* Hier stand bis 18.08. eine Zusatzpolsterung: unter 500px bekamen Seitenkoepfe (.up-ph-root) und
+   Komponenten mit eigener Kopfzeile (.up-sidebar-clear -- ask-mira, prompt-research) 32px Luft
+   nach oben, damit Bubbles mobiler Sidebar-Schalter oben links nicht auf der Ueberschrift lag.
+   Diesen Schalter gibt es nicht mehr: die Leiste ist unsere eigene (usn-bar) und bringt ihren
+   Knopf selbst mit. Die Polsterung war damit nur noch ein Sprung in der Hoehe, sobald das Fenster
+   schmal wurde -- ersatzlos raus, auf Ansage.
 
-   .up-sidebar-clear is the general carrier: any component that renders the top-left of a page adds
-   it (ask-mira and prompt-research do, since they draw their own header instead of using a page
-   header). .up-ph-root gets it implicitly -- a page header is always the top of its page.
+   Mit ihr gehen VIER Gegenrechnungen: .up-ph-addbtn hier und die -16px an .bph-topright,
+   .pph-topright und .cph-refreshbtn in den Seitenkopf-Dateien. Sie existierten ausschliesslich,
+   um diese Polsterung wieder abzuziehen; allein stehengelassen haetten sie die Knoepfe im
+   schmalen Fenster 16px nach oben gezogen.
 
-   The Add button's negative margin cancels the extra clearance for itself (-16 against the now-32px
-   padding-top), so it still lands at the same visual offset it has at every other width. */
-.up-root.is-vnarrow.up-ph-root,
-.up-root.is-vnarrow.up-sidebar-clear { padding-top: 32px; }
-.up-root.is-vnarrow .up-ph-addbtn { margin-top: -16px; }
+   .up-sidebar-clear wird von beiden Komponenten weiter gesetzt und traegt jetzt keine Regel mehr.
+   Absichtlich: die Klasse steht im Vertrag, und der naechste Kopf, der oben links etwas zeichnet,
+   haengt sich wieder daran. */
 
 /* ======================================================================
    Dropdown-Panel-Kante — EIN Ort, wie die Panel-Farbe daneben.

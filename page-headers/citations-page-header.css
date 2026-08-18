@@ -2,10 +2,8 @@
    shared Page Header Kit; this file only holds what's actually specific to this page: the lone
    Refresh button's alignment. */
 
-/* Sits flush with the root's 16px top padding, so it lines up with the meta row -- same
-   0/-16px(is-vnarrow) numbers prompts-page-header.css and dashboard-page-header.css use for their
-   own top-right groups, just applied directly since there's only one button here and no wrapper
-   needed. The -16px under is-vnarrow cancels the extra top clearance core adds at that width for
-   Bubble's mobile sidebar-toggle. */
+/* Sitzt auf der 16px-Polsterung der Wurzel und liegt damit auf einer Kante mit der Meta-Zeile --
+   dieselbe Null wie in prompts- und dashboard-page-header, hier direkt am Knopf, weil es nur einen
+   gibt. Die -16px fuer schmale Fenster sind weg: die Zusatzpolsterung, die sie abzogen, ist am
+   18.08. aus core entfernt worden. */
 .cph-refreshbtn { margin-top: 0; }
-.up-root.is-vnarrow .cph-refreshbtn { margin-top: -16px; }
