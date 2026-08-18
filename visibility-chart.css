@@ -207,3 +207,10 @@
    built by UC.makeScaleMenu (core.js), and brands-overview is a second consumer of it. Only this
    component's own BUTTON PLACEMENT stays here, since panel padding differs per component. */
 /* header info icon, reveal-on-hover — same interaction as urls/domains table column explainers */
+
+/* Die Markennamen in der Legende stehen hier in der Sekundaerfarbe statt in der Textfarbe:
+   die Legende benennt die Kurven, sie ist nicht die Aussage der Karte. Nur in dieser Komponente --
+   .up-legend gehoert core und wird von den anderen Charts genauso benutzt, deshalb der
+   .vot-root-Vorsatz und keine Aenderung am Bauteil. Einen eigenen Farbzustand hat der Eintrag
+   nicht -- an- und abgewaehlt unterscheidet core ueber die Deckkraft, und die bleibt. */
+.vot-root .up-legend .up-company-name { color: var(--vc-muted); }

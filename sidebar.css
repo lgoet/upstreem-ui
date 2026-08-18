@@ -51,7 +51,13 @@
      Menuezeilen der App) den Schritt -- ueber #1b1b1b ergibt das ~#242424. Umgekehrt waere
      --up-sel-bg im Hellen rgba(245,245,245,.55) und damit genauso unsichtbar. Genau dieselbe
      Falle wie bei .up-pop-opt weiter unten, nur mit dem jeweils anderen Token. */
-  --usn-sel: var(--vc-bg);
+  /* Im Hellen NICHT --vc-bg (also weiss): die Leiste ist selbst #f5f5f5, ein weisser Hover leuchtet
+     darauf heller als die Flaeche und liest sich als "herausgehoben" statt als "hier stehe ich".
+     Ueblich ist der Schritt nach UNTEN, und den macht ein Anteil der Textfarbe: 7% von #1f1f1b auf
+     #f5f5f5 ergeben rund #e6e6e5 -- ein sichtbarer, aber ruhiger Schritt. Aus dem Token abgeleitet
+     und nicht als Hexwert gesetzt, damit er dem Thema folgt.
+     Im Dunkeln bleibt es bei --up-sel-bg (siehe unten): dort ist heller richtig. */
+  --usn-sel: color-mix(in srgb, var(--vc-text) 7%, transparent);
   font-family: inherit;
   -webkit-font-smoothing: antialiased;
   box-sizing: border-box;
@@ -185,11 +191,11 @@
 /* 16 x 16: das Zeichen ist quadratisch (viewBox 16x16, layout-sidebar-inset aus Bootstrap Icons,
    siehe ICON_FILLED in core), die Groesse steht hier. 1:1 mit dem viewBox, die Pfade werden also
    gar nicht skaliert -- die Haarlinien des Rahmens bleiben genau einen Pixel breit.
-   50 Prozent Deckkraft im RUHEZUSTAND, beim Hover voll: der Umschalter soll die Leiste nicht
+   65 Prozent Deckkraft im RUHEZUSTAND, beim Hover voll: der Umschalter soll die Leiste nicht
    anfuehren, sondern dort sein, wenn man ihn sucht. Die Farbe wechselt dabei wie bisher von der
    Dritt- auf die Primaerfarbe (zwei Zeilen weiter oben), die Deckkraft kommt dazu. */
 .usn-bar .usn-toggle svg {
-  width: 16px; height: 16px; opacity: .5;
+  width: 16px; height: 16px; opacity: .65;
   transition: opacity var(--usn-t) var(--usn-ease);
 }
 .usn-bar .up-iconbtn.usn-toggle:hover svg { opacity: 1; }

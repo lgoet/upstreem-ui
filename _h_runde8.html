@@ -1,0 +1,45 @@
+<meta charset="utf-8"><title>achter durchgang</title>
+<style>html,body{margin:0;font:12px ui-monospace,monospace;background:#fff}
+#main{min-height:100%;padding-left:250px}pre{white-space:pre-wrap;background:#111;color:#eee;padding:8px}</style>
+<body><div id="main"><pre id="out">laeuft</pre></div>
+<div class="up-root usn-root" data-instance="r8" data-prompt-count="7" data-isdark="no"
+     data-team-id="t1" data-active="dashboard" data-nav-fn="bubble_fn_usnNav"></div>
+<script>
+["usnNav","usnTheme","usnState","usnPinned","usnTeam","usnAccount","usnLogout","usnNewTeam"].forEach(function(n){ window["bubble_fn_"+n]=function(){}; });
+try{ localStorage.setItem("pref_theme","light"); localStorage.removeItem("mqa_actions_open"); }catch(e){}
+window.__fehler=[]; window.addEventListener("error",function(e){window.__fehler.push(String(e.message))});
+(function(){
+  var files=["core.css","sidebar.css","quick-actions.css","visibility-chart.css","page-headers/dashboard-page-header.css","core.js","sidebar.js"], t={};
+  Promise.all(files.map(function(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"})
+    .then(function(r){return r.text()}).then(function(x){t[f]=x}); })).then(function(){
+      files.forEach(function(f){ var e=document.createElement(/\.css$/.test(f)?"style":"script"); e.textContent=t[f]; document.head.appendChild(e); });
+      setTimeout(function(){
+        window.setSidebarTeams("r8", JSON.stringify([{id:"t1",name:"LeeUp",domain:"lee-up.de",favicon_url:""}]));
+        window.setSidebarReady();
+        setTimeout(function(){
+          var bar=document.querySelector(".usn-bar");
+          function cs(sel, p){ var e=document.querySelector(sel); return e?getComputedStyle(e)[p]:null; }
+          /* Probe-Elemente fuer die CSS der anderen Komponenten */
+          var probe=document.createElement("div");
+          probe.innerHTML='<div class="up-root vot-root"><div class="up-legend"><span class="up-company-item"><span class="up-company-name">Mercedes</span></span></div></div>'+
+            '<div class="mqa-modal"><div class="mqa-actions-wrap"></div><span class="mqa-rowmenu-btn"><svg viewBox="0 0 24 24"></svg></span></div>'+
+            '<div class="up-root up-ph-root"><div class="dph-topright"><div class="dph-kpis"></div><div class="dph-tools"></div></div></div>';
+          document.body.appendChild(probe);
+          var res={ fehler: window.__fehler,
+            pin_max_kommentar: null,
+            usn_sel: getComputedStyle(bar).getPropertyValue("--usn-sel").trim(),
+            item_hover_farbe: (function(){ var st=document.createElement("style"); st.textContent=".usn-item.pruef{background:var(--usn-sel)}"; document.head.appendChild(st);
+              var it=document.querySelector(".usn-item"); it.classList.add("pruef"); var c=getComputedStyle(it).backgroundColor; it.classList.remove("pruef"); st.remove(); return c; })(),
+            leiste_bg: getComputedStyle(bar).backgroundColor,
+            toggle_deckkraft: cs(".usn-toggle svg","opacity"),
+            research_icon: (function(){ var p=document.querySelector('[data-nav-key="research"] .usn-ic svg path'); return p?p.getAttribute("d").slice(0,18):"(keins)"; })(),
+            legende_farbe: cs(".vot-root .up-legend .up-company-name","color"),
+            actionswrap_polsterung: cs(".mqa-actions-wrap","padding"),
+            dreipunkt: cs(".mqa-rowmenu-btn svg","width")+" x "+cs(".mqa-rowmenu-btn svg","height"),
+            topright_gap: cs(".dph-topright","gap"), tools_gap: cs(".dph-tools","gap") };
+          document.getElementById("out").textContent=JSON.stringify(res,null,1); window.__fertig=res;
+        }, 900);
+      }, 900);
+    });
+})();
+</script>

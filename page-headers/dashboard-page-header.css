@@ -8,7 +8,10 @@
    performance-page-header.js. This wrapper is what keeps .up-ph-top's own
    justify-content:space-between seeing exactly two children (.up-ph-left and this), same
    reasoning as prompts-page-header.css's .pph-topright. */
-.dph-topright { display: flex; align-items: center; gap: 32px; }
+/* 12 statt 32, und damit derselbe Abstand, den auch die KPI-Leiste zwischen ihren Eintraegen
+   benutzt: oben rechts stehen KPIs, Docs und Refresh in EINER Reihe, und die hatte zwei
+   verschiedene Luecken (32 hier, 8 zwischen den beiden Knoepfen). Jetzt ueberall 12. */
+.dph-topright { display: flex; align-items: center; gap: 12px; }
 
 /* ---------- KPI strip: Visibility / Ranking / Sentiment ---------- */
 .dph-kpis { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; margin-top: 0; }
@@ -25,7 +28,7 @@
 .dph-trend-sm svg { width: 14px; height: 14px; }
 
 /* ---------- top-right tools: Docs + Refresh ---------- */
-.dph-tools { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; margin-top: 0; }
+.dph-tools { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; margin-top: 0; }
 /* The Refresh button itself is core.css's shared .up-ph-iconbtn (32x32, icon-only, primary color,
    hover background) -- prompts-page-header.js reuses the identical button, so it lives there now
    instead of a page-local class. Docs stays local: no other page header has an icon+label utility

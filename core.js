@@ -1899,6 +1899,12 @@
   var PFAD_SCAN = '<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/>' +
                   '<path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/>' +
                   '<circle cx="12" cy="12" r="3"/><path d="m16 16-1.9-1.9"/>';
+  /* square-dashed-text: Prompt Research, in der Leiste und als grosses Zeichen auf der Seite. */
+  var PFAD_SQDASH = '<path d="M14 21h1"/><path d="M14 3h1"/><path d="M19 3a2 2 0 0 1 2 2"/>' +
+                    '<path d="M21 14v1"/><path d="M21 19a2 2 0 0 1-2 2"/><path d="M21 9v1"/>' +
+                    '<path d="M3 14v1"/><path d="M3 9v1"/><path d="M5 21a2 2 0 0 1-2-2"/>' +
+                    '<path d="M5 3a2 2 0 0 0-2 2"/><path d="M7 12h10"/><path d="M7 16h6"/>' +
+                    '<path d="M7 8h8"/><path d="M9 21h1"/><path d="M9 3h1"/>';
   var TOOLBAR_ICONS = {
     /* Sortieren: arrow-down-up. Vorher stand hier der Trichter mit drei Linien -- der ist die
        Filterform und stand am Sortierknopf falsch. */
@@ -1945,9 +1951,8 @@
     "#am-mic": '<path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/>' +
                '<rect x="9" y="2" width="6" height="13" rx="3"/>',
     /* Das grosse Zeichen ueber der Ueberschrift in Prompt Research: dieselbe Form wie der
-       Menuepunkt in der Leiste, damit Seite und Navigation dasselbe Zeichen tragen. Vorher
-       stand dort eine Lupe. */
-    ".upr-research-orb": PFAD_SCAN
+       Menuepunkt in der Leiste, damit Seite und Navigation dasselbe Zeichen tragen. */
+    ".upr-research-orb": PFAD_SQDASH
   };
   /* settings-2, dieselbe Form wie der Fader der Tabellen. */
   TOOLBAR_SEL["#am-settings-toggle"] = TOOLBAR_ICONS["urt-fader-btn"];
@@ -6214,6 +6219,7 @@
     listTodo: '<path d="M13 5h8"/><path d="M13 12h8"/><path d="M13 19h8"/>' +
               '<path d="m3 17 2 2 4-4"/><rect x="3" y="4" width="6" height="6" rx="1"/>',
     scanSearch: PFAD_SCAN,
+    squareDashedText: PFAD_SQDASH,
     /* arrow-down-up: das Sortierzeichen der Toolbars, jetzt auch fuer die Sortierknoepfe in den
        Filter-Menues abrufbar. Die trugen bis hierher den Trichter mit drei Linien. */
     arrowUpDown: PFAD_SORT,

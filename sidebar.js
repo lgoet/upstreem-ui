@@ -70,7 +70,7 @@
       { key: "performance",   label: "Performance",     icon: "chartColumnUp" },
       { key: "opportunities", label: "Opportunities",   icon: "listTodo" },
       /* Schluessel "research", nicht "prompt-research" -- siehe AKTIV_SYNONYM weiter unten. */
-      { key: "research",      label: "Prompt Research", icon: "scanSearch" },
+      { key: "research",      label: "Prompt Research", icon: "squareDashedText" },
       { key: "mira",          label: "Mira",            icon: "mira" }
     ]},
     { head: "Organisation", items: [
@@ -82,9 +82,9 @@
     { head: "Pinned", pinned: true, items: [] }
   ];
 
-  /* Hoechstens fuenf. Wird ein sechster angeheftet, faellt der LETZTE der Liste heraus -- also
+  /* Hoechstens zehn. Wird ein elfter angeheftet, faellt der LETZTE der Liste heraus -- also
      der aelteste, weil Neues oben einsortiert wird. */
-  var PIN_MAX = 5;
+  var PIN_MAX = 10;
 
   /* "prompt-research" als Synonym auf "research".
      Warum in dieser Richtung: der Punkt hiess von Anfang an "research", und die Bubble-Workflows

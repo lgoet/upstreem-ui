@@ -673,7 +673,9 @@
     /* Collapsed by default, and it has to be: eleven rows opened straight into the palette turned
        the first thing you see into a wall of documentation, above the four Actions people actually
        came for. One row now, expanding to the list on click. */
-    var html = '<div class="mqa-sep"></div><div class="mqa-group mqa-refgroup' +
+    /* Kein Trenner mehr ueber Reference: der Abstand macht die Trennung, siehe .mqa-actions-wrap
+       in der CSS. Eine Linie DAZU war eine Aussage zu viel. */
+    var html = '<div class="mqa-group mqa-refgroup' +
                (refListOpen ? " is-expanded" : "") + '">' +
       '<button class="mqa-action mqa-ref mqa-reftop" type="button" role="option" data-reflist="1"' +
               ' aria-expanded="' + (refListOpen ? "true" : "false") + '">' +
@@ -684,7 +686,6 @@
           '<svg viewBox="0 0 24 24"><path d="M12 5v16" /> <path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z" /></svg>' +
         '</span>' +
         '<span class="mqa-main"><span class="mqa-primary">Reference</span></span>' +
-        '<span class="mqa-action-hint">' + REF.length + ' entries</span>' +
         '<span class="mqa-ref-chev">' +
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>' +
         '</span>' +
@@ -752,7 +753,11 @@
     animSection = refListOpen ? "ref" : "";
     /* Immer nur eine der beiden Sektionen offen. Beide gleichzeitig ergeben eine Liste, die
        laenger ist als das Panel, und dann sieht man von der gerade geoeffneten nichts mehr. */
-    if (refListOpen && actionsOpen){ actionsOpen = false; persistActions(); }
+    /* OHNE persistActions: dass Actions hier zuklappt, ist eine Folge des Platzes, keine
+       Entscheidung des Nutzers. Vorher wurde genau das gespeichert -- ein einziger Blick in die
+       Referenzen liess Actions beim naechsten Oeffnen zugeklappt, obwohl aufgeklappt der
+       Standard ist. */
+    if (refListOpen && actionsOpen) actionsOpen = false;
     /* Collapsing the section also collapses whatever entry was open inside it, so reopening starts
        from the list rather than from someone else's half-read paragraph. */
     if (!refListOpen) refOpen = null;
@@ -792,7 +797,7 @@
 
   function buildStatic(){
     var html = refHtml() +
-      '<div class="mqa-sep"></div><div class="mqa-group mqa-actgroup' + (actionsOpen ? " is-expanded" : "") + '">' +
+      '<div class="mqa-group mqa-actgroup' + (actionsOpen ? " is-expanded" : "") + '">' +
       '<button class="mqa-action mqa-ref mqa-acttop" type="button" role="option" data-actlist="1"' +
               ' aria-expanded="' + (actionsOpen ? "true" : "false") + '">' +
         '<span class="mqa-action-ic mqa-ref-ic">' +
@@ -802,7 +807,6 @@
           '<svg viewBox="0 0 24 24"><path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" /></svg>' +
         '</span>' +
         '<span class="mqa-main"><span class="mqa-primary">Actions</span></span>' +
-        '<span class="mqa-action-hint">' + STATIC.length + ' entries</span>' +
         '<span class="mqa-ref-chev">' +
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>' +
         '</span>' +
@@ -1016,9 +1020,12 @@
   function renderIdle(){
     showStatic(true); renderRecent(); showRecent(true);
     resultsEl.innerHTML = ""; state = "idle"; refreshRows();
-    // when Enter means "run the search", nothing may be pre-highlighted — otherwise Enter would
-    // fire that row instead. Arrow keys still walk the list from here (move(-1) wraps to the end).
-    if (enterSearchOn()) clearActive(); else setActive(0, false);
+    /* NICHTS ist vorausgewaehlt, wenn die Palette aufgeht. Vorher stand die Auswahl auf Zeile 0 --
+       also auf "Reference", das damit hervorgehoben aussah, obwohl niemand dorthin gezeigt hat.
+       Die Pfeiltasten laufen weiterhin von hier los (move(-1) springt ans Ende), und Enter loest
+       ohne Auswahl nichts aus, was hier auch richtig ist: es gibt noch keine Zeile, die gemeint
+       waere. */
+    clearActive();
   }
 
   /* ---------- "Press Enter to search" ----------
