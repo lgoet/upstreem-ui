@@ -9,21 +9,31 @@
 /* ---------- Wurzel + Trigger ---------- */
 .uca-root { display: inline-block; width: max-content; max-width: 100%; }
 
+/* .check_reinvention meldet .up-seg-btn (Segmented-Control-Knopf) fuer diesen hier. Fehlalarm
+   ueber die gemeinsamen Eigenschaften "Knopf mit Radius, Hoehe und Uebergang": .up-seg-btn ist
+   eine Haelfte eines Umschalters in einer gemeinsamen Schiene, durchsichtig bis zum aktiven
+   Zustand. Das hier ist der primaere Handlungsknopf einer Zelle -- gefuellt mit der Textfarbe,
+   in der Sprache von .uca-primary im Fenster darunter, dessen Werte er teilt. */
 .uca-trigger {
   display: inline-flex; align-items: center; gap: 7px; white-space: nowrap;
-  height: 32px; padding: 0 13px; border: 0; border-radius: 8px;
+  /* Rechts 11 statt 13: links steht ein Zeichen, und ein Zeichen bringt in seinem Kasten
+     eigene Luft mit. Mit gleichen Werten sieht die rechte Seite darum breiter aus als die
+     linke -- eine optische Korrektur, kein gemessener Fehler. */
+  height: 32px; padding: 0 11px 0 13px; border: 0; border-radius: 8px;
   background: var(--vc-text); color: var(--vc-bg);
   font: inherit; font-size: 13.5px; font-weight: 560; letter-spacing: .1px; cursor: pointer;
   transition: opacity .14s ease;
 }
 .uca-trigger:hover { opacity: .9; }
 
-/* Der Stern ist eine Maske, keine Bildfarbe -- so folgt er der Textfarbe und stimmt in beiden
-   Themes, ohne ein zweites Asset. */
+/* Das Zeichen ist jetzt Lucide astroid aus UC.icon -- vorher lag hier eine PNG-Maske von
+   img.icons8.com, also ein fremder Server im Ladepfad eines Knopfes, der in jeder Tabelle steht.
+   Als SVG folgt es der Textfarbe ohnehin (stroke: currentColor) und braucht keine Maske mehr. */
 .uca-star {
-  display: inline-block; width: 15px; height: 15px; flex: 0 0 auto; background-color: currentColor;
-  -webkit-mask: var(--uca-star) center / contain no-repeat; mask: var(--uca-star) center / contain no-repeat;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 15px; height: 15px; flex: 0 0 auto;
 }
+.uca-star svg { width: 100%; height: 100%; display: block; }
 
 /* ---------- Portal-Wrapper, Overlay, Karte ---------- */
 .uca-portal {
@@ -34,6 +44,16 @@
   --uca-scrim: rgba(0,0,0,0.60);
   --uca-shadow: 0 24px 64px rgba(0,0,0,0.55), 0 6px 16px rgba(0,0,0,0.4);
 }
+/* Eingabefelder, Assistenten-Knoepfe und die Sekundaerknoepfe unten liegen AUF der Karte und
+   tragen deshalb die Farbe der Karte. --up-surface ist im Dunkeln #121212 und damit dunkler als
+   die Karte (#1b1b1b) -- gedacht als abgesetzte Flaeche auf der SEITE, hier aber ein dunkler
+   Kasten im hellen Fenster. Im Hellen sind beide Werte #ffffff, dort aendert sich nichts.
+   Dieselbe Korrektur, die die Themen-Fenster in core schon fuer sich gemacht haben. */
+/* Zwei Klassen plus Attribut (0,3,0): die Regel muss .up-root[data-theme="dark"] aus core
+   schlagen (0,2,0), und zwar ueber die Spezifitaet, nicht ueber die Ladereihenfolge -- das
+   Portal traegt beide Klassen und das Attribut am selben Element. Im Hellen fehlt data-theme
+   haeufig; dort sind --up-surface und --vc-bg ohnehin derselbe Wert. */
+.up-root.uca-portal[data-theme] { --up-surface: var(--vc-bg); }
 /* TOP LAYER, nicht z-index. Der Opportunity-Drawer liegt selbst im Top Layer (popover="manual"),
    und dagegen gewinnt keine Zahl -- der Top Layer wird nach dem gesamten Dokument gezeichnet.
    Genau das war der Fehler: das Popup laesst sich aus dem Drawer heraus oeffnen und verschwand

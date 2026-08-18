@@ -219,6 +219,26 @@
     var LOADING_EXPLICIT = (window.__ubdLoadingExplicit = window.__ubdLoadingExplicit || {});
     function istLaden(){ return LOADING_EXPLICIT[instanceId] ? !!state.loading : readProcessing(); }
 
+    /* ---- Ein Wartezustand, der endet ------------------------------------------------------
+       Die Karte zeigt ihr Skelett, solange geladen wird ODER noch keine Daten da sind. Der
+       zweite Teil hatte kein Ende: kam nach einem reset() kein setBrandDetailSeries mehr an --
+       weil der Aufruf ins Leere lief, weil der Workflow abbrach, weil die Verbindung stand --,
+       lief das Skelett fuer immer. Von aussen ist das nicht von "gleich da" zu unterscheiden.
+       25s, nicht 15 wie in der Gruppenansicht: hier haengen drei RPCs an einem Aufbau, und der
+       Serien-Aufruf ist der langsamste der App. Jeder eintreffende Payload stellt die Uhr neu. */
+    var WARTE_MS = 25000, warteUhr = null;
+    function warteStarten(){
+      if (warteUhr) clearTimeout(warteUhr);
+      warteUhr = setTimeout(function(){
+        warteUhr = null;
+        if (state.hasData || state.error) return;
+        state.error = "No data arrived for this brand. Check the brand-detail workflow, then reload.";
+        state.loading = false;
+        render();
+      }, WARTE_MS);
+    }
+    function warteBeenden(){ if (warteUhr){ clearTimeout(warteUhr); warteUhr = null; } }
+
     /* Ueber UC.themeParam und nicht ueber das Attribut allein: kennt core ein Thema, gewinnt
        core. Das Attribut ist die Momentaufnahme aus dem Lauf des Workflows -- steht die App
        inzwischen anders, dreht die Komponente sich damit selbst zurueck. */
@@ -326,6 +346,14 @@
          Instanz nicht fand. Das Chart zeigte trotzdem sein Skelett, weil es auf !hasData prueft,
          und der KPI daneben stand mit einem Gedankenstrich. Zwei Anzeigen fuer denselben Zustand,
          die sich widersprechen -- jetzt haengen beide an derselben Frage. */
+      /* Steht ein Fehler, ist das Warten vorbei -- dann hier KEIN Skelettbalken mehr. Sonst sagt
+         die Karte an zwei Stellen Verschiedenes: die Kurve meldet "kommt nichts mehr", der KPI
+         daneben laeuft weiter. Gemessen nach dem Ablauf der Wartezeit. */
+      if (state.error) {
+        elVal.innerHTML = '<span class="up-num is-empty">\u2013</span>';
+        elTrend.innerHTML = "";
+        return;
+      }
       if (istLaden() || !state.hasData) {
         elVal.innerHTML = '<span class="up-tsk-bar"></span>';
         elTrend.innerHTML = '<span class="up-tsk-bar"></span>';
@@ -543,6 +571,7 @@
             : "The chart data arrived without a series.";
         }
         state.loading = false;
+        warteBeenden();
         render();
       },
       setCompany: function (payload) {
@@ -557,11 +586,14 @@
         var list = UC.parseLoose ? UC.parseLoose(rows, "brand-detail variations") : rows;
         state.variations = isArr(list) ? list : [];
         state.loading = false;
+        warteBeenden();
         render();
       },
       setLoading: function (v) {
         LOADING_EXPLICIT[instanceId] = true;
-        state.loading = isYes(v); render();
+        state.loading = isYes(v);
+        if (state.loading) warteStarten(); else warteBeenden();
+        render();
       },
       reset: function (hart) {
         state.series = null; state.variations = null; state.hasData = false;
@@ -580,12 +612,16 @@
         state.varQuery = ""; state.error = null;
         if (elSInput) { elSInput.value = ""; }
         if (elSearch) { elSearch.classList.remove("is-open", "has-text"); }
+        /* Ab jetzt laeuft die Uhr: ein Reset ist der Anfang einer Wartezeit auf neue Daten. */
+        warteStarten();
         render();
       },
       destroy: function () { try { line.destroy && line.destroy(); } catch (e) {} }
     };
 
     root.__ubdController = ctrl;
+    /* Alles nachholen, was auf genau diese Instanz gewartet hat. */
+    if (spaet) spaet.drain(instanceId, ctrl);
     /* Aendert der Loader sein Attribut, muss die Komponente das sehen -- sonst bliebe das
        Skelett stehen oder erschiene nie. */
     if (window.MutationObserver){
@@ -603,6 +639,13 @@
   }
 
   function isArr(v) { return Object.prototype.toString.call(v) === "[object Array]"; }
+
+  /* Wartet ein Aufruf auf eine Instanz, die es gerade nicht gibt, geht er NICHT verloren --
+     siehe UC.makeLate. Das war die Ursache des gemeldeten Endlos-Skeletts: Bubble baut das
+     Element zwischen zwei Durchlaeufen neu, der Workflow feuert genau in dieses Fenster, und der
+     Setter beantwortete das mit einem stillen false. Danach wartete die Komponente auf Daten,
+     die schon geschickt worden waren. */
+  var spaet = UC.makeLate ? UC.makeLate("brand-detail", ".ubd-root") : null;
 
   var mount;
   mount = UC.makeMount({
@@ -625,7 +668,10 @@
 
   function each(id, fn) {
     var roots = mount.rootsWithId(String(id == null ? "default" : id).trim());
-    if (!roots.length) return false;
+    if (!roots.length) {
+      if (spaet) return spaet.park(id == null ? "default" : id, fn);
+      return false;
+    }
     roots.forEach(function (r) { var c = initRoot(r); if (c) fn(c); });
     return true;
   }

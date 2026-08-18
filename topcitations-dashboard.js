@@ -777,6 +777,17 @@
         state.filterUrlTypeSel = {};
         state.appliedTypeSel = {};
         state.appliedUrlTypeSel = {};
+        /* Der Modus GEHOERT zurueckgesetzt, und zwar zusammen mit userPickedMode. Ohne diese
+           zwei Zeilen war das der gemeldete Fehler: die Wahl "URL" ueberlebte im Instanz-Speicher,
+           und weil userPickedMode ebenfalls stehenblieb, verwarf update() das mode aus dem naechsten
+           Render-Aufruf (siehe dort: "nur uebernehmen, wenn der Nutzer nicht selbst gewaehlt hat").
+           Bubble stand danach auf Domain und lieferte Domain-Daten, die Komponente zeigte URL --
+           und konnte damit nichts anfangen.
+           Der Vorrang von userPickedMode ist innerhalb EINER Ansicht richtig: dort soll ein
+           spaeterer Render-Aufruf die Handwahl nicht ueberfahren. Ein Reset beendet aber genau
+           diese Ansicht -- die Platzierung faengt mit einem neuen Gegenstand von vorn an. */
+        state.mode = "domain";
+        state.userPickedMode = false;
         state.filterDimension = defaultDim(state.mode);
         /* Also EMPTY the data (chart + table back to skeleton), not just the filters — same reason
            as visibility-chart's reset: a slide-in that re-uses this placement calls
@@ -798,6 +809,9 @@
         populateFilter();
         syncFilterBadge();
         syncBrandToggle(false);
+        /* Die Knoepfe tragen den aktiven Zustand als Klasse -- ohne diesen Aufruf zeigte die
+           Leiste weiter auf URL, obwohl state.mode schon Domain sagt. */
+        syncModeActive();
         applyResponsive();
         return true;
       },
@@ -844,12 +858,20 @@
   }
 
   /* ================= init / multi-instance bootstrap ================= */
+  /* Kein Root mit dieser id -> der Aufruf wartet, statt zu verpuffen. Ohne das blieb die
+     Komponente im Skelett stehen, obwohl die Daten laengst geschickt worden waren: Bubble baut
+     das Element zwischen zwei Durchlaeufen neu, und der Workflow feuert genau in dieses Fenster.
+     visibility-chart und citations-combo-chart loesen dasselbe ueber einen Payload-Cache; hier
+     waere der zweite Weg zum selben Ziel -- gewaehlt ist der gemeinsame aus core. */
+  var spaet = UC.makeLate ? UC.makeLate("topcitations", ".tcd-root") : null;
   function initRoot(root){
     if (root.__tcdController) return root.__tcdController;
     var ctrl = makeController(root);
     if (!ctrl) return null;
     if (root.__tcdController) return root.__tcdController;
     root.__tcdController = ctrl; root.__tcdId = ctrl.__ctrlId;
+    /* Nachholen, was auf diese Instanz gewartet hat. */
+    if (spaet) spaet.drain(root.getAttribute("data-instance") || "default", ctrl);
     return ctrl;
   }
   function isVisible(el){
@@ -868,14 +890,20 @@
   function doRender(params){
     var id = params && params.instanceId;
     var root = id ? resolve(id) : document.querySelector(".tcd-root:not(.up-portal)");
-    if (!root){ return; }
+    if (!root){
+      if (spaet) spaet.park(id || "default", function(c){ c.update(params); });
+      return;
+    }
     var ctrl = root.__tcdController || initRoot(root);
     if (!ctrl){ return; }
     ctrl.update(params);
   }
   function doLoading(id, loading){
     var roots = id ? rootsWithId(id) : Array.prototype.slice.call(document.querySelectorAll(".tcd-root:not(.up-portal)"));
-    if (!roots.length) return false;
+    if (!roots.length){
+      if (spaet) return spaet.park(id || "default", function(c){ c.setLoading(loading); });
+      return false;
+    }
     var did = false;
     roots.forEach(function(root){
       var ctrl = root.__tcdController || initRoot(root);

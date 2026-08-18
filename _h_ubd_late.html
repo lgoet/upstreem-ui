@@ -1,0 +1,42 @@
+<meta charset="utf-8"><title>brand-detail: verlorene Aufrufe</title>
+<style>body{margin:0;font:12px ui-monospace,monospace;padding:10px}pre{white-space:pre-wrap;background:#111;color:#eee;padding:10px}
+#buehne{min-height:420px;border:1px dashed #ccc}</style>
+<body>
+<div id="buehne"></div>
+<pre id="out">laeuft</pre>
+<script>
+window.MARKUP = "<div class=\"up-root ubd-root\"\n     data-instance=\"bd1\"\n     data-cdn-pin=\"CDN_PIN\"\n     data-isdark=\"IS_DARK\"\n     data-isprocessing=\"IS_PROCESSING\"\n     data-mode-fn=\"bubble_fn_ubdMode\"\n     data-gran-fn=\"bubble_fn_ubdGran\"></div>\n\n";
+window.__fehler=[]; window.addEventListener("error",function(e){window.__fehler.push(String(e.message))});
+try{ localStorage.setItem("pref_theme","light"); }catch(e){}
+(function(){
+  var alt=/alt=1/.test(location.search);
+  var files=["core.css","brand-detail.css", alt?"_alt_core.js":"core.js", alt?"_alt_ubd.js":"brand-detail.js"];
+  var t={};
+  Promise.all(files.map(function(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"})
+    .then(function(r){return r.text()}).then(function(x){t[f]=x}); })).then(function(){
+      files.forEach(function(f){ var e=document.createElement(/\.css$/.test(f)?"style":"script"); e.textContent=t[f]; document.head.appendChild(e); });
+      setTimeout(function(){
+        /* DER FALL: der Workflow feuert, waehrend Bubble das Element gerade neu baut --
+           es steht in diesem Moment KEIN ubd-root im Dokument. */
+        var rueck = window.setBrandDetailSeries("bd1", JSON.stringify({
+          series:[{d:"2026-08-01",v:12},{d:"2026-08-02",v:14}], granularity:"day" }));
+        setTimeout(function(){
+          /* Und jetzt haengt Bubble das Element ein. */
+          document.getElementById("buehne").innerHTML = window.MARKUP;
+          setTimeout(function(){
+            var root=document.querySelector(".ubd-root");
+            var res={ datei: alt?"alt":"neu",
+              rueckgabe_des_setters: rueck,
+              root_da: !!root,
+              /* Sind die Daten angekommen? Dann steht ein Canvas statt eines Skeletts. */
+              skelett: root ? root.querySelectorAll(".up-tsk-bar, .vc-skel, [class*='skel']").length : null,
+              canvas: root ? root.querySelectorAll("canvas").length : null,
+              controller_hat_daten: (function(){ try { return !!(root.__ubdController && root.__ubdController.__hasData); } catch(e){ return null; } })(),
+              fehler: window.__fehler };
+            document.getElementById("out").textContent=JSON.stringify(res,null,1); window.__fertig=res;
+          }, 1200);
+        }, 600);
+      }, 900);
+    });
+})();
+</script>

@@ -1,0 +1,124 @@
+<meta charset="utf-8"><title>tcd reset</title>
+<style>body{margin:0;font:12px ui-monospace,monospace;padding:10px}pre{white-space:pre-wrap;background:#111;color:#eee;padding:10px}</style>
+<body>
+<div class="up-root tcd-root"
+     data-instance="tc1"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="IS_DARK"
+     data-export-instance="EXPORT_tc1"
+     data-processing="IS_PROCESSING"
+     data-processing2="IS_PROCESSING_2"
+     data-mode-fn="bubble_fn_tcdMode"
+     data-rowclick-fn="bubble_fn_tcdRowClick"
+     data-goto-fn="bubble_fn_tcdGoTo"
+     data-export-fn="bubble_fn_tcdExportTable"
+     data-types-fn="bubble_fn_tcdApplyTypeFilter"
+     data-dimension-fn="bubble_fn_tcdFilterDimension"
+     data-brand-fn="bubble_fn_tcdBrandMentioned">
+
+  <div class="tcd-unit tcd-unit-left">
+    <div class="tcd-head">
+      <div class="tcd-mode" role="tablist" aria-label="Mode">
+        <button class="tcd-mode-btn is-active" data-mode="domain" type="button" role="tab">Domains</button>
+        <button class="tcd-mode-btn" data-mode="url" type="button" role="tab">URLs</button>
+      </div>
+      <div class="tcd-head-tools">
+        <div class="tcl-seg" role="tablist" aria-label="Chart type">
+          <button class="tcl-seg-btn is-active" data-chart="doughnut" role="tab" aria-selected="true" data-tip="Doughnut" aria-label="Doughnut">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12c.552 0 1.005-.449.95-.998a10 10 0 0 0-8.953-8.951c-.55-.055-.998.398-.998.95v8a1 1 0 0 0 1 1z" /> <path d="M21.21 15.89A10 10 0 1 1 8 2.83" /></svg>
+          </button>
+          <button class="tcl-seg-btn" data-chart="bar" role="tab" aria-selected="false" data-tip="Bars" aria-label="Bars">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><rect x="7" y="13" width="9" height="4" rx="1"/><rect x="7" y="5" width="12" height="4" rx="1"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="tcd-box">
+      <div class="tcd-panel-body">
+        <div class="tcl-top-total"><span class="n">0</span><span class="lbl">Citations</span></div>
+        <div class="up-donut-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tcd-unit tcd-unit-right">
+    <div class="tcd-head">
+      <div class="tcd-heading tcd-heading-right"><span class="tcd-head-label">Top Domains</span><span class="tcd-head-sep"></span><span class="tcd-head-count"></span></div>
+      <div class="tcd-head-tools">
+        <button class="tcd-brand-toggle" type="button" data-tip="Filter for your brand mentions">
+          <span class="tcd-brand-toggle-lbl">
+            <img class="tcd-brand-logo" src="" style="display:none"/>
+            <span class="tcd-brand-label"></span>
+          </span>
+          <span class="tcd-brand-check">
+            <svg class="tcd-brand-check-yes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+            <svg class="tcd-brand-check-no" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /></svg>
+          </span>
+        </button>
+        <div class="tcd-filter">
+          <button class="tcd-filter-btn tcd-iconbtn" type="button" data-tip="Filter" aria-label="Filter">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 17H5"/><path d="M19 7h-9"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
+            <span class="tcd-filter-badge"></span>
+          </button>
+          <div class="up-filter-menu" role="menu" aria-hidden="true"></div>
+        </div>
+        <button class="tcd-export tcd-iconbtn" type="button" data-tip="Export" aria-label="Export">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3" /> <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /> <path d="m7 10 5 5 5-5" /></svg>
+        </button>
+        <button class="tcd-goto tcd-iconbtn" type="button" data-tip="Open" aria-label="Open">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10" /> <path d="M7 17 17 7" /></svg>
+        </button>
+      </div>
+    </div>
+    <div class="tcd-box">
+      <div class="tct-table"></div>
+    </div>
+  </div>
+</div>
+
+<pre id="out">laeuft</pre>
+<script>
+window.__fehler=[]; window.addEventListener("error",function(e){window.__fehler.push(String(e.message))});
+try{ localStorage.setItem("pref_theme","light"); }catch(e){}
+(function(){
+  var alt=/alt=1/.test(location.search);
+  var files=["core.css","topcitations-dashboard.css", alt?"_alt_core.js":"core.js", alt?"_alt_tcd.js":"topcitations-dashboard.js"];
+  var t={};
+  Promise.all(files.map(function(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"})
+    .then(function(r){return r.text()}).then(function(x){t[f]=x}); })).then(function(){
+      files.forEach(function(f){ var e=document.createElement(/\.css$/.test(f)?"style":"script"); e.textContent=t[f]; document.head.appendChild(e); });
+      setTimeout(function(){
+        var root=document.querySelector(".tcd-root");
+        /* 1. Daten im Domain-Modus */
+        window.renderTopCitations({ instanceId:"tc1", mode:"domain",
+          top_domains:[{domain:"a.de",citations:5,citation_type:"Editorial"}],
+          types_breakdown:[{citation_type:"Editorial",citations:5}], citations_total:5 });
+        setTimeout(function(){
+          /* 2. Nutzer stellt auf URL */
+          var urlBtn=root.querySelector('.tcd-mode-btn[data-mode="url"]');
+          if (urlBtn) urlBtn.click();
+          setTimeout(function(){
+            var nachKlick=root.querySelector(".tcd-mode-btn.is-active");
+            /* 3. Reset, dann neue Daten mit mode:"domain" -- wie beim Wechsel der Marke */
+            window.resetTopCitations("tc1");
+            setTimeout(function(){
+              window.renderTopCitations({ instanceId:"tc1", mode:"domain",
+                top_domains:[{domain:"b.de",citations:9,citation_type:"Editorial"}],
+                types_breakdown:[{citation_type:"Editorial",citations:9}], citations_total:9 });
+              setTimeout(function(){
+                var aktiv=root.querySelector(".tcd-mode-btn.is-active");
+                var kopf=root.querySelector(".tct-th");
+                var res={ datei: alt?"alt":"neu",
+                  modus_nach_klick: nachKlick?nachKlick.getAttribute("data-mode"):null,
+                  modus_nach_reset_und_render: aktiv?aktiv.getAttribute("data-mode"):null,
+                  erste_spalte: kopf?kopf.textContent.trim():null,
+                  fehler: window.__fehler };
+                document.getElementById("out").textContent=JSON.stringify(res,null,1); window.__fertig=res;
+              }, 700);
+            }, 500);
+          }, 500);
+        }, 700);
+      }, 900);
+    });
+})();
+</script>

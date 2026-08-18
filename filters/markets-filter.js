@@ -58,7 +58,11 @@
 
 
   var CONTROLLERS = [];
-  var PENDING = {};
+  /* Die Warteschlange fuer Aufrufe an eine noch nicht gebaute Instanz steht jetzt in core
+     (UC.makeLate). Sie stand hier viermal fast gleich -- und in allen vier Kopien mit zwei
+     Schwaechen: nur EIN Aufruf je id (der zweite ueberschrieb den ersten) und kein Verfall,
+     also hielt eine id, die nie erscheint, ihre Aufrufe fuer immer fest. */
+  var spaet = UC.makeLate ? UC.makeLate("markets-filter", ".umk-root, [data-umk-root]") : null;
   /* Survives a Bubble re-render of the element, keyed by instance: a rebuilt element must continue
      the filter, not restart it. */
   var STATE = (window.__umkStore = window.__umkStore || {});
@@ -710,15 +714,7 @@
        each other. */
     if (UC.onMarkets) UC.onMarkets(function (list) { ctrl.setMarkets(list); }, root);
 
-    for (var pid in PENDING) {
-      if (!Object.prototype.hasOwnProperty.call(PENDING, pid)) continue;
-      if (instanceId !== pid && instanceId.indexOf(pid) !== 0) continue;
-      var pfn = PENDING[pid];
-      delete PENDING[pid];
-      try { pfn(ctrl); } catch (e) {
-        if (window.console) console.error("[markets-filter] queued call for \"" + pid + "\" failed:", e);
-      }
-    }
+    if (spaet) spaet.drain(instanceId, ctrl);
     return ctrl;
   }
 
@@ -738,17 +734,7 @@
     CONTROLLERS.forEach(function (c) {
       if (!id || c.instanceId === id || c.instanceId.indexOf(id) === 0) { fn(c); hit = true; }
     });
-    if (!hit && id) {
-      PENDING[id] = fn;
-      if (window.console) {
-        var roots = document.querySelectorAll(".umk-root, [data-umk-root]");
-        var ids = [];
-        for (var i = 0; i < roots.length; i++) ids.push(roots[i].getAttribute("data-instance") || "(no data-instance)");
-        console.warn("[markets-filter] \"" + id + "\" not mounted yet — queued, will run when it appears." +
-          "  Mounted: " + (CONTROLLERS.map(function (c) { return c.instanceId; }).join(", ") || "none") +
-          "  |  .umk-root elements in the DOM: " + roots.length + (ids.length ? " (" + ids.join(", ") + ")" : ""));
-      }
-    }
+    if (!hit && id && spaet) spaet.park(id, fn);
     return hit;
   }
 

@@ -102,8 +102,10 @@
        later is worse than the default. */
     var STATE = window.__udrState || (window.__udrState = Object.create(null));
     var CONTROLLERS = [];
-    /* API calls that arrived before their picker existed, keyed by the id they asked for. */
-    var PENDING = {};
+    /* Aufrufe, die vor ihrem Kalender eintrafen. Die Warteschlange steht jetzt in core
+       (UC.makeLate) -- sie lag hier und in den drei Filtern viermal fast gleich, jeweils mit nur
+       EINEM Platz je id und ohne Verfall. */
+    var spaet = UC.makeLate ? UC.makeLate("date-range", ".udr-root, [data-udr-root]") : null;
 
     function initRoot(root) {
       /* Keyed on the controller itself, NOT on a flag set up front. The flag used to be raised
@@ -618,17 +620,10 @@
 
       syncConfig(); paint(); render();
 
-      /* Drain anything that asked for this picker before it existed. Same exact-or-prefix rule the
-         live call uses, so a queued resetUpstreemDateRangePicker('dates_v2_') reaches it too. */
-      for (var pid in PENDING) {
-        if (!Object.prototype.hasOwnProperty.call(PENDING, pid)) continue;
-        if (instanceId !== pid && instanceId.indexOf(pid) !== 0) continue;
-        var pfn = PENDING[pid];
-        delete PENDING[pid];
-        try { pfn(ctrl); } catch (e) {
-          if (window.console) console.error("[date-range] queued call for \"" + pid + "\" failed:", e);
-        }
-      }
+      /* Alles nachholen, was diesen Kalender angefragt hat, bevor es ihn gab. Dieselbe Regel
+         (exakt oder Praefix) wie beim lebenden Aufruf, damit ein wartendes
+         resetUpstreemDateRangePicker('dates_v2_') ihn auch erreicht. */
+      if (spaet) spaet.drain(instanceId, ctrl);
       return ctrl;
     }
 
@@ -653,18 +648,7 @@
          is why the failure carries no mount error. Held here and replayed the moment a picker with
          that id mounts (see the drain in initRoot), so the call order stops mattering. Latest wins
          per id -- two resets queued for the same picker mean the same end state, not two runs. */
-      if (!hit && id) {
-        PENDING[id] = fn;
-        if (window.console) {
-          var roots = document.querySelectorAll(".udr-root, [data-udr-root]");
-          var ids = [];
-          for (var i = 0; i < roots.length; i++) ids.push(roots[i].getAttribute("data-instance") || "(no data-instance)");
-          console.warn("[date-range] \"" + id + "\" not mounted yet — queued, will run when it appears." +
-            "  Mounted: " + (CONTROLLERS.map(function (c) { return c.instanceId; }).join(", ") || "none") +
-            "  |  .udr-root elements in the DOM: " + roots.length +
-            (ids.length ? " (" + ids.join(", ") + ")" : ""));
-        }
-      }
+      if (!hit && id && spaet) spaet.park(id, fn);
       return hit;
     }
     /* Per-root try/catch: one root failing to mount must not abort the sweep for the others, and

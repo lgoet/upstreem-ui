@@ -1,0 +1,51 @@
+<meta charset="utf-8"><title>create-with-ai dunkel</title>
+<style>html,body{margin:0;font:12px ui-monospace,monospace;background:#0d0d0d;color:#eee;padding:14px}
+pre{white-space:pre-wrap;background:#111;color:#eee;padding:8px}</style>
+<body>
+<div class="up-root uca-root"
+     data-cdn-pin="CDN_PIN"
+     data-url="URL"
+     data-title="TITLE"
+     data-citation-type="TYPE"
+     data-brand="BRAND"
+     data-summary="SUMMARY"
+     data-isdark="IS_DARK"></div>
+
+<!-- Das Wurzel-Div ist bewusst leer: die Komponente baut ihren gesamten Innenaufbau selbst. Es
+     gibt hier keine Stelle, an der du etwas einsetzen sollst. Die Platzhalter oben (URL, TITLE,
+     TYPE, BRAND, SUMMARY) ersetzt du mit "Insert dynamic data"; laesst du einen stehen, wird er
+     als leer behandelt und nicht als Text angezeigt. -->
+
+
+<pre id="out">laeuft</pre>
+<script>
+window.__fehler=[]; window.addEventListener("error",function(e){window.__fehler.push(String(e.message))});
+try{ localStorage.setItem("pref_theme","dark"); }catch(e){}
+(function(){
+  var alt=/alt=1/.test(location.search);
+  var files=["core.css","create-with-ai.css", alt?"_alt_core.js":"core.js", alt?"_alt_uca.js":"create-with-ai.js"];
+  var t={};
+  Promise.all(files.map(function(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"})
+    .then(function(r){return r.text()}).then(function(x){t[f]=x}); })).then(function(){
+      files.forEach(function(f){ var e=document.createElement(/\.css$/.test(f)?"style":"script"); e.textContent=t[f]; document.head.appendChild(e); });
+      setTimeout(function(){
+        window.setUpstreemTheme("dark");
+        var trig=document.querySelector(".uca-trigger");
+        if (trig) trig.click();
+        setTimeout(function(){
+          function bg(sel){ var e=document.querySelector(sel); return e?getComputedStyle(e).backgroundColor:null; }
+          var t2=document.querySelector(".uca-trigger"), st=t2?getComputedStyle(t2):null;
+          var karte=document.querySelector(".uca-modal");
+          var res={ datei: alt?"alt":"neu", fehler: window.__fehler,
+            karte: karte?getComputedStyle(karte).backgroundColor:null,
+            eingabe: bg(".uca-input"), assistent: bg(".uca-assistant"), sekundaer: bg(".uca-ghost"),
+            knopf_polsterung: st?(st.paddingLeft+" / "+st.paddingRight):null,
+            trigger_icon: (function(){ var e=document.querySelector(".uca-trigger .uca-star svg path"); return e?e.getAttribute("d").slice(0,28):"(kein svg)"; })(),
+            kopf_icon: (function(){ var e=document.querySelector("[data-action-ic] svg path"); return e?e.getAttribute("d").slice(0,28):"(kein svg)"; })() };
+          res.gleich_wie_karte = (res.eingabe===res.karte) && (res.assistent===res.karte) && (res.sekundaer===res.karte);
+          document.getElementById("out").textContent=JSON.stringify(res,null,1); window.__fertig=res;
+        }, 900);
+      }, 900);
+    });
+})();
+</script>

@@ -1,0 +1,19 @@
+<meta charset="utf-8"><title>uca im Rahmen</title>
+<style>html,body{margin:0;background:#0d0d0d}iframe{width:1100px;height:820px;border:0;display:block}</style>
+<body><iframe id="f" src="_h_uca_dark.html?neu=3"></iframe>
+<script>
+document.getElementById("f").addEventListener("load", function(){
+  var f=document.getElementById("f");
+  setTimeout(function(){
+    var d=f.contentDocument, w=f.contentWindow;
+    var t=d.querySelector(".uca-trigger"), st=t?w.getComputedStyle(t):null;
+    var ic=t?t.querySelector(".uca-star"):null, lbl=t?t.querySelector(".uca-trigger-label"):null;
+    var tb=t?t.getBoundingClientRect():null;
+    window.__mess = { sicht: w.innerWidth,
+      polsterung: st?(st.paddingLeft+" / "+st.paddingRight):null,
+      luft_links: (ic&&tb)?Math.round(ic.getBoundingClientRect().left-tb.left):null,
+      luft_rechts: (lbl&&tb)?Math.round(tb.right-lbl.getBoundingClientRect().right):null,
+      icon_breite: ic?Math.round(ic.getBoundingClientRect().width):null };
+  }, 2400);
+});
+</script>

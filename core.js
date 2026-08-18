@@ -1618,6 +1618,74 @@
     return q;
   }
 
+  /* ---- Aufrufe an eine Komponente, die es (noch) nicht gibt ---------------------------------
+     Der Fehler, den das behebt: jede Komponente beantwortet einen Setter mit
+     "kein Root mit dieser id -> return false". Der Aufruf ist damit WEG. Auf einer Bubble-Seite
+     ist das kein Ausnahmefall: das Element wird zwischen zwei Renderdurchlaeufen neu gebaut, und
+     der Workflow feuert genau in dieses Fenster. Sichtbar wird das als Komponente, die ewig im
+     Skelett steht -- gemeldet fuer brand-detail, und "haeufiger, wenn die Konsole offen ist",
+     was genau zu einem Zeitfenster passt, das unter Last groesser wird.
+
+     Die drei Filter hatten dafuer laengst je eine eigene Kopie (PENDING). Hier steht sie einmal,
+     mit zwei Unterschieden zu jenen Kopien:
+       - eine LISTE je id statt eines einzelnen Eintrags. Bei brand-detail treffen vier Setter
+         nacheinander ein; mit einem Platz je id ueberschrieben sie sich gegenseitig.
+       - ein Verfallsdatum. Eine id, die nie erscheint (Tippfehler im Workflow, geloeschtes
+         Element), haelt sonst ihre Aufrufe fuer immer fest und meldet nie, dass etwas fehlt.
+
+     Benutzung:
+       var spaet = UC.makeLate("brand-detail", ".ubd-root");
+       ... im Setter, wenn nichts passt:  spaet.park(id, function(ctrl){ ... });
+       ... am Ende von initRoot:          spaet.drain(instanceId, ctrl);
+     Der Abgleich der id ist derselbe wie in den Filtern: exakt oder als Praefix. */
+  var LATE_TTL_MS = 60000;
+  function makeLate(name, rootSel){
+    var wartend = {};
+    function park(id, fn){
+      id = String(id == null ? "" : id).trim();
+      if (!id) return false;
+      var l = wartend[id] || (wartend[id] = []);
+      l.push({ fn: fn, seit: nowMs() });
+      if (window.console){
+        var da = rootSel ? document.querySelectorAll(rootSel) : [];
+        var ids = [];
+        for (var i = 0; i < da.length; i++) ids.push(da[i].getAttribute("data-instance") || "(ohne data-instance)");
+        console.warn("[" + name + "] \"" + id + "\" ist noch nicht da -- der Aufruf wartet und " +
+          "laeuft, sobald die Komponente erscheint. Im Dokument: " + da.length +
+          (ids.length ? " (" + ids.join(", ") + ")" : ""));
+      }
+      return true;
+    }
+    /* Beim Mount aufrufen: alles ausfuehren, was auf genau diese id (oder ihren Praefix) wartet. */
+    function drain(id, ctrl){
+      id = String(id == null ? "" : id).trim();
+      var jetzt = nowMs();
+      for (var pid in wartend){
+        if (!Object.prototype.hasOwnProperty.call(wartend, pid)) continue;
+        var liste = wartend[pid];
+        /* Zu alt: verfallen lassen und EINMAL sagen, dass etwas verloren ging -- stilles
+           Verschwinden ist genau das, was hier nicht mehr passieren soll. */
+        var frisch = liste.filter(function(e){ return jetzt - e.seit < LATE_TTL_MS; });
+        if (frisch.length !== liste.length && window.console){
+          console.warn("[" + name + "] " + (liste.length - frisch.length) + " wartende(r) Aufruf(e) " +
+            "fuer \"" + pid + "\" sind verfallen -- diese Instanz ist nie erschienen.");
+        }
+        if (!frisch.length){ delete wartend[pid]; continue; }
+        /* "default" ist der Rueckfall der Setter-APIs fuer "ohne id" -- und der meint: die
+           Komponente, die da ist. Also passt er auf jede Instanz. */
+        if (pid !== "default" && id !== pid && id.indexOf(pid) !== 0){ wartend[pid] = frisch; continue; }
+        delete wartend[pid];
+        frisch.forEach(function(e){
+          try { e.fn(ctrl); }
+          catch(err){ if (window.console) console.error("[" + name + "] wartender Aufruf fuer \"" +
+            pid + "\" ist gescheitert:", err); }
+        });
+      }
+    }
+    function offen(){ var n = 0; for (var k in wartend) if (Object.prototype.hasOwnProperty.call(wartend, k)) n += wartend[k].length; return n; }
+    return { park: park, drain: drain, offen: offen };
+  }
+
   function makeMount(cfg){
     var rootSel = "." + cfg.rootClass + (cfg.notPortal ? ":not(.up-portal)" : "");
 
@@ -6136,6 +6204,9 @@
     eye: '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>',
     eyeOff: '<path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/>',
     /* square-pen: Rahmen plus Stift. Dasselbe Zeichen, das das Zeilenmenue der Tabelle traegt. */
+    /* Lucide astroid -- das Zeichen fuer "Create with AI". Ersetzt eine PNG-Maske von
+       img.icons8.com: ein fremder Server im Ladepfad eines Knopfes, der in jeder Tabelle steht. */
+    astroid: '<path d="M12.983 21.186a1 1 0 0 1-1.966 0 10 10 0 0 0-8.203-8.203 1 1 0 0 1 0-1.966 10 10 0 0 0 8.203-8.203 1 1 0 0 1 1.966 0 10 10 0 0 0 8.203 8.203 1 1 0 0 1 0 1.966 10 10 0 0 0-8.203 8.203"/>',
     squarePen: '<path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/>',
     /* refresh-cw, fuer "Generate More" in der Gruppenzeile. */
     refreshCw: '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
@@ -6991,6 +7062,7 @@
     makeSearch: makeSearch,
     bootStubs: bootStubs,
     makeMount: makeMount,
+    makeLate: makeLate,
     makePager: makePager,
     makeHeadSort: makeHeadSort,
     makeSoftReload: makeSoftReload,

@@ -66,7 +66,6 @@
   var esc = UC.esc;
 
   var TEMPLATE_DEFAULT = "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/content_templates/upstreem-matching-content-v2-0.txt";
-  var STAR = "https://img.icons8.com/?size=100&id=dQ0TcR10zyYB&format=png&color=000000";
   var LOGO = {
     chatgpt: "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/llm_logos/openai_logo.png",
     claude:  "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/llm_logos/claude-logo%20(1).svg",
@@ -95,9 +94,6 @@
   var COPY_SVG   = '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.7"><rect x="9" y="9" width="11" height="11" rx="2.4"></rect><path d="M6 15H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1"></path></svg>';
   var FILE_SVG   = '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.7"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="13" y2="17"></line></svg>';
   var GLOBE_SVG  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>';
-  var PENCIL_SVG = '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.8"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path></svg>';
-  var NEWDOC_SVG = '<svg viewBox="0 0 24 24" ' + SV + ' stroke-width="1.8"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" /> <path d="M14 2v5a1 1 0 0 0 1 1h5" /> <path d="M9 15h6" /> <path d="M12 18v-6" /></svg>';
-
   /* ---------------------------------------------------------------------------
      Erklaerkarten der drei Ausgabeformate.
      Alle drei zeigen DENSELBEN Dreizeiler, einmal je Format. Das ist der Punkt: nur so sieht man,
@@ -147,7 +143,7 @@
      --------------------------------------------------------------------------- */
   function triggerHtml(){
     return '<button class="uca-trigger" type="button" data-trigger aria-haspopup="dialog">' +
-             '<span class="uca-star" aria-hidden="true"></span>' +
+             '<span class="uca-star" aria-hidden="true">' + UC.icon("astroid", 2) + '</span>' +
              '<span class="uca-trigger-label">Create</span>' +
            "</button>";
   }
@@ -230,7 +226,7 @@
 
         '<div class="uca-foot">' +
           '<button class="uca-primary" type="button" data-primary>' +
-            '<span class="uca-star" aria-hidden="true"></span><span data-primary-label>Open in ChatGPT</span>' +
+            '<span class="uca-star" aria-hidden="true">' + UC.icon("astroid", 2) + '</span><span data-primary-label>Open in ChatGPT</span>' +
           "</button>" +
           '<div class="uca-note">You need to be logged in to the selected AI provider for this to work!</div>' +
           '<div class="uca-secondary">' +
@@ -279,7 +275,6 @@
 
     var UID = "uca_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
     root.setAttribute("data-uid", UID);
-    root.style.setProperty("--uca-star", 'url("' + STAR + '")');
 
     var S = {
       url: "", citation_type: "",
@@ -298,7 +293,6 @@
     var portal = document.createElement("div");
     portal.className = "up-root up-portal uca-portal";
     portal.setAttribute("data-uid", UID);
-    portal.style.setProperty("--uca-star", 'url("' + STAR + '")');
     portal.innerHTML = overlayHtml();
     document.body.appendChild(portal);
     portal._ucaRoot = root;
@@ -399,8 +393,8 @@
     function isYou(){ return String(S.citation_type || "").trim().toLowerCase() === "you"; }
     function action(){
       return isYou()
-        ? { mode: "improve", label: "Improve this page",      icon: PENCIL_SVG }
-        : { mode: "create",  label: "Create your own version", icon: NEWDOC_SVG };
+        ? { mode: "improve", label: "Improve this page",      icon: UC.icon("astroid", 2) }
+        : { mode: "create",  label: "Create your own version", icon: UC.icon("astroid", 2) };
     }
     function toast(msg){
       elToast.textContent = msg;

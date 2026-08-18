@@ -303,6 +303,7 @@
   "setUpstreemTopics",
   "showMacToast",
   "showView",
+  "upCheck",
   "upstreemBrandsChanged",
   "upstreemExportClose",
   "upstreemExportOpen",
@@ -2397,7 +2398,7 @@
  "_zaehlung": {
   "events": 104,
   "fnattrs": 72,
-  "globals": 136,
+  "globals": 137,
   "payloadkeys": 66,
   "dataattrs": 173,
   "klassen": 1774,

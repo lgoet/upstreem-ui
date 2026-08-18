@@ -74,9 +74,15 @@
 /* Der Wert traegt hier die groessere Stufe als in einer Tabellenzelle: er ist die Aussage der
    Kachel, nicht ein Feld unter vielen. */
 .upd-kpi-val .up-num { font-size: 18px; font-weight: 500; }
-/* Sentiment zwei Punkte kleiner: der Wert steht in einer Pille mit Punkt davor und traegt damit
-   optisch mehr Gewicht als eine nackte Zahl -- bei gleicher Groesse wirkt er groesser als die
-   drei anderen Kacheln. */
+/* Sentiment zwei Punkte kleiner als die anderen KPI-Zahlen: der Wert steht in einer Pille mit
+   Punkt davor und traegt damit optisch mehr Gewicht als eine nackte Zahl -- bei gleicher Groesse
+   wirkt er groesser als die drei anderen Kacheln.
+   16px statt 13px heisst Faktor 16/13 = 1.23 auf ALLE Masse der Pille, nicht nur auf die Schrift:
+   Hoehe 24 -> 29.5, Polsterung 6 -> 7.4, Radius 6 -> 7.4, Abstand 6 -> 7.4, Punkt 6 -> 7.4 mit
+   Radius 2 -> 2.5. Vorher stand hier nur die Schriftgroesse, und 16px Text in einer 24px hohen
+   Pille stossen an den Rahmen -- genau der Fehler, den .check_reinvention hier gemeldet hat. */
+.upd-kpi-val .up-sent { height: 29.5px; padding: 0 7.4px; border-radius: 7.4px; gap: 7.4px; }
+.upd-kpi-val .up-sent-dot { width: 7.4px; height: 7.4px; border-radius: 2.5px; }
 .upd-kpi-val .up-sent-val { font-size: 16px; font-weight: 500; }
 .upd-kpi-val .up-rank-group .up-hash { width: 12px; height: 12px; }
 .upd-kpi-trend { display: inline-flex; align-items: center; }
@@ -109,7 +115,10 @@
 .upd-stand-row .up-stack-item { width: 22px; height: 22px; flex: 0 0 22px; }
 /* Ohne Rahmen und ohne Ring: in einem ueberlappenden Stapel trennt der Rahmen die Logos
    voneinander, hier steht jedes fuer sich in seiner eigenen Zeile und braucht keine Abgrenzung. */
-.upd-stand-row .up-stack-vis { box-shadow: none; border: 0; border-radius: 6px; }
+/* transition: none gehoert dazu und stand 8 Zeilen weiter unten als zweite Regel fuer denselben
+   Selektor -- der Grund steht am transform-Block darunter: hier ueberlappt nichts, also wackelt
+   auch nichts, und dann braucht es auch keinen Uebergang. */
+.upd-stand-row .up-stack-vis { box-shadow: none; border: 0; border-radius: 6px; transition: none; }
 .upd-stand-row .up-stack-item img { border-radius: 5px; }   /* 6 - 1, gleicher Grund */
 /* Die Hover-Animation aus core gilt dem Marken-STAPEL: dort faechert sie ueberlappende Logos
    auseinander, damit man das einzelne trifft. Hier ueberlappt nichts, also wackelt hier auch
@@ -117,7 +126,6 @@
 .upd-stand-row .up-stack-item:hover .up-stack-vis,
 .upd-stand-row .up-stack-item:hover ~ .up-stack-item .up-stack-vis,
 .upd-stand-row:hover .up-stack-vis { transform: none; }
-.upd-stand-row .up-stack-vis { transition: none; }
 .upd-stand-name {
   flex: 1 1 auto; min-width: 0; font-size: 13px; font-weight: 400; color: var(--vc-muted);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -214,13 +222,14 @@
    Die Platte soll aussehen wie die Zeile darunter, nur eine Spur groesser: 13px statt der 12px,
    die die geteilte Regel setzt. Nur hier, damit die Erklaerkarten der anderen Komponenten
    unveraendert bleiben. */
-.upd-explain-vis .up-explain-row { font-size: 13px; }
+/* gap: 6px gehoert dazu und stand weiter unten als zweite Regel fuer denselben Selektor: derselbe
+   Abstand zwischen Zahl und Nebentext wie in .upd-td-cnt, damit die Probe die Zelle trifft. */
+.upd-explain-vis .up-explain-row { font-size: 13px; gap: 6px; }
 /* Zahl und Nebentext exakt wie in der Zelle darunter: 14px / 12px, und derselbe 6px-Abstand
    zwischen beiden wie in .upd-td-cnt. Nur die Farben sind gedreht, weil die Platte invertiert
    ist -- die Groessen sollen sich nicht unterscheiden, sonst ist es kein Beispiel mehr. */
 .upd-explain-vis .up-num { font-size: 14px; font-weight: 500; color: inherit; }
 .upd-explain-vis .up-var-of { font-size: 12px; color: rgba(31,31,27,0.55); }
-.upd-explain-vis .up-explain-row { gap: 6px; }
 /* Die Share-of-Voice-Zeile steht weiter auseinander als die Mention-Count-Zeile: dort sind Zahl
    und "of N" ein zusammenhaengender Wert, hier sind es zwei Darstellungen derselben Groesse und
    duerfen als zwei Dinge lesbar sein. In der Zelle darunter uebernimmt das margin-left:auto, das
