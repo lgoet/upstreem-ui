@@ -232,7 +232,10 @@
       warteUhr = setTimeout(function(){
         warteUhr = null;
         if (state.hasData || state.error) return;
-        state.error = "No data arrived for this brand. Check the brand-detail workflow, then reload.";
+        /* Diagnose in die Konsole, im UI nur der Zustand -- siehe domain-detail. */
+        if (window.console) console.warn("[brand-detail] " + WARTE_MS + "ms ohne setBrandDetail " +
+          'fuer die Instanz "' + instanceId + '". Laeuft der Pageload-Workflow?');
+        state.error = "No data";
         state.loading = false;
         render();
       }, WARTE_MS);

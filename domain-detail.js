@@ -240,7 +240,12 @@
       warteUhr = setTimeout(function () {
         warteUhr = null;
         if (state.hasData || state.error) return;
-        state.error = "No data arrived for this domain. Check the domain-detail workflow, then reload.";
+        /* Im UI steht, was der Nutzer wissen kann: es sind keine Daten da. Warum, gehoert in die
+           Konsole -- so wie es core und vier andere Komponenten schon halten. Ein Arbeitsauftrag
+           an uns ("check the ... workflow") ist fuer den Nutzer eine Sackgasse. */
+        if (window.console) console.warn("[domain-detail] " + WARTE_MS + "ms ohne setDomainDetail " +
+          'fuer die Instanz "' + instanceId + '". Laeuft der Pageload-Workflow?');
+        state.error = "No data";
         state.loading = false;
         render();
       }, WARTE_MS);
@@ -259,7 +264,9 @@
       urlUhr = setTimeout(function () {
         urlUhr = null;
         if (!urlWartet()) return;
-        state.urlsError = "No URL data arrived. Check the workflow behind the Domain Share switch, then try again.";
+        if (window.console) console.warn("[domain-detail] " + WARTE_MS + "ms ohne setDomainDetailUrls " +
+          'fuer die Instanz "' + instanceId + '". Haengt ein Workflow an uddMode/uddScope/uddGran?');
+        state.urlsError = "No data";
         state.urlsStale = false;
         renderChart();
       }, WARTE_MS);

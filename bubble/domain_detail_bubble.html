@@ -40,11 +40,13 @@
 
   Solange eine angeforderte URL-Serie nicht da ist, zeigt das Chart ein SKELETT -- nicht "No URL
   data". Der Satz waere eine Aussage ueber die Daten, und die kann niemand treffen, solange der
-  Workflow noch laeuft. Bleibt die Antwort 25 Sekunden aus, steht der Grund im Chart. Trichter und
-  Model Breakdown bleiben davon unberuehrt: sie haengen an setDomainDetail.
+  Workflow noch laeuft. Bleibt die Antwort 25 Sekunden aus, steht "No data" im Chart -- und der
+  Grund in der Konsole, nicht im UI. Trichter und Model Breakdown bleiben davon unberuehrt: sie
+  haengen an setDomainDetail.
 
   OHNE diese Workflows schaltet die Ansicht um, aber es kommen keine neuen Zahlen -- der
-  Domain-Share bleibt dann im Skelett und meldet nach 25 Sekunden, dass niemand geantwortet hat.
+  Domain-Share bleibt dann im Skelett und zeigt nach 25 Sekunden "No data"; die Konsole sagt,
+  welcher Workflow gefehlt hat.
 
   ── Die vier Setter ──────────────────────────────────────────────────────────
     setDomainDetail("<instance>", <json>)         Kopf, Zeitreihen, Modelle, Trichter

@@ -2698,10 +2698,13 @@
       /* Der Fehlerfall VOR dem Skelett: endloses Laden sieht aus wie "gleich da", und genau so
          wurde es gemeldet. */
       if (state.groupsTimeout && !state.groupsHasData){
+        /* Der Grund steht in der Konsole, nicht in der Tabelle: "check the uptGroups workflow"
+           ist ein Auftrag an uns und fuer den Nutzer eine Sackgasse. */
+        if (window.console) console.warn("[prompts-table] Zeitueberschreitung ohne " +
+          "setPromptsTableGroups. Haengt ein Workflow am Ereignis uptGroups?");
         elTbody.innerHTML = '<div class="up-empty">' +
-          '<div class="up-empty-h">Grouping did not answer</div>' +
-          '<div class="up-empty-t">The table asked for the group headers and got no reply. ' +
-            'Check the uptGroups workflow, then reload or toggle grouping off and on.</div>' +
+          '<div class="up-empty-h">No groups</div>' +
+          '<div class="up-empty-t">No group data available.</div>' +
         '</div>';
         applyCols();
         if (state.groupsWide && elGrpSidelist) elGrpSidelist.innerHTML = "";
@@ -2728,7 +2731,7 @@
           '<div class="up-empty-h">No groups</div>' +
           '<div class="up-empty-t">' + ((state.query || state.brandMentioned)
             ? "No topic group matches the current search."
-            : "The grouping call returned no rows — check the setPromptsTableGroups step.") + '</div>' +
+            : "No group data available.") + '</div>' +
         '</div>';
         if (state.groupsWide && elGrpSidelist) elGrpSidelist.innerHTML = "";
         return;
