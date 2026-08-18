@@ -365,9 +365,7 @@
           var col = citeColor(t);
           return { label: citeLabel(t), color: col, base: col, dot: false };
         });
-      },
-      apply: { scope: "domain", rank: "top" },
-      applyLabel: "Show top domains"
+      }
     },
     {
       id: "url-types",
@@ -381,9 +379,7 @@
         return URL_TYPES.map(function(t){
           return { label: urlTypeLabel(t), color: urlTypeColor(t), base: urlTypeBase(t), dot: true };
         });
-      },
-      apply: { scope: "url", rank: "top" },
-      applyLabel: "Show top URLs"
+      }
     },
     {
       id: "share",
@@ -393,9 +389,7 @@
             "domain or brand. Shares across all rows sum to 100%. A rising share means gaining ground " +
             "relative to everything else, not simply being cited more often. Domain Share applies the " +
             "same calculation inside a single domain: the percentage of that domain's own citations " +
-            "carried by one URL.",
-      apply: { scope: "domain", rank: "top" },
-      applyLabel: "Show top domains"
+            "carried by one URL."
     },
     {
       id: "trend",
@@ -413,9 +407,7 @@
       body: "Rank is the average position your brand takes within an answer that mentions it. Position 1 " +
             "is the first brand named. Lower is better, so the trend chip is inverted: a falling rank " +
             "number is displayed as a positive move. Values are shown to one decimal because typical " +
-            "changes are smaller than a full position.",
-      apply: { scope: "brand", rank: "top" },
-      applyLabel: "Show brands by rank"
+            "changes are smaller than a full position."
     },
     {
       id: "sentiment",
@@ -431,9 +423,7 @@
       hint: "%",
       body: "Visibility is the percentage of runs for a prompt in which your brand was mentioned at all. " +
             "20% means one answer in five named you. Visibility measures reach. Rank and Sentiment " +
-            "describe what happened inside the answers that did mention you.",
-      apply: { scope: "prompt", rank: "top" },
-      applyLabel: "Show top prompts"
+            "describe what happened inside the answers that did mention you."
     },
     {
       id: "prompts-responses",
@@ -450,9 +440,7 @@
       hint: "own vs competitor",
       body: "Brand Mentions lists which tracked brands appear on a cited page. Your own brand and your " +
             "competitors are stored the same way and differ only by role, so a single page can carry " +
-            "both. Pages that mention competitors but not you are usually the ones worth acting on.",
-      apply: { scope: "url" },
-      applyLabel: "Show URLs"
+            "both. Pages that mention competitors but not you are usually the ones worth acting on."
     },
     {
       id: "topics",
@@ -721,12 +709,11 @@
           r.chips().forEach(function(c){ html += tagHtml(c.label, c.color, c.base, c.dot); });
           html += '</div>';
         }
-        if (r.apply){
-          html += '<button class="mqa-ref-go" type="button" data-refgo="' + escAttr(r.id) + '">' +
-                    esc(r.applyLabel || "Show me") +
-                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg>' +
-                  '</button>';
-        }
+        /* Hier stand ein Knopf ("Show top domains" und Geschwister), der die Filter setzte und
+           eine Suche startete. Ausdruecklich entfernt: die Referenz ERKLAERT, sie fuehrt nicht
+           aus. Mit ihm sind applyRef, der data-refgo-Zweig und die apply-Felder der Eintraege
+           weg -- ein Datenfeld, das nichts mehr ausloest, ist der Anfang des naechsten
+           Missverstaendnisses. */
         html += '</div></div>';
       }
       html += '</div>';
@@ -734,20 +721,6 @@
     return html + '</div></div>';
   }
 
-  /* Turns a reference entry's `apply` into the same palette state the user could have typed —
-     { scope:"url", rank:"top" } is /urls /top. Deliberately routed through the existing FILTERS +
-     afterFilterChange() path rather than firing something of its own, so the button cannot drift
-     away from what the commands do. */
-  function applyRef(id){
-    var r = REF_BY_ID[id];
-    if (!r || !r.apply) return;
-    for (var slot in FILTERS) if (Object.prototype.hasOwnProperty.call(FILTERS, slot)) FILTERS[slot] = null;
-    for (var k in r.apply) if (Object.prototype.hasOwnProperty.call(r.apply, k)) FILTERS[k] = r.apply[k];
-    refOpen = null;                       // the reader is done reading — collapse behind them
-    input.value = ""; query = ""; syncPh();
-    renderChips(); buildStatic(); afterFilterChange();
-    try { input.focus(); } catch(_){}
-  }
   function toggleRefList(){
     refListOpen = !refListOpen;
     animSection = refListOpen ? "ref" : "";
@@ -1667,8 +1640,6 @@
     /* The "show me" button inside an expanded reference body. Checked BEFORE the row lookup below,
        because it sits in the .mqa-ref-item next to the row that opened it — without this the click
        would fall through to that row and collapse the entry the user just acted on. */
-    var refGo = e.target.closest ? e.target.closest("[data-refgo]") : null;
-    if (refGo){ e.stopPropagation(); applyRef(refGo.getAttribute("data-refgo")); return; }
     var el = e.target.closest ? e.target.closest(".mqa-row, .mqa-action") : null; if (el) activate(el);
   });
   modal.addEventListener("mousemove", function(e){ var el = e.target.closest ? e.target.closest(".mqa-row, .mqa-action") : null; if (el){ var i = rows.indexOf(el); if (i >= 0 && i !== activeIndex) setActive(i); } });

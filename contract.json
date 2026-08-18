@@ -501,7 +501,6 @@
   "data-recent",
   "data-recent-rm",
   "data-ref",
-  "data-refgo",
   "data-rename",
   "data-ri",
   "data-rm",
@@ -2403,7 +2402,7 @@
   "fnattrs": 72,
   "globals": 137,
   "payloadkeys": 66,
-  "dataattrs": 173,
+  "dataattrs": 172,
   "klassen": 1777,
   "keyframes": 56
  }

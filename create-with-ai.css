@@ -14,27 +14,20 @@
    eine Haelfte eines Umschalters in einer gemeinsamen Schiene, durchsichtig bis zum aktiven
    Zustand. Das hier ist der primaere Handlungsknopf einer Zelle -- gefuellt mit der Textfarbe,
    in der Sprache von .uca-primary im Fenster darunter, dessen Werte er teilt. */
-.uca-trigger {
-  display: inline-flex; align-items: center; gap: 7px; white-space: nowrap;
-  /* Links 7, rechts 8 -- und das ist mit Absicht ungleich, weil die TINTE gleich stehen soll,
-     nicht die Kaesten. Gemessen am gerenderten Knopf: der Stern fuellt seinen 15px-Kasten nicht
-     aus, seine Tinte beginnt 1.2px innen. Aus 7px Polsterung werden optisch also 8.2px, und der
-     Text endet 8px vor der rechten Kante. Vorher standen links 13 (optisch 14.2) gegen rechts 8 --
-     die rechte Seite sah deshalb NICHT zu breit aus, sondern die linke zu schmal; der Knopf war
-     um sechs Pixel aus der Mitte. Jetzt liegt beides auf 8. */
-  height: 32px; padding: 0 8px 0 7px; border: 0; border-radius: 8px;
-  background: var(--vc-text); color: var(--vc-bg);
-  font: inherit; font-size: 13.5px; font-weight: 560; letter-spacing: .1px; cursor: pointer;
-  transition: opacity .14s ease;
-}
-.uca-trigger:hover { opacity: .9; }
+/* Der Knopf traegt .up-export aus core und holt sich dort ALLES: Hoehe 32, Polsterung 0 8,
+   Abstand 8, Radius 8, gefuellte Flaeche, 12px/560, Hover. Hier steht nur noch, was er zusaetzlich
+   braucht -- eine Beschriftung, die nicht umbricht.
+   Vorher stand die Geometrie hier ein zweites Mal und wich ab (13.5px Schrift, 7px Abstand,
+   links 7 gegen rechts 8). Zwei Faelle desselben Knopfes mit zwei Werten: genau das, was ein
+   Bauteil verhindern soll. */
+.uca-trigger { white-space: nowrap; }
 
 /* Das Zeichen ist jetzt Lucide astroid aus UC.icon -- vorher lag hier eine PNG-Maske von
    img.icons8.com, also ein fremder Server im Ladepfad eines Knopfes, der in jeder Tabelle steht.
    Als SVG folgt es der Textfarbe ohnehin (stroke: currentColor) und braucht keine Maske mehr. */
 .uca-star {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 15px; height: 15px; flex: 0 0 auto;
+  width: 16px; height: 16px; flex: 0 0 auto;
 }
 .uca-star svg { width: 100%; height: 100%; display: block; }
 
@@ -441,8 +434,10 @@
 /* ---------- Mobil ---------- */
 @media (max-width: 768px) {
   .uca-root { display: block; width: auto; text-align: right; }
-  .uca-trigger { width: 32px; height: 32px; min-width: 32px; padding: 0; gap: 0; justify-content: center; overflow: hidden; font-size: 0; line-height: 0; }
-  .uca-trigger .uca-star { width: 16px; height: 16px; }
+  /* Mit .uca-root davor (0,2,0): der Knopf traegt jetzt auch .up-export, und gegen dessen
+     Polsterung darf nicht die Ladereihenfolge entscheiden. */
+  .uca-root .uca-trigger { width: 32px; height: 32px; min-width: 32px; padding: 0; gap: 0; justify-content: center; overflow: hidden; font-size: 0; line-height: 0; }
+  .uca-root .uca-trigger .uca-star { width: 16px; height: 16px; }
 }
 @media (max-width: 460px) {
   .uca-overlay { padding: 0; align-items: stretch; height: 100vh; height: 100dvh; }

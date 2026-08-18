@@ -142,7 +142,11 @@
      leeres Div plus Loader.
      --------------------------------------------------------------------------- */
   function triggerHtml(){
-    return '<button class="uca-trigger" type="button" data-trigger aria-haspopup="dialog">' +
+    /* up-export dazu: der Knopf IST der Export-Knopf der App -- gefuellte Flaeche, 32 hoch,
+       8px Polsterung auf beiden Seiten, 8px Abstand zum Zeichen, 12px/560. Vorher stand das alles
+       noch einmal in create-with-ai.css, mit eigenen Werten (13.5px Schrift, 7px Abstand, links 7
+       rechts 8) -- und genau daher kam der Eindruck, rechts sei zu viel Platz. */
+    return '<button class="uca-trigger up-export" type="button" data-trigger aria-haspopup="dialog">' +
              '<span class="uca-star" aria-hidden="true">' + UC.icon("astroid", 2) + '</span>' +
              '<span class="uca-trigger-label">Create</span>' +
            "</button>";

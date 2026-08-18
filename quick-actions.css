@@ -499,15 +499,11 @@
    scrolling row would hide most of the vocabulary this section exists to show. */
 .mqa-ref-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
 
-.mqa-ref-go {
-  margin-top: 10px; display: inline-flex; align-items: center; gap: 5px;
-  height: 28px; padding: 0 9px 0 11px; border: 1px solid var(--am-border); border-radius: 8px;
-  background: var(--am-card); color: var(--am-text);
-  font-family: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
-  transition: background .14s ease, border-color .14s ease;
-}
-.mqa-ref-go:hover { background: var(--am-soft); border-color: var(--am-border-strong); }
-.mqa-ref-go svg { width: 13px; height: 13px; display: block; }
+/* Hier stand .mqa-ref-go -- der Knopf "Show top domains" und seine Geschwister in den
+   Referenz-Eintraegen. Am 18.08. entfernt: die Referenz erklaert, sie fuehrt nicht aus. Mit dem
+   Markup faellt auch seine CSS weg; eine Regel ohne Element stiftet beim naechsten Aufraeumen nur
+   Ratlosigkeit. Die Klasse kam ausschliesslich aus quick-actions.js und steht in keinem
+   Bubble-Markup -- an der Verdrahtung nach aussen aendert sich also nichts. */
 
 /* ---------- Reference und Actions: die ruhige Zone ----------
    Beide Abschnitte stehen UNTER den Ergebnissen und sind nicht das, wonach jemand sucht -- sie
