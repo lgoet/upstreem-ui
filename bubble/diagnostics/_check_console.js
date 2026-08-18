@@ -201,3 +201,54 @@
   console.log("%cupCheck bereit:%c all() · pins() · core() · theme() · loading() · wiring()",
     "font-weight:700", "font-weight:400");
 })();
+
+/* ---------------------------------------------------------------------------------------------
+   upCheck.knopf(sel) -- wo sitzt der Platz in einem Knopf wirklich?
+
+   Gebaut fuer den Fall "der Knopf hat rechts zu viel Luft": misst nicht die Polsterung, sondern
+   die TINTE. Ein Zeichen fuellt seinen Kasten nie ganz aus, und ein Text endet mit dem letzten
+   Buchstaben -- die Polsterung allein sagt darum nichts darueber, was man sieht. Zusaetzlich
+   zeigt sie, wieviel Platz NEBEN dem Knopf steht: liegt die Luft dort, hilft keine Polsterung.
+
+     upCheck.knopf(".uca-trigger")          der Create-Knopf
+     upCheck.knopf()                        ohne Angabe: derselbe
+*/
+(function(){
+  var C = window.upCheck; if (!C) return;
+  C.knopf = function(sel){
+    sel = sel || ".uca-trigger";
+    var el = document.querySelector(sel);
+    if (!el){ console.warn("[upCheck] kein Element fuer " + sel); return null; }
+    var b = el.getBoundingClientRect(), cs = getComputedStyle(el);
+    function tinteLinks(){
+      var k = el.firstElementChild;
+      var svg = k && (k.matches("svg") ? k : k.querySelector("svg"));
+      var p = svg && svg.querySelector("path,rect,circle");
+      if (!p || !svg.viewBox || !svg.viewBox.baseVal.width) return k ? Math.round((k.getBoundingClientRect().left - b.left) * 10) / 10 : null;
+      var bb = p.getBBox(), sb = svg.getBoundingClientRect(), f = sb.width / svg.viewBox.baseVal.width;
+      return Math.round((sb.left - b.left + bb.x * f) * 10) / 10;
+    }
+    function tinteRechts(){
+      var letzte = el.lastElementChild || el;
+      var rg = document.createRange(); rg.selectNodeContents(letzte);
+      var rr = rg.getClientRects();
+      if (!rr.length) return Math.round((b.right - letzte.getBoundingClientRect().right) * 10) / 10;
+      return Math.round((b.right - rr[rr.length - 1].right) * 10) / 10;
+    }
+    var eltern = el.parentElement ? el.parentElement.getBoundingClientRect() : null;
+    var res = {
+      knopf: Math.round(b.width * 10) / 10 + " x " + Math.round(b.height * 10) / 10,
+      polsterung: cs.padding, abstand: cs.gap,
+      tinte_links: tinteLinks(), tinte_rechts: tinteRechts(),
+      platz_rechts_NEBEN_dem_knopf: eltern ? Math.round((eltern.right - b.right) * 10) / 10 : null,
+      elternklasse: el.parentElement ? el.parentElement.className : null
+    };
+    console.group("%cupCheck.knopf(" + sel + ")", "font-weight:700");
+    (console.table ? console.table : console.log)(res);
+    if (res.platz_rechts_NEBEN_dem_knopf > 4)
+      console.warn("Der Platz steht NEBEN dem Knopf, nicht darin -- er gehoert dem Elternelement " +
+        "(" + res.elternklasse + "). Polsterung am Knopf aendert daran nichts.");
+    console.groupEnd();
+    return res;
+  };
+})();
