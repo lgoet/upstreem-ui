@@ -29,49 +29,10 @@
 .udt-logo-ltr { font-size: 11px; font-weight: 600; color: var(--vc-muted); line-height: 1; text-transform: uppercase; }
 .udt-logo-box.has-img .udt-logo-ltr { display: none; }
 
-/* Anchor for both the goto arrow AND "Show Pages" — a single flex child with margin-left:auto,
-   zero width, that both children are absolutely positioned against (right:0). Fixed a real bug:
-   the arrow and the Show-Pages control used to be TWO SEPARATE siblings, each with its own
-   margin-left:auto. Flexbox splits available free space EQUALLY across every auto-margin item on
-   the line, so with two of them the arrow no longer landed flush against the cell's edge — it sat
-   wherever the split happened to leave it, roughly mid-cell. Anchoring both to one zero-width,
-   absolutely-positioned wrapper means there is only ever ONE auto margin in the row, and both
-   children share the exact same right edge regardless of which is visible. */
-.udt-row-affordance { display: inline-block; margin-left: auto; position: relative; flex: 0 0 auto; width: 0; height: 32px; }
-
-/* go-to arrow, revealed on row hover with a delay — same behaviour as urls-table. */
-.udt-row-goto { position: absolute; top: 50%; right: 0; width: 16px; height: 16px;
-  color: var(--vc-third);
-  opacity: 0; transform: translateY(-50%) translateX(-3px);
-  transition: opacity .18s ease, transform .18s ease; transition-delay: 0ms; }
-.udt-row-goto svg { width: 16px; height: 16px; display: block; }
-.up-row:hover .udt-row-goto { opacity: 1; transform: translateY(-50%) translateX(0); transition-delay: 220ms; }
-/* The 1s "Show Pages" dwell (.is-showpages-hover) fades the arrow out FIRST — no delay on the
-   way out — and only then fades Show Pages in (see its own transition-delay below), so the
-   handoff reads as one thing leaving before the next arrives, not two things fighting for the
-   same spot at once. */
-.up-row.is-showpages-hover .udt-row-goto { opacity: 0; transition: opacity 120ms ease; transition-delay: 0ms; }
-.up-root.is-vnarrow .udt-row-goto { display: none; }
-
-/* "Show Pages" — swaps in for the goto arrow after a 1s hover dwell (see the JS timer in
-   makeController). No border/pill shell — reads as a label with an icon in the same slot the
-   arrow occupied, not a new button appearing out of nowhere. position:absolute (see
-   .udt-row-affordance above) rather than a width transition: nothing here needs to occupy real
-   layout space while hidden, and an absolutely positioned element can't disturb the flex row's
-   auto-margin math the way the old width:0 approach did. transition-delay staggers this to start
-   AFTER the arrow's own fade-out has had time to mostly finish, per the sequencing above. */
-.udt-row-showpages { position: absolute; top: 50%; right: 0;
-  display: inline-flex; align-items: center; gap: 6px; transform: translateY(-50%) translateX(6px);
-  height: 32px; padding: 0; border: 0; background: transparent; cursor: pointer; font: inherit;
-  font-size: 12px; font-weight: 500; color: var(--vc-third); white-space: nowrap;
-  opacity: 0; pointer-events: none;
-  transition: opacity 160ms ease, transform 160ms ease, color 120ms ease; transition-delay: 0ms; }
-.udt-row-showpages svg { width: 14px; height: 14px; flex: 0 0 14px; display: block; }
-.udt-row-showpages:hover, .udt-row-showpages:focus-visible { color: var(--vc-text); }
-.up-row.is-showpages-hover .udt-row-showpages { opacity: 1; transform: translateY(-50%) translateX(0);
-  pointer-events: auto; transition-delay: 140ms; }
-.up-root.is-vnarrow .udt-row-affordance { display: none !important; }
-
+/* Pfeil, Anker und "Show Pages" stehen seit 18.08. in core.css als geteiltes Bauteil
+   (.up-rowswap*, mit den .udt-*-Klassen in jeder Regel daneben): brands-overview braucht fuer
+   seinen Edit-Knopf genau dieselben Zeiten, Groessen und Positionen, und zwei Kopien davon
+   laufen beim naechsten Nachziehen auseinander. Das Markup hier bleibt unveraendert. */
 .udt-dom-wrap { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .udt-dom-title { font-size: 13.5px; font-weight: 500; color: var(--vc-text); letter-spacing: -0.01em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

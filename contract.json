@@ -1682,6 +1682,9 @@
   "up-root-",
   "up-row",
   "up-row-goto",
+  "up-rowswap",
+  "up-rowswap-act",
+  "up-rowswap-goto",
   "up-scale-",
   "up-scale-dot",
   "up-scale-dots",
@@ -2019,7 +2022,6 @@
   "upt-grp-actmenu",
   "upt-grp-cdot",
   "upt-grp-chev",
-  "upt-grp-edit",
   "upt-grp-foot",
   "upt-grp-head",
   "upt-grp-inactive",
@@ -2401,7 +2403,7 @@
   "globals": 137,
   "payloadkeys": 66,
   "dataattrs": 173,
-  "klassen": 1774,
+  "klassen": 1776,
   "keyframes": 56
  }
 }

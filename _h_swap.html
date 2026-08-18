@@ -1,0 +1,60 @@
+<meta charset="utf-8"><title>edit gegen show pages</title>
+<style>html,body{margin:0;font:12px ui-monospace,monospace;background:#fff}
+.buehne{width:1000px} pre{white-space:pre-wrap;background:#111;color:#eee;padding:8px}</style>
+<body>
+<div class="buehne">
+  <div class="up-root ubo-root" id="ubo" data-instance="b1" data-isdark="no"></div>
+  <div class="up-root udt-root" id="udt" data-instance="d1" data-isdark="no"></div>
+</div>
+<pre id="out">laeuft</pre>
+<script>
+window.__fehler=[]; window.addEventListener("error",function(e){window.__fehler.push(String(e.message))});
+try{ localStorage.setItem("pref_theme","light"); }catch(e){}
+(function(){
+  var alt=/alt=1/.test(location.search);
+  var f=function(n){ return alt ? n[0] : n[1]; };
+  var files=[f(["_alt_core.css","core.css"]), f(["_alt_udt.css","domains-table.css"]), f(["_alt_ubo.css","brands-overview.css"]),
+             f(["_alt_core.js","core.js"])];
+  Promise.all(files.map(function(x){ return fetch(x+"?n="+Math.random(),{cache:"no-store"}).then(function(r){return r.text()}); }))
+  .then(function(t){
+    t.forEach(function(x,i){ var e=document.createElement(/\.css$/.test(files[i])?"style":"script"); e.textContent=x; document.head.appendChild(e); });
+    /* Kein Komponenten-JS: gemessen wird die CSS an handgebautem Markup, das dem echten gleicht. */
+    document.getElementById("ubo").innerHTML =
+      '<div class="up-table"><div class="up-tbody">' +
+      '<div class="up-row" id="uboRow"><div class="up-td up-td-brand" style="flex:1 1 auto;display:flex;align-items:center;gap:10px">' +
+        '<span class="ubo-brand-name">Mercedes</span>' +
+        (alt ? '<button class="ubo-row-edit" type="button"><svg viewBox="0 0 24 24"></svg>Edit</button><span class="up-row-goto"><svg viewBox="0 0 24 24"></svg></span>'
+             : '<span class="up-rowswap"><span class="up-rowswap-goto"><svg viewBox="0 0 24 24"></svg></span>' +
+               '<button class="up-rowswap-act ubo-row-edit" type="button"><svg viewBox="0 0 24 24"></svg><span>Edit</span></button></span>') +
+      '</div></div></div></div>';
+    document.getElementById("udt").innerHTML =
+      '<div class="up-table"><div class="up-tbody">' +
+      '<div class="up-row" id="udtRow"><div class="up-td up-td-domain" style="flex:1 1 auto;display:flex;align-items:center;gap:10px">' +
+        '<span class="udt-dom-title">spiegel.de</span>' +
+        '<span class="udt-row-affordance"><span class="udt-row-goto"><svg viewBox="0 0 24 24"></svg></span>' +
+        '<button class="udt-row-showpages" type="button"><svg viewBox="0 0 24 24"></svg><span>Show Pages</span></button></span>' +
+      '</div></div></div></div>';
+    setTimeout(function(){
+      function mess(row, gotoSel, actSel){
+        var g=row.querySelector(gotoSel), a=row.querySelector(actSel);
+        var gs=g?getComputedStyle(g):null, as=a?getComputedStyle(a):null;
+        var rr=row.getBoundingClientRect();
+        function kante(e){ var b=e.getBoundingClientRect(); return { rechts: Math.round(rr.right-b.right), oben: Math.round(b.top-rr.top), hoehe: Math.round(b.height) }; }
+        return { pfeil: g?{ pos: gs.position, breite: gs.width, verzug_hover: gs.transitionDelay, kante: kante(g) }:null,
+                 aktion: a?{ pos: as.position, hoehe: as.height, schrift: as.fontSize, gewicht: as.fontWeight,
+                             gap: as.gap, farbe: as.color, verzug: as.transitionDelay, uebergang: as.transitionDuration,
+                             kante: kante(a) }:null };
+      }
+      var ubo=mess(document.getElementById("uboRow"), alt?".up-row-goto":".up-rowswap-goto", ".ubo-row-edit");
+      var udt=mess(document.getElementById("udtRow"), ".udt-row-goto", ".udt-row-showpages");
+      var res={ datei: alt?"alt":"neu", brands: ubo, domains: udt, fehler: window.__fehler };
+      if (!alt){
+        res.gleich = JSON.stringify([ubo.aktion.pos, ubo.aktion.hoehe, ubo.aktion.schrift, ubo.aktion.gewicht, ubo.aktion.gap, ubo.aktion.verzug, ubo.aktion.kante.rechts])
+                  === JSON.stringify([udt.aktion.pos, udt.aktion.hoehe, udt.aktion.schrift, udt.aktion.gewicht, udt.aktion.gap, udt.aktion.verzug, udt.aktion.kante.rechts]);
+        res.pfeil_gleich = JSON.stringify([ubo.pfeil.pos, ubo.pfeil.breite, ubo.pfeil.kante.rechts]) === JSON.stringify([udt.pfeil.pos, udt.pfeil.breite, udt.pfeil.kante.rechts]);
+      }
+      document.getElementById("out").textContent=JSON.stringify(res,null,1); window.__fertig=res;
+    }, 600);
+  });
+})();
+</script>

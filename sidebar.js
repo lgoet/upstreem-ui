@@ -169,7 +169,12 @@
     var esc = UC.esc;
     var instanceId = root.getAttribute("data-instance") || "default";
     /* Erst hier, nicht auf Modulebene: UC steht beim Laden dieser Datei noch nicht fest. */
-    if (!BAR_SVG) BAR_SVG = UC.icon("panelLeft", 1.8);
+    /* Der Umschalter oben rechts traegt jetzt das gefuellte Zeichen aus core (sidebarPanels):
+       schmaler Balken, Luecke, groesseres Feld. Die Farben stehen an .usn-toggle -- Drittfarbe im
+       Ruhezustand, Primaerfarbe beim Hover -- und ein gefuelltes SVG mit fill="currentColor" folgt
+       ihnen von selbst. Der Knopf am Telefon (fab) bekommt dasselbe Zeichen: es ist derselbe
+       Umschalter, nur an anderer Stelle. */
+    if (!BAR_SVG) BAR_SVG = UC.icon("sidebarPanels");
     var fire = UC.makeFire(root, { label: "sidebar", eventPrefix: "" });
 
     function attr(n, f){

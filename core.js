@@ -1639,6 +1639,37 @@
        ... am Ende von initRoot:          spaet.drain(instanceId, ctrl);
      Der Abgleich der id ist derselbe wie in den Filtern: exakt oder als Praefix. */
   var LATE_TTL_MS = 60000;
+  /* ---- Verweildauer auf einer Zeile ---------------------------------------------------------
+     Setzt cls auf die Zeile, ueber der der Zeiger ms lang steht, und nimmt sie beim Verlassen
+     wieder weg. Damit wird aus einem Hover ein "und zwar wirklich diese Zeile" -- CSS kann das
+     ohne Keyframes an einer festen Gesamtdauer nicht ausdruecken.
+     Stand in domains-table; brands-overview braucht dieselbe Uhr fuer seinen Edit-Knopf. */
+  function rowDwell(root, cls, ms, rowSel){
+    if (!root || root.__upDwell) return;
+    root.__upDwell = true;
+    var sel = rowSel || ".up-row", uhr = null, zeile = null;
+    root.addEventListener("mouseover", function(e){
+      if (!e.target.closest) return;
+      var r = e.target.closest(sel);
+      /* Skelettzeilen nicht: dort gibt es nichts zu bedienen. */
+      if (!r || !root.contains(r) || r.classList.contains("up-tsk")) return;
+      if (r === zeile) return;
+      if (zeile) zeile.classList.remove(cls);
+      zeile = r;
+      clearTimeout(uhr);
+      uhr = setTimeout(function(){ r.classList.add(cls); }, ms == null ? 1000 : ms);
+    });
+    root.addEventListener("mouseout", function(e){
+      if (!e.target.closest) return;
+      var r = e.target.closest(sel);
+      if (!r || r !== zeile) return;
+      var zu = e.relatedTarget;
+      if (zu && zu.closest && zu.closest(sel) === r) return;   /* nur zu einem Kind gewandert */
+      zeile = null; clearTimeout(uhr);
+      r.classList.remove(cls);
+    });
+  }
+
   function makeLate(name, rootSel){
     var wartend = {};
     function park(id, fn){
@@ -6462,11 +6493,28 @@
          : (list.length ? '<button class="up-pop-action" type="button" data-mentall>Select all</button>' : ""));
   }
 
+  /* ---- Gefuellte Zeichen -----------------------------------------------------------------
+     Alles in ICON_PATHS ist eine Strichzeichnung (fill:none, stroke:currentColor). Ein gefuelltes
+     Zeichen ist eine andere Sache und braucht keinen Strich -- deshalb eine eigene Tabelle statt
+     eines Parameters, den man an der Aufrufstelle vergessen kann. Der Name kommt in beide Faelle
+     ueber dieselbe Funktion herein: UC.icon("name") entscheidet selbst, welche Sorte es ist.
+
+     sidebarPanels: der Umschalter der Leiste. Nach Vorlage gebaut, nicht aus Lucide -- ein
+     schmaler Balken, eine Luecke, ein groesseres Feld, beides gefuellt. Auf 24 gerechnet, damit es
+     im selben Kasten sitzt wie jedes andere Zeichen: Balken 4 breit von y5 bis y19, Feld 11 breit
+     von y3 bis y21, Luecke 3. Radien im Verhaeltnis zur Groesse (2 am Balken, 3.5 am Feld), das
+     ist die Rundung, die die App auch an ihren Kacheln benutzt. */
+  var ICON_FILLED = {
+    sidebarPanels: '<rect x="3" y="5" width="4" height="14" rx="2"/>' +
+                   '<rect x="10" y="3" width="11" height="18" rx="3.5"/>'
+  };
   function icon(name, strokeWidth){
+    var f = ICON_FILLED[name];
+    if (f) return '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none">' + f + '</svg>';
     var d = ICON_PATHS[name];
     if (!d){
       if (window.console) console.error("upstreem: kein Icon namens \"" + name + "\" -- " +
-        "vorhanden sind: " + Object.keys(ICON_PATHS).join(", "));
+        "vorhanden sind: " + Object.keys(ICON_PATHS).concat(Object.keys(ICON_FILLED)).join(", "));
       return "";
     }
     var w = (strokeWidth == null) ? 2 : strokeWidth;
@@ -7063,6 +7111,7 @@
     bootStubs: bootStubs,
     makeMount: makeMount,
     makeLate: makeLate,
+    rowDwell: rowDwell,
     makePager: makePager,
     makeHeadSort: makeHeadSort,
     makeSoftReload: makeSoftReload,

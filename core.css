@@ -1530,6 +1530,55 @@
 .up-logo-ltr { font-size: 11px; font-weight: 600; color: var(--vc-muted); line-height: 1; text-transform: uppercase; }
 .up-logo-box.has-img .up-logo-ltr { display: none; }
 
+/* ---------- Zeilen-Affordanz: Pfeil, der nach einer Verweildauer zur Aktion wird ----------
+   Die Bauart kommt aus domains-table ("Show Pages") und steht jetzt hier, weil brands-overview
+   mit seinem Edit-Knopf genau dasselbe braucht -- Buchstabe fuer Buchstabe dieselben Zeiten,
+   Groessen und Positionen. Die .udt-*-Klassen stehen in jeder Regel mit, damit das Markup der
+   Domains-Tabelle unangetastet bleibt (derselbe Kniff wie bei .up-seg/.cc-seg).
+
+   Der Anker ist EIN nullbreites Flex-Kind mit margin-left:auto, gegen das beide Kinder absolut
+   liegen. Vorher waren Pfeil und Aktion zwei Geschwister mit je eigenem auto-Rand: Flexbox teilt
+   den freien Platz gleichmaessig auf ALLE auto-Raender einer Zeile auf, der Pfeil landete also
+   irgendwo in der Mitte statt an der Kante.
+
+   Die Uebergabe ist gestaffelt: beim Hover kommt der Pfeil nach 220ms; nach 1s Verweilen (die
+   Klasse setzt UC.rowDwell) geht der Pfeil OHNE Verzoegerung in 120ms weg und die Aktion kommt
+   140ms spaeter -- eins geht, dann kommt das naechste, statt dass sich beide um denselben Platz
+   streiten. */
+.up-rowswap, .udt-row-affordance {
+  display: inline-block; margin-left: auto; position: relative; flex: 0 0 auto; width: 0; height: 32px;
+}
+.up-rowswap-goto, .udt-row-goto {
+  position: absolute; top: 50%; right: 0; width: 16px; height: 16px; color: var(--vc-third);
+  opacity: 0; transform: translateY(-50%) translateX(-3px);
+  transition: opacity .18s ease, transform .18s ease; transition-delay: 0ms;
+}
+.up-rowswap-goto svg, .udt-row-goto svg { width: 16px; height: 16px; display: block; }
+.up-row:hover .up-rowswap-goto, .up-row:hover .udt-row-goto {
+  opacity: 1; transform: translateY(-50%) translateX(0); transition-delay: 220ms;
+}
+.up-row.is-rowswap .up-rowswap-goto, .up-row.is-showpages-hover .udt-row-goto {
+  opacity: 0; transition: opacity 120ms ease; transition-delay: 0ms;
+}
+.up-root.is-vnarrow .up-rowswap-goto, .up-root.is-vnarrow .udt-row-goto { display: none; }
+/* Die Aktion sitzt in demselben Platz, den der Pfeil hatte: kein Rahmen, keine Pille -- eine
+   Beschriftung mit Zeichen, nicht ein Knopf, der aus dem Nichts auftaucht. */
+.up-rowswap-act, .udt-row-showpages {
+  position: absolute; top: 50%; right: 0;
+  display: inline-flex; align-items: center; gap: 6px; transform: translateY(-50%) translateX(6px);
+  height: 32px; padding: 0; border: 0; background: transparent; cursor: pointer; font: inherit;
+  font-size: 12px; font-weight: 500; color: var(--vc-third); white-space: nowrap;
+  opacity: 0; pointer-events: none;
+  transition: opacity 160ms ease, transform 160ms ease, color 120ms ease; transition-delay: 0ms;
+}
+.up-rowswap-act svg, .udt-row-showpages svg { width: 14px; height: 14px; flex: 0 0 14px; display: block; }
+.up-rowswap-act:hover, .up-rowswap-act:focus-visible,
+.udt-row-showpages:hover, .udt-row-showpages:focus-visible { color: var(--vc-text); }
+.up-row.is-rowswap .up-rowswap-act, .up-row.is-showpages-hover .udt-row-showpages {
+  opacity: 1; transform: translateY(-50%) translateX(0); pointer-events: auto; transition-delay: 140ms;
+}
+.up-root.is-vnarrow .up-rowswap, .up-root.is-vnarrow .udt-row-affordance { display: none; }
+
 /* go-to arrow, revealed on row hover after a short delay so it doesn't flicker while the cursor
    sweeps across rows */
 .up-row-goto { margin-left: auto; width: 16px; height: 16px; flex: 0 0 auto; color: var(--vc-third);

@@ -450,7 +450,10 @@
       }
       var fav = faviconUrl();
       elFav.innerHTML = fav ? imgHtml(fav) : GLOBE_SVG;
-      elSTitle.textContent = S.lead_title || S.lead_domain || domainOf(S.url) || "Selected source";
+      /* KEIN Rueckfall auf die Domain: die steht eine Zeile tiefer, und zweimal dasselbe sieht aus
+         wie ein verlorener Titel -- genau so ist es gemeldet worden ("da steht die Domain, wo der
+         Titel stand"). Fehlt der Titel wirklich, sagt die Zeile das neutral. */
+      elSTitle.textContent = S.lead_title || "Selected source";
       elSUrl.textContent = S.lead_domain || domainOf(S.url) || S.url || "";
     }
     function renderAssistants(){
@@ -667,7 +670,16 @@
       return v;
     }
     function readAttrs(){
-      if (_explicit) return;
+      /* Der Titel ist die eine Ausnahme von der _explicit-Sperre: ein Run-JS-Aufruf, der ihn nicht
+         mitbringt, ist kein Grund, den vorhandenen wegzuwerfen. Alles andere bleibt gesperrt --
+         dort gewinnt der Aufruf ueber das Attribut, so wie bisher. */
+      if (_explicit){
+        if (!S.lead_title){
+          var tSpaet = attrOf("data-title");
+          if (tSpaet){ S.lead_title = tSpaet; renderSource(); }
+        }
+        return;
+      }
       var u = attrOf("data-url"), c = attrOf("data-citation-type"), t = attrOf("data-title"),
           br = attrOf("data-brand"), bs = attrOf("data-summary");
       if (u) S.url = u;
@@ -685,7 +697,11 @@
         /* Eine neue URL setzt die abgeleiteten Felder zurueck, ausser sie kommen im selben
            Aufruf mit -- sonst klebt der Titel der vorigen Quelle an der neuen. */
         if (p.lead_domain == null)  S.lead_domain = domainOf(S.url);
-        if (p.lead_title == null)   S.lead_title = "";
+        /* Zuruecksetzen heisst NICHT loeschen: traegt das Element den Titel als data-title, gilt
+           er weiter. Vorher fiel er hier weg, sobald ein Workflow setContext nur mit der URL rief
+           -- und readAttrs holte ihn nicht zurueck, weil der Aufruf _explicit gesetzt hatte.
+           Uebrig blieb die Domain in der Titelzeile. */
+        if (p.lead_title == null)   S.lead_title = attrOf("data-title");
         if (p.lead_favicon == null) S.lead_favicon = "";
       }
       ["citation_type", "lead_title", "lead_domain", "lead_favicon", "own_brand_name", "own_brand_summary"]

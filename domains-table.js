@@ -1179,23 +1179,9 @@
        DISAPPEAR-after-appear on the SAME hover is two different endpoints for one continuous
        :hover state, which plain CSS transitions can't express without reaching for keyframes tied
        to a fixed total duration — a JS timer is simpler and exactly as reliable. */
-    var rowHoverTimer = null, rowHoverEl = null;
-    root.addEventListener("mouseover", function(e){
-      var row = e.target.closest(".up-row");
-      if (!row || !root.contains(row) || row.classList.contains("up-tsk")) return;
-      if (row === rowHoverEl) return;
-      rowHoverEl = row;
-      clearTimeout(rowHoverTimer);
-      rowHoverTimer = setTimeout(function(){ row.classList.add("is-showpages-hover"); }, 1000);
-    });
-    root.addEventListener("mouseout", function(e){
-      var row = e.target.closest(".up-row");
-      if (!row || row !== rowHoverEl) return;
-      var to = e.relatedTarget;
-      if (to && to.closest && to.closest(".up-row") === row) return;
-      rowHoverEl = null; clearTimeout(rowHoverTimer);
-      row.classList.remove("is-showpages-hover");
-    });
+    /* Die Uhr steht in core (UC.rowDwell) -- brands-overview braucht dieselbe fuer seinen
+       Edit-Knopf, und zwei Kopien laufen auseinander. Klasse und Dauer bleiben, wie sie waren. */
+    UC.rowDwell(root, "is-showpages-hover", 1000);
 
     /* ---------------- events ---------------- */
     function cloneSel(o){ var n = {}; for (var k in o){ if (Object.prototype.hasOwnProperty.call(o, k) && o[k]) n[k] = true; } return n; }

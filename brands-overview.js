@@ -974,13 +974,19 @@
         '<div class="up-td up-td-idx">' + pos + '</div>' +
         '<div class="up-td up-td-brand">' + logoHtml(r.logo_url || r.favicon_url) +
           '<span class="ubo-brand-name">' + highlight(r.name == null ? "" : r.name, state.query) + '</span>' +
-          /* Fires the exact same event as the kebab menu's own Edit item (data-edit-fn/uboEdit) --
-             this is a second entry point to the identical action, not a new one. Hover-reveal
-             mirrors prompts-table's group-header Edit button exactly: icon + "Edit" label, 200ms
-             opacity ease, gated on .up-row:hover so it never competes with the row's own
-             click-to-open. */
-          '<button class="ubo-row-edit" type="button" data-row-edit="' + esc(id) + '">' + EDIT_SVG + 'Edit</button>' +
-          '<span class="up-row-goto">' + GOTO_SVG + '</span></div>';
+          /* Loest genau dasselbe Ereignis aus wie der Eintrag "Edit" im Kebab-Menue
+             (data-edit-fn/uboEdit) -- ein zweiter Weg zur gleichen Aktion, keine neue.
+             Der Knopf sitzt jetzt im geteilten Anker aus core (.up-rowswap): der Pfeil kommt beim
+             Hover nach 220ms, nach 1s Verweilen geht er und der Knopf tritt an SEINE Stelle. Das
+             ist Zeit fuer Zeit, Groesse fuer Groesse und Position fuer Position dasselbe, was
+             "Show Pages" in der Domains-Tabelle macht -- eine Vorgabe, deshalb nicht nachgebaut,
+             sondern dasselbe Bauteil. Vorher stand der Knopf INLINE hinter dem Namen und kam ohne
+             Verweildauer, mit eigener Groesse und eigenem Platz. */
+          '<span class="up-rowswap">' +
+            '<span class="up-rowswap-goto">' + GOTO_SVG + '</span>' +
+            '<button class="up-rowswap-act ubo-row-edit" type="button" data-row-edit="' + esc(id) + '">' +
+              EDIT_SVG + '<span>Edit</span></button>' +
+          '</span></div>';
       if (colOn("visibility")) h += '<div class="up-td up-td-visibility">' + vis + '</div>';
       if (colOn("ranking"))    h += '<div class="up-td up-td-ranking">' + rank + '</div>';
       if (colOn("sentiment"))  h += '<div class="up-td up-td-sentiment">' + sent + '</div>';
@@ -1162,6 +1168,9 @@
       });
     }
     UC.makeTooltips(root, darkNow);
+    /* Die Verweildauer, die den Pfeil gegen den Edit-Knopf tauscht -- gleiche Uhr und gleiche
+       Sekunde wie "Show Pages" in der Domains-Tabelle. */
+    if (UC.rowDwell) UC.rowDwell(root, "is-rowswap", 1000);
 
     /* ---------- dropdowns ---------- */
     var POP_GROUP = "ubo-" + instanceId;

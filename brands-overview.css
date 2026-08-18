@@ -172,21 +172,13 @@
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .ubo-deact { font-size: 13px; color: var(--vc-muted); white-space: nowrap; }
 
-/* Per-row Edit, hover-revealed directly after the brand name -- icon + "Edit" label, same shape
-   and 200ms opacity ease as prompts-table's group-header Edit button (.upt-grp-edit). 32px from
-   the name specifically (not .up-td's own 10px flex-gap every other cell child gets) -- margin
-   tops up the existing 10px gap to the requested 32px total rather than fighting/replacing it.
-   Sits between the name and the right-aligned .up-row-goto arrow (core.css), not fighting it for
-   the same slot. */
-.ubo-row-edit { flex: 0 0 auto; height: 28px; padding: 0; border: 0; background: transparent;
-  color: var(--vc-third); font-family: inherit; font-size: 12.5px; font-weight: 500;
-  cursor: pointer; white-space: nowrap; opacity: 0; pointer-events: none;
-  display: inline-flex; align-items: center; gap: 6px; margin-left: 22px; /* 10px .up-td gap + 22px = 32px */
-  transition: opacity 200ms ease, color 120ms ease; }
-.ubo-row-edit svg { width: 14px; height: 14px; display: block; }
-.up-row:hover .ubo-row-edit { opacity: 1; pointer-events: auto; }
-.ubo-row-edit:hover { color: var(--vc-text); }
-.up-root.is-vnarrow .ubo-row-edit { display: none; }
+/* Der Edit-Knopf je Zeile hat hier KEINE eigene Geometrie mehr. Er sitzt im geteilten Anker aus
+   core (.up-rowswap / .up-rowswap-act) und traegt damit dieselben Zeiten, Groessen und Positionen
+   wie "Show Pages" in der Domains-Tabelle -- so war es verlangt. Vorher stand er inline hinter dem
+   Namen (32px Abstand, 28px hoch, 12.5px Schrift, 200ms ohne Verweildauer) und kaempfte mit dem
+   Pfeil um die rechte Kante.
+   .ubo-row-edit bleibt am Element: die Klasse steht im Vertrag, und ein Selektor, der von aussen
+   auf diesen Knopf zeigt, findet ihn weiter. */
 
 /* row actions trigger — always visible, not hover-revealed */
 .ubo-actbtn {

@@ -1,0 +1,31 @@
+<meta charset="utf-8"><title>neues sidebar-zeichen</title>
+<style>html,body{margin:0;font:12px ui-monospace,monospace;padding:16px;background:#fff}
+.gross{width:120px;height:120px} .gross svg{width:100%;height:100%}
+.reihe{display:flex;gap:24px;align-items:center;margin:12px 0}
+.echt{width:14px;height:14px;color:#9E9E9E} .echt svg{width:100%;height:100%}
+.echt.hover{color:#1f1f1b}
+pre{white-space:pre-wrap;background:#111;color:#eee;padding:8px}</style>
+<body>
+<div class="reihe">
+  <div class="gross" id="g" style="color:#9E9E9E"></div>
+  <div class="echt" id="e1"></div><div class="echt hover" id="e2"></div>
+</div>
+<pre id="out">laeuft</pre>
+<script>
+fetch("core.js?n="+Math.random(),{cache:"no-store"}).then(function(r){return r.text()}).then(function(t){
+  var s=document.createElement("script"); s.textContent=t; document.head.appendChild(s);
+  setTimeout(function(){
+    var svg = UC.icon("sidebarPanels");
+    document.getElementById("g").innerHTML=svg;
+    document.getElementById("e1").innerHTML=svg;
+    document.getElementById("e2").innerHTML=svg;
+    var el=document.querySelector("#e1 svg"), r1=el.querySelectorAll("rect");
+    var cs=getComputedStyle(el);
+    var res={ markup: svg.slice(0,120),
+      fill: cs.fill, stroke: cs.stroke, rechtecke: r1.length,
+      masse: [].map.call(r1, function(x){ return x.getAttribute("x")+","+x.getAttribute("y")+" "+x.getAttribute("width")+"x"+x.getAttribute("height")+" r"+x.getAttribute("rx"); }),
+      gerendert: Math.round(el.getBoundingClientRect().width)+"x"+Math.round(el.getBoundingClientRect().height) };
+    document.getElementById("out").textContent=JSON.stringify(res,null,1); window.__fertig=res;
+  }, 700);
+});
+</script>
