@@ -138,6 +138,10 @@
    sehen. Dieselbe Flaeche wie der aktive Menuepunkt, dazu die Chevrons in der Primaerfarbe. */
 .usn-team:hover { background: var(--usn-sel); }
 .usn-team:hover .usn-sw { color: var(--vc-text); }
+/* Offenes Team-Menue: der Doppelpfeil steht in der Primaerfarbe, auch ohne Zeiger darauf. Die
+   Klasse is-open setzt makePopover auf den WRAP (.usn-top), nicht auf den Knopf -- deshalb der
+   Weg von dort nach innen. */
+.usn-top.is-open .usn-team .usn-sw { color: var(--vc-text); }
 /* gap: 0 -- die Luecken zwischen den Flex-Kindern bleiben sonst stehen, auch wenn die Kinder
    selbst 0 breit sind, und das Icon steht dann um genau diese Luecke neben der Mitte. */
 /* Im Mini-Zustand ist der Teamknopf ein Quadrat wie der Einklapp-Knopf darunter -- vorher war
@@ -191,11 +195,11 @@
 /* 16 x 16: das Zeichen ist quadratisch (viewBox 16x16, layout-sidebar-inset aus Bootstrap Icons,
    siehe ICON_FILLED in core), die Groesse steht hier. 1:1 mit dem viewBox, die Pfade werden also
    gar nicht skaliert -- die Haarlinien des Rahmens bleiben genau einen Pixel breit.
-   65 Prozent Deckkraft im RUHEZUSTAND, beim Hover voll: der Umschalter soll die Leiste nicht
+   80 Prozent Deckkraft im RUHEZUSTAND, beim Hover voll: der Umschalter soll die Leiste nicht
    anfuehren, sondern dort sein, wenn man ihn sucht. Die Farbe wechselt dabei wie bisher von der
    Dritt- auf die Primaerfarbe (zwei Zeilen weiter oben), die Deckkraft kommt dazu. */
 .usn-bar .usn-toggle svg {
-  width: 16px; height: 16px; opacity: .65;
+  width: 16px; height: 16px; opacity: .8;
   transition: opacity var(--usn-t) var(--usn-ease);
 }
 .usn-bar .up-iconbtn.usn-toggle:hover svg { opacity: 1; }

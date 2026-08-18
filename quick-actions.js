@@ -960,9 +960,9 @@
     var list = recentLoad(), favs = favLoad();
     var h = "";
     function group(head, body){
-      // the separator belongs to the first group only — the rest stack straight under it
-      h += (h ? '' : '<div class="mqa-sep"></div>') +
-        '<div class="mqa-group"><div class="mqa-group-head">' + head + '</div>' + body + '</div>';
+      /* Kein Trenner mehr vor der ersten Gruppe: der Abstand unter dem Suchfeld trennt. Das war
+         der letzte, der noch stand -- die beiden ueber Reference und Actions sind schon weg. */
+      h += '<div class="mqa-group"><div class="mqa-group-head">' + head + '</div>' + body + '</div>';
     }
     if (_viewed.length) group("Recent", _viewed.map(function(it, i){ return viewedRowHtml(it, i); }).join(""));
     if (list.length)    group("Recent Searches", list.map(recentRowHtml).join(""));

@@ -8,10 +8,11 @@
    performance-page-header.js. This wrapper is what keeps .up-ph-top's own
    justify-content:space-between seeing exactly two children (.up-ph-left and this), same
    reasoning as prompts-page-header.css's .pph-topright. */
-/* 12 statt 32, und damit derselbe Abstand, den auch die KPI-Leiste zwischen ihren Eintraegen
-   benutzt: oben rechts stehen KPIs, Docs und Refresh in EINER Reihe, und die hatte zwei
-   verschiedene Luecken (32 hier, 8 zwischen den beiden Knoepfen). Jetzt ueberall 12. */
-.dph-topright { display: flex; align-items: center; gap: 12px; }
+/* 20 zwischen KPI-Leiste und Werkzeugen, 12 zwischen den Werkzeugen selbst (siehe .dph-tools):
+   die Reihe hatte urspruenglich 32 gegen 8, dann ueberall 12, und mit den 8px mehr hier steht der
+   Textblock jetzt weiter von den Knoepfen als die Knoepfe voneinander -- was der Sache entspricht,
+   es sind zwei verschiedene Dinge. */
+.dph-topright { display: flex; align-items: center; gap: 20px; }
 
 /* ---------- KPI strip: Visibility / Ranking / Sentiment ---------- */
 .dph-kpis { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; margin-top: 0; }

@@ -70,7 +70,7 @@
       { key: "performance",   label: "Performance",     icon: "chartColumnUp" },
       { key: "opportunities", label: "Opportunities",   icon: "listTodo" },
       /* Schluessel "research", nicht "prompt-research" -- siehe AKTIV_SYNONYM weiter unten. */
-      { key: "research",      label: "Prompt Research", icon: "squareDashedText" },
+      { key: "research",      label: "Prompt Research", icon: "textSearch" },
       { key: "mira",          label: "Mira",            icon: "mira" }
     ]},
     { head: "Organisation", items: [

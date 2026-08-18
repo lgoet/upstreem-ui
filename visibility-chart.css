@@ -214,3 +214,10 @@
    .vot-root-Vorsatz und keine Aenderung am Bauteil. Einen eigenen Farbzustand hat der Eintrag
    nicht -- an- und abgewaehlt unterscheidet core ueber die Deckkraft, und die bleibt. */
 .vot-root .up-legend .up-company-name { color: var(--vc-muted); }
+/* Beim Hervorheben doch die Primaerfarbe. Hervorgehoben wird genau dann, wenn der Zeiger auf dem
+   Eintrag steht -- core macht daraus die Kurve im Chart und setzt die Deckkraft der anderen
+   Eintraege per style-Attribut herunter (makeLine, applyHighlight). Eine KLASSE fuer diesen
+   Zustand gibt es nicht, deshalb haengt die Farbe hier an :hover und an nichts sonst.
+   Vier Stufen Spezifitaet gegen die drei der Grundregel darueber -- ueber die Spezifitaet, nicht
+   ueber die Reihenfolge. */
+.vot-root .up-legend .up-company-item:hover .up-company-name { color: var(--vc-text); }

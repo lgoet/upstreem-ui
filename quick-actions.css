@@ -227,10 +227,11 @@
 /* only the result list scrolls — the search bar above and the actions block below stay put */
 .mqa-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y !important; padding: 6px 6px 0; }
 .mqa-modal:not(.has-results) .mqa-scroll { display: none; }   /* nothing above -> no empty gap */
-/* Oben 12 statt 6: der Trenner ueber Reference ist weg, den Abstand macht jetzt der Abstand.
-   Doppelt so gross wie vorher, auf Ansage -- unten und an den Seiten bleibt es bei 6, sonst
-   waechst das Panel nach unten mit. */
-.mqa-actions-wrap { flex: 0 0 auto; padding: 12px 6px 6px; }
+/* Oben 18 statt 6: die Trenner sind weg, den Abstand macht jetzt der Abstand -- zweimal
+   nachgeschaerft, auf Ansage. Unten und an den Seiten bleibt es bei 6, sonst waechst das Panel
+   nach unten mit. */
+.mqa-actions-wrap { flex: 0 0 auto; padding: 18px 6px 6px; }
+
 .mqa-scroll::-webkit-scrollbar { width: 10px; }
 .mqa-scroll::-webkit-scrollbar-thumb { background: var(--am-border-strong); border: 3px solid var(--am-card); border-radius: 999px; }
 .mqa-results:empty { display: none; }
@@ -327,7 +328,9 @@
 .mqa-sep { height: 1px; margin: 6px 8px; background: var(--am-border); }
 
 /* ---------- recent searches ---------- */
-.mqa-recent-wrap { flex: 0 0 auto; padding: 6px 6px 0; }
+/* Oben 18 wie im Block darunter: diese Liste steht direkt unter dem Suchfeld und trug bisher den
+   Trenner. Der ist weg, den Abstand macht jetzt der Abstand. */
+.mqa-recent-wrap { flex: 0 0 auto; padding: 18px 6px 0; }
 .mqa-recent-wrap:empty { display: none; }
 .mqa-recent-ic { flex: 0 0 auto; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; color: var(--am-muted-2); }
 .mqa-recent-ic svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -513,6 +516,9 @@
 .mqa-refgroup .mqa-primary, .mqa-actgroup .mqa-primary,
 .mqa-refgroup .mqa-action-ic, .mqa-actgroup .mqa-action-ic,
 .mqa-refgroup .mqa-ref-chev, .mqa-actgroup .mqa-ref-chev,
+/* Der Enter-Pfeil gehoert dazu: er erbt sonst die Textfarbe der Zeile und war damit als
+   einziges Zeichen dieser beiden Zeilen noch in der Primaerfarbe. */
+.mqa-refgroup .mqa-enter, .mqa-actgroup .mqa-enter,
 .mqa-refgroup .mqa-group-head, .mqa-actgroup .mqa-group-head { color: var(--am-muted); }
 .mqa-refgroup .mqa-action.is-active .mqa-primary,
 .mqa-actgroup .mqa-action.is-active .mqa-primary,

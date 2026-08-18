@@ -1899,12 +1899,9 @@
   var PFAD_SCAN = '<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/>' +
                   '<path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/>' +
                   '<circle cx="12" cy="12" r="3"/><path d="m16 16-1.9-1.9"/>';
-  /* square-dashed-text: Prompt Research, in der Leiste und als grosses Zeichen auf der Seite. */
-  var PFAD_SQDASH = '<path d="M14 21h1"/><path d="M14 3h1"/><path d="M19 3a2 2 0 0 1 2 2"/>' +
-                    '<path d="M21 14v1"/><path d="M21 19a2 2 0 0 1-2 2"/><path d="M21 9v1"/>' +
-                    '<path d="M3 14v1"/><path d="M3 9v1"/><path d="M5 21a2 2 0 0 1-2-2"/>' +
-                    '<path d="M5 3a2 2 0 0 0-2 2"/><path d="M7 12h10"/><path d="M7 16h6"/>' +
-                    '<path d="M7 8h8"/><path d="M9 21h1"/><path d="M9 3h1"/>';
+  /* text-search: Prompt Research, in der Leiste und als grosses Zeichen auf der Seite. */
+  var PFAD_SQDASH = '<path d="M21 5H3"/><path d="M10 12H3"/><path d="M10 19H3"/>' +
+                    '<circle cx="17" cy="15" r="3"/><path d="m21 19-1.9-1.9"/>';
   var TOOLBAR_ICONS = {
     /* Sortieren: arrow-down-up. Vorher stand hier der Trichter mit drei Linien -- der ist die
        Filterform und stand am Sortierknopf falsch. */
@@ -1939,10 +1936,10 @@
      Doughnut/Balken traegt beide Male dieselbe Klasse und unterscheidet sich nur am
      data-chart. Deshalb ein zweiter Satz mit vollen Selektoren. */
   var TOOLBAR_SEL = {
-    /* chart-bar-big: liegende Balken mit Achse. Vorher stand hier align-left, also drei Linien
-       ohne Achse -- als Diagramm-Zeichen zu wenig. */
+    /* chart-bar-decreasing: Achse plus drei kuerzer werdende Balken. Vorher chart-bar-big mit
+       zwei Balken als Rechtecke -- dasselbe Zeichen, aber ohne die Aussage "sortiert". */
     '.cc-seg-btn[data-chart="bar"], .tcl-seg-btn[data-chart="bar"]':
-      '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><rect x="7" y="13" width="9" height="4" rx="1"/><rect x="7" y="5" width="12" height="4" rx="1"/>',
+      '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M7 11h8"/><path d="M7 16h3"/><path d="M7 6h12"/>',
     /* Der Sortierknopf in der Gruppierungsliste -- dieselbe Form wie in der Topbar. */
     ".upt-grp-sidesort-btn": PFAD_SORT,
     /* Mira: die beiden Zeichen im Eingabefeld. Der Regler war von Hand gezeichnet (zwei Linien
@@ -6219,7 +6216,7 @@
     listTodo: '<path d="M13 5h8"/><path d="M13 12h8"/><path d="M13 19h8"/>' +
               '<path d="m3 17 2 2 4-4"/><rect x="3" y="4" width="6" height="6" rx="1"/>',
     scanSearch: PFAD_SCAN,
-    squareDashedText: PFAD_SQDASH,
+    textSearch: PFAD_SQDASH,
     /* arrow-down-up: das Sortierzeichen der Toolbars, jetzt auch fuer die Sortierknoepfe in den
        Filter-Menues abrufbar. Die trugen bis hierher den Trichter mit drei Linien. */
     arrowUpDown: PFAD_SORT,
