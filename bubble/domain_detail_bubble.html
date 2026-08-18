@@ -38,6 +38,15 @@
   ihren Schalter danach, statt ihn zu ueberschreiben. So kann eine Antwort, die noch unterwegs war,
   den Schalter nicht verdrehen.
 
+  DARAUS FOLGT eine Pflicht fuer die RPC: bei scope "domain" muss sie
+    a) share_pct je Punkt auf die Domain bezogen liefern (Anteil an den Zitationen DIESER Domain,
+       nicht an allen), und
+    b) share_mode: "domain" mitschicken.
+  Kommt die Antwort mit share_mode "global" zurueck, springt der Schalter zurueck auf Global --
+  richtig, denn die gelieferten Zahlen SIND global. Gemessen: Klick setzt den Schalter auf domain,
+  die Antwort mit share_mode "global" setzt ihn zurueck, die Kurve bleibt unveraendert. Das ist
+  kein Fehler der Komponente, sondern die Antwort auf einen Payload, der den Bezug nicht wechselt.
+
   Solange eine angeforderte URL-Serie nicht da ist, zeigt das Chart ein SKELETT -- nicht "No URL
   data". Der Satz waere eine Aussage ueber die Daten, und die kann niemand treffen, solange der
   Workflow noch laeuft. Bleibt die Antwort 25 Sekunden aus, steht "No data" im Chart -- und der
