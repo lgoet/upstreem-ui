@@ -1,0 +1,34 @@
+<meta charset="utf-8"><title>upCheck gegen echte Wurzeln</title>
+<style>body{margin:0;font:12px ui-monospace,monospace;padding:10px}pre{white-space:pre-wrap;background:#111;color:#eee;padding:10px}</style>
+<body>
+<!-- Zwei Wurzeln, absichtlich mit ZWEI verschiedenen Pins, einer toten Verdrahtung,
+     einer doppelten data-instance und einer Komponente im falschen Thema. -->
+<div class="up-root utm-root" data-instance="t9" data-isdark="no" data-cdn-pin="aaaaaaa"
+     data-add-fn="bubble_fn_utmAdd" data-edit-fn="bubble_fn_gibtsNicht">
+  <div class="up-head"><div class="up-heading"><span class="up-head-label">Topics</span><span class="up-head-sep"></span><span class="up-head-count"></span></div>
+    <div class="up-head-tools">
+      <div class="up-sort"><button class="up-sort-btn up-iconbtn" type="button"></button><div class="up-sort-menu" role="menu" aria-hidden="true"></div></div>
+      <div class="up-search"><button class="up-search-btn up-iconbtn" type="button"></button>
+        <div class="up-search-box"><input class="up-search-input" type="text"/><button class="up-search-clear" type="button"></button></div></div>
+    </div></div>
+  <div class="utm-chipgrid"></div>
+</div>
+<div class="up-root vot-root" data-instance="t9" data-isdark="yes" data-theme="dark" data-cdn-pin="bbbbbbb"></div>
+<pre id="out">laeuft</pre>
+<script>
+window.bubble_fn_utmAdd = function(){};
+try{ localStorage.setItem("pref_theme","light"); }catch(e){}
+/* Registry wie der Loader sie hinterlaesst: eine echte Datei und eine, die es nicht gibt. */
+window.__upAssetsLoaded = {
+  "core.js": "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@7331c5c/core.js",
+  "gibtsnicht.js": "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@0000000000000000000000000000000000000000/gibtsnicht.js"
+};
+(function(){
+  var files=["core.css","topics-manager.css","core.js","topics-manager.js","bubble/diagnostics/_check_console.js"], t={};
+  Promise.all(files.map(function(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"})
+    .then(function(r){return r.text()}).then(function(x){t[f]=x}); })).then(function(){
+      files.forEach(function(f){ var e=document.createElement(/\.css$/.test(f)?"style":"script"); e.textContent=t[f]; document.head.appendChild(e); });
+      setTimeout(function(){ window.__bereit = true; document.getElementById("out").textContent="bereit -- upCheck.* aufrufen"; }, 900);
+    });
+})();
+</script>
