@@ -307,6 +307,10 @@
          setSidebarReady() oder spaetestens von der Notbremse -- eine Leiste, die auf einen
          Aufruf wartet, der nie kommt, darf nicht ewig im Skelett stehen. */
       enthuellt: !!vorrat.enthuellt,
+      /* {i, wert} waehrend eine angeheftete Zeile umbenannt wird, sonst null. Der Zwischenstand
+         steht hier und nicht nur im Feld: die Leiste zeichnet sich aus vielen Gruenden neu, und
+         ein Tippstand, der nur im DOM steht, waere dann weg. */
+      umbenennen: null,
       gemeldet: ""           /* zuletzt gefeuerter usnState-Payload, siehe anwenden() */
     };
 
@@ -435,6 +439,9 @@
       var hint = state.klasse === "hint";
       var mini = !hint && istMini();
 
+      /* Eingeklappt gibt es keine Zeile, in der ein Textfeld Platz haette -- eine laufende
+         Umbenennung wird darum beim Wechsel verworfen statt unsichtbar weiterzulaufen. */
+      if (mini && state.umbenennen){ state.umbenennen = null; renderNav(); }
       bar.classList.toggle("is-mini", mini);
       bar.classList.toggle("is-hidden", hint && !state.offen);
       /* Der Knopf verschwindet, sobald die Leiste draussen ist: sonst laege er auf dem
@@ -533,6 +540,19 @@
        ist .up-logo-box aus core -- beim Prompt die Flagge des Marktes, sonst Logo bzw. Favicon.
        Faellt es aus, bleibt der Anfangsbuchstabe. */
     function pinHtml(pin, i){
+      /* Waehrend des Umbenennens ist die Zeile KEIN Knopf. Ein <input> in einem <button> ist
+         verschachtelte Bedienung: der Browser haengt es aus dem Knopf heraus, und die Zeile
+         faellt auseinander -- dieselbe Falle, aus der in quick-actions das <span role="button">
+         entstanden ist. Also fuer die Dauer der Eingabe ein <div> mit denselben Klassen: gleiche
+         Hoehe, gleiche Polsterung, gleicher Radius, nur ohne Knopfverhalten. Ohne data-pin, damit
+         weder Navigation noch Ziehen anspringen. */
+      if (state.umbenennen && state.umbenennen.i === i){
+        return '<div class="usn-item usn-pin is-renaming" data-pinedit="' + i + '">' +
+          '<span class="usn-pin-ic">' + logoHtml(state.umbenennen.wert, pin.logo) + '</span>' +
+          '<input class="usn-pin-in" type="text" data-pinin maxlength="60" ' +
+            'aria-label="Rename pinned item" value="' + esc(state.umbenennen.wert) + '" />' +
+        '</div>';
+      }
       /* Die zwei Skelett-Kaesten stehen im Markup und sind unsichtbar, bis die Zeile gezogen
          wird. Dann treten sie an die Stelle von Bild, Name und x -- dieselbe Bauart wie bei den
          Custom Groupings, wo die gezogene Zeile ebenfalls zum grauen Platzhalter wird. Sie
@@ -543,10 +563,40 @@
         'data-tip-place="right">' +
         '<span class="usn-pin-ic">' + logoHtml(pin.label, pin.logo) + '</span>' +
         '<span class="usn-txt">' + esc(pin.label || "") + '</span>' +
+        '<span class="usn-pin-edit" data-rename="' + i + '" role="button" tabindex="-1" ' +
+        'aria-label="Rename">' + ic("squarePen") + '</span>' +
         '<span class="usn-pin-x" data-unpin="' + i + '" role="button" tabindex="-1" ' +
         'aria-label="Remove from pinned">' + ic("x") + '</span>' +
         '<span class="usn-pin-sk-ic"></span><span class="usn-pin-sk-txt"></span>' +
       '</button>';
+    }
+    /* ---- Umbenennen -------------------------------------------------------------------------
+       Der Name eines angehefteten Eintrags gehoert dem Nutzer: er steht nur im localStorage
+       dieses Teams und geht nirgendwo nach Bubble. Deshalb braucht das Umbenennen keinen
+       Workflow und keinen Event -- schreiben und neu zeichnen genuegt. */
+    function umbenennenStart(i){
+      var pin = state.pins[i];
+      if (!pin) return;
+      if (bar.classList.contains("is-mini")) return;   /* eingeklappt gibt es kein Textfeld */
+      state.umbenennen = { i: i, wert: pin.label || "" };
+      renderNav();
+      var feld = elNav.querySelector("[data-pinin]");
+      if (feld){ feld.focus(); try { feld.select(); } catch(e){} }
+    }
+    /* uebernehmen=false ist der Weg von Escape: der Wert wird verworfen, nicht geschrieben.
+       Ein leerer Name wird ebenfalls verworfen -- eine Zeile ohne Beschriftung waere nicht mehr
+       zuzuordnen, und der alte Name ist die einzige verbliebene Auskunft. */
+    function umbenennenEnde(uebernehmen){
+      var u = state.umbenennen;
+      if (!u) return;
+      state.umbenennen = null;
+      var pin = state.pins[u.i];
+      var wert = (u.wert || "").trim();
+      if (uebernehmen && pin && wert && wert !== pin.label){
+        pin.label = wert;
+        pinsSchreiben(state.pins);
+      }
+      renderNav();
     }
     function navItemHtml(it){
       var extra = "";
@@ -804,6 +854,11 @@
       /* Das X liegt IM Pin-Knopf -- also zuerst pruefen, sonst loest beides aus. */
       var ux = t.closest("[data-unpin]");
       if (ux){ pinEntfernen(parseInt(ux.getAttribute("data-unpin"), 10)); return; }
+      /* Der Stift liegt wie das x IM Pin-Knopf -- also auch er zuerst. */
+      var ur = t.closest("[data-rename]");
+      if (ur){ umbenennenStart(parseInt(ur.getAttribute("data-rename"), 10)); return; }
+      /* Ein Klick INS Textfeld ist kein Klick auf die Zeile. */
+      if (t.closest("[data-pinin]")) return;
       var pb = t.closest("[data-pin]");
       if (pb){
         if (gezogen){ gezogen = false; return; }      /* der Klick gehoert zum Ziehen davor */
@@ -834,9 +889,28 @@
       if (s){ s.focus(); try { s.setSelectionRange(pos, pos); } catch(x){} }
     });
 
+    /* Tippen: der Zwischenstand wandert in den state, damit ein Neuzeichnen ihn nicht verliert.
+       KEIN renderNav hier -- das Feld verlaere bei jedem Zeichen den Fokus. */
+    bar.addEventListener("input", function(e){
+      if (!e.target.closest || !e.target.closest("[data-pinin]")) return;
+      if (state.umbenennen) state.umbenennen.wert = e.target.value;
+    });
+    bar.addEventListener("keydown", function(e){
+      if (!e.target.closest || !e.target.closest("[data-pinin]")) return;
+      if (e.key === "Enter"){ e.preventDefault(); umbenennenEnde(true); }
+      else if (e.key === "Escape"){ e.preventDefault(); umbenennenEnde(false); }
+    });
+    /* Klick daneben uebernimmt, wie in jedem Namensfeld der App. focusout und nicht blur:
+       blur steigt nicht auf, ein delegierter Zuhoerer wuerde ihn nie sehen. */
+    bar.addEventListener("focusout", function(e){
+      if (!e.target.closest || !e.target.closest("[data-pinin]")) return;
+      umbenennenEnde(true);
+    });
+
     bar.addEventListener("pointerdown", function(e){
       if (!e.target.closest) return;
       if (e.target.closest("[data-unpin]")) return;          /* das x zieht nicht */
+      if (e.target.closest("[data-rename]")) return;         /* der Stift auch nicht */
       var k = e.target.closest("[data-pin]");
       if (k) pinZiehStart(e, k);
     });

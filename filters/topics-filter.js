@@ -67,9 +67,11 @@
        sits inside an input at a smaller optical size. Reusing it on the trigger made a chunky
        cross next to a 1.8-weight chevron. */
     xThin: '<svg viewBox="0 0 24 24"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>',
-    /* The sorter glyph the rest of the app uses -- lines narrowing toward the CENTRE, not
-        left-aligned. Copied from prompts-table's GRPSIDE_SORT_ICON rather than drawn again. */
-    sort: '<svg viewBox="0 0 24 24"><path d="M2 5h20"/><path d="M6 12h12"/><path d="M9 19h6"/></svg>',
+    /* Sortieren: arrow-down-up aus core, dieselbe Form wie an jedem Sortierknopf der Toolbars.
+       Hier standen drei zur Mitte schmaler werdende Linien -- die Filterform, nicht die
+       Sortierform, und damit trug ein Filter-Menue zwei verschiedene Zeichen fuer zwei
+       verschiedene Dinge, die gleich aussahen. */
+    sort: UC.icon("arrowUpDown", 2),
     /* core's CHECK_SVG verbatim -- same glyph and the same stroke-width the companies and types
        checkboxes draw, so the tick cannot look "a bit different" next to them. */
     check: UC.icon("check", 3),

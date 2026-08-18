@@ -404,12 +404,67 @@
 .usn-pin-x {
   flex: 0 0 14px; width: 14px; height: 14px; display: inline-flex; align-items: center; justify-content: center;
   color: var(--vc-third); opacity: 0; cursor: pointer;
-  transition: opacity 140ms var(--usn-ease), color var(--usn-t) var(--usn-ease);
+  transition: opacity 140ms var(--usn-ease), color var(--usn-t) var(--usn-ease),
+              margin-left 200ms cubic-bezier(.2,0,.38,.9);
 }
 .usn-pin-x svg { width: 12px; height: 12px; display: block; }
-.usn-pin:hover .usn-pin-x { opacity: 1; transition-delay: 220ms, 0ms; }
+.usn-pin:hover .usn-pin-x { opacity: 1; transition-delay: 220ms, 0ms, 0ms; }
 .usn-pin-x:hover { color: var(--vc-text); }
 .usn-bar.is-mini .usn-pin-x { display: none; }
+
+/* ---- Umbenennen: der Stift ----
+   Das Aufziehen ist das von .mqa-rowmenu-btn in quick-actions: max-width, opacity und der
+   Aussenabstand wandern, nicht display -- die Zeile schiebt sich also auf, statt dass etwas
+   hineinspringt. Uebernommen sind auch die Zeiten und die Kurve.
+
+   Der Aussenabstand ist hier negativ, und das ist der Punkt: .usn-item ist ein Flex mit
+   gap: 10px, ein Kind mit Breite 0 traegt seine Luecke also trotzdem. -10px frisst sie im
+   Ruhezustand ganz weg (sonst stuende dauerhaft ein 10px-Loch vor dem x), -4px laesst im
+   offenen Zustand 6px stehen -- denselben Abstand, den das Vorbild als margin-left setzt.
+   Das x rueckt dann mit, damit die beiden Zeichen als Paar stehen und nicht 10px auseinander.
+
+   Die Verzoegerung ist die des x (220ms) und nicht die 750ms des Vorbilds: beide Zeichen sitzen
+   in derselben Zeile, und zwei Enthuellungen nacheinander sehen aus wie ein Nachzuegler.
+
+   .check_reinvention meldet hier .up-search (die ausfahrende Suche). Fehlalarm ueber die
+   gemeinsamen Eigenschaften "Breite waechst, overflow versteckt, mit Uebergang": .up-search ist
+   ein Suchfeld samt Lupe, Eingabe und Loeschknopf, das eine Toolbar aufzieht. Hier faehrt ein
+   14px-Zeichen in eine Zeile ein. Das echte Vorbild ist .mqa-rowmenu-btn, und dessen Werte sind
+   uebernommen, nicht neu erfunden -- es liegt in quick-actions und ist dort an die Maße jener
+   Zeile gebunden, also nicht ohne Umbau zu teilen. */
+.usn-pin-edit {
+  flex: 0 0 auto; width: 14px; height: 14px;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--vc-third); cursor: pointer; overflow: hidden;
+  max-width: 0; opacity: 0; margin-left: -10px; pointer-events: none;
+  transition: max-width 200ms cubic-bezier(.2,0,.38,.9), opacity 160ms ease,
+              margin-left 200ms cubic-bezier(.2,0,.38,.9), color var(--usn-t) var(--usn-ease);
+}
+.usn-pin-edit svg { width: 12px; height: 12px; display: block; }
+.usn-pin:hover .usn-pin-edit {
+  max-width: 14px; opacity: 1; margin-left: -4px; pointer-events: auto;
+  transition-delay: 220ms, 220ms, 220ms, 0ms;
+}
+.usn-pin:hover .usn-pin-x { margin-left: -4px; }
+.usn-pin-edit:hover { color: var(--vc-text); }
+.usn-bar.is-mini .usn-pin-edit { display: none; }
+/* ---- Umbenennen: das Feld ----
+   Dasselbe Feld wie .up-ddsearch-in aus core, auf die 36px-Zeile gebracht: alle Werte im
+   Verhaeltnis 26/32 -- Hoehe 32 -> 26, Radius 8 -> 6.5, Polsterung 11 -> 9. Die Schriftgroesse
+   folgt NICHT dem Faktor, sondern bleibt auf den 13.5px der Zeile: der Name soll beim Umschalten
+   in die Eingabe nicht die Groesse wechseln.
+   flex und min-width: 0 sind das, was den Text im Feld haelt -- ohne min-width waechst ein Feld
+   in einem Flex ueber seinen Anteil hinaus und schiebt die Zeile auf. */
+.usn-pin.is-renaming { cursor: default; }
+.usn-pin-in {
+  flex: 1 1 auto; min-width: 0; height: 26px; box-sizing: border-box; padding: 0 9px;
+  border: 1px solid var(--vc-border); border-radius: 6.5px;
+  background: var(--vc-bg); color: var(--vc-text);
+  font-family: inherit; font-size: 13.5px; font-weight: 500; outline: none;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+.usn-pin-in:hover { border-color: var(--vc-hover-border); }
+.usn-pin-in:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); outline: 0; }
 /* ---- Umsortieren per Ziehen ----
    Die gezogene Zeile wandert im DOM mit und wird an ihrer jeweiligen Stelle zum grauen
    Platzhalter -- die Liste steht also immer schon so, wie sie nach dem Loslassen aussieht.
@@ -425,6 +480,7 @@
    zwei Aussagen auf einmal. */
 .usn-pin.is-dragging > .usn-pin-ic,
 .usn-pin.is-dragging > .usn-txt,
+.usn-pin.is-dragging > .usn-pin-edit,
 .usn-pin.is-dragging > .usn-pin-x { display: none; }
 .usn-pin.is-dragging > .usn-pin-sk-ic { display: block; width: 17px; height: 17px; border-radius: 5px; flex: 0 0 17px; }
 .usn-pin.is-dragging > .usn-pin-sk-txt { display: block; width: 55%; height: 12px; }

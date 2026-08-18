@@ -1790,10 +1790,17 @@
      zur LAUFZEIT hinein, wie SLIDERS_ICON es fuer den Fader schon vorgemacht hat.
      Der Gruppierungsknopf (.upt-group-btn) ist ausdruecklich NICHT dabei: sein Zeichen bleibt.
      data-up-ic merkt sich, was schon steht -- ohne die Marke schriebe jeder Durchlauf erneut. */
+  /* Zwei Formen werden an zwei Stellen gebraucht: hier beim Stempeln ins fremde Markup und
+     unten in ICON_PATHS fuer UC.icon. Deshalb stehen sie als Konstante -- zwei Kopien liefen
+     auseinander, sobald eine davon nachgezogen wird. */
+  var PFAD_SORT = '<path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/>';
+  var PFAD_SCAN = '<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/>' +
+                  '<path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/>' +
+                  '<circle cx="12" cy="12" r="3"/><path d="m16 16-1.9-1.9"/>';
   var TOOLBAR_ICONS = {
     /* Sortieren: arrow-down-up. Vorher stand hier der Trichter mit drei Linien -- der ist die
        Filterform und stand am Sortierknopf falsch. */
-    "up-sort-btn":  '<path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/>',
+    "up-sort-btn":  PFAD_SORT,
     /* Tabelleneinstellungen: Lucide settings. Das alte Zahnrad war das von Feather, mit mehr
        Zacken -- daran hat man den Unterschied gesehen. */
     "up-cols-btn":  '<path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/>',
@@ -1809,7 +1816,11 @@
   ["ubo-sort-btn", "uo-sort-btn", "vot-sort-btn"].forEach(function(k){
     TOOLBAR_ICONS[k] = TOOLBAR_ICONS["up-sort-btn"];
   });
-  ["ccl-settings-btn", "ubo-scale-btn", "vot-scale-btn", "uhm-set-btn"].forEach(function(k){
+  /* ubo-cols-btn und uo-settings-btn standen nicht in dieser Liste -- deshalb trug brands-overview
+     am Tabellen-Zahnrad noch die alte Feather-Form, waehrend das Zahnrad daneben (Chart Settings)
+     laengst das neue war. */
+  ["ccl-settings-btn", "ubo-scale-btn", "vot-scale-btn", "uhm-set-btn",
+   "ubo-cols-btn", "uo-settings-btn"].forEach(function(k){
     TOOLBAR_ICONS[k] = TOOLBAR_ICONS["up-cols-btn"];
   });
   ["combo-filter-btn", "tcd-filter-btn", "ubo-filter-btn", "vot-filter-btn",
@@ -1825,9 +1836,19 @@
     '.cc-seg-btn[data-chart="bar"], .tcl-seg-btn[data-chart="bar"]':
       '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><rect x="7" y="13" width="9" height="4" rx="1"/><rect x="7" y="5" width="12" height="4" rx="1"/>',
     /* Der Sortierknopf in der Gruppierungsliste -- dieselbe Form wie in der Topbar. */
-    ".upt-grp-sidesort-btn":
-      '<path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/>'
+    ".upt-grp-sidesort-btn": PFAD_SORT,
+    /* Mira: die beiden Zeichen im Eingabefeld. Der Regler war von Hand gezeichnet (zwei Linien
+       mit gefuellten Kreisen), das Mikrofon eine aeltere Fassung. Beide stehen im Bubble-Markup,
+       kommen also nur ueber diesen Weg auf den neuen Stand. */
+    "#am-mic": '<path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/>' +
+               '<rect x="9" y="2" width="6" height="13" rx="3"/>',
+    /* Das grosse Zeichen ueber der Ueberschrift in Prompt Research: dieselbe Form wie der
+       Menuepunkt in der Leiste, damit Seite und Navigation dasselbe Zeichen tragen. Vorher
+       stand dort eine Lupe. */
+    ".upr-research-orb": PFAD_SCAN
   };
+  /* settings-2, dieselbe Form wie der Fader der Tabellen. */
+  TOOLBAR_SEL["#am-settings-toggle"] = TOOLBAR_ICONS["urt-fader-btn"];
   /* EIN Selektor fuer alles, nicht einer pro Knopfklasse. Vorher lief pro Durchlauf ein
      querySelectorAll je Eintrag -- bei 19 Eintraegen also 19 Durchsuchungen des ganzen Dokuments.
      Jetzt eine, danach wird am Element entschieden, welcher Eintrag gilt. */
@@ -1866,7 +1887,11 @@
          die anderen 2, und das ist Absicht -- ein einheitlicher Wert wuerde ein halbes Dutzend
          Knoepfe anders aussehen lassen. */
       var strich = (alt && alt.getAttribute("stroke-width")) || "2";
-      var neu = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + strich +
+      /* Die Klasse des alten SVG mitnehmen. In Mira haengt die Groesse an .am-ic -- ohne die
+         Klasse kam das getauschte Zeichen in Standardgroesse heraus und sprengte den Knopf. */
+      var klasse = (alt && alt.getAttribute("class")) || "";
+      var neu = '<svg viewBox="0 0 24 24"' + (klasse ? ' class="' + klasse + '"' : "") +
+        ' fill="none" stroke="currentColor" stroke-width="' + strich +
         '" stroke-linecap="round" stroke-linejoin="round">' + t.pfad + '</svg>';
       /* Nur das SVG tauschen, alles andere im Knopf bleibt (Badges, Punkte, Beschriftungen). */
       if (alt){ alt.outerHTML = neu; } else { b.insertAdjacentHTML("afterbegin", neu); }
@@ -6055,9 +6080,10 @@
               '<circle cx="12" cy="12" r="4"/>',
     listTodo: '<path d="M13 5h8"/><path d="M13 12h8"/><path d="M13 19h8"/>' +
               '<path d="m3 17 2 2 4-4"/><rect x="3" y="4" width="6" height="6" rx="1"/>',
-    scanSearch:'<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/>' +
-              '<path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/>' +
-              '<circle cx="12" cy="12" r="3"/><path d="m16 16-1.9-1.9"/>',
+    scanSearch: PFAD_SCAN,
+    /* arrow-down-up: das Sortierzeichen der Toolbars, jetzt auch fuer die Sortierknoepfe in den
+       Filter-Menues abrufbar. Die trugen bis hierher den Trichter mit drei Linien. */
+    arrowUpDown: PFAD_SORT,
     chartColumnUp:'<path d="M13 17V9"/><path d="M18 17V5"/>' +
               '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M8 17v-3"/>',
     /* Die Erklaer-Raute in Tabellenkoepfen. */

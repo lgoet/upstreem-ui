@@ -247,6 +247,44 @@
     if (histEntry && shell && histEntry.parentElement !== shell) shell.appendChild(histEntry);
   })();
 
+  /* ---------- Hoehe des Startbereichs ----------------------------------------------------
+     justify-content: center zentriert den Inhalt in der Hoehe des Kastens -- und der Kasten war
+     nur so hoch wie sein Inhalt. Damit stand die Ueberschrift direkt unter der Kopfzeile, nicht
+     in der Mitte der Seite: die Zentrierung lief ins Leere.
+
+     Der Kasten bekommt jetzt als Mindesthoehe, was unterhalb seiner Oberkante noch auf den
+     Bildschirm passt. GEMESSEN und nicht als fester Wert: ueber der Komponente steht je nach
+     Seite eine verschieden hohe Kopfzeile, und ein geschaetzter Abzug waere auf der einen Seite
+     zu gross und auf der anderen zu klein.
+
+     Mindesthoehe und nicht Hoehe: waechst der Inhalt ueber den Bildschirm hinaus -- aufgeklappte
+     Einstellungen, ein offenes Auswahlfeld -- waechst der Kasten mit und die Seite scrollt.
+     Abgeschnitten wird nichts.
+
+     LUFT_UNTEN ist der Rand, der unter dem Eingabefeld stehen bleibt, damit es nicht auf der
+     Kante klebt. */
+  var LUFT_UNTEN = 28;
+  function heldenHoeheSetzen(){
+    var shell = root.querySelector('.upr-shell');
+    if (!shell) return;
+    /* In der Ergebnis- und der Laufansicht setzt die CSS min-height auf 0 und laesst den Inhalt
+       oben beginnen. Ein Inline-Wert wuerde diese Regel schlagen, also hier wieder loeschen. */
+    if (root.classList.contains('is-results') || root.classList.contains('is-running')){
+      shell.style.minHeight = '';
+      return;
+    }
+    var oben = shell.getBoundingClientRect().top;
+    var frei = Math.round((window.innerHeight || 0) - oben - LUFT_UNTEN);
+    /* Ein verdeckter Tab meldet 0 -- dann lieber nichts setzen als eine 0-Hoehe schreiben. */
+    if (!(frei > 0)) return;
+    shell.style.minHeight = Math.max(520, frei) + 'px';
+  }
+  heldenHoeheSetzen();
+  /* Bubble baut die Seite in Schueben auf: die Kopfzeile ueber der Komponente steht erst spaeter,
+     und damit verschiebt sich die Oberkante des Kastens noch. */
+  [120, 400, 1200].forEach(function(ms){ setTimeout(heldenHoeheSetzen, ms); });
+  window.addEventListener('resize', heldenHoeheSetzen);
+
   /* ---------- state (unchanged from the standalone) ---------- */
   var fallbackMarkets = [
     { alpha2: 'DE', alpha3: 'DEU', name: 'Germany', flag_url: 'https://flagcdn.com/de.svg', prompt_count: 0 },
@@ -400,6 +438,8 @@
     root.classList.toggle('is-running', isRunning);
     root.classList.toggle('is-results', isResults);
     root.classList.toggle('is-error', isError);
+    /* Nach dem Umschalten, nicht davor: die Funktion liest genau diese Klassen. */
+    heldenHoeheSetzen();
     if (textarea) textarea.disabled = isRunning;
     if (settingsToggle) settingsToggle.disabled = isRunning;
     if (startButton){
