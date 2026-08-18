@@ -6499,28 +6499,16 @@
      eines Parameters, den man an der Aufrufstelle vergessen kann. Der Name kommt in beide Faelle
      ueber dieselbe Funktion herein: UC.icon("name") entscheidet selbst, welche Sorte es ist.
 
-     sidebarPanels: der Umschalter der Leiste. Nach Vorlage gebaut, nicht aus Lucide.
-
-     Der viewBox ist hier 1:1 mit den gerenderten Pixeln (22.4 x 14) und NICHT der 24er-Kasten der
-     anderen Zeichen. Grund: die Masse sind in Pixeln vorgegeben, und in einem 24er-Kasten, der auf
-     14px skaliert wird, waere aus "3px Radius" ein 1.75px-Radius geworden -- die Vorgabe liesse
-     sich dort gar nicht treffen. Dieselbe Begruendung wie bei den Punkten in quick-actions.
-
-     Masse, wie vorgegeben: beide Formen 14 hoch, Radius 2, die linke 4.4 breit, die Luecke 4, die
-     rechte 8. Gesamtbreite damit 4.4 + 4 + 8 = 16.4. Die 4.4 ist krumm, weil sie es sein muss:
-     4 plus 60 Prozent sind 6.4, davon zweimal ein Pixel ab. Runden waere ein stiller Verstoss
-     gegen die Vorgabe.
-     rx steht an beiden Rechtecken und gilt damit fuer alle vier Ecken je Form; ry fehlt absichtlich
-     -- ohne ry gilt ry = rx, die Ecken sind also Kreisviertel und nicht Ellipsen. Geklemmt wird
-     nichts: 2 ist kleiner als die halbe Breite der schmaleren Form (2.2) und kleiner als die halbe
-     Hoehe (7).
-     Die Deckkraft steht NICHT hier: sie ist Sache der Stelle, an der das Zeichen sitzt (siehe
-     .usn-toggle in sidebar.css) -- dasselbe Zeichen an einem anderen Ort braucht sie vielleicht
-     nicht. */
+     sidebarPanels: der Umschalter der Leiste. Das ist "layout-sidebar-inset" aus Bootstrap Icons
+     (MIT), unveraendert uebernommen -- vorher stand hier eine selbst gezeichnete Form, die
+     verworfen wurde. Zwei gefuellte Pfade: der Rahmen (als Ring aus zwei gegenlaeufigen Teilpfaden,
+     deshalb ohne fill-rule) und das Feld links darin.
+     Der viewBox bleibt der des Originals (16x16), die Groesse steht an der Stelle, wo das Zeichen
+     sitzt: 14px in der Leiste, siehe .usn-toggle in sidebar.css. Ebenso die Deckkraft. */
   var ICON_FILLED = {
-    sidebarPanels: '<svg viewBox="0 0 16.4 14" fill="currentColor" stroke="none">' +
-                   '<rect x="0" y="0" width="4.4" height="14" rx="2"/>' +
-                   '<rect x="8.4" y="0" width="8" height="14" rx="2"/></svg>'
+    sidebarPanels: '<svg viewBox="0 0 16 16" fill="currentColor" stroke="none">' +
+      '<path d="M14 2a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h12zM2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2z"/>' +
+      '<path d="M3 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4z"/></svg>'
   };
   function icon(name, strokeWidth){
     var f = ICON_FILLED[name];
