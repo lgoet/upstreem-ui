@@ -572,9 +572,13 @@
   }
 
   /* ---------- render helpers ---------- */
-  function avHtml(src, fbInner){
-    if (!src) return '<span class="mqa-av is-fb">' + fbInner + '</span>';
-    return '<span class="mqa-av"><img src="' + escAttr(src) + '" alt="" loading="lazy" ' +
+  /* istFlagge: eine Flagge ist quer, das 30er-Quadrat der Zeilen-Kachel schneidet sie zuerst auf
+     ein Quadrat zu. Bei Deutschland faellt das nicht auf, bei den USA bleibt das Sternenfeld
+     uebrig. Mit is-flag bekommt sie die Querformat-Kachel, die das Untermenue schon hat. */
+  function avHtml(src, fbInner, istFlagge){
+    var kl = "mqa-av" + (istFlagge ? " is-flag" : "");
+    if (!src) return '<span class="' + kl + ' is-fb">' + fbInner + '</span>';
+    return '<span class="' + kl + '"><img src="' + escAttr(src) + '" alt="" loading="lazy" ' +
       'onerror="this.style.display=\'none\';this.parentNode.classList.add(\'is-fb\');">' +
       '<span class="mqa-av-fb">' + fbInner + '</span></span>';
   }
@@ -969,7 +973,8 @@
     else if (item.type === "url"){ av = avHtml(item.favicon, GLOBE); primary = esc(item.title || item.url || ""); secondary = esc(item.url || ""); }
     else if (item.type === "prompt"){
       var mk = String(item.market || "").toUpperCase();
-      av = avHtml(item.market ? ("https://flagcdn.com/" + String(item.market).toLowerCase() + ".svg") : "", '<span class="mqa-av-t">' + esc(mk) + '</span>');
+      av = avHtml(item.market ? ("https://flagcdn.com/" + String(item.market).toLowerCase() + ".svg") : "",
+                  '<span class="mqa-av-t">' + esc(mk) + '</span>', true);
       primary = esc(item.prompt_text || ""); secondary = mk ? ("Market · " + esc(mk)) : "";
     }
     return '<button class="mqa-row is-mini" type="button" role="option" data-viewed="' + i + '">' +

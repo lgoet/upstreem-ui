@@ -1,0 +1,111 @@
+<meta charset="utf-8"><title>sidebar-runde</title>
+<style>html,body{margin:0;height:100%;font:12px ui-monospace,monospace}
+#main{min-height:100%;padding-left:250px} pre{padding:10px;white-space:pre-wrap;background:#111;color:#eee}</style>
+<body><div id="main"><pre id="out">laeuft</pre></div>
+<div class="up-root usn-root" data-instance="pr" data-prompt-count="7" data-isdark="no"
+     data-team-id="t1" data-active="dashboard" data-nav-fn="bubble_fn_usnNav"></div>
+<script>
+["usnNav","usnTheme","usnState","usnPinned","usnTeam","usnAccount","usnLogout","usnNewTeam"].forEach(function(n){
+  window["bubble_fn_"+n]=function(){};
+});
+try {
+  localStorage.setItem("pref_theme","light");
+  localStorage.setItem("usn_pins__pr@t1", JSON.stringify([
+    {type:"prompt", id:"p1", label:"Beste Solaranlage Berlin", logo:""},
+    {type:"domain", id:"d1", label:"solarwatt.de", logo:""}
+  ]));
+} catch(e){}
+(function(){
+  var alt = /alt=1/.test(location.search);
+  var sb = alt ? "_alt_usn.js" : "sidebar.js";
+  var files=["core.css", (alt?"_alt_usn.css":"sidebar.css"), (alt?"_alt_core.js":"core.js"), sb], t={};
+  Promise.all(files.map(function(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"})
+    .then(function(r){return r.text()}).then(function(x){t[f]=x}); })).then(function(){
+      files.filter(function(f){return /\.css$/.test(f)}).forEach(function(f){ var s=document.createElement("style"); s.textContent=t[f]; document.head.appendChild(s); });
+      files.filter(function(f){return /\.js$/.test(f)}).forEach(function(f){ var s=document.createElement("script"); s.textContent=t[f]; document.head.appendChild(s); });
+      setTimeout(function(){ try{ window.setSidebarTeams("pr", JSON.stringify([{id:"t1",name:"LeeUp",domain:"lee-up.de",favicon_url:""}])); }catch(e){}
+                             try{ window.setSidebarReady(); }catch(e){} }, 300);
+      setTimeout(pruefen, 1400);
+    });
+
+  /* Die Werte fuer den aufgezogenen Zustand kommen aus dem GELADENEN Stylesheet, nicht aus der
+     Tastatur: sonst pruefe ich meine eigene Annahme statt der Regel. */
+  function hoverRegel(sel){
+    var gefunden=null;
+    [].forEach.call(document.styleSheets, function(ss){
+      try { [].forEach.call(ss.cssRules, function(r){
+        if (r.selectorText && r.selectorText.replace(/\s+/g," ").indexOf(sel) >= 0 && !gefunden) gefunden = r.style.cssText;
+      }); } catch(e){}
+    });
+    return gefunden;
+  }
+  function kasten(e){ if(!e) return null; var b=e.getBoundingClientRect();
+    return {links:Math.round(b.left),rechts:Math.round(b.right),breite:Math.round(b.width)}; }
+
+  function pruefen(){
+    var res={ datei: alt?"alt":"neu" };
+    var pin = document.querySelector(".usn-pin");
+    res.pin_da = !!pin;
+    if (!pin){ fertig(res); return; }
+    var stift = pin.querySelector(".usn-pin-edit"), x = pin.querySelector(".usn-pin-x"),
+        txt = pin.querySelector(".usn-txt"), ic = pin.querySelector(".usn-pin-ic");
+    res.stift_da = !!stift;
+    res.ruhe = { zeile: kasten(pin), icon: kasten(ic), text: kasten(txt), stift: kasten(stift), x: kasten(x) };
+    res.regel = hoverRegel(".usn-pin:hover .usn-pin-edit");
+
+    /* Aufgezogener Zustand: genau die Deklarationen der Hover-Regel auf das Element legen. */
+    if (stift && res.regel){
+      stift.style.cssText = res.regel;
+      var xr = hoverRegel(".usn-pin:hover .usn-pin-x"); if (xr) x.style.cssText = xr;
+      res.offen = { zeile: kasten(pin), text: kasten(txt), stift: kasten(stift), x: kasten(x) };
+      res.offen.stift_ueberlappt_text = res.offen.stift.links < res.offen.text.rechts;
+      res.offen.x_ueberlappt_stift   = res.offen.x.links < res.offen.stift.rechts;
+      res.offen.luft_text_stift = res.offen.stift.links - res.offen.text.rechts;
+      res.offen.luft_stift_x    = res.offen.x.links - res.offen.stift.rechts;
+      res.offen.alles_in_der_zeile = res.offen.x.rechts <= res.offen.zeile.rechts;
+      stift.style.cssText = ""; x.style.cssText = "";
+    }
+    res.ruhe.luft_text_x = res.ruhe.x.links - res.ruhe.text.rechts;
+
+    /* Umbenennen: Klick auf den Stift, tippen, Enter. */
+    if (stift){
+      stift.dispatchEvent(new MouseEvent("click", {bubbles:true}));
+      setTimeout(function(){
+        var feld = document.querySelector(".usn-pin-in");
+        res.feld_da = !!feld;
+        if (feld){
+          res.feld = kasten(feld);
+          res.feld_in_der_zeile = res.feld.rechts <= kasten(document.querySelector(".usn-pin.is-renaming")).rechts;
+          res.feld_fokus = document.activeElement === feld;
+          res.feld_wert_vorher = feld.value;
+          feld.value = "Solar Berlin";
+          feld.dispatchEvent(new Event("input", {bubbles:true}));
+          feld.dispatchEvent(new KeyboardEvent("keydown", {key:"Enter", bubbles:true}));
+        }
+        setTimeout(function(){
+          var neu = document.querySelector(".usn-pin .usn-txt");
+          res.nach_enter = neu ? neu.textContent : "(keine Zeile)";
+          try { res.gespeichert = JSON.parse(localStorage.getItem("usn_pins__pr@t1"))[0].label; } catch(e){ res.gespeichert = "(Fehler)"; }
+          res.tooltip = document.querySelector(".usn-pin").getAttribute("data-tip");
+          /* Escape verwirft */
+          var st2 = document.querySelector(".usn-pin .usn-pin-edit");
+          if (st2) st2.dispatchEvent(new MouseEvent("click", {bubbles:true}));
+          setTimeout(function(){
+            var f2 = document.querySelector(".usn-pin-in");
+            if (f2){ f2.value="Weg damit"; f2.dispatchEvent(new Event("input",{bubbles:true}));
+                     f2.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true})); }
+            setTimeout(function(){
+              var n2 = document.querySelector(".usn-pin .usn-txt");
+              res.nach_escape = n2 ? n2.textContent : "(keine Zeile)";
+              res.fehler = window.__fehler || [];
+              fertig(res);
+            }, 200);
+          }, 200);
+        }, 300);
+      }, 300);
+    } else fertig(res);
+  }
+  function fertig(res){ document.getElementById("out").textContent=JSON.stringify(res,null,1); window.__fertig=res; }
+  window.__fehler=[]; window.addEventListener("error",function(e){window.__fehler.push(String(e.message))});
+})();
+</script>

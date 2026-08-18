@@ -34,7 +34,7 @@
        sind. Ohne Stubs geht der erste Aufruf verloren -- und das ist genau der, der die Teams
        liefert. */
     ["setSidebarTeams", "setSidebarUser", "setSidebarActive", "setSidebarCount",
-     "setSidebarOpen", "resetSidebar", "setSidebarReady"].forEach(function(n){
+     "setSidebarOpen", "resetSidebar", "setSidebarReady", "setSidebarLoading"].forEach(function(n){
       window[n] = function(){ BOOTQ.push([n, arguments]); };
     });
   }
@@ -74,7 +74,7 @@
       { key: "mira",          label: "Mira",            icon: "mira" }
     ]},
     { head: "Organisation", items: [
-      { key: "teams",    label: "Teams",    icon: "folder", chips: true },
+      { key: "teams",    label: "Teams",    icon: "folders", chips: true },
       { key: "settings", label: "Settings", icon: "bolt" }
     ]},
     /* Die angehefteten Eintraege. Der Block hat keine festen Punkte -- er kommt aus dem
@@ -312,6 +312,8 @@
          setSidebarReady() oder spaetestens von der Notbremse -- eine Leiste, die auf einen
          Aufruf wartet, der nie kommt, darf nicht ewig im Skelett stehen. */
       enthuellt: !!vorrat.enthuellt,
+      /* true zwischen dem Klick auf ein anderes Team und dem Neuaufbau der Seite. */
+      laedt: false,
       /* {i, wert} waehrend eine angeheftete Zeile umbenannt wird, sonst null. Der Zwischenstand
          steht hier und nicht nur im Feld: die Leiste zeichnet sich aus vielen Gruenden neu, und
          ein Tippstand, der nur im DOM steht, waere dann weg. */
@@ -817,11 +819,19 @@
       var tr = t.closest("[data-team-id]");
       if (tr){
         var id = tr.getAttribute("data-team-id");
+        /* Klick auf das Team, in dem man schon steht: Menue zu, sonst nichts. Kein Ereignis, kein
+           Ladezustand -- es gibt nichts zu wechseln, und ein Ladebalken fuer einen Wechsel, der
+           nicht stattfindet, ist eine Luege. */
+        if (state.team && String(state.team.id) === String(id)){ menuZu(); return; }
         var neu = (state.teams || []).filter(function(x){ return String(x.id) === id; })[0];
         /* Sofort umstellen, nicht auf die Antwort warten: der Teamwechsel laedt die halbe Seite
            neu, und eine Leiste, die dabei den alten Namen zeigt, sieht aus wie ein Fehlklick. */
         if (neu){ state.team = neu; vorrat.team = neu; renderTeam(); }
         menuZu();
+        /* Und ab hier laedt die Leiste: die Seite wird gleich neu gebaut, alle Zahlen und Listen
+           daneben gehoeren dem alten Team. Statt sie stehen zu lassen, bis der Neuaufbau sie
+           ersetzt, gehen sie in ihren Ladezustand zurueck. */
+        ladenSetzen(true);
         fire("data-team-fn", "usnTeam", { team_id: id });
         return;
       }
@@ -1022,6 +1032,26 @@
        Wer setSidebarReady() ruft, wartet auf keines von beidem. */
     var SAMMELFENSTER_MS = 1500, NOTBREMSE_MS = 4000;
     var sammelUhr = null;
+    /* ---- Ladezustand der Leiste -------------------------------------------------------------
+       Es gibt genau einen Weg hinein (Teamwechsel) und einen hinaus (die Seite wird neu gebaut
+       und die Leiste entsteht mit ihr neu). Der Zustand ist die UMKEHRUNG der Enthuellung: was
+       an Zahlen, Namen und Chips schon dastand, wird wieder zum Skelett. Zusaetzlich nimmt
+       is-loading die Leiste aus der Bedienung -- ein zweiter Klick auf ein anderes Team,
+       waehrend der erste Wechsel laeuft, waere ein Rennen zweier Seitenaufbauten.
+       Dieselbe Funktion haengt als window.setSidebarLoading am Fenster: der Weg ueber Bubble ist
+       nicht noetig (der Klick macht es selbst), aber ein Workflow, der aus einem anderen Grund
+       neu laedt, soll die Leiste nicht als einziges Element wach zuruecklassen. */
+    function ladenSetzen(an){
+      state.laedt = !!an;
+      bar.classList.toggle("is-loading", state.laedt);
+      if (state.laedt){
+        state.enthuellt = false; vorrat.enthuellt = false;
+        renderTeam(); renderChips(); renderAcc(); renderNav();
+      } else {
+        enthuellen();
+      }
+    }
+
     function enthuellen(){
       if (sammelUhr){ clearTimeout(sammelUhr); sammelUhr = null; }
       if (state.enthuellt) return;
@@ -1278,6 +1308,9 @@
          Pageload-Workflow. Ohne den Aufruf enthuellt das Sammelfenster nach dem ersten Setter,
          das ist der Normalfall; der Aufruf ist die Zusicherung, kein Muss. */
       setReady: function(){ enthuellen(); return true; },
+      /* Ladezustand von aussen. Der Teamwechsel im Schalter setzt ihn selbst -- diesen Weg gibt es
+         fuer jeden anderen Grund, aus dem die Seite gleich neu gebaut wird. */
+      setLoading: function(v){ ladenSetzen(isYes(v)); return true; },
       setActive: function(k){
         state.aktiv = aktivNorm(k) || "dashboard";
         renderNav(); return true;
@@ -1326,7 +1359,8 @@
         setSidebarCount: doCount,
         setSidebarOpen: doOpen,
         resetSidebar: doReset,
-        setSidebarReady: doReady
+        setSidebarReady: doReady,
+        setSidebarLoading: doLoading
       },
       forwardShape: { resetSidebar: "id" }
     });
@@ -1372,6 +1406,18 @@
     var n = 0;
     [].forEach.call(document.querySelectorAll(".usn-root"), function(r){
       var ctrl = r.__usnController; if (ctrl && ctrl.setReady){ ctrl.setReady(); n++; }
+    });
+    return n > 0;
+  }
+  /* Wie doReady: ohne id gilt es fuer jede Leiste auf der Seite. Erstes Argument darf auch der
+     Wert sein (setSidebarLoading("yes")), damit der Aufruf ohne Instanz-ID moeglich bleibt. */
+  function doLoading(a, b){
+    var id = (b === undefined) ? "" : a;
+    var v  = (b === undefined) ? a : b;
+    if (id){ var c = resolve(id); return c ? c.setLoading(v) : fehlt(id); }
+    var n = 0;
+    [].forEach.call(document.querySelectorAll(".usn-root"), function(r){
+      var ctrl = r.__usnController; if (ctrl && ctrl.setLoading){ ctrl.setLoading(v); n++; }
     });
     return n > 0;
   }

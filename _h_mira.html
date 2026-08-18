@@ -1,0 +1,52 @@
+<meta charset="utf-8"><title>mira hell gegen dunkel</title>
+<style>body{margin:0;font:12px ui-monospace,monospace;padding:12px;background:#fff}
+pre{white-space:pre-wrap;background:#111;color:#eee;padding:8px}
+.box{width:17px;height:17px;position:relative;display:inline-block;outline:1px solid #ddd;margin-right:20px}
+.box img{position:absolute;top:50%;left:50%;width:17px;height:17px;object-fit:contain;display:block}
+.hell img{transform:translate(-50%,-50%)}
+.dunkel img{transform:translate(-50%,-50%) scale(1.273)}
+.roh img{transform:translate(-50%,-50%)}
+</style>
+<body>
+<div class="box hell"><img id="h" src="https://49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782122277820x302350779276307400/Group.svg"></div>
+<div class="box roh"><img id="d0" src="https://49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782132391699x758155530670363800/mira-logo-dark.svg"></div>
+<div class="box dunkel"><img id="d1" src="https://49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782132391699x758155530670363800/mira-logo-dark.svg"></div>
+<pre id="out">laeuft</pre>
+<script>
+/* Gemessen wird die TINTE, nicht der Kasten: beide Dateien in eine Leinwand rastern und schauen,
+   wie breit die Zeichnung darin wirklich ist. Der Kasten ist in beiden Faellen 17px -- genau das
+   ist ja die Falle. */
+function tinte(url, scale){
+  return new Promise(function(res){
+    var img=new Image(); img.crossOrigin="anonymous";
+    img.onload=function(){
+      var S=20, c=document.createElement("canvas");
+      c.width=Math.round(17*S); c.height=Math.round(17*S);
+      var ctx=c.getContext("2d");
+      var w=img.naturalWidth, h=img.naturalHeight, k=Math.min(c.width/w, c.height/h)*(scale||1);
+      var bw=w*k, bh=h*k;
+      ctx.drawImage(img,(c.width-bw)/2,(c.height-bh)/2,bw,bh);
+      var d;
+      try { d=ctx.getImageData(0,0,c.width,c.height).data; }
+      catch(e){ res({fehler:"Leinwand ist getrennt (CORS): "+e.message, natuerlich:w+"x"+h}); return; }
+      var minX=1e9,maxX=-1,minY=1e9,maxY=-1;
+      for (var y=0;y<c.height;y++) for (var x=0;x<c.width;x++){
+        if (d[((y*c.width)+x)*4+3]>40){ if(x<minX)minX=x; if(x>maxX)maxX=x; if(y<minY)minY=y; if(y>maxY)maxY=y; }
+      }
+      res({ natuerlich:w+"x"+h, tinte_breite: Math.round(((maxX-minX+1)/S)*100)/100, tinte_hoehe: Math.round(((maxY-minY+1)/S)*100)/100 });
+    };
+    img.onerror=function(){ res({fehler:"nicht geladen"}); };
+    img.src=url;
+  });
+}
+Promise.all([
+  tinte("https://49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782122277820x302350779276307400/Group.svg",1),
+  tinte("https://49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782132391699x758155530670363800/mira-logo-dark.svg",1),
+  tinte("https://49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782132391699x758155530670363800/mira-logo-dark.svg",1.273)
+]).then(function(z){
+  var res={ hell: z[0], dunkel_ohne_ausgleich: z[1], dunkel_mit_scale_1_273: z[2] };
+  if (z[0].tinte_breite && z[1].tinte_breite) res.verhaeltnis_vorher = Math.round((z[1].tinte_breite/z[0].tinte_breite)*1000)/1000;
+  if (z[0].tinte_breite && z[2].tinte_breite) res.verhaeltnis_nachher = Math.round((z[2].tinte_breite/z[0].tinte_breite)*1000)/1000;
+  document.getElementById("out").textContent=JSON.stringify(res,null,1); window.__fertig=res;
+});
+</script>

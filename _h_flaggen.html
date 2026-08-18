@@ -1,0 +1,31 @@
+<meta charset="utf-8"><title>flaggen: svg gegen raster</title>
+<style>body{margin:0;font:12px ui-monospace,monospace;padding:14px;background:#fff}
+.reihe{display:flex;gap:26px;align-items:center;margin:10px 0}
+.kachel{width:18px;height:14px;border-radius:3px;overflow:hidden;flex:0 0 auto}
+.kachel img{width:100%;height:100%;object-fit:cover;display:block}
+.gross{width:180px;height:140px;border-radius:14px;overflow:hidden}
+.gross img{width:100%;height:100%;object-fit:cover;display:block}
+pre{white-space:pre-wrap;background:#111;color:#eee;padding:8px}</style>
+<body>
+<div class="reihe"><span>SVG 18x14:</span>
+  <span class="kachel"><img src="https://flagcdn.com/de.svg"></span>
+  <span class="kachel"><img src="https://flagcdn.com/us.svg"></span>
+  <span class="kachel"><img src="https://flagcdn.com/gb.svg"></span></div>
+<div class="reihe"><span>PNG w40 18x14:</span>
+  <span class="kachel"><img src="https://flagcdn.com/w40/de.png"></span>
+  <span class="kachel"><img src="https://flagcdn.com/w40/us.png"></span>
+  <span class="kachel"><img src="https://flagcdn.com/w40/gb.png"></span></div>
+<div class="reihe"><span>10-fach, SVG:</span>
+  <span class="gross"><img src="https://flagcdn.com/us.svg"></span>
+  <span class="gross"><img src="https://flagcdn.com/de.svg"></span></div>
+<pre id="out">laeuft</pre>
+<script>
+setTimeout(function(){
+  var b=[].map.call(document.querySelectorAll("img"), function(i){
+    return { url: i.src.replace("https://flagcdn.com/",""), natuerlich: i.naturalWidth+"x"+i.naturalHeight,
+      verhaeltnis: Math.round((i.naturalWidth/i.naturalHeight)*100)/100 };
+  });
+  var res={ bilder: b, kachel_verhaeltnis: Math.round((18/14)*100)/100 };
+  document.getElementById("out").textContent=JSON.stringify(res,null,1); window.__fertig=res;
+}, 1800);
+</script>

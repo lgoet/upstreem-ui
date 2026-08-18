@@ -283,7 +283,13 @@
 .upr-dd-value { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .upr-dd-chevron { width: 16px; height: 16px; flex: 0 0 auto; color: var(--vc-muted); transition: transform 160ms ease; }
 .upr-dd.is-open .upr-dd-chevron { transform: rotate(180deg); }
-.upr-flag { width: 20px; height: 20px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; overflow: hidden; background: var(--vc-heading-bg); }
+/* Querformat-Kachel wie ueberall sonst in der App (prompts-table .upt-flag 18x14 r3,
+   markets-filter .umk-opt-flag 22x16 r3): hier stand ein KREIS, und ein Kreis schneidet eine
+   Flagge zuerst auf ein Quadrat zu. Bei Deutschland faellt das nicht auf -- drei Querstreifen
+   ueberleben jeden waagerechten Schnitt --, bei den USA (19:10, Sternenfeld links) bleibt vor
+   allem das Blau uebrig, und das war die Meldung "die US-Flagge sieht komisch aus". Masse aus
+   .umk-opt-flag uebernommen, Hoehe an die 20px-Zeile angepasst. */
+.upr-flag { width: 22px; height: 16px; border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; overflow: hidden; background: var(--vc-heading-bg); }
 .upr-flag img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .upr-dd-menu {
   position: absolute; left: 0; right: 0; top: calc(100% + 8px); z-index: 60;
@@ -399,8 +405,10 @@
 .upr-context-pill svg { width: 13px; height: 13px; flex: 0 0 auto; display: block; }
 .upr-context-pill span:last-child { overflow: hidden; text-overflow: ellipsis; }
 .upr-context-pill.is-keywords { max-width: 280px; }
+/* Dieselbe Korrektur wie an .upr-flag, eine Stufe kleiner: die Pille ist niedriger als das
+   Auswahlfeld, also 18x13 statt 22x16 -- dasselbe Verhaeltnis, derselbe Radius. */
 .upr-market-flag {
-  width: 14px; height: 14px; border-radius: 999px; overflow: hidden; background: var(--vc-heading-bg);
+  width: 18px; height: 13px; border-radius: 3px; overflow: hidden; background: var(--vc-heading-bg);
   box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
   display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
 }

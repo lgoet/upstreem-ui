@@ -247,6 +247,11 @@
   border: 1px solid var(--am-border); display: inline-flex; align-items: center; justify-content: center; position: relative;
 }
 .mqa-av img { width: 100%; height: 100%; object-fit: cover; display: block; -webkit-user-drag: none; user-select: none; pointer-events: none; }
+/* Flaggen sind quer, das 30er-Quadrat schneidet sie sonst auf ein Quadrat zu -- bei Deutschland
+   unauffaellig, bei den USA bleibt das Sternenfeld uebrig. Dieselbe Kachel wie im Untermenue
+   (.mqa-cmd-av.is-flag) und wie in den Tabellen: Querformat, Radius 3, ohne Rahmen. Die Zeile
+   behaelt ihre Hoehe, das Bild sitzt mittig darin. */
+.mqa-av.is-flag { width: 24px; height: 18px; border-radius: 3px; border: 0; background: var(--am-soft-2); }
 .mqa-av-fb { display: none; align-items: center; justify-content: center; width: 100%; height: 100%; color: var(--am-muted); }
 .mqa-av.is-fb .mqa-av-fb { display: flex; }
 .mqa-av-fb svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -492,6 +497,23 @@
 }
 .mqa-ref-go:hover { background: var(--am-soft); border-color: var(--am-border-strong); }
 .mqa-ref-go svg { width: 13px; height: 13px; display: block; }
+
+/* ---------- Reference und Actions: die ruhige Zone ----------
+   Beide Abschnitte stehen UNTER den Ergebnissen und sind nicht das, wonach jemand sucht -- sie
+   sind das, was danach noch da ist. Ueberschriften, Beschriftungen und Zeichen darum in der
+   Sekundaerfarbe statt in der Textfarbe.
+   Zwei Ausnahmen, beide mit hoeherer Spezifitaet und nicht ueber die Reihenfolge geloest:
+   die Zeile, auf der die Auswahl steht, und ein aufgeklappter Referenz-Eintrag. Ohne die erste
+   liesse sich die Liste nicht mehr mit der Tastatur navigieren. */
+.mqa-refgroup .mqa-primary, .mqa-actgroup .mqa-primary,
+.mqa-refgroup .mqa-action-ic, .mqa-actgroup .mqa-action-ic,
+.mqa-refgroup .mqa-ref-chev, .mqa-actgroup .mqa-ref-chev,
+.mqa-refgroup .mqa-group-head, .mqa-actgroup .mqa-group-head { color: var(--am-muted); }
+.mqa-refgroup .mqa-action.is-active .mqa-primary,
+.mqa-actgroup .mqa-action.is-active .mqa-primary,
+.mqa-refgroup .mqa-action.is-active .mqa-action-ic,
+.mqa-actgroup .mqa-action.is-active .mqa-action-ic,
+.mqa-refgroup .mqa-ref-item.is-open .mqa-primary { color: var(--am-text); }
 
 /* The section's own head row. Same .mqa-action shape as everything else in the list, so it is
    keyboard-reachable and highlights like a normal row; only the chevron marks it as expandable. */

@@ -144,7 +144,12 @@
 .usn-bar.is-mini .usn-top { margin: 0; }
 .usn-bar.is-mini .usn-teamname,
 .usn-bar.is-mini .usn-team .usn-sw { margin-left: 0; }
-.usn-teamlogo { flex: 0 0 24px; display: inline-flex; }
+/* 23 statt 24, auf Ansage. Der Radius geht anteilig mit (8 -> 7.7), ebenso das Bild darin
+   (22 -> 21) und dessen Radius (7 -> 6.7) -- ein Bauteil ist ein Paket aus Massen, und wer eines
+   davon aendert, zieht die anderen im selben Verhaeltnis nach. */
+.usn-teamlogo { flex: 0 0 23px; display: inline-flex; }
+.usn-teamlogo .up-logo-box { width: 23px; height: 23px; flex: 0 0 23px; border-radius: 7.7px; }
+.usn-teamlogo .up-logo-box img { width: 21px; height: 21px; border-radius: 6.7px; }
 /* Nie umbrechen, nie herausragen: schrumpfen und mit Auslassungspunkten enden. min-width: 0
    ist dafuer Pflicht -- ein Flex-Kind schrumpft sonst nicht unter seine Inhaltsbreite, und der
    Name schoebe den Doppelpfeil aus der Leiste heraus. */
@@ -311,7 +316,17 @@
    17px mittig in der 22px-Spalte, wie das Symbol darunter. */
 .usn-mira { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
   width: 17px; height: 17px; display: block; object-fit: contain; filter: brightness(3.58); }
-.usn-bar[data-theme="dark"] .usn-mira { filter: brightness(0.714); }
+/* Die dunkle Datei ist NICHT dieselbe Zeichnung in anderer Farbe: sie liegt auf einer 56x56-
+   Flaeche mit translate(6 6.5), die helle auf 44x43 ohne Rand. In derselben 17px-Box mit
+   object-fit: contain erscheint die dunkle damit nur 44/56 = 78.6% so gross -- gemessen an den
+   viewBox-Werten beider Dateien, das war die Meldung "im Dunkeln kleiner".
+   56/44 = 1.273 gleicht genau diesen Rand aus. Die Zeichnung sitzt in beiden Dateien mittig
+   (6 + 22 = 28 = die Mitte von 56), deshalb genuegt Skalieren, ohne zu verschieben.
+   Sauberer waere eine dunkle Datei ohne Rand -- dann faellt diese Zeile ersatzlos weg. */
+.usn-bar[data-theme="dark"] .usn-mira {
+  filter: brightness(0.714);
+  transform: translate(-50%, -50%) scale(1.273);
+}
 .usn-item.is-active .usn-mira { filter: none; }
 .usn-ic.has-mira svg { visibility: hidden; }
 .usn-item.is-active .usn-ic { color: var(--vc-text); }
@@ -362,6 +377,15 @@
 .usn-chips .up-stack-ltr { font-size: 7.9px; }
 .usn-bar.is-mini .usn-item { justify-content: center; padding: 0; gap: 0; }
 
+/* Ladezustand der ganzen Leiste (Teamwechsel). Die Skelette entstehen von selbst, weil die
+   Enthuellung zurueckgenommen wird -- hier bleibt nur, die Leiste aus der Bedienung zu nehmen:
+   ein zweiter Klick auf ein anderes Team, waehrend der erste Wechsel laeuft, waere ein Rennen
+   zweier Seitenaufbauten. Der Umschalter oben bleibt bedienbar; er laedt nichts nach. */
+.usn-bar.is-loading .usn-nav,
+.usn-bar.is-loading .usn-team,
+.usn-bar.is-loading .usn-accwrap { pointer-events: none; }
+.usn-bar.is-loading .usn-team { opacity: .7; }
+
 /* ---------- Skelette ----------
    Solange die Daten nicht da sind, steht an ihrer Stelle ein Balken -- kein leerer Platz und
    kein Fragezeichen. Geometrie und Ton wie die Tabellenskelette in core: --vc-sk, Radius 6,
@@ -374,7 +398,7 @@
 }
 .usn-bar[data-theme="dark"] .usn-sk::after { background: linear-gradient(90deg, transparent, rgba(255,255,255,.10), transparent); }
 @keyframes usn-sk-lauf { to { transform: translateX(100%); } }
-.usn-teamlogo .usn-sk { width: 24px; height: 24px; border-radius: 8px; }
+.usn-teamlogo .usn-sk { width: 23px; height: 23px; border-radius: 7.7px; }
 .usn-teamname .usn-sk { width: 96px; height: 13px; }
 .usn-av .usn-sk { width: 30px; height: 30px; border-radius: 50%; }
 .usn-acc-name .usn-sk { width: 92px; height: 12px; }
