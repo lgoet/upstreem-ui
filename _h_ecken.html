@@ -1,0 +1,77 @@
+<meta charset="utf-8"><title>acht ecken messen</title>
+<style>body{margin:0;font:12px ui-monospace,monospace;padding:12px}
+pre{white-space:pre-wrap;background:#111;color:#eee;padding:8px}
+canvas{border:1px solid #ccc;image-rendering:pixelated;margin-top:8px}</style>
+<body><canvas id="c"></canvas><pre id="out">laeuft</pre>
+<script>
+/* Das Zeichen wird 20-fach in eine Leinwand gerastert und danach an den PIXELN gemessen: fuer
+   jede der acht Ecken, wie weit die Fuellung von der Kante einruecken muss. Bei einem Radius r
+   spannt die Fuellung in der ersten Zeile von r bis w-r -- die Einrueckung IST also der Radius.
+   Gemessen statt gelesen: rx im Markup sagt nur, was gemeint war. */
+fetch("core.js?n="+Math.random(),{cache:"no-store"}).then(function(r){return r.text()}).then(function(t){
+  var s=document.createElement("script"); s.textContent=t; document.head.appendChild(s);
+  setTimeout(function(){
+    var UC=window.UpstreemCore, svg=UC.icon("sidebarPanels");
+    var vb=/viewBox="0 0 ([\d.]+) ([\d.]+)"/.exec(svg), W=parseFloat(vb[1]), H=parseFloat(vb[2]);
+    var S=20, c=document.getElementById("c"), ctx=c.getContext("2d");
+    c.width=Math.round(W*S); c.height=Math.round(H*S);
+    var img=new Image();
+    img.onload=function(){
+      ctx.clearRect(0,0,c.width,c.height);
+      ctx.drawImage(img,0,0,c.width,c.height);
+      var d=ctx.getImageData(0,0,c.width,c.height).data;
+      function voll(x,y){ return d[((y*c.width)+x)*4+3] > 128; }
+      /* Die beiden Formen an der obersten Zeile trennen: zusammenhaengende gefuellte Spannen */
+      function spannen(y){
+        var out=[], an=null;
+        for (var x=0;x<c.width;x++){
+          if (voll(x,y) && an===null) an=x;
+          if ((!voll(x,y) || x===c.width-1) && an!==null){ out.push([an, voll(x,y)?x:x-1]); an=null; }
+        }
+        return out;
+      }
+      /* Mitte der Hoehe: die volle Breite jeder Form (ohne Rundung) */
+      var mitte=spannen(Math.round(c.height/2));
+      var oben=spannen(0), unten=spannen(c.height-1);
+      function spaltenSpanne(x){
+        var an=null,aus=null;
+        for (var y=0;y<c.height;y++){ if (voll(x,y)){ if(an===null)an=y; aus=y; } }
+        return [an,aus];
+      }
+      var ecken=[];
+      mitte.forEach(function(m,i){
+        var o=oben[i]||[null,null], u=unten[i]||[null,null];
+        /* waagerechte Einrueckung an den vier Ecken dieser Form, in Einheiten des viewBox */
+        ecken.push({ form: i===0?"links":"rechts",
+          breite: Math.round(((m[1]-m[0]+1)/S)*100)/100,
+          oben_links: Math.round(((o[0]-m[0])/S)*100)/100,
+          oben_rechts: Math.round(((m[1]-o[1])/S)*100)/100,
+          unten_links: Math.round(((u[0]-m[0])/S)*100)/100,
+          unten_rechts: Math.round(((m[1]-u[1])/S)*100)/100,
+          /* senkrechte Einrueckung an der linken und rechten Kante der Form */
+          senkrecht_links: (function(){ var sp=spaltenSpanne(m[0]); return Math.round((sp[0]/S)*100)/100; })(),
+          senkrecht_rechts: (function(){ var sp=spaltenSpanne(m[1]); return Math.round((sp[0]/S)*100)/100; })() });
+      });
+      var alle=[];
+      ecken.forEach(function(e){ alle.push(e.oben_links,e.oben_rechts,e.unten_links,e.unten_rechts); });
+      var res={ viewBox: W+" x "+H, formen: ecken,
+        /* Die waagerechte Einrueckung an einer Ecke mit Radius 2 ist 2 minus dem, was die Rundung
+           in der ersten Pixelzeile schon zurueckgibt -- gemessen wird der Sehnenversatz, deshalb
+           gegen den THEORETISCHEN Wert derselben Rundung vergleichen, nicht gegen 2. */
+        alle_acht_gleich: alle.every(function(v){ return Math.abs(v - alle[0]) < 0.06; }),
+        werte: alle };
+      document.getElementById("out").textContent=JSON.stringify(res,null,1); window.__fertig=res;
+    };
+    /* width/height MUESSEN ins Markup: ein SVG ohne eigene Groesse hat als <img> keine
+       Eigenmasse, und Chrome rastert es dann gar nicht erst. Im Dokument stoert das nicht --
+       gerastert wird eine Kopie. */
+    /* xmlns MUSS mit: als <img> geladen wird das SVG als eigenes Dokument geparst, und ohne
+       Namensraum verweigert der Browser es. Inline im HTML braucht es das nicht -- deshalb steht
+       es nicht im Zeichen selbst. */
+    var fuerBild = svg.replace("currentColor","#000")
+      .replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'" ');
+    img.onerror = function(){ document.getElementById("out").textContent = "Bild konnte nicht gerastert werden"; };
+    img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(fuerBild);
+  }, 700);
+});
+</script>
