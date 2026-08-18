@@ -1,0 +1,55 @@
+<meta charset="utf-8"><title>uca titel</title>
+<style>body{margin:0;font:12px ui-monospace,monospace;padding:12px}pre{white-space:pre-wrap;background:#111;color:#eee;padding:8px}</style>
+<body>
+<div class="up-root uca-root"
+     data-cdn-pin="CDN_PIN"
+     data-url="URL"
+     data-title="TITLE"
+     data-citation-type="TYPE"
+     data-brand="BRAND"
+     data-summary="SUMMARY"
+     data-isdark="IS_DARK"></div>
+
+<!-- Das Wurzel-Div ist bewusst leer: die Komponente baut ihren gesamten Innenaufbau selbst. Es
+     gibt hier keine Stelle, an der du etwas einsetzen sollst. Die Platzhalter oben (URL, TITLE,
+     TYPE, BRAND, SUMMARY) ersetzt du mit "Insert dynamic data"; laesst du einen stehen, wird er
+     als leer behandelt und nicht als Text angezeigt. -->
+
+
+<pre id="out">laeuft</pre>
+<script>
+window.__fehler=[]; window.addEventListener("error",function(e){window.__fehler.push(String(e.message))});
+try{ localStorage.setItem("pref_theme","light"); localStorage.removeItem("uca_ctx"); }catch(e){}
+(function(){
+  var alt=/alt=1/.test(location.search);
+  var files=["core.css","create-with-ai.css", alt?"_alt_core.js":"core.js", alt?"_alt_uca.js":"create-with-ai.js"];
+  var t={};
+  Promise.all(files.map(function(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"})
+    .then(function(r){return r.text()}).then(function(x){t[f]=x}); })).then(function(){
+      files.forEach(function(f){ var e=document.createElement(/\.css$/.test(f)?"style":"script"); e.textContent=t[f]; document.head.appendChild(e); });
+      setTimeout(function(){
+        var root=document.querySelector(".uca-root");
+        var api=null;
+        /* DIE ECHTE REIHENFOLGE: der Workflow ruft setContext mit der URL (setzt _explicit),
+           Bubble schreibt data-title erst danach ins Element. */
+        var setCtx = window.createWithAiSetContext;
+        if (setCtx) setCtx(JSON.stringify({ url:"https://www.spiegel.de/auto/e-auto-test-a-123", citation_type:"You" }));
+        setTimeout(function(){
+          /* Jetzt kommt der Titel als Attribut, so wie Bubble ihn nachschreibt. */
+          root.setAttribute("data-title", "E-Auto im Test: 12 Modelle");
+          setTimeout(function(){
+            if (window.createWithAiOpen) window.createWithAiOpen();
+            setTimeout(function(){
+              var tEl=document.querySelector("[data-source-title]"), uEl=document.querySelector("[data-source-url]");
+              var res={ datei: alt?"alt":"neu", api_da: !!setCtx,
+                titelzeile: tEl?tEl.textContent:null, urlzeile: uEl?uEl.textContent:null,
+                fehler: window.__fehler };
+              res.titel_korrekt = res.titelzeile === "E-Auto im Test: 12 Modelle";
+              document.getElementById("out").textContent=JSON.stringify(res,null,1); window.__fertig=res;
+            }, 500);
+          }, 400);
+        }, 400);
+      }, 900);
+    });
+})();
+</script>

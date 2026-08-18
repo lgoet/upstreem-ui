@@ -664,9 +664,22 @@
     var _explicit = false;   // sobald Daten per run-JS kamen, duerfen Attribute sie nicht ueberschreiben
     var PLATZHALTER = { SOURCE_URL: 1, SOURCE_TITLE: 1, BRAND_NAME: 1, CITATION_TYPE: 1, BRAND_SUMMARY: 1,
                         URL: 1, TITLE: 1, BRAND: 1, TYPE: 1, SUMMARY: 1 };
+    /* Ein Platzhalter, der stehengeblieben ist, wird ignoriert -- und das wird EINMAL gesagt.
+       Genau daran hat eine Runde Suche gehangen: das Element trug data-title="TITLE" aus der
+       Vorlage, die Komponente warf den Wert still weg, und in der Titelzeile stand die Domain.
+       Ein Attribut, das aussieht wie gesetzt und wie nicht gesetzt behandelt wird, muss sich
+       melden. Je Attributname nur einmal, sonst schreibt jede Mutation eine neue Zeile. */
+    var platzGemeldet = {};
     function attrOf(name){
       var v = root.getAttribute(name) || "";
-      if (PLATZHALTER[v] || v.indexOf("INSERT") !== -1) return "";
+      if (PLATZHALTER[v] || v.indexOf("INSERT") !== -1){
+        if (!platzGemeldet[name] && window.console){
+          platzGemeldet[name] = 1;
+          console.warn("[create-with-ai] " + name + "=\"" + v + "\" ist noch der Platzhalter aus " +
+            "der Vorlage und wird ignoriert. Dort gehoert der dynamische Bubble-Ausdruck hinein.");
+        }
+        return "";
+      }
       return v;
     }
     function readAttrs(){
@@ -867,7 +880,12 @@
        Triggers ist vor dem Oeffnen sichtbar, also nachziehen. */
     try {
       if (window.MutationObserver){
-        new MutationObserver(function(){ if (!_explicit){ readAttrs(); renderTrigger(); } })
+        /* IMMER readAttrs, auch nach einem expliziten setContext -- die Sperre entscheidet drinnen,
+           was uebernommen wird (nur ein noch leerer Titel). Hier lag der Rest des gemeldeten
+           Fehlers: Bubble setzt data-title regelmaessig ERST nach dem Oeffnen, und wenn der
+           Workflow davor setContext mit der url gerufen hat, stand _explicit -- der Beobachter rief
+           dann gar nichts mehr, und der Titel kam nie an. */
+        new MutationObserver(function(){ readAttrs(); renderTrigger(); })
           .observe(root, { attributes: true, attributeFilter: ["data-url", "data-title", "data-brand", "data-citation-type", "data-summary"] });
       }
     } catch(e){}

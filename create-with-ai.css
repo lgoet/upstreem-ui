@@ -16,10 +16,11 @@
    in der Sprache von .uca-primary im Fenster darunter, dessen Werte er teilt. */
 .uca-trigger {
   display: inline-flex; align-items: center; gap: 7px; white-space: nowrap;
-  /* Rechts 11 statt 13: links steht ein Zeichen, und ein Zeichen bringt in seinem Kasten
-     eigene Luft mit. Mit gleichen Werten sieht die rechte Seite darum breiter aus als die
-     linke -- eine optische Korrektur, kein gemessener Fehler. */
-  height: 32px; padding: 0 11px 0 13px; border: 0; border-radius: 8px;
+  /* Rechts 8 statt 13: links steht ein Zeichen, und ein Zeichen bringt in seinem Kasten eigene
+     Luft mit; dazu legt letter-spacing hinter das letzte Zeichen noch 0.1px je Buchstabe, bei
+     "Create" also gut einen halben Pixel. Beides zusammen laesst die rechte Seite breiter
+     aussehen. 11px waren dafuer noch zu viel (zweimal gemeldet), jetzt 8. */
+  height: 32px; padding: 0 8px 0 13px; border: 0; border-radius: 8px;
   background: var(--vc-text); color: var(--vc-bg);
   font: inherit; font-size: 13.5px; font-weight: 560; letter-spacing: .1px; cursor: pointer;
   transition: opacity .14s ease;

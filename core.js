@@ -6499,18 +6499,30 @@
      eines Parameters, den man an der Aufrufstelle vergessen kann. Der Name kommt in beide Faelle
      ueber dieselbe Funktion herein: UC.icon("name") entscheidet selbst, welche Sorte es ist.
 
-     sidebarPanels: der Umschalter der Leiste. Nach Vorlage gebaut, nicht aus Lucide -- ein
-     schmaler Balken, eine Luecke, ein groesseres Feld, beides gefuellt. Auf 24 gerechnet, damit es
-     im selben Kasten sitzt wie jedes andere Zeichen: Balken 4 breit von y5 bis y19, Feld 11 breit
-     von y3 bis y21, Luecke 3. Radien im Verhaeltnis zur Groesse (2 am Balken, 3.5 am Feld), das
-     ist die Rundung, die die App auch an ihren Kacheln benutzt. */
+     sidebarPanels: der Umschalter der Leiste. Nach Vorlage gebaut, nicht aus Lucide.
+
+     Der viewBox ist hier 1:1 mit den gerenderten Pixeln (18 x 16) und NICHT der 24er-Kasten der
+     anderen Zeichen. Grund: die Masse sind in Pixeln vorgegeben -- beide Formen 16 hoch, die linke
+     ein Drittel so breit wie die rechte, die Luecke halb so breit wie die linke, Radius 4. In einem
+     24er-Kasten, der auf 14px skaliert wird, waere aus "4px Radius" ein 2.3px-Radius geworden; die
+     Vorgabe liesse sich dort gar nicht treffen. Dieselbe Begruendung wie bei den Punkten in
+     quick-actions.
+
+     Damit: links 4 breit, Luecke 2, rechts 12 -- 4 ist genau ein Drittel von 12, 2 die Haelfte von
+     4. Beide von y0 bis y16. rx 4 an beiden; an der 4px schmalen Form klemmt der Browser das auf
+     die halbe Breite, aus dem Rechteck wird also eine Pille -- genau wie in der Vorlage. */
   var ICON_FILLED = {
-    sidebarPanels: '<rect x="3" y="5" width="4" height="14" rx="2"/>' +
-                   '<rect x="10" y="3" width="11" height="18" rx="3.5"/>'
+    sidebarPanels: '<svg viewBox="0 0 18 16" fill="currentColor" stroke="none">' +
+                   '<rect x="0" y="0" width="4" height="16" rx="4"/>' +
+                   '<rect x="6" y="0" width="12" height="16" rx="4"/></svg>'
   };
   function icon(name, strokeWidth){
     var f = ICON_FILLED[name];
-    if (f) return '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none">' + f + '</svg>';
+    /* Ein Eintrag darf sein eigenes svg mitbringen, wenn er einen anderen viewBox braucht als den
+       24er-Kasten -- sonst nur die Formen, und der Kasten kommt von hier. */
+    if (f) return f.charAt(0) === "<" && f.indexOf("<svg") === 0
+      ? f
+      : '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none">' + f + '</svg>';
     var d = ICON_PATHS[name];
     if (!d){
       if (window.console) console.error("upstreem: kein Icon namens \"" + name + "\" -- " +
