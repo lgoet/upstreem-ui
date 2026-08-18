@@ -177,11 +177,18 @@
 .usn-toggle { flex: 0 0 32px; margin-left: auto; }
 /* Das Zeichen selbst kleiner als die 16 des Kits -- der Knopf bleibt 32 gross und damit gut
    treffbar, nur das Symbol darin tritt zurueck. */
-/* 22.4 x 14, nicht 14 x 14: das Zeichen ist in Pixeln vorgegeben (beide Formen 14 hoch, Radius 3,
-   linke Form 6.4 breit, Luecke 4, rechte 12) und traegt deshalb einen viewBox von 22.4x14 -- siehe
+/* 19.4 x 14, nicht 14 x 14: das Zeichen ist in Pixeln vorgegeben (beide Formen 14 hoch, Radius 2,
+   linke Form 5.4 breit, Luecke 4, rechte 10) und traegt deshalb einen viewBox von 19.4x14 -- siehe
    ICON_FILLED in core. Jede andere Groesse hier wuerde die vorgegebenen Masse skalieren und damit
-   verfehlen. */
-.usn-bar .usn-toggle svg { width: 22.4px; height: 14px; }
+   verfehlen.
+   60 Prozent Deckkraft im RUHEZUSTAND, beim Hover voll: der Umschalter soll die Leiste nicht
+   anfuehren, sondern dort sein, wenn man ihn sucht. Die Farbe wechselt dabei wie bisher von der
+   Dritt- auf die Primaerfarbe (zwei Zeilen weiter oben), die Deckkraft kommt dazu. */
+.usn-bar .usn-toggle svg {
+  width: 19.4px; height: 14px; opacity: .6;
+  transition: opacity var(--usn-t) var(--usn-ease);
+}
+.usn-bar .up-iconbtn.usn-toggle:hover svg { opacity: 1; }
 /* [hidden] ist die schwaechste Regel im Feld: die display-Angabe darueber wuerde sie schlagen.
    Deshalb hier ausdruecklich zurueck auf none. */
 .usn-toggle[hidden] { display: none; }
@@ -593,8 +600,10 @@
   box-shadow: 0 1px 2px rgba(0,0,0,.10), 0 6px 16px rgba(0,0,0,.10);
 }
 .up-root.up-portal.usn-fab.is-on { display: inline-flex; }
-/* Derselbe Umschalter, dieselben Masse -- nicht quadratisch, ein Quadrat streckte das Zeichen. */
-.up-root.up-portal.usn-fab svg { width: 22.4px; height: 14px; display: block; }
+/* Derselbe Umschalter, dieselben Masse -- nicht quadratisch, ein Quadrat streckte das Zeichen.
+   Ohne die 60 Prozent Deckkraft der Leisten-Version: dieser Knopf schwebt allein ueber der Seite
+   und ist das einzige, was dort auf die Leiste hinweist. */
+.up-root.up-portal.usn-fab svg { width: 19.4px; height: 14px; display: block; }
 
 /* Schleier hinter der ausgefahrenen Leiste im hint-Zustand. Werte wie beim Popup-Schleier in
    core, damit beide gleich aussehen. */

@@ -6506,14 +6506,17 @@
      14px skaliert wird, waere aus "3px Radius" ein 1.75px-Radius geworden -- die Vorgabe liesse
      sich dort gar nicht treffen. Dieselbe Begruendung wie bei den Punkten in quick-actions.
 
-     Masse, wie vorgegeben: beide Formen 14 hoch, Radius 3. Die linke war 4 breit und ist 60%
-     breiter, also 6.4; die Luecke war 2 und ist doppelt so gross, also 4; die rechte bleibt 12.
-     Gesamtbreite damit 6.4 + 4 + 12 = 22.4. Die krummen Zahlen sind Absicht -- sie sind das
-     Ergebnis der Vorgabe, und Runden waere ein stiller Verstoss dagegen. */
+     Masse, wie vorgegeben: beide Formen 14 hoch, Radius 2, die linke 5.4 breit, die Luecke 4, die
+     rechte 10. Gesamtbreite damit 5.4 + 4 + 10 = 19.4. Die 5.4 ist krumm, weil sie es sein muss:
+     4 plus 60 Prozent sind 6.4, davon einen Pixel ab. Runden waere ein stiller Verstoss gegen die
+     Vorgabe.
+     Die Deckkraft steht NICHT hier: sie ist Sache der Stelle, an der das Zeichen sitzt (siehe
+     .usn-toggle in sidebar.css) -- dasselbe Zeichen an einem anderen Ort braucht sie vielleicht
+     nicht. */
   var ICON_FILLED = {
-    sidebarPanels: '<svg viewBox="0 0 22.4 14" fill="currentColor" stroke="none">' +
-                   '<rect x="0" y="0" width="6.4" height="14" rx="3"/>' +
-                   '<rect x="10.4" y="0" width="12" height="14" rx="3"/></svg>'
+    sidebarPanels: '<svg viewBox="0 0 19.4 14" fill="currentColor" stroke="none">' +
+                   '<rect x="0" y="0" width="5.4" height="14" rx="2"/>' +
+                   '<rect x="9.4" y="0" width="10" height="14" rx="2"/></svg>'
   };
   function icon(name, strokeWidth){
     var f = ICON_FILLED[name];
