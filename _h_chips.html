@@ -1,0 +1,38 @@
+<meta charset="utf-8"><title>stapel-chips</title>
+<style>html,body{margin:0;font:12px ui-monospace,monospace;background:#1b1b1b;color:#eee}
+pre{white-space:pre-wrap;padding:10px}</style>
+<body>
+<div class="up-root" data-theme="dark" id="wurzel" style="padding:20px;background:#1b1b1b">
+  <div class="up-row" style="display:block">
+    <span class="up-stack">
+      <span class="up-stack-item has-img"><span class="up-stack-vis"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect width='40' height='40' fill='%23c00'/%3E%3C/svg%3E"/></span></span>
+      <span class="up-stack-item has-img"><span class="up-stack-vis"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect width='40' height='40' fill='%2306c'/%3E%3C/svg%3E"/></span></span>
+      <span class="up-stack-item has-img"><span class="up-stack-vis"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect width='40' height='40' fill='%230a0'/%3E%3C/svg%3E"/></span></span>
+    </span>
+  </div>
+</div>
+<pre id="out">laeuft</pre>
+<script>
+(function(){
+  var alt=/alt=1/.test(location.search);
+  fetch((alt?"_alt_core.css":"core.css")+"?n="+Math.random(),{cache:"no-store"}).then(function(r){return r.text()}).then(function(t){
+    var s=document.createElement("style"); s.textContent=t; document.head.appendChild(s);
+    setTimeout(function(){
+      var vis=document.querySelectorAll(".up-stack-vis"), items=document.querySelectorAll(".up-stack-item");
+      var c=getComputedStyle(vis[0]), img=document.querySelector(".up-stack-item img");
+      var ci=getComputedStyle(img);
+      var b1=items[0].getBoundingClientRect(), b2=items[1].getBoundingClientRect();
+      var i1=document.querySelectorAll(".up-stack-item img")[0].getBoundingClientRect();
+      var res={ datei: alt?"alt":"neu",
+        chip_breite: Math.round(b1.width),
+        versatz: Math.round(b2.left-b1.left),          /* Mittenabstand: 28-4=24 erwartet */
+        polsterung: c.padding, rahmen: c.borderTopWidth, radius: c.borderTopLeftRadius,
+        ring: c.boxShadow.replace(/rgba?\([^)]*\)/,"FARBE"),
+        bild: Math.round(i1.width)+"x"+Math.round(i1.height), bild_radius: ci.borderTopLeftRadius,
+        /* Der sichtbare helle Rand = (Chip - Bild)/2 */
+        heller_rand_px: (b1.width - i1.width)/2 };
+      document.getElementById("out").textContent=JSON.stringify(res,null,1); window.__fertig=res;
+    }, 500);
+  });
+})();
+</script>

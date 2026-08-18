@@ -1,0 +1,40 @@
+<meta charset="utf-8"><title>team-chips in der leiste</title>
+<style>html,body{margin:0;font:12px ui-monospace,monospace;background:#1b1b1b;color:#eee}pre{white-space:pre-wrap;padding:10px}</style>
+<body>
+<div class="up-root up-portal usn-bar" data-theme="dark" style="padding:16px">
+  <button class="usn-item" type="button"><span class="usn-txt">Teams</span>
+    <span class="usn-chips">
+      <span class="up-stack">
+        <span class="up-stack-item has-img"><span class="up-stack-vis"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect width='40' height='40' fill='%23c00'/%3E%3C/svg%3E"/></span></span>
+        <span class="up-stack-item has-img"><span class="up-stack-vis"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect width='40' height='40' fill='%2306c'/%3E%3C/svg%3E"/></span></span>
+        <span class="up-stack-item has-img"><span class="up-stack-vis"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect width='40' height='40' fill='%230a0'/%3E%3C/svg%3E"/></span></span>
+      </span>
+    </span>
+  </button>
+</div>
+<pre id="out">laeuft</pre>
+<script>
+(function(){
+  var alt=/alt=1/.test(location.search);
+  var files=[alt?"_alt_core.css":"core.css", alt?"_alt_sidebar.css":"sidebar.css"];
+  Promise.all(files.map(function(f){return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){return r.text()})}))
+  .then(function(t){
+    t.forEach(function(x){var s=document.createElement("style"); s.textContent=x; document.head.appendChild(s);});
+    setTimeout(function(){
+      var items=document.querySelectorAll(".usn-chips .up-stack-item");
+      var vis=document.querySelector(".usn-chips .up-stack-vis");
+      var c=getComputedStyle(vis);
+      var b1=items[0].getBoundingClientRect(), b2=items[1].getBoundingClientRect();
+      var i1=items[0].querySelector("img").getBoundingClientRect();
+      var res={ datei: alt?"alt":"neu", chip: Math.round(b1.width),
+        versatz: Math.round(b2.left-b1.left),
+        ring: c.boxShadow.replace(/rgba?\([^)]*\)/,"FARBE"),
+        polsterung: c.padding, rahmen: c.borderTopWidth,
+        heller_rand_px: (b1.width-i1.width)/2,
+        /* Was man zwischen zwei Logos sieht: der Ring des linken auf dem rechten */
+        sichtbare_luecke: Math.round(b2.left - b1.right) + parseFloat(c.boxShadow.match(/(\d+(\.\d+)?)px$/)[1]) };
+      document.getElementById("out").textContent=JSON.stringify(res,null,1); window.__fertig=res;
+    }, 400);
+  });
+})();
+</script>

@@ -889,6 +889,31 @@
       if (s){ s.focus(); try { s.setSelectionRange(pos, pos); } catch(x){} }
     });
 
+    /* ---- Der Stift kommt nach einer Verweildauer -------------------------------------------
+       Dieselbe Uhr wie das Zeilenmenue in quick-actions (ROWMENU_HOVER_MS), gleicher Wert.
+       Ueber eine Klasse und nicht ueber :hover mit transition-delay: wer die Liste nur
+       ueberfaehrt, soll keine Reihe von Stiften hinter sich herziehen -- die Uhr wird beim
+       Verlassen geloescht, eine CSS-Verzoegerung liesse sich nicht zurueckholen. */
+    var STIFT_MS = 750, stiftUhr = null, stiftZeile = null;
+    elNav.addEventListener("mouseover", function(e){
+      if (!e.target.closest) return;
+      var z = e.target.closest(".usn-pin");
+      if (!z || z === stiftZeile) return;            /* mouseover feuert auch beim Wechsel der Kinder */
+      clearTimeout(stiftUhr);
+      if (stiftZeile) stiftZeile.classList.remove("is-editready");
+      stiftZeile = z;
+      stiftUhr = setTimeout(function(){ z.classList.add("is-editready"); }, STIFT_MS);
+    });
+    elNav.addEventListener("mouseout", function(e){
+      if (!e.target.closest) return;
+      var z = e.target.closest(".usn-pin");
+      if (!z || z !== stiftZeile) return;
+      if (e.relatedTarget && z.contains(e.relatedTarget)) return;   /* nur zu einem Kind gewandert */
+      clearTimeout(stiftUhr);
+      stiftZeile = null;
+      z.classList.remove("is-editready");
+    });
+
     /* Tippen: der Zwischenstand wandert in den state, damit ein Neuzeichnen ihn nicht verliert.
        KEIN renderNav hier -- das Feld verlaere bei jedem Zeichen den Fokus. */
     bar.addEventListener("input", function(e){

@@ -193,7 +193,7 @@
               '<button class="up-ddsearch-x umk-search-x" type="button" aria-label="Clear search">' + ICON.x + '</button>' +
             '</span>' +
             '<span class="umk-sort">' +
-              '<button class="umk-sort-btn" type="button" aria-label="Sort markets">' + ICON.sort + '</button>' +
+              '<button class="umk-sort-btn" type="button" aria-label="Sort markets" data-tip="Sort markets">' + ICON.sort + '</button>' +
               '<div class="umk-sort-menu" role="menu"></div>' +
             '</span>' +
             '<button class="umk-clear" type="button">Clear</button>' +

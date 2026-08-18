@@ -256,7 +256,10 @@
           (CG_MENU === g.key ? " is-menuopen" : "") + '"' +
           /* Verborgene Gruppierungen tragen kein data-grp-drag: etwas umzusortieren, das man
              gerade nicht sieht, ist ein Ergebnis, das man erst spaeter bemerkt. */
-          (aus ? "" : ' data-grp-drag="' + esc(g.key) + '"') + '>' +
+          (aus ? "" : ' data-grp-drag="' + esc(g.key) + '"') +
+          /* Der Schluessel steht ZUSAETZLICH als eigenes Attribut: data-grp-drag fehlt der
+             verborgenen Zeile, und auch die soll sich oeffnen lassen. */
+          ' data-grp-key="' + esc(g.key) + '">' +
         UC.cgDotHtml(g.color) +
         '<span class="utm-cg-name">' + esc(g.key) + '</span>' +
         '<span class="utm-cg-chips">' + cgChipsHtml(g) + '</span>' +
@@ -457,8 +460,17 @@
         CG_MENU = null; renderCg(); return;
       }
       /* Klick irgendwo sonst im Abschnitt schliesst ein offenes Zeilenmenue -- dasselbe Verhalten
-         wie bei jedem Dropdown der App. */
-      if (CG_MENU && elCg && elCg.contains(e.target)){ CG_MENU = null; renderCg(); }
+         wie bei jedem Dropdown der App. Mit return: dieser Klick hat das Menue geschlossen und
+         soll nicht zusaetzlich die Zeile darunter oeffnen. */
+      if (CG_MENU && elCg && elCg.contains(e.target)){ CG_MENU = null; renderCg(); return; }
+      /* Die Zeile selbst oeffnet das Bearbeiten-Fenster. Sie steht NACH den Knoepfen in der Zeile
+         (Auge, Kebab, Menue) -- die haben oben schon zurueckgegeben. Ein Klick nach dem Ziehen
+         kommt hier nicht an: cgDragList haelt genau diesen einen auf. */
+      var cgZeile = e.target.closest("[data-grp-key]");
+      if (cgZeile){
+        var zeintrag = UC.cgFind(cgZeile.getAttribute("data-grp-key"));
+        if (zeintrag){ cgModal.open(zeintrag); return; }
+      }
       if (e.target.closest(".up-search-btn")){ search.toggle(); return; }
       if (e.target.closest(".up-search-clear")){
         elSearchIn.value = ""; state.query = ""; elSearch.classList.remove("has-text");

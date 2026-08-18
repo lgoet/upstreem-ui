@@ -108,14 +108,17 @@
    Brand-Mentions (dort .up-stack-vis), der Markt die Flaggenkachel (dort .upt-flag). Nachgebaut
    statt importiert -- diese Datei laedt bewusst kein core.css und kennt die --vc-Tokens nicht,
    siehe Kopf. Uebernommen ist die Geometrie, nicht die Groesse: 20px bleiben 20px. */
+/* Polsterung 1 statt 2 und kein Rahmen -- dieselbe Angleichung, die .up-stack-vis in core
+   bekommen hat: der helle Rand um ein Logo ist ueberall in der App genau einen Pixel breit.
+   Groesse (20) und Radius (6) bleiben, der Innenradius geht auf 6 - 1 = 5. */
 .mqa-cmd-av {
   flex: 0 0 auto; width: 20px; height: 20px; border-radius: 6px; overflow: hidden;
-  border: 1px solid var(--am-border); background: var(--am-soft-2);
-  display: inline-flex; align-items: center; justify-content: center; padding: 2px;
+  border: 0; background: var(--am-soft-2);
+  display: inline-flex; align-items: center; justify-content: center; padding: 1px;
 }
 /* contain, nicht cover: ein Wortmarken-Logo ist breiter als hoch, und cover schneidet ihm links
    und rechts die Haelfte ab. Genau dafuer steht es in der Tabelle auch auf contain. */
-.mqa-cmd-av img { width: 100%; height: 100%; object-fit: contain; border-radius: 4px; display: block; }
+.mqa-cmd-av img { width: 100%; height: 100%; object-fit: contain; border-radius: 5px; display: block; }
 /* Rueckfall ohne Logo: der Anfangsbuchstabe, wie in der Tabelle. Vorher stand hier ein "/", das
    sah aus wie ein Befehl und nicht wie eine Marke ohne Bild. */
 .mqa-cmd-ltr { font-size: 10px; font-weight: 600; color: var(--am-muted); line-height: 1; text-transform: uppercase; }

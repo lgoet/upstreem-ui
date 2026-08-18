@@ -1,0 +1,55 @@
+<meta charset="utf-8"><title>icons gestempelt</title>
+<style>body{margin:0;font:12px ui-monospace,monospace;padding:12px}
+pre{white-space:pre-wrap;background:#111;color:#eee;padding:10px}
+.zeile{display:flex;gap:14px;align-items:center;margin:8px 0}</style>
+<body>
+<h4>Vorher: alte Formen im Markup, wie sie auf der echten Seite stehen</h4>
+<div class="zeile" id="ask-mira">
+  <button class="am-icon-action" type="button" id="am-settings-toggle" aria-label="Answer settings">
+    <svg viewBox="0 0 24 24" class="am-ic am-ic-fader" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="8" x2="20" y2="8"></line><circle cx="9" cy="8" r="2.2"></circle><line x1="4" y1="16" x2="20" y2="16"></line><circle cx="15" cy="16" r="2.2"></circle></svg>
+  </button>
+  <button class="am-icon-action am-mic" type="button" id="am-mic" aria-label="Voice input">
+    <svg viewBox="0 0 24 24" class="am-ic"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+  </button>
+  <button class="ubo-cols-btn ubo-iconbtn" type="button" aria-label="Table settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33"/></svg>
+  </button>
+  <div class="upr-research-orb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
+</div>
+<pre id="out">laeuft</pre>
+<script>
+(function(){
+  var vorher = {
+    am_set: document.querySelector("#am-settings-toggle svg").outerHTML.slice(0,80),
+    am_mic: document.querySelector("#am-mic svg").innerHTML.slice(0,40),
+    ubo:    document.querySelector(".ubo-cols-btn svg").innerHTML.slice(0,40),
+    orb:    document.querySelector(".upr-research-orb svg").innerHTML.slice(0,40)
+  };
+  fetch("core.js?n="+Math.random(),{cache:"no-store"}).then(function(r){return r.text()}).then(function(t){
+    var s=document.createElement("script"); s.textContent=t; document.head.appendChild(s);
+    setTimeout(function(){
+      function q(sel){ var e=document.querySelector(sel); return e?e.innerHTML.replace(/\s+/g," ").slice(0,120):"(fehlt)"; }
+      var res={
+        core_da: !!window.UpstreemCore,
+        arrowUpDown_da: !!(window.UpstreemCore && /m3 16 4 4 4-4/.test(window.UpstreemCore.icon("arrowUpDown",2))),
+        vorher: vorher,
+        nachher: {
+          am_set: q("#am-settings-toggle svg"),
+          am_set_klasse: (document.querySelector("#am-settings-toggle svg")||{}).getAttribute && document.querySelector("#am-settings-toggle svg").getAttribute("class"),
+          am_mic: q("#am-mic svg"),
+          am_mic_klasse: document.querySelector("#am-mic svg").getAttribute("class"),
+          ubo: q(".ubo-cols-btn svg"),
+          orb: q(".upr-research-orb svg")
+        },
+        pruefung: {
+          settings2: /M14 17H5/.test(document.querySelector("#am-settings-toggle svg").innerHTML),
+          mic_lucide: /rect x="9" y="2"/.test(document.querySelector("#am-mic svg").innerHTML),
+          ubo_lucide_settings: /M9.671 4.136/.test(document.querySelector(".ubo-cols-btn svg").innerHTML),
+          orb_scansearch: /M3 7V5a2 2 0 0 1 2-2h2/.test(document.querySelector(".upr-research-orb svg").innerHTML)
+        }
+      };
+      document.getElementById("out").textContent=JSON.stringify(res,null,1); window.__fertig=res;
+    }, 1200);
+  });
+})();
+</script>

@@ -1,0 +1,36 @@
+<meta charset="utf-8"><title>sorter in den filtern</title>
+<style>body{margin:0;font:12px ui-monospace,monospace;padding:12px;background:#fff}
+pre{white-space:pre-wrap;background:#111;color:#eee;padding:10px}
+.slot{display:inline-block;vertical-align:top;width:380px;margin-right:12px}</style>
+<body>
+<div class="slot"><div class="up-root utf-root" id="tf" data-instance="tf" data-isdark="no" data-isprocessing="no"></div></div>
+<div class="slot"><div class="up-root umk-root" id="mk" data-instance="mk" data-isdark="no" data-isprocessing="no"></div></div>
+<div class="slot"><div class="up-root umf-root" id="mf" data-instance="mf" data-isdark="no" data-isprocessing="no"></div></div>
+<pre id="out">laeuft</pre>
+<script>
+(function(){
+  var files=["core.css","filters/topics-filter.css","filters/markets-filter.css","filters/models-filter.css",
+             "core.js","filters/topics-filter.js","filters/markets-filter.js","filters/models-filter.js"], t={};
+  Promise.all(files.map(function(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"})
+    .then(function(r){return r.text()}).then(function(x){t[f]=x}); })).then(function(){
+      files.filter(function(f){return /\.css$/.test(f)}).forEach(function(f){ var s=document.createElement("style"); s.textContent=t[f]; document.head.appendChild(s); });
+      files.filter(function(f){return /\.js$/.test(f)}).forEach(function(f){ var s=document.createElement("script"); s.textContent=t[f]; document.head.appendChild(s); });
+      setTimeout(function(){
+        try { window.setUpstreemTopics(JSON.stringify([{topic_id:"t1",name:"Solar",hex_light:"#575757",hex_dark:"#575757",prompt_count:3}])); } catch(e){}
+        try { window.setUpstreemMarkets(JSON.stringify([{alpha2:"de",name:"Germany",prompt_count:5}])); } catch(e){}
+        try { window.setUpstreemModels(JSON.stringify([{model_id:"m1",name:"GPT-5"}])); } catch(e){}
+        /* Menues aufmachen -- der Sortierknopf steht IM Panel. */
+        [".utf-trigger",".umk-trigger",".umf-trigger"].forEach(function(s){ var e=document.querySelector(s); if(e) e.click(); });
+        setTimeout(function(){
+          function pfad(sel){ var e=document.querySelector(sel); return e ? e.innerHTML.replace(/\s+/g," ").slice(0,90) : "(kein Knopf)"; }
+          var res={};
+          [["topics",".utf-sort-btn svg"],["markets",".umk-sort-btn svg"],["models",".umf-sort-btn svg"]].forEach(function(p){
+            var h=pfad(p[1]);
+            res[p[0]]={ pfad:h, neu:/m3 16 4 4 4-4/.test(h), alt_drei_linien:/M2 5h20/.test(h) };
+          });
+          document.getElementById("out").textContent=JSON.stringify(res,null,1); window.__fertig=res;
+        }, 500);
+      }, 900);
+    });
+})();
+</script>

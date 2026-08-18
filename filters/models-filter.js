@@ -191,7 +191,7 @@
               '<button class="up-ddsearch-x umf-search-x" type="button" aria-label="Clear search">' + ICON.x + '</button>' +
             '</span>' +
             '<span class="umf-sort">' +
-              '<button class="umf-sort-btn" type="button" aria-label="Sort models">' + ICON.sort + '</button>' +
+              '<button class="umf-sort-btn" type="button" aria-label="Sort models" data-tip="Sort models">' + ICON.sort + '</button>' +
               '<div class="umf-sort-menu" role="menu"></div>' +
             '</span>' +
             '<button class="umf-clear" type="button">Clear</button>' +

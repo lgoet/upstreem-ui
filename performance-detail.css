@@ -46,7 +46,9 @@
    ueberlappenden Stapel traegt, wuerde hier nur Platz fressen. */
 .upd-brand .up-stack-item { width: 24px; height: 24px; flex: 0 0 24px; }
 .upd-brand .up-stack-vis { box-shadow: none; border-radius: 7px; }
-.upd-brand .up-stack-item img { border-radius: 5px; }
+/* 7 - 1: der Innenradius folgt der Polsterung, und die ist seit dem Angleich an .up-logo-box
+   einen Pixel breit statt zwei. */
+.upd-brand .up-stack-item img { border-radius: 6px; }
 .upd-brand-name {
   font-size: 14px; font-weight: 500; color: var(--vc-text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -108,7 +110,7 @@
 /* Ohne Rahmen und ohne Ring: in einem ueberlappenden Stapel trennt der Rahmen die Logos
    voneinander, hier steht jedes fuer sich in seiner eigenen Zeile und braucht keine Abgrenzung. */
 .upd-stand-row .up-stack-vis { box-shadow: none; border: 0; border-radius: 6px; }
-.upd-stand-row .up-stack-item img { border-radius: 4px; }
+.upd-stand-row .up-stack-item img { border-radius: 5px; }   /* 6 - 1, gleicher Grund */
 /* Die Hover-Animation aus core gilt dem Marken-STAPEL: dort faechert sie ueberlappende Logos
    auseinander, damit man das einzelne trifft. Hier ueberlappt nichts, also wackelt hier auch
    nichts -- weder beim Hover auf das Logo noch beim Hover auf die Zeile. */

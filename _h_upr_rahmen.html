@@ -1,0 +1,32 @@
+<meta charset="utf-8"><title>upr im Rahmen</title>
+<style>html,body{margin:0;font:12px ui-monospace,monospace}
+iframe{width:1280px;height:860px;border:1px solid #ccc;display:block}
+pre{white-space:pre-wrap;padding:8px;background:#111;color:#eee}</style>
+<body>
+<iframe id="f" src="_h_upr2.html"></iframe>
+<pre id="out">laeuft</pre>
+<script>
+/* Der Rahmen hat eine feste Groesse, also hat das Dokument darin eine echte Sichthoehe --
+   auch wenn das Browserfenster selbst 0 meldet. Genau daran sind die Messungen vorher
+   gescheitert. */
+var f=document.getElementById("f");
+f.addEventListener("load", function(){
+  setTimeout(function(){
+    var w=f.contentWindow, d=f.contentDocument;
+    var shell=d.querySelector(".upr-shell"), content=d.querySelector(".upr-content"),
+        main=d.getElementById("main"), root=d.querySelector(".upr-root");
+    function r(e){ var b=e.getBoundingClientRect(); return {top:Math.round(b.top),h:Math.round(b.height),unten:Math.round(b.bottom)}; }
+    var res={ sichthoehe: w.innerHeight,
+      shell: r(shell), inhalt: r(content),
+      shell_minheight: w.getComputedStyle(shell).minHeight,
+      /* Wie weit ist die Mitte des Inhalts von der Mitte des sichtbaren Bereichs weg? */
+      mitte_inhalt: Math.round(content.getBoundingClientRect().top + content.getBoundingClientRect().height/2),
+      mitte_sicht: Math.round(w.innerHeight/2),
+      luft_ueber_inhalt: Math.round(content.getBoundingClientRect().top - shell.getBoundingClientRect().top),
+      luft_unter_inhalt: Math.round(shell.getBoundingClientRect().bottom - content.getBoundingClientRect().bottom),
+      scrollt: main.scrollHeight > main.clientHeight,
+      root_klassen: root.className };
+    document.getElementById("out").textContent=JSON.stringify(res,null,1); window.__fertig=res;
+  }, 2600);
+});
+</script>

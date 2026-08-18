@@ -1,0 +1,55 @@
+<meta charset="utf-8"><title>cg-zeile klicken</title>
+<style>html,body{margin:0;font-family:system-ui,sans-serif;background:#fff}
+#log{position:fixed;left:0;bottom:0;width:100%;max-height:22%;overflow:auto;font:10px/1.4 ui-monospace,monospace;background:#f6f6f6;padding:6px;white-space:pre-wrap;z-index:99999;border-top:1px solid #ddd}
+#buehne{padding:20px 20px 26%; min-width:1100px}</style>
+<body>
+<pre id="log">laeuft</pre>
+<div id="buehne">
+  <div class="up-root utm-root" data-instance="t9" data-isdark="no"
+       data-add-fn="bubble_fn_utmAdd" data-edit-fn="bubble_fn_utmEdit" data-delete-fn="bubble_fn_utmDelete">
+    <div class="up-head">
+      <div class="up-heading"><span class="up-head-label">Topics</span><span class="up-head-sep"></span><span class="up-head-count"></span></div>
+      <div class="up-head-tools">
+        <div class="up-sort"><button class="up-sort-btn up-iconbtn" type="button" data-tip="Sort"></button>
+          <div class="up-sort-menu" role="menu" aria-hidden="true"></div></div>
+        <div class="up-search"><button class="up-search-btn up-iconbtn" type="button" data-tip="Search"></button>
+          <div class="up-search-box"><input class="up-search-input" type="text" placeholder="Search topics..."/>
+            <button class="up-search-clear" type="button"></button></div></div>
+        <button class="up-export utm-addbtn" type="button" data-topic-add-new><span>Add Topic</span></button>
+      </div>
+    </div>
+    <div class="utm-chipgrid"></div>
+  </div>
+</div>
+<script>
+window.__fehler=[]; window.addEventListener("error",function(e){window.__fehler.push(String(e.message)+" @"+e.lineno)});
+["utmAdd","utmEdit","utmDelete"].forEach(function(n){ window["bubble_fn_"+n]=function(j){ log("event "+n+" "+j); }; });
+function log(s){ var l=document.getElementById("log"); l.textContent += "\n"+s; }
+try{ localStorage.removeItem("promptGroups@_"); }catch(e){}
+/* Thema AUSDRUECKLICH setzen: dieser Browser hat pref_theme=dark aus fruehreren Tests im
+   localStorage, und core uebernimmt das beim Laden. Sonst misst man das falsche Thema. */
+try{ localStorage.setItem("pref_theme","light"); }catch(e){}
+</script>
+<script>
+var GELADEN = Promise.all(["core.css","topics-manager.css","core.js","topics-manager.js"].map(function(f){
+  return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){return r.text()}).then(function(t){
+    var e=document.createElement(/\.css$/.test(f)?"style":"script"); e.textContent=t; document.head.appendChild(e); return f; });
+}));
+var TOPICS = [
+  {id:"t1", name:"Sedans",   emoji:"🚗", hex_light:"#1b6eda", prompt_count:42},
+  {id:"t2", name:"SUVs",     emoji:"🚙", hex_light:"#108440", prompt_count:31},
+  {id:"t3", name:"Hybrid",   emoji:"🔋", hex_light:"#8d6a11", prompt_count:18},
+  {id:"t4", name:"Charging", emoji:"⚡", hex_light:"#9145e8", prompt_count:12},
+  {id:"t5", name:"Leasing",  emoji:"📄", hex_light:"#d51a8b", prompt_count:7},
+  {id:"t6", name:"Insurance",emoji:"🛡️", hex_light:"#107c84", prompt_count:5},
+  {id:"t7", name:"Resale",   emoji:"💰", hex_light:"#b65616", prompt_count:4},
+  {id:"t8", name:"Safety",   emoji:"🦺", hex_light:"#de1b22", prompt_count:3},
+  {id:"t9", name:"Design",   emoji:"🎨", hex_light:"#666666", prompt_count:2},
+  {id:"t10",name:"Warranty", emoji:"📋", hex_light:"#7d7d7d", prompt_count:1},
+  {id:"t11",name:"Towing",   emoji:"🪝", hex_light:"#4f926b", prompt_count:1}
+];
+GELADEN.then(function(){ setTimeout(function(){
+  window.renderTopicsManager({ instanceId:"t9", topics: TOPICS });
+  setTimeout(function(){ window.__bereit = true; log("gerendert"); }, 400);
+}, 300); });
+</script>

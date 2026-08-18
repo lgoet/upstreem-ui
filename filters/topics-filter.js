@@ -189,7 +189,7 @@
               '<button class="up-ddsearch-x utf-search-x" type="button" aria-label="Clear search">' + ICON.x + '</button>' +
             '</span>' +
             '<span class="utf-sort">' +
-              '<button class="utf-sort-btn" type="button" aria-label="Sort topics">' + ICON.sort + '</button>' +
+              '<button class="utf-sort-btn" type="button" aria-label="Sort topics" data-tip="Sort topics">' + ICON.sort + '</button>' +
               '<div class="utf-sort-menu" role="menu"></div>' +
             '</span>' +
             '<button class="utf-clear" type="button">Clear</button>' +

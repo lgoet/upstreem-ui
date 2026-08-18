@@ -322,7 +322,10 @@
 .usn-chips { flex: 0 0 auto; display: inline-flex; align-items: center; pointer-events: none; }
 /* Die Chips sitzen in einem 36px-Knopf, nicht in einer Tabellenzeile: der Ring, mit dem sie
    sich sonst voneinander abheben, muss die Farbe der Leiste haben, nicht die des Inhalts. */
-.usn-chips .up-stack-vis { box-shadow: 0 0 0 2px var(--usn-bg); }
+/* Ring und Ueberlappung sind hier NICHT verkleinert: der Abstand, den man zwischen zwei Logos
+   sieht, IST der Ring, und der Versatz haengt daran. Mit 2px Ring und -3.1px Versatz standen die
+   Chips sichtbar enger als dieselben Logos in den Tabellen. Beide Werte jetzt wie dort: 4px. */
+.usn-chips .up-stack-vis { box-shadow: 0 0 0 4px var(--usn-bg); }
 /* 27 statt 28. Faktor 0.964 -- der Radius geht anteilig mit (8 -> 7.7). Polsterung (2px) und
    der Ueberlappungsversatz (-4px) bleiben: beides sind ganzzahlige Pixelwerte, die eine
    Aenderung von 3.6% nicht ueberleben, und der Versatz haengt zusaetzlich am Ring. */
@@ -337,7 +340,7 @@
    16.8px. Das liegt zwischen den 21px der alten Chips und den 15.6px der alten Pin-Logos, also
    genau dort, wo ein Logo der Tabellen bei dieser Zeilenhoehe landet. */
 .usn-chips .up-stack-item { width: 22px; height: 22px; flex: 0 0 22px; }
-.usn-chips .up-stack-item + .up-stack-item { margin-left: -3.1px; }
+.usn-chips .up-stack-item + .up-stack-item { margin-left: -4px; }
 /* Vorbild ist .up-logo-box aus der Tabelle des Visibility Charts, NICHT .up-stack-vis: die Box hat
    1px Polsterung und KEINEN Rahmen, der helle Rand ist also genau einen Pixel breit. Mit 1.6px
    Polsterung plus 1px Rahmen waren es 2.6px, und im Dunkeln (Platte #e0e0e0 auf #1b1b1b) ist jeder
@@ -423,8 +426,10 @@
    offenen Zustand 6px stehen -- denselben Abstand, den das Vorbild als margin-left setzt.
    Das x rueckt dann mit, damit die beiden Zeichen als Paar stehen und nicht 10px auseinander.
 
-   Die Verzoegerung ist die des x (220ms) und nicht die 750ms des Vorbilds: beide Zeichen sitzen
-   in derselben Zeile, und zwei Enthuellungen nacheinander sehen aus wie ein Nachzuegler.
+   Die Verzoegerung sind die 750ms des Vorbilds, und sie kommt wie dort aus einer Uhr in JS und
+   nicht aus transition-delay: eine CSS-Verzoegerung laeuft auch dann los, wenn der Zeiger die
+   Zeile nur streift, und haette bei jedem Ueberfahren der Liste eine Reihe von Stiften
+   nachgezogen. Die Klasse is-editready setzt der Zuhoerer in sidebar.js.
 
    .check_reinvention meldet hier .up-search (die ausfahrende Suche). Fehlalarm ueber die
    gemeinsamen Eigenschaften "Breite waechst, overflow versteckt, mit Uebergang": .up-search ist
@@ -441,11 +446,10 @@
               margin-left 200ms cubic-bezier(.2,0,.38,.9), color var(--usn-t) var(--usn-ease);
 }
 .usn-pin-edit svg { width: 12px; height: 12px; display: block; }
-.usn-pin:hover .usn-pin-edit {
+.usn-pin.is-editready .usn-pin-edit {
   max-width: 14px; opacity: 1; margin-left: -4px; pointer-events: auto;
-  transition-delay: 220ms, 220ms, 220ms, 0ms;
 }
-.usn-pin:hover .usn-pin-x { margin-left: -4px; }
+.usn-pin.is-editready .usn-pin-x { margin-left: -4px; }
 .usn-pin-edit:hover { color: var(--vc-text); }
 .usn-bar.is-mini .usn-pin-edit { display: none; }
 /* ---- Umbenennen: das Feld ----

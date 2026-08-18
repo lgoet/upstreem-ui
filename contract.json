@@ -447,6 +447,7 @@
   "data-grp-eye",
   "data-grp-headdel",
   "data-grp-headedit",
+  "data-grp-key",
   "data-grp-menubtn",
   "data-grp-more",
   "data-grp-rowmenu",
@@ -2398,7 +2399,7 @@
   "fnattrs": 72,
   "globals": 136,
   "payloadkeys": 66,
-  "dataattrs": 172,
+  "dataattrs": 173,
   "klassen": 1774,
   "keyframes": 56
  }
