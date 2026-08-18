@@ -1410,6 +1410,22 @@
 
 /* ---------- bars ---------- */
 .up-bars { display: flex; flex-direction: column; gap: 0; width: 100%; }
+/* Beschriftungsspalte links (UC.makeBarList mit labelCol). Nur dort, wo genug Platz ist -- die
+   Entscheidung faellt an der EIGENEN Box der Komponente, nicht am Fenster. Die Spalte ist fest
+   breit, damit alle Balken an derselben Kante beginnen; ein zu langer Name endet mit Punkten. */
+.up-bars.has-labelcol .up-bar-label {
+  flex: 0 0 148px; width: 148px; display: inline-flex; align-items: center; gap: 8px;
+  min-width: 0; padding-right: 12px; box-sizing: border-box;
+}
+.up-bar-logo { width: 16px; height: 16px; flex: 0 0 16px; border-radius: 4px; object-fit: contain; display: block; }
+.up-bar-labeltxt {
+  font-size: 12px; font-weight: 500; color: var(--vc-text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+/* Steht der Name links in der Spalte, ist der Prozentwert das EINZIGE Kind im Balken -- und
+   space-between schiebt ein einzelnes Kind nach links, also an den Anfang des Balkens. Dort
+   gehoert er nicht hin: er ist der Endwert und steht am Ende. */
+.up-bars.has-labelcol .up-bar-fill { justify-content: flex-end; }
 .up-bar-row { display: flex; align-items: center; padding: 5px 0; }
 .up-bar-row.is-clickable { cursor: pointer; }
 /* Hover reads on the FILL and the grey TRACK's own background only — never a border, never the

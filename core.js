@@ -4091,6 +4091,116 @@
     return { labels: labels, datasets: datasets, globalMax: globalMax };
   }
 
+  /* ---------- makeBarList ---------------------------------------------------------------------
+     Die Balkenliste als eigenstaendiges Bauteil. Markup und CSS sind DIESELBEN wie im Balkenmodus
+     von makeTypeChart (.up-bars/.up-bar-row/.up-bar-track/.up-bar-fill/.up-bar-outside) -- es ist
+     dasselbe Bauteil, nur ohne den Doughnut daneben.
+
+     Warum nicht makeTypeChart benutzt: dessen renderBars haengt an seinem Umfeld -- Slice-Klicks,
+     Dimmen, und ein fitBars, das die Zeilen auf eine feste Chart-Hoehe beschneidet. Eine Liste,
+     die vollstaendig sein muss und ihre Hoehe selbst mitbringt, kann das nicht gebrauchen.
+     Warum renderBars nicht umgebaut wurde: es steckt mitten im Umschalter Doughnut/Balken, und ein
+     Umbau dort trifft vier Komponenten auf einmal. Die gemeinsame Sprache ist die CSS.
+
+     Neu gegenueber renderBars ist die BESCHRIFTUNGSSPALTE links: ist genug Platz, stehen die Namen
+     in einer eigenen Spalte vor den Balken, und im Balken bleibt nur der Prozentwert. Wird es eng,
+     faellt die Spalte weg und alles verhaelt sich wie bisher (Beschriftung im Balken, bei zu
+     schmalem Balken daneben).
+
+     cfg: { mount, isDark(), labelCol() -> bool, minLabel, fmt(v) }
+     items: [{ key, name, share, color, logo }]                                                */
+  function makeBarList(cfg){
+    cfg = cfg || {};
+    var mount = cfg.mount;
+    var isDark = cfg.isDark || function(){ return false; };
+    var fmt = cfg.fmt || function(v){ return fmtPct(v); };
+    var letzte = null;
+
+    function zeichnen(items){
+      if (!mount) return;
+      letzte = items;
+      var d = (items || []).slice().filter(Boolean);
+      if (!d.length){ mount.innerHTML = '<div class="up-chart-empty">No data</div>'; return; }
+      var spalte = cfg.labelCol ? !!cfg.labelCol() : false;
+      var maxName = 0;
+      var html = '<div class="up-bars' + (spalte ? " has-labelcol" : "") + '">' + d.map(function(it){
+        var hell = barIsLight(it.color);
+        var txt = hell ? "rgba(31,31,27,0.96)" : "rgba(255,255,255,0.95)";
+        var txtPct = hell ? "rgba(31,31,27,0.62)" : "rgba(255,255,255,0.75)";
+        var ausFarbe = isDark() ? "rgba(255,255,255,0.85)" : "var(--vc-text)";
+        var ausPct = isDark() ? "rgba(255,255,255,0.55)" : "var(--vc-muted)";
+        if (String(it.name || "").length > maxName) maxName = String(it.name).length;
+        return '<div class="up-bar-row" data-bar-key="' + esc(String(it.key == null ? it.name : it.key)) + '">' +
+          (spalte ? '<span class="up-bar-label">' +
+              (it.logo ? '<img class="up-bar-logo" src="' + esc(it.logo) + '" alt="" loading="lazy" ' +
+                         'onerror="this.style.display=&quot;none&quot;"/>' : '') +
+              '<span class="up-bar-labeltxt">' + esc(it.name) + '</span></span>' : '') +
+          '<div class="up-bar-track">' +
+            '<div class="up-bar-fill" style="background:' + esc(it.color) + ';width:0%">' +
+              (spalte ? '' : '<span class="up-bar-name" style="color:' + txt + ';opacity:0">' + esc(it.name) + '</span>') +
+              '<span class="up-bar-pct up-bar-pct-in" style="color:' + txtPct + ';opacity:0">' + esc(fmt(it.share)) + '</span>' +
+            '</div>' +
+            '<span class="up-bar-outside" style="opacity:0">' +
+              (spalte ? '' : '<span class="up-bar-name-out" style="color:' + ausFarbe + '">' + esc(it.name) + '</span>') +
+              '<span class="up-bar-pct-out" style="color:' + ausPct + '">' + esc(fmt(it.share)) + '</span>' +
+            '</span>' +
+          '</div></div>';
+      }).join("") + '</div>';
+      mount.innerHTML = html;
+
+      var rows = [].slice.call(mount.querySelectorAll(".up-bar-row"));
+      var masse = rows.map(function(row){
+        return { nameW: measureText(row.querySelector(".up-bar-name")),
+                 pctW:  measureText(row.querySelector(".up-bar-pct-in")) };
+      });
+      /* Passt die Beschriftung in den Balken, steht sie drin; sonst rueckt sie daneben. Dieselbe
+         Rechnung wie in renderBars -- Text plus Innenabstand plus etwas Luft. */
+      function setzen(row, m){
+        var fill = row.querySelector(".up-bar-fill"),
+            name = row.querySelector(".up-bar-name"),
+            pin  = row.querySelector(".up-bar-pct-in"),
+            aus  = row.querySelector(".up-bar-outside");
+        if (!fill || !aus) return;
+        var breit = fill.offsetWidth, noetig = m.nameW + m.pctW + 12 + 20;
+        if (breit >= noetig){
+          if (name) name.style.opacity = "1";
+          pin.style.opacity = "1"; aus.style.opacity = "0";
+        } else {
+          if (name) name.style.opacity = "0";
+          pin.style.opacity = "0";
+          aus.style.left = Math.round(breit + 8) + "px";
+          aus.style.opacity = "1";
+        }
+      }
+      function alle(){ rows.forEach(function(row, i){ setzen(row, masse[i]); }); }
+      /* Zwei rAF: die 0%-Breite muss einmal gemalt worden sein, sonst fasst der Browser beide
+         Breiten zusammen und die Balken wachsen nicht, sondern stehen sofort. */
+      function breitenSetzen(){
+        rows.forEach(function(row, i){
+          var fill = row.querySelector(".up-bar-fill");
+          if (fill) fill.style.width = Math.max(Number(d[i].share) || 0, 0) + "%";
+        });
+      }
+      requestAnimationFrame(function(){ requestAnimationFrame(function(){ breitenSetzen(); }); });
+      /* Notbremse: in einem verdeckten Tab laeuft requestAnimationFrame nicht. Ohne diese Zeile
+         blieben die Balken dort auf 0% stehen -- und stuenden auch dann noch leer da, wenn der
+         Nutzer zurueckwechselt, weil der Rueckruf nur EINMAL vorgesehen war. */
+      setTimeout(function(){ if (rows[0] && rows[0].querySelector(".up-bar-fill").style.width === "0%") breitenSetzen(); }, 300);
+      setTimeout(alle, 640);
+      if (window.ResizeObserver){
+        var ro = new ResizeObserver(function(){ alle(); });
+        ro.observe(mount);
+      }
+    }
+    function skelett(n){
+      if (!mount) return;
+      var zeilen = "";
+      for (var i = 0; i < (n || 4); i++) zeilen += '<div class="up-bar-sk-row"><span class="up-bar-sk-track" style="width:' + (92 - i * 14) + '%"></span></div>';
+      mount.innerHTML = '<div class="up-bars-sk">' + zeilen + '</div>';
+    }
+    return { render: zeichnen, skeleton: skelett, redraw: function(){ if (letzte) zeichnen(letzte); } };
+  }
+
   /* ---------- makeScaleMenu ----------
      The gear-button "Chart Settings" dropdown shared by every line chart: colour scale + the
      app-wide Line Width section. Deliberately NOT built on makePopover — that primitive's
@@ -7132,6 +7242,7 @@
     bootStubs: bootStubs,
     makeMount: makeMount,
     makeLate: makeLate,
+    makeBarList: makeBarList,
     rowDwell: rowDwell,
     makePager: makePager,
     makeHeadSort: makeHeadSort,

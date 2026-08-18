@@ -1,0 +1,137 @@
+/* upstreem domain-detail.css — Praefix udd. Braucht core.css.
+
+   Die Karte ist die aus brand-detail: derselbe Rahmen, derselbe Radius, dieselbe Polsterung,
+   dieselbe Kopfzeile, dieselbe KPI-Zeile, dieselbe Chart-Hoehe. Was hier steht, ist entweder
+   Positionierung oder etwas, das es in brand-detail nicht gibt -- der Trichter und die
+   Abschnittsueberschriften.
+
+   Die drei Karten stehen mit 32px Abstand untereinander (Vorgabe). */
+
+/* 32px zwischen den drei Abschnitten -- Vorgabe. Der Modus-Umschalter gehoert zur ersten Karte
+   und nicht in diesen Rhythmus: er steht mit ihr zusammen in .udd-block, und dort sind es 16. */
+.udd-root { display: flex; flex-direction: column; gap: 32px; width: 100%; }
+.udd-block { display: block; }
+
+/* ---- Umschalter (Modus) ----------------------------------------------------------------------
+   .up-seg/.up-seg-btn kommen aus core. Hier nur der Abstand nach unten und die etwas breitere
+   Polsterung der Knoepfe -- wie in brand-detail, damit zwei Detailseiten gleich aussehen. */
+.udd-seg { margin: 0 0 16px; width: fit-content; }
+.udd-seg .up-seg-btn { padding-left: 16px; padding-right: 16px; }
+
+/* ---- Karte -----------------------------------------------------------------------------------
+   Werte 1:1 aus .ubd-card: 16px Radius wie jeder aeussere Container der App, 1px Rahmen,
+   16px Polsterung rundum. */
+.udd-card {
+  border: 1px solid var(--vc-border); border-radius: 16px; background: var(--vc-bg);
+  padding: 16px; width: 100%; box-sizing: border-box;
+}
+
+
+.udd-head { display: flex; align-items: center; gap: 12px; min-height: 32px; }
+.udd-title { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto; }
+/* Das Favicon sitzt im Bauteil .up-logo-box aus core (24px, 1px Polsterung, Radius 8). Hier steht
+   nur die kleinere Stufe: 18px wie das Logo in der Kopfzeile von brand-detail. Faktor 18/24 auf
+   ALLE Werte -- Radius 8 -> 6, Bildradius 7 -> 5.3, Buchstabe 11 -> 8.3. */
+.udd-logobox { width: 18px; height: 18px; flex: 0 0 18px; border-radius: 6px; }
+.udd-logobox img { width: 100%; height: 100%; border-radius: 5.3px; object-fit: cover; display: block; }
+.udd-logobox .up-logo-ltr { font-size: 8.3px; }
+.udd-heading {
+  font-size: 14px; font-weight: 500; color: var(--vc-text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.udd-tools { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.udd-tools .vc-gran { flex: 0 0 auto; }
+/* Der Global/Domain-Schalter bleibt das Bauteil in seiner Groesse: 32px, wie der Schalter fuer
+   die Granularitaet direkt daneben. Hier stand er eine Stufe kleiner (28px) -- das war ein
+   gesprengtes Bauteil (Hoehe geaendert, Radius nicht) UND zwei verschieden hohe Schalter in
+   derselben Zeile. Beides weg; die Groesse kommt aus core, hier steht nur noch, wann er da ist.
+   [hidden] mit zwei Klassen, damit es das display: inline-flex des Bauteils schlaegt -- ueber die
+   Spezifitaet, nicht ueber die Ladereihenfolge. */
+.udd-tools .udd-scope[hidden] { display: none; }
+
+/* ---- KPI-Zeile -------------------------------------------------------------------------------
+   Werte aus .ubd-kpi: die grosse Zahl steht ueber der Kurve, nicht daneben. */
+.udd-kpi { display: flex; align-items: center; gap: 12px; margin: 10px 0 16px; min-height: 30px; }
+.udd-kpi[hidden] { display: none; }
+.udd-kpi-val { font-size: 23px; line-height: 1.15; letter-spacing: -0.4px; }
+.udd-kpi-val .up-num { font-size: inherit; font-weight: 500; letter-spacing: inherit;
+  font-variant-numeric: tabular-nums; }
+.udd-kpi-val .up-tsk-bar   { height: 24px; width: 88px; border-radius: 6px; }
+.udd-kpi-trend .up-tsk-bar { height: 18px; width: 58px; border-radius: 5px; }
+
+/* ---- Kurve -----------------------------------------------------------------------------------
+   260px wie in brand-detail. Im Domain-Share-Modus faellt die KPI-Zeile weg, und die Kurve nimmt
+   ihren Platz ein -- 260 + 10 + 30 + 16 = die Hoehe, die die Karte vorher hatte. Ohne das
+   schrumpfte die Karte beim Umschalten, und der Trichter darunter huepfte nach oben. */
+.udd-chartwrap { position: relative; height: 260px; }
+.udd-root.is-domainshare .udd-chartwrap { height: 316px; }
+.udd-canvas { display: block; width: 100%; height: 100%; }
+/* Die Legende gehoert zum Domain-Share (mehrere Kurven). Im Citation-Share gibt es genau eine
+   Linie -- eine Legende mit einem Eintrag ist eine Zeile, die nichts sagt. */
+.udd-legend { margin-top: 10px; }
+.udd-root:not(.is-domainshare) .udd-legend { display: none; }
+
+/* ---- Abschnittskopf (Funnel, Model Breakdown) -------------------------------------------------
+   Dieselbe Staffelung wie die Meta-Zeile der Seitenkoepfe: Titel in Textfarbe, Beschreibung eine
+   Stufe kleiner und gedaempft. */
+.udd-sec { display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px; }
+.udd-sec-title { font-size: 14px; font-weight: 500; color: var(--vc-text); }
+.udd-sec-desc { font-size: 12.5px; font-weight: 400; line-height: 1.45; color: var(--vc-muted); }
+
+/* ---- Trichter --------------------------------------------------------------------------------
+   Vier Spalten Kopfzeile, darunter die gezeichnete Flaeche. Beide teilen sich dieselbe Breite,
+   deshalb stehen Zahl und Band immer uebereinander -- der Trenner im SVG faellt genau auf die
+   Spaltenkante.
+   Die Farbe kommt aus dem Zitationstyp der Domain (im JS gesetzt), die Abstufung ueber die
+   Deckkraft: die erste Stufe ist die volle Menge, jede weitere ein Rest davon. */
+.udd-funnel { position: relative; }
+.udd-fn-head { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
+.udd-fn-col {
+  display: flex; flex-direction: column; gap: 2px; min-width: 0;
+  padding: 0 12px 12px 0; box-sizing: border-box;
+}
+/* Ab der zweiten Spalte ein Strich links, der die Trennung im Bild aufnimmt -- oben im Text,
+   unten in der Flaeche, dieselbe Kante. */
+.udd-fn-col + .udd-fn-col { padding-left: 12px; border-left: 1px solid var(--vc-border); }
+.udd-fn-val {
+  font-size: 22px; font-weight: 500; line-height: 1.15; letter-spacing: -0.4px;
+  color: var(--vc-text); font-variant-numeric: tabular-nums;
+}
+.udd-fn-label {
+  font-size: 12px; font-weight: 500; color: var(--vc-text); line-height: 1.35;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.udd-fn-sub { font-size: 11.5px; font-weight: 400; color: var(--vc-muted); line-height: 1.35; }
+.udd-fn-svg { display: block; width: 100%; height: 132px; }
+/* Der Trenner im Bild ist derselbe Strich wie zwischen den Spalten darueber. */
+.udd-fn-div { stroke: var(--vc-border); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.udd-fn-band { transition: fill-opacity 160ms ease; }
+
+/* Skelett, solange nichts da ist: Kopfzeile und Flaeche als zwei Balken, Ton und Pulsieren aus
+   core (--vc-sk). */
+.udd-fn-sk { display: flex; flex-direction: column; gap: 12px; }
+.udd-fn-sk-head { display: block; height: 58px; border-radius: 8px; background: var(--vc-sk); }
+.udd-fn-sk-body { display: block; height: 132px; border-radius: 8px; background: var(--vc-sk); }
+
+/* ---- Model Breakdown -------------------------------------------------------------------------
+   Die Liste selbst ist UC.makeBarList mit dem Markup aus core (.up-bars/.up-bar-*). Hier steht
+   nichts ueber ihr Aussehen -- nur, dass sie keine eigene Polsterung braucht, die Karte polstert
+   schon. */
+.udd-bars { min-height: 84px; }
+
+/* ---- Schmal ----------------------------------------------------------------------------------
+   Gemessen an der EIGENEN Box (UC.widthTiers setzt is-narrow/is-vnarrow), nicht am Fenster: diese
+   Seite kann in einem Drawer stehen, der auf einem breiten Bildschirm schmal ist.
+   Unter 640px: Kopfzeile umbricht, der Trichter wird zweizeilig (2x2). Unter 480px steht auch der
+   Modus-Umschalter ueber die volle Breite, sonst passt sein Text nicht mehr. */
+.udd-root.is-narrow .udd-head { flex-wrap: wrap; }
+.udd-root.is-narrow .udd-tools { width: 100%; justify-content: flex-start; }
+.udd-root.is-narrow .udd-fn-head { grid-template-columns: repeat(2, 1fr); row-gap: 12px; }
+/* Bei zwei Spalten trennt der Strich die Paare, nicht mehr jede Spalte von der vorigen: der
+   dritte Eintrag beginnt eine neue Zeile und braucht links keinen. */
+.udd-root.is-narrow .udd-fn-col:nth-child(odd) { padding-left: 0; border-left: 0; }
+.udd-root.is-narrow .udd-fn-val { font-size: 19px; }
+.udd-root.is-vnarrow .udd-seg { width: 100%; }
+.udd-root.is-vnarrow .udd-seg .up-seg-btn { flex: 1 1 0; padding-left: 8px; padding-right: 8px; }
+.udd-root.is-vnarrow .udd-chartwrap { height: 220px; }
+.udd-root.is-vnarrow.is-domainshare .udd-chartwrap { height: 260px; }

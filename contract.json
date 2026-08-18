@@ -27,6 +27,7 @@
   "prefix:sph",
   "prefix:uau",
   "prefix:ubd",
+  "prefix:udd",
   "prefix:uhm",
   "prefix:usb",
   "sphNav",
@@ -46,6 +47,9 @@
   "udbMatched",
   "udbSearch",
   "udbTrack",
+  "uddGran",
+  "uddMode",
+  "uddScope",
   "udtBrand",
   "udtFilter",
   "udtMentioned",
@@ -185,6 +189,7 @@
   "MutationObserver",
   "ROWS",
   "TOPICS",
+  "UDD_DEMO",
   "UpstreemCore",
   "addBrandError",
   "addBrandSuccess",
@@ -1474,6 +1479,9 @@
   "up-badge",
   "up-bar-",
   "up-bar-fill",
+  "up-bar-label",
+  "up-bar-labeltxt",
+  "up-bar-logo",
   "up-bar-name",
   "up-bar-name-out",
   "up-bar-outside",
@@ -2399,12 +2407,12 @@
   "uutpulse"
  ],
  "_zaehlung": {
-  "events": 104,
+  "events": 108,
   "fnattrs": 72,
-  "globals": 137,
+  "globals": 138,
   "payloadkeys": 66,
   "dataattrs": 172,
-  "klassen": 1778,
+  "klassen": 1781,
   "keyframes": 56
  }
 }

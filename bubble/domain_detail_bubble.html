@@ -1,0 +1,169 @@
+<!--
+  UPSTREEM — DOMAIN DETAIL (Praefix udd)
+
+  WOHIN: ein HTML-Element auf der Domain-Detailseite. Das Element ist LEER bis auf das Wurzel-Div;
+  die Komponente baut ihren gesamten Innenaufbau selbst.
+
+  ── Die drei Abschnitte ──────────────────────────────────────────────────────
+  1. Umschalter "Citation Share" / "Domain Share" ueber einer Karte mit Favicon, Ueberschrift,
+     Tag/Woche/Monat-Schalter, KPI (globaler Anteil samt Trend) und der Kurve.
+     Im Domain-Share kommt ein zweiter Schalter dazu (Global / Domain) und die KPI-Zeile faellt
+     weg -- dort fuellt die Kurve deren Platz.
+  2. "Source Funnel": vier Stufen mit absoluten Werten.
+  3. "Model Breakdown": ein Balken je Modell.
+
+  ── Attribute am Wurzel-Div ──────────────────────────────────────────────────
+  | Attribut          | Pflicht | Bedeutung                                                |
+  |-------------------|---------|----------------------------------------------------------|
+  | data-instance     | JA      | eindeutig je Platzierung; die Setter sprechen sie darueber an |
+  | data-cdn-pin      | JA      | derselbe Commit-Hash wie auf allen anderen Elementen der Seite |
+  | data-isdark       | nein    | "yes"/"no". Kennt core ein Thema, gewinnt core (UC.themeParam) |
+  | data-brand        | nein    | Name der eigenen Marke -- steht in der vierten Trichterstufe  |
+  | data-mode-fn      | nein    | Toolbox-Funktion fuer den Wechsel Citation/Domain Share    |
+  | data-gran-fn      | nein    | Toolbox-Funktion fuer Tag/Woche/Monat                      |
+  | data-scope-fn     | nein    | Toolbox-Funktion fuer Global/Domain im Domain-Share        |
+
+  Die drei *-fn-Attribute sind der Weg nach Bubble: jeder Klick feuert das Ereignis mit
+  { mode, gran, scope } als JSON. Der Workflow holt daraufhin die passenden Daten und ruft
+  setDomainDetail / setDomainDetailUrls erneut. OHNE diese Workflows schaltet die Ansicht um, aber
+  es kommen keine neuen Zahlen -- die Komponente zeigt dann weiter, was sie schon hat.
+
+  ── Die vier Setter ──────────────────────────────────────────────────────────
+    setDomainDetail("<instance>", <json>)         Kopf, Zeitreihen, Modelle, Trichter
+    setDomainDetailUrls("<instance>", <json>)     die Top-URLs fuer den Domain-Share
+    setDomainDetailLoading("<instance>", "yes")   Skelette an
+    resetDomainDetail("<instance>")               alles leer, zurueck auf Citation Share / Day
+
+  Beide Daten-Setter nehmen den JSON als TEXT oder als Objekt. Ein Payload, den core nicht lesen
+  kann, endet als benannter Fehler in der Karte -- nicht als endloses Skelett.
+
+  ── Sanitizer (STYLEGUIDE §46) ───────────────────────────────────────────────
+  Ein Bubble-Ausdruck liefert leere Werte als "key": , und Ja/Nein unquotiert. Beides bricht
+  JSON.parse. Diese zwei Zeilen gehoeren an JEDEN Aufruf, der einen Bubble-Text weitergibt:
+
+      .replace(/:\s*([,}\]])/g, ": null$1")
+      .replace(/:\s*(yes|no)\s*([,}\]])/g, function(_, v, t){ return ": " + (v === "yes") + t; })
+
+  ── Statischer Start zum Ausprobieren ────────────────────────────────────────
+  Der Block am Fuss dieser Datei ruft die Komponente mit den Beispieldaten auf. Er laeuft nur,
+  solange data-instance auf "domain_detail_page" steht und window.UDD_DEMO nicht abgeschaltet ist
+  -- fuer den ersten Blick, bevor die Workflows stehen. Vor dem Livegang loeschen.
+-->
+
+<div class="up-root udd-root"
+     data-instance="INSTANCE_ID"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="IS_DARK"
+     data-brand="BRAND_NAME"
+     data-mode-fn="bubble_fn_uddMode"
+     data-gran-fn="bubble_fn_uddGran"
+     data-scope-fn="bubble_fn_uddScope"></div>
+
+<script>
+(function(){
+  /* Loader nach STYLEGUIDE §26: den Pin ueber getElementsByClassName lesen, NIEMALS ueber
+     document.currentScript — Bubble fuehrt Scripts nicht in DOM-Reihenfolge aus. */
+  function readPin(cls){
+    var els = document.getElementsByClassName(cls), i, p;
+    for (i = 0; i < els.length; i++){
+      p = (els[i].getAttribute("data-cdn-pin") || "").trim();
+      if (p && p !== "CDN_" + "PIN") return p;
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("udd-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  /* Entdoppelt nach DATEINAME, nicht nach URL: zwei Elemente mit verschiedenen Pins ergeben sonst
+     zwei Dateien im Dokument, und welche gewinnt, entscheidet die Ladereihenfolge. Der erste Pin
+     gewinnt, ein zweiter wird gemeldet. */
+  function once(url, make){
+    var name = url.slice(url.lastIndexOf("/") + 1);
+    if (L[name]){
+      if (L[name] !== url && window.console) console.warn("upstreem: " + name +
+        " ist schon von einem anderen Pin geladen. Geladen bleibt " + L[name] +
+        ", ignoriert wird " + url + ". Setzt alle Elemente auf denselben Pin.");
+      return;
+    }
+    L[name] = url; make(url);
+  }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+
+  /* core zuerst, async=false haelt die Reihenfolge ein. */
+  css("core.css");            js("core.js");
+  css("domain-detail.css");   js("domain-detail.js");
+})();
+</script>
+
+<script>
+/* ── STATISCHER START (zum Ausprobieren, vor dem Livegang loeschen) ──────────────────────────
+   Genau die Payloads aus der Spezifikation. Der Aufruf wartet, bis die Setter echt sind: bis
+   domain-detail.js geladen ist, sind sie Boot-Stubs, die den Aufruf in eine Warteschlange legen --
+   das funktioniert, aber so sieht man beim Testen auch, wann es wirklich losgeht. */
+(function(){
+  var wurzel = document.querySelector('.udd-root[data-instance="domain_detail_page"]');
+  if (!wurzel || window.UDD_DEMO === false) return;
+
+  var MAIN = {
+    "header": {
+      "id": "youtube.com", "domain": "youtube.com",
+      "favicon": "https://www.youtube.com/s/desktop/e2e75771/img/favicon_32x32.png",
+      "last_seen": "2026-08-18", "first_seen": "2026-08-08", "citation_type": "UGC_Community",
+      "citation_share_prev": 20.14, "total_citations_prev": 269, "total_citations_count": 622,
+      "current_citation_share": 23.65, "citation_share_delta_pct": 3.51, "total_citations_delta_pct": 131.23
+    },
+    "timeseries": {
+      "citation_share_over_time": [
+        { "day": "2026-08-12", "share_pct": 26.74 }, { "day": "2026-08-13", "share_pct": 22.07 },
+        { "day": "2026-08-14", "share_pct": 22.84 }, { "day": "2026-08-15", "share_pct": 23.50 },
+        { "day": "2026-08-16", "share_pct": 22.68 }, { "day": "2026-08-17", "share_pct": 23.56 },
+        { "day": "2026-08-18", "share_pct": 24.56 }
+      ]
+    },
+    "model_breakdown": [
+      { "model": "Google AI Overviews", "model_share_pct": 98.75,
+        "color_lightmode": "#4285F4", "color_darkmode": "#8AB4F8",
+        "model_logo_url": "https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" },
+      { "model": "ChatGPT", "model_share_pct": 1.25,
+        "color_lightmode": "#111827", "color_darkmode": "#F3F4F6",
+        "model_logo_url": "https://cdn-icons-png.freepik.com/512/12222/12222588.png" }
+    ],
+    "source_presence_funnel": {
+      "ai_searches_citing_domain": 320, "cited_urls_count": 93,
+      "urls_with_tracked_brands": 2, "tracked_brand_presence_pct": 2.15,
+      "urls_mentioning_you": 0, "your_url_presence_pct": 0.00,
+      "urls_mentioning_competitors": 2, "urls_without_tracked_brands": 91
+    }
+  };
+
+  var TITEL = [
+    ["https://www.youtube.com/watch?v=hFrdQNb0920", "So arbeiten die besten Handwerksbetriebe wirklich - YouTube", 5.2980, 30.0000],
+    ["https://www.youtube.com/watch?v=c6uXUxbeOL0", "Handwerkersoftware-Vergleich 2026: Wie gut sind Streit, Bosc", 3.5872, 20.3125],
+    ["https://www.youtube.com/watch?v=T-fOIKFC1zQ", "Lohnt sich die Handwerkersoftware PlanCraft für Handwerker i", 2.2627, 12.8125],
+    ["https://www.youtube.com/watch?v=GF-TG-z3rUo", "5 Automatisierungen zum Zeit sparen für Handwerks-, Bau- & I", 1.9316, 10.9375],
+    ["https://www.youtube.com/watch?v=PVbt_rWnh68", "Welche Handwerkersoftware ist die Beste für dich? Handwerker", 1.8212, 10.3125]
+  ];
+  var TAGE = {
+    "2026-08-12": [6.08, 4.18, 2.28, 2.66, 1.90], "2026-08-13": [7.63, 3.44, 2.29, 2.29, 2.29],
+    "2026-08-14": [4.20, 3.44, 1.53, 1.53, 1.53], "2026-08-15": [5.75, 3.45, 1.53, 1.15, 1.92],
+    "2026-08-16": [5.36, 3.45, 1.92, 2.30, 0.77], "2026-08-17": [3.86, 3.86, 3.47, 1.54, 2.32],
+    "2026-08-18": [4.10, 3.28, 2.87, 2.05, 2.05]
+  };
+  var punkte = [];
+  Object.keys(TAGE).sort().forEach(function(tag){
+    TITEL.forEach(function(t, i){
+      punkte.push({ day: tag, url: t[0], title: t[1], share_pct: TAGE[tag][i],
+                    share_total_pct: t[2], domain_share_total_pct: t[3], global_share_total_pct: t[2] });
+    });
+  });
+  var URLS = { from: "2026-08-12", to: "2026-08-18", top_n: 5, domain: "youtube.com",
+               share_mode: "global", points: punkte };
+
+  function los(){
+    window.setDomainDetail("domain_detail_page", JSON.stringify(MAIN));
+    window.setDomainDetailUrls("domain_detail_page", JSON.stringify(URLS));
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", los);
+  else los();
+})();
+</script>

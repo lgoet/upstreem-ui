@@ -1,0 +1,11 @@
+<meta charset="utf-8"><title>domain-detail unten</title>
+<style>html,body{margin:0;background:#eee}
+.fenster{width:1180px;height:620px;overflow:hidden;position:relative}
+iframe{width:1180px;height:1500px;border:0;position:absolute;left:0;top:-430px}</style>
+<body><div class="fenster"><iframe id="f" src="_h_udd.html"></iframe></div>
+<script>
+document.getElementById("f").addEventListener("load", function(){
+  var f=document.getElementById("f");
+  setTimeout(function(){ try { f.contentWindow.urls(); } catch(e){} window.__bereit=true; }, 2400);
+});
+</script>

@@ -1,0 +1,14 @@
+<meta charset="utf-8"><title>domain-detail im Rahmen</title>
+<style>html,body{margin:0;background:#eee;font:12px ui-monospace,monospace}
+iframe{width:1180px;height:1500px;border:0;display:block}</style>
+<body><iframe id="f" src="_h_udd.html"></iframe>
+<script>
+document.getElementById("f").addEventListener("load", function(){
+  var f=document.getElementById("f");
+  var i=setInterval(function(){
+    var w=f.contentWindow;
+    if (w.__bereit && w.mess){ clearInterval(i); setTimeout(function(){ w.mess().then(function(t){ window.__mess=t; }); }, 1600); }
+  }, 300);
+  setTimeout(function(){ clearInterval(i); if(!window.__mess) window.__mess="nicht bereit"; }, 16000);
+});
+</script>
