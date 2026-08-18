@@ -6501,20 +6501,19 @@
 
      sidebarPanels: der Umschalter der Leiste. Nach Vorlage gebaut, nicht aus Lucide.
 
-     Der viewBox ist hier 1:1 mit den gerenderten Pixeln (18 x 16) und NICHT der 24er-Kasten der
-     anderen Zeichen. Grund: die Masse sind in Pixeln vorgegeben -- beide Formen 16 hoch, die linke
-     ein Drittel so breit wie die rechte, die Luecke halb so breit wie die linke, Radius 4. In einem
-     24er-Kasten, der auf 14px skaliert wird, waere aus "4px Radius" ein 2.3px-Radius geworden; die
-     Vorgabe liesse sich dort gar nicht treffen. Dieselbe Begruendung wie bei den Punkten in
-     quick-actions.
+     Der viewBox ist hier 1:1 mit den gerenderten Pixeln (22.4 x 14) und NICHT der 24er-Kasten der
+     anderen Zeichen. Grund: die Masse sind in Pixeln vorgegeben, und in einem 24er-Kasten, der auf
+     14px skaliert wird, waere aus "3px Radius" ein 1.75px-Radius geworden -- die Vorgabe liesse
+     sich dort gar nicht treffen. Dieselbe Begruendung wie bei den Punkten in quick-actions.
 
-     Damit: links 4 breit, Luecke 2, rechts 12 -- 4 ist genau ein Drittel von 12, 2 die Haelfte von
-     4. Beide von y0 bis y16. rx 4 an beiden; an der 4px schmalen Form klemmt der Browser das auf
-     die halbe Breite, aus dem Rechteck wird also eine Pille -- genau wie in der Vorlage. */
+     Masse, wie vorgegeben: beide Formen 14 hoch, Radius 3. Die linke war 4 breit und ist 60%
+     breiter, also 6.4; die Luecke war 2 und ist doppelt so gross, also 4; die rechte bleibt 12.
+     Gesamtbreite damit 6.4 + 4 + 12 = 22.4. Die krummen Zahlen sind Absicht -- sie sind das
+     Ergebnis der Vorgabe, und Runden waere ein stiller Verstoss dagegen. */
   var ICON_FILLED = {
-    sidebarPanels: '<svg viewBox="0 0 18 16" fill="currentColor" stroke="none">' +
-                   '<rect x="0" y="0" width="4" height="16" rx="4"/>' +
-                   '<rect x="6" y="0" width="12" height="16" rx="4"/></svg>'
+    sidebarPanels: '<svg viewBox="0 0 22.4 14" fill="currentColor" stroke="none">' +
+                   '<rect x="0" y="0" width="6.4" height="14" rx="3"/>' +
+                   '<rect x="10.4" y="0" width="12" height="14" rx="3"/></svg>'
   };
   function icon(name, strokeWidth){
     var f = ICON_FILLED[name];

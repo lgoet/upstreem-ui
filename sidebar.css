@@ -177,10 +177,11 @@
 .usn-toggle { flex: 0 0 32px; margin-left: auto; }
 /* Das Zeichen selbst kleiner als die 16 des Kits -- der Knopf bleibt 32 gross und damit gut
    treffbar, nur das Symbol darin tritt zurueck. */
-/* 18 x 16 und nicht 14 x 14: das Zeichen ist in Pixeln vorgegeben (beide Formen 16 hoch, Radius 4)
-   und traegt deshalb einen viewBox von 18x16 -- siehe ICON_FILLED in core. Jede andere Groesse hier
-   wuerde die vorgegebenen Masse skalieren und damit verfehlen. */
-.usn-bar .usn-toggle svg { width: 18px; height: 16px; }
+/* 22.4 x 14, nicht 14 x 14: das Zeichen ist in Pixeln vorgegeben (beide Formen 14 hoch, Radius 3,
+   linke Form 6.4 breit, Luecke 4, rechte 12) und traegt deshalb einen viewBox von 22.4x14 -- siehe
+   ICON_FILLED in core. Jede andere Groesse hier wuerde die vorgegebenen Masse skalieren und damit
+   verfehlen. */
+.usn-bar .usn-toggle svg { width: 22.4px; height: 14px; }
 /* [hidden] ist die schwaechste Regel im Feld: die display-Angabe darueber wuerde sie schlagen.
    Deshalb hier ausdruecklich zurueck auf none. */
 .usn-toggle[hidden] { display: none; }
@@ -592,9 +593,8 @@
   box-shadow: 0 1px 2px rgba(0,0,0,.10), 0 6px 16px rgba(0,0,0,.10);
 }
 .up-root.up-portal.usn-fab.is-on { display: inline-flex; }
-/* Derselbe Umschalter, dieselben Masse -- 18x16 statt 18x18, weil das Zeichen nicht quadratisch
-   ist und ein Quadrat es in der Hoehe streckte. */
-.up-root.up-portal.usn-fab svg { width: 18px; height: 16px; display: block; }
+/* Derselbe Umschalter, dieselben Masse -- nicht quadratisch, ein Quadrat streckte das Zeichen. */
+.up-root.up-portal.usn-fab svg { width: 22.4px; height: 14px; display: block; }
 
 /* Schleier hinter der ausgefahrenen Leiste im hint-Zustand. Werte wie beim Popup-Schleier in
    core, damit beide gleich aussehen. */
