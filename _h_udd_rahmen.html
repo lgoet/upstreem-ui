@@ -1,7 +1,7 @@
 <meta charset="utf-8"><title>domain-detail im Rahmen</title>
 <style>html,body{margin:0;background:#eee;font:12px ui-monospace,monospace}
 iframe{width:1180px;height:1500px;border:0;display:block}</style>
-<body><iframe id="f" src="_h_udd.html"></iframe>
+<body><iframe id="f"></iframe><script>document.getElementById("f").src="_h_udd.html"+location.search;</script>
 <script>
 document.getElementById("f").addEventListener("load", function(){
   var f=document.getElementById("f");

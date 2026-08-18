@@ -189,7 +189,6 @@
   "MutationObserver",
   "ROWS",
   "TOPICS",
-  "UDD_DEMO",
   "UpstreemCore",
   "addBrandError",
   "addBrandSuccess",
@@ -2409,7 +2408,7 @@
  "_zaehlung": {
   "events": 108,
   "fnattrs": 72,
-  "globals": 138,
+  "globals": 137,
   "payloadkeys": 66,
   "dataattrs": 172,
   "klassen": 1781,

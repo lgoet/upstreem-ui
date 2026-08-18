@@ -3658,7 +3658,14 @@
     if (!/^[0-9a-fA-F]{6}$/.test(c)) return false;
     function lin(v){ v /= 255; return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); }
     var L = 0.2126*lin(parseInt(c.substr(0,2),16)) + 0.7152*lin(parseInt(c.substr(2,2),16)) + 0.0722*lin(parseInt(c.substr(4,2),16));
-    return L > 0.55;
+    /* 0.4 statt 0.55. Die Schwelle entscheidet zwischen weisser und dunkler Beschriftung, und bei
+       0.55 bekamen Pastelltoene weissen Text: #8AB4F8 (Googles Dunkelmodus-Blau, L=0.45) traegt
+       Weiss mit Kontrast 2.1 -- unlesbar --, dunkler Text darauf schafft 7.9. Gemeldet am Model
+       Breakdown, betroffen waren auch die hellen Dunkel-Paletten der URL-Typen (#93c5fd, #a5b4fc,
+       #c4b5fd u.a.), also stand in den Balken-Charts im Dunkeln teils Weiss auf Pastell.
+       0.4 laesst die satten Farben unangetastet (die App-Paletten liegen um 0.30) und kippt genau
+       die Pastellfaelle auf dunklen Text. */
+    return L > 0.4;
   }
   /* Intrinsic text width via an off-DOM probe. Deliberately NOT getBoundingClientRect(): the bar
      labels are measured while still opacity:0 inside a 0%-wide flex fill, so their box width is
@@ -3963,13 +3970,20 @@
   function legGetColumnGap(w){ return Math.max(LEG_MIN_GAP, Math.min(LEG_MAX_GAP, Math.floor(w * 0.025))); }
   function legNormalizeUrl(url){ if (!url) return ""; if (url.indexOf("//") === 0) return "https:" + url; return url; }
   function legItemHtml(c, measure){
+    /* OHNE favicon_url gibt es weder das Bild noch seinen Platz. Vorher stand hier ein
+       unsichtbarer 16px-Platzhalter plus ein zweiter 8px-Abstand -- zwischen Punkt und Name
+       klaffte damit ein 32px-Loch, das aussah, als fehle ein Bild. Der Platzhalter schuetzte nur
+       den Fall "Bild bricht beim LADEN weg" (onerror laesst deshalb weiter die Breite stehen,
+       visibility statt display); eine Legende, die von vornherein ohne Bilder gebaut wird,
+       braucht ihn nicht. */
+    var fav = c.favicon_url
+      ? '<img class="up-company-favicon" src="' + esc(legNormalizeUrl(c.favicon_url)) + '" alt="" onerror="this.style.visibility=\'hidden\'">' +
+        '<span class="up-company-inner-gap"></span>'
+      : '';
     return '<div class="up-company-item' + (measure ? " up-measure-item" : "") + '" data-company-id="' + esc(c.company_id) + '">' +
         '<span class="up-company-color" style="background:' + esc(c.color || "#999999") + '"></span>' +
         '<span class="up-company-inner-gap"></span>' +
-        (c.favicon_url
-          ? '<img class="up-company-favicon" src="' + esc(legNormalizeUrl(c.favicon_url)) + '" alt="" onerror="this.style.visibility=\'hidden\'">'
-          : '<span class="up-company-favicon" style="visibility:hidden"></span>') +
-        '<span class="up-company-inner-gap"></span>' +
+        fav +
         '<span class="up-company-name">' + esc(c.name) + '</span>' +
       '</div>';
   }

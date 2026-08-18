@@ -58,6 +58,28 @@ Konflikte über **Spezifität** lösen, nie über Ladereihenfolge (`.up-vartable
 
 ---
 
+## 1b. Neue Komponenten: das Rezept (Stand 18.08., domain-detail)
+
+So lief der Bau von domain-detail in einem Durchgang durch — dieselbe Reihenfolge bei jeder
+neuen Komponente:
+
+1. **Vorbild benennen, Werte übernehmen.** Erst `.core_parts.py`, dann die nächstverwandte
+   Komponente lesen (hier brand-detail) und deren Maße 1:1 übernehmen — dieselben Zahlen, nicht
+   ähnliche. Was das Vorbild aus core holt, holt die neue Komponente aus core.
+2. **Geteiltes sofort nach core.** Was es schon fast gibt, wird VOR dem Bau zum Kit-Baustein
+   (hier: makeBarList aus dem Balkenmodus von makeTypeChart — gleiche CSS, gleiches Markup).
+   Lokal bleibt nur, was es wirklich genau einmal gibt (der Funnel).
+3. **Die Beispieldaten des Nutzers unverändert verwenden** — als Harness-Daten UND als
+   wortgleicher Run-JS-Schritt, der selbst gegen die fertige Komponente getestet wird. Keine
+   erfundenen Testdaten; die Demo-Daten gehören in den Workflow-Schritt, nicht in die Vorlage.
+4. **Nicht nur den Gutfall messen.** Dunkel, is-narrow/is-vnarrow (Klassen von Hand setzen, wenn
+   der ResizeObserver im verdeckten Tab schweigt), Ladezustand, Reset, alle Events mit Payload,
+   kaputte Payloads. Jede Behauptung in der Übergabe hat einen Messwert.
+5. **Farben ableiten statt erfinden.** Neue Skalen entstehen aus den bestehenden (hier: Familie
+   um die Zitationstyp-Farbe, Helligkeit/Sättigung gestaffelt, gegenläufig je Thema).
+6. Von Anfang an: makeLate für frühe Aufrufe, Warte-Uhr mit benanntem Ende, parseLoose mit
+   Fehlerzustand vor dem Skelett, themeParam statt data-isdark roh.
+
 ## 2. Daten von Bubble: leer und kaputt sind zwei Dinge
 
 Jeder Setter bekommt Text aus einem Bubble-Ausdruck. Fünf Arten, wie der beschädigt ankommt:
