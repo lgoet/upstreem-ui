@@ -1,0 +1,17 @@
+<meta charset="utf-8"><title>create-knopf gross</title>
+<style>html,body{margin:0;background:#f5f5f5}
+.rahmen{width:420px;height:120px;overflow:hidden;position:relative}
+iframe{width:1100px;height:820px;border:0;position:absolute;left:0;top:0;transform:scale(4);transform-origin:14px 14px}</style>
+<body><div class="rahmen"><iframe id="f" src="_h_uca_hell.html"></iframe></div>
+<script>
+document.getElementById("f").addEventListener("load", function(){
+  var f=document.getElementById("f");
+  setTimeout(function(){
+    var d=f.contentDocument;
+    try { d.querySelector(".uca-overlay").style.display="none"; } catch(e){}
+    try { d.querySelector(".uca-portal").style.display="none"; } catch(e){}
+    var t=d.querySelector(".uca-trigger");
+    if (t){ t.scrollIntoView(); window.__bereit=true; }
+  }, 2600);
+});
+</script>

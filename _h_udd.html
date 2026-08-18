@@ -12,14 +12,14 @@
 </style>
 <body>
 <div id="main">
-  <div class="up-root udd-root" data-instance="d1" data-isdark="no" data-brand="LeeUp Media"
+  <div class="up-root udd-root" data-instance="domain_detail_page" data-isdark="no" data-brand="LeeUp Media"
        data-mode-fn="bubble_fn_uddMode" data-gran-fn="bubble_fn_uddGran" data-scope-fn="bubble_fn_uddScope"></div>
 </div>
 <div id="bar">
-  <button onclick="laden()">Daten</button>
-  <button onclick="urls()">URL-Serie</button>
-  <button onclick="setDomainDetailLoading('d1','yes')">loading yes</button>
-  <button onclick="resetDomainDetail('d1')">reset</button>
+  <button onclick="schritt('_h_udd_runjs.js')">Schritt 1</button>
+  <button onclick="schritt('_h_udd_runjs_urls.js')">Schritt 2</button>
+  <button onclick="setDomainDetailLoading('domain_detail_page','yes')">loading yes</button>
+  <button onclick="resetDomainDetail('domain_detail_page')">reset</button>
   <button onclick="thema()">dark/light</button>
   <button onclick="document.body.classList.toggle('schmal')">schmal</button>
   <button onclick="mess().then(function(t){document.getElementById('out').textContent=t;})">MESSEN</button>
@@ -44,17 +44,44 @@ window.__GELADEN = Promise.all(["core.css","domain-detail.css","core.js","domain
   });
 });
 
-function laden(){ window.setDomainDetail("d1", JSON.stringify(window.UDD_MAIN)); }
-function urls(){ window.setDomainDetailUrls("d1", JSON.stringify(window.UDD_URLS)); }
+function laden(){ window.setDomainDetail("domain_detail_page", JSON.stringify(window.UDD_MAIN)); }
+function urls(){ window.setDomainDetailUrls("domain_detail_page", JSON.stringify(window.UDD_URLS)); }
 function thema(){
   var r = document.querySelector(".udd-root");
   window.setUpstreemTheme(r.getAttribute("data-theme") === "dark" ? "light" : "dark");
 }
 
-/* Der statische Start, wie ihn der Pageload-Workflow feuert: erst die Hauptdaten, dann die
-   URL-Serie. */
-window.__GELADEN.then(function(){ setTimeout(function(){ laden(); urls(); window.__bereit = true; }, 400); });
+/* Die zwei Schritte, unveraendert wie in Bubble: Schritt 1 am Seitenstart, Schritt 2 am Klick. */
+function schritt(datei){
+  var s = document.createElement("script"); s.src = datei + "?n=" + Math.random();
+  document.head.appendChild(s);
+}
+window.__GELADEN.then(function(){
+  setTimeout(function(){ schritt("_h_udd_runjs.js"); setTimeout(function(){ window.__bereit = true; }, 600); }, 300);
+});
+/* Genau das, was der uddMode/uddScope/uddGran-Workflow tut -- mit Verzoegerung, damit der
+   Wartezustand sichtbar wird. */
+["uddMode","uddScope","uddGran"].forEach(function(n){
+  window["bubble_fn_"+n] = function(p){
+    window.__ev.push([n, p]);
+    var d = JSON.parse(p || "{}");
+    if (d.mode === "domain") setTimeout(function(){ schritt("_h_udd_runjs_urls.js"); }, window.__WF_MS || 1200);
+  };
+});
 
+/* Was das Chart JETZT sagt: Skelett, Text oder Kurve. Genau die Unterscheidung, um die es geht. */
+function chartZustand(){
+  var root = document.querySelector(".udd-root");
+  /* Die richtigen Klassen aus core: makeLine schreibt .up-line-empty und .up-line-sk in den wrap. */
+  var leer = root.querySelector(".udd-chartwrap .up-line-empty");
+  var sk = root.querySelectorAll(".udd-chartwrap .up-line-sk").length;
+  var ch = null; try { ch = Chart.getChart(root.querySelector(".udd-canvas")); } catch(e){}
+  return { text: leer ? leer.textContent.trim() : null, skelett_teile: sk,
+           linien: ch ? ch.data.datasets.length : 0,
+           erste_werte: ch && ch.data.datasets[0] ? ch.data.datasets[0].data.slice(0,3) : null,
+           canvas_sichtbar: !!root.querySelector(".udd-canvas") &&
+             getComputedStyle(root.querySelector(".udd-canvas")).display !== "none" };
+}
 function mess(){
   return new Promise(function(r){
     var root = document.querySelector(".udd-root");

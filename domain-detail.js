@@ -221,14 +221,20 @@
       scope: SCOPE_STORE[instanceId] || "global",
       header: null, share: null, urls: null, model: null, funnel: null,
       brand: (root.getAttribute("data-brand") || "").trim(),
-      loading: false, hasData: false, error: null
+      loading: false, hasData: false, error: null,
+      /* Die URL-Serie kommt aus einem EIGENEN Workflow, ausgeloest durch einen Klick. Deshalb hat
+         sie ihren eigenen Wartezustand: urls === null heisst "noch nie etwas angekommen",
+         urlsStale heisst "wir haben etwas, aber gerade neue Zahlen angefordert". Beides ist
+         WARTEN und muss ein Skelett zeigen -- nicht "No URL data", denn das ist eine Aussage
+         ueber die Daten und nicht ueber uns. urlsError ist das Ende der Geduld. */
+      urlsStale: false, urlsError: null
     };
     if (state.brand === "BRAND_NAME") state.brand = "";
 
     /* ---- Ein Wartezustand, der endet ---------------------------------------------------------
        Das Skelett laeuft, solange keine Daten da sind. Ohne Ende ist "kommt gleich" nicht von
        "kommt nie" zu unterscheiden -- dieselbe Uhr wie in brand-detail, dieselbe Dauer. */
-    var WARTE_MS = 25000, warteUhr = null;
+    var WARTE_MS = 25000, warteUhr = null, urlUhr = null;
     function warteStarten() {
       if (warteUhr) clearTimeout(warteUhr);
       warteUhr = setTimeout(function () {
@@ -241,6 +247,26 @@
     }
     function warteBeenden() { if (warteUhr) { clearTimeout(warteUhr); warteUhr = null; } }
     warteStarten();
+    /* Bubble spritzt das Markup neu ein, der Modus ueberlebt in MODE_STORE. Startet die Instanz
+       also schon im Domain-Share, ist die URL-Serie von der ersten Sekunde an unterwegs. */
+    if (state.mode === "domain") setTimeout(function () { if (!state.urls) urlWarteStarten(); }, 0);
+
+    /* Dieselbe Geduld fuer die URL-Serie, aber getrennt gezaehlt: sie wird spaeter und oefter
+       angefordert als die Hauptdaten, und ihr Ausbleiben darf nur ihr eigenes Chart betreffen. */
+    function urlWarteStarten() {
+      state.urlsError = null;
+      if (urlUhr) clearTimeout(urlUhr);
+      urlUhr = setTimeout(function () {
+        urlUhr = null;
+        if (!urlWartet()) return;
+        state.urlsError = "No URL data arrived. Check the workflow behind the Domain Share switch, then try again.";
+        state.urlsStale = false;
+        renderChart();
+      }, WARTE_MS);
+    }
+    function urlWarteBeenden() { if (urlUhr) { clearTimeout(urlUhr); urlUhr = null; } }
+    /* Warten heisst: nichts da ODER angefordert. Der Fehlerfall ist kein Warten mehr. */
+    function urlWartet() { return !state.urlsError && (!state.urls || state.urlsStale); }
 
     /* ---- Kurve ------------------------------------------------------------------------------ */
     var line = UC.makeLine({
@@ -414,6 +440,12 @@
         return;
       }
 
+      /* Reihenfolge wie in CLAUDE.md §2: erst der Fehler, dann das Skelett, dann die Aussage
+         ueber die Daten. Vorher stand hier nur die Aussage -- ein Klick auf "Domain Share"
+         zeigte "No URL data for this period.", solange der Workflow lief, also genau in dem
+         Moment, in dem noch niemand etwas ueber die Daten wissen konnte. */
+      if (state.urlsError) { line.empty(state.urlsError); return; }
+      if (urlWartet()) { line.skeleton(); return; }
       var pts = state.urls && isArr(state.urls.points) ? state.urls.points : [];
       if (!pts.length) { line.empty("No URL data for this period."); return; }
       /* Eine Farbe je URL, aus der Familie des Zitationstyps -- siehe familie(). Die Reihenfolge
@@ -498,6 +530,8 @@
         var k = m.getAttribute("data-mode");
         if (k === state.mode) return;              /* schon da: kein Ereignis, kein Neuladen */
         state.mode = k; MODE_STORE[instanceId] = k;
+        /* Der Wechsel nach Domain Share fordert die URL-Serie an: ab hier wird gewartet. */
+        if (k === "domain" && !state.urls) urlWarteStarten();
         syncSeg(); renderHead(); renderKpi(); renderChart();
         fire("data-mode-fn", "uddMode", { mode: k, gran: state.gran, scope: state.scope });
         return;
@@ -507,7 +541,10 @@
         var sk = s.getAttribute("data-scope");
         if (sk === state.scope) return;
         state.scope = sk; SCOPE_STORE[instanceId] = sk;
-        syncSeg();
+        /* Global und Domain sind zwei verschiedene Bezugsgroessen: die alte Kurve unter der neuen
+           Beschriftung stehen zu lassen waere eine falsche Aussage, kein "noch nicht aktuell". */
+        state.urlsStale = true; urlWarteStarten();
+        syncSeg(); renderChart();
         fire("data-scope-fn", "uddScope", { mode: state.mode, gran: state.gran, scope: sk });
         return;
       }
@@ -516,7 +553,11 @@
         var gk = g.getAttribute("data-gran");
         if (gk === state.gran) return;
         state.gran = gk; GRAN_STORE[instanceId] = gk;
-        syncSeg();
+        /* Nur im Domain-Share: dort haengt die x-Achse an der URL-Serie, und eine Tageskurve
+           unter der Aufschrift "Month" ist falsch. Im Citation-Share bleibt die alte Kurve
+           stehen, bis setDomainDetail die neue bringt -- dort ist sie nur veraltet, nicht falsch. */
+        if (state.mode === "domain") { state.urlsStale = true; urlWarteStarten(); }
+        syncSeg(); renderChart();
         fire("data-gran-fn", "uddGran", { mode: state.mode, gran: gk, scope: state.scope });
         return;
       }
@@ -581,7 +622,8 @@
           }
         }
         state.loading = false;
-        warteBeenden();
+        state.urlsStale = false; state.urlsError = null;
+        warteBeenden(); urlWarteBeenden();
         if (state.mode === "domain") granPruefen();
         syncSeg(); renderChart();
         return true;
@@ -596,6 +638,7 @@
         state.header = null; state.share = null; state.urls = null;
         state.model = null; state.funnel = null;
         state.hasData = false; state.error = null; state.loading = false;
+        state.urlsStale = false; state.urlsError = null; urlWarteBeenden();
         state.mode = "citation"; MODE_STORE[instanceId] = "citation";
         state.gran = "day"; GRAN_STORE[instanceId] = "day";
         state.scope = "global"; SCOPE_STORE[instanceId] = "global";

@@ -1,0 +1,39 @@
+<meta charset="utf-8"><title>grouping voll</title>
+<style>body{margin:0;font:12px ui-monospace,monospace}pre{padding:8px;white-space:pre-wrap;background:#f6f6f6}</style>
+<body><pre id="out">laeuft</pre>
+<div class="up-root upt-root" data-instance="g4" data-isdark="no" data-groups-fn="bubble_fn_uptGroups">
+  <div class="up-head"><div class="up-heading"><span class="up-head-label">Prompts</span><span class="up-head-sep"></span><span class="up-head-count"></span></div>
+    <div class="up-head-tools"><div class="up-cols"><button class="up-cols-btn up-iconbtn" type="button"></button><div class="up-cols-menu"></div></div></div></div>
+  <div class="up-table"><div class="up-thead"></div><div class="up-tbody"></div></div>
+  <div class="up-foot"></div>
+</div>
+<link rel="stylesheet" href="core.css?frisch=g4"><link rel="stylesheet" href="prompts-table.css?frisch=g4">
+<script>
+window.__fehler=[]; window.addEventListener("error",function(e){window.__fehler.push(String(e.message)+" @"+e.lineno)});
+["uptGroups","uptGroupOpen"].forEach(function(n){ window["bubble_fn_"+n]=function(){}; });
+try{ localStorage.setItem("upt_grouped__g4","yes"); localStorage.setItem("pref_theme","light");
+     localStorage.setItem("promptGroups@_", JSON.stringify([{key:"Sedans & SUVs",tag_ids:["t1","t2"],color:"#9145e8"}])); }catch(e){}
+</script>
+<script src="core.js?frisch=g4"></script><script src="prompts-table.js?frisch=g4"></script>
+<script>
+setTimeout(function(){
+  window.setPromptsTableViewActive("g4","yes");
+  window.renderPromptsTable({ instanceId:"g4", rows:[{prompt_id:"p1",prompt_text:"Test",visibility_pct:10}], totalCount:88 });
+  /* Genau die Antwort, an der es vorhin geknallt hat: Gruppenkoepfe inkl. eigener Gruppierung. */
+  window.setPromptsTableGroups("g4", [
+    {group_key:"Sedans", tag_ids:["t1"], prompts_count:5, is_custom:"no"},
+    {group_key:"Sedans & SUVs", tag_ids:["t1","t2"], prompts_count:2, is_custom:"yes"}
+  ]);
+  setTimeout(function(){
+    var tb=document.querySelector(".up-tbody");
+    var res={ fehler: window.__fehler,
+      skelette: tb.querySelectorAll(".up-tsk").length,
+      sidelist_zeilen: document.querySelectorAll(".upt-grp-sideitem").length,
+      gruppen_koepfe: document.querySelectorAll("[data-grp-sec]").length,
+      menubtn: document.querySelectorAll(".upt-grp-menubtn").length,
+      menubtn_svg: !!document.querySelector(".upt-grp-menubtn svg"),
+      tbody_start: tb.innerHTML.slice(0,70) };
+    document.getElementById("out").textContent=JSON.stringify(res,null,1); window.__fertig=res;
+  }, 700);
+}, 700);
+</script>

@@ -1,0 +1,18 @@
+<meta charset="utf-8"><title>pin-zeile gross</title>
+<style>html,body{margin:0;font:12px ui-monospace,monospace}iframe{width:1280px;height:820px;border:0;display:block;transform:scale(2.6) translate(0,-608px);transform-origin:0 0}</style>
+<body><iframe id="f" src="_h_pinren.html?neu=1"></iframe>
+<script>
+document.getElementById("f").addEventListener("load", function(){
+  var f=document.getElementById("f");
+  setTimeout(function(){
+    var d=f.contentDocument;
+    /* Hover kann ich nicht bewegen, also die Deklarationen der Hover-Regeln fest anlegen --
+       so sieht man genau den Zustand, den der Zeiger erzeugt. */
+    var st=d.createElement("style");
+    st.textContent=".usn-pin .usn-pin-edit{max-width:14px !important;opacity:1 !important;margin-left:-4px !important}"+
+                   ".usn-pin .usn-pin-x{opacity:1 !important;margin-left:-4px !important}";
+    d.head.appendChild(st);
+    window.__bereit=true;
+  }, 2600);
+});
+</script>

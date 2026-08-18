@@ -1,0 +1,38 @@
+<meta charset="utf-8"><title>brandcount vor dem reveal</title>
+<style>html,body{margin:0;height:100%;font:12px ui-monospace,monospace}
+#main{min-height:100%;padding-left:var(--up-sidebar-w,250px)} pre{padding:10px;white-space:pre-wrap}</style>
+<body><div id="main"><pre id="out">laeuft</pre></div>
+<div class="up-root usn-root" data-instance="sb" data-prompt-count="" data-isdark="no"
+     data-team-id="t1" data-active="dashboard" data-nav-fn="bubble_fn_usnNav"></div>
+<script>
+["usnNav","usnTheme","usnState","usnPinned","usnTeam","usnAccount","usnLogout","usnNewTeam"].forEach(function(n){
+  window["bubble_fn_"+n]=function(){};
+});
+try { localStorage.setItem("pref_theme","light"); } catch(e){}
+(function(){
+  var alt = /alt=1/.test(location.search);
+  var sbFile = alt ? "_alt_sidebar.js" : "sidebar.js";
+  var files=["sidebar.css","core.css","core.js",sbFile], texts={};
+  Promise.all(files.map(function(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"})
+    .then(function(r){return r.text()}).then(function(t){texts[f]=t}); })).then(function(){
+      ["core.css","sidebar.css"].forEach(function(f){ var s=document.createElement("style"); s.textContent=texts[f]; document.head.appendChild(s); });
+      var j=document.createElement("script"); j.textContent=texts["core.js"]; document.head.appendChild(j);
+      var j2=document.createElement("script"); j2.textContent=texts[sbFile]; document.head.appendChild(j2);
+      /* Genau die Beschwerde: die Marken sind ZUERST da, alles andere kommt spaeter. */
+      setTimeout(function(){ window.setUpstreemBrands([{company_id:"a"},{company_id:"b"},{company_id:"c"}]); }, 200);
+      setTimeout(function(){ window.setSidebarTeams("sb", JSON.stringify([{id:"t1",name:"LeeUp Media",domain:"lee-up.de",favicon_url:""}])); }, 900);
+      setTimeout(function(){ window.setSidebarUser("sb", JSON.stringify({name:"Lukas", email:"l@upstreem.ai"})); }, 1200);
+      setTimeout(function(){ window.setSidebarCount("sb","42"); }, 1500);
+      setTimeout(function(){ window.setSidebarReady(); }, 1600);
+      function zelle(){ var el=document.querySelector("[data-brandcount]"); return el ? el.innerHTML : "(keine Zelle)"; }
+      var proben={};
+      [400, 700, 1000, 1450].forEach(function(ms){ setTimeout(function(){ proben["t"+ms]=zelle(); }, ms); });
+      setTimeout(function(){
+        var res={ datei: sbFile, vor_reveal: proben, nach_reveal: zelle(),
+          zahl_vor_reveal_sichtbar: Object.keys(proben).filter(function(k){ return /\d/.test(proben[k]); }),
+          skelett_vor_reveal: Object.keys(proben).filter(function(k){ return /usn-sk/.test(proben[k]); }) };
+        document.getElementById("out").textContent=JSON.stringify(res,null,1); window.__fertig=res;
+      }, 2100);
+    });
+})();
+</script>

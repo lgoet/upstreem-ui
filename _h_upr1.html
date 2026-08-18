@@ -1,0 +1,268 @@
+<meta charset="utf-8"><title>prompt research zentrierung</title>
+<style>
+  html,body{margin:0;height:100%;font:12px ui-monospace,monospace;background:#fff}
+  /* Wie die echte Seite: #main scrollt, die Leiste haelt links Platz. */
+  #main{height:100%;overflow:auto;padding-left:250px}
+  /* Der Bubble-Container um die Komponente: volle Hoehe der Seite, so steht es auf der Seite. */
+  #bubble-group{min-height:calc(100vh - 64px);display:block;padding:0 24px}
+  #kopf{height:64px;display:flex;align-items:center;padding:0 24px;border-bottom:1px solid #eee}
+  #out{position:fixed;right:8px;bottom:8px;background:#111;color:#eee;padding:8px;max-width:46vw;white-space:pre-wrap;z-index:99}
+</style>
+<body><div id="main"><div id="kopf">Page header</div><div id="bubble-group">
+<div class="up-root upr-root"
+     id="upstreem-prompt-research"
+     data-instance="pr1"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="IS_DARK">
+
+  <div class="upr-shell">
+
+    <!-- ---------- start screen ---------- -->
+    <div class="upr-content">
+      <div class="upr-research-mark" aria-hidden="true">
+        <div class="upr-research-orb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><circle cx="12" cy="12" r="3"></circle><path d="m16 16-1.9-1.9"></path></svg></div>
+        <span class="upr-float-point p1"></span><span class="upr-float-point p2"></span><span class="upr-float-point p3"></span><span class="upr-float-point p4"></span>
+        <span class="upr-float-spark s1">✦</span><span class="upr-float-spark s2">✦</span>
+      </div>
+      <h1 class="upr-title">Start your prompt research</h1>
+      <p class="upr-subtitle">Enter keywords, topics, or context to uncover high-intent prompt themes and related opportunities.</p>
+
+      <div class="upr-suggestions-skeleton" id="upr-suggestions-skeleton" aria-hidden="true">
+        <span class="upr-skeleton-chip" style="width:82px;"></span><span class="upr-skeleton-chip" style="width:108px;"></span><span class="upr-skeleton-chip" style="width:68px;"></span><span class="upr-skeleton-chip" style="width:124px;"></span><span class="upr-skeleton-chip" style="width:90px;"></span><span class="upr-skeleton-chip" style="width:76px;"></span><span class="upr-skeleton-chip" style="width:116px;"></span><span class="upr-skeleton-chip" style="width:60px;"></span><span class="upr-skeleton-chip" style="width:98px;"></span><span class="upr-skeleton-chip" style="width:88px;"></span>
+      </div>
+      <div class="upr-suggestions" id="upr-suggestions" aria-label="Suggested keywords" style="display:none;"></div>
+
+      <div class="upr-history-entry">
+        <button class="upr-secondary-btn" type="button" id="upr-open-history">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719" /></svg>
+          Previous Researches
+        </button>
+      </div>
+
+      <div class="upr-composer-area">
+        <div class="upr-composer-shell">
+          <div class="upr-composer">
+            <textarea class="upr-textarea" rows="3" maxlength="300" placeholder="Enter keywords, topics, or context for prompt research..."></textarea>
+            <button class="upr-clear-input" type="button" id="upr-clear-input" data-tip="Clear input" aria-label="Clear input">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 11v6" /> <path d="M14 11v6" /> <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /> <path d="M3 6h18" /> <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+            </button>
+            <div class="upr-actions">
+              <button class="up-iconbtn upr-settings-toggle" type="button" id="upr-settings-toggle" data-tip="Research settings" aria-label="Open research settings" aria-expanded="false">
+                <svg viewBox="0 0 24 24" class="upr-ic-fader" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="8" x2="20" y2="8"></line><circle cx="9" cy="8" r="2.2"></circle><line x1="4" y1="16" x2="20" y2="16"></line><circle cx="15" cy="16" r="2.2"></circle></svg>
+              </button>
+              <button class="upr-start-btn" type="button" id="upr-start-button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z" /> <path d="m21.854 2.147-10.94 10.939" /></svg>
+                <span>Start Research</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="upr-settings-panel" id="upr-settings-panel">
+            <div class="upr-settings-inner">
+              <div class="upr-settings-header">
+                <p class="upr-settings-title">Research settings</p>
+                <p class="upr-settings-desc">Configure market, business model and optional persona for generated prompt themes.</p>
+              </div>
+              <div class="upr-settings-grid">
+
+                <div class="upr-field">
+                  <span class="upr-label">Market</span>
+                  <div class="upr-dd" data-name="market" id="upr-market-dd">
+                    <button class="upr-dd-trigger" type="button">
+                      <span class="upr-dd-value" data-dd-value><span class="upr-flag"></span><span>Loading markets…</span></span>
+                      <svg class="upr-dd-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                    </button>
+                    <div class="upr-dd-menu">
+                      <div class="upr-dd-search-row">
+                        <div class="upr-dd-search-wrap">
+                          <input class="upr-dd-search" type="text" placeholder="Search for Markets">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34" /> <circle cx="11" cy="11" r="8" /></svg>
+                        </div>
+                        <button class="upr-dd-clear" type="button">Clear</button>
+                      </div>
+                      <div class="upr-dd-list" data-dd-list>
+                        <div class="upr-dd-loading">Loading markets…</div>
+                        <div class="upr-dd-empty">No markets found</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="upr-field">
+                  <span class="upr-label">Business model</span>
+                  <div class="upr-dd" data-name="business_model">
+                    <button class="upr-dd-trigger" type="button">
+                      <span class="upr-dd-value" data-dd-value><span>B2C</span></span>
+                      <svg class="upr-dd-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                    </button>
+                    <div class="upr-dd-menu"><div class="upr-dd-list" data-dd-list>
+                      <button class="upr-dd-option is-selected" type="button" data-value="b2c" data-label="B2C"><span class="upr-dd-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg></span><span class="upr-dd-optlabel">B2C</span><span></span></button>
+                      <button class="upr-dd-option" type="button" data-value="b2b" data-label="B2B"><span class="upr-dd-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg></span><span class="upr-dd-optlabel">B2B</span><span></span></button>
+                      <button class="upr-dd-option" type="button" data-value="hybrid" data-label="Hybrid"><span class="upr-dd-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg></span><span class="upr-dd-optlabel">Hybrid <span class="upr-dd-meta">(B2B &amp; B2C)</span></span><span></span></button>
+                      <div class="upr-dd-empty">No options found</div>
+                    </div></div>
+                  </div>
+                </div>
+
+                <div class="upr-field">
+                  <span class="upr-label">Persona optional</span>
+                  <div class="upr-dd" data-name="persona">
+                    <button class="upr-dd-trigger" type="button">
+                      <span class="upr-dd-value" data-dd-value><span>No specific persona</span></span>
+                      <svg class="upr-dd-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                    </button>
+                    <div class="upr-dd-menu"><div class="upr-dd-list" data-dd-list>
+                      <button class="upr-dd-option is-selected" type="button" data-value="" data-label="No specific persona"><span class="upr-dd-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg></span><span class="upr-dd-optlabel">No specific persona</span><span></span></button>
+                      <button class="upr-dd-option" type="button" data-value="student" data-label="Student"><span class="upr-dd-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg></span><span class="upr-dd-optlabel">Student</span><span></span></button>
+                      <button class="upr-dd-option" type="button" data-value="entrepreneur" data-label="Entrepreneur"><span class="upr-dd-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg></span><span class="upr-dd-optlabel">Entrepreneur</span><span></span></button>
+                      <button class="upr-dd-option" type="button" data-value="smb_owner" data-label="SMB owner"><span class="upr-dd-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg></span><span class="upr-dd-optlabel">SMB owner</span><span></span></button>
+                      <button class="upr-dd-option" type="button" data-value="parent_family" data-label="Parent / Family"><span class="upr-dd-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg></span><span class="upr-dd-optlabel">Parent / Family</span><span></span></button>
+                      <button class="upr-dd-option" type="button" data-value="tech_enthusiast" data-label="Tech enthusiast"><span class="upr-dd-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg></span><span class="upr-dd-optlabel">Tech enthusiast</span><span></span></button>
+                      <div class="upr-dd-empty">No personas found</div>
+                    </div></div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="upr-tip">Tip: Be specific for better results. You can enter multiple keywords or a full topic description.</p>
+      </div>
+    </div>
+
+    <!-- ---------- results ---------- -->
+    <div class="upr-results-stage" id="upr-results-stage">
+      <div class="upr-results-nav">
+        <button class="upr-secondary-btn" type="button" id="upr-back-to-start">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7" /> <path d="M19 12H5" /></svg>
+          Back to start
+        </button>
+        <div class="upr-results-nav-right">
+          <button class="upr-secondary-btn" type="button" id="upr-open-history-results">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719" /></svg>
+            Previous Researches
+          </button>
+        </div>
+      </div>
+
+      <div class="up-head">
+        <div class="up-heading has-count" id="upr-results-heading">
+          <span class="up-head-label">Suggested prompts</span>
+          <span class="up-head-sep"></span>
+          <span class="up-head-count" id="upr-results-count">0</span>
+        </div>
+        <div class="upr-results-context" id="upr-results-context"></div>
+        <div class="up-head-tools">
+          <span class="upr-spinner" aria-hidden="true"></span>
+          <button class="upr-switchbtn is-on" type="button" id="upr-accept-with-tags" aria-pressed="true"
+                  data-tip="Track accepted prompts with their suggested tags">
+            <span>Accept with Tags</span><span class="up-switch is-on" aria-hidden="true"></span>
+          </button>
+          <div class="upr-menu-wrap" id="upr-table-menu">
+            <button class="up-iconbtn" type="button" id="upr-table-menu-trigger" data-tip="More actions" aria-label="Open suggested prompt actions" aria-expanded="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1" /> <circle cx="19" cy="12" r="1" /> <circle cx="5" cy="12" r="1" /></svg>
+            </button>
+            <div class="up-menu" id="upr-table-menu-popover" aria-hidden="true">
+              <button class="up-filter-item upr-menu-item" type="button" id="upr-accept-all-prompts">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="m9 12 2 2 4-4" /></svg>
+                <span>Accept all Prompts <span data-count-label>(0)</span></span>
+              </button>
+              <button class="up-filter-item upr-menu-item is-danger" type="button" id="upr-delete-all-prompts">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 11v6" /> <path d="M14 11v6" /> <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /> <path d="M3 6h18" /> <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                <span>Delete all Prompts <span data-count-label>(0)</span></span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="up-box upr-box">
+        <div class="up-table">
+          <div class="up-thead">
+            <div class="up-th">
+              <svg class="upr-th-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 5H3" /> <path d="M15 12H3" /> <path d="M17 19H3" /></svg>
+              Prompt
+            </div>
+            <div class="up-th">Tags</div>
+            <div class="up-th">Est. Volume<span class="up-th-info" data-explain="volume"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /></svg></span></div>
+            <div class="up-th">Actions</div>
+          </div>
+          <div class="up-tbody" id="upr-results-body"></div>
+        </div>
+      </div>
+
+      <div class="upr-results-empty">
+        <div class="up-box"><div class="up-empty">
+          <div class="up-empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><circle cx="12" cy="12" r="3"></circle><path d="m16 16-1.9-1.9"></path></svg></div>
+          <div class="up-empty-h">No suggested prompts found</div>
+          <div class="up-empty-t">Start a new prompt research to generate suggestions.</div>
+        </div></div>
+      </div>
+    </div>
+
+    <!-- ---------- loader ---------- -->
+    <div class="upr-loading-stage" aria-hidden="true">
+      <div class="upr-loading-inner">
+        <div class="upr-loader-mark">
+          <div class="upr-loader-ring r1"></div><div class="upr-loader-ring r2"></div>
+          <div class="upr-loader-core"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><circle cx="12" cy="12" r="3"></circle><path d="m16 16-1.9-1.9"></path></svg></div>
+        </div>
+        <div class="upr-tload">
+          <div class="upr-tl-bars"><span class="upr-tl-bar" style="width:82%;"></span><span class="upr-tl-bar" style="width:58%;"></span></div>
+          <div class="upr-tl-tags" id="upr-tl-tags"></div>
+        </div>
+        <div class="upr-think-loop"><span class="upr-think-text" id="upr-think-text">Understanding your intent…</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---------- previous researches sidebar ----------
+       Stays inside the root in the markup so it is easy to find; the script moves it to <body> on
+       init (see the note at the top). Do not reparent it by hand. -->
+  <div class="upr-side-scrim"></div>
+  <aside class="upr-side" role="dialog" aria-modal="true" aria-label="Previous researches">
+    <div class="upr-side-head">
+      <div class="up-heading has-count">
+        <span class="up-head-label">Previous researches</span>
+        <span class="up-head-sep"></span>
+        <span class="up-head-count" id="upr-history-count">0</span>
+      </div>
+      <div class="up-head-tools">
+        <button class="up-iconbtn" type="button" id="upr-close-history" data-tip="Close" aria-label="Close previous researches">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>
+        </button>
+      </div>
+    </div>
+    <div class="upr-side-body" id="upr-history-list"></div>
+  </aside>
+
+  <!-- Optional server-rendered seeds. Leave them as empty arrays and use setMarkets()/setTags()
+       instead unless you really want the data in the initial HTML. -->
+  <script class="upr-json" id="upr-markets-json" type="application/json"></script>
+  <script class="upr-json" id="upr-suggested-keywords-json" type="application/json"></script>
+</div>
+
+
+</div></div><pre id="out">laeuft</pre>
+<script>
+(function(){
+  var files=["core.css","prompt-research.css","core.js","prompt-research.js"], t={};
+  Promise.all(files.map(function(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"})
+    .then(function(r){return r.text()}).then(function(x){t[f]=x}); })).then(function(){
+      ["core.css","prompt-research.css"].forEach(function(f){ var s=document.createElement("style"); s.textContent=t[f]; document.head.appendChild(s); });
+      ["core.js","prompt-research.js"].forEach(function(f){ var s=document.createElement("script"); s.textContent=t[f]; document.head.appendChild(s); });
+      setTimeout(function(){
+        var root=document.querySelector(".upr-root"), shell=document.querySelector(".upr-shell"),
+            content=document.querySelector(".upr-content"), grp=document.getElementById("bubble-group"),
+            orb=document.querySelector(".upr-research-orb svg");
+        function r(e){ if(!e) return null; var b=e.getBoundingClientRect(); return {top:Math.round(b.top),hoehe:Math.round(b.height),unten:Math.round(b.bottom)}; }
+        var res={ gruppe:r(grp), root:r(root), shell:r(shell), inhalt:r(content),
+          luft_oben: content?Math.round(content.getBoundingClientRect().top-grp.getBoundingClientRect().top):null,
+          luft_unten: content?Math.round(grp.getBoundingClientRect().bottom-content.getBoundingClientRect().bottom):null,
+          orb_pfade: orb?orb.innerHTML.slice(0,60):"(kein orb)" };
+        document.getElementById("out").textContent=JSON.stringify(res,null,1); window.__fertig=res;
+      }, 1400);
+    });
+})();
+</script>

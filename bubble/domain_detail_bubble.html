@@ -24,9 +24,27 @@
   | data-scope-fn     | nein    | Toolbox-Funktion fuer Global/Domain im Domain-Share        |
 
   Die drei *-fn-Attribute sind der Weg nach Bubble: jeder Klick feuert das Ereignis mit
-  { mode, gran, scope } als JSON. Der Workflow holt daraufhin die passenden Daten und ruft
-  setDomainDetail / setDomainDetailUrls erneut. OHNE diese Workflows schaltet die Ansicht um, aber
-  es kommen keine neuen Zahlen -- die Komponente zeigt dann weiter, was sie schon hat.
+  { mode, gran, scope } als JSON.
+
+  ── Welches Ereignis welche Daten braucht ────────────────────────────────────
+  | Ereignis  | ausgeloest durch        | der Workflow ruft                                |
+  |-----------|------------------------|--------------------------------------------------|
+  | uddMode   | Citation/Domain Share  | domain -> setDomainDetailUrls, citation -> nichts (die Daten sind schon da) |
+  | uddScope  | Global/Domain          | setDomainDetailUrls mit dem anderen Bezug        |
+  | uddGran   | Day/Week/Month         | citation -> setDomainDetail, domain -> setDomainDetailUrls |
+
+  Die URL-Serie ist also ein EIGENER Schritt an drei Ereignissen -- dieselbe Abfrage, andere
+  Parameter. Der Payload sagt mit share_mode selbst, welchen Bezug er hat; die Komponente richtet
+  ihren Schalter danach, statt ihn zu ueberschreiben. So kann eine Antwort, die noch unterwegs war,
+  den Schalter nicht verdrehen.
+
+  Solange eine angeforderte URL-Serie nicht da ist, zeigt das Chart ein SKELETT -- nicht "No URL
+  data". Der Satz waere eine Aussage ueber die Daten, und die kann niemand treffen, solange der
+  Workflow noch laeuft. Bleibt die Antwort 25 Sekunden aus, steht der Grund im Chart. Trichter und
+  Model Breakdown bleiben davon unberuehrt: sie haengen an setDomainDetail.
+
+  OHNE diese Workflows schaltet die Ansicht um, aber es kommen keine neuen Zahlen -- der
+  Domain-Share bleibt dann im Skelett und meldet nach 25 Sekunden, dass niemand geantwortet hat.
 
   ── Die vier Setter ──────────────────────────────────────────────────────────
     setDomainDetail("<instance>", <json>)         Kopf, Zeitreihen, Modelle, Trichter
@@ -45,10 +63,12 @@
       .replace(/:\s*(yes|no)\s*([,}\]])/g, function(_, v, t){ return ": " + (v === "yes") + t; })
 
   ── Statischer Start zum Ausprobieren ────────────────────────────────────────
-  Die Beispieldaten liegen NICHT in diesem Element: sie kommen als eigener Run-JS-Schritt in den
-  Pageload-Workflow (die getestete Fassung liegt im Repo als _h_udd_runjs.js). So ist der Weg
-  vom ersten Tag der echte -- Workflow ruft Setter --, und fuer den Livegang wird nur der Inhalt
-  des Schritts getauscht, nicht das Element angefasst.
+  Die Beispieldaten liegen NICHT in diesem Element: sie kommen als Run-JS-Schritte in die
+  Workflows, getestet im Repo als
+      _h_udd_runjs.js        Schritt 1, Seitenstart -> setDomainDetail
+      _h_udd_runjs_urls.js   Schritt 2, an uddMode/uddScope/uddGran -> setDomainDetailUrls
+  So ist der Weg vom ersten Tag der echte -- Workflow ruft Setter --, und fuer den Livegang wird
+  nur der Inhalt der Schritte getauscht, nicht das Element angefasst.
 -->
 
 <div class="up-root udd-root"
