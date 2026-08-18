@@ -1,0 +1,121 @@
+<!--
+  UPSTREEM — RESPONSE DETAIL (Praefix urd)
+
+  WOHIN: ein HTML-Element auf der Response-Detailseite. Das Element ist LEER bis auf das
+  Wurzel-Div; die Komponente baut ihren gesamten Innenaufbau selbst.
+
+  ERSETZT die drei alten Full-Response-Elemente (zenith-response-v4 fuer ChatGPT, zenith-aio-v1
+  fuer Google AIO, zenith-response-v3 fuer Perplexity). EIN Element fuer alle drei Modelle: die
+  Unterschiede sind genau drei Zitatschreibweisen, und die erkennt core am Text. Ein viertes
+  Modell braucht kein viertes Element.
+
+  ── Die vier Abschnitte ──────────────────────────────────────────────────────
+  1. Der Prompt-Text als Titel, VOLLSTAENDIG (nie gekuerzt). Darunter Modell, Laufzeit
+     ("2 minutes ago", ab einem Tag das Datum) und Market.
+  2. "Mentions": die verfolgten Marken dieser Antwort als Chips.
+  3. "Full Response": der Antworttext mit Tabellen, Zitat-Chips und Markenauszeichnung.
+  4. "Citations": die Quellen, umschaltbar zwischen Kacheln (Standard) und Liste.
+
+  ── Attribute am Wurzel-Div ──────────────────────────────────────────────────
+  | Attribut        | Pflicht | Bedeutung                                                  |
+  |-----------------|---------|------------------------------------------------------------|
+  | data-instance   | JA      | eindeutig je Platzierung; die Setter sprechen sie darueber an |
+  | data-cdn-pin    | JA      | derselbe Commit-Hash wie auf allen anderen Elementen der Seite |
+  | data-isdark     | nein    | "yes"/"no". Kennt core ein Thema, gewinnt core (UC.themeParam) |
+  | data-prompt-fn  | nein    | Toolbox-Funktion fuer den Klick auf den Prompt-Titel        |
+  | data-brand-fn   | nein    | Toolbox-Funktion fuer den Klick auf eine Marke              |
+  | data-url-fn     | nein    | Toolbox-Funktion fuer den Klick auf eine Quelle             |
+  | data-view-fn    | nein    | Toolbox-Funktion fuer den Wechsel Kacheln/Liste             |
+
+  ── Die Ereignisse und ihre Werte ────────────────────────────────────────────
+  Die ersten drei tragen einen BLANKEN Wert, kein JSON -- Bubble liest sie ohne Umweg:
+
+  | Ereignis   | ausgeloest durch                          | Wert                            |
+  |------------|-------------------------------------------|---------------------------------|
+  | urdPrompt  | Klick auf den Prompt-Titel                | prompt_id                       |
+  | urdBrand   | Klick auf einen Marken-Chip (Mentions ODER die Auszeichnung im Antworttext) | company_id |
+  | urdUrl     | Klick auf eine Quelle (Kachel, Zeile) ODER "Open detail page" im Menue eines Zitat-Chips | citations[].id -- und wenn die RPC keine id liefert, die URL |
+  | urdView    | Umschalter Kacheln/Liste                  | { view: "grid" | "list" }       |
+
+  WICHTIG zu urdUrl: in den drei Beispiel-Payloads tragen die Eintraege in citations KEIN Feld
+  id. Solange das so ist, kommt die URL als Wert -- sonst waere der Klick wirkungslos. Der
+  Workflow muss die Zeile also ueber die URL finden. Liefert die RPC eine id mit, gewinnt sie
+  automatisch und es ist nichts umzustellen.
+
+  ── Die drei Setter ──────────────────────────────────────────────────────────
+    setResponseDetail("<instance>", <json>)          alles: Prompt, Modell, Marken, Text, Quellen
+    setResponseDetailLoading("<instance>", "yes")    Skelette an
+    resetResponseDetail("<instance>")                alles leer, zurueck auf Kacheln
+
+  Der Payload ist die LISTE, wie die RPC sie liefert -- ein Eintrag darin. Ein blankes Objekt
+  geht genauso. Ein Payload, den core nicht lesen kann, endet als benannter Fehler in den
+  Abschnitten, nicht als endloses Skelett. Bleibt der Setter 25 Sekunden aus, steht "No data" da
+  und der Grund in der Konsole.
+
+  ── Was die Seite ausserdem braucht ──────────────────────────────────────────
+  Der Modell-Chip holt Logo und Anzeigename aus dem seitenweiten Modell-Store. OHNE ihn steht
+  dort der rohe Schluessel ("google-aio") ohne Logo. Der Store wird wie ueberall gefuellt:
+
+      setUpstreemModels(<json-liste>)     [{ key, display_name, short_name, logo_url }, ...]
+
+  Der Market-Chip holt die Flagge aus dem Markt-Store (setUpstreemAllMarkets); fehlt er, faellt
+  er auf flagcdn.com anhand des Laendercodes zurueck -- die Flagge stimmt dann, nur nicht das
+  eigene Bild.
+
+  ── Sanitizer (STYLEGUIDE §46) ───────────────────────────────────────────────
+  Ein Bubble-Ausdruck liefert leere Werte als "key": , und Ja/Nein unquotiert. Beides bricht
+  JSON.parse. Diese zwei Zeilen gehoeren an JEDEN Aufruf, der einen Bubble-Text weitergibt:
+
+      .replace(/:\s*([,}\]])/g, ": null$1")
+      .replace(/:\s*(yes|no)\s*([,}\]])/g, function(_, v, t){ return ": " + (v === "yes") + t; })
+
+  ── Statischer Start zum Ausprobieren ────────────────────────────────────────
+  Die Beispieldaten liegen NICHT in diesem Element, sondern als Run-JS-Schritt im
+  Pageload-Workflow. Die getesteten Fassungen liegen im Repo als _h_urd_daten.js (alle drei
+  Modelle). Fuer den Livegang wird nur der Inhalt des Schritts getauscht.
+-->
+
+<div class="up-root urd-root"
+     data-instance="INSTANCE_ID"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="IS_DARK"
+     data-prompt-fn="bubble_fn_urdPrompt"
+     data-brand-fn="bubble_fn_urdBrand"
+     data-url-fn="bubble_fn_urdUrl"
+     data-view-fn="bubble_fn_urdView"></div>
+
+<script>
+(function(){
+  /* Loader nach STYLEGUIDE §26: den Pin ueber getElementsByClassName lesen, NIEMALS ueber
+     document.currentScript — Bubble fuehrt Scripts nicht in DOM-Reihenfolge aus. */
+  function readPin(cls){
+    var els = document.getElementsByClassName(cls), i, p;
+    for (i = 0; i < els.length; i++){
+      p = (els[i].getAttribute("data-cdn-pin") || "").trim();
+      if (p && p !== "CDN_" + "PIN") return p;
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("urd-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  /* Entdoppelt nach DATEINAME, nicht nach URL: zwei Elemente mit verschiedenen Pins ergeben sonst
+     zwei Dateien im Dokument, und welche gewinnt, entscheidet die Ladereihenfolge. Der erste Pin
+     gewinnt, ein zweiter wird gemeldet. */
+  function once(url, make){
+    var name = url.slice(url.lastIndexOf("/") + 1);
+    if (L[name]){
+      if (L[name] !== url && window.console) console.warn("upstreem: " + name +
+        " ist schon von einem anderen Pin geladen. Geladen bleibt " + L[name] +
+        ", ignoriert wird " + url + ". Setzt alle Elemente auf denselben Pin.");
+      return;
+    }
+    L[name] = url; make(url);
+  }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+
+  /* core zuerst, async=false haelt die Reihenfolge ein. */
+  css("core.css");              js("core.js");
+  css("response-detail.css");   js("response-detail.js");
+})();
+</script>

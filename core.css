@@ -23,6 +23,12 @@
       --vt-head-bg: rgba(245,245,245,0.3); --vt-logo-bg: #ffffff; --vt-row-hover: rgba(245,245,245,0.75);
       --vt-row-hover-solid: #f7f7f7;
       --vt-up: #2ea84a; --vt-down: #b0200c;
+      /* Markenauszeichnung im Antworttext: neben dem Zitat-Chip als etwas anderes lesbar, ohne
+         den Absatz zu zerreissen. Aus --vt-up abgeleitet, stark verduennt. */
+      --vt-brand-bg: color-mix(in srgb, var(--vt-up) 8%, transparent);
+      --vt-brand-bg-hover: color-mix(in srgb, var(--vt-up) 15%, transparent);
+      --vt-brand-border: color-mix(in srgb, var(--vt-up) 34%, transparent);
+      --vt-brand-border-hover: color-mix(in srgb, var(--vt-up) 58%, transparent);
       --vc-hover-border: #6f6f6f;
       /* Fokusfarbe der Eingabefelder. Der Ring ist derselbe Ton, nur transparent -- eine Farbe,
          zwei Deckkraefte. --up-focus-w steht hier und nicht in den Regeln, weil die Ringbreite
@@ -89,6 +95,11 @@
       --vt-head-bg: #121212; --vt-logo-bg: #e0e0e0; --vt-row-hover: rgba(42,42,42,0.6);
       --vt-row-hover-solid: #242424;
       --vt-up: #60d25d; --vt-down: #d25d5d;
+      /* Im Dunkeln braucht dieselbe Farbe mehr Deckung, sonst verschwindet sie im Grund. */
+      --vt-brand-bg: color-mix(in srgb, var(--vt-up) 14%, transparent);
+      --vt-brand-bg-hover: color-mix(in srgb, var(--vt-up) 24%, transparent);
+      --vt-brand-border: color-mix(in srgb, var(--vt-up) 42%, transparent);
+      --vt-brand-border-hover: color-mix(in srgb, var(--vt-up) 66%, transparent);
       --vc-hover-border: #707070;
       /* Auf dunklem Grund braucht der Ring mehr Deckkraft, sonst verschwindet er im Panel. */
       --up-focus: #6DB2FF; --up-focus-ring: rgba(109,178,255,0.28);
@@ -1667,6 +1678,41 @@
    prefix, which is how they drifted apart in the first place). A FILLED 14px badge carries the
    colour, the glyph inside is knocked out of it, and the label stays in the primary text colour —
    a coloured label next to a coloured icon read as two competing signals. */
+/* ---- Entitaeten-Chip -------------------------------------------------------------------------
+   Ein anklickbarer Chip mit Logo und Name. Es gab in core das Logo-Name-Paar (.up-ment-logo /
+   .up-ment-name) und den Themen-Chip (.up-topicchip) -- aber keinen NEUTRALEN Chip: der Themen-Chip
+   traegt die Farbe seines Themas als Hintergrund, was fuer eine Marke falsch waere.
+   Die Geometrie ist die des Themen-Chips (28px, Radius 8, gap 6..8), damit ein Chip mit Logo und
+   einer mit Emoji in derselben Zeile gleich hoch stehen. Links weniger Polsterung als rechts, weil
+   das Logo dort schon Rand mitbringt. Hover kommt aus .up-chiphover -- dieselbe Klasse, die die
+   Themen-Chips tragen. */
+.up-entchip { height: 28px; padding: 0 10px 0 5px; border-radius: 8px; display: inline-flex;
+  align-items: center; gap: 8px; cursor: pointer; font-family: inherit;
+  border: 1px solid var(--vc-border); background: var(--vc-bg);
+  white-space: nowrap; overflow: hidden; min-width: 0; max-width: 100%; box-sizing: border-box; }
+.up-entchip.is-static { cursor: default; }
+.up-entchip:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 1px; }
+
+/* ---- Modell-Chip / Market-Chip ----------------------------------------------------------------
+   Beide lagen als Kopie in responses-table bzw. prompts-table. Die alten Klassen bleiben als
+   Alias erhalten, damit dort kein Markup angefasst werden muss. Die Werte sind unveraendert die
+   der Vorbilder: 18px Logokachel aus .up-ment-logo, Flagge 18x14 mit Radius 3. */
+.up-model-chip, .urt-model-chip { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.up-model-ltr, .urt-model-ltr { font-size: 10px; font-weight: 600; color: var(--vc-muted); line-height: 1;
+  text-transform: uppercase; }
+.up-ment-logo.has-img .up-model-ltr, .up-ment-logo.has-img .urt-model-ltr { display: none; }
+/* Im Dunkeln traegt die Kachel keinen Ton: die Modell-Logos sind dort selbst hell. */
+.up-root[data-theme="dark"] .up-model-chip .up-ment-logo { background: transparent; padding: 0; }
+
+.up-market, .upt-market { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.up-flag, .upt-flag { width: 18px; height: 14px; border-radius: 3px; overflow: hidden; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center; line-height: 0;
+  background: var(--vc-heading-bg); }
+.up-flag img, .upt-flag img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Der Code ist eine Beschriftung der Flagge, kein eigener Wert -- also eine Stufe zurueck. */
+.up-market-code, .upt-market-code { font-size: 12px; font-weight: 600; color: var(--vc-muted);
+  letter-spacing: 0.02em; white-space: nowrap; }
+
 .up-ment-cell { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: var(--vc-muted); }
 .up-ment-badge { width: 14px; height: 14px; border-radius: 4px; flex: 0 0 auto;
   display: inline-flex; align-items: center; justify-content: center; }
@@ -2288,3 +2334,109 @@
    auch die Auswahlsperre des Browsers weg, und der Zeiger markiert die Namen. */
 .up-cg-list:has(.is-dragging) .up-cg-row { cursor: grabbing; }
 .up-cg-list:has(.is-dragging), .up-cg-list:has(.is-dragging) * { user-select: none; -webkit-user-select: none; }
+
+/* ---- Response Body ---------------------------------------------------------------------------
+   Der Text einer Modellantwort. Ersetzt die drei zenith-Elemente, deren Werte aus einer Zeit
+   stammen, in der es die Tokens noch nicht gab: 16px Grundschrift bei 1.8 Zeilenhoehe, 18px fuer
+   JEDES <strong> (also auch mitten im Satz), und ueber 40 !important-Regeln gegen Bubbles
+   Vorfahren. Hier gilt das Mass der App: 14px Text wie in jeder Karte, 1.65 Zeilenhoehe fuer
+   Lauftext (Tabellen und Listen sind dichter), Betonung ueber das Gewicht statt ueber die Groesse.
+
+   Die Tabelle ist die aus ask-mira, Wert fuer Wert: Rahmen mit Radius 10, 13.5px, Kopf in
+   --vc-heading-bg, Zellen 9px/12px, jede zweite Zeile minimal getoent. Sie ist das Vorbild, weil
+   sie die einzige Tabelle der App ist, die in einem Textfluss steht und dort funktioniert. */
+.up-rb { font-size: 14px; line-height: 1.65; color: var(--vc-text); overflow-wrap: break-word; }
+.up-rb-p { margin: 0 0 12px; }
+.up-rb-p:last-child { margin-bottom: 0; }
+/* Betonung ueber das Gewicht, nicht ueber die Groesse: <strong> steht mitten in Saetzen, und
+   16px inmitten von 14px liess ganze Absaetze springen. */
+.up-rb strong { font-weight: 600; }
+.up-rb em { font-style: italic; }
+/* Zwischentitel: eine Stufe ueber dem Text, mit Luft davor. 24px oben statt 16, weil der Titel
+   einen neuen Abschnitt beginnt und nicht zum Absatz darueber gehoert. */
+.up-rb-h { font-size: 15px; font-weight: 600; line-height: 1.4; letter-spacing: -0.01em;
+  color: var(--vc-text); margin: 24px 0 8px; }
+.up-rb-h:first-child { margin-top: 0; }
+.up-rb-hr { border: 0; border-top: 1px solid var(--vc-border); margin: 20px 0; }
+.up-rb-list { margin: 0 0 12px; padding-left: 22px; }
+.up-rb-list li { margin: 0 0 6px; }
+.up-rb-list li:last-child { margin-bottom: 0; }
+.up-rb-list li::marker { color: var(--vc-third); }
+
+/* ---- Tabellen (Werte 1:1 aus ask-mira) ---- */
+.up-rb-tablewrap { display: block; width: 100%; max-width: 100%; overflow-x: auto; margin: 20px 0;
+  border: 1px solid var(--vc-border); border-radius: 10px;
+  -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+.up-rb-table { border-collapse: collapse; width: 100%; font-size: 13.5px; table-layout: auto; }
+.up-rb-table thead th { text-align: left; font-weight: 600; color: var(--vc-muted);
+  background: var(--vc-heading-bg); padding: 9px 12px; white-space: normal;
+  overflow-wrap: break-word; border-bottom: 1px solid var(--vc-border); }
+.up-rb-table tbody td { padding: 9px 12px; border-bottom: 1px solid var(--vc-border);
+  vertical-align: top; white-space: normal; overflow-wrap: break-word; line-height: 1.5; }
+.up-rb-table tbody tr:last-child td { border-bottom: 0; }
+.up-rb-table tbody tr:nth-child(even) td { background: var(--vt-row-hover); }
+.up-rb-table th:first-child, .up-rb-table td:first-child { padding-left: 14px; }
+.up-rb-table th:last-child,  .up-rb-table td:last-child  { padding-right: 14px; }
+
+/* ---- Zitat-Chip ----
+   Das alte Element gab ihm 24px Hoehe bei 11px Text und 12px Abstand zwischen Favicon und Text --
+   ein Loch mitten im Chip. Hier: 22px Hoehe, 12px Text, 6px Abstand, und ein Rahmen statt einer
+   Hintergrundfarbe, damit er im Lauftext nicht als Block liegt. */
+.up-rb-cite { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 7px;
+  margin: 0 1px; border: 1px solid var(--vc-border); border-radius: 7px; background: var(--vc-bg);
+  vertical-align: -4px; cursor: pointer; max-width: 100%; box-sizing: border-box;
+  transition: background 120ms ease, border-color 120ms ease; }
+.up-rb-cite:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
+.up-rb-cite:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 1px; }
+.up-rb-cite-fav { width: 13px; height: 13px; border-radius: 3px; flex: 0 0 auto; object-fit: cover;
+  display: block; }
+.up-rb-cite-txt { font-size: 12px; font-weight: 500; color: var(--vc-muted); line-height: 1;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.up-rb-cite:hover .up-rb-cite-txt { color: var(--vc-text); }
+
+/* ---- Markenauszeichnung ----
+   Das alte Element zeichnete einen gestrichelten Rahmen als eingebettetes SVG, dessen Groesse ein
+   ResizeObserver und ein MutationObserver nachfuehrten -- weil ein CSS-Rahmen am umbrechenden
+   Inline-Element unten abgeschnitten wurde. Der Chip hier bricht nicht um (white-space: nowrap),
+   damit ist der Rahmen wieder CSS und die zwei Beobachter entfallen. */
+.up-rb-brand { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px;
+  margin: 0 1px; border: 1px solid var(--vt-brand-border); border-radius: 7px;
+  background: var(--vt-brand-bg); vertical-align: -4px; cursor: pointer; white-space: nowrap;
+  box-sizing: border-box; transition: background 120ms ease, border-color 120ms ease; }
+.up-rb-brand:hover { background: var(--vt-brand-bg-hover); border-color: var(--vt-brand-border-hover); }
+.up-rb-brand:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 1px; }
+.up-rb-brand-ic { width: 14px; height: 14px; border-radius: 4px; flex: 0 0 auto; object-fit: cover;
+  display: block; }
+.up-rb-brand-txt { font-size: 13px; font-weight: 600; color: var(--vc-text); line-height: 1; }
+
+/* ---- Die Wahl beim Klick auf ein Zitat ----
+   Aus ask-mira uebernommen (.am-url-pop): dieselbe Reihenfolge, dieselben zwei Eintraege, derselbe
+   Aufbau. Die Werte kommen hier aus den Tokens statt aus den --am-*-Variablen. */
+.up-rb-pop { position: absolute; z-index: 40; min-width: 176px; max-width: 300px;
+  background: var(--up-surface, var(--vc-bg)); border: 1px solid var(--vc-hover-border);
+  border-radius: 11px; box-shadow: 0 12px 32px rgba(0,0,0,0.14); padding: 5px;
+  display: none; flex-direction: column; gap: 2px;
+  opacity: 0; transform: translateY(-2px); transition: opacity .12s ease, transform .12s ease; }
+.up-rb-pop.is-open { display: flex; opacity: 1; transform: translateY(0); }
+.up-rb-pop button { display: flex; align-items: center; gap: 9px; width: 100%; border: 0;
+  background: transparent; color: var(--vc-text); font: inherit; font-size: 13.5px;
+  text-align: left; padding: 8px 10px; border-radius: 8px; cursor: pointer;
+  white-space: nowrap; line-height: 1.2; overflow: hidden; }
+.up-rb-pop button:hover { background: var(--vc-heading-bg); }
+.up-rb-pop button.is-primary { font-weight: 600; }
+.up-rb-pop button svg { width: 15px; height: 15px; flex: 0 0 auto; color: var(--vc-muted); }
+.up-rb-pop button span { overflow: hidden; text-overflow: ellipsis; }
+
+/* ---- Schmal ----
+   Gemessen an der eigenen Box. Die alten Elemente hatten min-width: 680px an der Tabelle: auf dem
+   Telefon schob das die ganze Seite zur Seite, weil der Rahmen um die Tabelle mitwuchs. Hier
+   scrollt nur der Rahmen, und die Zellen duerfen enger werden statt die Seite zu sprengen. */
+.up-root.is-narrow .up-rb { font-size: 13.5px; }
+.up-root.is-narrow .up-rb-table { font-size: 13px; }
+.up-root.is-narrow .up-rb-table thead th { white-space: nowrap; padding: 8px 10px; }
+.up-root.is-narrow .up-rb-table tbody td { padding: 8px 10px; min-width: 84px; }
+.up-root.is-narrow .up-rb-tablewrap { margin: 16px 0; }
+.up-root.is-narrow .up-rb-h { margin-top: 20px; font-size: 14.5px; }
+/* Der Chip darf schmal werden, aber nicht verschwinden: 132px zeigen Favicon plus Domain. */
+.up-root.is-narrow .up-rb-cite { max-width: 132px; }
+.up-root.is-vnarrow .up-rb-cite { max-width: 108px; }

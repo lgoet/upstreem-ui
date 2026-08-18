@@ -656,6 +656,458 @@
   var EXT_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6" /> <path d="M10 14 21 3" /> <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></svg>';
 
   /* ==========================================================================================
+     RESPONSE PRIMITIVES -- geteilt zwischen responses-table, prompts-table und response-detail
+     ==========================================================================================
+     Diese drei lagen als Kopie in je einer Komponente. Sie stehen hier, weil die Detailseite
+     dieselbe Zeitangabe, denselben Modell-Chip und denselben Market-Chip zeigen muss wie die
+     Tabelle, aus der man sie aufruft -- zwei Fassungen davon waeren zwei Wahrheiten. */
+
+  /* "2 minutes ago" fuer Frisches, ab einem Tag das Datum. Aus responses-table uebernommen,
+     Wortlaut unveraendert. */
+  function relativeTime(iso){
+    var d = iso ? new Date(iso) : null;
+    if (!d || isNaN(d.getTime())) return "";
+    var diffMs = Date.now() - d.getTime();
+    if (diffMs < 0) diffMs = 0;
+    var mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return "just now";
+    if (mins < 60) return mins + (mins === 1 ? " minute ago" : " minutes ago");
+    var hrs = Math.floor(mins / 60);
+    if (hrs < 24) return hrs + (hrs === 1 ? " hour ago" : " hours ago");
+    return fmtDate(iso);
+  }
+
+  /* Modell-Chip: Logo plus Anzeigename, beides aus dem seitenweiten Modell-Store (setModels).
+     "Google AI Overviews" ist breiter als eine Tabellenspalte, deshalb die Kurzform -- der volle
+     Name bleibt als Tooltip. cfg.full erzwingt den langen Namen (Detailseiten haben den Platz). */
+  var MODEL_SHORT = { "google-aio": "Google AIO" };
+  /* getModels() liefert eine LISTE, und jeder Eintrag traegt seinen Schluessel als `key` --
+     nicht ein Objekt nach Schluessel. Verglichen wird nachsichtig, weil Bubble denselben Wert
+     je Quelle mal mit Bindestrich und mal mit Unterstrich schreibt (google-aio / google_aio). */
+  function modelKeyGleich(a, b){
+    if (a == null || b == null) return false;
+    return String(a).toLowerCase().replace(/[_\s]+/g, "-") ===
+           String(b).toLowerCase().replace(/[_\s]+/g, "-");
+  }
+  function modelInfoOf(key){
+    var list = getModels ? getModels() : null;
+    if (!list || !key || !isArray(list)) return null;
+    for (var i = 0; i < list.length; i++){
+      var m = list[i];
+      if (m && (modelKeyGleich(m.key, key) || modelKeyGleich(m.model, key))) return m;
+    }
+    return null;
+  }
+  function modelLabelOf(m, key, lang){
+    if (lang) return String(lang);
+    if (m && m.short_name) return String(m.short_name);
+    if (MODEL_SHORT[key]) return MODEL_SHORT[key];
+    return m ? String(m.display_name || key) : String(key || "");
+  }
+  function modelChip(key, cfg){
+    cfg = cfg || {};
+    var m = modelInfoOf(key);
+    var full = m ? String(m.display_name || key) : String(key || "");
+    var name = cfg.full ? full : modelLabelOf(m, key, null);
+    var logo = m && m.logo_url ? String(m.logo_url) : "";
+    if (logo.indexOf("//") === 0) logo = "https:" + logo;
+    var initial = (name.charAt(0) || "?");
+    return '<span class="up-model-chip' + (cfg.cls ? " " + cfg.cls : "") + '"' +
+             (full !== name ? ' data-tip="' + esc(full) + '"' : "") + '>' +
+             '<span class="up-ment-logo' + (logo ? " has-img" : "") + '">' +
+               '<span class="up-model-ltr">' + esc(initial) + '</span>' +
+               (logo ? '<img src="' + esc(logo) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
+                       ' onerror="this.parentNode.classList.remove(\'has-img\'); this.remove()"/>' : "") +
+             '</span>' +
+             '<span class="up-ment-name">' + esc(name) + '</span>' +
+           '</span>';
+  }
+
+  /* Market-Chip: Flagge als liegende Kachel plus Laendercode. Rund wuerde jede Flagge auf ihre
+     Mitte beschneiden, und genau da tragen DE, FR und IT nichts Unterscheidbares. */
+  function marketChip(code, cfg){
+    cfg = cfg || {};
+    var c = String(code == null ? "" : code).trim().toUpperCase();
+    if (!c) return "";
+    var all = getAllMarkets ? getAllMarkets() : null;
+    var rec = all && (all[c] || all[c.toLowerCase()]);
+    var flag = rec && (rec.flag_url || rec.flag) ? String(rec.flag_url || rec.flag) : "";
+    if (!flag) flag = "https://flagcdn.com/w40/" + c.toLowerCase() + ".png";
+    return '<span class="up-market' + (cfg.cls ? " " + cfg.cls : "") + '">' +
+             '<span class="up-flag"><img src="' + esc(flag) + '" alt="" loading="lazy"' +
+               ' referrerpolicy="no-referrer" onerror="this.remove()"/></span>' +
+             '<span class="up-market-code">' + esc(c) + '</span>' +
+           '</span>';
+  }
+
+  /* ==========================================================================================
+     RESPONSE BODY -- der Text einer Modellantwort als HTML
+     ==========================================================================================
+     Ersetzt die drei zenith-Elemente (chatgpt / google-aio / perplexity), die als eigenstaendige
+     Bubble-HTML-Bloecke lebten. Ein Parser fuer alle drei, weil die Unterschiede genau drei
+     Zitatschreibweisen sind und sonst nichts:
+
+       google-aio    [0](url) im Text, am Ende eine Fussnotenliste [[0] - Titel](url)
+                     dazu SearchAPI-Muell der Form 0;2a1;0;582; mitten im Wort
+       chatgpt       [Label](url) im Text, Markdown-Tabellen
+       perplexity    [(url)] -- die Klammerform
+
+     Was aus den alten Elementen NICHT uebernommen wurde und warum:
+     - Die 12 Normalisierungsregeln (A bis L) fuer einzeilige Eingaben. Sie rieten anhand von
+       Bindestrichketten und Sternchen, wo Absaetze sein muessten, und zerlegten dabei auch
+       gueltigen Text. Die Beispieldaten aller drei Modelle tragen echte Zeilenumbrueche.
+     - Der gestrichelte Rahmen als eingebettetes SVG samt ResizeObserver und MutationObserver.
+       Er existierte nur, weil ein CSS-Rahmen am umbrechenden Inline-Element abgeschnitten wurde;
+       ein Chip, der nicht umbricht, braucht das nicht.
+     - Die ueber 40 !important-Regeln. Sie kaempften gegen Bubbles Vorfahren; eine Komponente
+       mit eigenem Praefix hat den Kampf nicht.
+
+     cfg: { text, citations, companies, model, onCite, onBrand }
+     Rueckgabe: HTML-Text. Die Klicks haengt die Komponente an -- hier entstehen nur die Haken
+     (data-urd-cite, data-urd-brand). */
+
+  /* SearchAPI schiebt Laufmarken der Form 0;2a1;0;582; mitten in den Text, teils in ein Wort
+     hinein. Ohne das steht im Absatz "Anbieter0;5cf;fuer". */
+  function rbStripRunTokens(t){
+    return String(t == null ? "" : t)
+      .replace(/0;[0-9a-f]{1,6};0;[0-9a-f]{1,6};/gi, "")
+      .replace(/0;[0-9a-f]{1,6};/gi, "")
+      /* unsichtbare Zeichen erzeugen Umbrueche an Stellen, an denen keine sind */
+      .replace(/[ ­​-‍⁠﻿]/g, " ")
+      .replace(/[ \t]+\n/g, "\n").replace(/\n[ \t]+/g, "\n")
+      .replace(/[ \t]{2,}/g, " ").replace(/\n{3,}/g, "\n\n").trim();
+  }
+
+  /* Die Fussnotenliste am Ende von google-aio wiederholt nur, was der Abschnitt "Citations"
+     darunter schon als Karten zeigt. Zwei Listen derselben Quellen auf einer Seite. */
+  function rbStripFooter(t){
+    return String(t == null ? "" : t).replace(/\n\s*\[\[\d+\][\s\S]*$/m, "").trim();
+  }
+
+  function rbCleanUrl(url){
+    try {
+      var u = new URL(String(url).trim());
+      u.hash = "";
+      var drop = { gclid:1, fbclid:1, ref:1, igshid:1, mc_cid:1, mc_eid:1 };
+      Object.keys(drop).forEach(function (k) { u.searchParams.delete(k); });
+      Array.prototype.slice.call(u.searchParams.keys()).forEach(function (k) {
+        if (k.toLowerCase().indexOf("utm_") === 0) u.searchParams.delete(k);
+      });
+      return u.toString();
+    } catch (e) {
+      return String(url || "").replace(/[?&]utm_[^=]+=[^&#]*/gi, "").replace(/#.*$/, "");
+    }
+  }
+  /* Anzeigeform einer URL: Host ohne www plus Pfad, ohne Schraegstrich am Ende. */
+  function rbShowUrl(url){
+    try {
+      var u = new URL(url);
+      var out = u.hostname.replace(/^www\./i, "") + u.pathname;
+      return out.length > 1 && out.charAt(out.length - 1) === "/" ? out.slice(0, -1) : out;
+    } catch (e) {
+      return String(url || "").replace(/^https?:\/\//i, "").replace(/^www\./i, "");
+    }
+  }
+  function rbFavicon(url, karte){
+    if (karte && karte.favicon) return String(karte.favicon);
+    try { return "https://www.google.com/s2/favicons?domain=" + new URL(url).hostname + "&sz=64"; }
+    catch (e) { return ""; }
+  }
+
+  /* Die eigene Zitationsliste ist die bessere Quelle als die URL im Text: sie kennt Titel und
+     Favicon, und ihre id ist es, die das Ereignis nach Bubble tragen muss. Verglichen wird nach
+     der bereinigten URL ohne Schraegstrich am Ende -- der Text schreibt sie mal mit, mal ohne. */
+  function rbCiteIndex(citations){
+    var idx = {};
+    (isArr(citations) ? citations : []).forEach(function (c) {
+      if (!c || !c.url) return;
+      var k = rbCleanUrl(c.url).replace(/\/+$/, "");
+      idx[k] = c;
+      idx[k.replace(/^https?:\/\//, "").replace(/^www\./, "")] = c;
+    });
+    return idx;
+  }
+  function rbLookup(idx, url){
+    var k = rbCleanUrl(url).replace(/\/+$/, "");
+    return idx[k] || idx[k.replace(/^https?:\/\//, "").replace(/^www\./, "")] || null;
+  }
+
+  var RB_CITE_MAX = 30;
+  function rbChip(url, idx){
+    var clean = rbCleanUrl(String(url).replace(/\\([()])/g, "$1"));
+    var karte = rbLookup(idx, clean);
+    var voll = rbShowUrl(clean);
+    var kurz = voll.length > RB_CITE_MAX ? voll.slice(0, RB_CITE_MAX) + "..." : voll;
+    var fav = rbFavicon(clean, karte);
+    /* Der Chip ist ein Knopf, kein Link: der Klick oeffnet die Wahl zwischen Detailseite und
+       externem Fenster. Ein <a href> wuerde beim ersten Klick schon navigieren. */
+    return '<span class="up-rb-cite" role="button" tabindex="0"' +
+             ' data-rb-cite="' + esc(clean) + '"' +
+             ' data-rb-id="' + esc(karte && karte.id ? karte.id : "") + '"' +
+             ' data-tip="' + esc(karte && karte.title ? karte.title : voll) + '">' +
+             (fav ? '<img class="up-rb-cite-fav" src="' + esc(fav) + '" alt="" loading="lazy"' +
+                    ' referrerpolicy="no-referrer" onerror="this.remove()"/>' : "") +
+             '<span class="up-rb-cite-txt">' + esc(kurz) + '</span>' +
+           '</span>';
+  }
+
+  /* Zitate ersetzen. Reihenfolge von spezifisch nach allgemein -- die letzte Regel frisst sonst
+     die Klammerformen der ersten. */
+  function rbCites(html, idx){
+    var out = String(html == null ? "" : html);
+    /* google-aio Fussnote, falls doch inline: [[0] - Titel](url) */
+    out = out.replace(/\[\[\s*[^\]]*?\s*\]\s*-\s*[^\]]*?\s*\]\((https?:\/\/[^)\s]+)\)/g,
+      function (_m, u) { return rbChip(u, idx); });
+    /* perplexity: [(url)] */
+    out = out.replace(/\[\(\s*(https?:\/\/[^)\s]+)\s*\)\]/g, function (_m, u) { return rbChip(u, idx); });
+    /* in Klammern: ([Label](url)) */
+    out = out.replace(/\(\s*\[[^\]]*\]\((https?:\/\/[^)\s]+)\)\s*\)/g, function (_m, u) { return rbChip(u, idx); });
+    /* allgemein: [Label](url) */
+    out = out.replace(/\[[^\]]*\]\((https?:\/\/[^)\s]+)\)/g, function (_m, u) { return rbChip(u, idx); });
+    return out;
+  }
+
+  /* Fett und kursiv. Der Sonderfall **text* mit nur einem Stern am Ende kommt aus google-aio und
+     stand schon im alten Element -- ohne ihn bleibt der Rest des Absatzes fett. */
+  function rbInline(t){
+    var out = String(t == null ? "" : t);
+    out = out.replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>");
+    out = out.replace(/\*\*([^*\n]+)\*/g, "<strong>$1</strong>");
+    out = out.replace(/(^|[\s(])\*([^*\n]+)\*(?=[\s.,;:!?)]|$)/g, "$1<em>$2</em>");
+    return out;
+  }
+
+  function rbSplitRow(line){
+    var s = String(line || "").trim();
+    if (s.charAt(0) === "|") s = s.slice(1);
+    if (s.charAt(s.length - 1) === "|") s = s.slice(0, -1);
+    return s.split("|").map(function (c) { return c.trim(); });
+  }
+  function rbIsSep(line){
+    var s = String(line || "").trim();
+    if (s.indexOf("|") < 0) return false;
+    var p = rbSplitRow(s);
+    return p.length >= 2 && p.every(function (x) { return /^:?-{3,}:?$/.test(x); });
+  }
+  function rbIsTable(lines, i){
+    var a = String(lines[i] || "").trim(), b = String(lines[i + 1] || "").trim();
+    if (a.indexOf("|") < 0 || b.indexOf("|") < 0) return false;
+    if (a.charAt(0) !== "|" && a.charAt(a.length - 1) !== "|" && rbSplitRow(a).length < 2) return false;
+    return rbIsSep(b);
+  }
+
+  /* Ausrichtung aus der Trennzeile: :--- links, ---: rechts, :---: mittig. Die alten Elemente
+     erkannten die Schreibweise, warfen sie aber weg und setzten alles linksbuendig -- eine
+     Spalte mit Zahlen liest sich rechtsbuendig deutlich besser. */
+  function rbAligns(sepLine){
+    return rbSplitRow(sepLine).map(function (p) {
+      var l = p.charAt(0) === ":", r = p.charAt(p.length - 1) === ":";
+      return l && r ? "center" : (r ? "right" : "");
+    });
+  }
+
+  function rbTable(headerLine, sepLine, bodyLines, idx){
+    var kopf = rbSplitRow(headerLine);
+    var aus = rbAligns(sepLine);
+    var zeilen = bodyLines.map(rbSplitRow).filter(function (r) {
+      return r.length > 1 && r.some(function (x) { return x !== ""; });
+    });
+    var spalten = kopf.length;
+    zeilen.forEach(function (r) { if (r.length > spalten) spalten = r.length; });
+    while (kopf.length < spalten) kopf.push("");
+
+    /* Eine Zelle, die NUR aus einem Link besteht, wird zu ihrem Text -- kein Chip. In der
+       Anbieter-Spalte einer Vergleichstabelle steht der Markenname als Link; als Chip verliert
+       die Spalte ihren Namen und wird zu einer Reihe URLs. Stand schon im chatgpt-Element. */
+    var NUR_LINK = /^\[([^\]]+)\]\((https?:\/\/[^)]+)\)$/;
+    function zelle(roh){
+      var t = String(roh || "").trim();
+      var m = t.match(NUR_LINK);
+      if (m) return rbInline(esc(m[1]));
+      return rbCites(rbInline(esc(t)), idx);
+    }
+    function attr(i){ return aus[i] ? ' style="text-align:' + aus[i] + '"' : ""; }
+
+    return '<div class="up-rb-tablewrap"><table class="up-rb-table"><thead><tr>' +
+        kopf.map(function (h, i) { return "<th" + attr(i) + ">" + zelle(h) + "</th>"; }).join("") +
+      "</tr></thead><tbody>" +
+        zeilen.map(function (r) {
+          while (r.length < spalten) r.push("");
+          return "<tr>" + r.map(function (c, i) { return "<td" + attr(i) + ">" + zelle(c) + "</td>"; }).join("") + "</tr>";
+        }).join("") +
+      "</tbody></table></div>";
+  }
+
+  function rbBlocks(text, idx){
+    var lines = String(text == null ? "" : text).replace(/\r\n?/g, "\n").split("\n");
+    var raus = [], i = 0, liste = null;
+
+    function listeAbschliessen(){
+      if (!liste) return;
+      raus.push("<" + liste.tag + ' class="up-rb-list">' +
+        liste.items.map(function (x) { return "<li>" + x + "</li>"; }).join("") + "</" + liste.tag + ">");
+      liste = null;
+    }
+
+    while (i < lines.length){
+      var z = lines[i], t = z.trim();
+
+      if (!t || /^\*+$/.test(t)){ listeAbschliessen(); i++; continue; }
+
+      /* Ueberschriften: ## und ### werden dieselbe Stufe -- eine Modellantwort hat keine
+         Dokumenthierarchie, nur Zwischentitel. */
+      if (/^#{1,6}\s/.test(t)){
+        listeAbschliessen();
+        raus.push('<h3 class="up-rb-h">' + rbCites(rbInline(esc(t.replace(/^#+\s*/, ""))), idx) + "</h3>");
+        i++; continue;
+      }
+      if (/^(-{3,}|_{3,}|\*{3,})$/.test(t)){ listeAbschliessen(); raus.push('<hr class="up-rb-hr">'); i++; continue; }
+
+      if (rbIsTable(lines, i)){
+        listeAbschliessen();
+        var kopfZ = lines[i], sepZ = lines[i + 1];
+        i += 2;
+        var koerper = [];
+        while (i < lines.length && lines[i].trim() && lines[i].indexOf("|") >= 0){ koerper.push(lines[i]); i++; }
+        raus.push(rbTable(kopfZ, sepZ, koerper, idx));
+        continue;
+      }
+
+      /* Listenpunkte: - / * / 1. -- aber nicht **fett** am Zeilenanfang. */
+      var mb = t.match(/^([*-]|\d+[.)])\s+(.+)$/);
+      if (mb && t.indexOf("**") !== 0){
+        var tag = /^\d/.test(mb[1]) ? "ol" : "ul";
+        if (!liste || liste.tag !== tag){ listeAbschliessen(); liste = { tag: tag, items: [] }; }
+        liste.items.push(rbCites(rbInline(esc(mb[2])), idx));
+        i++; continue;
+      }
+
+      listeAbschliessen();
+      var absatz = [];
+      while (i < lines.length && lines[i].trim()){
+        if (rbIsTable(lines, i)) break;
+        if (/^#{1,6}\s/.test(lines[i].trim())) break;
+        if (/^(-{3,}|_{3,}|\*{3,})$/.test(lines[i].trim())) break;
+        var m2 = lines[i].trim().match(/^([*-]|\d+[.)])\s+(.+)$/);
+        if (m2 && lines[i].trim().indexOf("**") !== 0) break;
+        absatz.push(lines[i]); i++;
+      }
+      if (absatz.length){
+        raus.push('<p class="up-rb-p">' +
+          rbCites(rbInline(esc(absatz.join("\n"))), idx).replace(/\n/g, "<br>") + "</p>");
+      }
+    }
+    listeAbschliessen();
+    return raus.join("");
+  }
+
+  /* Markennamen im fertigen Baum auszeichnen. Nach dem Einfuegen und nicht vorher, weil ein
+     Markenname auch in einer Tabellenzelle oder in einer Ueberschrift stehen kann -- und weil er
+     NICHT in einem Zitat-Chip stehen darf, dessen Text eine URL ist.
+     Regeln aus den alten Elementen uebernommen: laengste Marke zuerst (sonst gewinnt "Solar"
+     gegen "Aurora Solar"), Wortgrenzen ueber Unicode-Klassen statt \b (\b kennt kein "ü"),
+     und je Marke nur das ERSTE Vorkommen -- ein Text, der eine Marke zwanzigmal nennt, waere
+     sonst zwanzigmal unterbrochen. */
+  function rbBrands(rootEl, companies){
+    var items = (isArr(companies) ? companies : []).map(function (c) {
+      return {
+        roh: String((c && (c.brand_name_raw || c.name)) || "").trim(),
+        name: String((c && c.name) || "").trim(),
+        id: String((c && c.company_id) || ""),
+        icon: String((c && c.favicon_url) || "")
+      };
+    }).filter(function (x) { return x.roh; });
+    if (!rootEl || !items.length) return 0;
+
+    items.sort(function (a, b) { return b.roh.length - a.roh.length; });
+    var nachKlein = {}, muster = [];
+    items.forEach(function (it) {
+      var k = it.roh.toLowerCase();
+      if (!nachKlein[k]){ nachKlein[k] = it; muster.push(it.roh.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")); }
+    });
+    if (!muster.length) return 0;
+
+    var re;
+    try { re = new RegExp("(?<![\\p{L}\\p{N}])(" + muster.join("|") + ")(?![\\p{L}\\p{N}])", "giu"); }
+    catch (e) { re = new RegExp("\\b(" + muster.join("|") + ")\\b", "gi"); }
+
+    var gesehen = {}, gesetzt = 0;
+    var walker = document.createTreeWalker(rootEl, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (node) {
+        var p = node.parentElement;
+        if (!p) return NodeFilter.FILTER_REJECT;
+        if (p.closest(".up-rb-cite") || p.closest(".up-rb-brand")) return NodeFilter.FILTER_REJECT;
+        if (p.tagName === "SCRIPT" || p.tagName === "STYLE") return NodeFilter.FILTER_REJECT;
+        if (!String(node.nodeValue || "").trim()) return NodeFilter.FILTER_REJECT;
+        re.lastIndex = 0;
+        return re.test(node.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+      }
+    });
+    var knoten = [], n;
+    while ((n = walker.nextNode())) knoten.push(n);
+
+    knoten.forEach(function (tn) {
+      var text = tn.nodeValue || "";
+      re.lastIndex = 0;
+      var m, letzte = 0, frag = document.createDocumentFragment(), geaendert = false;
+      while ((m = re.exec(text)) !== null){
+        var gefunden = m[1], k = gefunden.toLowerCase();
+        if (m.index > letzte) frag.appendChild(document.createTextNode(text.slice(letzte, m.index)));
+        if (gesehen[k]){
+          frag.appendChild(document.createTextNode(gefunden));
+        } else {
+          gesehen[k] = true;
+          var e = nachKlein[k] || {};
+          var chip = document.createElement("span");
+          chip.className = "up-rb-brand";
+          chip.setAttribute("role", "button");
+          chip.setAttribute("tabindex", "0");
+          chip.setAttribute("data-rb-brand", e.id || "");
+          if (e.name && e.name !== gefunden) chip.setAttribute("data-tip", e.name);
+          if (e.icon){
+            var img = document.createElement("img");
+            img.className = "up-rb-brand-ic"; img.alt = ""; img.loading = "lazy";
+            img.referrerPolicy = "no-referrer"; img.src = e.icon;
+            img.onerror = function(){ if (img.parentNode) img.parentNode.removeChild(img); };
+            chip.appendChild(img);
+          }
+          var txt = document.createElement("strong");
+          txt.className = "up-rb-brand-txt"; txt.textContent = gefunden;
+          chip.appendChild(txt);
+          frag.appendChild(chip);
+          geaendert = true; gesetzt++;
+        }
+        letzte = m.index + m[0].length;
+      }
+      if (letzte < text.length) frag.appendChild(document.createTextNode(text.slice(letzte)));
+      if (geaendert && tn.parentNode) tn.parentNode.replaceChild(frag, tn);
+    });
+    return gesetzt;
+  }
+
+  /* Der ganze Weg: Text bereinigen, Bloecke bauen, Marken auszeichnen.
+     Gibt zurueck, was gesetzt wurde -- die Komponente kann so messen statt raten. */
+  function respBody(hostEl, cfg){
+    cfg = cfg || {};
+    var roh = String(cfg.text == null ? "" : cfg.text);
+    var modell = String(cfg.model || "").toLowerCase();
+    /* Die Laufmarken hat nur SearchAPI, also nur google-aio -- der Filter laeuft trotzdem
+       ueberall, weil er auf ein Muster prueft, das in echtem Text nicht vorkommt. */
+    var text = rbStripFooter(rbStripRunTokens(roh));
+    if (!hostEl) return { html: "", brands: 0, cites: 0, tables: 0 };
+    var idx = rbCiteIndex(cfg.citations);
+    hostEl.innerHTML = rbBlocks(text, idx);
+    var marken = rbBrands(hostEl, cfg.companies);
+    return {
+      html: hostEl.innerHTML,
+      brands: marken,
+      cites: hostEl.querySelectorAll(".up-rb-cite").length,
+      tables: hostEl.querySelectorAll(".up-rb-table").length,
+      modell: modell
+    };
+  }
+
+  /* ==========================================================================================
      TABLE PRIMITIVES
      ==========================================================================================
      The four tables in this library legitimately differ in their columns, heights and row
@@ -6343,6 +6795,18 @@
     textSearch: PFAD_SQDASH,
     /* arrow-down-up: das Sortierzeichen der Toolbars, jetzt auch fuer die Sortierknoepfe in den
        Filter-Menues abrufbar. Die trugen bis hierher den Trichter mit drei Linien. */
+    /* Lucide file-text / external-link: die zwei Wahlmoeglichkeiten im URL-Menue (aus Mira
+       uebernommen, dort noch als rohes SVG im JS). layoutGrid / listIcon: der Grid-/Listen-
+       Umschalter der Citations. */
+    fileText: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/>' +
+              '<path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/>' +
+              '<path d="M16 13H8"/><path d="M16 17H8"/>',
+    externalLink: '<path d="M15 3h6v6"/><path d="M10 14 21 3"/>' +
+              '<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+    layoutGrid: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>' +
+              '<rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>',
+    listIcon: '<path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/>' +
+              '<path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/>',
     arrowUpDown: PFAD_SORT,
     chartColumnUp:'<path d="M13 17V9"/><path d="M18 17V5"/>' +
               '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M8 17v-3"/>',
@@ -7250,6 +7714,12 @@
     trendChip: trendChip,
     sentColor: sentColor,
     brandStack: brandStack,
+    relativeTime: relativeTime,
+    modelChip: modelChip,
+    marketChip: marketChip,
+    respBody: respBody,
+    rbShowUrl: rbShowUrl,
+    rbCleanUrl: rbCleanUrl,
     skeletonRows: skeletonRows,
     makeColumns: makeColumns,
     makeSearch: makeSearch,

@@ -122,18 +122,9 @@
      is >= 24h. Used by both the table Date column and the card header; the full date is still
      always one hover away via data-tip. No relative-time helper exists in core.js yet — this
      stays local until a second component needs it too. */
-  function relativeTime(iso){
-    var d = iso ? new Date(iso) : null;
-    if (!d || isNaN(d.getTime())) return "";
-    var diffMs = Date.now() - d.getTime();
-    if (diffMs < 0) diffMs = 0;
-    var mins = Math.floor(diffMs / 60000);
-    if (mins < 1) return "just now";
-    if (mins < 60) return mins + (mins === 1 ? " minute ago" : " minutes ago");
-    var hrs = Math.floor(mins / 60);
-    if (hrs < 24) return hrs + (hrs === 1 ? " hour ago" : " hours ago");
-    return fmtDate(iso);
-  }
+  /* Liegt jetzt im Kit (UC.relativeTime) -- die Detailseite zeigt dieselbe Zeitangabe, und zwei
+     Fassungen davon waeren zwei Wahrheiten. */
+  var relativeTime = UC.relativeTime;
 
   function makeController(root){
     var instanceId = root.getAttribute("data-instance") || "default";
