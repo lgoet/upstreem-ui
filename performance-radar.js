@@ -1331,7 +1331,11 @@
       update: function(params){
         params = params || {};
         if (params.isDark != null){
-          root.setAttribute("data-isdark", isYes(params.isDark) ? "yes" : "no");
+          /* NICHT isYes(params.isDark): der Parameter ist eine Momentaufnahme aus dem Moment,
+             in dem Bubble den Payload gebaut hat. Kennt core ein Thema, gewinnt core -- sonst
+             dreht ein Render-Aufruf mit altem is_dark die Komponente hinter der App zurueck.
+             Siehe UC.themeParam. */
+          root.setAttribute("data-isdark", UC.themeParam(params.isDark) ? "yes" : "no");
           syncTheme();
         }
         readLimits(params);

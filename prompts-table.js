@@ -2695,6 +2695,18 @@
          and needs this, staying with the narrower, always-correct groupsLoading/groupsHasData pair
          is the safer default: it can undershoot (a genuinely external refresh shows stale groups
          briefly) but never overshoots into a false-positive flash like this did. */
+      /* Der Fehlerfall VOR dem Skelett: endloses Laden sieht aus wie "gleich da", und genau so
+         wurde es gemeldet. */
+      if (state.groupsTimeout && !state.groupsHasData){
+        elTbody.innerHTML = '<div class="up-empty">' +
+          '<div class="up-empty-h">Grouping did not answer</div>' +
+          '<div class="up-empty-t">The table asked for the group headers and got no reply. ' +
+            'Check the uptGroups workflow, then reload or toggle grouping off and on.</div>' +
+        '</div>';
+        applyCols();
+        if (state.groupsWide && elGrpSidelist) elGrpSidelist.innerHTML = "";
+        return;
+      }
       if (state.groupsLoading || !state.groupsHasData){
         /* The table's own skeleton, not a second one: a hand-rolled row of grey bars looked like a
            different product loading. */
@@ -3037,8 +3049,29 @@
        ever clears it, so the header counts/visibility stay whatever they were as of the last
        explicit grouping action while you filter. (Worth knowing, not obviously a bug -- flag it
        back if the headers should track search/filter live.) */
+    /* Die Notbremse fuer den Gruppen-Ladezustand. Ohne sie steht das Skelett fuer immer, wenn die
+       Antwort ausbleibt -- das Event geht raus, der Workflow laeuft (oder auch nicht), und die
+       Tabelle dreht. Genau so gemeldet: Zeilen und Gesamtzahl kommen an, die Skelette bleiben.
+       15 Sekunden sind grosszuegig fuer eine RPC und kurz genug, dass niemand daran zweifelt, ob
+       ueberhaupt etwas passiert. Danach steht dort, WAS fehlt, statt eines Skeletts -- die
+       Hausregel dazu: ein Ladezustand muss immer enden, und ein Fehler gehoert ins UI. */
+    var GRP_TIMEOUT_MS = 15000, grpTimeout = null;
+    function grpTimeoutStarten(){
+      clearTimeout(grpTimeout);
+      grpTimeout = setTimeout(function(){
+        if (!state.groupsLoading) return;
+        state.groupsLoading = false;
+        state.groupsTimeout = true;
+        if (window.console) console.warn("[prompts-table] uptGroups blieb " + (GRP_TIMEOUT_MS/1000) +
+          "s ohne Antwort. Der Workflow hat setPromptsTableGroups nicht gerufen -- pruefe den " +
+          "uptGroups-Workflow. Bis dahin zeigt die Tabelle den Grund statt eines Skeletts.");
+        renderTable();
+      }, GRP_TIMEOUT_MS);
+    }
     function fetchGroups(){
       state.groupsLoading = true;
+      state.groupsTimeout = false;
+      grpTimeoutStarten();
       renderTable();
       /* Hidden groupings are simply not sent: the server never computes a section nobody wants to
          see, instead of computing it and the client throwing it away. */
@@ -3069,6 +3102,11 @@
       var fnName = root.getAttribute("data-groups-fn") || "uptGroups";
       var tries = 0;
       state.groupsLoading = true;
+      state.groupsTimeout = false;
+      /* Auch hier, nicht nur in fetchGroups(): dieser Pfad laeuft beim Seitenaufbau, und genau
+         dort wurde das haengende Skelett gemeldet. Die Uhr laeuft ab dem Versuch, nicht erst ab
+         dem Absenden -- findet die Bubble-Funktion sich nie, ist das ebenso ein Ausbleiben. */
+      grpTimeoutStarten();
       /* Before starting a poll, not after: the whole point is that a poll started by an EARLIER
          controller for this same instance is still pending, and it will fire on its own once the
          Bubble function shows up. Its answer reaches whichever controller is alive by then
@@ -4205,6 +4243,8 @@
         state.groups = Array.isArray(rows) ? rows : [];
         state.groupsHasData = true;
         state.groupsLoading = false;
+        state.groupsTimeout = false;
+        clearTimeout(grpTimeout);
         GROUPS_PENDING[instanceId] = false;   // the pending poll has landed; a later one may run
         /* A fresh header set invalidates whatever section was open — the sections themselves may
            be different objects now. */
@@ -4258,7 +4298,11 @@
            dass jemand die Tabelle vor sich hat. */
         if (params.view_active != null) state.darfHolen = isYes(params.view_active);
         if (params.isDark != null){
-          isDark = isYes(params.isDark);
+          /* NICHT isYes(params.isDark): der Parameter ist eine Momentaufnahme aus dem Moment,
+             in dem Bubble den Payload gebaut hat. Kennt core ein Thema, gewinnt core -- sonst
+             dreht ein Render-Aufruf mit altem is_dark die Komponente hinter der App zurueck.
+             Siehe UC.themeParam. */
+          isDark = UC.themeParam(params.isDark);
           if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
           if (window.__uptUstTopics) window.__uptUstTopics.setTheme(isDark ? "dark" : "light");
         }

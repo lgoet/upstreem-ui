@@ -562,7 +562,11 @@
          setzt ihn neben den Punkt -- unter einem Icon steht in der eingeklappten Leiste schon
          das naechste. Im ausgeklappten Zustand nimmt die CSS den Chip weg: dort steht der Name
          ja daneben. */
-      return '<button class="usn-item' + (it.key === state.aktiv ? " is-active" : "") + '" ' +
+      /* Markiert wird erst nach der Enthuellung. Vorher stand fuer einen Moment "Dashboard" da:
+         data-active ist beim Bau noch leer, und der Rueckfall heisst dashboard -- das sah aus wie
+         ein Sprung von Dashboard auf den richtigen Punkt. Solange die Leiste ihre Skelette zeigt,
+         muss auch die Markierung nichts sagen; setSidebarReady() loest beides gemeinsam aus. */
+      return '<button class="usn-item' + ((state.enthuellt && it.key === state.aktiv) ? " is-active" : "") + '" ' +
         'type="button" data-nav-key="' + esc(it.key) + '" data-tiplabel="' + esc(it.label) + '" ' +
         'data-tip-place="right">' +
         '<span class="usn-ic' + (it.icon === "mira" ? " has-mira" : "") + '">' + ic(it.icon) + '</span>' +

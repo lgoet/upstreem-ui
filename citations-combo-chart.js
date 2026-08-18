@@ -647,7 +647,11 @@
            getting a real payload is the reason this is here now instead of a one-off snippet. */
         root.__ccLastParams = params;
         if (params.isDark != null){
-          isDark = isYes(params.isDark);
+          /* NICHT isYes(params.isDark): der Parameter ist eine Momentaufnahme aus dem Moment,
+             in dem Bubble den Payload gebaut hat. Kennt core ein Thema, gewinnt core -- sonst
+             dreht ein Render-Aufruf mit altem is_dark die Komponente hinter der App zurueck.
+             Siehe UC.themeParam. */
+          isDark = UC.themeParam(params.isDark);
           if (isDark){ root.setAttribute("data-theme","dark"); donutRoot.setAttribute("data-theme","dark"); } else { root.removeAttribute("data-theme"); donutRoot.removeAttribute("data-theme"); }
         }
         /* Accepts "mode" as well as the documented "dataMode" — the backend payload this actually

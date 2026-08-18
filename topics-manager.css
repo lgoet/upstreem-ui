@@ -104,3 +104,23 @@
 .up-root.is-narrow .utm-cg-row { flex-wrap: wrap; padding-top: 6px; padding-bottom: 6px; }
 .up-root.is-narrow .utm-cg-chips { flex: 1 1 100%; order: 3; padding-top: 2px; }
 .up-root.is-narrow .utm-cg-name { max-width: none; flex: 1 1 auto; }
+
+/* Beim Ziehen wird die Zeile ihr eigener Platzhalter. core.css blendet dafuer .up-cg-dot,
+   .up-pop-label, .up-cg-eye und .up-cg-more aus -- diese Zeile heisst ihre Teile aber anders
+   (.utm-cg-name, .utm-cg-chips, .utm-cg-actions), also standen sie beim Ziehen weiter da und die
+   grauen Bloecke kamen zusaetzlich dazu. Genau das sah verschoben aus.
+   Hier also dieselbe Regel fuer die eigenen Teile, und die beiden Platzhalter bekommen die
+   Reihenfolge der Zeile: erst der Punkt, dann ein Balken fuer den Text. Mehr braucht es nicht --
+   die Zeile sagt beim Ziehen nur "hier komme ich hin". */
+.utm-cg-row.is-dragging > .utm-cg-name,
+.utm-cg-row.is-dragging > .utm-cg-chips,
+.utm-cg-row.is-dragging > .utm-cg-actions { display: none; }
+.utm-cg-row.is-dragging > .up-cg-sk-text { width: 180px; }
+
+/* Eine ausgeblendete Gruppierung: Punkt, Name und Themen gedaempft, und das durchgestrichene Auge
+   ist dauerhaft zu sehen -- es ist dort keine Aktion mehr, sondern der Zustand. Ohne das musste man
+   die Zeile anfassen, um zu erkennen, warum sie unten steht. */
+.utm-cg-row.is-hidden > .up-cg-dot,
+.utm-cg-row.is-hidden > .utm-cg-name,
+.utm-cg-row.is-hidden > .utm-cg-chips { opacity: .45; }
+.utm-cg-row.is-hidden .up-cg-eye { opacity: 1; }

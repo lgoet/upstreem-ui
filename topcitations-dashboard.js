@@ -814,7 +814,11 @@
         if (params.types_breakdown != null){ state.typesBreakdown = Array.isArray(params.types_breakdown) ? params.types_breakdown : []; state.hasChart = true; }
         if (params.url_types_breakdown != null){ state.urlTypesBreakdown = Array.isArray(params.url_types_breakdown) ? params.url_types_breakdown : []; }
         if (params.isDark != null){
-          isDark = isYes(params.isDark);
+          /* NICHT isYes(params.isDark): der Parameter ist eine Momentaufnahme aus dem Moment,
+             in dem Bubble den Payload gebaut hat. Kennt core ein Thema, gewinnt core -- sonst
+             dreht ein Render-Aufruf mit altem is_dark die Komponente hinter der App zurueck.
+             Siehe UC.themeParam. */
+          isDark = UC.themeParam(params.isDark);
           if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
           }
         persistState();

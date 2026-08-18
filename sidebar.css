@@ -338,8 +338,14 @@
    genau dort, wo ein Logo der Tabellen bei dieser Zeilenhoehe landet. */
 .usn-chips .up-stack-item { width: 22px; height: 22px; flex: 0 0 22px; }
 .usn-chips .up-stack-item + .up-stack-item { margin-left: -3.1px; }
-.usn-chips .up-stack-vis { border-radius: 6.3px; padding: 1.6px; border: 1px solid var(--vc-border); }
-.usn-chips .up-stack-item img { border-radius: 4.7px; }
+/* Vorbild ist .up-logo-box aus der Tabelle des Visibility Charts, NICHT .up-stack-vis: die Box hat
+   1px Polsterung und KEINEN Rahmen, der helle Rand ist also genau einen Pixel breit. Mit 1.6px
+   Polsterung plus 1px Rahmen waren es 2.6px, und im Dunkeln (Platte #e0e0e0 auf #1b1b1b) ist jeder
+   Pixel davon zu sehen -- daher der zu dicke weisse Rand.
+   Faktor 22/24 auf die Werte der Box: Radius 8 -> 7.3, Bildradius 7 -> 6.4. Die Polsterung bleibt
+   bei 1px, sie IST der Rand; ein Bruchteil davon waere kein sichtbarer Ring mehr. */
+.usn-chips .up-stack-vis { border-radius: 7.3px; padding: 1px; border: 0; }
+.usn-chips .up-stack-item img { border-radius: 6.4px; }
 .usn-chips .up-stack-ltr { font-size: 7.9px; }
 .usn-bar.is-mini .usn-item { justify-content: center; padding: 0; gap: 0; }
 
@@ -382,11 +388,12 @@
    anderen Zeilen auf derselben Kante. Alle Werte im selben Verhaeltnis: Radius 8 -> 5.7,
    Bild 22 -> 15.6. */
 /* Dieselben Werte wie die Team-Chips darueber: 22px, Polsterung 1.6, Rahmen 1, Radius 6.3,
-   Bildradius 4.7. Das Bild waechst dabei von 15.6 auf 16.8px und bekommt die helle Platte samt
-   Rand, die es in den Tabellen auch hat -- vorher war es ein nacktes Bild ohne beides. */
-.usn-pin-ic .up-logo-box { width: 22px; height: 22px; flex: 0 0 22px; border-radius: 6.3px;
-  padding: 1.6px; border: 1px solid var(--vc-border); }
-.usn-pin-ic .up-logo-box img { width: 100%; height: 100%; border-radius: 4.7px; }
+   Bildradius 6.4 -- dieselben Werte wie die Chips darueber, dasselbe Vorbild .up-logo-box. Das
+   Bild waechst dabei von 15.6 auf 20px und liegt auf der hellen Platte, die es in den Tabellen
+   auch hat. Der sichtbare Rand ist ein Pixel. */
+.usn-pin-ic .up-logo-box { width: 22px; height: 22px; flex: 0 0 22px; border-radius: 7.3px;
+  padding: 1px; border: 0; }
+.usn-pin-ic .up-logo-box img { width: 100%; height: 100%; border-radius: 6.4px; }
 .usn-pin-ic .up-logo-ltr { font-size: 7.9px; }
 /* Dasselbe Bauteil noch eine Stufe kleiner: im Konto-Menue sind die Icons 15px (siehe
    .usn-menu .up-pop-opt svg weiter unten), nicht 17. Faktor 15/24 auf ALLE Werte:

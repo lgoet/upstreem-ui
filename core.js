@@ -5826,6 +5826,21 @@
     try { setUpstreemTheme(wahl); } catch(e){}
     THEME.booting = false;
   })();
+  /* Der isDark-Parameter eines Render-Aufrufs ist eine MOMENTAUFNAHME: Bubble hat ihn in dem
+     Moment in den Payload geschrieben, in dem der Workflow lief. Steht die App inzwischen auf einer
+     anderen Farbe, ist er falsch -- und weil jede Komponente ihn direkt in ihr data-theme schreibt,
+     dreht sie sich damit selbst zurueck, waehrend der Rest der Seite richtig steht.
+     Genau das war das gemeldete Bild im brands-overview: beim Wechsel auf Hell blitzt die Karte
+     kurz weiss auf (core faerbt sie), und der naechste Render-Aufruf mit dem alten is_dark macht
+     sie sofort wieder dunkel.
+     Regel: kennt core ein Thema, gewinnt core. Der Parameter zaehlt nur, solange keins gesetzt ist
+     -- also beim ganz fruehen Seitenaufbau, wo er die einzige Quelle ist. */
+  function themeParam(v){
+    var t = THEME.value;
+    if (t === "dark" || t === "light") return t === "dark";
+    return isYes(v);
+  }
+
   function getUpstreemTheme(){ return THEME.value || readPrefTheme() || "light"; }
 
   window.setUpstreemTheme = setUpstreemTheme;
@@ -6881,6 +6896,7 @@
     setUpstreemTheme: setUpstreemTheme,
     onTheme: onTheme,
     getUpstreemTheme: getUpstreemTheme,
+    themeParam: themeParam,
     highlight: highlight,
     redditTitleHtml: redditTitleHtml,
     esc: esc,

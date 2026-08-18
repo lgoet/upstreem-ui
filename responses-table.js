@@ -1269,7 +1269,11 @@
       update: function(params){
         params = params || {};
         if (params.isDark != null){
-          isDark = isYes(params.isDark);
+          /* NICHT isYes(params.isDark): der Parameter ist eine Momentaufnahme aus dem Moment,
+             in dem Bubble den Payload gebaut hat. Kennt core ein Thema, gewinnt core -- sonst
+             dreht ein Render-Aufruf mit altem is_dark die Komponente hinter der App zurueck.
+             Siehe UC.themeParam. */
+          isDark = UC.themeParam(params.isDark);
           if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
         }
         if (params.requestId != null && search.latestReqId() != null && String(params.requestId) !== String(search.latestReqId())) return;

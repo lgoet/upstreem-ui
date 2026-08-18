@@ -75,8 +75,9 @@
     var elGrid      = root.querySelector(".utm-chipgrid");
 
     var state = {
-      topics: [],
-      hasData: false,
+      /* Aus dem Speicher zurueck, falls es diese Instanz schon einmal gab -- siehe persist(). */
+      topics: Array.isArray(saved.topics) ? saved.topics : [],
+      hasData: !!saved.hasData,
       loading: false, extLoading: false,
       query: saved.query || "",
       sortField: saved.sortField || DEFAULT_SORT.field,
@@ -84,7 +85,15 @@
     };
 
     function persist(){
-      STORE[instanceId] = { query: state.query, sortField: state.sortField, sortDir: state.sortDir };
+      /* Themen MIT in den Speicher, nicht nur die Ansichtsvorlieben. Bubble haengt das Element bei
+         jedem Ansichtswechsel neu ein; der frische Controller startet dann ohne Daten und zeigt
+         Skelette, bis jemand renderTopicsManager erneut ruft -- und wenn die Seite nicht neu
+         geladen wurde, ruft das niemand. Gemeldet als: nach Navigation und Themenwechsel steht die
+         Tabelle im Dauerladen, und die Custom Groupings zeigen "Deleted topic", weil ihre Themen-Ids
+         gegen eine leere Liste aufgeloest werden.
+         Dieselbe Bauart wie __usnStore in der Sidebar, aus demselben Grund. */
+      STORE[instanceId] = { query: state.query, sortField: state.sortField, sortDir: state.sortDir,
+                            topics: state.topics, hasData: state.hasData };
     }
     function isBusy(){ return !!state.loading || !!state.extLoading; }
 
@@ -509,7 +518,11 @@
       update: function(params){
         params = params || {};
         if (params.isDark != null){
-          isDark = isYes(params.isDark);
+          /* NICHT isYes(params.isDark): der Parameter ist eine Momentaufnahme aus dem Moment,
+             in dem Bubble den Payload gebaut hat. Kennt core ein Thema, gewinnt core -- sonst
+             dreht ein Render-Aufruf mit altem is_dark die Komponente hinter der App zurueck.
+             Siehe UC.themeParam. */
+          isDark = UC.themeParam(params.isDark);
           if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
         }
         if (params.topics != null){
@@ -518,6 +531,11 @@
           state.topics = Array.isArray(list) ? list : [];
           state.hasData = true;
           state.loading = false;
+          /* Themen sind die Antwort, auf die JEDER Ladezustand gewartet hat -- auch der
+             ausdrueckliche. Sonst dreht die Liste nach einem setLoading("yes") ohne passendes "no"
+             weiter, obwohl die Daten dastehen. Dieselbe Stelle wie in den vier Tabellen. */
+          state.extLoading = false;
+          persist();
         }
         if (!explicitOverride && hasProcessingAttr()) state.extLoading = readProcessing();
         /* A round trip just came back — if the modal was waiting on THIS one, it's done. */
