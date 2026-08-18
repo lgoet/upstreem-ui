@@ -84,7 +84,10 @@
 @keyframes mqaPop { from { opacity: 0; transform: translateY(-8px) scale(.985); } to { opacity: 1; transform: none; } }
 
 /* ---------- search ---------- */
-.mqa-search { display: flex; align-items: center; gap: 11px; padding: 0 14px; height: 54px; border-bottom: 1px solid var(--am-border); flex: 0 0 auto; }
+/* Ohne Linie unter dem Suchfeld. DAS war der Strich, der nach zwei Runden noch stand: er kam
+   nicht von einem .mqa-sep, sondern als border-bottom vom Suchfeld selbst. Getrennt wird jetzt
+   ueber den Abstand darunter (siehe .mqa-recent-wrap und .mqa-actions-wrap, je 18px oben). */
+.mqa-search { display: flex; align-items: center; gap: 11px; padding: 0 14px; height: 54px; flex: 0 0 auto; }
 .mqa-search-ic { width: 18px; height: 18px; flex: 0 0 auto; fill: none; stroke: var(--am-muted-2); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .mqa-inputwrap { position: relative; flex: 1 1 auto; min-width: 60px; display: flex; align-items: center; }
 .mqa-input { flex: 1 1 auto; min-width: 60px; border: 0; outline: 0; background: transparent; color: var(--am-text); font-family: var(--mqa-font); font-size: 15px; font-weight: 450; letter-spacing: -0.01em; padding: 0; touch-action: auto; position: relative; z-index: 1; }

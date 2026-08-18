@@ -20,15 +20,19 @@
 .unc-card:not(.is-shown) { display: none; }
 
 .unc-card {
-  position: fixed; right: 16px; bottom: 16px; z-index: 2147483500;
+  position: fixed; right: 8px; bottom: 8px; z-index: 2147483500;
   width: 424px; box-sizing: border-box; overflow: hidden;
   background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 16px;
   /* Drei Lagen, damit die Karte nicht auf der Flaeche klebt: eine harte Kante, ein mittlerer und
      ein weit gestreuter Schatten. Ein einzelner Schatten sieht bei dieser Groesse aus wie ein
      Rahmen. */
-  box-shadow: 0 1px 2px rgba(31,31,31,0.05),
-              0 12px 28px -8px rgba(31,31,31,0.16),
-              0 32px 64px -24px rgba(31,31,31,0.22);
+  /* Die erste Lage hat KEINEN Versatz: die drei anderen fallen nach unten, oben und rechts war
+     die Karte damit kantig abgeschnitten. Ein wenig Streuung in alle Richtungen legt sie auch
+     dort auf den Grund. */
+  box-shadow: 0 0 22px -6px rgba(31,31,31,0.12),
+              0 1px 2px rgba(31,31,31,0.05),
+              0 12px 28px -8px rgba(31,31,31,0.18),
+              0 32px 64px -24px rgba(31,31,31,0.24);
   /* 420ms mit dieser Kurve: schnell heraus, weich hinein -- die Karte soll auffallen, ohne zu
      springen. `both` haelt den Anfangszustand, sonst blitzt sie vor dem ersten Bild auf. */
   animation: unc-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -44,9 +48,10 @@
    beim Dropdown-Schatten tut (--up-dd-shadow geht von .14 auf .32). Aus 0.05/0.16/0.22 wird
    0.15/0.42/0.55. */
 .unc-card[data-theme="dark"] {
-  box-shadow: 0 1px 2px rgba(0,0,0,0.15),
-              0 12px 28px -8px rgba(0,0,0,0.42),
-              0 32px 64px -24px rgba(0,0,0,0.55);
+  box-shadow: 0 0 22px -6px rgba(0,0,0,0.38),
+              0 1px 2px rgba(0,0,0,0.15),
+              0 12px 28px -8px rgba(0,0,0,0.45),
+              0 32px 64px -24px rgba(0,0,0,0.58);
 }
 .unc-card.is-closing {
   animation: unc-out 180ms cubic-bezier(0.4, 0, 1, 1) both;
@@ -112,8 +117,18 @@
 .unc-card .up-iconbtn.unc-x { width: 24px; height: 24px; border-radius: 7px; }
 .unc-card .up-iconbtn.unc-x svg { width: 11px; height: 11px; }
 
-/* ---- Rumpf ----------------------------------------------------------------------------------- */
-.unc-body { position: relative; display: flex; align-items: flex-start; gap: 14px; padding: 16px; }
+/* ---- Rumpf -----------------------------------------------------------------------------------
+   backdrop-filter blurrt, was HINTER dem Rumpf liegt -- und das sind die sieben Zierkurven
+   (.unc-rules, absolut ueber die ganze Karte). Sie liefen quer durch die Textzeilen und machten
+   sie unruhig. 8px reichen: die Linien sind einen Pixel stark, ein Bruchteil davon bleibt als
+   Hauch stehen, der Text steht wieder auf einer ruhigen Flaeche.
+   Nicht die Linien wegzunehmen ist Absicht -- oben und unten bleiben sie sichtbar, sie sind die
+   Handschrift der Karte.
+   Browser ohne backdrop-filter lassen die Zeile fallen und zeigen den Stand von vorher. */
+.unc-body {
+  position: relative; display: flex; align-items: flex-start; gap: 14px; padding: 16px;
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+}
 /* Die Symbolflaeche traegt IMMER das dunkle Grau, unabhaengig vom Thema: sie ist die Marke in
    dieser Karte, und ein im Dark Mode helles Feld waere ein zweiter Akzent neben dem Knopf.
    Die Lichtkante innen laesst die Flaeche gewoelbt wirken statt aufgeklebt. */
@@ -213,5 +228,7 @@
    Unter 440px passt eine 384px-Karte mit 32px Rand nicht mehr: sie spannt sich dann von Kante zu
    Kante mit 16px Luft, wie in der Vorlage vorgegeben. */
 @media (max-width: 480px) {
-  .unc-card { left: 16px; right: 16px; bottom: 16px; width: auto; }
+  /* Unten 8 wie in der grossen Fassung; seitlich bleiben 16, dort spannt die Karte ueber die
+     ganze Breite und 8px Rand saehen aus wie ein Fehler im Layout. */
+  .unc-card { left: 16px; right: 16px; bottom: 8px; width: auto; }
 }

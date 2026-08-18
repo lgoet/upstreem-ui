@@ -54,8 +54,14 @@
     announcement: { icon: "broadcast",   label: "Announcement", zweit: "Dismiss",      dunkel: true },
     maintenance:  { icon: "clock",       label: "Maintenance",  zweit: "Dismiss",      dunkel: false },
     security:     { icon: "shieldCheck", label: "Security",     zweit: "That was me",  dunkel: true },
-    tip:          { icon: "bulb",        label: "Tip",          zweit: "Dismiss",      dunkel: false }
+    tip:          { icon: "bulb",        label: "Tip",          zweit: "Dismiss",      dunkel: false },
+    /* Neu, mit dem Megafon aus Lucide. Drei Schreibweisen, weil der Typ aus einem Bubble-Feld
+       kommt und dort mal mit Unterstrich, mal mit Bindestrich, mal zusammen geschrieben steht --
+       ein Tippfehler im Datensatz soll nicht das neutrale Info-Zeichen erzwingen. */
+    whats_new:    { icon: "megaphone",   label: "What's new",   zweit: "Dismiss",      dunkel: true }
   };
+  TYPEN["whatsnew"] = TYPEN["whats_new"];
+  TYPEN["whats-new"] = TYPEN["whats_new"];
   /* Ein unbekannter Typ darf die Karte nicht verschlucken: die Nachricht ist wichtiger als ihr
      Symbol. Also das neutrale Info-Zeichen und der Typ als Bezeichnung, so wie er kam. */
   function typOf(t) {

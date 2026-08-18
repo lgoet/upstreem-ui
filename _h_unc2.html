@@ -1,0 +1,56 @@
+<!doctype html><meta charset="utf-8"><title>notification-card</title>
+<style>body{margin:0;font-family:Geist,system-ui;height:220vh;background:#fafafa}
+ .bar{padding:16px;display:flex;gap:8px;flex-wrap:wrap}button{padding:6px 10px}</style>
+<div class="bar">
+  <button onclick="zeige('feature')">feature</button>
+  <button onclick="zeige('announcement')">announcement</button>
+  <button onclick="zeige('maintenance')">maintenance</button>
+  <button onclick="zeige('security')">security</button>
+  <button onclick="zeige('tip')">tip</button>
+  <button onclick="zeige('whats_new')">whats_new</button>
+  <button onclick="zeige('unbekannt')">unbekannter Typ</button>
+  <button onclick="mehrere()">3 auf einmal (Prio)</button>
+  <button onclick="kaputt()">kaputtes JSON</button>
+  <button onclick="resetUpstreemNotifications('n1')">reset</button>
+  <button onclick="neuEinhaengen()">Element neu einhaengen (Bubble)</button>
+  <button onclick="document.querySelector('.up-root').setAttribute('data-theme',
+    document.querySelector('.up-root').getAttribute('data-theme')==='dark'?'light':'dark')">dark</button>
+</div>
+<!-- Baut die Bubble-Lage nach: ein 1x1-Host, und die Wurzel bekommt von aussen
+     position:relative aufgezwungen -- genau das, was in der App passiert. -->
+<!-- Der schlimmste Fall, den Bubble baut: ein Vorfahre mit transform (Animation) und
+     overflow:hidden. transform macht ihn zum Bezugsrahmen fuer position:fixed, sein overflow
+     beschneidet dann alles darin auf 1x1 -- die Karte ist im DOM, offen und trotzdem nicht da. -->
+<div style="transform: translateZ(0); overflow: hidden; width:1px; height:1px">
+<div class="up-root unc-root" style="position:relative" data-instance="n1" data-theme="light"
+     data-logo="https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-lockup-1f1f1f.svg"
+     data-dismiss-fn="bubble_fn_uncDismiss"></div>
+</div>
+<script>
+/* Frische beweisen: alles per fetch(no-store) inline. */
+window.__GELADEN = Promise.all(["core.css","notification-card.css","core.js","notification-card.js"].map(function(f){
+  return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){return r.text()}).then(function(t){ return [f,t]; });
+})).then(function(paare){ paare.forEach(function(p){
+  var e=document.createElement(/\.css$/.test(p[0])?"style":"script"); e.textContent=p[1]; document.head.appendChild(e); }); });
+</script>
+<script>
+window.__events = [];
+window.bubble_fn_uncDismiss = function(v){ window.__events.push(v); };
+function karte(t, prio, id){ return {
+  id: id || ("id-"+t), title: "Mira is live", color: "#111827",
+  body: "Mira, your AI Search Data Agent, is now available.\nAsk questions about Visibility, competitors, citations, URLs, sources and opportunities — directly from your upstreem data.",
+  cta_label: "Big Update!", cta_url: "https://app.upstreem.ai/?view=ask-mira",
+  notification_type: t, priority: prio || 110, created_at: "2026-06-25T06:27:45.469339+00:00" }; }
+function zeige(t){ setUpstreemNotifications("n1", JSON.stringify([karte(t)])); }
+function mehrere(){ setUpstreemNotifications("n1", JSON.stringify([
+  karte("tip", 10, "a"), karte("security", 200, "b"), karte("feature", 110, "c")])); }
+function kaputt(){ setUpstreemNotifications("n1", "{das ist kein json"); }
+/* Was Bubble bei jedem Filterwechsel tut: dasselbe Markup neu einhaengen. Danach darf es genau
+   EINE Karte am body geben, nicht zwei. */
+function neuEinhaengen(){
+  var r=document.querySelector(".unc-root"), p=r.parentElement, h=p.innerHTML;
+  p.innerHTML = h;
+  setTimeout(function(){ setUpstreemNotifications("n1", JSON.stringify([karte("feature",110,"nach-neu")])); }, 200);
+}
+zeige("feature");
+</script>

@@ -6224,6 +6224,9 @@
               '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M8 17v-3"/>',
     /* Die Erklaer-Raute in Tabellenkoepfen. */
     info:     '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+    /* megaphone: der Typ "What's new" in der Benachrichtigungskarte. */
+    megaphone: '<path d="M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/>' +
+              '<path d="M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14"/><path d="M8 6v8"/>',
     /* Fuenf Symbole fuer die Benachrichtigungstypen. sparkle heisst in Lucide sparkles und ist
        dort eine Strichform, keine gefuellte -- der Schluessel bleibt, das Bild aendert sich. */
     sparkle:  '<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>' +
