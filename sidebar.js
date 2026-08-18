@@ -120,8 +120,10 @@
          Zweig stumm gelegt (siehe AKTIV_SYNONYM). logo: statt icon: -- die Zeile zeigt das
          Markenlogo des Teams, dasselbe wie der Umschalter oben. */
       { key: "preferences", label: "Your Brand", logo: true },
-      { key: "team",        label: "Team Organisation",   icon: "folder" },
-      { key: "billing",     label: "Billing",             icon: "creditCard" }
+      /* Dieselben Zeichen wie die Unterseiten-Navigation im Einstellungs-Seitenkopf: derselbe
+         Ort, dieselbe Sache, dasselbe Zeichen. Vorher standen hier folder und creditCard. */
+      { key: "team",        label: "Team Organisation",   icon: "users" },
+      { key: "billing",     label: "Billing",             icon: "dollarSign" }
     ]},
     { head: "Theme", theme: true, items: [
       { key: "light",  label: "Light"  },

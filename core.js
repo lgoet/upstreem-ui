@@ -6224,6 +6224,12 @@
               '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M8 17v-3"/>',
     /* Die Erklaer-Raute in Tabellenkoepfen. */
     info:     '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+    /* users und dollarSign: die beiden Unterseiten der Einstellungen -- in der Kopfzeile und im
+       Konto-Menue der Leiste dasselbe Zeichen. Standen bisher nur als Konstante im Seitenkopf. */
+    users:    '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/>' +
+              '<path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/>',
+    dollarSign: '<line x1="12" x2="12" y1="2" y2="22"/>' +
+              '<path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
     /* megaphone: der Typ "What's new" in der Benachrichtigungskarte. */
     megaphone: '<path d="M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/>' +
               '<path d="M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14"/><path d="M8 6v8"/>',
