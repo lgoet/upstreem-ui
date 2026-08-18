@@ -2619,7 +2619,7 @@
     function groupMenuBtnHtml(id, custom){
       var open = grpActionMenu === id;
       return '<div class="upt-grp-menuwrap' + (open ? " is-open" : "") + '">' +
-        '<button class="upt-grp-menubtn" type="button" data-grp-menubtn="' + esc(id) + '" aria-label="Group actions" aria-haspopup="menu" aria-expanded="' + (open ? "true" : "false") + '">' + GRP_MORE_SVG + '</button>' +
+        '<button class="upt-grp-menubtn" type="button" data-grp-menubtn="' + esc(id) + '" aria-label="Group actions" aria-haspopup="menu" aria-expanded="' + (open ? "true" : "false") + '">' + UC.icon("moreHorizontal", 2) + '</button>' +
         (open ? groupActionsMenuHtml(id, custom) : "") +
       '</div>';
     }

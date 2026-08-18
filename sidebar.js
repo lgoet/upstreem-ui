@@ -1049,7 +1049,11 @@
       enthuellenAnstossen();
       vorrat.brands = state.brands; vorrat.brandsDa = true;
       var el = elNav.querySelector("[data-brandcount]");
-      if (el) el.textContent = String(state.brands);
+      /* Wie beim Prompt-Zaehler: dieser Schnellweg schreibt direkt in die Zelle. Ohne die
+         Abfrage der Enthuellung stand die Markenzahl vor allem anderen da -- der Marken-Store
+         von core antwortet sofort, die Setter von Bubble brauchen laenger. */
+      if (el) el.innerHTML = state.enthuellt ? esc(String(state.brands))
+                                             : '<span class="usn-sk"></span>';
     }
     try {
       var jetztBrands = window.getUpstreemBrands && window.getUpstreemBrands();
