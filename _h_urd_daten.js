@@ -158,7 +158,7 @@ window.URD_AIO = [
         "domain": "pv-magazine.de",
         "favicon": "https://www.google.com/s2/favicons?domain=pv-magazine.de&sz=128",
         "mentions": [],
-        "description": "- Start der Zusammenarbeit bei klarsolar, einer Solar-Tochter von E.ON Deutschland, anschließend Rollout auf weitere PV-Tochtergesellschaften."
+        "description": "- Start der Zusammenarbeit bei klarsolar, einer Solar-Tochter von E.ON Deutschland, anschließend Rollout auf weitere PV-Tochtergesellschaften. - Klarsolar setzt Software von Aurora entlang der gesamten Customer Journey ein: in der Live‑Planung als Teil der Beratung digital oder vor Ort und in der technischen Planung inkl. Schaltplan - Ziel ist maximale Schnelligkeit bei noch stärkerem Einbezug von Kundinnen und Kunden in die PV-Planung"
       }
     ]
   }
