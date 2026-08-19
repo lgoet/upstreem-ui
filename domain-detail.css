@@ -12,19 +12,11 @@
    Die Reihenfolge macht order (JS), nicht die Reihenfolge im DOM: ein Umhaengen der Knoten wuerde
    ein laufendes Chart aus dem Dokument nehmen, und Chart.js verliert dabei seine Canvas-Groesse. */
 .udd-root { display: flex; flex-direction: column; gap: 32px; width: 100%; }
-/* Chart aus: die GANZE Komponente rueckt 32px hoch, die oberste Zeile mit dem Zahnrad also auch.
-   Der Abstand zwischen Zeile und erster Karte bleibt dabei 16px -- nur beides zusammen wandert.
+/* Chart aus: KEIN Versatz. Drei Anlaeufe haben es nur schlimmer gemacht -- an der Wurzel
+   verschwindet das Zahnrad, unter der Zeile liegt es auf der Oberkante der ersten Karte. Die
+   Zeile bleibt also, wo sie ist, und die Klasse is-nochart haengt weiter am Wurzelelement, damit
+   die Regel an EINER Stelle steht, sobald klar ist, welcher Abstand gemeint war. */
 
-   Zwei falsche Anlaeufe davor, und der Grund, warum sie falsch waren:
-   1. Erst hing der Versatz hier an der Wurzel. Ich habe im Harness -8px fuer die Zeile gemessen und
-      daraus "ausserhalb der Box, unsichtbar" geschlossen. Das war die Buehne des Harness mit ihren
-      24px Polsterung, nicht die Seite: dort ist ueber der Komponente Platz.
-   2. Dann habe ich die 32px UNTER der Zeile weggenommen. Damit blieb die Zeile stehen und die erste
-      Karte kam ihr entgegen -- das Zahnrad lag genau auf der Oberkante der Karte. Im Screenshot
-      unmissverstaendlich.
-   Es gehoert nach oben MIT dem Rest. 200ms ease (Vorgabe). */
-.udd-root { transition: margin-top 200ms ease; }
-.udd-root.is-nochart { margin-top: -32px; }
 .udd-root > * { min-width: 0; }
 /* Ein ausgeblendeter Bereich traegt das hidden-Attribut, und das wirkt nur ueber display:none aus
    dem Browser-Stylesheet -- jede eigene display-Regel schlaegt es. Genau das ist passiert: die
