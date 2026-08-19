@@ -986,7 +986,10 @@
         var on = (alleGewaehlt() && !state.excluded[bid]) || !!state.selected[bid];
         b.classList.toggle("is-checked", on);
         b.setAttribute("aria-checked", on ? "true" : "false");
-        b.innerHTML = on ? CHECK_SVG : "";
+        /* Nur die Klasse wechselt, das SVG bleibt stehen: ein innerHTML-Tausch nimmt das
+           Element aus dem Baum und setzt ein neues ein, und ein neues Element hat keinen
+           Ausgangszustand, aus dem heraus es animieren koennte. */
+        if (!b.querySelector("svg")) b.innerHTML = CHECK_SVG;
         var row = b.closest(".up-row");
         if (row) row.classList.toggle("is-selected", on);
       });
@@ -1051,7 +1054,7 @@
         box.classList.toggle("is-checked", gAll);
         box.classList.toggle("is-indeterminate", gSome);
         box.setAttribute("aria-checked", gAll ? "true" : (gSome ? "mixed" : "false"));
-        box.innerHTML = gAll ? CHECK_SVG : "";
+        if (!box.querySelector("svg")) box.innerHTML = CHECK_SVG;
         syncSelCount();
         syncBulkBarCount();
         return;
@@ -1064,7 +1067,7 @@
       box.classList.toggle("is-checked", all);
       box.classList.toggle("is-indeterminate", some);
       box.setAttribute("aria-checked", all ? "true" : (some ? "mixed" : "false"));
-      box.innerHTML = all ? CHECK_SVG : "";
+      if (!box.querySelector("svg")) box.innerHTML = CHECK_SVG;
       syncSelCount();
       syncBulkBarCount();
     }
@@ -1566,6 +1569,8 @@
             return '<button type="button" class="upt-colorcell" data-color="' + esc(hx) + '"' +
               ' aria-label="' + esc(hx) + '" aria-pressed="' + (on ? "true" : "false") + '">' +
               '<span class="upt-colorblob" style="background:' + esc(hx) + '">' +
+                /* HIER bleibt der Haken bedingt: .upt-colorblob svg hat keine opacity-Regel, ein
+                   dauerhaftes SVG stuende also auf JEDEM Farbfeld. Das ist keine Checkbox. */
                 (on ? CHECK_SVG : "") + '</span>' +
             '</button>';
           }).join("") +
@@ -1960,7 +1965,10 @@
       var text = String(r.prompt_text == null ? "" : r.prompt_text);
       return '<div class="up-row' + (checked ? " is-selected" : "") + '" data-id="' + esc(id) + '" tabindex="0" role="button">' +
         '<div class="up-td upt-td-prompt">' +
-          '<span class="upt-check' + (checked ? " is-checked" : "") + '" role="checkbox" tabindex="0" aria-checked="' + (checked ? "true" : "false") + '" data-select="' + esc(id) + '">' + (checked ? CHECK_SVG : "") + '</span>' +
+          '<span class="upt-check' + (checked ? " is-checked" : "") + '" role="checkbox" tabindex="0" aria-checked="' + (checked ? "true" : "false") + /* Der Haken steht IMMER im DOM, auch ungehakt. Die CSS blendet ihn ueber opacity und
+             scale ein (.upt-check svg / .is-checked svg) -- ohne Element im Baum kann dieser
+             Uebergang nie laufen, und der Haken poppte statt zu wachsen. */
+          '" data-select="' + esc(id) + '">' + CHECK_SVG + '</span>' +
           '<span class="upt-prompt-wrap">' +
             '<span class="upt-prompt-text">' + highlight(text, state.query) + '</span>' +
           '</span>' +
@@ -2490,7 +2498,8 @@
       var gIndet = !gChecked && anySel;
       return '<span class="upt-check upt-grp-selectall is-visible' + (gChecked ? " is-checked" : (gIndet ? " is-indeterminate" : "")) +
         '" role="checkbox" tabindex="0" aria-checked="' + (gChecked ? "true" : (gIndet ? "mixed" : "false")) +
-        '" data-grp-selectall="' + esc(id) + '">' + (gChecked ? CHECK_SVG : "") + '</span>';
+        /* Haken immer im DOM, siehe rowHtml -- sonst laeuft der Uebergang nicht. */
+        '" data-grp-selectall="' + esc(id) + '">' + CHECK_SVG + '</span>';
     }
     /* Patches the checkbox in or out of an EXISTING header node without touching anything else in
        it -- toggleGroup() mutates the header's is-open class directly on the live node (so the

@@ -10,8 +10,8 @@
    Fehlalarme derselben Art: der Vergleich laeuft ueber "hat Hintergrund, Rahmen, Radius, Hoehe und
    transition", und das trifft jeden Knopf und jedes Eingabefeld. Wo es ein Kit-Bauteil gibt, wird
    es benutzt -- .up-iconbtn, .up-btn, .up-btn-sec, .up-pop-opt, .up-menu, .up-switch, .up-dense,
-   .up-topicchip, .up-topicmodal-* und seit dieser Runde die .up-cg-*/.up-cgm-*-Teile der
-   Gruppierungen. Was hier eigene Klassen hat, weicht in Hoehe, Zustandslogik oder Ort ab; die
+   .up-topicchip, .up-topicmodal-* und seit dieser Runde die Gruppierungs-Teile .up-cg- und
+   .up-cgm-. Was hier eigene Klassen hat, weicht in Hoehe, Zustandslogik oder Ort ab; die
    Begruendung steht jeweils darueber.
    Die Treffer sind alt und tauchen auf, weil die Datei fuer den Umzug der Gruppierungen angefasst
    wurde. */

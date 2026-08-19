@@ -345,10 +345,9 @@
         [].forEach.call(root.querySelectorAll('[data-tie="' + e.key + '"]'), function (t) {
           t.hidden = !!e.aus;
         });
-        /* Ist der Chart-Bereich aus, ruecken wir die ganze Komponente um 32px hoch. Die oberste
-           Zeile bleibt (sie traegt das Zahnrad, den einzigen Weg zurueck) und wuerde sonst eine
-           Zeile Leerraum ueber der ersten Karte hinterlassen -- so bleibt der Abstand von oben bis
-           zum ersten Chart derselbe wie mit sichtbarem Chart. */
+        /* Ist der Chart-Bereich aus, schrumpft der Abstand UNTER der obersten Zeile um 32px. Die
+           Zeile selbst bleibt stehen -- sie traegt das Zahnrad, und ein Versatz an der Wurzel hat
+           es aus dem Bild geschoben. */
         if (e.key === "chart") root.classList.toggle("is-nochart", !!e.aus);
       });
       /* Ist die zweite Spalte leer, weil kein halber Bereich sichtbar ist, faellt sie durch die
