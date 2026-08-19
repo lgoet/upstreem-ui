@@ -193,8 +193,11 @@
       try { o = v ? JSON.parse(v) : null; } catch (e) { o = null; }
       var modus = o && o.brands;
       var gueltig = HL_MODES.some(function (m) { return m.key === modus; });
+      /* group wie cites: standardmaessig AN, und nur eine ausdrueckliche Abwahl (group === false)
+         schaltet es aus. Vorher stand hier !!o.group -- damit war ein fehlender Eintrag dasselbe
+         wie "abgewaehlt", und der Standard war aus. */
       return { brands: gueltig ? modus : "first", cites: !(o && o.cites === false),
-               group: !!(o && o.group) };
+               group: !(o && o.group === false) };
     }
     function hlSchreiben() {
       try {
