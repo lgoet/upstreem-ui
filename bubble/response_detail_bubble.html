@@ -107,16 +107,25 @@
       .replace(/:\s*([,}\]])/g, ": null$1")
       .replace(/:\s*(yes|no)\s*([,}\]])/g, function(_, v, t){ return ": " + (v === "yes") + t; })
 
-  UND: das Template-Literal braucht String.raw davor.
+  UND: der Bubble-Ausdruck braucht :formatted as JSON-safe.
 
-      var ROH = String.raw`<hier der Bubble-Ausdruck>`
+      var ROH = "<Ausdruck:formatted as JSON-safe>"
 
-  Ohne String.raw verarbeitet JavaScript die Escape-Folgen im Text, BEVOR JSON.parse sie sieht:
-  aus \n im Antworttext wird ein echter Zeilenumbruch mitten in einem JSON-String, und der ist
-  dort verboten. Gemessen ohne String.raw an diesem Payload: "Bad control character in string
-  literal at position 1585", die Komponente blieb leer -- und die Konsole nannte den Grund, aber
-  nicht die Ursache. Mit String.raw bleibt \n stehen und JSON.parse macht daraus den Umbruch.
-  Das betrifft jeden Antworttext, denn der besteht aus Absaetzen.
+  Das ist keine Feinheit, sondern die Bedingung, unter der ein Antworttext ueberhaupt in einen
+  Run-JS-Schritt passt. Gemessen, drei Wege, mit einem Text aus Umbruechen, Anfuehrungszeichen,
+  einem Code-Block und einem Backslash:
+
+    "<Ausdruck>" ohne JSON-safe          SyntaxError: Invalid or unexpected token
+                                         (ein "..."-String vertraegt keinen echten Umbruch)
+    String.raw`<Ausdruck>`               laeuft -- aber NUR ohne Backticks im Text. Eine
+                                         ChatGPT-Antwort mit ```python bricht mit
+                                         "Unexpected identifier 'python'".
+    "<Ausdruck:formatted as JSON-safe>"  laeuft, und der Text kommt unveraendert an.
+
+  Gemessen mit dem echten Payload samt Code-Block im Text: 0 Fehler, 11 Absaetze, 11 Kacheln,
+  2 Mentions, 3 Themen, und die Backticks stehen im Text.
+  JSON-safe escaped Umbrueche, Anfuehrungszeichen und Backslashes so, dass ein gueltiges
+  JS-String-Literal entsteht -- Backticks sind darin einfach Zeichen.
 
   ── Statischer Start zum Ausprobieren ────────────────────────────────────────
   Die Beispieldaten liegen NICHT in diesem Element, sondern als Run-JS-Schritt im
