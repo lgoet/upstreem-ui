@@ -1,0 +1,77 @@
+<!--
+  UPSTREEM — THEMA VOR DEM ERSTEN BILD
+
+  WOHIN: Bubble → Settings → SEO/metatags → "Script/meta tags in header". Ganz nach OBEN, vor das
+  Asset-Preload aus page_header_preload.html. Es muss laufen, bevor der Browser das erste Mal malt.
+
+  ── DAS PROBLEM ────────────────────────────────────────────────────────────────────────────────
+  Der Seitengrund und der Loader waren im Dunkelmodus fuer eine bis zwei Sekunden weiss, bis der
+  Pageload-Workflow das Thema gesetzt hat. Die Komponenten (Sidebar und so weiter) waren dabei
+  richtig gefaerbt -- core.js stampft das gespeicherte Thema selbst auf jede .up-root, bevor
+  Bubbles Attribute ankommen. Nur der Seitengrund gehoert keiner Komponente, also hat ihn niemand
+  gesetzt.
+
+  Das bisherige Header-Snippet fragte NUR prefers-color-scheme ab:
+
+      html, body { background-color: #ffffff !important; }
+      @media (prefers-color-scheme: dark) { html, body { background-color: #121212 !important; } }
+
+  Das trifft genau EINEN der drei Faelle. Die App kennt drei:
+
+      pref_theme = "dark"    der Nutzer hat ausdruecklich dunkel gewaehlt
+      pref_theme = "light"   der Nutzer hat ausdruecklich hell gewaehlt
+      Schluessel fehlt       "System" -- dann und nur dann gilt prefers-color-scheme
+
+  Wer im hellen Betriebssystem sitzt und in der App dunkel gewaehlt hat, bekam mit dem alten
+  Snippet einen weissen Grund; umgekehrt einen dunklen. Und CSS kann den localStorage nicht lesen,
+  also braucht es die drei Zeilen Javascript -- eine Media Query allein kann das nicht loesen.
+
+  ── DER SCHLUESSEL ─────────────────────────────────────────────────────────────────────────────
+  "pref_theme" ist derselbe Schluessel, den core.js schreibt (setUpstreemTheme) und liest
+  (readPrefTheme). Nichts Neues, nichts Zusaetzliches zu pflegen: waehlt der Nutzer in der App das
+  Thema, steht es danach hier drin, und dieses Snippet liest genau das.
+
+  ── FARBEN ─────────────────────────────────────────────────────────────────────────────────────
+  #ffffff und #121212 sind --vc-bg aus core.css, hell und dunkel. Weichen sie dort einmal ab,
+  muessen sie hier mitgezogen werden -- das Snippet laeuft, BEVOR core.css da ist, kann seine
+  Variablen also nicht benutzen.
+-->
+<script>
+(function () {
+  /* Synchron im <head>: laeuft vor dem ersten Bild, also blitzt nichts. try/catch, weil
+     localStorage in einem privaten Fenster werfen kann -- dann bleibt es bei der Media Query. */
+  var t = "";
+  try { t = String(window.localStorage.getItem("pref_theme") || "").trim().toLowerCase(); } catch (e) {}
+  if (t === "dark" || t === "light") {
+    document.documentElement.setAttribute("data-up-pagetheme", t);
+  }
+  /* Kein else: fehlt der Schluessel, ist "System" gemeint, und dann soll die Media Query unten
+     entscheiden. Ein Attribut zu setzen wuerde sie ausschalten. */
+})();
+</script>
+<style>
+  /* Vorgabe HELL. Steht zuerst, damit die zwei Faelle darunter sie ueberschreiben koennen.
+     Ohne !important: Bubble setzt den Seitengrund selbst, und !important hier hat schon einmal
+     verhindert, dass eine Seite ihren eigenen Grund bekommt. Reicht die Spezifitaet nicht, ist
+     der richtige Ort Bubbles Page-Einstellung, nicht ein !important hier. */
+  html, body { background-color: #ffffff; }
+
+  /* "System" -- gilt nur, wenn der Nutzer NICHTS gewaehlt hat (kein Attribut gesetzt). Der
+     :not()-Teil ist entscheidend: ohne ihn schlaegt ein dunkles Betriebssystem die ausdrueckliche
+     Wahl "hell". Genau dieser Fall fehlte im alten Snippet. */
+  @media (prefers-color-scheme: dark) {
+    html:not([data-up-pagetheme]), html:not([data-up-pagetheme]) body { background-color: #121212; }
+  }
+
+  /* Die ausdrueckliche Wahl. Zwei Selektorteile mehr als die Vorgabe, gewinnt also ueber
+     Spezifitaet und nicht ueber die Reihenfolge. */
+  html[data-up-pagetheme="dark"], html[data-up-pagetheme="dark"] body { background-color: #121212; }
+  html[data-up-pagetheme="light"], html[data-up-pagetheme="light"] body { background-color: #ffffff; }
+
+  /* Der Loader: dieselbe Frage, dasselbe Attribut. Trifft die drei Bubble-Klassen, die waehrend
+     des Pageloads sichtbar sind. Stimmt einer der Namen in dieser App nicht, ist er hier
+     nachzutragen -- die Regel schadet nicht, wenn es die Klasse nicht gibt. */
+  html[data-up-pagetheme="dark"] .bubble-element.Group.loader,
+  html[data-up-pagetheme="dark"] .page-loader,
+  html[data-up-pagetheme="dark"] #app-loader { background-color: #121212; }
+</style>

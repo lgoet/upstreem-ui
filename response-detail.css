@@ -177,8 +177,7 @@
   transition: color 120ms ease; }
 /* Unterstrichen UND in Textfarbe: die Domain ist ein eigenes Ziel neben der Karte, und ohne den
    Strich sieht der Farbwechsel wie ein Hover auf der ganzen Karte aus. */
-.urd-cc-domain:hover, .urd-cr-domain:hover { text-decoration: underline; text-underline-offset: 2px;
-  color: var(--vc-text);
+.urd-cc-domain:hover, .urd-cr-domain:hover { color: var(--vc-text);
   text-decoration: underline; text-underline-offset: 2px; }
 .urd-cc-domain:focus-visible, .urd-cr-domain:focus-visible { outline: 2px solid var(--vc-text);
   outline-offset: 2px; border-radius: 4px; }
@@ -229,19 +228,24 @@
    Stapel, sondern als Reihe: 4px Abstand, ein echter Rahmen, und die Hover-Verschiebung des
    Stapels ist aus (sie ergibt ohne Ueberlappung keinen Sinn).
    Und zwei Pixel kleiner: 26 statt 28. Nach Regel 1 ziehen alle Werte mit -- Radius 8 -> 7.4,
-   Bildradius 7 -> 6.5. */
+   Bildradius 5 -> 4.4. Rahmen (1px) und Polsterung (2px) kommen aus core und bleiben: ein Pixel
+   skaliert nicht sinnvoll auf 0.93. */
 .urd-cc-foot .up-stack-item, .urd-cr-ments .up-stack-item {
   width: 26px; height: 26px; flex: 0 0 26px; }
 .urd-cc-foot .up-stack-item + .up-stack-item,
 .urd-cr-ments .up-stack-item + .up-stack-item { margin-left: 4px; }
+/* 26px Chip statt 28: Faktor 26/28 auf Radius (8 -> 7.4). Rahmen 1px und Polsterung 2px kommen
+   aus core und bleiben -- ein Pixel skaliert nicht sinnvoll auf 0.93. Bild also 26 - 2 - 4 = 20px,
+   Bildradius 7.4 - 3 = 4.4. */
 .urd-cc-foot .up-stack-vis, .urd-cr-ments .up-stack-vis {
   border-radius: 7.4px; box-shadow: none; border: 1px solid var(--vc-border); }
 /* Im Dunkeln kein Rahmen: die Logokachel ist dort selbst hell und traegt die Form allein --
    dieselbe Entscheidung wie beim Marken-Chip in den Mentions und beim Zitations-Chip im Text.
    Ein Marken-Chip soll nicht an drei Orten drei Rahmen-Regeln haben. */
 .up-root[data-theme="dark"] .urd-cc-foot .up-stack-vis,
-.up-root[data-theme="dark"] .urd-cr-ments .up-stack-vis { border-color: transparent; }
-.urd-cc-foot .up-stack-item img, .urd-cr-ments .up-stack-item img { border-radius: 6.5px; }
+.up-root[data-theme="dark"] .urd-cr-ments .up-stack-vis {
+  border-color: transparent; background-clip: padding-box; }
+.urd-cc-foot .up-stack-item img, .urd-cr-ments .up-stack-item img { border-radius: 4.4px; }
 /* Ohne Ueberlappung gibt es nichts auseinanderzuschieben: das SEITLICHE Wegruecken der Nachbarn
    faellt weg, sonst zappelt die ganze Reihe, wenn man ueber einen Chip faehrt.
    Das Anheben bleibt -- und zwar auf JEDEM Chip. Vorher hob nur der erste: core gibt dem ersten

@@ -345,6 +345,11 @@
         [].forEach.call(root.querySelectorAll('[data-tie="' + e.key + '"]'), function (t) {
           t.hidden = !!e.aus;
         });
+        /* Ist der Chart-Bereich aus, ruecken wir die ganze Komponente um 32px hoch. Die oberste
+           Zeile bleibt (sie traegt das Zahnrad, den einzigen Weg zurueck) und wuerde sonst eine
+           Zeile Leerraum ueber der ersten Karte hinterlassen -- so bleibt der Abstand von oben bis
+           zum ersten Chart derselbe wie mit sichtbarem Chart. */
+        if (e.key === "chart") root.classList.toggle("is-nochart", !!e.aus);
       });
       /* Ist die zweite Spalte leer, weil kein halber Bereich sichtbar ist, faellt sie durch die
          span-2-Regeln von selbst weg -- dafuer braucht es keine eigene Klasse. */
@@ -682,32 +687,40 @@
        animieren und danach wieder freigeben. 200ms ease (Vorgabe).
        Ohne das Freigeben am Ende bliebe die Karte auf der gemessenen Hoehe stehen und wuerde beim
        naechsten Datenwechsel nicht mehr mitwachsen. */
-    /* Die Zielhoehe wird NACH dem Einrichten des Charts gemessen, nicht direkt nach dem Zeichnen.
-       Chart.js richtet seine Leinwand ueber einen ResizeObserver ein, also erst nach diesem Lauf:
-       gemessen wurden 326px vor dem Wechsel, 468px direkt danach -- und nach dem Loslassen wieder
-       326px. Die Animation lief also auf ein Ziel, das es gleich nicht mehr gab, und das Ergebnis
-       war ein Flackern statt einer Bewegung. Solange gemessen wird, haelt die alte Hoehe die Karte
-       fest, damit zwischen Zeichnen und Animation kein Sprung sichtbar wird. */
+    /* Die Zielhoehe wird NACH dem Einrichten des Charts gemessen, nicht direkt nach dem Zeichnen:
+       Chart.js richtet seine Leinwand ueber einen ResizeObserver ein, also erst nach diesem Lauf.
+       Wer vorher misst, misst eine Hoehe, die es gleich nicht mehr gibt (gemessen 326 -> 468 -> und
+       nach dem Loslassen wieder 326), und animiert auf ein Ziel, das verschwindet -- ein Flackern
+       statt einer Bewegung.
+
+       Waehrend der zwei Frames haelt MIN-HEIGHT die alte Hoehe, nicht height. Das ist der
+       Unterschied, der zaehlt: eine feste Hoehe quetscht die Balkenliste, und was nicht
+       hineinpasst, ist weg -- gemessen neun Balken im Dokument, fuenf sichtbar, und die Karte blieb
+       mit einer inline gesetzten Hoehe von 326px stehen. Ein Mindestmass laesst wachsen und
+       verhindert nur das Zusammenfallen, also genau das, was animiert werden soll. */
     function hoeheAnimiert(karte, neuZeichnen) {
       if (!karte || !karte.getBoundingClientRect) { neuZeichnen(); return; }
       var vorher = karte.getBoundingClientRect().height;
       karte.style.transition = "none";
-      karte.style.height = vorher + "px";
+      karte.style.minHeight = vorher + "px";
       neuZeichnen();
-      function aufraeumen() { karte.style.height = ""; karte.style.transition = ""; }
+      function aufraeumen() {
+        karte.style.height = ""; karte.style.minHeight = ""; karte.style.transition = "";
+      }
       requestAnimationFrame(function () {
         requestAnimationFrame(function () {
-          /* Loslassen, natuerliche Hoehe lesen, sofort wieder festnageln -- alles im selben Frame,
-             also entsteht dazwischen kein Bild. */
-          karte.style.height = "";
+          /* Mindestmass loslassen, natuerliche Hoehe lesen -- alles im selben Frame, also entsteht
+             dazwischen kein Bild. */
+          karte.style.minHeight = "";
           var nachher = karte.getBoundingClientRect().height;
           if (Math.abs(nachher - vorher) < 1) { aufraeumen(); return; }
           karte.style.height = vorher + "px";
-          requestAnimationFrame(function () {
-            karte.style.transition = "height 200ms ease";
-            karte.style.height = nachher + "px";
-            setTimeout(aufraeumen, 220);
-          });
+          /* Den Startwert festschreiben, ohne zu zeichnen: ohne diese erzwungene Neuberechnung
+             springt die Karte ohne Animation auf das Ziel. */
+          void karte.offsetHeight;
+          karte.style.transition = "height 200ms ease";
+          karte.style.height = nachher + "px";
+          setTimeout(aufraeumen, 220);
         });
       });
     }
@@ -937,7 +950,22 @@
       },
       setLoading: function (v) {
         state.loading = isYes(v);
-        if (state.loading) warteStarten(); else warteBeenden();
+        /* Loading = yes heisst: KEINE Daten zeigen -- nicht "die alten stehen lassen und ein
+           Skelett darueberlegen". Der Unterschied ist nicht theoretisch: gemeldet wurde, dass beim
+           Laden einer neuen Domain hier und da die Linie der VORIGEN erschien. Solange die alten
+           Zahlen im Zustand liegen, kann jeder Weg, der spaeter neu zeichnet, sie wieder auf den
+           Schirm bringen -- eine verzoegerte Zeichnung, ein Themenwechsel, ein Breitenwechsel.
+           Weggeworfen kann das keiner mehr. Den Rest bringt der naechste setDomainDetail.
+           Folge, die genannt sein muss: setzt ein Workflow loading=yes und danach loading=no OHNE
+           neue Daten zu schicken, steht "No data" da und nicht mehr der alte Stand. Das ist die
+           Regel, um die es hier geht. */
+        if (state.loading) {
+          state.header = null; state.share = null; state.urls = null;
+          state.model = null; state.funnel = null; state.types = null;
+          state.hasData = false; state.error = null;
+          state.urlsStale = false; state.urlsError = null;
+          warteStarten();
+        } else warteBeenden();
         render();
         return true;
       },

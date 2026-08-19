@@ -936,7 +936,13 @@
       },
       setLoading: function (v) {
         state.loading = isYes(v);
-        if (state.loading) warteStarten(); else warteBeenden();
+        /* Dieselbe Regel wie in domain-detail: loading = yes heisst KEINE Daten zeigen, also
+           werden die alten weggeworfen. Sonst kann ein verzoegertes Neuzeichnen sie zurueckholen,
+           und dann stand die Antwort der vorigen Ausfuehrung unter dem neuen Prompt. */
+        if (state.loading) {
+          state.data = null; state.hasData = false; state.error = null;
+          warteStarten();
+        } else warteBeenden();
         render();
         return true;
       },

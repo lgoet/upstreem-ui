@@ -1,0 +1,28 @@
+<meta charset="utf-8"><title>seitengrund vor dem ersten bild</title>
+<pre id="log" style="font:11px/1.6 ui-monospace,monospace;padding:12px">laeuft</pre>
+<script>
+/* Die drei Faelle als Regelwerk pruefen, ohne dreimal neu zu laden: das Snippet wird eingesetzt,
+   dann wird das Attribut von Hand gestellt und der berechnete Grund gelesen. Die Media Query
+   selbst kann ich nicht umstellen -- ihren Zustand lese ich mit matchMedia und rechne mit. */
+function log(s){ document.getElementById("log").textContent += "\n" + s; }
+fetch("bubble/page_theme_preload.html", {cache:"no-store"}).then(function(r){ return r.text(); })
+ .then(function(t){
+   var i = t.indexOf("<style>"), j = t.indexOf("</style>");
+   var css = t.slice(i + 7, j);
+   var st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
+   var systemDunkel = window.matchMedia("(prefers-color-scheme: dark)").matches;
+   var out = [];
+   [["dark","ausdruecklich dunkel"],["light","ausdruecklich hell"],[null,"System"]].forEach(function(f){
+     if (f[0]) document.documentElement.setAttribute("data-up-pagetheme", f[0]);
+     else document.documentElement.removeAttribute("data-up-pagetheme");
+     var html = getComputedStyle(document.documentElement).backgroundColor;
+     var body = getComputedStyle(document.body).backgroundColor;
+     out.push({fall: f[1], html: html, body: body});
+     log(f[1] + ": html=" + html + " body=" + body);
+   });
+   document.documentElement.removeAttribute("data-up-pagetheme");
+   window.__ERG = {systemDunkel: systemDunkel, faelle: out};
+   window.__fertig = true;
+   log("system prefers dark: " + systemDunkel);
+ });
+</script>

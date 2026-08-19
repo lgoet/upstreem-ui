@@ -1,0 +1,81 @@
+<meta charset="utf-8"><title>dominierende favicon-farbe</title>
+<style>body{font:12px/1.5 system-ui;margin:16px} table{border-collapse:collapse} td,th{border:1px solid #ddd;padding:4px 8px}
+.sw{width:44px;height:20px;display:inline-block;border:1px solid #999;vertical-align:middle}</style>
+<body>
+<div id="out">laeuft</div>
+<script>
+/* Zwei Quellen im Vergleich, beide mit Access-Control-Allow-Origin (gemessen):
+     wsrv.nl   -> holt die Google-Favicon-URL, die die App ohnehin benutzt, und liefert sie mit CORS
+     favicone  -> eigener Favicon-Dienst, 128px, mit CORS
+   Die Farbe wird selbst berechnet, nicht mit Color Thief: dessen Median-Cut liefert den
+   HAEUFIGSTEN Ton, und der ist bei einem Favicon fast immer der Hintergrund (bei YouTube Weiss).
+   Gesucht ist die dominierende FARBE, also wird nach Saettigung gewichtet und Grau uebergangen. */
+function quelle(art, domain){
+  if (art === "wsrv") return "https://wsrv.nl/?url=" +
+    encodeURIComponent("www.google.com/s2/favicons?domain=" + domain + "%26sz=128") + "&w=64&h=64&output=png";
+  return "https://favicone.com/" + domain + "?s=64";
+}
+function laden(url){
+  return new Promise(function(res, rej){
+    var img = new Image(); img.crossOrigin = "anonymous";
+    img.onload = function(){ res(img); };
+    img.onerror = function(){ rej(new Error("CORS/Ladefehler")); };
+    setTimeout(function(){ rej(new Error("keine Antwort")); }, 8000);
+    img.src = url;
+  });
+}
+function rgb2hsl(r,g,b){
+  r/=255; g/=255; b/=255;
+  var mx=Math.max(r,g,b), mn=Math.min(r,g,b), h=0, s=0, l=(mx+mn)/2, d=mx-mn;
+  if (d){ s = l > 0.5 ? d/(2-mx-mn) : d/(mx+mn);
+    h = mx===r ? ((g-b)/d + (g<b?6:0)) : mx===g ? ((b-r)/d + 2) : ((r-g)/d + 4); h/=6; }
+  return [h, s, l];
+}
+function hex(r,g,b){ function h2(n){ n=Math.max(0,Math.min(255,Math.round(n))); var s=n.toString(16); return s.length<2?"0"+s:s; }
+  return "#"+h2(r)+h2(g)+h2(b); }
+/* Eimer im HSL-Farbkreis: 24 Toene. Jedes Pixel zaehlt mit seiner Saettigung als Gewicht, damit
+   ein grosses blasses Feld einen kleinen satten Fleck nicht ueberstimmt. Fast durchsichtige,
+   fast weisse, fast schwarze und graue Pixel zaehlen gar nicht. */
+function dominant(img){
+  var c = document.createElement("canvas"); c.width = 64; c.height = 64;
+  var ctx = c.getContext("2d", {willReadFrequently:true});
+  ctx.drawImage(img, 0, 0, 64, 64);
+  var d = ctx.getImageData(0,0,64,64).data;
+  var eimer = {}, gesamt = 0;
+  for (var i = 0; i < d.length; i += 4){
+    var a = d[i+3]; if (a < 128) continue;
+    var r = d[i], g = d[i+1], b = d[i+2];
+    var hsl = rgb2hsl(r,g,b);
+    if (hsl[1] < 0.18) continue;               /* grau, weiss, schwarz */
+    if (hsl[2] < 0.10 || hsl[2] > 0.94) continue;
+    var k = Math.floor(hsl[0] * 24) % 24;
+    var w = hsl[1] * hsl[1];                   /* Saettigung quadriert: satt schlaegt blass */
+    var e = eimer[k] = eimer[k] || {w:0, r:0, g:0, b:0, n:0};
+    e.w += w; e.r += r*w; e.g += g*w; e.b += b*w; e.n++;
+    gesamt += w;
+  }
+  var best = null;
+  Object.keys(eimer).forEach(function(k){ if (!best || eimer[k].w > best.w) best = eimer[k]; });
+  if (!best || !gesamt) return null;
+  return {hex: hex(best.r/best.w, best.g/best.w, best.b/best.w),
+          anteil: Math.round(best.w/gesamt*100) + "%", pixel: best.n};
+}
+var DOMAINS = ["youtube.com","adac.de","spiegel.de","reddit.com","github.com","x.com",
+               "amazon.de","idealo.de","check24.de","chip.de","heise.de","lee-up.de",
+               "anfragenfluss.de","mittelstand-digital.de","wikipedia.org","linkedin.com"];
+var rows = [];
+Promise.all(DOMAINS.map(function(dm){
+  return Promise.all(["wsrv","favicone"].map(function(q){
+    return laden(quelle(q, dm)).then(function(img){ return dominant(img); })
+      .catch(function(e){ return {fehler: e.message}; });
+  })).then(function(r){ return {domain: dm, wsrv: r[0], favicone: r[1]}; });
+})).then(function(r){
+  window.__ERG = r; window.__fertig = true;
+  var h = "<table><tr><th>domain</th><th>wsrv</th><th></th><th>favicone</th><th></th></tr>";
+  r.forEach(function(x){
+    function z(v){ return v && v.hex ? '<span class="sw" style="background:'+v.hex+'"></span> '+v.hex+' '+v.anteil : (v && v.fehler ? v.fehler : "keine Farbe"); }
+    h += "<tr><td>"+x.domain+"</td><td>"+z(x.wsrv)+"</td><td></td><td>"+z(x.favicone)+"</td><td></td></tr>";
+  });
+  document.getElementById("out").innerHTML = h + "</table>";
+});
+</script>
