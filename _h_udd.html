@@ -49,6 +49,9 @@ window.__GELADEN = Promise.all(["core.css","domain-detail.css","core.js","domain
   });
 });
 
+(function(){ var l=document.createElement("script"); l.src="_h_udd_load.js?n="+Math.random();
+  document.head.appendChild(l); })();
+
 function laden(){ window.setDomainDetail("domain_detail_page", JSON.stringify(window.UDD_MAIN)); }
 function urls(){ window.setDomainDetailUrls("domain_detail_page", JSON.stringify(window.UDD_URLS)); }
 function thema(){
