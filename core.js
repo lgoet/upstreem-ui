@@ -3642,7 +3642,18 @@
         var fn2 = resolveBubbleFn(mitPraefix);
         if (typeof fn2 === "function"){ fn = fn2; fnName = mitPraefix; }
       }
-      var json; try { json = JSON.stringify(payload); } catch(e){ json = ""; }
+      /* Ein einzelner Wert geht ROH raus, nicht als JSON. JSON.stringify("abc") ergibt "abc" MIT
+         Anfuehrungszeichen, und ein Workflow, der nur eine Id braucht, musste sie erst wieder
+         abschneiden -- eine Extraktion fuer einen Wert, der schon der Wert war. Objekte bleiben
+         JSON, dort ist die Struktur der Sinn.
+         Zahlen und Wahrheitswerte ebenso roh: "3" und "true" liest Bubble direkt als Zahl bzw. als
+         yes/no, "\"3\"" nicht. null und undefined werden zum leeren Text -- ein Event ohne Wert
+         soll nichts senden, nicht das Wort "null". */
+      var json;
+      if (payload == null) json = "";
+      else if (typeof payload === "string") json = payload;
+      else if (typeof payload === "number" || typeof payload === "boolean") json = String(payload);
+      else { try { json = JSON.stringify(payload); } catch(e){ json = ""; } }
       /* Der Wurf der Bubble-Funktion darf NICHT still verschwinden. Der Nicht-gefunden-Zweig
          darunter warnt ausfuehrlich, dieser hier schwieg -- und das ist der teurere Fall: eine
          Komponente, die vor dem Feuern einen Ladezustand setzt und auf ein Erfolgsereignis

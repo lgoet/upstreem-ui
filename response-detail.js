@@ -811,7 +811,9 @@
         /* Die Spaltenzahl haengt an der Kachelmenge und muss nach dem Umschalten neu stehen:
            im Listenmodus ist das Raster verborgen und meldet Breite 0. */
         if (k === "grid" && state.data) { spaltenSetzen((state.data.citations || []).length); markenPassen(); }
-        fire("data-view-fn", "urdView", { view: k });
+        /* Ein Wert, also roh: "grid" oder "list". Vorher { view: "grid" } -- eine Huelle um einen
+           einzigen Wert, die in Bubble eine Extraktion kostete, die nichts extrahiert. */
+        fire("data-view-fn", "urdView", k);
         return;
       }
 
