@@ -109,7 +109,11 @@
       .replace(/:\s*([,}\]])/g, ": null$1")
       .replace(/:\s*(yes|no)\s*([,}\]])/g, function(_, v, t){ return ": " + (v === "yes") + t; })
 
-  UND: der Bubble-Ausdruck braucht :formatted as JSON-safe.
+  UND: JEDER dynamische Wert braucht :formatted as JSON-safe. Nicht nur der Antworttext --
+  auch prompt_text, title und description. Genau daran ist es dreimal gebrochen: erst am
+  Zeilenumbruch, dann am Backtick, dann am Anfuehrungszeichen in einer description
+  ("... — title: \"Radware Captcha Page\" ..." -> Unexpected identifier 'Radware').
+  Das ist der Sanitizer, und er muss BEIM EINSETZEN greifen.
 
       var ROH = "<Ausdruck:formatted as JSON-safe>"
 

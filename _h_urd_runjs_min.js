@@ -10,26 +10,18 @@
       logo_url: "https://www.google.com/s2/favicons?domain=perplexity.ai&sz=64" }
   ];
 
-  /* ── DIESE STELLE DYNAMISCH MACHEN ────────────────────────────────────────────────────────
-     Alles zwischen den beiden Backticks loeschen und den Bubble-Ausdruck fuer den Antworttext
-     einsetzen. String.raw und die Backticks BLEIBEN STEHEN -- sie sind der Grund, dass echte
-     Zeilenumbrueche und Anfuehrungszeichen im Text nichts kaputt machen. */
-  var TEXT = String.raw`Kurzer Einstiegsabsatz mit einer Marke: LeeUP Media ist dabei. [0](https://www.lee-up.de/solar) [1](https://anfragenfluss.de/neuigkeiten/beste-agentur-photovoltaik-leads)
-
-## Zwischentitel
-
-- Erster Listenpunkt mit **fett** darin
-- Zweiter Listenpunkt mit einem Zitat [1](https://anfragenfluss.de/neuigkeiten/beste-agentur-photovoltaik-leads)
-
-| Anbieter | Bewertung | Preis |
-| --- | :---: | ---: |
-| LeeUP Media | gut | 1.200 |
-| Anfragenfluss | sehr gut | 900 |
-
-Ein Absatz mit "Anfuehrungszeichen" und einem Backslash C:\temp, damit sichtbar ist, dass beides haelt.
-
-[[0] - Marketing für Solarbetriebe - LeeUP Media GmbH](https://www.lee-up.de/solar)
-[[1] - Beste Agentur für Photovoltaik-Leads - Anfragenfluss](https://anfragenfluss.de/neuigkeiten/beste-agentur-photovoltaik-leads)`;
+  /* ── DYNAMISCH MACHEN ─────────────────────────────────────────────────────────────────────
+     Doppelte Anfuehrungszeichen behalten, den Inhalt gegen den Bubble-Ausdruck tauschen, und in
+     Bubble hinter den Ausdruck :formatted as JSON-safe haengen. Das ist der Sanitizer, und er muss
+     BEIM EINSETZEN greifen -- ein .replace() weiter unten kaeme zu spaet, weil ein SyntaxError
+     verhindert, dass ueberhaupt eine Zeile laeuft.
+     Gemessen mit einem Text aus Umbruechen, Anfuehrungszeichen, Backticks und Backslash:
+       ohne JSON-safe            SyntaxError: Invalid or unexpected token
+       String.raw mit Backticks  bricht am Backtick (```python in einer ChatGPT-Antwort)
+       mit JSON-safe             haelt alles, Text kommt unveraendert an
+     Dasselbe gilt fuer JEDEN anderen dynamischen Wert hier drin -- prompt_text, title,
+     description. */
+  var TEXT = "Kurzer Einstiegsabsatz mit einer Marke: LeeUP Media ist dabei. [0](https://www.lee-up.de/solar) [1](https://anfragenfluss.de/neuigkeiten/beste-agentur-photovoltaik-leads)\n\n## Zwischentitel\n\n- Erster Listenpunkt mit **fett** darin\n- Zweiter Listenpunkt mit einem Zitat [1](https://anfragenfluss.de/neuigkeiten/beste-agentur-photovoltaik-leads)\n\n| Anbieter | Bewertung | Preis |\n| --- | :---: | ---: |\n| LeeUP Media | gut | 1.200 |\n| Anfragenfluss | sehr gut | 900 |\n\nEin Absatz mit \"Anfuehrungszeichen\" und einem Backslash C:\\temp, damit sichtbar ist, dass beides haelt.\n\n[[0] - Marketing für Solarbetriebe - LeeUP Media GmbH](https://www.lee-up.de/solar)\n[[1] - Beste Agentur für Photovoltaik-Leads - Anfragenfluss](https://anfragenfluss.de/neuigkeiten/beste-agentur-photovoltaik-leads)";
 
   var DATEN = [{
     prompt_run_id: "f052a30f-0b42-4fb9-a672-2bf797ff42e5",
@@ -72,7 +64,13 @@ Ein Absatz mit "Anfuehrungszeichen" und einem Backslash C:\temp, damit sichtbar 
         domain: "anfragenfluss.de",
         favicon: "https://www.google.com/s2/favicons?domain=anfragenfluss.de&sz=128",
         mentions: [],
-        description: "Woran erkennst du die beste Agentur für Photovoltaik-Leads? 7 Prüfkriterien, typische Red Flags und der Fragenkatalog fürs Erstgespräch." }
+        description: "Woran erkennst du die beste Agentur für Photovoltaik-Leads? 7 Prüfkriterien, typische Red Flags und der Fragenkatalog fürs Erstgespräch." },
+      { url: "https://www.mittelstand-digital.de/MD/Redaktion/DE/Karte/Kompetenzzentren-Projekte/mittelstand-digital-zentrum-handwerk.html",
+        title: "Mittelstand Digital | Mittelstand-Digital Zentrum Handwerk",
+        domain: "mittelstand-digital.de",
+        favicon: "https://www.google.com/s2/favicons?domain=mittelstand-digital.de&sz=128",
+        mentions: [],
+        description: "Mittelstand Digital | Mittelstand-Digital Zentrum Handwerk — title: \"Radware Captcha Page\" We apologize for the inconvenience... ...but your activity..." }
     ]
   }];
 
