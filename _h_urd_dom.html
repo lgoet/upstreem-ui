@@ -1,0 +1,41 @@
+<meta charset="utf-8"><title>Payload aus dem DOM</title>
+<style>html,body{margin:0;height:100%;font-family:Geist,system-ui,sans-serif}
+body{overflow:hidden;background:#fff}#main{height:100vh;overflow-y:auto;padding:24px;box-sizing:border-box}</style>
+<body>
+<div id="main">
+  <!-- Genau wie in der Bubble-Vorlage: der Payload steht als INHALT des Blocks. -->
+  <div class="up-root urd-root" data-instance="response_detail_page" data-isdark="no"
+       data-prompt-fn="bubble_fn_urdPrompt" data-brand-fn="bubble_fn_urdBrand"
+       data-url-fn="bubble_fn_urdUrl" data-view-fn="bubble_fn_urdView">
+    <script type="application/json" id="payload"></script>
+  </div>
+  <!-- Und ein zweites Element, aus dem setResponseDetailFrom liest. -->
+  <div id="extern" style="display:none"></div>
+</div>
+<script>
+window.__ev=[]; window.__fehler=[]; window.__warn=[];
+window.addEventListener("error", function(e){ window.__fehler.push(String(e.message)); });
+(function(){ var w=console.warn; console.warn=function(){ window.__warn.push([].join.call(arguments," ")); w.apply(console,arguments); }; })();
+["urdPrompt","urdBrand","urdUrl","urdView"].forEach(function(n){ window["bubble_fn_"+n]=function(p){ window.__ev.push([n,p]); }; });
+try { localStorage.removeItem("urdHighlights"); } catch(e){}
+window.__MODELS=[{key:"google-aio",display_name:"Google AI Overviews",short_name:"Google AIO",
+  logo_url:"https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"}];
+</script>
+<script>
+/* Erst den Payload in die Elemente legen -- so, wie Bubble ihn rendern wuerde --, dann core laden. */
+window.__GELADEN = fetch("_h_urd_payload.json?n="+Math.random(),{cache:"no-store"}).then(function(r){return r.text();})
+  .then(function(txt){
+    document.getElementById("payload").textContent = txt;
+    document.getElementById("extern").textContent = txt;
+    return Promise.all(["core.css","response-detail.css","core.js","response-detail.js"].map(function(f){
+      return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){return r.text();}).then(function(t){return [f,t];});
+    }));
+  }).then(function(paare){
+    paare.forEach(function(p){ var e=document.createElement(/\.css$/.test(p[0])?"style":"script");
+      e.textContent=p[1]; document.head.appendChild(e); });
+    setTimeout(function(){
+      if (window.setUpstreemModels) window.setUpstreemModels(JSON.stringify(window.__MODELS));
+      window.__bereit = true;
+    }, 700);
+  });
+</script>

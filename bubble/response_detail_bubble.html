@@ -44,6 +44,8 @@
 
   ── Die drei Setter ──────────────────────────────────────────────────────────
     setResponseDetail("<instance>", <json>)          alles: Prompt, Modell, Marken, Text, Quellen
+    setResponseDetailFrom("<instance>", "<selektor>")  dasselbe, aber der Payload wird aus dem
+                                                     Inhalt eines DOM-Elements gelesen
     setResponseDetailLoading("<instance>", "yes")    Skelette an
     resetResponseDetail("<instance>")                alles leer, zurueck auf Kacheln
 
@@ -140,7 +142,18 @@
      data-prompt-fn="bubble_fn_urdPrompt"
      data-brand-fn="bubble_fn_urdBrand"
      data-url-fn="bubble_fn_urdUrl"
-     data-view-fn="bubble_fn_urdView"></div>
+     data-view-fn="bubble_fn_urdView">
+  <!--
+    DER EINFACHSTE WEG, die Daten hereinzugeben: den dynamischen Ausdruck als INHALT dieses Blocks.
+    Die Komponente liest ihn beim Aufbau selbst, es braucht dafuer keinen Run-JS-Schritt.
+    Warum das der sichere Weg ist: im Quelltext eines Run-JS-Schritts ist ein Antworttext nicht
+    unterzubringen. "..." vertraegt keinen echten Zeilenumbruch (SyntaxError: Invalid or unexpected
+    token) und `...` keine Backticks (eine Antwort mit ```python bricht). Im Inhalt eines Elements
+    ist JEDES Zeichen erlaubt -- der Browser parst hier keinen Code.
+    Steht hier noch der Platzhalter, wird der Block ignoriert.
+  -->
+  <script type="application/json">PAYLOAD_JSON</script>
+</div>
 
 <script>
 (function(){

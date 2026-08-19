@@ -30,7 +30,8 @@
   /* ---- Boot-Stubs (STYLEGUIDE §25), VOR der core-Pruefung -----------------------------------
      Bubble ruft die Setter aus einem Workflow, der neben dem Laden dieser Datei laeuft. Ohne
      Stubs wirft der erste Aufruf und reisst den ganzen Run-JS-Step mit. */
-  var API_NAMES = ["setResponseDetail", "setResponseDetailLoading", "resetResponseDetail"];
+  var API_NAMES = ["setResponseDetail", "setResponseDetailFrom", "setResponseDetailLoading",
+                   "resetResponseDetail"];
   var Q = (window.__urdBootQueue = window.__urdBootQueue || []);
   API_NAMES.forEach(function (n) {
     if (!window[n]) window[n] = function () { Q.push([n, [].slice.call(arguments)]); };
@@ -153,6 +154,12 @@
     if (root.__urdController) return root.__urdController;
     var instanceId = root.getAttribute("data-instance") || "default";
     if (instanceId === "INSTANCE_ID") return null;   /* Platzhalter noch nicht ersetzt */
+
+    /* Einen mitgelieferten JSON-Block AUSLESEN, bevor shell() den Inhalt der Wurzel ersetzt --
+       danach ist er weg. Genau daran ist der erste Versuch gescheitert. */
+    var mitgeliefert = "";
+    var elJson0 = root.querySelector('script[type="application/json"]');
+    if (elJson0) mitgeliefert = String(elJson0.textContent || "");
 
     root.innerHTML = shell();
     var fire = UC.makeFire(root, { label: "response-detail", eventPrefix: "urd" });
@@ -909,6 +916,13 @@
 
     render();
 
+    /* Trug das Element einen JSON-Block, wird er jetzt verwendet -- dann braucht es fuer den
+       ersten Aufbau ueberhaupt keinen Run-JS-Schritt. Bubble setzt den dynamischen Ausdruck
+       einfach als Inhalt des Blocks; dort ist jedes Zeichen erlaubt. */
+    if (mitgeliefert.trim() && mitgeliefert.indexOf("PAYLOAD" + "_JSON") < 0) {
+      setTimeout(function () { ctrl.set(mitgeliefert); }, 0);
+    }
+
     var ctrl = {
       set: function (payload) {
         var p = UC.parseLoose ? UC.parseLoose(payload, "response-detail") : payload;
@@ -960,6 +974,29 @@
     initRoot: initRoot,
     api: {
       setResponseDetail:        function (id, p) { return each(id, function (c) { c.set(p); }); },
+      /* Den Payload aus einem DOM-Element lesen statt ihn in JS-Quelltext zu setzen. Das ist der
+         Weg fuer alles, was echte Zeilenumbrueche, Anfuehrungszeichen oder Backticks enthaelt --
+         also fuer jeden Antworttext. Im Quelltext eines Run-JS-Schritts ist so ein Text nicht
+         unterzubringen: "..." vertraegt keinen Umbruch, `...` keine Backticks. Im Inhalt eines
+         Elements ist jedes Zeichen erlaubt.
+         Bubble fuellt dazu ein Textelement oder ein <script type="application/json"> mit dem
+         dynamischen Ausdruck; dieser Setter bekommt nur den Selektor. */
+      setResponseDetailFrom:    function (id, sel) {
+        var el = null;
+        try { el = sel ? document.querySelector(String(sel)) : null; } catch (e) { el = null; }
+        if (!el) {
+          if (window.console) console.warn('[response-detail] setResponseDetailFrom: kein Element ' +
+            'zu "' + sel + '" gefunden. Steht es auf der Seite und ist der Selektor richtig?');
+          return false;
+        }
+        var roh = el.textContent == null ? "" : String(el.textContent);
+        if (!roh.trim()) {
+          if (window.console) console.warn('[response-detail] setResponseDetailFrom: "' + sel +
+            '" ist leer. Traegt es den dynamischen Ausdruck?');
+          return false;
+        }
+        return each(id, function (c) { c.set(roh); });
+      },
       setResponseDetailLoading: function (id, v) { return each(id, function (c) { c.setLoading(v); }); },
       resetResponseDetail:      function (id)    { return each(id, function (c) { c.reset(); }); }
     }
