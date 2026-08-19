@@ -2448,7 +2448,13 @@
 .up-rb-table tbody td { padding: 10px 12px; border-bottom: 1px solid var(--vc-border);
   vertical-align: top; white-space: normal; overflow-wrap: break-word; line-height: 1.6; }
 .up-rb-table tbody tr:last-child td { border-bottom: 0; }
-.up-rb-table tbody tr:nth-child(even) td { background: var(--vt-row-hover); }
+/* Die getoenten Zeilen tragen DIESELBE Farbe wie die Kopfzeile, nur mit 60% Deckkraft. Vorher war
+   es --vt-row-hover, und das ist in beiden Themen praktisch derselbe Ton wie --vc-heading-bg: die
+   Kopfzeile war damit von jeder zweiten Datenzeile nicht zu unterscheiden und las sich nicht mehr
+   als Kopf. Ueber dieselbe Farbe gebaut und nicht ueber eine zweite, damit der Zusammenhang bleibt
+   -- die Kopfzeile ist der Vollton, die Zebra-Zeilen sind sein Abklang. */
+.up-rb-table tbody tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--vc-heading-bg) 60%, transparent); }
 .up-rb-table th:first-child, .up-rb-table td:first-child { padding-left: 14px; }
 .up-rb-table th:last-child,  .up-rb-table td:last-child  { padding-right: 14px; }
 
