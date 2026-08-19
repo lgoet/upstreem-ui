@@ -73,6 +73,7 @@
   var MODE_STORE = (window.__uddMode = window.__uddMode || {});
   var GRAN_STORE = (window.__uddGran = window.__uddGran || {});
   var SCOPE_STORE = (window.__uddScope = window.__uddScope || {});
+  var CHART_STORE = (window.__uddChart = window.__uddChart || {});
 
   function isArr(v) { return Object.prototype.toString.call(v) === "[object Array]"; }
   function num(v) { return UC.toNum(v); }
@@ -174,12 +175,35 @@
         '<div class="udd-funnel"></div>' +
       '</div>' +
 
-      '<div class="udd-card udd-modelcard">' +
-        '<div class="udd-sec">' +
-          '<span class="udd-sec-title">Model Breakdown</span>' +
-          '<span class="udd-sec-desc">Distribution of this domain in AI models</span>' +
+      /* Typ-Split und Model Breakdown stehen nebeneinander in einer Zeile. Das Typ-Chart ist
+         hoeher als die Balkenliste (ein Doughnut braucht seine Flaeche), deshalb richtet die Zeile
+         mittig aus statt oben -- sonst haengt die Balkenliste am Kopf der Zeile. */
+      '<div class="udd-row2">' +
+        '<div class="udd-card udd-typecard">' +
+          '<div class="udd-sec udd-sec-row">' +
+            '<div class="udd-sec-txt">' +
+              '<span class="udd-sec-title">URL Type Split</span>' +
+              '<span class="udd-sec-desc">What kind of pages of this domain get cited</span>' +
+            '</div>' +
+            /* .cc-seg / .cc-seg-btn sind die Alias-Klassen von .up-seg / .up-seg-btn -- dasselbe
+               Bauteil wie im Combo-Chart, damit der Umschalter ueberall gleich aussieht. */
+            '<div class="cc-seg udd-typeseg" role="tablist" aria-label="Chart type">' +
+              '<button class="cc-seg-btn" type="button" role="tab" data-chart="doughnut"' +
+                ' data-tip="Doughnut" aria-label="Doughnut">' + UC.icon("donut", 2) + '</button>' +
+              '<button class="cc-seg-btn" type="button" role="tab" data-chart="bar"' +
+                ' data-tip="Bars" aria-label="Bars">' + UC.icon("chartBarDec", 2) + '</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="udd-typebody up-donut-body"></div>' +
         '</div>' +
-        '<div class="udd-bars"></div>' +
+
+        '<div class="udd-card udd-modelcard">' +
+          '<div class="udd-sec">' +
+            '<span class="udd-sec-title">Model Breakdown</span>' +
+            '<span class="udd-sec-desc">Distribution of this domain in AI models</span>' +
+          '</div>' +
+          '<div class="udd-bars"></div>' +
+        '</div>' +
       '</div>';
   }
 
@@ -208,6 +232,8 @@
     var elLegend  = root.querySelector(".udd-legend");
     var elFunnel  = root.querySelector(".udd-funnel");
     var elBars    = root.querySelector(".udd-bars");
+    var elTypeBody = root.querySelector(".udd-typebody");
+    var elTypeSeg  = root.querySelector(".udd-typeseg");
 
     /* UC.themeParam und nicht das Attribut allein: kennt core ein Thema, gewinnt core. Das
        Attribut ist die Momentaufnahme aus dem Lauf des Workflows. */
@@ -227,7 +253,11 @@
          urlsStale heisst "wir haben etwas, aber gerade neue Zahlen angefordert". Beides ist
          WARTEN und muss ein Skelett zeigen -- nicht "No URL data", denn das ist eine Aussage
          ueber die Daten und nicht ueber uns. urlsError ist das Ende der Geduld. */
-      urlsStale: false, urlsError: null
+      urlsStale: false, urlsError: null,
+      /* Der Umschalter des Typ-Charts. Wie in Combo und Topcitations ist der Doughnut der Anfang;
+         der Balkenmodus ist die Ansicht fuer viele Typen. Ueberlebt das Neueinspritzen. */
+      chartMode: CHART_STORE[instanceId] || "doughnut",
+      types: null
     };
     if (state.brand === "BRAND_NAME") state.brand = "";
 
@@ -489,6 +519,44 @@
       elFunnel.innerHTML = trichterHtml(state.funnel);
     }
 
+    /* Der Typ-Split. UC.makeTypeChart ist derselbe Baustein, den das Combo-Chart und das
+       Topcitations-Dashboard benutzen -- Doughnut, Balken, Legende, Skelett und der Tooltip
+       kommen von dort. Hier steht nur, WANN was gezeichnet wird.
+       decimals: 1 wie im Combo (CLAUDE.md 2b: der Standard des Kits ist 2 und fuer keinen Chart
+       der App richtig). */
+    var typeChart = UC.makeTypeChart ? UC.makeTypeChart({
+      decimals: 1,
+      body: elTypeBody,
+      isDark: darkNow,
+      isOwner: function () { return true; },
+      /* "url" ist der Datenmodus: die Typen kommen aus URL_LABEL und der URL-Farbskala, nicht aus
+         der Zitationstyp-Skala. Genau wie im Combo, wenn dort auf URL-Typen umgeschaltet ist. */
+      mode: function () { return "url"; },
+      chartMode: function () { return state.chartMode; },
+      total: function () { return null; },
+      centerLabel: "URL Types",
+      collapseHost: root.querySelector(".udd-typecard")
+    }) : null;
+
+    function renderTypes() {
+      if (!typeChart) return;
+      if (state.error) { elTypeBody.innerHTML = '<div class="up-chart-empty">' + esc(state.error) + "</div>"; return; }
+      if (istLaden() || !isArr(state.types)) { typeChart.skeleton(); return; }
+      var vorbereitet = UC.prepTypeData("url", state.types, isDark);
+      if (!vorbereitet.length) { typeChart.empty("No URL types for this period."); return; }
+      if (state.chartMode === "bar") typeChart.renderBars(vorbereitet);
+      else typeChart.renderDonut(vorbereitet);
+    }
+
+    function syncTypeSeg() {
+      if (!elTypeSeg) return;
+      [].forEach.call(elTypeSeg.querySelectorAll("[data-chart]"), function (b) {
+        var an = b.getAttribute("data-chart") === state.chartMode;
+        b.classList.toggle("is-active", an);
+        b.setAttribute("aria-selected", an ? "true" : "false");
+      });
+    }
+
     function renderBars() {
       if (state.error) { elBars.innerHTML = '<div class="up-chart-empty">' + esc(state.error) + '</div>'; return; }
       if (istLaden() || !isArr(state.model)) { bars.skeleton(4); return; }
@@ -508,10 +576,12 @@
 
     function render() {
       syncSeg();
+      syncTypeSeg();
       renderHead();
       renderKpi();
       renderChart();
       renderFunnel();
+      renderTypes();
       renderBars();
     }
 
@@ -555,6 +625,17 @@
         fire("data-scope-fn", "uddScope", { mode: state.mode, gran: state.gran, scope: sk });
         return;
       }
+      var c = e.target.closest("[data-chart]");
+      if (c && elTypeSeg && elTypeSeg.contains(c)) {
+        var ck = c.getAttribute("data-chart");
+        if (ck === state.chartMode) return;
+        state.chartMode = ck; CHART_STORE[instanceId] = ck;
+        syncTypeSeg();
+        renderTypes();
+        /* Kein Ereignis nach Bubble: der Wechsel zeichnet dieselben Daten anders. */
+        return;
+      }
+
       var g = e.target.closest("[data-gran]");
       if (g && elGran.contains(g)) {
         var gk = g.getAttribute("data-gran");
@@ -574,8 +655,9 @@
     if (UC.onTheme) UC.onTheme(function (dunkel) {
       isDark = !!dunkel;
       if (isDark) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
-      /* Die Kurve zeichnet das Kit selbst neu (makeLine haengt an onTheme). Der Trichter und die
-         Balken tragen ihre Farben im Markup und muessen es hier tun. */
+      /* Die Kurve zeichnet das Kit selbst neu (makeLine haengt an onTheme). Trichter, Balken und
+         der Typ-Split tragen ihre Farben im Markup und muessen es hier tun. */
+      renderTypes();
       renderFunnel(); renderBars();
     });
 
@@ -607,7 +689,11 @@
         if (p.source_presence_funnel && typeof p.source_presence_funnel === "object") {
           state.funnel = p.source_presence_funnel;
         }
-        state.hasData = !!(state.header || state.share || state.model || state.funnel);
+        /* types_breakdown ist neu im Payload. Fehlt es, bleibt state.types null und der Abschnitt
+           zeigt sein Skelett -- nicht "keine Typen", denn das waere eine Aussage ueber Daten, die
+           gar nicht geschickt wurden. */
+        if (isArr(p.types_breakdown)) state.types = p.types_breakdown;
+        state.hasData = !!(state.header || state.share || state.model || state.funnel || state.types);
         state.loading = false;
         warteBeenden();
         granPruefen();
@@ -643,7 +729,7 @@
       },
       reset: function () {
         state.header = null; state.share = null; state.urls = null;
-        state.model = null; state.funnel = null;
+        state.model = null; state.funnel = null; state.types = null;
         state.hasData = false; state.error = null; state.loading = false;
         state.urlsStale = false; state.urlsError = null; urlWarteBeenden();
         state.mode = "citation"; MODE_STORE[instanceId] = "citation";

@@ -106,6 +106,12 @@ window.UDD_MAIN = {
       }
     ]
   },
+  "types_breakdown": [
+    { "type": "article", "share_pct": 45.21 },
+    { "type": "homepage", "share_pct": 30.14 },
+    { "type": "video", "share_pct": 14.9 },
+    { "type": "uncategorized", "share_pct": 9.75 }
+  ],
   "model_breakdown": [
     {
       "model": "Google AI Overviews",

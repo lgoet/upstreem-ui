@@ -6988,6 +6988,12 @@
               '<path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
     copy:     '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>' +
               '<path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+    /* Lucide chart-pie: der Doughnut-Knopf des Umschalters. Stand bisher als rohes SVG im
+       Bubble-Markup des Combo-Charts -- jetzt im Kit, damit domain-detail denselben Knopf hat. */
+    donut:    '<path d="M21 12c.552 0 1.005-.449.95-.998a10 10 0 0 0-8.953-8.951c-.55-.055-.998.398-.998.95v8a1 1 0 0 0 1 1z"/>' +
+              '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>',
+    /* chart-bar-decreasing, dieselbe Form, die TOOLBAR_SEL auf die Combo-Knoepfe stempelt. */
+    chartBarDec: '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M7 11h8"/><path d="M7 16h3"/><path d="M7 6h12"/>',
     barChart2:'<path d="M5 21v-6"/><path d="M12 21V3"/><path d="M19 21V9"/>',
     clipboard:'<rect width="8" height="4" x="8" y="2" rx="1" ry="1"/>' +
               '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>',

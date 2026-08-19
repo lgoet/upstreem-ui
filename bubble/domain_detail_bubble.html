@@ -66,6 +66,14 @@
   Beide Daten-Setter nehmen den JSON als TEXT oder als Objekt. Ein Payload, den core nicht lesen
   kann, endet als benannter Fehler in der Karte -- nicht als endloses Skelett.
 
+  ── URL-Typen (neu) ──────────────────────────────────────────────────────────
+  types_breakdown: [{ type, share_pct }, ...] im Payload von setDomainDetail. Dieselbe Form, die
+  das Combo-Chart und das Topcitations-Dashboard schon bekommen -- Namen und Farben holt core aus
+  URL_LABEL und der URL-Farbskala, es ist nichts mitzugeben.
+  Fehlt das Feld, bleibt die Karte im Skelett: "keine Typen" waere eine Aussage ueber Daten, die
+  gar nicht geschickt wurden.
+  url_share bleibt ein EIGENER Aufruf (setDomainDetailUrls) und kommt nicht im Pageload mit.
+
   ── Sanitizer (STYLEGUIDE §46) ───────────────────────────────────────────────
   Ein Bubble-Ausdruck liefert leere Werte als "key": , und Ja/Nein unquotiert. Beides bricht
   JSON.parse. Diese zwei Zeilen gehoeren an JEDEN Aufruf, der einen Bubble-Text weitergibt:

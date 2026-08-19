@@ -122,6 +122,23 @@
 .udd-fn-sk-head { display: block; height: 58px; border-radius: 8px; background: var(--vc-sk); }
 .udd-fn-sk-body { display: block; height: 132px; border-radius: 8px; background: var(--vc-sk); }
 
+/* ---- Zeile: Typ-Split und Model Breakdown --------------------------------------------------
+   Zwei Karten nebeneinander, mittig ausgerichtet (Vorgabe): der Doughnut braucht seine Flaeche und
+   ist damit hoeher als eine Liste aus zwei Balken. Bei align-items: stretch waere die Balkenliste
+   auf Doughnut-Hoehe gezogen und haette oben geklebt.
+   Der Typ-Split bekommt mehr Breite als der Breakdown -- 1.15 zu 1 --, weil er neben dem Ring auch
+   seine Legende traegt. */
+.udd-row2 { display: grid; grid-template-columns: 1.15fr 1fr; gap: 32px; align-items: center; }
+.udd-row2 > .udd-card { min-width: 0; }
+/* Die Kopfzeile mit dem Umschalter rechts: dieselbe Zeile wie der Titel, nicht darunter. */
+.udd-sec-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.udd-sec-row .udd-sec-txt { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.udd-typeseg { flex: 0 0 auto; margin-top: -2px; }
+/* Die Hoehe des Doughnut-Bereichs: 236px ist die Flaeche, in der ein Ring mit Legende in den
+   anderen Charts steht. Ohne feste Hoehe springt die Karte beim Umschalten zwischen Ring und
+   Balken, weil beide unterschiedlich hoch bauen. */
+.udd-typebody { min-height: 236px; }
+
 /* ---- Model Breakdown -------------------------------------------------------------------------
    Die Liste selbst ist UC.makeBarList mit dem Markup aus core (.up-bars/.up-bar-*). Hier steht
    nichts ueber ihr Aussehen -- nur, dass sie keine eigene Polsterung braucht, die Karte polstert
@@ -135,6 +152,8 @@
    Modus-Umschalter ueber die volle Breite, sonst passt sein Text nicht mehr. */
 .udd-root.is-narrow .udd-head { flex-wrap: wrap; }
 .udd-root.is-narrow .udd-tools { width: 100%; justify-content: flex-start; }
+/* Schmal stehen die zwei Karten untereinander -- nebeneinander bliebe fuer den Ring nichts. */
+.udd-root.is-narrow .udd-row2 { grid-template-columns: 1fr; gap: 24px; }
 .udd-root.is-narrow .udd-fn-head { grid-template-columns: repeat(2, 1fr); row-gap: 12px; }
 /* Bei zwei Spalten trennt der Strich die Paare, nicht mehr jede Spalte von der vorigen: der
    dritte Eintrag beginnt eine neue Zeile und braucht links keinen. */

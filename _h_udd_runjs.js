@@ -22,6 +22,12 @@
         { day: "2026-08-18", share_pct: 24.56 }
       ]
     },
+    types_breakdown: [
+      { type: "article", share_pct: 45.21 },
+      { type: "homepage", share_pct: 30.14 },
+      { type: "video", share_pct: 14.9 },
+      { type: "uncategorized", share_pct: 9.75 }
+    ],
     model_breakdown: [
       { model: "Google AI Overviews", model_share_pct: 98.75,
         color_lightmode: "#4285F4", color_darkmode: "#8AB4F8",

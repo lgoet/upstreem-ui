@@ -33,6 +33,11 @@ try { localStorage.setItem("pref_theme","light"); } catch(e){}
 </script>
 <script src="_h_udd_daten.js"></script>
 <script>
+/* Nur mit ?raf=timer: rAF auf einen Timer umbiegen. Im verdeckten Pane ist rAF pausiert, und die
+   Balkenbreiten werden dort gesetzt -- ohne Ersatz messe ich die Drosselung statt den Code. */
+if (/raf=timer/.test(location.search)) {
+  window.requestAnimationFrame = function (fn) { return setTimeout(function () { fn(Date.now()); }, 16); };
+}
 /* Frische beweisen statt hoffen: alles per fetch(no-store) inline, kein <link>/<script src>. */
 window.__GELADEN = Promise.all(["core.css","domain-detail.css","core.js","domain-detail.js"].map(function(f){
   return fetch(f + "?n=" + Math.random(), { cache: "no-store" }).then(function(r){ return r.text(); })
