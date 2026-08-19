@@ -34,7 +34,8 @@
      Nur noetig, wenn der Modell-Store auf DIESER Seite nicht schon anderswo gefuellt wird. Ohne
      ihn steht im Chip der rohe Schluessel ("google-aio") ohne Logo. Auch hier der ganze Payload
      in einem Stueck: eine Liste mit key, display_name, optional short_name und logo_url.
-     Faellt weg, wenn setUpstreemModels bereits im Pageload laeuft -- dann diesen Block loeschen. */
+     LAEUFT setUpstreemModels SCHON WOANDERS: diesen Block ersatzlos loeschen. Der Aufruf unten
+     prueft mit typeof und laeuft dann ohne ihn weiter. */
   var ROH_MODELLE = String.raw`RPC_MODELS_JSON`
     .replace(/:\s*([,}\]])/g, ": null$1")
     .replace(/:\s*(yes|no)\s*([,}\]])/g, function(_, v, t){ return ": " + (v === "yes") + t; });
@@ -46,9 +47,12 @@
   var versuche = 0;
   (function los(){
     if (typeof window.setResponseDetail === "function") {
-      /* Der Platzhalter bleibt stehen, wenn der Ausdruck nicht eingesetzt wurde -- dann lieber
-         nichts an den Store schicken als den Text "RPC_MODELS_JSON". */
-      if (typeof window.setUpstreemModels === "function" &&
+      /* Drei Gruende, hier nichts zu schicken, und alle drei sind gueltige Zustaende:
+         der Block oben wurde geloescht (typeof -- jede andere Pruefung wuerde mit
+         "ROH_MODELLE is not defined" werfen und den Schritt mitreissen), der Store existiert auf
+         dieser Seite nicht, oder der Platzhalter steht noch drin. */
+      if (typeof ROH_MODELLE !== "undefined" &&
+          typeof window.setUpstreemModels === "function" &&
           ROH_MODELLE.indexOf("RPC_MODELS" + "_JSON") < 0) {
         window.setUpstreemModels(ROH_MODELLE);
       }

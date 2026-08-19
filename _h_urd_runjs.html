@@ -82,8 +82,9 @@ window.__GELADEN.then(function(){
     var sc = document.createElement("script");
     /* ?live=1 laedt die Live-Fassung mit eingesetztem Payload -- dieselbe Datei wie in Bubble,
        nur mit dem Ausdruck schon ersetzt. */
-    sc.src = (/live=1/.test(location.search) ? "_h_urd_runjs_live_test.js" : "_h_urd_runjs.js") +
-             "?n=" + Math.random();
+    sc.src = (/live=1/.test(location.search) ? "_h_urd_runjs_live_test.js"
+              : /ohnemodelle=1/.test(location.search) ? "_h_urd_runjs_ohnemodelle.js"
+              : "_h_urd_runjs.js") + "?n=" + Math.random();
     sc.onload = function(){ setTimeout(function(){ window.__bereit = true; }, 900); };
     document.head.appendChild(sc);
   }, 300);

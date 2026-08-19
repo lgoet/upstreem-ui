@@ -78,7 +78,15 @@
   ── Was die Seite ausserdem braucht ──────────────────────────────────────────
   Der Modell-Chip holt Logo und Anzeigename aus dem seitenweiten Modell-Store -- er braucht keine
   eigenen Daten. Laeuft setUpstreemModels irgendwo auf der Seite, ist nichts zu tun; der Block im
-  Run-JS-Schritt ist nur fuer Seiten, auf denen der Store sonst leer bleibt, und kann weg.
+  Run-JS-Schritt ist nur fuer Seiten, auf denen der Store sonst leer bleibt, und kann ERSATZLOS
+  geloescht werden -- der Aufruf im Schritt prueft mit typeof:
+
+      if (typeof MODELLE !== "undefined" && typeof window.setUpstreemModels === "function") {
+        window.setUpstreemModels(JSON.stringify(MODELLE));
+      }
+
+  typeof und nicht die Variable selbst: bei geloeschter Deklaration wirft jede andere Form
+  "MODELLE is not defined" und reisst den ganzen Schritt mit -- dann laedt NICHTS mehr.
 
       setUpstreemModels(<json-liste>)     [{ key, display_name, short_name, logo_url }, ...]
 

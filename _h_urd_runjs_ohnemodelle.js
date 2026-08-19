@@ -11,19 +11,6 @@
 (function(){
   var INSTANCE_ID = "response_detail_page";
 
-  /* Ohne den Modell-Store steht im Chip der rohe Schluessel "google-aio" ohne Logo.
-     LAEUFT setUpstreemModels SCHON WOANDERS: diesen Block ersatzlos loeschen. Der Aufruf unten
-     prueft mit typeof und laeuft dann ohne ihn weiter. Die Reihenfolge ist gleichgueltig -- die
-     Komponente haengt an UC.onModels und holt Logo und Namen nach, sobald der Store da ist. */
-  var MODELLE = [
-    { key: "chatgpt",    display_name: "ChatGPT",
-      logo_url: "https://cdn-icons-png.freepik.com/512/12222/12222588.png" },
-    { key: "google-aio", display_name: "Google AI Overviews", short_name: "Google AIO",
-      logo_url: "https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" },
-    { key: "perplexity", display_name: "Perplexity",
-      logo_url: "https://www.google.com/s2/favicons?domain=perplexity.ai&sz=64" }
-  ];
-
   /* Der Antworttext. Ein Absatz je Zeile, damit der Block kopierbar bleibt -- eine einzige
      3789 Zeichen lange Zeile bricht beim Einfuegen und ist danach kaputt. */
   var TEXT =
