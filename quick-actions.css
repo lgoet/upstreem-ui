@@ -140,18 +140,24 @@
 /* 26px statt 24, Geometrie im Verhaeltnis 26/24 = 1.083: Polsterung 6/9 -> 6.5/9.75, Radius
    7 -> 7.6, Innenabstand 6 -> 6.5. Schrift bleibt 12.5 -- 24px innen tragen sie ohne Bedraengnis.
    Grund auf die Haelfte: der Schatten traegt jetzt die Abgrenzung, der Grund nur noch den Ton.
-   Der Schatten ist kurz und dicht -- 0 1px 3px bei 14% deckt genau einen Pixel unter dem Chip ab.
-   Das hebt ihn aus der Eingabezeile, in der er sitzt, ohne wie ein schwebendes Fenster zu wirken.
-   Im Dunkeln kraeftiger (30%), weil ein Schatten auf dunklem Grund weniger hergibt. */
+
+   ZWEI Lagen, nicht eine, und das ist der Unterschied:
+     0 1px 1px bei 22%   die dichte Lage direkt hinter dem Rahmen -- ein Pixel Streuung, also faellt
+                         sie genau auf die Kante und macht sie dort kraeftiger
+     0 1px 2px bei 12%   die weiche Lage darunter, die den Chip von der Eingabezeile abhebt
+   Eine Lage kann nur eines von beiden: mit 3px Streuung ist die Kante weich, mit 1px fehlt das
+   Abheben. Zusammen sind es 2px Gesamtausdehnung statt 3 -- einen weniger als vorher.
+   Im Dunkeln beide kraeftiger (40 und 26%), weil ein Schatten auf dunklem Grund weniger hergibt. */
 .mqa-chip {
   display: inline-flex; align-items: center; gap: 6.5px; height: 26px; padding: 0 6.5px 0 9.75px;
   border-radius: 7.6px; border: 1px solid var(--am-border);
   background: color-mix(in srgb, var(--am-soft-2) 50%, transparent);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.14);
+  box-shadow: 0 1px 1px rgba(0,0,0,0.22), 0 1px 2px rgba(0,0,0,0.12);
   color: var(--am-muted); font-size: 12.5px; font-weight: 500; white-space: nowrap;
 }
 /* [data-theme="dark"] als Vorfahre, wie die Nachbarregeln dieser Datei. */
-[data-theme="dark"] .mqa-chip { box-shadow: 0 1px 3px rgba(0,0,0,0.30); }
+[data-theme="dark"] .mqa-chip {
+  box-shadow: 0 1px 1px rgba(0,0,0,0.40), 0 1px 2px rgba(0,0,0,0.26); }
 .mqa-chip b { font-weight: 400; color: var(--am-muted-2); }   /* value only: -100 weight, weaker colour */
 .mqa-chip-x {
   width: 16px; height: 16px; border: 0; border-radius: 4px; background: transparent; cursor: pointer;
