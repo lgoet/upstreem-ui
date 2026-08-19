@@ -423,16 +423,19 @@
 
     /* ---- Full Response -------------------------------------------------------------------- */
     /* Der Aufbau des Skeletts, einmal als Daten: h ist eine Ueberschrift (Breite in Prozent), p ein
-       Absatz (eine Breite je Zeile). Gerechnet auf etwa 560px, also doppelt so hoch wie die zwoelf
-       Zeilen davor -- und die Gliederung ist der eigentliche Punkt. */
+       Absatz (eine Breite je Zeile).
+       Weniger Balken, dafuer breiter und mit mehr Luft: 17 Zeilen waren eine Wand, drei je Absatz
+       sind eine Andeutung. Die Breiten liegen jetzt bei 92 bis 99 statt 52 bis 96 -- ein Absatz
+       fuellt seine Zeile fast ganz, nur die letzte bricht kurz, und genau daran erkennt man einen
+       Absatz. Die Hoehe bleibt aehnlich, weil die Abstaende wachsen, was ausfaellt. */
     var ABSCHNITTE = [
-      { p: [96, 88, 92, 61] },
+      { p: [98, 94, 63] },
       { h: 34 },
-      { p: [94, 86, 90, 78, 52] },
+      { p: [96, 99, 71] },
       { h: 28 },
-      { p: [92, 96, 84, 88, 66] },
+      { p: [97, 93, 58] },
       { h: 41 },
-      { p: [90, 94, 72] }
+      { p: [95, 68] }
     ];
     var letzteMessung = null;
     function renderBody() {

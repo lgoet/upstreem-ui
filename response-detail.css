@@ -306,14 +306,17 @@
 .urd-sk-kpi { height: 18px; width: 108px; border-radius: 6px; }
 .urd-sk-ment { height: 28px; width: 148px; border-radius: 8px; }
 .urd-sk-line { height: 14px; margin-bottom: 10px; border-radius: 6px; }
-/* Ueberschrift im Skelett: 18px hoch statt 14 und Radius im selben Verhaeltnis (6 -> 7.7). 24px Luft
-   darueber, 6px darunter -- so steht eine Ueberschrift auch im fertigen Text: naeher am Absatz, der
+/* Ueberschrift im Skelett: 18px hoch statt 14 und Radius im selben Verhaeltnis (6 -> 7.7). 36px Luft
+   darueber, 10px darunter -- so steht eine Ueberschrift auch im fertigen Text: naeher am Absatz, der
    ihr folgt, als an dem, der ihr vorausgeht. Der erste Abschnitt hat keine Ueberschrift, also
    braucht die Regel keinen Sonderfall fuer "oben". */
-.urd-sk-h { height: 18px; border-radius: 7.7px; margin: 24px 0 6px; }
+.urd-sk-h { height: 18px; border-radius: 7.7px; margin: 36px 0 10px; }
 /* Ein Absatz ist eine eigene Kiste, damit die letzte Zeile darin ihren Rand verliert und der
-   Abstand zwischen Absaetzen einmal an einer Stelle steht statt an jeder Zeile. */
-.urd-sk-para { display: block; margin-bottom: 14px; }
+   Abstand zwischen Absaetzen einmal an einer Stelle steht statt an jeder Zeile.
+   Die Abstaende sind gewachsen (Zeile 10 -> 14, Absatz 14 -> 22), weil die Zahl der Balken gesunken
+   ist: weniger Striche, die dafuer atmen koennen. */
+.urd-sk-para { display: block; margin-bottom: 22px; }
+.urd-sk-para .urd-sk-line { margin-bottom: 14px; }
 .urd-sk-para .urd-sk-line:last-child { margin-bottom: 0; }
 .urd-sk-card { height: 184px; border-radius: 14px; }
 .urd-sk-av { width: 32px; height: 32px; border-radius: 8.9px; }

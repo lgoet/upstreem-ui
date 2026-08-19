@@ -1766,6 +1766,7 @@
   "up-sent-dot",
   "up-sent-val",
   "up-sidebar-clear",
+  "up-sk",
   "up-sk-chart",
   "up-sk-dot",
   "up-sk-g0",
@@ -2462,7 +2463,7 @@
   "globals": 137,
   "payloadkeys": 66,
   "dataattrs": 181,
-  "klassen": 1814,
+  "klassen": 1815,
   "keyframes": 56
  }
 }

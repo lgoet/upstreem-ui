@@ -1,0 +1,37 @@
+<meta charset="utf-8"><title>sidebar teams + pins</title>
+<style>html,body{margin:0;font:12px ui-monospace,monospace;background:#fff}
+#main{min-height:100vh;padding-left:250px}pre{white-space:pre-wrap;background:#111;color:#eee;padding:8px;margin:0}</style>
+<body><div id="main"><pre id="out">laeuft</pre></div>
+<div class="up-root usn-root" data-instance="s1" data-prompt-count="7" data-isdark="no"
+     data-team-id="t1" data-active="dashboard" data-nav-fn="bubble_fn_usnNav"></div>
+<script>
+["usnNav","usnTheme","usnState","usnPinned","usnTeam","usnAccount","usnLogout","usnNewTeam"]
+  .forEach(function(n){ window["bubble_fn_"+n]=function(){}; });
+window.__fehler=[]; window.addEventListener("error",function(e){window.__fehler.push(String(e.message))});
+try{ localStorage.setItem("pref_theme","light"); }catch(e){}
+/* Pins fuer BEIDE Teams in den Speicher legen: nur so ist messbar, ob der Wechsel die des neuen
+   Teams hereinholt (soll er nicht) oder leer bleibt. Der Schluessel ist storeKey("usnPins"). */
+try{
+  /* Der echte Schluessel, aus pinKey() in sidebar.js: "usn_pins__<instanz>@<team>". Erst mit
+     "usnPins@t1" geraten -- dann liest die Komponente einen Topf, den es nicht gibt, und die
+     Messung zeigt leer, obwohl sie nichts geprueft hat. */
+  localStorage.setItem("usn_pins__s1@t1", JSON.stringify([{type:"brand",id:"b1",label:"Alpha",logo:""}]));
+  localStorage.setItem("usn_pins__s1@t2", JSON.stringify([
+    {type:"brand",id:"b9",label:"Zeta",logo:""},{type:"prompt",id:"p9",label:"Frage",logo:""}]));
+}catch(e){}
+var t={};
+var files=["core.css","sidebar.css","core.js","sidebar.js"];
+Promise.all(files.map(function(f){ return fetch(f,{cache:"no-store"})
+  .then(function(r){return r.text()}).then(function(x){t[f]=x}); })).then(function(){
+  files.forEach(function(f){ var e=document.createElement(/\.css$/.test(f)?"style":"script");
+    e.textContent=t[f]; document.head.appendChild(e); });
+  setTimeout(function(){
+    window.setSidebarTeams("s1", JSON.stringify([
+      {id:"t1",name:"LeeUp",domain:"lee-up.de",favicon_url:""},
+      {id:"t2",name:"Zweites",domain:"zwei.de",favicon_url:""},
+      {id:"t3",name:"Drittes",domain:"drei.de",favicon_url:""}]));
+    window.setSidebarReady();
+    setTimeout(function(){ window.__bereit = true; document.getElementById("out").textContent = "bereit"; }, 500);
+  }, 300);
+});
+</script>

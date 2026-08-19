@@ -5891,10 +5891,19 @@
       }
       /* double rAF so the 0% width lands in a painted frame first — otherwise the browser
          coalesces both widths and the grow animation never runs */
-      requestAnimationFrame(function(){ requestAnimationFrame(function(){
-        rows.forEach(function(row, i){ var fill = row.querySelector(".up-bar-fill"); if (fill) fill.style.width = Math.max(d[i].share, 0) + "%"; });
-        fitBars();
-      }); });
+      function wachsen(){
+        requestAnimationFrame(function(){ requestAnimationFrame(function(){
+          rows.forEach(function(row, i){ var fill = row.querySelector(".up-bar-fill"); if (fill) fill.style.width = Math.max(d[i].share, 0) + "%"; });
+          fitBars();
+        }); });
+      }
+      /* cfg.growGate: der Aufrufer bekommt den Starter und entscheidet, WANN die Balken wachsen.
+         Gebraucht, wo das Umschalten von Ring auf Balken die Hoehe der Karte aendert: dort laufen
+         sonst die Hoehenanimation und das Wachsen gleichzeitig, und fitBars() misst die Hoehe,
+         waehrend sie noch die alte ist -- es blendet also Zeilen aus, die gleich Platz haetten, und
+         der Umbruch passiert zweimal. Genau das war als "stockig" gemeldet.
+         Ohne growGate bleibt es beim alten Verhalten: sofort. */
+      if (typeof cfg.growGate === "function") cfg.growGate(wachsen); else wachsen();
       var placed = false;
       rows.forEach(function(row){
         var fill = row.querySelector(".up-bar-fill"); if (!fill) return;

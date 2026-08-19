@@ -615,7 +615,12 @@
       if (it.brands) extra = '<span class="usn-count usn-fade" data-brandcount>' +
         (state.brandsDa && state.enthuellt ? esc(state.brands == null ? "" : String(state.brands))
                         : '<span class="usn-sk"></span>') + '</span>';
-      if (it.chips) extra = '<span class="usn-chips usn-fade" data-chips></span>';
+      /* Teams zeigt jetzt die ZAHL, nicht die Logos. Dieselbe Klasse wie Prompts und Brands, also
+         auch dieselbe Schrift, Farbe und Ziffernbreite -- drei Zaehler in einer Leiste sollen nicht
+         in drei Bauarten dastehen. .usn-chips und die Logo-Vorschau sind damit heraus. */
+      if (it.chips) extra = '<span class="usn-count usn-fade" data-teamcount>' +
+        (state.teamsDa && state.enthuellt ? esc(String((state.teams || []).length))
+                        : '<span class="usn-sk"></span>') + '</span>';
       /* data-tip statt title: der Browser-Tooltip erscheint verzoegert, an der Maus und in
          Systemoptik. data-tip ist der Chip des Hauses (.up-tip), und data-tip-place="right"
          setzt ihn neben den Punkt -- unter einem Icon steht in der eingeklappten Leiste schon
@@ -687,14 +692,15 @@
       bl.querySelector("[data-head]").setAttribute("aria-expanded", zu ? "false" : "true");
       body.style.maxHeight = zu ? "0px" : body.scrollHeight + "px";
     }
-    /* Die Team-Vorschau neben "Teams": UC.brandStack, dieselben Chips wie die erwaehnten Marken
-       in den Tabellen. Drei Logos, der Rest als "+N". */
+    /* Die Zahl neben "Teams". Vorher stand hier eine Logo-Vorschau (UC.brandStack, drei Logos plus
+       "+N") -- die Zahl sagt dasselbe in der Sprache, die die Leiste schon spricht.
+       Das Skelett ist das der anderen Zaehler (.usn-sk in .usn-count), nicht mehr das breite
+       .usn-sk-chips: es soll die Groesse haben, die danach wirklich kommt. */
     function renderChips(){
-      var el = elNav.querySelector("[data-chips]");
+      var el = elNav.querySelector("[data-teamcount]");
       if (!el) return;
-      var liste = state.teams || [];
-      if (!state.teamsDa || !state.enthuellt){ el.innerHTML = '<span class="usn-sk usn-sk-chips"></span>'; return; }
-      el.innerHTML = liste.length ? UC.brandStack(liste, liste.length, { max: 3 }) : "";
+      if (!state.teamsDa || !state.enthuellt){ el.innerHTML = '<span class="usn-sk"></span>'; return; }
+      el.textContent = String((state.teams || []).length);
     }
     function renderAcc(){
       var u = state.user || {};
@@ -1088,8 +1094,15 @@
     function pinsNachziehen(){
       var t = teamJetzt();
       if (!t || t === pinsFuerTeam) return;
+      var erstesMal = pinsFuerTeam === null;
       pinsFuerTeam = t;
-      state.pins = pinsLesen();
+      /* Beim ERSTEN bekannten Team aus dem Speicher laden -- das ist der Seitenaufbau, und dort
+         gehoeren die Pins hin. Bei jedem WECHSEL danach NICHT: der Wechsel-Workflow laedt die Seite
+         am Ende neu, und bis dahin waere jede Anzeige hier eine Behauptung ueber ein Team, dessen
+         uebrige Daten noch nicht da sind. Die alten Pins stehen zu lassen waere falsch (sie gehoeren
+         dem vorigen Team), die neuen zu laden sieht aus wie ein fertiger Wechsel, der es nicht ist.
+         Also leer, und der naechste Seitenaufbau bringt sie. */
+      state.pins = erstesMal ? pinsLesen() : [];
       renderNav();
     }
     function pinHinzu(p){

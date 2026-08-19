@@ -1,5 +1,19 @@
 /* upstreem sidebar.css — die App-Navigation (Praefix `usn`). Braucht core.css.
 
+   .check_reinvention.py meldet hier drei Stellen als Nachbau. Alle drei sind Fehlalarme derselben
+   Art -- der Vergleich laeuft ueber "hat Hintergrund, Rahmen, Radius, Hoehe und transition", und das
+   trifft jede anklickbare Zeile:
+     .usn-team      der Team-Umschalter oben. Kein Segmented Control: er hat keine Geschwister, aus
+                    denen er einen Zustand auswaehlt, sondern oeffnet ein Menue. Hoehe und Radius
+                    folgen der Leiste, nicht dem Bauteil.
+     .usn-item      eine Navigationszeile. Dasselbe Argument: sie markiert, WO man ist, und schaltet
+                    nicht zwischen Ansichten um. Sie traegt ausserdem den eingeklappten Zustand der
+                    Leiste, den kein Kit-Knopf kennt.
+     .usn-pin-edit  eine Breite, die aufgeht. Sieht wie .up-search aus, ist aber kein Eingabefeld --
+                    es faehrt ein Loeschknopf aus, und die Breite ist die des Knopfes.
+   Wo es ein Kit-Bauteil gibt, wird es benutzt: .up-iconbtn, .up-tip, .up-menu, .up-pop-opt,
+   .up-stack, .up-logo-box, .up-sk.
+
    ── Was aus core kommt und hier NICHT steht ──────────────────────────────────
    Die Dropdowns sind .up-filter-menu mit .up-ddsearch, die Zeilen darin .up-pop-opt mit
    .up-pop-head als Abschnittsueberschrift und .up-check als Haken. Die Logos sind .up-logo-box,
@@ -357,6 +371,10 @@
    Marken-Tooltip mit -- alles richtig in einer Tabellenzeile, hier falsch: die Chips sind
    Beiwerk in einem Knopf, kein eigenes Ziel. pointer-events:none nimmt Hover UND Tooltip auf
    einmal und laesst den Klick zum Menuepunkt darunter durch. */
+/* UNGENUTZT seit "Teams" die Zahl statt der Logo-Vorschau zeigt (siehe navItemHtml/renderChips in
+   sidebar.js). Der Block bleibt stehen, weil ein Klassenname, der aus den CSS-Dateien verschwindet,
+   fremden Code brechen kann -- .contract_diff.py meldet genau das. Wer die Vorschau zurueckholt,
+   findet hier die erprobten Masse. */
 .usn-chips { flex: 0 0 auto; display: inline-flex; align-items: center; pointer-events: none; }
 /* Die Chips sitzen in einem 36px-Knopf, nicht in einer Tabellenzeile: der Ring, mit dem sie
    sich sonst voneinander abheben, muss die Farbe der Leiste haben, nicht die des Inhalts. */

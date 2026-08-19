@@ -652,8 +652,25 @@
        kommen von dort. Hier steht nur, WANN was gezeichnet wird.
        decimals: 1 wie im Combo (CLAUDE.md 2b: der Standard des Kits ist 2 und fuer keinen Chart
        der App richtig). */
+    /* Das Tor fuer das Balkenwachstum. renderBars gibt seinen Starter hierher, hoeheAnimiert ruft
+       ihn erst, wenn Hoehe und Einblenden durch sind -- so laufen die drei Bewegungen NACHEINANDER
+       (Hoehe, Einblenden, Balken) statt uebereinander. Laeuft kein hoeheAnimiert (Erstaufbau, neue
+       Daten), startet das Tor sofort von selbst. */
+    var wachsTor = { starter: null, offen: true };
+    function torSchliessen() { wachsTor.starter = null; wachsTor.offen = false; }
+    function torOeffnen() {
+      wachsTor.offen = true;
+      var s = wachsTor.starter; wachsTor.starter = null;
+      if (s) s();
+    }
+    function torNehmen(starter) {
+      if (wachsTor.offen) { starter(); return; }
+      wachsTor.starter = starter;
+    }
+
     var typeChart = UC.makeTypeChart ? UC.makeTypeChart({
       decimals: 1,
+      growGate: torNehmen,
       body: elTypeBody,
       isDark: darkNow,
       isOwner: function () { return true; },
@@ -686,44 +703,69 @@
        animieren und danach wieder freigeben. 200ms ease (Vorgabe).
        Ohne das Freigeben am Ende bliebe die Karte auf der gemessenen Hoehe stehen und wuerde beim
        naechsten Datenwechsel nicht mehr mitwachsen. */
-    /* Die Zielhoehe wird NACH dem Einrichten des Charts gemessen, nicht direkt nach dem Zeichnen:
-       Chart.js richtet seine Leinwand ueber einen ResizeObserver ein, also erst nach diesem Lauf.
-       Wer vorher misst, misst eine Hoehe, die es gleich nicht mehr gibt (gemessen 326 -> 468 -> und
-       nach dem Loslassen wieder 326) und animiert auf ein Ziel, das verschwindet.
+    /* Der Wechsel Ring <-> Balken in DREI Schritten hintereinander, nicht uebereinander:
+         1. die Hoehe der Karte animiert (200ms ease)
+         2. mit demselben Mass danach der Inhalt eingeblendet (200ms ease)
+         3. erst dann laufen die Erscheinungs-Animationen des Charts los (das Balkenwachstum)
+       Vorher liefen 1 und 3 gleichzeitig, und fitBars() in core mass die Hoehe, waehrend sie noch
+       die alte war -- es blendete Zeilen aus, die einen Frame spaeter Platz hatten, und der Umbruch
+       passierte zweimal. Das war das Stocken.
 
-       Waehrend der zwei Frames haelt MIN-HEIGHT die alte Hoehe, nicht height: eine feste Hoehe
+       Die Zielhoehe wird NACH dem Einrichten des Charts gemessen: Chart.js richtet seine Leinwand
+       ueber einen ResizeObserver ein, also erst nach diesem Lauf. Wer vorher misst, misst eine
+       Hoehe, die es gleich nicht mehr gibt.
+
+       Waehrend gemessen wird, haelt MIN-HEIGHT die alte Hoehe und nicht height: eine feste Hoehe
        quetscht die Balkenliste, und was nicht hineinpasst, ist weg (gemessen neun Balken im
        Dokument, fuenf sichtbar). Ein Mindestmass laesst wachsen und verhindert nur das
-       Zusammenfallen -- genau das, was animiert werden soll.
-
-       is-hanim schaltet fuer die Dauer der Bewegung die beiden min-height-Uebergaenge aus (Karte
-       und Koerper). Ohne das liefen drei Uebergaenge auf derselben Box, und das war das Ruckeln. */
+       Zusammenfallen. */
+    var HANIM_MS = 200;
     function hoeheAnimiert(karte, neuZeichnen) {
       if (!karte || !karte.getBoundingClientRect) { neuZeichnen(); return; }
+      var koerper = karte.querySelector(".udd-typebody, .udd-modelbody");
       var vorher = karte.getBoundingClientRect().height;
       karte.classList.add("is-hanim");
       karte.style.transition = "none";
       karte.style.minHeight = vorher + "px";
+      /* Der Inhalt geht auf 0, OHNE Uebergang -- der Wechsel selbst soll nicht zu sehen sein, nur
+         das Einblenden danach. */
+      if (koerper) { koerper.style.transition = "none"; koerper.style.opacity = "0"; }
+      torSchliessen();
       neuZeichnen();
+
+      function einblenden() {
+        if (!koerper) { torOeffnen(); aufraeumen(); return; }
+        koerper.style.transition = "opacity " + HANIM_MS + "ms ease";
+        koerper.style.opacity = "1";
+        setTimeout(function () {
+          koerper.style.transition = ""; koerper.style.opacity = "";
+          /* Jetzt erst die Balken. */
+          torOeffnen();
+          aufraeumen();
+        }, HANIM_MS + 20);
+      }
       function aufraeumen() {
         karte.style.height = ""; karte.style.minHeight = ""; karte.style.transition = "";
         karte.classList.remove("is-hanim");
       }
+
       requestAnimationFrame(function () {
         requestAnimationFrame(function () {
-          /* Mindestmass loslassen, natuerliche Hoehe lesen -- alles im selben Frame, also entsteht
-             dazwischen kein Bild. */
+          /* Mindestmass loslassen, natuerliche Hoehe lesen, im selben Frame wieder festnageln --
+             dazwischen entsteht kein Bild. */
           karte.style.minHeight = "";
           var nachher = karte.getBoundingClientRect().height;
-          if (Math.abs(nachher - vorher) < 1) { aufraeumen(); return; }
+          if (Math.abs(nachher - vorher) < 1) { einblenden(); return; }
           karte.style.height = vorher + "px";
           /* Den Startwert festschreiben, ohne zu zeichnen: ohne diese erzwungene Neuberechnung
              springt die Karte ohne Animation auf das Ziel. */
           void karte.offsetHeight;
-          /* Die Kurve kommt aus der Klasse (is-hanim), das inline gesetzte none muss also weg. */
-          karte.style.transition = "";
+          karte.style.transition = "height " + HANIM_MS + "ms ease";
           karte.style.height = nachher + "px";
-          setTimeout(aufraeumen, 220);
+          setTimeout(function () {
+            karte.style.height = ""; karte.style.minHeight = ""; karte.style.transition = "";
+            einblenden();
+          }, HANIM_MS + 20);
         });
       });
     }
@@ -741,6 +783,7 @@
        Items: die Modelle bringen ihre Farbe je Thema mit, es gibt fuer sie keine Skala in core.
        prepTypeData waere hier falsch -- das kennt nur Zitations- und URL-Typen. */
     var modelDonut = UC.makeTypeChart ? UC.makeTypeChart({
+      growGate: torNehmen,
       decimals: 1,
       body: elModelDonut,
       isDark: darkNow,
