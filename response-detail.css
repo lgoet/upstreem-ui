@@ -56,19 +56,19 @@
    Ein Chip je Marke, umbrechend. Zehn bis fuenfzehn Marken sind die Ausnahme, kommen aber vor --
    deshalb flex-wrap und keine Spalten: eine Rasterung mit fester Spaltenzahl laesst bei drei
    Marken zwei Luecken und bei fuenfzehn eine Wand. */
-/* Eine Aufzaehlung, kein Knopfleiste: 20px zwischen den Marken, damit sie ohne Rahmen als eigene
-   Einheiten lesbar bleiben. Ein Rahmen je Marke machte aus der Liste eine Reihe von Knoepfen. */
-.urd-ments { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; }
-.urd-ment { display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%;
-  cursor: pointer; border-radius: 6px; }
-/* Der Name bekommt beim Hover die Unterstreichung -- das ist das Zeichen fuer "anklickbar", das
-   ohne Rahmen und ohne Hintergrund noch bleibt. */
-.urd-ment:hover .up-ment-name { text-decoration: underline; text-underline-offset: 2px; }
-.urd-ment:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 3px; }
-.urd-ment .up-ment-logo { width: 20px; height: 20px; border-radius: 5.6px; }
-.urd-ment .up-ment-logo img { width: 18px; height: 18px; border-radius: 4.5px; }
-.urd-ment .up-model-ltr { font-size: 11px; }
-.urd-ment .up-ment-name { font-size: 14.5px; }
+/* Kleine Chips mit leichtem Grund, OHNE Rahmen: der Grund faellt die Marke zusammen, ohne sie wie
+   einen Knopf einzurahmen. 8px Abstand statt 20 -- mit Grund braucht es keinen Weissraum mehr, um
+   die Einheiten zu trennen, das tut die Flaeche. */
+.urd-ments { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+/* Der Chip ist .up-entchip.is-soft aus core -- 28px, Radius 8, kein Rahmen, leichter Grund,
+   Hover inklusive. Hier steht nur, dass er die Breite der Karte nicht sprengt. */
+.urd-ment { max-width: 100%; }
+/* Das Logo eine Stufe kleiner als vorher (18 statt 20), weil der Chip jetzt die Groesse vorgibt.
+   Faktor 18/20 auf alles: Radius 5.6 -> 5, Bild 18 -> 16, Bildradius 4.5 -> 4. */
+.urd-ment .up-ment-logo { width: 18px; height: 18px; border-radius: 5px; }
+.urd-ment .up-ment-logo img { width: 16px; height: 16px; border-radius: 4px; }
+.urd-ment .up-model-ltr { font-size: 10px; }
+.urd-ment .up-ment-name { font-size: 13.5px; }
 /* Der leere Zustand der Mentions: das Minus steht fuer sich, ohne Karte und ohne Satz. Etwas
    Hoehe, damit der Abschnitt nicht auf eine Zeile zusammenfaellt. */
 .urd-mentempty { min-height: 24px; }

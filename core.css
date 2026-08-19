@@ -1755,6 +1755,12 @@
   border: 1px solid var(--vc-border); background: var(--vc-bg);
   white-space: nowrap; overflow: hidden; min-width: 0; max-width: 100%; box-sizing: border-box; }
 .up-entchip.is-static { cursor: default; }
+/* is-soft: derselbe Chip ohne Rahmen, dafuer mit leichtem Grund. Gebraucht dort, wo viele Chips
+   nebeneinander stehen -- ein Rahmen je Marke macht aus einer Aufzaehlung eine Reihe von Knoepfen,
+   eine Flaeche fasst sie zusammen, ohne sie einzurahmen. Hover verdichtet den Grund, statt einen
+   Rahmen einzublenden. */
+.up-entchip.is-soft { border-color: transparent; background: var(--vc-heading-bg); }
+.up-entchip.is-soft:hover { background: var(--vt-row-hover-solid, var(--vc-switch-bg)); }
 .up-entchip:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 1px; }
 
 /* ---- Modell-Chip / Market-Chip ----------------------------------------------------------------

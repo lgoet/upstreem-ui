@@ -386,14 +386,17 @@
         return;
       }
       elMents.innerHTML = liste.map(function (c) {
-        var name = String((c && c.name) || "");
+        /* brand_name_raw und nicht name: das ist die Schreibweise, mit der die Marke im Antworttext
+           steht und mit der sie dort auch ausgezeichnet wird ("LeeUP Media", nicht "LeeUp Media").
+           Zwei Schreibweisen derselben Marke auf einer Seite lesen sich wie zwei Marken. */
+        var name = String((c && (c.brand_name_raw || c.name)) || "");
         var logo = String((c && c.favicon_url) || "");
         var buchst = (name.charAt(0) || "?").toUpperCase();
         /* Kein Chip und keine Karte: Logo und Name, wie in der Mentioned-Liste der Tabellen.
            Der Rahmen um jede Marke machte aus einer Aufzaehlung eine Reihe von Knoepfen -- hier
            steht aber einfach, wer vorkommt. Anklickbar bleibt es (der Zeiger und der Hover sagen
            es), nur ohne eigenen Kasten. */
-        return '<span class="urd-ment" role="button" tabindex="0"' +
+        return '<span class="up-entchip is-soft urd-ment" role="button" tabindex="0"' +
                  ' data-brand="' + esc(String((c && c.company_id) || "")) + '">' +
                  '<span class="up-ment-logo' + (logo ? " has-img" : "") + '">' +
                    '<span class="up-model-ltr">' + esc(buchst) + "</span>" +
