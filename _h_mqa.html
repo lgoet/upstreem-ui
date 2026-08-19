@@ -44,6 +44,22 @@ Promise.all(["quick-actions.css"].map(function(f){
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span>';
         log("Chips von Hand gesetzt");
       }
+      /* Eine Recent-Search-Zeile und eine Favorites-Zeile von Hand einsetzen: sie entstehen erst
+         nach echten Suchen, und fuer die Messung der Chips genuegt dieselbe Struktur, die
+         entryLineHtml/miniChips bauen. */
+      var rw = document.querySelector("#mqa-recent");
+      if (rw) rw.innerHTML =
+        ['<div class="mqa-sec-label">Recent Searches</div>',
+         '<button class="mqa-action" type="button"><span class="mqa-recent-ic"></span>' +
+         '<span class="mqa-main"><span class="mqa-primary mqa-recent-line">' +
+         '<span class="mqa-mini">Brand <b>Mercedes Benz</b></span>' +
+         '<span class="mqa-mini">Market <b>DE</b></span>' +
+         '<span class="mqa-recent-q">solaranlagen anbieter</span></span></span></button>',
+         '<div class="mqa-sec-label">Favorites</div>',
+         '<button class="mqa-action" type="button"><span class="mqa-recent-ic"></span>' +
+         '<span class="mqa-main"><span class="mqa-primary mqa-recent-line">' +
+         '<span class="mqa-mini">Rank <b>Top 3</b></span>' +
+         '<span class="mqa-recent-q">gespeicherte suche</span></span></span></button>'].join("");
       window.__bereit = true; log("bereit");
     }, 500);
   }, 400);

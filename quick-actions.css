@@ -354,12 +354,27 @@
 .mqa-recent-ic { flex: 0 0 auto; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; color: var(--am-muted-2); }
 .mqa-recent-ic svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .mqa-recent-line { display: flex; align-items: center; gap: 6px; min-width: 0; flex-wrap: nowrap; overflow: hidden; }
+/* Derselbe Chip wie .mqa-chip im Suchfeld, nur 4px flacher: 22 statt 26. Alles im Verhaeltnis
+   22/26 = 0.846 mitgezogen -- Polsterung 6.5/9.75 -> 5.5/8.25, Radius 7.6 -> 6.4, Innenabstand
+   6.5 -> 5.5.
+   Die Schrift bleibt bei 11: proportional waeren 10.6, und das ist unter dem, was diese App
+   irgendwo sonst verwendet. 0.4px Abweichung gegen einen Wert, der sich noch lesen laesst.
+   Grund, Rahmen und der zweilagige Schatten sind die des grossen Chips -- Recent Searches,
+   Favorites und das Suchfeld sollen dieselbe Sprache sprechen, nur in zwei Groessen. Der Schatten
+   skaliert NICHT mit: ein Pixel ist ein Pixel, halbiert waere er nichts.
+   Auch der Mini-Chip im Tooltip (.mqa-tip .mqa-mini) traegt diese Regel -- dort wird nur die Farbe
+   ueberschrieben, und dass er dieselbe Form hat, ist richtig. */
 .mqa-mini {
-  flex: 0 0 auto; display: inline-flex; align-items: center; height: 18px; padding: 0 6px;
-  border-radius: 5px; background: var(--am-soft-2); border: 1px solid var(--am-border);
-  color: var(--am-muted); font-size: 11px; font-weight: 550; white-space: nowrap; gap: 3px;
+  flex: 0 0 auto; display: inline-flex; align-items: center; height: 22px; padding: 0 5.5px 0 8.25px;
+  border-radius: 6.4px; border: 1px solid var(--am-border);
+  background: color-mix(in srgb, var(--am-soft-2) 50%, transparent);
+  box-shadow: 0 1px 1px rgba(0,0,0,0.22), 0 1px 2px rgba(0,0,0,0.12);
+  color: var(--am-muted); font-size: 11px; font-weight: 500; white-space: nowrap; gap: 5.5px;
 }
-.mqa-mini b { font-weight: 450; color: var(--am-muted-2); }   /* value only: -100 weight, weaker colour */
+[data-theme="dark"] .mqa-mini {
+  box-shadow: 0 1px 1px rgba(0,0,0,0.40), 0 1px 2px rgba(0,0,0,0.26); }
+/* Nur der Wert: eine Stufe leichter und gedaempft, genau wie in .mqa-chip b. */
+.mqa-mini b { font-weight: 400; color: var(--am-muted-2); }
 .mqa-recent-q { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mqa-recent-x {
   flex: 0 0 auto; width: 18px; height: 18px; border: 0; border-radius: 5px; background: transparent; cursor: pointer;
