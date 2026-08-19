@@ -422,16 +422,33 @@
     }
 
     /* ---- Full Response -------------------------------------------------------------------- */
+    /* Der Aufbau des Skeletts, einmal als Daten: h ist eine Ueberschrift (Breite in Prozent), p ein
+       Absatz (eine Breite je Zeile). Gerechnet auf etwa 560px, also doppelt so hoch wie die zwoelf
+       Zeilen davor -- und die Gliederung ist der eigentliche Punkt. */
+    var ABSCHNITTE = [
+      { p: [96, 88, 92, 61] },
+      { h: 34 },
+      { p: [94, 86, 90, 78, 52] },
+      { h: 28 },
+      { p: [92, 96, 84, 88, 66] },
+      { h: 41 },
+      { p: [90, 94, 72] }
+    ];
     var letzteMessung = null;
     function renderBody() {
       if (state.error) { elBody.innerHTML = '<span class="urd-empty">' + esc(state.error) + "</span>"; return; }
       if (istLaden() || !state.data) {
-        /* Zwoelf Zeilen statt sechs: doppelt so hoch (6 x 24 = 144 wird 12 x 24 = 288), und das
-           passt zu dem, was danach kommt -- eine Modellantwort ist selten sechs Zeilen kurz. Die
-           Breiten bleiben ungleichmaessig, damit es wie Text aussieht und nicht wie ein Balken;
-           die 40 am Ende ist der Absatzschluss. */
-        elBody.innerHTML = [72, 96, 88, 64, 92, 78, 94, 68, 86, 90, 74, 40].map(function (w) {
-          return '<span class="urd-sk urd-sk-line" style="width:' + w + '%"></span>';
+        /* Das Skelett hat jetzt die FORM einer Antwort, nicht nur ihre Masse: Absatz, Ueberschrift,
+           Absatz, Ueberschrift, Absatz, Schluss. Eine Wand aus gleich langen Balken sieht aus wie
+           ein Ladefehler; eine Gliederung sieht aus wie ein Text, der gleich da ist.
+           Die Ueberschriften sind kuerzer und etwas hoeher als die Textzeilen (18 zu 14) und tragen
+           mehr Luft ueber sich -- dasselbe Verhaeltnis, das der fertige Text hat. Die Zeilenbreiten
+           sind ungleich, und jeder Absatz endet kurz: so bricht Text wirklich. */
+        elBody.innerHTML = ABSCHNITTE.map(function (a) {
+          if (a.h) return '<span class="urd-sk urd-sk-h" style="width:' + a.h + '%"></span>';
+          return '<div class="urd-sk-para">' + a.p.map(function (w) {
+            return '<span class="urd-sk urd-sk-line" style="width:' + w + '%"></span>';
+          }).join("") + "</div>";
         }).join("");
         return;
       }

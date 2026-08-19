@@ -2486,17 +2486,18 @@
    Das alte Element gab ihm 24px Hoehe bei 11px Text und 12px Abstand zwischen Favicon und Text --
    ein Loch mitten im Chip. Hier: 22px Hoehe, 12px Text, 6px Abstand, und ein Rahmen statt einer
    Hintergrundfarbe, damit er im Lauftext nicht als Block liegt. */
-/* Grund in der Feldfarbe und ein Rahmen in beiden Themen: auf --vc-bg lag der Chip auf demselben
-   Ton wie die Karte um ihn und war nur am Rahmen zu erkennen -- im Dunkeln, wo der Rahmen weg war,
-   an gar nichts. Die Feldfarbe hebt ihn ab, der Rahmen fasst ihn. */
+/* EIN Mittel je Thema, nicht zwei: im Hellen der Rahmen ohne Grund, im Dunkeln der Grund ohne
+   Rahmen. Der Grund liegt hell so nah am Kartenton, dass er nichts hinzufuegt, und der Rahmen liegt
+   dunkel so nah am Kartenrand, dass er als zweite Kante liest. Also je Thema das, was traegt.
+   Der Grund steht in der Dunkel-Regel weiter unten, hier ist er durchsichtig. */
 .up-rb-cite { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 7px;
-  margin: 0 1px; border: 1px solid var(--vc-border); border-radius: 7px; background: var(--vc-field);
+  margin: 0 1px; border: 1px solid var(--vc-border); border-radius: 7px; background: transparent;
   vertical-align: middle; cursor: pointer; max-width: 100%; box-sizing: border-box; line-height: 1;
   transition: background 120ms ease, border-color 120ms ease; }
 .up-rb-cite:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
-/* Der Rahmen bleibt jetzt in BEIDEN Themen: mit der Feldfarbe als Grund ist der Chip abgesetzt,
-   und der Rahmen fasst ihn -- vorher war er im Dunkeln weg, weil er auf --vc-bg als zweite Kante
-   neben dem Kartenrand wirkte. */
+/* Im Dunkeln umgekehrt: Grund in der Feldfarbe, kein Rahmen. Der Hover verdichtet den Grund. */
+.up-root[data-theme="dark"] .up-rb-cite { background: var(--vc-field); border-color: transparent; }
+.up-root[data-theme="dark"] .up-rb-cite:hover { background: var(--vc-heading-bg); }
 .up-rb-cite:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 1px; }
 /* 14 statt 13, und der Radius zieht im selben Verhaeltnis mit (3 * 14/13 = 3.23). Der Chip ist
    24px hoch, das Bild passt also weiter hinein, ohne an den Rahmen zu stossen. */
@@ -2513,11 +2514,13 @@
    Zeile gleich hoch stehen. */
 /* Grund und Rahmen wie beim einzelnen Zitations-Chip -- beide gehoeren zur selben Familie. */
 .up-rb-cgroup { display: inline-flex; align-items: center; gap: 7px; height: 24px; padding: 0 8px 0 6px;
-  margin: 0 1px; border: 1px solid var(--vc-border); border-radius: 7px; background: var(--vc-field);
+  margin: 0 1px; border: 1px solid var(--vc-border); border-radius: 7px; background: transparent;
   vertical-align: middle; cursor: pointer; box-sizing: border-box; line-height: 1; white-space: nowrap;
   transition: background 120ms ease, border-color 120ms ease; }
 .up-rb-cgroup:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
-/* Rahmen in beiden Themen, wie beim einzelnen Chip -- beide gehoeren zur selben Familie. */
+/* Dieselbe Entscheidung wie beim einzelnen Chip: dunkel der Grund, hell der Rahmen. */
+.up-root[data-theme="dark"] .up-rb-cgroup { background: var(--vc-field); border-color: transparent; }
+.up-root[data-theme="dark"] .up-rb-cgroup:hover { background: var(--vc-heading-bg); }
 .up-rb-cgroup:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 1px; }
 .up-rb-cg-favs { display: inline-flex; align-items: center; flex: 0 0 auto; }
 /* 4px Ueberlappung, genau wie .up-stack-item -- ein Stapel sieht in der ganzen App gleich aus.
