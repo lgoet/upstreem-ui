@@ -5,13 +5,14 @@ body{overflow:hidden;background:#fff}#main{height:100vh;overflow-y:auto;padding:
 <div id="main">
   <div class="up-root urd-root" data-instance="response_detail_page" data-isdark="no"
        data-prompt-fn="bubble_fn_urdPrompt" data-brand-fn="bubble_fn_urdBrand"
-       data-url-fn="bubble_fn_urdUrl" data-view-fn="bubble_fn_urdView"></div>
+       data-url-fn="bubble_fn_urdUrl" data-view-fn="bubble_fn_urdView"
+       data-domain-fn="bubble_fn_urdDomain"></div>
 </div>
 <script>
 window.__ev=[]; window.__fehler=[]; window.__warn=[];
 window.addEventListener("error", function(e){ window.__fehler.push(String(e.message)); });
 (function(){ var w=console.warn; console.warn=function(){ window.__warn.push([].join.call(arguments," ")); w.apply(console,arguments); }; })();
-["urdPrompt","urdBrand","urdUrl","urdView"].forEach(function(n){ window["bubble_fn_"+n]=function(p){ window.__ev.push([n,p]); }; });
+["urdPrompt","urdBrand","urdUrl","urdView","urdDomain"].forEach(function(n){ window["bubble_fn_"+n]=function(p){ window.__ev.push([n,p]); }; });
 try { localStorage.removeItem("urdHighlights"); } catch(e){}
 </script>
 <script>

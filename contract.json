@@ -79,6 +79,7 @@
   "uptSort",
   "uptStatus",
   "urdBrand",
+  "urdDomain",
   "urdPrompt",
   "urdUrl",
   "urdView",
@@ -133,6 +134,7 @@
   "data-dimension-fn",
   "data-dismiss-fn",
   "data-docs-fn",
+  "data-domain-fn",
   "data-edit-fn",
   "data-editbrand-fn",
   "data-edittopics-fn",
@@ -2453,8 +2455,8 @@
   "uutpulse"
  ],
  "_zaehlung": {
-  "events": 113,
-  "fnattrs": 74,
+  "events": 114,
+  "fnattrs": 75,
   "globals": 137,
   "payloadkeys": 66,
   "dataattrs": 179,

@@ -687,7 +687,10 @@
                  '<div class="urd-cc-head">' +
                    (fav ? '<img class="urd-cc-fav" src="' + esc(fav) + '" alt="" loading="lazy"' +
                           ' referrerpolicy="no-referrer" onerror="this.remove()"/>' : "") +
-                   '<span class="urd-cc-domain">' + esc(dom) + "</span>" +
+                   /* Die Domain ist ein eigenes Ziel: sie fuehrt zur Domain-Detailseite, die
+                      Karte zur URL. Der Klick darf also nicht bis zur Karte durchlaufen. */
+                   '<span class="urd-cc-domain" role="button" tabindex="0" data-domain="' +
+                     esc(dom) + '">' + esc(dom) + "</span>" +
                  "</div>" +
                  '<div class="urd-cc-title">' + esc(titelOf(c)) + "</div>" +
                  (desc ? '<div class="urd-cc-desc">' + esc(desc) + "</div>" : '<div class="urd-cc-desc"></div>') +
@@ -703,7 +706,8 @@
                         ' referrerpolicy="no-referrer" onerror="this.remove()"/>' : "") +
                  '<span class="urd-cr-txt">' +
                    '<span class="urd-cr-title">' + esc(titelOf(c)) + "</span>" +
-                   '<span class="urd-cr-domain">' + esc(domainOf(c)) + "</span>" +
+                   '<span class="urd-cr-domain" role="button" tabindex="0" data-domain="' +
+                     esc(domainOf(c)) + '">' + esc(domainOf(c)) + "</span>" +
                  "</span>" +
                  '<span class="urd-cr-ments">' + UC.brandStack(c.mentions) + "</span>" +
                "</div>";
@@ -804,6 +808,14 @@
       /* Eine Marke im Mentions-Abschnitt. */
       var m = e.target.closest(".urd-ment");
       if (m) { markeFeuern(m.getAttribute("data-brand")); return; }
+      /* Die Domain ZUERST pruefen -- sie liegt in der Kachel, und der Klick auf sie meint die
+         Domain, nicht die URL. */
+      var dm = e.target.closest("[data-domain]");
+      if (dm) {
+        var dv = dm.getAttribute("data-domain") || "";
+        if (dv) fire("data-domain-fn", "urdDomain", dv);
+        return;
+      }
       /* Eine Quelle, als Kachel oder als Zeile. */
       var q = e.target.closest(".urd-cite-card, .urd-cite-row");
       if (q) { quelleFeuern(q); return; }
@@ -824,7 +836,7 @@
       if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
       var z = e.target.closest ? e.target.closest(
         ".urd-prompt, .urd-ment, .urd-cite-card, .urd-cite-row, .up-rb-cite, .up-rb-brand, " +
-        ".up-rb-cgroup") : null;
+        ".up-rb-cgroup, [data-domain]") : null;
       if (!z) return;
       e.preventDefault();
       z.click();

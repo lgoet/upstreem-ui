@@ -26,6 +26,7 @@
   | data-brand-fn   | nein    | Toolbox-Funktion fuer den Klick auf eine Marke              |
   | data-url-fn     | nein    | Toolbox-Funktion fuer den Klick auf eine Quelle             |
   | data-view-fn    | nein    | Toolbox-Funktion fuer den Wechsel Kacheln/Liste             |
+  | data-domain-fn  | nein    | Toolbox-Funktion fuer den Klick auf eine Domain             |
 
   ── Die Ereignisse und ihre Werte ────────────────────────────────────────────
   Die ersten drei tragen einen BLANKEN Wert, kein JSON -- Bubble liest sie ohne Umweg:
@@ -36,6 +37,10 @@
   | urdBrand   | Klick auf einen Marken-Chip (Mentions ODER die Auszeichnung im Antworttext) | company_id |
   | urdUrl     | Klick auf eine Quelle (Kachel, Zeile) ODER "Open detail page" im Menue eines Zitat-Chips | citations[].id -- und wenn die RPC keine id liefert, die URL |
   | urdView    | Umschalter Kacheln/Liste                  | { view: "grid" | "list" }       |
+  | urdDomain  | Klick auf die Domain einer Quelle (Kachel oder Zeile) | die Domain als Text  |
+
+  Die Domain ist ein EIGENES Ziel: sie fuehrt zur Domain-Detailseite, die Kachel zur URL. Ein Klick
+  auf die Domain feuert deshalb nur urdDomain und laeuft nicht bis zur Kachel durch.
 
   WICHTIG zu urdUrl: in den drei Beispiel-Payloads tragen die Eintraege in citations KEIN Feld
   id. Solange das so ist, kommt die URL als Wert -- sonst waere der Klick wirkungslos. Der
@@ -139,7 +144,8 @@
      data-prompt-fn="bubble_fn_urdPrompt"
      data-brand-fn="bubble_fn_urdBrand"
      data-url-fn="bubble_fn_urdUrl"
-     data-view-fn="bubble_fn_urdView">
+     data-view-fn="bubble_fn_urdView"
+     data-domain-fn="bubble_fn_urdDomain">
   <!--
     DER EINFACHSTE WEG, die Daten hereinzugeben: den dynamischen Ausdruck als INHALT dieses Blocks.
     Die Komponente liest ihn beim Aufbau selbst, es braucht dafuer keinen Run-JS-Schritt.
