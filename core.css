@@ -28,8 +28,8 @@
          keine Bewertung. Der Hintergrund liegt 10 Prozentpunkte unter dem ersten Ansatz (8 -> 6,
          hover 15 -> 12), damit der Absatz beim Lesen nicht gestreift wirkt. */
       --vt-brand: rgba(255, 165, 0, 1);
-      --vt-brand-bg: color-mix(in srgb, var(--vt-brand) 6%, transparent);
-      --vt-brand-bg-hover: color-mix(in srgb, var(--vt-brand) 12%, transparent);
+      --vt-brand-bg: color-mix(in srgb, var(--vt-brand) 4%, transparent);
+      --vt-brand-bg-hover: color-mix(in srgb, var(--vt-brand) 9%, transparent);
       --vt-brand-border: color-mix(in srgb, var(--vt-brand) 55%, transparent);
       --vt-brand-border-hover: var(--vt-brand);
       --vc-hover-border: #6f6f6f;
@@ -101,8 +101,8 @@
       /* Im Dunkeln ein aufgehellter Ton mit weniger Deckung -- auch das wortgleich aus den alten
          Elementen. Der Hintergrund darf hier etwas mehr tragen, sonst verschwindet er im Grund. */
       --vt-brand: rgba(255, 190, 60, 0.85);
-      --vt-brand-bg: color-mix(in srgb, var(--vt-brand) 10%, transparent);
-      --vt-brand-bg-hover: color-mix(in srgb, var(--vt-brand) 18%, transparent);
+      --vt-brand-bg: color-mix(in srgb, var(--vt-brand) 7%, transparent);
+      --vt-brand-bg-hover: color-mix(in srgb, var(--vt-brand) 14%, transparent);
       --vt-brand-border: color-mix(in srgb, var(--vt-brand) 60%, transparent);
       --vt-brand-border-hover: var(--vt-brand);
       --vc-hover-border: #707070;
@@ -2350,7 +2350,11 @@
    Die Tabelle ist die aus ask-mira, Wert fuer Wert: Rahmen mit Radius 10, 13.5px, Kopf in
    --vc-heading-bg, Zellen 9px/12px, jede zweite Zeile minimal getoent. Sie ist das Vorbild, weil
    sie die einzige Tabelle der App ist, die in einem Textfluss steht und dort funktioniert. */
-.up-rb { font-size: 14px; line-height: 1.65; color: var(--vc-text); overflow-wrap: break-word; }
+/* 15px (Vorgabe: 1px groesser) bei Zeilenhoehe 1.75. Die 1.75 sind kein Geschmack, sondern eine
+   Rechnung: 15 * 1.75 = 26.25px, und genau so hoch ist der Marken-Chip (26px). Damit passt er in
+   die Zeilenbox, ohne sie zu dehnen -- vorher war die Zeile 23px und der Chip 26px, also wuchs
+   JEDE Zeile mit einer Marke um 3px plus den Versatz, was wie ein halber Absatz aussah. */
+.up-rb { font-size: 15px; line-height: 1.75; color: var(--vc-text); overflow-wrap: break-word; }
 .up-rb-p { margin: 0 0 12px; }
 .up-rb-p:last-child { margin-bottom: 0; }
 /* Betonung ueber das Gewicht, nicht ueber die Groesse: <strong> steht mitten in Saetzen, und
@@ -2376,8 +2380,8 @@
 .up-rb-table thead th { text-align: left; font-weight: 600; color: var(--vc-muted);
   background: var(--vc-heading-bg); padding: 9px 12px; white-space: normal;
   overflow-wrap: break-word; border-bottom: 1px solid var(--vc-border); }
-.up-rb-table tbody td { padding: 9px 12px; border-bottom: 1px solid var(--vc-border);
-  vertical-align: top; white-space: normal; overflow-wrap: break-word; line-height: 1.5; }
+.up-rb-table tbody td { padding: 10px 12px; border-bottom: 1px solid var(--vc-border);
+  vertical-align: top; white-space: normal; overflow-wrap: break-word; line-height: 1.6; }
 .up-rb-table tbody tr:last-child td { border-bottom: 0; }
 .up-rb-table tbody tr:nth-child(even) td { background: var(--vt-row-hover); }
 .up-rb-table th:first-child, .up-rb-table td:first-child { padding-left: 14px; }
@@ -2387,9 +2391,9 @@
    Das alte Element gab ihm 24px Hoehe bei 11px Text und 12px Abstand zwischen Favicon und Text --
    ein Loch mitten im Chip. Hier: 22px Hoehe, 12px Text, 6px Abstand, und ein Rahmen statt einer
    Hintergrundfarbe, damit er im Lauftext nicht als Block liegt. */
-.up-rb-cite { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 7px;
+.up-rb-cite { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 7px;
   margin: 0 1px; border: 1px solid var(--vc-border); border-radius: 7px; background: var(--vc-bg);
-  vertical-align: -4px; cursor: pointer; max-width: 100%; box-sizing: border-box;
+  vertical-align: middle; cursor: pointer; max-width: 100%; box-sizing: border-box; line-height: 1;
   transition: background 120ms ease, border-color 120ms ease; }
 .up-rb-cite:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
 .up-rb-cite:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 1px; }
@@ -2398,6 +2402,42 @@
 .up-rb-cite-txt { font-size: 12px; font-weight: 500; color: var(--vc-muted); line-height: 1;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .up-rb-cite:hover .up-rb-cite-txt { color: var(--vc-text); }
+
+/* ---- Zitat-Gruppe (mehrere Quellen hintereinander) -------------------------------------------
+   Die Favicons ineinandergeschoben wie ein Stapel, dahinter "N Sources" -- dasselbe Bild, das die
+   KI-Produkte von Google benutzen, und dasselbe Prinzip wie .up-stack in den Tabellen: der Stapel
+   sagt "mehrere", die Zahl sagt "wie viele". Masse wie der einzelne Chip, damit beide in einer
+   Zeile gleich hoch stehen. */
+.up-rb-cgroup { display: inline-flex; align-items: center; gap: 7px; height: 24px; padding: 0 8px 0 6px;
+  margin: 0 1px; border: 1px solid var(--vc-border); border-radius: 7px; background: var(--vc-bg);
+  vertical-align: middle; cursor: pointer; box-sizing: border-box; line-height: 1; white-space: nowrap;
+  transition: background 120ms ease, border-color 120ms ease; }
+.up-rb-cgroup:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
+.up-rb-cgroup:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 1px; }
+.up-rb-cg-favs { display: inline-flex; align-items: center; flex: 0 0 auto; }
+/* 4px Ueberlappung, genau wie .up-stack-item -- ein Stapel sieht in der ganzen App gleich aus.
+   Der Rahmen in Hintergrundfarbe trennt die Bilder, sonst verschmelzen zwei aehnliche Favicons. */
+.up-rb-cg-fav { width: 14px; height: 14px; border-radius: 4px; object-fit: cover; display: block;
+  box-shadow: 0 0 0 1.5px var(--vc-bg); background: var(--vt-logo-bg); }
+.up-rb-cg-fav + .up-rb-cg-fav { margin-left: -4px; }
+.up-rb-cgroup:hover .up-rb-cg-fav { box-shadow: 0 0 0 1.5px var(--vc-heading-bg); }
+.up-rb-cg-txt { font-size: 12px; font-weight: 500; color: var(--vc-muted); }
+.up-rb-cgroup:hover .up-rb-cg-txt { color: var(--vc-text); }
+
+/* Der Kasten, der die Quellen einer Gruppe auflistet. Kein Tooltip aus core: der ist einzeiliger
+   Text, hier stehen Favicon und Titel je Zeile und man muss sie anklicken koennen. */
+.up-rb-glist { position: absolute; z-index: 40; min-width: 240px; max-width: 380px;
+  background: var(--up-surface, var(--vc-bg)); border: 1px solid var(--vc-border);
+  border-radius: 11px; box-shadow: 0 12px 32px rgba(0,0,0,0.14); padding: 5px;
+  display: none; flex-direction: column; gap: 1px; }
+.up-rb-glist.is-open { display: flex; }
+.up-rb-glist button { display: flex; align-items: center; gap: 9px; width: 100%; border: 0;
+  background: transparent; font: inherit; font-size: 13px; text-align: left; padding: 7px 8px;
+  border-radius: 8px; cursor: pointer; color: var(--vc-text); min-width: 0; }
+.up-rb-glist button:hover { background: var(--vc-heading-bg); }
+.up-rb-glist img { width: 16px; height: 16px; border-radius: 4px; flex: 0 0 16px; object-fit: cover;
+  display: block; background: var(--vt-logo-bg); }
+.up-rb-glist span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 
 /* ---- Markenauszeichnung ----
    Das alte Element zeichnete einen gestrichelten Rahmen als eingebettetes SVG, dessen Groesse ein
@@ -2409,15 +2449,20 @@
    CSS-Rahmen am umbrechenden Inline-Element abgeschnitten wurde. Der Chip hier bricht nicht um
    (white-space: nowrap), damit genuegt border-style: dashed.
    vertical-align: -6px statt -4: der Chip ist 4px hoeher geworden und saesse sonst zu hoch. */
+/* vertical-align: middle statt eines Versatzes in Pixeln: der Chip wird an der Mitte des
+   Fliesstextes ausgerichtet, also sitzt seine Schrift auf derselben Linie wie der Text drumherum.
+   Der Pixelversatz vorher war fuer EINE Schriftgroesse gerechnet und verrutschte bei jeder anderen.
+   line-height: 1 im Chip, damit seine eigene Schrift die Chiphoehe nicht noch einmal aufblaeht. */
 .up-rb-brand { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 8px;
   margin: 0 1px; border: 2px dashed var(--vt-brand-border); border-radius: 8px;
-  background: var(--vt-brand-bg); vertical-align: -6px; cursor: pointer; white-space: nowrap;
-  box-sizing: border-box; transition: background 120ms ease, border-color 120ms ease; }
+  background: var(--vt-brand-bg); vertical-align: middle; cursor: pointer; white-space: nowrap;
+  line-height: 1; box-sizing: border-box;
+  transition: background 120ms ease, border-color 120ms ease; }
 .up-rb-brand:hover { background: var(--vt-brand-bg-hover); border-color: var(--vt-brand-border-hover); }
 .up-rb-brand:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 1px; }
 .up-rb-brand-ic { width: 14px; height: 14px; border-radius: 4px; flex: 0 0 auto; object-fit: cover;
   display: block; }
-.up-rb-brand-txt { font-size: 13px; font-weight: 600; color: var(--vc-text); line-height: 1; }
+.up-rb-brand-txt { font-size: 13.5px; font-weight: 600; color: var(--vc-text); line-height: 1; }
 
 /* ---- Die Wahl beim Klick auf ein Zitat ----
    Aus ask-mira uebernommen (.am-url-pop): dieselbe Reihenfolge, dieselben zwei Eintraege, derselbe

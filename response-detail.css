@@ -39,6 +39,10 @@
    und gedaempft. Der Umschalter der Citations sitzt rechts in derselben Zeile. */
 .urd-sec { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px;
   margin-bottom: 16px; }
+/* Der Knopf richtet sich an der Ueberschrift aus, nicht am Fuss der Beschreibung darunter --
+   sonst haengt er unter dem Titel statt neben ihm. */
+.urd-sect-body .urd-sec { align-items: flex-start; }
+.urd-sect-body .urd-hlwrap { margin-top: -4px; }
 .urd-sec-txt { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .urd-sec-title { font-size: 14px; font-weight: 500; color: var(--vc-text); }
 .urd-sec-desc { font-size: 12.5px; font-weight: 400; line-height: 1.45; color: var(--vc-muted); }
@@ -52,12 +56,15 @@
    Ein Chip je Marke, umbrechend. Zehn bis fuenfzehn Marken sind die Ausnahme, kommen aber vor --
    deshalb flex-wrap und keine Spalten: eine Rasterung mit fester Spaltenzahl laesst bei drei
    Marken zwei Luecken und bei fuenfzehn eine Wand. */
-.urd-ments { display: flex; flex-wrap: wrap; gap: 8px; }
-/* Der Chip ist .up-entchip aus core plus .up-chiphover. Hier steht die groessere Stufe: Logo 20
-   statt 18, Text 14.5 statt 13. Nach Regel 1 der CLAUDE.md ziehen ALLE Werte mit -- Chiphoehe
-   28 -> 32, Radius 8 -> 9, Bild im Logo 16 -> 18, Radien im Logo im selben Verhaeltnis.
-   Ohne das Mitziehen stiess der groessere Text an den Rahmen des Chips. */
-.urd-ment { max-width: 100%; height: 32px; padding: 0 12px 0 6px; border-radius: 9px; }
+/* Eine Aufzaehlung, kein Knopfleiste: 20px zwischen den Marken, damit sie ohne Rahmen als eigene
+   Einheiten lesbar bleiben. Ein Rahmen je Marke machte aus der Liste eine Reihe von Knoepfen. */
+.urd-ments { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; }
+.urd-ment { display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%;
+  cursor: pointer; border-radius: 6px; }
+/* Der Name bekommt beim Hover die Unterstreichung -- das ist das Zeichen fuer "anklickbar", das
+   ohne Rahmen und ohne Hintergrund noch bleibt. */
+.urd-ment:hover .up-ment-name { text-decoration: underline; text-underline-offset: 2px; }
+.urd-ment:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 3px; }
 .urd-ment .up-ment-logo { width: 20px; height: 20px; border-radius: 5.6px; }
 .urd-ment .up-ment-logo img { width: 18px; height: 18px; border-radius: 4.5px; }
 .urd-ment .up-model-ltr { font-size: 11px; }
@@ -74,16 +81,13 @@
    Name und darunter die Karte mit dem Text. 12px zwischen Logo und Spalte, damit das Logo als
    Absender neben der Karte steht und nicht als Teil von ihr. */
 .urd-msg { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
-.urd-msg-av { flex: 0 0 auto; margin-top: 2px; }
+/* Kein margin-top: die Oberkante des Logos liegt auf der Oberkante der Karte (Vorgabe) -- so
+   liest es sich als Profilbild neben einer Nachricht und nicht als etwas, das daneben schwebt. */
+.urd-msg-av { flex: 0 0 auto; }
 /* Das Logo ist .up-ment-logo aus core, hier eine Stufe groesser: 32 statt 18. Faktor 32/18 auf
    alle Werte -- Radius 5 -> 8.9, Bild 16 -> 28.4, Polsterung 1 -> 1.8. */
 .urd-msg-av .up-ment-logo { width: 32px; height: 32px; border-radius: 8.9px; padding: 1.8px; }
 .urd-msg-av .up-ment-logo img { width: 28.4px; height: 28.4px; border-radius: 7.1px; }
-.urd-msg-col { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1 1 auto; }
-.urd-msg-top { display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  min-height: 20px; }
-.urd-msg-who { font-size: 13px; font-weight: 500; color: var(--vc-text); white-space: nowrap;
-  overflow: hidden; text-overflow: ellipsis; }
 .urd-body { position: relative; min-width: 0; }
 .urd-body .up-rb { max-width: 100%; }
 
@@ -92,9 +96,13 @@
    ueberall. .up-pop und die Positionierung kommen aus core (UC.makePopover). */
 .urd-hlwrap { position: relative; flex: 0 0 auto; }
 /* Der Knopf ist .up-iconbtn aus core -- 32px, Radius 8, Icon 16px, Hover und Dunkelmodus
-   inklusive. Hier steht nur der offene Zustand, den das Bauteil nicht kennt. */
+   inklusive. Hier steht die Drittfarbe im Ruhezustand (Vorgabe) und der offene Zustand, den das
+   Bauteil nicht kennt. Beim Hover uebernimmt wieder core. */
+.urd-hlbtn { color: var(--vc-third); }
 .urd-hlwrap.is-open .up-iconbtn { background: var(--vc-heading-bg); color: var(--vc-text); }
 .urd-hlbtn[hidden] { display: none; }
+.urd-hlopt[disabled] { opacity: 0.45; cursor: default; }
+.urd-hlopt[disabled]:hover { background: transparent; }
 
 .urd-hlpop { position: absolute; top: calc(100% + 6px); right: 0; z-index: 30; min-width: 248px;
   background: var(--up-surface, var(--vc-bg)); border: 1px solid var(--vc-border);
@@ -178,7 +186,15 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .urd-cr-domain { font-size: 12px; font-weight: 400; color: var(--vc-muted); line-height: 1.3;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.urd-cr-ments { flex: 0 0 auto; }
+/* 8px Abstand rechts, damit der Strich fuer "keine Marke" mittig unter der Logospalte sitzt und
+   nicht an der Kante klebt. Die Drittfarbe (Vorgabe) nimmt ihn aus dem Lesefluss -- er sagt
+   "hier ist nichts", und das soll nicht so laut sein wie ein Wert. */
+.urd-cr-ments { flex: 0 0 auto; padding-right: 8px; }
+/* brandStack schreibt bei leerer Liste ein "-" als .up-stack-empty. Das ist der Strich, der
+   gemeint ist: in Drittfarbe (Vorgabe), und die 8px oben schieben ihn unter die Logospalte der
+   Zeilen darueber, statt ihn an der Kante kleben zu lassen. */
+.urd-cr-ments .up-stack-empty { color: var(--vc-third); }
+.urd-cc-foot .up-stack-empty { color: var(--vc-third); }
 
 /* ---- Skelette (Ton und Pulsieren aus core, --vc-sk) ---- */
 .urd-sk { display: block; background: var(--vc-sk); border-radius: 8px; }
@@ -189,7 +205,6 @@
 .urd-sk-line { height: 14px; margin-bottom: 10px; border-radius: 6px; }
 .urd-sk-card { height: 184px; border-radius: 14px; }
 .urd-sk-av { width: 32px; height: 32px; border-radius: 8.9px; }
-.urd-sk-who { display: block; height: 13px; width: 96px; border-radius: 5px; }
 
 /* ---- Schmal ----
    Gemessen an der EIGENEN Box (UC.widthTiers), nicht am Fenster: diese Seite kann in einem Drawer

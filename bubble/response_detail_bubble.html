@@ -52,6 +52,19 @@
   Abschnitten, nicht als endloses Skelett. Bleibt der Setter 25 Sekunden aus, steht "No data" da
   und der Grund in der Konsole.
 
+  ── Themenfarben ─────────────────────────────────────────────────────────────
+  tags[] traegt hex_light und hex_dark. Beide werden benutzt: hex_light im hellen, hex_dark im
+  dunklen Thema. Fehlt eines, gilt das andere; fehlen beide, wird im Themen-Store nachgeschlagen
+  (setUpstreemTopics), und erst dann bleibt der Chip grau.
+
+  ── Die Einstellungen der Hervorhebungen ─────────────────────────────────────
+  Ein Menue am Kopf der Antwort, gespeichert im localStorage (teambezogen ueber UC.prefKey):
+    Marken   All mentions | First mention only (Standard) | Your brand only | Off
+    Quellen  Zitat-Chips an/aus, und optional benachbarte Quellen gruppieren
+  "Your brand only" braucht die Rolle, und die steht NUR an den Erwaehnungen der Zitationen
+  (citations[].mentions[].role === "own"). Liefert die RPC sie nicht, zeigt der Modus alle Marken
+  statt stumm keine.
+
   ── Was die Seite ausserdem braucht ──────────────────────────────────────────
   Der Modell-Chip holt Logo und Anzeigename aus dem seitenweiten Modell-Store. OHNE ihn steht
   dort der rohe Schluessel ("google-aio") ohne Logo. Der Store wird wie ueberall gefuellt:

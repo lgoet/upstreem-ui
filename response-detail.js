@@ -96,28 +96,31 @@
       '</div>' +
 
       '<div class="urd-sect urd-sect-body">' +
-        '<div class="urd-sec"><div class="urd-sec-txt">' +
-          '<span class="urd-sec-title">Full Response</span>' +
-          '<span class="urd-sec-desc">The complete answer as the model returned it</span>' +
-        '</div></div>' +
+        '<div class="urd-sec">' +
+          '<div class="urd-sec-txt">' +
+            '<span class="urd-sec-title">Full Response</span>' +
+            '<span class="urd-sec-desc">The complete answer as the model returned it</span>' +
+          '</div>' +
+          /* Der Knopf sitzt in der Zeile der Ueberschrift, nicht darunter -- .urd-sec ist schon
+             eine Zeile mit space-between, der Platz rechts war frei.
+             wrap + menu, wie UC.makePopover es erwartet: der Wrap traegt is-open, das Menue haengt
+             darin und wird von core positioniert und geschlossen. */
+          '<span class="urd-hlwrap">' +
+            '<button class="up-iconbtn urd-hlbtn" type="button" data-tip="Highlights"' +
+              ' aria-label="Highlight settings"></button>' +
+            '<div class="urd-hlpop up-pop"></div>' +
+          '</span>' +
+        '</div>' +
         /* Der Antworttext liest sich wie eine Nachricht -- also bekommt er auch den Absender:
            links das Modell-Logo, daneben sein Name. Die Idee stammt aus den alten Elementen, dort
            war es ein loses Bild neben dem Kasten. */
+        /* Logo und Karte auf einer Linie: das Logo steht neben der Karte wie ein Profilbild neben
+           einer Nachricht, seine Oberkante auf der Oberkante der Karte. Der Modellname stand
+           vorher darueber -- er steht schon in der KPI-Zeile oben, zweimal derselbe Name auf
+           einer Seite. */
         '<div class="urd-msg">' +
           '<div class="urd-msg-av"></div>' +
-          '<div class="urd-msg-col">' +
-            '<div class="urd-msg-top">' +
-              '<span class="urd-msg-who"></span>' +
-                /* wrap + menu, wie UC.makePopover es erwartet: der Wrap traegt is-open, das Menue
-                 haengt darin und wird von core positioniert und geschlossen. */
-              '<span class="urd-hlwrap">' +
-                '<button class="up-iconbtn urd-hlbtn" type="button" data-tip="Highlights"' +
-                  ' aria-label="Highlight settings"></button>' +
-                '<div class="urd-hlpop up-pop"></div>' +
-              '</span>' +
-            '</div>' +
-            '<div class="urd-card urd-body"><div class="up-rb"></div></div>' +
-          '</div>' +
+          '<div class="urd-card urd-body"><div class="up-rb"></div></div>' +
         '</div>' +
       '</div>' +
 
@@ -156,7 +159,6 @@
     var elMents  = root.querySelector(".urd-ments");
     var elBody   = root.querySelector(".up-rb");
     var elAv     = root.querySelector(".urd-msg-av");
-    var elWho    = root.querySelector(".urd-msg-who");
     var elHlBtn  = root.querySelector(".urd-hlbtn");
     var elHlWrap = root.querySelector(".urd-hlwrap");
     var elHlPop  = root.querySelector(".urd-hlpop");
@@ -184,12 +186,13 @@
       try { o = v ? JSON.parse(v) : null; } catch (e) { o = null; }
       var modus = o && o.brands;
       var gueltig = HL_MODES.some(function (m) { return m.key === modus; });
-      return { brands: gueltig ? modus : "first", cites: !(o && o.cites === false) };
+      return { brands: gueltig ? modus : "first", cites: !(o && o.cites === false),
+               group: !!(o && o.group) };
     }
     function hlSchreiben() {
       try {
         if (UC.prefSet) UC.prefSet(UC.prefKey ? UC.prefKey(HL_KEY) : HL_KEY,
-          JSON.stringify({ brands: state.hl.brands, cites: state.hl.cites }));
+          JSON.stringify({ brands: state.hl.brands, cites: state.hl.cites, group: state.hl.group }));
       } catch (e) {}
     }
 
@@ -275,6 +278,71 @@
     document.addEventListener("keydown", function (e) { if (e.key === "Escape") popZu(); });
     window.addEventListener("scroll", popZu, true);
 
+    /* ---- Der Kasten, der die Quellen einer Gruppe auflistet ---------------------------------
+       Auf Hover, nicht auf Klick: die Gruppe ist eine Zusammenfassung, und wer sie ueberfliegt,
+       will wissen was drin ist, ohne etwas zu oeffnen. Ein Klick auf eine Zeile darin verhaelt sich
+       wie der Klick auf einen einzelnen Chip. */
+    var glist = document.createElement("div");
+    glist.className = "up-rb-glist";
+    root.appendChild(glist);
+    var glistFuer = null, glistZu = null;
+
+    function glistSchliessen() {
+      if (glistZu) { clearTimeout(glistZu); glistZu = null; }
+      glist.classList.remove("is-open");
+      glistFuer = null;
+    }
+    function glistOeffnen(g) {
+      var daten;
+      try { daten = JSON.parse(g.getAttribute("data-rb-group") || "[]"); } catch (e) { daten = []; }
+      if (!daten.length) return;
+      glist.innerHTML = daten.map(function (d, i) {
+        return '<button type="button" data-gi="' + i + '">' +
+          (d.fav ? '<img src="' + esc(d.fav) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
+                   ' onerror="this.style.visibility=\'hidden\'"/>' : '<img alt=""/>') +
+          "<span>" + esc(d.title || UC.rbShowUrl(d.url)) + "</span></button>";
+      }).join("");
+      glist.__daten = daten;
+      glistFuer = g;
+      glist.classList.add("is-open");
+      var r = g.getBoundingClientRect(), rr = root.getBoundingClientRect();
+      glist.style.top = (r.bottom - rr.top + 6) + "px";
+      glist.style.left = (r.left - rr.left) + "px";
+      /* Erst nach dem Einfuegen messen: die Breite haengt am laengsten Titel. */
+      requestAnimationFrame(function () {
+        var maxLeft = root.clientWidth - glist.offsetWidth - 8;
+        var left = r.left - rr.left;
+        if (left > maxLeft) glist.style.left = Math.max(8, maxLeft) + "px";
+      });
+    }
+    /* Verzoegertes Schliessen, damit der Weg von der Gruppe in den Kasten nicht abreisst. */
+    function glistSpaeterSchliessen() {
+      if (glistZu) clearTimeout(glistZu);
+      glistZu = setTimeout(glistSchliessen, 180);
+    }
+    elBody.addEventListener("mouseover", function (e) {
+      var g = e.target.closest ? e.target.closest(".up-rb-cgroup") : null;
+      if (!g) return;
+      if (glistZu) { clearTimeout(glistZu); glistZu = null; }
+      if (glistFuer !== g) glistOeffnen(g);
+    });
+    elBody.addEventListener("mouseout", function (e) {
+      var g = e.target.closest ? e.target.closest(".up-rb-cgroup") : null;
+      if (g) glistSpaeterSchliessen();
+    });
+    glist.addEventListener("mouseover", function () { if (glistZu) { clearTimeout(glistZu); glistZu = null; } });
+    glist.addEventListener("mouseout", glistSpaeterSchliessen);
+    glist.addEventListener("click", function (e) {
+      var b = e.target.closest ? e.target.closest("button[data-gi]") : null;
+      if (!b || !glist.__daten) return;
+      var d = glist.__daten[parseInt(b.getAttribute("data-gi"), 10)];
+      glistSchliessen();
+      if (!d) return;
+      var wert = String(d.id || "").trim() || d.url;
+      if (wert) fire("data-url-fn", "urdUrl", wert);
+    });
+    window.addEventListener("scroll", glistSchliessen, true);
+
     /* ---- Kopfzeile ------------------------------------------------------------------------- */
     function renderHead() {
       if (state.error) { elPrompt.textContent = ""; elKpis.innerHTML = ""; return; }
@@ -309,18 +377,27 @@
        aus dem seitenweiten Themen-Store, nachgeschlagen ueber die id. Fehlt der Store, bleibt der
        Chip beim Grau aus dem Bauteil -- lesbar, nur ohne Zuordnung.
        is-static, weil ein Thema hier reine Anzeige ist und keinen Klick traegt. */
-    function topicFarbe(id) {
+    /* Die Farbe kommt jetzt im Payload mit: hex_light und hex_dark je Thema. Sie gewinnt, weil sie
+       zu DIESER Antwort gehoert -- der Themen-Store kann veraltet sein oder auf der Seite fehlen.
+       Nur wenn beide Felder fehlen, wird im Store nachgeschlagen; erst dann bleibt es beim Grau
+       des Bauteils. */
+    function topicFarbe(t) {
+      if (!t) return "";
+      var eigen = isDark ? t.hex_dark : t.hex_light;
+      if (eigen) return String(eigen);
+      /* Nur eine Farbe geliefert: die nehmen, statt in beiden Themen grau zu bleiben. */
+      if (t.hex_light || t.hex_dark) return String(t.hex_light || t.hex_dark);
       var liste = UC.getTopics ? UC.getTopics() : null;
-      if (!liste || !id) return "";
+      if (!liste || !t.id) return "";
       for (var i = 0; i < liste.length; i++) {
-        var t = liste[i];
-        if (t && String(t.id) === String(id)) return String(t.color || "");
+        var x = liste[i];
+        if (x && String(x.id) === String(t.id)) return String(x.color || "");
       }
       return "";
     }
     function topicChip(t) {
       if (!t || !t.name) return "";
-      var farbe = topicFarbe(t.id);
+      var farbe = topicFarbe(t);
       return '<span class="up-topicchip is-static"' +
                (farbe ? ' style="--ust-tag-color:' + esc(farbe) + '"' : "") + ">" +
                (t.emoji ? '<span class="up-topicchip-e">' + esc(t.emoji) + "</span>" : "") +
@@ -345,9 +422,11 @@
         var name = String((c && c.name) || "");
         var logo = String((c && c.favicon_url) || "");
         var buchst = (name.charAt(0) || "?").toUpperCase();
-        /* .up-entchip + .up-chiphover + .up-ment-logo + .up-ment-name sind alle aus core --
-           hier entsteht kein eigenes Aussehen, nur die Zusammensetzung. */
-        return '<span class="up-entchip up-chiphover urd-ment" role="button" tabindex="0"' +
+        /* Kein Chip und keine Karte: Logo und Name, wie in der Mentioned-Liste der Tabellen.
+           Der Rahmen um jede Marke machte aus einer Aufzaehlung eine Reihe von Knoepfen -- hier
+           steht aber einfach, wer vorkommt. Anklickbar bleibt es (der Zeiger und der Hover sagen
+           es), nur ohne eigenen Kasten. */
+        return '<span class="urd-ment" role="button" tabindex="0"' +
                  ' data-brand="' + esc(String((c && c.company_id) || "")) + '">' +
                  '<span class="up-ment-logo' + (logo ? " has-img" : "") + '">' +
                    '<span class="up-model-ltr">' + esc(buchst) + "</span>" +
@@ -386,6 +465,7 @@
         model: d.model,
         brandMode: state.hl.brands,
         cites: state.hl.cites,
+        groupCites: state.hl.group,
         ownIds: eigeneIds(d)
       });
     }
@@ -412,18 +492,19 @@
     function renderAbsender() {
       if (istLaden() || !state.data || state.error) {
         elAv.innerHTML = '<span class="urd-sk urd-sk-av"></span>';
-        elWho.innerHTML = '<span class="urd-sk urd-sk-who"></span>';
         elHlBtn.hidden = true;
         return;
       }
       elHlBtn.hidden = false;
       if (!elHlBtn.innerHTML) elHlBtn.innerHTML = UC.icon("settings", 2);
+      /* Nur das Logo aus dem Modell-Chip -- den Namen traegt die KPI-Zeile oben. Der Tooltip
+         nennt ihn trotzdem, damit das Bild allein nicht raten laesst. */
       var chip = document.createElement("div");
       chip.innerHTML = UC.modelChip(state.data.model, { full: true });
       var logo = chip.querySelector(".up-ment-logo");
       var name = chip.querySelector(".up-ment-name");
       elAv.innerHTML = logo ? logo.outerHTML : "";
-      elWho.textContent = name ? name.textContent : String(state.data.model || "");
+      if (name) elAv.setAttribute("data-tip", name.textContent);
     }
 
     /* ---- Das Menue der Hervorhebungen (10) --------------------------------------------------
@@ -448,6 +529,13 @@
               UC.icon("check", 3) + "</span>" +
             '<span class="urd-hltxt"><span class="urd-hllbl">Show citation chips</span>' +
             '<span class="urd-hldesc">Sources stay listed below either way</span></span></button>' +
+          /* Das Gruppieren hat nur einen Sinn, wenn die Chips ueberhaupt da sind. */
+          '<button type="button" class="urd-hlopt' + (state.hl.cites ? "" : " is-off") +
+            '" data-group="1"' + (state.hl.cites ? "" : " disabled") + ">" +
+            '<span class="urd-hlcheck' + (state.hl.group && state.hl.cites ? " is-on" : "") + '">' +
+              UC.icon("check", 3) + "</span>" +
+            '<span class="urd-hltxt"><span class="urd-hllbl">Group adjacent sources</span>' +
+            '<span class="urd-hldesc">Several in a row become one chip</span></span></button>' +
         "</div>";
     }
     var hlPop = UC.makePopover ? UC.makePopover({
@@ -471,6 +559,14 @@
         var cb = e.target.closest ? e.target.closest("[data-cites]") : null;
         if (cb) {
           state.hl.cites = !state.hl.cites;
+          hlSchreiben();
+          elHlPop.innerHTML = hlMenuHtml();
+          renderBody();
+          return;
+        }
+        var gb = e.target.closest ? e.target.closest("[data-group]") : null;
+        if (gb && !gb.disabled) {
+          state.hl.group = !state.hl.group;
           hlSchreiben();
           elHlPop.innerHTML = hlMenuHtml();
           renderBody();
@@ -629,6 +725,13 @@
         if (popChip === chip) popZu(); else popAuf(chip);
         return;
       }
+      /* Eine Gruppe mehrerer Quellen: Klick oeffnet ihre Liste (auf dem Telefon gibt es kein
+         Hover, dort ist der Klick der einzige Weg hinein). */
+      var g = e.target.closest(".up-rb-cgroup");
+      if (g && elBody.contains(g)) {
+        if (glistFuer === g) glistSchliessen(); else glistOeffnen(g);
+        return;
+      }
       /* Eine Markenauszeichnung im Antworttext. */
       var bchip = e.target.closest(".up-rb-brand");
       if (bchip && elBody.contains(bchip)) {
@@ -654,7 +757,8 @@
     root.addEventListener("keydown", function (e) {
       if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
       var z = e.target.closest ? e.target.closest(
-        ".urd-prompt, .urd-ment, .urd-cite-card, .urd-cite-row, .up-rb-cite, .up-rb-brand") : null;
+        ".urd-prompt, .urd-ment, .urd-cite-card, .urd-cite-row, .up-rb-cite, .up-rb-brand, " +
+        ".up-rb-cgroup") : null;
       if (!z) return;
       e.preventDefault();
       z.click();
@@ -676,6 +780,9 @@
     if (UC.onTheme) UC.onTheme(function (dunkel) {
       isDark = !!dunkel;
       if (isDark) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
+      /* Die Themen-Chips tragen ihre Farbe als Inline-Wert (hex_light gegen hex_dark) -- die kann
+         die Kaskade nicht umschalten, also muss die Zeile neu gebaut werden. */
+      if (state.data) renderHead();
     });
 
     /* Die Spaltenzahl haengt an der Breite der eigenen Box. */

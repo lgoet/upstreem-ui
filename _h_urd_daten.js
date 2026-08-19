@@ -15,17 +15,23 @@ window.URD_AIO = [
       {
         "id": "3001e901-d2f2-4662-984e-a4d5e54bb9b7",
         "name": "Digitalisierung",
-        "emoji": null
+        "emoji": null,
+        "hex_light": "#2563eb",
+        "hex_dark": "#7ea8f8"
       },
       {
         "id": "9dbcfa97-f327-4a92-a95f-a6adff2a46a5",
         "name": "Marketing",
-        "emoji": null
+        "emoji": null,
+        "hex_light": "#db2777",
+        "hex_dark": "#f27bb0"
       },
       {
         "id": "2e29b676-3e9b-485a-8821-de01c34281fd",
         "name": "Solar",
-        "emoji": null
+        "emoji": null,
+        "hex_light": "#f59e0b",
+        "hex_dark": "#fbc55a"
       }
     ],
     "response_json": {
@@ -179,7 +185,9 @@ window.URD_CHATGPT = [
       {
         "id": "3001e901-d2f2-4662-984e-a4d5e54bb9b7",
         "name": "Digitalisierung",
-        "emoji": null
+        "emoji": null,
+        "hex_light": "#2563eb",
+        "hex_dark": "#7ea8f8"
       }
     ],
     "response_json": {
@@ -305,13 +313,17 @@ window.URD_PPLX = [
     "tags": [
       {
         "id": "19fb8bc8-69b8-4d21-a65d-b7aa46ae7043",
+        "hex_light": "#0891b2",
+        "hex_dark": "#5fc8de",
         "name": "LeadGen",
         "emoji": "⚡"
       },
       {
         "id": "2e29b676-3e9b-485a-8821-de01c34281fd",
         "name": "Solar",
-        "emoji": null
+        "emoji": null,
+        "hex_light": "#f59e0b",
+        "hex_dark": "#fbc55a"
       }
     ],
     "response_json": {

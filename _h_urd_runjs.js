@@ -73,9 +73,12 @@
     prompt_text: "wer sind die f\u00fchrenden Anbieter f\u00fcr digitale Marketingl\u00f6sungen im Bereich Solar?",
     market: "DE",
     tags: [
-      { id: "3001e901-d2f2-4662-984e-a4d5e54bb9b7", name: "Digitalisierung", emoji: null },
-      { id: "9dbcfa97-f327-4a92-a95f-a6adff2a46a5", name: "Marketing", emoji: null },
-      { id: "2e29b676-3e9b-485a-8821-de01c34281fd", name: "Solar", emoji: null }
+      { id: "3001e901-d2f2-4662-984e-a4d5e54bb9b7", name: "Digitalisierung", emoji: null,
+        hex_light: "#2563eb", hex_dark: "#7ea8f8" },
+      { id: "9dbcfa97-f327-4a92-a95f-a6adff2a46a5", name: "Marketing", emoji: null,
+        hex_light: "#db2777", hex_dark: "#f27bb0" },
+      { id: "2e29b676-3e9b-485a-8821-de01c34281fd", name: "Solar", emoji: null,
+        hex_light: "#f59e0b", hex_dark: "#fbc55a" }
     ],
     response_json: {
       meta: { run_key: "962ed0083a526434ee1a178ac7-fa1bba5ef",

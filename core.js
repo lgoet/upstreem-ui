@@ -1152,6 +1152,69 @@
     return gesetzt;
   }
 
+  /* Stehen mehrere Zitate direkt hintereinander -- "[0](url) [3](url) [4](url)", die Regel bei
+     google-aio --, ergibt das drei Chips in einer Reihe und der Satz davor verschwindet dahinter.
+     Zusammengefasst werden sie zu EINEM Chip: die Favicons ineinandergeschoben, dahinter
+     "N Sources". Was dazugehoert, steht als JSON am Chip, damit der Hover-Kasten es ohne zweite
+     Datenquelle auflisten kann.
+     "Direkt hintereinander" heisst: zwischen zwei Chips steht nichts oder nur Leerraum. Ein Komma
+     oder ein Wort dazwischen trennt sie -- dann gehoeren sie zu verschiedenen Aussagen. */
+  function rbGroupCites(hostEl){
+    if (!hostEl) return 0;
+    var chips = [].slice.call(hostEl.querySelectorAll(".up-rb-cite"));
+    var gruppen = 0, i = 0;
+    while (i < chips.length){
+      var reihe = [chips[i]], j = i + 1;
+      while (j < chips.length){
+        /* Alles zwischen dem letzten Chip der Reihe und dem naechsten Kandidaten ansehen. */
+        var vorher = reihe[reihe.length - 1], naechst = chips[j], nur = true, k = vorher.nextSibling;
+        while (k && k !== naechst){
+          if (k.nodeType === 3){ if (String(k.nodeValue).trim() !== ""){ nur = false; break; } }
+          else { nur = false; break; }
+          k = k.nextSibling;
+        }
+        if (!nur || vorher.parentNode !== naechst.parentNode) break;
+        reihe.push(naechst); j++;
+      }
+      if (reihe.length >= 2){
+        var daten = reihe.map(function (c) {
+          var img = c.querySelector(".up-rb-cite-fav");
+          return { url: c.getAttribute("data-rb-cite") || "",
+                   id: c.getAttribute("data-rb-id") || "",
+                   title: c.getAttribute("data-tip") || "",
+                   fav: img ? img.getAttribute("src") : "" };
+        });
+        var g = document.createElement("span");
+        g.className = "up-rb-cgroup";
+        g.setAttribute("role", "button");
+        g.setAttribute("tabindex", "0");
+        g.setAttribute("data-rb-group", JSON.stringify(daten));
+        g.innerHTML = '<span class="up-rb-cg-favs">' +
+            daten.map(function (d) {
+              return d.fav ? '<img class="up-rb-cg-fav" src="' + esc(d.fav) + '" alt="" loading="lazy"' +
+                             ' referrerpolicy="no-referrer" onerror="this.remove()"/>'
+                           : '<span class="up-rb-cg-fav"></span>';
+            }).join("") +
+          "</span>" +
+          '<span class="up-rb-cg-txt">' + daten.length + " Sources</span>";
+        reihe[0].parentNode.insertBefore(g, reihe[0]);
+        /* Den Leerraum zwischen den alten Chips mitnehmen, sonst bleibt eine Luecke stehen. */
+        reihe.forEach(function (c, n) {
+          if (n > 0){
+            var vor = c.previousSibling;
+            while (vor && vor.nodeType === 3 && String(vor.nodeValue).trim() === ""){
+              var weg = vor; vor = vor.previousSibling; weg.parentNode.removeChild(weg);
+            }
+          }
+          c.parentNode.removeChild(c);
+        });
+        gruppen++;
+      }
+      i = j > i ? j : i + 1;
+    }
+    return gruppen;
+  }
+
   /* Der ganze Weg: Text bereinigen, Bloecke bauen, Marken auszeichnen.
      Gibt zurueck, was gesetzt wurde -- die Komponente kann so messen statt raten. */
   function respBody(hostEl, cfg){
@@ -1164,19 +1227,32 @@
     if (!hostEl) return { html: "", brands: 0, cites: 0, tables: 0 };
     var idx = rbCiteIndex(cfg.citations);
     hostEl.innerHTML = rbBlocks(text, idx);
-    /* Zitat-Chips abschalten heisst: der Chip wird zu seinem Text. Die Quelle bleibt im Abschnitt
-       "Citations" sichtbar, im Lauftext steht dann nur noch die Adresse. */
+    /* Zitat-Chips abschalten heisst: WEG, nicht "als Text stehen lassen". Vorher wurde der Chip zu
+       seinem Text, also blieb die nackte Adresse mitten im Satz -- schlechter lesbar als der Chip.
+       Die Quellen bleiben im Abschnitt "Citations" vollstaendig sichtbar. */
+    var gruppen = 0;
     if (cfg.cites === false){
       [].forEach.call(hostEl.querySelectorAll(".up-rb-cite"), function (c) {
-        var t = c.querySelector(".up-rb-cite-txt");
-        c.parentNode.replaceChild(document.createTextNode(t ? t.textContent : ""), c);
+        /* Auch den Leerraum davor, sonst stehen zwei Luecken hintereinander. */
+        var vor = c.previousSibling;
+        if (vor && vor.nodeType === 3 && /\s$/.test(vor.nodeValue) && !String(vor.nodeValue).trim()){
+          vor.parentNode.removeChild(vor);
+        }
+        c.parentNode.removeChild(c);
       });
+      /* Was nach dem Entfernen als leerer Absatz uebrig bleibt, ist keiner mehr. */
+      [].forEach.call(hostEl.querySelectorAll(".up-rb-p"), function (pp) {
+        if (!pp.textContent.trim() && !pp.querySelector("img")) pp.parentNode.removeChild(pp);
+      });
+    } else if (cfg.groupCites){
+      gruppen = rbGroupCites(hostEl);
     }
     var marken = rbBrands(hostEl, cfg.companies, { mode: cfg.brandMode, ownIds: cfg.ownIds });
     return {
       html: hostEl.innerHTML,
       brands: marken,
       cites: hostEl.querySelectorAll(".up-rb-cite").length,
+      groups: gruppen,
       tables: hostEl.querySelectorAll(".up-rb-table").length,
       modell: modell
     };
