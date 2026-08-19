@@ -82,6 +82,17 @@
       .replace(/:\s*([,}\]])/g, ": null$1")
       .replace(/:\s*(yes|no)\s*([,}\]])/g, function(_, v, t){ return ": " + (v === "yes") + t; })
 
+  UND: das Template-Literal braucht String.raw davor.
+
+      var ROH = String.raw`<hier der Bubble-Ausdruck>`
+
+  Ohne String.raw verarbeitet JavaScript die Escape-Folgen im Text, BEVOR JSON.parse sie sieht:
+  aus \n im Antworttext wird ein echter Zeilenumbruch mitten in einem JSON-String, und der ist
+  dort verboten. Gemessen ohne String.raw an diesem Payload: "Bad control character in string
+  literal at position 1585", die Komponente blieb leer -- und die Konsole nannte den Grund, aber
+  nicht die Ursache. Mit String.raw bleibt \n stehen und JSON.parse macht daraus den Umbruch.
+  Das betrifft jeden Antworttext, denn der besteht aus Absaetzen.
+
   ── Statischer Start zum Ausprobieren ────────────────────────────────────────
   Die Beispieldaten liegen NICHT in diesem Element, sondern als Run-JS-Schritt im
   Pageload-Workflow. Die getesteten Fassungen liegen im Repo als _h_urd_daten.js (alle drei
