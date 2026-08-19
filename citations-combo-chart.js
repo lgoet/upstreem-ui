@@ -160,17 +160,34 @@
     ids.sort(function(a,b){ return (metaMap[b].global_share||0) - (metaMap[a].global_share||0); });
     ids = ids.slice(0, 7);
     var colorForId = {};
-    /* Markenfarben: die Hausfarbe der Domain, wo es eine gibt. Wo nicht, bleibt die Reihe bei der
-       Typfarbe -- eine erfundene Farbe waere schlechter als die richtige Familienfarbe. Die
-       Staffelung innerhalb einer Familie laeuft dann nur ueber die uebrigen Reihen, sonst haetten
-       zwei Domains ohne Markenfarbe denselben Ton wie vorher zwei mit. */
+    /* Markenfarben, in dieser Reihenfolge:
+         1. brand_hex aus dem Payload -- exakt, kein Netz, gewinnt immer
+         2. die dominierende Farbe des Favicons, sofern schon im Zwischenspeicher
+         3. die Typfarbe, solange (2) noch laeuft oder es keine gibt
+       Was fehlt, wird in fehlendeFarben gesammelt; der Aufrufer holt es nach und zeichnet noch
+       einmal. Deshalb der synchrone Blick in den Zwischenspeicher und kein Warten hier: eine
+       Zeichnung, die auf das Netz wartet, laesst das Chart leer stehen. */
+    var fehlende = [];
     var offen = ids;
     if (farbSchema === "brand"){
       offen = [];
       ids.forEach(function(id){
         var m = metaMap[id];
-        var bc = UC.brandColor ? UC.brandColor((m && m.domain) || id, m && m.brand_hex, isDark) : null;
-        if (bc) colorForId[id] = bc; else offen.push(id);
+        var quelle = (m && m.domain) || id;
+        var eigen = String((m && m.brand_hex) || "").trim();
+        if (eigen){
+          if (eigen.charAt(0) !== "#") eigen = "#" + eigen;
+          if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(eigen)){
+            colorForId[id] = UC.readableHex ? UC.readableHex(eigen.toLowerCase(), isDark) : eigen.toLowerCase();
+            return;
+          }
+        }
+        var zwischen = UC.faviconColorCached ? UC.faviconColorCached(quelle) : null;
+        if (zwischen) { colorForId[id] = UC.readableHex ? UC.readableHex(zwischen, isDark) : zwischen; return; }
+        /* undefined heisst "noch nie gefragt" -- dann nachholen. null heisst "gefragt, es gibt
+           keine": dann bleibt es bei der Typfarbe und es wird nicht wieder gefragt. */
+        if (zwischen === undefined) fehlende.push(quelle);
+        offen.push(id);
       });
     }
     /* group ids by their family colour, then spread a shade ramp inside each group */
@@ -195,7 +212,7 @@
         borderColor: col
       };
     });
-    return { labels: labels, datasets: datasets };
+    return { labels: labels, datasets: datasets, fehlendeFarben: fehlende };
   }
 
   /* ================= controller ================= */
@@ -370,6 +387,29 @@
       populateFilter(built.datasets);
       var visible = built.datasets.filter(function(ds){ return !hiddenSeries[ds.__id]; });
       line.render({ labels: built.labels, datasets: visible });
+      farbenNachholen(built.fehlendeFarben);
+    }
+    /* Die Favicon-Farben, die beim Zeichnen noch nicht im Zwischenspeicher lagen. Nachgeholt und
+       DANN einmal neu gezeichnet -- nicht je Farbe einmal: sieben Reihen waeren sonst sieben
+       Neuzeichnungen, und jede setzt die Eingangsanimation der Linien neu an.
+       Wer nichts liefert, bleibt bei seiner Typfarbe; der Zwischenspeicher merkt sich das als null,
+       also wird nicht bei jedem Zeichnen erneut gefragt. */
+    var farbenLaufen = false;
+    function farbenNachholen(liste){
+      if (!liste || !liste.length || farbenLaufen) return;
+      if (!UC.faviconColor) return;
+      farbenLaufen = true;
+      var offen = liste.length, etwasNeu = false;
+      liste.forEach(function(quelle){
+        UC.faviconColor(quelle, function(hex){
+          if (hex) etwasNeu = true;
+          if (--offen > 0) return;
+          farbenLaufen = false;
+          /* Nur neu zeichnen, wenn wirklich eine Farbe dazugekommen ist und der Nutzer noch im
+             Markenschema steht -- er kann in der Zwischenzeit zurueckgeschaltet haben. */
+          if (etwasNeu && state.colorScheme === "brand" && isOwner()) renderLineSide();
+        });
+      });
     }
     function render(){
       if (!isOwner()) return;

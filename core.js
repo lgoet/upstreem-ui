@@ -4307,6 +4307,122 @@
     var name = citeName(raw);
     return isDark ? (CITE_COLOR_DARK[name] || CHART_OTHER_DARK) : (CITE_COLOR[name] || CHART_OTHER_LIGHT);
   }
+  /* ---- Dominierende Farbe eines Favicons -------------------------------------------------------
+     Warum ein Proxy dazwischen steht, und zwar gemessen und nicht vermutet: eine Leinwand, auf die
+     ein fremdes Bild gezeichnet wurde, ist "getaint", und getImageData wirft SecurityError, solange
+     der Host kein Access-Control-Allow-Origin sendet. Mit crossOrigin="anonymous" laedt das Bild
+     dann gar nicht erst. Das trifft auch Color Thief -- dessen Median-Cut liest dieselben Pixel.
+       google.com/s2/favicons (die Quelle dieser App), youtube.com, adac.de, reddit.com  -> nein
+       wikipedia.org, github.githubassets.com                                            -> ja
+     Zwei von sieben. wsrv.nl holt dieselbe Google-URL und liefert sie MIT dem Header; damit sind es
+     alle. Gemessen: youtube #ff0a39, adac #deb300, spiegel #e8552b, lee-up.de #4ed3e9.
+
+     Und warum nicht Color Thief selbst: sein Median-Cut liefert den HAEUFIGSTEN Ton, und der ist
+     bei einem Favicon fast immer der Hintergrund -- bei YouTube also Weiss. Gesucht ist die
+     dominierende FARBE. Deshalb 24 Eimer im Farbkreis, jedes Pixel mit seiner Saettigung im
+     Quadrat gewichtet, und Grau/Weiss/Schwarz zaehlen nicht mit. Ein grosses blasses Feld kann
+     einen kleinen satten Fleck damit nicht ueberstimmen. */
+  var FAV_PROXY = "https://wsrv.nl/?url=";
+  var favCache = {};      /* host -> hex | null (fertig) */
+  var favWarten = {};     /* host -> [cb] (laeuft noch) */
+  /* Die Registrierungsebene reicht als Schluessel: www.shop.example.de und example.de tragen
+     dasselbe Favicon. Zwei Ebenen genuegen nicht (co.uk waere der Treffer), daher die kurze Liste. */
+  var MEHRTEILIGE_TLD = { "co.uk":1, "com.au":1, "co.jp":1, "com.br":1, "co.nz":1, "com.tr":1 };
+  function favHost(s){
+    var t = String(s == null ? "" : s).trim();
+    if (!t) return "";
+    if (t.indexOf("//") >= 0) { try { t = new URL(t).hostname; } catch (e) { t = t.split("/")[0]; } }
+    else t = t.split("/")[0];
+    t = t.replace(/^www\./i, "").toLowerCase().split(":")[0];
+    var p = t.split(".");
+    if (p.length <= 2) return t;
+    var zwei = p.slice(-2).join(".");
+    return MEHRTEILIGE_TLD[zwei] ? p.slice(-3).join(".") : zwei;
+  }
+  function favUrl(host){
+    return FAV_PROXY + encodeURIComponent("www.google.com/s2/favicons?domain=" + host + "%26sz=128") +
+           "&w=64&h=64&output=png";
+  }
+  function rgb2hsl(r, g, b){
+    r /= 255; g /= 255; b /= 255;
+    var mx = Math.max(r,g,b), mn = Math.min(r,g,b), h = 0, s = 0, l = (mx+mn)/2, d = mx-mn;
+    if (d){ s = l > 0.5 ? d/(2-mx-mn) : d/(mx+mn);
+      h = mx === r ? ((g-b)/d + (g<b?6:0)) : mx === g ? ((b-r)/d + 2) : ((r-g)/d + 4); h /= 6; }
+    return [h, s, l];
+  }
+  function hex2(n){ n = Math.max(0, Math.min(255, Math.round(n))); var s = n.toString(16); return s.length < 2 ? "0"+s : s; }
+  function dominantVon(img){
+    var c = document.createElement("canvas"); c.width = 64; c.height = 64;
+    var ctx = c.getContext("2d", { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0, 64, 64);
+    var d;
+    try { d = ctx.getImageData(0, 0, 64, 64).data; } catch (e) { return null; }
+    var eimer = {};
+    for (var i = 0; i < d.length; i += 4){
+      if (d[i+3] < 128) continue;                       /* zu durchsichtig */
+      var hsl = rgb2hsl(d[i], d[i+1], d[i+2]);
+      if (hsl[1] < 0.18) continue;                      /* grau, weiss, schwarz */
+      if (hsl[2] < 0.10 || hsl[2] > 0.94) continue;
+      var k = Math.floor(hsl[0] * 24) % 24;
+      var w = hsl[1] * hsl[1];
+      var e = eimer[k] = eimer[k] || { w:0, r:0, g:0, b:0 };
+      e.w += w; e.r += d[i]*w; e.g += d[i+1]*w; e.b += d[i+2]*w;
+    }
+    var best = null;
+    Object.keys(eimer).forEach(function(k){ if (!best || eimer[k].w > best.w) best = eimer[k]; });
+    if (!best) return null;                             /* rein monochrom, z.B. x.com */
+    return "#" + hex2(best.r/best.w) + hex2(best.g/best.w) + hex2(best.b/best.w);
+  }
+  /* Aus dem Zwischenspeicher, ohne Netz. undefined heisst "noch nie gefragt", null heisst "gefragt
+     und es gibt keine". Der Unterschied zaehlt: sonst wird jedes Mal neu geladen. */
+  function faviconColorCached(domainOderUrl){
+    var h = favHost(domainOderUrl);
+    return h ? favCache[h] : null;
+  }
+  function faviconColor(domainOderUrl, cb){
+    var h = favHost(domainOderUrl);
+    if (!h){ if (cb) cb(null); return; }
+    if (favCache.hasOwnProperty(h)){ if (cb) cb(favCache[h]); return; }
+    if (favWarten[h]){ if (cb) favWarten[h].push(cb); return; }
+    favWarten[h] = cb ? [cb] : [];
+    function fertig(hex){
+      favCache[h] = hex || null;
+      var liste = favWarten[h] || []; delete favWarten[h];
+      liste.forEach(function(f){ try { f(favCache[h]); } catch (e) {} });
+    }
+    var img = new Image();
+    img.crossOrigin = "anonymous";
+    var erledigt = false;
+    img.onload = function(){ if (erledigt) return; erledigt = true; fertig(dominantVon(img)); };
+    img.onerror = function(){ if (erledigt) return; erledigt = true; fertig(null); };
+    /* Ohne Frist bleibt ein Aufrufer, der auf alle wartet, bei einem haengenden Bild fuer immer
+       stehen. Acht Sekunden, danach gilt: keine Farbe. */
+    setTimeout(function(){ if (!erledigt){ erledigt = true; fertig(null); } }, 8000);
+    img.src = favUrl(h);
+  }
+  /* Eine Farbe, die im jeweiligen Thema unsichtbar waere, wird angehoben oder abgesenkt -- nicht
+     ersetzt. Fastschwarz (github #24292f) verschwindet auf #1b1b1b, und im Hellen gilt dasselbe
+     fuer sehr helle Marken (ADAC-Gelb auf Weiss). Gemischt gegen Weiss bzw. Schwarz in Schritten,
+     bis die relative Helligkeit im lesbaren Bereich liegt; die Farbe bleibt Farbe. */
+  function relLum(rgb){
+    function lin(v){ v /= 255; return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); }
+    return 0.2126*lin(rgb[0]) + 0.7152*lin(rgb[1]) + 0.0722*lin(rgb[2]);
+  }
+  function mischen(rgb, ziel, anteil){
+    return "#" + hex2(rgb[0] + (ziel-rgb[0])*anteil) + hex2(rgb[1] + (ziel-rgb[1])*anteil) +
+                 hex2(rgb[2] + (ziel-rgb[2])*anteil);
+  }
+  function readableHex(hex, isDark){
+    var rgb = hexToRgb(hex);
+    if (!rgb) return hex;
+    var L = relLum(rgb), i = 0;
+    /* 0.06 und 0.62: die Grenzen, ab denen eine Linie gegen #1b1b1b bzw. #ffffff verschwindet. */
+    while (isDark && L < 0.06 && i++ < 5){ hex = mischen(hexToRgb(hex), 255, 0.12*i); L = relLum(hexToRgb(hex)); }
+    i = 0;
+    while (!isDark && L > 0.62 && i++ < 5){ hex = mischen(hexToRgb(hex), 0, 0.12*i); L = relLum(hexToRgb(hex)); }
+    return hex;
+  }
+
   function capitalize(s){ s = String(s || ""); return s.charAt(0).toUpperCase() + s.slice(1); }
   /* Share formatter with the <1% case fmtTotal doesn't have. */
   /* THE percent formatter for this app — every share/visibility figure goes through it.
@@ -8114,6 +8230,9 @@
     CHART_OTHER_DARK: CHART_OTHER_DARK,
     MAX_URL_SLICES: MAX_URL_SLICES,
     typeColor: typeColor,
+    faviconColor: faviconColor,
+    faviconColorCached: faviconColorCached,
+    readableHex: readableHex,
     prepTypeData: prepTypeData,
     applyTypeDim: applyTypeDim,
     barIsLight: barIsLight,
