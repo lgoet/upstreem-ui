@@ -81,6 +81,8 @@ window.__GELADEN.then(function(){
     /* Statt eines Harness-Aufrufs: GENAU der Run-JS-Schritt, der nach Bubble geht. */
     /* Die Modelle kommen von der Seite, nicht aus dem Schritt -- wie in Bubble. */
     if (window.setUpstreemModels) window.setUpstreemModels(JSON.stringify(window.__MODELS));
+    var lo = document.createElement("script"); lo.src = "_h_urd_load.js?n=" + Math.random();
+    document.head.appendChild(lo);
     var sc = document.createElement("script");
     /* ?live=1 laedt die Live-Fassung mit eingesetztem Payload -- dieselbe Datei wie in Bubble,
        nur mit dem Ausdruck schon ersetzt. */
