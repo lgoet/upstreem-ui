@@ -151,10 +151,19 @@
       var id = String(t.id);
       var color = String(t.hex_light || t.hex_dark || "#6b7280");
       if (color.charAt(0) !== "#") color = "#" + color;
-      return '<button type="button" class="utm-topicchip up-chiphover" data-topic-id="' + esc(id) +
+      /* .up-topicchip aus core traegt das Aussehen -- dasselbe Bauteil, das die Gruppierungs-Chips
+         unten schon benutzen und das in der Prompts-Tabelle (.ust-tag) dieselben Werte hat: 28px,
+         kein sichtbarer Rahmen, nur der getoente Grund. Diese Seite hatte eine eigene Kopie aus
+         der Zeit vor der Auslagerung, und die war 32px hoch und hatte einen Rahmen -- ein Thema
+         sah hier anders aus als ueberall sonst. .utm-topicchip bleibt als Aufhaenger fuer die
+         Zaehler-Plakette, den breiteren Textabschnitt und den Klick-Selektor. */
+      return '<button type="button" class="up-topicchip utm-topicchip up-chiphover" data-topic-id="' + esc(id) +
         '" style="--ust-tag-color:' + esc(color) + '">' +
-        (t.emoji ? '<span class="utm-topicchip-e">' + esc(t.emoji) + '</span>' : "") +
-        '<span class="utm-topicchip-lbl">' + esc(t.name == null ? "" : t.name) + '</span>' +
+        /* Beide Klassennamen: .up-topicchip-e traegt das Aussehen, .utm-topicchip-e bleibt als
+           Alias stehen. Ein Klassenname, an dem fremder Code haengen koennte, verschwindet nicht
+           still -- genau das hat .contract_diff.py hier gemeldet. */
+        (t.emoji ? '<span class="up-topicchip-e utm-topicchip-e">' + esc(t.emoji) + '</span>' : "") +
+        '<span class="up-topicchip-lbl utm-topicchip-lbl">' + esc(t.name == null ? "" : t.name) + '</span>' +
         '<span class="utm-topicchip-count">' + fmtInt(toNum(t.prompt_count) || 0) + '</span>' +
         '</button>';
     }
@@ -162,7 +171,9 @@
        yet, so nothing here is measured off real content. */
     var SK_WIDTHS = [96, 132, 84, 150, 108, 90, 168, 120, 100, 140];
     function skeletonChipsHtml(){
-      return SK_WIDTHS.map(function(w){ return '<span class="utm-topicchip up-tsk" style="width:' + w + 'px"></span>'; }).join("");
+      /* Auch das Skelett traegt .up-topicchip: die Geometrie steht jetzt dort, und ein Skelett, das
+         nicht die Groesse des echten Chips hat, ruckt beim Ankommen der Daten. */
+      return SK_WIDTHS.map(function(w){ return '<span class="up-topicchip utm-topicchip up-tsk" style="width:' + w + 'px"></span>'; }).join("");
     }
     function renderChips(){
       if (!elGrid) return;
@@ -286,7 +297,9 @@
       var sichtbar = liste.filter(function(g){ return !g.hidden; });
       var verborgen = liste.filter(function(g){ return g.hidden; });
       var alle = sichtbar.concat(verborgen);
-      if (elCgCount) elCgCount.textContent = alle.length ? String(alle.length) : "";
+      /* Auch die 0 wird gezeigt: der Trenner hinter der Ueberschrift steht ohnehin, und ein
+         Trenner ohne Zahl dahinter sieht aus wie ein abgeschnittener Kopf, nicht wie "keine". */
+      if (elCgCount) elCgCount.textContent = String(alle.length);
       if (!alle.length){
         elCgList.innerHTML = '<div class="utm-cg-empty">' +
           '<span class="utm-cg-empty-t">No custom groupings yet</span>' +

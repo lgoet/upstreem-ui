@@ -143,8 +143,30 @@
       return t
         /* Bare keys -> quoted keys. */
         .replace(/([{,]\s*)([A-Za-z_$][A-Za-z0-9_$]*)\s*:/g, '$1"$2":')
+        /* Bubble's yes/no as a bare word -> true/false. Ein "yes" ohne Anfuehrungszeichen ist
+           JSON-fremd und war bisher das Ende: die Doku traegt die Ersetzung als Zeile im Schritt,
+           aber wer sie vergisst, verlor den ganzen Payload. Hier gemessen als "The domain data
+           could not be read." bei einem Payload, dem nur diese Zeile fehlte. Nur in WERT-Position,
+           erkennbar am : davor -- ein Feld, das "yes" heisst, bleibt ein Feldname. */
+        .replace(/:(\s*)(yes|no)\s*(?=[,}\]]|$)/gi, function(_, w, v){
+          return ":" + w + (String(v).toLowerCase() === "yes" ? "true" : "false");
+        })
         /* Empty value before the next comma or the closing brace/bracket -> null. */
         .replace(/:\s*(?=[,}\]])/g, ": null")
+        /* Ein LEERES Listenelement: [a, , b] und [ , a]. Das entsteht, wenn Bubble eine Liste
+           Zeile fuer Zeile mit einem Komma dazwischen einsetzt und eine Zeile leer bleibt -- in
+           JS-Quellposition ist das der "Unexpected token ','", den Toolbox meldet, und als Text
+           war es bis hier das Ende des ganzen Payloads.
+           Das leere Element wird ENTFERNT, nicht zu null: es ist kein Datensatz, sondern ein
+           verirrtes Komma, und ein null an seiner Stelle ist schlimmer als der alte Fehlerzustand
+           -- gemessen riss es die Komponente mit ("Cannot read properties of null (reading 'day')"
+           aus renderChart), und ein Wurf im Setter nimmt den ganzen Run-JS-Schritt mit, also auch
+           die Setter der Komponenten darunter.
+           Wirkt auch im Objekt ({"a":1, ,"b":2}), und dort ist das Entfernen ebenso richtig.
+           Zweimal, weil sich ueberlappende Vorkommen ([a, , , b]) sonst nur halb treffen. */
+        .replace(/,\s*,/g, ",")
+        .replace(/,\s*,/g, ",")
+        .replace(/([[{])\s*,/g, "$1")
         /* Trailing comma left behind when the LAST value was the empty one. */
         .replace(/,\s*(?=[}\]])/g, "");
     }

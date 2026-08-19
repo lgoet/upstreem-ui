@@ -1,0 +1,60 @@
+<meta charset="utf-8"><title>topics chips + groupings</title>
+<style>html,body{margin:0;font-family:system-ui,sans-serif;background:#fff}
+#log{position:fixed;left:0;bottom:0;width:100%;max-height:20%;overflow:auto;font:10px/1.4 ui-monospace,monospace;background:#f6f6f6;border-top:1px solid #ddd;margin:0;padding:6px;white-space:pre-wrap}
+#buehne{padding:20px 20px 24%; min-width:1100px}
+/* Im Dunkeln muss auch der Grund des Harness dunkel sein, sonst messe ich helle Schrift auf
+   weiss und halte einen Harness-Fehler fuer einen Fehler der Komponente. */
+html.dunkel body{background:#121212}</style>
+<body>
+<pre id="log">laeuft</pre>
+<div id="buehne">
+  <div class="up-root utm-root" data-instance="c1" data-isdark="no"
+       data-add-fn="bubble_fn_utmAdd" data-edit-fn="bubble_fn_utmEdit" data-delete-fn="bubble_fn_utmDelete">
+    <div class="up-head">
+      <div class="up-heading has-count"><span class="up-head-label">Topics</span><span class="up-head-sep"></span><span class="up-head-count"></span></div>
+      <div class="up-head-tools">
+        <button class="up-export utm-addbtn" type="button" data-topic-add-new><span>Add Topic</span></button>
+      </div>
+    </div>
+    <div class="utm-chipgrid"></div>
+  </div>
+</div>
+<script>
+window.__fehler=[]; window.addEventListener("error",function(e){window.__fehler.push(String(e.message)+" @"+e.lineno)});
+["utmAdd","utmEdit","utmDelete"].forEach(function(n){ window["bubble_fn_"+n]=function(j){ log("event "+n+" "+j); }; });
+function log(s){ var l=document.getElementById("log"); l.textContent += "\n"+s; }
+/* Ohne Gruppierungen starten -- genau der Fall, in dem der Trenner ohne Zahl dastand.
+   ?grp=1 legt zwei an, damit die Gegenprobe im selben Aufbau laeuft. */
+try{ localStorage.removeItem("promptGroups@_"); }catch(e){}
+try{ localStorage.removeItem("promptGroups"); }catch(e){}
+/* Der Schluessel ist storeKey("promptGroups") = "promptGroups@<team>", ohne Team also
+   "promptGroups@_". Erst falsch geraten ("promptGroups"), und dann standen keine Gruppierungen da
+   -- gemessen wurde also der leere Fall, wo ich den gefuellten messen wollte. */
+if (/grp=1/.test(location.search)) {
+  try{ localStorage.setItem("promptGroups@_", JSON.stringify([
+    {key:"g1", name:"Cars", tag_ids:["t1","t2"], hidden:false},
+    {key:"g2", name:"Energy", tag_ids:["t3","t4"], hidden:false}
+  ])); }catch(e){}
+}
+/* Thema AUSDRUECKLICH setzen -- ein alter pref_theme im localStorage misst sonst das falsche. */
+try{ localStorage.setItem("pref_theme", /dark=1/.test(location.search) ? "dark" : "light"); }catch(e){}
+if (/dark=1/.test(location.search)) document.documentElement.classList.add("dunkel");
+var DATEIEN = ["core.css","topics-manager.css","core.js","topics-manager.js"];
+/* fetch mit no-store und inline einsetzen: ein ?v= im Harness hat mehrfach nicht gewirkt, und
+   dann messe ich eine alte Datei. */
+var GELADEN = Promise.all(DATEIEN.map(function(f){
+  return fetch(f, {cache:"no-store"}).then(function(r){ return r.text(); }).then(function(t){
+    var e=document.createElement(/\.css$/.test(f)?"style":"script"); e.textContent=t; document.head.appendChild(e); return f; });
+}));
+var TOPICS = [
+  {id:"t1", name:"Sedans",   emoji:"🚗", hex_light:"#1b6eda", hex_dark:"#6fa8f5", prompt_count:42},
+  {id:"t2", name:"SUVs",     emoji:"🚙", hex_light:"#108440", hex_dark:"#4ec882", prompt_count:31},
+  {id:"t3", name:"Hybrid",   emoji:"🔋", hex_light:"#8d6a11", hex_dark:"#e0b84a", prompt_count:18},
+  {id:"t4", name:"Charging", emoji:"⚡", hex_light:"#9145e8", hex_dark:"#c092f5", prompt_count:12},
+  {id:"t5", name:"Leasing",  emoji:"📄", hex_light:"#d51a8b", hex_dark:"#f072bd", prompt_count:0}
+];
+GELADEN.then(function(){ setTimeout(function(){
+  window.renderTopicsManager({ instanceId:"c1", topics: TOPICS });
+  setTimeout(function(){ window.__bereit = true; log("gerendert"); }, 400);
+}, 300); });
+</script>

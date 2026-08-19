@@ -72,15 +72,14 @@
       unter: function (f) { return UC.fmtPct(f.your_url_presence_pct, 1) + " of cited URLs"; } }
   ];
 
-  /* Die vier Bereiche der Seite. Reihenfolge, Breite und Sichtbarkeit stellt der Nutzer ein; das
-     hier ist der Ausgangszustand und die Liste der gueltigen Schluessel. "full" heisst ueber die
-     ganze Breite, "half" heisst zwei nebeneinander -- damit entsteht das 2x2-Raster, ohne dass es
-     einen freien Editor braucht. Das Grid hat zwei Spalten; ein halbes Element belegt eine. */
+  /* Die drei Bereiche der Seite. Der Nutzer stellt Reihenfolge und Sichtbarkeit ein, NICHT die
+     Breite: das Raster steht fest, wie es ist. Typ-Split und Breakdown sind darin EIN Bereich --
+     sie stehen ohnehin in einer Zeile, und zwei Menuezeilen fuer eine Zeile der Seite waeren eine
+     Einstellung, die man nur halb ausfuehren kann. */
   var BEREICHE = [
-    { key: "chart",  label: "Citations over Time", breite: "full" },
-    { key: "funnel", label: "Source Funnel",       breite: "full" },
-    { key: "types",  label: "URL Type Split",      breite: "half" },
-    { key: "models", label: "Model Breakdown",     breite: "half" }
+    { key: "chart",      label: "Citations over Time" },
+    { key: "funnel",     label: "Source Funnel" },
+    { key: "breakdowns", label: "Breakdowns" }
   ];
   var LAYOUT_KEY = "uddLayout";
 
@@ -199,7 +198,8 @@
       /* Typ-Split und Model Breakdown stehen nebeneinander in einer Zeile. Das Typ-Chart ist
          hoeher als die Balkenliste (ein Doughnut braucht seine Flaeche), deshalb richtet die Zeile
          mittig aus statt oben -- sonst haengt die Balkenliste am Kopf der Zeile. */
-        '<div class="udd-card udd-typecard" data-bereich="types">' +
+      '<div class="udd-row2" data-bereich="breakdowns">' +
+        '<div class="udd-card udd-typecard">' +
           '<div class="udd-sec udd-sec-row">' +
             '<div class="udd-sec-txt">' +
               '<span class="udd-sec-title">URL Type Split</span>' +
@@ -217,7 +217,7 @@
           '<div class="udd-typebody up-donut-body"></div>' +
         '</div>' +
 
-        '<div class="udd-card udd-modelcard" data-bereich="models">' +
+        '<div class="udd-card udd-modelcard">' +
           '<div class="udd-sec udd-sec-row">' +
             '<div class="udd-sec-txt">' +
               '<span class="udd-sec-title">Model Breakdown</span>' +
@@ -231,7 +231,8 @@
             '</div>' +
           '</div>' +
           '<div class="udd-modelbody udd-modeldonut up-donut-body"></div>' +
-        '</div>';
+        '</div>' +
+      '</div>';
   }
 
   function initRoot(root) {
@@ -275,7 +276,10 @@
       scope: SCOPE_STORE[instanceId] || "global",
       header: null, share: null, urls: null, model: null, funnel: null,
       brand: (root.getAttribute("data-brand") || "").trim(),
-      loading: false, hasData: false, error: null,
+      /* loading startet auf true: die Komponente steht auf der Seite, bevor der Pageload-Workflow
+         gelaufen ist, und in dieser Zeit LAEDT sie -- sie ist nicht leer. Beendet wird der Zustand
+         durch die Daten oder nach WARTE_MS durch die Warte-Uhr, nie durch nichts. */
+      loading: true, hasData: false, error: null,
       /* Die URL-Serie kommt aus einem EIGENEN Workflow, ausgeloest durch einen Klick. Deshalb hat
          sie ihren eigenen Wartezustand: urls === null heisst "noch nie etwas angekommen",
          urlsStale heisst "wir haben etwas, aber gerade neue Zahlen angefordert". Beides ist
@@ -315,13 +319,11 @@
         var b = e && e.key ? BEREICHE.filter(function (x) { return x.key === String(e.key); })[0] : null;
         if (!b) return;
         if (out.filter(function (o) { return o.key === b.key; }).length) return;
-        out.push({ key: b.key, label: b.label,
-                   breite: e.breite === "half" || e.breite === "full" ? e.breite : b.breite,
-                   aus: !!e.aus });
+        out.push({ key: b.key, label: b.label, aus: !!e.aus });
       });
       BEREICHE.forEach(function (b) {
         if (out.filter(function (o) { return o.key === b.key; }).length) return;
-        out.push({ key: b.key, label: b.label, breite: b.breite, aus: false });
+        out.push({ key: b.key, label: b.label, aus: false });
       });
       return out;
     }
@@ -329,22 +331,18 @@
       try {
         if (UC.prefSet) UC.prefSet(UC.prefKey ? UC.prefKey(LAYOUT_KEY) : LAYOUT_KEY,
           JSON.stringify(state.layout.map(function (e) {
-            return { key: e.key, breite: e.breite, aus: e.aus ? 1 : 0 };
+            return { key: e.key, aus: e.aus ? 1 : 0 };
           })));
       } catch (e) {}
     }
-    /* Reihenfolge, Breite und Sichtbarkeit ins DOM bringen. Die Reihenfolge ueber order und nicht
-       durch Umhaengen der Knoten: ein appendChild wuerde ein laufendes Chart aus dem Dokument
-       nehmen und wieder einsetzen, und Chart.js verliert dabei seine Canvas-Groesse. */
+    /* Reihenfolge und Sichtbarkeit ins DOM bringen. Die Reihenfolge ueber order und nicht durch
+       Umhaengen der Knoten: ein appendChild wuerde ein laufendes Chart aus dem Dokument nehmen und
+       wieder einsetzen, und Chart.js verliert dabei seine Canvas-Groesse. */
     function layoutAnwenden() {
       state.layout.forEach(function (e, i) {
         var el = root.querySelector('[data-bereich="' + e.key + '"]');
         if (!el) return;
         el.style.order = String(i);
-        /* Eine Variable statt grid-column direkt: eine inline gesetzte Eigenschaft schlaegt JEDE
-           Klassenregel, und der Schmalmodus konnte deshalb nicht auf eine Spalte zurueckfallen --
-           gemessen 858px/350px statt einer Spalte. Als Variable entscheidet weiter die CSS. */
-        el.style.setProperty("--udd-span", e.breite === "half" ? "1" : "2");
         el.hidden = !!e.aus;
         /* Bedienelemente, die zu einem Bereich gehoeren, aber ausserhalb von ihm stehen (der
            Modus-Umschalter in der obersten Zeile): sie gehen mit ihrem Bereich. */
@@ -370,13 +368,6 @@
                (e.aus ? ' data-aus="1"' : "") + '>' +
         '<span class="udd-lygrip">' + UC.icon("arrowUpDown", 2) + "</span>" +
         '<span class="udd-lyname">' + esc(e.label) + "</span>" +
-        /* Breite: zwei benannte Knoepfe statt eines Umschalters, damit beide Zustaende lesbar sind. */
-        '<span class="up-seg udd-lyseg">' +
-          '<button class="up-seg-btn' + (e.breite === "full" ? " is-active" : "") + '" type="button"' +
-            ' data-ly-w="full" data-ly-key="' + esc(e.key) + '" data-tip="Full width">1/1</button>' +
-          '<button class="up-seg-btn' + (e.breite === "half" ? " is-active" : "") + '" type="button"' +
-            ' data-ly-w="half" data-ly-key="' + esc(e.key) + '" data-tip="Half width">1/2</button>' +
-        "</span>" +
         '<button class="up-cg-eye udd-lyeye' + (e.aus ? " is-off" : "") + '" type="button"' +
           ' data-ly-eye="' + esc(e.key) + '" aria-pressed="' + (e.aus ? "true" : "false") + '"' +
           ' aria-label="' + (e.aus ? "Show section" : "Hide section") + '">' +
@@ -394,7 +385,7 @@
       elLyPop.innerHTML = lyMenuHtml();
       if (UC.cgDragList) UC.cgDragList(elLyPop.querySelector(".udd-lylist"), {
         rowSel: "[data-grp-drag]",
-        noDragSel: ".udd-lyeye, .udd-lyseg, .up-seg-btn",
+        noDragSel: ".udd-lyeye",
         onOrder: function (keys) {
           var nach = {};
           state.layout.forEach(function (e) { nach[e.key] = e; });
@@ -558,7 +549,20 @@
       var fav = h.favicon || h.favicon_url || "";
       var name = h.domain || h.id || "";
       var img = elLogo.querySelector("img");
-      elLogo.querySelector(".up-logo-ltr").textContent = (name || "?").charAt(0).toUpperCase();
+      /* Auch das Favicon ist ein Skelett, solange geladen wird: es wechselt mit den Daten wie jede
+         Zahl daneben. Vorher stand hier das "?" des Anfangsbuchstaben-Rueckfalls -- das behauptet
+         "eine Domain, die ich nicht kenne", waehrend die Wahrheit "noch nichts da" ist. */
+      /* Auch ein bereits bekanntes Favicon wird zum Skelett, nicht nur ein fehlendes: es gehoert
+         zu den ALTEN Daten und kann mit den neuen ein anderes sein. Ein Logo stehen zu lassen,
+         waehrend die Zahlen daneben laden, behauptet "diese Domain ist es weiterhin". */
+      var laedt = istLaden() || !state.hasData;
+      elLogo.classList.toggle("is-sk", laedt);
+      if (laedt) {
+        elLogo.querySelector(".up-logo-ltr").textContent = "";
+        if (img) { img.remove(); elLogo.classList.remove("has-img"); }
+        return;
+      }
+      elLogo.querySelector(".up-logo-ltr").textContent = (name || "").charAt(0).toUpperCase();
       if (fav) {
         if (!img) {
           img = document.createElement("img");
@@ -1000,13 +1004,6 @@
         if (lyPop) lyPop.toggle();
       });
       elLyPop.addEventListener("click", function (e) {
-        var w = e.target.closest ? e.target.closest("[data-ly-w]") : null;
-        if (w) {
-          var wk = w.getAttribute("data-ly-key"), wv = w.getAttribute("data-ly-w");
-          state.layout.forEach(function (x) { if (x.key === wk) x.breite = wv; });
-          layoutSchreiben(); layoutAnwenden(); lyOeffnen();
-          return;
-        }
         var ey = e.target.closest ? e.target.closest("[data-ly-eye]") : null;
         if (ey) {
           var ek = ey.getAttribute("data-ly-eye");
@@ -1021,7 +1018,7 @@
         }
         if (e.target.closest && e.target.closest(".udd-lyreset")) {
           state.layout = BEREICHE.map(function (b) {
-            return { key: b.key, label: b.label, breite: b.breite, aus: false };
+            return { key: b.key, label: b.label, aus: false };
           });
           layoutSchreiben(); layoutAnwenden(); lyOeffnen();
         }

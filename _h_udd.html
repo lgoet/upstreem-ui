@@ -64,7 +64,10 @@ function schritt(datei){
   var s = document.createElement("script"); s.src = datei + "?n=" + Math.random();
   document.head.appendChild(s);
 }
+/* ?leer=1 laesst den Datenschritt weg: so ist der Zustand messbar, in dem die Komponente auf der
+   Seite steht und noch nichts angekommen ist -- der Zustand beim Aufschlagen der Seite. */
 window.__GELADEN.then(function(){
+  if (/leer=1/.test(location.search)) { window.__bereit = true; return; }
   setTimeout(function(){ schritt("_h_udd_runjs.js"); setTimeout(function(){ window.__bereit = true; }, 600); }, 300);
 });
 /* Genau das, was der uddMode/uddScope/uddGran-Workflow tut -- mit Verzoegerung, damit der

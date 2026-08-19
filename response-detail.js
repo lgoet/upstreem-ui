@@ -219,7 +219,12 @@
       view: VIEW_STORE[instanceId] || "grid",
       brandFilter: "",
       hl: hlLesen(),
-      data: null, loading: false, hasData: false, error: null
+      /* loading startet auf true: die Komponente steht auf der Seite, bevor der Pageload-Workflow
+         gelaufen ist, und in dieser Zeit LAEDT sie -- sie ist nicht leer. Ohne das zeigte jeder
+         Abschnitt, der nur auf state.loading sieht, seinen Leerzustand, und die Seite las sich
+         beim ersten Aufschlagen als "keine Daten" statt als "kommt gleich". Beendet wird der
+         Zustand durch die Daten oder nach WARTE_MS durch die Warte-Uhr, nie durch nichts. */
+      data: null, loading: true, hasData: false, error: null
     };
 
     /* ---- Ein Wartezustand, der endet -------------------------------------------------------
@@ -328,9 +333,11 @@
       if (zeit) teile.push('<span class="urd-kpi-time" data-tip="' +
         esc(String(d.run_at || "")) + '">' + esc(zeit) + "</span>");
       if (d.market) teile.push(UC.marketChip(d.market));
-      if (isArr(d.tags) && d.tags.length) {
-        teile.push('<span class="urd-tags">' + d.tags.map(topicChip).join("") + "</span>");
-      }
+      /* Erst bauen, dann pruefen: topicChip laesst ein Thema ohne Namen weg, und eine Liste, in
+         der keines einen Namen hat, ergab eine leere Huelle -- die zaehlte als Angabe, also stand
+         hinter dem Market ein Trenner, hinter dem nichts mehr kam. */
+      var themen = isArr(d.tags) ? d.tags.map(topicChip).join("") : "";
+      if (themen) teile.push('<span class="urd-tags">' + themen + "</span>");
       /* Ein Trenner zwischen den Angaben. Ohne ihn standen Modell, Zeit, Market und Themen als
          eine Reihe da und lasen sich als ein zusammenhaengender Satz. */
       elKpis.innerHTML = teile.join('<span class="urd-kpi-sep" aria-hidden="true"></span>');

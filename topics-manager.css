@@ -14,18 +14,18 @@
   padding: 20px 0 40px; border-top: 1px solid var(--vc-border); min-height: 80px; }
 .utm-empty { padding: 24px 0; color: var(--vc-muted); font-size: 13px; }
 
-/* Chip: name + emoji + color + usage count. Same visual language as the topic chips in
-   prompts-table.js's bulk editor (.upt-topicchip), duplicated+renamed rather than shared — see
-   STYLEGUIDE §25, extract only after real re-duplication, and this is only the second consumer. */
-.utm-topicchip { height: 32px; padding: 0 8px 0 11px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;
-  cursor: pointer; font-family: inherit; border: 0; text-align: left;
-  border: 1px solid color-mix(in srgb, var(--ust-tag-color, #6b7280) 40%, transparent);
-  background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 10%, transparent);
-  color: var(--ust-tag-color, #4b5563); font-size: 12px; font-weight: 500; line-height: 1;
-  white-space: nowrap; max-width: 100%; }
-.up-root[data-theme="dark"] .utm-topicchip { background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 22%, transparent); color: #e0e0e0; }
+/* Das Aussehen kommt aus .up-topicchip in core -- 28px, Radius 8, kein sichtbarer Rahmen, nur der
+   getoente Grund, hell und dunkel. Hier stand eine eigene Kopie mit 32px Hoehe und einem sichtbaren
+   Rahmen, aus der Zeit vor der Auslagerung: ein Thema sah auf dieser Seite anders aus als in der
+   Prompts-Tabelle und als in den Gruppierungen zwei Zeilen weiter unten. Uebrig bleibt, was der
+   Knopf braucht (ein button zentriert seinen Text von sich aus) und was diese Seite zusaetzlich
+   hat: die Zaehler-Plakette und ein breiterer Textabschnitt als der des Bauteils. */
+.utm-topicchip { text-align: left; max-width: 100%; }
+.utm-topicchip .utm-topicchip-lbl { max-width: 240px; }
+/* Alias: .utm-topicchip-e traegt jetzt dieselben Werte wie .up-topicchip-e in core, statt eigene.
+   Die Klasse bleibt stehen und nicht nur im Markup -- .contract_diff.py liest Klassennamen aus den
+   CSS-Dateien, und ein Name, der dort verschwindet, koennte fremden Code brechen. */
 .utm-topicchip-e { font-size: 12px; line-height: 1; flex: 0 0 auto; }
-.utm-topicchip-lbl { overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
 .utm-topicchip-count { flex: 0 0 auto; font-size: 11px; font-weight: 600; color: var(--vc-third);
   font-variant-numeric: tabular-nums; }
 

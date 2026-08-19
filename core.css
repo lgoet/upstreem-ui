@@ -1755,11 +1755,12 @@
   border: 1px solid var(--vc-border); background: var(--vc-bg);
   white-space: nowrap; overflow: hidden; min-width: 0; max-width: 100%; box-sizing: border-box; }
 .up-entchip.is-static { cursor: default; }
-/* is-soft: derselbe Chip ohne Rahmen, dafuer mit leichtem Grund. Gebraucht dort, wo viele Chips
-   nebeneinander stehen -- ein Rahmen je Marke macht aus einer Aufzaehlung eine Reihe von Knoepfen,
-   eine Flaeche fasst sie zusammen, ohne sie einzurahmen. Hover verdichtet den Grund, statt einen
-   Rahmen einzublenden. */
-.up-entchip.is-soft { border-color: transparent; background: var(--vc-heading-bg); }
+/* is-soft: derselbe Chip mit leichtem Grund statt weissem. Der Rahmen BLEIBT im hellen Thema --
+   dort ist der Grund so blass, dass ohne Rahmen kein Chip mehr zu sehen ist, nur ein Schatten von
+   einem. Im Dunkeln faellt er weg: da ist der Grund heller als seine Umgebung und traegt die Form
+   allein. Hover verdichtet den Grund. */
+.up-entchip.is-soft { background: var(--vc-heading-bg); }
+.up-root[data-theme="dark"] .up-entchip.is-soft { border-color: transparent; }
 .up-entchip.is-soft:hover { background: var(--vt-row-hover-solid, var(--vc-switch-bg)); }
 .up-entchip:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 1px; }
 
@@ -2448,13 +2449,13 @@
 .up-rb-table tbody td { padding: 10px 12px; border-bottom: 1px solid var(--vc-border);
   vertical-align: top; white-space: normal; overflow-wrap: break-word; line-height: 1.6; }
 .up-rb-table tbody tr:last-child td { border-bottom: 0; }
-/* Die getoenten Zeilen tragen DIESELBE Farbe wie die Kopfzeile, nur mit 60% Deckkraft. Vorher war
+/* Die getoenten Zeilen tragen DIESELBE Farbe wie die Kopfzeile, nur mit 50% Deckkraft. Vorher war
    es --vt-row-hover, und das ist in beiden Themen praktisch derselbe Ton wie --vc-heading-bg: die
    Kopfzeile war damit von jeder zweiten Datenzeile nicht zu unterscheiden und las sich nicht mehr
    als Kopf. Ueber dieselbe Farbe gebaut und nicht ueber eine zweite, damit der Zusammenhang bleibt
    -- die Kopfzeile ist der Vollton, die Zebra-Zeilen sind sein Abklang. */
 .up-rb-table tbody tr:nth-child(even) td {
-  background: color-mix(in srgb, var(--vc-heading-bg) 60%, transparent); }
+  background: color-mix(in srgb, var(--vc-heading-bg) 50%, transparent); }
 .up-rb-table th:first-child, .up-rb-table td:first-child { padding-left: 14px; }
 .up-rb-table th:last-child,  .up-rb-table td:last-child  { padding-right: 14px; }
 
@@ -2467,6 +2468,11 @@
   vertical-align: middle; cursor: pointer; max-width: 100%; box-sizing: border-box; line-height: 1;
   transition: background 120ms ease, border-color 120ms ease; }
 .up-rb-cite:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
+/* Im Dunkeln traegt der Grund die Form: der Chip ist dort heller als der Lauftext um ihn, ein
+   Rahmen zusaetzlich macht aus dem Chip einen Knopf. Im Hellen bleibt er, weil dort der Grund
+   fast nichts hergibt. Der Hover bringt ihn auch im Dunkeln zurueck -- das ist die Rueckmeldung. */
+.up-root[data-theme="dark"] .up-rb-cite { border-color: transparent; }
+.up-root[data-theme="dark"] .up-rb-cite:hover { border-color: var(--vc-hover-border); }
 .up-rb-cite:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 1px; }
 /* 14 statt 13, und der Radius zieht im selben Verhaeltnis mit (3 * 14/13 = 3.23). Der Chip ist
    24px hoch, das Bild passt also weiter hinein, ohne an den Rahmen zu stossen. */
@@ -2486,6 +2492,11 @@
   vertical-align: middle; cursor: pointer; box-sizing: border-box; line-height: 1; white-space: nowrap;
   transition: background 120ms ease, border-color 120ms ease; }
 .up-rb-cgroup:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
+/* Wie beim einzelnen Zitations-Chip: im Dunkeln traegt der Grund die Form, ein Rahmen macht daraus
+   einen Knopf. Der Hover bringt ihn zurueck. Beide Chips gehoeren zur selben Familie und muessen
+   dieselbe Entscheidung tragen -- sonst steht im Lauftext ein Chip mit und einer ohne Rahmen. */
+.up-root[data-theme="dark"] .up-rb-cgroup { border-color: transparent; }
+.up-root[data-theme="dark"] .up-rb-cgroup:hover { border-color: var(--vc-hover-border); }
 .up-rb-cgroup:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 1px; }
 .up-rb-cg-favs { display: inline-flex; align-items: center; flex: 0 0 auto; }
 /* 4px Ueberlappung, genau wie .up-stack-item -- ein Stapel sieht in der ganzen App gleich aus.

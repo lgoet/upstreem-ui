@@ -33,6 +33,11 @@
 .urd-kpi-sep { width: 1px; height: 14px; flex: 0 0 1px; background: var(--vc-border);
   border-radius: 1px; }
 .urd-tags { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+/* 26 statt der 28 des Bauteils, und die Geometrie zieht im Verhaeltnis 26/28 mit: Polsterung
+   8/11 -> 7/10, Radius 8 -> 7.4, Innenabstand 6 -> 5.5. Die Schriftgroesse bleibt bei 12 -- ein
+   26px hoher Chip hat 24px innen, 12px Text bei Zeilenhoehe 1 stoesst dort an nichts, und ein
+   kleinerer Themenname waere die kleinste Schrift der ganzen Seite. */
+.urd-tags .up-topicchip { height: 26px; padding: 0 7px 0 10px; border-radius: 7.4px; gap: 5.5px; }
 
 /* ---- Abschnittskopf (Mentions, Full Response, Citations) ----
    Dieselbe Staffelung wie in domain-detail: Titel in Textfarbe, Beschreibung eine Stufe kleiner
@@ -215,15 +220,32 @@
 .urd-cr-ments .up-stack-item + .up-stack-item { margin-left: 4px; }
 .urd-cc-foot .up-stack-vis, .urd-cr-ments .up-stack-vis {
   border-radius: 7.4px; box-shadow: none; border: 1px solid var(--vc-border); }
+/* Im Dunkeln kein Rahmen: die Logokachel ist dort selbst hell und traegt die Form allein --
+   dieselbe Entscheidung wie beim Marken-Chip in den Mentions und beim Zitations-Chip im Text.
+   Ein Marken-Chip soll nicht an drei Orten drei Rahmen-Regeln haben. */
+.up-root[data-theme="dark"] .urd-cc-foot .up-stack-vis,
+.up-root[data-theme="dark"] .urd-cr-ments .up-stack-vis { border-color: transparent; }
 .urd-cc-foot .up-stack-item img, .urd-cr-ments .up-stack-item img { border-radius: 6.5px; }
-/* Ohne Ueberlappung gibt es nichts auseinanderzuschieben -- die Hover-Bewegung des Stapels wuerde
-   die Reihe nur zappeln lassen. */
-.urd-cc-foot .up-stack-item:hover .up-stack-vis,
-.urd-cr-ments .up-stack-item:hover .up-stack-vis,
+/* Ohne Ueberlappung gibt es nichts auseinanderzuschieben: das SEITLICHE Wegruecken der Nachbarn
+   faellt weg, sonst zappelt die ganze Reihe, wenn man ueber einen Chip faehrt.
+   Das Anheben bleibt -- und zwar auf JEDEM Chip. Vorher hob nur der erste: core gibt dem ersten
+   ein eigenes transform (nur translateY, weil er nach links nicht ausweichen kann), und das ist
+   spezifischer als die Regel, die hier alles auf none setzte. Also hob genau der Chip, der die
+   Ausnahme war, und alle anderen nicht. */
 .urd-cc-foot .up-stack-item:hover ~ .up-stack-item .up-stack-vis,
 .urd-cr-ments .up-stack-item:hover ~ .up-stack-item .up-stack-vis,
+.urd-cc-foot .up-stack-item:first-child:hover ~ .up-stack-item .up-stack-vis,
+.urd-cr-ments .up-stack-item:first-child:hover ~ .up-stack-item .up-stack-vis,
 .urd-cc-foot .up-stack-item:hover ~ .up-stack-more,
-.urd-cr-ments .up-stack-item:hover ~ .up-stack-more { transform: none; }
+.urd-cr-ments .up-stack-item:hover ~ .up-stack-more,
+.urd-cc-foot .up-stack-item:first-child:hover ~ .up-stack-more,
+.urd-cr-ments .up-stack-item:first-child:hover ~ .up-stack-more { transform: none; }
+/* Das Anheben ohne seitlichen Versatz -- dasselbe, was core dem ersten Chip gibt, nur fuer alle.
+   Vier Selektorteile, damit es core's .up-stack-item:first-child:hover schlaegt. */
+.urd-cc-foot .up-stack-item:hover .up-stack-vis,
+.urd-cr-ments .up-stack-item:hover .up-stack-vis,
+.urd-cc-foot .up-stack-item:first-child:hover .up-stack-vis,
+.urd-cr-ments .up-stack-item:first-child:hover .up-stack-vis { transform: translateY(-3px); }
 
 /* brandStack schreibt bei leerer Liste ein "-" als .up-stack-empty. In Drittfarbe (Vorgabe), und
    11px Rand rechts. Der Wunsch waren 6px -- gemessen blieb damit ein Versatz von 5px zur Mitte des
@@ -238,8 +260,12 @@
 .urd-cites-tools { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
 .urd-brandwrap { display: inline-flex; align-items: center; }
 
-/* ---- Skelette (Ton und Pulsieren aus core, --vc-sk) ---- */
-.urd-sk { display: block; background: var(--vc-sk); border-radius: 8px; }
+/* ---- Skelette ----
+   Ton aus core (--vc-sk), Puls aus core (uutpulse, 1.2s) -- der Kommentar behauptete das vorher
+   schon, aber die Regel holte nur die Farbe: die Bloecke standen still und lasen sich als grauer
+   Kasten, nicht als "laedt". */
+.urd-sk { display: block; background: var(--vc-sk); border-radius: 8px;
+  animation: uutpulse 1.2s ease-in-out infinite; }
 .urd-sk-prompt { height: 26px; width: 72%; margin-bottom: 8px; }
 .urd-sk-prompt2 { height: 26px; width: 44%; }
 .urd-sk-kpi { height: 18px; width: 108px; border-radius: 6px; }

@@ -70,7 +70,10 @@ function thema(){
   var r = document.querySelector(".urd-root");
   window.setUpstreemTheme(r.getAttribute("data-theme") === "dark" ? "light" : "dark");
 }
+/* ?leer=1 laesst den Datenschritt weg: so ist der Zustand messbar, in dem die Komponente auf der
+   Seite steht und noch nichts angekommen ist -- der Zustand beim Aufschlagen der Seite. */
 window.__GELADEN.then(function(){
+  if (/leer=1/.test(location.search)) { window.__bereit = true; return; }
   setTimeout(function(){
     /* Modelle in den seitenweiten Store, wie es die echte Seite beim Pageload tut. */
     if (window.setUpstreemModels) window.setUpstreemModels(JSON.stringify(window.__MODELS));
