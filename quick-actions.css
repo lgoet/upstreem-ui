@@ -353,7 +353,15 @@
 .mqa-recent-wrap:empty { display: none; }
 .mqa-recent-ic { flex: 0 0 auto; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; color: var(--am-muted-2); }
 .mqa-recent-ic svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.mqa-recent-line { display: flex; align-items: center; gap: 6px; min-width: 0; flex-wrap: nowrap; overflow: hidden; }
+/* Die Zeile beschneidet (overflow: hidden aus .mqa-primary UND von hier), damit ein langer Suchtext
+   die Zeile nicht sprengt. Genau das schnitt aber den Schatten der Chips unten ab: er liegt 2px
+   unter dem Chip, und der Kasten war genau so hoch wie die Chips.
+   overflow-x: hidden mit overflow-y: visible geht nicht -- ein hidden auf einer Achse erzwingt auto
+   auf der anderen. Also Platz INNEN schaffen: 3px Polsterung unten holen den Schatten in den
+   beschnittenen Bereich, der negative Rand von 3px nimmt die Hoehe wieder heraus, damit die Zeile
+   genauso hoch bleibt wie vorher. */
+.mqa-recent-line { display: flex; align-items: center; gap: 6px; min-width: 0; flex-wrap: nowrap;
+  overflow: hidden; padding-bottom: 3px; margin-bottom: -3px; }
 /* Derselbe Chip wie .mqa-chip im Suchfeld, nur 4px flacher: 22 statt 26. Alles im Verhaeltnis
    22/26 = 0.846 mitgezogen -- Polsterung 6.5/9.75 -> 5.5/8.25, Radius 7.6 -> 6.4, Innenabstand
    6.5 -> 5.5.
