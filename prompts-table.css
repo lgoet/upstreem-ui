@@ -77,7 +77,14 @@
 .upt-check.is-checked, .upt-check.is-indeterminate { background: var(--vc-text); border-color: var(--vc-text); }
 .up-root[data-theme="dark"] .upt-check.is-checked,
 .up-root[data-theme="dark"] .upt-check.is-indeterminate { color: #1f1f1b; }
-.upt-check.is-indeterminate::after { content: ""; width: 8px; height: 2px; border-radius: 1px; background: currentColor; }
+/* Absolut positioniert und ueber die Mitte gelegt, NICHT als Flex-Kind. Seit der Haken dauerhaft
+   im DOM steht (damit sein Uebergang laufen kann), hat das Kaestchen zwei Kinder: das 11px breite
+   SVG mit Deckkraft 0 und diesen Strich. Ein zentrierender Flex-Container ordnet dann BEIDE an, und
+   der Strich landete rechts neben dem unsichtbaren Haken. Absolut heisst: er kennt die Geschwister
+   nicht. inset 0 plus margin auto zentriert in beiden Achsen ohne transform -- ein transform hier
+   wuerde mit dem scale des Hakens ins Gehege kommen, wenn beide Zustaende einmal ueberblenden. */
+.upt-check.is-indeterminate::after { content: ""; position: absolute; inset: 0; margin: auto;
+  width: 8px; height: 2px; border-radius: 1px; background: currentColor; }
 .up-row:hover .upt-check:not(.is-checked) { border-color: var(--vc-third); }
 .up-th .upt-check { margin-right: 8px; }
 

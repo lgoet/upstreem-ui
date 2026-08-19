@@ -12,12 +12,13 @@
    Die Reihenfolge macht order (JS), nicht die Reihenfolge im DOM: ein Umhaengen der Knoten wuerde
    ein laufendes Chart aus dem Dokument nehmen, und Chart.js verliert dabei seine Canvas-Groesse. */
 .udd-root { display: flex; flex-direction: column; gap: 32px; width: 100%; }
-/* Chart aus: die 32px werden UNTER der obersten Zeile weggenommen, nicht ueber der Komponente.
-   Ein margin-top von -32px an der Wurzel hat die Zeile mit nach oben genommen und damit das
-   Zahnrad aus dem Bild geschoben -- gemeldet als "das Settings-Icon ist weg", und das ist der
-   einzige Weg zu einem ausgeblendeten Bereich zurueck. Also bleibt die Zeile, wo sie ist, und der
-   Abstand darunter schrumpft: -16 wird -48, das sind die 32px.
-   Animiert wird margin-bottom statt margin-top, sonst ruckt es (200ms ease, Vorgabe). */
+/* Chart aus: die 32px werden UNTER der obersten Zeile weggenommen. Zwei Wuensche widersprechen
+   sich hier, und das ist gemessen, nicht abgewogen:
+     -32px an der Wurzel      -> Zahnrad bei -8px, also AUSSERHALB der Box, unsichtbar
+     -32px unter der Zeile    -> Zahnrad bei 24px sichtbar, Inhalt darunter 32px hoeher
+   Die Sichtbarkeit gewinnt: das Zahnrad ist der einzige Weg zu einem ausgeblendeten Bereich
+   zurueck. Also bleibt die Zeile stehen und der Abstand darunter schrumpft, -16 wird -48.
+   200ms ease (Vorgabe), animiert wird margin-bottom. */
 .udd-toprow { transition: margin-bottom 200ms ease; }
 .udd-root.is-nochart .udd-toprow { margin-bottom: -48px; }
 .udd-root > * { min-width: 0; }
