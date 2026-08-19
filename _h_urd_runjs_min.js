@@ -10,23 +10,26 @@
       logo_url: "https://www.google.com/s2/favicons?domain=perplexity.ai&sz=64" }
   ];
 
-  var TEXT =
-    "Kurzer Einstiegsabsatz mit einer Marke: LeeUP Media ist dabei. [0](https://www.lee-up.de/solar) [1](https://anfragenfluss.de/neuigkeiten/beste-agentur-photovoltaik-leads)\n" +
-    "\n" +
-    "## Zwischentitel\n" +
-    "\n" +
-    "- Erster Listenpunkt mit **fett** darin\n" +
-    "- Zweiter Listenpunkt mit einem Zitat [1](https://anfragenfluss.de/neuigkeiten/beste-agentur-photovoltaik-leads)\n" +
-    "\n" +
-    "| Anbieter | Bewertung | Preis |\n" +
-    "| --- | :---: | ---: |\n" +
-    "| LeeUP Media | gut | 1.200 |\n" +
-    "| Anfragenfluss | sehr gut | 900 |\n" +
-    "\n" +
-    "Abschlussabsatz.\n" +
-    "\n" +
-    "[[0] - Marketing für Solarbetriebe - LeeUP Media GmbH](https://www.lee-up.de/solar)\n" +
-    "[[1] - Beste Agentur für Photovoltaik-Leads - Anfragenfluss](https://anfragenfluss.de/neuigkeiten/beste-agentur-photovoltaik-leads)";
+  /* ── DIESE STELLE DYNAMISCH MACHEN ────────────────────────────────────────────────────────
+     Alles zwischen den beiden Backticks loeschen und den Bubble-Ausdruck fuer den Antworttext
+     einsetzen. String.raw und die Backticks BLEIBEN STEHEN -- sie sind der Grund, dass echte
+     Zeilenumbrueche und Anfuehrungszeichen im Text nichts kaputt machen. */
+  var TEXT = String.raw`Kurzer Einstiegsabsatz mit einer Marke: LeeUP Media ist dabei. [0](https://www.lee-up.de/solar) [1](https://anfragenfluss.de/neuigkeiten/beste-agentur-photovoltaik-leads)
+
+## Zwischentitel
+
+- Erster Listenpunkt mit **fett** darin
+- Zweiter Listenpunkt mit einem Zitat [1](https://anfragenfluss.de/neuigkeiten/beste-agentur-photovoltaik-leads)
+
+| Anbieter | Bewertung | Preis |
+| --- | :---: | ---: |
+| LeeUP Media | gut | 1.200 |
+| Anfragenfluss | sehr gut | 900 |
+
+Ein Absatz mit "Anfuehrungszeichen" und einem Backslash C:\temp, damit sichtbar ist, dass beides haelt.
+
+[[0] - Marketing für Solarbetriebe - LeeUP Media GmbH](https://www.lee-up.de/solar)
+[[1] - Beste Agentur für Photovoltaik-Leads - Anfragenfluss](https://anfragenfluss.de/neuigkeiten/beste-agentur-photovoltaik-leads)`;
 
   var DATEN = [{
     prompt_run_id: "f052a30f-0b42-4fb9-a672-2bf797ff42e5",
