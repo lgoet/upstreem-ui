@@ -2446,8 +2446,10 @@
   transition: background 120ms ease, border-color 120ms ease; }
 .up-rb-cite:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
 .up-rb-cite:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 1px; }
-.up-rb-cite-fav { width: 13px; height: 13px; border-radius: 3px; flex: 0 0 auto; object-fit: cover;
-  display: block; }
+/* 14 statt 13, und der Radius zieht im selben Verhaeltnis mit (3 * 14/13 = 3.23). Der Chip ist
+   24px hoch, das Bild passt also weiter hinein, ohne an den Rahmen zu stossen. */
+.up-rb-cite-fav { width: 14px; height: 14px; border-radius: 3.23px; flex: 0 0 auto;
+  object-fit: cover; display: block; }
 .up-rb-cite-txt { font-size: 12px; font-weight: 500; color: var(--vc-muted); line-height: 1;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .up-rb-cite:hover .up-rb-cite-txt { color: var(--vc-text); }
@@ -2466,7 +2468,9 @@
 .up-rb-cg-favs { display: inline-flex; align-items: center; flex: 0 0 auto; }
 /* 4px Ueberlappung, genau wie .up-stack-item -- ein Stapel sieht in der ganzen App gleich aus.
    Der Rahmen in Hintergrundfarbe trennt die Bilder, sonst verschmelzen zwei aehnliche Favicons. */
-.up-rb-cg-fav { width: 14px; height: 14px; border-radius: 4px; object-fit: cover; display: block;
+/* 15 statt 14, Radius mit (4 * 15/14 = 4.29). Der Rahmen in Hintergrundfarbe bleibt bei 1.5px --
+   er trennt die gestapelten Bilder und haengt nicht an ihrer Groesse. */
+.up-rb-cg-fav { width: 15px; height: 15px; border-radius: 4.29px; object-fit: cover; display: block;
   box-shadow: 0 0 0 1.5px var(--vc-bg); background: var(--vt-logo-bg); }
 .up-rb-cg-fav + .up-rb-cg-fav { margin-left: -4px; }
 .up-rb-cgroup:hover .up-rb-cg-fav { box-shadow: 0 0 0 1.5px var(--vc-heading-bg); }

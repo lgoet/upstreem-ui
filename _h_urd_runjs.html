@@ -79,6 +79,8 @@ window.__GELADEN.then(function(){
   setTimeout(function(){
     /* Modelle in den seitenweiten Store, wie es die echte Seite beim Pageload tut. */
     /* Statt eines Harness-Aufrufs: GENAU der Run-JS-Schritt, der nach Bubble geht. */
+    /* Die Modelle kommen von der Seite, nicht aus dem Schritt -- wie in Bubble. */
+    if (window.setUpstreemModels) window.setUpstreemModels(JSON.stringify(window.__MODELS));
     var sc = document.createElement("script");
     /* ?live=1 laedt die Live-Fassung mit eingesetztem Payload -- dieselbe Datei wie in Bubble,
        nur mit dem Ausdruck schon ersetzt. */
