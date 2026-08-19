@@ -689,22 +689,25 @@
     /* Die Zielhoehe wird NACH dem Einrichten des Charts gemessen, nicht direkt nach dem Zeichnen:
        Chart.js richtet seine Leinwand ueber einen ResizeObserver ein, also erst nach diesem Lauf.
        Wer vorher misst, misst eine Hoehe, die es gleich nicht mehr gibt (gemessen 326 -> 468 -> und
-       nach dem Loslassen wieder 326), und animiert auf ein Ziel, das verschwindet -- ein Flackern
-       statt einer Bewegung.
+       nach dem Loslassen wieder 326) und animiert auf ein Ziel, das verschwindet.
 
-       Waehrend der zwei Frames haelt MIN-HEIGHT die alte Hoehe, nicht height. Das ist der
-       Unterschied, der zaehlt: eine feste Hoehe quetscht die Balkenliste, und was nicht
-       hineinpasst, ist weg -- gemessen neun Balken im Dokument, fuenf sichtbar, und die Karte blieb
-       mit einer inline gesetzten Hoehe von 326px stehen. Ein Mindestmass laesst wachsen und
-       verhindert nur das Zusammenfallen, also genau das, was animiert werden soll. */
+       Waehrend der zwei Frames haelt MIN-HEIGHT die alte Hoehe, nicht height: eine feste Hoehe
+       quetscht die Balkenliste, und was nicht hineinpasst, ist weg (gemessen neun Balken im
+       Dokument, fuenf sichtbar). Ein Mindestmass laesst wachsen und verhindert nur das
+       Zusammenfallen -- genau das, was animiert werden soll.
+
+       is-hanim schaltet fuer die Dauer der Bewegung die beiden min-height-Uebergaenge aus (Karte
+       und Koerper). Ohne das liefen drei Uebergaenge auf derselben Box, und das war das Ruckeln. */
     function hoeheAnimiert(karte, neuZeichnen) {
       if (!karte || !karte.getBoundingClientRect) { neuZeichnen(); return; }
       var vorher = karte.getBoundingClientRect().height;
+      karte.classList.add("is-hanim");
       karte.style.transition = "none";
       karte.style.minHeight = vorher + "px";
       neuZeichnen();
       function aufraeumen() {
         karte.style.height = ""; karte.style.minHeight = ""; karte.style.transition = "";
+        karte.classList.remove("is-hanim");
       }
       requestAnimationFrame(function () {
         requestAnimationFrame(function () {
@@ -717,7 +720,8 @@
           /* Den Startwert festschreiben, ohne zu zeichnen: ohne diese erzwungene Neuberechnung
              springt die Karte ohne Animation auf das Ziel. */
           void karte.offsetHeight;
-          karte.style.transition = "height 200ms ease";
+          /* Die Kurve kommt aus der Klasse (is-hanim), das inline gesetzte none muss also weg. */
+          karte.style.transition = "";
           karte.style.height = nachher + "px";
           setTimeout(aufraeumen, 220);
         });

@@ -163,6 +163,14 @@
 /* Die Hoehe aendert sich beim Umschalten zwischen Ring und Balken -- 200ms ease (Vorgabe), damit
    der Sprung als Bewegung lesbar ist und nicht als Ruck. */
 .udd-typecard, .udd-modelcard { transition: min-height 200ms ease; }
+/* Waehrend hoeheAnimiert laeuft, darf NUR die Hoehe der Karte animieren. Vorher liefen drei
+   Uebergaenge auf derselben Box gleichzeitig -- min-height der Karte, min-height des Koerpers und
+   die Hoehe aus dem Javascript -- und dazu die 0.5s der Balkenbreiten. Das war das Ruckeln: nicht
+   eine Bewegung, sondern drei, die sich gegenseitig korrigieren.
+   Die Klasse traegt auch die Kurve, damit sie nicht zusaetzlich inline gesetzt werden muss. */
+.udd-typecard.is-hanim, .udd-modelcard.is-hanim { transition: height 200ms ease; }
+.udd-typecard.is-hanim .udd-typebody,
+.udd-modelcard.is-hanim .udd-modelbody { transition: none; }
 /* Die Kopfzeile mit dem Umschalter rechts: dieselbe Zeile wie der Titel, nicht darunter, und der
    Umschalter oben an der Titelzeile statt an der Beschreibung darunter. */
 /* flex-direction: row ausdruecklich -- .udd-sec setzt column, und ohne diese Zeile standen Text

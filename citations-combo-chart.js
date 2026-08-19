@@ -399,6 +399,20 @@
       if (!liste || !liste.length || farbenLaufen) return;
       if (!UC.faviconColor) return;
       farbenLaufen = true;
+      /* In den Leerlauf verschoben, nicht sofort: sieben Bildabrufe plus siebenmal Pixel lesen
+         landeten direkt im Fenster der Seitenwechsel-Animation, und die wurde hakelig. Gemeldet auf
+         der Citations-Seite, und die Rechnung stimmt -- ein Bild dekodieren und 4096 Pixel wiegen
+         ist Arbeit im Hauptstrang.
+         requestIdleCallback mit Frist: gibt es die Funktion nicht (Safari), tut ein setTimeout
+         dasselbe grob genug. Die Farben sind kein Zustand, auf den jemand wartet -- bis sie da
+         sind, steht die Reihe in ihrer Typfarbe. */
+      var starten = function(fn){
+        if (window.requestIdleCallback) window.requestIdleCallback(fn, { timeout: 1500 });
+        else setTimeout(fn, 400);
+      };
+      starten(function(){ farbenHolen(liste); });
+    }
+    function farbenHolen(liste){
       var offen = liste.length, etwasNeu = false;
       liste.forEach(function(quelle){
         UC.faviconColor(quelle, function(hex){
