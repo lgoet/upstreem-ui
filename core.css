@@ -20,6 +20,11 @@
       --up-dd-radius: 14px; --up-dd-pad: 8px; --up-dd-gap: 6px;
       --up-dd-shadow: 0 10px 28px rgba(0,0,0,.14);
       --vc-switch-bg: #f5f5f5; --vc-switch-border: #e0e2e6; --vc-third: #9e9e9e;
+      /* Die Flaeche eines Eingabefelds, SOLIDE. Es gab sie bisher nur als 60%-Variante
+         (--vc-switch-bg im Dunkeln, --up-sel-bg, --vt-row-hover) -- und wo ein Chip auf einer Karte
+         liegt, die selbst schon getoent ist, addieren sich zwei Halbtransparenzen zu einem dritten
+         Ton. Deshalb ein eigenes Token mit dem Vollwert. */
+      --vc-field: #f5f5f5;
       --vt-head-bg: rgba(245,245,245,0.3); --vt-logo-bg: #ffffff; --vt-row-hover: rgba(245,245,245,0.75);
       --vt-row-hover-solid: #f7f7f7;
       --vt-up: #2ea84a; --vt-down: #b0200c;
@@ -95,6 +100,7 @@
       --up-menu-bg: #151515; --up-sel-bg: rgba(42,42,42,0.60); --up-menu-border: #454545;
       --up-dd-shadow: 0 10px 28px rgba(0,0,0,.32);
       --vc-switch-bg: rgba(42,42,42,0.6); --vc-switch-border: #353535; --vc-third: #808080;
+      --vc-field: #2a2a2a;
       --vt-head-bg: #121212; --vt-logo-bg: #e0e0e0; --vt-row-hover: rgba(42,42,42,0.6);
       --vt-row-hover-solid: #242424;
       --vt-up: #60d25d; --vt-down: #d25d5d;
@@ -2480,16 +2486,17 @@
    Das alte Element gab ihm 24px Hoehe bei 11px Text und 12px Abstand zwischen Favicon und Text --
    ein Loch mitten im Chip. Hier: 22px Hoehe, 12px Text, 6px Abstand, und ein Rahmen statt einer
    Hintergrundfarbe, damit er im Lauftext nicht als Block liegt. */
+/* Grund in der Feldfarbe und ein Rahmen in beiden Themen: auf --vc-bg lag der Chip auf demselben
+   Ton wie die Karte um ihn und war nur am Rahmen zu erkennen -- im Dunkeln, wo der Rahmen weg war,
+   an gar nichts. Die Feldfarbe hebt ihn ab, der Rahmen fasst ihn. */
 .up-rb-cite { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 7px;
-  margin: 0 1px; border: 1px solid var(--vc-border); border-radius: 7px; background: var(--vc-bg);
+  margin: 0 1px; border: 1px solid var(--vc-border); border-radius: 7px; background: var(--vc-field);
   vertical-align: middle; cursor: pointer; max-width: 100%; box-sizing: border-box; line-height: 1;
   transition: background 120ms ease, border-color 120ms ease; }
 .up-rb-cite:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
-/* Im Dunkeln traegt der Grund die Form: der Chip ist dort heller als der Lauftext um ihn, ein
-   Rahmen zusaetzlich macht aus dem Chip einen Knopf. Im Hellen bleibt er, weil dort der Grund
-   fast nichts hergibt. Der Hover bringt ihn auch im Dunkeln zurueck -- das ist die Rueckmeldung. */
-.up-root[data-theme="dark"] .up-rb-cite { border-color: transparent; }
-.up-root[data-theme="dark"] .up-rb-cite:hover { border-color: var(--vc-hover-border); }
+/* Der Rahmen bleibt jetzt in BEIDEN Themen: mit der Feldfarbe als Grund ist der Chip abgesetzt,
+   und der Rahmen fasst ihn -- vorher war er im Dunkeln weg, weil er auf --vc-bg als zweite Kante
+   neben dem Kartenrand wirkte. */
 .up-rb-cite:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 1px; }
 /* 14 statt 13, und der Radius zieht im selben Verhaeltnis mit (3 * 14/13 = 3.23). Der Chip ist
    24px hoch, das Bild passt also weiter hinein, ohne an den Rahmen zu stossen. */
@@ -2504,16 +2511,13 @@
    KI-Produkte von Google benutzen, und dasselbe Prinzip wie .up-stack in den Tabellen: der Stapel
    sagt "mehrere", die Zahl sagt "wie viele". Masse wie der einzelne Chip, damit beide in einer
    Zeile gleich hoch stehen. */
+/* Grund und Rahmen wie beim einzelnen Zitations-Chip -- beide gehoeren zur selben Familie. */
 .up-rb-cgroup { display: inline-flex; align-items: center; gap: 7px; height: 24px; padding: 0 8px 0 6px;
-  margin: 0 1px; border: 1px solid var(--vc-border); border-radius: 7px; background: var(--vc-bg);
+  margin: 0 1px; border: 1px solid var(--vc-border); border-radius: 7px; background: var(--vc-field);
   vertical-align: middle; cursor: pointer; box-sizing: border-box; line-height: 1; white-space: nowrap;
   transition: background 120ms ease, border-color 120ms ease; }
 .up-rb-cgroup:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
-/* Wie beim einzelnen Zitations-Chip: im Dunkeln traegt der Grund die Form, ein Rahmen macht daraus
-   einen Knopf. Der Hover bringt ihn zurueck. Beide Chips gehoeren zur selben Familie und muessen
-   dieselbe Entscheidung tragen -- sonst steht im Lauftext ein Chip mit und einer ohne Rahmen. */
-.up-root[data-theme="dark"] .up-rb-cgroup { border-color: transparent; }
-.up-root[data-theme="dark"] .up-rb-cgroup:hover { border-color: var(--vc-hover-border); }
+/* Rahmen in beiden Themen, wie beim einzelnen Chip -- beide gehoeren zur selben Familie. */
 .up-rb-cgroup:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 1px; }
 .up-rb-cg-favs { display: inline-flex; align-items: center; flex: 0 0 auto; }
 /* 4px Ueberlappung, genau wie .up-stack-item -- ein Stapel sieht in der ganzen App gleich aus.

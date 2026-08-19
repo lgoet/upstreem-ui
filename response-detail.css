@@ -70,17 +70,24 @@
    die Mentions eine Aufzaehlung sind -- der Rahmen traegt die Form, der Grund nur den Zusammenhang.
    Den Hover uebernimmt .up-chiphover aus core (im Markup gesetzt), deshalb steht er nicht hier. */
 .urd-ment { max-width: 100%; }
-/* Drei Selektorteile, weil .up-entchip.is-soft in core zwei hat und sonst gewinnt -- gemessen kam
-   der Grund in voller Deckkraft heraus (rgb(245,245,245)) statt halbiert. Ueber Spezifitaet, nicht
-   ueber Ladereihenfolge. */
+/* 32px statt 28, und die Geometrie zieht im Verhaeltnis 32/28 mit (Faktor 1.143): Polsterung
+   10/5 -> 11.4/5.7, Radius 8 -> 9.1, Innenabstand 8 -> 9.1. Logo und Schrift stehen weiter unten
+   mit demselben Faktor.
+   Der Grund ist die Feldfarbe -- solide, nicht halbtransparent: die Chips liegen auf der Seite und
+   nicht auf einer getoenten Karte, zwei Halbtransparenzen ergaeben sonst einen dritten Ton.
+   KEIN Rahmen: bei diesem Grund traegt die Flaeche die Form, und ein Rahmen je Marke macht aus
+   einer Aufzaehlung eine Reihe von Knoepfen. Gilt fuer beide Themen.
+   Drei Selektorteile, weil .up-entchip.is-soft in core zwei hat und sonst gewinnt. */
 .urd-ments .up-entchip.is-soft {
-  background: color-mix(in srgb, var(--vc-heading-bg) 50%, transparent); }
-/* Das Logo eine Stufe kleiner als vorher (18 statt 20), weil der Chip jetzt die Groesse vorgibt.
-   Faktor 18/20 auf alles: Radius 5.6 -> 5, Bild 18 -> 16, Bildradius 4.5 -> 4. */
-.urd-ment .up-ment-logo { width: 18px; height: 18px; border-radius: 5px; }
-.urd-ment .up-ment-logo img { width: 16px; height: 16px; border-radius: 4px; }
-.urd-ment .up-model-ltr { font-size: 10px; }
-.urd-ment .up-ment-name { font-size: 13.5px; }
+  height: 32px; padding: 0 11.4px 0 5.7px; border-radius: 9.1px; gap: 9.1px;
+  background: var(--vc-field); border-color: transparent; }
+/* Logo und Schrift mit demselben Faktor 32/28 = 1.143 wie der Chip: 18 -> 20.6, Radius 5 -> 5.7,
+   Bild 16 -> 18.3, Bildradius 4 -> 4.6, Buchstabe 10 -> 11.4, Name 13.5 -> 15.4. Ein Bauteil, das
+   waechst, waechst in allen Maessen -- sonst sitzt ein 18px-Logo verloren in einem 32px-Chip. */
+.urd-ment .up-ment-logo { width: 20.6px; height: 20.6px; border-radius: 5.7px; }
+.urd-ment .up-ment-logo img { width: 18.3px; height: 18.3px; border-radius: 4.6px; }
+.urd-ment .up-model-ltr { font-size: 11.4px; }
+.urd-ment .up-ment-name { font-size: 15.4px; }
 /* Der leere Zustand der Mentions: das Minus steht fuer sich, ohne Karte und ohne Satz. Etwas
    Hoehe, damit der Abschnitt nicht auf eine Zeile zusammenfaellt. */
 .urd-mentempty { min-height: 24px; }

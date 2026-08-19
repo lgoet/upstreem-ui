@@ -538,11 +538,21 @@
    from that colour in light mode, on the flat dark chip ground in dark mode. Geometry is
    core.css's .up-tag; the class is local because this component deliberately does not load
    core.css (its Bubble loader pulls only quick-actions.css/.js). */
+/* 26px statt 24, und die Geometrie zieht mit (Faktor 26/24 = 1.083): Polsterung 10 -> 10.8,
+   Radius 7 -> 7.6, Innenabstand 6 -> 6.5. Schrift bleibt 12 -- 24px innen tragen sie ohne
+   Bedraengnis, und kleiner soll der Text ohnehin nicht werden.
+   Der Schatten ist kurz und dicht: 0 1px 3px bei 14% deckt genau einen Pixel unter dem Chip ab, das
+   hebt ihn von der Eingabezeile darunter, ohne dass es wie ein schwebendes Fenster aussieht.
+   Im Dunkeln kraeftiger (28%), weil ein Schatten auf dunklem Grund weniger hergibt. */
 .mqa-tag {
-  display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px;
-  border-radius: 7px; font-size: 12px; font-weight: 600; white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 6.5px; height: 26px; padding: 0 10.8px;
+  border-radius: 7.6px; font-size: 12px; font-weight: 600; white-space: nowrap;
   max-width: 100%; overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.14);
 }
+/* [data-theme="dark"] als Vorfahre, wie die Nachbarregeln dieser Datei -- eine Wurzelklasse mit
+   mqa-Praefix gibt es hier nicht, das Thema haengt an #mira-quick-actions bzw. .mqa-overlay. */
+[data-theme="dark"] .mqa-tag { box-shadow: 0 1px 3px rgba(0,0,0,0.28); }
 .mqa-tag-dot { width: 6px; height: 6px; border-radius: 999px; flex: 0 0 auto; }
 .mqa-tag-lbl { overflow: hidden; text-overflow: ellipsis; }
 

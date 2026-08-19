@@ -196,6 +196,8 @@
     social_post:     { c:"#8b5cf6", cDark:"#ddd6fe" }
   };
   var OTHER_LIGHT = "#8c8f96", OTHER_DARK = "#a8abb2", CHIP_BG_DARK = "#242424";
+  /* Derselbe Ton wie CHIP_BG_DARK, nur halb deckend -- 0x24 = 36. */
+  var CHIP_BG_DARK_HALB = "rgba(36,36,36,0.5)";
   function urlTypeLabel(t){ return URL_TYPE_LABEL[t] || String(t||"").replace(/_/g," "); }
   /* base = the LIGHT hue always. The tinted background is mixed from it in both themes, so a
      chip's fill stays the same family whatever the text colour does. */
@@ -229,7 +231,11 @@
      the two vocabularies apart at a glance when they sit next to each other. Geometry copied from
      core.css's .up-tag; the class is local because core.css is not loaded here. */
   function tagHtml(label, color, base, withDot){
-    var bg = isDarkTheme() ? CHIP_BG_DARK : tint(base, 0.12);
+    /* Der Grund auf die Haelfte: 0.12 wird 0.06 im Hellen, und im Dunkeln steht statt der vollen
+       Chipflaeche dieselbe Farbe mit 50% Deckkraft. Der Schatten in der CSS traegt jetzt die
+       Abgrenzung, der Grund nur noch den Farbwert der Marke -- bei voller Toenung lasen die Chips
+       als Kaesten, und es sind Auszeichnungen. */
+    var bg = isDarkTheme() ? CHIP_BG_DARK_HALB : tint(base, 0.06);
     return '<span class="mqa-tag" style="color:' + color + ';background:' + bg + '">' +
              (withDot ? '<span class="mqa-tag-dot" style="background:' + color + '"></span>' : '') +
              '<span class="mqa-tag-lbl">' + esc(label) + '</span>' +
