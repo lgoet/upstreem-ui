@@ -523,6 +523,10 @@
         return;
       }
       elFunnel.innerHTML = trichterHtml(state.funnel);
+      /* Die Spaltenzahl des Kopfrasters an die Zahl der Stufen binden -- das SVG teilt die Breite
+         durch dieselbe Zahl, also muessen die Koepfe darueber genau daraufliegen. */
+      var kopf = elFunnel.querySelector(".udd-fn-head");
+      if (kopf) kopf.style.setProperty("--udd-fnc", String(STUFEN.length));
     }
 
     /* Der Typ-Split. UC.makeTypeChart ist derselbe Baustein, den das Combo-Chart und das

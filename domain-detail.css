@@ -88,7 +88,11 @@
    Die Farbe kommt aus dem Zitationstyp der Domain (im JS gesetzt), die Abstufung ueber die
    Deckkraft: die erste Stufe ist die volle Menge, jede weitere ein Rest davon. */
 .udd-funnel { position: relative; }
-.udd-fn-head { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
+/* Die Spaltenzahl kommt aus dem JS (--udd-fnc), nicht als feste 4. Genau daran ist es gebrochen:
+   der Trichter hat jetzt drei Stufen, das Raster stand weiter auf vier -- die Koepfe nahmen also
+   drei Viertel der Breite, waehrend das SVG darunter die ganze zeichnete. Mit der Variablen kann
+   die Stufenzahl sich aendern, ohne dass hier jemand nachziehen muss. */
+.udd-fn-head { display: grid; grid-template-columns: repeat(var(--udd-fnc, 3), 1fr); gap: 0; }
 .udd-fn-col {
   display: flex; flex-direction: column; gap: 2px; min-width: 0;
   /* Unten 20: 12 plus die nachbestellten 8. Der Abstand liegt als Polsterung an der Spalte und
@@ -170,6 +174,10 @@
 .udd-root.is-narrow .udd-tools { width: 100%; justify-content: flex-start; }
 /* Schmal stehen die zwei Karten untereinander -- nebeneinander bliebe fuer den Ring nichts. */
 .udd-root.is-narrow .udd-row2 { grid-template-columns: 1fr; gap: 24px; }
+/* Schmal: die Koepfe brechen auf zwei Spalten um und liegen dann NICHT mehr auf den Dritteln der
+   Flaeche -- deshalb steht darunter der 16px-Abstand (weiter unten), der beides klar trennt.
+   Kein !important noetig: das JS setzt nur die VARIABLE inline, nicht grid-template-columns, und
+   diese Regel (0,3,0) schlaegt die Basisregel (0,1,0) ueber die Spezifitaet. */
 .udd-root.is-narrow .udd-fn-head { grid-template-columns: repeat(2, 1fr); row-gap: 12px; }
 /* Bei zwei Spalten trennt der Strich die Paare, nicht mehr jede Spalte von der vorigen: der
    dritte Eintrag beginnt eine neue Zeile und braucht links keinen. */
