@@ -487,6 +487,7 @@
   "data-markets-apply-fn",
   "data-markets-fn",
   "data-max-span-months",
+  "data-mchart",
   "data-metric",
   "data-min-date",
   "data-mode",
@@ -2455,7 +2456,7 @@
   "fnattrs": 74,
   "globals": 137,
   "payloadkeys": 66,
-  "dataattrs": 178,
+  "dataattrs": 179,
   "klassen": 1813,
   "keyframes": 56
  }

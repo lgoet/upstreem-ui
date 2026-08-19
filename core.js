@@ -5204,10 +5204,16 @@
               x: { grid: { display:false }, offset: single, border: { display:true, color: tc.border, width:1 },
                    ticks: { autoSkip:true, maxTicksLimit:X_MAX_TICKS, maxRotation:0, color: tc.muted,
                             callback: function(v, i){
-                              var lab = String(labels[i] || "");
+                              /* dayKey ZUERST. Der Rohwert ist nicht immer ISO: ein Bubble-Ausdruck
+                                 schickt auch "Aug 6, 2026 12:00 am", und slice(5) machte daraus
+                                 "6, 2026 12:00 am" -- genau so stand es in der Achse. dayKey bringt
+                                 jede Schreibweise auf YYYY-MM-DD, ein ISO-Datum laeuft unveraendert
+                                 durch. Bleibt der Wert unlesbar, steht er roh da statt verstuemmelt. */
+                              var lab = dayKey(labels[i]);
+                              var iso = lab.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+                              if (!iso) return String(labels[i] || "");
                               if (cfg.gran && cfg.gran() === "month"){
-                                var m = lab.match(/^(\d{4})-(\d{2})/);
-                                if (m) return MONTHS_LONG[parseInt(m[2],10) - 1] || lab;
+                                return MONTHS_LONG[parseInt(iso[2],10) - 1] || lab;
                               }
                               return lab.slice(5);   // day / week → "MM-DD"
                             } } },

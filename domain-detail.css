@@ -123,27 +123,49 @@
 .udd-fn-sk-body { display: block; height: 132px; border-radius: 8px; background: var(--vc-sk); }
 
 /* ---- Zeile: Typ-Split und Model Breakdown --------------------------------------------------
-   Zwei Karten nebeneinander, mittig ausgerichtet (Vorgabe): der Doughnut braucht seine Flaeche und
-   ist damit hoeher als eine Liste aus zwei Balken. Bei align-items: stretch waere die Balkenliste
-   auf Doughnut-Hoehe gezogen und haette oben geklebt.
+   Beide Karten gleich hoch (Vorgabe): align-items: stretch, nicht center. Die Ueberschriften
+   stehen damit auf einer Linie oben, und mittig ist nur der Chart INNERHALB seiner Karte -- so
+   verhaelt sich der Balkenmodus des Typ-Splits schon, wenn er wenige Balken hat.
    Der Typ-Split bekommt mehr Breite als der Breakdown -- 1.15 zu 1 --, weil er neben dem Ring auch
    seine Legende traegt. */
-.udd-row2 { display: grid; grid-template-columns: 1.15fr 1fr; gap: 32px; align-items: center; }
-.udd-row2 > .udd-card { min-width: 0; }
-/* Die Kopfzeile mit dem Umschalter rechts: dieselbe Zeile wie der Titel, nicht darunter. */
-.udd-sec-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.udd-row2 { display: grid; grid-template-columns: 1.15fr 1fr; gap: 32px; align-items: stretch; }
+/* Die Karte ist eine Spalte: Kopf oben, Chart nimmt den Rest und zentriert darin. Dadurch sind
+   beide Karten gleich hoch, ohne dass ein Chart nach oben gezogen wird. */
+.udd-row2 > .udd-card { min-width: 0; display: flex; flex-direction: column; }
+/* Die Hoehe aendert sich beim Umschalten zwischen Ring und Balken -- 200ms ease (Vorgabe), damit
+   der Sprung als Bewegung lesbar ist und nicht als Ruck. */
+.udd-row2 > .udd-card { transition: min-height 200ms ease; }
+/* Die Kopfzeile mit dem Umschalter rechts: dieselbe Zeile wie der Titel, nicht darunter, und der
+   Umschalter oben an der Titelzeile statt an der Beschreibung darunter. */
+/* flex-direction: row ausdruecklich -- .udd-sec setzt column, und ohne diese Zeile standen Text
+   und Umschalter untereinander statt nebeneinander. Gemessen: der Umschalter sass 495px vom rechten
+   Rand entfernt und 54px unter dem Titel. */
+.udd-sec-row { display: flex; flex-direction: row; align-items: flex-start;
+  justify-content: space-between; gap: 16px; flex: 0 0 auto; }
 .udd-sec-row .udd-sec-txt { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.udd-typeseg { flex: 0 0 auto; margin-top: -2px; }
-/* Die Hoehe des Doughnut-Bereichs: 236px ist die Flaeche, in der ein Ring mit Legende in den
-   anderen Charts steht. Ohne feste Hoehe springt die Karte beim Umschalten zwischen Ring und
-   Balken, weil beide unterschiedlich hoch bauen. */
-.udd-typebody { min-height: 236px; }
+.udd-typeseg, .udd-modelseg { flex: 0 0 auto; margin-top: -2px; }
+/* Der Chartbereich nimmt, was uebrig ist, und zentriert seinen Inhalt darin -- senkrecht wie
+   waagerecht. min-height 236: die Flaeche, in der ein Ring mit Legende in den anderen Charts
+   steht; ohne sie faellt die Karte im Balkenmodus auf die Hoehe von zwei Balken zusammen. */
+.udd-typebody, .udd-modelbody { flex: 1 1 auto; display: flex; flex-direction: column;
+  justify-content: center; min-height: 236px; transition: min-height 200ms ease; }
+
+/* Im Model Breakdown liegen Balken und Ring uebereinander -- sichtbar ist immer genau einer. */
+.udd-modelbody > .udd-bars { width: 100%; }
+.udd-modelbody > .udd-modeldonut { width: 100%; }
+/* Keine Mitte im Modell-Ring: das Model Breakdown kennt nur Anteile, keine Gesamtmenge. Mit
+   total() = null schrieb makeTypeChart dort eine 0 -- "0 Models" ist falsch, und richtig ist keine
+   Zahl. Beim Typ-Split bleibt sie: dort ist es die Zahl der zitierten Seiten. */
+.udd-modeldonut .up-donut-center { display: none; }
+.udd-root:not(.is-modeldonut) .udd-modeldonut { display: none; }
+.udd-root.is-modeldonut .udd-bars { display: none; }
 
 /* ---- Model Breakdown -------------------------------------------------------------------------
    Die Liste selbst ist UC.makeBarList mit dem Markup aus core (.up-bars/.up-bar-*). Hier steht
    nichts ueber ihr Aussehen -- nur, dass sie keine eigene Polsterung braucht, die Karte polstert
    schon. */
-.udd-bars { min-height: 84px; }
+/* Die Hoehe kommt jetzt von .udd-modelbody -- hier bleibt nur, dass die Liste die Breite nimmt. */
+.udd-bars { width: 100%; }
 
 /* ---- Schmal ----------------------------------------------------------------------------------
    Gemessen an der EIGENEN Box (UC.widthTiers setzt is-narrow/is-vnarrow), nicht am Fenster: diese

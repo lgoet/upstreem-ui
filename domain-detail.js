@@ -74,6 +74,7 @@
   var GRAN_STORE = (window.__uddGran = window.__uddGran || {});
   var SCOPE_STORE = (window.__uddScope = window.__uddScope || {});
   var CHART_STORE = (window.__uddChart = window.__uddChart || {});
+  var MCHART_STORE = (window.__uddMChart = window.__uddMChart || {});
 
   function isArr(v) { return Object.prototype.toString.call(v) === "[object Array]"; }
   function num(v) { return UC.toNum(v); }
@@ -198,11 +199,24 @@
         '</div>' +
 
         '<div class="udd-card udd-modelcard">' +
-          '<div class="udd-sec">' +
-            '<span class="udd-sec-title">Model Breakdown</span>' +
-            '<span class="udd-sec-desc">Distribution of this domain in AI models</span>' +
+          '<div class="udd-sec udd-sec-row">' +
+            '<div class="udd-sec-txt">' +
+              '<span class="udd-sec-title">Model Breakdown</span>' +
+              '<span class="udd-sec-desc">Distribution of this domain in AI models</span>' +
+            '</div>' +
+            '<div class="cc-seg udd-modelseg" role="tablist" aria-label="Chart type">' +
+              '<button class="cc-seg-btn" type="button" role="tab" data-mchart="doughnut"' +
+                ' data-tip="Doughnut" aria-label="Doughnut">' + UC.icon("donut", 2) + '</button>' +
+              '<button class="cc-seg-btn" type="button" role="tab" data-mchart="bar"' +
+                ' data-tip="Bars" aria-label="Bars">' + UC.icon("chartBarDec", 2) + '</button>' +
+            '</div>' +
           '</div>' +
-          '<div class="udd-bars"></div>' +
+          /* Zwei Behaelter, weil zwei Werkzeuge: der Doughnut kommt aus UC.makeTypeChart, die
+             Balken aus UC.makeBarList -- nur die kann Logos, und die Modelle haben Logos. */
+          '<div class="udd-modelbody">' +
+            '<div class="udd-bars"></div>' +
+            '<div class="udd-modeldonut up-donut-body"></div>' +
+          '</div>' +
         '</div>' +
       '</div>';
   }
@@ -234,6 +248,8 @@
     var elBars    = root.querySelector(".udd-bars");
     var elTypeBody = root.querySelector(".udd-typebody");
     var elTypeSeg  = root.querySelector(".udd-typeseg");
+    var elModelSeg = root.querySelector(".udd-modelseg");
+    var elModelDonut = root.querySelector(".udd-modeldonut");
 
     /* UC.themeParam und nicht das Attribut allein: kennt core ein Thema, gewinnt core. Das
        Attribut ist die Momentaufnahme aus dem Lauf des Workflows. */
@@ -257,6 +273,9 @@
       /* Der Umschalter des Typ-Charts. Wie in Combo und Topcitations ist der Doughnut der Anfang;
          der Balkenmodus ist die Ansicht fuer viele Typen. Ueberlebt das Neueinspritzen. */
       chartMode: CHART_STORE[instanceId] || "doughnut",
+      /* Beim Model Breakdown ist der BALKEN der Anfang (Vorgabe): zwei oder drei Modelle sind als
+         Balken mit Logo und Prozentwert schneller zu lesen als als Ring. */
+      modelMode: MCHART_STORE[instanceId] || "bar",
       types: null
     };
     if (state.brand === "BRAND_NAME") state.brand = "";
@@ -533,8 +552,10 @@
          der Zitationstyp-Skala. Genau wie im Combo, wenn dort auf URL-Typen umgeschaltet ist. */
       mode: function () { return "url"; },
       chartMode: function () { return state.chartMode; },
-      total: function () { return null; },
-      centerLabel: "URL Types",
+      /* Die Zahl in der Mitte ist die Menge der zitierten Seiten dieser Domain -- sie steht im
+         Trichter (cited_urls_count) und nicht in types_breakdown, das nur Anteile kennt. */
+      total: function () { return state.funnel ? num(state.funnel.cited_urls_count) : null; },
+      centerLabel: "Pages",
       collapseHost: root.querySelector(".udd-typecard")
     }) : null;
 
@@ -557,8 +578,56 @@
       });
     }
 
+    /* Der Doughnut der Modelle. Dasselbe Werkzeug wie beim Typ-Split, nur mit selbst gebauten
+       Items: die Modelle bringen ihre Farbe je Thema mit, es gibt fuer sie keine Skala in core.
+       prepTypeData waere hier falsch -- das kennt nur Zitations- und URL-Typen.
+       Der Balkenmodus bleibt UC.makeBarList: nur die kann Logos, und die Modelle haben Logos. */
+    var modelDonut = UC.makeTypeChart ? UC.makeTypeChart({
+      decimals: 1,
+      body: elModelDonut,
+      isDark: darkNow,
+      isOwner: function () { return true; },
+      mode: function () { return "url"; },
+      chartMode: function () { return "doughnut"; },
+      total: function () { return null; },
+      centerLabel: "Models",
+      collapseHost: root.querySelector(".udd-modelcard")
+    }) : null;
+
+    function modelItems() {
+      return (isArr(state.model) ? state.model : []).map(function (m) {
+        return {
+          key: String(m.model || ""),
+          name: String(m.model || ""),
+          share: num(m.model_share_pct) || 0,
+          color: (isDark ? m.color_darkmode : m.color_lightmode) || typFarbe()
+        };
+      });
+    }
+
+    function syncModelSeg() {
+      if (!elModelSeg) return;
+      [].forEach.call(elModelSeg.querySelectorAll("[data-mchart]"), function (b) {
+        var an = b.getAttribute("data-mchart") === state.modelMode;
+        b.classList.toggle("is-active", an);
+        b.setAttribute("aria-selected", an ? "true" : "false");
+      });
+      root.classList.toggle("is-modeldonut", state.modelMode === "doughnut");
+    }
+
     function renderBars() {
-      if (state.error) { elBars.innerHTML = '<div class="up-chart-empty">' + esc(state.error) + '</div>'; return; }
+      if (state.error) {
+        elBars.innerHTML = '<div class="up-chart-empty">' + esc(state.error) + '</div>';
+        if (elModelDonut) elModelDonut.innerHTML = "";
+        return;
+      }
+      if (state.modelMode === "doughnut" && modelDonut) {
+        if (istLaden() || !isArr(state.model)) { modelDonut.skeleton(); return; }
+        var mi = modelItems();
+        if (!mi.length) { modelDonut.empty("No model data for this period."); return; }
+        modelDonut.renderDonut(mi);
+        return;
+      }
       if (istLaden() || !isArr(state.model)) { bars.skeleton(4); return; }
       var items = state.model.map(function (m) {
         return {
@@ -577,6 +646,7 @@
     function render() {
       syncSeg();
       syncTypeSeg();
+      syncModelSeg();
       renderHead();
       renderKpi();
       renderChart();
@@ -625,6 +695,17 @@
         fire("data-scope-fn", "uddScope", { mode: state.mode, gran: state.gran, scope: sk });
         return;
       }
+      var mc = e.target.closest("[data-mchart]");
+      if (mc && elModelSeg && elModelSeg.contains(mc)) {
+        var mk = mc.getAttribute("data-mchart");
+        if (mk === state.modelMode) return;
+        state.modelMode = mk; MCHART_STORE[instanceId] = mk;
+        syncModelSeg();
+        renderBars();
+        /* Kein Ereignis nach Bubble: derselbe Datensatz, andere Darstellung. */
+        return;
+      }
+
       var c = e.target.closest("[data-chart]");
       if (c && elTypeSeg && elTypeSeg.contains(c)) {
         var ck = c.getAttribute("data-chart");
