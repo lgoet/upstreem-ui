@@ -1507,6 +1507,13 @@
   "up-bars",
   "up-bars-sk",
   "up-box",
+  "up-brandcheck",
+  "up-brandcheck-no",
+  "up-brandcheck-yes",
+  "up-brandlabel",
+  "up-brandlogo",
+  "up-brandtoggle",
+  "up-brandtoggle-lbl",
   "up-btn",
   "up-btn-sec",
   "up-cg-",
@@ -2451,7 +2458,7 @@
   "globals": 137,
   "payloadkeys": 66,
   "dataattrs": 179,
-  "klassen": 1807,
+  "klassen": 1814,
   "keyframes": 56
  }
 }

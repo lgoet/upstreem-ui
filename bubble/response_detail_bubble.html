@@ -57,6 +57,16 @@
   dunklen Thema. Fehlt eines, gilt das andere; fehlen beide, wird im Themen-Store nachgeschlagen
   (setUpstreemTopics), und erst dann bleibt der Chip grau.
 
+  ── Der Marken-Filter bei den Citations ──────────────────────────────────────
+  Links neben dem Grid/List-Umschalter steht ein dreistufiger Schalter
+  "<Marke> mentioned?" (aus -> ja -> nein -> aus). Er filtert AUSSCHLIESSLICH clientseitig, in den
+  Daten, die schon da sind: kein zweiter Aufruf, kein Ereignis nach Bubble, kein Attribut.
+  Er erscheint nur, wenn er etwas aendern kann -- also wenn mindestens eine, aber nicht jede
+  Quelle die eigene Marke nennt. Bei 0 Treffern oder bei 100 Prozent bleibt er weg, weil ein
+  Filter, der nichts aendert, ein toter Knopf ist.
+  Name und Logo kommen aus der ersten Erwaehnung mit role "own" (Rueckfall fuer den Namen:
+  data-brand am Element). Liefert die RPC diese Rolle nicht, gibt es den Schalter nicht.
+
   ── Die Einstellungen der Hervorhebungen ─────────────────────────────────────
   Ein Menue am Kopf der Antwort, gespeichert im localStorage (teambezogen ueber UC.prefKey):
     Marken   All mentions | First mention only (Standard) | Your brand only | Off

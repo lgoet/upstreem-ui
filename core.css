@@ -1683,6 +1683,39 @@
    prefix, which is how they drifted apart in the first place). A FILLED 14px badge carries the
    colour, the glyph inside is knocked out of it, and the label stays in the primary text colour —
    a coloured label next to a coloured icon read as two competing signals. */
+/* ---- Marken-Schalter ("Brand X mentioned?") ---------------------------------------------------
+   Dreistufig: aus, ja, nein. Lag als Kopie in urls-table.css; zweiter Verbraucher (response-detail),
+   also hierher -- die alten .uut-*-Klassen bleiben als Alias, damit dort kein Markup anzufassen ist.
+   Werte unveraendert: 32px hoch wie jeder Kopfzeilen-Knopf, Radius 8, Kaestchen 16px mit Radius 5. */
+.up-brandtoggle, .uut-brand-toggle { display: none; align-items: center; justify-content: space-between;
+  gap: 10px; height: 32px; padding: 0 8px; border-radius: 8px; background: transparent; border: 0;
+  cursor: pointer; flex: 0 0 auto; font-family: inherit; }
+.up-brandtoggle.is-visible, .uut-brand-toggle.is-visible { display: inline-flex; }
+.up-brandtoggle:hover, .uut-brand-toggle:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
+.up-brandtoggle.is-yes, .up-brandtoggle.is-no,
+.uut-brand-toggle.is-yes, .uut-brand-toggle.is-no { background: var(--vc-heading-bg); }
+.up-brandtoggle-lbl, .uut-brand-toggle-lbl { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.up-brandcheck, .uut-brand-check { width: 16px; height: 16px; border-radius: 5px;
+  border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center;
+  justify-content: center; flex: 0 0 auto; color: #fff; }
+.up-brandcheck svg, .uut-brand-check svg { width: 11px; height: 11px; display: none; }
+.up-brandtoggle.is-yes .up-brandcheck, .up-brandtoggle.is-no .up-brandcheck,
+.uut-brand-toggle.is-yes .uut-brand-check, .uut-brand-toggle.is-no .uut-brand-check {
+  background: var(--vc-text); border-color: var(--vc-text); }
+/* Im Dunkeln ist --vc-text hell, also braucht der Haken darauf die dunkle Farbe. */
+.up-root[data-theme="dark"] .up-brandtoggle.is-yes .up-brandcheck,
+.up-root[data-theme="dark"] .up-brandtoggle.is-no .up-brandcheck,
+.up-root[data-theme="dark"] .uut-brand-toggle.is-yes .uut-brand-check,
+.up-root[data-theme="dark"] .uut-brand-toggle.is-no .uut-brand-check { color: #1f1f1b; }
+.up-brandtoggle.is-yes .up-brandcheck .up-brandcheck-yes,
+.uut-brand-toggle.is-yes .uut-brand-check .uut-brand-check-yes { display: block; }
+.up-brandtoggle.is-no .up-brandcheck .up-brandcheck-no,
+.uut-brand-toggle.is-no .uut-brand-check .uut-brand-check-no { display: block; }
+.up-brandlogo, .uut-brand-logo { width: 16px; height: 16px; border-radius: 4px; flex: 0 0 auto;
+  display: block; object-fit: cover; }
+.up-brandlabel, .uut-brand-label { font-size: 12px; font-weight: 500; color: var(--vc-text);
+  white-space: nowrap; }
+
 /* ---- Entitaeten-Chip -------------------------------------------------------------------------
    Ein anklickbarer Chip mit Logo und Name. Es gab in core das Logo-Name-Paar (.up-ment-logo /
    .up-ment-name) und den Themen-Chip (.up-topicchip) -- aber keinen NEUTRALEN Chip: der Themen-Chip

@@ -190,11 +190,18 @@
    nicht an der Kante klebt. Die Drittfarbe (Vorgabe) nimmt ihn aus dem Lesefluss -- er sagt
    "hier ist nichts", und das soll nicht so laut sein wie ein Wert. */
 .urd-cr-ments { flex: 0 0 auto; padding-right: 8px; }
-/* brandStack schreibt bei leerer Liste ein "-" als .up-stack-empty. Das ist der Strich, der
-   gemeint ist: in Drittfarbe (Vorgabe), und die 8px oben schieben ihn unter die Logospalte der
-   Zeilen darueber, statt ihn an der Kante kleben zu lassen. */
-.urd-cr-ments .up-stack-empty { color: var(--vc-third); }
-.urd-cc-foot .up-stack-empty { color: var(--vc-third); }
+/* brandStack schreibt bei leerer Liste ein "-" als .up-stack-empty. In Drittfarbe (Vorgabe), und
+   11px Rand rechts. Der Wunsch waren 6px -- gemessen blieb damit ein Versatz von 5px zur Mitte des
+   rechten Logos, weil der Strich schmal ist (~5px) und ein Logo 24px breit. 6 + 5 = 11 setzt die
+   Mitten aufeinander. Gemessen, nicht gerechnet. */
+.urd-cr-ments .up-stack-empty { color: var(--vc-third); margin-right: 11px; }
+.urd-cc-foot .up-stack-empty { color: var(--vc-third); margin-right: 11px; }
+
+/* ---- Werkzeugzeile der Citations ----
+   Marken-Schalter und Ansichtsumschalter nebeneinander, 8px auseinander -- derselbe Abstand, den
+   die Kopfzeilen der Tabellen zwischen zwei Knoepfen halten. */
+.urd-cites-tools { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.urd-brandwrap { display: inline-flex; align-items: center; }
 
 /* ---- Skelette (Ton und Pulsieren aus core, --vc-sk) ---- */
 .urd-sk { display: block; background: var(--vc-sk); border-radius: 8px; }

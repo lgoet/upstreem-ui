@@ -725,6 +725,26 @@
 
   /* Market-Chip: Flagge als liegende Kachel plus Laendercode. Rund wuerde jede Flagge auf ihre
      Mitte beschneiden, und genau da tragen DE, FR und IT nichts Unterscheidbares. */
+  /* Das Markup des Marken-Schalters. Dreistufig: aus, ja, nein -- dieselbe Reihenfolge wie in
+     urls-table, damit ein Klick ueberall dasselbe bedeutet. Der Haken und das Kreuz liegen beide
+     im Kaestchen, die Klasse entscheidet, welches sichtbar ist. */
+  function brandToggleHtml(cfg){
+    cfg = cfg || {};
+    var name = String(cfg.name || "").trim();
+    var logo = String(cfg.logo || "").trim();
+    return '<button type="button" class="up-brandtoggle' + (cfg.cls ? " " + cfg.cls : "") + '"' +
+             ' aria-label="' + esc(name ? name + " mentioned" : "Own brand mentioned") + '">' +
+             '<span class="up-brandtoggle-lbl">' +
+               '<span class="up-brandcheck">' +
+                 '<span class="up-brandcheck-yes">' + CHECK_SVG + "</span>" +
+                 '<span class="up-brandcheck-no">' + icon("x", 3) + "</span>" +
+               "</span>" +
+               (logo ? '<img class="up-brandlogo" src="' + esc(logo) + '" alt="" loading="lazy"' +
+                       ' referrerpolicy="no-referrer" onerror="this.remove()"/>' : "") +
+               '<span class="up-brandlabel">' + esc(name || "Own brand") + " mentioned?</span>" +
+             "</span></button>";
+  }
+
   function marketChip(code, cfg){
     cfg = cfg || {};
     var c = String(code == null ? "" : code).trim().toUpperCase();
@@ -7890,6 +7910,7 @@
     relativeTime: relativeTime,
     modelChip: modelChip,
     marketChip: marketChip,
+    brandToggleHtml: brandToggleHtml,
     respBody: respBody,
     rbShowUrl: rbShowUrl,
     rbCleanUrl: rbCleanUrl,

@@ -130,12 +130,17 @@
             '<span class="urd-sec-title">Citations</span>' +
             '<span class="urd-sec-desc">What citations were used for this answer</span>' +
           '</div>' +
+          '<div class="urd-cites-tools">' +
+          /* Der Schalter steht links neben dem Umschalter -- dieselbe Reihenfolge wie in den
+             Tabellen: erst filtern, dann die Ansicht waehlen. */
+          '<span class="urd-brandwrap"></span>' +
           '<div class="up-seg urd-viewseg" role="group" aria-label="Citations view">' +
             VIEWS.map(function (v) {
               return '<button class="up-seg-btn" type="button" data-view="' + v.key + '"' +
                        ' data-tip="' + esc(v.label) + '" aria-label="' + esc(v.label) + '">' +
                        UC.icon(v.icon, 2) + '</button>';
             }).join("") +
+          '</div>' +
           '</div>' +
         '</div>' +
         '<div class="urd-cites-grid"></div>' +
@@ -165,6 +170,7 @@
     var elGrid   = root.querySelector(".urd-cites-grid");
     var elList   = root.querySelector(".urd-cites-list");
     var elSeg    = root.querySelector(".urd-viewseg");
+    var elBrandWrap = root.querySelector(".urd-brandwrap");
 
     var isDark = UC.themeParam(root.getAttribute("data-isdark"));
     if (isDark) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
@@ -196,8 +202,11 @@
       } catch (e) {}
     }
 
+    /* Der Marken-Filter ist Ansichtssache und gilt nur fuer diese Antwort -- er wird NICHT
+       gespeichert. Wer eine Antwort oeffnet, will erst alle Quellen sehen. */
     var state = {
       view: VIEW_STORE[instanceId] || "grid",
+      brandFilter: "",
       hl: hlLesen(),
       data: null, loading: false, hasData: false, error: null
     };
@@ -486,6 +495,49 @@
       return out;
     }
 
+    /* Die eigene Marke, wie sie in den Daten steht: Name und Logo aus der ersten Erwaehnung mit
+       role "own". Das ist derselbe Ort, aus dem auch der Modus "Your brand only" seine ids nimmt --
+       eine Quelle, keine zweite Wahrheit. data-brand am Element ist der Rueckfall fuer den Namen. */
+    function eigeneMarke(d) {
+      var treffer = null;
+      (isArr(d && d.citations) ? d.citations : []).forEach(function (c) {
+        (isArr(c && c.mentions) ? c.mentions : []).forEach(function (m) {
+          if (!treffer && m && m.role === "own") treffer = m;
+        });
+      });
+      if (treffer) return { name: String(treffer.name || ""), logo: String(treffer.favicon_url || "") };
+      var attr = (root.getAttribute("data-brand") || "").trim();
+      if (attr && attr !== "BRAND_NAME") return { name: attr, logo: "" };
+      return null;
+    }
+
+    /* Zaehlt, wie viele Quellen die eigene Marke nennen -- der Schalter erscheint nur, wenn es
+       ueberhaupt etwas zu filtern gibt. Ein Filter, der nichts aendert, ist ein toter Knopf. */
+    function mitEigener(d) {
+      return (isArr(d && d.citations) ? d.citations : []).filter(function (c) {
+        return (isArr(c && c.mentions) ? c.mentions : []).some(function (m) { return m && m.role === "own"; });
+      }).length;
+    }
+
+    function renderBrandFilter() {
+      if (!elBrandWrap) return;
+      var d = state.data;
+      var marke = d ? eigeneMarke(d) : null;
+      var treffer = d ? mitEigener(d) : 0;
+      var gesamt = d && isArr(d.citations) ? d.citations.length : 0;
+      /* Sichtbar nur, wenn es eine eigene Marke gibt UND der Filter etwas aendern kann: bei 0
+         Treffern oder wenn ALLE Quellen sie nennen, gibt es nichts zu filtern. */
+      var zeigen = !!marke && !istLaden() && !state.error && treffer > 0 && treffer < gesamt;
+      if (!zeigen) {
+        elBrandWrap.innerHTML = "";
+        if (state.brandFilter) { state.brandFilter = ""; }
+        return;
+      }
+      elBrandWrap.innerHTML = UC.brandToggleHtml({ name: marke.name, logo: marke.logo,
+        cls: "urd-brandtoggle is-visible" +
+             (state.brandFilter === "yes" ? " is-yes" : state.brandFilter === "no" ? " is-no" : "") });
+    }
+
     /* Absender der Nachricht: Logo und Name des Modells, beides aus dem Modell-Store (UC.modelChip
        liefert genau das Paar). Der Chip wird auseinandergenommen, weil das Logo hier gross links
        neben der Karte steht und der Name darueber. */
@@ -601,6 +653,10 @@
       return d;
     }
 
+    function nenntEigene(c) {
+      return (isArr(c && c.mentions) ? c.mentions : []).some(function (m) { return m && m.role === "own"; });
+    }
+
     /* Der Wert, den ein Klick auf eine Quelle nach Bubble traegt: die id, wenn die RPC eine
        mitschickt -- sonst die URL. In allen drei Beispiel-Payloads hat citations KEIN Feld id,
        also waere der Klick sonst wirkungslos. Die URL ist der einzige Schluessel, der in den
@@ -622,12 +678,25 @@
         spaltenSetzen(4);
         return;
       }
-      var liste = (isArr(state.data.citations) ? state.data.citations : []).filter(function (c) {
+      var alle = (isArr(state.data.citations) ? state.data.citations : []).filter(function (c) {
         return c && c.url;
       });
+      /* Der Filter arbeitet nur hier, auf den Daten, die schon da sind -- kein neuer Aufruf, kein
+         Ereignis nach Bubble. "ja" zeigt die Quellen, die die eigene Marke nennen, "nein" die
+         anderen, leer alle. */
+      var liste = state.brandFilter === "yes"
+        ? alle.filter(function (c) { return nenntEigene(c); })
+        : state.brandFilter === "no"
+          ? alle.filter(function (c) { return !nenntEigene(c); })
+          : alle;
       if (!liste.length) {
-        elGrid.innerHTML = '<span class="urd-empty">No citations for this response.</span>';
-        elList.innerHTML = '<span class="urd-empty">No citations for this response.</span>';
+        /* Mit aktivem Filter ist "keine Quellen" die falsche Aussage: es gibt welche, sie passen
+           nur nicht. Sonst sucht man den Fehler in den Daten statt im Schalter. */
+        var txt = state.brandFilter
+          ? "No citations match this filter."
+          : "No citations for this response.";
+        elGrid.innerHTML = '<span class="urd-empty">' + txt + "</span>";
+        elList.innerHTML = '<span class="urd-empty">' + txt + "</span>";
         spaltenSetzen(1);
         return;
       }
@@ -695,6 +764,7 @@
 
     function render() {
       syncSeg();
+      renderBrandFilter();
       renderHead();
       renderAbsender();
       renderMents();
@@ -705,6 +775,16 @@
     /* ---- Klicks --------------------------------------------------------------------------- */
     root.addEventListener("click", function (e) {
       if (!e.target.closest) return;
+
+      /* aus -> ja -> nein -> aus, dieselbe Reihenfolge wie in urls-table. Kein Ereignis nach
+         Bubble: der Filter braucht keine neuen Daten. */
+      var bt = e.target.closest(".urd-brandtoggle");
+      if (bt) {
+        state.brandFilter = state.brandFilter === "" ? "yes" : (state.brandFilter === "yes" ? "no" : "");
+        renderBrandFilter();
+        renderCites();
+        return;
+      }
 
       var v = e.target.closest("[data-view]");
       if (v && elSeg.contains(v)) {
@@ -818,6 +898,7 @@
       reset: function () {
         state.data = null; state.hasData = false; state.error = null; state.loading = false;
         state.view = "grid"; VIEW_STORE[instanceId] = "grid";
+        state.brandFilter = "";
         warteBeenden();
         popZu();
         render();
