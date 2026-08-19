@@ -72,6 +72,18 @@
       unter: function (f) { return UC.fmtPct(f.your_url_presence_pct, 1) + " of cited URLs"; } }
   ];
 
+  /* Die vier Bereiche der Seite. Reihenfolge, Breite und Sichtbarkeit stellt der Nutzer ein; das
+     hier ist der Ausgangszustand und die Liste der gueltigen Schluessel. "full" heisst ueber die
+     ganze Breite, "half" heisst zwei nebeneinander -- damit entsteht das 2x2-Raster, ohne dass es
+     einen freien Editor braucht. Das Grid hat zwei Spalten; ein halbes Element belegt eine. */
+  var BEREICHE = [
+    { key: "chart",  label: "Citations over Time", breite: "full" },
+    { key: "funnel", label: "Source Funnel",       breite: "full" },
+    { key: "types",  label: "URL Type Split",      breite: "half" },
+    { key: "models", label: "Model Breakdown",     breite: "half" }
+  ];
+  var LAYOUT_KEY = "uddLayout";
+
   var MODE_STORE = (window.__uddMode = window.__uddMode || {});
   var GRAN_STORE = (window.__uddGran = window.__uddGran || {});
   var SCOPE_STORE = (window.__uddScope = window.__uddScope || {});
@@ -131,17 +143,24 @@
     return '' +
       /* .up-seg/.up-seg-btn und .vc-gran/.vc-gran-btn sind die Haus-Bauteile aus core.css. Hier
          steht nur die Positionierung, kein eigenes Aussehen. */
-      /* Umschalter und Karte stehen in EINEM Block: die Wurzel setzt 32px zwischen ihre Kinder,
-         und zwischen Umschalter und seiner Karte gehoeren 16. */
-      '<div class="udd-block">' +
-      '<div class="up-seg udd-seg" role="tablist">' +
-        MODES.map(function (m) {
-          return '<button class="up-seg-btn" type="button" role="tab" data-mode="' + m.key + '">' +
-                   esc(m.label) + '</button>';
-        }).join("") +
+      /* Die oberste Zeile steht AUSSERHALB des Chart-Bereichs und immer an erster Stelle: das
+         Zahnrad darf nicht mit dem Bereich verschwinden, den es ausblendet -- sonst gibt es keinen
+         Weg zurueck. Der Modus-Umschalter darin gehoert dagegen zum Chart und geht mit ihm. */
+      '<div class="udd-toprow">' +
+        '<div class="up-seg udd-seg" data-tie="chart" role="tablist">' +
+          MODES.map(function (m) {
+            return '<button class="up-seg-btn" type="button" role="tab" data-mode="' + m.key + '">' +
+                     esc(m.label) + '</button>';
+          }).join("") +
+        '</div>' +
+        '<span class="udd-lywrap">' +
+          '<button class="up-iconbtn udd-lybtn" type="button" data-tip="Sections"' +
+            ' aria-label="Show, hide and arrange sections"></button>' +
+          '<div class="udd-lypop up-pop"></div>' +
+        '</span>' +
       '</div>' +
 
-      '<div class="udd-card udd-chartcard">' +
+      '<div class="udd-card udd-chartcard" data-bereich="chart">' +
         '<div class="udd-head">' +
           '<div class="udd-title">' +
             '<span class="up-logo-box udd-logobox"><span class="up-logo-ltr"></span></span>' +
@@ -167,9 +186,8 @@
         '<div class="udd-chartwrap"><canvas class="udd-canvas"></canvas></div>' +
         '<div class="udd-legend up-legend"></div>' +
       '</div>' +
-      '</div>' +
 
-      '<div class="udd-card udd-funnelcard">' +
+      '<div class="udd-card udd-funnelcard" data-bereich="funnel">' +
         '<div class="udd-sec">' +
           '<span class="udd-sec-title">Source Funnel</span>' +
           '<span class="udd-sec-desc">How often this source is cited, how many of its cited URLs ' +
@@ -181,8 +199,7 @@
       /* Typ-Split und Model Breakdown stehen nebeneinander in einer Zeile. Das Typ-Chart ist
          hoeher als die Balkenliste (ein Doughnut braucht seine Flaeche), deshalb richtet die Zeile
          mittig aus statt oben -- sonst haengt die Balkenliste am Kopf der Zeile. */
-      '<div class="udd-row2">' +
-        '<div class="udd-card udd-typecard">' +
+        '<div class="udd-card udd-typecard" data-bereich="types">' +
           '<div class="udd-sec udd-sec-row">' +
             '<div class="udd-sec-txt">' +
               '<span class="udd-sec-title">URL Type Split</span>' +
@@ -200,7 +217,7 @@
           '<div class="udd-typebody up-donut-body"></div>' +
         '</div>' +
 
-        '<div class="udd-card udd-modelcard">' +
+        '<div class="udd-card udd-modelcard" data-bereich="models">' +
           '<div class="udd-sec udd-sec-row">' +
             '<div class="udd-sec-txt">' +
               '<span class="udd-sec-title">Model Breakdown</span>' +
@@ -214,8 +231,7 @@
             '</div>' +
           '</div>' +
           '<div class="udd-modelbody udd-modeldonut up-donut-body"></div>' +
-        '</div>' +
-      '</div>';
+        '</div>';
   }
 
   function initRoot(root) {
@@ -268,6 +284,7 @@
       urlsStale: false, urlsError: null,
       /* Der Umschalter des Typ-Charts. Wie in Combo und Topcitations ist der Doughnut der Anfang;
          der Balkenmodus ist die Ansicht fuer viele Typen. Ueberlebt das Neueinspritzen. */
+      layout: null,
       chartMode: CHART_STORE[instanceId] || "doughnut",
       /* Beim Model Breakdown ist der BALKEN der Anfang (Vorgabe): zwei oder drei Modelle sind als
          Balken mit Logo und Prozentwert schneller zu lesen als als Ring. */
@@ -275,6 +292,121 @@
       types: null
     };
     if (state.brand === "BRAND_NAME") state.brand = "";
+
+    /* ---- Sichtbarkeit und Anordnung der vier Bereiche ----------------------------------------
+       Der Nutzer bestimmt Reihenfolge, Breite und Sichtbarkeit. Gespeichert wird in den
+       Einstellungen (localStorage ueber UC.prefGet/prefSet, teambezogen) -- es ist eine Vorliebe
+       des Nutzers, keine Eigenschaft der Daten, und sie soll die naechste Domain ueberleben.
+       Gelesen wird nachsichtig: ein unbekannter Schluessel wird ignoriert, ein fehlender ergaenzt.
+       Damit kann die Liste der Bereiche wachsen, ohne dass ein gespeichertes Layout ungueltig wird
+       -- ein neuer Bereich taucht dann hinten auf und ist sichtbar. */
+    function layoutLesen() {
+      var roh = null;
+      try { roh = UC.prefGet ? UC.prefGet(UC.prefKey ? UC.prefKey(LAYOUT_KEY) : LAYOUT_KEY) : null; } catch (e) {}
+      var gespeichert = null;
+      try { gespeichert = roh ? JSON.parse(roh) : null; } catch (e) { gespeichert = null; }
+      var nach = {};
+      if (isArr(gespeichert)) gespeichert.forEach(function (e) {
+        if (e && e.key) nach[String(e.key)] = e;
+      });
+      var out = [];
+      /* Erst in gespeicherter Reihenfolge, dann alles, was noch fehlt. */
+      if (isArr(gespeichert)) gespeichert.forEach(function (e) {
+        var b = e && e.key ? BEREICHE.filter(function (x) { return x.key === String(e.key); })[0] : null;
+        if (!b) return;
+        if (out.filter(function (o) { return o.key === b.key; }).length) return;
+        out.push({ key: b.key, label: b.label,
+                   breite: e.breite === "half" || e.breite === "full" ? e.breite : b.breite,
+                   aus: !!e.aus });
+      });
+      BEREICHE.forEach(function (b) {
+        if (out.filter(function (o) { return o.key === b.key; }).length) return;
+        out.push({ key: b.key, label: b.label, breite: b.breite, aus: false });
+      });
+      return out;
+    }
+    function layoutSchreiben() {
+      try {
+        if (UC.prefSet) UC.prefSet(UC.prefKey ? UC.prefKey(LAYOUT_KEY) : LAYOUT_KEY,
+          JSON.stringify(state.layout.map(function (e) {
+            return { key: e.key, breite: e.breite, aus: e.aus ? 1 : 0 };
+          })));
+      } catch (e) {}
+    }
+    /* Reihenfolge, Breite und Sichtbarkeit ins DOM bringen. Die Reihenfolge ueber order und nicht
+       durch Umhaengen der Knoten: ein appendChild wuerde ein laufendes Chart aus dem Dokument
+       nehmen und wieder einsetzen, und Chart.js verliert dabei seine Canvas-Groesse. */
+    function layoutAnwenden() {
+      state.layout.forEach(function (e, i) {
+        var el = root.querySelector('[data-bereich="' + e.key + '"]');
+        if (!el) return;
+        el.style.order = String(i);
+        /* Eine Variable statt grid-column direkt: eine inline gesetzte Eigenschaft schlaegt JEDE
+           Klassenregel, und der Schmalmodus konnte deshalb nicht auf eine Spalte zurueckfallen --
+           gemessen 858px/350px statt einer Spalte. Als Variable entscheidet weiter die CSS. */
+        el.style.setProperty("--udd-span", e.breite === "half" ? "1" : "2");
+        el.hidden = !!e.aus;
+        /* Bedienelemente, die zu einem Bereich gehoeren, aber ausserhalb von ihm stehen (der
+           Modus-Umschalter in der obersten Zeile): sie gehen mit ihrem Bereich. */
+        [].forEach.call(root.querySelectorAll('[data-tie="' + e.key + '"]'), function (t) {
+          t.hidden = !!e.aus;
+        });
+      });
+      /* Ist die zweite Spalte leer, weil kein halber Bereich sichtbar ist, faellt sie durch die
+         span-2-Regeln von selbst weg -- dafuer braucht es keine eigene Klasse. */
+    }
+
+    /* ---- Das Menue der Bereiche --------------------------------------------------------------
+       Ein Menue fuer alles drei, nicht zwei Knoepfe: Sichtbarkeit, Breite und Reihenfolge sind
+       dieselbe Frage ("wie soll die Seite aussehen"), und wer die Reihenfolge aendert, will meist
+       im selben Moment auch etwas ausblenden. Das Ziehen macht UC.cgDragList -- dieselbe Mechanik
+       wie die Gruppierungsliste, damit sich Ziehen in der App ueberall gleich anfuehlt. */
+    var elLyWrap = root.querySelector(".udd-lywrap");
+    var elLyBtn  = root.querySelector(".udd-lybtn");
+    var elLyPop  = root.querySelector(".udd-lypop");
+
+    function lyRowHtml(e) {
+      return '<div class="up-cg-row udd-lyrow" data-grp-drag="' + esc(e.key) + '"' +
+               (e.aus ? ' data-aus="1"' : "") + '>' +
+        '<span class="udd-lygrip">' + UC.icon("arrowUpDown", 2) + "</span>" +
+        '<span class="udd-lyname">' + esc(e.label) + "</span>" +
+        /* Breite: zwei benannte Knoepfe statt eines Umschalters, damit beide Zustaende lesbar sind. */
+        '<span class="up-seg udd-lyseg">' +
+          '<button class="up-seg-btn' + (e.breite === "full" ? " is-active" : "") + '" type="button"' +
+            ' data-ly-w="full" data-ly-key="' + esc(e.key) + '" data-tip="Full width">1/1</button>' +
+          '<button class="up-seg-btn' + (e.breite === "half" ? " is-active" : "") + '" type="button"' +
+            ' data-ly-w="half" data-ly-key="' + esc(e.key) + '" data-tip="Half width">1/2</button>' +
+        "</span>" +
+        '<button class="up-cg-eye udd-lyeye' + (e.aus ? " is-off" : "") + '" type="button"' +
+          ' data-ly-eye="' + esc(e.key) + '" aria-pressed="' + (e.aus ? "true" : "false") + '"' +
+          ' aria-label="' + (e.aus ? "Show section" : "Hide section") + '">' +
+          UC.icon(e.aus ? "eyeOff" : "eye", 2) + "</button>" +
+      "</div>";
+    }
+    function lyMenuHtml() {
+      return '<div class="udd-lyhead">Sections</div>' +
+        '<div class="up-cg-list udd-lylist">' + state.layout.map(lyRowHtml).join("") + "</div>" +
+        '<div class="udd-lyfoot">' +
+          '<button type="button" class="udd-lyreset">Reset to default</button>' +
+        "</div>";
+    }
+    function lyOeffnen() {
+      elLyPop.innerHTML = lyMenuHtml();
+      if (UC.cgDragList) UC.cgDragList(elLyPop.querySelector(".udd-lylist"), {
+        rowSel: "[data-grp-drag]",
+        noDragSel: ".udd-lyeye, .udd-lyseg, .up-seg-btn",
+        onOrder: function (keys) {
+          var nach = {};
+          state.layout.forEach(function (e) { nach[e.key] = e; });
+          var neu = [];
+          (keys || []).forEach(function (k) { if (nach[k]) { neu.push(nach[k]); delete nach[k]; } });
+          Object.keys(nach).forEach(function (k) { neu.push(nach[k]); });
+          state.layout = neu;
+          layoutSchreiben();
+          layoutAnwenden();
+        }
+      });
+    }
 
     /* ---- Ein Wartezustand, der endet ---------------------------------------------------------
        Das Skelett laeuft, solange keine Daten da sind. Ohne Ende ist "kommt gleich" nicht von
@@ -568,23 +700,32 @@
        animieren und danach wieder freigeben. 200ms ease (Vorgabe).
        Ohne das Freigeben am Ende bliebe die Karte auf der gemessenen Hoehe stehen und wuerde beim
        naechsten Datenwechsel nicht mehr mitwachsen. */
+    /* Die Zielhoehe wird NACH dem Einrichten des Charts gemessen, nicht direkt nach dem Zeichnen.
+       Chart.js richtet seine Leinwand ueber einen ResizeObserver ein, also erst nach diesem Lauf:
+       gemessen wurden 326px vor dem Wechsel, 468px direkt danach -- und nach dem Loslassen wieder
+       326px. Die Animation lief also auf ein Ziel, das es gleich nicht mehr gab, und das Ergebnis
+       war ein Flackern statt einer Bewegung. Solange gemessen wird, haelt die alte Hoehe die Karte
+       fest, damit zwischen Zeichnen und Animation kein Sprung sichtbar wird. */
     function hoeheAnimiert(karte, neuZeichnen) {
       if (!karte || !karte.getBoundingClientRect) { neuZeichnen(); return; }
       var vorher = karte.getBoundingClientRect().height;
-      neuZeichnen();
-      var nachher = karte.getBoundingClientRect().height;
-      if (Math.abs(nachher - vorher) < 1) return;
+      karte.style.transition = "none";
       karte.style.height = vorher + "px";
-      karte.style.transition = "height 200ms ease";
-      /* Zwei Frames: einer, damit die Startho:he im Layout steht, der zweite fuer das Ziel --
-         beides im selben Frame gesetzt wuerde nicht animieren. */
+      neuZeichnen();
+      function aufraeumen() { karte.style.height = ""; karte.style.transition = ""; }
       requestAnimationFrame(function () {
         requestAnimationFrame(function () {
-          karte.style.height = nachher + "px";
-          setTimeout(function () {
-            karte.style.height = "";
-            karte.style.transition = "";
-          }, 220);
+          /* Loslassen, natuerliche Hoehe lesen, sofort wieder festnageln -- alles im selben Frame,
+             also entsteht dazwischen kein Bild. */
+          karte.style.height = "";
+          var nachher = karte.getBoundingClientRect().height;
+          if (Math.abs(nachher - vorher) < 1) { aufraeumen(); return; }
+          karte.style.height = vorher + "px";
+          requestAnimationFrame(function () {
+            karte.style.transition = "height 200ms ease";
+            karte.style.height = nachher + "px";
+            setTimeout(aufraeumen, 220);
+          });
         });
       });
     }
@@ -708,7 +849,10 @@
         if (mk === state.modelMode) return;
         state.modelMode = mk; MCHART_STORE[instanceId] = mk;
         syncModelSeg();
-        hoeheAnimiert(root.querySelector(".udd-row2"), renderBars);
+        /* Animiert wird die Karte selbst, nicht mehr eine feste Zeile um beide: die gibt es seit
+           dem Bereichsmenue nicht mehr. Weil das Raster seine Karten streckt, misst die Karte die
+           Hoehe ihrer Rasterzeile -- steht der Breakdown allein, ist es seine eigene. */
+        hoeheAnimiert(root.querySelector(".udd-modelcard"), renderBars);
         /* Kein Ereignis nach Bubble: derselbe Datensatz, andere Darstellung. */
         return;
       }
@@ -719,7 +863,7 @@
         if (ck === state.chartMode) return;
         state.chartMode = ck; CHART_STORE[instanceId] = ck;
         syncTypeSeg();
-        hoeheAnimiert(root.querySelector(".udd-row2"), renderTypes);
+        hoeheAnimiert(root.querySelector(".udd-typecard"), renderTypes);
         /* Kein Ereignis nach Bubble: der Wechsel zeichnet dieselben Daten anders. */
         return;
       }
@@ -844,6 +988,48 @@
         if (d !== isDark) { isDark = d; renderFunnel(); renderBars(); }
       }).observe(root, { attributes: true, attributeFilter: ["data-brand", "data-isdark", "data-theme"] });
     }
+
+    if (elLyBtn) {
+      elLyBtn.innerHTML = UC.icon("settings", 2);
+      var lyPop = UC.makePopover ? UC.makePopover({
+        wrap: elLyWrap, menu: elLyPop, opener: elLyBtn
+      }) : null;
+      elLyBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        lyOeffnen();
+        if (lyPop) lyPop.toggle();
+      });
+      elLyPop.addEventListener("click", function (e) {
+        var w = e.target.closest ? e.target.closest("[data-ly-w]") : null;
+        if (w) {
+          var wk = w.getAttribute("data-ly-key"), wv = w.getAttribute("data-ly-w");
+          state.layout.forEach(function (x) { if (x.key === wk) x.breite = wv; });
+          layoutSchreiben(); layoutAnwenden(); lyOeffnen();
+          return;
+        }
+        var ey = e.target.closest ? e.target.closest("[data-ly-eye]") : null;
+        if (ey) {
+          var ek = ey.getAttribute("data-ly-eye");
+          /* Der letzte sichtbare Bereich bleibt sichtbar -- eine leere Seite ist kein Zustand, den
+             man versehentlich herstellen koennen soll. */
+          var sichtbar = state.layout.filter(function (x) { return !x.aus; });
+          var ziel = state.layout.filter(function (x) { return x.key === ek; })[0];
+          if (ziel && !ziel.aus && sichtbar.length <= 1) return;
+          if (ziel) ziel.aus = !ziel.aus;
+          layoutSchreiben(); layoutAnwenden(); lyOeffnen();
+          return;
+        }
+        if (e.target.closest && e.target.closest(".udd-lyreset")) {
+          state.layout = BEREICHE.map(function (b) {
+            return { key: b.key, label: b.label, breite: b.breite, aus: false };
+          });
+          layoutSchreiben(); layoutAnwenden(); lyOeffnen();
+        }
+      });
+    }
+
+    state.layout = layoutLesen();
+    layoutAnwenden();
 
     render();
     return ctrl;

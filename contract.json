@@ -485,6 +485,9 @@
   "data-linewidth",
   "data-local",
   "data-logo",
+  "data-ly-eye",
+  "data-ly-key",
+  "data-ly-w",
   "data-market",
   "data-markets-apply-fn",
   "data-markets-fn",
@@ -2459,7 +2462,7 @@
   "fnattrs": 75,
   "globals": 137,
   "payloadkeys": 66,
-  "dataattrs": 179,
+  "dataattrs": 182,
   "klassen": 1814,
   "keyframes": 56
  }

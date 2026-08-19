@@ -7,15 +7,36 @@
 
    Die drei Karten stehen mit 32px Abstand untereinander (Vorgabe). */
 
-/* 32px zwischen den drei Abschnitten -- Vorgabe. Der Modus-Umschalter gehoert zur ersten Karte
-   und nicht in diesen Rhythmus: er steht mit ihr zusammen in .udd-block, und dort sind es 16. */
-.udd-root { display: flex; flex-direction: column; gap: 32px; width: 100%; }
-.udd-block { display: block; }
+/* 32px zwischen den Abschnitten -- Vorgabe. Die Wurzel ist ein Zweispaltenraster, weil der Nutzer
+   jeden der vier Bereiche auf halbe oder volle Breite stellen kann: voll ist span 2, halb ist
+   span 1, und zwei halbe nebeneinander ergeben das 2x2. Die Spalten sind gleich breit -- welche
+   zwei Bereiche nebeneinander landen, entscheidet der Nutzer, also kann keine Spalte mehr
+   verdienen als die andere.
+   Die Reihenfolge macht order (JS), nicht die Reihenfolge im DOM: ein Umhaengen der Knoten wuerde
+   ein laufendes Chart aus dem Dokument nehmen, und Chart.js verliert dabei seine Canvas-Groesse. */
+.udd-root { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 32px; width: 100%; align-items: stretch; }
+/* Die Spannweite kommt aus --udd-span (JS), nicht aus einer inline gesetzten grid-column: inline
+   schlaegt jede Klassenregel, und der Schmalmodus unten koennte dann nicht mehr durchgreifen. */
+.udd-root > * { grid-column: span var(--udd-span, 2); min-width: 0; }
+/* Ein ausgeblendeter Bereich traegt das hidden-Attribut, und das wirkt nur ueber display:none aus
+   dem Browser-Stylesheet -- jede eigene display-Regel schlaegt es. Genau das ist passiert: die
+   Karten von Typ-Split und Breakdown setzen display:flex, und beide blieben trotz hidden sichtbar
+   (gemessen: hidden=true bei display:flex und 326px Hoehe). Zwei Selektorteile statt einem, also
+   ueber Spezifitaet gewonnen, nicht ueber Ladereihenfolge. */
+.udd-root > [hidden] { display: none; }
 
 /* ---- Umschalter (Modus) ----------------------------------------------------------------------
    .up-seg/.up-seg-btn kommen aus core. Hier nur der Abstand nach unten und die etwas breitere
    Polsterung der Knoepfe -- wie in brand-detail, damit zwei Detailseiten gleich aussehen. */
-.udd-seg { margin: 0 0 16px; width: fit-content; }
+.udd-seg { margin: 0; width: fit-content; }
+.udd-seg[hidden] { display: none; }
+/* Die oberste Zeile: Umschalter links, Zahnrad rechts. Sie steht IMMER an erster Stelle (order
+   -1000) und ueber beide Spalten -- das Zahnrad ist der einzige Weg zurueck zu einem ausgeblendeten
+   Bereich und darf deshalb nie mitwandern. -16px unten, weil zwischen Umschalter und der ersten
+   Karte 16 gehoeren und nicht die 32 des Rasters. */
+.udd-toprow { display: flex; flex-direction: row; align-items: center;
+  justify-content: space-between; gap: 16px; order: -1000; margin-bottom: -16px; min-height: 32px; }
 .udd-seg .up-seg-btn { padding-left: 16px; padding-right: 16px; }
 
 /* ---- Karte -----------------------------------------------------------------------------------
@@ -132,13 +153,14 @@
    verhaelt sich der Balkenmodus des Typ-Splits schon, wenn er wenige Balken hat.
    Der Typ-Split bekommt mehr Breite als der Breakdown -- 1.15 zu 1 --, weil er neben dem Ring auch
    seine Legende traegt. */
-.udd-row2 { display: grid; grid-template-columns: 1.15fr 1fr; gap: 32px; align-items: stretch; }
 /* Die Karte ist eine Spalte: Kopf oben, Chart nimmt den Rest und zentriert darin. Dadurch sind
-   beide Karten gleich hoch, ohne dass ein Chart nach oben gezogen wird. */
-.udd-row2 > .udd-card { min-width: 0; display: flex; flex-direction: column; }
+   zwei nebeneinander stehende Karten gleich hoch, ohne dass ein Chart nach oben gezogen wird.
+   Frueher hing das an .udd-row2, einer festen Zeile um genau diese zwei Karten. Die gibt es nicht
+   mehr: seit der Nutzer die Anordnung bestimmt, kann jede der vier Karten neben jeder stehen. */
+.udd-typecard, .udd-modelcard { display: flex; flex-direction: column; }
 /* Die Hoehe aendert sich beim Umschalten zwischen Ring und Balken -- 200ms ease (Vorgabe), damit
    der Sprung als Bewegung lesbar ist und nicht als Ruck. */
-.udd-row2 > .udd-card { transition: min-height 200ms ease; }
+.udd-typecard, .udd-modelcard { transition: min-height 200ms ease; }
 /* Die Kopfzeile mit dem Umschalter rechts: dieselbe Zeile wie der Titel, nicht darunter, und der
    Umschalter oben an der Titelzeile statt an der Beschreibung darunter. */
 /* flex-direction: row ausdruecklich -- .udd-sec setzt column, und ohne diese Zeile standen Text
@@ -173,7 +195,12 @@
 .udd-root.is-narrow .udd-head { flex-wrap: wrap; }
 .udd-root.is-narrow .udd-tools { width: 100%; justify-content: flex-start; }
 /* Schmal stehen die zwei Karten untereinander -- nebeneinander bliebe fuer den Ring nichts. */
-.udd-root.is-narrow .udd-row2 { grid-template-columns: 1fr; gap: 24px; }
+/* Schmal gibt es keine zwei Spalten mehr: ein halber Bereich neben einem halben waere hier
+   200px breit. Alles rutscht untereinander, die Reihenfolge des Nutzers bleibt. */
+.udd-root.is-narrow { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+/* 1 / -1 statt span 1: bei EINER Spalte ist das dieselbe Zelle, aber es kann kein implizites
+   zweites Gleis entstehen -- genau das war der gemessene Fehler (858px/350px statt einer Spalte). */
+.udd-root.is-narrow > * { grid-column: 1 / -1; }
 /* Schmal: die Koepfe brechen auf zwei Spalten um und liegen dann NICHT mehr auf den Dritteln der
    Flaeche -- deshalb steht darunter der 16px-Abstand (weiter unten), der beides klar trennt.
    Kein !important noetig: das JS setzt nur die VARIABLE inline, nicht grid-template-columns, und
@@ -191,3 +218,51 @@
 .udd-root.is-vnarrow .udd-seg .up-seg-btn { flex: 1 1 0; padding-left: 8px; padding-right: 8px; }
 .udd-root.is-vnarrow .udd-chartwrap { height: 220px; }
 .udd-root.is-vnarrow.is-domainshare .udd-chartwrap { height: 260px; }
+
+/* ---- Das Bereichsmenue -------------------------------------------------------------------------
+   Werte 1:1 aus dem Einstellungsmenue von response-detail (.urd-hl*): gleicher Rahmen, gleicher
+   Radius, gleicher Schatten, gleiche Polsterung, gleiche Ueberschrift. Zwei Menues derselben App
+   sollen nicht zwei Bauarten sein. Breiter als dort (312 statt 248), weil eine Zeile hier Name,
+   Breitenumschalter und Auge traegt. */
+.udd-lywrap { position: relative; flex: 0 0 auto; }
+/* Der Knopf ist .up-iconbtn aus core. Hier nur die Drittfarbe im Ruhezustand und der offene
+   Zustand, den das Bauteil nicht kennt -- beim Hover uebernimmt wieder core. */
+.udd-lybtn { color: var(--vc-third); }
+.udd-lywrap.is-open .up-iconbtn { background: var(--vc-heading-bg); color: var(--vc-text); }
+.udd-lypop { position: absolute; top: calc(100% + 6px); right: 0; z-index: 30; width: 312px;
+  background: var(--up-surface, var(--vc-bg)); border: 1px solid var(--vc-border);
+  border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,0.14); padding: 6px;
+  display: none; flex-direction: column; box-sizing: border-box; }
+.udd-lywrap.is-open .udd-lypop { display: flex; }
+.udd-lyhead { font-size: 11px; font-weight: 600; color: var(--vc-third); letter-spacing: 0.04em;
+  text-transform: uppercase; padding: 6px 8px 4px; }
+.udd-lylist { display: flex; flex-direction: column; gap: 1px; }
+/* 40 statt der 32 einer normalen Menuezeile: der Breitenumschalter darin ist das 32px hohe
+   .up-seg aus core, und ein Bauteil wird nicht kleiner gerechnet, nur weil es in einem Menue
+   steht. 40 = 32 + 2x4 Luft. */
+.udd-lyrow { display: flex; flex-direction: row; align-items: center; gap: 8px;
+  height: 40px; padding: 0 4px 0 6px; border-radius: 8px; box-sizing: border-box; }
+.udd-lyrow:hover { background: var(--vc-heading-bg); }
+/* Der Griff sagt "diese Zeile laesst sich ziehen", bevor man es versucht. Gedaempft, weil er
+   Hinweis ist und nicht Knopf. */
+.udd-lygrip { flex: 0 0 14px; width: 14px; height: 14px; color: var(--vc-third);
+  display: inline-flex; align-items: center; justify-content: center; cursor: grab; }
+.udd-lygrip svg { width: 14px; height: 14px; display: block; }
+.udd-lyname { flex: 1 1 auto; min-width: 0; font-size: 13px; font-weight: 500; color: var(--vc-text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Ein ausgeblendeter Bereich liest sich auch in der Liste als ausgeblendet -- dasselbe Bild wie
+   bei den Gruppierungen (.up-cg-row mit is-off). */
+.udd-lyrow[data-aus="1"] .udd-lyname { opacity: .45; }
+/* Der Umschalter ist .up-seg aus core in voller Groesse; nur die Knoepfe sind schmaler, weil
+   "1/1" und "1/2" kuerzer sind als jedes Wort. */
+.udd-lyseg { flex: 0 0 auto; }
+.udd-lyseg .up-seg-btn { padding: 0 8px; font-size: 12px; }
+/* Das Auge ist .up-cg-eye aus core: 24x24, erscheint beim Hover der Zeile. Hier steht es
+   dauerhaft, weil in diesem Menue jede Zeile eine Aktionszeile ist und es nichts zu beruhigen
+   gibt -- die Liste besteht nur aus vier Zeilen. */
+.udd-lyeye { opacity: 1; }
+.udd-lyfoot { display: flex; justify-content: flex-end; padding: 4px 4px 2px; margin-top: 4px;
+  border-top: 1px solid var(--vc-border); }
+.udd-lyreset { border: 0; background: transparent; font: inherit; font-size: 12px;
+  color: var(--vc-muted); cursor: pointer; padding: 6px 6px; border-radius: 6px; }
+.udd-lyreset:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
