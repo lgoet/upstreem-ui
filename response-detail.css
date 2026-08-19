@@ -15,7 +15,7 @@
    der Kartenueberschrift (14px) und eine unter dem Seitentitel -- die Antwort ist ein Detail einer
    Seite, nicht die Seite. Der Klick geht nach Bubble, also traegt er auch den Zeiger. */
 .urd-head { display: flex; flex-direction: column; gap: 12px; }
-.urd-prompt { font-size: 22px; font-weight: 500; line-height: 1.4; letter-spacing: -0.015em;
+.urd-prompt { font-size: 23.5px; font-weight: 500; line-height: 1.4; letter-spacing: -0.015em;
   color: var(--vc-text); margin: 0; cursor: pointer; border-radius: 8px;
   transition: color 120ms ease; }
 .urd-prompt:hover { color: var(--vc-muted); }
@@ -218,7 +218,7 @@
    stehen, der auf einem breiten Bildschirm schmal ist. Genau das fehlte den alten
    Response-Elementen komplett -- sie hatten keine einzige Regel fuer schmale Breiten. */
 .urd-root.is-narrow { gap: 24px; }
-.urd-root.is-narrow .urd-prompt { font-size: 18px; }
+.urd-root.is-narrow .urd-prompt { font-size: 19px; }
 .urd-root.is-narrow .urd-card { padding: 14px; border-radius: 14px; }
 /* Der Umschalter rutscht unter die Ueberschrift, sobald beides nicht mehr nebeneinander passt. */
 .urd-root.is-narrow .urd-sec { flex-direction: column; align-items: stretch; gap: 12px; }
@@ -227,7 +227,7 @@
 /* Bei einer Spalte ist die Kachel nur noch ein breiter Streifen: die Beschreibung darf dann drei
    Zeilen nehmen, sonst steht darunter Luft. */
 .urd-root.is-narrow .urd-cc-desc { -webkit-line-clamp: 3; }
-.urd-root.is-vnarrow .urd-prompt { font-size: 17px; }
+.urd-root.is-vnarrow .urd-prompt { font-size: 17.5px; }
 .urd-root.is-vnarrow .urd-kpis { gap: 10px; }
 /* Ganz schmal darf der Chip die volle Breite der Karte nehmen, statt den Namen zu kappen. */
 .urd-root.is-vnarrow .urd-ment { max-width: 100%; }

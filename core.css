@@ -1697,16 +1697,25 @@
 .up-brandtoggle-lbl, .uut-brand-toggle-lbl { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
 .up-brandcheck, .uut-brand-check { width: 16px; height: 16px; border-radius: 5px;
   border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center;
-  justify-content: center; flex: 0 0 auto; color: #fff; }
+  justify-content: center; flex: 0 0 auto; }
 .up-brandcheck svg, .uut-brand-check svg { width: 11px; height: 11px; display: none; }
+/* Im Ruhezustand traegt das Kaestchen keine Fuellung, also darf die Zeichenfarbe nicht Weiss
+   bleiben: ein weisses Zeichen auf durchsichtigem Grund ist im Hellen unsichtbar. Sichtbar ist
+   ohnehin nur eines der beiden svg, und nur in is-yes/is-no -- dort ist der Grund --vc-text und
+   die Farbe wird unten gesetzt. */
+.up-brandcheck, .uut-brand-check { color: var(--up-surface, #fff); }
 .up-brandtoggle.is-yes .up-brandcheck, .up-brandtoggle.is-no .up-brandcheck,
 .uut-brand-toggle.is-yes .uut-brand-check, .uut-brand-toggle.is-no .uut-brand-check {
   background: var(--vc-text); border-color: var(--vc-text); }
-/* Im Dunkeln ist --vc-text hell, also braucht der Haken darauf die dunkle Farbe. */
+/* Im Dunkeln ist --vc-text hell, also braucht das Zeichen darauf die dunkle Farbe -- und die ist
+   genau --up-surface, die Flaechenfarbe des Themas. Vorher stand hier die Konstante #1f1f1b: die
+   traf zufaellig den hellen Grund, war aber im Dunkeln dieselbe Farbe wie die Karte, sodass ein
+   Zeichen auf dunklem Kaestchen unsichtbar wurde, sobald der Zustand nicht is-yes/is-no war. */
 .up-root[data-theme="dark"] .up-brandtoggle.is-yes .up-brandcheck,
 .up-root[data-theme="dark"] .up-brandtoggle.is-no .up-brandcheck,
 .up-root[data-theme="dark"] .uut-brand-toggle.is-yes .uut-brand-check,
-.up-root[data-theme="dark"] .uut-brand-toggle.is-no .uut-brand-check { color: #1f1f1b; }
+.up-root[data-theme="dark"] .uut-brand-toggle.is-no .uut-brand-check {
+  color: var(--up-surface, #1b1b1b); }
 .up-brandtoggle.is-yes .up-brandcheck .up-brandcheck-yes,
 .uut-brand-toggle.is-yes .uut-brand-check .uut-brand-check-yes { display: block; }
 .up-brandtoggle.is-no .up-brandcheck .up-brandcheck-no,

@@ -76,10 +76,17 @@
   statt stumm keine.
 
   ── Was die Seite ausserdem braucht ──────────────────────────────────────────
-  Der Modell-Chip holt Logo und Anzeigename aus dem seitenweiten Modell-Store. OHNE ihn steht
-  dort der rohe Schluessel ("google-aio") ohne Logo. Der Store wird wie ueberall gefuellt:
+  Der Modell-Chip holt Logo und Anzeigename aus dem seitenweiten Modell-Store -- er braucht keine
+  eigenen Daten. Laeuft setUpstreemModels irgendwo auf der Seite, ist nichts zu tun; der Block im
+  Run-JS-Schritt ist nur fuer Seiten, auf denen der Store sonst leer bleibt, und kann weg.
 
       setUpstreemModels(<json-liste>)     [{ key, display_name, short_name, logo_url }, ...]
+
+  Die REIHENFOLGE ist gleichgueltig: die Komponente haengt an UC.onModels und holt Logo und Namen
+  nach, sobald der Store gefuellt wird. Vorher blieb bei "erst Daten, dann Modelle" der rohe
+  Schluessel stehen -- gemessen: ohne Store "google-aio" ohne Logo, nach dem Store
+  "Google AI Overviews" mit Logo, ohne dass die Antwortdaten erneut geschickt wurden.
+  Der Schluessel wird nachsichtig verglichen (google-aio und google_aio sind dasselbe).
 
   Der Market-Chip holt die Flagge aus dem Markt-Store (setUpstreemAllMarkets); fehlt er, faellt
   er auf flagcdn.com anhand des Laendercodes zurueck -- die Flagge stimmt dann, nur nicht das

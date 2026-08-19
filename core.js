@@ -732,17 +732,26 @@
     cfg = cfg || {};
     var name = String(cfg.name || "").trim();
     var logo = String(cfg.logo || "").trim();
+    /* Aufbau wie im Vorbild (urls_table_bubble.html): Logo und Beschriftung links im -lbl, das
+       Kaestchen DANACH als Geschwister -- justify-content: space-between schiebt es nach rechts.
+       Vorher stand es als erstes Kind IM Label, also ganz links.
+       Und die Zustandsklassen sitzen AM SVG, nicht an einem Span darum: die Regel
+       ".up-brandcheck svg { display: none }" versteckt jedes svg im Kaestchen, ein display:block
+       am Wrapper kommt dagegen nicht an -- der Haken blieb unsichtbar. */
+    var svgJa = CHECK_SVG.replace("<svg ", '<svg class="up-brandcheck-yes" ');
+    /* Minus statt Kreuz fuer "nicht erwaehnt" -- dasselbe Zeichen wie im Vorbild. */
+    var svgNein = '<svg class="up-brandcheck-no" viewBox="0 0 24 24" fill="none" stroke="currentColor"' +
+                  ' stroke-width="3" stroke-linecap="round" stroke-linejoin="round">' +
+                  '<path d="M5 12h14" /></svg>';
     return '<button type="button" class="up-brandtoggle' + (cfg.cls ? " " + cfg.cls : "") + '"' +
              ' aria-label="' + esc(name ? name + " mentioned" : "Own brand mentioned") + '">' +
              '<span class="up-brandtoggle-lbl">' +
-               '<span class="up-brandcheck">' +
-                 '<span class="up-brandcheck-yes">' + CHECK_SVG + "</span>" +
-                 '<span class="up-brandcheck-no">' + icon("x", 3) + "</span>" +
-               "</span>" +
                (logo ? '<img class="up-brandlogo" src="' + esc(logo) + '" alt="" loading="lazy"' +
                        ' referrerpolicy="no-referrer" onerror="this.remove()"/>' : "") +
                '<span class="up-brandlabel">' + esc(name || "Own brand") + " mentioned?</span>" +
-             "</span></button>";
+             "</span>" +
+             '<span class="up-brandcheck">' + svgJa + svgNein + "</span>" +
+           "</button>";
   }
 
   function marketChip(code, cfg){

@@ -59,17 +59,18 @@
 
   function isArr(v) { return Object.prototype.toString.call(v) === "[object Array]"; }
 
-  /* Spaltenzahl der Kachelansicht. Wie in responses-table wird nur eine Zahl gewaehlt, die die
-     Kachelmenge glatt teilt -- sonst bleibt die letzte Reihe als Waise stehen (12 Quellen auf
-     einer Breite fuer 5 Spalten ergaeben 5+5+2). */
+  /* Spaltenzahl der Kachelansicht: nach dem PLATZ, gedeckelt auf die Zahl der Kacheln.
+     responses-table waehlt hier nur Zahlen, die die Kachelmenge glatt teilen, damit keine kurze
+     letzte Reihe stehen bleibt. Diese Regel ist hier falsch, und zwar messbar: bei 1180px Breite
+     ergaben 11 Kacheln 4 Spalten und 10 Kacheln 2 -- ein einziger weggefilterter Eintrag halbierte
+     die Spaltenzahl und verdoppelte die Kachelbreite. In responses-table steht die Kachelmenge
+     fest (die Seitengroesse), hier aendert sie der Marken-Filter bei jedem Klick.
+     Eine kurze letzte Reihe ist der guenstigere Preis: sie sieht ruhig aus, ein springendes Raster
+     nicht. */
   function spalten(breite, anzahl) {
     if (anzahl <= 1) return 1;
     var max = breite >= 1180 ? 4 : breite >= 880 ? 3 : breite >= 600 ? 2 : 1;
-    if (max <= 1) return 1;
-    for (var n = max; n >= 2; n--) if (anzahl % n === 0) return n;
-    /* Keine glatte Teilung (Primzahl): dann die volle Breite nutzen und die kurze Reihe hinnehmen,
-       aber nie mehr Spalten als Kacheln. */
-    return Math.min(max, anzahl);
+    return Math.max(1, Math.min(max, anzahl));
   }
 
   /* ============================================================================================
@@ -519,6 +520,18 @@
       }).length;
     }
 
+    /* Der Knopf wird EINMAL gebaut und danach nur noch umgeklassifiziert. Ihn bei jedem Klick per
+       innerHTML neu zu setzen kostete den Tastaturfokus: wer mit Enter schaltet, verliert das
+       Element unter dem Finger und muss sich neu hinnavigieren. Ausserdem laedt das Logo dabei
+       jedes Mal neu. */
+    var brandGebaut = "";
+    function syncBrandKlassen() {
+      var b = elBrandWrap ? elBrandWrap.querySelector(".urd-brandtoggle") : null;
+      if (!b) return;
+      b.classList.toggle("is-yes", state.brandFilter === "yes");
+      b.classList.toggle("is-no", state.brandFilter === "no");
+      b.setAttribute("aria-pressed", state.brandFilter ? "true" : "false");
+    }
     function renderBrandFilter() {
       if (!elBrandWrap) return;
       var d = state.data;
@@ -529,13 +542,19 @@
          Treffern oder wenn ALLE Quellen sie nennen, gibt es nichts zu filtern. */
       var zeigen = !!marke && !istLaden() && !state.error && treffer > 0 && treffer < gesamt;
       if (!zeigen) {
-        elBrandWrap.innerHTML = "";
-        if (state.brandFilter) { state.brandFilter = ""; }
+        if (brandGebaut) { elBrandWrap.innerHTML = ""; brandGebaut = ""; }
+        if (state.brandFilter) state.brandFilter = "";
         return;
       }
-      elBrandWrap.innerHTML = UC.brandToggleHtml({ name: marke.name, logo: marke.logo,
-        cls: "urd-brandtoggle is-visible" +
-             (state.brandFilter === "yes" ? " is-yes" : state.brandFilter === "no" ? " is-no" : "") });
+      /* Neu bauen nur, wenn sich die Marke selbst geaendert hat -- der Zustand kommt ueber die
+         Klassen. */
+      var kennung = marke.name + "|" + marke.logo;
+      if (brandGebaut !== kennung) {
+        elBrandWrap.innerHTML = UC.brandToggleHtml({ name: marke.name, logo: marke.logo,
+          cls: "urd-brandtoggle is-visible" });
+        brandGebaut = kennung;
+      }
+      syncBrandKlassen();
     }
 
     /* Absender der Nachricht: Logo und Name des Modells, beides aus dem Modell-Store (UC.modelChip
@@ -781,7 +800,7 @@
       var bt = e.target.closest(".urd-brandtoggle");
       if (bt) {
         state.brandFilter = state.brandFilter === "" ? "yes" : (state.brandFilter === "yes" ? "no" : "");
-        renderBrandFilter();
+        syncBrandKlassen();
         renderCites();
         return;
       }
@@ -835,6 +854,9 @@
     /* Tastatur: was mit der Maus geht, muss auch mit Enter und Leertaste gehen -- role=button
        allein macht ein span noch nicht bedienbar. */
     root.addEventListener("keydown", function (e) {
+      /* .urd-brandtoggle steht absichtlich NICHT in der Liste: es ist ein echtes <button>, dort
+         loest der Browser den Klick selbst aus -- ein zweiter von hier wuerde den Filter um zwei
+         Stufen weiterdrehen. */
       if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
       var z = e.target.closest ? e.target.closest(
         ".urd-prompt, .urd-ment, .urd-cite-card, .urd-cite-row, .up-rb-cite, .up-rb-brand, " +
@@ -864,6 +886,17 @@
          die Kaskade nicht umschalten, also muss die Zeile neu gebaut werden. */
       if (state.data) renderHead();
     });
+
+    /* Der Modell-Store kann NACH den Antwortdaten gefuellt werden -- die Reihenfolge zweier
+       Workflow-Schritte ist nicht garantiert. Ohne dieses Abonnement blieb im Chip dann der rohe
+       Schluessel ("google-aio") ohne Logo stehen, obwohl der Store eine Sekunde spaeter alles
+       hatte. Jetzt kommt Logo und Anzeigename nach, sobald sie da sind, und die Reihenfolge ist
+       gleichgueltig. owner=root, damit das Abonnement mit dem Element verschwindet. */
+    if (UC.onModels) UC.onModels(function () {
+      if (!state.data) return;
+      renderHead();
+      renderAbsender();
+    }, root);
 
     /* Die Spaltenzahl haengt an der Breite der eigenen Box. */
     if (UC.onResize) UC.onResize(root, function () {
