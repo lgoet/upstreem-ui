@@ -109,29 +109,22 @@
       .replace(/:\s*([,}\]])/g, ": null$1")
       .replace(/:\s*(yes|no)\s*([,}\]])/g, function(_, v, t){ return ": " + (v === "yes") + t; })
 
-  UND: JEDER dynamische Wert braucht :formatted as JSON-safe. Nicht nur der Antworttext --
-  auch prompt_text, title und description. Genau daran ist es dreimal gebrochen: erst am
-  Zeilenumbruch, dann am Backtick, dann am Anfuehrungszeichen in einer description
-  ("... — title: \"Radware Captcha Page\" ..." -> Unexpected identifier 'Radware').
-  Das ist der Sanitizer, und er muss BEIM EINSETZEN greifen.
+  Beides muss NICHT von Hand geschrieben werden: core.parseLoose macht es selbst, und es macht
+  mehr als das. Es reparariert auch, was ein Template-Literal am Payload beschaedigt: verlorene
+  \n als echte Zeilenumbrueche, verlorene \" als nackte Anfuehrungszeichen, verlorene Backslashes.
+  Der Payload gehoert also in BACKTICKS, wie in jeder anderen Komponente:
 
-      var ROH = "<Ausdruck:formatted as JSON-safe>"
+      window.setResponseDetail(INSTANCE_ID, `<Bubble-Ausdruck: die GANZE RPC-Antwort>`);
 
-  Das ist keine Feinheit, sondern die Bedingung, unter der ein Antworttext ueberhaupt in einen
-  Run-JS-Schritt passt. Gemessen, drei Wege, mit einem Text aus Umbruechen, Anfuehrungszeichen,
-  einem Code-Block und einem Backslash:
+  Kein :formatted as JSON-safe, kein String.raw. Gemessen mit einem absichtlich beschaedigten
+  Payload (34 echte Zeilenumbrueche, nackte Anfuehrungszeichen in zwei Beschreibungen, strikt NICHT
+  parsebar): 0 Fehler, 0 Warnungen, Prompt da, 10 Absaetze, 4 Zitat-Gruppen, 12 Kacheln,
+  2 Mentions, Antworttext vollstaendig bei 3789 Zeichen.
 
-    "<Ausdruck>" ohne JSON-safe          SyntaxError: Invalid or unexpected token
-                                         (ein "..."-String vertraegt keinen echten Umbruch)
-    String.raw`<Ausdruck>`               laeuft -- aber NUR ohne Backticks im Text. Eine
-                                         ChatGPT-Antwort mit ```python bricht mit
-                                         "Unexpected identifier 'python'".
-    "<Ausdruck:formatted as JSON-safe>"  laeuft, und der Text kommt unveraendert an.
-
-  Gemessen mit dem echten Payload samt Code-Block im Text: 0 Fehler, 11 Absaetze, 11 Kacheln,
-  2 Mentions, 3 Themen, und die Backticks stehen im Text.
-  JSON-safe escaped Umbrueche, Anfuehrungszeichen und Backslashes so, dass ein gueltiges
-  JS-String-Literal entsteht -- Backticks sind darin einfach Zeichen.
+  Eine Stelle im Sanitizer war dafuer zu erweitern: er hielt ein : nach einem Anfuehrungszeichen
+  auch im WERT-Kontext fuer ein String-Ende. An dieser echten Beschreibung brach er deshalb:
+      "... — title: \"LeeUP Media ...\" meta: \"og:title\": \"LeeUP Media ...\""
+  Ein JSON-WERT wird nie von : gefolgt, ein Schluessel immer -- diese Unterscheidung fehlte.
 
   ── Statischer Start zum Ausprobieren ────────────────────────────────────────
   Die Beispieldaten liegen NICHT in diesem Element, sondern als Run-JS-Schritt im

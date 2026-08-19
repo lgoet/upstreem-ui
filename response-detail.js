@@ -242,62 +242,6 @@
     function warteBeenden() { if (warteUhr) { clearTimeout(warteUhr); warteUhr = null; } }
     warteStarten();
 
-    /* ---- Das Menue eines Zitat-Chips ------------------------------------------------------
-       Aus ask-mira uebernommen: "Open detail page" zuerst und fett, darunter die URL selbst.
-       Es haengt an der Wurzel und nicht am Chip -- ein Chip steht auch in einer Tabellenzelle,
-       die waagerecht scrollt, und ein Menue darin wuerde mitscrollen und abgeschnitten werden. */
-    var pop = document.createElement("div");
-    pop.className = "up-rb-pop";
-    root.appendChild(pop);
-    var popChip = null;
-
-    function popZu() { if (popChip) { pop.classList.remove("is-open"); popChip = null; } }
-    function popAuf(chip) {
-      var url = chip.getAttribute("data-rb-cite") || "";
-      var kurz = UC.rbShowUrl(url);
-      if (kurz.length > 34) kurz = kurz.slice(0, 34) + "...";
-      pop.innerHTML =
-        '<button type="button" data-pop="detail" class="is-primary">' + UC.icon("fileText", 2) +
-          "<span>Open detail page</span></button>" +
-        '<button type="button" data-pop="visit">' + UC.icon("externalLink", 2) +
-          "<span>" + esc(kurz) + "</span></button>";
-      popChip = chip;
-      pop.classList.add("is-open");
-      var r = chip.getBoundingClientRect(), rr = root.getBoundingClientRect();
-      pop.style.top = (r.bottom - rr.top + 6) + "px";
-      pop.style.left = (r.left - rr.left) + "px";
-      /* Erst messen, wenn das Menue steht: seine Breite haengt am Text der URL. */
-      requestAnimationFrame(function () {
-        var maxLeft = root.clientWidth - pop.offsetWidth - 8;
-        var left = r.left - rr.left;
-        if (left > maxLeft) pop.style.left = Math.max(8, maxLeft) + "px";
-      });
-    }
-    pop.addEventListener("click", function (e) {
-      var btn = e.target.closest ? e.target.closest("button[data-pop]") : null;
-      if (!btn || !popChip) return;
-      var chip = popChip, art = btn.getAttribute("data-pop");
-      popZu();
-      if (art === "visit") {
-        var u = chip.getAttribute("data-rb-cite");
-        if (u) window.open(u, "_blank", "noopener");
-        return;
-      }
-      /* Detailseite: die id der Quelle, blank wenn die Zitationsliste diese URL nicht kennt --
-         dann kann Bubble nichts oeffnen, und das Ereignis bleibt aus statt leer zu feuern. */
-      /* Dieselbe Regel wie bei den Quellenkarten: id wenn da, sonst die URL. */
-      var wert = (chip.getAttribute("data-rb-id") || "").trim() ||
-                 (chip.getAttribute("data-rb-cite") || "");
-      if (wert) fire("data-url-fn", "urdUrl", wert);
-    });
-    document.addEventListener("click", function (e) {
-      if (!popChip) return;
-      if (e.target.closest && (e.target.closest(".up-rb-pop") || e.target.closest(".up-rb-cite"))) return;
-      popZu();
-    }, true);
-    document.addEventListener("keydown", function (e) { if (e.key === "Escape") popZu(); });
-    window.addEventListener("scroll", popZu, true);
-
     /* ---- Der Kasten, der die Quellen einer Gruppe auflistet ---------------------------------
        Auf Hover, nicht auf Klick: die Gruppe ist eine Zusammenfassung, und wer sie ueberfliegt,
        will wissen was drin ist, ohne etwas zu oeffnen. Ein Klick auf eine Zeile darin verhaelt sich
@@ -435,7 +379,10 @@
       }
       var liste = isArr(state.data.companies) ? state.data.companies : [];
       if (!liste.length) {
-        elMents.innerHTML = '<span class="urd-empty">No tracked brands mentioned in this response.</span>';
+        /* Ein Minus statt eines Satzes: derselbe leere Zustand wie in den Tabellenzellen, und
+           dasselbe Zeichen. Ein ganzer Satz an dieser Stelle liest sich wie eine Meldung, obwohl
+           es nur "nichts" heisst. */
+        elMents.innerHTML = '<span class="up-stack-empty urd-mentempty">' + UC.icon("minus", 2.5) + "</span>";
         return;
       }
       elMents.innerHTML = liste.map(function (c) {
@@ -828,10 +775,14 @@
         return;
       }
 
-      /* Ein Zitat-Chip im Antworttext: Menue auf, oder zu, wenn es schon zu diesem Chip offen war. */
+      /* Ein Zitat-Chip im Antworttext feuert direkt -- wie eine Quellenkachel unten. Vorher stand
+         hier ein Menue mit "Open detail page" und der URL; zwei Klicks fuer eine Sache, und die
+         Wahl war keine: die Detailseite kann alles, was das externe Fenster kann. */
       var chip = e.target.closest(".up-rb-cite");
       if (chip && elBody.contains(chip)) {
-        if (popChip === chip) popZu(); else popAuf(chip);
+        var wert = (chip.getAttribute("data-rb-id") || "").trim() ||
+                   (chip.getAttribute("data-rb-cite") || "");
+        if (wert) fire("data-url-fn", "urdUrl", wert);
         return;
       }
       /* Eine Gruppe mehrerer Quellen: Klick oeffnet ihre Liste (auf dem Telefon gibt es kein
@@ -911,7 +862,7 @@
     /* Die Spaltenzahl haengt an der Breite der eigenen Box. */
     if (UC.onResize) UC.onResize(root, function () {
       if (state.data && state.view === "grid") { spaltenSetzen((state.data.citations || []).length); markenPassen(); }
-      popZu();
+      glistSchliessen();
     });
 
     render();
@@ -950,7 +901,7 @@
         state.view = "grid"; VIEW_STORE[instanceId] = "grid";
         state.brandFilter = "";
         warteBeenden();
-        popZu();
+        glistSchliessen();
         render();
         return true;
       }

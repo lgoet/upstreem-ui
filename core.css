@@ -1644,6 +1644,13 @@
    .up-num/.up-sent-val with no color override so it rendered in full text-strength color, and
    responses-table's own SVG minus icon) — one per component, none of them muted. This is the
    single source every one of them now points at. */
+/* Der leere Stapel traegt jetzt ein Minus-Icon statt eines Schriftzeichens: feste Groesse, und
+   die Drittfarbe nimmt es aus dem Lesefluss -- es sagt "hier ist nichts", und das soll nicht so
+   laut sein wie ein Wert. */
+.up-stack-empty { display: inline-flex; align-items: center; justify-content: center;
+  color: var(--vc-third); }
+.up-stack-empty svg { width: 14px; height: 14px; display: block; }
+
 .up-num.is-empty, .up-sent-val.is-empty, .up-stack-empty,
 .tct-num.is-empty, .udt-sub-share.is-empty { color: var(--vc-third); font-weight: 500; }
 
@@ -2505,24 +2512,6 @@
 .up-rb-brand-ic { width: 14px; height: 14px; border-radius: 4px; flex: 0 0 auto; object-fit: cover;
   display: block; }
 .up-rb-brand-txt { font-size: 13.5px; font-weight: 600; color: var(--vc-text); line-height: 1; }
-
-/* ---- Die Wahl beim Klick auf ein Zitat ----
-   Aus ask-mira uebernommen (.am-url-pop): dieselbe Reihenfolge, dieselben zwei Eintraege, derselbe
-   Aufbau. Die Werte kommen hier aus den Tokens statt aus den --am-*-Variablen. */
-.up-rb-pop { position: absolute; z-index: 40; min-width: 176px; max-width: 300px;
-  background: var(--up-surface, var(--vc-bg)); border: 1px solid var(--vc-hover-border);
-  border-radius: 11px; box-shadow: 0 12px 32px rgba(0,0,0,0.14); padding: 5px;
-  display: none; flex-direction: column; gap: 2px;
-  opacity: 0; transform: translateY(-2px); transition: opacity .12s ease, transform .12s ease; }
-.up-rb-pop.is-open { display: flex; opacity: 1; transform: translateY(0); }
-.up-rb-pop button { display: flex; align-items: center; gap: 9px; width: 100%; border: 0;
-  background: transparent; color: var(--vc-text); font: inherit; font-size: 13.5px;
-  text-align: left; padding: 8px 10px; border-radius: 8px; cursor: pointer;
-  white-space: nowrap; line-height: 1.2; overflow: hidden; }
-.up-rb-pop button:hover { background: var(--vc-heading-bg); }
-.up-rb-pop button.is-primary { font-weight: 600; }
-.up-rb-pop button svg { width: 15px; height: 15px; flex: 0 0 auto; color: var(--vc-muted); }
-.up-rb-pop button span { overflow: hidden; text-overflow: ellipsis; }
 
 /* ---- Schmal ----
    Gemessen an der eigenen Box. Die alten Elemente hatten min-width: 680px an der Tabelle: auf dem

@@ -69,6 +69,10 @@
 .urd-ment .up-ment-logo img { width: 18px; height: 18px; border-radius: 4.5px; }
 .urd-ment .up-model-ltr { font-size: 11px; }
 .urd-ment .up-ment-name { font-size: 14.5px; }
+/* Der leere Zustand der Mentions: das Minus steht fuer sich, ohne Karte und ohne Satz. Etwas
+   Hoehe, damit der Abschnitt nicht auf eine Zeile zusammenfaellt. */
+.urd-mentempty { min-height: 24px; }
+
 /* Kein Treffer: derselbe Ton wie jeder leere Zustand der App, nur ohne Bild -- der Abschnitt ist
    eine Zeile hoch und braucht keine halbe Karte Luft. */
 .urd-empty { font-size: 13px; font-weight: 400; color: var(--vc-muted); padding: 2px 0; }

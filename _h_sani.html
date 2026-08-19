@@ -1,0 +1,26 @@
+<meta charset="utf-8"><title>greift parseLoose?</title>
+<body><pre id="out">laeuft</pre>
+<script>
+Promise.all(["core.js","_h_urd_beschaedigt.txt"].map(function(f){
+  return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){return r.text();});
+})).then(function(t){
+  var e=document.createElement("script"); e.textContent=t[0]; document.head.appendChild(e);
+  var beschaedigt = t[1];
+  var UC = window.UpstreemCore;
+  var res = { laenge: beschaedigt.length, echte_umbrueche: (beschaedigt.match(/\n/g)||[]).length };
+  try { JSON.parse(beschaedigt); res.strict_json = "OK"; }
+  catch(err){ res.strict_json = "FEHLER: " + err.message.slice(0,60); }
+  var p = UC.parseLoose(beschaedigt, "sanitizer-test");
+  res.parseLoose = p ? "REPARIERT" : "null";
+  if (p && p[0]) {
+    res.prompt = String(p[0].prompt_text||"").slice(0,40);
+    res.textlaenge = String((p[0].response_json||{}).text||"").length;
+    res.citations = (p[0].citations||[]).length;
+    var wild = (p[0].citations||[]).filter(function(c){ return String(c.url||"").indexOf("mittelstand")>=0; })[0];
+    res.wilde_beschreibung = wild ? wild.description : null;
+    res.absaetze_im_text = String((p[0].response_json||{}).text||"").split("\n\n").length;
+  }
+  window.__erg = res;
+  document.getElementById("out").textContent = JSON.stringify(res,null,1);
+});
+</script>

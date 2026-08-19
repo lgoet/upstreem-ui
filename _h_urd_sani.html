@@ -1,0 +1,34 @@
+<meta charset="utf-8"><title>beschaedigter Payload durch die Komponente</title>
+<style>html,body{margin:0;height:100%;font-family:Geist,system-ui,sans-serif}
+body{overflow:hidden;background:#fff}#main{height:100vh;overflow-y:auto;padding:24px;box-sizing:border-box}</style>
+<body>
+<div id="main">
+  <div class="up-root urd-root" data-instance="response_detail_page" data-isdark="no"
+       data-prompt-fn="bubble_fn_urdPrompt" data-brand-fn="bubble_fn_urdBrand"
+       data-url-fn="bubble_fn_urdUrl" data-view-fn="bubble_fn_urdView"></div>
+</div>
+<script>
+window.__ev=[]; window.__fehler=[]; window.__warn=[];
+window.addEventListener("error", function(e){ window.__fehler.push(String(e.message)); });
+(function(){ var w=console.warn; console.warn=function(){ window.__warn.push([].join.call(arguments," ")); w.apply(console,arguments); }; })();
+["urdPrompt","urdBrand","urdUrl","urdView"].forEach(function(n){ window["bubble_fn_"+n]=function(p){ window.__ev.push([n,p]); }; });
+try { localStorage.removeItem("urdHighlights"); } catch(e){}
+</script>
+<script>
+/* Der Payload ist ABSICHTLICH beschaedigt: so sieht er aus, nachdem ein Template-Literal in einem
+   Run-JS-Schritt die Escapes verarbeitet hat. Kein JSON-safe, kein String.raw -- nur der Sanitizer
+   in core soll ihn retten. */
+Promise.all(["core.css","response-detail.css","core.js","response-detail.js"].map(function(f){
+  return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){return r.text();}).then(function(t){return [f,t];});
+})).then(function(paare){
+  paare.forEach(function(p){ var e=document.createElement(/\.css$/.test(p[0])?"style":"script");
+    e.textContent=p[1]; document.head.appendChild(e); });
+  return fetch("_h_urd_beschaedigt.txt?n="+Math.random(),{cache:"no-store"}).then(function(r){return r.text();});
+}).then(function(beschaedigt){
+  window.__roh = beschaedigt;
+  setTimeout(function(){
+    window.setResponseDetail("response_detail_page", beschaedigt);
+    setTimeout(function(){ window.__bereit = true; }, 900);
+  }, 400);
+});
+</script>

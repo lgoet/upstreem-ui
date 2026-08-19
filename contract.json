@@ -505,7 +505,6 @@
   "data-pick",
   "data-pin",
   "data-pinid",
-  "data-pop",
   "data-preset",
   "data-processing",
   "data-processing2",
@@ -1727,7 +1726,6 @@
   "up-rb-hr",
   "up-rb-list",
   "up-rb-p",
-  "up-rb-pop",
   "up-rb-table",
   "up-rb-tablewrap",
   "up-reddit-sep",
@@ -2457,8 +2455,8 @@
   "fnattrs": 74,
   "globals": 137,
   "payloadkeys": 66,
-  "dataattrs": 179,
-  "klassen": 1814,
+  "dataattrs": 178,
+  "klassen": 1813,
   "keyframes": 56
  }
 }

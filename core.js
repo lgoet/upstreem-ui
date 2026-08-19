@@ -186,7 +186,15 @@
     /* curly tells scanString the literal was OPENED by a typographic quote, which is the only case
        where a typographic quote may also CLOSE it. Opened by a plain ", every „ and " inside is
        ordinary text and gets copied through untouched. */
-    function scanString(t, i, curly){
+    /* istWert sagt, ob der Literal an einer WERT-Stelle steht (also direkt hinter einem : ) oder an
+       einer Schluessel-Stelle. Der Unterschied entscheidet, ob ein : nach dem Anfuehrungszeichen
+       ein String-Ende sein darf: ein SCHLUESSEL wird von : gefolgt, ein WERT niemals.
+       Ohne diese Unterscheidung brach genau diese echte Beschreibung:
+         "description": "... — title: "LeeUP Media ..." meta: "og:title": "LeeUP Media ..."
+       Beim inneren "og:title" folgte ein : , das galt als Ende, und ab da war die Struktur hin.
+       Der Fehler in der Konsole zeigte auf Position 9557 -- vierhundert Zeichen hinter der
+       eigentlichen Stelle, weil der Parser bis dahin munter weiterlief. */
+    function scanString(t, i, curly, istWert){
       var n = t.length, j = i + 1, body = "";
       while (j < n){
         var c = t.charAt(j);
@@ -205,7 +213,9 @@
           var k = j + 1;
           while (k < n && /\s/.test(t.charAt(k))) k++;
           var nxt = t.charAt(k);
-          if (k >= n || nxt === "," || nxt === ":" || nxt === "}" || nxt === "]"){
+          var strukturell = k >= n || nxt === "," || nxt === "}" || nxt === "]" ||
+                            (nxt === ":" && !istWert);
+          if (strukturell){
             return { end: j + 1, text: '"' + body + '"' };
           }
           if (c === '"'){ body += '\\"'; }          // literal quote inside the value
@@ -223,7 +233,12 @@
         /* A typographic quote out here, in CODE position, cannot be prose -- it is standing in for
            a structural quote, so open a literal on it. Inside a literal it is just a character. */
         if (DQUOTE.indexOf(ch) >= 0){
-          var lit = scanString(t, i, ch !== '"');
+          /* Wert oder Schluessel? Was vor dem Literal steht, sagt es: ein : (nach Leerraum)
+             heisst Wert, ein { oder , heisst Schluessel. */
+          var v = buf.length - 1;
+          while (v >= 0 && /\s/.test(buf.charAt(v))) v--;
+          var davor = v >= 0 ? buf.charAt(v) : "";
+          var lit = scanString(t, i, ch !== '"', davor === ":");
           out += fixCode(buf); buf = "";
           out += lit.text;
           i = lit.end;
@@ -1339,7 +1354,18 @@
        normalized) display name. Defaults to "name" so every other consumer is unaffected. */
     var tipKey = opts.tipKey || "name";
     var list = Array.isArray(mentions) ? mentions : [];
-    if (!list.length) return '<span class="up-stack-empty">-</span>';
+    /* Ein Minus-Icon statt eines Bindestrichs: derselbe Strich, aber als Zeichen und nicht als
+       Schriftzeichen, das je nach Schriftart anders lang ist. Lucide minus, wie ueberall. */
+    if (!list.length) return '<span class="up-stack-empty">' + icon("minus", 2.5) + "</span>";
+    /* Eine Erwaehnung ohne Namen und ohne Logo ist ein leerer Chip -- der sah mit dem alten
+       "?"-Rueckfall aus wie eine unbekannte Marke. Sie wird nicht gezeigt, zaehlt aber weiter zur
+       Gesamtzahl, damit "+N" die Wahrheit sagt. */
+    list = list.filter(function(m){
+      var nm = m && m.name != null ? String(m.name).trim() : "";
+      var lg = m && (m.favicon_url || m.favicon) ? String(m.favicon_url || m.favicon).trim() : "";
+      return !!(nm || lg);
+    });
+    if (!list.length) return '<span class="up-stack-empty">' + icon("minus", 2.5) + "</span>";
     var shown = list.slice(0, MAX);
     var total = toNum(totalCount);
     if (total == null || total < list.length) total = list.length;
@@ -1351,7 +1377,11 @@
       var logo = String(m && (m.favicon_url != null ? m.favicon_url : (m.favicon != null ? m.favicon : "")) || "");
       // protocol-relative urls ("//cdn...") break inside some Bubble contexts
       if (logo.indexOf("//") === 0) logo = "https:" + logo;
-      var initial = nm.charAt(0) || "?";
+      /* Kein "?" mehr als Rueckfall. Ein Fragezeichen behauptet "hier ist etwas, das ich nicht
+         kenne" -- richtig ist: hier ist nichts. Traegt eine Erwaehnung weder Namen noch Logo, hat
+         sie im Stapel nichts zu suchen (siehe Filter oben). Bleibt sie ohne Namen, aber MIT Logo,
+         steht das Logo fuer sich. */
+      var initial = nm.charAt(0) || "";
       /* is-last marks the final CHIP (a "+N" badge may follow it, so :last-child will not do).
          The left-spread hover rules need to target it, and CSS forbids :has() inside :has() —
          which is what an inline "item not followed by another item" selector would require. */
