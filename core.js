@@ -955,20 +955,42 @@
     var items = [].slice.call(stack.querySelectorAll(".up-stack-item"));
     var more = stack.querySelector(".up-stack-more");
     if (!items.length) return 0;
-    var platz = (stack.parentNode ? stack.parentNode.clientWidth : 0) - (cfg.reserve || 0);
+    /* Das "+N" anlegen, wenn es keines gibt. brandStack schreibt es nur, wenn schon beim Rendern
+       etwas uebrig war (rest > 0) -- passen alle Chips in den Vorrat und kuerzt erst stackFit am
+       Platz, gab es kein Element, in das die Zahl haette gehen koennen: gemessen 10 Chips, 6
+       sichtbar, kein "+4". Vier verschwundene Marken ohne einen Hinweis darauf. */
+    if (!more){
+      more = document.createElement("span");
+      more.className = "up-stack-more";
+      more.style.display = "none";
+      stack.appendChild(more);
+    }
+    /* cfg.space: der Platz in Pixeln, ausdruecklich vorgegeben. Gebraucht, wenn der Behaelter
+       seine Breite vom INHALT nimmt (flex: 0 0 auto). Dann ist clientWidth die Breite des schon
+       gekuerzten Stapels, und was einmal weg ist, kommt nie zurueck -- gemessen blieb der Stapel
+       bei 3 Chips, auch als die Zeile wieder 1184px breit war. */
+    var platz = (cfg.space != null ? cfg.space : (stack.parentNode ? stack.parentNode.clientWidth : 0)) -
+                (cfg.reserve || 0);
     if (platz <= 0) return items.length;
     /* Alle erst zeigen, sonst messe ich die Breite eines schon gekuerzten Stapels. */
     items.forEach(function (it) { it.style.display = ""; });
     /* Die Gesamtzahl steht NICHT an den Chips: brandStack rendert hoechstens seine max und schreibt
        den Rest schon als "+N". Ohne diese Zahl haette stackFit ein vorhandenes "+4" fuer ueberzaehlig
        gehalten und ausgeblendet -- gemessen: 8 Erwaehnungen, 4 Chips, "+4" verschwand. */
-    var restVorher = 0;
-    if (more){
-      var mm = /(\d+)/.exec(more.textContent || "");
-      restVorher = mm ? parseInt(mm[1], 10) : 0;
-      more.style.display = "none";
+    if (more) more.style.display = "none";
+    /* Die Gesamtzahl EINMAL merken. Sie steht beim ersten Lauf im "+N", das brandStack geschrieben
+       hat -- danach steht darin, was stackFit selbst zuletzt geschrieben hat, und wer sie dann
+       erneut daraus liest, addiert seine eigene Ausgabe dazu. Gemessen: 10 Marken wurden ueber
+       drei Laeufe (jede Breitenaenderung ist einer) zu "+15" bei 3 Chips, also 18.
+       Der Stapel wird bei neuen Daten neu gebaut, also faellt der Merker von selbst weg. */
+    var gesamt = cfg.total ? Math.max(cfg.total, items.length) : 0;
+    if (!gesamt){
+      if (stack.__upStackTotal == null){
+        var mm = more ? /(\d+)/.exec(more.textContent || "") : null;
+        stack.__upStackTotal = items.length + (mm ? parseInt(mm[1], 10) : 0);
+      }
+      gesamt = stack.__upStackTotal;
     }
-    var gesamt = cfg.total ? Math.max(cfg.total, items.length) : items.length + restVorher;
     var sichtbar = items.length;
     /* Von hinten wegnehmen, bis es passt. Ein Chip ueberlappt den vorigen um 4px (up-stack-item
        + up-stack-item hat margin-left -4), deshalb wird gemessen und nicht gerechnet. */
@@ -4285,6 +4307,107 @@
     var name = citeName(raw);
     return isDark ? (CITE_COLOR_DARK[name] || CHART_OTHER_DARK) : (CITE_COLOR[name] || CHART_OTHER_LIGHT);
   }
+  /* ---- Markenfarbe einer Domain ----------------------------------------------------------------
+     Die dominierende Farbe des Favicons LAESST SICH IM BROWSER NICHT LESEN. Gemessen, nicht
+     vermutet: eine Leinwand, auf die ein fremdes Bild gezeichnet wurde, ist "getaint", und
+     getImageData wirft SecurityError, solange der Host kein Access-Control-Allow-Origin sendet.
+     Mit crossOrigin="anonymous" laedt das Bild dann gar nicht erst.
+       google.com/s2/favicons  (die Quelle dieser App)   -> verweigert
+       youtube.com, adac.de, reddit.com, jsdelivr        -> verweigert
+       wikipedia.org, github.githubassets.com           -> lesbar
+     Zwei von sieben. Ein Farbschema, das bei fuenf von sieben Domains auf einen Ersatz zurueckfaellt,
+     ist keine Farbwahl, sondern ein Losverfahren.
+
+     Deshalb drei Quellen, in dieser Reihenfolge:
+       1. eine Farbe AUS DEM PAYLOAD (brand_hex / favicon_hex am Eintrag) -- exakt, sobald die RPC
+          sie mitschickt, und fuer jede Domain
+       2. diese Tabelle -- die Hausfarben der Domains, die in dieser App wirklich auftauchen
+       3. null, und der Aufrufer bleibt bei seiner bisherigen Farbe
+     Die Tabelle traegt die dominierende Farbe der MARKE, nicht den Mittelwert des Bildes: ADAC ist
+     das Gelb und nicht das Grau dazwischen, genau darum ging es. */
+  var BRAND_HEX = {
+    "youtube.com":"#ff0000", "youtu.be":"#ff0000",
+    "adac.de":"#ffcc00", "google.com":"#4285f4", "google.de":"#4285f4",
+    "facebook.com":"#1877f2", "instagram.com":"#e1306c", "linkedin.com":"#0a66c2",
+    "x.com":"#000000", "twitter.com":"#1da1f2", "tiktok.com":"#ff0050",
+    "pinterest.com":"#e60023", "reddit.com":"#ff4500", "amazon.de":"#ff9900",
+    "amazon.com":"#ff9900", "ebay.de":"#e53238", "spotify.com":"#1db954",
+    "wikipedia.org":"#3366cc", "de.wikipedia.org":"#3366cc",
+    "github.com":"#24292f", "stackoverflow.com":"#f48024", "medium.com":"#000000",
+    "quora.com":"#b92b27", "trustpilot.com":"#00b67a", "yelp.com":"#d32323",
+    "chip.de":"#e2001a", "heise.de":"#cc0000", "spiegel.de":"#e64415",
+    "welt.de":"#0a2f5a", "faz.net":"#00519e", "sueddeutsche.de":"#005b99",
+    "zeit.de":"#00a3e0", "handelsblatt.com":"#f28d00", "focus.de":"#c8102e",
+    "n-tv.de":"#e2001a", "t-online.de":"#e20074", "web.de":"#ffcc00",
+    "gmx.net":"#1b6ec2", "idealo.de":"#0a5dc2", "check24.de":"#005ea8",
+    "verivox.de":"#e2001a", "otto.de":"#e2001a", "mediamarkt.de":"#df0000",
+    "saturn.de":"#eb690b", "ikea.com":"#0058a3", "obi.de":"#ff7f32",
+    "hornbach.de":"#ff7300", "bauhaus.info":"#e2001a",
+    "solaranlagen-portal.com":"#f59e0b", "photovoltaik.org":"#f59e0b",
+    "energie-experten.org":"#00a651", "enbw.com":"#00a0dc", "eon.de":"#e2001a",
+    "vattenfall.de":"#ffda00", "lichtblick.de":"#ffcc00"
+  };
+  /* Die Registrierungsebene: "www.shop.example.co.uk" -> "example.co.uk". Zwei Ebenen reichen
+     nicht (co.uk waere der Treffer), deshalb die kurze Liste der zusammengesetzten Endungen, die
+     in den Daten dieser App vorkommen. */
+  var MEHRTEILIGE_TLD = { "co.uk":1, "com.au":1, "co.jp":1, "com.br":1, "co.nz":1, "com.tr":1 };
+  function hostVon(s){
+    var t = String(s == null ? "" : s).trim();
+    if (!t) return "";
+    if (t.indexOf("//") >= 0) { try { t = new URL(t).hostname; } catch (e) { t = t.split("/")[0]; } }
+    else t = t.split("/")[0];
+    return t.replace(/^www\./i, "").toLowerCase();
+  }
+  function registrierbar(host){
+    var p = String(host || "").split(".");
+    if (p.length <= 2) return host;
+    var zwei = p.slice(-2).join(".");
+    return MEHRTEILIGE_TLD[zwei] ? p.slice(-3).join(".") : zwei;
+  }
+  /* Eine Hausfarbe, die im jeweiligen Thema unsichtbar waere, wird angehoben oder abgesenkt --
+     nicht ersetzt. Schwarz (x.com, medium.com) und Fastschwarz (github #24292f) sind auf #1b1b1b
+     nicht zu sehen, und im Hellen gilt dasselbe fuer sehr helle Marken. Gemischt wird gegen Weiss
+     bzw. Schwarz, bis die relative Helligkeit im lesbaren Bereich liegt: die Farbe bleibt als
+     Farbe erkennbar (Schwarz hat keine, wird also Grau -- das ist die ehrliche Antwort). */
+  function relLum(rgb){
+    function lin(v){ v /= 255; return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4); }
+    return 0.2126*lin(rgb[0]) + 0.7152*lin(rgb[1]) + 0.0722*lin(rgb[2]);
+  }
+  function hex2(n){ n = Math.max(0, Math.min(255, Math.round(n))); var s = n.toString(16); return s.length < 2 ? "0" + s : s; }
+  function mischen(rgb, ziel, anteil){
+    return "#" + hex2(rgb[0] + (ziel - rgb[0]) * anteil) +
+                 hex2(rgb[1] + (ziel - rgb[1]) * anteil) +
+                 hex2(rgb[2] + (ziel - rgb[2]) * anteil);
+  }
+  function lesbarMachen(hex, isDark){
+    var rgb = hexToRgb(hex);
+    if (!rgb) return hex;
+    var L = relLum(rgb);
+    /* 0.06 und 0.62: die Grenzen, ab denen eine Linie gegen #1b1b1b bzw. #ffffff verschwindet.
+       In Schritten von 12% mischen, hoechstens fuenfmal -- danach ist jede Farbe im Bereich. */
+    var i = 0;
+    while (isDark && L < 0.06 && i++ < 5){ hex = mischen(hexToRgb(hex), 255, 0.12 * i); L = relLum(hexToRgb(hex)); }
+    i = 0;
+    while (!isDark && L > 0.62 && i++ < 5){ hex = mischen(hexToRgb(hex), 0, 0.12 * i); L = relLum(hexToRgb(hex)); }
+    return hex;
+  }
+  /* Gibt einen Hex-Wert oder null. eigen: eine Farbe, die schon am Eintrag steht (aus dem Payload)
+     und immer gewinnt. isDark entscheidet nur ueber die Lesbarkeitskorrektur, nicht ueber die Farbe. */
+  function brandColor(domainOderUrl, eigen, isDark){
+    var treffer = null;
+    var e = String(eigen == null ? "" : eigen).trim();
+    if (e){
+      if (e.charAt(0) !== "#") e = "#" + e;
+      if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(e)) treffer = e.toLowerCase();
+    }
+    if (!treffer){
+      var host = hostVon(domainOderUrl);
+      if (!host) return null;
+      treffer = BRAND_HEX[host] || BRAND_HEX[registrierbar(host)] || null;
+    }
+    return treffer ? lesbarMachen(treffer, !!isDark) : null;
+  }
+
   function capitalize(s){ s = String(s || ""); return s.charAt(0).toUpperCase() + s.slice(1); }
   /* Share formatter with the <1% case fmtTotal doesn't have. */
   /* THE percent formatter for this app — every share/visibility figure goes through it.
@@ -8072,6 +8195,7 @@
     CHART_OTHER_DARK: CHART_OTHER_DARK,
     MAX_URL_SLICES: MAX_URL_SLICES,
     typeColor: typeColor,
+    brandColor: brandColor,
     prepTypeData: prepTypeData,
     applyTypeDim: applyTypeDim,
     barIsLight: barIsLight,

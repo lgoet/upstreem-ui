@@ -96,7 +96,7 @@
      Turns the Bubble payload into the {labels, datasets} UC.makeLine expects. This is genuinely
      per component: visibility-chart keys on company_id with a fixed palette, this one keys on
      domain or url depending on dataMode and derives its colours from the entry's TYPE. */
-  function buildLineDatasets(series, meta, dataMode, isDark){
+  function buildLineDatasets(series, meta, dataMode, isDark, farbSchema){
     series = Array.isArray(series) ? series : [];
     meta = Array.isArray(meta) ? meta : [];
     var metaMap = {}, metaMapNorm = {};
@@ -112,6 +112,12 @@
       var entry = {
         type: dataMode === "url" ? m.url_type : m.citation_type,
         favicon: m.favicon || "",
+        /* Die Hausfarbe, wenn die RPC eine mitschickt. Dann gilt sie fuer JEDE Domain und nicht
+           nur fuer die aus der Tabelle in core. Fehlt sie, bleibt es bei der Tabelle. */
+        brand_hex: m.brand_hex || m.favicon_hex || m.brand_color || "",
+        /* Die Domain zur Farbsuche: in URL-Sicht ist die Id die ganze Adresse, und daraus holt
+           UC.brandColor den Host selbst -- aber wenn die RPC eine Domain nennt, ist die genauer. */
+        domain: m.domain || "",
         global_share: (m.global_share != null ? Number(m.global_share) : null),
         label: dataMode === "url" ? String(m.title || id) : String(id)
       };
@@ -142,8 +148,9 @@
       if (!metaMap[id]){
         var nm = metaMapNorm[normKey(id)];
         metaMap[id] = nm
-          ? { type: nm.type, favicon: nm.favicon, global_share: nm.global_share, label: nm.label }
-          : { type:null, favicon:"", global_share:null, label:id };
+          ? { type: nm.type, favicon: nm.favicon, brand_hex: nm.brand_hex, domain: nm.domain,
+              global_share: nm.global_share, label: nm.label }
+          : { type:null, favicon:"", brand_hex:"", domain:"", global_share:null, label:id };
       }
       if (metaMap[id].global_share == null){
         var vals = labels.map(function(d){ return byId[id][d]; }).filter(function(v){ return v != null; });
@@ -152,13 +159,26 @@
     });
     ids.sort(function(a,b){ return (metaMap[b].global_share||0) - (metaMap[a].global_share||0); });
     ids = ids.slice(0, 7);
+    var colorForId = {};
+    /* Markenfarben: die Hausfarbe der Domain, wo es eine gibt. Wo nicht, bleibt die Reihe bei der
+       Typfarbe -- eine erfundene Farbe waere schlechter als die richtige Familienfarbe. Die
+       Staffelung innerhalb einer Familie laeuft dann nur ueber die uebrigen Reihen, sonst haetten
+       zwei Domains ohne Markenfarbe denselben Ton wie vorher zwei mit. */
+    var offen = ids;
+    if (farbSchema === "brand"){
+      offen = [];
+      ids.forEach(function(id){
+        var m = metaMap[id];
+        var bc = UC.brandColor ? UC.brandColor((m && m.domain) || id, m && m.brand_hex, isDark) : null;
+        if (bc) colorForId[id] = bc; else offen.push(id);
+      });
+    }
     /* group ids by their family colour, then spread a shade ramp inside each group */
     var groups = {};
-    ids.forEach(function(id){
+    offen.forEach(function(id){
       var base = UC.typeColor(metaMap[id].type, dataMode === "url" ? "url" : "citation", isDark);
       (groups[base] = groups[base] || []).push(id);
     });
-    var colorForId = {};
     Object.keys(groups).forEach(function(base){
       var arr = groups[base], shades = shadeVariants(base, arr.length);
       arr.forEach(function(id,i){ colorForId[id] = shades[i]; });
@@ -201,6 +221,13 @@
     try { savedMode = UC.prefGet ? UC.prefGet(UC.prefKey("cc_chart_mode__" + instanceId))
                                  : window.localStorage.getItem("cc_chart_mode__" + instanceId); } catch(e){}
     var startMode = (savedMode === "bar" || savedMode === "doughnut") ? savedMode : "doughnut";
+    /* Das Farbschema der Linien. "type" ist die Vorgabe und war bisher der einzige Zustand: die
+       Familienfarbe des Zitationstyps mit einer Helligkeitsstaffel innerhalb der Familie. "brand"
+       nimmt die Hausfarbe der Domain. */
+    var FARB_KEY = "cc_line_colors__";
+    var savedFarb = null;
+    try { savedFarb = UC.prefGet ? UC.prefGet(UC.prefKey(FARB_KEY + instanceId)) : null; } catch(e){}
+    var startFarb = savedFarb === "brand" ? "brand" : "type";
 
     var isDark = isYes(root.getAttribute("data-isdark"));
     if (isDark){ root.setAttribute("data-theme","dark"); donutRoot.setAttribute("data-theme","dark"); } else { root.removeAttribute("data-theme"); donutRoot.removeAttribute("data-theme"); }
@@ -218,7 +245,7 @@
     var LOADING_EXPLICIT = (window.__ccLoadingExplicit = window.__ccLoadingExplicit || {});
 
     var state = {
-      chartMode: startMode, dataMode: "domain",
+      chartMode: startMode, dataMode: "domain", colorScheme: startFarb,
       total: 0, prepped: [],
       loading: LOADING_EXPLICIT[instanceId]
         ? !!(window.__ccCache && window.__ccCache[instanceId] && window.__ccCache[instanceId].loading)
@@ -333,7 +360,8 @@
       }
       /* the per-series filter is this component's own feature — the kit only ever sees the
          datasets that should actually be drawn */
-      var built = buildLineDatasets(state.series, state.dataMode === "url" ? state.meta.urls : state.meta.domains, state.dataMode, isDark);
+      var built = buildLineDatasets(state.series, state.dataMode === "url" ? state.meta.urls : state.meta.domains,
+                                    state.dataMode, isDark, state.colorScheme);
       /* Same debug stash as root.__ccLastParams above, but the resolved side: what dataMode and
          meta array this actually used, and the id/label buildLineDatasets produced for each
          series — so a "still shows urls" report can be diagnosed from one console read instead of
@@ -425,16 +453,38 @@
       settingsMenu.setAttribute("aria-hidden", "true");
       settingsMenu.addEventListener("click", function(e){
         var lw = e.target.closest("[data-linewidth]");
-        if (!lw) return;
-        UC.setLineWidthPref(lw.getAttribute("data-linewidth"));
-        populateSettingsMenu();
+        if (lw){
+          UC.setLineWidthPref(lw.getAttribute("data-linewidth"));
+          populateSettingsMenu();
+          return;
+        }
+        var cs = e.target.closest("[data-colorscheme]");
+        if (cs){
+          var neu = cs.getAttribute("data-colorscheme");
+          if (neu === state.colorScheme) return;
+          state.colorScheme = neu;
+          try { UC.prefSet && UC.prefSet(UC.prefKey(FARB_KEY + instanceId), neu); } catch(err){}
+          populateSettingsMenu();
+          render();
+        }
       });
       document.body.appendChild(settingsMenu);
       return settingsMenu;
     }
     function populateSettingsMenu(){
       if (!settingsMenu) return;
-      settingsMenu.innerHTML = '<div class="up-pop-head">Chart Settings</div>' + UC.lineWidthSectionHtml();
+      /* Zwei Knoepfe wie beim Linienbreiten-Umschalter darunter -- dasselbe Bauteil (.up-dense),
+         damit ein Menue nicht zwei Bauarten hat. */
+      var s = state.colorScheme;
+      settingsMenu.innerHTML = '<div class="up-pop-head">Chart Settings</div>' +
+        '<div class="up-pop-sub">Series Color</div>' +
+        '<div class="up-dense">' +
+          '<button class="up-dense-btn' + (s === "type" ? " is-active" : "") + '" type="button"' +
+            ' data-colorscheme="type">By type</button>' +
+          '<button class="up-dense-btn' + (s === "brand" ? " is-active" : "") + '" type="button"' +
+            ' data-colorscheme="brand">Brand color</button>' +
+        '</div>' +
+        UC.lineWidthSectionHtml();
     }
     function positionSettingsMenu(){
       if (!settingsBtn || !settingsMenu) return;

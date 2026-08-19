@@ -65,9 +65,16 @@
    einen Knopf einzurahmen. 8px Abstand statt 20 -- mit Grund braucht es keinen Weissraum mehr, um
    die Einheiten zu trennen, das tut die Flaeche. */
 .urd-ments { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-/* Der Chip ist .up-entchip.is-soft aus core -- 28px, Radius 8, kein Rahmen, leichter Grund,
-   Hover inklusive. Hier steht nur, dass er die Breite der Karte nicht sprengt. */
+/* Der Chip ist .up-entchip.is-soft aus core -- 28px, Radius 8, leichter Grund, Rahmen im Hellen.
+   Hier: der Grund auf 50% seiner Deckkraft, weil die Chips bei voller Toenung als Kaesten lasen und
+   die Mentions eine Aufzaehlung sind -- der Rahmen traegt die Form, der Grund nur den Zusammenhang.
+   Den Hover uebernimmt .up-chiphover aus core (im Markup gesetzt), deshalb steht er nicht hier. */
 .urd-ment { max-width: 100%; }
+/* Drei Selektorteile, weil .up-entchip.is-soft in core zwei hat und sonst gewinnt -- gemessen kam
+   der Grund in voller Deckkraft heraus (rgb(245,245,245)) statt halbiert. Ueber Spezifitaet, nicht
+   ueber Ladereihenfolge. */
+.urd-ments .up-entchip.is-soft {
+  background: color-mix(in srgb, var(--vc-heading-bg) 50%, transparent); }
 /* Das Logo eine Stufe kleiner als vorher (18 statt 20), weil der Chip jetzt die Groesse vorgibt.
    Faktor 18/20 auf alles: Radius 5.6 -> 5, Bild 18 -> 16, Bildradius 4.5 -> 4. */
 .urd-ment .up-ment-logo { width: 18px; height: 18px; border-radius: 5px; }
@@ -168,7 +175,10 @@
 .urd-cc-domain { font-size: 12px; font-weight: 500; color: var(--vc-muted); white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis; min-width: 0; cursor: pointer;
   transition: color 120ms ease; }
-.urd-cc-domain:hover, .urd-cr-domain:hover { color: var(--vc-text);
+/* Unterstrichen UND in Textfarbe: die Domain ist ein eigenes Ziel neben der Karte, und ohne den
+   Strich sieht der Farbwechsel wie ein Hover auf der ganzen Karte aus. */
+.urd-cc-domain:hover, .urd-cr-domain:hover { text-decoration: underline; text-underline-offset: 2px;
+  color: var(--vc-text);
   text-decoration: underline; text-underline-offset: 2px; }
 .urd-cc-domain:focus-visible, .urd-cr-domain:focus-visible { outline: 2px solid var(--vc-text);
   outline-offset: 2px; border-radius: 4px; }
@@ -206,7 +216,13 @@
 /* 8px Abstand rechts, damit der Strich fuer "keine Marke" mittig unter der Logospalte sitzt und
    nicht an der Kante klebt. Die Drittfarbe (Vorgabe) nimmt ihn aus dem Lesefluss -- er sagt
    "hier ist nichts", und das soll nicht so laut sein wie ein Wert. */
-.urd-cr-ments { flex: 0 0 auto; padding-right: 8px; }
+/* 64px Rand links: die Luft zwischen Titel und erstem Chip, strukturell und nicht gemessen. Als
+   Rand am Chip-Behaelter gilt sie immer -- die Textspalte nimmt sich den Rest und kuerzt ihren
+   Titel mit Auslassungspunkten, wie sie es schon vorher tat.
+   max-width 50%: ohne die Grenze wuechse der Stapel mit jeder Marke weiter und der Titel waere
+   irgendwann nur noch drei Punkte. Die Halbierung ist die Obergrenze; wie viele Chips wirklich
+   stehen, entscheidet stackFit an dieser Breite. */
+.urd-cr-ments { flex: 0 0 auto; padding-right: 8px; margin-left: 64px; max-width: 50%; }
 /* ---- Marken-Chips an den Quellen ------------------------------------------------------------
    Der Stapel aus core ueberlappt (margin-left: -4px) und traegt statt eines Rahmens einen Ring in
    Hintergrundfarbe -- das trennt die Bilder, wenn sie sich schieben. Hier stehen sie nicht als

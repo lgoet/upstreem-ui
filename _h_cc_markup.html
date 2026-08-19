@@ -1,0 +1,137 @@
+<div class="up-root combo-root"
+     data-instance="INSTANCE_ID"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="IS_DARK"
+     data-processing="IS_PROCESSING"
+     data-processing2="IS_PROCESSING_2"
+     data-gran-fn="bubble_fn_comboGranularity">
+
+  <div class="combo-unit combo-unit-left">
+    <div class="combo-head">
+      <div class="combo-heading">Citation Share</div>
+      <div class="combo-head-tools">
+        <div class="cc-gran" role="tablist" aria-label="Granularity">
+          <button class="cc-gran-btn is-active" data-gran="day" type="button" role="tab">Day</button>
+          <button class="cc-gran-btn" data-gran="week" type="button" role="tab">Week</button>
+          <button class="cc-gran-btn" data-gran="month" type="button" role="tab">Month</button>
+        </div>
+        <div class="combo-filter">
+          <button class="combo-filter-btn combo-iconbtn" type="button" data-tip="Filter brands" aria-label="Filter">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 17H5"/><path d="M19 7h-9"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
+            <span class="combo-filter-badge"></span>
+          </button>
+          <div class="combo-filter-menu" role="menu" aria-hidden="true"></div>
+        </div>
+        <button class="combo-maximize combo-iconbtn" type="button" data-tip="Maximize" aria-label="Maximize">
+          <svg class="ic-max" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="m21 3-7 7"/><path d="m3 21 7-7"/><path d="M9 21H3v-6"/></svg>
+          <svg class="ic-min" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m14 10 7-7"/><path d="M20 10h-6V4"/><path d="m3 21 7-7"/><path d="M4 14h6v6"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="combo-box combo-box-left">
+      <div class="combo-panel-body">
+        <button class="ccl-settings-btn" type="button" data-tip="Chart Settings" aria-label="Chart Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+        <div class="up-line-wrap"><canvas class="up-line-canvas"></canvas></div>
+        <div class="up-legend"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="combo-unit combo-unit-right">
+    <div class="combo-head">
+      <div class="combo-heading combo-heading-right">Citation Type Split</div>
+      <div class="combo-head-tools">
+        <div class="cc-seg" role="tablist" aria-label="Chart type">
+          <button class="cc-seg-btn is-active" data-chart="doughnut" role="tab" aria-selected="true" data-tip="Doughnut" aria-label="Doughnut">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12c.552 0 1.005-.449.95-.998a10 10 0 0 0-8.953-8.951c-.55-.055-.998.398-.998.95v8a1 1 0 0 0 1 1z" /> <path d="M21.21 15.89A10 10 0 1 1 8 2.83" /></svg>
+          </button>
+          <button class="cc-seg-btn" data-chart="bar" role="tab" aria-selected="false" data-tip="Bars" aria-label="Bars">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><rect x="7" y="13" width="9" height="4" rx="1"/><rect x="7" y="5" width="12" height="4" rx="1"/></svg>
+          </button>
+        </div>
+        <button class="combo-hide combo-iconbtn" type="button" data-tip="Hide" aria-label="Hide">
+          <svg class="ic-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /> <circle cx="12" cy="12" r="3" /></svg>
+          <svg class="ic-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" /> <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" /> <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" /> <path d="m2 2 20 20" /></svg>
+        </button>
+      </div>
+    </div>
+    <div class="combo-box combo-box-right">
+      <div class="combo-panel-body">
+        <div class="cc-type-root">
+          <div class="cc-top">
+            <div class="cc-top-total"><span class="n">0</span><span class="lbl">Citations</span></div>
+          </div>
+          <div class="up-donut-body"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+/* Loads this component's CSS/JS from jsDelivr, pinned to the commit hash you put in data-cdn-pin on
+   the root div above (falls back to @main only if data-cdn-pin is left blank or at the literal
+   "CDN_PIN" placeholder). The pin is found by looking the root element up BY CLASS — deliberately
+   NOT via document.currentScript, because Bubble injects an HTML element's inline scripts in a way
+   that leaves document.currentScript null/misattached. That made the previous loader read no pin
+   and silently fall back to @main for every file (and jsDelivr caches @main for hours, so it served
+   stale code) — which is why setting data-cdn-pin appeared to do nothing. Loading core.js once per
+   component is fine: the browser caches the (immutable, commit-pinned) URL, and the component's own
+   init is idempotent. */
+(function(){
+  /* Boot-Stub fuer den Brand-Store. Bubble ruft setUpstreemBrands() im Page-Load-Workflow, also
+     regelmaessig BEVOR core.js geladen ist. Ohne diesen Stub ist window.setUpstreemBrands zu dem
+     Zeitpunkt undefined, der Run-JS-Schritt wirft, und der GANZE Aufruf ist weg -- die Seite sieht
+     danach aus wie eine ohne Marken, ohne dass irgendwo ein Fehler steht. core.js leert die Queue
+     beim Start. Dasselbe Muster wie bei Topics und Markets (__upTopicsQueue / __upMarketsQueue). */
+  window.__upBrandsQueue = window.__upBrandsQueue || [];
+  if (typeof window.setUpstreemBrands !== "function"){
+    window.setUpstreemBrands = function(rows){ window.__upBrandsQueue.push(rows); };
+  }
+
+  function readPin(cls){
+    var els = document.getElementsByClassName(cls), i, p;
+    for (i = 0; i < els.length; i++){
+      p = (els[i].getAttribute("data-cdn-pin") || "").trim();
+      /* Gespaltener Platzhalter: wer "CDN_PIN" global im Element ersetzt, wuerde sonst auch diesen
+         Waechter treffen -- der Vergleich waere dann pin === "<der Hash>" und der Loader liefe
+         dauerhaft auf @main, obwohl ein Pin gesetzt ist. */
+      if (p && p !== "CDN_" + "PIN") return p;
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("combo-root") + "/";
+  /* Bubble re-injects this whole block (this script tag included) every time the reusable this
+     component sits in re-renders — i.e. on every drawer/view open. Without this guard each of
+     those re-runs appended ANOTHER <link> + <script> for the SAME urls, forever: 4 more tags per
+     render, never cleaned up (measured: 14 tags after one page build, 64 after ~25 navigations).
+     Inserting a stylesheet <link> is render-blocking, so that landed right in the middle of the
+     open animation — which is what made drawers/views "pop" in instead of animating.
+     The registry lives on window, not in this closure, because every component ships its own copy
+     of this loader. Skipping the re-run is safe: a re-rendered root is picked up and initialised
+     by core.js's own root observer + 1.5s heartbeat, it does not need the scripts evaluated
+     again (verified against a root injected with the scripts deliberately run only once). */
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  /* Entdoppelt nach DATEINAME, nicht nach URL. Zwei Elemente mit verschiedenen data-cdn-pin
+     ergeben zwei URLs fuer dieselbe Datei -- vorher lud der Loader dann beide: core.js lief
+     zweimal, und core.css stand zweimal im Dokument, wobei die spaetere die fruehere ueberschrieb.
+     Wer gewinnt, entschied die Reihenfolge, in der Bubble die Elemente baut.
+     Der erste Pin gewinnt jetzt, und ein zweiter wird gemeldet -- sonst sucht man den Unterschied
+     zwischen zwei Seiten, auf denen dieselbe Version verschiedene Dinge tut. */
+  function once(url, make){
+    var name = url.slice(url.lastIndexOf("/") + 1);
+    if (L[name]){
+      if (L[name] !== url && window.console) console.warn("upstreem: " + name +
+        " ist schon von einem anderen Pin geladen. Geladen bleibt " + L[name] +
+        ", ignoriert wird " + url + ". Setzt alle Elemente auf denselben Pin.");
+      return;
+    }
+    L[name] = url; make(url);
+  }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+  css("core.css"); css("citations-combo-chart.css");
+  js("core.js"); js("citations-combo-chart.js");
+})();
+</script>

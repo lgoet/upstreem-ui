@@ -30,7 +30,7 @@
    Bereich und darf deshalb nie mitwandern. -16px unten, weil zwischen Umschalter und der ersten
    Karte 16 gehoeren und nicht die 32 des Rasters. */
 .udd-toprow { display: flex; flex-direction: row; align-items: center;
-  justify-content: space-between; gap: 16px; order: -1000; margin-bottom: -16px; min-height: 32px; }
+  gap: 16px; margin-bottom: -16px; min-height: 32px; }
 .udd-seg .up-seg-btn { padding-left: 16px; padding-right: 16px; }
 
 /* ---- Karte -----------------------------------------------------------------------------------
@@ -215,7 +215,11 @@
    Werte 1:1 aus dem Einstellungsmenue von response-detail (.urd-hl*): gleicher Rahmen, gleicher
    Radius, gleicher Schatten, gleiche Polsterung, gleiche Ueberschrift. Zwei Menues derselben App
    sollen nicht zwei Bauarten sein, auch nicht in der Breite. */
-.udd-lywrap { position: relative; flex: 0 0 auto; }
+/* margin-left: auto und nicht justify-content: space-between an der Zeile: mit space-between
+   rutschte das Zahnrad nach LINKS, sobald der Modus-Umschalter ausgeblendet war und es das einzige
+   Kind der Zeile blieb. Der automatische Rand haengt an ihm selbst und schiebt es immer nach
+   rechts, mit Nachbar oder ohne. */
+.udd-lywrap { position: relative; flex: 0 0 auto; margin-left: auto; }
 /* Der Knopf ist .up-iconbtn aus core. Hier nur die Drittfarbe im Ruhezustand und der offene
    Zustand, den das Bauteil nicht kennt -- beim Hover uebernimmt wieder core. */
 .udd-lybtn { color: var(--vc-third); }
@@ -231,13 +235,8 @@
 /* 32px, wie jede Menuezeile dieser App: die Zeile traegt nur noch Griff, Name und Auge. Die 40
    von vorher kamen vom Breitenumschalter darin, und der ist weg. */
 .udd-lyrow { display: flex; flex-direction: row; align-items: center; gap: 8px;
-  height: 32px; padding: 0 4px 0 6px; border-radius: 8px; box-sizing: border-box; }
+  height: 32px; padding: 0 4px 0 10px; border-radius: 8px; box-sizing: border-box; }
 .udd-lyrow:hover { background: var(--vc-heading-bg); }
-/* Der Griff sagt "diese Zeile laesst sich ziehen", bevor man es versucht. Gedaempft, weil er
-   Hinweis ist und nicht Knopf. */
-.udd-lygrip { flex: 0 0 14px; width: 14px; height: 14px; color: var(--vc-third);
-  display: inline-flex; align-items: center; justify-content: center; cursor: grab; }
-.udd-lygrip svg { width: 14px; height: 14px; display: block; }
 .udd-lyname { flex: 1 1 auto; min-width: 0; font-size: 13px; font-weight: 500; color: var(--vc-text);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Ein ausgeblendeter Bereich liest sich auch in der Liste als ausgeblendet -- dasselbe Bild wie

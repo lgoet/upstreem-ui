@@ -68,9 +68,12 @@
      fest (die Seitengroesse), hier aendert sie der Marken-Filter bei jedem Klick.
      Eine kurze letzte Reihe ist der guenstigere Preis: sie sieht ruhig aus, ein springendes Raster
      nicht. */
+  /* Die Schwellen sind die Mindestbreite einer Karte, mal Spaltenzahl, plus die Luecken (14px).
+     Eine Karte war damit rund 284px breit; +32px heisst +32 JE SPALTE, also 1180 -> 1308 (4),
+     880 -> 976 (3), 600 -> 664 (2). Gerechnet und danach gemessen, nicht geschaetzt. */
   function spalten(breite, anzahl) {
     if (anzahl <= 1) return 1;
-    var max = breite >= 1180 ? 4 : breite >= 880 ? 3 : breite >= 600 ? 2 : 1;
+    var max = breite >= 1308 ? 4 : breite >= 976 ? 3 : breite >= 664 ? 2 : 1;
     return Math.max(1, Math.min(max, anzahl));
   }
 
@@ -403,7 +406,9 @@
            Der Rahmen um jede Marke machte aus einer Aufzaehlung eine Reihe von Knoepfen -- hier
            steht aber einfach, wer vorkommt. Anklickbar bleibt es (der Zeiger und der Hover sagen
            es), nur ohne eigenen Kasten. */
-        return '<span class="up-entchip is-soft urd-ment" role="button" tabindex="0"' +
+        /* up-chiphover ist der geteilte Hover fuer anklickbare Chips: er faellt auf die neutrale
+           Flaeche mit dem Haus-Rahmen, damit "das ist ein Bedienelement" ueberall gleich liest. */
+        return '<span class="up-entchip is-soft up-chiphover urd-ment" role="button" tabindex="0"' +
                  ' data-brand="' + esc(String((c && c.company_id) || "")) + '">' +
                  '<span class="up-ment-logo' + (logo ? " has-img" : "") + '">' +
                    '<span class="up-model-ltr">' + esc(buchst) + "</span>" +
@@ -716,7 +721,9 @@
                    '<span class="urd-cr-domain" role="button" tabindex="0" data-domain="' +
                      esc(domainOf(c)) + '">' + esc(domainOf(c)) + "</span>" +
                  "</span>" +
-                 '<span class="urd-cr-ments">' + UC.brandStack(c.mentions) + "</span>" +
+                 /* max 12 wie im Gitter: wie viele davon wirklich stehen, entscheidet stackFit
+                    am Platz -- der Vorrat muss nur gross genug sein. */
+                 '<span class="urd-cr-ments">' + UC.brandStack(c.mentions, null, { max: 12 }) + "</span>" +
                "</div>";
       }).join("");
 
@@ -730,10 +737,25 @@
        32px bleiben links frei (Vorgabe), damit die Chips nicht bis an die Kante des Titels
        darueber heranlaufen. */
     var MARKEN_RESERVE = 32;
+    /* 8px: der Rand rechts an .urd-cr-ments, der den Strich fuer "keine Marke" mittig unter die
+       Logospalte setzt. Er gehoert nicht zum Platz der Chips. */
+    var LISTE_RESERVE = 8;
     function markenPassen() {
       if (!UC.stackFit) return;
       [].forEach.call(elGrid.querySelectorAll(".urd-cc-foot .up-stack"), function (st) {
         UC.stackFit(st, { reserve: MARKEN_RESERVE });
+      });
+      /* Auch in der Liste: so viele Chips wie Platz ist. Die 64px Luft zum Titel stehen NICHT
+         hier, sondern als Rand in der CSS -- strukturell, damit sie auch dann gilt, wenn stackFit
+         gar nicht laeuft. Der Behaelter ist auf die Haelfte der Zeile begrenzt, also misst
+         stackFit gegen diese Grenze und kuerzt von hinten, bis es passt. */
+      [].forEach.call(elList.querySelectorAll(".urd-cite-row"), function (zeile) {
+        var st = zeile.querySelector(".urd-cr-ments .up-stack");
+        if (!st) return;
+        /* Die Haelfte der Zeile ist die Obergrenze aus der CSS (max-width: 50%). Ausdruecklich
+           mitgegeben, weil der Behaelter seine Breite vom Inhalt nimmt und clientWidth dort den
+           letzten Stand misst statt den Platz. */
+        UC.stackFit(st, { space: Math.floor(zeile.clientWidth / 2), reserve: LISTE_RESERVE });
       });
     }
 

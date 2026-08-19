@@ -270,6 +270,11 @@
     if (isDark) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
     function darkNow() { return isDark; }
 
+    /* Die Tooltips fehlten hier komplett -- makeTooltips wurde nie gerufen, also blieb JEDES
+       data-tip dieser Komponente stumm: Zahnrad, Ring/Balken-Umschalter, alle. Der zweite
+       Parameter ist die Themenabfrage; ohne ihn steht der Tooltip im Dunkeln hell. */
+    if (UC.makeTooltips) UC.makeTooltips(root, darkNow);
+
     var state = {
       mode:  MODE_STORE[instanceId]  || "citation",
       gran:  GRAN_STORE[instanceId]  || "day",
@@ -313,19 +318,13 @@
       if (isArr(gespeichert)) gespeichert.forEach(function (e) {
         if (e && e.key) nach[String(e.key)] = e;
       });
-      var out = [];
-      /* Erst in gespeicherter Reihenfolge, dann alles, was noch fehlt. */
-      if (isArr(gespeichert)) gespeichert.forEach(function (e) {
-        var b = e && e.key ? BEREICHE.filter(function (x) { return x.key === String(e.key); })[0] : null;
-        if (!b) return;
-        if (out.filter(function (o) { return o.key === b.key; }).length) return;
-        out.push({ key: b.key, label: b.label, aus: !!e.aus });
+      /* Immer in der Reihenfolge von BEREICHE, also der des Entwurfs. Gespeichert wird nur, was
+         ausgeblendet ist -- ein alter Eintrag mit einem Schluessel, den es nicht mehr gibt, wird
+         dabei still uebergangen, und ein neuer Bereich kommt sichtbar dazu. */
+      return BEREICHE.map(function (b) {
+        var e = nach[b.key];
+        return { key: b.key, label: b.label, aus: !!(e && e.aus) };
       });
-      BEREICHE.forEach(function (b) {
-        if (out.filter(function (o) { return o.key === b.key; }).length) return;
-        out.push({ key: b.key, label: b.label, aus: false });
-      });
-      return out;
     }
     function layoutSchreiben() {
       try {
@@ -335,14 +334,11 @@
           })));
       } catch (e) {}
     }
-    /* Reihenfolge und Sichtbarkeit ins DOM bringen. Die Reihenfolge ueber order und nicht durch
-       Umhaengen der Knoten: ein appendChild wuerde ein laufendes Chart aus dem Dokument nehmen und
-       wieder einsetzen, und Chart.js verliert dabei seine Canvas-Groesse. */
+    /* Sichtbarkeit ins DOM bringen. */
     function layoutAnwenden() {
-      state.layout.forEach(function (e, i) {
+      state.layout.forEach(function (e) {
         var el = root.querySelector('[data-bereich="' + e.key + '"]');
         if (!el) return;
-        el.style.order = String(i);
         el.hidden = !!e.aus;
         /* Bedienelemente, die zu einem Bereich gehoeren, aber ausserhalb von ihm stehen (der
            Modus-Umschalter in der obersten Zeile): sie gehen mit ihrem Bereich. */
@@ -355,18 +351,16 @@
     }
 
     /* ---- Das Menue der Bereiche --------------------------------------------------------------
-       Ein Menue fuer alles drei, nicht zwei Knoepfe: Sichtbarkeit, Breite und Reihenfolge sind
-       dieselbe Frage ("wie soll die Seite aussehen"), und wer die Reihenfolge aendert, will meist
-       im selben Moment auch etwas ausblenden. Das Ziehen macht UC.cgDragList -- dieselbe Mechanik
-       wie die Gruppierungsliste, damit sich Ziehen in der App ueberall gleich anfuehlt. */
+       Ein Auge je Bereich, sonst nichts. Breite und Reihenfolge standen hier einmal auch drin und
+       sind wieder heraus: die Anordnung der Seite ist eine Entscheidung des Entwurfs und keine
+       Einstellung. Was bleibt, ist das Ausblenden. */
     var elLyWrap = root.querySelector(".udd-lywrap");
     var elLyBtn  = root.querySelector(".udd-lybtn");
     var elLyPop  = root.querySelector(".udd-lypop");
 
     function lyRowHtml(e) {
-      return '<div class="up-cg-row udd-lyrow" data-grp-drag="' + esc(e.key) + '"' +
+      return '<div class="up-cg-row udd-lyrow" data-ly-key="' + esc(e.key) + '"' +
                (e.aus ? ' data-aus="1"' : "") + '>' +
-        '<span class="udd-lygrip">' + UC.icon("arrowUpDown", 2) + "</span>" +
         '<span class="udd-lyname">' + esc(e.label) + "</span>" +
         '<button class="up-cg-eye udd-lyeye' + (e.aus ? " is-off" : "") + '" type="button"' +
           ' data-ly-eye="' + esc(e.key) + '" aria-pressed="' + (e.aus ? "true" : "false") + '"' +
@@ -381,23 +375,7 @@
           '<button type="button" class="udd-lyreset">Reset to default</button>' +
         "</div>";
     }
-    function lyOeffnen() {
-      elLyPop.innerHTML = lyMenuHtml();
-      if (UC.cgDragList) UC.cgDragList(elLyPop.querySelector(".udd-lylist"), {
-        rowSel: "[data-grp-drag]",
-        noDragSel: ".udd-lyeye",
-        onOrder: function (keys) {
-          var nach = {};
-          state.layout.forEach(function (e) { nach[e.key] = e; });
-          var neu = [];
-          (keys || []).forEach(function (k) { if (nach[k]) { neu.push(nach[k]); delete nach[k]; } });
-          Object.keys(nach).forEach(function (k) { neu.push(nach[k]); });
-          state.layout = neu;
-          layoutSchreiben();
-          layoutAnwenden();
-        }
-      });
-    }
+    function lyOeffnen() { elLyPop.innerHTML = lyMenuHtml(); }
 
     /* ---- Ein Wartezustand, der endet ---------------------------------------------------------
        Das Skelett laeuft, solange keine Daten da sind. Ohne Ende ist "kommt gleich" nicht von

@@ -423,6 +423,7 @@
   "data-cname",
   "data-col",
   "data-color",
+  "data-colorscheme",
   "data-company",
   "data-company-fn",
   "data-company-id",
@@ -2460,7 +2461,7 @@
   "fnattrs": 75,
   "globals": 137,
   "payloadkeys": 66,
-  "dataattrs": 180,
+  "dataattrs": 181,
   "klassen": 1814,
   "keyframes": 56
  }
