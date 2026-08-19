@@ -426,7 +426,11 @@
     function renderBody() {
       if (state.error) { elBody.innerHTML = '<span class="urd-empty">' + esc(state.error) + "</span>"; return; }
       if (istLaden() || !state.data) {
-        elBody.innerHTML = [72, 96, 88, 64, 92, 40].map(function (w) {
+        /* Zwoelf Zeilen statt sechs: doppelt so hoch (6 x 24 = 144 wird 12 x 24 = 288), und das
+           passt zu dem, was danach kommt -- eine Modellantwort ist selten sechs Zeilen kurz. Die
+           Breiten bleiben ungleichmaessig, damit es wie Text aussieht und nicht wie ein Balken;
+           die 40 am Ende ist der Absatzschluss. */
+        elBody.innerHTML = [72, 96, 88, 64, 92, 78, 94, 68, 86, 90, 74, 40].map(function (w) {
           return '<span class="urd-sk urd-sk-line" style="width:' + w + '%"></span>';
         }).join("");
         return;

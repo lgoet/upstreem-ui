@@ -172,7 +172,15 @@
   display: block; background: var(--vt-logo-bg); }
 /* Die Domain ist ein eigenes Ziel, also braucht sie ihr eigenes Hover-Zeichen: Textfarbe und
    Unterstreichung. Ein Hintergrund waere hier falsch -- die Karte darunter hat schon einen. */
+/* line-height 1.3 und 1px Polsterung unten: OHNE die beiden war der Kasten 16px hoch (12px Schrift
+   bei line-height normal), und die Unterstreichung sitzt bei Grundlinie plus 2px Versatz plus ihrer
+   eigenen Dicke -- das lag genau auf der Kante und wurde von overflow: hidden abgeschnitten. Der
+   Wert kam berechnet als "underline" heraus und war trotzdem nicht zu sehen, genau so gemeldet.
+   1.3 ist der Wert der Listenansicht, wo die Unterstreichung immer sichtbar war -- also nicht
+   geraten, sondern von der Stelle uebernommen, die funktioniert. overflow: hidden muss bleiben, es
+   traegt die Auslassungspunkte. */
 .urd-cc-domain { font-size: 12px; font-weight: 500; color: var(--vc-muted); white-space: nowrap;
+  line-height: 1.3; padding-bottom: 1px;
   overflow: hidden; text-overflow: ellipsis; min-width: 0; cursor: pointer;
   transition: color 120ms ease; }
 /* Unterstrichen UND in Textfarbe: die Domain ist ein eigenes Ziel neben der Karte, und ohne den

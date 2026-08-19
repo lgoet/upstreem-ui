@@ -3490,12 +3490,29 @@
     if (onResize) onResize(root, apply);
   }
 
+  /* Die gewaehlte Unterseite je Kopfzeile, modulweit. Sie muss ein Neueinspritzen des Markups
+     ueberleben, und genau daran hing ein gemeldeter Fehler: bei einem Themenwechsel baut Bubble die
+     Kopfzeile neu, makePageNav lief wieder und rendert mit pages[0] -- die Navigation sprang also
+     auf "All Prompts" zurueck, waehrend Bubbles eigener Zustand weiter auf "Responses" stand und
+     die Responses-Tabelle darunter stehen blieb. Die Kopfzeile log ueber den Zustand der Seite.
+     Ein Modul-Speicher und nicht der localStorage: die Wahl gilt fuer diesen Seitenbesuch, nicht
+     fuer den naechsten. */
+  var NAV_STORE = {};
   function makePageNav(root, cfg){
     cfg = cfg || {};
     var nav = cfg.nav || root.querySelector(cfg.navSelector || ".up-ph-nav");
     if (!nav) return null;
     var pages = cfg.pages || [];
-    var selected = cfg.selected != null ? cfg.selected : (pages[0] && pages[0].value);
+    var navKey = cfg.storeKey ||
+      ((root.getAttribute && root.getAttribute("data-instance")) || "") + "|" +
+      (cfg.navSelector || ".up-ph-nav") + "|" + pages.map(function(p){ return p.value; }).join(",");
+    var gemerkt = NAV_STORE[navKey];
+    var gueltig = gemerkt != null && pages.some(function(p){ return p.value === gemerkt; });
+    /* cfg.selected gewinnt weiter: gibt eine Komponente die Seite ausdruecklich vor, ist das die
+       Wahrheit und nicht der Merker. */
+    var selected = cfg.selected != null ? cfg.selected
+                 : gueltig ? gemerkt
+                 : (pages[0] && pages[0].value);
 
     function esc(v){ var d = document.createElement("div"); d.textContent = String(v == null ? "" : v); return d.innerHTML; }
 
@@ -3534,6 +3551,12 @@
         if (on) target = el;
       });
       positionUnderline(target, true);
+      /* Auch ohne Ereignis merken: die Wiederherstellung nach einem Neuaufbau ruft selectPage ohne
+         fireEvent, und dann darf der Merker nicht verloren gehen. */
+      if (target) NAV_STORE[navKey] = value;
+      /* Beim Wiederherstellen wird NICHT gefeuert. Bubbles Zustand ist in diesem Moment schon
+         richtig -- ein Ereignis waere eine zweite Quelle der Wahrheit und wuerde die Seite
+         umschalten, obwohl niemand geklickt hat. */
       if (fireEvent && cfg.onSelect) cfg.onSelect(value);
     }
 
