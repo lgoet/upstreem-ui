@@ -5549,7 +5549,14 @@
         '</div>';
       var clickable = !!cfg.onSliceClick;
       body.querySelector(".up-donut-legend").innerHTML = d.map(function(it){
+        /* Bringt ein Eintrag ein Logo mit (it.logo), steht es zwischen Farbfleck und Name:
+           Fleck, Luecke, Logo, Luecke, Name. Gebraucht vom Model Breakdown -- ein Modell erkennt
+           man am Zeichen schneller als am Namen. Ohne logo bleibt die Zeile wie bisher. */
+        var lg = it.logo ? String(it.logo) : "";
+        if (lg.indexOf("//") === 0) lg = "https:" + lg;
         return '<div class="up-donut-legend-row' + (clickable && it.key !== "other" ? " is-clickable" : "") + '" data-type-key="' + esc(it.key || "") + '"><span class="up-donut-legend-chip" style="background:' + it.color + '"></span>' +
+          (lg ? '<img class="up-donut-legend-logo" src="' + esc(lg) + '" alt="" loading="lazy"' +
+                ' referrerpolicy="no-referrer" onerror="this.remove()"/>' : "") +
           '<span class="up-donut-legend-name">' + esc(it.name) + '</span>' +
           '<span class="up-donut-legend-pct">' + esc(fmtPct(it.share)) + '</span></div>';
       }).join("");
@@ -5622,13 +5629,20 @@
         var txtPct = light ? "rgba(31,31,27,0.62)" : "rgba(255,255,255,0.75)";
         var outColor = isDark() ? "rgba(255,255,255,0.85)" : "var(--vc-text)";
         var outPctColor = isDark() ? "rgba(255,255,255,0.55)" : "var(--vc-muted)";
+        /* Ein Logo vor dem Namen, wenn der Eintrag eines mitbringt -- dieselbe Regel wie in der
+           Legende des Rings. Damit kann diese Balkenliste die des Model Breakdowns ersetzen, und
+           beide Charts der Zeile animieren identisch (Balken waechst, dann faden die Texte ein). */
+        var blg = it.logo ? String(it.logo) : "";
+        if (blg.indexOf("//") === 0) blg = "https:" + blg;
+        var logoHtml = blg ? '<img class="up-bar-logo" src="' + esc(blg) + '" alt="" loading="lazy"' +
+                             ' referrerpolicy="no-referrer" onerror="this.remove()"/>' : "";
         return '<div class="up-bar-row' + (cfg.onSliceClick && it.key !== "other" ? " is-clickable" : "") + (it.__dimmed ? " is-dimmed" : "") + '" data-type-key="' + esc(it.key || "") + '"><div class="up-bar-track">' +
             '<div class="up-bar-fill" style="background:' + it.color + ';width:0%">' +
-              '<span class="up-bar-name" style="color:' + txt + ';opacity:0">' + esc(it.name) + '</span>' +
+              '<span class="up-bar-name" style="color:' + txt + ';opacity:0">' + logoHtml + esc(it.name) + '</span>' +
               '<span class="up-bar-pct up-bar-pct-in" style="color:' + txtPct + ';opacity:0">' + esc(fmtPct(it.share)) + '</span>' +
             '</div>' +
             '<span class="up-bar-outside" style="opacity:0">' +
-              '<span class="up-bar-name-out" style="color:' + outColor + '">' + esc(it.name) + '</span>' +
+              '<span class="up-bar-name-out" style="color:' + outColor + '">' + logoHtml + esc(it.name) + '</span>' +
               '<span class="up-bar-pct-out" style="color:' + outPctColor + '">' + esc(fmtPct(it.share)) + '</span>' +
             '</span></div></div>';
       }).join("") + '</div>';

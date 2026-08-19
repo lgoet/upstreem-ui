@@ -1419,6 +1419,10 @@
 .up-donut-legend-row.is-clickable { cursor: pointer; margin: -4px -6px; padding: 4px 6px; border-radius: 6px; transition: background 120ms ease; }
 .up-donut-legend-row.is-clickable:hover { background: var(--vc-heading-bg); }
 .up-donut-legend-chip { width: 12px; height: 12px; border-radius: 4px; flex: 0 0 auto; }
+/* Das Logo in der Legende: zwischen Farbfleck und Name, mit derselben Luecke wie der Fleck sie
+   zum Namen hat. 14px, damit es neben dem 10px-Fleck und dem 13px-Text nicht dominiert. */
+.up-donut-legend-logo { width: 14px; height: 14px; border-radius: 4px; flex: 0 0 auto;
+  object-fit: cover; display: block; }
 .up-donut-legend-name { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; flex: 1 1 auto; min-width: 0; }
 .up-donut-legend-pct { font-size: 12px; font-weight: 500; color: var(--vc-muted); white-space: nowrap; flex: 0 0 auto; }
 .up-donut-layout.is-collapsed { flex-direction: column; gap: 18px; }
@@ -1466,6 +1470,12 @@
 .up-bar-pct { font-size: 11px; font-weight: 600; white-space: nowrap; flex: 0 0 auto; transition: opacity .18s ease; }
 /* shown instead of the inside labels when the bar is too short to hold them */
 .up-bar-outside { position: absolute; top: 50%; transform: translateY(-50%); left: 0; pointer-events: none; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; transition: opacity .18s ease; }
+/* Das Logo im Balken sitzt vor dem Namen, in beiden Namensfeldern (innen und ausserhalb). Es
+   faedt mit dem Text ein, weil es in demselben span liegt -- eine eigene Animation waere ein
+   zweiter Takt in derselben Bewegung. */
+.up-bar-name, .up-bar-name-out { display: inline-flex; align-items: center; gap: 6px; }
+.up-bar-logo { width: 15px; height: 15px; border-radius: 4px; flex: 0 0 auto; object-fit: cover;
+  display: block; background: var(--vt-logo-bg); }
 .up-bar-name-out { font-size: 11px; font-weight: 600; }
 .up-bar-pct-out { font-size: 11px; font-weight: 600; }
 

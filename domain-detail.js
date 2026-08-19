@@ -8,7 +8,8 @@
 
    Was aus core kommt und hier NICHT noch einmal entsteht:
      UC.makeLine + UC.buildLineDatasets   die Kurve samt Tooltip, Legende, Skelett
-     UC.makeBarList                       die Balkenliste (Markup und CSS wie im Type-Chart)
+     UC.makeTypeChart                     BEIDE Charts der unteren Zeile: URL-Typen und Modelle,
+                                          je als Ring oder Balken. Ein Baustein, eine Bewegung.
      UC.trendChip / UC.fmtPct / UC.fmtTotal   die Formate
      UC.typeColor                         die Farbe des Zitationstyps, hell wie dunkel
      UC.makeMount / makeFire / makeLate / parseLoose / widthTiers / onTheme / themeParam
@@ -55,10 +56,11 @@
   /* Die vier Stufen des Trichters. `wert` holt die Zahl aus dem Payload, `unter` die Zeile
      darunter. Reihenfolge ist die Erzaehlung: wie oft wird die Quelle zitiert, wie viele Seiten
      davon, wie viele nennen ueberhaupt eine verfolgte Marke, wie viele die eigene. */
+  /* Drei Stufen, nicht vier. "Responses citing this domain" ist raus: die Stufe zaehlt Antworten,
+     die drei anderen zaehlen URLs. Ein Trichter, dessen erste Stufe eine andere Einheit hat als
+     der Rest, behauptet ein Verhaeltnis, das es nicht gibt -- und weil die Hoehe jeder Stufe ihr
+     Anteil an der ERSTEN ist, war die Verjuengung danach willkuerlich. */
   var STUFEN = [
-    { key: "responses", label: "Responses citing this domain",
-      wert: function (f) { return f.ai_searches_citing_domain; },
-      unter: function () { return "Responses"; } },
     { key: "urls", label: "Cited Pages / URLs",
       wert: function (f) { return f.cited_urls_count; },
       unter: function () { return "URLs"; } },
@@ -211,12 +213,7 @@
                 ' data-tip="Bars" aria-label="Bars">' + UC.icon("chartBarDec", 2) + '</button>' +
             '</div>' +
           '</div>' +
-          /* Zwei Behaelter, weil zwei Werkzeuge: der Doughnut kommt aus UC.makeTypeChart, die
-             Balken aus UC.makeBarList -- nur die kann Logos, und die Modelle haben Logos. */
-          '<div class="udd-modelbody">' +
-            '<div class="udd-bars"></div>' +
-            '<div class="udd-modeldonut up-donut-body"></div>' +
-          '</div>' +
+          '<div class="udd-modelbody udd-modeldonut up-donut-body"></div>' +
         '</div>' +
       '</div>';
   }
@@ -245,7 +242,6 @@
     var elCanvas  = root.querySelector(".udd-canvas");
     var elLegend  = root.querySelector(".udd-legend");
     var elFunnel  = root.querySelector(".udd-funnel");
-    var elBars    = root.querySelector(".udd-bars");
     var elTypeBody = root.querySelector(".udd-typebody");
     var elTypeSeg  = root.querySelector(".udd-typeseg");
     var elModelSeg = root.querySelector(".udd-modelseg");
@@ -334,15 +330,6 @@
       decimals: 1,
       tipLabel: "Share:",
       watermark: true
-    });
-
-    var bars = UC.makeBarList({
-      mount: elBars,
-      isDark: darkNow,
-      /* Die Beschriftungsspalte nur, wenn die Komponente breit genug ist -- gemessen an der
-         eigenen Box ueber die Klasse, die widthTiers setzt. */
-      labelCol: function () { return !root.classList.contains("is-narrow"); },
-      fmt: function (v) { return UC.fmtPct(v, 1); }
     });
 
     /* ---- Trichter ----------------------------------------------------------------------------
@@ -569,6 +556,35 @@
       else typeChart.renderDonut(vorbereitet);
     }
 
+    /* Die Hoehe der ZEILE animieren, wenn ein Chart darin den Modus wechselt. Nicht die der
+       einzelnen Karte: die Zeile richtet mit align-items: stretch aus, also folgt jede Karte der
+       hoeheren -- gemessen blieb eine einzelne Karte bei 326px, egal was in ihr passierte, auch
+       ohne min-height. Was sich aendert, ist die Zeile. transition auf height greift bei
+       auto nicht -- also: aktuelle Hoehe festschreiben, neu zeichnen, Zielhoehe messen, darauf
+       animieren und danach wieder freigeben. 200ms ease (Vorgabe).
+       Ohne das Freigeben am Ende bliebe die Karte auf der gemessenen Hoehe stehen und wuerde beim
+       naechsten Datenwechsel nicht mehr mitwachsen. */
+    function hoeheAnimiert(karte, neuZeichnen) {
+      if (!karte || !karte.getBoundingClientRect) { neuZeichnen(); return; }
+      var vorher = karte.getBoundingClientRect().height;
+      neuZeichnen();
+      var nachher = karte.getBoundingClientRect().height;
+      if (Math.abs(nachher - vorher) < 1) return;
+      karte.style.height = vorher + "px";
+      karte.style.transition = "height 200ms ease";
+      /* Zwei Frames: einer, damit die Startho:he im Layout steht, der zweite fuer das Ziel --
+         beides im selben Frame gesetzt wuerde nicht animieren. */
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          karte.style.height = nachher + "px";
+          setTimeout(function () {
+            karte.style.height = "";
+            karte.style.transition = "";
+          }, 220);
+        });
+      });
+    }
+
     function syncTypeSeg() {
       if (!elTypeSeg) return;
       [].forEach.call(elTypeSeg.querySelectorAll("[data-chart]"), function (b) {
@@ -580,15 +596,19 @@
 
     /* Der Doughnut der Modelle. Dasselbe Werkzeug wie beim Typ-Split, nur mit selbst gebauten
        Items: die Modelle bringen ihre Farbe je Thema mit, es gibt fuer sie keine Skala in core.
-       prepTypeData waere hier falsch -- das kennt nur Zitations- und URL-Typen.
-       Der Balkenmodus bleibt UC.makeBarList: nur die kann Logos, und die Modelle haben Logos. */
+       prepTypeData waere hier falsch -- das kennt nur Zitations- und URL-Typen. */
     var modelDonut = UC.makeTypeChart ? UC.makeTypeChart({
       decimals: 1,
       body: elModelDonut,
       isDark: darkNow,
       isOwner: function () { return true; },
       mode: function () { return "url"; },
-      chartMode: function () { return "doughnut"; },
+      /* Derselbe Baustein zeichnet jetzt BEIDE Modi des Model Breakdowns. Vorher kamen die Balken
+         aus UC.makeBarList -- die animiert anders (Breite und Text in einem Zug), waehrend
+         makeTypeChart erst den Balken wachsen laesst und dann die Texte einfaedt. Zwei Charts in
+         einer Zeile mit zwei Bewegungen liest sich als Fehler. Die Logos gehen dabei nicht
+         verloren: renderBars in core kann sie jetzt auch. */
+      chartMode: function () { return state.modelMode; },
       total: function () { return null; },
       centerLabel: "Models",
       collapseHost: root.querySelector(".udd-modelcard")
@@ -600,7 +620,8 @@
           key: String(m.model || ""),
           name: String(m.model || ""),
           share: num(m.model_share_pct) || 0,
-          color: (isDark ? m.color_darkmode : m.color_lightmode) || typFarbe()
+          color: (isDark ? m.color_darkmode : m.color_lightmode) || typFarbe(),
+          logo: String(m.model_logo_url || "")
         };
       });
     }
@@ -616,31 +637,13 @@
     }
 
     function renderBars() {
-      if (state.error) {
-        elBars.innerHTML = '<div class="up-chart-empty">' + esc(state.error) + '</div>';
-        if (elModelDonut) elModelDonut.innerHTML = "";
-        return;
-      }
-      if (state.modelMode === "doughnut" && modelDonut) {
-        if (istLaden() || !isArr(state.model)) { modelDonut.skeleton(); return; }
-        var mi = modelItems();
-        if (!mi.length) { modelDonut.empty("No model data for this period."); return; }
-        modelDonut.renderDonut(mi);
-        return;
-      }
-      if (istLaden() || !isArr(state.model)) { bars.skeleton(4); return; }
-      var items = state.model.map(function (m) {
-        return {
-          key: m.model,
-          name: m.model,
-          share: num(m.model_share_pct) || 0,
-          /* Jedes Modell bringt seine eigene Farbe je Thema mit; ohne die faellt es auf die
-             Typfarbe der Domain zurueck, damit die Liste nie farblos dasteht. */
-          color: (isDark ? m.color_darkmode : m.color_lightmode) || typFarbe(),
-          logo: m.model_logo_url || ""
-        };
-      });
-      bars.render(items);
+      if (!modelDonut) return;
+      if (state.error) { modelDonut.empty(state.error); return; }
+      if (istLaden() || !isArr(state.model)) { modelDonut.skeleton(); return; }
+      var mi = modelItems();
+      if (!mi.length) { modelDonut.empty("No model data for this period."); return; }
+      if (state.modelMode === "bar") modelDonut.renderBars(mi);
+      else modelDonut.renderDonut(mi);
     }
 
     function render() {
@@ -701,7 +704,7 @@
         if (mk === state.modelMode) return;
         state.modelMode = mk; MCHART_STORE[instanceId] = mk;
         syncModelSeg();
-        renderBars();
+        hoeheAnimiert(root.querySelector(".udd-row2"), renderBars);
         /* Kein Ereignis nach Bubble: derselbe Datensatz, andere Darstellung. */
         return;
       }
@@ -712,7 +715,7 @@
         if (ck === state.chartMode) return;
         state.chartMode = ck; CHART_STORE[instanceId] = ck;
         syncTypeSeg();
-        renderTypes();
+        hoeheAnimiert(root.querySelector(".udd-row2"), renderTypes);
         /* Kein Ereignis nach Bubble: der Wechsel zeichnet dieselben Daten anders. */
         return;
       }

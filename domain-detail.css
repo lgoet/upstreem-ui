@@ -150,22 +150,16 @@
 .udd-typebody, .udd-modelbody { flex: 1 1 auto; display: flex; flex-direction: column;
   justify-content: center; min-height: 236px; transition: min-height 200ms ease; }
 
-/* Im Model Breakdown liegen Balken und Ring uebereinander -- sichtbar ist immer genau einer. */
-.udd-modelbody > .udd-bars { width: 100%; }
-.udd-modelbody > .udd-modeldonut { width: 100%; }
 /* Keine Mitte im Modell-Ring: das Model Breakdown kennt nur Anteile, keine Gesamtmenge. Mit
    total() = null schrieb makeTypeChart dort eine 0 -- "0 Models" ist falsch, und richtig ist keine
    Zahl. Beim Typ-Split bleibt sie: dort ist es die Zahl der zitierten Seiten. */
 .udd-modeldonut .up-donut-center { display: none; }
-.udd-root:not(.is-modeldonut) .udd-modeldonut { display: none; }
-.udd-root.is-modeldonut .udd-bars { display: none; }
 
 /* ---- Model Breakdown -------------------------------------------------------------------------
    Die Liste selbst ist UC.makeBarList mit dem Markup aus core (.up-bars/.up-bar-*). Hier steht
    nichts ueber ihr Aussehen -- nur, dass sie keine eigene Polsterung braucht, die Karte polstert
    schon. */
-/* Die Hoehe kommt jetzt von .udd-modelbody -- hier bleibt nur, dass die Liste die Breite nimmt. */
-.udd-bars { width: 100%; }
+
 
 /* ---- Schmal ----------------------------------------------------------------------------------
    Gemessen an der EIGENEN Box (UC.widthTiers setzt is-narrow/is-vnarrow), nicht am Fenster: diese
