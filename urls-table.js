@@ -1110,6 +1110,10 @@
 
     var lastProcAttr = String(root.getAttribute("data-processing") || "") + "|" +
                        String(root.getAttribute("data-processing2") || "");
+    /* Der Ausgangsstand von Marke und Logo, damit der erste Lauf nicht faelschlich als Aenderung
+       zaehlt. */
+    var lastMarkeAttr = String(root.getAttribute("data-brand-name") || "") + "|" +
+                        String(root.getAttribute("data-brand-logo") || "");
     var explicitOverride = false;
     /* Zwei Quellen fuer den Skeleton-Zustand, absichtlich getrennt:
          state.loading     — INTERN: von UC.makeSearch/UC.makePager gesetzt, wenn die Komponente
@@ -1132,6 +1136,13 @@
          bei jedem Umschalten data-processing frisch aus dem DOM und wendet einen Ladezustand an,
          den niemand angefordert hat. Siehe UC.themeOnly. */
       if (UC.themeOnly && UC.themeOnly(muts)){ if (changed) render(); return; }
+      /* Marke und Logo stehen im attributeFilter des Beobachters, loesten aber kein Neuzeichnen
+         aus: changed wurde nur von Thema und Ladezustand gesetzt. Dieselbe Luecke wie in
+         responses-table, dort gemessen -- das Logo blieb beim Umschreiben des Attributs stehen.
+         prompts-table hat dafuer einen eigenen Beobachter und war nie betroffen. */
+      var markeAttr = String(root.getAttribute("data-brand-name") || "") + "|" +
+                      String(root.getAttribute("data-brand-logo") || "");
+      if (markeAttr !== lastMarkeAttr){ lastMarkeAttr = markeAttr; changed = true; }
       var procAttr = String(root.getAttribute("data-processing") || "") + "|" +
                      String(root.getAttribute("data-processing2") || "");
       if (procAttr !== lastProcAttr){

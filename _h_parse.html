@@ -5,7 +5,7 @@
 var DATEIEN = ["_h_urd_runjs_ohnemodelle.js", "_h_urd_runjs_live.js", "response-detail.js", "_h_udd_runjs.js", "_h_udd_runjs_urls.js", "core.js","prompts-table.js","prompt-research.js","create-with-ai.js","quick-actions.js",
  "visibility-chart.js","opportunities.js","brand-detail.js","discover-brands.js","notification-card.js",
  "responses-table.js","performance-detail.js","export-data.js","settings-brand.js","topics-manager.js",
- "filters/topics-filter.js","filters/markets-filter.js","filters/models-filter.js","filters/date-range.js","sidebar.js","topcitations-dashboard.js","brand-detail.js","create-with-ai.js","brands-overview.js","domains-table.js","domain-detail.js","notification-card.js"];
+ "filters/topics-filter.js","filters/markets-filter.js","filters/models-filter.js","filters/date-range.js","sidebar.js","topcitations-dashboard.js","brand-detail.js","create-with-ai.js","brands-overview.js","domains-table.js","urls-table.js","domain-detail.js","notification-card.js"];
 Promise.all(DATEIEN.map(function(f){
   return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){return r.text()}).then(function(t){
     /* new Function PARST die Datei, ohne sie auszufuehren -- ein Syntaxfehler wirft hier. */

@@ -1229,6 +1229,10 @@
     }
 
     var lastProcAttr = String(root.getAttribute("data-processing") || "") + "|" + String(root.getAttribute("data-processing2") || "");
+    /* Der Ausgangsstand von Marke und Logo, damit der erste Lauf nicht faelschlich als
+       Aenderung zaehlt. */
+    var lastMarkeAttr = String(root.getAttribute("data-brand-name") || "") + "|" +
+                        String(root.getAttribute("data-brand-logo") || "");
     var explicitOverride = false;
     function isBusy(){ return !!state.loading || !!state.extLoading; }
     var syncFromAttrs = function(muts){
@@ -1239,6 +1243,13 @@
       var changed = _th.changed;
       /* Reiner Themewechsel: Ladezustand nicht anfassen. Siehe UC.themeOnly. */
       if (UC.themeOnly && UC.themeOnly(muts)){ if (changed) render(); return; }
+      /* Marke und Logo stehen im attributeFilter des Beobachters, loesten aber kein Neuzeichnen aus:
+         changed wurde nur von Thema und Ladezustand gesetzt. Ein Workflow, der data-brand-logo
+         umschreibt, aenderte damit das Attribut und sonst nichts -- gemessen blieb das Bild im
+         Spaltenkopf und im "<Marke> mentioned"-Schalter auf dem alten Logo stehen. */
+      var markeAttr = String(root.getAttribute("data-brand-name") || "") + "|" +
+                      String(root.getAttribute("data-brand-logo") || "");
+      if (markeAttr !== lastMarkeAttr){ lastMarkeAttr = markeAttr; changed = true; }
       var procAttr = String(root.getAttribute("data-processing") || "") + "|" + String(root.getAttribute("data-processing2") || "");
       if (procAttr !== lastProcAttr){ lastProcAttr = procAttr; explicitOverride = false; }
       if (!explicitOverride){

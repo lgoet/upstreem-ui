@@ -1,0 +1,221 @@
+<meta charset="utf-8">
+<link rel="stylesheet" href="core.css?v=202">
+<link rel="stylesheet" href="responses-table.css?v=202">
+<body style="margin:0;padding:20px;font-family:sans-serif">
+<div class="up-root urt-root"
+     data-instance="rt1"
+     data-cdn-pin=""
+     data-isdark="no"
+     data-brand-name="Acme"
+     data-brand-logo="https://www.google.com/s2/favicons?domain=github.com&sz=64"
+     data-export-instance="EXPORT_rt1"
+     data-sticky-top="171"
+     data-search-fn="bubble_fn_urtSearch"
+     data-sort-fn="bubble_fn_urtSort"
+     data-filter-fn="bubble_fn_urtFilter"
+     data-mentioned-fn="bubble_fn_urtMentioned"
+     data-brand-fn="bubble_fn_urtBrand"
+     data-page-fn="bubble_fn_urtPage"
+     data-view-fn="bubble_fn_urtView"
+     data-rowclick-fn="bubble_fn_urtRowClick">
+  <div class="up-head">
+    <div class="up-heading"><span class="up-head-label">Responses</span><span class="up-head-sep"></span><span class="up-head-count"></span></div>
+    <div class="up-head-tools">
+      <button class="urt-brand-toggle" type="button" data-tip="Filter by brand mention">
+        <span class="urt-brand-toggle-lbl">
+          <img class="urt-brand-logo" src="" style="display:none" alt=""/>
+          <span class="urt-brand-label"></span>
+        </span>
+        <span class="urt-brand-check">
+          <svg class="urt-brand-check-yes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <svg class="urt-brand-check-no" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </span>
+      </button>
+
+      <div class="up-ment">
+        <button class="up-ment-btn" type="button" aria-haspopup="menu" aria-expanded="false">
+          <span class="up-ment-lbl">All Brands</span>
+          <svg class="up-ment-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          <svg class="up-ment-clear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <div class="up-ment-menu" role="menu" aria-hidden="true"></div>
+      </div>
+
+      <!-- feather "sliders" — the SAME filter glyph visibility-chart / topcitations / combo-chart
+           use. .up-iconbtn makes it behave like every other toolbar icon button. -->
+      <div class="urt-fader">
+        <button class="urt-fader-btn up-iconbtn" type="button" data-tip="Filter by rank &amp; sentiment" aria-label="Filter by rank and sentiment" aria-haspopup="menu" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+        </button>
+        <div class="urt-fader-menu" role="menu" aria-hidden="true"></div>
+      </div>
+
+      <div class="up-sort">
+        <button class="up-sort-btn up-iconbtn" type="button" data-tip="Sort" aria-label="Sort">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+        </button>
+        <div class="up-sort-menu" role="menu" aria-hidden="true"></div>
+      </div>
+
+      <div class="up-search">
+        <button class="up-search-btn up-iconbtn" type="button" data-tip="Search" aria-label="Search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+        <div class="up-search-box">
+          <input class="up-search-input" type="text" placeholder="Search prompts..." autocomplete="off" spellcheck="false" aria-label="Search responses"/>
+          <button class="up-search-clear" type="button" aria-label="Clear search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="up-cols">
+        <button class="up-cols-btn up-iconbtn" type="button" data-tip="Table Settings" aria-label="Table settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+        <span class="urt-cols-badge"></span>
+        <div class="up-cols-menu" role="menu" aria-hidden="true"></div>
+      </div>
+
+      <!-- .up-dense / .up-dense-btn are core's segmented control — the same one the Row Height
+           picker uses. Reused verbatim so this switcher IS the app's switcher, not a lookalike.
+           .urt-viewswitch only overrides the width (core's is full-width for the popover). -->
+      <div class="up-dense urt-viewswitch" role="group" aria-label="View">
+        <button class="up-dense-btn up-dense-btn-icon is-active" type="button" data-view="table" data-tip="Table view" aria-label="Table view">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
+        </button>
+        <button class="up-dense-btn up-dense-btn-icon" type="button" data-view="cards" data-tip="Card view" aria-label="Card view">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        </button>
+      </div>
+
+      <button class="up-export" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Export</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="up-box">
+    <div class="up-table">
+      <div class="up-thead">
+        <!-- The lead column's resize grip. Every other table has one; without it the first
+             column simply cannot be dragged (core's resize kit binds to .up-grip). -->
+        <div class="up-th up-th-prompt">Prompt<span class="up-grip" data-grip="prompt"></span></div>
+        <!-- "<brand logo> mentioned?", identical to urls-table: the logo is filled in from
+             data-brand-logo, and without one the label falls back to "<brand name> mentioned?" -->
+        <div class="up-th up-th-mentioned">
+          <img class="up-th-brandlogo" src="" alt="" style="display:none"/>
+          <span class="up-th-mentlbl">Mentioned?</span>
+        </div>
+        <div class="up-th up-th-sentiment is-sortable" data-sortcol="sentiment">
+          <span class="up-th-txt">Sentiment</span>
+          <span class="up-thsort" data-for="sentiment">
+            <svg class="up-thsort-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+            <svg class="up-thsort-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+        </div>
+        <div class="up-th up-th-rank is-sortable" data-sortcol="rank">
+          <span class="up-th-txt">Rank</span>
+          <span class="up-thsort" data-for="rank">
+            <svg class="up-thsort-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+            <svg class="up-thsort-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+        </div>
+        <div class="up-th up-th-brands">Brand Mentions</div>
+        <div class="up-th up-th-citations">Citations</div>
+        <div class="up-th up-th-model">Model</div>
+        <div class="up-th up-th-date is-sortable" data-sortcol="date">
+          <span class="up-th-txt">Date</span>
+          <span class="up-thsort" data-for="date">
+            <svg class="up-thsort-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+            <svg class="up-thsort-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+        </div>
+      </div>
+      <div class="up-tbody"></div>
+    </div>
+  </div>
+
+  <div class="urt-cards"></div>
+
+  <div class="up-foot">
+    <div class="up-pagesize">
+      <span class="up-pagesize-lbl">Rows per page</span>
+      <div class="up-pagesize-seg" role="group" aria-label="Rows per page"></div>
+    </div>
+    <div class="up-pager"></div>
+  </div>
+</div>
+
+<!-- Per fetch mit no-store und in Reihenfolge eingesetzt: ein ?v= hat in dieser Sitzung
+     mehrfach nicht gewirkt, und dann misst man drei Runden gegen eine alte Datei. -->
+<script>
+window.__JS_BEREIT = ["core.js","responses-table.js"].reduce(function(kette, f){
+  return kette.then(function(){
+    return fetch(f, {cache:"no-store"}).then(function(r){ return r.text(); }).then(function(t){
+      var e = document.createElement("script"); e.textContent = t; document.head.appendChild(e); });
+  });
+}, Promise.resolve());
+</script>
+<script>
+window.MODELS = [
+  {"key":"chatgpt","logo_url":"https://cdn-icons-png.freepik.com/512/12222/12222588.png","provider":"OpenAI","is_active":"yes","display_name":"ChatGPT"},
+  {"key":"google-aio","logo_url":"https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg","provider":"Google","is_active":"yes","display_name":"Google AI Overviews"},
+  {"key":"perplexity","logo_url":"https://registry.npmmirror.com/@lobehub/icons-static-png/latest/files/dark/perplexity-color.png","provider":"Perplexity","is_active":"yes","display_name":"Perplexity"},
+  {"key":"gemini","logo_url":"https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/llm_logos/gemini_logo.webp","provider":"Google","is_active":"no","display_name":"Gemini"},
+  {"key":"deepseek","logo_url":"https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/llm_logos/icons8-deepseek-96.svg","provider":"DeepSeek","is_active":"no","display_name":"DeepSeek"}
+];
+window.ROWS = [
+  {"prompt_run_id":"bf769b52-e00b-4a72-93d0-9927ece9732d","run_at":"2026-08-02T07:49:07.445732+00:00","model":"chatgpt","prompt_id":"0cc61f1b","prompt_text":"beste SUV-Modelle mit Allradantrieb fuer den Winter","user_rank":null,"user_sentiment":null,"has_user_brand":"no",
+   "companies_preview_totalcount":5,"companies_preview":[
+     {"name":"Toyota","rank":2,"company_id":"c1","favicon_url":"https://www.google.com/s2/favicons?domain=www.toyota.de&sz=64","brand_name_raw":"Toyota RAV4"},
+     {"name":"Audi","rank":4,"company_id":"c2","favicon_url":"https://www.google.com/s2/favicons?domain=www.audi.de&sz=64","brand_name_raw":"Audi Q5"},
+     {"name":"Volvo","rank":5,"company_id":"c3","favicon_url":"https://www.google.com/s2/favicons?domain=www.volvo.com&sz=64","brand_name_raw":"Volvo XC60"},
+     {"name":"VW","rank":8,"company_id":"c4","favicon_url":"https://www.google.com/s2/favicons?domain=volkswagen.de&sz=64","brand_name_raw":"Volkswagen Tiguan"}
+   ],
+   "sources_preview":[
+     {"pos":1,"url":"https://motor.com.de/blog/suv-vergleich-2026","title":"SUV Vergleich 2026","domain":"motor.com.de","favicon":"https://www.google.com/s2/favicons?domain=motor.com.de&sz=128"},
+     {"pos":2,"url":"https://www.adac.de/x","title":"SUV-Modelle im Vergleich","domain":"adac.de","favicon":"https://www.google.com/s2/favicons?domain=adac.de&sz=128"},
+     {"pos":3,"url":"https://www.auto-netz.com/x","title":"Winter-SUVs im Test","domain":"auto-netz.com","favicon":"https://www.google.com/s2/favicons?domain=auto-netz.com&sz=128"},
+     {"pos":4,"url":"https://www.autobild.de/a","title":"AUTO BILD Allrad Award 2026","domain":"autobild.de","favicon":"https://www.google.com/s2/favicons?domain=autobild.de&sz=128"},
+     {"pos":5,"url":"https://www.autobild.de/b","title":"Die besten kompakten Elektro-SUV","domain":"autobild.de","favicon":"https://www.google.com/s2/favicons?domain=autobild.de&sz=128"},
+     {"pos":6,"url":"https://www.autobild.de/c","title":"Bestenliste Mitteklasse","domain":"autobild.de","favicon":"https://www.google.com/s2/favicons?domain=autobild.de&sz=128"},
+     {"pos":7,"url":"https://www.carwow.de/allrad","title":"Beste Allrad-Autos 2026","domain":"carwow.de","favicon":"https://www.google.com/s2/favicons?domain=carwow.de&sz=128"}
+   ],
+   "total_count":23381,"response_preview":"Wenn du regelmaessig bei Schnee, Eis oder in den Bergen unterwegs bist, lohnt sich ein SUV mit einem g..."},
+  {"prompt_run_id":"4fc66fd0-9878-40c1-98bd-4f79937eb7f2","run_at":"2026-08-02T07:48:54.864186+00:00","model":"perplexity","prompt_id":"0cc61f1b","prompt_text":"beste SUV-Modelle mit Allradantrieb fuer den Winter","user_rank":null,"user_sentiment":null,"has_user_brand":"no",
+   "companies_preview_totalcount":0,"companies_preview":[],
+   "sources_preview":[
+     {"pos":1,"url":"https://citymagazine.si/x","title":"TOP 8: Die besten SUVs","domain":"citymagazine.si","favicon":"https://www.google.com/s2/favicons?domain=citymagazine.si&sz=128"}
+   ],
+   "total_count":23381,"response_preview":"Kurz gesagt: Gute Allrad-SUVs fuer den Winter sind oft Modelle mit symmetrischem Antrieb..."},
+  {"prompt_run_id":"61c5ee23-e08e-431c-a255-2f377f92eee8","run_at":"2026-08-02T07:48:37.153227+00:00","model":"google-aio","prompt_id":"0cc61f1b","prompt_text":"beste SUV-Modelle mit Allradantrieb fuer den Winter","user_rank":6,"user_sentiment":72,"has_user_brand":"yes",
+   "companies_preview_totalcount":4,"companies_preview":[
+     {"name":"Volvo","rank":1,"company_id":"c3","favicon_url":"https://www.google.com/s2/favicons?domain=www.volvo.com&sz=64","brand_name_raw":"Volvo XC60"},
+     {"name":"VW","rank":2,"company_id":"c4","favicon_url":"https://www.google.com/s2/favicons?domain=volkswagen.de&sz=64","brand_name_raw":"VW Tiguan"}
+   ],
+   "sources_preview":[
+     {"pos":1,"url":"https://blog.carvago.com/x","title":"Die 5 beliebtesten SUVs","domain":"blog.carvago.com","favicon":"https://www.google.com/s2/favicons?domain=blog.carvago.com&sz=128"}
+   ],
+   "total_count":23381,"response_preview":"Die besten SUV-Modelle mit Allradantrieb fuer den Winter sind der Volvo XC60..."},
+  {"prompt_run_id":"unknown-model-test","run_at":"2026-08-01T10:00:00.000000+00:00","model":"some-future-llm","prompt_id":"x","prompt_text":"test unknown model key","user_rank":15,"user_sentiment":30,"has_user_brand":"no",
+   "companies_preview_totalcount":0,"companies_preview":[],"sources_preview":[],"total_count":23381,"response_preview":"short preview text"}
+];
+window.__events = [];
+['mira_x'].forEach(function(){});
+window.bubble_fn_urtSearch = function(j){ window.__events.push(['search',j]); };
+window.bubble_fn_urtSort = function(j){ window.__events.push(['sort',j]); };
+window.bubble_fn_urtFilter = function(j){ window.__events.push(['filter',j]); };
+window.bubble_fn_urtMentioned = function(j){ window.__events.push(['mentioned',j]); };
+window.bubble_fn_urtBrand = function(j){ window.__events.push(['brand',j]); };
+window.bubble_fn_urtPage = function(j){ window.__events.push(['page',j]); };
+window.bubble_fn_urtView = function(j){ window.__events.push(['view',j]); };
+window.bubble_fn_urtRowClick = function(j){ window.__events.push(['rowclick',j]); };
+window.addEventListener('load', function(){
+  setTimeout(function(){
+    window.setResponsesTableModels('rt1', window.MODELS);
+    window.renderResponsesTable({ instanceId:'rt1', rows: window.ROWS });
+  }, 300);
+});
+</script>
