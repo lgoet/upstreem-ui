@@ -37,9 +37,9 @@
                        auch dort.
        data-demo       "yes" fuellt die Seite mit Beispieldaten und laesst die Uhren fest laufen
                        (5s je Phase, also 20s, dann 10s). Fuer eine Testseite ohne Workflows.
-                       Der Loader unten holt onboarding-demo.js dann von selbst nach -- es ist
-                       nichts weiter zu tun. Im Betrieb WEGLASSEN, dann wird die Datei auch
-                       nicht geladen.
+                       Die Daten stecken IN onboarding-page.js -- es ist nichts weiter zu laden
+                       und nichts weiter zu verdrahten, das Attribut genuegt. Im Betrieb auf
+                       "no" lassen oder ganz weglassen.
 
      ── EREIGNISSE ──────────────────────────────────────────────────────────────────────────
        uobStart   Objekt: brand_name, website_input, website_url, website_domain, market,
@@ -138,16 +138,6 @@
 
   /* core zuerst, async=false haelt die Reihenfolge ein. */
   css("core.css");        js("core.js");
-  /* Die Beispieldaten VOR der Komponente: sie liest window.__uobDemo beim Aufbau, und ein
-     Nachzuegler kaeme zu spaet. Nur wenn data-demo gesetzt ist -- im Betrieb laedt die Seite
-     die Datei gar nicht erst. */
-  (function(){
-    var els = document.getElementsByClassName("uob-root");
-    for (var i = 0; i < els.length; i++){
-      var d = (els[i].getAttribute("data-demo") || "").trim().toLowerCase();
-      if (d === "yes" || d === "true"){ js("onboarding-demo.js"); break; }
-    }
-  })();
   css("onboarding-page.css"); js("onboarding-page.js");
 })();
 </script>

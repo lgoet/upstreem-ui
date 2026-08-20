@@ -16,10 +16,11 @@
    deshalb steht neben Weiter ein sichtbarer Ueberspringen-Weg und keine stille Sperre.
 
    ── Statisch und dynamisch in EINER Datei ───────────────────────────────────────────────────
-   data-demo="yes" fuellt die Seite mit den Beispieldaten und laesst die Uhren fest laufen
-   (40s in vier Phasen, dann 10s). Ohne das Attribut passiert nichts von selbst: dann fuettern
-   die Setter unten, und die Phasen kommen aus dem Statuspayload. Es sind DIESELBEN Zustaende,
-   nicht zwei Fassungen -- eine abgespeckte erste Version waere spaeter ein zweiter Umbau.
+   data-demo="yes" fuellt die Seite mit den Beispieldaten (DEMO_DATEN, weiter unten in dieser
+   Datei) und laesst die Uhren fest laufen: fuenf Sekunden je Phase, also zwanzig, danach zehn.
+   Nichts nachzuladen, nichts zu verdrahten -- das Attribut genuegt. Ohne das Attribut passiert
+   nichts von selbst: dann fuettern die Setter unten, und die Phasen kommen aus dem
+   Statuspayload. Es sind DIESELBEN Zustaende, nicht zwei Fassungen.
 
    ── Bubble ──────────────────────────────────────────────────────────────────────────────────
    Ereignisse (data-*-fn am Root, sonst bubble_fn_<name>):
@@ -74,6 +75,140 @@
   function isArr(v) { return Object.prototype.toString.call(v) === "[object Array]"; }
   function txt(v) { return String(v == null ? "" : v).trim(); }
   function num(v) { var n = parseFloat(String(v == null ? "" : v).replace(",", ".")); return isFinite(n) ? n : null; }
+
+  /* ---------- Beispieldaten fuer den Demobetrieb ---------------------------------------------
+     Sie stehen HIER und nicht in einer zweiten Datei. Der erste Versuch hatte sie ausgelagert,
+     und genau daran ist er gescheitert: auf einer Seite, die diese Datei nicht mitlaedt, blieben
+     alle Listen leer, und die Ladeuhr stand still, weil im Demobetrieb sie es ist, die die
+     Phasen weiterschaltet. Eine Fassung, die von einer zweiten Datei abhaengt, ist keine
+     Fassung, die man einfach anschalten kann.
+
+     Projekt, Marken, Prompts und Tarife sind wortgleich die Payloads aus der Aufgabe. Erfunden
+     sind nur die Themen und die zusaetzlichen Prompts, weil es beides in der heutigen Fassung
+     noch nicht gibt.
+
+     Sie werden NUR gelesen, wenn am Element data-demo="yes" steht. Ohne das Attribut ruehrt
+     diese Komponente den Block nicht an. */
+  var DEMO_DATEN = {
+  
+    project: {
+      "id": "9346b43e-f7b9-4122-ad10-0869aaecc21d",
+      "user_id": "aea6e317-d901-419b-b2b2-5ca3573ea2f5",
+      "mode": "Brand",
+      "business_model": "B2B",
+      "brand_industry": "Lautsprecher / Beschallung",
+      "market_focus": null,
+      "website_input": "https://www.funktion-one.com",
+      "website_url": "https://funktion-one.com",
+      "website_domain": "funktion-one.com",
+      "status": "ready",
+      "run_group_uuid": null,
+      "status_phase": 5,
+      "status_label": "Finalizing insights",
+      "progress_percent": 100,
+      "last_error": null,
+      "created_at": "2026-08-20T11:52:29.900336+00:00",
+      "updated_at": "2026-08-20T11:52:29.97104+00:00",
+      "company_name": "Function One",
+      "summary": "Funktion-One ist ein Hersteller professioneller Lautsprechersysteme fuer Tourneen, Festivals, Arenen, Clubs und Installationen.",
+      "market": "DE",
+      "selected_billing_plan_id": null,
+      "billing_interval": null,
+      "stripe_checkout_session_id": null,
+      "stripe_checkout_url": null,
+      "team_id": null
+    },
+  
+    brands: [
+      { "id": "f6450b61-b104-44b8-a9f9-c9cd30f53c58", "name": "d&b audiotechnik", "domain": "dbaudio.com",
+        "url": "https://dbaudio.com", "favicon_url": "https://www.google.com/s2/favicons?domain=dbaudio.com&sz=64", "selected": false },
+      { "id": "56f0910d-a8dc-4f48-8f52-1d5bc86ba038", "name": "L-Acoustics", "domain": "l-acoustics.com",
+        "url": "https://l-acoustics.com", "favicon_url": "https://www.google.com/s2/favicons?domain=l-acoustics.com&sz=64", "selected": false },
+      { "id": "3d0c0160-25a0-475b-bab3-29b4f5cd120b", "name": "Meyer Sound", "domain": "meyersound.com",
+        "url": "https://meyersound.com", "favicon_url": "https://www.google.com/s2/favicons?domain=meyersound.com&sz=64", "selected": false },
+      { "id": "ae8e82b0-fb4f-4b56-a052-00cc730a97e2", "name": "KV2 Audio", "domain": "kv2audio.com",
+        "url": "https://kv2audio.com", "favicon_url": "https://www.google.com/s2/favicons?domain=kv2audio.com&sz=64", "selected": false },
+      { "id": "1ddc14fd-f7e1-4c83-98a6-4433b7b9222a", "name": "CODA Audio", "domain": "codaaudio.com",
+        "url": "https://codaaudio.com", "favicon_url": "https://www.google.com/s2/favicons?domain=codaaudio.com&sz=64", "selected": false },
+      { "id": "9a2fad22-cb7b-4acc-919f-da37972d6bcd", "name": "NEXO", "domain": "nexo-sa.com",
+        "url": "https://nexo-sa.com", "favicon_url": "https://www.google.com/s2/favicons?domain=nexo-sa.com&sz=64", "selected": false },
+      { "id": "1fff4526-d922-4305-820b-6ef33d607c7d", "name": "RCF", "domain": "rcf.it",
+        "url": "https://rcf.it", "favicon_url": "https://www.google.com/s2/favicons?domain=rcf.it&sz=64", "selected": false },
+      { "id": "422b43a8-ec22-49d3-ae0f-7c893b22b4e0", "name": "Electro-Voice", "domain": "electrovoice.com",
+        "url": "https://electrovoice.com", "favicon_url": "https://www.google.com/s2/favicons?domain=electrovoice.com&sz=64", "selected": false }
+    ],
+  
+    /* Sieben Themen. Ohne Emoji, wie verlangt -- der farbige Koerper traegt die Unterscheidung.
+       hex_light/hex_dark wie in der Themenverwaltung der App; wo sie fehlen, greift die Palette
+       aus core. */
+    topics: [
+      { "id": "t-line-array",  "name": "Line Array Systems",
+        "description": "Vertikal arraybare Systeme fuer grosse Flaechen",
+        "hex_light": "#1b6eda", "hex_dark": "#1b6eda" },
+      { "id": "t-touring",     "name": "Festival & Touring Sound",
+        "description": "Open Air, Tourneen, wechselnde Spielstaetten",
+        "hex_light": "#de1b22", "hex_dark": "#de1b22" },
+      { "id": "t-club",        "name": "Club & Nightlife",
+        "description": "Feste Installationen in Clubs und Bars",
+        "hex_light": "#9145e8", "hex_dark": "#9145e8" },
+      { "id": "t-spatial",     "name": "Spatial & Immersive Audio",
+        "description": "Objektbasiertes Mischen, raeumliche Wiedergabe",
+        "hex_light": "#107c84", "hex_dark": "#107c84" },
+      { "id": "t-amps",        "name": "Amplifiers & Rigging",
+        "description": "Endstufenracks, Traversen, Transporthardware",
+        "hex_light": "#8d6a11", "hex_dark": "#8d6a11" },
+      { "id": "t-efficiency",  "name": "Energy Efficiency",
+        "description": "Wirkungsgrad, Leistungsbedarf, Nachhaltigkeit",
+        "hex_light": "#108440", "hex_dark": "#108440" },
+      { "id": "t-venues",      "name": "Arenas & Venues",
+        "description": "Mehrzweckhallen, Theater, Arenen",
+        "hex_light": "#d51a8b", "hex_dark": "#d51a8b" }
+    ],
+  
+    /* Dreizehn Prompts. Die ersten vier sind wortgleich die aus der Aufgabe, nur mit topic_ids.
+       Vier davon tragen ZWEI Themen -- genau der Fall, an dem die Gruppierung sich beweisen muss:
+       jeder Prompt steht einmal, unter seinem ersten Thema, die uebrigen als Marken am Zeilenende. */
+    prompts: [
+      { "id": "p1",  "prompt_text": "beste Line-Array-Lautsprecher fuer Festivals und Arenatouren",
+        "market": "DE", "selected": false, "topic_ids": ["t-line-array", "t-touring"] },
+      { "id": "p2",  "prompt_text": "Welcher Pro-Audio-Hersteller bietet energieeffiziente Touring-PA-Systeme mit hoher Sprachverstaendlichkeit fuer Open-Air-Festivals?",
+        "market": "DE", "selected": false, "topic_ids": ["t-efficiency", "t-touring"] },
+      { "id": "p3",  "prompt_text": "Top Anbieter von raeumlichen Beschallungssystemen und Objekt-basiertem Mixing fuer Theater und Mehrzweckhallen in Europa",
+        "market": "DE", "selected": false, "topic_ids": ["t-spatial", "t-venues"] },
+      { "id": "p4",  "prompt_text": "vergleiche Hersteller von vertikal arraybaren Lautsprechersystemen und passenden Endstufenracks fuer grosse Konzertproduktionen",
+        "market": "DE", "selected": false, "topic_ids": ["t-line-array", "t-amps"] },
+      { "id": "p5",  "prompt_text": "welches Line-Array-System hat die beste Direktivitaetskontrolle bei langen Wurfweiten",
+        "market": "DE", "selected": false, "topic_ids": ["t-line-array"] },
+      { "id": "p6",  "prompt_text": "PA-System fuer ein Festival mit 20.000 Besuchern - welche Hersteller kommen infrage?",
+        "market": "DE", "selected": false, "topic_ids": ["t-touring"] },
+      { "id": "p7",  "prompt_text": "beste Clublautsprecher fuer elektronische Musik mit sauberem Tiefbass",
+        "market": "DE", "selected": false, "topic_ids": ["t-club"] },
+      { "id": "p8",  "prompt_text": "welche Beschallungsmarken werden in Technoclubs am haeufigsten verbaut?",
+        "market": "DE", "selected": false, "topic_ids": ["t-club"] },
+      { "id": "p9",  "prompt_text": "Loesungen fuer objektbasiertes Mischen in Theatern - Anbieter im Vergleich",
+        "market": "DE", "selected": false, "topic_ids": ["t-spatial"] },
+      { "id": "p10", "prompt_text": "welche Verstaerkerracks passen zu grossen Touring-Lautsprechersystemen?",
+        "market": "DE", "selected": false, "topic_ids": ["t-amps"] },
+      { "id": "p11", "prompt_text": "Lautsprecher mit hohem Wirkungsgrad - welche Hersteller brauchen am wenigsten Strom pro dB?",
+        "market": "DE", "selected": false, "topic_ids": ["t-efficiency"] },
+      { "id": "p12", "prompt_text": "Beschallungsanlage fuer eine Mehrzweckhalle - worauf kommt es bei der Auswahl an?",
+        "market": "DE", "selected": false, "topic_ids": ["t-venues"] },
+      { "id": "p13", "prompt_text": "welche Lautsprecherhersteller gelten als nachhaltig in der Veranstaltungstechnik?",
+        "market": "DE", "selected": false, "topic_ids": ["t-efficiency"] }
+    ],
+  
+    plans: [
+      { "id": "54be31d2-dc61-4a5e-8ea0-31c4370a4cb3", "name": "Essential",
+        "monthly_price_eur": 89.00, "yearly_price_eur": 948.00,
+        "prompts_per_day": 50, "competitors_max_active": 5, "trial_days": 30, "sort_order": null },
+      { "id": "3129be58-d59a-4221-ba53-7b2e4131cf5f", "name": "Professional",
+        "monthly_price_eur": 205.00, "yearly_price_eur": 2220.00,
+        "prompts_per_day": 150, "competitors_max_active": 10, "trial_days": 30, "sort_order": null },
+      { "id": "a980c741-807e-43dd-9617-8e06b82999ba", "name": "Enterprise",
+        "monthly_price_eur": 429.00, "yearly_price_eur": 4380.00,
+        "prompts_per_day": 350, "competitors_max_active": 15, "trial_days": 30, "sort_order": null }
+    ]
+  };
 
   /* ---------- Schritte ---------------------------------------------------------------------
      Die Reihenfolge ist die Wahrheit ueber den Ablauf: Schiene, Zurueck-Knopf und die
@@ -303,9 +438,11 @@
       plan: "", interval: "yearly",
       /* Einmal beim Tarif gewesen heisst: der Punkt bleibt in der Schiene. Siehe renderRail. */
       planGesehen: false,
-      /* Hat der Nutzer das Geschaeftsmodell angefasst? Steuert das Branchenfeld, siehe
-         syncBusiness. */
-      bizBeruehrt: false,
+      /* Der weiteste Schritt, an dem der Nutzer je war. Er entscheidet, worauf in der Leiste
+         geklickt werden darf -- nicht der aktuelle Schritt. Wer von Plan auf Competitors
+         zurueckgeht, muss von dort auch wieder nach vorn kommen, ohne alles noch einmal
+         durchzuklicken. */
+      maxErreicht: 0,
       busy: false
     };
     var BRAND_MAX = 5;
@@ -371,6 +508,7 @@
           '<div class="uob-rail-dots" data-rail-dots></div>' +
         '</div>' +
         '<div class="uob-rail-labels" data-rail-labels></div>' +
+        '<div class="uob-rail-hits" data-rail-hits></div>' +
       '</div>' +
 
       '<div class="uob-mid">' +
@@ -408,6 +546,7 @@
     var elRailFill= root.querySelector("[data-rail-fill]");
     var elRailDots= root.querySelector("[data-rail-dots]");
     var elRailLbls= root.querySelector("[data-rail-labels]");
+    var elRailHits= root.querySelector("[data-rail-hits]");
     var elIdent   = root.querySelector("[data-ident]");
     var elIdentLg = root.querySelector("[data-ident-logo]");
     var elIdentNm = root.querySelector("[data-ident-name]");
@@ -865,52 +1004,81 @@
       var neuGebaut = schluessel !== railStand;
       if (neuGebaut) {
         var vorher = railStand ? railStand.split(",") : [];
-        elRailDots.innerHTML = liste.map(function (x, n) {
-          var frisch = vorher.length && vorher.indexOf(x.key) < 0;
-          return '<button class="uob-dot' + (frisch ? " is-fresh" : "") + '" type="button"' +
-                 ' data-go="' + esc(x.key) + '" style="--uob-x:' + (n / letzte * 100) + '%"' +
-                 ' aria-label="' + esc(x.label) + '" tabindex="-1">' + ic("check", 3) + '</button>';
+        function x(n) { return (n / letzte * 100) + "%"; }
+        elRailDots.innerHTML = liste.map(function (e, n) {
+          var frisch = vorher.length && vorher.indexOf(e.key) < 0;
+          return '<span class="uob-dot' + (frisch ? " is-fresh" : "") + '"' +
+                 ' data-dot="' + esc(e.key) + '" style="--uob-x:' + x(n) + '">' + ic("check", 3) + '</span>';
         }).join("");
-        elRailLbls.innerHTML = liste.map(function (x, n) {
-          var frisch = vorher.length && vorher.indexOf(x.key) < 0;
-          return '<span class="' + (frisch ? "is-fresh" : "") + '" data-go="' + esc(x.key) +
-                 '" style="--uob-x:' + (n / letzte * 100) + '%">' + esc(x.label) + '</span>';
+        elRailLbls.innerHTML = liste.map(function (e, n) {
+          var frisch = vorher.length && vorher.indexOf(e.key) < 0;
+          return '<span class="' + (frisch ? "is-fresh" : "") + '" data-lbl="' + esc(e.key) +
+                 '" style="--uob-x:' + x(n) + '">' + esc(e.label) + '</span>';
+        }).join("");
+        /* Eine Trefferflaeche je Station, ueber Punkt UND Beschriftung. Sie traegt Klick und
+           Hover; Punkt und Text sind nur noch Bild (pointer-events: none im CSS). */
+        elRailHits.innerHTML = liste.map(function (e, n) {
+          return '<button class="uob-rail-hit" type="button" data-go="' + esc(e.key) + '"' +
+                 ' style="--uob-x:' + x(n) + '" aria-label="' + esc(e.label) + '" tabindex="-1"></button>';
         }).join("");
         railStand = schluessel;
-        /* Ein Bildaufbau dazwischen, dann faellt is-fresh: erst dadurch hat der Uebergang einen
-           Ausgangszustand, von dem aus er laufen kann. */
         window.setTimeout(function () {
-          [].forEach.call(root.querySelectorAll(".is-fresh"), function (e) { e.classList.remove("is-fresh"); });
+          [].forEach.call(root.querySelectorAll(".is-fresh"), function (e2) { e2.classList.remove("is-fresh"); });
         }, 30);
       }
 
-      var dots = elRailDots.children, labels = elRailLbls.children;
-      /* Waehrend einer Uhr ist der Schritt, von dem sie ausging, ERLEDIGT und kein Punkt ist
-         aktiv -- die Fuellung steht dann in der Mitte zwischen zwei Punkten. Das ist der
-         ehrliche Zustand: der Schritt ist abgegeben, der naechste noch nicht da. */
+      var dots = elRailDots.children, labels = elRailLbls.children, hits = elRailHits.children;
       var wartet = !!state.warten;
+      /* Der weiteste je erreichte Schritt entscheidet, nicht der aktuelle: wer von Plan
+         zurueckgeht, muss auch wieder nach vorn. Brand ist davon ausgenommen und bleibt
+         gesperrt -- ein zweites Absenden der Stammdaten wuerde den Hintergrundlauf doppeln. */
+      if (i > state.maxErreicht) state.maxErreicht = i;
+      var brandGesperrt = state.maxErreicht > 0;
+
       for (var n = 0; n < dots.length; n++) {
         var fertig = wartet ? n <= i : n < i;
-        dots[n].style.setProperty("--uob-x", (n / letzte * 100) + "%");
-        dots[n].classList.toggle("is-done", fertig);
+        var anteil = (n / letzte * 100) + "%";
+        dots[n].style.setProperty("--uob-x", anteil);
+        if (labels[n]) labels[n].style.setProperty("--uob-x", anteil);
+        if (hits[n]) hits[n].style.setProperty("--uob-x", anteil);
+
+        var gesperrt = n === 0 && brandGesperrt;
+        dots[n].classList.toggle("is-done", fertig || (n <= state.maxErreicht && n !== i));
         dots[n].classList.toggle("is-now", !wartet && n === i);
-        /* Zurueck darf man auf jeden erledigten Schritt -- ausser auf Brand: die Stammdaten sind
-           abgeschickt und haben einen Hintergrundlauf gestartet, den ein zweites Absenden nur
-           durcheinanderbraechte. Der Punkt bleibt sichtbar abgehakt, nur nicht anklickbar. */
-        var klickbar = fertig && n > 0 && !wartet;
-        dots[n].classList.toggle("is-link", klickbar);
-        dots[n].disabled = !klickbar;
-        dots[n].tabIndex = klickbar ? 0 : -1;
-        if (labels[n]) {
-          labels[n].style.setProperty("--uob-x", (n / letzte * 100) + "%");
-          labels[n].classList.toggle("is-done", klickbar);
-          labels[n].classList.toggle("is-now", !wartet && n === i);
+        dots[n].classList.toggle("is-locked", gesperrt);
+
+        var klickbar = !wartet && !gesperrt && n !== i && n <= state.maxErreicht;
+        if (hits[n]) {
+          hits[n].classList.toggle("is-link", klickbar);
+          hits[n].disabled = !klickbar;
+          hits[n].tabIndex = klickbar ? 0 : -1;
         }
+        if (labels[n]) {
+          labels[n].classList.toggle("is-done", n <= state.maxErreicht && n !== i);
+          labels[n].classList.toggle("is-now", !wartet && n === i);
+          labels[n].classList.toggle("is-locked", gesperrt);
+          if (!klickbar) labels[n].classList.remove("is-hot");
+        }
+        if (!klickbar) dots[n].classList.remove("is-hot");
       }
-      /* Die Fuellung endet MITTIG unter dem aktuellen Punkt, nicht dahinter: so liegt der Punkt
-         auf der Kante zwischen erledigt und offen. Waehrend einer Uhr genau dazwischen. */
+      /* Die Breite der Trefferflaeche: der halbe Abstand zwischen zwei Punkten nach jeder Seite,
+         damit sich benachbarte Flaechen weder ueberlappen noch eine Luecke lassen. */
+      if (elRail.clientWidth) {
+        elRailHits.style.setProperty("--uob-w-hit",
+          Math.max(44, Math.round((elRail.clientWidth - 16) / letzte)) + "px");
+      }
+
       var pos = wartet ? i + 0.5 : i;
-      if (elRailFill) elRailFill.style.width = (pos / letzte * 100) + "%";
+      var breite = pos / letzte * 100;
+      if (elRailFill) {
+        elRailFill.style.width = breite + "%";
+        /* Der Verlauf im gefuellten Teil: stumpf am Anfang, voll ab Competitors -- aber nur,
+           solange Brand gesperrt ist. Die Umrechnung geht auf die Breite der FUELLUNG, nicht auf
+           die der Schiene: ein Verlauf misst sich an seinem eigenen Kasten. */
+        var bis = breite > 0 ? Math.min(100, (100 / letzte) / breite * 100) : 0;
+        elRailFill.style.setProperty("--uob-grau", (brandGesperrt ? bis : 0) + "%");
+        elRailFill.style.setProperty("--uob-grauton", brandGesperrt ? "var(--vc-sk)" : "var(--vc-text)");
+      }
       labelsPruefen(liste.length);
       root.setAttribute("data-view", k);
     }
@@ -1038,13 +1206,13 @@
         btns[i].classList.toggle("is-active", an);
         btns[i].setAttribute("aria-selected", an ? "true" : "false");
       }
-      /* Die Branche erscheint, sobald der Nutzer das Geschaeftsmodell ANGEFASST hat -- nicht,
-         sobald ein Wert darin steht. Der Unterschied ist noetig, weil B2B vorbelegt ist: waere
-         der Wert das Kriterium, staende das Feld von der ersten Sekunde an da, und die
-         gewuenschte Staffelung gaebe es nicht. Wer aus einem gefuellten Projekt zurueckkommt,
-         hat es ebenfalls sofort -- dort ist die Frage laengst beantwortet. */
+      /* Die Branche steht immer da. Sie war eine Zeit lang eingeklappt, bis das
+         Geschaeftsmodell angefasst wurde -- zurueckgenommen: mit B2B als Vorbelegung ist die
+         Frage davor bereits beantwortet, und ein Feld, das erst nach einem Klick auf eine schon
+         getroffene Wahl erscheint, wirkt wie ein Fehler. Die Klasse bleibt im Markup, damit die
+         Staffelung ohne Umbau wieder eingeschaltet werden kann. */
       var spaet = root.querySelector('[data-later="industry"]');
-      if (spaet) spaet.classList.toggle("is-on", state.bizBeruehrt || !!txt(state.form.industry));
+      if (spaet) spaet.classList.add("is-on");
     }
 
     /* ---- Die vier Auswahlfelder ------------------------------------------------------------
@@ -1163,12 +1331,7 @@
 
       var go = e.target.closest("[data-go]");
       if (go && elRail.contains(go)) {
-        var ziel = go.getAttribute("data-go");
-        var jetzt = stepIndex(state.step), hin = stepIndex(ziel);
-        /* Nur zurueck, nur auf einen bereits abgeschlossenen Schritt, und nie auf Brand. Alles
-           andere ist entweder ein Sprung in Unbekanntes oder ein zweites Absenden der
-           Stammdaten. */
-        if (hin > 0 && hin < jetzt && !state.warten) gehe(ziel);
+        if (!go.disabled) gehe(go.getAttribute("data-go"));
         return;
       }
 
@@ -1222,7 +1385,6 @@
       var biz = e.target.closest("[data-biz]");
       if (biz) {
         state.form.business = biz.getAttribute("data-biz");
-        state.bizBeruehrt = true;
         delete state.fehler.business;
         syncBusiness();
         zeigeFeldfehler();
@@ -1245,6 +1407,34 @@
       if (e.target.closest("[data-skip]")) { weiter(true); return; }
       if (e.target.closest("[data-back]")) { zurueck(); return; }
       if (e.target.closest("[data-next]")) { weiter(false); return; }
+    });
+
+    /* Der Hover einer Station faerbt Punkt UND Beschriftung. Beide liegen in getrennten
+       Schichten, CSS kann von der einen nicht auf die andere zeigen -- also setzt das hier die
+       Klasse auf beide. Getragen wird der Hover von der Trefferflaeche, die ueber beidem liegt:
+       vorher reagierte nur, was gerade unter dem Zeiger stand, und der Weg vom Punkt zum Text
+       ging durch tote Zone. */
+    function heiss(key, an) {
+      var d = elRailDots.querySelector('[data-dot="' + key + '"]');
+      var l = elRailLbls.querySelector('[data-lbl="' + key + '"]');
+      if (d) d.classList.toggle("is-hot", an);
+      if (l) l.classList.toggle("is-hot", an);
+    }
+    elRailHits.addEventListener("mouseover", function (e) {
+      var h = e.target.closest ? e.target.closest("[data-go]") : null;
+      if (h && !h.disabled) heiss(h.getAttribute("data-go"), true);
+    });
+    elRailHits.addEventListener("mouseout", function (e) {
+      var h = e.target.closest ? e.target.closest("[data-go]") : null;
+      if (h) heiss(h.getAttribute("data-go"), false);
+    });
+    elRailHits.addEventListener("focusin", function (e) {
+      var h = e.target.closest ? e.target.closest("[data-go]") : null;
+      if (h && !h.disabled) heiss(h.getAttribute("data-go"), true);
+    });
+    elRailHits.addEventListener("focusout", function (e) {
+      var h = e.target.closest ? e.target.closest("[data-go]") : null;
+      if (h) heiss(h.getAttribute("data-go"), false);
     });
 
     /* Eigene Branche: Enter im Zusatzfeld uebernimmt sie. Kein Add-Knopf daneben -- ein Feld mit
@@ -1467,11 +1657,13 @@
     /* ---- Demo -------------------------------------------------------------------------------
        Feste Uhren: fuenf Sekunden je Phase, also zwanzig fuer den ersten Lauf, spaeter zehn.
        Sie ersetzen den Statuspayload NICHT -- kommt einer, gewinnt er (siehe setStatus).
-       Die Datei mit den Daten (onboarding-demo.js) laedt die Bubble-Vorlage nur, wenn
-       data-demo gesetzt ist; im Betrieb ist sie gar nicht da. */
+       Die Daten stehen oben in dieser Datei (DEMO_DATEN); es ist nichts nachzuladen. */
     var DEMO_PHASE_MS = 5000;
     var DEMO_PROMPT_MS = 10000;
-    var DEMO = window.__uobDemo || null;
+    /* Ein von aussen gesetztes window.__uobDemo gewinnt -- so laesst sich der Demobetrieb mit
+       anderen Daten fuettern, ohne diese Datei anzufassen. Ohne das steht der eingebaute Block
+       bereit, und der ist immer da. */
+    var DEMO = window.__uobDemo || DEMO_DATEN;
     function demoLauf1() {
       var i = 0;
       (function schritt() {
@@ -1536,7 +1728,7 @@
         if (txt(p.company_name)) state.form.name = txt(p.company_name);
         if (txt(p.website_url)) state.form.website = txt(p.website_url);
         if (txt(p.market)) state.form.market = txt(p.market);
-        if (txt(p.business_model)) { state.form.business = txt(p.business_model); state.bizBeruehrt = true; }
+        if (txt(p.business_model)) state.form.business = txt(p.business_model);
         if (txt(p.brand_industry)) state.form.industry = txt(p.brand_industry);
         var ph = num(p.status_phase);
         if (ph != null) {
@@ -1592,7 +1784,7 @@
         state.brands = []; state.topics = []; state.prompts = [];
         state.selBrands = {}; state.selTopics = {}; state.selPrompts = {};
         state.plan = ""; state.banner = ""; state.busy = false;
-        state.fehler = {}; state.bizBeruehrt = false; state.planGesehen = false;
+        state.fehler = {}; state.maxErreicht = 0; state.planGesehen = false;
         railStand = "";
         state.form = { name: "", website: "", market: eigenerMarkt(), timezone: eigeneZone(),
                        business: BUSINESS_STD, industry: "" };

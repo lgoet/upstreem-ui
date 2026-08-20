@@ -101,13 +101,25 @@
    waechst in --uob-t. Zwei getrennte Balken je Abschnitt waeren dasselbe Bild mit vier
    Uebergaengen statt einem. */
 .uob-rail {
+  /* position: relative ist hier PFLICHT, nicht Kosmetik: die Trefferflaechen sind absolut
+     gesetzt und suchen sich sonst den naechsten positionierten Vorfahren -- gemessen wurden sie
+     dann 792 Pixel hoch und lagen als unsichtbare Knopfschicht ueber der halben Seite. */
+  position: relative;
   flex: 0 0 auto; width: 100%; max-width: 620px; margin: clamp(18px, 3.2vh, 34px) auto 0;
   padding: 0 8px;
 }
 .uob-rail-line { position: relative; height: 2px; border-radius: 999px; background: var(--vc-sk); }
+/* Die Fuellung ist ein Verlauf und keine Flaeche. Grund: sobald Brand gesperrt ist, soll das
+   auch die Linie sagen -- der Abschnitt bis Competitors verblasst dann nach links hin, statt
+   dort genauso satt zu stehen wie der Rest. --uob-grau ist die Stelle im Verlauf, an der
+   Competitors sitzt, umgerechnet auf die Breite der FUELLUNG (nicht der Schiene) -- das JS
+   setzt sie, weil sie mit jedem Schritt eine andere ist.
+   Ohne gesperrtes Brand steht --uob-grau auf 0%: dann faengt der Verlauf sofort mit der vollen
+   Farbe an und ist von einer Flaeche nicht zu unterscheiden. */
 .uob-rail-fill {
-  position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px;
-  background: var(--vc-text); width: 0;
+  position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; width: 0;
+  background: linear-gradient(90deg, var(--uob-grauton, var(--vc-text)) 0%,
+                                     var(--vc-text) var(--uob-grau, 0%));
   transition: width var(--uob-t) var(--uob-ease);
 }
 .uob-rail-dots { position: absolute; inset: 0; }
@@ -140,14 +152,37 @@
 /* Ein Punkt, der frisch dazukommt (der Tarif), faehrt nicht von links heran -- er blendet an
    seiner Stelle auf. Ohne das kaeme er aus dem Nichts durch die halbe Schiene gerauscht. */
 .uob-dot.is-fresh { opacity: 0; }
-/* Ein bereits erledigter Schritt ist anklickbar: zurueck darf man immer. Die Trefferflaeche ist
-   groesser als der Punkt, sonst muesste man zehn Pixel genau treffen. */
-.uob-dot.is-link { cursor: pointer; }
-.uob-dot.is-link::after {
-  content: ""; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  width: 34px; height: 34px; border-radius: 50%;
-}
+/* Brand ist abgehakt, aber gesperrt: die Stammdaten sind abgeschickt und haben einen
+   Hintergrundlauf gestartet. Der Punkt sagt das mit, statt nur der Zeiger -- gefuellt in einem
+   stumpfen Ton, der Haken in der Grundfarbe der Seite. */
+.uob-dot.is-locked { background: var(--vc-sk); border-color: var(--vc-sk); }
+.uob-dot.is-locked svg { color: var(--vc-bg); }
 .uob-dot:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+
+/* ---- Trefferflaechen ----
+   Punkt und Beschriftung liegen in zwei Schichten uebereinander, und dazwischen ist Luft. Wer
+   nur den Punkt oder nur den Text trifft, hat zwei verschiedene Ziele fuer dieselbe Sache --
+   und der Hover auf dem einen liess das andere kalt. Deshalb EINE unsichtbare Flaeche je
+   Station, ueber beidem, die Klick und Hover traegt. Punkt und Text sind dann nur noch Bild. */
+.uob-rail-hits { position: absolute; left: 0; right: 0; top: -10px; bottom: -22px; }
+.uob-rail-hit {
+  position: absolute; top: 0; bottom: 0; left: var(--uob-x, 0%);
+  transform: translateX(-50%);
+  width: var(--uob-w-hit, 88px); max-width: 100%;
+  border: 0; background: transparent; padding: 0; cursor: default;
+  transition: left var(--uob-t) var(--uob-ease);
+}
+.uob-rail-hit.is-link { cursor: pointer; }
+.uob-rail-hit:focus-visible { outline: 0; border-radius: 10px;
+  box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+.uob-rail-dots, .uob-rail-labels { pointer-events: none; }
+/* Der Hover faerbt Text UND Punkt, egal wo in der Flaeche der Zeiger steht. is-hot setzt das
+   JS auf beide, weil sie in getrennten Schichten liegen und CSS von der einen nicht auf die
+   andere zeigen kann. */
+/* Drei Klassen, weil .is-done weiter unten dieselbe Spezifitaet haette und dann die
+   Ladereihenfolge entschiede -- gemessen blieb der Text beim Ueberfahren grau. */
+.uob-rail-labels span.is-hot, .uob-rail-labels span.is-done.is-hot { color: var(--vc-text); }
+.uob-dot.is-hot:not(.is-now):not(.is-locked) { border-color: var(--vc-text); }
 
 /* Die Beschriftungen sitzen ebenfalls absolut und GENAU mittig unter ihrem Punkt -- vorher
    verteilte sie ein flex mit space-between, dann steht die erste linksbuendig unter einem
@@ -160,8 +195,9 @@
   transition: color var(--uob-t) var(--uob-ease), left var(--uob-t) var(--uob-ease),
               opacity var(--uob-t) var(--uob-ease);
 }
-.uob-rail-labels span.is-done { color: var(--vc-muted); cursor: pointer; }
-.uob-rail-labels span.is-done:hover { color: var(--vc-text); }
+.uob-rail-labels span.is-done { color: var(--vc-muted); }
+/* Brand bleibt lesbar, aber sichtbar stumpf -- derselbe Ton wie sein Punkt. */
+.uob-rail-labels span.is-locked { color: var(--vc-third); }
 .uob-rail-labels span.is-now { color: var(--vc-text); font-weight: 600; }
 .uob-rail-labels span.is-fresh { opacity: 0; }
 /* Passt schon die breiteste Beschriftung nicht mehr zwischen zwei Punkte, verschwinden ALLE und
@@ -533,11 +569,18 @@
   animation: uob-spin 700ms linear infinite;
   opacity: 0; transition: opacity var(--uob-t) var(--uob-ease);
 }
+/* Der Haken setzt sich sichtbar: die Scheibe waechst aus dem Nichts auf ihre Groesse und schiesst
+   dabei ein Stueck darueber hinaus. Der Ueberschwung ist der Unterschied zwischen "da ist ein
+   Haken" und "der Haken ist gerade gesetzt worden" -- und darum geht es an dieser Stelle, sie ist
+   das einzige Erfolgserlebnis in vierzig Sekunden Warten.
+   280ms statt der 200 des Hauses: eine Feder, die in 200ms schwingt, sieht nach Zucken aus. Das
+   ist eine Belohnung und kein Zustandswechsel, deshalb die Ausnahme. */
 .uob-phase-ok {
   position: absolute; inset: 0; border-radius: 50%; background: var(--vc-text); color: var(--vc-bg);
   display: inline-flex; align-items: center; justify-content: center;
-  opacity: 0; transform: scale(.7);
-  transition: opacity var(--uob-t) var(--uob-ease), transform var(--uob-t) var(--uob-ease);
+  opacity: 0; transform: scale(.2);
+  transition: opacity 160ms var(--uob-ease), transform 280ms cubic-bezier(.34, 1.56, .64, 1),
+              background 280ms var(--uob-ease);
 }
 .uob-phase-ok svg { width: 11px; height: 11px; display: block; }
 .uob-phase.is-now .uob-phase-dot { opacity: 0; }
