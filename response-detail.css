@@ -88,8 +88,17 @@
    kommen von dort, wie bei jedem anderen anklickbaren Chip der App.
    Die Geometrie bleibt oben und gilt in BEIDEN Zustaenden: ein Chip, der beim Ueberfahren die
    Hoehe wechselt, springt. */
-.urd-ments .up-entchip.is-soft:not(:hover) {
-  background: var(--vc-field); border-color: transparent; }
+/* Hell: KEIN Grund, nur der Rahmen, den .up-entchip ohnehin mitbringt (--vc-border). Der
+   getoente Grund liess die Chips als Kaesten lesen; die Mentions sind eine Aufzaehlung, und die
+   Reihe wirkt ruhiger, wenn nur der Umriss sie zusammenhaelt. Der Grund kommt erst beim
+   Ueberfahren, und zwar aus core wie bei jedem anklickbaren Chip. */
+.urd-ments .up-entchip.is-soft:not(:hover) { background: transparent; }
+/* Dunkel bleibt, wie es war: dort ist der Grund heller als seine Umgebung und traegt die Form
+   allein -- ein Rahmen je Marke waere da zu viel, und ein rahmenloser Chip OHNE Grund waere gar
+   nichts mehr. Den durchsichtigen Rahmen setzt core schon fuer .is-soft im Dunkeln, hier steht
+   nur der Grund. Sechs Selektorteile gegen die vier der hellen Regel darueber. */
+.up-root[data-theme="dark"] .urd-ments .up-entchip.is-soft:not(:hover) {
+  background: var(--vc-field); }
 /* Logo und Schrift mit demselben Faktor 32/28 = 1.143 wie der Chip: 18 -> 20.6, Radius 5 -> 5.7,
    Bild 16 -> 18.3, Bildradius 4 -> 4.6, Buchstabe 10 -> 11.4, Name 13.5 -> 15.4. Ein Bauteil, das
    waechst, waechst in allen Maessen -- sonst sitzt ein 18px-Logo verloren in einem 32px-Chip. */

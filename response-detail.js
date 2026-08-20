@@ -325,9 +325,8 @@
       var d = glist.__daten[parseInt(b.getAttribute("data-gi"), 10)];
       glistSchliessen();
       if (!d) return;
-      /* Dieselbe Regel wie beim einzelnen Chip: die exakte Adresse, nicht die id. */
-      var wert = String(d.url || "");
-      if (wert) fire("data-url-fn", "urdUrl", wert);
+      /* Dieselben Zitate wie einzeln, nur gebuendelt -- also auch derselbe Weg. */
+      urlOeffnen(d.url);
     });
     window.addEventListener("scroll", glistSchliessen, true);
 
@@ -859,12 +858,10 @@
          Wahl war keine: die Detailseite kann alles, was das externe Fenster kann. */
       var chip = e.target.closest(".up-rb-cite");
       if (chip && elBody.contains(chip)) {
-        /* Die URL IST der Schluessel in Bubble -- eine eigene id dafuer gibt es nicht, und die
-           Zitationen der RPC fuehren auch kein Feld id. Also die unveraenderte Adresse aus
-           data-rb-url. Vorher stand hier data-rb-cite als Rueckfall: die bereinigte Form, der
-           utm-Parameter und die Raute fehlen. Damit fand Bubble die Zeile nicht wieder. */
-        var wert = chip.getAttribute("data-rb-url") || chip.getAttribute("data-rb-cite") || "";
-        if (wert) fire("data-url-fn", "urdUrl", wert);
+        /* Direkt aufmachen, kein Ereignis. data-rb-url traegt die Adresse unveraendert --
+           data-rb-cite waere die bereinigte Form ohne utm-Parameter und ohne Raute, und die
+           fuehrt unter Umstaenden auf eine andere Seite als die, auf die das Modell zeigt. */
+        urlOeffnen(chip.getAttribute("data-rb-url") || chip.getAttribute("data-rb-cite") || "");
         return;
       }
       /* Eine Gruppe mehrerer Quellen: Klick oeffnet ihre Liste (auf dem Telefon gibt es kein
@@ -927,6 +924,19 @@
     function quelleFeuern(el) {
       var wert = el.getAttribute("data-url") || "";
       if (wert) fire("data-url-fn", "urdUrl", wert);
+    }
+    /* Die Zitate IM FLIESSTEXT sind etwas anderes als der Abschnitt "Citations" darunter: sie
+       stehen nur im Antworttext des Modells und haben keine Zeile in der Datenbank. Ein Ereignis
+       nach Bubble zielte dort ins Leere -- also oeffnet der Klick die Adresse direkt. Der
+       Abschnitt "Citations" bleibt unberuehrt und feuert weiter urdUrl.
+       noopener,noreferrer wie ueberall sonst im Haus: das neue Fenster darf weder an
+       window.opener noch an den Verweis auf die Herkunft. */
+    function urlOeffnen(u) {
+      var wert = String(u || "").trim();
+      if (!wert) return;
+      /* Ohne Schema loeste der Browser die Adresse relativ zur Bubble-Seite auf. */
+      if (!/^https?:\/\//i.test(wert)) wert = "https://" + wert;
+      try { window.open(wert, "_blank", "noopener,noreferrer"); } catch (e) {}
     }
 
     /* ---- Thema ---------------------------------------------------------------------------- */
