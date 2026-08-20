@@ -56,7 +56,11 @@
      der Aufdecker    core deckt es bei .up-th:hover auf, und ein .up-th gibt es hier nicht. Also
                       beim Hover auf die Titelzeile -- dasselbe Verhalten, anderer Ausloeser.
    Groesse, Farbe, Uebergang und der Hover-Wechsel auf Textfarbe kommen unveraendert aus core. */
-.udd-info { margin-left: 0; }
+/* 8px zusaetzlich zu den 8px Innenabstand der Titelzeile ergeben die bestellten 16px zwischen
+   Ueberschrift und Symbol. Das margin-left: auto aus core faellt damit weg -- dort schiebt es das
+   Symbol ans rechte Ende einer Kopfzelle, hier soll es direkt neben der Ueberschrift stehen und
+   nicht am anderen Ende der Zeile. */
+.udd-info { margin-left: 8px; }
 .udd-title:hover .udd-info { opacity: 1; }
 /* Das Favicon sitzt im Bauteil .up-logo-box aus core (24px, 1px Polsterung, Radius 8). Hier steht
    nur die kleinere Stufe: 18px wie das Logo in der Kopfzeile von brand-detail. Faktor 18/24 auf

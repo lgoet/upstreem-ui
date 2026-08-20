@@ -49,7 +49,9 @@
        dieser Domain auf ihre einzelnen URLs verteilen. "Domain Share" las sich wie der Anteil der
        Domain am Gesamtmarkt -- das ist die Kurve daneben. Der Knopf heisst weiter "Domain Share",
        er waehlt den Datensatz und nicht die Sicht darauf. */
-    { key: "domain",   label: "Domain Share",   heading: "URL Share over Time",
+    /* Der Knopf heisst "URL Share", nicht mehr "Domain Share": er waehlt dieselbe Sicht, die die
+       Ueberschrift benennt, und zwei Namen fuer eine Sache sind einer zu viel. */
+    { key: "domain",   label: "URL Share",      heading: "URL Share over Time",
       info: "How this domain's citations are split across its own URLs. Each line is one URL, " +
             "and its value is that URL's share of all citations this domain received in the " +
             "period -- so the lines add up to 100%. It answers which pages of the domain the " +
@@ -402,13 +404,29 @@
        Dieselbe Karte wie in den Tabellenkoepfen (UC.makeExplain, .up-explain): Ueberschrift,
        Beispielbild, Satz. Der Inhalt haengt am Modus, weil die Kurve mit dem Modus ihre Bedeutung
        wechselt -- ein Text fuer beide waere fuer einen von beiden falsch. */
+    /* Das Beispielbild oben in der Karte. Es fehlte -- und genau daran war zu sehen, dass es NICHT
+       dieselbe Karte war wie in den Tabellenkoepfen: dort steht ueber Ueberschrift und Satz ein
+       heller Block mit einem Beispiel, und ohne ihn sieht die Karte aus wie ein blosser Tooltip.
+       Die Beispiele zeigen, was in der jeweiligen Kurve wirklich steht: beim Zitationsanteil ein
+       Wert mit Veraenderung, beim URL-Anteil zwei Werte, die sich zu hundert ergaenzen. */
+    /* Dieselben zwei Pfeile, die die Tabellen in ihren Erklaerkarten benutzen (UC.TREND_UP /
+       TREND_DOWN) -- nicht selbst gezeichnet, damit das Beispielbild wirklich dasselbe ist. */
+    var TREND_HOCH = UC.TREND_UP || "", TREND_RUNTER = UC.TREND_DOWN || "";
     var ERKLAERUNG = {
       citation: {
+        vis: '<span class="up-explain-row">11.3%' +
+               '<span class="up-explain-up">' + TREND_HOCH + '</span>' +
+               '<span class="up-explain-up">2.4%</span></span>' +
+             '<span class="up-explain-row">8.9%' +
+               '<span class="up-explain-down">' + TREND_RUNTER + '</span>' +
+               '<span class="up-explain-down">1.1%</span></span>',
         h: "Citations Share over Time",
         t: "How much of all citations in the period went to this domain, day by day. It compares " +
            "this domain against every other domain, so the value falls when others are cited more."
       },
       domain: {
+        vis: '<span class="up-explain-row">/pricing<span style="margin-left:auto">62.0%</span></span>' +
+             '<span class="up-explain-row">/blog/guide<span style="margin-left:auto">38.0%</span></span>',
         h: "URL Share over Time",
         t: "How this domain's citations are split across its own URLs. Each line is one URL, and " +
            "its value is that URL's share of all citations this domain received -- so the lines " +
@@ -422,7 +440,8 @@
       root: root, getIsDark: darkNow,
       html: function () {
         var e = ERKLAERUNG[state.mode] || ERKLAERUNG.citation;
-        return '<div class="up-explain-h">' + esc(e.h) + '</div>' +
+        return (e.vis ? '<div class="up-explain-vis">' + e.vis + '</div>' : "") +
+               '<div class="up-explain-h">' + esc(e.h) + '</div>' +
                '<div class="up-explain-t">' + esc(e.t) + '</div>';
       }
     });

@@ -25,13 +25,38 @@ Promise.all(files.map(function(f){ return fetch(f,{cache:"no-store"})
   .then(function(r){return r.text()}).then(function(x){t[f]=x}); })).then(function(){
   files.forEach(function(f){ var e=document.createElement(/\.css$/.test(f)?"style":"script");
     e.textContent=t[f]; document.head.appendChild(e); });
+  /* ?spaet=<ms> schickt setSidebarTeams absichtlich SPAETER als die anderen Setter -- genau der
+     gemeldete Fall, in dem der Teams-Zaehler allein im Skelett stehenblieb. Ohne den Schalter
+     laufen alle zusammen, und dann ist nichts zu sehen.
+     setSidebarReady() bleibt weg, wenn verzoegert wird: sonst enthuellt es sofort und der
+     Sammelmechanismus, um den es geht, kommt gar nicht zum Zug. */
+  var VERZUG = (/spaet=(\d+)/.exec(location.search) || [])[1];
+  window.__protokoll = [];
+  function protokoll(was){
+    var tc = document.querySelector("[data-teamcount]");
+    var pc = document.querySelector("[data-count]");
+    function sk(el){ return el ? (el.querySelector(".usn-sk") ? "skelett" : (el.textContent||"leer")) : "-"; }
+    window.__protokoll.push({bei: was, teams: sk(tc), prompts: sk(pc)});
+  }
   setTimeout(function(){
-    window.setSidebarTeams("s1", JSON.stringify([
+    window.setSidebarUser("s1", JSON.stringify({name:"Lukas", email:"l@x.de", avatar:""}));
+    var teams = JSON.stringify([
       {id:"t1",name:"LeeUp",domain:"lee-up.de",favicon_url:""},
       {id:"t2",name:"Zweites",domain:"zwei.de",favicon_url:""},
-      {id:"t3",name:"Drittes",domain:"drei.de",favicon_url:""}]));
-    window.setSidebarReady();
-    setTimeout(function(){ window.__bereit = true; document.getElementById("out").textContent = "bereit"; }, 500);
+      {id:"t3",name:"Drittes",domain:"drei.de",favicon_url:""}]);
+    if (VERZUG) {
+      protokoll("nach dem ersten Setter");
+      setTimeout(function(){
+        protokoll("kurz vor dem spaeten Teams-Setter");
+        window.setSidebarTeams("s1", teams);
+        setTimeout(function(){ protokoll("2s nach dem spaeten Setter");
+          window.__bereit = true; document.getElementById("out").textContent = "bereit"; }, 2200);
+      }, +VERZUG);
+    } else {
+      window.setSidebarTeams("s1", teams);
+      window.setSidebarReady();
+      setTimeout(function(){ window.__bereit = true; document.getElementById("out").textContent = "bereit"; }, 500);
+    }
   }, 300);
 });
 </script>

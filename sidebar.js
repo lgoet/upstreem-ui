@@ -1030,10 +1030,12 @@
     /* Der Auslöser ist setSidebarReady() am Ende des Pageload-Workflows. Alles andere ist
        Rueckfall, damit eine Installation ohne diesen Aufruf nicht im Skelett stehenbleibt:
 
-         SAMMELFENSTER_MS  ab dem ERSTEN Setter. Gemessen an einem Pageload mit vier Aufrufen im
-                           Abstand von 400 bis 500ms: mit 220ms enthuellte die Leiste nach dem
-                           ersten und die drei anderen sprangen danach einzeln um -- genau das,
-                           was nicht sein soll. 1500ms deckt die ganze Kette ab.
+         SAMMELFENSTER_MS  ab dem LETZTEN Setter, nicht ab dem ersten. Jeder Setter stellt die Uhr
+                           zurueck. Ab dem ersten war es falsch: kam ein Aufruf spaeter als das
+                           Fenster, enthuellte die Leiste ohne ihn, und genau das eine Feld stand
+                           allein weiter im Skelett -- gemeldet fuer den Teams-Zaehler, dessen
+                           Setter als letzter kommt. Die Regel ist, dass ALLES gleichzeitig
+                           umspringt, und die haelt nur, wenn die Uhr am letzten Aufruf haengt.
          NOTBREMSE_MS      ab dem Bau der Leiste. Kommt gar kein Setter, steht dort "keine Daten"
                            statt eines ewigen Skeletts.
 
@@ -1060,6 +1062,19 @@
       }
     }
 
+    /* Sind ALLE erwarteten Quellen da? Teams und Nutzer kommen ueber eigene Setter und sind in
+       dieser App immer beide vorhanden -- die Zaehler haengen an Attributen, die beim Bau schon
+       stehen. Fehlt eine der beiden, wird NICHT enthuellt: sonst springt ein Feld allein um, und
+       genau das war der Bericht (der Teams-Setter kommt als letzter, und mit ihm der Zaehler). */
+    function alleDa(){ return !!state.teamsDa && !!state.userDa; }
+    /* fruehen: die Enthuellung ueber das Sammelfenster. Sie wartet auf alleDa().
+       enthuellen(): die Enthuellung ohne Bedingung -- setSidebarReady() und die Notbremse. Beide
+       sagen "jetzt ist Schluss mit Warten", und dann zeigt jedes Feld, was es hat. */
+    function fruehen(){
+      if (state.enthuellt) return;
+      if (!alleDa()) return;
+      enthuellen();
+    }
     function enthuellen(){
       if (sammelUhr){ clearTimeout(sammelUhr); sammelUhr = null; }
       if (state.enthuellt) return;
@@ -1067,8 +1082,13 @@
       renderTeam(); renderChips(); renderAcc(); renderNav();
     }
     function enthuellenAnstossen(){
-      if (state.enthuellt || sammelUhr) return;
-      sammelUhr = setTimeout(function(){ sammelUhr = null; enthuellen(); }, SAMMELFENSTER_MS);
+      if (state.enthuellt) return;
+      /* Zuruecksetzen statt stehenlassen: die Uhr laeuft ab dem LETZTEN Setter. Und am Ende wird
+         fruehen() gerufen, nicht enthuellen() -- fehlt dann noch eine Quelle, bleibt ALLES im
+         Skelett und die naechste Lieferung stoesst erneut an. Die Notbremse ab dem Bau der Leiste
+         deckelt das Ganze, es kann also nicht endlos warten. */
+      if (sammelUhr) clearTimeout(sammelUhr);
+      sammelUhr = setTimeout(function(){ sammelUhr = null; fruehen(); }, SAMMELFENSTER_MS);
     }
     setTimeout(function(){ enthuellen(); }, NOTBREMSE_MS);
 
