@@ -139,30 +139,25 @@
     ],
   
     /* Sieben Themen. Ohne Emoji, wie verlangt -- der farbige Koerper traegt die Unterscheidung.
-       hex_light/hex_dark wie in der Themenverwaltung der App; wo sie fehlen, greift die Palette
-       aus core. */
+       OHNE hex_light/hex_dark: die Farben kommen aus der Themenpalette von core, in ihrer
+       Reihenfolge. Handverlesene Werte standen hier einmal und ergaben einen Regenbogen ohne
+       Ordnung -- die Palette ist als Zeile durch den Farbkreis gebaut und liest sich als Folge.
+       Liefert die RPC eigene Farben mit, gewinnen die. */
     topics: [
       { "id": "t-line-array",  "name": "Line Array Systems",
-        "description": "Vertikal arraybare Systeme fuer grosse Flaechen",
-        "hex_light": "#1b6eda", "hex_dark": "#1b6eda" },
+        "description": "Vertikal arraybare Systeme fuer grosse Flaechen" },
       { "id": "t-touring",     "name": "Festival & Touring Sound",
-        "description": "Open Air, Tourneen, wechselnde Spielstaetten",
-        "hex_light": "#de1b22", "hex_dark": "#de1b22" },
+        "description": "Open Air, Tourneen, wechselnde Spielstaetten" },
       { "id": "t-club",        "name": "Club & Nightlife",
-        "description": "Feste Installationen in Clubs und Bars",
-        "hex_light": "#9145e8", "hex_dark": "#9145e8" },
+        "description": "Feste Installationen in Clubs und Bars" },
       { "id": "t-spatial",     "name": "Spatial & Immersive Audio",
-        "description": "Objektbasiertes Mischen, raeumliche Wiedergabe",
-        "hex_light": "#107c84", "hex_dark": "#107c84" },
+        "description": "Objektbasiertes Mischen, raeumliche Wiedergabe" },
       { "id": "t-amps",        "name": "Amplifiers & Rigging",
-        "description": "Endstufenracks, Traversen, Transporthardware",
-        "hex_light": "#8d6a11", "hex_dark": "#8d6a11" },
+        "description": "Endstufenracks, Traversen, Transporthardware" },
       { "id": "t-efficiency",  "name": "Energy Efficiency",
-        "description": "Wirkungsgrad, Leistungsbedarf, Nachhaltigkeit",
-        "hex_light": "#108440", "hex_dark": "#108440" },
+        "description": "Wirkungsgrad, Leistungsbedarf, Nachhaltigkeit" },
       { "id": "t-venues",      "name": "Arenas & Venues",
-        "description": "Mehrzweckhallen, Theater, Arenen",
-        "hex_light": "#d51a8b", "hex_dark": "#d51a8b" }
+        "description": "Mehrzweckhallen, Theater, Arenen" }
     ],
   
     /* Dreizehn Prompts. Die ersten vier sind wortgleich die aus der Aufgabe, nur mit topic_ids.
@@ -579,8 +574,6 @@
     var elRailLbls= root.querySelector("[data-rail-labels]");
     var elRailHits= root.querySelector("[data-rail-hits]");
     var elMid     = root.querySelector(".uob-mid");
-    /* Einmal ganz am Anfang lesen, bevor irgendein Inline-Polster gesetzt sein kann. */
-    var midPolsterStart = elMid ? (parseFloat(getComputedStyle(elMid).paddingBottom) || 0) : 0;
     var elIdent   = root.querySelector("[data-ident]");
     var elIdentLg = root.querySelector("[data-ident-logo]");
     var elIdentNm = root.querySelector("[data-ident-name]");
@@ -659,9 +652,16 @@
             '</div>' +
             '<div class="uob-field" data-field="website">' +
               '<label class="uob-label" for="' + instanceId + '-web">Website</label>' +
-              '<input class="uob-input up-field" id="' + instanceId + '-web" type="text" ' +
-                'maxlength="' + MAX.website + '" placeholder="yourbrand.com" autocomplete="url" ' +
-                'inputmode="url" data-f="website"/>' +
+              /* Das Favicon sitzt IM Feld und zeigt beim Tippen, dass die Adresse gefunden wird.
+                 Dieselbe Idee wie im Add-Brand-Popup -- dort steht es links, hier rechts, weil
+                 das Feld hier keinen Einzug fuer ein Praefix hat und der rechte Rand sonst leer
+                 bleibt. */
+              '<span class="uob-inwrap">' +
+                '<input class="uob-input up-field has-fav" id="' + instanceId + '-web" type="text" ' +
+                  'maxlength="' + MAX.website + '" placeholder="yourbrand.com" autocomplete="url" ' +
+                  'inputmode="url" data-f="website"/>' +
+                '<span class="uob-fav" data-fav></span>' +
+              '</span>' +
               '<div class="uob-err"><span data-err="website"></span></div>' +
             '</div>' +
             '<div class="uob-frow">' +
@@ -793,10 +793,10 @@
              { text: n + " selected", voll: n > 0 }) +
         '<div class="uob-body">' +
           (state.topics.length
-            ? '<div class="uob-list up-scroll" role="group" aria-label="Topics">' +
+            ? '<div class="uob-list up-scroll uob-group-items is-plain" role="group" aria-label="Topics">' +
                 state.topics.map(function (t) {
                   var an = !!state.selTopics[t.id];
-                  return '<button class="uob-item is-slim' + (an ? " is-on" : "") + '" type="button" role="checkbox"' +
+                  return '<button class="uob-item is-slim is-plain' + (an ? " is-on" : "") + '" type="button" role="checkbox"' +
                            ' aria-checked="' + (an ? "true" : "false") + '"' +
                            ' data-pick="topics" data-id="' + esc(t.id) + '">' +
                     '<span class="uob-check">' + ic("check", 3) + '</span>' +
@@ -811,7 +811,8 @@
                 }).join("") +
                 eigeneThemenHtml() +
               '</div>'
-            : '<div class="uob-list" role="group" aria-label="Topics">' + eigeneThemenHtml() + '</div>') +
+            : '<div class="uob-list uob-group-items is-plain" role="group" aria-label="Topics">' +
+                eigeneThemenHtml() + '</div>') +
         '</div>' +
       '</div>';
     }
@@ -822,7 +823,7 @@
        Ein Thema ohne Namen zaehlt nicht mit: erst wenn etwas dasteht, ist es eines. */
     function eigeneThemenHtml() {
       var html = state.eigene.map(function (e, i) {
-        return '<div class="uob-item is-slim" data-eigen="' + i + '">' +
+        return '<div class="uob-item is-slim is-plain" data-eigen="' + i + '">' +
           '<span class="uob-check' + (txt(e.name) ? "" : " is-leer") + '">' + ic("check", 3) + '</span>' +
           '<span class="uob-swatch" style="--uob-sw:' + esc(e.farbe) + '"></span>' +
           '<input class="uob-newin" type="text" maxlength="' + MAX.topic + '" value="' + esc(e.name) + '"' +
@@ -1088,6 +1089,10 @@
       if (!t) return "";
       var h = txt(isDark ? (t.hex_dark || t.hex_light) : (t.hex_light || t.hex_dark));
       if (h) return h;
+      /* Kein Farbwert dabei: die Themenpalette von core, IN IHRER REIHENFOLGE. Sie ist als Zeile
+         durch den ganzen Farbkreis gebaut (rot, braun, oliv, gruen, tuerkis, blau, violett,
+         magenta) -- wer aus ihr auswaehlt statt sie abzulaufen, bekommt einen Regenbogen ohne
+         Ordnung. Genau dieselbe Palette benutzen die Themenverwaltung und die Prompts-Tabelle. */
       /* Kein Farbwert dabei: aus der Themenpalette von core, stabil nach der Position -- so
          bekommt dasselbe Thema bei jedem Aufbau denselben Ton. */
       var pal = UC.TOPIC_COLOR_PALETTE || [];
@@ -1239,10 +1244,12 @@
         if (labels[n]) labels[n].style.setProperty("--uob-x", anteil);
         if (hits[n]) hits[n].style.setProperty("--uob-x", anteil);
 
+        /* Brand bleibt nach dem Absenden gesperrt -- aber nur im Verhalten. Sichtbar ist es ein
+           erledigter Schritt wie jeder andere; eine ausgegraute Station war hier eine Zeit lang
+           zu sehen und ist zurueckgenommen worden. */
         var gesperrt = n === 0 && brandGesperrt;
         dots[n].classList.toggle("is-done", fertig || (n <= state.maxErreicht && n !== i));
         dots[n].classList.toggle("is-now", !wartet && n === i);
-        dots[n].classList.toggle("is-locked", gesperrt);
 
         var klickbar = !wartet && !gesperrt && n !== i && n <= state.maxErreicht;
         if (hits[n]) {
@@ -1253,7 +1260,6 @@
         if (labels[n]) {
           labels[n].classList.toggle("is-done", n <= state.maxErreicht && n !== i);
           labels[n].classList.toggle("is-now", !wartet && n === i);
-          labels[n].classList.toggle("is-locked", gesperrt);
           if (!klickbar) labels[n].classList.remove("is-hot");
         }
         if (!klickbar) dots[n].classList.remove("is-hot");
@@ -1329,7 +1335,10 @@
       if (wartet) return;
 
       var i = stepIndex(state.step);
-      elBack.classList.toggle("is-hidden", i <= 0);
+      /* Kein Zurueck von Competitors: dahinter liegt nur Brand, und dorthin darf niemand mehr
+         -- die Stammdaten sind abgeschickt und haben einen Hintergrundlauf gestartet. Ein Knopf,
+         der nichts tut, ist schlechter als keiner. */
+      elBack.classList.toggle("is-hidden", i <= 1);
       elNext.classList.toggle("is-busy", state.busy);
       elNext.disabled = state.busy || (state.step === "plan" && !state.plan);
 
@@ -1396,7 +1405,32 @@
       if (n && n.value !== state.form.name) n.value = state.form.name;
       if (w && w.value !== state.form.website) w.value = state.form.website;
       syncBusiness();
+      favZeichnen();
     }
+    /* Das Favicon haengt an der NORMALISIERTEN Domain und nicht am Rohtext -- sonst laedt es
+       beim Tippen von "https://www.apple.com" dreimal fuer drei Zwischenstaende. Erst ab einer
+       formal gueltigen Domain wird ueberhaupt geladen; vorher steht der Globus, und der ist
+       ehrlicher als ein gebrochenes Bild.
+       Das img wird gebaut und nicht als Text zusammengesetzt: der Rueckfall haengt an
+       img.onerror, und ein SVG in einem inline-onerror zerlegt sich am ersten doppelten
+       Anfuehrungszeichen. Genau diesen Fehler hat add-brand schon einmal gehabt. */
+    function favZeichnen() {
+      var host = root.querySelector("[data-fav]");
+      if (!host) return;
+      var n = normUrl(state.form.website);
+      var url = (n.domain && urlOk(n.domain)) ? favicon(n.domain) : "";
+      if (host.getAttribute("data-src") === url) return;
+      host.setAttribute("data-src", url);
+      if (!url) { host.innerHTML = ic("globe", 1.7); return; }
+      host.innerHTML = "";
+      var img = document.createElement("img");
+      img.alt = "";
+      img.referrerPolicy = "no-referrer";
+      img.onerror = function () { host.innerHTML = ic("globe", 1.7); };
+      img.src = url;
+      host.appendChild(img);
+    }
+
     /* Der Switcher und das davon abhaengige Branchenfeld an einer Stelle: beide haengen am
        selben Wert, und getrennte Funktionen liefen frueher oder spaeter auseinander. */
     function syncBusiness() {
@@ -1422,9 +1456,10 @@
       var ind = root.querySelector("[data-bseg-ind]");
       if (!ind) return;
       var an = root.querySelector("[data-biz].is-active");
-      if (!an) { ind.style.width = "0px"; return; }
+      if (!an || !an.offsetWidth) { ind.classList.remove("is-bereit"); return; }
       ind.style.left = an.offsetLeft + "px";
       ind.style.width = an.offsetWidth + "px";
+      ind.classList.add("is-bereit");
     }
 
     /* ---- Die vier Auswahlfelder ------------------------------------------------------------
@@ -1520,49 +1555,48 @@
          und dorthin kam man auch durch Scrollen nicht -- ein absolut gesetzter Kasten zaehlt
          nicht zur scrollbaren Hoehe seines Vorfahren (scrollHeight blieb bei 560 statt 806).
          Erst scrollen, dann messen: nach dem Scrollen ist mehr Platz da als davor. */
-      ddPlatz(m);
+      ddRichtung(wrap, m);
     }
-    /* Platz schaffen, damit der Kasten ganz zu sehen ist. Zwei Schritte, in dieser Reihenfolge:
+    /* Nach OBEN aufklappen, wenn unten kein Platz ist. Der Styleguide sagt in §6 "kein
+       Flip-nach-oben" -- diese Ausnahme ist ausdruecklich gewuenscht, und der Grund liegt an
+       dieser Seite: die Mitte ist ein Scrollbereich, und ein absolut gesetzter Kasten zaehlt
+       NICHT zu ihrer scrollbaren Hoehe. Gemessen blieb scrollHeight bei 560, waehrend das
+       Branchenmenue 246 Pixel tiefer endete -- dorthin kam man durch kein Scrollen. Der Versuch
+       davor, dem Bereich Polster unterzuschieben, war die schlechtere Loesung: er verschob den
+       Kasten waehrend des Messens mit und liess ihn oben UND unten anschneiden.
+       Wer das hier spaeter "richtigstellt", nimmt die Branchenwahl wieder ausser Betrieb.
 
-       1. Die Liste im Kasten wird auf die Hoehe des Bereichs begrenzt. Ein Kasten, der hoeher
-          ist als der Scrollbereich selbst, laesst sich durch kein Scrollen ganz zeigen.
-       2. Der Bereich bekommt unten so viel Polster dazu, wie der Kasten uebersteht -- und wird
-          dorthin gescrollt. Das ist noetig, weil ein absolut gesetzter Kasten NICHT zur
-          scrollbaren Hoehe seines Vorfahren zaehlt: gemessen blieb scrollHeight bei 560, waehrend
-          das Menue 246 Pixel tiefer endete, und dorthin kam man durch kein Scrollen.
-
-       Kein Umklappen nach oben, kein Portal, kein position: fixed -- alle drei verbietet
-       STYLEGUIDE §6/§14, und zwar mit guten Gruenden. Das Polster faellt beim Schliessen weg. */
-    function ddPlatz(menu) {
-      if (!elMid) return;
+       Reihenfolge: passt es unten, bleibt es unten -- nach oben geht es nur, wenn dort mehr
+       Platz ist. Und passt es weder oben noch unten ganz, wird die Liste im Kasten begrenzt,
+       damit er wenigstens vollstaendig zu sehen ist. */
+    function ddRichtung(wrap, menu) {
       var liste = menu.querySelector("[data-dd-list]");
-      var midb = elMid.getBoundingClientRect();
-      if (liste) {
-        liste.style.maxHeight = "";
-        var ueber = menu.getBoundingClientRect().height - (midb.height - 24);
-        if (ueber > 0) {
-          liste.style.maxHeight =
-            Math.max(120, Math.round(liste.getBoundingClientRect().height - ueber)) + "px";
-        }
+      if (liste) liste.style.maxHeight = "";
+      wrap.classList.remove("is-up");
+
+      if (!elMid) return;
+      var btn = wrap.querySelector("[data-dd-btn]");
+      /* ZUERST das Feld selbst ins Bild holen. Ohne das wurde ueber die Richtung eines Kastens
+         entschieden, dessen Feld gar nicht zu sehen war -- gemessen lag der Ausloeser bei 621,
+         waehrend der sichtbare Bereich bei 548 endete. Dann ist jede Richtung falsch.
+         block: "nearest" bewegt nur so weit wie noetig, und ohne weiches Scrollen: das ist eine
+         Zuweisung, deren Ergebnis im naechsten Ausdruck schon stimmen muss. */
+      try { btn.scrollIntoView({ block: "nearest" }); } catch (e) {}
+      var grenze = elMid.getBoundingClientRect();
+      var bb = btn.getBoundingClientRect();
+      var LUFT = 10, ABSTAND = 6;
+      var untenFrei = grenze.bottom - bb.bottom - ABSTAND - LUFT;
+      var obenFrei  = bb.top - grenze.top - ABSTAND - LUFT;
+      var hoch = menu.getBoundingClientRect().height;
+
+      if (hoch > untenFrei && obenFrei > untenFrei) wrap.classList.add("is-up");
+      var frei = wrap.classList.contains("is-up") ? obenFrei : untenFrei;
+      if (liste && hoch > frei) {
+        var neuHoch = liste.getBoundingClientRect().height - (hoch - frei);
+        /* Unter 96px zeigt die Liste weniger als drei Zeilen -- dann ist der Kasten kein Kasten
+           mehr. Lieber ein Stueck ueberstehen lassen als ihn zur Schlitzblende machen. */
+        liste.style.maxHeight = Math.max(96, Math.round(neuHoch)) + "px";
       }
-      var zuviel = Math.ceil(menu.getBoundingClientRect().bottom - (midb.bottom - 10));
-      if (zuviel <= 0) return;
-      elMid.style.paddingBottom = (midPolster() + zuviel) + "px";
-      /* NACH dem Polster noch einmal messen und genau um den Rest scrollen. Der erste Wert taugt
-         dafuer nicht: das frische Polster verschiebt den Kasten selbst mit, und wer um den alten
-         Ueberstand scrollt, schiebt den Kopf des Menues oben aus dem Bild.
-         scrollTop direkt und ohne scroll-behavior: smooth. Beides Weiche -- scrollIntoView mit
-         behavior smooth wie auch scroll-behavior in der CSS -- haengt an requestAnimationFrame.
-         Hier faellt das Scrollen in denselben Augenblick wie das Aufgehen des Kastens und liest
-         sich als Teil davon; eine Zuweisung ist ausserdem messbar, eine Animation nicht. */
-      var rest = Math.ceil(menu.getBoundingClientRect().bottom - (elMid.getBoundingClientRect().bottom - 10));
-      if (rest > 0) elMid.scrollTop = elMid.scrollTop + rest;
-    }
-    /* Das Polster aus der CSS, einmal gelesen und gemerkt -- danach steht dort ein Inline-Wert,
-       und der waere die Antwort auf die eigene Frage. */
-    function midPolster() { return midPolsterStart; }
-    function ddPlatzZurueck() {
-      if (elMid) elMid.style.paddingBottom = "";
     }
     function ddSchliessen(ausser) {
       var wraps = root.querySelectorAll(".uob-ddwrap.is-open");
@@ -1585,7 +1619,6 @@
         var b = wraps[i].querySelector("[data-dd-btn]");
         if (b) b.setAttribute("aria-expanded", "false");
       }
-      if (!root.querySelector(".uob-ddwrap.is-open")) ddPlatzZurueck();
     }
 
     /* ---- Klicks ----------------------------------------------------------------------------- */
@@ -1754,6 +1787,7 @@
         /* Die Grenze meldet sich erst, wenn sie WIRKLICH erreicht ist -- maxlength haelt die
            Eingabe ohnehin an, und ein Zaehler, der bei jedem Anschlag mitzaehlt, lenkt vom
            Tippen ab. Der Fehler verschwindet von selbst, sobald wieder Platz ist. */
+        if (f === "website") favZeichnen();
         if (MAX[f] && String(e.target.value).length >= MAX[f]) {
           state.fehler[f] = "Maximum of " + MAX[f] + " characters reached.";
         } else if (state.fehler[f]) {

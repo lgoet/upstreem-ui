@@ -156,11 +156,10 @@
 /* Ein Punkt, der frisch dazukommt (der Tarif), faehrt nicht von links heran -- er blendet an
    seiner Stelle auf. Ohne das kaeme er aus dem Nichts durch die halbe Schiene gerauscht. */
 .uob-dot.is-fresh { opacity: 0; }
-/* Brand ist abgehakt, aber gesperrt: die Stammdaten sind abgeschickt und haben einen
-   Hintergrundlauf gestartet. Der Punkt sagt das mit, statt nur der Zeiger -- gefuellt in einem
-   stumpfen Ton, der Haken in der Grundfarbe der Seite. */
-.uob-dot.is-locked { background: var(--vc-sk); border-color: var(--vc-sk); }
-.uob-dot.is-locked svg { color: var(--vc-bg); }
+/* Brand ist abgehakt und NICHT anklickbar -- aber es sieht aus wie jeder andere erledigte
+   Schritt. Es war hier eine Zeit lang stumpf eingefaerbt; zurueckgenommen: die Station ist
+   erledigt, und "erledigt" hat in dieser Leiste genau ein Aussehen. Dass man nicht zurueck
+   kann, merkt man dort, wo man es merken muss -- am Zeiger, der sich nicht aendert. */
 .uob-dot:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 
 /* ---- Trefferflaechen ----
@@ -186,7 +185,7 @@
 /* Drei Klassen, weil .is-done weiter unten dieselbe Spezifitaet haette und dann die
    Ladereihenfolge entschiede -- gemessen blieb der Text beim Ueberfahren grau. */
 .uob-rail-labels span.is-hot, .uob-rail-labels span.is-done.is-hot { color: var(--vc-text); }
-.uob-dot.is-hot:not(.is-now):not(.is-locked) { border-color: var(--vc-text); }
+.uob-dot.is-hot:not(.is-now) { border-color: var(--vc-text); }
 
 /* Die Beschriftungen sitzen ebenfalls absolut und GENAU mittig unter ihrem Punkt -- vorher
    verteilte sie ein flex mit space-between, dann steht die erste linksbuendig unter einem
@@ -200,8 +199,7 @@
               opacity var(--uob-t) var(--uob-ease);
 }
 .uob-rail-labels span.is-done { color: var(--vc-muted); }
-/* Brand bleibt lesbar, aber sichtbar stumpf -- derselbe Ton wie sein Punkt. */
-.uob-rail-labels span.is-locked { color: var(--vc-third); }
+
 .uob-rail-labels span.is-now { color: var(--vc-text); font-weight: 600; }
 .uob-rail-labels span.is-fresh { opacity: 0; }
 /* Passt schon die breiteste Beschriftung nicht mehr zwischen zwei Punkte, verschwinden ALLE und
@@ -254,7 +252,7 @@
   margin-bottom: 0;
 }
 .uob-ident > div { overflow: hidden; min-height: 0; }
-.uob-ident.is-on { grid-template-rows: 1fr; opacity: 1; margin-bottom: clamp(14px, 2.4vh, 22px); }
+.uob-ident.is-on { grid-template-rows: 1fr; opacity: 1; margin-bottom: clamp(20px, 3.4vh, 30px); }
 .uob-ident-in { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
 /* Dieselbe Kachel wie .up-ment-logo in core, eine Stufe groesser: 18 -> 28, also Faktor 1.556 auf
    Radius (5 -> 7.8) und Bild (16 -> 24.9, hier auf 24 gerundet, weil das Favicon 64px liefert
@@ -297,7 +295,10 @@
 .uob-count.is-full { color: var(--vc-text); }
 
 /* ---------- Felder ---------- */
-.uob-fields { margin-top: clamp(16px, 3vh, 26px); display: flex; flex-direction: column; gap: 14px; }
+/* Der Abstand zwischen Kopfblock und Inhalt ist DOPPELT so gross wie der zwischen den
+   Elementen darin. Er ist die Grenze zwischen "worum geht es" und "was ist zu tun", und die
+   darf nicht so aussehen wie der Abstand zweier Felder. */
+.uob-fields { margin-top: clamp(28px, 5vh, 44px); display: flex; flex-direction: column; gap: 14px; }
 /* Zwei Felder nebeneinander, solange Platz ist. Unter is-narrow stapeln sie -- die Regel steht
    ganz unten bei den uebrigen schmalen Faellen. */
 .uob-frow { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
@@ -334,6 +335,18 @@
   transition: border-color var(--uob-t) var(--uob-ease), box-shadow var(--uob-t) var(--uob-ease);
 }
 .uob-input::placeholder { color: var(--vc-third); }
+/* Das Favicon sitzt IM Feld, rechts. Es gehoert zum eingegebenen Wert und darf nicht wie ein
+   zweites Bedienelement aussehen -- deshalb ohne eigenen Rahmen und ohne Zeigerreaktion. */
+.uob-inwrap { position: relative; display: block; }
+.uob-input.has-fav { padding-right: 42px; }
+.uob-fav {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  width: 20px; height: 20px; border-radius: 5px; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--vc-third); pointer-events: none;
+}
+.uob-fav img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.uob-fav svg { width: 15px; height: 15px; display: block; }
 .uob-input:disabled { opacity: .55; cursor: default; }
 /* Wie auf der Anmeldeseite: der Rahmen faerbt sich NICHT, solange das Feld den Fokus hat --
    sonst wechselt die Farbe genau in dem Moment, in dem jemand den Fehler beheben will. */
@@ -368,16 +381,26 @@
 .uob-bseg-ind {
   position: absolute; top: 0; bottom: 0; left: 0; width: 0; z-index: 0;
   border-radius: 8px; background: #ffffff;
-  border: 1px solid var(--vc-switch-active-border, transparent);
+  /* --vc-switch-border ist der Rahmen, den core der aktiven Stufe gibt. Hier stand einmal ein
+     Name, den es nicht gibt (--vc-switch-active-border) -- dann faellt der Rueckfall an, und der
+     war transparent: der Rahmen um die aktive Stufe fehlte einfach. */
+  border: 1px solid var(--vc-switch-border);
   box-shadow: 0 1px 2px rgba(15,17,21,.06);
-  transition: left var(--uob-t) var(--uob-ease), width var(--uob-t) var(--uob-ease);
+  transition: left var(--uob-t) var(--uob-ease), width var(--uob-t) var(--uob-ease),
+              opacity var(--uob-t) var(--uob-ease);
 }
-/* Vor der ersten Messung hat die Marke keine Breite -- dann darf sie auch nicht zu sehen sein,
-   sonst blitzt links ein Strich auf. */
-.uob-bseg-ind[style*="width: 0"] { opacity: 0; }
-.uob-root[data-theme="dark"] .uob-bseg-ind { background: var(--vc-bg); box-shadow: 0 1px 2px rgba(0,0,0,.3); }
-.uob-bseg .up-seg-btn.is-active { background: transparent; border-color: transparent; box-shadow: none; }
-.uob-bseg .up-seg-btn.is-active { color: var(--vc-text); }
+/* Vor der ersten Messung ist die Marke unsichtbar. Ohne das sah man beim Aufbau kurz zwei
+   aktive Stufen: die Marke lag mit Breite 0 links, waehrend schon eine Beschriftung dunkel war
+   -- und weil die erste Messung erst nach dem Layout kommt, hielt das eine Bildaenderung lang.
+   is-bereit setzt das JS, sobald es gemessen hat. */
+.uob-bseg-ind { opacity: 0; }
+.uob-bseg-ind.is-bereit { opacity: 1; }
+.uob-root[data-theme="dark"] .uob-bseg-ind { background: #121212; border-color: #353535;
+  box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+/* Die Stufen geben ihren eigenen Grund und Rahmen ab -- die Marke traegt beides, und zwei
+   Pillen uebereinander waeren beim Gleiten zwei. */
+.uob-bseg .up-seg-btn.is-active { background: transparent; border-color: transparent;
+  box-shadow: none; color: var(--vc-text); }
 
 /* ---------- Formular-Select ----------
    Begruendung im Kopf dieser Datei: core sagt ausdruecklich, dass .up-ddtrigger KEIN
@@ -422,6 +445,10 @@
   position: absolute; top: calc(100% + 6px); left: 0; right: 0; width: auto; min-width: 0;
   z-index: 40;
 }
+/* Nach oben aufklappen. Begruendung steht im JS bei ddRichtung: die Mitte ist ein
+   Scrollbereich, und ein absolut gesetzter Kasten zaehlt nicht zu ihrer scrollbaren Hoehe --
+   unten heraus heisst hier wirklich unerreichbar. */
+.uob-ddwrap.is-up .uob-ddmenu { top: auto; bottom: calc(100% + 6px); }
 /* Der geschlossene Kasten hat keine HOEHE -- er bleibt aber im DOM und im Layout, display wird
    nie umgeschaltet. Das ist die Regel aus STYLEGUIDE §6, und sie gilt hier unveraendert: die
    Appear-Animation (opacity + Scale) laeuft wie bei jedem anderen Dropdown der App.
@@ -454,7 +481,7 @@
    grosse Flaechen mit Logo und zwei Textzeilen ausgewaehlt werden -- ein 16px-Kaestchen als
    einziger Zustandstraeger waere auf so einer Flaeche zu leise. */
 .uob-list {
-  margin-top: clamp(14px, 2.6vh, 22px);
+  margin-top: clamp(28px, 5vh, 44px);
   display: flex; flex-direction: column; gap: 8px;
   /* Zwei Spalten sind hier die Vorgabe und nicht der Ausnahmefall: acht Marken untereinander
      sind acht Bildschirmzeilen. Nebeneinander sind es vier. Die Spalte darunter ist
@@ -482,11 +509,17 @@
    gewaehlten Zustand. Das ist genau die Zeile aus der Prompts-Tabelle (.up-row), mit denselben
    Tokens: --vt-row-hover fuer beides. Wer die Tabelle kennt, kennt diese Liste. */
 .uob-group-items.is-plain { display: block; }
+/* 8px zwischen zwei Zeilen, die Trennlinie genau in der Mitte -- also 4px Luft nach oben und
+   nach unten. Der Abstand steht NUR unten: zwei Raender von je 4px faellen in einem Blockfluss
+   zusammen und ergaeben 4 statt 8. Gemessen genau das, bevor die Zeile hier stand.
+   Das Polster liegt IM Element und nicht als gap dazwischen, sonst faerbt der Hover nur den
+   Text und laesst einen Streifen daneben ungefaerbt. */
 .uob-item.is-plain {
   border: 0; border-radius: 8px; background: transparent;
   padding: 11px 12px; min-height: 0; width: 100%;
-  align-items: center;
+  margin: 0 0 8px; align-items: center;
 }
+.uob-group-items.is-plain > *:last-child { margin-bottom: 0; }
 .uob-item.is-plain:hover { background: var(--vt-row-hover); border-color: transparent; }
 .uob-item.is-plain.is-on { background: var(--vt-row-hover); border-color: transparent; }
 /* Die Trennlinie sitzt als Rand am Kasten DARUNTER und nicht am gefaerbten Element selbst: so
@@ -494,7 +527,7 @@
    einer Gruppe hat keine. */
 .uob-group-items.is-plain > .uob-item + .uob-item { position: relative; }
 .uob-group-items.is-plain > .uob-item + .uob-item::before {
-  content: ""; position: absolute; left: 12px; right: 12px; top: -1px; height: 1px;
+  content: ""; position: absolute; left: 12px; right: 12px; top: -4px; height: 1px;
   background: var(--vc-border);
 }
 .uob-item.is-plain:hover::before, .uob-item.is-plain.is-on::before,
@@ -510,14 +543,17 @@
   transition: border-color var(--uob-t) var(--uob-ease), background var(--uob-t) var(--uob-ease);
 }
 .uob-item:hover { border-color: var(--vc-hover-border); }
-.uob-item.is-on { border-color: var(--vc-text); background: var(--up-sel-bg, var(--vc-heading-bg)); }
+/* Gewaehlt faerbt die FLAECHE, der Rahmen bleibt der des Hovers. Ein Rahmen in der
+   Primaerfarbe zog jede gewaehlte Zeile nach vorn, als waere sie ein Knopf -- fuenf davon
+   nebeneinander waren fuenf Knoepfe. Die Flaeche sagt es leiser und genauso deutlich. */
+.uob-item.is-on { border-color: var(--vc-hover-border); background: var(--up-sel-bg, var(--vc-heading-bg)); }
 .uob-item:focus-visible { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 /* Eine Zeile, die nicht mehr gewaehlt werden kann, weil das Limit erreicht ist. Sie bleibt
    lesbar und anklickbar-aussehend waere gelogen -- also Zeiger weg und gedaempft, aber nicht so
    blass, dass man den Namen nicht mehr liest. */
 /* Eine Themenzeile traegt nur noch Farbe und Name -- 56px waeren dafuer eine halbe Zeile Luft
    zu viel, und bei sieben Themen entscheidet genau das darueber, ob die Liste scrollt. */
-.uob-item.is-slim { min-height: 44px; padding: 8px 14px; }
+.uob-item.is-slim { min-height: 40px; padding: 6px 12px; }
 .uob-item.is-blocked { opacity: .45; cursor: default; }
 .uob-item.is-blocked:hover { border-color: var(--vc-border); }
 /* Geometrie exakt .up-filter-check aus core, nur eine Stufe groesser (16 -> 18, Radius 5 -> 5.6,
@@ -587,16 +623,19 @@
    Der Platzhalter sieht aus wie eine Zeile der Liste, ist aber gestrichelt -- er ist ein
    ANGEBOT und kein Eintrag. Beim Klick wird er zur Zeile mit Eingabefeld; darunter erscheint
    der naechste Platzhalter, bis fuenf erreicht sind. */
+/* Der Platzhalter ist eine ZEILE wie die anderen, kein gestrichelter Kasten. Die Karten sahen
+   nach Baukasten aus; eine Liste mit Trennlinien ist das, was diese App sonst ueberall zeigt --
+   dieselbe Zeile wie in der Prompts-Tabelle. Nur das Plus davor sagt, dass hier etwas dazukommt. */
 .uob-add {
   display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
-  padding: 8px 14px; min-height: 44px;
-  border: 1px dashed var(--vc-border); border-radius: 12px; background: transparent;
+  padding: 6px 12px; min-height: 40px; margin: 0 0 8px;
+  border: 0; border-radius: 8px; background: transparent;
   font-family: inherit; font-size: 14px; font-weight: 500; color: var(--vc-third);
   cursor: pointer; outline: none;
-  transition: border-color var(--uob-t) var(--uob-ease), color var(--uob-t) var(--uob-ease),
+  transition: background var(--uob-t) var(--uob-ease), color var(--uob-t) var(--uob-ease),
               opacity var(--uob-t) var(--uob-ease);
 }
-.uob-add:hover { border-color: var(--vc-hover-border); color: var(--vc-text); }
+.uob-add:hover { background: var(--vt-row-hover); color: var(--vc-text); }
 .uob-add:focus-visible { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 .uob-add svg { width: 15px; height: 15px; display: block; flex: 0 0 auto; }
 /* Neu dazugekommene Zeilen und Platzhalter blenden auf, statt zu erscheinen. Die Klasse nimmt
@@ -635,7 +674,7 @@
    seinem ersten Thema -- sonst waere derselbe Prompt zweimal anwaehlbar und der Zaehler stimmte
    nicht mehr. Die uebrigen Themen stehen als kleine Marken rechts in der Zeile; damit ist die
    Ueberschneidung sichtbar, ohne dass die Liste sie verdoppelt. */
-.uob-group + .uob-group { margin-top: 16px; }
+.uob-group + .uob-group { margin-top: 32px; }
 .uob-group-h {
   display: flex; align-items: center; gap: 8px; padding: 0 2px 8px;
   font-size: 12px; font-weight: 600; color: var(--vc-muted); letter-spacing: .01em;
@@ -777,7 +816,7 @@
    Drei Karten nebeneinander, die mittlere hervorgehoben. Die Hervorhebung ist ein Rahmen in
    --vc-text und ein Etikett, KEINE eigene Farbe: die App hat keine Akzentfarbe, und eine hier
    einzufuehren waere genau die neue Regel, die es nicht geben soll. */
-.uob-plans { margin-top: clamp(12px, 2.2vh, 20px); display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.uob-plans { margin-top: clamp(16px, 2.8vh, 24px); display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 /* Die Karte ist dichter gesetzt als eine Preisseite: dort scrollt man, hier soll der ganze
    Ablauf ohne Scrollen erreichbar bleiben, und acht Merkmalszeilen plus Unterzeile sind das
    Hoechste, was auf einen 760 Pixel hohen Bildschirm passt. Gemessen wurden mit den Werten
@@ -824,7 +863,7 @@
 .uob-plan-feat b { font-weight: 600; color: var(--vc-text); }
 
 /* Monats-/Jahresschalter: das ist .up-seg aus core, hier nur mittig gestellt. */
-.uob-billrow { margin-top: clamp(10px, 1.8vh, 16px); display: flex; justify-content: center; }
+.uob-billrow { margin-top: clamp(22px, 3.8vh, 34px); display: flex; justify-content: center; }
 /* Beim Tarif ist die Seite am vollsten. Der Luftraum um die Mitte gibt dort als erstes nach --
    lieber enger als scrollend, denn drei Karten nebeneinander lassen sich nicht scrollen, ohne
    dass man sie nicht mehr vergleichen kann. */
