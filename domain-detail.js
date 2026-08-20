@@ -795,7 +795,10 @@
          einer Zeile mit zwei Bewegungen liest sich als Fehler. Die Logos gehen dabei nicht
          verloren: renderBars in core kann sie jetzt auch. */
       chartMode: function () { return state.modelMode; },
-      total: function () { return null; },
+      /* Die Zahl in der Mitte: wie viele verschiedene Modelle diese Domain ueberhaupt zitieren.
+         Das ist die Laenge von model_breakdown selbst -- jeder Eintrag IST ein Modell. Keine
+         Summe der Anteile, die waere immer 100. */
+      total: function () { return isArr(state.model) ? state.model.length : null; },
       centerLabel: "Models",
       collapseHost: root.querySelector(".udd-modelcard")
     }) : null;
