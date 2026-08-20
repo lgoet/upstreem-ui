@@ -1,0 +1,84 @@
+<meta charset="utf-8">
+<title>Reset: Models / Topics / Markets</title>
+<style>
+  html,body{height:100%;margin:0;font-family:system-ui,sans-serif;background:#eee}
+  #main{height:100vh;overflow:hidden auto;padding:20px}
+  .bar{display:flex;gap:12px;align-items:flex-start;padding:12px;background:#fff;border:1px dashed #bbb}
+  .slot{width:300px}
+  #out{font:11px/1.5 ui-monospace,monospace;white-space:pre-wrap;background:#fff;padding:10px;margin-top:12px}
+</style>
+<body>
+<div id="main">
+  <div id="frisch" style="font:12px ui-monospace;background:#fff;padding:8px">lade…</div>
+  <div class="bar" id="bar">
+    <div class="slot"><div class="up-root umf-root" id="mf" data-instance="m1" data-isdark="no" data-isprocessing="no"></div></div>
+    <div class="slot"><div class="up-root utf-root" id="tf" data-instance="t1" data-isdark="no" data-isprocessing="no"></div></div>
+    <div class="slot"><div class="up-root umk-root" id="kf" data-instance="k1" data-isdark="no" data-isprocessing="no"></div></div>
+  </div>
+  <div id="out"></div>
+  <div style="height:900px"></div>
+</div>
+<script>
+/* Frische BEWEISEN statt ?v= zu bumpen: alles per fetch(no-store) holen und inline einhaengen.
+   Was hier laeuft, ist damit nachweislich die Datei auf der Platte. */
+window.__frisch = {};
+function holen(pfad){
+  return fetch(pfad + "?nc=" + Math.random(), { cache: "no-store" }).then(function(r){ return r.text(); });
+}
+function css(pfad){ return holen(pfad).then(function(t){
+  var s = document.createElement("style"); s.textContent = t; document.head.appendChild(s); }); }
+function js(pfad, marker){ return holen(pfad).then(function(t){
+  window.__frisch[pfad] = marker ? (t.indexOf(marker) >= 0) : true;
+  var s = document.createElement("script"); s.textContent = t; document.head.appendChild(s); }); }
+
+var MARK = "sortKey = DEFAULT_SORT; sortOpen = false; cursor = -1;";
+Promise.all([css("core.css"), css("filters/models-filter.css"),
+             css("filters/topics-filter.css"), css("filters/markets-filter.css")])
+  .then(function(){ return js("core.js"); })
+  .then(function(){ return js("filters/models-filter.js", MARK); })
+  .then(function(){ return js("filters/topics-filter.js", MARK); })
+  .then(function(){ return js("filters/markets-filter.js", MARK); })
+  .then(function(){
+    document.getElementById("frisch").textContent =
+      "frisch: " + JSON.stringify(window.__frisch) + "  |  UC=" + (!!window.UpstreemCore);
+    window.__bereit = true;
+  })
+  .catch(function(e){ document.getElementById("frisch").textContent = "LADEFEHLER: " + e; });
+
+/* Daten wie sie Bubble liefert. */
+window.__daten = function(){
+  window.setUpstreemModels(JSON.stringify([
+    {model_key:"gpt-4o", name:"GPT-4o", provider:"OpenAI", used:1},
+    {model_key:"claude", name:"Claude", provider:"Anthropic", used:1},
+    {model_key:"gemini", name:"Gemini", provider:"Google", used:1}
+  ]));
+  window.setUpstreemTopics(JSON.stringify([
+    {topic_id:"t1", name:"Digitalisierung", hex_light:"#575757", hex_dark:"#575757", prompt_count:12},
+    {topic_id:"t2", name:"Solar", hex_light:"#8d6a11", hex_dark:"#8d6a11", prompt_count:9}
+  ]));
+  window.setUpstreemMarkets(JSON.stringify([
+    {market_code:"DE", name:"Germany", used:5},
+    {market_code:"US", name:"United States", used:3}
+  ]));
+};
+
+/* Zustand aus dem DOM lesen -- nicht aus internen Variablen, die es nach dem Reset
+   gar nicht mehr geben soll. */
+window.__stand = function(){
+  function eine(id, praefix){
+    var root = document.getElementById(id);
+    var ctrl = root["__" + praefix + "Ctrl"];
+    var liste = root.querySelector("." + praefix + "-list") || root.querySelector("[class$='-list']");
+    var leer  = root.querySelector("." + praefix + "-empty");
+    var zeilen = liste ? liste.querySelectorAll("[data-key],[data-id],[data-code]").length : -1;
+    return {
+      sel: ctrl && ctrl.getSelected ? ctrl.getSelected() : null,
+      zeilen: zeilen,
+      leerText: leer ? leer.textContent : null,
+      trigger: (root.querySelector("[class$='-trigger']") || {}).textContent || null,
+      offen: root.querySelectorAll("[class$='-panel'],[class$='-pop']").length
+    };
+  }
+  return { models: eine("mf","umf"), topics: eine("tf","utf"), markets: eine("kf","umk") };
+};
+</script>

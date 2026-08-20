@@ -97,7 +97,23 @@
   ];
   var LAYOUT_KEY = "uddLayout";
 
+  /* Der Modus (Citation Share / URL Share) ueberlebt jetzt den Seitenaufbau: er liegt im
+     localStorage ueber UC.prefGet/prefSet, nicht mehr nur im Fenster. Eine Ansichtsvorliebe gehoert
+     dem Nutzer, nicht dem Seitenbesuch -- wer zuletzt URL Share angesehen hat, will das morgen
+     wieder sehen. Das Fenster-Objekt bleibt als schneller Zwischenspeicher davor: mehrere Kopien
+     derselben Instanz auf einer Seite sollen sich nicht ueber den Speicher unterhalten muessen. */
   var MODE_STORE = (window.__uddMode = window.__uddMode || {});
+  var MODE_KEY = "uddMode__";
+  function modusLesen(id){
+    if (MODE_STORE[id]) return MODE_STORE[id];
+    var v = null;
+    try { v = UC.prefGet ? UC.prefGet(UC.prefKey ? UC.prefKey(MODE_KEY + id) : MODE_KEY + id) : null; } catch (e) {}
+    return (v === "citation" || v === "domain") ? v : null;
+  }
+  function modusSchreiben(id, m){
+    MODE_STORE[id] = m;
+    try { if (UC.prefSet) UC.prefSet(UC.prefKey ? UC.prefKey(MODE_KEY + id) : MODE_KEY + id, m); } catch (e) {}
+  }
   var GRAN_STORE = (window.__uddGran = window.__uddGran || {});
 /* Der Speicher fuer den Bezug: es gibt nur noch "domain", also merkt er nichts mehr. Er bleibt
    stehen, weil eine andere Fassung derselben Datei auf einer Seite daneben liegen kann und dann
@@ -294,8 +310,15 @@
        Parameter ist die Themenabfrage; ohne ihn steht der Tooltip im Dunkeln hell. */
     if (UC.makeTooltips) UC.makeTooltips(root, darkNow);
 
+    /* Kam der Modus aus localStorage statt aus dieser Seitensitzung, hat auf DIESER Seite noch
+       nie jemand die URL-Serie angefordert -- der Klick, der das sonst tut, hat nie
+       stattgefunden. Unten wird sie deshalb genau einmal selbst angefordert. Die Unterscheidung
+       muss hier fallen, VOR dem ersten modusSchreiben: danach ist der Speicher gefuellt und der
+       Fall nicht mehr von einer Neueinspritzung durch Bubble zu unterscheiden. */
+    var modusAusSpeicher = !MODE_STORE[instanceId];
+
     var state = {
-      mode:  MODE_STORE[instanceId]  || "citation",
+      mode:  modusLesen(instanceId)  || "citation",
       gran:  GRAN_STORE[instanceId]  || "day",
       scope: SCOPE_FEST,
       header: null, share: null, urls: null, model: null, funnel: null,
@@ -467,9 +490,22 @@
     }
     function warteBeenden() { if (warteUhr) { clearTimeout(warteUhr); warteUhr = null; } }
     warteStarten();
-    /* Bubble spritzt das Markup neu ein, der Modus ueberlebt in MODE_STORE. Startet die Instanz
-       also schon im Domain-Share, ist die URL-Serie von der ersten Sekunde an unterwegs. */
-    if (state.mode === "domain") setTimeout(function () { if (!state.urls) urlWarteStarten(); }, 0);
+    /* Bubble spritzt das Markup neu ein, der Modus ueberlebt in MODE_STORE und ueber
+       localStorage sogar das Seitenneuladen. Startet die Instanz also schon im URL Share, ist
+       die Serie von der ersten Sekunde an unterwegs.
+
+       Angefordert wird sie nur beim Wert aus localStorage: dann ist die Seite frisch und der
+       Ladeschritt der Seite kennt nur die Zitationsdaten -- ohne diese Anforderung stuende das
+       Chart nach der Wartezeit auf "No data". Bei einer blossen Neueinspritzung wird NICHT
+       angefordert: der Workflow lief schon, und ein Ereignis, das eine erneute Einspritzung
+       ausloest, waere eine Schleife. Ein Tick Verzoegerung, damit der Workflow gebunden ist. */
+    MODE_STORE[instanceId] = state.mode;
+    if (state.mode === "domain") setTimeout(function () {
+      if (state.urls) return;
+      urlWarteStarten();
+      if (modusAusSpeicher) fire("data-mode-fn", "uddMode",
+        { mode: state.mode, gran: state.gran, scope: state.scope });
+    }, 0);
 
     /* Dieselbe Geduld fuer die URL-Serie, aber getrennt gezaehlt: sie wird spaeter und oefter
        angefordert als die Hauptdaten, und ihr Ausbleiben darf nur ihr eigenes Chart betreffen. */
@@ -943,7 +979,7 @@
       if (m && elSeg.contains(m)) {
         var k = m.getAttribute("data-mode");
         if (k === state.mode) return;              /* schon da: kein Ereignis, kein Neuladen */
-        state.mode = k; MODE_STORE[instanceId] = k;
+        state.mode = k; modusSchreiben(instanceId, k);
         /* Der Wechsel nach Domain Share fordert die URL-Serie an: ab hier wird gewartet. */
         if (k === "domain" && !state.urls) urlWarteStarten();
         syncSeg(); renderHead(); renderKpi(); renderChart();
@@ -1033,6 +1069,11 @@
            gar nicht geschickt wurden. */
         if (isArr(p.types_breakdown)) state.types = p.types_breakdown;
         state.hasData = !!(state.header || state.share || state.model || state.funnel || state.types);
+        /* Lesbar, aber ohne einen einzigen brauchbaren Block -- etwa "{}" aus einem Workflow, der
+           nichts gefunden hat. Das ist KEIN Ladezustand: ohne diese Zeile blieben alle Abschnitte
+           im Skelett stehen, optisch nicht von "gleich da" zu unterscheiden, obwohl die Antwort
+           laengst da und leer ist. Genau der stille Ausfall, den §2 verbietet. */
+        if (!state.hasData) state.error = "No data for this domain.";
         state.loading = false;
         warteBeenden();
         /* VOR granPruefen: der Wert aus dem Payload ist die Wahrheit, granPruefen korrigiert
@@ -1080,16 +1121,34 @@
         render();
         return true;
       },
+      /* Reset raeumt DATEN weg, keine Einstellungen. Die Trennung ist der ganze Punkt:
+           geleert   Kopf, Zeitreihen, Modelle, Typen, Trichter, URL-Serie, Fehlerzustaende
+           auf day   die Granularitaet -- sie gehoert zu den Daten, nicht zur Ansicht: die neuen
+                     Daten bringen ihre eigene mit (granularity im Payload), und bis dahin ist
+                     "day" die einzige Stufe, die immer erlaubt ist
+           BLEIBT    Citation Share / URL Share, und die Ring/Balken-Wahl der beiden Charts
+         Vorher setzte reset() auch den Modus auf "citation" zurueck. Das ist eine Ansichtsvorliebe
+         des Nutzers, und ein Datenwechsel ist kein Grund, sie ihm wegzunehmen.
+         Danach steht die Komponente auf loading: das Skelett laeuft, die Warte-Uhr auch, und der
+         naechste setDomainDetail beendet beides. */
       reset: function () {
         state.header = null; state.share = null; state.urls = null;
         state.model = null; state.funnel = null; state.types = null;
-        state.hasData = false; state.error = null; state.loading = false;
+        state.hasData = false; state.error = null;
         state.urlsStale = false; state.urlsError = null; urlWarteBeenden();
-        state.mode = "citation"; MODE_STORE[instanceId] = "citation";
         state.gran = "day"; GRAN_STORE[instanceId] = "day";
         state.scope = SCOPE_FEST;
+        state.loading = true;
         warteStarten();
         render();
+        /* Der Modus bleibt, wie der Nutzer ihn gestellt hat -- steht er auf URL Share, sind die
+           URL-Daten aber gerade mit geleert worden, und der Klick, der sie sonst anfordert, kommt
+           nach einem Reset nie. Also hier anfordern, wortgleich zum Klick. NACH render(), damit
+           das Skelett schon steht, wenn der Workflow anlaeuft. */
+        if (state.mode === "domain") {
+          urlWarteStarten();
+          fire("data-mode-fn", "uddMode", { mode: state.mode, gran: state.gran, scope: state.scope });
+        }
         return true;
       },
       destroy: function () { warteBeenden(); try { line.destroy && line.destroy(); } catch (e) {} }

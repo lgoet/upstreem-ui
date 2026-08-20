@@ -68,7 +68,13 @@
     setDomainDetail("<instance>", <json>)         Kopf, Zeitreihen, Modelle, Trichter
     setDomainDetailUrls("<instance>", <json>)     die Top-URLs fuer den Domain-Share
     setDomainDetailLoading("<instance>", "yes")   Skelette an
-    resetDomainDetail("<instance>")               alles leer, zurueck auf Citation Share / Day
+    resetDomainDetail("<instance>")               Daten leer, Skelette an, Granularitaet auf Day
+
+  Der Reset leert DATEN, keine Einstellungen: die Wahl zwischen Citation Share und URL Share
+  bleibt stehen (sie liegt in localStorage und ueberlebt auch das Seitenneuladen), ebenso die
+  Einstellungen an den Charts. Zurueckgesetzt wird nur die Granularitaet auf Day.
+  Steht die Ansicht dabei auf URL Share, feuert der Reset einmal uddMode -- sonst wuerde die
+  URL-Serie nie wieder angefordert, weil der Klick, der das sonst tut, ausbleibt.
 
   Beide Daten-Setter nehmen den JSON als TEXT oder als Objekt. Ein Payload, den core nicht lesen
   kann, endet als benannter Fehler in der Karte -- nicht als endloses Skelett.

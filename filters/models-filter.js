@@ -697,6 +697,15 @@
       reset: function () {
         selected = []; mode = "multi"; query = "";
         elSearchIn.value = ""; elSearch.classList.remove("has-text");
+        /* Auch die gelieferte Liste raus, nicht nur die Auswahl: nach einem Team- oder
+           Projektwechsel gehoeren die alten Modelle niemandem mehr, und eine Liste ohne
+           passende Auswahl waere schlimmer als gar keine. Die Liste zeigt danach
+           "No models yet"; der naechste Load fuellt sie wieder. Der seitenweite Store
+           bleibt unangetastet -- an dem haengen auch andere Komponenten. */
+        models = [];
+        /* "Alles clearen" schliesst die Sortierung mit ein -- wie beim Datumsfilter, der
+           auf seine Vorgabe zurueckgeht statt nur die Auswahl zu leeren. */
+        sortKey = DEFAULT_SORT; sortOpen = false; cursor = -1;
         setOpen(false); persist(); render();             // SILENT, like every other reset in the repo
       },
       getSelected: function () { return { model_keys: selected.join(","), select_mode: mode }; }
