@@ -79,7 +79,16 @@
    einer Aufzaehlung eine Reihe von Knoepfen. Gilt fuer beide Themen.
    Drei Selektorteile, weil .up-entchip.is-soft in core zwei hat und sonst gewinnt. */
 .urd-ments .up-entchip.is-soft {
-  height: 32px; padding: 0 11.4px 0 5.7px; border-radius: 9.1px; gap: 9.1px;
+  height: 32px; padding: 0 11.4px 0 5.7px; border-radius: 9.1px; gap: 9.1px; }
+/* Grund und Rahmen NUR in Ruhe. Standen sie in der Regel darueber, schlugen sie mit ihren drei
+   Klassen den geteilten Hover aus core (.up-chiphover:hover, zwei) -- der Chip hatte dann gar
+   keinen Hover: Rahmen blieb durchsichtig, und der Hover-Grund #f5f5f5 ist derselbe wie
+   --vc-field, also blieb auch dort alles gleich. Gemessen: Ruhe und Hover Zeichen fuer Zeichen
+   identisch. Mit :not(:hover) gilt hier die Ruhe und in core der Hover -- Rahmen und Grund
+   kommen von dort, wie bei jedem anderen anklickbaren Chip der App.
+   Die Geometrie bleibt oben und gilt in BEIDEN Zustaenden: ein Chip, der beim Ueberfahren die
+   Hoehe wechselt, springt. */
+.urd-ments .up-entchip.is-soft:not(:hover) {
   background: var(--vc-field); border-color: transparent; }
 /* Logo und Schrift mit demselben Faktor 32/28 = 1.143 wie der Chip: 18 -> 20.6, Radius 5 -> 5.7,
    Bild 16 -> 18.3, Bildradius 4 -> 4.6, Buchstabe 10 -> 11.4, Name 13.5 -> 15.4. Ein Bauteil, das
@@ -87,7 +96,10 @@
 .urd-ment .up-ment-logo { width: 20.6px; height: 20.6px; border-radius: 5.7px; }
 .urd-ment .up-ment-logo img { width: 18.3px; height: 18.3px; border-radius: 4.6px; }
 .urd-ment .up-model-ltr { font-size: 11.4px; }
-.urd-ment .up-ment-name { font-size: 15.4px; }
+/* Der Name faellt bewusst aus dem Faktor 32/28 heraus: 14.4 statt der rechnerischen 15.4. Er
+   stand zu gross neben seinem Logo -- die Kachel ist 20.6, und eine Schrift fast so hoch wie das
+   Bild daneben laesst den Chip nach Ueberschrift aussehen statt nach Aufzaehlung. */
+.urd-ment .up-ment-name { font-size: 14.4px; }
 /* Der leere Zustand der Mentions: das Minus steht fuer sich, ohne Karte und ohne Satz. Etwas
    Hoehe, damit der Abschnitt nicht auf eine Zeile zusammenfaellt. */
 .urd-mentempty { min-height: 24px; }
