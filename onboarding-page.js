@@ -197,16 +197,28 @@
         "market": "DE", "selected": false, "topic_ids": ["t-efficiency"] }
     ],
   
+    /* Die vier Zusatzfelder (description, ai_responses_per_month, ai_responses_more,
+       support_label) stehen so NICHT im Payload, den die RPC heute liefert. Sie sind die
+       Angaben von der Preisseite, und sie muessen dort auch her: die Antwortzahlen lassen sich
+       nicht rechnen (siehe antworten()). Bis die RPC sie mitschickt, zeigt die Karte die Zeile
+       mit den Antworten gar nicht -- lieber eine Zeile weniger als eine erfundene Zahl. */
     plans: [
       { "id": "54be31d2-dc61-4a5e-8ea0-31c4370a4cb3", "name": "Essential",
+        "description": "Get started with basic monitoring and analytics",
         "monthly_price_eur": 89.00, "yearly_price_eur": 948.00,
-        "prompts_per_day": 50, "competitors_max_active": 5, "trial_days": 30, "sort_order": null },
+        "prompts_per_day": 50, "competitors_max_active": 5, "trial_days": 30, "sort_order": null,
+        "ai_responses_per_month": 4650, "support_label": "Standard email support" },
       { "id": "3129be58-d59a-4221-ba53-7b2e4131cf5f", "name": "Professional",
+        "description": "Advanced monitoring and AI search insights",
         "monthly_price_eur": 205.00, "yearly_price_eur": 2220.00,
-        "prompts_per_day": 150, "competitors_max_active": 10, "trial_days": 30, "sort_order": null },
+        "prompts_per_day": 150, "competitors_max_active": 10, "trial_days": 30, "sort_order": null,
+        "ai_responses_per_month": 13500, "support_label": "Personal account manager" },
       { "id": "a980c741-807e-43dd-9617-8e06b82999ba", "name": "Enterprise",
+        "description": "Advanced features for growing businesses",
         "monthly_price_eur": 429.00, "yearly_price_eur": 4380.00,
-        "prompts_per_day": 350, "competitors_max_active": 15, "trial_days": 30, "sort_order": null }
+        "prompts_per_day": 350, "competitors_max_active": 15, "trial_days": 30, "sort_order": null,
+        "ai_responses_per_month": 30000, "ai_responses_more": true,
+        "support_label": "Personal account manager" }
     ]
   };
 
@@ -859,7 +871,7 @@
     function viewPlan() {
       var jaehrlich = state.interval === "yearly";
       return '<div class="uob-pane" data-pane="plan">' +
-        kopf("Choose your plan", "Every plan starts with a free trial. No charge until it ends.") +
+        kopf("Choose your plan", testText()) +
         '<div class="uob-body">' +
           '<div class="uob-billrow">' +
             '<div class="up-seg" role="tablist" aria-label="Billing interval">' +
@@ -879,7 +891,6 @@
                 var zeigMon = jaehrlich && jah != null ? jah / 12 : mon;
                 var spar = (mon != null && jah != null && mon > 0)
                   ? Math.round(100 - (jah / (mon * 12)) * 100) : null;
-                var tage = num(pl.trial_days);
                 /* Empfohlen ist die MITTLERE Karte. Nicht die teuerste, und nicht per Feld aus
                    den Daten: dort gibt es keins, und ein erfundenes waere eine Behauptung. */
                 var empfohlen = state.plans.length === 3 && i === 1;
@@ -887,21 +898,28 @@
                          ' aria-checked="' + (an ? "true" : "false") + '" data-plan="' + esc(pl.id) + '">' +
                   (empfohlen ? '<span class="uob-plan-tag">Most popular</span>' : "") +
                   '<span class="uob-plan-h"><span class="uob-plan-name">' + esc(pl.name) + '</span></span>' +
+                  (txt(pl.description) ? '<span class="uob-plan-desc">' + esc(pl.description) + '</span>' : "") +
                   '<span class="uob-plan-price">' +
                     '<span class="uob-plan-amt">' + esc(geld(zeigMon)) + '</span>' +
                     '<span class="uob-plan-per">/ month</span>' +
                   '</span>' +
                   '<span class="uob-plan-note' + (jaehrlich && spar ? " is-on" : "") + '"><span>' +
                     (spar ? "Save " + spar + "% billed yearly" : "") + '</span></span>' +
+                  /* Wortlaut und Reihenfolge sind die der Preisseite. Sie stehen hier nicht,
+                     weil sie mir gefallen, sondern damit ein Nutzer, der von dort kommt,
+                     dieselbe Liste wiederfindet. */
                   '<span class="uob-plan-feats">' +
-                    feat("<b>" + esc(String(pl.prompts_per_day)) + "</b> prompts per day") +
-                    feat("<b>~" + esc(zahl(antworten(pl))) + "</b> AI responses per month") +
-                    feat("<b>" + esc(String(pl.competitors_max_active)) + "</b> tracked competitors") +
-                    feat("Choose the <b>LLM models</b> to track") +
-                    feat("<b>Unlimited</b> seats") +
-                    feat("<b>Every</b> location and language") +
-                    feat(hilfe(pl)) +
-                    feat(tage ? "<b>" + tage + " days</b> free, cancel anytime" : "Cancel anytime") +
+                    feat("Track <b>ChatGPT, Perplexity &amp; Google AI Overviews</b>") +
+                    feat("Track up to <b>" + esc(String(pl.prompts_per_day)) + " prompts</b>") +
+                    feat("Prompts executed daily") +
+                    (antworten(pl) != null
+                      ? feat((pl.ai_responses_more === true ? "Analyze more than " : "Analyze up to ") +
+                             "<b>" + esc(zahl(antworten(pl))) + " AI responses per month</b>")
+                      : "") +
+                    feat("Unlimited countries / languages") +
+                    feat("Unlimited seats for your team") +
+                    feat("Track up to <b>" + esc(marken(pl)) + " brands / competitors</b>") +
+                    feat(esc(hilfe(pl))) +
                   '</span>' +
                 '</button>';
               }).join("") + '</div>'
@@ -966,34 +984,49 @@
       el.__uobLauf = window.requestAnimationFrame(schritt);
     }
 
+    /* Die Testphase steht EINMAL unter der Ueberschrift und nicht in jeder Karte: sie ist bei
+       allen Tarifen dieselbe, und dreimal derselbe Satz nebeneinander liest sich wie ein
+       Unterschied, den es nicht gibt. Die Zahl kommt aus den Daten; sind sie uneinheitlich,
+       bleibt der Satz allgemein. */
+    function testText() {
+      var tage = null, gleich = true;
+      for (var i = 0; i < state.plans.length; i++) {
+        var t = num(state.plans[i].trial_days);
+        if (i === 0) tage = t; else if (t !== tage) gleich = false;
+      }
+      return (gleich && tage)
+        ? "Every plan starts with a " + Math.round(tage) + "-day free trial. No charge until it ends."
+        : "Every plan starts with a free trial. No charge until it ends.";
+    }
+
     function feat(html) { return '<span class="uob-plan-feat">' + ic("check", 2.6) + '<span>' + html + '</span></span>'; }
-    /* Die Zahl der Antworten je Monat. Liefert der Tarif sie selbst mit, gilt seine -- sonst
-       gerechnet aus Prompts je Tag mal dreissig. Gerechnet und nicht getippt, damit sie beim
-       naechsten Preisblatt nicht als einzige stehenbleibt.
-       ACHTUNG: die Rechnung nimmt EIN Modell je Prompt an. Werden mehrere Modelle je Prompt
-       abgefragt, ist die echte Zahl ein Vielfaches davon -- dann gehoert ai_responses_per_month
-       in den Payload, und diese Zeile ruehrt sich nicht mehr. */
-    function antworten(pl) {
-      var eigen = num(pl.ai_responses_per_month);
-      if (eigen != null) return eigen;
-      var proTag = num(pl.prompts_per_day);
-      return proTag == null ? null : proTag * 30;
+    /* Die Zahl der Antworten je Monat kommt AUS DEN DATEN oder gar nicht. Rechnen laesst sie
+       sich nicht: die Preisseite nennt 4.650, 13.500 und ueber 30.000 bei 50, 150 und 350
+       Prompts -- das sind Faktoren von 93, 90 und 85,7, also gesetzte Zahlen und keine Formel.
+       Eine hier erfundene Rechnung stuende ueber kurz oder lang im Widerspruch zur Preisseite,
+       und von zwei Zahlen glaubt ein Nutzer der kleineren. Fehlt das Feld, faellt die Zeile
+       weg. */
+    function antworten(pl) { return num(pl.ai_responses_per_month); }
+    /* Die Preisseite zaehlt die EIGENE Marke mit: fuenf Wettbewerber sind dort "6 brands /
+       competitors". Die Rechnung steht hier und nicht in den Daten, weil competitors_max_active
+       eine technische Grenze ist und die Karte eine Aussage an den Kunden. */
+    function marken(pl) {
+      var n = num(pl.competitors_max_active);
+      return n == null ? "–" : String(Math.round(n) + 1);
     }
     function zahl(v) {
       if (v == null) return "–";
       /* Tausenderpunkte, aber ohne Gebietsschema: die Seite ist englisch, also Kommas. */
       return String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     }
-    /* Der Support waechst mit dem Tarif. Er steht NICHT in den Daten -- solange das so ist,
-       haengt er an der Position, und das ist eine Annahme: pruefen und gegebenenfalls ein Feld
-       support_level in den Payload aufnehmen. */
+    /* Die letzte Zeile im Wortlaut der Preisseite: "Standard email support" beim kleinsten
+       Tarif, sonst "Personal account manager". Steht sie im Payload, gilt der Payload -- der
+       Rueckfall haengt an der Position und ist damit eine Annahme, die beim vierten Tarif
+       stillschweigend falsch waere. */
     function hilfe(pl) {
-      var eigen = txt(pl.support_level);
-      if (eigen) return "<b>" + esc(eigen) + "</b> support";
-      var i = state.plans.indexOf(pl);
-      if (i <= 0) return "<b>Email</b> support";
-      if (i === 1) return "<b>Priority</b> support";
-      return "<b>Dedicated</b> support";
+      var eigen = txt(pl.support_label);
+      if (eigen) return eigen;
+      return state.plans.indexOf(pl) <= 0 ? "Standard email support" : "Personal account manager";
     }
     function geld(v) {
       if (v == null) return "–";
@@ -1039,7 +1072,7 @@
     /* Die Spaltenbreite je Ansicht. Ein Formular liest sich schmal besser, Listen brauchen mehr,
        drei Preiskarten am meisten. */
     var BREITE = { brand: "480px", load1: "480px", load2: "560px",
-                   competitors: "880px", topics: "620px", prompts: "880px", plan: "940px" };
+                   competitors: "880px", topics: "620px", prompts: "880px", plan: "1040px" };
 
     function render(neuEingezogen) {
       var k = ansichtKey();

@@ -644,10 +644,14 @@
    Drei Karten nebeneinander, die mittlere hervorgehoben. Die Hervorhebung ist ein Rahmen in
    --vc-text und ein Etikett, KEINE eigene Farbe: die App hat keine Akzentfarbe, und eine hier
    einzufuehren waere genau die neue Regel, die es nicht geben soll. */
-.uob-plans { margin-top: clamp(16px, 2.8vh, 24px); display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.uob-plans { margin-top: clamp(12px, 2.2vh, 20px); display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+/* Die Karte ist dichter gesetzt als eine Preisseite: dort scrollt man, hier soll der ganze
+   Ablauf ohne Scrollen erreichbar bleiben, und acht Merkmalszeilen plus Unterzeile sind das
+   Hoechste, was auf einen 760 Pixel hohen Bildschirm passt. Gemessen wurden mit den Werten
+   einer Preisseite 822 Pixel Seitenhoehe bei 760 Pixel Fenster. */
 .uob-plan {
   position: relative; display: flex; flex-direction: column; text-align: left;
-  padding: 18px 18px 20px; border: 1px solid var(--vc-border); border-radius: 16px;
+  padding: 16px 16px 18px; border: 1px solid var(--vc-border); border-radius: 16px;
   background: var(--vc-bg); font-family: inherit; cursor: pointer; outline: none;
   transition: border-color var(--uob-t) var(--uob-ease), background var(--uob-t) var(--uob-ease),
               box-shadow var(--uob-t) var(--uob-ease);
@@ -666,7 +670,11 @@
 }
 .uob-plan-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .uob-plan-name { font-size: 15px; font-weight: 600; color: var(--vc-text); }
-.uob-plan-price { margin-top: 12px; display: flex; align-items: baseline; gap: 5px; }
+/* Die Unterzeile des Tarifs, wortgleich zur Preisseite. Sie steht zwischen Namen und Preis und
+   nicht darunter: sie erklaert, fuer WEN der Tarif ist, und das gehoert vor die Zahl. */
+.uob-plan-desc { margin-top: 5px; font-size: 12.5px; line-height: 1.35; color: var(--vc-muted);
+  text-wrap: pretty; }
+.uob-plan-price { margin-top: 14px; display: flex; align-items: baseline; gap: 5px; }
 .uob-plan-amt { font-size: 26px; font-weight: 600; color: var(--vc-text); letter-spacing: -.03em;
   font-variant-numeric: tabular-nums; }
 .uob-plan-per { font-size: 12.5px; color: var(--vc-muted); }
@@ -677,13 +685,18 @@
 .uob-plan-note > span { overflow: hidden; min-height: 0; display: block;
   font-size: 11.5px; color: var(--vc-pos, #2e9e63); padding-top: 4px; }
 .uob-plan-note.is-on { grid-template-rows: 1fr; opacity: 1; }
-.uob-plan-feats { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
-.uob-plan-feat { display: flex; align-items: flex-start; gap: 8px; font-size: 12.5px; line-height: 1.4; color: var(--vc-muted); }
-.uob-plan-feat svg { width: 14px; height: 14px; flex: 0 0 auto; margin-top: 1px; color: var(--vc-text); }
+.uob-plan-feats { margin-top: 13px; display: flex; flex-direction: column; gap: 6px; }
+.uob-plan-feat { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; line-height: 1.35; color: var(--vc-muted); }
+.uob-plan-feat svg { width: 13px; height: 13px; flex: 0 0 auto; margin-top: 2px; color: var(--vc-text); }
 .uob-plan-feat b { font-weight: 600; color: var(--vc-text); }
 
 /* Monats-/Jahresschalter: das ist .up-seg aus core, hier nur mittig gestellt. */
-.uob-billrow { margin-top: clamp(14px, 2.4vh, 20px); display: flex; justify-content: center; }
+.uob-billrow { margin-top: clamp(10px, 1.8vh, 16px); display: flex; justify-content: center; }
+/* Beim Tarif ist die Seite am vollsten. Der Luftraum um die Mitte gibt dort als erstes nach --
+   lieber enger als scrollend, denn drei Karten nebeneinander lassen sich nicht scrollen, ohne
+   dass man sie nicht mehr vergleichen kann. */
+.uob-root[data-view="plan"] .uob-mid { padding-top: clamp(8px, 1.4vh, 18px); padding-bottom: clamp(8px, 1.4vh, 18px); }
+.uob-root[data-view="plan"] .uob-rail { margin-top: clamp(14px, 2.2vh, 24px); }
 
 /* ---------- Knopfzeile ----------
    Beide Knoepfe sind bewusst die der Anmeldeseite und nicht .up-btn-sec/.up-seg-btn aus core:
