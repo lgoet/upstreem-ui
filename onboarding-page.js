@@ -689,13 +689,16 @@
               '</div>' +
               '<div class="uob-err"><span data-err="business"></span></div>' +
             '</div>' +
-            /* Die Branche kommt erst, wenn das Geschaeftsmodell steht -- siehe CSS. */
-            '<div class="uob-field uob-later" data-field="industry" data-later="industry">' +
-              '<div class="uob-later-in">' +
-                '<span class="uob-labrow"><span class="uob-label">Industry</span>' +
-                  '<span class="uob-opt">Optional</span></span>' +
-                selectHtml("industry", "Select an industry", "Industries", true, true) +
-              '</div>' +
+            /* Ein Feld wie jedes andere. Es steckte eine Zeit lang in einem Einklapp-Wrapper,
+               weil es erst nach dem Geschaeftsmodell erscheinen sollte -- der Wrapper braucht
+               fuer die Hoehenanimation ein overflow: hidden, und das SCHNITT den Ausklapp-Kasten
+               auf Feldhoehe ab: sichtbar blieben dreissig bis fuenfzig Pixel. Die Staffelung ist
+               zurueckgenommen, also faellt auch der Wrapper weg. Kaeme sie zurueck, muss das
+               overflow nach der Animation wieder auf visible. */
+            '<div class="uob-field" data-field="industry">' +
+              '<span class="uob-labrow"><span class="uob-label">Industry</span>' +
+                '<span class="uob-opt">Optional</span></span>' +
+              selectHtml("industry", "Select an industry", "Industries", true, true) +
             '</div>' +
           '</div>' +
         '</div>' +
@@ -1440,13 +1443,6 @@
         btns[i].classList.toggle("is-active", an);
         btns[i].setAttribute("aria-selected", an ? "true" : "false");
       }
-      /* Die Branche steht immer da. Sie war eine Zeit lang eingeklappt, bis das
-         Geschaeftsmodell angefasst wurde -- zurueckgenommen: mit B2B als Vorbelegung ist die
-         Frage davor bereits beantwortet, und ein Feld, das erst nach einem Klick auf eine schon
-         getroffene Wahl erscheint, wirkt wie ein Fehler. Die Klasse bleibt im Markup, damit die
-         Staffelung ohne Umbau wieder eingeschaltet werden kann. */
-      var spaet = root.querySelector('[data-later="industry"]');
-      if (spaet) spaet.classList.add("is-on");
       bsegMarke();
     }
     /* Die gleitende Marke unter den aktiven Knopf legen. Gemessen statt gerechnet: die vier
@@ -1603,6 +1599,9 @@
       for (var i = 0; i < wraps.length; i++) {
         if (wraps[i] === ausser) continue;
         wraps[i].classList.remove("is-open");
+        /* Die Richtung faellt beim naechsten Oeffnen neu -- sie hier stehen zu lassen hiesse,
+           dass der Kasten das naechste Mal in die alte Richtung aufblitzt, bevor gemessen ist. */
+        wraps[i].classList.remove("is-up");
         var m = wraps[i].querySelector(".uob-ddmenu");
         if (m) {
           m.classList.remove("is-shown");

@@ -303,19 +303,12 @@
    ganz unten bei den uebrigen schmalen Faellen. */
 .uob-frow { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .uob-field { display: flex; flex-direction: column; min-width: 0; }
-/* Das Branchenfeld gibt es erst, wenn ein Geschaeftsmodell gewaehlt ist: vorher ist es eine
-   Frage zu einer Antwort, die noch nicht gegeben wurde. 0fr->1fr statt height, weil die
-   Zielhoehe von der Beschriftung abhaengt und niemand sie vorher kennt -- dieselbe Mechanik wie
-   das Namensfeld auf der Anmeldeseite. Der negative Rand frisst den gap des Stapels, solange
-   das Feld zu ist, sonst bleibt eine Luecke stehen. */
-.uob-field.uob-later {
-  display: grid; grid-template-rows: 0fr; opacity: 0; margin-top: -14px; pointer-events: none;
-  transition: grid-template-rows var(--uob-t) var(--uob-ease), opacity var(--uob-t) var(--uob-ease),
-              margin-top var(--uob-t) var(--uob-ease);
-}
-.uob-field.uob-later > .uob-later-in { overflow: hidden; min-height: 0;
-  display: flex; flex-direction: column; }
-.uob-field.uob-later.is-on { grid-template-rows: 1fr; opacity: 1; margin-top: 0; pointer-events: auto; }
+/* Hier stand ein Einklapp-Wrapper fuer das Branchenfeld (0fr->1fr mit overflow: hidden), damit
+   es erst nach dem Geschaeftsmodell erscheint. Beides ist raus: die Staffelung ist
+   zurueckgenommen, und das overflow: hidden hatte einen Nebeneffekt, der schlimmer war als der
+   Gewinn -- es schnitt den Ausklapp-Kasten des Feldes auf Feldhoehe ab, sichtbar blieben rund
+   vierzig Pixel. Wer die Staffelung wieder einbaut, muss das overflow nach dem Ende der
+   Animation auf visible setzen, sonst ist die Auswahl wieder unbenutzbar. */
 .uob-label { font-size: 12px; font-weight: 600; color: var(--vc-muted); }
 /* .uob-labrow gehoert MIT in diese Regel: bei Industry steht die Beschriftung in einer Zeile
    mit dem Zusatz, und dann ist nicht .uob-label der Vorgaenger des Feldes, sondern die Zeile.
@@ -509,32 +502,21 @@
    gewaehlten Zustand. Das ist genau die Zeile aus der Prompts-Tabelle (.up-row), mit denselben
    Tokens: --vt-row-hover fuer beides. Wer die Tabelle kennt, kennt diese Liste. */
 .uob-group-items.is-plain { display: block; }
-/* 8px zwischen zwei Zeilen, die Trennlinie genau in der Mitte -- also 4px Luft nach oben und
-   nach unten. Der Abstand steht NUR unten: zwei Raender von je 4px faellen in einem Blockfluss
-   zusammen und ergaeben 4 statt 8. Gemessen genau das, bevor die Zeile hier stand.
+/* 4px zwischen zwei Zeilen, keine Trennlinie. Es lag eine dazwischen; sie ist raus -- bei
+   Zeilen, die beim Ueberfahren und im gewaehlten Zustand ihre Flaeche faerben, ist der
+   Zwischenraum der Trenner, und ein Strich dazu ist ein Strich zu viel.
+   Der Abstand steht NUR unten: zwei Raender von je 2px faellen in einem Blockfluss zusammen.
    Das Polster liegt IM Element und nicht als gap dazwischen, sonst faerbt der Hover nur den
    Text und laesst einen Streifen daneben ungefaerbt. */
 .uob-item.is-plain {
   border: 0; border-radius: 8px; background: transparent;
   padding: 11px 12px; min-height: 0; width: 100%;
-  margin: 0 0 8px; align-items: center;
+  margin: 0 0 4px; align-items: center;
 }
 .uob-group-items.is-plain > *:last-child { margin-bottom: 0; }
 .uob-item.is-plain:hover { background: var(--vt-row-hover); border-color: transparent; }
 .uob-item.is-plain.is-on { background: var(--vt-row-hover); border-color: transparent; }
-/* Die Trennlinie sitzt als Rand am Kasten DARUNTER und nicht am gefaerbten Element selbst: so
-   verschwindet sie nicht, sobald eine Zeile ihren Hintergrund bekommt, und die letzte Zeile
-   einer Gruppe hat keine. */
-.uob-group-items.is-plain > .uob-item + .uob-item { position: relative; }
-.uob-group-items.is-plain > .uob-item + .uob-item::before {
-  content: ""; position: absolute; left: 12px; right: 12px; top: -4px; height: 1px;
-  background: var(--vc-border);
-}
-.uob-item.is-plain:hover::before, .uob-item.is-plain.is-on::before,
-.uob-item.is-plain:hover + .uob-item::before, .uob-item.is-plain.is-on + .uob-item::before {
-  opacity: 0;
-}
-.uob-group-items.is-plain > .uob-item::before { transition: opacity var(--uob-t) var(--uob-ease); }
+
 .uob-item {
   display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
   padding: 10px 14px; min-height: 56px;
@@ -628,7 +610,7 @@
    dieselbe Zeile wie in der Prompts-Tabelle. Nur das Plus davor sagt, dass hier etwas dazukommt. */
 .uob-add {
   display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
-  padding: 6px 12px; min-height: 40px; margin: 0 0 8px;
+  padding: 6px 12px; min-height: 40px; margin: 0 0 4px;
   border: 0; border-radius: 8px; background: transparent;
   font-family: inherit; font-size: 14px; font-weight: 500; color: var(--vc-third);
   cursor: pointer; outline: none;
