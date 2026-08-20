@@ -459,6 +459,9 @@
       plan: "", interval: "yearly",
       /* Einmal beim Tarif gewesen heisst: der Punkt bleibt in der Schiene. Siehe renderRail. */
       planGesehen: false,
+      /* Die Themenauswahl, zu der die aktuellen Prompts gehoeren. Sie entscheidet, ob ein
+         erneutes Weiter aus Schritt 3 die Wartezeit noch einmal braucht. */
+      promptsFuer: null,
       /* Der weiteste Schritt, an dem der Nutzer je war. Er entscheidet, worauf in der Leiste
          geklickt werden darf -- nicht der aktuelle Schritt. Wer von Plan auf Competitors
          zurueckgeht, muss von dort auch wieder nach vorn kommen, ohne alles noch einmal
@@ -845,6 +848,13 @@
                       (g.farbe ? '<span class="uob-swatch" style="--uob-sw:' + esc(g.farbe) + '"></span>' : "") +
                       '<span>' + esc(g.name) + '</span>' +
                       '<span class="uob-group-n">' + g.items.length + '</span>' +
+                      /* Alle Prompts eines Themas auf einmal. Ein Umschalter und kein reines
+                         Hinzufuegen: wer versehentlich alles waehlt, muss es sonst einzeln
+                         wieder abwaehlen. Die Beschriftung sagt, was der Klick TUT, nicht was
+                         gerade gilt. */
+                      '<button class="uob-group-all" type="button" data-all="' + esc(g.id) + '">' +
+                        (alleAn(g) ? "Deselect all" : "Select all") +
+                      '</button>' +
                     '</div>' +
                     '<div class="uob-group-items is-cols">' +
                       g.items.map(function (it) {
@@ -1051,6 +1061,10 @@
       for (var k = 0; k < state.topics.length; k++) if (state.topics[k].id === t.id) { i = k; break; }
       return pal[i % pal.length];
     }
+    function alleAn(g) {
+      for (var i = 0; i < g.items.length; i++) if (!state.selPrompts[g.items[i].p.id]) return false;
+      return g.items.length > 0;
+    }
     function anzahl(o) { var n = 0; for (var k in o) if (o[k]) n++; return n; }
     function idsVon(o) { var a = []; for (var k in o) if (o[k]) a.push(k); return a; }
 
@@ -1218,15 +1232,7 @@
 
       var pos = wartet ? i + 0.5 : i;
       var breite = pos / letzte * 100;
-      if (elRailFill) {
-        elRailFill.style.width = breite + "%";
-        /* Der Verlauf im gefuellten Teil: stumpf am Anfang, voll ab Competitors -- aber nur,
-           solange Brand gesperrt ist. Die Umrechnung geht auf die Breite der FUELLUNG, nicht auf
-           die der Schiene: ein Verlauf misst sich an seinem eigenen Kasten. */
-        var bis = breite > 0 ? Math.min(100, (100 / letzte) / breite * 100) : 0;
-        elRailFill.style.setProperty("--uob-grau", (brandGesperrt ? bis : 0) + "%");
-        elRailFill.style.setProperty("--uob-grauton", brandGesperrt ? "var(--vc-sk)" : "var(--vc-text)");
-      }
+      if (elRailFill) elRailFill.style.width = breite + "%";
       labelsPruefen(liste.length);
       root.setAttribute("data-view", k);
     }
@@ -1541,6 +1547,12 @@
         return;
       }
 
+      var alle = e.target.closest("[data-all]");
+      if (alle) {
+        gruppeUmschalten(alle.getAttribute("data-all"));
+        return;
+      }
+
       var pick = e.target.closest("[data-pick]");
       if (pick) {
         if (pick.getAttribute("aria-disabled") === "true") return;
@@ -1676,9 +1688,37 @@
          wird, verliert seinen Platz -- gemessen sprang der Scrollstand auf 0. Ausserdem holt ein
          neu gebautes Markup jedes Favicon erneut, was sichtbar flackert. */
       auswahlZeichnen(kind);
+      if (kind === "prompts") gruppenKnoepfe();
       renderNav();
       fire("data-select-fn", "uobSelect",
         { kind: kind, ids: idsVon(topf).join(","), count: anzahl(topf) });
+    }
+
+    /* Alle Prompts eines Themas auf einmal an oder aus. Ist schon alles gewaehlt, raeumt der
+       Klick auf -- sonst waere der Knopf nach dem ersten Druck wirkungslos. */
+    function gruppeUmschalten(gid) {
+      var gruppen = promptGruppen(), g = null;
+      for (var i = 0; i < gruppen.length; i++) if (gruppen[i].id === gid) { g = gruppen[i]; break; }
+      if (!g) return;
+      var an = !alleAn(g);
+      for (var j = 0; j < g.items.length; j++) {
+        var id = g.items[j].p.id;
+        if (an) state.selPrompts[id] = true; else delete state.selPrompts[id];
+      }
+      auswahlZeichnen("prompts");
+      gruppenKnoepfe();
+      renderNav();
+      fire("data-select-fn", "uobSelect",
+        { kind: "prompts", ids: idsVon(state.selPrompts).join(","), count: anzahl(state.selPrompts) });
+    }
+    /* Die Beschriftungen der Gruppenknoepfe nachziehen, ohne die Liste neu zu bauen -- sonst
+       ginge der Scrollstand verloren, und die Mehrspaltenaufteilung wuerde neu berechnet. */
+    function gruppenKnoepfe() {
+      var gruppen = promptGruppen();
+      for (var i = 0; i < gruppen.length; i++) {
+        var b = root.querySelector('[data-all="' + gruppen[i].id + '"]');
+        if (b) b.textContent = alleAn(gruppen[i]) ? "Deselect all" : "Select all";
+      }
     }
 
     /* Nur die Zustaende an den vorhandenen Zeilen nachziehen: Haken, Sperre, Zaehler. */
@@ -1750,11 +1790,18 @@
       }
       if (state.step === "competitors") { gehe("topics"); return; }
       if (state.step === "topics") {
+        /* Sind die Prompts schon da und passen sie zur AKTUELLEN Themenauswahl, geht es direkt
+           weiter -- niemand will dieselbe Wartezeit zweimal absitzen, nur weil er einen Schritt
+           zurueckgegangen ist. Hat sich die Auswahl geaendert, muessen neue Prompts entstehen,
+           und dann gehoert die Wartezeit dazu: die alten Prompts gehoeren zu anderen Themen. */
+        var jetztGewaehlt = idsVon(state.selTopics).sort().join(",");
+        if (state.prompts.length && state.promptsFuer === jetztGewaehlt) { gehe("prompts"); return; }
+        state.promptsFuer = jetztGewaehlt;
         /* Die Themenauswahl ist der Anstoss fuer die Prompts -- deshalb ein eigenes Ereignis und
            nicht nur uobStep: der Workflow dahinter tut etwas, das dauert. */
         warteStarten("prompts");
         fire("data-topics-fn", "uobTopics",
-          { topic_ids: idsVon(state.selTopics).join(","), count: anzahl(state.selTopics) });
+          { topic_ids: jetztGewaehlt, count: anzahl(state.selTopics) });
         if (demo) demoLauf2();
         return;
       }
@@ -1959,6 +2006,7 @@
         state.selBrands = {}; state.selTopics = {}; state.selPrompts = {};
         state.plan = ""; state.banner = ""; state.busy = false;
         state.fehler = {}; state.maxErreicht = 0; state.planGesehen = false;
+        state.promptsFuer = null;
         railStand = "";
         state.form = { name: "", website: "", market: eigenerMarkt(), timezone: eigeneZone(),
                        business: BUSINESS_STD, industry: "" };
@@ -1999,6 +2047,10 @@
         }
       }
       state[welche] = rein;
+      /* Ankommende Prompts gehoeren zur Auswahl, die sie angefordert hat. Ohne diese Zeile
+         waere promptsFuer nach einem Setter von aussen leer, und der naechste Weiter-Klick
+         liefe unnoetig noch einmal durch die Wartezeit. */
+      if (welche === "prompts") state.promptsFuer = idsVon(state.selTopics).sort().join(",");
       render(true);
       return true;
     }

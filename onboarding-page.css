@@ -109,17 +109,13 @@
   padding: 0 8px;
 }
 .uob-rail-line { position: relative; height: 2px; border-radius: 999px; background: var(--vc-sk); }
-/* Die Fuellung ist ein Verlauf und keine Flaeche. Grund: sobald Brand gesperrt ist, soll das
-   auch die Linie sagen -- der Abschnitt bis Competitors verblasst dann nach links hin, statt
-   dort genauso satt zu stehen wie der Rest. --uob-grau ist die Stelle im Verlauf, an der
-   Competitors sitzt, umgerechnet auf die Breite der FUELLUNG (nicht der Schiene) -- das JS
-   setzt sie, weil sie mit jedem Schritt eine andere ist.
-   Ohne gesperrtes Brand steht --uob-grau auf 0%: dann faengt der Verlauf sofort mit der vollen
-   Farbe an und ist von einer Flaeche nicht zu unterscheiden. */
+/* Eine Flaeche, kein Verlauf. Hier stand kurz einer, der den Abschnitt bis Competitors
+   ausblasste, weil Brand gesperrt ist -- zurueckgenommen: die Sperre sagen der Punkt und die
+   Beschriftung, und die Linie ist Fortschritt und nicht Zustand. Zwei Aussagen auf einem
+   Strich sind eine zu viel. */
 .uob-rail-fill {
   position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; width: 0;
-  background: linear-gradient(90deg, var(--uob-grauton, var(--vc-text)) 0%,
-                                     var(--vc-text) var(--uob-grau, 0%));
+  background: var(--vc-text);
   transition: width var(--uob-t) var(--uob-ease);
 }
 .uob-rail-dots { position: absolute; inset: 0; }
@@ -428,12 +424,26 @@
      Zeilen mit einer sauberen Kante, und niemand ahnt die restlichen drei. */
   padding: 2px 2px 2px; margin-left: -2px; margin-right: -2px;
 }
+/* Marken: ein Raster. Ihre Zeilen sind alle gleich hoch (Logo, Name, Domain), da gibt es
+   nichts auszugleichen. */
 .uob-list.is-cols { display: grid; grid-template-columns: 1fr 1fr; align-content: start; }
-.uob-group-items.is-cols { display: grid; grid-template-columns: 1fr 1fr; }
+
+/* Prompts: MEHRSPALTENSATZ statt Raster. Im Raster bestimmt der laengste Prompt einer Zeile die
+   Hoehe BEIDER Kacheln -- ein Einzeiler sass dann in einem dreizeiligen Kasten, und die Liste
+   sah aus, als waere sie kaputt. Mit columns fliesst jede Kachel in ihrer eigenen Hoehe und die
+   Spalten fuellen sich lueckenlos; break-inside verhindert, dass eine Kachel in der Mitte
+   umbricht. Das ist die uebliche Antwort auf ungleich hohe Karten (dieselbe, die jede
+   Bilderwand nimmt) -- CSS-Grid kann Masonry noch nicht verlaesslich.
+   Der Preis dafuer: die Lesereihenfolge geht Spalte fuer Spalte statt Zeile fuer Zeile. Bei
+   einer Auswahlliste ohne Rangfolge kostet das nichts, und die Tastatur folgt derselben
+   Reihenfolge wie das Auge. */
+.uob-group-items.is-cols { display: block; columns: 2; column-gap: 8px; }
+.uob-group-items.is-cols > .uob-item { break-inside: avoid; margin-bottom: 8px; width: 100%; }
 /* Eine Spalte, sobald zwei nur noch Stuempfe waeren. Der Wert ist am Inhalt kalibriert: unter
-   640px bleibt fuer Logo, Name und Domain nebeneinander kein lesbarer Rest. */
+   700px bleibt fuer Logo, Name und Domain nebeneinander kein lesbarer Rest. */
 @media (max-width: 700px) {
-  .uob-list.is-cols, .uob-group-items.is-cols { grid-template-columns: 1fr; }
+  .uob-list.is-cols { grid-template-columns: 1fr; }
+  .uob-group-items.is-cols { columns: 1; }
 }
 .uob-item {
   display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
@@ -524,6 +534,17 @@
   font-size: 12px; font-weight: 600; color: var(--vc-muted); letter-spacing: .01em;
 }
 .uob-group-n { font-weight: 500; color: var(--vc-third); font-variant-numeric: tabular-nums; }
+/* Ganz rechts in der Themenzeile: alle Prompts dieses Themas auf einmal. margin-left: auto
+   schiebt ihn dorthin, ohne dass die Zeile ein Raster braucht. Leise gehalten -- er steht neben
+   einer Ueberschrift und darf sie nicht ueberstimmen. */
+.uob-group-all {
+  margin-left: auto; flex: 0 0 auto;
+  background: none; border: 0; padding: 2px 4px; margin-right: -4px; border-radius: 6px;
+  font: inherit; font-size: 11.5px; font-weight: 500; color: var(--vc-third); cursor: pointer;
+  transition: color var(--uob-t) var(--uob-ease), background var(--uob-t) var(--uob-ease);
+}
+.uob-group-all:hover { color: var(--vc-text); background: var(--uob-hover); }
+.uob-group-all:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 .uob-group-items { display: flex; flex-direction: column; gap: 8px; }
 
 /* ---------- Ladezustand ----------
