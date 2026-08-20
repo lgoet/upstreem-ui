@@ -1,5 +1,16 @@
 /* upstreem responses-table.css — component-specific styling (urt-).
-   Shared base lives in core.css. Loaded after core.css. */
+   Shared base lives in core.css. Loaded after core.css.
+
+   .check_reinvention.py meldet hier drei Stellen als Nachbau. Alle drei sind Fehlalarme derselben
+   Art -- der Vergleich laeuft ueber "hat Hintergrund, Rahmen, Radius, Hoehe und transition":
+     .urt-brand-toggle             eine Kaestchen-Zeile mit Logo und Text, keine Sentiment-Pille.
+                                   Sie traegt drei Zustaende (leer, ja, nein) und seit dieser Runde
+                                   einen vierten (Spotlight), die eine Pille alle nicht kennt.
+     .urt-range::-webkit-slider-thumb   der Griff eines nativen Schiebereglers. Er kann gar kein
+     .urt-range::-moz-range-thumb       Kit-Bauteil sein: ein Pseudo-Element nimmt keine Klassen an,
+                                   und die Werte muessen fuer beide Browser doppelt stehen.
+   Wo es ein Kit-Bauteil gibt, wird es benutzt: .up-iconbtn, .up-menu, .up-pop-opt, .up-stack,
+   .up-num, .up-sent, .up-tag, .up-tip, .up-sk. */
 
 /* ---------- prompt cell ---------- */
 .urt-prompt-text { font-size: 13.5px; font-weight: 500; color: var(--vc-text); letter-spacing: -0.01em;
@@ -27,6 +38,15 @@
 .up-root[data-theme="dark"] .urt-brand-toggle.is-yes .urt-brand-check, .up-root[data-theme="dark"] .urt-brand-toggle.is-no .urt-brand-check { color: #1f1f1b; }
 .urt-brand-toggle.is-yes .urt-brand-check .urt-brand-check-yes { display: block; }
 .urt-brand-toggle.is-no .urt-brand-check .urt-brand-check-no { display: block; }
+/* Spotlight: sichtbar und gewaehlt, aber nicht bedienbar. Drei Dinge, und jedes hat seinen Grund.
+   pointer-events: none nimmt Klick UND Hover -- ein Element, das auf den Zeiger reagiert, sieht
+   bedienbar aus, egal wie blass es ist. cursor: default gilt fuer den Fall, dass jemand die
+   Zeiger-Sperre spaeter aufhebt. Und 0.55 statt einer eigenen Graufarbe: die Deckkraft nimmt den
+   ganzen Schalter mit, also auch Logo und Haken, und bleibt in beiden Themen richtig -- eine feste
+   Farbe muesste man zweimal pflegen und traefe das Bild ohnehin nicht. */
+.urt-brand-toggle.is-spotlight {
+  pointer-events: none; cursor: default; opacity: 0.55;
+}
 .urt-brand-logo { width: 16px; height: 16px; border-radius: 4px; flex: 0 0 auto; display: block; object-fit: cover; }
 .urt-brand-label { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
 

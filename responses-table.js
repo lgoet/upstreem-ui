@@ -831,6 +831,16 @@
       lbl.textContent = (!logo || logo === "BRAND_LOGO") && name && name !== "BRAND_NAME"
         ? name + " mentioned?" : "Mentioned?";
     }
+    /* Spotlight: der Schalter zeigt seinen gewaehlten Zustand, ist aber ausgegraut und nicht
+       bedienbar. Gedacht fuer Seiten, die ohnehin schon auf diese Marke gefiltert sind -- dort
+       koennte der Schalter nur der Seite widersprechen, auf der er steht.
+       Als TEXT gelesen, wie data-isdark: Bubble liefert "yes"/"no", und der unersetzte Platzhalter
+       aus der Vorlage zaehlt als nein. */
+    function spotlightAn(){
+      var v = String(root.getAttribute("data-spotlight-mode") || "").trim();
+      if (!v || v === "SPOTLIGHT_MODE") return false;
+      return isYes(v);
+    }
     function syncBrand(){
       syncHeadBrand();
       if (!elBrand) return;
@@ -850,8 +860,18 @@
       elBrandLbl.textContent = name + " mentioned";
       if (logo && logo !== "BRAND_LOGO"){ elBrandLogo.src = logo; elBrandLogo.style.display = "block"; }
       else { elBrandLogo.style.display = "none"; }
-      elBrand.classList.toggle("is-yes", state.brandMentioned === "yes");
-      elBrand.classList.toggle("is-no", state.brandMentioned === "no");
+      /* Im Spotlight IMMER der gewaehlte Zustand, unabhaengig vom Filter: der Schalter behauptet
+         damit nichts, was die Seite nicht ohnehin tut. state.brandMentioned bleibt unberuehrt --
+         wird der Modus abgeschaltet, steht wieder da, was der Nutzer zuletzt gewaehlt hatte. */
+      var spot = spotlightAn();
+      elBrand.classList.toggle("is-spotlight", spot);
+      elBrand.classList.toggle("is-yes", spot || state.brandMentioned === "yes");
+      elBrand.classList.toggle("is-no", !spot && state.brandMentioned === "no");
+      /* aria-disabled und nicht disabled: der Schalter ist ein div, kein button -- und ein Wert,
+         den Hilfstechnik lesen kann, gehoert trotzdem hin. Der Tooltip verschwindet, er versprach
+         eine Bedienung, die es hier nicht gibt. */
+      if (spot) { elBrand.setAttribute("aria-disabled", "true"); elBrand.removeAttribute("data-tip"); }
+      else { elBrand.removeAttribute("aria-disabled"); elBrand.setAttribute("data-tip", "Filter for your brand mentions"); }
     }
     function cycleBrand(){
       state.brandMentioned = state.brandMentioned === "" ? "yes" : (state.brandMentioned === "yes" ? "no" : "");
@@ -1133,7 +1153,14 @@
       }
       if (e.target.closest(".up-export")){ openExport(); return; }
       if (e.target.closest(".up-search-btn")){ closePops(); toggleSearch(); return; }
-      if (e.target.closest(".urt-brand-toggle")){ closePops(); cycleBrand(); return; }
+      if (e.target.closest(".urt-brand-toggle")){
+        closePops();
+        /* Im Spotlight passiert NICHTS: kein Zustandswechsel, kein Ereignis nach Bubble. Die
+           pointer-events: none in der CSS fangen den Klick schon vorher ab -- das hier ist die
+           zweite Sperre, damit ein Klick per Tastatur oder aus fremdem Code nicht doch durchgeht. */
+        if (!spotlightAn()) cycleBrand();
+        return;
+      }
 
       if (e.target.closest(".up-ment-clear")){
         state.mentionSel = {}; persist();
@@ -1255,7 +1282,8 @@
     /* Der Ausgangsstand von Marke und Logo, damit der erste Lauf nicht faelschlich als
        Aenderung zaehlt. */
     var lastMarkeAttr = String(root.getAttribute("data-brand-name") || "") + "|" +
-                        String(root.getAttribute("data-brand-logo") || "");
+                        String(root.getAttribute("data-brand-logo") || "") + "|" +
+                        String(root.getAttribute("data-spotlight-mode") || "");
     var explicitOverride = false;
     function isBusy(){ return !!state.loading || !!state.extLoading; }
     var syncFromAttrs = function(muts){
@@ -1271,7 +1299,8 @@
          umschreibt, aenderte damit das Attribut und sonst nichts -- gemessen blieb das Bild im
          Spaltenkopf und im "<Marke> mentioned"-Schalter auf dem alten Logo stehen. */
       var markeAttr = String(root.getAttribute("data-brand-name") || "") + "|" +
-                      String(root.getAttribute("data-brand-logo") || "");
+                      String(root.getAttribute("data-brand-logo") || "") + "|" +
+                      String(root.getAttribute("data-spotlight-mode") || "");
       if (markeAttr !== lastMarkeAttr){ lastMarkeAttr = markeAttr; changed = true; }
       var procAttr = String(root.getAttribute("data-processing") || "") + "|" + String(root.getAttribute("data-processing2") || "");
       if (procAttr !== lastProcAttr){ lastProcAttr = procAttr; explicitOverride = false; }
@@ -1282,7 +1311,8 @@
       if (changed) render();
     };
     new MutationObserver(syncFromAttrs).observe(root, {
-      attributes: true, attributeFilter: ["data-isdark","data-processing","data-processing2","data-brand-name","data-brand-logo"]
+      attributes: true, attributeFilter: ["data-isdark","data-processing","data-processing2",
+        "data-brand-name","data-brand-logo","data-spotlight-mode"]
     });
     syncFromAttrs();
 

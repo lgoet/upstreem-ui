@@ -32,6 +32,12 @@
   data-isdark          = "yes" / "no"
   data-brand-name      = the brand's display name (for the "X mentioned" toggle)
   data-brand-logo      = the brand's logo url (optional)
+  data-spotlight-mode  = "yes" / "no" (TEXT, not a boolean -- same convention as data-isdark).
+                         "no" or empty: nothing changes, the table behaves exactly as before.
+                         "yes": the "<brand> mentioned" toggle shows its SELECTED state, is greyed
+                         out and cannot be clicked -- it fires no event and changes no filter. Use
+                         it where the page already filters to that brand and the toggle would only
+                         let the user contradict the page it sits on.
   data-export-instance = the instanceId of the EXPORT POPUP component on the same page
   data-sticky-top      = px offset from the top at which the sticky header pins (desktop only)
   data-sticky          = "yes" / "no" — same dynamic-input convention as data-isdark. "no" turns
@@ -193,6 +199,7 @@
      data-isdark="IS_DARK"
      data-brand-name="BRAND_NAME"
      data-brand-logo="BRAND_LOGO"
+     data-spotlight-mode="SPOTLIGHT_MODE"
      data-export-instance="EXPORT_INSTANCE_ID"
      data-sticky-top="171"
      data-sticky="IS_STICKY"

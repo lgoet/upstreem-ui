@@ -538,6 +538,7 @@
   "data-sort",
   "data-sortcol",
   "data-sortfield",
+  "data-spotlight-mode",
   "data-src",
   "data-status",
   "data-sticky",
@@ -2462,7 +2463,7 @@
   "fnattrs": 75,
   "globals": 137,
   "payloadkeys": 66,
-  "dataattrs": 181,
+  "dataattrs": 182,
   "klassen": 1815,
   "keyframes": 56
  }
