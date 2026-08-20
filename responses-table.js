@@ -9,7 +9,8 @@
   if (!window.__urtBootStubbed){
     window.__urtBootStubbed = true;
     ["renderResponsesTable", "setResponsesTableLoading", "resetResponsesTable",
-     "setResponsesTableModels", "setResponsesTableBrands"].forEach(function(n){
+     "setResponsesTableModels", "setResponsesTableBrands",
+     "setResponsesTableBrand"].forEach(function(n){
       window[n] = function(){ __urtBootQueue.push([n, arguments]); };
     });
   }
@@ -50,6 +51,16 @@
      topics-manager.js/prompts-table.js for the same reasoning). */
   var STORE = (window.__urtStore = window.__urtStore || {});
   var LOADING_EXPLICIT = (window.__urtLoadingExplicit = window.__urtLoadingExplicit || {});
+  /* Ausdruecklich gesetzte Marke je Instanz. Modulweit und nicht im Zustand des Elements, weil
+     Bubble das Markup neu einspritzt -- ein Wert, der nur an der Instanz haengt, waere danach weg.
+
+     Warum es das ueberhaupt braucht: data-brand-name und data-brand-logo sind BUBBLE-Attribute. Wer
+     sie aus einem Run-JS-Schritt ueberschreibt, gewinnt genau bis zum naechsten Mal, in dem Bubble
+     das Element anfasst -- gemeldet als "der Name blinkt kurz auf und springt zurueck, das Logo
+     wechselt gar nicht". Beim Logo sieht man nicht einmal das Blinken: ein Bild braucht einen
+     Ladevorgang, und der Wert ist vorher schon wieder ueberschrieben.
+     Was hier steht, gewinnt gegen das Attribut. Wer es nie ruft, merkt nichts. */
+  var BRAND_EXPLICIT = (window.__urtBrandExplicit = window.__urtBrandExplicit || {});
 
   /* Table mode only — the card grid has no columns/row-height to configure, so the whole
      Table-Settings gear hides itself in Cards mode (see render()). "Prompt" is the firstKey,
@@ -779,9 +790,20 @@
     /* Column header reads "<brand logo> mentioned?" — same treatment as urls-table. Without a
        logo the brand NAME has to carry the meaning, otherwise the header just says "mentioned?"
        with no clue what is meant. */
+    /* Die Marke, die gilt: ausdruecklich gesetzt schlaegt Attribut. Ein leerer Text ZAEHLT dabei
+       als Wert -- wer das Logo ausdruecklich leert, will es weg haben und nicht das aus dem
+       Attribut zurueck. Deshalb wird auf "Schluessel vorhanden" geprueft und nicht auf "wahr". */
+    function markeJetzt(){
+      var e = BRAND_EXPLICIT[instanceId];
+      return {
+        name: (e && e.name != null) ? String(e.name) : (root.getAttribute("data-brand-name") || ""),
+        logo: (e && e.logo != null) ? String(e.logo) : (root.getAttribute("data-brand-logo") || "")
+      };
+    }
     function syncHeadBrand(){
-      var logo = root.getAttribute("data-brand-logo") || "";
-      var name = root.getAttribute("data-brand-name") || "";
+      var m = markeJetzt();
+      var logo = m.logo;
+      var name = m.name;
       var th = root.querySelector(".up-th-mentioned");
       if (!th) return;
       /* Built here when absent instead of required from the markup: the CDN pin ships JS/CSS
@@ -812,8 +834,9 @@
     function syncBrand(){
       syncHeadBrand();
       if (!elBrand) return;
-      var name = root.getAttribute("data-brand-name") || "";
-      var logo = root.getAttribute("data-brand-logo") || "";
+      var m = markeJetzt();
+      var name = m.name;
+      var logo = m.logo;
       var valid = name && name !== "BRAND_NAME";
       /* PAGE-LOAD RULE (asked for repeatedly, and this is the line that broke it): with no data
          before the load, the toggle stays hidden until loading has actually finished -- not the
@@ -1293,8 +1316,13 @@
           if (_b.length) state.brands = _b;
           populateMent();
         }
-        if (params.brand_name != null) root.setAttribute("data-brand-name", String(params.brand_name));
-        if (params.brand_logo != null) root.setAttribute("data-brand-logo", String(params.brand_logo));
+        /* In den ausdruecklichen Speicher, NICHT ins Attribut: ein Attribut gehoert Bubble und
+           wird beim naechsten Anfassen des Elements ueberschrieben. */
+        if (params.brand_name != null || params.brand_logo != null) {
+          var be = BRAND_EXPLICIT[instanceId] = BRAND_EXPLICIT[instanceId] || {};
+          if (params.brand_name != null) be.name = String(params.brand_name);
+          if (params.brand_logo != null) be.logo = String(params.brand_logo);
+        }
         /* Zeilen sind die Antwort, auf die JEDER Ladezustand gewartet hat, auch der
            ausdrueckliche. Blieb state.extLoading stehen, drehte die Tabelle nach einem
            setLoading("yes") ohne passendes "no" fuer immer weiter -- derselbe Fall wie in
@@ -1302,6 +1330,17 @@
         if (params.rows != null){ state.loading = false; state.softReload = false; dim.end(); state.extLoading = false; }
         if (!explicitOverride && hasProcessingAttr()) state.extLoading = readProcessing();
         persist(); render();
+      },
+      /* Marke und Logo ausdruecklich setzen. Beide Argumente einzeln und als reiner Text -- es
+         sind zwei Werte, aber keiner davon braucht eine Struktur, und ein JSON drumherum waere
+         eine Extraktion in Bubble fuer nichts. null oder undefined heisst "nicht anfassen",
+         leerer Text heisst "weg damit". */
+      setBrand: function(name, logo){
+        var be = BRAND_EXPLICIT[instanceId] = BRAND_EXPLICIT[instanceId] || {};
+        if (name != null) be.name = String(name);
+        if (logo != null) be.logo = String(logo);
+        syncBrand();
+        return true;
       },
       setLoading: function(on){
         explicitOverride = true;
@@ -1387,6 +1426,11 @@
     ctrl.update({ models: list });
     return true;
   }
+  function doBrand(id, name, logo){
+    var ctrl = id ? resolve(id) : initRoot(document.querySelector(".urt-root"));
+    if (!ctrl) return false;
+    return ctrl.setBrand(name, logo);
+  }
   function doBrands(id, brands){
     var list = asList(brands);
     var ctrl = id ? resolve(id) : initRoot(document.querySelector(".urt-root"));
@@ -1406,7 +1450,12 @@
     initRoot: initRoot,
     api: {
       renderResponsesTable: doRender, setResponsesTableLoading: doLoading, resetResponsesTable: doReset,
-      setResponsesTableModels: doModels, setResponsesTableBrands: doBrands
+      setResponsesTableModels: doModels, setResponsesTableBrands: doBrands,
+      /* setResponsesTableBrands (Mehrzahl) ist der Filter ueber mehrere Marken.
+         setResponsesTableBrand (Einzahl) ist die EIGENE Marke -- Name und Logo im Spaltenkopf und
+         im Schalter. Zwei Namen, die sich um einen Buchstaben unterscheiden, sind eine Falle; der
+         Kommentar steht deshalb hier und in der Bubble-Doku. */
+      setResponsesTableBrand: doBrand
     },
     forwardShape: { renderResponsesTable: "params", resetResponsesTable: "id" }
   });

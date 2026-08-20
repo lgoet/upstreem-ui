@@ -3,39 +3,36 @@
    WO ES ERSCHEINT: im Spaltenkopf ("<Logo> Mentioned?") und im Schalter ueber der Tabelle
    ("<Logo> Acme mentioned").
 
-   WARUM ES KEIN SETTER IST: beides sind ATTRIBUTE am HTML-Element (data-brand-logo,
-   data-brand-name). Die Komponente beobachtet sie und zeichnet neu, sobald sich eines aendert --
-   ein eigener setResponsesTable...-Aufruf waere ein zweiter Weg fuer dieselbe Sache.
+   WARUM EIN SETTER UND NICHT DAS ATTRIBUT:
+   data-brand-name und data-brand-logo sind BUBBLE-Attribute. Wer sie aus einem Run-JS-Schritt
+   ueberschreibt, gewinnt genau bis zum naechsten Mal, in dem Bubble das Element anfasst -- der Name
+   blinkt kurz auf und springt zurueck, und das Logo wechselt gar nicht sichtbar, weil ein Bild
+   einen Ladevorgang braucht und der Wert vorher schon wieder ueberschrieben ist.
+   setResponsesTableBrand legt den Wert dagegen in einen Speicher, der dem Attribut VORGEHT und ein
+   Neueinspritzen des Markups ueberlebt.
 
-   ACHTUNG: bis zu dieser Runde hat das Beobachten zwar gefeuert, aber nicht neu gezeichnet -- das
-   Attribut aenderte sich und das Bild blieb stehen. Gemessen und behoben; derselbe Fehler steckte
-   in urls-table und domains-table. Mit einem aelteren Pin tut dieser Schritt also nichts. */
+   VORSICHT, zwei Namen mit einem Buchstaben Unterschied:
+     setResponsesTableBrands  (Mehrzahl)  der Filter ueber mehrere Marken
+     setResponsesTableBrand   (Einzahl)   die EIGENE Marke, also dieser Schritt hier */
 (function(){
   var INSTANCE_ID = "responses_table";      /* dasselbe data-instance wie am HTML-Element */
 
-  /* In Backticks, damit ein leerer Bubble-Ausdruck den Schritt nicht sprengt: leer heisst dann
-     einfach leerer Text, und die Komponente faellt sauber auf den Namen zurueck. */
-  var LOGO = `<Bubble: Brand's favicon_url oder logo_url>`;
+  /* In Backticks, damit ein leerer Bubble-Ausdruck den Schritt nicht sprengt. Leerer Text heisst
+     ausdruecklich "weg damit" -- ohne Logo faellt der Spaltenkopf auf "<Name> mentioned?" zurueck. */
   var NAME = `<Bubble: Brand's name>`;
+  var LOGO = `<Bubble: Brand's favicon_url oder logo_url>`;
 
   var versuche = 0;
   (function los(){
-    /* Alle Elemente mit dieser Instanz -- Bubble kann dasselbe Reusable mehrfach auf der Seite
-       haben, und dann muessen alle Kopien dasselbe Logo tragen. */
-    var wurzeln = document.querySelectorAll('.urt-root[data-instance="' + INSTANCE_ID + '"]');
-    if (wurzeln.length) {
-      [].forEach.call(wurzeln, function(w){
-        /* Nur setzen, wenn sich etwas aendert: ein gleicher Wert loest sonst ein Neuzeichnen aus,
-           das nichts bewirkt und die Eingangsanimation der Zeilen neu ansetzt. */
-        if (String(w.getAttribute("data-brand-logo") || "") !== String(LOGO)) w.setAttribute("data-brand-logo", LOGO);
-        if (String(w.getAttribute("data-brand-name") || "") !== String(NAME)) w.setAttribute("data-brand-name", NAME);
-      });
+    if (typeof window.setResponsesTableBrand === "function") {
+      window.setResponsesTableBrand(INSTANCE_ID, NAME, LOGO);
       return;
     }
-    /* Das Element steht beim Seitenaufbau nicht immer schon da -- in 100ms-Schritten warten,
-       hoechstens 6 Sekunden, und danach EINMAL sagen warum. */
+    /* Die Setter sind Boot-Stubs, solange responses-table.js noch laedt -- ein Aufruf landet dann
+       in der Warteschlange und wird nachgeholt. Fehlen sie GANZ, ist das Element noch nicht
+       gebaut: in 100ms-Schritten warten, hoechstens 6 Sekunden, danach EINMAL sagen warum. */
     if (versuche++ < 60) { setTimeout(los, 100); return; }
-    if (window.console) console.warn('[responses-table] kein Element mit data-instance="' +
-      INSTANCE_ID + '" nach 6s. Stimmt die Instanz-Id, und ist das Element sichtbar?');
+    if (window.console) console.warn("[responses-table] setResponsesTableBrand gibt es nach 6s " +
+      "nicht. Steht das HTML-Element auf der Seite, und ist der CDN-Pin aktuell?");
   })();
 })();
