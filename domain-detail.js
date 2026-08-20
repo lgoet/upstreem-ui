@@ -45,13 +45,25 @@
 
   var MODES = [
     { key: "citation", label: "Citation Share", heading: "Citations Share over Time" },
-    { key: "domain",   label: "Domain Share",   heading: "Domain Share over Time" }
+    /* Die Ueberschrift heisst URL Share, weil genau das gezeigt wird: wie sich die Zitationen
+       dieser Domain auf ihre einzelnen URLs verteilen. "Domain Share" las sich wie der Anteil der
+       Domain am Gesamtmarkt -- das ist die Kurve daneben. Der Knopf heisst weiter "Domain Share",
+       er waehlt den Datensatz und nicht die Sicht darauf. */
+    { key: "domain",   label: "Domain Share",   heading: "URL Share over Time",
+      info: "How this domain's citations are split across its own URLs. Each line is one URL, " +
+            "and its value is that URL's share of all citations this domain received in the " +
+            "period -- so the lines add up to 100%. It answers which pages of the domain the " +
+            "models actually cite, not how the domain compares to other domains." }
   ];
   var GRANS  = [{ key: "day", label: "Day" }, { key: "week", label: "Week" }, { key: "month", label: "Month" }];
   /* Global heisst: der Anteil dieser URL an ALLEN Zitationen. Domain: ihr Anteil innerhalb dieser
      Domain. Beides kommt aus dem Payload (share_pct), der Schalter sagt Bubble nur, welche Zahl
      der naechste Aufruf liefern soll. */
-  var SCOPES = [{ key: "global", label: "Global" }, { key: "domain", label: "Domain" }];
+/* Der Bezug ist ab jetzt immer "domain": die Kurve zeigt die Verteilung der Zitationen dieser
+   Domain auf ihre eigenen URLs, und dafuer gibt es keine zweite Lesart. Der Umschalter Global/Domain
+   ist damit weg. Die Konstante bleibt, weil jedes Ereignis nach Bubble weiterhin einen scope traegt
+   und die RPC ihn erwartet -- ein Feld, das plotzlich fehlt, bricht dort still. */
+  var SCOPE_FEST = "domain";
 
   /* Die vier Stufen des Trichters. `wert` holt die Zahl aus dem Payload, `unter` die Zeile
      darunter. Reihenfolge ist die Erzaehlung: wie oft wird die Quelle zitiert, wie viele Seiten
@@ -85,6 +97,9 @@
 
   var MODE_STORE = (window.__uddMode = window.__uddMode || {});
   var GRAN_STORE = (window.__uddGran = window.__uddGran || {});
+/* Der Speicher fuer den Bezug: es gibt nur noch "domain", also merkt er nichts mehr. Er bleibt
+   stehen, weil eine andere Fassung derselben Datei auf einer Seite daneben liegen kann und dann
+   auf window.__uddScope zugreift -- ein Objekt, das plotzlich fehlt, wirft dort. */
   var SCOPE_STORE = (window.__uddScope = window.__uddScope || {});
   var CHART_STORE = (window.__uddChart = window.__uddChart || {});
   var MCHART_STORE = (window.__uddMChart = window.__uddMChart || {});
@@ -164,13 +179,13 @@
           '<div class="udd-title">' +
             '<span class="up-logo-box udd-logobox"><span class="up-logo-ltr"></span></span>' +
             '<span class="udd-heading"></span>' +
+            /* Das Info-Symbol steht NUR im URL-Share, deshalb versteckt es sich selbst -- die
+               Zitationsanteils-Kurve erklaert ihre Ueberschrift von allein. Der Tooltip ist der
+               des Hauses (data-tip, .up-tip), kein title-Attribut: das erscheint verzoegert, an
+               der Maus und in Systemoptik. */
+            '<span class="udd-info" hidden aria-hidden="true"></span>' +
           '</div>' +
           '<div class="udd-tools">' +
-            '<div class="up-seg udd-scope" role="group" aria-label="Share scope">' +
-              SCOPES.map(function (s) {
-                return '<button class="up-seg-btn" type="button" data-scope="' + s.key + '">' + esc(s.label) + '</button>';
-              }).join("") +
-            '</div>' +
             '<div class="vc-gran" role="group" aria-label="Granularity">' +
               GRANS.map(function (g) {
                 return '<button class="vc-gran-btn" type="button" data-gran="' + g.key + '">' + esc(g.label) + '</button>';
@@ -248,7 +263,7 @@
     if (UC.widthTiers) UC.widthTiers(root, { narrowAt: 640, vnarrowAt: 480 });
 
     var elSeg     = root.querySelector(".udd-seg");
-    var elScope   = root.querySelector(".udd-scope");
+    var elInfo    = root.querySelector(".udd-info");
     var elGran    = root.querySelector(".vc-gran");
     var elHeading = root.querySelector(".udd-heading");
     var elLogo    = root.querySelector(".udd-logobox");
@@ -278,7 +293,7 @@
     var state = {
       mode:  MODE_STORE[instanceId]  || "citation",
       gran:  GRAN_STORE[instanceId]  || "day",
-      scope: SCOPE_STORE[instanceId] || "global",
+      scope: SCOPE_FEST,
       header: null, share: null, urls: null, model: null, funnel: null,
       brand: (root.getAttribute("data-brand") || "").trim(),
       /* loading startet auf true: die Komponente steht auf der Seite, bevor der Pageload-Workflow
@@ -510,18 +525,21 @@
         b.classList.toggle("is-active", on);
         b.setAttribute("aria-selected", on ? "true" : "false");
       });
-      [].forEach.call(elScope.querySelectorAll(".up-seg-btn"), function (b) {
-        b.classList.toggle("is-active", b.getAttribute("data-scope") === state.scope);
-      });
       [].forEach.call(elGran.querySelectorAll(".vc-gran-btn"), function (b) {
         b.classList.toggle("is-active", b.getAttribute("data-gran") === state.gran);
       });
-      /* Der Global/Domain-Schalter gehoert zum Domain-Share; im Citation-Share gibt es nichts,
-         worauf er sich beziehen koennte. Und die KPI-Zeile ist die des globalen Anteils -- im
-         Domain-Share nimmt die Kurve ihren Platz ein. */
+      /* Die KPI-Zeile ist die des globalen Anteils -- im URL-Share nimmt die Kurve ihren Platz
+         ein. Das Info-Symbol steht nur dort, weil nur diese Ueberschrift erklaerungsbeduerftig ist. */
       var domainModus = state.mode === "domain";
-      elScope.hidden = !domainModus;
       elKpi.hidden = domainModus;
+      if (elInfo) {
+        elInfo.hidden = !domainModus;
+        elInfo.setAttribute("aria-hidden", domainModus ? "false" : "true");
+        if (domainModus && !elInfo.innerHTML) {
+          elInfo.innerHTML = UC.icon("info", 2);
+          elInfo.setAttribute("data-tip", modeOf("domain").info || "");
+        }
+      }
       root.classList.toggle("is-domainshare", domainModus);
     }
 
@@ -875,18 +893,6 @@
         fire("data-mode-fn", "uddMode", { mode: k, gran: state.gran, scope: state.scope });
         return;
       }
-      var s = e.target.closest("[data-scope]");
-      if (s && elScope.contains(s)) {
-        var sk = s.getAttribute("data-scope");
-        if (sk === state.scope) return;
-        state.scope = sk; SCOPE_STORE[instanceId] = sk;
-        /* Global und Domain sind zwei verschiedene Bezugsgroessen: die alte Kurve unter der neuen
-           Beschriftung stehen zu lassen waere eine falsche Aussage, kein "noch nicht aktuell". */
-        state.urlsStale = true; urlWarteStarten();
-        syncSeg(); renderChart();
-        fire("data-scope-fn", "uddScope", { mode: state.mode, gran: state.gran, scope: sk });
-        return;
-      }
       var mc = e.target.closest("[data-mchart]");
       if (mc && elModelSeg && elModelSeg.contains(mc)) {
         var mk = mc.getAttribute("data-mchart");
@@ -984,10 +990,14 @@
           state.urls = { points: [] };
         } else {
           state.urls = p;
-          /* Der Payload sagt selbst, welchen Bezug er hat -- der Schalter folgt ihm, statt ihn
-             zu ueberschreiben. */
-          if (p.share_mode === "global" || p.share_mode === "domain") {
-            state.scope = p.share_mode; SCOPE_STORE[instanceId] = state.scope;
+          /* Die Granularitaet sagt der Payload. Vorher stand sie allein im Schalter und wurde aus
+             den Abstaenden der Punkte erraten -- kamen Wochen-Daten, zeigte der Schalter weiter
+             "Day". Der Wert aus der RPC ist die Wahrheit, der Schalter folgt ihm.
+             Nur die drei bekannten Werte, sonst bleibt es beim bisherigen: ein Tippfehler in der
+             RPC soll den Schalter nicht auf etwas stellen, das es nicht gibt. */
+          var g = String(p.granularity || "").trim().toLowerCase();
+          if (g === "day" || g === "week" || g === "month") {
+            state.gran = g; GRAN_STORE[instanceId] = g;
           }
         }
         state.loading = false;
@@ -1025,7 +1035,7 @@
         state.urlsStale = false; state.urlsError = null; urlWarteBeenden();
         state.mode = "citation"; MODE_STORE[instanceId] = "citation";
         state.gran = "day"; GRAN_STORE[instanceId] = "day";
-        state.scope = "global"; SCOPE_STORE[instanceId] = "global";
+        state.scope = SCOPE_FEST;
         warteStarten();
         render();
         return true;

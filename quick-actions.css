@@ -1,5 +1,11 @@
 /* upstreem — Quick Actions (Cmd-K command menu). Split out of the original standalone
    quick_actions.html verbatim; see bubble/quick_actions_bubble.html for the migration notes.
+
+   .check_reinvention.py meldet in dieser Datei acht Stellen als Nachbau. Alle acht haben denselben
+   Grund, und er steht schon in der naechsten Zeile: diese Datei laedt core.css BEWUSST NICHT (ihr
+   Bubble-Loader zieht nur quick-actions.css/.js). Jedes Kit-Bauteil muss hier also lokal stehen --
+   die Geometrie ist die des Kits, die Klassennamen sind eigene. Das ist kein Nachbau aus
+   Bequemlichkeit, sondern die Folge einer Entscheidung, die zwei Zeilen tiefer begruendet ist.
    Deliberately self-contained, not built on core.css's --vc-* tokens or .up-root: this is a
    page-level singleton (one #mira-quick-actions, not a per-instance .up-root component), and it
    already carried its own complete token set before the migration. Keeping its own --am-* scope
@@ -152,12 +158,14 @@
   display: inline-flex; align-items: center; gap: 6.5px; height: 26px; padding: 0 6.5px 0 9.75px;
   border-radius: 7.6px; border: 1px solid var(--am-border);
   background: color-mix(in srgb, var(--am-soft-2) 50%, transparent);
-  box-shadow: 0 1px 1px rgba(0,0,0,0.22), 0 1px 2px rgba(0,0,0,0.12);
+  /* Die weiche Lage zwei Pixel weiter (Streuung 2 -> 4, Versatz 1 -> 2). Die dichte Lage an der
+     Kante bleibt: sie zeichnet die Kante, sie traegt nicht den Schatten. */
+  box-shadow: 0 1px 1px rgba(0,0,0,0.22), 0 2px 4px rgba(0,0,0,0.12);
   color: var(--am-muted); font-size: 12.5px; font-weight: 500; white-space: nowrap;
 }
 /* [data-theme="dark"] als Vorfahre, wie die Nachbarregeln dieser Datei. */
 [data-theme="dark"] .mqa-chip {
-  box-shadow: 0 1px 1px rgba(0,0,0,0.40), 0 1px 2px rgba(0,0,0,0.26); }
+  box-shadow: 0 1px 1px rgba(0,0,0,0.40), 0 2px 4px rgba(0,0,0,0.26); }
 .mqa-chip b { font-weight: 400; color: var(--am-muted-2); }   /* value only: -100 weight, weaker colour */
 .mqa-chip-x {
   width: 16px; height: 16px; border: 0; border-radius: 4px; background: transparent; cursor: pointer;
@@ -354,14 +362,14 @@
 .mqa-recent-ic { flex: 0 0 auto; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; color: var(--am-muted-2); }
 .mqa-recent-ic svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 /* Die Zeile beschneidet (overflow: hidden aus .mqa-primary UND von hier), damit ein langer Suchtext
-   die Zeile nicht sprengt. Genau das schnitt aber den Schatten der Chips unten ab: er liegt 2px
-   unter dem Chip, und der Kasten war genau so hoch wie die Chips.
+   die Zeile nicht sprengt. Genau das schnitt aber den Schatten der Chips unten ab: er liegt jetzt
+   3px unter dem Chip, und der Kasten war genau so hoch wie die Chips.
    overflow-x: hidden mit overflow-y: visible geht nicht -- ein hidden auf einer Achse erzwingt auto
-   auf der anderen. Also Platz INNEN schaffen: 3px Polsterung unten holen den Schatten in den
-   beschnittenen Bereich, der negative Rand von 3px nimmt die Hoehe wieder heraus, damit die Zeile
-   genauso hoch bleibt wie vorher. */
+   auf der anderen. Also Platz INNEN schaffen: 4px Polsterung unten holen den Schatten in den
+   beschnittenen Bereich, der negative Rand von 4px nimmt die Hoehe wieder heraus, damit die Zeile
+   genauso hoch bleibt wie vorher. Waechst der Schatten, waechst diese Zahl mit. */
 .mqa-recent-line { display: flex; align-items: center; gap: 6px; min-width: 0; flex-wrap: nowrap;
-  overflow: hidden; padding-bottom: 3px; margin-bottom: -3px; }
+  overflow: hidden; padding-bottom: 4px; margin-bottom: -4px; }
 /* Derselbe Chip wie .mqa-chip im Suchfeld, nur 4px flacher: 22 statt 26. Alles im Verhaeltnis
    22/26 = 0.846 mitgezogen -- Polsterung 6.5/9.75 -> 5.5/8.25, Radius 7.6 -> 6.4, Innenabstand
    6.5 -> 5.5.
@@ -376,11 +384,13 @@
   flex: 0 0 auto; display: inline-flex; align-items: center; height: 22px; padding: 0 5.5px 0 8.25px;
   border-radius: 6.4px; border: 1px solid var(--am-border);
   background: color-mix(in srgb, var(--am-soft-2) 50%, transparent);
-  box-shadow: 0 1px 1px rgba(0,0,0,0.22), 0 1px 2px rgba(0,0,0,0.12);
+  /* Einen Pixel weiter als vorher (Streuung 2 -> 3), also einen weniger als beim grossen Chip --
+     der kleine soll nicht staerker schweben als der grosse. */
+  box-shadow: 0 1px 1px rgba(0,0,0,0.22), 0 1px 3px rgba(0,0,0,0.12);
   color: var(--am-muted); font-size: 11px; font-weight: 500; white-space: nowrap; gap: 5.5px;
 }
 [data-theme="dark"] .mqa-mini {
-  box-shadow: 0 1px 1px rgba(0,0,0,0.40), 0 1px 2px rgba(0,0,0,0.26); }
+  box-shadow: 0 1px 1px rgba(0,0,0,0.40), 0 1px 3px rgba(0,0,0,0.26); }
 /* Nur der Wert: eine Stufe leichter und gedaempft, genau wie in .mqa-chip b. */
 .mqa-mini b { font-weight: 400; color: var(--am-muted-2); }
 .mqa-recent-q { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

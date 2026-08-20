@@ -50,7 +50,6 @@
   "udbTrack",
   "uddGran",
   "uddMode",
-  "uddScope",
   "udtBrand",
   "udtFilter",
   "udtMentioned",
@@ -436,6 +435,7 @@
   "data-dim",
   "data-dimension-fn",
   "data-domain",
+  "data-domain-mode",
   "data-et-topic",
   "data-explain",
   "data-export-fn",
@@ -2459,11 +2459,11 @@
   "uutpulse"
  ],
  "_zaehlung": {
-  "events": 114,
+  "events": 113,
   "fnattrs": 75,
   "globals": 137,
   "payloadkeys": 66,
-  "dataattrs": 182,
+  "dataattrs": 183,
   "klassen": 1815,
   "keyframes": 56
  }

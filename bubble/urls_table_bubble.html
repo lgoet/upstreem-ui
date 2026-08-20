@@ -33,6 +33,16 @@
                          fix may not actually be live yet even right after it's pushed. The loader
                          script at the bottom reads this once and builds every asset URL from it.
   data-isdark          = "yes" / "no"
+  data-domain-mode     = "yes" / "no" (TEXT, not a boolean -- same convention as data-isdark).
+                         "no" or empty: nothing changes.
+                         "yes": the Share column becomes "Domain Share" and shows domainshare_pct
+                         instead of global_share_pct, with NO trend chip (the RPC sends no delta
+                         for it, and a delta on the global share would be the wrong number next to
+                         a domain share). The global share is not shown at all in this view.
+                         Sorting that column sends domainshare_desc / domainshare_asc instead of
+                         share_desc / share_asc, and "Share Trend" drops out of the sort menu --
+                         there is no trend column to sort by.
+                         A row without domainshare_pct shows a dash, never the global figure.
   data-brand-name      = the brand's display name (for the "X mentioned" toggle)
   data-brand-logo      = the brand's logo url (optional)
   data-export-instance = the instanceId of the EXPORT POPUP component you place on
@@ -118,6 +128,7 @@
      data-instance="INSTANCE_ID"
      data-cdn-pin="CDN_PIN"
      data-isdark="IS_DARK"
+     data-domain-mode="DOMAIN_MODE"
      data-brand-name="BRAND_NAME"
      data-brand-logo="BRAND_LOGO"
      data-export-instance="EXPORT_INSTANCE_ID"

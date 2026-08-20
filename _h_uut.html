@@ -1,0 +1,40 @@
+<meta charset="utf-8"><title>urls table domain mode</title>
+<style>html,body{margin:0;font-family:system-ui,sans-serif;background:#fff}
+#log{position:fixed;left:0;bottom:0;width:100%;max-height:14%;overflow:auto;font:10px/1.4 ui-monospace,monospace;background:#f6f6f6;border-top:1px solid #ddd;margin:0;padding:6px;white-space:pre-wrap}
+#buehne{padding:20px 20px 20%;min-width:1100px}</style>
+<body><pre id="log">laeuft</pre><div id="buehne"></div>
+<script>
+window.__fehler=[]; window.addEventListener("error",function(e){window.__fehler.push(String(e.message))});
+function log(s){ document.getElementById("log").textContent += "\n"+s; }
+window.__ev=[];
+["uutSearch","uutSort","uutPage","uutFilter","uutRow","uutBrand","uutMentioned"].forEach(function(n){
+  window["bubble_fn_"+n]=function(v){ window.__ev.push([n,v]); };
+});
+try{ localStorage.setItem("pref_theme","light"); }catch(e){}
+/* Markup aus bubble/ geholt; CSS und JS per fetch mit no-store -- ein ?v= hat in dieser Sitzung
+   mehrfach eine alte Datei geliefert. */
+fetch("_h_uut_markup.html",{cache:"no-store"}).then(function(r){return r.text();}).then(function(t){
+  document.getElementById("buehne").innerHTML = t;
+  return Promise.all(["core.css","urls-table.css"].map(function(f){
+    return fetch(f,{cache:"no-store"}).then(function(r){return r.text();}).then(function(x){
+      var e=document.createElement("style"); e.textContent=x; document.head.appendChild(e); }); }));
+}).then(function(){
+  return ["core.js","urls-table.js"].reduce(function(k,f){ return k.then(function(){
+    return fetch(f,{cache:"no-store"}).then(function(r){return r.text();}).then(function(x){
+      var e=document.createElement("script"); e.textContent=x; document.head.appendChild(e); }); }); }, Promise.resolve());
+}).then(function(){
+  setTimeout(function(){
+    window.renderUrlsTable({ instanceId:"u1", total_count: 2, rows: [
+      { url:"https://a.de/eins", title:"Seite eins", domain:"a.de", favicon:"",
+        global_share_pct: 12.5, domainshare_pct: 41.2, share_delta_pct: 3.4,
+        url_type:"article", has_user_brand:"yes", last_seen:"2026-08-18",
+        companies_preview:[], companies_preview_totalcount:0 },
+      { url:"https://a.de/zwei", title:"Seite zwei", domain:"a.de", favicon:"",
+        global_share_pct: 4.1, domainshare_pct: null, share_delta_pct: -1.2,
+        url_type:"homepage", has_user_brand:"no", last_seen:"2026-08-17",
+        companies_preview:[], companies_preview_totalcount:0 }
+    ]});
+    setTimeout(function(){ window.__bereit = true; log("bereit"); }, 700);
+  }, 300);
+}).catch(function(e){ log("FEHLER "+e.message); });
+</script>

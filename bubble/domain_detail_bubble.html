@@ -24,7 +24,9 @@
   | data-brand        | nein    | Name der eigenen Marke -- steht in der vierten Trichterstufe  |
   | data-mode-fn      | nein    | Toolbox-Funktion fuer den Wechsel Citation/Domain Share    |
   | data-gran-fn      | nein    | Toolbox-Funktion fuer Tag/Woche/Monat                      |
-  | data-scope-fn     | nein    | Toolbox-Funktion fuer Global/Domain im Domain-Share        |
+  | data-scope-fn     | ENTFAELLT | War die Toolbox-Funktion fuer Global/Domain. Den Umschalter  |
+  |                   |         | gibt es nicht mehr, der Bezug ist immer "domain". Das Attribut |
+  |                   |         | kann am Element stehen bleiben, es wird nie mehr gerufen.   |
 
   Die drei *-fn-Attribute sind der Weg nach Bubble: jeder Klick feuert das Ereignis mit
   { mode, gran, scope } als JSON.
@@ -33,7 +35,9 @@
   | Ereignis  | ausgeloest durch        | der Workflow ruft                                |
   |-----------|------------------------|--------------------------------------------------|
   | uddMode   | Citation/Domain Share  | domain -> setDomainDetailUrls, citation -> nichts (die Daten sind schon da) |
-  | uddScope  | Global/Domain          | setDomainDetailUrls mit dem anderen Bezug        |
+  | uddScope  | ENTFAELLT              | Feuert NICHT MEHR. Der Umschalter Global/Domain ist weg, |
+  |           |                        | der Bezug ist immer "domain". Ein Workflow, der daran   |
+  |           |                        | haengt, laeuft nie wieder an -- er kann geloescht werden. |
   | uddGran   | Day/Week/Month         | citation -> setDomainDetail, domain -> setDomainDetailUrls |
 
   Die URL-Serie ist also ein EIGENER Schritt an drei Ereignissen -- dieselbe Abfrage, andere
@@ -101,6 +105,9 @@
      data-mode-fn="bubble_fn_uddMode"
      data-gran-fn="bubble_fn_uddGran"
      data-scope-fn="bubble_fn_uddScope"></div>
+<!-- data-scope-fn steht hier nur noch, damit ein bestehendes Element nichts verliert. Die
+     Komponente ruft es NICHT mehr: der Umschalter Global/Domain ist weg, der Bezug ist immer
+     "domain". Bei einer Neuinstallation kann die Zeile entfallen. -->
 
 <script>
 (function(){

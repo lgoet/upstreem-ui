@@ -21,13 +21,20 @@
 
   /* Alles in EINER Zeichenkette. Die Bubble-Ausdruecke kommen genau dorthin, wo jetzt die
      Platzhalter stehen -- die Anfuehrungszeichen bleiben stehen, auch bei Zahlen: parseLoose macht
-     aus "5" die Zahl 5, und aus "" wird null statt eines Syntaxfehlers. */
+     aus "5" die Zahl 5, und aus "" wird null statt eines Syntaxfehlers.
+
+     granularity ist neu und wichtig: der Schalter Day/Week/Month folgte bisher nur den Abstaenden
+     zwischen den Punkten. Kamen Wochendaten, zeigte er weiter "Day". Mit diesem Feld sagt die RPC
+     selbst, was sie geliefert hat.
+     share_mode steht fest auf "domain" -- den Umschalter Global/Domain gibt es nicht mehr, die
+     Kurve zeigt immer die Verteilung auf die URLs dieser Domain. */
   var URLS = `{
     "to": "<Datum bis>",
     "from": "<Datum von>",
     "top_n": "<Anzahl>",
     "domain": "<Domain>",
-    "share_mode": "<global oder domain>",
+    "share_mode": "domain",
+    "granularity": "<day, week oder month>",
     "points": [
       <Liste der Punkte, je Zeile ein Objekt mit Komma dazwischen>
     ]

@@ -49,6 +49,16 @@
 
 .udd-head { display: flex; align-items: center; gap: 12px; min-height: 32px; }
 .udd-title { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto; }
+/* Das Info-Symbol neben der Ueberschrift: 14px, Drittfarbe, erst beim Hover in Textfarbe. Es ist
+   ein Hinweis und kein Bedienelement -- deshalb kein Knopfgrund, kein Radius, keine Flaeche. Der
+   Zeiger bleibt ein Pfeil: es gibt nichts zu klicken, nur etwas zu lesen.
+   Der Tooltip selbst kommt aus core (.up-tip ueber data-tip), also dieselbe Form wie ueberall. */
+.udd-info { flex: 0 0 14px; width: 14px; height: 14px; display: inline-flex;
+  align-items: center; justify-content: center; color: var(--vc-third);
+  transition: color 120ms ease; }
+.udd-info svg { width: 14px; height: 14px; display: block; }
+.udd-info:hover { color: var(--vc-text); }
+.udd-info[hidden] { display: none; }
 /* Das Favicon sitzt im Bauteil .up-logo-box aus core (24px, 1px Polsterung, Radius 8). Hier steht
    nur die kleinere Stufe: 18px wie das Logo in der Kopfzeile von brand-detail. Faktor 18/24 auf
    ALLE Werte -- Radius 8 -> 6, Bildradius 7 -> 5.3, Buchstabe 11 -> 8.3. */

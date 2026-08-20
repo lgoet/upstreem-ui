@@ -65,7 +65,15 @@
     "last_seen:desc":   "last_used_desc",
     "last_seen:asc":    "last_used_asc"
   };
-  function orderValue(field, dir){ return ORDER[field + ":" + dir] || "share_desc"; }
+  /* Im Domain-Modus zeigt die Tabelle den Anteil AN DER DOMAIN statt am Gesamtmarkt, und die RPC
+     erwartet dafuer eigene Sortierschluessel. Nur der Anteil selbst wechselt -- Typ, Zuletzt
+     gesehen und alles andere sortieren unveraendert. */
+  var ORDER_DOMAIN = { "share:desc": "domainshare_desc", "share:asc": "domainshare_asc" };
+  function orderValue(field, dir, domainModus){
+    var k = field + ":" + dir;
+    if (domainModus && ORDER_DOMAIN[k]) return ORDER_DOMAIN[k];
+    return ORDER[k] || (domainModus ? "domainshare_desc" : "share_desc");
+  }
   /* Which sort keys a header column cycles through, in order. Clicking past the end
      resets to the default (share desc) — same convention as elsewhere in the app. */
   var HEAD_CYCLE = {
@@ -224,6 +232,23 @@
     function trendChip(delta, suffix){
       return UC.trendChip(delta, { decimals: true, suffix: suffix });
     }
+    /* Domain-Modus: die Tabelle steht auf einer Domain-Detailseite und zeigt den Anteil AN DIESER
+       DOMAIN statt am Gesamtmarkt. Als TEXT gelesen, wie data-isdark -- Bubble liefert "yes"/"no",
+       und der unersetzte Platzhalter aus der Vorlage zaehlt als nein. */
+    function domainModus(){
+      var v = String(root.getAttribute("data-domain-mode") || "").trim();
+      if (!v || v === "DOMAIN_MODE") return false;
+      return isYes(v);
+    }
+    /* Die Kopfzeile steht im Bubble-Markup, also wird die Beschriftung hier gesetzt und nicht dort
+       -- das Markup ist eine Handkopie und bleibt sonst auf dem Stand, den jemand zuletzt
+       eingefuegt hat. */
+    function syncShareKopf(){
+      var th = root.querySelector(".up-th-share");
+      if (!th) return;
+      var txt = th.querySelector(".up-th-txt");
+      if (txt) txt.textContent = domainModus() ? "Domain Share" : "Share";
+    }
     /* URL types have their own dark palette; citation types deliberately do not.
        A missing/empty type is "Uncategorized" — same convention as core.js's URL_LABEL.other and
        topcitations-dashboard's URL_TYPE_CHIP.other — never a blank cell. A non-empty value that
@@ -260,8 +285,14 @@
       var fav = String(r.favicon == null ? "" : r.favicon);
       if (fav.indexOf("//") === 0) fav = "https:" + fav;
       var initial = dom.replace(/^www\./, "").charAt(0) || "?";
+      /* Im Domain-Modus der Anteil AN DIESER DOMAIN, sonst der am Gesamtmarkt. Kein Rueckfall
+         zwischen den beiden: waere domainshare_pct leer und die Zelle zeigte still den globalen
+         Wert, staende unter "Domain Share" eine andere Zahl als draufsteht. Fehlt der Wert, zeigt
+         die Zelle nichts -- das ist die ehrliche Antwort. */
+      var dm = domainModus();
       // share_pct isn't in the URL payload; global_share_pct is the equivalent figure
-      var share = (r.global_share_pct != null) ? r.global_share_pct : r.share_pct;
+      var share = dm ? r.domainshare_pct
+                     : ((r.global_share_pct != null) ? r.global_share_pct : r.share_pct);
       return '<div class="up-row" data-url="' + esc(url) + '" tabindex="0" role="button">' +
         '<div class="up-td uut-td-domain">' +
           '<span class="uut-logo-box' + (fav ? " has-img" : "") + '">' +
@@ -275,7 +306,11 @@
           '</span>' +
           '<span class="uut-row-goto">' + GOTO_SVG + '</span>' +
         '</div>' +
-        '<div class="up-td uut-td-share"><span class="uut-num">' + fmt1(share) + '%</span>' + trendChip(r.share_delta_pct, "%") + '</div>' +
+        /* Kein Trend im Domain-Modus: die RPC liefert dafuer keine Veraenderung, und ein Pfeil,
+           der sich auf den globalen Anteil bezieht, waere neben dem Domain-Anteil schlicht falsch. */
+        '<div class="up-td uut-td-share"><span class="uut-num' + (share == null ? " is-empty" : "") + '">' +
+          (share == null ? "\u2013" : fmt1(share) + "%") + '</span>' +
+          (dm ? "" : trendChip(r.share_delta_pct, "%")) + '</div>' +
         '<div class="up-td uut-td-type">' + tagHtml(r.url_type) + '</div>' +
         '<div class="up-td uut-td-ment">' + mentCell(r.is_mentioned) + '</div>' +
         '<div class="up-td uut-td-brands">' + UC.brandStack(r.mentions, r.mentions_totalcount) + '</div>' +
@@ -380,7 +415,7 @@
         search.setLatest(null);
         state.loading = true;
         fire("data-sort-fn", "uutSort", {
-          order: orderValue(state.sortField, state.sortDir),   // -> p_order
+          order: orderValue(state.sortField, state.sortDir, domainModus()),   // -> p_order
           sort_field: state.sortField, sort_dir: state.sortDir // split parts, in case a workflow prefers them
         });
         renderTable();
@@ -393,7 +428,14 @@
       /* Shared markup: UC.sortMenuHtml. Four components built this string identically, including
          the data-sortfield / data-sortdir hooks their click handlers match on -- so a change to
          the markup here had to be made in four places or the handlers drifted apart from it. */
-      elSortMenu.innerHTML = UC.sortMenuHtml(SORT_FIELDS, state.sortField, state.sortDir);
+      /* Im Domain-Modus faellt "Share Trend" aus der Liste: es gibt in dieser Ansicht keinen
+         Trend, also waere es eine Sortierung nach einer Spalte, die nicht dasteht. Und "Share"
+         heisst hier "Domain Share", damit die Liste dieselbe Sprache spricht wie der Kopf. */
+      var felder = domainModus()
+        ? SORT_FIELDS.filter(function(f){ return f.key !== "share_trend"; })
+                     .map(function(f){ return f.key === "share" ? { key: "share", label: "Domain Share" } : f; })
+        : SORT_FIELDS;
+      elSortMenu.innerHTML = UC.sortMenuHtml(felder, state.sortField, state.sortDir);
     }
 
     /* ---------------- citation type filter ---------------- */
@@ -1113,7 +1155,8 @@
     /* Der Ausgangsstand von Marke und Logo, damit der erste Lauf nicht faelschlich als Aenderung
        zaehlt. */
     var lastMarkeAttr = String(root.getAttribute("data-brand-name") || "") + "|" +
-                        String(root.getAttribute("data-brand-logo") || "");
+                        String(root.getAttribute("data-brand-logo") || "") + "|" +
+                        String(root.getAttribute("data-domain-mode") || "");
     var explicitOverride = false;
     /* Zwei Quellen fuer den Skeleton-Zustand, absichtlich getrennt:
          state.loading     — INTERN: von UC.makeSearch/UC.makePager gesetzt, wenn die Komponente
@@ -1141,7 +1184,8 @@
          responses-table, dort gemessen -- das Logo blieb beim Umschreiben des Attributs stehen.
          prompts-table hat dafuer einen eigenen Beobachter und war nie betroffen. */
       var markeAttr = String(root.getAttribute("data-brand-name") || "") + "|" +
-                      String(root.getAttribute("data-brand-logo") || "");
+                      String(root.getAttribute("data-brand-logo") || "") + "|" +
+                      String(root.getAttribute("data-domain-mode") || "");
       if (markeAttr !== lastMarkeAttr){ lastMarkeAttr = markeAttr; changed = true; }
       var procAttr = String(root.getAttribute("data-processing") || "") + "|" +
                      String(root.getAttribute("data-processing2") || "");
@@ -1156,7 +1200,8 @@
       if (changed) render();
     };
     new MutationObserver(syncFromAttrs).observe(root, {
-      attributes: true, attributeFilter: ["data-isdark","data-processing","data-processing2","data-brand-name","data-brand-logo"]
+      attributes: true, attributeFilter: ["data-isdark","data-processing","data-processing2",
+        "data-brand-name","data-brand-logo","data-domain-mode"]
     });
     // reconcile once right after attaching: Bubble may resolve these between the initial
     // read above and this observer existing, and that change would otherwise be lost
@@ -1253,6 +1298,9 @@
     function render(){
       renderTable(); renderCount(); syncHeadSorters(); syncBrand(); syncFilterBadge(); syncColsBadge();
       renderPageSize(); renderPager(); applyCols(); syncMentLabel(); syncHeadBrand(); applyResponsive();
+      /* Nach applyCols: die Spaltenmaschine baut den Kopf um, und eine vorher gesetzte
+         Beschriftung waere dann wieder die aus dem Markup. */
+      syncShareKopf(); populateSort();
       if (root.classList.contains("up-sticky")) syncTheadOffset();
     }
 
