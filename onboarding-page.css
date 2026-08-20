@@ -1,0 +1,698 @@
+/* upstreem onboarding-page.css — Team-Onboarding als GANZE Seite (Praefix `uob`).
+
+   ── Verhaeltnis zu auth-page.css ────────────────────────────────────────────────────────────
+   Die Anmeldeseite ist die Vorlage, nicht die Verwandte: ein Nutzer kommt von dort direkt
+   hierher, und beides muss wie eine Seite wirken, die weitergeblaettert wurde. Uebernommen sind
+   deshalb WORTGLEICH: --uau-t/--uob-t 200ms, --uau-in/--uob-in 420ms Einzug, dieselbe
+   cubic-bezier(.4,0,.2,1), Feldhoehe 40 mit Radius 12, Beschriftung 12px/600 in --vc-muted,
+   der gefuellte Hauptknopf 40px/Radius 12 in --vc-text, der 32px-Themenschalter, der
+   translateY(18px)-Einzug in drei Stufen und die Regel, dass Farben ausschliesslich aus --vc-*
+   kommen.
+
+   ── Warum nicht dasselbe Stylesheet ─────────────────────────────────────────────────────────
+   Die Anmeldeseite ist ein zweispaltiges Blatt mit EINEM Formular. Hier laufen sieben Zustaende
+   durch eine mittige Spalte, mit Fortschrittsschiene, Listen zum Auswaehlen und zwei
+   Ladezustaenden. Ein gemeinsames Blatt haette am Ende zwei Layouts in einer Datei -- und jede
+   Aenderung an der Anmeldeseite waere ein Risiko fuer das Onboarding.
+
+   ── Warum ein eigener Formular-Select (.uob-select) ─────────────────────────────────────────
+   core hat .up-ddtrigger, und der ist ausdruecklich KEIN Formular-Select: 32px hoch, nur so
+   breit wie sein Inhalt, Chevron direkt neben der Beschriftung. Genau das steht als Begruendung
+   in core.css. Hier stehen die Auswahlfelder aber IM Feldstapel neben 40px-Eingabefeldern, und
+   ein 32px-Knopf daneben liest als etwas anderes als "auch ein Feld". Der Ausklapp-Kasten
+   selbst ist unveraendert der aus core (.up-ment-menu, .up-ddsearch, .up-filter-item,
+   .up-filter-check) -- neu ist nur der Ausloeser.
+
+   ── 200ms ──────────────────────────────────────────────────────────────────────────────────
+   Jeder Zustandswechsel laeuft ueber --uob-t. Auch die Hoehen: Schritte sind verschieden hoch,
+   und ein springender Kasten sieht nach einem Fehler aus. Die Karte misst ihre Zielhoehe und
+   faehrt sie in denselben 200ms an. */
+
+.uob-root {
+  --uob-t: 200ms;
+  /* Der Einzug beim Aufbau und beim Schrittwechsel hat seine EIGENE Dauer -- dort wartet niemand
+     auf eine Reaktion, dort sieht jemand der Seite beim Ankommen zu. Wortgleich zu --uau-in. */
+  --uob-in: 420ms;
+  --uob-ease: cubic-bezier(.4, 0, .2, 1);
+  --uob-hover: #f7f8fa;
+  /* Breite je Schritt. Ein Formular liest sich in einer schmalen Spalte besser, eine Liste
+     braucht mehr, drei Preiskarten am meisten. Der Wechsel laeuft ueber dieselben 200ms wie
+     alles andere, deshalb eine Variable statt drei Klassen mit festen Breiten. */
+  --uob-w: 480px;
+
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  background: var(--vc-bg);
+  color: var(--vc-text);
+  font-family: inherit;
+  -webkit-font-smoothing: antialiased;
+  box-sizing: border-box;
+  padding: clamp(16px, 2.4vh, 24px) clamp(16px, 3vw, 32px) clamp(16px, 2.4vh, 28px);
+}
+.uob-root *, .uob-root *::before, .uob-root *::after { box-sizing: border-box; }
+.uob-root[data-theme="dark"] { --uob-hover: var(--vc-heading-bg); }
+
+/* ---------- Kopfzeile ----------
+   Logo links, die drei Nebenwege rechts. "Dashboard" und "Log out" sind bewusst Textknoepfe in
+   --vc-muted und kein gefuellter Knopf: sie fuehren aus dem Ablauf HERAUS, und ein Ausgang darf
+   nie so aussehen wie der Weg weiter. */
+.uob-top {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+}
+.uob-logo { height: 18px; width: auto; flex: 0 0 auto; display: block; }
+.uob-logo svg, .uob-logo img { height: 18px; width: auto; display: block; }
+.uob-topr { display: flex; align-items: center; gap: 4px; }
+/* .check_reinvention.py meldet .uob-link, .uob-themebtn, .uob-select, .uob-back und .uob-next als
+   moegliche Zwillinge von .up-seg-btn. Sind sie nicht: .up-seg-btn ist ein MITGLIED von .up-seg,
+   es lebt in einem Kasten mit --vc-switch-bg und hat als einzelner Knopf weder Sinn noch Hover.
+   Was die Heuristik sieht, ist die Schnittmenge "32px hoch, Radius 8, transparent" -- die teilt
+   in dieser App jeder ruhige Knopf.
+   .uob-link ist der Textknopf der Kopfzeile. .up-btn-sec waere er nicht: der traegt einen
+   sichtbaren Rahmen und liest damit als Aktion, und "Dashboard"/"Log out" sind Ausgaenge. */
+.uob-link {
+  height: 32px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent;
+  color: var(--vc-muted); font-family: inherit; font-size: 13px; font-weight: 500;
+  display: inline-flex; align-items: center; gap: 7px; cursor: pointer; white-space: nowrap;
+  transition: color var(--uob-t) var(--uob-ease), background var(--uob-t) var(--uob-ease);
+}
+.uob-link:hover { color: var(--vc-text); background: var(--uob-hover); }
+.uob-link svg { width: 15px; height: 15px; display: block; flex: 0 0 auto; }
+.uob-link:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+/* Geometrie wie .uau-themebtn auf der Anmeldeseite, damit die Ecke oben rechts beim Uebergang
+   von dort nach hier stehen bleibt -- WORTGLEICH, also kein Nachbau, sondern der Punkt der
+   Aufgabe. Nicht .up-iconbtn aus core, aus demselben Grund, den auth-page.css schon nennt: der
+   zieht seinen Hover-Hintergrund aus --vc-heading-bg, und der ist auf einer Seite ohne getoenten
+   Untergrund fast unsichtbar. */
+.uob-themebtn {
+  width: 32px; height: 32px; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; border-radius: 8px; background: transparent; color: var(--vc-muted);
+  cursor: pointer; padding: 0; margin-left: 4px;
+  transition: background var(--uob-t) var(--uob-ease), color var(--uob-t) var(--uob-ease);
+}
+.uob-themebtn:hover { color: var(--vc-text); background: var(--uob-hover); }
+.uob-themebtn svg { width: 16px; height: 16px; display: block; }
+.uob-themebtn:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+
+/* ---------- Fortschrittsschiene ----------
+   Fuenf Stationen, die Ladezustaende sind keine. Sie steht ganz oben und nicht neben dem Inhalt:
+   der Nutzer soll VOR der ersten Eingabe wissen, worauf er sich einlaesst -- das ist der ganze
+   Zweck. Die Linie ist eine einzige Spur mit einer gefuellten Deckschicht darueber; die Deckung
+   waechst in --uob-t. Zwei getrennte Balken je Abschnitt waeren dasselbe Bild mit vier
+   Uebergaengen statt einem. */
+.uob-rail {
+  flex: 0 0 auto; width: 100%; max-width: 620px; margin: clamp(18px, 3.2vh, 34px) auto 0;
+  padding: 0 8px;
+}
+.uob-rail-line { position: relative; height: 2px; border-radius: 999px; background: var(--vc-sk); }
+.uob-rail-fill {
+  position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px;
+  background: var(--vc-text); width: 0;
+  transition: width var(--uob-t) var(--uob-ease);
+}
+.uob-rail-dots { position: absolute; inset: 0; display: flex; justify-content: space-between; }
+.uob-dot {
+  position: relative; top: 50%; transform: translateY(-50%);
+  width: 10px; height: 10px; flex: 0 0 auto; border-radius: 50%;
+  background: var(--vc-bg); border: 2px solid var(--vc-sk);
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background var(--uob-t) var(--uob-ease), border-color var(--uob-t) var(--uob-ease),
+              width var(--uob-t) var(--uob-ease), height var(--uob-t) var(--uob-ease);
+}
+.uob-dot svg { width: 8px; height: 8px; display: block; color: var(--vc-bg);
+  opacity: 0; transform: scale(.6);
+  transition: opacity var(--uob-t) var(--uob-ease), transform var(--uob-t) var(--uob-ease); }
+/* Erledigt: gefuellt mit Haken. Aktuell: gefuellt und groesser, ohne Haken -- der Haken wuerde
+   "fertig" behaupten. Kuenftig: hohl. */
+.uob-dot.is-done { background: var(--vc-text); border-color: var(--vc-text); }
+.uob-dot.is-done svg { opacity: 1; transform: scale(1); }
+.uob-dot.is-now {
+  width: 14px; height: 14px; background: var(--vc-text); border-color: var(--vc-text);
+  box-shadow: 0 0 0 4px var(--vc-bg);
+}
+.uob-rail-labels {
+  display: flex; justify-content: space-between; margin-top: 12px;
+  font-size: 11.5px; font-weight: 500; color: var(--vc-third);
+}
+.uob-rail-labels span {
+  flex: 1 1 0; text-align: center; min-width: 0;
+  transition: color var(--uob-t) var(--uob-ease);
+}
+.uob-rail-labels span:first-child { text-align: left; }
+.uob-rail-labels span:last-child { text-align: right; }
+.uob-rail-labels span.is-done { color: var(--vc-muted); }
+.uob-rail-labels span.is-now { color: var(--vc-text); font-weight: 600; }
+
+/* ---------- Mitte ----------
+   Der Inhalt sitzt senkrecht in der Mitte. justify-content: center und nicht ein margin: auto,
+   damit ein Schritt, der doch einmal hoeher als der Bildschirm wird, oben anfaengt und nicht
+   nach oben aus dem Bild laeuft. */
+.uob-mid {
+  flex: 1 1 auto; min-height: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: clamp(16px, 3vh, 36px) 0;
+}
+.uob-col {
+  width: 100%; max-width: var(--uob-w); min-width: 0;
+  transition: max-width var(--uob-t) var(--uob-ease);
+}
+
+/* ---------- Markenkopf ----------
+   Sobald die Marke bekannt ist, steht sie ueber dem Inhalt: Favicon, Name, Domain. Das ist der
+   Satz "du baust hier DEINEN Zugang" -- ohne ihn ist der ganze Ablauf ein Formular ueber
+   irgendetwas. Vor Schritt 2 gibt es nichts zu zeigen, dann ist der Block eingeklappt.
+   grid-template-rows 0fr->1fr wie ueberall in dieser App, weil die Zielhoehe von der Laenge des
+   Namens abhaengt und niemand sie vorher kennt. */
+.uob-ident {
+  display: grid; grid-template-rows: 0fr; opacity: 0;
+  transition: grid-template-rows var(--uob-t) var(--uob-ease), opacity var(--uob-t) var(--uob-ease),
+              margin-bottom var(--uob-t) var(--uob-ease);
+  margin-bottom: 0;
+}
+.uob-ident > div { overflow: hidden; min-height: 0; }
+.uob-ident.is-on { grid-template-rows: 1fr; opacity: 1; margin-bottom: clamp(14px, 2.4vh, 22px); }
+.uob-ident-in { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
+/* Dieselbe Kachel wie .up-ment-logo in core, eine Stufe groesser: 18 -> 28, also Faktor 1.556 auf
+   Radius (5 -> 7.8) und Bild (16 -> 24.9, hier auf 24 gerundet, weil das Favicon 64px liefert
+   und krumme Werte dort sichtbar unscharf werden). */
+.uob-ident-logo {
+  width: 28px; height: 28px; flex: 0 0 auto; border-radius: 8px;
+  background: var(--vc-bg); border: 1px solid var(--vc-border);
+  display: inline-flex; align-items: center; justify-content: center; overflow: hidden;
+  font-size: 12px; font-weight: 600; color: var(--vc-muted);
+}
+.uob-ident-logo img { width: 24px; height: 24px; border-radius: 6px; display: block; object-fit: contain; }
+.uob-ident-logo.has-img { font-size: 0; }
+.uob-ident-txt { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.uob-ident-name { font-size: 14px; font-weight: 600; color: var(--vc-text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.uob-ident-dom { font-size: 12px; color: var(--vc-third);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- Ueberschriften ----------
+   Kleiner als auf der Anmeldeseite (dort clamp bis 44px): dort ist die Ueberschrift das einzige
+   grosse Element der Spalte, hier steht darunter jedes Mal ein Block, mit dem etwas getan wird.
+   Eine 44px-Zeile ueber einer Liste erschlaegt die Liste. */
+.uob-h1 {
+  margin: 0;
+  font-size: clamp(22px, min(2.4vw, 3.6vh), 30px); line-height: 1.1;
+  font-weight: 600; letter-spacing: -.022em; color: var(--vc-text);
+}
+.uob-sub {
+  margin-top: 8px; font-size: 14px; line-height: 1.45; color: var(--vc-muted); text-wrap: pretty;
+}
+/* Der Zaehler steht in derselben Zeile wie die Ueberschrift, rechts. In der Aufgabe stand er
+   unter der Ueberschrift in Klammern -- dort liest er sich wie ein Teil des Titels, obwohl er
+   sich staendig aendert. Rechts oben ist er ein Anzeigefeld und kein Text. */
+.uob-h1row { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+.uob-count {
+  flex: 0 0 auto; font-size: 13px; font-weight: 600; color: var(--vc-muted);
+  font-variant-numeric: tabular-nums;
+  transition: color var(--uob-t) var(--uob-ease);
+}
+.uob-count.is-full { color: var(--vc-text); }
+
+/* ---------- Felder ---------- */
+.uob-fields { margin-top: clamp(16px, 3vh, 26px); display: flex; flex-direction: column; gap: 14px; }
+/* Zwei Felder nebeneinander, solange Platz ist. Unter is-narrow stapeln sie -- die Regel steht
+   ganz unten bei den uebrigen schmalen Faellen. */
+.uob-frow { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.uob-field { display: flex; flex-direction: column; min-width: 0; }
+.uob-label { font-size: 12px; font-weight: 600; color: var(--vc-muted); }
+.uob-label + * { margin-top: 7px; }
+/* Der optionale Zusatz an der Beschriftung. Nicht "(optional)" in Klammern hinter dem Namen,
+   sondern rechts in der Zeile: so bleibt der Feldname die erste gelesene Sache. */
+.uob-labrow { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.uob-opt { font-size: 11.5px; font-weight: 500; color: var(--vc-third); }
+.uob-input {
+  height: 40px; width: 100%;
+  border: 1px solid var(--vc-border); border-radius: 12px;
+  background: var(--vc-bg); padding: 0 14px;
+  font-family: inherit; font-size: 14px; color: var(--vc-text);
+  outline: none;
+  transition: border-color var(--uob-t) var(--uob-ease), box-shadow var(--uob-t) var(--uob-ease);
+}
+.uob-input::placeholder { color: var(--vc-third); }
+.uob-input:disabled { opacity: .55; cursor: default; }
+/* Wie auf der Anmeldeseite: der Rahmen faerbt sich NICHT, solange das Feld den Fokus hat --
+   sonst wechselt die Farbe genau in dem Moment, in dem jemand den Fehler beheben will. */
+.uob-field.is-err .uob-input:not(:focus) { border-color: var(--vc-neg, #c8412e); }
+.uob-field.is-err .uob-select:not(:focus) { border-color: var(--vc-neg, #c8412e); }
+/* Hinweis unter einem Feld. Immer da, nicht eingeklappt: er sagt etwas ueber die Eingabe, die
+   noch kommt, und muss deshalb VOR dem Tippen dastehen. */
+.uob-hint { font-size: 11.5px; line-height: 1.4; color: var(--vc-third); padding-top: 5px; }
+.uob-err {
+  display: grid; grid-template-rows: 0fr; opacity: 0;
+  transition: grid-template-rows var(--uob-t) var(--uob-ease), opacity var(--uob-t) var(--uob-ease);
+}
+.uob-err > span { overflow: hidden; min-height: 0; display: block;
+  font-size: 12px; line-height: 1.4; color: var(--vc-neg, #c8412e); padding-top: 5px; }
+.uob-field.is-err .uob-err { grid-template-rows: 1fr; opacity: 1; }
+
+/* ---------- Formular-Select ----------
+   Begruendung im Kopf dieser Datei: core sagt ausdruecklich, dass .up-ddtrigger KEIN
+   Formular-Select ist, und .up-seg-btn ist ein Switcher-Mitglied. Geometrie deshalb 1:1 die von
+   .uob-input -- 40px, Radius 12, dieselbe Polsterung --, damit ein Auswahlfeld und ein
+   Eingabefeld in derselben Zeile dieselbe Sache zu sein scheinen. Der Ausklapp-Kasten darunter
+   ist unveraendert der aus core. */
+.uob-ddwrap { position: relative; display: block; width: 100%; min-width: 0; }
+.uob-select {
+  height: 40px; width: 100%;
+  display: inline-flex; align-items: center; gap: 10px;
+  border: 1px solid var(--vc-border); border-radius: 12px;
+  background: var(--vc-bg); padding: 0 12px 0 14px;
+  font-family: inherit; font-size: 14px; color: var(--vc-text); text-align: left;
+  cursor: pointer; outline: none;
+  transition: border-color var(--uob-t) var(--uob-ease), background var(--uob-t) var(--uob-ease),
+              box-shadow var(--uob-t) var(--uob-ease);
+}
+.uob-select:hover { border-color: var(--vc-hover-border); }
+.uob-ddwrap.is-open .uob-select { border-color: var(--vc-hover-border); }
+.uob-select:focus-visible { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+.uob-select-ic { display: inline-flex; align-items: center; flex: 0 0 auto; color: var(--vc-muted); }
+.uob-select-ic:empty { display: none; }
+.uob-select-ic svg { width: 16px; height: 16px; display: block; }
+.uob-select-ic img { width: 20px; height: 14px; border-radius: 3px; object-fit: cover; display: block; }
+.uob-select-lbl {
+  flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--vc-third);
+}
+.uob-ddwrap.has-sel .uob-select-lbl { color: var(--vc-text); }
+/* Der Chevron steht hier RECHTS AUSSEN, anders als bei .up-ddtrigger in core. Das ist der
+   sichtbare Unterschied zwischen einem Werkzeugleisten-Ausloeser und einem Formularfeld, und er
+   ist beabsichtigt: das Feld ist so breit wie sein Nachbar, also braucht es einen Anker am
+   rechten Rand, sonst schwebt der Pfeil in der Mitte einer leeren Flaeche. */
+.uob-select-chev { flex: 0 0 16px; color: var(--vc-third); transition: transform var(--uob-t) var(--uob-ease); }
+.uob-select-chev svg { width: 16px; height: 16px; display: block; }
+.uob-ddwrap.is-open .uob-select-chev { transform: rotate(180deg); }
+/* Der Kasten selbst ist .up-ment-menu aus core. Hier steht nur, was core nicht wissen kann:
+   dass er unter einem 40px-Feld haengt und dessen volle Breite hat. */
+.uob-ddmenu {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0; width: auto; min-width: 0;
+  z-index: 40;
+}
+/* Der geschlossene Kasten hat keine HOEHE -- er bleibt aber im DOM und im Layout, display wird
+   nie umgeschaltet. Das ist die Regel aus STYLEGUIDE §6, und sie gilt hier unveraendert: die
+   Appear-Animation (opacity + Scale) laeuft wie bei jedem anderen Dropdown der App.
+   Warum ueberhaupt: gemessen zogen die vier zugeklappten Kaesten die Seite von 720 auf 978
+   Pixel, weil ein absolut gesetzter Kasten weiter zur scrollbaren Hoehe des Dokuments zaehlt.
+   Auf dieser Seite ist "nichts scrollt" eine Bedingung und keine Vorliebe -- deshalb hier, und
+   nur hier, die Zusatzregel.
+   is-flat setzt das JS erst NACH dem Ausblenden und nimmt es VOR dem Einblenden weg. Stuende
+   die Hoehe schon waehrend des Uebergangs auf 0, waere der Kasten weg, bevor er verblasst ist.
+   box-sizing ist border-box (oben am Root), 0 heisst also wirklich 0 -- Polster und Rahmen
+   fallen mit. */
+.uob-ddmenu.is-flat { max-height: 0; overflow: hidden; }
+.uob-ddlist { max-height: 240px; overflow-y: auto; }
+/* Das Zusatzfeld fuer eine eigene Branche sitzt unter der Liste, abgesetzt wie die Kopfzeile
+   darueber -- sonst liest es sich wie ein weiterer Eintrag. */
+.uob-ddcustom { padding: 8px; border-top: 1px solid var(--vc-border); display: flex; }
+
+/* ---------- Auswahlliste (Marken, Themen, Prompts) ----------
+   Eine Zeile ist ein Knopf mit Haken links. Haken links und nicht rechts: das Auge sucht den
+   Zustand am Zeilenanfang, und in jeder anderen Auswahlliste dieser App (.up-filter-item)
+   steht er ebenfalls dort. Der Rahmen um die ganze Zeile statt nur ein Haken, weil hier
+   grosse Flaechen mit Logo und zwei Textzeilen ausgewaehlt werden -- ein 16px-Kaestchen als
+   einziger Zustandstraeger waere auf so einer Flaeche zu leise. */
+.uob-list {
+  margin-top: clamp(14px, 2.6vh, 22px);
+  display: flex; flex-direction: column; gap: 8px;
+  /* Die Liste scrollt IN SICH, die Seite nicht. Das ist die Bedingung dafuer, dass Kopf,
+     Schiene und die Knopfzeile unten immer sichtbar bleiben -- sonst waere der Weiter-Knopf bei
+     fuenfzehn Prompts unter dem Bildschirmrand. */
+  max-height: min(46vh, 460px); overflow-y: auto; overscroll-behavior: contain;
+  /* Die duenne Bildlaufleiste aus core (.up-scroll, im Markup gesetzt) ist hier nicht nur
+     Kosmetik, sondern die Auskunft "hier geht es weiter": ohne sie endet die Liste nach fuenf
+     Zeilen mit einer sauberen Kante, und niemand ahnt die restlichen drei. */
+  padding: 2px 2px 2px; margin-left: -2px; margin-right: -2px;
+}
+.uob-item {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  padding: 10px 14px; min-height: 56px;
+  border: 1px solid var(--vc-border); border-radius: 12px; background: var(--vc-bg);
+  font-family: inherit; cursor: pointer; outline: none;
+  transition: border-color var(--uob-t) var(--uob-ease), background var(--uob-t) var(--uob-ease);
+}
+.uob-item:hover { border-color: var(--vc-hover-border); }
+.uob-item.is-on { border-color: var(--vc-text); background: var(--up-sel-bg, var(--vc-heading-bg)); }
+.uob-item:focus-visible { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+/* Eine Zeile, die nicht mehr gewaehlt werden kann, weil das Limit erreicht ist. Sie bleibt
+   lesbar und anklickbar-aussehend waere gelogen -- also Zeiger weg und gedaempft, aber nicht so
+   blass, dass man den Namen nicht mehr liest. */
+.uob-item.is-blocked { opacity: .45; cursor: default; }
+.uob-item.is-blocked:hover { border-color: var(--vc-border); }
+/* Geometrie exakt .up-filter-check aus core, nur eine Stufe groesser (16 -> 18, Radius 5 -> 5.6,
+   Haken 11 -> 12.4): die Zeile ist 56px hoch statt 28, ein 16er-Kaestchen verschwindet darin. */
+.uob-check {
+  width: 18px; height: 18px; flex: 0 0 auto; border-radius: 6px;
+  border: 1.5px solid var(--vc-border); background: var(--vc-bg);
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background var(--uob-t) var(--uob-ease), border-color var(--uob-t) var(--uob-ease);
+}
+.uob-check svg {
+  width: 12px; height: 12px; display: block; color: var(--vc-bg);
+  opacity: 0; transform: scale(.7);
+  transition: opacity var(--uob-t) var(--uob-ease), transform var(--uob-t) var(--uob-ease);
+}
+.uob-item.is-on .uob-check { background: var(--vc-text); border-color: var(--vc-text); }
+.uob-item.is-on .uob-check svg { opacity: 1; transform: scale(1); }
+/* Markenkachel in der Zeile: dieselbe Kachel wie oben im Markenkopf, eine Stufe kleiner
+   (28 -> 24, Radius 8 -> 7, Bild 24 -> 20). */
+.uob-item-logo {
+  width: 24px; height: 24px; flex: 0 0 auto; border-radius: 7px;
+  background: var(--vc-bg); border: 1px solid var(--vc-border);
+  display: inline-flex; align-items: center; justify-content: center; overflow: hidden;
+  font-size: 11px; font-weight: 600; color: var(--vc-muted);
+}
+.uob-item-logo img { width: 20px; height: 20px; border-radius: 5px; display: block; object-fit: contain; }
+.uob-item-logo.has-img { font-size: 0; }
+.uob-item-txt { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.uob-item-name { font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.3; }
+.uob-item-sub { font-size: 12px; color: var(--vc-third); line-height: 1.3;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Prompts brechen um und werden NIE gekuerzt: ein halber Prompt ist keine Entscheidungsgrundlage.
+   Deshalb hier kein nowrap und keine feste Zeilenzahl. */
+.uob-item.is-multiline { align-items: flex-start; }
+.uob-item.is-multiline .uob-check { margin-top: 1px; }
+/* Der Marktchip ist .up-market aus core und wird hier nur POSITIONIERT, nicht umgestylt:
+   flex: 0 0 auto, weil er in einer Flexzeile neben umbrechendem Text sonst zusammengedrueckt
+   wird und der Prompt in die Flagge hineinlaeuft -- gemessen an einem zweizeiligen Prompt.
+   Die 2px oben stellen ihn auf die erste Textzeile statt in die Mitte des Blocks. */
+.uob-item .up-market { flex: 0 0 auto; }
+.uob-item.is-multiline .up-market { margin-top: 2px; }
+.uob-item-long { font-size: 13.5px; line-height: 1.45; color: var(--vc-text); text-wrap: pretty; }
+
+/* Themen-Marke: der farbige Koerper eines Themas ohne Emoji, wie in der Aufgabe verlangt.
+   Kein Kreis: die App zeichnet Themen ueberall als abgerundetes Quadrat (.up-sent-dot,
+   .up-cg-swatch), und ein Kreis waere hier ein zweiter Formenkanon. */
+.uob-swatch {
+  width: 12px; height: 12px; flex: 0 0 auto; border-radius: 4px;
+  background: var(--uob-sw, var(--vc-third));
+}
+.uob-swatch.is-lg { width: 16px; height: 16px; border-radius: 5px; }
+
+/* ---------- Prompts nach Thema ----------
+   Ein Prompt kann zu mehreren Themen gehoeren. Er wird trotzdem GENAU EINMAL aufgefuehrt, unter
+   seinem ersten Thema -- sonst waere derselbe Prompt zweimal anwaehlbar und der Zaehler stimmte
+   nicht mehr. Die uebrigen Themen stehen als kleine Marken rechts in der Zeile; damit ist die
+   Ueberschneidung sichtbar, ohne dass die Liste sie verdoppelt. */
+.uob-group + .uob-group { margin-top: 16px; }
+.uob-group-h {
+  display: flex; align-items: center; gap: 8px; padding: 0 2px 8px;
+  font-size: 12px; font-weight: 600; color: var(--vc-muted); letter-spacing: .01em;
+}
+.uob-group-n { font-weight: 500; color: var(--vc-third); font-variant-numeric: tabular-nums; }
+.uob-group-items { display: flex; flex-direction: column; gap: 8px; }
+.uob-tags { display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; margin-left: 2px; }
+
+/* ---------- Ladezustand ----------
+   Der Aufbau ist bewusst ruhig: Markenkachel, eine Zeile Text, eine Spur, die Liste der Phasen.
+   Kein Kreisel in der Mitte -- ein Kreisel sagt "es passiert etwas", die Phasenliste sagt WAS,
+   und das ist bei vierzig Sekunden der Unterschied zwischen Warten und Zusehen. */
+.uob-load { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.uob-load-logo {
+  width: 56px; height: 56px; border-radius: 16px;
+  background: var(--vc-bg); border: 1px solid var(--vc-border);
+  display: inline-flex; align-items: center; justify-content: center; overflow: hidden;
+  font-size: 20px; font-weight: 600; color: var(--vc-muted);
+  box-shadow: 0 1px 2px rgba(15,17,21,.05), 0 12px 28px rgba(23,37,84,.08);
+}
+.uob-load-logo img { width: 40px; height: 40px; border-radius: 10px; display: block; object-fit: contain; }
+.uob-load-logo.has-img { font-size: 0; }
+.uob-root[data-theme="dark"] .uob-load-logo { box-shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 28px rgba(0,0,0,.34); }
+.uob-load-name { margin-top: 14px; font-size: 18px; font-weight: 600; color: var(--vc-text); letter-spacing: -.015em; }
+.uob-load-dom { margin-top: 3px; font-size: 13px; color: var(--vc-third); }
+/* Die Spur. Sie ist ausdruecklich NICHT linear: die Recherche zu Ladefortschritt sagt, ein
+   Balken wirkt schneller, wenn er vorne zieht und hinten nachlaesst. Der Wert kommt aus dem JS,
+   die Kurve steckt dort in der Rechnung -- hier steht nur, dass die Breite weich folgt. Die
+   Dauer ist laenger als --uob-t, weil dieser Balken nichts umschaltet, sondern laeuft. */
+.uob-bar {
+  margin-top: clamp(20px, 3.4vh, 30px); width: 100%; max-width: 320px;
+  height: 3px; border-radius: 999px; background: var(--vc-sk); overflow: hidden;
+}
+.uob-bar-fill {
+  height: 100%; width: 0; border-radius: 999px; background: var(--vc-text);
+  transition: width 620ms linear;
+}
+.uob-phases {
+  margin-top: clamp(20px, 3.4vh, 30px); width: 100%;
+  display: flex; flex-direction: column; gap: 2px; text-align: left;
+}
+.uob-phase {
+  display: flex; align-items: flex-start; gap: 12px; padding: 9px 10px; border-radius: 10px;
+  transition: background var(--uob-t) var(--uob-ease), opacity var(--uob-t) var(--uob-ease);
+  opacity: .4;
+}
+.uob-phase.is-done { opacity: 1; }
+.uob-phase.is-now { opacity: 1; background: var(--vc-heading-bg); }
+/* Drei Zustaende in EINEM 18px-Feld: Punkt (kommt noch), Kreisel (laeuft), Haken (fertig).
+   Ein Wechsel der Elementart mittendrin wuerde die Zeile springen lassen. */
+.uob-phase-ic {
+  width: 18px; height: 18px; flex: 0 0 auto; margin-top: 1px; position: relative;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.uob-phase-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--vc-third);
+  transition: opacity var(--uob-t) var(--uob-ease);
+}
+.uob-phase-ring {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 2px solid var(--vc-border); border-top-color: var(--vc-text);
+  animation: uob-spin 700ms linear infinite;
+  opacity: 0; transition: opacity var(--uob-t) var(--uob-ease);
+}
+.uob-phase-ok {
+  position: absolute; inset: 0; border-radius: 50%; background: var(--vc-text); color: var(--vc-bg);
+  display: inline-flex; align-items: center; justify-content: center;
+  opacity: 0; transform: scale(.7);
+  transition: opacity var(--uob-t) var(--uob-ease), transform var(--uob-t) var(--uob-ease);
+}
+.uob-phase-ok svg { width: 11px; height: 11px; display: block; }
+.uob-phase.is-now .uob-phase-dot { opacity: 0; }
+.uob-phase.is-now .uob-phase-ring { opacity: 1; }
+.uob-phase.is-done .uob-phase-dot { opacity: 0; }
+.uob-phase.is-done .uob-phase-ok { opacity: 1; transform: scale(1); }
+@keyframes uob-spin { to { transform: rotate(360deg); } }
+.uob-phase-txt { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.uob-phase-h { font-size: 13.5px; font-weight: 500; color: var(--vc-text); line-height: 1.35; }
+.uob-phase-b { font-size: 12px; color: var(--vc-third); line-height: 1.35; }
+
+/* Der zweite, kurze Ladezustand: dieselbe Kachel, ein Satz, dieselbe Spur -- aber keine Phasen.
+   Zehn Sekunden brauchen keine Gliederung, sie brauchen nur ein Zeichen, dass es weitergeht. */
+.uob-load.is-compact .uob-load-logo { width: 44px; height: 44px; border-radius: 13px; }
+.uob-load.is-compact .uob-load-logo img { width: 30px; height: 30px; border-radius: 8px; }
+
+/* ---------- Preiskarten ----------
+   Drei Karten nebeneinander, die mittlere hervorgehoben. Die Hervorhebung ist ein Rahmen in
+   --vc-text und ein Etikett, KEINE eigene Farbe: die App hat keine Akzentfarbe, und eine hier
+   einzufuehren waere genau die neue Regel, die es nicht geben soll. */
+.uob-plans { margin-top: clamp(16px, 2.8vh, 24px); display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.uob-plan {
+  position: relative; display: flex; flex-direction: column; text-align: left;
+  padding: 18px 18px 20px; border: 1px solid var(--vc-border); border-radius: 16px;
+  background: var(--vc-bg); font-family: inherit; cursor: pointer; outline: none;
+  transition: border-color var(--uob-t) var(--uob-ease), background var(--uob-t) var(--uob-ease),
+              box-shadow var(--uob-t) var(--uob-ease);
+}
+.uob-plan:hover { border-color: var(--vc-hover-border); }
+.uob-plan.is-on {
+  border-color: var(--vc-text);
+  box-shadow: 0 0 0 1px var(--vc-text);   /* zweiter Ring statt 2px Rahmen: sonst springt der Inhalt um 1px */
+}
+.uob-plan:focus-visible { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+.uob-plan-tag {
+  position: absolute; top: -9px; left: 18px; height: 18px; padding: 0 8px; border-radius: 999px;
+  background: var(--vc-text); color: var(--vc-bg);
+  font-size: 10.5px; font-weight: 600; letter-spacing: .02em;
+  display: inline-flex; align-items: center;
+}
+.uob-plan-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.uob-plan-name { font-size: 15px; font-weight: 600; color: var(--vc-text); }
+.uob-plan-price { margin-top: 12px; display: flex; align-items: baseline; gap: 5px; }
+.uob-plan-amt { font-size: 26px; font-weight: 600; color: var(--vc-text); letter-spacing: -.03em;
+  font-variant-numeric: tabular-nums; }
+.uob-plan-per { font-size: 12.5px; color: var(--vc-muted); }
+.uob-plan-note {
+  display: grid; grid-template-rows: 0fr; opacity: 0;
+  transition: grid-template-rows var(--uob-t) var(--uob-ease), opacity var(--uob-t) var(--uob-ease);
+}
+.uob-plan-note > span { overflow: hidden; min-height: 0; display: block;
+  font-size: 11.5px; color: var(--vc-pos, #2e9e63); padding-top: 4px; }
+.uob-plan-note.is-on { grid-template-rows: 1fr; opacity: 1; }
+.uob-plan-feats { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+.uob-plan-feat { display: flex; align-items: flex-start; gap: 8px; font-size: 12.5px; line-height: 1.4; color: var(--vc-muted); }
+.uob-plan-feat svg { width: 14px; height: 14px; flex: 0 0 auto; margin-top: 1px; color: var(--vc-text); }
+.uob-plan-feat b { font-weight: 600; color: var(--vc-text); }
+
+/* Monats-/Jahresschalter: das ist .up-seg aus core, hier nur mittig gestellt. */
+.uob-billrow { margin-top: clamp(14px, 2.4vh, 20px); display: flex; justify-content: center; }
+
+/* ---------- Knopfzeile ----------
+   Beide Knoepfe sind bewusst die der Anmeldeseite und nicht .up-btn-sec/.up-seg-btn aus core:
+   dort ist ein Knopf 32px hoch und sitzt in einer Werkzeugleiste, hier ist er das Hauptziel der
+   Seite und 40px, genau wie .uau-primary. auth-page.css hat dieselbe Entscheidung mit derselben
+   Begruendung getroffen -- hier davon abzuweichen hiesse, dass der Weiter-Knopf im Onboarding
+   anders aussieht als der Anmelden-Knopf eine Seite davor.
+   Zurueck links als Textknopf, Weiter rechts gefuellt. Auf schmalen Fenstern kehrt sich das um:
+   dort steht Weiter oben und in voller Breite, weil der Daumen unten ist und der Hauptweg nicht
+   in einer Ecke stehen soll. Siehe unten bei is-narrow. */
+.uob-nav {
+  flex: 0 0 auto; width: 100%; max-width: var(--uob-w); margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding-top: clamp(16px, 2.6vh, 24px);
+  transition: max-width var(--uob-t) var(--uob-ease);
+}
+.uob-back {
+  height: 40px; padding: 0 14px; border: 0; border-radius: 12px; background: transparent;
+  color: var(--vc-muted); font-family: inherit; font-size: 14px; font-weight: 500;
+  display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+  transition: color var(--uob-t) var(--uob-ease), background var(--uob-t) var(--uob-ease),
+              opacity var(--uob-t) var(--uob-ease);
+}
+.uob-back:hover { color: var(--vc-text); background: var(--uob-hover); }
+.uob-back svg { width: 15px; height: 15px; display: block; }
+.uob-back:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+/* Unsichtbar, aber am Platz: der Weiter-Knopf soll auf dem ersten Schritt nicht nach links
+   rutschen, nur weil links noch nichts steht. */
+.uob-back.is-hidden { opacity: 0; pointer-events: none; }
+/* Geometrie 1:1 .uau-primary. Nur die Breite ist anders: dort spannt der Knopf ueber das ganze
+   Formular, hier steht er neben Zurueck. */
+.uob-next {
+  height: 40px; min-width: 148px; padding: 0 20px;
+  border: 0; border-radius: 12px;
+  background: var(--vc-text); color: var(--vc-bg);
+  font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: -.01em;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15,17,21,.14);
+  display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+  transition: opacity var(--uob-t) var(--uob-ease), background var(--uob-t) var(--uob-ease);
+}
+.uob-next:hover:not(:disabled) { opacity: .9; }
+.uob-next:disabled { opacity: .55; cursor: default; }
+.uob-next svg { width: 15px; height: 15px; display: block; }
+.uob-next:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+/* Der Kreisel tritt neben die Beschriftung, er ersetzt sie nicht -- ein Knopf ohne Text wirkt
+   kaputt statt beschaeftigt. Wortgleich zu .uau-spin. */
+.uob-spin {
+  width: 15px; height: 15px; flex: 0 0 auto;
+  border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%;
+  animation: uob-spin 620ms linear infinite;
+  display: none;
+}
+.uob-next.is-busy .uob-spin { display: block; }
+/* Der Ueberspringen-Weg. Marken, Themen und Prompts sind alle freiwillig, und das muss man sehen
+   koennen, ohne es zu erraten -- sonst klickt jemand irgendetwas an, nur um weiterzukommen. */
+.uob-navr { display: flex; align-items: center; gap: 18px; }
+.uob-skip {
+  background: none; border: 0; padding: 0; font: inherit; font-size: 13px; font-weight: 500;
+  color: var(--vc-third); cursor: pointer; white-space: nowrap;
+  transition: color var(--uob-t) var(--uob-ease);
+}
+.uob-skip:hover { color: var(--vc-text); }
+
+/* ---------- Fehlerband ----------
+   Ueber dem Inhalt, nicht unter ihm: ein Fehler, der unter einer gescrollten Liste steht, ist
+   kein Fehler, den jemand sieht. */
+.uob-banner {
+  display: grid; grid-template-rows: 0fr; opacity: 0;
+  transition: grid-template-rows var(--uob-t) var(--uob-ease), opacity var(--uob-t) var(--uob-ease),
+              margin-bottom var(--uob-t) var(--uob-ease);
+  margin-bottom: 0;
+}
+.uob-banner > div { overflow: hidden; min-height: 0; }
+.uob-banner.is-on { grid-template-rows: 1fr; opacity: 1; margin-bottom: 16px; }
+.uob-banner-in {
+  padding: 10px 12px; border-radius: 10px;
+  border: 1px solid var(--vc-neg-border, rgba(200, 60, 60, .28));
+  background: var(--vc-neg-bg, rgba(200, 60, 60, .08));
+  font-size: 13px; line-height: 1.45; color: var(--vc-text);
+}
+
+/* ---------- Schrittwechsel ----------
+   Die Schritte liegen im selben Raster uebereinander, damit die Spalte beim Wechsel nicht
+   zusammenfaellt und wieder aufgeht. Der abgehende Schritt faellt in --uob-t weg, der
+   ankommende kommt mit dem Einzug. */
+.uob-stack { display: grid; }
+.uob-stack > * { grid-area: 1 / 1; }
+.uob-pane { transition: opacity var(--uob-t) var(--uob-ease), transform var(--uob-t) var(--uob-ease); }
+.uob-pane.is-off { opacity: 0; transform: translateY(6px); pointer-events: none; visibility: hidden; }
+
+/* ---------- Einzug ----------
+   Wortgleich zur Anmeldeseite: 18px Weg, 420ms, backwards als fill-mode, drei Stufen mit 130ms
+   Versatz. backwards ist der Punkt, an dem so etwas sonst kaputtgeht -- ohne ihn steht der Block
+   waehrend seiner Verzoegerung sichtbar da und springt erst dann auf opacity 0.
+   Die Klasse traegt der Root und faellt nach dem letzten Durchlauf wieder ab (siehe JS): die
+   spaeteren Zustaende haben ihre eigenen Uebergaenge, und eine Animation daneben liefe ihnen
+   ins Bild. */
+@keyframes uob-rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: none; }
+}
+.uob-root.is-entering .uob-rail,
+.uob-root.is-entering .uob-ident,
+.uob-root.is-entering .uob-head,
+.uob-root.is-entering .uob-body,
+.uob-root.is-entering .uob-nav {
+  animation: uob-rise var(--uob-in) var(--uob-ease) backwards;
+}
+.uob-root.is-entering .uob-rail                          { animation-delay: 0ms; }
+.uob-root.is-entering .uob-ident,
+.uob-root.is-entering .uob-head                          { animation-delay: 130ms; }
+.uob-root.is-entering .uob-body,
+.uob-root.is-entering .uob-nav                           { animation-delay: 260ms; }
+/* Beim SCHRITTWECHSEL laeuft derselbe Einzug, aber nur auf dem Inhalt und ohne Staffelung: die
+   Schiene und die Kopfzeile bleiben stehen, sie sind der ruhende Rahmen des Ablaufs. Kuerzer
+   als der Seiteneinzug, weil hier jemand auf eine Reaktion auf seinen Klick wartet. */
+.uob-pane.is-arriving .uob-head,
+.uob-pane.is-arriving .uob-body {
+  animation: uob-rise 300ms var(--uob-ease) backwards;
+}
+.uob-pane.is-arriving .uob-body { animation-delay: 60ms; }
+
+/* ---------- schmal ----------
+   Ein Telefon ist hier kein Sonderfall, den man wegblendet: das Onboarding muss dort ganz
+   durchlaufen. Also stapelt alles, die Liste bekommt mehr Hoehe (es gibt nichts daneben), und
+   die Knopfzeile dreht sich um. */
+.uob-root.is-narrow { padding: 14px 16px 18px; }
+.uob-root.is-narrow .uob-col,
+.uob-root.is-narrow .uob-nav { max-width: none; }
+.uob-root.is-narrow .uob-frow { grid-template-columns: 1fr; }
+.uob-root.is-narrow .uob-mid { justify-content: flex-start; padding-top: clamp(14px, 3vh, 26px); }
+.uob-root.is-narrow .uob-h1 { font-size: 22px; }
+.uob-root.is-narrow .uob-list { max-height: none; overflow: visible; }
+/* Auf dem Telefon darf die Seite scrollen -- das ist dort normal, und eine Liste mit eigenem
+   Scrollbereich in einer scrollenden Seite ist eine Falle. */
+.uob-root.is-narrow { min-height: 100vh; height: auto; }
+.uob-root.is-narrow .uob-plans { grid-template-columns: 1fr; }
+.uob-root.is-narrow .uob-nav { flex-direction: column-reverse; align-items: stretch; }
+.uob-root.is-narrow .uob-next { width: 100%; }
+.uob-root.is-narrow .uob-back { width: 100%; justify-content: center; }
+.uob-root.is-narrow .uob-back.is-hidden { display: none; }
+/* Gestapelt steht Weiter oben, Ueberspringen darunter -- in dieser Reihenfolge, weil
+   column-reverse die Kinder umdreht und der Hauptweg oben liegen soll. */
+.uob-root.is-narrow .uob-navr { flex-direction: column-reverse; align-items: stretch; gap: 12px; }
+.uob-root.is-narrow .uob-skip { padding: 6px 0; }
+/* Beschriftungen an der Schiene wuerden auf 360px zu sechs Buchstaben verstuemmelt. Statt sie
+   zu kuerzen: nur die aktuelle nennen, mit Zaehler. Das sagt dasselbe und passt. */
+.uob-root.is-narrow .uob-rail-labels { display: none; }
+.uob-root.is-narrow .uob-rail-now {
+  display: block; margin-top: 10px; text-align: center;
+  font-size: 12px; font-weight: 600; color: var(--vc-text);
+}
+.uob-rail-now { display: none; }
+.uob-rail-now span { font-weight: 500; color: var(--vc-third); }
+
+/* ---------- sehr schmal ---------- */
+.uob-root.is-vnarrow .uob-item { padding: 10px 12px; gap: 10px; }
+.uob-root.is-vnarrow .uob-load-logo { width: 48px; height: 48px; border-radius: 14px; }
+.uob-root.is-vnarrow .uob-load-logo img { width: 34px; height: 34px; }
+
+/* Wer Bewegung abgestellt hat, bekommt die Zustaende trotzdem -- nur ohne Weg dorthin. Ueber die
+   Variable, nicht mit !important auf transition-duration: alle Uebergaenge dieser Datei lesen
+   --uob-t, also genuegt EIN Wert. Kreisel und Spur haengen als einzige nicht daran. */
+@media (prefers-reduced-motion: reduce) {
+  .uob-root { --uob-t: 1ms; }
+  .uob-spin, .uob-phase-ring { animation: none; }
+  .uob-bar-fill { transition: none; }
+  .uob-root.is-entering *, .uob-pane.is-arriving * { animation: none; }
+}

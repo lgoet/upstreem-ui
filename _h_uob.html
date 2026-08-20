@@ -1,0 +1,93 @@
+<meta charset="utf-8"><title>onboarding</title>
+<style>
+  html, body { margin: 0; height: 100%; font-family: Geist, system-ui, sans-serif; }
+  body { background: #fff; }
+  html.dunkel body { background: #1b1b1b; }
+  #bar { position: fixed; right: 10px; bottom: 10px; z-index: 999; display: flex; gap: 6px; flex-wrap: wrap; max-width: 62vw; }
+  #bar button { font: 11px ui-monospace, monospace; padding: 5px 8px; border-radius: 7px;
+                border: 1px solid #bbb; background: #fff; cursor: pointer; }
+  #out { position: fixed; left: 10px; bottom: 10px; z-index: 999; font: 10px/1.4 ui-monospace, monospace;
+         background: #111; color: #eee; padding: 7px; max-width: 32vw; max-height: 34vh; overflow: auto;
+         white-space: pre-wrap; border-radius: 6px; }
+</style>
+<body>
+<div class="up-root uob-root" data-instance="onboarding" data-demo="yes" data-isdark="no"
+     data-logo="https://upstreem.com/logo.svg"></div>
+
+<div id="bar">
+  <button onclick="location.search='?step=brand'">brand</button>
+  <button onclick="location.search='?step=competitors'">competitors</button>
+  <button onclick="location.search='?step=topics'">topics</button>
+  <button onclick="location.search='?step=prompts'">prompts</button>
+  <button onclick="location.search='?step=plan'">plan</button>
+  <button onclick="resetOnboarding('onboarding')">reset</button>
+  <button onclick="setOnboardingError('onboarding','Something went wrong. Please try again.')">error</button>
+  <button onclick="thema()">dark/light</button>
+  <button onclick="document.querySelector('.uob-root').style.maxWidth = document.querySelector('.uob-root').style.maxWidth ? '' : '420px'">schmal</button>
+  <button onclick="mess().then(function(t){ out.textContent = t; })">MESSEN</button>
+</div>
+<pre id="out">laeuft</pre>
+
+<script>
+window.__fehler = []; window.__ev = [];
+window.addEventListener("error", function (e) { window.__fehler.push(String(e.message) + " @" + e.lineno); });
+["uobStart","uobStep","uobSelect","uobTopics","uobFinish","uobExit"].forEach(function (n) {
+  window["bubble_fn_" + n] = function (p) { window.__ev.push([n, p]); };
+});
+var DUNKEL = /dark=1/.test(location.search);
+if (DUNKEL) document.documentElement.classList.add("dunkel");
+try { localStorage.setItem("pref_theme", DUNKEL ? "dark" : "light"); } catch (e) {}
+function thema(){
+  var r = document.querySelector(".uob-root");
+  window.setUpstreemTheme(r.getAttribute("data-theme") === "dark" ? "light" : "dark");
+  document.documentElement.classList.toggle("dunkel", r.getAttribute("data-theme") !== "dark");
+}
+</script>
+
+<script src="_h_uob_demo.js"></script>
+<script>
+/* Frische beweisen statt hoffen: alles per fetch(no-store) inline, kein <link>/<script src>.
+   Ein ?v= hat in diesem Projekt mehrfach nicht gewirkt. */
+window.__GELADEN = Promise.all(["core.css", "onboarding-page.css", "core.js", "onboarding-page.js"]
+  .map(function (f) {
+    return fetch(f + "?n=" + Math.random(), { cache: "no-store" })
+      .then(function (r) { return r.text(); }).then(function (t) { return [f, t]; });
+  })).then(function (paare) {
+    window.__quellen = {};
+    paare.forEach(function (p) {
+      window.__quellen[p[0]] = p[1];
+      var e = document.createElement(/\.css$/.test(p[0]) ? "style" : "script");
+      e.textContent = p[1]; document.head.appendChild(e);
+    });
+    window.__bereit = true;
+  }).catch(function (e) { document.getElementById("out").textContent = "LADEFEHLER: " + e; });
+
+function box(sel){
+  var e = document.querySelector(sel); if (!e) return null;
+  var b = e.getBoundingClientRect();
+  return { b: Math.round(b.width), h: Math.round(b.height), oben: Math.round(b.top), links: Math.round(b.left) };
+}
+function mess(){
+  return new Promise(function (res) {
+    var r = document.querySelector(".uob-root");
+    var pane = r.querySelector(".uob-pane:not(.is-off)");
+    res(JSON.stringify({
+      fehler: window.__fehler,
+      ereignisse: window.__ev.slice(-6),
+      ansicht: r.getAttribute("data-view"),
+      klassen: r.className,
+      breite_var: getComputedStyle(r).getPropertyValue("--uob-w").trim(),
+      spalte: box(".uob-col"),
+      schiene_fuellung: (document.querySelector(".uob-rail-fill") || {}).style
+        ? document.querySelector(".uob-rail-fill").style.width : null,
+      punkte: [].map.call(r.querySelectorAll(".uob-dot"), function (d) {
+        return d.classList.contains("is-done") ? "done" : d.classList.contains("is-now") ? "now" : "-";
+      }),
+      pane: pane ? pane.getAttribute("data-pane") : null,
+      seite_scrollt: document.documentElement.scrollHeight > window.innerHeight + 1,
+      wurzel_hoehe: Math.round(r.getBoundingClientRect().height),
+      fenster: [window.innerWidth, window.innerHeight]
+    }, null, 1));
+  });
+}
+</script>

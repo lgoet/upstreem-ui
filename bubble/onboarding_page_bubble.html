@@ -1,0 +1,140 @@
+<!-- ==========================================================================================
+     upstreem — Onboarding: ein neues Team einrichten (Praefix `uob`)
+
+     Die GANZE Seite ist dieses eine HTML-Element. Es bringt Kopfzeile, Fortschrittsschiene,
+     alle Schritte und die Knopfzeile mit -- auf der Bubble-Seite gehoert nichts darum herum.
+     Setze das Element auf volle Breite und volle Hoehe, ohne eigenes Padding.
+
+     ── FRISCHE INSTALLATION ────────────────────────────────────────────────────────────────
+     Diese Datei ist eine VORLAGE. Aenderungen daran erreichen ein bereits eingebautes Element
+     NICHT -- dort muss dasselbe von Hand nachgezogen werden.
+
+     ── DER ABLAUF ──────────────────────────────────────────────────────────────────────────
+     Fuenf Stationen, dazwischen zwei Wartezustaende:
+
+       1 Brand        Stammdaten                       -> feuert uobStart
+         (warten)     vier Phasen, Statusanzeige       <- setOnboardingStatus / setOnboardingProject
+       2 Competitors  gefundene Marken, hoechstens 5   <- setOnboardingBrands
+       3 Topics       gefundene Themen                 <- setOnboardingTopics
+         (warten)     kurz, waehrend Prompts entstehen -> feuert uobTopics
+       4 Prompts      nach Themen gruppiert            <- setOnboardingPrompts
+       5 Plan         Tarif und Zeitraum               <- setOnboardingPlans, -> uobFinish
+
+     Marken, Themen und Prompts sind FREIWILLIG -- neben Weiter steht ein Ueberspringen-Weg.
+     Die Wartezustaende sind KEINE Stationen: sie stehen nicht in der Schiene und nicht in der
+     Adresse, weil man an eine Uhr nicht zurueckkehren kann.
+
+     ── ATTRIBUTE ───────────────────────────────────────────────────────────────────────────
+       data-instance   eindeutig pro Platzierung. Alle Setter sprechen ueber diese ID.
+       data-cdn-pin    Commit-Hash. NIEMALS leer lassen: leer zieht "@main", und das liefern
+                       jsDelivr und der Browser aus einem bis zu tagealten Cache.
+       data-isdark     "yes"/"no". Wird beobachtet, ein Umschalten braucht keinen Neuaufbau.
+                       Der Schalter oben rechts setzt das Thema ausserdem selbst, ueber
+                       setUpstreemTheme -- wie auf der Anmeldeseite.
+       data-logo       URL des upstreem-Schriftzugs, 18px hoch dargestellt. Fehlt sie, bleibt
+                       die Stelle leer statt ein kaputtes Bild zu zeigen.
+       data-logo-dark  Optional: eigener Schriftzug fuer den Dark Mode. Fehlt er, gilt data-logo
+                       auch dort.
+       data-demo       "yes" fuellt die Seite mit Beispieldaten und laesst die Uhren fest laufen
+                       (40s in vier Phasen, dann 10s). Fuer eine Testseite ohne Workflows.
+                       Dazu muss _h_uob_demo.js geladen sein. Im Betrieb WEGLASSEN.
+
+     ── EREIGNISSE ──────────────────────────────────────────────────────────────────────────
+       uobStart   Objekt: brand_name, website_input, website_url, website_domain, market,
+                  timezone, business_model, brand_industry.
+                  website_url ist normalisiert: immer https, Host immer OHNE www -- damit sie
+                  zu website_domain passt, das ueberall in der App der Schluessel ist.
+       uobStep    der Schluessel des Schritts als Text: brand | competitors | topics | prompts | plan
+       uobSelect  Objekt: kind ("brands"|"topics"|"prompts"), ids (Komma-getrennt), count
+       uobTopics  Objekt: topic_ids, count -- beim Verlassen von Schritt 3. DAS ist der Anstoss,
+                  aus dem die Prompts entstehen. Der Workflow dahinter muss am Ende
+                  setOnboardingPrompts rufen, sonst haengt die zweite Uhr.
+       uobFinish  Objekt: plan_id, billing_interval, brand_ids, topic_ids, prompt_ids
+       uobExit    Text: "dashboard" oder "logout"
+
+     ── SETTER ──────────────────────────────────────────────────────────────────────────────
+       setOnboardingProject("<instance>", <json>)   das Onboarding-Projekt (Objekt oder Liste
+                       mit einem Eintrag). status_phase 1..4 stellt die Phase, 5 heisst fertig
+                       und schaltet weiter.
+       setOnboardingStatus("<instance>", <json>)    nur der Statusschritt: {"status_phase": 2}
+       setOnboardingBrands("<instance>", <json>)    Liste: id, name, domain, url, favicon_url,
+                       selected
+       setOnboardingTopics("<instance>", <json>)    Liste: id, name, description, hex_light,
+                       hex_dark, selected
+       setOnboardingPrompts("<instance>", <json>)   Liste: id, prompt_text, market, topic_ids
+                       (Liste ODER Komma-Text), selected
+       setOnboardingPlans("<instance>", <json>)     Liste: id, name, monthly_price_eur,
+                       yearly_price_eur, prompts_per_day, competitors_max_active, trial_days,
+                       sort_order
+       setOnboardingStep("<instance>", "topics")    springt zu einer Station
+       setOnboardingError("<instance>", "<text>")   Band ueber dem Inhalt, beendet jede Uhr
+       setOnboardingLoading("<instance>", "yes")    Kreisel im Weiter-Knopf
+       resetOnboarding("<instance>")                alles leer, zurueck auf Schritt 1
+
+     Jeder Setter nimmt den JSON als TEXT oder als Objekt. Ein Payload, den core nicht lesen
+     kann, endet als benanntes Band im Bild -- nicht als endloses Warten.
+
+     ── SANITIZER (§46) ─────────────────────────────────────────────────────────────────────
+     Jeder Bubble-Ausdruck, der hier hineingeht, braucht BEIDE Zeilen:
+       .replace(/:\s*([,}\]])/g, ": null$1")
+       .replace(/:\s*(yes|no)\s*([,}\]])/g, function(_, v, t){ return ": " + (v === "yes") + t; })
+
+     ── ADRESSZEILE ─────────────────────────────────────────────────────────────────────────
+     Die Seite schreibt ?step=<key> in die Adresse und liest ihn beim Aufbau. Wer die Seite
+     verlaesst und Tage spaeter zurueckkommt, landet an derselben Station. Der Zurueck-Knopf
+     des Browsers funktioniert damit ebenfalls.
+     ========================================================================================== -->
+
+<div class="up-root uob-root"
+     data-instance="INSTANCE_ID"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="IS_DARK"
+     data-logo="LOGO_URL"
+     data-logo-dark="LOGO_DARK_URL"
+     data-start-fn="bubble_fn_uobStart"
+     data-step-fn="bubble_fn_uobStep"
+     data-select-fn="bubble_fn_uobSelect"
+     data-topics-fn="bubble_fn_uobTopics"
+     data-finish-fn="bubble_fn_uobFinish"
+     data-exit-fn="bubble_fn_uobExit"></div>
+
+<script>
+(function(){
+  /* Loader nach STYLEGUIDE 26: den Pin ueber getElementsByClassName lesen, NIEMALS ueber
+     document.currentScript — Bubble fuehrt Scripts nicht in DOM-Reihenfolge aus. */
+  function readPin(cls){
+    var els = document.getElementsByClassName(cls), i, p;
+    for (i = 0; i < els.length; i++){
+      /* trim: ein Leerzeichen aus der Bubble-Konstante ergaebe sonst .../upstreem-ui@ abc /core.js,
+         jsDelivr antwortet mit 404, und weder CSS noch JS landen. */
+      p = (els[i].getAttribute("data-cdn-pin") || "").trim();
+      if (p && p !== "CDN_" + "PIN") return p;
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("uob-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  /* Entdoppelt nach DATEINAME, nicht nach URL. Zwei Elemente mit verschiedenen data-cdn-pin
+     ergeben zwei URLs fuer dieselbe Datei -- vorher lud der Loader dann beide: core.js lief
+     zweimal, und core.css stand zweimal im Dokument, wobei die spaetere die fruehere ueberschrieb.
+     Wer gewinnt, entschied die Reihenfolge, in der Bubble die Elemente baut.
+     Der erste Pin gewinnt jetzt, und ein zweiter wird gemeldet -- sonst sucht man den Unterschied
+     zwischen zwei Seiten, auf denen dieselbe Version verschiedene Dinge tut. */
+  function once(url, make){
+    var name = url.slice(url.lastIndexOf("/") + 1);
+    if (L[name]){
+      if (L[name] !== url && window.console) console.warn("upstreem: " + name +
+        " ist schon von einem anderen Pin geladen. Geladen bleibt " + L[name] +
+        ", ignoriert wird " + url + ". Setzt alle Elemente auf denselben Pin.");
+      return;
+    }
+    L[name] = url; make(url);
+  }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+
+  /* core zuerst, async=false haelt die Reihenfolge ein. */
+  css("core.css");        js("core.js");
+  css("onboarding-page.css"); js("onboarding-page.js");
+})();
+</script>
