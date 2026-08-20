@@ -1,0 +1,16 @@
+<meta charset="utf-8"><title>auth: springt der Inhalt?</title>
+<style>html,body{margin:0;height:100%;font-family:Geist,system-ui,sans-serif}</style>
+<body>
+<div class="up-root uau-root" data-instance="a1" data-isdark="no" data-mode="signup"></div>
+<script>
+window.__fehler=[]; window.addEventListener("error",function(e){window.__fehler.push(String(e.message))});
+["uauName","uauPassword","uauSubmit","uauGoogle","uauMode","uauSide"].forEach(function(n){
+  window["bubble_fn_"+n]=function(){};
+});
+/* Frische beweisen statt hoffen: fetch(no-store) inline. */
+window.__GELADEN = Promise.all(["core.css","auth-page.css","core.js","auth-page.js"].map(function(f){
+  return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){return r.text()}).then(function(t){return [f,t]});
+})).then(function(p){ p.forEach(function(x){
+  var e=document.createElement(/\.css$/.test(x[0])?"style":"script"); e.textContent=x[1]; document.head.appendChild(e); });
+  window.__bereit=true; });
+</script>

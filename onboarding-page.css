@@ -105,7 +105,7 @@
      gesetzt und suchen sich sonst den naechsten positionierten Vorfahren -- gemessen wurden sie
      dann 792 Pixel hoch und lagen als unsichtbare Knopfschicht ueber der halben Seite. */
   position: relative;
-  flex: 0 0 auto; width: 100%; max-width: 620px; margin: clamp(18px, 3.2vh, 34px) auto 0;
+  flex: 0 0 auto; width: 100%; max-width: 820px; margin: clamp(18px, 3.2vh, 34px) auto 0;
   padding: 0 8px;
 }
 .uob-rail-line { position: relative; height: 2px; border-radius: 999px; background: var(--vc-sk); }
@@ -415,14 +415,25 @@
 .uob-list {
   margin-top: clamp(14px, 2.6vh, 22px);
   display: flex; flex-direction: column; gap: 8px;
+  /* Zwei Spalten sind hier die Vorgabe und nicht der Ausnahmefall: acht Marken untereinander
+     sind acht Bildschirmzeilen, und dann scrollt das Onboarding auf einem normalen Bildschirm.
+     Nebeneinander sind es vier. Die Spalte darunter ist entsprechend breiter (siehe --uob-w im
+     JS), sonst waeren zwei Spalten nur zwei schmale Spalten. */
   /* Die Liste scrollt IN SICH, die Seite nicht. Das ist die Bedingung dafuer, dass Kopf,
      Schiene und die Knopfzeile unten immer sichtbar bleiben -- sonst waere der Weiter-Knopf bei
      fuenfzehn Prompts unter dem Bildschirmrand. */
-  max-height: min(46vh, 460px); overflow-y: auto; overscroll-behavior: contain;
+  max-height: min(52vh, 520px); overflow-y: auto; overscroll-behavior: contain;
   /* Die duenne Bildlaufleiste aus core (.up-scroll, im Markup gesetzt) ist hier nicht nur
      Kosmetik, sondern die Auskunft "hier geht es weiter": ohne sie endet die Liste nach fuenf
      Zeilen mit einer sauberen Kante, und niemand ahnt die restlichen drei. */
   padding: 2px 2px 2px; margin-left: -2px; margin-right: -2px;
+}
+.uob-list.is-cols { display: grid; grid-template-columns: 1fr 1fr; align-content: start; }
+.uob-group-items.is-cols { display: grid; grid-template-columns: 1fr 1fr; }
+/* Eine Spalte, sobald zwei nur noch Stuempfe waeren. Der Wert ist am Inhalt kalibriert: unter
+   640px bleibt fuer Logo, Name und Domain nebeneinander kein lesbarer Rest. */
+@media (max-width: 700px) {
+  .uob-list.is-cols, .uob-group-items.is-cols { grid-template-columns: 1fr; }
 }
 .uob-item {
   display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
@@ -437,6 +448,9 @@
 /* Eine Zeile, die nicht mehr gewaehlt werden kann, weil das Limit erreicht ist. Sie bleibt
    lesbar und anklickbar-aussehend waere gelogen -- also Zeiger weg und gedaempft, aber nicht so
    blass, dass man den Namen nicht mehr liest. */
+/* Eine Themenzeile traegt nur noch Farbe und Name -- 56px waeren dafuer eine halbe Zeile Luft
+   zu viel, und bei sieben Themen entscheidet genau das darueber, ob die Liste scrollt. */
+.uob-item.is-slim { min-height: 44px; padding: 8px 14px; }
 .uob-item.is-blocked { opacity: .45; cursor: default; }
 .uob-item.is-blocked:hover { border-color: var(--vc-border); }
 /* Geometrie exakt .up-filter-check aus core, nur eine Stufe groesser (16 -> 18, Radius 5 -> 5.6,
@@ -468,16 +482,26 @@
 .uob-item-name { font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.3; }
 .uob-item-sub { font-size: 12px; color: var(--vc-third); line-height: 1.3;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Die Domain als eigenes Ziel: sie oeffnet die Seite. Nur so breit wie ihr Text, damit der
+   Rest der Zeile weiter die Auswahl umschaltet -- ein Ziel, das die ganze Breite einnimmt,
+   frisst den Klick auf die Zeile. */
+.uob-link-out { align-self: flex-start; max-width: 100%; cursor: pointer;
+  transition: color var(--uob-t) var(--uob-ease); }
+.uob-link-out:hover { color: var(--vc-text); text-decoration: underline; text-underline-offset: 2px; }
+.uob-link-out:focus-visible { outline: 0; border-radius: 4px;
+  box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 /* Prompts brechen um und werden NIE gekuerzt: ein halber Prompt ist keine Entscheidungsgrundlage.
    Deshalb hier kein nowrap und keine feste Zeilenzahl. */
-.uob-item.is-multiline { align-items: flex-start; }
-.uob-item.is-multiline .uob-check { margin-top: 1px; }
+/* Auch die mehrzeiligen Zeilen stehen senkrecht MITTIG. Oben angeschlagen sah eine Zeile mit
+   zwei Textzeilen aus, als haetten Haken und Flagge sich verlaufen. */
+.uob-item.is-multiline { align-items: center; }
 /* Der Marktchip ist .up-market aus core und wird hier nur POSITIONIERT, nicht umgestylt:
    flex: 0 0 auto, weil er in einer Flexzeile neben umbrechendem Text sonst zusammengedrueckt
    wird und der Prompt in die Flagge hineinlaeuft -- gemessen an einem zweizeiligen Prompt.
-   Die 2px oben stellen ihn auf die erste Textzeile statt in die Mitte des Blocks. */
+   Der Laendercode entfaellt: in einem Onboarding gibt es genau einen Markt, und ihn in jeder
+   Zeile auszuschreiben ist eine Wiederholung ohne Zugewinn. Die Flagge sagt es. */
 .uob-item .up-market { flex: 0 0 auto; }
-.uob-item.is-multiline .up-market { margin-top: 2px; }
+.uob-item .up-market-code { display: none; }
 .uob-item-long { font-size: 13.5px; line-height: 1.45; color: var(--vc-text); text-wrap: pretty; }
 
 /* Themen-Marke: der farbige Koerper eines Themas ohne Emoji, wie in der Aufgabe verlangt.
@@ -501,7 +525,6 @@
 }
 .uob-group-n { font-weight: 500; color: var(--vc-third); font-variant-numeric: tabular-nums; }
 .uob-group-items { display: flex; flex-direction: column; gap: 8px; }
-.uob-tags { display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; margin-left: 2px; }
 
 /* ---------- Ladezustand ----------
    Der Aufbau ist bewusst ruhig: Markenkachel, eine Zeile Text, eine Spur, die Liste der Phasen.
@@ -596,6 +619,26 @@
    Zehn Sekunden brauchen keine Gliederung, sie brauchen nur ein Zeichen, dass es weitergeht. */
 .uob-load.is-compact .uob-load-logo { width: 44px; height: 44px; border-radius: 13px; }
 .uob-load.is-compact .uob-load-logo img { width: 30px; height: 30px; border-radius: 8px; }
+
+/* Die gewaehlten Themen als Marken, waehrend die Prompts entstehen. Das ist WORTGLEICH die
+   Marke aus prompt-research (.upr-tl-tag) -- dieselben 24px Hoehe, Radius 8, 11.5px/500,
+   derselbe 6px-Punkt, dieselbe gestaffelte Einblendung. Sie steht hier ein zweites Mal, weil
+   prompt-research.css auf dieser Seite nicht geladen ist; wandert sie eines Tages nach core,
+   nehmen beide sie von dort. Der Zweck ist derselbe: das Warten zeigt, WOMIT gerade gearbeitet
+   wird, statt nur, DASS gearbeitet wird. */
+.uob-tl-tags {
+  display: flex; gap: 7px; flex-wrap: wrap; justify-content: center; align-items: flex-start;
+  width: 100%; margin-top: clamp(16px, 2.6vh, 22px); min-height: 24px;
+}
+.uob-tl-tag {
+  display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px;
+  border-radius: 8px; font-size: 11.5px; line-height: 1; font-weight: 500;
+  background: var(--vc-heading-bg); border: 1px solid var(--vc-border); color: var(--vc-muted);
+  white-space: nowrap; flex: 0 0 auto; opacity: 0; transform: translateY(5px);
+  transition: opacity .34s ease, transform .34s cubic-bezier(.2, .8, .3, 1);
+}
+.uob-tl-tag.is-on { opacity: 1; transform: none; }
+.uob-tl-dot { width: 6px; height: 6px; border-radius: 50%; flex: 0 0 auto; background: var(--vc-third); }
 
 /* ---------- Preiskarten ----------
    Drei Karten nebeneinander, die mittlere hervorgehoben. Die Hervorhebung ist ein Rahmen in
@@ -727,14 +770,27 @@
    Die Schritte liegen im selben Raster uebereinander, damit die Spalte beim Wechsel nicht
    zusammenfaellt und wieder aufgeht. Der abgehende Schritt faellt in --uob-t weg, der
    ankommende kommt mit dem Einzug. */
-.uob-stack { display: grid; }
+.uob-stack { display: grid; position: relative; }
 /* min-width: 0 ist hier kein Feinschliff, sondern die Bedingung dafuer, dass ueberhaupt etwas
    gekuerzt werden kann: ein Grid-Kind bekommt als Mindestbreite automatisch die Breite seines
    Inhalts. Ohne die Zeile wuchs der Bereich mit einem langen Markennamen ueber die Spalte
    hinaus, und jedes text-overflow darin lief ins Leere -- gemessen mit 62 Zeichen. */
 .uob-stack > * { grid-area: 1 / 1; min-width: 0; }
 .uob-pane { transition: opacity var(--uob-t) var(--uob-ease), transform var(--uob-t) var(--uob-ease); }
-.uob-pane.is-off { opacity: 0; transform: translateY(6px); pointer-events: none; visibility: hidden; }
+/* Der ABGEHENDE Bereich wird aus der Groessenrechnung genommen. Solange er als Grid-Kind
+   mitzaehlte, war die Zeile so hoch wie der HOEHERE der beiden -- und in dem Moment, in dem er
+   240ms spaeter entfernt wurde, sprang die Hoehe auf ihr richtiges Mass und der senkrecht
+   zentrierte Inhalt rutschte sichtbar nach. Genau das Nachrutschen kurz nach der Einblendung.
+   position: absolute nimmt ihn aus dem Fluss; er liegt weiter an derselben Stelle und verblasst
+   dort, aber die Hoehe der Spalte gehoert ab sofort dem ankommenden Bereich. */
+.uob-pane.is-off {
+  position: absolute; left: 0; right: 0; top: 0;
+  opacity: 0; transform: translateY(6px); pointer-events: none;
+}
+/* Die Hoehe der Karte selbst faehrt mit, statt zu springen: der Wechsel zwischen Monat und Jahr
+   klappt die Ersparnis-Zeile auf und zu, und ohne diese Zeile schnappt die Karte dabei. */
+.uob-plan { transition: border-color var(--uob-t) var(--uob-ease), background var(--uob-t) var(--uob-ease),
+            box-shadow var(--uob-t) var(--uob-ease); }
 
 /* ---------- Einzug ----------
    Wortgleich zur Anmeldeseite: 18px Weg, 420ms, backwards als fill-mode, drei Stufen mit 130ms

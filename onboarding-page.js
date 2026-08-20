@@ -362,6 +362,15 @@
     return d ? "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(d) + "&sz=64" : "";
   }
   function initial(s) { return txt(s).charAt(0).toUpperCase() || "?"; }
+  /* Eine fremde Adresse in einem neuen Tab. noopener,noreferrer wie ueberall im Haus: das neue
+     Fenster darf weder an window.opener noch an den Verweis auf die Herkunft. Ohne Schema wuerde
+     der Browser relativ zur Bubble-Seite aufloesen. */
+  function urlOeffnen(u) {
+    var wert = txt(u);
+    if (!wert) return;
+    if (!/^https?:\/\//i.test(wert)) wert = "https://" + wert;
+    try { window.open(wert, "_blank", "noopener,noreferrer"); } catch (e) {}
+  }
   /* Eine Markenkachel, dreimal in derselben Form gebraucht (Kopf, Listenzeile, Ladebild) und
      deshalb an EINER Stelle gebaut. Der Anfangsbuchstabe steht IMMER im Markup, das Bild liegt
      darueber und wird durch has-img sichtbar gemacht -- genau wie .up-ment-logo in core. Faellt
@@ -679,7 +688,18 @@
             (dom ? '<div class="uob-load-dom">' + esc(dom) + '</div>' : "") +
             '<div class="uob-bar"><div class="uob-bar-fill" data-bar></div></div>' +
             (kompakt
-              ? '<p class="uob-sub" style="margin-top:18px">Writing the first prompts for the topics you picked.</p>'
+              ? '<p class="uob-sub" style="margin-top:18px">Writing the first prompts for the topics you picked.</p>' +
+                /* Die gewaehlten Themen als Marken -- dieselbe Idee wie im Ladebild von
+                   prompt-research: das Warten zeigt, WOMIT gearbeitet wird. Hat der Nutzer
+                   nichts gewaehlt, bleibt die Zeile leer statt etwas zu behaupten. */
+                '<div class="uob-tl-tags" data-tltags>' +
+                  state.topics.filter(function (t) { return state.selTopics[t.id]; })
+                    .map(function (t) {
+                      return '<span class="uob-tl-tag">' +
+                        '<span class="uob-tl-dot" style="background:' + esc(farbeVon(t)) + '"></span>' +
+                        esc(t.name) + '</span>';
+                    }).join("") +
+                '</div>'
               : '<div class="uob-phases" data-phases>' +
                   PHASES.map(function (ph, i) {
                     return '<div class="uob-phase" data-phase="' + i + '">' +
@@ -708,7 +728,7 @@
              { text: n + "/" + BRAND_MAX, voll: n >= BRAND_MAX }) +
         '<div class="uob-body">' +
           (state.brands.length
-            ? '<div class="uob-list up-scroll" role="group" aria-label="Competitors">' +
+            ? '<div class="uob-list up-scroll is-cols" role="group" aria-label="Competitors">' +
                 state.brands.map(function (b) {
                   var an = !!state.selBrands[b.id];
                   var gesperrt = !an && n >= BRAND_MAX;
@@ -719,7 +739,14 @@
                     kachel("uob-item-logo", b.name, b.domain, b.favicon_url) +
                     '<span class="uob-item-txt">' +
                       '<span class="uob-item-name">' + esc(b.name) + '</span>' +
-                      '<span class="uob-item-sub">' + esc(b.domain) + '</span>' +
+                      /* Die Domain ist ein eigenes Ziel und oeffnet die Seite. Wer eine fremde
+                         Marke nicht kennt, will sie ansehen koennen, bevor er sie als
+                         Wettbewerber setzt -- und dafuer soll er das Onboarding nicht
+                         verlassen muessen. Der Klick darf deshalb nicht bis zur Zeile
+                         durchlaufen, sonst haekelt er nebenbei die Auswahl an. */
+                      '<span class="uob-item-sub uob-link-out" role="link" tabindex="0"' +
+                        ' data-open="' + esc(txt(b.url) || ("https://" + txt(b.domain))) + '"' +
+                        ' data-tip="Open ' + esc(b.domain) + '">' + esc(b.domain) + '</span>' +
                     '</span>' +
                   '</button>';
                 }).join("") +
@@ -741,14 +768,16 @@
             ? '<div class="uob-list up-scroll" role="group" aria-label="Topics">' +
                 state.topics.map(function (t) {
                   var an = !!state.selTopics[t.id];
-                  return '<button class="uob-item' + (an ? " is-on" : "") + '" type="button" role="checkbox"' +
+                  return '<button class="uob-item is-slim' + (an ? " is-on" : "") + '" type="button" role="checkbox"' +
                            ' aria-checked="' + (an ? "true" : "false") + '"' +
                            ' data-pick="topics" data-id="' + esc(t.id) + '">' +
                     '<span class="uob-check">' + ic("check", 3) + '</span>' +
-                    '<span class="uob-swatch is-lg" style="--uob-sw:' + esc(farbeVon(t)) + '"></span>' +
+                    /* Nur Farbe und Name. Die Beschreibung stand als zweite Zeile darunter und
+                       machte aus einer Auswahlliste eine Leseaufgabe -- an dieser Stelle des
+                       Ablaufs entscheidet niemand anhand eines Halbsatzes. */
+                    '<span class="uob-swatch" style="--uob-sw:' + esc(farbeVon(t)) + '"></span>' +
                     '<span class="uob-item-txt">' +
                       '<span class="uob-item-name">' + esc(t.name) + '</span>' +
-                      (txt(t.description) ? '<span class="uob-item-sub">' + esc(t.description) + '</span>' : "") +
                     '</span>' +
                   '</button>';
                 }).join("") +
@@ -791,8 +820,6 @@
     function viewPrompts() {
       var n = anzahl(state.selPrompts);
       var gruppen = promptGruppen();
-      var byId = {};
-      for (var i = 0; i < state.topics.length; i++) byId[state.topics[i].id] = state.topics[i];
       return '<div class="uob-pane" data-pane="prompts">' +
         kopf("Prompts",
              "These are the questions we will ask the models for you. Keep the ones that matter.",
@@ -807,7 +834,7 @@
                       '<span>' + esc(g.name) + '</span>' +
                       '<span class="uob-group-n">' + g.items.length + '</span>' +
                     '</div>' +
-                    '<div class="uob-group-items">' +
+                    '<div class="uob-group-items is-cols">' +
                       g.items.map(function (it) {
                         var an = !!state.selPrompts[it.p.id];
                         return '<button class="uob-item is-multiline' + (an ? " is-on" : "") + '" type="button"' +
@@ -818,12 +845,6 @@
                           '<span class="uob-item-txt">' +
                             '<span class="uob-item-long">' + esc(it.p.prompt_text) + '</span>' +
                           '</span>' +
-                          (it.weitere.length
-                            ? '<span class="uob-tags">' + it.weitere.map(function (tid) {
-                                return '<span class="uob-swatch" style="--uob-sw:' + esc(farbeVon(byId[tid])) + '"' +
-                                       ' data-tip="' + esc(byId[tid].name) + '"></span>';
-                              }).join("") + '</span>'
-                            : "") +
                         '</button>';
                       }).join("") +
                     '</div>' +
@@ -874,7 +895,12 @@
                     (spar ? "Save " + spar + "% billed yearly" : "") + '</span></span>' +
                   '<span class="uob-plan-feats">' +
                     feat("<b>" + esc(String(pl.prompts_per_day)) + "</b> prompts per day") +
+                    feat("<b>~" + esc(zahl(antworten(pl))) + "</b> AI responses per month") +
                     feat("<b>" + esc(String(pl.competitors_max_active)) + "</b> tracked competitors") +
+                    feat("Choose the <b>LLM models</b> to track") +
+                    feat("<b>Unlimited</b> seats") +
+                    feat("<b>Every</b> location and language") +
+                    feat(hilfe(pl)) +
                     feat(tage ? "<b>" + tage + " days</b> free, cancel anytime" : "Cancel anytime") +
                   '</span>' +
                 '</button>';
@@ -883,7 +909,92 @@
         '</div>' +
       '</div>';
     }
+    /* Der Wechsel zwischen Monat und Jahr, ohne das Markup anzufassen: Schalter umstellen, die
+       Ersparnis-Zeile auf- oder zuklappen (die traegt ihren Uebergang selbst und schiebt die
+       Kartenhoehe damit weich mit), und die Betraege von der alten Zahl auf die neue zaehlen.
+       Ein Preis, der einfach umspringt, liest sich wie ein anderer Preis -- ein zaehlender sagt,
+       dass es DERSELBE Tarif zu anderen Bedingungen ist. */
+    function intervalZeichnen() {
+      var jaehrlich = state.interval === "yearly";
+      var sw = root.querySelectorAll("[data-interval]");
+      for (var i = 0; i < sw.length; i++) {
+        var an = sw[i].getAttribute("data-interval") === state.interval;
+        sw[i].classList.toggle("is-active", an);
+        sw[i].setAttribute("aria-selected", an ? "true" : "false");
+      }
+      var karten = root.querySelectorAll(".uob-plan");
+      for (var k = 0; k < karten.length; k++) {
+        var pl = state.plans[k]; if (!pl) continue;
+        var mon = num(pl.monthly_price_eur), jah = num(pl.yearly_price_eur);
+        var ziel = jaehrlich && jah != null ? jah / 12 : mon;
+        var betrag = karten[k].querySelector(".uob-plan-amt");
+        if (betrag) zaehle(betrag, ziel);
+        var notiz = karten[k].querySelector(".uob-plan-note");
+        if (notiz) notiz.classList.toggle("is-on", jaehrlich && !!notiz.textContent.trim());
+      }
+    }
+    /* Von der Zahl, die dasteht, auf die neue. Die Ausgangszahl wird aus dem Text gelesen und
+       nicht mitgefuehrt: so stimmt sie auch dann, wenn mitten im Zaehlen erneut umgeschaltet
+       wird. 380ms mit weichem Ausklang -- laenger als ein Zustandswechsel, weil hier eine Zahl
+       gelesen werden soll, waehrend sie laeuft. */
+    function zaehle(el, ziel) {
+      if (ziel == null) { el.textContent = geld(null); return; }
+      var von = num(String(el.textContent).replace(/[^0-9.,-]/g, ""));
+      if (von == null || von === Math.round(ziel)) { el.textContent = geld(ziel); return; }
+      if (el.__uobLauf) { window.cancelAnimationFrame(el.__uobLauf); el.__uobLauf = 0; }
+      if (el.__uobEnde) { window.clearTimeout(el.__uobEnde); el.__uobEnde = 0; }
+      var start = 0, DAUER = 380;
+      function fertig() {
+        if (el.__uobLauf) { window.cancelAnimationFrame(el.__uobLauf); el.__uobLauf = 0; }
+        el.__uobEnde = 0;
+        el.textContent = geld(ziel);
+      }
+      /* Die SICHERUNG steht vor der Animation, nicht dahinter: requestAnimationFrame ist in
+         einem verdeckten Tab angehalten. Ohne diese Uhr bliebe dort der ALTE Preis stehen --
+         ein Zaehler, der nicht laeuft, waere Schoenheitsfehler, ein falscher Preis nicht.
+         Der Zeitgeber wird gedrosselt, aber nicht gestoppt. */
+      el.__uobEnde = window.setTimeout(fertig, DAUER + 80);
+      if (!window.requestAnimationFrame) { fertig(); return; }
+      function schritt(t) {
+        if (!start) start = t;
+        var p = Math.min(1, (t - start) / DAUER);
+        var e = 1 - Math.pow(1 - p, 3);
+        el.textContent = geld(von + (ziel - von) * e);
+        if (p < 1) el.__uobLauf = window.requestAnimationFrame(schritt);
+        else fertig();
+      }
+      el.__uobLauf = window.requestAnimationFrame(schritt);
+    }
+
     function feat(html) { return '<span class="uob-plan-feat">' + ic("check", 2.6) + '<span>' + html + '</span></span>'; }
+    /* Die Zahl der Antworten je Monat. Liefert der Tarif sie selbst mit, gilt seine -- sonst
+       gerechnet aus Prompts je Tag mal dreissig. Gerechnet und nicht getippt, damit sie beim
+       naechsten Preisblatt nicht als einzige stehenbleibt.
+       ACHTUNG: die Rechnung nimmt EIN Modell je Prompt an. Werden mehrere Modelle je Prompt
+       abgefragt, ist die echte Zahl ein Vielfaches davon -- dann gehoert ai_responses_per_month
+       in den Payload, und diese Zeile ruehrt sich nicht mehr. */
+    function antworten(pl) {
+      var eigen = num(pl.ai_responses_per_month);
+      if (eigen != null) return eigen;
+      var proTag = num(pl.prompts_per_day);
+      return proTag == null ? null : proTag * 30;
+    }
+    function zahl(v) {
+      if (v == null) return "–";
+      /* Tausenderpunkte, aber ohne Gebietsschema: die Seite ist englisch, also Kommas. */
+      return String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+    /* Der Support waechst mit dem Tarif. Er steht NICHT in den Daten -- solange das so ist,
+       haengt er an der Position, und das ist eine Annahme: pruefen und gegebenenfalls ein Feld
+       support_level in den Payload aufnehmen. */
+    function hilfe(pl) {
+      var eigen = txt(pl.support_level);
+      if (eigen) return "<b>" + esc(eigen) + "</b> support";
+      var i = state.plans.indexOf(pl);
+      if (i <= 0) return "<b>Email</b> support";
+      if (i === 1) return "<b>Priority</b> support";
+      return "<b>Dedicated</b> support";
+    }
     function geld(v) {
       if (v == null) return "–";
       /* Ganze Euro, wenn es aufgeht -- "89 €" liest sich schneller als "89,00 €", und bei der
@@ -927,8 +1038,8 @@
 
     /* Die Spaltenbreite je Ansicht. Ein Formular liest sich schmal besser, Listen brauchen mehr,
        drei Preiskarten am meisten. */
-    var BREITE = { brand: "480px", load1: "480px", load2: "480px",
-                   competitors: "560px", topics: "560px", prompts: "660px", plan: "900px" };
+    var BREITE = { brand: "480px", load1: "480px", load2: "560px",
+                   competitors: "880px", topics: "620px", prompts: "880px", plan: "940px" };
 
     function render(neuEingezogen) {
       var k = ansichtKey();
@@ -978,6 +1089,7 @@
         zeigeFeldfehler();
       }
       if (k === "load1" || k === "load2") renderPhasen();
+      if (k === "load2") tlTagsEinblenden();
       if (UC.makeTooltips) UC.makeTooltips(root, function () { return isDark; });
     }
 
@@ -1167,6 +1279,17 @@
     function renderBanner() {
       elBanner.classList.toggle("is-on", !!state.banner);
       if (state.banner) elBannerT.textContent = state.banner;
+    }
+
+    /* Gestaffelt einblenden, 120ms Vorlauf und 140ms je Marke -- dieselben Zahlen wie in
+       prompt-research. Nacheinander statt gleichzeitig, damit es aussieht, als wuerde gerade
+       eines nach dem anderen aufgegriffen. */
+    function tlTagsEinblenden() {
+      var host = root.querySelector("[data-tltags]");
+      if (!host) return;
+      [].forEach.call(host.children, function (el, i) {
+        window.setTimeout(function () { el.classList.add("is-on"); }, 120 + i * 140);
+      });
     }
 
     function renderPhasen() {
@@ -1375,6 +1498,13 @@
       }
       if (!e.target.closest(".uob-ddwrap")) ddSchliessen(null);
 
+      var auf = e.target.closest("[data-open]");
+      if (auf) {
+        e.stopPropagation();
+        urlOeffnen(auf.getAttribute("data-open"));
+        return;
+      }
+
       var pick = e.target.closest("[data-pick]");
       if (pick) {
         if (pick.getAttribute("aria-disabled") === "true") return;
@@ -1399,7 +1529,15 @@
       }
 
       var iv = e.target.closest("[data-interval]");
-      if (iv) { state.interval = iv.getAttribute("data-interval"); render(true); return; }
+      if (iv) {
+        var neuIv = iv.getAttribute("data-interval");
+        if (neuIv === state.interval) return;
+        state.interval = neuIv;
+        /* NICHT neu zeichnen. Ein Neuaufbau setzt die Preise hart um und laesst die Karten
+           springen; hier soll der Preis zaehlen und die Karte ihre Hoehe mitnehmen. */
+        intervalZeichnen();
+        return;
+      }
 
       var pl = e.target.closest("[data-plan]");
       if (pl) { state.plan = pl.getAttribute("data-plan"); render(true); return; }
