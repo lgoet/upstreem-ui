@@ -1,0 +1,58 @@
+<meta charset="utf-8"><title>combo chart: Farbschema</title>
+<style>html,body{margin:0;font-family:system-ui,sans-serif;background:#fff}
+#log{position:fixed;left:0;bottom:0;width:100%;max-height:18%;overflow:auto;font:10px/1.4 ui-monospace,monospace;background:#f6f6f6;border-top:1px solid #ddd;margin:0;padding:6px;white-space:pre-wrap}
+#buehne{padding:20px 20px 22%; min-width:1100px}
+html.dunkel body{background:#121212}</style>
+<body>
+<pre id="log">laeuft</pre>
+<div id="buehne"></div>
+<script>
+window.__fehler=[]; window.addEventListener("error",function(e){window.__fehler.push(String(e.message)+" @"+e.lineno)});
+function log(s){ var l=document.getElementById("log"); l.textContent += "\n"+s; }
+window.bubble_fn_comboGranularity = function(g){ log("gran " + g); };
+var DUNKEL = /dark=1/.test(location.search);
+if (DUNKEL) document.documentElement.classList.add("dunkel");
+try{ localStorage.setItem("pref_theme", DUNKEL ? "dark" : "light"); }catch(e){}
+/* Diese Fassung loescht das Farbschema NICHT: hier wird gerade gemessen, ob eine ausdrueckliche
+   Wahl die Vorgabe schlaegt. ?farbe=type|brand|weg setzt den Zustand vor dem Laden der Komponente. */
+try{
+  var f = (location.search.match(/farbe=(\w+)/)||[])[1];
+  if (f === "weg") localStorage.removeItem("cc_line_colors__cc1");
+  else if (f) localStorage.setItem("cc_line_colors__cc1", f);
+}catch(e){}
+
+/* Das Markup ist das aus bubble/citations_combo_chart_bubble.html, unveraendert geholt --
+   ein selbst getipptes waere ein anderes Element als das echte. */
+var GELADEN = fetch("_h_cc_markup.html", {cache:"no-store"}).then(function(r){ return r.text(); })
+  .then(function(t){
+    document.getElementById("buehne").innerHTML = t.replace(/INSTANCE_ID/g, "cc1")
+      .replace(/IS_DARK/g, DUNKEL ? "yes" : "no").replace(/IS_PROCESSING_2|IS_PROCESSING/g, "no")
+      .replace(/CDN_PIN/g, "");
+    return Promise.all(["core.css","citations-combo-chart.css","core.js","citations-combo-chart.js"].map(function(f){
+      return fetch(f, {cache:"no-store"}).then(function(r){ return r.text(); }).then(function(x){
+        var e=document.createElement(/\.css$/.test(f)?"style":"script"); e.textContent=x; document.head.appendChild(e); return f; });
+    }));
+  });
+
+/* Domains mit und ohne Hausfarbe in der Tabelle, dazu eine mit brand_hex aus dem Payload. */
+var DOMAINS = [
+  { domain:"youtube.com",        citation_type:"UGC_Community", favicon:"", global_share:24.5 },
+  { domain:"adac.de",            citation_type:"Editorial",     favicon:"", global_share:18.2 },
+  { domain:"spiegel.de",         citation_type:"Editorial",     favicon:"", global_share:12.1 },
+  { domain:"unbekannt-xyz.de",   citation_type:"Editorial",     favicon:"", global_share:9.4 },
+  { domain:"noch-eine-fremde.de",citation_type:"Editorial",     favicon:"", global_share:7.8 },
+  { domain:"eigenfarbe.de",      citation_type:"UGC_Community", favicon:"", global_share:5.2, brand_hex:"#00b3a4" },
+  { domain:"www.reddit.com",     citation_type:"UGC_Community", favicon:"", global_share:3.9 }
+];
+var TAGE = ["2026-08-12","2026-08-13","2026-08-14","2026-08-15","2026-08-16","2026-08-17","2026-08-18"];
+var SERIES = [];
+DOMAINS.forEach(function(d,i){ TAGE.forEach(function(t,j){
+  SERIES.push({ domain: d.domain, day: t, share_pct: d.global_share + Math.sin(i + j) * 2 }); }); });
+var TYPSPLIT = [{type:"UGC_Community", share_pct:41.2},{type:"Editorial", share_pct:58.8}];
+
+GELADEN.then(function(){ setTimeout(function(){
+  window.renderComboChart({ instanceId:"cc1", isDark: DUNKEL ? "yes":"no", dataMode:"domain",
+    chartMode:"doughnut", total:622, typeSplit:TYPSPLIT, series:SERIES, domains:DOMAINS, granularity:"day" });
+  setTimeout(function(){ window.__bereit = true; log("gerendert"); }, 700);
+}, 250); });
+</script>

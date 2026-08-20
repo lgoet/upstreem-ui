@@ -55,8 +55,23 @@
     { key: "list", label: "List", icon: "listIcon" }
   ];
   /* Die Ansicht ueberlebt das Neueinspritzen des Markups durch Bubble -- sonst springt sie beim
-     ersten Datenwechsel zurueck auf Grid. */
+     ersten Datenwechsel zurueck auf Grid. Der Speicher im Fenster ist nur der schnelle Weg;
+     darunter liegt localStorage, damit die Wahl auch das Neuladen der Seite ueberlebt. Ohne den
+     stand nach jedem Reload wieder Grid da, egal was der Nutzer eingestellt hatte. */
   var VIEW_STORE = (window.__urdView = window.__urdView || {});
+  var VIEW_KEY = "urdView__";
+  function viewLesen(id) {
+    if (VIEW_STORE[id]) return VIEW_STORE[id];
+    var v = null;
+    try { v = UC.prefGet ? UC.prefGet(UC.prefKey ? UC.prefKey(VIEW_KEY + id) : VIEW_KEY + id) : null; }
+    catch (e) {}
+    return (v === "grid" || v === "list") ? v : null;
+  }
+  function viewSchreiben(id, k) {
+    VIEW_STORE[id] = k;
+    try { if (UC.prefSet) UC.prefSet(UC.prefKey ? UC.prefKey(VIEW_KEY + id) : VIEW_KEY + id, k); }
+    catch (e) {}
+  }
 
   function isArr(v) { return Object.prototype.toString.call(v) === "[object Array]"; }
 
@@ -219,7 +234,7 @@
     /* Der Marken-Filter ist Ansichtssache und gilt nur fuer diese Antwort -- er wird NICHT
        gespeichert. Wer eine Antwort oeffnet, will erst alle Quellen sehen. */
     var state = {
-      view: VIEW_STORE[instanceId] || "grid",
+      view: viewLesen(instanceId) || "grid",
       brandFilter: "",
       hl: hlLesen(),
       /* loading startet auf true: die Komponente steht auf der Seite, bevor der Pageload-Workflow
@@ -310,7 +325,8 @@
       var d = glist.__daten[parseInt(b.getAttribute("data-gi"), 10)];
       glistSchliessen();
       if (!d) return;
-      var wert = String(d.id || "").trim() || d.url;
+      /* Dieselbe Regel wie beim einzelnen Chip: die exakte Adresse, nicht die id. */
+      var wert = String(d.url || "");
       if (wert) fire("data-url-fn", "urdUrl", wert);
     });
     window.addEventListener("scroll", glistSchliessen, true);
@@ -672,14 +688,15 @@
       return (isArr(c && c.mentions) ? c.mentions : []).some(function (m) { return m && m.role === "own"; });
     }
 
-    /* Der Wert, den ein Klick auf eine Quelle nach Bubble traegt: die id, wenn die RPC eine
-       mitschickt -- sonst die URL. In allen drei Beispiel-Payloads hat citations KEIN Feld id,
-       also waere der Klick sonst wirkungslos. Die URL ist der einzige Schluessel, der in den
-       Daten wirklich vorkommt, und sie ist eindeutig: Bubble findet damit dieselbe Zeile.
-       Sobald die RPC eine id liefert, gewinnt sie automatisch. */
+    /* Der Wert, den ein Klick auf eine Quelle nach Bubble traegt: die URL, unveraendert wie sie
+       in den Daten steht. Sie ist der Primaerschluessel -- eine eigene id fuer eine URL gibt es
+       nicht, und citations fuehrt auch kein Feld id.
+       Hier stand vorher c.id mit Vorrang. Das war als Vorsorge gemeint fuer den Tag, an dem die
+       RPC eine id liefert, war aber eine Falle: taucht dort irgendwann ein Feld id auf, das
+       etwas anderes bezeichnet als die URL, feuert die Komponente still den falschen Schluessel
+       und niemand sieht warum. Ein Schluessel, kein Vielleicht. */
     function quellWert(c) {
-      var id = String((c && c.id) || "").trim();
-      return id || String((c && c.url) || "");
+      return String((c && c.url) || "");
     }
 
     function renderCites() {
@@ -826,7 +843,7 @@
       if (v && elSeg.contains(v)) {
         var k = v.getAttribute("data-view");
         if (k === state.view) return;
-        state.view = k; VIEW_STORE[instanceId] = k;
+        state.view = k; viewSchreiben(instanceId, k);
         syncSeg();
         /* Die Spaltenzahl haengt an der Kachelmenge und muss nach dem Umschalten neu stehen:
            im Listenmodus ist das Raster verborgen und meldet Breite 0. */
@@ -842,8 +859,11 @@
          Wahl war keine: die Detailseite kann alles, was das externe Fenster kann. */
       var chip = e.target.closest(".up-rb-cite");
       if (chip && elBody.contains(chip)) {
-        var wert = (chip.getAttribute("data-rb-id") || "").trim() ||
-                   (chip.getAttribute("data-rb-cite") || "");
+        /* Die URL IST der Schluessel in Bubble -- eine eigene id dafuer gibt es nicht, und die
+           Zitationen der RPC fuehren auch kein Feld id. Also die unveraenderte Adresse aus
+           data-rb-url. Vorher stand hier data-rb-cite als Rueckfall: die bereinigte Form, der
+           utm-Parameter und die Raute fehlen. Damit fand Bubble die Zeile nicht wieder. */
+        var wert = chip.getAttribute("data-rb-url") || chip.getAttribute("data-rb-cite") || "";
         if (wert) fire("data-url-fn", "urdUrl", wert);
         return;
       }
@@ -974,7 +994,9 @@
       },
       reset: function () {
         state.data = null; state.hasData = false; state.error = null; state.loading = false;
-        state.view = "grid"; VIEW_STORE[instanceId] = "grid";
+        /* Die Ansicht bleibt, wie der Nutzer sie gestellt hat -- sie ist eine Einstellung, keine
+           Daten. Sie hier auf Grid zu zwingen hiesse, sie bei jedem Reset zu ueberschreiben und
+           die Speicherung damit wieder aufzuheben. */
         state.brandFilter = "";
         warteBeenden();
         glistSchliessen();

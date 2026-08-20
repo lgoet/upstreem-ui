@@ -238,13 +238,15 @@
     try { savedMode = UC.prefGet ? UC.prefGet(UC.prefKey("cc_chart_mode__" + instanceId))
                                  : window.localStorage.getItem("cc_chart_mode__" + instanceId); } catch(e){}
     var startMode = (savedMode === "bar" || savedMode === "doughnut") ? savedMode : "doughnut";
-    /* Das Farbschema der Linien. "type" ist die Vorgabe und war bisher der einzige Zustand: die
-       Familienfarbe des Zitationstyps mit einer Helligkeitsstaffel innerhalb der Familie. "brand"
-       nimmt die Hausfarbe der Domain. */
+    /* Das Farbschema der Linien. "brand" ist jetzt die Vorgabe: die Hausfarbe der Domain
+       unterscheidet zwei Linien auf einen Blick, waehrend "type" innerhalb einer Familie nur
+       ueber die Helligkeit staffelt -- bei drei Domains desselben Typs liegen die Toene dann
+       dicht beieinander. "type" bleibt waehlbar und gewinnt, wenn es ausdruecklich gespeichert
+       ist; nur wer noch nie gewaehlt hat, bekommt die neue Vorgabe. */
     var FARB_KEY = "cc_line_colors__";
     var savedFarb = null;
     try { savedFarb = UC.prefGet ? UC.prefGet(UC.prefKey(FARB_KEY + instanceId)) : null; } catch(e){}
-    var startFarb = savedFarb === "brand" ? "brand" : "type";
+    var startFarb = savedFarb === "type" ? "type" : "brand";
 
     var isDark = isYes(root.getAttribute("data-isdark"));
     if (isDark){ root.setAttribute("data-theme","dark"); donutRoot.setAttribute("data-theme","dark"); } else { root.removeAttribute("data-theme"); donutRoot.removeAttribute("data-theme"); }

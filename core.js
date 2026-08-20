@@ -898,9 +898,26 @@
     return idx[k] || idx[k.replace(/^https?:\/\//, "").replace(/^www\./, "")] || null;
   }
 
+  /* Die Gegenrichtung zu esc(). An dieser Stelle der Kette ist der Antworttext schon HTML, ein
+     "&" in der Adresse steht also als "&amp;". Ohne diese Umkehr traegt der Chip eine Adresse,
+     die es in der Datenbank so nie gab -- und der Abgleich mit der Zitationsliste scheitert
+     genau bei den Adressen mit Parametern. Nur die vier Entitaeten, die esc() erzeugt, und
+     "&amp;" zuletzt, damit aus "&amp;lt;" nicht faelschlich "<" wird. */
+  function rbUnesc(s){
+    return String(s == null ? "" : s)
+      .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"')
+      .replace(/&amp;/g, "&");
+  }
+
   var RB_CITE_MAX = 30;
   function rbChip(url, idx){
-    var clean = rbCleanUrl(String(url).replace(/\\([()])/g, "$1"));
+    /* roh = nur die Markdown-Maskierung zurueckgenommen, sonst NICHTS. Dieser Wert geht als
+       Schluessel nach Bubble, und dort ist die URL selbst der Primaerschluessel -- eine eigene
+       id gibt es nicht. rbCleanUrl waere dafuer falsch: es wirft utm-Parameter und die Raute weg
+       und schickt alles durch new URL(), was Host kleinschreibt und Zeichen umkodiert. Zum
+       Abgleichen und Anzeigen ist das richtig, als Schluessel nicht. */
+    var roh = rbUnesc(String(url).replace(/\\([()])/g, "$1"));
+    var clean = rbCleanUrl(roh);
     var karte = rbLookup(idx, clean);
     var voll = rbShowUrl(clean);
     var kurz = voll.length > RB_CITE_MAX ? voll.slice(0, RB_CITE_MAX) + "..." : voll;
@@ -909,6 +926,11 @@
        externem Fenster. Ein <a href> wuerde beim ersten Klick schon navigieren. */
     return '<span class="up-rb-cite" role="button" tabindex="0"' +
              ' data-rb-cite="' + esc(clean) + '"' +
+             /* Die Adresse Zeichen fuer Zeichen wie in den Daten: aus der Zitationsliste, wenn
+                der Chip dort eine Karte hat -- das IST die Zeile aus der Datenbank -- sonst so,
+                wie sie im Antworttext steht. data-rb-cite bleibt daneben stehen, es traegt die
+                bereinigte Form fuer Abgleich und Gruppierung. */
+             ' data-rb-url="' + esc(karte && karte.url ? String(karte.url) : roh) + '"' +
              ' data-rb-id="' + esc(karte && karte.id ? karte.id : "") + '"' +
              ' data-tip="' + esc(karte && karte.title ? karte.title : voll) + '">' +
              (fav ? '<img class="up-rb-cite-fav" src="' + esc(fav) + '" alt="" loading="lazy"' +
@@ -1267,7 +1289,9 @@
       if (reihe.length >= 2){
         var daten = reihe.map(function (c) {
           var img = c.querySelector(".up-rb-cite-fav");
-          return { url: c.getAttribute("data-rb-cite") || "",
+          /* url ist die EXAKTE Adresse (data-rb-url), nicht die bereinigte: aus dieser Liste
+             heraus wird geklickt, und der Klick traegt den Schluessel nach Bubble. */
+          return { url: c.getAttribute("data-rb-url") || c.getAttribute("data-rb-cite") || "",
                    id: c.getAttribute("data-rb-id") || "",
                    title: c.getAttribute("data-tip") || "",
                    fav: img ? img.getAttribute("src") : "" };
