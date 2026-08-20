@@ -110,38 +110,66 @@
   background: var(--vc-text); width: 0;
   transition: width var(--uob-t) var(--uob-ease);
 }
-.uob-rail-dots { position: absolute; inset: 0; display: flex; justify-content: space-between; }
+.uob-rail-dots { position: absolute; inset: 0; }
+/* Jeder Punkt sitzt ABSOLUT auf seinem Anteil (--uob-x), nicht als Flex-Kind mit
+   space-between. Der Grund ist der Tarif-Punkt: er kommt erst dazu, wenn der Nutzer dort
+   ankommt, und dann muessen sich alle anderen weich verschieben. Flex-Positionen lassen sich
+   nicht animieren, ein left in Prozent schon. */
 .uob-dot {
-  position: relative; top: 50%; transform: translateY(-50%);
-  width: 10px; height: 10px; flex: 0 0 auto; border-radius: 50%;
+  position: absolute; top: 50%; left: var(--uob-x, 0%);
+  transform: translate(-50%, -50%);
+  width: 10px; height: 10px; border-radius: 50%; padding: 0;
   background: var(--vc-bg); border: 2px solid var(--vc-sk);
   display: inline-flex; align-items: center; justify-content: center;
   transition: background var(--uob-t) var(--uob-ease), border-color var(--uob-t) var(--uob-ease),
-              width var(--uob-t) var(--uob-ease), height var(--uob-t) var(--uob-ease);
+              width var(--uob-t) var(--uob-ease), height var(--uob-t) var(--uob-ease),
+              left var(--uob-t) var(--uob-ease), opacity var(--uob-t) var(--uob-ease);
 }
-.uob-dot svg { width: 8px; height: 8px; display: block; color: var(--vc-bg);
+.uob-dot svg { width: 9px; height: 9px; display: block; color: var(--vc-bg);
   opacity: 0; transform: scale(.6);
   transition: opacity var(--uob-t) var(--uob-ease), transform var(--uob-t) var(--uob-ease); }
-/* Erledigt: gefuellt mit Haken. Aktuell: gefuellt und groesser, ohne Haken -- der Haken wuerde
-   "fertig" behaupten. Kuenftig: hohl. */
-.uob-dot.is-done { background: var(--vc-text); border-color: var(--vc-text); }
+/* Erledigt: gefuellt mit Haken, und einen Pixel groesser als ein offener Punkt -- ein Haken in
+   einem 10px-Kreis wird sonst zum Fleck. Aktuell: gefuellt und deutlich groesser, ohne Haken,
+   denn der wuerde "fertig" behaupten. Kuenftig: hohl. */
+.uob-dot.is-done { width: 12px; height: 12px; background: var(--vc-text); border-color: var(--vc-text); }
 .uob-dot.is-done svg { opacity: 1; transform: scale(1); }
 .uob-dot.is-now {
   width: 14px; height: 14px; background: var(--vc-text); border-color: var(--vc-text);
   box-shadow: 0 0 0 4px var(--vc-bg);
 }
-.uob-rail-labels {
-  display: flex; justify-content: space-between; margin-top: 12px;
-  font-size: 11.5px; font-weight: 500; color: var(--vc-third);
+/* Ein Punkt, der frisch dazukommt (der Tarif), faehrt nicht von links heran -- er blendet an
+   seiner Stelle auf. Ohne das kaeme er aus dem Nichts durch die halbe Schiene gerauscht. */
+.uob-dot.is-fresh { opacity: 0; }
+/* Ein bereits erledigter Schritt ist anklickbar: zurueck darf man immer. Die Trefferflaeche ist
+   groesser als der Punkt, sonst muesste man zehn Pixel genau treffen. */
+.uob-dot.is-link { cursor: pointer; }
+.uob-dot.is-link::after {
+  content: ""; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: 34px; height: 34px; border-radius: 50%;
 }
+.uob-dot:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+
+/* Die Beschriftungen sitzen ebenfalls absolut und GENAU mittig unter ihrem Punkt -- vorher
+   verteilte sie ein flex mit space-between, dann steht die erste linksbuendig unter einem
+   mittigen Punkt und die Zuordnung stimmt nur in der Mitte der Leiste. */
+.uob-rail-labels { position: relative; height: 15px; margin-top: 12px; }
 .uob-rail-labels span {
-  flex: 1 1 0; text-align: center; min-width: 0;
-  transition: color var(--uob-t) var(--uob-ease);
+  position: absolute; left: var(--uob-x, 0%); transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 11.5px; font-weight: 500; color: var(--vc-third);
+  transition: color var(--uob-t) var(--uob-ease), left var(--uob-t) var(--uob-ease),
+              opacity var(--uob-t) var(--uob-ease);
 }
-.uob-rail-labels span:first-child { text-align: left; }
-.uob-rail-labels span:last-child { text-align: right; }
-.uob-rail-labels span.is-done { color: var(--vc-muted); }
+.uob-rail-labels span.is-done { color: var(--vc-muted); cursor: pointer; }
+.uob-rail-labels span.is-done:hover { color: var(--vc-text); }
 .uob-rail-labels span.is-now { color: var(--vc-text); font-weight: 600; }
+.uob-rail-labels span.is-fresh { opacity: 0; }
+/* Passt schon die breiteste Beschriftung nicht mehr zwischen zwei Punkte, verschwinden ALLE und
+   es bleibt die Spur mit ihren Punkten. Eine halb gekuerzte Reihe sagt weniger als gar keine.
+   Die Klasse setzt das JS nach Messung, nicht ein Breakpoint: wie breit "Competitors" ist,
+   haengt an der Schrift und nicht am Fenster -- und es gibt genau EIN Kriterium dafuer, nicht
+   zusaetzlich noch eine Breitenregel weiter unten, die dasselbe anders entscheidet. */
+.uob-rail.is-nolabels .uob-rail-labels { display: none; }
 
 /* ---------- Mitte ----------
    Der Inhalt sitzt senkrecht in der Mitte. justify-content: center und nicht ein margin: auto,
@@ -218,11 +246,28 @@
    ganz unten bei den uebrigen schmalen Faellen. */
 .uob-frow { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .uob-field { display: flex; flex-direction: column; min-width: 0; }
+/* Das Branchenfeld gibt es erst, wenn ein Geschaeftsmodell gewaehlt ist: vorher ist es eine
+   Frage zu einer Antwort, die noch nicht gegeben wurde. 0fr->1fr statt height, weil die
+   Zielhoehe von der Beschriftung abhaengt und niemand sie vorher kennt -- dieselbe Mechanik wie
+   das Namensfeld auf der Anmeldeseite. Der negative Rand frisst den gap des Stapels, solange
+   das Feld zu ist, sonst bleibt eine Luecke stehen. */
+.uob-field.uob-later {
+  display: grid; grid-template-rows: 0fr; opacity: 0; margin-top: -14px; pointer-events: none;
+  transition: grid-template-rows var(--uob-t) var(--uob-ease), opacity var(--uob-t) var(--uob-ease),
+              margin-top var(--uob-t) var(--uob-ease);
+}
+.uob-field.uob-later > .uob-later-in { overflow: hidden; min-height: 0;
+  display: flex; flex-direction: column; }
+.uob-field.uob-later.is-on { grid-template-rows: 1fr; opacity: 1; margin-top: 0; pointer-events: auto; }
 .uob-label { font-size: 12px; font-weight: 600; color: var(--vc-muted); }
-.uob-label + * { margin-top: 7px; }
-/* Der optionale Zusatz an der Beschriftung. Nicht "(optional)" in Klammern hinter dem Namen,
-   sondern rechts in der Zeile: so bleibt der Feldname die erste gelesene Sache. */
-.uob-labrow { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+/* .uob-labrow gehoert MIT in diese Regel: bei Industry steht die Beschriftung in einer Zeile
+   mit dem Zusatz, und dann ist nicht .uob-label der Vorgaenger des Feldes, sondern die Zeile.
+   Ohne den zweiten Selektor fehlten dort die 7px, und genau dieses eine Feld klebte an seiner
+   Beschriftung. */
+.uob-label + *, .uob-labrow + * { margin-top: 7px; }
+/* Der optionale Zusatz steht direkt hinter dem Feldnamen mit Abstand, nicht am rechten Rand:
+   ganz rechts gehoert er optisch zum Feld daneben und nicht mehr zur Beschriftung. */
+.uob-labrow { display: flex; align-items: baseline; justify-content: flex-start; gap: 8px; }
 .uob-opt { font-size: 11.5px; font-weight: 500; color: var(--vc-third); }
 .uob-input {
   height: 40px; width: 100%;
@@ -248,6 +293,14 @@
 .uob-err > span { overflow: hidden; min-height: 0; display: block;
   font-size: 12px; line-height: 1.4; color: var(--vc-neg, #c8412e); padding-top: 5px; }
 .uob-field.is-err .uob-err { grid-template-rows: 1fr; opacity: 1; }
+
+/* Der Switcher fuer das Geschaeftsmodell. Er ist .up-seg/.up-seg-btn aus core und wird hier nur
+   auf volle Breite gestellt -- vier gleichwertige Werte sollen die Zeile teilen und nicht links
+   zusammenklumpen. Auf schmalen Fenstern darf er waagerecht scrollen statt umzubrechen: eine
+   zweizeilige Segmentleiste liest sich als zwei Leisten. */
+.uob-bseg { display: flex; width: 100%; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.uob-bseg::-webkit-scrollbar { display: none; }
+.uob-bseg .up-seg-btn { flex: 1 1 auto; white-space: nowrap; }
 
 /* ---------- Formular-Select ----------
    Begruendung im Kopf dieser Datei: core sagt ausdruecklich, dass .up-ddtrigger KEIN
@@ -282,9 +335,10 @@
    sichtbare Unterschied zwischen einem Werkzeugleisten-Ausloeser und einem Formularfeld, und er
    ist beabsichtigt: das Feld ist so breit wie sein Nachbar, also braucht es einen Anker am
    rechten Rand, sonst schwebt der Pfeil in der Mitte einer leeren Flaeche. */
-.uob-select-chev { flex: 0 0 16px; color: var(--vc-third); transition: transform var(--uob-t) var(--uob-ease); }
+/* Der Chevron dreht sich NICHT beim Oeffnen. Das ist die Hausregel (core sagt sie fuer
+   .up-ddtrigger ausdruecklich), und sie gilt hier genauso. */
+.uob-select-chev { flex: 0 0 16px; color: var(--vc-third); }
 .uob-select-chev svg { width: 16px; height: 16px; display: block; }
-.uob-ddwrap.is-open .uob-select-chev { transform: rotate(180deg); }
 /* Der Kasten selbst ist .up-ment-menu aus core. Hier steht nur, was core nicht wissen kann:
    dass er unter einem 40px-Feld haengt und dessen volle Breite hat. */
 .uob-ddmenu {
@@ -304,6 +358,14 @@
    fallen mit. */
 .uob-ddmenu.is-flat { max-height: 0; overflow: hidden; }
 .uob-ddlist { max-height: 240px; overflow-y: auto; }
+/* Eine Zeile im Marktkasten: Haken, Flagge, Name, rechts der Alpha-2-Code als Sekundaeres --
+   dieselbe Anordnung wie im Marktfilter der App. Die Masse kommen von dort: Flagge 22x16 mit
+   Radius 3, Name 14px/500, Code 12px/500 in --vc-third. */
+.uob-ddflag { width: 22px; height: 16px; border-radius: 3px; flex: 0 0 auto; object-fit: cover; display: block; }
+.uob-ddmain { display: flex; align-items: center; gap: 10px; flex: 1 1 auto; min-width: 0; }
+.uob-ddname { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; font-size: 14px; font-weight: 500; }
+.uob-ddcode { flex: 0 0 auto; font-size: 12px; font-weight: 500; color: var(--vc-third); }
 /* Das Zusatzfeld fuer eine eigene Branche sitzt unter der Liste, abgesetzt wie die Kopfzeile
    darueber -- sonst liest es sich wie ein weiterer Eintrag. */
 .uob-ddcustom { padding: 8px; border-top: 1px solid var(--vc-border); display: flex; }
@@ -409,7 +471,8 @@
    Der Aufbau ist bewusst ruhig: Markenkachel, eine Zeile Text, eine Spur, die Liste der Phasen.
    Kein Kreisel in der Mitte -- ein Kreisel sagt "es passiert etwas", die Phasenliste sagt WAS,
    und das ist bei vierzig Sekunden der Unterschied zwischen Warten und Zusehen. */
-.uob-load { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.uob-load { display: flex; flex-direction: column; align-items: center; text-align: center;
+  width: 100%; min-width: 0; }
 .uob-load-logo {
   width: 56px; height: 56px; border-radius: 16px;
   background: var(--vc-bg); border: 1px solid var(--vc-border);
@@ -420,8 +483,14 @@
 .uob-load-logo img { width: 40px; height: 40px; border-radius: 10px; display: block; object-fit: contain; }
 .uob-load-logo.has-img { font-size: 0; }
 .uob-root[data-theme="dark"] .uob-load-logo { box-shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 28px rgba(0,0,0,.34); }
-.uob-load-name { margin-top: 14px; font-size: 18px; font-weight: 600; color: var(--vc-text); letter-spacing: -.015em; }
-.uob-load-dom { margin-top: 3px; font-size: 13px; color: var(--vc-third); }
+/* Beide kuerzen statt umzubrechen: ein Markenname darf lang sein (gemessen mit 100 Zeichen),
+   aber er darf nicht das Bild auseinanderziehen, auf das der Nutzer vierzig Sekunden schaut.
+   max-width statt width, damit ein kurzer Name nicht auf Kastenbreite gezogen wird. */
+.uob-load-name { margin-top: 14px; max-width: 100%; font-size: 18px; font-weight: 600;
+  color: var(--vc-text); letter-spacing: -.015em;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.uob-load-dom { margin-top: 3px; max-width: 100%; font-size: 13px; color: var(--vc-third);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Die Spur. Sie ist ausdruecklich NICHT linear: die Recherche zu Ladefortschritt sagt, ein
    Balken wirkt schneller, wenn er vorne zieht und hinten nachlaesst. Der Wert kommt aus dem JS,
    die Kurve steckt dort in der Rechnung -- hier steht nur, dass die Breite weich folgt. Die
@@ -436,10 +505,13 @@
 }
 .uob-phases {
   margin-top: clamp(20px, 3.4vh, 30px); width: 100%;
-  display: flex; flex-direction: column; gap: 2px; text-align: left;
+  display: flex; flex-direction: column; gap: 8px; text-align: left;
 }
+/* align-items: center und nicht flex-start: das Zeichen links gehoert zur ganzen Zeile, nicht
+   zur ersten Textzeile. Oben angeschlagen sass es sichtbar zu hoch, weil der Text zwei Zeilen
+   hat und das Zeichen nur eine. */
 .uob-phase {
-  display: flex; align-items: flex-start; gap: 12px; padding: 9px 10px; border-radius: 10px;
+  display: flex; align-items: center; gap: 12px; padding: 9px 10px; border-radius: 10px;
   transition: background var(--uob-t) var(--uob-ease), opacity var(--uob-t) var(--uob-ease);
   opacity: .4;
 }
@@ -448,7 +520,7 @@
 /* Drei Zustaende in EINEM 18px-Feld: Punkt (kommt noch), Kreisel (laeuft), Haken (fertig).
    Ein Wechsel der Elementart mittendrin wuerde die Zeile springen lassen. */
 .uob-phase-ic {
-  width: 18px; height: 18px; flex: 0 0 auto; margin-top: 1px; position: relative;
+  width: 18px; height: 18px; flex: 0 0 auto; position: relative;
   display: inline-flex; align-items: center; justify-content: center;
 }
 .uob-phase-dot {
@@ -613,7 +685,11 @@
    zusammenfaellt und wieder aufgeht. Der abgehende Schritt faellt in --uob-t weg, der
    ankommende kommt mit dem Einzug. */
 .uob-stack { display: grid; }
-.uob-stack > * { grid-area: 1 / 1; }
+/* min-width: 0 ist hier kein Feinschliff, sondern die Bedingung dafuer, dass ueberhaupt etwas
+   gekuerzt werden kann: ein Grid-Kind bekommt als Mindestbreite automatisch die Breite seines
+   Inhalts. Ohne die Zeile wuchs der Bereich mit einem langen Markennamen ueber die Spalte
+   hinaus, und jedes text-overflow darin lief ins Leere -- gemessen mit 62 Zeichen. */
+.uob-stack > * { grid-area: 1 / 1; min-width: 0; }
 .uob-pane { transition: opacity var(--uob-t) var(--uob-ease), transform var(--uob-t) var(--uob-ease); }
 .uob-pane.is-off { opacity: 0; transform: translateY(6px); pointer-events: none; visibility: hidden; }
 
@@ -672,15 +748,10 @@
    column-reverse die Kinder umdreht und der Hauptweg oben liegen soll. */
 .uob-root.is-narrow .uob-navr { flex-direction: column-reverse; align-items: stretch; gap: 12px; }
 .uob-root.is-narrow .uob-skip { padding: 6px 0; }
-/* Beschriftungen an der Schiene wuerden auf 360px zu sechs Buchstaben verstuemmelt. Statt sie
-   zu kuerzen: nur die aktuelle nennen, mit Zaehler. Das sagt dasselbe und passt. */
-.uob-root.is-narrow .uob-rail-labels { display: none; }
-.uob-root.is-narrow .uob-rail-now {
-  display: block; margin-top: 10px; text-align: center;
-  font-size: 12px; font-weight: 600; color: var(--vc-text);
-}
-.uob-rail-now { display: none; }
-.uob-rail-now span { font-weight: 500; color: var(--vc-third); }
+/* Die Beschriftungen regelt is-nolabels weiter oben, gemessen statt geraten. Hier stand vorher
+   eine zweite Regel, die sie ab 760px pauschal ausblendete und dafuer eine Zeile "Brand Step 1
+   of 4" einsetzte -- zwei Mechanismen fuer dieselbe Sache, und in dem Fenster dazwischen
+   widersprachen sie sich. */
 
 /* ---------- sehr schmal ---------- */
 .uob-root.is-vnarrow .uob-item { padding: 10px 12px; gap: 10px; }

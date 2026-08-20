@@ -36,8 +36,10 @@
        data-logo-dark  Optional: eigener Schriftzug fuer den Dark Mode. Fehlt er, gilt data-logo
                        auch dort.
        data-demo       "yes" fuellt die Seite mit Beispieldaten und laesst die Uhren fest laufen
-                       (40s in vier Phasen, dann 10s). Fuer eine Testseite ohne Workflows.
-                       Dazu muss _h_uob_demo.js geladen sein. Im Betrieb WEGLASSEN.
+                       (5s je Phase, also 20s, dann 10s). Fuer eine Testseite ohne Workflows.
+                       Der Loader unten holt onboarding-demo.js dann von selbst nach -- es ist
+                       nichts weiter zu tun. Im Betrieb WEGLASSEN, dann wird die Datei auch
+                       nicht geladen.
 
      ── EREIGNISSE ──────────────────────────────────────────────────────────────────────────
        uobStart   Objekt: brand_name, website_input, website_url, website_domain, market,
@@ -91,6 +93,7 @@
      data-isdark="IS_DARK"
      data-logo="LOGO_URL"
      data-logo-dark="LOGO_DARK_URL"
+     data-demo="no"
      data-start-fn="bubble_fn_uobStart"
      data-step-fn="bubble_fn_uobStep"
      data-select-fn="bubble_fn_uobSelect"
@@ -135,6 +138,16 @@
 
   /* core zuerst, async=false haelt die Reihenfolge ein. */
   css("core.css");        js("core.js");
+  /* Die Beispieldaten VOR der Komponente: sie liest window.__uobDemo beim Aufbau, und ein
+     Nachzuegler kaeme zu spaet. Nur wenn data-demo gesetzt ist -- im Betrieb laedt die Seite
+     die Datei gar nicht erst. */
+  (function(){
+    var els = document.getElementsByClassName("uob-root");
+    for (var i = 0; i < els.length; i++){
+      var d = (els[i].getAttribute("data-demo") || "").trim().toLowerCase();
+      if (d === "yes" || d === "true"){ js("onboarding-demo.js"); break; }
+    }
+  })();
   css("onboarding-page.css"); js("onboarding-page.js");
 })();
 </script>

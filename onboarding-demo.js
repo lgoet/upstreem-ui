@@ -1,4 +1,11 @@
-/* Beispieldaten fuer das Onboarding. Projekt, Marken, Prompts und Tarife sind WORTGLEICH die
+/* upstreem onboarding-demo.js — Beispieldaten fuer das Onboarding.
+
+   Diese Datei gehoert zur Auslieferung und nicht in den Harness-Ordner: die Bubble-Vorlage laedt
+   sie, wenn am Element data-demo="yes" steht. Ohne sie waere eine statische Vorschau nur im
+   lokalen Harness moeglich -- und genau daran ist die erste Fassung gescheitert: auf der
+   Bubble-Seite standen alle Listen leer, weil die Daten in einer _h_-Datei lagen.
+
+   Beispieldaten fuer das Onboarding. Projekt, Marken, Prompts und Tarife sind WORTGLEICH die
    Payloads aus der Aufgabe -- nichts erfunden, nichts gekuerzt. Erfunden sind nur die Themen und
    die zusaetzlichen Prompts, weil es beides in der heutigen Fassung noch nicht gibt.
 

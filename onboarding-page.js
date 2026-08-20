@@ -102,12 +102,22 @@
     { h: "Preparing your insights",    b: "Turning what we found into something useful" }
   ];
 
+  /* Vier Werte, vier Segmente. Der Wert bleibt exakt der, den Bubble erwartet -- nur die
+     Beschriftung von Hybrid ist kurz: "Hybrid (B2B & B2C)" sprengt in einem Switcher jede
+     Zeile, und was Hybrid heisst, weiss ohnehin jeder, der die drei anderen liest. */
   var BUSINESS = [
-    { value: "B2B",             label: "B2B" },
-    { value: "B2C",             label: "B2C" },
-    { value: "Hybrid",          label: "Hybrid (B2B & B2C)" },
-    { value: "CitiesRegions",   label: "Cities & Regions" }
+    { value: "B2B",           label: "B2B" },
+    { value: "B2C",           label: "B2C" },
+    { value: "Hybrid",        label: "Hybrid" },
+    { value: "CitiesRegions", label: "Cities & Regions" }
   ];
+  /* B2B ist die Vorbelegung. Ein Pflichtfeld, das schon ausgefuellt ist, spart einen Klick und
+     einen moeglichen Fehler -- und B2B ist der weit haeufigste Fall in dieser App. */
+  var BUSINESS_STD = "B2B";
+
+  /* Zeichengrenzen. Kein Zaehler unter dem Feld: der zaehlt bei jedem Anschlag mit und lenkt vom
+     Tippen ab. Stattdessen sagt das Feld erst etwas, wenn die Grenze WIRKLICH erreicht ist. */
+  var MAX = { name: 60, website: 255, industry: 60 };
 
   /* Dieselbe Liste wie im Bereich "Your Brand" (settings-brand.js). Sie steht hier ein zweites
      Mal und nicht in core, weil sie in beiden Faellen eine INHALTSliste ist und kein Bauteil --
@@ -283,7 +293,7 @@
       phase: 0,                 /* 0..3, der Index der laufenden Phase */
       fortschritt: 0,           /* 0..100 fuer die Spur */
       form: {
-        name: "", website: "", market: "", timezone: "", business: "", industry: ""
+        name: "", website: "", market: "", timezone: "", business: BUSINESS_STD, industry: ""
       },
       fehler: {},               /* feldname -> text */
       banner: "",
@@ -291,6 +301,11 @@
       brands: [], topics: [], prompts: [], plans: [],
       selBrands: {}, selTopics: {}, selPrompts: {},
       plan: "", interval: "yearly",
+      /* Einmal beim Tarif gewesen heisst: der Punkt bleibt in der Schiene. Siehe renderRail. */
+      planGesehen: false,
+      /* Hat der Nutzer das Geschaeftsmodell angefasst? Steuert das Branchenfeld, siehe
+         syncBusiness. */
+      bizBeruehrt: false,
       busy: false
     };
     var BRAND_MAX = 5;
@@ -350,17 +365,12 @@
         '</div>' +
       '</div>' +
 
-      '<div class="uob-rail" role="group" aria-label="Setup progress">' +
+      '<div class="uob-rail" role="group" aria-label="Setup progress" data-rail>' +
         '<div class="uob-rail-line">' +
           '<div class="uob-rail-fill" data-rail-fill></div>' +
-          '<div class="uob-rail-dots">' +
-            STEPS.map(function () { return '<span class="uob-dot">' + ic("check", 3) + '</span>'; }).join("") +
-          '</div>' +
+          '<div class="uob-rail-dots" data-rail-dots></div>' +
         '</div>' +
-        '<div class="uob-rail-labels">' +
-          STEPS.map(function (s) { return '<span>' + esc(s.label) + '</span>'; }).join("") +
-        '</div>' +
-        '<div class="uob-rail-now" data-rail-now></div>' +
+        '<div class="uob-rail-labels" data-rail-labels></div>' +
       '</div>' +
 
       '<div class="uob-mid">' +
@@ -394,8 +404,10 @@
     var elBack    = root.querySelector("[data-back]");
     var elNext    = root.querySelector("[data-next]");
     var elNextTxt = root.querySelector("[data-next-txt]");
+    var elRail    = root.querySelector("[data-rail]");
     var elRailFill= root.querySelector("[data-rail-fill]");
-    var elRailNow = root.querySelector("[data-rail-now]");
+    var elRailDots= root.querySelector("[data-rail-dots]");
+    var elRailLbls= root.querySelector("[data-rail-labels]");
     var elIdent   = root.querySelector("[data-ident]");
     var elIdentLg = root.querySelector("[data-ident-logo]");
     var elIdentNm = root.querySelector("[data-ident-name]");
@@ -432,17 +444,26 @@
         '<div class="up-ment-menu uob-ddmenu is-flat" role="listbox" aria-hidden="true">' +
           '<div class="up-filter-head"><span class="up-filter-title">' + esc(titel) + '</span></div>' +
           (suchbar
-            ? '<div class="up-ment-searchwrap"><span class="up-ddsearch">' +
+            ? '<div class="up-ment-searchwrap"><span class="up-ddsearch" data-dd-searchwrap>' +
                 '<input class="up-ddsearch-in" type="text" placeholder="Search" autocomplete="off" ' +
                   'spellcheck="false" aria-label="Search" data-dd-search/>' +
+                /* Lupe und Loeschkreuz sind das Paar aus core: hat das Feld Text, tauscht
+                   .has-text am Rahmen die Lupe gegen das Kreuz. */
+                '<span class="up-ddsearch-ic">' + ic("search", 2) + '</span>' +
+                '<button class="up-ddsearch-x" type="button" aria-label="Clear search" data-dd-clear>' +
+                  ic("x", 3.5) + '</button>' +
               '</span></div>'
             : "") +
           '<div class="up-filter-list uob-ddlist up-scroll" data-dd-list></div>' +
           (mitEigen
             ? '<div class="uob-ddcustom">' +
-                '<span class="up-ddsearch">' +
-                  '<input class="up-ddsearch-in" type="text" maxlength="60" placeholder="Not listed? Add your own" ' +
-                    'autocomplete="off" spellcheck="false" aria-label="Add your own" data-dd-custom/>' +
+                '<span class="up-ddsearch" data-dd-searchwrap>' +
+                  '<input class="up-ddsearch-in" type="text" maxlength="' + MAX.industry + '" ' +
+                    'placeholder="Not listed? Add your own" autocomplete="off" spellcheck="false" ' +
+                    'aria-label="Add your own" data-dd-custom/>' +
+                  '<span class="up-ddsearch-ic">' + ic("plus", 2) + '</span>' +
+                  '<button class="up-ddsearch-x" type="button" aria-label="Clear" data-dd-clear>' +
+                    ic("x", 3.5) + '</button>' +
                 '</span>' +
               '</div>'
             : "") +
@@ -458,14 +479,16 @@
             '<div class="uob-field" data-field="name">' +
               '<label class="uob-label" for="' + instanceId + '-name">Brand name</label>' +
               '<input class="uob-input up-field" id="' + instanceId + '-name" type="text" ' +
-                'placeholder="Your brand" autocomplete="organization" data-f="name"/>' +
+                'maxlength="' + MAX.name + '" placeholder="Your brand" autocomplete="organization" ' +
+                'data-f="name"/>' +
               '<div class="uob-hint">Avoid legal suffixes (e.g. GmbH, Inc., Ltd., LLC).</div>' +
               '<div class="uob-err"><span data-err="name"></span></div>' +
             '</div>' +
             '<div class="uob-field" data-field="website">' +
               '<label class="uob-label" for="' + instanceId + '-web">Website</label>' +
               '<input class="uob-input up-field" id="' + instanceId + '-web" type="text" ' +
-                'placeholder="yourbrand.com" autocomplete="url" inputmode="url" data-f="website"/>' +
+                'maxlength="' + MAX.website + '" placeholder="yourbrand.com" autocomplete="url" ' +
+                'inputmode="url" data-f="website"/>' +
               '<div class="uob-err"><span data-err="website"></span></div>' +
             '</div>' +
             '<div class="uob-frow">' +
@@ -482,13 +505,23 @@
             '</div>' +
             '<div class="uob-field" data-field="business">' +
               '<span class="uob-label">Business model</span>' +
-              selectHtml("business", "Select a business model", "Business model", false, false) +
+              /* Vier feste Werte, alle gleich wichtig, keiner erklaerungsbeduerftig -- das ist
+                 ein Switcher und kein Kasten, den man erst aufmachen muss. .up-seg aus core. */
+              '<div class="up-seg uob-bseg" role="tablist" aria-label="Business model">' +
+                BUSINESS.map(function (b) {
+                  return '<button class="up-seg-btn" type="button" role="tab" aria-selected="false"' +
+                         ' data-biz="' + esc(b.value) + '">' + esc(b.label) + '</button>';
+                }).join("") +
+              '</div>' +
               '<div class="uob-err"><span data-err="business"></span></div>' +
             '</div>' +
-            '<div class="uob-field" data-field="industry">' +
-              '<span class="uob-labrow"><span class="uob-label">Industry</span>' +
-                '<span class="uob-opt">Optional</span></span>' +
-              selectHtml("industry", "Select an industry", "Industries", true, true) +
+            /* Die Branche kommt erst, wenn das Geschaeftsmodell steht -- siehe CSS. */
+            '<div class="uob-field uob-later" data-field="industry" data-later="industry">' +
+              '<div class="uob-later-in">' +
+                '<span class="uob-labrow"><span class="uob-label">Industry</span>' +
+                  '<span class="uob-opt">Optional</span></span>' +
+                selectHtml("industry", "Select an industry", "Industries", true, true) +
+              '</div>' +
             '</div>' +
           '</div>' +
         '</div>' +
@@ -809,32 +842,99 @@
       if (UC.makeTooltips) UC.makeTooltips(root, function () { return isDark; });
     }
 
+    /* Der Tarif steht NICHT von Anfang an in der Schiene. Wer beim ersten Blick sieht, dass am
+       Ende eine Bezahlseite wartet, entscheidet ueber den ganzen Ablauf anders. Sichtbar wird er
+       genau dann, wenn der Nutzer dort ankommt -- und bleibt es danach, auch wenn er nochmal
+       zurueckgeht: ein Punkt, der wieder verschwindet, waere ein Taschenspielertrick. */
+    function sichtbareSteps() {
+      if (state.planGesehen) return STEPS;
+      return STEPS.filter(function (x) { return x.key !== "plan"; });
+    }
+    var railStand = "";
     function renderRail() {
       var k = ansichtKey();
-      /* Waehrend einer Uhr bleibt die Schiene auf dem Schritt stehen, zu dem die Uhr gehoert:
-         der erste Lauf gehoert noch zu Brand, der zweite zu Topics. Ein Sprung nach vorn waehrend
-         des Wartens waere ein Versprechen, das die Daten noch nicht halten. */
-      var i = stepIndex(state.step);
-      if (i < 0) i = 0;
-      var dots = root.querySelectorAll(".uob-dot");
-      var labels = root.querySelectorAll(".uob-rail-labels span");
+      if (state.step === "plan") state.planGesehen = true;
+      var liste = sichtbareSteps();
+      var i = 0;
+      for (var q = 0; q < liste.length; q++) if (liste[q].key === state.step) { i = q; break; }
+      var letzte = Math.max(1, liste.length - 1);
+
+      /* Die Punkte nur neu bauen, wenn sich ihre ZAHL geaendert hat. Sonst blieben Klassen und
+         Uebergaenge nicht erhalten, und der Tarif-Punkt koennte nicht sanft dazukommen. */
+      var schluessel = liste.map(function (x) { return x.key; }).join(",");
+      var neuGebaut = schluessel !== railStand;
+      if (neuGebaut) {
+        var vorher = railStand ? railStand.split(",") : [];
+        elRailDots.innerHTML = liste.map(function (x, n) {
+          var frisch = vorher.length && vorher.indexOf(x.key) < 0;
+          return '<button class="uob-dot' + (frisch ? " is-fresh" : "") + '" type="button"' +
+                 ' data-go="' + esc(x.key) + '" style="--uob-x:' + (n / letzte * 100) + '%"' +
+                 ' aria-label="' + esc(x.label) + '" tabindex="-1">' + ic("check", 3) + '</button>';
+        }).join("");
+        elRailLbls.innerHTML = liste.map(function (x, n) {
+          var frisch = vorher.length && vorher.indexOf(x.key) < 0;
+          return '<span class="' + (frisch ? "is-fresh" : "") + '" data-go="' + esc(x.key) +
+                 '" style="--uob-x:' + (n / letzte * 100) + '%">' + esc(x.label) + '</span>';
+        }).join("");
+        railStand = schluessel;
+        /* Ein Bildaufbau dazwischen, dann faellt is-fresh: erst dadurch hat der Uebergang einen
+           Ausgangszustand, von dem aus er laufen kann. */
+        window.setTimeout(function () {
+          [].forEach.call(root.querySelectorAll(".is-fresh"), function (e) { e.classList.remove("is-fresh"); });
+        }, 30);
+      }
+
+      var dots = elRailDots.children, labels = elRailLbls.children;
+      /* Waehrend einer Uhr ist der Schritt, von dem sie ausging, ERLEDIGT und kein Punkt ist
+         aktiv -- die Fuellung steht dann in der Mitte zwischen zwei Punkten. Das ist der
+         ehrliche Zustand: der Schritt ist abgegeben, der naechste noch nicht da. */
+      var wartet = !!state.warten;
       for (var n = 0; n < dots.length; n++) {
-        dots[n].classList.toggle("is-done", n < i);
-        dots[n].classList.toggle("is-now", n === i);
+        var fertig = wartet ? n <= i : n < i;
+        dots[n].style.setProperty("--uob-x", (n / letzte * 100) + "%");
+        dots[n].classList.toggle("is-done", fertig);
+        dots[n].classList.toggle("is-now", !wartet && n === i);
+        /* Zurueck darf man auf jeden erledigten Schritt -- ausser auf Brand: die Stammdaten sind
+           abgeschickt und haben einen Hintergrundlauf gestartet, den ein zweites Absenden nur
+           durcheinanderbraechte. Der Punkt bleibt sichtbar abgehakt, nur nicht anklickbar. */
+        var klickbar = fertig && n > 0 && !wartet;
+        dots[n].classList.toggle("is-link", klickbar);
+        dots[n].disabled = !klickbar;
+        dots[n].tabIndex = klickbar ? 0 : -1;
         if (labels[n]) {
-          labels[n].classList.toggle("is-done", n < i);
-          labels[n].classList.toggle("is-now", n === i);
+          labels[n].style.setProperty("--uob-x", (n / letzte * 100) + "%");
+          labels[n].classList.toggle("is-done", klickbar);
+          labels[n].classList.toggle("is-now", !wartet && n === i);
         }
       }
       /* Die Fuellung endet MITTIG unter dem aktuellen Punkt, nicht dahinter: so liegt der Punkt
-         auf der Kante zwischen erledigt und offen, und die Schiene erzaehlt dasselbe wie er. */
-      var anteil = STEPS.length > 1 ? (i / (STEPS.length - 1)) * 100 : 0;
-      if (elRailFill) elRailFill.style.width = anteil + "%";
-      if (elRailNow) {
-        elRailNow.innerHTML = esc(STEPS[i].label) +
-          ' <span>Step ' + (i + 1) + " of " + STEPS.length + "</span>";
-      }
+         auf der Kante zwischen erledigt und offen. Waehrend einer Uhr genau dazwischen. */
+      var pos = wartet ? i + 0.5 : i;
+      if (elRailFill) elRailFill.style.width = (pos / letzte * 100) + "%";
+      labelsPruefen(liste.length);
       root.setAttribute("data-view", k);
+    }
+
+    /* Passt die breiteste Beschriftung nicht mehr zwischen zwei Punkte, verschwinden alle. Ein
+       fester Breakpoint waere hier falsch: wie breit "Competitors" ist, haengt an der Schrift und
+       nicht am Fenster. */
+    function labelsPruefen(anzahl) {
+      if (!elRail || !elRailLbls || anzahl < 2) return;
+      var spanne = elRail.clientWidth - 16;             /* 16 = Polster der Schiene */
+      if (spanne <= 0) return;
+      var abstand = spanne / (anzahl - 1);
+      /* Gemessen wird IMMER im sichtbaren Zustand. Ohne die zwei Zeilen schaukelt sich das auf:
+         ausgeblendet ist display:none, damit ist scrollWidth 0, damit passt alles wieder, damit
+         kommen die Beschriftungen zurueck, passen nicht -- und es flackert. Gemessen im Wechsel
+         von 380 auf 330 Pixel. */
+      var warAus = elRail.classList.contains("is-nolabels");
+      if (warAus) elRail.classList.remove("is-nolabels");
+      var breiteste = 0;
+      for (var n = 0; n < elRailLbls.children.length; n++) {
+        var w = elRailLbls.children[n].scrollWidth;
+        if (w > breiteste) breiteste = w;
+      }
+      elRail.classList.toggle("is-nolabels", breiteste + 12 > abstand);
     }
 
     function renderIdent() {
@@ -927,6 +1027,24 @@
       var w = root.querySelector('[data-f="website"]');
       if (n && n.value !== state.form.name) n.value = state.form.name;
       if (w && w.value !== state.form.website) w.value = state.form.website;
+      syncBusiness();
+    }
+    /* Der Switcher und das davon abhaengige Branchenfeld an einer Stelle: beide haengen am
+       selben Wert, und getrennte Funktionen liefen frueher oder spaeter auseinander. */
+    function syncBusiness() {
+      var btns = root.querySelectorAll("[data-biz]");
+      for (var i = 0; i < btns.length; i++) {
+        var an = btns[i].getAttribute("data-biz") === state.form.business;
+        btns[i].classList.toggle("is-active", an);
+        btns[i].setAttribute("aria-selected", an ? "true" : "false");
+      }
+      /* Die Branche erscheint, sobald der Nutzer das Geschaeftsmodell ANGEFASST hat -- nicht,
+         sobald ein Wert darin steht. Der Unterschied ist noetig, weil B2B vorbelegt ist: waere
+         der Wert das Kriterium, staende das Feld von der ersten Sekunde an da, und die
+         gewuenschte Staffelung gaebe es nicht. Wer aus einem gefuellten Projekt zurueckkommt,
+         hat es ebenfalls sofort -- dort ist die Frage laengst beantwortet. */
+      var spaet = root.querySelector('[data-later="industry"]');
+      if (spaet) spaet.classList.toggle("is-on", state.bizBeruehrt || !!txt(state.form.industry));
     }
 
     /* ---- Die vier Auswahlfelder ------------------------------------------------------------
@@ -936,9 +1054,10 @@
     function ddDaten(kind) {
       if (kind === "market") {
         return marketList().map(function (m) {
-          return { value: m.code, label: m.name + " (" + m.code + ")", kurz: m.name,
-                   ic: '<img src="https://flagcdn.com/w40/' + m.code.toLowerCase() + '.png" alt="" ' +
-                       'loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()"/>' };
+          var flag = "https://flagcdn.com/w40/" + m.code.toLowerCase() + ".png";
+          return { value: m.code, label: m.name + " " + m.code, kurz: m.name, flag: flag,
+                   ic: '<img src="' + flag + '" alt="" loading="lazy" ' +
+                       'referrerpolicy="no-referrer" onerror="this.remove()"/>' };
         });
       }
       if (kind === "timezone") {
@@ -980,7 +1099,17 @@
                      ' role="option" aria-selected="' + (d.value === wert ? "true" : "false") + '"' +
                      ' data-dd-val="' + esc(d.value) + '">' +
               '<span class="up-filter-check">' + (UC.icon ? UC.icon("check", 3) : "") + '</span>' +
-              '<span class="up-filter-lbl">' + esc(d.label) + '</span>' +
+              /* Der Markt bekommt die Zeile, die er im Rest der App auch hat: Flagge, Name,
+                 rechts der Alpha-2-Code als Sekundaeres. Alles andere ist eine schlichte
+                 Beschriftung. */
+              (d.flag
+                ? '<span class="uob-ddmain">' +
+                    '<img class="uob-ddflag" src="' + esc(d.flag) + '" alt="" loading="lazy" ' +
+                      'referrerpolicy="no-referrer" onerror="this.remove()"/>' +
+                    '<span class="uob-ddname">' + esc(d.kurz) + '</span>' +
+                  '</span>' +
+                  '<span class="uob-ddcode">' + esc(d.value) + '</span>'
+                : '<span class="up-filter-lbl">' + esc(d.label) + '</span>') +
             '</div>';
           }).join("")
         : '<div class="up-filter-empty">No match</div>';
@@ -1032,6 +1161,17 @@
     root.addEventListener("click", function (e) {
       if (!e.target.closest) return;
 
+      var go = e.target.closest("[data-go]");
+      if (go && elRail.contains(go)) {
+        var ziel = go.getAttribute("data-go");
+        var jetzt = stepIndex(state.step), hin = stepIndex(ziel);
+        /* Nur zurueck, nur auf einen bereits abgeschlossenen Schritt, und nie auf Brand. Alles
+           andere ist entweder ein Sprung in Unbekanntes oder ein zweites Absenden der
+           Stammdaten. */
+        if (hin > 0 && hin < jetzt && !state.warten) gehe(ziel);
+        return;
+      }
+
       var exit = e.target.closest("[data-exit]");
       if (exit) { fire("data-exit-fn", "uobExit", exit.getAttribute("data-exit")); return; }
 
@@ -1079,6 +1219,23 @@
         return;
       }
 
+      var biz = e.target.closest("[data-biz]");
+      if (biz) {
+        state.form.business = biz.getAttribute("data-biz");
+        state.bizBeruehrt = true;
+        delete state.fehler.business;
+        syncBusiness();
+        zeigeFeldfehler();
+        return;
+      }
+
+      var clr = e.target.closest("[data-dd-clear]");
+      if (clr) {
+        var feld = clr.parentNode.querySelector("input");
+        if (feld) { feld.value = ""; feld.dispatchEvent(new Event("input", { bubbles: true })); feld.focus(); }
+        return;
+      }
+
       var iv = e.target.closest("[data-interval]");
       if (iv) { state.interval = iv.getAttribute("data-interval"); render(true); return; }
 
@@ -1111,11 +1268,26 @@
       var f = e.target.getAttribute && e.target.getAttribute("data-f");
       if (f) {
         state.form[f] = e.target.value;
-        if (state.fehler[f]) { delete state.fehler[f]; zeigeFeldfehler(); }
+        /* Die Grenze meldet sich erst, wenn sie WIRKLICH erreicht ist -- maxlength haelt die
+           Eingabe ohnehin an, und ein Zaehler, der bei jedem Anschlag mitzaehlt, lenkt vom
+           Tippen ab. Der Fehler verschwindet von selbst, sobald wieder Platz ist. */
+        if (MAX[f] && String(e.target.value).length >= MAX[f]) {
+          state.fehler[f] = "Maximum of " + MAX[f] + " characters reached.";
+        } else if (state.fehler[f]) {
+          delete state.fehler[f];
+        }
+        zeigeFeldfehler();
         return;
       }
-      var s = e.target.closest ? e.target.closest("[data-dd-search]") : null;
-      if (s) ddFuellen(s.closest(".uob-ddwrap"));
+      var sf = e.target.closest ? e.target.closest("[data-dd-search], [data-dd-custom]") : null;
+      if (sf) {
+        /* has-text tauscht in core die Lupe gegen das Loeschkreuz. */
+        var wrap = sf.closest("[data-dd-searchwrap]");
+        if (wrap) wrap.classList.toggle("has-text", !!String(sf.value).length);
+        if (sf.getAttribute("data-dd-search") != null || sf.hasAttribute("data-dd-search")) {
+          ddFuellen(sf.closest(".uob-ddwrap"));
+        }
+      }
     });
 
     /* Die Adresse wird beim Verlassen des Feldes normalisiert, nicht beim Tippen: wer mitten in
@@ -1276,7 +1448,10 @@
       var v = new Date().getTime() - t0;
       /* Vorne ziehen, hinten nachlassen: 1 - e^(-t/tau). Genau die Kurve, die Ladebalken
          schneller wirken laesst, als sie sind. */
-      var anteil = 1 - Math.exp(-v / 4200);
+      /* 2600 statt 4200: bei fuenf Sekunden je Phase war die alte Zeitkonstante so traege, dass
+         der Balken innerhalb einer Phase kaum vom Fleck kam. Der Wert ist auf das Ergebnis
+         kalibriert, nicht gerechnet. */
+      var anteil = 1 - Math.exp(-v / 2600);
       var w = unten + (ziel - unten) * anteil;
       if (w > state.fortschritt) { state.fortschritt = w; renderPhasen(); }
     }
@@ -1290,8 +1465,12 @@
     }
 
     /* ---- Demo -------------------------------------------------------------------------------
-       Feste Uhren, wie in der Aufgabe verlangt: vierzig Sekunden in vier Phasen, spaeter zehn.
-       Sie ersetzen den Statuspayload NICHT -- kommt einer, gewinnt er (siehe setStatus). */
+       Feste Uhren: fuenf Sekunden je Phase, also zwanzig fuer den ersten Lauf, spaeter zehn.
+       Sie ersetzen den Statuspayload NICHT -- kommt einer, gewinnt er (siehe setStatus).
+       Die Datei mit den Daten (onboarding-demo.js) laedt die Bubble-Vorlage nur, wenn
+       data-demo gesetzt ist; im Betrieb ist sie gar nicht da. */
+    var DEMO_PHASE_MS = 5000;
+    var DEMO_PROMPT_MS = 10000;
     var DEMO = window.__uobDemo || null;
     function demoLauf1() {
       var i = 0;
@@ -1308,7 +1487,7 @@
           }
           phaseSetzen(i);
           schritt();
-        }, 10000);
+        }, DEMO_PHASE_MS);
       })();
     }
     function demoLauf2() {
@@ -1316,7 +1495,7 @@
         if (DEMO && DEMO.prompts) ctrl.setPrompts(DEMO.prompts);
         state.fortschritt = 100; renderPhasen();
         window.setTimeout(function () { warteBeenden(); gehe("prompts"); }, 360);
-      }, 10000);
+      }, DEMO_PROMPT_MS);
     }
 
     /* ---- Breite ------------------------------------------------------------------------------
@@ -1326,6 +1505,10 @@
       var w = root.clientWidth;
       root.classList.toggle("is-narrow", w < 760);
       root.classList.toggle("is-vnarrow", w < 460);
+      /* Die Beschriftungen der Schiene haengen an der Breite und nicht am Zustand -- ohne diese
+         Zeile wurde nur beim Zeichnen geprueft, und ein blosses Ziehen am Fensterrand liess eine
+         Reihe stehen, die laengst nicht mehr passte. */
+      labelsPruefen(sichtbareSteps().length);
     }
     messeBreite();
     if (UC.onResize) UC.onResize(root, messeBreite);
@@ -1353,7 +1536,7 @@
         if (txt(p.company_name)) state.form.name = txt(p.company_name);
         if (txt(p.website_url)) state.form.website = txt(p.website_url);
         if (txt(p.market)) state.form.market = txt(p.market);
-        if (txt(p.business_model)) state.form.business = txt(p.business_model);
+        if (txt(p.business_model)) { state.form.business = txt(p.business_model); state.bizBeruehrt = true; }
         if (txt(p.brand_industry)) state.form.industry = txt(p.brand_industry);
         var ph = num(p.status_phase);
         if (ph != null) {
@@ -1409,9 +1592,10 @@
         state.brands = []; state.topics = []; state.prompts = [];
         state.selBrands = {}; state.selTopics = {}; state.selPrompts = {};
         state.plan = ""; state.banner = ""; state.busy = false;
-        state.fehler = {};
+        state.fehler = {}; state.bizBeruehrt = false; state.planGesehen = false;
+        railStand = "";
         state.form = { name: "", website: "", market: eigenerMarkt(), timezone: eigeneZone(),
-                       business: "", industry: "" };
+                       business: BUSINESS_STD, industry: "" };
         letzteAnsicht = "";
         elStack.innerHTML = "";
         urlSetzen("brand", false);
@@ -1458,6 +1642,7 @@
     /* ---- Start ------------------------------------------------------------------------------- */
     state.form.market = eigenerMarkt();
     state.form.timezone = eigeneZone();
+    state.form.business = BUSINESS_STD;
     var ausUrl = stepAusUrl();
     if (ausUrl) state.step = ausUrl; else urlSetzen("brand", false);
 
