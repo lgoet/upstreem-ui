@@ -40,7 +40,15 @@
      alles andere, deshalb eine Variable statt drei Klassen mit festen Breiten. */
   --uob-w: 480px;
 
-  min-height: 100vh;
+  /* Feste Hoehe statt min-height: nur so kann der mittlere Bereich der EINZIGE Scrollbereich
+     sein. Vorher wuchs die Wurzel mit dem Inhalt, und weil die Mitte ihren Inhalt zentriert,
+     lief er auf schmalen Schirmen oben UND unten heraus -- die obere Haelfte war dann
+     unerreichbar, weil man nach oben nicht scrollen kann. Genau das machte das Onboarding auf
+     dem Telefon unbenutzbar.
+     dvh vor vh: die Adressleiste mobiler Browser faehrt ein und aus, und 100vh rechnet mit der
+     ausgefahrenen. Aeltere Browser nehmen die erste Zeile. */
+  height: 100vh;
+  height: 100dvh;
   display: flex; flex-direction: column;
   background: var(--vc-bg);
   color: var(--vc-text);
@@ -209,8 +217,24 @@
    nach oben aus dem Bild laeuft. */
 .uob-mid {
   flex: 1 1 auto; min-height: 0;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: clamp(16px, 3vh, 36px) 0;
+  display: flex; flex-direction: column; align-items: center;
+  /* "safe" ist der ganze Punkt: solange der Inhalt passt, steht er mittig; passt er nicht,
+     faellt die Ausrichtung auf den Anfang zurueck, statt ihn nach oben aus dem Bild zu
+     schieben. Ohne das Schluesselwort ist zentrierter Ueberlauf unerreichbar. */
+  justify-content: center;
+  justify-content: safe center;
+  /* DER Scrollbereich der Seite. Kopf und Knopfzeile bleiben dadurch immer sichtbar, und was
+     zu hoch ist, scrollt hier -- an EINER Stelle statt in jeder Liste einzeln. */
+  overflow-y: auto; overscroll-behavior: contain;
+  /* Waagerechtes Polster, damit die Bildlaufleiste neben dem Inhalt steht und nicht darauf.
+     scrollbar-gutter haelt den Platz frei, auch wenn gerade nichts scrollt -- sonst ruckt die
+     Spalte um die Leistenbreite, sobald ein Schritt einmal laenger wird. */
+  padding: clamp(16px, 3vh, 36px) 14px;
+  scrollbar-gutter: stable both-edges;
+  /* KEIN scroll-behavior: smooth. Es haengt an requestAnimationFrame, und das Scrollen, um das
+     es hier geht, faellt in denselben Augenblick, in dem ein Ausklapp-Kasten aufgeht: der Nutzer
+     nimmt es als Teil des Aufgehens wahr, nicht als Sprung. Weich waere es ausserdem nicht
+     messbar -- in einem verdeckten Tab passiert dann gar nichts. */
 }
 .uob-col {
   width: 100%; max-width: var(--uob-w); min-width: 0;
@@ -330,9 +354,30 @@
    auf volle Breite gestellt -- vier gleichwertige Werte sollen die Zeile teilen und nicht links
    zusammenklumpen. Auf schmalen Fenstern darf er waagerecht scrollen statt umzubrechen: eine
    zweizeilige Segmentleiste liest sich als zwei Leisten. */
-.uob-bseg { display: flex; width: 100%; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
-.uob-bseg::-webkit-scrollbar { display: none; }
-.uob-bseg .up-seg-btn { flex: 1 1 auto; white-space: nowrap; }
+.uob-bseg { position: relative; display: flex; width: 100%; max-width: 100%; }
+.uob-bseg .up-seg-btn { position: relative; z-index: 1; flex: 1 1 auto; white-space: nowrap; min-width: 0; }
+/* Die weisse Pille GLEITET, statt in jedem Knopf einzeln an- und auszugehen. Deshalb traegt
+   ein eigenes Element sie, und die Knoepfe geben ihren eigenen Hintergrund ab -- sonst laegen
+   zwei Pillen uebereinander, waehrend die eine unterwegs ist.
+   Das gibt es sonst nirgends in der App. Hier ist es richtig: dieser Switcher ist ein
+   Formularfeld unter anderen Formularfeldern, kein Werkzeugleisten-Umschalter, und ein Feld
+   darf zeigen, dass die Antwort gewechselt hat. Die Werte kommen aus core (.up-seg-btn.is-active),
+   damit die Pille genauso aussieht wie ueberall sonst.
+   left und width statt transform: die vier Beschriftungen sind verschieden breit, eine
+   Verschiebung allein koennte die Pille nicht auf ihre Groesse bringen. */
+.uob-bseg-ind {
+  position: absolute; top: 0; bottom: 0; left: 0; width: 0; z-index: 0;
+  border-radius: 8px; background: #ffffff;
+  border: 1px solid var(--vc-switch-active-border, transparent);
+  box-shadow: 0 1px 2px rgba(15,17,21,.06);
+  transition: left var(--uob-t) var(--uob-ease), width var(--uob-t) var(--uob-ease);
+}
+/* Vor der ersten Messung hat die Marke keine Breite -- dann darf sie auch nicht zu sehen sein,
+   sonst blitzt links ein Strich auf. */
+.uob-bseg-ind[style*="width: 0"] { opacity: 0; }
+.uob-root[data-theme="dark"] .uob-bseg-ind { background: var(--vc-bg); box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+.uob-bseg .up-seg-btn.is-active { background: transparent; border-color: transparent; box-shadow: none; }
+.uob-bseg .up-seg-btn.is-active { color: var(--vc-text); }
 
 /* ---------- Formular-Select ----------
    Begruendung im Kopf dieser Datei: core sagt ausdruecklich, dass .up-ddtrigger KEIN
@@ -412,39 +457,51 @@
   margin-top: clamp(14px, 2.6vh, 22px);
   display: flex; flex-direction: column; gap: 8px;
   /* Zwei Spalten sind hier die Vorgabe und nicht der Ausnahmefall: acht Marken untereinander
-     sind acht Bildschirmzeilen, und dann scrollt das Onboarding auf einem normalen Bildschirm.
-     Nebeneinander sind es vier. Die Spalte darunter ist entsprechend breiter (siehe --uob-w im
-     JS), sonst waeren zwei Spalten nur zwei schmale Spalten. */
-  /* Die Liste scrollt IN SICH, die Seite nicht. Das ist die Bedingung dafuer, dass Kopf,
-     Schiene und die Knopfzeile unten immer sichtbar bleiben -- sonst waere der Weiter-Knopf bei
-     fuenfzehn Prompts unter dem Bildschirmrand. */
-  max-height: min(52vh, 520px); overflow-y: auto; overscroll-behavior: contain;
-  /* Die duenne Bildlaufleiste aus core (.up-scroll, im Markup gesetzt) ist hier nicht nur
-     Kosmetik, sondern die Auskunft "hier geht es weiter": ohne sie endet die Liste nach fuenf
-     Zeilen mit einer sauberen Kante, und niemand ahnt die restlichen drei. */
-  padding: 2px 2px 2px; margin-left: -2px; margin-right: -2px;
+     sind acht Bildschirmzeilen. Nebeneinander sind es vier. Die Spalte darunter ist
+     entsprechend breiter (siehe --uob-w im JS), sonst waeren zwei Spalten nur zwei schmale.
+     KEIN eigener Scrollbereich mehr: das macht .uob-mid fuer die ganze Seite. Zwei
+     verschachtelte Scrollflaechen sind eine Falle -- das Rad scrollt mal die eine, mal die
+     andere, je nachdem, wo der Zeiger gerade steht. */
+  padding: 2px; margin-left: -2px; margin-right: -2px;
 }
 /* Marken: ein Raster. Ihre Zeilen sind alle gleich hoch (Logo, Name, Domain), da gibt es
    nichts auszugleichen. */
 .uob-list.is-cols { display: grid; grid-template-columns: 1fr 1fr; align-content: start; }
 
-/* Prompts: MEHRSPALTENSATZ statt Raster. Im Raster bestimmt der laengste Prompt einer Zeile die
-   Hoehe BEIDER Kacheln -- ein Einzeiler sass dann in einem dreizeiligen Kasten, und die Liste
-   sah aus, als waere sie kaputt. Mit columns fliesst jede Kachel in ihrer eigenen Hoehe und die
-   Spalten fuellen sich lueckenlos; break-inside verhindert, dass eine Kachel in der Mitte
-   umbricht. Das ist die uebliche Antwort auf ungleich hohe Karten (dieselbe, die jede
-   Bilderwand nimmt) -- CSS-Grid kann Masonry noch nicht verlaesslich.
-   Der Preis dafuer: die Lesereihenfolge geht Spalte fuer Spalte statt Zeile fuer Zeile. Bei
-   einer Auswahlliste ohne Rangfolge kostet das nichts, und die Tastatur folgt derselben
-   Reihenfolge wie das Auge. */
-.uob-group-items.is-cols { display: block; columns: 2; column-gap: 8px; }
-.uob-group-items.is-cols > .uob-item { break-inside: avoid; margin-bottom: 8px; width: 100%; }
-/* Eine Spalte, sobald zwei nur noch Stuempfe waeren. Der Wert ist am Inhalt kalibriert: unter
-   700px bleibt fuer Logo, Name und Domain nebeneinander kein lesbarer Rest. */
-@media (max-width: 700px) {
-  .uob-list.is-cols { grid-template-columns: 1fr; }
-  .uob-group-items.is-cols { columns: 1; }
+/* Eine Spalte, sobald zwei nur noch Stuempfe waeren. Ueber die gemessene Klasse und NICHT ueber
+   eine Medienabfrage: die misst das Fenster, und in Bubble steckt diese Seite in einem Element,
+   das schmal sein kann, waehrend das Fenster breit ist. Gemessen wurden bei 390px Wurzelbreite
+   und breitem Fenster zwei Spalten zu 191px -- fuer Logo, Name und Domain nebeneinander bleibt
+   da kein lesbarer Rest. */
+.uob-root.is-narrow .uob-list.is-cols { grid-template-columns: 1fr; }
+
+/* ---------- Prompts als Liste ----------
+   Kein Kasten je Prompt mehr. Der Mehrspaltensatz davor loeste zwar die ungleichen Hoehen, aber
+   er stellte dreizehn Fragen als dreizehn Karten dar -- und eine Frage ist keine Karte, sie ist
+   eine Zeile. Jetzt: volle Breite, Trennlinie dazwischen, Hintergrund beim Ueberfahren und im
+   gewaehlten Zustand. Das ist genau die Zeile aus der Prompts-Tabelle (.up-row), mit denselben
+   Tokens: --vt-row-hover fuer beides. Wer die Tabelle kennt, kennt diese Liste. */
+.uob-group-items.is-plain { display: block; }
+.uob-item.is-plain {
+  border: 0; border-radius: 8px; background: transparent;
+  padding: 11px 12px; min-height: 0; width: 100%;
+  align-items: center;
 }
+.uob-item.is-plain:hover { background: var(--vt-row-hover); border-color: transparent; }
+.uob-item.is-plain.is-on { background: var(--vt-row-hover); border-color: transparent; }
+/* Die Trennlinie sitzt als Rand am Kasten DARUNTER und nicht am gefaerbten Element selbst: so
+   verschwindet sie nicht, sobald eine Zeile ihren Hintergrund bekommt, und die letzte Zeile
+   einer Gruppe hat keine. */
+.uob-group-items.is-plain > .uob-item + .uob-item { position: relative; }
+.uob-group-items.is-plain > .uob-item + .uob-item::before {
+  content: ""; position: absolute; left: 12px; right: 12px; top: -1px; height: 1px;
+  background: var(--vc-border);
+}
+.uob-item.is-plain:hover::before, .uob-item.is-plain.is-on::before,
+.uob-item.is-plain:hover + .uob-item::before, .uob-item.is-plain.is-on + .uob-item::before {
+  opacity: 0;
+}
+.uob-group-items.is-plain > .uob-item::before { transition: opacity var(--uob-t) var(--uob-ease); }
 .uob-item {
   display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
   padding: 10px 14px; min-height: 56px;
@@ -477,16 +534,28 @@
   transition: opacity var(--uob-t) var(--uob-ease), transform var(--uob-t) var(--uob-ease);
 }
 .uob-item.is-on .uob-check { background: var(--vc-text); border-color: var(--vc-text); }
+/* Ein eigenes Thema ohne Namen ist noch keines: der Haken bleibt leer, bis etwas dasteht. */
+.uob-item [data-eigen-in] ~ * .uob-check, .uob-check.is-leer { background: var(--vc-bg); border-color: var(--vc-border); }
+.uob-check.is-leer svg { opacity: 0; }
+.uob-item[data-eigen] .uob-check:not(.is-leer) { background: var(--vc-text); border-color: var(--vc-text); }
+.uob-item[data-eigen] .uob-check:not(.is-leer) svg { opacity: 1; transform: scale(1); }
+.uob-item[data-eigen] { cursor: text; }
 .uob-item.is-on .uob-check svg { opacity: 1; transform: scale(1); }
 /* Markenkachel in der Zeile: dieselbe Kachel wie oben im Markenkopf, eine Stufe kleiner
    (28 -> 24, Radius 8 -> 7, Bild 24 -> 20). */
 .uob-item-logo {
-  width: 24px; height: 24px; flex: 0 0 auto; border-radius: 7px;
-  background: var(--vc-bg); border: 1px solid var(--vc-border);
+  width: 26px; height: 26px; flex: 0 0 auto; border-radius: 7px;
+  background: var(--vt-logo-bg); border: 1px solid var(--vc-border);
   display: inline-flex; align-items: center; justify-content: center; overflow: hidden;
   font-size: 11px; font-weight: 600; color: var(--vc-muted);
 }
-.uob-item-logo img { width: 20px; height: 20px; border-radius: 5px; display: block; object-fit: contain; }
+.uob-item-logo img { width: 22px; height: 22px; border-radius: 5px; display: block; object-fit: contain; }
+/* Im Dunkeln kein Rahmen, sondern die helle Flaeche --vt-logo-bg -- dieselbe Loesung wie bei
+   jeder Logokachel der Hauptapp (.up-ment-logo). Ein Rahmen um ein dunkles Favicon auf dunklem
+   Grund macht daraus einen leeren Kasten; die helle Flaeche gibt dem Logo einen Grund, auf dem
+   es ueberhaupt zu sehen ist. */
+.uob-root[data-theme="dark"] .uob-item-logo { border-color: transparent; }
+.uob-root[data-theme="dark"] .uob-ident-logo { border-color: transparent; background: var(--vt-logo-bg); }
 .uob-item-logo.has-img { font-size: 0; }
 .uob-item-txt { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .uob-item-name { font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.3; }
@@ -513,6 +582,44 @@
 .uob-item .up-market { flex: 0 0 auto; }
 .uob-item .up-market-code { display: none; }
 .uob-item-long { font-size: 13.5px; line-height: 1.45; color: var(--vc-text); text-wrap: pretty; }
+
+/* ---------- eigenes Thema hinzufuegen ----------
+   Der Platzhalter sieht aus wie eine Zeile der Liste, ist aber gestrichelt -- er ist ein
+   ANGEBOT und kein Eintrag. Beim Klick wird er zur Zeile mit Eingabefeld; darunter erscheint
+   der naechste Platzhalter, bis fuenf erreicht sind. */
+.uob-add {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  padding: 8px 14px; min-height: 44px;
+  border: 1px dashed var(--vc-border); border-radius: 12px; background: transparent;
+  font-family: inherit; font-size: 14px; font-weight: 500; color: var(--vc-third);
+  cursor: pointer; outline: none;
+  transition: border-color var(--uob-t) var(--uob-ease), color var(--uob-t) var(--uob-ease),
+              opacity var(--uob-t) var(--uob-ease);
+}
+.uob-add:hover { border-color: var(--vc-hover-border); color: var(--vc-text); }
+.uob-add:focus-visible { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+.uob-add svg { width: 15px; height: 15px; display: block; flex: 0 0 auto; }
+/* Neu dazugekommene Zeilen und Platzhalter blenden auf, statt zu erscheinen. Die Klasse nimmt
+   das JS nach einem Bildaufbau wieder weg. */
+.uob-list .is-fresh { opacity: 0; transform: translateY(-4px); }
+.uob-list .uob-item, .uob-list .uob-add { transition: opacity var(--uob-t) var(--uob-ease),
+  transform var(--uob-t) var(--uob-ease), border-color var(--uob-t) var(--uob-ease),
+  background var(--uob-t) var(--uob-ease), color var(--uob-t) var(--uob-ease); }
+/* Das Eingabefeld sitzt IN der Zeile und bringt nichts Eigenes mit: kein Rahmen, kein Grund,
+   keine Hoehe. Die Zeile ist das Feld. */
+.uob-newin {
+  flex: 1 1 auto; min-width: 0; border: 0; background: transparent; padding: 0;
+  font-family: inherit; font-size: 14px; font-weight: 500; color: var(--vc-text); outline: none;
+}
+.uob-newin::placeholder { color: var(--vc-third); font-weight: 400; }
+.uob-newdel {
+  flex: 0 0 auto; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 6px;
+  background: transparent; color: var(--vc-third); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: color var(--uob-t) var(--uob-ease), background var(--uob-t) var(--uob-ease);
+}
+.uob-newdel:hover { color: var(--vc-text); background: var(--uob-hover); }
+.uob-newdel svg { width: 12px; height: 12px; display: block; }
 
 /* Themen-Marke: der farbige Koerper eines Themas ohne Emoji, wie in der Aufgabe verlangt.
    Kein Kreis: die App zeichnet Themen ueberall als abgerundetes Quadrat (.up-sent-dot,
@@ -630,6 +737,10 @@
 .uob-phase.is-now .uob-phase-dot { opacity: 0; }
 .uob-phase.is-now .uob-phase-ring { opacity: 1; }
 .uob-phase.is-done .uob-phase-dot { opacity: 0; }
+/* Der Kreisel geht SCHNELL (90ms), der Haken kommt langsam (280ms). Liefen beide gleich lang,
+   ueberlagerten sie sich in derselben 18px-Scheibe -- ein drehender Ring hinter einer
+   wachsenden Scheibe, und genau das sah wie Flackern aus. */
+.uob-phase.is-done .uob-phase-ring { opacity: 0; transition-duration: 90ms; }
 .uob-phase.is-done .uob-phase-ok { opacity: 1; transform: scale(1); }
 @keyframes uob-spin { to { transform: rotate(360deg); } }
 .uob-phase-txt { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
@@ -651,15 +762,16 @@
   display: flex; gap: 7px; flex-wrap: wrap; justify-content: center; align-items: flex-start;
   width: 100%; margin-top: clamp(16px, 2.6vh, 22px); min-height: 24px;
 }
-.uob-tl-tag {
-  display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px;
-  border-radius: 8px; font-size: 11.5px; line-height: 1; font-weight: 500;
-  background: var(--vc-heading-bg); border: 1px solid var(--vc-border); color: var(--vc-muted);
-  white-space: nowrap; flex: 0 0 auto; opacity: 0; transform: translateY(5px);
+/* Die Marken selbst sind .up-topicchip aus core -- DIESELBEN Chips wie in der Prompts-Tabelle
+   und in der Themenverwaltung. Vorher stand hier ein eigener Ton in Grau; jetzt trifft der
+   Nutzer im Warten schon die Farbe wieder, die das Thema spaeter in der App traegt. Hier steht
+   nur noch, wie sie ANKOMMEN. */
+.uob-tl-tags .up-topicchip {
+  cursor: default; flex: 0 0 auto;
+  opacity: 0; transform: translateY(5px);
   transition: opacity .34s ease, transform .34s cubic-bezier(.2, .8, .3, 1);
 }
-.uob-tl-tag.is-on { opacity: 1; transform: none; }
-.uob-tl-dot { width: 6px; height: 6px; border-radius: 50%; flex: 0 0 auto; background: var(--vc-third); }
+.uob-tl-tags .up-topicchip.is-in { opacity: 1; transform: none; }
 
 /* ---------- Preiskarten ----------
    Drei Karten nebeneinander, die mittlere hervorgehoben. Die Hervorhebung ist ein Rahmen in
@@ -868,10 +980,6 @@
 .uob-root.is-narrow .uob-frow { grid-template-columns: 1fr; }
 .uob-root.is-narrow .uob-mid { justify-content: flex-start; padding-top: clamp(14px, 3vh, 26px); }
 .uob-root.is-narrow .uob-h1 { font-size: 22px; }
-.uob-root.is-narrow .uob-list { max-height: none; overflow: visible; }
-/* Auf dem Telefon darf die Seite scrollen -- das ist dort normal, und eine Liste mit eigenem
-   Scrollbereich in einer scrollenden Seite ist eine Falle. */
-.uob-root.is-narrow { min-height: 100vh; height: auto; }
 .uob-root.is-narrow .uob-plans { grid-template-columns: 1fr; }
 .uob-root.is-narrow .uob-nav { flex-direction: column-reverse; align-items: stretch; }
 .uob-root.is-narrow .uob-next { width: 100%; }

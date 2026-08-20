@@ -264,7 +264,10 @@
 
   /* Zeichengrenzen. Kein Zaehler unter dem Feld: der zaehlt bei jedem Anschlag mit und lenkt vom
      Tippen ab. Stattdessen sagt das Feld erst etwas, wenn die Grenze WIRKLICH erreicht ist. */
-  var MAX = { name: 60, website: 255, industry: 60 };
+  var MAX = { name: 60, website: 255, industry: 60, topic: 40 };
+  /* Fuenf eigene Themen. Die Grenze steht in der Aufgabe -- und sie ist auch sachlich richtig:
+     wer im Onboarding zehn Themen tippt, hat danach zehn Themen ohne Prompts. */
+  var EIGEN_MAX = 5;
 
   /* Dieselbe Liste wie im Bereich "Your Brand" (settings-brand.js). Sie steht hier ein zweites
      Mal und nicht in core, weil sie in beiden Faellen eine INHALTSliste ist und kein Bauteil --
@@ -456,6 +459,10 @@
       projekt: null,            /* das Onboarding-Projekt, sobald es da ist */
       brands: [], topics: [], prompts: [], plans: [],
       selBrands: {}, selTopics: {}, selPrompts: {},
+      /* Selbst getippte Themen: [{ id, name, farbe }]. Sie liegen NEBEN state.topics und nicht
+         darin -- topics kommt vom Server und wird bei jedem Payload ersetzt, diese hier gehoeren
+         dem Nutzer und duerfen dabei nicht verschwinden. */
+      eigene: [],
       plan: "", interval: "yearly",
       /* Einmal beim Tarif gewesen heisst: der Punkt bleibt in der Schiene. Siehe renderRail. */
       planGesehen: false,
@@ -571,6 +578,9 @@
     var elRailDots= root.querySelector("[data-rail-dots]");
     var elRailLbls= root.querySelector("[data-rail-labels]");
     var elRailHits= root.querySelector("[data-rail-hits]");
+    var elMid     = root.querySelector(".uob-mid");
+    /* Einmal ganz am Anfang lesen, bevor irgendein Inline-Polster gesetzt sein kann. */
+    var midPolsterStart = elMid ? (parseFloat(getComputedStyle(elMid).paddingBottom) || 0) : 0;
     var elIdent   = root.querySelector("[data-ident]");
     var elIdentLg = root.querySelector("[data-ident-logo]");
     var elIdentNm = root.querySelector("[data-ident-name]");
@@ -671,6 +681,7 @@
               /* Vier feste Werte, alle gleich wichtig, keiner erklaerungsbeduerftig -- das ist
                  ein Switcher und kein Kasten, den man erst aufmachen muss. .up-seg aus core. */
               '<div class="up-seg uob-bseg" role="tablist" aria-label="Business model">' +
+                '<span class="uob-bseg-ind" data-bseg-ind></span>' +
                 BUSINESS.map(function (b) {
                   return '<button class="up-seg-btn" type="button" role="tab" aria-selected="false"' +
                          ' data-biz="' + esc(b.value) + '">' + esc(b.label) + '</button>';
@@ -710,9 +721,11 @@
                 '<div class="uob-tl-tags" data-tltags>' +
                   state.topics.filter(function (t) { return state.selTopics[t.id]; })
                     .map(function (t) {
-                      return '<span class="uob-tl-tag">' +
-                        '<span class="uob-tl-dot" style="background:' + esc(farbeVon(t)) + '"></span>' +
-                        esc(t.name) + '</span>';
+                      /* .up-topicchip aus core -- derselbe Chip, den die Prompts-Tabelle und die
+                         Themenverwaltung zeichnen. is-static, weil er hier nur anzeigt. */
+                      return '<span class="up-topicchip is-static" style="--ust-tag-color:' +
+                             esc(farbeVon(t) || "#6b7280") + '">' +
+                        '<span class="up-topicchip-lbl">' + esc(t.name) + '</span></span>';
                     }).join("") +
                 '</div>'
               : '<div class="uob-phases" data-phases>' +
@@ -796,10 +809,32 @@
                     '</span>' +
                   '</button>';
                 }).join("") +
+                eigeneThemenHtml() +
               '</div>'
-            : '<p class="uob-sub" style="margin-top:18px">No topics yet.</p>') +
+            : '<div class="uob-list" role="group" aria-label="Topics">' + eigeneThemenHtml() + '</div>') +
         '</div>' +
       '</div>';
+    }
+
+    /* Selbst hinzugefuegte Themen und der Platzhalter darunter. Sie stehen im selben Listenraster
+       wie die vorgeschlagenen, damit sie gleichwertig aussehen -- sie SIND gleichwertig, der
+       Nutzer weiss besser als der Hintergrundlauf, wofuer er gefunden werden will.
+       Ein Thema ohne Namen zaehlt nicht mit: erst wenn etwas dasteht, ist es eines. */
+    function eigeneThemenHtml() {
+      var html = state.eigene.map(function (e, i) {
+        return '<div class="uob-item is-slim" data-eigen="' + i + '">' +
+          '<span class="uob-check' + (txt(e.name) ? "" : " is-leer") + '">' + ic("check", 3) + '</span>' +
+          '<span class="uob-swatch" style="--uob-sw:' + esc(e.farbe) + '"></span>' +
+          '<input class="uob-newin" type="text" maxlength="' + MAX.topic + '" value="' + esc(e.name) + '"' +
+            ' placeholder="Name your topic" autocomplete="off" spellcheck="false" data-eigen-in="' + i + '"/>' +
+          '<button class="uob-newdel" type="button" data-eigen-del="' + i + '" aria-label="Remove topic">' +
+            ic("x", 3) + '</button>' +
+        '</div>';
+      }).join("");
+      if (state.eigene.length < EIGEN_MAX) {
+        html += '<button class="uob-add" type="button" data-addtopic>' + ic("plus", 2) + 'Add your own</button>';
+      }
+      return html;
     }
 
     /* Prompts nach Thema. Ein Prompt mit mehreren Themen steht GENAU EINMAL, unter seinem ersten
@@ -856,10 +891,10 @@
                         (alleAn(g) ? "Deselect all" : "Select all") +
                       '</button>' +
                     '</div>' +
-                    '<div class="uob-group-items is-cols">' +
+                    '<div class="uob-group-items is-plain">' +
                       g.items.map(function (it) {
                         var an = !!state.selPrompts[it.p.id];
-                        return '<button class="uob-item is-multiline' + (an ? " is-on" : "") + '" type="button"' +
+                        return '<button class="uob-item is-multiline is-plain' + (an ? " is-on" : "") + '" type="button"' +
                                  ' role="checkbox" aria-checked="' + (an ? "true" : "false") + '"' +
                                  ' data-pick="prompts" data-id="' + esc(it.p.id) + '">' +
                           '<span class="uob-check">' + ic("check", 3) + '</span>' +
@@ -1089,7 +1124,7 @@
     /* Die Spaltenbreite je Ansicht. Ein Formular liest sich schmal besser, Listen brauchen mehr,
        drei Preiskarten am meisten. */
     var BREITE = { brand: "480px", load1: "480px", load2: "560px",
-                   competitors: "880px", topics: "620px", prompts: "880px", plan: "1040px" };
+                   competitors: "880px", topics: "620px", prompts: "720px", plan: "1040px" };
 
     function render(neuEingezogen) {
       var k = ansichtKey();
@@ -1330,7 +1365,7 @@
       var host = root.querySelector("[data-tltags]");
       if (!host) return;
       [].forEach.call(host.children, function (el, i) {
-        window.setTimeout(function () { el.classList.add("is-on"); }, 120 + i * 140);
+        window.setTimeout(function () { el.classList.add("is-in"); }, 120 + i * 140);
       });
     }
 
@@ -1378,6 +1413,18 @@
          Staffelung ohne Umbau wieder eingeschaltet werden kann. */
       var spaet = root.querySelector('[data-later="industry"]');
       if (spaet) spaet.classList.add("is-on");
+      bsegMarke();
+    }
+    /* Die gleitende Marke unter den aktiven Knopf legen. Gemessen statt gerechnet: die vier
+       Beschriftungen sind verschieden breit, und flex verteilt den Rest -- eine Rechnung aus der
+       Zahl der Knoepfe waere falsch, sobald ein Wort laenger wird. */
+    function bsegMarke() {
+      var ind = root.querySelector("[data-bseg-ind]");
+      if (!ind) return;
+      var an = root.querySelector("[data-biz].is-active");
+      if (!an) { ind.style.width = "0px"; return; }
+      ind.style.left = an.offsetLeft + "px";
+      ind.style.width = an.offsetWidth + "px";
     }
 
     /* ---- Die vier Auswahlfelder ------------------------------------------------------------
@@ -1466,6 +1513,56 @@
       m.setAttribute("aria-hidden", "false");
       var b = wrap.querySelector("[data-dd-btn]");
       if (b) b.setAttribute("aria-expanded", "true");
+      /* Der Kasten darf nicht unter der Kante des Scrollbereichs enden. Weder Umklappen nach oben
+         noch ein Portal (beides verbietet STYLEGUIDE §6/§14) -- also bekommt er genau die Hoehe,
+         die noch da ist, und seine Liste scrollt in sich.
+         Warum ueberhaupt: gemessen endete das Branchenmenue 246 Pixel unter dem Scrollbereich,
+         und dorthin kam man auch durch Scrollen nicht -- ein absolut gesetzter Kasten zaehlt
+         nicht zur scrollbaren Hoehe seines Vorfahren (scrollHeight blieb bei 560 statt 806).
+         Erst scrollen, dann messen: nach dem Scrollen ist mehr Platz da als davor. */
+      ddPlatz(m);
+    }
+    /* Platz schaffen, damit der Kasten ganz zu sehen ist. Zwei Schritte, in dieser Reihenfolge:
+
+       1. Die Liste im Kasten wird auf die Hoehe des Bereichs begrenzt. Ein Kasten, der hoeher
+          ist als der Scrollbereich selbst, laesst sich durch kein Scrollen ganz zeigen.
+       2. Der Bereich bekommt unten so viel Polster dazu, wie der Kasten uebersteht -- und wird
+          dorthin gescrollt. Das ist noetig, weil ein absolut gesetzter Kasten NICHT zur
+          scrollbaren Hoehe seines Vorfahren zaehlt: gemessen blieb scrollHeight bei 560, waehrend
+          das Menue 246 Pixel tiefer endete, und dorthin kam man durch kein Scrollen.
+
+       Kein Umklappen nach oben, kein Portal, kein position: fixed -- alle drei verbietet
+       STYLEGUIDE §6/§14, und zwar mit guten Gruenden. Das Polster faellt beim Schliessen weg. */
+    function ddPlatz(menu) {
+      if (!elMid) return;
+      var liste = menu.querySelector("[data-dd-list]");
+      var midb = elMid.getBoundingClientRect();
+      if (liste) {
+        liste.style.maxHeight = "";
+        var ueber = menu.getBoundingClientRect().height - (midb.height - 24);
+        if (ueber > 0) {
+          liste.style.maxHeight =
+            Math.max(120, Math.round(liste.getBoundingClientRect().height - ueber)) + "px";
+        }
+      }
+      var zuviel = Math.ceil(menu.getBoundingClientRect().bottom - (midb.bottom - 10));
+      if (zuviel <= 0) return;
+      elMid.style.paddingBottom = (midPolster() + zuviel) + "px";
+      /* NACH dem Polster noch einmal messen und genau um den Rest scrollen. Der erste Wert taugt
+         dafuer nicht: das frische Polster verschiebt den Kasten selbst mit, und wer um den alten
+         Ueberstand scrollt, schiebt den Kopf des Menues oben aus dem Bild.
+         scrollTop direkt und ohne scroll-behavior: smooth. Beides Weiche -- scrollIntoView mit
+         behavior smooth wie auch scroll-behavior in der CSS -- haengt an requestAnimationFrame.
+         Hier faellt das Scrollen in denselben Augenblick wie das Aufgehen des Kastens und liest
+         sich als Teil davon; eine Zuweisung ist ausserdem messbar, eine Animation nicht. */
+      var rest = Math.ceil(menu.getBoundingClientRect().bottom - (elMid.getBoundingClientRect().bottom - 10));
+      if (rest > 0) elMid.scrollTop = elMid.scrollTop + rest;
+    }
+    /* Das Polster aus der CSS, einmal gelesen und gemerkt -- danach steht dort ein Inline-Wert,
+       und der waere die Antwort auf die eigene Frage. */
+    function midPolster() { return midPolsterStart; }
+    function ddPlatzZurueck() {
+      if (elMid) elMid.style.paddingBottom = "";
     }
     function ddSchliessen(ausser) {
       var wraps = root.querySelectorAll(".uob-ddwrap.is-open");
@@ -1488,6 +1585,7 @@
         var b = wraps[i].querySelector("[data-dd-btn]");
         if (b) b.setAttribute("aria-expanded", "false");
       }
+      if (!root.querySelector(".uob-ddwrap.is-open")) ddPlatzZurueck();
     }
 
     /* ---- Klicks ----------------------------------------------------------------------------- */
@@ -1546,6 +1644,15 @@
         urlOeffnen(auf.getAttribute("data-open"));
         return;
       }
+
+      var add = e.target.closest("[data-addtopic]");
+      if (add) { eigenesThemaAnlegen(add); return; }
+      var del = e.target.closest("[data-eigen-del]");
+      if (del) { eigenesThemaLoeschen(parseInt(del.getAttribute("data-eigen-del"), 10)); return; }
+      /* Ein Klick irgendwo in die Zeile eines eigenen Themas setzt den Fokus ins Feld -- die
+         Zeile IST das Feld, nur ist das Feld schmaler als sie. */
+      var eig = e.target.closest("[data-eigen]");
+      if (eig) { var f = eig.querySelector("[data-eigen-in]"); if (f) f.focus(); return; }
 
       var alle = e.target.closest("[data-all]");
       if (alle) {
@@ -1655,6 +1762,23 @@
         zeigeFeldfehler();
         return;
       }
+      var ei = e.target.getAttribute && e.target.getAttribute("data-eigen-in");
+      if (ei != null) {
+        var k = parseInt(ei, 10);
+        var eintrag = state.eigene[k];
+        if (eintrag) {
+          eintrag.name = e.target.value;
+          /* Ein Thema mit Namen ist gewaehlt, eines ohne nicht -- ohne diesen Schritt zaehlte
+             ein leer gelassener Platzhalter mit. */
+          if (txt(eintrag.name)) state.selTopics[eintrag.id] = true;
+          else delete state.selTopics[eintrag.id];
+          var zeile = e.target.closest("[data-eigen]");
+          var hk = zeile && zeile.querySelector(".uob-check");
+          if (hk) hk.classList.toggle("is-leer", !txt(eintrag.name));
+          themenZaehler();
+        }
+        return;
+      }
       var sf = e.target.closest ? e.target.closest("[data-dd-search], [data-dd-custom]") : null;
       if (sf) {
         /* has-text tauscht in core die Lupe gegen das Loeschkreuz. */
@@ -1692,6 +1816,61 @@
       renderNav();
       fire("data-select-fn", "uobSelect",
         { kind: kind, ids: idsVon(topf).join(","), count: anzahl(topf) });
+    }
+
+    /* Ein neues eigenes Thema. Die Zeile wird an Ort und Stelle eingesetzt und der Platzhalter
+       wandert darunter -- kein Neuaufbau der Liste, sonst verlaere jedes andere Feld seinen
+       Fokus und die Liste ihren Scrollstand. Die Farbe kommt aus der Themenpalette von core,
+       weitergezaehlt hinter den vorgeschlagenen, damit zwei eigene nicht dieselbe bekommen. */
+    function eigenesThemaAnlegen(platzhalter) {
+      if (state.eigene.length >= EIGEN_MAX) return;
+      var pal = UC.TOPIC_COLOR_PALETTE || [];
+      var i = state.topics.length + state.eigene.length;
+      state.eigene.push({
+        id: "eigen-" + i + "-" + state.eigene.length,
+        name: "",
+        farbe: pal.length ? pal[i % pal.length] : "#6b7280"
+      });
+      var idx = state.eigene.length - 1;
+      var frisch = document.createElement("div");
+      frisch.innerHTML = eigeneThemenHtml();
+      /* Der alte Platzhalter geht, die neue Zeile und der neue Platzhalter kommen an seine
+         Stelle. Ueber ein Zwischenelement, weil eigeneThemenHtml ALLE eigenen Zeilen liefert
+         und nur die neuen gebraucht werden. */
+      var neuZeile = frisch.querySelector('[data-eigen="' + idx + '"]');
+      var neuPlatz = frisch.querySelector("[data-addtopic]");
+      neuZeile.classList.add("is-fresh");
+      platzhalter.parentNode.insertBefore(neuZeile, platzhalter);
+      if (neuPlatz) { neuPlatz.classList.add("is-fresh"); platzhalter.parentNode.replaceChild(neuPlatz, platzhalter); }
+      else platzhalter.parentNode.removeChild(platzhalter);
+      window.setTimeout(function () {
+        neuZeile.classList.remove("is-fresh");
+        if (neuPlatz) neuPlatz.classList.remove("is-fresh");
+        var f = neuZeile.querySelector("[data-eigen-in]");
+        if (f) f.focus();
+      }, 20);
+      themenZaehler();
+    }
+    function eigenesThemaLoeschen(idx) {
+      if (!(idx >= 0) || idx >= state.eigene.length) return;
+      var id = state.eigene[idx].id;
+      delete state.selTopics[id];
+      state.eigene.splice(idx, 1);
+      /* Hier wird neu gebaut: die Indizes aller folgenden Zeilen verschieben sich, und die von
+         Hand nachzuziehen waere mehr Code als der Neuaufbau kostet. Der Fokus ist ohnehin auf
+         einem Knopf, der gerade verschwindet. */
+      render(true);
+    }
+    /* Der Zaehler zaehlt vorgeschlagene UND eigene -- ein eigenes Thema mit Namen gilt als
+       gewaehlt, denn wer es tippt, will es. */
+    function themenZaehler() {
+      var z = root.querySelector(".uob-count");
+      if (z) {
+        var n = anzahl(state.selTopics);
+        z.textContent = n + " selected";
+        z.classList.toggle("is-full", n > 0);
+      }
+      renderNav();
     }
 
     /* Alle Prompts eines Themas auf einmal an oder aus. Ist schon alles gewaehlt, raeumt der
@@ -1759,6 +1938,11 @@
     }
 
     function gehe(key, neuerEintrag) {
+      /* Schon dort und nicht am Warten: nichts tun. Ohne diese Sperre hat der Demolauf zweimal
+         nach Competitors navigiert -- einmal ueber setProject (status_phase 5) und 360ms spaeter
+         ueber seine eigene Uhr. Der zweite Aufruf tauschte den Inhalt des schon stehenden
+         Bereichs aus, und genau das sah man als Flackern kurz nach dem Einzug. */
+      if (state.step === key && !state.warten) return;
       state.step = key;
       state.warten = "";
       urlSetzen(key, neuerEintrag !== false);
@@ -1794,14 +1978,21 @@
            weiter -- niemand will dieselbe Wartezeit zweimal absitzen, nur weil er einen Schritt
            zurueckgegangen ist. Hat sich die Auswahl geaendert, muessen neue Prompts entstehen,
            und dann gehoert die Wartezeit dazu: die alten Prompts gehoeren zu anderen Themen. */
+        /* Eigene Themen gehen als NAME hinaus, nicht als Id: sie haben serverseitig noch keine.
+           Der Workflow legt sie an und bekommt seine Ids beim naechsten Payload zurueck. */
         var jetztGewaehlt = idsVon(state.selTopics).sort().join(",");
         if (state.prompts.length && state.promptsFuer === jetztGewaehlt) { gehe("prompts"); return; }
         state.promptsFuer = jetztGewaehlt;
         /* Die Themenauswahl ist der Anstoss fuer die Prompts -- deshalb ein eigenes Ereignis und
            nicht nur uobStep: der Workflow dahinter tut etwas, das dauert. */
         warteStarten("prompts");
-        fire("data-topics-fn", "uobTopics",
-          { topic_ids: jetztGewaehlt, count: anzahl(state.selTopics) });
+        fire("data-topics-fn", "uobTopics", {
+          topic_ids: state.topics.filter(function (t) { return state.selTopics[t.id]; })
+            .map(function (t) { return t.id; }).join(","),
+          new_topics: state.eigene.filter(function (e2) { return txt(e2.name); })
+            .map(function (e2) { return txt(e2.name); }).join(","),
+          count: anzahl(state.selTopics)
+        });
         if (demo) demoLauf2();
         return;
       }
@@ -1891,9 +2082,13 @@
         uhr = window.setTimeout(function () {
           i++;
           if (i >= PHASES.length) {
-            if (DEMO && DEMO.project) ctrl.setProject(DEMO.project);
+            /* Erst die Daten, DANN das Projekt. Das Projekt traegt status_phase 5 und schaltet
+               damit weiter -- kaeme es zuerst, baute sich der naechste Schritt leer auf und
+               danach zweimal mit Inhalt neu. Genau das sah man als Flackern kurz nach dem
+               Einzug. So entsteht er einmal, fertig gefuellt. */
             if (DEMO && DEMO.brands) ctrl.setBrands(DEMO.brands);
             if (DEMO && DEMO.topics) ctrl.setTopics(DEMO.topics);
+            if (DEMO && DEMO.project) ctrl.setProject(DEMO.project);
             state.fortschritt = 100; renderPhasen();
             window.setTimeout(function () { warteBeenden(); gehe("competitors"); }, 360);
             return;
@@ -1922,6 +2117,8 @@
          Zeile wurde nur beim Zeichnen geprueft, und ein blosses Ziehen am Fensterrand liess eine
          Reihe stehen, die laengst nicht mehr passte. */
       labelsPruefen(sichtbareSteps().length);
+      /* Die Marke haengt an Pixelmassen, die sich mit der Breite aendern. */
+      bsegMarke();
     }
     messeBreite();
     if (UC.onResize) UC.onResize(root, messeBreite);
@@ -2003,7 +2200,7 @@
         warteBeenden();
         state.step = "brand"; state.projekt = null;
         state.brands = []; state.topics = []; state.prompts = [];
-        state.selBrands = {}; state.selTopics = {}; state.selPrompts = {};
+        state.selBrands = {}; state.selTopics = {}; state.selPrompts = {}; state.eigene = [];
         state.plan = ""; state.banner = ""; state.busy = false;
         state.fehler = {}; state.maxErreicht = 0; state.planGesehen = false;
         state.promptsFuer = null;
@@ -2051,7 +2248,11 @@
          waere promptsFuer nach einem Setter von aussen leer, und der naechste Weiter-Klick
          liefe unnoetig noch einmal durch die Wartezeit. */
       if (welche === "prompts") state.promptsFuer = idsVon(state.selTopics).sort().join(",");
-      render(true);
+      /* Waehrend einer Uhr NICHT zeichnen. Die Daten fuer den naechsten Schritt kommen an,
+         waehrend das Ladebild laeuft -- ein Neuaufbau baut dann das Ladebild neu, mitten in der
+         Animation seiner letzten Phase, und genau das sah man kurz zucken. Gezeichnet wird, wenn
+         die Uhr endet und gehe() den neuen Schritt aufbaut. */
+      if (!state.warten) render(true);
       return true;
     }
 

@@ -73,6 +73,10 @@
        setOnboardingLoading("<instance>", "yes")    Kreisel im Weiter-Knopf
        resetOnboarding("<instance>")                alles leer, zurueck auf Schritt 1
 
+     REIHENFOLGE: erst die Listen (setOnboardingBrands, setOnboardingTopics), dann das Projekt
+     bzw. den Status mit status_phase 5. Das Projekt schaltet weiter -- kommt es zuerst, baut
+     sich der naechste Schritt leer auf und danach noch einmal mit Inhalt, und das sieht man.
+
      Jeder Setter nimmt den JSON als TEXT oder als Objekt. Ein Payload, den core nicht lesen
      kann, endet als benanntes Band im Bild -- nicht als endloses Warten.
 
