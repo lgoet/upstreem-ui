@@ -1016,8 +1016,11 @@
     }
     function zahl(v) {
       if (v == null) return "–";
-      /* Tausenderpunkte, aber ohne Gebietsschema: die Seite ist englisch, also Kommas. */
-      return String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      /* PUNKT als Tausendertrenner, nicht Komma. Der englische Text der Oberflaeche spraeche
+         fuer das Komma -- aber diese Zahl steht wortgleich so auf der Preisseite, und ein Nutzer,
+         der von dort kommt, soll dieselbe Zahl wiedererkennen und nicht kurz stutzen. Der
+         Wiedererkennungswert schlaegt die Schreibkonvention. */
+      return String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
     }
     /* Die letzte Zeile im Wortlaut der Preisseite: "Standard email support" beim kleinsten
        Tarif, sonst "Personal account manager". Steht sie im Payload, gilt der Payload -- der
