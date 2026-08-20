@@ -179,11 +179,13 @@
           '<div class="udd-title">' +
             '<span class="up-logo-box udd-logobox"><span class="up-logo-ltr"></span></span>' +
             '<span class="udd-heading"></span>' +
-            /* Das Info-Symbol steht NUR im URL-Share, deshalb versteckt es sich selbst -- die
-               Zitationsanteils-Kurve erklaert ihre Ueberschrift von allein. Der Tooltip ist der
-               des Hauses (data-tip, .up-tip), kein title-Attribut: das erscheint verzoegert, an
-               der Maus und in Systemoptik. */
-            '<span class="udd-info" hidden aria-hidden="true"></span>' +
+            /* Der Erklaerer der Tabellenkoepfe, nicht der kurze Tooltip: .up-th-info mit
+               data-explain, und die Karte baut UC.makeExplain. Ein data-tip haette denselben Text
+               in der falschen Form gezeigt -- eine Zeile Text an der Maus statt der Karte mit
+               Ueberschrift, Beispielbild und Satz, die jede Spaltenerklaerung dieser App hat.
+               Beide Ueberschriften bekommen einen: die Kurve wechselt ihre Bedeutung mit dem
+               Modus, und dann muss auch die Erklaerung wechseln. */
+            '<span class="up-th-info udd-info" data-explain="chart"></span>' +
           '</div>' +
           '<div class="udd-tools">' +
             '<div class="vc-gran" role="group" aria-label="Granularity">' +
@@ -396,6 +398,35 @@
     }
     function lyOeffnen() { elLyPop.innerHTML = lyMenuHtml(); }
 
+    /* ---- Der Erklaerer an der Ueberschrift -----------------------------------------------------
+       Dieselbe Karte wie in den Tabellenkoepfen (UC.makeExplain, .up-explain): Ueberschrift,
+       Beispielbild, Satz. Der Inhalt haengt am Modus, weil die Kurve mit dem Modus ihre Bedeutung
+       wechselt -- ein Text fuer beide waere fuer einen von beiden falsch. */
+    var ERKLAERUNG = {
+      citation: {
+        h: "Citations Share over Time",
+        t: "How much of all citations in the period went to this domain, day by day. It compares " +
+           "this domain against every other domain, so the value falls when others are cited more."
+      },
+      domain: {
+        h: "URL Share over Time",
+        t: "How this domain's citations are split across its own URLs. Each line is one URL, and " +
+           "its value is that URL's share of all citations this domain received -- so the lines " +
+           "add up to 100%. It says which pages get cited, not how the domain compares to others."
+      }
+    };
+    /* html(key) statt eines festen Textes: der Schluessel ist immer "chart", die Antwort haengt am
+       aktuellen Modus. Die Karte fragt bei jedem Oeffnen neu, also stimmt sie auch nach einem
+       Moduswechsel ohne dass hier jemand etwas nachziehen muss. */
+    if (UC.makeExplain) UC.makeExplain({
+      root: root, getIsDark: darkNow,
+      html: function () {
+        var e = ERKLAERUNG[state.mode] || ERKLAERUNG.citation;
+        return '<div class="up-explain-h">' + esc(e.h) + '</div>' +
+               '<div class="up-explain-t">' + esc(e.t) + '</div>';
+      }
+    });
+
     /* ---- Ein Wartezustand, der endet ---------------------------------------------------------
        Das Skelett laeuft, solange keine Daten da sind. Ohne Ende ist "kommt gleich" nicht von
        "kommt nie" zu unterscheiden -- dieselbe Uhr wie in brand-detail, dieselbe Dauer. */
@@ -528,18 +559,10 @@
       [].forEach.call(elGran.querySelectorAll(".vc-gran-btn"), function (b) {
         b.classList.toggle("is-active", b.getAttribute("data-gran") === state.gran);
       });
-      /* Die KPI-Zeile ist die des globalen Anteils -- im URL-Share nimmt die Kurve ihren Platz
-         ein. Das Info-Symbol steht nur dort, weil nur diese Ueberschrift erklaerungsbeduerftig ist. */
+      /* Die KPI-Zeile ist die des globalen Anteils -- im URL-Share nimmt die Kurve ihren Platz ein. */
       var domainModus = state.mode === "domain";
       elKpi.hidden = domainModus;
-      if (elInfo) {
-        elInfo.hidden = !domainModus;
-        elInfo.setAttribute("aria-hidden", domainModus ? "false" : "true");
-        if (domainModus && !elInfo.innerHTML) {
-          elInfo.innerHTML = UC.icon("info", 2);
-          elInfo.setAttribute("data-tip", modeOf("domain").info || "");
-        }
-      }
+      if (elInfo && !elInfo.innerHTML) elInfo.innerHTML = UC.icon("info", 2);
       root.classList.toggle("is-domainshare", domainModus);
     }
 
@@ -866,6 +889,21 @@
     }
 
     /* ---- Granularitaet: was die Daten hergeben ----------------------------------------------- */
+    /* Die Granularitaet sagt der PAYLOAD, nicht der Schalter. Vorher wurde sie allein aus den
+       Abstaenden zwischen den Punkten erraten -- kamen Wochendaten, zeigte der Schalter weiter
+       "Day", obwohl das Chart schon Wochen zeichnete.
+       BEIDE Setter lesen sie: der grosse Payload (setDomainDetail) traegt sie fuer die
+       Zitationskurve, der URL-Payload (setDomainDetailUrls) fuer die URL-Kurve. Nur einen von
+       beiden zu bedienen war genau der gemeldete Fehler.
+       Nur die drei bekannten Werte werden uebernommen: ein Tippfehler in der RPC soll den Schalter
+       nicht auf etwas stellen, das es nicht gibt. */
+    function granAusPayload(p) {
+      var g = String((p && p.granularity) || "").trim().toLowerCase();
+      if (g !== "day" && g !== "week" && g !== "month") return false;
+      if (g === state.gran) return false;
+      state.gran = g; GRAN_STORE[instanceId] = g;
+      return true;
+    }
     function granPruefen() {
       if (!UC.granAvailability) return;
       var reihe = state.mode === "citation"
@@ -978,6 +1016,9 @@
         state.hasData = !!(state.header || state.share || state.model || state.funnel || state.types);
         state.loading = false;
         warteBeenden();
+        /* VOR granPruefen: der Wert aus dem Payload ist die Wahrheit, granPruefen korrigiert
+           danach nur noch, falls die Spanne diese Stufe gar nicht zulaesst. */
+        granAusPayload(p);
         granPruefen();
         render();
         return true;
@@ -990,15 +1031,7 @@
           state.urls = { points: [] };
         } else {
           state.urls = p;
-          /* Die Granularitaet sagt der Payload. Vorher stand sie allein im Schalter und wurde aus
-             den Abstaenden der Punkte erraten -- kamen Wochen-Daten, zeigte der Schalter weiter
-             "Day". Der Wert aus der RPC ist die Wahrheit, der Schalter folgt ihm.
-             Nur die drei bekannten Werte, sonst bleibt es beim bisherigen: ein Tippfehler in der
-             RPC soll den Schalter nicht auf etwas stellen, das es nicht gibt. */
-          var g = String(p.granularity || "").trim().toLowerCase();
-          if (g === "day" || g === "week" || g === "month") {
-            state.gran = g; GRAN_STORE[instanceId] = g;
-          }
+          granAusPayload(p);
         }
         state.loading = false;
         state.urlsStale = false; state.urlsError = null;

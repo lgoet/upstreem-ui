@@ -756,6 +756,12 @@
           '<span class="up-explain-dot up-explain-more" style="margin-left:-4px">+2</span></span>';
       }
       if (kind === "share"){
+        /* Im Domain-Modus ohne Trendpfeile: das Bild soll zeigen, was in der Spalte steht, und
+           dort steht kein Trend. Zwei Werte, die sich zu einem Anteil lesen. */
+        if (domainModus()){
+          return '<span class="up-explain-row">41.2%</span>' +
+                 '<span class="up-explain-row">18.4%</span>';
+        }
         return '<span class="up-explain-row">18.4%' +
                '<span class="up-explain-up">' + TREND_UP + '</span>' +
                '<span class="up-explain-up">2.9%</span></span>' +
@@ -774,6 +780,15 @@
     };
     function explainInfo(kind){
       if (EXPLAIN_LOCAL[kind]) return EXPLAIN_LOCAL[kind];
+      /* Im Domain-Modus erklaert der Kopf eine ANDERE Kennzahl -- der Text muss mitwandern, sonst
+         steht ueber "Domain Share" die Erklaerung des globalen Anteils. Eigene Worte statt
+         UC.explainCopy("share"): dort ist der Trend Teil des Satzes, und in dieser Ansicht gibt es
+         keinen. */
+      if (kind === "share" && domainModus()){
+        return { h: "Domain Share",
+                 t: "How much of all citations this domain received in the period went to this " +
+                    "URL. The URLs of one domain add up to 100%." };
+      }
       if (UC.explainCopy){
         if (kind === "share") return UC.explainCopy("share", { subject: "URL" });
         if (kind === "brands") return UC.explainCopy("brands", { scope: " on this page" });
