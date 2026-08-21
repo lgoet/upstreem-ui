@@ -856,8 +856,25 @@
            verbietet: leer und unlesbar duerfen nicht gleich aussehen. Und er tritt auf, sobald
            ein Bubble-Ausdruck die Liste als Text einsetzt statt als Objekt.
            liste() liest beides und meldet, was es nicht lesen konnte. */
-        if (params.top_domains != null){ state.topDomains = liste(params.top_domains, "top_domains"); state.hasTable = true; state.hasDomainRows = true; }
-        if (params.top_urls != null){ state.topUrls = liste(params.top_urls, "top_urls"); state.hasTable = true; state.hasUrlRows = true; }
+        /* Zwei Bubble-Workflows liefern je eine HAELFTE der Tabelle -- eines die Domains, eines
+           die URLs -- und geben die jeweils andere Haelfte als leeres Array mit. Ohne die Pruefung
+           unten loescht der zweite Payload die guten Zeilen des ersten: die Tabelle sagt "No data",
+           waehrend das Chart daneben weiter Daten zeigt, weil das aus types_breakdown kommt und
+           nicht aus den Zeilen. Am 21.08. so gemessen: 7 URL-Zeilen, danach ein Domain-Payload
+           mit "top_urls": [] -- 0 Zeilen, "No data", kein Konsolenfehler.
+           Eine leere Liste NEBEN einer gefuellten ist deshalb keine Leermeldung, sondern das
+           Schweigen dieses Workflows ueber die andere Haelfte. Sind beide leer, ist es eine echte
+           Leermeldung (Filter ohne Treffer) und wird uebernommen -- Domains entstehen aus URLs,
+           den Zustand "keine URLs, aber Domains" gibt es in den Daten nicht. */
+        var neueDomains = params.top_domains != null ? liste(params.top_domains, "top_domains") : null;
+        var neueUrls    = params.top_urls    != null ? liste(params.top_urls,    "top_urls")    : null;
+        var halbePost   = !!neueDomains && !!neueUrls && (neueDomains.length > 0) !== (neueUrls.length > 0);
+        if (neueDomains && !(halbePost && !neueDomains.length)){
+          state.topDomains = neueDomains; state.hasTable = true; state.hasDomainRows = true;
+        }
+        if (neueUrls && !(halbePost && !neueUrls.length)){
+          state.topUrls = neueUrls; state.hasTable = true; state.hasUrlRows = true;
+        }
         if (params.types_breakdown != null){ state.typesBreakdown = liste(params.types_breakdown, "types_breakdown"); state.hasChart = true; }
         if (params.url_types_breakdown != null){ state.urlTypesBreakdown = liste(params.url_types_breakdown, "url_types_breakdown"); }
         if (params.isDark != null){
