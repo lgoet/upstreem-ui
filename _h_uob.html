@@ -34,6 +34,21 @@ window.addEventListener("error", function (e) { window.__fehler.push(String(e.me
 ["uobStart","uobStep","uobSelect","uobTopics","uobFinish","uobExit"].forEach(function (n) {
   window["bubble_fn_" + n] = function (p) { window.__ev.push([n, p]); };
 });
+/* Schreibt mit, WANN die Begleittafel aufgeht -- gemessen ab dem Laden der Seite. Der Umlauf
+   des Messwerkzeugs dauert rund fuenfzehn Sekunden, das Fenster der ersten fuenf ist von aussen
+   also nicht zu beobachten. Der Beobachter haengt hier und nicht in der Komponente, weil er ein
+   Messinstrument ist und kein Verhalten. */
+window.__hilfeLog = [];
+(function(){
+  var beob = new MutationObserver(function(muts){
+    muts.forEach(function(m){
+      if (m.type === "attributes" && m.target.hasAttribute && m.target.hasAttribute("data-help"))
+        window.__hilfeLog.push({ ms: Math.round(performance.now()),
+                                 offen: m.target.classList.contains("is-on") });
+    });
+  });
+  beob.observe(document.documentElement, { attributes: true, subtree: true, attributeFilter: ["class"] });
+})();
 var DUNKEL = /dark=1/.test(location.search);
 if (DUNKEL) document.documentElement.classList.add("dunkel");
 try { localStorage.setItem("pref_theme", DUNKEL ? "dark" : "light"); } catch (e) {}

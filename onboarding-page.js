@@ -276,13 +276,13 @@
     en: {
       titel: "Guide",
       brand: {
-        lead: "Everything upstreem measures, it measures for this one brand.",
+        ic: "globe",
+        lead: "What you enter here becomes your {ic}workspace – and the starting point for everything we suggest next.",
         warum: {
           h: "Why this matters",
-          t: "The name is what we look for in AI answers -- write it the way a model would, " +
-             "without the legal suffix. Market and time zone decide WHICH answer we collect: " +
-             "the same question is answered differently in Germany than in the US, and a day " +
-             "starts at a different hour."
+          t: "We read your website to work out what you sell and who you sell it to. The " +
+             "competitors and topics on the next screens are derived from it – so a precise " +
+             "address means better suggestions and less for you to correct."
         },
         wie: {
           h: "What to watch for",
@@ -292,7 +292,8 @@
         }
       },
       competitors: {
-        lead: "The brands we measure you against.",
+        ic: "squareStack",
+        lead: "The {ic}brands we measure you against.",
         warum: {
           h: "Why this matters",
           t: "A visibility of 20% is good or bad depending on who else is in the answer. " +
@@ -301,17 +302,18 @@
         },
         wie: {
           h: "How to choose",
-          l: ["Brands a buyer would genuinely consider instead of you -- not the biggest names in the industry.",
+          l: ["Brands a buyer would genuinely consider instead of you – not the biggest names in the industry.",
               "Three to five is plenty to start. You can add more from your dashboard.",
               "Pick brands that show up in the same kind of questions as you."]
         }
       },
       topics: {
-        lead: "The subject areas you want to be found for.",
+        ic: "tags",
+        lead: "The {ic}topics you want to be found for.",
         warum: {
           h: "Why this matters",
           t: "Topics decide what you can measure later. Prompts are written per topic, and " +
-             "every report groups by topic -- so a subject you skip here is a subject you " +
+             "every report groups by topic – so a subject you skip here is a subject you " +
              "cannot see a number for afterwards."
         },
         wie: {
@@ -322,7 +324,8 @@
         }
       },
       prompts: {
-        lead: "The questions we ask the models for you, every day.",
+        ic: "zap",
+        lead: "The {ic}prompts we run for you, every day.",
         warum: {
           h: "Why this matters",
           t: "This is where the data comes from. Every model runs these questions daily in your " +
@@ -332,12 +335,13 @@
         wie: {
           h: "How to choose",
           l: ["Keep the ones a real customer would type into ChatGPT.",
-              "Questions WITHOUT your brand name are the valuable ones -- they show whether you get recommended when nobody is looking for you yet.",
+              "Questions WITHOUT your brand name are the valuable ones – they show whether you get recommended when nobody is looking for you yet.",
               "Your plan sets how many run per day. You can swap them any time."]
         }
       },
       plan: {
-        lead: "How much of the picture you get.",
+        ic: "creditCard",
+        lead: "Your {ic}plan sets how much of the picture you get.",
         warum: {
           h: "Why this matters",
           t: "The plan sets how many prompts run each day and how many brands you track. That " +
@@ -348,20 +352,20 @@
           h: "Good to know",
           l: ["Every plan starts with a free trial. Nothing is charged until it ends.",
               "Yearly billing is cheaper per month; the switch above shows both.",
-              "You can change plans later -- your data stays."]
+              "You can change plans later – your data stays."]
         }
       }
     },
     de: {
-      titel: "Hilfe",
+      titel: "Guide",
       brand: {
-        lead: "Alles, was upstreem misst, misst es für diese eine Marke.",
+        ic: "globe",
+        lead: "Was du hier einträgst, wird dein {ic}Arbeitsbereich – und der Ausgangspunkt für alles, was wir dir danach vorschlagen.",
         warum: {
           h: "Warum das zählt",
-          t: "Der Name ist das, wonach wir in KI-Antworten suchen -- schreib ihn so, wie ein " +
-             "Modell ihn schreiben würde, ohne Rechtsform. Markt und Zeitzone entscheiden, " +
-             "WELCHE Antwort wir einsammeln: dieselbe Frage wird in Deutschland anders " +
-             "beantwortet als in den USA, und ein Tag beginnt zu einer anderen Stunde."
+          t: "Wir lesen deine Website, um zu verstehen, was du verkaufst und an wen. Die " +
+             "Wettbewerber und Themen auf den nächsten Schritten entstehen daraus – eine " +
+             "präzise Adresse bringt dir also bessere Vorschläge und weniger zu korrigieren."
         },
         wie: {
           h: "Worauf es ankommt",
@@ -371,7 +375,8 @@
         }
       },
       competitors: {
-        lead: "Die Marken, an denen wir dich messen.",
+        ic: "squareStack",
+        lead: "Die {ic}Brands, an denen wir dich messen.",
         warum: {
           h: "Warum das zählt",
           t: "Eine Sichtbarkeit von 20% ist gut oder schlecht, je nachdem, wer sonst in der " +
@@ -380,17 +385,18 @@
         },
         wie: {
           h: "Worauf es ankommt",
-          l: ["Marken, die ein Käufer wirklich statt deiner in Betracht zieht -- nicht die größten der Branche.",
+          l: ["Marken, die ein Käufer wirklich statt deiner in Betracht zieht – nicht die größten der Branche.",
               "Drei bis fünf reichen zum Start. Weitere kannst du später im Dashboard ergänzen.",
               "Nimm Marken, die in derselben Art von Fragen auftauchen wie du."]
         }
       },
       topics: {
-        lead: "Die Themen, für die du gefunden werden willst.",
+        ic: "tags",
+        lead: "Die {ic}Themen, für die du gefunden werden willst.",
         warum: {
           h: "Warum das zählt",
           t: "Themen entscheiden, was du später messen kannst. Prompts entstehen je Thema, und " +
-             "jede Auswertung gruppiert nach Thema -- ein Thema, das du hier auslässt, ist ein " +
+             "jede Auswertung gruppiert nach Thema – ein Thema, das du hier auslässt, ist ein " +
              "Thema, zu dem du danach keine Zahl siehst."
         },
         wie: {
@@ -401,7 +407,8 @@
         }
       },
       prompts: {
-        lead: "Die Fragen, die wir täglich für dich an die Modelle stellen.",
+        ic: "zap",
+        lead: "Die {ic}Prompts, die wir täglich für dich an die Modelle stellen.",
         warum: {
           h: "Warum das zählt",
           t: "Hier kommen die Daten her. Jedes Modell beantwortet diese Fragen täglich in " +
@@ -411,12 +418,13 @@
         wie: {
           h: "Worauf es ankommt",
           l: ["Behalte die, die ein echter Kunde so bei ChatGPT eintippen würde.",
-              "Fragen OHNE deinen Markennamen sind die wertvollen -- sie zeigen, ob du empfohlen wirst, wenn noch niemand nach dir sucht.",
+              "Fragen OHNE deinen Markennamen sind die wertvollen – sie zeigen, ob du empfohlen wirst, wenn noch niemand nach dir sucht.",
               "Wie viele täglich laufen, bestimmt dein Tarif. Tauschen kannst du sie jederzeit."]
         }
       },
       plan: {
-        lead: "Wie viel vom Bild du bekommst.",
+        ic: "creditCard",
+        lead: "Dein {ic}Tarif bestimmt, wie viel vom Bild du bekommst.",
         warum: {
           h: "Warum das zählt",
           t: "Der Tarif bestimmt, wie viele Prompts täglich laufen und wie viele Marken du " +
@@ -427,7 +435,7 @@
           h: "Gut zu wissen",
           l: ["Jeder Tarif startet mit einer kostenlosen Testphase. Vorher wird nichts berechnet.",
               "Jährlich ist pro Monat günstiger; der Schalter oben zeigt beides.",
-              "Den Tarif kannst du später wechseln -- deine Daten bleiben."]
+              "Den Tarif kannst du später wechseln – deine Daten bleiben."]
         }
       }
     }
@@ -647,6 +655,8 @@
       plan: "", interval: "yearly",
       /* Die Begleittafel: einmal weggeklickt bleibt sie weg, ueber Schritte und Neuladen hinweg. */
       hilfeAuf: hilfeGelesen(),
+      /* Hat der Nutzer den Guide selbst angefasst? Bricht die Fuenf-Sekunden-Uhr ab. */
+      hilfeVonHand: false,
       /* Einmal beim Tarif gewesen heisst: der Punkt bleibt in der Schiene. Siehe renderRail. */
       planGesehen: false,
       /* Die Themenauswahl, zu der die aktuellen Prompts gehoeren. Sie entscheidet, ob ein
@@ -746,6 +756,7 @@
          fremdem Markup. Absolut im eigenen Root ist dasselbe Bild ohne diese Abhaengigkeit. */
       '<aside class="uob-help" data-help aria-hidden="true">' +
         '<div class="uob-help-head">' +
+          '<span class="uob-help-ic">' + ic("libraryBig", 1.9) + '</span>' +
           '<span class="uob-help-title" data-help-title></span>' +
           '<button class="uob-help-x" type="button" data-help-close aria-label="Close">' + ic("x", 2.6) + '</button>' +
         '</div>' +
@@ -1602,8 +1613,15 @@
       var kennung = hilfeSprache() + "|" + hilfeSchluessel();
       if (elHelpBody.getAttribute("data-fuer") === kennung) return;
       elHelpBody.setAttribute("data-fuer", kennung);
+      /* Das Zeichen steht MITTEN im Satz, direkt vor dem Wort, um das es geht. Deshalb kommt es
+         ueber einen Platzhalter in den Text und nicht daneben: "Die [Marken] Brands, an denen
+         wir dich messen" liest sich als ein Satz, ein Zeichen vor dem Absatz waere eine
+         Ueberschrift. esc() laeuft VOR dem Einsetzen, damit der Text weiter maskiert ist und
+         nur das Zeichen als Markup durchgeht. */
+      var leadHtml = esc(d.lead).replace("{ic}",
+        '<span class="uob-help-leadic">' + ic(d.ic || "info", 2) + '</span>');
       elHelpBody.innerHTML =
-        '<p class="uob-help-lead">' + esc(d.lead) + '</p>' +
+        '<p class="uob-help-lead">' + leadHtml + '</p>' +
         '<div class="uob-help-sec">' +
           '<h4 class="uob-help-h">' + esc(d.warum.h) + '</h4>' +
           '<p class="uob-help-t">' + esc(d.warum.t) + '</p>' +
@@ -1893,12 +1911,16 @@
       if (exit) { fire("data-exit-fn", "uobExit", exit.getAttribute("data-exit")); return; }
 
       if (e.target.closest("[data-help-btn]")) {
+        if (hilfeUhr) { window.clearTimeout(hilfeUhr); hilfeUhr = null; }
+        state.hilfeVonHand = true;
         state.hilfeAuf = !state.hilfeAuf;
         hilfeSchreiben();
         renderHilfe();
         return;
       }
       if (e.target.closest("[data-help-close]")) {
+        if (hilfeUhr) { window.clearTimeout(hilfeUhr); hilfeUhr = null; }
+        state.hilfeVonHand = true;
         state.hilfeAuf = false;
         hilfeSchreiben();
         renderHilfe();
@@ -2328,7 +2350,7 @@
        naehert sich dem Ende der laufenden Phase an und bleibt kurz davor stehen. Ein Balken, der
        zwischen zwei Meldungen einfriert, liest sich als Absturz -- die Recherche zu Ladeanzeigen
        ist da eindeutig, und vier Phasen mit je zehn Sekunden sind lang genug, dass es auffiele. */
-    var uhr = null, tick = null, t0 = 0;
+    var uhr = null, tick = null, t0 = 0, hilfeUhr = null;
     function warteStarten(art) {
       state.warten = art;
       state.phase = 0;
@@ -2576,6 +2598,23 @@
     root.classList.add("is-entering");
     render(true);
     window.setTimeout(function () { root.classList.remove("is-entering"); }, 900);
+
+    /* Der Guide meldet sich nach fuenf Sekunden von selbst -- lange genug, dass die Seite
+       angekommen ist und der Blick auf dem Formular war, kurz genug, dass er noch zum ersten
+       Schritt gehoert. Nur beim ERSTEN Mal: wer ihn schon einmal zugemacht hat, bekommt ihn
+       nicht wieder aufgedraengt (hilfeGelesen liest denselben Speicher).
+       Ein Klick auf den Knopf davor bricht die Uhr ab, sonst spraenge die Tafel gleich nach dem
+       Zumachen wieder auf. */
+    if (state.hilfeAuf) {
+      state.hilfeAuf = false;
+      renderHilfe();
+      hilfeUhr = window.setTimeout(function () {
+        hilfeUhr = null;
+        if (state.hilfeVonHand) return;
+        state.hilfeAuf = true;
+        renderHilfe();
+      }, 5000);
+    }
 
     if (demo && DEMO) {
       /* Im Demobetrieb sind Tarife von Anfang an da -- sie haengen an keinem Lauf. Marken,

@@ -927,12 +927,14 @@
    bestraft das Nachschlagen. */
 .uob-help {
   position: absolute; right: clamp(12px, 2vw, 24px);
-  /* UNTER der Fortschrittsschiene, nicht darueber: sie deckte sonst die letzten zwei Stationen
-     zu, und ausgerechnet die Leiste, die sagt, wo man ist, darf eine Hilfe nicht verdecken.
-     Der Wert ist an der Schiene gemessen (Kopfzeile 32 + Abstand + Punkte + Beschriftungen). */
-  top: clamp(104px, 15vh, 130px); z-index: 60;
+  /* Direkt unter der Kopfzeile mit den Knoepfen, 16px Luft dazwischen. Die Kopfzeile ist 32px
+     hoch und sitzt im Polster des Roots -- der Wert rechnet beides zusammen, statt eine Zahl
+     zu raten, damit er bei jeder Polstergroesse stimmt.
+     Damit liegt die Tafel ueber dem rechten Ende der Fortschrittsschiene. Das ist der Preis
+     dafuer, dass sie oben steht: sie ist zuklappbar, die Schiene nicht. */
+  top: calc(clamp(16px, 2.4vh, 24px) + 32px + 16px); z-index: 60;
   width: 320px; max-width: calc(100% - 24px);
-  max-height: calc(100% - 190px);
+  max-height: calc(100% - 130px);
   display: flex; flex-direction: column;
   border: 1px solid var(--vc-border); border-radius: 14px;
   background: var(--vc-bg);
@@ -943,10 +945,15 @@
 .uob-help.is-on { opacity: 1; transform: none; pointer-events: auto; }
 .uob-root[data-theme="dark"] .uob-help { box-shadow: 0 1px 2px rgba(0,0,0,.3), 0 18px 40px rgba(0,0,0,.4); }
 .uob-help-head {
-  flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between;
-  gap: 10px; padding: 12px 10px 10px 16px;
+  flex: 0 0 auto; display: flex; align-items: center;
+  gap: 9px; padding: 13px 10px 11px 16px;
 }
-.uob-help-title { font-size: 12px; font-weight: 600; color: var(--vc-muted); letter-spacing: .02em; }
+/* Das Zeichen des Kastens steht links neben seinem Namen -- so ist der Kopf ein Etikett und
+   nicht nur ein Wort mit einem Kreuz am anderen Ende. */
+.uob-help-ic { flex: 0 0 auto; display: inline-flex; color: var(--vc-muted); }
+.uob-help-ic svg { width: 15px; height: 15px; display: block; }
+.uob-help-title { flex: 1 1 auto; font-size: 13px; font-weight: 600; color: var(--vc-text);
+  letter-spacing: .01em; }
 /* Der Schliesskreuz-Knopf. .check_reinvention.py meldet ihn wie die uebrigen ruhigen Knoepfe
    dieser Datei als moeglichen Zwilling von .up-seg-btn -- ist er nicht: der ist 32px hoch und
    Mitglied eines Switchers. Dieser hier ist 24px, sitzt in einer Kastenkopfzeile und traegt nur
@@ -961,20 +968,28 @@
 .uob-help-x:hover { color: var(--vc-text); background: var(--uob-hover); }
 .uob-help-x svg { width: 13px; height: 13px; display: block; }
 .uob-help-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 16px 16px; }
-/* Der erste Satz traegt das Ganze: was ist dieser Schritt. Er ist deshalb der einzige in
-   Textfarbe -- alles darunter ist Erlaeuterung und steht eine Stufe leiser. */
-.uob-help-lead { margin: 0 0 16px; font-size: 14px; line-height: 1.45; font-weight: 500;
-  color: var(--vc-text); text-wrap: pretty; }
-.uob-help-sec + .uob-help-sec { margin-top: 16px; }
-.uob-help-h { margin: 0 0 6px; font-size: 11.5px; font-weight: 600; color: var(--vc-muted);
-  letter-spacing: .02em; }
-.uob-help-t { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--vc-muted); text-wrap: pretty; }
+/* Drei Stufen, damit das Auge weiss, wo es anfaengt: der Leitsatz gross und in Textfarbe, die
+   Zwischenueberschriften klein und in Textfarbe (nicht grau -- eine graue Ueberschrift ueber
+   grauem Text ist keine Stufe), der Fliesstext dazwischen in --vc-muted. */
+.uob-help-lead { margin: 0 0 18px; font-size: 15.5px; line-height: 1.45; font-weight: 600;
+  color: var(--vc-text); letter-spacing: -.008em; text-wrap: pretty; }
+/* Das Zeichen im Satz: auf der Grundlinie mitlaufend, in der ruhigen Farbe, damit es den Satz
+   gliedert statt ihn zu unterbrechen. */
+.uob-help-leadic { display: inline-flex; vertical-align: -2px; margin-right: 3px; color: var(--vc-muted); }
+.uob-help-leadic svg { width: 15px; height: 15px; display: block; }
+.uob-help-sec + .uob-help-sec { margin-top: 18px; }
+/* Die Zwischenueberschrift ist GROESSER als ihr Text, nicht kleiner. Sie war es kurz nicht --
+   dann traegt die Stufe allein das Gewicht, und eine Ueberschrift, die kleiner ist als das,
+   was unter ihr steht, liest sich als Beschriftung und nicht als Kapitel. */
+.uob-help-h { margin: 0 0 7px; font-size: 13.5px; font-weight: 600; color: var(--vc-text);
+  letter-spacing: -.005em; }
+.uob-help-t { margin: 0; font-size: 13px; line-height: 1.5; color: var(--vc-muted); text-wrap: pretty; }
 /* Die Liste traegt ihre Punkte als eigene Zeichen, nicht als Aufzaehlungspunkte des Browsers:
    dessen Punkte sitzen ausserhalb des Textblocks und brechen die linke Kante. */
 .uob-help-l { margin: 0; padding: 0; list-style: none;
   display: flex; flex-direction: column; gap: 8px; }
 .uob-help-l li { position: relative; padding-left: 14px;
-  font-size: 12.5px; line-height: 1.5; color: var(--vc-muted); text-wrap: pretty; }
+  font-size: 13px; line-height: 1.5; color: var(--vc-muted); text-wrap: pretty; }
 .uob-help-l li::before {
   content: ""; position: absolute; left: 0; top: .55em;
   width: 4px; height: 4px; border-radius: 50%; background: var(--vc-third);
@@ -986,7 +1001,7 @@
    waere sie dort ein Streifen von 60 Pixeln. */
 .uob-root.is-narrow .uob-help {
   left: clamp(12px, 2vw, 24px); right: clamp(12px, 2vw, 24px); width: auto;
-  top: 92px; max-height: calc(100% - 170px);
+  max-height: calc(100% - 120px);
 }
 
 /* ---------- Fehlerband ----------

@@ -7241,6 +7241,14 @@
        ohne dass sich am Bild etwas aendert.
        Die Pfade sind woertlich aus lucide-static uebernommen, nicht nachgezeichnet. */
     x:        '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    /* tags und libraryBig: woertlich aus lucide-static wie alle anderen. tags stand bisher als
+       Inline-SVG im Prompts-Seitenkopf und wird jetzt auch vom Onboarding gebraucht -- zweiter
+       Verbraucher, also hierher. libraryBig ist das Zeichen des Begleitkastens im Onboarding. */
+    tags:     '<path d="m15 5 6.3 6.3a2.4 2.4 0 0 1 0 3.4L17 19"/>' +
+              '<path d="M9.586 5.586A2 2 0 0 0 8.172 5H3a1 1 0 0 0-1 1v5.172a2 2 0 0 0 .586 1.414L8.29 18.29a2.426 2.426 0 0 0 3.42 0l3.58-3.58a2.426 2.426 0 0 0 0-3.42z"/>' +
+              '<circle cx="6.5" cy="9.5" r=".5" fill="currentColor"/>',
+    libraryBig: '<rect width="8" height="18" x="3" y="3" rx="1"/><path d="M7 3v18"/>' +
+              '<path d="M20.4 18.9c.2.5-.1 1.1-.6 1.3l-1.9.7c-.5.2-1.1-.1-1.3-.6L11.1 5.1c-.2-.5.1-1.1.6-1.3l1.9-.7c.5-.2 1.1.1 1.3.6Z"/>',
     check:    '<path d="M20 6 9 17l-5-5"/>',
     chevronDown:  '<path d="m6 9 6 6 6-6"/>',
     chevronRight: '<path d="m9 18 6-6-6-6"/>',
