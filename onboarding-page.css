@@ -443,6 +443,15 @@
    Scrollbereich, und ein absolut gesetzter Kasten zaehlt nicht zu ihrer scrollbaren Hoehe --
    unten heraus heisst hier wirklich unerreichbar. */
 .uob-ddwrap.is-up .uob-ddmenu { top: auto; bottom: calc(100% + 6px); }
+/* Der Kasten steht HELLER als die Seite, nicht dunkler. Im Dunkeln bringt core --up-menu-bg
+   mit (#151515), und das ist dunkler als der Seitengrund (#1b1b1b): auf einer Seite ohne
+   Karten und ohne Toenung liest sich ein dunklerer Kasten als Loch statt als Auflage. Hier,
+   wo er ueber blankem Grund schwebt, muss er nach oben abheben.
+   Im Hellen ist der Seitengrund schon Weiss -- heller geht nicht, dort traegt der Rahmen. */
+.uob-root[data-theme="dark"] .uob-ddmenu { background: #242424; border-color: #3a3a3a; }
+/* Das Feld fuer die eigene Branche: rundum 16px, wie das Polster links und rechts. Es sass
+   mit 8px zu eng unter dem Trennstrich und wirkte angeklebt. */
+.uob-ddcustom { padding: 16px; border-top: 1px solid var(--vc-border); display: flex; }
 /* Der geschlossene Kasten hat keine HOEHE -- er bleibt aber im DOM und im Layout, display wird
    nie umgeschaltet. Das ist die Regel aus STYLEGUIDE §6, und sie gilt hier unveraendert: die
    Appear-Animation (opacity + Scale) laeuft wie bei jedem anderen Dropdown der App.
@@ -466,7 +475,7 @@
 .uob-ddcode { flex: 0 0 auto; font-size: 12px; font-weight: 500; color: var(--vc-third); }
 /* Das Zusatzfeld fuer eine eigene Branche sitzt unter der Liste, abgesetzt wie die Kopfzeile
    darueber -- sonst liest es sich wie ein weiterer Eintrag. */
-.uob-ddcustom { padding: 8px; border-top: 1px solid var(--vc-border); display: flex; }
+
 
 /* ---------- Auswahlliste (Marken, Themen, Prompts) ----------
    Eine Zeile ist ein Knopf mit Haken links. Haken links und nicht rechts: das Auge sucht den

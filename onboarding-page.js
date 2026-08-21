@@ -521,6 +521,27 @@
     if (eigen && basis.indexOf(eigen) < 0) basis.unshift(eigen);
     return basis;
   }
+  /* Der Versatz zu UTC, einmal je Zone gerechnet und gemerkt. Ohne den Speicher liefe die
+     Rechnung bei jedem Tastendruck im Suchfeld ueber alle vierhundert Zonen.
+     shortOffset liefert "GMT+1"; daraus wird "UTC+1" -- beides meint dasselbe, und UTC ist der
+     Begriff, den eine Zeitzonenwahl heute fuehrt. Kennt ein Browser das Format nicht, bleibt
+     der Zusatz weg statt falsch zu sein. */
+  var VERSATZ = {};
+  function versatz(zone) {
+    if (VERSATZ[zone] !== undefined) return VERSATZ[zone];
+    var v = "";
+    try {
+      var teile = new Intl.DateTimeFormat("en-US", { timeZone: zone, timeZoneName: "shortOffset" })
+        .formatToParts(new Date());
+      for (var i = 0; i < teile.length; i++) {
+        if (teile[i].type === "timeZoneName") { v = teile[i].value; break; }
+      }
+      v = v.replace(/^GMT/, "UTC");
+      if (v === "UTC") v = "UTC+0";
+    } catch (e) { v = ""; }
+    VERSATZ[zone] = v;
+    return v;
+  }
   function eigeneZone() {
     try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch (e) { return ""; }
   }
@@ -1702,11 +1723,22 @@
       if (host.getAttribute("data-src") === url) return;
       host.setAttribute("data-src", url);
       if (!url) { host.innerHTML = ic("globe", 1.7); return; }
+      /* Der Dienst antwortet IMMER mit einem Bild -- kennt er die Domain nicht, schickt er
+         seinen eigenen Weltkugel-Platzhalter. Der ist an der GROESSE zu erkennen: ein echtes
+         Favicon kommt in der angeforderten Groesse (gemessen 64, bei kleineren Quellen 32),
+         der Platzhalter immer mit 16, auch wenn 64 angefordert wurde. Genau daher sah er
+         verpixelt aus -- 16 Pixel auf 20 hochgezogen.
+         Unter 32 zeigen wir deshalb weiter unser eigenes Zeichen. Das kostet die wenigen
+         Seiten, von denen der Dienst nur eine 16er-Fassung hat -- die saehe hochskaliert aber
+         ohnehin schlecht aus. onerror bleibt als zweites Netz fuer echte Ausfaelle. */
       host.innerHTML = "";
       var img = document.createElement("img");
       img.alt = "";
       img.referrerPolicy = "no-referrer";
       img.onerror = function () { host.innerHTML = ic("globe", 1.7); };
+      img.onload = function () {
+        if (img.naturalWidth && img.naturalWidth < 32) host.innerHTML = ic("globe", 1.7);
+      };
       img.src = url;
       host.appendChild(img);
     }
@@ -1750,7 +1782,9 @@
       }
       if (kind === "timezone") {
         return timezoneList().map(function (z) {
-          return { value: z, label: z.replace(/_/g, " "), kurz: z.replace(/_/g, " "),
+          var name = z.replace(/_/g, " ");
+          var v = versatz(z);
+          return { value: z, label: name + (v ? " " + v : ""), kurz: name + (v ? " (" + v + ")" : ""),
                    ic: UC.icon ? UC.icon("clock", 1.8) : "" };
         });
       }
@@ -1876,9 +1910,6 @@
       for (var i = 0; i < wraps.length; i++) {
         if (wraps[i] === ausser) continue;
         wraps[i].classList.remove("is-open");
-        /* Die Richtung faellt beim naechsten Oeffnen neu -- sie hier stehen zu lassen hiesse,
-           dass der Kasten das naechste Mal in die alte Richtung aufblitzt, bevor gemessen ist. */
-        wraps[i].classList.remove("is-up");
         var m = wraps[i].querySelector(".uob-ddmenu");
         if (m) {
           m.classList.remove("is-shown");
@@ -1888,7 +1919,12 @@
              Zwischenzeit wieder geoeffnet wurde. */
           (function (menu, w) {
             window.setTimeout(function () {
-              if (!w.classList.contains("is-open")) menu.classList.add("is-flat");
+              if (w.classList.contains("is-open")) return;
+              menu.classList.add("is-flat");
+              /* is-up faellt ZUSAMMEN mit is-flat, nicht vorher. Wurde es sofort abgenommen,
+                 sprang der noch sichtbare Kasten waehrend des Ausblendens von oben nach unten
+                 -- und blitzte fuer zwei Bildaenderungen unter dem Feld auf. */
+              w.classList.remove("is-up");
             }, 220);
           })(m, wraps[i]);
         }
