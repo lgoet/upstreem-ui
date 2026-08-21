@@ -452,10 +452,35 @@
    Karten und ohne Toenung liest sich ein dunklerer Kasten als Loch statt als Auflage. Hier,
    wo er ueber blankem Grund schwebt, muss er nach oben abheben.
    Im Hellen ist der Seitengrund schon Weiss -- heller geht nicht, dort traegt der Rahmen. */
-.uob-root[data-theme="dark"] .uob-ddmenu { background: #242424; border-color: #3a3a3a; }
-/* Das Feld fuer die eigene Branche: rundum 16px, wie das Polster links und rechts. Es sass
-   mit 8px zu eng unter dem Trennstrich und wirkte angeklebt. */
-.uob-ddcustom { padding: 16px; border-top: 1px solid var(--vc-border); display: flex; }
+.uob-root[data-theme="dark"] .uob-ddmenu { background: #202020; border-color: #383838; }
+/* Die Zeile fuer die eigene Branche. 8px zu allen vier Seiten -- zum Trennstrich oben und zu
+   den drei Kanten des Kastens. Feld und Add-Knopf sind 40px hoch und stehen nebeneinander,
+   dazwischen dieselben 8px.
+   Aufbau und Rollen sind die aus "Your Brand" (.usb-ddcustom-row): das Loesch-X sitzt IM Feld,
+   der Add-Knopf daneben. Die Hoehe ist hier 40 statt 32, weil die Felder dieser Seite 40 sind. */
+.uob-ddcustom { padding: 8px; border-top: 1px solid var(--vc-border);
+  display: flex; align-items: center; gap: 8px; }
+.uob-ddcustom-field { position: relative; flex: 1 1 auto; min-width: 0; display: block; }
+/* 34px rechts wie in jedem Suchfeld der App: der Text muss VOR dem X enden, sonst schreibt man
+   beim Tippen sichtbar darunter. */
+.uob-ddcustom-in { width: 100%; min-width: 0; height: 40px; padding-right: 34px; }
+.uob-ddcustom-clear {
+  position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
+  display: none; align-items: center; justify-content: center; width: 20px; height: 20px;
+  padding: 0; border: 0; border-radius: 6px; background: none; color: var(--vc-muted); cursor: pointer;
+}
+.uob-ddcustom-clear svg { width: 13px; height: 13px; display: block; }
+.uob-ddcustom-clear:hover { color: var(--vc-text); }
+/* .check_reinvention.py meldet ihn als moeglichen Zwilling von .up-seg-btn -- ist er nicht:
+   das ist der Add-Knopf aus "Your Brand" (.usb-ddcustom-add), Wert fuer Wert uebernommen, nur
+   40px statt 32, weil die Felder dieser Seite 40 sind. Ein Switcher-Mitglied ist er nicht. */
+.uob-ddcustom-add {
+  flex: 0 0 auto; height: 40px; padding: 0 16px; border: 0; border-radius: 8px;
+  background: var(--vc-text); color: var(--vc-bg);
+  font: inherit; font-size: 13px; font-weight: 500; line-height: 1; cursor: pointer;
+  transition: opacity var(--uob-t) var(--uob-ease);
+}
+.uob-ddcustom-add:disabled { opacity: .35; cursor: default; }
 /* Der geschlossene Kasten hat keine HOEHE -- er bleibt aber im DOM und im Layout, display wird
    nie umgeschaltet. Das ist die Regel aus STYLEGUIDE §6, und sie gilt hier unveraendert: die
    Appear-Animation (opacity + Scale) laeuft wie bei jedem anderen Dropdown der App.
@@ -469,6 +494,21 @@
    fallen mit. */
 .uob-ddmenu.is-flat { max-height: 0; overflow: hidden; }
 .uob-ddlist { max-height: 240px; overflow-y: auto; }
+/* 16px zwischen Suchfeld und Liste. core bringt 8px als margin mit; die werden ERSETZT und
+   nicht ergaenzt -- addiert waeren es 24, und genau das stand hier zuerst. */
+.uob-ddmenu .up-ment-searchwrap { margin-bottom: 16px; }
+
+/* 2 bis 3 Punkt kleiner, aber NUR im Kasten -- die Zeitzonennamen sind lang ("America/
+   Argentina/Buenos Aires UTC-3"), und in der Vorgabegroesse brach jede zweite Zeile um. Der
+   Ausloeser oben behaelt seine 14px: dort steht immer nur eine Zone. */
+.uob-ddwrap[data-dd="timezone"] .uob-ddlist .up-filter-lbl {
+  font-size: 12px;
+  /* Kleiner allein reicht nicht: drei von sechzig Zonen brechen trotzdem um
+     ("America/Argentina/Buenos Aires UTC-3"). Eine Zeile bleibt eine Zeile, notfalls gekuerzt --
+     der Ausloeser oben zeigt den vollen Namen. */
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+.uob-ddwrap[data-dd="timezone"] .uob-ddlist .up-filter-item { padding: 5px 9px; min-width: 0; }
 /* Eine Zeile im Marktkasten: Haken, Flagge, Name, rechts der Alpha-2-Code als Sekundaeres --
    dieselbe Anordnung wie im Marktfilter der App. Die Masse kommen von dort: Flagge 22x16 mit
    Radius 3, Name 14px/500, Code 12px/500 in --vc-third. */

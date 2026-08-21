@@ -831,15 +831,20 @@
             : "") +
           '<div class="up-filter-list uob-ddlist up-scroll" data-dd-list></div>' +
           (mitEigen
+            /* Feld und Add-Knopf nebeneinander, das Loesch-X IM Feld -- exakt die Zeile aus
+               "Your Brand" (settings-brand, .usb-ddcustom-row). Dort steht der Grund auch: ein
+               Feld mit X darin ist EIN Bedienelement, ein Knopf mit eigener Beschriftung gehoert
+               daneben. Ohne den Knopf liess sich eine getippte Branche nur ueber die
+               Eingabetaste uebernehmen, und das sieht niemand. */
             ? '<div class="uob-ddcustom">' +
-                '<span class="up-ddsearch" data-dd-searchwrap>' +
-                  '<input class="up-ddsearch-in" type="text" maxlength="' + MAX.industry + '" ' +
+                '<span class="uob-ddcustom-field">' +
+                  '<input class="up-ddsearch-in uob-ddcustom-in" type="text" maxlength="' + MAX.industry + '" ' +
                     'placeholder="Not listed? Add your own" autocomplete="off" spellcheck="false" ' +
                     'aria-label="Add your own" data-dd-custom/>' +
-                  '<span class="up-ddsearch-ic">' + ic("plus", 2) + '</span>' +
-                  '<button class="up-ddsearch-x" type="button" aria-label="Clear" data-dd-clear>' +
+                  '<button class="uob-ddcustom-clear" type="button" aria-label="Clear" data-dd-customclear>' +
                     ic("x", 3.5) + '</button>' +
                 '</span>' +
+                '<button class="uob-ddcustom-add" type="button" data-dd-customadd disabled>Add</button>' +
               '</div>'
             : "") +
         '</div>' +
@@ -2027,6 +2032,15 @@
         return;
       }
 
+      var cadd = e.target.closest("[data-dd-customadd]");
+      if (cadd) { eigeneBrancheNehmen(cadd.closest(".uob-ddwrap")); return; }
+      var cclr = e.target.closest("[data-dd-customclear]");
+      if (cclr) {
+        var cf = cclr.parentNode.querySelector("input");
+        if (cf) { cf.value = ""; cf.dispatchEvent(new Event("input", { bubbles: true })); cf.focus(); }
+        return;
+      }
+
       var clr = e.target.closest("[data-dd-clear]");
       if (clr) {
         var feld = clr.parentNode.querySelector("input");
@@ -2081,18 +2095,23 @@
       if (h) heiss(h.getAttribute("data-go"), false);
     });
 
-    /* Eigene Branche: Enter im Zusatzfeld uebernimmt sie. Kein Add-Knopf daneben -- ein Feld mit
-       genau einer moeglichen Handlung braucht keinen zweiten Bedienpunkt. */
+    /* Eigene Branche uebernehmen -- ueber den Knopf oder die Eingabetaste. Beide Wege enden
+       hier, damit sie nicht auseinanderlaufen. */
+    function eigeneBrancheNehmen(wrap) {
+      if (!wrap) return;
+      var feld = wrap.querySelector("[data-dd-custom]");
+      var v = txt(feld && feld.value);
+      if (!v) return;
+      state.form.industry = v;
+      feld.value = "";
+      ddFuellen(wrap);
+      ddSchliessen(null);
+    }
     root.addEventListener("keydown", function (e) {
       var c = e.target.closest ? e.target.closest("[data-dd-custom]") : null;
       if (c && e.key === "Enter") {
         e.preventDefault();
-        var v = txt(c.value);
-        if (!v) return;
-        state.form.industry = v;
-        c.value = "";
-        ddFuellen(c.closest(".uob-ddwrap"));
-        ddSchliessen(null);
+        eigeneBrancheNehmen(c.closest(".uob-ddwrap"));
         return;
       }
       if (e.key === "Escape") ddSchliessen(null);
@@ -2112,6 +2131,14 @@
           delete state.fehler[f];
         }
         zeigeFeldfehler();
+        return;
+      }
+      var cu = e.target.closest ? e.target.closest("[data-dd-custom]") : null;
+      if (cu) {
+        var knopf = cu.closest(".uob-ddwrap").querySelector("[data-dd-customadd]");
+        if (knopf) knopf.disabled = !txt(cu.value);
+        var x = cu.parentNode.querySelector("[data-dd-customclear]");
+        if (x) x.style.display = txt(cu.value) ? "inline-flex" : "none";
         return;
       }
       var ei = e.target.getAttribute && e.target.getAttribute("data-eigen-in");
