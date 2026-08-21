@@ -1,0 +1,118 @@
+<meta charset="utf-8"><title>tcd: URL-Modus ohne Filter</title>
+<body style="margin:0;padding:16px;width:1400px;font-family:Geist,system-ui,sans-serif">
+<script>
+window.__fehler=[]; window.__ev=[];
+window.onerror=function(m){ window.__fehler.push(String(m)); };
+["tcdMode","tcdRowClick","tcdGoTo","tcdExportTable","tcdApplyTypeFilter","tcdFilterDimension","tcdBrandMentioned"]
+  .forEach(function(n){ window["bubble_fn_"+n]=function(a,b){ window.__ev.push([n,a,b]); }; });
+try{ localStorage.clear(); }catch(e){}
+</script>
+<div class="up-root tcd-root"
+     data-instance="t1"
+     data-cdn-pin=""
+     data-isdark="no"
+     data-processing="IS_PROCESSING"
+     data-processing2="IS_PROCESSING_2"
+     data-mode-fn="bubble_fn_tcdMode"
+     data-rowclick-fn="bubble_fn_tcdRowClick"
+     data-goto-fn="bubble_fn_tcdGoTo"
+     data-export-fn="bubble_fn_tcdExportTable"
+     data-types-fn="bubble_fn_tcdApplyTypeFilter"
+     data-dimension-fn="bubble_fn_tcdFilterDimension"
+     data-brand-fn="bubble_fn_tcdBrandMentioned">
+
+  <div class="tcd-unit tcd-unit-left">
+    <div class="tcd-head">
+      <div class="tcd-mode" role="tablist" aria-label="Mode">
+        <button class="tcd-mode-btn is-active" data-mode="domain" type="button" role="tab">Domains</button>
+        <button class="tcd-mode-btn" data-mode="url" type="button" role="tab">URLs</button>
+      </div>
+      <div class="tcd-head-tools">
+        <div class="tcl-seg" role="tablist" aria-label="Chart type">
+          <button class="tcl-seg-btn is-active" data-chart="doughnut" role="tab" aria-selected="true" data-tip="Doughnut" aria-label="Doughnut">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+          </button>
+          <button class="tcl-seg-btn" data-chart="bar" role="tab" aria-selected="false" data-tip="Bars" aria-label="Bars">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="9" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="tcd-box">
+      <div class="tcd-panel-body">
+        <div class="tcl-top-total"><span class="n">0</span><span class="lbl">Citations</span></div>
+        <div class="up-donut-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tcd-unit tcd-unit-right">
+    <div class="tcd-head">
+      <div class="tcd-heading tcd-heading-right"><span class="tcd-head-label">Top Domains</span><span class="tcd-head-sep"></span><span class="tcd-head-count"></span></div>
+      <div class="tcd-head-tools">
+        <button class="tcd-brand-toggle" type="button" data-tip="Filter by brand mention">
+          <span class="tcd-brand-toggle-lbl">
+            <img class="tcd-brand-logo" src="" style="display:none"/>
+            <span class="tcd-brand-label"></span>
+          </span>
+          <span class="tcd-brand-check">
+            <svg class="tcd-brand-check-yes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <svg class="tcd-brand-check-no" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </span>
+        </button>
+        <div class="tcd-filter">
+          <button class="tcd-filter-btn tcd-iconbtn" type="button" data-tip="Filter" aria-label="Filter">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+            <span class="tcd-filter-badge"></span>
+          </button>
+          <div class="up-filter-menu" role="menu" aria-hidden="true"></div>
+        </div>
+        <button class="tcd-export tcd-iconbtn" type="button" data-tip="Export" aria-label="Export">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+        <button class="tcd-goto tcd-iconbtn" type="button" data-tip="Open" aria-label="Open">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+        </button>
+      </div>
+    </div>
+    <div class="tcd-box">
+      <div class="tct-table"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* Frische beweisen: fetch(no-store) inline. */
+window.__GELADEN = Promise.all(["core.css","topcitations-dashboard.css","core.js","topcitations-dashboard.js"]
+  .map(function(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"})
+    .then(function(r){return r.text()}).then(function(t){return [f,t]}); }))
+  .then(function(p){ window.__quellen={}; p.forEach(function(x){ window.__quellen[x[0]]=x[1];
+    var e=document.createElement(/\.css$/.test(x[0])?"style":"script"); e.textContent=x[1];
+    document.head.appendChild(e); }); window.__bereit=true; });
+
+/* Genau die zwei Payloads, die im Betrieb kommen: erst Domains beim Seitenstart, dann nach dem
+   Moduswechsel einer, der NUR das Chart traegt -- so schildert der Nutzer es. */
+window.__domainPayload = { instanceId:"t1", mode:"domain", totalCountDomain:42, citations_total:15899,
+  top_domains:[{domain:"dbaudio.com",favicon:"",share_pct:12.4,share_delta_pct:1.1,used_total:88,citation_type:"Editorial"},
+               {domain:"rcf.it",favicon:"",share_pct:8.2,share_delta_pct:-0.4,used_total:51,citation_type:"Competition"}],
+  types_breakdown:[{type:"Editorial",share_pct:61},{type:"Competition",share_pct:39}],
+  brand:{id:"b1",name:"Function One",logo:""} };
+
+window.__urlPayloadNurChart = { instanceId:"t1", mode:"url", totalCountUrl:128, citations_total:15899,
+  types_breakdown:[{type:"Guide",share_pct:55},{type:"Review",share_pct:45}] };
+
+window.__urlPayloadVoll = { instanceId:"t1", mode:"url", totalCountUrl:128, citations_total:15899,
+  top_urls:[{url:"https://dbaudio.com/pricing",title:"Pricing",favicon:"",global_share_pct:6.1,share_delta_pct:0.3,used_total:22,url_type:"Guide"},
+            {url:"https://rcf.it/blog/guide",title:"Guide",favicon:"",global_share_pct:4.4,share_delta_pct:-0.2,used_total:15,url_type:"Review"}],
+  types_breakdown:[{type:"Guide",share_pct:55},{type:"Review",share_pct:45}] };
+
+function lage(){
+  var r=document.querySelector(".tcd-root");
+  var t=r.querySelector(".tct-table") || r.querySelector("[class*='tct']");
+  return { modus: (r.querySelector(".tcd-mode-btn.is-active")||{}).textContent,
+           tabelleText: (r.querySelector(".up-empty-mini")||{}).textContent || null,
+           zeilen: r.querySelectorAll(".tct-tr, .tct-row").length,
+           skelett: r.querySelectorAll("[class*='sk']").length,
+           ereignisse: window.__ev.slice(-3), fehler: window.__fehler };
+}
+</script>

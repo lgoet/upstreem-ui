@@ -122,6 +122,12 @@
       loading: LOADING_EXPLICIT[instanceId] ? !!saved.loading : readProcessing(),
       optimisticLoading: false,
       hasChart: false, hasTable: false,
+      /* Getrennt je Modus: eine Domain-Lieferung darf nicht dazu fuehren, dass die URL-Tabelle
+         "No data" behauptet, obwohl fuer URLs noch nie etwas geliefert wurde. Genau das war der
+         Fall -- hasTable galt fuer beide, und nach einem Moduswechsel stand sofort "No data". */
+      hasDomainRows: false, hasUrlRows: false,
+      /* Text einer Liste, die nicht zu lesen war. Steht er, zeigt die Tabelle IHN statt "No data". */
+      listenFehler: null,
       mode: saved.mode || "domain", userPickedMode: saved.userPickedMode || false,
       chartMode: "doughnut", prepped: [], chartTotal: 0,
       topDomains: [], topUrls: [],
@@ -284,6 +290,23 @@
       return UC.trendChip(delta, { decimals: decimals !== false, suffix: suffix });
     }
     function activeRows(){ return state.mode === "url" ? state.topUrls : state.topDomains; }
+    /* Wurde fuer den AKTUELLEN Modus schon einmal etwas geliefert? */
+    function hatZeilenLieferung(){ return state.mode === "url" ? state.hasUrlRows : state.hasDomainRows; }
+    /* Eine Liste aus dem Payload. Array bleibt Array; Text wird durch parseLoose gelesen, weil
+       Bubble Listen regelmaessig als Text einsetzt. Was danach kein Array ist, ist ein Fehler und
+       wird als solcher gemeldet -- nicht als leere Liste. */
+    function liste(v, name){
+      if (Array.isArray(v)) { state.listenFehler = null; return v; }
+      if (typeof v === "string"){
+        var p = UC.parseLoose ? UC.parseLoose(v, "top-citations " + name) : null;
+        if (Array.isArray(p)) { state.listenFehler = null; return p; }
+      }
+      state.listenFehler = "The " + name.replace(/_/g, " ") + " could not be read.";
+      if (window.console) console.warn("[top-citations] " + name + " ist weder ein Array noch " +
+        "lesbarer JSON-Text. Kommt die Liste aus einem Bubble-Ausdruck, der sie als TEXT " +
+        "einsetzt? Empfangen:", v);
+      return [];
+    }
     function checkTrendFit(){
       if (checkTrendFit.__busy) return;
       checkTrendFit.__busy = true;
@@ -327,8 +350,12 @@
           tableEl.innerHTML = tableSkeletonHtml();
           tableEmptyGraceTimer = setTimeout(function(){
             tableEmptyGraceTimer = null;
-            if (state.loading || state.optimisticLoading || !state.hasTable || activeRows().length) return;
-            tableEl.innerHTML = head + '<div class="up-empty-mini">No data</div>';
+            if (state.loading || state.optimisticLoading || activeRows().length) return;
+            /* Nur "No data" sagen, wenn fuer DIESEN Modus wirklich eine Lieferung kam. Sonst
+               weiter das Skelett: es ist noch nichts da, und das ist etwas anderes als nichts. */
+            if (!hatZeilenLieferung() && !state.listenFehler) return;
+            tableEl.innerHTML = head + '<div class="up-empty-mini">' +
+              esc(state.listenFehler || "No data") + '</div>';
           }, 600);   // shortened from the 3s visibility-chart default — felt "stuck" once loading was genuinely done
         }
         return;
@@ -803,6 +830,7 @@
            chartTotal is the doughnut-center / bar "N Citations" number. */
         state.totalCountDomain = null; state.totalCountUrl = null; state.chartTotal = 0;
         state.hasChart = false; state.hasTable = false;
+        state.hasDomainRows = false; state.hasUrlRows = false; state.listenFehler = null;
         state.optimisticLoading = false;
         persistState();
         render();
@@ -823,10 +851,15 @@
         if (params.totalCountUrl != null) state.totalCountUrl = params.totalCountUrl;
         if (params.citations_total != null) state.chartTotal = params.citations_total;
         if (params.brand != null) state.brand = params.brand;
-        if (params.top_domains != null){ state.topDomains = Array.isArray(params.top_domains) ? params.top_domains : []; state.hasTable = true; }
-        if (params.top_urls != null){ state.topUrls = Array.isArray(params.top_urls) ? params.top_urls : []; state.hasTable = true; }
-        if (params.types_breakdown != null){ state.typesBreakdown = Array.isArray(params.types_breakdown) ? params.types_breakdown : []; state.hasChart = true; }
-        if (params.url_types_breakdown != null){ state.urlTypesBreakdown = Array.isArray(params.url_types_breakdown) ? params.url_types_breakdown : []; }
+        /* Kommt eine Liste als TEXT statt als Array, wurde sie hier stillschweigend zu [] --
+           und die Tabelle sagte "No data", obwohl der Payload voll war. Genau der Fall, den §46
+           verbietet: leer und unlesbar duerfen nicht gleich aussehen. Und er tritt auf, sobald
+           ein Bubble-Ausdruck die Liste als Text einsetzt statt als Objekt.
+           liste() liest beides und meldet, was es nicht lesen konnte. */
+        if (params.top_domains != null){ state.topDomains = liste(params.top_domains, "top_domains"); state.hasTable = true; state.hasDomainRows = true; }
+        if (params.top_urls != null){ state.topUrls = liste(params.top_urls, "top_urls"); state.hasTable = true; state.hasUrlRows = true; }
+        if (params.types_breakdown != null){ state.typesBreakdown = liste(params.types_breakdown, "types_breakdown"); state.hasChart = true; }
+        if (params.url_types_breakdown != null){ state.urlTypesBreakdown = liste(params.url_types_breakdown, "url_types_breakdown"); }
         if (params.isDark != null){
           /* NICHT isYes(params.isDark): der Parameter ist eine Momentaufnahme aus dem Moment,
              in dem Bubble den Payload gebaut hat. Kennt core ein Thema, gewinnt core -- sonst
