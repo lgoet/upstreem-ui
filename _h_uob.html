@@ -49,6 +49,29 @@ window.__hilfeLog = [];
   });
   beob.observe(document.documentElement, { attributes: true, subtree: true, attributeFilter: ["class"] });
 })();
+/* Zeitzone und Sprachen faelschen, BEVOR die Komponente laedt -- so laesst sich der Fall
+   nachstellen, der auf dem Windows-Rechner schiefging: englische Oberflaeche, deutsche Zone.
+   ?tz=Europe/Berlin&lang=en-US,en */
+(function(){
+  var p = new URLSearchParams(location.search);
+  var tz = p.get("tz"), lang = p.get("lang");
+  if (tz) {
+    var Echt = Intl.DateTimeFormat;
+    Intl.DateTimeFormat = function(){
+      var f = Echt.apply(Intl, arguments);
+      var echtRes = f.resolvedOptions.bind(f);
+      f.resolvedOptions = function(){ var o = echtRes(); o.timeZone = tz; return o; };
+      return f;
+    };
+    Intl.DateTimeFormat.supportedLocalesOf = Echt.supportedLocalesOf;
+  }
+  if (lang) {
+    try {
+      Object.defineProperty(navigator, "languages", { get: function(){ return lang.split(","); } });
+      Object.defineProperty(navigator, "language",  { get: function(){ return lang.split(",")[0]; } });
+    } catch(e){}
+  }
+})();
 var DUNKEL = /dark=1/.test(location.search);
 if (DUNKEL) document.documentElement.classList.add("dunkel");
 try { localStorage.setItem("pref_theme", DUNKEL ? "dark" : "light"); } catch (e) {}

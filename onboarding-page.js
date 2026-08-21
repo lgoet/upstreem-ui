@@ -276,8 +276,7 @@
     en: {
       titel: "Guide",
       brand: {
-        ic: "globe",
-        lead: "The {ic}website we read everything else from.",
+        lead: "The brand we start tracking for you.",
         warum: {
           h: "Why this matters",
           t: "We read your website to work out what you sell and who you sell it to. The " +
@@ -343,8 +342,7 @@
     de: {
       titel: "Guide",
       brand: {
-        ic: "globe",
-        lead: "Die {ic}Website, aus der wir alles Weitere ableiten.",
+        lead: "Die Marke, die wir ab jetzt für dich beobachten.",
         warum: {
           h: "Warum das zählt",
           t: "Wir lesen deine Website, um zu verstehen, was du verkaufst und an wen. Die " +
@@ -513,10 +511,44 @@
   function eigeneZone() {
     try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch (e) { return ""; }
   }
-  /* Der Markt aus dem Browser. Die Sprache traegt die Region ("de-DE" -> DE) und ist verlaesslicher
-     als die Zeitzone, in der halb Europa unter Europe/Berlin steht. Findet sich nichts, ist DE
-     die Vorgabe -- so steht es in der Aufgabe. */
+  /* Zeitzone -> Land. Die ZEITZONE ist die Ortsangabe, die Browsersprache ist eine Vorliebe --
+     und genau daran ist der erste Versuch gescheitert: auf einem deutschen Windows mit
+     englischer Oberflaeche steht in navigator.languages "en-US" vorn, und der Markt sprang auf
+     die USA, obwohl der Rechner in Deutschland stand. Die Zeitzone sagt dort weiterhin
+     Europe/Berlin.
+     Die Tabelle deckt Europa vollstaendig ab und die uebrigen Maerkte, die in MARKETS_FALLBACK
+     stehen. Was nicht darin steht, faellt auf die Sprache zurueck und zuletzt auf DE. */
+  var ZONE_LAND = {
+    "Europe/Berlin": "DE", "Europe/Busingen": "DE",
+    "Europe/Vienna": "AT", "Europe/Zurich": "CH",
+    "Europe/London": "GB", "Europe/Belfast": "GB", "Europe/Dublin": "IE",
+    "Europe/Paris": "FR", "Europe/Monaco": "FR",
+    "Europe/Madrid": "ES", "Atlantic/Canary": "ES", "Europe/Lisbon": "PT", "Atlantic/Madeira": "PT",
+    "Europe/Rome": "IT", "Europe/Vatican": "IT", "Europe/San_Marino": "IT", "Europe/Malta": "MT",
+    "Europe/Amsterdam": "NL", "Europe/Brussels": "BE", "Europe/Luxembourg": "LU",
+    "Europe/Copenhagen": "DK", "Europe/Stockholm": "SE", "Europe/Oslo": "NO", "Europe/Helsinki": "FI",
+    "Atlantic/Reykjavik": "IS", "Europe/Tallinn": "EE", "Europe/Riga": "LV", "Europe/Vilnius": "LT",
+    "Europe/Warsaw": "PL", "Europe/Prague": "CZ", "Europe/Bratislava": "SK", "Europe/Budapest": "HU",
+    "Europe/Ljubljana": "SI", "Europe/Zagreb": "HR", "Europe/Sarajevo": "BA", "Europe/Belgrade": "RS",
+    "Europe/Skopje": "MK", "Europe/Podgorica": "ME", "Europe/Tirane": "AL",
+    "Europe/Bucharest": "RO", "Europe/Sofia": "BG", "Europe/Athens": "GR", "Asia/Nicosia": "CY",
+    "Europe/Kiev": "UA", "Europe/Kyiv": "UA", "Europe/Istanbul": "TR",
+    "America/New_York": "US", "America/Detroit": "US", "America/Chicago": "US",
+    "America/Denver": "US", "America/Phoenix": "US", "America/Los_Angeles": "US",
+    "America/Anchorage": "US", "Pacific/Honolulu": "US",
+    "America/Toronto": "CA", "America/Vancouver": "CA", "America/Edmonton": "CA",
+    "America/Winnipeg": "CA", "America/Halifax": "CA",
+    "America/Mexico_City": "MX", "America/Sao_Paulo": "BR",
+    "Australia/Sydney": "AU", "Australia/Melbourne": "AU", "Australia/Brisbane": "AU",
+    "Australia/Perth": "AU", "Australia/Adelaide": "AU", "Pacific/Auckland": "NZ",
+    "Asia/Tokyo": "JP", "Asia/Singapore": "SG", "Asia/Kolkata": "IN", "Asia/Calcutta": "IN",
+    "Asia/Dubai": "AE", "Africa/Johannesburg": "ZA"
+  };
   function eigenerMarkt() {
+    var z = eigeneZone();
+    if (z && ZONE_LAND[z]) return ZONE_LAND[z];
+    /* Rueckfall: die Region aus der Sprache. Sie ist schwaecher, aber besser als nichts -- und
+       fuer Zonen, die hier nicht stehen, oft die einzige Angabe. */
     var kandidaten = [];
     try {
       if (navigator.languages && navigator.languages.length) kandidaten = [].slice.call(navigator.languages);
@@ -1633,8 +1665,11 @@
          wir dich messen" liest sich als ein Satz, ein Zeichen vor dem Absatz waere eine
          Ueberschrift. esc() laeuft VOR dem Einsetzen, damit der Text weiter maskiert ist und
          nur das Zeichen als Markup durchgeht. */
-      var leadHtml = esc(d.lead).replace("{ic}",
-        '<span class="uob-help-leadic">' + ic(d.ic || "info", 2) + '</span>');
+      /* Ohne d.ic gibt es kein Zeichen im Satz -- der erste Schritt kommt bewusst ohne aus.
+         Der Platzhalter wird dann einfach entfernt, statt ein Ersatzzeichen einzusetzen. */
+      var leadHtml = d.ic
+        ? esc(d.lead).replace("{ic}", '<span class="uob-help-leadic">' + ic(d.ic, 2) + '</span>')
+        : esc(d.lead).replace("{ic}", "");
       elHelpBody.innerHTML =
         '<p class="uob-help-lead">' + leadHtml + '</p>' +
         '<div class="uob-help-sec">' +
