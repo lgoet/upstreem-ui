@@ -247,6 +247,192 @@
   /* Vier Werte, vier Segmente. Der Wert bleibt exakt der, den Bubble erwartet -- nur die
      Beschriftung von Hybrid ist kurz: "Hybrid (B2B & B2C)" sprengt in einem Switcher jede
      Zeile, und was Hybrid heisst, weiss ohnehin jeder, der die drei anderen liest. */
+  /* ---------- Begleittexte ------------------------------------------------------------------
+     Die Klapptafel rechts. Sie beantwortet je Schritt drei Fragen, in dieser Reihenfolge: was
+     ist das, warum zaehlt es, worauf kommt es an. Das Warum steht VOR dem Wie -- so ist es in
+     der Doku-Lehre (Diataxis trennt Erklaerung von Anleitung, und die Erklaerung kommt zuerst),
+     und so liest es sich auch: wer nicht weiss, wozu Wettbewerber gut sind, waehlt die
+     groessten statt der richtigen.
+
+     Kurz gehalten, mit Absicht. Ein Onboarding ist kein Handbuch: drei Bloecke, der letzte als
+     Liste, zusammen unter 120 Woertern je Schritt. Wer mehr will, findet es spaeter in der App.
+
+     Zwei Sprachen. Deutsch bei Markt DE, sonst Englisch -- so steht es in der Aufgabe. AT und CH
+     bekommen damit Englisch; wer das aendern will, erweitert MARKT_DE unten um die zwei Codes.
+     Die deutschen Texte sind geschrieben und nicht uebersetzt: eine woertliche Uebertragung
+     klingt an genau den Stellen falsch, an denen es um Fachbegriffe geht. */
+  var MARKT_DE = { DE: 1 };
+  var HILFE_KEY = "uobHilfe";
+  /* Standard: OFFEN. Ein Erklaerkasten, den man erst suchen muss, wird beim ersten Durchlauf
+     nicht gefunden -- und der erste Durchlauf ist der einzige, den es gibt. Wer ihn zumacht,
+     hat ihn danach zu. */
+  function hilfeGelesen() {
+    var v = null;
+    try { v = UC.prefGet ? UC.prefGet(UC.prefKey ? UC.prefKey(HILFE_KEY) : HILFE_KEY) : null; } catch (e) {}
+    return v == null ? true : v === "1";
+  }
+
+  var HILFE = {
+    en: {
+      titel: "Guide",
+      brand: {
+        lead: "Everything upstreem measures, it measures for this one brand.",
+        warum: {
+          h: "Why this matters",
+          t: "The name is what we look for in AI answers -- write it the way a model would, " +
+             "without the legal suffix. Market and time zone decide WHICH answer we collect: " +
+             "the same question is answered differently in Germany than in the US, and a day " +
+             "starts at a different hour."
+        },
+        wie: {
+          h: "What to watch for",
+          l: ["Website: the domain you want to be found for, not a landing page.",
+              "Market: where your buyers are, not where your office is.",
+              "Industry is optional and only sharpens the suggestions on the next screens."]
+        }
+      },
+      competitors: {
+        lead: "The brands we measure you against.",
+        warum: {
+          h: "Why this matters",
+          t: "A visibility of 20% is good or bad depending on who else is in the answer. " +
+             "Competitors are the yardstick: Share of Voice, Rank and Sentiment all compare " +
+             "your brand against exactly these. Without them you get a number without a scale."
+        },
+        wie: {
+          h: "How to choose",
+          l: ["Brands a buyer would genuinely consider instead of you -- not the biggest names in the industry.",
+              "Three to five is plenty to start. You can add more from your dashboard.",
+              "Pick brands that show up in the same kind of questions as you."]
+        }
+      },
+      topics: {
+        lead: "The subject areas you want to be found for.",
+        warum: {
+          h: "Why this matters",
+          t: "Topics decide what you can measure later. Prompts are written per topic, and " +
+             "every report groups by topic -- so a subject you skip here is a subject you " +
+             "cannot see a number for afterwards."
+        },
+        wie: {
+          h: "How to choose",
+          l: ["Areas where a buying decision happens, not everything you do.",
+              "Name them the way a customer would say them, not the way your catalogue does.",
+              "Three to six is a good start. Missing one? Add your own at the bottom."]
+        }
+      },
+      prompts: {
+        lead: "The questions we ask the models for you, every day.",
+        warum: {
+          h: "Why this matters",
+          t: "This is where the data comes from. Every model runs these questions daily in your " +
+             "market, and everything upstreem shows is built from the answers. A question you " +
+             "drop here is a question nobody answers for you."
+        },
+        wie: {
+          h: "How to choose",
+          l: ["Keep the ones a real customer would type into ChatGPT.",
+              "Questions WITHOUT your brand name are the valuable ones -- they show whether you get recommended when nobody is looking for you yet.",
+              "Your plan sets how many run per day. You can swap them any time."]
+        }
+      },
+      plan: {
+        lead: "How much of the picture you get.",
+        warum: {
+          h: "Why this matters",
+          t: "The plan sets how many prompts run each day and how many brands you track. That " +
+             "is the resolution of your data: more prompts mean more questions answered, more " +
+             "brands mean a wider field to compare against."
+        },
+        wie: {
+          h: "Good to know",
+          l: ["Every plan starts with a free trial. Nothing is charged until it ends.",
+              "Yearly billing is cheaper per month; the switch above shows both.",
+              "You can change plans later -- your data stays."]
+        }
+      }
+    },
+    de: {
+      titel: "Hilfe",
+      brand: {
+        lead: "Alles, was upstreem misst, misst es für diese eine Marke.",
+        warum: {
+          h: "Warum das zählt",
+          t: "Der Name ist das, wonach wir in KI-Antworten suchen -- schreib ihn so, wie ein " +
+             "Modell ihn schreiben würde, ohne Rechtsform. Markt und Zeitzone entscheiden, " +
+             "WELCHE Antwort wir einsammeln: dieselbe Frage wird in Deutschland anders " +
+             "beantwortet als in den USA, und ein Tag beginnt zu einer anderen Stunde."
+        },
+        wie: {
+          h: "Worauf es ankommt",
+          l: ["Website: die Domain, für die du gefunden werden willst, keine Unterseite.",
+              "Markt: wo deine Käufer sind, nicht wo dein Büro steht.",
+              "Die Branche ist freiwillig und schärft nur die Vorschläge auf den nächsten Schritten."]
+        }
+      },
+      competitors: {
+        lead: "Die Marken, an denen wir dich messen.",
+        warum: {
+          h: "Warum das zählt",
+          t: "Eine Sichtbarkeit von 20% ist gut oder schlecht, je nachdem, wer sonst in der " +
+             "Antwort steht. Wettbewerber sind der Maßstab: Share of Voice, Rang und Sentiment " +
+             "vergleichen deine Marke mit genau diesen. Ohne sie bekommst du eine Zahl ohne Skala."
+        },
+        wie: {
+          h: "Worauf es ankommt",
+          l: ["Marken, die ein Käufer wirklich statt deiner in Betracht zieht -- nicht die größten der Branche.",
+              "Drei bis fünf reichen zum Start. Weitere kannst du später im Dashboard ergänzen.",
+              "Nimm Marken, die in derselben Art von Fragen auftauchen wie du."]
+        }
+      },
+      topics: {
+        lead: "Die Themen, für die du gefunden werden willst.",
+        warum: {
+          h: "Warum das zählt",
+          t: "Themen entscheiden, was du später messen kannst. Prompts entstehen je Thema, und " +
+             "jede Auswertung gruppiert nach Thema -- ein Thema, das du hier auslässt, ist ein " +
+             "Thema, zu dem du danach keine Zahl siehst."
+        },
+        wie: {
+          h: "Worauf es ankommt",
+          l: ["Bereiche, in denen eine Kaufentscheidung fällt, nicht alles, was du tust.",
+              "Benenne sie so, wie ein Kunde sie sagen würde, nicht wie dein Katalog sie nennt.",
+              "Drei bis sechs sind ein guter Start. Fehlt eins? Unten kannst du eigene ergänzen."]
+        }
+      },
+      prompts: {
+        lead: "Die Fragen, die wir täglich für dich an die Modelle stellen.",
+        warum: {
+          h: "Warum das zählt",
+          t: "Hier kommen die Daten her. Jedes Modell beantwortet diese Fragen täglich in " +
+             "deinem Markt, und alles, was upstreem zeigt, entsteht aus diesen Antworten. Eine " +
+             "Frage, die du hier wegnimmst, beantwortet niemand für dich."
+        },
+        wie: {
+          h: "Worauf es ankommt",
+          l: ["Behalte die, die ein echter Kunde so bei ChatGPT eintippen würde.",
+              "Fragen OHNE deinen Markennamen sind die wertvollen -- sie zeigen, ob du empfohlen wirst, wenn noch niemand nach dir sucht.",
+              "Wie viele täglich laufen, bestimmt dein Tarif. Tauschen kannst du sie jederzeit."]
+        }
+      },
+      plan: {
+        lead: "Wie viel vom Bild du bekommst.",
+        warum: {
+          h: "Warum das zählt",
+          t: "Der Tarif bestimmt, wie viele Prompts täglich laufen und wie viele Marken du " +
+             "verfolgst. Das ist die Auflösung deiner Daten: mehr Prompts heißt mehr " +
+             "beantwortete Fragen, mehr Marken heißt ein breiteres Vergleichsfeld."
+        },
+        wie: {
+          h: "Gut zu wissen",
+          l: ["Jeder Tarif startet mit einer kostenlosen Testphase. Vorher wird nichts berechnet.",
+              "Jährlich ist pro Monat günstiger; der Schalter oben zeigt beides.",
+              "Den Tarif kannst du später wechseln -- deine Daten bleiben."]
+        }
+      }
+    }
+  };
+
   var BUSINESS = [
     { value: "B2B",           label: "B2B" },
     { value: "B2C",           label: "B2C" },
@@ -459,6 +645,8 @@
          dem Nutzer und duerfen dabei nicht verschwinden. */
       eigene: [],
       plan: "", interval: "yearly",
+      /* Die Begleittafel: einmal weggeklickt bleibt sie weg, ueber Schritte und Neuladen hinweg. */
+      hilfeAuf: hilfeGelesen(),
       /* Einmal beim Tarif gewesen heisst: der Punkt bleibt in der Schiene. Siehe renderRail. */
       planGesehen: false,
       /* Die Themenauswahl, zu der die aktuellen Prompts gehoeren. Sie entscheidet, ob ein
@@ -522,6 +710,8 @@
                 '{className:\'uob-logo\'}))"/>'
               : '<span class="uob-logo"></span>') +
         '<div class="uob-topr">' +
+          '<button class="uob-link" type="button" data-help-btn aria-pressed="false">' +
+            ic("bulb", 1.8) + '<span data-help-lbl>Guide</span></button>' +
           '<button class="uob-link" type="button" data-exit="dashboard">' + ic("home", 1.8) + 'Dashboard</button>' +
           '<button class="uob-link" type="button" data-exit="logout">' + ic("logOut", 1.8) + 'Log out</button>' +
           '<button class="uob-themebtn" type="button" data-theme-btn aria-label="Switch theme"></button>' +
@@ -551,6 +741,17 @@
         '</div>' +
       '</div>' +
 
+      /* Die Tafel liegt IM Root und ist absolut gesetzt, nicht fixiert: position: fixed haengt in
+         Bubble an jedem Vorfahren mit transform oder filter, und dieser Root steckt dort in
+         fremdem Markup. Absolut im eigenen Root ist dasselbe Bild ohne diese Abhaengigkeit. */
+      '<aside class="uob-help" data-help aria-hidden="true">' +
+        '<div class="uob-help-head">' +
+          '<span class="uob-help-title" data-help-title></span>' +
+          '<button class="uob-help-x" type="button" data-help-close aria-label="Close">' + ic("x", 2.6) + '</button>' +
+        '</div>' +
+        '<div class="uob-help-body up-scroll" data-help-body></div>' +
+      '</aside>' +
+
       '<div class="uob-nav" data-nav>' +
         '<button class="uob-back" type="button" data-back>' + ic("chevronRight", 2) + 'Back</button>' +
         '<div class="uob-navr">' +
@@ -574,6 +775,10 @@
     var elRailLbls= root.querySelector("[data-rail-labels]");
     var elRailHits= root.querySelector("[data-rail-hits]");
     var elMid     = root.querySelector(".uob-mid");
+    var elHelp    = root.querySelector("[data-help]");
+    var elHelpBody= root.querySelector("[data-help-body]");
+    var elHelpTtl = root.querySelector("[data-help-title]");
+    var elHelpBtn = root.querySelector("[data-help-btn]");
     var elIdent   = root.querySelector("[data-ident]");
     var elIdentLg = root.querySelector("[data-ident-logo]");
     var elIdentNm = root.querySelector("[data-ident-name]");
@@ -1172,6 +1377,7 @@
       renderIdent();
       renderNav();
       renderBanner();
+      renderHilfe();
     }
 
     /* Was nach jedem Zeichnen wieder gesetzt werden muss, weil es nicht im Markup steht. */
@@ -1363,6 +1569,59 @@
       } else if (!zeigen && alt) {
         alt.parentNode.removeChild(alt);
       }
+    }
+
+    /* ---- Begleittafel ------------------------------------------------------------------------
+       Sie folgt dem Schritt und faellt bei den Wartezustaenden auf den Schritt zurueck, zu dem
+       die Uhr gehoert -- waehrend des Wartens ist Erklaerung genau das Richtige, und ein leerer
+       Kasten waere die falsche Antwort auf zwanzig Sekunden Leerlauf. */
+    function hilfeSprache() {
+      return MARKT_DE[txt(state.form.market).toUpperCase()] ? "de" : "en";
+    }
+    function hilfeSchluessel() {
+      var k = ansichtKey();
+      if (k === "load1") return "brand";
+      if (k === "load2") return "topics";
+      return k;
+    }
+    function renderHilfe() {
+      var sp = HILFE[hilfeSprache()];
+      var d = sp[hilfeSchluessel()];
+      if (elHelpBtn) {
+        var lbl = elHelpBtn.querySelector("[data-help-lbl]");
+        if (lbl) lbl.textContent = sp.titel;
+        elHelpBtn.setAttribute("aria-pressed", state.hilfeAuf ? "true" : "false");
+        elHelpBtn.classList.toggle("is-on", !!state.hilfeAuf);
+      }
+      elHelp.classList.toggle("is-on", !!state.hilfeAuf);
+      elHelp.setAttribute("aria-hidden", state.hilfeAuf ? "false" : "true");
+      if (!d) { elHelpBody.innerHTML = ""; return; }
+      elHelpTtl.textContent = sp.titel;
+      /* Nur neu setzen, wenn sich der Inhalt wirklich aendert -- sonst springt der Scrollstand
+         der Tafel bei jedem Haken in der Liste zurueck. */
+      var kennung = hilfeSprache() + "|" + hilfeSchluessel();
+      if (elHelpBody.getAttribute("data-fuer") === kennung) return;
+      elHelpBody.setAttribute("data-fuer", kennung);
+      elHelpBody.innerHTML =
+        '<p class="uob-help-lead">' + esc(d.lead) + '</p>' +
+        '<div class="uob-help-sec">' +
+          '<h4 class="uob-help-h">' + esc(d.warum.h) + '</h4>' +
+          '<p class="uob-help-t">' + esc(d.warum.t) + '</p>' +
+        '</div>' +
+        '<div class="uob-help-sec">' +
+          '<h4 class="uob-help-h">' + esc(d.wie.h) + '</h4>' +
+          '<ul class="uob-help-l">' +
+            d.wie.l.map(function (z) { return '<li>' + esc(z) + '</li>'; }).join("") +
+          '</ul>' +
+        '</div>';
+    }
+    /* Auf oder zu ueberlebt den Schrittwechsel und das Neuladen: wer sie einmal weggeklickt hat,
+       will sie nicht auf jedem Schritt wieder wegklicken. Derselbe Speicher wie beim Thema. */
+    function hilfeSchreiben() {
+      try {
+        if (UC.prefSet) UC.prefSet(UC.prefKey ? UC.prefKey(HILFE_KEY) : HILFE_KEY,
+          state.hilfeAuf ? "1" : "0");
+      } catch (e) {}
     }
 
     function renderBanner() {
@@ -1632,6 +1891,19 @@
 
       var exit = e.target.closest("[data-exit]");
       if (exit) { fire("data-exit-fn", "uobExit", exit.getAttribute("data-exit")); return; }
+
+      if (e.target.closest("[data-help-btn]")) {
+        state.hilfeAuf = !state.hilfeAuf;
+        hilfeSchreiben();
+        renderHilfe();
+        return;
+      }
+      if (e.target.closest("[data-help-close]")) {
+        state.hilfeAuf = false;
+        hilfeSchreiben();
+        renderHilfe();
+        return;
+      }
 
       var tb = e.target.closest("[data-theme-btn]");
       if (tb) {

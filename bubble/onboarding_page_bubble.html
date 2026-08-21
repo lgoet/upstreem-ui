@@ -85,6 +85,14 @@
        .replace(/:\s*([,}\]])/g, ": null$1")
        .replace(/:\s*(yes|no)\s*([,}\]])/g, function(_, v, t){ return ": " + (v === "yes") + t; })
 
+     ── BEGLEITTAFEL ────────────────────────────────────────────────────────────────────────
+     Rechts schwebt eine Klapptafel mit einer kurzen Erklaerung je Schritt: was ist das, warum
+     zaehlt es, worauf kommt es an. Der Knopf dafuer steht oben rechts. Sie ist beim ersten
+     Besuch OFFEN und merkt sich in localStorage, wenn jemand sie zumacht.
+     Sprache: Deutsch, wenn der gewaehlte Markt DE ist, sonst Englisch. AT und CH bekommen damit
+     Englisch -- wer das anders will, erweitert MARKT_DE in onboarding-page.js um die Codes.
+     Die Texte stehen in der Komponente (HILFE) und brauchen nichts von Bubble.
+
      ── ADRESSZEILE ─────────────────────────────────────────────────────────────────────────
      Die Seite schreibt ?step=<key> in die Adresse und liest ihn beim Aufbau. Wer die Seite
      verlaesst und Tage spaeter zurueckkommt, landet an derselben Station. Der Zurueck-Knopf

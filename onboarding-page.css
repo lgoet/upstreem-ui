@@ -29,6 +29,7 @@
    faehrt sie in denselben 200ms an. */
 
 .uob-root {
+  position: relative;
   --uob-t: 200ms;
   /* Der Einzug beim Aufbau und beim Schrittwechsel hat seine EIGENE Dauer -- dort wartet niemand
      auf eine Reaktion, dort sieht jemand der Seite beim Ankommen zu. Wortgleich zu --uau-in. */
@@ -914,6 +915,79 @@
   transition: color var(--uob-t) var(--uob-ease);
 }
 .uob-skip:hover { color: var(--vc-text); }
+
+/* ---------- Begleittafel ----------
+   Rechts am Rand, schwebend, ueber allem. Sie steht ABSOLUT im eigenen Root und nicht fixiert:
+   position: fixed haengt an jedem Vorfahren mit transform oder filter, und in Bubble steckt
+   diese Seite in fremdem Markup, das man nicht kennt und nach Hausregel auch nicht anfasst.
+   Der Root ist ohnehin so hoch wie das Fenster -- absolut darin ist dasselbe Bild.
+
+   Sie schiebt den Inhalt NICHT zur Seite. Der Inhalt steht mittig und soll dort bleiben, ob die
+   Tafel offen ist oder nicht: eine Seite, die beim Aufklappen einer Hilfe ihr Layout umbaut,
+   bestraft das Nachschlagen. */
+.uob-help {
+  position: absolute; right: clamp(12px, 2vw, 24px);
+  /* UNTER der Fortschrittsschiene, nicht darueber: sie deckte sonst die letzten zwei Stationen
+     zu, und ausgerechnet die Leiste, die sagt, wo man ist, darf eine Hilfe nicht verdecken.
+     Der Wert ist an der Schiene gemessen (Kopfzeile 32 + Abstand + Punkte + Beschriftungen). */
+  top: clamp(104px, 15vh, 130px); z-index: 60;
+  width: 320px; max-width: calc(100% - 24px);
+  max-height: calc(100% - 190px);
+  display: flex; flex-direction: column;
+  border: 1px solid var(--vc-border); border-radius: 14px;
+  background: var(--vc-bg);
+  box-shadow: 0 1px 2px rgba(15,17,21,.05), 0 18px 40px rgba(23,37,84,.10);
+  opacity: 0; transform: translateX(8px); pointer-events: none;
+  transition: opacity var(--uob-t) var(--uob-ease), transform var(--uob-t) var(--uob-ease);
+}
+.uob-help.is-on { opacity: 1; transform: none; pointer-events: auto; }
+.uob-root[data-theme="dark"] .uob-help { box-shadow: 0 1px 2px rgba(0,0,0,.3), 0 18px 40px rgba(0,0,0,.4); }
+.uob-help-head {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; padding: 12px 10px 10px 16px;
+}
+.uob-help-title { font-size: 12px; font-weight: 600; color: var(--vc-muted); letter-spacing: .02em; }
+/* Der Schliesskreuz-Knopf. .check_reinvention.py meldet ihn wie die uebrigen ruhigen Knoepfe
+   dieser Datei als moeglichen Zwilling von .up-seg-btn -- ist er nicht: der ist 32px hoch und
+   Mitglied eines Switchers. Dieser hier ist 24px, sitzt in einer Kastenkopfzeile und traegt nur
+   ein Kreuz. Die Geometrie ist die von .uob-newdel weiter oben, damit die zwei kleinen
+   Wegklick-Knoepfe dieser Seite gleich gross sind. */
+.uob-help-x {
+  width: 24px; height: 24px; flex: 0 0 auto; padding: 0; border: 0; border-radius: 6px;
+  background: transparent; color: var(--vc-third); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: color var(--uob-t) var(--uob-ease), background var(--uob-t) var(--uob-ease);
+}
+.uob-help-x:hover { color: var(--vc-text); background: var(--uob-hover); }
+.uob-help-x svg { width: 13px; height: 13px; display: block; }
+.uob-help-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 16px 16px; }
+/* Der erste Satz traegt das Ganze: was ist dieser Schritt. Er ist deshalb der einzige in
+   Textfarbe -- alles darunter ist Erlaeuterung und steht eine Stufe leiser. */
+.uob-help-lead { margin: 0 0 16px; font-size: 14px; line-height: 1.45; font-weight: 500;
+  color: var(--vc-text); text-wrap: pretty; }
+.uob-help-sec + .uob-help-sec { margin-top: 16px; }
+.uob-help-h { margin: 0 0 6px; font-size: 11.5px; font-weight: 600; color: var(--vc-muted);
+  letter-spacing: .02em; }
+.uob-help-t { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--vc-muted); text-wrap: pretty; }
+/* Die Liste traegt ihre Punkte als eigene Zeichen, nicht als Aufzaehlungspunkte des Browsers:
+   dessen Punkte sitzen ausserhalb des Textblocks und brechen die linke Kante. */
+.uob-help-l { margin: 0; padding: 0; list-style: none;
+  display: flex; flex-direction: column; gap: 8px; }
+.uob-help-l li { position: relative; padding-left: 14px;
+  font-size: 12.5px; line-height: 1.5; color: var(--vc-muted); text-wrap: pretty; }
+.uob-help-l li::before {
+  content: ""; position: absolute; left: 0; top: .55em;
+  width: 4px; height: 4px; border-radius: 50%; background: var(--vc-third);
+}
+/* Der Knopf oben zeigt, dass die Tafel offen ist -- sonst sucht man sie beim naechsten Mal. */
+.uob-link.is-on { color: var(--vc-text); background: var(--uob-hover); }
+
+/* Schmal: die Tafel legt sich ueber die ganze Breite unter die Kopfzeile. Zur Seite geschoben
+   waere sie dort ein Streifen von 60 Pixeln. */
+.uob-root.is-narrow .uob-help {
+  left: clamp(12px, 2vw, 24px); right: clamp(12px, 2vw, 24px); width: auto;
+  top: 92px; max-height: calc(100% - 170px);
+}
 
 /* ---------- Fehlerband ----------
    Ueber dem Inhalt, nicht unter ihm: ein Fehler, der unter einer gescrollten Liste steht, ist
