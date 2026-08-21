@@ -338,6 +338,22 @@
       checkTrendFit();
     }
     var tableEmptyGraceTimer = null;
+    /* Der Payload kann sich selbst widersprechen: totalCountUrl meldet 5085 Treffer, top_urls
+       kommt im selben Aufruf als leeres Array. Am 21.08. auf der Seite so gemessen -- der
+       Workflow-Step fuellt die Zaehler, aber nicht die Listen. "No data" waere dann eine
+       Falschaussage: es GIBT Daten, sie sind nur nicht mitgeliefert worden. Ausgefallen und leer
+       duerfen nicht gleich aussehen (§46), sonst sucht man den Fehler in der Komponente statt im
+       Workflow. Die Warnung nennt den Widerspruch beim Namen -- sie ist kein Debug-Ausgabe,
+       sondern die einzige Spur, an der das ueberhaupt auffaellt. */
+    function widerspruchsText(){
+      var roh = state.mode === "url" ? state.totalCountUrl : state.totalCountDomain;
+      var n = UC.toNum(roh);
+      if (n == null || n <= 0) return null;
+      if (window.console) console.warn("[top-citations] " + (state.mode === "url" ? "totalCountUrl" : "totalCountDomain") +
+        " meldet " + n + " Treffer, aber " + (state.mode === "url" ? "top_urls" : "top_domains") +
+        " kam als leere Liste an. Der Bubble-Workflow fuellt den Zaehler, aber nicht die Liste.");
+      return "The rows could not be loaded.";
+    }
     function renderTable(){
       var rows = activeRows();
       var head = tableHeadHtml(state.mode);
@@ -355,7 +371,7 @@
                weiter das Skelett: es ist noch nichts da, und das ist etwas anderes als nichts. */
             if (!hatZeilenLieferung() && !state.listenFehler) return;
             tableEl.innerHTML = head + '<div class="up-empty-mini">' +
-              esc(state.listenFehler || "No data") + '</div>';
+              esc(state.listenFehler || widerspruchsText() || "No data") + '</div>';
           }, 600);   // shortened from the 3s visibility-chart default — felt "stuck" once loading was genuinely done
         }
         return;

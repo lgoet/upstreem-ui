@@ -23,3 +23,14 @@ window.__echt = {
     {"type":"other","share_pct":0.40},{"type":"review","share_pct":0.06}
   ]
 };
+
+/* Der Payload, der auf der Seite ankam: Zaehler voll, Listen leer. Wortgleich aus der Konsole. */
+window.__widerspruch = {"instanceId":"t1","isDark":"no","mode":"url","totalCountDomain":null,
+  "totalCountUrl":5085,"citations_total":12828,
+  "brand":{"id":"26dd1507","name":"Parookaville","logo":"https://www.google.com/s2/favicons?domain=parookaville.com&sz=64"},
+  "top_domains":[],"top_urls":[],
+  "types_breakdown":[{"type":"listicle","share_pct":21.48},{"type":"article","share_pct":13.19}],
+  "url_types_breakdown":[{"type":"listicle","share_pct":21.48},{"type":"article","share_pct":13.19}]};
+/* Gegenprobe: echte Leermeldung -- kein Zaehler, keine Zeilen. Muss weiter "No data" sagen. */
+window.__echtLeer = {"instanceId":"t1","mode":"url","totalCountUrl":0,"top_urls":[],"top_domains":[],
+  "citations_total":0,"types_breakdown":[]};
