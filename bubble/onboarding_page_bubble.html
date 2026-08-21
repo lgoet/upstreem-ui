@@ -20,7 +20,9 @@
        4 Prompts      nach Themen gruppiert            <- setOnboardingPrompts
        5 Plan         Tarif und Zeitraum               <- setOnboardingPlans, -> uobFinish
 
-     Marken, Themen und Prompts sind FREIWILLIG -- neben Weiter steht ein Ueberspringen-Weg.
+     Marken und Prompts sind FREIWILLIG -- neben Weiter steht ein Ueberspringen-Weg. THEMEN
+     nicht: ohne Thema entstehen keine Prompts, und ohne Prompts hat das fertige Konto nichts zu
+     messen. Dort ist Weiter gesperrt, bis eines steht.
      Die Wartezustaende sind KEINE Stationen: sie stehen nicht in der Schiene und nicht in der
      Adresse, weil man an eine Uhr nicht zurueckkehren kann.
 
@@ -89,6 +91,9 @@
      Rechts schwebt eine Klapptafel mit einer kurzen Erklaerung je Schritt: was ist das, warum
      zaehlt es, worauf kommt es an. Der Knopf dafuer steht oben rechts. Sie ist beim ersten
      Besuch OFFEN und merkt sich in localStorage, wenn jemand sie zumacht.
+     Nicht bei den Wartezustaenden und nicht beim Tarif -- dort ist der Knopf ausgeblendet.
+     Wer sie zumacht und einen Schritt weitergeht, bekommt sie NICHT wieder aufgedraengt: der
+     Knopf traegt dann den Hinweispunkt der App (.up-badge.is-dot).
      Sprache: Deutsch, wenn der gewaehlte Markt DE ist, sonst Englisch. AT und CH bekommen damit
      Englisch -- wer das anders will, erweitert MARKT_DE in onboarding-page.js um die Codes.
      Die Texte stehen in der Komponente (HILFE) und brauchen nichts von Bubble.

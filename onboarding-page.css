@@ -87,6 +87,10 @@
 .uob-link:hover { color: var(--vc-text); background: var(--uob-hover); }
 .uob-link svg { width: 15px; height: 15px; display: block; flex: 0 0 auto; }
 .uob-link:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+/* Traeger fuer den Hinweispunkt. .up-badge aus core ist absolut gesetzt und braucht einen
+   positionierten Vorfahren -- ohne ihn suchte er sich den naechsten und saesse irgendwo. */
+.uob-link-dot { position: relative; }
+.uob-link[hidden] { display: none; }
 /* Geometrie wie .uau-themebtn auf der Anmeldeseite, damit die Ecke oben rechts beim Uebergang
    von dort nach hier stehen bleibt -- WORTGLEICH, also kein Nachbau, sondern der Punkt der
    Aufgabe. Nicht .up-iconbtn aus core, aus demselben Grund, den auth-page.css schon nennt: der
@@ -955,7 +959,7 @@
 .uob-root[data-theme="dark"] .uob-help { box-shadow: 0 1px 2px rgba(0,0,0,.3), 0 18px 40px rgba(0,0,0,.4); }
 .uob-help-head {
   flex: 0 0 auto; display: flex; align-items: center;
-  gap: 9px; padding: 13px 10px 11px 16px;
+  gap: 7px; padding: 13px 10px 11px 16px;
 }
 /* Das Zeichen des Kastens steht links neben seinem Namen -- so ist der Kopf ein Etikett und
    nicht nur ein Wort mit einem Kreuz am anderen Ende. */
@@ -984,7 +988,10 @@
   color: var(--vc-text); letter-spacing: -.008em; text-wrap: pretty; }
 /* Das Zeichen im Satz: auf der Grundlinie mitlaufend, in der ruhigen Farbe, damit es den Satz
    gliedert statt ihn zu unterbrechen. */
-.uob-help-leadic { display: inline-flex; vertical-align: -2px; margin-right: 3px; color: var(--vc-muted); }
+/* Das Zeichen im Satz braucht rundum Luft: es steht zwischen zwei Woertern, und ohne Abstand
+   klebt es am naechsten. Rechts mehr als links, weil danach das Wort kommt, um das es geht. */
+.uob-help-leadic { display: inline-flex; vertical-align: -2px;
+  margin-left: 2px; margin-right: 6px; color: var(--vc-muted); }
 .uob-help-leadic svg { width: 15px; height: 15px; display: block; }
 .uob-help-sec + .uob-help-sec { margin-top: 18px; }
 /* Die Zwischenueberschrift ist GROESSER als ihr Text, nicht kleiner. Sie war es kurz nicht --

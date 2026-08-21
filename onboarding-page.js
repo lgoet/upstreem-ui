@@ -277,7 +277,7 @@
       titel: "Guide",
       brand: {
         ic: "globe",
-        lead: "What you enter here becomes your {ic}workspace – and the starting point for everything we suggest next.",
+        lead: "The {ic}website we read everything else from.",
         warum: {
           h: "Why this matters",
           t: "We read your website to work out what you sell and who you sell it to. The " +
@@ -338,29 +338,13 @@
               "Questions WITHOUT your brand name are the valuable ones – they show whether you get recommended when nobody is looking for you yet.",
               "Your plan sets how many run per day. You can swap them any time."]
         }
-      },
-      plan: {
-        ic: "creditCard",
-        lead: "Your {ic}plan sets how much of the picture you get.",
-        warum: {
-          h: "Why this matters",
-          t: "The plan sets how many prompts run each day and how many brands you track. That " +
-             "is the resolution of your data: more prompts mean more questions answered, more " +
-             "brands mean a wider field to compare against."
-        },
-        wie: {
-          h: "Good to know",
-          l: ["Every plan starts with a free trial. Nothing is charged until it ends.",
-              "Yearly billing is cheaper per month; the switch above shows both.",
-              "You can change plans later – your data stays."]
-        }
       }
     },
     de: {
       titel: "Guide",
       brand: {
         ic: "globe",
-        lead: "Was du hier einträgst, wird dein {ic}Arbeitsbereich – und der Ausgangspunkt für alles, was wir dir danach vorschlagen.",
+        lead: "Die {ic}Website, aus der wir alles Weitere ableiten.",
         warum: {
           h: "Warum das zählt",
           t: "Wir lesen deine Website, um zu verstehen, was du verkaufst und an wen. Die " +
@@ -420,22 +404,6 @@
           l: ["Behalte die, die ein echter Kunde so bei ChatGPT eintippen würde.",
               "Fragen OHNE deinen Markennamen sind die wertvollen – sie zeigen, ob du empfohlen wirst, wenn noch niemand nach dir sucht.",
               "Wie viele täglich laufen, bestimmt dein Tarif. Tauschen kannst du sie jederzeit."]
-        }
-      },
-      plan: {
-        ic: "creditCard",
-        lead: "Dein {ic}Tarif bestimmt, wie viel vom Bild du bekommst.",
-        warum: {
-          h: "Warum das zählt",
-          t: "Der Tarif bestimmt, wie viele Prompts täglich laufen und wie viele Marken du " +
-             "verfolgst. Das ist die Auflösung deiner Daten: mehr Prompts heißt mehr " +
-             "beantwortete Fragen, mehr Marken heißt ein breiteres Vergleichsfeld."
-        },
-        wie: {
-          h: "Gut zu wissen",
-          l: ["Jeder Tarif startet mit einer kostenlosen Testphase. Vorher wird nichts berechnet.",
-              "Jährlich ist pro Monat günstiger; der Schalter oben zeigt beides.",
-              "Den Tarif kannst du später wechseln – deine Daten bleiben."]
         }
       }
     }
@@ -678,6 +646,9 @@
       hilfeAuf: hilfeGelesen(),
       /* Hat der Nutzer den Guide selbst angefasst? Bricht die Fuenf-Sekunden-Uhr ab. */
       hilfeVonHand: false,
+      /* Welche Schritte hat der Nutzer im Guide schon gesehen. Nur fuer diese Sitzung: der Punkt
+         am Knopf soll auf einen NEUEN Schritt hinweisen, nicht eine Woche spaeter noch. */
+      hilfeGesehen: {},
       /* Einmal beim Tarif gewesen heisst: der Punkt bleibt in der Schiene. Siehe renderRail. */
       planGesehen: false,
       /* Die Themenauswahl, zu der die aktuellen Prompts gehoeren. Sie entscheidet, ob ein
@@ -741,8 +712,9 @@
                 '{className:\'uob-logo\'}))"/>'
               : '<span class="uob-logo"></span>') +
         '<div class="uob-topr">' +
-          '<button class="uob-link" type="button" data-help-btn aria-pressed="false">' +
-            ic("bulb", 1.8) + '<span data-help-lbl>Guide</span></button>' +
+          '<button class="uob-link uob-link-dot" type="button" data-help-btn aria-pressed="false">' +
+            ic("libraryBig", 1.8) + '<span data-help-lbl>Guide</span>' +
+            '<span class="up-badge is-dot" data-help-dot></span></button>' +
           '<button class="uob-link" type="button" data-exit="dashboard">' + ic("home", 1.8) + 'Dashboard</button>' +
           '<button class="uob-link" type="button" data-exit="logout">' + ic("logOut", 1.8) + 'Log out</button>' +
           '<button class="uob-themebtn" type="button" data-theme-btn aria-label="Switch theme"></button>' +
@@ -1029,7 +1001,7 @@
       var n = anzahl(state.selTopics);
       return '<div class="uob-pane" data-pane="topics">' +
         kopf("Topics",
-             "Topics group the questions we ask the models. Pick the ones you want to be found for.",
+             "Topics group the questions we ask the models. Pick at least one you want to be found for.",
              { text: n + " selected", voll: n > 0 }) +
         '<div class="uob-body">' +
           (state.topics.length
@@ -1586,12 +1558,16 @@
       var texte = { brand: "Continue", competitors: "Continue", topics: "Continue",
                     prompts: "Continue", plan: "Start free trial" };
       elNextTxt.textContent = texte[state.step] || "Continue";
+      /* Mindestens ein Thema. Ohne Thema entstehen keine Prompts, und ohne Prompts hat das
+         fertige Konto nichts zu messen -- der Schritt ist der einzige, der wirklich noetig ist.
+         Deshalb hier kein Ueberspringen und ein gesperrter Weiter-Knopf, solange nichts steht. */
+      if (state.step === "topics" && !anzahl(state.selTopics)) elNext.disabled = true;
 
       /* Ueberspringen erscheint nur dort, wo wirklich nichts ausgewaehlt ist -- sobald jemand
          etwas angeklickt hat, waere "Skip" das falsche Wort fuer das, was der Klick tut. */
       var alt = elNav.querySelector("[data-skip]");
+      /* Themen fehlen hier mit Absicht: sie sind Pflicht, siehe oben. */
       var zeigen = (state.step === "competitors" && !anzahl(state.selBrands)) ||
-                   (state.step === "topics" && !anzahl(state.selTopics)) ||
                    (state.step === "prompts" && !anzahl(state.selPrompts));
       if (zeigen && !alt) {
         /* Direkt NEBEN den Weiter-Knopf, nicht irgendwo in die Mitte der Zeile: die beiden sind
@@ -1610,24 +1586,37 @@
     function hilfeSprache() {
       return MARKT_DE[txt(state.form.market).toUpperCase()] ? "de" : "en";
     }
+    /* Waehrend einer Uhr und beim Tarif gibt es keinen Guide. Beim Warten hat der Nutzer nichts
+       zu entscheiden -- da ist Lesestoff daneben nur Betrieb; und der Tarif erklaert sich auf
+       den Karten selbst, ein Kasten daneben waere eine zweite Meinung zum selben Preis. */
     function hilfeSchluessel() {
       var k = ansichtKey();
-      if (k === "load1") return "brand";
-      if (k === "load2") return "topics";
+      if (k === "load1" || k === "load2" || k === "plan") return "";
       return k;
     }
     function renderHilfe() {
       var sp = HILFE[hilfeSprache()];
-      var d = sp[hilfeSchluessel()];
+      var schl = hilfeSchluessel();
+      var d = schl ? sp[schl] : null;
+      var offen = !!state.hilfeAuf && !!d;
       if (elHelpBtn) {
         var lbl = elHelpBtn.querySelector("[data-help-lbl]");
         if (lbl) lbl.textContent = sp.titel;
-        elHelpBtn.setAttribute("aria-pressed", state.hilfeAuf ? "true" : "false");
-        elHelpBtn.classList.toggle("is-on", !!state.hilfeAuf);
+        elHelpBtn.setAttribute("aria-pressed", offen ? "true" : "false");
+        elHelpBtn.classList.toggle("is-on", offen);
+        /* Kein Guide fuer diesen Schritt heisst: auch keinen Knopf dafuer. Ein Knopf, der
+           nichts aufmacht, ist schlimmer als keiner. */
+        elHelpBtn.hidden = !d;
+        /* Der Punkt am Knopf: es gibt etwas zu lesen, und der Nutzer hat es fuer DIESEN Schritt
+           noch nicht gesehen. Genau das Zeichen, das die Icon-Knoepfe der App tragen
+           (.up-badge.is-dot). Er verschwindet, sobald der Kasten einmal offen war. */
+        var dot = elHelpBtn.querySelector("[data-help-dot]");
+        if (dot) dot.classList.toggle("is-visible", !!d && !offen && !state.hilfeGesehen[schl]);
       }
-      elHelp.classList.toggle("is-on", !!state.hilfeAuf);
-      elHelp.setAttribute("aria-hidden", state.hilfeAuf ? "false" : "true");
-      if (!d) { elHelpBody.innerHTML = ""; return; }
+      elHelp.classList.toggle("is-on", offen);
+      elHelp.setAttribute("aria-hidden", offen ? "false" : "true");
+      if (!d) { return; }
+      if (offen) state.hilfeGesehen[schl] = true;
       elHelpTtl.textContent = sp.titel;
       /* Nur neu setzen, wenn sich der Inhalt wirklich aendert -- sonst springt der Scrollstand
          der Tafel bei jedem Haken in der Liste zurueck. */
@@ -2337,6 +2326,7 @@
       }
       if (state.step === "competitors") { gehe("topics"); return; }
       if (state.step === "topics") {
+        if (!anzahl(state.selTopics)) return;
         /* Sind die Prompts schon da und passen sie zur AKTUELLEN Themenauswahl, geht es direkt
            weiter -- niemand will dieselbe Wartezeit zweimal absitzen, nur weil er einen Schritt
            zurueckgegangen ist. Hat sich die Auswahl geaendert, muessen neue Prompts entstehen,
