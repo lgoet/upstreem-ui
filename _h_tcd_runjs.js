@@ -1,38 +1,36 @@
 (function () {
-  /* Hausmuster, identisch zu responses-table: den rohen RPC-Text in Backticks, als STRING
-     durchreichen. Kein eval, kein Sanitizer hier. UC.parseBubbleJson in der Komponente ist die
-     eine geteilte Reparatur -- sie kennt das unescapte " im Titel, rohe Zeilenumbrueche,
-     nacktes yes/no. Wer hier selbst parst, verliert den Payload still. */
-  var URLS    = `[TOP_URLS_RPC]`;
-  var DOMAINS = `[TOP_DOMAINS_RPC]`;
-  var TYPES   = `[TYPES_BREAKDOWN_RPC]`;
-  var UTYPES  = `[URL_TYPES_BREAKDOWN_RPC]`;
-  var BRAND   = `[BRAND_RPC]`;
+  /* Kein toArr, kein toObj mehr: Bubble setzt seine Ausdruecke zwischen Backticks, und ein
+     Template-Literal loest Backslash-Escapes auf, BEVOR eine Zeile hier laeuft. Aus \" in einem
+     Titel wird ", das JSON ist kaputt, und ein catch machte daraus still ein leeres Array.
+     Die Listen und brand gehen deshalb als TEXT an die Komponente -- UC.parseBubbleJson dort ist
+     die eine geteilte Reparatur, dieselbe wie in responses-table und domains-table. */
+  function toNum(raw) {
+    var s = String(raw == null ? "" : raw).trim();
+    if (s === "") return null;
+    var n = Number(s);
+    return isFinite(n) ? n : null;
+  }
+
+  var payload = {
+    instanceId: "overview_v2_",
+    isDark: "",
+    mode: "",                 // "domain" | "url" — welche Liste/welcher Chart aktiv ist
+    totalCountDomain: toNum(``),
+    totalCountUrl: toNum(``),
+    citations_total: toNum(``),
+    brand: `{"id": "", "name": "", "logo": ""}`,
+    top_domains: `[]`,
+    top_urls: `[]`,
+    types_breakdown: `[]`,
+    url_types_breakdown: `[]`
+  };
 
   var t = 0;
   (function go () {
-    var w  = window,
-        fn = w.renderTopCitations
-          || (w.parent && w.parent.renderTopCitations)
-          || (w.top && w.top.renderTopCitations);
-    if (typeof fn === "function") {
-      fn({
-        instanceId: `INSTANCE_ID`,
-        isDark: `IS_DARK`,
-        mode: `MODE`,                            // "domain" | "url"
-        totalCountDomain: Number(`[TOTAL_COUNT_DOMAIN]`),
-        totalCountUrl:    Number(`[TOTAL_COUNT_URL]`),
-        citations_total:  Number(`[CITATIONS_TOTAL]`),
-        brand:               BRAND,              // bleiben Strings -- Absicht
-        top_domains:         DOMAINS,
-        top_urls:            URLS,
-        types_breakdown:     TYPES,
-        url_types_breakdown: UTYPES
-      });
-      return;
-    }
-    if (t++ < 60) { setTimeout(go, 100); return; }
-    console.error("[top-citations] renderTopCitations never appeared after 6s -- " +
-      "check data-cdn-pin and that the component is actually on this page.");
+    var fn = window.renderTopCitations
+          || (window.parent && window.parent.renderTopCitations)
+          || (window.top && window.top.renderTopCitations);
+    if (typeof fn === "function") { fn(payload); return; }
+    if (t++ < 60) setTimeout(go, 100);
   })();
 })();

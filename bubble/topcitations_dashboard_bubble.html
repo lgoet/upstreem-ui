@@ -70,7 +70,7 @@
   // URL Type in url mode and Citation Type in domain mode, switching modes resets it to that
   // mode's default, and an explicit pick by the user survives re-renders. You still get the
   // dimension event when the user switches it by hand, if you want to mirror it into a state.
-  ── Run-JS "Render" step (paste as-is, swap the bracketed dynamic values) ────
+  ── Run-JS "Render" step (paste as-is, drop the Bubble expressions into the backticks) ────
 
   !! NEVER parse the RPC result inside the step. Bubble puts its expressions between BACKTICKS,
   and a template literal resolves backslash escapes before a single line of the step runs:
@@ -80,44 +80,41 @@
 
   A JSON.parse/eval in the step throws on that, and a catch that returns [] turns it into an
   empty table with a silent console. Measured on 22.08.: 7 URLs in the RPC, array:0 in the step,
-  "No data" in the table while the chart beside it kept its data. Same story for a \\n in a
-  multi-line text and for any backslash in a path.
+  "No data" in the table while the chart beside it kept its data. Same for a \\n in multi-line
+  text and for any backslash in a path.
 
-  Hand the raw text over as a STRING, exactly like responses-table and every other table here.
-  UpstreemCore.parseBubbleJson is the one shared repair pass and knows these cases.
+  The four lists and brand go over as STRINGS, exactly like responses-table and every other table
+  here. UpstreemCore.parseBubbleJson is the one shared repair pass and knows these cases.
 
   (function () {
-    var URLS    = `[TOP_URLS_RPC]`;              // backticks -- do NOT wrap in [ ] yourself
-    var DOMAINS = `[TOP_DOMAINS_RPC]`;
-    var TYPES   = `[TYPES_BREAKDOWN_RPC]`;
-    var UTYPES  = `[URL_TYPES_BREAKDOWN_RPC]`;
-    var BRAND   = `[BRAND_RPC]`;
+    function toNum(raw) {
+      var s = String(raw == null ? "" : raw).trim();
+      if (s === "") return null;
+      var n = Number(s);
+      return isFinite(n) ? n : null;
+    }
+
+    var payload = {
+      instanceId: "INSTANCE_ID",
+      isDark: "IS_DARK",
+      mode: "MODE",             // "domain" | "url"
+      totalCountDomain: toNum(``),
+      totalCountUrl: toNum(``),
+      citations_total: toNum(``),
+      brand: `{"id": "", "name": "", "logo": ""}`,
+      top_domains: `[]`,
+      top_urls: `[]`,
+      types_breakdown: `[]`,
+      url_types_breakdown: `[]`
+    };
 
     var t = 0;
     (function go () {
-      var w  = window,
-          fn = w.renderTopCitations
-            || (w.parent && w.parent.renderTopCitations)
-            || (w.top && w.top.renderTopCitations);
-      if (typeof fn === "function") {
-        fn({
-          instanceId: `INSTANCE_ID`,
-          isDark: `IS_DARK`,
-          mode: `MODE`,                          // "domain" | "url"
-          totalCountDomain: Number(`[TOTAL_COUNT_DOMAIN]`),
-          totalCountUrl:    Number(`[TOTAL_COUNT_URL]`),
-          citations_total:  Number(`[CITATIONS_TOTAL]`),
-          brand:               BRAND,            // all five stay STRINGS on purpose
-          top_domains:         DOMAINS,
-          top_urls:            URLS,
-          types_breakdown:     TYPES,
-          url_types_breakdown: UTYPES
-        });
-        return;
-      }
-      if (t++ < 60) { setTimeout(go, 100); return; }
-      console.error("[top-citations] renderTopCitations never appeared after 6s -- " +
-        "check data-cdn-pin and that the component is actually on this page.");
+      var fn = window.renderTopCitations
+            || (window.parent && window.parent.renderTopCitations)
+            || (window.top && window.top.renderTopCitations);
+      if (typeof fn === "function") { fn(payload); return; }
+      if (t++ < 60) setTimeout(go, 100);
     })();
   })();
 
