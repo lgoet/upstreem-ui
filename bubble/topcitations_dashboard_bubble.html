@@ -70,6 +70,70 @@
   // URL Type in url mode and Citation Type in domain mode, switching modes resets it to that
   // mode's default, and an explicit pick by the user survives re-renders. You still get the
   // dimension event when the user switches it by hand, if you want to mirror it into a state.
+  ── Der Run-JS-Step: Listen NICHT hier parsen ────────────────────────────────
+  Bubble setzt seine Ausdruecke zwischen BACKTICKS. Ein Template-Literal loest
+  Backslash-Escapes auf, BEVOR eine Zeile des Steps laeuft:
+
+      RPC liefert   "title":"NATURE ONE \\"rave. now. together.\\" | 30. Juli"
+      im Step an    "title":"NATURE ONE "rave. now. together." | 30. Juli"
+
+  Damit ist das JSON kaputt, eval/JSON.parse wirft, und ein  catch (e) { return []; }
+  macht daraus still ein leeres Array. Die Tabelle sagt dann "No data", das Chart
+  daneben lebt weiter (es haengt an types_breakdown), und die Konsole schweigt.
+  Am 22.08. genau so passiert: 7 URLs im RPC, array:0 im Step. Dasselbe gilt fuer
+  \\n in einem mehrzeiligen Text und fuer jeden Backslash in einem Pfad.
+
+  Deshalb: die Listenfelder als TEXT durchreichen. parseLoose in der Komponente
+  repariert beides (core.js, Repair 6 und 7), und was es nicht lesen kann, steht
+  sichtbar in der Tabelle statt als "No data". String.raw verhindert den Schaden
+  zusaetzlich an der Quelle.
+
+  (function () {
+    // Leer bleibt ein echtes leeres Array -- sonst meldet die Komponente einen
+    // Fehler, wo gar keine Daten sein sollen.
+    function alsText(raw) {
+      var s = String(raw == null ? "" : raw).trim();
+      return s ? s : [];
+    }
+    // brand ist ein Objekt, kein Listenfeld -- das parst die Komponente nicht.
+    function toObj(raw) {
+      var s = String(raw == null ? "" : raw).trim();
+      if (!s) return null;
+      s = s.replace(/:\s*([,}\]])/g, ": null$1")
+           .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; })
+           .replace(/,\s*([}\]])/g, "$1");
+      try { return eval("(" + s + ")"); }
+      catch (e) { console.error("[tcd] brand nicht lesbar: " + e.message, s.slice(0, 200)); return null; }
+    }
+    function toNum(raw) {
+      var s = String(raw == null ? "" : raw).trim();
+      if (s === "") return null;
+      var n = Number(s);
+      return isFinite(n) ? n : null;
+    }
+    var payload = {
+      instanceId: "INSTANCE_ID",
+      isDark: "IS_DARK",
+      mode: "MODE",
+      totalCountDomain:    toNum(String.raw`<Bubble>`),
+      totalCountUrl:       toNum(String.raw`<Bubble>`),
+      citations_total:     toNum(String.raw`<Bubble>`),
+      brand:               toObj(String.raw`<Bubble>`),
+      top_domains:         alsText(String.raw`<Bubble>`),
+      top_urls:            alsText(String.raw`<Bubble>`),
+      types_breakdown:     alsText(String.raw`<Bubble>`),
+      url_types_breakdown: alsText(String.raw`<Bubble>`)
+    };
+    var t = 0;
+    (function go () {
+      var fn = window.renderTopCitations
+            || (window.parent && window.parent.renderTopCitations)
+            || (window.top && window.top.renderTopCitations);
+      if (typeof fn === "function") { fn(payload); return; }
+      if (t++ < 60) setTimeout(go, 100);
+    })();
+  })();
+
   window.setTopCitationsLoading("INSTANCE_ID", "yes" | "no");
   window.resetTopCitations("INSTANCE_ID");    // resets every filter (Brand Mentioned, both type
                                                // selections, filter dimension) — does NOT fire any
