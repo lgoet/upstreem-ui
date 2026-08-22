@@ -97,6 +97,28 @@
                        mit einem Eintrag). status_phase 1..4 stellt die Phase, 5 heisst fertig
                        und schaltet weiter.
        setOnboardingStatus("<instance>", <json>)    nur der Statusschritt: {"status_phase": 2}
+                       FEHLER: dieselbe Funktion. status "error"/"failed" oder ein gefuelltes
+                       last_error beendet jede Uhr, zeigt das Band und bleibt stehen -- die
+                       Felder der RPC reichen, es braucht keinen eigenen Aufruf:
+                         {"status":"error","last_error":"The website could not be reached."}
+                       last_error gewinnt als Text; ohne last_error steht ein allgemeiner Satz
+                       da. Ohne diesen Zweig dreht die Uhr endlos: sie hat KEIN Zeitlimit und
+                       endet nur durch status_phase 5, durch einen Fehler oder durch reset.
+                       Gilt genauso fuer setOnboardingProject -- der Fehler wird dort VOR der
+                       Phase geprueft, denn ein abgebrochener Lauf schickt oft trotzdem eine.
+
+                       Run-JS-Step dafuer (Hausmuster: roher Text in Backticks, als String
+                       durchreichen, NICHT im Step parsen):
+
+                         (function () {
+                           var STATUS = `[STATUS_RPC]`;
+                           var t = 0;
+                           (function go () {
+                             var fn = window.setOnboardingStatus;
+                             if (typeof fn === "function") { fn("INSTANCE_ID", STATUS); return; }
+                             if (t++ < 60) setTimeout(go, 100);
+                           })();
+                         })();
        setOnboardingBrands("<instance>", <json>)    Liste: id, name, domain, url, favicon_url,
                        selected
        setOnboardingTopics("<instance>", <json>)    Liste: id, name, description, hex_light,

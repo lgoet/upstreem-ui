@@ -2549,11 +2549,60 @@
       if (k && k !== state.step) { state.step = k; state.warten = ""; render(); }
     });
 
+    /* EIN Leseweg fuer alles, was aus Bubble kommt -- dieselbe geteilte Reparatur wie in jeder
+       Tabelle dieses Repos. UC.parseBubbleJson kennt die Faelle, die wirklich auftreten: ein
+       unescaptes " mitten in einem Namen, rohe Zeilenumbrueche, nacktes yes/no. parseLoose war
+       hier ein zweiter Weg, und genau an so einem zweiten Weg ist Top Citations gestorben --
+       ein Markenname mit Anfuehrungszeichen reicht, und die ganze Liste ist still weg.
+       Markennamen, Themennamen und die Zusammenfassung kommen vom Crawler; dort ist ein
+       Anfuehrungszeichen keine Ausnahme, sondern Alltag.
+       Objekte gehen unveraendert durch: parseBubbleJson liest TEXT, ein Objekt wuerde es zu
+       "[object Object]" verstringen. JSON.parse als Rueckfall, falls das geladene core.js
+       aelter ist als parseBubbleJson -- sonst nimmt ein alter Pin die ganze Seite mit. */
+    function lies(payload) {
+      if (payload && typeof payload === "object") return payload;
+      var t = txt(payload);
+      if (!t) return null;
+      /* Doppelt verpackt: ein Run-JS-Step, der JSON.stringify UM einen Payload legt, der schon
+         Text ist. Das Ergebnis ist ein String, dessen erstes Zeichen ein Anfuehrungszeichen ist
+         und der escapte Anfuehrungszeichen enthaelt. parseBubbleJson liest das als leere Liste --
+         gemessen: array:0, Payload still weg. parseLoose packte es aus, und diese eine Faehigkeit
+         darf beim Wechsel auf den geteilten Leseweg nicht verlorengehen. Nur bei genau diesem
+         Muster, damit ein Textwert nicht zerlegt wird. */
+      if (t.charAt(0) === '"' && t.charAt(t.length - 1) === '"' && t.indexOf('\\"') >= 0) {
+        try {
+          var innen = JSON.parse(t);
+          if (typeof innen === "string" && /^\s*[\[{]/.test(innen)) t = txt(innen);
+        } catch (e) {}
+      }
+      var a = null;
+      try { if (UC.parseBubbleJson) a = UC.parseBubbleJson(t); } catch (e) {}
+      if (!isArr(a)) { try { a = JSON.parse(t); } catch (e) { a = null; } }
+      /* Leer und unlesbar sind zwei Dinge (§46): parseBubbleJson gibt fuer beides [] zurueck.
+         Eine WIRKLICH leere Lieferung ist am leeren Klammerpaar zu erkennen -- alles andere,
+         das nichts ergibt, ist ein Lesefehler und muss als Fehler zurueck. Sonst sieht ein
+         kaputter Payload aus wie "es gibt hier nichts", und der Nutzer sucht an der falschen
+         Stelle. Gemessen: "das ist kein json" lieferte eine leere Liste ohne jede Meldung. */
+      if (isArr(a) && !a.length && !/^\[\s*\]$/.test(t)) return null;
+      return a;
+    }
+    /* Ein Fehler aus dem Hintergrundlauf. Die RPC traegt ihn ohnehin mit (status, last_error) --
+       bisher hat die Komponente beide gelesen und weggeworfen, und ein abgebrochener Lauf sah
+       aus wie ein Lauf, der gleich fertig ist: die Uhr drehte weiter, ohne Ende. */
+    function fehlerAus(p) {
+      if (!p || typeof p !== "object") return "";
+      var st = txt(p.status).toLowerCase();
+      var le = txt(p.last_error);
+      if (le) return le;
+      if (st === "error" || st === "failed") return "Something went wrong while setting up your workspace. Please try again.";
+      return "";
+    }
+
     /* ---- Aussenschnittstelle ------------------------------------------------------------------ */
     var ctrl = {
       instanceId: instanceId,
       setProject: function (payload) {
-        var p = UC.parseLoose ? UC.parseLoose(payload, "onboarding project") : payload;
+        var p = lies(payload);
         if (isArr(p)) p = p[0];
         if (!p || typeof p !== "object") {
           state.banner = "We could not read the project data. Please try again.";
@@ -2567,6 +2616,10 @@
         if (txt(p.market)) state.form.market = txt(p.market);
         if (txt(p.business_model)) state.form.business = txt(p.business_model);
         if (txt(p.brand_industry)) state.form.industry = txt(p.brand_industry);
+        /* Fehler VOR der Phase: ein abgebrochener Lauf schickt oft trotzdem eine status_phase,
+           und die wuerde die Uhr weiterdrehen lassen. */
+        var fehl1 = fehlerAus(p);
+        if (fehl1) { state.banner = fehl1; warteBeenden(); state.busy = false; render(); return true; }
         var ph = num(p.status_phase);
         if (ph != null) {
           /* status_phase 5 heisst fertig, 1..4 sind die laufenden. Der Index ist eins kleiner. */
@@ -2577,8 +2630,13 @@
         return true;
       },
       setStatus: function (payload) {
-        var p = UC.parseLoose ? UC.parseLoose(payload, "onboarding status") : payload;
+        var p = lies(payload);
+        if (isArr(p)) p = p[0];
         if (!p || typeof p !== "object") return false;
+        /* Vor der Phase, und ohne status_phase gueltig: {"status":"error","last_error":"..."}
+           allein muss reichen, um die Uhr zu beenden. */
+        var fehl2 = fehlerAus(p);
+        if (fehl2) { state.banner = fehl2; warteBeenden(); state.busy = false; render(); return true; }
         var ph = num(p.status_phase);
         if (ph == null) return false;
         if (ph >= 5) {
@@ -2596,7 +2654,7 @@
       setTopics: function (payload) { return listeSetzen(payload, "topics"); },
       setPrompts: function (payload) { return listeSetzen(payload, "prompts"); },
       setPlans: function (payload) {
-        var p = UC.parseLoose ? UC.parseLoose(payload, "onboarding plans") : payload;
+        var p = lies(payload);
         if (!isArr(p)) { state.banner = "We could not read the plans."; render(); return true; }
         state.plans = p.slice().sort(function (a, b) {
           var sa = num(a.sort_order), sb = num(b.sort_order);
@@ -2635,7 +2693,7 @@
     };
 
     function listeSetzen(payload, welche) {
-      var p = UC.parseLoose ? UC.parseLoose(payload, "onboarding " + welche) : payload;
+      var p = lies(payload);
       if (!isArr(p)) {
         state.banner = "We could not read the " + welche + ".";
         render(); return true;
