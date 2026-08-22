@@ -2368,6 +2368,10 @@
       if (state.busy) return;
       if (state.step === "brand") {
         if (!pruefeForm()) return;
+        /* Der Rohtext MUSS vor dem Normalisieren weg: state.form.website wird gleich mit der
+           aufgeraeumten Adresse ueberschrieben, und website_input war danach byteweise dasselbe
+           wie website_url -- ein Feld, das nur so aussah, als traege es die Eingabe. */
+        var roheEingabe = txt(state.form.website);
         var n = normUrl(state.form.website);
         state.form.website = n.url;
         setzeFormWerte();
@@ -2375,7 +2379,7 @@
         warteStarten("main");
         fire("data-start-fn", "uobStart", {
           brand_name: txt(state.form.name),
-          website_input: txt(state.form.website),
+          website_input: roheEingabe,
           website_url: n.url,
           website_domain: n.domain,
           market: txt(state.form.market),

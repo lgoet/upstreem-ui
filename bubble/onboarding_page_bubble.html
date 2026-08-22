@@ -44,10 +44,46 @@
                        "no" lassen oder ganz weglassen.
 
      ── EREIGNISSE ──────────────────────────────────────────────────────────────────────────
-       uobStart   Objekt: brand_name, website_input, website_url, website_domain, market,
-                  timezone, business_model, brand_industry.
-                  website_url ist normalisiert: immer https, Host immer OHNE www -- damit sie
-                  zu website_domain passt, das ueberall in der App der Schluessel ist.
+       uobStart   JSON-TEXT, nicht Objekt. Gemessener Payload, Schluessel in dieser Reihenfolge:
+
+                  {"brand_name":"Parookaville \\"Festival\\"",
+                   "website_input":"WWW.Parookaville.com/Tickets/",
+                   "website_url":"https://parookaville.com/Tickets",
+                   "website_domain":"parookaville.com",
+                   "market":"DE","timezone":"Europe/Berlin",
+                   "business_model":"B2B","brand_industry":""}
+
+                  Ist ein Team gesetzt (UC.setUpstreemTeam), steht team_id VORNE als erster
+                  Schluessel. Die Extraktionen unten holen sich ihren Schluessel und sind davon
+                  nicht betroffen.
+
+                  Werte:
+                    brand_name      Freitext, hoechstens 60 Zeichen
+                    website_input   was der Nutzer getippt hat, unveraendert
+                    website_url     normalisiert: immer https, Host immer OHNE www
+                    website_domain  nur der Host, klein -- der Schluessel dieser App
+                    market          ISO-2, z.B. DE, US, GB
+                    timezone        IANA, z.B. Europe/Berlin
+                    business_model  B2B | B2C | Hybrid | CitiesRegions
+                    brand_industry  Freitext oder leer, hoechstens 60 Zeichen
+
+                  Extraktion (Bubble: value:extract with Regex):
+                    (?<="website_url":")[^"]*
+                    (?<="website_domain":")[^"]*
+                    (?<="market":")[^"]*
+                    (?<="timezone":")[^"]*
+                    (?<="business_model":")[^"]*
+
+                  Die drei FREITEXT-Felder brauchen ein anderes Muster. Tippt jemand ein
+                  Anfuehrungszeichen in den Markennamen, schreibt JSON.stringify es als \\" --
+                  und [^"]* bricht dort ab. Gemessen: aus Parookaville "Festival" wurde
+                  Parookaville \\ und der Rest war weg.
+                    (?<="brand_name":")(?:[^"\\\\]|\\\\.)*
+                    (?<="brand_industry":")(?:[^"\\\\]|\\\\.)*
+                    (?<="website_input":")(?:[^"\\\\]|\\\\.)*
+                  Das Ergebnis traegt die Escapes noch: dahinter ein
+                  :find & replace  \\"  ->  "
+                  Gemessen: Parookaville \\"Festival\\"  ->  Parookaville "Festival"
        uobStep    der Schluessel des Schritts als Text: brand | competitors | topics | prompts | plan
        uobSelect  Objekt: kind ("brands"|"topics"|"prompts"), ids (Komma-getrennt), count
        uobTopics  Objekt: topic_ids, count -- beim Verlassen von Schritt 3. DAS ist der Anstoss,
