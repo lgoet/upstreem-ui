@@ -1631,6 +1631,25 @@
       if (k === "load1" || k === "load2" || k === "plan") return "";
       return k;
     }
+    /* Passt die Tafel neben den Inhalt, ohne ihn zu verdecken? Sie steht rechts und ist absolut
+       gesetzt, schiebt also nichts zur Seite -- auf einem schmalen Schirm liegt sie damit ueber
+       der Spalte. Von SELBST darf sie nur aufgehen, wenn daneben Platz ist; per Knopf jederzeit,
+       denn dann hat der Nutzer sie ausdruecklich geholt und weiss, was er verdeckt.
+       Gemessen bei 900px: Spalte endet bei 690, Tafel begann bei 570 -- 120 Pixel Ueberdeckung.
+       Im schmalen Modus legt sich die Tafel ohnehin ueber die ganze Breite, dort ist die Antwort
+       immer nein. */
+    function hilfePasst() {
+      if (!elHelp) return false;
+      if (root.classList.contains("is-narrow") || root.classList.contains("is-vnarrow")) return false;
+      var col = root.querySelector(".uob-col");
+      if (!col) return true;
+      var rr = root.getBoundingClientRect(), cc = col.getBoundingClientRect();
+      var breite = elHelp.offsetWidth || 320;
+      var rechts = parseFloat(window.getComputedStyle(elHelp).right);
+      if (!isFinite(rechts)) rechts = 24;
+      /* 16px Luft zwischen Spalte und Tafel -- beruehren zaehlt nicht als "passt". */
+      return (rr.right - rechts - breite) >= (cc.right + 16);
+    }
     function renderHilfe() {
       var sp = HILFE[hilfeSprache()];
       var schl = hilfeSchluessel();
@@ -2761,6 +2780,17 @@
       hilfeUhr = window.setTimeout(function () {
         hilfeUhr = null;
         if (state.hilfeVonHand) return;
+        if (!hilfePasst()) {
+          /* Kein Platz: die Tafel bleibt zu. Nicht aufgedraengt heisst aber nicht versteckt --
+             der erste Render hat den Schritt schon als "gesehen" markiert, weil die Tafel gleich
+             von selbst aufgehen sollte. Diese Marke muss weg, sonst steht kein Punkt am Knopf
+             und der Guide ist auf schmalen Schirmen unauffindbar: kein Kasten, kein Zeichen.
+             Gemessen: display none am Punkt, obwohl der Nutzer nie etwas gesehen hatte. */
+          var k = hilfeSchluessel();
+          if (k) delete state.hilfeGesehen[k];
+          renderHilfe();
+          return;
+        }
         state.hilfeAuf = true;
         renderHilfe();
       }, 5000);

@@ -1,0 +1,54 @@
+<meta charset="utf-8"><title>onboarding: Breiten</title>
+<style>
+  body { margin: 0; font: 11px ui-monospace, monospace; background: #f4f4f5; }
+  .zeile { display: flex; align-items: flex-start; gap: 10px; padding: 8px; }
+  iframe { border: 1px solid #999; background: #fff; height: 780px; }
+  pre { margin: 0; background: #111; color: #eee; padding: 8px; border-radius: 6px; white-space: pre-wrap; }
+</style>
+<div id="wrap"></div>
+<script>
+/* Ein iframe hat eine ECHTE Breite -- 3vw rechnet darin richtig. Der Browser-Pane hat meine
+   Groessenaenderung mehrfach ignoriert und 1034px gemeldet, obwohl 620 gesetzt waren. */
+var BREITEN = [1500, 1100, 900, 760, 620, 480, 380];
+window.__mess = null;
+var wrap = document.getElementById("wrap"), rahmen = [];
+BREITEN.forEach(function (b) {
+  var z = document.createElement("div"); z.className = "zeile";
+  var f = document.createElement("iframe");
+  /* Breite per style, nicht per Attribut: das Attribut wurde vom Layout beschnitten und
+     zwei Rahmen meldeten dieselbe Breite. */
+  f.style.width = b + "px"; f.style.minWidth = b + "px"; f.style.flex = "0 0 auto";
+  f.src = "_h_uob.html?step=brand";
+  z.appendChild(f); wrap.appendChild(z); rahmen.push([b, f]);
+});
+function messen() {
+  var aus = {};
+  rahmen.forEach(function (paar) {
+    var b = paar[0], d = paar[1].contentDocument, w = paar[1].contentWindow;
+    var r = d.querySelector(".uob-root");
+    if (!r) { aus[b] = "keine Wurzel"; return; }
+    var W = d.documentElement.clientWidth;
+    var logo = r.querySelector(".uob-logo"), topr = r.querySelector(".uob-topr"),
+        rail = r.querySelector(".uob-rail"), col = r.querySelector(".uob-col"),
+        help = r.querySelector("[data-help]"), dot = r.querySelector("[data-help-dot]");
+    var L = logo.getBoundingClientRect(), P = topr.getBoundingClientRect(),
+        R = rail.getBoundingClientRect(), C = col.getBoundingClientRect();
+    var rs = w.getComputedStyle(rail);
+    aus[b] = {
+      wurzelpolster: Math.round(parseFloat(w.getComputedStyle(r).paddingLeft)),
+      logo_links: Math.round(L.left),
+      knoepfe_rechts: Math.round(W - P.right),
+      schiene_links: Math.round(R.left + parseFloat(rs.paddingLeft)),
+      schiene_rechts: Math.round(W - (R.right - parseFloat(rs.paddingRight))),
+      spalte: [Math.round(C.left), Math.round(C.right)],
+      narrow: r.classList.contains("is-narrow"),
+      tafel_offen: help.classList.contains("is-on"),
+      punkt: w.getComputedStyle(dot).display !== "none",
+      quer_scroll: d.documentElement.scrollWidth > W + 1
+    };
+  });
+  window.__mess = aus;
+}
+/* Erst nach der Guide-Uhr messen: 5s plus Luft. */
+setTimeout(messen, 9000);
+</script>

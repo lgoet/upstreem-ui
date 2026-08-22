@@ -56,7 +56,12 @@
   font-family: inherit;
   -webkit-font-smoothing: antialiased;
   box-sizing: border-box;
-  padding: clamp(16px, 2.4vh, 24px) clamp(16px, 3vw, 32px) clamp(16px, 2.4vh, 28px);
+  /* Das waagerechte Polster steht als Variable, weil zwei Bauteile darueber rechnen: Kopfzeile
+     und Fortschrittsschiene halten IMMER 32px zum Bildschirmrand, auch wenn das Polster
+     schrumpft. Eine zweite Kopie der Formel war genau einmal falsch -- is-narrow setzt ein
+     FESTES Polster, und die Kopie rechnete weiter mit dem clamp: gemessen 29px statt 32. */
+  --uob-px: clamp(16px, 3vw, 32px);
+  padding: clamp(16px, 2.4vh, 24px) var(--uob-px) clamp(16px, 2.4vh, 28px);
 }
 .uob-root *, .uob-root *::before, .uob-root *::after { box-sizing: border-box; }
 .uob-root[data-theme="dark"] { --uob-hover: var(--vc-heading-bg); }
@@ -67,6 +72,13 @@
    nie so aussehen wie der Weg weiter. */
 .uob-top {
   flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  /* Oben bleiben IMMER 32px zum Bildschirmrand, auch wenn das Polster der Wurzel auf schmalen
+     Schirmen bis auf 16px schrumpft. Der Inhalt darunter darf naeher an den Rand, er braucht
+     die Breite -- Logo und Ausgaenge nicht: das sind die Ankerpunkte der Seite und sie sollen
+     auf jeder Breite an derselben Stelle stehen.
+     Der Ausgleich ist die Differenz zum Wurzelpolster, bei vollen 32px also null. Breiter wird
+     dadurch nichts, und auf breiten Schirmen aendert sich kein Pixel. */
+  padding-inline: max(0px, calc(32px - var(--uob-px)));
 }
 .uob-logo { height: 18px; width: auto; flex: 0 0 auto; display: block; }
 .uob-logo svg, .uob-logo img { height: 18px; width: auto; display: block; }
@@ -119,7 +131,11 @@
      dann 792 Pixel hoch und lagen als unsichtbare Knopfschicht ueber der halben Seite. */
   position: relative;
   flex: 0 0 auto; width: 100%; max-width: 820px; margin: clamp(18px, 3.2vh, 34px) auto 0;
-  padding: 0 8px;
+  /* 8px sind der Ueberstand der Punkte an den Enden der Schiene. Dazu derselbe Ausgleich wie in
+     .uob-top -- sonst rutscht die Schiene auf schmalen Schirmen naeher an den Rand als die
+     Kopfzeile darueber, und der Abstand zwischen beiden aendert sich mit der Fensterbreite.
+     Padding statt margin, damit die Zentrierung ueber margin:auto erhalten bleibt. */
+  padding-inline: calc(8px + max(0px, calc(32px - var(--uob-px))));
 }
 .uob-rail-line { position: relative; height: 2px; border-radius: 999px; background: var(--vc-sk); }
 /* Eine Flaeche, kein Verlauf. Hier stand kurz einer, der den Abschnitt bis Competitors
@@ -172,7 +188,13 @@
    nur den Punkt oder nur den Text trifft, hat zwei verschiedene Ziele fuer dieselbe Sache --
    und der Hover auf dem einen liess das andere kalt. Deshalb EINE unsichtbare Flaeche je
    Station, ueber beidem, die Klick und Hover traegt. Punkt und Text sind dann nur noch Bild. */
-.uob-rail-hits { position: absolute; left: 0; right: 0; top: -10px; bottom: -22px; }
+/* overflow: hidden ist hier PFLICHT, nicht Kosmetik: jede Trefferflaeche sitzt auf ihrem Punkt
+   und wird per translateX(-50%) zentriert -- die letzte steht bei left:100% und ragt damit ihre
+   halbe Breite ueber den rechten Rand hinaus. Gemessen: bei 900px Fenster reichte die Seite bis
+   994px und scrollte seitwaerts, bei 380px bis 420px. Geklippt wird dabei nur Flaeche, die
+   ohnehin ausserhalb der Schiene liegt; der Punkt selbst und seine ganze innere Haelfte
+   bleiben klickbar. */
+.uob-rail-hits { position: absolute; left: 0; right: 0; top: -10px; bottom: -22px; overflow: hidden; }
 .uob-rail-hit {
   position: absolute; top: 0; bottom: 0; left: var(--uob-x, 0%);
   transform: translateX(-50%);
@@ -468,6 +490,9 @@
 /* 34px rechts wie in jedem Suchfeld der App: der Text muss VOR dem X enden, sonst schreibt man
    beim Tippen sichtbar darunter. */
 .uob-ddcustom-in { width: 100%; min-width: 0; height: 32px; padding-right: 34px; }
+/* .check_reinvention.py meldet das als Zwilling von .up-iconbtn. Ist es nicht: .up-iconbtn ist
+   32px hoch und steht fuer sich, das hier ist ein 20px-Zeichen IM Feld, das den Text loescht --
+   dieselbe Rolle wie das X in jedem Suchfeld der App, nicht die eines Knopfes daneben. */
 .uob-ddcustom-clear {
   position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
   display: none; align-items: center; justify-content: center; width: 20px; height: 20px;
@@ -691,6 +716,8 @@
   font-family: inherit; font-size: 14px; font-weight: 500; color: var(--vc-text); outline: none;
 }
 .uob-newin::placeholder { color: var(--vc-third); font-weight: 400; }
+/* Ebenfalls kein .up-iconbtn: 22px, sitzt IN der Zeile des eigenen Themas und gehoert zu ihr.
+   Ein 32px-Knopf daneben wuerde die Zeile aufblasen und sich wichtiger machen als ihr Inhalt. */
 .uob-newdel {
   flex: 0 0 auto; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 6px;
   background: transparent; color: var(--vc-third); cursor: pointer;
@@ -1144,7 +1171,7 @@
    Ein Telefon ist hier kein Sonderfall, den man wegblendet: das Onboarding muss dort ganz
    durchlaufen. Also stapelt alles, die Liste bekommt mehr Hoehe (es gibt nichts daneben), und
    die Knopfzeile dreht sich um. */
-.uob-root.is-narrow { padding: 14px 16px 18px; }
+.uob-root.is-narrow { --uob-px: 16px; padding: 14px var(--uob-px) 18px; }
 .uob-root.is-narrow .uob-col,
 .uob-root.is-narrow .uob-nav { max-width: none; }
 .uob-root.is-narrow .uob-frow { grid-template-columns: 1fr; }
