@@ -97,6 +97,12 @@
                        mit einem Eintrag). status_phase 1..4 stellt die Phase, 5 heisst fertig
                        und schaltet weiter.
        setOnboardingStatus("<instance>", <json>)    nur der Statusschritt: {"status_phase": 2}
+                       Eine nackte Zahl geht auch: setOnboardingStatus("<instance>", "2").
+                       1..4 sind die laufenden Phasen, 5 heisst fertig und schaltet weiter.
+                       REIHENFOLGE bei 5: erst die Listen, DANN die 5. Gemessen: 5 ohne
+                       vorherige Listen landet auf Competitors mit null Eintraegen, und die
+                       Liste erscheint erst, wenn sie nachkommt -- der Nutzer sieht dazwischen
+                       einen leeren Schritt.
                        FEHLER: dieselbe Funktion. status "error"/"failed" oder ein gefuelltes
                        last_error beendet jede Uhr, zeigt das Band und bleibt stehen -- die
                        Felder der RPC reichen, es braucht keinen eigenen Aufruf:

@@ -2651,6 +2651,14 @@
       setStatus: function (payload) {
         var p = lies(payload);
         if (isArr(p)) p = p[0];
+        /* Eine nackte Zahl ist eindeutig -- sie kann nur die Phase sein. Vorher hat
+           setOnboardingStatus("...", "3") NICHTS getan und auch nichts gesagt: kein Fehler,
+           keine Meldung, die Uhr lief einfach weiter. Das ist der naheliegendste Griff, weil
+           der Parameter "Status" heisst und in der RPC eine Zahl ist. Gemessen: 0 Phasen
+           fertig mit "3", 2 mit {"status_phase": 3}. */
+        if ((!p || typeof p !== "object") && txt(payload) !== "" && num(payload) != null) {
+          p = { status_phase: num(payload) };
+        }
         if (!p || typeof p !== "object") return false;
         /* Vor der Phase, und ohne status_phase gueltig: {"status":"error","last_error":"..."}
            allein muss reichen, um die Uhr zu beenden. */
