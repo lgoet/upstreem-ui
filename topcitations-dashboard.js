@@ -302,7 +302,12 @@
       if (Array.isArray(v)) { state.listenFehler = null; return v; }
       var text = (v == null) ? "" : String(v).trim();
       if (!text) { state.listenFehler = null; return []; }
-      var p = UC.parseBubbleJson(text);
+      var p = null;
+      /* Faellt zurueck, statt zu werfen: ein Pin, dessen core.js aelter ist als parseBubbleJson,
+         haette die ganze Komponente mitgenommen -- und mit ihr den Rest des Run-JS-Steps. */
+      try { if (UC.parseBubbleJson) p = UC.parseBubbleJson(text); } catch (e){}
+      if (!Array.isArray(p)){ try { var q = JSON.parse(text); if (Array.isArray(q)) p = q; } catch (e){} }
+      if (!Array.isArray(p)) p = [];
       /* Leer und unlesbar sind zwei Dinge (§46): parseBubbleJson gibt beides als [] zurueck.
          Eine WIRKLICH leere Lieferung ist als leeres Klammerpaar zu erkennen -- alles andere,
          das nichts ergibt, ist ein Lesefehler und gehoert sichtbar ins UI. */
@@ -808,6 +813,13 @@
 
     return {
       __ctrlId: myCtrlId,
+      /* Notausgang fuer doRender: Ladezustand beenden, Fehler sichtbar machen. Ohne das bleibt
+         nach einem Wurf das Skelett stehen und sieht aus wie "gleich da". */
+      fail: function(text){
+        state.listenFehler = text;
+        state.loading = false; state.optimisticLoading = false;
+        render();
+      },
       /*
         Bubble Toolbox → Run JavaScript
         window.resetTopCitations("YOUR_INSTANCE_ID");
@@ -873,9 +885,11 @@
            Listen -- ein Markenname mit " zerlegt den Text genauso. Also durch dieselbe geteilte
            Reparatur; parseBubbleJson verpackt ein einzelnes Objekt in ein Array. */
         if (params.brand != null){
-          state.brand = (typeof params.brand === "string")
-            ? (UC.parseBubbleJson(params.brand)[0] || null)
-            : params.brand;
+          if (typeof params.brand === "string"){
+            var b = null;
+            try { if (UC.parseBubbleJson) b = UC.parseBubbleJson(params.brand)[0] || null; } catch (e){}
+            if (b) state.brand = b;
+          } else state.brand = params.brand;
         }
         /* Kommt eine Liste als TEXT statt als Array, wurde sie hier stillschweigend zu [] --
            und die Tabelle sagte "No data", obwohl der Payload voll war. Genau der Fall, den §46
@@ -972,7 +986,15 @@
     }
     var ctrl = root.__tcdController || initRoot(root);
     if (!ctrl){ return; }
-    ctrl.update(params);
+    /* Ein Wurf hier nimmt den GANZEN Run-JS-Step mit, also auch die Setter der Komponenten,
+       die darunter stehen. Deshalb abfangen -- aber laut: in die Konsole UND sichtbar in die
+       Tabelle. Stilles Schlucken ist genau der Fehler, der uns diese Woche gekostet hat. */
+    try { ctrl.update(params); }
+    catch (err){
+      if (window.console) console.error("[top-citations] update() hat geworfen:",
+        (err && err.message) || err, err);
+      try { ctrl.fail("The data could not be read."); } catch (e2){}
+    }
   }
   function doLoading(id, loading){
     var roots = id ? rootsWithId(id) : Array.prototype.slice.call(document.querySelectorAll(".tcd-root:not(.up-portal)"));
