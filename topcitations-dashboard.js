@@ -292,19 +292,22 @@
     function activeRows(){ return state.mode === "url" ? state.topUrls : state.topDomains; }
     /* Wurde fuer den AKTUELLEN Modus schon einmal etwas geliefert? */
     function hatZeilenLieferung(){ return state.mode === "url" ? state.hasUrlRows : state.hasDomainRows; }
-    /* Eine Liste aus dem Payload. Array bleibt Array; Text wird durch parseLoose gelesen, weil
-       Bubble Listen regelmaessig als Text einsetzt. Was danach kein Array ist, ist ein Fehler und
-       wird als solcher gemeldet -- nicht als leere Liste. */
+    /* UC.parseBubbleJson, nicht parseLoose: das ist die EINE geteilte Reparatur, die jede andere
+       Tabelle des Repos benutzt (responses-table, domains-table, brands-overview). Sie kennt die
+       Faelle, die Bubble wirklich liefert -- ein unescaptes " mitten in einem Titel, rohe
+       Zeilenumbrueche, nacktes yes/no, abgeschnittene Textfelder. Top Citations war die einzige
+       Komponente mit einem eigenen Weg, und genau daran ist der URL-Modus gestorben:
+       "NATURE ONE \"rave. now. together.\"" im Titel, Liste weg, "No data". */
     function liste(v, name){
       if (Array.isArray(v)) { state.listenFehler = null; return v; }
-      if (typeof v === "string"){
-        var p = UC.parseLoose ? UC.parseLoose(v, "top-citations " + name) : null;
-        if (Array.isArray(p)) { state.listenFehler = null; return p; }
-      }
+      var text = (v == null) ? "" : String(v).trim();
+      if (!text) { state.listenFehler = null; return []; }
+      var p = UC.parseBubbleJson(text);
+      /* Leer und unlesbar sind zwei Dinge (§46): parseBubbleJson gibt beides als [] zurueck.
+         Eine WIRKLICH leere Lieferung ist als leeres Klammerpaar zu erkennen -- alles andere,
+         das nichts ergibt, ist ein Lesefehler und gehoert sichtbar ins UI. */
+      if (p.length || /^\[\s*\]$/.test(text)) { state.listenFehler = null; return p; }
       state.listenFehler = "The " + name.replace(/_/g, " ") + " could not be read.";
-      if (window.console) console.warn("[top-citations] " + name + " ist weder ein Array noch " +
-        "lesbarer JSON-Text. Kommt die Liste aus einem Bubble-Ausdruck, der sie als TEXT " +
-        "einsetzt? Empfangen:", v);
       return [];
     }
     function checkTrendFit(){
@@ -866,7 +869,14 @@
         if (params.totalCountDomain != null) state.totalCountDomain = params.totalCountDomain;
         if (params.totalCountUrl != null) state.totalCountUrl = params.totalCountUrl;
         if (params.citations_total != null) state.chartTotal = params.citations_total;
-        if (params.brand != null) state.brand = params.brand;
+        /* brand kommt aus demselben Run-JS-Step und damit durch dieselben Backticks wie die
+           Listen -- ein Markenname mit " zerlegt den Text genauso. Also durch dieselbe geteilte
+           Reparatur; parseBubbleJson verpackt ein einzelnes Objekt in ein Array. */
+        if (params.brand != null){
+          state.brand = (typeof params.brand === "string")
+            ? (UC.parseBubbleJson(params.brand)[0] || null)
+            : params.brand;
+        }
         /* Kommt eine Liste als TEXT statt als Array, wurde sie hier stillschweigend zu [] --
            und die Tabelle sagte "No data", obwohl der Payload voll war. Genau der Fall, den §46
            verbietet: leer und unlesbar duerfen nicht gleich aussehen. Und er tritt auf, sobald

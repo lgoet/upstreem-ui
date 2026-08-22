@@ -70,67 +70,54 @@
   // URL Type in url mode and Citation Type in domain mode, switching modes resets it to that
   // mode's default, and an explicit pick by the user survives re-renders. You still get the
   // dimension event when the user switches it by hand, if you want to mirror it into a state.
-  ── Der Run-JS-Step: Listen NICHT hier parsen ────────────────────────────────
-  Bubble setzt seine Ausdruecke zwischen BACKTICKS. Ein Template-Literal loest
-  Backslash-Escapes auf, BEVOR eine Zeile des Steps laeuft:
+  ── Run-JS "Render" step (paste as-is, swap the bracketed dynamic values) ────
 
-      RPC liefert   "title":"NATURE ONE \\"rave. now. together.\\" | 30. Juli"
-      im Step an    "title":"NATURE ONE "rave. now. together." | 30. Juli"
+  !! NEVER parse the RPC result inside the step. Bubble puts its expressions between BACKTICKS,
+  and a template literal resolves backslash escapes before a single line of the step runs:
 
-  Damit ist das JSON kaputt, eval/JSON.parse wirft, und ein  catch (e) { return []; }
-  macht daraus still ein leeres Array. Die Tabelle sagt dann "No data", das Chart
-  daneben lebt weiter (es haengt an types_breakdown), und die Konsole schweigt.
-  Am 22.08. genau so passiert: 7 URLs im RPC, array:0 im Step. Dasselbe gilt fuer
-  \\n in einem mehrzeiligen Text und fuer jeden Backslash in einem Pfad.
+      RPC sends   "title":"NATURE ONE \\"rave. now. together.\\" | 30. Juli"
+      step gets   "title":"NATURE ONE "rave. now. together." | 30. Juli"
 
-  Deshalb: die Listenfelder als TEXT durchreichen. parseLoose in der Komponente
-  repariert beides (core.js, Repair 6 und 7), und was es nicht lesen kann, steht
-  sichtbar in der Tabelle statt als "No data". String.raw verhindert den Schaden
-  zusaetzlich an der Quelle.
+  A JSON.parse/eval in the step throws on that, and a catch that returns [] turns it into an
+  empty table with a silent console. Measured on 22.08.: 7 URLs in the RPC, array:0 in the step,
+  "No data" in the table while the chart beside it kept its data. Same story for a \\n in a
+  multi-line text and for any backslash in a path.
+
+  Hand the raw text over as a STRING, exactly like responses-table and every other table here.
+  UpstreemCore.parseBubbleJson is the one shared repair pass and knows these cases.
 
   (function () {
-    // Leer bleibt ein echtes leeres Array -- sonst meldet die Komponente einen
-    // Fehler, wo gar keine Daten sein sollen.
-    function alsText(raw) {
-      var s = String(raw == null ? "" : raw).trim();
-      return s ? s : [];
-    }
-    // brand ist ein Objekt, kein Listenfeld -- das parst die Komponente nicht.
-    function toObj(raw) {
-      var s = String(raw == null ? "" : raw).trim();
-      if (!s) return null;
-      s = s.replace(/:\s*([,}\]])/g, ": null$1")
-           .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; })
-           .replace(/,\s*([}\]])/g, "$1");
-      try { return eval("(" + s + ")"); }
-      catch (e) { console.error("[tcd] brand nicht lesbar: " + e.message, s.slice(0, 200)); return null; }
-    }
-    function toNum(raw) {
-      var s = String(raw == null ? "" : raw).trim();
-      if (s === "") return null;
-      var n = Number(s);
-      return isFinite(n) ? n : null;
-    }
-    var payload = {
-      instanceId: "INSTANCE_ID",
-      isDark: "IS_DARK",
-      mode: "MODE",
-      totalCountDomain:    toNum(String.raw`<Bubble>`),
-      totalCountUrl:       toNum(String.raw`<Bubble>`),
-      citations_total:     toNum(String.raw`<Bubble>`),
-      brand:               toObj(String.raw`<Bubble>`),
-      top_domains:         alsText(String.raw`<Bubble>`),
-      top_urls:            alsText(String.raw`<Bubble>`),
-      types_breakdown:     alsText(String.raw`<Bubble>`),
-      url_types_breakdown: alsText(String.raw`<Bubble>`)
-    };
+    var URLS    = `[TOP_URLS_RPC]`;              // backticks -- do NOT wrap in [ ] yourself
+    var DOMAINS = `[TOP_DOMAINS_RPC]`;
+    var TYPES   = `[TYPES_BREAKDOWN_RPC]`;
+    var UTYPES  = `[URL_TYPES_BREAKDOWN_RPC]`;
+    var BRAND   = `[BRAND_RPC]`;
+
     var t = 0;
     (function go () {
-      var fn = window.renderTopCitations
-            || (window.parent && window.parent.renderTopCitations)
-            || (window.top && window.top.renderTopCitations);
-      if (typeof fn === "function") { fn(payload); return; }
-      if (t++ < 60) setTimeout(go, 100);
+      var w  = window,
+          fn = w.renderTopCitations
+            || (w.parent && w.parent.renderTopCitations)
+            || (w.top && w.top.renderTopCitations);
+      if (typeof fn === "function") {
+        fn({
+          instanceId: `INSTANCE_ID`,
+          isDark: `IS_DARK`,
+          mode: `MODE`,                          // "domain" | "url"
+          totalCountDomain: Number(`[TOTAL_COUNT_DOMAIN]`),
+          totalCountUrl:    Number(`[TOTAL_COUNT_URL]`),
+          citations_total:  Number(`[CITATIONS_TOTAL]`),
+          brand:               BRAND,            // all five stay STRINGS on purpose
+          top_domains:         DOMAINS,
+          top_urls:            URLS,
+          types_breakdown:     TYPES,
+          url_types_breakdown: UTYPES
+        });
+        return;
+      }
+      if (t++ < 60) { setTimeout(go, 100); return; }
+      console.error("[top-citations] renderTopCitations never appeared after 6s -- " +
+        "check data-cdn-pin and that the component is actually on this page.");
     })();
   })();
 
