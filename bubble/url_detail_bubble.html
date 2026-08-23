@@ -40,6 +40,7 @@
   ── Setter ──────────────────────────────────────────────────────────────────────────────────
       window.setUrlDetail("INSTANCE_ID", <text>)             das url_detailed-Objekt
       window.setUrlDetailConversion("INSTANCE_ID", <text>)   die conversion-Liste
+      window.setUrlDetailSummary("INSTANCE_ID", <text>)      die Zusammenfassung, EIGENER Weg
       window.setUrlDetailLoading("INSTANCE_ID", "yes"|"no")  Skelett an/aus
       window.resetUrlDetail("INSTANCE_ID")                   alles leer
 
@@ -62,7 +63,15 @@
                           auseinander, wenn sie nebeneinander stehen.
       description         die Meta-Beschreibung. Darf HTML-kodiert sein (&amp;) -- die
                           Komponente dekodiert einmal und schreibt sie als Text zurueck.
-      markdown_summary    JSON-TEXT mit einem Feld: {"summary": "..."} . Reiner Text geht auch.
+      markdown_summary    NICHT hier mitschicken. Es ist JSON IN JSON, und Bubble setzt den
+                          Payload zwischen Backticks: das Template-Literal frisst die Escapes der
+                          inneren Anfuehrungszeichen, und danach ist nicht mehr zu unterscheiden,
+                          ob ein ": zur Struktur gehoert oder zum Text. Der GANZE Payload wird
+                          unlesbar, nicht nur die Zusammenfassung. Gemessen am 23.08.: derselbe
+                          Payload als Bytes array:1, durch den Backtick null.
+                          Stattdessen setUrlDetailSummary mit einem EIGENEN Backtick. Dort steht
+                          der Text fuer sich und kann nichts zerlegen. Reiner Text oder
+                          {"summary": "..."} -- beides wird gelesen.
       companies           [{company_id, company_name, logo_url}, ...] -> die Mention-Chips
 
   ── Felder von conversion ───────────────────────────────────────────────────────────────────
@@ -86,18 +95,33 @@
   ── Run-JS "Render" step (paste as-is, drop the Bubble expressions into the backticks) ──────
 
   (function () {
-    var DETAIL     = `[URL_DETAILED_RPC]`;
+    var DETAIL     = `[URL_DETAILED_RPC ohne markdown_summary]`;
     var CONVERSION = `[CONVERSION_RPC]`;
+    var SUMMARY    = `[SUMMARY_TEXT]`;
     var t = 0;
     (function go () {
       if (typeof window.setUrlDetail === "function") {
         window.setUrlDetail("INSTANCE_ID", DETAIL);
         window.setUrlDetailConversion("INSTANCE_ID", CONVERSION);
+        window.setUrlDetailSummary("INSTANCE_ID", SUMMARY);
         return;
       }
       if (t++ < 60) setTimeout(go, 100);
     })();
   })();
+
+  ── Was dynamische Werte aushalten und was nicht (gemessen 23.08.) ──────────────────────────
+  Sicher, alles gelesen: " Anfuehrungszeichen, ' Apostroph, / ( ) [ ] { }, Backslash, roher
+  Zeilenumbruch, Emoji, leerer Wert, null, HTML-Entities, sogar <script> im Titel (es landet als
+  Text, nicht als Markup).
+
+  NICHT sicher, und das liegt an Bubbles Run-JS und nicht an der Komponente:
+    `  ein BACKTICK im Text beendet das Template-Literal -- der Schritt stirbt mit einem
+       SyntaxError, BEVOR eine Zeile laeuft, und nimmt jeden Setter darunter mit.
+    ${ derselbe Fall: das Literal versucht zu ersetzen und wirft ReferenceError.
+  Beide kommen in Seitentiteln von Entwickler-Blogs vor. Zwei Gegenmittel: das Feld serverseitig
+  von ` und ${ befreien, und JEDEN Setter in einen EIGENEN Run-JS-Schritt legen -- dann reisst
+  ein kaputter Titel nur seinen eigenen Schritt mit und nicht die ganze Seite.
 -->
 
 <div class="up-root uud-root"

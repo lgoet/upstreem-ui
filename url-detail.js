@@ -30,8 +30,8 @@
   /* ---- Boot-Stubs (STYLEGUIDE §25), VOR der core-Pruefung -----------------------------------
      Bubble ruft die Setter aus einem Workflow, der neben dem Laden dieser Datei laeuft. Ohne
      Stubs wirft der erste Aufruf und reisst den ganzen Run-JS-Step mit. */
-  var API_NAMES = ["setUrlDetail", "setUrlDetailConversion", "setUrlDetailLoading",
-                   "resetUrlDetail"];
+  var API_NAMES = ["setUrlDetail", "setUrlDetailConversion", "setUrlDetailSummary",
+                   "setUrlDetailLoading", "resetUrlDetail"];
   var Q = (window.__uudBootQueue = window.__uudBootQueue || []);
   API_NAMES.forEach(function (n) {
     if (!window[n]) window[n] = function () { Q.push([n, [].slice.call(arguments)]); };
@@ -307,7 +307,9 @@
       /* Der zuletzt eingebettete Anbieter samt Adresse. Ohne das baut jeder Render den iframe neu,
          und ein laufendes Video springt beim ersten Datenupdate zurueck auf Anfang. */
       embedKey: "",
-      oembed: null
+      oembed: null,
+      /* Getrennt vom Payload gesetzt -- siehe setSummary. */
+      summary: ""
     };
 
     if (UC.makeTooltips) UC.makeTooltips(root, dunkel);
@@ -535,6 +537,10 @@
       return d2.value;
     }
     function renderSum() {
+      /* Der eigene Weg gewinnt: kommt die Zusammenfassung ueber setUrlDetailSummary, ist sie
+         unbeschaedigt. Das Feld im Payload bleibt als Rueckfall bestehen, damit ein bestehender
+         Aufbau nichts verliert. */
+      if (state.summary) { elSumSect.hidden = false; elSum.textContent = state.summary; return; }
       var roh = d().markdown_summary;
       var t = "";
       if (roh && typeof roh === "object") t = txt(roh.summary);
@@ -685,6 +691,32 @@
         render();
         return true;
       },
+      /* Die Zusammenfassung hat einen EIGENEN Weg, und das ist kein Luxus: markdown_summary ist
+         JSON IN JSON. Bubble setzt den Payload zwischen Backticks, das Template-Literal frisst
+         die Escapes der inneren Anfuehrungszeichen, und danach ist nicht mehr zu unterscheiden,
+         ob ein ": zur Struktur gehoert oder zum Text -- der GANZE Payload wird unlesbar, nicht
+         nur die Zusammenfassung. Gemessen am 23.08.: derselbe Payload einmal als Bytes gelesen
+         (array:1) und einmal durch den Backtick (null).
+         In einem eigenen Backtick steht der Text fuer sich, ohne Struktur drumherum, und kann
+         nichts mehr zerlegen. */
+      setSummary: function (payload) {
+        var roh = (payload && typeof payload === "object") ? payload : txt(payload);
+        if (roh && typeof roh === "object") { state.summary = txt(roh.summary); }
+        else {
+          var t = txt(roh);
+          /* Kommt er doch als {"summary": "..."} an, wird er ausgepackt -- sonst gilt der Text
+             selbst als Zusammenfassung. Ein Vertrag weniger fuer die RPC. */
+          if (t.charAt(0) === "{") {
+            var p2 = UC.readBubble ? UC.readBubble(t) : null;
+            var o2 = isArr(p2) ? p2[0] : p2;
+            t = (o2 && typeof o2 === "object" && txt(o2.summary)) || t;
+          }
+          state.summary = t;
+        }
+        state.loading = false;
+        render();
+        return true;
+      },
       setLoading: function (v) {
         state.loading = UC.isYes(v);
         if (state.loading) state.fehler = "";
@@ -693,6 +725,7 @@
       },
       reset: function () {
         state.data = null; state.conv = []; state.loading = true; state.fehler = "";
+        state.summary = "";
         state.embedKey = ""; state.oembed = null;
         elEmbed.innerHTML = "";
         elEmbedTitle.textContent = ""; elEmbedDesc.textContent = "";
@@ -725,6 +758,7 @@
     api: {
       setUrlDetail:           function (id, p) { return each(id, function (c) { c.setData(p); }); },
       setUrlDetailConversion: function (id, p) { return each(id, function (c) { c.setConversion(p); }); },
+      setUrlDetailSummary:    function (id, p) { return each(id, function (c) { c.setSummary(p); }); },
       setUrlDetailLoading:    function (id, v) { return each(id, function (c) { c.setLoading(v); }); },
       resetUrlDetail:         function (id)    { return each(id, function (c) { c.reset(); }); }
     }

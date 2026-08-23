@@ -11,12 +11,20 @@
 (function () {
   var DETAIL     = `[URL_DETAILED_RPC]`;
   var CONVERSION = `[CONVERSION_RPC]`;
+  /* Die Zusammenfassung im EIGENEN Backtick. Grund, gemessen: markdown_summary ist JSON in JSON.
+     Steht es im Payload, frisst das Template-Literal die Escapes der inneren Anfuehrungszeichen,
+     und danach ist nicht mehr zu unterscheiden, ob ein ": zur Struktur gehoert oder zum Text --
+     der GANZE Payload wird unlesbar, nicht nur die Zusammenfassung. Hier steht der Text fuer sich
+     und kann nichts zerlegen.
+     Also im RPC-Ausdruck fuer DETAIL das Feld markdown_summary WEGLASSEN. */
+  var SUMMARY    = `[SUMMARY_TEXT]`;
 
   var t = 0;
   (function go () {
     if (typeof window.setUrlDetail === "function") {
       window.setUrlDetail("INSTANCE_ID", DETAIL);
       window.setUrlDetailConversion("INSTANCE_ID", CONVERSION);
+      window.setUrlDetailSummary("INSTANCE_ID", SUMMARY);
       return;
     }
     if (t++ < 60) setTimeout(go, 100);
@@ -92,8 +100,14 @@ window.resetUrlDetail("INSTANCE_ID");
     if (typeof window.setUrlDetail === "function") {
       /* Als TEXT hineingeben, damit der Weg exakt der ist, den Bubble spaeter nimmt --
          ein Objekt wuerde einen anderen Zweig treffen und den echten Fall nicht pruefen. */
-      window.setUrlDetail(INSTANCE_ID, JSON.stringify(DETAIL));
+      /* markdown_summary geht NICHT im Payload mit -- denselben Weg nehmen wie im Echtbetrieb,
+         sonst prueft der Test den Fall nicht, der spaeter wirklich laeuft. */
+      var OHNE = {}; Object.keys(DETAIL).forEach(function (k) {
+        if (k !== "markdown_summary") OHNE[k] = DETAIL[k];
+      });
+      window.setUrlDetail(INSTANCE_ID, JSON.stringify(OHNE));
       window.setUrlDetailConversion(INSTANCE_ID, JSON.stringify(CONVERSION));
+      window.setUrlDetailSummary(INSTANCE_ID, DETAIL.markdown_summary);
       return;
     }
     if (t++ < 60) setTimeout(go, 100);
