@@ -106,6 +106,16 @@
    jede feste Schwelle waere fuer ein anderes Logo falsch. */
 .uob-root.is-tight .uob-link-t { display: none; }
 .uob-root.is-tight .uob-link { width: 32px; padding: 0; gap: 0; justify-content: center; }
+/* Reicht auch das nicht -- ein sehr breites Logo -- gibt zuletzt das Logo nach. Die Reihenfolge
+   ist Absicht: erst fallen Woerter weg, die das Icon daneben ohnehin sagt, und erst danach wird
+   das Logo kleiner. Ohne diese Regel bleibt flex: 0 0 auto und der Ueberhang steht wieder
+   ausserhalb des Bildschirms.
+   object-fit skaliert das Bild, statt es zu quetschen -- ein gestauchter Schriftzug waere
+   schlimmer als ein kleinerer. */
+.uob-root.is-tight .uob-logo {
+  flex: 0 1 auto; min-width: 0; max-width: 100%;
+  object-fit: contain; object-position: left center;
+}
 .uob-link svg { width: 15px; height: 15px; display: block; flex: 0 0 auto; }
 .uob-link:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 /* Traeger fuer den Hinweispunkt. .up-badge aus core ist absolut gesetzt und braucht einen

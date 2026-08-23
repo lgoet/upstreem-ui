@@ -2404,6 +2404,22 @@
     messeBreite();
     if (UC.onResize) UC.onResize(root, messeBreite);
     else window.addEventListener("resize", messeBreite);
+    /* Nachmessen, sobald das Logo da ist. In Bubble ist es eine URL und liegt beim ersten Messen
+       noch nicht vor -- dann ist es 0 breit, alles passt, und wenn es ankommt, misst niemand
+       nach. Genau so standen die Ausgaenge auf der echten Seite ausserhalb des Bildes, und zwar
+       bei JEDER Fensterbreite gleich weit: der Ueberhang ist die Logobreite und haengt nicht am
+       Fenster. Gemessen: Logo nach dem Start von 132 auf 360 gesetzt, is-tight blieb aus, die
+       Knoepfe standen 109px draussen.
+       error zaehlt mit: schlaegt die Adresse fehl, ersetzt der onerror-Griff das Bild durch ein
+       leeres Element, und die Breite aendert sich ein zweites Mal.
+       Die Schrift ebenso -- laedt sie spaet, sind die Beschriftungen breiter als beim ersten
+       Messen. Beides kostet nichts und schliesst die ganze Klasse. */
+    var logoEl = root.querySelector(".uob-logo");
+    if (logoEl && logoEl.tagName === "IMG") {
+      logoEl.addEventListener("load", kopfPruefen);
+      logoEl.addEventListener("error", function () { window.setTimeout(kopfPruefen, 0); });
+    }
+    try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(kopfPruefen); } catch (e) {}
 
     /* ---- Zurueck-Taste des Browsers ---------------------------------------------------------- */
     window.addEventListener("popstate", function () {
