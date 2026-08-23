@@ -274,7 +274,12 @@
 
     /* Schmale Breiten ueber die EIGENE Box, nicht ueber eine Media Query auf das Fenster: diese
        Seite kann in einem Drawer stehen, der auf einem breiten Bildschirm schmal ist. */
-    if (UC.widthTiers) UC.widthTiers(root, { narrowAt: 640, vnarrowAt: 480 });
+    /* Die Schwellen haengen an der KPI-Leiste, nicht an einem runden Wert: sechs Felder brauchen
+       6*120 + 5*16 = 800px, drei brauchen 3*120 + 2*16 = 392. Darunter zwei.
+       Der Grund fuer genau 6/3/2 und nicht "was gerade passt": eine Zeile mit fuenf Feldern und
+       eine mit einem darunter sieht aus wie ein Fehler. Teiler von sechs, also bricht es immer
+       gleichmaessig -- 3 und 3, dann 2 und 2 und 2. */
+    if (UC.widthTiers) UC.widthTiers(root, { narrowAt: 800, vnarrowAt: 400 });
 
     var elKpis   = root.querySelector(".uud-kpis");
     var elMentSect = root.querySelector(".uud-sect-ments");

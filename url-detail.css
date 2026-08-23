@@ -7,7 +7,11 @@
    Was hier NICHT steht, weil es in core steht: .up-card, .up-tag, .up-entchip, .up-logo-box,
    .up-th-info, .up-explain, .up-bars, .up-dash, .up-rank-group. */
 
-.uud-root { display: flex; flex-direction: column; gap: 32px; width: 100%; }
+/* 44px zwischen den Abschnitten, nicht die 32 der Karten-Seiten. Ohne Rahmen muss der Abstand die
+   Trennung allein tragen -- bei 32 lasen KPI-Leiste und Mentions als ein Block. Der Abstand
+   INNERHALB eines Abschnitts (Ueberschrift zu Inhalt) bleibt bei 16, damit der Unterschied
+   zwischen "gehoert zusammen" und "ist etwas Neues" deutlich bleibt. */
+.uud-root { display: flex; flex-direction: column; gap: 44px; width: 100%; }
 .uud-root > * { min-width: 0; }
 /* Ein ausgeblendeter Bereich traegt das hidden-Attribut, und das wirkt nur ueber display:none aus
    dem Browser-Stylesheet -- jede eigene display-Regel schlaegt es. Dieselbe Falle wie in
@@ -28,7 +32,12 @@
    Spalte; mit 132 brach die Leiste dort in zwei Zeilen. */
 .uud-kpis {
   display: grid; gap: 16px;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  /* FESTE Spaltenzahl, nicht auto-fit: auto-fit nimmt, was passt, und das ergab bei mittleren
+     Breiten fuenf Felder oben und eins darunter -- das sieht aus wie ein Fehler. Sechs hat die
+     Teiler 3 und 2, also bricht die Leiste immer gleichmaessig: 6, dann 3 und 3, dann 2 und 2
+     und 2. Die Schwellen dazu setzt widthTiers im JS, aus derselben Rechnung:
+     6*120 + 5*16 = 800, 3*120 + 2*16 = 392. */
+  grid-template-columns: repeat(6, 1fr);
 }
 .uud-kpi { display: flex; flex-direction: column; gap: 6px; align-items: center; min-width: 0; }
 /* 28px: die Hoehe von .up-tag (24) plus Luft, damit eine Zeile mit Chip und eine mit Zahl gleich
@@ -170,9 +179,9 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 /* Shape, Luecke, Zahl. Die Farbe traegt der Shape (UC.sentColor: rot schlecht, gruen gut), die
    Zahl steht in der Primaerfarbe -- ein farbiger Zahlenwert liest sich als Warnung, nicht als
-   Messwert. 8px Radius wie an jedem kleinen Traeger der App, 10px Kante. */
+   Messwert. Ein runder Punkt mit 6px -- dieselbe Marke wie .up-tag-dot und .up-sent-dot in core. */
 .uud-cpct { display: inline-flex; align-items: center; gap: 8px; }
-.uud-cdot { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto; }
+.uud-cdot { width: 6px; height: 6px; border-radius: 999px; flex: 0 0 auto; }
 
 /* ---- Ladezustand -----------------------------------------------------------------------------
    Kein eigenes Skelett-Markup: die Abschnitte stehen bereits, sie bekommen nur den Puls von core
@@ -192,9 +201,8 @@
 /* ---- schmal ----------------------------------------------------------------------------------
    is-narrow/is-vnarrow kommen von UC.widthTiers und messen die EIGENE Box, nicht das Fenster --
    diese Seite kann in einem Drawer stehen, der auf einem breiten Schirm schmal ist. */
-.uud-root.is-narrow .uud-kpis { grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); gap: 14px; }
-.uud-root.is-narrow .uud-cnum { flex: 0 0 88px; }
-.uud-root.is-vnarrow .uud-kpis { grid-template-columns: 1fr 1fr; gap: 12px; }
+.uud-root.is-narrow .uud-kpis { grid-template-columns: repeat(3, 1fr); }
+.uud-root.is-vnarrow .uud-kpis { grid-template-columns: repeat(2, 1fr); }
 /* Ganz schmal darf die Tabelle die volle Breite nehmen -- ein Drittel von 380px waeren 127px,
    und darin steht kein Markenname. */
 .uud-root.is-vnarrow .uud-ctable { width: 100%; }

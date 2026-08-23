@@ -9,7 +9,7 @@
 <script>
 /* Ein iframe hat eine ECHTE Breite -- 3vw rechnet darin richtig. Der Browser-Pane hat meine
    Groessenaenderung mehrfach ignoriert und 1034px gemeldet, obwohl 620 gesetzt waren. */
-var BREITEN = [1100, 760, 620, 480, 380];
+var BREITEN = [1100, 900, 760, 620, 480, 380];
 window.__mess = null;
 var wrap = document.getElementById("wrap"), rahmen = [];
 BREITEN.forEach(function (b) {
@@ -31,13 +31,20 @@ function messen() {
     var W = d.documentElement.clientWidth;
     var kpis = r.querySelectorAll(".uud-kpi");
     var reihen = {};
-    [].forEach.call(kpis, function (k) { reihen[Math.round(k.getBoundingClientRect().top)] = 1; });
+    [].forEach.call(kpis, function (k) {
+      var t = Math.round(k.getBoundingClientRect().top);
+      reihen[t] = (reihen[t] || 0) + 1;
+    });
+    var verteilung = Object.keys(reihen).sort(function (x, y) { return x - y; })
+      .map(function (t) { return reihen[t]; }).join("+");
     aus[b] = {
       wurzel: Math.round(r.getBoundingClientRect().width),
       narrow: r.classList.contains("is-narrow"), vnarrow: r.classList.contains("is-vnarrow"),
-      kpi_zeilen: Object.keys(reihen).length,
-      karten: [].map.call(r.querySelectorAll(".uud-card"), function (c) {
-        return Math.round(c.getBoundingClientRect().width); }),
+      kpi_verteilung: verteilung,
+      abstand: (function(){ var k = r.children;
+        return k.length > 1 ? Math.round(k[1].getBoundingClientRect().top - k[0].getBoundingClientRect().bottom) : null; })(),
+      punkt: (function(){ var d = r.querySelector(".uud-cdot");
+        return d ? w.getComputedStyle(d).width + " r" + w.getComputedStyle(d).borderRadius : null; })(),
       quer: d.documentElement.scrollWidth > W + 1,
       fehler: (w.__fehler || []).length
     };
