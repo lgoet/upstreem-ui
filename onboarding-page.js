@@ -2427,42 +2427,15 @@
       if (k && k !== state.step) { state.step = k; state.warten = ""; render(); }
     });
 
-    /* EIN Leseweg fuer alles, was aus Bubble kommt -- dieselbe geteilte Reparatur wie in jeder
-       Tabelle dieses Repos. UC.parseBubbleJson kennt die Faelle, die wirklich auftreten: ein
-       unescaptes " mitten in einem Namen, rohe Zeilenumbrueche, nacktes yes/no. parseLoose war
-       hier ein zweiter Weg, und genau an so einem zweiten Weg ist Top Citations gestorben --
-       ein Markenname mit Anfuehrungszeichen reicht, und die ganze Liste ist still weg.
-       Markennamen, Themennamen und die Zusammenfassung kommen vom Crawler; dort ist ein
-       Anfuehrungszeichen keine Ausnahme, sondern Alltag.
-       Objekte gehen unveraendert durch: parseBubbleJson liest TEXT, ein Objekt wuerde es zu
-       "[object Object]" verstringen. JSON.parse als Rueckfall, falls das geladene core.js
-       aelter ist als parseBubbleJson -- sonst nimmt ein alter Pin die ganze Seite mit. */
+    /* EIN Leseweg fuer alles, was aus Bubble kommt -- jetzt UC.readBubble in core, weil
+       url-detail denselben braucht. Was er kann und warum, steht dort. Der Rueckfall haelt die
+       Seite am Leben, falls ein alter Pin core ohne readBubble liefert. */
     function lies(payload) {
+      if (UC.readBubble) return UC.readBubble(payload);
       if (payload && typeof payload === "object") return payload;
       var t = txt(payload);
       if (!t) return null;
-      /* Doppelt verpackt: ein Run-JS-Step, der JSON.stringify UM einen Payload legt, der schon
-         Text ist. Das Ergebnis ist ein String, dessen erstes Zeichen ein Anfuehrungszeichen ist
-         und der escapte Anfuehrungszeichen enthaelt. parseBubbleJson liest das als leere Liste --
-         gemessen: array:0, Payload still weg. parseLoose packte es aus, und diese eine Faehigkeit
-         darf beim Wechsel auf den geteilten Leseweg nicht verlorengehen. Nur bei genau diesem
-         Muster, damit ein Textwert nicht zerlegt wird. */
-      if (t.charAt(0) === '"' && t.charAt(t.length - 1) === '"' && t.indexOf('\\"') >= 0) {
-        try {
-          var innen = JSON.parse(t);
-          if (typeof innen === "string" && /^\s*[\[{]/.test(innen)) t = txt(innen);
-        } catch (e) {}
-      }
-      var a = null;
-      try { if (UC.parseBubbleJson) a = UC.parseBubbleJson(t); } catch (e) {}
-      if (!isArr(a)) { try { a = JSON.parse(t); } catch (e) { a = null; } }
-      /* Leer und unlesbar sind zwei Dinge (§46): parseBubbleJson gibt fuer beides [] zurueck.
-         Eine WIRKLICH leere Lieferung ist am leeren Klammerpaar zu erkennen -- alles andere,
-         das nichts ergibt, ist ein Lesefehler und muss als Fehler zurueck. Sonst sieht ein
-         kaputter Payload aus wie "es gibt hier nichts", und der Nutzer sucht an der falschen
-         Stelle. Gemessen: "das ist kein json" lieferte eine leere Liste ohne jede Meldung. */
-      if (isArr(a) && !a.length && !/^\[\s*\]$/.test(t)) return null;
-      return a;
+      try { var q = JSON.parse(t); return (q && typeof q === "object") ? q : null; } catch (e) { return null; }
     }
     /* Ein Fehler aus dem Hintergrundlauf. Die RPC traegt ihn ohnehin mit (status, last_error) --
        bisher hat die Komponente beide gelesen und weggeworfen, und ein abgebrochener Lauf sah

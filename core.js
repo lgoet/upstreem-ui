@@ -451,6 +451,38 @@
     }
     return out;
   }
+  /* ---------- readBubble ----------
+     parseBubbleJson mit drei Ergaenzungen, die jeder Konsument sonst selbst schreibt -- und die
+     onboarding-page bereits einmal selbst geschrieben hatte:
+
+     1. Ein Objekt geht unveraendert durch. parseBubbleJson liest TEXT; ein Objekt wuerde es zu
+        "[object Object]" verstringen.
+     2. Doppelt verpackt: ein Run-JS-Schritt, der JSON.stringify UM einen Payload legt, der schon
+        Text ist. parseBubbleJson liest das als leere Liste -- gemessen: array:0, Payload still
+        weg. Einmal auspacken, nur bei genau diesem Muster.
+     3. Leer und unlesbar sind zwei Dinge (§46). parseBubbleJson gibt fuer beides []. Eine WIRKLICH
+        leere Lieferung ist am leeren Klammerpaar zu erkennen; alles andere, das nichts ergibt,
+        ist ein Lesefehler und kommt als null zurueck, damit der Aufrufer ihn ins UI schreiben
+        kann statt eine leere Liste zu zeigen.
+
+     Rueckgabe: Array oder Objekt, oder null wenn nichts zu lesen war. */
+  function readBubble(raw){
+    if (raw && typeof raw === "object") return raw;
+    var t = String(raw == null ? "" : raw).trim();
+    if (!t) return null;
+    if (t.charAt(0) === '"' && t.charAt(t.length - 1) === '"' && t.indexOf('\\"') >= 0){
+      try {
+        var innen = JSON.parse(t);
+        if (typeof innen === "string" && /^\s*[\[{]/.test(innen)) t = innen.trim();
+      } catch(e){}
+    }
+    var a = null;
+    try { a = parseBubbleJson(t); } catch(e){}
+    if (!Array.isArray(a)){ try { var q = JSON.parse(t); if (q && typeof q === "object") a = q; } catch(e){ a = null; } }
+    if (Array.isArray(a) && !a.length && !/^\[\s*\]$/.test(t)) return null;
+    return a;
+  }
+
   /* ---------- parseBubbleJson ----------
      Bubble's ":formatted as text" output is JSON-SHAPED but not valid JSON: several field types
      come through unquoted — booleans as the bare words yes/no ("yes is not defined") and emoji as
@@ -8246,6 +8278,7 @@
     redditTitleHtml: redditTitleHtml,
     esc: esc,
     parseBubbleJson: parseBubbleJson,
+    readBubble: readBubble,
     citeName: citeName,
     tint: tint,
     brighten: brighten,
