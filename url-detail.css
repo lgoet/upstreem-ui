@@ -58,16 +58,18 @@
    NEBEN der Ueberschrift stehen; und core deckt es bei .up-th:hover auf, ein .up-th gibt es hier
    nicht. 6px Abstand, weil es sonst am Wort klebt -- ohne die Regel erbt es das auto und steht
    ohne jede Luecke. Groesse, Farbe und Uebergang bleiben unveraendert aus core. */
-/* 8px Abstand -- und links dieselben 8px plus die Symbolbreite als Polsterung. Das ist der Grund,
-   warum die Zahl darueber vorher nach rechts versetzt aussah: das Symbol steht IM Fluss der
-   Ueberschrift, also zentriert die Zeile "Wort + Luecke + Symbol" -- und das Wort rutscht um die
-   halbe Symbolbreite nach links, waehrend der Wert auf der Zellenmitte bleibt. Gemessen waren
-   Zellenmitte und Wertmitte beide 84, die Schrift der Ueberschrift aber nicht.
-   Mit der Polsterung links ist die Zeile symmetrisch und das WORT steht mittig -- genau unter
-   dem Wert. Das Symbol bleibt im Fluss und kann damit nichts ueberlappen.
-   14px ist die Symbolbreite aus core (.up-th-info svg), 8 der bestellte Abstand. */
-.uud-info { margin-left: 8px; }
-.uud-kpi-lbl { padding-left: 22px; }
+/* Das Info-Symbol steht AUSSERHALB des Textflusses. Zwei Anlaeufe davor waren falsch: im Fluss
+   zentriert die Zeile "Wort + Luecke + Symbol", und das Wort rutscht nach links; mit einer
+   Polsterung links wird die BOX symmetrisch, aber gemessen stand der Text danach 11px rechts vom
+   Wert -- das Symbol traegt 14px plus 8px Rand, die Polsterung 22px, und die Rechnung ging trotzdem
+   nicht auf, weil die Zeile shrink-to-fit ist.
+   Absolut gesetzt traegt das Symbol gar keine Breite mehr. Damit ist die Ueberschrift NUR ihr Text,
+   und der zentriert sich exakt unter dem Wert -- Chip wie Zahl. 8px Abstand rechts vom Wort. */
+.uud-kpi-lbl { position: relative; }
+.uud-info {
+  position: absolute; left: calc(100% + 8px); top: 50%; transform: translateY(-50%);
+  margin-left: 0;
+}
 .uud-kpi:hover .uud-info { opacity: 1; }
 
 /* ---- Abschnittskoepfe ------------------------------------------------------------------------ */
