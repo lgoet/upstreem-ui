@@ -53,6 +53,49 @@
     social_post:     { label:"Social Post",      c:"#8b5cf6", cDark:"#ddd6fe" }
   };
   var ALL_URL_TYPES = Object.keys(URL_TYPE);
+  /* Was ein Typ BEDEUTET, in einem Satz. Bisher lag das nur im freistehenden URL-Type-Element und
+     damit ausserhalb dieses Repos -- die Palette war hier, die Erklaerung dort, und beide waren
+     bereits auseinandergelaufen. Hier stehen sie nebeneinander, weil jede Erklaerkarte, die einen
+     Typ zeigt, denselben Satz zeigen soll.
+     Der Schluessel der Zitationstypen ist der KANONISCHE Name aus CITE_COLOR, nicht die
+     Bubble-Schreibweise -- citeName() uebersetzt Brand_Platform und Freunde vorher. */
+  var CITE_DESC = {
+    "You":              "This is one of your own pages. You control it directly, so it is the fastest content to improve or expand.",
+    "Competition":      "A competitor's page. You cannot edit it, but it shows what the AI rewards in your space.",
+    "Brand Platforms":  "A brand-owned platform that is not a competitor: a partner, marketplace, or vendor page.",
+    "Editorial":        "Journalist- or editor-written coverage. You influence it by earning a mention, not by editing.",
+    "Institutional":    "An official or authoritative body: government, standards, or academic. High trust, hard to sway.",
+    "Knowledge-Base":   "Reference material the AI leans on as ground truth, like an encyclopedia or a docs entry.",
+    "UGC / Community":  "Community-generated content: forums, reviews, threads. Shaped by real users, not by you."
+  };
+  var URL_TYPE_DESC = {
+    homepage:        "The root or landing page of a site: its front door, usually the domain itself.",
+    product_service: "A single product or service page, one concrete offering described in detail.",
+    marketplace:     "A large sales platform hosting many third-party sellers, where visitors buy or book directly.",
+    company_info:    "About, team, contact, or legal pages: background on the company rather than what it sells.",
+    article:         "An authored blog post, opinion piece, or dated news story.",
+    listicle:        "A ranked or numbered best-of list. These punch far above their weight in AI answers.",
+    guide:           "A how-to, tutorial, or long-form explainer that teaches the reader something.",
+    comparison:      "An X versus Y or alternatives piece, weighing options head to head.",
+    review:          "A hands-on test, review, testimonial, or case study of a product or service.",
+    documentation:   "Technical docs, API references, help centers, or encyclopedic entries: reference material.",
+    forum:           "A community thread, Q&A, or discussion, such as Reddit or Quora.",
+    directory:       "An aggregator listing or profile: review sites, business directories, marketplaces.",
+    video:           "A video watch or player page, such as a YouTube result.",
+    social_post:     "A social media post or profile, such as a LinkedIn update or an X profile."
+  };
+  /* Label und Satz zu einem Typ, in einer Funktion fuer beide Achsen. Ohne Treffer ein leerer
+     Satz und der Rohwert als Label -- ein erfundener Text waere hier schlimmer als keiner. */
+  function typeLabel(raw, mode){
+    var k = String(raw == null ? "" : raw).trim();
+    if (mode === "url") return (URL_TYPE[k] && URL_TYPE[k].label) || (k ? k.replace(/_/g, " ") : "");
+    return citeName(k);
+  }
+  function typeDesc(raw, mode){
+    var k = String(raw == null ? "" : raw).trim();
+    if (mode === "url") return URL_TYPE_DESC[k] || "";
+    return CITE_DESC[citeName(k)] || "";
+  }
   var OTHER_LIGHT = "#8c8f96", OTHER_DARK = "#a8abb2", CHIP_BG_DARK = "#242424";
   var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   /* Search behaviour lifted verbatim from quick_actions.html so both feel identical. */
@@ -8139,6 +8182,10 @@
     ALL_CITATION_TYPES: ALL_CITATION_TYPES,
     URL_TYPE: URL_TYPE,
     ALL_URL_TYPES: ALL_URL_TYPES,
+    CITE_DESC: CITE_DESC,
+    URL_TYPE_DESC: URL_TYPE_DESC,
+    typeLabel: typeLabel,
+    typeDesc: typeDesc,
     OTHER_LIGHT: OTHER_LIGHT,
     OTHER_DARK: OTHER_DARK,
     CHIP_BG_DARK: CHIP_BG_DARK,
