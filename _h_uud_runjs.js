@@ -1,13 +1,30 @@
-/* URL DETAIL -- die Seite fuellen
+/* ==============================================================================================
+   URL DETAIL -- der Run-JS-Schritt
 
+   HIER STEHEN ZWEI FASSUNGEN. Du kopierst GENAU EINE, nie beide, und nie die ganze Datei:
+
+     A) ECHTBETRIEB       vier Bubble-Ausdruecke in die Backticks. Das ist der Schritt fuer den
+                          Workflow.
+     B) ZUM AUSPROBIEREN  deine echten Daten fest eingesetzt. Laeuft sofort, ohne Workflow und
+                          ohne einen einzigen Ausdruck -- nur INSTANCE_ID anpassen.
+
+   Beide tun dasselbe. B ist nur da, damit du die Komponente sehen kannst, bevor der Workflow
+   steht.
+   ============================================================================================== */
+
+
+/* ==============================================================================================
+   A) ECHTBETRIEB
+   ==============================================================================================
    WANN: beim Aufbau der Detailseite, sobald die RPC geantwortet hat.
 
-   Beide Payloads gehen als TEXT rein, roh zwischen den Backticks. Nicht im Schritt parsen, nicht
-   JSON-safe formatieren: UC.readBubble in der Komponente liest gueltiges JSON unveraendert,
-   repariert Bubbles Eigenheiten und trennt LEER von UNLESBAR -- ein unlesbarer Payload steht
-   dann als Fehlerband oben statt als leere Seite.
+   Alle drei Werte gehen als TEXT rein, roh zwischen den Backticks. Nicht im Schritt parsen und
+   nicht JSON-safe formatieren: UC.readBubble in der Komponente liest gueltiges JSON unveraendert,
+   repariert Bubbles Eigenheiten und trennt LEER von UNLESBAR -- ein unlesbarer Payload steht dann
+   als Fehlerband oben statt als leere Seite.
 
-   Die Warteschleife braucht es, weil Bubble diesen Schritt vor der Komponente ausfuehren kann. */
+   Die Warteschleife braucht es, weil Bubble diesen Schritt vor der Komponente ausfuehren kann.
+   ============================================================================================== */
 (function () {
   var DETAIL     = `[URL_DETAILED_RPC]`;
   var CONVERSION = `[CONVERSION_RPC]`;
@@ -31,18 +48,20 @@
   })();
 })();
 
-/* ---------- Skelett an und aus, waehrend ein Workflow laeuft ----------
-window.setUrlDetailLoading("INSTANCE_ID", "yes");
-window.setUrlDetailLoading("INSTANCE_ID", "no");
----------- alles leeren ----------
-window.resetUrlDetail("INSTANCE_ID");
-*/
 
-/* ============================================================================================
-   STATISCH -- dieselben Aufrufe, aber mit deinen echten Daten fest eingesetzt. Laeuft sofort,
-   ohne Bubble-Ausdruck und ohne Workflow. INSTANCE_ID anpassen, einfuegen, fertig.
-   Die Daten sind wortgleich die aus dem Auftrag.
-   ============================================================================================ */
+/* ==============================================================================================
+   Kleine Schritte fuer zwischendurch -- je einzeln in einen eigenen Run-JS-Schritt:
+
+     window.setUrlDetailLoading("INSTANCE_ID", "yes");   Skelett an, waehrend ein Workflow laeuft
+     window.setUrlDetailLoading("INSTANCE_ID", "no");    Skelett aus
+     window.resetUrlDetail("INSTANCE_ID");               alles leeren
+   ============================================================================================== */
+
+
+/* ==============================================================================================
+   B) ZUM AUSPROBIEREN -- deine echten Daten, ohne Bubble.
+   Alternative zu A oben. Nicht zusaetzlich einfuegen.
+   ============================================================================================== */
 (function () {
   var INSTANCE_ID = "urldetail";
 
