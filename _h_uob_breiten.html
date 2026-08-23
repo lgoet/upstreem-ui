@@ -18,7 +18,7 @@ BREITEN.forEach(function (b) {
   /* Breite per style, nicht per Attribut: das Attribut wurde vom Layout beschnitten und
      zwei Rahmen meldeten dieselbe Breite. */
   f.style.width = b + "px"; f.style.minWidth = b + "px"; f.style.flex = "0 0 auto";
-  f.src = "_h_uob.html?step=brand";
+  f.src = "_h_uob_logo.html?step=brand";
   z.appendChild(f); wrap.appendChild(z); rahmen.push([b, f]);
 });
 function messen() {

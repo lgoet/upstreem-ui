@@ -97,6 +97,15 @@
   transition: color var(--uob-t) var(--uob-ease), background var(--uob-t) var(--uob-ease);
 }
 .uob-link:hover { color: var(--vc-text); background: var(--uob-hover); }
+/* Kein Platz fuer die Worte: die Ausgaenge werden zu reinen Icon-Knoepfen. Die Masse kommen
+   aus .up-iconbtn in core -- 32x32, Radius 8 --, und .uob-link bringt Hoehe und Radius bereits
+   genau so mit; es bleiben Breite, Polster und Ausrichtung. Damit sieht der Knopf hier aus wie
+   jeder andere Icon-Knopf der App und nicht wie ein zusammengeschobener Textknopf.
+   is-tight setzt kopfPruefen(), wenn Logo und Ausgaenge zusammen nicht mehr in die Kopfzeile
+   passen -- gemessen, nicht an einer Breite geraten: das Logo ist in Bubble frei gesetzt und
+   jede feste Schwelle waere fuer ein anderes Logo falsch. */
+.uob-root.is-tight .uob-link-t { display: none; }
+.uob-root.is-tight .uob-link { width: 32px; padding: 0; gap: 0; justify-content: center; }
 .uob-link svg { width: 15px; height: 15px; display: block; flex: 0 0 auto; }
 .uob-link:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 /* Traeger fuer den Hinweispunkt. .up-badge aus core ist absolut gesetzt und braucht einen

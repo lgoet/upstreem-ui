@@ -596,11 +596,18 @@
                 '{className:\'uob-logo\'}))"/>'
               : '<span class="uob-logo"></span>') +
         '<div class="uob-topr">' +
-          '<button class="uob-link uob-link-dot" type="button" data-help-btn aria-pressed="false">' +
-            ic("libraryBig", 1.8) + '<span data-help-lbl>Guide</span>' +
+          /* Die Beschriftungen stecken in einem eigenen Element und die Knoepfe tragen
+             aria-label und data-tip: faellt die Beschriftung bei Platzmangel weg, bleibt der
+             Knopf lesbar -- fuer Vorleseprogramme ueber aria-label, fuer die Maus ueber den
+             Tooltip. Ein nackter Text hinter dem Icon liesse sich per CSS gar nicht ausblenden. */
+          '<button class="uob-link uob-link-dot" type="button" data-help-btn aria-pressed="false" ' +
+            'aria-label="Guide" data-tip="Guide">' +
+            ic("libraryBig", 1.8) + '<span class="uob-link-t" data-help-lbl>Guide</span>' +
             '<span class="up-badge is-dot" data-help-dot></span></button>' +
-          '<button class="uob-link" type="button" data-exit="dashboard">' + ic("home", 1.8) + 'Dashboard</button>' +
-          '<button class="uob-link" type="button" data-exit="logout">' + ic("logOut", 1.8) + 'Log out</button>' +
+          '<button class="uob-link" type="button" data-exit="dashboard" aria-label="Dashboard" ' +
+            'data-tip="Dashboard">' + ic("home", 1.8) + '<span class="uob-link-t">Dashboard</span></button>' +
+          '<button class="uob-link" type="button" data-exit="logout" aria-label="Log out" ' +
+            'data-tip="Log out">' + ic("logOut", 1.8) + '<span class="uob-link-t">Log out</span></button>' +
           '<button class="uob-themebtn" type="button" data-theme-btn aria-label="Switch theme"></button>' +
         '</div>' +
       '</div>' +
@@ -2356,6 +2363,28 @@
     /* ---- Breite ------------------------------------------------------------------------------
        Zwei Stufen: unter 760px stapelt alles, unter 460px wird es noch enger. Gemessen an der
        Wurzel und nicht am Fenster, weil diese Seite in Bubble in einem Element steckt. */
+    /* Die Kopfzeile darf NIE ueber den Rand hinauslaufen. Gemessen mit einem 132px breiten
+       Logo: bei 480px Fensterbreite standen die Ausgaenge 21px ausserhalb des Bildschirms, bei
+       380px 121px -- der Themenknopf war ganz draussen und die Seite scrollte seitwaerts.
+       Reicht der Platz nicht, fallen die Beschriftungen weg und die Icons bleiben. Das ist die
+       einzige Stelle, die nachgibt, bevor Inhalt den Schirm verlaesst -- lieber die 32px zum
+       Rand halten und ein Wort weniger zeigen als einen Knopf, den niemand erreicht.
+       Gemessen wird im SICHTBAREN Zustand: mit display:none haben die Beschriftungen Breite 0,
+       dann passt es, dann kommen sie zurueck, dann passt es nicht. Dieselbe Schaukel wie bei
+       den Schienenbeschriftungen, und derselbe Ausweg. */
+    function kopfPruefen() {
+      var top = root.querySelector(".uob-top");
+      var logo = root.querySelector(".uob-logo");
+      var rechts = root.querySelector(".uob-topr");
+      if (!top || !logo || !rechts) return;
+      root.classList.remove("is-tight");
+      var st = window.getComputedStyle(top);
+      var platz = top.clientWidth - (parseFloat(st.paddingLeft) || 0) - (parseFloat(st.paddingRight) || 0);
+      var lueckeRoh = parseFloat(st.columnGap || st.gap);
+      var luecke = isFinite(lueckeRoh) ? lueckeRoh : 16;
+      var noetig = logo.offsetWidth + rechts.offsetWidth + luecke;
+      if (noetig > platz) root.classList.add("is-tight");
+    }
     function messeBreite() {
       var w = root.clientWidth;
       root.classList.toggle("is-narrow", w < 760);
@@ -2364,6 +2393,7 @@
          Zeile wurde nur beim Zeichnen geprueft, und ein blosses Ziehen am Fensterrand liess eine
          Reihe stehen, die laengst nicht mehr passte. */
       labelsPruefen(sichtbareSteps().length);
+      kopfPruefen();
       /* Die Marke haengt an Pixelmassen, die sich mit der Breite aendern. */
       bsegMarke();
     }
