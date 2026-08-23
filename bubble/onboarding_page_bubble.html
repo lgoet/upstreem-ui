@@ -86,6 +86,17 @@
                   setOnboardingPrompts rufen, sonst haengt die zweite Uhr.
        uobFinish  Objekt: plan_id, billing_interval, brand_ids, topic_ids, prompt_ids
        uobExit    Text: "dashboard" oder "logout"
+       uobWorkflowStart  JSON-TEXT: {"onboarding_id":"...","run_token":"..."}
+                  Kommt NICHT aus dem Ablauf, sondern aus einem Run-JS-Schritt:
+                    window.startOnboardingWorkflow("INSTANCE_ID", "<onboarding_id>", "<run_token>")
+                  Gedacht fuer den Fall, dass beide Werte erst im Workflow hinter uobStart
+                  entstehen und sich dort kein zweiter Ereignisaufruf anhaengen laesst.
+                  Ist ein Team gesetzt, steht team_id VORNE als erster Schluessel.
+                  Extraktion:
+                    (?<="onboarding_id":")[^"]*
+                    (?<="run_token":")[^"]*
+                  Beide Werte sind PFLICHT. Fehlt einer oder steht dort noch ein Platzhalter in
+                  Grossbuchstaben, wird nichts gesendet und die Konsole sagt welcher.
 
      ── SETTER ──────────────────────────────────────────────────────────────────────────────
        setOnboardingProject("<instance>", <json>)   das Onboarding-Projekt (Objekt oder Liste
@@ -174,7 +185,8 @@
      data-select-fn="bubble_fn_uobSelect"
      data-topics-fn="bubble_fn_uobTopics"
      data-finish-fn="bubble_fn_uobFinish"
-     data-exit-fn="bubble_fn_uobExit"></div>
+     data-exit-fn="bubble_fn_uobExit"
+     data-workflow-fn="bubble_fn_uobWorkflowStart"></div>
 
 <script>
 (function(){

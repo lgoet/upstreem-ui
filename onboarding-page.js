@@ -26,6 +26,10 @@
                  die Prompts entstehen
      uobFinish   {plan_id, billing_interval, brand_ids, topic_ids, prompt_ids}
      uobExit     "dashboard" oder "logout"
+     uobWorkflowStart  {onboarding_id, run_token} -- NICHT aus dem Ablauf heraus, sondern von
+                 window.startOnboardingWorkflow(instanz, onboarding_id, run_token). Damit laesst
+                 sich der grosse Hintergrundlauf aus einem Run-JS-Schritt anstossen, wenn beide
+                 Werte im Workflow hinter uobStart entstanden sind.
 
    Setter: setOnboardingProject, setOnboardingStatus, setOnboardingBrands, setOnboardingTopics,
    setOnboardingPrompts, setOnboardingPlans, setOnboardingStep, setOnboardingError,
@@ -40,7 +44,7 @@
     window.__uobBootStubbed = true;
     ["setOnboardingProject", "setOnboardingStatus", "setOnboardingBrands", "setOnboardingTopics",
      "setOnboardingPrompts", "setOnboardingPlans", "setOnboardingStep", "setOnboardingError",
-     "setOnboardingLoading", "resetOnboarding"].forEach(function (n) {
+     "setOnboardingLoading", "resetOnboarding", "startOnboardingWorkflow"].forEach(function (n) {
       if (typeof window[n] === "function") return;
       window[n] = function () { BOOTQ.push([n, [].slice.call(arguments)]); return true; };
     });
@@ -2532,6 +2536,28 @@
         render(true);
         return true;
       },
+      /* Startet den grossen Hintergrundlauf. NICHT Teil des uobStart-Ablaufs: die beiden Werte
+         entstehen erst im Workflow hinter uobStart, und dort laesst sich kein zweiter Ereignis-
+         aufruf anhaengen. Deshalb ein eigener Weg, den ein Run-JS-Schritt ruft, sobald er sie hat.
+         Beide Werte sind Pflicht -- ein Lauf ohne Token startet nichts, und ein leeres Feld im
+         Payload waere genau der stille Ausfall, den es hier nicht geben darf.
+         Der Platzhaltertest ist derselbe wie in attr(): bleibt ONBOARDING_ID in der Vorlage
+         stehen, weil der Bubble-Ausdruck fehlt, wird daraus kein Lauf mit dem Namen des
+         Platzhalters. Echte Werte fallen nicht darunter -- eine UUID hat Ziffern und Striche. */
+      startWorkflow: function (onboardingId, runToken) {
+        var oid = txt(onboardingId), tok = txt(runToken);
+        var offen = !oid ? "onboarding_id"
+                  : !tok ? "run_token"
+                  : /^[A-Z_]{3,}$/.test(oid) ? "onboarding_id (Platzhalter nicht ersetzt)"
+                  : /^[A-Z_]{3,}$/.test(tok) ? "run_token (Platzhalter nicht ersetzt)" : "";
+        if (offen) {
+          if (window.console) console.warn("[onboarding] startOnboardingWorkflow: " + offen +
+            " fehlt -- uobWorkflowStart wird NICHT gesendet.");
+          return false;
+        }
+        fire("data-workflow-fn", "uobWorkflowStart", { onboarding_id: oid, run_token: tok });
+        return true;
+      },
       setStep: function (k) {
         if (stepIndex(txt(k)) < 0) return false;
         gehe(txt(k), false);
@@ -2686,6 +2712,9 @@
     ruf("setOnboardingError",   function (id, t) { var c = resolve(id); return c ? c.setError(t) : false; });
     ruf("setOnboardingLoading", function (id, v) { var c = resolve(id); return c ? c.setLoading(v) : false; });
     ruf("resetOnboarding",      function (id)    { var c = resolve(id); return c ? c.reset() : false; });
+    ruf("startOnboardingWorkflow", function (id, oid, tok) {
+      var c = resolve(id); return c ? c.startWorkflow(oid, tok) : false;
+    });
 
     /* Alles nachholen, was gerufen wurde, bevor es die Seite gab. */
     var q = BOOTQ.splice(0, BOOTQ.length);

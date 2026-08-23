@@ -12,7 +12,7 @@
 </style>
 <body>
 <div class="up-root uob-root" data-instance="onboarding" data-isdark="no"
-     data-logo="https://upstreem.com/logo.svg"></div>
+     data-logo="https://upstreem.com/logo.svg" data-workflow-fn="bubble_fn_uobWorkflowStart"></div>
 
 <div id="bar">
   <button onclick="location.search='?step=brand'">brand</button>
@@ -31,7 +31,7 @@
 <script>
 window.__fehler = []; window.__ev = [];
 window.addEventListener("error", function (e) { window.__fehler.push(String(e.message) + " @" + e.lineno); });
-["uobStart","uobStep","uobSelect","uobTopics","uobFinish","uobExit"].forEach(function (n) {
+["uobStart","uobStep","uobSelect","uobTopics","uobFinish","uobExit","uobWorkflowStart"].forEach(function (n) {
   window["bubble_fn_" + n] = function (p) { window.__ev.push([n, p]); };
 });
 /* Schreibt mit, WANN die Begleittafel aufgeht -- gemessen ab dem Laden der Seite. Der Umlauf
