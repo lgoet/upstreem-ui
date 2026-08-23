@@ -4,13 +4,15 @@
   Die Detailseite einer einzelnen zitierten URL. Aufbau von oben, jede Karte erscheint nur,
   wenn sie etwas zu zeigen hat:
 
-      1. Kopf        Favicon, Titel, Domain (Link nach draussen)
-      2. KPIs        Last Seen, Domain Share, Global Share, URL Rank, Citation Type, URL Type
-      3. Mentions    "Relevant brands referenced on this page"
-      4. Embed       das Video oder der Post selbst, wenn die Adresse zu einem Anbieter passt
-      5. Meta        die SEO-Beschreibung -- erscheint NICHT neben einem Embed
-      6. AI Summary  die Zusammenfassung des Hintergrundlaufs
-      7. Conversion  wie oft diese Zitation zu einer Markennennung fuehrt
+      1. KPIs        Last Seen, Domain Share, Global Share, URL Rank, Citation Type, URL Type
+      2. Mentions    "Relevant brands referenced on this page"
+      3. Embed       das Video oder der Post selbst, wenn die Adresse zu einem Anbieter passt
+      4. Meta        die SEO-Beschreibung -- erscheint NICHT neben einem Embed
+      5. AI Summary  die Zusammenfassung des Hintergrundlaufs
+      6. Conversion  kompakte Tabelle: zitiert, genannt, Quote je Marke
+
+  Abschnitte, keine Karten. Titel, Favicon und Domain stehen NICHT hier -- die Seite faengt mit
+  den KPIs an.
 
   ── Attribute am Element ────────────────────────────────────────────────────────────────────
       data-instance    die Instanz-Id, frei waehlbar. MUSS gesetzt sein: steht dort noch
@@ -23,7 +25,9 @@
                        Standard bubble_fn_uudBrand
 
   ── Ereignis ────────────────────────────────────────────────────────────────────────────────
-      uudBrand   JSON-TEXT beim Klick auf einen Mention-Chip:
+      uudBrand   JSON-TEXT beim Klick auf einen Mention-Chip ODER auf eine Zeile der
+                 Conversion-Tabelle -- beide Wege feuern dasselbe Ereignis, es ist derselbe
+                 Sprung zur Marke:
                    {"company_id":"26dd1507-...","company_name":"Parookaville"}
                  Ist ein Team gesetzt, steht team_id VORNE als erster Schluessel.
                  Extraktion:

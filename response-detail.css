@@ -65,50 +65,13 @@
    einen Knopf einzurahmen. 8px Abstand statt 20 -- mit Grund braucht es keinen Weissraum mehr, um
    die Einheiten zu trennen, das tut die Flaeche. */
 .urd-ments { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-/* Der Chip ist .up-entchip.is-soft aus core -- 28px, Radius 8, leichter Grund, Rahmen im Hellen.
-   Hier: der Grund auf 50% seiner Deckkraft, weil die Chips bei voller Toenung als Kaesten lasen und
-   die Mentions eine Aufzaehlung sind -- der Rahmen traegt die Form, der Grund nur den Zusammenhang.
-   Den Hover uebernimmt .up-chiphover aus core (im Markup gesetzt), deshalb steht er nicht hier. */
+/* Der Chip ist jetzt .up-mentlist aus core -- derselbe Block, der hier stand, nur an einer
+   Stelle statt an zweien (url-detail braucht ihn ebenfalls). Die Werte sind unveraendert: das
+   Bauteil rechnet alle Masse aus --up-mc, und bei den 32px, die hier gelten, ergibt das Zeichen
+   fuer Zeichen die Zahlen, die vorher hier standen.
+   Was NICHT mitgezogen ist und deshalb hier bleibt: die Breitenbegrenzung des einzelnen Chips
+   und der leere Zustand darunter -- beides gehoert zu DIESER Seite, nicht zum Chip. */
 .urd-ment { max-width: 100%; }
-/* 32px statt 28, und die Geometrie zieht im Verhaeltnis 32/28 mit (Faktor 1.143): Polsterung
-   10/5 -> 11.4/5.7, Radius 8 -> 9.1, Innenabstand 8 -> 9.1. Logo und Schrift stehen weiter unten
-   mit demselben Faktor.
-   Der Grund ist die Feldfarbe -- solide, nicht halbtransparent: die Chips liegen auf der Seite und
-   nicht auf einer getoenten Karte, zwei Halbtransparenzen ergaeben sonst einen dritten Ton.
-   KEIN Rahmen: bei diesem Grund traegt die Flaeche die Form, und ein Rahmen je Marke macht aus
-   einer Aufzaehlung eine Reihe von Knoepfen. Gilt fuer beide Themen.
-   Drei Selektorteile, weil .up-entchip.is-soft in core zwei hat und sonst gewinnt. */
-.urd-ments .up-entchip.is-soft {
-  height: 32px; padding: 0 11.4px 0 5.7px; border-radius: 9.1px; gap: 9.1px; }
-/* Grund und Rahmen NUR in Ruhe. Standen sie in der Regel darueber, schlugen sie mit ihren drei
-   Klassen den geteilten Hover aus core (.up-chiphover:hover, zwei) -- der Chip hatte dann gar
-   keinen Hover: Rahmen blieb durchsichtig, und der Hover-Grund #f5f5f5 ist derselbe wie
-   --vc-field, also blieb auch dort alles gleich. Gemessen: Ruhe und Hover Zeichen fuer Zeichen
-   identisch. Mit :not(:hover) gilt hier die Ruhe und in core der Hover -- Rahmen und Grund
-   kommen von dort, wie bei jedem anderen anklickbaren Chip der App.
-   Die Geometrie bleibt oben und gilt in BEIDEN Zustaenden: ein Chip, der beim Ueberfahren die
-   Hoehe wechselt, springt. */
-/* Hell: KEIN Grund, nur der Rahmen, den .up-entchip ohnehin mitbringt (--vc-border). Der
-   getoente Grund liess die Chips als Kaesten lesen; die Mentions sind eine Aufzaehlung, und die
-   Reihe wirkt ruhiger, wenn nur der Umriss sie zusammenhaelt. Der Grund kommt erst beim
-   Ueberfahren, und zwar aus core wie bei jedem anklickbaren Chip. */
-.urd-ments .up-entchip.is-soft:not(:hover) { background: transparent; }
-/* Dunkel bleibt, wie es war: dort ist der Grund heller als seine Umgebung und traegt die Form
-   allein -- ein Rahmen je Marke waere da zu viel, und ein rahmenloser Chip OHNE Grund waere gar
-   nichts mehr. Den durchsichtigen Rahmen setzt core schon fuer .is-soft im Dunkeln, hier steht
-   nur der Grund. Sechs Selektorteile gegen die vier der hellen Regel darueber. */
-.up-root[data-theme="dark"] .urd-ments .up-entchip.is-soft:not(:hover) {
-  background: var(--vc-field); }
-/* Logo und Schrift mit demselben Faktor 32/28 = 1.143 wie der Chip: 18 -> 20.6, Radius 5 -> 5.7,
-   Bild 16 -> 18.3, Bildradius 4 -> 4.6, Buchstabe 10 -> 11.4, Name 13.5 -> 15.4. Ein Bauteil, das
-   waechst, waechst in allen Maessen -- sonst sitzt ein 18px-Logo verloren in einem 32px-Chip. */
-.urd-ment .up-ment-logo { width: 20.6px; height: 20.6px; border-radius: 5.7px; }
-.urd-ment .up-ment-logo img { width: 18.3px; height: 18.3px; border-radius: 4.6px; }
-.urd-ment .up-model-ltr { font-size: 11.4px; }
-/* Der Name faellt bewusst aus dem Faktor 32/28 heraus: 14.4 statt der rechnerischen 15.4. Er
-   stand zu gross neben seinem Logo -- die Kachel ist 20.6, und eine Schrift fast so hoch wie das
-   Bild daneben laesst den Chip nach Ueberschrift aussehen statt nach Aufzaehlung. */
-.urd-ment .up-ment-name { font-size: 14.4px; }
 /* Der leere Zustand der Mentions: das Minus steht fuer sich, ohne Karte und ohne Satz. Etwas
    Hoehe, damit der Abschnitt nicht auf eine Zeile zusammenfaellt. */
 .urd-mentempty { min-height: 24px; }

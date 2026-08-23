@@ -88,15 +88,15 @@ function mess() {
       }),
       mentions: r.querySelectorAll(".uud-ment").length,
       karten: {
-        ments: sicht(".uud-mentcard"), embed: sicht(".uud-embedcard"),
-        meta: sicht(".uud-metacard"), summary: sicht(".uud-sumcard"), conv: sicht(".uud-convcard")
+        ments: sicht(".uud-sect-ments"), embed: sicht(".uud-sect-embed"),
+        meta: sicht(".uud-sect-meta"), summary: sicht(".uud-sect-sum"), conv: sicht(".uud-sect-conv")
       },
       embed_titel: (r.querySelector(".uud-embedtitle") || {}).textContent || null,
       embed_desc: (r.querySelector(".uud-embeddesc") || {}).textContent || null,
       iframe_src: (r.querySelector(".uud-embed iframe") || {}).src || null,
       meta_text: ((r.querySelector(".uud-meta") || {}).textContent || "").slice(0, 60),
       summary_text: ((r.querySelector(".uud-sum") || {}).textContent || "").slice(0, 60),
-      conv_balken: r.querySelectorAll(".uud-conv .up-bar-row").length,
+      conv_zeilen: r.querySelectorAll(".uud-cbody").length,
       fehlerband: r.querySelector(".uud-fehler").hidden ? null : r.querySelector(".uud-fehler").textContent,
       quer_scroll: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1
     }, null, 1));

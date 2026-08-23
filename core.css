@@ -1773,6 +1773,49 @@
 .up-entchip.is-soft:not(.up-chiphover):hover { background: var(--vt-row-hover-solid, var(--vc-switch-bg)); }
 .up-entchip:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 1px; }
 
+/* ---- Mention-Liste ---------------------------------------------------------------------------
+   Die Aufzaehlung der Marken, die irgendwo vorkommen. Lag als lokaler Block in response-detail;
+   url-detail braucht denselben Chip, also gehoert er hierher -- zwei Kopien sind genau der Weg,
+   auf dem sie auseinanderlaufen.
+
+   ALLE Masse haengen an --up-mc, der Hoehe. Die Verhaeltnisse sind die des Grundchips
+   .up-entchip (28px): Polsterung 10/5, Radius 8, Innenabstand 8, Logo 18, Bild 16, Buchstabe 10.
+   Bei --up-mc: 32px ergibt das Zeichen fuer Zeichen die Zahlen, die in response-detail standen
+   (11.43 / 5.71 / 9.14 / 20.57 / 18.29 / 11.43) -- der Block dort ist damit nicht geaendert,
+   sondern nur umgezogen.
+   Der NAME faellt bewusst aus dem Verhaeltnis: 0.45 der Hoehe statt 13.5/28 = 0.48. Er stand
+   sonst zu gross neben seinem Logo, und eine Schrift fast so hoch wie das Bild daneben laesst
+   den Chip nach Ueberschrift aussehen statt nach Aufzaehlung.
+   is-lg ist dieselbe Liste eine Stufe groesser -- eine Zahl aendert sich, alles andere zieht mit. */
+.up-mentlist { --up-mc: 32px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.up-mentlist.is-lg { --up-mc: 40px; }
+/* Drei Selektorteile, weil .up-entchip.is-soft oben zwei hat und sonst gewinnt. */
+.up-mentlist .up-entchip.is-soft {
+  height: var(--up-mc);
+  padding: 0 calc(var(--up-mc) * 0.3571) 0 calc(var(--up-mc) * 0.1786);
+  border-radius: calc(var(--up-mc) * 0.2857);
+  gap: calc(var(--up-mc) * 0.2857);
+  max-width: 100%;
+}
+/* Grund und Rahmen NUR in Ruhe. Standen sie in der Regel darueber, schlugen sie mit ihren drei
+   Klassen den geteilten Hover aus core (.up-chiphover:hover, zwei) -- der Chip haette dann gar
+   keinen Hover. Mit :not(:hover) gilt hier die Ruhe und oben der Hover.
+   Hell: KEIN Grund, nur der Rahmen, den .up-entchip ohnehin mitbringt. */
+.up-mentlist .up-entchip.is-soft:not(:hover) { background: transparent; }
+/* Dunkel: dort ist der Grund heller als seine Umgebung und traegt die Form allein -- ein Rahmen
+   je Marke waere zu viel, ein rahmenloser Chip ohne Grund waere nichts mehr. */
+.up-root[data-theme="dark"] .up-mentlist .up-entchip.is-soft:not(:hover) { background: var(--vc-field); }
+.up-mentlist .up-ment-logo {
+  width: calc(var(--up-mc) * 0.6429); height: calc(var(--up-mc) * 0.6429);
+  border-radius: calc(var(--up-mc) * 0.1786);
+}
+.up-mentlist .up-ment-logo img {
+  width: calc(var(--up-mc) * 0.5714); height: calc(var(--up-mc) * 0.5714);
+  border-radius: calc(var(--up-mc) * 0.1429);
+}
+.up-mentlist .up-model-ltr { font-size: calc(var(--up-mc) * 0.3571); }
+.up-mentlist .up-ment-name { font-size: calc(var(--up-mc) * 0.45); }
+
 /* ---- Modell-Chip / Market-Chip ----------------------------------------------------------------
    Beide lagen als Kopie in responses-table bzw. prompts-table. Die alten Klassen bleiben als
    Alias erhalten, damit dort kein Markup angefasst werden muss. Die Werte sind unveraendert die

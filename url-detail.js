@@ -1,21 +1,22 @@
 /* upstreem url-detail.js — die URL-Detailseite. Braucht core.js (window.UpstreemCore).
 
-   Aufbau von oben, jede Karte erscheint nur, wenn sie etwas zu zeigen hat:
-     1. Kopf        Favicon, Titel, Domain, Link nach draussen
-     2. KPIs        Last Seen, Domain Share, Global Share, URL Rank, Citation Type, URL Type
-     3. Mentions    die Marken, die auf dieser Seite vorkommen
-     4. Embed       das Video oder der Post selbst, wenn die Adresse zu einem Anbieter passt
-     5. Meta        die SEO-Beschreibung -- NICHT neben einem Embed, dort ist der Post der Inhalt
-     6. AI Summary  die Zusammenfassung des Hintergrundlaufs
-     7. Conversion  wie oft diese Zitation zu einer Markennennung fuehrt
+   Aufbau von oben, jeder Abschnitt erscheint nur, wenn er etwas zu zeigen hat:
+     1. KPIs        Last Seen, Domain Share, Global Share, URL Rank, Citation Type, URL Type
+     2. Mentions    die Marken, die auf dieser Seite vorkommen
+     3. Embed       das Video oder der Post selbst, wenn die Adresse zu einem Anbieter passt
+     4. Meta        die SEO-Beschreibung -- NICHT neben einem Embed, dort ist der Post der Inhalt
+     5. AI Summary  die Zusammenfassung des Hintergrundlaufs
+     6. Conversion  eine kompakte Tabelle: zitiert, genannt, Quote je Marke
+
+   ABSCHNITTE, keine Karten -- wie in response-detail. Umrandet ist nur, was einen Rahmen
+   braucht: das Embed (fremder Inhalt) und die Tabelle.
 
    Was aus core kommt und hier NICHT noch einmal entsteht:
      UC.typeColor / typeLabel / typeDesc   Farbe, Name und Erklaersatz beider Typ-Achsen
      UC.makeExplain                        die Erklaerkarte an den Ueberschriften
-     UC.makeBarList                        die Balkenliste der Conversion
      UC.readBubble                         der eine Leseweg fuer Bubble-Payloads
      UC.makeMount / makeFire / makeLate / widthTiers / onTheme / themeParam / makeTooltips
-     .up-tag / .up-entchip / .up-card      die Bauteile
+     .up-tag / .up-entchip / .up-mentlist  die Bauteile
 
    Die Chip-Regel aus quick-actions gilt auch hier: URL-Typen tragen einen Punkt, Zitationstypen
    nie. Das ist es, was die beiden Vokabulare auf einen Blick auseinanderhaelt, wenn sie
@@ -210,57 +211,51 @@
   }
 
   function shell() {
+    /* Abschnitte, keine Karten -- wie in response-detail. Eine Karte je Block macht aus einer
+       Detailseite eine Kachelwand; die Ueberschrift traegt den Abschnitt, nicht ein Rahmen.
+       Umrandet ist nur, was einen Rahmen BRAUCHT: das Embed (fremder Inhalt) und die Tabelle. */
     return '' +
-      '<div class="up-card uud-card uud-headcard">' +
-        '<div class="uud-head">' +
-          '<span class="up-logo-box uud-logobox"><span class="up-logo-ltr"></span></span>' +
-          '<div class="uud-headtxt">' +
-            '<span class="uud-title"></span>' +
-            '<a class="uud-domain" target="_blank" rel="noopener noreferrer"></a>' +
-          '</div>' +
-        '</div>' +
+      '<div class="uud-sect uud-sect-kpi">' +
         '<div class="uud-kpis"></div>' +
       '</div>' +
 
-      '<div class="up-card uud-card uud-mentcard" hidden>' +
-        '<div class="uud-sec">' +
+      '<div class="uud-sect uud-sect-ments" hidden>' +
+        '<div class="uud-sec"><div class="uud-sec-txt">' +
           '<span class="uud-sec-title">Mentions</span>' +
           '<span class="uud-sec-desc">Relevant brands referenced on this page</span>' +
-        '</div>' +
-        '<div class="uud-ments"></div>' +
+        '</div></div>' +
+        '<div class="uud-ments up-mentlist is-lg"></div>' +
       '</div>' +
 
-      '<div class="up-card uud-card uud-embedcard" hidden>' +
-        '<div class="uud-sec uud-sec-row">' +
-          '<div class="uud-sec-txt">' +
-            '<span class="uud-sec-title uud-embedtitle"></span>' +
-            '<span class="uud-sec-desc uud-embeddesc"></span>' +
-          '</div>' +
-        '</div>' +
+      '<div class="uud-sect uud-sect-embed" hidden>' +
+        '<div class="uud-sec"><div class="uud-sec-txt">' +
+          '<span class="uud-sec-title uud-embedtitle"></span>' +
+          '<span class="uud-sec-desc uud-embeddesc"></span>' +
+        '</div></div>' +
         '<div class="uud-embed"></div>' +
       '</div>' +
 
-      '<div class="up-card uud-card uud-metacard" hidden>' +
-        '<div class="uud-sec">' +
+      '<div class="uud-sect uud-sect-meta" hidden>' +
+        '<div class="uud-sec"><div class="uud-sec-txt">' +
           '<span class="uud-sec-title">Meta Description</span>' +
           '<span class="uud-sec-desc">The page\'s SEO description</span>' +
-        '</div>' +
+        '</div></div>' +
         '<p class="uud-text uud-meta"></p>' +
       '</div>' +
 
-      '<div class="up-card uud-card uud-sumcard" hidden>' +
-        '<div class="uud-sec">' +
+      '<div class="uud-sect uud-sect-sum" hidden>' +
+        '<div class="uud-sec"><div class="uud-sec-txt">' +
           '<span class="uud-sec-title">AI Summary</span>' +
           '<span class="uud-sec-desc">High-level summary of this page</span>' +
-        '</div>' +
+        '</div></div>' +
         '<p class="uud-text uud-sum"></p>' +
       '</div>' +
 
-      '<div class="up-card uud-card uud-convcard" hidden>' +
-        '<div class="uud-sec">' +
+      '<div class="uud-sect uud-sect-conv" hidden>' +
+        '<div class="uud-sec"><div class="uud-sec-txt">' +
           '<span class="uud-sec-title">Citation Conversion</span>' +
           '<span class="uud-sec-desc">How often this citation leads to brand mentions</span>' +
-        '</div>' +
+        '</div></div>' +
         '<div class="uud-conv"></div>' +
       '</div>' +
 
@@ -279,21 +274,18 @@
        Seite kann in einem Drawer stehen, der auf einem breiten Bildschirm schmal ist. */
     if (UC.widthTiers) UC.widthTiers(root, { narrowAt: 640, vnarrowAt: 480 });
 
-    var elLogo   = root.querySelector(".uud-logobox");
-    var elTitle  = root.querySelector(".uud-title");
-    var elDomain = root.querySelector(".uud-domain");
     var elKpis   = root.querySelector(".uud-kpis");
-    var elMentCard = root.querySelector(".uud-mentcard");
+    var elMentSect = root.querySelector(".uud-sect-ments");
     var elMents  = root.querySelector(".uud-ments");
-    var elEmbedCard = root.querySelector(".uud-embedcard");
+    var elEmbedSect = root.querySelector(".uud-sect-embed");
     var elEmbedTitle = root.querySelector(".uud-embedtitle");
     var elEmbedDesc = root.querySelector(".uud-embeddesc");
     var elEmbed  = root.querySelector(".uud-embed");
-    var elMetaCard = root.querySelector(".uud-metacard");
+    var elMetaSect = root.querySelector(".uud-sect-meta");
     var elMeta   = root.querySelector(".uud-meta");
-    var elSumCard = root.querySelector(".uud-sumcard");
+    var elSumSect = root.querySelector(".uud-sect-sum");
     var elSum    = root.querySelector(".uud-sum");
-    var elConvCard = root.querySelector(".uud-convcard");
+    var elConvSect = root.querySelector(".uud-sect-conv");
     var elConv   = root.querySelector(".uud-conv");
     var elFehler = root.querySelector(".uud-fehler");
 
@@ -335,10 +327,12 @@
               : "Who owns this page in relation to you: your own site, a competitor, editorial coverage, and so on.";
             label = k.label;
           }
-          return '<div class="up-explain-h">' + esc(label) + '</div>' +
+          return '<div class="up-explain-vis">' + vorschau(k) + '</div>' +
+                 '<div class="up-explain-h">' + esc(label) + '</div>' +
                  '<div class="up-explain-t">' + esc(satz) + '</div>';
         }
-        return '<div class="up-explain-h">' + esc(k.title) + '</div>' +
+        return '<div class="up-explain-vis">' + vorschau(k) + '</div>' +
+               '<div class="up-explain-h">' + esc(k.title) + '</div>' +
                '<div class="up-explain-t">' + esc(k.body) + '</div>';
       }
     }) : null;
@@ -353,6 +347,32 @@
     /* Der Strich der App fuer "nichts da" -- eine Antwort auf die Frage, nicht drei. */
     var LEER = '<span class="up-dash">–</span>';
 
+    /* Der Vorschau-Block der Erklaerkarte. Ohne ihn ist es keine Erklaerkarte der App, sondern
+       ein Kasten mit Text -- jede andere Erklaerung dieser App zeigt oben, WIE der Wert aussieht,
+       ueber den sie spricht. Das Muster ist das von prompts-table (explainVisual): eine Zeile im
+       Kasten, aufgebaut aus denselben Bauteilen wie die Zelle selbst. */
+    function vorschau(k) {
+      if (k.typ) {
+        /* Der Chip in seiner echten Form, mit dem echten Wert -- inklusive Punkt beim URL-Typ. */
+        return '<span class="up-explain-row">' + kpiWert(k) + '</span>';
+      }
+      if (k.key === "last_seen") return '<span class="up-explain-row">23. Aug 2026</span>';
+      if (k.key === "global_rank") {
+        return '<span class="up-explain-row">' + rangHtml(1) + '</span>';
+      }
+      return '<span class="up-explain-row">' + esc(UC.fmtPct(k.key === "domain_share" ? 99.2 : 11.6, 1)) + '</span>';
+    }
+    /* Die Platzziffer an einer Stelle: das Gitter braucht sie, die Erklaerkarte auch, und zwei
+       Kopien laufen auseinander. */
+    /* UC.HASH_ICON kommt OHNE Klasse -- visibility-chart und performance-radar haengen sie
+       genauso selbst an. Ohne .up-hash faellt die Raute auf currentColor und die Groesse des
+       Textes zurueck; mit ihr steht sie in der dritten Farbe, und die Zeile darunter macht sie
+       zwei Punkt kleiner als die Zahl daneben. */
+    var HASH = UC.HASH_ICON ? UC.HASH_ICON.replace("<svg ", '<svg class="up-hash" ') : "";
+    function rangHtml(n) {
+      return '<span class="up-rank-group uud-rank">' + HASH +
+             '<span class="uud-kpi-num">' + esc(String(n)) + '</span></span>';
+    }
     function kpiWert(k) {
       var v = d()[k.key];
       if (k.typ) {
@@ -379,8 +399,7 @@
         var r = num(v);
         /* Platzziffer, kein Durchschnittsrang: #1 ist die meistzitierte Seite des Zeitraums.
            Die Nachkommastelle aus der Rang-Regel gilt dem Durchschnitt, nicht einer Position. */
-        return r == null ? LEER : '<span class="up-rank-group">' + UC.HASH_ICON +
-               '<span class="uud-kpi-num">' + esc(String(Math.round(r))) + '</span></span>';
+        return r == null ? LEER : rangHtml(Math.round(r));
       }
       var p = num(v);
       if (p == null) return LEER;
@@ -400,24 +419,9 @@
       }).join("");
     }
 
-    function renderHead() {
-      var p = d();
-      var titel = txt(p.title) || txt(p.url);
-      elTitle.textContent = titel;
-      var dom = txt(p.domain);
-      elDomain.textContent = dom;
-      elDomain.setAttribute("href", txt(p.url) || ("https://" + dom));
-      var fav = txt(p.favicon);
-      var buchst = (dom.charAt(0) || "?").toUpperCase();
-      elLogo.className = "up-logo-box uud-logobox" + (fav ? " has-img" : "");
-      elLogo.innerHTML = '<span class="up-logo-ltr">' + esc(buchst) + '</span>' +
-        (fav ? '<img src="' + esc(fav) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
-               ' onerror="this.parentNode.classList.remove(\'has-img\'); this.remove()"/>' : "");
-    }
-
     function renderMents() {
       var liste = isArr(d().companies) ? d().companies : [];
-      elMentCard.hidden = !liste.length;
+      elMentSect.hidden = !liste.length;
       if (!liste.length) { elMents.innerHTML = ""; return; }
       elMents.innerHTML = liste.map(function (c) {
         var name = txt(c && (c.company_name || c.name));
@@ -441,7 +445,7 @@
     function renderEmbed() {
       var url = txt(d().url);
       var a = anbieterFuer(url);
-      elEmbedCard.hidden = !a;
+      elEmbedSect.hidden = !a;
       if (!a) {
         elEmbed.innerHTML = ""; state.embedKey = ""; state.oembed = null;
         /* Auch die Beschriftung raeumen: sie steht sonst beim naechsten Anbieter kurz mit dem
@@ -512,7 +516,7 @@
       /* Neben einem Embed keine SEO-Beschreibung: bei einem Video oder Post ist der Beitrag der
          Inhalt, und die Meta-Zeile ist dort meist der automatische Text der Plattform. */
       var zeigen = !!t && !anbieterFuer(txt(d().url));
-      elMetaCard.hidden = !zeigen;
+      elMetaSect.hidden = !zeigen;
       if (zeigen) elMeta.textContent = entities(t);
     }
     /* Die Beschreibung kommt HTML-kodiert aus dem Crawl ("Techno &amp; Elektro"). Einmal
@@ -537,39 +541,64 @@
           t = (o && typeof o === "object" && txt(o.summary)) || s;
         }
       }
-      elSumCard.hidden = !t;
+      elSumSect.hidden = !t;
       if (t) elSum.textContent = t;
     }
 
     /* ---- Citation Conversion ----------------------------------------------------------------- */
-    var bars = UC.makeBarList ? UC.makeBarList({
-      mount: elConv,
-      isDark: dunkel,
-      labelCol: function () { return true; },
-      fmt: function (v) { return UC.fmtPct(v, 1); }
-    }) : null;
 
+    /* Eine kompakte Tabelle, keine Balkenliste: hier stehen drei Zahlen je Marke nebeneinander
+       (zitiert, genannt, Quote), und die liest man in Spalten, nicht in Balkenlaengen.
+       Warum NICHT .up-row aus core als Raster: das ist das Gitter der grossen Tabellen -- 72px
+       hohe Zeilen, verschiebbare Spalten, var(--up-cols). Hier stehen vier feste Spalten in einem
+       Abschnitt. core loest denselben Fall selbst so: .up-vartable schaltet .up-row auf
+       display:flex zurueck, weil sein Raster nicht passt. Dieselbe Ausnahme, hier noch einmal --
+       Kopf- und Zellenaussehen borgt sie sich weiter bei .up-thead/.up-th/.up-td, damit sie wie
+       eine Tabelle dieser App liest. */
     function renderConv() {
       var rows = state.conv || [];
-      elConvCard.hidden = !rows.length;
-      if (!rows.length) { if (bars) bars.render([]); return; }
-      /* Die eigene Marke bekommt die Markenfarbe, die uebrigen die Wettbewerbsfarbe -- dieselbe
-         Trennung wie ueberall in der App: es geht um "wir" gegen "die anderen", nicht um sieben
-         Farben ohne Ordnung. */
-      var eigen = UC.typeColor("You", "citation", dunkel());
-      var fremd = UC.typeColor("Competition", "citation", dunkel());
-      var items = rows.slice().sort(function (a, b) {
-        return (num(b.citation_conversion_pct) || 0) - (num(a.citation_conversion_pct) || 0);
-      }).map(function (r) {
-        return {
-          key: txt(r.company_id) || txt(r.company_name),
-          name: txt(r.company_name),
-          logo: txt(r.logo_url),
-          color: txt(r.role) === "own" ? eigen : fremd,
-          share: num(r.citation_conversion_pct) || 0
-        };
+      elConvSect.hidden = !rows.length;
+      if (!rows.length) { elConv.innerHTML = ""; return; }
+      var sortiert = rows.slice().sort(function (x, y) {
+        return (num(y.citation_conversion_pct) || 0) - (num(x.citation_conversion_pct) || 0);
       });
-      if (bars) bars.render(items);
+      elConv.innerHTML =
+        '<div class="uud-ctable">' +
+          '<div class="up-thead uud-crow">' +
+            '<div class="up-th uud-cbrand">Brand</div>' +
+            '<div class="up-th uud-cnum">Cited</div>' +
+            '<div class="up-th uud-cnum">Mentioned</div>' +
+            '<div class="up-th uud-cnum">Conversion</div>' +
+          '</div>' +
+          sortiert.map(function (r) {
+            var name = txt(r.company_name);
+            var logo = txt(r.logo_url);
+            var buchst = (name.charAt(0) || "?").toUpperCase();
+            var pct = num(r.citation_conversion_pct);
+            /* Eigene Marke in der You-Farbe, alle anderen in der Wettbewerbsfarbe -- dieselbe
+               Trennung wie ueberall: "wir" gegen "die anderen". */
+            var farbe = UC.typeColor(txt(r.role) === "own" ? "You" : "Competition", "citation", dunkel());
+            return '<div class="up-row uud-crow uud-cbody" data-brand="' + esc(txt(r.company_id)) +
+                     '" role="button" tabindex="0">' +
+              '<div class="up-td uud-cbrand">' +
+                '<span class="up-ment-logo' + (logo ? " has-img" : "") + '">' +
+                  '<span class="up-model-ltr">' + esc(buchst) + '</span>' +
+                  (logo ? '<img src="' + esc(logo) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
+                          ' onerror="this.parentNode.classList.remove(\'has-img\'); this.remove()"/>' : "") +
+                '</span>' +
+                '<span class="uud-cname">' + esc(name) + '</span>' +
+              '</div>' +
+              '<div class="up-td uud-cnum"><span class="up-num">' + esc(UC.fmtInt(num(r.cited_runs) || 0)) + '</span></div>' +
+              '<div class="up-td uud-cnum"><span class="up-num">' + esc(UC.fmtInt(num(r.mentioned_runs) || 0)) + '</span></div>' +
+              '<div class="up-td uud-cnum">' +
+                (pct == null ? LEER :
+                  '<span class="up-tag uud-cpct" style="color:' + esc(farbe) + ';background:' +
+                    esc(dunkel() ? UC.CHIP_BG_DARK : UC.tint(farbe, 0.12)) + '">' +
+                    '<span class="up-tag-lbl">' + esc(UC.fmtPct(pct, 1)) + '</span></span>') +
+              '</div>' +
+            '</div>';
+          }).join("") +
+        '</div>';
     }
 
     /* ---- Render ------------------------------------------------------------------------------ */
@@ -583,7 +612,6 @@
          des vorigen Aufrufs im Dokument stehen, und das Skelett lag daneben ueber alten Zahlen --
          gemessen: nach reset stand "23. Aug 2026" weiter in der Zelle. Mit state.data === null
          ergeben sie leere Zellen, und die CSS legt den Puls darueber. */
-      renderHead();
       renderKpis();
       if (state.loading) return;
       renderMents();
@@ -595,20 +623,22 @@
 
     /* ---- Klicks ------------------------------------------------------------------------------ */
     root.addEventListener("click", function (e) {
-      var chip = e.target.closest && e.target.closest(".uud-ment");
-      if (chip) {
+      /* Chip und Tabellenzeile feuern DASSELBE Ereignis -- es ist derselbe Sprung zur Marke, und
+         zwei Ereignisse fuer einen Weg sind eines zu viel. */
+      var ziel = e.target.closest && e.target.closest(".uud-ment, .uud-cbody");
+      if (ziel) {
         fire("data-brand-fn", "uudBrand", {
-          company_id: chip.getAttribute("data-brand") || "",
-          company_name: (chip.querySelector(".up-ment-name") || {}).textContent || ""
+          company_id: ziel.getAttribute("data-brand") || "",
+          company_name: ((ziel.querySelector(".up-ment-name") || ziel.querySelector(".uud-cname")) || {}).textContent || ""
         });
       }
     });
     root.addEventListener("keydown", function (e) {
       if (e.key !== "Enter" && e.key !== " ") return;
-      var chip = e.target.closest && e.target.closest(".uud-ment");
-      if (!chip) return;
+      var ziel2 = e.target.closest && e.target.closest(".uud-ment, .uud-cbody");
+      if (!ziel2) return;
       e.preventDefault();
-      chip.click();
+      ziel2.click();
     });
 
     if (UC.onTheme) UC.onTheme(function (dark) {
@@ -660,7 +690,7 @@
         elEmbed.innerHTML = "";
         elEmbedTitle.textContent = ""; elEmbedDesc.textContent = "";
         elMents.innerHTML = ""; elMeta.textContent = ""; elSum.textContent = "";
-        if (bars) bars.render([]);
+        elConv.innerHTML = "";
         render();
         return true;
       }

@@ -15,69 +15,55 @@
    gewonnen und nicht ueber ein !important. */
 .uud-root > [hidden] { display: none; }
 
-.uud-card {
-  border: 1px solid var(--vc-border); border-radius: 16px; background: var(--vc-bg);
-  padding: 16px; width: 100%; box-sizing: border-box;
-}
-
-/* ---- Kopf ------------------------------------------------------------------------------------
-   Favicon, Titel, Domain. Das Favicon ist .up-logo-box aus core in seiner vollen Groesse (24px) --
-   hier ist es die Identitaet der Seite und nicht eine Marke in einer Zeile. */
-.uud-head { display: flex; align-items: center; gap: 12px; min-height: 32px; }
-.uud-headtxt { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; }
-.uud-title {
-  font-size: 15px; font-weight: 500; color: var(--vc-text); line-height: 1.35;
-  /* Zwei Zeilen, dann Auslassungspunkte: ein Seitentitel ist oft ein ganzer Satz, und eine
-     einzige Zeile schneidet ihn genau dort ab, wo das Thema steht. */
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-}
-.uud-domain {
-  font-size: 12.5px; color: var(--vc-muted); text-decoration: none;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
-  transition: color 160ms cubic-bezier(.4, 0, .2, 1);
-}
-.uud-domain:hover { color: var(--vc-text); text-decoration: underline; }
+/* Abschnitt, keine Karte. Wie in response-detail: die Ueberschrift traegt den Block, nicht ein
+   Rahmen. Umrandet ist nur, was fremden Inhalt haelt (das Embed) oder eine Tabelle ist. */
+.uud-sect { width: 100%; box-sizing: border-box; }
 
 /* ---- KPI-Leiste ------------------------------------------------------------------------------
-   Wert oben, Ueberschrift darunter -- die Anordnung des bisherigen Typ-Elements, damit die Leiste
-   sich nicht neu erklaeren muss. auto-fit statt einer festen Spaltenzahl: sechs Felder passen auf
-   einem breiten Schirm in eine Zeile und brechen darunter von selbst, ohne dass eine Stufe
-   dazwischen geraten werden muss. */
+   Wert oben, Ueberschrift darunter, beides MITTIG -- die Anordnung des bisherigen Typ-Elements,
+   damit die Leiste sich nicht neu erklaeren muss.
+   auto-fit statt einer festen Spaltenzahl: sechs Felder passen auf einem breiten Schirm in eine
+   Zeile und brechen darunter von selbst. 120px, gemessen und nicht geraten: bei 860px Wurzel --
+   der Breite im Drawer -- bleiben nach fuenf Luecken 748px fuer sechs Spalten, also 124 je
+   Spalte; mit 132 brach die Leiste dort in zwei Zeilen. */
 .uud-kpis {
-  margin-top: 20px; display: grid; gap: 16px;
-  /* 120px, gemessen und nicht geraten: bei 860px Wurzelbreite -- der Breite, in der diese Seite
-     im Drawer steht -- bleiben nach 16px Polsterung und fuenf Luecken 748px fuer sechs Spalten,
-     also 124 je Spalte. Mit 132 brach die Leiste dort in zwei Zeilen. */
+  display: grid; gap: 16px;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
 }
-.uud-kpi { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; min-width: 0; }
-/* 28px: die Hoehe von .up-tag (24px) plus Luft, damit eine Zeile mit Chip und eine Zeile mit
-   Zahl gleich hoch sind und die Ueberschriften darunter auf einer Linie stehen. */
-.uud-kpi-val { display: flex; align-items: center; min-height: 28px; min-width: 0; max-width: 100%; }
+.uud-kpi { display: flex; flex-direction: column; gap: 6px; align-items: center; min-width: 0; }
+/* 28px: die Hoehe von .up-tag (24) plus Luft, damit eine Zeile mit Chip und eine mit Zahl gleich
+   hoch sind und die Ueberschriften darunter auf einer Linie stehen. */
+.uud-kpi-val { display: flex; align-items: center; justify-content: center;
+  min-height: 28px; min-width: 0; max-width: 100%; }
 .uud-kpi-num { font-size: 15px; font-weight: 500; color: var(--vc-text); font-variant-numeric: tabular-nums; }
+/* Die Raute steht in der dritten Farbe und zwei Punkt kleiner als die Zahl daneben: sie ist die
+   Einheit, nicht der Wert. Farbe kommt aus core (.up-hash), hier nur die Groesse -- 15 - 2 = 13. */
+.uud-rank .up-hash { width: 13px; height: 13px; }
 .uud-kpi-lbl {
-  display: inline-flex; align-items: center;
+  display: inline-flex; align-items: center; justify-content: center;
   font-size: 12px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase;
-  color: var(--vc-third); white-space: nowrap;
+  color: var(--vc-third); white-space: nowrap; text-align: center;
 }
 /* Das Info-Symbol ist .up-th-info aus core. Zwei Dinge muessen anders sein, genau wie in
    domain-detail: core schiebt es mit margin-left:auto ans Ende einer Kopfzelle, hier soll es
    NEBEN der Ueberschrift stehen; und core deckt es bei .up-th:hover auf, ein .up-th gibt es hier
-   nicht. Groesse, Farbe und Uebergang bleiben unveraendert aus core. */
+   nicht. 6px Abstand, weil es sonst am Wort klebt -- ohne die Regel erbt es das auto und steht
+   ohne jede Luecke. Groesse, Farbe und Uebergang bleiben unveraendert aus core. */
 .uud-info { margin-left: 6px; }
 .uud-kpi:hover .uud-info { opacity: 1; }
 
 /* ---- Abschnittskoepfe ------------------------------------------------------------------------ */
-.uud-sec { display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px; }
-.uud-sec-row { flex-direction: row; align-items: flex-start; justify-content: space-between; gap: 16px; }
+/* Wortgleich .urd-sec aus response-detail: die Ueberschriftzeile ist eine ZEILE, der Text darin
+   eine Spalte. So sitzt spaeter ein Knopf daneben und nicht darunter. */
+.uud-sec { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px;
+  margin-bottom: 16px; }
 .uud-sec-txt { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .uud-sec-title { font-size: 14px; font-weight: 500; color: var(--vc-text); }
 .uud-sec-desc { font-size: 12.5px; font-weight: 400; line-height: 1.45; color: var(--vc-muted); }
 
 /* ---- Mentions --------------------------------------------------------------------------------
-   Die Chips sind .up-entchip is-soft up-chiphover aus core, wortgleich wie in response-detail.
-   Hier steht nur, wie sie liegen. */
-.uud-ments { display: flex; flex-wrap: wrap; gap: 8px; }
+   Die Liste ist .up-mentlist aus core, eine Stufe groesser (is-lg, 40px). Alles -- Polsterung,
+   Radius, Logo, Schrift -- rechnet dort aus der Hoehe; hier steht nichts mehr. */
 
 /* ---- Embed -----------------------------------------------------------------------------------
    Zwei Bauarten in einem Rahmen: mit Seitenverhaeltnis (Video) oder mit fester Hoehe (Post).
@@ -131,25 +117,41 @@
   font-size: 13px; line-height: 1.45; color: var(--vc-text);
 }
 
+/* ---- Conversion-Tabelle ----------------------------------------------------------------------
+   Vier feste Spalten, flach. Kopf- und Zellenaussehen kommen aus core (.up-thead/.up-th/.up-td),
+   das Raster NICHT: .up-row ist dort ein Gitter aus var(--up-cols) fuer die grossen Tabellen mit
+   verschiebbaren Spalten und 72px Zeilen. Hier ist es eine Zeile in einem Abschnitt. core loest
+   denselben Fall selbst so -- .up-vartable schaltet .up-row auf flex zurueck.
+   Drei Selektorteile, damit die flex-Regel die Gitter-Regel aus core schlaegt und nicht die
+   Ladereihenfolge entscheidet. */
+.uud-ctable { border: 1px solid var(--vc-border); border-radius: 12px; overflow: hidden; }
+/* .check_reinvention.py meldet die naechste Zeile als gesprengtes Bauteil: sie setzt display
+   und laesst grid-template-columns stehen. Genau das ist hier richtig und core macht es an
+   .up-vartable selbst -- das Gitter aus var(--up-cols) gehoert den grossen Tabellen mit
+   verschiebbaren Spalten. Vier feste Spalten in einem Abschnitt brauchen es nicht, und mit
+   dem Gitter erbten sie die Spalten der zuletzt definierten Tabelle. */
+.uud-ctable .up-thead.uud-crow { display: flex; height: 40px; flex: 0 0 40px; }
+.uud-ctable .up-row.uud-crow { display: flex; height: 52px; flex: 0 0 52px; cursor: pointer; }
+.uud-ctable .up-row.uud-crow + .up-row.uud-crow { border-top: 1px solid var(--vc-border); }
+.uud-ctable .up-row.uud-crow:hover { background: var(--vc-heading-bg); }
+.uud-ctable .up-row.uud-crow:focus-visible { outline: 2px solid var(--vc-text); outline-offset: -2px; }
+.uud-cbrand { flex: 1 1 auto; min-width: 0; }
+.uud-cnum { flex: 0 0 108px; justify-content: flex-end; }
+.uud-cname { font-size: 13.5px; font-weight: 500; color: var(--vc-text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+/* Der Prozentwert steht als .up-tag, aber ohne Punkt: er ist kein Typ, er ist eine Zahl mit
+   Zugehoerigkeit -- die Farbe sagt "wir" oder "die anderen". */
+.uud-cpct { font-variant-numeric: tabular-nums; }
+
 /* ---- Ladezustand -----------------------------------------------------------------------------
-   Kein eigenes Skelett-Markup: die Karten stehen bereits, sie bekommen nur den Puls von core
-   (.up-sk) auf ihre Flaechen. Ein zweiter Aufbau nur fuers Laden waere ein zweiter Aufbau, den
-   jemand pflegen muss. Der Puls ist uutpulse aus core -- derselbe Name, dieselbe Dauer wie an
-   jedem Skelettbalken der App, damit nicht zwei Pulse nebeneinander unterschiedlich schlagen. */
-.uud-root.is-loading .uud-mentcard,
-.uud-root.is-loading .uud-embedcard,
-.uud-root.is-loading .uud-metacard,
-.uud-root.is-loading .uud-sumcard,
-.uud-root.is-loading .uud-convcard { display: none; }
-.uud-root.is-loading .uud-title,
-.uud-root.is-loading .uud-domain {
-  color: transparent; border-radius: 6px; background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite;
-}
-.uud-root.is-loading .uud-title { width: 60%; height: 15px; }
-.uud-root.is-loading .uud-domain { width: 30%; height: 12px; }
-.uud-root.is-loading .uud-logobox {
-  background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite;
-}
+   Kein eigenes Skelett-Markup: die Abschnitte stehen bereits, sie bekommen nur den Puls von core
+   (uutpulse, derselbe Name und dieselbe Dauer wie an jedem Skelettbalken der App) auf ihre
+   Flaechen. Ein zweiter Aufbau nur fuers Laden waere ein zweiter Aufbau, den jemand pflegen muss. */
+.uud-root.is-loading .uud-sect-ments,
+.uud-root.is-loading .uud-sect-embed,
+.uud-root.is-loading .uud-sect-meta,
+.uud-root.is-loading .uud-sect-sum,
+.uud-root.is-loading .uud-sect-conv { display: none; }
 .uud-root.is-loading .uud-kpi-val::before {
   content: ""; display: block; width: 56px; height: 15px; border-radius: 6px;
   background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite;
@@ -160,6 +162,9 @@
    is-narrow/is-vnarrow kommen von UC.widthTiers und messen die EIGENE Box, nicht das Fenster --
    diese Seite kann in einem Drawer stehen, der auf einem breiten Schirm schmal ist. */
 .uud-root.is-narrow .uud-kpis { grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); gap: 14px; }
+.uud-root.is-narrow .uud-cnum { flex: 0 0 88px; }
 .uud-root.is-vnarrow .uud-kpis { grid-template-columns: 1fr 1fr; gap: 12px; }
-.uud-root.is-vnarrow .uud-card { padding: 14px; }
-.uud-root.is-vnarrow .uud-title { font-size: 14px; }
+/* Ganz schmal fallen die zwei mittleren Spalten weg: Quote und Marke tragen die Aussage, die
+   Rohzahlen sind das Detail dahinter. */
+.uud-root.is-vnarrow .uud-ctable .uud-cnum:nth-child(2),
+.uud-root.is-vnarrow .uud-ctable .uud-cnum:nth-child(3) { display: none; }

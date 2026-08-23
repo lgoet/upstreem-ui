@@ -112,7 +112,7 @@
         '</div></div>' +
         /* Keine Karte um die Chips: sie tragen selbst schon einen Rahmen, und ein Rahmen im
            Rahmen liest sich als zwei Ebenen, wo es nur eine gibt. */
-        '<div class="urd-ments"></div>' +
+        '<div class="urd-ments up-mentlist"></div>' +
       '</div>' +
 
       '<div class="urd-sect urd-sect-body">' +
