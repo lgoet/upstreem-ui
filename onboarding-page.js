@@ -651,6 +651,16 @@
     }
     function istJa(v) { return UC.isYes ? UC.isYes(v) : /^(yes|true|1)$/i.test(txt(v)); }
     var demo = istJa(attr("data-demo"));
+    /* Der Demobetrieb zeigt erfundene Daten so, als waeren es echte, und laesst die Uhren
+       ohne Workflow durchlaufen -- die schlimmste Art von stillem Ausfall: es sieht nicht
+       kaputt aus, es sieht fertig aus. Am 23.08. lief eine Installation genau so, und nichts
+       deutete darauf hin; gesucht wurde am Pin und an den Workflows.
+       Die Zeile erscheint NUR, wenn das Attribut wirklich auf yes steht -- ohne Demobetrieb
+       bleibt die ausgelieferte App still. Sie ist keine Debug-Ausgabe, sondern die Meldung
+       eines Zustands, den man von aussen nicht erkennen kann. */
+    if (demo && window.console) console.warn('[onboarding] data-demo="yes" am Element: ' +
+      'die Seite zeigt BEISPIELDATEN und laesst die Uhren ohne Workflow laufen. ' +
+      'Fuer den Echtbetrieb das Attribut auf "no" setzen.');
 
     /* ---- Zustand ------------------------------------------------------------------------- */
     var state = {
