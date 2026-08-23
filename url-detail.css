@@ -49,7 +49,16 @@
    NEBEN der Ueberschrift stehen; und core deckt es bei .up-th:hover auf, ein .up-th gibt es hier
    nicht. 6px Abstand, weil es sonst am Wort klebt -- ohne die Regel erbt es das auto und steht
    ohne jede Luecke. Groesse, Farbe und Uebergang bleiben unveraendert aus core. */
-.uud-info { margin-left: 6px; }
+/* 8px Abstand -- und links dieselben 8px plus die Symbolbreite als Polsterung. Das ist der Grund,
+   warum die Zahl darueber vorher nach rechts versetzt aussah: das Symbol steht IM Fluss der
+   Ueberschrift, also zentriert die Zeile "Wort + Luecke + Symbol" -- und das Wort rutscht um die
+   halbe Symbolbreite nach links, waehrend der Wert auf der Zellenmitte bleibt. Gemessen waren
+   Zellenmitte und Wertmitte beide 84, die Schrift der Ueberschrift aber nicht.
+   Mit der Polsterung links ist die Zeile symmetrisch und das WORT steht mittig -- genau unter
+   dem Wert. Das Symbol bleibt im Fluss und kann damit nichts ueberlappen.
+   14px ist die Symbolbreite aus core (.up-th-info svg), 8 der bestellte Abstand. */
+.uud-info { margin-left: 8px; }
+.uud-kpi-lbl { padding-left: 22px; }
 .uud-kpi:hover .uud-info { opacity: 1; }
 
 /* ---- Abschnittskoepfe ------------------------------------------------------------------------ */
@@ -100,6 +109,16 @@
 }
 .uud-fallback:hover { background: var(--vc-heading-bg); }
 
+/* ---- Zitatstrich -----------------------------------------------------------------------------
+   Ein 1px breiter Strich in der Rahmenfarbe links neben dem Text, 16px Abstand. Er steht IM
+   Textbehaelter, nicht neben der Ueberschrift: die Ueberschrift benennt den Abschnitt, der Strich
+   markiert den fremden Text darunter -- die Meta-Beschreibung und die Zusammenfassung sind beide
+   nicht unsere Worte.
+   stretch statt einer festen Hoehe: der Strich ist so hoch wie der Text, den er begleitet, und
+   das gilt fuer eine Zeile genauso wie fuer zehn. */
+.uud-quote { display: flex; align-items: stretch; gap: 16px; }
+.uud-rule { flex: 0 0 1px; width: 1px; background: var(--vc-border); border-radius: 1px; }
+
 /* ---- Textkarten ------------------------------------------------------------------------------ */
 .uud-text {
   margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--vc-text);
@@ -124,7 +143,11 @@
    denselben Fall selbst so -- .up-vartable schaltet .up-row auf flex zurueck.
    Drei Selektorteile, damit die flex-Regel die Gitter-Regel aus core schlaegt und nicht die
    Ladereihenfolge entscheidet. */
-.uud-ctable { border: 1px solid var(--vc-border); border-radius: 12px; overflow: hidden; }
+/* Nur so breit wie ihr Inhalt, aber nie schmaler als ein Drittel der Seite: zwei Spalten in
+   voller Breite lassen die Quote am rechten Rand allein stehen, und eine Tabelle, die auf zwei
+   kurze Namen zusammenschrumpft, sieht aus wie ein Rest. */
+.uud-ctable { border: 1px solid var(--vc-border); border-radius: 12px; overflow: hidden;
+  width: fit-content; min-width: 33%; max-width: 100%; }
 /* .check_reinvention.py meldet die naechste Zeile als gesprengtes Bauteil: sie setzt display
    und laesst grid-template-columns stehen. Genau das ist hier richtig und core macht es an
    .up-vartable selbst -- das Gitter aus var(--up-cols) gehoert den grossen Tabellen mit
@@ -132,16 +155,24 @@
    dem Gitter erbten sie die Spalten der zuletzt definierten Tabelle. */
 .uud-ctable .up-thead.uud-crow { display: flex; height: 40px; flex: 0 0 40px; }
 .uud-ctable .up-row.uud-crow { display: flex; height: 52px; flex: 0 0 52px; cursor: pointer; }
-.uud-ctable .up-row.uud-crow + .up-row.uud-crow { border-top: 1px solid var(--vc-border); }
+/* KEIN border-top hier: .up-row aus core traegt bereits eine Trennlinie unten. Beides zusammen
+   ergab zwei Linien uebereinander -- gemessen 1px unten plus 1px oben, also eine 2px dicke
+   Gridline. Die letzte Zeile bekommt ihre untere Linie vom Rahmen der Tabelle geschluckt. */
+.uud-ctable .up-row.uud-crow:last-child { border-bottom: 0; }
 .uud-ctable .up-row.uud-crow:hover { background: var(--vc-heading-bg); }
 .uud-ctable .up-row.uud-crow:focus-visible { outline: 2px solid var(--vc-text); outline-offset: -2px; }
-.uud-cbrand { flex: 1 1 auto; min-width: 0; }
+/* 64px rechts: der Abstand zur Quote gehoert zur Markenspalte, nicht als Luecke dazwischen --
+   so bleibt er auch dann stehen, wenn die Tabelle auf ihre Mindestbreite geht. Die 12px
+   Grundpolsterung von .up-td bleiben links. */
+.uud-cbrand { flex: 1 1 auto; min-width: 0; padding-right: 64px; }
 .uud-cnum { flex: 0 0 108px; justify-content: flex-end; }
 .uud-cname { font-size: 13.5px; font-weight: 500; color: var(--vc-text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-/* Der Prozentwert steht als .up-tag, aber ohne Punkt: er ist kein Typ, er ist eine Zahl mit
-   Zugehoerigkeit -- die Farbe sagt "wir" oder "die anderen". */
-.uud-cpct { font-variant-numeric: tabular-nums; }
+/* Shape, Luecke, Zahl. Die Farbe traegt der Shape (UC.sentColor: rot schlecht, gruen gut), die
+   Zahl steht in der Primaerfarbe -- ein farbiger Zahlenwert liest sich als Warnung, nicht als
+   Messwert. 8px Radius wie an jedem kleinen Traeger der App, 10px Kante. */
+.uud-cpct { display: inline-flex; align-items: center; gap: 8px; }
+.uud-cdot { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto; }
 
 /* ---- Ladezustand -----------------------------------------------------------------------------
    Kein eigenes Skelett-Markup: die Abschnitte stehen bereits, sie bekommen nur den Puls von core
@@ -164,7 +195,7 @@
 .uud-root.is-narrow .uud-kpis { grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); gap: 14px; }
 .uud-root.is-narrow .uud-cnum { flex: 0 0 88px; }
 .uud-root.is-vnarrow .uud-kpis { grid-template-columns: 1fr 1fr; gap: 12px; }
-/* Ganz schmal fallen die zwei mittleren Spalten weg: Quote und Marke tragen die Aussage, die
-   Rohzahlen sind das Detail dahinter. */
-.uud-root.is-vnarrow .uud-ctable .uud-cnum:nth-child(2),
-.uud-root.is-vnarrow .uud-ctable .uud-cnum:nth-child(3) { display: none; }
+/* Ganz schmal darf die Tabelle die volle Breite nehmen -- ein Drittel von 380px waeren 127px,
+   und darin steht kein Markenname. */
+.uud-root.is-vnarrow .uud-ctable { width: 100%; }
+.uud-root.is-vnarrow .uud-cbrand { padding-right: 16px; }

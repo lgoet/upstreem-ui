@@ -224,7 +224,7 @@
           '<span class="uud-sec-title">Mentions</span>' +
           '<span class="uud-sec-desc">Relevant brands referenced on this page</span>' +
         '</div></div>' +
-        '<div class="uud-ments up-mentlist is-lg"></div>' +
+        '<div class="uud-ments up-mentlist"></div>' +
       '</div>' +
 
       '<div class="uud-sect uud-sect-embed" hidden>' +
@@ -240,7 +240,8 @@
           '<span class="uud-sec-title">Meta Description</span>' +
           '<span class="uud-sec-desc">The page\'s SEO description</span>' +
         '</div></div>' +
-        '<p class="uud-text uud-meta"></p>' +
+        '<div class="uud-quote"><span class="uud-rule"></span>' +
+          '<p class="uud-text uud-meta"></p></div>' +
       '</div>' +
 
       '<div class="uud-sect uud-sect-sum" hidden>' +
@@ -248,7 +249,8 @@
           '<span class="uud-sec-title">AI Summary</span>' +
           '<span class="uud-sec-desc">High-level summary of this page</span>' +
         '</div></div>' +
-        '<p class="uud-text uud-sum"></p>' +
+        '<div class="uud-quote"><span class="uud-rule"></span>' +
+          '<p class="uud-text uud-sum"></p></div>' +
       '</div>' +
 
       '<div class="uud-sect uud-sect-conv" hidden>' +
@@ -566,8 +568,6 @@
         '<div class="uud-ctable">' +
           '<div class="up-thead uud-crow">' +
             '<div class="up-th uud-cbrand">Brand</div>' +
-            '<div class="up-th uud-cnum">Cited</div>' +
-            '<div class="up-th uud-cnum">Mentioned</div>' +
             '<div class="up-th uud-cnum">Conversion</div>' +
           '</div>' +
           sortiert.map(function (r) {
@@ -575,9 +575,6 @@
             var logo = txt(r.logo_url);
             var buchst = (name.charAt(0) || "?").toUpperCase();
             var pct = num(r.citation_conversion_pct);
-            /* Eigene Marke in der You-Farbe, alle anderen in der Wettbewerbsfarbe -- dieselbe
-               Trennung wie ueberall: "wir" gegen "die anderen". */
-            var farbe = UC.typeColor(txt(r.role) === "own" ? "You" : "Competition", "citation", dunkel());
             return '<div class="up-row uud-crow uud-cbody" data-brand="' + esc(txt(r.company_id)) +
                      '" role="button" tabindex="0">' +
               '<div class="up-td uud-cbrand">' +
@@ -588,13 +585,18 @@
                 '</span>' +
                 '<span class="uud-cname">' + esc(name) + '</span>' +
               '</div>' +
-              '<div class="up-td uud-cnum"><span class="up-num">' + esc(UC.fmtInt(num(r.cited_runs) || 0)) + '</span></div>' +
-              '<div class="up-td uud-cnum"><span class="up-num">' + esc(UC.fmtInt(num(r.mentioned_runs) || 0)) + '</span></div>' +
               '<div class="up-td uud-cnum">' +
                 (pct == null ? LEER :
-                  '<span class="up-tag uud-cpct" style="color:' + esc(farbe) + ';background:' +
-                    esc(dunkel() ? UC.CHIP_BG_DARK : UC.tint(farbe, 0.12)) + '">' +
-                    '<span class="up-tag-lbl">' + esc(UC.fmtPct(pct, 1)) + '</span></span>') +
+                  /* UC.sentColor ist die Gut/Schlecht-Skala dieser App: rot unter 25, orange bis 40,
+                     grau bis 60, hellgruen bis 75, gruen darueber -- dieselben Schwellen, die die
+                     Sentiment-Spalte in prompts-table und visibility-chart benutzen. Eine zweite
+                     Skala fuer denselben Gedanken waere eine Skala zu viel.
+                     Die Farbe traegt der Shape, die Zahl steht in der Primaerfarbe: der Wert soll
+                     lesbar sein, die Bewertung daneben stehen. */
+                  '<span class="uud-cpct">' +
+                    '<span class="uud-cdot" style="background:' + esc(UC.sentColor(pct)) + '"></span>' +
+                    '<span class="up-num">' + esc(UC.fmtPct(pct, 1)) + '</span>' +
+                  '</span>') +
               '</div>' +
             '</div>';
           }).join("") +
