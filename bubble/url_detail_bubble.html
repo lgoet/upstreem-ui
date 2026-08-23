@@ -101,3 +101,40 @@
      data-cdn-pin="CDN_PIN"
      data-isdark="IS_DARK"
      data-brand-fn="bubble_fn_uudBrand"></div>
+
+<script>
+(function(){
+  /* Loader nach STYLEGUIDE §26: den Pin ueber getElementsByClassName lesen, NIEMALS ueber
+     document.currentScript — Bubble fuehrt Scripts nicht in DOM-Reihenfolge aus. */
+  function readPin(cls){
+    var els = document.getElementsByClassName(cls), i, p;
+    for (i = 0; i < els.length; i++){
+      p = (els[i].getAttribute("data-cdn-pin") || "").trim();
+      if (p && p !== "CDN_" + "PIN") return p;
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("uud-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  /* Entdoppelt nach DATEINAME, nicht nach URL: zwei Elemente mit verschiedenen Pins ergeben sonst
+     zwei Dateien im Dokument, und welche gewinnt, entscheidet die Ladereihenfolge. Der erste Pin
+     gewinnt, ein zweiter wird gemeldet. */
+  function once(url, make){
+    var name = url.slice(url.lastIndexOf("/") + 1);
+    if (L[name]){
+      if (L[name] !== url && window.console) console.warn("upstreem: " + name +
+        " ist schon von einem anderen Pin geladen. Geladen bleibt " + L[name] +
+        ", ignoriert wird " + url + ". Setzt alle Elemente auf denselben Pin.");
+      return;
+    }
+    L[name] = url; make(url);
+  }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+
+  /* core zuerst, async=false haelt die Reihenfolge ein. */
+  css("core.css");            js("core.js");
+  css("url-detail.css");      js("url-detail.js");
+})();
+</script>
+
