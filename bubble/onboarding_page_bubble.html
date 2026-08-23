@@ -37,11 +37,6 @@
                        die Stelle leer statt ein kaputtes Bild zu zeigen.
        data-logo-dark  Optional: eigener Schriftzug fuer den Dark Mode. Fehlt er, gilt data-logo
                        auch dort.
-       data-demo       "yes" fuellt die Seite mit Beispieldaten und laesst die Uhren fest laufen
-                       (5s je Phase, also 20s, dann 10s). Fuer eine Testseite ohne Workflows.
-                       Die Daten stecken IN onboarding-page.js -- es ist nichts weiter zu laden
-                       und nichts weiter zu verdrahten, das Attribut genuegt. Im Betrieb auf
-                       "no" lassen oder ganz weglassen.
 
      ── EREIGNISSE ──────────────────────────────────────────────────────────────────────────
        uobStart   JSON-TEXT, nicht Objekt. Gemessener Payload, Schluessel in dieser Reihenfolge:
@@ -174,7 +169,6 @@
      data-isdark="IS_DARK"
      data-logo="LOGO_URL"
      data-logo-dark="LOGO_DARK_URL"
-     data-demo="no"
      data-start-fn="bubble_fn_uobStart"
      data-step-fn="bubble_fn_uobStep"
      data-select-fn="bubble_fn_uobSelect"

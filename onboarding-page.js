@@ -15,12 +15,6 @@
    Marken, Themen und Prompts sind FREIWILLIG. Wer nichts auswaehlt, kommt trotzdem weiter --
    deshalb steht neben Weiter ein sichtbarer Ueberspringen-Weg und keine stille Sperre.
 
-   ── Statisch und dynamisch in EINER Datei ───────────────────────────────────────────────────
-   data-demo="yes" fuellt die Seite mit den Beispieldaten (DEMO_DATEN, weiter unten in dieser
-   Datei) und laesst die Uhren fest laufen: fuenf Sekunden je Phase, also zwanzig, danach zehn.
-   Nichts nachzuladen, nichts zu verdrahten -- das Attribut genuegt. Ohne das Attribut passiert
-   nichts von selbst: dann fuettern die Setter unten, und die Phasen kommen aus dem
-   Statuspayload. Es sind DIESELBEN Zustaende, nicht zwei Fassungen.
 
    ── Bubble ──────────────────────────────────────────────────────────────────────────────────
    Ereignisse (data-*-fn am Root, sonst bubble_fn_<name>):
@@ -75,147 +69,6 @@
   function isArr(v) { return Object.prototype.toString.call(v) === "[object Array]"; }
   function txt(v) { return String(v == null ? "" : v).trim(); }
   function num(v) { var n = parseFloat(String(v == null ? "" : v).replace(",", ".")); return isFinite(n) ? n : null; }
-
-  /* ---------- Beispieldaten fuer den Demobetrieb ---------------------------------------------
-     Sie stehen HIER und nicht in einer zweiten Datei. Der erste Versuch hatte sie ausgelagert,
-     und genau daran ist er gescheitert: auf einer Seite, die diese Datei nicht mitlaedt, blieben
-     alle Listen leer, und die Ladeuhr stand still, weil im Demobetrieb sie es ist, die die
-     Phasen weiterschaltet. Eine Fassung, die von einer zweiten Datei abhaengt, ist keine
-     Fassung, die man einfach anschalten kann.
-
-     Projekt, Marken, Prompts und Tarife sind wortgleich die Payloads aus der Aufgabe. Erfunden
-     sind nur die Themen und die zusaetzlichen Prompts, weil es beides in der heutigen Fassung
-     noch nicht gibt.
-
-     Sie werden NUR gelesen, wenn am Element data-demo="yes" steht. Ohne das Attribut ruehrt
-     diese Komponente den Block nicht an. */
-  var DEMO_DATEN = {
-  
-    project: {
-      "id": "9346b43e-f7b9-4122-ad10-0869aaecc21d",
-      "user_id": "aea6e317-d901-419b-b2b2-5ca3573ea2f5",
-      "mode": "Brand",
-      "business_model": "B2B",
-      "brand_industry": "Lautsprecher / Beschallung",
-      "market_focus": null,
-      "website_input": "https://www.funktion-one.com",
-      "website_url": "https://funktion-one.com",
-      "website_domain": "funktion-one.com",
-      "status": "ready",
-      "run_group_uuid": null,
-      "status_phase": 5,
-      "status_label": "Finalizing insights",
-      "progress_percent": 100,
-      "last_error": null,
-      "created_at": "2026-08-20T11:52:29.900336+00:00",
-      "updated_at": "2026-08-20T11:52:29.97104+00:00",
-      "company_name": "Function One",
-      "summary": "Funktion-One ist ein Hersteller professioneller Lautsprechersysteme fuer Tourneen, Festivals, Arenen, Clubs und Installationen.",
-      "market": "DE",
-      "selected_billing_plan_id": null,
-      "billing_interval": null,
-      "stripe_checkout_session_id": null,
-      "stripe_checkout_url": null,
-      "team_id": null
-    },
-  
-    brands: [
-      { "id": "f6450b61-b104-44b8-a9f9-c9cd30f53c58", "name": "d&b audiotechnik", "domain": "dbaudio.com",
-        "url": "https://dbaudio.com", "favicon_url": "https://www.google.com/s2/favicons?domain=dbaudio.com&sz=64", "selected": false },
-      { "id": "56f0910d-a8dc-4f48-8f52-1d5bc86ba038", "name": "L-Acoustics", "domain": "l-acoustics.com",
-        "url": "https://l-acoustics.com", "favicon_url": "https://www.google.com/s2/favicons?domain=l-acoustics.com&sz=64", "selected": false },
-      { "id": "3d0c0160-25a0-475b-bab3-29b4f5cd120b", "name": "Meyer Sound", "domain": "meyersound.com",
-        "url": "https://meyersound.com", "favicon_url": "https://www.google.com/s2/favicons?domain=meyersound.com&sz=64", "selected": false },
-      { "id": "ae8e82b0-fb4f-4b56-a052-00cc730a97e2", "name": "KV2 Audio", "domain": "kv2audio.com",
-        "url": "https://kv2audio.com", "favicon_url": "https://www.google.com/s2/favicons?domain=kv2audio.com&sz=64", "selected": false },
-      { "id": "1ddc14fd-f7e1-4c83-98a6-4433b7b9222a", "name": "CODA Audio", "domain": "codaaudio.com",
-        "url": "https://codaaudio.com", "favicon_url": "https://www.google.com/s2/favicons?domain=codaaudio.com&sz=64", "selected": false },
-      { "id": "9a2fad22-cb7b-4acc-919f-da37972d6bcd", "name": "NEXO", "domain": "nexo-sa.com",
-        "url": "https://nexo-sa.com", "favicon_url": "https://www.google.com/s2/favicons?domain=nexo-sa.com&sz=64", "selected": false },
-      { "id": "1fff4526-d922-4305-820b-6ef33d607c7d", "name": "RCF", "domain": "rcf.it",
-        "url": "https://rcf.it", "favicon_url": "https://www.google.com/s2/favicons?domain=rcf.it&sz=64", "selected": false },
-      { "id": "422b43a8-ec22-49d3-ae0f-7c893b22b4e0", "name": "Electro-Voice", "domain": "electrovoice.com",
-        "url": "https://electrovoice.com", "favicon_url": "https://www.google.com/s2/favicons?domain=electrovoice.com&sz=64", "selected": false }
-    ],
-  
-    /* Sieben Themen. Ohne Emoji, wie verlangt -- der farbige Koerper traegt die Unterscheidung.
-       OHNE hex_light/hex_dark: die Farben kommen aus der Themenpalette von core, in ihrer
-       Reihenfolge. Handverlesene Werte standen hier einmal und ergaben einen Regenbogen ohne
-       Ordnung -- die Palette ist als Zeile durch den Farbkreis gebaut und liest sich als Folge.
-       Liefert die RPC eigene Farben mit, gewinnen die. */
-    topics: [
-      { "id": "t-line-array",  "name": "Line Array Systems",
-        "description": "Vertikal arraybare Systeme fuer grosse Flaechen" },
-      { "id": "t-touring",     "name": "Festival & Touring Sound",
-        "description": "Open Air, Tourneen, wechselnde Spielstaetten" },
-      { "id": "t-club",        "name": "Club & Nightlife",
-        "description": "Feste Installationen in Clubs und Bars" },
-      { "id": "t-spatial",     "name": "Spatial & Immersive Audio",
-        "description": "Objektbasiertes Mischen, raeumliche Wiedergabe" },
-      { "id": "t-amps",        "name": "Amplifiers & Rigging",
-        "description": "Endstufenracks, Traversen, Transporthardware" },
-      { "id": "t-efficiency",  "name": "Energy Efficiency",
-        "description": "Wirkungsgrad, Leistungsbedarf, Nachhaltigkeit" },
-      { "id": "t-venues",      "name": "Arenas & Venues",
-        "description": "Mehrzweckhallen, Theater, Arenen" }
-    ],
-  
-    /* Dreizehn Prompts. Die ersten vier sind wortgleich die aus der Aufgabe, nur mit topic_ids.
-       Vier davon tragen ZWEI Themen -- genau der Fall, an dem die Gruppierung sich beweisen muss:
-       jeder Prompt steht einmal, unter seinem ersten Thema, die uebrigen als Marken am Zeilenende. */
-    prompts: [
-      { "id": "p1",  "prompt_text": "beste Line-Array-Lautsprecher fuer Festivals und Arenatouren",
-        "market": "DE", "selected": false, "topic_ids": ["t-line-array", "t-touring"] },
-      { "id": "p2",  "prompt_text": "Welcher Pro-Audio-Hersteller bietet energieeffiziente Touring-PA-Systeme mit hoher Sprachverstaendlichkeit fuer Open-Air-Festivals?",
-        "market": "DE", "selected": false, "topic_ids": ["t-efficiency", "t-touring"] },
-      { "id": "p3",  "prompt_text": "Top Anbieter von raeumlichen Beschallungssystemen und Objekt-basiertem Mixing fuer Theater und Mehrzweckhallen in Europa",
-        "market": "DE", "selected": false, "topic_ids": ["t-spatial", "t-venues"] },
-      { "id": "p4",  "prompt_text": "vergleiche Hersteller von vertikal arraybaren Lautsprechersystemen und passenden Endstufenracks fuer grosse Konzertproduktionen",
-        "market": "DE", "selected": false, "topic_ids": ["t-line-array", "t-amps"] },
-      { "id": "p5",  "prompt_text": "welches Line-Array-System hat die beste Direktivitaetskontrolle bei langen Wurfweiten",
-        "market": "DE", "selected": false, "topic_ids": ["t-line-array"] },
-      { "id": "p6",  "prompt_text": "PA-System fuer ein Festival mit 20.000 Besuchern - welche Hersteller kommen infrage?",
-        "market": "DE", "selected": false, "topic_ids": ["t-touring"] },
-      { "id": "p7",  "prompt_text": "beste Clublautsprecher fuer elektronische Musik mit sauberem Tiefbass",
-        "market": "DE", "selected": false, "topic_ids": ["t-club"] },
-      { "id": "p8",  "prompt_text": "welche Beschallungsmarken werden in Technoclubs am haeufigsten verbaut?",
-        "market": "DE", "selected": false, "topic_ids": ["t-club"] },
-      { "id": "p9",  "prompt_text": "Loesungen fuer objektbasiertes Mischen in Theatern - Anbieter im Vergleich",
-        "market": "DE", "selected": false, "topic_ids": ["t-spatial"] },
-      { "id": "p10", "prompt_text": "welche Verstaerkerracks passen zu grossen Touring-Lautsprechersystemen?",
-        "market": "DE", "selected": false, "topic_ids": ["t-amps"] },
-      { "id": "p11", "prompt_text": "Lautsprecher mit hohem Wirkungsgrad - welche Hersteller brauchen am wenigsten Strom pro dB?",
-        "market": "DE", "selected": false, "topic_ids": ["t-efficiency"] },
-      { "id": "p12", "prompt_text": "Beschallungsanlage fuer eine Mehrzweckhalle - worauf kommt es bei der Auswahl an?",
-        "market": "DE", "selected": false, "topic_ids": ["t-venues"] },
-      { "id": "p13", "prompt_text": "welche Lautsprecherhersteller gelten als nachhaltig in der Veranstaltungstechnik?",
-        "market": "DE", "selected": false, "topic_ids": ["t-efficiency"] }
-    ],
-  
-    /* Die vier Zusatzfelder (description, ai_responses_per_month, ai_responses_more,
-       support_label) stehen so NICHT im Payload, den die RPC heute liefert. Sie sind die
-       Angaben von der Preisseite, und sie muessen dort auch her: die Antwortzahlen lassen sich
-       nicht rechnen (siehe antworten()). Bis die RPC sie mitschickt, zeigt die Karte die Zeile
-       mit den Antworten gar nicht -- lieber eine Zeile weniger als eine erfundene Zahl. */
-    plans: [
-      { "id": "54be31d2-dc61-4a5e-8ea0-31c4370a4cb3", "name": "Essential",
-        "description": "Get started with basic monitoring and analytics",
-        "monthly_price_eur": 89.00, "yearly_price_eur": 948.00,
-        "prompts_per_day": 50, "competitors_max_active": 5, "trial_days": 30, "sort_order": null,
-        "ai_responses_per_month": 4650, "support_label": "Standard email support" },
-      { "id": "3129be58-d59a-4221-ba53-7b2e4131cf5f", "name": "Professional",
-        "description": "Advanced monitoring and AI search insights",
-        "monthly_price_eur": 205.00, "yearly_price_eur": 2220.00,
-        "prompts_per_day": 150, "competitors_max_active": 10, "trial_days": 30, "sort_order": null,
-        "ai_responses_per_month": 13500, "support_label": "Personal account manager" },
-      { "id": "a980c741-807e-43dd-9617-8e06b82999ba", "name": "Enterprise",
-        "description": "Advanced features for growing businesses",
-        "monthly_price_eur": 429.00, "yearly_price_eur": 4380.00,
-        "prompts_per_day": 350, "competitors_max_active": 15, "trial_days": 30, "sort_order": null,
-        "ai_responses_per_month": 30000, "ai_responses_more": true,
-        "support_label": "Personal account manager" }
-    ]
-  };
 
   /* ---------- Schritte ---------------------------------------------------------------------
      Die Reihenfolge ist die Wahrheit ueber den Ablauf: Schiene, Zurueck-Knopf und die
@@ -650,17 +503,6 @@
       return (v == null || v === "" || /^[A-Z_]{3,}$/.test(v)) ? (f || "") : v;
     }
     function istJa(v) { return UC.isYes ? UC.isYes(v) : /^(yes|true|1)$/i.test(txt(v)); }
-    var demo = istJa(attr("data-demo"));
-    /* Der Demobetrieb zeigt erfundene Daten so, als waeren es echte, und laesst die Uhren
-       ohne Workflow durchlaufen -- die schlimmste Art von stillem Ausfall: es sieht nicht
-       kaputt aus, es sieht fertig aus. Am 23.08. lief eine Installation genau so, und nichts
-       deutete darauf hin; gesucht wurde am Pin und an den Workflows.
-       Die Zeile erscheint NUR, wenn das Attribut wirklich auf yes steht -- ohne Demobetrieb
-       bleibt die ausgelieferte App still. Sie ist keine Debug-Ausgabe, sondern die Meldung
-       eines Zustands, den man von aussen nicht erkennen kann. */
-    if (demo && window.console) console.warn('[onboarding] data-demo="yes" am Element: ' +
-      'die Seite zeigt BEISPIELDATEN und laesst die Uhren ohne Workflow laufen. ' +
-      'Fuer den Echtbetrieb das Attribut auf "no" setzen.');
 
     /* ---- Zustand ------------------------------------------------------------------------- */
     var state = {
@@ -2381,10 +2223,10 @@
     }
 
     function gehe(key, neuerEintrag) {
-      /* Schon dort und nicht am Warten: nichts tun. Ohne diese Sperre hat der Demolauf zweimal
-         nach Competitors navigiert -- einmal ueber setProject (status_phase 5) und 360ms spaeter
-         ueber seine eigene Uhr. Der zweite Aufruf tauschte den Inhalt des schon stehenden
-         Bereichs aus, und genau das sah man als Flackern kurz nach dem Einzug. */
+      /* Schon dort und nicht am Warten: nichts tun. Ohne diese Sperre navigiert ein Payload,
+         der status_phase 5 traegt, ein zweites Mal nach Competitors -- der Aufruf tauscht den
+         Inhalt des schon stehenden Bereichs aus, und genau das sieht man als Flackern kurz nach
+         dem Einzug. Zwei Setter kurz hintereinander reichen dafuer. */
       if (state.step === key && !state.warten) return;
       state.step = key;
       state.warten = "";
@@ -2416,7 +2258,6 @@
           business_model: txt(state.form.business),
           brand_industry: txt(state.form.industry)
         });
-        if (demo) demoLauf1();
         return;
       }
       if (state.step === "competitors") { gehe("topics"); return; }
@@ -2441,7 +2282,6 @@
             .map(function (e2) { return txt(e2.name); }).join(","),
           count: anzahl(state.selTopics)
         });
-        if (demo) demoLauf2();
         return;
       }
       if (state.step === "prompts") { gehe("plan"); return; }
@@ -2471,7 +2311,7 @@
        naehert sich dem Ende der laufenden Phase an und bleibt kurz davor stehen. Ein Balken, der
        zwischen zwei Meldungen einfriert, liest sich als Absturz -- die Recherche zu Ladeanzeigen
        ist da eindeutig, und vier Phasen mit je zehn Sekunden sind lang genug, dass es auffiele. */
-    var uhr = null, tick = null, t0 = 0, hilfeUhr = null;
+    var tick = null, t0 = 0, hilfeUhr = null;
     function warteStarten(art) {
       state.warten = art;
       state.phase = 0;
@@ -2484,7 +2324,6 @@
     function warteBeenden() {
       state.warten = "";
       if (tick) { window.clearInterval(tick); tick = null; }
-      if (uhr) { window.clearTimeout(uhr); uhr = null; }
     }
     function spurTick() {
       var ziel, unten;
@@ -2512,46 +2351,6 @@
       state.fortschritt = Math.max(state.fortschritt, (neu / PHASES.length) * 100);
       t0 = new Date().getTime();
       renderPhasen();
-    }
-
-    /* ---- Demo -------------------------------------------------------------------------------
-       Feste Uhren: fuenf Sekunden je Phase, also zwanzig fuer den ersten Lauf, spaeter zehn.
-       Sie ersetzen den Statuspayload NICHT -- kommt einer, gewinnt er (siehe setStatus).
-       Die Daten stehen oben in dieser Datei (DEMO_DATEN); es ist nichts nachzuladen. */
-    var DEMO_PHASE_MS = 5000;
-    var DEMO_PROMPT_MS = 10000;
-    /* Ein von aussen gesetztes window.__uobDemo gewinnt -- so laesst sich der Demobetrieb mit
-       anderen Daten fuettern, ohne diese Datei anzufassen. Ohne das steht der eingebaute Block
-       bereit, und der ist immer da. */
-    var DEMO = window.__uobDemo || DEMO_DATEN;
-    function demoLauf1() {
-      var i = 0;
-      (function schritt() {
-        uhr = window.setTimeout(function () {
-          i++;
-          if (i >= PHASES.length) {
-            /* Erst die Daten, DANN das Projekt. Das Projekt traegt status_phase 5 und schaltet
-               damit weiter -- kaeme es zuerst, baute sich der naechste Schritt leer auf und
-               danach zweimal mit Inhalt neu. Genau das sah man als Flackern kurz nach dem
-               Einzug. So entsteht er einmal, fertig gefuellt. */
-            if (DEMO && DEMO.brands) ctrl.setBrands(DEMO.brands);
-            if (DEMO && DEMO.topics) ctrl.setTopics(DEMO.topics);
-            if (DEMO && DEMO.project) ctrl.setProject(DEMO.project);
-            state.fortschritt = 100; renderPhasen();
-            window.setTimeout(function () { warteBeenden(); gehe("competitors"); }, 360);
-            return;
-          }
-          phaseSetzen(i);
-          schritt();
-        }, DEMO_PHASE_MS);
-      })();
-    }
-    function demoLauf2() {
-      uhr = window.setTimeout(function () {
-        if (DEMO && DEMO.prompts) ctrl.setPrompts(DEMO.prompts);
-        state.fortschritt = 100; renderPhasen();
-        window.setTimeout(function () { warteBeenden(); gehe("prompts"); }, 360);
-      }, DEMO_PROMPT_MS);
     }
 
     /* ---- Breite ------------------------------------------------------------------------------
@@ -2814,21 +2613,6 @@
       }, 5000);
     }
 
-    if (demo && DEMO) {
-      /* Im Demobetrieb sind Tarife von Anfang an da -- sie haengen an keinem Lauf. Marken,
-         Themen und Prompts kommen dort an, wo sie auch echt ankaemen: nach ihrer Uhr. */
-      if (DEMO.plans) ctrl.setPlans(DEMO.plans);
-      /* Wer per Adresse mitten im Ablauf einsteigt, braucht die Daten dieses Schritts sofort --
-         sonst steht er vor einer leeren Liste, obwohl er schon weiter war. */
-      if (ausUrl && ausUrl !== "brand") {
-        if (DEMO.project) ctrl.setProject(DEMO.project);
-        if (DEMO.brands) ctrl.setBrands(DEMO.brands);
-        if (DEMO.topics) ctrl.setTopics(DEMO.topics);
-        if (ausUrl === "prompts" || ausUrl === "plan") { if (DEMO.prompts) ctrl.setPrompts(DEMO.prompts); }
-        state.step = ausUrl;
-        render();
-      }
-    }
     return ctrl;
   }
 
