@@ -1,0 +1,165 @@
+/* upstreem url-detail.css — die URL-Detailseite.
+
+   Alle Masse sind die von domain-detail.css, Zahl fuer Zahl: 32px zwischen den Karten, Karte mit
+   1px Rahmen, Radius 16 und 16px Polsterung, Abschnittskopf mit 4px Zeilenabstand und 16px zum
+   Inhalt. Eine Detailseite, die sich anders misst als die daneben, liest sich als andere App.
+
+   Was hier NICHT steht, weil es in core steht: .up-card, .up-tag, .up-entchip, .up-logo-box,
+   .up-th-info, .up-explain, .up-bars, .up-dash, .up-rank-group. */
+
+.uud-root { display: flex; flex-direction: column; gap: 32px; width: 100%; }
+.uud-root > * { min-width: 0; }
+/* Ein ausgeblendeter Bereich traegt das hidden-Attribut, und das wirkt nur ueber display:none aus
+   dem Browser-Stylesheet -- jede eigene display-Regel schlaegt es. Dieselbe Falle wie in
+   domain-detail, und derselbe Ausweg: zwei Selektorteile statt einem, also ueber Spezifitaet
+   gewonnen und nicht ueber ein !important. */
+.uud-root > [hidden] { display: none; }
+
+.uud-card {
+  border: 1px solid var(--vc-border); border-radius: 16px; background: var(--vc-bg);
+  padding: 16px; width: 100%; box-sizing: border-box;
+}
+
+/* ---- Kopf ------------------------------------------------------------------------------------
+   Favicon, Titel, Domain. Das Favicon ist .up-logo-box aus core in seiner vollen Groesse (24px) --
+   hier ist es die Identitaet der Seite und nicht eine Marke in einer Zeile. */
+.uud-head { display: flex; align-items: center; gap: 12px; min-height: 32px; }
+.uud-headtxt { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; }
+.uud-title {
+  font-size: 15px; font-weight: 500; color: var(--vc-text); line-height: 1.35;
+  /* Zwei Zeilen, dann Auslassungspunkte: ein Seitentitel ist oft ein ganzer Satz, und eine
+     einzige Zeile schneidet ihn genau dort ab, wo das Thema steht. */
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.uud-domain {
+  font-size: 12.5px; color: var(--vc-muted); text-decoration: none;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+  transition: color 160ms cubic-bezier(.4, 0, .2, 1);
+}
+.uud-domain:hover { color: var(--vc-text); text-decoration: underline; }
+
+/* ---- KPI-Leiste ------------------------------------------------------------------------------
+   Wert oben, Ueberschrift darunter -- die Anordnung des bisherigen Typ-Elements, damit die Leiste
+   sich nicht neu erklaeren muss. auto-fit statt einer festen Spaltenzahl: sechs Felder passen auf
+   einem breiten Schirm in eine Zeile und brechen darunter von selbst, ohne dass eine Stufe
+   dazwischen geraten werden muss. */
+.uud-kpis {
+  margin-top: 20px; display: grid; gap: 16px;
+  /* 120px, gemessen und nicht geraten: bei 860px Wurzelbreite -- der Breite, in der diese Seite
+     im Drawer steht -- bleiben nach 16px Polsterung und fuenf Luecken 748px fuer sechs Spalten,
+     also 124 je Spalte. Mit 132 brach die Leiste dort in zwei Zeilen. */
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+}
+.uud-kpi { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; min-width: 0; }
+/* 28px: die Hoehe von .up-tag (24px) plus Luft, damit eine Zeile mit Chip und eine Zeile mit
+   Zahl gleich hoch sind und die Ueberschriften darunter auf einer Linie stehen. */
+.uud-kpi-val { display: flex; align-items: center; min-height: 28px; min-width: 0; max-width: 100%; }
+.uud-kpi-num { font-size: 15px; font-weight: 500; color: var(--vc-text); font-variant-numeric: tabular-nums; }
+.uud-kpi-lbl {
+  display: inline-flex; align-items: center;
+  font-size: 12px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase;
+  color: var(--vc-third); white-space: nowrap;
+}
+/* Das Info-Symbol ist .up-th-info aus core. Zwei Dinge muessen anders sein, genau wie in
+   domain-detail: core schiebt es mit margin-left:auto ans Ende einer Kopfzelle, hier soll es
+   NEBEN der Ueberschrift stehen; und core deckt es bei .up-th:hover auf, ein .up-th gibt es hier
+   nicht. Groesse, Farbe und Uebergang bleiben unveraendert aus core. */
+.uud-info { margin-left: 6px; }
+.uud-kpi:hover .uud-info { opacity: 1; }
+
+/* ---- Abschnittskoepfe ------------------------------------------------------------------------ */
+.uud-sec { display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px; }
+.uud-sec-row { flex-direction: row; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.uud-sec-txt { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.uud-sec-title { font-size: 14px; font-weight: 500; color: var(--vc-text); }
+.uud-sec-desc { font-size: 12.5px; font-weight: 400; line-height: 1.45; color: var(--vc-muted); }
+
+/* ---- Mentions --------------------------------------------------------------------------------
+   Die Chips sind .up-entchip is-soft up-chiphover aus core, wortgleich wie in response-detail.
+   Hier steht nur, wie sie liegen. */
+.uud-ments { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ---- Embed -----------------------------------------------------------------------------------
+   Zwei Bauarten in einem Rahmen: mit Seitenverhaeltnis (Video) oder mit fester Hoehe (Post).
+   is-ratio traegt die Hoehe ueber padding-top, deshalb steht dort keine height -- beides zugleich
+   ergaebe einen Rahmen, der doppelt so hoch ist wie das Bild darin. */
+.uud-frame {
+  position: relative; width: 100%; border-radius: 12px; overflow: hidden;
+  background: var(--vc-heading-bg); border: 1px solid var(--vc-border); box-sizing: border-box;
+}
+.uud-frame.is-ratio { height: 0; }
+.uud-frame iframe {
+  position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block;
+}
+/* Die Skript-Einbettungen bringen ihre eigene Breite mit und ignorieren sie gern. Der Wrapper
+   zwingt sie in die Spalte, ohne ihnen die Hoehe vorzuschreiben -- die kennt nur der Anbieter. */
+.uud-social { width: 100%; min-height: 220px; }
+/* Die einzige Stelle in dieser Datei mit !important, und sie ist nicht zu vermeiden: Instagram
+   und X schreiben ihre Breite als INLINE-Stil in das eingesetzte Element (min-width:326px,
+   max-width:540px, margin:1px). Ein Inline-Stil schlaegt jeden Selektor -- ueber Spezifitaet ist
+   dagegen nichts auszurichten, das ist die eine Ausnahme, die die Hausregel meint. Ohne diese
+   Zeilen steht der Post links in der Karte statt in ihrer Breite. */
+.uud-social .instagram-media,
+.uud-social .twitter-tweet {
+  width: 100% !important; max-width: 100% !important; min-width: 0 !important; margin: 0 !important;
+}
+.uud-social iframe { width: 100% !important; border-radius: 12px; }
+/* Kommt das fremde Script nicht durch, steht hier ein Weg nach draussen statt eines leeren
+   Rahmens: ein leerer Kasten sieht aus wie ein Fehler DIESER Seite. */
+.uud-fallback {
+  display: inline-flex; align-items: center; height: 32px; padding: 0 12px; border-radius: 8px;
+  border: 1px solid var(--vc-border); background: var(--vc-bg);
+  font-size: 13px; font-weight: 500; color: var(--vc-text); text-decoration: none;
+  transition: background 160ms cubic-bezier(.4, 0, .2, 1);
+}
+.uud-fallback:hover { background: var(--vc-heading-bg); }
+
+/* ---- Textkarten ------------------------------------------------------------------------------ */
+.uud-text {
+  margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--vc-text);
+  white-space: pre-wrap; text-wrap: pretty;
+}
+
+/* ---- Fehlerband ------------------------------------------------------------------------------
+   Ueber allem und nicht unter der letzten Karte: ein Fehler, den man erst nach dem Scrollen
+   sieht, ist kein Fehler, den jemand sieht. */
+.uud-fehler {
+  order: -1;
+  padding: 10px 12px; border-radius: 10px;
+  border: 1px solid var(--vc-neg-border, rgba(200, 60, 60, .28));
+  background: var(--vc-neg-bg, rgba(200, 60, 60, .08));
+  font-size: 13px; line-height: 1.45; color: var(--vc-text);
+}
+
+/* ---- Ladezustand -----------------------------------------------------------------------------
+   Kein eigenes Skelett-Markup: die Karten stehen bereits, sie bekommen nur den Puls von core
+   (.up-sk) auf ihre Flaechen. Ein zweiter Aufbau nur fuers Laden waere ein zweiter Aufbau, den
+   jemand pflegen muss. Der Puls ist uutpulse aus core -- derselbe Name, dieselbe Dauer wie an
+   jedem Skelettbalken der App, damit nicht zwei Pulse nebeneinander unterschiedlich schlagen. */
+.uud-root.is-loading .uud-mentcard,
+.uud-root.is-loading .uud-embedcard,
+.uud-root.is-loading .uud-metacard,
+.uud-root.is-loading .uud-sumcard,
+.uud-root.is-loading .uud-convcard { display: none; }
+.uud-root.is-loading .uud-title,
+.uud-root.is-loading .uud-domain {
+  color: transparent; border-radius: 6px; background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite;
+}
+.uud-root.is-loading .uud-title { width: 60%; height: 15px; }
+.uud-root.is-loading .uud-domain { width: 30%; height: 12px; }
+.uud-root.is-loading .uud-logobox {
+  background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite;
+}
+.uud-root.is-loading .uud-kpi-val::before {
+  content: ""; display: block; width: 56px; height: 15px; border-radius: 6px;
+  background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite;
+}
+.uud-root.is-loading .uud-kpi-val > * { display: none; }
+
+/* ---- schmal ----------------------------------------------------------------------------------
+   is-narrow/is-vnarrow kommen von UC.widthTiers und messen die EIGENE Box, nicht das Fenster --
+   diese Seite kann in einem Drawer stehen, der auf einem breiten Schirm schmal ist. */
+.uud-root.is-narrow .uud-kpis { grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); gap: 14px; }
+.uud-root.is-vnarrow .uud-kpis { grid-template-columns: 1fr 1fr; gap: 12px; }
+.uud-root.is-vnarrow .uud-card { padding: 14px; }
+.uud-root.is-vnarrow .uud-title { font-size: 14px; }

@@ -1,0 +1,105 @@
+<meta charset="utf-8"><title>url-detail</title>
+<style>
+  html, body { margin: 0; font-family: Geist, system-ui, sans-serif; background: #fff; }
+  html.dunkel body { background: #1b1b1b; }
+  #huelle { max-width: 860px; margin: 0 auto; padding: 24px; }
+  #bar { position: fixed; right: 10px; bottom: 10px; z-index: 999; display: flex; gap: 6px; flex-wrap: wrap; max-width: 62vw; }
+  #bar button { font: 11px ui-monospace, monospace; padding: 5px 8px; border-radius: 7px;
+                border: 1px solid #bbb; background: #fff; cursor: pointer; }
+  #out { position: fixed; left: 10px; bottom: 10px; z-index: 999; font: 10px/1.4 ui-monospace, monospace;
+         background: #111; color: #eee; padding: 7px; max-width: 34vw; max-height: 40vh; overflow: auto;
+         white-space: pre-wrap; border-radius: 6px; }
+</style>
+<body>
+<div id="huelle">
+  <div class="up-root uud-root" data-instance="urldetail" data-isdark="no"></div>
+</div>
+<div id="bar">
+  <button onclick="fuellen()">daten</button>
+  <button onclick="window.setUrlDetailLoading('urldetail','yes')">loading</button>
+  <button onclick="window.resetUrlDetail('urldetail')">reset</button>
+  <button onclick="window.setUrlDetail('urldetail','kaputt')">kaputt</button>
+  <button onclick="thema()">dark/light</button>
+  <button onclick="embed('youtube')">yt</button>
+  <button onclick="embed('tiktok')">tiktok</button>
+  <button onclick="embed('instagram')">ig</button>
+  <button onclick="embed('x')">x</button>
+  <button onclick="embed('reddit')">reddit</button>
+  <button onclick="embed('keiner')">kein embed</button>
+  <button onclick="mess().then(function(t){ out.textContent = t; })">MESSEN</button>
+</div>
+<pre id="out">laeuft</pre>
+<script src="_h_uud_daten.js"></script>
+<script>
+window.__fehler = []; window.__ev = [];
+window.addEventListener("error", function (e) { window.__fehler.push(String(e.message) + " @" + e.lineno); });
+["uudBrand"].forEach(function (n) { window["bubble_fn_" + n] = function (p) { window.__ev.push([n, p]); }; });
+function fuellen() {
+  window.setUrlDetail("urldetail", JSON.stringify(window.__uudDetail));
+  window.setUrlDetailConversion("urldetail", JSON.stringify(window.__uudConversion));
+}
+function embed(k) {
+  var d = JSON.parse(JSON.stringify(window.__uudDetail));
+  d.url = window.__uudEmbeds[k];
+  window.setUrlDetail("urldetail", JSON.stringify(d));
+  window.setUrlDetailConversion("urldetail", JSON.stringify(window.__uudConversion));
+}
+var DUNKEL = /dark=1/.test(location.search);
+if (DUNKEL) document.documentElement.classList.add("dunkel");
+try { localStorage.setItem("pref_theme", DUNKEL ? "dark" : "light"); } catch (e) {}
+function thema() {
+  var r = document.querySelector(".uud-root");
+  window.setUpstreemTheme(r.getAttribute("data-theme") === "dark" ? "light" : "dark");
+  document.documentElement.classList.toggle("dunkel", r.getAttribute("data-theme") !== "dark");
+}
+</script>
+<script>
+/* Frische beweisen statt hoffen: alles per fetch(no-store) inline, kein <link>/<script src>. */
+window.__GELADEN = Promise.all(["core.css", "url-detail.css", "core.js", "url-detail.js"]
+  .map(function (f) {
+    return fetch(f + "?n=" + Math.random(), { cache: "no-store" })
+      .then(function (r) { return r.text(); }).then(function (t) { return [f, t]; });
+  })).then(function (paare) {
+    window.__quellen = {};
+    paare.forEach(function (p) {
+      window.__quellen[p[0]] = p[1];
+      var e = document.createElement(/\.css$/.test(p[0]) ? "style" : "script");
+      e.textContent = p[1]; document.head.appendChild(e);
+    });
+    window.__bereit = true;
+  }).catch(function (e) { document.getElementById("out").textContent = "LADEFEHLER: " + e; });
+
+function sicht(sel) {
+  var e = document.querySelector(sel); if (!e) return null;
+  var b = e.getBoundingClientRect();
+  return { b: Math.round(b.width), h: Math.round(b.height), sichtbar: !e.hidden && b.height > 0 };
+}
+function mess() {
+  return new Promise(function (res) {
+    var r = document.querySelector(".uud-root");
+    res(JSON.stringify({
+      fehler: window.__fehler,
+      ereignisse: window.__ev.slice(-4),
+      klassen: r.className,
+      thema: r.getAttribute("data-theme"),
+      kpis: [].map.call(r.querySelectorAll(".uud-kpi"), function (k) {
+        return (k.querySelector(".uud-kpi-lbl").textContent || "").trim() + " = " +
+               (k.querySelector(".uud-kpi-val").textContent || "").trim();
+      }),
+      mentions: r.querySelectorAll(".uud-ment").length,
+      karten: {
+        ments: sicht(".uud-mentcard"), embed: sicht(".uud-embedcard"),
+        meta: sicht(".uud-metacard"), summary: sicht(".uud-sumcard"), conv: sicht(".uud-convcard")
+      },
+      embed_titel: (r.querySelector(".uud-embedtitle") || {}).textContent || null,
+      embed_desc: (r.querySelector(".uud-embeddesc") || {}).textContent || null,
+      iframe_src: (r.querySelector(".uud-embed iframe") || {}).src || null,
+      meta_text: ((r.querySelector(".uud-meta") || {}).textContent || "").slice(0, 60),
+      summary_text: ((r.querySelector(".uud-sum") || {}).textContent || "").slice(0, 60),
+      conv_balken: r.querySelectorAll(".uud-conv .up-bar-row").length,
+      fehlerband: r.querySelector(".uud-fehler").hidden ? null : r.querySelector(".uud-fehler").textContent,
+      quer_scroll: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1
+    }, null, 1));
+  });
+}
+</script>

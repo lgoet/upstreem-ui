@@ -1,0 +1,49 @@
+<meta charset="utf-8"><title>onboarding: Breiten</title>
+<style>
+  body { margin: 0; font: 11px ui-monospace, monospace; background: #f4f4f5; }
+  .zeile { display: flex; align-items: flex-start; gap: 10px; padding: 8px; }
+  iframe { border: 1px solid #999; background: #fff; height: 780px; }
+  pre { margin: 0; background: #111; color: #eee; padding: 8px; border-radius: 6px; white-space: pre-wrap; }
+</style>
+<div id="wrap"></div>
+<script>
+/* Ein iframe hat eine ECHTE Breite -- 3vw rechnet darin richtig. Der Browser-Pane hat meine
+   Groessenaenderung mehrfach ignoriert und 1034px gemeldet, obwohl 620 gesetzt waren. */
+var BREITEN = [1100, 760, 620, 480, 380];
+window.__mess = null;
+var wrap = document.getElementById("wrap"), rahmen = [];
+BREITEN.forEach(function (b) {
+  var z = document.createElement("div"); z.className = "zeile";
+  var f = document.createElement("iframe");
+  /* Breite per style, nicht per Attribut: das Attribut wurde vom Layout beschnitten und
+     zwei Rahmen meldeten dieselbe Breite. */
+  f.style.width = b + "px"; f.style.minWidth = b + "px"; f.style.flex = "0 0 auto";
+  f.src = "_h_uud.html";
+  z.appendChild(f); wrap.appendChild(z); rahmen.push([b, f]);
+});
+function messen() {
+  var aus = {};
+  rahmen.forEach(function (paar) {
+    var b = paar[0], d = paar[1].contentDocument, w = paar[1].contentWindow;
+    var r = d.querySelector(".uud-root");
+    if (!r) { aus[b] = "keine Wurzel"; return; }
+    try { w.fuellen(); } catch (e) {}
+    var W = d.documentElement.clientWidth;
+    var kpis = r.querySelectorAll(".uud-kpi");
+    var reihen = {};
+    [].forEach.call(kpis, function (k) { reihen[Math.round(k.getBoundingClientRect().top)] = 1; });
+    aus[b] = {
+      wurzel: Math.round(r.getBoundingClientRect().width),
+      narrow: r.classList.contains("is-narrow"), vnarrow: r.classList.contains("is-vnarrow"),
+      kpi_zeilen: Object.keys(reihen).length,
+      karten: [].map.call(r.querySelectorAll(".uud-card"), function (c) {
+        return Math.round(c.getBoundingClientRect().width); }),
+      quer: d.documentElement.scrollWidth > W + 1,
+      fehler: (w.__fehler || []).length
+    };
+  });
+  window.__mess = aus;
+}
+/* Erst nach der Guide-Uhr messen: 5s plus Luft. */
+setTimeout(messen, 9000);
+</script>

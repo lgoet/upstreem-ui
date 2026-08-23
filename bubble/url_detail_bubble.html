@@ -1,0 +1,103 @@
+<!--
+  upstreem — URL DETAIL
+  ============================================================================================
+  Die Detailseite einer einzelnen zitierten URL. Aufbau von oben, jede Karte erscheint nur,
+  wenn sie etwas zu zeigen hat:
+
+      1. Kopf        Favicon, Titel, Domain (Link nach draussen)
+      2. KPIs        Last Seen, Domain Share, Global Share, URL Rank, Citation Type, URL Type
+      3. Mentions    "Relevant brands referenced on this page"
+      4. Embed       das Video oder der Post selbst, wenn die Adresse zu einem Anbieter passt
+      5. Meta        die SEO-Beschreibung -- erscheint NICHT neben einem Embed
+      6. AI Summary  die Zusammenfassung des Hintergrundlaufs
+      7. Conversion  wie oft diese Zitation zu einer Markennennung fuehrt
+
+  ── Attribute am Element ────────────────────────────────────────────────────────────────────
+      data-instance    die Instanz-Id, frei waehlbar. MUSS gesetzt sein: steht dort noch
+                       INSTANCE_ID, baut die Komponente sich absichtlich nicht auf.
+      data-cdn-pin     der Commit-Hash, aus dem geladen wird
+      data-isdark      "yes" | "no" -- nur die ERSTE Farbe. Danach gewinnt das Thema der App
+                       (UC.themeParam), damit ein spaeter Render-Aufruf mit altem Wert die
+                       Komponente nicht hinter der App zurueckdreht.
+      data-brand-fn    Name der Bubble-Funktion fuer den Klick auf einen Mention-Chip,
+                       Standard bubble_fn_uudBrand
+
+  ── Ereignis ────────────────────────────────────────────────────────────────────────────────
+      uudBrand   JSON-TEXT beim Klick auf einen Mention-Chip:
+                   {"company_id":"26dd1507-...","company_name":"Parookaville"}
+                 Ist ein Team gesetzt, steht team_id VORNE als erster Schluessel.
+                 Extraktion:
+                   (?<="company_id":")[^"]*
+                   (?<="company_name":")(?:[^"\\]|\\.)*
+                 company_name ist FREITEXT -- ein Anfuehrungszeichen im Markennamen kommt als \"
+                 an, deshalb das escape-feste Muster und dahinter ein
+                   :find & replace  \"  ->  "
+
+  ── Setter ──────────────────────────────────────────────────────────────────────────────────
+      window.setUrlDetail("INSTANCE_ID", <text>)             das url_detailed-Objekt
+      window.setUrlDetailConversion("INSTANCE_ID", <text>)   die conversion-Liste
+      window.setUrlDetailLoading("INSTANCE_ID", "yes"|"no")  Skelett an/aus
+      window.resetUrlDetail("INSTANCE_ID")                   alles leer
+
+  Beide Payloads gehen als TEXT rein, roh zwischen Backticks. NICHT im Schritt parsen und nicht
+  JSON-safe formatieren: UC.readBubble in der Komponente ist der eine geteilte Leseweg. Er liest
+  gueltiges JSON unveraendert, repariert Bubbles Eigenheiten (nacktes yes/no, leere Werte,
+  unescapte Anfuehrungszeichen, abgeschnittene Felder) und trennt LEER von UNLESBAR -- ein
+  unlesbarer Payload steht als Fehlerband oben in der Komponente statt als leere Seite.
+
+  ── Felder von url_detailed ─────────────────────────────────────────────────────────────────
+      url, title, domain, favicon
+      last_seen           ISO-Zeitstempel -> "23. Aug 2026"
+      domain_share        Zahl -> 99.2%   (eine Nachkommastelle)
+      global_share        Zahl -> 11.6%
+      global_rank         Platzziffer -> #1
+      citation_type       Brand_Platform | Editorial | Competition | You | Institutional |
+                          Knowledge_Base | UGC_Community  -> Chip OHNE Punkt
+      url_type            listicle | article | guide | ... -> Chip MIT Punkt
+                          Der Punkt ist die Hausregel: er haelt die beiden Vokabulare
+                          auseinander, wenn sie nebeneinander stehen.
+      description         die Meta-Beschreibung. Darf HTML-kodiert sein (&amp;) -- die
+                          Komponente dekodiert einmal und schreibt sie als Text zurueck.
+      markdown_summary    JSON-TEXT mit einem Feld: {"summary": "..."} . Reiner Text geht auch.
+      companies           [{company_id, company_name, logo_url}, ...] -> die Mention-Chips
+
+  ── Felder von conversion ───────────────────────────────────────────────────────────────────
+      company_id, company_name, logo_url, role ("own" | "competitor"),
+      cited_runs, mentioned_runs, citation_conversion_pct
+      Sortiert wird nach citation_conversion_pct, absteigend. Die eigene Marke traegt die
+      You-Farbe, alle anderen die Competition-Farbe.
+
+  ── Embeds ──────────────────────────────────────────────────────────────────────────────────
+  Erkannt werden YouTube (auch Shorts und youtu.be), TikTok, Instagram, X/Twitter, LinkedIn,
+  Reddit und Facebook -- an der URL, ohne zusaetzliches Feld. Fuenf davon sind reine iframes;
+  Instagram und X brauchen ihr eigenes Script, das die Komponente laedt und danach ausdruecklich
+  zum Verarbeiten auffordert. Kommt ein Script nicht durch, steht ein Link nach draussen da und
+  kein leerer Rahmen.
+
+  YouTube und TikTok liefern zusaetzlich Kanal und Titel ueber oEmbed -- ohne Schluessel und mit
+  CORS, gemessen am 23.08. AUFRUFZAHLEN gibt es dort nicht: die stehen nur hinter der Data API
+  mit Schluessel, und ein Schluessel in Client-JS ist oeffentlich. Lieber eine Zeile weniger als
+  eine Zahl, die nicht stimmt.
+
+  ── Run-JS "Render" step (paste as-is, drop the Bubble expressions into the backticks) ──────
+
+  (function () {
+    var DETAIL     = `[URL_DETAILED_RPC]`;
+    var CONVERSION = `[CONVERSION_RPC]`;
+    var t = 0;
+    (function go () {
+      if (typeof window.setUrlDetail === "function") {
+        window.setUrlDetail("INSTANCE_ID", DETAIL);
+        window.setUrlDetailConversion("INSTANCE_ID", CONVERSION);
+        return;
+      }
+      if (t++ < 60) setTimeout(go, 100);
+    })();
+  })();
+-->
+
+<div class="up-root uud-root"
+     data-instance="INSTANCE_ID"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="IS_DARK"
+     data-brand-fn="bubble_fn_uudBrand"></div>

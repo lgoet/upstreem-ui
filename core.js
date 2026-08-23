@@ -499,6 +499,19 @@
   function parseBubbleJson(raw){
     var src = String(raw == null ? "" : raw).trim();
     if (!src) return [];
+    /* Ist der Text bereits GUELTIGES JSON, wird er nicht repariert. Jede Reparatur unten ist fuer
+       kaputte Eingaben gebaut, und auf einer heilen richtet sie Schaden an: ein Feld, das selbst
+       JSON enthaelt -- markdown_summary traegt {"summary": "..."} als Text --, endet auf \" vor
+       der schliessenden Klammer, und die Truncation-Regel haelt genau das fuer ein abgeschnittenes
+       Feld und wirft den Backslash weg. Gemessen am 23.08.: der url-detail-Payload kam als
+       array:0 an, obwohl JSON.parse ihn anstandslos liest.
+       Die Regeln gelten also nur noch dort, wo sie gebraucht werden -- bei Text, den kein
+       JSON-Erzeuger geschrieben hat. */
+    try {
+      var heil = JSON.parse(src);
+      if (Array.isArray(heil)) return heil;
+      if (heil && typeof heil === "object") return [heil];
+    } catch(e){}
     if (src.charAt(0) === "{") src = "[" + src + "]";
     var out = "", i = 0, n = src.length, inStr = false, esc2 = false, ch, c, start, v;
     /* A real closing quote is always followed (after whitespace) by one of , } ] : or the end of
@@ -7070,7 +7083,14 @@
         window.MiraQuickActions.setTheme(THEME.value);
     } catch(e){}
 
-    for (var t = 0; t < THEME.subs.length; t++){ try { THEME.subs[t](THEME.value); } catch(e){} }
+    /* Der Abonnent bekommt einen WAHRHEITSWERT, nicht den Text. Bisher ging THEME.value hinaus
+       ("dark"/"light"), und jeder Abonnent, der ihn als Wahrheitswert las, bekam bei HELL ein
+       truthy "light" -- also dunkel. Gemessen am 23.08.: domain-detail, response-detail und
+       url-detail blieben beim Zurueckschalten auf hell alle drei dunkel, obwohl core das Attribut
+       zuvor korrekt entfernt hatte; die Abonnenten setzten es danach wieder.
+       Kein Abonnent im Repo braucht den Text -- die uebrigen ignorieren das Argument und lesen
+       den Zustand selbst. Wer ihn doch braucht, hat getUpstreemTheme(). */
+    for (var t = 0; t < THEME.subs.length; t++){ try { THEME.subs[t](dark); } catch(e){} }
 
     /* Rueckkanal nach Bubble. Ohne ihn kennt die App den Zustand nicht: der Schalter auf der
        Anmeldeseite schreibt den localStorage, aber ein Bubble-State oder ein Feld in der
