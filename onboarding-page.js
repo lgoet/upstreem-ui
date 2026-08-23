@@ -2624,7 +2624,11 @@
         }
         /* Eine schon gesetzte Auswahl aus den Daten uebernehmen -- so ueberlebt sie ein
            Neuladen, wenn der Server sie kennt. */
-        if (r.selected === true || txt(r.selected) === "yes") {
+        /* istJa statt eines Vergleichs auf "yes": Bubble schickt je nach Feldtyp und Formatierung
+           yes, true, 1 oder den nackten Wahrheitswert -- und ein "true" als Text fiel bisher
+           durch, ohne dass irgendwo etwas davon stand. Der geteilte Helfer aus core kennt alle
+           vier Schreibweisen; ein echter Boolean geht ohnehin voran. */
+        if (r.selected === true || istJa(r.selected)) {
           (welche === "brands" ? state.selBrands : welche === "topics" ? state.selTopics : state.selPrompts)[id] = true;
         }
       }

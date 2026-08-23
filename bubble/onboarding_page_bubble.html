@@ -80,10 +80,32 @@
                   :find & replace  \\"  ->  "
                   Gemessen: Parookaville \\"Festival\\"  ->  Parookaville "Festival"
        uobStep    der Schluessel des Schritts als Text: brand | competitors | topics | prompts | plan
-       uobSelect  Objekt: kind ("brands"|"topics"|"prompts"), ids (Komma-getrennt), count
-       uobTopics  Objekt: topic_ids, count -- beim Verlassen von Schritt 3. DAS ist der Anstoss,
-                  aus dem die Prompts entstehen. Der Workflow dahinter muss am Ende
-                  setOnboardingPrompts rufen, sonst haengt die zweite Uhr.
+       uobSelect  JSON-TEXT, bei JEDEM Klick auf ein Element. Gemessen:
+                    {"kind":"topics","ids":"t-line,t-eff","count":2}
+                  kind ist "brands" | "topics" | "prompts", ids sind Komma-getrennt.
+                  Extraktion:
+                    (?<="kind":")[^"]*
+                    (?<="ids":")[^"]*
+                    (?<="count":)\d+
+       uobTopics  JSON-TEXT, beim Verlassen von Schritt 3. DAS ist der Anstoss, aus dem die
+                  Prompts entstehen -- der Workflow dahinter muss am Ende setOnboardingPrompts
+                  rufen, sonst haengt die zweite Uhr. Gemessen mit zwei eigenen Themen:
+                    {"topic_ids":"t-line","new_topics":"Spatial Audio,Rigging & Trucks","count":3}
+                  topic_ids sind die Ids der ausgewaehlten VORHANDENEN Themen.
+                  new_topics sind die NAMEN der selbst getippten -- sie haben serverseitig noch
+                  keine Id. Der Workflow legt sie an und schickt sie beim naechsten
+                  setOnboardingTopics mit Id zurueck. Leer, wenn keine getippt wurden.
+                  count zaehlt beide zusammen (hier 1 + 2).
+                  Extraktion:
+                    (?<="topic_ids":")[^"]*
+                    (?<="new_topics":")(?:[^"\\\\]|\\\\.)*
+                    (?<="count":)\d+
+                  new_topics ist FREITEXT: ein Anfuehrungszeichen im Themennamen kommt als \\"
+                  an, deshalb das escape-feste Muster und dahinter ein
+                  :find & replace  \\"  ->  "
+                  Ein Komma im Themennamen laesst sich nicht von einem Trenner unterscheiden --
+                  die Zeichengrenze von 40 macht das unwahrscheinlich, ausschliessen kann sie es
+                  nicht.
        uobFinish  Objekt: plan_id, billing_interval, brand_ids, topic_ids, prompt_ids
        uobExit    Text: "dashboard" oder "logout"
        uobWorkflowStart  JSON-TEXT: {"onboarding_id":"...","run_token":"..."}
