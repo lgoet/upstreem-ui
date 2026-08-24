@@ -240,6 +240,10 @@
          embed.js. Keine feste Groesse im Markup -- "Leave empty to use fluid width" laut Doku. */
       key: "facebook", label: "Facebook",
       passt: function (u) { return /facebook\.com\/[^\/]+\/(posts|videos)\//i.test(u); },
+      /* Ein Facebook-VIDEO ist wie YouTube ein Bild-/Bewegtbild-Format -- volle Spaltenbreite
+         wirkt dort so ueberproportional wie beim YouTube-Embed. Ein normaler Facebook-POST bleibt
+         textlastig (siehe Begruendung bei der Breiten-Regel unten) und damit bei 100%. */
+      merkmal: function (u) { return /facebook\.com\/[^\/]+\/videos\//i.test(u) ? "video" : "post"; },
       art: "script", skript: "https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v19.0",
       markup: function (u) {
         return '<div id="fb-root"></div><div class="fb-post" data-href="' + esc(u) + '"></div>';
@@ -555,13 +559,19 @@
       if (a.art === "iframe") {
         var stil = a.ratio ? 'style="padding-top:' + a.ratio + '%"' : 'style="height:' + (a.hoehe || 560) + 'px"';
         elEmbed.innerHTML = '<div class="uud-frame' + (a.ratio ? " is-ratio" : "") + '" data-anbieter="' + a.key + '" ' + stil + '>' +
-          '<iframe src="' + esc(a.src(url)) + '" loading="lazy" allowfullscreen' +
+          /* scrolling="no": veraltetes Attribut, aber von jedem Browser weiter beachtet (HTML
+             Living Standard fuehrt es als "obsolete but conforming"). Ohne das zeigt ein Anbieter,
+             dessen Inhalt hoeher ist als unser fester Rahmen, einen eigenen Scrollbalken IN der
+             iframe -- bei fremdem, cross-origin Inhalt kommt CSS da nicht ran, das Attribut schon. */
+          '<iframe src="' + esc(a.src(url)) + '" loading="lazy" allowfullscreen scrolling="no"' +
             ' referrerpolicy="strict-origin-when-cross-origin"' +
             ' allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"' +
             ' title="' + esc(a.label) + ' embed"></iframe>' +
         '</div>';
       } else {
-        elEmbed.innerHTML = '<div class="uud-social" data-anbieter="' + a.key + '">' + a.markup(url) + '</div>';
+        var merkmal = a.merkmal ? (a.merkmal(url) || "") : "";
+        elEmbed.innerHTML = '<div class="uud-social" data-anbieter="' + a.key + '"' +
+          (merkmal ? ' data-merkmal="' + esc(merkmal) + '"' : "") + '>' + a.markup(url) + '</div>';
         var ziel = elEmbed.querySelector(".uud-social");
         skriptLaden(a.skript, function (fehlgeschlagen) {
           /* Der Kasten darf nicht leer stehen bleiben, wenn das fremde Script nicht kommt --

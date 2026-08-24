@@ -110,21 +110,31 @@
    Wurzelbreite (is-narrow, dieselbe Schwelle wie die KPI-Leiste) wird ohnehin schon alles enger,
    dort darf das Embed wieder die volle Breite nehmen -- sonst bliebe bei 85%/50% auf einem
    schmalen Schirm nur ein schmaler Streifen. Ohne eigene Regel bleibt ein Anbieter bei 100%
-   (LinkedIn, Reddit, Facebook, X -- deren Beitraege sind ohnehin textlastiger, kein Grund zu
-   verschmaelern). */
+   (LinkedIn, Reddit, X, Facebook-POSTS -- deren Beitraege sind ohnehin textlastiger, kein Grund
+   zu verschmaelern; ein Facebook-VIDEO zaehlt dagegen wie YouTube zur Bewegtbild-Breite unten). */
 .uud-frame[data-anbieter="youtube"] { width: 85%; }
 .uud-social[data-anbieter="instagram"] { width: 50%; }
+.uud-social[data-anbieter="facebook"][data-merkmal="video"] { width: 85%; }
 .uud-root.is-narrow .uud-frame[data-anbieter="youtube"],
-.uud-root.is-narrow .uud-social[data-anbieter="instagram"] { width: 100%; }
+.uud-root.is-narrow .uud-social[data-anbieter="instagram"],
+.uud-root.is-narrow .uud-social[data-anbieter="facebook"][data-merkmal="video"] { width: 100%; }
 /* TikToks Player ist senkrecht und schmal (325px natuerliche Breite, bis 605px laut TikToks
    eigener oEmbed-Antwort) -- volle Spaltenbreite liess ihn wie einen schmalen Streifen in einem
    viel zu grossen Rahmen wirken: der Rahmen war fast doppelt so breit wie der Player selbst.
-   fit-content plus dieselben Grenzen wie TikToks eigenes Embed, mittig -- und die IFRAME bekommt
-   dieselbe Breite statt 100%, sonst zieht sie den Rahmen wieder in die volle Spalte. */
+   fit-content plus dieselben Grenzen wie TikToks eigenes Embed, LINKSBUENDIG wie alle anderen
+   Embeds dieser Seite (kein margin:auto mehr) -- und die IFRAME bekommt dieselbe Breite statt
+   100%, sonst zieht sie den Rahmen wieder in die volle Spalte. */
 .uud-frame[data-anbieter="tiktok"] {
-  width: fit-content; min-width: 325px; max-width: 605px; margin: 0 auto;
+  width: fit-content; min-width: 325px; max-width: 605px;
 }
 .uud-frame[data-anbieter="tiktok"] iframe { position: static; width: 325px; height: 100%; }
+/* Reddits eigene Embed-Antwort (embed.reddit.com) bringt bereits eine eigene, abgerundete
+   Karte mit Rahmen mit -- das ist Reddits Website-Stil, nachgebaut fuer das Embed. Unser
+   Wrapper-Rahmen lag direkt daneben und ergab am unteren Rand zwei sichtbare Linien
+   uebereinander, derselbe Effekt wie die doppelte Gridline bei der Citation-Conversion-Tabelle
+   weiter unten in dieser Datei -- nur einer der beiden Rahmen darf stehen bleiben, und der von
+   Reddit selbst laesst sich (cross-origin) nicht abschalten. */
+.uud-frame[data-anbieter="reddit"] { border: 0; }
 
 /* Die Skript-Einbettungen bringen ihre eigene Breite mit und ignorieren sie gern. Der Wrapper
    zwingt sie in die Spalte, ohne ihnen die Hoehe vorzuschreiben -- die kennt nur der Anbieter. */
