@@ -19,7 +19,10 @@
    ── Bubble ──────────────────────────────────────────────────────────────────────────────────
    Ereignisse (data-*-fn am Root, sonst bubble_fn_<name>):
      uobStart    {brand_name, website_input, website_url, website_domain, market, timezone,
-                  business_model, brand_industry}
+                  business_model}
+                 brand_industry ist am 24.08. ENTFALLEN -- das Feld ist aus dem Formular raus und
+                 der Schluessel geht nicht mehr mit. Steht er im Bubble-Workflow noch als
+                 Parameter, bleibt er leer; er gehoert dort entfernt.
      uobStep     der Schluessel des Schritts, roh
      uobSelect   {kind: "brands"|"topics"|"prompts", ids: "a,b,c", count: n}
      uobTopics   die Themenauswahl beim Verlassen von Schritt 3 -- das ist der Anstoss, aus dem
@@ -278,7 +281,7 @@
 
   /* Zeichengrenzen. Kein Zaehler unter dem Feld: der zaehlt bei jedem Anschlag mit und lenkt vom
      Tippen ab. Stattdessen sagt das Feld erst etwas, wenn die Grenze WIRKLICH erreicht ist. */
-  var MAX = { name: 60, website: 255, industry: 60, topic: 40 };
+  var MAX = { name: 60, website: 255, topic: 40 };
   /* Fuenf eigene Themen. Die Grenze steht in der Aufgabe -- und sie ist auch sachlich richtig:
      wer im Onboarding zehn Themen tippt, hat danach zehn Themen ohne Prompts. */
   var EIGEN_MAX = 5;
@@ -287,14 +290,6 @@
      Mal und nicht in core, weil sie in beiden Faellen eine INHALTSliste ist und kein Bauteil --
      core traegt Geometrie und Verhalten, keine Branchennamen. Wer sie aendert, aendert sie an
      beiden Stellen; ein Payload mit industries uebersteuert sie ohnehin. */
-  var INDUSTRIES = [
-    "Agriculture & Food", "Automotive & Mobility", "Construction & Real Estate",
-    "Consulting & Agencys", "E-Commerce & Retail", "Education & Training",
-    "Energy & Utilities", "Fashion & Beauty", "Finance & Insurance", "Health & Pharma",
-    "Hospitality & Gastronomy", "Industry & Manufacturing", "Legal & Compliance",
-    "Logistics & Transport", "Media & Publishing", "Non-Profit & Public Sector",
-    "SaaS & Software", "Sports & Fitness", "Telecommunications", "Travel & Tourism"
-  ];
 
   /* Rueckfall fuer die Maerkte. Normalerweise kommt die Liste ueber setUpstreemAllMarkets aus
      derselben Quelle wie ueberall sonst -- aber diese Seite ist der ERSTE Bildschirm, und dort
@@ -520,7 +515,7 @@
       phase: 0,                 /* 0..3, der Index der laufenden Phase */
       fortschritt: 0,           /* 0..100 fuer die Spur */
       form: {
-        name: "", website: "", market: "", timezone: "", business: BUSINESS_STD, industry: ""
+        name: "", website: "", market: "", timezone: "", business: BUSINESS_STD
       },
       fehler: {},               /* feldname -> text */
       banner: "",
@@ -726,7 +721,7 @@
       '</div>';
     }
 
-    function selectHtml(kind, platzhalter, titel, suchbar, mitEigen) {
+    function selectHtml(kind, platzhalter, titel, suchbar) {
       return '<div class="uob-ddwrap" data-dd="' + kind + '">' +
         '<button class="uob-select" type="button" data-dd-btn aria-haspopup="listbox" aria-expanded="false">' +
           '<span class="uob-select-ic" data-dd-icon></span>' +
@@ -748,23 +743,6 @@
               '</span></div>'
             : "") +
           '<div class="up-filter-list uob-ddlist up-scroll" data-dd-list></div>' +
-          (mitEigen
-            /* Feld und Add-Knopf nebeneinander, das Loesch-X IM Feld -- exakt die Zeile aus
-               "Your Brand" (settings-brand, .usb-ddcustom-row). Dort steht der Grund auch: ein
-               Feld mit X darin ist EIN Bedienelement, ein Knopf mit eigener Beschriftung gehoert
-               daneben. Ohne den Knopf liess sich eine getippte Branche nur ueber die
-               Eingabetaste uebernehmen, und das sieht niemand. */
-            ? '<div class="uob-ddcustom">' +
-                '<span class="uob-ddcustom-field">' +
-                  '<input class="up-ddsearch-in uob-ddcustom-in" type="text" maxlength="' + MAX.industry + '" ' +
-                    'placeholder="Not listed? Add your own" autocomplete="off" spellcheck="false" ' +
-                    'aria-label="Add your own" data-dd-custom/>' +
-                  '<button class="uob-ddcustom-clear" type="button" aria-label="Clear" data-dd-customclear>' +
-                    ic("x", 3.5) + '</button>' +
-                '</span>' +
-                '<button class="uob-ddcustom-add" type="button" data-dd-customadd disabled>Add</button>' +
-              '</div>'
-            : "") +
         '</div>' +
       '</div>';
     }
@@ -799,12 +777,12 @@
             '<div class="uob-frow">' +
               '<div class="uob-field" data-field="market">' +
                 '<span class="uob-label">Market</span>' +
-                selectHtml("market", "Select a market", "Markets", true, false) +
+                selectHtml("market", "Select a market", "Markets", true) +
                 '<div class="uob-err"><span data-err="market"></span></div>' +
               '</div>' +
               '<div class="uob-field" data-field="timezone">' +
                 '<span class="uob-label">Time zone</span>' +
-                selectHtml("timezone", "Select a time zone", "Time zones", true, false) +
+                selectHtml("timezone", "Select a time zone", "Time zones", true) +
                 '<div class="uob-err"><span data-err="timezone"></span></div>' +
               '</div>' +
             '</div>' +
@@ -1832,13 +1810,9 @@
       if (kind === "business") {
         return BUSINESS.map(function (b) { return { value: b.value, label: b.label, kurz: b.label, ic: "" }; });
       }
-      var eigen = state.form.industry && INDUSTRIES.indexOf(state.form.industry) < 0
-        ? [{ value: state.form.industry, label: state.form.industry, kurz: state.form.industry, ic: "" }] : [];
-      return eigen.concat(INDUSTRIES.map(function (s) {
-        return { value: s, label: s, kurz: s, ic: "" };
-      }));
+      return [];
     }
-    var FELD_VON = { market: "market", timezone: "timezone", business: "business", industry: "industry" };
+    var FELD_VON = { market: "market", timezone: "timezone", business: "business" };
 
     function baueSelects() {
       var wraps = root.querySelectorAll(".uob-ddwrap");
@@ -2084,14 +2058,6 @@
         return;
       }
 
-      var cadd = e.target.closest("[data-dd-customadd]");
-      if (cadd) { eigeneBrancheNehmen(cadd.closest(".uob-ddwrap")); return; }
-      var cclr = e.target.closest("[data-dd-customclear]");
-      if (cclr) {
-        var cf = cclr.parentNode.querySelector("input");
-        if (cf) { cf.value = ""; cf.dispatchEvent(new Event("input", { bubbles: true })); cf.focus(); }
-        return;
-      }
 
       var clr = e.target.closest("[data-dd-clear]");
       if (clr) {
@@ -2147,25 +2113,7 @@
       if (h) heiss(h.getAttribute("data-go"), false);
     });
 
-    /* Eigene Branche uebernehmen -- ueber den Knopf oder die Eingabetaste. Beide Wege enden
-       hier, damit sie nicht auseinanderlaufen. */
-    function eigeneBrancheNehmen(wrap) {
-      if (!wrap) return;
-      var feld = wrap.querySelector("[data-dd-custom]");
-      var v = txt(feld && feld.value);
-      if (!v) return;
-      state.form.industry = v;
-      feld.value = "";
-      ddFuellen(wrap);
-      ddSchliessen(null);
-    }
     root.addEventListener("keydown", function (e) {
-      var c = e.target.closest ? e.target.closest("[data-dd-custom]") : null;
-      if (c && e.key === "Enter") {
-        e.preventDefault();
-        eigeneBrancheNehmen(c.closest(".uob-ddwrap"));
-        return;
-      }
       if (e.key === "Escape") ddSchliessen(null);
     });
 
@@ -2185,14 +2133,6 @@
         zeigeFeldfehler();
         return;
       }
-      var cu = e.target.closest ? e.target.closest("[data-dd-custom]") : null;
-      if (cu) {
-        var knopf = cu.closest(".uob-ddwrap").querySelector("[data-dd-customadd]");
-        if (knopf) knopf.disabled = !txt(cu.value);
-        var x = cu.parentNode.querySelector("[data-dd-customclear]");
-        if (x) x.style.display = txt(cu.value) ? "inline-flex" : "none";
-        return;
-      }
       var ei = e.target.getAttribute && e.target.getAttribute("data-eigen-in");
       if (ei != null) {
         var k = parseInt(ei, 10);
@@ -2210,7 +2150,7 @@
         }
         return;
       }
-      var sf = e.target.closest ? e.target.closest("[data-dd-search], [data-dd-custom]") : null;
+      var sf = e.target.closest ? e.target.closest("[data-dd-search]") : null;
       if (sf) {
         /* has-text tauscht in core die Lupe gegen das Loeschkreuz. */
         var wrap = sf.closest("[data-dd-searchwrap]");
@@ -2411,14 +2351,6 @@
       fire("data-step-fn", "uobStep", key);
     }
 
-    /* brand_industry geht weiter im uobStart-Payload mit, obwohl das Industry-Feld am 24.08. aus
-       dem Formular geflogen ist -- jetzt eben leer. Den Schluessel wegzulassen waere eine
-       Aenderung am Vertrag mit dem Bubble-Workflow, und der erwartet ihn. Zustand und Ruecklesen
-       bleiben ebenfalls stehen: kommt das Feld je zurueck, funktioniert es sofort wieder.
-       Der Kommentar steht HIER und nicht im Payload-Objekt: .contract_snapshot.py fasst ein
-       gefeuertes Objekt nur bis 600 Zeichen, und ein langer Kommentar darin schiebt es darueber
-       -- dann meldet der Check sechs Schluessel als entfernt, die alle noch da sind. Genau das
-       ist passiert. Ein blindes Sicherheitsnetz ist schlimmer als keins. */
     function weiter(ueberspringen) {
       if (state.busy) return;
       if (state.step === "brand") {
@@ -2439,8 +2371,7 @@
           website_domain: n.domain,
           market: txt(state.form.market),
           timezone: txt(state.form.timezone),
-          business_model: txt(state.form.business),
-          brand_industry: txt(state.form.industry)   /* Feld raus, Schluessel bleibt -- s.u. */
+          business_model: txt(state.form.business)
         });
         return;
       }
@@ -2720,7 +2651,6 @@
       if (w) state.form.website = w;
       if (txt(p.market)) state.form.market = txt(p.market);
       if (txt(p.business_model)) state.form.business = txt(p.business_model);
-      if (txt(p.brand_industry)) state.form.industry = txt(p.brand_industry);
       if (txt(p.timezone)) state.form.timezone = txt(p.timezone);
       setzeFormWerte();
     }
@@ -2973,7 +2903,7 @@
         state.promptsFuer = null;
         railStand = "";
         state.form = { name: "", website: "", market: eigenerMarkt(), timezone: eigeneZone(),
-                       business: BUSINESS_STD, industry: "" };
+                       business: BUSINESS_STD };
         letzteAnsicht = "";
         elStack.innerHTML = "";
         urlSetzen("brand", false);

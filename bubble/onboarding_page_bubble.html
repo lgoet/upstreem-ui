@@ -46,7 +46,7 @@
                    "website_url":"https://parookaville.com/Tickets",
                    "website_domain":"parookaville.com",
                    "market":"DE","timezone":"Europe/Berlin",
-                   "business_model":"B2B","brand_industry":""}
+                   "business_model":"B2B"}
 
                   Ist ein Team gesetzt (UC.setUpstreemTeam), steht team_id VORNE als erster
                   Schluessel. Die Extraktionen unten holen sich ihren Schluessel und sind davon
@@ -60,7 +60,6 @@
                     market          ISO-2, z.B. DE, US, GB
                     timezone        IANA, z.B. Europe/Berlin
                     business_model  B2B | B2C | Hybrid | CitiesRegions
-                    brand_industry  Freitext oder leer, hoechstens 60 Zeichen
 
                   Extraktion (Bubble: value:extract with Regex):
                     (?<="website_url":")[^"]*
@@ -74,7 +73,6 @@
                   und [^"]* bricht dort ab. Gemessen: aus Parookaville "Festival" wurde
                   Parookaville \\ und der Rest war weg.
                     (?<="brand_name":")(?:[^"\\\\]|\\\\.)*
-                    (?<="brand_industry":")(?:[^"\\\\]|\\\\.)*
                     (?<="website_input":")(?:[^"\\\\]|\\\\.)*
                   Das Ergebnis traegt die Escapes noch: dahinter ein
                   :find & replace  \\"  ->  "

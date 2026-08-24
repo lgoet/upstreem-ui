@@ -530,41 +530,6 @@
    wo er ueber blankem Grund schwebt, muss er nach oben abheben.
    Im Hellen ist der Seitengrund schon Weiss -- heller geht nicht, dort traegt der Rahmen. */
 .uob-root[data-theme="dark"] .uob-ddmenu { background: #202020; border-color: #383838; }
-/* Die Zeile fuer die eigene Branche. 8px zu allen vier Seiten -- zum Trennstrich oben und zu
-   den drei Kanten des Kastens. Feld und Add-Knopf sind 40px hoch und stehen nebeneinander,
-   dazwischen dieselben 8px.
-   Aufbau und Rollen sind die aus "Your Brand" (.usb-ddcustom-row): das Loesch-X sitzt IM Feld,
-   der Add-Knopf daneben. Die Hoehe ist hier 40 statt 32, weil die Felder dieser Seite 40 sind. */
-/* Oben 16, an den Seiten und unten 8. Klingt ungleich, ist es aber genau nicht: der Kasten
-   bringt selbst 8px Polster mit, also hat das Feld zu Rand und Boden 8 + 8 = 16 -- zum
-   Trennstrich darueber gaebe es mit 8 nur 8. Gemessen waren es 9 gegen 17. Die 16 hier stellen
-   alle vier Abstaende gleich. */
-.uob-ddcustom { padding: 16px 8px 8px; border-top: 1px solid var(--vc-border);
-  display: flex; align-items: center; gap: 8px; }
-.uob-ddcustom-field { position: relative; flex: 1 1 auto; min-width: 0; display: block; }
-/* 34px rechts wie in jedem Suchfeld der App: der Text muss VOR dem X enden, sonst schreibt man
-   beim Tippen sichtbar darunter. */
-.uob-ddcustom-in { width: 100%; min-width: 0; height: 32px; padding-right: 34px; }
-/* .check_reinvention.py meldet das als Zwilling von .up-iconbtn. Ist es nicht: .up-iconbtn ist
-   32px hoch und steht fuer sich, das hier ist ein 20px-Zeichen IM Feld, das den Text loescht --
-   dieselbe Rolle wie das X in jedem Suchfeld der App, nicht die eines Knopfes daneben. */
-.uob-ddcustom-clear {
-  position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
-  display: none; align-items: center; justify-content: center; width: 20px; height: 20px;
-  padding: 0; border: 0; border-radius: 6px; background: none; color: var(--vc-muted); cursor: pointer;
-}
-.uob-ddcustom-clear svg { width: 13px; height: 13px; display: block; }
-.uob-ddcustom-clear:hover { color: var(--vc-text); }
-/* .check_reinvention.py meldet ihn als moeglichen Zwilling von .up-seg-btn -- ist er nicht:
-   das ist der Add-Knopf aus "Your Brand" (.usb-ddcustom-add), Wert fuer Wert uebernommen --
-   32px, wie dort. Ein Switcher-Mitglied ist er nicht. */
-.uob-ddcustom-add {
-  flex: 0 0 auto; height: 32px; padding: 0 14px; border: 0; border-radius: 8px;
-  background: var(--vc-text); color: var(--vc-bg);
-  font: inherit; font-size: 13px; font-weight: 500; line-height: 1; cursor: pointer;
-  transition: opacity var(--uob-t) var(--uob-ease);
-}
-.uob-ddcustom-add:disabled { opacity: .35; cursor: default; }
 /* Der geschlossene Kasten hat keine HOEHE -- er bleibt aber im DOM und im Layout, display wird
    nie umgeschaltet. Das ist die Regel aus STYLEGUIDE §6, und sie gilt hier unveraendert: die
    Appear-Animation (opacity + Scale) laeuft wie bei jedem anderen Dropdown der App.
