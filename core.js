@@ -2914,7 +2914,13 @@
        eine Regel, die nie greift und beim naechsten Lesen in die Irre fuehrt. */
     { rang: 40, sel: ".up-cols, .ubo-cols, .uhm-set, .uo-settings-btn" }
   ];
-  var TOOLBAR_LEISTEN = ".up-head-tools, .vot-head-tools, .ubo-head-tools, .tcd-head-tools, .combo-head-tools";
+  /* .up-toolgroup-in gehoert dazu, seit es die einklappbare Werkzeuggruppe gibt: die Werkzeuge
+     liegen dann eine Ebene tiefer, und orderToolbars sieht nur direkte Kinder. Ohne diesen
+     Eintrag faellt die Rangordnung fuer jede Tabelle mit eingeklappter Leiste STILL aus --
+     rollen.length bleibt unter 2, die Schleife geht weiter, und niemand merkt es. Gemessen am
+     24.08. an prompts-table: dort stand die Reihenfolge schon richtig, der Ausfall waere also
+     erst beim naechsten neuen Knopf aufgefallen. */
+  var TOOLBAR_LEISTEN = ".up-head-tools, .vot-head-tools, .ubo-head-tools, .tcd-head-tools, .combo-head-tools, .up-toolgroup-in";
   function toolbarRang(el){
     var i;
     for (i = 0; i < TOOLBAR_ORDNUNG.length; i++){

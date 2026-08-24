@@ -1,0 +1,246 @@
+<meta charset="utf-8"><title>prompts-table: einklappbare Werkzeugleiste </title>
+<style>
+  html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif;background:#fff}
+  #buehne{padding:16px;width:1240px}
+  #out{position:fixed;left:8px;bottom:8px;z-index:9999;font:10px/1.45 ui-monospace,monospace;
+       background:#111;color:#eee;padding:8px;max-width:60vw;max-height:52vh;overflow:auto;
+       white-space:pre-wrap;border-radius:6px}
+</style>
+<body>
+<div id="buehne"></div>
+<pre id="out">laeuft…</pre>
+<script>
+/* Was hier gemessen wird und was NICHT.
+   MESSBAR: die gebaute Huelle, die Zustandsklassen bei jeder Bedienung, die Uebergangsangaben
+   (Eigenschaft, Dauer, Kurve), die echten Pixelabstaende in jedem Zustand, die Kappung um die
+   Dropdowns, und dass die Suchuebernahme die Suche noch findet.
+   NICHT MESSBAR in dieser Umgebung: wie die Bewegung AUSSIEHT. CSS-Uebergaenge laufen hier nicht
+   (siehe die Notiz zu haengenden CSSTransitions), deshalb werden sie unten ausdruecklich
+   abgeschaltet -- sonst halten sie jede animierte Eigenschaft auf ihrem STARTWERT fest und jede
+   Messung von grid-template-columns waere die Messung der eigenen Umgebung. */
+/* Die Gruppierung liegt im localStorage und ist eine Ansichtseinstellung, die aus einem
+   frueheren Lauf stehenbleiben kann. Sie hier raeumen, sonst messe ich einen Zustand, den
+   ein frischer Nutzer nie hat. */
+try { for (var i = window.localStorage.length - 1; i >= 0; i--) {
+  var k = window.localStorage.key(i);
+  if (k && /upt_/.test(k)) window.localStorage.removeItem(k);
+} } catch (e) {}
+window.__err = [];
+window.addEventListener("error", function(e){ window.__err.push(String(e.message)); });
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+
+var DATEIEN = ["core.css","core.js","prompts-table.css","prompts-table.js",
+               "bubble/prompts_table_bubble.html"];
+Promise.all(DATEIEN.map(hol)).then(function(t){
+  var m={}; DATEIEN.forEach(function(f,i){ m[f]=t[i]; });
+  ["core.css","prompts-table.css"].forEach(function(f){
+    var s=document.createElement("style"); s.textContent=m[f]; document.head.appendChild(s); });
+  /* Uebergaenge aus, BEVOR gemessen wird -- siehe Kopfkommentar. */
+  var s2=document.createElement("style"); s2.id="keineAnim";
+  s2.textContent="*,*::before,*::after{transition:none !important;animation:none !important}";
+  document.head.appendChild(s2);
+
+  var w=document.createElement("div"); w.innerHTML=wurzelAus(m["bubble/prompts_table_bubble.html"]);
+  var r=w.querySelector(".upt-root");
+  r.setAttribute("data-instance","tb"); r.setAttribute("data-cdn-pin","tb"); r.setAttribute("data-isdark","no");
+  document.getElementById("buehne").appendChild(r);
+
+  var j=document.createElement("script"); j.textContent=m["core.js"]; document.head.appendChild(j);
+  var j2=document.createElement("script"); j2.textContent=m["prompts-table.js"]; document.head.appendChild(j2);
+  window.__css = m["prompts-table.css"];
+  return new Promise(function(ok){ setTimeout(ok, 1400); });
+}).then(function(){
+  var R = {};
+  var root = document.querySelector(".upt-root");
+  var UC = window.UpstreemCore;
+
+  /* FRISCHEBEWEIS: steht die neue Regel wirklich im geladenen Stylesheet, und ist der neue
+     JS-Zweig aktiv? Ohne das ist jeder Messwert darunter wertlos. */
+  R.frisch = {
+    cssRegelDa: /\.up-toolgroup\b/.test([].map.call(document.styleSheets, function(ss){
+      try { return [].map.call(ss.cssRules, function(x){ return x.cssText || ""; }).join(""); }
+      catch(e){ return ""; } }).join("")),
+    huelleGebaut: !!root.querySelector(".up-toolgroup-in"),
+    ausloeserDa: !!root.querySelector(".upt-tbtrig"),
+    einklapperDa: !!root.querySelector(".upt-tbcol")
+  };
+
+  /* Daten hineingeben, damit die Tabelle nicht im Skelett steht. */
+  window.renderPromptsTable(JSON.stringify({
+    instanceId: "tb", view_active: "yes", totalCount: 2,
+    rows: [{ id:"1", prompt_text:"Was ist X?", status:"active" },
+           { id:"2", prompt_text:"Was ist Y?", status:"active" }]
+  }));
+
+  var tools = root.querySelector(".up-head-tools");
+  var grp   = root.querySelector(".up-toolgroup");
+  var inn   = root.querySelector(".up-toolgroup-in");
+  var trig  = root.querySelector(".upt-tbtrig");
+  var col   = root.querySelector(".upt-tbcol");
+
+  /* 1) STRUKTUR: was ist in der Gruppe, was steht daneben? */
+  function klassen(el){
+    return Array.prototype.map.call(el.children, function(c){
+      var cl = (c.className||"").toString().split(/\s+/);
+      return cl.filter(function(x){ return /^(up|upt)-/.test(x); })[0] || c.tagName.toLowerCase();
+    });
+  }
+  R.struktur = { inDerGruppe: klassen(inn), nebenDerGruppe: klassen(tools) };
+
+  /* 2) UEBERGAENGE: Eigenschaft, Dauer, Kurve -- die Vorgabe war 200ms ease in beide Richtungen. */
+  function uebergang(el){
+    var cs = getComputedStyle(el);
+    return { eigenschaft: cs.transitionProperty, dauer: cs.transitionDuration, kurve: cs.transitionTimingFunction };
+  }
+  /* Dafuer die Anim-Sperre kurz weg: sie ueberschreibt genau das, was hier geprueft wird. */
+  var sperre = document.getElementById("keineAnim");
+  sperre.disabled = true;
+  R.uebergaenge = { gruppe: uebergang(grp), ausloeser: uebergang(trig), einklapper: uebergang(col) };
+  sperre.disabled = false;
+
+  /* 3) ZUSTANDSMASCHINE: jede Bedienung einmal, und jedes Mal ablesen, was der Nutzer sieht. */
+  function bild(){
+    var cs = getComputedStyle(grp), csT = getComputedStyle(trig), csC = getComputedStyle(col);
+    return {
+      klassen: (root.className||"").split(/\s+/).filter(function(x){ return /^is-tools/.test(x); }).join(" ") || "(keine)",
+      gruppeSpalten: cs.gridTemplateColumns,
+      gruppeDeckkraft: cs.opacity,
+      gruppeBreite: Math.round(grp.getBoundingClientRect().width),
+      innenKappung: getComputedStyle(inn).overflow,
+      ausloeserBreite: Math.round(trig.getBoundingClientRect().width) + " (" + csT.width + ", opac " + csT.opacity + ")",
+      einklapperBreite: Math.round(col.getBoundingClientRect().width) + " (" + csC.width + ", opac " + csC.opacity + ")",
+      ariaExpanded: trig.getAttribute("aria-expanded")
+    };
+  }
+  function feuer(el, typ){ el.dispatchEvent(new Event(typ, { bubbles: typ !== "pointerenter" && typ !== "pointerleave" })); }
+  function pointer(el, typ){ el.dispatchEvent(new PointerEvent(typ, { bubbles: false })); }
+  function warte(ms){ return new Promise(function(ok){ setTimeout(ok, ms); }); }
+
+  R.zustaende = {};
+  R.zustaende["1_start_eingeklappt"] = bild();
+
+  return warte(30).then(function(){
+    /* Hover auf den Ausloeser -> nach 120ms Vorschau */
+    pointer(trig, "pointerenter");
+    R.zustaende["2_direkt_nach_hover_noch_nichts"] = bild();
+    return warte(200);
+  }).then(function(){
+    R.zustaende["3_vorschau_nach_120ms"] = bild();
+    /* Zeiger verlaesst die Leiste -> nach 260ms wieder zu */
+    pointer(tools, "pointerleave");
+    return warte(120);
+  }).then(function(){
+    R.zustaende["4_120ms_nach_verlassen_noch_offen"] = bild();
+    return warte(250);
+  }).then(function(){
+    R.zustaende["5_nach_260ms_wieder_eingeklappt"] = bild();
+    /* Klick -> festgestellt */
+    trig.click();
+    return warte(280);
+  }).then(function(){
+    R.zustaende["6_klick_festgestellt"] = bild();
+    /* Hover auf die Leiste -> Einklapper erscheint */
+    var vorher = Math.round(col.getBoundingClientRect().width);
+    R.einklapperVorHover = vorher;
+    /* :hover laesst sich nicht per Ereignis erzwingen. Also die Regel selbst pruefen: passt sie
+       auf den Knopf, wenn der Vorfahr :hover haette? Ersatzweise dieselbe Regel mit einer
+       Testklasse nachstellen und den Effekt messen -- so wird die REGEL geprueft, nicht der
+       Zeiger, den es hier nicht gibt. */
+    var probe = document.createElement("style");
+    probe.textContent = ".upt-root.is-tools-open .up-head-tools.__probe .upt-tbcol { width: 32px; opacity: 1; margin-right: 0; pointer-events: auto; }";
+    document.head.appendChild(probe);
+    tools.classList.add("__probe");
+    R.zustaende["7_einklapper_bei_hover"] = bild();
+    R.hinweisHover = "Die :hover-Regel selbst ist nicht per Ereignis erzwingbar. Gemessen wurde eine " +
+      "identische Regel mit Testklasse -- damit ist die WIRKUNG geprueft, die Zeigerbindung nicht.";
+    tools.classList.remove("__probe"); probe.remove();
+    /* Einklappen */
+    col.click();
+    return warte(280);
+  }).then(function(){
+    R.zustaende["8_einklapper_geklickt"] = bild();
+
+    /* 4) FILTER AKTIV -> muss offen bleiben UND der Einklapper muss weg sein.
+       has-text sitzt auf .up-search, NICHT auf .up-search-box -- die erste Fassung dieser Messung
+       hat die falsche Klasse abgefragt und daraufhin einen Defekt gemeldet, den es nicht gab. */
+    var suche = root.querySelector(".up-search-input");
+    var suchWrap = root.querySelector(".up-search");
+    suche.value = "abc";
+    suche.dispatchEvent(new Event("input", { bubbles: true }));
+    R.sucheHatGegriffen = suchWrap.classList.contains("has-text");
+    return warte(120);
+  }).then(function(){
+    R.zustaende["9_suchtext_aktiv_bleibt_offen"] = bild();
+    R.einklapperBeiFilter = getComputedStyle(col).display;
+    /* Und der Einklapper darf nichts tun, solange der Filter steht. */
+    col.click();
+    return warte(280);
+  }).then(function(){
+    R.zustaende["9b_einklappen_bei_aktivem_filter_wirkungslos"] = bild();
+
+    /* Gegenprobe: Filter weg -> darf wieder einklappen */
+    var suche = root.querySelector(".up-search-input");
+    suche.value = "";
+    suche.dispatchEvent(new Event("input", { bubbles: true }));
+    return warte(120);
+  }).then(function(){
+    R.zustaende["10_filter_weg_wieder_einklappbar"] = bild();
+    /* Zweiter Filterweg, ohne Sucheingabe: der Marken-Umschalter. */
+    var bt = root.querySelector(".upt-brand-toggle");
+    R.markenKnopfDa = !!bt;
+    return warte(20);
+
+    /* 5) ABSTAENDE: liegt zwischen den Nachbarn wirklich 8px, in JEDEM Zustand? Die
+       negativen Aussenabstaende sind genau dafuer da -- ohne sie waeren es 16px. */
+    function luecke(a, b){
+      var ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+      return Math.round(rb.left - ra.right);
+    }
+    var exp = root.querySelector(".up-export");
+    var status = root.querySelector(".upt-status");
+    function abstaende(){
+      return { status_zu_ausloeser: status ? luecke(status, trig) : null,
+               ausloeser_zu_export: luecke(trig, exp),
+               gruppe_zu_naechstem: luecke(grp, grp.nextElementSibling) };
+    }
+    R.abstaende = { eingeklappt: abstaende() };
+    trig.click();
+    return warte(280).then(function(){
+      R.abstaende.festgestellt = abstaende();
+      col.click(); return warte(280);
+    });
+  }).then(function(){
+    /* 6) SUCHUEBERNAHME: die Kernregel blendet alle Geschwister der Suche aus. Liegt die Suche
+       jetzt eine Ebene tiefer, muss die Ausnahme greifen -- sonst ist die Zeile leer. */
+    root.classList.add("is-searchtakeover");
+    var such = root.querySelector(".up-search");
+    R.suchuebernahme = {
+      gruppeDisplay: getComputedStyle(grp).display,
+      sucheDisplay: getComputedStyle(such).display,
+      sucheSichtbar: such.getClientRects().length > 0,
+      sortDisplay: getComputedStyle(root.querySelector(".up-sort")).display,
+      innenKappung: getComputedStyle(inn).overflow
+    };
+    root.classList.remove("is-searchtakeover");
+
+    /* 7) DROPDOWNS: wird ein Menue aus der Gruppe abgeschnitten? */
+    trig.click();
+    return warte(280);
+  }).then(function(){
+    var sortMenu = root.querySelector(".up-sort-menu");
+    R.kappung = {
+      klassen: (root.className||"").split(/\s+/).filter(function(x){ return /^is-tools/.test(x); }).join(" "),
+      innen: getComputedStyle(inn).overflow,
+      sortMenuVorhanden: !!sortMenu
+    };
+    R.konsolenfehler = window.__err;
+    document.getElementById("out").textContent = JSON.stringify(R, null, 1);
+    window.__R = R; window.__fertig = true;
+  }).catch(function(e){
+    document.getElementById("out").textContent = "FEHLER: " + e.message + "\n" + e.stack;
+    window.__fertig = true;
+  });
+});
+</script>

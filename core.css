@@ -163,6 +163,35 @@
     .up-heading.has-count .up-head-sep, .up-heading.has-count .up-head-count { display: block; }
     .up-head-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; flex: 0 0 auto; }
 
+    /* ── Einklappbare Werkzeuggruppe ─────────────────────────────────────────────────────────
+       Die Kopfleiste einer grossen Tabelle traegt schnell sechs bis acht Bedienelemente. Diese
+       Gruppe schiebt sie zusammen, ohne sie wegzunehmen: eingeklappt bleibt nur der Ausloeser
+       stehen, ausgeklappt steht alles genau wie vorher.
+
+       Warum grid-template-columns 0fr -> 1fr und nicht max-width: nur so laeuft die Bewegung
+       exakt bis zur ECHTEN Inhaltsbreite. Ein geratenes max-width haelt entweder zu frueh an
+       oder laeuft die letzten Pixel ins Leere und wirkt dabei traege. Gleiche Bauart wie der
+       Meldungsstreifen im Onboarding, dort mit Zeilen statt Spalten.
+
+       200ms ease, beide Richtungen gleich -- ausdrueckliche Vorgabe.
+
+       Der negative Aussenabstand im eingeklappten Zustand raeumt die Luecke weg, die .up-head-tools
+       ueber `gap` auch um ein NULL Pixel breites Kind legt. Ohne ihn stehen zwischen der
+       Statusgruppe und dem Ausloeser 16px statt 8px, und die Leiste sieht schief aus. */
+    .up-toolgroup { display: grid; grid-template-columns: 0fr; opacity: 0; margin-right: -8px;
+      transition: grid-template-columns 200ms ease, opacity 200ms ease, margin-right 200ms ease; }
+    /* min-width: 0 ist Pflicht. Ein Grid-Kind bekommt sonst seine Inhaltsbreite als Untergrenze,
+       und die Spalte laesst sich gar nicht erst auf 0 ziehen -- die Gruppe bliebe offen stehen. */
+    .up-toolgroup-in { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; }
+    .up-root.is-tools-open .up-toolgroup,
+    .up-root.is-tools-peek .up-toolgroup { grid-template-columns: 1fr; opacity: 1; margin-right: 0; }
+    /* Die Kappung faellt erst NACH der Bewegung -- sonst haengt waehrend des Aufziehens ein Menue
+       aus der Gruppe heraus. Und sie MUSS fallen: die Dropdowns darin sind absolut positionierte
+       Kinder, und ein overflow:hidden am Vorfahren schneidet sie ab. Gesetzt wird die Klasse von
+       einer Uhr mit benanntem Ende, NICHT von transitionend: in einem Bubble-Tab, der gerade
+       nicht gemalt wird, laeuft der Uebergang nicht und das Ereignis kommt nie. */
+    .up-root.is-tools-shown .up-toolgroup-in { overflow: visible; }
+
     .up-iconbtn {
       display: inline-flex; align-items: center; justify-content: center;
       width: 32px; height: 32px; border: 0; border-radius: 8px;
@@ -221,7 +250,14 @@
     /* Mobile: an open search takes over the toolbar row. Below MOBILE_SEARCH_MAX the other
        tools hide so the field spans from the heading to the right edge; they return on close. */
     .up-root.is-searchtakeover .up-head-tools { flex: 1 1 auto; min-width: 0; }
-    .up-root.is-searchtakeover .up-head-tools > :not(.up-search) { display: none !important; }
+    /* :not(.up-toolgroup) seit der einklappbaren Werkzeuggruppe: die Suche liegt dann eine Ebene
+       tiefer, und ohne die Ausnahme blendet diese Regel mit der Gruppe die Suche selbst aus --
+       auf einer schmalen Tabelle waere die Suchuebernahme damit eine leere Zeile. */
+    .up-root.is-searchtakeover .up-head-tools > :not(.up-search):not(.up-toolgroup) { display: none !important; }
+    /* Waehrend der Uebernahme ist die Gruppe offen und ungekappt, zeigt aber nur die Suche. */
+    .up-root.is-searchtakeover .up-toolgroup { grid-template-columns: 1fr; opacity: 1; margin-right: 0; }
+    .up-root.is-searchtakeover .up-toolgroup-in { overflow: visible; }
+    .up-root.is-searchtakeover .up-toolgroup-in > :not(.up-search) { display: none; }
     .up-root.is-searchtakeover .up-search { flex: 1 1 auto; min-width: 0; }
     .up-root.is-searchtakeover .up-search-box { width: auto; flex: 1 1 auto; }
     .up-root.is-searchtakeover .up-heading { display: none; }             /* search owns the whole row */

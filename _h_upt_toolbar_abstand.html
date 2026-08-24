@@ -1,0 +1,65 @@
+<meta charset="utf-8"><title>prompts-table: Abstaende und Gruppierung</title>
+<style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif}#buehne{padding:16px;width:1240px}
+#out{padding:10px;font:11px/1.5 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body><div id="buehne"></div><pre id="out">laeuft…</pre>
+<script>
+/* Zwei Dinge, die im vorigen Aufbau nicht saubertrennbar waren:
+   1. Die echten Pixelabstaende in JEDEM Zustand -- vorher habe ich zweimal denselben Zustand
+      gemessen und ihn falsch benannt.
+   2. Der Punkt des Gruppierungs-Fixes: mit EINGESCHALTETER Gruppierung (steht im localStorage und
+      wird beim Aufbau gelesen) muss sich die Leiste weiterhin einklappen lassen. Vorher war sie
+      damit fuer immer offen -- wer Gruppierung benutzt, haette die aufgeraeumte Ansicht nie
+      gesehen. Deshalb wird der Schluessel hier VOR dem Aufbau gesetzt. */
+window.__err = []; window.addEventListener("error", function(e){ window.__err.push(String(e.message)); });
+try {
+  for (var i = window.localStorage.length - 1; i >= 0; i--){
+    var k = window.localStorage.key(i); if (k && /upt_/.test(k)) window.localStorage.removeItem(k);
+  }
+  window.localStorage.setItem("upt_grouped__tb", "yes");   /* Gruppierung AN, vor dem Aufbau */
+} catch(e){}
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=["core.css","core.js","prompts-table.css","prompts-table.js","bubble/prompts_table_bubble.html"];
+Promise.all(D.map(hol)).then(function(t){
+  var m={}; D.forEach(function(f,i){ m[f]=t[i]; });
+  ["core.css","prompts-table.css"].forEach(function(f){ var s=document.createElement("style"); s.textContent=m[f]; document.head.appendChild(s); });
+  var s2=document.createElement("style"); s2.textContent="*,*::before,*::after{transition:none !important;animation:none !important}"; document.head.appendChild(s2);
+  var w=document.createElement("div"); w.innerHTML=wurzelAus(m["bubble/prompts_table_bubble.html"]);
+  var r=w.querySelector(".upt-root");
+  r.setAttribute("data-instance","tb"); r.setAttribute("data-cdn-pin","tb"); r.setAttribute("data-isdark","no");
+  document.getElementById("buehne").appendChild(r);
+  var j=document.createElement("script"); j.textContent=m["core.js"]; document.head.appendChild(j);
+  var j2=document.createElement("script"); j2.textContent=m["prompts-table.js"]; document.head.appendChild(j2);
+  return new Promise(function(ok){ setTimeout(ok,1400); });
+}).then(function(){
+  var root=document.querySelector(".upt-root");
+  window.renderPromptsTable(JSON.stringify({ instanceId:"tb", view_active:"yes", totalCount:2,
+    rows:[{id:"1",prompt_text:"Was ist X?",status:"active"},{id:"2",prompt_text:"Was ist Y?",status:"active"}] }));
+  var tools=root.querySelector(".up-head-tools"), grp=root.querySelector(".up-toolgroup");
+  var trig=root.querySelector(".upt-tbtrig"), col=root.querySelector(".upt-tbcol");
+  var exp=root.querySelector(".up-export"), status=root.querySelector(".upt-status");
+  function kl(){ return (root.className||"").split(/\s+/).filter(function(x){return /^is-tools|^is-grouped/.test(x)}).join(" ")||"(keine)"; }
+  function l(a,b){ var ra=a.getBoundingClientRect(), rb=b.getBoundingClientRect(); return Math.round(rb.left-ra.right); }
+  function abst(){ return { zustand: kl(),
+    grp_breite: Math.round(grp.getBoundingClientRect().width),
+    trig_breite: Math.round(trig.getBoundingClientRect().width),
+    /* Der einzige Wert, der zaehlt: was der Nutzer als Luecke SIEHT. */
+    status_bis_export: Math.round(exp.getBoundingClientRect().left - status.getBoundingClientRect().right) }; }
+  function warte(ms){ return new Promise(function(ok){ setTimeout(ok,ms); }); }
+  var R={};
+  R.gruppierungAn = root.classList.contains("is-grouped");
+  R.eingeklappt = abst();
+  trig.click();
+  return warte(300).then(function(){
+    R.festgestellt = abst();
+    col.click(); return warte(300);
+  }).then(function(){
+    /* DER PUNKT: bei eingeschalteter Gruppierung wieder eingeklappt? */
+    R.mitGruppierung_wieder_eingeklappt = abst();
+    R.fehler = window.__err;
+    document.getElementById("out").textContent = JSON.stringify(R,null,1);
+    window.__R=R; window.__fertig=true;
+  });
+}).catch(function(e){ document.getElementById("out").textContent="FEHLER: "+e.message; window.__fertig=true; });
+</script>

@@ -1047,3 +1047,38 @@
   .upt-grp-kpi { min-width: 58px; }
 }
 
+
+
+/* ══ Einklappbare Werkzeugleiste ══════════════════════════════════════════════════════════════
+   Die Geometrie der Gruppe steht in core.css (.up-toolgroup). Hier bleibt nur, WANN Ausloeser und
+   Einklapper sichtbar sind -- das ist die Entscheidung dieser Tabelle, nicht die des Bauteils.
+
+   Beide Knoepfe SIND .up-iconbtn: 32x32, Radius 8, Farben und Hover kommen von dort. Hier steht
+   kein einziger dieser Werte noch einmal.
+
+   Warum Breite statt display: display laesst sich nicht animieren, und die Vorgabe lautet 200ms
+   in beide Richtungen. margin-right raeumt dabei die `gap`-Luecke weg, die .up-head-tools auch um
+   ein null Pixel breites Kind legt -- ohne sie stuenden 16px statt 8px zwischen den Nachbarn. */
+
+.upt-root .upt-tbtrig, .upt-root .upt-tbcol {
+  overflow: hidden; flex: 0 0 auto;
+  transition: width 200ms ease, opacity 200ms ease, margin-right 200ms ease;
+}
+
+/* Der Ausloeser steht im eingeklappten Zustand UND im Hover-Zustand da. Ihn beim Aufziehen
+   verschwinden zu lassen waere ein Flackerkreis: er liegt unter dem Zeiger, faellt weg, der Zeiger
+   verlaesst ihn, die Leiste klappt zu, er kommt zurueck. Er geht erst, wenn die Leiste
+   festgestellt ist -- dann uebernimmt der Einklapper links. */
+.upt-root .upt-tbtrig { width: 32px; opacity: 1; margin-right: 0; }
+.upt-root.is-tools-open .upt-tbtrig { width: 0; opacity: 0; margin-right: -8px; pointer-events: none; }
+
+/* Der Einklapper erscheint nur, wenn die Leiste festgestellt ist und der Zeiger (oder der
+   Tastaturfokus) auf ihr liegt. Kein Dauergast: er ist der Ausgang, nicht ein Werkzeug. */
+.upt-root .upt-tbcol { width: 0; opacity: 0; margin-right: -8px; pointer-events: none; }
+.upt-root.is-tools-open .up-head-tools:hover .upt-tbcol,
+.upt-root.is-tools-open .up-head-tools:focus-within .upt-tbcol {
+  width: 32px; opacity: 1; margin-right: 0; pointer-events: auto;
+}
+/* Haelt ein aktiver Filter die Leiste offen, gibt es keinen Ausgang -- ihn trotzdem anzubieten
+   hiesse, den Nutzer auf einen Knopf klicken zu lassen, der nichts tut. */
+.upt-root.is-tools-locked .upt-tbcol { display: none; }
