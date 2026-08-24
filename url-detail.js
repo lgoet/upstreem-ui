@@ -211,22 +211,21 @@
       }
     },
     {
-      /* embed.reddit.com ist als EIGENSTAENDIGER Iframe gedacht (Reddits Antwort auf ein
-         Script-Widget) -- kein Script noetig. Was er NICHT von selbst kann: seine tatsaechliche
-         Hoehe ueber die Seitengrenze hinweg melden. Gegengeprueft (24.08.): auch Reddits EIGENES
-         Beispiel fuer den alternativen widgets.js-Weg setzt eine FESTE data-embed-height, kein
-         Auto-Resize -- ein Umstieg auf das Script haette also dasselbe Grundproblem, nicht geloest.
-         Bei fester Hoehe und unbekannter echter Inhaltslaenge bleiben nur zwei schlechte Optionen:
-         abschneiden (Inhalt komplett unerreichbar) oder scrollen (Inhalt bleibt erreichbar, nur
-         bei ungewoehnlich langen Beitraegen sichtbar). scrollErlaubt: true waehlt zweiteres bewusst
-         -- nur fuer Reddit, die anderen Anbieter behalten kein-Scroll, da deren Player nie eigenen
-         Overflow haben. Die Hoehe selbst zielt DESHALB auf den typischen Fall, nicht den langen:
-         500px (Reddits eigener Beispielwert) liess kurze Beitraege mit viel Leerraum unten stehen.
-         300px trifft einen kurzen Beitrag ohne Bild naeher -- und laengere Beitraege sind jetzt
-         nur noch scrollbar statt abgeschnitten, keine verlorene Information mehr. */
+      /* embed.reddit.com meldet seine tatsaechliche Hoehe nie ueber die Seitengrenze hinweg --
+         weder per Auto-Resize noch per Scroll: Reddits eigene Seite blockiert internes Scrollen
+         selbst (eigenes overflow:hidden vermutlich), scrolling="auto" auf unserer Seite aendert
+         daran nichts, das ist gegengeprueft (Nutzer-Report: "einige Embeds abgeschnitten" BLIEB
+         trotz scrollErlaubt:true bestehen). Auch der Script-Weg (widgets.js) haette nichts
+         gebracht -- Reddits eigenes Beispiel dafuer setzt ebenfalls nur eine FESTE
+         data-embed-height, kein Auto-Resize. Und die oEmbed-API liefert weder Hoehe/Breite noch
+         einen CORS-Header, an dem man das programmatisch vorab abfragen koennte -- auch nicht in
+         echter Produktion, nicht nur in dieser Sandbox. Es gibt keine Zahl, die fuer jeden Beitrag
+         stimmt: kurze Beitraege bekommen etwas Leerraum, ungewoehnlich lange werden am unteren
+         Rand abgeschnitten. Vor die Wahl gestellt, welcher der beiden Fehler bleiben darf, hat der
+         Nutzer sich am 24.08. explizit fuer 500px entschieden -- Leerraum statt Abschneiden. */
       key: "reddit", label: "Reddit",
       passt: function (u) { return /reddit\.com\/r\/[^\/]+\/comments\/[a-z0-9]+/i.test(u); },
-      art: "iframe", hoehe: 300, scrollErlaubt: true,
+      art: "iframe", hoehe: 500, scrollErlaubt: true,
       src: function (u) {
         var m = /reddit\.com(\/r\/[^\/]+\/comments\/[^?#]*)/i.exec(u);
         return "https://embed.reddit.com" + (m ? m[1] : "") + "?embed=true";
