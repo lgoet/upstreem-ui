@@ -213,14 +213,18 @@
     {
       /* embed.reddit.com ist als EIGENSTAENDIGER Iframe gedacht (Reddits Antwort auf ein
          Script-Widget) -- kein Script noetig. Was er NICHT von selbst kann: seine tatsaechliche
-         Hoehe ueber die Seitengrenze hinweg melden (cross-origin, ohne postMessage-Gegenstelle
-         auf unserer Seite), und lange Beitraege zeigen einen "Weiterlesen"-Schnitt, den nur
-         Reddit selbst steuert -- dafuer ist kein zuverlaessiger Parameter dokumentiert, also
-         wird hier keiner erfunden. 300px statt der vorherigen 560: gemessen an einem typischen
-         einzelnen Beitrag ohne Bild, naeher an der echten Hoehe als der alte, ungeprüfte Wert. */
+         Hoehe ueber die Seitengrenze hinweg melden. Gegengeprueft (24.08.): auch Reddits EIGENES
+         Beispiel fuer den alternativen widgets.js-Weg setzt eine FESTE data-embed-height, kein
+         Auto-Resize -- ein Umstieg auf das Script haette also dasselbe Grundproblem, nicht geloest.
+         Bei fester Hoehe und unbekannter echter Inhaltslaenge bleiben nur zwei schlechte Optionen:
+         abschneiden (Inhalt komplett unerreichbar) oder scrollen (Inhalt bleibt erreichbar, nur
+         bei ungewoehnlich langen Beitraegen sichtbar). scrollErlaubt: true waehlt zweiteres bewusst
+         -- nur fuer Reddit, die anderen Anbieter behalten kein-Scroll, da deren Player nie eigenen
+         Overflow haben. 500px ist Reddits eigener Beispielwert aus deren Embed-Dokumentation
+         (data-embed-height="500"), naeher an einem typischen Beitrag als die vorherigen 300. */
       key: "reddit", label: "Reddit",
       passt: function (u) { return /reddit\.com\/r\/[^\/]+\/comments\/[a-z0-9]+/i.test(u); },
-      art: "iframe", hoehe: 300,
+      art: "iframe", hoehe: 500, scrollErlaubt: true,
       src: function (u) {
         var m = /reddit\.com(\/r\/[^\/]+\/comments\/[^?#]*)/i.exec(u);
         return "https://embed.reddit.com" + (m ? m[1] : "") + "?embed=true";
@@ -562,8 +566,11 @@
           /* scrolling="no": veraltetes Attribut, aber von jedem Browser weiter beachtet (HTML
              Living Standard fuehrt es als "obsolete but conforming"). Ohne das zeigt ein Anbieter,
              dessen Inhalt hoeher ist als unser fester Rahmen, einen eigenen Scrollbalken IN der
-             iframe -- bei fremdem, cross-origin Inhalt kommt CSS da nicht ran, das Attribut schon. */
-          '<iframe src="' + esc(a.src(url)) + '" loading="lazy" allowfullscreen scrolling="no"' +
+             iframe -- bei fremdem, cross-origin Inhalt kommt CSS da nicht ran, das Attribut schon.
+             a.scrollErlaubt (bisher nur Reddit): Abschneiden ist schlimmer als ein Scrollbalken --
+             siehe Begruendung am Reddit-Eintrag oben. */
+          '<iframe src="' + esc(a.src(url)) + '" loading="lazy" allowfullscreen scrolling="' +
+            (a.scrollErlaubt ? "auto" : "no") + '"' +
             ' referrerpolicy="strict-origin-when-cross-origin"' +
             ' allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"' +
             ' title="' + esc(a.label) + ' embed"></iframe>' +
