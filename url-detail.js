@@ -720,19 +720,21 @@
         var text = (payload && typeof payload === "object") ? null : txt(payload);
         var p = null, mitgerissen = null;
         if (text) {
-          p = UC.readBubble ? UC.readBubble(text) : null;
-          /* markdown_summary kann MITTEN im Objekt stehen und selbst unescaptes JSON sein --
-             {"summary": "..."} roh. Gemessen (24.08.): das bringt den Parser der GANZEN Zeile
-             durcheinander, nicht nur dieses eine Feld. Erst NACHDEM der normale Weg das schon
-             erkannt hat (p ist keine brauchbare Struktur), wird das Feld gezielt herausgezogen
-             und der Rest neu versucht -- der Normalfall (Feld schon sauber oder gar nicht da)
-             bleibt unangetastet und laeuft ueber den geteilten Weg wie jedes andere Feld auch. */
-          if (!(p && typeof p === "object") && text.indexOf('"markdown_summary"') >= 0) {
-            var gezogen = ziehMarkdownSummary(text);
-            if (gezogen.roh != null) {
-              mitgerissen = gezogen.roh;
-              p = UC.readBubble ? UC.readBubble(gezogen.rest) : null;
-            }
+          /* Der Blick VOR dem eigentlichen Lesen: traegt der Text das bekannte kaputte Muster
+             ({"summary" roh, ohne \" davor), waere der erste Versuch ueber readBubble ohnehin
+             zum Scheitern verurteilt -- und dessen eigener parseBubbleJson-Zweig meldet JEDEN
+             Fehlschlag mit einer eigenen Konsolenwarnung, auch wenn die zweite, gezielte
+             Extraktion gleich danach erfolgreich ist. Gemessen: die Seite zeigte alle Felder
+             richtig UND eine Warnung stand trotzdem da -- fuer einen Fall, der laengst behoben
+             ist. Bei bekanntem Muster also direkt zur Extraktion, der normale Weg bleibt fuer
+             alles andere (echte, unbekannte Fehler sollen weiter warnen). */
+          var bekanntesMuster = /"markdown_summary"\s*:\s*"\{"summary"/.test(text);
+          var gezogen = bekanntesMuster ? ziehMarkdownSummary(text) : null;
+          if (gezogen && gezogen.roh != null) {
+            mitgerissen = gezogen.roh;
+            p = UC.readBubble ? UC.readBubble(gezogen.rest) : null;
+          } else {
+            p = UC.readBubble ? UC.readBubble(text) : null;
           }
         } else {
           p = payload;
