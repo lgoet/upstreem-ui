@@ -815,7 +815,12 @@
     }
     function renderEmpty(){
       elGrid.style.gridTemplateColumns = "1fr";
-      elGrid.innerHTML = '<div class="uhm-empty">No data</div>';
+      /* Zwei verschiedene Aussagen im selben Kasten: "es gibt nichts" und "es kam etwas an,
+         aber es war unlesbar". Ohne die zweite las sich ein zerrissener Payload als sauberes
+         leeres Ergebnis. */
+      elGrid.innerHTML = state.leseFehler
+        ? UC.leseFehlerHtml("the radar")
+        : '<div class="uhm-empty">No data</div>';
       state.layoutKey = "";
     }
 
@@ -1330,6 +1335,17 @@
     var ctrl = {
       update: function(params){
         params = params || {};
+        /* Der Payload kam an, war aber nicht lesbar -- normParams in core.js haengt dafuer
+           __parseError an (§46). Ohne diesen Zweig traegt der Aufruf keine cells: das Raster
+           bleibt im Skelett stehen und sagt nichts. */
+        if (params.__parseError){
+          state.leseFehler = true; state.loading = false; state.hasData = false;
+          root.classList.remove("is-loading");
+          render(); return;
+        }
+        /* Nur eine echte Lieferung loescht den Vermerk -- ein reiner Theme-Render darf ihn
+           nicht wegraeumen, sonst stuende danach "No data" statt des Fehlers. */
+        if (params.cells != null || params.rows != null) state.leseFehler = false;
         if (params.isDark != null){
           /* NICHT isYes(params.isDark): der Parameter ist eine Momentaufnahme aus dem Moment,
              in dem Bubble den Payload gebaut hat. Kennt core ein Thema, gewinnt core -- sonst
@@ -1381,6 +1397,9 @@
          ist der ausdrueckliche Aufruf von aussen, und der bedeutet "zeig den Ladezustand". */
       setLoading: function(on){
         state.loading = !!on;
+        /* Ein NEUER Ladeversuch raeumt den Lesefehler weg -- sonst ueberlebt er jeden weiteren
+           Versuch und steht noch da, waehrend frische Daten unterwegs sind. */
+        if (state.loading) state.leseFehler = false;
         root.classList.toggle("is-loading", state.loading);
         if (!state.loading){ soft.end(); render(); return; }
         soft.end();

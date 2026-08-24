@@ -484,10 +484,22 @@
       if (revealRaf){ cancelAnimationFrame(revealRaf); revealRaf = null; }
       points = []; hovered = null;
       killTip();
+      /* Gleiche Stelle wie clearExtras in UC.makeLine: ohne das steht der Fehlertext auch dann
+         noch da, wenn danach wieder echte Daten gezeichnet werden -- und ein zweites empty()
+         haengte einen zweiten Kasten darunter. */
+      var em = wrap.querySelector(".up-line-empty"); if (em) em.parentNode.removeChild(em);
     }
     function skeleton(){
       destroy();
       wrap.classList.add("is-sk");
+    }
+    /* Gegenstueck zu skeleton(): der Zustand "es kam etwas an, aber es war unlesbar". Ohne das
+       gab es im Landscape-Modus nur Skelett oder Zeichnung -- ein zerrissener Payload haette
+       also weitergeladen. Gleicher Kasten und gleiche Klasse wie in UC.makeLine.empty. */
+    function empty(msg){
+      destroy();
+      wrap.classList.remove("is-sk");
+      wrap.insertAdjacentHTML("beforeend", '<div class="up-line-empty">' + UC.esc(msg || "No data") + '</div>');
     }
     function render(rows){
       if (!isOwner()) return;
@@ -558,7 +570,7 @@
       });
     }
     function resize(){ if (chart){ try { chart.resize(); } catch(e){} } }
-    return { render: render, skeleton: skeleton, destroy: destroy, resize: resize,
+    return { render: render, skeleton: skeleton, empty: empty, destroy: destroy, resize: resize,
              redraw: function(){ if (lastRows) render(lastRows); } };
   }
 
@@ -833,6 +845,13 @@
     }
     function renderChartSide(){
       if (!isOwner()) return;
+      /* Der Lesefehler schlaegt den Ladezustand: sonst dreht die Kurve weiter, waehrend die
+         Tabelle daneben den Fehler schon zeigt. */
+      if (state.leseFehler){
+        root.classList.remove("is-line-loading"); scaleKit.close();
+        if (chartMode === "landscape"){ line.destroy(); matrix.empty("The data could not be read."); return; }
+        matrix.destroy(); line.empty("The data could not be read."); return;
+      }
       var loading = state.loading || !state.hasLine || state.linePending;
       root.classList.toggle("is-line-loading", loading);
       if (chartMode === "landscape"){
@@ -1008,6 +1027,13 @@
          and let the .is-reloading dim carry the feedback instead of dropping into the skeleton. */
       var liveRows = inactive ? (state.inactiveRows || []) : (state.tableRows || []);
       var keepForSort = softReload && liveRows.length > 0;
+      /* Der Lesefehler kommt VOR dem Skelett -- sonst sieht endloses Laden aus wie "gleich da". */
+      if (state.leseFehler){
+        if (emptyGraceTimer){ clearTimeout(emptyGraceTimer); emptyGraceTimer = null; }
+        tableEl.innerHTML = UC.leseFehlerHtml("brands");
+        applyCols();
+        return;
+      }
       if ((isLoading() || !hasData) && !keepForSort){
         if (emptyGraceTimer){ clearTimeout(emptyGraceTimer); emptyGraceTimer = null; }
         tableEl.innerHTML = skeletonHtml();
@@ -1662,6 +1688,9 @@
         /* Local state + UI only — fires NO Bubble events (same contract as every other reset* here:
            the caller loads fresh data next, and firing sort/filter events from a reset re-triggers
            the very workflows that are already in flight). */
+        /* Ein Reset raeumt den Lesefehler mit weg -- er gehoert zu den Daten, nicht zur
+           Bedienung, und der Aufrufer laedt danach frisch. */
+        state.leseFehler = false;
         sortField = "visibility"; sortDir = "desc";
         SORT_STORE[instanceId] = { field: sortField, dir: sortDir };
         filterSel = {}; filterQuery = "";
@@ -1681,6 +1710,20 @@
       },
       update: function(params){
         params = params || {};
+        /* Der Payload kam an, war aber nicht lesbar -- normParams in core.js haengt dafuer
+           __parseError an (§46). Ohne diesen Zweig traegt der Aufruf keinen bekannten
+           Schluessel: Kurve und Tabelle bleiben im Skelett stehen, und ein zerrissener Payload
+           sieht aus wie "gleich da". */
+        if (params.__parseError){
+          state.leseFehler = true;
+          state.loading = false; state.linePending = false;
+          state.hasTable = true; state.tableRows = [];
+          state.hasLine = true; state.series = [];
+          render(); return;
+        }
+        /* Nur eine echte Lieferung loescht den Vermerk -- ein reiner Theme-Render darf ihn nicht
+           wegraeumen, sonst stuende danach der Leerzustand statt des Fehlers. */
+        if (params.rows != null || params.series != null || params.table != null) state.leseFehler = false;
         if (params.isDark != null){
           /* NICHT isYes(params.isDark): der Parameter ist eine Momentaufnahme aus dem Moment,
              in dem Bubble den Payload gebaut hat. Kennt core ein Thema, gewinnt core -- sonst
@@ -1744,6 +1787,10 @@
       setLoading: function(on){
         LOADING_EXPLICIT[instanceId] = true;
         state.loading = isYes(on);
+        /* Ein NEUER Ladeversuch raeumt den Lesefehler weg. Ohne das ueberlebt er jeden weiteren
+           Versuch: die Komponente zeigte den Fehler dann auch, nachdem laengst frische Daten
+           unterwegs waren. Gemessen am 24.08. -- der Fehler stand nach einem reset() noch da. */
+        if (isYes(on)) state.leseFehler = false;
         render();
       },
       setTheme: function(on){

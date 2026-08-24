@@ -345,6 +345,9 @@
       }
       // skeleton matches the CURRENT page size, so the table doesn't visibly resize when data lands
       if (isBusy() || !state.hasData){ clearEmptyGrace(); elTbody.innerHTML = skeletonRows(state.pageSize); return; }
+      /* Der Lesefehler kommt VOR dem Leerzustand. Andersherum liest sich ein zerrissener Payload
+         als "No URLs yet", und der Nutzer sucht den Fehler in seinen Filtern. */
+      if (state.leseFehler){ clearEmptyGrace(); elTbody.innerHTML = UC.leseFehlerHtml("URLs"); return; }
       if (!state.rows.length){
         var filtered = !!state.query ||
           Object.keys(state.appliedSel).some(function(k){ return state.appliedSel[k]; }) ||
@@ -1327,6 +1330,16 @@
       root: root,
       update: function(params){
         params = params || {};
+        /* Der Payload kam an, war aber nicht lesbar -- normParams in core.js haengt dafuer
+           __parseError an (§46). Ohne diesen Zweig traegt so ein Aufruf keinen einzigen
+           bekannten Schluessel: die Tabelle beendet weder den Ladezustand noch sagt sie etwas,
+           und das Skelett laeuft endlos weiter. Genau so gemessen am 24.08. mit einem
+           abgeschnittenen Payload. Ein Ladezustand muss IMMER enden (CLAUDE.md §2). */
+        if (params.__parseError){
+          state.leseFehler = true; state.rows = []; state.hasData = true;
+          state.loading = false; state.softReload = false; dim.end(); state.extLoading = false;
+          persist(); render(); return;
+        }
         if (params.isDark != null){
           /* NICHT isYes(params.isDark): der Parameter ist eine Momentaufnahme aus dem Moment,
              in dem Bubble den Payload gebaut hat. Kennt core ein Thema, gewinnt core -- sonst
@@ -1341,6 +1354,10 @@
         if (params.rows != null){
           state.rows = Array.isArray(params.rows) ? params.rows : [];
           state.hasData = true;
+          /* Nur echte Zeilen loeschen den Lesefehler. Wuerde ihn jeder beliebige Aufruf loeschen
+             (etwa ein reiner Theme-Render), stuende danach "No URLs yet" da -- der stille
+             Ausfall waere zurueck, nur eine Stufe spaeter. */
+          state.leseFehler = false;
         }
         if (params.totalCount != null) state.totalCount = toNum(params.totalCount);
         if (params.brands != null){
@@ -1366,6 +1383,10 @@
         explicitOverride = true;
         LOADING_EXPLICIT[instanceId] = true;
         state.extLoading = isYes(on);
+        /* Ein NEUER Ladeversuch raeumt den Lesefehler weg. Ohne das ueberlebt er jeden weiteren
+           Versuch: die Komponente zeigte den Fehler dann auch, nachdem laengst frische Daten
+           unterwegs waren. Gemessen am 24.08. -- der Fehler stand nach einem reset() noch da. */
+        if (isYes(on)) state.leseFehler = false;
         if (!state.extLoading){ state.loading = false; state.softReload = false; dim.end(); }   // "fertig" beendet auch ein internes Nachladen
         persist(); render();
       },
@@ -1379,6 +1400,7 @@
         state.mentionSel = {}; state.mentionApplied = {};
         state.widths = {}; writeWidths();
         state.softReload = false; dim.end();
+        state.leseFehler = false;   /* ein Reset raeumt auch den Lesefehler weg, sonst ueberlebt er den Neuladeversuch */
         elSearch.classList.remove("has-text");
         persist(); populateSort(); populateFilter(); render();
         return true;

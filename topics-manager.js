@@ -177,6 +177,8 @@
     }
     function renderChips(){
       if (!elGrid) return;
+      /* Der Lesefehler kommt VOR dem Skelett -- sonst sieht endloses Laden aus wie "gleich da". */
+      if (state.leseFehler){ elGrid.innerHTML = UC.leseFehlerHtml("topics"); return; }
       if (isBusy() || !state.hasData){ elGrid.innerHTML = skeletonChipsHtml(); return; }
       var shown = topicsShown();
       if (!shown.length){
@@ -548,6 +550,14 @@
       root: root,
       update: function(params){
         params = params || {};
+        /* Der Payload kam an, war aber nicht lesbar -- normParams in core.js haengt dafuer
+           __parseError an (§46). Ohne diesen Zweig traegt der Aufruf kein topics-Feld: die
+           Liste beendet den Ladezustand nicht und sagt auch nichts. */
+        if (params.__parseError){
+          state.leseFehler = true; state.topics = []; state.hasData = true;
+          state.loading = false; state.extLoading = false;
+          render(); return;
+        }
         if (params.isDark != null){
           /* NICHT isYes(params.isDark): der Parameter ist eine Momentaufnahme aus dem Moment,
              in dem Bubble den Payload gebaut hat. Kennt core ein Thema, gewinnt core -- sonst
@@ -557,6 +567,9 @@
           if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
         }
         if (params.topics != null){
+          /* Nur eine ECHTE Themenlieferung loescht den Lesefehler -- ein reiner Theme-Render
+             wuerde ihn sonst wegraeumen und den Leerzustand zeigen. */
+          state.leseFehler = false;
           var list = params.topics;
           if (typeof list === "string") list = parseBubbleJson(list);
           state.topics = Array.isArray(list) ? list : [];
@@ -576,10 +589,16 @@
       setLoading: function(on){
         explicitOverride = true;
         state.extLoading = isYes(on);
+        /* Ein NEUER Ladeversuch raeumt den Lesefehler weg -- sonst ueberlebt er jeden weiteren
+           Versuch und steht noch da, waehrend frische Daten unterwegs sind. */
+        if (state.extLoading) state.leseFehler = false;
         if (!state.extLoading) state.loading = false;
         render();
       },
       reset: function(){
+        /* Ein Reset raeumt den Lesefehler mit weg -- er gehoert zu den Daten, nicht zur
+           Bedienung, und der Aufrufer laedt danach frisch. */
+        state.leseFehler = false;
         state.query = ""; if (elSearchIn) elSearchIn.value = ""; if (elSearch) elSearch.classList.remove("is-open", "has-text");
         state.sortField = DEFAULT_SORT.field; state.sortDir = DEFAULT_SORT.dir;
         topicModal.close();

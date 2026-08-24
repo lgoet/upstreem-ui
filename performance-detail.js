@@ -475,6 +475,17 @@
       syncTheme();
       var on = !!(state.company && state.topic);
       root.classList.toggle("has-selection", on);
+      /* Der Leerkasten traegt zwei verschiedene Aussagen: "noch nichts gewaehlt" und "es kam
+         etwas an, aber es war unlesbar". Ohne die zweite las sich ein zerrissener Payload als
+         "Pick a cell", obwohl der Nutzer laengst eine gewaehlt hatte. */
+      var elLeerT = root.querySelector(".upd-empty-title");
+      var elLeerS = root.querySelector(".upd-empty-sub");
+      if (elLeerT && elLeerS){
+        elLeerT.textContent = state.leseFehler ? "Could not load this cell" : "No cell selected";
+        elLeerS.textContent = state.leseFehler
+          ? "The data could not be read. Please reload the page."
+          : "Pick a cell in the Performance Radar to see the details for that brand and topic.";
+      }
       if (!on) return;
       elBrand.innerHTML = brandChipHtml(state.company) +
         '<span class="upd-brand-name">' + esc(String(state.company.name || "")) + '</span>';
@@ -667,6 +678,16 @@
     }
     function setSelection(p){
       p = p || {};
+      /* Der Payload kam an, war aber nicht lesbar -- normParams in core.js haengt dafuer
+         __parseError an (§46). Ohne diesen Zweig traegt der Aufruf weder company noch topic:
+         der Block bleibt im Ladezustand stehen und sagt nichts. Der Leerzustand ist hier schon
+         da, er bekommt nur einen anderen Text -- "keine Zelle gewaehlt" waere gelogen. */
+      if (p.__parseError){
+        state.leseFehler = true;
+        state.company = null; state.topic = null;
+        setLoading(false); render(); return;
+      }
+      state.leseFehler = false;
       var neu = paarSchluessel(p.company, p.topic);
       var alt = paarSchluessel(state.company, state.topic);
       var wechsel = neu !== alt;
@@ -753,6 +774,11 @@
     }
     function setLoading(v){
       state.loading = UC.isYes ? UC.isYes(v) : (String(v) === "yes" || v === true);
+      /* Ein NEUER Ladeversuch raeumt den Lesefehler weg -- sonst ueberlebt er jeden weiteren
+         Versuch und steht noch da, waehrend frische Daten unterwegs sind. Der Text steht im
+         Leerkasten, den nur render() anfasst -- die drei Teilzeichner unten erreichen ihn
+         nicht, deshalb hier ausdruecklich render(). Gemessen: ohne das blieb er stehen. */
+      if (state.loading && state.leseFehler){ state.leseFehler = false; render(); }
       root.classList.toggle("is-loading", state.loading);
       /* Alle drei, nicht nur die Kurve: KPIs und Rangliste haben jetzt eigene Skelette, und ein
          Bereich, in dem ein Teil laedt und der Rest noch die Zahlen der vorigen Zelle zeigt,

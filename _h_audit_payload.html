@@ -1,0 +1,232 @@
+<meta charset="utf-8"><title>Audit 6: Textform, Lesefehler, Aufraeumen</title>
+<style>
+  html,body{margin:0;font:13px/1.5 system-ui,sans-serif;background:#fff}
+  #buehne{position:absolute;left:-99999px;top:0;width:1200px}
+  #out{padding:10px;font:11px/1.5 ui-monospace,monospace;white-space:pre-wrap}
+</style>
+<body>
+<div id="buehne"></div>
+<pre id="out">laeuft…</pre>
+<script>
+/* ==============================================================================================
+   Die Frage: kann ein Run-JS-Step fuer JEDE Komponente als EIN Backtick geschrieben werden --
+   also render*(`{...}`) statt render*({...})? Nur die Textform ueberlebt einen leeren
+   Bubble-Ausdruck; ein Objektliteral stirbt beim PARSEN und nimmt den ganzen Step mit (§46).
+
+   normParams in core.js sieht so aus, als koennte es das schon. "Sieht so aus" ist kein Messwert.
+
+   GEGENPROBE gegen einen falschen Payload von mir: derselbe Inhalt wird ZWEIMAL geschickt --
+   einmal als Objekt, einmal als Text. Verglichen wird nicht "sieht gut aus", sondern ob beide
+   dasselbe DOM erzeugen. Ist mein Payload unbrauchbar, sind beide gleich LEER, und das faellt
+   an der dritten Messung auf (Kontrolle gegen den Leerzustand).
+   ============================================================================================== */
+var COMPS = [
+  { k:"visibility-chart",       tpl:"visibility_chart_bubble",       root:"vot-root",
+    fn:"renderVisibilityChart",  load:"setVisibilityChartLoading",  res:"resetVisibilityChart",
+    good:{ table:[{company_id:"1",name:"Alpha",visibility_pct:34.3,avg_rank:3,sentiment:76},
+                  {company_id:"2",name:"Beta", visibility_pct:21.0,avg_rank:5,sentiment:60}],
+           series:[{company_id:"1",day:"2026-08-01",visibility_pct:34.3}], totalCount:2 } },
+  { k:"citations-combo-chart",  tpl:"citations_combo_chart_bubble",   root:"combo-root",
+    fn:"renderComboChart",       load:"setComboChartLoading",       res:"resetComboChart",
+    good:{ series:[{day:"2026-08-01",value:12}], types:[{type:"News",count:5},{type:"Blog",count:3}] } },
+  { k:"topcitations-dashboard", tpl:"topcitations_dashboard_bubble",  root:"tcd-root",
+    fn:"renderTopCitations",     load:"setTopCitationsLoading",     res:"resetTopCitations",
+    /* top_domains, NICHT rows: das ist der Schluessel, den diese Komponente liest (liste() in
+       topcitations-dashboard.js). Mit "rows" wirkte der Payload gar nicht, und die Messung mass
+       daraufhin nur meinen eigenen falschen Payload. */
+    good:{ top_domains:[{domain:"a.de",citations:9},{domain:"b.de",citations:4}],
+           types:[{type:"News",count:5}], mode:"domain" } },
+  { k:"prompts-table",          tpl:"prompts_table_bubble",           root:"upt-root",
+    fn:"renderPromptsTable",     load:"setPromptsTableLoading",     res:"resetPromptsTable",
+    good:{ rows:[{id:"1",prompt_text:"Was ist X?",status:"active"},
+                 {id:"2",prompt_text:"Was ist Y?",status:"active"}], totalCount:2 } },
+  { k:"urls-table",             tpl:"urls_table_bubble",              root:"uut-root",
+    fn:"renderUrlsTable",        load:"setUrlsTableLoading",        res:"resetUrlsTable",
+    good:{ rows:[{id:"1",url:"https://a.de/x",domain:"a.de",mentions:3},
+                 {id:"2",url:"https://b.de/y",domain:"b.de",mentions:1}], totalCount:2 } },
+  { k:"domains-table",          tpl:"domains_table_bubble",           root:"udt-root",
+    fn:"renderDomainsTable",     load:"setDomainsTableLoading",     res:"resetDomainsTable",
+    good:{ rows:[{id:"1",domain:"a.de",citations:9},{id:"2",domain:"b.de",citations:4}], totalCount:2 } },
+  { k:"responses-table",        tpl:"responses_table_bubble",         root:"urt-root",
+    fn:"renderResponsesTable",   load:"setResponsesTableLoading",   res:"resetResponsesTable",
+    good:{ rows:[{id:"1",prompt_text:"Frage A",model:"gpt-4"},
+                 {id:"2",prompt_text:"Frage B",model:"gpt-4"}], totalCount:2 } },
+  { k:"topics-manager",         tpl:"topics_manager_bubble",          root:"utm-root",
+    fn:"renderTopicsManager",    load:null,                          res:"resetTopicsManager",
+    good:{ topics:[{id:"1",name:"Alpha"},{id:"2",name:"Beta"}] } },
+  { k:"brands-overview",        tpl:"brands_overview_bubble",         root:"ubo-root",
+    fn:"renderBrandsOverview",   load:"setBrandsOverviewLoading",   res:"resetBrandsOverview",
+    good:{ rows:[{company_id:"1",name:"Alpha",visibility_pct:34.3},
+                 {company_id:"2",name:"Beta",visibility_pct:21}], series:[] } },
+  { k:"discover-brands",        tpl:"discover_brands_bubble",         root:"udb-root",
+    fn:"renderDiscoverBrands",   load:"setDiscoverBrandsLoading",   res:"resetDiscoverBrands",
+    good:{ rows:[{name:"Alpha",domain:"a.de",mentions:4},{name:"Beta",domain:"b.de",mentions:2}] } },
+  { k:"performance-detail",     tpl:"performance_detail_bubble",      root:"upd-root",
+    fn:"renderPerformanceDetail",load:"setPerformanceDetailLoading", res:"resetPerformanceDetail",
+    good:{ company_id:"1", topic_id:"7", name:"Alpha" } },
+  { k:"settings-brand",         tpl:"settings_brand_bubble",          root:"usb-root",
+    fn:"renderSettingsBrand",    load:"setSettingsBrandLoading",    res:"resetSettingsBrand",
+    good:{ name:"Alpha", domain:"a.de", business_model:"B2B" } },
+  { k:"performance-radar",      tpl:"performance_radar_bubble",       root:"uhm-root",
+    fn:"renderPerformanceRadar", load:"setPerformanceRadarLoading",  res:"resetPerformanceRadar",
+    good:{ cells:[{company_id:"1",topic_id:"7",visibility_pct:34.3}],
+           companies:[{company_id:"1",name:"Alpha"}], topics:[{id:"7",name:"Alpha"}] } },
+  { k:"auth-page",              tpl:"auth_page_bubble",               root:"uau-root",
+    fn:"renderAuthPage",         load:"setAuthPageLoading",         res:"resetAuthPage",
+    good:{ mode:"signup" } }
+];
+
+var ID = "audit";
+var out = document.getElementById("out"), buehne = document.getElementById("buehne");
+/* Ein Syntaxfehler in einer der Dateien laesst die Komponente still nicht mounten -- dann waere
+   jede Messung darunter wertlos. Deshalb mitschreiben und ganz oben ausgeben. */
+window.__ladeFehler = [];
+window.addEventListener("error", function(ev){ window.__ladeFehler.push(String(ev.message)); });
+
+function hol(f){ return fetch(f + "?n=" + Math.random(), {cache:"no-store"}).then(function(r){
+  if (!r.ok) throw new Error(f + " -> " + r.status); return r.text(); }); }
+
+/* Aus der Bubble-Vorlage NUR das Wurzel-Element: Kommentar weg, Loader weg. So misst der Aufbau
+   gegen genau das Markup, das in Bubble steht. */
+function wurzelAus(html){
+  return html.replace(/<!--[\s\S]*?-->/g, "").replace(/<script[\s\S]*?<\/script>/gi, "").trim();
+}
+function ruf(name, a, b){
+  try { return arguments.length > 2 ? window[name](a, b) : window[name](a); }
+  catch(e){ return "WURF: " + (e && e.message); }
+}
+/* innerText, NICHT textContent: textContent liest auch Knoten mit, die display:none sind.
+   Genau daran ist die Messung an settings-brand gescheitert -- der versteckte Fehlerkasten wurde
+   als "steht sichtbar da" gezaehlt, und ich haette an einer heilen Komponente repariert. */
+function txtVon(c){ return (c.el.innerText || c.el.textContent || "").replace(/\s+/g, " ").trim(); }
+function lenVon(c){ return (c.el.innerHTML || "").length; }
+/* Skelett-Erkennung: die Klassen, die alle Komponenten dafuer benutzen. Gegengeprueft wird sie
+   unten an GUTEN Daten -- meldet sie auch dann "laedt", misst sie nichts. */
+function laedtNoch(c){
+  if (/is-loading|is-line-loading|is-busy/.test(c.el.className)) return true;
+  /* Nur SICHTBARE Skelette zaehlen. Mehrere Komponenten halten Skelett-Markup dauerhaft im DOM
+     (settings-brand: usb-skelbox, top-citations: 27 Stueck) -- wer es blind zaehlt, misst bei
+     GUTEN Daten dasselbe wie bei kaputten und hat damit gar nichts gemessen. */
+  var sk = c.el.querySelectorAll(".is-loading, .up-tsk-bar, .is-sk, [class*='-sk-'], [class*='skel']");
+  for (var i = 0; i < sk.length; i++) if (sk[i].getClientRects().length) return true;
+  return false;
+}
+function sagtFehler(c){ return /could not be read|Could not load/i.test(txtVon(c)); }
+function warte(ms){ return new Promise(function(ok){ window.setTimeout(ok, ms); }); }
+/* Lange genug fuer JEDE Nachfrist im Haus: die Tabellen warten 500ms (UC.EMPTY_GRACE_MS),
+   top-citations und visibility-chart 600ms, bevor sie ihren Leer-/Fehlertext setzen. Zu frueh
+   gemessen sieht jeder davon aus wie "laedt noch" -- genau das ist mir in Runde 2 passiert. */
+var NACHFRIST = 900;
+
+Promise.all([hol("core.css"), hol("core.js")]).then(function(kern){
+  var s = document.createElement("style"); s.textContent = kern[0]; document.head.appendChild(s);
+  var s2 = document.createElement("style");
+  s2.textContent = "*,*::before,*::after{transition:none !important;animation:none !important}";
+  document.head.appendChild(s2);
+  var j = document.createElement("script"); j.textContent = kern[1]; document.head.appendChild(j);
+  return COMPS.reduce(function(kette, c){
+    return kette.then(function(){
+      return Promise.all([hol("bubble/" + c.tpl + ".html"), hol(c.k + ".css"), hol(c.k + ".js")])
+        .then(function(t){
+          var wrap = document.createElement("div");
+          wrap.innerHTML = wurzelAus(t[0]);
+          var r = wrap.querySelector("." + c.root);
+          if (!r) { c.fehler = "kein ." + c.root + " in der Vorlage"; return; }
+          r.setAttribute("data-instance", ID);
+          r.setAttribute("data-cdn-pin", "audit");
+          r.setAttribute("data-isdark", "no");
+          buehne.appendChild(r);
+          var cs = document.createElement("style"); cs.textContent = t[1]; document.head.appendChild(cs);
+          var cj = document.createElement("script"); cj.textContent = t[2]; document.head.appendChild(cj);
+          c.el = r;
+        })
+        .catch(function(e){ c.fehler = String(e.message || e); });
+    });
+  }, Promise.resolve());
+}).then(function(){ return warte(1200); }).then(function(){
+
+  var E = {};
+  COMPS.forEach(function(c){
+    E[c.k] = { k: c.k, fehler: c.fehler || null };
+    if (!c.el) E[c.k].fehler = E[c.k].fehler || "nicht gemountet";
+    else if (typeof window[c.fn] !== "function") E[c.k].fehler = c.fn + " fehlt";
+  });
+  function aktiv(){ return COMPS.filter(function(c){ return !E[c.k].fehler; }); }
+  function objVon(c){ var p={}; for (var k in c.good) p[k]=c.good[k]; p.instanceId=ID; return p; }
+
+  /* ---- 1) Nullmessung: der Leerzustand ---- */
+  aktiv().forEach(function(c){ if (c.res) ruf(c.res, ID); });
+  return warte(NACHFRIST).then(function(){
+    aktiv().forEach(function(c){ E[c.k].leerLen = lenVon(c); });
+
+    /* ---- 2) Objektform (so, wie es heute in Bubble steht) ---- */
+    aktiv().forEach(function(c){ if (c.res) ruf(c.res, ID); ruf(c.fn, objVon(c)); });
+    return warte(NACHFRIST);
+  }).then(function(){
+    aktiv().forEach(function(c){
+      E[c.k].objLen = lenVon(c);
+      /* GEGENPROBE des Messgeraets: meldet es auch bei GUTEN Daten "laedt noch", misst es
+         dauerhaft vorhandenes Skelett-Markup, und der Kaputt-Befund waere wertlos. */
+      E[c.k].gutLaedt = laedtNoch(c);
+    });
+
+    /* ---- 3) Textform: EIN Backtick, gleicher Inhalt ---- */
+    aktiv().forEach(function(c){ if (c.res) ruf(c.res, ID); ruf(c.fn, JSON.stringify(objVon(c))); });
+    return warte(NACHFRIST);
+  }).then(function(){
+    aktiv().forEach(function(c){ E[c.k].txtLen = lenVon(c); });
+
+    /* ---- 4) Kaputter Text, mitten im Payload abgeschnitten ---- */
+    aktiv().forEach(function(c){
+      if (c.res) ruf(c.res, ID);
+      if (c.load) ruf(c.load, ID, "yes");
+      ruf(c.fn, '{"instanceId":"' + ID + '","rows":[{"a":1},');
+    });
+    return warte(NACHFRIST);
+  }).then(function(){
+    aktiv().forEach(function(c){
+      E[c.k].kaputtLaedt = laedtNoch(c);
+      E[c.k].kaputtSagt  = sagtFehler(c);
+      E[c.k].kaputtText  = txtVon(c).slice(0, 70);
+    });
+
+    /* ---- 5) Raeumt ein neuer Ladeversuch den Fehler weg? ---- */
+    aktiv().forEach(function(c){ if (c.load) ruf(c.load, ID, "yes"); else if (c.res) ruf(c.res, ID); });
+    return warte(NACHFRIST);
+  }).then(function(){
+    aktiv().forEach(function(c){ E[c.k].fehlerUeberlebtLaden = sagtFehler(c); });
+
+    /* ---- 6) Leerer Text darf WEITERHIN kein Fehler sein (§46: leer != kaputt) ---- */
+    aktiv().forEach(function(c){ if (c.res) ruf(c.res, ID); ruf(c.fn, ""); });
+    return warte(NACHFRIST);
+  }).then(function(){
+    aktiv().forEach(function(c){ E[c.k].leerTextFaelschlichFehler = sagtFehler(c); });
+
+    var frisch = !!(window.UpstreemCore && typeof window.UpstreemCore.leseFehlerHtml === "function");
+    var zeilen = COMPS.map(function(c){
+      var e = E[c.k];
+      if (e.fehler) return pad(c.k, 24) + "  << " + e.fehler;
+      function j(v){ return v ? "ja " : "-  "; }
+      return pad(c.k, 24) +
+        pad(Math.abs(e.objLen - e.txtLen) <= 6 ? "gleich" : "ANDERS", 8) +
+        pad(e.objLen !== e.leerLen ? "ja" : "-", 8) +
+        pad(j(e.gutLaedt), 8) +
+        pad(j(e.kaputtLaedt), 8) +
+        pad(j(e.kaputtSagt), 8) +
+        pad(j(e.fehlerUeberlebtLaden), 10) +
+        pad(j(e.leerTextFaelschlichFehler), 6);
+    });
+    out.textContent =
+      "core.js frisch (UC.leseFehlerHtml da): " + frisch + "\n" +
+      "Fehler beim Laden der 14 Dateien: " + (window.__ladeFehler.length ? window.__ladeFehler.join(" | ") : "keine") + "\n\n" +
+      pad("", 24) + pad("text=obj", 8) + pad("wirkte", 8) + pad("gut:", 8) + pad("kaputt:", 8) +
+        pad("sagt", 8) + pad("ueberlebt", 10) + "leer=Fehler\n" +
+      pad("", 24) + pad("", 8) + pad("", 8) + pad("laedt", 8) + pad("laedt", 8) +
+        pad("es", 8) + pad("Laden", 10) + "(falsch)\n" +
+      zeilen.join("\n");
+    window.__E = E;
+    window.__fertig = true;
+  });
+});
+function pad(s, n){ s = String(s); while (s.length < n) s += " "; return s; }
+</script>

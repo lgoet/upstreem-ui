@@ -894,8 +894,26 @@
       el.textContent = text;
     }
 
+    /* Der Fehlerkasten haengt als Geschwister neben dem Formular, nicht an dessen Stelle --
+       siehe die Begruendung in render(). Er wird beim ersten Mal gebaut und danach nur noch
+       ein- und ausgeblendet. */
+    function zeigeLesefehler(an){
+      var koerper = root.querySelector(".usb-body");
+      var kasten = root.querySelector(".usb-loaderr");
+      if (an && !kasten){
+        kasten = document.createElement("div");
+        kasten.className = "usb-loaderr";
+        kasten.innerHTML = UC.leseFehlerHtml("your brand settings");
+        root.appendChild(kasten);
+      }
+      if (kasten) kasten.hidden = !an;
+      if (koerper) koerper.hidden = an;
+    }
     function applyLoading(on){
       loading = UC.isYes(on);
+      /* Ein NEUER Ladeversuch raeumt den Lesefehler weg -- sonst ueberlebt er jeden weiteren
+         Versuch, und das Formular bliebe versteckt, obwohl frische Daten unterwegs sind. */
+      if (loading) zeigeLesefehler(false);
       root.__usbLoading = loading;
       root.classList.toggle("is-loading", loading);
       root.classList.toggle("is-busy", loading);
@@ -1174,7 +1192,16 @@
 
     return {
       render: function(p){
-        p = stripTeamPrefix(p || {});
+        p = p || {};
+        /* Der Payload kam an, war aber nicht lesbar -- normParams in core.js haengt dafuer
+           __parseError an (§46). Ohne diesen Zweig bleibt die Seite inert im Ladezustand stehen
+           und sagt nichts. Das Formular wird VERSTECKT, nicht ersetzt: ein halb gefuelltes
+           Formular waere schlimmer als gar keins (der Nutzer speichert sonst falsche Werte),
+           aber sein Markup muss stehen bleiben -- an genau diesen Knoten haengen alle
+           Ereignisbindungen, und ein spaeterer erfolgreicher Aufruf schreibt in sie hinein. */
+        if (p.__parseError){ applyLoading("no"); zeigeLesefehler(true); return; }
+        zeigeLesefehler(false);
+        p = stripTeamPrefix(p);
         var brand = p.brand || {}, team = p.team || {};
         if (brand.name != null) meta.brandName = String(brand.name);
         if (brand.logo != null) meta.brandLogo = String(brand.logo);

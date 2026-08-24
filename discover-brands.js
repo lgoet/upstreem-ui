@@ -459,11 +459,16 @@
                  damit genauso aus wie ein sauberes Ergebnis. */
               /* Vierter Fall, seit der Parse-Fehler nicht mehr als "leer" durchgeht: die Daten
                  KAMEN an, waren aber unlesbar. Das ist ein Fehler und muss auch so heissen. */
-              '<div class="up-empty-h">' + (state.parseError ? "Could not read the results" :
+              '<div class="up-empty-h">' + (state.parseError ? "Could not load brands" :
                 (state.query ? "No brand matches your search" :
                 (state.hasData ? "No untracked brands found" : "No results yet"))) + "</div>" +
+              /* Der Fehlertext sagt, was der Nutzer TUN kann, und sonst nichts. Vorher stand hier
+                 "The data arrived in a form this component could not parse. See the browser
+                 console for details." -- eine Entwicklermeldung im Nutzer-UI: "this component"
+                 ist ein interner Name, und die Konsole liest niemand, den es angeht.
+                 Gleicher Wortlaut wie UC.leseFehlerHtml, damit ueberall dasselbe dasteht. */
               '<div class="up-empty-t">' + (state.parseError
-                ? "The data arrived in a form this component could not parse. See the browser console for details."
+                ? "The data could not be read. Please reload the page."
                 : state.query
                 ? "Try a shorter search term."
                 : !state.hasData
@@ -482,6 +487,10 @@
       }
 
       function renderTotal() {
+        /* Bei einem Lesefehler kommt keine Zahl mehr -- ein pulsender Balken behauptet dann,
+           sie sei unterwegs. Gemessen am 24.08.: der Zaehler war das letzte sichtbare Skelett,
+           obwohl die Tabelle darunter schon den Fehler zeigte. */
+        if (state.parseError) { elTotal.classList.remove("is-sk"); elTotal.textContent = ""; return; }
         if (state.totalResponses == null) { elTotal.classList.add("is-sk"); elTotal.textContent = ""; return; }
         elTotal.classList.remove("is-sk");
         elTotal.textContent = "Total Responses analyzed: " +
@@ -568,7 +577,12 @@
           setLoading(false);
           render();
         },
-        setLoading: function (v) { setLoading(UC.isYes(v)); },
+        setLoading: function (v) {
+          /* Ein NEUER Ladeversuch raeumt den Lesefehler weg -- sonst ueberlebt er jeden weiteren
+             Versuch und steht noch da, waehrend frische Daten unterwegs sind. */
+          if (UC.isYes(v)) state.parseError = false;
+          setLoading(UC.isYes(v));
+        },
         reset: function () {
           state.rows = []; state.totalResponses = null; state.hasData = false; state.parseError = false;
           /* makeSearch hat KEIN reset() -- der alte Aufruf lief in ein undefined und wurde vom

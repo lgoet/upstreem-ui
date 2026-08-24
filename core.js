@@ -363,10 +363,31 @@
      components hold on to params and a surprise mutation there is its own class of bug. */
   function normParams(params, label){
     if (typeof params === "string"){
-      var parsed = parseLoose(params, label);
+      var roh = params, parsed = parseLoose(params, label);
       /* A bare array is the other easy mistake: renderFoo(`[ … ]`) instead of
          renderFoo(`{"instanceId": …, "rows": [ … ]}`). Treat it as the rows list. */
-      params = isArr(parsed) ? { rows: parsed } : (parsed || {});
+      if (isArr(parsed)) params = { rows: parsed };
+      else if (parsed && typeof parsed === "object") params = parsed;
+      else {
+        /* Bisher wurde daraus schlicht {} -- und damit sah ein zerrissener Payload fuer JEDE
+           Komponente aus wie "es kam gar nichts". Gemessen am 24.08. an vier Tabellen und
+           discover-brands: nach einem abgeschnittenen Payload lief das Skelett endlos weiter,
+           weil der Aufruf zwar ankam, aber keinen einzigen Schluessel trug, an dem eine
+           Komponente den Ladezustand haette beenden koennen.
+
+           Leer und kaputt sind zwei Dinge (§46): ein WIRKLICH leerer Text bleibt {} und
+           verhaelt sich wie bisher, alles andere traegt ab jetzt den Vermerk.
+
+           Die instanceId wird aus dem ROHTEXT gefischt, nicht aus dem Ergebnis -- das gibt es
+           ja nicht. Ohne sie faellt doRender auf die erste Wurzel der Seite zurueck, und auf
+           einer Seite mit zwei Platzierungen meldete die falsche den Fehler. */
+        params = {};
+        if (String(roh).trim()){
+          params.__parseError = true;
+          var mId = String(roh).match(/"instance_?[Ii]d"\s*:\s*"([^"]{1,120})"/);
+          if (mId) params.instanceId = mId[1];
+        }
+      }
     }
     if (!params || typeof params !== "object") return params;
     /* rows and brands are the two list fields that carry free text from the server, so they are
@@ -7840,6 +7861,26 @@
            '" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
   }
 
+  /* ---------- leseFehlerHtml ----------
+     Der Zustand "es kam etwas an, aber es war nicht lesbar" -- die dritte Moeglichkeit neben
+     "laedt" und "ist leer". Vorher hatte ihn keine Tabelle, also sah ein zerrissener Payload
+     entweder aus wie endloses Laden oder wie ein sauberes leeres Ergebnis (§46).
+
+     Steht in core, weil vier Tabellen und die Charts denselben Zustand brauchen -- vier Kopien
+     desselben Kastens sind genau die Stelle, an der spaeter drei davon repariert werden.
+
+     `was` ist der Plural des Dings, das fehlt ("URLs", "domains", "prompts"). Der zweite Satz
+     nennt bewusst KEIN Substantiv, damit er zu jedem passt, und er sagt, was der Nutzer tun
+     kann. Keine Diagnose, keine internen Namen, kein Verweis auf die Konsole -- das liest hier
+     niemand, den es angeht. */
+  function leseFehlerHtml(was){
+    return '<div class="up-empty">' +
+      '<div class="up-empty-ic">' + icon("info", 1.6) + '</div>' +
+      '<div class="up-empty-h">Could not load ' + esc(was || "data") + '</div>' +
+      '<div class="up-empty-t">The data could not be read. Please reload the page.</div>' +
+    '</div>';
+  }
+
   /* ══ Custom Groupings ═══════════════════════════════════════════════════════════════════════
      Eine Gruppierung ist eine benannte Kombination aus bis zu drei Themen: ein Prompt zaehlt zur
      Gruppe, wenn er ALLE davon traegt. Sie lebt im localStorage, teambezogen, ohne Backend --
@@ -8352,6 +8393,7 @@
     isYes: isYes,
     parseLoose: parseLoose,
     normParams: normParams,
+    leseFehlerHtml: leseFehlerHtml,
     getTeam: getTeam,
     setUpstreemTeam: setUpstreemTeam,
     storeKey: storeKey,

@@ -362,12 +362,17 @@
     /* ---------- render (two independent halves) ---------- */
     function renderDonutSide(){
       if (!isOwner()) return;
-      if (state.loading || !state.hasData){ topTotal.style.display = "none"; typeChart.skeleton(); }
+      /* Der Lesefehler kommt VOR dem Skelett -- sonst sieht endloses Laden aus wie "gleich da". */
+      if (state.leseFehler){ topTotal.style.display = "none"; typeChart.empty("The data could not be read."); }
+      else if (state.loading || !state.hasData){ topTotal.style.display = "none"; typeChart.skeleton(); }
       else if (state.chartMode === "bar"){ topTotal.style.display = "flex"; topTotalN.textContent = fmtTotal(state.total); typeChart.renderBars(state.prepped); }
       else { topTotal.style.display = "none"; typeChart.renderDonut(state.prepped); }
     }
     function renderLineSide(nurFarben){
       if (!isOwner()) return;
+      /* Der Lesefehler schlaegt den Ladezustand: sonst dreht die Kurve weiter, waehrend der
+         Doughnut daneben den Fehler schon zeigt. */
+      if (state.leseFehler){ root.classList.remove("is-line-loading"); if (settingsOpen) closeSettingsMenu(); line.empty("The data could not be read."); return; }
       var loading = state.loading || !state.hasLine || state.linePending;
       /* The gear button (and its dropdown, if it was somehow open when a reload started) has no
          business being reachable over a skeleton — nothing to configure yet. */
@@ -752,6 +757,19 @@
       __ctrlId: myCtrlId,
       update: function(params){
         params = params || {};
+        /* Der Payload kam an, war aber nicht lesbar -- normParams in core.js haengt dafuer
+           __parseError an (§46). Ohne diesen Zweig traegt der Aufruf keinen bekannten
+           Schluessel: beide Seiten laufen weiter im Skelett, und ein zerrissener Payload sieht
+           aus wie "gleich da". */
+        if (params.__parseError){
+          state.leseFehler = true;
+          state.loading = false; state.linePending = false;
+          state.hasData = true; state.hasLine = true;
+          render(); return;
+        }
+        /* Nur eine echte Lieferung loescht den Vermerk -- ein reiner Theme-Render darf ihn nicht
+           wegraeumen, sonst stuende danach ein leerer Chart statt des Fehlers. */
+        if (params.series != null || params.types != null || params.rows != null) state.leseFehler = false;
         /* Debug-only, permanent: stash the exact object this call received on the root element
            itself, so it can be inspected from the console at any later time with zero timing
            risk — no need to wrap the render function and hope a fresh call happens while watching.
@@ -807,6 +825,10 @@
       setLoading: function(on){
         LOADING_EXPLICIT[instanceId] = true;
         state.loading = isYes(on);
+        /* Ein NEUER Ladeversuch raeumt den Lesefehler weg. Ohne das ueberlebt er jeden weiteren
+           Versuch: die Komponente zeigte den Fehler dann auch, nachdem laengst frische Daten
+           unterwegs waren. Gemessen am 24.08. -- der Fehler stand nach einem reset() noch da. */
+        if (isYes(on)) state.leseFehler = false;
         render();
       },
       setMode: function(m){
@@ -823,6 +845,9 @@
            data. Fires zero Bubble events — same hard rule as resetVisibilityChart/
            resetTopCitations, and for the same reason: a reset ahead of a fresh load must not
            re-trigger whatever workflow is wired to the granularity click. */
+        /* Ein Reset raeumt den Lesefehler mit weg -- er gehoert zu den Daten, nicht zur
+           Bedienung, und der Aufrufer laedt danach frisch. */
+        state.leseFehler = false;
         hiddenSeries = FILTER_STORE[instanceId] = {};
         delete GRAN_PICKED[instanceId];
         curGran = "day"; GRAN_STORE[instanceId] = "day";

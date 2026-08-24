@@ -16,6 +16,11 @@
    auseinander und das Bedienelement steht einen halben Meter rechts von seiner Beschriftung.
    Linksbuendig, nicht zentriert -- die Seite steht in derselben Spalte wie jede andere. */
 .usb-body { display: flex; flex-direction: column; gap: 40px; max-width: 720px; }
+/* display:flex schlaegt das eingebaute [hidden] des Browsers -- ohne diese Zeile bleibt das
+   Formular sichtbar, waehrend der Lesefehler daneben steht. Gleiches gilt fuer den Kasten. */
+.usb-body[hidden] { display: none; }
+.usb-loaderr { max-width: 720px; }
+.usb-loaderr[hidden] { display: none; }
 
 /* ---------- Abschnitt ---------- */
 .usb-sec { display: flex; flex-direction: column; gap: 12px; }

@@ -495,6 +495,9 @@
         container.innerHTML = isCards ? skeletonCardsHtml(state.pageSize) : skeletonRowsHtml(state.pageSize);
         return;
       }
+      /* Der Lesefehler kommt VOR dem Leerzustand. Andersherum liest sich ein zerrissener
+         Payload als leeres Ergebnis, und der Nutzer sucht den Fehler in seinen Filtern. */
+      if (state.leseFehler){ clearEmptyGrace(); container.innerHTML = UC.leseFehlerHtml("responses"); return; }
       if (!state.rows.length){
         if (anyFilterActive()){ clearEmptyGrace(); container.innerHTML = emptyHtml(true); return; }
         if (!emptyGraceTimer){
@@ -1320,6 +1323,16 @@
       root: root,
       update: function(params){
         params = params || {};
+        /* Der Payload kam an, war aber nicht lesbar -- normParams in core.js haengt dafuer
+           __parseError an (§46). Ohne diesen Zweig traegt so ein Aufruf keinen einzigen
+           bekannten Schluessel: die Tabelle beendet weder den Ladezustand noch sagt sie etwas,
+           und das Skelett laeuft endlos weiter. Genau so gemessen am 24.08. mit einem
+           abgeschnittenen Payload. Ein Ladezustand muss IMMER enden (CLAUDE.md §2). */
+        if (params.__parseError){
+          state.leseFehler = true; state.rows = []; state.hasData = true;
+          state.loading = false; state.softReload = false; dim.end(); state.extLoading = false;
+          persist(); render(); return;
+        }
         if (params.isDark != null){
           /* NICHT isYes(params.isDark): der Parameter ist eine Momentaufnahme aus dem Moment,
              in dem Bubble den Payload gebaut hat. Kennt core ein Thema, gewinnt core -- sonst
@@ -1329,7 +1342,10 @@
           if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
         }
         if (params.requestId != null && search.latestReqId() != null && String(params.requestId) !== String(search.latestReqId())) return;
-        if (params.rows != null){ state.rows = Array.isArray(params.rows) ? params.rows : []; state.hasData = true; }
+        /* state.leseFehler faellt nur bei ECHTEN Zeilen weg. Wuerde ihn jeder beliebige Aufruf
+           loeschen (etwa ein reiner Theme-Render), stuende danach der Leerzustand da -- der
+           stille Ausfall waere zurueck, nur eine Stufe spaeter. */
+        if (params.rows != null){ state.rows = Array.isArray(params.rows) ? params.rows : []; state.hasData = true; state.leseFehler = false; }
         if (params.totalCount != null) state.totalCount = toNum(params.totalCount);
         else if (state.rows.length && state.rows[0].total_count != null){
           /* The RPC carries the result-set total on every row (same shape prompts-table uses).
@@ -1376,6 +1392,10 @@
         explicitOverride = true;
         LOADING_EXPLICIT[instanceId] = true;
         state.extLoading = isYes(on);
+        /* Ein NEUER Ladeversuch raeumt den Lesefehler weg. Ohne das ueberlebt er jeden weiteren
+           Versuch: die Komponente zeigte den Fehler dann auch, nachdem laengst frische Daten
+           unterwegs waren. Gemessen am 24.08. -- der Fehler stand nach einem reset() noch da. */
+        if (isYes(on)) state.leseFehler = false;
         if (!state.extLoading){ state.loading = false; state.softReload = false; dim.end(); }
         persist(); render();
       },
@@ -1392,6 +1412,7 @@
         state.page = 1; state.pageSize = DEFAULT_PAGE_SIZE;
         state.widths = {}; colsKit.writeWidths();
         state.softReload = false; dim.end();
+        state.leseFehler = false;   /* ein Reset raeumt auch den Lesefehler weg, sonst ueberlebt er den Neuladeversuch */
         persist(); populateSort(); populateFader(); render();
         return true;
       },

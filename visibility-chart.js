@@ -204,7 +204,12 @@
     var tableEmptyGraceTimer = null;
     function renderTableSide(){
       if (root.__votController && root.__votController.__ctrlId !== myCtrlId){ return; }
-      if (state.loading || !state.hasTable){
+      /* Der Lesefehler kommt VOR dem Skelett -- sonst sieht endloses Laden aus wie "gleich da". */
+      if (state.leseFehler){
+        if (tableEmptyGraceTimer){ clearTimeout(tableEmptyGraceTimer); tableEmptyGraceTimer = null; }
+        tableEl.innerHTML = UC.leseFehlerHtml("brands");
+      }
+      else if (state.loading || !state.hasTable){
         if (tableEmptyGraceTimer){ clearTimeout(tableEmptyGraceTimer); tableEmptyGraceTimer = null; }
         tableEl.innerHTML = tableSkeletonHtml();
       }
@@ -212,6 +217,9 @@
     }
     function renderLineSide(){
       if (!isOwner()) return;
+      /* Der Lesefehler schlaegt den Ladezustand: sonst dreht die Kurve weiter, waehrend die
+         Tabelle daneben den Fehler schon zeigt. */
+      if (state.leseFehler){ root.classList.remove("is-line-loading"); closeScaleMenu(); line.empty("The data could not be read."); return; }
       var loading = state.loading || !state.hasLine || state.linePending;
       /* The gear button (and, if it was somehow open when a reload started, its dropdown) has no
          business being reachable over a skeleton — there's nothing to configure yet. Plain
@@ -809,6 +817,9 @@
            sort back to Visibility Descending and companies back to the default set so the dropdowns
            read correctly right away; if the caller also wants Bubble to refetch with those
            defaults, that's a separate, explicit step in their own workflow now. */
+        /* Ein Reset raeumt den Lesefehler mit weg -- er gehoert zu den Daten, nicht zur
+           Bedienung, und der Aufrufer laedt danach frisch. */
+        state.leseFehler = false;
         sortField = "visibility";
         sortDir = "desc";
         SORT_STORE[instanceId] = { field: sortField, dir: sortDir };
@@ -837,6 +848,19 @@
       },
       update: function(params){
         params = params || {};
+        /* Der Payload kam an, war aber nicht lesbar -- normParams in core.js haengt dafuer
+           __parseError an (§46). Ohne diesen Zweig traegt der Aufruf keinen bekannten
+           Schluessel: weder Kurve noch Tabelle erfahren etwas, das Skelett bleibt stehen, und
+           ein zerrissener Payload sieht aus wie "gleich da". Beide Seiten bekommen den
+           Lesefehler, damit nicht eine davon weiterlaedt. */
+        if (params.__parseError){
+          state.leseFehler = true;
+          state.loading = false; state.linePending = false;
+          state.hasTable = true; state.tableRows = [];
+          state.hasLine = true; state.series = []; state.noDataConfirmed = true;
+          clearTimeout(root.__votPendingT); clearTimeout(root.__votNoDataT);
+          render(); return;
+        }
         if (params.isDark != null){
           /* NICHT isYes(params.isDark): der Parameter ist eine Momentaufnahme aus dem Moment,
              in dem Bubble den Payload gebaut hat. Kennt core ein Thema, gewinnt core -- sonst
@@ -859,6 +883,9 @@
         }
         var __tc = (params.totalCount != null) ? params.totalCount : (params.total_count != null) ? params.total_count : params.companiesTotal;
         if (__tc != null) state.totalCount = __tc;
+        /* Nur eine echte Lieferung loescht den Vermerk -- ein reiner Theme-Render darf ihn
+           nicht wegraeumen, sonst stuende danach "No data" statt des Fehlers. */
+        if (params.table != null || params.rows != null || params.series != null) state.leseFehler = false;
         var __tbl = (params.table != null) ? params.table : (params.brands != null) ? params.brands : params.rows;
         if (__tbl != null){ state.tableRows = Array.isArray(__tbl) ? __tbl : []; state.hasTable = true; }
         if (params.series != null){
@@ -900,6 +927,10 @@
       setLoading: function(on){
         LOADING_EXPLICIT[instanceId] = true;
         state.loading = isYes(on);
+        /* Ein NEUER Ladeversuch raeumt den Lesefehler weg. Ohne das ueberlebt er jeden weiteren
+           Versuch: die Komponente zeigte den Fehler dann auch, nachdem laengst frische Daten
+           unterwegs waren. Gemessen am 24.08. -- der Fehler stand nach einem reset() noch da. */
+        if (isYes(on)) state.leseFehler = false;
         render();
       },
       /* Theme-only entry point, deliberately separate from update({isDark}) — that path always

@@ -3174,6 +3174,9 @@
       if (isBusy() || !state.hasData){
         clearEmptyGrace(); elTbody.innerHTML = skeletonRows(state.pageSize); applyCols(); return;
       }
+      /* Der Lesefehler kommt VOR dem Leerzustand. Andersherum liest sich ein zerrissener
+         Payload als leeres Ergebnis, und der Nutzer sucht den Fehler in seinen Filtern. */
+      if (state.leseFehler){ clearEmptyGrace(); elTbody.innerHTML = UC.leseFehlerHtml("prompts"); applyCols(); return; }
       if (!state.rows.length){
         var filtered = !!state.query || !!state.brandMentioned;
         if (filtered){ clearEmptyGrace(); renderEmptyState(true); return; }
@@ -4297,6 +4300,17 @@
       },
       update: function(params){
         params = params || {};
+        /* Der Payload kam an, war aber nicht lesbar -- normParams in core.js haengt dafuer
+           __parseError an (§46). Ohne diesen Zweig traegt so ein Aufruf keinen einzigen
+           bekannten Schluessel: die Tabelle beendet weder den Ladezustand noch sagt sie etwas,
+           und das Skelett laeuft endlos weiter. Genau so gemessen am 24.08. mit einem
+           abgeschnittenen Payload. Ein Ladezustand muss IMMER enden (CLAUDE.md §2). */
+        if (params.__parseError){
+          state.leseFehler = true; state.rows = []; state.hasData = true;
+          state.loading = false; state.softReload = false; endSoftReload();
+          state.extLoading = false;
+          persist(); render(); return;
+        }
         /* NUR dieses Feld oeffnet den Riegel. Gemessen wurde, warum jedes andere Kriterium
            versagt: renderPromptsTable laeuft auf jeder Seite, und die Tabelle ist dabei technisch
            voll sichtbar (1756x1131, display:flex, visibility:visible, kein versteckender Vorfahr)
@@ -4324,6 +4338,10 @@
           var hatteVorherDaten = state.hasData;
           state.rows = Array.isArray(params.rows) ? params.rows : [];
           state.hasData = true;
+          /* Nur ECHTE Zeilen loeschen den Lesefehler. Wuerde ihn jeder beliebige Aufruf
+             loeschen (etwa ein reiner Theme-Render), stuende danach der Leerzustand da --
+             der stille Ausfall waere zurueck, nur eine Stufe spaeter. */
+          state.leseFehler = false;
           /* Only a delivery that actually carries rows releases the latch. An empty one is a
              valid answer ("no prompts match") and must NOT re-open the automatic fetch, or the
              pair would ping-pong forever. */
@@ -4385,6 +4403,10 @@
         explicitOverride = true;
         LOADING_EXPLICIT[instanceId] = true;
         state.extLoading = isYes(on);
+        /* Ein NEUER Ladeversuch raeumt den Lesefehler weg. Ohne das ueberlebt er jeden weiteren
+           Versuch: die Komponente zeigte den Fehler dann auch, nachdem laengst frische Daten
+           unterwegs waren. Gemessen am 24.08. -- der Fehler stand nach einem reset() noch da. */
+        if (isYes(on)) state.leseFehler = false;
         if (!state.extLoading){ state.loading = false; endSoftReload(); }
         persist(); render();
       },

@@ -435,7 +435,13 @@
           note.className = "uex-cal-missing";
           elCustomWrap.appendChild(note);
         }
-        note.textContent = "Date picker could not be created — is filters/date-range.js loaded?";
+        /* Der Nutzer bekommt zu lesen, was er tun kann -- nicht, welche Datei fehlt. Vorher stand
+           hier "Date picker could not be created -- is filters/date-range.js loaded?": ein
+           Dateiname im Nutzer-UI, und die Frage richtet sich an jemanden, der nicht davorsitzt.
+           Der Grund gehoert in die Konsole (eine Zeile darunter), nicht auf den Bildschirm. */
+        note.textContent = "Custom range is unavailable. Please reload the page.";
+        if (window.console) console.error("upstreem export-data: filters/date-range.js fehlt im " +
+          "Loader-Block dieses Elements, deshalb gibt es keinen Kalender.");
         return;
       }
       elCustomBtn.disabled = false;

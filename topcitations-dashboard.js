@@ -253,6 +253,16 @@
     }
     function renderChartSide(){
       if (!isOwner()) return;
+      /* Der Lesefehler beendet BEIDE Haelften. Ohne das zeigte die Tabelle den Fehler, waehrend
+         der Doughnut daneben endlos weiterlud -- gemessen am 24.08.: 59 sichtbare Skelettteile
+         auf der Chart-Seite, obwohl die Tabelle schon "could not be read" sagte. */
+      if (state.listenFehler){
+        chartGrace.clear();
+        if (topTotal) topTotal.style.display = "none";
+        typeChart.empty("The data could not be read.");
+        syncChartSwitch();
+        return;
+      }
       if (state.loading || state.optimisticLoading || !state.hasChart){
         chartGrace.clear();
         if (topTotal) topTotal.style.display = "none";
@@ -365,6 +375,14 @@
     function renderTable(){
       var rows = activeRows();
       var head = tableHeadHtml(state.mode);
+      /* Der Lesefehler steht SOFORT da, nicht erst nach der Nachfrist: die Nachfrist gibt es
+         fuer den Fall "gleich kommt die echte Lieferung nach", und den gibt es hier nicht --
+         die Lieferung ist schon da und war unlesbar. */
+      if (state.listenFehler){
+        if (tableEmptyGraceTimer){ clearTimeout(tableEmptyGraceTimer); tableEmptyGraceTimer = null; }
+        tableEl.innerHTML = head + UC.leseFehlerHtml("citations");
+        return;
+      }
       if (!rows.length){
         /* An empty top_domains/top_urls delivery can be an interim "clearing" step before the
            real data lands a moment later — showing "No data" immediately for that interim state
@@ -817,6 +835,13 @@
          nach einem Wurf das Skelett stehen und sieht aus wie "gleich da". */
       fail: function(text){
         state.listenFehler = text;
+        /* Die alten Zeilen muessen weg. Ohne das gewinnt in renderTable() der Zweig "es sind
+           Zeilen da", die Tabelle zeigt weiter die Lieferung von vorhin, und der Fehler bleibt
+           stumm -- gemessen am 24.08.: nach einem zerrissenen Payload stand die alte Zeile noch
+           da, als waere sie frisch. Eine misslungene Lieferung ist kein Grund, alte Zahlen als
+           aktuelle auszugeben. */
+        state.topDomains = []; state.topUrls = [];
+        state.hasTable = true; state.hasDomainRows = true; state.hasUrlRows = true;
         state.loading = false; state.optimisticLoading = false;
         render();
       },
@@ -876,6 +901,12 @@
       },
       update: function(params){
         if (!params || typeof params !== "object") return;
+        /* Der Payload kam an, war aber nicht lesbar -- normParams in core.js haengt dafuer
+           __parseError an (§46). Ohne diesen Zweig traegt der Aufruf keinen einzigen bekannten
+           Schluessel, das Skelett laeuft weiter, und es sieht aus wie "gleich da".
+           fail() gibt es hier schon -- es fehlte nur der Weg dorthin fuer den haeufigsten Fall:
+           der Payload zerreisst, statt dass update() wirft. */
+        if (params.__parseError){ this.fail("The data could not be read."); return; }
         if (params.mode != null && !state.userPickedMode){ state.mode = params.mode === "url" ? "url" : "domain"; syncModeActive(); }
         if (params.chartMode != null){ state.chartMode = params.chartMode === "bar" ? "bar" : "doughnut"; }
         if (params.totalCountDomain != null) state.totalCountDomain = params.totalCountDomain;
@@ -938,6 +969,9 @@
       setLoading: function(on){
         LOADING_EXPLICIT[instanceId] = true;
         state.loading = isYes(on);
+        /* Ein NEUER Ladeversuch raeumt den Lesefehler weg -- sonst ueberlebt er jeden weiteren
+           Versuch und steht noch da, waehrend frische Daten unterwegs sind. */
+        if (state.loading) state.listenFehler = null;
         if (!state.loading) state.optimisticLoading = false;
         persistState();
         render();
