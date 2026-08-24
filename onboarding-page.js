@@ -1377,6 +1377,14 @@
       return STEPS.filter(function (x) { return x.key !== "plan"; });
     }
     var railStand = "";
+    /* Gilt die Station als abgeschlossen? Fuer alle ausser Topics: ja, sobald man dort war.
+       Topics braucht mindestens ein gewaehltes Thema -- sonst steht dort ein Haken fuer etwas,
+       das noch zu tun ist. So angesagt am 24.08. */
+    function stationErledigt(n) {
+      if (STEPS[n] && STEPS[n].key === "topics") return anzahl(state.selTopics) > 0;
+      return true;
+    }
+
     function renderRail() {
       var k = ansichtKey();
       if (state.step === "plan") state.planGesehen = true;
@@ -1433,7 +1441,13 @@
            erledigter Schritt wie jeder andere; eine ausgegraute Station war hier eine Zeit lang
            zu sehen und ist zurueckgenommen worden. */
         var gesperrt = n === 0 && brandGesperrt;
-        dots[n].classList.toggle("is-done", fertig || (n <= state.maxErreicht && n !== i));
+        /* Besucht ist nicht erledigt. Wer bei Topics war und nichts gewaehlt hat, hat den Schritt
+           NICHT hinter sich -- ein Haken dort behauptet etwas, das nicht stimmt, und der Schritt
+           ist der einzige, der wirklich Pflicht ist (ohne Thema entstehen keine Prompts).
+           Nur Topics: bei Competitors und Prompts ist Ueberspringen ausdruecklich erlaubt, dort
+           IST der Besuch die Erledigung. */
+        var erledigt = (n <= state.maxErreicht && n !== i) && stationErledigt(n);
+        dots[n].classList.toggle("is-done", fertig || erledigt);
         dots[n].classList.toggle("is-now", !wartet && n === i);
 
         var klickbar = !wartet && !gesperrt && n !== i && n <= state.maxErreicht;
@@ -1443,7 +1457,7 @@
           hits[n].tabIndex = klickbar ? 0 : -1;
         }
         if (labels[n]) {
-          labels[n].classList.toggle("is-done", n <= state.maxErreicht && n !== i);
+          labels[n].classList.toggle("is-done", erledigt);
           labels[n].classList.toggle("is-now", !wartet && n === i);
           if (!klickbar) labels[n].classList.remove("is-hot");
         }

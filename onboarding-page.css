@@ -807,11 +807,13 @@
   background: var(--vc-bg); border: 1px solid var(--vc-border);
   display: inline-flex; align-items: center; justify-content: center; overflow: hidden;
   font-size: 20px; font-weight: 600; color: var(--vc-muted);
-  box-shadow: 0 1px 2px rgba(15,17,21,.05), 0 12px 28px rgba(23,37,84,.08);
+  /* KEIN Schatten. Die Logo-Kachel der App (.up-ment-logo in core) hat auch keinen, und hier
+     standen zwei Lagen mit einem BLAUEN Stich (rgba(23,37,84,...)) -- neben den neutralen
+     Schatten der App liest sich das falsch, und genau so wurde es gemeldet. Eine Kachel mit
+     Rahmen auf ruhigem Grund braucht keine Erhebung. */
 }
 .uob-load-logo img { width: 40px; height: 40px; border-radius: 10px; display: block; object-fit: contain; }
 .uob-load-logo.has-img { font-size: 0; }
-.uob-root[data-theme="dark"] .uob-load-logo { box-shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 28px rgba(0,0,0,.34); }
 /* Beide kuerzen statt umzubrechen: ein Markenname darf lang sein (gemessen mit 100 Zeichen),
    aber er darf nicht das Bild auseinanderziehen, auf das der Nutzer vierzig Sekunden schaut.
    max-width statt width, damit ein kurzer Name nicht auf Kastenbreite gezogen wird. */
@@ -1009,7 +1011,7 @@
   background: var(--vc-text); color: var(--vc-bg);
   font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: -.01em;
   cursor: pointer;
-  box-shadow: 0 1px 2px rgba(15,17,21,.14);
+  /* Ohne Schatten wie jeder Knopf der App -- .up-btn in core traegt keinen. */
   display: inline-flex; align-items: center; justify-content: center; gap: 9px;
   transition: opacity var(--uob-t) var(--uob-ease), background var(--uob-t) var(--uob-ease);
 }
@@ -1062,12 +1064,17 @@
   display: flex; flex-direction: column;
   border: 1px solid var(--vc-border); border-radius: 14px;
   background: var(--vc-bg);
-  box-shadow: 0 1px 2px rgba(15,17,21,.05), 0 18px 40px rgba(23,37,84,.10);
+  /* Derselbe Schatten wie der Drawer der Hauptapp (uo-drawer, ohne Punkt geschrieben: .contract_snapshot.py
+     sucht Klassennamen im Rohtext und nimmt sonst auch die aus Kommentaren in den Vertrag
+     auf -- eine Klasse, die es in dieser Datei nicht gibt): einlagig, neutral schwarz, und
+     nach LINKS geworfen, weil beide am rechten Rand haengen und von dort hereinkommen. Hier
+     standen zwei Lagen mit blauem Stich und eine eigene Dunkel-Fassung -- die faellt mit weg,
+     der Drawer hat auch keine. */
+  box-shadow: -12px 0 32px rgba(0,0,0,.15);
   opacity: 0; transform: translateX(8px); pointer-events: none;
   transition: opacity var(--uob-t) var(--uob-ease), transform var(--uob-t) var(--uob-ease);
 }
 .uob-help.is-on { opacity: 1; transform: none; pointer-events: auto; }
-.uob-root[data-theme="dark"] .uob-help { box-shadow: 0 1px 2px rgba(0,0,0,.3), 0 18px 40px rgba(0,0,0,.4); }
 .uob-help-head {
   flex: 0 0 auto; display: flex; align-items: center;
   gap: 7px; padding: 13px 10px 11px 16px;
