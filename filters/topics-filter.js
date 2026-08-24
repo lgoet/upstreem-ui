@@ -61,7 +61,13 @@
   var STATE = (window.__utfStore = window.__utfStore || {});
 
   var ICON = {
-    tag: '<svg viewBox="0 0 24 24"><path d="M20.59 13.41 13.42 20.6a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>',
+    /* Lucide "tags" aus core, nicht das frueher hier gezeichnete einzelne "tag": derselbe Filter
+       heisst in der Subpage-Navigation des Prompts-Seitenkopfs schon "Topics" und traegt dort
+       genau dieses Zeichen (zwei uebereinanderliegende Anhaenger -- eine MENGE von Themen; ein
+       einzelner Anhaenger sagt "ein Etikett"). Zwei Zeichen fuer dieselbe Sache an zwei Orten
+       waren der Grund fuer den Bericht. Aus core geholt statt hier kopiert -- ein zweiter
+       Handstrich waere derselbe Fehler noch einmal. */
+    tag: UC.icon ? UC.icon("tags", 2) : "",
     chev: '<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg>',
     search: '<svg viewBox="0 0 24 24"><path d="m21 21-4.34-4.34" /> <circle cx="11" cy="11" r="8" /></svg>',
     /* Same clear-X core's search fields use, stroke-width and all. */
