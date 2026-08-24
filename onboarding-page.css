@@ -448,25 +448,20 @@
    damit die Pille genauso aussieht wie ueberall sonst.
    left und width statt transform: die vier Beschriftungen sind verschieden breit, eine
    Verschiebung allein koennte die Pille nicht auf ihre Groesse bringen. */
-/* 3px Luft oben und unten, NICHT bis an den Rand. Daran hing der zweimal gemeldete fehlende
-   Schatten, und es war keine Frage der Deckkraft: gemessen war die Pille 32px hoch und die
-   Leiste ebenfalls 32px -- sie deckte den grauen Grund senkrecht vollstaendig ab, der Schatten
-   konnte also nur AUSSERHALB der Leiste fallen, auf den weissen Formulargrund, wo er nicht zu
-   sehen ist. Erst mit sichtbarem grauem Grund darueber und darunter hat der Schatten eine
-   Flaeche, auf die er faellt -- so liest die Pille als erhoben statt als aufgemalt.
-   Der Radius geht mit: 6px in einer 8px-Leiste, sonst laeuft die innere Rundung an der
-   aeusseren vorbei. */
+/* Buendig, ohne Luft und ohne Schatten -- so wie am Anfang. Zwischenstand war 3px Abstand oben
+   und unten, damit ein Schatten ueberhaupt eine Flaeche zum Fallen hat (die Pille deckte die
+   Leiste senkrecht sonst vollstaendig ab). Der Nutzer will beides nicht: "jetzt hat das ding
+   iwie 2-4px padding oben und unten, weg damit" und "der hat auch immernoch shadow".
+   Die Folge ist bewusst in Kauf genommen: ohne diese Luft KANN kein Schatten sichtbar sein, und
+   deshalb steht hier auch keiner mehr -- ein box-shadow, der nichts tut, ist nur eine Zeile, die
+   beim naechsten Lesen Fragen aufwirft. */
 .uob-bseg-ind {
-  position: absolute; top: 3px; bottom: 3px; left: 0; width: 0; z-index: 0;
-  border-radius: 6px; background: #ffffff;
+  position: absolute; top: 0; bottom: 0; left: 0; width: 0; z-index: 0;
+  border-radius: 8px; background: #ffffff;
   /* --vc-switch-border ist der Rahmen, den core der aktiven Stufe gibt. Hier stand einmal ein
      Name, den es nicht gibt (--vc-switch-active-border) -- dann faellt der Rueckfall an, und der
      war transparent: der Rahmen um die aktive Stufe fehlte einfach. */
   border: 1px solid var(--vc-switch-border);
-  /* 0.2 Deckkraft wie der Knauf von .up-switch in core -- das ist der Wert, den diese App fuer
-     eine erhobene weisse Flaeche auf grauem Grund benutzt. Hier standen .06, und das ist auf
-     dem hellen Schaltergrund schlicht nicht zu sehen gewesen ("kein shadow im switcher"). */
-  box-shadow: 0 1px 2px rgba(0,0,0,.2);
   transition: left var(--uob-t) var(--uob-ease), width var(--uob-t) var(--uob-ease),
               opacity var(--uob-t) var(--uob-ease);
 }
@@ -476,8 +471,7 @@
    is-bereit setzt das JS, sobald es gemessen hat. */
 .uob-bseg-ind { opacity: 0; }
 .uob-bseg-ind.is-bereit { opacity: 1; }
-.uob-root[data-theme="dark"] .uob-bseg-ind { background: #121212; border-color: #353535;
-  box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+.uob-root[data-theme="dark"] .uob-bseg-ind { background: #121212; border-color: #353535; }
 /* Die Stufen geben ihren eigenen Grund und Rahmen ab -- die Marke traegt beides, und zwei
    Pillen uebereinander waeren beim Gleiten zwei. */
 .uob-bseg .up-seg-btn.is-active { background: transparent; border-color: transparent;

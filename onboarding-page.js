@@ -2783,7 +2783,22 @@
           state.banner = "";
           bootBeenden();
           warteBeenden();
-          if (state.step !== "brand") gehe("brand", false); else render();
+          /* KEIN Projekt heisst: nichts ist je erreicht worden. Der Fortschritt muss deshalb
+             mit weg, nicht nur der Schritt.
+             Der Grund, warum das ueberhaupt auffiel: der Startschritt kommt aus der Adresse
+             (?step=topics), damit jemand nach Tagen wieder dort landet, wo er war. Wird das
+             Onboarding in der Datenbank geloescht und die Seite neu geladen, traegt die Adresse
+             den alten Schritt aber weiter -- die Komponente startete auf "topics", maxErreicht
+             sprang auf 2, und Competitors und Topics standen abgehakt und anklickbar da, obwohl
+             es nichts mehr gab. Genau so gemeldet am 24.08.
+             Mit Listen und Auswahl zusammen: sie stammen aus demselben geloeschten Projekt. */
+          state.projekt = null;
+          state.maxErreicht = 0; state.planGesehen = false; state.promptsFuer = null;
+          state.brands = []; state.topics = []; state.prompts = []; state.eigene = [];
+          state.selBrands = {}; state.selTopics = {}; state.selPrompts = {};
+          state.step = "brand";
+          urlSetzen("brand", false);
+          render();
           return true;
         }
         var b = lies(payload);
