@@ -1,0 +1,78 @@
+<meta charset="utf-8"><title>sidebar: setSidebarReady vor den Daten</title>
+<style>html,body{margin:0;height:100%;font:12px ui-monospace,monospace}
+#main{min-height:100%;padding-left:var(--up-sidebar-w,250px)} pre{padding:10px;white-space:pre-wrap}</style>
+<body><div id="main"><pre id="out">laeuft</pre></div>
+<div id="mira-quick-actions" data-theme="light" data-team=""></div>
+<div class="up-root usn-root" data-instance="s9" data-prompt-count="" data-isdark="no"
+     data-team-id="ca880309-251e-4513-8901-8c5f8583f624" data-active="dashboard"
+     data-nav-fn="bubble_fn_usnNav"></div>
+<script>
+/* DER GEMELDETE FALL (24.08.): setSidebarReady() steht als letzter Schritt im Pageload-Workflow,
+   ABER Bubble hat die Schritte dann nur abgeschickt -- die Setter antworten erst danach. Der
+   Aufruf kommt hier deshalb FRUEH (300ms), die Daten trudeln von 600ms bis 1500ms nach.
+   ?alt=1 laedt die Fassung von vor dem Fix als Gegenprobe: die muss staffeln. Die Datei dafuer
+   liegt NICHT im Repo (sie wuerde als zweite, veraltete sidebar.js verrotten) -- bei Bedarf:
+       git show <commit-vor-dem-fix>:sidebar.js > _h_sb_alt.js
+   Gemessen am 24.08.: alt = 5 Stufen (jedes Feld einzeln), neu = 2 Stufen (alles zugleich). */
+["usnNav","usnTheme","usnState","usnPinned","usnTeam","usnAccount","usnLogout","usnNewTeam"].forEach(function(n){
+  window["bubble_fn_"+n]=function(){};
+});
+try { localStorage.removeItem("pref_theme"); } catch(e){}
+(function(){
+  var alt = /[?&]alt=1/.test(location.search);
+  var sbDatei = alt ? "_h_sb_alt.js" : "sidebar.js";
+  var files=["sidebar.css","core.css","core.js",sbDatei], texts={};
+  Promise.all(files.map(function(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"})
+    .then(function(r){return r.text()}).then(function(t){texts[f]=t}); })).then(function(){
+      [ "sidebar.css","core.css" ].forEach(function(f){ var s=document.createElement("style"); s.textContent=texts[f]; document.head.appendChild(s); });
+      var j=document.createElement("script"); j.textContent=texts["core.js"]; document.head.appendChild(j);
+      setUpstreemTheme("system");
+      var j2=document.createElement("script"); j2.textContent=texts[sbDatei]; document.head.appendChild(j2);
+
+      /* Beweis, dass wirklich die gemeinte Fassung laeuft: die neue kennt bereitMelden. */
+      window.__fassung = { alt: alt, datei: sbDatei,
+        neuerCodeDrin: texts[sbDatei].indexOf("bereitMelden") >= 0 };
+
+      var t0 = Date.now();
+      window.__verlauf = [];
+      /* setSidebarReady ZUERST -- das ist der Kern des Berichts. */
+      setTimeout(function(){ window.setSidebarReady(); }, 300);
+      setTimeout(function(){ window.setSidebarTeams("s9", JSON.stringify([
+        {id:"ca880309-251e-4513-8901-8c5f8583f624", name:"LeeUp Media", domain:"lee-up.de", favicon_url:""}])); }, 600);
+      setTimeout(function(){ window.setSidebarUser("s9", JSON.stringify({name:"Lukas", email:"l@upstreem.ai"})); }, 900);
+      setTimeout(function(){ window.setUpstreemBrands([{company_id:"a"},{company_id:"b"}]); }, 1200);
+      setTimeout(function(){ window.setSidebarCount("s9","42"); }, 1500);
+
+      /* Nicht nur ZAEHLEN, sondern benennen: welches Feld genau steht noch im Skelett. Ohne das
+         sieht man zwar, DASS gestaffelt wird, aber nicht welches Feld ausschert. */
+      function skListe(bar){
+        var sk = bar.querySelectorAll(".usn-sk"), wo = [];
+        for (var i=0;i<sk.length;i++){
+          var p = sk[i].parentNode;
+          wo.push(p.hasAttribute("data-count") ? "count"
+                : p.hasAttribute("data-brandcount") ? "brands"
+                : p.hasAttribute("data-teamcount") ? "teams"
+                : (p.className || p.tagName));
+        }
+        return wo.sort().join("+");
+      }
+      var uhr=setInterval(function(){
+        var bar=document.querySelector(".usn-bar"); if(!bar) return;
+        window.__verlauf.push({ ms: Date.now()-t0, sk: bar.querySelectorAll(".usn-sk").length,
+                                wo: skListe(bar) });
+      }, 50);
+      setTimeout(function(){
+        clearInterval(uhr);
+        /* Wie viele VERSCHIEDENE Skelettstaende gab es? Springt alles gemeinsam um, gibt es
+           genau zwei: "alles Skelett" und "nichts mehr Skelett". Jeder Wert dazwischen ist ein
+           Feld, das allein umgesprungen ist -- genau das Symptom. */
+        var stufen = [], letzt = null;
+        window.__verlauf.forEach(function(p){ if (p.wo !== letzt){ stufen.push(p); letzt = p.wo; } });
+        window.__erg = { fassung: window.__fassung, stufen: stufen,
+                         anzahlStufen: stufen.length,
+                         gleichzeitig: stufen.length <= 2 };
+        document.getElementById("out").textContent = JSON.stringify(window.__erg, null, 1);
+      }, 6500);
+    });
+})();
+</script>

@@ -366,7 +366,7 @@
       else if (state.chartMode === "bar"){ topTotal.style.display = "flex"; topTotalN.textContent = fmtTotal(state.total); typeChart.renderBars(state.prepped); }
       else { topTotal.style.display = "none"; typeChart.renderDonut(state.prepped); }
     }
-    function renderLineSide(){
+    function renderLineSide(nurFarben){
       if (!isOwner()) return;
       var loading = state.loading || !state.hasLine || state.linePending;
       /* The gear button (and its dropdown, if it was somehow open when a reload started) has no
@@ -388,7 +388,13 @@
       root.__ccLastBuilt = { dataMode: state.dataMode, metaCount: (state.dataMode === "url" ? state.meta.urls : state.meta.domains).length, datasets: built.datasets.map(function(d){ return { id: d.__id, label: d.label }; }) };
       populateFilter(built.datasets);
       var visible = built.datasets.filter(function(ds){ return !hiddenSeries[ds.__id]; });
-      line.render({ labels: built.labels, datasets: visible });
+      /* nurFarben: die nachgeholten Favicon-Farben aendern NUR die Farben, nicht die Werte. Ueber
+         render() liefe das auf eine zweite Eingangsanimation hinaus -- die Linie zoege erst in
+         Typfarben ein und gleich darauf noch einmal in Markenfarben. updateColors faerbt die
+         stehende Zeichnung um und faellt von sich aus auf render() zurueck, falls sich doch mehr
+         als die Farben geaendert hat. */
+      if (nurFarben && line.updateColors) line.updateColors({ labels: built.labels, datasets: visible });
+      else line.render({ labels: built.labels, datasets: visible });
       farbenNachholen(built.fehlendeFarben);
     }
     /* Die Favicon-Farben, die beim Zeichnen noch nicht im Zwischenspeicher lagen. Nachgeholt und
@@ -423,7 +429,7 @@
           farbenLaufen = false;
           /* Nur neu zeichnen, wenn wirklich eine Farbe dazugekommen ist und der Nutzer noch im
              Markenschema steht -- er kann in der Zwischenzeit zurueckgeschaltet haben. */
-          if (etwasNeu && state.colorScheme === "brand" && isOwner()) renderLineSide();
+          if (etwasNeu && state.colorScheme === "brand" && isOwner()) renderLineSide(true);
         });
       });
     }

@@ -2488,6 +2488,19 @@
     });
   }
 
+  /* Steht das Element ueberhaupt auf dem Schirm? Bubble haelt die Elemente ALLER Seiten im
+     Dokument und blendet die inaktiven nur aus -- eine Komponente im DOM heisst also nicht, dass
+     jemand auf ihre Daten wartet. Wer das verwechselt, laesst Warte-Uhren fuer Seiten ablaufen,
+     die gar nicht offen sind: gemeldet am 24.08., weil response-detail und domain-detail im
+     SELBEN Pageload meldeten -- auf beiden Seiten zugleich kann niemand sein.
+     getClientRects() ist der Test dafuer: bei display:none am Element ODER an einem Vorfahren
+     kommt eine leere Liste zurueck. Kennt ein Browser die Methode nicht, gilt sichtbar -- lieber
+     einmal zu viel gemeldet als eine echte Fehlmeldung verschluckt. */
+  function istSichtbar(el){
+    if (!el || !el.getClientRects) return true;
+    return el.getClientRects().length > 0;
+  }
+
   function makeLate(name, rootSel){
     var wartend = {};
     function park(id, fn){
@@ -5624,8 +5637,52 @@
       });
     }
 
+    /* Faerbt die schon gezeichneten Linien an Ort und Stelle um -- kein destroy, keine erneute
+       Eingangsanimation. Fuer den einen Fall, in dem sich NUR die Farben aendern: die Favicon-
+       Farben des Markenschemas liegen beim ersten Zeichnen noch nicht im Zwischenspeicher, die
+       Reihen stehen so lange in ihrer Typfarbe und werden nachtraeglich umgefaerbt. Ueber
+       render() lief das auf zwei sichtbare Eingangsanimationen hinaus -- erst in Standardfarben,
+       dann in Markenfarben, genau so gemeldet am 24.08.
+       Faellt auf ein volles render() zurueck, sobald sich mehr als die Farben geaendert hat
+       (andere Reihen, andere Reihenfolge, andere Werte): updateColors flickt nur, es fuegt nie
+       eine Reihe hinzu und entfernt nie eine. Dieselbe Bauart wie updateColors an makeTypeChart. */
+    function updateColors(built){
+      if (!built || !built.datasets) return;
+      if (!chart || !canvasHasLiveChart()){ render(built); return; }
+      var alt = chart.data.datasets || [], neu = built.datasets;
+      if (alt.length !== neu.length){ render(built); return; }
+      /* Nur die Farben duerfen sich unterscheiden. Weicht irgendetwas anderes ab, ist es keine
+         Umfaerbung mehr, sondern ein neuer Datensatz -- dann gehoert die Animation auch dazu. */
+      for (var i = 0; i < neu.length; i++){
+        if (String(alt[i].__id) !== String(neu[i].__id) ||
+            String(alt[i].label) !== String(neu[i].label) ||
+            (alt[i].data || []).join(",") !== (neu[i].data || []).join(",")){ render(built); return; }
+      }
+      if ((built.labels || []).join(",") !== (chart.data.labels || []).join(",")){ render(built); return; }
+      var tc = themeColors();
+      var single = (built.labels || []).length <= 1;
+      for (var j = 0; j < neu.length; j++){
+        var a = alt[j], n = neu[j];
+        a.__baseColor = n.__baseColor;
+        a.__favicon = n.__favicon;
+        a.borderColor = n.__baseColor;
+        a.pointBackgroundColor = single ? n.__baseColor : tc.bg;
+        a.pointBorderColor = n.__baseColor;
+        a.pointHoverBorderColor = n.__baseColor;
+      }
+      /* Die Hervorhebung neu setzen zu lassen, waere hier falsch: __activeId zeigt noch auf den
+         Stand von vorher, und applyHighlight vergleicht genau darauf. Zuruecksetzen, damit ein
+         spaeterer Legenden-Hover wieder greift. */
+      if (chart.__activeId != null) chart.__activeId = undefined;
+      lastSig = builtSig(built);
+      lastBuilt = built;
+      renderLegend(built.datasets);
+      chart.update("none");   // "none" = ohne Animation, wie bei makeTypeChart
+    }
+
     return {
       render: render,
+      updateColors: updateColors,
       skeleton: skeleton,
       empty: empty,
       destroy: destroy,
@@ -8341,6 +8398,7 @@
     bootStubs: bootStubs,
     makeMount: makeMount,
     makeLate: makeLate,
+    istSichtbar: istSichtbar,
     makeBarList: makeBarList,
     rowDwell: rowDwell,
     makePager: makePager,

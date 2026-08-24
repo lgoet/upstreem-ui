@@ -232,9 +232,9 @@
       warteUhr = setTimeout(function(){
         warteUhr = null;
         if (state.hasData || state.error) return;
-        /* Diagnose in die Konsole, im UI nur der Zustand -- siehe domain-detail. */
-        if (window.console) console.warn("[brand-detail] " + WARTE_MS + "ms ohne setBrandDetail " +
-          'fuer die Instanz "' + instanceId + '". Laeuft der Pageload-Workflow?');
+        /* Unsichtbar heisst: diese Seite ist gar nicht offen, Bubble haelt sie nur im DOM --
+           siehe domain-detail. Dann weiter warten statt "No data" auf Vorrat setzen. */
+        if (!UC.istSichtbar(root)) { warteStarten(); return; }
         state.error = "No data";
         state.loading = false;
         render();

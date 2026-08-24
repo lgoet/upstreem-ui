@@ -1066,7 +1066,19 @@
        dieser App immer beide vorhanden -- die Zaehler haengen an Attributen, die beim Bau schon
        stehen. Fehlt eine der beiden, wird NICHT enthuellt: sonst springt ein Feld allein um, und
        genau das war der Bericht (der Teams-Setter kommt als letzter, und mit ihm der Zaehler). */
-    function alleDa(){ return !!state.teamsDa && !!state.userDa; }
+    /* ALLE veraenderlichen Felder, nicht nur Team und Nutzer. Vorher standen die drei Zaehler
+       nicht in dieser Bedingung -- enthuellt wurde also schon, waehrend sie noch fehlten, und
+       dann trudelte jeder Zaehler fuer sich in die fertige Leiste. Genau so gemeldet am 24.08.:
+       "erst der prompt count, dann brands count, dann teams count, dann der Rest".
+       countErwartet: die Prompt-Zahl haengt an einem Attribut, das nicht jede Installation setzt.
+       Fehlt es, wird auf sie auch nicht gewartet -- sonst haenge die Leiste an einem Feld, das
+       nie kommt. Marken und Teams kommen in dieser App immer. */
+    function alleDa(){
+      if (!state.teamsDa || !state.userDa) return false;
+      if (state.countErwartet && !state.countDa) return false;
+      if (!state.brandsDa) return false;
+      return true;
+    }
     /* fruehen: die Enthuellung ueber das Sammelfenster. Sie wartet auf alleDa().
        enthuellen(): die Enthuellung ohne Bedingung -- setSidebarReady() und die Notbremse. Beide
        sagen "jetzt ist Schluss mit Warten", und dann zeigt jedes Feld, was es hat. */
@@ -1075,14 +1087,34 @@
       if (!alleDa()) return;
       enthuellen();
     }
+    /* setSidebarReady(): warten, aber nicht endlos. Ist schon alles da, springt die Leiste sofort
+       gemeinsam um. Fehlt noch etwas, bekommt es GEDULD_MS Zeit, sich der gemeinsamen Enthuellung
+       anzuschliessen -- danach wird gezeigt, was da ist, damit eine stumme Quelle die Leiste nicht
+       dauerhaft im Skelett haelt. */
+    var BEREIT_GEDULD_MS = 2000, bereitUhr = null, bereitGemeldet = false;
+    function bereitMelden(){
+      bereitGemeldet = true;
+      if (state.enthuellt) return;
+      fruehen();
+      if (state.enthuellt) return;
+      if (bereitUhr) clearTimeout(bereitUhr);
+      bereitUhr = setTimeout(function(){ bereitUhr = null; enthuellen(); }, BEREIT_GEDULD_MS);
+    }
     function enthuellen(){
       if (sammelUhr){ clearTimeout(sammelUhr); sammelUhr = null; }
+      if (bereitUhr){ clearTimeout(bereitUhr); bereitUhr = null; }
       if (state.enthuellt) return;
       state.enthuellt = true; vorrat.enthuellt = true;
       renderTeam(); renderChips(); renderAcc(); renderNav();
     }
     function enthuellenAnstossen(){
       if (state.enthuellt) return;
+      /* Ist die Bereitmeldung schon da, kommt nichts Neues mehr dazu -- sobald mit DIESER Antwort
+         alles beisammen ist, kann sofort gemeinsam enthuellt werden. Ohne diese Zeile laege
+         zwischen der letzten Antwort und dem sichtbaren Umschalten noch das Sammelfenster bzw.
+         der Rest der Geduldsfrist: gemessen 850ms, in denen alles fertig war und trotzdem
+         Skelette standen. */
+      if (bereitGemeldet){ fruehen(); if (state.enthuellt) return; }
       /* Zuruecksetzen statt stehenlassen: die Uhr laeuft ab dem LETZTEN Setter. Und am Ende wird
          fruehen() gerufen, nicht enthuellen() -- fehlt dann noch eine Quelle, bleibt ALLES im
          Skelett und die naechste Lieferung stoesst erneut an. Die Notbremse ab dem Bau der Leiste
@@ -1338,11 +1370,15 @@
         renderAcc();
         return true;
       },
-      /* Sagt: der Pageload ist durch. Was bis hier nicht angekommen ist, kommt auch nicht mehr --
-         also alles zeigen, statt weiter auf Skelette zu warten. Gehoert als LETZTER Schritt in den
-         Pageload-Workflow. Ohne den Aufruf enthuellt das Sammelfenster nach dem ersten Setter,
-         das ist der Normalfall; der Aufruf ist die Zusicherung, kein Muss. */
-      setReady: function(){ enthuellen(); return true; },
+      /* Sagt: der Pageload-Workflow ist durch. Das heisst aber NICHT, dass seine Daten schon da
+         sind -- Bubble hat die Schritte nur abgeschickt, die Setter antworten danach. Genau daran
+         hing der Bericht vom 24.08. ("ich rufe doch extra am Ende setSidebarReady, warum reicht
+         das nicht"): der Aufruf enthuellte sofort und bedingungslos, und ab da malte sich jeder
+         nachtrudelnde Zaehler einzeln in die schon fertige Leiste.
+         Jetzt heisst der Aufruf: von hier an kommt nichts NEUES mehr dazu -- enthuelle, sobald
+         alles Erwartete beisammen ist, und dann alles zusammen. GEDULD_MS deckelt das, damit eine
+         Quelle, die gar nicht antwortet, die Leiste nicht im Skelett stehen laesst. */
+      setReady: function(){ bereitMelden(); return true; },
       /* Ladezustand von aussen. Der Teamwechsel im Schalter setzt ihn selbst -- diesen Weg gibt es
          fuer jeden anderen Grund, aus dem die Seite gleich neu gebaut wird. */
       setLoading: function(v){ ladenSetzen(isYes(v)); return true; },
@@ -1351,12 +1387,20 @@
         renderNav(); return true;
       },
       setCount: function(n){
-        enthuellenAnstossen();
         state.count = (n == null || n === "") ? "" : String(n);
         /* Ein Setter-Aufruf ist eine Antwort -- auch eine leere. Danach kein Skelett mehr. */
         state.countDa = true;
+        state.countErwartet = true;
+        /* Erst NACH der Enthuellung schreiben. Ohne diese Abfrage sprang die Prompt-Zahl allein
+           um, sobald ihr Setter eintraf -- gemessen am 24.08.: sie verlor ihr Skelett 850ms vor
+           allen anderen Feldern. Der Weg ueber das data-prompt-count-Attribut fragt schon so ab,
+           dieser Schnellweg tat es als einziger nicht.
+           enthuellenAnstossen() steht jetzt DANACH: es kann selbst enthuellen (wenn mit diesem
+           Wert alles beisammen ist), und dann muss der Wert schon im Zustand stehen. */
         var el = elNav.querySelector("[data-count]");
-        if (el) el.textContent = state.count;
+        if (el) el.innerHTML = state.enthuellt ? esc(state.count)
+                                               : '<span class="usn-sk"></span>';
+        enthuellenAnstossen();
         return true;
       },
       setOpen: function(v){

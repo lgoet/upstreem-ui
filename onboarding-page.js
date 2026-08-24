@@ -1676,6 +1676,33 @@
       ind.style.left = an.offsetLeft + "px";
       ind.style.width = an.offsetWidth + "px";
       ind.classList.add("is-bereit");
+      bsegBeobachten(root.querySelectorAll("[data-biz]"));
+    }
+    /* EINMAL messen reicht nicht. Die Pille steht auf gemessenen Pixeln, und die aendern sich
+       noch, NACHDEM sie gesetzt wurden: die Hausschrift laedt spaeter nach, und mit ihr werden
+       alle vier Beschriftungen anders breit -- die Pille bleibt dann an der alten Stelle stehen
+       und liegt hinter dem falschen Knopf. Genau so gemeldet am 24.08. ("B2B ist selected, aber
+       der weisse BG ist hinter B2X"), und es passt zusammen: es trat "ab und an" auf, naemlich
+       dann, wenn die Schrift nicht schon im Zwischenspeicher lag.
+       Deshalb zwei Nachmessungen: eine, wenn die Schriften fertig sind, und dauerhaft eine bei
+       jeder Groessenaenderung der Leiste (Fensterbreite, Sprache, Zoom). */
+    var bsegRo = null, bsegSchriftHaengt = false;
+    function bsegBeobachten(knoepfe) {
+      if (!knoepfe || !knoepfe.length) return;
+      if (!bsegSchriftHaengt && document.fonts && document.fonts.ready) {
+        bsegSchriftHaengt = true;
+        document.fonts.ready.then(function () { bsegMarke(); })["catch"](function () {});
+      }
+      if (bsegRo || !window.ResizeObserver) return;
+      /* Beobachtet werden die KNOEPFE, nicht die Leiste um sie herum. Die Leiste ist 100% breit
+         und aendert ihre Groesse nie -- ein Beobachter auf ihr feuert also genau dann nicht, wenn
+         es darauf ankaeme. Gemessen: bei 1100px stand die Pille an der richtigen Stelle, war aber
+         2px statt 100px breit, weil die Knopfbreite sich NACH der einzigen Messung noch aenderte.
+         Der Rueckruf ruft bsegMarke, das wieder hierher fuehrt -- der Beobachter wird aber nur
+         einmal angelegt (bsegRo), und bsegMarke aendert nur die Pille, nie einen Knopf: keine
+         Schleife. */
+      bsegRo = new ResizeObserver(function () { bsegMarke(); });
+      for (var i = 0; i < knoepfe.length; i++) bsegRo.observe(knoepfe[i]);
     }
 
     /* ---- Die vier Auswahlfelder ------------------------------------------------------------

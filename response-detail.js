@@ -255,8 +255,11 @@
       warteUhr = setTimeout(function () {
         warteUhr = null;
         if (state.hasData || state.error) return;
-        if (window.console) console.warn("[response-detail] " + WARTE_MS + "ms ohne " +
-          'setResponseDetail fuer die Instanz "' + instanceId + '". Laeuft der Pageload-Workflow?');
+        /* Unsichtbar heisst: diese Seite ist gar nicht offen, Bubble haelt sie nur im DOM. Dann
+           wartet niemand, und "No data" jetzt zu setzen hiesse, es steht beim spaeteren Oeffnen
+           der Seite schon da, bevor der Pageload-Workflow ueberhaupt laufen konnte. Also weiter
+           warten statt melden. */
+        if (!UC.istSichtbar(root)) { warteStarten(); return; }
         state.error = "No data";
         state.loading = false;
         render();

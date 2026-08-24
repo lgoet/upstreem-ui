@@ -90,22 +90,23 @@
    in dieser App jeder ruhige Knopf.
    .uob-link ist der Textknopf der Kopfzeile. .up-btn-sec waere er nicht: der traegt einen
    sichtbaren Rahmen und liest damit als Aktion, und "Dashboard"/"Log out" sind Ausgaenge. */
+/* IMMER ein reiner Icon-Knopf, nie Icon plus ausgeschriebenes Wort -- so angeordnet am 24.08.
+   Die Masse sind die von .up-iconbtn in core (32x32, Radius 8), damit die Ausgaenge oben rechts
+   aussehen wie jeder andere Icon-Knopf der App. Was das Wort gesagt haette, sagt weiterhin der
+   data-tip am Knopf und das aria-label fuer Vorlesesoftware -- die Beschriftung geht also nicht
+   verloren, sie steht nur nicht mehr dauerhaft da. */
 .uob-link {
-  height: 32px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent;
+  width: 32px; height: 32px; padding: 0; border: 0; border-radius: 8px; background: transparent;
   color: var(--vc-muted); font-family: inherit; font-size: 13px; font-weight: 500;
-  display: inline-flex; align-items: center; gap: 7px; cursor: pointer; white-space: nowrap;
+  display: inline-flex; align-items: center; justify-content: center; gap: 0; cursor: pointer;
+  white-space: nowrap;
   transition: color var(--uob-t) var(--uob-ease), background var(--uob-t) var(--uob-ease);
 }
 .uob-link:hover { color: var(--vc-text); background: var(--uob-hover); }
-/* Kein Platz fuer die Worte: die Ausgaenge werden zu reinen Icon-Knoepfen. Die Masse kommen
-   aus .up-iconbtn in core -- 32x32, Radius 8 --, und .uob-link bringt Hoehe und Radius bereits
-   genau so mit; es bleiben Breite, Polster und Ausrichtung. Damit sieht der Knopf hier aus wie
-   jeder andere Icon-Knopf der App und nicht wie ein zusammengeschobener Textknopf.
-   is-tight setzt kopfPruefen(), wenn Logo und Ausgaenge zusammen nicht mehr in die Kopfzeile
-   passen -- gemessen, nicht an einer Breite geraten: das Logo ist in Bubble frei gesetzt und
-   jede feste Schwelle waere fuer ein anderes Logo falsch. */
-.uob-root.is-tight .uob-link-t { display: none; }
-.uob-root.is-tight .uob-link { width: 32px; padding: 0; gap: 0; justify-content: center; }
+/* Das Wort im Knopf ist damit grundsaetzlich weg, nicht mehr nur bei Platznot. Die Klasse bleibt
+   im Markup: sie traegt den Text fuer aria und ist der Ankerpunkt, falls die Kopfzeile je wieder
+   beschriftete Ausgaenge bekommt. */
+.uob-link-t { display: none; }
 /* Reicht auch das nicht -- ein sehr breites Logo -- gibt zuletzt das Logo nach. Die Reihenfolge
    ist Absicht: erst fallen Woerter weg, die das Icon daneben ohnehin sagt, und erst danach wird
    das Logo kleiner. Ohne diese Regel bleibt flex: 0 0 auto und der Ueberhang steht wieder
@@ -424,7 +425,10 @@
      Name, den es nicht gibt (--vc-switch-active-border) -- dann faellt der Rueckfall an, und der
      war transparent: der Rahmen um die aktive Stufe fehlte einfach. */
   border: 1px solid var(--vc-switch-border);
-  box-shadow: 0 1px 2px rgba(15,17,21,.06);
+  /* 0.2 Deckkraft wie der Knauf von .up-switch in core -- das ist der Wert, den diese App fuer
+     eine erhobene weisse Flaeche auf grauem Grund benutzt. Hier standen .06, und das ist auf
+     dem hellen Schaltergrund schlicht nicht zu sehen gewesen ("kein shadow im switcher"). */
+  box-shadow: 0 1px 2px rgba(0,0,0,.2);
   transition: left var(--uob-t) var(--uob-ease), width var(--uob-t) var(--uob-ease),
               opacity var(--uob-t) var(--uob-ease);
 }

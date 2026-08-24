@@ -283,9 +283,6 @@
     var S = {
       url: "", citation_type: "",
       lead_title: "", lead_domain: "", lead_favicon: "",
-    /* Merkt sich, fuer welche Quelle der fehlende Titel schon gemeldet wurde -- eine Zeile je
-       Quelle, nicht eine je Render. */
-    var _titelGemeldet = null;
       own_brand_name: "", own_brand_summary: "",
       youUrls: [], youLoaded: false, selectedLinks: [],
       format: "markdown", schema: false, suggestsOpen: false, inputFocused: false,
@@ -460,16 +457,6 @@
       /* KEIN Rueckfall auf die Domain: die steht eine Zeile tiefer, und zweimal dasselbe sieht aus
          wie ein verlorener Titel -- genau so ist es gemeldet worden ("da steht die Domain, wo der
          Titel stand"). Fehlt der Titel wirklich, sagt die Zeile das neutral. */
-      /* Fehlt der Titel, steht hier eine neutrale Zeile -- aber sie sieht aus wie ein
-         entworfener Leerzustand, und niemand erkennt daran, dass eine Eingabe fehlt. Genau so
-         gemeldet worden ("da steht nur Selected source"). Einmal je Quelle in die Konsole, damit
-         der Fall diagnostizierbar ist; ohne fehlenden Titel bleibt die App still. */
-      if (!S.lead_title && S.url && _titelGemeldet !== S.url) {
-        _titelGemeldet = S.url;
-        if (window.console) console.warn("[create-with-ai] kein Titel fuer " + S.url +
-          " -- weder data-title am Element noch lead_title im setCreateWithAiContext-Aufruf. " +
-          "Die Zeile zeigt deshalb nur \"Selected source\".");
-      }
       elSTitle.textContent = S.lead_title || "Selected source";
       elSUrl.textContent = S.lead_domain || domainOf(S.url) || S.url || "";
     }

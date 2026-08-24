@@ -478,11 +478,10 @@
       warteUhr = setTimeout(function () {
         warteUhr = null;
         if (state.hasData || state.error) return;
-        /* Im UI steht, was der Nutzer wissen kann: es sind keine Daten da. Warum, gehoert in die
-           Konsole -- so wie es core und vier andere Komponenten schon halten. Ein Arbeitsauftrag
-           an uns ("check the ... workflow") ist fuer den Nutzer eine Sackgasse. */
-        if (window.console) console.warn("[domain-detail] " + WARTE_MS + "ms ohne setDomainDetail " +
-          'fuer die Instanz "' + instanceId + '". Laeuft der Pageload-Workflow?');
+        /* Unsichtbar heisst: diese Seite ist gar nicht offen, Bubble haelt sie nur im DOM. Dann
+           wartet niemand, und "No data" jetzt zu setzen hiesse, es steht beim spaeteren Oeffnen
+           der Seite schon da, bevor der Pageload-Workflow ueberhaupt laufen konnte. */
+        if (!UC.istSichtbar(root)) { warteStarten(); return; }
         state.error = "No data";
         state.loading = false;
         render();
@@ -515,8 +514,8 @@
       urlUhr = setTimeout(function () {
         urlUhr = null;
         if (!urlWartet()) return;
-        if (window.console) console.warn("[domain-detail] " + WARTE_MS + "ms ohne setDomainDetailUrls " +
-          'fuer die Instanz "' + instanceId + '". Haengt ein Workflow an uddMode/uddScope/uddGran?');
+        /* Siehe Hauptuhr oben: unsichtbar heisst, die Seite ist gar nicht offen. */
+        if (!UC.istSichtbar(root)) { urlWarteStarten(); return; }
         state.urlsError = "No data";
         state.urlsStale = false;
         renderChart();
