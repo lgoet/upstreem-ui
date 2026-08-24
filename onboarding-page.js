@@ -695,11 +695,17 @@
        Jede Ansicht liefert nur ihr Markup. Welche gerade sichtbar ist, entscheidet render() --
        so gibt es genau eine Stelle, an der ein Zustand zu einem Bild wird. */
 
-    function kopf(h1, sub, zaehler) {
+    function kopf(h1, sub, zaehler, aktion) {
       return '<div class="uob-head">' +
         (zaehler != null
           ? '<div class="uob-h1row"><h1 class="uob-h1">' + esc(h1) + '</h1>' +
-            '<span class="uob-count' + (zaehler.voll ? " is-full" : "") + '">' + esc(zaehler.text) + '</span></div>'
+            '<span class="uob-count' + (zaehler.voll ? " is-full" : "") + '">' + esc(zaehler.text) + '</span>' +
+            /* Dieselbe Bauart wie der Knopf ueber jeder Prompt-Gruppe (.uob-group-all): ein
+               UMSCHALTER, kein reines Hinzufuegen -- wer versehentlich alles waehlt, muesste es
+               sonst einzeln wieder abwaehlen. Und die Beschriftung sagt, was der Klick TUT. */
+            (aktion ? '<button class="uob-group-all uob-head-all" type="button" data-allof="' +
+                        esc(aktion.kind) + '">' + esc(aktion.text) + '</button>' : "") +
+            '</div>'
           : '<h1 class="uob-h1">' + esc(h1) + '</h1>') +
         (sub ? '<p class="uob-sub">' + esc(sub) + '</p>' : "") +
       '</div>';
@@ -901,10 +907,17 @@
 
     function viewTopics() {
       var n = anzahl(state.selTopics);
+      /* Nur die vom Server gelieferten Themen zaehlen fuer "alle": die selbst getippten stehen
+         in state.eigene und sind ohnehin immer gewaehlt -- sie abzuwaehlen hiesse, sie zu
+         loeschen, und das gehoert an ihr eigenes Kreuz, nicht an diesen Knopf. */
+      var alleGewaehlt = state.topics.length > 0 && n >= state.topics.length;
       return '<div class="uob-pane" data-pane="topics">' +
         kopf("Topics",
              "Topics group the questions we ask the models. Pick at least one you want to be found for.",
-             { text: n + " selected", voll: n > 0 }) +
+             { text: n + " selected", voll: n > 0 },
+             state.topics.length
+               ? { kind: "topics", text: alleGewaehlt ? "Deselect all" : "Select all" }
+               : null) +
         '<div class="uob-body">' +
           (state.topics.length
             ? '<div class="uob-list up-scroll uob-group-items is-plain" role="group" aria-label="Topics">' +
@@ -1425,7 +1438,14 @@
       elIdent.classList.toggle("is-on", an);
       if (!an) return;
       var name = txt(p.company_name) || txt(state.form.name);
-      var dom = txt(p.website_domain);
+      /* website_domain ist das bequemste Feld, aber nicht das einzige, das die Domain KENNT --
+         und es fehlt in manchen Antworten schlicht. Dann stand hier eine leere Domain, und das
+         hiess: keine Domainzeile UND kein Favicon (favicon() gibt ohne Domain "" zurueck, die
+         Kachel faellt auf den Anfangsbuchstaben zurueck). Genau so gemeldet am 24.08.
+         normUrl zieht die Domain aus jeder Schreibweise, mit oder ohne Protokoll -- dieselbe
+         Rueckfallkette, die das Ladebild in viewLoad() schon benutzt. */
+      var dom = txt(p.website_domain) ||
+                normUrl(txt(p.website_url) || txt(p.website_input) || state.form.website).domain;
       elIdentNm.textContent = name;
       elIdentDm.textContent = dom;
       /* Nur neu bauen, wenn sich die Marke wirklich geaendert hat -- sonst laedt das Favicon bei
@@ -1976,6 +1996,11 @@
       var eig = e.target.closest("[data-eigen]");
       if (eig) { var f = eig.querySelector("[data-eigen-in]"); if (f) f.focus(); return; }
 
+      /* data-allof, nicht data-all: closest("[data-all]") darunter trifft nur den exakten
+         Attributnamen, die beiden Knoepfe kommen sich also nicht ins Gehege. */
+      var alleVon = e.target.closest("[data-allof]");
+      if (alleVon) { alleUmschalten(alleVon.getAttribute("data-allof")); return; }
+
       var alle = e.target.closest("[data-all]");
       if (alle) {
         gruppeUmschalten(alle.getAttribute("data-all"));
@@ -2158,9 +2183,39 @@
          neu gebautes Markup jedes Favicon erneut, was sichtbar flackert. */
       auswahlZeichnen(kind);
       if (kind === "prompts") gruppenKnoepfe();
+      /* Der Knopf im Kopf sagt, was der Klick TUT -- nach dem letzten fehlenden Haken muss dort
+         "Deselect all" stehen, sonst behauptet er das Gegenteil. */
+      if (kind === "topics") {
+        var kn = root.querySelector('[data-allof="topics"]');
+        if (kn) kn.textContent = alleServerThemenAn() ? "Deselect all" : "Select all";
+      }
       renderNav();
       fire("data-select-fn", "uobSelect",
         { kind: kind, ids: idsVon(topf).join(","), count: anzahl(topf) });
+    }
+
+    /* Alle Themen auf einmal. Gezaehlt wird nur, was der Server geliefert hat -- die selbst
+       getippten Themen aus state.eigene sind ohnehin immer gewaehlt, und sie hier abzuwaehlen
+       hiesse, sie zu loeschen; das gehoert an ihr eigenes Kreuz.
+       Wie waehle(): NICHT neu zeichnen, sondern nur die betroffenen Zeilen -- sonst springt der
+       Scrollstand der Liste auf 0 und jedes Favicon wird erneut geholt. */
+    function alleServerThemenAn() {
+      for (var i = 0; i < state.topics.length; i++) if (!state.selTopics[state.topics[i].id]) return false;
+      return state.topics.length > 0;
+    }
+    function alleUmschalten(kind) {
+      if (kind !== "topics" || !state.topics.length) return;
+      var aus = alleServerThemenAn();
+      for (var i = 0; i < state.topics.length; i++) {
+        if (aus) delete state.selTopics[state.topics[i].id];
+        else state.selTopics[state.topics[i].id] = true;
+      }
+      auswahlZeichnen("topics");
+      var knopf = root.querySelector('[data-allof="topics"]');
+      if (knopf) knopf.textContent = alleServerThemenAn() ? "Deselect all" : "Select all";
+      renderNav();
+      fire("data-select-fn", "uobSelect",
+        { kind: "topics", ids: idsVon(state.selTopics).join(","), count: anzahl(state.selTopics) });
     }
 
     /* Ein neues eigenes Thema. Die Zeile wird an Ort und Stelle eingesetzt und der Platzhalter

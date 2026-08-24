@@ -334,6 +334,13 @@
    unter der Ueberschrift in Klammern -- dort liest er sich wie ein Teil des Titels, obwohl er
    sich staendig aendert. Rechts oben ist er ein Anzeigefeld und kein Text. */
 .uob-h1row { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+/* Zaehler und "Select all" gehoeren als Paar nach rechts. Ohne diese Zeile zieht
+   space-between drei Kinder auseinander und der Zaehler stuende allein in der Mitte --
+   margin-left:auto am Zaehler schiebt beide gemeinsam an den rechten Rand. Der Knopf
+   selbst bringt aus .uob-group-all ein eigenes margin-left:auto mit, das hier weg muss,
+   sonst reisst es das Paar wieder auseinander. */
+.uob-h1row .uob-count { margin-left: auto; }
+.uob-head-all { margin-left: 0; }
 .uob-count {
   flex: 0 0 auto; font-size: 13px; font-weight: 600; color: var(--vc-muted);
   font-variant-numeric: tabular-nums;
@@ -418,9 +425,17 @@
    damit die Pille genauso aussieht wie ueberall sonst.
    left und width statt transform: die vier Beschriftungen sind verschieden breit, eine
    Verschiebung allein koennte die Pille nicht auf ihre Groesse bringen. */
+/* 3px Luft oben und unten, NICHT bis an den Rand. Daran hing der zweimal gemeldete fehlende
+   Schatten, und es war keine Frage der Deckkraft: gemessen war die Pille 32px hoch und die
+   Leiste ebenfalls 32px -- sie deckte den grauen Grund senkrecht vollstaendig ab, der Schatten
+   konnte also nur AUSSERHALB der Leiste fallen, auf den weissen Formulargrund, wo er nicht zu
+   sehen ist. Erst mit sichtbarem grauem Grund darueber und darunter hat der Schatten eine
+   Flaeche, auf die er faellt -- so liest die Pille als erhoben statt als aufgemalt.
+   Der Radius geht mit: 6px in einer 8px-Leiste, sonst laeuft die innere Rundung an der
+   aeusseren vorbei. */
 .uob-bseg-ind {
-  position: absolute; top: 0; bottom: 0; left: 0; width: 0; z-index: 0;
-  border-radius: 8px; background: #ffffff;
+  position: absolute; top: 3px; bottom: 3px; left: 0; width: 0; z-index: 0;
+  border-radius: 6px; background: #ffffff;
   /* --vc-switch-border ist der Rahmen, den core der aktiven Stufe gibt. Hier stand einmal ein
      Name, den es nicht gibt (--vc-switch-active-border) -- dann faellt der Rueckfall an, und der
      war transparent: der Rahmen um die aktive Stufe fehlte einfach. */

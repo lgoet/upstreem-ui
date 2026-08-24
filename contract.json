@@ -433,6 +433,7 @@
   "data-act",
   "data-action",
   "data-all",
+  "data-allof",
   "data-assistant",
   "data-biz",
   "data-block",
@@ -1575,6 +1576,7 @@
   "uob-h1",
   "uob-h1row",
   "uob-head",
+  "uob-head-all",
   "uob-help",
   "uob-help-body",
   "uob-help-h",
@@ -2642,8 +2644,8 @@
   "fnattrs": 80,
   "globals": 137,
   "payloadkeys": 81,
-  "dataattrs": 197,
-  "klassen": 1948,
+  "dataattrs": 198,
+  "klassen": 1949,
   "keyframes": 58
  }
 }
