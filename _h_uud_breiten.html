@@ -27,29 +27,23 @@ function messen() {
     var b = paar[0], d = paar[1].contentDocument, w = paar[1].contentWindow;
     var r = d.querySelector(".uud-root");
     if (!r) { aus[b] = "keine Wurzel"; return; }
-    try { w.fuellen(); } catch (e) {}
-    var W = d.documentElement.clientWidth;
-    var kpis = r.querySelectorAll(".uud-kpi");
-    var reihen = {};
-    [].forEach.call(kpis, function (k) {
-      var t = Math.round(k.getBoundingClientRect().top);
-      reihen[t] = (reihen[t] || 0) + 1;
-    });
-    var verteilung = Object.keys(reihen).sort(function (x, y) { return x - y; })
-      .map(function (t) { return reihen[t]; }).join("+");
+    var basis = JSON.parse(JSON.stringify(w.__uudDetail));
+    basis.url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+    w.resetUrlDetail("urldetail");
+    w.setUrlDetail("urldetail", JSON.stringify(basis));
+    w.setUrlDetailConversion("urldetail", "[]");
+    var spalte = r.querySelector(".uud-sect-embed");
+    var frame = spalte ? spalte.querySelector(".uud-frame") : null;
     aus[b] = {
       wurzel: Math.round(r.getBoundingClientRect().width),
-      narrow: r.classList.contains("is-narrow"), vnarrow: r.classList.contains("is-vnarrow"),
-      kpi_verteilung: verteilung,
-      abstand: (function(){ var k = r.children;
-        return k.length > 1 ? Math.round(k[1].getBoundingClientRect().top - k[0].getBoundingClientRect().bottom) : null; })(),
-      punkt: (function(){ var d = r.querySelector(".uud-cdot");
-        return d ? w.getComputedStyle(d).width + " r" + w.getComputedStyle(d).borderRadius : null; })(),
-      quer: d.documentElement.scrollWidth > W + 1,
-      fehler: (w.__fehler || []).length
+      narrow: r.classList.contains("is-narrow"),
+      embed_breite: frame ? Math.round(frame.getBoundingClientRect().width) : null,
+      spalte_breite: spalte ? Math.round(spalte.getBoundingClientRect().width) : null
     };
+    if (frame && spalte) aus[b].anteil = Math.round(aus[b].embed_breite / aus[b].spalte_breite * 100) + "%";
   });
   window.__mess = aus;
+window.__mess = aus;
 }
 /* Erst nach der Guide-Uhr messen: 5s plus Luft. */
 setTimeout(messen, 9000);

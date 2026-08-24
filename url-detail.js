@@ -163,7 +163,7 @@
       /* Fester Rahmen statt Seitenverhaeltnis: TikTok liefert je nach Post mal Hoch-, mal
          Querformat, und der eigene Player bringt seine Beschriftung mit. 740px ist die Hoehe,
          die TikTok in seinem eigenen Einbettungscode vorgibt. */
-      art: "iframe", hoehe: 740, maxBreite: 605,
+      art: "iframe", hoehe: 740,
       src: function (u) { return "https://www.tiktok.com/embed/v2/" + (/video\/(\d{6,})/.exec(u) || [])[1]; },
       oembed: function (u) { return "https://www.tiktok.com/oembed?url=" + encodeURIComponent(u); }
     },
@@ -204,29 +204,48 @@
     {
       key: "linkedin", label: "LinkedIn",
       passt: function (u) { return /linkedin\.com\/.*(?:activity-|urn:li:(?:activity|share|ugcPost):)(\d{6,})/i.test(u); },
-      art: "iframe", hoehe: 600, maxBreite: 560,
+      art: "iframe", hoehe: 600,
       src: function (u) {
         var m = /(?:activity-|urn:li:(?:activity|share|ugcPost):)(\d{6,})/i.exec(u);
         return "https://www.linkedin.com/embed/feed/update/urn:li:share:" + (m ? m[1] : "");
       }
     },
     {
+      /* embed.reddit.com ist als EIGENSTAENDIGER Iframe gedacht (Reddits Antwort auf ein
+         Script-Widget) -- kein Script noetig. Was er NICHT von selbst kann: seine tatsaechliche
+         Hoehe ueber die Seitengrenze hinweg melden (cross-origin, ohne postMessage-Gegenstelle
+         auf unserer Seite), und lange Beitraege zeigen einen "Weiterlesen"-Schnitt, den nur
+         Reddit selbst steuert -- dafuer ist kein zuverlaessiger Parameter dokumentiert, also
+         wird hier keiner erfunden. 300px statt der vorherigen 560: gemessen an einem typischen
+         einzelnen Beitrag ohne Bild, naeher an der echten Hoehe als der alte, ungeprüfte Wert. */
       key: "reddit", label: "Reddit",
       passt: function (u) { return /reddit\.com\/r\/[^\/]+\/comments\/[a-z0-9]+/i.test(u); },
-      art: "iframe", hoehe: 560,
-      /* embed.reddit.com nimmt den Pfad des Beitrags unveraendert und braucht kein Script. */
+      art: "iframe", hoehe: 300,
       src: function (u) {
         var m = /reddit\.com(\/r\/[^\/]+\/comments\/[^?#]*)/i.exec(u);
         return "https://embed.reddit.com" + (m ? m[1] : "") + "?embed=true";
       }
     },
     {
+      /* Facebooks eigene Doku (developers.facebook.com/docs/plugins/embedded-posts, 24.08.
+         gegengeprueft) warnt ausdruecklich: "Do not use CSS style tags to adjust the size of a
+         plugin" -- das SDK verwaltet die Groesse seines iframes selbst (startet 1000x1000
+         unsichtbar, schrumpft danach auf die echte Groesse). Der bisherige Weg -- ein roher
+         iframe auf facebook.com/plugins/post.php -- ist Facebooks AELTERER, eigenstaendiger Weg
+         und genau der, an dem "Cannot listen to an undefined element" auftrat: das ist ein Fehler
+         AUS Facebooks eigenem Code, der IN diesem iframe laeuft, nicht aus unserem.
+         Jetzt der offizielle, aktuelle Weg -- derselbe wie bei Instagram/X: Script einmal laden,
+         Markup einsetzen, danach ausdruecklich FB.XFBML.parse() rufen. Ohne das verarbeitet das
+         SDK ein spaeter eingefuegtes fb-post-div nicht, exakt dieselbe Falle wie bei TikToks
+         embed.js. Keine feste Groesse im Markup -- "Leave empty to use fluid width" laut Doku. */
       key: "facebook", label: "Facebook",
       passt: function (u) { return /facebook\.com\/[^\/]+\/(posts|videos)\//i.test(u); },
-      art: "iframe", hoehe: 620, maxBreite: 560,
-      src: function (u) {
-        return "https://www.facebook.com/plugins/post.php?href=" + encodeURIComponent(u) +
-               "&show_text=true&width=500";
+      art: "script", skript: "https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v19.0",
+      markup: function (u) {
+        return '<div id="fb-root"></div><div class="fb-post" data-href="' + esc(u) + '"></div>';
+      },
+      anstossen: function (el) {
+        try { if (window.FB && window.FB.XFBML) window.FB.XFBML.parse(el); } catch (e) {}
       }
     }
   ];
@@ -529,19 +548,20 @@
       state.embedKey = kennung;
       state.oembed = null;
 
+      /* Die Breite je Anbieter (85% YouTube, 50% Instagram, volle Breite sonst, unter 800px
+         Wurzelbreite ueberall 100%) steht in der CSS, ueber data-anbieter angesprochen -- nicht
+         hier als Inline-Stil. Das JS setzt nur noch Hoehe/Seitenverhaeltnis, die von der Anbieter-
+         KONFIGURATION kommen, keine feste Breite mehr. */
       if (a.art === "iframe") {
-        var stil = a.ratio
-          ? 'style="padding-top:' + a.ratio + '%"'
-          : 'style="height:' + (a.hoehe || 560) + 'px"';
-        elEmbed.innerHTML = '<div class="uud-frame' + (a.ratio ? " is-ratio" : "") + '"' +
-          (a.maxBreite ? ' style="max-width:' + a.maxBreite + 'px;' + (a.ratio ? "padding-top:" + a.ratio + "%" : "height:" + (a.hoehe || 560) + "px") + '"' : " " + stil) + '>' +
+        var stil = a.ratio ? 'style="padding-top:' + a.ratio + '%"' : 'style="height:' + (a.hoehe || 560) + 'px"';
+        elEmbed.innerHTML = '<div class="uud-frame' + (a.ratio ? " is-ratio" : "") + '" data-anbieter="' + a.key + '" ' + stil + '>' +
           '<iframe src="' + esc(a.src(url)) + '" loading="lazy" allowfullscreen' +
             ' referrerpolicy="strict-origin-when-cross-origin"' +
             ' allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"' +
             ' title="' + esc(a.label) + ' embed"></iframe>' +
         '</div>';
       } else {
-        elEmbed.innerHTML = '<div class="uud-social">' + a.markup(url) + '</div>';
+        elEmbed.innerHTML = '<div class="uud-social" data-anbieter="' + a.key + '">' + a.markup(url) + '</div>';
         var ziel = elEmbed.querySelector(".uud-social");
         skriptLaden(a.skript, function (fehlgeschlagen) {
           /* Der Kasten darf nicht leer stehen bleiben, wenn das fremde Script nicht kommt --

@@ -88,15 +88,44 @@
 /* ---- Embed -----------------------------------------------------------------------------------
    Zwei Bauarten in einem Rahmen: mit Seitenverhaeltnis (Video) oder mit fester Hoehe (Post).
    is-ratio traegt die Hoehe ueber padding-top, deshalb steht dort keine height -- beides zugleich
-   ergaebe einen Rahmen, der doppelt so hoch ist wie das Bild darin. */
-.uud-frame {
-  position: relative; width: 100%; border-radius: 12px; overflow: hidden;
-  background: var(--vc-heading-bg); border: 1px solid var(--vc-border); box-sizing: border-box;
+   ergaebe einen Rahmen, der doppelt so hoch ist wie das Bild darin.
+
+   EIN Aussehen fuer beide Bauarten -- 16px Radius, Rahmen, KEIN Grund: der Beitrag traegt seine
+   eigene Flaeche (weiss/Karte des Anbieters), ein zusaetzlicher Grund dahinter waere eine zweite,
+   sichtbare Farbe an einer Kante, die der Anbieter selbst schon setzt. Vorher stand hier
+   background: var(--vc-heading-bg) UND 12px Radius -- zwei Werte, die von den uebrigen 16px-
+   Radien dieser Seite abwichen. */
+.uud-frame, .uud-social {
+  border-radius: 16px; border: 1px solid var(--vc-border); overflow: hidden; box-sizing: border-box;
 }
+.uud-frame { position: relative; width: 100%; }
 .uud-frame.is-ratio { height: 0; }
 .uud-frame iframe {
   position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block;
 }
+
+/* ---- Breite je Anbieter -----------------------------------------------------------------------
+   Bei normaler Bildschirmbreite nimmt ein Video/Post nicht die volle Spalte -- 100% Breite fuer
+   ein einzelnes eingebettetes Element wirkt neben Fliesstext ueberproportional gross. Unter 800px
+   Wurzelbreite (is-narrow, dieselbe Schwelle wie die KPI-Leiste) wird ohnehin schon alles enger,
+   dort darf das Embed wieder die volle Breite nehmen -- sonst bliebe bei 85%/50% auf einem
+   schmalen Schirm nur ein schmaler Streifen. Ohne eigene Regel bleibt ein Anbieter bei 100%
+   (LinkedIn, Reddit, Facebook, X -- deren Beitraege sind ohnehin textlastiger, kein Grund zu
+   verschmaelern). */
+.uud-frame[data-anbieter="youtube"] { width: 85%; }
+.uud-social[data-anbieter="instagram"] { width: 50%; }
+.uud-root.is-narrow .uud-frame[data-anbieter="youtube"],
+.uud-root.is-narrow .uud-social[data-anbieter="instagram"] { width: 100%; }
+/* TikToks Player ist senkrecht und schmal (325px natuerliche Breite, bis 605px laut TikToks
+   eigener oEmbed-Antwort) -- volle Spaltenbreite liess ihn wie einen schmalen Streifen in einem
+   viel zu grossen Rahmen wirken: der Rahmen war fast doppelt so breit wie der Player selbst.
+   fit-content plus dieselben Grenzen wie TikToks eigenes Embed, mittig -- und die IFRAME bekommt
+   dieselbe Breite statt 100%, sonst zieht sie den Rahmen wieder in die volle Spalte. */
+.uud-frame[data-anbieter="tiktok"] {
+  width: fit-content; min-width: 325px; max-width: 605px; margin: 0 auto;
+}
+.uud-frame[data-anbieter="tiktok"] iframe { position: static; width: 325px; height: 100%; }
+
 /* Die Skript-Einbettungen bringen ihre eigene Breite mit und ignorieren sie gern. Der Wrapper
    zwingt sie in die Spalte, ohne ihnen die Hoehe vorzuschreiben -- die kennt nur der Anbieter. */
 .uud-social { width: 100%; min-height: 220px; }
@@ -104,12 +133,15 @@
    und X schreiben ihre Breite als INLINE-Stil in das eingesetzte Element (min-width:326px,
    max-width:540px, margin:1px). Ein Inline-Stil schlaegt jeden Selektor -- ueber Spezifitaet ist
    dagegen nichts auszurichten, das ist die eine Ausnahme, die die Hausregel meint. Ohne diese
-   Zeilen steht der Post links in der Karte statt in ihrer Breite. */
+   Zeilen steht der Post links in der Karte statt in ihrer Breite. Dasselbe Problem hat Facebooks
+   SDK mit seinem fb_iframe_widget-Wrapper, deshalb steht er hier mit in der Liste. */
 .uud-social .instagram-media,
-.uud-social .twitter-tweet {
+.uud-social .twitter-tweet,
+.uud-social .fb_iframe_widget,
+.uud-social .fb_iframe_widget span {
   width: 100% !important; max-width: 100% !important; min-width: 0 !important; margin: 0 !important;
 }
-.uud-social iframe { width: 100% !important; border-radius: 12px; }
+.uud-social iframe { width: 100% !important; border-radius: 16px; }
 /* Kommt das fremde Script nicht durch, steht hier ein Weg nach draussen statt eines leeren
    Rahmens: ein leerer Kasten sieht aus wie ein Fehler DIESER Seite. */
 .uud-fallback {
