@@ -121,6 +121,50 @@
                   Grossbuchstaben, wird nichts gesendet und die Konsole sagt welcher.
 
      ── SETTER ──────────────────────────────────────────────────────────────────────────────
+       JEDER Parameter dieser Aufrufe ist in Bubble vom Typ TEXT. Ausnahmslos -- auch der, der
+       inhaltlich ein Ja/Nein oder eine Zahl ist. Ein yes/no-Parameter schreibt in Bubble das
+       nackte Wort yes bzw. no in den JSON, und das ist kein gueltiger JSON-Wert; ein Zahlen-
+       Parameter wird je nach Formatierung mit Tausenderpunkt geschrieben. Beides hat diese App
+       schon gekostet. Der Sanitizer in core faengt yes/no zwar ab (§46), aber das ist ein Netz,
+       kein Grund, ohne Seil zu klettern.
+
+       setOnboardingBundle("<instance>", <json>)    ALLES aus dem Seitenaufbau in EINEM Aufruf:
+                       {"project": {...}, "competitors": [...], "topics": [...],
+                        "prompts": [...]} -- genau die Antwort der Onboarding-RPC.
+                       Dieser Aufruf entscheidet zugleich, WAS der Nutzer sieht:
+                         kein project / leere Antwort -> Formular (neuer Nutzer, KEIN Fehler)
+                         status "draft"               -> Formular, Werte vorbelegt
+                         status "submitted"           -> Ladebild
+                         status "processing"          -> Ladebild, Startwert aus status_phase
+                                                         bzw. progress_percent
+                         status "ready"               -> Auswahl; wie weit, sagt das schon
+                                                         Gewaehlte (selected an competitors
+                                                         bzw. topics)
+                         status "failed"              -> Formular + last_error als Band
+                       Geschoben wird nur VORWAERTS: wer schon auf Topics steht, faellt durch
+                       ein spaeter eintreffendes Buendel nicht auf Competitors zurueck.
+
+                       Run-JS-Step dafuer -- NIE den nackten Namen aufrufen. Ein Bezeichner, den
+                       es (noch) nicht gibt, wirft ReferenceError und reisst den GANZEN Step mit,
+                       auch die Aufrufe darunter. Genau so ist am 24.08. der Seitenaufbau
+                       gestorben, weil das Element noch an einem aelteren CDN-Pin hing.
+                       window.<name> ist stattdessen schlicht undefined, und die Warteschleife
+                       gibt den CDN-Dateien Zeit anzukommen:
+
+                         (function () {
+                           var BUNDLE = `[ONBOARDING_RPC]`;
+                           var t = 0;
+                           (function go () {
+                             var fn = window.setOnboardingBundle || window.setOnboardingProject;
+                             if (typeof fn === "function") { fn("INSTANCE_ID", BUNDLE); return; }
+                             if (t++ < 60) setTimeout(go, 100);
+                           })();
+                         })();
+
+                       setOnboardingProject ist der Rueckfall in derselben Zeile: es erkennt ein
+                       Buendel von selbst. Damit laeuft der Step auch an einem Pin, der
+                       setOnboardingBundle noch nicht kennt.
+
        setOnboardingProject("<instance>", <json>)   das Onboarding-Projekt (Objekt oder Liste
                        mit einem Eintrag). status_phase 1..4 stellt die Phase, 5 heisst fertig
                        und schaltet weiter.
