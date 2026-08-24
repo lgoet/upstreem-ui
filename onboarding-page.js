@@ -440,7 +440,6 @@
     var d = txt(domain);
     return d ? "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(d) + "&sz=64" : "";
   }
-  function initial(s) { return txt(s).charAt(0).toUpperCase() || "?"; }
   /* Eine fremde Adresse in einem neuen Tab. noopener,noreferrer wie ueberall im Haus: das neue
      Fenster darf weder an window.opener noch an den Verweis auf die Herkunft. Ohne Schema wuerde
      der Browser relativ zur Bubble-Seite aufloesen. */
@@ -456,10 +455,36 @@
      das Favicon aus, nimmt onerror nur die Klasse weg und der Buchstabe steht wieder da. Eine
      Fassung, die den Buchstaben nur bei fehlender Adresse ausgibt, hinterlaesst bei einem
      kaputten Favicon eine leere Kachel -- und die sieht aus wie ein Ladefehler der Seite. */
+  /* Der Globus als Rueckfall statt des Anfangsbuchstabens. Er kommt aus core (Feather/Lucide) und
+     traegt die Primaerfarbe -- so angefordert am 24.08.
+     Warum ein onload und nicht nur onerror: der Google-Dienst antwortet fuer eine unbekannte
+     Domain NICHT mit einem Fehler, sondern mit seinem eigenen, generischen Globus -- und der ist
+     immer 16px gross. Auf einer 26px-Kachel sieht das aus wie ein Bildfehler, und genau so wurde
+     es gemeldet ("sehr verpixeltes default favicon"). onerror feuert dabei nie, weil das Bild ja
+     erfolgreich laedt.
+     Gemessen an sieben Domains: echte Favicons kommen bei sz=64 als 32 oder 64px zurueck, der
+     Ausweich-Globus immer als 16px. Die Schwelle ist damit gemessen und nicht geraten. */
+  /* Erst beim ersten Gebrauch holen und dann merken: hier oben ist UC noch NICHT im Scope (die
+     Zuweisung steht in initRoot), und window.UpstreemCore kann beim Auswerten dieser Datei noch
+     fehlen -- der Bootlauf wartet ja gerade darauf. */
+  var globusCache = null;
+  function globus() {
+    if (globusCache === null) {
+      var C = window.UpstreemCore;
+      globusCache = (C && C.icon) ? C.icon("globe", 1.8) : "";
+    }
+    return globusCache;
+  }
   function kachelInhalt(name, favUrl) {
-    return esc(initial(name)) +
-      (favUrl ? '<img src="' + esc(favUrl) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
-                ' onerror="this.parentNode.classList.remove(\'has-img\'); this.remove()"/>' : "");
+    return '<span class="uob-kachel-globus">' + globus() + '</span>' +
+      /* KEIN loading="lazy": die Kachel steht ganz oben im Bild, das Bild ist 26px gross, und
+         lazy verzoegert es nur. Vor allem aber haengt die 16px-Erkennung unten am load-Ereignis --
+         und ein verzoegertes Bild feuert es spaet oder (in einem nicht gerenderten Rahmen) gar
+         nicht. Gemessen: naturalWidth 16, aber complete false und onload nie gelaufen. */
+      (favUrl ? '<img src="' + esc(favUrl) + '" alt="" referrerpolicy="no-referrer"' +
+                ' onerror="this.parentNode.classList.remove(\'has-img\'); this.remove()"' +
+                ' onload="if(this.naturalWidth&&this.naturalWidth&lt;=16){' +
+                  'this.parentNode.classList.remove(\'has-img\'); this.remove();}"/>' : "");
   }
   function kachel(cls, name, domain, favUrl) {
     /* Eine mitgelieferte Adresse gewinnt ueber die selbst gebaute: die RPC kennt das Logo
@@ -1287,13 +1312,25 @@
         /* Der abgehende Bereich bleibt fuer die Dauer des Uebergangs stehen und geht dabei weg.
            Ohne ihn faellt die Spalte auf null zusammen und schnellt wieder auf -- der haesslichste
            Fall eines Schrittwechsels. */
-        var alt = elStack.querySelector(".uob-pane");
+        /* ALLE bestehenden Bereiche, nicht nur den ersten. Hier stand querySelector, also der
+           ERSTE Treffer -- und der ist bei einem zweiten Wechsel innerhalb der 240ms immer noch
+           der ALTE, weil der erst danach entfernt wird. Der dazwischen eingefuegte Bereich bekam
+           dann nie ein is-off und blieb fuer immer stehen: Competitors, Topics und Prompts mit
+           ihren Ueberschriften und Zaehlern uebereinander. Genau so gemeldet am 24.08., und ein
+           Neuladen half, weil der Stapel dabei neu entsteht.
+           Zwei Wechsel so dicht hintereinander sind der Normalfall und kein Sonderfall: das Ende
+           des Ladebilds schaltet weiter, und der Payload, der gleich darauf eintrifft, schaltet
+           noch einmal. */
+        var alte = elStack.querySelectorAll(".uob-pane");
         elStack.insertAdjacentHTML("beforeend", viewFor(k));
         var neu = elStack.lastElementChild;
-        if (alt) {
-          alt.classList.add("is-off");
-          window.setTimeout(function () { if (alt.parentNode) alt.parentNode.removeChild(alt); }, 240);
-        }
+        for (var ai = 0; ai < alte.length; ai++) (function (p) {
+          /* Ein Bereich, der schon abgeht, fliegt SOFORT raus: sein Uebergang ist ueberholt, und
+             ihn ein zweites Mal auslaufen zu lassen haelt ihn nur laenger im Bild. */
+          if (p.classList.contains("is-off")) { if (p.parentNode) p.parentNode.removeChild(p); return; }
+          p.classList.add("is-off");
+          window.setTimeout(function () { if (p.parentNode) p.parentNode.removeChild(p); }, 240);
+        })(alte[ai]);
         if (!neuEingezogen) {
           neu.classList.add("is-arriving");
           window.setTimeout(function () { neu.classList.remove("is-arriving"); }, 420);

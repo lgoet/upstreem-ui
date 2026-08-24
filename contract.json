@@ -1603,6 +1603,7 @@
   "uob-item-name",
   "uob-item-sub",
   "uob-item-txt",
+  "uob-kachel-globus",
   "uob-label",
   "uob-labrow",
   "uob-link",
@@ -2644,7 +2645,7 @@
   "globals": 137,
   "payloadkeys": 80,
   "dataattrs": 198,
-  "klassen": 1949,
+  "klassen": 1950,
   "keyframes": 58
  }
 }

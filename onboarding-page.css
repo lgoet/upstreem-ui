@@ -324,6 +324,17 @@
   display: inline-flex; align-items: center; justify-content: center; overflow: hidden;
   font-size: 12px; font-weight: 600; color: var(--vc-muted);
 }
+/* Der Globus im Rueckfall: Primaerfarbe, und er fuellt die Kachel NICHT aus -- er ist ein
+   Zeichen, kein Bild. Sichtbar ist er nur, wenn has-img fehlt; liegt ein echtes Favicon darueber,
+   deckt es ihn ab (dieselbe Mechanik, die vorher der Anfangsbuchstabe hatte). */
+.uob-kachel-globus { display: inline-flex; align-items: center; justify-content: center;
+  /* --vc-text ist in dieser App die Primaerfarbe -- ein --vc-primary gibt es nicht, und ein
+     Rueckfall auf einen Namen, den niemand definiert, liest sich beim naechsten Mal wie ein
+     Versehen. */
+  color: var(--vc-text); }
+.uob-kachel-globus svg { width: 62%; height: 62%; display: block; }
+.has-img > .uob-kachel-globus { display: none; }
+
 .uob-ident-logo img { width: 26px; height: 26px; border-radius: 6.5px; display: block; object-fit: contain; }
 .uob-ident-logo.has-img { font-size: 0; }
 .uob-ident-txt { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
