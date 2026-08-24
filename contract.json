@@ -1579,6 +1579,7 @@
   "uob-group-n",
   "uob-h1",
   "uob-h1row",
+  "uob-h1side",
   "uob-head",
   "uob-head-all",
   "uob-help",
@@ -2649,7 +2650,7 @@
   "globals": 137,
   "payloadkeys": 81,
   "dataattrs": 198,
-  "klassen": 1953,
+  "klassen": 1954,
   "keyframes": 58
  }
 }

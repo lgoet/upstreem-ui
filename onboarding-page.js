@@ -708,12 +708,18 @@
       return '<div class="uob-head">' +
         (zaehler != null
           ? '<div class="uob-h1row"><h1 class="uob-h1">' + esc(h1) + '</h1>' +
-            '<span class="uob-count' + (zaehler.voll ? " is-full" : "") + '">' + esc(zaehler.text) + '</span>' +
-            /* Dieselbe Bauart wie der Knopf ueber jeder Prompt-Gruppe (.uob-group-all): ein
+            /* Knopf und Zaehler stehen als PAAR rechts, der Zaehler ganz aussen und der Knopf
+               8px links davon. Dafuer ein eigener Behaelter: .uob-h1row haelt 16px Abstand, und
+               der gilt fuer alle Kinder gleich -- ohne Gruppierung staenden die beiden ebenfalls
+               16px auseinander UND der Knopf ganz aussen. Genau das war schief.
+               Dieselbe Bauart wie der Knopf ueber jeder Prompt-Gruppe (.uob-group-all): ein
                UMSCHALTER, kein reines Hinzufuegen -- wer versehentlich alles waehlt, muesste es
                sonst einzeln wieder abwaehlen. Und die Beschriftung sagt, was der Klick TUT. */
-            (aktion ? '<button class="uob-group-all uob-head-all" type="button" data-allof="' +
-                        esc(aktion.kind) + '">' + esc(aktion.text) + '</button>' : "") +
+            '<span class="uob-h1side">' +
+              (aktion ? '<button class="uob-group-all uob-head-all" type="button" data-allof="' +
+                          esc(aktion.kind) + '">' + esc(aktion.text) + '</button>' : "") +
+              '<span class="uob-count' + (zaehler.voll ? " is-full" : "") + '">' + esc(zaehler.text) + '</span>' +
+            '</span>' +
             '</div>'
           : '<h1 class="uob-h1">' + esc(h1) + '</h1>') +
         (sub ? '<p class="uob-sub">' + esc(sub) + '</p>' : "") +
@@ -2621,41 +2627,17 @@
        Schluessel dort stand, steht nirgends mehr im Text --, aber es laesst sich BENENNEN: ein
        Text, der auf eine schliessende Klammer endet, ohne mit einer oeffnenden zu beginnen, hat
        seinen Anfang verloren. */
-    function leseFehlerText(payload) {
-      var t = txt(payload).trim();
-      if (!t) return "We could not read your onboarding data. Please reload the page.";
-      /* Auf den ersten Blick beginnt so ein Text voellig heil -- der gemessene Fall fing mit
-         {"id": an. Verraten hat ihn erst die Klammerbilanz: irgendwo steht ein ] oder }, das
-         nichts schliesst, weil sein Gegenstueck vor dem Anfang lag. Gezaehlt wird ausserhalb von
-         Zeichenketten, sonst zaehlt eine Klammer in einem Markennamen mit. */
-      var tiefe = 0, imText = false, flucht = false;
-      for (var i = 0; i < t.length; i++) {
-        var c = t.charAt(i);
-        if (imText) {
-          if (flucht) { flucht = false; continue; }
-          if (c === "\\") { flucht = true; continue; }
-          if (c === '"') imText = false;
-          continue;
-        }
-        if (c === '"') { imText = true; continue; }
-        if (c === "{" || c === "[") tiefe++;
-        else if (c === "}" || c === "]") {
-          tiefe--;
-          if (tiefe < 0) {
-            return "The onboarding data is missing its beginning. Check the very start of the " +
-                   "expression in the Bubble step -- the literal text before the dynamic part.";
-          }
-        }
-      }
-      /* Eine offene Klammer allein reicht NICHT fuer die Diagnose "abgeschnitten": auch
-         "{kaputt::" hat eine, ist aber schlicht kein JSON -- und "pruef die Laengenbegrenzung"
-         waere dort ein falscher Rat. Gemessen. Also zusaetzlich verlangen, dass der Text
-         ueberhaupt wie JSON aussieht: mindestens ein sauber gequoteter Schluessel. */
-      if (tiefe > 0 && /"[^"]+"\s*:/.test(t)) {
-        return "The onboarding data is cut off at the end. The expression in the Bubble step is " +
-               "likely hitting a length limit.";
-      }
-      return "We could not read your onboarding data. Please reload the page.";
+    /* EINE Meldung, und zwar eine, die dem Nutzer etwas sagt. Hier stand vorher eine
+       Klammerbilanz, die zwischen "Anfang fehlt" und "am Ende abgeschnitten" unterschied und dazu
+       riet, den Ausdruck im Bubble-Schritt zu pruefen. Das ist Entwicklerdiagnose und hat im
+       Bild eines Nutzers nichts zu suchen -- so ausdruecklich angemahnt am 24.08. Wer die Seite
+       benutzt, kann an einem Payload nichts richten; er kann neu laden. Also sagt die Meldung
+       genau das und nichts weiter.
+       Die Diagnose ist damit ganz weg und nicht nur unsichtbar: eine Konsolenausgabe waere nach
+       §5 ebenfalls nicht erlaubt, und toter Code, der nichts erreicht, ist schlechter als keiner.
+       Wer sie braucht, hat den Payload im Bubble-Log und im Harness. */
+    function leseFehlerText() {
+      return "We could not load your onboarding. Please reload the page.";
     }
 
     /* Die Statuswerte des Datenmodells. Als Menge, damit ein nacktes Wort als Status erkannt
@@ -2827,7 +2809,7 @@
         }
         var p = kernAus(b);
         if (!p || typeof p !== "object") {
-          state.banner = "We could not read the project data. Please try again.";
+          state.banner = "We could not load your onboarding. Please reload the page.";
           warteBeenden(); render(); return true;
         }
         state.projekt = p;
@@ -2859,7 +2841,7 @@
         if (!p || typeof p !== "object") {
           /* KEIN stilles false mehr. Ein Payload, den niemand lesen konnte, ist ein Fehler --
              und ein Loader, der ewig weiterlaeuft, sieht aus wie "gleich fertig". */
-          state.banner = "We could not read the status update. Please reload the page.";
+          state.banner = "We could not load your onboarding. Please reload the page.";
           warteBeenden(); state.busy = false; render(); return true;
         }
         var s = statusAus(p);
@@ -2886,7 +2868,7 @@
       setPrompts: function (payload) { return listeSetzen(payload, "prompts"); },
       setPlans: function (payload) {
         var p = lies(payload);
-        if (!isArr(p)) { state.banner = "We could not read the plans."; render(); return true; }
+        if (!isArr(p)) { state.banner = "We could not load the plans. Please reload the page."; render(); return true; }
         state.plans = p.slice().sort(function (a, b) {
           var sa = num(a.sort_order), sb = num(b.sort_order);
           if (sa != null && sb != null && sa !== sb) return sa - sb;
@@ -2964,10 +2946,16 @@
       }
     };
 
+    /* Interner Schluessel -> das Wort, das in der Oberflaeche steht. */
+    var LISTENNAME = { brands: "competitors", topics: "topics", prompts: "prompts" };
     function listeSetzen(payload, welche) {
       var p = lies(payload);
       if (!isArr(p)) {
-        state.banner = "We could not read the " + welche + ".";
+        /* NICHT den internen Namen einsetzen: "welche" ist brands/topics/prompts, und
+           "brands" heisst in der Oberflaeche Competitors -- der Nutzer saehe ein Wort, das auf
+           seinem Bildschirm nirgends steht. Interne Bezeichner haben in sichtbarem Text nichts
+           zu suchen, so angemahnt am 24.08. */
+        state.banner = "We could not load the " + LISTENNAME[welche] + ". Please reload the page.";
         render(); return true;
       }
       var rein = [];

@@ -313,16 +313,18 @@
 .uob-ident > div { overflow: hidden; min-height: 0; }
 .uob-ident.is-on { grid-template-rows: 1fr; opacity: 1; margin-bottom: clamp(20px, 3.4vh, 30px); }
 .uob-ident-in { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
-/* Dieselbe Kachel wie .up-ment-logo in core, eine Stufe groesser: 18 -> 28, also Faktor 1.556 auf
-   Radius (5 -> 7.8) und Bild (16 -> 24.9, hier auf 24 gerundet, weil das Favicon 64px liefert
-   und krumme Werte dort sichtbar unscharf werden). */
+/* Dieselbe Kachel wie .up-ment-logo in core, zwei Stufen groesser: 18 -> 30. Das Bild darin ist
+   2px gewachsen (24 -> 26, so angefordert am 24.08.), und weil ein Bauteil nur als GANZES stimmt,
+   wachsen Rahmen und Radien im selben Verhaeltnis mit: Kachel 28 -> 30, ihr Radius 8 -> 9, der
+   Bildradius 6 -> 6.5. Nur das Bild zu vergroessern haette die Luft zum Rahmen von 2px auf 1px
+   halbiert -- das Favicon haette am Rand geklebt. */
 .uob-ident-logo {
-  width: 28px; height: 28px; flex: 0 0 auto; border-radius: 8px;
+  width: 30px; height: 30px; flex: 0 0 auto; border-radius: 9px;
   background: var(--vc-bg); border: 1px solid var(--vc-border);
   display: inline-flex; align-items: center; justify-content: center; overflow: hidden;
   font-size: 12px; font-weight: 600; color: var(--vc-muted);
 }
-.uob-ident-logo img { width: 24px; height: 24px; border-radius: 6px; display: block; object-fit: contain; }
+.uob-ident-logo img { width: 26px; height: 26px; border-radius: 6.5px; display: block; object-fit: contain; }
 .uob-ident-logo.has-img { font-size: 0; }
 .uob-ident-txt { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .uob-ident-name { font-size: 14px; font-weight: 600; color: var(--vc-text);
@@ -346,13 +348,22 @@
    unter der Ueberschrift in Klammern -- dort liest er sich wie ein Teil des Titels, obwohl er
    sich staendig aendert. Rechts oben ist er ein Anzeigefeld und kein Text. */
 .uob-h1row { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
-/* Zaehler und "Select all" gehoeren als Paar nach rechts. Ohne diese Zeile zieht
-   space-between drei Kinder auseinander und der Zaehler stuende allein in der Mitte --
-   margin-left:auto am Zaehler schiebt beide gemeinsam an den rechten Rand. Der Knopf
-   selbst bringt aus .uob-group-all ein eigenes margin-left:auto mit, das hier weg muss,
-   sonst reisst es das Paar wieder auseinander. */
-.uob-h1row .uob-count { margin-left: auto; }
-.uob-head-all { margin-left: 0; }
+/* Knopf und Zaehler als Paar am rechten Rand, 8px dazwischen -- der Zaehler ganz aussen.
+   Ein eigener Behaelter, weil der 16px-Abstand von .uob-h1row fuer ALLE Kinder gleich gilt:
+   ohne ihn staenden Knopf und Zaehler ebenso 16px auseinander und der Knopf ganz rechts.
+   baseline wie in der Zeile selbst, damit die Grundlinien von Zahl und Beschriftung liegen.
+   Das margin-left:auto aus .uob-group-all muss am Knopf weg, sonst schiebt es ihn INNERHALB
+   des Paares nach rechts und die 8px werden zur ganzen Restbreite. Und das margin-right:-4px
+   ebenfalls: es zieht den Zaehler naeher heran, gemessen kamen so 4px statt 8 heraus. Beide
+   Raender stammen aus der Prompt-Gruppe, wo der Knopf an der Kante der Zeile sitzt -- hier sitzt
+   er neben einem Nachbarn, und dafuer gilt allein der gap. */
+.uob-h1side { display: inline-flex; align-items: baseline; gap: 8px; margin-left: auto;
+              flex: 0 0 auto; }
+/* ZWEI Selektorteile, nicht einer: .uob-head-all allein hat dieselbe Spezifitaet wie
+   .uob-group-all, und die steht weiter unten in dieser Datei -- damit gewinnt sie, und die
+   Raender blieben stehen (gemessen: margin-right weiter -4px, Abstand 4px statt 8). Konflikte
+   ueber Spezifitaet loesen, nie ueber die Ladereihenfolge. */
+.uob-h1side .uob-head-all { margin-left: 0; margin-right: 0; }
 .uob-count {
   flex: 0 0 auto; font-size: 13px; font-weight: 600; color: var(--vc-muted);
   font-variant-numeric: tabular-nums;

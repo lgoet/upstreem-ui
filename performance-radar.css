@@ -139,6 +139,18 @@
 /* Badge am Fader-Trigger: core.css (.up-badge.is-dot). Mein erster, frei nachgebauter
    Kreis war zu gross -- die Vorgabe lag laengst da. */
 
+/* Solange ein Menue offen ist, hebt sich der Radar als GANZES ueber seine Nachbarn.
+   Der Grund: das Detail-Element steht als eigenes Bubble-Element UNTER dem Radar und legte sich
+   ueber das nach unten geoeffnete Menue -- gemeldet am 24.08. ("Detailbereich ist in der Ebene
+   ueber diesem Dropdown"). Ein z-index am Menue allein hilft dort nicht: es sitzt im
+   Stapelkontext des Radars, und der entscheidet gegen den Nachbarn, nicht das Kind.
+   Angefasst wird deshalb NUR die eigene Wurzel, niemals ein fremder Bubble-Vorfahre -- das hat
+   am 11.08. die App lahmgelegt. Und nur, WAEHREND ein Menue offen ist: ein dauerhaft gehobener
+   Radar wuerde sich ueber Schubladen und Modale der Seite legen.
+   :has() statt einer Klasse aus dem JS, weil makePopover die Klasse .is-open schon an den
+   Wrapper setzt -- eine zweite Markierung waere eine zweite Wahrheit ueber denselben Zustand. */
+.uhm-root:has(.is-open) { position: relative; z-index: 40; }
+
 .uhm-pick-menu {
   position: absolute; top: calc(100% + var(--up-dd-gap)); right: 0; z-index: 60;
   width: 520px; max-width: calc(100vw - 32px);
