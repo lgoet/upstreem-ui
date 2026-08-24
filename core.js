@@ -4097,7 +4097,29 @@
       }
     } catch(e){}
     var el = root.parentElement, guard = 0;
+    /* Dieselbe Vorfahrenkette wird pro Bild von JEDER Komponente einmal durchgemessen -- und die
+       Kette ist geteilt: #main misst auf einer Seite mit acht Tabellen achtmal, mit demselben
+       Ergebnis. Gemessen auf der echten Seite (40 Resize-Schritte): 2993 Lesezugriffe allein
+       hier, 25% aller Zugriffe, davon 2247 auf getComputedStyle. Der zweite bis achte Durchlauf
+       findet ohnehin nichts mehr zu tun (data-up-unclipped steht schon), er zahlt nur die
+       Messung.
+       Der Speicher liegt auf WINDOW, nicht in diesem Modul: core.js laeuft einmal pro Komponente
+       (siehe watchRoots), jede Kopie haette sonst ihren eigenen -- und genau die Dopplung
+       ueber Komponenten hinweg ist der Punkt.
+       16ms, also ein Bild. Der bewusst hingenommene Preis: kippt die App #main innerhalb
+       desselben Bildes auf overflow:hidden (Drawer), sieht ein zweiter Aufruf das erst beim
+       naechsten -- der Rueckbau passiert dann einen Aufruf spaeter, nicht nie. Der RESTORE-Weg
+       ist ausgenommen und laeuft immer: er nimmt zurueck, was wir geschrieben haben, und das
+       darf nie an einem Zeitfenster haengen. */
+    var UNCLIP_GESEHEN = window.WeakMap
+      ? (window.__upUnclipGesehen = window.__upUnclipGesehen || new WeakMap()) : null;
+    var jetzt = new Date().getTime();
     while (el && el !== document.body && el !== document.documentElement && guard++ < 40){
+      if (!restore && UNCLIP_GESEHEN){
+        var zuletzt = UNCLIP_GESEHEN.get(el);
+        if (zuletzt && (jetzt - zuletzt) < 16){ el = el.parentElement; continue; }
+        UNCLIP_GESEHEN.set(el, jetzt);
+      }
       var cs; try { cs = window.getComputedStyle(el); } catch(e){ break; }
       var oy = cs.overflowY;
       /* The real scroll container: leave it alone, everything above it is none of our business.
@@ -4220,6 +4242,28 @@
     } else {
       window.addEventListener("resize", rafThrottle(run));
     }
+  }
+
+  /* Einmal pro Bild, aber GARANTIERT. rafThrottle daneben nimmt nur rAF -- und rAF feuert nicht
+     immer: in einem Hintergrund-Tab und in einem nicht gemalten Rahmen gar nicht (gemessen am
+     24.08.: in der Testumgebung feuerte es nirgends). Was daran haengt, bliebe dann liegen, und
+     pruefen kann man es auch nicht. Deshalb laufen rAF und ein kurzer Timer gemeinsam los; wer
+     zuerst kommt, macht die Arbeit und raeumt den anderen ab. Im sichtbaren Tab gewinnt immer
+     rAF, die Arbeit liegt also weiter am Bild -- der Timer ist nur das Netz darunter.
+     Ohne Argumente, im Unterschied zu rafThrottle: die Aufrufer hier messen selbst, sie bekommen
+     nichts uebergeben. */
+  function einmalProBild(fn){
+    var raf = 0, t = 0;
+    function lauf(){
+      if (raf){ try { cancelAnimationFrame(raf); } catch(e){} raf = 0; }
+      if (t){ clearTimeout(t); t = 0; }
+      fn();
+    }
+    return function(){
+      if (raf || t) return;
+      if (window.requestAnimationFrame) raf = requestAnimationFrame(lauf);
+      t = setTimeout(lauf, 32);
+    };
   }
 
   function rafThrottle(fn){
@@ -8423,6 +8467,7 @@
     dropEscape: dropEscape,
     makeSticky: makeSticky,
     rafThrottle: rafThrottle,
+    einmalProBild: einmalProBild,
     onResize: onResize,
     unclipAncestors: unclipAncestors,
     watchRoots: watchRoots,

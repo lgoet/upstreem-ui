@@ -293,9 +293,20 @@
       });
       checkBrandWidth();
     }
-    function checkTrendFit(){
-      if (checkTrendFit.__busy) return;
-      checkTrendFit.__busy = true;
+    /* Auf EINEN Durchlauf pro Bild zusammengefasst. Der Aufruf haengt ueber checkBrandWidth an
+       applyResponsive und damit am ResizeObserver: beim Ziehen des Fensters lief er pro
+       Zwischenbreite einmal komplett durch. Gemessen auf der echten Seite (40 Resize-Schritte):
+       2967 Lesezugriffe allein hier, 25% aller Zugriffe -- rund 74 je Aufruf mal 40 Aufrufe.
+       Die 74 sind nicht das Problem: in der Schleife wird nur gelesen, der Browser rechnet das
+       Layout also einmal und bedient den Rest daraus. Die 40 sind es.
+       Ein Bild spaeter zu entscheiden ist unsichtbar -- der Zustand haengt an der Breite, und die
+       ist im naechsten Bild ohnehin schon wieder anders. Der Wachhund __busy faellt damit weg:
+       einmalProBild laesst ohnehin nur einen Lauf zu, und ein zweites Schloss davor koennte im
+       Fehlerfall dauerhaft zubleiben (frueher blieb __busy stehen, wenn die Schleife warf). */
+    var checkTrendFit = UC.einmalProBild ? UC.einmalProBild(trendFitJetzt)
+                                         : function(){ trendFitJetzt(); };
+    function trendFitJetzt(){
+      if (!tableEl) return;
       var hadHide = tableEl.classList.contains("vt-hide-trend");
       if (hadHide) tableEl.classList.remove("vt-hide-trend");
       var cells = tableEl.querySelectorAll(".vt-td-visibility, .vt-td-ranking, .vt-td-sentiment");
@@ -311,7 +322,6 @@
         if (clearance < 8){ tooTight = true; break; }
       }
       tableEl.classList.toggle("vt-hide-trend", tooTight);
-      checkTrendFit.__busy = false;
     }
     function checkBrandWidth(){
       var w = tableEl ? tableEl.clientWidth : 0;
