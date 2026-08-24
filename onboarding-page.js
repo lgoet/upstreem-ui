@@ -952,7 +952,7 @@
       var alleGewaehlt = state.topics.length > 0 && n >= state.topics.length;
       return '<div class="uob-pane" data-pane="topics">' +
         kopf("Topics",
-             "Topics group the questions we ask the models. Pick at least one you want to be found for.",
+             "Topics group the questions we ask the models.",
              { text: n + " selected", voll: n > 0 },
              state.topics.length
                ? { kind: "topics", text: alleGewaehlt ? "Deselect all" : "Select all" }
@@ -1546,8 +1546,22 @@
       elNextTxt.textContent = texte[state.step] || "Continue";
       /* Mindestens ein Thema. Ohne Thema entstehen keine Prompts, und ohne Prompts hat das
          fertige Konto nichts zu messen -- der Schritt ist der einzige, der wirklich noetig ist.
-         Deshalb hier kein Ueberspringen und ein gesperrter Weiter-Knopf, solange nichts steht. */
-      if (state.step === "topics" && !anzahl(state.selTopics)) elNext.disabled = true;
+         Deshalb hier kein Ueberspringen und ein gesperrter Weiter-Knopf, solange nichts steht.
+
+         aria-disabled statt disabled: ein disabled-Knopf feuert in Chrome KEINE Mausereignisse,
+         und der Tooltip aus core haengt an einem mouseover auf [data-tip] -- er waere also nie
+         zu sehen. Genau das Muster benutzen die gesperrten Wettbewerber-Zeilen in dieser Datei
+         schon. weiter() prueft die Auswahl ohnehin selbst, der Klick kann also nichts ausloesen;
+         der Knopf sieht gesperrt aus, sagt jetzt aber auch WARUM. */
+      var themaFehlt = state.step === "topics" && !anzahl(state.selTopics);
+      elNext.classList.toggle("is-blocked", themaFehlt);
+      if (themaFehlt) {
+        elNext.setAttribute("aria-disabled", "true");
+        elNext.setAttribute("data-tip", "Pick at least one topic");
+      } else {
+        elNext.removeAttribute("aria-disabled");
+        elNext.removeAttribute("data-tip");
+      }
 
       /* Ueberspringen erscheint nur dort, wo wirklich nichts ausgewaehlt ist -- sobald jemand
          etwas angeklickt hat, waere "Skip" das falsche Wort fuer das, was der Klick tut. */

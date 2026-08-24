@@ -1043,8 +1043,12 @@
   display: inline-flex; align-items: center; justify-content: center; gap: 9px;
   transition: opacity var(--uob-t) var(--uob-ease), background var(--uob-t) var(--uob-ease);
 }
-.uob-next:hover:not(:disabled) { opacity: .9; }
-.uob-next:disabled { opacity: .55; cursor: default; }
+.uob-next:hover:not(:disabled):not(.is-blocked) { opacity: .9; }
+/* is-blocked sieht aus wie :disabled, IST es aber nicht -- der Knopf muss hoverbar bleiben,
+   sonst zeigt der Tooltip aus core nie, warum er nicht weitergeht (ein disabled-Knopf feuert
+   keine Mausereignisse). Der Zeiger bleibt trotzdem der normale, damit niemand einen Klick
+   erwartet, der nichts tut. */
+.uob-next:disabled, .uob-next.is-blocked { opacity: .55; cursor: default; }
 .uob-next svg { width: 15px; height: 15px; display: block; }
 .uob-next:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 /* Der Kreisel tritt neben die Beschriftung, er ersetzt sie nicht -- ein Knopf ohne Text wirkt
