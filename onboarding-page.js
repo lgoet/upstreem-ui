@@ -855,7 +855,9 @@
       return '<div class="uob-pane" data-pane="' + (kompakt ? "load2" : "load1") + '">' +
         '<div class="uob-body">' +
           '<div class="uob-load' + (kompakt ? " is-compact" : "") + '">' +
-            kachel("uob-load-logo", name, dom, txt(p.logo_url) || txt(p.favicon_url)) +
+            /* Ohne vierten Parameter: das Zeichen entsteht aus der Domain (Google s2), siehe
+               Begruendung in renderIdent. */
+            kachel("uob-load-logo", name, dom) +
             '<div class="uob-load-name">' + esc(name) + '</div>' +
             (dom ? '<div class="uob-load-dom">' + esc(dom) + '</div>' : "") +
             '<div class="uob-bar"><div class="uob-bar-fill" data-bar></div></div>' +
@@ -1485,14 +1487,15 @@
       elIdentDm.textContent = dom;
       /* Nur neu bauen, wenn sich die Marke wirklich geaendert hat -- sonst laedt das Favicon bei
          jedem Haken in der Liste erneut und blitzt dabei. */
-      /* Ein mitgeliefertes Logo gewinnt ueber das aus der Domain abgeleitete Favicon -- die RPC
-         kennt die Marke besser als der Google-Dienst, und ein echtes Logo ist schaerfer als ein
-         64px-Favicon. Dieselbe Vorrangregel wie in kachel(). */
-      var eigenesLogo = txt(p.logo_url) || txt(p.favicon_url);
-      var schluessel = dom + "|" + name + "|" + eigenesLogo;
+      /* Das Zeichen der EIGENEN Marke wird aus der Domain aufgeloest, ueber Google s2 -- es steht
+         bewusst NICHT im Payload. Eine Adresse, die ohnehin aus der Domain entsteht, durch den
+         Run-JS-Step zu schleifen, macht den Schritt laenger und schafft eine zweite Stelle, an
+         der etwas fehlen kann; die Domain allein reicht. (Bei den WETTBEWERBERN ist es anders:
+         dort liefert die RPC favicon_url schon mit, und kachel() nimmt sie dann auch.) */
+      var schluessel = dom + "|" + name;
       if (elIdentLg.getAttribute("data-for") !== schluessel) {
         elIdentLg.setAttribute("data-for", schluessel);
-        var fav = eigenesLogo || favicon(dom);
+        var fav = favicon(dom);
         elIdentLg.className = "uob-ident-logo" + (fav ? " has-img" : "");
         elIdentLg.innerHTML = kachelInhalt(name, fav);
       }
