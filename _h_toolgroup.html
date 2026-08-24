@@ -1,0 +1,213 @@
+<meta charset="utf-8"><title>Werkzeugleiste: sechs Komponenten, sieben Breiten</title>
+<style>
+  html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif}
+  .rahmen{margin:0 0 24px;padding:12px;border:1px dashed #444}
+  #out{padding:10px;font:10.5px/1.5 ui-monospace,monospace;white-space:pre-wrap}
+</style>
+<body><div id="buehne"></div><div id="labor"></div><pre id="out">laeuft…</pre>
+<script>
+/* ══ Was hier geprueft wird ═══════════════════════════════════════════════════════════════════
+   A) Die Kit-LOGIK an einem eigenen Aufbau: alle Zustaende und die ganze Breitenmatrix. Das ist
+      der neue, geteilte Code -- er muss vollstaendig durchgemessen sein.
+   B) Je Komponente: ist die Huelle gebaut, und liegt das RICHTIGE drin? (Was man einstellt, klappt
+      ein; was die Ansicht benennt, bleibt stehen.)
+   C) Der Punkt, nach dem ausdruecklich gefragt wurde: laeuft beim Ausklappen auf schmaler Breite
+      etwas ueber?
+   D) Dunkelmodus.
+
+   NICHT durchfuehrbar in dieser Umgebung, und deshalb hier auch nicht behauptet: die Kette
+   ResizeObserver -> applyResponsive -> refit. Weder ResizeObserver noch requestAnimationFrame
+   feuern hier (gemessen). Statt es zu behaupten, wird refit am eigenen Aufbau DIREKT mit jeder
+   Breite gerufen -- damit ist die Logik belegt, die Verdrahtung nur durch Quelltext. */
+window.__err=[]; window.addEventListener("error",function(e){window.__err.push(String(e.message));});
+try { for (var i=window.localStorage.length-1;i>=0;i--){ var k=window.localStorage.key(i);
+  if (k && /_tools__|^upt_|^uhm_|^ubo_/.test(k)) window.localStorage.removeItem(k); } } catch(e){}
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+
+var KOMP = [
+  { k:"prompts-table",     tpl:"prompts_table_bubble",     root:"upt-root", tools:".up-head-tools",
+    fn:"renderPromptsTable",   daten:{ view_active:"yes", rows:[{id:"1",prompt_text:"X",status:"active"}], totalCount:1 } },
+  { k:"urls-table",        tpl:"urls_table_bubble",        root:"uut-root", tools:".up-head-tools",
+    fn:"renderUrlsTable",      daten:{ rows:[{id:"1",url:"https://a.de/x",domain:"a.de"}], totalCount:1 } },
+  { k:"domains-table",     tpl:"domains_table_bubble",     root:"udt-root", tools:".up-head-tools",
+    fn:"renderDomainsTable",   daten:{ rows:[{id:"1",domain:"a.de"}], totalCount:1 } },
+  { k:"responses-table",   tpl:"responses_table_bubble",   root:"urt-root", tools:".up-head-tools",
+    fn:"renderResponsesTable", daten:{ rows:[{id:"1",prompt_text:"A",model:"gpt-4"}], totalCount:1 } },
+  { k:"performance-radar", tpl:"performance_radar_bubble", root:"uhm-root", tools:".up-head-tools",
+    fn:"renderPerformanceRadar", daten:{ cells:[{company_id:"1",topic_id:"7",visibility_pct:34}],
+                                         companies:[{id:"1",name:"Alpha"}], topics:[{id:"7",name:"T"}] } },
+  { k:"brands-overview",   tpl:"brands_overview_bubble",   root:"ubo-root", tools:".ubo-head-tools",
+    fn:"renderBrandsOverview", daten:{ rows:[{company_id:"1",name:"Alpha",visibility_pct:34}], series:[] } }
+];
+var BREITEN = [1240, 900, 760, 700, 640, 600, 420];
+
+var D = ["core.css","core.js"];
+KOMP.forEach(function(c){ D.push(c.k+".css", c.k+".js", "bubble/"+c.tpl+".html"); });
+var T={};
+Promise.all(D.map(hol)).then(function(t){
+  D.forEach(function(f,i){ T[f]=t[i]; });
+  var s=document.createElement("style"); s.textContent=T["core.css"]; document.head.appendChild(s);
+  KOMP.forEach(function(c){ var x=document.createElement("style"); x.textContent=T[c.k+".css"]; document.head.appendChild(x); });
+  var s2=document.createElement("style"); s2.id="animAus";
+  s2.textContent="*,*::before,*::after{transition:none !important;animation:none !important}";
+  document.head.appendChild(s2);
+  var j=document.createElement("script"); j.textContent=T["core.js"]; document.head.appendChild(j);
+  KOMP.forEach(function(c){
+    var w=document.createElement("div"); w.className="rahmen"; w.setAttribute("data-k", c.k);
+    w.innerHTML = wurzelAus(T["bubble/"+c.tpl+".html"]);
+    var r=w.querySelector("."+c.root);
+    if (r){ r.setAttribute("data-instance","t_"+c.k); r.setAttribute("data-cdn-pin","t"); r.setAttribute("data-isdark","no"); }
+    document.getElementById("buehne").appendChild(w);
+    var x=document.createElement("script"); x.textContent=T[c.k+".js"]; document.head.appendChild(x);
+  });
+  return new Promise(function(ok){ setTimeout(ok, 2200); });
+}).then(function(){
+  var R = { ladefehler: window.__err.slice(0,6) };
+
+  /* ══ A) Die Kit-Logik an einem eigenen Aufbau ═════════════════════════════════════════════ */
+  var labor = document.getElementById("labor");
+  labor.innerHTML =
+    '<div class="up-root" id="lroot" style="width:1000px"><div class="up-head">' +
+      '<div class="up-heading">Titel</div>' +
+      '<div class="up-head-tools" id="ltools">' +
+        '<div class="up-sort" id="la"><button class="up-iconbtn" type="button">a</button></div>' +
+        '<div class="up-search" id="lb"><button class="up-iconbtn" type="button">b</button></div>' +
+        '<div class="up-cols" id="lc"><button class="up-iconbtn" type="button">c</button></div>' +
+        '<div class="up-seg" role="tablist" id="ld"><button type="button">Ansicht</button></div>' +
+        '<button class="up-export" type="button" id="le">Export</button>' +
+      '</div></div></div>';
+  var lroot=document.getElementById("lroot"), ltools=document.getElementById("ltools");
+  var gefiltert = false;
+  var tg = window.UpstreemCore.makeToolGroup({
+    root: lroot, tools: ltools, keep: '[role="tablist"], .up-export',
+    filterActive: function(){ return gefiltert; },
+    prefKey: null, tip: "Test"
+  });
+  function lk(){ return (lroot.className||"").split(/\s+/).filter(function(x){return /^is-tools/.test(x)}).join(" ")||"(keine)"; }
+  function drin(){ return [].map.call(ltools.querySelector(".up-toolgroup-in").children, function(c){ return c.id || c.className.split(" ")[0]; }); }
+  function draussen(){ return [].map.call(ltools.children, function(c){ return c.id || c.className.split(" ")[0]; }); }
+  R.A_struktur = { inDerGruppe: drin(), danebenStehend: draussen() };
+
+  var trig = ltools.querySelector(".up-tbtrig"), col = ltools.querySelector(".up-tbcol");
+  function warte(ms){ return new Promise(function(ok){ setTimeout(ok,ms); }); }
+
+  R.A_breiten = {};
+  BREITEN.forEach(function(w){
+    lroot.style.width = w + "px";
+    tg.refit(w);
+    R.A_breiten[w] = { klassen: lk(),
+                       kitAus: lroot.classList.contains("is-tools-off"),
+                       ausloeserSichtbar: Math.round(trig.getBoundingClientRect().width) > 0,
+                       gruppeBreite: Math.round(ltools.querySelector(".up-toolgroup").getBoundingClientRect().width) };
+  });
+  lroot.style.width = "1000px"; tg.refit(1000);
+
+  return warte(60).then(function(){
+    R.A_zustaende = {};
+    R.A_zustaende["1_start"] = lk();
+    trig.dispatchEvent(new PointerEvent("pointerenter"));
+    return warte(200);
+  }).then(function(){
+    R.A_zustaende["2_vorschau"] = lk();
+    trig.click(); return warte(280);
+  }).then(function(){
+    R.A_zustaende["3_festgestellt"] = lk();
+    col.click(); return warte(280);
+  }).then(function(){
+    R.A_zustaende["4_eingeklappt"] = lk();
+    gefiltert = true; tg.sync(); return warte(280);
+  }).then(function(){
+    R.A_zustaende["5_filter_aktiv"] = lk();
+    R.A_einklapperBeiFilter = getComputedStyle(col).display;
+    col.click(); return warte(280);
+  }).then(function(){
+    R.A_zustaende["6_einklappen_bei_filter_wirkungslos"] = lk();
+    gefiltert = false; tg.sync(); return warte(280);
+  }).then(function(){
+    R.A_zustaende["7_filter_weg"] = lk();
+    /* Kit aus, waehrend festgestellt: muss offen und ohne Ausloeser dastehen. */
+    trig.click(); return warte(60);
+  }).then(function(){
+    tg.refit(400);
+    R.A_zustaende["8_kit_aus_trotz_festgestellt"] = lk() +
+      " | ausloeser=" + Math.round(trig.getBoundingClientRect().width) +
+      " einklapper=" + getComputedStyle(col).display;
+    tg.refit(1000);
+    R.A_zustaende["9_kit_wieder_an"] = lk();
+    col.click();
+
+    /* ══ B) Je Komponente: Huelle und Inhalt ═════════════════════════════════════════════ */
+    R.B = {};
+    KOMP.forEach(function(c){
+      var rahmen = document.querySelector('[data-k="'+c.k+'"]');
+      var root = rahmen.querySelector("."+c.root);
+      var tools = root ? root.querySelector(c.tools) : null;
+      var eintrag = { gemountet: !!root };
+      if (tools){
+        try {
+          var p = {}; for (var kk in c.daten) p[kk]=c.daten[kk]; p.instanceId = "t_"+c.k;
+          window[c.fn](JSON.stringify(p));
+        } catch(e){ eintrag.renderWurf = e.message; }
+        var grp = tools.querySelector(".up-toolgroup-in");
+        eintrag.huelleGebaut = !!grp;
+        eintrag.ausloeser = !!tools.querySelector(".up-tbtrig");
+        if (grp){
+          eintrag.inDerGruppe = [].map.call(grp.children, function(x){
+            return (x.className||"").toString().split(/\s+/).filter(function(n){ return /^(up|upt|uut|udt|urt|uhm|ubo)-/.test(n) && !/^up-iconbtn$/.test(n); })[0] || x.tagName.toLowerCase(); });
+          eintrag.danebenStehend = [].map.call(tools.children, function(x){
+            return (x.className||"").toString().split(/\s+/).filter(function(n){ return /^(up|upt|uut|udt|urt|uhm|ubo)-/.test(n) && !/^up-iconbtn$/.test(n); })[0] || x.tagName.toLowerCase(); });
+        }
+      }
+      R.B[c.k] = eintrag;
+    });
+
+    /* ══ C) Ueberlauf beim Ausklappen auf schmaler Breite ════════════════════════════════ */
+    R.C_ueberlauf = {};
+    KOMP.forEach(function(c){
+      var rahmen = document.querySelector('[data-k="'+c.k+'"]');
+      var root = rahmen.querySelector("."+c.root);
+      if (!root) return;
+      var tools = root.querySelector(c.tools);
+      var head = tools ? tools.parentNode : null;
+      if (!head) return;
+      var je = {};
+      /* scrollWidth gegen clientWidth am KOPF, nicht eine Summe der Kinderbreiten: die Kinder
+         koennen im Flex schrumpfen, die Summe saehe dann harmlos aus, waehrend der Kasten laengst
+         ueberlaeuft. Und 300px als GEGENPROBE -- meldet die Sonde dort keinen Ueberlauf, misst sie
+         nichts und jedes "ok" darueber waere wertlos. */
+      [1240, 900, 760, 700, 640, 300].forEach(function(w){
+        rahmen.style.width = (w + 26) + "px";     /* + Rahmenpolsterung */
+        /* Aufgeklappt erzwingen -- die echte Kette laeuft hier nicht. */
+        root.classList.remove("is-tools-off", "is-tools-peek");
+        root.classList.add("is-tools-open", "is-tools-shown");
+        void head.offsetWidth;
+        je[w] = { kopf: Math.round(head.clientWidth), noetig: Math.round(head.scrollWidth),
+                  ueberlauf: Math.round(head.scrollWidth - head.clientWidth),
+                  toolsNoetig: Math.round(tools.scrollWidth),
+                  toolsKasten: Math.round(tools.clientWidth) };
+      });
+      rahmen.style.width = "";
+      root.classList.remove("is-tools-open", "is-tools-shown");
+      R.C_ueberlauf[c.k] = je;
+    });
+
+    /* ══ D) Dunkelmodus ═══════════════════════════════════════════════════════════════════ */
+    var pt = document.querySelector(".upt-root");
+    pt.setAttribute("data-theme", "dark");
+    pt.classList.add("is-tools-open", "is-tools-shown");
+    var t2 = pt.querySelector(".up-tbtrig");
+    R.D_dunkel = { ausloeserFarbe: t2 ? getComputedStyle(t2).color : null,
+                   gruppeDeckkraft: getComputedStyle(pt.querySelector(".up-toolgroup")).opacity };
+    pt.removeAttribute("data-theme"); pt.classList.remove("is-tools-open","is-tools-shown");
+
+    R.nichtPruefbar = "ResizeObserver und requestAnimationFrame feuern hier nicht -- die Kette " +
+      "applyResponsive -> refit ist nur im Quelltext belegt, nicht am laufenden Bild. Fenster " +
+      window.innerWidth + "x" + window.innerHeight + ", also auch kein echter Zeiger.";
+    R.ladefehlerEnde = window.__err.slice(0,6);
+    document.getElementById("out").textContent = JSON.stringify(R,null,1);
+    window.__R = R; window.__fertig = true;
+  });
+}).catch(function(e){ document.getElementById("out").textContent="FEHLER: "+e.message+"\n"+e.stack; window.__fertig=true; });
+</script>

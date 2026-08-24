@@ -726,8 +726,8 @@
          kann: die Sucheingabe setzt state.query SOFORT und ruft persist(), rendert aber erst
          400ms spaeter nach der Entprellung. Ohne diese Zeile stand die Leiste in der Zwischenzeit
          auf "kein Filter aktiv" und liess sich zuklappen, obwohl schon gefiltert wurde.
-         tbSync ist bis zum Bau der Huelle ein no-op und danach nur ein paar classList-Aufrufe. */
-      tbSync();
+         Der Wachposten ist noetig: persist() laeuft auch, bevor toolGroup zugewiesen ist. */
+      if (typeof toolGroup !== "undefined" && toolGroup) toolGroup.sync();
     }
     /* shared event dispatch (core), wrapped so every outgoing event lands in window.__uptDebug
        with the call site that produced it -- see the diagnostics block at module scope. */
@@ -4218,6 +4218,9 @@
       root.classList.toggle("is-t1", w < 560);
       root.classList.toggle("is-narrow", w < 860);
       root.classList.toggle("is-vnarrow", w < 620);
+      /* Dieselbe Grenze wie is-vnarrow: darunter verhaelt sich die Leiste wie vor dem Kit.
+         Die Breite ist hier schon gemessen -- refit bekommt sie mit, statt sie neu zu lesen. */
+      if (typeof toolGroup !== "undefined" && toolGroup) toolGroup.refit(w);
       /* Unconditional: which columns fit is now a continuous function of the width (see autoFit
          in UC.makeColumns), not something that only changes when one of the tier classes above
          flips. Gating this on a class change was why the table happily overflowed anywhere
@@ -4272,263 +4275,42 @@
          dran ist. Kein aus dem DOM ablesbares Merkmal unterscheidet die beiden Faelle. */
       if (state.darfHolen && groupingOn() && !state.groupsHasData && !state.groupsLoading) fetchGroupsInitial();
       renderStatusTabs(); renderBulkBar();
-      /* Nach renderStatusTabs, weil das die Statusgruppe neu einsortiert und tbBauen die
-       Nachzuegler danach wieder einsammeln muss. tbSync haengt daran, dass sich ein Filter
-       auch OHNE Zeigerbewegung aendern kann -- ueber die Suche, ueber einen Reset, ueber einen
-       Aufruf aus Bubble. */
-      tbBauen(); tbSync();
+      /* Nach renderStatusTabs, weil das die Statusgruppe neu einsortiert und die Gruppe die
+         Nachzuegler danach wieder einsammeln muss. sync() haengt zusaetzlich daran, dass sich ein
+         Filter auch OHNE Zeigerbewegung aendern kann -- ueber die Suche, ueber einen Reset, ueber
+         einen Aufruf aus Bubble. */
+      if (toolGroup) toolGroup.sync();
       if (root.classList.contains("up-sticky")) syncTheadOffset();
     }
 
 
-    /* ══ Einklappbare Werkzeugleiste ══════════════════════════════════════════════════════════
-       Die Kopfleiste dieser Tabelle traegt acht Bedienelemente. Fuer jemanden, der die Tabelle
-       taeglich benutzt, ist das richtig; fuer jemanden, der sie zum ersten Mal sieht, ist es eine
-       Wand. Diese Leiste nimmt nichts weg -- sie schiebt es zusammen.
-
-       DREI ZUSTAENDE, und der Unterschied zwischen den ersten beiden ist der Grund, warum es drei
-       sind und nicht zwei:
-         eingeklappt   nur Ausloeser und Export stehen da
-         Vorschau      Zeiger liegt auf dem Ausloeser: alles da, ABER der Ausloeser bleibt stehen
-         festgestellt  angeklickt (oder ein Filter ist aktiv): alles da, Ausloeser weg,
-                       links erscheint bei Hover der Einklapper
-
-       Ohne den Vorschau-Zustand entsteht ein Flackerkreis: der Ausloeser liegt unter dem Zeiger,
-       verschwindet beim Aufziehen, damit verlaesst der Zeiger ihn, die Leiste klappt zu, der
-       Ausloeser kommt zurueck -- und das dreissigmal pro Sekunde.
-
-       WAS AM ZEIGER HAENGT UND WAS NICHT: aufziehen tut nur der Ausloeser, offen HALTEN tut die
-       ganze Leiste. Sonst zoege die Leiste auch dann auf, wenn der Zeiger nur auf dem Weg zum
-       Export-Knopf durch die Ecke faehrt.
-
-       Beide Verzoegerungen sind Absichtserkennung, keine Zierde: 120ms bis zum Aufziehen laesst
-       ein Durchfahren unbeantwortet, 500ms bis zum Zuklappen laesst kurzes Herausrutschen zu --
-       um ein Menue herum, ueber eine Kante, oder einfach weil die Hand zittert. Dazu ist die
-       Haltefläche selbst 16px groesser als die Leiste (siehe .up-head-tools in core.css): beides
-       zusammen, nicht eines davon.
-
-       Tastatur: der Fokus zaehlt wie der Zeiger, sofort und ohne Verzoegerung. Ein Ausloeser, den
-       man nur mit der Maus erreicht, waere fuer jeden mit Tastatur eine verschlossene Tuer.
-       Beruehrung: es gibt keinen Hover, aber der Klick allein genuegt -- deshalb ist der Ausloeser
-       ein echter <button> und nicht ein Feld mit einem Hover-Zuhoerer.
-
-       KEIN Bubble-Ereignis, keine Änderung an der Vorlage: die Huelle wird hier aus dem Markup
-       gebaut, das schon dasteht. Ein Element, das in Bubble bereits eingebaut ist, bekommt das
-       damit ohne einen einzigen Handgriff -- und genau darum geht es (bubble/*.html erreicht es
-       ja nicht).
-
-       Die Statusgruppe (Active/Inactive) klappt ABSICHTLICH nicht mit ein. Sie ist kein Filter,
-       sondern die Antwort auf "was sehe ich hier gerade" -- sie zu verstecken nimmt Orientierung
-       weg, nicht Ueberforderung. Ein Wort genuegt, wenn das anders sein soll. */
-    var TB_AUF_MS = 120, TB_ZU_MS = 500, TB_ANIM_MS = 200;
-    var elToolgroup = null, elToolIn = null, elTbTrig = null, elTbCol = null;
-    var tbGepinnt = false, tbZeiger = false;
-    var tbUhrAuf = null, tbUhrZu = null, tbUhrFertig = null;
-    var tbZuletztSichtbar = null;
-    var TB_PREF = UC.prefKey ? UC.prefKey("upt_tools__" + instanceId) : null;
-
-    /* Der festgestellte Zustand ueberlebt einen Seitenwechsel. Wer die Leiste einmal aufgemacht
-       hat, will sie beim naechsten Aufruf offen finden -- sonst nimmt die Neuerung dem Vielnutzer
-       genau das weg, was sie ihm nicht wegnehmen soll. Gleiche Ablage wie die Spaltenbreiten. */
-    (function(){
-      if (!TB_PREF || !UC.prefGet) return;
-      try { tbGepinnt = UC.prefGet(TB_PREF) === "1"; } catch(e){}
-    })();
-    function tbPinMerken(){
-      if (!TB_PREF || !UC.prefSet) return;
-      try { UC.prefSet(TB_PREF, tbGepinnt ? "1" : "0"); } catch(e){}
-    }
-
-    /* Baut die Huelle aus dem Markup, das schon dasteht -- und ist mit Absicht wiederholbar:
-       .up-ment, .upt-group und .upt-status haengt die Komponente selbst erst im Laufe des Aufbaus
-       ein, und renderStatusTabs schiebt die Statusgruppe bei jedem Durchgang erneut an ihren
-       Platz. Ein einmaliger Aufbau haette die Nachzuegler draussen stehen lassen. */
-    function tbBauen(){
-      if (!elHeadTools) return;
-      if (!elToolgroup){
-        elToolgroup = document.createElement("div");
-        elToolgroup.className = "up-toolgroup";
-        elToolIn = document.createElement("div");
-        elToolIn.className = "up-toolgroup-in";
-        elToolgroup.appendChild(elToolIn);
-        elHeadTools.insertBefore(elToolgroup, elHeadTools.firstChild);
-
-        elTbCol = document.createElement("button");
-        elTbCol.type = "button";
-        elTbCol.className = "up-iconbtn upt-tbcol";
-        elTbCol.setAttribute("data-tip", "Hide tools");
-        elTbCol.setAttribute("aria-label", "Hide table tools");
-        /* Ein Chevron nach RECHTS, statisch: die Leiste faehrt nach rechts zusammen, dorthin zeigt
-           er. Er dreht sich nicht -- im ganzen Haus dreht sich kein Chevron. */
-        elTbCol.innerHTML = UC.icon("chevronRight", 2);
-        elToolIn.appendChild(elTbCol);
-
-        elTbTrig = document.createElement("button");
-        elTbTrig.type = "button";
-        elTbTrig.className = "up-iconbtn upt-tbtrig";
-        elTbTrig.setAttribute("data-tip", "Search, filters and settings");
-        elTbTrig.setAttribute("aria-label", "Show table tools");
-        elTbTrig.setAttribute("aria-expanded", "false");
-        /* list-filter-plus: die Striche sagen "Liste", das Plus sagt "es kommt noch mehr dazu" --
-           beides trifft zu, denn dahinter liegen neben den zwei Filtern auch Suche, Sortierung,
-           Gruppierung und die Tabelleneinstellungen. Das Zahnrad ist zwei Knoepfe weiter schon
-           vergeben. */
-        elTbTrig.innerHTML = UC.icon("listFilterPlus", 2);
-      }
-      /* Alles einsammeln, was in die Gruppe gehoert: jedes direkte Kind ausser der Statusgruppe,
-         dem Export-Knopf und den beiden eigenen Knoepfen. Ueber eine Ausschlussliste und nicht
-         ueber eine Aufzaehlung -- ein spaeter dazukommendes Werkzeug ist damit von sich aus drin
-         und nicht aus Versehen draussen. */
-      var kinder = Array.prototype.slice.call(elHeadTools.children);
-      for (var i = 0; i < kinder.length; i++){
-        var k = kinder[i];
-        if (k === elToolgroup || k === elTbTrig) continue;
-        if (k.classList.contains("upt-status") || k.classList.contains("up-export")) continue;
-        elToolIn.appendChild(k);
-      }
-      /* Reihenfolge von rechts: Export, Active/Inactive, Ausloeser. Der Ausloeser steht also VOR
-         der Statusgruppe -- und weil renderStatusTabs sie bei jedem Durchgang neu vor den
-         Export-Knopf schiebt, wird sein Platz hier bei jedem Durchgang nachgezogen.
-
-         ABER nur verschieben, wenn er nicht schon dort steht: insertBefore auf einen Knoten, der
-         bereits an dieser Stelle haengt, ist trotzdem ein Ausbauen und Wiedereinbauen. tbBauen
-         laeuft bei JEDEM render() -- der Knopf haette damit unter dem Zeiger den Hover verloren,
-         und ein Tastaturfokus darauf waere weggesprungen. */
-      var nachbar = elHeadTools.querySelector(".upt-status") || elHeadTools.querySelector(".up-export");
-      if (nachbar){ if (elTbTrig.nextElementSibling !== nachbar || elTbTrig.parentNode !== elHeadTools) elHeadTools.insertBefore(elTbTrig, nachbar); }
-      else if (elTbTrig.parentNode !== elHeadTools) elHeadTools.appendChild(elTbTrig);
-
-      if (!elTbTrig.__uptBound){
-        elTbTrig.__uptBound = true;
-        elTbTrig.addEventListener("click", function(e){
-          e.preventDefault(); e.stopPropagation();
-          tbGepinnt = true; tbPinMerken(); tbSync();
-        });
-        /* Nur der Ausloeser zieht auf. Die ganze Leiste haelt offen (weiter unten) -- sonst zoege
-           sie auch dann auf, wenn der Zeiger bloss zum Export-Knopf unterwegs ist. */
-        elTbTrig.addEventListener("pointerenter", function(){
-          window.clearTimeout(tbUhrZu); tbUhrZu = null;
-          if (tbUhrAuf) return;
-          tbUhrAuf = window.setTimeout(function(){ tbUhrAuf = null; tbZeiger = true; tbSync(); }, TB_AUF_MS);
-        });
-        /* Fokus ohne Verzoegerung: wer mit der Tastatur hierher kommt, hat sich schon entschieden. */
-        elTbTrig.addEventListener("focus", function(){
-          window.clearTimeout(tbUhrZu); tbUhrZu = null;
-          tbZeiger = true; tbSync();
-        });
-      }
-      if (!elTbCol.__uptBound){
-        elTbCol.__uptBound = true;
-        elTbCol.addEventListener("click", function(e){
-          e.preventDefault(); e.stopPropagation();
-          tbGepinnt = false; tbZeiger = false; tbPinMerken();
-          window.clearTimeout(tbUhrAuf); tbUhrAuf = null;
-          window.clearTimeout(tbUhrZu);  tbUhrZu  = null;
-          tbSync();
-        });
-      }
-      if (!elToolIn.__uptPopBound){
-        elToolIn.__uptPopBound = true;
-        /* Ein Menue in der Gruppe haelt die Leiste offen (tbMenueOffen). Vom SCHLIESSEN erfuhr sie
-           bisher nichts: wer das Markendropdown aufmachte und ohne Auswahl wieder zumachte, liess
-           die Leiste stehen -- gemeldet am 24.08. Core feuert dafuer jetzt up-popover-close am
-           Wrapper, und das steigt hierher auf: EIN Zuhoerer fuer alle Menues der Gruppe, kein
-           Beobachter, kein Nachfragen im Takt.
-           Steht der Zeiger noch auf der Leiste, bleibt alles wie es ist -- :hover einmal abfragen
-           ist genauer als ein eigener Merker und kostet einen Zugriff, nicht einen pro Bild. */
-        elToolIn.addEventListener("up-popover-close", function(){
-          var drauf = false;
-          try { drauf = elHeadTools.matches(":hover"); } catch(e){}
-          if (drauf){ tbSync(); return; }
-          window.clearTimeout(tbUhrZu);
-          tbUhrZu = window.setTimeout(function(){ tbUhrZu = null; tbZeiger = false; tbSync(); }, TB_ZU_MS);
-        });
-      }
-      if (!elHeadTools.__uptToolsBound){
-        elHeadTools.__uptToolsBound = true;
-        elHeadTools.addEventListener("pointerenter", function(){
-          window.clearTimeout(tbUhrZu); tbUhrZu = null;
-        });
-        elHeadTools.addEventListener("pointerleave", function(){
-          window.clearTimeout(tbUhrAuf); tbUhrAuf = null;
-          window.clearTimeout(tbUhrZu);
-          tbUhrZu = window.setTimeout(function(){ tbUhrZu = null; tbZeiger = false; tbSync(); }, TB_ZU_MS);
-        });
-        /* focusin/focusout statt focus/blur: die beiden ersten steigen auf, die beiden anderen
-           nicht -- mit focus/blur haette die Leiste jeden Tabulatorsprung IN sie hinein verpasst. */
-        elHeadTools.addEventListener("focusin", function(){
-          window.clearTimeout(tbUhrZu); tbUhrZu = null;
-          tbZeiger = true; tbSync();
-        });
-        elHeadTools.addEventListener("focusout", function(e){
-          if (e.relatedTarget && elHeadTools.contains(e.relatedTarget)) return;
-          tbZeiger = false; tbSync();
-        });
-      }
-    }
-
-    /* Was die Leiste offen HALTEN muss: nur die drei echten Filter. Sie entscheiden, WELCHE
-       Zeilen dastehen, und eine verborgene Ursache fuer eine halbe Tabelle ist die schlimmste
-       Art von stillem Ausfall -- deshalb darf die Leiste dann nicht zuklappen.
-
-       Sortierung, Spaltenwahl UND Gruppierung stehen absichtlich nicht drin. Alle drei sind
-       Ansichtseinstellungen, nicht Filter: sie nehmen keine Zeile weg, und man sieht ihnen an
-       der Tabelle selbst an, dass sie an sind. Bei der Gruppierung war das zuerst anders
-       gedacht, und die Messung hat gezeigt, warum es falsch war: sie liegt im localStorage, also
-       haette jeder, der sie einmal eingeschaltet hat, die Leiste fuer immer offen -- er bekaeme
-       die aufgeraeumte Ansicht nie zu sehen. Genau die soll das hier aber sein. */
-    function tbFilterAktiv(){
-      if (state.query) return true;
-      if (state.brandMentioned) return true;
-      if (state.mentionApplied && Object.keys(state.mentionApplied).some(function(k){ return state.mentionApplied[k]; })) return true;
-      return false;
-    }
-    /* Ein offenes Menue aus der Gruppe haelt sie ebenfalls offen. Ohne das koennte die Leiste unter
-       einem aufgeklappten Dropdown wegklappen -- und das Menue haengt dann in der Luft. */
-    function tbMenueOffen(){
-      if (!elToolIn) return false;
-      return !!elToolIn.querySelector('[aria-expanded="true"], .is-open');
-    }
-
-    function tbSync(){
-      if (!elToolgroup) return;
-      var gesperrt = tbFilterAktiv();
-      var offen    = tbGepinnt || gesperrt;
-      var vorschau = !offen && (tbZeiger || tbMenueOffen());
-      var sichtbar = offen || vorschau;
-
-      root.classList.toggle("is-tools-locked", gesperrt);
-      root.classList.toggle("is-tools-open", offen);
-      root.classList.toggle("is-tools-peek", vorschau);
-      if (elTbTrig) elTbTrig.setAttribute("aria-expanded", sichtbar ? "true" : "false");
-
-      /* is-tools-shown nimmt die Kappung weg, aber erst NACH der Bewegung -- sonst haengt beim
-         Aufziehen ein Menue heraus. Eine Uhr mit benanntem Ende, NICHT transitionend: in einem
-         Bubble-Tab, der gerade nicht gemalt wird, laeuft der Uebergang nicht und das Ereignis
-         kommt nie an. Dann bliebe die Gruppe fuer immer gekappt und jedes Dropdown darin
-         abgeschnitten.
-
-         Die Uhr wird nur bei einem WECHSEL neu gestellt. tbSync haengt an persist(), und das
-         laeuft bei jeder Zustandsaenderung -- ein Neustellen bei jedem Aufruf schoebe das Ende
-         der Kappung immer weiter hinaus, und ein Dropdown blieb waehrend einer Folge von
-         Aenderungen abgeschnitten. */
-      if (sichtbar !== tbZuletztSichtbar){
-        tbZuletztSichtbar = sichtbar;
-        window.clearTimeout(tbUhrFertig); tbUhrFertig = null;
-        if (sichtbar){
-          tbUhrFertig = window.setTimeout(function(){
-            tbUhrFertig = null;
-            root.classList.add("is-tools-shown");
-          }, TB_ANIM_MS + 20);
-        } else {
-          root.classList.remove("is-tools-shown");
-        }
-      }
-    }
-
     if (state.query){ elSearchIn.value = state.query; elSearch.classList.add("is-open", "has-text"); }
     populateSort(); populateCols(); populateMent(); render();
-    tbBauen(); tbSync();
+
+    /* Die einklappbare Werkzeugleiste kommt aus core (UC.makeToolGroup) -- hier steht nur noch, was
+       bei DIESER Tabelle einklappt und was sie offen haelt. Die Zustandsmaschine selbst stand an
+       genau dieser Stelle 247 Zeilen lang; sie ist nach core gewandert, als die zweite Komponente
+       sie brauchte, statt als sechste Kopie zu enden.
+
+       keep: .upt-status traegt role="tablist" und faellt damit schon unter die Vorgabe des Kits.
+       Ausdruecklich mitgeschrieben, weil es die Aussage der Zeile ist -- Active/Inactive klappt
+       NICHT mit ein: das ist kein Filter, sondern die Antwort auf "was sehe ich hier gerade".
+
+       filterActive: nur die drei ECHTEN Filter. Sortierung, Spalten und Gruppierung sind
+       Ansichtseinstellungen -- sie nehmen keine Zeile weg, und man sieht ihnen an der Tabelle an,
+       dass sie an sind. Die Gruppierung war zuerst drin; sie liegt im localStorage, also haette
+       jeder, der sie einmal einschaltet, die Leiste fuer immer offen. */
+    var toolGroup = UC.makeToolGroup ? UC.makeToolGroup({
+      root: root, tools: elHeadTools,
+      filterActive: function(){
+        if (state.query) return true;
+        if (state.brandMentioned) return true;
+        if (state.mentionApplied && Object.keys(state.mentionApplied).some(function(k){ return state.mentionApplied[k]; })) return true;
+        return false;
+      },
+      prefKey: UC.prefKey ? UC.prefKey("upt_tools__" + instanceId) : null,
+      tip: "Search, filters and settings"
+    }) : null;
 
     return {
       root: root,

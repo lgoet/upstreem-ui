@@ -209,8 +209,21 @@
 
        :has(.up-toolgroup) statt einer Regel fuer alle: nur eine Leiste mit einklappbarer Gruppe
        hat ueberhaupt etwas davon. Die anderen Tabellen sollen ihre Kastenmasse behalten. */
-    .up-root:has(.up-toolgroup) .up-head-tools {
-      padding: 16px; margin-top: -16px; margin-bottom: -16px; margin-right: -16px;
+    /* :has(> .up-toolgroup) statt eines Klassennamens: die Leiste heisst je Komponente anders
+       (.up-head-tools, .ubo-head-tools), aber sie ist immer der ELTERNTEIL der Gruppe. Die
+       Ausrichtung (margin-left: auto) bleibt unangetastet -- ein Wert dort statt auto schoebe die
+       ganze Leiste nach links. */
+    .up-root :has(> .up-toolgroup) {
+      /* Nach RECHTS ausdruecklich nicht. Dort ist die Kante der Komponente -- es gibt nichts,
+         wohin man hineinfahren koennte, und die 16px kosten dort etwas: margin-right: -16px zieht
+         zwar das Layout zurueck, aber scrollWidth zaehlt die Polsterung mit. Gemessen an allen
+         sechs Komponenten und auf jeder Breite: der Kopf brauchte genau 16px mehr, als er hatte.
+         Unsichtbar, weil die Polsterung durchsichtig ist -- aber ein Vorfahre mit
+         overflow-x: auto haette daraus einen waagerechten Balken gemacht, und den haette
+         niemand mit dieser Leiste in Verbindung gebracht.
+         Links, oben und unten bleiben die 16px: dort liegt Platz, und dort faehrt der Zeiger
+         wirklich vorbei. */
+      padding: 16px 0 16px 16px; margin-top: -16px; margin-bottom: -16px;
     }
     /* Die Polsterung reicht 16px nach links in eine Flaeche, die normalerweise leer ist -- aber
        nicht immer: die Ueberschrift waechst mit der Auswahl ("0 selected" samt Loeschkreuz), und
@@ -222,6 +235,50 @@
        braucht keine Messung. In dieser Testumgebung liesse sich der Klick auch gar nicht pruefen
        (das Fenster ist dort 0x0, elementFromPoint gibt fuer jeden Punkt null). */
     .up-root:has(.up-toolgroup) .up-heading { position: relative; z-index: 1; }
+
+    /* ── Ausloeser und Einklapper ────────────────────────────────────────────────────────────
+       Beide SIND .up-iconbtn -- 32x32, Radius 8, Farben und Hover kommen von dort. Hier steht
+       kein einziger dieser Werte noch einmal, nur WANN sie sichtbar sind.
+
+       Breite statt display, weil display sich nicht animieren laesst und die Vorgabe 200ms in
+       beide Richtungen lautet. margin-right raeumt dabei die gap-Luecke weg, die die Leiste auch
+       um ein null Pixel breites Kind legt -- ohne sie stuenden 16px statt 8px zwischen den
+       Nachbarn. */
+    .up-tbtrig, .up-tbcol {
+      overflow: hidden; flex: 0 0 auto;
+      transition: width 200ms ease, opacity 200ms ease, margin-right 200ms ease;
+    }
+    /* Der Ausloeser steht im eingeklappten Zustand UND in der Vorschau da. Ihn beim Aufziehen
+       verschwinden zu lassen waere ein Flackerkreis: er liegt unter dem Zeiger, faellt weg, der
+       Zeiger verlaesst ihn, die Leiste klappt zu, er kommt zurueck. Er geht erst, wenn die Leiste
+       festgestellt ist -- dann uebernimmt der Einklapper links. */
+    .up-tbtrig { width: 32px; opacity: 1; margin-right: 0; }
+    .up-root.is-tools-open .up-tbtrig { width: 0; opacity: 0; margin-right: -8px; pointer-events: none; }
+
+    /* Der Einklapper erscheint nur, wenn die Leiste festgestellt ist UND der Zeiger auf ihr
+       liegt. Kein Dauergast: er ist der Ausgang, nicht ein Werkzeug.
+       :has(:focus-visible) statt :focus-within -- nach einem KLICK auf den Ausloeser bleibt der
+       Fokus auf ihm liegen, und :focus-within waere damit dauerhaft wahr; der Einklapper stuende
+       von da an immer da. :focus-visible trifft nur tastaturgesetzten Fokus. */
+    .up-tbcol { width: 0; opacity: 0; margin-right: -8px; pointer-events: none; }
+    .up-root.is-tools-open :has(> .up-toolgroup):hover .up-tbcol,
+    .up-root.is-tools-open :has(> .up-toolgroup):has(:focus-visible) .up-tbcol {
+      width: 32px; opacity: 1; margin-right: 0; pointer-events: auto;
+    }
+    /* Haelt ein aktiver Filter die Leiste offen, gibt es keinen Ausgang -- ihn trotzdem
+       anzubieten hiesse, den Nutzer auf einen Knopf klicken zu lassen, der nichts tut. */
+    .up-root.is-tools-locked .up-tbcol { display: none; }
+
+    /* ── Kit aus (unter cfg.minWidth) ────────────────────────────────────────────────────────
+       Auf schmalen Komponenten verhaelt sich die Leiste wie vor dem Kit: alles sichtbar, kein
+       Ausloeser, kein Einklapper, keine Bewegung. Ueber eine Klasse und nicht durch Umbauen des
+       DOM -- bei jedem Ueberschreiten der Grenze Kinder zu verschieben wuerde Fokus, offene
+       Menues und Zeigerzustand mitnehmen.
+       Auch die Halteflaeche faellt weg: ohne Ausloeser gibt es nichts zu halten, und die 16px
+       Polsterung waeren auf einer engen Leiste nur ein Kasten, der ueber seine Nachbarn reicht. */
+    .up-root.is-tools-off .up-tbtrig, .up-root.is-tools-off .up-tbcol { display: none; }
+    .up-root.is-tools-off .up-toolgroup { transition: none; }
+    .up-root.is-tools-off :has(> .up-toolgroup) { padding: 0; margin-top: 0; margin-bottom: 0; }
 
     .up-iconbtn {
       display: inline-flex; align-items: center; justify-content: center;

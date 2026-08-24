@@ -3959,6 +3959,259 @@
      call it on open don't need to change; the CSS rest-state already places the menu correctly. */
   function placeMenu(menu, btn, opts){}
 
+  /* ---------- makeToolGroup ----------
+     Die einklappbare Werkzeugleiste. Eingeklappt steht nur der Ausloeser da, ausgeklappt alles
+     wie vorher -- die Leiste nimmt nichts weg, sie schiebt es zusammen.
+
+     Steht hier und nicht sechsmal in den Komponenten: die Zustandsmaschine ist der ganze Aufwand,
+     und sechs Kopien davon sind die Stelle, an der spaeter vier repariert werden. Jede Komponente
+     gibt nur mit, WAS bei ihr einklappt und WAS sie offen haelt.
+
+     DREI ZUSTAENDE, und der mittlere ist der Grund, warum es drei sind:
+       eingeklappt   nur Ausloeser (und was cfg.keep verschont) steht da
+       Vorschau      Zeiger auf dem Ausloeser: alles da, ABER der Ausloeser bleibt stehen
+       festgestellt  angeklickt oder ein Filter ist aktiv: Ausloeser weg, links der Einklapper
+     Ohne die Vorschau entsteht ein Flackerkreis: der Ausloeser liegt unter dem Zeiger,
+     verschwindet beim Aufziehen, damit verlaesst der Zeiger ihn, die Leiste klappt zu.
+
+     AUFZIEHEN tut nur der Ausloeser, offen HALTEN die ganze Leiste -- sonst zoege sie auch dann
+     auf, wenn der Zeiger bloss auf dem Weg zum Export-Knopf durch die Ecke faehrt.
+
+     UNTER cfg.minWidth ist der Kit AUS und die Leiste verhaelt sich wie vorher: alles sichtbar,
+     kein Ausloeser, kein Einklapper. Auf einer schmalen Komponente ist die Kopfzeile ohnehin schon
+     zusammengestrichen; ein Ausloeser waere dort ein weiterer Knopf statt einer Ersparnis.
+     Abgeschaltet wird ueber eine KLASSE, nicht durch Umbauen des DOM: bei jedem Ueberschreiten der
+     Grenze Kinder hin- und herzuschieben wuerde Fokus, offene Menues und Zeigerzustand mitnehmen.
+
+     cfg:
+       root         Wurzel der Komponente (traegt die is-tools-*-Klassen)
+       tools        die Werkzeugleiste selbst
+       keep         Selektor: direkte Kinder, die NIE einklappen. Vorgabe: alles, was die aktuelle
+                    ANSICHT benennt (Segmentschalter, Reiter) plus der Export-Knopf. Was man
+                    einstellt, klappt ein; was sagt, worauf man gerade sieht, bleibt stehen.
+       filterActive Funktion -> true, solange ein Filter aktiv ist. Dann bleibt die Leiste offen
+                    und der Einklapper verschwindet: eine verborgene Ursache fuer eine halbe
+                    Tabelle ist die schlimmste Art von stillem Ausfall.
+       minWidth     Grenze in px (Vorgabe 620). Darunter ist der Kit aus.
+       prefKey      localStorage-Schluessel fuer "festgestellt". Ohne ihn wird nichts gemerkt.
+       tip          Tooltip des Ausloesers.
+     Rueckgabe: { sync, refit(breite), destroy }. */
+  function makeToolGroup(cfg){
+    var root = cfg && cfg.root, tools = cfg && cfg.tools;
+    var leer = { sync: function(){}, refit: function(){}, destroy: function(){}, gepinnt: function(){ return false; } };
+    if (!root || !tools) return leer;
+
+    /* Die Vorgabe faengt ALLES, was die aktuelle Ansicht benennt, und den Export-Knopf. Sie ist
+       bewusst breit: die Alternative waere, dass jede Komponente ihre eigene Liste mitgibt -- und
+       genau daran ist es beim ersten Anlauf gescheitert. responses-table traegt seinen
+       Ansichtsschalter im Markup als "up-dense urt-viewswitch" mit role="group", ZUR LAUFZEIT baut
+       die Komponente ihn aber als "urt-viewswitch up-seg" neu. Eine Liste, die nur das Markup
+       kennt, laesst ihn einklappen -- gemessen, bevor es jemand gesehen haette. */
+    var KEEP    = cfg.keep || '[role="tablist"], .up-seg, .up-dense, .up-export';
+    var AUF_MS  = cfg.openDelay  == null ? 120 : cfg.openDelay;
+    var ZU_MS   = cfg.closeDelay == null ? 500 : cfg.closeDelay;
+    var ANIM_MS = 200;
+    var MIN_W   = cfg.minWidth == null ? 620 : cfg.minWidth;
+    var filterAktiv = typeof cfg.filterActive === "function" ? cfg.filterActive : function(){ return false; };
+
+    var elGroup = null, elIn = null, elTrig = null, elCol = null;
+    var gepinnt = false, zeiger = false, aus = false;
+    var uhrAuf = null, uhrZu = null, uhrFertig = null, zuletztSichtbar = null;
+
+    if (cfg.prefKey){ try { gepinnt = prefGet(cfg.prefKey) === "1"; } catch(e){} }
+    function pinMerken(){ if (cfg.prefKey){ try { prefSet(cfg.prefKey, gepinnt ? "1" : "0"); } catch(e){} } }
+
+    /* Mit Absicht wiederholbar: mehrere Komponenten haengen Werkzeuge erst im Laufe des Aufbaus
+       ein, und manche sortieren sie bei jedem Durchgang neu. Ein einmaliger Aufbau haette die
+       Nachzuegler draussen stehen lassen. */
+    function bauen(){
+      if (!elGroup){
+        elGroup = document.createElement("div");
+        elGroup.className = "up-toolgroup";
+        elIn = document.createElement("div");
+        elIn.className = "up-toolgroup-in";
+        elGroup.appendChild(elIn);
+        tools.insertBefore(elGroup, tools.firstChild);
+
+        elCol = document.createElement("button");
+        elCol.type = "button";
+        elCol.className = "up-iconbtn up-tbcol";
+        elCol.setAttribute("data-tip", "Hide tools");
+        elCol.setAttribute("aria-label", "Hide tools");
+        /* Ein Chevron nach RECHTS, statisch: die Leiste faehrt nach rechts zusammen, dorthin zeigt
+           er. Er dreht sich nicht -- im ganzen Haus dreht sich kein Chevron. */
+        elCol.innerHTML = icon("chevronRight", 2);
+        elIn.appendChild(elCol);
+
+        elTrig = document.createElement("button");
+        elTrig.type = "button";
+        elTrig.className = "up-iconbtn up-tbtrig";
+        elTrig.setAttribute("data-tip", cfg.tip || "Filters and settings");
+        elTrig.setAttribute("aria-label", cfg.tip || "Show tools");
+        elTrig.setAttribute("aria-expanded", "false");
+        elTrig.innerHTML = icon("listFilterPlus", 2);
+      }
+      /* Ueber eine AUSSCHLUSSliste, nicht ueber eine Aufzaehlung: ein spaeter dazukommendes
+         Werkzeug ist damit von sich aus drin und nicht aus Versehen draussen. */
+      var kinder = Array.prototype.slice.call(tools.children), i, k;
+      for (i = 0; i < kinder.length; i++){
+        k = kinder[i];
+        if (k === elGroup || k === elTrig) continue;
+        try { if (k.matches(KEEP)) continue; } catch(e){}
+        elIn.appendChild(k);
+      }
+      /* Der Ausloeser steht unmittelbar links von dem, was nicht einklappt -- aber nur verschieben,
+         wenn er nicht schon dort steht: insertBefore auf einen Knoten, der bereits an dieser Stelle
+         haengt, ist trotzdem ein Ausbauen und Wiedereinbauen, und der Knopf haette unter dem Zeiger
+         den Hover verloren. bauen() laeuft bei jedem render(). */
+      var nachbar = null;
+      for (i = 0; i < tools.children.length; i++){
+        k = tools.children[i];
+        if (k === elGroup || k === elTrig) continue;
+        try { if (k.matches(KEEP)){ nachbar = k; break; } } catch(e){}
+      }
+      if (nachbar){ if (elTrig.nextElementSibling !== nachbar || elTrig.parentNode !== tools) tools.insertBefore(elTrig, nachbar); }
+      else if (elTrig.parentNode !== tools) tools.appendChild(elTrig);
+
+      if (!elTrig.__upTgBound){
+        elTrig.__upTgBound = true;
+        elTrig.addEventListener("click", function(e){
+          e.preventDefault(); e.stopPropagation();
+          gepinnt = true; pinMerken(); sync();
+        });
+        elTrig.addEventListener("pointerenter", function(){
+          window.clearTimeout(uhrZu); uhrZu = null;
+          if (uhrAuf) return;
+          uhrAuf = window.setTimeout(function(){ uhrAuf = null; zeiger = true; sync(); }, AUF_MS);
+        });
+        /* Fokus ohne Verzoegerung: wer mit der Tastatur hierher kommt, hat sich schon entschieden. */
+        elTrig.addEventListener("focus", function(){
+          window.clearTimeout(uhrZu); uhrZu = null; zeiger = true; sync();
+        });
+      }
+      if (!elCol.__upTgBound){
+        elCol.__upTgBound = true;
+        elCol.addEventListener("click", function(e){
+          e.preventDefault(); e.stopPropagation();
+          gepinnt = false; zeiger = false; pinMerken();
+          window.clearTimeout(uhrAuf); uhrAuf = null;
+          window.clearTimeout(uhrZu);  uhrZu  = null;
+          sync();
+        });
+      }
+      if (!elIn.__upTgPop){
+        elIn.__upTgPop = true;
+        /* Ein Menue in der Gruppe haelt sie offen. Vom SCHLIESSEN erfaehrt sie ueber das
+           aufsteigende up-popover-close aus makePopover -- EIN Zuhoerer fuer alle Menues, kein
+           Beobachter und kein Nachfragen im Takt. */
+        elIn.addEventListener("up-popover-close", function(){
+          var drauf = false;
+          try { drauf = tools.matches(":hover"); } catch(e){}
+          if (drauf){ sync(); return; }
+          window.clearTimeout(uhrZu);
+          uhrZu = window.setTimeout(function(){ uhrZu = null; zeiger = false; sync(); }, ZU_MS);
+        });
+      }
+      if (!tools.__upTgBound){
+        tools.__upTgBound = true;
+        tools.addEventListener("pointerenter", function(){ window.clearTimeout(uhrZu); uhrZu = null; });
+        tools.addEventListener("pointerleave", function(){
+          window.clearTimeout(uhrAuf); uhrAuf = null;
+          window.clearTimeout(uhrZu);
+          uhrZu = window.setTimeout(function(){ uhrZu = null; zeiger = false; sync(); }, ZU_MS);
+        });
+        /* focusin/focusout statt focus/blur: die beiden ersten steigen auf, die beiden anderen
+           nicht -- damit haette die Leiste jeden Tabulatorsprung IN sie hinein verpasst. */
+        tools.addEventListener("focusin", function(){
+          window.clearTimeout(uhrZu); uhrZu = null; zeiger = true; sync();
+        });
+        tools.addEventListener("focusout", function(e){
+          if (e.relatedTarget && tools.contains(e.relatedTarget)) return;
+          zeiger = false; sync();
+        });
+      }
+    }
+
+    /* Ein offenes Menue aus der Gruppe haelt sie offen -- sonst klappt die Leiste unter einem
+       aufgeklappten Dropdown weg und das Menue haengt in der Luft. */
+    function menueOffen(){
+      if (!elIn) return false;
+      return !!elIn.querySelector('[aria-expanded="true"], .is-open');
+    }
+
+    function sync(){
+      if (!elGroup) return;
+      if (aus){
+        root.classList.add("is-tools-off");
+        root.classList.remove("is-tools-peek");
+        root.classList.add("is-tools-open", "is-tools-shown");
+        root.classList.remove("is-tools-locked");
+        zuletztSichtbar = true;
+        return;
+      }
+      root.classList.remove("is-tools-off");
+      var gesperrt = false;
+      try { gesperrt = !!filterAktiv(); } catch(e){}
+      var offen    = gepinnt || gesperrt;
+      var vorschau = !offen && (zeiger || menueOffen());
+      var sichtbar = offen || vorschau;
+
+      root.classList.toggle("is-tools-locked", gesperrt);
+      root.classList.toggle("is-tools-open", offen);
+      root.classList.toggle("is-tools-peek", vorschau);
+      if (elTrig) elTrig.setAttribute("aria-expanded", sichtbar ? "true" : "false");
+
+      /* is-tools-shown nimmt die Kappung weg, aber erst NACH der Bewegung -- sonst haengt beim
+         Aufziehen ein Menue heraus. Und sie MUSS fallen, sonst schneidet sie jedes Dropdown ab.
+         Eine Uhr mit benanntem Ende, NICHT transitionend: in einem Bubble-Tab, der gerade nicht
+         gemalt wird, laeuft der Uebergang nicht und das Ereignis kommt nie an.
+         Nur bei einem WECHSEL neu stellen: sync() laeuft bei jeder Zustandsaenderung, und ein
+         Neustellen bei jedem Aufruf schoebe das Ende der Kappung immer weiter hinaus. */
+      if (sichtbar !== zuletztSichtbar){
+        zuletztSichtbar = sichtbar;
+        window.clearTimeout(uhrFertig); uhrFertig = null;
+        if (sichtbar){
+          uhrFertig = window.setTimeout(function(){
+            uhrFertig = null; root.classList.add("is-tools-shown");
+          }, ANIM_MS + 20);
+        } else {
+          root.classList.remove("is-tools-shown");
+        }
+      }
+    }
+
+    /* Von der Breitenlogik der Komponente aufgerufen. Ohne Argument misst er selbst -- EIN
+       Lesezugriff, und nur wenn der Aufrufer die Breite nicht ohnehin schon hat. */
+    function refit(breite){
+      var w = breite;
+      if (w == null){ try { w = root.getBoundingClientRect().width || 0; } catch(e){ w = 0; } }
+      var neuAus = w > 0 && w < MIN_W;
+      if (neuAus === aus){ if (!aus) sync(); return; }
+      aus = neuAus;
+      if (aus){
+        window.clearTimeout(uhrAuf); uhrAuf = null;
+        window.clearTimeout(uhrZu);  uhrZu  = null;
+        window.clearTimeout(uhrFertig); uhrFertig = null;
+        zeiger = false;
+      }
+      sync();
+    }
+
+    function destroy(){
+      window.clearTimeout(uhrAuf); window.clearTimeout(uhrZu); window.clearTimeout(uhrFertig);
+      root.classList.remove("is-tools-open", "is-tools-peek", "is-tools-shown",
+                            "is-tools-locked", "is-tools-off");
+    }
+
+    bauen(); sync();
+    return {
+      sync: function(){ bauen(); sync(); },
+      refit: refit,
+      destroy: destroy,
+      gepinnt: function(){ return gepinnt; }
+    };
+  }
+
   /* ---------- makePopover ----------
      Open/close mechanics for every dropdown in the library. There were four different versions of
      this (each table's, visibility-chart's, topcitations', and citations-combo-chart's), which is
@@ -8435,6 +8688,7 @@
     isYes: isYes,
     parseLoose: parseLoose,
     normParams: normParams,
+    makeToolGroup: makeToolGroup,
     leseFehlerHtml: leseFehlerHtml,
     getTeam: getTeam,
     setUpstreemTeam: setUpstreemTeam,

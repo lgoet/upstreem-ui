@@ -1152,6 +1152,9 @@
       if (!cIds.length || !tIds.length) return;    // an empty axis is not a chart
       state.appliedCompanies = cIds;
       state.appliedTopics = tIds;
+      /* Die Auswahl entscheidet, ob die Werkzeugleiste offen bleiben muss (filterActive). Sie
+         aendert sich hier, ohne dass ein Zeiger im Spiel waere -- also ausdruecklich melden. */
+      if (typeof toolGroup !== "undefined" && toolGroup) toolGroup.sync();
 
       /* Optimistic local narrowing: everything the user KEPT we already have data for, so redraw
          it immediately instead of showing a skeleton for a change that is partly free. Anything
@@ -1416,9 +1419,30 @@
     });
     if (elScroll) elScroll.addEventListener("scroll", hideTip, { passive: true });
 
+    /* Die einklappbare Werkzeugleiste aus core. Sie klappt zusammen, was man EINSTELLT (Brands &
+       Topics, Settings) und laesst den Metrik-Schalter stehen -- der sagt, WORAUF man gerade
+       sieht, und ist damit Orientierung, nicht Bedienung. Unter 620px ist sie aus und die
+       Kopfzeile verhaelt sich wie vorher.
+
+       filterActive: gefiltert ist, wenn die angewandte Auswahl kleiner ist als das, was es gibt.
+       Solange alles gewaehlt ist, sieht der Nutzer alles -- dann gibt es nichts offenzuhalten. */
+    var toolGroup = UC.makeToolGroup ? UC.makeToolGroup({
+      root: root, tools: elTools,
+      filterActive: function(){
+        var t = (state.topics || []).length, c = (state.companies || []).length;
+        if (!t || !c) return false;
+        return (state.appliedTopics || []).length < t || (state.appliedCompanies || []).length < c;
+      },
+      prefKey: UC.prefKey ? UC.prefKey("uhm_tools__" + instanceId) : null,
+      tip: "Brands, topics and settings"
+    }) : null;
+
     /* Re-flow the tracks when the container width crosses a breakpoint (the lead column narrows). */
     if (UC.onResize) UC.onResize(root, function(){
       if (state.hasData && state.layoutKey) applyTracks();
+      /* Ohne Argument misst refit selbst -- EIN Lesezugriff, und nur hier: diese Komponente
+         haelt ihre Breite nirgends als Zahl (widthTiers setzt nur Klassen). */
+      if (toolGroup) toolGroup.refit();
     });
 
     /* =====================================================================
@@ -1510,6 +1534,7 @@
         root.classList.remove("is-loading");
         renderEmpty();
         syncPickBtn();
+        if (typeof toolGroup !== "undefined" && toolGroup) toolGroup.sync();
       },
       destroyTip: killTip,
       root: root,

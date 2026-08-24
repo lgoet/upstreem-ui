@@ -1266,6 +1266,9 @@
       // column drops
       root.classList.toggle("is-narrow", w < 860);
       root.classList.toggle("is-vnarrow", w < 620);
+      /* Dieselbe Grenze wie is-vnarrow: darunter verhaelt sich die Leiste wie vor dem Kit.
+         Die Breite ist hier schon gemessen -- refit bekommt sie mit, statt sie neu zu lesen. */
+      if (typeof toolGroup !== "undefined" && toolGroup) toolGroup.refit(w);
       /* Unconditional: which columns fit is now a continuous function of the width (autoFit
          in UC.makeColumns), not only of the tier classes above. applyCols() no-ops when the
          resulting layout is unchanged, so this stays cheap on every resize frame. */
@@ -1325,6 +1328,23 @@
     // restore the search box if a query survived a rebuild
     if (state.query){ elSearchIn.value = state.query; elSearch.classList.add("is-open", "has-text"); }
     populateSort(); populateFilter(); populateCols(); populateMent(); render();
+
+    /* Die einklappbare Werkzeugleiste aus core. Sie klappt zusammen, was man EINSTELLT, und laesst
+       stehen, was sagt, worauf man gerade sieht -- Segmentschalter und Reiter (role="tablist") und
+       den Export-Knopf. Unter 620px ist sie aus und die Leiste verhaelt sich wie vorher.
+       filterActive: derselbe Ausdruck, den renderTable schon fuer "No matching URLs" benutzt --
+       zwei Wahrheiten ueber dieselbe Frage waeren eine zu viel. */
+    var toolGroup = UC.makeToolGroup ? UC.makeToolGroup({
+      root: root, tools: elHeadTools,
+      filterActive: function(){
+        return !!state.query ||
+          Object.keys(state.appliedSel).some(function(k){ return state.appliedSel[k]; }) ||
+          !!state.brandMentioned ||
+          Object.keys(state.mentionApplied).some(function(k){ return state.mentionApplied[k]; });
+      },
+      prefKey: UC.prefKey ? UC.prefKey("uut_tools__" + instanceId) : null,
+      tip: "Search, filters and settings"
+    }) : null;
 
     return {
       root: root,

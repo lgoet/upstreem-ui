@@ -967,6 +967,9 @@
       fitToolbar();
       root.classList.toggle("is-narrow", w < 860);
       root.classList.toggle("is-vnarrow", w < 620);
+      /* Dieselbe Grenze wie is-vnarrow: darunter verhaelt sich die Leiste wie vor dem Kit.
+         Die Breite ist hier schon gemessen -- refit bekommt sie mit, statt sie neu zu lesen. */
+      if (typeof toolGroup !== "undefined" && toolGroup) toolGroup.refit(w);
       applyCols();
       applyCardCols();
     }
@@ -1102,6 +1105,23 @@
 
     if (state.query){ elSearchIn.value = state.query; elSearch.classList.add("is-open", "has-text"); }
     populateSort(); populateCols(); populateMent(); populateFader(); render();
+
+    /* Die einklappbare Werkzeugleiste aus core. Sie klappt zusammen, was man EINSTELLT, und laesst
+       stehen, was sagt, worauf man gerade sieht -- Segmentschalter und Reiter (role="tablist") und
+       den Export-Knopf. Unter 620px ist sie aus und die Leiste verhaelt sich wie vorher.
+       filterActive: anyFilterActive() gibt es hier schon -- es beantwortet exakt dieselbe Frage
+       fuer den Leerzustand und kennt auch die beiden Regler (Rank, Sentiment). Ein zweiter,
+       eigener Ausdruck waere eine zweite Wahrheit ueber denselben Zustand.
+       Der Ansichtsschalter (Tabelle/Karten) bleibt stehen: die Vorgabe des Kits faengt ihn ueber
+       .up-seg. Im Markup traegt er noch "up-dense" mit role="group", zur Laufzeit baut ihn diese
+       Datei aber als "urt-viewswitch up-seg" neu -- deshalb faengt ihn nur eine Liste, die BEIDE
+       kennt, und die steht genau einmal in core. */
+    var toolGroup = UC.makeToolGroup ? UC.makeToolGroup({
+      root: root, tools: elHeadTools,
+      filterActive: function(){ return anyFilterActive(); },
+      prefKey: UC.prefKey ? UC.prefKey("urt_tools__" + instanceId) : null,
+      tip: "Search, filters and settings"
+    }) : null;
 
     /* ---------------- click delegation ---------------- */
     function ownsTarget(tg){

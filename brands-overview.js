@@ -1252,6 +1252,9 @@
       var show = !!USER_FILTERED[instanceId] && active > 0 && active < maxSel;
       badge.textContent = show ? String(active) : "";
       badge.classList.toggle("is-visible", show);
+      /* Dieselbe Bedingung entscheidet, ob die Werkzeugleiste offen bleiben muss. Sie aendert
+         sich hier, ohne dass ein Zeiger im Spiel waere -- also ausdruecklich melden. */
+      if (typeof toolGroup !== "undefined" && toolGroup) toolGroup.sync();
     }
     function applyFilterSearch(){
       if (!filterMenu) return;
@@ -1635,11 +1638,31 @@
       });
     }
 
+    /* Die einklappbare Werkzeugleiste aus core. Eingeklappt bleiben die drei Segmentschalter
+       stehen -- Granularitaet, Charttyp und Y-Achse sagen, WORAUF man gerade sieht. Ein
+       klappt, was man einstellt: der Markenfilter und der Ein-/Ausblenden-Knopf.
+
+       filterActive: genau die Bedingung, die auch das Zaehlerabzeichen am Filterknopf zeigt
+       (syncFilterBadge). Zwei Wahrheiten ueber denselben Zustand waeren eine zu viel. */
+    var toolGroup = UC.makeToolGroup ? UC.makeToolGroup({
+      root: root, tools: root.querySelector(".ubo-head-tools"),
+      filterActive: function(){
+        var aktiv = activeCompanyIds().length;
+        var maxSel = Math.min((state.filterCompanies || []).length, MAX_FILTER_SEL);
+        return !!USER_FILTERED[instanceId] && aktiv > 0 && aktiv < maxSel;
+      },
+      prefKey: UC.prefKey ? UC.prefKey("ubo_tools__" + instanceId) : null,
+      tip: "Filter and display settings"
+    }) : null;
+
     /* ---------- responsive ---------- */
     function applyResponsive(){
       var w = root.clientWidth || 0;
       if (w) root.classList.toggle("is-narrow", w < 760);
       root.classList.toggle("ubo-narrow-page", UC.getPageWidth() < 500);
+      /* Unter 620px ist der Kit aus und die Leiste verhaelt sich wie vor ihm. Die Breite ist hier
+         schon gemessen -- refit bekommt sie mit, statt sie neu zu lesen. */
+      if (typeof toolGroup !== "undefined" && toolGroup && w) toolGroup.refit(w);
       clearTimeout(root.__uboRespT);
       root.__uboRespT = setTimeout(function(){ line.resize(); matrix.resize(); }, 60);
     }
