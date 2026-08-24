@@ -1,0 +1,117 @@
+<meta charset="utf-8"><title>Audit: create-with-ai und export-data nehmen Text</title>
+<style>html,body{margin:0;font:12px/1.5 system-ui}#buehne{position:absolute;left:-99999px;width:1200px}
+#out{padding:10px;font:11px/1.5 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body>
+<div id="buehne"></div><pre id="out">laeuft…</pre>
+<script>
+/* Zwei Behauptungen aus dem Commit pruefen, jede mit Gegenprobe:
+   1. createWithAiSetYouUrls kommt jetzt mit einem Titel klar, an dem JSON.parse wirft
+      (nacktes yes, Emoji ohne Anfuehrungszeichen). Gegenprobe: JSON.parse WIRFT daran wirklich.
+   2. upstreemExportSetContext nimmt rohen Text an -- und ein LEERES Feld darin kommt als null
+      an, nicht als Absturz. Gegenprobe: dieselben Werte als Objektliteral waeren SyntaxError,
+      was hier nur als Text nachgestellt werden kann (eval), sonst stirbt diese Datei selbst. */
+window.__err = [];
+window.addEventListener("error", function(e){ window.__err.push(String(e.message)); });
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+
+var DATEIEN = ["core.css","core.js","create-with-ai.css","create-with-ai.js",
+               "export-data.css","export-data.js","filters/date-range.css","filters/date-range.js",
+               "bubble/create_with_ai_bubble.html","bubble/export_data_bubble.html"];
+Promise.all(DATEIEN.map(hol)).then(function(t){
+  var m = {}; DATEIEN.forEach(function(f,i){ m[f]=t[i]; });
+  ["core.css","create-with-ai.css","export-data.css","filters/date-range.css"].forEach(function(f){
+    var s=document.createElement("style"); s.textContent=m[f]; document.head.appendChild(s); });
+  var s2=document.createElement("style");
+  s2.textContent="*,*::before,*::after{transition:none !important;animation:none !important}";
+  document.head.appendChild(s2);
+  ["bubble/create_with_ai_bubble.html","bubble/export_data_bubble.html"].forEach(function(f){
+    var w=document.createElement("div"); w.innerHTML=wurzelAus(m[f]);
+    [].slice.call(w.children).forEach(function(el){
+      if (el.className && /-root/.test(el.className.toString())){
+        el.setAttribute("data-instance","audit"); el.setAttribute("data-cdn-pin","audit");
+        el.setAttribute("data-isdark","no");
+      }
+      document.getElementById("buehne").appendChild(el);
+    });
+  });
+  ["core.js","create-with-ai.js","filters/date-range.js","export-data.js"].forEach(function(f){
+    var j=document.createElement("script"); j.textContent=m[f]; document.head.appendChild(j); });
+  return new Promise(function(ok){ setTimeout(ok, 1400); });
+}).then(function(){
+  var R = {};
+  var UC = window.UpstreemCore;
+
+  /* --- 1) create-with-ai: eine Liste, an der JSON.parse wirft --- */
+  var GIFTIG = '[{"url":"https://a.de/x","title":"NATURE ONE \\"rave\\"","pinned": yes,"note": 💎}]';
+  R.gegenprobe_JSONparse_wirft = (function(){ try { JSON.parse(GIFTIG); return false; } catch(e){ return true; } })();
+  var uca = document.querySelector(".uca-root");
+  R.ucaGemountet = !!(uca && window.createWithAiSetYouUrls);
+  try { window.createWithAiSetYouUrls("audit", GIFTIG); } catch(e){ R.ucaWurf = e.message; }
+  /* Der Zustand liegt nicht offen -- also am Baukasten ablesen: oeffnen, in den Builder, zaehlen. */
+  /* Der Zustand liegt nicht offen -- also am Bild ablesen: den Baukasten von Hand in seinen
+     Modus setzen und die Zeilen zaehlen, die renderBuilder daraus baut. */
+  R.ucaGelesen = (function(){
+    try {
+      var reg = window.createWithAi || {}, ks = Object.keys(reg);
+      var inst = ks.length ? reg[ks[ks.length-1]] : null;
+      if (!inst) return "keine Instanz";
+      var modal = document.querySelector(".uca-modal");
+      if (modal) modal.classList.add("uca-in-builder");
+      inst.setYouUrls(GIFTIG);
+      var liste = document.querySelector(".uca-bld-list") ||
+                  document.querySelector('[class*="bld-list"]');
+      if (!liste) return "keine Builder-Liste im DOM";
+      return { zeilen: liste.children.length,
+               skelette: liste.querySelectorAll(".uca-bld-skel").length,
+               text: (liste.textContent||"").replace(/\s+/g," ").trim().slice(0,110) };
+    } catch(e){ return "WURF "+e.message; }
+  })();
+  /* GEGENPROBE: derselbe Aufruf mit JSON.parse davor -- so verhielt sich die alte Fassung. */
+  R.ucaGegenprobeAlt = (function(){
+    try {
+      var arr; try { arr = JSON.parse(GIFTIG); } catch(e){ arr = []; }
+      return { zeilenDieAlteFassungGesehenHaette: Array.isArray(arr) ? arr.length : 0 };
+    } catch(e){ return "WURF "+e.message; }
+  })();
+
+  /* --- 2) export-data: roher Text mit einem LEEREN Feld --- */
+  var ROH = '{\n "export_type": ,\n "export_accesstoken": "abc123"\n}'
+    .replace(/:\s*([,}\]])/g, ": null$1")
+    .replace(/:\s*(yes|no)\s*([,}\]])/g, function(_,v,t){ return ": "+(v==="yes")+t; });
+  R.rohNachSanitizer = ROH.replace(/\s+/g," ");
+  R.uexVorhanden = typeof window.upstreemExportSetContext;
+  R.uexTextAngenommen = (function(){
+    try { return window.upstreemExportSetContext("audit", ROH); } catch(e){ return "WURF "+e.message; }
+  })();
+  /* Gegenprobe: die ALTE Bauart -- ein Objektliteral mit leerem Ausdruck -- ist SyntaxError. */
+  R.gegenprobe_objektliteral = (function(){
+    try { eval('window.upstreemExportSetContext("audit", { export_type: , export_accesstoken: "abc" })'); return "lief durch (unerwartet)"; }
+    catch(e){ return e.name + ": " + e.message.slice(0,60); }
+  })();
+  /* Fehlalarm-Test: normParams darf NUR bei wirklich unlesbaren Payloads __parseError setzen.
+     Ein nacktes Emoji ist lesbar (parseBubbleJson schafft es) -- meldete normParams das als
+     Lesefehler, saehe der Nutzer "could not be read" fuer heile Daten, und ein Neuladen zeigte
+     dasselbe. Das waere schlimmer als die alte stille Leere. */
+  var FAELLE = {
+    sauber:          '{"instanceId":"x","rows":[{"a":1}],"totalCount":2}',
+    nacktes_yes:     '{"instanceId":"x","rows":[{"a":1,"ok": yes}]}',
+    emoji:           '{"instanceId":"x","rows":[{"a":1,"note": \uD83D\uDC8E}]}',
+    quote_im_titel:  '{"instanceId":"x","rows":[{"title":"NATURE ONE "rave""}]}',
+    null_nach_sanitizer: '{"instanceId":"x","rows":[{"a":null}],"totalCount":null}',
+    leer:            '',
+    abgeschnitten:   '{"instanceId":"x","rows":[{"a":1},'
+  };
+  R.normParams = {};
+  Object.keys(FAELLE).forEach(function(k){
+    var np = UC.normParams(FAELLE[k], "test");
+    R.normParams[k] = (np && np.__parseError) ? "LESEFEHLER"
+                    : (np && Array.isArray(np.rows)) ? ("gelesen, " + np.rows.length + " Zeile(n)")
+                    : "gelesen, keine rows";
+  });
+  R.konsolenfehler = window.__err;
+  document.getElementById("out").textContent = JSON.stringify(R, null, 1);
+  window.__fertig = true;
+}).catch(function(e){ document.getElementById("out").textContent = "FEHLER: "+e.message; window.__fertig=true; });
+</script>

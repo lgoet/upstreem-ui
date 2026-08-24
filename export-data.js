@@ -716,6 +716,18 @@
         return true;
       },
       setContext: function(opts){
+        /* Auch TEXT annehmen. Ohne das musste der Run-JS-Schritt ein Objektliteral von Hand
+           bauen -- und ein leerer Bubble-Ausdruck darin ("export_accesstoken": ,) toetet den
+           ganzen Schritt beim PARSEN, samt aller Aufrufe darunter (§46). Mit einem einzigen
+           Backtick ist derselbe leere Wert nur Text. */
+        /* window.UpstreemCore direkt, KEINE UC-Variable: diese Datei kommt ohne core aus (siehe
+           den Kommentar an dunkelJetzt), und ein `UC.` hier warf "UC is not defined" -- gemessen,
+           bevor es jemand in Bubble gemerkt haette. Ohne core faellt es auf JSON.parse zurueck. */
+        if (typeof opts === "string"){
+          var C = window.UpstreemCore;
+          if (C && C.readBubble) opts = C.readBubble(opts);
+          else { try { opts = JSON.parse(opts); } catch (e){ opts = null; } }
+        }
         opts = opts || {};
         var t = normType(opts.export_type != null ? opts.export_type : opts.type);
         if (t) state.type = t;

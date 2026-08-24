@@ -158,6 +158,52 @@
 
      Rows land in the same staged list as manually typed ones and can be edited or removed before
      anything is sent.
+
+     ── DER RUN-JS-SCHRITT: EIN BACKTICK, KEIN OBJEKT (STYLEGUIDE §46) ────────────────────────
+     NIEMALS ein JS-Objekt im Schritt von Hand bauen. Also NICHT so:
+
+       setUpstreemTopics([{ id: <ausdruck>, name: <ausdruck> }])   FALSCH
+
+     Ist einer der Ausdruecke leer, steht dort  name: ,  -- und das ist kein gueltiges JavaScript.
+     Der Schritt scheitert dann beim PARSEN, bevor eine einzige Zeile laeuft: "Uncaught
+     SyntaxError: Unexpected token ','". Kein Sanitizer und kein Code im Kit kann das abfangen,
+     weil nichts davon zur Ausfuehrung kommt -- und weil der GANZE Schritt stirbt, gehen auch die
+     Aufrufe DARUNTER mit. So gemeldet am 24.08. an brand-detail: die Komponente blieb im
+     Ladezustand stehen, weil ein leerer _prev-Wert den Schritt getoetet hatte, ehe ihr Setter
+     ueberhaupt an die Reihe kam.
+
+     RICHTIG ist immer EIN Backtick mit dem ROHEN Text und die beiden Ersetzungen darauf. Im
+     Backtick ist ein leeres Feld nur Text; die erste Ersetzung macht daraus null, die zweite
+     quotiert Bubbles unquotiertes yes/no. BEIDE Zeilen sind Pflicht.
+
+       (function () {
+         var ROH = `[RPC-Ergebnis: id, name, hex_light, hex_dark]`
+           .replace(/:\s*([,}\]])/g, ": null$1")
+           .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+         /* Jeder Aufruf in seinem EIGENEN try: ein kaputter oder fehlender Ausdruck darf die
+            anderen nicht mitnehmen. Und window.<name> statt des nackten Namens -- haengt das
+            Element noch an einem aelteren Pin, ist der Name schlicht undefined statt ein
+            ReferenceError, der den ganzen Schritt mitnimmt. */
+         try { if (window.setUpstreemTopics) window.setUpstreemTopics(ROH); } catch (e) {}
+       })();
+
+     Zahlen bleiben OHNE Anfuehrungszeichen -- 3.0, nicht "3.0" -- sonst kommt der Wert als Text
+     an und jede Rechnung darauf geht daneben.
+
+     Was bei einem unlesbaren Payload passiert: dieser Setter hat NOCH KEINEN Lesefehler-Zustand.
+     Der Payload landet dann als leere Liste, und die Ansicht sieht aus wie ein sauberes leeres
+     Ergebnis. Der Backtick ist hier also nicht eine von zwei Absicherungen, sondern die einzige.
+     (Die 12 Komponenten mit render*-Einstieg haben den Zustand seit dem 24.08.; hier steht er
+     noch offen.)
+
+     setUpstreemMarkets traegt ebenfalls eine Liste -- eigener Backtick, eigenes try.
+     setUpstreemDefaultMarket nimmt einen einzelnen Wert. Alle drei sind SEITENWEIT und nehmen
+     nur den Payload, ohne instanceId.
+
+     Die EINZIGE Zeichenfolge, die im Backtick selbst gefaehrlich bleibt, ist ein Backtick oder
+     ein Dollar mit geschweifter Klammer in einem WERT. Beides kommt in Marken-, Domain- und
+     Themennamen nicht vor; alles andere -- Anfuehrungszeichen, Apostrophe, Umlaute,
+     Zeilenumbrueche, Emoji -- traegt er unbeschadet.
 -->
 
 <div class="up-root uap-host"

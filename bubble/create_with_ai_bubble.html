@@ -103,6 +103,49 @@
   ── HOEHE DES BUBBLE-ELEMENTS ────────────────────────────────────────────────
   Fit height, fit width. Sichtbar ist nur der Knopf (32px hoch); das Popup liegt im Overlay und
   braucht im Element selbst keinen Platz.
+
+     ── DER RUN-JS-SCHRITT: EIN BACKTICK, KEIN OBJEKT (STYLEGUIDE §46) ────────────────────────
+     NIEMALS ein JS-Objekt im Schritt von Hand bauen. Ist ein Bubble-Ausdruck leer, steht dort
+     "wert": ,  -- kein gueltiges JavaScript. Der Schritt scheitert dann beim PARSEN, bevor eine
+     Zeile laeuft ("Uncaught SyntaxError: Unexpected token ','"), und nimmt jeden Aufruf DARUNTER
+     mit. Kein Sanitizer kann das abfangen, weil nichts davon zur Ausfuehrung kommt. So gemeldet
+     am 24.08. an brand-detail.
+
+     RICHTIG ist immer EIN Backtick mit dem ROHEN Text und die beiden Ersetzungen darauf. BEIDE
+     Zeilen sind Pflicht: die erste macht aus einem leeren Feld null, die zweite quotiert Bubbles
+     unquotiertes yes/no.
+
+       (function () {
+         var ROH = `{
+           "url": "",
+           "citation_type": "",
+           "lead_title": "",
+           "lead_domain": "",
+           "own_brand_name": "",
+           "own_brand_summary": ""
+         }`
+           .replace(/:\s*([,}\]])/g, ": null$1")
+           .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+         /* Jeder Aufruf in seinem EIGENEN try, und window.<name> statt des nackten Namens: haengt
+            das Element noch an einem aelteren Pin, ist der Name undefined statt ein
+            ReferenceError, der den ganzen Schritt mitnimmt. */
+         try { if (window.createWithAiSetContext) window.createWithAiSetContext("INSTANCE_ID", ROH); } catch (e) {}
+       })();
+
+     createWithAiSetContext nahm rohen TEXT schon immer an. createWithAiSetYouUrls tut es seit dem
+     24.08. richtig: es benutzte vorher JSON.parse und warf damit an jedem Titel mit
+     Anfuehrungszeichen, Umlaut oder Emoji -- still, mit leerer Liste, und der Baukasten sah aus
+     wie "keine Quellen gefunden".
+
+     createWithAiSetYouUrls traegt eine LISTE und braucht seinen eigenen Backtick und sein eigenes
+     try. createWithAiOpen, -Close und -SetTheme nehmen einfache Werte und brauchen keinen.
+
+     Diese Komponente hat noch KEINEN Lesefehler-Zustand: ein unlesbarer Payload landet als leerer
+     Kontext. Der Backtick ist hier also die einzige Absicherung.
+
+     Die EINZIGE Zeichenfolge, die im Backtick selbst gefaehrlich bleibt, ist ein Backtick oder
+     ein Dollar mit geschweifter Klammer in einem WERT. Alles andere -- Anfuehrungszeichen,
+     Apostrophe, Umlaute, Zeilenumbrueche, Emoji -- traegt er unbeschadet.
 -->
 
 <div class="up-root uca-root"

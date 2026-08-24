@@ -218,6 +218,43 @@
       if (t++ < 60) setTimeout(go, 100);
     })();
   })();
+
+     ── DER RUN-JS-SCHRITT: EIN BACKTICK, KEIN OBJEKT (STYLEGUIDE §46) ────────────────────────
+     DIES IST DIE AKTUELLE FASSUNG. Die lange toArr/toNum-Konstruktion weiter unten ist die
+     AELTERE Fassung und nicht mehr noetig: sie baut mit eval() nach, was UC.parseLoose in core
+     seit laengerem tut, und liefert bei einem Lesefehler ein leeres Array -- also genau die
+     Verwechslung von "leer" und "kaputt", die sie vermeiden wollte. renderBrandsOverview nimmt
+     den rohen Text direkt an (gemessen am 24.08.: Objekt- und Textform ergeben dasselbe DOM).
+
+     (function () {
+       var ROH = `{
+         "instanceId": "INSTANCE_ID",
+         "granularity": "day",
+         "rows": [RPC: company_id, name, logo_url, visibility_pct, avg_rank, sentiment],
+         "series": [RPC: company_id, day, visibility_pct],
+         "companies": [RPC: company_id, name, color, favicon_url],
+         "totalCount":
+       }`
+         .replace(/:\s*([,}\]])/g, ": null$1")
+         .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+       /* Jeder Aufruf in seinem EIGENEN try, und window.<name> statt des nackten Namens: haengt
+          das Element noch an einem aelteren Pin, ist der Name undefined statt ein ReferenceError,
+          der den ganzen Schritt mitnimmt. */
+       try { if (window.renderBrandsOverview) window.renderBrandsOverview(ROH); } catch (e) {}
+     })();
+
+     Warum kein Objektliteral: ist ein Bubble-Ausdruck leer, steht dort  "wert": ,  -- kein
+     gueltiges JavaScript. Der Schritt stirbt dann beim PARSEN, bevor eine Zeile laeuft, und
+     nimmt jeden Aufruf DARUNTER mit. Kein Sanitizer kann das abfangen, weil nichts davon zur
+     Ausfuehrung kommt. So gemeldet am 24.08. an brand-detail.
+
+     "instanceId" steht ABSICHTLICH als ERSTES Feld. Bricht der Payload mitten ab, fischt core
+     die Id trotzdem aus dem Rohtext und die richtige Platzierung zeigt den Fehler.
+
+     Was bei einem unlesbaren Payload passiert (gemessen am 24.08.): die Komponente beendet den
+     Ladezustand und schreibt "The data could not be read. Please reload the page." an die Stelle
+     der Daten. Ein WIRKLICH leerer Payload bleibt der normale Leerzustand. Ein neuer
+     Ladeversuch raeumt die Meldung weg.
 -->
 <div class="up-root ubo-root"
      data-instance="INSTANCE_ID"

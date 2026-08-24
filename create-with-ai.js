@@ -372,6 +372,17 @@
     function looseParse(v){
       if (v && typeof v === "object") return v;
       if (typeof v !== "string") return {};
+      /* UC.readBubble zuerst: das ist die EINE geteilte Reparatur, die jede andere Komponente
+         benutzt, und sie kennt die Faelle, die Bubble wirklich liefert -- nacktes yes/no, ein
+         Emoji ohne Anfuehrungszeichen, rohe Zeilenumbrueche, unquotierte Schluessel. Der eigene
+         Weg hier kannte nur JSON.parse plus einen Tausch von Apostrophen gegen
+         Anfuehrungszeichen und gab bei allem anderen {} zurueck -- still. Genau so hat der
+         Emoji-Fehler in top-citations eine ganze Runde Reparaturen ueberlebt: es gab zwei
+         Kopien der Reparatur, und nur eine wurde geflickt. */
+      if (UC && UC.readBubble){
+        var p = UC.readBubble(v);
+        if (p && typeof p === "object") return p;
+      }
       try { return JSON.parse(v); } catch(e){
         try { return JSON.parse(v.replace(/'/g, '"')); } catch(e2){ return {}; }
       }
@@ -575,7 +586,10 @@
     }
     function setYouUrls(data){
       var arr = data;
-      if (typeof data === "string"){ try { arr = JSON.parse(data); } catch(e){ arr = []; } }
+      /* Nicht JSON.parse: die Liste kommt aus einem Bubble-Ausdruck und traegt Titel mit
+         Anfuehrungszeichen, Umlauten und Emoji. JSON.parse warf daran und lieferte still eine
+         leere Liste -- der Baukasten sah dann aus wie "keine Quellen gefunden". */
+      if (typeof data === "string") arr = looseParse(data);
       if (!Array.isArray(arr)) arr = [];
       S.youUrls = arr.map(function(it){
         if (typeof it === "string") return { url: it, title: "" };

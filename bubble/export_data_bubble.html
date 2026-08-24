@@ -105,6 +105,40 @@
   processing on its own (with a console.warn) if resolve() never arrives — e.g. because the
   export function name below isn't wired up on the Bubble side — so the dialog can't get
   stuck open forever, but 90s is generous and should never fire for a real export.
+
+     ── DER RUN-JS-SCHRITT: EIN BACKTICK, KEIN OBJEKT (STYLEGUIDE §46) ────────────────────────
+     NIEMALS ein JS-Objekt im Schritt von Hand bauen. Ist ein Bubble-Ausdruck leer, steht dort
+     "wert": ,  -- kein gueltiges JavaScript. Der Schritt scheitert dann beim PARSEN, bevor eine
+     Zeile laeuft ("Uncaught SyntaxError: Unexpected token ','"), und nimmt jeden Aufruf DARUNTER
+     mit. Kein Sanitizer kann das abfangen, weil nichts davon zur Ausfuehrung kommt. So gemeldet
+     am 24.08. an brand-detail.
+
+     RICHTIG ist immer EIN Backtick mit dem ROHEN Text und die beiden Ersetzungen darauf. BEIDE
+     Zeilen sind Pflicht: die erste macht aus einem leeren Feld null, die zweite quotiert Bubbles
+     unquotiertes yes/no.
+
+       (function () {
+         var ROH = `{
+           "export_type": "",
+           "export_accesstoken": ""
+         }`
+           .replace(/:\s*([,}\]])/g, ": null$1")
+           .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+         /* Jeder Aufruf in seinem EIGENEN try, und window.<name> statt des nackten Namens: haengt
+            das Element noch an einem aelteren Pin, ist der Name undefined statt ein
+            ReferenceError, der den ganzen Schritt mitnimmt. */
+         try { if (window.upstreemExportSetContext) window.upstreemExportSetContext("INSTANCE_ID", ROH); } catch (e) {}
+       })();
+
+     upstreemExportSetContext nimmt seit dem 24.08. auch rohen TEXT an -- vorher ging nur ein
+     Objekt, und damit war der Schritt zwangslaeufig die riskante Bauart oben.
+
+     upstreemExportOpen, upstreemExportClose und upstreemExportResolve nehmen nur die instanceId
+     und brauchen keinen Backtick.
+
+     Die EINZIGE Zeichenfolge, die im Backtick selbst gefaehrlich bleibt, ist ein Backtick oder
+     ein Dollar mit geschweifter Klammer in einem WERT. Alles andere -- Anfuehrungszeichen,
+     Apostrophe, Umlaute, Zeilenumbrueche, Emoji -- traegt er unbeschadet.
 -->
 <div class="up-root uex-root"
      data-instance="INSTANCE_ID"

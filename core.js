@@ -366,6 +366,17 @@
       var roh = params, parsed = parseLoose(params, label);
       /* A bare array is the other easy mistake: renderFoo(`[ … ]`) instead of
          renderFoo(`{"instanceId": …, "rows": [ … ]}`). Treat it as the rows list. */
+      /* Zweiter Versuch mit readBubble, BEVOR etwas als unlesbar gilt. parseLoose und
+         parseBubbleJson koennen verschiedene Dinge: gemessen am 24.08. an denselben sechs
+         Payloads scheitert parseLoose an einem nackten Emoji ("note": 💎), waehrend der Scanner
+         in parseBubbleJson es sauber liest. Ohne diesen zweiten Versuch meldete die Komponente
+         "The data could not be read." fuer Daten, die lesbar sind -- und ein Fehlalarm ist hier
+         schlimmer als die alte stille Leere, weil der Nutzer daraufhin neu laedt und wieder
+         dasselbe sieht. */
+      if (!isArr(parsed) && !(parsed && typeof parsed === "object")){
+        var zweit = readBubble(roh);
+        if (zweit && typeof zweit === "object") parsed = zweit;
+      }
       if (isArr(parsed)) params = { rows: parsed };
       else if (parsed && typeof parsed === "object") params = parsed;
       else {

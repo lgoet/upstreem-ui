@@ -2419,6 +2419,7 @@
   "usb-linkbox",
   "usb-linktoggle",
   "usb-linktoggle-chev",
+  "usb-loaderr",
   "usb-logoctl",
   "usb-logoforms",
   "usb-logoprev",
@@ -2645,7 +2646,7 @@
   "globals": 137,
   "payloadkeys": 80,
   "dataattrs": 198,
-  "klassen": 1950,
+  "klassen": 1951,
   "keyframes": 58
  }
 }
