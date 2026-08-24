@@ -427,8 +427,31 @@
                                         : ("upt_" + k + "__" + instanceId); }
     function gGet(k){ return UC.prefGet ? UC.prefGet(gKey(k))
                                         : (function(){ try { return window.localStorage.getItem(gKey(k)); } catch(e){ return null; } })(); }
+    /* Voreinstellung: Gruppierung AN -- die Tabelle zeigt damit von Anfang an, wie die Prompts
+       zusammenhaengen, statt einer flachen Liste von Hunderten. Der Listenmodus daneben stand
+       schon immer auf an (readGroupsWide).
+
+       Auf Mobilbreite AUS: dort ist neben der Gruppenliste kein Platz fuer eine brauchbare
+       Tabelle -- die Komponente zwingt die Liste dann selbst zu (is-groups-cramped), und was
+       uebrig bliebe, waere eine Gruppierung ohne ihren Nutzen.
+
+       Gemessen wird die Wurzel, nicht das Fenster: in Bubble sagt die Fensterbreite nichts ueber
+       die Breite DIESES Elements. Steht die Wurzel beim Aufbau noch ohne Breite da (das kommt
+       vor, bevor der Host sie einsortiert hat), faellt es auf das Fenster zurueck -- einmal, beim
+       Aufbau, nicht pro Bild. Eine gespeicherte Wahl schlaegt beides: wer es einmal eingestellt
+       hat, bekommt seine Einstellung, nicht meine Voreinstellung. */
+    function schmaleWurzel(){
+      var w = 0;
+      try { w = root.getBoundingClientRect().width || 0; } catch(e){}
+      if (!w) { try { w = window.innerWidth || 0; } catch(e){} }
+      return w > 0 && w < 620;   /* dieselbe Grenze wie is-vnarrow in applyResponsive */
+    }
     function readGrouped(){
-      try { return gGet("grouped") === "yes"; } catch(e){ return false; }
+      try {
+        var v = gGet("grouped");
+        if (v == null) return !schmaleWurzel();
+        return v === "yes";
+      } catch(e){ return false; }
     }
     function writeGrouped(v){
       try { window.localStorage.setItem(gKey("grouped"), v ? "yes" : "no"); } catch(e){}
@@ -4402,6 +4425,23 @@
           window.clearTimeout(tbUhrAuf); tbUhrAuf = null;
           window.clearTimeout(tbUhrZu);  tbUhrZu  = null;
           tbSync();
+        });
+      }
+      if (!elToolIn.__uptPopBound){
+        elToolIn.__uptPopBound = true;
+        /* Ein Menue in der Gruppe haelt die Leiste offen (tbMenueOffen). Vom SCHLIESSEN erfuhr sie
+           bisher nichts: wer das Markendropdown aufmachte und ohne Auswahl wieder zumachte, liess
+           die Leiste stehen -- gemeldet am 24.08. Core feuert dafuer jetzt up-popover-close am
+           Wrapper, und das steigt hierher auf: EIN Zuhoerer fuer alle Menues der Gruppe, kein
+           Beobachter, kein Nachfragen im Takt.
+           Steht der Zeiger noch auf der Leiste, bleibt alles wie es ist -- :hover einmal abfragen
+           ist genauer als ein eigener Merker und kostet einen Zugriff, nicht einen pro Bild. */
+        elToolIn.addEventListener("up-popover-close", function(){
+          var drauf = false;
+          try { drauf = elHeadTools.matches(":hover"); } catch(e){}
+          if (drauf){ tbSync(); return; }
+          window.clearTimeout(tbUhrZu);
+          tbUhrZu = window.setTimeout(function(){ tbUhrZu = null; tbZeiger = false; tbSync(); }, TB_ZU_MS);
         });
       }
       if (!elHeadTools.__uptToolsBound){

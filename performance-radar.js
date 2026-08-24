@@ -871,7 +871,8 @@
        ===================================================================== */
     var pickPop = (elPick && elPickMenu)
       ? UC.makePopover({ wrap: elPick, menu: elPickMenu, opener: elPickBtn, group: "uhm-" + instanceId,
-                         onClose: function(committed){ if (!committed) resetDraft(); } })
+                         onClose: function(committed){ if (!committed) resetDraft();
+                                                       obenAus(elPickMenu); obenLoesen(); } })
       : { open: function(){}, close: function(){}, toggle: function(){}, isOpen: function(){ return false; } };
 
     var pickQuery = { brands: "", topics: "" };
@@ -993,8 +994,91 @@
        ueberlappenden Punkte wie im Chart-Settings-Menue der Linecharts) und .up-pop-row +
        .up-switch fuer den Schalter. Nichts davon ist hier neu gebaut.
        ===================================================================== */
+    /* ══ Die Menues dieser Kopfzeile muessen aus dem Stapelkontext heraus ═══════════════════════
+       Dritter Anlauf an derselben Meldung: "das Settings-Dropdown liegt hinter dem Detailbereich".
+       Der Detailbereich ist ein EIGENES Bubble-Element unter dem Radar. Beide Menues oeffnen nach
+       unten und reichen ueber die Unterkante des Radars hinaus -- besonders wenn der Nutzer nur
+       zwei oder drei Themen hat und das Raster entsprechend flach ist.
+
+       Was zweimal nicht gereicht hat:
+       - z-index am Menue: es liegt im Stapelkontext des Radars, und der entscheidet gegen den
+         Nachbarn, nicht das Kind.
+       - z-index an der eigenen Wurzel (.uhm-root:has(.is-open), 40): hilft nur, solange beide
+         Bubble-Wrapper im selben Kontext liegen und keiner einen eigenen aufspannt. Genau das ist
+         hier offenbar nicht der Fall. Und der fremde Wrapper darf nicht angefasst werden -- das
+         hat am 11.08. die App lahmgelegt.
+
+       Was hier stattdessen passiert: das Menue wird in die OBERSTE EBENE des Browsers gehoben
+       (popover). Entscheidend dabei -- und der Grund, warum es kein Portal am <body> ist: das
+       Element bleibt an seiner Stelle im DOM. Klicks steigen weiter zum Wurzel-Zuhoerer auf (die
+       ganze Menuelogik dieser Datei haengt daran), CSS-Variablen und Nachfahren-Selektoren gelten
+       weiter, und makePopovers Aussenklick-Erkennung findet es. Ein Portal haette all das
+       gebrochen -- geprueft, bevor es gebaut wurde.
+
+       Ohne Unterstuetzung im Browser bleibt alles wie vorher: kein popover-Attribut, keine Klasse,
+       die alte absolute Platzierung samt :has(.is-open)-Regel greift weiter. */
+    var OBEN_GEHT = !!(window.HTMLElement && HTMLElement.prototype &&
+                       typeof HTMLElement.prototype.showPopover === "function");
+    var MENU_ANIM_MS = 200;
+
+    function obenAn(menu, btn){
+      if (!OBEN_GEHT || !menu || !btn) return;
+      if (!menu.hasAttribute("popover")) menu.setAttribute("popover", "manual");
+      try { if (!menu.matches(":popover-open")) menu.showPopover(); } catch(e){ return; }
+      menu.classList.add("is-topline");
+      obenStellen(menu, btn);
+    }
+    /* Platzierung von Hand, weil ein Element der obersten Ebene am Viewport haengt und nicht mehr
+       an .uhm-set. Rechtskante an der Knopfkante -- dieselbe Ausrichtung wie vorher ueber right:0.
+       Reicht es unten nicht, klappt es nach oben; das ist billiger als ein Menue, das halb unter
+       dem Fensterrand steckt. */
+    function obenStellen(menu, btn){
+      if (!menu.classList.contains("is-topline")) return;
+      var r = btn.getBoundingClientRect();
+      var mw = menu.offsetWidth || 268, mh = menu.offsetHeight || 0;
+      var luft = 8, spalt = 6;
+      var links = Math.min(Math.max(luft, r.right - mw), Math.max(luft, window.innerWidth - mw - luft));
+      var oben = r.bottom + spalt;
+      if (mh && oben + mh > window.innerHeight - luft) oben = Math.max(luft, r.top - spalt - mh);
+      menu.style.left = links + "px";
+      menu.style.top = oben + "px";
+    }
+    /* Erst nach der Bewegung aus der obersten Ebene nehmen -- sonst verschwindet das Menue
+       schlagartig, statt auszublenden. Eine Uhr mit benanntem Ende, kein transitionend: in einem
+       Bubble-Tab, der gerade nicht gemalt wird, kommt das Ereignis nie an, und das Menue blieb
+       dann fuer immer in der obersten Ebene stehen -- sichtbar ueber allem. */
+    function obenAus(menu){
+      if (!menu || !menu.classList.contains("is-topline")) return;
+      window.clearTimeout(menu.__uhmObenT);
+      menu.__uhmObenT = window.setTimeout(function(){
+        menu.__uhmObenT = null;
+        menu.classList.remove("is-topline");
+        menu.style.left = ""; menu.style.top = "";
+        try { if (menu.matches(":popover-open")) menu.hidePopover(); } catch(e){}
+      }, MENU_ANIM_MS + 20);
+    }
+    /* Zuhoerer NUR waehrend ein Menue offen ist. Ein dauerhafter Beobachter waere hier reine
+       Verschwendung: die Platzierung interessiert genau so lange, wie etwas offen steht. */
+    var obenAktiv = null;
+    function obenFolgen(menu, btn){
+      obenAktiv = { menu: menu, btn: btn };
+      if (obenFolgen.__an) return;
+      obenFolgen.__an = true;
+      window.addEventListener("scroll", obenNach, true);
+      window.addEventListener("resize", obenNach);
+    }
+    function obenLoesen(){
+      obenAktiv = null;
+      if (!obenFolgen.__an) return;
+      obenFolgen.__an = false;
+      window.removeEventListener("scroll", obenNach, true);
+      window.removeEventListener("resize", obenNach);
+    }
+    function obenNach(){ if (obenAktiv) obenStellen(obenAktiv.menu, obenAktiv.btn); }
+
     var setPop = (elSet && elSetMenu)
-      ? UC.makePopover({ wrap: elSet, menu: elSetMenu, opener: elSetBtn, group: "uhm-" + instanceId })
+      ? UC.makePopover({ wrap: elSet, menu: elSetMenu, opener: elSetBtn, group: "uhm-" + instanceId,
+                         onClose: function(){ obenAus(elSetMenu); obenLoesen(); } })
       : { open: function(){}, close: function(){}, toggle: function(){}, isOpen: function(){ return false; } };
 
     /* Vier Punkte, aus derselben Rampe entnommen, die das Chart benutzt -- die Vorschau kann
@@ -1110,7 +1194,12 @@
         e.stopPropagation();
         if (setPop.isOpen()){ setPop.close(false); return; }
         populateSettings();
+        /* VOR open(): showPopover schaltet display um, und die Einblendbewegung braucht ein Bild
+           mit dem Startwert. open() setzt gleich danach .is-shown. */
+        obenAn(elSetMenu, elSetBtn);
         setPop.open();
+        obenStellen(elSetMenu, elSetBtn);   /* jetzt steht die echte Hoehe fest */
+        obenFolgen(elSetMenu, elSetBtn);
         return;
       }
       if (elSetMenu && elSetMenu.contains(e.target)){
@@ -1125,7 +1214,10 @@
         if (pickPop.isOpen()){ pickPop.close(false); return; }
         resetDraft();
         populatePicker();
+        obenAn(elPickMenu, elPickBtn);
         pickPop.open();
+        obenStellen(elPickMenu, elPickBtn);
+        obenFolgen(elPickMenu, elPickBtn);
         return;
       }
 

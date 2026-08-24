@@ -309,7 +309,14 @@
   max-width: 0; opacity: 0; overflow: hidden; margin-left: 0; pointer-events: none;
   transition: max-width 200ms cubic-bezier(.2,0,.38,.9), opacity 160ms ease, margin-left 200ms cubic-bezier(.2,0,.38,.9);
 }
-.mqa-row.is-menuready .mqa-rowmenu-btn, .mqa-row.is-menuopen .mqa-rowmenu-btn {
+/* :hover statt einer Klasse aus dem JS: der Knopf gehoert zur Zeile, unter der der Zeiger steht,
+   und dafuer braucht es weder eine Uhr noch einen Zustand. is-menuready ist mit raus -- eine
+   Verzoegerung von einer halben Sekunde vor einem Knopf, den man gerade ansteuert, fuehlt sich
+   an, als haenge die Oberflaeche. is-menuopen bleibt: waehrend das Menue offen ist, steht der
+   Zeiger im Menue und nicht mehr auf der Zeile, der Knopf muesste sonst mittendrin verschwinden.
+   is-active haelt ihn bei Tastaturbedienung sichtbar -- dort gibt es keinen Zeiger. */
+.mqa-row:hover .mqa-rowmenu-btn, .mqa-row.is-active .mqa-rowmenu-btn,
+.mqa-row.is-menuopen .mqa-rowmenu-btn {
   max-width: 24px; opacity: 1; margin-left: 6px; pointer-events: auto;
 }
 /* 16 statt 15, auf Ansage. Die Form ist Lucide "ellipsis": drei gefuellte Kreise mit r=1 auf
@@ -419,7 +426,13 @@
 .mqa-fav-x:hover { color: var(--am-text); background: var(--am-hover-bg); }
 
 /* ---------- filter tooltip (hover the "/ for filters" hint) ---------- */
-.mqa-ph-cmd { cursor: help; pointer-events: auto; }
+/* pointer-events: auto, damit der Hinweis den Zeiger ueberhaupt bemerkt -- der Platzhalter
+   darueber ist auf none gestellt. Aber KEIN cursor: help: das Fragezeichen ist ein eigener
+   Zeiger fuer eine Stelle, an der nichts passiert, und es liest sich wie ein Fehler. Die
+   Rueckmeldung ist stattdessen die Sekundaerfarbe -- dieselbe Sprache wie jeder andere
+   Hover-Text hier. Der Tooltip selbst bleibt unveraendert. */
+.mqa-ph-cmd { pointer-events: auto; transition: color 140ms ease; }
+.mqa-ph-cmd:hover { color: var(--am-muted); }
 /* Werte 1:1 aus core.css' .up-explain uebernommen -- Breite, Polsterung, Rundung, Grund, Schatten,
    Spitze und die Umkehr im Dark Mode. Nachgebaut statt importiert: diese Datei laedt kein core.css
    (siehe Kopf). Die Farben sind dort ohnehin literal, weil die Karte am Rand der Komponente haengt

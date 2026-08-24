@@ -619,6 +619,15 @@
 .up-root.is-grouped .upt-grp-widewrap { display: flex; align-items: stretch; gap: 0; transition: gap 200ms ease; }
 .up-root.is-grouped.is-groups-wide .upt-grp-widewrap { gap: 8px; }
 .up-root.is-grouped .up-box { flex: 1 1 auto; min-width: 0; }
+/* Im Listenmodus steht der Kasten neben der Gruppenliste, und die ist oft hoeher als er --
+   etwa wenn in der offenen Gruppe genau ein Prompt liegt. align-items: stretch am Wrapper zog
+   ihn dann auf die Hoehe der Liste, und weil .up-box in core --vc-bg traegt (im Dunkelmodus
+   #1b1b1b, also HELLER als die Flaeche darunter mit #121212), stand der hellere Grund ueber die
+   ganze Hoehe da -- weit unter der letzten Zeile. Gemeldet am 24.08.
+   align-self: flex-start laesst ihn seine Inhaltshoehe behalten: Kopf, Zeilen, Fuss, Schluss.
+   Die Liste bleibt so hoch, wie sie ist -- sie ist das hoechste Element und braucht dafuer
+   nichts. */
+.up-root.is-grouped.is-groups-wide .up-box { align-self: flex-start; }
 /* display:none by default (grouping off) -- NOT just width:0, and this is the one that actually
    matters: .upt-grp-widewrap is display:contents whenever grouping is off (see above), which
    means the panel is no longer a flex ITEM of anything and gets no align-items:stretch height from
@@ -1047,6 +1056,15 @@
   .upt-grp-kpi { min-width: 58px; }
 }
 
+/* Auf Mobilbreite bleibt vom Gruppenkopf nur der linke Teil: Chevron und Themenmarke. Die vier
+   Kennzahlen (Prompts, Visibility, Rank, Sentiment) sind dort nicht zu klein, sondern zu viel --
+   sie draengen den Namen zusammen, um den es in der Zeile geht, und dieselben Zahlen stehen in
+   der geoeffneten Gruppe ohnehin pro Zeile.
+   is-vnarrow (unter 620px Wurzelbreite) statt einer Bildschirm-Medienabfrage: in Bubble sagt die
+   Fensterbreite nichts ueber die Breite DIESES Elements -- die Komponente misst sich selbst
+   (siehe applyResponsive in prompts-table.js). */
+.up-root.is-vnarrow .upt-grp-kpis { display: none; }
+
 
 
 /* ══ Einklappbare Werkzeugleiste ══════════════════════════════════════════════════════════════
@@ -1075,8 +1093,14 @@
 /* Der Einklapper erscheint nur, wenn die Leiste festgestellt ist und der Zeiger (oder der
    Tastaturfokus) auf ihr liegt. Kein Dauergast: er ist der Ausgang, nicht ein Werkzeug. */
 .upt-root .upt-tbcol { width: 0; opacity: 0; margin-right: -8px; pointer-events: none; }
+/* :has(:focus-visible) statt :focus-within. Der Unterschied entscheidet hier alles: nach einem
+   KLICK auf den Ausloeser bleibt der Fokus auf ihm liegen, und :focus-within war damit dauerhaft
+   wahr -- der Einklapper stand von da an immer da, auch ohne Zeiger. Gemeldet am 24.08.
+   :focus-visible trifft nur den Fokus, den der Browser als tastaturgesetzt einordnet; ein
+   Mausklick faellt heraus. Tastaturbedienung behaelt den Zugang, die Maus bekommt ihn nur unter
+   dem Zeiger. */
 .upt-root.is-tools-open .up-head-tools:hover .upt-tbcol,
-.upt-root.is-tools-open .up-head-tools:focus-within .upt-tbcol {
+.upt-root.is-tools-open .up-head-tools:has(:focus-visible) .upt-tbcol {
   width: 32px; opacity: 1; margin-right: 0; pointer-events: auto;
 }
 /* Haelt ein aktiver Filter die Leiste offen, gibt es keinen Ausgang -- ihn trotzdem anzubieten

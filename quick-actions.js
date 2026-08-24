@@ -579,7 +579,12 @@
   var ARR_DOWN = '<svg viewBox="0 0 24 24"><path d="m7 7 10 10" /> <path d="M17 7v10H7" /></svg>';
   var DASH     = '<svg viewBox="0 0 24 24"><path d="M5 12h14" /></svg>';
   // per-row "more" menu — see rowHtml()/the row-menu block near the bottom of this file
-  var MORE_SVG   = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>';
+  /* Lucide "ellipsis", wortgleich: drei Kreise mit r=1, gezeichnet mit stroke-width 2 -- nicht
+     gefuellt. Vorher stand hier fill="currentColor" ohne Strich, und damit waren die Punkte nur
+     halb so gross wie ueberall sonst in der App. Literal statt UC.icon, weil diese Datei
+     absichtlich ohne core lauffaehig bleibt (siehe Kopf) -- die Form ist dieselbe, die
+     UC.icon("moreHorizontal") liefert. */
+  var MORE_SVG   = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>';
   var OPEN_SVG   = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /> <path d="m12 5 7 7-7 7" /></svg>';
   var NEWTAB_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6" /> <path d="M10 14 21 3" /> <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></svg>';
   /* Lucide pin -- fuer "Pin to sidebar" im Zeilenmenue. */
@@ -621,8 +626,10 @@
       '</span>' +
       metricHtml(item) +
       '<span class="mqa-type">' + TYPE_SINGULAR[type] + '</span>' +
+      /* Das Chevron rechts ist raus, auf Ansage. An seiner Stelle steht das Zeilenmenue -- eine
+         Stelle, ein Zweck. Vorher standen dort zwei Dinge nebeneinander, von denen eines nur
+         anzeigte, dass Enter etwas tut. */
       '<span class="mqa-rowmenu-btn" role="button" tabindex="-1" aria-label="More options" aria-haspopup="true">' + MORE_SVG + '</span>' +
-      '<span class="mqa-enter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg></span>' +
     '</button>';
   }
 
@@ -960,8 +967,8 @@
         (secondary ? '<span class="mqa-secondary">' + secondary + '</span>' : '') +
       '</span>' +
       '<span class="mqa-type">' + (TYPE_SINGULAR[item.type] || "") + '</span>' +
+      /* Wie in der Ergebniszeile: das Chevron faellt weg, das Zeilenmenue nimmt seinen Platz. */
       '<span class="mqa-rowmenu-btn" role="button" tabindex="-1" aria-label="More options" aria-haspopup="true">' + MORE_SVG + '</span>' +
-      '<span class="mqa-enter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6" /></svg></span>' +
     '</button>';
   }
   function applyEntry(e){
@@ -1202,11 +1209,9 @@
      ("result" = _rowData via data-ri, "viewed" = _viewed via data-viewed) rather than just an
      index — an index alone would be ambiguous between the two.
 
-     Delegated on `scroll` AND `recentEl`, not bound per-row: rows get replaced wholesale on
-     every render, so per-element listeners would need rebinding every time. mouseover/mouseout
-     bubble (unlike mouseenter/mouseleave), which is what makes delegation possible here. */
-  var ROWMENU_HOVER_MS = 750;
-  var hoverTimer = null, hoverRowEl = null;
+     Der Knopf selbst haengt nicht mehr an Ereignissen: seine Sichtbarkeit ist .mqa-row:hover in
+     der CSS. Hier stand vorher eine Beschreibung der Delegation auf `scroll` und `recentEl` --
+     die vier mouseover/mouseout-Zuhoerer sind mit der Verzoegerung zusammen weggefallen. */
   var rowMenuOpenKind = null, rowMenuOpenIdx = null, rowMenuEl = null;
 
   function menuRowSel(){ return ".mqa-row[data-ri], .mqa-row[data-viewed]"; }
@@ -1215,28 +1220,12 @@
     var attr = rowMenuOpenKind === "result" ? "data-ri" : "data-viewed";
     return rowEl.getAttribute(attr) === String(rowMenuOpenIdx);
   }
-  function onRowHoverIn(e){
-    var rowEl = e.target.closest ? e.target.closest(menuRowSel()) : null;
-    if (!rowEl) return;
-    if (rowEl === hoverRowEl) return;   // already tracking — mouseover keeps firing as the pointer crosses child elements
-    clearTimeout(hoverTimer);
-    if (hoverRowEl && !isOpenRow(hoverRowEl)) hoverRowEl.classList.remove("is-menuready");
-    hoverRowEl = rowEl;
-    hoverTimer = setTimeout(function(){ rowEl.classList.add("is-menuready"); }, ROWMENU_HOVER_MS);
-  }
-  function onRowHoverOut(e){
-    var rowEl = e.target.closest ? e.target.closest(menuRowSel()) : null;
-    if (!rowEl) return;
-    if (e.relatedTarget && rowEl.contains(e.relatedTarget)) return;   // moved to a child, still inside the row
-    if (rowEl !== hoverRowEl) return;
-    clearTimeout(hoverTimer);
-    hoverRowEl = null;
-    if (!isOpenRow(rowEl)) rowEl.classList.remove("is-menuready");   // its dropdown is open -> keep the trigger visible
-  }
-  scroll.addEventListener("mouseover", onRowHoverIn);
-  scroll.addEventListener("mouseout", onRowHoverOut);
-  recentEl.addEventListener("mouseover", onRowHoverIn);
-  recentEl.addEventListener("mouseout", onRowHoverOut);
+  /* Die Sichtbarkeit des Zeilenmenues haengt jetzt an .mqa-row:hover in der CSS -- kein Zeitgeber
+     und keine is-menuready-Klasse mehr. Die Verzoegerung von 750ms vor einem Knopf, den man gerade
+     ansteuert, las sich wie eine haengende Oberflaeche.
+     Nebeneffekt, der zaehlt: die vier mouseover/mouseout-Zuhoerer auf den beiden Listen sind damit
+     weg. Sie liefen bei jeder Zeigerbewegung ueber die Ergebnisse, samt closest()-Suche pro
+     Ereignis -- :hover kostet nichts davon. */
 
   function itemForMenu(kind, idx){ return kind === "result" ? _rowData[idx] : _viewed[idx]; }
   function ensureRowMenu(){
@@ -1293,7 +1282,10 @@
       return;
     }
     try { fn({ type: typ, id: String(id == null ? "" : id), label: label, logo: logo }); } catch(e){}
-    close();
+    /* KEIN close(). Anheften ist eine Nebenhandlung, nicht das Ziel des Besuchs -- wer eine Marke
+       an die Leiste haengt, will meistens gleich die naechste anheften oder weitersuchen. Das
+       Zeilenmenue ist ohnehin schon zu (closeRowMenu im Aufrufer), also verschwindet genau das,
+       was verschwinden soll. Vorher schloss die ganze Palette und man musste sie neu oeffnen. */
   }
 
   function positionRowMenu(btn){
@@ -1358,7 +1350,7 @@
 
   /* ---------- keyboard selection ---------- */
   function refreshRows(){
-    clearTimeout(hoverTimer); hoverRowEl = null; closeRowMenu();   // stale rows are about to be replaced
+    closeRowMenu();   // stale rows are about to be replaced
     // results and actions are separate containers now -> query the modal (DOM order keeps results first).
     // only rows that are actually on screen: the actions block is hidden in command mode, and
     // keyboard nav must not run through invisible entries

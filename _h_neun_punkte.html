@@ -1,0 +1,154 @@
+<meta charset="utf-8"><title>Die neun Punkte vom 24.08.</title>
+<style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif}#buehne{padding:24px;width:1240px}
+#eng{width:520px}#out{padding:10px;font:11px/1.5 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body><div id="buehne"></div><div id="eng"></div><pre id="out">laeuft…</pre>
+<script>
+/* Was hier geprueft wird: dass die Dateien laden, dass die Regeln greifen, und die Zustaende, die
+   ohne Zeiger und ohne Uebergaenge messbar sind. Nicht pruefbar in dieser Umgebung: alles, was
+   einen echten Zeiger braucht (:hover), und wie Bewegungen aussehen -- das Fenster ist hier 0x0
+   und Uebergaenge laufen nicht. Beides steht unten ausdruecklich dabei. */
+window.__err=[]; window.addEventListener("error",function(e){window.__err.push(String(e.message));});
+try { for (var i=window.localStorage.length-1;i>=0;i--){ var k=window.localStorage.key(i);
+  if (k && /^upt_|^uhm_|^mqa_/.test(k)) window.localStorage.removeItem(k); } } catch(e){}
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+
+var D=["core.css","core.js","prompts-table.css","prompts-table.js",
+       "performance-radar.css","performance-radar.js","quick-actions.css","quick-actions.js",
+       "opportunities.css","opportunities.js",
+       "bubble/prompts_table_bubble.html","bubble/performance_radar_bubble.html",
+       "bubble/quick_actions_bubble.html"];
+var T={};
+Promise.all(D.map(hol)).then(function(t){
+  D.forEach(function(f,i){ T[f]=t[i]; });
+  ["core.css","prompts-table.css","performance-radar.css","quick-actions.css","opportunities.css"]
+    .forEach(function(f){ var s=document.createElement("style"); s.textContent=T[f]; document.head.appendChild(s); });
+  var s2=document.createElement("style"); s2.id="animAus";
+  s2.textContent="*,*::before,*::after{transition:none !important;animation:none !important}";
+  document.head.appendChild(s2);
+  ["bubble/prompts_table_bubble.html","bubble/performance_radar_bubble.html",
+   "bubble/quick_actions_bubble.html"].forEach(function(f){
+    var w=document.createElement("div"); w.innerHTML=wurzelAus(T[f]);
+    [].slice.call(w.children).forEach(function(el){
+      if (el.className && /-root/.test(el.className.toString())){
+        el.setAttribute("data-instance","x"); el.setAttribute("data-cdn-pin","x"); el.setAttribute("data-isdark","yes");
+      }
+      document.getElementById("buehne").appendChild(el);
+    });
+  });
+  ["core.js","prompts-table.js","performance-radar.js","quick-actions.js","opportunities.js"]
+    .forEach(function(f){ var j=document.createElement("script"); j.textContent=T[f]; document.head.appendChild(j); });
+  return new Promise(function(ok){ setTimeout(ok,1600); });
+}).then(function(){
+  var R={}, upt=document.querySelector(".upt-root"), uhm=document.querySelector(".uhm-root");
+  R.ladefehler = window.__err.slice(0,4);
+  R.gemountet = { promptsTable: !!upt, radar: !!uhm,
+                  quickActions: !!(window.MiraQuickActions && typeof window.MiraQuickActions.open === "function") };
+
+  window.renderPromptsTable(JSON.stringify({ instanceId:"x", view_active:"yes", totalCount:2,
+    rows:[{id:"1",prompt_text:"X",status:"active"},{id:"2",prompt_text:"Y",status:"active"}] }));
+
+  /* ── 4) Voreinstellung: Gruppierung an bei breiter Wurzel ── */
+  R.p4_default_breit = { istGruppiert: upt.classList.contains("is-grouped"),
+                         istListenmodus: upt.classList.contains("is-groups-wide") };
+
+  /* ── 1) Der hellere Kasten waechst nicht auf Sidebar-Hoehe ── */
+  var box = upt.querySelector(".up-box"), panel = upt.querySelector(".upt-grp-sidepanel");
+  /* Der Fall, um den es geht: die Gruppenliste ist HOEHER als die Tabelle. Die erste Fassung dieser
+     Messung hatte eine leere Liste und zwei Tabellenzeilen -- da war die Tabelle das hoehere
+     Element, das Panel streckte sich auf SIE, und beide Hoehen waren gleich, ohne dass das etwas
+     bewiesen haette. Also viele Gruppen und EINE Zeile. */
+  window.setPromptsTableGroups(JSON.stringify(
+    Array.apply(null, Array(14)).map(function(_, i){
+      return { id: "g" + i, name: "Gruppe " + i, prompt_count: 3, hex_light: "#888", hex_dark: "#888" };
+    })));
+  window.renderPromptsTable(JSON.stringify({ instanceId:"x", view_active:"yes", totalCount:1,
+    rows:[{id:"1",prompt_text:"nur eine Zeile",status:"active"}] }));
+  R.p1_kasten = { alignSelf: getComputedStyle(box).alignSelf,
+                  hintergrund: getComputedStyle(box).backgroundColor,
+                  kastenHoehe: Math.round(box.getBoundingClientRect().height),
+                  panelHoehe: panel ? Math.round(panel.getBoundingClientRect().height) : null,
+                  listeEintraege: panel ? panel.querySelectorAll(".upt-grp-sideitem").length : 0 };
+  /* Gegenprobe: OHNE align-self stretchte der Kasten auf die Panelhoehe. Genau diese Regel
+     kurz aushebeln und dasselbe messen -- ohne das ist "479 gegen 479" kein Ergebnis. */
+  var aus = document.createElement("style");
+  aus.textContent = ".up-root.is-grouped.is-groups-wide .up-box { align-self: stretch; }";
+  document.head.appendChild(aus);
+  R.p1_gegenprobe_ohne_regel = { kastenHoehe: Math.round(box.getBoundingClientRect().height),
+                                 panelHoehe: panel ? Math.round(panel.getBoundingClientRect().height) : null };
+  aus.remove();
+
+  /* ── 2) Kennzahlen im Gruppenkopf verschwinden bei is-vnarrow ── */
+  var kpiProbe = document.createElement("div");
+  kpiProbe.className = "up-root upt-root"; kpiProbe.innerHTML = '<div class="upt-grp-kpis"><span>x</span></div>';
+  document.getElementById("eng").appendChild(kpiProbe);
+  R.p2_kpis = { ohneKlasse: getComputedStyle(kpiProbe.firstChild).display };
+  kpiProbe.classList.add("is-vnarrow");
+  R.p2_kpis.mitVnarrow = getComputedStyle(kpiProbe.firstChild).display;
+
+  /* ── 9) Einklapper haengt an :hover / :focus-visible, nicht an :focus-within ── */
+  var regeln = [].map.call(document.styleSheets, function(ss){
+    try { return [].map.call(ss.cssRules, function(r){ return r.cssText||""; }).join("\n"); } catch(e){ return ""; }
+  }).join("\n");
+  R.p9_einklapper = { hatFocusVisible: /is-tools-open .up-head-tools:has\(:focus-visible\)/.test(regeln),
+                      hatNochFocusWithin: /is-tools-open .up-head-tools:focus-within/.test(regeln) };
+
+  /* ── 3+8) quick-actions: Markup und Regeln ── */
+  R.p3_quick = {
+    ergebniszeileOhneChevron: !/data-ri="' \+ ri \+ '">[\s\S]{0,400}mqa-enter/.test(T["quick-actions.js"]),
+    moreSvgGestrichelt: /MORE_SVG\s*=\s*'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"/.test(T["quick-actions.js"]),
+    keinHoverTimerMehr: !/ROWMENU_HOVER_MS/.test(T["quick-actions.js"]),
+    regelAufHover: /\.mqa-row:hover \.mqa-rowmenu-btn/.test(regeln),
+    keineIsMenuready: !/is-menuready \.mqa-rowmenu-btn/.test(regeln),
+    opportunitiesNutztUcIcon: /UC\.icon\("moreHorizontal", 2\)/.test(T["opportunities.js"]),
+    keineSenkrechtenPunkteMehr: !/cy="5" r="1"/.test(T["opportunities.js"])
+  };
+  R.p8_filterhinweis = {
+    keinFragezeichen: !/\.mqa-ph-cmd \{ cursor: help/.test(regeln),
+    hatHoverfarbe: /\.mqa-ph-cmd:hover/.test(regeln)
+  };
+  R.p7_pin = { keinCloseMehr: !/logo: logo \}\); \} catch\(e\)\{\}\s*\n\s*close\(\);/.test(T["quick-actions.js"]) };
+
+  /* ── 6) Radar-Menue in der obersten Ebene ── */
+  var setBtn = uhm ? uhm.querySelector(".uhm-set-btn") : null;
+  var setMenu = uhm ? uhm.querySelector(".uhm-set-menu") : null;
+  R.p6_radar = { knopfDa: !!setBtn, menueDa: !!setMenu,
+                 browserKannOberEbene: typeof HTMLElement.prototype.showPopover === "function" };
+  if (setBtn && setMenu){
+    var trafRoot = 0;
+    uhm.addEventListener("click", function(){ trafRoot++; }, true);
+    setBtn.click();
+    R.p6_radar.nachKlick = {
+      popoverAttribut: setMenu.getAttribute("popover"),
+      istOffen: (function(){ try { return setMenu.matches(":popover-open"); } catch(e){ return "nicht pruefbar"; } })(),
+      klasse: /is-topline/.test(setMenu.className) ? "is-topline" : "(keine)",
+      position: getComputedStyle(setMenu).position,
+      links: setMenu.style.left, oben: setMenu.style.top,
+      wrapOffen: uhm.querySelector(".uhm-set").classList.contains("is-open")
+    };
+    /* Der entscheidende Punkt: steigt ein Klick IM Menue noch zum Wurzel-Zuhoerer auf? Ein Portal
+       am <body> haette genau das gebrochen -- die ganze Menuelogik dieser Datei haengt daran. */
+    var opt = setMenu.querySelector("[data-scale], [data-weights], button, .up-pop-row");
+    R.p6_radar.klickImMenueErreichtWurzel = null;
+    if (opt){ var vor = trafRoot; opt.dispatchEvent(new MouseEvent("click", {bubbles:true}));
+              R.p6_radar.klickImMenueErreichtWurzel = trafRoot > vor; }
+  }
+
+  /* ── 5) Ein geschlossenes Dropdown darf die Leiste nicht offen halten ── */
+  var tools = upt.querySelector(".up-head-tools");
+  var trig  = upt.querySelector(".upt-tbtrig");
+  var sortWrap = upt.querySelector(".up-sort");
+  function tKl(){ return (upt.className||"").split(/\s+/).filter(function(x){return /^is-tools/.test(x)}).join(" ")||"(keine)"; }
+  R.p5_toolbar = { fnDa: !!(trig && sortWrap) };
+  if (trig && sortWrap){
+    trig.dispatchEvent(new PointerEvent("pointerenter"));
+    R.p5_toolbar.schritte = [];
+    window.__p5 = { tools: tools, trig: trig, sortWrap: sortWrap, upt: upt, tKl: tKl, R: R };
+  }
+  R.nichtPruefbar = "Fenster "  + window.innerWidth + "x" + window.innerHeight +
+    " -- alles mit echtem :hover und jede Bewegung. Die :hover-Regeln sind als REGEL geprueft (oben), nicht am Zeiger.";
+  document.getElementById("out").textContent = JSON.stringify(R,null,1);
+  window.__R=R; window.__fertig=true;
+}).catch(function(e){ document.getElementById("out").textContent="FEHLER: "+e.message+"\n"+e.stack; window.__fertig=true; });
+</script>

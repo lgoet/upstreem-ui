@@ -349,7 +349,11 @@
          table group headers, where a control that appears and disappears read as a glitch. */
       var menu = '<div class="uo-col-menu-wrap">'+
         '<button class="uo-col-kebab up-iconbtn" type="button" data-col="'+col.key+'" data-tip="Column actions" aria-label="Column actions" aria-haspopup="menu">'+
-          '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>'+
+          /* UC.icon("moreHorizontal") -- die eine Form, die im ganzen Haus fuer ein Punktemenue
+             steht (Lucide "ellipsis"). Hier standen vorher SENKRECHTE Punkte, und dazu gefuellt mit
+             r=1 statt gestrichelt: also an derselben Rolle ein anderes Bild UND eine andere Groesse
+             als in prompts-table, quick-actions, ask-mira, prompt-research und der Sidebar. */
+          UC.icon("moreHorizontal", 2) + '</button>'+
         '<div class="up-menu uo-col-menu" role="menu" aria-hidden="true">'+
           COLUMNS.filter(function(t){ return t.key !== col.key; }).map(function(t){
             return '<div class="up-pop-opt" role="menuitem" data-from="'+col.key+'" data-to="'+t.key+'"><span class="up-pop-label"><span class="uo-col-dot" style="background:'+t.dot+';"></span>Move all to '+t.label+'</span></div>';

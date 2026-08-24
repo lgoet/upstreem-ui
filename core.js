@@ -4004,6 +4004,14 @@
       menu.classList.remove("is-shown");
       menu.setAttribute("aria-hidden", "true");
       if (rec.onClose) { try { rec.onClose(!!committed); } catch(e){} }
+      /* Ein Ereignis am Wrapper, das aufsteigt -- damit ein Aufrufer auf das Schliessen reagieren
+         kann, OHNE dafuer einen Beobachter laufen zu lassen. Gebraucht von der einklappbaren
+         Werkzeugleiste in prompts-table: die haelt sich offen, solange ein Menue darin offen ist,
+         und erfuhr vom Schliessen bisher gar nichts -- sie blieb danach stehen (gemeldet am
+         24.08.). Ein Zustands-Callback pro Popover haette dasselbe geleistet, aber jeder Aufrufer
+         haette seinen eigenen schreiben muessen; ein aufsteigendes Ereignis kostet einen
+         Zuhoerer fuer beliebig viele Menues. */
+      try { wrap.dispatchEvent(new CustomEvent("up-popover-close", { bubbles: true })); } catch(e){}
     }
     /* Ein Dropdown, dessen Inhalt noch unterwegs ist, darf sich nicht oeffnen lassen. Sonst
        klappt ein 8px hoher, leerer Kasten auf, und das sieht nach kaputt aus, obwohl nur die
@@ -4089,7 +4097,13 @@
         var p = POPOVERS[i];
         if (!document.contains(p.wrap)){ POPOVERS.splice(i--, 1); continue; }
         if (!p.wrap.classList.contains("is-open")) continue;
+        /* p.menu ausdruecklich mit: liegt das Menue in der obersten Ebene (popover) oder in einem
+           Portal, ist es KEIN Nachfahre von wrap mehr, und ein Klick auf einen seiner eigenen
+           Eintraege zaehlte sonst als Klick nach draussen -- das Menue schloesse sich unter der
+           Hand des Nutzers. Solange das Menue wie ueblich im wrap steckt, aendert die Zeile
+           nichts: der erste Test greift dann schon. */
         if (p.wrap.contains(e.target)) continue;   // press inside the trigger or the menu itself
+        if (p.menu && p.menu.contains(e.target)) continue;
         dropEscape(p.menu);
         p.wrap.classList.remove("is-open");
         p.menu.classList.remove("is-shown");

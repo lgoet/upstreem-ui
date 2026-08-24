@@ -151,6 +151,23 @@
    Wrapper setzt -- eine zweite Markierung waere eine zweite Wahrheit ueber denselben Zustand. */
 .uhm-root:has(.is-open) { position: relative; z-index: 40; }
 
+/* ── In der obersten Ebene ────────────────────────────────────────────────────────────────────
+   Die Regel darueber ist der RUECKFALL fuer Browser ohne popover -- sie bleibt, weil sie in
+   vielen Faellen ausreicht. Kann der Browser die oberste Ebene, hebt performance-radar.js das
+   Menue dorthin und setzt .is-topline dazu. Dann haengt es am Viewport, nicht mehr an .uhm-set,
+   und die Koordinaten kommen aus dem JS.
+
+   Die vier Nullen raeumen die Standardregeln des Browsers fuer [popover] weg: der setzt von
+   sich aus Rahmen, Polsterung, Hintergrund und inset:0 -- ohne das stuende das Menue mit einem
+   fremden schwarzen Rahmen mitten im Fenster. */
+.uhm-set-menu.is-topline, .uhm-pick-menu.is-topline {
+  position: fixed; right: auto; bottom: auto;
+  margin: 0; border-width: 1px; padding: var(--up-dd-pad); overflow: visible;
+}
+/* Die Bewegung selbst bleibt die des Menues (.is-shown). Der Browser blendet ein Element der
+   obersten Ebene nicht aus, solange es offen ist -- das Ausblenden erledigt die Uhr im JS, das
+   Menue nimmt vorher noch seine 200ms Deckkraft mit. */
+
 .uhm-pick-menu {
   position: absolute; top: calc(100% + var(--up-dd-gap)); right: 0; z-index: 60;
   width: 520px; max-width: calc(100vw - 32px);
