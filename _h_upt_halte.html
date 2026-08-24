@@ -1,0 +1,147 @@
+<meta charset="utf-8"><title>prompts-table: Halteflaeche (3)</title>
+<style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif}#buehne{padding:24px;width:1240px}
+#out{padding:10px;font:11px/1.5 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body><div id="buehne"></div><pre id="out">laeuft…</pre>
+<script>
+/* Drei Behauptungen, jede mit Gegenprobe:
+   1. list-filter-plus steckt im Knopf (fuenf Pfade, erster "M12 5H2").
+   2. Die Halteflaeche ist 16px groesser als die Leiste -- geprueft mit elementFromPoint, weil das
+      die Frage beantwortet, die zaehlt: WAS liegt an dieser Stelle unter dem Zeiger. Gegenprobe:
+      24px draussen darf es NICHT mehr die Leiste sein.
+   3. Das Layout verschiebt sich dabei um NULL Pixel. Gemessen mit und ohne die Regel -- padding
+      plus gegengerechneter Aussenabstand ist genau dann richtig, wenn beide Messungen gleich sind.
+      Ohne diese Gegenprobe waere "sieht gleich aus" die ganze Begruendung. */
+window.__err=[]; window.addEventListener("error",function(e){window.__err.push(String(e.message));});
+try { for (var i=window.localStorage.length-1;i>=0;i--){ var k=window.localStorage.key(i);
+  if (k && /upt_/.test(k)) window.localStorage.removeItem(k); } } catch(e){}
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=["core.css","core.js","prompts-table.css","prompts-table.js","bubble/prompts_table_bubble.html"];
+Promise.all(D.map(hol)).then(function(t){
+  var m={}; D.forEach(function(f,i){ m[f]=t[i]; });
+  ["core.css","prompts-table.css"].forEach(function(f){
+    var s=document.createElement("style"); s.textContent=m[f]; s.dataset.name=f; document.head.appendChild(s); });
+  var s2=document.createElement("style"); s2.textContent="*,*::before,*::after{transition:none !important;animation:none !important}"; document.head.appendChild(s2);
+  var w=document.createElement("div"); w.innerHTML=wurzelAus(m["bubble/prompts_table_bubble.html"]);
+  var r=w.querySelector(".upt-root");
+  r.setAttribute("data-instance","tb"); r.setAttribute("data-cdn-pin","tb"); r.setAttribute("data-isdark","no");
+  document.getElementById("buehne").appendChild(r);
+  var j=document.createElement("script"); j.textContent=m["core.js"]; document.head.appendChild(j);
+  var j2=document.createElement("script"); j2.textContent=m["prompts-table.js"]; document.head.appendChild(j2);
+  return new Promise(function(ok){ setTimeout(ok,1400); });
+}).then(function(){
+  var root=document.querySelector(".upt-root");
+  window.renderPromptsTable(JSON.stringify({ instanceId:"tb", view_active:"yes", totalCount:2,
+    rows:[{id:"1",prompt_text:"Was ist X?",status:"active"},{id:"2",prompt_text:"Was ist Y?",status:"active"}] }));
+  var R={};
+  /* Das Fenster ist in dieser Umgebung 0x0. Damit ist elementFromPoint fuer JEDEN Punkt null --
+     innen wie aussen -- und der Treffertest weiter unten sagt nichts aus. Er bleibt drin, damit
+     er in einem echten Browser etwas sagt, aber die Zahl daneben verhindert, dass ihn jemand
+     (auch ich) als Befund liest. Die Halteflaeche wird stattdessen GEOMETRISCH belegt: Ueberstand
+     des gepolsterten Kastens gegenueber der sichtbaren Kante, und Abstand zur Tabelle darunter. */
+  R.fenster = { breite: window.innerWidth, hoehe: window.innerHeight,
+                treffertestBrauchbar: window.innerWidth > 0 && window.innerHeight > 0 };
+  var tools=root.querySelector(".up-head-tools");
+  var trig=root.querySelector(".upt-tbtrig");
+  var exp=root.querySelector(".up-export");
+  var head=root.querySelector(".up-head");
+  var heading=root.querySelector(".up-heading");
+  var thead=root.querySelector(".up-thead");
+
+  /* 1) ICON */
+  R.icon = { pfade: trig.querySelectorAll("path").length,
+             ersterPfad: trig.querySelector("path") ? trig.querySelector("path").getAttribute("d") : null,
+             allePfade: [].map.call(trig.querySelectorAll("path"), function(p){ return p.getAttribute("d"); }) };
+
+  /* 2) HALTEFLAECHE. Die SICHTBARE Kante ist die des Export-Knopfes bzw. des Ausloesers, nicht die
+     des gepolsterten Kastens -- deshalb wird von den KINDERN aus gemessen. */
+  function sichtbareKante(){
+    var l=Infinity,t=Infinity,rr=-Infinity,b=-Infinity;
+    [].forEach.call(tools.children, function(c){
+      var q=c.getBoundingClientRect(); if (!q.width && !q.height) return;
+      l=Math.min(l,q.left); t=Math.min(t,q.top); rr=Math.max(rr,q.right); b=Math.max(b,q.bottom);
+    });
+    return { left:l, top:t, right:rr, bottom:b };
+  }
+  function wasLiegtDa(x,y){
+    var el=document.elementFromPoint(x,y);
+    if (!el) return "(nichts)";
+    if (tools.contains(el) || el===tools) return "LEISTE";
+    var cl=(el.className||"").toString().split(/\s+/).filter(function(c){return /^(up|upt)-/.test(c);});
+    return (cl[0]||el.tagName.toLowerCase());
+  }
+  var k = sichtbareKante();
+  R.kastenVsSichtbar = {
+    kasten: { l: Math.round(tools.getBoundingClientRect().left), t: Math.round(tools.getBoundingClientRect().top),
+              r: Math.round(tools.getBoundingClientRect().right), b: Math.round(tools.getBoundingClientRect().bottom) },
+    sichtbar: { l: Math.round(k.left), t: Math.round(k.top), r: Math.round(k.right), b: Math.round(k.bottom) },
+    ueberstand: { links: Math.round(k.left - tools.getBoundingClientRect().left),
+                  oben: Math.round(k.top - tools.getBoundingClientRect().top),
+                  rechts: Math.round(tools.getBoundingClientRect().right - k.right),
+                  unten: Math.round(tools.getBoundingClientRect().bottom - k.bottom) }
+  };
+  var my = Math.round((k.top + k.bottom) / 2);
+  var mx = Math.round(exp.getBoundingClientRect().left + exp.getBoundingClientRect().width/2);
+  /* Der Kasten darf die Tabelle NICHT beruehren: sonst faengt er Klicks ab, die dem Sortierkopf
+     gehoeren. 16px nach unten sind genau die margin-bottom von .up-head, es muss also aufgehen. */
+  R.abstandZurTabelle = thead ? Math.round(thead.getBoundingClientRect().top - tools.getBoundingClientRect().bottom) : null;
+  R.trefferpruefung = {
+    /* 8px im Rand: muss die Leiste sein. */
+    innen8_oben:   wasLiegtDa(mx, Math.round(k.top) - 8),
+    innen8_unten:  wasLiegtDa(mx, Math.round(k.bottom) + 8),
+    innen8_rechts: wasLiegtDa(Math.round(k.right) + 8, my),
+    innen8_links:  wasLiegtDa(Math.round(k.left) - 8, my),
+    /* GEGENPROBE: 24px draussen darf es NICHT mehr die Leiste sein. */
+    aussen24_oben:   wasLiegtDa(mx, Math.round(k.top) - 24),
+    aussen24_rechts: wasLiegtDa(Math.round(k.right) + 24, my),
+    aussen24_unten:  wasLiegtDa(mx, Math.round(k.bottom) + 24)
+  };
+
+  /* 3) LAYOUT: mit und ohne die Regel messen. Gleich = padding und Aussenabstand heben sich auf. */
+  function masse(){
+    return { kopfHoehe: Math.round(head.getBoundingClientRect().height),
+             kopfOben: Math.round(head.getBoundingClientRect().top),
+             exportRechts: Math.round(exp.getBoundingClientRect().right),
+             exportOben: Math.round(exp.getBoundingClientRect().top),
+             ueberschriftLinks: Math.round(heading.getBoundingClientRect().left),
+             theadOben: thead ? Math.round(thead.getBoundingClientRect().top) : null };
+  }
+  R.layout = { mitRegel: masse() };
+  var aus = document.createElement("style");
+  aus.textContent = ".up-root:has(.up-toolgroup) .up-head-tools { padding: 0; margin: 0 0 0 auto; }";
+  document.head.appendChild(aus);
+  R.layout.ohneRegel = masse();
+  aus.remove();
+  R.layout.gleich = JSON.stringify(R.layout.mitRegel) === JSON.stringify(R.layout.ohneRegel);
+
+  /* 4) VERZOEGERUNG: 500ms bis zum Zuklappen. */
+  function warte(ms){ return new Promise(function(ok){ setTimeout(ok,ms); }); }
+  function kl(){ return (root.className||"").split(/\s+/).filter(function(x){return /^is-tools/.test(x)}).join(" ")||"(keine)"; }
+  trig.dispatchEvent(new PointerEvent("pointerenter"));
+  return warte(200).then(function(){
+    R.verzoegerung = { nach_hover_200ms: kl() };
+    tools.dispatchEvent(new PointerEvent("pointerleave"));
+    return warte(300);
+  }).then(function(){
+    R.verzoegerung.nach_verlassen_300ms = kl();     /* muss noch offen sein */
+    return warte(300);
+  }).then(function(){
+    R.verzoegerung.nach_verlassen_600ms = kl();     /* jetzt zu */
+    /* Und die Gegenprobe: kurz raus und wieder rein darf NICHT zuklappen. */
+    trig.dispatchEvent(new PointerEvent("pointerenter"));
+    return warte(200);
+  }).then(function(){
+    tools.dispatchEvent(new PointerEvent("pointerleave"));
+    return warte(300);
+  }).then(function(){
+    tools.dispatchEvent(new PointerEvent("pointerenter"));   /* zurueck, bevor die 500ms um sind */
+    return warte(400);
+  }).then(function(){
+    R.verzoegerung.kurz_raus_und_zurueck = kl();     /* muss offen geblieben sein */
+    R.fehler = window.__err;
+    document.getElementById("out").textContent = JSON.stringify(R,null,1);
+    window.__R=R; window.__fertig=true;
+  });
+}).catch(function(e){ document.getElementById("out").textContent="FEHLER: "+e.message+"\n"+e.stack; window.__fertig=true; });
+</script>

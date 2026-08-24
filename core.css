@@ -192,6 +192,37 @@
        nicht gemalt wird, laeuft der Uebergang nicht und das Ereignis kommt nie. */
     .up-root.is-tools-shown .up-toolgroup-in { overflow: visible; }
 
+    /* ── Die Halteflaeche ist 16px groesser als die Leiste ────────────────────────────────────
+       Solange der Zeiger hier drin ist, klappt die Werkzeuggruppe nicht zu. Ohne den Rand liegt
+       die Grenze genau auf der Knopfkante: einmal am Rand vorbeigefahren, und die Leiste faehrt
+       zusammen, obwohl der Nutzer sie noch benutzen wollte.
+
+       padding wachsen lassen und die Aussenabstaende gegenrechnen -- so wird die Flaeche groesser,
+       ohne dass sich im Layout ein Pixel verschiebt. margin-left bleibt `auto`: das ist die
+       Rechtsausrichtung der ganzen Leiste, und ein Wert dort statt auto schoebe sie nach links.
+       Nach links reicht die Flaeche trotzdem 16px weiter, weil das padding die Kastenkante
+       verschiebt und `auto` nur den Rest verteilt.
+
+       Nach unten sind die 16px genau die margin-bottom von .up-head -- die Flaeche endet also
+       exakt an der Tabelle und legt sich nicht ueber ihren Kopf. Waere sie groesser, faenge sie
+       Klicks ab, die dem Sortierkopf gehoeren.
+
+       :has(.up-toolgroup) statt einer Regel fuer alle: nur eine Leiste mit einklappbarer Gruppe
+       hat ueberhaupt etwas davon. Die anderen Tabellen sollen ihre Kastenmasse behalten. */
+    .up-root:has(.up-toolgroup) .up-head-tools {
+      padding: 16px; margin-top: -16px; margin-bottom: -16px; margin-right: -16px;
+    }
+    /* Die Polsterung reicht 16px nach links in eine Flaeche, die normalerweise leer ist -- aber
+       nicht immer: die Ueberschrift waechst mit der Auswahl ("0 selected" samt Loeschkreuz), und
+       auf einer schmalen Tabelle kommt sie der Leiste nahe. Ueberlappen sich beide, gewinnt beim
+       Klick die Leiste, weil sie im Markup SPAETER kommt -- und das Loeschkreuz waere tot.
+
+       position+z-index statt eines kleineren Randes: dass ein positioniertes Element mit z-index 1
+       ueber einem unpositionierten Geschwister liegt, ist eine Zusage der Spezifikation und
+       braucht keine Messung. In dieser Testumgebung liesse sich der Klick auch gar nicht pruefen
+       (das Fenster ist dort 0x0, elementFromPoint gibt fuer jeden Punkt null). */
+    .up-root:has(.up-toolgroup) .up-heading { position: relative; z-index: 1; }
+
     .up-iconbtn {
       display: inline-flex; align-items: center; justify-content: center;
       width: 32px; height: 32px; border: 0; border-radius: 8px;

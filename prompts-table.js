@@ -4279,8 +4279,10 @@
        Export-Knopf durch die Ecke faehrt.
 
        Beide Verzoegerungen sind Absichtserkennung, keine Zierde: 120ms bis zum Aufziehen laesst
-       ein Durchfahren unbeantwortet, 260ms bis zum Zuklappen laesst den Weg vom Ausloeser zum
-       ersten Werkzeug zu, ohne dass die Leiste dazwischen zuklappt.
+       ein Durchfahren unbeantwortet, 500ms bis zum Zuklappen laesst kurzes Herausrutschen zu --
+       um ein Menue herum, ueber eine Kante, oder einfach weil die Hand zittert. Dazu ist die
+       Haltefläche selbst 16px groesser als die Leiste (siehe .up-head-tools in core.css): beides
+       zusammen, nicht eines davon.
 
        Tastatur: der Fokus zaehlt wie der Zeiger, sofort und ohne Verzoegerung. Ein Ausloeser, den
        man nur mit der Maus erreicht, waere fuer jeden mit Tastatur eine verschlossene Tuer.
@@ -4295,7 +4297,7 @@
        Die Statusgruppe (Active/Inactive) klappt ABSICHTLICH nicht mit ein. Sie ist kein Filter,
        sondern die Antwort auf "was sehe ich hier gerade" -- sie zu verstecken nimmt Orientierung
        weg, nicht Ueberforderung. Ein Wort genuegt, wenn das anders sein soll. */
-    var TB_AUF_MS = 120, TB_ZU_MS = 260, TB_ANIM_MS = 200;
+    var TB_AUF_MS = 120, TB_ZU_MS = 500, TB_ANIM_MS = 200;
     var elToolgroup = null, elToolIn = null, elTbTrig = null, elTbCol = null;
     var tbGepinnt = false, tbZeiger = false;
     var tbUhrAuf = null, tbUhrZu = null, tbUhrFertig = null;
@@ -4344,11 +4346,11 @@
         elTbTrig.setAttribute("data-tip", "Search, filters and settings");
         elTbTrig.setAttribute("aria-label", "Show table tools");
         elTbTrig.setAttribute("aria-expanded", "false");
-        /* funnel-plus: der Trichter sagt "hier wird gefiltert", das Plus sagt "es kommt noch
-           mehr dazu" -- beides trifft zu, denn dahinter liegen neben den zwei Filtern auch
-           Suche, Sortierung, Gruppierung und die Tabelleneinstellungen. Das Zahnrad ist zwei
-           Knoepfe weiter schon vergeben. */
-        elTbTrig.innerHTML = UC.icon("funnelPlus", 2);
+        /* list-filter-plus: die Striche sagen "Liste", das Plus sagt "es kommt noch mehr dazu" --
+           beides trifft zu, denn dahinter liegen neben den zwei Filtern auch Suche, Sortierung,
+           Gruppierung und die Tabelleneinstellungen. Das Zahnrad ist zwei Knoepfe weiter schon
+           vergeben. */
+        elTbTrig.innerHTML = UC.icon("listFilterPlus", 2);
       }
       /* Alles einsammeln, was in die Gruppe gehoert: jedes direkte Kind ausser der Statusgruppe,
          dem Export-Knopf und den beiden eigenen Knoepfen. Ueber eine Ausschlussliste und nicht
