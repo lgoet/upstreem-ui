@@ -220,11 +220,13 @@
          abschneiden (Inhalt komplett unerreichbar) oder scrollen (Inhalt bleibt erreichbar, nur
          bei ungewoehnlich langen Beitraegen sichtbar). scrollErlaubt: true waehlt zweiteres bewusst
          -- nur fuer Reddit, die anderen Anbieter behalten kein-Scroll, da deren Player nie eigenen
-         Overflow haben. 500px ist Reddits eigener Beispielwert aus deren Embed-Dokumentation
-         (data-embed-height="500"), naeher an einem typischen Beitrag als die vorherigen 300. */
+         Overflow haben. Die Hoehe selbst zielt DESHALB auf den typischen Fall, nicht den langen:
+         500px (Reddits eigener Beispielwert) liess kurze Beitraege mit viel Leerraum unten stehen.
+         300px trifft einen kurzen Beitrag ohne Bild naeher -- und laengere Beitraege sind jetzt
+         nur noch scrollbar statt abgeschnitten, keine verlorene Information mehr. */
       key: "reddit", label: "Reddit",
       passt: function (u) { return /reddit\.com\/r\/[^\/]+\/comments\/[a-z0-9]+/i.test(u); },
-      art: "iframe", hoehe: 500, scrollErlaubt: true,
+      art: "iframe", hoehe: 300, scrollErlaubt: true,
       src: function (u) {
         var m = /reddit\.com(\/r\/[^\/]+\/comments\/[^?#]*)/i.exec(u);
         return "https://embed.reddit.com" + (m ? m[1] : "") + "?embed=true";

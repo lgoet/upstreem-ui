@@ -133,8 +133,10 @@
    Wrapper-Rahmen lag direkt daneben und ergab am unteren Rand zwei sichtbare Linien
    uebereinander, derselbe Effekt wie die doppelte Gridline bei der Citation-Conversion-Tabelle
    weiter unten in dieser Datei -- nur einer der beiden Rahmen darf stehen bleiben, und der von
-   Reddit selbst laesst sich (cross-origin) nicht abschalten. */
-.uud-frame[data-anbieter="reddit"] { border: 0; }
+   Reddit selbst laesst sich (cross-origin) nicht abschalten. Radius aus demselben Grund mit weg:
+   ohne EIGENEN Rahmen schnitt unser rundes overflow:hidden oben in Reddits eigene, eckige Karte
+   hinein -- es sah aus, als fehlten die oberen Ecken, statt sie nur abzurunden. */
+.uud-frame[data-anbieter="reddit"] { border: 0; border-radius: 0; }
 
 /* Die Skript-Einbettungen bringen ihre eigene Breite mit und ignorieren sie gern. Der Wrapper
    zwingt sie in die Spalte, ohne ihnen die Hoehe vorzuschreiben -- die kennt nur der Anbieter. */
