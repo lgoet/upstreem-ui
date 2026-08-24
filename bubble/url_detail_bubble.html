@@ -63,15 +63,16 @@
                           auseinander, wenn sie nebeneinander stehen.
       description         die Meta-Beschreibung. Darf HTML-kodiert sein (&amp;) -- die
                           Komponente dekodiert einmal und schreibt sie als Text zurueck.
-      markdown_summary    NICHT hier mitschicken. Es ist JSON IN JSON, und Bubble setzt den
-                          Payload zwischen Backticks: das Template-Literal frisst die Escapes der
-                          inneren Anfuehrungszeichen, und danach ist nicht mehr zu unterscheiden,
-                          ob ein ": zur Struktur gehoert oder zum Text. Der GANZE Payload wird
-                          unlesbar, nicht nur die Zusammenfassung. Gemessen am 23.08.: derselbe
-                          Payload als Bytes array:1, durch den Backtick null.
-                          Stattdessen setUrlDetailSummary mit einem EIGENEN Backtick. Dort steht
-                          der Text fuer sich und kann nichts zerlegen. Reiner Text oder
-                          {"summary": "..."} -- beides wird gelesen.
+      markdown_summary    Darf GENAU so mitgeschickt werden, wie die RPC es liefert -- auch
+                          wenn es selbst unescaptes JSON ist ({"summary": "...", roh, ohne \"
+                          davor). Die Komponente erkennt dieses eine, bekannte Muster, zieht das
+                          Feld gezielt heraus und liest den Rest normal weiter. Gemessen (24.08.,
+                          der reale ADAC-Payload aus einem Bugreport): 14 Felder, 11 Firmen,
+                          Zusammenfassung -- alle korrekt, 0 Konsolenfehler.
+                          Optional: window.setUrlDetailSummary("INSTANCE_ID", <text>) fuer
+                          Aufbauten, die markdown_summary als EIGENEN Bubble-Wert getrennt vom
+                          Rest der Zeile haben. Wird er gerufen, gewinnt er; sonst zaehlt
+                          automatisch das Feld aus dem DETAIL-Payload.
       companies           [{company_id, company_name, logo_url}, ...] -> die Mention-Chips
 
   ── Felder von conversion ───────────────────────────────────────────────────────────────────
@@ -97,39 +98,40 @@
   EIN Backtick je Aufruf, roher JSON-Text -- dasselbe Muster wie in JEDER anderen Komponente
   dieses Repos. Kein Objekt, das aus mehreren Backtick-Werten zusammengebaut wird: jeder
   zusaetzliche Backtick in einem Statement ist eine zusaetzliche Stelle, an der Bubbles rohe
-  Einfuegung auf JavaScript-Syntax trifft statt auf den geteilten Textreparatur-Weg (readBubble,
-  core.js Repair 6), der genau dafuer gebaut ist.
+  Einfuegung auf JavaScript-Syntax trifft statt auf den geteilten Textreparatur-Weg (readBubble),
+  der genau dafuer gebaut ist.
 
   Zum Wiring: den Wert ZWISCHEN den Anfuehrungszeichen ersetzen, z.B. wird aus
   "title":"Festivals in Deutschland..."  ->  "title":<dein Bubble-Ausdruck>
   Die Anfuehrungszeichen bleiben stehen. Ein Wert, der selbst ein " enthaelt (ein Titel mit
   Zitat, ein Firmenname mit Anfuehrungszeichen), bricht NICHT mehr: readBubble erkennt am
-  naechsten Zeichen, ob das " zur Struktur gehoert (dahinter , : } ] oder Ende) oder zum Text,
-  und repariert nur dort, wo es noetig ist. Gemessen (24.08.): Titel mit Zitat, Firmenname mit "
-  und Apostroph, Zusammenfassung mit " -- alle liefen roh, ohne Escaping, unveraendert durch.
+  naechsten Zeichen, ob das " zur Struktur gehoert oder zum Text, und repariert nur dort, wo es
+  noetig ist. markdown_summary hat zusaetzlich sein EIGENES, bekanntes Muster erkannt -- auch
+  wenn es selbst unescaptes JSON ist, darf es einfach im Payload stehen bleiben. Gemessen
+  (24.08., realer ADAC-Payload aus einem Bugreport, wortgleich): Titel mit Zitat, elf
+  Firmennamen, eine Zusammenfassung mit eigenem JSON-in-JSON -- alle liefen roh durch, 0
+  Konsolenfehler.
 
-  markdown_summary steht NICHT in DETAIL -- es ist JSON IN JSON und braucht einen EIGENEN
-  Backtick (SUMMARY unten), sonst verwechselt der Parser die inneren Anfuehrungszeichen mit der
-  aeusseren Struktur. Einzige Ausnahme, eigener Grund.
+  Jeder der drei Aufrufe unten steht in einem EIGENEN try/catch: fehlt einer der Bubble-
+  Ausdruecke (noch), reisst das NICHT die anderen beiden mit. Genau das ist am 24.08. passiert --
+  ein undefinierter Wert hat per ReferenceError den ganzen Schritt gestoppt, auch die Aufrufe
+  DAVOR liefen dadurch nie durch.
 
   (function () {
     var INSTANCE_ID = "INSTANCE_ID";   // muss zum data-instance des Elements passen
 
-    var DETAIL = `{"url":"https://www.paulcamper.de/magazin/festivals-2025-in-deutschland","title":"Festivals in Deutschland mit Camping: der Guide für Camper","domain":"paulcamper.de","favicon":"https://www.google.com/s2/favicons?domain=paulcamper.de&sz=128","url_type":"listicle","citation_type":"Brand_Platform","last_seen":"2026-08-23T13:25:01.38037+00:00","domain_share":99.15,"global_share":11.60,"global_rank":1,"description":"Die besten Festivals in Deutschland mit Camping – Techno, Rock, Metal, Reggae &amp; Elektro. Mit dem Camper campst du direkt vor Ort, mitten im Geschehen.","companies":[{"logo_url":"https://www.google.com/s2/favicons?domain=airbeat-one.de&sz=64","company_id":"c392c676-6327-4874-8e3f-a919fff7a76c","company_name":"Airbeat One Festival"}]}`;
-
-    var SUMMARY = `{"summary": "Der Festivalguide von Paulcamper stellt die beliebtesten Open-Air-Festivals in Deutschland vor."}`;
+    var DETAIL = `{"url":"https://www.paulcamper.de/magazin/festivals-2025-in-deutschland","title":"Festivals in Deutschland mit Camping: der Guide für Camper","domain":"paulcamper.de","favicon":"https://www.google.com/s2/favicons?domain=paulcamper.de&sz=128","url_type":"listicle","citation_type":"Brand_Platform","last_seen":"2026-08-23T13:25:01.38037+00:00","domain_share":99.15,"global_share":11.60,"global_rank":1,"description":"Die besten Festivals in Deutschland mit Camping – Techno, Rock, Metal, Reggae &amp; Elektro. Mit dem Camper campst du direkt vor Ort, mitten im Geschehen.","markdown_summary":"{"summary": "Der Festivalguide von Paulcamper stellt die beliebtesten Open-Air-Festivals in Deutschland vor."}","companies":[{"logo_url":"https://www.google.com/s2/favicons?domain=airbeat-one.de&sz=64","company_id":"c392c676-6327-4874-8e3f-a919fff7a76c","company_name":"Airbeat One Festival"}]}`;
 
     var CONVERSION = `[{"company_id":"215378ad-9322-498a-9331-b44d3d52a98b","company_name":"Nature One","logo_url":"https://www.google.com/s2/favicons?domain=nature-one.de&sz=64","role":"competitor","cited_runs":117,"mentioned_runs":73,"citation_conversion_pct":62.39}]`;
 
     var t = 0;
     (function go () {
-      if (typeof window.setUrlDetail === "function") {
-        window.setUrlDetail(INSTANCE_ID, DETAIL);
-        window.setUrlDetailSummary(INSTANCE_ID, SUMMARY);
-        window.setUrlDetailConversion(INSTANCE_ID, CONVERSION);
-        return;
-      }
-      if (t++ < 60) setTimeout(go, 100);
+      if (typeof window.setUrlDetail !== "function") { if (t++ < 60) setTimeout(go, 100); return; }
+      try { window.setUrlDetail(INSTANCE_ID, DETAIL); } catch (e) { if (window.console) console.error("[url-detail] setUrlDetail:", e); }
+      try { window.setUrlDetailConversion(INSTANCE_ID, CONVERSION); } catch (e) { if (window.console) console.error("[url-detail] setUrlDetailConversion:", e); }
+      /* Optional -- nur wenn markdown_summary als EIGENER Bubble-Wert vorliegt:
+      try { window.setUrlDetailSummary(INSTANCE_ID, `[SUMMARY_TEXT]`); } catch (e) { if (window.console) console.error("[url-detail] setUrlDetailSummary:", e); }
+      */
     })();
   })();
 

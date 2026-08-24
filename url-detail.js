@@ -52,6 +52,54 @@
   /* core exportiert kein isArr -- eine Zeile, kein Nachbau eines Bauteils. */
   function isArr(v) { return Object.prototype.toString.call(v) === "[object Array]"; }
 
+  /* markdown_summary kann MITTEN im DETAIL-Objekt stehen und dabei selbst unescaptes JSON sein:
+     {"summary": "..."} roh, ohne \" davor. Gemessen (24.08.): genau das bringt den Parser der
+     GANZEN Zeile durcheinander, nicht nur dieses eine Feld -- "Unexpected token ':'" auf dem
+     kompletten Payload, alle vierzehn Felder verloren, nicht nur die Zusammenfassung.
+     Deshalb: das Feld VOR dem eigentlichen Parsen roh herausziehen und den Rest davon befreien.
+     Greedy statt lazy -- findet das LETZTE Anfuehrungszeichen vor , oder } oder dem Ende, und das
+     ist bei Fliesstext zuverlaessiger als das erste (das waere die Klammer von "summary" selbst). */
+  function ziehMarkdownSummary(text){
+    var start = text.indexOf('"markdown_summary"');
+    if (start < 0) return { rest: text, roh: null };
+    var doppelpunkt = text.indexOf(":", start);
+    var wertStart = text.indexOf('"', doppelpunkt) + 1;
+    /* Nur bei GENAU diesem Muster greifen: {"summary" -- alles andere (schon sauberer Text, ein
+       anderer Aufbau) bleibt unangetastet und laeuft ueber den normalen Weg.
+       Die Grenze ist die literale Folge "}"  (Anfuehrungszeichen, Klammer zu, Anfuehrungszeichen)
+       -- TEXT-Ende, Objekt-Ende, aeussere Huelle-Ende in einem Zug. Eine erste Fassung suchte das
+       LETZTE Vorkommen einer schliessenden Klammer im Rest des Textes; das griff zu weit, sobald
+       markdown_summary NICHT das letzte Feld war (companies kam danach) und fasste die halbe
+       Firmenliste mit ein. Die literale 3-Zeichen-Folge ist eng genug, dass das FRUEHESTE
+       Vorkommen bereits das richtige ist -- gemessen an vier Faellen: Feld zuletzt, Feld vor
+       companies, sauberer Text ohne Sonderfall, sogar ein zusaetzliches Zitat mitten im Text. */
+    var muster = '{"summary"';
+    if (wertStart <= 0 || text.slice(wertStart, wertStart + muster.length) !== muster) return { rest: text, roh: null };
+    var i = text.indexOf('"}"', wertStart);
+    if (i < 0) return { rest: text, roh: null };
+    var roh = text.slice(wertStart, i + 2);
+    return { rest: text.slice(0, start) + '"markdown_summary": null' + text.slice(i + 3), roh: roh };
+  }
+
+  /* Wortgleich tryParseSummary aus dem bestehenden Zusammenfassungs-Widget der App -- keine neue
+     Erfindung, dieselbe Ausleseregel: erst JSON.parse (auch doppelt verpackt), sonst per Regex
+     "summary": "..." heraus, die vier gaengigen Escapes von Hand aufgeloest. */
+  function parseSummary(s){
+    if (!s) return "";
+    var t = String(s).trim();
+    try {
+      var p1 = JSON.parse(t);
+      if (typeof p1 === "string") {
+        try { var p2 = JSON.parse(p1); return (p2 && p2.summary) || p1; } catch (e2) { return p1; }
+      }
+      return (p1 && p1.summary) || t;
+    } catch (e) {
+      var m = t.match(/"summary"\s*:\s*"([\s\S]*?)"\s*}/i);
+      if (m && m[1]) return m[1].replace(/\\"/g, '"').replace(/\\n/g, "\n").replace(/\\r/g, "\r").replace(/\\t/g, "\t");
+      return t;
+    }
+  }
+
   /* ---- Die KPI-Leiste ------------------------------------------------------------------------
      Sechs Felder, jedes mit einer Erklaerkarte an der Ueberschrift. Der Text steht hier und nicht
      im Markup, damit Reihenfolge und Erklaerung nicht auseinanderlaufen koennen.
@@ -550,23 +598,13 @@
       return d2.value;
     }
     function renderSum() {
-      /* Der eigene Weg gewinnt: kommt die Zusammenfassung ueber setUrlDetailSummary, ist sie
-         unbeschaedigt. Das Feld im Payload bleibt als Rueckfall bestehen, damit ein bestehender
-         Aufbau nichts verliert. */
-      if (state.summary) { elSumSect.hidden = false; elSum.textContent = state.summary; return; }
-      var roh = d().markdown_summary;
-      var t = "";
-      if (roh && typeof roh === "object") t = txt(roh.summary);
-      else {
-        var s = txt(roh);
-        if (s) {
-          /* markdown_summary kommt als JSON-TEXT mit einem einzigen Feld. Ist es keins, gilt der
-             Text selbst als Zusammenfassung -- eine Zeile weniger Vertrag fuer die RPC. */
-          var p = UC.readBubble ? UC.readBubble(s) : null;
-          var o = isArr(p) ? p[0] : p;
-          t = (o && typeof o === "object" && txt(o.summary)) || s;
-        }
-      }
+      /* state.summary gewinnt, wenn setUrlDetailSummary eigens gerufen wurde; sonst das Feld aus
+         dem Payload -- beide durch dieselbe Ausleseregel (parseSummary). */
+      /* state.summary ist "" solange setUrlDetailSummary nie gerufen wurde -- ein leerer Text
+         zaehlt hier NICHT als "gewinnt", sonst verdeckt der leere Standardwert das echte Feld
+         aus dem Payload. Nur ein WIRKLICH gesetzter Text gewinnt. */
+      var roh = state.summary ? state.summary : d().markdown_summary;
+      var t = (roh && typeof roh === "object") ? txt(roh.summary) : parseSummary(roh);
       elSumSect.hidden = !t;
       if (t) elSum.textContent = t;
     }
@@ -679,9 +717,29 @@
     var ctrl = {
       instanceId: instanceId,
       setData: function (payload) {
-        var p = UC.readBubble ? UC.readBubble(payload) : null;
+        var text = (payload && typeof payload === "object") ? null : txt(payload);
+        var p = null, mitgerissen = null;
+        if (text) {
+          p = UC.readBubble ? UC.readBubble(text) : null;
+          /* markdown_summary kann MITTEN im Objekt stehen und selbst unescaptes JSON sein --
+             {"summary": "..."} roh. Gemessen (24.08.): das bringt den Parser der GANZEN Zeile
+             durcheinander, nicht nur dieses eine Feld. Erst NACHDEM der normale Weg das schon
+             erkannt hat (p ist keine brauchbare Struktur), wird das Feld gezielt herausgezogen
+             und der Rest neu versucht -- der Normalfall (Feld schon sauber oder gar nicht da)
+             bleibt unangetastet und laeuft ueber den geteilten Weg wie jedes andere Feld auch. */
+          if (!(p && typeof p === "object") && text.indexOf('"markdown_summary"') >= 0) {
+            var gezogen = ziehMarkdownSummary(text);
+            if (gezogen.roh != null) {
+              mitgerissen = gezogen.roh;
+              p = UC.readBubble ? UC.readBubble(gezogen.rest) : null;
+            }
+          }
+        } else {
+          p = payload;
+        }
         if (isArr(p)) p = p[0];
         var ok = p && typeof p === "object";
+        if (ok && mitgerissen != null && p.markdown_summary === null) p.markdown_summary = mitgerissen;
         state.fehler = ok ? "" : "The page data could not be read.";
         state.data = ok ? p : null;
         /* Der Ladezustand endet IMMER -- auch bei kaputtem Payload. Sonst laeuft das Skelett
@@ -704,28 +762,13 @@
         render();
         return true;
       },
-      /* Die Zusammenfassung hat einen EIGENEN Weg, und das ist kein Luxus: markdown_summary ist
-         JSON IN JSON. Bubble setzt den Payload zwischen Backticks, das Template-Literal frisst
-         die Escapes der inneren Anfuehrungszeichen, und danach ist nicht mehr zu unterscheiden,
-         ob ein ": zur Struktur gehoert oder zum Text -- der GANZE Payload wird unlesbar, nicht
-         nur die Zusammenfassung. Gemessen am 23.08.: derselbe Payload einmal als Bytes gelesen
-         (array:1) und einmal durch den Backtick (null).
-         In einem eigenen Backtick steht der Text fuer sich, ohne Struktur drumherum, und kann
-         nichts mehr zerlegen. */
+      /* Optional: fuer Aufbauten, die markdown_summary bereits als EIGENEN Bubble-Wert haben
+         (getrennt vom Rest der Zeile) -- dieselbe Ausleseregel wie beim eingebetteten Feld
+         (parseSummary), nur ohne den Umweg ueber setData. Wird dieser Setter nie gerufen, liest
+         renderSum() das Feld direkt aus dem Payload von setData. */
       setSummary: function (payload) {
         var roh = (payload && typeof payload === "object") ? payload : txt(payload);
-        if (roh && typeof roh === "object") { state.summary = txt(roh.summary); }
-        else {
-          var t = txt(roh);
-          /* Kommt er doch als {"summary": "..."} an, wird er ausgepackt -- sonst gilt der Text
-             selbst als Zusammenfassung. Ein Vertrag weniger fuer die RPC. */
-          if (t.charAt(0) === "{") {
-            var p2 = UC.readBubble ? UC.readBubble(t) : null;
-            var o2 = isArr(p2) ? p2[0] : p2;
-            t = (o2 && typeof o2 === "object" && txt(o2.summary)) || t;
-          }
-          state.summary = t;
-        }
+        state.summary = (roh && typeof roh === "object") ? txt(roh.summary) : parseSummary(roh);
         state.loading = false;
         render();
         return true;
