@@ -2517,6 +2517,50 @@
       return p;
     }
 
+    /* "Konnte nicht gelesen werden" ist als Meldung wertlos -- damit weiss niemand, wo er suchen
+       soll. Der haeufigste echte Fall ist gemessen: am 24.08. kam das Buendel ohne seine ersten
+       elf Zeichen an (das literale {"topics":[ vor dem dynamischen Teil des Bubble-Ausdrucks war
+       verschwunden), alles danach war unversehrt. Das kann niemand reparieren -- welcher
+       Schluessel dort stand, steht nirgends mehr im Text --, aber es laesst sich BENENNEN: ein
+       Text, der auf eine schliessende Klammer endet, ohne mit einer oeffnenden zu beginnen, hat
+       seinen Anfang verloren. */
+    function leseFehlerText(payload) {
+      var t = txt(payload).trim();
+      if (!t) return "We could not read your onboarding data. Please reload the page.";
+      /* Auf den ersten Blick beginnt so ein Text voellig heil -- der gemessene Fall fing mit
+         {"id": an. Verraten hat ihn erst die Klammerbilanz: irgendwo steht ein ] oder }, das
+         nichts schliesst, weil sein Gegenstueck vor dem Anfang lag. Gezaehlt wird ausserhalb von
+         Zeichenketten, sonst zaehlt eine Klammer in einem Markennamen mit. */
+      var tiefe = 0, imText = false, flucht = false;
+      for (var i = 0; i < t.length; i++) {
+        var c = t.charAt(i);
+        if (imText) {
+          if (flucht) { flucht = false; continue; }
+          if (c === "\\") { flucht = true; continue; }
+          if (c === '"') imText = false;
+          continue;
+        }
+        if (c === '"') { imText = true; continue; }
+        if (c === "{" || c === "[") tiefe++;
+        else if (c === "}" || c === "]") {
+          tiefe--;
+          if (tiefe < 0) {
+            return "The onboarding data is missing its beginning. Check the very start of the " +
+                   "expression in the Bubble step -- the literal text before the dynamic part.";
+          }
+        }
+      }
+      /* Eine offene Klammer allein reicht NICHT fuer die Diagnose "abgeschnitten": auch
+         "{kaputt::" hat eine, ist aber schlicht kein JSON -- und "pruef die Laengenbegrenzung"
+         waere dort ein falscher Rat. Gemessen. Also zusaetzlich verlangen, dass der Text
+         ueberhaupt wie JSON aussieht: mindestens ein sauber gequoteter Schluessel. */
+      if (tiefe > 0 && /"[^"]+"\s*:/.test(t)) {
+        return "The onboarding data is cut off at the end. The expression in the Bubble step is " +
+               "likely hitting a length limit.";
+      }
+      return "We could not read your onboarding data. Please reload the page.";
+    }
+
     /* Die Statuswerte des Datenmodells. Als Menge, damit ein nacktes Wort als Status erkannt
        werden kann, ohne dass jeder beliebige Text dafuer durchgeht. */
     var STATUS_WORTE = { draft:1, submitted:1, processing:1, running:1, queued:1,
@@ -2634,7 +2678,7 @@
         var b = lies(payload);
         if (isArr(b)) b = b[0];
         if (!b || typeof b !== "object") {
-          state.banner = "We could not read your onboarding data. Please reload the page.";
+          state.banner = leseFehlerText(payload);
           warteBeenden(); render(); return true;
         }
         /* Ein Buendel, das gelesen werden konnte, raeumt eine alte Fehlermeldung weg. Ohne diese
