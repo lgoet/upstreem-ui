@@ -265,21 +265,51 @@
      LUFT_UNTEN ist der Rand, der unter dem Eingabefeld stehen bleibt, damit es nicht auf der
      Kante klebt. */
   var LUFT_UNTEN = 28;
-  function heldenHoeheSetzen(){
+  /* Was zuletzt WIRKLICH geschrieben wurde. Der Grund steht im Trace vom 24.08.: diese Funktion
+     war mit 695ms auf 42 Aufrufe die teuerste der ganzen Seite -- 16.5ms JE AUFRUF, mehr als
+     jede andere. Sie liest (getBoundingClientRect) und schreibt dann (style.minHeight), und
+     genau diese Reihenfolge macht das Layout des Teilbaums bei jedem Aufruf ungueltig; der
+     naechste Aufruf muss es komplett neu rechnen lassen.
+     Der Witz daran: beim Ziehen der BREITE aendert sich weder innerHeight noch die Oberkante des
+     Kastens. Es wurde also 42 Mal derselbe Wert geschrieben, und jeder dieser Schreibzugriffe war
+     reine Layout-Vernichtung ohne jede Wirkung. Ein Vergleich davor kostet nichts und spart
+     alles. */
+  var letzteHoehe = -1;
+  function heldenHoeheJetzt(){
     var shell = root.querySelector('.upr-shell');
     if (!shell) return;
     /* In der Ergebnis- und der Laufansicht setzt die CSS min-height auf 0 und laesst den Inhalt
        oben beginnen. Ein Inline-Wert wuerde diese Regel schlagen, also hier wieder loeschen. */
     if (root.classList.contains('is-results') || root.classList.contains('is-running')){
-      shell.style.minHeight = '';
+      if (letzteHoehe !== 0){ shell.style.minHeight = ''; letzteHoehe = 0; }
       return;
     }
     var oben = shell.getBoundingClientRect().top;
     var frei = Math.round((window.innerHeight || 0) - oben - LUFT_UNTEN);
     /* Ein verdeckter Tab meldet 0 -- dann lieber nichts setzen als eine 0-Hoehe schreiben. */
     if (!(frei > 0)) return;
-    shell.style.minHeight = Math.max(520, frei) + 'px';
+    var wert = Math.max(520, frei);
+    if (wert === letzteHoehe) return;          /* unveraendert -> NICHT anfassen */
+    letzteHoehe = wert;
+    shell.style.minHeight = wert + 'px';
   }
+  /* Und zusaetzlich nur einmal pro Bild, nicht pro Resize-Ereignis: der Listener unten hing ohne
+     jede Drosselung an 'resize', und das feuert schneller als der Schirm zeichnet. rAF plus
+     Timer als Netz -- rAF allein feuert in einem Hintergrund-Tab nicht, dann bliebe die Hoehe
+     stehen. */
+  var heldenHoeheSetzen = (function(){
+    var raf = 0, t = 0;
+    function lauf(){
+      if (raf){ try { cancelAnimationFrame(raf); } catch(e){} raf = 0; }
+      if (t){ clearTimeout(t); t = 0; }
+      heldenHoeheJetzt();
+    }
+    return function(){
+      if (raf || t) return;
+      if (window.requestAnimationFrame) raf = requestAnimationFrame(lauf);
+      t = setTimeout(lauf, 32);
+    };
+  })();
   heldenHoeheSetzen();
   /* Bubble baut die Seite in Schueben auf: die Kopfzeile ueber der Komponente steht erst spaeter,
      und damit verschiebt sich die Oberkante des Kastens noch. */
