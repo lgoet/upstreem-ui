@@ -1,0 +1,86 @@
+<meta charset="utf-8"><title>onboarding: setStatus, alle Realtime-Formen</title>
+<style>
+  html, body { margin:0; min-height:100%; font-family: Geist, system-ui, sans-serif; background:#fff; }
+  #out { position:fixed; left:8px; bottom:8px; z-index:9999; font:10px/1.45 ui-monospace,monospace;
+         background:#111; color:#eee; padding:8px; max-width:52vw; max-height:46vh; overflow:auto;
+         white-space:pre-wrap; border-radius:6px; }
+</style>
+<body>
+<div class="up-root uob-root" data-instance="onboarding" data-isdark="no"
+     data-logo="https://upstreem.com/logo.svg" data-workflow-fn="bubble_fn_uobWorkflowStart"></div>
+<pre id="out">laeuft</pre>
+<script>
+/* DER GEMELDETE FALL (24.08.): "n8n setzt korrekt die status dinger, der realtime trigger ist
+   auch da -- aber das Event updatet die Steps nicht."
+   Ein Realtime-Ereignis kann in mehreren Formen ankommen, je nachdem wie es verdrahtet ist. Die
+   alte Fassung verstand NUR {status_phase: n} und gab bei allem anderen still false zurueck.
+   ?alt=1 laedt die Fassung von vor dem Fix als Gegenprobe. Die Datei dafuer liegt nicht im Repo
+   (sie wuerde als zweite, veraltete onboarding-page.js verrotten):
+       git show <commit-vor-dem-fix>:onboarding-page.js > _h_uob_alt.js */
+["uobStart","uobStep","uobTopics","uobWorkflowStart","uobPrompts","uobPlan","uobBrands"].forEach(function(n){
+  window["bubble_fn_"+n]=function(){};
+});
+
+/* Die Formen, in denen ein Status ankommen kann. Namen sagen, WOHER die Form kommt. */
+var FORMEN = [
+  { name:"phase_objekt",     nutz:{ status_phase:3 } },
+  { name:"nur_status_wort",  nutz:{ status:"processing" } },
+  { name:"status_plus_proz", nutz:{ status:"processing", progress_percent:55, status_label:"Mapping" } },
+  { name:"nur_prozent",      nutz:{ progress_percent:80 } },
+  { name:"supabase_record",  nutz:{ record:{ status:"processing", status_phase:2, progress_percent:30 } } },
+  { name:"supabase_new",     nutz:{ "new":{ status:"processing", status_phase:4, progress_percent:85 } } },
+  { name:"ganzes_projekt",   nutz:{ project:{ status:"processing", status_phase:2, progress_percent:35 } } },
+  { name:"nacktes_wort",     nutz:"processing", roh:true },
+  { name:"nackte_zahl",      nutz:"3", roh:true },
+  { name:"fertig_ready",     nutz:{ status:"ready" } },
+  { name:"fertig_phase5",    nutz:{ status_phase:5 } },
+  { name:"fehler",           nutz:{ status:"failed", last_error:"The website could not be reached." } },
+  { name:"muell",            nutz:"{kaputt::", roh:true }
+];
+
+var alt = /[?&]alt=1/.test(location.search);
+var uobDatei = alt ? "_h_uob_alt.js" : "onboarding-page.js";
+var files=["onboarding-page.css","core.css","core.js",uobDatei], texts={};
+Promise.all(files.map(function(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"})
+  .then(function(r){return r.text()}).then(function(t){texts[f]=t}); })).then(function(){
+    ["onboarding-page.css","core.css"].forEach(function(f){
+      var s=document.createElement("style"); s.textContent=texts[f]; document.head.appendChild(s); });
+    var j=document.createElement("script"); j.textContent=texts["core.js"]; document.head.appendChild(j);
+    var j2=document.createElement("script"); j2.textContent=texts[uobDatei]; document.head.appendChild(j2);
+    window.__fassung = { alt: alt, datei: uobDatei, neuerCodeDrin: texts[uobDatei].indexOf("statusAus") >= 0 };
+    window.__bereit = true;
+  });
+
+/* Was der Nutzer WIRKLICH sieht. Der Fortschritt der Spur ist das Mass dafuer, ob ein Status
+   angekommen ist: er ist die einzige Anzeige, die sich waehrend des Ladens bewegt. */
+window.lage = function(){
+  var r = document.querySelector(".uob-root");
+  var fill = r.querySelector("[data-bar]");
+  var b = r.querySelector("[data-banner]");
+  /* Welche Phase gerade laeuft, steht als Klasse is-now an [data-phase]. */
+  var ph = r.querySelector("[data-phase].is-now");
+  return {
+    schritt: (new URL(location.href)).searchParams.get("step"),
+    fortschritt: fill ? fill.style.width : null,
+    phaseText: ph ? (ph.textContent||"").trim().slice(0,44) : null,
+    phaseIndex: (function(){ var a=[].slice.call(r.querySelectorAll("[data-phase]"));
+                             for (var i=0;i<a.length;i++) if (a[i].classList.contains("is-now")) return i;
+                             return null; })(),
+    banner: (b && b.classList.contains("is-on")) ? (b.textContent||"").trim().slice(0,70) : ""
+  };
+};
+/* Immer aus demselben Startpunkt: laufende Uhr auf Phase 0. */
+window.starte = function(){
+  resetOnboarding("onboarding");
+  /* window.* statt des nackten Namens: die ALTE Fassung kennt setOnboardingBundle nicht, und ein
+     nicht deklarierter Bezeichner wirft ReferenceError statt undefined zu sein. */
+  if (window.setOnboardingBundle) {
+    window.setOnboardingBundle("onboarding", JSON.stringify({ project:{ status:"processing", status_phase:1, progress_percent:5 }, competitors:[], topics:[], prompts:[] }));
+  } else {
+    window.setOnboardingProject("onboarding", JSON.stringify({ status:"processing", status_phase:1, progress_percent:5 }));
+  }
+};
+window.schick = function(f){
+  return setOnboardingStatus("onboarding", f.roh ? f.nutz : JSON.stringify(f.nutz));
+};
+</script>

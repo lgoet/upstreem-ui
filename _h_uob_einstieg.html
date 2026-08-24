@@ -1,0 +1,108 @@
+<meta charset="utf-8"><title>onboarding: Einstieg je Status</title>
+<style>
+  html, body { margin: 0; min-height: 100%; font-family: Geist, system-ui, sans-serif; background:#fff; }
+  #out { position: fixed; left: 8px; bottom: 8px; z-index: 9999; font: 10px/1.45 ui-monospace, monospace;
+         background: #111; color: #eee; padding: 8px; max-width: 46vw; max-height: 44vh; overflow: auto;
+         white-space: pre-wrap; border-radius: 6px; }
+</style>
+<body>
+<div class="up-root uob-root" data-instance="onboarding" data-isdark="no"
+     data-logo="https://upstreem.com/logo.svg" data-workflow-fn="bubble_fn_uobWorkflowStart"></div>
+<pre id="out">laeuft</pre>
+<script>
+["uobStart","uobStep","uobTopics","uobWorkflowStart","uobPrompts","uobPlan","uobBrands"].forEach(function(n){
+  window["bubble_fn_"+n]=function(){};
+});
+
+/* ECHTES Buendel des Nutzers (24.08., Kaeltebringer) -- wortgleich uebernommen, nur gekuerzt auf
+   drei Wettbewerber und drei Themen, damit die Datei lesbar bleibt. Der Status wird je Fall
+   ausgetauscht, alles andere bleibt wie geliefert. */
+var BUENDEL = {
+  "topics": [
+    { "id":"1defeb4e-ebe8-46f1-a8cc-ba0a58af0825","name":"Split-Klimaanlagen","hex_dark":"#de1b22","selected":false,"hex_light":"#de1b22","sort_order":0 },
+    { "id":"ca0543ae-5bc7-4ce5-a72f-ae20d068c581","name":"Multi-Split-Anlagen","hex_dark":"#8b4c23","selected":false,"hex_light":"#8b4c23","sort_order":1 },
+    { "id":"bfa55d62-e02d-4e14-acc7-8934080fc1b1","name":"Klima-Montage","hex_dark":"#988552","selected":false,"hex_light":"#988552","sort_order":2 }
+  ],
+  "project": {
+    "id":"03099e2a-505a-4eec-addc-219e4103eac2","mode":"Brand","market":"DE","status":"ready",
+    "summary":"Kaeltebringer ist ein deutscher Online-Anbieter fuer Split-Klimaanlagen.",
+    "team_id":null,"user_id":"aea6e317-d901-419b-b2b2-5ca3573ea2f5","timezone":"Europe/Berlin",
+    "created_at":"2026-08-23T18:43:46.38799+00:00","last_error":null,
+    "updated_at":"2026-08-24T08:49:58.151251+00:00","website_url":"https://kaeltebringer.de",
+    "company_name":"Kaeltebringer","market_focus":null,"status_label":"Done","status_phase":5,
+    "website_input":"https://kaeltebringer.de","brand_industry":null,"business_model":"Hybrid",
+    "run_group_uuid":"6dd6e93d-ef9e-4029-9496-2a69576a3eae","website_domain":"kaeltebringer.de",
+    "billing_interval":null,"progress_percent":100,"stripe_checkout_url":null,
+    "selected_billing_plan_id":null,"stripe_checkout_session_id":null
+  },
+  "prompts": [],
+  "competitors": [
+    { "id":"ee7089ae-a279-401f-a8f7-595f840d4fee","url":"https://daikin.de/","name":"Daikin","domain":"daikin.de","selected":false,"favicon_url":"https://www.google.com/s2/favicons?domain=daikin.de&sz=64" },
+    { "id":"2c4a481e-026f-43f1-9312-1c18d1bd446e","url":"https://klimashop.de/","name":"KlimaShop","domain":"klimashop.de","selected":false,"favicon_url":"https://www.google.com/s2/favicons?domain=klimashop.de&sz=64" },
+    { "id":"785ef633-66d3-44c1-af0b-7a71dc582192","url":"https://klimaworld.com/","name":"Klimaworld","domain":"klimaworld.com","selected":false,"favicon_url":"https://www.google.com/s2/favicons?domain=klimaworld.com&sz=64" }
+  ]
+};
+
+function klon(){ return JSON.parse(JSON.stringify(BUENDEL)); }
+
+/* Die sechs Faelle aus der Vorgabe des Nutzers, plus die Realtime-Formen fuer setStatus. */
+var FAELLE = {
+  leer:        function(){ return null; },
+  draft:       function(){ var b=klon(); b.project.status="draft"; b.project.status_phase=null;
+                           b.project.progress_percent=0; b.competitors=[]; b.topics=[]; return b; },
+  submitted:   function(){ var b=klon(); b.project.status="submitted"; b.project.status_phase=1;
+                           b.project.progress_percent=10; b.competitors=[]; b.topics=[]; return b; },
+  processing:  function(){ var b=klon(); b.project.status="processing"; b.project.status_phase=3;
+                           b.project.progress_percent=55; b.competitors=[]; b.topics=[]; return b; },
+  ready:       function(){ return klon(); },
+  failed:      function(){ var b=klon(); b.project.status="failed"; b.project.status_phase=2;
+                           b.project.last_error="The website could not be reached."; return b; },
+  /* ready, aber Wettbewerber sind schon gewaehlt -> muss auf Topics stehen */
+  ready_comps: function(){ var b=klon(); b.competitors[0].selected=true; return b; },
+  /* ready, Themen schon gewaehlt -> muss auf Prompts stehen */
+  ready_topics:function(){ var b=klon(); b.competitors[0].selected=true; b.topics[0].selected=true; return b; }
+};
+
+var files=["onboarding-page.css","core.css","core.js","onboarding-page.js"], texts={};
+Promise.all(files.map(function(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"})
+  .then(function(r){return r.text()}).then(function(t){texts[f]=t}); })).then(function(){
+    ["onboarding-page.css","core.css"].forEach(function(f){
+      var s=document.createElement("style"); s.textContent=texts[f]; document.head.appendChild(s); });
+    var j=document.createElement("script"); j.textContent=texts["core.js"]; document.head.appendChild(j);
+    var j2=document.createElement("script"); j2.textContent=texts["onboarding-page.js"]; document.head.appendChild(j2);
+    window.__bereit = true;
+  });
+
+/* Ablesen, WAS der Nutzer gerade sieht -- nicht was im Zustand steht. */
+window.sicht = function(){
+  var r = document.querySelector(".uob-root");
+  if (!r) return { fehler: "keine Wurzel" };
+  var aktiv = r.querySelector(".uob-stepdot.is-active, [data-stepkey].is-active");
+  var lade = r.querySelector(".uob-load, [data-phases], .uob-phase");
+  var bannerEl = r.querySelector(".uob-banner, [data-banner]");
+  var sichtbar = function(el){ return !!(el && el.getClientRects().length); };
+  return {
+    schritt: (new URL(location.href)).searchParams.get("step"),
+    ladebildSichtbar: sichtbar(lade),
+    /* Der Banner wird per grid-template-rows:0fr + opacity:0 zugeklappt -- getClientRects()
+       meldet ihn dann TROTZDEM. Die erste Fassung dieser Messung hat deshalb einen stehenden
+       Banner gemeldet, den der Nutzer nie sieht. Also an is-on UND an der Deckkraft ablesen. */
+    banner: (bannerEl && bannerEl.classList.contains("is-on") &&
+             getComputedStyle(bannerEl).opacity !== "0")
+              ? (bannerEl.textContent||"").trim().slice(0,90) : "",
+    bannerTextImDom: bannerEl ? (bannerEl.textContent||"").trim().slice(0,60) : null,
+    fortschrittBreite: (function(){ var b = r.querySelector(".uob-track-fill, .uob-progress-fill");
+                                    return b ? b.style.width : null; })(),
+    formularSichtbar: sichtbar(r.querySelector('[data-field="business"]')),
+    wettbewerberSichtbar: sichtbar(r.querySelector(".uob-cardgrid, .uob-list")),
+    ueberschrift: (function(){ var h = r.querySelector(".uob-h1, .uob-title, h1, h2");
+                               return h ? (h.textContent||"").trim().slice(0,60) : null; })()
+  };
+};
+window.lauf = function(name){
+  resetOnboarding("onboarding");
+  var b = FAELLE[name]();
+  setOnboardingBundle("onboarding", b === null ? "" : JSON.stringify(b));
+  return name;
+};
+</script>

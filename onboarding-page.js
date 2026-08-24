@@ -31,7 +31,8 @@
                  sich der grosse Hintergrundlauf aus einem Run-JS-Schritt anstossen, wenn beide
                  Werte im Workflow hinter uobStart entstanden sind.
 
-   Setter: setOnboardingProject, setOnboardingStatus, setOnboardingBrands, setOnboardingTopics,
+   Setter: setOnboardingBundle (die ganze RPC-Antwort beim Seitenaufbau -- entscheidet zugleich,
+   welchen Schritt der Nutzer sieht), setOnboardingProject, setOnboardingStatus, setOnboardingBrands, setOnboardingTopics,
    setOnboardingPrompts, setOnboardingPlans, setOnboardingStep, setOnboardingError,
    setOnboardingLoading, resetOnboarding. */
 (function () {
@@ -42,9 +43,10 @@
   var BOOTQ = window.__uobBootQueue = window.__uobBootQueue || [];
   if (!window.__uobBootStubbed) {
     window.__uobBootStubbed = true;
-    ["setOnboardingProject", "setOnboardingStatus", "setOnboardingBrands", "setOnboardingTopics",
-     "setOnboardingPrompts", "setOnboardingPlans", "setOnboardingStep", "setOnboardingError",
-     "setOnboardingLoading", "resetOnboarding", "startOnboardingWorkflow"].forEach(function (n) {
+    ["setOnboardingBundle", "setOnboardingProject", "setOnboardingStatus", "setOnboardingBrands",
+     "setOnboardingTopics", "setOnboardingPrompts", "setOnboardingPlans", "setOnboardingStep",
+     "setOnboardingError", "setOnboardingLoading", "resetOnboarding",
+     "startOnboardingWorkflow"].forEach(function (n) {
       if (typeof window[n] === "function") return;
       window[n] = function () { BOOTQ.push([n, [].slice.call(arguments)]); return true; };
     });
@@ -1444,7 +1446,23 @@
          entfernt: ihr Platz bleibt, damit der Inhalt darueber nicht nach unten rutscht und
          zurueckspringt, sobald sie wiederkommt. */
       elNav.style.visibility = wartet ? "hidden" : "";
-      elNav.setAttribute("aria-hidden", wartet ? "true" : "false");
+      /* inert statt aria-hidden -- genau das, wozu der Browser in der Konsole selbst raet:
+         "Blocked aria-hidden on an element because its descendant retained focus." Der Fall trat
+         auf, wenn jemand mit der Tastatur auf "Next" stand und der Klick die Wartezeit startete:
+         aria-hidden versteckt die Zeile vor Vorlesesoftware, nimmt dem Knopf aber NICHT den
+         Fokus -- der Nutzer stand dann auf einem Element, das es fuer ihn nicht mehr gab.
+         inert nimmt beides zugleich. Wo es das nicht gibt (aeltere Browser), bleibt aria-hidden
+         als Rueckfall, und der Fokus wird von Hand herausgenommen -- damit ist der gemeldete
+         Zustand auch dort nicht mehr erreichbar. */
+      if (wartet && elNav.contains(document.activeElement)) {
+        try { document.activeElement.blur(); } catch (e) {}
+      }
+      if ("inert" in elNav) {
+        elNav.inert = wartet;
+        elNav.removeAttribute("aria-hidden");
+      } else {
+        elNav.setAttribute("aria-hidden", wartet ? "true" : "false");
+      }
       if (wartet) return;
 
       var i = stepIndex(state.step);
@@ -1576,7 +1594,11 @@
 
     function renderBanner() {
       elBanner.classList.toggle("is-on", !!state.banner);
-      if (state.banner) elBannerT.textContent = state.banner;
+      /* Auch LEEREN, nicht nur zuklappen. Sichtbar ist der zugeklappte Banner nicht (0fr plus
+         opacity 0), aber der Text blieb im Dokument stehen -- Vorlesesoftware liest ihn weiter,
+         und klappt der Banner spaeter aus einem anderen Grund auf, stuende fuer einen Moment die
+         alte Meldung darin. */
+      elBannerT.textContent = state.banner || "";
     }
 
     /* Gestaffelt einblenden, 120ms Vorlauf und 140ms je Marke -- dieselben Zahlen wie in
@@ -2476,40 +2498,189 @@
       return "";
     }
 
+    /* Die Huelle abziehen, in der ein Status ankommen kann. Der Realtime-Kanal schickt die Zeile
+       je nach Verdrahtung nackt, als {record:...}, als {new:...} (so heisst es bei Postgres-
+       Changes) oder im ganzen Buendel unter {project:...}. Bisher verstand die Komponente nur
+       die nackte Form -- alles andere fiel still durch, und der Loader lief einfach weiter.
+       Genau so gemeldet am 24.08.: "n8n setzt korrekt die status dinger, aber das Event updatet
+       die Steps nicht". */
+    function kernAus(p) {
+      if (!p || typeof p !== "object") return p;
+      if (isArr(p)) p = p[0];
+      if (!p || typeof p !== "object") return p;
+      var h = ["project", "record", "new", "row", "data"];
+      for (var i = 0; i < h.length; i++) {
+        var k = p[h[i]];
+        if (k && typeof k === "object" && !isArr(k) &&
+            (k.status != null || k.status_phase != null || k.progress_percent != null)) return k;
+      }
+      return p;
+    }
+
+    /* Die Statuswerte des Datenmodells. Als Menge, damit ein nacktes Wort als Status erkannt
+       werden kann, ohne dass jeder beliebige Text dafuer durchgeht. */
+    var STATUS_WORTE = { draft:1, submitted:1, processing:1, running:1, queued:1,
+                         ready:1, done:1, complete:1, completed:1, failed:1, error:1 };
+
+    /* Ein Status kann auf vier Wegen gesagt werden, und das Datenmodell traegt alle vier:
+       status_phase (1..5), progress_percent (0..100), status ("draft"/"submitted"/"processing"/
+       "ready"/"failed") und status_label. Bisher zaehlte NUR status_phase -- fehlte die, tat
+       setStatus nichts und meldete auch nichts (return false). Jetzt wird jedes Signal gelesen
+       und in dieselbe Phase uebersetzt, damit es egal ist, welche Felder der Kanal mitschickt. */
+    function statusAus(p) {
+      var st = txt(p.status).toLowerCase();
+      var phase = num(p.status_phase);
+      var proz = num(p.progress_percent);
+      /* "ready" ist fertig, auch ohne status_phase 5 -- und 100% ebenso. */
+      var fertig = (st === "ready" || st === "done" || st === "complete" || st === "completed") ||
+                   (phase != null && phase >= 5) ||
+                   (phase == null && proz != null && proz >= 100);
+      /* Ohne Phase, aber mit Prozent: die Spur hat vier Abschnitte, also je 25%. */
+      if (phase == null && proz != null) phase = Math.floor(proz / (100 / PHASES.length)) + 1;
+      return {
+        status: st,
+        phase: phase,
+        prozent: proz,
+        label: txt(p.status_label),
+        fertig: fertig,
+        laeuft: st === "submitted" || st === "processing" || st === "running" || st === "queued",
+        entwurf: st === "draft" || st === "",
+        fehler: fehlerAus(p)
+      };
+    }
+
+    /* ---- Einstieg: wohin gehoert dieser Nutzer? ------------------------------------------------
+       Der Aufruf beim Seitenaufbau bekommt ein Buendel {project, competitors, topics, prompts}.
+       Daraus faellt die Entscheidung, was der Nutzer ueberhaupt sieht -- das ist der einzige Ort,
+       an dem sie faellt, damit nicht drei Setter nacheinander an der Ansicht ziehen.
+
+         kein project        -> Formular (neuer Nutzer)
+         draft               -> Formular, aber mit den gespeicherten Werten vorbelegt
+         submitted/processing-> Ladebild, Startwert aus status_phase bzw. progress_percent
+         ready               -> Auswahl; wie weit, sagt das, was schon gewaehlt ist
+         failed              -> Fehlermeldung aus last_error, Formular bleibt zum erneuten Versuch
+
+       Bewusst NICHT vorwaerts geschoben wird, wer schon weiter ist als das Buendel: ein Nutzer,
+       der gerade auf Topics steht, darf durch ein spaeter eintreffendes Buendel nicht auf
+       Competitors zurueckfallen. */
+    /* Was der Server schon weiss, gewinnt ueber das, was im Formular steht: nach einem Neuladen
+       ist das Formular leer, das Projekt aber vollstaendig. Steht in beiden Einstiegen (Buendel
+       und Einzel-Projekt), deshalb hier einmal. */
+    function formAusProjekt(p) {
+      if (!p || typeof p !== "object") return;
+      if (txt(p.company_name)) state.form.name = txt(p.company_name);
+      /* website_input ist die ROHE Eingabe des Nutzers, website_url die aufgeraeumte. Ins Feld
+         gehoert das, was er selbst getippt hat -- sonst sieht er beim Zurueckkommen eine Adresse,
+         die er so nie eingegeben hat. Fehlt sie, tut es die aufgeraeumte. */
+      var w = txt(p.website_input) || txt(p.website_url);
+      if (w) state.form.website = w;
+      if (txt(p.market)) state.form.market = txt(p.market);
+      if (txt(p.business_model)) state.form.business = txt(p.business_model);
+      if (txt(p.brand_industry)) state.form.industry = txt(p.brand_industry);
+      if (txt(p.timezone)) state.form.timezone = txt(p.timezone);
+      setzeFormWerte();
+    }
+
+    function zielSchritt() {
+      if (isArr(state.prompts) && state.prompts.length) return "prompts";
+      if (idsVon(state.selTopics).length) return "prompts";
+      if (idsVon(state.selBrands).length) return "topics";
+      return "competitors";
+    }
+    function einstieg(b) {
+      var pr = (b && typeof b === "object" && b.project && typeof b.project === "object")
+             ? b.project : b;
+      if (!pr || typeof pr !== "object") { gehe("brand", false); return; }
+      var s = statusAus(pr);
+      if (s.fehler) { state.banner = s.fehler; warteBeenden(); state.busy = false;
+                      if (state.step !== "brand") gehe("brand", false); else render(); return; }
+      if (s.fertig) {
+        warteBeenden();
+        var ziel = zielSchritt();
+        /* Nur vorwaerts, nie zurueck -- siehe Begruendung oben. */
+        if (stepIndex(ziel) > stepIndex(state.step)) gehe(ziel, false);
+        else render();
+        return;
+      }
+      if (s.laeuft) {
+        if (state.warten !== "main") warteStarten("main");
+        if (s.phase != null) phaseSetzen(Math.max(0, s.phase - 1));
+        else if (s.prozent != null) state.fortschritt = Math.max(state.fortschritt, s.prozent);
+        renderPhasen();
+        return;
+      }
+      /* draft oder unbekannt: das Formular, mit dem was schon dasteht. */
+      warteBeenden();
+      if (state.step !== "brand") gehe("brand", false); else render();
+    }
+
     /* ---- Aussenschnittstelle ------------------------------------------------------------------ */
     var ctrl = {
       instanceId: instanceId,
+      /* Das ganze Buendel aus EINEM Aufruf: Projekt, Wettbewerber, Themen und Prompts zugleich.
+         Genau die Form, in der die RPC beim Seitenaufbau antwortet -- ein Setter statt vier, und
+         die Ansicht wird erst gesetzt, wenn alles vier eingetragen ist. */
+      setBundle: function (payload) {
+        /* GAR NICHTS ist kein Fehler, sondern ein neuer Nutzer: die RPC antwortet leer, wenn es
+           noch kein Onboarding-Projekt gibt. Das von einem kaputten Payload zu unterscheiden ist
+           der ganze Punkt -- sonst begruesst die Seite jeden neuen Nutzer mit einer Fehlermeldung.
+           Leer heisst hier: kein Text. Ein Text, den niemand lesen kann, ist weiter ein Fehler. */
+        if (payload == null || (typeof payload !== "object" && txt(payload) === "")) {
+          state.banner = "";
+          warteBeenden();
+          if (state.step !== "brand") gehe("brand", false); else render();
+          return true;
+        }
+        var b = lies(payload);
+        if (isArr(b)) b = b[0];
+        if (!b || typeof b !== "object") {
+          state.banner = "We could not read your onboarding data. Please reload the page.";
+          warteBeenden(); render(); return true;
+        }
+        /* Ein Buendel, das gelesen werden konnte, raeumt eine alte Fehlermeldung weg. Ohne diese
+           Zeile blieb der Banner eines frueheren Versuchs ueber dem neuen, heilen Zustand stehen
+           -- gemessen: die Meldung aus dem Fall "leer" stand noch ueber draft, processing und
+           ready. Was danach wirklich ein Fehler ist, setzt einstieg() gleich neu. */
+        state.banner = "";
+        /* Erst die Listen, dann der Einstieg: zielSchritt() liest sie. Die Listen zeichnen
+           waehrend einer Uhr ohnehin nicht (siehe listeSetzen). */
+        if (isArr(b.competitors)) listeSetzen(b.competitors, "brands");
+        else if (isArr(b.brands)) listeSetzen(b.brands, "brands");
+        if (isArr(b.topics)) listeSetzen(b.topics, "topics");
+        if (isArr(b.prompts)) listeSetzen(b.prompts, "prompts");
+        var pr = (b.project && typeof b.project === "object") ? b.project : null;
+        if (pr) {
+          state.projekt = pr;
+          formAusProjekt(pr);
+        }
+        einstieg(b);
+        return true;
+      },
+      /* Nimmt weiterhin das nackte Projekt -- UND das ganze Buendel, falls jemand die RPC-Antwort
+         unveraendert hierher gibt. Beides zu koennen ist billiger, als es falsch zu erwischen:
+         der Unterschied ist von aussen nicht sichtbar, es ist dieselbe RPC. */
       setProject: function (payload) {
-        var p = lies(payload);
-        if (isArr(p)) p = p[0];
+        var b = lies(payload);
+        if (isArr(b)) b = b[0];
+        if (b && typeof b === "object" &&
+            (isArr(b.competitors) || isArr(b.topics) || (b.project && typeof b.project === "object"))) {
+          return ctrl.setBundle(b);
+        }
+        var p = kernAus(b);
         if (!p || typeof p !== "object") {
           state.banner = "We could not read the project data. Please try again.";
           warteBeenden(); render(); return true;
         }
         state.projekt = p;
-        /* Was der Server schon weiss, gewinnt ueber das, was im Formular steht: nach einem
-           Neuladen ist das Formular leer, das Projekt aber vollstaendig. */
-        if (txt(p.company_name)) state.form.name = txt(p.company_name);
-        if (txt(p.website_url)) state.form.website = txt(p.website_url);
-        if (txt(p.market)) state.form.market = txt(p.market);
-        if (txt(p.business_model)) state.form.business = txt(p.business_model);
-        if (txt(p.brand_industry)) state.form.industry = txt(p.brand_industry);
-        /* Fehler VOR der Phase: ein abgebrochener Lauf schickt oft trotzdem eine status_phase,
-           und die wuerde die Uhr weiterdrehen lassen. */
-        var fehl1 = fehlerAus(p);
-        if (fehl1) { state.banner = fehl1; warteBeenden(); state.busy = false; render(); return true; }
-        var ph = num(p.status_phase);
-        if (ph != null) {
-          /* status_phase 5 heisst fertig, 1..4 sind die laufenden. Der Index ist eins kleiner. */
-          if (ph >= 5) { warteBeenden(); if (state.step === "brand") { gehe("competitors", false); return true; } }
-          else if (state.warten === "main") phaseSetzen(Math.max(0, ph - 1));
-        }
-        render();
+        /* Wie bei setBundle: ein lesbares Projekt raeumt die alte Fehlermeldung weg, einstieg()
+           setzt gleich die neue, falls dieses Projekt wirklich einen Fehler traegt. */
+        state.banner = "";
+        formAusProjekt(p);
+        einstieg(p);
         return true;
       },
       setStatus: function (payload) {
-        var p = lies(payload);
-        if (isArr(p)) p = p[0];
+        var p = kernAus(lies(payload));
         /* Eine nackte Zahl ist eindeutig -- sie kann nur die Phase sein. Vorher hat
            setOnboardingStatus("...", "3") NICHTS getan und auch nichts gesagt: kein Fehler,
            keine Meldung, die Uhr lief einfach weiter. Das ist der naheliegendste Griff, weil
@@ -2518,14 +2689,24 @@
         if ((!p || typeof p !== "object") && txt(payload) !== "" && num(payload) != null) {
           p = { status_phase: num(payload) };
         }
-        if (!p || typeof p !== "object") return false;
-        /* Vor der Phase, und ohne status_phase gueltig: {"status":"error","last_error":"..."}
-           allein muss reichen, um die Uhr zu beenden. */
-        var fehl2 = fehlerAus(p);
-        if (fehl2) { state.banner = fehl2; warteBeenden(); state.busy = false; render(); return true; }
-        var ph = num(p.status_phase);
-        if (ph == null) return false;
-        if (ph >= 5) {
+        /* Ein blosses Wort reicht auch: "processing", "ready", "failed". Aber NUR ein bekanntes:
+           sonst wird jeder unlesbare Text zu einem Status, der nichts bedeutet, und der Aufruf
+           verpufft wieder still -- gemessen mit "{kaputt::", das genau so durchrutschte. */
+        if ((!p || typeof p !== "object") && STATUS_WORTE[txt(payload).toLowerCase()]) {
+          p = { status: txt(payload) };
+        }
+        if (!p || typeof p !== "object") {
+          /* KEIN stilles false mehr. Ein Payload, den niemand lesen konnte, ist ein Fehler --
+             und ein Loader, der ewig weiterlaeuft, sieht aus wie "gleich fertig". */
+          state.banner = "We could not read the status update. Please reload the page.";
+          warteBeenden(); state.busy = false; render(); return true;
+        }
+        var s = statusAus(p);
+        /* status_label wird bewusst NICHT angezeigt: die vier Phasentexte sind auf den Nutzer
+           geschrieben ("Reading your website"), das Label des Servers ist eine Systemmeldung
+           ("Done"). Beides gemischt laese sich wie zwei verschiedene Stimmen. */
+        if (s.fehler) { state.banner = s.fehler; warteBeenden(); state.busy = false; render(); return true; }
+        if (s.fertig) {
           state.fortschritt = 100; renderPhasen();
           window.setTimeout(function () {
             warteBeenden();
@@ -2533,7 +2714,10 @@
           }, 360);
           return true;
         }
-        phaseSetzen(Math.max(0, ph - 1));
+        if (s.phase != null) { phaseSetzen(Math.max(0, s.phase - 1)); return true; }
+        /* Laeuft noch, sagt aber keine Phase: dann wenigstens die Uhr am Laufen halten, statt
+           den Aufruf verpuffen zu lassen. */
+        if (s.laeuft) { if (!state.warten) warteStarten("main"); return true; }
         return true;
       },
       setBrands: function (payload) { return listeSetzen(payload, "brands"); },
@@ -2723,6 +2907,7 @@
       window[name] = fn;
     }
     ruf("setOnboardingProject", function (id, p) { var c = resolve(id); return c ? c.setProject(p) : false; });
+    ruf("setOnboardingBundle",  function (id, p) { var c = resolve(id); return c ? c.setBundle(p) : false; });
     ruf("setOnboardingStatus",  function (id, p) { var c = resolve(id); return c ? c.setStatus(p) : false; });
     ruf("setOnboardingBrands",  function (id, p) { var c = resolve(id); return c ? c.setBrands(p) : false; });
     ruf("setOnboardingTopics",  function (id, p) { var c = resolve(id); return c ? c.setTopics(p) : false; });
