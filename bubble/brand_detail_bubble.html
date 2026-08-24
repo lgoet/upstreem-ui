@@ -64,14 +64,36 @@
        resetBrandDetail(instanceId)
 
      ── SANITIZER (STYLEGUIDE §46) ────────────────────────────────────────────────────────────
-     Baust du den Payload in einem Run-JavaScript aus dynamischen Ausdruecken zusammen, brauchen
-     die Zeilen BEIDE Ersetzungen. Bubble laesst einen leeren Wert als NICHTS stehen ("key": ,)
-     und schreibt Ja/Nein unquotiert als yes/no -- beides ist kein gueltiges JSON:
+     NIEMALS ein JS-Objekt im Step von Hand bauen. Also NICHT so:
 
-       var roh = `PAYLOAD_HIER`
-         .replace(/:\s*([,}\]])/g, ": null$1")
-         .replace(/:\s*(yes|no)\s*([,}\]])/g, function(_, v, t){ return ": " + (v === "yes") + t; });
-       setBrandDetailSeries("brand_detail_page", roh);
+       setBrandDetailCompany("x", { name: <ausdruck>, visibility_prev: <ausdruck> })   FALSCH
+
+     Ist einer der Ausdruecke leer, steht dort "visibility_prev": , -- und das ist kein
+     gueltiges JavaScript. Der Step scheitert dann beim PARSEN, bevor eine einzige Zeile laeuft:
+     "Uncaught SyntaxError: Unexpected token ','". Kein Sanitizer und kein Code im Kit kann das
+     abfangen, weil nichts davon zur Ausfuehrung kommt. Und weil der ganze Step stirbt, gehen
+     auch die Aufrufe darunter mit -- die Komponente bleibt im Ladezustand stehen.
+     Gemeldet am 24.08. an brand-detail, mit einem leeren _prev-Wert.
+
+     RICHTIG ist immer: EIN Backtick, der den ROHEN Text der RPC traegt, und die beiden
+     Ersetzungen darauf. Im Backtick ist ein leeres Feld nur Text und bringt nichts zum Absturz;
+     die erste Ersetzung macht daraus null, die zweite quotiert yes/no.
+
+       (function () {
+         var roh = `PAYLOAD_HIER`
+           .replace(/:\s*([,}\]])/g, ": null$1")
+           .replace(/:\s*(yes|no)\s*([,}\]])/g, function(_, v, t){ return ": " + (v === "yes") + t; });
+         /* Jeder Aufruf in seinem EIGENEN try: ein kaputter oder fehlender Ausdruck darf die
+            anderen nicht mitnehmen. */
+         try { window.setBrandDetailCompany("INSTANCE_ID", roh); } catch (e) {}
+       })();
+
+     Mehrere Setter im selben Step: je EIN Backtick pro RPC, je ein try. Nicht zusammenfassen --
+     eine Zeichenkette fuer zwei Antworten ist wieder eine Stelle, an der beides zugleich kippt.
+
+     Die EINZIGE Zeichenfolge, die im Backtick selbst gefaehrlich bleibt, ist ein Backtick oder
+     ${ im Wert. Beides kommt in Marken- und Domainnamen nicht vor; alles andere -- Anfuehrungs-
+     zeichen, Apostrophe, Umlaute, Zeilenumbrueche, Emoji -- traegt der Backtick unbeschadet.
 
      ── EINBAU IN KUERZE ──────────────────────────────────────────────────────────────────────
      1. Dieses HTML-Element auf die Seite, data-instance und data-cdn-pin setzen.
