@@ -428,8 +428,21 @@
       }).join("");
     }
 
+    /* companies kann als echtes Array ankommen ODER als roher JSON-Text -- die Feld-fuer-Feld-
+       Vorlage setzt jedes Feld einzeln in Backticks, auch companies, und dann ist es beim ersten
+       Lesen ein STRING, kein Array. UC.readBubble liest es nach, genau wie bei jedem anderen
+       Textfeld. Ohne das blieb die Mention-Liste leer, sobald companies so eingesetzt wurde. */
+    function companies() {
+      var c = d().companies;
+      if (isArr(c)) return c;
+      if (typeof c === "string" && c.trim()) {
+        var p = UC.readBubble ? UC.readBubble(c) : null;
+        if (isArr(p)) return p;
+      }
+      return [];
+    }
     function renderMents() {
-      var liste = isArr(d().companies) ? d().companies : [];
+      var liste = companies();
       elMentSect.hidden = !liste.length;
       if (!liste.length) { elMents.innerHTML = ""; return; }
       elMents.innerHTML = liste.map(function (c) {

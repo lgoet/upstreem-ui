@@ -92,36 +92,52 @@
   mit Schluessel, und ein Schluessel in Client-JS ist oeffentlich. Lieber eine Zeile weniger als
   eine Zahl, die nicht stimmt.
 
-  ── Run-JS "Render" step (paste as-is, drop the Bubble expressions into the backticks) ──────
+  ── Run-JS "Render" step (paste as-is, mit echten Beispieldaten, sofort lauffaehig) ─────────
+
+  EIN Backtick je Aufruf, roher JSON-Text -- dasselbe Muster wie in JEDER anderen Komponente
+  dieses Repos. Kein Objekt, das aus mehreren Backtick-Werten zusammengebaut wird: jeder
+  zusaetzliche Backtick in einem Statement ist eine zusaetzliche Stelle, an der Bubbles rohe
+  Einfuegung auf JavaScript-Syntax trifft statt auf den geteilten Textreparatur-Weg (readBubble,
+  core.js Repair 6), der genau dafuer gebaut ist.
+
+  Zum Wiring: den Wert ZWISCHEN den Anfuehrungszeichen ersetzen, z.B. wird aus
+  "title":"Festivals in Deutschland..."  ->  "title":<dein Bubble-Ausdruck>
+  Die Anfuehrungszeichen bleiben stehen. Ein Wert, der selbst ein " enthaelt (ein Titel mit
+  Zitat, ein Firmenname mit Anfuehrungszeichen), bricht NICHT mehr: readBubble erkennt am
+  naechsten Zeichen, ob das " zur Struktur gehoert (dahinter , : } ] oder Ende) oder zum Text,
+  und repariert nur dort, wo es noetig ist. Gemessen (24.08.): Titel mit Zitat, Firmenname mit "
+  und Apostroph, Zusammenfassung mit " -- alle liefen roh, ohne Escaping, unveraendert durch.
+
+  markdown_summary steht NICHT in DETAIL -- es ist JSON IN JSON und braucht einen EIGENEN
+  Backtick (SUMMARY unten), sonst verwechselt der Parser die inneren Anfuehrungszeichen mit der
+  aeusseren Struktur. Einzige Ausnahme, eigener Grund.
 
   (function () {
-    var DETAIL     = `[URL_DETAILED_RPC ohne markdown_summary]`;
-    var CONVERSION = `[CONVERSION_RPC]`;
-    var SUMMARY    = `[SUMMARY_TEXT]`;
+    var INSTANCE_ID = "INSTANCE_ID";   // muss zum data-instance des Elements passen
+
+    var DETAIL = `{"url":"https://www.paulcamper.de/magazin/festivals-2025-in-deutschland","title":"Festivals in Deutschland mit Camping: der Guide für Camper","domain":"paulcamper.de","favicon":"https://www.google.com/s2/favicons?domain=paulcamper.de&sz=128","url_type":"listicle","citation_type":"Brand_Platform","last_seen":"2026-08-23T13:25:01.38037+00:00","domain_share":99.15,"global_share":11.60,"global_rank":1,"description":"Die besten Festivals in Deutschland mit Camping – Techno, Rock, Metal, Reggae &amp; Elektro. Mit dem Camper campst du direkt vor Ort, mitten im Geschehen.","companies":[{"logo_url":"https://www.google.com/s2/favicons?domain=airbeat-one.de&sz=64","company_id":"c392c676-6327-4874-8e3f-a919fff7a76c","company_name":"Airbeat One Festival"}]}`;
+
+    var SUMMARY = `{"summary": "Der Festivalguide von Paulcamper stellt die beliebtesten Open-Air-Festivals in Deutschland vor."}`;
+
+    var CONVERSION = `[{"company_id":"215378ad-9322-498a-9331-b44d3d52a98b","company_name":"Nature One","logo_url":"https://www.google.com/s2/favicons?domain=nature-one.de&sz=64","role":"competitor","cited_runs":117,"mentioned_runs":73,"citation_conversion_pct":62.39}]`;
+
     var t = 0;
     (function go () {
       if (typeof window.setUrlDetail === "function") {
-        window.setUrlDetail("INSTANCE_ID", DETAIL);
-        window.setUrlDetailConversion("INSTANCE_ID", CONVERSION);
-        window.setUrlDetailSummary("INSTANCE_ID", SUMMARY);
+        window.setUrlDetail(INSTANCE_ID, DETAIL);
+        window.setUrlDetailSummary(INSTANCE_ID, SUMMARY);
+        window.setUrlDetailConversion(INSTANCE_ID, CONVERSION);
         return;
       }
       if (t++ < 60) setTimeout(go, 100);
     })();
   })();
 
-  ── Was dynamische Werte aushalten und was nicht (gemessen 23.08.) ──────────────────────────
-  Sicher, alles gelesen: " Anfuehrungszeichen, ' Apostroph, / ( ) [ ] { }, Backslash, roher
-  Zeilenumbruch, Emoji, leerer Wert, null, HTML-Entities, sogar <script> im Titel (es landet als
-  Text, nicht als Markup).
-
-  NICHT sicher, und das liegt an Bubbles Run-JS und nicht an der Komponente:
-    `  ein BACKTICK im Text beendet das Template-Literal -- der Schritt stirbt mit einem
-       SyntaxError, BEVOR eine Zeile laeuft, und nimmt jeden Setter darunter mit.
-    ${ derselbe Fall: das Literal versucht zu ersetzen und wirft ReferenceError.
-  Beide kommen in Seitentiteln von Entwickler-Blogs vor. Zwei Gegenmittel: das Feld serverseitig
-  von ` und ${ befreien, und JEDEN Setter in einen EIGENEN Run-JS-Schritt legen -- dann reisst
-  ein kaputter Titel nur seinen eigenen Schritt mit und nicht die ganze Seite.
+  ── Eine Grenze bleibt (gemessen 24.08.) ────────────────────────────────────────────────────
+  Ein Wert, der selbst einen BACKTICK oder die Zeichenfolge ${ enthaelt, sprengt weiterhin die
+  Zeile -- Eigenschaft von JavaScript-Template-Strings, keine dieser Vorlage. Kommt in normalem
+  Seiteninhalt praktisch nie vor (Titel, Beschreibungen); anders als Anfuehrungszeichen, die in
+  echtem Text staendig auftauchen.
 -->
 
 <div class="up-root uud-root"
