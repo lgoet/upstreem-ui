@@ -286,6 +286,18 @@
   transition: max-width var(--uob-t) var(--uob-ease);
 }
 
+/* ---------- Bootzustand ----------
+   Was vor der ersten Antwort steht. Die Balken selbst sind .up-tsk-bar aus core (Farbe --vc-sk,
+   Puls uutpulse) -- hier stehen nur Breite, Hoehe und Abstand, also die Anordnung, nicht das
+   Aussehen. Drei Balken in abnehmender Breite lesen sich als "hier kommt Text", ohne etwas zu
+   behaupten: eine Ueberschrift oder eine Markenkachel waere geraten, und ein falscher Name, der
+   gleich umspringt, ist schlimmer als gar keiner. */
+.uob-boot { display: flex; flex-direction: column; gap: 14px; padding-top: 4px; }
+.uob-boot .up-tsk-bar { height: 14px; border-radius: 6px; }
+.uob-boot-a { width: min(46%, 260px); }
+.uob-boot-b { width: min(78%, 440px); }
+.uob-boot-c { width: min(62%, 350px); }
+
 /* ---------- Markenkopf ----------
    Sobald die Marke bekannt ist, steht sie ueber dem Inhalt: Favicon, Name, Domain. Das ist der
    Satz "du baust hier DEINEN Zugang" -- ohne ihn ist der ganze Ablauf ein Formular ueber
@@ -615,6 +627,11 @@
    und breitem Fenster zwei Spalten zu 191px -- fuer Logo, Name und Domain nebeneinander bleibt
    da kein lesbarer Rest. */
 .uob-root.is-narrow .uob-list.is-cols { grid-template-columns: 1fr; }
+/* Im Raster traegt der gap den Abstand, nicht das Element. .uob-item.is-plain bringt fuer
+   den Blockfluss der Themen- und Prompt-Listen ein margin-bottom von 4px mit -- hier kaeme
+   das ZUSAETZLICH zu den 8px gap, und die Zeilen staenden weiter auseinander als in den
+   beiden anderen Schritten. Genau die Gleichheit war der Punkt. */
+.uob-list.is-cols .uob-item.is-plain { margin-bottom: 0; }
 
 /* ---------- Prompts als Liste ----------
    Kein Kasten je Prompt mehr. Der Mehrspaltensatz davor loeste zwar die ungleichen Hoehen, aber

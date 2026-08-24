@@ -524,6 +524,15 @@
       },
       fehler: {},               /* feldname -> text */
       banner: "",
+      /* Beim Aufbau weiss die Komponente noch NICHT, ob es schon ein Projekt gibt -- die Antwort
+         kommt erst mit dem ersten Setter, und bis dahin vergehen ein paar hundert Millisekunden
+         bis eine Sekunde. Faengt sie in dieser Zeit mit dem Formular an, sieht jeder mit einem
+         laufenden Onboarding kurz das Formular aufblitzen, bevor es zu seinem Schritt springt --
+         genau so gemeldet am 24.08. Also startet sie in einem neutralen Ladezustand und zeigt
+         erst dann etwas, wenn sie weiss, WAS sie zeigen soll.
+         BOOT_MAX_MS ist die Notbremse: bleibt der Setter ganz aus (alte Verdrahtung), darf die
+         Seite nicht ewig im Skelett stehen -- dann gilt "kein Projekt" und das Formular kommt. */
+      hochfahren: true,
       projekt: null,            /* das Onboarding-Projekt, sobald es da ist */
       brands: [], topics: [], prompts: [], plans: [],
       selBrands: {}, selTopics: {}, selPrompts: {},
@@ -822,14 +831,31 @@
       '</div>';
     }
 
+    /* Der Zustand VOR der ersten Antwort. Bewusst ohne Ueberschrift und ohne Markenkachel: beides
+       waere geraten, und ein falscher Name, der gleich umspringt, ist schlimmer als keiner.
+       Die Balken sind .up-tsk-bar aus core -- dasselbe Skelett und derselbe Puls wie in jeder
+       Tabelle der App, nicht ein zweites danebengebautes. */
+    function viewBoot() {
+      return '<div class="uob-pane" data-pane="boot">' +
+        '<div class="uob-body"><div class="uob-boot" aria-busy="true" aria-live="polite">' +
+          '<span class="up-tsk-bar uob-boot-a"></span>' +
+          '<span class="up-tsk-bar uob-boot-b"></span>' +
+          '<span class="up-tsk-bar uob-boot-c"></span>' +
+        '</div></div>' +
+      '</div>';
+    }
+
     function viewLoad(kompakt) {
       var p = state.projekt || {};
       var name = txt(p.company_name) || txt(state.form.name) || "Your brand";
-      var dom = txt(p.website_domain) || normUrl(state.form.website).domain;
+      /* Dieselbe Rueckfallkette wie in renderIdent: website_domain, sonst aus der Adresse
+         abgeleitet -- website_domain fehlt in manchen RPC-Antworten schlicht. */
+      var dom = txt(p.website_domain) ||
+                normUrl(txt(p.website_url) || txt(p.website_input) || state.form.website).domain;
       return '<div class="uob-pane" data-pane="' + (kompakt ? "load2" : "load1") + '">' +
         '<div class="uob-body">' +
           '<div class="uob-load' + (kompakt ? " is-compact" : "") + '">' +
-            kachel("uob-load-logo", name, dom) +
+            kachel("uob-load-logo", name, dom, txt(p.logo_url) || txt(p.favicon_url)) +
             '<div class="uob-load-name">' + esc(name) + '</div>' +
             (dom ? '<div class="uob-load-dom">' + esc(dom) + '</div>' : "") +
             '<div class="uob-bar"><div class="uob-bar-fill" data-bar></div></div>' +
@@ -880,7 +906,12 @@
                 state.brands.map(function (b) {
                   var an = !!state.selBrands[b.id];
                   var gesperrt = !an && n >= BRAND_MAX;
-                  return '<button class="uob-item' + (an ? " is-on" : "") + (gesperrt ? " is-blocked" : "") +
+                  /* is-plain wie bei Themen und Prompts: flache Zeile, die beim Ueberfahren und
+                     im gewaehlten Zustand ihre Flaeche faerbt -- keine Karte mit Rahmen. Die
+                     Auswahl sieht damit auf allen drei Schritten gleich aus, was sie inhaltlich
+                     auch ist. Das zweispaltige Raster bleibt: acht Marken untereinander waeren
+                     acht Bildschirmzeilen, nebeneinander sind es vier. */
+                  return '<button class="uob-item is-plain' + (an ? " is-on" : "") + (gesperrt ? " is-blocked" : "") +
                            '" type="button" role="checkbox" aria-checked="' + (an ? "true" : "false") + '"' +
                            ' data-pick="brands" data-id="' + esc(b.id) + '"' + (gesperrt ? ' aria-disabled="true"' : "") + '>' +
                     '<span class="uob-check">' + ic("check", 3) + '</span>' +
@@ -1238,11 +1269,15 @@
     /* ---- Zeichnen -------------------------------------------------------------------------- */
     var letzteAnsicht = "";
     function ansichtKey() {
+      /* Vor allem anderen: solange nicht feststeht, ob es ein Projekt gibt, wird nichts gezeigt,
+         was sich gleich wieder aendern koennte. */
+      if (state.hochfahren) return "boot";
       if (state.warten === "main") return "load1";
       if (state.warten === "prompts") return "load2";
       return state.step;
     }
     function viewFor(k) {
+      if (k === "boot") return viewBoot();
       if (k === "load1") return viewLoad(false);
       if (k === "load2") return viewLoad(true);
       if (k === "brand") return viewBrand();
@@ -1450,10 +1485,14 @@
       elIdentDm.textContent = dom;
       /* Nur neu bauen, wenn sich die Marke wirklich geaendert hat -- sonst laedt das Favicon bei
          jedem Haken in der Liste erneut und blitzt dabei. */
-      var schluessel = dom + "|" + name;
+      /* Ein mitgeliefertes Logo gewinnt ueber das aus der Domain abgeleitete Favicon -- die RPC
+         kennt die Marke besser als der Google-Dienst, und ein echtes Logo ist schaerfer als ein
+         64px-Favicon. Dieselbe Vorrangregel wie in kachel(). */
+      var eigenesLogo = txt(p.logo_url) || txt(p.favicon_url);
+      var schluessel = dom + "|" + name + "|" + eigenesLogo;
       if (elIdentLg.getAttribute("data-for") !== schluessel) {
         elIdentLg.setAttribute("data-for", schluessel);
-        var fav = favicon(dom);
+        var fav = eigenesLogo || favicon(dom);
         elIdentLg.className = "uob-ident-logo" + (fav ? " has-img" : "");
         elIdentLg.innerHTML = kachelInhalt(name, fav);
       }
@@ -2680,6 +2719,22 @@
       setzeFormWerte();
     }
 
+    /* Der Bootzustand endet, sobald IRGENDEINE Antwort da ist -- auch eine leere, denn "kein
+       Projekt" ist eine gueltige Antwort und bedeutet: neuer Nutzer, Formular. */
+    var BOOT_MAX_MS = 6000, bootUhr = null;
+    function bootBeenden() {
+      if (bootUhr) { window.clearTimeout(bootUhr); bootUhr = null; }
+      if (!state.hochfahren) return false;
+      state.hochfahren = false;
+      return true;
+    }
+    bootUhr = window.setTimeout(function () {
+      bootUhr = null;
+      /* Niemand hat geantwortet. Lieber das Formular als ein Skelett ohne Ende -- ein Nutzer, der
+         doch ein Projekt hat, landet spaeter trotzdem richtig, sobald der Setter eintrifft. */
+      if (state.hochfahren) { state.hochfahren = false; render(); }
+    }, BOOT_MAX_MS);
+
     function zielSchritt() {
       if (isArr(state.prompts) && state.prompts.length) return "prompts";
       if (idsVon(state.selTopics).length) return "prompts";
@@ -2687,6 +2742,7 @@
       return "competitors";
     }
     function einstieg(b) {
+      bootBeenden();
       var pr = (b && typeof b === "object" && b.project && typeof b.project === "object")
              ? b.project : b;
       if (!pr || typeof pr !== "object") { gehe("brand", false); return; }
@@ -2726,6 +2782,7 @@
            Leer heisst hier: kein Text. Ein Text, den niemand lesen kann, ist weiter ein Fehler. */
         if (payload == null || (typeof payload !== "object" && txt(payload) === "")) {
           state.banner = "";
+          bootBeenden();
           warteBeenden();
           if (state.step !== "brand") gehe("brand", false); else render();
           return true;
@@ -2734,7 +2791,7 @@
         if (isArr(b)) b = b[0];
         if (!b || typeof b !== "object") {
           state.banner = leseFehlerText(payload);
-          warteBeenden(); render(); return true;
+          bootBeenden(); warteBeenden(); render(); return true;
         }
         /* Ein Buendel, das gelesen werden konnte, raeumt eine alte Fehlermeldung weg. Ohne diese
            Zeile blieb der Banner eines frueheren Versuchs ueber dem neuen, heilen Zustand stehen
@@ -2779,6 +2836,8 @@
         return true;
       },
       setStatus: function (payload) {
+        /* Ein Status ist auch eine Antwort: ab hier ist klar, dass ein Lauf existiert. */
+        bootBeenden();
         var p = kernAus(lies(payload));
         /* Eine nackte Zahl ist eindeutig -- sie kann nur die Phase sein. Vorher hat
            setOnboardingStatus("...", "3") NICHTS getan und auch nichts gesagt: kein Fehler,
@@ -2859,13 +2918,32 @@
       },
       setStep: function (k) {
         if (stepIndex(txt(k)) < 0) return false;
+        /* Wer den Schritt von aussen setzt, weiss wohin -- dann ist der Bootzustand erledigt. */
+        bootBeenden();
         gehe(txt(k), false);
         return true;
       },
       setError: function (text) { state.banner = txt(text); warteBeenden(); state.busy = false; render(); return true; },
-      setLoading: function (on) { state.busy = istJa(on); renderNav(); return true; },
+      /* Zwei Bedeutungen, sauber getrennt nach Zeitpunkt -- und beide heissen fuer den Nutzer
+         dasselbe: "die Seite arbeitet gerade".
+           VOR der ersten Antwort (state.projekt ist noch leer): der Aufruf steuert den
+           Bootzustand, also das seitenweite Skelett. Genau dafuer angefragt am 24.08. -- "yes"
+           beim Pageload, damit das Formular nicht aufblitzt, bevor die Daten da sind.
+           DANACH: der Kreisel im Weiter-Knopf, wie bisher.
+         "no" beendet den Bootzustand immer -- es ist die ausdrueckliche Ansage, dass fertig
+         geladen ist. */
+      setLoading: function (on) {
+        var an = istJa(on);
+        if (!an) { if (bootBeenden()) { render(); return true; } }
+        else if (state.hochfahren || !state.projekt) {
+          if (!state.hochfahren) { state.hochfahren = true; render(); return true; }
+          return true;
+        }
+        state.busy = an; renderNav(); return true;
+      },
       reset: function () {
         warteBeenden();
+        bootBeenden();
         state.step = "brand"; state.projekt = null;
         state.brands = []; state.topics = []; state.prompts = [];
         state.selBrands = {}; state.selTopics = {}; state.selPrompts = {}; state.eigene = [];
