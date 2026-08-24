@@ -827,11 +827,6 @@
                auf Feldhoehe ab: sichtbar blieben dreissig bis fuenfzig Pixel. Die Staffelung ist
                zurueckgenommen, also faellt auch der Wrapper weg. Kaeme sie zurueck, muss das
                overflow nach der Animation wieder auf visible. */
-            '<div class="uob-field" data-field="industry">' +
-              '<span class="uob-labrow"><span class="uob-label">Industry</span>' +
-                '<span class="uob-opt">Optional</span></span>' +
-              selectHtml("industry", "Select an industry", "Industries", true, true) +
-            '</div>' +
           '</div>' +
         '</div>' +
       '</div>';
@@ -866,7 +861,11 @@
             kachel("uob-load-logo", name, dom) +
             '<div class="uob-load-name">' + esc(name) + '</div>' +
             (dom ? '<div class="uob-load-dom">' + esc(dom) + '</div>' : "") +
-            '<div class="uob-bar"><div class="uob-bar-fill" data-bar></div></div>' +
+            /* Balken nur im ZWEITEN Ladebild. Im ersten stehen darunter die vier Phasenchips,
+               und die sagen dasselbe genauer: welcher Abschnitt laeuft, nicht nur wie weit es
+               ungefaehr ist. Zwei Fortschrittsanzeigen uebereinander sind eine zu viel.
+               renderPhasen faellt darauf herein nicht: es fragt [data-bar] mit if (bar) ab. */
+            (kompakt ? '<div class="uob-bar"><div class="uob-bar-fill" data-bar></div></div>' : "") +
             (kompakt
               ? '<p class="uob-sub" style="margin-top:18px">Writing the first prompts for the topics you picked.</p>' +
                 /* Die gewaehlten Themen als Marken -- dieselbe Idee wie im Ladebild von
@@ -2412,6 +2411,14 @@
       fire("data-step-fn", "uobStep", key);
     }
 
+    /* brand_industry geht weiter im uobStart-Payload mit, obwohl das Industry-Feld am 24.08. aus
+       dem Formular geflogen ist -- jetzt eben leer. Den Schluessel wegzulassen waere eine
+       Aenderung am Vertrag mit dem Bubble-Workflow, und der erwartet ihn. Zustand und Ruecklesen
+       bleiben ebenfalls stehen: kommt das Feld je zurueck, funktioniert es sofort wieder.
+       Der Kommentar steht HIER und nicht im Payload-Objekt: .contract_snapshot.py fasst ein
+       gefeuertes Objekt nur bis 600 Zeichen, und ein langer Kommentar darin schiebt es darueber
+       -- dann meldet der Check sechs Schluessel als entfernt, die alle noch da sind. Genau das
+       ist passiert. Ein blindes Sicherheitsnetz ist schlimmer als keins. */
     function weiter(ueberspringen) {
       if (state.busy) return;
       if (state.step === "brand") {
@@ -2433,7 +2440,7 @@
           market: txt(state.form.market),
           timezone: txt(state.form.timezone),
           business_model: txt(state.form.business),
-          brand_industry: txt(state.form.industry)
+          brand_industry: txt(state.form.industry)   /* Feld raus, Schluessel bleibt -- s.u. */
         });
         return;
       }

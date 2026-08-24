@@ -354,7 +354,6 @@
   "billing_interval",
   "block",
   "brand_ids",
-  "brand_industry",
   "brand_mentioned",
   "brand_name",
   "brands",
@@ -380,7 +379,6 @@
   "key",
   "kind",
   "limit",
-  "market",
   "market_id",
   "matched",
   "message",
@@ -415,7 +413,6 @@
   "summary",
   "tag_ids",
   "team_id",
-  "timezone",
   "token",
   "topic_id",
   "topic_ids",
@@ -423,10 +420,7 @@
   "url",
   "url_types",
   "value",
-  "view",
-  "website_domain",
-  "website_input",
-  "website_url"
+  "view"
  ],
  "dataattrs": [
   "data-acc-key",
@@ -2648,7 +2642,7 @@
   "events": 123,
   "fnattrs": 80,
   "globals": 137,
-  "payloadkeys": 81,
+  "payloadkeys": 75,
   "dataattrs": 198,
   "klassen": 1954,
   "keyframes": 58
