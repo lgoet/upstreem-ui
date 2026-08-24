@@ -7592,7 +7592,12 @@
     /* refresh-cw, fuer "Generate More" in der Gruppenzeile. */
     refreshCw: '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
     bulb:     '<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/>' +
-              '<path d="M9 18h6"/><path d="M10 22h4"/>'
+              '<path d="M9 18h6"/><path d="M10 22h4"/>',
+    /* funnel-plus, wortgleich aus lucide-static 1.34.0 uebernommen -- nicht nachgezeichnet. Der
+       Trichter ist unten offen und traegt rechts oben das Plus; genau daran erkennt man ihn vom
+       schlichten funnel. Ausloeser der einklappbaren Werkzeugleiste in prompts-table. */
+    funnelPlus: '<path d="M13.354 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14v6a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341l1.218-1.348"/>' +
+                '<path d="M16 6h6"/><path d="M19 3v6"/>'
   };
   /* ---- Mentioned-Brands-Dropdown: die zwei Teile, die in allen vier Tabellen gleich sind ------
      mentFilter(menu, query)  blendet die Eintraege aus, die nicht zur Suche passen, und schaltet

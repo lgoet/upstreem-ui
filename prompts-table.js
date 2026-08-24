@@ -4344,10 +4344,11 @@
         elTbTrig.setAttribute("data-tip", "Search, filters and settings");
         elTbTrig.setAttribute("aria-label", "Show table tools");
         elTbTrig.setAttribute("aria-expanded", "false");
-        /* Die drei Punkte, nicht ein Zahnrad oder ein Trichter: dahinter liegen Suche, zwei
-           Filter, Sortierung, Gruppierung UND die Tabelleneinstellungen. Ein Trichter waere
-           gelogen, und das Zahnrad ist zwei Knoepfe weiter schon vergeben. */
-        elTbTrig.innerHTML = UC.icon("moreHorizontal", 2);
+        /* funnel-plus: der Trichter sagt "hier wird gefiltert", das Plus sagt "es kommt noch
+           mehr dazu" -- beides trifft zu, denn dahinter liegen neben den zwei Filtern auch
+           Suche, Sortierung, Gruppierung und die Tabelleneinstellungen. Das Zahnrad ist zwei
+           Knoepfe weiter schon vergeben. */
+        elTbTrig.innerHTML = UC.icon("funnelPlus", 2);
       }
       /* Alles einsammeln, was in die Gruppe gehoert: jedes direkte Kind ausser der Statusgruppe,
          dem Export-Knopf und den beiden eigenen Knoepfen. Ueber eine Ausschlussliste und nicht
@@ -4360,13 +4361,16 @@
         if (k.classList.contains("upt-status") || k.classList.contains("up-export")) continue;
         elToolIn.appendChild(k);
       }
-      /* Der Ausloeser steht IMMER unmittelbar links vom Export-Knopf, auch wenn die Statusgruppe
-         dazwischen neu einsortiert wurde -- ABER nur verschieben, wenn er nicht schon dort steht.
-         insertBefore auf einen Knoten, der bereits an dieser Stelle haengt, ist trotzdem ein
-         Ausbauen und Wiedereinbauen. Und tbBauen laeuft bei JEDEM render(): der Knopf haette
-         damit unter dem Zeiger den Hover verloren, und ein Fokus darauf waere weggesprungen. */
-      var exp = elHeadTools.querySelector(".up-export");
-      if (exp){ if (elTbTrig.nextElementSibling !== exp || elTbTrig.parentNode !== elHeadTools) elHeadTools.insertBefore(elTbTrig, exp); }
+      /* Reihenfolge von rechts: Export, Active/Inactive, Ausloeser. Der Ausloeser steht also VOR
+         der Statusgruppe -- und weil renderStatusTabs sie bei jedem Durchgang neu vor den
+         Export-Knopf schiebt, wird sein Platz hier bei jedem Durchgang nachgezogen.
+
+         ABER nur verschieben, wenn er nicht schon dort steht: insertBefore auf einen Knoten, der
+         bereits an dieser Stelle haengt, ist trotzdem ein Ausbauen und Wiedereinbauen. tbBauen
+         laeuft bei JEDEM render() -- der Knopf haette damit unter dem Zeiger den Hover verloren,
+         und ein Tastaturfokus darauf waere weggesprungen. */
+      var nachbar = elHeadTools.querySelector(".upt-status") || elHeadTools.querySelector(".up-export");
+      if (nachbar){ if (elTbTrig.nextElementSibling !== nachbar || elTbTrig.parentNode !== elHeadTools) elHeadTools.insertBefore(elTbTrig, nachbar); }
       else if (elTbTrig.parentNode !== elHeadTools) elHeadTools.appendChild(elTbTrig);
 
       if (!elTbTrig.__uptBound){

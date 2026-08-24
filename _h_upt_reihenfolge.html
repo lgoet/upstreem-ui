@@ -1,4 +1,4 @@
-<meta charset="utf-8"><title>prompts-table: Abstaende und Gruppierung</title>
+<meta charset="utf-8"><title>prompts-table: Reihenfolge, Icon, Abstaende</title>
 <style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif}#buehne{padding:16px;width:1240px}
 #out{padding:10px;font:11px/1.5 ui-monospace,monospace;white-space:pre-wrap}</style>
 <body><div id="buehne"></div><pre id="out">laeuft…</pre>
@@ -49,6 +49,17 @@ Promise.all(D.map(hol)).then(function(t){
   function warte(ms){ return new Promise(function(ok){ setTimeout(ok,ms); }); }
   var R={};
   R.gruppierungAn = root.classList.contains("is-grouped");
+  /* REIHENFOLGE: von rechts Export, Active/Inactive, Ausloeser. */
+  R.reihenfolge = Array.prototype.map.call(tools.children, function(c){
+    var cl=(c.className||"").toString().split(/\s+/);
+    return cl.filter(function(x){ return /^(up|upt)-/.test(x) && x!=="up-iconbtn"; })[0] || cl[0] || c.tagName.toLowerCase();
+  });
+  /* ICON: funnel-plus hat DREI Pfade (Trichter, Querstrich, Senkrechte). Ein fehlender Name gaebe
+     einen leeren String und einen Konsolenfehler aus UC.icon -- beides wird hier geprueft. */
+  R.icon = { pfade: trig.querySelectorAll("path").length,
+             svgDa: !!trig.querySelector("svg"),
+             ersterPfadAnfang: (trig.querySelector("path") || {}).getAttribute
+               ? trig.querySelector("path").getAttribute("d").slice(0, 24) : null };
   R.eingeklappt = abst();
   trig.click();
   return warte(300).then(function(){

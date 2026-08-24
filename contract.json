@@ -1995,6 +1995,8 @@
   "up-thsort-up",
   "up-tip",
   "up-tip-lbl",
+  "up-toolgroup",
+  "up-toolgroup-in",
   "up-topicchip",
   "up-topicchip-check",
   "up-topicchip-e",
@@ -2306,6 +2308,8 @@
   "upt-status",
   "upt-status-btn",
   "upt-status-tag",
+  "upt-tbcol",
+  "upt-tbtrig",
   "upt-td-prompt",
   "upt-td-topics",
   "upt-th-brandlogo",
@@ -2646,7 +2650,7 @@
   "globals": 137,
   "payloadkeys": 80,
   "dataattrs": 198,
-  "klassen": 1951,
+  "klassen": 1955,
   "keyframes": 58
  }
 }
