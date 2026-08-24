@@ -222,10 +222,11 @@
          echter Produktion, nicht nur in dieser Sandbox. Es gibt keine Zahl, die fuer jeden Beitrag
          stimmt: kurze Beitraege bekommen etwas Leerraum, ungewoehnlich lange werden am unteren
          Rand abgeschnitten. Vor die Wahl gestellt, welcher der beiden Fehler bleiben darf, hat der
-         Nutzer sich am 24.08. explizit fuer 500px entschieden -- Leerraum statt Abschneiden. */
+         Nutzer sich am 24.08. fuer Leerraum statt Abschneiden entschieden, 400px als Punkt
+         dazwischen. */
       key: "reddit", label: "Reddit",
       passt: function (u) { return /reddit\.com\/r\/[^\/]+\/comments\/[a-z0-9]+/i.test(u); },
-      art: "iframe", hoehe: 500, scrollErlaubt: true,
+      art: "iframe", hoehe: 400, scrollErlaubt: true,
       src: function (u) {
         var m = /reddit\.com(\/r\/[^\/]+\/comments\/[^?#]*)/i.exec(u);
         return "https://embed.reddit.com" + (m ? m[1] : "") + "?embed=true";
