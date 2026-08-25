@@ -178,15 +178,41 @@
        Trigger event : angehakt
      Am Wurzel-Div:  data-select-fn="bubble_fn_uobSelect"
 
-   GEMESSEN, Klick auf einen Competitor (Auswahl weggenommen):
-     {"kind":"brands","ids":"","count":0,"changed":"c1","on":false}
-   GEMESSEN, derselbe Competitor wieder angeklickt:
-     {"kind":"brands","ids":"c1","count":1,"changed":"c1","on":true}
-   GEMESSEN, Klick auf ein Topic:
-     {"kind":"topics","ids":"ca0543ae","count":1,"changed":"1defeb4e","on":false}
+   GEMESSEN, Klick auf einen Competitor:
+     {"kind":"brands","ids":"c1","count":1,"changed":"c1","changed_ids":"c1","on":true}
    GEMESSEN, "Select all" bei den Topics:
-     {"kind":"topics","ids":"ca0543ae,1defeb4e","count":2,"changed":"","on":true}
-   Bei den Prompts im Schritt danach genauso, mit kind "prompts".
+     {"kind":"topics","ids":"t1,t2","count":2,"changed":"","changed_ids":"t1,t2","on":true}
+   GEMESSEN, "Deselect all" bei den Topics:
+     {"kind":"topics","ids":"","count":0,"changed":"","changed_ids":"t1,t2","on":false}
+   GEMESSEN, Gruppenknopf "Hardtekk" bei den Prompts (3 Prompts in der Gruppe):
+     {"kind":"prompts","ids":"pr0,pr1,pr2,pr3","count":4,"changed":"","changed_ids":"ht0,ht1,ht2","on":false}
+
+   ── changed_ids IST DAS FELD, MIT DEM DU ARBEITEST ────────────────────────────────────────────
+   Es traegt genau die Ids, die DIESER Klick angefasst hat -- als Komma-Text, in allen drei Formen
+   gleich. Einzelklick: eine Id. Gruppenknopf: die Ids dieser Gruppe. Alle-Knopf der Themen: die vom
+   Server gelieferten Themen (die selbst getippten schaltet er absichtlich nicht).
+
+   Warum eine Themen-Id NICHT genuegt: ein Prompt kann mehrere Themen tragen. In der Oberflaeche
+   steht er unter seinem primary_topic_id, die anderen traegt er als Marke. Ein serverseitiges
+   "alle Prompts mit Topic Hardtekk" trifft damit auch die, die unter Partyreihe stehen -- Prompts,
+   die der Nutzer nicht angefasst hat.
+
+   GEMESSEN an einem Datensatz mit 4 Prompts (primary Partyreihe, tragen AUCH Hardtekk) und 3
+   (primary Hardtekk):
+     "alle Prompts mit Topic Hardtekk"  ->  7 Ids   falsch
+     changed_ids beim Gruppenklick      ->  3 Ids   richtig, keine fremde dabei
+
+   Dein RPC braucht damit genau zwei Parameter, fuer ALLE drei Formen dieselben:
+     p_ids       changed_ids, in Bubble  :split by ","  ->  Liste
+     p_selected  on
+
+   ids und count daneben sind die Vollmenge NACH dem Klick. Die brauchst du nur, wenn du lieber
+   ueberschreiben willst statt gezielt zu schreiben.
+
+   EXTRAKTION
+     changed_ids  (?<="changed_ids":")[^"]*
+     on           (?<="on":)\w+
+     kind         (?<="kind":")[^"]*
 
      kind     "brands" | "topics" | "prompts".  ACHTUNG: intern heissen die Competitors "brands" --
               in der Oberflaeche steht "Competitors", im Ereignis steht "brands".

@@ -2265,7 +2265,8 @@
          einzelnes Element. */
       fire("data-select-fn", "uobSelect",
         { kind: kind, ids: idsVon(topf).join(","), count: anzahl(topf),
-          changed: String(id == null ? "" : id), on: !!jetztAn });
+          changed: String(id == null ? "" : id),
+          changed_ids: String(id == null ? "" : id), on: !!jetztAn });
     }
 
     /* Alle Themen auf einmal. Gezaehlt wird nur, was der Server geliefert hat -- die selbst
@@ -2288,11 +2289,15 @@
       var knopf = root.querySelector('[data-allof="topics"]');
       if (knopf) knopf.textContent = alleServerThemenAn() ? "Deselect all" : "Select all";
       renderNav();
-      /* changed bleibt leer: hier gibt es kein einzelnes Element, und ein erfundener Wert waere
-         schlimmer als keiner. `on` sagt, in welche Richtung der Knopf geschaltet hat. */
+      /* changed bleibt leer: hier gibt es kein EINZELNES Element. changed_ids traegt dafuer genau
+         die Ids, die dieser Klick angefasst hat -- die vom Server gelieferten Themen, nicht die
+         selbst getippten (die schaltet der Knopf absichtlich nicht, siehe oben). Damit kann ein
+         Workflow gezielt schreiben, statt "alle" aufloesen zu muessen. */
       fire("data-select-fn", "uobSelect",
         { kind: "topics", ids: idsVon(state.selTopics).join(","), count: anzahl(state.selTopics),
-          changed: "", on: alleServerThemenAn() });
+          changed: "",
+          changed_ids: state.topics.map(function (t) { return t.id; }).join(","),
+          on: alleServerThemenAn() });
     }
 
     /* Ein neues eigenes Thema. Die Zeile wird an Ort und Stelle eingesetzt und der Platzhalter
@@ -2364,10 +2369,20 @@
       auswahlZeichnen("prompts");
       gruppenKnoepfe();
       renderNav();
-      /* Gruppenknopf bei den Prompts -- wie beim Alle-Knopf der Topics: kein einzelnes Element. */
+      /* DER Fall, an dem eine Topic-Id nicht genuegt: ein Prompt kann mehrere Themen tragen. Steht
+         er unter "Partyreihe", weil das sein primary_topic_id ist, traegt aber auch "Hardtekk",
+         dann trifft ein serverseitiges "alle Prompts mit Topic Hardtekk" ihn MIT -- obwohl er in
+         der Oberflaeche unter einer anderen Ueberschrift steht und der Nutzer ihn nicht angefasst
+         hat. Gemeldet am 25.08.
+
+         Deshalb traegt changed_ids die Prompt-Ids DIESER Gruppe, nicht die Themen-Id. Der Workflow
+         muss dann nichts aufloesen -- er schreibt genau die Zeilen, die der Klick gemeint hat.
+         `on` sagt die Richtung: der Knopf schaltet die ganze Gruppe an oder aus. */
       fire("data-select-fn", "uobSelect",
         { kind: "prompts", ids: idsVon(state.selPrompts).join(","), count: anzahl(state.selPrompts),
-          changed: "", on: null });
+          changed: "",
+          changed_ids: g.items.map(function (it) { return it.p.id; }).join(","),
+          on: !!an });
     }
     /* Die Beschriftungen der Gruppenknoepfe nachziehen, ohne die Liste neu zu bauen -- sonst
        ginge der Scrollstand verloren, und die Mehrspaltenaufteilung wuerde neu berechnet. */

@@ -1,0 +1,178 @@
+{
+ "topics": [
+  {
+   "id": "6010bff1-c229-4fc5-a3f0-fa0e9773ab5d",
+   "name": "Partyreihe",
+   "hex_dark": "#de1b22",
+   "selected": true,
+   "hex_light": "#de1b22",
+   "sort_order": 0
+  },
+  {
+   "id": "f535da7b-6da0-4155-9bbe-3ea7810fa118",
+   "name": "Hardtekk",
+   "hex_dark": "#8b4c23",
+   "selected": true,
+   "hex_light": "#8b4c23",
+   "sort_order": 1
+  }
+ ],
+ "project": {
+  "id": "p",
+  "status": "ready",
+  "status_phase": 7,
+  "progress_percent": 100,
+  "company_name": "East Side Party",
+  "website_domain": "eastsidepartys.ticket.io",
+  "business_model": "B2C",
+  "market": "DE",
+  "last_error": null
+ },
+ "prompts": [
+  {
+   "id": "pr0",
+   "market": "DE",
+   "selected": true,
+   "sort_order": 0,
+   "prompt_text": "Partyreihe-Prompt 0 (traegt auch Hardtekk)",
+   "primary_topic_id": "6010bff1-c229-4fc5-a3f0-fa0e9773ab5d",
+   "topics": [
+    {
+     "id": "6010bff1-c229-4fc5-a3f0-fa0e9773ab5d",
+     "name": "Partyreihe",
+     "hex_light": "#de1b22",
+     "is_primary": true
+    },
+    {
+     "id": "f535da7b-6da0-4155-9bbe-3ea7810fa118",
+     "name": "Hardtekk",
+     "hex_light": "#8b4c23",
+     "is_primary": false
+    }
+   ]
+  },
+  {
+   "id": "pr1",
+   "market": "DE",
+   "selected": true,
+   "sort_order": 1,
+   "prompt_text": "Partyreihe-Prompt 1 (traegt auch Hardtekk)",
+   "primary_topic_id": "6010bff1-c229-4fc5-a3f0-fa0e9773ab5d",
+   "topics": [
+    {
+     "id": "6010bff1-c229-4fc5-a3f0-fa0e9773ab5d",
+     "name": "Partyreihe",
+     "hex_light": "#de1b22",
+     "is_primary": true
+    },
+    {
+     "id": "f535da7b-6da0-4155-9bbe-3ea7810fa118",
+     "name": "Hardtekk",
+     "hex_light": "#8b4c23",
+     "is_primary": false
+    }
+   ]
+  },
+  {
+   "id": "pr2",
+   "market": "DE",
+   "selected": true,
+   "sort_order": 2,
+   "prompt_text": "Partyreihe-Prompt 2 (traegt auch Hardtekk)",
+   "primary_topic_id": "6010bff1-c229-4fc5-a3f0-fa0e9773ab5d",
+   "topics": [
+    {
+     "id": "6010bff1-c229-4fc5-a3f0-fa0e9773ab5d",
+     "name": "Partyreihe",
+     "hex_light": "#de1b22",
+     "is_primary": true
+    },
+    {
+     "id": "f535da7b-6da0-4155-9bbe-3ea7810fa118",
+     "name": "Hardtekk",
+     "hex_light": "#8b4c23",
+     "is_primary": false
+    }
+   ]
+  },
+  {
+   "id": "pr3",
+   "market": "DE",
+   "selected": true,
+   "sort_order": 3,
+   "prompt_text": "Partyreihe-Prompt 3 (traegt auch Hardtekk)",
+   "primary_topic_id": "6010bff1-c229-4fc5-a3f0-fa0e9773ab5d",
+   "topics": [
+    {
+     "id": "6010bff1-c229-4fc5-a3f0-fa0e9773ab5d",
+     "name": "Partyreihe",
+     "hex_light": "#de1b22",
+     "is_primary": true
+    },
+    {
+     "id": "f535da7b-6da0-4155-9bbe-3ea7810fa118",
+     "name": "Hardtekk",
+     "hex_light": "#8b4c23",
+     "is_primary": false
+    }
+   ]
+  },
+  {
+   "id": "ht0",
+   "market": "DE",
+   "selected": true,
+   "sort_order": 10,
+   "prompt_text": "Hardtekk-Prompt 0",
+   "primary_topic_id": "f535da7b-6da0-4155-9bbe-3ea7810fa118",
+   "topics": [
+    {
+     "id": "f535da7b-6da0-4155-9bbe-3ea7810fa118",
+     "name": "Hardtekk",
+     "hex_light": "#8b4c23",
+     "is_primary": true
+    }
+   ]
+  },
+  {
+   "id": "ht1",
+   "market": "DE",
+   "selected": true,
+   "sort_order": 11,
+   "prompt_text": "Hardtekk-Prompt 1",
+   "primary_topic_id": "f535da7b-6da0-4155-9bbe-3ea7810fa118",
+   "topics": [
+    {
+     "id": "f535da7b-6da0-4155-9bbe-3ea7810fa118",
+     "name": "Hardtekk",
+     "hex_light": "#8b4c23",
+     "is_primary": true
+    }
+   ]
+  },
+  {
+   "id": "ht2",
+   "market": "DE",
+   "selected": true,
+   "sort_order": 12,
+   "prompt_text": "Hardtekk-Prompt 2",
+   "primary_topic_id": "f535da7b-6da0-4155-9bbe-3ea7810fa118",
+   "topics": [
+    {
+     "id": "f535da7b-6da0-4155-9bbe-3ea7810fa118",
+     "name": "Hardtekk",
+     "hex_light": "#8b4c23",
+     "is_primary": true
+    }
+   ]
+  }
+ ],
+ "competitors": [
+  {
+   "id": "c1",
+   "name": "BigCityBeats",
+   "domain": "bigcitybeats.de",
+   "url": "https://bigcitybeats.de/",
+   "selected": true
+  }
+ ]
+}
