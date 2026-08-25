@@ -300,7 +300,10 @@
        der Kaskade selbst (welche Regel greift), nicht geraten. Sichtbar war es nicht, weil die
        Gruppe dort 0 breit und gekappt ist -- aber eine CSS, die etwas anderes tut als sie sagt,
        fuehrt den naechsten Leser in die Irre. */
-    .up-tbcol.up-tbcol { width: 0; opacity: 0; transform: translateX(-6px); pointer-events: none; }
+    /* Die Ruhelage liegt RECHTS von der Endlage: der Knopf faehrt also von rechts nach links
+       herein und beim Ausblenden nach rechts wieder hinaus. Das ist die Richtung, in die auch
+       die Leiste selbst zusammenfaehrt -- vorher lief er ihr entgegen. */
+    .up-tbcol.up-tbcol { width: 0; opacity: 0; transform: translateX(6px); pointer-events: none; }
     .up-root.is-tools-open .up-tbcol.up-tbcol { width: 32px; }
     /* Hover: NUR Deckkraft und Verschiebung. Kein Layout, keine Gridspur, kein Ruckeln. */
     .up-root.is-tools-open :has(> .up-toolgroup):hover .up-tbcol,
