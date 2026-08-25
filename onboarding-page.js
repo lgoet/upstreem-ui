@@ -524,6 +524,14 @@
     var fire = UC.makeFire(root, { label: "onboarding-page", eventPrefix: "uob" });
     var instanceId = txt(root.getAttribute("data-instance")) || "onboarding";
 
+    /* Die Adresse EINMAL lesen, jetzt -- bevor irgendein gehe() sie anfasst. gehe() schreibt den
+       Schritt naemlich hinein, und der Aufbau ruft es (mit "brand"), bevor das Buendel da ist.
+       Ohne diese Momentaufnahme liest zielSchritt() spaeter genau das, was die Komponente selbst
+       gerade geschrieben hat, und landet immer auf brand -- gemessen, und zwar erst NACHDEM der
+       Fix schon geschrieben war. Was hier steht, ist der Schritt, auf dem der Nutzer die Seite
+       verlassen hat. */
+    var schrittBeimAufbau = stepAusUrl();
+
     function attr(n, f) {
       var v = root.getAttribute(n);
       return (v == null || v === "" || /^[A-Z_]{3,}$/.test(v)) ? (f || "") : v;
@@ -2741,10 +2749,29 @@
       if (state.hochfahren) { state.hochfahren = false; render(); }
     }, BOOT_MAX_MS);
 
+    /* Wohin gehoert dieser Nutzer beim Aufbau?
+
+       ZUERST die Adresse, und zwar die MOMENTAUFNAHME vom Aufbau (schrittBeimAufbau). gehe()
+       schreibt den Schritt bei jedem Wechsel hinein (urlSetzen), ein Neuladen bringt ihn also mit --
+       stepAusUrl() gab es schon, es wurde nur nie gefragt. Die Momentaufnahme ist Pflicht: fragte
+       man hier live, laese man das, was die Komponente beim Aufbau selbst geschrieben hat.
+
+       Die beiden Schluesse aus der Auswahl sind RAUS, und der Grund ist der gemeldete Fehler vom
+       24.08.: einen Wettbewerber anklicken, neu laden -- und man stand auf Topics, ohne je Continue
+       gedrueckt zu haben. Eine Auswahl wird sofort gespeichert (uobSelect feuert bei jedem Klick),
+       sie kann also nicht dafuer stehen, dass ein Schritt ABGESCHLOSSEN ist. Dasselbe galt fuer die
+       Themen: ein Haken dort schob nach Prompts.
+
+       Was als Schluss BLEIBT: vorhandene Prompts. Die entstehen erst im Workflow hinter uobTopics,
+       also erst nachdem der Nutzer den Themenschritt wirklich verlassen hat -- der einzige Zustand
+       in den Daten, der eine abgeschlossene Handlung belegt und nicht bloss einen Klick.
+
+       Ist die Adresse leer (fremder Einstieg, Link ohne Parameter) und gibt es keine Prompts, faengt
+       es bei Competitors an. Zurueck geht es nie: darum kuemmert sich die Vorwaertssperre im
+       Aufrufer. */
     function zielSchritt() {
+      if (schrittBeimAufbau) return schrittBeimAufbau;
       if (isArr(state.prompts) && state.prompts.length) return "prompts";
-      if (idsVon(state.selTopics).length) return "prompts";
-      if (idsVon(state.selBrands).length) return "topics";
       return "competitors";
     }
     function einstieg(b) {
