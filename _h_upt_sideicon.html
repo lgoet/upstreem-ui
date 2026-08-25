@@ -1,0 +1,66 @@
+<meta charset="utf-8"><title>prompts-table: Sidebar-Zeichen wie in der Hauptleiste</title>
+<style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif;background:#151515;color:#e0e0e0}
+#b{padding:20px;width:1200px}#out{padding:10px;font:11px/1.5 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body><div id="b"></div><pre id="out">laeuft…</pre>
+<script>
+/* Die Frage: traegt der Umschalter in der Gruppenliste JETZT dasselbe Zeichen wie der oben rechts
+   in der Hauptleiste? Verglichen wird nicht "sieht gleich aus", sondern das gerenderte Markup und
+   die gerechnete Groesse -- beides muss uebereinstimmen. Die Hauptleiste wird dafuer nicht
+   nachgebaut: es wird direkt UC.icon("sidebarPanels") gefragt, also genau das, was sidebar.js
+   dort einsetzt (BAR_SVG). */
+window.__err=[]; window.addEventListener("error",function(e){window.__err.push(String(e.message));});
+try { for (var i=window.localStorage.length-1;i>=0;i--){ var k=window.localStorage.key(i);
+  if (k && /^upt_/.test(k)) window.localStorage.removeItem(k); } } catch(e){}
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=["core.css","core.js","prompts-table.css","prompts-table.js","sidebar.js","bubble/prompts_table_bubble.html"];
+Promise.all(D.map(hol)).then(function(t){
+  var m={}; D.forEach(function(f,i){ m[f]=t[i]; });
+  ["core.css","prompts-table.css"].forEach(function(f){ var s=document.createElement("style"); s.textContent=m[f]; document.head.appendChild(s); });
+  var s2=document.createElement("style"); s2.textContent="*,*::before,*::after{transition:none!important;animation:none!important}"; document.head.appendChild(s2);
+  var w=document.createElement("div"); w.innerHTML=wurzelAus(m["bubble/prompts_table_bubble.html"]);
+  var r=w.querySelector(".upt-root");
+  r.setAttribute("data-instance","s"); r.setAttribute("data-cdn-pin","s"); r.setAttribute("data-isdark","yes");
+  document.getElementById("b").appendChild(r);
+  var j=document.createElement("script"); j.textContent=m["core.js"]; document.head.appendChild(j);
+  var j2=document.createElement("script"); j2.textContent=m["prompts-table.js"]; document.head.appendChild(j2);
+  window.__sidebarQuelle = m["sidebar.js"];
+  return new Promise(function(ok){ setTimeout(ok,1500); });
+}).then(function(){
+  var upt=document.querySelector(".upt-root");
+  /* Gruppierung + Listenmodus erzwingen, damit beide Umschalter im DOM stehen. */
+  window.setPromptsTableGroups(JSON.stringify([{ id:"g1", name:"Gruppe", prompt_count:2, hex_light:"#888", hex_dark:"#888" }]));
+  window.renderPromptsTable(JSON.stringify({ instanceId:"s", view_active:"yes", totalCount:1,
+    rows:[{id:"1",prompt_text:"X",status:"active"}] }));
+  var R={};
+  var UC=window.UpstreemCore;
+  /* Das Zeichen, das sidebar.js oben rechts einsetzt -- an der Quelle abgelesen, nicht geraten. */
+  R.hauptleiste_nutzt = /UC\.icon\("sidebarPanels"\)/.test(window.__sidebarQuelle) ? 'UC.icon("sidebarPanels")' : "ANDERS";
+  var soll = UC.icon("sidebarPanels");
+
+  var seite = upt.querySelector(".upt-grp-widebtn");     /* im Kopf der Gruppenliste */
+  var kopf  = upt.querySelector(".upt-heading-widebtn"); /* der Zwilling in der Ueberschrift */
+  function pruef(el, name){
+    if (!el) return { name: name, da: false };
+    var svg = el.querySelector("svg");
+    var cs = svg ? getComputedStyle(svg) : null;
+    return { name: name, da: true,
+             markupGleich: el.innerHTML.trim() === soll.trim(),
+             viewBox: svg ? svg.getAttribute("viewBox") : null,
+             groesse: cs ? (cs.width + " x " + cs.height) : null,
+             fuellung: cs ? cs.fill : null,
+             /* 1:1 gerendert? Nur dann bleiben die Haarlinien genau einen Pixel breit. */
+             einsZuEins: (svg && cs) ? (parseFloat(cs.width) === 16 && svg.getAttribute("viewBox") === "0 0 16 16") : null,
+             deckkraft: cs ? cs.opacity : null };
+  }
+  R.gruppenliste = pruef(seite, ".upt-grp-widebtn");
+  R.ueberschrift = pruef(kopf, ".upt-heading-widebtn");
+  R.beideGleich = R.gruppenliste.markupGleich === true && R.ueberschrift.markupGleich === true;
+  /* Gegenprobe: das ALTE Zeichen war ein 24er viewBox mit stroke -- damit waere markupGleich false. */
+  R.gegenprobe_altesZeichen = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>').trim() === soll.trim();
+  R.fehler = window.__err;
+  document.getElementById("out").textContent = JSON.stringify(R,null,1);
+  window.__R=R; window.__fertig=true;
+}).catch(function(e){ document.getElementById("out").textContent="FEHLER: "+e.message; window.__fertig=true; });
+</script>
