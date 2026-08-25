@@ -1,4 +1,4 @@
-<meta charset="utf-8"><title>onboarding: drei Vertraege gemessen</title>
+<meta charset="utf-8"><title>onboarding: uobSelect und uobStep</title>
 <style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif}#b{padding:16px;width:1100px}
 #out{padding:10px;font:11px/1.5 ui-monospace,monospace;white-space:pre-wrap}</style>
 <body><div id="b"></div><pre id="out">laeuft…</pre>
@@ -57,6 +57,48 @@ Promise.all(D.map(hol)).then(function(t){
     }).then(function(){
       R.uobTopics_gefeuert = window.__gefeuert.filter(function(x){ return x[0]==="uobTopics"; }).map(function(x){ return x[1]; });
       R.alleEreignisse = window.__gefeuert.map(function(x){ return x[0]+" = "+String(x[1]).slice(0,120); });
+
+      /* ── uobSelect: was feuert bei einem Klick auf einen Competitor bzw. ein Topic? ──
+         Gemessen wird jeder einzelne Klick, damit in der Uebergabe der ECHTE Wert steht. */
+      var root2 = document.querySelector(".uob-root");
+      R.select = {};
+      function klickReihe(schritt, name){
+        window.setOnboardingStep("o", schritt);
+        window.__gefeuert.length = 0;
+        var kandidaten = root2.querySelectorAll("[data-pick]");
+        var aus = [];
+        [].slice.call(kandidaten).slice(0, 2).forEach(function(el, i){
+          window.__gefeuert.length = 0;
+          el.click();
+          aus.push("Klick " + (i+1) + ": " + window.__gefeuert.filter(function(x){ return x[0]==="uobSelect"; })
+            .map(function(x){ return x[1]; }).join(" ; "));
+        });
+        /* Und einmal abwaehlen -- die Liste wird kuerzer, das Ereignis feuert wieder. */
+        if (kandidaten.length){
+          window.__gefeuert.length = 0;
+          kandidaten[0].click();
+          aus.push("Abwahl:  " + window.__gefeuert.filter(function(x){ return x[0]==="uobSelect"; })
+            .map(function(x){ return x[1]; }).join(" ; "));
+        }
+        R.select[name] = { anzahlKarten: kandidaten.length, klicks: aus };
+      }
+      klickReihe("competitors", "competitors");
+      klickReihe("topics", "topics");
+
+      /* ── uobStep: feuert beim Wechsel, auch beim Verlassen von Competitors ── */
+      window.__gefeuert.length = 0;
+      window.setOnboardingStep("o", "competitors");
+      var weiter2 = root2.querySelector("[data-next], .uob-next");
+      if (weiter2) weiter2.click();
+      R.step_beimVerlassenVonCompetitors = window.__gefeuert.map(function(x){ return x[0]+" = "+String(x[1]).slice(0,100); });
+
+      /* Alle-Knopf: feuert der auch? */
+      window.setOnboardingStep("o", "topics");
+      window.__gefeuert.length = 0;
+      var alle = root2.querySelector('[data-allof="topics"]');
+      R.selectAllKnopf = alle ? (alle.textContent||"").trim() : "nicht gefunden";
+      if (alle) alle.click();
+      R.select_beiSelectAll = window.__gefeuert.filter(function(x){ return x[0]==="uobSelect"; }).map(function(x){ return x[1]; });
 
       /* ── 2) setOnboardingStatus: welche Formen wirken? ── */
       function lage(){

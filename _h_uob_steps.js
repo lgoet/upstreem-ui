@@ -152,3 +152,72 @@
       Element noch an einem aelteren Pin, ist der Name undefined statt ein ReferenceError, der den
       ganzen Schritt mitnimmt.
    ============================================================================================== */
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   NACHTRAG: WIE WAEHLT DER NUTZER COMPETITORS UND TOPICS AUS?
+   ══════════════════════════════════════════════════════════════════════════════════════════════
+
+   Die kurze Antwort auf "sollte uobTopics nicht noch mehr tun, es schliesst die Bereiche doch ab?"
+   -- nein, und zwar weil es nichts abzuschliessen gibt. Gespeichert wird LAUFEND, bei jedem Klick.
+   uobTopics ist kein Speichern-Ereignis, sondern der ANSTOSS fuer die Prompt-Erzeugung: das ist das
+   einzige, was dort dauert und deshalb einen eigenen Workflow braucht.
+
+   Drei Ereignisse, drei verschiedene Aufgaben:
+
+     uobSelect   bei JEDEM Klick auf eine Karte. Traegt die VOLLSTAENDIGE Auswahl danach.
+                 --> hier speicherst du. Nach jedem Klick, nicht am Ende.
+     uobStep     bei jedem Schrittwechsel. Nur der Name des Schritts, als reiner Text.
+                 --> hier merkst du dir, wo der Nutzer steht (fuer den Wiedereinstieg).
+     uobTopics   nur beim VERLASSEN von Topics, und nur wenn sich die Auswahl geaendert hat.
+                 --> hier erzeugst du die Prompts.
+
+   ── uobSelect ─────────────────────────────────────────────────────────────────────────────────
+     Toolbox-Element "JavaScript to Bubble", Suffix  uobSelect
+       Value type    : text
+       Trigger event : angehakt
+     Am Wurzel-Div:  data-select-fn="bubble_fn_uobSelect"
+
+   GEMESSEN, Klick auf einen Competitor:
+     {"kind":"brands","ids":"c1","count":1}
+   GEMESSEN, Klick auf ein Topic:
+     {"kind":"topics","ids":"ca0543ae","count":1}
+   GEMESSEN, "Select all" bei den Topics:
+     {"kind":"topics","ids":"ca0543ae,1defeb4e","count":2}
+   Bei den Prompts im Schritt danach genauso, mit kind "prompts".
+
+     kind   "brands" | "topics" | "prompts".  ACHTUNG: intern heissen die Competitors "brands" --
+            in der Oberflaeche steht "Competitors", im Ereignis steht "brands".
+     ids    die IDs ALLER gerade gewaehlten Elemente dieser Art, komma-getrennt. Nicht das
+            angeklickte Element, sondern der ganze Stand danach -- du kannst also stumpf
+            ueberschreiben und musst nichts zusammenrechnen.
+     count  wie viele. Bei den Topics zaehlen die selbst getippten mit.
+
+   Abwahl feuert genauso: dieselbe Form, ein Eintrag weniger. Die leere Auswahl kommt als
+     {"kind":"topics","ids":"","count":0}
+
+   EXTRAKTION
+     kind    (?<="kind":")[^"]*
+     ids     (?<="ids":")[^"]*
+     count   (?<="count":)\d+
+
+   Mit gesetztem Team steht team_id VORNE als erster Schluessel -- die Muster oben treffen
+   trotzdem, weil sie nach ihrem eigenen Schluessel suchen und nicht nach der Position.
+
+   ── uobStep ───────────────────────────────────────────────────────────────────────────────────
+     Suffix uobStep, Value type text, Trigger event an. data-step-fn="bubble_fn_uobStep"
+   KEIN JSON, nur der Name des Schritts:
+     brand | competitors | topics | prompts | plan
+   GEMESSEN beim Weiterklicken von Competitors: zwei Aufrufe, "competitors" und "topics" --
+   der erste ist der Schritt, der verlassen wird, der zweite der neue. Keine Extraktion noetig.
+
+   ── WORAUF DU ACHTEN MUSST ────────────────────────────────────────────────────────────────────
+   1. uobSelect feuert oft -- bei jedem Klick. Der Workflow dahinter sollte deshalb billig sein:
+      ein Ueberschreiben der Auswahl, kein RPC-Gewitter.
+   2. Speichere aus uobSelect, NICHT aus uobTopics. uobTopics feuert nicht, wenn die Auswahl
+      unveraendert ist -- wer dort speichert, verliert die Auswahl in genau dem Fall, in dem der
+      Nutzer nichts geaendert hat.
+   3. Die selbst getippten Themen haben in uobSelect noch KEINE serverseitige Id. Sie tauchen dort
+      nur in count auf. Ihre Namen kommen erst mit uobTopics (new_topics) -- das ist auch der
+      Moment, in dem du sie anlegen kannst.
+   ============================================================================================== */
