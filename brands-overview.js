@@ -1252,9 +1252,6 @@
       var show = !!USER_FILTERED[instanceId] && active > 0 && active < maxSel;
       badge.textContent = show ? String(active) : "";
       badge.classList.toggle("is-visible", show);
-      /* Dieselbe Bedingung entscheidet, ob die Werkzeugleiste offen bleiben muss. Sie aendert
-         sich hier, ohne dass ein Zeiger im Spiel waere -- also ausdruecklich melden. */
-      if (typeof toolGroup !== "undefined" && toolGroup) toolGroup.sync();
     }
     function applyFilterSearch(){
       if (!filterMenu) return;
@@ -1447,7 +1444,12 @@
     function syncSearch(){
       if (searchWrap) searchWrap.classList.toggle("has-text", !!(searchInput && searchInput.value));
     }
-    function setQuery(v){ state.query = v; syncSearch(); renderTable(); }
+    function setQuery(v){
+      state.query = v; syncSearch(); renderTable();
+      /* Die Suche entscheidet, ob die Werkzeugleiste offen bleiben muss. Sie aendert sich hier,
+         ohne dass ein Zeiger im Spiel waere -- also ausdruecklich melden. */
+      if (typeof toolGroup !== "undefined" && toolGroup) toolGroup.sync();
+    }
     function toggleSearch(){
       if (!searchWrap) return;
       var open = !searchWrap.classList.contains("is-open");
@@ -1638,21 +1640,28 @@
       });
     }
 
-    /* Die einklappbare Werkzeugleiste aus core. Eingeklappt bleiben die drei Segmentschalter
-       stehen -- Granularitaet, Charttyp und Y-Achse sagen, WORAUF man gerade sieht. Ein
-       klappt, was man einstellt: der Markenfilter und der Ein-/Ausblenden-Knopf.
+    /* Die einklappbare Werkzeugleiste aus core -- an der TABELLE, nicht am Chart. Der Chartkopf
+       bleibt, wie er war: seine Bedienelemente sind Granularitaet, Charttyp, Y-Achse und
+       Markenfilter, also fast durchweg Ansichtssachen, und die gehoeren nicht hinter einen
+       Ausloeser. In der Tabelle darunter stehen dagegen genau die drei Werkzeuge, um die es geht:
+       Sortierung, Suche, Tabelleneinstellungen.
 
-       filterActive: genau die Bedingung, die auch das Zaehlerabzeichen am Filterknopf zeigt
-       (syncFilterBadge). Zwei Wahrheiten ueber denselben Zustand waeren eine zu viel. */
-    var toolGroup = UC.makeToolGroup ? UC.makeToolGroup({
-      root: root, tools: root.querySelector(".ubo-head-tools"),
-      filterActive: function(){
-        var aktiv = activeCompanyIds().length;
-        var maxSel = Math.min((state.filterCompanies || []).length, MAX_FILTER_SEL);
-        return !!USER_FILTERED[instanceId] && aktiv > 0 && aktiv < maxSel;
-      },
+       Die Leiste wird ueber die Tabelleneinstellungen gefunden und nicht als
+       querySelectorAll(".ubo-head-tools")[1]: es gibt zwei Leisten mit derselben Klasse, und ein
+       Index waere von der Reihenfolge im Markup abhaengig -- die naechste Umstellung dort haette
+       den Kit still an den falschen Kopf gehaengt.
+
+       filterActive: die Tabellensuche. Der Statusschalter (Active/Inactive) steht ohnehin
+       ausserhalb der Leiste, und die Sortierung ist eine Ansichtssache. */
+    var uboTabTools = (function(){
+      var c = root.querySelector(".ubo-cols");
+      return c && c.closest ? c.closest(".ubo-head-tools") : null;
+    })();
+    var toolGroup = (UC.makeToolGroup && uboTabTools) ? UC.makeToolGroup({
+      root: root, tools: uboTabTools,
+      filterActive: function(){ return !!(state.query && String(state.query).trim()); },
       prefKey: UC.prefKey ? UC.prefKey("ubo_tools__" + instanceId) : null,
-      tip: "Filter and display settings"
+      tip: "Sort, search and table settings"
     }) : null;
 
     /* ---------- responsive ---------- */
