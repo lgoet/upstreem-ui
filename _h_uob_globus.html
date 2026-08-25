@@ -1,0 +1,74 @@
+<meta charset="utf-8"><title>onboarding: Globus auf der Logokachel, hell und dunkel</title>
+<style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif}
+#b{padding:20px;width:1100px}#out{padding:10px;font:11px/1.5 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body><div id="b"></div><pre id="out">laeuft…</pre>
+<script>
+/* Die Frage: hat der Globus auf der Logokachel im Dunkeln dieselbe Farbe wie im Hellen -- und hebt
+   er sich vom Grund der Kachel ab? Gemessen wird der KONTRAST zwischen Zeichenfarbe und
+   Kachelgrund, nicht "sieht gut aus". Gegenprobe: ohne die Korrektur muss der dunkle Fall
+   durchfallen; sie wird dafuer im selben Durchlauf ausgehebelt. */
+window.__err=[]; window.addEventListener("error",function(e){window.__err.push(String(e.message));});
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=["core.css","core.js","onboarding-page.css","onboarding-page.js","bubble/onboarding_page_bubble.html"];
+Promise.all(D.map(hol)).then(function(t){
+  var m={}; D.forEach(function(f,i){ m[f]=t[i]; });
+  ["core.css","onboarding-page.css"].forEach(function(f){ var s=document.createElement("style"); s.textContent=m[f]; document.head.appendChild(s); });
+  var s2=document.createElement("style"); s2.textContent="*,*::before,*::after{transition:none!important;animation:none!important}"; document.head.appendChild(s2);
+  var w=document.createElement("div"); w.innerHTML=wurzelAus(m["bubble/onboarding_page_bubble.html"]);
+  var r=w.querySelector(".uob-root");
+  r.setAttribute("data-instance","g"); r.setAttribute("data-cdn-pin","g"); r.setAttribute("data-isdark","no");
+  document.getElementById("b").appendChild(r);
+  ["uobStart","uobStep","uobTopics","uobWorkflowStart","uobSelect","uobFinish","uobExit"].forEach(function(n){ window["bubble_fn_"+n]=function(){}; });
+  var j=document.createElement("script"); j.textContent=m["core.js"]; document.head.appendChild(j);
+  var j2=document.createElement("script"); j2.textContent=m["onboarding-page.js"]; document.head.appendChild(j2);
+  return new Promise(function(ok){ setTimeout(ok,1400); });
+}).then(function(){
+  /* Ein Buendel mit einem Wettbewerber OHNE favicon_url -- dann greift der Globus-Rueckfall. */
+  window.setOnboardingBundle("g", JSON.stringify({
+    project:{ id:"p", status:"ready", status_phase:5, progress_percent:100,
+              company_name:"Kaeltebringer", website_domain:"kaeltebringer.de", business_model:"Hybrid", market:"DE" },
+    competitors:[{ id:"c1", name:"OhneFavicon", domain:"ohne.de" }],
+    topics:[{ id:"t1", name:"Thema", hex_light:"#888", hex_dark:"#888" }], prompts:[]
+  }));
+  window.setOnboardingStep("g","competitors");
+  return new Promise(function(ok){ setTimeout(ok,500); });
+}).then(function(){
+  var root=document.querySelector(".uob-root");
+  function rgb(str){ var m=/(\d+),\s*(\d+),\s*(\d+)/.exec(str||""); return m?[+m[1],+m[2],+m[3]]:null; }
+  function lum(c){ var a=c.map(function(v){ v/=255; return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4); });
+                   return 0.2126*a[0]+0.7152*a[1]+0.0722*a[2]; }
+  function kontrast(v,h){ var a=lum(v),b=lum(h); var hi=Math.max(a,b),lo=Math.min(a,b);
+                          return Math.round(((hi+0.05)/(lo+0.05))*100)/100; }
+  function messe(sel){
+    var kachel=root.querySelector(sel);
+    if (!kachel) return { sel: sel, da:false };
+    var globus=kachel.querySelector(".uob-kachel-globus");
+    if (!globus) return { sel: sel, da:true, globusDa:false };
+    var cg=getComputedStyle(globus), ck=getComputedStyle(kachel);
+    var v=rgb(cg.color), h=rgb(ck.backgroundColor);
+    return { sel: sel, da:true, globusDa:true, sichtbar: globus.getClientRects().length>0,
+             zeichenfarbe: cg.color, kachelgrund: ck.backgroundColor,
+             kontrast: (v&&h)?kontrast(v,h):null };
+  }
+  var R={};
+  ["hell","dunkel"].forEach(function(modus){
+    if (modus==="dunkel") root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
+    R[modus] = { kopfkachel: messe(".uob-ident-logo"), zeilenkachel: messe(".uob-item-logo") };
+  });
+  R.farbeGleich = R.hell.zeilenkachel.zeichenfarbe === R.dunkel.zeilenkachel.zeichenfarbe &&
+                  R.hell.kopfkachel.zeichenfarbe === R.dunkel.kopfkachel.zeichenfarbe;
+  /* GEGENPROBE: die Korrektur aushebeln -- dann muss der dunkle Fall zusammenfallen. */
+  root.setAttribute("data-theme","dark");
+  var weg=document.createElement("style");
+  weg.textContent=".uob-item-logo, .uob-ident-logo { --vc-text: #e0e0e0; --vc-muted: #a0a0a0; }";
+  document.head.appendChild(weg);
+  R.gegenprobe_ohneKorrektur = { zeilenkachel: messe(".uob-item-logo") };
+  weg.remove();
+  root.removeAttribute("data-theme");
+  R.fehler=window.__err;
+  document.getElementById("out").textContent = JSON.stringify(R,null,1);
+  window.__R=R; window.__fertig=true;
+}).catch(function(e){ document.getElementById("out").textContent="FEHLER: "+e.message; window.__fertig=true; });
+</script>

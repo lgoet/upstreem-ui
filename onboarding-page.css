@@ -323,6 +323,17 @@
   background: var(--vc-bg); border: 1px solid var(--vc-border);
   display: inline-flex; align-items: center; justify-content: center; overflow: hidden;
   font-size: 12px; font-weight: 600; color: var(--vc-muted);
+  /* Die Kachel ist in BEIDEN Modi hell -- im Dunkeln liegt hier --vt-logo-bg (#e0e0e0), damit ein
+     dunkles Favicon ueberhaupt einen Grund hat. Was DRIN liegt, muss deshalb auch im Dunkeln die
+     HELLEN Textfarben benutzen: der Globus erbte sonst --vc-text (dunkel: #e0e0e0) und stand
+     unsichtbar auf der gleichfarbigen Platte, und der Anfangsbuchstabe stand mit --vc-muted
+     (#a0a0a0) fast genauso schwach da.
+     Beide Tokens hier neu setzen statt einzelne Farbregeln nachzuziehen -- dann stimmt alles, was
+     in der Kachel liegt, auch das, was spaeter dazukommt. Dieselbe Loesung wie bei .uhm-tip im
+     Performance Radar: eine Flaeche, die dem Thema der Komponente nicht folgt, bringt ihre eigenen
+     Farben mit. Die Werte sind die HELLEN aus core.css -- literal, weil es zu einer festen hellen
+     Flaeche kein Token gibt, das in beiden Modi dunkel bleibt. */
+  --vc-text: #1f1f1b; --vc-muted: #6f737c;
 }
 /* Der Globus im Rueckfall: Primaerfarbe, und er fuellt die Kachel NICHT aus -- er ist ein
    Zeichen, kein Bild. Sichtbar ist er nur, wenn has-img fehlt; liegt ein echtes Favicon darueber,
@@ -685,6 +696,17 @@
   background: var(--vt-logo-bg); border: 1px solid var(--vc-border);
   display: inline-flex; align-items: center; justify-content: center; overflow: hidden;
   font-size: 11px; font-weight: 600; color: var(--vc-muted);
+  /* Die Kachel ist in BEIDEN Modi hell -- im Dunkeln liegt hier --vt-logo-bg (#e0e0e0), damit ein
+     dunkles Favicon ueberhaupt einen Grund hat. Was DRIN liegt, muss deshalb auch im Dunkeln die
+     HELLEN Textfarben benutzen: der Globus erbte sonst --vc-text (dunkel: #e0e0e0) und stand
+     unsichtbar auf der gleichfarbigen Platte, und der Anfangsbuchstabe stand mit --vc-muted
+     (#a0a0a0) fast genauso schwach da.
+     Beide Tokens hier neu setzen statt einzelne Farbregeln nachzuziehen -- dann stimmt alles, was
+     in der Kachel liegt, auch das, was spaeter dazukommt. Dieselbe Loesung wie bei .uhm-tip im
+     Performance Radar: eine Flaeche, die dem Thema der Komponente nicht folgt, bringt ihre eigenen
+     Farben mit. Die Werte sind die HELLEN aus core.css -- literal, weil es zu einer festen hellen
+     Flaeche kein Token gibt, das in beiden Modi dunkel bleibt. */
+  --vc-text: #1f1f1b; --vc-muted: #6f737c;
 }
 .uob-item-logo img { width: 22px; height: 22px; border-radius: 5px; display: block; object-fit: contain; }
 /* Im Dunkeln kein Rahmen, sondern die helle Flaeche --vt-logo-bg -- dieselbe Loesung wie bei
