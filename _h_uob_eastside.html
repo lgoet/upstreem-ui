@@ -56,9 +56,19 @@ Promise.all(D.map(hol)).then(function(t){
                      getComputedStyle(p).pointerEvents !== "none" && !p.classList.contains("is-off");
             klickbar.push(k+(geht?":ja":":nein"));
           });
+          /* Die Zuordnung: unter welcher Ueberschrift steht jeder Prompt? "Other" heisst, die
+             Themenzuordnung ist verloren gegangen -- genau das war die Meldung. */
+          var gruppen=[];
+          [].forEach.call(r.querySelectorAll(".uob-group, [data-group], .uob-grouphead"), function(g){
+            var t=(g.querySelector(".uob-group-name, .uob-grouphead-name")||g).textContent||"";
+            gruppen.push(t.replace(/\s+/g," ").trim().slice(0,40));
+          });
           R[name]={ url: urlStep||"(keine)", promptsImBuendel: (buendel.prompts||[]).length,
                     gelandetAuf: steht, erwartet: erwartet, stimmt: steht===erwartet,
-                    stationen: klickbar.join("  ") };
+                    stationen: klickbar.join("  "),
+                    gruppen: gruppen,
+                    hatOther: /(^|\s)Other(\s|$)/.test((r.innerText||"")),
+                    text: (r.innerText||"").replace(/\s+/g," ").trim().slice(0,260) };
           ok();
         }, 500);
       }, 700);

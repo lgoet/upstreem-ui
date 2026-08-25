@@ -3039,9 +3039,34 @@
           rein.push({ id: id, name: txt(r.name), description: txt(r.description),
                       hex_light: txt(r.hex_light), hex_dark: txt(r.hex_dark) });
         } else {
-          var tids = isArr(r.topic_ids) ? r.topic_ids
-                   : (txt(r.topic_ids) ? txt(r.topic_ids).split(",").map(function (s) { return s.trim(); })
-                                       : []);
+          /* Die Themenzuordnung eines Prompts kommt in DREI Formen aus der RPC, und nur die erste
+             war bisher gelesen -- mit dem echten Buendel vom 25.08. standen darum alle 15 Prompts
+             unter "Other": dort heisst das Feld `topics` und traegt Objekte, kein `topic_ids`.
+
+               topic_ids          Liste oder Komma-Text von Ids
+               topics             Liste von Objekten {id, is_primary} ODER von nackten Ids
+               primary_topic_id / topic_id   eine einzelne Id
+
+             Die PRIMAERE gehoert nach vorn: promptGruppen() nimmt die erste Id, die es kennt, als
+             Gruppe. Ohne diese Sortierung entschiede die Reihenfolge im Payload, unter welchem
+             Thema ein Prompt landet -- und die ist keine Aussage. */
+          var tids = [];
+          if (isArr(r.topic_ids)) tids = r.topic_ids.map(txt);
+          else if (txt(r.topic_ids)) tids = txt(r.topic_ids).split(",").map(function (s2) { return s2.trim(); });
+          else if (isArr(r.topics)) {
+            tids = r.topics.map(function (t) { return (t && typeof t === "object") ? txt(t.id) : txt(t); });
+            var prim = txt(r.primary_topic_id);
+            if (!prim) {
+              for (var pi = 0; pi < r.topics.length; pi++) {
+                var t2 = r.topics[pi];
+                if (t2 && typeof t2 === "object" && istJa(t2.is_primary)) { prim = txt(t2.id); break; }
+              }
+            }
+            if (prim) tids = [prim].concat(tids.filter(function (x) { return x !== prim; }));
+          }
+          if (!tids.length && txt(r.primary_topic_id)) tids = [txt(r.primary_topic_id)];
+          if (!tids.length && txt(r.topic_id)) tids = [txt(r.topic_id)];
+          tids = tids.filter(function (x) { return !!x; });
           rein.push({ id: id, prompt_text: txt(r.prompt_text), market: txt(r.market), topic_ids: tids });
         }
         /* Eine schon gesetzte Auswahl aus den Daten uebernehmen -- so ueberlebt sie ein
