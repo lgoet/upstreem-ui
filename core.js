@@ -4015,7 +4015,24 @@
     var filterAktiv = typeof cfg.filterActive === "function" ? cfg.filterActive : function(){ return false; };
 
     var elGroup = null, elIn = null, elTrig = null, elCol = null;
-    var gepinnt = false, zeiger = false, aus = false;
+    /* VIER Merker, und die Trennung ist der Kern der Sache -- ein gemeinsamer hat zweimal versagt.
+
+         drin      Der Zeiger ist irgendwo IN der Leiste. HAELT offen, oeffnet aber nicht: sonst
+                   zoege sie auch dann auf, wenn der Zeiger bloss zum Export-Knopf unterwegs ist.
+         aufTrig   Der Zeiger lag lang genug auf dem Ausloeser. OEFFNET.
+         fokus     Der Tastaturfokus ist in der Leiste. Haelt offen und oeffnet.
+         vorschau  Der Riegel. Einmal offen, bleibt es offen, solange IRGENDETWAS haelt.
+
+       Warum ein Riegel und nicht eine Rechnung aus den drei anderen: der gemeldete Fall vom
+       24.08. Leiste per Hover auf, Dropdown auf, Dropdown mit demselben Knopf wieder zu -- und
+       sie war weg. Zwei Ursachen lagen uebereinander. Erst makePopover.close(), das den Fokus auf
+       den Ausloeser zurueckholt und ihn dann BLURRT; mit einem gemeinsamen Merker fuer Zeiger und
+       Fokus las die Leiste dieses focusout als "der Zeiger ist weg". Und danach immer noch die
+       Ersatzfrage tools.matches(":hover") im Schliess-Zuhoerer -- die ist in jeder Umgebung ohne
+       echten Zeiger falsch, also auch in jedem Testaufbau, und sie beantwortet eine Frage, die
+       pointerenter/pointerleave laengst beantworten. Jetzt wird der Zeiger verfolgt statt
+       abgefragt. */
+    var gepinnt = false, drin = false, aufTrig = false, fokus = false, vorschau = false, aus = false;
     var uhrAuf = null, uhrZu = null, uhrFertig = null, zuletztSichtbar = null;
 
     if (cfg.prefKey){ try { gepinnt = prefGet(cfg.prefKey) === "1"; } catch(e){} }
@@ -4038,9 +4055,10 @@
         elCol.className = "up-iconbtn up-tbcol";
         elCol.setAttribute("data-tip", "Hide tools");
         elCol.setAttribute("aria-label", "Hide tools");
-        /* Ein Chevron nach RECHTS, statisch: die Leiste faehrt nach rechts zusammen, dorthin zeigt
-           er. Er dreht sich nicht -- im ganzen Haus dreht sich kein Chevron. */
-        elCol.innerHTML = icon("chevronRight", 2);
+        /* Lucide "x". Vorher stand hier ein Chevron nach rechts, als Hinweis auf die Richtung,
+           in die die Leiste zusammenfaehrt -- aber die Richtung ist nicht die Aussage. Die
+           Aussage ist "weg damit", und dafuer gibt es im ganzen Haus genau ein Zeichen. */
+        elCol.innerHTML = icon("x", 2.2);
         elIn.appendChild(elCol);
 
         elTrig = document.createElement("button");
@@ -4081,19 +4099,20 @@
         });
         elTrig.addEventListener("pointerenter", function(){
           window.clearTimeout(uhrZu); uhrZu = null;
+          drin = true;
           if (uhrAuf) return;
-          uhrAuf = window.setTimeout(function(){ uhrAuf = null; zeiger = true; sync(); }, AUF_MS);
+          uhrAuf = window.setTimeout(function(){ uhrAuf = null; aufTrig = true; sync(); }, AUF_MS);
         });
         /* Fokus ohne Verzoegerung: wer mit der Tastatur hierher kommt, hat sich schon entschieden. */
         elTrig.addEventListener("focus", function(){
-          window.clearTimeout(uhrZu); uhrZu = null; zeiger = true; sync();
+          window.clearTimeout(uhrZu); uhrZu = null; fokus = true; sync();
         });
       }
       if (!elCol.__upTgBound){
         elCol.__upTgBound = true;
         elCol.addEventListener("click", function(e){
           e.preventDefault(); e.stopPropagation();
-          gepinnt = false; zeiger = false; pinMerken();
+          gepinnt = false; drin = false; aufTrig = false; fokus = false; vorschau = false; pinMerken();
           window.clearTimeout(uhrAuf); uhrAuf = null;
           window.clearTimeout(uhrZu);  uhrZu  = null;
           sync();
@@ -4105,29 +4124,35 @@
            aufsteigende up-popover-close aus makePopover -- EIN Zuhoerer fuer alle Menues, kein
            Beobachter und kein Nachfragen im Takt. */
         elIn.addEventListener("up-popover-close", function(){
-          var drauf = false;
-          try { drauf = tools.matches(":hover"); } catch(e){}
-          if (drauf){ sync(); return; }
+          /* Haelt noch etwas -- Zeiger in der Leiste oder Tastaturfokus --, bleibt alles wie es
+             ist und der Riegel haelt. Nur wenn NICHTS haelt, laeuft die Nachfrist los: der
+             Zeiger stand dann ausserhalb, als das Menue zuging. */
+          if (drin || fokus){ sync(); return; }
           window.clearTimeout(uhrZu);
-          uhrZu = window.setTimeout(function(){ uhrZu = null; zeiger = false; sync(); }, ZU_MS);
+          uhrZu = window.setTimeout(function(){ uhrZu = null; aufTrig = false; sync(); }, ZU_MS);
         });
       }
       if (!tools.__upTgBound){
         tools.__upTgBound = true;
-        tools.addEventListener("pointerenter", function(){ window.clearTimeout(uhrZu); uhrZu = null; });
+        tools.addEventListener("pointerenter", function(){
+          window.clearTimeout(uhrZu); uhrZu = null;
+          drin = true; sync();
+        });
         tools.addEventListener("pointerleave", function(){
           window.clearTimeout(uhrAuf); uhrAuf = null;
           window.clearTimeout(uhrZu);
-          uhrZu = window.setTimeout(function(){ uhrZu = null; zeiger = false; sync(); }, ZU_MS);
+          uhrZu = window.setTimeout(function(){ uhrZu = null; drin = false; aufTrig = false; sync(); }, ZU_MS);
         });
         /* focusin/focusout statt focus/blur: die beiden ersten steigen auf, die beiden anderen
            nicht -- damit haette die Leiste jeden Tabulatorsprung IN sie hinein verpasst. */
         tools.addEventListener("focusin", function(){
-          window.clearTimeout(uhrZu); uhrZu = null; zeiger = true; sync();
+          window.clearTimeout(uhrZu); uhrZu = null; fokus = true; sync();
         });
         tools.addEventListener("focusout", function(e){
           if (e.relatedTarget && tools.contains(e.relatedTarget)) return;
-          zeiger = false; sync();
+          /* NUR den Fokus-Merker. Der Zeiger haengt an pointerenter/pointerleave und hat mit dem
+             Fokus nichts zu tun -- siehe die Begruendung an der Deklaration. */
+          fokus = false; sync();
         });
       }
     }
@@ -4152,13 +4177,17 @@
       root.classList.remove("is-tools-off");
       var gesperrt = false;
       try { gesperrt = !!filterAktiv(); } catch(e){}
-      var offen    = gepinnt || gesperrt;
-      var vorschau = !offen && (zeiger || menueOffen());
-      var sichtbar = offen || vorschau;
+      var offen  = gepinnt || gesperrt;
+      var menue  = menueOffen();
+      /* Der Riegel: was OEFFNET, setzt ihn; erst wenn NICHTS mehr haelt, faellt er. Ohne diese
+         Trennung schloss ein zugehendes Dropdown die Leiste, obwohl der Zeiger noch drauflag. */
+      if (aufTrig || menue) vorschau = true;
+      else if (!(drin || fokus)) vorschau = false;
+      var sichtbar = offen || (!offen && vorschau);
 
       root.classList.toggle("is-tools-locked", gesperrt);
       root.classList.toggle("is-tools-open", offen);
-      root.classList.toggle("is-tools-peek", vorschau);
+      root.classList.toggle("is-tools-peek", !offen && vorschau);
       if (elTrig) elTrig.setAttribute("aria-expanded", sichtbar ? "true" : "false");
 
       /* is-tools-shown nimmt die Kappung weg, aber erst NACH der Bewegung -- sonst haengt beim
@@ -4192,7 +4221,7 @@
         window.clearTimeout(uhrAuf); uhrAuf = null;
         window.clearTimeout(uhrZu);  uhrZu  = null;
         window.clearTimeout(uhrFertig); uhrFertig = null;
-        zeiger = false;
+        drin = false; aufTrig = false; fokus = false; vorschau = false;
       }
       sync();
     }

@@ -244,26 +244,68 @@
        beide Richtungen lautet. margin-right raeumt dabei die gap-Luecke weg, die die Leiste auch
        um ein null Pixel breites Kind legt -- ohne sie stuenden 16px statt 8px zwischen den
        Nachbarn. */
-    .up-tbtrig, .up-tbcol {
-      overflow: hidden; flex: 0 0 auto;
-      transition: width 200ms ease, opacity 200ms ease, margin-right 200ms ease;
-    }
-    /* Der Ausloeser steht im eingeklappten Zustand UND in der Vorschau da. Ihn beim Aufziehen
-       verschwinden zu lassen waere ein Flackerkreis: er liegt unter dem Zeiger, faellt weg, der
-       Zeiger verlaesst ihn, die Leiste klappt zu, er kommt zurueck. Er geht erst, wenn die Leiste
-       festgestellt ist -- dann uebernimmt der Einklapper links. */
-    .up-tbtrig { width: 32px; opacity: 1; margin-right: 0; }
-    .up-root.is-tools-open .up-tbtrig { width: 0; opacity: 0; margin-right: -8px; pointer-events: none; }
+    /* ── Warum hier nur Deckkraft und Verschiebung animieren ─────────────────────────────────
+       Beide Knoepfe behalten IMMER ihre 32px. Vorher animierten width UND margin-right mit -- zwei
+       LAYOUT-Eigenschaften, und die Gruppe daneben ist ein Grid mit 1fr, dessen Spur bei jeder
+       geaenderten Kinderbreite neu aufgeloest wird. Das war einmal pro Bild das ganze
+       Kopfzeilen-Layout, waehrend darunter eine Tabelle steht. Genau daran hat es geruckelt.
+       Deckkraft und transform erledigt der Browser dagegen ohne Layout und ohne Neuzeichnen.
 
-    /* Der Einklapper erscheint nur, wenn die Leiste festgestellt ist UND der Zeiger auf ihr
-       liegt. Kein Dauergast: er ist der Ausgang, nicht ein Werkzeug.
-       :has(:focus-visible) statt :focus-within -- nach einem KLICK auf den Ausloeser bleibt der
-       Fokus auf ihm liegen, und :focus-within waere damit dauerhaft wahr; der Einklapper stuende
-       von da an immer da. :focus-visible trifft nur tastaturgesetzten Fokus. */
-    .up-tbcol { width: 0; opacity: 0; margin-right: -8px; pointer-events: none; }
+       Der reservierte Platz kostet nichts Sichtbares: die Leiste ist rechtsbuendig
+       (margin-left: auto), links von ihr liegt freie Flaeche. Ein 32px-Platz dort schiebt die
+       Leiste in einen Bereich, der ohnehin leer war -- es wandert nichts, was der Nutzer ansieht.
+
+       cubic-bezier(.2, 0, .2, 1) statt `ease`: ease bremst am Anfang UND am Ende, und auf sechs
+       Pixel Verschiebung liest sich das als Zoegern. Diese Kurve geht sofort los und laeuft sanft
+       aus. 200ms bleiben, wie vorgegeben. */
+    .up-tbtrig, .up-tbcol { flex: 0 0 auto; overflow: hidden; }
+
+    /* Der AUSLOESER darf seine Breite weiter mitanimieren. Das passiert genau einmal, beim
+       Feststellen, gleichzeitig mit dem Aufziehen der Gruppe -- also waehrend das Layout ohnehin
+       in Bewegung ist, und der Ruckler wurde auch nie dort gemeldet, sondern beim HOVER.
+       Wichtiger noch: seinen Platz zu reservieren kostet echte Pixel. Gemessen bei 640px Breite
+       und aufgeklappter Leiste lief prompts-table dadurch um 27px ueber -- die Tabelle mit den
+       meisten Werkzeugen hat dort keine 32px zu verschenken. So wie es jetzt steht, gibt der
+       Ausloeser seine 32px ab, und der Einklapper nimmt sie: die Leiste ist im festgestellten
+       Zustand genau so breit wie vorher. */
+    .up-tbtrig {
+      width: 32px; opacity: 1;
+      transition: width 200ms cubic-bezier(.2, 0, .2, 1), opacity 200ms cubic-bezier(.2, 0, .2, 1);
+    }
+    .up-root.is-tools-open .up-tbtrig { width: 0; opacity: 0; pointer-events: none; }
+
+    /* Eingeklappt nimmt der Einklapper keinen Platz: dort gibt es nichts zu schliessen, und 32px
+       waeren eine Luecke neben dem Ausloeser. Die Breite steht NICHT in der Uebergangsliste, sie
+       schaltet also hart um -- und zwar in demselben Augenblick, in dem die Gruppe zu wachsen
+       beginnt. In einem Kasten, der gerade aufzieht, sieht das niemand. */
+    /* Der EINKLAPPER dagegen bewegt sich nur mit Deckkraft und Verschiebung -- das sind die zwei
+       Eigenschaften, die der Browser ohne Layout und ohne Neuzeichnen erledigt. Genau daran hat
+       es geruckelt: vorher animierten width UND margin-right mit, und die Gruppe daneben ist ein
+       Grid mit 1fr, dessen Spur bei jeder geaenderten Kinderbreite neu aufgeloest wird -- einmal
+       pro Bild das ganze Kopfzeilen-Layout, waehrend darunter eine Tabelle steht.
+       Seine 32px sind im festgestellten Zustand reserviert; sie kosten nichts, weil der Ausloeser
+       im selben Augenblick seine abgibt.
+
+       cubic-bezier(.2, 0, .2, 1) statt `ease`: ease bremst am Anfang UND am Ende, und auf sechs
+       Pixel Verschiebung liest sich das als Zoegern. Diese Kurve geht sofort los und laeuft sanft
+       aus. 200ms bleiben, wie vorgegeben. */
+    .up-tbcol {
+      transition: opacity 200ms cubic-bezier(.2, 0, .2, 1),
+                  transform 200ms cubic-bezier(.2, 0, .2, 1);
+    }
+    /* Doppelte Klasse, dieselbe Begruendung wie bei .up-field.up-field weiter oben: .up-iconbtn
+       setzt selbst width: 32px, steht in derselben Datei und -- seit die Werkzeugleiste hier
+       eingefuegt wurde -- WEITER UNTEN. Bei gleicher Spezifitaet entscheidet die Reihenfolge, und
+       die hat gewonnen: der Einklapper war auch im eingeklappten Zustand 32px breit. Gemessen an
+       der Kaskade selbst (welche Regel greift), nicht geraten. Sichtbar war es nicht, weil die
+       Gruppe dort 0 breit und gekappt ist -- aber eine CSS, die etwas anderes tut als sie sagt,
+       fuehrt den naechsten Leser in die Irre. */
+    .up-tbcol.up-tbcol { width: 0; opacity: 0; transform: translateX(-6px); pointer-events: none; }
+    .up-root.is-tools-open .up-tbcol.up-tbcol { width: 32px; }
+    /* Hover: NUR Deckkraft und Verschiebung. Kein Layout, keine Gridspur, kein Ruckeln. */
     .up-root.is-tools-open :has(> .up-toolgroup):hover .up-tbcol,
     .up-root.is-tools-open :has(> .up-toolgroup):has(:focus-visible) .up-tbcol {
-      width: 32px; opacity: 1; margin-right: 0; pointer-events: auto;
+      opacity: 1; transform: none; pointer-events: auto;
     }
     /* Haelt ein aktiver Filter die Leiste offen, gibt es keinen Ausgang -- ihn trotzdem
        anzubieten hiesse, den Nutzer auf einen Knopf klicken zu lassen, der nichts tut. */

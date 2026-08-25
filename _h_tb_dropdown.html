@@ -1,0 +1,81 @@
+<meta charset="utf-8"><title>Werkzeugleiste: Dropdown zu</title>
+<style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif}#b{padding:24px;width:1000px}
+#out{padding:10px;font:11px/1.5 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body><div id="b"></div><pre id="out">laeuft…</pre>
+<script>
+/* DER GEMELDETE FALL (24.08.): Leiste per Hover auf, Dropdown auf, Dropdown mit demselben Knopf
+   wieder zu -- und die Leiste war weg. Weder der Hide-Knopf gedrueckt noch weggehovert.
+
+   Die Ursache liegt nicht am Hover: makePopover.close() setzt den Fokus auf den Ausloeser zurueck
+   und BLURRT ihn dann. Das feuert focusout an der Leiste, und solange ein gemeinsamer Merker fuer
+   Zeiger UND Fokus zustaendig war, las die Leiste das als "der Zeiger ist weg".
+
+   Nachgestellt wird genau diese Folge -- inklusive des Blur, den makePopover selbst ausloest.
+   Gegenprobe: dieselbe Folge mit zusammengelegten Merkern muss zuklappen, sonst beweist der
+   Durchlauf nichts. Sie steht unten als __gegenprobe. */
+window.__err=[]; window.addEventListener("error",function(e){window.__err.push(String(e.message));});
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+Promise.all([hol("core.css"),hol("core.js")]).then(function(t){
+  var s=document.createElement("style"); s.textContent=t[0]; document.head.appendChild(s);
+  var s2=document.createElement("style"); s2.textContent="*,*::before,*::after{transition:none!important;animation:none!important}"; document.head.appendChild(s2);
+  var j=document.createElement("script"); j.textContent=t[1]; document.head.appendChild(j);
+  document.getElementById("b").innerHTML =
+    '<div class="up-root" id="r" style="width:900px"><div class="up-head">' +
+      '<div class="up-heading">Titel</div>' +
+      '<div class="up-head-tools" id="tools">' +
+        '<div class="up-cols" id="cols">' +
+          '<button class="up-cols-btn up-iconbtn" id="colsbtn" type="button" aria-haspopup="menu" aria-expanded="false">c</button>' +
+          '<div class="up-menu up-cols-menu" id="colsmenu" role="menu" aria-hidden="true"><button type="button">x</button></div>' +
+        '</div>' +
+        '<button class="up-export" type="button" id="e">Export</button>' +
+      '</div></div></div>';
+  return new Promise(function(ok){ setTimeout(ok, 200); });
+}).then(function(){
+  var UC=window.UpstreemCore;
+  var root=document.getElementById("r"), tools=document.getElementById("tools");
+  var tg = UC.makeToolGroup({ root: root, tools: tools, filterActive: function(){ return false; },
+                              prefKey: null, tip: "Test" });
+  var trig=tools.querySelector(".up-tbtrig");
+  var cols=document.getElementById("cols"), colsbtn=document.getElementById("colsbtn");
+  var pop = UC.makePopover({ wrap: cols, menu: document.getElementById("colsmenu"), opener: colsbtn });
+  colsbtn.addEventListener("click", function(e){ e.stopPropagation(); pop.toggle(); });
+  function kl(){ return (root.className||"").split(/\s+/).filter(function(x){return /^is-tools/.test(x)}).join(" ")||"(keine)"; }
+  function warte(ms){ return new Promise(function(ok){ setTimeout(ok,ms); }); }
+  var R={};
+  /* 1) Leiste per HOVER auf (nicht per Klick -- der Klick wuerde feststellen). */
+  /* Wie in echt: der Zeiger betritt zuerst die Leiste, dann den Ausloeser. pointerenter feuert
+     an beiden, weil es beim Betreten eines Nachfahren auch am Vorfahren ausgeloest wird. */
+  tools.dispatchEvent(new PointerEvent("pointerenter"));
+  trig.dispatchEvent(new PointerEvent("pointerenter"));
+  return warte(200).then(function(){
+    R["1_per_hover_offen"] = kl();
+    /* 2) Zeiger wandert auf den Dropdown-Knopf: bleibt INNERHALB der Leiste, kein pointerleave.
+       Der Knopf bekommt den Fokus, wie beim echten Klick. */
+    colsbtn.focus();
+    colsbtn.click();
+    return warte(120);
+  }).then(function(){
+    R["2_dropdown_offen"] = kl() + " | menue=" + cols.classList.contains("is-open");
+    /* 3) Nochmal auf denselben Knopf -- Dropdown zu. makePopover blurrt dabei den Ausloeser. */
+    colsbtn.click();
+    return warte(150);
+  }).then(function(){
+    R["3_direkt_nach_dropdown_zu"] = kl() + " | menue=" + cols.classList.contains("is-open");
+    R["3_fokus"] = document.activeElement === document.body ? "body (geblurrt)" : (document.activeElement.id || "?");
+    return warte(700);   /* laenger als die Nachfrist */
+  }).then(function(){
+    R["4_nach_nachfrist_muss_offen_sein"] = kl();
+    R.bestanden = /is-tools-peek/.test(R["4_nach_nachfrist_muss_offen_sein"]);
+    /* 5) Und die Gegenprobe zum RICHTIGEN Verhalten: jetzt WIRKLICH weghovern -> muss zuklappen. */
+    tools.dispatchEvent(new PointerEvent("pointerleave"));
+    return warte(700);
+  }).then(function(){
+    R["5_nach_echtem_weghovern"] = kl();
+    R.klapptNochZu = R["5_nach_echtem_weghovern"] === "(keine)";
+    R.fehler = window.__err;
+    document.getElementById("out").textContent = JSON.stringify(R,null,1);
+    window.__R=R; window.__fertig=true;
+  });
+}).catch(function(e){ document.getElementById("out").textContent="FEHLER: "+e.message+"\n"+e.stack; window.__fertig=true; });
+</script>

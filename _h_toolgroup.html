@@ -38,7 +38,10 @@ var KOMP = [
   { k:"performance-radar", tpl:"performance_radar_bubble", root:"uhm-root", tools:".up-head-tools",
     fn:"renderPerformanceRadar", daten:{ cells:[{company_id:"1",topic_id:"7",visibility_pct:34}],
                                          companies:[{id:"1",name:"Alpha"}], topics:[{id:"7",name:"T"}] } },
-  { k:"brands-overview",   tpl:"brands_overview_bubble",   root:"ubo-root", tools:".ubo-head-tools",
+  /* NICHT ".ubo-head-tools": es gibt zwei davon, und die Gruppe sitzt seit der Korrektur an der
+     TABELLE. querySelector faende den Chartkopf und meldete "Huelle fehlt" -- ein Messfehler, kein
+     Befund. Ueber die Tabelleneinstellungen ist es eindeutig. */
+  { k:"brands-overview",   tpl:"brands_overview_bubble",   root:"ubo-root", tools:".ubo-cols",
     fn:"renderBrandsOverview", daten:{ rows:[{company_id:"1",name:"Alpha",visibility_pct:34}], series:[] } }
 ];
 var BREITEN = [1240, 900, 760, 700, 640, 600, 420];
@@ -144,6 +147,9 @@ Promise.all(D.map(hol)).then(function(t){
       var rahmen = document.querySelector('[data-k="'+c.k+'"]');
       var root = rahmen.querySelector("."+c.root);
       var tools = root ? root.querySelector(c.tools) : null;
+      /* Bei brands-overview zeigt der Selektor auf die Tabelleneinstellungen, nicht auf die
+         Leiste -- von dort aufsteigen. */
+      if (tools && !/head-tools/.test((tools.className||"").toString()) && tools.closest) tools = tools.closest(".ubo-head-tools");
       var eintrag = { gemountet: !!root };
       if (tools){
         try {
@@ -170,6 +176,9 @@ Promise.all(D.map(hol)).then(function(t){
       var root = rahmen.querySelector("."+c.root);
       if (!root) return;
       var tools = root.querySelector(c.tools);
+      /* Bei brands-overview zeigt der Selektor auf die Tabelleneinstellungen, nicht auf die
+         Leiste -- von dort aufsteigen. */
+      if (tools && !/head-tools/.test((tools.className||"").toString()) && tools.closest) tools = tools.closest(".ubo-head-tools");
       var head = tools ? tools.parentNode : null;
       if (!head) return;
       var je = {};

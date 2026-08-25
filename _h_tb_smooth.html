@@ -1,0 +1,89 @@
+<meta charset="utf-8"><title>Werkzeugleiste: Uebergaenge</title>
+<style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif}#b{padding:24px;width:1100px}
+#out{padding:10px;font:11px/1.5 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body><div id="b"></div><pre id="out">laeuft…</pre>
+<script>
+/* Die Frage, die zaehlt: bewegt der Hover noch eine LAYOUT-Eigenschaft? Solange width oder
+   margin in der Uebergangsliste steht oder sich beim Hover die Geometrie aendert, rechnet der
+   Browser pro Bild das Kopfzeilen-Layout neu -- und genau das war das Ruckeln.
+   Gemessen wird deshalb zweierlei: die Uebergangsliste (welche Eigenschaften ueberhaupt animiert
+   werden) und die Geometrie VOR und NACH dem Hover-Zustand. Sie muss identisch sein. */
+window.__err=[]; window.addEventListener("error",function(e){window.__err.push(String(e.message));});
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+Promise.all([hol("core.css"),hol("core.js")]).then(function(t){
+  var s=document.createElement("style"); s.textContent=t[0]; document.head.appendChild(s);
+  var j=document.createElement("script"); j.textContent=t[1]; document.head.appendChild(j);
+  document.getElementById("b").innerHTML =
+    '<div class="up-root" id="r" style="width:1000px"><div class="up-head">' +
+      '<div class="up-heading">Titel</div>' +
+      '<div class="up-head-tools" id="tools">' +
+        '<div class="up-sort" id="a"><button class="up-iconbtn" type="button">a</button></div>' +
+        '<div class="up-search" id="b2"><button class="up-iconbtn" type="button">b</button></div>' +
+        '<div class="up-cols" id="c"><button class="up-iconbtn" type="button">c</button></div>' +
+        '<div class="up-seg" role="tablist" id="d"><button type="button">Ansicht</button></div>' +
+        '<button class="up-export" type="button" id="e">Export</button>' +
+      '</div></div></div>';
+  return new Promise(function(ok){ setTimeout(ok, 200); });
+}).then(function(){
+  var root=document.getElementById("r"), tools=document.getElementById("tools");
+  var tg = window.UpstreemCore.makeToolGroup({ root: root, tools: tools,
+    filterActive: function(){ return false; }, prefKey: null, tip: "Test" });
+  var trig=tools.querySelector(".up-tbtrig"), col=tools.querySelector(".up-tbcol");
+  var R={};
+
+  /* 1) Uebergangsliste: kein width, kein margin. */
+  function ueb(el){ var cs=getComputedStyle(el);
+    return { eigenschaft: cs.transitionProperty, dauer: cs.transitionDuration, kurve: cs.transitionTimingFunction }; }
+  R.uebergaenge = { ausloeser: ueb(trig), einklapper: ueb(col) };
+  R.nurKompositor = !/width|margin|height|padding|left|top/.test(
+    R.uebergaenge.ausloeser.eigenschaft + " " + R.uebergaenge.einklapper.eigenschaft);
+
+  /* 2) Das Icon. */
+  R.icon = { pfade: col.querySelectorAll("path").length,
+             d: [].map.call(col.querySelectorAll("path"), function(p){ return p.getAttribute("d"); }) };
+
+  /* 3) Geometrie beim Hover -- der eigentliche Beweis. Die :hover-Regel laesst sich nicht per
+     Ereignis erzwingen, also wird eine WORTGLEICHE Regel mit Testklasse eingespeist und die
+     Geometrie davor und danach verglichen. Aendert sich eine Kante, animiert doch Layout. */
+  trig.click();
+  return new Promise(function(ok){ setTimeout(ok, 300); }).then(function(){
+    function geo(){
+      var q = [trig, col, document.getElementById("a"), document.getElementById("c"),
+               document.getElementById("d"), document.getElementById("e"), tools];
+      return q.map(function(el){ var r=el.getBoundingClientRect();
+        return Math.round(r.left)+","+Math.round(r.width); }).join(" | ");
+    }
+    var vorher = geo();
+    var probe=document.createElement("style");
+    probe.textContent = ".up-root.is-tools-open .up-head-tools.__pr .up-tbcol{opacity:1;transform:none;pointer-events:auto}";
+    document.head.appendChild(probe);
+    tools.classList.add("__pr");
+    var nachher = geo();
+    R.geometrie = { vorHover: vorher, imHover: nachher, unveraendert: vorher === nachher };
+    R.einklapperImHover = { deckkraft: getComputedStyle(col).opacity, transform: getComputedStyle(col).transform };
+    tools.classList.remove("__pr"); probe.remove();
+    R.einklapperOhneHover = { deckkraft: getComputedStyle(col).opacity, transform: getComputedStyle(col).transform };
+
+    /* 4) Gegenprobe: mit der ALTEN Bauart (width in der Liste) aendert sich die Geometrie sehr wohl.
+       Ohne die waere "unveraendert" kein Ergebnis, sondern nur eine Behauptung. */
+    var alt=document.createElement("style");
+    alt.textContent = ".up-root.is-tools-open .up-head-tools.__alt .up-tbcol{width:0;opacity:0}";
+    document.head.appendChild(alt);
+    tools.classList.add("__alt");
+    R.gegenprobe_alteBauart = { geometrie: geo(), unterscheidetSich: geo() !== vorher };
+    tools.classList.remove("__alt"); alt.remove();
+
+    /* 5) Eingeklappt: nimmt der Einklapper dort wirklich keinen Platz? */
+    col.click();
+    return new Promise(function(ok2){ setTimeout(ok2, 300); }).then(function(){
+      R.eingeklappt = { einklapperBreite: Math.round(col.getBoundingClientRect().width),
+                        ausloeserBreite: Math.round(trig.getBoundingClientRect().width),
+                        klassen: (root.className||"").split(/\s+/).filter(function(x){return /^is-tools/.test(x)}).join(" ")||"(keine)" };
+      R.fehler = window.__err;
+      document.getElementById("out").textContent = JSON.stringify(R,null,1);
+      window.__R=R; window.__fertig=true;
+    });
+  });
+}).catch(function(e){ document.getElementById("out").textContent="FEHLER: "+e.message+"\n"+e.stack; window.__fertig=true; });
+</script>
