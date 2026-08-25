@@ -1,0 +1,80 @@
+<meta charset="utf-8"><title>onboarding: East Side Party, echtes Buendel</title>
+<style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif}#b{padding:16px;width:1100px}
+#out{padding:10px;font:11px/1.5 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body><div id="b"></div><pre id="out">laeuft…</pre>
+<script>
+/* Das ECHTE Buendel des Nutzers (25.08., East Side Party), gekuerzt auf drei Prompts und drei
+   Wettbewerber -- Struktur und Feldnamen unveraendert. Gemeldet: die Seite startet auf Topics,
+   obwohl 15 Prompts im Buendel liegen, und Prompts ist nicht anklickbar.
+
+   Nachgestellt werden beide Ausgangslagen, die es im Feld gibt: mit ?step=topics in der Adresse
+   (Neuladen, waehrend man auf Topics stand) und ohne Adressparameter (frischer Einstieg).
+   Gegenprobe: dieselbe Lage OHNE Prompts muss auf topics bleiben -- sonst beweist der Durchlauf
+   nur, dass irgendetwas nach vorn schiebt. */
+window.__err=[]; window.addEventListener("error",function(e){window.__err.push(String(e.message));});
+["uobStart","uobStep","uobTopics","uobWorkflowStart","uobSelect","uobFinish","uobExit"].forEach(function(n){
+  window["bubble_fn_"+n]=function(){}; });
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=["core.css","core.js","onboarding-page.css","onboarding-page.js",
+       "bubble/onboarding_page_bubble.html","_h_uob_eastside.json"];
+var T={};
+Promise.all(D.map(hol)).then(function(t){
+  D.forEach(function(f,i){ T[f]=t[i]; });
+  ["core.css","onboarding-page.css"].forEach(function(f){ var s=document.createElement("style"); s.textContent=T[f]; document.head.appendChild(s); });
+  var s2=document.createElement("style"); s2.textContent="*,*::before,*::after{transition:none!important;animation:none!important}"; document.head.appendChild(s2);
+  var j=document.createElement("script"); j.textContent=T["core.js"]; document.head.appendChild(j);
+  var j2=document.createElement("script"); j2.textContent=T["onboarding-page.js"]; document.head.appendChild(j2);
+  return new Promise(function(ok){ setTimeout(ok,900); });
+}).then(function(){
+  var ECHT = JSON.parse(T["_h_uob_eastside.json"]);
+  function klon(){ return JSON.parse(JSON.stringify(ECHT)); }
+  var R = {};
+  function lauf(name, urlStep, buendel, erwartet){
+    var u=new URL(window.location.href);
+    if (urlStep) u.searchParams.set("step", urlStep); else u.searchParams.delete("step");
+    window.history.replaceState({}, "", u.toString());
+    document.getElementById("b").innerHTML="";
+    var w=document.createElement("div"); w.innerHTML=wurzelAus(T["bubble/onboarding_page_bubble.html"]);
+    var r=w.querySelector(".uob-root");
+    var id="es"+Math.random().toString(36).slice(2,7);
+    r.setAttribute("data-instance",id); r.setAttribute("data-cdn-pin","es"); r.setAttribute("data-isdark","no");
+    r.setAttribute("data-step-fn","bubble_fn_uobStep");
+    document.getElementById("b").appendChild(r);
+    return new Promise(function(ok){
+      setTimeout(function(){
+        window.setOnboardingBundle(id, JSON.stringify(buendel));
+        setTimeout(function(){
+          var steht=new URL(window.location.href).searchParams.get("step");
+          /* Anklickbarkeit ablesen, wie der Nutzer sie sieht: die Station in der Leiste. */
+          var punkte=r.querySelectorAll("[data-stepkey], .uob-stepdot");
+          var klickbar=[];
+          [].forEach.call(punkte, function(p){
+            var k=p.getAttribute("data-stepkey")||p.getAttribute("data-step")||"?";
+            var geht=!p.hasAttribute("disabled") && !p.classList.contains("is-locked") &&
+                     getComputedStyle(p).pointerEvents !== "none" && !p.classList.contains("is-off");
+            klickbar.push(k+(geht?":ja":":nein"));
+          });
+          R[name]={ url: urlStep||"(keine)", promptsImBuendel: (buendel.prompts||[]).length,
+                    gelandetAuf: steht, erwartet: erwartet, stimmt: steht===erwartet,
+                    stationen: klickbar.join("  ") };
+          ok();
+        }, 500);
+      }, 700);
+    });
+  }
+  return lauf("1_echt_mit_url_topics", "topics", klon(), "prompts")
+    .then(function(){ return lauf("2_echt_ohne_url", "", klon(), "prompts"); })
+    .then(function(){ var b=klon(); b.prompts=[];
+      return lauf("3_gegenprobe_ohne_prompts_url_topics", "topics", b, "topics"); })
+    .then(function(){ var b=klon(); b.prompts=[];
+      return lauf("4_gegenprobe_ohne_prompts_ohne_url", "", b, "competitors"); })
+    .then(function(){
+      R.alleRichtig = Object.keys(R).filter(function(k){ return R[k] && R[k].stimmt===false; }).length===0;
+      R.fehler = window.__err.slice(0,4);
+      document.getElementById("out").textContent = JSON.stringify(R,null,1);
+      window.__R=R; window.__fertig=true;
+    });
+}).catch(function(e){ document.getElementById("out").textContent="FEHLER: "+e.message+"\n"+e.stack; window.__fertig=true; });
+</script>

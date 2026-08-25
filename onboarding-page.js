@@ -2751,28 +2751,30 @@
 
     /* Wohin gehoert dieser Nutzer beim Aufbau?
 
-       ZUERST die Adresse, und zwar die MOMENTAUFNAHME vom Aufbau (schrittBeimAufbau). gehe()
-       schreibt den Schritt bei jedem Wechsel hinein (urlSetzen), ein Neuladen bringt ihn also mit --
-       stepAusUrl() gab es schon, es wurde nur nie gefragt. Die Momentaufnahme ist Pflicht: fragte
-       man hier live, laese man das, was die Komponente beim Aufbau selbst geschrieben hat.
+       Zwei Belege, und der spaetere von beiden gewinnt -- sie sind UNTERGRENZEN, keine Obergrenzen:
 
-       Die beiden Schluesse aus der Auswahl sind RAUS, und der Grund ist der gemeldete Fehler vom
-       24.08.: einen Wettbewerber anklicken, neu laden -- und man stand auf Topics, ohne je Continue
-       gedrueckt zu haben. Eine Auswahl wird sofort gespeichert (uobSelect feuert bei jedem Klick),
-       sie kann also nicht dafuer stehen, dass ein Schritt ABGESCHLOSSEN ist. Dasselbe galt fuer die
-       Themen: ein Haken dort schob nach Prompts.
+         die Adresse   gehe() schreibt den Schritt bei jedem Wechsel hinein, ein Neuladen bringt
+                       ihn also mit. Das sagt, wo der Nutzer WAR. Gelesen wird die Momentaufnahme
+                       vom Aufbau: fragte man live, laese man das, was die Komponente beim Aufbau
+                       selbst geschrieben hat (gemessen -- so landete es in allen Faellen auf brand).
+         die Prompts   Sie entstehen erst im Workflow hinter uobTopics, also erst nachdem der Nutzer
+                       den Themenschritt wirklich verlassen hat. Ihre Existenz BEWEIST einen
+                       abgeschlossenen Schritt.
 
-       Was als Schluss BLEIBT: vorhandene Prompts. Die entstehen erst im Workflow hinter uobTopics,
-       also erst nachdem der Nutzer den Themenschritt wirklich verlassen hat -- der einzige Zustand
-       in den Daten, der eine abgeschlossene Handlung belegt und nicht bloss einen Klick.
+       Warum das Maximum und nicht die Adresse allein: genau daran ist es am 25.08. gescheitert.
+       Die Adresse stand auf topics, das Buendel trug 15 Prompts -- und die Adresse als Obergrenze
+       hielt den Nutzer auf Topics fest, obwohl der Schritt nachweislich durch war. Prompts waren
+       nicht einmal anklickbar. Andersherum (Prompts allein) wuerde jemand, der bewusst auf Topics
+       zurueckgegangen ist und neu laedt, nach vorn geworfen. Das Maximum trifft beide Faelle.
 
-       Ist die Adresse leer (fremder Einstieg, Link ohne Parameter) und gibt es keine Prompts, faengt
-       es bei Competitors an. Zurueck geht es nie: darum kuemmert sich die Vorwaertssperre im
-       Aufrufer. */
+       Was ABSICHTLICH kein Beleg ist: eine Auswahl. Ein Haken wird sofort gespeichert (uobSelect
+       feuert bei jedem Klick), er sagt also nichts darueber, ob ein Schritt abgeschlossen ist.
+       Genau das war der Fehler vom 24.08.: ein angeklickter Wettbewerber schob nach Topics. */
     function zielSchritt() {
-      if (schrittBeimAufbau) return schrittBeimAufbau;
-      if (isArr(state.prompts) && state.prompts.length) return "prompts";
-      return "competitors";
+      var a = schrittBeimAufbau ? stepIndex(schrittBeimAufbau) : -1;
+      var b = (isArr(state.prompts) && state.prompts.length) ? stepIndex("prompts") : -1;
+      var i = Math.max(a, b);
+      return i >= 0 ? STEPS[i].key : "competitors";
     }
     function einstieg(b) {
       bootBeenden();
@@ -2785,6 +2787,11 @@
       if (s.fertig) {
         warteBeenden();
         var ziel = zielSchritt();
+        /* Was belegt erreicht ist, muss in der Leiste auch anklickbar sein. Ohne diese Zeile stand
+           der Nutzer auf Topics, die Prompts lagen vor -- und Prompts war trotzdem gesperrt, weil
+           maxErreicht nur aus dem AKTUELLEN Schritt waechst. So gemeldet am 25.08. */
+        var zi = stepIndex(ziel);
+        if (zi > state.maxErreicht) state.maxErreicht = zi;
         /* Nur vorwaerts, nie zurueck -- siehe Begruendung oben. */
         if (stepIndex(ziel) > stepIndex(state.step)) gehe(ziel, false);
         else render();
