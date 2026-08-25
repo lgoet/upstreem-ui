@@ -1,0 +1,104 @@
+<meta charset="utf-8"><title>onboarding: drei Vertraege gemessen</title>
+<style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif}#b{padding:16px;width:1100px}
+#out{padding:10px;font:11px/1.5 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body><div id="b"></div><pre id="out">laeuft…</pre>
+<script>
+/* Die Beispiele in der Uebergabe werden GEMESSEN, nicht getippt: ein erfundenes Beispiel, das im
+   Feld anders aussieht, kostet den Nutzer eine Stunde Suche. Gefangen wird deshalb der echte
+   Wert, den die Komponente an bubble_fn_uobTopics uebergibt, und die echte Wirkung von
+   setOnboardingStatus und setOnboardingPrompts. */
+window.__err=[]; window.addEventListener("error",function(e){window.__err.push(String(e.message));});
+window.__gefeuert = [];
+["uobStart","uobStep","uobTopics","uobWorkflowStart","uobPrompts","uobPlan","uobBrands","uobSelect","uobFinish","uobExit"]
+  .forEach(function(n){ window["bubble_fn_"+n] = function(v){ window.__gefeuert.push([n, v]); }; });
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=["core.css","core.js","onboarding-page.css","onboarding-page.js","bubble/onboarding_page_bubble.html"];
+Promise.all(D.map(hol)).then(function(t){
+  var m={}; D.forEach(function(f,i){ m[f]=t[i]; });
+  ["core.css","onboarding-page.css"].forEach(function(f){ var s=document.createElement("style"); s.textContent=m[f]; document.head.appendChild(s); });
+  var s2=document.createElement("style"); s2.textContent="*,*::before,*::after{transition:none!important;animation:none!important}"; document.head.appendChild(s2);
+  var w=document.createElement("div"); w.innerHTML=wurzelAus(m["bubble/onboarding_page_bubble.html"]);
+  var r=w.querySelector(".uob-root");
+  r.setAttribute("data-instance","o"); r.setAttribute("data-cdn-pin","o"); r.setAttribute("data-isdark","no");
+  r.setAttribute("data-topics-fn","bubble_fn_uobTopics");
+  document.getElementById("b").appendChild(r);
+  var j=document.createElement("script"); j.textContent=m["core.js"]; document.head.appendChild(j);
+  var j2=document.createElement("script"); j2.textContent=m["onboarding-page.js"]; document.head.appendChild(j2);
+  return new Promise(function(ok){ setTimeout(ok,1400); });
+}).then(function(){
+  var R={};
+  /* Buendel: fertiger Lauf mit zwei Themen, damit der Themenschritt erreichbar ist. */
+  var buendel = {
+    project: { id:"03099e2a", status:"ready", status_phase:5, progress_percent:100,
+               company_name:"Kaeltebringer", website_domain:"kaeltebringer.de", business_model:"Hybrid", market:"DE" },
+    competitors: [{ id:"c1", name:"Daikin", domain:"daikin.de", selected:true }],
+    topics: [{ id:"1defeb4e", name:"Split-Klimaanlagen", hex_light:"#de1b22", hex_dark:"#de1b22" },
+             { id:"ca0543ae", name:"Multi-Split-Anlagen", hex_light:"#8b4c23", hex_dark:"#8b4c23" }],
+    prompts: []
+  };
+  window.setOnboardingBundle("o", JSON.stringify(buendel));
+  return new Promise(function(ok){ setTimeout(ok, 500); }).then(function(){
+    /* ── 1) uobTopics: zwei vorhandene Themen waehlen und weiterklicken ── */
+    var root=document.querySelector(".uob-root");
+    window.setOnboardingStep("o","topics");
+    return new Promise(function(ok2){ setTimeout(ok2,300); }).then(function(){
+      var karten = root.querySelectorAll('[data-pick], .uob-item[data-id], [data-topic-id]');
+      R.auswahlKandidaten = karten.length;
+      [].slice.call(karten).slice(0,2).forEach(function(el){ el.click(); });
+      return new Promise(function(ok3){ setTimeout(ok3,200); });
+    }).then(function(){
+      window.__gefeuert.length = 0;
+      var weiter = root.querySelector("[data-next], .uob-next, .uob-nav-next");
+      R.weiterKnopf = weiter ? (weiter.className||"").toString().slice(0,40) : "nicht gefunden";
+      if (weiter) weiter.click();
+      return new Promise(function(ok4){ setTimeout(ok4,300); });
+    }).then(function(){
+      R.uobTopics_gefeuert = window.__gefeuert.filter(function(x){ return x[0]==="uobTopics"; }).map(function(x){ return x[1]; });
+      R.alleEreignisse = window.__gefeuert.map(function(x){ return x[0]+" = "+String(x[1]).slice(0,120); });
+
+      /* ── 2) setOnboardingStatus: welche Formen wirken? ── */
+      function lage(){
+        var r2=document.querySelector(".uob-root");
+        var fill=r2.querySelector("[data-bar]");
+        var ph=r2.querySelector("[data-phase].is-now");
+        var idx=null; var alle=r2.querySelectorAll("[data-phase]");
+        for (var i=0;i<alle.length;i++) if (alle[i].classList.contains("is-now")) idx=i;
+        return { fortschritt: fill?fill.style.width:null, phaseIndex: idx,
+                 phaseText: ph?(ph.textContent||"").trim().slice(0,40):null };
+      }
+      R.status = {};
+      [["nur_phase",'{"status_phase":3}'],
+       ["wort_und_prozent",'{"status":"processing","progress_percent":55,"status_label":"Mapping"}'],
+       ["nur_prozent",'{"progress_percent":80}'],
+       ["supabase_record",'{"record":{"status":"processing","status_phase":2,"progress_percent":30}}'],
+       ["nacktes_wort","processing"],
+       ["nackte_zahl","3"],
+       ["fertig",'{"status":"ready"}']].forEach(function(p){
+        window.resetOnboarding("o");
+        window.setOnboardingBundle("o", JSON.stringify({ project:{ status:"processing", status_phase:1, progress_percent:5 }, competitors:[], topics:[], prompts:[] }));
+        var rueck = window.setOnboardingStatus("o", p[1]);
+        R.status[p[0]] = { rueckgabe: rueck, lage: lage() };
+      });
+
+      /* ── 3) setOnboardingPrompts ── */
+      window.resetOnboarding("o");
+      window.setOnboardingBundle("o", JSON.stringify(buendel));
+      var prompts = [
+        { id:"p1", prompt_text:"Welche Split-Klimaanlage ist die beste fuer 40 qm?", market:"DE", topic_ids:"1defeb4e", selected:true },
+        { id:"p2", prompt_text:"Was kostet die Montage einer Multi-Split-Anlage?", market:"DE", topic_ids:"ca0543ae" }
+      ];
+      var rp = window.setOnboardingPrompts("o", JSON.stringify(prompts));
+      window.setOnboardingStep("o","prompts");
+      var root3 = document.querySelector(".uob-root");
+      R.prompts = { rueckgabe: rp,
+                    sichtbareZeilen: root3.querySelectorAll(".uob-item, [data-id]").length,
+                    text: (root3.innerText||"").replace(/\s+/g," ").trim().slice(0,220) };
+      R.fehler = window.__err;
+      document.getElementById("out").textContent = JSON.stringify(R,null,1);
+      window.__R=R; window.__fertig=true;
+    });
+  });
+}).catch(function(e){ document.getElementById("out").textContent="FEHLER: "+e.message+"\n"+e.stack; window.__fertig=true; });
+</script>
