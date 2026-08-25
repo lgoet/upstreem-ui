@@ -1,0 +1,48 @@
+<meta charset="utf-8"><title>sidebar: der Randreiter im Mobilmodus</title>
+<style>html,body{margin:0;min-height:200vh;font:13px/1.5 Geist,system-ui,sans-serif;background:#151515}
+#out{position:fixed;right:8px;bottom:8px;z-index:99999;font:11px/1.5 ui-monospace,monospace;
+     background:#111;color:#eee;padding:8px;max-width:56vw;white-space:pre-wrap;border-radius:6px}</style>
+<body><pre id="out">laeuft…</pre>
+<script>
+/* Der Knopf ist ein Portal am <body> und erscheint nur im hint-Zustand. Gemessen wird, WO er
+   sitzt und welche Ecken rund sind -- nicht, wie er sich anfuehlt. */
+window.__err=[]; window.addEventListener("error",function(e){window.__err.push(String(e.message));});
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+Promise.all([hol("core.css"),hol("sidebar.css")]).then(function(t){
+  t.forEach(function(css){ var s=document.createElement("style"); s.textContent=css; document.head.appendChild(s); });
+  /* Den Knopf so nachbauen, wie sidebar.js ihn baut: Portal am body, Klassen up-root up-portal
+     usn-fab is-on. Auf das ganze Sidebar-JS wird verzichtet -- gemessen wird die CSS. */
+  var fab=document.createElement("button");
+  fab.type="button"; fab.className="up-root up-portal usn-fab is-on";
+  fab.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>';
+  document.body.appendChild(fab);
+  return new Promise(function(ok){ setTimeout(ok,200); });
+}).then(function(){
+  var fab=document.querySelector(".usn-fab");
+  var cs=getComputedStyle(fab), r=fab.getBoundingClientRect();
+  var svg=fab.querySelector("svg"), cv=svg?getComputedStyle(svg):null;
+  var R = {
+    lage: { links: Math.round(r.left), oben: Math.round(r.top),
+            breite: Math.round(r.width), hoehe: Math.round(r.height) },
+    amLinkenRand: Math.round(r.left) === 0,
+    amOberenRand: Math.round(r.top) === 0,
+    nichtAbgeschnitten: r.left >= 0 && r.top >= 0,
+    ecken: { obenLinks: cs.borderTopLeftRadius, obenRechts: cs.borderTopRightRadius,
+             untenRechts: cs.borderBottomRightRadius, untenLinks: cs.borderBottomLeftRadius },
+    linkeEckenEckig: cs.borderTopLeftRadius === "0px" && cs.borderBottomLeftRadius === "0px",
+    position: cs.position, zIndex: cs.zIndex, anzeige: cs.display,
+    symbol: cv ? (cv.width + " x " + cv.height) : null,
+    /* Luft um das Symbol: sprengt es den kleineren Kasten? */
+    luft: cv ? { seitlich: (Math.round(r.width) - parseFloat(cv.width))/2,
+                 oben: (Math.round(r.height) - parseFloat(cv.height))/2 } : null,
+    schattenNachLinks: /(^|\s)-\d/.test(cs.boxShadow) ? "ja (unerwuenscht)" : "nein",
+    /* Gegenprobe: ohne is-on darf er gar nicht da sein. */
+    ohneIsOn: (function(){ fab.classList.remove("is-on");
+                           var d=getComputedStyle(fab).display; fab.classList.add("is-on"); return d; })(),
+    fehler: window.__err
+  };
+  document.getElementById("out").textContent = JSON.stringify(R,null,1);
+  window.__R=R; window.__fertig=true;
+}).catch(function(e){ document.getElementById("out").textContent="FEHLER: "+e.message; window.__fertig=true; });
+</script>

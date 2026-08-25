@@ -638,20 +638,33 @@
 .usn-menu .up-pop-opt-l { display: inline-flex; align-items: center; gap: 9px; min-width: 0; }
 
 /* ---------- schwebender Knopf (hint) ----------
-   Auch das ist ein .up-iconbtn; abweichend sind nur Lage, Flaeche und Groesse. 36 statt 32,
-   weil er auf dem Telefon mit dem Finger getroffen werden muss -- und dann ALLE Werte im
-   selben Verhaeltnis: Radius 8 -> 9, Symbol 16 -> 18. */
+   Ein Reiter an der linken Bildschirmkante, nicht ein schwebender Knopf: er klebt am Rand, und
+   deshalb sind die beiden LINKEN Ecken eckig -- eine Rundung dort waere eine Kante, die es nicht
+   gibt. Rechts bleiben die 12px.
+
+   Zur Lage: gewuenscht waren -16px auf left und top. Von den vorherigen 12px aus waeren das -4px,
+   also 4px AUSSERHALB des Bildschirms -- und abgeschnitten ist das Gegenteil von "sitzt am Rand".
+   Deshalb 0/0: das ist derselbe Griff, nur an der Kante angehalten. Ein Wort genuegt, wenn er
+   tiefer sitzen soll.
+
+   Breite 32 auf Ansage. Die Hoehe bleibt bei 36: sie ist die Trefferflaeche fuer den Finger, und
+   die war nicht gemeint. Das Symbol bleibt ebenfalls bei 18 -- in einem 32x36-Kasten stehen damit
+   7px und 9px Luft, es sprengt also nichts, und kleiner zu machen liefe dem einzigen Zweck dieses
+   Knopfes zuwider: gefunden zu werden. */
 /* Doppelte Klasse im Selektor, damit Groesse, Flaeche und display gegen .up-iconbtn ueber die
    Spezifitaet gewinnen und nicht ueber die Ladereihenfolge. */
 .up-root.up-portal.usn-fab {
-  position: fixed; left: 12px; top: 12px; z-index: 9902;
-  width: 36px; height: 36px; min-width: 0; border-radius: 12px; border: 0; padding: 0;
+  position: fixed; left: 0; top: 0; z-index: 9902;
+  width: 32px; height: 36px; min-width: 0;
+  border-radius: 0 12px 12px 0; border: 0; padding: 0;
   background: var(--usn-bg); color: var(--vc-text); cursor: pointer;
   align-items: center; justify-content: center;
   display: none;
   /* Der einzige Schatten der Komponente: dieser Knopf liegt UEBER dem Inhalt und braucht eine
-     Kante, sonst verschwimmt er auf einer hellen Seite. */
-  box-shadow: 0 1px 2px rgba(0,0,0,.10), 0 6px 16px rgba(0,0,0,.10);
+     Kante, sonst verschwimmt er auf einer hellen Seite. Nach LINKS keiner mehr -- dort ist der
+     Bildschirmrand, und ein Schatten, der ueber die Kante hinausfaellt, ist nur ein dunkler
+     Streifen. */
+  box-shadow: 1px 1px 2px rgba(0,0,0,.10), 4px 6px 16px rgba(0,0,0,.10);
 }
 .up-root.up-portal.usn-fab.is-on { display: inline-flex; }
 /* Derselbe Umschalter, hier etwas groesser, weil er allein ueber der Seite schwebt. Ohne die

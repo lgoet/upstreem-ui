@@ -178,28 +178,51 @@
        Trigger event : angehakt
      Am Wurzel-Div:  data-select-fn="bubble_fn_uobSelect"
 
-   GEMESSEN, Klick auf einen Competitor:
-     {"kind":"brands","ids":"c1","count":1}
+   GEMESSEN, Klick auf einen Competitor (Auswahl weggenommen):
+     {"kind":"brands","ids":"","count":0,"changed":"c1","on":false}
+   GEMESSEN, derselbe Competitor wieder angeklickt:
+     {"kind":"brands","ids":"c1","count":1,"changed":"c1","on":true}
    GEMESSEN, Klick auf ein Topic:
-     {"kind":"topics","ids":"ca0543ae","count":1}
+     {"kind":"topics","ids":"ca0543ae","count":1,"changed":"1defeb4e","on":false}
    GEMESSEN, "Select all" bei den Topics:
-     {"kind":"topics","ids":"ca0543ae,1defeb4e","count":2}
+     {"kind":"topics","ids":"ca0543ae,1defeb4e","count":2,"changed":"","on":true}
    Bei den Prompts im Schritt danach genauso, mit kind "prompts".
 
-     kind   "brands" | "topics" | "prompts".  ACHTUNG: intern heissen die Competitors "brands" --
-            in der Oberflaeche steht "Competitors", im Ereignis steht "brands".
-     ids    die IDs ALLER gerade gewaehlten Elemente dieser Art, komma-getrennt. Nicht das
-            angeklickte Element, sondern der ganze Stand danach -- du kannst also stumpf
-            ueberschreiben und musst nichts zusammenrechnen.
-     count  wie viele. Bei den Topics zaehlen die selbst getippten mit.
+     kind     "brands" | "topics" | "prompts".  ACHTUNG: intern heissen die Competitors "brands" --
+              in der Oberflaeche steht "Competitors", im Ereignis steht "brands".
+     ids      die IDs ALLER gerade gewaehlten Elemente dieser Art, komma-getrennt. Nicht das
+              angeklickte Element, sondern der ganze Stand DANACH.
+     count    wie viele. Bei den Topics zaehlen die selbst getippten mit.
+     changed  das angeklickte Element. Beim Alle-Knopf leer -- dort gibt es kein einzelnes.
+     on       true, wenn es jetzt gewaehlt IST; false, wenn es weggenommen wurde.
 
-   Abwahl feuert genauso: dieselbe Form, ein Eintrag weniger. Die leere Auswahl kommt als
-     {"kind":"topics","ids":"","count":0}
+   ── WARUM ids DIE GANZE AUSWAHL TRAEGT UND NICHT NUR DEN KLICK ────────────────────────────────
+   Die Frage lag nahe. Drei Gruende, und der zweite ist der eigentliche:
+
+     1. Der Workflow schreibt EINMAL die Liste, statt hinzufuegen und entfernen zu unterscheiden.
+        Eine Verzweigung weniger ist eine Fehlerquelle weniger.
+     2. Es heilt sich selbst. Bubble verwirft und stapelt Ereignisse unter Last -- geht eines
+        verloren, steht die Wahrheit beim naechsten Klick wieder KOMPLETT da. Mit einer Differenz
+        waere der Server ab da dauerhaft daneben, und niemand merkt es: die Oberflaeche zeigt ja
+        das Richtige.
+     3. Zwei schnelle Klicks koennen in falscher Reihenfolge ankommen. Mit der Vollmenge gewinnt
+        der letzte und das Ergebnis stimmt. Mit einer Differenz stimmt es nicht.
+
+   Was es KOSTET: eine komma-getrennte Id-Liste. Bei den Groessen hier (bis ein paar Dutzend
+   Themen) sind das ein paar hundert Zeichen. Lohnen wuerde sich eine Differenz erst bei Listen in
+   der Tausenderordnung oder bei einem teuren Workflow pro Klick -- beides ist hier nicht der Fall.
+
+   Und weil die Frage berechtigt war: changed und on sind neu dazugekommen. Wer den Klick selbst
+   braucht -- etwas protokollieren, eine Empfehlung nachladen, eine Animation -- hat ihn jetzt,
+   OHNE dass das stumpfe Ueberschreiben seine Verlaesslichkeit verliert. Speichern aus ids,
+   reagieren auf changed.
 
    EXTRAKTION
-     kind    (?<="kind":")[^"]*
-     ids     (?<="ids":")[^"]*
-     count   (?<="count":)\d+
+     kind     (?<="kind":")[^"]*
+     ids      (?<="ids":")[^"]*
+     count    (?<="count":)\d+
+     changed  (?<="changed":")[^"]*
+     on       (?<="on":)\w+          -> Text "true" oder "false"
 
    Mit gesetztem Team steht team_id VORNE als erster Schluessel -- die Muster oben treffen
    trotzdem, weil sie nach ihrem eigenen Schluessel suchen und nicht nach der Position.

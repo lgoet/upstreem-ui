@@ -2224,10 +2224,11 @@
     /* ---- Auswahl --------------------------------------------------------------------------- */
     function waehle(kind, id) {
       var topf = kind === "brands" ? state.selBrands : kind === "topics" ? state.selTopics : state.selPrompts;
-      if (topf[id]) delete topf[id];
+      var jetztAn;
+      if (topf[id]) { delete topf[id]; jetztAn = false; }
       else {
         if (kind === "brands" && anzahl(topf) >= BRAND_MAX) return;
-        topf[id] = true;
+        topf[id] = true; jetztAn = true;
       }
       /* NICHT neu zeichnen. Ein Klick aendert genau eine Zeile, und die Liste hat einen eigenen
          Scrollbereich: wer die achte Marke anklickt und dabei zurueck an den Anfang geworfen
@@ -2242,8 +2243,21 @@
         if (kn) kn.textContent = alleServerThemenAn() ? "Deselect all" : "Select all";
       }
       renderNav();
+      /* ids traegt die VOLLSTAENDIGE Auswahl, nicht das angeklickte Element -- und das bleibt so.
+         Der Workflow kann damit stumpf ueberschreiben, statt hinzufuegen und entfernen zu
+         unterscheiden, und er heilt sich selbst: geht ein Ereignis verloren (Bubble verwirft und
+         stapelt sie unter Last), steht die Wahrheit beim naechsten Klick wieder komplett da. Mit
+         einer Differenz waere der Server dann dauerhaft daneben, ohne dass es jemand merkt. Auch
+         zwei schnelle Klicks in falscher Reihenfolge enden mit der Vollmenge richtig; mit einer
+         Differenz nicht.
+
+         changed und on kommen NEU dazu, additiv: wer den Klick selbst braucht -- etwas
+         protokollieren, eine Empfehlung nachladen -- hat ihn jetzt, ohne dass das Ueberschreiben
+         seine Verlaesslichkeit verliert. Beim Alle-Knopf ist changed leer, dort gibt es kein
+         einzelnes Element. */
       fire("data-select-fn", "uobSelect",
-        { kind: kind, ids: idsVon(topf).join(","), count: anzahl(topf) });
+        { kind: kind, ids: idsVon(topf).join(","), count: anzahl(topf),
+          changed: String(id == null ? "" : id), on: !!jetztAn });
     }
 
     /* Alle Themen auf einmal. Gezaehlt wird nur, was der Server geliefert hat -- die selbst
@@ -2266,8 +2280,11 @@
       var knopf = root.querySelector('[data-allof="topics"]');
       if (knopf) knopf.textContent = alleServerThemenAn() ? "Deselect all" : "Select all";
       renderNav();
+      /* changed bleibt leer: hier gibt es kein einzelnes Element, und ein erfundener Wert waere
+         schlimmer als keiner. `on` sagt, in welche Richtung der Knopf geschaltet hat. */
       fire("data-select-fn", "uobSelect",
-        { kind: "topics", ids: idsVon(state.selTopics).join(","), count: anzahl(state.selTopics) });
+        { kind: "topics", ids: idsVon(state.selTopics).join(","), count: anzahl(state.selTopics),
+          changed: "", on: alleServerThemenAn() });
     }
 
     /* Ein neues eigenes Thema. Die Zeile wird an Ort und Stelle eingesetzt und der Platzhalter
@@ -2339,8 +2356,10 @@
       auswahlZeichnen("prompts");
       gruppenKnoepfe();
       renderNav();
+      /* Gruppenknopf bei den Prompts -- wie beim Alle-Knopf der Topics: kein einzelnes Element. */
       fire("data-select-fn", "uobSelect",
-        { kind: "prompts", ids: idsVon(state.selPrompts).join(","), count: anzahl(state.selPrompts) });
+        { kind: "prompts", ids: idsVon(state.selPrompts).join(","), count: anzahl(state.selPrompts),
+          changed: "", on: null });
     }
     /* Die Beschriftungen der Gruppenknoepfe nachziehen, ohne die Liste neu zu bauen -- sonst
        ginge der Scrollstand verloren, und die Mehrspaltenaufteilung wuerde neu berechnet. */
