@@ -1153,6 +1153,36 @@
 /* Der Knopf oben zeigt, dass die Tafel offen ist -- sonst sucht man sie beim naechsten Mal. */
 .uob-link.is-on { color: var(--vc-text); background: var(--uob-hover); }
 
+/* ---------- Terminknopf im Guide ----------
+   Der Abschnitt steht bei jedem Schritt gleich am Ende der Tafel: wer haengt, haengt nicht
+   schrittweise.
+
+   Der Knopf nimmt die Masse von .uob-back, eine Stufe kleiner, weil er in einer Tafel steht und
+   nicht in der Fusszeile: 40 -> 32, Radius 12 -> 10, Schrift 14 -> 13, Zeichen 15 -> 14. Alle
+   Werte im selben Verhaeltnis heruntergezogen, nicht einzelne -- sonst sprengt die Schrift den
+   Kasten (CLAUDE.md 1).
+
+   Ein Rahmen statt einer Flaeche: er soll neben dem Lesetext nicht um Aufmerksamkeit rufen. Beim
+   Hover kommt die Flaeche dazu, wie bei .uob-back.
+
+   .check_reinvention.py meldet ihn als Nachbau von .up-seg-btn -- das ist er nicht. .up-seg-btn
+   ist ein Segment einer Gruppe und traegt seine Rundung nur an den Aussenkanten; das hier ist ein
+   einzelner Knopf. Er nimmt seine Masse von .uob-back, dem sekundaeren Knopf DIESER Komponente --
+   das Onboarding baut seine Bedienelemente durchweg selbst (.uob-next, .uob-back, .uob-select),
+   und ein Kern-Knopf mitten darin saehe an dieser einen Stelle anders aus als der Rest. */
+.uob-help-cal { padding-top: 16px; border-top: 1px solid var(--vc-border); }
+.uob-help-calbtn {
+  margin-top: 10px;
+  height: 32px; padding: 0 11px; border: 1px solid var(--vc-border); border-radius: 10px;
+  background: transparent; color: var(--vc-text);
+  font-family: inherit; font-size: 13px; font-weight: 500;
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+  transition: color var(--uob-t) var(--uob-ease), background var(--uob-t) var(--uob-ease),
+              border-color var(--uob-t) var(--uob-ease);
+}
+.uob-help-calbtn:hover { background: var(--uob-hover); border-color: var(--vc-hover-border); }
+.uob-help-calbtn svg { width: 14px; height: 14px; display: block; }
+
 /* Schmal: die Tafel legt sich ueber die ganze Breite unter die Kopfzeile. Zur Seite geschoben
    waere sie dort ein Streifen von 60 Pixeln. */
 .uob-root.is-narrow .uob-help {

@@ -137,6 +137,13 @@
   var HILFE = {
     en: {
       titel: "Guide",
+      /* Der Hilfe-Abschnitt am Ende jeder Tafel. Er steht bei JEDEM Schritt gleich da: wer
+         haengt, haengt nicht schrittweise. */
+      hilfe: {
+        h: "Need help?",
+        t: "Pick a 15-minute slot and we will walk through your setup together.",
+        cta: "Book a call"
+      },
       brand: {
         lead: "The brand we start tracking for you.",
         warum: {
@@ -203,6 +210,11 @@
     },
     de: {
       titel: "Guide",
+      hilfe: {
+        h: "Brauchst du Hilfe?",
+        t: "Nimm dir 15 Minuten und wir gehen dein Setup gemeinsam durch.",
+        cta: "Termin buchen"
+      },
       brand: {
         lead: "Die Marke, die wir ab jetzt für dich beobachten.",
         warum: {
@@ -1649,6 +1661,44 @@
       /* 16px Luft zwischen Spalte und Tafel -- beruehren zaehlt nicht als "passt". */
       return (rr.right - rechts - breite) >= (cc.right + 16);
     }
+    /* ---- cal.com: erst laden, wenn der Guide wirklich offen ist ----------------------------
+       NICHT beim Seitenaufbau. Der ist ohnehin lang genug (gemessen am 25.08.: 4,2 Sekunden
+       vergehen, bevor eine Zeile von uns laeuft), und ein Fremdskript fuer einen Knopf, den die
+       meisten nie druecken, hat dort nichts zu suchen. Der Aufruf steht deshalb hinter dem Render
+       der Tafel -- und der Knopf existiert dann schon, was wichtig ist: cal bindet beim Init an
+       die vorhandenen [data-cal-link]-Elemente.
+
+       Einmal und nie wieder: das Fahnenzeichen haengt am window, nicht am Zustand der Komponente.
+       Zwei Platzierungen auf einer Seite wuerden das Skript sonst zweimal holen. */
+    function calLaden() {
+      if (window.__uobCalAn) return;
+      window.__uobCalAn = true;
+      /* Wortgleich der Ausschnitt von cal.com, nur in eine Funktion gelegt. Nichts daran
+         umgeschrieben: es ist ihr Ladeprogramm, und eine eigene Fassung davon waere eine zweite
+         Wahrheit, die beim naechsten Update ihrer Seite auseinanderlaeuft. */
+      try {
+        (function (C, A, L) { var p = function (a, ar) { a.q.push(ar); }; var d = C.document;
+          C.Cal = C.Cal || function () { var cal = C.Cal; var ar = arguments;
+            if (!cal.loaded) { cal.ns = {}; cal.q = cal.q || [];
+              d.head.appendChild(d.createElement("script")).src = A; cal.loaded = true; }
+            if (ar[0] === L) { var api = function () { p(api, arguments); };
+              var namespace = ar[1]; api.q = api.q || [];
+              if (typeof namespace === "string") { cal.ns[namespace] = cal.ns[namespace] || api;
+                p(cal.ns[namespace], ar); p(cal, ["initNamespace", namespace]); }
+              else p(cal, ar); return; }
+            p(cal, ar); };
+        })(window, "https://app.cal.com/embed/embed.js", "init");
+        window.Cal("init", "15min", { origin: "https://app.cal.com" });
+        window.Cal.config = window.Cal.config || {};
+        window.Cal.config.forwardQueryParams = true;
+        window.Cal.ns["15min"]("ui", { hideEventTypeDetails: false, layout: "month_view" });
+      } catch (e) {
+        /* Kein sichtbarer Fehler: der Guide ist auch ohne Terminknopf vollstaendig, und ein
+           blockiertes Fremdskript (CSP, Blocker) ist nichts, was der Nutzer beheben kann. */
+        if (window.console) console.warn("upstreem onboarding: cal.com liess sich nicht laden.", e);
+      }
+    }
+
     function renderHilfe() {
       var sp = HILFE[hilfeSprache()];
       var schl = hilfeSchluessel();
@@ -1699,7 +1749,23 @@
           '<ul class="uob-help-l">' +
             d.wie.l.map(function (z) { return '<li>' + esc(z) + '</li>'; }).join("") +
           '</ul>' +
+        '</div>' +
+        /* Die drei data-cal-Attribute sind der Weg, den cal.com dafuer vorgibt (element-click
+           embed): das Skript bindet sich selbst daran, wir rufen keine eigene API. Der einfache
+           Anfuehrungsstrich um die Konfiguration ist Absicht -- der Wert ist JSON und traegt
+           doppelte. */
+        '<div class="uob-help-sec uob-help-cal">' +
+          '<h4 class="uob-help-h">' + esc(sp.hilfe.h) + '</h4>' +
+          '<p class="uob-help-t">' + esc(sp.hilfe.t) + '</p>' +
+          '<button class="uob-help-calbtn" type="button"' +
+            ' data-cal-link="upstreem/15min"' +
+            ' data-cal-namespace="15min"' +
+            ' data-cal-config=\'{"layout":"month_view","useSlotsViewOnSmallScreen":"true"}\'>' +
+            ic("clock", 2) + '<span>' + esc(sp.hilfe.cta) + '</span>' +
+          '</button>' +
         '</div>';
+      /* Nach dem Render, nicht davor: der Knopf muss dastehen, wenn cal sich bindet. */
+      calLaden();
     }
     /* Auf oder zu ueberlebt den Schrittwechsel und das Neuladen: wer sie einmal weggeklickt hat,
        will sie nicht auf jedem Schritt wieder wegklicken. Derselbe Speicher wie beim Thema. */

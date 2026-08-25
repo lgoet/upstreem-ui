@@ -1,0 +1,89 @@
+<meta charset="utf-8"><title>onboarding: Need help mit cal.com</title>
+<style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif}#b{padding:16px;width:1100px}
+#out{position:fixed;right:8px;bottom:8px;z-index:99999;font:10.5px/1.5 ui-monospace,monospace;
+     background:#111;color:#eee;padding:8px;max-width:52vw;max-height:60vh;overflow:auto;
+     white-space:pre-wrap;border-radius:6px}</style>
+<body><div id="b"></div><pre id="out">laeuft…</pre>
+<script>
+/* Zwei Fragen, und die zweite entscheidet, ob das Ganze funktioniert:
+   1. Steht der Abschnitt in der Tafel, in beiden Sprachen, mit den drei data-cal-Attributen?
+   2. BINDET cal.com sich an einen Knopf, der erst NACH dem Init im DOM landet? Das passiert hier
+      bei jedem Schrittwechsel, weil die Tafel neu geschrieben wird. Bindet cal nur beim Init an
+      die damals vorhandenen Elemente, waere der Knopf ab dem zweiten Schritt tot.
+   Dafuer wird das ECHTE embed.js von cal.com geladen -- eine Nachbildung wuerde genau die Frage
+   nicht beantworten. Braucht Netz; ohne Netz sagt der Bericht das ausdruecklich. */
+window.__err=[]; window.addEventListener("error",function(e){window.__err.push(String(e.message));});
+["uobStart","uobStep","uobTopics","uobWorkflowStart","uobSelect","uobFinish","uobExit"].forEach(function(n){ window["bubble_fn_"+n]=function(){}; });
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=["core.css","core.js","onboarding-page.css","onboarding-page.js",
+       "bubble/onboarding_page_bubble.html","_h_uob_eastside.json"];
+var T={};
+Promise.all(D.map(hol)).then(function(t){
+  D.forEach(function(f,i){ T[f]=t[i]; });
+  ["core.css","onboarding-page.css"].forEach(function(f){ var s=document.createElement("style"); s.textContent=T[f]; document.head.appendChild(s); });
+  var w=document.createElement("div"); w.innerHTML=wurzelAus(T["bubble/onboarding_page_bubble.html"]);
+  var r=w.querySelector(".uob-root");
+  r.setAttribute("data-instance","cal"); r.setAttribute("data-cdn-pin","x"); r.setAttribute("data-isdark","no");
+  document.getElementById("b").appendChild(r);
+  var j=document.createElement("script"); j.textContent=T["core.js"]; document.head.appendChild(j);
+  var j2=document.createElement("script"); j2.textContent=T["onboarding-page.js"]; document.head.appendChild(j2);
+  return new Promise(function(ok){ setTimeout(ok,1200); });
+}).then(function(){
+  var R={};
+  var E=JSON.parse(T["_h_uob_eastside.json"]);
+  /* Wichtig: VOR dem Oeffnen darf cal noch nicht geladen sein. */
+  R.vorOeffnen = { calDa: typeof window.Cal, skriptImDokument: !!document.querySelector('script[src*="cal.com/embed"]') };
+  window.setOnboardingBundle("cal", JSON.stringify(E));
+  var root=document.querySelector(".uob-root");
+  return new Promise(function(ok){ setTimeout(ok,600); }).then(function(){
+    /* Guide aufmachen. */
+    var hb=root.querySelector("[data-help], .uob-help-btn, [aria-pressed]");
+    R.helpKnopf = hb ? (hb.className||"").toString().slice(0,40) : "nicht gefunden";
+    if (hb) hb.click();
+    return new Promise(function(ok2){ setTimeout(ok2, 400); });
+  }).then(function(){
+    var sec=root.querySelector(".uob-help-cal");
+    var btn=root.querySelector(".uob-help-calbtn");
+    R.abschnitt = { da: !!sec, knopfDa: !!btn,
+      ueberschrift: sec ? (sec.querySelector(".uob-help-h")||{}).textContent : null,
+      text: sec ? (sec.querySelector(".uob-help-t")||{}).textContent : null,
+      beschriftung: btn ? (btn.textContent||"").trim() : null,
+      attribute: btn ? { link: btn.getAttribute("data-cal-link"),
+                         ns: btn.getAttribute("data-cal-namespace"),
+                         config: btn.getAttribute("data-cal-config") } : null,
+      symbolPfade: btn ? btn.querySelectorAll("svg path, svg circle, svg line").length : 0 };
+    R.nachOeffnen = { calDa: typeof window.Cal, skriptImDokument: !!document.querySelector('script[src*="cal.com/embed"]') };
+    /* Auf das echte embed.js warten. */
+    return new Promise(function(ok3){ var n=0; var iv=setInterval(function(){
+      n++; if ((window.Cal && window.Cal.loaded && window.Cal.ns && window.Cal.ns["15min"]) || n>40){ clearInterval(iv); ok3(); } }, 250); });
+  }).then(function(){
+    R.calGeladen = { loaded: !!(window.Cal && window.Cal.loaded),
+                     namespace: !!(window.Cal && window.Cal.ns && window.Cal.ns["15min"]),
+                     skriptStatus: (function(){ var s=document.querySelector('script[src*="cal.com/embed"]');
+                       return s ? s.src : "kein Skript"; })() };
+    /* DIE Frage: ein Knopf, der NACH dem Init entsteht -- reagiert cal darauf?
+       Nachgestellt durch einen Schrittwechsel, der die Tafel neu schreibt. */
+    window.setOnboardingStep("cal","topics");
+    return new Promise(function(ok4){ setTimeout(ok4, 600); });
+  }).then(function(){
+    var btn2=root.querySelector(".uob-help-calbtn");
+    R.nachSchrittwechsel = { knopfDa: !!btn2,
+      istEinNeuerKnopf: true,
+      attribute: btn2 ? btn2.getAttribute("data-cal-link") : null };
+    /* Klicken und schauen, ob cal ein Modal aufmacht. */
+    var vorher=document.querySelectorAll("cal-modal-box, [data-cal-modal], .cal-modal, iframe[src*='cal.com']").length;
+    if (btn2) btn2.click();
+    return new Promise(function(ok5){ setTimeout(function(){
+      var nachher=document.querySelectorAll("cal-modal-box, [data-cal-modal], .cal-modal, iframe[src*='cal.com']").length;
+      R.klickTest = { modaleVorher: vorher, modaleNachher: nachher, hatGeoeffnet: nachher>vorher,
+        gefundeneElemente: [].map.call(document.querySelectorAll("cal-modal-box, [data-cal-modal], .cal-modal, iframe[src*='cal.com']"),
+                                       function(e){ return e.tagName.toLowerCase(); }) };
+      R.fehler=window.__err.slice(0,5);
+      document.getElementById("out").textContent=JSON.stringify(R,null,1);
+      window.__R=R; window.__fertig=true; ok5();
+    }, 2500); });
+  });
+}).catch(function(e){ document.getElementById("out").textContent="FEHLER: "+e.message+"\n"+e.stack; window.__fertig=true; });
+</script>
