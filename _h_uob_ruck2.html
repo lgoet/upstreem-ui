@@ -1,0 +1,168 @@
+<meta charset="utf-8"><title>onboarding: Ruck, synchron gemessen</title>
+<style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif;background:#fff}
+#b{padding:16px;width:1100px}
+#out{padding:10px;font:11px/1.4 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body><div id="b"></div><pre id="out">laeuft…</pre>
+<script>
+/* Zweiter Anlauf. Der erste hat mit einer Zeituhr gemessen und dabei nur sich selbst gemessen:
+   in dieser Umgebung ist setTimeout auf etwa eine Sekunde gedrosselt, also lagen zwischen zwei
+   Messpunkten drei Zustandswechsel. Und Animationen laufen hier gar nicht -- jedes Element mit
+   uob-rise steht fest auf seinem Anfangswert (18px zu tief), altes wie neues. Eine Bewegung
+   IST hier also nicht messbar.
+
+   Was messbar ist, und worauf es ankommt: WELCHES Element eine frische uob-rise-Animation
+   traegt. Der Ruck entsteht, wenn ein Inhalt, der schon in Ruhe dastand, neu gebaut wird und
+   dabei die Einzugsanimation seiner Vorfahren von vorn beginnt (backwards-Fuellung: erst 18px
+   nach unten, dann hoch). Also wird jeder Setter aufgerufen und UNMITTELBAR danach synchron
+   nachgesehen -- keine Uhr dazwischen.
+
+   Animationen ausschalten darf dieser Aufbau nicht: genau das haben alle bisherigen
+   Onboarding-Harnesse getan, und deshalb ist der Ruck nie aufgefallen. */
+window.__err=[]; window.addEventListener("error",function(e){window.__err.push(String(e.message));});
+["uobStart","uobStep","uobTopics","uobWorkflowStart","uobSelect","uobFinish","uobExit"].forEach(function(n){
+  window["bubble_fn_"+n]=function(){}; });
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(f+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=["core.css","core.js","onboarding-page.css","onboarding-page.js",
+       "bubble/onboarding_page_bubble.html","_h_uob_eastside.json"];
+var T={}, R={};
+Promise.all(D.map(hol)).then(function(t){
+  D.forEach(function(f,i){ T[f]=t[i]; });
+  R.frische = {
+    css_hat_is_quiet: T["onboarding-page.css"].indexOf(".uob-pane.is-quiet.is-quiet") >= 0,
+    js_setzt_is_quiet: T["onboarding-page.js"].indexOf('jetzt.classList.add("is-quiet")') >= 0,
+    js_tauscht_in_ort: T["onboarding-page.js"].indexOf("gleicheGestalt(jetzt, neuIn)") >= 0
+  };
+  ["core.css","onboarding-page.css"].forEach(function(f){ var s=document.createElement("style"); s.textContent=T[f]; document.head.appendChild(s); });
+  var j=document.createElement("script"); j.textContent=T["core.js"]; document.head.appendChild(j);
+  var j2=document.createElement("script"); j2.textContent=T["onboarding-page.js"]; document.head.appendChild(j2);
+  return new Promise(function(ok){ setTimeout(ok,600); });
+}).then(function(){
+  var ECHT = JSON.parse(T["_h_uob_eastside.json"]);
+  function klon(){ return JSON.parse(JSON.stringify(ECHT)); }
+  var nr = 0, gesehen = new WeakMap();
+  function num(el){ if(!el) return "-"; if(!gesehen.has(el)) gesehen.set(el, ++nr); return gesehen.get(el); }
+  function anim(el){
+    if (!el) return "-";
+    if (!el.getAnimations) return "?";
+    try { return el.getAnimations().map(function(x){ return (x.animationName||"?"); }).join(",") || "keine"; }
+    catch(e){ return "!"; }
+  }
+  function probe(r, marke){
+    var pane = r.querySelector(".uob-pane:not(.is-off)");
+    var body = pane ? pane.querySelector(".uob-body") : null;
+    var head = pane ? pane.querySelector(".uob-head") : null;
+    return {
+      wann: marke,
+      pane: num(pane), body: num(body), head: num(head),
+      paneKl: pane ? (pane.className.match(/is-[a-z-]+/g)||[]).sort().join(" ") : "-",
+      wurzelKl: (r.className.match(/is-[a-z-]+/g)||[]).sort().join(" "),
+      /* Der Beweis: welche Animation haengt am Inhalt, und wo steht er dadurch. */
+      animBody: anim(body), animHead: anim(head),
+      tfBody: body ? (window.getComputedStyle(body).transform||"none").replace("matrix(1, 0, 0, 1, ","m(") : "-",
+      /* Sichtbarkeit mitmessen: animation:none nimmt dem Element auch die 0-Deckkraft aus dem
+         Anfangsbild der Keyframes. Waere sie danach 0, haette der Ruck einem unsichtbaren
+         Inhalt Platz gemacht -- die schlimmere Variante. */
+      opBody: body ? window.getComputedStyle(body).opacity : "-",
+      opHead: head ? window.getComputedStyle(head).opacity : "-",
+      /* Reine Layoutlage, ohne Verwandlung -- so wird ein echter Layoutsprung von der
+         Animation unterscheidbar. */
+      oTopBody: body ? body.offsetTop : null,
+      railH: (r.querySelector(".uob-rail")||{}).offsetHeight,
+      topH: (r.querySelector(".uob-top")||{}).offsetHeight,
+      zeilen: r.querySelectorAll(".uob-item").length
+    };
+  }
+  function mount(step){
+    var u=new URL(window.location.href);
+    if (step) u.searchParams.set("step",step); else u.searchParams.delete("step");
+    window.history.replaceState({}, "", u.toString());
+    document.getElementById("b").innerHTML="";
+    var w=document.createElement("div"); w.innerHTML=wurzelAus(T["bubble/onboarding_page_bubble.html"]);
+    var r=w.querySelector(".uob-root");
+    var id="rk"+Math.random().toString(36).slice(2,7);
+    r.setAttribute("data-instance",id); r.setAttribute("data-cdn-pin","rk"); r.setAttribute("data-isdark","no");
+    r.setAttribute("data-step-fn","bubble_fn_uobStep");
+    document.getElementById("b").appendChild(r);
+    return { r: r, id: id };
+  }
+  /* Die gemeldete Lage: Neuladen auf Prompts, Buendel kommt, und ein zweiter Setter kommt
+     Millisekunden danach -- auf der echten Seite der Normalfall (ein Workflow, mehrere
+     Run-JS-Schritte hintereinander). */
+  function lauf(name, step, schritte){
+    var m = mount(step);
+    /* Der Aufbau selbst ist NICHT synchron: uobBoot versucht es alle 60ms erneut, und in dieser
+       Umgebung ist das gedrosselt. Erst warten, bis der Regler steht -- sonst laufen die Setter
+       in die Warteschlange von makeLate und alles passiert gemeinsam nach dem Aufbau, was genau
+       den Unterschied verwischt, um den es hier geht. Das war der erste Fehlversuch. */
+    return new Promise(function(bereit){
+      var n=0; (function w(){ if (m.r.__uobController || n++>40) return bereit(); setTimeout(w,50); })();
+    }).then(function(){
+    var spur = [probe(m.r, "0_montiert")];
+    schritte.forEach(function(s){ s.tun(m.id); spur.push(probe(m.r, s.name)); });
+    /* Und einmal nach einer langen Pause: bewegt sich das LAYOUT noch, nachdem alles stand? */
+    return new Promise(function(ok){ setTimeout(function(){
+      spur.push(probe(m.r, "9_nach_1200ms"));
+      var l = spur[spur.length-1], v = spur[spur.length-2];
+      R[name] = {
+        spur: spur,
+        /* Auswertung: traegt ein Inhalt eine Einzugsanimation, obwohl sein Bereich stehen blieb? */
+        ruck: spur.filter(function(s,i){ var p=spur[i-1];
+          return p && s.pane===p.pane && s.body!==p.body && /uob-rise/.test(String(s.animBody)); })
+          .map(function(s){ return s.wann; }),
+        layoutBewegtSpaeter: (l.oTopBody!==v.oTopBody || l.railH!==v.railH || l.topH!==v.topH),
+        /* Der neue Vertrag: bei einem Tausch in derselben Ansicht bleibt das Element STEHEN
+           (gleiche Nummer) und der Inhalt wechselt trotzdem. */
+        inOrt: spur.map(function(s2,i){ var p=spur[i-1]; if(!p||s2.pane!==p.pane) return null;
+          return { wann:s2.wann, elementBleibt:(s2.body===p.body && s2.head===p.head),
+                   zeilenVorher:p.zeilen, zeilenNachher:s2.zeilen, anim:s2.animBody }; })
+          .filter(Boolean)
+      };
+      ok();
+    }, 1200); });
+    });
+  }
+  return lauf("A_prompts_buendel_dann_prompts", "prompts", [
+      { name:"1_setBundle", tun:function(id){ window.setOnboardingBundle(id, JSON.stringify(klon())); } },
+      { name:"2_setPrompts_kuerzer", tun:function(id){ window.setOnboardingPrompts(id, JSON.stringify(klon().prompts.slice(0,2))); } }
+    ])
+    .then(function(){ return lauf("B_prompts_buendel_dann_status", "prompts", [
+      { name:"1_setBundle", tun:function(id){ window.setOnboardingBundle(id, JSON.stringify(klon())); } },
+      { name:"2_setStatus", tun:function(id){ window.setOnboardingStatus(id, "ready"); } }
+    ]); })
+    .then(function(){ return lauf("C_prompts_buendel_dann_topics", "prompts", [
+      { name:"1_setBundle", tun:function(id){ window.setOnboardingBundle(id, JSON.stringify(klon())); } },
+      { name:"2_setTopics", tun:function(id){ window.setOnboardingTopics(id, JSON.stringify(klon().topics)); } }
+    ]); })
+    .then(function(){ return lauf("D_topics_buendel_dann_topics", "topics", [
+      { name:"1_setBundle", tun:function(id){ var b=klon(); b.prompts=[];
+        window.setOnboardingBundle(id, JSON.stringify(b)); } },
+      { name:"2_setTopics_kuerzer", tun:function(id){ window.setOnboardingTopics(id, JSON.stringify(klon().topics.slice(0,2))); } }
+    ]); })
+    .then(function(){ return lauf("E_competitors_buendel_dann_brands", "competitors", [
+      { name:"1_setBundle", tun:function(id){ var b=klon(); b.prompts=[]; b.topics=[];
+        window.setOnboardingBundle(id, JSON.stringify(b)); } },
+      { name:"2_setBrands", tun:function(id){ window.setOnboardingBrands(id, JSON.stringify(klon().competitors||[])); } }
+    ]); })
+    .then(function(){ return lauf("F_brand_leer_dann_buendel", "", [
+      { name:"1_setBundle_leer", tun:function(id){ window.setOnboardingBundle(id, ""); } },
+      { name:"2_setBundle_echt", tun:function(id){ window.setOnboardingBundle(id, JSON.stringify(klon())); } }
+    ]); })
+    .then(function(){ return lauf("G_gestalt_passt_nicht_rueckfall", "prompts", [
+      { name:"1_setBundle", tun:function(id){ window.setOnboardingBundle(id, JSON.stringify(klon())); } },
+      /* Den Rueckfall erzwingen: ein fremdes Kind im Bereich, und die Gestalt passt nicht mehr.
+         Ein Zweig, der nie gelaufen ist, ist kein Zweig -- er muss zeigen, dass er den Ruck
+         auch dort verhindert, wo Kind fuer Kind nicht geht. */
+      { name:"1b_fremdes_kind", tun:function(){
+          var pane=document.querySelector(".uob-pane:not(.is-off)");
+          if (pane) pane.appendChild(document.createElement("hr")); } },
+      { name:"2_setPrompts", tun:function(id){ window.setOnboardingPrompts(id, JSON.stringify(klon().prompts)); } }
+    ]); })
+    .then(function(){
+      R.fehler = window.__err.slice(0,4);
+      document.getElementById("out").textContent = JSON.stringify(R,null,1);
+      window.__R=R; window.__fertig=true;
+    });
+}).catch(function(e){ document.getElementById("out").textContent="FEHLER: "+e.message+"\n"+e.stack; window.__fertig=true; });
+</script>

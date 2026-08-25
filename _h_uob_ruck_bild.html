@@ -1,0 +1,49 @@
+<meta charset="utf-8"><title>onboarding: Prompts nach dem Tausch am Ort</title>
+<style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif;background:#fff}
+#b{padding:16px;width:1100px} #out{padding:8px;font:11px/1.4 ui-monospace,monospace}</style>
+<body><div id="b"></div><pre id="out">laeuft…</pre>
+<script>
+/* Sichtprobe zum Tausch am Ort: genau die gemeldete Folge (Buendel, und Millisekunden spaeter ein
+   zweiter Setter) und danach ein Bild. Zahlen sagen nicht, ob der Kopf noch dasteht. */
+["uobStart","uobStep","uobTopics","uobWorkflowStart","uobSelect","uobFinish","uobExit"].forEach(function(n){
+  window["bubble_fn_"+n]=function(){}; });
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){ return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=["core.css","core.js","onboarding-page.css","onboarding-page.js",
+       "bubble/onboarding_page_bubble.html","_h_uob_eastside.json"];
+var T={};
+Promise.all(D.map(hol)).then(function(t){
+  D.forEach(function(f,i){ T[f]=t[i]; });
+  ["core.css","onboarding-page.css"].forEach(function(f){ var s=document.createElement("style"); s.textContent=T[f]; document.head.appendChild(s); });
+  [ "core.js","onboarding-page.js"].forEach(function(f){ var j=document.createElement("script"); j.textContent=T[f]; document.head.appendChild(j); });
+  return new Promise(function(ok){ setTimeout(ok,600); });
+}).then(function(){
+  var u=new URL(window.location.href); u.searchParams.set("step","prompts");
+  window.history.replaceState({}, "", u.toString());
+  var dunkel = new URL(window.location.href).searchParams.get("dark")==="1";
+  document.body.style.background = dunkel ? "#0f0f10" : "#fff";
+  var w=document.createElement("div"); w.innerHTML=wurzelAus(T["bubble/onboarding_page_bubble.html"]);
+  var r=w.querySelector(".uob-root"); var id="bd"+Math.random().toString(36).slice(2,7);
+  r.setAttribute("data-instance",id); r.setAttribute("data-cdn-pin","bd");
+  r.setAttribute("data-isdark", dunkel?"yes":"no"); r.setAttribute("data-step-fn","bubble_fn_uobStep");
+  document.getElementById("b").appendChild(r);
+  var n=0; (function warte(){ if (r.__uobController || n++>40){
+      var E=JSON.parse(T["_h_uob_eastside.json"]);
+      window.setOnboardingBundle(id, JSON.stringify(E));
+      window.setOnboardingPrompts(id, JSON.stringify(E.prompts));
+      setTimeout(function(){
+        var pane=r.querySelector(".uob-pane:not(.is-off)");
+        document.getElementById("out").textContent = JSON.stringify({
+          kopfDa: !!pane.querySelector(".uob-head"), rumpfDa: !!pane.querySelector(".uob-body"),
+          kinderImBereich: pane.children.length,
+          ueberschrift: (pane.querySelector(".uob-head")||{}).innerText,
+          gruppen: [].map.call(r.querySelectorAll(".uob-group-h"), function(g){ return g.innerText.replace(/\s+/g," ").trim(); }),
+          zeilen: r.querySelectorAll(".uob-item").length,
+          deckkraft: getComputedStyle(pane.querySelector(".uob-body")).opacity,
+          verwandlung: getComputedStyle(pane.querySelector(".uob-body")).transform
+        });
+        window.__fertig=true;
+      }, 1400);
+    } else setTimeout(warte,50); })();
+});
+</script>

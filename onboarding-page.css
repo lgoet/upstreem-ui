@@ -1265,6 +1265,19 @@
   animation: uob-rise 300ms var(--uob-ease) backwards;
 }
 .uob-pane.is-arriving .uob-body { animation-delay: 60ms; }
+/* Inhalt, der IN einem stehenden Bereich getauscht wurde, zieht NICHT ein -- er stand schon da.
+   Ohne diese Regel war das die haesslichste Bewegung der ganzen Seite: die Liste steht
+   vollstaendig, ein zweiter Setter kommt Millisekunden spaeter, head und body entstehen neu, und
+   ein frisches Element beginnt jede Animation seiner Vorfahren von vorn. uob-rise hat
+   backwards-Fuellung, also sitzt der Inhalt erst die Verzoegerung lang 18px zu tief und fahrt
+   dann hoch -- einmal runter und wieder hoch, ohne dass etwas passiert waere. Gemeldet am 25.08.
+   fuer Prompts, gemessen fuer Prompts, Topics UND Competitors.
+   Doppelte Klasse, weil .uob-root.is-entering .uob-body und .uob-pane.is-arriving .uob-body
+   dieselbe Spezifitaet haben: ueber die Ladereihenfolge zu entscheiden waere Zufall (§1). Sie
+   trifft nur das Innere des Bereichs -- Schiene, Kopf und Knopfzeile ziehen weiter ein, die
+   entstehen beim Tausch nicht neu. */
+.uob-pane.is-quiet.is-quiet .uob-head,
+.uob-pane.is-quiet.is-quiet .uob-body { animation: none; }
 
 /* ---------- schmal ----------
    Ein Telefon ist hier kein Sonderfall, den man wegblendet: das Onboarding muss dort ganz
