@@ -141,7 +141,7 @@
          haengt, haengt nicht schrittweise. */
       hilfe: {
         h: "Need help?",
-        t: "Pick a 15-minute slot and we will walk through your setup together.",
+        t: "Pick a slot of up to 30 minutes and we will walk through your setup together.",
         cta: "Book a call"
       },
       brand: {
@@ -212,7 +212,7 @@
       titel: "Guide",
       hilfe: {
         h: "Brauchst du Hilfe?",
-        t: "Nimm dir 15 Minuten und wir gehen dein Setup gemeinsam durch.",
+        t: "Nimm dir bis zu 30 Minuten und wir gehen dein Setup gemeinsam durch.",
         cta: "Termin buchen"
       },
       brand: {
@@ -1323,6 +1323,29 @@
     var BREITE = { brand: "480px", load1: "480px", load2: "560px",
                    competitors: "880px", topics: "620px", prompts: "720px", plan: "1040px" };
 
+    /* Gleiche Ansicht heisst normalerweise gleiche Gestalt: dieselbe Zahl von Kindern in
+       derselben Art. Geprueft wird es trotzdem, denn ein Tausch Kind fuer Kind schreibt sonst
+       Inhalt in das falsche Element -- lieber der grobe Weg als vertauschte Haelften. */
+    function gleicheGestalt(a, b) {
+      var n = a.children.length;
+      if (!n || n !== b.children.length) return false;
+      for (var i = 0; i < n; i++) if (a.children[i].tagName !== b.children[i].tagName) return false;
+      return true;
+    }
+    /* Attribute nachziehen statt das Element ersetzen. Eine Klasse, die sich aendert, startet
+       keine Animation neu -- ein neues Element schon. Erst weg, was nicht mehr dasteht, sonst
+       bleibt der Zustand des letzten Zeichnens haengen. */
+    function attrNachziehen(von, nach) {
+      for (var i = nach.attributes.length - 1; i >= 0; i--) {
+        var alt = nach.attributes[i].name;
+        if (!von.hasAttribute(alt)) nach.removeAttribute(alt);
+      }
+      for (var j = 0; j < von.attributes.length; j++) {
+        var a = von.attributes[j];
+        if (nach.getAttribute(a.name) !== a.value) nach.setAttribute(a.name, a.value);
+      }
+    }
+
     function render(neuEingezogen) {
       var k = ansichtKey();
       var wechsel = k !== letzteAnsicht;
@@ -1361,11 +1384,33 @@
         var jetzt = elStack.querySelector(".uob-pane:not(.is-off)");
         if (jetzt) {
           /* Innerhalb derselben Ansicht wird nur der Inhalt getauscht, nicht der Bereich: sonst
-             liefe bei jedem Haken der Einzug erneut. */
+             liefe bei jedem Haken der Einzug erneut.
+             Der Bereich allein reicht dafuer NICHT, und das war der Ruck vom 25.08.: der Einzug
+             haengt an .uob-head und .uob-body, und die beiden wurden hier mitgetauscht. Ein
+             frisches Element beginnt jede Animation seiner Vorfahren von vorn, und uob-rise hat
+             backwards-Fuellung -- der Inhalt sass erst die Verzoegerung lang 18px zu tief und fuhr
+             dann hoch. Einmal runter und wieder hoch, ohne dass etwas passiert waere. Gemeldet
+             fuer Prompts, gemessen fuer Prompts, Topics UND Competitors: jeder zweite Setter, der
+             Millisekunden nach dem ersten kommt, loeste es aus.
+             Also bleiben Kopf und Rumpf STEHEN und bekommen nur neuen Inhalt. Das ist mehr als
+             die Animation zu unterdruecken: ein Einzug, der noch laeuft, laeuft ungestoert weiter
+             -- er haengt am Element, und das Element ist noch da. Wer den Tausch mitten im Einzug
+             abbekommt, sieht ihn zu Ende laufen statt auf die Endlage zu springen. */
           var frisch = document.createElement("div");
           frisch.innerHTML = viewFor(k);
           var neuIn = frisch.firstElementChild;
-          jetzt.innerHTML = neuIn.innerHTML;
+          if (gleicheGestalt(jetzt, neuIn)) {
+            for (var ci = 0; ci < neuIn.children.length; ci++) {
+              attrNachziehen(neuIn.children[ci], jetzt.children[ci]);
+              jetzt.children[ci].innerHTML = neuIn.children[ci].innerHTML;
+            }
+          } else {
+            /* Andere Gestalt heisst: hier ist mehr passiert als ein Inhaltswechsel. Dann doch ganz
+               tauschen -- aber mit der Marke, damit der Inhalt nicht ein zweites Mal einzieht.
+               Das Warum der Marke steht an ihrer Regel in der CSS. */
+            jetzt.classList.add("is-quiet");
+            jetzt.innerHTML = neuIn.innerHTML;
+          }
           nachZeichnen(k);
         }
       }
