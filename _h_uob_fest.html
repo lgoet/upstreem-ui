@@ -1,0 +1,91 @@
+<meta charset="utf-8"><title>onboarding: Topics fest, sobald Prompts da sind</title>
+<style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif}
+#b{padding:16px;width:900px} #out{padding:10px;font:11px/1.45 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body><div id="b"></div><pre id="out">laeuft…</pre>
+<script>
+/* Angesagt: sobald Prompts existieren, sind die Themen fest. Geprueft wird BEIDES -- dass die
+   Sperre greift, und dass sie OHNE Prompts nicht greift. Eine Sperre, die immer sperrt, waere
+   von einer, die richtig sperrt, nicht zu unterscheiden.
+   Und sie muss in der SACHE stehen, nicht nur im Bild: darum wird auch aus dem Code geklickt,
+   auf Elemente, die kein data-pick mehr tragen. */
+var SEL = [];
+["uobStart","uobStep","uobTopics","uobWorkflowStart","uobFinish","uobExit"].forEach(function(n){
+  window["bubble_fn_"+n]=function(){}; });
+window.bubble_fn_uobSelect = function(p){ SEL.push(String(p)); };
+window.__err=[]; window.addEventListener("error",function(e){window.__err.push(String(e.message));});
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){ return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=["core.css","core.js","onboarding-page.css","onboarding-page.js",
+       "bubble/onboarding_page_bubble.html","_h_uob_eastside_voll.json"];
+var T={}, R={};
+Promise.all(D.map(hol)).then(function(t){
+  D.forEach(function(f,i){ T[f]=t[i]; });
+  ["core.css","onboarding-page.css"].forEach(function(f){ var s=document.createElement("style"); s.textContent=T[f]; document.head.appendChild(s); });
+  [ "core.js","onboarding-page.js"].forEach(function(f){ var j=document.createElement("script"); j.textContent=T[f]; document.head.appendChild(j); });
+  return new Promise(function(ok){ setTimeout(ok,600); });
+}).then(function(){
+  function lauf(name, mitPrompts){
+    var b = JSON.parse(T["_h_uob_eastside_voll.json"]);
+    delete b.restart;                       /* ohne Tor */
+    if (!mitPrompts) b.prompts = [];
+    document.getElementById("b").innerHTML="";
+    var u=new URL(window.location.href); u.searchParams.set("step","topics");
+    window.history.replaceState({}, "", u.toString());
+    var w=document.createElement("div"); w.innerHTML=wurzelAus(T["bubble/onboarding_page_bubble.html"]);
+    var r=w.querySelector(".uob-root"); var id="fe"+Math.random().toString(36).slice(2,7);
+    r.setAttribute("data-instance",id); r.setAttribute("data-cdn-pin","fe");
+    document.getElementById("b").appendChild(r);
+    return new Promise(function(ok){ var n=0;
+      (function warte(){ if (r.__uobController || n++>40){
+        window.setOnboardingBundle(id, JSON.stringify(b));
+        setTimeout(function(){
+          /* Bei vorhandenen Prompts landet der Einstieg auf Prompts -- fuer diesen Test muss die
+             Themenansicht her. Ueber die Schiene, wie ein Nutzer. */
+          var hit = r.querySelector('[data-go="topics"]');
+          if (hit) hit.click();
+          setTimeout(function(){
+            var vorZahl = (r.querySelector(".uob-count")||{}).textContent;
+            SEL = [];
+            /* Alle Wege, die etwas aendern koennten. */
+            var zeile = r.querySelectorAll(".uob-item")[0];
+            if (zeile) zeile.click();
+            var alle = r.querySelector('[data-allof="topics"]'); if (alle) alle.click();
+            var plus = r.querySelector("[data-addtopic]"); if (plus) plus.click();
+            var kreuz = r.querySelector("[data-eigen-del]"); if (kreuz) kreuz.click();
+            var feld = r.querySelector("[data-eigen-in]");
+            if (feld) { feld.value = "geschmuggelt"; feld.dispatchEvent(new Event("input",{bubbles:true})); }
+            setTimeout(function(){
+              var pane = r.querySelector(".uob-pane:not(.is-off)");
+              R[name] = {
+                bereich: pane ? pane.getAttribute("data-pane") : "-",
+                vorspann: (pane && pane.querySelector(".uob-sub")||{}).textContent,
+                zeilenMitPick: r.querySelectorAll('.uob-item[data-pick="topics"]').length,
+                zeilenFest: r.querySelectorAll(".uob-item.is-fest").length,
+                alleKnopfDa: !!r.querySelector('[data-allof="topics"]'),
+                plusDa: !!r.querySelector("[data-addtopic]"),
+                kreuzDa: !!r.querySelector("[data-eigen-del]"),
+                feldReadonly: (function(){ var f=r.querySelector("[data-eigen-in]"); return f ? f.readOnly : null; })(),
+                zahlVorher: vorZahl,
+                zahlNachher: (r.querySelector(".uob-count")||{}).textContent,
+                ereignisse: SEL.length,
+                zeiger: (function(){ var z=r.querySelector(".uob-item"); return z ? getComputedStyle(z).cursor : null; })()
+              };
+              ok();
+            }, 250);
+          }, 350);
+        }, 500);
+      } else setTimeout(warte,60); })();
+    });
+  }
+  /* ?nur=A oder ?nur=B laesst nur einen Fall stehen -- fuers Bild, denn sonst ueberschreibt der
+     zweite Durchlauf den ersten auf dem Schirm. */
+  var nur = new URL(window.location.href).searchParams.get("nur");
+  return (nur === "B" ? Promise.resolve() : lauf("A_mit_prompts_gesperrt", true))
+    .then(function(){ return nur === "A" ? null : lauf("B_ohne_prompts_offen", false); })
+    .then(function(){
+      R.fehler = window.__err.slice(0,3);
+      document.getElementById("out").textContent = JSON.stringify(R,null,1);
+      window.__R=R; window.__fertig=true;
+    });
+}).catch(function(e){ document.getElementById("out").textContent="FEHLER: "+e.message+"\n"+e.stack; window.__fertig=true; });
+</script>

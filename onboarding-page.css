@@ -668,6 +668,15 @@
 .uob-item.is-slim { min-height: 40px; padding: 6px 12px; }
 .uob-item.is-blocked { opacity: .45; cursor: default; }
 .uob-item.is-blocked:hover { border-color: var(--vc-border); }
+/* FEST: die Themen stehen, weil die Prompts darauf gebaut sind. Der Haken bleibt in voller
+   Deckkraft -- er ist die Aussage, was gewaehlt IST, und eine blasse Liste laese sich wie ein
+   Fehler oder wie "nicht mehr gueltig". Weg muss nur, was Bedienbarkeit VERSPRICHT: der Zeiger
+   und die Rahmenreaktion beim Ueberfahren. Anders als is-blocked, das eine Zeile meint, die man
+   gerade nicht waehlen KANN -- hier ist die Wahl getroffen und gilt. */
+.uob-item.is-fest { cursor: default; }
+.uob-item.is-fest:not(.is-on):hover { border-color: var(--vc-border); }
+/* Das Namensfeld eines eigenen Themas bleibt lesbar und markierbar, nimmt aber nichts an. */
+.uob-item.is-fest .uob-newin { cursor: default; }
 /* Geometrie exakt .up-filter-check aus core, nur eine Stufe groesser (16 -> 18, Radius 5 -> 5.6,
    Haken 11 -> 12.4): die Zeile ist 56px hoch statt 28, ein 16er-Kaestchen verschwindet darin. */
 .uob-check {

@@ -1658,9 +1658,12 @@
   "uob-rail-labels",
   "uob-rail-line",
   "uob-res-acts",
+  "uob-res-k",
   "uob-res-meta",
   "uob-res-note",
   "uob-res-over",
+  "uob-res-row",
+  "uob-res-v",
   "uob-root",
   "uob-select",
   "uob-select-chev",
@@ -2662,7 +2665,7 @@
   "globals": 137,
   "payloadkeys": 83,
   "dataattrs": 198,
-  "klassen": 1964,
+  "klassen": 1967,
   "keyframes": 58
  }
 }

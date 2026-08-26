@@ -1103,27 +1103,47 @@
       '</div>';
     }
 
+    /* Sobald Prompts existieren, sind die Themen FEST. Die Prompts wurden aus genau dieser
+       Auswahl gebaut -- ein Thema danach abzuwaehlen liesse Prompts stehen, die zu einem Thema
+       gehoeren, das es nicht mehr gibt, und ein neues Thema haette keine Prompts. Der Schritt
+       bleibt erreichbar (nachsehen darf man immer), aber er nimmt keine Aenderung mehr an.
+       Wer spaeter ein Thema dazunehmen will, tut das in der Themenverwaltung -- dort stehen die
+       nicht gewaehlten weiter als Vorschlaege.
+       Bewusst an den PROMPTS und nicht an einem eigenen Merker: existieren keine (der Lauf ist
+       fehlgeschlagen), darf der Nutzer die Auswahl aendern und es erneut versuchen. */
+    function themenGesperrt() { return isArr(state.prompts) && state.prompts.length > 0; }
+
     function viewTopics() {
       var n = anzahl(state.selTopics);
       /* Nur die vom Server gelieferten Themen zaehlen fuer "alle": die selbst getippten stehen
          in state.eigene und sind ohnehin immer gewaehlt -- sie abzuwaehlen hiesse, sie zu
          loeschen, und das gehoert an ihr eigenes Kreuz, nicht an diesen Knopf. */
       var alleGewaehlt = state.topics.length > 0 && n >= state.topics.length;
+      var fest = themenGesperrt();
       return '<div class="uob-pane" data-pane="topics">' +
         kopf("Topics",
-             "Topics group the questions we ask the models.",
+             fest
+               ? "Your prompts are already built on these topics, so they cannot be changed here."
+               : "Topics group the questions we ask the models.",
              { text: n + " selected", voll: n > 0 },
-             state.topics.length
+             /* Kein Alle-Knopf, wenn nichts mehr zu waehlen ist. Ein Knopf, der nichts tut, ist
+                schlechter als keiner. */
+             (state.topics.length && !fest)
                ? { kind: "topics", text: alleGewaehlt ? "Deselect all" : "Select all" }
                : null) +
         '<div class="uob-body">' +
           (state.topics.length
-            ? '<div class="uob-list up-scroll uob-group-items is-plain" role="group" aria-label="Topics">' +
+            ? '<div class="uob-list up-scroll uob-group-items is-plain' + (fest ? " is-fest" : "") +
+              '" role="group" aria-label="Topics">' +
                 state.topics.map(function (t) {
                   var an = !!state.selTopics[t.id];
-                  return '<button class="uob-item is-slim is-plain' + (an ? " is-on" : "") + '" type="button" role="checkbox"' +
+                  /* Gesperrt heisst: KEIN data-pick. Die Sperre steht damit im Markup und nicht
+                     nur im Aussehen -- ein Klick findet gar kein Ziel mehr. */
+                  return '<button class="uob-item is-slim is-plain' + (an ? " is-on" : "") +
+                           (fest ? " is-fest" : "") + '" type="button" role="checkbox"' +
                            ' aria-checked="' + (an ? "true" : "false") + '"' +
-                           ' data-pick="topics" data-id="' + esc(t.id) + '">' +
+                           (fest ? ' aria-disabled="true"' : ' data-pick="topics"') +
+                           ' data-id="' + esc(t.id) + '">' +
                     '<span class="uob-check">' + ic("check", 3) + '</span>' +
                     /* Nur Farbe und Name. Die Beschreibung stand als zweite Zeile darunter und
                        machte aus einer Auswahlliste eine Leseaufgabe -- an dieser Stelle des
@@ -1147,17 +1167,23 @@
        Nutzer weiss besser als der Hintergrundlauf, wofuer er gefunden werden will.
        Ein Thema ohne Namen zaehlt nicht mit: erst wenn etwas dasteht, ist es eines. */
     function eigeneThemenHtml() {
+      var fest = themenGesperrt();
       var html = state.eigene.map(function (e, i) {
-        return '<div class="uob-item is-slim is-plain" data-eigen="' + i + '">' +
+        return '<div class="uob-item is-slim is-plain' + (fest ? " is-fest" : "") + '" data-eigen="' + i + '">' +
           '<span class="uob-check' + (txt(e.name) ? "" : " is-leer") + '">' + ic("check", 3) + '</span>' +
           '<span class="uob-swatch" style="--uob-sw:' + esc(e.farbe) + '"></span>' +
+          /* Gesperrt: das Feld liest sich noch, aber es nimmt nichts an. readonly und nicht
+             disabled -- ein disabled-Feld ist fuer Vorlesesoftware weg, und der Name soll
+             lesbar bleiben. */
           '<input class="uob-newin" type="text" maxlength="' + MAX.topic + '" value="' + esc(e.name) + '"' +
+            (fest ? ' readonly tabindex="-1"' : '') +
             ' placeholder="Name your topic" autocomplete="off" spellcheck="false" data-eigen-in="' + i + '"/>' +
-          '<button class="uob-newdel" type="button" data-eigen-del="' + i + '" aria-label="Remove topic">' +
-            ic("x", 3) + '</button>' +
+          (fest ? "" :
+            '<button class="uob-newdel" type="button" data-eigen-del="' + i + '" aria-label="Remove topic">' +
+              ic("x", 3) + '</button>') +
         '</div>';
       }).join("");
-      if (state.eigene.length < EIGEN_MAX) {
+      if (state.eigene.length < EIGEN_MAX && !fest) {
         html += '<button class="uob-add" type="button" data-addtopic>' + ic("plus", 2) + 'Add your own</button>';
       }
       return html;
@@ -2430,6 +2456,8 @@
          Attributnamen, die beiden Knoepfe kommen sich also nicht ins Gehege. */
       var alleVon = e.target.closest("[data-allof]");
       if (alleVon) { alleUmschalten(alleVon.getAttribute("data-allof")); return; }
+      /* Die Sperre steht auch HIER, nicht nur im Markup: ein Klick aus dem Code oder ein alter
+         Knopf in einem noch nicht neu gezeichneten Bereich darf nichts aendern. */
 
       var alle = e.target.closest("[data-all]");
       if (alle) {
@@ -2532,6 +2560,9 @@
       }
       var ei = e.target.getAttribute && e.target.getAttribute("data-eigen-in");
       if (ei != null) {
+        /* readonly im Markup haelt die Tastatur auf; das hier haelt auch ein Ereignis auf, das
+           von woanders kommt. */
+        if (themenGesperrt()) return;
         var k = parseInt(ei, 10);
         var eintrag = state.eigene[k];
         if (eintrag) {
@@ -2569,6 +2600,10 @@
 
     /* ---- Auswahl --------------------------------------------------------------------------- */
     function waehle(kind, id) {
+      /* Die Sperre steht in der SACHE und nicht nur im Markup: ein Klick aus dem Code, ein alter
+         Knopf in einem Bereich, der noch nicht neu gezeichnet wurde, ein Tastendruck auf einem
+         Element mit aria-disabled -- alles das kaeme sonst durch. */
+      if (kind === "topics" && themenGesperrt()) return;
       var topf = kind === "brands" ? state.selBrands : kind === "topics" ? state.selTopics : state.selPrompts;
       var jetztAn;
       if (topf[id]) { delete topf[id]; jetztAn = false; }
@@ -2618,6 +2653,7 @@
     }
     function alleUmschalten(kind) {
       if (kind !== "topics" || !state.topics.length) return;
+      if (themenGesperrt()) return;
       var aus = alleServerThemenAn();
       for (var i = 0; i < state.topics.length; i++) {
         if (aus) delete state.selTopics[state.topics[i].id];
@@ -2644,6 +2680,7 @@
        weitergezaehlt hinter den vorgeschlagenen, damit zwei eigene nicht dieselbe bekommen. */
     function eigenesThemaAnlegen(platzhalter) {
       if (state.eigene.length >= EIGEN_MAX) return;
+      if (themenGesperrt()) return;
       var pal = UC.TOPIC_COLOR_PALETTE || [];
       var i = state.topics.length + state.eigene.length;
       state.eigene.push({
@@ -2672,6 +2709,7 @@
       themenZaehler();
     }
     function eigenesThemaLoeschen(idx) {
+      if (themenGesperrt()) return;
       if (!(idx >= 0) || idx >= state.eigene.length) return;
       var id = state.eigene[idx].id;
       delete state.selTopics[id];
