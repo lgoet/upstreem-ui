@@ -28,9 +28,10 @@ Promise.all(D.map(hol)).then(function(t){
   R.bloecke = m ? m[1].trim().split("\n").map(function(z){ return z.trim(); }) : "nicht gefunden";
   return new Promise(function(ok){ setTimeout(ok,600); });
 }).then(function(){
-  function mount(){
+  function mount(adresse){
     document.getElementById("b").innerHTML="";
-    var u=new URL(window.location.href); u.searchParams.delete("step");
+    var u=new URL(window.location.href);
+    if (adresse) u.searchParams.set("step", adresse); else u.searchParams.delete("step");
     window.history.replaceState({}, "", u.toString());
     var w=document.createElement("div"); w.innerHTML=wurzelAus(T["bubble/onboarding_page_bubble.html"]);
     var r=w.querySelector(".uob-root"); var id="p5"+Math.random().toString(36).slice(2,7);
@@ -78,8 +79,8 @@ Promise.all(D.map(hol)).then(function(t){
       }, 500); });
     });
   }
-  function lauf(name, reihenfolge){
-    return mount().then(function(m){
+  function lauf(name, reihenfolge, adresse){
+    return mount(adresse).then(function(m){
       /* Kein Buendel beim Aufbau: neuer Nutzer, Formular. Der Bootzustand muss dafuer enden. */
       window.setOnboardingBundle(m.id, "");
       return new Promise(function(ok){ setTimeout(function(){
@@ -110,6 +111,12 @@ Promise.all(D.map(hol)).then(function(t){
   return bootBild()
     .then(function(){ return lauf("A_buendel_dann_status", "buendel-zuerst"); })
     .then(function(){ return lauf("B_status_dann_buendel", "status-zuerst"); })
+    /* Die Meldung vom 26.08.: in der Adresse stand noch ?step=plan aus einem frueheren Besuch,
+       und danach landete der Nutzer nach dem Loader auf dem Tarifschritt. Die Adresse darf nach
+       einem frisch durchgelaufenen Lauf nichts mehr entscheiden. */
+    .then(function(){ return lauf("C_adresse_plan_veraltet", "buendel-zuerst", "plan"); })
+    .then(function(){ return lauf("D_adresse_prompts_veraltet", "status-zuerst", "prompts"); })
+    .then(function(){ return lauf("E_adresse_topics", "buendel-zuerst", "topics"); })
     .then(function(){
       R.fehler = window.__err.slice(0,3);
       document.getElementById("out").textContent = JSON.stringify(R,null,1);

@@ -3526,8 +3526,13 @@
        Was ABSICHTLICH kein Beleg ist: eine Auswahl. Ein Haken wird sofort gespeichert (uobSelect
        feuert bei jedem Klick), er sagt also nichts darueber, ob ein Schritt abgeschlossen ist.
        Genau das war der Fehler vom 24.08.: ein angeklickter Wettbewerber schob nach Topics. */
-    function zielSchritt() {
-      var a = schrittBeimAufbau ? stepIndex(schrittBeimAufbau) : -1;
+    /* ohneAdresse: die Adresse zaehlt NICHT mit. Gebraucht in genau einem Fall -- der grosse Lauf
+       ist gerade durchgelaufen. Dann hat er die Welt neu gesetzt (keine Prompts, keine Auswahl),
+       und was vorher in der Adresse stand, ist Erinnerung an einen Ort, den es nicht mehr gibt.
+       Gemeldet am 26.08.: nach dem Loader landete der Nutzer auf PLAN, weil dort noch ?step=plan
+       aus einem frueheren Besuch stand. */
+    function zielSchritt(ohneAdresse) {
+      var a = (!ohneAdresse && schrittBeimAufbau) ? stepIndex(schrittBeimAufbau) : -1;
       var b = (isArr(state.prompts) && state.prompts.length) ? stepIndex("prompts") : -1;
       /* DRITTER Beleg, und er hat gefehlt: liegen Wettbewerber oder Themen vor, ist der grosse
          Lauf durch -- und wer damit fertig ist, gehoert mindestens auf Competitors.
@@ -3539,7 +3544,16 @@
          wie die Wettbewerber, ihr Vorliegen sagt also dasselbe. */
       var c = ((isArr(state.brands) && state.brands.length) ||
                (isArr(state.topics) && state.topics.length)) ? stepIndex("competitors") : -1;
-      var i = Math.max(a, Math.max(b, c));
+      /* Und eine OBERGRENZE aus den Daten. Die Adresse ist eine Untergrenze, aber keine, die ueber
+         die Daten hinausgehen darf: ?step=plan mit null Prompts ist kein Ort, an dem jemand sein
+         kann -- der Tarifschritt liegt hinter Prompts, und Prompts gibt es nicht.
+           Prompts da              -> bis Plan ist alles moeglich
+           nur der grosse Lauf     -> hoechstens Topics (dort sitzt man, bevor man Weiter drueckt)
+           nichts                  -> das Formular */
+      var deckel = (isArr(state.prompts) && state.prompts.length) ? stepIndex("plan")
+                 : (c >= 0) ? stepIndex("topics")
+                 : stepIndex("brand");
+      var i = Math.min(Math.max(a, Math.max(b, c)), deckel);
       return i >= 0 ? STEPS[i].key : "competitors";
     }
     function einstieg(b) {
@@ -3555,8 +3569,13 @@
            regelmaessig eines -- jeder aendernde Workflow schickt am Ende die RPC-Antwort --, und
            darin steht der Status auf ready, obwohl die Prompts noch entstehen. */
         if (state.warten === "prompts" && !promptlaufDurch(s)) return;
+        /* Lief gerade der grosse Lauf, entscheidet die Adresse nicht mit: sie traegt womoeglich
+           einen Schritt aus einem frueheren Besuch (?step=plan), und der Lauf hat die Welt neu
+           gesetzt. Dasselbe Kriterium wie in setStatus -- ein Buendel kann hier ebenso ankommen
+           wie eine Statusmeldung, und welches zuerst kommt, steht nicht in unserer Hand. */
+        var ausLauf = state.warten === "main";
         warteBeenden();
-        var ziel = zielSchritt();
+        var ziel = zielSchritt(ausLauf);
         /* Was belegt erreicht ist, muss in der Leiste auch anklickbar sein. Ohne diese Zeile stand
            der Nutzer auf Topics, die Prompts lagen vor -- und Prompts war trotzdem gesperrt, weil
            maxErreicht nur aus dem AKTUELLEN Schritt waechst. So gemeldet am 25.08. */
@@ -3732,6 +3751,9 @@
             if (s.phase != null) phaseSetzen(Math.max(0, s.phase - 1));
             return true;
           }
+          /* VOR warteBeenden festhalten: lief gerade der grosse Lauf? Dann ist die Adresse
+             Erinnerung und kein Beleg. */
+          var ausLauf = state.warten === "main";
           state.fortschritt = 100; renderPhasen();
           window.setTimeout(function () {
             warteBeenden();
@@ -3743,7 +3765,8 @@
                Jetzt sagt die PHASE, was fertig wurde: 7 heisst Promptlauf, alles andere heisst
                grosser Lauf -- und wohin der Nutzer danach gehoert, sagt zielSchritt() aus den
                Daten. */
-            var ziel = (num(s.phase) != null && num(s.phase) >= PROMPT_PHASE) ? "prompts" : zielSchritt();
+            var ziel = (num(s.phase) != null && num(s.phase) >= PROMPT_PHASE)
+                     ? "prompts" : zielSchritt(ausLauf);
             /* Nur vorwaerts. Steht der Nutzer schon weiter, holt ihn eine Statusmeldung nicht
                zurueck -- sonst wirft ihn eine spaete Meldung von Topics auf Competitors. */
             if (stepIndex(ziel) < stepIndex(state.step)) ziel = state.step;
