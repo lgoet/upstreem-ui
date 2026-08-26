@@ -1549,6 +1549,9 @@
   "uob-bar",
   "uob-bar-fill",
   "uob-bg",
+  "uob-bg-licht",
+  "uob-bg-marken",
+  "uob-bg-raster",
   "uob-billrow",
   "uob-body",
   "uob-boot",
@@ -2671,7 +2674,7 @@
   "globals": 137,
   "payloadkeys": 85,
   "dataattrs": 198,
-  "klassen": 1970,
+  "klassen": 1973,
   "keyframes": 58
  }
 }

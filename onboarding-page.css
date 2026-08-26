@@ -129,13 +129,28 @@
      eine Vorlage, die fuer weiss auf dunkel gezeichnet wurde. */
   background-color: var(--vc-text);
 }
-.uob-bg-licht  { -webkit-mask-image: var(--uob-bg-licht);  mask-image: var(--uob-bg-licht); }
+/* Die Lichter und der Bogen in --vc-muted und nicht in --vc-text. Sie sind in der Vorlage mit
+   #939393 gemalt, also mittlerem Grau -- ich habe sie mit nahezu Weiss (#e0e0e0) gefuellt, und
+   weil sie ueber fast die ganze Flaeche liegen, hob das den ganzen Grund an: gemeldet als "der
+   Hintergrund ist heller, sobald das Bild da ist". In L* gerechnet, auf dem dunklen Grund:
+     Vorlage #939393    Licht +10.4   Bogen +6.4
+     --vc-text #e0e0e0  Licht +16.6   Bogen +10.4   <- das war zu hell
+     --vc-muted #a0a0a0 Licht +11.5   Bogen +7.1    <- so gut wie gezeichnet
+   Den Grund der Seite dunkler zu machen waere der falsche Griff gewesen: er wechselt dann die
+   Farbe, sobald das Bild aus- oder einblendet. */
+.uob-bg-licht  { -webkit-mask-image: var(--uob-bg-licht);  mask-image: var(--uob-bg-licht);
+  background-color: var(--vc-muted); }
 .uob-bg-raster { -webkit-mask-image: var(--uob-bg-raster); mask-image: var(--uob-bg-raster); }
 .uob-bg-marken { -webkit-mask-image: var(--uob-bg-marken); mask-image: var(--uob-bg-marken); }
-/* Hell: das Raster mit voller Ebene, damit von den Strichen ueberhaupt etwas ankommt. Lichter und
-   Marken leiser -- auf weissem Grund traegt ein dunkler Strich weiter als ein weisser auf dunklem. */
+/* Das Raster soll im Hellen GENAUSO wirken wie im Dunkeln -- nicht denselben Alphawert haben,
+   sondern denselben wahrgenommenen Helligkeitsunterschied zum Grund. Gerechnet in L*, weil der
+   Augenabstand dort linear ist:
+     dunkel  Strich #e0e0e0 auf #1b1b1b, wirksames Alpha 0.06 x 0.33 = 0.0198  ->  dL* 1.94
+     hell    Strich #1f1f1b auf #ffffff, dafuer noetiges Alpha 0.025           ->  Ebene 0.42
+   Mit voller Ebene waere es dL* 4.67, also zweieinhalbmal so kraeftig -- genau das war gemeldet.
+   Lichter und Marken bleiben, wie sie sind; sie waren nicht beanstandet. */
 .uob-bg-licht  { opacity: .45; }
-.uob-bg-raster { opacity: 1; }
+.uob-bg-raster { opacity: .42; }
 .uob-bg-marken { opacity: .45; }
 /* Dunkel: das Raster auf ein Drittel -- die Vorlage zeichnet es mit 6%, gemeint waren 2%, und
    genau die kommen so heraus. Die Marken auf die Haelfte, sie waren zu hell. Die Lichter voll,

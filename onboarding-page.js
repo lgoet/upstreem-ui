@@ -3138,12 +3138,18 @@
       if (state.step === "plan") {
         if (!state.plan) return;
         state.busy = true; renderNav();
+        /* trial sagt, was der Klick BEDEUTET: Testphase oder direkt zur Kasse. Die Komponente hat
+           das gerade entschieden (derselbe Aufruf, der die Beschriftung des Knopfs setzt), und der
+           Workflow soll es nicht ein zweites Mal aus den Tarifdaten ableiten muessen -- zwei
+           Rechnungen fuer dieselbe Frage laufen irgendwann auseinander.
+           Am Ende des Payloads: alles davor bleibt byteweise, wie es war. */
         fire("data-finish-fn", "uobFinish", {
           plan_id: state.plan,
           billing_interval: state.interval,
           brand_ids: idsVon(state.selBrands).join(","),
           topic_ids: idsVon(state.selTopics).join(","),
-          prompt_ids: idsVon(state.selPrompts).join(",")
+          prompt_ids: idsVon(state.selPrompts).join(","),
+          trial: hatTest(gewaehlterPlan())
         });
         return;
       }

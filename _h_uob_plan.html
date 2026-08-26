@@ -141,10 +141,32 @@ Promise.all(D.map(hol)).then(function(t){
     seit();
     M.r.querySelectorAll("[data-plan]")[1].click();
     R.E_tarif_gewaehlt = { ereignisse: seit(), bild: bild(M.r) };
-    /* 6. Weiter -> uobFinish */
+    /* 6. Weiter -> uobFinish, einmal mit Testphase und einmal ohne. Der Payload traegt jetzt
+       trial, und das ist der Unterschied zwischen "Testphase starten" und "zur Kasse". */
     seit();
     M.r.querySelector("[data-next]").click();
     R.F_finish = { ereignisse: seit(), bild: bild(M.r) };
+    (function ohneTest(){
+      /* Einen Tarif OHNE Testphase nachschieben und noch einmal abschicken. */
+      var ohne = JSON.parse(JSON.stringify(PLAENE));
+      ohne.push({ id:"44444444-4444-4444-4444-444444444444", name:"Enterprise",
+                  monthly_price_eur:899, yearly_price_eur:8630, prompts_per_day:1000,
+                  competitors_max_active:60, trial_days:0, sort_order:4 });
+      window.setOnboardingPlans(M.id, JSON.stringify(ohne));
+      var k = M.r.querySelector('[data-plan="44444444-4444-4444-4444-444444444444"]');
+      if (!k) { R.G_finish_ohne_test = "Karte nicht gefunden"; return; }
+      k.click();
+      /* Der erste Abschluss hat den Knopf auf busy gesetzt, und weiter() kehrt dann um -- ein
+         zweiter Klick loest nichts aus. Das ist richtig so (kein doppeltes Abschicken), also muss
+         der Aufbau den Zustand loesen, wie es der Workflow im Fehlerfall auch tut. Der erste
+         Durchlauf hat das nicht getan und deshalb "kein Ereignis" gemeldet, wo keines kommen
+         DURFTE. */
+      window.setOnboardingLoading(M.id, "no");
+      seit();
+      M.r.querySelector("[data-next]").click();
+      R.G_finish_ohne_test = { knopf: (M.r.querySelector("[data-next-txt]")||{}).textContent,
+                               ereignisse: seit() };
+    })();
     return null;
   }).then(function(){
     /* 7. Leere Antwort: eine Aussage, kein Skelett */
