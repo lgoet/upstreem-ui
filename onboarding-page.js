@@ -1080,14 +1080,19 @@
       /* Der Zaehler nur dort, wo er eine Entscheidung aendert: beim letzten freien Neustart.
          Immer sichtbar waere er eine Einladung, ihn zu verbrauchen. */
       if (num(rs.remaining) === 1) warnung += " This is your last restart for now.";
+      /* Ein Text oder eine Liste von Zeilen -- beides kommt vor, und der Aufbau unten nimmt beides. */
       var hinweis;
       if (darf) {
         hinweis = "";
       } else if (laeuft) {
         hinweis = "We are still setting this one up. You can start over once it is done.";
       } else if (txt(rs.next_allowed_at)) {
-        hinweis = "You have used all your restarts for now. The next one is available on " +
-                  zeitpunkt(rs.next_allowed_at) + ".";
+        /* Zwei Zeilen und kein Satzpaar in einer: die erste sagt, dass es gerade nicht geht, die
+           zweite wann wieder. Das sind zwei Auskuenfte, und untereinander liest man sie als zwei.
+           Ein Feld je Zeile statt eines \n oder eines <br>: der Text laeuft durch esc(), dort
+           waere ein Umbruch entweder unwirksam oder ein Zeichen im Text. */
+        hinweis = ["You have used all your restarts for now.",
+                   "The next one is available on " + zeitpunkt(rs.next_allowed_at) + "."];
       } else {
         hinweis = "Starting over is not possible right now. Please try again later.";
       }
@@ -1133,7 +1138,11 @@
              etwas laufen koennte. */
           (darf
             ? '<div class="uob-res-warn" data-overwarn><div><p>' + esc(warnung) + '</p></div></div>'
-            : '<p class="uob-res-note">' + esc(hinweis) + '</p>') +
+            : '<div class="uob-res-note">' +
+                (isArr(hinweis) ? hinweis : [hinweis]).map(function (z) {
+                  return '<span>' + esc(z) + '</span>';
+                }).join("") +
+              '</div>') +
         '</div>' +
       '</div>';
     }

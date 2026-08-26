@@ -1045,8 +1045,18 @@
 /* .uob-back ist links ausgerichtet, weil es in der Knopfzeile neben dem Rand sitzt. Hier steht
    es allein ueber die Breite, also mittig. */
 .uob-res-over { justify-content: center; width: 100%; }
-.uob-res-note { margin: 10px 0 0; font-size: 12.5px; line-height: 1.5;
-  color: var(--vc-third); text-align: center; }
+/* Der Grund, warum ein Neustart nicht geht, steht in einem eigenen Kasten. Er ist kein Fliesstext
+   mehr, sondern eine Auskunft mit zwei Zeilen -- und in --vc-field, dem Grund der Eingabefelder:
+   dieselbe Rolle, ein ruhiges Feld, das Text traegt und nichts verspricht. Kein Rahmen dazu, sonst
+   sieht es aus wie ein Bedienelement.
+   Polsterung und Radius von .uob-input (12px Radius, 14px waagerecht), damit es in derselben
+   Familie steht wie die Felder der Seite. */
+.uob-res-note {
+  margin: 12px 0 0; padding: 10px 14px; border-radius: 12px;
+  background: var(--vc-field);
+  display: grid; gap: 2px;
+  font-size: 12.5px; line-height: 1.5; color: var(--vc-third); text-align: center;
+}
 /* Die Warnung faehrt von oben herein, wenn der Knopf scharf gemacht wird. Bauart wie .uob-banner:
    grid-template-rows von 0fr auf 1fr, dazu Deckkraft und ein kleiner Weg -- das Element steht
    dabei die ganze Zeit im Dokument, und nur so hat der Uebergang einen Ausgangszustand. */

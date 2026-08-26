@@ -29,7 +29,6 @@ Promise.all(D.map(hol)).then(function(t){
   if (q.get("felder") === "alias") {
     b.project.created = b.project.created_at; delete b.project.created_at;
     b.project.last_updated = b.project.updated_at; delete b.project.updated_at;
-    ROH = JSON.stringify(b);
   }
   /* ?felder=muster: Namen, die in KEINER Liste stehen, aber wie Zeitfelder heissen. Dazu ein
      created_by mit einer Uuid -- es traegt "creat" im Namen und ist kein Zeitpunkt; stuende es im
@@ -38,12 +37,10 @@ Promise.all(D.map(hol)).then(function(t){
     b.project.record_created_at = b.project.created_at; delete b.project.created_at;
     b.project.row_changed_at = b.project.updated_at; delete b.project.updated_at;
     b.project.created_by = "aea6e317-d901-419b-b2b2-5ca3573ea2f5";
-    ROH = JSON.stringify(b);
   }
   /* ?felder=keine: gar keine Zeiten. Dann darf auch kein leerer Kasten stehen. */
   if (q.get("felder") === "keine") {
     delete b.project.created_at; delete b.project.updated_at;
-    ROH = JSON.stringify(b);
   }
   /* KEINE eigenen Zeiten und KEIN eigener restart-Block mehr: beides steht im echten Payload des
      Nutzers. Vorher hat dieser Aufbau sich seine Eingabe selbst gebaut und damit gemessen, dass
@@ -52,6 +49,10 @@ Promise.all(D.map(hol)).then(function(t){
     b.restart.remaining=0; b.restart.next_allowed_at=new Date(Date.now()+5*3600e3).toISOString(); }
   if (fall === "lauf") { b.restart.allowed=false; b.restart.reason="run_in_progress";
     b.restart.run_in_progress=true; }
+  /* EINMAL am Ende, fuer alle Zweige. Vorher baute nur der felder-Zweig den Rohtext neu, und die
+     Aenderungen der fall-Zweige fielen unter den Tisch: ?fall=limit zeigte das Tor mit aktivem
+     Start over, also gar nicht den Fall, um den es ging. */
+  ROH = JSON.stringify(b);
   /* Der Schritt in der Adresse entscheidet, welchen Weg einstieg() nimmt: gehe() oder render().
      Genau daran koennte haengen, ob die Karte ihr Projekt schon hat -- state.projekt wird in
      setBundle NACH den Listen gesetzt, und die zeichnen dazwischen. Also alle drei Wege messen. */
@@ -87,6 +88,12 @@ Promise.all(D.map(hol)).then(function(t){
         pane: (r.querySelector(".uob-pane:not(.is-off)")||{getAttribute:function(){return "-";}}).getAttribute("data-pane"),
         knopfBreite: Math.round((r.querySelector("[data-resume]")||{getBoundingClientRect:function(){return{width:0}}}).getBoundingClientRect().width),
         ueberlauf: r.scrollWidth > r.clientWidth ? (r.scrollWidth - r.clientWidth) : 0,
+        noteZeilen: [].map.call(r.querySelectorAll(".uob-res-note span"), function(x){ return x.textContent; }),
+        noteKasten: (function(){ var k=r.querySelector(".uob-res-note");
+          if (!k) return null; var v=getComputedStyle(k);
+          return { grund: v.backgroundColor, radius: v.borderTopLeftRadius, polster: v.padding,
+                   rahmen: v.borderTopWidth, zeilen: k.querySelectorAll("span").length,
+                   hoehe: Math.round(k.getBoundingClientRect().height) }; })(),
         note: (r.querySelector(".uob-res-note")||{}).textContent,
         projektDa: !!document.querySelector(".uob-load-dom"),
         /* Unterlaengen: passt die Zeilenhoehe zur Schrift, oder schneidet overflow:hidden das
