@@ -52,6 +52,7 @@ Promise.all(D.map(hol)).then(function(t){
           R[name] = { adresse: step || "(keine)", vorTor: vorTor, torStand: !!t,
                       danach: bereich(m.r), schritt: new URL(window.location.href).searchParams.get("step"),
                       uhr: uhrVorher || m.r.querySelector("[data-warte]").classList.contains("is-on") };
+          R[name].uhrText = m.r.querySelector("[data-warte-uhr]").textContent;
           ok();
         }, 400);
       }, 600); });
@@ -72,6 +73,27 @@ Promise.all(D.map(hol)).then(function(t){
     /* Und der Fall aus der Meldung: Lauf laeuft laut restart, aber die Daten sind schon da. */
     .then(function(){ return lauf("F_lauf_laeuft_daten_da", "brand", function(b){
         b.restart.run_in_progress = true;
+      }); })
+    /* Die Phasentabelle des Servers, jede Zeile einmal durch -- und die Frage ist jedes Mal
+       dieselbe: wo landet der Nutzer nach einem Neuladen? */
+    .then(function(){ return lauf("G_phase2_grosser_lauf", "brand", function(b){
+        b.project.status = "processing"; b.project.status_phase = 2; b.project.progress_percent = 20;
+        b.restart.run_in_progress = true; b.competitors = []; b.topics = [];
+      }); })
+    .then(function(){ return lauf("H_phase6_promptlauf", "topics", function(b){
+        b.project.status = "processing"; b.project.status_phase = 6; b.project.progress_percent = 60;
+        b.restart.run_in_progress = true; b.restart.status_phase = 6;
+      }); })
+    .then(function(){ return lauf("I_phase5_fertig", "brand", function(b){
+        b.project.status = "ready"; b.project.status_phase = 5;
+      }); })
+    .then(function(){ return lauf("J_phase7_prompts_da", "topics", function(b){
+        b.project.status = "ready"; b.project.status_phase = 7;
+        b.prompts = [{ id:"p1", prompt_text:"Was ist Bubble?", market:"DE",
+                       primary_topic_id:"c8b860ac-6f7d-4273-9c16-ecf01d60b719", selected:false }];
+      }); })
+    .then(function(){ return lauf("K_phase95_finalize", "plan", function(b){
+        b.project.status = "finalizing"; b.project.status_phase = 95; b.project.progress_percent = 95;
       }); })
     .then(function(){
       R.fehler = window.__err.slice(0,3);

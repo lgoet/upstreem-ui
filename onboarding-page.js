@@ -3163,7 +3163,9 @@
     var warteAb = 0, warteSek = -1, uhrAn = false;
     function warteUhrZeichnen() {
       if (!elWarte) return;
-      var an = !!state.warten && uhrAn;
+      /* Nur im ERSTEN Ladebild. Der Promptlauf hat seine eigene Dauer (rund neunzig Sekunden) und
+         braucht die Uhr nicht -- so angesagt am 26.08. */
+      var an = state.warten === "main" && uhrAn;
       elWarte.classList.toggle("is-on", an);
       if (!an) { warteSek = -1; return; }
       var sek = Math.max(0, Math.floor((new Date().getTime() - warteAb) / 1000));
@@ -3368,6 +3370,25 @@
        die Komponente "ready" als "fertig", verliess das Ladebild und zeigte eine leere
        Promptliste mit "No prompts yet" -- gemeldet am 26.08. Eine Sekunde Ladebild, dann nichts. */
     var PROMPT_PHASE = 7;
+    /* Die Phasentabelle des Servers, wie sie dort wirklich steht (26.08.):
+         1 Initializing project   5%    submitted    onboarding_start_v1
+         2 Scanning website      20%    processing   Onboarding-WF
+         3 Reading pages         45%    processing   Onboarding-WF
+         4 Analyzing brand       70%    processing   Onboarding-WF
+         5 Done                 100%    ready        Onboarding-WF
+         6 Creating prompts      60%    processing   onboarding_prompts_claim_v1
+         7 Prompts ready        100%    ready        Prompt-WF
+        95 Creating Workspace    95%    finalizing   Finalize-RPC
+       100 Completed            100%    completed    Finalize-RPC
+
+       Sie steht hier, weil "Phase >= 5 heisst fertig" falsch ist: 6 und 95 sind LAUFENDE Phasen mit
+       hoeherer Zahl. Genau daran hing, dass ein Neuladen im Promptlauf nicht ins zweite Ladebild
+       zurueckfuehrte -- die Komponente las Phase 6 als "durch".
+       6 ist der Promptlauf. Damit ist das zweite Ladebild nach einem Neuladen erkennbar, und die
+       Behauptung, das sei von aussen nicht zu unterscheiden, war schlicht falsch. */
+    var PROMPT_LAUF_PHASE = 6;
+    var PHASE_FERTIG = { 5: 1, 7: 1, 100: 1 };
+    var PHASE_LAEUFT = { 1: 1, 2: 1, 3: 1, 4: 1, 6: 1, 95: 1 };
     /* Ist der Promptlauf wirklich durch? Zwei Belege, und einer genuegt: die Phase des Servers,
        oder Prompts, die tatsaechlich da sind. Der zweite ist der Rueckfall fuer den Fall, dass
        jemand die Liste setzt, ohne die Phase mitzuschicken -- sonst wartete der Nutzer vor
@@ -3381,10 +3402,20 @@
       var st = txt(p.status).toLowerCase();
       var phase = num(p.status_phase);
       var proz = num(p.progress_percent);
-      /* "ready" ist fertig, auch ohne status_phase 5 -- und 100% ebenso. */
-      var fertig = (st === "ready" || st === "done" || st === "complete" || st === "completed") ||
-                   (phase != null && phase >= 5) ||
-                   (phase == null && proz != null && proz >= 100);
+      /* Der STATUS gewinnt ueber die Zahl. Jede laufende Phase der Tabelle traegt submitted,
+         processing oder finalizing; jede fertige ready oder completed. Vorher entschied die Zahl,
+         und "Phase >= 5" machte aus dem laufenden Promptlauf (6) und der laufenden
+         Arbeitsraumanlage (95) ein "fertig". */
+      var laeuft = st === "submitted" || st === "processing" || st === "running" ||
+                   st === "queued" || st === "finalizing" ||
+                   (!st && phase != null && PHASE_LAEUFT[phase] === 1);
+      var fertig = !laeuft && (
+                   (st === "ready" || st === "done" || st === "complete" || st === "completed") ||
+                   (phase != null && PHASE_FERTIG[phase] === 1) ||
+                   /* Eine Zahl, die in keiner der beiden Listen steht: der alte Rueckfall. Besser
+                      eine Annahme als ein Zustand, in dem nichts passiert. */
+                   (phase != null && PHASE_LAEUFT[phase] !== 1 && PHASE_FERTIG[phase] !== 1 && phase >= 5) ||
+                   (phase == null && proz != null && proz >= 100));
       /* Ohne Phase, aber mit Prozent: die Spur hat vier Abschnitte, also je 25%. */
       if (phase == null && proz != null) phase = Math.floor(proz / (100 / PHASES.length)) + 1;
       return {
@@ -3393,7 +3424,7 @@
         prozent: proz,
         label: txt(p.status_label),
         fertig: fertig,
-        laeuft: st === "submitted" || st === "processing" || st === "running" || st === "queued",
+        laeuft: laeuft,
         entwurf: st === "draft" || st === "",
         fehler: fehlerAus(p)
       };
@@ -3515,9 +3546,16 @@
         return;
       }
       if (s.laeuft) {
-        if (state.warten !== "main") warteStarten("main");
-        if (s.phase != null) phaseSetzen(Math.max(0, s.phase - 1));
-        else if (s.prozent != null) state.fortschritt = Math.max(state.fortschritt, s.prozent);
+        /* Phase 6 ist der Promptlauf, alles andere der grosse Lauf. Damit landet ein Neuladen
+           mitten im Promptlauf wieder im ZWEITEN Ladebild und nicht auf einer leeren Promptseite. */
+        var art = (num(s.phase) === PROMPT_LAUF_PHASE) ? "prompts" : "main";
+        if (state.warten !== art) warteStarten(art);
+        /* Die vier Phasenchips gehoeren zum grossen Lauf. Der Promptlauf hat nur seine Spur, und
+           die laeuft ueber die Zeit -- phaseSetzen wuerde ihr nur den Anfang verschieben. */
+        if (art === "main") {
+          if (s.phase != null) phaseSetzen(Math.max(0, s.phase - 1));
+          else if (s.prozent != null) state.fortschritt = Math.max(state.fortschritt, s.prozent);
+        }
         renderPhasen();
         return;
       }
@@ -3679,10 +3717,17 @@
           }, 360);
           return true;
         }
+        /* Ein laufender Zustand muss den passenden Wartezustand SETZEN und nicht nur die Phase
+           nachziehen -- sonst kommt Phase 6 an, waehrend der Nutzer eine leere Promptseite ansieht,
+           und nichts fuehrt ihn ins Ladebild zurueck. Diese Abfrage stand deshalb VOR der reinen
+           Phasenmeldung. */
+        if (s.laeuft) {
+          var art2 = (num(s.phase) === PROMPT_LAUF_PHASE) ? "prompts" : "main";
+          if (state.warten !== art2) warteStarten(art2);
+          if (art2 === "main" && s.phase != null) phaseSetzen(Math.max(0, s.phase - 1));
+          return true;
+        }
         if (s.phase != null) { phaseSetzen(Math.max(0, s.phase - 1)); return true; }
-        /* Laeuft noch, sagt aber keine Phase: dann wenigstens die Uhr am Laufen halten, statt
-           den Aufruf verpuffen zu lassen. */
-        if (s.laeuft) { if (!state.warten) warteStarten("main"); return true; }
         return true;
       },
       setBrands: function (payload) { return listeSetzen(payload, "brands"); },
