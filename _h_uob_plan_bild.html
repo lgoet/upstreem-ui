@@ -14,7 +14,11 @@ var D=["core.css","core.js","onboarding-page.css","onboarding-page.js",
 var T={};
 var PLAENE=[{id:"p1",name:"Starter",description:"For a first brand.",monthly_price_eur:49,yearly_price_eur:470,prompts_per_day:50,ai_responses_per_month:4650,competitors_max_active:5,trial_days:14,sort_order:1},
 {id:"p2",name:"Growth",description:"For a growing team.",monthly_price_eur:129,yearly_price_eur:1238,prompts_per_day:150,ai_responses_per_month:13500,competitors_max_active:10,trial_days:14,sort_order:2},
-{id:"p3",name:"Scale",description:"For an agency.",monthly_price_eur:299,yearly_price_eur:2870,prompts_per_day:350,ai_responses_per_month:30000,ai_responses_more:true,competitors_max_active:25,support_label:"Personal account manager",trial_days:14,sort_order:3}];
+{id:"p3",name:"Scale",description:"For an agency.",monthly_price_eur:299,yearly_price_eur:2870,prompts_per_day:350,ai_responses_per_month:30000,ai_responses_more:true,competitors_max_active:25,support_label:"Personal account manager",trial_days:14,sort_order:3},
+/* Der Tarif OHNE Testphase. Erkannt wird er an trial_days und nicht am Namen -- deshalb heisst er
+   hier auch nicht Enterprise, sondern traegt nur die 0. Waere der Name das Kriterium, wuerde
+   dieser Durchlauf gruen und die echte Seite bliebe kaputt. */
+{id:"p4",name:"Enterprise",description:"For large organisations.",monthly_price_eur:899,yearly_price_eur:8630,prompts_per_day:1000,competitors_max_active:60,support_label:"Personal account manager",trial_days:0,sort_order:4}];
 Promise.all(D.map(hol)).then(function(t){
   D.forEach(function(f,i){ T[f]=t[i]; });
   ["core.css","onboarding-page.css"].forEach(function(f){ var s=document.createElement("style"); s.textContent=T[f]; document.head.appendChild(s); });
@@ -38,12 +42,29 @@ Promise.all(D.map(hol)).then(function(t){
       if (was==="fehler") window.setOnboardingPlans(id, "{kaputt");
       setTimeout(function(){
         var pane=r.querySelector(".uob-pane:not(.is-off)");
+        function knopf(){ return (r.querySelector("[data-next-txt]")||{}).textContent; }
+        /* JEDES Mal frisch suchen. Der Klick loest ein render(true) aus, danach sind die Karten
+           NEUE Elemente -- eine vorher gesammelte Liste zeigt auf abgehaengte Knoten, und ein
+           Klick darauf erreicht die Ereignisverwaltung an der Wurzel nicht mehr. Der erste
+           Durchlauf hier meldete deshalb fuer alle vier Tarife "Start free trial": nur der erste
+           Klick war ueberhaupt einer. */
+        var namen = [].map.call(pane.querySelectorAll("[data-plan]"), function(k){
+          return k.getAttribute("data-plan"); });
+        var proKarte = namen.map(function(id){
+          var k = r.querySelector('[data-plan="' + id + '"]');
+          if (!k) return id + " -> KARTE WEG";
+          var nm = (k.querySelector(".uob-plan-name")||{}).textContent;
+          k.click();
+          return nm + " -> " + knopf();
+        });
         document.getElementById("out").textContent = JSON.stringify({
           was: was, pane: pane.getAttribute("data-pane"),
           ueberschrift: (pane.querySelector(".uob-h1")||{}).textContent,
           vorspann: (pane.querySelector(".uob-sub")||{}).textContent,
           huellen: pane.querySelectorAll(".uob-plan.is-skel").length,
-          karten: pane.querySelectorAll(".uob-plan:not(.is-skel)").length
+          karten: pane.querySelectorAll(".uob-plan:not(.is-skel)").length,
+          knopfOhneAuswahl: was === "plaene" ? "(siehe proKarte)" : knopf(),
+          proKarte: proKarte
         });
         window.__fertig=true;
       }, 900);

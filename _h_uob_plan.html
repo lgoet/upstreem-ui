@@ -48,12 +48,17 @@ Promise.all(D.map(hol)).then(function(t){
   return new Promise(function(ok){ setTimeout(ok,600); });
 }).then(function(){
   var ROH = T["_h_uob_eastside_voll.json"];
-  function mount(){
+  /* Der Schritt in der Adresse ist ein PARAMETER. Vorher stand hier "prompts" fest verdrahtet,
+     waehrend die Faelle ihn uebergaben -- jeder Durchlauf lud also prompts, und die Messung zu
+     "?step=plan" hat nie einen Tarifschritt gesehen. */
+  function mount(step){
     document.getElementById("b").innerHTML="";
     var w=document.createElement("div"); w.innerHTML=wurzelAus(T["bubble/onboarding_page_bubble.html"]);
     var r=w.querySelector(".uob-root"); var id="pl"+Math.random().toString(36).slice(2,7);
     r.setAttribute("data-instance",id); r.setAttribute("data-cdn-pin","pl"); r.setAttribute("data-isdark","no");
-    var u=new URL(window.location.href); u.searchParams.set("step","prompts");
+    var u=new URL(window.location.href);
+    if (step === undefined) step = "prompts";
+    if (step) u.searchParams.set("step", step); else u.searchParams.delete("step");
     window.history.replaceState({}, "", u.toString());
     document.getElementById("b").appendChild(r);
     return new Promise(function(ok){ var n=0;
@@ -84,6 +89,30 @@ Promise.all(D.map(hol)).then(function(t){
       weiterAus: (r.querySelector("[data-next]")||{}).disabled,
       banner: (r.querySelector("[data-banner-txt]")||{}).textContent
     };
+  }
+  /* Neu am 26.08.: uobStep muss auch beim NEULADEN feuern, sonst holt der Workflow die Daten des
+     Schritts nicht. Und es darf NICHT feuern, solange das Tor davor steht -- dann waeren es Daten
+     fuer einen Schritt, den vielleicht niemand betritt. Beide Richtungen messen. */
+  function ladeFall(name, step, mitTor){
+    return mount(step).then(function(m){
+      seit();
+      var roh = ROH;
+      if (!mitTor) { var o = JSON.parse(ROH); delete o.restart; roh = JSON.stringify(o); }
+      window.setOnboardingBundle(m.id, roh);
+      return new Promise(function(ok){ setTimeout(function(){
+        var vor = seit();
+        var pane = m.r.querySelector(".uob-pane:not(.is-off)");
+        var erg = { adresse: step || "(keine)", mitTor: mitTor,
+                    bereich: pane ? pane.getAttribute("data-pane") : "-",
+                    ereignisseNachBuendel: vor.map(function(x){ return x.ev+"="+x.payload; }) };
+        if (mitTor) {
+          var t = m.r.querySelector("[data-resume]"); if (t) t.click();
+          erg.ereignisseNachTorZu = seit().map(function(x){ return x.ev+"="+x.payload; });
+          erg.bereichDanach = (m.r.querySelector(".uob-pane:not(.is-off)")||{getAttribute:function(){return "-";}}).getAttribute("data-pane");
+        }
+        R[name] = erg; ok();
+      }, 700); });
+    });
   }
   var M;
   /* Der Payload traegt jetzt restart.has_onboarding, also steht zuerst das Tor. Es muss zu sein,
@@ -140,7 +169,11 @@ Promise.all(D.map(hol)).then(function(t){
         R.I_uhr_vorher = bild(M.r);
         setTimeout(function(){ R.I_uhr_nachher = bild(M.r); ok(); }, 900);
       }, 600); }); });
-  }).then(function(){
+  }).then(function(){ return ladeFall("K_pageload_plan_mit_tor", "plan", true); })
+    .then(function(){ return ladeFall("L_pageload_plan_ohne_tor", "plan", false); })
+    .then(function(){ return ladeFall("M_pageload_prompts_ohne_tor", "prompts", false); })
+    .then(function(){ return ladeFall("N_pageload_ohne_adresse_ohne_tor", "", false); })
+    .then(function(){
     R.fehler = window.__err.slice(0,4);
     document.getElementById("out").textContent = JSON.stringify(R,null,1);
     window.__R=R; window.__fertig=true;
