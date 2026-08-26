@@ -110,11 +110,11 @@
   background-image: radial-gradient(ellipse 26% 34% at 50% 50%,
                     transparent 0%, var(--vc-third) 100%);
   background-image: radial-gradient(ellipse 26% 34% at 50% 50%,
-                    color-mix(in srgb, var(--vc-third) 45%, transparent) 0%,
+                    color-mix(in srgb, var(--vc-third) 22%, transparent) 0%,
                     var(--vc-third) 100%);
 }
-.uob-root.is-welt .uob-welt { opacity: .4; }
-.uob-root[data-theme="dark"].is-welt .uob-welt { opacity: .2; }
+.uob-root.is-welt .uob-welt { opacity: .2; }
+.uob-root[data-theme="dark"].is-welt .uob-welt { opacity: .15; }
 /* Auf dem Telefon nicht: dort fuellt der Inhalt den Schirm, und eine Punktwolke dahinter macht die
    Beschriftungen schlechter lesbar, ohne etwas zu zeigen. */
 .uob-root.is-narrow .uob-welt { display: none; }

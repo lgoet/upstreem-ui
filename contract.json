@@ -1685,9 +1685,6 @@
   "uob-top",
   "uob-topr",
   "uob-welt",
-  "uob-welt-huelle",
-  "uob-welt-scharf",
-  "uob-welt-weich",
   "up",
   "up-",
   "up-badge",
@@ -2672,7 +2669,7 @@
   "globals": 137,
   "payloadkeys": 85,
   "dataattrs": 198,
-  "klassen": 1972,
+  "klassen": 1969,
   "keyframes": 58
  }
 }
