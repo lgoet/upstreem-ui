@@ -581,6 +581,11 @@
          dem Nutzer und duerfen dabei nicht verschwinden. */
       eigene: [],
       plan: "", interval: "yearly",
+      /* Drei Zustaende am Tarifschritt, nicht zwei: noch keine Antwort (Skelett), Antwort mit
+         nichts drin ("keine Tarife"), Antwort unlesbar oder ausgeblieben (Lesefehler). Ohne
+         plansGeholt sahen die ersten beiden gleich aus, und "No plans available right now" waehrend
+         eines laufenden Abrufs ist eine falsche Aussage, keine Wartemeldung. */
+      plansGeholt: false, plansFehler: false,
       /* Die Begleittafel: einmal weggeklickt bleibt sie weg, ueber Schritte und Neuladen hinweg. */
       hilfeAuf: hilfeGelesen(),
       /* Hat der Nutzer den Guide selbst angefasst? Bricht die Fuenf-Sekunden-Uhr ab. */
@@ -1210,6 +1215,34 @@
       '</div>';
     }
 
+    /* Drei Kartenhuellen mit den Massen der echten -- so ruckt beim Eintreffen der Tarife nur
+       der Inhalt und nicht das Raster. Die Balken sind .up-tsk-bar aus core, dasselbe Skelett wie
+       im Bootbild und in jeder Tabelle der App, nicht ein zweites danebengebautes. */
+    function planSkelett() {
+      var karte = '<div class="uob-plan is-skel" aria-hidden="true">' +
+        '<span class="up-tsk-bar uob-sk-name"></span>' +
+        '<span class="up-tsk-bar uob-sk-preis"></span>' +
+        '<span class="up-tsk-bar uob-sk-z"></span>' +
+        '<span class="up-tsk-bar uob-sk-z"></span>' +
+        '<span class="up-tsk-bar uob-sk-z is-kurz"></span>' +
+      '</div>';
+      return '<div class="uob-plans" aria-busy="true" aria-live="polite">' + karte + karte + karte + '</div>';
+    }
+    /* Ein Skelett braucht ein benanntes Ende. Bleibt die Antwort aus, stuende hier sonst fuer
+       immer ein Platzhalter -- der Ausfall, der wie "gleich da" aussieht. Acht Sekunden: die
+       Tarife sind drei Zeilen aus der Datenbank, und wer laenger wartet, wartet auf etwas, das
+       nicht mehr kommt. */
+    var PLAN_MAX_MS = 8000, planUhr = null;
+    function planUhrStarten() {
+      if (planUhr || state.plansGeholt || state.plans.length) return;
+      planUhr = window.setTimeout(function () {
+        planUhr = null;
+        if (state.plansGeholt || state.plans.length) return;
+        state.plansGeholt = true; state.plansFehler = true;
+        render();
+      }, PLAN_MAX_MS);
+    }
+
     function viewPlan() {
       var jaehrlich = state.interval === "yearly";
       return '<div class="uob-pane" data-pane="plan">' +
@@ -1223,7 +1256,15 @@
                 ' aria-selected="' + (jaehrlich ? "true" : "false") + '" data-interval="yearly">Yearly</button>' +
             '</div>' +
           '</div>' +
-          (state.plans.length
+          /* Reihenfolge wie ueberall im Haus: Fehler VOR dem Skelett. Sonst sieht ein Ausfall
+             aus wie "gleich da", und das ist die Meldung, die niemand findet. */
+          (state.plansFehler
+            ? (UC.leseFehlerHtml ? UC.leseFehlerHtml("plans")
+                : '<p class="uob-sub" style="margin-top:18px">We could not load the plans. ' +
+                  'Please reload the page.</p>')
+            : !state.plans.length && !state.plansGeholt
+            ? planSkelett()
+            : state.plans.length
             ? '<div class="uob-plans">' + state.plans.map(function (pl, i) {
                 var an = state.plan === pl.id;
                 var mon = num(pl.monthly_price_eur), jah = num(pl.yearly_price_eur);
@@ -1465,6 +1506,9 @@
       root.style.setProperty("--uob-w", BREITE[k] || "480px");
       /* Im Tor bleiben Schiene und Knopfzeile weg -- die Begruendung steht an viewResume. */
       root.classList.toggle("is-gate", k === "resume");
+      /* Erst hier, nicht beim Aufbau: die Uhr laeuft nur, wenn der Nutzer den Tarifschritt
+         wirklich sieht. Wer nie dort ankommt, braucht keinen Ablauf. */
+      if (k === "plan") planUhrStarten();
 
       if (wechsel) {
         /* Der abgehende Bereich bleibt fuer die Dauer des Uebergangs stehen und geht dabei weg.
@@ -3247,8 +3291,14 @@
       setTopics: function (payload) { return listeSetzen(payload, "topics"); },
       setPrompts: function (payload) { return listeSetzen(payload, "prompts"); },
       setPlans: function (payload) {
+        if (planUhr) { window.clearTimeout(planUhr); planUhr = null; }
         var p = lies(payload);
-        if (!isArr(p)) { state.banner = "We could not load the plans. Please reload the page."; render(); return true; }
+        /* Der Ladezustand endet IMMER, auch bei einem Payload, den niemand lesen kann. Die Meldung
+           steht im Rumpf und nicht mehr im Banner: sie gehoert an die Stelle, an der der Inhalt
+           fehlt, und zweimal dasselbe an zwei Orten zu sagen ist einmal zu viel. */
+        state.plansGeholt = true;
+        if (!isArr(p)) { state.plansFehler = true; state.plans = []; render(); return true; }
+        state.plansFehler = false;
         state.plans = p.slice().sort(function (a, b) {
           var sa = num(a.sort_order), sb = num(b.sort_order);
           if (sa != null && sb != null && sa !== sb) return sa - sb;

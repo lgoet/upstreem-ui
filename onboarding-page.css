@@ -993,6 +993,15 @@
               box-shadow var(--uob-t) var(--uob-ease);
 }
 .uob-plan:hover { border-color: var(--vc-hover-border); }
+/* Die Huelle waehrend des Abrufs. Sie behaelt Polsterung, Radius und Rahmen der echten Karte --
+   nur so bleibt das Raster stehen, wenn die Tarife eintreffen. Kein Zeiger und kein Hover: hier
+   ist nichts zu waehlen. */
+.uob-plan.is-skel { cursor: default; gap: 10px; }
+.uob-plan.is-skel:hover { border-color: var(--vc-border); }
+.uob-sk-name  { width: 44%; height: 13px; border-radius: 5px; }
+.uob-sk-preis { width: 62%; height: 26px; border-radius: 7px; margin: 6px 0 4px; }
+.uob-sk-z     { width: 88%; height: 9px;  border-radius: 4px; }
+.uob-sk-z.is-kurz { width: 64%; }
 .uob-plan.is-on {
   border-color: var(--vc-text);
   box-shadow: 0 0 0 1px var(--vc-text);   /* zweiter Ring statt 2px Rahmen: sonst springt der Inhalt um 1px */

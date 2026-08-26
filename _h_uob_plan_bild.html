@@ -1,0 +1,53 @@
+<meta charset="utf-8"><title>onboarding: Tarifschritt, Sichtprobe</title>
+<style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif}
+#b{padding:16px;width:1100px} #out{padding:8px;font:11px/1.4 ui-monospace,monospace}</style>
+<body><div id="b"></div><pre id="out">laeuft…</pre>
+<script>
+/* Sichtprobe: ?was=skelett | plaene | leer | fehler. Zahlen sagen nicht, ob drei Huellen so
+   aussehen wie drei Karten. */
+["uobStart","uobStep","uobTopics","uobWorkflowStart","uobSelect","uobFinish","uobExit"].forEach(function(n){
+  window["bubble_fn_"+n]=function(){}; });
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){ return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=["core.css","core.js","onboarding-page.css","onboarding-page.js",
+       "bubble/onboarding_page_bubble.html","_h_uob_eastside_voll.json"];
+var T={};
+var PLAENE=[{id:"p1",name:"Starter",description:"For a first brand.",monthly_price_eur:49,yearly_price_eur:470,prompts_per_day:50,ai_responses_per_month:4650,competitors_max_active:5,trial_days:14,sort_order:1},
+{id:"p2",name:"Growth",description:"For a growing team.",monthly_price_eur:129,yearly_price_eur:1238,prompts_per_day:150,ai_responses_per_month:13500,competitors_max_active:10,trial_days:14,sort_order:2},
+{id:"p3",name:"Scale",description:"For an agency.",monthly_price_eur:299,yearly_price_eur:2870,prompts_per_day:350,ai_responses_per_month:30000,ai_responses_more:true,competitors_max_active:25,support_label:"Personal account manager",trial_days:14,sort_order:3}];
+Promise.all(D.map(hol)).then(function(t){
+  D.forEach(function(f,i){ T[f]=t[i]; });
+  ["core.css","onboarding-page.css"].forEach(function(f){ var s=document.createElement("style"); s.textContent=T[f]; document.head.appendChild(s); });
+  [ "core.js","onboarding-page.js"].forEach(function(f){ var j=document.createElement("script"); j.textContent=T[f]; document.head.appendChild(j); });
+  return new Promise(function(ok){ setTimeout(ok,600); });
+}).then(function(){
+  var q=new URL(window.location.href).searchParams, was=q.get("was")||"skelett";
+  var u=new URL(window.location.href); u.searchParams.set("step","prompts");
+  window.history.replaceState({}, "", u.toString());
+  var w=document.createElement("div"); w.innerHTML=wurzelAus(T["bubble/onboarding_page_bubble.html"]);
+  var r=w.querySelector(".uob-root"); var id="pb"+Math.random().toString(36).slice(2,7);
+  r.setAttribute("data-instance",id); r.setAttribute("data-cdn-pin","pb");
+  document.getElementById("b").appendChild(r);
+  var n=0; (function warte(){ if (r.__uobController || n++>40){
+    window.setOnboardingBundle(id, T["_h_uob_eastside_voll.json"]);
+    setTimeout(function(){
+      var t=r.querySelector("[data-resume]"); if (t) t.click();
+      r.querySelector("[data-next]").click();
+      if (was==="plaene") window.setOnboardingPlans(id, JSON.stringify(PLAENE));
+      if (was==="leer")   window.setOnboardingPlans(id, "[]");
+      if (was==="fehler") window.setOnboardingPlans(id, "{kaputt");
+      setTimeout(function(){
+        var pane=r.querySelector(".uob-pane:not(.is-off)");
+        document.getElementById("out").textContent = JSON.stringify({
+          was: was, pane: pane.getAttribute("data-pane"),
+          ueberschrift: (pane.querySelector(".uob-h1")||{}).textContent,
+          vorspann: (pane.querySelector(".uob-sub")||{}).textContent,
+          huellen: pane.querySelectorAll(".uob-plan.is-skel").length,
+          karten: pane.querySelectorAll(".uob-plan:not(.is-skel)").length
+        });
+        window.__fertig=true;
+      }, 900);
+    }, 700);
+  } else setTimeout(warte,60); })();
+});
+</script>

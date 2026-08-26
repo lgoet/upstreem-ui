@@ -1,0 +1,149 @@
+<meta charset="utf-8"><title>onboarding: Tarifschritt -- Skelett, leer, Fehler, Ereignisse</title>
+<style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif;background:#fff}
+#b{padding:16px;width:1100px} #out{padding:10px;font:11px/1.4 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body><div id="b"></div><pre id="out">laeuft…</pre>
+<script>
+/* Der Tarifschritt. Drei Fragen: welche Ereignisse feuern beim Weiter aus Prompts und bei den
+   Klicks auf Karte und Umschalter, was steht da, WAEHREND die Tarife noch unterwegs sind, und was
+   steht da, wenn sie leer oder unlesbar ankommen. */
+var GEF = [];
+["uobStart","uobStep","uobTopics","uobWorkflowStart","uobSelect","uobFinish","uobExit"].forEach(function(n){
+  window["bubble_fn_"+n]=function(p){ GEF.push({ev:n, payload:p}); }; });
+function seit(){ var g=GEF.slice(); GEF=[]; return g; }
+window.__err=[]; window.addEventListener("error",function(e){window.__err.push(String(e.message));});
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){ return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=["core.css","core.js","onboarding-page.css","onboarding-page.js",
+       "bubble/onboarding_page_bubble.html","_h_uob_eastside_voll.json"];
+var T={}, R={}; window.__R=R;
+/* Die drei Tarife in der Form, die die Karte liest -- Feldnamen wie in der Preistabelle. */
+var PLAENE = [
+  { id:"11111111-1111-1111-1111-111111111111", name:"Starter", description:"For a first brand.",
+    monthly_price_eur:49, yearly_price_eur:470, prompts_per_day:50, ai_responses_per_month:4650,
+    competitors_max_active:5, trial_days:14, sort_order:1 },
+  { id:"22222222-2222-2222-2222-222222222222", name:"Growth", description:"For a growing team.",
+    monthly_price_eur:129, yearly_price_eur:1238, prompts_per_day:150, ai_responses_per_month:13500,
+    competitors_max_active:10, trial_days:14, sort_order:2 },
+  { id:"33333333-3333-3333-3333-333333333333", name:"Scale", description:"For an agency.",
+    monthly_price_eur:299, yearly_price_eur:2870, prompts_per_day:350, ai_responses_per_month:30000,
+    ai_responses_more:true, competitors_max_active:25, support_label:"Personal account manager",
+    trial_days:14, sort_order:3 }
+];
+Promise.all(D.map(hol)).then(function(t){
+  D.forEach(function(f,i){ T[f]=t[i]; });
+  R.frische = {
+    js_hat_planSkelett: T["onboarding-page.js"].indexOf("function planSkelett()") >= 0,
+    js_hat_plansGeholt: T["onboarding-page.js"].indexOf("state.plansGeholt = true") >= 0,
+    css_hat_skel: T["onboarding-page.css"].indexOf(".uob-plan.is-skel") >= 0,
+    /* Der ausgelieferte Wert der Uhr, aus der Quelle gelesen. Gemessen wird die Uhr mit einem
+       verkuerzten Wert (siehe unten): in dieser Umgebung ist setTimeout auf etwa eine Sekunde
+       gedrosselt, acht Sekunden Code werden daraus Minuten. Die MECHANIK ist damit gemessen, die
+       ZAHL nur gelesen -- beides getrennt ausgewiesen, statt eine als die andere zu verkaufen. */
+    uhr_im_quelltext: (T["onboarding-page.js"].match(/PLAN_MAX_MS = (\d+)/)||[])[1] || "?"
+  };
+  T["onboarding-page.js"] = T["onboarding-page.js"].replace("PLAN_MAX_MS = 8000", "PLAN_MAX_MS = 400");
+  R.frische.uhr_im_test = "400";
+  ["core.css","onboarding-page.css"].forEach(function(f){ var s=document.createElement("style"); s.textContent=T[f]; document.head.appendChild(s); });
+  [ "core.js","onboarding-page.js"].forEach(function(f){ var j=document.createElement("script"); j.textContent=T[f]; document.head.appendChild(j); });
+  return new Promise(function(ok){ setTimeout(ok,600); });
+}).then(function(){
+  var ROH = T["_h_uob_eastside_voll.json"];
+  function mount(){
+    document.getElementById("b").innerHTML="";
+    var w=document.createElement("div"); w.innerHTML=wurzelAus(T["bubble/onboarding_page_bubble.html"]);
+    var r=w.querySelector(".uob-root"); var id="pl"+Math.random().toString(36).slice(2,7);
+    r.setAttribute("data-instance",id); r.setAttribute("data-cdn-pin","pl"); r.setAttribute("data-isdark","no");
+    var u=new URL(window.location.href); u.searchParams.set("step","prompts");
+    window.history.replaceState({}, "", u.toString());
+    document.getElementById("b").appendChild(r);
+    return new Promise(function(ok){ var n=0;
+      (function warte(){ if (r.__uobController || n++>40) return ok({r:r,id:id}); setTimeout(warte,60); })(); });
+  }
+  function bild(r){
+    var pane = r.querySelector(".uob-pane:not(.is-off)");
+    /* NUR im stehenden Bereich suchen. Der abgehende bleibt 240ms im Dokument, und ein Waehler auf
+       die ganze Wurzel las dessen Ueberschrift -- der Vorspann des Tarifschritts sah dadurch aus
+       wie der von Prompts. Das war ein Fehler des Instruments, nicht der Komponente. */
+    var q = function(sel){ return pane ? pane.querySelector(sel) : null; };
+    var qa = function(sel){ return pane ? pane.querySelectorAll(sel) : []; };
+    return {
+      pane: pane ? pane.getAttribute("data-pane") : "-",
+      huellen: qa(".uob-plan.is-skel").length,
+      karten: qa(".uob-plan:not(.is-skel)").length,
+      leerText: (q(".uob-body .uob-sub")||{}).textContent,
+      fehlerKasten: !!q(".up-empty"),
+      fehlerText: (q(".up-empty-t")||{}).textContent,
+      vorspann: (q(".uob-head .uob-sub")||{}).textContent,
+      preise: [].map.call(qa(".uob-plan-amt"), function(e){ return e.textContent; }),
+      spar: [].map.call(qa(".uob-plan-note"), function(e){
+        return (e.className.indexOf("is-on")>=0?"an:":"aus:") + e.textContent.trim(); }),
+      gewaehlt: [].map.call(qa(".uob-plan[data-plan]"), function(e){
+        return e.getAttribute("aria-checked"); }).join(","),
+      umschalter: [].map.call(qa("[data-interval]"), function(e){
+        return e.getAttribute("data-interval")+":"+e.getAttribute("aria-selected"); }).join(" "),
+      weiterAus: (r.querySelector("[data-next]")||{}).disabled,
+      banner: (r.querySelector("[data-banner-txt]")||{}).textContent
+    };
+  }
+  var M;
+  /* Der Payload traegt jetzt restart.has_onboarding, also steht zuerst das Tor. Es muss zu sein,
+     sonst klickt dieser Aufbau auf eine Knopfzeile, die auf der echten Seite gar nicht sichtbar
+     ist -- und misst einen Weg, den kein Nutzer nehmen kann. */
+  function torZu(r){ var b=r.querySelector("[data-resume]"); if (b) b.click(); }
+  return mount().then(function(m){ M=m;
+    window.setOnboardingBundle(m.id, ROH);
+    return new Promise(function(ok){ setTimeout(function(){ torZu(M.r); ok(); }, 600); });
+  }).then(function(){
+    /* 1. Weiter aus Prompts. WELCHE Ereignisse feuern? */
+    seit();
+    M.r.querySelector("[data-next]").click();
+    R.A_weiter_aus_prompts = { ereignisse: seit(), bild: bild(M.r) };
+    /* 2. Klick auf einen Tarif und auf den Umschalter, SOLANGE das Skelett steht (nichts da) */
+    R.B_klick_ins_skelett = { plaeneDa: M.r.querySelectorAll("[data-plan]").length };
+    /* 3. Tarife kommen */
+    seit();
+    window.setOnboardingPlans(M.id, JSON.stringify(PLAENE));
+    R.C_plaene_da = { ereignisse: seit(), bild: bild(M.r) };
+    /* 4. Umschalter auf Monat */
+    seit();
+    M.r.querySelector('[data-interval="monthly"]').click();
+    R.D_umschalter_monat = { ereignisse: seit(), bild: bild(M.r) };
+    /* 5. Tarif waehlen */
+    seit();
+    M.r.querySelectorAll("[data-plan]")[1].click();
+    R.E_tarif_gewaehlt = { ereignisse: seit(), bild: bild(M.r) };
+    /* 6. Weiter -> uobFinish */
+    seit();
+    M.r.querySelector("[data-next]").click();
+    R.F_finish = { ereignisse: seit(), bild: bild(M.r) };
+    return null;
+  }).then(function(){
+    /* 7. Leere Antwort: eine Aussage, kein Skelett */
+    return mount().then(function(m){ M=m; window.setOnboardingBundle(m.id, ROH);
+      return new Promise(function(ok){ setTimeout(function(){
+        torZu(M.r);
+        M.r.querySelector("[data-next]").click();
+        window.setOnboardingPlans(M.id, "[]");
+        R.G_leer = bild(M.r);
+        /* 8. Unlesbare Antwort: Fehler, und das Skelett ist weg */
+        window.setOnboardingPlans(M.id, "{kaputt");
+        R.H_unlesbar = bild(M.r);
+        ok();
+      }, 600); }); });
+  }).then(function(){
+    /* 9. Die Uhr: keine Antwort. Acht Sekunden im Code, in dieser Umgebung gedrosselt -- deshalb
+       grosszuegig warten und den Zustand danach ansehen. */
+    return mount().then(function(m){ M=m; window.setOnboardingBundle(m.id, ROH);
+      return new Promise(function(ok){ setTimeout(function(){
+        torZu(M.r);
+        M.r.querySelector("[data-next]").click();
+        R.I_uhr_vorher = bild(M.r);
+        setTimeout(function(){ R.I_uhr_nachher = bild(M.r); ok(); }, 900);
+      }, 600); }); });
+  }).then(function(){
+    R.fehler = window.__err.slice(0,4);
+    document.getElementById("out").textContent = JSON.stringify(R,null,1);
+    window.__R=R; window.__fertig=true;
+  });
+}).catch(function(e){ document.getElementById("out").textContent="FEHLER: "+e.message+"\n"+e.stack; window.__fertig=true; });
+</script>
