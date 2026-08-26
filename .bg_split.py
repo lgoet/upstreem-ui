@@ -45,9 +45,13 @@ if haben != erwartet:
     sys.exit(1)
 
 teile = {
-    # Lichter und Bogen gehoeren zusammen: beide sind die Atmosphaere, beide sind in beiden Themen
-    # ungefaehr richtig.
-    "licht":  KOPF + "".join(lichter) + bogen[0] + "<defs>" + "".join(fdefs) + "</defs></svg>",
+    # Lichter und Bogen liegen GETRENNT, obwohl beide "Atmosphaere" sind. Der Grund: die vier
+    # Lichter decken fast die ganze Flaeche und heben damit den Grund an -- im Dunkeln sah man den
+    # Sprung, wenn das Bild kam. Sie muessen also leise stehen. Der Bogen ist eine LINIE; er hebt
+    # nichts an und soll deutlich bleiben. In einer Ebene haette jede Beruhigung des Grundes auch
+    # die Linie gedimmt.
+    "licht":  KOPF + "".join(lichter) + "<defs>" + "".join(fdefs) + "</defs></svg>",
+    "bogen":  KOPF + bogen[0] + "</svg>",
     "raster": KOPF + "".join(raster) + "</svg>",
     "marken": KOPF + "".join(kreuze) + "<defs>" + "".join(vdefs) + "</defs></svg>",
 }

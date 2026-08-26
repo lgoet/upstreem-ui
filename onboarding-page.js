@@ -689,6 +689,7 @@
          aria-hidden, weil hier nichts steht, was jemand vorgelesen bekommen muesste. */
       '<div class="uob-bg" data-bg aria-hidden="true">' +
         '<span class="uob-bg-licht"></span>' +
+        '<span class="uob-bg-bogen"></span>' +
         '<span class="uob-bg-raster"></span>' +
         '<span class="uob-bg-marken"></span>' +
       '</div>' +

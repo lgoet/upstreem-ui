@@ -424,6 +424,7 @@
   "token",
   "topic_id",
   "topic_ids",
+  "trial",
   "type",
   "url",
   "url_types",
@@ -2672,7 +2673,7 @@
   "events": 124,
   "fnattrs": 80,
   "globals": 137,
-  "payloadkeys": 85,
+  "payloadkeys": 86,
   "dataattrs": 198,
   "klassen": 1973,
   "keyframes": 58
