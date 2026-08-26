@@ -124,6 +124,43 @@ Promise.all(D.map(hol)).then(function(t){
            sagen, sonst schickt ein zweiter Tab den Nutzer in einen Fehler der RPC. */
         m.r.querySelector("[data-restart]").click();
         return bild(m.r); }); })
+    /* Die losen Wahrheitswerte. Aus Bubble kommt ein Ja als true, "true", yes oder 1 -- ein
+       strenger Vergleich haette hier stumm nichts getan, und genau so wurde das Tor am 26.08.
+       auf der echten Seite nicht angezeigt. */
+    .then(function(){ return fall("K_has_onboarding_als_text", "prompts", regel({ has_onboarding:"true" })); })
+    .then(function(){ return fall("L_has_onboarding_als_yes", "prompts", regel({ has_onboarding:"yes" })); })
+    .then(function(){ return fall("M_allowed_als_text", "prompts", regel({ allowed:"true" })); })
+    /* Zwei Buendel: das erste ohne Regel. Es darf die Einmal-Marke nicht verbrauchen. */
+    .then(function(){ return mount("prompts").then(function(m){
+        nullen();
+        window.setOnboardingBundle(m.id, JSON.stringify(klon(undefined)));
+        return new Promise(function(ok){ setTimeout(function(){
+          var ohne = bild(m.r);
+          window.setOnboardingBundle(m.id, JSON.stringify(klon(regel())));
+          setTimeout(function(){
+            R.N_erst_ohne_regel_dann_mit = { tor: ohne, weiter: bild(m.r), zaehler: zaehler() };
+            ok();
+          }, 400);
+        }, 500); });
+      }); })
+    /* Und die Gegenprobe dazu: hat der Nutzer in der Zwischenzeit schon gehandelt, bleibt das Tor
+       zu. Sonst reisst eine spaete Antwort ihn aus laufender Arbeit. */
+    .then(function(){ return mount("topics").then(function(m){
+        nullen();
+        window.setOnboardingBundle(m.id, JSON.stringify(klon(undefined)));
+        return new Promise(function(ok){ setTimeout(function(){
+          /* Irgendeine Zeile der gerade stehenden Ansicht. Vorher stand hier ein Waehler auf
+             die TOPICS-Liste -- das Buendel traegt aber Prompts, also landet der Einstieg auf
+             Prompts, und der Waehler fand nichts. Die Gegenprobe hat dann nichts gegengeprueft. */
+          var it = m.r.querySelector('.uob-item');
+          if (it) it.click();
+          window.setOnboardingBundle(m.id, JSON.stringify(klon(regel())));
+          setTimeout(function(){
+            R.O_nach_klick_kein_tor = { geklickt: !!it, weiter: bild(m.r), zaehler: zaehler() };
+            ok();
+          }, 400);
+        }, 500); });
+      }); })
     .then(function(){
       R.fehler = window.__err.slice(0,4);
       document.getElementById("out").textContent = JSON.stringify(R,null,1);

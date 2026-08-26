@@ -618,6 +618,10 @@
        Bewusst KEINE Abfrage auf den Bootzustand: der endet nach sechs Sekunden von selbst, und
        auf der echten Seite vergehen bis zur Antwort der RPC schon mal neun. */
     var torGeprueft = false;
+    /* Hat der Nutzer schon etwas angefasst? Das Tor darf ihn nie aus laufender Arbeit reissen.
+       Diese Marke ist das ehrlichere Kriterium als eine Uhr: sie sagt, ob ueberhaupt schon jemand
+       gehandelt hat, und nicht, ob eine willkuerliche Zahl von Sekunden vergangen ist. */
+    var angefasst = false;
 
     /* ---- Thema ---------------------------------------------------------------------------- */
     var isDark = false;
@@ -976,8 +980,8 @@
       var dom = txt(p.website_domain) ||
                 normUrl(txt(p.website_url) || txt(p.website_input)).domain;
       var erstellt = txt(p.created_at), geaendert = txt(p.updated_at);
-      var laeuft = rs.run_in_progress === true;
-      var darf = rs.allowed === true;
+      var laeuft = istJa(rs.run_in_progress);
+      var darf = istJa(rs.allowed);
 
       /* Eine Zeile unter den Knoepfen, und sie sagt IMMER etwas. Darf der Nutzer neu starten, sagt
          sie, was er dabei verliert; darf er nicht, sagt sie warum und wann wieder. Kein interner
@@ -2231,6 +2235,7 @@
 
     /* ---- Klicks ----------------------------------------------------------------------------- */
     root.addEventListener("click", function (e) {
+      angefasst = true;
       if (!e.target.closest) return;
 
       var go = e.target.closest("[data-go]");
@@ -2688,7 +2693,7 @@
       /* Die Regel wird hier ein zweites Mal gefragt. Ein gesperrter Knopf ist eine Anzeige und
          kein Riegel: disabled im Markup haelt einen Klick aus dem Code nicht auf, und die Antwort
          der RPC waere dann ein Fehler statt einer Verweigerung. */
-      if (!(state.restart && state.restart.allowed === true)) return;
+      if (!(state.restart && istJa(state.restart.allowed))) return;
       state.brands = []; state.topics = []; state.prompts = []; state.eigene = [];
       state.selBrands = {}; state.selTopics = {}; state.selPrompts = {};
       state.promptsFuer = null; state.maxErreicht = 0; state.planGesehen = false;
@@ -3138,9 +3143,19 @@
         /* Die Neustart-Regel reist im selben Buendel mit. Nur uebernehmen, nicht auswerten: wie
            oft jemand neu starten darf, entscheidet die Datenbank. */
         if (b.restart && typeof b.restart === "object") state.restart = b.restart;
-        if (!torGeprueft) {
+        /* Die Einmal-Marke wird nur verbraucht, wenn ueberhaupt eine Regel dabei war. Sonst haette
+           ein erstes Buendel ohne restart das Tor fuer die ganze Seitenansicht verspielt, und was
+           danach kommt, koennte es nie mehr aufmachen.
+           istJa und nicht === true: was als Wahrheitswert aus Bubble kommt, kommt als true, "true",
+           yes oder 1 -- derselbe Grund, aus dem selected schon so gelesen wird. Ein strenger
+           Vergleich haette hier stumm nichts getan, und "es passiert nichts" ist die Meldung, die
+           am schwersten zu finden ist. */
+        if (state.restart && !torGeprueft) {
           torGeprueft = true;
-          if (state.restart && state.restart.has_onboarding === true) state.torAuf = true;
+          /* Nicht, wenn der Nutzer schon handelt: auf der echten Seite vergehen bis zur Antwort
+             der RPC gut und gerne neun Sekunden, und wer in der Zeit angefangen hat, darf nicht
+             vor eine Frage gestellt werden, die er langst beantwortet hat. */
+          if (istJa(state.restart.has_onboarding) && !angefasst) state.torAuf = true;
         }
         /* Erst die Listen, dann der Einstieg: zielSchritt() liest sie. Die Listen zeichnen
            waehrend einer Uhr ohnehin nicht (siehe listeSetzen). */
