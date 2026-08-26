@@ -884,19 +884,24 @@
    angesagt am 26.08. Ein Kasten stand hier vorher und machte aus zwei Angaben ein Bauteil; sie
    sind aber nur zwei Angaben. */
 .uob-res-meta {
-  margin: clamp(20px, 3.4vh, 30px) 0 0; width: 100%;
-  display: flex; align-items: stretch; text-align: left;
+  /* 32px zum Block darueber und 32px zum Knopf darunter -- so angesagt, feste Werte statt clamp:
+     hier sollen die drei Bloecke in gleichem Abstand stehen und nicht mit der Fensterhoehe
+     atmen. */
+  margin: 32px auto 0; width: 100%; max-width: 320px;
+  display: flex; align-items: stretch; text-align: center;
 }
 /* Eigene Klassen und keine Tag-Waehler. dt und dd standen hier als einzige semantische Tags der
    Komponente, mitten in einer fremden Seite -- und was ein Baukasten wie Bubble an globaler CSS
    mitbringt, trifft genau solche Tags. */
-.uob-res-row { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-/* Die Trennlinie sitzt als Rahmen am FOLGENDEN Paar, mit gleichem Abstand links und rechts. So
-   entsteht sie nur zwischen zwei Angaben und nie am Rand -- und sie braucht kein eigenes
-   Element im Markup. */
-.uob-res-row + .uob-res-row {
-  margin-left: 20px; padding-left: 20px; border-left: 1px solid var(--vc-border);
-}
+/* flex: 1 1 0 und nicht Inhaltsbreite: nur so ist jede Haelfte GLEICH breit, und damit sitzt die
+   Trennlinie zwischen ihnen exakt in der Mitte -- unabhaengig davon, ob links "24. Aug 2026" und
+   rechts "13 hours ago" steht. Mit Inhaltsbreite waere die Linie bei jedem Datum anders weit vom
+   Rand entfernt. */
+.uob-res-row { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 6px;
+  padding: 0 12px; }
+/* Die Trennlinie sitzt als Rahmen am FOLGENDEN Paar. So entsteht sie nur zwischen zwei Angaben
+   und nie am Rand -- und sie braucht kein eigenes Element im Markup. */
+.uob-res-row + .uob-res-row { border-left: 1px solid var(--vc-border); }
 /* 11.5px ist die Groesse der Schienenbeschriftung -- dieselbe Rolle (ein Wort, das einen Wert
    benennt), also dieselbe Groesse. */
 .uob-res-k { font-size: 11.5px; font-weight: 500; color: var(--vc-third); }
@@ -908,7 +913,7 @@
 /* 32px Einzug je Seite, also 64px weniger Breite als der Kasten darueber. So angesagt am 26.08.:
    die beiden Knoepfe sollen schmaler stehen als die Karte, nicht auf ihrer Kante. box-sizing:
    border-box gilt in core fuer alles, das Polster geht also von der Breite ab. */
-.uob-res-acts { margin-top: clamp(16px, 2.6vh, 24px); width: 100%; display: grid; gap: 8px;
+.uob-res-acts { margin-top: 32px; width: 100%; display: grid; gap: 8px;
   padding: 0 32px; }
 .uob-res-acts .uob-next { width: 100%; }
 /* .uob-back ist links ausgerichtet, weil es in der Knopfzeile neben dem Rand sitzt. Hier steht
