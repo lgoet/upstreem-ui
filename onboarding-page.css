@@ -66,56 +66,66 @@
 .uob-root *, .uob-root *::before, .uob-root *::after { box-sizing: border-box; }
 .uob-root[data-theme="dark"] { --uob-hover: var(--vc-heading-bg); }
 
-/* ---------- Weltkarte im Hintergrund des Formulars ----------
-   Nur beim ersten Schritt: dort ist der Bildschirm am leersten, und ab Competitors braucht die
-   Liste die Ruhe.
+/* ---------- Weltkarte im Hintergrund ----------
+   Sie steht auf dem Formular, im Tor und im ERSTEN Ladebild -- ueberall dort, wo der Bildschirm
+   fast leer ist. Ab Competitors blendet sie aus, und zwar weich: deshalb liegt sie IMMER im
+   Dokument und traegt nur ihre Deckkraft. Ein Element, das mit seiner Klasse verschwindet,
+   verschwindet sofort; ein Uebergang braucht etwas, das bleibt.
 
    Sie kommt als MASKE und nicht als Bild. Damit steht die Farbe hier und nicht in der Datei: eine
-   Punktwolke in #F5F5F5 waere auf weissem Grund unsichtbar und auf dunklem zu hell, also braeuchte
-   es zwei Dateien, die auseinanderlaufen. So ist es eine Datei und zwei Zeilen CSS.
+   Punktwolke in #F5F5F5 waere auf weissem Grund unsichtbar und auf dunklem zu hell, es braeuchte
+   also zwei Dateien, die auseinanderlaufen.
 
    Der Pfad ist RELATIV. Das Stylesheet kommt selbst vom CDN unter seinem Pin, also loest der
    Browser die Datei aus demselben Pin auf -- ohne dass irgendwo eine Adresse mit Versionsnummer
    steht, die man beim naechsten Mal vergisst.
 
-   Und sie laeuft NICHT geometrisch aus dem Kasten heraus: der Kasten deckt die Wurzel genau ab
-   (inset: 0), und die Maske ist groesser als er und nach rechts unten verschoben. Was rechts und
-   unten herausragt, wird also nicht gezeichnet, statt eine Bildlaufleiste zu erzeugen. Ein
-   overflow: hidden an der Wurzel waere der naheliegende Weg und der falsche: es schneidet auch die
-   Auswahlfelder des Formulars ab, sobald eines nach unten aufklappt.
+   Sie laeuft NICHT geometrisch aus dem Kasten heraus: der Kasten deckt die Wurzel genau ab, und
+   die Maske ist auf cover skaliert. Was darueber hinausgeht, wird nicht gezeichnet, statt eine
+   Bildlaufleiste zu erzeugen. Ein overflow: hidden an der Wurzel waere der naheliegende Weg und
+   der falsche: es schneidet auch die Auswahlfelder des Formulars ab, sobald eines aufklappt.
 
    isolation: isolate an der Wurzel ist die Bedingung dafuer, dass z-index: -1 hier bleibt. Ohne
    einen eigenen Stapelkontext faellt eine negative Ebene hinter den Hintergrund der FREMDEN Seite
    und ist weg -- und an fremder Stapelung wird nichts angefasst (11.08.). */
 .uob-root { isolation: isolate; }
-.uob-root.is-form::before {
-  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+.uob-welt {
+  position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  opacity: 0; transition: opacity var(--uob-in) var(--uob-ease);
+}
+.uob-root.is-welt .uob-welt { opacity: .4; }
+.uob-root[data-theme="dark"].is-welt .uob-welt { opacity: .2; }
+/* Auf dem Telefon nicht: dort fuellt der Inhalt den Schirm, und eine Punktwolke dahinter macht die
+   Beschriftungen schlechter lesbar, ohne etwas zu zeigen. */
+.uob-root.is-narrow .uob-welt { display: none; }
+
+.uob-welt-scharf, .uob-welt-huelle, .uob-welt-weich { position: absolute; inset: 0; }
+.uob-welt-scharf, .uob-welt-weich {
   -webkit-mask-image: url("onboarding-world.svg"); mask-image: url("onboarding-world.svg");
   -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
   -webkit-mask-position: center; mask-position: center;
-  /* cover und nicht ein Prozentwert: die Karte soll die Flaeche fuellen und mittig sitzen, egal
-     welches Seitenverhaeltnis der Bildschirm hat. Was ueber den Kasten hinausgeht, wird nicht
-     gezeichnet. */
+  /* cover: die Karte fuellt die Flaeche und sitzt mittig, gleich welches Seitenverhaeltnis der
+     Bildschirm hat. */
   -webkit-mask-size: cover; mask-size: cover;
-  /* Das Ausblenden sitzt in der MITTE, nicht an den Raendern: dort steht das Formular, und die
-     Punktwolke soll hinter den Feldern verschwinden und nach aussen hin da sein. Also ein Loch --
-     durchsichtig im Kern, zur Kante der Ellipse hin auf die volle Farbe, und ausserhalb voll.
-     Es steckt in der FARBE und nicht in einer zweiten Maske: zwei Maskenebenen brauchen
-     mask-composite: intersect, und dessen Rueckfall ist "add" -- wo das nicht greift, wuerden die
-     Ebenen sich ADDIEREN und aus dem Loch wuerde ein grauer Kasten. Ein Farbverlauf als Fuellung
-     kommt ohne diese Wette zum selben Bild.
-     Die Ellipse ist hoeher als breit, weil die Formularspalte das auch ist (480px breit, aber
-     ueber die ganze Hoehe). */
-  background-image: radial-gradient(ellipse 42% 62% at 50% 50%,
-                    transparent 38%, var(--vc-third) 100%);
-  /* Hell 30%, dunkel 10% -- so angesagt. Dunkel braucht weniger: dort ist der Abstand zwischen
-     Punkt und Grund von sich aus groesser. */
-  opacity: .3;
 }
-.uob-root[data-theme="dark"].is-form::before { opacity: .1; }
-/* Auf dem Telefon nicht: dort ist der Bildschirm klein, das Formular fuellt ihn, und eine
-   Punktwolke dahinter macht die Beschriftungen schlechter lesbar, ohne etwas zu zeigen. */
-.uob-root.is-narrow.is-form::before { display: none; }
+/* Die scharfe Ebene hat in der Mitte ein LOCH -- dort uebernimmt die weiche. Es steckt in der
+   Farbe und nicht in einer zweiten Maske: zwei Maskenebenen brauchen mask-composite: intersect,
+   und dessen Rueckfall ist "add" -- wo das nicht greift, wuerden sie sich addieren und aus dem
+   Loch wuerde ein grauer Kasten. */
+.uob-welt-scharf {
+  background-image: radial-gradient(ellipse 26% 34% at 50% 50%,
+                    transparent 42%, var(--vc-third) 100%);
+}
+/* Und die weiche bringt GENAU das mit, was der scharfen fehlt: die beiden Verlaeufe sind
+   komplementaer, deshalb gibt es keine Naht dazwischen. */
+.uob-welt-weich {
+  background-image: radial-gradient(ellipse 26% 34% at 50% 50%,
+                    var(--vc-third) 42%, transparent 100%);
+}
+/* Der Blur sitzt an der HUELLE und nicht am Kind. filter wirkt vor der Maske: auf demselben
+   Element haette die scharfe Punktmaske das Verwaschene wieder scharf geschnitten, und man haette
+   nichts gesehen. So wird erst gezeichnet und maskiert, dann verwaschen. */
+.uob-welt-huelle { filter: blur(3px); }
 
 /* ---------- Kopfzeile ----------
    Logo links, die drei Nebenwege rechts. "Dashboard" und "Log out" sind bewusst Textknoepfe in

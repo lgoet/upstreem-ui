@@ -675,6 +675,14 @@
     function shell() {
       var logo = (istDunkelRoh() && attr("data-logo-dark")) || attr("data-logo");
       return '' +
+      /* Die Weltkarte. Zwei Ebenen, und sie sind ECHTE Elemente und keine Pseudoelemente: filter
+         wirkt VOR der Maske, ein blur auf demselben Element wuerde von der scharfen Punktmaske
+         wieder scharf geschnitten. Also blurrt eine Huelle das fertig gezeichnete Kind.
+         aria-hidden, weil hier nichts steht, was jemand vorgelesen bekommen muesste. */
+      '<div class="uob-welt" data-welt aria-hidden="true">' +
+        '<span class="uob-welt-scharf"></span>' +
+        '<span class="uob-welt-huelle"><span class="uob-welt-weich"></span></span>' +
+      '</div>' +
       '<div class="uob-top">' +
         /* onerror: eine Adresse, die ins Leere zeigt, hinterlaesst sonst das Bruchbild-Symbol
            des Browsers oben links -- auf dem ersten Bildschirm eines neuen Nutzers das denkbar
@@ -1675,8 +1683,9 @@
       root.style.setProperty("--uob-w", spalte);
       /* Im Tor bleiben Schiene und Knopfzeile weg -- die Begruendung steht an viewResume. */
       root.classList.toggle("is-gate", k === "resume");
-      /* Die Weltkarte im Hintergrund nur beim Formular -- Begruendung an der Regel in der CSS. */
-      root.classList.toggle("is-form", k === "brand");
+      /* Die Weltkarte steht dort, wo der Bildschirm fast leer ist: Formular, Tor und das ERSTE
+         Ladebild. Ab Competitors blendet sie aus -- ab da braucht die Liste die Ruhe. */
+      root.classList.toggle("is-welt", k === "brand" || k === "resume" || k === "load1");
       /* Erst hier, nicht beim Aufbau: die Uhr laeuft nur, wenn der Nutzer den Tarifschritt
          wirklich sieht. Wer nie dort ankommt, braucht keinen Ablauf. */
       if (k === "plan") planUhrStarten();
