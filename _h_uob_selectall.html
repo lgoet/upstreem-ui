@@ -66,7 +66,13 @@ Promise.all(D.map(hol)).then(function(t){
         on_mit_anfuehrung:           (text.match(/(?<="on":")[^"]*/)||[null])[0],
         on_ohne_anfuehrung:          (text.match(/(?<="on":)[^,}]*/)||[null])[0],
         changed_ids:                 (text.match(/(?<="changed_ids":")[^"]*/)||[null])[0],
-        ids:                         (text.match(/(?<="ids":")[^"]*/)||[null])[0]
+        ids:                         (text.match(/(?<="ids":")[^"]*/)||[null])[0],
+        /* Die Array-Form, wie sie der RPC als p_ids nimmt. */
+        ids_json:                    (text.match(/(?<="ids_json":)\[[^\]]*\]/)||[null])[0],
+        changed_ids_json:            (text.match(/(?<="changed_ids_json":)\[[^\]]*\]/)||[null])[0],
+        /* Und die Gegenprobe zu der Sorge, die beim team_id-Feld einmal zugeschlagen hat: die
+           ALTEN Extraktionen muessen unveraendert liefern, obwohl hinten Felder dazukamen. */
+        ids_noch_da:                 (text.match(/(?<="ids":")[^"]*/)||[null])[0] != null
       };
       document.getElementById("out").textContent = JSON.stringify(erg,null,1);
       window.__R=erg; window.__fertig=true;

@@ -24,7 +24,10 @@
                  der Schluessel geht nicht mehr mit. Steht er im Bubble-Workflow noch als
                  Parameter, bleibt er leer; er gehoert dort entfernt.
      uobStep     der Schluessel des Schritts, roh
-     uobSelect   {kind: "brands"|"topics"|"prompts", ids: "a,b,c", count: n}
+     uobSelect   {kind, ids: "a,b,c", count, changed, changed_ids, on,
+                  ids_json: ["a","b"], changed_ids_json: ["a"]}
+                  ids/changed_ids sind Kommatexte, die *_json dieselben Ids als echtes Array --
+                  die Form, die die RPCs als p_ids nehmen. Leer ist dort [] und nicht [""].
      uobTopics   die Themenauswahl beim Verlassen von Schritt 3 -- das ist der Anstoss, aus dem
                  die Prompts entstehen
      uobFinish   {plan_id, billing_interval, brand_ids, topic_ids, prompt_ids}
@@ -1530,6 +1533,14 @@
     }
     function anzahl(o) { var n = 0; for (var k in o) if (o[k]) n++; return n; }
     function idsVon(o) { var a = []; for (var k in o) if (o[k]) a.push(k); return a; }
+    /* Dieselben Ids ein zweites Mal, als echtes Array im Payload. Es ist die Form, die die RPCs
+       nehmen (p_ids als jsonb), und in Bubble ist der Weg dorthin sonst Zeichenkettenchirurgie:
+       aus "a,b" ein ["a","b"] zu bauen heisst Komma tauschen und Anfuehrungszeichen anhaengen --
+       und bei LEERER Auswahl kommt dabei [""] heraus, also eine leere Id, die der RPC dann sucht.
+       Hier ist leer sauber []. Die Kommatexte bleiben, sie sind in Gebrauch.
+       Die neuen Felder stehen am ENDE des Payloads: alles davor bleibt byteweise, wie es war, und
+       eine Extraktion, die einen Wert per Namen greift, sieht keinen Unterschied. */
+    function alsListe(arr) { return isArr(arr) ? arr.map(function (x) { return String(x); }) : []; }
 
     /* ---- Zeichnen -------------------------------------------------------------------------- */
     var letzteAnsicht = "";
@@ -2636,10 +2647,13 @@
          protokollieren, eine Empfehlung nachladen -- hat ihn jetzt, ohne dass das Ueberschreiben
          seine Verlaesslichkeit verliert. Beim Alle-Knopf ist changed leer, dort gibt es kein
          einzelnes Element. */
+      var eineId = String(id == null ? "" : id);
       fire("data-select-fn", "uobSelect",
         { kind: kind, ids: idsVon(topf).join(","), count: anzahl(topf),
-          changed: String(id == null ? "" : id),
-          changed_ids: String(id == null ? "" : id), on: !!jetztAn });
+          changed: eineId,
+          changed_ids: eineId, on: !!jetztAn,
+          ids_json: alsListe(idsVon(topf)),
+          changed_ids_json: eineId ? [eineId] : [] });
     }
 
     /* Alle Themen auf einmal. Gezaehlt wird nur, was der Server geliefert hat -- die selbst
@@ -2667,11 +2681,14 @@
          die Ids, die dieser Klick angefasst hat -- die vom Server gelieferten Themen, nicht die
          selbst getippten (die schaltet der Knopf absichtlich nicht, siehe oben). Damit kann ein
          Workflow gezielt schreiben, statt "alle" aufloesen zu muessen. */
+      var alleThemen = state.topics.map(function (t) { return String(t.id); });
       fire("data-select-fn", "uobSelect",
         { kind: "topics", ids: idsVon(state.selTopics).join(","), count: anzahl(state.selTopics),
           changed: "",
-          changed_ids: state.topics.map(function (t) { return t.id; }).join(","),
-          on: alleServerThemenAn() });
+          changed_ids: alleThemen.join(","),
+          on: alleServerThemenAn(),
+          ids_json: alsListe(idsVon(state.selTopics)),
+          changed_ids_json: alleThemen });
     }
 
     /* Ein neues eigenes Thema. Die Zeile wird an Ort und Stelle eingesetzt und der Platzhalter
@@ -2754,11 +2771,14 @@
          Deshalb traegt changed_ids die Prompt-Ids DIESER Gruppe, nicht die Themen-Id. Der Workflow
          muss dann nichts aufloesen -- er schreibt genau die Zeilen, die der Klick gemeint hat.
          `on` sagt die Richtung: der Knopf schaltet die ganze Gruppe an oder aus. */
+      var gruppenIds = g.items.map(function (it) { return String(it.p.id); });
       fire("data-select-fn", "uobSelect",
         { kind: "prompts", ids: idsVon(state.selPrompts).join(","), count: anzahl(state.selPrompts),
           changed: "",
-          changed_ids: g.items.map(function (it) { return it.p.id; }).join(","),
-          on: !!an });
+          changed_ids: gruppenIds.join(","),
+          on: !!an,
+          ids_json: alsListe(idsVon(state.selPrompts)),
+          changed_ids_json: gruppenIds });
     }
     /* Die Beschriftungen der Gruppenknoepfe nachziehen, ohne die Liste neu zu bauen -- sonst
        ginge der Scrollstand verloren, und die Mehrspaltenaufteilung wuerde neu berechnet. */
