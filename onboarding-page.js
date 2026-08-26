@@ -687,14 +687,16 @@
          Dokument und traegt nur ihre Deckkraft -- ein Element, das mit seiner Klasse verschwindet,
          kann nicht ausblenden. */
       '<div class="uob-warte" data-warte>' +
-        /* Die Uhr steckt in einer eigenen Huelle, und der Hinweis haengt ABSOLUT daran. Anders
-           bliebe die Uhr nicht in der Mitte: der Hinweis hat auch unsichtbar seine Breite, und
-           eine mittig ausgerichtete Reihe waere dadurch um dessen halbe Breite verschoben --
-           gemessen 549 statt 640. Und wuerde er beim Erscheinen Platz einnehmen, sprang die Uhr
-           nach links. So steht sie fest und der Hinweis kommt daneben. */
-        '<span class="uob-warte-in">' +
-          '<span class="uob-warte-uhr" data-warte-uhr aria-live="off"></span>' +
-          '<span class="uob-warte-hint" data-warte-hint>This usually takes 3-5 minutes</span>' +
+        /* Untereinander, und der Block ist UNTEN verankert: kommt der Hinweis dazu, waechst er
+           nach oben und die Uhr rutscht mit. So bleibt der Abstand zum Bildschirmrand derselbe --
+           vorher hing der Hinweis absolut unter der Uhr und wurde am Rand abgeschnitten.
+           Waagerecht mittig ist damit auch geloest, ohne dass der Hinweis dabei stoert: in einer
+           Spalte zaehlt seine Breite fuer die Lage der Uhr nicht (in einer Reihe zaehlte sie, und
+           die Uhr stand um seine halbe Breite daneben -- gemessen 549 statt 640).
+           Die Hoehe faehrt ueber grid-template-rows 0fr -> 1fr, dieselbe Bauart wie der Banner. */
+        '<span class="uob-warte-uhr" data-warte-uhr aria-live="off"></span>' +
+        '<span class="uob-warte-hint" data-warte-hint>' +
+          '<span>This usually takes 3-5 minutes</span>' +
         '</span>' +
       '</div>' +
       '<div class="uob-top">' +
