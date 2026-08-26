@@ -598,9 +598,26 @@
          zurueckgeht, muss von dort auch wieder nach vorn kommen, ohne alles noch einmal
          durchzuklicken. */
       maxErreicht: 0,
+      /* Die Neustart-Regel, wie sie die RPC im Buendel mitschickt (restart). Die Komponente
+         RECHNET nichts davon nach: wie oft jemand neu starten darf, entscheidet die Datenbank,
+         und zwei Rechnungen daneben waeren zwei Wahrheiten. Hier wird nur angezeigt, was sie
+         sagt, und der Knopf gesperrt, wenn sie nein sagt. */
+      restart: null,
+      /* Kommt der Nutzer ueber "Start over" ins Formular? Dann sagt der Vorspann dort, was das
+         Abschicken kostet -- an der Stelle, an der er ohnehin liest, und nicht als Fehlerkasten. */
+      neuStart: false,
+      /* Steht das Tor offen? Es kommt vor den ersten Schritt, wenn schon ein Onboarding
+         existiert: fortsetzen oder von vorn. */
+      torAuf: false,
       busy: false
     };
     var BRAND_MAX = 5;
+    /* Das Tor wird vom ERSTEN Buendel dieser Seitenansicht entschieden, danach nie wieder. Ein
+       Buendel kommt auch spaeter noch -- jeder aendernde Workflow schickt am Ende eine frische
+       Antwort --, und oeffnete das erneut das Tor, floege der Nutzer mitten aus seinem Schritt.
+       Bewusst KEINE Abfrage auf den Bootzustand: der endet nach sechs Sekunden von selbst, und
+       auf der echten Seite vergehen bis zur Antwort der RPC schon mal neun. */
+    var torGeprueft = false;
 
     /* ---- Thema ---------------------------------------------------------------------------- */
     var isDark = false;
@@ -794,7 +811,10 @@
 
     function viewBrand() {
       return '<div class="uob-pane" data-pane="brand">' +
-        kopf("Set up your brand", "Help us understand what your business does and who it serves.") +
+        kopf("Set up your brand",
+             state.neuStart
+               ? "This replaces your current setup. It is deleted when you submit this form."
+               : "Help us understand what your business does and who it serves.") +
         '<div class="uob-body">' +
           '<div class="uob-fields">' +
             '<div class="uob-field" data-field="name">' +
@@ -920,6 +940,90 @@
                   }).join("") +
                 '</div>') +
           '</div>' +
+        '</div>' +
+      '</div>';
+    }
+
+    /* ---- Das Tor: fortsetzen oder von vorn ---------------------------------------------------
+       Es gibt genau EIN Onboarding je Nutzer. Wer schon eines hat, landet nicht mehr stumm mittendrin,
+       sondern sieht zuerst, was da liegt, und entscheidet. Bewusst OHNE Schiene und OHNE Knopfzeile:
+       hier ist nichts zu bedienen ausser dieser einen Frage, und ein Fortschrittsbalken ueber einer
+       Entscheidung behauptet, sie sei schon getroffen.
+
+       Ob ein Neustart erlaubt ist, sagt die RPC (restart.allowed). Nachgerechnet wird hier nichts --
+       die Grenze steht in der Datenbank, und eine zweite Rechnung daneben waere eine zweite Wahrheit,
+       die irgendwann von der ersten abweicht. */
+    function datumKurz(iso) {
+      if (UC.fmtDate) return UC.fmtDate(iso);
+      var d = new Date(String(iso));
+      return isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
+    }
+    /* Datum UND Uhrzeit. Ein Datum allein reicht hier nicht: bei einem Fenster von 24 Stunden faellt
+       der naechste Neustart meist auf denselben Tag, und "wieder moeglich am 27. Aug" waere am
+       27. Aug um neun Uhr keine Auskunft. */
+    function zeitpunkt(iso) {
+      var d = new Date(String(iso));
+      if (isNaN(d.getTime())) return "";
+      return datumKurz(iso) + ", " +
+             String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+    }
+    function viewResume() {
+      var p = state.projekt || {};
+      var rs = state.restart || {};
+      /* Der Name steht an zwei Stellen im Payload. Das Projekt gewinnt, weil es auch die Domain
+         und die Zeiten traegt; restart.company_name ist der Rueckfall, falls nur die Regel kam. */
+      var name = txt(p.company_name) || txt(rs.company_name) || "Your setup";
+      var dom = txt(p.website_domain) ||
+                normUrl(txt(p.website_url) || txt(p.website_input)).domain;
+      var erstellt = txt(p.created_at), geaendert = txt(p.updated_at);
+      var laeuft = rs.run_in_progress === true;
+      var darf = rs.allowed === true;
+
+      /* Eine Zeile unter den Knoepfen, und sie sagt IMMER etwas. Darf der Nutzer neu starten, sagt
+         sie, was er dabei verliert; darf er nicht, sagt sie warum und wann wieder. Kein interner
+         Grund im Text: "rate_limited" ist eine Auskunft fuer uns, nicht fuer ihn. */
+      var hinweis;
+      if (darf) {
+        hinweis = "Starting over deletes this setup with everything it found.";
+        /* Der Zaehler nur dort, wo er eine Entscheidung aendert: beim letzten freien Neustart.
+           Immer sichtbar waere er eine Einladung, ihn zu verbrauchen. */
+        if (num(rs.remaining) === 1) hinweis += " This is your last restart for now.";
+      } else if (laeuft) {
+        hinweis = "We are still setting this one up. You can start over once it is done.";
+      } else if (txt(rs.next_allowed_at)) {
+        hinweis = "You have used all your restarts for now. The next one is available on " +
+                  zeitpunkt(rs.next_allowed_at) + ".";
+      } else {
+        hinweis = "Starting over is not possible right now. Please try again later.";
+      }
+
+      var zeilen = [];
+      if (erstellt) zeilen.push(["Created", datumKurz(erstellt)]);
+      /* relativeTime nennt Frisches in Minuten und Stunden und faellt ab einem Tag auf das Datum
+         zurueck -- genau die Aufloesung, die "zuletzt bearbeitet" braucht. */
+      if (geaendert) zeilen.push(["Last updated",
+        UC.relativeTime ? UC.relativeTime(geaendert) : datumKurz(geaendert)]);
+
+      return '<div class="uob-pane" data-pane="resume">' +
+        '<div class="uob-body">' +
+          '<div class="uob-load is-compact">' +
+            kachel("uob-load-logo", name, dom) +
+            '<div class="uob-load-name">' + esc(name) + '</div>' +
+            (dom ? '<div class="uob-load-dom">' + esc(dom) + '</div>' : "") +
+          '</div>' +
+          (zeilen.length
+            ? '<dl class="uob-res-meta">' +
+                zeilen.map(function (z) {
+                  return '<div><dt>' + esc(z[0]) + '</dt><dd>' + esc(z[1]) + '</dd></div>';
+                }).join("") +
+              '</dl>'
+            : "") +
+          '<div class="uob-res-acts">' +
+            '<button class="uob-next" type="button" data-resume>Continue with this setup</button>' +
+            '<button class="uob-back uob-res-over" type="button" data-restart' +
+              (darf ? "" : " disabled") + '>Start over</button>' +
+          '</div>' +
+          '<p class="uob-res-note">' + esc(hinweis) + '</p>' +
         '</div>' +
       '</div>';
     }
@@ -1302,12 +1406,17 @@
       /* Vor allem anderen: solange nicht feststeht, ob es ein Projekt gibt, wird nichts gezeigt,
          was sich gleich wieder aendern koennte. */
       if (state.hochfahren) return "boot";
+      /* Das Tor steht VOR allem anderen, auch vor einem laufenden Lauf: wer schon ein Onboarding
+         hat, soll zuerst sehen, DASS er eins hat. Laeuft gerade etwas, fuehrt Continue ihn genau
+         dorthin, ins Ladebild. */
+      if (state.torAuf) return "resume";
       if (state.warten === "main") return "load1";
       if (state.warten === "prompts") return "load2";
       return state.step;
     }
     function viewFor(k) {
       if (k === "boot") return viewBoot();
+      if (k === "resume") return viewResume();
       if (k === "load1") return viewLoad(false);
       if (k === "load2") return viewLoad(true);
       if (k === "brand") return viewBrand();
@@ -1320,7 +1429,7 @@
 
     /* Die Spaltenbreite je Ansicht. Ein Formular liest sich schmal besser, Listen brauchen mehr,
        drei Preiskarten am meisten. */
-    var BREITE = { brand: "480px", load1: "480px", load2: "560px",
+    var BREITE = { brand: "480px", load1: "480px", load2: "560px", resume: "480px",
                    competitors: "880px", topics: "620px", prompts: "720px", plan: "1040px" };
 
     /* Gleiche Ansicht heisst normalerweise gleiche Gestalt: dieselbe Zahl von Kindern in
@@ -1350,6 +1459,8 @@
       var k = ansichtKey();
       var wechsel = k !== letzteAnsicht;
       root.style.setProperty("--uob-w", BREITE[k] || "480px");
+      /* Im Tor bleiben Schiene und Knopfzeile weg -- die Begruendung steht an viewResume. */
+      root.classList.toggle("is-gate", k === "resume");
 
       if (wechsel) {
         /* Der abgehende Bereich bleibt fuer die Dauer des Uebergangs stehen und geht dabei weg.
@@ -1570,7 +1681,7 @@
          oben waere dann dasselbe zweimal auf einem Bildschirm. Beim ersten Schritt gibt es noch
          nichts zu zeigen. */
       var k = ansichtKey();
-      var an = !!p && k !== "brand" && k !== "load1" && k !== "load2";
+      var an = !!p && k !== "brand" && k !== "load1" && k !== "load2" && k !== "resume";
       elIdent.classList.toggle("is-on", an);
       if (!an) return;
       var name = txt(p.company_name) || txt(state.form.name);
@@ -2252,6 +2363,8 @@
 
       if (e.target.closest("[data-skip]")) { weiter(true); return; }
       if (e.target.closest("[data-back]")) { zurueck(); return; }
+      if (e.target.closest("[data-resume]")) { torSchliessen(); return; }
+      if (e.target.closest("[data-restart]")) { neuAnfangen(); return; }
       if (e.target.closest("[data-next]")) { weiter(false); return; }
     });
 
@@ -2553,6 +2666,40 @@
       urlSetzen(key, neuerEintrag !== false);
       render();
       fire("data-step-fn", "uobStep", key);
+    }
+
+    /* Fortsetzen: das Tor zu, mehr nicht. Der Schritt steht schon -- einstieg() hat ihn beim
+       Aufbau gesetzt, samt Adresse. Ein gehe() darauf waere ein zweites uobStep fuer denselben
+       Schritt, also ein Ereignis ohne Ereignis. */
+    function torSchliessen() {
+      if (!state.torAuf) return;
+      state.torAuf = false;
+      render();
+    }
+
+    /* Von vorn anfangen. Geloescht wird HIER NICHTS: das tut die Start-RPC, wenn das Formular
+       abgeschickt wird. Wer klickt und die Seite dann verlaesst, hat noch alles -- beim naechsten
+       Aufbau steht dasselbe Tor wieder da.
+       Lokal muss aber weg, was zum alten Lauf gehoert: Listen und Auswahl stammen aus einem
+       Onboarding, das es gleich nicht mehr gibt. Die FORMULARWERTE bleiben stehen: der haeufigste
+       Grund fuer einen Neustart ist dieselbe Marke noch einmal, und wer eine andere will, tippt
+       darueber -- die Felder liegen offen, es ist nichts versteckt. */
+    function neuAnfangen() {
+      /* Die Regel wird hier ein zweites Mal gefragt. Ein gesperrter Knopf ist eine Anzeige und
+         kein Riegel: disabled im Markup haelt einen Klick aus dem Code nicht auf, und die Antwort
+         der RPC waere dann ein Fehler statt einer Verweigerung. */
+      if (!(state.restart && state.restart.allowed === true)) return;
+      state.brands = []; state.topics = []; state.prompts = []; state.eigene = [];
+      state.selBrands = {}; state.selTopics = {}; state.selPrompts = {};
+      state.promptsFuer = null; state.maxErreicht = 0; state.planGesehen = false;
+      state.projekt = null; state.plan = ""; state.banner = ""; state.fehler = {};
+      state.neuStart = true;
+      state.torAuf = false;
+      warteBeenden();
+      /* gehe() kehrt um, wenn der Schritt schon steht -- und nach einem Entwurf steht er auf
+         brand. Dann zeichnet hier niemand, und das Tor bliebe stehen. */
+      if (state.step === "brand") { urlSetzen("brand", false); render(); }
+      else gehe("brand", false);
     }
 
     function weiter(ueberspringen) {
@@ -2988,6 +3135,13 @@
            -- gemessen: die Meldung aus dem Fall "leer" stand noch ueber draft, processing und
            ready. Was danach wirklich ein Fehler ist, setzt einstieg() gleich neu. */
         state.banner = "";
+        /* Die Neustart-Regel reist im selben Buendel mit. Nur uebernehmen, nicht auswerten: wie
+           oft jemand neu starten darf, entscheidet die Datenbank. */
+        if (b.restart && typeof b.restart === "object") state.restart = b.restart;
+        if (!torGeprueft) {
+          torGeprueft = true;
+          if (state.restart && state.restart.has_onboarding === true) state.torAuf = true;
+        }
         /* Erst die Listen, dann der Einstieg: zielSchritt() liest sie. Die Listen zeichnen
            waehrend einer Uhr ohnehin nicht (siehe listeSetzen). */
         if (isArr(b.competitors)) listeSetzen(b.competitors, "brands");
@@ -3140,6 +3294,7 @@
         state.plan = ""; state.banner = ""; state.busy = false;
         state.fehler = {}; state.maxErreicht = 0; state.planGesehen = false;
         state.promptsFuer = null;
+        state.restart = null; state.torAuf = false; state.neuStart = false;
         railStand = "";
         state.form = { name: "", website: "", market: eigenerMarkt(), timezone: eigeneZone(),
                        business: BUSINESS_STD };

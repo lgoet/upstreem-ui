@@ -1,0 +1,57 @@
+<meta charset="utf-8"><title>onboarding: Tor, Sichtprobe</title>
+<style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif}
+#b{padding:16px} #out{padding:8px;font:11px/1.4 ui-monospace,monospace}</style>
+<body><div id="b"></div><pre id="out">laeuft…</pre>
+<script>
+/* Sichtprobe zum Tor. ?dark=1 dunkel, ?w=420 schmal (der Umbruch der Komponente liegt bei 760),
+   ?fall=ok|limit|lauf. Zahlen sagen nicht, ob eine Karte gut aussieht. */
+["uobStart","uobStep","uobTopics","uobWorkflowStart","uobSelect","uobFinish","uobExit"].forEach(function(n){
+  window["bubble_fn_"+n]=function(){}; });
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){ return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=["core.css","core.js","onboarding-page.css","onboarding-page.js",
+       "bubble/onboarding_page_bubble.html","_h_uob_eastside.json"];
+var T={};
+Promise.all(D.map(hol)).then(function(t){
+  D.forEach(function(f,i){ T[f]=t[i]; });
+  ["core.css","onboarding-page.css"].forEach(function(f){ var s=document.createElement("style"); s.textContent=T[f]; document.head.appendChild(s); });
+  [ "core.js","onboarding-page.js"].forEach(function(f){ var j=document.createElement("script"); j.textContent=T[f]; document.head.appendChild(j); });
+  return new Promise(function(ok){ setTimeout(ok,600); });
+}).then(function(){
+  var q = new URL(window.location.href).searchParams;
+  var dunkel = q.get("dark")==="1", breite = q.get("w") || "1100", fall = q.get("fall") || "ok";
+  document.body.style.background = dunkel ? "#0f0f10" : "#fff";
+  document.getElementById("b").style.width = breite + "px";
+  var b = JSON.parse(T["_h_uob_eastside.json"]);
+  b.project.created_at = new Date(Date.now()-26*3600e3).toISOString();
+  b.project.updated_at = new Date(Date.now()-2*3600e3).toISOString();
+  b.restart = { has_onboarding:true, is_paying:true, limit:5, window_hours:24, used:2, remaining:3,
+    allowed:true, reason:null, next_allowed_at:null, run_in_progress:false,
+    company_name:"East Side Party", status:"ready", status_phase:7 };
+  if (fall === "limit") { b.restart.allowed=false; b.restart.reason="rate_limited"; b.restart.used=5;
+    b.restart.remaining=0; b.restart.next_allowed_at=new Date(Date.now()+5*3600e3).toISOString(); }
+  if (fall === "lauf") { b.restart.allowed=false; b.restart.reason="run_in_progress";
+    b.restart.run_in_progress=true; }
+  var u=new URL(window.location.href); u.searchParams.set("step","prompts");
+  window.history.replaceState({}, "", u.toString());
+  var w=document.createElement("div"); w.innerHTML=wurzelAus(T["bubble/onboarding_page_bubble.html"]);
+  var r=w.querySelector(".uob-root"); var id="tb"+Math.random().toString(36).slice(2,7);
+  r.setAttribute("data-instance",id); r.setAttribute("data-cdn-pin","tb");
+  r.setAttribute("data-isdark", dunkel?"yes":"no");
+  document.getElementById("b").appendChild(r);
+  var n=0; (function warte(){ if (r.__uobController || n++>40){
+    window.setOnboardingBundle(id, JSON.stringify(b));
+    setTimeout(function(){
+      var karte = r.querySelector(".uob-res-meta");
+      document.getElementById("out").textContent = JSON.stringify({
+        breiteWurzel: r.clientWidth, schmal: r.classList.contains("is-narrow"),
+        kartenBreite: karte ? Math.round(karte.getBoundingClientRect().width) : null,
+        knopfBreite: Math.round((r.querySelector("[data-resume]")||{getBoundingClientRect:function(){return{width:0}}}).getBoundingClientRect().width),
+        ueberlauf: r.scrollWidth > r.clientWidth ? (r.scrollWidth - r.clientWidth) : 0,
+        note: (r.querySelector(".uob-res-note")||{}).textContent
+      });
+      window.__fertig=true;
+    }, 500);
+  } else setTimeout(warte,60); })();
+});
+</script>

@@ -860,6 +860,43 @@
   margin-top: clamp(20px, 3.4vh, 30px); width: 100%;
   display: flex; flex-direction: column; gap: 8px; text-align: left;
 }
+
+/* ---------- Das Tor: fortsetzen oder von vorn ----------
+   Der Kopf der Karte ist .uob-load, dasselbe Bild wie im Ladeschirm: Kachel, Name, Domain. Es
+   ist dieselbe Marke in derselben Lage, und zwei Fassungen davon waeren zwei Wahrheiten. Neu
+   sind nur die Zeiten und die zwei Knoepfe. */
+.uob-root.is-gate .uob-rail,
+.uob-root.is-gate .uob-nav { display: none; }
+/* Die zwei Zeitangaben in einem Kasten, nicht als lose Zeilen unter der Marke: sie gehoeren zu
+   diesem einen Onboarding, und der Kasten macht aus Marke, Zeiten und Knoepfen eine Karte.
+   Masse aus .uob-item, der Listenzeile dieser Komponente -- gleiche Polsterung waagerecht,
+   gleicher Radius, gleicher Rahmen, gleicher Grund. Nur die Hoehe nicht: dort steht ein
+   Auswahlziel mit 56px Mindesthoehe, hier zwei Textzeilen. */
+.uob-res-meta {
+  margin: clamp(20px, 3.4vh, 30px) 0 0; width: 100%;
+  padding: 10px 14px; border: 1px solid var(--vc-border); border-radius: 12px;
+  background: var(--vc-bg);
+  display: grid; gap: 4px;
+}
+.uob-res-meta > div { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.uob-res-meta dt { font-size: 13px; color: var(--vc-third); }
+.uob-res-meta dd { margin: 0; font-size: 13px; font-weight: 500; color: var(--vc-text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Untereinander, beide ueber die volle Breite. Nebeneinander stuenden zwei Antworten auf
+   dieselbe Frage gleich gewichtet da, und die zweite loescht etwas. Der Abstand ist der der
+   Knopfzeile, damit die Karte im selben Raster sitzt wie jeder andere Schritt. */
+.uob-res-acts { margin-top: clamp(16px, 2.6vh, 24px); width: 100%; display: grid; gap: 8px; }
+.uob-res-acts .uob-next { width: 100%; }
+/* .uob-back ist links ausgerichtet, weil es in der Knopfzeile neben dem Rand sitzt. Hier steht
+   es allein ueber die Breite, also mittig. */
+.uob-res-over { justify-content: center; width: 100%; }
+.uob-res-note { margin: 10px 0 0; font-size: 12.5px; line-height: 1.5;
+  color: var(--vc-third); text-align: center; }
+/* Gesperrt sieht aus wie beim Hauptknopf, dieselben Werte (.uob-next:disabled). Der Hover muss
+   dabei ausdruecklich zurueck: ein Knopf, der auf das Ueberfahren noch antwortet, sieht
+   bedienbar aus. */
+.uob-back:disabled { opacity: .55; cursor: default; }
+.uob-back:disabled:hover { background: transparent; color: var(--vc-muted); }
 /* align-items: center und nicht flex-start: das Zeichen links gehoert zur ganzen Zeile, nicht
    zur ersten Textzeile. Oben angeschlagen sass es sichtbar zu hoch, weil der Text zwei Zeilen
    hat und das Zeichen nur eine. */

@@ -1,0 +1,133 @@
+<meta charset="utf-8"><title>onboarding: Tor -- fortsetzen oder von vorn</title>
+<style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif;background:#fff}
+#b{padding:16px;width:1100px} #out{padding:10px;font:11px/1.4 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body><div id="b"></div><pre id="out">laeuft…</pre>
+<script>
+/* Das Tor vor dem Onboarding, gegen das ECHTE Buendel des Nutzers plus den neuen restart-Block
+   aus der RPC. Geprueft wird jeder Zweig der Regel, nicht nur der Gutfall: erlaubt, laufender
+   Lauf, Limit erreicht, letzter freier Neustart, gar kein Onboarding -- und ein Buendel ganz
+   OHNE restart, denn ein Pin, der aelter ist als die RPC, darf sich nicht anders verhalten als
+   bisher. */
+var Z = {};
+["uobStart","uobStep","uobTopics","uobWorkflowStart","uobSelect","uobFinish","uobExit"].forEach(function(n){
+  Z[n]=0; window["bubble_fn_"+n]=function(p){ Z[n]++; }; });
+function zaehler(){ var o={}; Object.keys(Z).forEach(function(k){ if(Z[k]) o[k]=Z[k]; }); return o; }
+function nullen(){ Object.keys(Z).forEach(function(k){ Z[k]=0; }); }
+window.__err=[]; window.addEventListener("error",function(e){window.__err.push(String(e.message));});
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){ return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=["core.css","core.js","onboarding-page.css","onboarding-page.js",
+       "bubble/onboarding_page_bubble.html","_h_uob_eastside.json"];
+var T={}, R={};
+Promise.all(D.map(hol)).then(function(t){
+  D.forEach(function(f,i){ T[f]=t[i]; });
+  R.frische = {
+    js_hat_viewResume: T["onboarding-page.js"].indexOf("function viewResume()") >= 0,
+    css_hat_is_gate: T["onboarding-page.css"].indexOf(".uob-root.is-gate .uob-rail") >= 0
+  };
+  ["core.css","onboarding-page.css"].forEach(function(f){ var s=document.createElement("style"); s.textContent=T[f]; document.head.appendChild(s); });
+  [ "core.js","onboarding-page.js"].forEach(function(f){ var j=document.createElement("script"); j.textContent=T[f]; document.head.appendChild(j); });
+  return new Promise(function(ok){ setTimeout(ok,600); });
+}).then(function(){
+  var ECHT = JSON.parse(T["_h_uob_eastside.json"]);
+  /* Zeiten wie sie die echte RPC mitliefert (to_jsonb der ganzen Zeile). */
+  var GESTERN = new Date(Date.now() - 26*3600e3).toISOString();
+  var VORHIN  = new Date(Date.now() - 2*3600e3).toISOString();
+  function klon(restart){
+    var b = JSON.parse(JSON.stringify(ECHT));
+    b.project.created_at = GESTERN; b.project.updated_at = VORHIN;
+    if (restart !== undefined) b.restart = restart;
+    return b;
+  }
+  var REGEL_OK = { has_onboarding:true, is_paying:true, limit:5, window_hours:24, used:2,
+    remaining:3, allowed:true, reason:null, next_allowed_at:null, run_in_progress:false,
+    company_name:"East Side Party", status:"ready", status_phase:7 };
+  function regel(aend){ var r=JSON.parse(JSON.stringify(REGEL_OK));
+    Object.keys(aend||{}).forEach(function(k){ r[k]=aend[k]; }); return r; }
+
+  function mount(step){
+    var u=new URL(window.location.href);
+    if (step) u.searchParams.set("step",step); else u.searchParams.delete("step");
+    window.history.replaceState({}, "", u.toString());
+    document.getElementById("b").innerHTML="";
+    var w=document.createElement("div"); w.innerHTML=wurzelAus(T["bubble/onboarding_page_bubble.html"]);
+    var r=w.querySelector(".uob-root"); var id="t"+Math.random().toString(36).slice(2,7);
+    r.setAttribute("data-instance",id); r.setAttribute("data-cdn-pin","t"); r.setAttribute("data-isdark","no");
+    document.getElementById("b").appendChild(r);
+    return new Promise(function(ok){ var n=0;
+      (function warte(){ if (r.__uobController || n++>40) return ok({r:r,id:id}); setTimeout(warte,60); })(); });
+  }
+  function bild(r){
+    var pane = r.querySelector(".uob-pane:not(.is-off)");
+    var rail = r.querySelector(".uob-rail"), nav = r.querySelector(".uob-nav");
+    var over = r.querySelector("[data-restart]"), weiter = r.querySelector("[data-resume]");
+    var meta = [].map.call(r.querySelectorAll(".uob-res-meta > div"), function(d){
+      return (d.querySelector("dt")||{}).textContent + ": " + (d.querySelector("dd")||{}).textContent; });
+    var note = r.querySelector(".uob-res-note");
+    return {
+      pane: pane ? pane.getAttribute("data-pane") : "-",
+      schritt: new URL(window.location.href).searchParams.get("step"),
+      railAn: rail ? window.getComputedStyle(rail).display !== "none" : null,
+      navAn: nav ? window.getComputedStyle(nav).display !== "none" : null,
+      identAn: !!r.querySelector(".uob-ident.is-on"),
+      guideKnopf: !(r.querySelector("[data-help-btn]")||{}).hidden,
+      marke: (r.querySelector(".uob-load-name")||{}).textContent,
+      domain: (r.querySelector(".uob-load-dom")||{}).textContent,
+      logoBild: !!(r.querySelector(".uob-load-logo img")),
+      meta: meta,
+      weiterDa: !!weiter, overDa: !!over,
+      overGesperrt: over ? over.disabled : null,
+      overDeckkraft: over ? window.getComputedStyle(over).opacity : null,
+      note: note ? note.textContent : "",
+      vorspann: (r.querySelector(".uob-sub")||{}).textContent,
+      zeilen: r.querySelectorAll(".uob-item").length,
+      formName: (r.querySelector('[data-f="name"]')||{}).value,
+      formSite: (r.querySelector('[data-f="website"]')||{}).value
+    };
+  }
+  function fall(name, step, restart, danach){
+    return mount(step).then(function(m){
+      nullen();
+      window.setOnboardingBundle(m.id, JSON.stringify(klon(restart)));
+      return new Promise(function(ok){ setTimeout(function(){
+        var vor = bild(m.r);
+        var extra = danach ? danach(m, bild) : null;
+        R[name] = { tor: vor, weiter: extra, zaehler: zaehler() };
+        ok();
+      }, 500); });
+    });
+  }
+
+  return fall("A_erlaubt_3_von_5", "prompts", regel())
+    .then(function(){ return fall("B_lauf_laeuft", "prompts",
+      regel({ allowed:false, reason:"run_in_progress", run_in_progress:true, status:"processing" })); })
+    .then(function(){ return fall("C_limit_erreicht", "prompts",
+      regel({ allowed:false, reason:"rate_limited", used:5, remaining:0,
+              next_allowed_at: new Date(Date.now() + 5*3600e3).toISOString() })); })
+    .then(function(){ return fall("D_letzter_neustart", "prompts", regel({ used:4, remaining:1 })); })
+    .then(function(){ return fall("E_kein_onboarding", "", regel({ has_onboarding:false, company_name:null })); })
+    .then(function(){ return fall("F_ohne_restart_alter_pin", "prompts", undefined); })
+    .then(function(){ return fall("G_continue_klick", "prompts", regel(), function(m, bild){
+        m.r.querySelector("[data-resume]").click();
+        return bild(m.r); }); })
+    .then(function(){ return fall("H_start_over_klick", "prompts", regel(), function(m, bild){
+        m.r.querySelector("[data-restart]").click();
+        return bild(m.r); }); })
+    .then(function(){ return fall("I_zweites_buendel_oeffnet_nicht", "prompts", regel(), function(m, bild){
+        m.r.querySelector("[data-resume]").click();
+        window.setOnboardingBundle(m.id, JSON.stringify(klon(regel())));
+        return bild(m.r); }); })
+    .then(function(){ return fall("J_start_over_gesperrt_klick", "prompts",
+      regel({ allowed:false, reason:"rate_limited", remaining:0,
+              next_allowed_at: new Date(Date.now()+5*3600e3).toISOString() }), function(m, bild){
+        /* Ein Klick aus dem Code umgeht die Sperre des Markups -- die Logik muss selbst nein
+           sagen, sonst schickt ein zweiter Tab den Nutzer in einen Fehler der RPC. */
+        m.r.querySelector("[data-restart]").click();
+        return bild(m.r); }); })
+    .then(function(){
+      R.fehler = window.__err.slice(0,4);
+      document.getElementById("out").textContent = JSON.stringify(R,null,1);
+      window.__R=R; window.__fertig=true;
+    });
+}).catch(function(e){ document.getElementById("out").textContent="FEHLER: "+e.message+"\n"+e.stack; window.__fertig=true; });
+</script>
