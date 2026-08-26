@@ -668,13 +668,16 @@
 .uob-item.is-slim { min-height: 40px; padding: 6px 12px; }
 .uob-item.is-blocked { opacity: .45; cursor: default; }
 .uob-item.is-blocked:hover { border-color: var(--vc-border); }
-/* FEST: die Themen stehen, weil die Prompts darauf gebaut sind. Der Haken bleibt in voller
-   Deckkraft -- er ist die Aussage, was gewaehlt IST, und eine blasse Liste laese sich wie ein
-   Fehler oder wie "nicht mehr gueltig". Weg muss nur, was Bedienbarkeit VERSPRICHT: der Zeiger
-   und die Rahmenreaktion beim Ueberfahren. Anders als is-blocked, das eine Zeile meint, die man
-   gerade nicht waehlen KANN -- hier ist die Wahl getroffen und gilt. */
+/* FEST: die Themen stehen, weil die Prompts darauf gebaut sind. Das Ausgegraut kommt aus
+   is-blocked -- dieselbe Bedeutung, dieselbe Klasse, derselbe Wert; hier steht nur, was darueber
+   hinaus gilt. (Erst stand hier volle Deckkraft mit der Begruendung, die Wahl sei getroffen und
+   gueltig. Angesagt am 26.08. war das Gegenteil: ausgegraut, mit Grund am Zeiger -- der Nutzer
+   soll SEHEN, dass hier nichts mehr geht, und nicht erst beim Klicken merken.) */
 .uob-item.is-fest { cursor: default; }
-.uob-item.is-fest:not(.is-on):hover { border-color: var(--vc-border); }
+.uob-item.is-fest:hover { border-color: var(--vc-border); }
+/* Der Haken einer gewaehlten Zeile bleibt erkennbar, auch gedaempft: er ist die Aussage, WAS
+   gewaehlt ist, und die muss lesbar bleiben. */
+.uob-item.is-fest.is-on { opacity: .6; }
 /* Das Namensfeld eines eigenen Themas bleibt lesbar und markierbar, nimmt aber nichts an. */
 .uob-item.is-fest .uob-newin { cursor: default; }
 /* Geometrie exakt .up-filter-check aus core, nur eine Stufe groesser (16 -> 18, Radius 5 -> 5.6,

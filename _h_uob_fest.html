@@ -46,6 +46,13 @@ Promise.all(D.map(hol)).then(function(t){
           setTimeout(function(){
             var vorZahl = (r.querySelector(".uob-count")||{}).textContent;
             SEL = [];
+            /* Den Tooltip-Kasten leeren. Er haengt an document.body und wird von allen
+               Durchlaeufen geteilt (window.__upTipEl) -- ohne das Leeren las der zweite Durchlauf
+               den Text des ersten und "tipSpaeter" sah aus, als haette auch die offene Liste
+               einen Grund am Zeiger. */
+            (function(){ var t=document.querySelector(".up-tip");
+              if (t) { t.textContent=""; t.classList.remove("is-on"); }
+              if (window.__upTipState) window.__upTipState.btn = null; })();
             /* Alle Wege, die etwas aendern koennten. */
             var zeile = r.querySelectorAll(".uob-item")[0];
             if (zeile) zeile.click();
@@ -68,9 +75,29 @@ Promise.all(D.map(hol)).then(function(t){
                 zahlVorher: vorZahl,
                 zahlNachher: (r.querySelector(".uob-count")||{}).textContent,
                 ereignisse: SEL.length,
-                zeiger: (function(){ var z=r.querySelector(".uob-item"); return z ? getComputedStyle(z).cursor : null; })()
+                zeiger: (function(){ var z=r.querySelector(".uob-item"); return z ? getComputedStyle(z).cursor : null; })(),
+                /* Ausgegraut und Grund am Zeiger -- so angesagt. Beides messen, nicht nur die
+                   Klasse: die Deckkraft aus dem berechneten Stil, und ob der Tooltip auf ein
+                   echtes mouseover wirklich AUFGEHT (das Attribut allein beweist nichts). */
+                deckkraft: (function(){ var z=r.querySelector(".uob-item"); return z ? getComputedStyle(z).opacity : null; })(),
+                tipAttr: (function(){ var z=r.querySelector(".uob-item"); return z ? z.getAttribute("data-tip") : null; })(),
+                /* Der Tooltip aus core geht mit 60ms Verzoegerung auf. Sofort danach zu lesen
+                   heisst, den leeren Kasten zu lesen -- genau das hat der erste Versuch gemessen.
+                   Also ausloesen, warten, dann lesen (siehe tipSpaeter unten). */
+                tipSofort: (function(){
+                  var z=r.querySelector(".uob-item"); if (!z) return null;
+                  try { z.dispatchEvent(new MouseEvent("mouseover", { bubbles: true })); } catch(e){ return "kein Ereignis"; }
+                  var t = document.querySelector(".up-tip");
+                  return t ? ((t.textContent || "").trim().slice(0, 60) || "(leer)") : "kein .up-tip";
+                })()
               };
-              ok();
+              /* Nach dem Ausloesen warten und erneut lesen. */
+              setTimeout(function(){
+                var t = document.querySelector(".up-tip");
+                R[name].tipSpaeter = t ? ((t.textContent || "").trim().slice(0, 60) || "(leer)") : "kein .up-tip";
+                R[name].tipAn = !!(t && t.className.indexOf("is-on") >= 0);
+                ok();
+              }, 1400);
             }, 250);
           }, 350);
         }, 500);

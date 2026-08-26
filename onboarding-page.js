@@ -988,6 +988,26 @@
       }
       return "";
     }
+    /* Und wenn keiner der bekannten Namen passt: ueber ALLES suchen, was das Projekt mitbringt,
+       per Muster. Fuenf Runden lang stand hier nur eine Liste, und jede Runde hiess "noch ein Name
+       fehlt". Ein Muster hoert damit auf.
+       Der Wert muss sich als Zeitpunkt LESEN lassen -- ein Feld created_by mit einer Nutzerkennung
+       traegt "creat" im Namen und ist keines. Ohne diese Pruefung stuende im Tor eine Uuid. */
+    function zeitNachMuster(o, muster) {
+      if (!o || typeof o !== "object") return "";
+      for (var k in o) {
+        if (!Object.prototype.hasOwnProperty.call(o, k)) continue;
+        if (!muster.test(k)) continue;
+        var v = txt(o[k]);
+        if (!v || v.length < 8) continue;
+        var d = new Date(v);
+        if (!isNaN(d.getTime())) return v;
+      }
+      return "";
+    }
+    function zeitFeld(o, namen, muster) {
+      return ersteZeit(o, namen) || zeitNachMuster(o, muster);
+    }
     function viewResume() {
       var p = state.projekt || {};
       var rs = state.restart || {};
@@ -1002,9 +1022,11 @@
          Ein Feldname, der nicht passt, ist hier nicht unterscheidbar von "kein Datum vorhanden":
          die Zeile bleibt einfach weg, und das ist die Meldung, die am schwersten zu finden ist.
          Viermal gemeldet am 26.08. */
-      var erstellt = ersteZeit(p, ["created_at", "createdAt", "created", "created_on", "inserted_at"]);
-      var geaendert = ersteZeit(p, ["updated_at", "updatedAt", "updated", "last_updated",
-                                    "modified_at", "changed_at"]);
+      var erstellt = zeitFeld(p, ["created_at", "createdAt", "created", "created_on", "inserted_at"],
+                              /creat|insert|start|begin|angeleg/i);
+      var geaendert = zeitFeld(p, ["updated_at", "updatedAt", "updated", "last_updated",
+                                   "modified_at", "changed_at"],
+                               /updat|modif|chang|edit|touch|geaender/i);
       var laeuft = istJa(rs.run_in_progress);
       var darf = istJa(rs.allowed);
 
@@ -1115,6 +1137,10 @@
        Bewusst an den PROMPTS und nicht an einem eigenen Merker: existieren keine (der Lauf ist
        fehlgeschlagen), darf der Nutzer die Auswahl aendern und es erneut versuchen. */
     function themenGesperrt() { return isArr(state.prompts) && state.prompts.length > 0; }
+    /* Der Grund am Zeiger, EINMAL formuliert: er steht an jeder Zeile, und zwei Wortlaute fuer
+       dieselbe Sache waeren zwei Aussagen. Kurz, weil ein Tooltip kurz ist -- die lange Fassung
+       steht im Vorspann darueber. */
+    var FEST_TIP = "Locked: your prompts are already built on these topics.";
 
     function viewTopics() {
       var n = anzahl(state.selTopics);
@@ -1142,10 +1168,17 @@
                   var an = !!state.selTopics[t.id];
                   /* Gesperrt heisst: KEIN data-pick. Die Sperre steht damit im Markup und nicht
                      nur im Aussehen -- ein Klick findet gar kein Ziel mehr. */
+                  /* is-blocked ist die vorhandene Sprache fuer "kann gerade nicht gewaehlt
+                     werden" (das Wettbewerber-Limit benutzt sie). Dieselbe Bedeutung, also
+                     dieselbe Klasse und derselbe Wert -- kein zweites Ausgegraut daneben.
+                     data-tip statt disabled: ein disabled-Knopf feuert in Chrome keine
+                     Mausereignisse, und der Tooltip aus core haengt an mouseover auf [data-tip].
+                     Genau dieselbe Paarung benutzt der gesperrte Weiter-Knopf in dieser Datei. */
                   return '<button class="uob-item is-slim is-plain' + (an ? " is-on" : "") +
-                           (fest ? " is-fest" : "") + '" type="button" role="checkbox"' +
+                           (fest ? " is-fest is-blocked" : "") + '" type="button" role="checkbox"' +
                            ' aria-checked="' + (an ? "true" : "false") + '"' +
-                           (fest ? ' aria-disabled="true"' : ' data-pick="topics"') +
+                           (fest ? ' aria-disabled="true" data-tip="' + esc(FEST_TIP) + '"'
+                                 : ' data-pick="topics"') +
                            ' data-id="' + esc(t.id) + '">' +
                     '<span class="uob-check">' + ic("check", 3) + '</span>' +
                     /* Nur Farbe und Name. Die Beschreibung stand als zweite Zeile darunter und
@@ -1172,7 +1205,8 @@
     function eigeneThemenHtml() {
       var fest = themenGesperrt();
       var html = state.eigene.map(function (e, i) {
-        return '<div class="uob-item is-slim is-plain' + (fest ? " is-fest" : "") + '" data-eigen="' + i + '">' +
+        return '<div class="uob-item is-slim is-plain' + (fest ? " is-fest is-blocked" : "") +
+          '"' + (fest ? ' data-tip="' + esc(FEST_TIP) + '"' : "") + ' data-eigen="' + i + '">' +
           '<span class="uob-check' + (txt(e.name) ? "" : " is-leer") + '">' + ic("check", 3) + '</span>' +
           '<span class="uob-swatch" style="--uob-sw:' + esc(e.farbe) + '"></span>' +
           /* Gesperrt: das Feld liest sich noch, aber es nimmt nichts an. readonly und nicht

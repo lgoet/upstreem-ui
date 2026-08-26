@@ -31,6 +31,15 @@ Promise.all(D.map(hol)).then(function(t){
     b.project.last_updated = b.project.updated_at; delete b.project.updated_at;
     ROH = JSON.stringify(b);
   }
+  /* ?felder=muster: Namen, die in KEINER Liste stehen, aber wie Zeitfelder heissen. Dazu ein
+     created_by mit einer Uuid -- es traegt "creat" im Namen und ist kein Zeitpunkt; stuende es im
+     Tor, waere die Mustersuche schlimmer als die Liste. */
+  if (q.get("felder") === "muster") {
+    b.project.record_created_at = b.project.created_at; delete b.project.created_at;
+    b.project.row_changed_at = b.project.updated_at; delete b.project.updated_at;
+    b.project.created_by = "aea6e317-d901-419b-b2b2-5ca3573ea2f5";
+    ROH = JSON.stringify(b);
+  }
   /* ?felder=keine: gar keine Zeiten. Dann darf auch kein leerer Kasten stehen. */
   if (q.get("felder") === "keine") {
     delete b.project.created_at; delete b.project.updated_at;
