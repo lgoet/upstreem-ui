@@ -92,40 +92,32 @@
 .uob-welt {
   position: absolute; inset: 0; z-index: -1; pointer-events: none;
   opacity: 0; transition: opacity var(--uob-in) var(--uob-ease);
-}
-.uob-root.is-welt .uob-welt { opacity: .4; }
-.uob-root[data-theme="dark"].is-welt .uob-welt { opacity: .2; }
-/* Auf dem Telefon nicht: dort fuellt der Inhalt den Schirm, und eine Punktwolke dahinter macht die
-   Beschriftungen schlechter lesbar, ohne etwas zu zeigen. */
-.uob-root.is-narrow .uob-welt { display: none; }
-
-.uob-welt-scharf, .uob-welt-huelle, .uob-welt-weich { position: absolute; inset: 0; }
-.uob-welt-scharf, .uob-welt-weich {
   -webkit-mask-image: url("onboarding-world.svg"); mask-image: url("onboarding-world.svg");
   -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
   -webkit-mask-position: center; mask-position: center;
   /* cover: die Karte fuellt die Flaeche und sitzt mittig, gleich welches Seitenverhaeltnis der
      Bildschirm hat. */
   -webkit-mask-size: cover; mask-size: cover;
-}
-/* Die scharfe Ebene hat in der Mitte ein LOCH -- dort uebernimmt die weiche. Es steckt in der
-   Farbe und nicht in einer zweiten Maske: zwei Maskenebenen brauchen mask-composite: intersect,
-   und dessen Rueckfall ist "add" -- wo das nicht greift, wuerden sie sich addieren und aus dem
-   Loch wuerde ein grauer Kasten. */
-.uob-welt-scharf {
+  /* In der Mitte nimmt die Punktwolke etwas zurueck -- dort steht der Inhalt (Formular, Tor,
+     Ladebild). Kein Loch, nur leiser: deshalb nicht transparent, sondern dieselbe Farbe mit
+     weniger Deckung.
+     Zwei Zeilen, weil color-mix ein neueres Mittel ist: ein Browser, der es nicht kennt, nimmt
+     die erste und bekommt ein Loch statt eines leisen Bereichs -- das ist das schlechtere Bild,
+     aber immer noch ein Bild. Ohne Rueckfall waere die ganze Regel ungueltig und die Karte weg.
+     Die Farbe steht hier und nicht in der Datei: eine Punktwolke in #F5F5F5 waere auf weissem
+     Grund unsichtbar und auf dunklem zu hell, es braeuchte also zwei Dateien, die auseinander
+     laufen. */
   background-image: radial-gradient(ellipse 26% 34% at 50% 50%,
-                    transparent 42%, var(--vc-third) 100%);
-}
-/* Und die weiche bringt GENAU das mit, was der scharfen fehlt: die beiden Verlaeufe sind
-   komplementaer, deshalb gibt es keine Naht dazwischen. */
-.uob-welt-weich {
+                    transparent 0%, var(--vc-third) 100%);
   background-image: radial-gradient(ellipse 26% 34% at 50% 50%,
-                    var(--vc-third) 42%, transparent 100%);
+                    color-mix(in srgb, var(--vc-third) 45%, transparent) 0%,
+                    var(--vc-third) 100%);
 }
-/* Der Blur sitzt an der HUELLE und nicht am Kind. filter wirkt vor der Maske: auf demselben
-   Element haette die scharfe Punktmaske das Verwaschene wieder scharf geschnitten, und man haette
-   nichts gesehen. So wird erst gezeichnet und maskiert, dann verwaschen. */
-.uob-welt-huelle { filter: blur(3px); }
+.uob-root.is-welt .uob-welt { opacity: .4; }
+.uob-root[data-theme="dark"].is-welt .uob-welt { opacity: .2; }
+/* Auf dem Telefon nicht: dort fuellt der Inhalt den Schirm, und eine Punktwolke dahinter macht die
+   Beschriftungen schlechter lesbar, ohne etwas zu zeigen. */
+.uob-root.is-narrow .uob-welt { display: none; }
 
 /* ---------- Kopfzeile ----------
    Logo links, die drei Nebenwege rechts. "Dashboard" und "Log out" sind bewusst Textknoepfe in

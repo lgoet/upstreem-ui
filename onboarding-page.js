@@ -675,14 +675,12 @@
     function shell() {
       var logo = (istDunkelRoh() && attr("data-logo-dark")) || attr("data-logo");
       return '' +
-      /* Die Weltkarte. Zwei Ebenen, und sie sind ECHTE Elemente und keine Pseudoelemente: filter
-         wirkt VOR der Maske, ein blur auf demselben Element wuerde von der scharfen Punktmaske
-         wieder scharf geschnitten. Also blurrt eine Huelle das fertig gezeichnete Kind.
+      /* Die Weltkarte. EIN Element -- der Blur ist wieder raus, und damit auch die zweite Ebene,
+         die es nur gab, weil filter vor der Maske wirkt und deshalb eine eigene Huelle brauchte.
+         Es bleibt ein Element und keine Pseudoelemente, weil das Ausblenden beim Schrittwechsel
+         etwas braucht, das im Dokument BLEIBT.
          aria-hidden, weil hier nichts steht, was jemand vorgelesen bekommen muesste. */
-      '<div class="uob-welt" data-welt aria-hidden="true">' +
-        '<span class="uob-welt-scharf"></span>' +
-        '<span class="uob-welt-huelle"><span class="uob-welt-weich"></span></span>' +
-      '</div>' +
+      '<div class="uob-welt" data-welt aria-hidden="true"></div>' +
       '<div class="uob-top">' +
         /* onerror: eine Adresse, die ins Leere zeigt, hinterlaesst sonst das Bruchbild-Symbol
            des Browsers oben links -- auf dem ersten Bildschirm eines neuen Nutzers das denkbar
