@@ -1137,6 +1137,11 @@
      ueberblendbar ist. */
   transition: opacity var(--uob-t) var(--uob-ease), background var(--uob-t) var(--uob-ease),
               width var(--uob-t) var(--uob-ease);
+  /* Waehrend die Breite laeuft, ist der Knopf fuer einen Moment schmaler als seine Beschriftung --
+     ohne nowrap brach "Proceed to checkout" dort auf zwei Zeilen und sprang beim Ankommen zurueck
+     auf eine. Gemeldet am 26.08. Das overflow gehoert dazu: die Beschriftung soll dabei hinter der
+     Kante hervorkommen und nicht neben dem Knopf stehen. */
+  white-space: nowrap; overflow: hidden;
 }
 .uob-next:hover:not(:disabled):not(.is-blocked) { opacity: .9; }
 /* is-blocked sieht aus wie :disabled, IST es aber nicht -- der Knopf muss hoverbar bleiben,
