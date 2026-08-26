@@ -1,0 +1,82 @@
+<meta charset="utf-8"><title>onboarding: Neuladen im Ladebild -- wohin?</title>
+<style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif}
+#b{padding:0} #out{padding:10px;font:11px/1.45 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body><div id="b"></div><pre id="out">laeuft…</pre>
+<script>
+/* Gemeldet am 26.08.: Neuladen im Ladebild landet im Formular, obwohl zehn Wettbewerber und acht
+   Themen im Buendel liegen. Mit ?step=competitors in der Adresse geht es -- also entschied allein
+   die Adresse, und die traegt nach einem Neuladen im Ladebild noch "brand".
+
+   Geprueft wird mit dem ECHTEN Buendel des Nutzers (Bubble, status ready, Phase 5, keine Prompts)
+   und zwar aus JEDER Adresse, die dabei vorkommen kann. Dazu: steht das Tor davor, wenn ein Lauf
+   laeuft? Und laeuft die Uhr nach einem Neuladen? */
+["uobStart","uobStep","uobTopics","uobWorkflowStart","uobSelect","uobFinish","uobExit"].forEach(function(n){
+  window["bubble_fn_"+n]=function(){}; });
+window.__err=[]; window.addEventListener("error",function(e){window.__err.push(String(e.message));});
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){ return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=["core.css","core.js","onboarding-page.css","onboarding-page.js",
+       "bubble/onboarding_page_bubble.html","_h_uob_bubble.json"];
+var T={}, R={};
+Promise.all(D.map(hol)).then(function(t){
+  D.forEach(function(f,i){ T[f]=t[i]; });
+  ["core.css","onboarding-page.css"].forEach(function(f){ var s=document.createElement("style"); s.textContent=T[f]; document.head.appendChild(s); });
+  [ "core.js","onboarding-page.js"].forEach(function(f){ var j=document.createElement("script"); j.textContent=T[f]; document.head.appendChild(j); });
+  return new Promise(function(ok){ setTimeout(ok,600); });
+}).then(function(){
+  var ROH = T["_h_uob_bubble.json"];
+  function mount(step){
+    document.getElementById("b").innerHTML="";
+    var u=new URL(window.location.href);
+    if (step) u.searchParams.set("step",step); else u.searchParams.delete("step");
+    window.history.replaceState({}, "", u.toString());
+    var w=document.createElement("div"); w.innerHTML=wurzelAus(T["bubble/onboarding_page_bubble.html"]);
+    var r=w.querySelector(".uob-root"); var id="hg"+Math.random().toString(36).slice(2,7);
+    r.setAttribute("data-instance",id); r.setAttribute("data-cdn-pin","hg");
+    document.getElementById("b").appendChild(r);
+    return new Promise(function(ok){ var n=0;
+      (function warte(){ if (r.__uobController || n++>40) return ok({r:r,id:id}); setTimeout(warte,60); })(); });
+  }
+  function bereich(r){ var p=r.querySelector(".uob-pane:not(.is-off)"); return p?p.getAttribute("data-pane"):"-"; }
+  function lauf(name, step, aendern){
+    return mount(step).then(function(m){
+      var b = JSON.parse(ROH);
+      if (aendern) aendern(b);
+      window.setOnboardingBundle(m.id, JSON.stringify(b));
+      return new Promise(function(ok){ setTimeout(function(){
+        var vorTor = bereich(m.r);
+        var uhrVorher = m.r.querySelector("[data-warte]").classList.contains("is-on");
+        /* Wenn ein Tor steht: durchgehen, wie ein Nutzer. */
+        var t = m.r.querySelector("[data-resume]"); if (t) t.click();
+        setTimeout(function(){
+          R[name] = { adresse: step || "(keine)", vorTor: vorTor, torStand: !!t,
+                      danach: bereich(m.r), schritt: new URL(window.location.href).searchParams.get("step"),
+                      uhr: uhrVorher || m.r.querySelector("[data-warte]").classList.contains("is-on") };
+          ok();
+        }, 400);
+      }, 600); });
+    });
+  }
+  return lauf("A_adresse_brand", "brand")
+    .then(function(){ return lauf("B_ohne_adresse", ""); })
+    .then(function(){ return lauf("C_adresse_competitors", "competitors"); })
+    .then(function(){ return lauf("D_adresse_topics", "topics"); })
+    /* Lauf laeuft: kein Tor, direkt ins Ladebild -- und KEINE Uhr, weil kein Klick ihn gestartet
+       hat. */
+    .then(function(){ return lauf("E_lauf_laeuft", "brand", function(b){
+        b.project.status = "processing"; b.project.status_phase = 2;
+        b.project.progress_percent = 30;
+        b.restart.run_in_progress = true; b.restart.allowed = false; b.restart.reason = "run_in_progress";
+        b.competitors = []; b.topics = [];
+      }); })
+    /* Und der Fall aus der Meldung: Lauf laeuft laut restart, aber die Daten sind schon da. */
+    .then(function(){ return lauf("F_lauf_laeuft_daten_da", "brand", function(b){
+        b.restart.run_in_progress = true;
+      }); })
+    .then(function(){
+      R.fehler = window.__err.slice(0,3);
+      document.getElementById("out").textContent = JSON.stringify(R,null,1);
+      window.__R=R; window.__fertig=true;
+    });
+}).catch(function(e){ document.getElementById("out").textContent="FEHLER: "+e.message+"\n"+e.stack; window.__fertig=true; });
+</script>

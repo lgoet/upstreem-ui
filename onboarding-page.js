@@ -3063,7 +3063,7 @@
         state.form.website = n.url;
         setzeFormWerte();
         state.banner = "";
-        warteStarten("main");
+        warteStarten("main", true);
         fire("data-start-fn", "uobStart", {
           brand_name: txt(state.form.name),
           website_input: roheEingabe,
@@ -3089,7 +3089,7 @@
         state.promptsFuer = jetztGewaehlt;
         /* Die Themenauswahl ist der Anstoss fuer die Prompts -- deshalb ein eigenes Ereignis und
            nicht nur uobStep: der Workflow dahinter tut etwas, das dauert. */
-        warteStarten("prompts");
+        warteStarten("prompts", true);
         fire("data-topics-fn", "uobTopics", {
           topic_ids: state.topics.filter(function (t) { return state.selTopics[t.id]; })
             .map(function (t) { return t.id; }).join(","),
@@ -3127,7 +3127,10 @@
        zwischen zwei Meldungen einfriert, liest sich als Absturz -- die Recherche zu Ladeanzeigen
        ist da eindeutig, und vier Phasen mit je zehn Sekunden sind lang genug, dass es auffiele. */
     var tick = null, t0 = 0, hilfeUhr = null;
-    function warteStarten(art) {
+    /* mitUhr: hat ein KLICK diesen Lauf gestartet? Dann zaehlt die Uhr. Kommt der Wartezustand
+       dagegen aus den Daten (Neuladen mitten im Lauf), bleibt sie weg. */
+    function warteStarten(art, mitUhr) {
+      uhrAn = !!mitUhr;
       state.warten = art;
       state.phase = 0;
       state.fortschritt = 0;
@@ -3153,10 +3156,14 @@
        jeder Phase auf null zurueck.
        Der Hinweis kommt nach dreissig Sekunden dazu, und nur im HAUPTLAUF: "3-5 minutes" waere
        beim Promptlauf, der rund neunzig Sekunden braucht, eine falsche Auskunft. */
-    var warteAb = 0, warteSek = -1;
+    /* Die Uhr laeuft nur, wenn der Lauf in DIESER Seitenansicht gestartet wurde. Nach einem
+       Neuladen weiss niemand, wann er begonnen hat -- eine Uhr, die dann bei 0:00 anfaengt, zaehlt
+       etwas anderes als die Wartezeit und ist damit falsch. Ohne Uhr auch kein Hinweis: der Satz
+       "das dauert 3-5 Minuten" haengt an einer Zeit, die es hier nicht gibt. So angesagt am 26.08. */
+    var warteAb = 0, warteSek = -1, uhrAn = false;
     function warteUhrZeichnen() {
       if (!elWarte) return;
-      var an = !!state.warten;
+      var an = !!state.warten && uhrAn;
       elWarte.classList.toggle("is-on", an);
       if (!an) { warteSek = -1; return; }
       var sek = Math.max(0, Math.floor((new Date().getTime() - warteAb) / 1000));
@@ -3425,7 +3432,13 @@
 
     /* Der Bootzustand endet, sobald IRGENDEINE Antwort da ist -- auch eine leere, denn "kein
        Projekt" ist eine gueltige Antwort und bedeutet: neuer Nutzer, Formular. */
-    var BOOT_MAX_MS = 6000, bootUhr = null;
+    /* Zwoelf Sekunden und nicht sechs. Auf der echten Seite vergehen bis zur Antwort der RPC
+       gemessen neun (25.08.) -- mit sechs fiel der Bootzustand vorher aus, das Formular stand
+       kurz da und wurde von der Antwort wieder abgeloest. Genau dieses Aufblitzen war gemeldet.
+       Der Preis: antwortet gar nichts, sieht ein neuer Nutzer zwoelf Sekunden ein Skelett statt
+       sechs. Das ist der seltenere Fall und der harmlosere -- ein Formular, das erscheint und
+       wieder verschwindet, kostet Vertrauen. */
+    var BOOT_MAX_MS = 12000, bootUhr = null;
     function bootBeenden() {
       if (bootUhr) { window.clearTimeout(bootUhr); bootUhr = null; }
       if (!state.hochfahren) return false;
@@ -3463,7 +3476,17 @@
     function zielSchritt() {
       var a = schrittBeimAufbau ? stepIndex(schrittBeimAufbau) : -1;
       var b = (isArr(state.prompts) && state.prompts.length) ? stepIndex("prompts") : -1;
-      var i = Math.max(a, b);
+      /* DRITTER Beleg, und er hat gefehlt: liegen Wettbewerber oder Themen vor, ist der grosse
+         Lauf durch -- und wer damit fertig ist, gehoert mindestens auf Competitors.
+         Ohne diese Zeile entschied allein die Adresse, und die traegt nach einem Neuladen mitten
+         im Ladebild noch "brand" (Wartezustaende stehen nicht in der Adresse). Der Nutzer landete
+         also auf dem Formular, obwohl zehn Wettbewerber und acht Themen im Buendel lagen -- genau
+         so gemeldet am 26.08.
+         Themen ZAEHLEN mit, obwohl sie erst der Schritt danach sind: sie entstehen im selben Lauf
+         wie die Wettbewerber, ihr Vorliegen sagt also dasselbe. */
+      var c = ((isArr(state.brands) && state.brands.length) ||
+               (isArr(state.topics) && state.topics.length)) ? stepIndex("competitors") : -1;
+      var i = Math.max(a, Math.max(b, c));
       return i >= 0 ? STEPS[i].key : "competitors";
     }
     function einstieg(b) {
@@ -3559,10 +3582,15 @@
            am schwersten zu finden ist. */
         if (state.restart && !torGeprueft) {
           torGeprueft = true;
+          /* Laeuft gerade ein Lauf, gibt es nichts zu entscheiden: der Nutzer gehoert ins
+             Ladebild und nicht vor eine Frage, deren eine Antwort ohnehin gesperrt waere.
+             So angesagt am 26.08.: Neuladen im Ladebild fuehrt zurueck ins Ladebild. */
+          if (istJa(state.restart.run_in_progress)) state.restart.__keinTor = true;
           /* Nicht, wenn der Nutzer schon handelt: auf der echten Seite vergehen bis zur Antwort
              der RPC gut und gerne neun Sekunden, und wer in der Zeit angefangen hat, darf nicht
              vor eine Frage gestellt werden, die er langst beantwortet hat. */
-          if (istJa(state.restart.has_onboarding) && !angefasst) state.torAuf = true;
+          if (istJa(state.restart.has_onboarding) && !angefasst &&
+              !state.restart.__keinTor) state.torAuf = true;
         }
         /* Das PROJEKT zuerst, und das ist keine Kosmetik: listeSetzen zeichnet, wenn keine Uhr
            laeuft -- dreimal, einmal je Liste. Stand das Projekt danach, zeichneten diese drei

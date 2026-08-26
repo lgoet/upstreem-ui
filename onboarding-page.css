@@ -144,19 +144,18 @@
      genau das sieht man bei etwas, das mittig steht. */
   font-variant-numeric: tabular-nums;
 }
-/* Der Hinweis haengt rechts an der Uhr und nimmt keinen Platz im Fluss -- so bleibt die Uhr
-   mittig, vorher wie nachher. Er faehrt beim Erscheinen ein Stueck heran: er soll sich
-   anschliessen und nicht auftauchen. */
+/* Der Hinweis steht UNTER der Uhr, 8px darunter, und faehrt beim Erscheinen nach oben in seine
+   Lage. Er haengt absolut an der Uhr und nimmt keinen Platz im Fluss -- so bleibt die Uhr mittig,
+   vorher wie nachher, und sie rueckt nicht, wenn der Satz dazukommt.
+   translate mit beiden Achsen in EINEM Wert: zwei transform-Angaben ueberschreiben sich, und die
+   Mittigkeit (-50%) muss in jedem Zustand mitkommen. */
 .uob-warte-hint {
-  position: absolute; left: calc(100% + 8px); top: 0; white-space: nowrap;
+  position: absolute; top: calc(100% + 8px); left: 50%; white-space: nowrap;
   font-size: 12.5px; color: var(--vc-third);
-  opacity: 0; transform: translateX(-6px);
+  opacity: 0; transform: translate(-50%, 6px);
   transition: opacity var(--uob-in) var(--uob-ease), transform var(--uob-in) var(--uob-ease);
 }
-.uob-warte-hint.is-on { opacity: 1; transform: none; }
-/* Auf dem Telefon ist rechts der Uhr kein Platz fuer den Satz -- dort steht er darunter. */
-.uob-root.is-narrow .uob-warte-hint { left: 50%; top: 100%; transform: translateX(-50%); }
-.uob-root.is-narrow .uob-warte-hint.is-on { transform: translateX(-50%); }
+.uob-warte-hint.is-on { opacity: 1; transform: translate(-50%, 0); }
 
 /* ---------- Kopfzeile ----------
    Logo links, die drei Nebenwege rechts. "Dashboard" und "Log out" sind bewusst Textknoepfe in
