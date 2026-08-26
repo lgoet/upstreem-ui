@@ -19,6 +19,13 @@ var PLAENE=[{id:"p1",name:"Starter",description:"For a first brand.",monthly_pri
    hier auch nicht Enterprise, sondern traegt nur die 0. Waere der Name das Kriterium, wuerde
    dieser Durchlauf gruen und die echte Seite bliebe kaputt. */
 {id:"p4",name:"Enterprise",description:"For large organisations.",monthly_price_eur:899,yearly_price_eur:8630,prompts_per_day:1000,competitors_max_active:60,support_label:"Personal account manager",trial_days:0,sort_order:4}];
+/* ?trial=rest: Enterprise traegt eine Testdauer von 14 UND ein ausdrueckliches has_trial false.
+   Genau der gemeldete Fall -- die Zahl steht im Katalog, die Testphase gibt es nicht. */
+var q0 = new URL(window.location.href).searchParams.get("trial");
+if (q0 === "rest")   { PLAENE[3].trial_days = 14; PLAENE[3].has_trial = false; }
+if (q0 === "leer")   { delete PLAENE[3].trial_days; }
+if (q0 === "nein")   { PLAENE[3].trial_days = 14; PLAENE[3].no_trial = true; }
+if (q0 === "jatrotz"){ PLAENE[3].trial_days = 0;  PLAENE[3].has_trial = true; }
 Promise.all(D.map(hol)).then(function(t){
   D.forEach(function(f,i){ T[f]=t[i]; });
   ["core.css","onboarding-page.css"].forEach(function(f){ var s=document.createElement("style"); s.textContent=T[f]; document.head.appendChild(s); });

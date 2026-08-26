@@ -1488,7 +1488,19 @@
       }
       return null;
     }
-    function hatTest(pl) { return pl ? num(pl.trial_days) > 0 : false; }
+    /* Hat DIESER Tarif eine Testphase? Ein ausdrueckliches Ja oder Nein gewinnt ueber die Zahl:
+       ein Tarif kann im Katalog eine Testdauer stehen haben und trotzdem keine Testphase anbieten
+       -- die Zahl ist dann ein Rest, und der Knopf verspraeche etwas, das niemand einloest.
+       Gemeldet am 26.08.: bei Enterprise stand "Start free trial", obwohl es dort keine gibt. */
+    function hatTest(pl) {
+      if (!pl) return false;
+      var flaggen = ["has_trial", "trial", "trial_enabled", "trial_available"];
+      for (var i = 0; i < flaggen.length; i++) {
+        if (pl[flaggen[i]] != null && txt(pl[flaggen[i]]) !== "") return istJa(pl[flaggen[i]]);
+      }
+      if (pl.no_trial != null && txt(pl.no_trial) !== "") return !istJa(pl.no_trial);
+      return num(pl.trial_days) > 0;
+    }
     /* Der Knopf sagt, was der Klick TUT. Ein Tarif ohne Testphase fuehrt direkt zur Kasse, und
        "Start free trial" waere dort eine Zusage, die niemand einhaelt.
        Entschieden wird das an trial_days des GEWAEHLTEN Tarifs und nicht am Namen: "Enterprise"
@@ -1510,10 +1522,13 @@
     function testText() {
       var mit = 0, ohne = 0, tage = null, gleich = true;
       for (var i = 0; i < state.plans.length; i++) {
-        var t = num(state.plans[i].trial_days);
-        if (t != null && t > 0) {
+        /* Dieselbe Frage wie am Knopf, also dieselbe Funktion. Vorher zaehlte hier die Zahl
+           allein -- damit konnten Knopf und Vorspann verschiedener Meinung sein. */
+        if (hatTest(state.plans[i])) {
           mit++;
-          if (tage == null) tage = t; else if (t !== tage) gleich = false;
+          var t = num(state.plans[i].trial_days);
+          if (t != null && t > 0) { if (tage == null) tage = t; else if (t !== tage) gleich = false; }
+          else gleich = false;
         } else ohne++;
       }
       if (!mit) return "Pick the plan that fits your team.";
@@ -1916,6 +1931,36 @@
       }
     }
 
+    /* Die Beschriftung des Knopfs wechseln und die Breite dabei MITFAHREN lassen. Eine
+       Inhaltsbreite (auto) laesst sich nicht ueberblenden, also wird gemessen: erst die alte
+       Breite festschreiben, dann den Text tauschen und die neue Breite messen, dann darauf fahren.
+       Das Lesen von offsetWidth dazwischen erzwingt die Neuberechnung -- ohne diesen Zwischenschritt
+       fasst der Browser beide Zuweisungen zu einer zusammen und es gibt keinen Uebergang.
+       Danach faellt die feste Breite wieder ab, damit der Knopf bei einer Textaenderung von aussen
+       (oder in einer anderen Sprache) nicht auf einem alten Mass klebt.
+       200ms wie jeder Zustandswechsel dieser Komponente (--uob-t). */
+    var knopfUhr = null;
+    function knopfTextSetzen(neuText) {
+      if (!elNextTxt) return;
+      if (elNextTxt.textContent === neuText) return;
+      var sichtbar = elNext && elNext.offsetWidth > 0;
+      if (!sichtbar) { elNextTxt.textContent = neuText; return; }
+      var altBreite = elNext.offsetWidth;
+      elNext.style.width = "";
+      elNextTxt.textContent = neuText;
+      var neuBreite = elNext.offsetWidth;
+      if (neuBreite === altBreite) return;
+      elNext.style.width = altBreite + "px";
+      /* Lesen erzwingt die Neuberechnung. Ohne das kein Uebergang. */
+      void elNext.offsetWidth;
+      elNext.style.width = neuBreite + "px";
+      if (knopfUhr) window.clearTimeout(knopfUhr);
+      knopfUhr = window.setTimeout(function () {
+        knopfUhr = null;
+        elNext.style.width = "";
+      }, 260);
+    }
+
     function renderNav() {
       var k = ansichtKey();
       var wartet = k === "load1" || k === "load2";
@@ -1952,7 +1997,7 @@
 
       var texte = { brand: "Continue", competitors: "Continue", topics: "Continue",
                     prompts: "Continue", plan: planKnopfText() };
-      elNextTxt.textContent = texte[state.step] || "Continue";
+      knopfTextSetzen(texte[state.step] || "Continue");
       /* Mindestens ein Thema. Ohne Thema entstehen keine Prompts, und ohne Prompts hat das
          fertige Konto nichts zu messen -- der Schritt ist der einzige, der wirklich noetig ist.
          Deshalb hier kein Ueberspringen und ein gesperrter Weiter-Knopf, solange nichts steht.

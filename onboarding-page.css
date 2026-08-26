@@ -1131,7 +1131,12 @@
   cursor: pointer;
   /* Ohne Schatten wie jeder Knopf der App -- .up-btn in core traegt keinen. */
   display: inline-flex; align-items: center; justify-content: center; gap: 9px;
-  transition: opacity var(--uob-t) var(--uob-ease), background var(--uob-t) var(--uob-ease);
+  /* width faehrt mit: die Beschriftung wechselt am Tarifschritt zwischen "Start free trial" und
+     "Proceed to checkout", und der Knopf steht rechts -- seine linke Kante wandert dabei. Ohne
+     Uebergang springt sie. Den Zielwert setzt das JS in Pixeln, weil eine Inhaltsbreite nicht
+     ueberblendbar ist. */
+  transition: opacity var(--uob-t) var(--uob-ease), background var(--uob-t) var(--uob-ease),
+              width var(--uob-t) var(--uob-ease);
 }
 .uob-next:hover:not(:disabled):not(.is-blocked) { opacity: .9; }
 /* is-blocked sieht aus wie :disabled, IST es aber nicht -- der Knopf muss hoverbar bleiben,
