@@ -5452,11 +5452,21 @@
       var raw = (p.company_id != null) ? p.company_id : (p.id != null) ? p.id : "";
       var id = String(raw);
       if (!id) return;
-      var day = String(p.day);
+      /* dayKey und NICHT der Rohwert. Der Schluessel wird gleich SORTIERT, und sortiert wird als
+         Text -- bei ISO ist das die Zeitachse, bei allem anderen das Alphabet. Ein Bubble-Ausdruck
+         schickt regelmaessig "Aug 6, 2026 12:00 am" oder "August 1, 2026", und daraus wurde in der
+         Monatsansicht April, August, February, July, June, March, May: die Werte richtig, die
+         Reihenfolge alphabetisch. Genau so gemeldet am 26.08. fuer Citations Share Over Time.
+         Zweiter Gewinn: zwei Schreibweisen desselben Tages fallen jetzt auf EINEN Punkt zusammen.
+         Vorher waren sie zwei Labels, also zwei Spalten fuer denselben Tag. */
+      var day = dayKey(p.day);
+      if (!day) return;
       daySet[day] = true;
       var v = (p.visibility_pct != null) ? Number(p.visibility_pct) : (p.share_pct != null ? Number(p.share_pct) : 0);
       (byId[id] = byId[id] || {})[day] = v || 0;
     });
+    /* Sortieren als Text ist ab hier richtig: die Schluessel sind YYYY-MM-DD, und dort ist die
+       alphabetische Reihenfolge die zeitliche. */
     var labels = Object.keys(daySet).sort();
     var ids = Object.keys(byId);
     ids.forEach(function(id){

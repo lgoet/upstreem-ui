@@ -1,0 +1,87 @@
+<meta charset="utf-8"><title>Charts: Reihenfolge der Tage</title>
+<style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif;background:#fff}
+#out{padding:10px;font:11px/1.45 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body><pre id="out">laeuft…</pre>
+<script>
+/* Gemeldet am 26.08.: Citations Share Over Time in domain-detail zeigt die richtigen Werte in
+   FALSCHER Reihenfolge -- in der Monatsansicht alphabetisch (April, August, February, July, June,
+   March, May), in Woche und Tag wirr. URL Share Over Time in derselben Komponente ist richtig.
+
+   buildLineDatasets sammelt die Tage in einem Objekt und sortiert die Schluessel mit .sort(), also
+   als TEXT. Bei ISO ist das die Zeitachse. Bei allem anderen das Alphabet -- und ein Bubble-
+   Ausdruck schickt regelmaessig "August 1, 2026" oder "Aug 1, 2026 12:00 am".
+
+   Geprueft wird gegen die ECHTE Serie des Nutzers (ISO, muss unveraendert richtig bleiben) und
+   gegen dieselbe Serie in zwei Bubble-Schreibweisen. Und zur GEGENPROBE dasselbe gegen die Datei,
+   die am Pin liegt: zeigt die alte Fassung den Fehler nicht, misst dieser Aufbau sich selbst. */
+var PIN = "87cdeb0";
+var CDN = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + PIN + "/core.js";
+function hol(u){ return fetch(u,{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(u+" -> "+r.status); return r.text(); }); }
+
+/* Die echte Serie: fuenf Monate ohne Wert, dann Juli und August. */
+var ISO = ["2026-02-01","2026-03-01","2026-04-01","2026-05-01","2026-06-01","2026-07-01","2026-08-01"];
+var WERTE = [null,null,null,null,null,8.18,7.63];
+var MON = ["February","March","April","May","June","July","August"];
+function serie(tage){
+  return tage.map(function(d,i){ return { company_id:"eastsidepartys.ticket.io", day:d, share_pct:WERTE[i] }; });
+}
+var FORMEN = {
+  a_iso:        ISO,
+  b_bubble_lang: MON.map(function(m){ return m + " 1, 2026"; }),
+  c_bubble_kurz: MON.map(function(m){ return m.slice(0,3) + " 1, 2026 12:00 am"; }),
+  /* Und Tage innerhalb eines Monats -- dort schlaegt die Textsortierung anders zu: "12" kommt vor
+     "6". Genau das beschreibt "Wochenansicht von rechts nach links" und "Tagesansicht wirr". */
+  d_tage_im_monat: ["Aug 3, 2026","Aug 6, 2026","Aug 9, 2026","Aug 12, 2026","Aug 15, 2026","Aug 18, 2026","Aug 21, 2026"]
+};
+var R = {};
+function pruefe(UC, name){
+  var erg = {};
+  Object.keys(FORMEN).forEach(function(k){
+    var built = UC.buildLineDatasets(serie(FORMEN[k]), [{ company_id:"eastsidepartys.ticket.io", name:"x", color:"#f00" }], null);
+    var lab = built.labels;
+    /* Richtig heisst: aufsteigend in der ZEIT. Gemessen an Date.parse, nicht am Augenmass. */
+    var zeiten = lab.map(function(l){ return Date.parse(l); });
+    var aufsteigend = zeiten.every(function(t,i){ return i===0 || (!isNaN(t) && !isNaN(zeiten[i-1]) && t >= zeiten[i-1]); });
+    erg[k] = {
+      labels: lab,
+      aufsteigend: aufsteigend,
+      /* Die Werte muessen an ihrem Tag bleiben, nicht nur die Reihenfolge stimmen. */
+      werte: built.datasets[0] ? built.datasets[0].data : null,
+      punkte: lab.length
+    };
+  });
+  R[name] = erg;
+}
+hol("core.js?n="+Math.random()).then(function(lokal){
+  return hol(CDN).then(function(pin){
+    /* Beide Fassungen in eigenen iframes: zwei core.js im selben Fenster ueberschreiben sich das
+       window.UpstreemCore gegenseitig. */
+    function laden(js){
+      return new Promise(function(ok){
+        var ifr=document.createElement("iframe"); ifr.style.cssText="width:1px;height:1px;border:0;position:absolute;left:-9999px";
+        document.body.appendChild(ifr);
+        var d=ifr.contentDocument; d.write("<meta charset='utf-8'>"); d.close();
+        var sc=d.createElement("script"); sc.textContent=js; d.head.appendChild(sc);
+        setTimeout(function(){ ok(ifr.contentWindow.UpstreemCore); }, 120);
+      });
+    }
+    return laden(pin).then(function(ucAlt){
+      R.beweis = { pin: PIN, alt_hat_dayKey_im_builder:
+        pin.indexOf("var day = dayKey(p.day)") >= 0,
+        neu_hat_dayKey_im_builder: lokal.indexOf("var day = dayKey(p.day)") >= 0 };
+      pruefe(ucAlt, "ALT_pin_" + PIN);
+      return laden(lokal).then(function(ucNeu){ pruefe(ucNeu, "NEU_lokal"); });
+    });
+  });
+}).then(function(){
+  /* Zusammenfassung zuerst -- die Details darunter. */
+  var z = {};
+  ["ALT_pin_" + PIN, "NEU_lokal"].forEach(function(f){
+    z[f] = Object.keys(FORMEN).map(function(k){ return k + ":" + (R[f][k].aufsteigend ? "richtig" : "FALSCH"); }).join("  ");
+  });
+  R.zusammenfassung = z;
+  document.getElementById("out").textContent = JSON.stringify(R,null,1);
+  window.__R=R; window.__fertig=true;
+}).catch(function(e){ document.getElementById("out").textContent="FEHLER: "+e.message+"\n"+e.stack; window.__fertig=true; });
+</script>

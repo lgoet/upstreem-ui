@@ -1,0 +1,93 @@
+<meta charset="utf-8"><title>onboarding: Tor -- Pin gegen lokal</title>
+<style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif;background:#fff}
+#b{padding:16px;width:1100px} #out{padding:10px;font:11px/1.4 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body><div id="b"></div><pre id="out">laeuft…</pre>
+<script>
+/* Dreimal habe ich gemessen, dass die zwei Zeitzeilen im Tor mit dem echten Payload erscheinen --
+   und dreimal die LOKALE Datei gemessen. Der Nutzer sieht die vom Pin. Also genau die holen, vom
+   CDN, und dieselbe Frage daran stellen.
+
+   Der Unterschied, um den es geht: im Pin 87cdeb0 wird state.projekt NACH den Listen gesetzt, und
+   die Listen zeichnen. Ob der letzte Durchgang das wieder einfaengt, war meine ANNAHME. Hier wird
+   sie geprueft, gegen dieselbe Datei, die er ausgeliefert bekommt. */
+["uobStart","uobStep","uobTopics","uobWorkflowStart","uobSelect","uobFinish","uobExit"].forEach(function(n){
+  window["bubble_fn_"+n]=function(){}; });
+window.__err=[]; window.addEventListener("error",function(e){window.__err.push(String(e.message));});
+function hol(u){ return fetch(u,{cache:"no-store"}).then(function(r){
+  if(!r.ok) throw new Error(u+" -> "+r.status); return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var PIN = "87cdeb0";
+var CDN = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + PIN + "/";
+var R = {};
+Promise.all([
+  hol("core.css?n="+Math.random()), hol("core.js?n="+Math.random()),
+  hol("onboarding-page.css?n="+Math.random()), hol("onboarding-page.js?n="+Math.random()),
+  hol("bubble/onboarding_page_bubble.html?n="+Math.random()),
+  hol("_h_uob_eastside_voll.json?n="+Math.random()),
+  hol(CDN + "onboarding-page.js"), hol(CDN + "onboarding-page.css")
+]).then(function(t){
+  var LOK_JS = t[3], LOK_CSS = t[2], PIN_JS = t[6], PIN_CSS = t[7];
+  R.beweis = {
+    pin: PIN,
+    pin_bytes: PIN_JS.length, lokal_bytes: LOK_JS.length,
+    /* Der Unterschied in EINER Zeile nachweisen, statt ihn zu behaupten. */
+    pin_projekt_nach_listen: PIN_JS.indexOf('if (isArr(b.competitors)) listeSetzen') <
+                             PIN_JS.indexOf('state.projekt = pr;'),
+    lokal_projekt_vor_listen: LOK_JS.indexOf('state.projekt = pr;') <
+                              LOK_JS.indexOf('if (isArr(b.competitors)) listeSetzen'),
+    pin_hat_datumzeilen: PIN_JS.indexOf('"Last updated"') >= 0
+  };
+  var s1=document.createElement("style"); s1.textContent=t[0]; document.head.appendChild(s1);
+  var j1=document.createElement("script"); j1.textContent=t[1]; document.head.appendChild(j1);
+  var VOLL = t[5], HUELLE = t[4];
+
+  function lauf(name, js, css){
+    /* Jede Fassung in ihrem eigenen Dokument: zwei Fassungen derselben Komponente im selben
+       Fenster wuerden sich die Setter am window gegenseitig ueberschreiben. */
+    return new Promise(function(ok){
+      var ifr = document.createElement("iframe");
+      ifr.style.cssText = "width:1100px;height:620px;border:1px solid #ddd";
+      document.getElementById("b").appendChild(ifr);
+      var d = ifr.contentDocument, w = ifr.contentWindow;
+      w.eval("window.__err=[];addEventListener('error',function(e){__err.push(String(e.message))});" +
+             "['uobStart','uobStep','uobTopics','uobWorkflowStart','uobSelect','uobFinish','uobExit']" +
+             ".forEach(function(n){window['bubble_fn_'+n]=function(){}});");
+      d.write('<meta charset="utf-8"><style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif}</style><div id="m"></div>');
+      d.close();
+      var st=d.createElement("style"); st.textContent=t[0]+"\n"+css; d.head.appendChild(st);
+      var c=d.createElement("script"); c.textContent=t[1]; d.head.appendChild(c);
+      var o=d.createElement("script"); o.textContent=js; d.head.appendChild(o);
+      var wrap=d.createElement("div"); wrap.innerHTML=wurzelAus(HUELLE);
+      var r=wrap.querySelector(".uob-root"); var id="pn"+Math.random().toString(36).slice(2,7);
+      r.setAttribute("data-instance",id); r.setAttribute("data-cdn-pin","pn"); r.setAttribute("data-isdark","no");
+      d.getElementById("m").appendChild(r);
+      var n=0;
+      (function warte(){
+        if (r.__uobController || n++>50){
+          try { w.setOnboardingBundle(id, VOLL); } catch(e){ R[name]={fehler:String(e.message)}; return ok(); }
+          setTimeout(function(){
+            var pane = r.querySelector(".uob-pane:not(.is-off)");
+            R[name] = {
+              pane: pane ? pane.getAttribute("data-pane") : "-",
+              marke: (r.querySelector(".uob-load-name")||{}).textContent || "",
+              domain: (r.querySelector(".uob-load-dom")||{}).textContent || "",
+              zeitzeilen: [].map.call(r.querySelectorAll(".uob-res-meta > div"), function(x){
+                return (x.querySelector("dt")||{}).textContent + " = " + (x.querySelector("dd")||{}).textContent; }),
+              kastenDa: !!r.querySelector(".uob-res-meta"),
+              fehler: (w.__err||[]).slice(0,3)
+            };
+            ok();
+          }, 900);
+        } else setTimeout(warte, 60);
+      })();
+    });
+  }
+  return lauf("A_PIN_87cdeb0", PIN_JS, PIN_CSS)
+    .then(function(){ return lauf("B_lokal_jetzt", LOK_JS, LOK_CSS); })
+    .then(function(){
+      R.fehler = window.__err.slice(0,3);
+      document.getElementById("out").textContent = JSON.stringify(R,null,1);
+      window.__R=R; window.__fertig=true;
+    });
+}).catch(function(e){ document.getElementById("out").textContent="FEHLER: "+e.message+"\n"+e.stack; window.__fertig=true; });
+</script>

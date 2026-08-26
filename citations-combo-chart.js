@@ -138,7 +138,10 @@
       if (raw == null) raw = (p.id != null) ? p.id : (p.company_id != null) ? p.company_id : (p.url != null) ? p.url : (p.domain != null) ? p.domain : "";
       var id = String(raw);
       if (!id) return;
-      var day = String(p.day);
+      /* dayKey und nicht der Rohwert -- die Begruendung steht bei buildLineDatasets in core:
+         der Schluessel wird als TEXT sortiert, und das ist nur bei ISO die Zeitachse. */
+      var day = UC.dayKey ? UC.dayKey(p.day) : String(p.day);
+      if (!day) return;
       daySet[day] = true;
       (byId[id] = byId[id] || {})[day] = Number(p.share_pct) || 0;
     });
@@ -283,7 +286,10 @@
     var granBtns = Array.prototype.slice.call(root.querySelectorAll(".cc-gran-btn"));
     function seriesRangeDays(){
       var days = [];
-      (state.series || []).forEach(function(p){ if (p && p.day != null) days.push(String(p.day)); });
+      /* dayKey: die Liste wird sortiert und dann per Date.parse auf ihre Spanne geprueft. Mit
+         einem formatierten Datum sortiert sie alphabetisch, also stehen vorn und hinten die
+         falschen Tage -- und die Spanne entscheidet, welche Granularitaetsknoepfe frei sind. */
+      (state.series || []).forEach(function(p){ if (p && p.day != null) days.push(UC.dayKey ? UC.dayKey(p.day) : String(p.day)); });
       if (!days.length) return 0;
       days.sort();
       var a = Date.parse(days[0]), b = Date.parse(days[days.length - 1]);
@@ -299,7 +305,7 @@
     }
     function inferGran(series){
       var seen = {};
-      (series || []).forEach(function(p){ if (p && p.day != null) seen[String(p.day)] = 1; });
+      (series || []).forEach(function(p){ if (p && p.day != null) seen[UC.dayKey ? UC.dayKey(p.day) : String(p.day)] = 1; });
       var arr = Object.keys(seen).sort();
       if (arr.length < 2) return null;
       var gaps = [];

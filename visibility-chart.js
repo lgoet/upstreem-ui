@@ -131,7 +131,10 @@
     var curGran = (GRAN_STORE[instanceId] === "week" || GRAN_STORE[instanceId] === "month") ? GRAN_STORE[instanceId] : "day";
     function seriesRangeDays(){
       var days = [];
-      (state.series || []).forEach(function(p){ if (p && p.day != null) days.push(String(p.day)); });
+      /* dayKey: die Liste wird sortiert und dann per Date.parse auf ihre Spanne geprueft. Mit
+         einem formatierten Datum sortiert sie alphabetisch, also stehen vorn und hinten die
+         falschen Tage -- und die Spanne entscheidet, welche Granularitaetsknoepfe frei sind. */
+      (state.series || []).forEach(function(p){ if (p && p.day != null) days.push(UC.dayKey ? UC.dayKey(p.day) : String(p.day)); });
       if (!days.length) return 0;
       days.sort();
       var a = Date.parse(days[0]), b = Date.parse(days[days.length - 1]);
@@ -142,7 +145,7 @@
     var normGran = UC.normGran;
     function inferGran(series){
       var seen = {};
-      (series || []).forEach(function(p){ if (p && p.day != null) seen[String(p.day)] = 1; });
+      (series || []).forEach(function(p){ if (p && p.day != null) seen[UC.dayKey ? UC.dayKey(p.day) : String(p.day)] = 1; });
       var arr = Object.keys(seen).sort();
       if (arr.length < 2) return null;
       var gaps = [];
