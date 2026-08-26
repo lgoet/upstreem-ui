@@ -1068,10 +1068,12 @@
              demselben Grund ueberall div und span. */
           (zeilen.length
             ? '<div class="uob-res-meta">' +
+                /* Wert OBEN, Beschriftung darunter -- so angesagt am 26.08. Die Reihenfolge im
+                   Markup ist die Leserichtung: erst das Datum, dann wofuer es steht. */
                 zeilen.map(function (z) {
                   return '<div class="uob-res-row">' +
-                    '<span class="uob-res-k">' + esc(z[0]) + '</span>' +
                     '<span class="uob-res-v">' + esc(z[1]) + '</span>' +
+                    '<span class="uob-res-k">' + esc(z[0]) + '</span>' +
                   '</div>';
                 }).join("") +
               '</div>'

@@ -879,22 +879,27 @@
    sind nur die Zeiten und die zwei Knoepfe. */
 .uob-root.is-gate .uob-rail,
 .uob-root.is-gate .uob-nav { display: none; }
-/* Die zwei Zeitangaben in einem Kasten, nicht als lose Zeilen unter der Marke: sie gehoeren zu
-   diesem einen Onboarding, und der Kasten macht aus Marke, Zeiten und Knoepfen eine Karte.
-   Masse aus .uob-item, der Listenzeile dieser Komponente -- gleiche Polsterung waagerecht,
-   gleicher Radius, gleicher Rahmen, gleicher Grund. Nur die Hoehe nicht: dort steht ein
-   Auswahlziel mit 56px Mindesthoehe, hier zwei Textzeilen. */
+/* Die zwei Zeitangaben, nebeneinander und linksbuendig, jede als Paar aus Wert und Beschriftung
+   -- der Wert oben, die Beschriftung darunter. Kein Rahmen, kein Grund, keine Polsterung: so
+   angesagt am 26.08. Ein Kasten stand hier vorher und machte aus zwei Angaben ein Bauteil; sie
+   sind aber nur zwei Angaben. */
 .uob-res-meta {
   margin: clamp(20px, 3.4vh, 30px) 0 0; width: 100%;
-  padding: 10px 14px; border: 1px solid var(--vc-border); border-radius: 12px;
-  background: var(--vc-bg);
-  display: grid; gap: 4px;
+  display: flex; align-items: stretch; text-align: left;
 }
 /* Eigene Klassen und keine Tag-Waehler. dt und dd standen hier als einzige semantische Tags der
    Komponente, mitten in einer fremden Seite -- und was ein Baukasten wie Bubble an globaler CSS
    mitbringt, trifft genau solche Tags. */
-.uob-res-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-.uob-res-k { font-size: 13px; color: var(--vc-third); }
+.uob-res-row { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+/* Die Trennlinie sitzt als Rahmen am FOLGENDEN Paar, mit gleichem Abstand links und rechts. So
+   entsteht sie nur zwischen zwei Angaben und nie am Rand -- und sie braucht kein eigenes
+   Element im Markup. */
+.uob-res-row + .uob-res-row {
+  margin-left: 20px; padding-left: 20px; border-left: 1px solid var(--vc-border);
+}
+/* 11.5px ist die Groesse der Schienenbeschriftung -- dieselbe Rolle (ein Wort, das einen Wert
+   benennt), also dieselbe Groesse. */
+.uob-res-k { font-size: 11.5px; font-weight: 500; color: var(--vc-third); }
 .uob-res-v { font-size: 13px; font-weight: 500; color: var(--vc-text);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Untereinander, beide ueber die volle Breite. Nebeneinander stuenden zwei Antworten auf
