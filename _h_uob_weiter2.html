@@ -1,0 +1,126 @@
+<meta charset="utf-8"><title>onboarding: Continue bei Topics -- wie oft feuert es?</title>
+<style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif;background:#fff}
+#b{padding:16px;width:1100px} #out{padding:10px;font:11px/1.4 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body><div id="b"></div><pre id="out">laeuft…</pre>
+<script>
+/* Zwei Fragen: feuert Continue bei Topics genau EINMAL, und feuert es GAR NICHT mehr, wenn die
+   Prompts schon da sind?
+
+   Wichtig fuer die Aussagekraft: ein programmatisches .click() umgeht die Trefferpruefung des
+   Browsers. Ein Knopf mit visibility:hidden nimmt keinen echten Klick an, ein
+   el.click() erreicht ihn trotzdem. Beides wird deshalb GETRENNT gemessen:
+     - was die Logik tut (synthetische Klicks)
+     - was ein Nutzer ueberhaupt treffen kann (visibility, inert, Fokus)
+   Sonst meldet man eine Doppelausloesung, die es im Feld nicht gibt -- oder haelt eine fuer
+   verhindert, die es gibt. */
+var Z = {};
+["uobStart","uobStep","uobTopics","uobWorkflowStart","uobSelect","uobFinish","uobExit"].forEach(function(n){
+  Z[n]=0; window["bubble_fn_"+n]=function(p){ Z[n]++; window.__letzte=window.__letzte||{}; window.__letzte[n]=p; }; });
+function zaehlerAus(){ var o={}; Object.keys(Z).forEach(function(k){ if(Z[k]) o[k]=Z[k]; }); return o; }
+function nullen(){ Object.keys(Z).forEach(function(k){ Z[k]=0; }); }
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){ return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=["core.css","core.js","onboarding-page.css","onboarding-page.js",
+       "bubble/onboarding_page_bubble.html","_h_uob_eastside.json"];
+var T={}, R={};
+Promise.all(D.map(hol)).then(function(t){
+  D.forEach(function(f,i){ T[f]=t[i]; });
+  R.frische = { js_sperrt_warten: T["onboarding-page.js"].indexOf("if (state.warten) return;") >= 0 };
+  ["core.css","onboarding-page.css"].forEach(function(f){ var s=document.createElement("style"); s.textContent=T[f]; document.head.appendChild(s); });
+  [ "core.js","onboarding-page.js"].forEach(function(f){ var j=document.createElement("script"); j.textContent=T[f]; document.head.appendChild(j); });
+  return new Promise(function(ok){ setTimeout(ok,600); });
+}).then(function(){
+  var ECHT = JSON.parse(T["_h_uob_eastside.json"]);
+  function klon(){ return JSON.parse(JSON.stringify(ECHT)); }
+  function mount(step){
+    var u=new URL(window.location.href);
+    if (step) u.searchParams.set("step",step); else u.searchParams.delete("step");
+    window.history.replaceState({}, "", u.toString());
+    document.getElementById("b").innerHTML="";
+    var w=document.createElement("div"); w.innerHTML=wurzelAus(T["bubble/onboarding_page_bubble.html"]);
+    var r=w.querySelector(".uob-root"); var id="w"+Math.random().toString(36).slice(2,7);
+    r.setAttribute("data-instance",id); r.setAttribute("data-cdn-pin","w"); r.setAttribute("data-isdark","no");
+    document.getElementById("b").appendChild(r);
+    return new Promise(function(ok){ var n=0;
+      (function warte(){ if (r.__uobController || n++>40) return ok({r:r,id:id}); setTimeout(warte,50); })(); });
+  }
+  function stand(r){
+    var nav = r.querySelector(".uob-nav");
+    var btn = r.querySelector("[data-next]");
+    return {
+      schritt: new URL(window.location.href).searchParams.get("step"),
+      /* Die Schranke fuer einen ECHTEN Klick: unsichtbar und inert nimmt niemand mit der Maus
+         oder der Tastatur. */
+      navSichtbar: nav ? window.getComputedStyle(nav).visibility : "-",
+      navInert: nav ? (nav.hasAttribute("inert") || nav.getAttribute("aria-hidden")==="true") : null,
+      knopfDa: !!btn,
+      fokusImNav: !!(nav && document.activeElement && nav.contains(document.activeElement))
+    };
+  }
+  function klick(r, was){ var b=r.querySelector("["+was+"]"); if(b) b.click(); return !!b; }
+  function warteKurz(ms){ return new Promise(function(ok){ setTimeout(ok, ms||700); }); }
+
+  /* T1/T2/T3: frisch, ohne Prompts. Ein Klick, dann zwei weitere unmittelbar danach. */
+  return mount("topics").then(function(m){
+    var b = klon(); b.prompts = [];
+    window.setOnboardingBundle(m.id, JSON.stringify(b));
+    return warteKurz().then(function(){
+      nullen();
+      var vorher = stand(m.r);
+      var t1 = klick(m.r, "data-next");
+      var nachEinem = { zaehler: zaehlerAus(), stand: stand(m.r) };
+      /* Noch zweimal, so schnell wie es geht -- die Logik, nicht der Zeiger. */
+      klick(m.r, "data-next"); klick(m.r, "data-next");
+      R.T1_frisch_ein_klick_dann_zwei = {
+        knopfGefunden: t1, gewaehlteThemen: (window.__letzte&&window.__letzte.uobTopics||"").length ? "ja" : "?",
+        vorher: vorher, nachEinemKlick: nachEinem, nachDreiKlicks: zaehlerAus(),
+        payload: window.__letzte && window.__letzte.uobTopics
+      };
+    });
+  })
+  /* T4: Prompts liegen vor (Buendel wie beim Neuladen). Zurueck zu Topics, dann Continue. */
+  .then(function(){ return mount("prompts"); }).then(function(m){
+    window.setOnboardingBundle(m.id, JSON.stringify(klon()));
+    return warteKurz().then(function(){
+      nullen();
+      var vor = stand(m.r);
+      klick(m.r, "data-back");
+      var aufTopics = stand(m.r);
+      nullen();
+      klick(m.r, "data-next");
+      R.T4_prompts_da_zurueck_und_weiter = {
+        vorher: vor, nachZurueck: aufTopics, nachWeiter: stand(m.r), zaehler: zaehlerAus() };
+    });
+  })
+  /* T5: Prompts liegen vor, aber die Auswahl wird geaendert -- dann MUSS es feuern. */
+  .then(function(){ return mount("prompts"); }).then(function(m){
+    window.setOnboardingBundle(m.id, JSON.stringify(klon()));
+    return warteKurz().then(function(){
+      klick(m.r, "data-back");
+      nullen();
+      /* Ein Thema abwaehlen: erster Themenknopf in der Liste. */
+      var it = m.r.querySelector('.uob-item[data-pick="topics"]');
+      var abgewaehlt = !!it; if (it) it.click();
+      klick(m.r, "data-next");
+      R.T5_prompts_da_auswahl_geaendert = {
+        abgewaehlt: abgewaehlt, zaehler: zaehlerAus(), stand: stand(m.r) };
+    });
+  })
+  /* T6: falsche Reihenfolge der Setter -- Prompts VOR Topics. Dann kennt promptsFuer die
+     Auswahl nicht, die die Prompts angefordert hat. */
+  .then(function(){ return mount("prompts"); }).then(function(m){
+    var b = klon();
+    window.setOnboardingPrompts(m.id, JSON.stringify(b.prompts));
+    window.setOnboardingTopics(m.id, JSON.stringify(b.topics));
+    window.setOnboardingBundle(m.id, JSON.stringify({ project: b.project }));
+    return warteKurz().then(function(){
+      klick(m.r, "data-back");
+      nullen();
+      klick(m.r, "data-next");
+      R.T6_setter_falsche_reihenfolge = { zaehler: zaehlerAus(), stand: stand(m.r) };
+      document.getElementById("out").textContent = JSON.stringify(R,null,1);
+      window.__R=R; window.__fertig=true;
+    });
+  });
+}).catch(function(e){ document.getElementById("out").textContent="FEHLER: "+e.message+"\n"+e.stack; window.__fertig=true; });
+</script>

@@ -2557,6 +2557,15 @@
 
     function weiter(ueberspringen) {
       if (state.busy) return;
+      /* Laeuft eine Uhr, tut Continue NICHTS. Bisher hing das allein am Bild: die Knopfzeile wird
+         waehrend einer Wartezeit unsichtbar und inert gesetzt, also trifft sie kein Zeiger und
+         keine Tastatur -- gemessen, und mit der Maus ist ein zweiter Klick auch nicht moeglich.
+         Nur steht die Sperre damit im Aussehen und nicht in der Sache: drei Klicks aus dem Code
+         loesten dreimal aus, und der Rueckfall fuer Browser ohne inert (aria-hidden) haelt einen
+         Klick gar nicht auf. Ein zweites uobTopics heisst ein zweiter Lauf ueber denselben
+         Themen, also eine zweite Rechnung fuer dieselbe Arbeit. Eine Zeile ist billiger als die
+         Frage, ob das Bild ueberall stimmt. */
+      if (state.warten) return;
       if (state.step === "brand") {
         if (!pruefeForm()) return;
         /* Der Rohtext MUSS vor dem Normalisieren weg: state.form.website wird gleich mit der
@@ -3208,8 +3217,22 @@
       state[welche] = rein;
       /* Ankommende Prompts gehoeren zur Auswahl, die sie angefordert hat. Ohne diese Zeile
          waere promptsFuer nach einem Setter von aussen leer, und der naechste Weiter-Klick
-         liefe unnoetig noch einmal durch die Wartezeit. */
-      if (welche === "prompts") state.promptsFuer = idsVon(state.selTopics).sort().join(",");
+         liefe unnoetig noch einmal durch die Wartezeit.
+         Nur wenn es eine Auswahl GIBT: in welcher Folge die Setter kommen, steht nicht in unserer
+         Hand. Kommen die Prompts VOR den Themen, waere das hier die leere Auswahl -- und die passt
+         zu keiner spaeteren. Genau so gemessen: der Weiter-Klick fand einen Unterschied, wo keiner
+         war, und schickte den Nutzer ein zweites Mal durch die ganze Wartezeit. Dann bleibt es
+         unbekannt, und der Themen-Setter traegt es nach. */
+      if (welche === "prompts") {
+        var ausw = idsVon(state.selTopics).sort().join(",");
+        if (ausw) state.promptsFuer = ausw;
+      }
+      /* Die andere Richtung. Nur wenn es noch unbekannt ist -- eine bekannte Zuordnung darf ein
+         Themen-Setter nicht ueberschreiben: aendert er die Auswahl, gehoeren die liegenden
+         Prompts eben NICHT mehr dazu, und dann muss der naechste Weiter-Klick neue anfordern. */
+      if (welche === "topics" && state.prompts.length && !state.promptsFuer) {
+        state.promptsFuer = idsVon(state.selTopics).sort().join(",");
+      }
       /* Waehrend einer Uhr NICHT zeichnen. Die Daten fuer den naechsten Schritt kommen an,
          waehrend das Ladebild laeuft -- ein Neuaufbau baut dann das Ladebild neu, mitten in der
          Animation seiner letzten Phase, und genau das sah man kurz zucken. Gezeichnet wird, wenn
