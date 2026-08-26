@@ -105,14 +105,15 @@
   /* Die vier Bloecke des ersten Ladebilds. Sie folgen den vier Phasen des Servers (1 Initializing
      project, 2 Scanning website, 3 Reading pages, 4 Analyzing brand), sagen sie aber in der Sprache
      des Nutzers -- das Label des Servers ist eine Systemmeldung ("Done") und keine Auskunft.
-     Der dritte traegt seine Dauer im Text: "page by page" sagt, dass hier etwas Grosses laeuft,
-     ohne zu behaupten, es werde lange dauern. Eine Zahl steht dort NICHT -- wie viele Seiten es
-     sind, weiss diese Komponente nicht, und eine erfundene waere schlimmer als keine. */
+     Der dritte traegt seine Dauer im Text: "every brand you compete against" sagt, dass hier etwas
+     Breites laeuft, ohne zu behaupten, es werde lange dauern. Eine Zahl steht dort NICHT -- wie
+     viele Marken es sind, weiss diese Komponente nicht, und eine erfundene waere schlimmer als
+     keine. */
   var PHASES = [
     { h: "Setting up your workspace", b: "Creating the space your team will work in" },
-    { h: "Opening your website",      b: "Finding the pages worth reading" },
-    { h: "Reading your pages",        b: "Going through your site page by page" },
-    { h: "Analyzing your brand",      b: "Working out what you do and who you compete with" }
+    { h: "Reading your website",      b: "Going through your pages to learn what you do" },
+    { h: "Analyzing your market",     b: "Comparing you with every brand you compete against" },
+    { h: "Finalizing your setup",     b: "Putting your competitors and topics together" }
   ];
 
   /* Vier Werte, vier Segmente. Der Wert bleibt exakt der, den Bubble erwartet -- nur die

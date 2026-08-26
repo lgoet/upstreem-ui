@@ -123,10 +123,10 @@
      Die Farbe steht hier und nicht in der Datei: eine Punktwolke in #F5F5F5 waere auf weissem
      Grund unsichtbar und auf dunklem zu hell, es braeuchte also zwei Dateien, die auseinander
      laufen. */
-  background-image: radial-gradient(ellipse 26% 34% at 50% 50%,
+  background-image: radial-gradient(ellipse 32% 42% at 50% 50%,
                     transparent 0%, var(--vc-third) 100%);
-  background-image: radial-gradient(ellipse 26% 34% at 50% 50%,
-                    color-mix(in srgb, var(--vc-third) 22%, transparent) 0%,
+  background-image: radial-gradient(ellipse 32% 42% at 50% 50%,
+                    color-mix(in srgb, var(--vc-third) 8%, transparent) 0%,
                     var(--vc-third) 100%);
 }
 .uob-root.is-welt .uob-welt { opacity: .2; }
