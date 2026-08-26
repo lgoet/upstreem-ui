@@ -119,6 +119,45 @@
    Beschriftungen schlechter lesbar, ohne etwas zu zeigen. */
 .uob-root.is-narrow .uob-welt { display: none; }
 
+/* ---------- Uhr am unteren Rand (nur im Ladebild) ----------
+   Mittig, 16px ueber dem Bildschirmrand. Der negative Wert ist der Weg dorthin: der Bezugsrahmen
+   eines absolut gesetzten Kindes ist das Polsterfeld der Wurzel, und das endet schon --uob-pb
+   ueber dem Rand. 16px minus Polster bringt sie genau auf die 16px.
+   Sie liegt immer im Dokument und traegt nur ihre Deckkraft -- ein Element, das mit seiner Klasse
+   verschwindet, kann nicht ausblenden. */
+/* bottom: 16px sind genau die angesagten 16px zum Bildschirmrand: der Bezugsrahmen eines absolut
+   gesetzten Kindes ist das POLSTERFELD der Wurzel, und das reicht bis an deren Kante -- das
+   Polster liegt darin und nicht davor. Hier stand zuerst eine Rechnung, die das Polster abzog;
+   gemessen kam die Uhr damit auf 0px Abstand. */
+.uob-warte {
+  position: absolute; left: 0; right: 0; bottom: 16px;
+  display: flex; justify-content: center;
+  pointer-events: none;
+  opacity: 0; transition: opacity var(--uob-in) var(--uob-ease);
+}
+.uob-warte.is-on { opacity: 1; }
+/* Die Huelle traegt den Bezug fuer den Hinweis -- siehe Begruendung im Markup. */
+.uob-warte-in { position: relative; }
+.uob-warte-uhr {
+  font-size: 12.5px; font-weight: 500; color: var(--vc-third);
+  /* Feste Ziffernbreite: sonst wandert die Zeile bei jedem Sekundenwechsel um einen Hauch, und
+     genau das sieht man bei etwas, das mittig steht. */
+  font-variant-numeric: tabular-nums;
+}
+/* Der Hinweis haengt rechts an der Uhr und nimmt keinen Platz im Fluss -- so bleibt die Uhr
+   mittig, vorher wie nachher. Er faehrt beim Erscheinen ein Stueck heran: er soll sich
+   anschliessen und nicht auftauchen. */
+.uob-warte-hint {
+  position: absolute; left: calc(100% + 8px); top: 0; white-space: nowrap;
+  font-size: 12.5px; color: var(--vc-third);
+  opacity: 0; transform: translateX(-6px);
+  transition: opacity var(--uob-in) var(--uob-ease), transform var(--uob-in) var(--uob-ease);
+}
+.uob-warte-hint.is-on { opacity: 1; transform: none; }
+/* Auf dem Telefon ist rechts der Uhr kein Platz fuer den Satz -- dort steht er darunter. */
+.uob-root.is-narrow .uob-warte-hint { left: 50%; top: 100%; transform: translateX(-50%); }
+.uob-root.is-narrow .uob-warte-hint.is-on { transform: translateX(-50%); }
+
 /* ---------- Kopfzeile ----------
    Logo links, die drei Nebenwege rechts. "Dashboard" und "Log out" sind bewusst Textknoepfe in
    --vc-muted und kein gefuellter Knopf: sie fuehren aus dem Ablauf HERAUS, und ein Ausgang darf

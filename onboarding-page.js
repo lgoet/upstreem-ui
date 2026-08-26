@@ -681,6 +681,22 @@
          etwas braucht, das im Dokument BLEIBT.
          aria-hidden, weil hier nichts steht, was jemand vorgelesen bekommen muesste. */
       '<div class="uob-welt" data-welt aria-hidden="true"></div>' +
+
+      /* Die Uhr am unteren Rand. Sie steht IM Rahmen und nicht im Ladebild: das Ladebild sitzt
+         mittig und waechst mit seinem Inhalt, der Rand bleibt der Rand. Sie liegt immer im
+         Dokument und traegt nur ihre Deckkraft -- ein Element, das mit seiner Klasse verschwindet,
+         kann nicht ausblenden. */
+      '<div class="uob-warte" data-warte>' +
+        /* Die Uhr steckt in einer eigenen Huelle, und der Hinweis haengt ABSOLUT daran. Anders
+           bliebe die Uhr nicht in der Mitte: der Hinweis hat auch unsichtbar seine Breite, und
+           eine mittig ausgerichtete Reihe waere dadurch um dessen halbe Breite verschoben --
+           gemessen 549 statt 640. Und wuerde er beim Erscheinen Platz einnehmen, sprang die Uhr
+           nach links. So steht sie fest und der Hinweis kommt daneben. */
+        '<span class="uob-warte-in">' +
+          '<span class="uob-warte-uhr" data-warte-uhr aria-live="off"></span>' +
+          '<span class="uob-warte-hint" data-warte-hint>This usually takes 3-5 minutes</span>' +
+        '</span>' +
+      '</div>' +
       '<div class="uob-top">' +
         /* onerror: eine Adresse, die ins Leere zeigt, hinterlaesst sonst das Bruchbild-Symbol
            des Browsers oben links -- auf dem ersten Bildschirm eines neuen Nutzers das denkbar
@@ -764,6 +780,9 @@
     var elRailLbls= root.querySelector("[data-rail-labels]");
     var elRailHits= root.querySelector("[data-rail-hits]");
     var elMid     = root.querySelector(".uob-mid");
+    var elWarte   = root.querySelector("[data-warte]");
+    var elWarteUhr= root.querySelector("[data-warte-uhr]");
+    var elWarteHnt= root.querySelector("[data-warte-hint]");
     var elHelp    = root.querySelector("[data-help]");
     var elHelpBody= root.querySelector("[data-help-body]");
     var elHelpTtl = root.querySelector("[data-help-title]");
@@ -3114,17 +3133,69 @@
       state.fortschritt = 0;
       render();
       t0 = new Date().getTime();
+      /* Der Anfang der UHR, getrennt von t0: t0 setzt phaseSetzen bei jeder Phase neu, damit die
+         Spur innerhalb der Phase wieder vorne zieht. Die Uhr zaehlt dagegen die ganze Wartezeit. */
+      warteAb = t0;
+      warteSek = -1;
+      if (elWarteHnt) elWarteHnt.classList.remove("is-on");
+      warteUhrZeichnen();
       if (tick) window.clearInterval(tick);
       tick = window.setInterval(spurTick, 240);
     }
     function warteBeenden() {
       state.warten = "";
       if (tick) { window.clearInterval(tick); tick = null; }
+      warteUhrZeichnen();
     }
+    /* Die Uhr am Rand, ab dem Klick, der den Lauf gestartet hat. Sie hat einen EIGENEN Anfang
+       und nicht t0: den setzt phaseSetzen bei jeder Phase neu, damit die Spur innerhalb der Phase
+       wieder vorne zieht. Die Uhr zaehlt dagegen die ganze Wartezeit -- mit t0 spraenge sie bei
+       jeder Phase auf null zurueck.
+       Der Hinweis kommt nach dreissig Sekunden dazu, und nur im HAUPTLAUF: "3-5 minutes" waere
+       beim Promptlauf, der rund neunzig Sekunden braucht, eine falsche Auskunft. */
+    var warteAb = 0, warteSek = -1;
+    function warteUhrZeichnen() {
+      if (!elWarte) return;
+      var an = !!state.warten;
+      elWarte.classList.toggle("is-on", an);
+      if (!an) { warteSek = -1; return; }
+      var sek = Math.max(0, Math.floor((new Date().getTime() - warteAb) / 1000));
+      if (sek !== warteSek) {
+        warteSek = sek;
+        var m = Math.floor(sek / 60), r = sek % 60;
+        elWarteUhr.textContent = m + ":" + (r < 10 ? "0" : "") + r;
+      }
+      if (elWarteHnt) {
+        elWarteHnt.classList.toggle("is-on", state.warten === "main" && warteSek >= 30);
+      }
+    }
+    /* Die erwartete Dauer des Promptlaufs und die zwei Grenzen der Spur.
+       Der Lauf braucht rund neunzig Sekunden. Bis dahin laeuft die Spur auf 85 -- vorne ziehend,
+       hinten nachlassend, die Kurve, die einen Balken schneller wirken laesst als er ist. Dauert
+       es laenger, kriecht sie von 85 in Richtung 95 und kommt dort nie an: die letzten fuenf
+       Prozent gehoeren dem echten Ende. Ein Balken, der bei 100 steht und nichts passiert, ist
+       eine Luege; einer, der bei 95 steht, ist eine Auskunft. */
+    var SPUR_DAUER = 90000, SPUR_KNICK = 85, SPUR_DECKEL = 95;
     function spurTick() {
       var ziel, unten;
-      if (state.warten === "prompts") { unten = 0; ziel = 96; }
-      else {
+      if (state.warten === "prompts") {
+        warteUhrZeichnen();
+        var vp = new Date().getTime() - t0;
+        var w2;
+        if (vp < SPUR_DAUER) {
+          /* Auf SPUR_KNICK normiert, damit die Kurve bei der erwarteten Dauer genau dort steht
+             und nicht irgendwo in ihrer Naehe. */
+          var tau = SPUR_DAUER / 3;
+          w2 = SPUR_KNICK * (1 - Math.exp(-vp / tau)) / (1 - Math.exp(-SPUR_DAUER / tau));
+        } else {
+          /* Die letzten Prozent deutlich langsamer: eine Minute Zeitkonstante auf zehn Prozent. */
+          w2 = SPUR_KNICK + (SPUR_DECKEL - SPUR_KNICK) * (1 - Math.exp(-(vp - SPUR_DAUER) / 60000));
+        }
+        if (w2 > state.fortschritt) { state.fortschritt = w2; renderPhasen(); }
+        return;
+      }
+      warteUhrZeichnen();
+      {
         /* Je Phase ein Viertel der Spur. Die laufende Phase fuellt ihr Viertel nur zu vier
            Fuenfteln -- der Rest springt, wenn die Phase wirklich fertig ist. */
         unten = (state.phase / PHASES.length) * 100;
@@ -3283,6 +3354,22 @@
        "ready"/"failed") und status_label. Bisher zaehlte NUR status_phase -- fehlte die, tat
        setStatus nichts und meldete auch nichts (return false). Jetzt wird jedes Signal gelesen
        und in dieselbe Phase uebersetzt, damit es egal ist, welche Felder der Kanal mitschickt. */
+    /* Die Phase, an der der Server sagt: die Prompts stehen. Sie kommt aus der Datenbank und ist
+       nicht geraten -- dort ist status_phase 7 der Punkt, an dem alles gesetzt ist.
+       Warum das gebraucht wird: der Status bleibt waehrend des Promptlaufs auf "ready" (das
+       Onboarding als Ganzes IST fertig, es laeuft nur noch ein Nachlauf). Ohne diesen Riegel las
+       die Komponente "ready" als "fertig", verliess das Ladebild und zeigte eine leere
+       Promptliste mit "No prompts yet" -- gemeldet am 26.08. Eine Sekunde Ladebild, dann nichts. */
+    var PROMPT_PHASE = 7;
+    /* Ist der Promptlauf wirklich durch? Zwei Belege, und einer genuegt: die Phase des Servers,
+       oder Prompts, die tatsaechlich da sind. Der zweite ist der Rueckfall fuer den Fall, dass
+       jemand die Liste setzt, ohne die Phase mitzuschicken -- sonst wartete der Nutzer vor
+       fertigen Daten weiter. */
+    function promptlaufDurch(s2) {
+      if (isArr(state.prompts) && state.prompts.length) return true;
+      return !!(s2 && s2.phase != null && s2.phase >= PROMPT_PHASE);
+    }
+
     function statusAus(p) {
       var st = txt(p.status).toLowerCase();
       var phase = num(p.status_phase);
@@ -3388,6 +3475,10 @@
       if (s.fehler) { state.banner = s.fehler; warteBeenden(); state.busy = false;
                       if (state.step !== "brand") gehe("brand", false); else render(); return; }
       if (s.fertig) {
+        /* Ein frisches Buendel waehrend des Promptlaufs darf ihn nicht abbrechen. Es kommt
+           regelmaessig eines -- jeder aendernde Workflow schickt am Ende die RPC-Antwort --, und
+           darin steht der Status auf ready, obwohl die Prompts noch entstehen. */
+        if (state.warten === "prompts" && !promptlaufDurch(s)) return;
         warteBeenden();
         var ziel = zielSchritt();
         /* Was belegt erreicht ist, muss in der Leiste auch anklickbar sein. Ohne diese Zeile stand
@@ -3546,6 +3637,13 @@
            ("Done"). Beides gemischt laese sich wie zwei verschiedene Stimmen. */
         if (s.fehler) { state.banner = s.fehler; warteBeenden(); state.busy = false; render(); return true; }
         if (s.fertig) {
+          /* Waehrend des Promptlaufs gilt "ready" NICHT als fertig: der Status des Onboardings
+             steht dort schon auf ready, waehrend die Prompts noch entstehen. Erst die Phase des
+             Servers (oder die Prompts selbst) beenden das Warten. */
+          if (state.warten === "prompts" && !promptlaufDurch(s)) {
+            if (s.phase != null) phaseSetzen(Math.max(0, s.phase - 1));
+            return true;
+          }
           state.fortschritt = 100; renderPhasen();
           window.setTimeout(function () {
             warteBeenden();
@@ -3724,6 +3822,14 @@
       if (welche === "prompts") {
         var ausw = idsVon(state.selTopics).sort().join(",");
         if (ausw) state.promptsFuer = ausw;
+        /* Worauf gewartet wurde, ist da: dann endet das Warten hier und nicht erst bei einer
+           Statusmeldung, die vielleicht gar nicht mehr kommt. Leere Liste zaehlt NICHT -- das ist
+           genau der Fall, in dem der Nutzer eine leere Promptseite zu sehen bekam. */
+        if (state.warten === "prompts" && rein.length) {
+          state.fortschritt = 100; renderPhasen();
+          window.setTimeout(function () { warteBeenden(); gehe("prompts", false); }, 360);
+          return true;
+        }
       }
       /* Die andere Richtung. Nur wenn es noch unbekannt ist -- eine bekannte Zuordnung darf ein
          Themen-Setter nicht ueberschreiben: aendert er die Auswahl, gehoeren die liegenden

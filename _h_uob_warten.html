@@ -1,0 +1,95 @@
+<meta charset="utf-8"><title>onboarding: Ladebild -- Uhr, Spur, Riegel bei Phase 7</title>
+<style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif}
+#b{padding:0} #out{padding:10px;font:11px/1.45 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body><div id="b"></div><pre id="out">laeuft…</pre>
+<script>
+/* Drei Fragen, gemeldet am 26.08.:
+   1. Steht unten eine Uhr, mittig, 16px ueber dem Rand, und kommt nach 30s der Hinweis dazu?
+   2. Bleibt das Ladebild nach Continue bei Topics STEHEN, wenn der Status "ready" meldet, aber
+      status_phase noch nicht 7 ist? (Vorher sah man eine Sekunde Ladebild und dann eine leere
+      Promptliste.)
+   3. Laeuft die Spur ueber rund 90 Sekunden und bleibt dann unter 95?
+
+   Die Uhren dieser Umgebung sind gedrosselt, echte 90 Sekunden also nicht abwartbar. Deshalb wird
+   die Spur RECHNERISCH geprueft: dieselbe Formel, gegen die Werte im Quelltext gelesen. Was
+   gemessen wird, ist der Riegel und die Uhr -- die brauchen keine 90 Sekunden. */
+["uobStart","uobStep","uobTopics","uobWorkflowStart","uobSelect","uobFinish","uobExit"].forEach(function(n){
+  window["bubble_fn_"+n]=function(){}; });
+window.__err=[]; window.addEventListener("error",function(e){window.__err.push(String(e.message));});
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){ return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=["core.css","core.js","onboarding-page.css","onboarding-page.js",
+       "bubble/onboarding_page_bubble.html","_h_uob_eastside_voll.json"];
+var T={}, R={};
+Promise.all(D.map(hol)).then(function(t){
+  D.forEach(function(f,i){ T[f]=t[i]; });
+  ["core.css","onboarding-page.css"].forEach(function(f){ var s=document.createElement("style"); s.textContent=T[f]; document.head.appendChild(s); });
+  [ "core.js","onboarding-page.js"].forEach(function(f){ var j=document.createElement("script"); j.textContent=T[f]; document.head.appendChild(j); });
+  /* Die Spur nachrechnen -- mit den Zahlen AUS der Datei, nicht mit meinen. */
+  var m = T["onboarding-page.js"].match(/SPUR_DAUER = (\d+), SPUR_KNICK = (\d+), SPUR_DECKEL = (\d+)/);
+  R.spurWerte = m ? { dauer:+m[1], knick:+m[2], deckel:+m[3] } : "nicht gefunden";
+  if (m) {
+    var Dz=+m[1], K=+m[2], De=+m[3], tau=Dz/3;
+    function spur(v){
+      if (v < Dz) return K * (1 - Math.exp(-v/tau)) / (1 - Math.exp(-Dz/tau));
+      return K + (De-K) * (1 - Math.exp(-(v-Dz)/60000));
+    }
+    R.spurVerlauf = [0, 5000, 15000, 30000, 45000, 60000, 90000, 120000, 180000, 600000]
+      .map(function(v){ return (v/1000)+"s=" + spur(v).toFixed(1); });
+  }
+  return new Promise(function(ok){ setTimeout(ok,600); });
+}).then(function(){
+  var b = JSON.parse(T["_h_uob_eastside_voll.json"]);
+  delete b.restart;
+  b.prompts = [];                 /* noch keine Prompts -- der Nutzer steht auf Topics */
+  /* Und die Phase MUSS unter 7 liegen. Das echte Buendel des Nutzers traegt status_phase 7 -- das
+     ist genau der Beleg "Prompts stehen", also liess der Riegel es zu Recht durch, und der
+     Durchlauf hat einen Fehler gemeldet, den es nicht gab. Ein Buendel, mit dem der Promptlauf
+     noch nicht durch ist, hat dort eine kleinere Zahl. */
+  b.project.status_phase = 5;
+  var u=new URL(window.location.href); u.searchParams.set("step","topics");
+  window.history.replaceState({}, "", u.toString());
+  var w=document.createElement("div"); w.innerHTML=wurzelAus(T["bubble/onboarding_page_bubble.html"]);
+  var r=w.querySelector(".uob-root"); var id="wa"+Math.random().toString(36).slice(2,7);
+  r.setAttribute("data-instance",id); r.setAttribute("data-cdn-pin","wa");
+  document.getElementById("b").appendChild(r);
+  function bereich(){ var p=r.querySelector(".uob-pane:not(.is-off)"); return p?p.getAttribute("data-pane"):"-"; }
+  function uhr(){ var e=r.querySelector("[data-warte]"); var v=getComputedStyle(e);
+    return { an: e.classList.contains("is-on"), deckkraft: v.opacity, text: r.querySelector("[data-warte-uhr]").textContent,
+             hintAn: r.querySelector("[data-warte-hint]").classList.contains("is-on"),
+             hintText: r.querySelector("[data-warte-hint]").textContent,
+             unten: Math.round(e.getBoundingClientRect().bottom),
+             wurzelUnten: Math.round(r.getBoundingClientRect().bottom),
+             mitte: Math.round(e.querySelector(".uob-warte-uhr").getBoundingClientRect().left) }; }
+  var n=0; (function warte(){ if (r.__uobController || n++>40){
+    window.setOnboardingBundle(id, JSON.stringify(b));
+    setTimeout(function(){
+      /* Auf Topics: alles auswaehlen und Continue -- das startet den Promptlauf. */
+      var hit = r.querySelector('[data-go="topics"]'); if (hit) hit.click();
+      setTimeout(function(){
+        var alle = r.querySelector('[data-allof="topics"]'); if (alle) alle.click();
+        r.querySelector("[data-next]").click();
+        R.A_nach_continue = { bereich: bereich(), uhr: uhr() };
+        /* JETZT der Fall, der gemeldet wurde: Status ready, aber Phase noch nicht 7. */
+        window.setOnboardingStatus(id, JSON.stringify({ status: "ready", status_phase: 5 }));
+        setTimeout(function(){
+          R.B_ready_phase5 = { bereich: bereich(), uhr: uhr() };
+          /* Und ein frisches Buendel mit ready -- darf auch nicht abbrechen. */
+          window.setOnboardingBundle(id, JSON.stringify(b));
+          setTimeout(function(){
+            R.C_buendel_ready = { bereich: bereich() };
+            /* Phase 7: jetzt darf es weitergehen. */
+            window.setOnboardingStatus(id, JSON.stringify({ status: "ready", status_phase: 7 }));
+            setTimeout(function(){
+              R.D_phase7 = { bereich: bereich(), uhr: uhr() };
+              R.fehler = window.__err.slice(0,3);
+              document.getElementById("out").textContent = JSON.stringify(R,null,1);
+              window.__R=R; window.__fertig=true;
+            }, 900);
+          }, 500);
+        }, 500);
+      }, 500);
+    }, 600);
+  } else setTimeout(warte,60); })();
+});
+</script>
