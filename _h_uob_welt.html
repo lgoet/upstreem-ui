@@ -43,9 +43,20 @@ Promise.all(D.map(hol)).then(function(t){
        Ladezustand, nicht die Karte. */
     var wunsch = schritt || "brand";
     var m = 0;
+    /* Warten, bis der Zielschritt steht UND die Breite sich nicht mehr aendert. Zwei Messungen
+       hintereinander mit demselben Wert -- und NICHT gegen window.innerWidth vergleichen: das ist
+       hier 0, sobald das Browserfenster im Hintergrund liegt, und die Bedingung waere nie erfuellt.
+       (Genau daran hing der Aufbau eine Minute lang.)
+       Der Grund fuer das Warten: zweimal hat dieser Aufbau 160px Ueberlauf gemeldet, den es nicht
+       gab -- gemessen waehrend des Layouts. Deshalb steht die Breite jetzt auch im Ergebnis: ein
+       Ueberlauf, der bei 32px Wurzelbreite gemessen wurde, ist kein Befund. */
+    var letzteBreite = -1;
     (function bereit(){
       var pn = r.querySelector('.uob-pane:not(.is-off)');
-      if ((pn && pn.getAttribute("data-pane") === wunsch) || m++ > 40) return los();
+      var b = r.clientWidth;
+      var steht = b > 400 && b === letzteBreite;
+      letzteBreite = b;
+      if ((pn && pn.getAttribute("data-pane") === wunsch && steht) || m++ > 40) return los();
       setTimeout(bereit, 80);
     })();
     function los(){ setTimeout(function(){
@@ -71,6 +82,7 @@ Promise.all(D.map(hol)).then(function(t){
           groesse: vor.maskSize || vor.webkitMaskSize,
           lage: vor.maskPosition || vor.webkitMaskPosition,
           stapel: window.getComputedStyle(r).isolation,
+          wurzelBreite: r.clientWidth,
           ueberlaufWurzel: r.scrollWidth - r.clientWidth,
           ueberlaufSeite: document.documentElement.scrollWidth - document.documentElement.clientWidth
         }, null, 1);

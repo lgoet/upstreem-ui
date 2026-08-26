@@ -92,14 +92,23 @@
   content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
   -webkit-mask-image: url("onboarding-world.svg"); mask-image: url("onboarding-world.svg");
   -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
-  -webkit-mask-position: right -6% bottom -12%; mask-position: right -6% bottom -12%;
-  -webkit-mask-size: 132% auto; mask-size: 132% auto;
-  background-color: var(--vc-third);
-  /* Hell: sehr leise, der Grund ist weiss und der Kontrast ohnehin da. Dunkel: 30%, wie
-     angesagt. */
-  opacity: .16;
+  -webkit-mask-position: center; mask-position: center;
+  /* cover und nicht ein Prozentwert: die Karte soll die Flaeche fuellen und mittig sitzen, egal
+     welches Seitenverhaeltnis der Bildschirm hat. Was ueber den Kasten hinausgeht, wird nicht
+     gezeichnet. */
+  -webkit-mask-size: cover; mask-size: cover;
+  /* Die Vignette. Sie steckt in der FARBE und nicht in einer zweiten Maske: zwei Maskenebenen
+     brauchen mask-composite: intersect, und dessen Rueckfall ist "add" -- die Ebenen wuerden sich
+     dann ADDIEREN, aus der Vignette wuerde ein grauer Kasten ueber dem halben Bild. Ein Verlauf
+     als Fuellung kommt ohne diese Wette zum selben Bild: die Punkte verlieren zu allen Raendern
+     hin ihre Farbe. */
+  background-image: radial-gradient(ellipse at center,
+                    var(--vc-third) 0%, var(--vc-third) 34%, transparent 76%);
+  /* Hell 30%, dunkel 10% -- so angesagt. Dunkel braucht weniger: dort ist der Abstand zwischen
+     Punkt und Grund von sich aus groesser. */
+  opacity: .3;
 }
-.uob-root[data-theme="dark"].is-form::before { opacity: .3; }
+.uob-root[data-theme="dark"].is-form::before { opacity: .1; }
 /* Auf dem Telefon nicht: dort ist der Bildschirm klein, das Formular fuellt ihn, und eine
    Punktwolke dahinter macht die Beschriftungen schlechter lesbar, ohne etwas zu zeigen. */
 .uob-root.is-narrow.is-form::before { display: none; }
