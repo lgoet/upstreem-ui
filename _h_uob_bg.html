@@ -1,10 +1,10 @@
-<meta charset="utf-8"><title>onboarding: Weltkarte im Formular</title>
+<meta charset="utf-8"><title>onboarding: Hintergrundbild im Formular</title>
 <style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif}
 #b{padding:0} #out{padding:10px;font:11px/1.45 ui-monospace,monospace;white-space:pre-wrap}</style>
 <body><div id="b"></div><pre id="out">laeuft…</pre>
 <script>
-/* Die Karte darf NUR beim Formular stehen, darf keine Bildlaufleiste erzeugen und muss hinter dem
-   Inhalt liegen. ?dark=1 dunkel, ?w=420 schmal (dort ist sie aus), ?step=... anderer Schritt.
+/* Das Hintergrundbild darf NUR beim Formular, im Tor und im ersten Ladebild stehen, darf keine
+   Bildlaufleiste erzeugen und muss hinter dem Inhalt liegen. ?dark=1 dunkel, ?w=420 schmal (dort ist sie aus), ?step=... anderer Schritt.
    Das Stylesheet wird hier als <style> eingehaengt, nicht als <link> -- der relative Pfad in der
    Maske loest damit gegen localhost auf, und die Datei liegt im Wurzelverzeichnis. Auf der echten
    Seite kommt die CSS als <link> vom CDN, dort loest derselbe Pfad gegen den Pin auf. */
@@ -35,12 +35,12 @@ Promise.all(D.map(hol)).then(function(t){
   document.getElementById("b").appendChild(r);
   var n=0; (function warte(){ if (r.__uobController || n++>40){
     /* Ohne Buendel bleibt es beim Formular. Mit ?step=topics kommt eins, damit ein anderer
-       Schritt sichtbar wird -- die Karte muss dort AUS sein. */
+       Schritt sichtbar wird -- die Bild muss dort AUS sein. */
     if (schritt) window.setOnboardingBundle(id, T["_h_uob_eastside_voll.json"]);
     /* Warten, bis der ZIELSCHRITT wirklich steht. Der erste Versuch hat 700ms nach dem Aufbau
        gemessen und dabei das Bootskelett erwischt: is-form war noch nicht gesetzt, die Maske stand
        auf "none", und der Waehler fetchte die Adresse "none" -- 404. Gemessen wurde also der
-       Ladezustand, nicht die Karte. */
+       Ladezustand, nicht die Bild. */
     var wunsch = schritt || "brand";
     var m = 0;
     /* Warten, bis der Zielschritt steht UND die Breite sich nicht mehr aendert. Zwei Messungen
@@ -60,7 +60,7 @@ Promise.all(D.map(hol)).then(function(t){
       setTimeout(bereit, 80);
     })();
     function los(){ setTimeout(function(){
-      var welt = r.querySelector("[data-welt]");
+      var welt = r.querySelector("[data-bg]");
       var vor = window.getComputedStyle(welt);
       var pane = r.querySelector(".uob-pane:not(.is-off)");
       /* Laedt die Maskendatei wirklich? Der berechnete Wert sagt nur, dass eine Adresse dasteht. */
@@ -75,9 +75,9 @@ Promise.all(D.map(hol)).then(function(t){
         var wv = window.getComputedStyle(welt);
         document.getElementById("out").textContent = JSON.stringify({
           schritt: pane ? pane.getAttribute("data-pane") : "-",
-          klasseIsWelt: r.classList.contains("is-welt"),
-          karteDeckkraft: wv.opacity,
-          karteZielDeckkraft: wv.opacity,
+          klasseIsWelt: r.classList.contains("is-bg"),
+          bildDeckkraft: wv.opacity,
+          bildZielDeckkraft: wv.opacity,
           blur: vor.filter,
           verlauf: vor.backgroundImage.slice(0, 110),
           schmal: r.classList.contains("is-narrow"),
@@ -94,7 +94,7 @@ Promise.all(D.map(hol)).then(function(t){
           groesse: vor.maskSize || vor.webkitMaskSize,
           lage: vor.maskPosition || vor.webkitMaskPosition,
           stapel: window.getComputedStyle(r).isolation,
-          karteUebergang: (welt.style.transition = altUeb,
+          bildUebergang: (welt.style.transition = altUeb,
                            window.getComputedStyle(welt).transitionProperty + " " +
                            window.getComputedStyle(welt).transitionDuration),
           wurzelBreite: r.clientWidth,

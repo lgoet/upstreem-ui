@@ -687,7 +687,7 @@
          Es bleibt ein Element und keine Pseudoelemente, weil das Ausblenden beim Schrittwechsel
          etwas braucht, das im Dokument BLEIBT.
          aria-hidden, weil hier nichts steht, was jemand vorgelesen bekommen muesste. */
-      '<div class="uob-welt" data-welt aria-hidden="true"></div>' +
+      '<div class="uob-bg" data-bg aria-hidden="true"></div>' +
 
       /* Die Uhr am unteren Rand. Sie steht IM Rahmen und nicht im Ladebild: das Ladebild sitzt
          mittig und waechst mit seinem Inhalt, der Rand bleibt der Rand. Sie liegt immer im
@@ -1720,7 +1720,7 @@
       root.classList.toggle("is-gate", k === "resume");
       /* Die Weltkarte steht dort, wo der Bildschirm fast leer ist: Formular, Tor und das ERSTE
          Ladebild. Ab Competitors blendet sie aus -- ab da braucht die Liste die Ruhe. */
-      root.classList.toggle("is-welt", k === "brand" || k === "resume" || k === "load1");
+      root.classList.toggle("is-bg", k === "brand" || k === "resume" || k === "load1");
       /* Solange nicht feststeht, was hier ueberhaupt hingehoert, ist ausser dem Kreisel nichts zu
          sehen -- auch nicht die Kopfzeile und nicht die Schiene. */
       root.classList.toggle("is-boot", k === "boot");
