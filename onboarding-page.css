@@ -97,13 +97,17 @@
      welches Seitenverhaeltnis der Bildschirm hat. Was ueber den Kasten hinausgeht, wird nicht
      gezeichnet. */
   -webkit-mask-size: cover; mask-size: cover;
-  /* Die Vignette. Sie steckt in der FARBE und nicht in einer zweiten Maske: zwei Maskenebenen
-     brauchen mask-composite: intersect, und dessen Rueckfall ist "add" -- die Ebenen wuerden sich
-     dann ADDIEREN, aus der Vignette wuerde ein grauer Kasten ueber dem halben Bild. Ein Verlauf
-     als Fuellung kommt ohne diese Wette zum selben Bild: die Punkte verlieren zu allen Raendern
-     hin ihre Farbe. */
-  background-image: radial-gradient(ellipse at center,
-                    var(--vc-third) 0%, var(--vc-third) 34%, transparent 76%);
+  /* Das Ausblenden sitzt in der MITTE, nicht an den Raendern: dort steht das Formular, und die
+     Punktwolke soll hinter den Feldern verschwinden und nach aussen hin da sein. Also ein Loch --
+     durchsichtig im Kern, zur Kante der Ellipse hin auf die volle Farbe, und ausserhalb voll.
+     Es steckt in der FARBE und nicht in einer zweiten Maske: zwei Maskenebenen brauchen
+     mask-composite: intersect, und dessen Rueckfall ist "add" -- wo das nicht greift, wuerden die
+     Ebenen sich ADDIEREN und aus dem Loch wuerde ein grauer Kasten. Ein Farbverlauf als Fuellung
+     kommt ohne diese Wette zum selben Bild.
+     Die Ellipse ist hoeher als breit, weil die Formularspalte das auch ist (480px breit, aber
+     ueber die ganze Hoehe). */
+  background-image: radial-gradient(ellipse 42% 62% at 50% 50%,
+                    transparent 38%, var(--vc-third) 100%);
   /* Hell 30%, dunkel 10% -- so angesagt. Dunkel braucht weniger: dort ist der Abstand zwischen
      Punkt und Grund von sich aus groesser. */
   opacity: .3;
