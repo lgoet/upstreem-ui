@@ -1550,6 +1550,7 @@
   "uob-bar",
   "uob-bar-fill",
   "uob-bg",
+  "uob-bg-bogen",
   "uob-bg-licht",
   "uob-bg-marken",
   "uob-bg-raster",
@@ -2675,7 +2676,7 @@
   "globals": 137,
   "payloadkeys": 86,
   "dataattrs": 198,
-  "klassen": 1973,
+  "klassen": 1974,
   "keyframes": 58
  }
 }

@@ -1,0 +1,38 @@
+<!doctype html><meta charset="utf-8">
+<title>onboarding: Verlauf gegen geblurte Maske</title>
+<!-- Wozu: die geblurte Maske hat auf dunklem Grund nur 4 Graustufen und zerfaellt in eckige
+     Hoehenlinien (Feld C). Gemessen wird, ob ein CSS-Verlauf mit GENAU demselben Gewicht glatt
+     bleibt -- Skai dithert Verlaeufe, Bitmaps nicht. Zwei Bauformen, weil offen ist, ob ein
+     opacity-Layer das Dither wieder wegrundet:
+       A  Verlauf im Vollgewicht, opacity .2 auf der Ebene -- das ist die ausgelieferte Form
+       B  die .2 in die Prozente eingerechnet, kein opacity
+     Der Verstaerker macht 1 RGB-Schritt sichtbar; ohne ihn sieht man in allen Feldern nichts. -->
+<style>
+  body { margin: 0; background: #000; font: 12px/1.4 system-ui, sans-serif; }
+  :root { --vc-muted: #a0a0a0; }
+  .verst { filter: brightness(6); }
+  .roh   { filter: none; }
+  .feld  { position: relative; height: 148px; background: #1b1b1b; overflow: hidden; }
+  .lab   { position: absolute; left: 6px; top: 4px; z-index: 2; color: #3a3a3a; font-size: 10px; }
+  .g::before, .m::before { content: ""; position: absolute; inset: 0; }
+  .a::before { opacity: .2; background-image: radial-gradient(61.53% 73.26% at 94.44% 0.56%, color-mix(in srgb, var(--vc-muted) 6.160%, transparent), color-mix(in srgb, var(--vc-muted) 0%, transparent)),
+radial-gradient(61.53% 73.26% at 20.49% 85.39%, color-mix(in srgb, var(--vc-muted) 6.160%, transparent), color-mix(in srgb, var(--vc-muted) 0%, transparent)),
+radial-gradient(56.04% 75.84% at -3.12% 19.44%, color-mix(in srgb, var(--vc-muted) 10.368%, transparent), color-mix(in srgb, var(--vc-muted) 0%, transparent)),
+radial-gradient(56.04% 75.84% at 94.44% 74.16%, color-mix(in srgb, var(--vc-muted) 10.368%, transparent), color-mix(in srgb, var(--vc-muted) 0%, transparent)) }
+  .b::before { background-image: radial-gradient(61.53% 73.26% at 94.44% 0.56%, color-mix(in srgb, var(--vc-muted) 1.232%, transparent), color-mix(in srgb, var(--vc-muted) 0%, transparent)),
+radial-gradient(61.53% 73.26% at 20.49% 85.39%, color-mix(in srgb, var(--vc-muted) 1.232%, transparent), color-mix(in srgb, var(--vc-muted) 0%, transparent)),
+radial-gradient(56.04% 75.84% at -3.12% 19.44%, color-mix(in srgb, var(--vc-muted) 2.074%, transparent), color-mix(in srgb, var(--vc-muted) 0%, transparent)),
+radial-gradient(56.04% 75.84% at 94.44% 74.16%, color-mix(in srgb, var(--vc-muted) 2.074%, transparent), color-mix(in srgb, var(--vc-muted) 0%, transparent)) }
+  .m::before { background-color: var(--vc-muted); opacity: .2;
+    -webkit-mask-image: url("_h_bgL_licht.svg"); mask-image: url("_h_bgL_licht.svg");
+    -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+    -webkit-mask-size: 100% 100%; mask-size: 100% 100%; }
+</style>
+<div class="verst">
+  <div class="feld g a"><span class="lab">A Verlauf + opacity .2</span></div>
+  <div class="feld g b"><span class="lab">B Verlauf eingerechnet</span></div>
+  <div class="feld m"><span class="lab">C Maske mit Blur (die verworfene Fassung)</span></div>
+</div>
+<div class="roh">
+  <div class="feld g a"><span class="lab">D wie A, ohne Verstaerker -- so sieht es das Auge</span></div>
+</div>
