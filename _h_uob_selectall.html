@@ -41,6 +41,20 @@ Promise.all(D.map(hol)).then(function(t){
         el.click();
         erg[name] = ROH.slice();
       }
+      /* Und die Frage, die vor der Entscheidung "ids statt changed_ids" steht: traegt ids auch
+         die SELBST GETIPPTEN Themen? Die haben serverseitig noch keine Id, sondern einen
+         Platzhalter aus dem Browser. Ein Ueberschreib-RPC bekaeme sie mitgeschickt. */
+      (function eigenesThema(){
+        var plus = r.querySelector("[data-addtopic]");
+        if (!plus) { erg.eigenesThema = "kein Plus-Knopf"; return; }
+        plus.click();
+        var feld = r.querySelector("[data-eigen-in]");
+        if (!feld) { erg.eigenesThema = "kein Eingabefeld"; return; }
+        feld.value = "Mein eigenes Thema";
+        feld.dispatchEvent(new Event("input", { bubbles: true }));
+        erg.eigenesThema = "getippt";
+      })();
+      klick('.uob-item[data-pick="topics"]', "0_nach_eigenem_thema_ein_klick");
       klick('[data-allof="topics"]', "1_alle_knopf_erster_klick");
       klick('[data-allof="topics"]', "2_alle_knopf_zweiter_klick");
       klick('.uob-item[data-pick="topics"]', "3_einzelnes_thema");
