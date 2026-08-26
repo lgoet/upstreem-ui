@@ -61,8 +61,9 @@ Promise.all(D.map(hol)).then(function(t){
     var pane = r.querySelector(".uob-pane:not(.is-off)");
     var rail = r.querySelector(".uob-rail"), nav = r.querySelector(".uob-nav");
     var over = r.querySelector("[data-restart]"), weiter = r.querySelector("[data-resume]");
-    var meta = [].map.call(r.querySelectorAll(".uob-res-meta > div"), function(d){
-      return (d.querySelector("dt")||{}).textContent + ": " + (d.querySelector("dd")||{}).textContent; });
+    var meta = [].map.call(r.querySelectorAll(".uob-res-row"), function(d){
+      return (d.querySelector(".uob-res-k")||{}).textContent + ": " +
+             (d.querySelector(".uob-res-v")||{}).textContent; });
     var note = r.querySelector(".uob-res-note");
     return {
       pane: pane ? pane.getAttribute("data-pane") : "-",

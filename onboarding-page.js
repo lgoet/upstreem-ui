@@ -976,6 +976,15 @@
       return datumKurz(iso) + ", " +
              String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
     }
+    /* Der erste Feldname, der wirklich etwas traegt. */
+    function ersteZeit(o, namen) {
+      if (!o || typeof o !== "object") return "";
+      for (var i = 0; i < namen.length; i++) {
+        var v = txt(o[namen[i]]);
+        if (v) return v;
+      }
+      return "";
+    }
     function viewResume() {
       var p = state.projekt || {};
       var rs = state.restart || {};
@@ -984,7 +993,15 @@
       var name = txt(p.company_name) || txt(rs.company_name) || "Your setup";
       var dom = txt(p.website_domain) ||
                 normUrl(txt(p.website_url) || txt(p.website_input)).domain;
-      var erstellt = txt(p.created_at), geaendert = txt(p.updated_at);
+      /* Nicht nur EIN Feldname. Die RPC liefert created_at und updated_at, aber der Weg vom
+         RPC-Ergebnis in den Setter fuehrt durch einen Bubble-Schritt, und der kann Felder anders
+         benennen -- beim Chart hat genau dieser Weg aus einem ISO-Datum "August 1, 2026" gemacht.
+         Ein Feldname, der nicht passt, ist hier nicht unterscheidbar von "kein Datum vorhanden":
+         die Zeile bleibt einfach weg, und das ist die Meldung, die am schwersten zu finden ist.
+         Viermal gemeldet am 26.08. */
+      var erstellt = ersteZeit(p, ["created_at", "createdAt", "created", "created_on", "inserted_at"]);
+      var geaendert = ersteZeit(p, ["updated_at", "updatedAt", "updated", "last_updated",
+                                    "modified_at", "changed_at"]);
       var laeuft = istJa(rs.run_in_progress);
       var darf = istJa(rs.allowed);
 
@@ -1020,12 +1037,19 @@
             '<div class="uob-load-name">' + esc(name) + '</div>' +
             (dom ? '<div class="uob-load-dom">' + esc(dom) + '</div>' : "") +
           '</div>' +
+          /* div und span, kein dl/dt/dd. Das waere die EINZIGE Stelle der Komponente mit
+             Definitionslisten, und sie steht in einer fremden Seite: was Bubble an globaler CSS
+             mitbringt, trifft semantische Tags als erstes. Der Rest dieser Datei benutzt aus
+             demselben Grund ueberall div und span. */
           (zeilen.length
-            ? '<dl class="uob-res-meta">' +
+            ? '<div class="uob-res-meta">' +
                 zeilen.map(function (z) {
-                  return '<div><dt>' + esc(z[0]) + '</dt><dd>' + esc(z[1]) + '</dd></div>';
+                  return '<div class="uob-res-row">' +
+                    '<span class="uob-res-k">' + esc(z[0]) + '</span>' +
+                    '<span class="uob-res-v">' + esc(z[1]) + '</span>' +
+                  '</div>';
                 }).join("") +
-              '</dl>'
+              '</div>'
             : "") +
           '<div class="uob-res-acts">' +
             '<button class="uob-next" type="button" data-resume>Continue with this setup</button>' +
@@ -1226,7 +1250,11 @@
         '<span class="up-tsk-bar uob-sk-z"></span>' +
         '<span class="up-tsk-bar uob-sk-z is-kurz"></span>' +
       '</div>';
-      return '<div class="uob-plans" aria-busy="true" aria-live="polite">' + karte + karte + karte + '</div>';
+      /* Drei Huellen, weil die Zahl der Tarife noch niemand kennt. Drei ist der Normalfall, und
+         kommt ein vierter dazu, rueckt genau eine Spalte nach -- ein Skelett, das die Zahl raet,
+         waere haeufiger falsch als eines, das den Normalfall zeigt. */
+      return '<div class="uob-plans" style="--uob-plancols:3" aria-busy="true" aria-live="polite">' +
+             karte + karte + karte + '</div>';
     }
     /* Ein Skelett braucht ein benanntes Ende. Bleibt die Antwort aus, stuende hier sonst fuer
        immer ein Platzhalter -- der Ausfall, der wie "gleich da" aussieht. Acht Sekunden: die
@@ -1265,7 +1293,8 @@
             : !state.plans.length && !state.plansGeholt
             ? planSkelett()
             : state.plans.length
-            ? '<div class="uob-plans">' + state.plans.map(function (pl, i) {
+            ? '<div class="uob-plans" style="--uob-plancols:' + Math.min(4, state.plans.length) + '">' +
+              state.plans.map(function (pl, i) {
                 var an = state.plan === pl.id;
                 var mon = num(pl.monthly_price_eur), jah = num(pl.yearly_price_eur);
                 /* Der Jahrespreis wird auf den Monat umgerechnet, damit die drei Karten
@@ -1371,12 +1400,43 @@
        allen Tarifen dieselbe, und dreimal derselbe Satz nebeneinander liest sich wie ein
        Unterschied, den es nicht gibt. Die Zahl kommt aus den Daten; sind sie uneinheitlich,
        bleibt der Satz allgemein. */
+    /* Der gewaehlte Tarif, als Datensatz. */
+    function gewaehlterPlan() {
+      for (var i = 0; i < state.plans.length; i++) {
+        if (String(state.plans[i].id) === String(state.plan)) return state.plans[i];
+      }
+      return null;
+    }
+    function hatTest(pl) { return pl ? num(pl.trial_days) > 0 : false; }
+    /* Der Knopf sagt, was der Klick TUT. Ein Tarif ohne Testphase fuehrt direkt zur Kasse, und
+       "Start free trial" waere dort eine Zusage, die niemand einhaelt.
+       Entschieden wird das an trial_days des GEWAEHLTEN Tarifs und nicht am Namen: "Enterprise"
+       ist ein Wort auf einer Preisseite, es kann morgen anders heissen, und ein zweiter Tarif ohne
+       Testphase waere von einer Namensabfrage nicht erfasst.
+       Solange nichts gewaehlt ist, ist der Knopf ohnehin gesperrt -- dort steht der Fall, der auf
+       die Mehrheit zutrifft, und mit dem ersten Klick sagt er die Wahrheit fuer DIESEN Tarif. */
+    function planKnopfText() {
+      var pl = gewaehlterPlan();
+      if (pl) return hatTest(pl) ? "Start free trial" : "Proceed to checkout";
+      for (var i = 0; i < state.plans.length; i++) if (hatTest(state.plans[i])) return "Start free trial";
+      return "Proceed to checkout";
+    }
+    /* "Every plan starts with a free trial" war falsch, sobald EIN Tarif keine Testphase hat --
+       und darunter steht ein Knopf, der fuer genau diesen Tarif "Proceed to checkout" sagt. Zwei
+       Aussagen, die sich widersprechen, und die falsche steht groesser.
+       Also drei Faelle, und jeder ist wahr. Der gemischte nennt keinen Namen: welcher Tarif keine
+       Testphase hat, steht in den Daten und nicht in diesem Satz. */
     function testText() {
-      var tage = null, gleich = true;
+      var mit = 0, ohne = 0, tage = null, gleich = true;
       for (var i = 0; i < state.plans.length; i++) {
         var t = num(state.plans[i].trial_days);
-        if (i === 0) tage = t; else if (t !== tage) gleich = false;
+        if (t != null && t > 0) {
+          mit++;
+          if (tage == null) tage = t; else if (t !== tage) gleich = false;
+        } else ohne++;
       }
+      if (!mit) return "Pick the plan that fits your team.";
+      if (ohne) return "Pick the plan that fits your team. Not every plan includes a free trial.";
       return (gleich && tage)
         ? "Every plan starts with a " + Math.round(tage) + "-day free trial. No charge until it ends."
         : "Every plan starts with a free trial. No charge until it ends.";
@@ -1503,7 +1563,12 @@
     function render(neuEingezogen) {
       var k = ansichtKey();
       var wechsel = k !== letzteAnsicht;
-      root.style.setProperty("--uob-w", BREITE[k] || "480px");
+      /* Vier Tarife brauchen mehr Spalte als drei -- mit 1040px waeren die Karten so schmal, dass
+         jede Merkmalszeile dreifach umbricht. Die Spalte ist ohnehin nur eine Obergrenze; auf
+         einem engeren Schirm schrumpft sie mit. */
+      var spalte = BREITE[k] || "480px";
+      if (k === "plan" && state.plans.length >= 4) spalte = "1240px";
+      root.style.setProperty("--uob-w", spalte);
       /* Im Tor bleiben Schiene und Knopfzeile weg -- die Begruendung steht an viewResume. */
       root.classList.toggle("is-gate", k === "resume");
       /* Erst hier, nicht beim Aufbau: die Uhr laeuft nur, wenn der Nutzer den Tarifschritt
@@ -1794,7 +1859,7 @@
       elNext.disabled = state.busy || (state.step === "plan" && !state.plan);
 
       var texte = { brand: "Continue", competitors: "Continue", topics: "Continue",
-                    prompts: "Continue", plan: "Start free trial" };
+                    prompts: "Continue", plan: planKnopfText() };
       elNextTxt.textContent = texte[state.step] || "Continue";
       /* Mindestens ein Thema. Ohne Thema entstehen keine Prompts, und ohne Prompts hat das
          fertige Konto nichts zu messen -- der Schritt ist der einzige, der wirklich noetig ist.
@@ -2704,6 +2769,28 @@
       return true;
     }
 
+    /* Der Schritt wird gemeldet, wenn der Nutzer ihn SEHEN kann -- nicht, wenn er sich intern
+       aendert. Zwei Faelle hingen daran, und beide waren gemeldet:
+
+         Neuladen MIT dem Schritt in der Adresse. Dann aendert einstieg() den Schritt nicht (er
+         steht schon) und rief nur render(). Es feuerte also nichts, und ein Workflow, der auf
+         uobStep die Daten des Schritts holt, lud nie -- auf dem Tarifschritt hiess das: keine
+         Tarife nach einem Neuladen.
+
+         Das Tor. Solange es davor steht, ist der Nutzer NICHT im Schritt, und ein Ereignis dafuer
+         wuerde Daten fuer einen Schritt holen, den vielleicht niemand betritt. Gemeldet wird
+         daher erst, wenn das Tor zugeht.
+
+       Die Marke verhindert nur das DOPPELTE Melden derselben Ankunft. Wer zurueckgeht und wieder
+       vorkommt, wird erneut gemeldet -- er kommt ja wirklich wieder an. */
+    var schrittGemeldet = "";
+    function schrittMelden() {
+      if (state.torAuf) return;
+      if (schrittGemeldet === state.step) return;
+      schrittGemeldet = state.step;
+      fire("data-step-fn", "uobStep", state.step);
+    }
+
     function gehe(key, neuerEintrag) {
       /* Schon dort und nicht am Warten: nichts tun. Ohne diese Sperre navigiert ein Payload,
          der status_phase 5 traegt, ein zweites Mal nach Competitors -- der Aufruf tauscht den
@@ -2714,7 +2801,7 @@
       state.warten = "";
       urlSetzen(key, neuerEintrag !== false);
       render();
-      fire("data-step-fn", "uobStep", key);
+      schrittMelden();
     }
 
     /* Fortsetzen: das Tor zu, mehr nicht. Der Schritt steht schon -- einstieg() hat ihn beim
@@ -2724,6 +2811,10 @@
       if (!state.torAuf) return;
       state.torAuf = false;
       render();
+      /* JETZT ist der Nutzer im Schritt. Vorher stand hier ausdruecklich kein Ereignis ("der
+         Schritt steht schon") -- das war falsch gedacht: uobStep ist nicht die Meldung einer
+         Aenderung, sondern der Anlass, die Daten des Schritts zu holen. */
+      schrittMelden();
     }
 
     /* Von vorn anfangen. Geloescht wird HIER NICHTS: das tut die Start-RPC, wenn das Formular
@@ -3125,7 +3216,7 @@
         if (zi > state.maxErreicht) state.maxErreicht = zi;
         /* Nur vorwaerts, nie zurueck -- siehe Begruendung oben. */
         if (stepIndex(ziel) > stepIndex(state.step)) gehe(ziel, false);
-        else render();
+        else { render(); schrittMelden(); }
         return;
       }
       if (s.laeuft) {

@@ -1,0 +1,62 @@
+<meta charset="utf-8"><title>onboarding: uobSelect roh -- Select all bei Topics</title>
+<style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif}
+#b{padding:16px;width:900px} #out{padding:10px;font:11px/1.45 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body><div id="b"></div><pre id="out">laeuft…</pre>
+<script>
+/* Gefragt am 26.08.: der Regex auf p_select_all bleibt leer. Also den ROHEN Text ausgeben, den
+   das Ereignis wirklich schickt -- nicht meine Erinnerung daran. Und zwar fuer beide Klicks:
+   einzelnes Thema und Alle-Knopf, jeweils an und aus. */
+var ROH = [];
+["uobStart","uobStep","uobTopics","uobWorkflowStart","uobFinish","uobExit"].forEach(function(n){
+  window["bubble_fn_"+n]=function(){}; });
+window.bubble_fn_uobSelect = function(p){ ROH.push(String(p)); };
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){ return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=["core.css","core.js","onboarding-page.css","onboarding-page.js",
+       "bubble/onboarding_page_bubble.html","_h_uob_eastside_voll.json"];
+var T={};
+Promise.all(D.map(hol)).then(function(t){
+  D.forEach(function(f,i){ T[f]=t[i]; });
+  ["core.css","onboarding-page.css"].forEach(function(f){ var s=document.createElement("style"); s.textContent=T[f]; document.head.appendChild(s); });
+  [ "core.js","onboarding-page.js"].forEach(function(f){ var j=document.createElement("script"); j.textContent=T[f]; document.head.appendChild(j); });
+  return new Promise(function(ok){ setTimeout(ok,600); });
+}).then(function(){
+  var b = JSON.parse(T["_h_uob_eastside_voll.json"]);
+  b.prompts = [];                       /* ohne Prompts landet der Einstieg auf Topics */
+  delete b.restart;                     /* ohne Tor, damit der Schritt sofort sichtbar ist */
+  var u=new URL(window.location.href); u.searchParams.set("step","topics");
+  window.history.replaceState({}, "", u.toString());
+  var w=document.createElement("div"); w.innerHTML=wurzelAus(T["bubble/onboarding_page_bubble.html"]);
+  var r=w.querySelector(".uob-root"); var id="sa"+Math.random().toString(36).slice(2,7);
+  r.setAttribute("data-instance",id); r.setAttribute("data-cdn-pin","sa");
+  document.getElementById("b").appendChild(r);
+  var n=0; (function warte(){ if (r.__uobController || n++>40){
+    window.setOnboardingBundle(id, JSON.stringify(b));
+    setTimeout(function(){
+      var erg = {};
+      function klick(sel, name){
+        ROH = [];
+        var el = r.querySelector(sel);
+        if (!el) { erg[name] = "KEIN ELEMENT: " + sel; return; }
+        el.click();
+        erg[name] = ROH.slice();
+      }
+      klick('[data-allof="topics"]', "1_alle_knopf_erster_klick");
+      klick('[data-allof="topics"]', "2_alle_knopf_zweiter_klick");
+      klick('.uob-item[data-pick="topics"]', "3_einzelnes_thema");
+      /* Und die Regex-Frage direkt beantworten, am echten Text. */
+      var text = (erg["1_alle_knopf_erster_klick"]||[])[0] || "";
+      erg.regexProbe = {
+        text: text,
+        p_select_all_mit_anfuehrung: (text.match(/(?<="p_select_all":")[^"]*/)||[null])[0],
+        on_mit_anfuehrung:           (text.match(/(?<="on":")[^"]*/)||[null])[0],
+        on_ohne_anfuehrung:          (text.match(/(?<="on":)[^,}]*/)||[null])[0],
+        changed_ids:                 (text.match(/(?<="changed_ids":")[^"]*/)||[null])[0],
+        ids:                         (text.match(/(?<="ids":")[^"]*/)||[null])[0]
+      };
+      document.getElementById("out").textContent = JSON.stringify(erg,null,1);
+      window.__R=erg; window.__fertig=true;
+    }, 800);
+  } else setTimeout(warte,60); })();
+});
+</script>

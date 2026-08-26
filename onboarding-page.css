@@ -878,14 +878,21 @@
   background: var(--vc-bg);
   display: grid; gap: 4px;
 }
-.uob-res-meta > div { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-.uob-res-meta dt { font-size: 13px; color: var(--vc-third); }
-.uob-res-meta dd { margin: 0; font-size: 13px; font-weight: 500; color: var(--vc-text);
+/* Eigene Klassen und keine Tag-Waehler. dt und dd standen hier als einzige semantische Tags der
+   Komponente, mitten in einer fremden Seite -- und was ein Baukasten wie Bubble an globaler CSS
+   mitbringt, trifft genau solche Tags. */
+.uob-res-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.uob-res-k { font-size: 13px; color: var(--vc-third); }
+.uob-res-v { font-size: 13px; font-weight: 500; color: var(--vc-text);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Untereinander, beide ueber die volle Breite. Nebeneinander stuenden zwei Antworten auf
    dieselbe Frage gleich gewichtet da, und die zweite loescht etwas. Der Abstand ist der der
    Knopfzeile, damit die Karte im selben Raster sitzt wie jeder andere Schritt. */
-.uob-res-acts { margin-top: clamp(16px, 2.6vh, 24px); width: 100%; display: grid; gap: 8px; }
+/* 32px Einzug je Seite, also 64px weniger Breite als der Kasten darueber. So angesagt am 26.08.:
+   die beiden Knoepfe sollen schmaler stehen als die Karte, nicht auf ihrer Kante. box-sizing:
+   border-box gilt in core fuer alles, das Polster geht also von der Breite ab. */
+.uob-res-acts { margin-top: clamp(16px, 2.6vh, 24px); width: 100%; display: grid; gap: 8px;
+  padding: 0 32px; }
 .uob-res-acts .uob-next { width: 100%; }
 /* .uob-back ist links ausgerichtet, weil es in der Knopfzeile neben dem Rand sitzt. Hier steht
    es allein ueber die Breite, also mittig. */
@@ -980,7 +987,11 @@
    Drei Karten nebeneinander, die mittlere hervorgehoben. Die Hervorhebung ist ein Rahmen in
    --vc-text und ein Etikett, KEINE eigene Farbe: die App hat keine Akzentfarbe, und eine hier
    einzufuehren waere genau die neue Regel, die es nicht geben soll. */
-.uob-plans { margin-top: clamp(16px, 2.8vh, 24px); display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+/* Die Spaltenzahl kommt aus dem JS und ist die Zahl der Tarife (hoechstens vier). Fest auf drei
+   verdrahtet stand der vierte Tarif allein in einer zweiten Zeile -- und der vierte ist genau der,
+   der jetzt dazukommt (Enterprise). Der Rueckfall bleibt drei: das ist der Normalfall. */
+.uob-plans { margin-top: clamp(16px, 2.8vh, 24px); display: grid;
+  grid-template-columns: repeat(var(--uob-plancols, 3), minmax(0, 1fr)); gap: 12px; }
 /* Die Karte ist dichter gesetzt als eine Preisseite: dort scrollt man, hier soll der ganze
    Ablauf ohne Scrollen erreichbar bleiben, und acht Merkmalszeilen plus Unterzeile sind das
    Hoechste, was auf einen 760 Pixel hohen Bildschirm passt. Gemessen wurden mit den Werten

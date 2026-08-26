@@ -24,6 +24,18 @@ Promise.all(D.map(hol)).then(function(t){
   document.getElementById("b").style.width = breite + "px";
   var ROH = T["_h_uob_eastside_voll.json"];
   var b = JSON.parse(ROH);
+  /* ?felder=alias: die Zeitfelder heissen anders. Genau der Fall, der auf der echten Seite nicht
+     zu unterscheiden war von "kein Datum da" -- die Zeile blieb weg und sagte nicht, warum. */
+  if (q.get("felder") === "alias") {
+    b.project.created = b.project.created_at; delete b.project.created_at;
+    b.project.last_updated = b.project.updated_at; delete b.project.updated_at;
+    ROH = JSON.stringify(b);
+  }
+  /* ?felder=keine: gar keine Zeiten. Dann darf auch kein leerer Kasten stehen. */
+  if (q.get("felder") === "keine") {
+    delete b.project.created_at; delete b.project.updated_at;
+    ROH = JSON.stringify(b);
+  }
   /* KEINE eigenen Zeiten und KEIN eigener restart-Block mehr: beides steht im echten Payload des
      Nutzers. Vorher hat dieser Aufbau sich seine Eingabe selbst gebaut und damit gemessen, dass
      meine Annahme zu meiner Annahme passt. */
@@ -58,15 +70,20 @@ Promise.all(D.map(hol)).then(function(t){
       document.getElementById("out").textContent = JSON.stringify({
         breiteWurzel: r.clientWidth, schmal: r.classList.contains("is-narrow"),
         kartenBreite: karte ? Math.round(karte.getBoundingClientRect().width) : null,
-        zeilen: [].map.call(r.querySelectorAll(".uob-res-meta > div"), function(d){
-          return (d.querySelector("dt")||{}).textContent + " = " + (d.querySelector("dd")||{}).textContent; }),
+        zeilen: [].map.call(r.querySelectorAll(".uob-res-row"), function(d){
+          return (d.querySelector(".uob-res-k")||{}).textContent + " = " +
+                 (d.querySelector(".uob-res-v")||{}).textContent; }),
         marke: (r.querySelector(".uob-load-name")||{}).textContent,
         domain: (r.querySelector(".uob-load-dom")||{}).textContent,
         pane: (r.querySelector(".uob-pane:not(.is-off)")||{getAttribute:function(){return "-";}}).getAttribute("data-pane"),
         knopfBreite: Math.round((r.querySelector("[data-resume]")||{getBoundingClientRect:function(){return{width:0}}}).getBoundingClientRect().width),
         ueberlauf: r.scrollWidth > r.clientWidth ? (r.scrollWidth - r.clientWidth) : 0,
         note: (r.querySelector(".uob-res-note")||{}).textContent,
-        projektDa: !!document.querySelector(".uob-load-dom")
+        projektDa: !!document.querySelector(".uob-load-dom"),
+        knopfBreiten: [].map.call(r.querySelectorAll(".uob-res-acts button"), function(x){
+          return Math.round(x.getBoundingClientRect().width); }),
+        kastenBreiteGemessen: (function(){ var k=r.querySelector(".uob-res-meta");
+          return k ? Math.round(k.getBoundingClientRect().width) : null; })()
       });
       /* Und beide Knoepfe wirklich druecken. "startet und updatet nicht" kann auch heissen:
          die Karte steht, aber nichts passiert beim Klicken. */
