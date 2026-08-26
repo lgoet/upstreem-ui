@@ -102,11 +102,17 @@
      Die Texte sind bewusst in derselben Sprache wie die Anmeldeseite geschrieben: was der Nutzer
      davon hat, nicht was das System tut. "Creating your personal workspace" wurde zu "Setting up
      your workspace" -- "personal" ist es nicht, es ist ein Team. */
+  /* Die vier Bloecke des ersten Ladebilds. Sie folgen den vier Phasen des Servers (1 Initializing
+     project, 2 Scanning website, 3 Reading pages, 4 Analyzing brand), sagen sie aber in der Sprache
+     des Nutzers -- das Label des Servers ist eine Systemmeldung ("Done") und keine Auskunft.
+     Der dritte traegt seine Dauer im Text: "page by page" sagt, dass hier etwas Grosses laeuft,
+     ohne zu behaupten, es werde lange dauern. Eine Zahl steht dort NICHT -- wie viele Seiten es
+     sind, weiss diese Komponente nicht, und eine erfundene waere schlimmer als keine. */
   var PHASES = [
-    { h: "Setting up your workspace",  b: "Creating the space your team will work in" },
-    { h: "Reading your website",       b: "Getting to know what your brand does" },
-    { h: "Mapping your market",        b: "Looking for the brands you compete with" },
-    { h: "Preparing your insights",    b: "Turning what we found into something useful" }
+    { h: "Setting up your workspace", b: "Creating the space your team will work in" },
+    { h: "Opening your website",      b: "Finding the pages worth reading" },
+    { h: "Reading your pages",        b: "Going through your site page by page" },
+    { h: "Analyzing your brand",      b: "Working out what you do and who you compete with" }
   ];
 
   /* Vier Werte, vier Segmente. Der Wert bleibt exakt der, den Bubble erwartet -- nur die
@@ -918,16 +924,16 @@
       '</div>';
     }
 
-    /* Der Zustand VOR der ersten Antwort. Bewusst ohne Ueberschrift und ohne Markenkachel: beides
-       waere geraten, und ein falscher Name, der gleich umspringt, ist schlimmer als keiner.
-       Die Balken sind .up-tsk-bar aus core -- dasselbe Skelett und derselbe Puls wie in jeder
-       Tabelle der App, nicht ein zweites danebengebautes. */
+    /* Der Zustand VOR der ersten Antwort. Ein Kreisel in der Mitte und nichts weiter -- keine
+       Schiene, keine Kopfzeile, keine Knopfzeile (siehe is-boot in der CSS).
+       Hier standen drei Skelettbalken. Das war falsch gedacht: ein Skelett verspricht eine FORM,
+       und welche es wird, weiss die Komponente in diesem Moment nicht -- Formular, Tor und
+       Ladebild sehen alle anders aus. Dreimal gemeldet, dass vor dem Tor kurz etwas anderes
+       aufblitzt. Ein Kreisel verspricht nichts als "gleich". */
     function viewBoot() {
       return '<div class="uob-pane" data-pane="boot">' +
         '<div class="uob-body"><div class="uob-boot" aria-busy="true" aria-live="polite">' +
-          '<span class="up-tsk-bar uob-boot-a"></span>' +
-          '<span class="up-tsk-bar uob-boot-b"></span>' +
-          '<span class="up-tsk-bar uob-boot-c"></span>' +
+          '<span class="uob-boot-kreisel"></span>' +
         '</div></div>' +
       '</div>';
     }
@@ -1705,6 +1711,9 @@
       /* Die Weltkarte steht dort, wo der Bildschirm fast leer ist: Formular, Tor und das ERSTE
          Ladebild. Ab Competitors blendet sie aus -- ab da braucht die Liste die Ruhe. */
       root.classList.toggle("is-welt", k === "brand" || k === "resume" || k === "load1");
+      /* Solange nicht feststeht, was hier ueberhaupt hingehoert, ist ausser dem Kreisel nichts zu
+         sehen -- auch nicht die Kopfzeile und nicht die Schiene. */
+      root.classList.toggle("is-boot", k === "boot");
       /* Erst hier, nicht beim Aufbau: die Uhr laeuft nur, wenn der Nutzer den Tarifschritt
          wirklich sieht. Wer nie dort ankommt, braucht keinen Ablauf. */
       if (k === "plan") planUhrStarten();
@@ -3715,7 +3724,24 @@
           state.fortschritt = 100; renderPhasen();
           window.setTimeout(function () {
             warteBeenden();
-            gehe(state.step === "brand" ? "competitors" : "prompts", false);
+            /* Hier stand: war der Nutzer auf brand, dann competitors, sonst prompts. Das war eine
+               Vermutung, und sie ging schief, sobald das Buendel VOR der Statusmeldung eintraf: es
+               setzte den Schritt schon auf competitors, und der Status danach schickte den Nutzer
+               deshalb auf prompts -- eine leere Promptliste, und in der Schiene standen Competitors
+               und Topics als erledigt. Genau so gemeldet am 26.08., ohne Neuladen, im normalen Weg.
+               Jetzt sagt die PHASE, was fertig wurde: 7 heisst Promptlauf, alles andere heisst
+               grosser Lauf -- und wohin der Nutzer danach gehoert, sagt zielSchritt() aus den
+               Daten. */
+            var ziel = (num(s.phase) != null && num(s.phase) >= PROMPT_PHASE) ? "prompts" : zielSchritt();
+            /* Nur vorwaerts. Steht der Nutzer schon weiter, holt ihn eine Statusmeldung nicht
+               zurueck -- sonst wirft ihn eine spaete Meldung von Topics auf Competitors. */
+            if (stepIndex(ziel) < stepIndex(state.step)) ziel = state.step;
+            var zi = stepIndex(ziel);
+            if (zi > state.maxErreicht) state.maxErreicht = zi;
+            /* gehe() kehrt um, wenn der Schritt schon steht -- dann muss hier gezeichnet werden,
+               sonst bleibt das Ladebild stehen, obwohl das Warten zu Ende ist. */
+            if (state.step === ziel) { render(); schrittMelden(); }
+            else gehe(ziel, false);
           }, 360);
           return true;
         }

@@ -1686,7 +1686,6 @@
   "uob-topr",
   "uob-warte",
   "uob-warte-hint",
-  "uob-warte-in",
   "uob-warte-uhr",
   "uob-welt",
   "up",
@@ -2673,7 +2672,7 @@
   "globals": 137,
   "payloadkeys": 85,
   "dataattrs": 198,
-  "klassen": 1973,
+  "klassen": 1972,
   "keyframes": 58
  }
 }

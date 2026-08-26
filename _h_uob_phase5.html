@@ -1,0 +1,119 @@
+<meta charset="utf-8"><title>onboarding: Phase 5 nach dem ersten Loader</title>
+<style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif}
+#b{padding:0} #out{padding:10px;font:11px/1.45 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body><div id="b"></div><pre id="out">laeuft…</pre>
+<script>
+/* Gemeldet am 26.08., im normalen Weg und ohne Neuladen: nach dem ersten Loader kommt Phase 5, und
+   die Komponente wechselt auf PROMPTS -- leere Liste, und in der Schiene stehen Competitors und
+   Topics als erledigt. Danach traegt Prompts noch einen Haken, obwohl man dort nie war.
+
+   Nachgestellt wird der Weg genau so: Formular abschicken, Ladebild, dann das Buendel (Wettbewerber
+   und Themen da, keine Prompts), dann die Statusmeldung Phase 5. Und zur Gegenprobe dieselbe Folge
+   in der ANDEREN Reihenfolge -- erst der Status, dann das Buendel: welche zuerst kommt, steht nicht
+   in unserer Hand. */
+["uobStart","uobStep","uobTopics","uobWorkflowStart","uobSelect","uobFinish","uobExit"].forEach(function(n){
+  window["bubble_fn_"+n]=function(){}; });
+window.__err=[]; window.addEventListener("error",function(e){window.__err.push(String(e.message));});
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){ return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=["core.css","core.js","onboarding-page.css","onboarding-page.js",
+       "bubble/onboarding_page_bubble.html","_h_uob_bubble.json"];
+var T={}, R={};
+Promise.all(D.map(hol)).then(function(t){
+  D.forEach(function(f,i){ T[f]=t[i]; });
+  ["core.css","onboarding-page.css"].forEach(function(f){ var s=document.createElement("style"); s.textContent=T[f]; document.head.appendChild(s); });
+  [ "core.js","onboarding-page.js"].forEach(function(f){ var j=document.createElement("script"); j.textContent=T[f]; document.head.appendChild(j); });
+  /* Die vier Bloecke aus der Datei lesen -- damit im Bericht steht, was wirklich drinsteht. */
+  var m = T["onboarding-page.js"].match(/var PHASES = \[([\s\S]*?)\];/);
+  R.bloecke = m ? m[1].trim().split("\n").map(function(z){ return z.trim(); }) : "nicht gefunden";
+  return new Promise(function(ok){ setTimeout(ok,600); });
+}).then(function(){
+  function mount(){
+    document.getElementById("b").innerHTML="";
+    var u=new URL(window.location.href); u.searchParams.delete("step");
+    window.history.replaceState({}, "", u.toString());
+    var w=document.createElement("div"); w.innerHTML=wurzelAus(T["bubble/onboarding_page_bubble.html"]);
+    var r=w.querySelector(".uob-root"); var id="p5"+Math.random().toString(36).slice(2,7);
+    r.setAttribute("data-instance",id); r.setAttribute("data-cdn-pin","p5");
+    document.getElementById("b").appendChild(r);
+    return new Promise(function(ok){ var n=0;
+      (function warte(){ if (r.__uobController || n++>40) return ok({r:r,id:id}); setTimeout(warte,60); })(); });
+  }
+  function bereich(r){ var p=r.querySelector(".uob-pane:not(.is-off)"); return p?p.getAttribute("data-pane"):"-"; }
+  function schiene(r){
+    return [].map.call(r.querySelectorAll(".uob-dot"), function(d){
+      var k=d.getAttribute("data-dot");
+      return k + (d.className.indexOf("is-done")>=0 ? ":HAKEN" : d.className.indexOf("is-now")>=0 ? ":jetzt" : ":-");
+    }).join(" ");
+  }
+  function formularAbschicken(m){
+    var n=m.r.querySelector('[data-f="name"]'), s=m.r.querySelector('[data-f="website"]');
+    n.value="LeeUp Media"; n.dispatchEvent(new Event("input",{bubbles:true}));
+    s.value="lee-up.de";   s.dispatchEvent(new Event("input",{bubbles:true}));
+    m.r.querySelector("[data-next]").click();
+  }
+  /* Der Bootzustand: was ist da ueberhaupt zu sehen? Dreimal gemeldet, dass die Schiene kurz
+     aufblitzt, bevor das Tor kommt. */
+  function bootBild(){
+    return mount().then(function(m){
+      var r = m.r;
+      function sichtbar(sel){ var e=r.querySelector(sel); return e ? getComputedStyle(e).display !== "none" : null; }
+      R.Z_bootzustand = {
+        bereich: bereich(r),
+        kopfzeile: sichtbar(".uob-top"),
+        schiene: sichtbar(".uob-rail"),
+        knopfzeile: sichtbar(".uob-nav"),
+        kreisel: !!r.querySelector(".uob-boot-kreisel"),
+        alteBalken: r.querySelectorAll(".uob-boot .up-tsk-bar").length,
+        kreiselGroesse: (function(){ var k=r.querySelector(".uob-boot-kreisel");
+          return k ? Math.round(k.getBoundingClientRect().width)+"x"+Math.round(k.getBoundingClientRect().height) : null; })(),
+        /* Und danach, mit Daten: ist alles wieder da? */
+        nachBuendel: null
+      };
+      window.setOnboardingBundle(m.id, T["_h_uob_bubble.json"]);
+      return new Promise(function(ok){ setTimeout(function(){
+        R.Z_bootzustand.nachBuendel = { bereich: bereich(r), kopfzeile: sichtbar(".uob-top"),
+                                        schiene: sichtbar(".uob-rail"), knopfzeile: sichtbar(".uob-nav") };
+        ok();
+      }, 500); });
+    });
+  }
+  function lauf(name, reihenfolge){
+    return mount().then(function(m){
+      /* Kein Buendel beim Aufbau: neuer Nutzer, Formular. Der Bootzustand muss dafuer enden. */
+      window.setOnboardingBundle(m.id, "");
+      return new Promise(function(ok){ setTimeout(function(){
+        var vor = bereich(m.r);
+        formularAbschicken(m);
+        var imLader = bereich(m.r);
+        var b = JSON.parse(T["_h_uob_bubble.json"]);
+        function buendel(){ window.setOnboardingBundle(m.id, JSON.stringify(b)); }
+        function status(){ window.setOnboardingStatus(m.id, JSON.stringify({ status:"ready", status_phase:5, progress_percent:100 })); }
+        if (reihenfolge === "buendel-zuerst") { buendel(); setTimeout(status, 120); }
+        else { status(); setTimeout(buendel, 120); }
+        setTimeout(function(){
+          R[name] = { vorAbschicken: vor, imLader: imLader, danach: bereich(m.r),
+                      schiene: schiene(m.r),
+                      url: new URL(window.location.href).searchParams.get("step"),
+                      zeilen: m.r.querySelectorAll(".uob-item").length };
+          /* Und dann zurueck auf Competitors klicken -- traegt Prompts dort noch einen Haken? */
+          var hit = m.r.querySelector('[data-go="competitors"]');
+          if (hit) hit.click();
+          setTimeout(function(){
+            R[name].nachZurueck = { bereich: bereich(m.r), schiene: schiene(m.r) };
+            ok();
+          }, 300);
+        }, 1200);
+      }, 500); });
+    });
+  }
+  return bootBild()
+    .then(function(){ return lauf("A_buendel_dann_status", "buendel-zuerst"); })
+    .then(function(){ return lauf("B_status_dann_buendel", "status-zuerst"); })
+    .then(function(){
+      R.fehler = window.__err.slice(0,3);
+      document.getElementById("out").textContent = JSON.stringify(R,null,1);
+      window.__R=R; window.__fertig=true;
+    });
+}).catch(function(e){ document.getElementById("out").textContent="FEHLER: "+e.message+"\n"+e.stack; window.__fertig=true; });
+</script>

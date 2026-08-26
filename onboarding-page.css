@@ -403,11 +403,22 @@
    Aussehen. Drei Balken in abnehmender Breite lesen sich als "hier kommt Text", ohne etwas zu
    behaupten: eine Ueberschrift oder eine Markenkachel waere geraten, und ein falscher Name, der
    gleich umspringt, ist schlimmer als gar keiner. */
-.uob-boot { display: flex; flex-direction: column; gap: 14px; padding-top: 4px; }
-.uob-boot .up-tsk-bar { height: 14px; border-radius: 6px; }
-.uob-boot-a { width: min(46%, 260px); }
-.uob-boot-b { width: min(78%, 440px); }
-.uob-boot-c { width: min(62%, 350px); }
+/* Der Bootzustand zeigt NUR den Kreisel. Kopfzeile, Schiene und Knopfzeile bleiben weg, solange
+   nicht feststeht, was hier hingehoert -- sonst blitzt die Fortschrittsschiene auf und wird von
+   einem Tor abgeloest, das gar keine Schiene hat. Dreimal so gemeldet.
+   display: none und nicht opacity: hier soll nichts Platz halten. Der Kreisel steht mittig in der
+   Spalte, und die Spalte ist ohnehin mittig. */
+.uob-root.is-boot .uob-top,
+.uob-root.is-boot .uob-rail,
+.uob-root.is-boot .uob-nav { display: none; }
+.uob-boot { display: flex; align-items: center; justify-content: center; padding: 24px 0; }
+/* Geometrie und Puls von .uob-spin (dem Kreisel im Weiter-Knopf), eine Stufe groesser: 15 -> 22,
+   Rahmen 2 -> 2.5. Dieselbe Bewegung, nur sichtbar aus der Entfernung. */
+.uob-boot-kreisel {
+  width: 22px; height: 22px; flex: 0 0 auto;
+  border: 2.5px solid var(--vc-border); border-right-color: transparent; border-radius: 50%;
+  animation: uob-spin 620ms linear infinite;
+}
 
 /* ---------- Markenkopf ----------
    Sobald die Marke bekannt ist, steht sie ueber dem Inhalt: Favicon, Name, Domain. Das ist der
