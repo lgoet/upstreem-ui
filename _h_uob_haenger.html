@@ -53,6 +53,12 @@ Promise.all(D.map(hol)).then(function(t){
                       danach: bereich(m.r), schritt: new URL(window.location.href).searchParams.get("step"),
                       uhr: uhrVorher || m.r.querySelector("[data-warte]").classList.contains("is-on") };
           R[name].uhrText = m.r.querySelector("[data-warte-uhr]").textContent;
+          /* Welcher Chip laeuft? Sonst waere "load1" nur die halbe Auskunft -- vier Phasen fuehren
+             in dasselbe Bild, aber nicht an dieselbe Stelle darin. */
+          R[name].chips = [].map.call(m.r.querySelectorAll(".uob-phase"), function(c){
+            return c.className.indexOf("is-now") >= 0 ? "JETZT" :
+                   c.className.indexOf("is-done") >= 0 ? "fertig" : "-"; }).join(",");
+          R[name].balken = (m.r.querySelector("[data-bar]") || {style:{}}).style.width || "-";
           ok();
         }, 400);
       }, 600); });
@@ -76,9 +82,33 @@ Promise.all(D.map(hol)).then(function(t){
       }); })
     /* Die Phasentabelle des Servers, jede Zeile einmal durch -- und die Frage ist jedes Mal
        dieselbe: wo landet der Nutzer nach einem Neuladen? */
-    .then(function(){ return lauf("G_phase2_grosser_lauf", "brand", function(b){
+    /* ALLE vier Phasen des grossen Laufs, nicht nur eine. Phase 1 traegt "submitted", 2 bis 4
+       "processing" -- zwei verschiedene Status, und beide muessen ins erste Ladebild fuehren.
+       Vorher stand hier nur Phase 2, und der Bericht sprach von vier. */
+    .then(function(){ return lauf("G1_phase1_submitted", "brand", function(b){
+        b.project.status = "submitted"; b.project.status_phase = 1; b.project.progress_percent = 5;
+        b.restart.run_in_progress = true; b.competitors = []; b.topics = [];
+      }); })
+    .then(function(){ return lauf("G2_phase2_processing", "brand", function(b){
         b.project.status = "processing"; b.project.status_phase = 2; b.project.progress_percent = 20;
         b.restart.run_in_progress = true; b.competitors = []; b.topics = [];
+      }); })
+    .then(function(){ return lauf("G3_phase3_processing", "brand", function(b){
+        b.project.status = "processing"; b.project.status_phase = 3; b.project.progress_percent = 45;
+        b.restart.run_in_progress = true; b.competitors = []; b.topics = [];
+      }); })
+    .then(function(){ return lauf("G4_phase4_processing", "brand", function(b){
+        b.project.status = "processing"; b.project.status_phase = 4; b.project.progress_percent = 70;
+        b.restart.run_in_progress = true; b.competitors = []; b.topics = [];
+      }); })
+    /* processing, aber run_in_progress FALSE. Das ist kein Widerspruch, sondern die
+       Fuenfzehn-Minuten-Regel der Datenbank: ein Lauf, dessen Status sich so lange nicht geruehrt
+       hat, gilt als haengend. Genau dann MUSS das Tor kommen -- es ist der einzige Weg zurueck.
+       Deshalb entscheidet run_in_progress und nicht der rohe Status: die Regel weiss von der
+       Haengezeit, der Status nicht. */
+    .then(function(){ return lauf("G5_lauf_haengt_15min_regel", "brand", function(b){
+        b.project.status = "processing"; b.project.status_phase = 3; b.project.progress_percent = 45;
+        b.restart.run_in_progress = false; b.competitors = []; b.topics = [];
       }); })
     .then(function(){ return lauf("H_phase6_promptlauf", "topics", function(b){
         b.project.status = "processing"; b.project.status_phase = 6; b.project.progress_percent = 60;
