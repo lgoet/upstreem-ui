@@ -10,7 +10,7 @@
 function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){ return r.text(); }); }
 function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
 var D=["core.css","core.js","onboarding-page.css","onboarding-page.js",
-       "bubble/onboarding_page_bubble.html","_h_uob_eastside.json"];
+       "bubble/onboarding_page_bubble.html","_h_uob_eastside_voll.json"];
 var T={};
 Promise.all(D.map(hol)).then(function(t){
   D.forEach(function(f,i){ T[f]=t[i]; });
@@ -22,17 +22,21 @@ Promise.all(D.map(hol)).then(function(t){
   var dunkel = q.get("dark")==="1", breite = q.get("w") || "1100", fall = q.get("fall") || "ok";
   document.body.style.background = dunkel ? "#0f0f10" : "#fff";
   document.getElementById("b").style.width = breite + "px";
-  var b = JSON.parse(T["_h_uob_eastside.json"]);
-  b.project.created_at = new Date(Date.now()-26*3600e3).toISOString();
-  b.project.updated_at = new Date(Date.now()-2*3600e3).toISOString();
-  b.restart = { has_onboarding:true, is_paying:true, limit:5, window_hours:24, used:2, remaining:3,
-    allowed:true, reason:null, next_allowed_at:null, run_in_progress:false,
-    company_name:"East Side Party", status:"ready", status_phase:7 };
+  var ROH = T["_h_uob_eastside_voll.json"];
+  var b = JSON.parse(ROH);
+  /* KEINE eigenen Zeiten und KEIN eigener restart-Block mehr: beides steht im echten Payload des
+     Nutzers. Vorher hat dieser Aufbau sich seine Eingabe selbst gebaut und damit gemessen, dass
+     meine Annahme zu meiner Annahme passt. */
   if (fall === "limit") { b.restart.allowed=false; b.restart.reason="rate_limited"; b.restart.used=5;
     b.restart.remaining=0; b.restart.next_allowed_at=new Date(Date.now()+5*3600e3).toISOString(); }
   if (fall === "lauf") { b.restart.allowed=false; b.restart.reason="run_in_progress";
     b.restart.run_in_progress=true; }
-  var u=new URL(window.location.href); u.searchParams.set("step","prompts");
+  /* Der Schritt in der Adresse entscheidet, welchen Weg einstieg() nimmt: gehe() oder render().
+     Genau daran koennte haengen, ob die Karte ihr Projekt schon hat -- state.projekt wird in
+     setBundle NACH den Listen gesetzt, und die zeichnen dazwischen. Also alle drei Wege messen. */
+  var u=new URL(window.location.href);
+  var wunsch = u.searchParams.has("step") ? u.searchParams.get("step") : "prompts";
+  if (wunsch) u.searchParams.set("step", wunsch); else u.searchParams.delete("step");
   window.history.replaceState({}, "", u.toString());
   var w=document.createElement("div"); w.innerHTML=wurzelAus(T["bubble/onboarding_page_bubble.html"]);
   var r=w.querySelector(".uob-root"); var id="tb"+Math.random().toString(36).slice(2,7);
@@ -40,16 +44,48 @@ Promise.all(D.map(hol)).then(function(t){
   r.setAttribute("data-isdark", dunkel?"yes":"no");
   document.getElementById("b").appendChild(r);
   var n=0; (function warte(){ if (r.__uobController || n++>40){
-    window.setOnboardingBundle(id, JSON.stringify(b));
+    /* ROHTEXT, wie ihn der Run-JS-Step uebergibt -- er laeuft dann durch UC.readBubble samt
+       Sanitizer. Vorher stand hier JSON.stringify(JSON.parse(...)): das prueft den Parser gar
+       nicht, sondern nur, dass mein eigenes Objekt zu meinem eigenen Objekt passt. */
+    /* Ein MutationObserver stand hier und sollte die Zwischenzustaende mitschreiben. Er kann das
+       nicht: sein Rueckruf ist eine Mikroaufgabe und laeuft erst NACH dem synchronen Setter, da
+       steht schon der Endzustand. Ein Instrument, das nichts messen kann, ist schlimmer als
+       keines -- also raus. Der Zwischenzustand bleibt hier ungemessen und ist als solcher benannt. */
+    window.setOnboardingBundle(id, (new URL(window.location.href).searchParams.get("roh")==="0")
+      ? JSON.stringify(b) : ROH);
     setTimeout(function(){
       var karte = r.querySelector(".uob-res-meta");
       document.getElementById("out").textContent = JSON.stringify({
         breiteWurzel: r.clientWidth, schmal: r.classList.contains("is-narrow"),
         kartenBreite: karte ? Math.round(karte.getBoundingClientRect().width) : null,
+        zeilen: [].map.call(r.querySelectorAll(".uob-res-meta > div"), function(d){
+          return (d.querySelector("dt")||{}).textContent + " = " + (d.querySelector("dd")||{}).textContent; }),
+        marke: (r.querySelector(".uob-load-name")||{}).textContent,
+        domain: (r.querySelector(".uob-load-dom")||{}).textContent,
+        pane: (r.querySelector(".uob-pane:not(.is-off)")||{getAttribute:function(){return "-";}}).getAttribute("data-pane"),
         knopfBreite: Math.round((r.querySelector("[data-resume]")||{getBoundingClientRect:function(){return{width:0}}}).getBoundingClientRect().width),
         ueberlauf: r.scrollWidth > r.clientWidth ? (r.scrollWidth - r.clientWidth) : 0,
-        note: (r.querySelector(".uob-res-note")||{}).textContent
+        note: (r.querySelector(".uob-res-note")||{}).textContent,
+        projektDa: !!document.querySelector(".uob-load-dom")
       });
+      /* Und beide Knoepfe wirklich druecken. "startet und updatet nicht" kann auch heissen:
+         die Karte steht, aber nichts passiert beim Klicken. */
+      var vorPane = (r.querySelector(".uob-pane:not(.is-off)")||{getAttribute:function(){return "-";}}).getAttribute("data-pane");
+      var welcher = new URL(window.location.href).searchParams.get("klick");
+      if (welcher === "weiter" || welcher === "over") {
+        var b2 = r.querySelector(welcher === "weiter" ? "[data-resume]" : "[data-restart]");
+        if (b2) b2.click();
+        setTimeout(function(){
+          var o = JSON.parse(document.getElementById("out").textContent);
+          o.klick = { welcher: welcher, knopfDa: !!b2, paneVorher: vorPane,
+            paneNachher: (r.querySelector(".uob-pane:not(.is-off)")||{getAttribute:function(){return "-";}}).getAttribute("data-pane"),
+            schritt: new URL(window.location.href).searchParams.get("step"),
+            vorspann: (r.querySelector(".uob-sub")||{}).textContent };
+          document.getElementById("out").textContent = JSON.stringify(o);
+          window.__fertig=true;
+        }, 300);
+        return;
+      }
       window.__fertig=true;
     }, 500);
   } else setTimeout(warte,60); })();

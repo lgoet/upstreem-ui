@@ -3157,17 +3157,23 @@
              vor eine Frage gestellt werden, die er langst beantwortet hat. */
           if (istJa(state.restart.has_onboarding) && !angefasst) state.torAuf = true;
         }
-        /* Erst die Listen, dann der Einstieg: zielSchritt() liest sie. Die Listen zeichnen
-           waehrend einer Uhr ohnehin nicht (siehe listeSetzen). */
-        if (isArr(b.competitors)) listeSetzen(b.competitors, "brands");
-        else if (isArr(b.brands)) listeSetzen(b.brands, "brands");
-        if (isArr(b.topics)) listeSetzen(b.topics, "topics");
-        if (isArr(b.prompts)) listeSetzen(b.prompts, "prompts");
+        /* Das PROJEKT zuerst, und das ist keine Kosmetik: listeSetzen zeichnet, wenn keine Uhr
+           laeuft -- dreimal, einmal je Liste. Stand das Projekt danach, zeichneten diese drei
+           Durchgaenge eine Ansicht, der das Projekt fehlt. Am Tor sieht man das: die Karte kommt
+           ohne Domain und ohne Zeiten, weil beides nur aus dem Projekt stammt, und erst der
+           Durchgang am Ende setzt sie ein. Nichts davon braucht die Listen, also gehoert es nach
+           vorn. */
         var pr = (b.project && typeof b.project === "object") ? b.project : null;
         if (pr) {
           state.projekt = pr;
           formAusProjekt(pr);
         }
+        /* Dann die Listen, dann der Einstieg: zielSchritt() liest sie. Die Listen zeichnen
+           waehrend einer Uhr ohnehin nicht (siehe listeSetzen). */
+        if (isArr(b.competitors)) listeSetzen(b.competitors, "brands");
+        else if (isArr(b.brands)) listeSetzen(b.brands, "brands");
+        if (isArr(b.topics)) listeSetzen(b.topics, "topics");
+        if (isArr(b.prompts)) listeSetzen(b.prompts, "prompts");
         einstieg(b);
         return true;
       },
