@@ -1675,6 +1675,8 @@
       root.style.setProperty("--uob-w", spalte);
       /* Im Tor bleiben Schiene und Knopfzeile weg -- die Begruendung steht an viewResume. */
       root.classList.toggle("is-gate", k === "resume");
+      /* Die Weltkarte im Hintergrund nur beim Formular -- Begruendung an der Regel in der CSS. */
+      root.classList.toggle("is-form", k === "brand");
       /* Erst hier, nicht beim Aufbau: die Uhr laeuft nur, wenn der Nutzer den Tarifschritt
          wirklich sieht. Wer nie dort ankommt, braucht keinen Ablauf. */
       if (k === "plan") planUhrStarten();

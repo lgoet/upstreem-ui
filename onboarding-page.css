@@ -66,6 +66,44 @@
 .uob-root *, .uob-root *::before, .uob-root *::after { box-sizing: border-box; }
 .uob-root[data-theme="dark"] { --uob-hover: var(--vc-heading-bg); }
 
+/* ---------- Weltkarte im Hintergrund des Formulars ----------
+   Nur beim ersten Schritt: dort ist der Bildschirm am leersten, und ab Competitors braucht die
+   Liste die Ruhe.
+
+   Sie kommt als MASKE und nicht als Bild. Damit steht die Farbe hier und nicht in der Datei: eine
+   Punktwolke in #F5F5F5 waere auf weissem Grund unsichtbar und auf dunklem zu hell, also braeuchte
+   es zwei Dateien, die auseinanderlaufen. So ist es eine Datei und zwei Zeilen CSS.
+
+   Der Pfad ist RELATIV. Das Stylesheet kommt selbst vom CDN unter seinem Pin, also loest der
+   Browser die Datei aus demselben Pin auf -- ohne dass irgendwo eine Adresse mit Versionsnummer
+   steht, die man beim naechsten Mal vergisst.
+
+   Und sie laeuft NICHT geometrisch aus dem Kasten heraus: der Kasten deckt die Wurzel genau ab
+   (inset: 0), und die Maske ist groesser als er und nach rechts unten verschoben. Was rechts und
+   unten herausragt, wird also nicht gezeichnet, statt eine Bildlaufleiste zu erzeugen. Ein
+   overflow: hidden an der Wurzel waere der naheliegende Weg und der falsche: es schneidet auch die
+   Auswahlfelder des Formulars ab, sobald eines nach unten aufklappt.
+
+   isolation: isolate an der Wurzel ist die Bedingung dafuer, dass z-index: -1 hier bleibt. Ohne
+   einen eigenen Stapelkontext faellt eine negative Ebene hinter den Hintergrund der FREMDEN Seite
+   und ist weg -- und an fremder Stapelung wird nichts angefasst (11.08.). */
+.uob-root { isolation: isolate; }
+.uob-root.is-form::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  -webkit-mask-image: url("onboarding-world.svg"); mask-image: url("onboarding-world.svg");
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  -webkit-mask-position: right -6% bottom -12%; mask-position: right -6% bottom -12%;
+  -webkit-mask-size: 132% auto; mask-size: 132% auto;
+  background-color: var(--vc-third);
+  /* Hell: sehr leise, der Grund ist weiss und der Kontrast ohnehin da. Dunkel: 30%, wie
+     angesagt. */
+  opacity: .16;
+}
+.uob-root[data-theme="dark"].is-form::before { opacity: .3; }
+/* Auf dem Telefon nicht: dort ist der Bildschirm klein, das Formular fuellt ihn, und eine
+   Punktwolke dahinter macht die Beschriftungen schlechter lesbar, ohne etwas zu zeigen. */
+.uob-root.is-narrow.is-form::before { display: none; }
+
 /* ---------- Kopfzeile ----------
    Logo links, die drei Nebenwege rechts. "Dashboard" und "Log out" sind bewusst Textknoepfe in
    --vc-muted und kein gefuellter Knopf: sie fuehren aus dem Ablauf HERAUS, und ein Ausgang darf
