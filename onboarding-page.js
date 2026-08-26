@@ -687,7 +687,11 @@
          Es bleibt ein Element und keine Pseudoelemente, weil das Ausblenden beim Schrittwechsel
          etwas braucht, das im Dokument BLEIBT.
          aria-hidden, weil hier nichts steht, was jemand vorgelesen bekommen muesste. */
-      '<div class="uob-bg" data-bg aria-hidden="true"></div>' +
+      '<div class="uob-bg" data-bg aria-hidden="true">' +
+        '<span class="uob-bg-licht"></span>' +
+        '<span class="uob-bg-raster"></span>' +
+        '<span class="uob-bg-marken"></span>' +
+      '</div>' +
 
       /* Die Uhr am unteren Rand. Sie steht IM Rahmen und nicht im Ladebild: das Ladebild sitzt
          mittig und waechst mit seinem Inhalt, der Rand bleibt der Rand. Sie liegt immer im
