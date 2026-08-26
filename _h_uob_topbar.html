@@ -1,0 +1,60 @@
+<meta charset="utf-8"><title>onboarding: Dashboard und Log out als zwei Ereignisse</title>
+<style>html,body{margin:0;font:13px/1.5 Geist,system-ui,sans-serif}
+#b{padding:0} #out{padding:10px;font:11px/1.45 ui-monospace,monospace;white-space:pre-wrap}</style>
+<body><div id="b"></div><pre id="out">laeuft…</pre>
+<script>
+/* Zwei getrennte Ereignisse statt eines mit Wert. Geprueft wird BEIDES: dass je Knopf genau eines
+   feuert -- und dass das alte uobExit NICHT mehr kommt. Ohne die zweite Haelfte wuesste niemand,
+   ob am Ende zwei Workflows gleichzeitig losgehen. */
+var GEF = [];
+["uobStart","uobStep","uobTopics","uobWorkflowStart","uobSelect","uobFinish",
+ "uobExit","uobDashboard","uobLogout"].forEach(function(n){
+  window["bubble_fn_"+n]=function(p){ GEF.push(n+"("+(p===undefined?"":JSON.stringify(p))+")"); }; });
+window.__err=[]; window.addEventListener("error",function(e){window.__err.push(String(e.message));});
+function hol(f){ return fetch(f+"?n="+Math.random(),{cache:"no-store"}).then(function(r){ return r.text(); }); }
+function wurzelAus(h){ return h.replace(/<!--[\s\S]*?-->/g,"").replace(/<script[\s\S]*?<\/script>/gi,"").trim(); }
+var D=["core.css","core.js","onboarding-page.css","onboarding-page.js",
+       "bubble/onboarding_page_bubble.html","_h_uob_bubble.json"];
+var T={}, R={};
+Promise.all(D.map(hol)).then(function(t){
+  D.forEach(function(f,i){ T[f]=t[i]; });
+  R.vorlageTraegtAttribute = {
+    dashboard: T["bubble/onboarding_page_bubble.html"].indexOf('data-dashboard-fn="bubble_fn_uobDashboard"') >= 0,
+    logout:    T["bubble/onboarding_page_bubble.html"].indexOf('data-logout-fn="bubble_fn_uobLogout"') >= 0,
+    altesExit: T["bubble/onboarding_page_bubble.html"].indexOf("uobExit") >= 0
+  };
+  ["core.css","onboarding-page.css"].forEach(function(f){ var s=document.createElement("style"); s.textContent=T[f]; document.head.appendChild(s); });
+  [ "core.js","onboarding-page.js"].forEach(function(f){ var j=document.createElement("script"); j.textContent=T[f]; document.head.appendChild(j); });
+  return new Promise(function(ok){ setTimeout(ok,600); });
+}).then(function(){
+  var w=document.createElement("div"); w.innerHTML=wurzelAus(T["bubble/onboarding_page_bubble.html"]);
+  var r=w.querySelector(".uob-root"); var id="tb"+Math.random().toString(36).slice(2,7);
+  r.setAttribute("data-instance",id); r.setAttribute("data-cdn-pin","tb");
+  document.getElementById("b").appendChild(r);
+  var n=0; (function warte(){ if (r.__uobController || n++>40){
+    /* Erst Daten, sonst steht die Kopfzeile im Bootzustand gar nicht da (dort ist sie aus). */
+    window.setOnboardingBundle(id, T["_h_uob_bubble.json"]);
+    setTimeout(function(){
+      var tor = r.querySelector("[data-resume]"); if (tor) tor.click();
+      setTimeout(function(){
+        var kopf = getComputedStyle(r.querySelector(".uob-top")).display;
+        GEF = []; r.querySelector('[data-exit="dashboard"]').click();
+        var d = GEF.slice();
+        GEF = []; r.querySelector('[data-exit="logout"]').click();
+        var l = GEF.slice();
+        R.kopfzeileSichtbar = kopf !== "none";
+        R.klickDashboard = d;
+        R.klickLogout = l;
+        R.attributeAmElement = {
+          dashboard: r.getAttribute("data-dashboard-fn"),
+          logout: r.getAttribute("data-logout-fn"),
+          altesExit: r.getAttribute("data-exit-fn")
+        };
+        R.fehler = window.__err.slice(0,3);
+        document.getElementById("out").textContent = JSON.stringify(R,null,1);
+        window.__R=R; window.__fertig=true;
+      }, 400);
+    }, 600);
+  } else setTimeout(warte,60); })();
+});
+</script>

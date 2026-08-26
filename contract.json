@@ -1550,9 +1550,7 @@
   "uob-billrow",
   "uob-body",
   "uob-boot",
-  "uob-boot-a",
-  "uob-boot-b",
-  "uob-boot-c",
+  "uob-boot-kreisel",
   "uob-bseg",
   "uob-bseg-ind",
   "uob-check",
@@ -2672,7 +2670,7 @@
   "globals": 137,
   "payloadkeys": 85,
   "dataattrs": 198,
-  "klassen": 1972,
+  "klassen": 1970,
   "keyframes": 58
  }
 }

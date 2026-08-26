@@ -31,7 +31,7 @@
      uobTopics   die Themenauswahl beim Verlassen von Schritt 3 -- das ist der Anstoss, aus dem
                  die Prompts entstehen
      uobFinish   {plan_id, billing_interval, brand_ids, topic_ids, prompt_ids}
-     uobExit     "dashboard" oder "logout"
+     uobDashboard, uobLogout   die zwei Wege aus dem Ablauf heraus, ohne Nutzlast
      uobWorkflowStart  {onboarding_id, run_token} -- NICHT aus dem Ablauf heraus, sondern von
                  window.startOnboardingWorkflow(instanz, onboarding_id, run_token). Damit laesst
                  sich der grosse Hintergrundlauf aus einem Run-JS-Schritt anstossen, wenn beide
@@ -2530,7 +2530,17 @@
       }
 
       var exit = e.target.closest("[data-exit]");
-      if (exit) { fire("data-exit-fn", "uobExit", exit.getAttribute("data-exit")); return; }
+      if (exit) {
+        /* ZWEI getrennte Ereignisse und nicht eines mit einem Wert. So angesagt am 26.08., und es
+           ist auch das Richtige: ein Workflow je Knopf braucht keine Verzweigung auf einen
+           Ereigniswert, und der Knopf, der den Nutzer abmeldet, sollte nicht an derselben
+           Verzweigung haengen wie der, der eine Seite oeffnet -- ein Fehler in der Bedingung
+           kostet dort verschiedene Dinge.
+           Ohne Nutzlast: beide sind ein Anlass und tragen keine Auskunft. */
+        if (exit.getAttribute("data-exit") === "logout") fire("data-logout-fn", "uobLogout", null);
+        else fire("data-dashboard-fn", "uobDashboard", null);
+        return;
+      }
 
       if (e.target.closest("[data-help-btn]")) {
         if (hilfeUhr) { window.clearTimeout(hilfeUhr); hilfeUhr = null; }

@@ -105,7 +105,8 @@
                   die Zeichengrenze von 40 macht das unwahrscheinlich, ausschliessen kann sie es
                   nicht.
        uobFinish  Objekt: plan_id, billing_interval, brand_ids, topic_ids, prompt_ids
-       uobExit    Text: "dashboard" oder "logout"
+       uobDashboard  ohne Wert -- der Klick auf Dashboard in der Kopfzeile
+       uobLogout     ohne Wert -- der Klick auf Log out in der Kopfzeile
        uobWorkflowStart  JSON-TEXT: {"onboarding_id":"...","run_token":"..."}
                   Kommt NICHT aus dem Ablauf, sondern aus einem Run-JS-Schritt:
                     window.startOnboardingWorkflow("INSTANCE_ID", "<onboarding_id>", "<run_token>")
@@ -249,7 +250,8 @@
      data-select-fn="bubble_fn_uobSelect"
      data-topics-fn="bubble_fn_uobTopics"
      data-finish-fn="bubble_fn_uobFinish"
-     data-exit-fn="bubble_fn_uobExit"
+     data-dashboard-fn="bubble_fn_uobDashboard"
+     data-logout-fn="bubble_fn_uobLogout"
      data-workflow-fn="bubble_fn_uobWorkflowStart"></div>
 
 <script>
