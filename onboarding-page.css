@@ -903,9 +903,13 @@
    und nie am Rand -- und sie braucht kein eigenes Element im Markup. */
 .uob-res-row + .uob-res-row { border-left: 1px solid var(--vc-border); }
 /* 11.5px ist die Groesse der Schienenbeschriftung -- dieselbe Rolle (ein Wort, das einen Wert
-   benennt), also dieselbe Groesse. */
-.uob-res-k { font-size: 11.5px; font-weight: 500; color: var(--vc-third); }
-.uob-res-v { font-size: 13px; font-weight: 500; color: var(--vc-text);
+   benennt), also dieselbe Groesse.
+   line-height AUSDRUECKLICH, und das ist hier kein Feinschliff: beide Zeilen tragen
+   overflow: hidden fuers Kuerzen, und ein Kasten, der nur so hoch ist wie die geerbte Zeilenhoehe,
+   schneidet die Unterlaengen ab -- am "g" von "13 hours ago" gemeldet am 26.08. 1.45 ist der
+   Wert, den der Vorspann dieser Komponente schon benutzt. */
+.uob-res-k { font-size: 11.5px; line-height: 1.45; font-weight: 500; color: var(--vc-third); }
+.uob-res-v { font-size: 13px; line-height: 1.45; font-weight: 500; color: var(--vc-text);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Untereinander, beide ueber die volle Breite. Nebeneinander stuenden zwei Antworten auf
    dieselbe Frage gleich gewichtet da, und die zweite loescht etwas. Der Abstand ist der der
@@ -920,6 +924,19 @@
    es allein ueber die Breite, also mittig. */
 .uob-res-over { justify-content: center; width: 100%; }
 .uob-res-note { margin: 10px 0 0; font-size: 12.5px; line-height: 1.5;
+  color: var(--vc-third); text-align: center; }
+/* Die Warnung faehrt von oben herein, wenn der Knopf scharf gemacht wird. Bauart wie .uob-banner:
+   grid-template-rows von 0fr auf 1fr, dazu Deckkraft und ein kleiner Weg -- das Element steht
+   dabei die ganze Zeit im Dokument, und nur so hat der Uebergang einen Ausgangszustand. */
+.uob-res-warn {
+  display: grid; grid-template-rows: 0fr; opacity: 0; margin-top: 0;
+  transform: translateY(-6px);
+  transition: grid-template-rows var(--uob-t) var(--uob-ease), opacity var(--uob-t) var(--uob-ease),
+              margin-top var(--uob-t) var(--uob-ease), transform var(--uob-t) var(--uob-ease);
+}
+.uob-res-warn > div { overflow: hidden; min-height: 0; }
+.uob-res-warn.is-on { grid-template-rows: 1fr; opacity: 1; margin-top: 12px; transform: none; }
+.uob-res-warn p { margin: 0; font-size: 12.5px; line-height: 1.5;
   color: var(--vc-third); text-align: center; }
 /* Gesperrt sieht aus wie beim Hauptknopf, dieselben Werte (.uob-next:disabled). Der Hover muss
    dabei ausdruecklich zurueck: ein Knopf, der auf das Ueberfahren noch antwortet, sieht

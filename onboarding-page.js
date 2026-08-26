@@ -626,6 +626,10 @@
        Bewusst KEINE Abfrage auf den Bootzustand: der endet nach sechs Sekunden von selbst, und
        auf der echten Seite vergehen bis zur Antwort der RPC schon mal neun. */
     var torGeprueft = false;
+    /* Ist der Neustart-Knopf scharf? Der erste Klick zeigt den Hinweis, der zweite fuehrt aus.
+       Ein Zwischenschritt und kein Fenster: der Nutzer bleibt, wo er ist, und die Bestaetigung
+       steht an derselben Stelle wie der Knopf, den er gedrueckt hat. */
+    var overScharf = false;
     /* Hat der Nutzer schon etwas angefasst? Das Tor darf ihn nie aus laufender Arbeit reissen.
        Diese Marke ist das ehrlichere Kriterium als eine Uhr: sie sagt, ob ueberhaupt schon jemand
        gehandelt hat, und nicht, ob eine willkuerliche Zahl von Sekunden vergangen ist. */
@@ -1033,12 +1037,18 @@
       /* Eine Zeile unter den Knoepfen, und sie sagt IMMER etwas. Darf der Nutzer neu starten, sagt
          sie, was er dabei verliert; darf er nicht, sagt sie warum und wann wieder. Kein interner
          Grund im Text: "rate_limited" ist eine Auskunft fuer uns, nicht fuer ihn. */
+      /* Zwei verschiedene Dinge, die vorher in einer Zeile standen:
+         die WARNUNG (was ein Neustart kostet) erscheint erst auf den ersten Klick -- vorher stand
+         sie immer da und hat einen Schaden angekuendigt, den niemand vorhatte.
+         der GRUND (warum es nicht geht) steht dagegen immer, sonst ist der gesperrte Knopf
+         stumm. */
+      var warnung = "Starting over deletes this setup with everything it found.";
+      /* Der Zaehler nur dort, wo er eine Entscheidung aendert: beim letzten freien Neustart.
+         Immer sichtbar waere er eine Einladung, ihn zu verbrauchen. */
+      if (num(rs.remaining) === 1) warnung += " This is your last restart for now.";
       var hinweis;
       if (darf) {
-        hinweis = "Starting over deletes this setup with everything it found.";
-        /* Der Zaehler nur dort, wo er eine Entscheidung aendert: beim letzten freien Neustart.
-           Immer sichtbar waere er eine Einladung, ihn zu verbrauchen. */
-        if (num(rs.remaining) === 1) hinweis += " This is your last restart for now.";
+        hinweis = "";
       } else if (laeuft) {
         hinweis = "We are still setting this one up. You can start over once it is done.";
       } else if (txt(rs.next_allowed_at)) {
@@ -1083,7 +1093,13 @@
             '<button class="uob-back uob-res-over" type="button" data-restart' +
               (darf ? "" : " disabled") + '>Start over</button>' +
           '</div>' +
-          '<p class="uob-res-note">' + esc(hinweis) + '</p>' +
+          /* Die Warnung steht IMMER im Markup und faehrt nur ihre Hoehe -- Bauart wie der Banner
+             (.uob-banner). Sie beim Klick erst einzufuegen hiesse, sie ohne Uebergang aufblitzen
+             zu lassen: ein frisch eingesetztes Element hat keinen Ausgangszustand, von dem aus
+             etwas laufen koennte. */
+          (darf
+            ? '<div class="uob-res-warn" data-overwarn><div><p>' + esc(warnung) + '</p></div></div>'
+            : '<p class="uob-res-note">' + esc(hinweis) + '</p>') +
         '</div>' +
       '</div>';
     }
@@ -1725,6 +1741,9 @@
         baueSelects();
         zeigeFeldfehler();
       }
+      /* Ein frisch gezeichnetes Tor traegt eine zugeklappte Warnung -- also muss die Marke
+         dazu passen, sonst waere der erste Klick schon die Bestaetigung. */
+      if (k === "resume") overScharf = false;
       if (k === "load1" || k === "load2") renderPhasen();
       if (k === "load2") tlTagsEinblenden();
       if (UC.makeTooltips) UC.makeTooltips(root, function () { return isDark; });
@@ -2553,7 +2572,7 @@
       if (e.target.closest("[data-skip]")) { weiter(true); return; }
       if (e.target.closest("[data-back]")) { zurueck(); return; }
       if (e.target.closest("[data-resume]")) { torSchliessen(); return; }
-      if (e.target.closest("[data-restart]")) { neuAnfangen(); return; }
+      if (e.target.closest("[data-restart]")) { neustartKlick(); return; }
       if (e.target.closest("[data-next]")) { weiter(false); return; }
     });
 
@@ -2918,6 +2937,20 @@
        Onboarding, das es gleich nicht mehr gibt. Die FORMULARWERTE bleiben stehen: der haeufigste
        Grund fuer einen Neustart ist dieselbe Marke noch einmal, und wer eine andere will, tippt
        darueber -- die Felder liegen offen, es ist nichts versteckt. */
+    /* Der erste Klick klappt die Warnung auf und macht aus dem Knopf die Bestaetigung. NICHT neu
+       zeichnen: ein Neuaufbau setzte die Warnung in ihren Endzustand und der Uebergang liefe nie.
+       Deshalb wird hier von Hand am Element gearbeitet, wie beim Haken in einer Liste. */
+    function neustartKlick() {
+      if (!(state.restart && istJa(state.restart.allowed))) return;
+      if (overScharf) { neuAnfangen(); return; }
+      overScharf = true;
+      var w = root.querySelector("[data-overwarn]");
+      if (w) w.classList.add("is-on");
+      var k = root.querySelector("[data-restart]");
+      if (k) k.textContent = "Confirm";
+      return;
+    }
+
     function neuAnfangen() {
       /* Die Regel wird hier ein zweites Mal gefragt. Ein gesperrter Knopf ist eine Anzeige und
          kein Riegel: disabled im Markup haelt einen Klick aus dem Code nicht auf, und die Antwort

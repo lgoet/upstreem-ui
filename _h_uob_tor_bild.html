@@ -89,6 +89,23 @@ Promise.all(D.map(hol)).then(function(t){
         ueberlauf: r.scrollWidth > r.clientWidth ? (r.scrollWidth - r.clientWidth) : 0,
         note: (r.querySelector(".uob-res-note")||{}).textContent,
         projektDa: !!document.querySelector(".uob-load-dom"),
+        /* Unterlaengen: passt die Zeilenhoehe zur Schrift, oder schneidet overflow:hidden das
+           "g" ab? Gemessen wird die Kastenhoehe gegen die Zeilenhoehe -- ist der Kasten kleiner,
+           wird geschnitten. */
+        zeilenkasten: (function(){
+          var v=r.querySelector(".uob-res-v"); if (!v) return null;
+          var st=getComputedStyle(v);
+          return { schrift: st.fontSize, zeile: st.lineHeight,
+                   hoehe: Math.round(v.getBoundingClientRect().height * 10) / 10,
+                   scrollHoehe: v.scrollHeight, reicht: v.scrollHeight <= Math.ceil(v.getBoundingClientRect().height) };
+        })(),
+        warnung: (function(){
+          var w=r.querySelector("[data-overwarn]"); if (!w) return null;
+          return { da: true, an: w.className.indexOf("is-on") >= 0,
+                   hoehe: Math.round(w.getBoundingClientRect().height),
+                   text: (w.textContent||"").trim().slice(0,50) };
+        })(),
+        knopfText: (r.querySelector("[data-restart]")||{}).textContent,
         knopfBreiten: [].map.call(r.querySelectorAll(".uob-res-acts button"), function(x){
           return Math.round(x.getBoundingClientRect().width); }),
         kastenBreiteGemessen: (function(){ var k=r.querySelector(".uob-res-meta");
