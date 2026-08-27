@@ -1179,51 +1179,123 @@
   }
 
   /* Sobald die Seite bewegt wird, geht das Fenster auf 80 Prozent zurueck; oben angekommen wird es
-     wieder gross. Die Groesse selbst steht in der CSS (.is-klein), hier steht nur, WANN.
+     wieder gross.
 
-     Erkannt wird es an der LAGE der Sektion und nicht nur an window.scrollY: welches Element eine
-     Seite scrollt, entscheidet der Baukasten drumherum -- Framer haengt eine Seite mitunter in einen
-     eigenen Kasten, und dann bewegt sich window.scrollY nie. Die Ruhelage ist das Maximum aller je
-     gemessenen Oberkanten: scrollen kann die Sektion nur nach OBEN schieben, ein hoeherer Wert ist
-     also immer der unbewegte Zustand. Das korrigiert sich auch selbst, wenn der Browser beim Laden
-     eine alte Scrollposition wiederherstellt.
-     Ein Pixel Schwelle und nicht null: eine wiederhergestellte Position kommt gelegentlich als
-     halber Pixel zurueck. */
+     Der Faktor steht als INLINE-Stil am Rahmen und nicht in einer Regel mit Klasse. Zwei Gruende,
+     beide aus Fehlversuchen:
+     - Auf demselben Element laeuft beim Erscheinen eine CSS-animation, und eine laufende animation
+       schlaegt jede Regel. Ein Inline-Stil verliert dagegen nur SOLANGE sie laeuft und greift danach
+       von sich aus -- der Takt unten schreibt ihn ohnehin jedes Mal nachdrucklos nach.
+     - Es gibt keine Regel mehr, deren Spezifitaet oder Reihenfolge jemand versehentlich schlagen
+       kann. Die Klasse .is-klein bleibt als Zustandsmerkmal fuer alles, was spaeter dazukommt.
+
+     ERKANNT wird die Bewegung auf vier Wegen, in dieser Reihenfolge, weil jeder einzelne auf
+     irgendeiner Seite ausfaellt:
+     1. window.scrollY -- der Normalfall.
+     2. Die LAGE der Sektion im eigenen Dokument. Faengt jeden eigenen Scrollkasten und auch die
+        Baukaesten, die den Seiteninhalt per transform verschieben, statt zu scrollen: dort feuert
+        kein scroll-Ereignis und window.scrollY bleibt 0.
+     3. Die Lage des RAHMENS, in dem die Sektion steckt (window.frameElement). Framer haengt ein
+        HTML-Embed in einen eigenen Rahmen; darin bewegt sich weder das Fenster noch die Lage der
+        Sektion, wenn die Seite darueber scrollt -- wohl aber der Rahmen selbst.
+     4. Die Scrollposition der Fenster darueber, bis zu vier Ebenen hoch.
+     3 und 4 koennen bei fremder Herkunft werfen; dann bleibt es bei 1 und 2. */
+  var KLEIN_FAKTOR = 0.8;
+
   function scrollGroesse(root){
     if (root.__ulhScrollAn) return;
     root.__ulhScrollAn = true;
-    var ruhe = null, klein = null;
-    function pruefen(){
-      var oben = root.getBoundingClientRect().top;
-      if (ruhe == null || oben > ruhe) ruhe = oben;
-      var y = window.scrollY || window.pageYOffset || 0;
-      var soll = y > 1 || (ruhe - oben) > 1;
-      if (soll === klein) return;
-      klein = soll;
-      if (soll) root.classList.add("is-klein"); else root.classList.remove("is-klein");
-    }
-    pruefen();
-    /* Zwei Zuhoerer, beide passiv: window fuer den Normalfall, dazu die Einfangphase am Dokument,
-       damit auch ein eigener Scrollkasten irgendwo darueber ankommt (scroll steigt nicht auf, geht
-       aber durch die Einfangphase). pruefen() vergleicht mit dem letzten Stand, ein zweiter Aufruf
-       kostet also nichts. */
-    window.addEventListener("scroll", pruefen, { passive: true });
-    document.addEventListener("scroll", pruefen, { passive: true, capture: true });
-    window.addEventListener("resize", function(){ ruhe = null; pruefen(); });
+    var ruhe = null, ruheRahmen = null;
 
-    /* DAZU ein leiser Takt, und der ist nicht Gürtel-und-Hosenträger, sondern der eigentliche Weg.
-       Es gibt Seiten, auf denen ueberhaupt kein scroll-Ereignis ankommt: Framer und andere
-       Baukaesten bewegen den Seiteninhalt mitunter per transform, statt das Dokument wirklich zu
-       scrollen. Dann bleibt window.scrollY auf 0, es feuert kein scroll -- und die LAGE der Sektion
-       aendert sich trotzdem. Mit Zuhoerern allein blieb das Fenster im Betrieb gross.
-       Nachgemessen in diesem Aufbau: window.scrollTo(0, 300) verschob die Seite und loeste NULL
-       scroll-Ereignisse aus. Genau dieser Fall.
+    function bewegt(){
+      var y = 0;
+      try { y = window.scrollY || window.pageYOffset || 0; } catch (e){}
+      if (y > 1) return true;
+
+      var oben = root.getBoundingClientRect().top;
+      /* Die Ruhelage ist das Maximum aller je gemessenen Oberkanten: scrollen kann die Sektion nur
+         nach OBEN schieben, ein hoeherer Wert ist also immer der unbewegte Zustand. Das korrigiert
+         sich auch selbst, wenn der Browser beim Laden eine alte Scrollposition wiederherstellt. */
+      if (ruhe == null || oben > ruhe) ruhe = oben;
+      if ((ruhe - oben) > 1) return true;
+
+      try {
+        var rahmen = window.frameElement;
+        if (rahmen){
+          var rt = rahmen.getBoundingClientRect().top;
+          if (ruheRahmen == null || rt > ruheRahmen) ruheRahmen = rt;
+          if ((ruheRahmen - rt) > 1) return true;
+        }
+      } catch (e){}
+
+      try {
+        var w = window;
+        for (var i = 0; i < 4 && w.parent && w.parent !== w; i++){
+          w = w.parent;
+          if ((w.scrollY || w.pageYOffset || 0) > 1) return true;
+        }
+      } catch (e){}
+
+      return false;
+    }
+
+    function anwenden(){
+      var rahmen = root.querySelector(".ulh-frame");
+      if (!rahmen) return;
+      var soll = bewegt();
+      /* BEIDE Zustaende ausdruecklich, auch der grosse als scale(1) -- nicht der leere Wert. Eine
+         Ueberblendung von "none" auf "scale(.8)" muss ein Browser als Uebergang von der Einheits-
+         matrix lesen, und das ist genau die Stelle, an der es hakt, wenn etwas hakt. Zwischen zwei
+         echten Transformationen gibt es nichts zu deuten. */
+      var wunsch = soll ? "scale(" + KLEIN_FAKTOR + ")" : "scale(1)";
+      /* Nur schreiben, wenn sich etwas aendert -- sonst waere das ein Stilschreiben je Takt, und
+         jedes davon macht das Layout schmutzig. */
+      if (rahmen.style.transform !== wunsch) rahmen.style.transform = wunsch;
+      if (soll !== root.classList.contains("is-klein")){
+        if (soll) root.classList.add("is-klein"); else root.classList.remove("is-klein");
+      }
+    }
+
+    /* Eine Handhabe zum NACHSEHEN, wie __ulhSzene und __ulhMira. Sie schreibt nichts und zeigt
+       nichts an, sie GIBT den Stand zurueck: welcher der vier Wege anschlaegt, was am Rahmen steht
+       und wie die Ruhelagen aussehen. Damit laesst sich auf einer fremden Seite in einer Zeile
+       klaeren, ob die Erkennung ausfaellt oder etwas anderes -- ohne Rateschleife. */
+    root.__ulhStand = function(){
+      var rahmen = root.querySelector(".ulh-frame");
+      var eltern = [];
+      try {
+        var w = window;
+        for (var i = 0; i < 4 && w.parent && w.parent !== w; i++){ w = w.parent; eltern.push(w.scrollY || w.pageYOffset || 0); }
+      } catch (e){ eltern.push("fremde Herkunft"); }
+      var rt = null;
+      try { rt = window.frameElement ? Math.round(window.frameElement.getBoundingClientRect().top) : null; }
+      catch (e){ rt = "fremde Herkunft"; }
+      return {
+        klein: root.classList.contains("is-klein"),
+        transform: rahmen ? (rahmen.style.transform || "(leer)") : "kein Rahmen",
+        gerechnet: rahmen ? getComputedStyle(rahmen).transform : null,
+        scrollY: window.scrollY,
+        oben: Math.round(root.getBoundingClientRect().top),
+        ruhe: ruhe == null ? null : Math.round(ruhe),
+        im_rahmen: rt, ruhe_rahmen: ruheRahmen == null ? null : Math.round(ruheRahmen),
+        eltern_scroll: eltern
+      };
+    };
+
+    anwenden();
+    /* Die Zuhoerer reagieren im Normalfall sofort. Der Takt daneben ist kein Guertel-und-
+       Hosentraeger, sondern der eigentliche Weg fuer die Faelle 2 bis 4: dort kommt gar kein
+       Ereignis an. Nachgemessen in diesem Aufbau -- window.scrollTo verschob die Seite und loeste
+       NULL scroll-Ereignisse aus.
        120ms heisst ein Rechteck-Lesen je Achtelsekunde. Auf einer ruhenden Seite kostet das nichts:
        ohne Aenderung am DOM ist das Layout gueltig und der Wert liegt schon vor. Der Takt endet mit
        der Sektion. */
+    window.addEventListener("scroll", anwenden, { passive: true });
+    document.addEventListener("scroll", anwenden, { passive: true, capture: true });
+    window.addEventListener("resize", function(){ ruhe = null; ruheRahmen = null; anwenden(); });
     var takt = setInterval(function(){
       if (!document.body || !document.body.contains(root)){ clearInterval(takt); return; }
-      pruefen();
+      anwenden();
     }, 120);
   }
 

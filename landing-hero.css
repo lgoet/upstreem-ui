@@ -287,8 +287,18 @@
    CorelDRAW-Export mit 12527x8769 -- also flach; auf voller Breite steht sie im unteren Drittel. */
 .ulh-bg-foto {
   top: 0;
+  /* cover und nicht "100% auto", und das ist der Unterschied zwischen einer Kante und keiner:
+     die Datei ist 12527x8769, also flach. Mit 100% auto ist sie 0.7 mal so hoch wie breit -- bei
+     1440px Breite rund 1008px -- und ihre OBERKANTE liegt damit mitten in der Flaeche. Genau dort
+     sass die harte waagrechte Linie. Wird das Fenster schmaler, wird das Bild kuerzer, die Kante
+     wandert nach UNTEN in den kraeftigeren Teil der Blende und faellt noch mehr auf: genau das war
+     der Bericht.
+     Mit cover deckt das Bild den Kasten immer ganz ab -- es gibt keine Oberkante mehr, an keiner
+     Fenstergroesse. Es wird dafuer links und rechts beschnitten, mittig; das Seitenverhaeltnis
+     bleibt. Eine feste Groesse waere der andere Weg gewesen und der schlechtere: die Kante waere
+     dann nur immer an derselben Stelle, statt zu verschwinden. */
   background: url("https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/slimane-kadi-M3TevYf1EKo-unsplash.svg")
-              center bottom / 100% auto no-repeat;
+              center bottom / cover no-repeat;
   /* Doppelt so kraeftig wie zuerst (.22) -- da war es kaum zu sehen. */
   opacity: .44;
 }
@@ -364,7 +374,11 @@
    schlaegt jede transition. Ohne diese Bedingung sprang das Fenster in der Sekunde, in der die
    Animation endete, auf 80 Prozent. So beginnt die Verkleinerung erst danach -- und dann weich. */
 .ulh-frame { transform-origin: center center; transition: transform 860ms var(--ulh-aus); }
-.ulh-root.is-klein:not(.is-entering) .ulh-frame { transform: scale(.8); }
+/* Der Faktor selbst steht NICHT hier, sondern als Inline-Stil aus landing-hero.js. Hier stand er,
+   mit :not(.is-entering) davor, und er hat im Betrieb nicht gegriffen -- eine Regel mehr, deren
+   Zutreffen von einer zweiten Klasse und von der Spezifitaet abhaengt. Der Inline-Stil kann von
+   nichts geschlagen werden ausser einer laufenden animation, und die ist nach 1410ms vorbei;
+   der Takt in landing-hero.js schreibt ihn danach von sich aus nach. */
 @media (prefers-reduced-motion: reduce) {
   .ulh-frame { transition: none; }
 }
