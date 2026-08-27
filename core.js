@@ -5129,10 +5129,14 @@
   /* Line width is a page-wide preference, not per-component/per-instance — one localStorage key
      read by every makeLine() chart, changeable from any of their own Chart Settings dropdowns.
      "thick" is the default (explicit user request) — the stored key only ever needs to hold "thin"
-     as an opt-out, so an unset/unreadable key falls through to "thick" here. "thick" itself is the
-     midpoint between thin (1.5px, the original) and the first version's 2.75px, not that value
-     itself — 2.75 read as too heavy in practice. */
-  var LINE_WIDTH_VALUES = { thin: 1.5, thick: 2.125 };
+     as an opt-out, so an unset/unreadable key falls through to "thick" here. "thick" itself was the
+     midpoint between thin (1.5px, the original) and the first version's 2.75px — 2.75 read as too
+     heavy in practice.
+     Danach beide um 15 Prozent zurueckgenommen: 1.5 -> 1.275 und 2.125 -> 1.80625. Beide, nicht nur
+     der Vorgabewert -- sonst waere "thin" nach der Aenderung dicker als vorher "thick" gewirkt hat,
+     und das Verhaeltnis der zwei Stufen zueinander ist die eigentliche Aussage der Einstellung.
+     Der Rand der Hoverpunkte zieht von selbst mit: er IST diese Breite (siehe build()). */
+  var LINE_WIDTH_VALUES = { thin: 1.275, thick: 1.80625 };
   var LINE_WIDTH_KEY = "up_line_width_pref";
   function getLineWidthPref(){
     try { return window.localStorage.getItem(LINE_WIDTH_KEY) === "thin" ? "thin" : "thick"; }

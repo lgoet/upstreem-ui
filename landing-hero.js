@@ -542,9 +542,19 @@
      interpoliert sie mit seinen eigenen 600ms, die Zeilen wandern per FLIP, die Zahlen zaehlen. */
 
   var SZENE_WARTEN = 3000;      /* nach dem fertigen Dashboard, nicht nach dem Skriptstart */
-  /* 930ms fuer alles, was sich beim Wechsel bewegt: Zeilen, Linien, Tooltipzeilen, Zahlen. Vorher
-     620 -- das war zu knapp, um als Bewegung gelesen zu werden. */
+  /* ZWEI Dauern, und das ist Absicht.
+     SZENE_DAUER gilt fuer das Zaehlen der Zahlen und fuer die Linien im Chart: 930ms, lang genug,
+     dass man beim Zaehlen mitlesen kann.
+     WANDER_DAUER gilt fuer das Verschieben der Zeilen -- in der Tabelle und im Tooltip. Eine Zeile,
+     die eine ganze Sekunde braucht, um zwei Plaetze weit zu rutschen, wirkt schwerfaellig; eine
+     zaehlende Zahl braucht die Zeit dagegen. 700ms: knapp ueber den 620 vom Anfang, deutlich unter
+     den 930. */
   var SZENE_DAUER = 930;
+  var WANDER_DAUER = 700;
+  /* Der Zeitpunkt, an dem die Platzziffer springt -- die halbe Strecke DER WANDERUNG, ausgedrueckt
+     in der Zeit des Zaehlwerks, weil die Ziffer aus dem Zaehlwerk gesetzt wird. Seit die zwei
+     Dauern auseinanderliegen, waeren 0.5 des Zaehlwerks zwei Drittel der Wanderung. */
+  var ZIFFER_BEI = (WANDER_DAUER / 2) / SZENE_DAUER;
   /* EINE Kurve fuer alles: ein sanftes Ausschleichen. Vorher zaehlten die Zahlen auf easeOutQuart,
      und das ist ein hartes Ausschleichen -- zur halben Zeit schon bei 94 Prozent, die Zahlen standen
      also praktisch fest, waehrend die Zeilen noch fuhren. easeOutQuad ist bei der halben Zeit bei
@@ -870,12 +880,12 @@
         punkt.style.background = kern.sentColor(a.sentiment + (b.sentiment - a.sentiment) * e);
       });
       /* Die Platzziffer ist eine Ordnungszahl -- eine 2.4 unterwegs waere ein Fehler und kein
-         Zaehlen. Also springt sie, und zwar auf der halben Strecke: vorher stimmte sie zur alten
-         Lage der Zeile, nachher zur neuen. t und nicht e -- die Kurve ist zur halben Zeit bei 75
-         Prozent, die Ziffer waere zu frueh gesprungen. */
+         Zaehlen. Also springt sie, und zwar auf der halben Strecke der WANDERUNG: vorher stimmte
+         sie zur alten Lage der Zeile, nachher zur neuen. t und nicht e -- die Kurve ist zur halben
+         Zeit bei 75 Prozent, die Ziffer waere zu frueh gesprungen. */
       var idx = z.querySelector(".vt-td-idx");
       if (idx) werk.frei(function(e, t){
-        var soll = String((t >= 0.5 ? b : a).position);
+        var soll = String((t >= ZIFFER_BEI ? b : a).position);
         if (idx.textContent !== soll) idx.textContent = soll;
       });
     });
@@ -899,8 +909,8 @@
 
     zustand = "b";
     chartWandern(root, reihen("b"), SZENE_DAUER);
-    reihenWandern(root, ordnung, SZENE_DAUER);
-    tippNachziehen(tipp, werk, SZENE_DAUER);
+    reihenWandern(root, ordnung, WANDER_DAUER);
+    tippNachziehen(tipp, werk, WANDER_DAUER);
     werk.lauf(function(){
       /* Danach den Tooltip wieder anstecken: chart.update() raeumt die gesetzten Punkte ab, und
          ohne diesen Griff stuende das Chart nach der Szene ohne den dauerhaft offenen Kasten da.
