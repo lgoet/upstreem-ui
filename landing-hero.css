@@ -30,9 +30,9 @@
   /* Die Blende. Derselbe Ton wie die Leiste (#f5f5f5) machte den Rahmen dort unsichtbar, wo die
      Leiste anliegt; 15% dunkler (#d0d0d0 = 208) war zu viel und sah nach einem grauen Balken aus.
      Der Weg: #f5f5f5 unsichtbar, #d0d0d0 ein grauer Balken, #e8e8e8 zu dunkel, #e9edf1 mit Blau
-     noch zu dunkel. Jetzt #f2f5f8 -- dieselbe Mischung (8% #98CEF2), nur auf einem hellen Grau
-     statt auf #f0f0f0. Das Blau bleibt drin, der Ton ist heller. */
-  --ulh-blende: #f2f5f8;
+     noch zu dunkel, #f2f5f8 richtig hell aber zu blau. Jetzt #ebecee: der Blauabstand halbiert
+     (b minus r von 6 auf 3) und alles 3% dunkler (x 0.97). */
+  --ulh-blende: #ebecee;
   --ulh-schirm: #FFFFFFF2;
   --ulh-text: #1f1f1b;
   --ulh-muted: #6f737c;
@@ -439,9 +439,11 @@
 /* Fuenf Zeilen statt sieben, und die Kaesten schrumpfen mit. .vot-box steht in der App fest auf
    427px; bei fuenf Zeilen a 55px (visibility-chart.css) bleiben sonst zwei Zeilen Luft unter der
    Tabelle stehen. 427 - 2 x 55 = 317. */
-.ulh-app .vot-box { height: 317px; }
+/* Sechs Marken statt fuenf: der Kasten waechst um genau eine Zeile. 317 + 47 = 364. Der
+   Kopfbalken wird gleich noch flacher (45 -> 32), das nimmt 13 zurueck -- also 351. */
+.ulh-app .vot-box { height: 351px; }
 .ulh-app .vot-root.is-max .vot-box-left,
-.ulh-app .vot-root.is-max .vot-box-right { height: 317px; }
+.ulh-app .vot-root.is-max .vot-box-right { height: 351px; }
 
 /* Der Day-Knopf soll normal aussehen. Er ist gesperrt, und das ist RICHTIG: die Serie spannt sechs
    Monate, und ueber 92 Tagen ist eine Tageskurve unlesbar (UC.granAvailability) -- in der App
@@ -466,6 +468,18 @@
    sie neben Zahlen, die durch die Verkleinerung ohnehin klein sind, und wirkten dadurch zu laut. */
 .ulh-app .up-trend { font-size: 12px; }
 .ulh-app .up-trend svg { width: 15px; height: 15px; }
+
+/* Zwischen Chart und Tabelle 8px statt 16. Beide Bloecke sind eine Reihe aus zwei Einheiten, und
+   die 16px stehen in den Komponenten (.vot-root und .tcd-root). Der Abstand ZWISCHEN den Bloecken
+   bleibt bei 16 -- der kommt von .ulh-main. */
+.ulh-app .vot-root,
+.ulh-app .tcd-root { gap: 8px; }
+
+/* Die Kopfbalken beider Tabellen auf 32px statt 45. Der Inhalt bleibt mittig: .vt-th und .tct-th
+   sind 100% hoch und richten mit align-items: center aus, das gilt weiter. height UND flex-basis,
+   wie bei den Zeilen -- der Kopf ist ein Flex-Kind mit fester Basis. */
+.ulh-app .vt-thead { height: 32px; flex: 0 0 32px; }
+.ulh-app .tct-thead { height: 32px; flex: 0 0 32px; }
 
 /* Die Leiste 16px schmaler. Die Marke muss an der LEISTE SELBST stehen und nicht am Vorfahren:
    .usn-bar traegt die Klasse .up-root, und sidebar.css setzt --usn-w genau dort auf 250px. Ein
@@ -501,21 +515,19 @@
 .ulh-app .tct-num,
 .ulh-app .tct-used,
 .ulh-app .up-num,
-.ulh-app .usn-teamname,
+
 .ulh-app .vot-head-count,
 .ulh-app .vot-head-label,
 .ulh-app .vot-heading,
 .ulh-app .vt-brand-name { font-size: 13px; }
 .ulh-app .up-pop-label,
-.ulh-app .up-pop-opt-l,
-.ulh-app .usn-teamrow-name,
-.ulh-app .usn-txt { font-size: 12.5px; }
-.ulh-app .mqa-trigger-label,
+.ulh-app .up-pop-opt-l { font-size: 12.5px; }
+
 .ulh-app .tct-td,
 .ulh-app .up-filter-submit,
 .ulh-app .up-ment-name,
 .ulh-app .up-sent-val,
-.ulh-app .usn-acc-name,
+
 .ulh-app .vt-td { font-size: 12px; }
 .ulh-app .lbl,
 .ulh-app .pph-metaname,
@@ -525,12 +537,11 @@
 .ulh-app .tct-th,
 .ulh-app .up-company-name,
 .ulh-app .up-ment-noresult,
-.ulh-app .usn-count,
-.ulh-app .usn-teamrow-dom,
+
+
 .ulh-app .vc-gran-btn,
 .ulh-app .vt-th { font-size: 11px; }
-.ulh-app .usn-acc-mail,
-.ulh-app .usn-av { font-size: 10.5px; }
+
 .ulh-app .up-bar-name,
 .ulh-app .up-bar-name-out,
 .ulh-app .up-bar-pct,
@@ -539,9 +550,8 @@
 .ulh-app .up-filter-title,
 .ulh-app .up-pop-action,
 .ulh-app .up-pop-head,
-.ulh-app .usn-head-lbl,
+
 .ulh-app .vot-filter-count { font-size: 10px; }
-.ulh-app .mqa-kbd { font-size: 9.5px; }
 
 /* Die Trendangabe: im Schritt davor von 13 auf 12, jetzt mit allen anderen auf 11. Das Zeichen
    bleibt bei 15px -- kleiner wird der Pfeil unleserlich. */
@@ -560,8 +570,11 @@
    gemessen. Deshalb nicht schieben, sondern verteilen: die Liste nimmt die ganze Hoehe, und die
    sieben Zeilen teilen sie sich. Damit ist oben angesetzt und unten nichts uebrig, ohne dass hier
    eine Hoehe geraten werden muss. */
-.ulh-app .up-bars { margin: 0; flex: 1 1 auto; }
-.ulh-app .up-bar-row { flex: 1 1 auto; }
+.ulh-app .up-bars { margin: 0; gap: 8px; }
+/* Feste 8px zwischen den Balken statt verteilter Hoehe: die Zeilen behalten ihre eigene Hoehe, und
+   das Polster von 5px oben und unten faellt weg -- sonst waere der Abstand 8 + 10 = 18px. Oben
+   angesetzt bleibt es, weil der automatische Rand der Komponente weg ist. */
+.ulh-app .up-bar-row { flex: 0 0 auto; padding: 0; }
 
 /* ---------- Schmal ---------- */
 /* Auf dem Telefon gar kein Fenster. Gemessen bei 700px Fensterbreite: das Mass faellt auf 0.50,

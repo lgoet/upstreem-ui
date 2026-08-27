@@ -47,7 +47,8 @@
     { id: "va", name: "Vantage", farbe: "#8957e5", basis: 28.6 },
     { id: "ha", name: "Halden",  farbe: "#1a7f5a", basis: 22.1 },
     { id: "ni", name: "Nimbus",  farbe: "#0e7490", basis: 17.4 },
-    { id: "lu", name: "Lumen",   farbe: "#b3541e", basis: 13.2 }
+    { id: "lu", name: "Lumen",   farbe: "#b3541e", basis: 13.2 },
+    { id: "ve", name: "Verity",  farbe: "#be185d", basis: 9.6 }
   ];
 
   /* Ein Zeichen je Marke, erzeugt: abgerundetes Quadrat in der Markenfarbe mit dem Anfangs-
@@ -141,9 +142,9 @@
         visibility_pct: Math.round(jetzt * 10) / 10,
         visibility_delta_pct: Math.round((jetzt - davor) * 10) / 10,
         avg_rank: Math.round(rang * 10) / 10,
-        avg_rank_delta: [-0.3, 0.2, -0.1, 0.4, 0.1][i],
-        sentiment: [79, 74, 71, 68, 66][i],
-        sentiment_delta: [1.4, -0.8, 2.1, -1.6, 0.9][i]
+        avg_rank_delta: [-0.3, 0.2, -0.1, 0.4, 0.1, -0.2][i],
+        sentiment: [79, 74, 71, 68, 66, 63][i],
+        sentiment_delta: [1.4, -0.8, 2.1, -1.6, 0.9, 0.5][i]
       };
     });
   }
@@ -366,12 +367,27 @@
     var eigene = tab[0];
 
     if (window.setSidebarTeams){
-      window.setSidebarTeams(ID.usn, [{ id: "t1", name: "Kestrel", domain: "kestrel.example", favicon_url: "" }]);
+      /* Acht Teams. Nur das erste ist zu sehen (es ist das aktive) -- die anderen sieben zaehlen im
+         Teams-Eintrag der Leiste mit, und genau der soll 8 zeigen. */
+      window.setSidebarTeams(ID.usn, [
+        { id: "t1", name: "Kestrel",  domain: "kestrel.example",  favicon_url: "" },
+        { id: "t2", name: "Vantage",  domain: "vantage.example",  favicon_url: "" },
+        { id: "t3", name: "Halden",   domain: "halden.example",   favicon_url: "" },
+        { id: "t4", name: "Nimbus",   domain: "nimbus.example",   favicon_url: "" },
+        { id: "t5", name: "Lumen",    domain: "lumen.example",    favicon_url: "" },
+        { id: "t6", name: "Verity",   domain: "verity.example",   favicon_url: "" },
+        { id: "t7", name: "Solace",   domain: "solace.example",   favicon_url: "" },
+        { id: "t8", name: "Marlow",   domain: "marlow.example",   favicon_url: "" }
+      ]);
       window.setSidebarUser(ID.usn, { name: "Alex Moreno", email: "alex@kestrel.example", avatar_url: "" });
-      if (window.setUpstreemBrands) window.setUpstreemBrands(MARKEN.map(function(m){
-        return { company_id: m.id, name: m.name };
-      }));
-      if (window.setSidebarCount) window.setSidebarCount(ID.usn, 128);
+      /* Vierzehn Marken im Store. Die Leiste zieht ihren Brands-Zaehler daraus, und er soll dieselbe
+         Zahl nennen wie die Kopfzeile der Tabelle. Sichtbar sind nur die sechs oben; die acht
+         weiteren stehen nur als Bestand da und tauchen nirgends auf. */
+      if (window.setUpstreemBrands) window.setUpstreemBrands(
+        MARKEN.map(function(m){ return { company_id: m.id, name: m.name }; }).concat(
+          ["Solace", "Marlow", "Aster", "Bramble", "Cinder", "Dovetail", "Ember", "Fennel"]
+            .map(function(n, i){ return { company_id: "x" + i, name: n }; })));
+      if (window.setSidebarCount) window.setSidebarCount(ID.usn, 231);
       if (window.setSidebarActive) window.setSidebarActive(ID.usn, "dashboard");
       /* Offen und nicht als Schiene: die Beschriftungen sind der halbe Wiedererkennungswert. */
       if (window.setSidebarOpen) window.setSidebarOpen(ID.usn, "yes");
@@ -402,7 +418,11 @@
           return { company_id: m.id, name: m.name, color: m.farbe, favicon_url: m.logo };
         }),
         table: tab,
-        totalCount: MARKEN.length,
+        /* 14 und nicht MARKEN.length: die Zahl neben "Top Brands" ist die Zahl ALLER Marken im
+           Konto, nicht die der sechs sichtbaren Zeilen. In der App ist das auch so -- die Tabelle
+           zeigt die oberen, der Zaehler nennt den Bestand. Dieselbe 14 steht deshalb auch im
+           Marken-Store, aus dem die Leiste ihren Zaehler zieht. */
+        totalCount: 14,
         granularity: "month"
       });
     }
