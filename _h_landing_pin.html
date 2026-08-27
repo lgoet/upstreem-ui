@@ -1,3 +1,14 @@
+<meta charset="utf-8">
+<title>landing hero am Pin 422b446 (genau das Framer-Schnipsel)</title>
+<!-- Wozu: pruefen, ob das, was in Framer eingesetzt wird, am PIN wirklich laeuft -- also gegen
+     cdn.jsdelivr.net und nicht gegen die Dateien auf der Platte. Der Inhalt unten ist Zeichen fuer
+     Zeichen framer/landing_hero.html, eingefuegt von einem Skript, damit beides nicht auseinander
+     laeuft. -->
+<style>body{margin:0;font:12px ui-monospace,monospace;background:#fff}
+#out{position:fixed;right:0;top:0;z-index:99;max-width:340px;background:#f6f6f6;padding:6px;
+     white-space:pre-wrap;font:10px/1.4 ui-monospace,monospace}</style>
+<body>
+<pre id="out">laedt vom CDN</pre>
 <!-- ============================================================================
      upstreem — Hero-Sektion. In Framer als Embed/Code-Element einfuegen, EINMAL.
 
@@ -70,4 +81,31 @@
   /* Zuletzt: diese Datei ruft die Setter der anderen. */
   js("landing-hero.js");
 })();
+</script>
+<script>
+function messen(){
+  var r = document.querySelector(".ulh-root");
+  var v = r.querySelector(".ulh-view"), f = r.querySelector(".ulh-frame");
+  var o = {
+    pin: r.getAttribute("data-cdn-pin"),
+    core_da: !!window.UpstreemCore,
+    fenster: v ? Math.round(v.clientWidth) : null,
+    mass: getComputedStyle(r).getPropertyValue("--ulh-mass").trim(),
+    blende: f ? getComputedStyle(f).backgroundColor : null,
+    themen: [].map.call(r.querySelectorAll(".up-root"), function(e){ return e.getAttribute("data-theme"); }),
+    leiste: r.querySelectorAll(".usn-item").length,
+    kennzahlen: r.querySelectorAll(".dph-kpis > *").length,
+    chart_zeilen: r.querySelectorAll(".vot-unit-right .vt-row").length,
+    gran: (r.querySelector(".vc-gran-btn.is-active") || {}).textContent,
+    zitate: r.querySelectorAll(".tct-row").length,
+    fehler: window.__fehler || null
+  };
+  document.getElementById("out").textContent = JSON.stringify(o, null, 1);
+  window.__fertig = o;
+  return o;
+}
+window.addEventListener("error", function(e){
+  window.__fehler = (window.__fehler || []).concat([String(e.message).slice(0, 100)]);
+});
+setTimeout(messen, 4000);
 </script>
