@@ -1,0 +1,71 @@
+<!-- upstreem — Hero-Sektion fuer die Landingpage in Framer.
+
+     In Framer als Code-/Embed-Element einfuegen, EINMAL. Danach kommt jede Aenderung ueber den
+     Pin unten, ohne dass hier etwas neu eingesetzt werden muss.
+
+     data-cdn-pin  = der Commit-Hash, aus dem geladen wird, z.B. "926aee6". Leer laesst @main
+                     laden -- fuer die oeffentliche Seite bitte NICHT leer lassen: @main aendert
+                     sich mit jedem Push, und dann aendert sich die Seite ohne Zutun.
+
+     Was hier NICHT steht: das Markup des Dashboards. Das baut landing-hero.js aus den echten
+     Komponenten der App -- Seitenleiste, Dashboard-Seitenkopf, Visibility-Chart,
+     Top-Citations-Dashboard, mit deren echter CSS. Deshalb ist dieses Schnipsel kurz und muss
+     nicht angefasst werden, wenn sich die App aendert.
+
+     Die Zahlen im Fenster sind Demodaten, die Marken darin erfunden. -->
+
+<div class="ulh-root" data-cdn-pin="CDN_PIN"></div>
+
+<script>
+(function(){
+  /* Den Pin aus dem Wurzelelement lesen und nicht aus document.currentScript: in Framer landet
+     dieses Schnipsel in einem eigenen Rahmen, und currentScript ist dort je nach Einbauart nicht
+     das, was man erwartet. Ueber die Klasse findet es sich immer. */
+  function pin(){
+    var el = document.querySelector(".ulh-root");
+    var v = el && el.getAttribute("data-cdn-pin");
+    return (!v || v === "CDN_PIN") ? "main" : v;
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + pin() + "/";
+
+  /* Einmal pro Dateiname, nicht pro URL -- dieselbe Buchfuehrung wie in den Bubble-Ladern. Auf der
+     Landingpage gibt es zwar nur eine Sektion, aber Framer baut ein Embed bei jeder Navigation
+     neu ein, und ohne die Sperre haengen nach ein paar Seitenwechseln zwoelf Kopien im Kopf. */
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(url, make){
+    var name = url.slice(url.lastIndexOf("/") + 1);
+    if (L[name]) return;
+    L[name] = url; make(url);
+  }
+  function css(f){
+    once(base + f, function(u){
+      var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u;
+      document.head.appendChild(l);
+    });
+  }
+  /* async = false ist hier PFLICHT und keine Feinheit: ein per createElement eingehaengtes Skript
+     laeuft sonst, sobald es da ist, und dann kann visibility-chart.js vor core.js starten und
+     findet window.UpstreemCore nicht. Mit async = false halten die Skripte ihre Reihenfolge. */
+  function js(f){
+    once(base + f, function(u){
+      var s = document.createElement("script"); s.src = u; s.async = false;
+      document.head.appendChild(s);
+    });
+  }
+
+  css("core.css");
+  css("sidebar.css");
+  css("page-headers/dashboard-page-header.css");
+  css("visibility-chart.css");
+  css("topcitations-dashboard.css");
+  css("landing-hero.css");
+
+  js("core.js");
+  js("sidebar.js");
+  js("page-headers/dashboard-page-header.js");
+  js("visibility-chart.js");
+  js("topcitations-dashboard.js");
+  /* Zuletzt: diese Datei ruft die Setter der anderen. */
+  js("landing-hero.js");
+})();
+</script>

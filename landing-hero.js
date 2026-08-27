@@ -1,0 +1,339 @@
+/* upstreem landing-hero.js — die Hero-Sektion der Landingpage.
+
+   Was diese Datei tut und was sie ausdruecklich NICHT tut:
+
+   Sie baut die Buehne (Ueberschrift, Unterzeile, Fensterrahmen) und setzt DIE ECHTEN KOMPONENTEN
+   der App hinein: die Seitenleiste, den Dashboard-Seitenkopf, das Visibility-Chart und das
+   Top-Citations-Dashboard. Kein Nachbau, kein Bild, kein Video -- dasselbe Markup und dieselbe CSS,
+   die in Bubble laufen. Deshalb ist das Fenster in jeder Groesse scharf, und deshalb veraltet es
+   nicht, wenn sich die App aendert.
+
+   Das Markup der vier Komponenten steht weiter unten in einem erzeugten Block. Erzeugt heisst:
+   .landing_markup.py zieht es aus den Bubble-Vorlagen und schreibt es hierher. Wer es von Hand
+   aendert, verliert die Aenderung beim naechsten Lauf -- und die Landingpage weicht von der App ab,
+   was der ganze Sinn dieser Bauart ist.
+
+   Die Zahlen im Fenster sind DEMODATEN und die Marken sind erfunden (Kestrel, Vantage, Halden,
+   Lumen, Orbit). Absichtlich: erfundene Zahlen unter echten Firmennamen wuerden auf einer
+   oeffentlichen Seite wie Daten ueber diese Firmen aussehen.
+
+   Braucht: core.js, sidebar.js, dashboard-page-header.js, visibility-chart.js,
+   topcitations-dashboard.js -- und diese Datei ZULETZT, weil sie deren Setter ruft. */
+(function(){
+  "use strict";
+
+  /* Feste Kennungen. Es gibt genau eine Hero-Sektion pro Seite, also braucht keine davon eine
+     laufende Nummer -- und feste Namen machen die Demodaten unten lesbar. */
+  var ID = { usn: "lh-usn", dph: "lh-dph", vot: "lh-vot", tcd: "lh-tcd" };
+
+  /* ---- MARKUP ANFANG (erzeugt von .landing_markup.py -- nicht von Hand aendern) ---- */
+  var MARKUP = {
+    usn: "<div class=\"up-root usn-root\" data-instance=\"lh-usn\" data-cdn-pin=\"\" data-isdark=\"no\" data-team-id=\"t1\" data-active=\"dashboard\" data-prompt-count=\"\" data-export-instance=\"\"></div>",
+    dph: "<div class=\"up-root up-ph-root dph-root\" data-instance=\"lh-dph\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Kestrel\" data-brand-logo=\"\"><div class=\"up-ph-top\"><div class=\"up-ph-left\"><div class=\"up-ph-meta\"><img class=\"up-ph-metalogo\" alt=\"\" style=\"display:none\"/><span class=\"up-ph-metatxt\"><span class=\"pph-metaname\"></span></span></div><h1 class=\"up-ph-heading\">Dashboard</h1><p class=\"up-ph-desc\">Monitor your AI visibility, performance, and latest developments</p></div><div class=\"dph-topright\"><!-- dashboard-page-header.js fills this in on setDashboardPageHeaderKpis(). --><div class=\"dph-kpis\"></div><div class=\"dph-tools\"><button class=\"dph-docsbtn\" type=\"button\" data-tip=\"Open Documentation\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 5v16\" /><path d=\"M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z\" /></svg><span>Docs</span></button><button class=\"dph-refreshbtn up-ph-iconbtn\" type=\"button\" aria-label=\"Refresh\" data-tip=\"Refresh Data\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8\" /><path d=\"M21 3v5h-5\" /><path d=\"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16\" /><path d=\"M8 16H3v5\" /></svg></button></div></div></div></div>",
+    vot: "<div class=\"up-root vot-root\" data-instance=\"lh-vot\" data-cdn-pin=\"\" data-isdark=\"no\" data-export-instance=\"\" data-processing=\"no\" data-processing2=\"no\"><div class=\"vot-unit vot-unit-left\"><div class=\"vot-head\"><div class=\"vot-heading\">Visibility over Time</div><div class=\"vot-head-tools\"><div class=\"vc-gran\" role=\"tablist\" aria-label=\"Granularity\"><button class=\"vc-gran-btn is-active\" data-gran=\"day\" type=\"button\" role=\"tab\">Day</button><button class=\"vc-gran-btn\" data-gran=\"week\" type=\"button\" role=\"tab\">Week</button><button class=\"vc-gran-btn\" data-gran=\"month\" type=\"button\" role=\"tab\">Month</button></div><button class=\"vot-maximize vot-max-top vot-iconbtn\" type=\"button\" data-tip=\"Minimize\" aria-label=\"Minimize\"><svg class=\"ic-max\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M15 3h6v6\"/><path d=\"m21 3-7 7\"/><path d=\"m3 21 7-7\"/><path d=\"M9 21H3v-6\"/></svg><svg class=\"ic-min\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m14 10 7-7\"/><path d=\"M20 10h-6V4\"/><path d=\"m3 21 7-7\"/><path d=\"M4 14h6v6\"/></svg></button></div></div><div class=\"vot-box vot-box-left\"><div class=\"vot-panel-body\"><button class=\"vot-scale-btn\" type=\"button\" data-tip=\"Chart Settings\" aria-label=\"Chart Settings\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg></button><div class=\"up-line-wrap\"><canvas class=\"up-line-canvas\"></canvas></div><div class=\"up-legend\"></div></div></div></div><div class=\"vot-unit vot-unit-right\"><div class=\"vot-head\"><div class=\"vot-heading vot-heading-right\"><span class=\"vot-head-label\">Top Brands</span><span class=\"vot-head-sep\"></span><span class=\"vot-head-count\"></span></div><div class=\"vot-head-tools\"><div class=\"vot-sort\"><button class=\"vot-sort-btn vot-iconbtn\" type=\"button\" data-tip=\"Sort\" aria-label=\"Sort\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 16 4 4 4-4\"/><path d=\"M7 20V4\"/><path d=\"m21 8-4-4-4 4\"/><path d=\"M17 4v16\"/></svg></button><div class=\"up-sort-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"vot-filter\"><button class=\"vot-filter-btn vot-iconbtn\" type=\"button\" data-tip=\"Filter brands\" aria-label=\"Filter\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M14 17H5\"/><path d=\"M19 7h-9\"/><circle cx=\"17\" cy=\"17\" r=\"3\"/><circle cx=\"7\" cy=\"7\" r=\"3\"/></svg><span class=\"vot-filter-badge\"></span></button><div class=\"up-ment-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><button class=\"vot-export vot-iconbtn\" type=\"button\" data-tip=\"Export\" aria-label=\"Export\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 15V3\" /><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /><path d=\"m7 10 5 5 5-5\" /></svg></button><button class=\"vot-maximize vot-max-right vot-iconbtn\" type=\"button\" data-tip=\"Maximize\" aria-label=\"Maximize\"><svg class=\"ic-max\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M15 3h6v6\"/><path d=\"m21 3-7 7\"/><path d=\"m3 21 7-7\"/><path d=\"M9 21H3v-6\"/></svg><svg class=\"ic-min\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m14 10 7-7\"/><path d=\"M20 10h-6V4\"/><path d=\"m3 21 7-7\"/><path d=\"M4 14h6v6\"/></svg></button><button class=\"vot-goto vot-iconbtn\" type=\"button\" data-tip=\"Open\" aria-label=\"Open\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7 7h10v10\" /><path d=\"M7 17 17 7\" /></svg></button></div></div><div class=\"vot-box vot-box-right\"><div class=\"vt-table\"></div></div></div></div>",
+    tcd: "<div class=\"up-root tcd-root\" data-instance=\"lh-tcd\" data-cdn-pin=\"\" data-isdark=\"no\" data-export-instance=\"\" data-processing=\"no\" data-processing2=\"no\"><div class=\"tcd-unit tcd-unit-left\"><div class=\"tcd-head\"><div class=\"tcd-mode\" role=\"tablist\" aria-label=\"Mode\"><button class=\"tcd-mode-btn is-active\" data-mode=\"domain\" type=\"button\" role=\"tab\">Domains</button><button class=\"tcd-mode-btn\" data-mode=\"url\" type=\"button\" role=\"tab\">URLs</button></div><div class=\"tcd-head-tools\"><div class=\"tcl-seg\" role=\"tablist\" aria-label=\"Chart type\"><button class=\"tcl-seg-btn is-active\" data-chart=\"doughnut\" role=\"tab\" aria-selected=\"true\" data-tip=\"Doughnut\" aria-label=\"Doughnut\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 12c.552 0 1.005-.449.95-.998a10 10 0 0 0-8.953-8.951c-.55-.055-.998.398-.998.95v8a1 1 0 0 0 1 1z\" /><path d=\"M21.21 15.89A10 10 0 1 1 8 2.83\" /></svg></button><button class=\"tcl-seg-btn\" data-chart=\"bar\" role=\"tab\" aria-selected=\"false\" data-tip=\"Bars\" aria-label=\"Bars\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3v16a2 2 0 0 0 2 2h16\"/><rect x=\"7\" y=\"13\" width=\"9\" height=\"4\" rx=\"1\"/><rect x=\"7\" y=\"5\" width=\"12\" height=\"4\" rx=\"1\"/></svg></button></div></div></div><div class=\"tcd-box\"><div class=\"tcd-panel-body\"><div class=\"tcl-top-total\"><span class=\"n\">0</span><span class=\"lbl\">Citations</span></div><div class=\"up-donut-body\"></div></div></div></div><div class=\"tcd-unit tcd-unit-right\"><div class=\"tcd-head\"><div class=\"tcd-heading tcd-heading-right\"><span class=\"tcd-head-label\">Top Domains</span><span class=\"tcd-head-sep\"></span><span class=\"tcd-head-count\"></span></div><div class=\"tcd-head-tools\"><button class=\"tcd-brand-toggle\" type=\"button\" data-tip=\"Filter for your brand mentions\"><span class=\"tcd-brand-toggle-lbl\"><img class=\"tcd-brand-logo\" src=\"\" style=\"display:none\"/><span class=\"tcd-brand-label\"></span></span><span class=\"tcd-brand-check\"><svg class=\"tcd-brand-check-yes\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6 9 17l-5-5\" /></svg><svg class=\"tcd-brand-check-no\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14\" /></svg></span></button><div class=\"tcd-filter\"><button class=\"tcd-filter-btn tcd-iconbtn\" type=\"button\" data-tip=\"Filter\" aria-label=\"Filter\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M14 17H5\"/><path d=\"M19 7h-9\"/><circle cx=\"17\" cy=\"17\" r=\"3\"/><circle cx=\"7\" cy=\"7\" r=\"3\"/></svg><span class=\"tcd-filter-badge\"></span></button><div class=\"up-filter-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><button class=\"tcd-export tcd-iconbtn\" type=\"button\" data-tip=\"Export\" aria-label=\"Export\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 15V3\" /><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /><path d=\"m7 10 5 5 5-5\" /></svg></button><button class=\"tcd-goto tcd-iconbtn\" type=\"button\" data-tip=\"Open\" aria-label=\"Open\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7 7h10v10\" /><path d=\"M7 17 17 7\" /></svg></button></div></div><div class=\"tcd-box\"><div class=\"tct-table\"></div></div></div></div>"
+  };
+  /* ---- MARKUP ENDE ---- */
+
+  /* ---------- Demodaten ----------------------------------------------------------------- */
+
+  /* Hoechstens sieben Zeichen je Name. Gemessen: bei 1066px Inhaltsbreite -- und die ist fest,
+     weil die Buehne fest ist -- kuerzt die Top-Brands-Tabelle "Northwind" auf "Northwi...".
+     Kuerzere Namen sind der billigere Hebel als eine breitere Buehne, denn die Buehnenbreite
+     steuert auch die Schriftgroesse im Fenster. */
+  var MARKEN = [
+    { id: "ke", name: "Kestrel", farbe: "#1f6feb", basis: 34.2 },
+    { id: "va", name: "Vantage", farbe: "#8957e5", basis: 27.8 },
+    { id: "ha", name: "Halden",  farbe: "#1a7f5a", basis: 19.4 },
+    { id: "lu", name: "Lumen",   farbe: "#b3541e", basis: 12.6 },
+    { id: "or", name: "Orbit",   farbe: "#9a6700", basis: 8.1 }
+  ];
+
+  /* Ein Zufall mit Gedaechtnis: derselbe Startwert liefert dieselbe Kurve. Auf einer Landingpage
+     ist das kein Detail -- ein Bild, das bei jedem Laden anders aussieht, wirkt wie ein Fehler,
+     und niemand kann sich auf einen Screenshot davon berufen. */
+  function wuerfel(saat){
+    var s = saat;
+    return function(){ s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+  }
+
+  var TAGE = 30;
+
+  function tagesliste(){
+    var out = [], heute = new Date();
+    for (var i = TAGE - 1; i >= 0; i--){
+      var d = new Date(heute.getTime() - i * 86400000);
+      out.push(d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" +
+               String(d.getDate()).padStart(2, "0"));
+    }
+    return out;
+  }
+
+  function reihen(){
+    var tage = tagesliste(), out = [];
+    MARKEN.forEach(function(m, mi){
+      var r = wuerfel(7919 + mi * 131), wert = m.basis;
+      tage.forEach(function(tag, ti){
+        /* Ein langsamer Trend plus ein kleines Zittern. Der Trend macht die Kurven unterscheidbar
+           (die erste Marke steigt, die letzte faellt), das Zittern nimmt ihnen das Kuenstliche. */
+        var trend = (2 - mi) * 0.055 * ti;
+        wert = m.basis + trend + (r() - 0.5) * 2.6;
+        out.push({ company_id: m.id, day: tag, visibility_pct: Math.max(0, Math.round(wert * 10) / 10) });
+      });
+    });
+    return out;
+  }
+
+  /* Aus der letzten Woche gegen die Woche davor -- so entstehen die Deltas, die in der Tabelle und
+     in den Kennzahlen stehen. Gerechnet und nicht erfunden, damit Kurve und Zahlen zusammenpassen:
+     eine steigende Linie neben einem fallenden Pfeil ist genau die Art Widerspruch, die einem
+     aufmerksamen Betrachter auffaellt. */
+  function fenster(serie, id, von, bis){
+    var w = serie.filter(function(p){ return p.company_id === id; }).slice(von, bis);
+    if (!w.length) return 0;
+    var s = 0; w.forEach(function(p){ s += p.visibility_pct; });
+    return s / w.length;
+  }
+
+  function tabelle(serie){
+    return MARKEN.map(function(m, i){
+      var jetzt = fenster(serie, m.id, TAGE - 7, TAGE);
+      var davor = fenster(serie, m.id, TAGE - 14, TAGE - 7);
+      var rang = 1 + i * 0.8 + (i === 0 ? 0 : 0.3);
+      return {
+        company_id: m.id, name: m.name, logo_url: "", position: i + 1,
+        visibility_pct: Math.round(jetzt * 10) / 10,
+        visibility_delta_pct: Math.round((jetzt - davor) * 10) / 10,
+        avg_rank: Math.round(rang * 10) / 10,
+        avg_rank_delta: [-0.3, 0.2, -0.1, 0.4, 0.1][i],
+        sentiment: [79, 74, 71, 68, 63][i],
+        sentiment_delta: [1.4, -0.8, 2.1, -1.6, 0.5][i]
+      };
+    });
+  }
+
+  /* Erfundene Quellen. Keine echten Domains: die Anteile hier sind Demozahlen, und unter einem
+     echten Namen saehen sie aus wie eine Aussage ueber diese Seite. */
+  var QUELLEN = [
+    { domain: "industryguide.example",  share_pct: 18.4, share_delta_pct: 2.1, used_total: 2926, citation_type: "Editorial" },
+    { domain: "reviewhub.example",      share_pct: 14.1, share_delta_pct: -1.3, used_total: 2242, citation_type: "Review" },
+    { domain: "techjournal.example",    share_pct: 11.7, share_delta_pct: 0.8, used_total: 1860, citation_type: "Editorial" },
+    { domain: "forum.example",          share_pct: 9.3,  share_delta_pct: 3.4, used_total: 1479, citation_type: "Community" },
+    { domain: "comparison.example",     share_pct: 7.6,  share_delta_pct: -0.4, used_total: 1208, citation_type: "Comparison" },
+    { domain: "docs.kestrel.example", share_pct: 6.2,  share_delta_pct: 1.9, used_total: 986,  citation_type: "Owned" },
+    { domain: "newsroom.example",       share_pct: 4.8,  share_delta_pct: -0.7, used_total: 763,  citation_type: "News" }
+  ];
+
+  var TYPEN = [
+    { type: "Editorial",  share_pct: 34.2 },
+    { type: "Review",     share_pct: 22.6 },
+    { type: "Community",  share_pct: 16.8 },
+    { type: "Comparison", share_pct: 13.1 },
+    { type: "Owned",      share_pct: 8.4 },
+    { type: "News",       share_pct: 4.9 }
+  ];
+
+  /* ---------- Buehne bauen ---------------------------------------------------------------- */
+
+  function bauen(root){
+    if (root.querySelector(".ulh-frame")) return;          /* schon gebaut */
+    root.innerHTML =
+      '<div class="ulh-text">' +
+        '<h1 class="ulh-h1"><span>AI Search Analytics</span><span>Made simple</span></h1>' +
+        '<p class="ulh-sub">Track and optimize your brand’s AI search performance and drive ' +
+          '<b>Qualified Traffic</b>, <b>Leads</b>, and <b>Revenue</b>.</p>' +
+      '</div>' +
+      '<div class="ulh-stage">' +
+        '<div class="ulh-frame">' +
+          '<div class="ulh-chrome" aria-hidden="true">' +
+            '<span class="ulh-dot"></span><span class="ulh-dot"></span><span class="ulh-dot"></span>' +
+          '</div>' +
+          '<div class="ulh-view">' +
+            '<div class="ulh-app">' +
+              '<div class="ulh-side">' + (MARKUP.usn || "") + '</div>' +
+              '<div class="ulh-main">' +
+                (MARKUP.dph || "") + (MARKUP.vot || "") + (MARKUP.tcd || "") +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+  }
+
+  /* Die Seitenleiste haengt sich SELBST an <body> und ist position: fixed. In der App muss das so
+     sein -- sie steht neben allem und scrollt nicht mit. Fuer das Fenster holen wir sie herein:
+     liegt ein Vorfahre mit transform darueber, bezieht sich fixed auf DIESEN Vorfahren und nicht
+     mehr auf das Browserfenster. Damit sitzt die Leiste im Ausschnitt und wird mitverkleinert.
+     Die zwei Handhaben fuer das Telefon (Knopf und Vorhang) bleiben nicht: im Fenster drueckt sie
+     niemand, und der Vorhang wuerde ueber der halben Buehne liegen. */
+  function leisteHolen(root){
+    var side = root.querySelector(".ulh-side");
+    var bar = document.querySelector('.usn-bar[data-usn-instance="' + ID.usn + '"]');
+    if (!side || !bar) return false;
+    if (bar.parentNode !== side) side.appendChild(bar);
+    ["usn-fab", "usn-scrim"].forEach(function(k){
+      var el = document.querySelector("." + k + '[data-usn-instance="' + ID.usn + '"]');
+      if (el && el.parentNode) el.parentNode.removeChild(el);
+    });
+    return true;
+  }
+
+  /* Die Verkleinerung. Gerechnet aus der WIRKLICHEN Breite des Ausschnitts, nicht aus der des
+     Fensters: das Fenster traegt den Rahmen, der Ausschnitt ist der Platz darin. */
+  function mass(root){
+    var view = root.querySelector(".ulh-view");
+    if (!view) return;
+    var b = view.clientWidth;
+    if (!b) return;                                        /* verdeckter Tab, spaeter nochmal */
+    /* Die Buehnenbreite kommt aus der CSS und steht nicht hier: sonst gibt es zwei Wahrheiten, und
+       eine Aenderung an --ulh-buehne verschiebt das Bild, ohne dass das Mass mitgeht. */
+    var soll = parseFloat(getComputedStyle(root).getPropertyValue("--ulh-buehne")) || 1280;
+    var m = b / soll;
+    root.style.setProperty("--ulh-mass", m.toFixed(4));
+    /* Die Buehne muss den Ausschnitt mindestens fuellen, sonst scheint unten der Grund durch.
+       Genau fuellen und nicht mit Zugabe: ist der Inhalt hoeher, wird er abgeschnitten -- und
+       genau dieser Schnitt mitten im Inhalt laesst es aussehen wie ein Blick in eine laufende
+       App. Eine Zugabe wuerde stattdessen leere Flaeche unter den Inhalt legen. */
+    var app = root.querySelector(".ulh-app");
+    if (app) app.style.minHeight = Math.ceil(view.clientHeight / m) + "px";
+    /* Der Platz fuer die Leiste muss reserviert werden: fixed nimmt sie aus dem Fluss, und ohne
+       diese Breite beginnt der Seiteninhalt bei x=0 und liegt unter ihr. offsetWidth und nicht
+       getBoundingClientRect: das eine ist die Breite im Layout, das andere die verkleinerte auf
+       dem Schirm -- hier zaehlt die im Layout. Gemessen und nicht festgeschrieben, damit eine
+       Aenderung an --usn-w nichts kaputt macht. */
+    var bar = root.querySelector(".usn-bar");
+    var side = root.querySelector(".ulh-side");
+    if (bar && side && bar.offsetWidth) side.style.width = bar.offsetWidth + "px";
+  }
+
+  /* ---------- Daten hineingeben ----------------------------------------------------------- */
+
+  function fuellen(){
+    var serie = reihen();
+    var tab = tabelle(serie);
+    var eigene = tab[0];
+
+    if (window.setSidebarTeams){
+      window.setSidebarTeams(ID.usn, [{ id: "t1", name: "Kestrel", domain: "kestrel.example", favicon_url: "" }]);
+      window.setSidebarUser(ID.usn, { name: "Alex Moreno", email: "alex@kestrel.example", avatar_url: "" });
+      if (window.setUpstreemBrands) window.setUpstreemBrands(MARKEN.map(function(m){
+        return { company_id: m.id, name: m.name };
+      }));
+      if (window.setSidebarCount) window.setSidebarCount(ID.usn, 128);
+      if (window.setSidebarActive) window.setSidebarActive(ID.usn, "dashboard");
+      /* Offen und nicht als Schiene: die Beschriftungen sind der halbe Wiedererkennungswert. */
+      if (window.setSidebarOpen) window.setSidebarOpen(ID.usn, "yes");
+      if (window.setSidebarReady) window.setSidebarReady(ID.usn);
+    }
+
+    if (window.setDashboardPageHeaderKpis){
+      window.setDashboardPageHeaderKpis(ID.dph, [{
+        avg_visibility_pct: eigene.visibility_pct,
+        avg_visibility_delta_pct: eigene.visibility_delta_pct,
+        avg_rank: eigene.avg_rank,
+        avg_rank_delta: eigene.avg_rank_delta,
+        avg_sentiment: eigene.sentiment,
+        avg_sentiment_delta: eigene.sentiment_delta,
+        has_own_brand: true
+      }]);
+    }
+
+    if (window.renderVisibilityChart){
+      window.renderVisibilityChart({
+        instanceId: ID.vot,
+        series: serie,
+        companies: MARKEN.map(function(m, i){
+          return { company_id: m.id, name: m.name, color: m.farbe, favicon_url: "",
+                   visibility_window_pct: tab[i].visibility_pct };
+        }),
+        filterCompanies: MARKEN.map(function(m){
+          return { company_id: m.id, name: m.name, color: m.farbe, favicon_url: "" };
+        }),
+        table: tab,
+        totalCount: MARKEN.length,
+        granularity: "day"
+      });
+    }
+
+    if (window.renderTopCitations){
+      window.renderTopCitations({
+        instanceId: ID.tcd,
+        mode: "domain",
+        totalCountDomain: 412,
+        totalCountUrl: 1893,
+        citations_total: 15899,
+        top_domains: QUELLEN.map(function(q){
+          return { domain: q.domain, favicon: "", share_pct: q.share_pct,
+                   share_delta_pct: q.share_delta_pct, used_total: q.used_total,
+                   citation_type: q.citation_type };
+        }),
+        top_urls: [],
+        types_breakdown: TYPEN,
+        brand: { id: "ke", name: "Kestrel", logo: "" },
+        brandMentioned: ""
+      });
+    }
+  }
+
+  /* ---------- Start ----------------------------------------------------------------------- */
+
+  /* Warten auf die Komponenten, aber nicht endlos. Diese Datei laeuft NACH ihnen, das heisst
+     aber nur, dass ihr <script>-Tag spaeter steht -- ob die Dateien schon ausgewertet sind,
+     entscheidet das Netz. Ohne Warten waere der erste Setter ein TypeError auf undefined, und die
+     Ausnahme haette die uebrigen mitgenommen.
+     Laeuft die Uhr ab, verschwindet das FENSTER und die Sektion bleibt als Text stehen. Ein leerer
+     weisser Kasten mit drei Punkten waere die schlechtere Antwort auf ein kaputtes CDN. */
+  var VERSUCHE = 80, ABSTAND = 125;                        /* zusammen 10 Sekunden */
+
+  function bereit(){
+    return !!(window.UpstreemCore && window.renderVisibilityChart &&
+              window.renderTopCitations && window.setDashboardPageHeaderKpis &&
+              window.setSidebarTeams);
+  }
+
+  function los(root){
+    bauen(root);
+    mass(root);
+    var n = 0;
+    (function warte(){
+      if (bereit()){
+        try { fuellen(); } catch (e){ if (window.console) console.warn("[landing-hero]", e); }
+        /* Die Leiste entsteht erst, wenn core ihre Wurzel gesehen hat -- das kann nach dem Setter
+           liegen. Also nachfassen, bis sie da ist, und dann noch einmal messen. */
+        (function holen(k){
+          if (leisteHolen(root)){ mass(root); return; }
+          if (k < 40) setTimeout(function(){ holen(k + 1); }, 100);
+        })(0);
+        /* Nach dem Fuellen noch einmal messen: die Tabellen bringen ihre Hoehe erst mit den
+           Daten, und die Buehne muss den Ausschnitt danach immer noch fuellen. */
+        mass(root);
+        return;
+      }
+      if (++n > VERSUCHE){
+        var f = root.querySelector(".ulh-stage");
+        if (f) f.style.display = "none";
+        return;
+      }
+      setTimeout(warte, ABSTAND);
+    })();
+
+    /* Neu messen, wenn sich die Breite aendert. UC ist hier noch nicht sicher da, also der eigene
+       Beobachter -- und ein Rueckfall auf resize fuer alte Browser. */
+    if (typeof ResizeObserver !== "undefined"){
+      try { new ResizeObserver(function(){ mass(root); }).observe(root); } catch (e){}
+    }
+    window.addEventListener("resize", function(){ mass(root); });
+  }
+
+  function start(){
+    var roots = document.querySelectorAll(".ulh-root");
+    for (var i = 0; i < roots.length; i++){
+      if (roots[i].__ulhAuf) continue;
+      roots[i].__ulhAuf = true;
+      los(roots[i]);
+    }
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
+  else start();
+})();

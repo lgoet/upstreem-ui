@@ -23,6 +23,10 @@ upstreem-ui/
 ├─ citations-combo-chart.css/.js   ausgeliefert (CDN) — Prefix combo-
 ├─ topics-manager.css/.js     ausgeliefert (CDN) — Prefix utm-
 ├─ quick-actions.css/.js      ausgeliefert (CDN) — Prefix mqa- (eigenes Token-Set, siehe unten)
+├─ landing-hero.css/.js       ausgeliefert (CDN) — Prefix ulh-, für die Landingpage in Framer.
+│                             Setzt die ECHTEN Komponenten in ein Fenster; das Markup dafür
+│                             erzeugt .landing_markup.py aus den bubble/-Vorlagen.
+├─ framer/landing_hero.html   Einbau-Schnipsel für Framer (NICHT ausgeliefert)
 └─ bubble/                    Loader-Vorlagen für Bubble (NICHT ausgeliefert)
    ├─ <name>_bubble.html      eine pro Komponente — Markup + data-* + CDN-Includes
    ├─ page_header_preload.html   optionale Asset-Vorwärmung fürs Bubble-Page-Header-Script

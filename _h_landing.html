@@ -1,0 +1,99 @@
+<meta charset="utf-8">
+<title>landing hero: statisches Dashboard im Fenster</title>
+<!-- Wozu: die Hero-Sektion der Landingpage, Schritt 1 -- Ueberschrift, Unterzeile und das Fenster
+     mit dem Dashboard im Anfangszustand. Geprueft wird, ob die VIER ECHTEN Komponenten darin
+     wirklich anlaufen (nicht nur ihr Markup steht), ob die Verkleinerung stimmt und ob die
+     Komponenten in ihrer Desktop-Fassung bleiben.
+
+     Alles per fetch mit no-store und inline eingesetzt. Ein blanker src hat in dieser Sitzung
+     zweimal eine alte Datei geladen, und einmal war es sogar das Harness selbst. -->
+<style>
+  body { margin: 0; font: 12px ui-monospace, monospace; background: #fff; }
+  #bar { padding: 8px; background: #eee; display: flex; gap: 6px; flex-wrap: wrap; }
+  #out { font: 11px/1.5 ui-monospace, monospace; background: #f6f6f6; padding: 8px; margin: 0;
+         white-space: pre-wrap; max-height: 190px; overflow: auto; }
+</style>
+<body>
+<div id="bar">
+  <button onclick="messen()">MESSEN</button>
+  <button onclick="rahmen(1280)">Fenster 1280</button>
+  <button onclick="rahmen(1024)">Fenster 1024</button>
+  <button onclick="rahmen(760)">Fenster 760</button>
+</div>
+<pre id="out">laedt</pre>
+
+<div class="ulh-root" data-cdn-pin=""></div>
+
+<script>
+function rahmen(px){ document.body.style.width = px + "px"; setTimeout(messen, 400); }
+
+function messen(){
+  var r = document.querySelector(".ulh-root");
+  var view = r.querySelector(".ulh-view"), app = r.querySelector(".ulh-app");
+  function auf(sel){ var e = r.querySelector(sel); return e ? !!e.__ulhEgal || true : false; }
+  /* Ob eine Komponente wirklich LAEUFT, zeigt nur ihr Ergebnis -- nicht ihr Markup. Also je
+     Komponente an einer Stelle nachsehen, die erst durch ihre Daten entsteht. */
+  var o = {
+    geladen: window.__geladen,
+    mass: r ? getComputedStyle(r).getPropertyValue("--ulh-mass").trim() : null,
+    fenster_breite: view ? Math.round(view.clientWidth) : null,
+    ausschnitt_hoehe: view ? Math.round(view.clientHeight) : null,
+    buehne_hoehe: app ? Math.round(app.getBoundingClientRect().height) : null,
+    leiste: {
+      punkte: r.querySelectorAll(".usn-item").length,
+      teamname: (r.querySelector(".usn-teamname") || {}).textContent || null,
+      offen: !!r.querySelector(".usn-bar") && getComputedStyle(r.querySelector(".usn-bar")).width
+    },
+    seitenkopf: {
+      kennzahlen: r.querySelectorAll(".dph-kpis .up-sent, .dph-kpis > *").length,
+      marke: (r.querySelector(".pph-metaname") || {}).textContent || null
+    },
+    chart: {
+      leinwand: !!r.querySelector(".up-line-canvas"),
+      gezeichnet: (function(){ var c = r.querySelector(".up-line-canvas");
+        return c ? c.width + "x" + c.height : null; })(),
+      legende: r.querySelectorAll(".up-legend *").length,
+      tabellenzeilen: r.querySelectorAll(".vot-unit-right .vt-row").length
+    },
+    zitate: {
+      zeilen: r.querySelectorAll(".tcd-root .up-row, .tct-row").length,
+      doughnut: r.querySelectorAll(".tcd-root canvas").length
+    },
+    schmal: {
+      chart: !!r.querySelector(".vot-root.is-narrow"),
+      zitate: !!r.querySelector(".tcd-root.is-narrow")
+    },
+    fehler: window.__fehler || null
+  };
+  document.getElementById("out").textContent = JSON.stringify(o, null, 1);
+  window.__fertig = o;
+  return o;
+}
+
+window.addEventListener("error", function(e){
+  window.__fehler = (window.__fehler || []).concat([String(e.message).slice(0, 120)]);
+});
+
+(function(){
+  var files = ["core.css", "sidebar.css", "page-headers/dashboard-page-header.css",
+               "visibility-chart.css", "topcitations-dashboard.css", "landing-hero.css",
+               "core.js", "sidebar.js", "page-headers/dashboard-page-header.js",
+               "visibility-chart.js", "topcitations-dashboard.js", "landing-hero.js"];
+  var texts = {};
+  Promise.all(files.map(function(f){
+    return fetch(f + "?nocache=" + Math.random(), { cache: "no-store" })
+      .then(function(res){ return res.text(); }).then(function(t){ texts[f] = t; });
+  })).then(function(){
+    files.forEach(function(f){
+      var el = document.createElement(/\.css$/.test(f) ? "style" : "script");
+      el.textContent = texts[f];
+      document.head.appendChild(el);
+    });
+    window.__geladen = { core_js: texts["core.js"].length,
+                         hero_js: texts["landing-hero.js"].length,
+                         hero_css: texts["landing-hero.css"].length,
+                         markup_da: texts["landing-hero.js"].indexOf("usn-root") > 0 };
+    setTimeout(messen, 1500);
+  });
+})();
+</script>

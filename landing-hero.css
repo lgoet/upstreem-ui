@@ -1,0 +1,169 @@
+/* upstreem landing-hero.css — die Hero-Sektion der Landingpage. Prefix ulh-.
+   Braucht core.css UND die CSS der Komponenten, die im Fenster stehen: sidebar, der
+   Dashboard-Seitenkopf, visibility-chart, topcitations-dashboard. Der Lader in
+   framer/landing_hero.html holt alles aus demselben Pin.
+
+   Der Punkt dieser Datei: sie baut KEINE Produktoberflaeche nach. Im Fenster stehen die echten
+   Komponenten der App mit ihrer echten CSS -- diese Datei liefert nur die Buehne: Ueberschrift,
+   Unterzeile, den Fensterrahmen und die Verkleinerung. Was drin steht, entscheidet landing-hero.js
+   mit Demodaten.
+
+   Warum das wichtig ist: ein nachgezeichnetes Dashboard veraltet ab dem Tag, an dem sich die App
+   aendert. Das echte nicht. Und es ist scharf in jeder Groesse, weil es DOM ist und kein Bild. */
+
+.ulh-root {
+  /* Hell. Die Landingpage hat keinen Themenschalter -- der Grund ist Weiss, und die Komponenten
+     im Fenster bekommen data-isdark="no". */
+  --ulh-grund: #ffffff;
+  /* Die Buehne hat eine FESTE Breite und wird als Ganzes verkleinert. Nur so sieht man die App in
+     ihrem Desktop-Layout: die Komponenten messen ihre eigene Breite (clientWidth) und stapeln
+     darunter um -- eine transform-Verkleinerung aendert clientWidth nicht, ein kleinerer Kasten
+     schon.
+     Die Zahl ist ein Kompromiss zwischen zwei Messungen. Nach UNTEN: die Komponenten stapeln
+     unter 880px EIGENER Breite auf ihre schmale Fassung um (NARROW_STACK in visibility-chart.js
+     und topcitations-dashboard.js), und bei 1280 kuerzte die Top-Brands-Tabelle schon die
+     Markennamen ab ("North..."). Nach OBEN: je breiter die Buehne, desto stauber die Verkleinerung
+     und desto kleiner die Schrift im Fenster -- 1440 ergab 0.69, 1360 ergibt 0.73.
+     1360 laesst dem Inhalt neben der 250px-Leiste und dem Polster 1066px: Namen vollstaendig,
+     nichts gestapelt, Schrift noch lesbar. */
+  --ulh-buehne: 1360px;
+  --ulh-mass: 1;
+  /* Das Seitenverhaeltnis des Fensters. 0.605 ist gemessen an der Vorlage (1058x640): flacher als
+     die Buehne, der Inhalt wird also unten abgeschnitten -- genau das laesst es aussehen wie ein
+     Blick in eine laufende App und nicht wie ein abfotografierter Bildschirm. */
+  --ulh-verhaeltnis: 0.605;
+  --ulh-t: 200ms;
+  --ulh-ease: cubic-bezier(.4, 0, .2, 1);
+  position: relative;
+  background: var(--ulh-grund);
+  font-family: Geist, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Textblock ---------- */
+.ulh-text {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: clamp(48px, 9vh, 104px) 24px clamp(28px, 4vh, 44px);
+  text-align: center;
+}
+/* Zeilenhoehe UNTER 1 und negative Laufweite: das ist der halbe Effekt. Bei 0.95 und -0.02em liest
+   sich die Ueberschrift als Block und nicht als zwei Zeilen -- beides an der Vorlage gemessen
+   (64px, Gewicht 600, Zeilenhoehe 60.8px = 0.95, Laufweite -1.28px = -0.02em).
+   clamp statt fester 64px, weil die Sektion in Framer auch auf dem Telefon steht. */
+.ulh-h1 {
+  margin: 0;
+  font-size: clamp(34px, 5.4vw, 64px);
+  font-weight: 600;
+  line-height: .95;
+  letter-spacing: -0.02em;
+  color: var(--vc-text);
+}
+.ulh-h1 span { display: block; }
+.ulh-sub {
+  max-width: 560px;
+  margin: clamp(16px, 2.2vh, 22px) auto 0;
+  font-size: clamp(15px, 1.25vw, 18px);
+  line-height: 1.45;
+  color: var(--vc-muted);
+}
+/* Die drei Begriffe stehen als eigene Elemente da, obwohl sie hier nur kraeftiger gesetzt sind:
+   sie sollen spaeter durchwechseln, und dann braucht jeder seinen eigenen Kasten. */
+.ulh-sub b { font-weight: 500; color: var(--vc-text); }
+
+/* ---------- Das Fenster ---------- */
+/* Die Buehne haengt in einem Raster mit EINER Zelle, damit der spaetere Ablauf mehrere Szenen
+   uebereinander legen kann, ohne dass die Hoehe springt. */
+.ulh-stage {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  padding: 0 clamp(16px, 4vw, 56px) clamp(40px, 8vh, 96px);
+}
+.ulh-frame {
+  /* 3/4 der Breite, hoechstens 1440 -- an der Vorlage gemessen (w-2/3, lg:w-3/4, max-w-1440).
+     Das ist die Breite des FENSTERS auf dem Schirm und hat mit --ulh-buehne nichts zu tun: die
+     Buehne ist das, was hineinverkleinert wird. */
+  width: min(75%, 1440px);
+  margin: 0 auto;
+  border-radius: 16px;
+  background: var(--vc-bg);
+  overflow: hidden;
+  /* Fuenf Ebenen statt einer, und die Deckkraft STEIGT nach aussen (.024 -> .035). Die erste Ebene
+     hat keinen Weichzeichner: sie ist eine Haarlinie von 0.9px und ersetzt den Rahmen -- ein
+     border wuerde bei jeder Verkleinerung mitskalieren und dabei ausfransen. Werte an der Vorlage
+     abgelesen. Die Farbe ist ein kuehles Fast-Schwarz und nicht --vc-text: unser Textton ist warm
+     (#1f1f1b), und ein warmer Schatten sieht unter einem weissen Fenster schmutzig aus. */
+  box-shadow:
+    0 0 0 .906px rgba(11, 13, 24, .055),
+    0 .906px 1.812px rgba(11, 13, 24, .024),
+    0 2.719px 5.437px rgba(11, 13, 24, .027),
+    0 7.25px 12.687px rgba(11, 13, 24, .03),
+    0 14.5px 25.374px rgba(11, 13, 24, .035);
+}
+/* Die Fensterleiste. Drei Punkte, sonst nichts -- sie sagt "das ist eine Anwendung in einem
+   Fenster" und darf dabei nicht selbst auffallen. Hoehe 34px, damit sie neben der 1440er Buehne
+   nach der Verkleinerung noch etwa 25px hat. */
+.ulh-chrome {
+  height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 13px;
+  border-bottom: 1px solid var(--vc-border);
+  background: var(--vc-heading-bg);
+}
+.ulh-dot { width: 10px; height: 10px; border-radius: 999px; background: var(--vc-sk); }
+
+/* Der Ausschnitt: so hoch wie das Verhaeltnis vorgibt, und was die Buehne darunter noch traegt,
+   ist abgeschnitten. */
+.ulh-view {
+  position: relative;
+  width: 100%;
+  height: 0;
+  padding-bottom: calc(var(--ulh-verhaeltnis) * 100%);
+  overflow: hidden;
+}
+/* Die Buehne selbst: die feste Breite aus --ulh-buehne, oben links verankert, als Ganzes
+   verkleinert. transform und nicht zoom: zoom aendert die gemessene Breite der Kinder und haette
+   genau die schmalen Fassungen ausgeloest, die wir nicht wollen. */
+.ulh-app {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--ulh-buehne);
+  transform: scale(var(--ulh-mass));
+  transform-origin: top left;
+  display: flex;
+  align-items: stretch;
+  background: var(--up-surface);
+}
+/* Die Leiste bringt ihre Breite selbst mit; rechts davon der Seiteninhalt.
+   min-width: 0, sonst sprengt eine breite Tabelle die Spalte. */
+.ulh-side { flex: 0 0 auto; }
+.ulh-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 18px 22px 0;
+  background: var(--up-surface);
+}
+/* Die Komponenten im Fenster sind Schaustuecke. Nichts darin ist anklickbar, und der Zeiger soll
+   das auch nicht behaupten -- der Ablauf spaeter fuehrt die Maus selbst.
+   Der Zeiger bleibt trotzdem stehen: pointer-events: none an der Buehne wuerde auch die
+   Tooltips der spaeteren Szenen verhindern, die ueber echte Hover-Zustaende laufen. */
+.ulh-app * { cursor: default; }
+
+/* ---------- Schmal ---------- */
+/* Auf dem Telefon gar kein Fenster. Gemessen bei 700px Fensterbreite: das Mass faellt auf 0.50,
+   die 13px-Schrift der App landet bei 6.5px und ist nicht mehr zu lesen -- ein Bild, auf dem
+   niemand etwas erkennt, kostet nur Ladezeit und Platz. Die Vorlage macht es genauso: dort haengt
+   der ganze Fensterblock in einem Kasten mit "hidden md:block".
+   Die Ueberschrift traegt die Sektion auf dem Telefon allein. */
+@media (max-width: 900px) {
+  .ulh-stage { display: none; }
+  .ulh-text { padding-bottom: clamp(40px, 8vh, 72px); }
+}
