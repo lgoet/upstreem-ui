@@ -133,13 +133,15 @@
     { items: [{ key: "logout", label: "Log out", icon: "logOut" }] }
   ];
 
-  /* Mira ist eine Wortmarke, kein Feather-Symbol -- deshalb zwei Bilddateien statt eines Pfades.
-     Fest im Code und nicht ueber ein Bubble-Attribut: die Marke aendert sich nicht pro
-     Platzierung, und ein leeres Attribut haette hier ein leeres Icon bedeutet. Ueberschreibbar
-     bleibt es trotzdem (data-mira-icon / data-mira-icon-dark), falls doch mal etwas anderes
-     dort stehen soll. */
-  var MIRA_HELL = "//49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782122277820x302350779276307400/Group.svg";
-  var MIRA_DUNKEL = "//49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782132391699x758155530670363800/mira-logo-dark.svg";
+  /* Mira traegt jetzt ein normales Symbol aus demselben Satz wie jeder andere Punkt der Leiste:
+     Lucide galaxy. Vorher stand hier die Wortmarke als BILD -- zwei Dateien auf Bubbles CDN, je
+     eine pro Thema, dazu ein Helligkeitsfilter in der CSS und ein Rueckfall darunter, falls der
+     Abruf scheitert. Ein Icon aus dem Satz braucht davon nichts und dreht sich mit der Farbe der
+     Zeile mit.
+     Die zwei Attribute bleiben der Sonderweg: wer data-mira-icon / data-mira-icon-dark setzt,
+     bekommt sein Bild weiter ueber das Symbol gelegt. Sie stehen im Vertrag, also verschwinden
+     sie nicht, nur weil die VORGABE eine andere ist.
+     Deshalb auch keine festen Adressen mehr an dieser Stelle: ohne Attribut gibt es kein Bild. */
 
   /* Feather hat kein Sidebar-Symbol, hier stand deshalb eine handgezeichnete Form. Lucide hat
      eine: panel-left. Damit ist auch dieses Icon aus einem Satz und nicht mehr selbst gemalt. */
@@ -183,19 +185,31 @@
       var v = root.getAttribute(n);
       return (v == null || v === "" || /^[A-Z_]{3,}$/.test(v)) ? (f || "") : v;
     }
+    /* Das Ueberschreibbild von Mira, oder leer. An EINER Stelle, weil zwei Aufrufer dieselbe
+       Antwort brauchen: ic() entscheidet, was gezeichnet wird, und der Bau der Zeile entscheidet,
+       ob has-mira gesetzt wird. Standen die beiden Abfragen getrennt, koennte die Klasse das
+       Symbol ausblenden, obwohl gar kein Bild darueber liegt. */
+    function miraBild(){
+      /* Das Thema haengt an der Leiste (.usn-bar[data-theme]), nicht an der Wurzel -- so stand es
+         auch vorher hier. Der Wachhund davor, weil bar erst weiter unten entsteht: gerufen wird
+         diese Funktion nur beim Zeichnen, aber eine hochgezogene Variable ist bis dahin
+         undefiniert und ein Zugriff darauf riss frueher schon Leisten mit. */
+      var dunkel = !!bar && bar.getAttribute("data-theme") === "dark";
+      return url(attr(dunkel ? "data-mira-icon-dark" : "data-mira-icon", ""));
+    }
     function ic(name){
       if (name === "mira"){
-        var dunkel = bar.getAttribute("data-theme") === "dark";
-        var q = url(attr(dunkel ? "data-mira-icon-dark" : "data-mira-icon", dunkel ? MIRA_DUNKEL : MIRA_HELL));
-        /* Der Funkelstern aus core liegt darunter, das Bild darueber und blendet ihn aus.
-           Faellt das Bild aus, nimmt es sich samt der Klasse weg und der Stern wird sichtbar --
-           ein leerer Platz neben einem Menuepunkt sieht aus, als fehle etwas. Gleiche Bauart
-           wie .up-logo-box mit has-img.
-           Bild und nicht Maske: als Maske haette die Wortmarke die Farbe der Zeile getragen, aber
-           die Datei liegt auf Bubbles CDN ohne CORS-Header, und ein fremdes SVG wird als
-           mask-image verworfen. Gegenprobe mit derselben Maske als data:-URL: die malt. Den Ton
-           macht deshalb ein brightness-Filter in der CSS. */
-        return UC.icon("sparkle", 1.8) +
+        var q = miraBild();
+        if (!q) return UC.icon("galaxy", 1.8);
+        /* Der Sonderweg: galaxy liegt darunter, das Bild darueber und blendet es aus. Faellt das
+           Bild aus, nimmt es sich samt der Klasse weg und das Symbol wird sichtbar -- ein leerer
+           Platz neben einem Menuepunkt sieht aus, als fehle etwas. Gleiche Bauart wie
+           .up-logo-box mit has-img.
+           Bild und nicht Maske: als Maske haette es die Farbe der Zeile getragen, aber eine Datei
+           auf Bubbles CDN kommt ohne CORS-Header, und ein fremdes SVG wird als mask-image
+           verworfen. Gegenprobe mit derselben Maske als data:-URL: die malt. Den Ton macht
+           deshalb ein brightness-Filter in der CSS. */
+        return UC.icon("galaxy", 1.8) +
           '<img class="usn-mira" src="' + esc(q) + '" alt="" ' +
           'onerror="this.parentNode.classList.remove(\'has-mira\');this.remove()"/>';
       }
@@ -633,7 +647,9 @@
       return '<button class="usn-item' + ((state.enthuellt && it.key === state.aktiv) ? " is-active" : "") + '" ' +
         'type="button" data-nav-key="' + esc(it.key) + '" data-tiplabel="' + esc(it.label) + '" ' +
         'data-tip-place="right">' +
-        '<span class="usn-ic' + (it.icon === "mira" ? " has-mira" : "") + '">' + ic(it.icon) + '</span>' +
+        /* has-mira blendet das Symbol darunter aus. Das darf nur passieren, wenn wirklich ein
+           Bild darueber liegt -- sonst waere der Platz leer. */
+        '<span class="usn-ic' + (it.icon === "mira" && miraBild() ? " has-mira" : "") + '">' + ic(it.icon) + '</span>' +
         '<span class="usn-txt">' + esc(it.label) + '</span>' + extra + '</button>';
     }
     function renderNav(){

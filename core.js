@@ -7795,6 +7795,16 @@
     search:   '<path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/>',
     plus:     '<path d="M5 12h14"/><path d="M12 5v14"/>',
     minus:    '<path d="M5 12h14"/>',
+    /* Lucide galaxy. Der gefuellte Kern traegt sein fill selbst: die Huelle von icon() setzt
+       fill: none am svg, und ohne die Angabe am Kreis blieb der Kern ein leerer Ring.
+       Die Flaggen des letzten Bogens im ersten Pfad sind 01 und nicht 00 -- zwei Abrufe der Datei
+       lasen die Stelle verschieden, und mit 00 beult der Arm zur falschen Seite: die Zeichnung
+       liegt dann von 6.6 bis 17.3 statt von 2.3 bis 21.7 und ist im Kasten nicht mehr mittig.
+       Nachgesehen in _h_galaxy.html, beide Fassungen nebeneinander gemalt. */
+    galaxy:   '<path d="M16.005 15.108a5.041 6.52 28.25 00-8.008-6.217 5.041 6.52 28.25 008.008 ' +
+              '6.217A11.884 7.288-60.76 014.029 7.001"/><path d="M17 21h.01"/><path d="M7 3h.01"/>' +
+              '<path d="M7.997 8.891a11.885 7.288-60.756 0111.977 8.107"/>' +
+              '<circle cx="12" cy="12" r="1" fill="currentColor"/>',
     /* ── Navigation ──────────────────────────────────────────────────────────── */
     home:     '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/>' +
               '<path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',

@@ -802,6 +802,12 @@
   /* Offen zeigt es nach unten, zugeklappt nach rechts. Die Vierteldrehung ist die des Klapp-
      zeichens in der Chatliste; eine Wende um 180 Grad gibt es in dieser App nirgends. */
   #ask-mira .am-suggested.is-catclosed .am-sugg-chev svg { transform: rotate(-90deg); }
+  /* Zugeklappt rueckt das Zeichen DIREKT hinter die Ueberschrift, mit dem gap von 8px als Abstand.
+     Offen sitzt es am rechten Rand, weil dort der ganze Block darunter haengt und die Kante die
+     Bezugslinie ist; zugeklappt gibt es keinen Block mehr, und ein Zeichen allein am rechten Rand
+     haette nichts mehr, worauf es sich bezieht. Das Schieben macht die Textzelle: offen nimmt sie
+     den ganzen Platz, zugeklappt nur ihre eigene Breite. */
+  #ask-mira .am-suggested.is-catclosed .am-sugg-lbl { flex: 0 0 auto; }
   /* Der Klappweg: ein Raster von 1fr auf 0fr. So laeuft die Hoehe, ohne dass irgendwer sie messen
      muss, und der Inhalt bleibt im Fluss -- dieselbe Machart wie die aufklappenden Bloecke im
      Onboarding. display: none koennte nicht laufen. */
@@ -853,8 +859,12 @@
   .am-cat-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
   .am-cat-label { font-size: 13.5px; font-weight: 600; color: var(--am-text); line-height: 1.2; }
   .am-cat-desc { font-size: 11.5px; font-weight: 450; color: var(--am-muted); line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .am-cat-card:hover { border-color: #6f6f6f; background: #f5f5f5; }
-  #ask-mira[data-theme="dark"] .am-cat-card:hover { border-color: #707070; background: #2a2a2a; }
+  /* Der Hoverzustand des Hauses, wie an jeder Karte der App (.uo-card in opportunities): Rahmen
+     --vc-hover-border, Fuellung --vt-row-hover. Vorher standen hier zwei feste Zahlen, und die
+     dunkle war #2a2a2a DECKEND -- die Marke ist rgba(42,42,42,0.6), auf #121212 also etwa
+     rgb(30,30,30) statt rgb(42,42,42). Genau das war als "zu hell" gemeldet. Mit den Marken
+     braucht es auch keine eigene Zeile je Thema mehr. */
+  .am-cat-card:hover { border-color: var(--vc-hover-border); background: var(--vt-row-hover); }
   /* leading = a left-tilted little "document" tile, larger than the row so it bleeds past the bottom
      and is clipped by the card (same logic as the report cards); absolute -> no extra card height */
   .am-cat-ic {

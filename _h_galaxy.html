@@ -1,0 +1,55 @@
+<meta charset="utf-8">
+<title>lucide galaxy: welche Bogenflaggen sind richtig?</title>
+<!-- Wozu: die Pfaddaten kamen aus zwei Abrufen und weichen an EINER Stelle ab -- der letzte Bogen
+     des ersten Pfades hat entweder die Flaggen 00 und x=14.029 oder 01 und x=4.029. Das ist keine
+     Kleinigkeit: die Flaggen entscheiden, in welche Richtung der Bogen ausbeult. Also beide malen
+     und hinsehen, statt zu raten. Dazu die Tintenbreite, damit auch belegt ist, dass ueberhaupt
+     etwas gezeichnet wird und nicht nur ein leerer Kasten steht. -->
+<style>
+ body { margin:0; padding:16px; font:12px ui-monospace,monospace; background:#fff; color:#222; }
+ .reihe { display:flex; align-items:center; gap:26px; margin:14px 0 22px; }
+ .gross svg { width:120px; height:120px; }
+ .klein svg { width:18px; height:18px; }
+ .dunkel { background:#121212; padding:10px; border-radius:8px; color:#e0e0e0; }
+ svg { fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+ svg circle { fill:currentColor; stroke:none; }
+ pre { background:#f6f6f6; padding:8px; white-space:pre-wrap; }
+</style>
+<body>
+<h3 style="font:600 13px system-ui">A -- Flaggen 00, x=14.029 (aus der GitHub-API, base64 dekodiert)</h3>
+<div class="reihe">
+  <span class="gross" id="a1"></span><span class="klein" id="a2"></span>
+  <span class="dunkel"><span class="klein" id="a3"></span></span>
+  <span class="dunkel"><span class="gross" id="a4"></span></span>
+</div>
+<h3 style="font:600 13px system-ui">B -- Flaggen 01, x=4.029 (aus dem raw-Abruf)</h3>
+<div class="reihe">
+  <span class="gross" id="b1"></span><span class="klein" id="b2"></span>
+  <span class="dunkel"><span class="klein" id="b3"></span></span>
+  <span class="dunkel"><span class="gross" id="b4"></span></span>
+</div>
+<pre id="out">laeuft</pre>
+<script>
+var GEMEIN = '<path d="M17 21h.01" /><path d="M7 3h.01" />' +
+  '<path d="M7.997 8.891a11.885 7.288-60.756 0111.977 8.107" />' +
+  '<circle cx="12" cy="12" r="1" />';
+var A = '<svg viewBox="0 0 24 24"><path d="M16.005 15.108a5.041 6.52 28.25 00-8.008-6.217 5.041 6.52 28.25 008.008 6.217A11.884 7.288-60.76 0014.029 7.001" />' + GEMEIN + '</svg>';
+var B = '<svg viewBox="0 0 24 24"><path d="M16.005 15.108a5.041 6.52 28.25 00-8.008-6.217 5.041 6.52 28.25 008.008 6.217A11.884 7.288-60.76 014.029 7.001" />' + GEMEIN + '</svg>';
+["a1","a2","a3","a4"].forEach(function(id){ document.getElementById(id).innerHTML = A; });
+["b1","b2","b3","b4"].forEach(function(id){ document.getElementById(id).innerHTML = B; });
+/* Die Tinte messen: getBBox gibt die Ausdehnung der Zeichnung im Nutzerkoordinatensystem. Ein
+   leerer oder halb geratener Pfad faellt hier sofort auf. */
+function mass(id){
+  var svg = document.getElementById(id).querySelector("svg");
+  var out = [];
+  [].forEach.call(svg.querySelectorAll("path"), function(p, i){
+    try { var b = p.getBBox();
+      out.push("Pfad" + i + " " + b.x.toFixed(1) + "," + b.y.toFixed(1) + " " + b.width.toFixed(1) + "x" + b.height.toFixed(1));
+    } catch(e){ out.push("Pfad" + i + " FEHLER " + e.message); }
+  });
+  return out;
+}
+document.getElementById("out").textContent =
+  "A (00 / 14.029):\n  " + mass("a1").join("\n  ") +
+  "\n\nB (01 / 4.029):\n  " + mass("b1").join("\n  ");
+</script>
