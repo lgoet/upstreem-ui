@@ -4290,6 +4290,32 @@
   window.addEventListener('resize', function(){ moveThumb(); });
 
   /* ---------------- Init ---------------- */
+  /* Das Hintergrundbild des Startschirms. Es steht NICHT in der Bubble-Vorlage: bubble/*.html ist
+     die Vorlage fuer eine NEUinstallation, ein bereits eingebautes Element bekaeme neues Markup
+     nie. Also baut es die Komponente selbst -- idempotent, weil UC.watchRoots diese Init erneut
+     durchlaeuft, sobald Bubble die Auszeichnung austauscht.
+     Die Ebenen und ihr Gewicht kommen aus core.css; dieselbe Grafik liegt hinter dem Onboarding. */
+  (function bildEinsetzen(){
+    var schale = root.querySelector('.am-shell');
+    if (!schale || schale.querySelector('.am-bgart')) return;
+    var d = document.createElement('div');
+    d.className = 'am-bgart';
+    d.setAttribute('aria-hidden', 'true');
+    d.innerHTML = '<span class="up-bgart-licht"></span><span class="up-bgart-bogen"></span>'
+                + '<span class="up-bgart-raster"></span><span class="up-bgart-marken"></span>';
+    schale.insertBefore(d, schale.firstChild);
+    /* Die Blende erst danach freigeben. Zwei Bilder warten und nicht eines: nach dem ersten steht
+       das Markup, aber der Stil ist noch nicht angewandt, und eine im selben Bild gesetzte Blende
+       laeuft trotzdem los.
+       Die Uhr daneben ist kein Guertel-und-Hosentraeger: requestAnimationFrame laeuft in einem
+       VERDECKTEN Tab gar nicht, und Mira haengt in Bubble regelmaessig in einem Tab, der noch nicht
+       vorne ist -- gemessen im Harness, wo nach fuenf Sekunden noch keine einzige Stufe erreicht
+       war (document.visibilityState war "hidden"). Ohne die Uhr bliebe die Klasse dort aus. Beides
+       ruft dasselbe, classList.add ist idempotent. */
+    function blendeFrei(){ root.classList.add('is-bgart'); }
+    requestAnimationFrame(function(){ requestAnimationFrame(blendeFrei); });
+    setTimeout(blendeFrei, 120);
+  })();
   if (window.__askMiraMarket && !S.market) S.market = String(window.__askMiraMarket).toLowerCase();
   if (window.__askMiraTheme) window.askMiraSetTheme(window.__askMiraTheme);
   resolveLang();
