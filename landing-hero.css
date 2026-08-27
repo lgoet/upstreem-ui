@@ -30,9 +30,9 @@
   /* Die Blende. Derselbe Ton wie die Leiste (#f5f5f5) machte den Rahmen dort unsichtbar, wo die
      Leiste anliegt; 15% dunkler (#d0d0d0 = 208) war zu viel und sah nach einem grauen Balken aus.
      Der Weg: #f5f5f5 unsichtbar, #d0d0d0 ein grauer Balken, #e8e8e8 zu dunkel, #e9edf1 mit Blau
-     noch zu dunkel, #f2f5f8 richtig hell aber zu blau. Jetzt #ebecee: der Blauabstand halbiert
-     (b minus r von 6 auf 3) und alles 3% dunkler (x 0.97). */
-  --ulh-blende: #ebecee;
+     noch zu dunkel, #f2f5f8 richtig hell aber zu blau, #ebecee wieder zu dunkel. Jetzt #f1f2f4:
+     derselbe kleine Blauabstand (b minus r = 3), nur wieder 2.5% heller. */
+  --ulh-blende: #f1f2f4;
   --ulh-schirm: #FFFFFFF2;
   --ulh-text: #1f1f1b;
   --ulh-muted: #6f737c;
@@ -439,11 +439,24 @@
 /* Fuenf Zeilen statt sieben, und die Kaesten schrumpfen mit. .vot-box steht in der App fest auf
    427px; bei fuenf Zeilen a 55px (visibility-chart.css) bleiben sonst zwei Zeilen Luft unter der
    Tabelle stehen. 427 - 2 x 55 = 317. */
-/* Sechs Marken statt fuenf: der Kasten waechst um genau eine Zeile. 317 + 47 = 364. Der
-   Kopfbalken wird gleich noch flacher (45 -> 32), das nimmt 13 zurueck -- also 351. */
-.ulh-app .vot-box { height: 351px; }
+/* Der Kasten ist genau so hoch wie die Tabelle darin: Kopfbalken 32 plus sechs Zeilen a 47 = 314.
+   Vorher standen 351 da, also 37px Leerraum unter der letzten Zeile. Der Kasten links (das Chart)
+   teilt die Hoehe -- er wird um dieselben 37px flacher, das war die Ansage. */
+.ulh-app .vot-box { height: 314px; }
 .ulh-app .vot-root.is-max .vot-box-left,
-.ulh-app .vot-root.is-max .vot-box-right { height: 351px; }
+.ulh-app .vot-root.is-max .vot-box-right { height: 314px; }
+
+/* Der Umschalter subtiler: kleiner, flacher, und der aktive Knopf ohne Rahmen -- er hebt sich nur
+   noch durch die weisse Fuellung ab. In der App darf er auffallen, hier ist er Beiwerk.
+   Die Beschriftung kuerzt landing-hero.js auf D, W und M.
+   .check_reinvention.py meldet das als gesprengtes Bauteil, und die Regel ist richtig: wer einen
+   Wert aendert, muss die anderen mitziehen. Genau das passiert hier -- Hoehe 32 -> 26, Polster
+   12 -> 8, und die Schrift geht ueber die Schriftgruppen von 12 auf 11. Nicht auf drei Stellen
+   proportional, aber alle drei Masse zusammen und nur im Schaustueck: die Regel haengt an
+   .ulh-app. */
+.ulh-app .vc-gran { height: 26px; background: transparent; }
+.ulh-app .vc-gran-btn { height: 26px; padding: 0 8px; border-color: transparent; }
+.ulh-app .vc-gran-btn.is-active { border-color: transparent; box-shadow: 0 1px 2px rgba(11, 13, 24, .06); }
 
 /* Der Day-Knopf soll normal aussehen. Er ist gesperrt, und das ist RICHTIG: die Serie spannt sechs
    Monate, und ueber 92 Tagen ist eine Tageskurve unlesbar (UC.granAvailability) -- in der App
@@ -468,6 +481,26 @@
    sie neben Zahlen, die durch die Verkleinerung ohnehin klein sind, und wirkten dadurch zu laut. */
 .ulh-app .up-trend { font-size: 12px; }
 .ulh-app .up-trend svg { width: 15px; height: 15px; }
+
+/* Die Ecken der vier grossen Kaesten auf 12px. In den Komponenten stehen 16 -- dieselbe Zahl wie
+   der Fensterrahmen aussen, und zwei gleiche Radien ineinander sehen aus, als waere einer davon
+   falsch. Der Zitatteil hat nur eine Klasse fuer beide Kaesten (.tcd-box), das Chart zwei
+   (.vot-box-left und -right); .vot-box deckt beide ab. */
+.ulh-app .vot-box,
+.ulh-app .tcd-box { border-radius: 12px; }
+
+/* Derselbe Leerraum wie bei Top Brands, nur im Zitatteil: .tcd-box steht auf 430px, gerechnet fuer
+   45px Kopf und sieben Zeilen a 55. Mit 32er Kopf und 47er Zeilen sind es 361 -- also 69px Luft.
+   Nicht gemeldet, weil dieser Kasten fast vollstaendig unter der Kante des Fensters liegt; es ist
+   aber derselbe Fehler, und wenn das Fenster je hoeher wird, waere er zu sehen. */
+.ulh-app .tcd-box { height: 361px; }
+
+/* Die Rahmenfarbe 25% schwaecher: --vc-border ist #e0e2e6 (224,226,230), ein Viertel des Wegs zu
+   Weiss ergibt #e7e9ec. Die Marke muss an den WURZELN der Komponenten stehen und nicht an .ulh-app:
+   sie ist in core.css an .up-root deklariert, und ein Wert am eigenen Element schlaegt jeden
+   geerbten -- dieselbe Falle wie bei --usn-w. Der Chip und die Knoepfe oben ziehen mit. */
+.ulh-app .up-root { --vc-border: #e7e9ec; }
+.ulh-root { --ulh-border: #e7e9ec; }
 
 /* Zwischen Chart und Tabelle 8px statt 16. Beide Bloecke sind eine Reihe aus zwei Einheiten, und
    die 16px stehen in den Komponenten (.vot-root und .tcd-root). Der Abstand ZWISCHEN den Bloecken

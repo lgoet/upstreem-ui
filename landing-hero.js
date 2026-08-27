@@ -271,6 +271,51 @@
     }
   }
 
+  /* Der Umschalter heisst hier D, W und M. Die langen Namen stehen im Markup der Komponente, und
+     das kommt erzeugt aus der Bubble-Vorlage -- also hier gekuerzt und nicht dort, sonst waere es
+     eine Aenderung an der App. */
+  function schalterKuerzen(root){
+    var kurz = { Day: "D", Week: "W", Month: "M" };
+    var btns = root.querySelectorAll(".vc-gran-btn");
+    for (var i = 0; i < btns.length; i++){
+      var t = btns[i].textContent.trim();
+      if (kurz[t]) btns[i].textContent = kurz[t];
+    }
+  }
+
+  /* Der Tooltip des Charts steht dauerhaft offen, auf dem dritten der sechs Monate -- das ist heute
+     Mai. DRITTER PUNKT und nicht "Mai": die sechs Monate laufen bis zum aktuellen, ein fester
+     Monatsname waere in vier Wochen nicht mehr dabei. So bleibt er immer in der Mitte.
+     Chart.js haelt die Instanz an der Leinwand (Chart.getChart) -- ueber diesen Weg, weil die
+     Komponente sie nicht herausgibt und ein Umbau an ihr fuer ein Schaustueck der falsche Preis
+     waere. setActiveElements setzt die Punkte, tooltip.setActiveElements zeichnet den Kasten.
+     Auf mouseleave raeumt Chart.js beides ab, deshalb der Zuhoerer: nach dem Zeigen steht der
+     Tooltip wieder da, wo er hingehoert. */
+  var TIPP_PUNKT = 2;
+
+  function tippZeigen(root){
+    var leinwand = root.querySelector(".up-line-canvas");
+    if (!leinwand || !window.Chart || !window.Chart.getChart) return false;
+    var chart = window.Chart.getChart(leinwand);
+    if (!chart || !chart.data || !chart.data.datasets || !chart.data.datasets.length) return false;
+    var punkte = chart.data.datasets.map(function(_, di){
+      return { datasetIndex: di, index: TIPP_PUNKT };
+    });
+    function setzen(){
+      try {
+        chart.setActiveElements(punkte);
+        if (chart.tooltip && chart.tooltip.setActiveElements) chart.tooltip.setActiveElements(punkte, { x: 0, y: 0 });
+        chart.update();
+      } catch (e){}
+    }
+    setzen();
+    if (!leinwand.__ulhTipp){
+      leinwand.__ulhTipp = true;
+      leinwand.addEventListener("mouseleave", function(){ setTimeout(setzen, 60); });
+    }
+    return true;
+  }
+
   /* Keine Tooltips. Sie haengen an data-tip (und in der Leiste an data-tiplabel), und das Kit von
      core baut daraus ein Element AN <body> -- ausserhalb dieser Sektion, also mit einer CSS-Regel
      von hier gar nicht erreichbar. Deshalb an der Quelle: die Attribute kommen weg, dann hat das
@@ -487,7 +532,10 @@
        Puffer, Heartbeat --, also muss das Nachfassen so lange reichen. Kreisen kann es nicht: es
        sind feste Zeitpunkte, und hellHalten schreibt nur, wo der Wert abweicht. */
     [300, 900, 2000, 4000, 8000].forEach(function(ms){
-      setTimeout(function(){ hellHalten(root); ohneTipps(root); zeichenSetzen(root); mass(root); }, ms);
+      setTimeout(function(){
+        hellHalten(root); ohneTipps(root); zeichenSetzen(root);
+        schalterKuerzen(root); tippZeigen(root); mass(root);
+      }, ms);
     });
     var n = 0;
     (function warte(){
@@ -496,6 +544,7 @@
         hellHalten(root);
         ohneTipps(root);
         zeichenSetzen(root);
+        schalterKuerzen(root);
         /* Die Leiste entsteht erst, wenn core ihre Wurzel gesehen hat -- das kann nach dem Setter
            liegen. Also nachfassen, bis sie da ist, und dann noch einmal messen. */
         (function holen(k){
