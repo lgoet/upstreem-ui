@@ -1204,11 +1204,27 @@
     }
     pruefen();
     /* Zwei Zuhoerer, beide passiv: window fuer den Normalfall, dazu die Einfangphase am Dokument,
-       damit auch ein eigener Scrollkasten irgendwo darueber ankommt. pruefen() vergleicht mit dem
-       letzten Stand, ein zweiter Aufruf kostet also nichts. */
+       damit auch ein eigener Scrollkasten irgendwo darueber ankommt (scroll steigt nicht auf, geht
+       aber durch die Einfangphase). pruefen() vergleicht mit dem letzten Stand, ein zweiter Aufruf
+       kostet also nichts. */
     window.addEventListener("scroll", pruefen, { passive: true });
     document.addEventListener("scroll", pruefen, { passive: true, capture: true });
     window.addEventListener("resize", function(){ ruhe = null; pruefen(); });
+
+    /* DAZU ein leiser Takt, und der ist nicht Gürtel-und-Hosenträger, sondern der eigentliche Weg.
+       Es gibt Seiten, auf denen ueberhaupt kein scroll-Ereignis ankommt: Framer und andere
+       Baukaesten bewegen den Seiteninhalt mitunter per transform, statt das Dokument wirklich zu
+       scrollen. Dann bleibt window.scrollY auf 0, es feuert kein scroll -- und die LAGE der Sektion
+       aendert sich trotzdem. Mit Zuhoerern allein blieb das Fenster im Betrieb gross.
+       Nachgemessen in diesem Aufbau: window.scrollTo(0, 300) verschob die Seite und loeste NULL
+       scroll-Ereignisse aus. Genau dieser Fall.
+       120ms heisst ein Rechteck-Lesen je Achtelsekunde. Auf einer ruhenden Seite kostet das nichts:
+       ohne Aenderung am DOM ist das Layout gueltig und der Wert liegt schon vor. Der Takt endet mit
+       der Sektion. */
+    var takt = setInterval(function(){
+      if (!document.body || !document.body.contains(root)){ clearInterval(takt); return; }
+      pruefen();
+    }, 120);
   }
 
   /* Das Mausrad muss durch das Fenster hindurch an die Seite. Mira haengt einen eigenen
