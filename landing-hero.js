@@ -189,12 +189,7 @@
          davor. */
       '<div class="ulh-bg" aria-hidden="true">' +
         '<span class="ulh-bg-foto"></span>' +
-        '<span class="up-root ulh-bg-art" data-theme="light" data-isdark="no">' +
-          '<span class="up-bgart-licht"></span>' +
-          '<span class="up-bgart-bogen"></span>' +
-          '<span class="up-bgart-raster"></span>' +
-          '<span class="up-bgart-marken"></span>' +
-        '</span>' +
+        '<span class="ulh-bg-grid"></span>' +
       '</div>' +
       '<div class="ulh-text">' +
         '<p class="ulh-eyebrow">' +
@@ -416,6 +411,10 @@
       window.renderTopCitations({
         instanceId: ID.tcd,
         mode: "domain",
+        /* Balken statt Doughnut. Die Komponente kann beides und nimmt es aus dem Payload
+           (topcitations-dashboard.js: params.chartMode) -- auf den Umschaltknopf zu klicken waere
+           der Umweg gewesen, und klicken kann hier ohnehin niemand. */
+        chartMode: "bar",
         totalCountDomain: 412,
         totalCountUrl: 1893,
         citations_total: 15899,

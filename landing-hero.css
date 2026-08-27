@@ -26,9 +26,10 @@
   --ulh-grund: #ffffff;
   /* Die Blende. Derselbe Ton wie die Leiste (#f5f5f5) machte den Rahmen dort unsichtbar, wo die
      Leiste anliegt; 15% dunkler (#d0d0d0 = 208) war zu viel und sah nach einem grauen Balken aus.
-     #e8e8e8 (232) war noch zu dunkel. Jetzt #f0f0f0 = 240, also 2% dunkler als die Leiste: gerade
-     genug, dass der Rahmen dort, wo die Leiste anliegt, noch als Kante zu sehen ist. */
-  --ulh-blende: #f0f0f0;
+     #e8e8e8 (232) war noch zu dunkel, #f0f0f0 (240) richtig. Jetzt mit einem Stich desselben Blaus
+     wie der Schimmer am Chip: 8% #98CEF2 auf #f0f0f0 gerechnet ergibt #e9edf1 -- kuehl genug, dass
+     man es neben dem Weiss merkt, und weit davon entfernt, blau zu WIRKEN. */
+  --ulh-blende: #e9edf1;
   --ulh-schirm: #ffffff;
   --ulh-text: #1f1f1b;
   --ulh-muted: #6f737c;
@@ -83,7 +84,8 @@
 .ulh-text {
   max-width: 780px;
   margin: 0 auto;
-  padding: clamp(48px, 9vh, 104px) 24px clamp(28px, 4vh, 44px);
+  /* Unten das Doppelte: der Abstand von den Knoepfen zum Fensteranfang war zu knapp. */
+  padding: clamp(48px, 9vh, 104px) 24px clamp(56px, 8vh, 88px);
   text-align: center;
 }
 /* Zeilenhoehe UNTER 1 und negative Laufweite: das ist der halbe Effekt. Bei 0.95 und -0.02em liest
@@ -107,17 +109,20 @@
   color: var(--ulh-muted);
 }
 /* ---------- Der Chip ueber der Ueberschrift ----------
-   40px hoch, Rahmen, und um ihn herum laeuft ein Funke. Gemacht mit EINEM drehenden Kegelverlauf
-   hinter einem deckenden Innenteil: sichtbar bleibt nur der Ring dazwischen. Der Verlauf dreht
-   sich per transform und nicht per @property-Winkel -- die Winkelanimation braucht registrierte
-   Eigenschaften, und die kann ich hier nicht ueberall voraussetzen.
-   inset: -100% macht das drehende Feld quadratisch und viel groesser als der Chip; sonst waeren an
-   den Ecken Luecken zu sehen, wenn es sich dreht. */
+   32px hoch, Rahmen, und um ihn herum zieht ein Schimmer. Die Machart ist die aus deinem Beispiel 2:
+   EIN schmaler Streifen mit einem Verlauf, der an beiden Enden auf 0 laeuft, dreht um die Mitte des
+   Chips und wird vom overflow beschnitten -- sichtbar ist immer nur das Stueck, das gerade auf dem
+   Rand liegt. Der Kegelverlauf davor hatte eine harte Kante und sah nach einem laufenden Licht aus;
+   dieser wandert weich durch.
+   Der Streifen ist laenger als die halbe Diagonale des Chips (420 gegen etwa 130), sonst reicht er
+   in den Ecken nicht bis an den Rand. transform-origin: top center, damit er um seinen oberen Punkt
+   dreht, und der liegt in der Mitte des Chips. */
 .ulh-chip {
   position: relative;
   display: inline-flex;
-  height: 40px;
-  padding: 1px;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
   border-radius: 999px;
   overflow: hidden;
   isolation: isolate;
@@ -125,22 +130,33 @@
 .ulh-chip::before {
   content: "";
   position: absolute;
-  inset: -100%;
-  background: conic-gradient(from 0turn, transparent 0turn, var(--ulh-funke) .06turn,
-              transparent .13turn, transparent 1turn);
-  animation: ulhFunke 3.2s linear infinite;
+  top: 50%;
+  left: 50%;
+  width: 90px;
+  height: 420px;
+  margin-left: -45px;
+  transform-origin: top center;
+  background: linear-gradient(90deg, rgba(152, 206, 242, 0) 0%,
+              var(--ulh-funke) 50%, rgba(152, 206, 242, 0) 100%);
+  animation: ulhSchimmer 5s linear infinite;
 }
-@keyframes ulhFunke { to { transform: rotate(1turn); } }
+/* Der Vertrag meldet ulhFunke als ENTFERNT -- das ist der Name der vorigen Bewegung, und die
+   Meldung ist richtig. Kein Bruch: der Name stand ausschliesslich in dieser Datei, wurde nur von
+   .ulh-chip::before benutzt und ist im Commit davor entstanden. Bubble und die App kennen ihn
+   nicht. */
+@keyframes ulhSchimmer { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .ulh-chip-in {
   position: relative;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
-  height: 100%;
-  padding: 0 15px;
+  margin: 1px;
+  height: calc(100% - 2px);
+  padding: 0 14px;
   border-radius: 999px;
   border: 1px solid var(--ulh-border);
   background: var(--ulh-grund);
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -213,7 +229,7 @@
   pointer-events: none;
   overflow: hidden;
 }
-.ulh-bg-foto, .ulh-bg-art {
+.ulh-bg-foto, .ulh-bg-grid {
   position: absolute;
   left: 0;
   right: 0;
@@ -230,20 +246,21 @@
   top: 0;
   background: url("https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/slimane-kadi-M3TevYf1EKo-unsplash.svg")
               center bottom / 100% auto no-repeat;
-  opacity: .22;
+  /* Doppelt so kraeftig wie zuerst (.22) -- da war es kaum zu sehen. */
+  opacity: .44;
 }
-/* Die Onboarding-Grafik darueber. Sie steht in ihrer eigenen Huelle, weil die vier Ebenen aus core
-   ihre eigene Maske tragen -- eine zweite Maske am selben Element gaebe es nicht, also blendet die
-   HUELLE aus. */
-/* Die Huelle traegt die Klasse .up-root -- gesetzt im Markup, nicht hier. Damit loesen BEIDE Dinge
-   auf, die das Kit braucht: die vier Bildwerte (--up-bgart-*) und die Farben (--vc-text fuer die
-   Masken, --vc-muted fuer die Lichter). Ohne die Klasse blieb die Grafik unsichtbar: die Maske
-   sprach an, die Farbe nicht, und eine Maske ohne Farbe malt nichts.
-   Die Klasse ist hier gefahrlos, anders als an der Wurzel der Sektion: diese Huelle enthaelt nur
-   vier leere Spans und keine weitere .up-root -- genau die Verschachtelung war es, die den Renderer
-   angehalten hat. data-theme steht mit im Markup, damit die Grafik hell bleibt. */
-.ulh-bg-art { top: 0; }
-.ulh-bg-art > span { position: absolute; inset: 0; }
+/* Das Raster darueber: einfache SENKRECHTE Linien, 1px, alle 8px, weiss. Keine waagrechten.
+   Vorher stand hier die Grafik aus dem Onboarding -- die bringt Bogen, Kreuzmarken und Lichter mit
+   und war fuer diese Flaeche zu viel Bild. Ein Verlauf, der sich wiederholt, kostet ausserdem keine
+   Datei, keine Maske und keine .up-root-Huelle.
+   Weiss wirkt nur, wo darunter das blaue Bild liegt; ueber dem weissen Grund ist es unsichtbar --
+   genau richtig, denn oben soll ohnehin nichts zu sehen sein. */
+.ulh-bg-grid {
+  top: 0;
+  background: repeating-linear-gradient(to right,
+              rgba(255, 255, 255, .55) 0, rgba(255, 255, 255, .55) 1px,
+              transparent 1px, transparent 8px);
+}
 
 /* ---------- Die Blende unten im Dashboardbereich ----------
    32px, in der Farbe des Rahmens, und erst rechts der Leiste: sie soll den Inhalt ausfaden lassen,
@@ -371,8 +388,11 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  padding: 9px 22px 0;
+  /* 16px links und rechts, und 16px zwischen den Bloecken -- eine Zahl fuer alles. Die Abstaende
+     INNERHALB der Bloecke (zwischen Chart und Tabelle, zwischen Chart und Liste bei den Zitaten)
+     sind in den Komponenten schon 16px, die mussten nicht angefasst werden. */
+  gap: 16px;
+  padding: 9px 16px 0;
   background: var(--ulh-schirm);
 }
 /* Die Komponenten im Fenster sind Schaustuecke. Nichts darin ist anklickbar, und der Zeiger soll
@@ -408,6 +428,18 @@
 /* Kein Zahnrad fuer die Chart-Einstellungen. Es erscheint erst beim Hover ueber dem Chart und
    verspricht damit etwas, das hier nicht geht. */
 .ulh-app .vot-scale-btn { display: none; }
+
+/* Die Typspalte in den Top Domains war zu eng: laengere Namen wie "Knowledge-Base" oder
+   "Brand Platforms" wurden selbst auf voller Breite gekuerzt. Die Domain braucht den Platz nicht --
+   sie hat ihn nur, weil sie die 1fr-Spalte ist. Aus 18% Typ werden 24%, und die Domain nimmt, was
+   bleibt. Kopfzeile und Zeilen teilen dasselbe Raster, deshalb beide Selektoren. */
+.ulh-app .tct-thead,
+.ulh-app .tct-row { grid-template-columns: 44px minmax(100px, 1fr) 24% 18% 14%; }
+
+/* Die Trendangaben eine Stufe kleiner: 13 -> 12px Schrift, 16 -> 15px Zeichen. Im Fenster stehen
+   sie neben Zahlen, die durch die Verkleinerung ohnehin klein sind, und wirkten dadurch zu laut. */
+.ulh-app .up-trend { font-size: 12px; }
+.ulh-app .up-trend svg { width: 15px; height: 15px; }
 
 /* Die Leiste 16px schmaler. Die Marke muss an der LEISTE SELBST stehen und nicht am Vorfahren:
    .usn-bar traegt die Klasse .up-root, und sidebar.css setzt --usn-w genau dort auf 250px. Ein
