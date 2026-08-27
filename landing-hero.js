@@ -1200,7 +1200,8 @@
         Sektion, wenn die Seite darueber scrollt -- wohl aber der Rahmen selbst.
      4. Die Scrollposition der Fenster darueber, bis zu vier Ebenen hoch.
      3 und 4 koennen bei fremder Herkunft werfen; dann bleibt es bei 1 und 2. */
-  var KLEIN_FAKTOR = 0.8;
+  /* Halb so stark wie zuerst: 0.8 war ein Fuenftel kleiner, 0.9 ist ein Zehntel. */
+  var KLEIN_FAKTOR = 0.9;
 
   function scrollGroesse(root){
     if (root.__ulhScrollAn) return;

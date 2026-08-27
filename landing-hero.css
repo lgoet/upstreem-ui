@@ -63,9 +63,11 @@
   --ulh-verhaeltnis: 0.605;
   --ulh-t: 200ms;
   --ulh-ease: cubic-bezier(.4, 0, .2, 1);
-  /* Ein ausschleichender Verlauf fuer das Kleinerwerden. --ulh-ease ist ein ein- UND ausschleichender
-     Verlauf und fuer eine Bewegung ueber fast eine Sekunde zu traege am Anfang. */
-  --ulh-aus: cubic-bezier(.22, 1, .36, 1);
+  /* Der Verlauf fuer das Kleinerwerden, und zwar ein STARK ausschleichender: die Bewegung soll
+     sofort losgehen und lange auslaufen. .22/1/.36/1 war die erste Fassung und noch zu gleichmaessig;
+     .16/1/.3/1 liegt naeher an easeOutExpo -- nach einem Drittel der Zeit sind gut 80 Prozent des
+     Weges getan. --ulh-ease waere hier falsch, das ist ein ein- UND ausschleichender Verlauf. */
+  --ulh-aus: cubic-bezier(.16, 1, .3, 1);
   position: relative;
   /* width: 100% ist hier PFLICHT und nicht Kosmetik. Ein Block-div fuellt seinen Eltern nur, wenn
      der ein normaler Block-Kontext ist. Steht die Sektion in einem FLEX-Eltern -- und genau so
@@ -373,7 +375,8 @@
    :not(.is-entering): waehrend des Erscheinens laeuft auf demselben Element eine animation, und die
    schlaegt jede transition. Ohne diese Bedingung sprang das Fenster in der Sekunde, in der die
    Animation endete, auf 80 Prozent. So beginnt die Verkleinerung erst danach -- und dann weich. */
-.ulh-frame { transform-origin: center center; transition: transform 860ms var(--ulh-aus); }
+/* 1290ms, die Haelfte laenger als die 860 davor. */
+.ulh-frame { transform-origin: center center; transition: transform 1290ms var(--ulh-aus); }
 /* Der Faktor selbst steht NICHT hier, sondern als Inline-Stil aus landing-hero.js. Hier stand er,
    mit :not(.is-entering) davor, und er hat im Betrieb nicht gegriffen -- eine Regel mehr, deren
    Zutreffen von einer zweiten Klasse und von der Spezifitaet abhaengt. Der Inline-Stil kann von
