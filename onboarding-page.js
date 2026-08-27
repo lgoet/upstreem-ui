@@ -688,10 +688,10 @@
          etwas braucht, das im Dokument BLEIBT.
          aria-hidden, weil hier nichts steht, was jemand vorgelesen bekommen muesste. */
       '<div class="uob-bg" data-bg aria-hidden="true">' +
-        '<span class="uob-bg-licht"></span>' +
-        '<span class="uob-bg-bogen"></span>' +
-        '<span class="uob-bg-raster"></span>' +
-        '<span class="uob-bg-marken"></span>' +
+        '<span class="up-bgart-licht"></span>' +
+        '<span class="up-bgart-bogen"></span>' +
+        '<span class="up-bgart-raster"></span>' +
+        '<span class="up-bgart-marken"></span>' +
       '</div>' +
 
       /* Die Uhr am unteren Rand. Sie steht IM Rahmen und nicht im Ladebild: das Ladebild sitzt

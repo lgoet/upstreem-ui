@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Teilt onboarding-bg.svg fuer onboarding-page.css auf: drei Masken plus vier CSS-Verlaeufe.
+"""Teilt onboarding-bg.svg fuer core.css auf: drei Masken plus vier CSS-Verlaeufe.
+
+Die Werte stehen in core.css und nicht bei der Komponente, weil ZWEI Komponenten dieselbe
+Grafik benutzen: der Onboarding-Hintergrund und der Startschirm von Mira. Gekostet hat der
+Umzug 2 kB gzip in core.css -- 31 kB roh, aber das Raster sind 180 fast gleiche Rechtecke und
+komprimiert entsprechend.
 
 WARUM getrennt und nicht eine Maske: die Vorlage traegt Gruppen mit ganz verschiedenem Gewicht --
 die weichen Lichter, den Bogen, das Raster, die vier Kreuzmarken. Und das Gewicht muss je THEMA
@@ -21,7 +26,7 @@ Aufruf nach jeder Aenderung an onboarding-bg.svg:
 import re, sys
 
 QUELLE = "onboarding-bg.svg"
-CSS = "onboarding-page.css"
+CSS = "core.css"
 # Die Vorlage rechnet in diesem Feld; alle Prozente der Verlaeufe beziehen sich darauf.
 BREIT, HOCH = 1440.0, 890.0
 # fill="none" ist hier PFLICHT und nicht Deko: die Rasterfelder und der Bogen tragen nur
@@ -128,20 +133,20 @@ teile = {
 
 css = open(CSS).read()
 for name, svg in teile.items():
-    zeile = '  --uob-bg-' + name + ': url("' + kodiere(svg) + '");\n'
-    muster = r'  --uob-bg-' + name + r': url\("data:image/svg\+xml,[^\n]*\);\n'
+    zeile = '  --up-bgart-' + name + ': url("' + kodiere(svg) + '");\n'
+    muster = r'  --up-bgart-' + name + r': url\("data:image/svg\+xml,[^\n]*\);\n'
     if re.search(muster, css):
         css = re.sub(muster, zeile, css, count=1)
     else:
-        print("ABBRUCH -- keine Zeile fuer --uob-bg-" + name + " in der CSS")
+        print("ABBRUCH -- keine Zeile fuer --up-bgart-" + name + " in " + CSS)
         sys.exit(1)
     print("%-7s %6d Bytes SVG" % (name, len(svg)))
 
 # Die Lichter: eine Eigenschaft mit vier Verlaeufen, mehrzeilig eingerueckt.
-zeile = "  --uob-bg-licht:\n    " + verlauf_zeile + ";\n"
-muster = r'  --uob-bg-licht:\n(?:    [^\n]*\n)+'
+zeile = "  --up-bgart-licht:\n    " + verlauf_zeile + ";\n"
+muster = r'  --up-bgart-licht:\n(?:    [^\n]*\n)+'
 if not re.search(muster, css):
-    print("ABBRUCH -- keine Zeile fuer --uob-bg-licht in der CSS")
+    print("ABBRUCH -- keine Zeile fuer --up-bgart-licht in " + CSS)
     sys.exit(1)
 css = re.sub(muster, zeile, css, count=1)
 print("%-7s %6d Bytes CSS, %d Verlaeufe" % ("licht", len(zeile), len(verlaeufe)))
