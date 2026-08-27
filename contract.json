@@ -862,6 +862,10 @@
   "am-status-dot",
   "am-status-pill",
   "am-subline",
+  "am-sugg-chev",
+  "am-sugg-fold",
+  "am-sugg-foldin",
+  "am-sugg-lbl",
   "am-suggest-card",
   "am-suggest-chev",
   "am-suggest-ic",
@@ -2678,7 +2682,7 @@
   "globals": 137,
   "payloadkeys": 86,
   "dataattrs": 198,
-  "klassen": 1976,
+  "klassen": 1980,
   "keyframes": 58
  }
 }

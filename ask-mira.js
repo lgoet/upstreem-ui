@@ -134,6 +134,8 @@
   var elMessages   = root.querySelector('#am-messages');
   var elChat       = root.querySelector('#am-chat');
   var elSuggGrid   = root.querySelector('#am-suggested-grid');
+  var elSugg       = root.querySelector('#am-suggested');
+  var elSuggLbl    = root.querySelector('#am-suggested-label');
   var elComposer   = root.querySelector('#am-composer');
   var elTextarea   = root.querySelector('#am-textarea');
   var elPhLoop     = root.querySelector('#am-ph-loop');
@@ -1835,6 +1837,19 @@
 
   var _greetIdx = -1;
   var _galleryCat = null;
+  /* Der Kategorienblock laesst sich zuklappen, und die Entscheidung ueberlebt den Seitenwechsel.
+     In try/catch, weil localStorage im privaten Fenster beim Lesen schon wirft -- ohne den Fang
+     stuerzt die ganze Komponente an einer Bequemlichkeit. */
+  var CAT_KEY = 'am_cat_closed';
+  var _catClosed = (function(){
+    try { return localStorage.getItem(CAT_KEY) === '1'; } catch(e){ return false; }
+  })();
+  function catKlappen(){
+    _catClosed = !_catClosed;
+    try { localStorage.setItem(CAT_KEY, _catClosed ? '1' : '0'); } catch(e){}
+    if (elSugg) elSugg.classList.toggle('is-catclosed', _catClosed);
+    if (elSuggLbl) elSuggLbl.setAttribute('aria-expanded', _catClosed ? 'false' : 'true');
+  }
   var _reportRange = '30d';
   var _reportTopics = [];      // selected topic ids
   var _reportTopicMode = 'or'; // 'or' = any of, 'and' = all of
@@ -2151,7 +2166,16 @@
     var label = root.querySelector('#am-suggested-label');
     var g = L().gallery || [];
     if (_galleryCat === null){
-      if (label){ label.style.display = ''; label.textContent = L().galleryLabel || L().tryAsking; }
+      if (label){
+        label.style.display = '';
+        /* Die Kopfzeile ist der Schalter -- Text links, Winkelzeichen rechts, und ein Klick
+           irgendwo darauf klappt den Block zu. Deshalb gebaut und nicht als textContent. */
+        label.innerHTML = '<span class="am-sugg-lbl">' + esc(L().galleryLabel || L().tryAsking) + '</span>' +
+                          '<span class="am-sugg-chev">' + ICON.chevron + '</span>';
+        label.setAttribute('role', 'button');
+        label.setAttribute('tabindex', '0');
+        label.setAttribute('aria-expanded', _catClosed ? 'false' : 'true');
+      }
       function catCardHTML(cat, i, full){
         return '<button class="am-cat-card'+(full ? ' am-cat-card-full' : '')+'" type="button" data-cat="'+i+'">'+
           '<span class="am-cat-ic">'+(GALLERY_ICONS[i] || ICON.trend)+'</span>'+
@@ -2173,7 +2197,14 @@
       html += '<div class="am-cat-grid">' + g.map(function(cat, i){
         return (i === repIdx) ? '' : catCardHTML(cat, i, false);
       }).join('') + '</div>';
-      elSuggGrid.innerHTML = html;
+      /* Zwei Huellen und nicht eine: die AEUSSERE ist das Raster, das von 1fr auf 0fr laeuft, die
+         INNERE haelt den Inhalt und schneidet ihn ab. Braucht die aeussere mehr als ein Kind, legt
+         der Browser eine zweite Reihe automatisch an, und die bleibt beim Zuklappen stehen.
+         Die Bewegung sitzt hier und NICHT an #am-suggested-grid: dort animiert renderGallery
+         schon Hoehe und Deckkraft mit eigenen Inline-Stilen, und zwei Bewegungen an einem Element
+         geraten sich in die Quere. */
+      elSuggGrid.innerHTML = '<div class="am-sugg-fold"><div class="am-sugg-foldin">' + html + '</div></div>';
+      if (elSugg) elSugg.classList.toggle('is-catclosed', _catClosed);
       return;
     }
     var cat = g[_galleryCat];
@@ -3851,6 +3882,20 @@
     c.project_title = np ? np.title : null;
     renderPrevious();
     amFire('move_chat', { chat_id: chatId, old_project_id: oldPid || null, new_project_id: newPid || null }, 'move-chat');
+  }
+
+  /* Die Kopfzeile der Kategorien: Klick irgendwo darauf, nicht nur auf das Winkelzeichen.
+     Der Wachhund am Element und nicht am Zaehler: UC.watchRoots laeuft die Init erneut durch,
+     wenn Bubble die Auszeichnung austauscht -- ist das Element dasselbe, haengt sonst ein zweiter
+     Zuhoerer daran und der Block klappt zu und sofort wieder auf. */
+  if (elSuggLbl && !elSuggLbl.__amCatBound){
+    elSuggLbl.__amCatBound = true;
+    elSuggLbl.addEventListener('click', function(){ if (_galleryCat === null) catKlappen(); });
+    elSuggLbl.addEventListener('keydown', function(e){
+      if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+      e.preventDefault();                      // Leertaste rollt sonst die Seite
+      if (_galleryCat === null) catKlappen();
+    });
   }
 
   /* ---- click delegation ---- */

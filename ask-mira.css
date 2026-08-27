@@ -785,6 +785,29 @@
     text-transform: uppercase; color: var(--am-muted-2);
   }
   .am-suggested-grid { display: block; }
+  /* Die Kopfzeile der Kategorien ist ein Schalter. Das Winkelzeichen liegt rechts, ist im Ruhe-
+     zustand unsichtbar und kommt, sobald die Maus im Block ist -- ZUGEKLAPPT bleibt es stehen,
+     sonst waere der Block ohne jeden Hinweis verschwunden. */
+  #ask-mira .am-suggested-label { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+  #ask-mira .am-sugg-lbl { flex: 1 1 auto; min-width: 0; }
+  /* Masse 1:1 aus .am-prev-sec-chev, dem Klappzeichen der Chatliste: dasselbe Bauteil an einer
+     anderen Stelle, also dieselben 15px und derselbe Strich. */
+  #ask-mira .am-sugg-chev { display: inline-flex; flex: 0 0 auto; color: var(--am-muted-2);
+    opacity: 0; transition: opacity 200ms ease, color 200ms ease; }
+  #ask-mira .am-sugg-chev svg { width: 15px; height: 15px; fill: none; stroke: currentColor;
+    stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform 200ms ease; }
+  #ask-mira .am-suggested:hover .am-sugg-chev,
+  #ask-mira .am-suggested.is-catclosed .am-sugg-chev { opacity: 1; }
+  #ask-mira .am-suggested-label:hover .am-sugg-chev { color: var(--am-primary); }
+  /* Offen zeigt es nach unten, zugeklappt nach rechts. Die Vierteldrehung ist die des Klapp-
+     zeichens in der Chatliste; eine Wende um 180 Grad gibt es in dieser App nirgends. */
+  #ask-mira .am-suggested.is-catclosed .am-sugg-chev svg { transform: rotate(-90deg); }
+  /* Der Klappweg: ein Raster von 1fr auf 0fr. So laeuft die Hoehe, ohne dass irgendwer sie messen
+     muss, und der Inhalt bleibt im Fluss -- dieselbe Machart wie die aufklappenden Bloecke im
+     Onboarding. display: none koennte nicht laufen. */
+  #ask-mira .am-sugg-fold { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 200ms ease; }
+  #ask-mira .am-sugg-foldin { overflow: hidden; min-height: 0; }
+  #ask-mira .am-suggested.is-catclosed .am-sugg-fold { grid-template-rows: 0fr; }
   /* mobile quick actions (hidden on desktop, shown via the mobile media query) */
   .am-quick { display: none; grid-template-columns: 1fr; gap: 2px; margin-top: 4px; }
   .am-quick-item { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; padding: 10px 8px; border: 0; border-radius: 10px; background: transparent; color: var(--am-text); font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 140ms ease; }
@@ -817,7 +840,7 @@
   .am-cat-card {
     position: relative; overflow: hidden;
     text-align: left; border: 1px solid var(--am-border); border-radius: 13px;
-    background: transparent; padding: 13px 14px 13px 60px; cursor: pointer;
+    background: var(--am-bg); padding: 13px 14px 13px 60px; cursor: pointer;
     display: flex; align-items: center; gap: 11px; min-width: 0;
     color: var(--am-text); font-size: 13.5px; font-weight: 500; line-height: 1.4;
     transition: border-color 160ms ease, background 160ms ease;
@@ -1122,6 +1145,12 @@
   #ask-mira:not(.has-messages) .am-messages { display: none; }
   #ask-mira:not(.has-messages) .am-chat { flex: 1 1 0; min-height: 0; overflow-y: auto; padding-top: clamp(24px, 5vh, 56px); }
   #ask-mira:not(.has-messages) .am-composer-area { margin-top: 0; }
+  /* Auf dem Startschirm KEIN Verlauf hinter dem Eingabefeld. Der Verlauf malt --am-bg ueber die
+     ganze Breite und war unsichtbar, solange dahinter derselbe Grund lag; seit dort das
+     Hintergrundbild liegt, deckt er es auf voller Breite ab und man sieht ein Band. Im Chat
+     BLEIBT er: dort ist er kein Schmuck, sondern der Ausblender fuer Nachrichten, die hinter das
+     Eingabefeld scrollen. */
+  #ask-mira:not(.has-messages) .am-composer-area { background: none; }
   /* Der Ruhe-Schatten des Composers bleibt hinter dem Fokusring stehen, sonst springt die
      Eingabezeile beim Hineinklicken flach. Dark Mode braucht keine eigene Regel mehr: die
      --up-focus-Tokens kippen ueber .up-root[data-theme] von selbst. */
