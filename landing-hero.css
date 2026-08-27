@@ -104,7 +104,9 @@
   display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: 1fr;
-  padding: 0 clamp(16px, 4vw, 56px) clamp(40px, 8vh, 96px);
+  /* Kein seitliches Polster mehr: der Rahmen nimmt 3/4 der Breite und steht mittig, der Rest ist
+     ohnehin Luft. Zwei Begrenzungen uebereinander machten ihn nur schmaler als in der Vorlage. */
+  padding: 0 0 clamp(40px, 8vh, 96px);
 }
 /* Der Rahmen ist ZWEI Kaesten, nicht einer -- so macht es die Vorlage, und daher kommt der Eindruck
    eines Geraets. Gemessen an attio.com bei 1440px Fensterbreite:
@@ -117,10 +119,12 @@
    Blende und Schirm nehmen --ulh-blende und --ulh-schirm: dasselbe Verhaeltnis wie in der Vorlage.
    Deckend und nicht mit Alpha, weil die Seite darunter weiss ist. */
 .ulh-frame {
-  /* Volle Breite. Vorher 3/4 wie in der Vorlage -- die hat aber eine eigene Seite mit eigenem
-     Polster; als Framer-Einbettung sitzt diese Sektion schon in einem Abschnitt und soll ihn
-     ausfuellen. */
-  width: 100%;
+  /* 3/4 der Breite, hoechstens 1440 -- das Mass der Vorlage (w-2/3, lg:w-3/4, max-w-1440). Bei
+     1440px Fensterbreite sind das 1080px, also genau die Groesse, die dort gemessen wurde.
+     Kurz stand hier width: 100%. Das war der falsche Schluss aus der Meldung "zu klein": zu klein
+     war die WURZEL, weil sie in einem Flex-Eltern schrumpfte (siehe oben), nicht der Rahmen. Mit
+     einer Wurzel, die ihren Platz wirklich fuellt, ergeben 3/4 wieder das Mass der Vorlage. */
+  width: min(75%, 1440px);
   margin: 0 auto;
   border-radius: 16px;
   padding: 0 6px 6px;
@@ -181,6 +185,15 @@
   display: flex;
   align-items: stretch;
   background: var(--ulh-schirm);
+  /* Beschneiden muss HIER passieren, nicht nur am Ausschnitt. Die Seitenleiste ist position: fixed,
+     und ein fixed positioniertes Element beschneidet nur der Vorfahre, der auch sein Bezugsrahmen
+     ist -- das ist dieser hier (er traegt das transform), nicht .ulh-view mit seinem overflow.
+     Deshalb lief die grau hinterlegte Leiste ueber die runden Ecken hinaus und die beiden LINKEN
+     Ecken sahen eckig aus, waehrend die rechten rund waren.
+     Der Radius muss durch das Mass geteilt werden: was hier gezeichnet wird, verkleinert das
+     transform anschliessend, und ohne die Division waere die Rundung innen kleiner als aussen. */
+  overflow: hidden;
+  border-radius: calc(12px / var(--ulh-mass, 1));
 }
 /* Die Leiste bringt ihre Breite selbst mit; rechts davon der Seiteninhalt.
    min-width: 0, sonst sprengt eine breite Tabelle die Spalte. */

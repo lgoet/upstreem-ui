@@ -43,19 +43,29 @@
      steuert auch die Schriftgroesse im Fenster. */
   var MARKEN = [
     { id: "ke", name: "Kestrel", farbe: "#1f6feb", basis: 34.2 },
-    { id: "va", name: "Vantage", farbe: "#8957e5", basis: 27.8 },
-    { id: "ha", name: "Halden",  farbe: "#1a7f5a", basis: 19.4 },
-    { id: "lu", name: "Lumen",   farbe: "#b3541e", basis: 12.6 },
-    { id: "or", name: "Orbit",   farbe: "#9a6700", basis: 8.1 }
+    { id: "va", name: "Vantage", farbe: "#8957e5", basis: 28.6 },
+    { id: "ha", name: "Halden",  farbe: "#1a7f5a", basis: 22.1 },
+    { id: "ni", name: "Nimbus",  farbe: "#0e7490", basis: 17.4 },
+    { id: "lu", name: "Lumen",   farbe: "#b3541e", basis: 13.2 },
+    { id: "ve", name: "Verity",  farbe: "#be185d", basis: 9.6 },
+    { id: "or", name: "Orbit",   farbe: "#9a6700", basis: 6.3 }
   ];
 
-  /* Ein Zufall mit Gedaechtnis: derselbe Startwert liefert dieselbe Kurve. Auf einer Landingpage
-     ist das kein Detail -- ein Bild, das bei jedem Laden anders aussieht, wirkt wie ein Fehler,
-     und niemand kann sich auf einen Screenshot davon berufen. */
-  function wuerfel(saat){
-    var s = saat;
-    return function(){ s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
+  /* Ein Zeichen je Marke, erzeugt: abgerundetes Quadrat in der Markenfarbe mit dem Anfangs-
+     buchstaben. Die Logo-Plaetze der App bleiben sonst leer, und eine Reihe leerer grauer Kreise
+     sieht nach fehlenden Daten aus.
+     ECHTE Firmenlogos waeren die andere Moeglichkeit -- dann stuenden hier aber erfundene Zahlen
+     unter fremden Marken, auf einer oeffentlichen Seite. Das ist eine Entscheidung und keine
+     Kleinigkeit; bis dahin sind es diese.
+     Als data:-Adresse und nicht als Datei: kein zusaetzlicher Abruf, und nichts kann fehlen. */
+  function zeichen(text, farbe){
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">' +
+      '<rect width="32" height="32" rx="8" fill="' + farbe + '"/>' +
+      '<text x="16" y="22.5" text-anchor="middle" fill="#ffffff" font-weight="600" ' +
+      'font-size="16" font-family="Geist, system-ui, sans-serif">' + text + '</text></svg>';
+    return "data:image/svg+xml," + encodeURIComponent(svg);
   }
+  MARKEN.forEach(function(m){ m.logo = zeichen(m.name.charAt(0), m.farbe); });
 
   /* Sechs MONATSpunkte, nicht dreissig Tagespunkte. Das Chart aggregiert nicht selbst --
      UC.buildLineDatasets nimmt die Serie, wie sie kommt --, also entscheidet die Serie die Stufe.
@@ -78,14 +88,18 @@
   function reihen(){
     var monate = monatsliste(), out = [];
     MARKEN.forEach(function(m, mi){
-      var r = wuerfel(7919 + mi * 131);
+      /* Eine ruhige Welle je Marke statt eines Zufallsgangs. Der Zufallsgang liess sechs Punkte
+         zappeln, und das sah nach Rauschen aus, nicht nach einer Messreihe. Eine Sinuswelle ueber
+         etwa zwei Drittel einer Periode (0.85 rad je Schritt bei sechs Schritten) gibt genau einen
+         Bogen -- ein Chart mit zwei vollen Wellen braucht mindestens ein Dutzend Punkte, und die
+         haetten die Monatsnamen auf der Achse gekostet.
+         Die Phase versetzt jede Marke, damit die Linien nicht im Gleichschritt laufen; der kleine
+         Trend haelt die Reihenfolge in der Tabelle stabil. */
+      var phase = mi * 1.05;
       monate.forEach(function(tag, ti){
-        /* Ein langsamer Trend plus ein kleines Zittern. Der Trend macht die Kurven unterscheidbar
-           (die erste Marke steigt, die letzte faellt), das Zittern nimmt ihnen das Kuenstliche.
-           Bei sechs Punkten darf der Trend groesser sein als bei dreissig, sonst ist die Kurve
-           eine Gerade. */
-        var trend = (2 - mi) * 0.9 * ti;
-        var wert = m.basis + trend + (r() - 0.5) * 2.2;
+        var welle = 1.9 * Math.sin(phase + ti * 0.85);
+        var trend = (3 - mi) * 0.42 * ti;
+        var wert = m.basis + welle + trend;
         out.push({ company_id: m.id, day: tag, visibility_pct: Math.max(0, Math.round(wert * 10) / 10) });
       });
     });
@@ -108,36 +122,45 @@
       var davor = punkt(serie, m.id, -2);
       var rang = 1 + i * 0.8 + (i === 0 ? 0 : 0.3);
       return {
-        company_id: m.id, name: m.name, logo_url: "", position: i + 1,
+        company_id: m.id, name: m.name, logo_url: m.logo, position: i + 1,
         visibility_pct: Math.round(jetzt * 10) / 10,
         visibility_delta_pct: Math.round((jetzt - davor) * 10) / 10,
         avg_rank: Math.round(rang * 10) / 10,
-        avg_rank_delta: [-0.3, 0.2, -0.1, 0.4, 0.1][i],
-        sentiment: [79, 74, 71, 68, 63][i],
-        sentiment_delta: [1.4, -0.8, 2.1, -1.6, 0.5][i]
+        avg_rank_delta: [-0.3, 0.2, -0.1, 0.4, 0.1, -0.2, 0.3][i],
+        sentiment: [79, 74, 71, 68, 66, 63, 58][i],
+        sentiment_delta: [1.4, -0.8, 2.1, -1.6, 0.9, 0.5, -1.1][i]
       };
     });
   }
 
   /* Erfundene Quellen. Keine echten Domains: die Anteile hier sind Demozahlen, und unter einem
      echten Namen saehen sie aus wie eine Aussage ueber diese Seite. */
+  /* Die Zitattypen sind die ECHTEN der App -- UC.ALL_CITATION_TYPES: Editorial, UGC_Community,
+     Knowledge_Base, Brand_Platform, Institutional, Competition, You. Vorher standen hier erfundene
+     Namen (Review, Comparison, Owned, News); die Komponente faerbt und beschriftet aber nach dieser
+     Liste, ein unbekannter Name laeuft in den Rueckfall. Es sind genau sieben, und die sieben
+     Quellen benutzen jeden einmal.
+     Die Domains bleiben erfunden (*.example): die Anteile sind Demozahlen, und unter einem echten
+     Namen saehen sie aus wie eine Aussage ueber diese Seite. Das Zeichen davor entsteht wie das der
+     Marken, in einem neutralen Grau. */
   var QUELLEN = [
-    { domain: "industryguide.example",  share_pct: 18.4, share_delta_pct: 2.1, used_total: 2926, citation_type: "Editorial" },
-    { domain: "reviewhub.example",      share_pct: 14.1, share_delta_pct: -1.3, used_total: 2242, citation_type: "Review" },
-    { domain: "techjournal.example",    share_pct: 11.7, share_delta_pct: 0.8, used_total: 1860, citation_type: "Editorial" },
-    { domain: "forum.example",          share_pct: 9.3,  share_delta_pct: 3.4, used_total: 1479, citation_type: "Community" },
-    { domain: "comparison.example",     share_pct: 7.6,  share_delta_pct: -0.4, used_total: 1208, citation_type: "Comparison" },
-    { domain: "docs.kestrel.example", share_pct: 6.2,  share_delta_pct: 1.9, used_total: 986,  citation_type: "Owned" },
-    { domain: "newsroom.example",       share_pct: 4.8,  share_delta_pct: -0.7, used_total: 763,  citation_type: "News" }
+    { domain: "industryguide.example", share_pct: 18.4, share_delta_pct: 2.1,  used_total: 2926, citation_type: "Editorial" },
+    { domain: "community.example",     share_pct: 14.1, share_delta_pct: -1.3, used_total: 2242, citation_type: "UGC_Community" },
+    { domain: "wiki.example",          share_pct: 11.7, share_delta_pct: 0.8,  used_total: 1860, citation_type: "Knowledge_Base" },
+    { domain: "kestrel.example",       share_pct: 9.3,  share_delta_pct: 3.4,  used_total: 1479, citation_type: "You" },
+    { domain: "vantage.example",       share_pct: 7.6,  share_delta_pct: -0.4, used_total: 1208, citation_type: "Competition" },
+    { domain: "docs.kestrel.example",  share_pct: 6.2,  share_delta_pct: 1.9,  used_total: 986,  citation_type: "Brand_Platform" },
+    { domain: "university.example",    share_pct: 4.8,  share_delta_pct: -0.7, used_total: 763,  citation_type: "Institutional" }
   ];
 
   var TYPEN = [
-    { type: "Editorial",  share_pct: 34.2 },
-    { type: "Review",     share_pct: 22.6 },
-    { type: "Community",  share_pct: 16.8 },
-    { type: "Comparison", share_pct: 13.1 },
-    { type: "Owned",      share_pct: 8.4 },
-    { type: "News",       share_pct: 4.9 }
+    { type: "Editorial",      share_pct: 31.4 },
+    { type: "UGC_Community",  share_pct: 21.8 },
+    { type: "Knowledge_Base", share_pct: 15.2 },
+    { type: "You",            share_pct: 11.6 },
+    { type: "Competition",    share_pct: 9.3 },
+    { type: "Brand_Platform", share_pct: 6.9 },
+    { type: "Institutional",  share_pct: 3.8 }
   ];
 
   /* ---------- Buehne bauen ---------------------------------------------------------------- */
@@ -165,6 +188,28 @@
           '</div>' +
         '</div>' +
       '</div>';
+  }
+
+  /* Hover ja, Klick nein. Die Knoepfe, Aufklapper und Zeilen im Fenster SOLLEN auf die Maus
+     reagieren -- das ist der halbe Eindruck von "lebendige App" -- aber nichts davon darf wirklich
+     etwas tun: ein aufgeklapptes Menue oder eine umsortierte Tabelle mitten im Hero ist ein Zustand,
+     aus dem der Besucher nicht mehr herausfindet.
+     pointer-events: none koennte das nicht leisten, denn es nimmt genau die Hover-Zustaende mit weg.
+     Also bleiben die Zeiger-Ereignisse erlaubt und die HANDLUNGEN werden geschluckt: in der
+     Einfangphase, damit es geschieht, bevor irgendein Zuhoerer der Komponenten dran ist.
+     mousedown und pointerdown gehoeren dazu -- die Aufklapper der App haengen daran, nicht an
+     click. Bewegungsereignisse (mouseover, mouseenter, mousemove) sind ausdruecklich NICHT dabei. */
+  function nurSchauen(root){
+    var view = root.querySelector(".ulh-view");
+    if (!view || view.__ulhStumm) return;
+    view.__ulhStumm = true;
+    ["click", "dblclick", "mousedown", "mouseup", "pointerdown", "pointerup",
+     "keydown", "keypress", "submit", "focusin", "contextmenu"].forEach(function(art){
+      view.addEventListener(art, function(e){
+        e.preventDefault();
+        e.stopPropagation();
+      }, true);
+    });
   }
 
   /* Die Landingpage ist HELL, immer. core liest beim Start localStorage.pref_theme und setzt allen
@@ -234,6 +279,10 @@
     var bar = root.querySelector(".usn-bar");
     var side = root.querySelector(".ulh-side");
     if (bar && side && bar.offsetWidth) side.style.width = bar.offsetWidth + "px";
+    /* Diese Messung MUSS wiederholt werden, und deshalb steht mass() auch in der Uhrenkette oben.
+       setSidebarOpen animiert die Breite (transition width in sidebar.css) -- wer unmittelbar danach
+       offsetWidth liest, bekommt den Startwert 64 statt der 250 am Ende. Gemessen: die Spalte blieb
+       auf 64px stehen und die Leiste lag ueber dem Seiteninhalt. */
   }
 
   /* ---------- Daten hineingeben ----------------------------------------------------------- */
@@ -273,11 +322,11 @@
         instanceId: ID.vot,
         series: serie,
         companies: MARKEN.map(function(m, i){
-          return { company_id: m.id, name: m.name, color: m.farbe, favicon_url: "",
+          return { company_id: m.id, name: m.name, color: m.farbe, favicon_url: m.logo,
                    visibility_window_pct: tab[i].visibility_pct };
         }),
         filterCompanies: MARKEN.map(function(m){
-          return { company_id: m.id, name: m.name, color: m.farbe, favicon_url: "" };
+          return { company_id: m.id, name: m.name, color: m.farbe, favicon_url: m.logo };
         }),
         table: tab,
         totalCount: MARKEN.length,
@@ -293,13 +342,14 @@
         totalCountUrl: 1893,
         citations_total: 15899,
         top_domains: QUELLEN.map(function(q){
-          return { domain: q.domain, favicon: "", share_pct: q.share_pct,
+          return { domain: q.domain, favicon: zeichen(q.domain.charAt(0).toUpperCase(), "#6f737c"),
+                   share_pct: q.share_pct,
                    share_delta_pct: q.share_delta_pct, used_total: q.used_total,
                    citation_type: q.citation_type };
         }),
         top_urls: [],
         types_breakdown: TYPEN,
-        brand: { id: "ke", name: "Kestrel", logo: "" },
+        brand: { id: "ke", name: "Kestrel", logo: MARKEN[0].logo },
         brandMentioned: ""
       });
     }
@@ -323,6 +373,7 @@
 
   function los(root){
     bauen(root);
+    nurSchauen(root);
     hellHalten(root);
     mass(root);
     /* KEIN MutationObserver auf data-theme. Der erste Versuch hatte einen: hellHalten schreibt die
@@ -338,7 +389,7 @@
        Puffer, Heartbeat --, also muss das Nachfassen so lange reichen. Kreisen kann es nicht: es
        sind feste Zeitpunkte, und hellHalten schreibt nur, wo der Wert abweicht. */
     [300, 900, 2000, 4000, 8000].forEach(function(ms){
-      setTimeout(function(){ hellHalten(root); }, ms);
+      setTimeout(function(){ hellHalten(root); mass(root); }, ms);
     });
     var n = 0;
     (function warte(){
