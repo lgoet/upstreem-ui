@@ -6595,7 +6595,17 @@
   function stampTheme(el){
     if (!el || !el.classList || !el.classList.contains("up-root")) return;
     if (readPrefTheme() !== "dark") return;
-    if (el.getAttribute("data-theme") !== "dark") el.setAttribute("data-theme", "dark");
+    /* Nur wo das Attribut FEHLT. Genau das behauptet der Kommentar oben schon ("this only fills the
+       gap where the attribute is absent", "a component that sets data-theme itself always wins") --
+       der Code tat es aber nicht: er schrieb dark ueber jeden Wert, der nicht dark war, also auch
+       ueber ein ausdrueckliches light. Aufgefallen an der Landingpage: die setzt ihren Komponenten
+       data-theme="light", weil sie immer hell ist, und der Waechter drehte sie im Sekundentakt
+       zurueck auf dunkel.
+       Fuer die App aendert sich nichts: eine frisch von Bubble eingesetzte Wurzel hat gar kein
+       data-theme, und genau die Luecke fuellt der Waechter weiter. Steht dort ausdruecklich light,
+       hat das jemand so gewollt. */
+    var jetzt = el.getAttribute("data-theme");
+    if (jetzt == null || jetzt === "") el.setAttribute("data-theme", "dark");
   }
   function themeGuard(){
     if (window.__upThemeGuard) return;

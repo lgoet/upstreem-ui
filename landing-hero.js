@@ -57,48 +57,55 @@
     return function(){ s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
   }
 
-  var TAGE = 30;
+  /* Sechs MONATSpunkte, nicht dreissig Tagespunkte. Das Chart aggregiert nicht selbst --
+     UC.buildLineDatasets nimmt die Serie, wie sie kommt --, also entscheidet die Serie die Stufe.
+     Sechs Punkte im Monatsabstand ergeben eine Spanne von etwa 152 Tagen, und damit sperrt
+     UC.granAvailability von sich aus "Day" (ueber 92 Tagen unlesbar) und gibt Week und Month frei.
+     Die Achse beschriftet einen ganzen Monatsbereich nur mit dem Monatsnamen. */
+  var PUNKTE = 6;
 
-  function tagesliste(){
+  function monatsliste(){
     var out = [], heute = new Date();
-    for (var i = TAGE - 1; i >= 0; i--){
-      var d = new Date(heute.getTime() - i * 86400000);
-      out.push(d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" +
-               String(d.getDate()).padStart(2, "0"));
+    for (var i = PUNKTE - 1; i >= 0; i--){
+      /* Der ERSTE des Monats. Ein Punkt mitten im Monat waere kein ganzer Monatsbereich, und die
+         Achse haette dann das Datum statt des Monatsnamens gezeigt. */
+      var d = new Date(heute.getFullYear(), heute.getMonth() - i, 1);
+      out.push(d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-01");
     }
     return out;
   }
 
   function reihen(){
-    var tage = tagesliste(), out = [];
+    var monate = monatsliste(), out = [];
     MARKEN.forEach(function(m, mi){
-      var r = wuerfel(7919 + mi * 131), wert = m.basis;
-      tage.forEach(function(tag, ti){
+      var r = wuerfel(7919 + mi * 131);
+      monate.forEach(function(tag, ti){
         /* Ein langsamer Trend plus ein kleines Zittern. Der Trend macht die Kurven unterscheidbar
-           (die erste Marke steigt, die letzte faellt), das Zittern nimmt ihnen das Kuenstliche. */
-        var trend = (2 - mi) * 0.055 * ti;
-        wert = m.basis + trend + (r() - 0.5) * 2.6;
+           (die erste Marke steigt, die letzte faellt), das Zittern nimmt ihnen das Kuenstliche.
+           Bei sechs Punkten darf der Trend groesser sein als bei dreissig, sonst ist die Kurve
+           eine Gerade. */
+        var trend = (2 - mi) * 0.9 * ti;
+        var wert = m.basis + trend + (r() - 0.5) * 2.2;
         out.push({ company_id: m.id, day: tag, visibility_pct: Math.max(0, Math.round(wert * 10) / 10) });
       });
     });
     return out;
   }
 
-  /* Aus der letzten Woche gegen die Woche davor -- so entstehen die Deltas, die in der Tabelle und
-     in den Kennzahlen stehen. Gerechnet und nicht erfunden, damit Kurve und Zahlen zusammenpassen:
-     eine steigende Linie neben einem fallenden Pfeil ist genau die Art Widerspruch, die einem
+  /* Der letzte Monat gegen den davor -- so entstehen die Deltas in der Tabelle und in den
+     Kennzahlen. Gerechnet und nicht erfunden, damit Kurve und Zahlen zusammenpassen: eine
+     steigende Linie neben einem fallenden Pfeil ist genau die Art Widerspruch, die einem
      aufmerksamen Betrachter auffaellt. */
-  function fenster(serie, id, von, bis){
-    var w = serie.filter(function(p){ return p.company_id === id; }).slice(von, bis);
-    if (!w.length) return 0;
-    var s = 0; w.forEach(function(p){ s += p.visibility_pct; });
-    return s / w.length;
+  function punkt(serie, id, index){
+    var w = serie.filter(function(p){ return p.company_id === id; });
+    var p = w[index < 0 ? w.length + index : index];
+    return p ? p.visibility_pct : 0;
   }
 
   function tabelle(serie){
     return MARKEN.map(function(m, i){
-      var jetzt = fenster(serie, m.id, TAGE - 7, TAGE);
-      var davor = fenster(serie, m.id, TAGE - 14, TAGE - 7);
+      var jetzt = punkt(serie, m.id, -1);
+      var davor = punkt(serie, m.id, -2);
       var rang = 1 + i * 0.8 + (i === 0 ? 0 : 0.3);
       return {
         company_id: m.id, name: m.name, logo_url: "", position: i + 1,
@@ -160,6 +167,22 @@
       '</div>';
   }
 
+  /* Die Landingpage ist HELL, immer. core liest beim Start localStorage.pref_theme und setzt allen
+     .up-root-Elementen data-theme -- wer die App schon einmal im Dunkeln benutzt hat, saehe hier
+     also ein dunkles Dashboard auf weissem Grund. Gemessen: genau das passierte.
+     setUpstreemTheme("no") waere der falsche Griff, denn es SCHREIBT pref_theme: ein Besuch der
+     Landingpage haette die Themenwahl des Nutzers in der App umgestellt. Also nur die zwei
+     Attribute an den Wurzeln hier drin, und ein Waechter, der sie festhaelt, falls core sie spaeter
+     noch einmal anfasst. Nur schreiben, wenn der Wert abweicht -- sonst loest der Waechter sich
+     selbst wieder aus. */
+  function hellHalten(root){
+    var alle = [root].concat([].slice.call(root.querySelectorAll(".up-root")));
+    alle.forEach(function(el){
+      if (el.getAttribute("data-theme") !== "light") el.setAttribute("data-theme", "light");
+      if (el.getAttribute("data-isdark") !== "no") el.setAttribute("data-isdark", "no");
+    });
+  }
+
   /* Die Seitenleiste haengt sich SELBST an <body> und ist position: fixed. In der App muss das so
      sein -- sie steht neben allem und scrollt nicht mit. Fuer das Fenster holen wir sie herein:
      liegt ein Vorfahre mit transform darueber, bezieht sich fixed auf DIESEN Vorfahren und nicht
@@ -187,7 +210,14 @@
     if (!b) return;                                        /* verdeckter Tab, spaeter nochmal */
     /* Die Buehnenbreite kommt aus der CSS und steht nicht hier: sonst gibt es zwei Wahrheiten, und
        eine Aenderung an --ulh-buehne verschiebt das Bild, ohne dass das Mass mitgeht. */
-    var soll = parseFloat(getComputedStyle(root).getPropertyValue("--ulh-buehne")) || 1280;
+    var basis = parseFloat(getComputedStyle(root).getPropertyValue("--ulh-buehne")) || 1360;
+    /* Nie HOCH skalieren. Ist das Fenster breiter als die Basisbuehne, waechst die Buehne mit und
+       das Mass bleibt bei 1: die App rendert dann in ihrer echten Groesse, so wie sie es auf einem
+       breiten Schirm auch tut. Ein Mass ueber 1 blaeht stattdessen jede Schriftgroesse auf -- 13px
+       wuerden auf einem 1920er Schirm als 17px erscheinen, und die App saehe aus wie mit der Lupe
+       betrachtet. */
+    var soll = Math.max(basis, b);
+    root.style.setProperty("--ulh-buehne-ist", soll + "px");
     var m = b / soll;
     root.style.setProperty("--ulh-mass", m.toFixed(4));
     /* Die Buehne muss den Ausschnitt mindestens fuellen, sonst scheint unten der Grund durch.
@@ -251,7 +281,7 @@
         }),
         table: tab,
         totalCount: MARKEN.length,
-        granularity: "day"
+        granularity: "month"
       });
     }
 
@@ -293,11 +323,28 @@
 
   function los(root){
     bauen(root);
+    hellHalten(root);
     mass(root);
+    /* KEIN MutationObserver auf data-theme. Der erste Versuch hatte einen: hellHalten schreibt die
+       Attribute, die Komponenten HABEN darauf eigene Beobachter ("components read data-isdark in
+       their own MutationObservers", core.js), reagieren mit einem Neuaufbau, und irgendwo in dieser
+       Kette schrieb etwas zurueck -- der Renderer blieb stehen und beantwortete keine Abfrage mehr.
+       Stattdessen ein paar feste Zeitpunkte: einmal beim Bauen, einmal nach dem Fuellen, und danach
+       dreimal nachfassen. Das kann nicht kreisen, und spaeter als zwei Sekunden fasst core das
+       Thema nicht mehr an. */
+    /* Fuenf Zeitpunkte, nicht drei. Gemessen: core stempelt eine NEU eingefuegte .up-root mit dem
+       gerade gueltigen Thema, und zwar auch ueber ein ausdruecklich gesetztes light hinweg (eigener
+       Pfad, nicht der Waechter). Die Komponenten hier entstehen ueber mehrere Sekunden -- Boot-
+       Puffer, Heartbeat --, also muss das Nachfassen so lange reichen. Kreisen kann es nicht: es
+       sind feste Zeitpunkte, und hellHalten schreibt nur, wo der Wert abweicht. */
+    [300, 900, 2000, 4000, 8000].forEach(function(ms){
+      setTimeout(function(){ hellHalten(root); }, ms);
+    });
     var n = 0;
     (function warte(){
       if (bereit()){
         try { fuellen(); } catch (e){ if (window.console) console.warn("[landing-hero]", e); }
+        hellHalten(root);
         /* Die Leiste entsteht erst, wenn core ihre Wurzel gesehen hat -- das kann nach dem Setter
            liegen. Also nachfassen, bis sie da ist, und dann noch einmal messen. */
         (function holen(k){

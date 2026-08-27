@@ -12,9 +12,22 @@
    aendert. Das echte nicht. Und es ist scharf in jeder Groesse, weil es DOM ist und kein Bild. */
 
 .ulh-root {
-  /* Hell. Die Landingpage hat keinen Themenschalter -- der Grund ist Weiss, und die Komponenten
-     im Fenster bekommen data-isdark="no". */
+  /* Die Landingpage traegt ihre Farben SELBST und nicht als --vc-*-Marken. Zwei Gruende, und der
+     zweite ist der wichtigere:
+     1. Die Marken stehen in core.css ausschliesslich an .up-root. Die Landing-Wurzel diese Klasse
+        zu geben war der naheliegende Weg -- und hat den Renderer zum Stehen gebracht: eine .up-root,
+        die weitere .up-root enthaelt, gibt es in der App nirgends, und core hat pro Wurzel eigene
+        Beobachter und einen Heartbeat. Gemessen: die Seite antwortete danach auf keine Abfrage mehr.
+     2. Selbst wenn es ginge, waere es falsch. Die Marken drehen sich mit dem Thema der APP, und wer
+        die App einmal im Dunkeln benutzt hat, haette hier ein dunkles Fenster auf weisser Seite.
+        Diese Sektion ist immer hell.
+     Die Werte sind die hellen Werte aus core (--vc-bg, --vc-heading-bg, --vc-text, --vc-muted,
+     --vc-sk). Aendert sich dort die helle Palette, gehoert sie hier nachgezogen. */
   --ulh-grund: #ffffff;
+  --ulh-blende: #f5f5f5;
+  --ulh-schirm: #ffffff;
+  --ulh-text: #1f1f1b;
+  --ulh-muted: #6f737c;
   /* Die Buehne hat eine FESTE Breite und wird als Ganzes verkleinert. Nur so sieht man die App in
      ihrem Desktop-Layout: die Komponenten messen ihre eigene Breite (clientWidth) und stapeln
      darunter um -- eine transform-Verkleinerung aendert clientWidth nicht, ein kleinerer Kasten
@@ -57,7 +70,7 @@
   font-weight: 600;
   line-height: .95;
   letter-spacing: -0.02em;
-  color: var(--vc-text);
+  color: var(--ulh-text);
 }
 .ulh-h1 span { display: block; }
 .ulh-sub {
@@ -65,11 +78,11 @@
   margin: clamp(16px, 2.2vh, 22px) auto 0;
   font-size: clamp(15px, 1.25vw, 18px);
   line-height: 1.45;
-  color: var(--vc-muted);
+  color: var(--ulh-muted);
 }
 /* Die drei Begriffe stehen als eigene Elemente da, obwohl sie hier nur kraeftiger gesetzt sind:
    sie sollen spaeter durchwechseln, und dann braucht jeder seinen eigenen Kasten. */
-.ulh-sub b { font-weight: 500; color: var(--vc-text); }
+.ulh-sub b { font-weight: 500; color: var(--ulh-text); }
 
 /* ---------- Das Fenster ---------- */
 /* Die Buehne haengt in einem Raster mit EINER Zelle, damit der spaetere Ablauf mehrere Szenen
@@ -81,15 +94,25 @@
   grid-template-rows: 1fr;
   padding: 0 clamp(16px, 4vw, 56px) clamp(40px, 8vh, 96px);
 }
+/* Der Rahmen ist ZWEI Kaesten, nicht einer -- so macht es die Vorlage, und daher kommt der Eindruck
+   eines Geraets. Gemessen an attio.com bei 1440px Fensterbreite:
+     aussen  1080x619  Radius 16  Polster 0 6px 6px  Fuellung fast-weiss bei 80% Deckkraft
+     innen   1068x581  Radius 12  kein Polster       Fuellung weiss
+   1080 - 1068 = 12, also 6px links und rechts: eine BLENDE. Oben sitzt in der Blende die Zeile mit
+   den drei Punkten (die Hoehendifferenz von 38 sind 6px Polster unten plus 32px Zeile), und der
+   Schirm darunter hat seinen eigenen, kleineren Radius. Ohne diese Blende sieht das Fenster aus wie
+   ein Kasten mit einer Leiste obendrauf -- genau das war der Unterschied.
+   Blende und Schirm nehmen --ulh-blende und --ulh-schirm: dasselbe Verhaeltnis wie in der Vorlage.
+   Deckend und nicht mit Alpha, weil die Seite darunter weiss ist. */
 .ulh-frame {
-  /* 3/4 der Breite, hoechstens 1440 -- an der Vorlage gemessen (w-2/3, lg:w-3/4, max-w-1440).
-     Das ist die Breite des FENSTERS auf dem Schirm und hat mit --ulh-buehne nichts zu tun: die
-     Buehne ist das, was hineinverkleinert wird. */
-  width: min(75%, 1440px);
+  /* Volle Breite. Vorher 3/4 wie in der Vorlage -- die hat aber eine eigene Seite mit eigenem
+     Polster; als Framer-Einbettung sitzt diese Sektion schon in einem Abschnitt und soll ihn
+     ausfuellen. */
+  width: 100%;
   margin: 0 auto;
   border-radius: 16px;
-  background: var(--vc-bg);
-  overflow: hidden;
+  padding: 0 6px 6px;
+  background: var(--ulh-blende);
   /* Fuenf Ebenen statt einer, und die Deckkraft STEIGT nach aussen (.024 -> .035). Die erste Ebene
      hat keinen Weichzeichner: sie ist eine Haarlinie von 0.9px und ersetzt den Rahmen -- ein
      border wuerde bei jeder Verkleinerung mitskalieren und dabei ausfransen. Werte an der Vorlage
@@ -102,19 +125,21 @@
     0 7.25px 12.687px rgba(11, 13, 24, .03),
     0 14.5px 25.374px rgba(11, 13, 24, .035);
 }
-/* Die Fensterleiste. Drei Punkte, sonst nichts -- sie sagt "das ist eine Anwendung in einem
-   Fenster" und darf dabei nicht selbst auffallen. Hoehe 34px, damit sie neben der 1440er Buehne
-   nach der Verkleinerung noch etwa 25px hat. */
+/* Die Punktezeile liegt IN der Blende und hat keine eigene Fuellung und keine Trennlinie -- sie
+   ist ein Teil des Rahmens, kein Balken auf dem Schirm. 32px wie in der Vorlage. */
 .ulh-chrome {
-  height: 34px;
+  height: 32px;
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 0 13px;
-  border-bottom: 1px solid var(--vc-border);
-  background: var(--vc-heading-bg);
+  padding: 0 8px;
 }
-.ulh-dot { width: 10px; height: 10px; border-radius: 999px; background: var(--vc-sk); }
+/* Die drei Punkte in den Farben, die jeder kennt -- so steht es auch in der Vorlage. Grau sahen sie
+   aus wie deaktivierte Knoepfe statt wie ein Fensterrahmen. Feste Werte und keine Marken: das sind
+   die Farben eines Betriebssystems und nicht die unserer App, sie drehen sich mit keinem Thema. */
+.ulh-dot { width: 10px; height: 10px; border-radius: 999px; background: #ff5f57; }
+.ulh-dot:nth-child(2) { background: #febc2e; }
+.ulh-dot:nth-child(3) { background: #28c840; }
 
 /* Der Ausschnitt: so hoch wie das Verhaeltnis vorgibt, und was die Buehne darunter noch traegt,
    ist abgeschnitten. */
@@ -124,6 +149,10 @@
   height: 0;
   padding-bottom: calc(var(--ulh-verhaeltnis) * 100%);
   overflow: hidden;
+  /* Kleiner als der Rahmen: 12 gegen 16, gemessen an der Vorlage. Der Unterschied ist genau die
+     Blende -- ein Schirm mit demselben Radius wie sein Rahmen sieht aufgeklebt aus. */
+  border-radius: 12px;
+  background: var(--ulh-schirm);
 }
 /* Die Buehne selbst: die feste Breite aus --ulh-buehne, oben links verankert, als Ganzes
    verkleinert. transform und nicht zoom: zoom aendert die gemessene Breite der Kinder und haette
@@ -132,12 +161,14 @@
   position: absolute;
   top: 0;
   left: 0;
-  width: var(--ulh-buehne);
+  /* --ulh-buehne-ist setzt landing-hero.js: es ist das Maximum aus der Basisbreite und der
+     wirklichen Fensterbreite, damit nie hochskaliert wird. Der Rueckfall ist die Basis. */
+  width: var(--ulh-buehne-ist, var(--ulh-buehne));
   transform: scale(var(--ulh-mass));
   transform-origin: top left;
   display: flex;
   align-items: stretch;
-  background: var(--up-surface);
+  background: var(--ulh-schirm);
 }
 /* Die Leiste bringt ihre Breite selbst mit; rechts davon der Seiteninhalt.
    min-width: 0, sonst sprengt eine breite Tabelle die Spalte. */
@@ -149,7 +180,7 @@
   flex-direction: column;
   gap: 18px;
   padding: 18px 22px 0;
-  background: var(--up-surface);
+  background: var(--ulh-schirm);
 }
 /* Die Komponenten im Fenster sind Schaustuecke. Nichts darin ist anklickbar, und der Zeiger soll
    das auch nicht behaupten -- der Ablauf spaeter fuehrt die Maus selbst.
