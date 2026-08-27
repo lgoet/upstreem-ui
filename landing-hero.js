@@ -84,21 +84,34 @@
     return out;
   }
 
+  /* Der Verlauf: erst hoch, dann runter, dann wieder hoch -- alle Marken im selben Rhythmus, aber
+     jede mit eigener Amplitude. Die Zahlen sind RELATIVE Ausschlaege in Vielfachen der Amplitude,
+     also unabhaengig davon, wie hoch die Marke liegt:
+       Monat 1  Ausgangswert
+       Monat 2  +1.00   hoch
+       Monat 3  +0.55   faellt schon wieder
+       Monat 4  -0.85   unten
+       Monat 5  -0.15   dreht
+       Monat 6  +0.95   hoch
+     Vorher stand hier eine Sinuswelle -- ein einziger Bogen, und das sah aus wie ein Trend, nicht
+     wie eine Messreihe mit Bewegung. */
+  var VERLAUF = [0, 1.0, 0.55, -0.85, -0.15, 0.95];
+
+  /* Amplitude 3% bis 8% der eigenen Basis, gestaffelt statt gewuerfelt: fuenf Marken, fuenf Stufen.
+     Gestaffelt, damit dasselbe Bild bei jedem Laden herauskommt -- ein Chart, das sich bei jedem
+     Aufruf anders bewegt, wirkt wie ein Fehler, und niemand kann sich auf einen Screenshot berufen. */
+  function amplitude(mi){ return 0.03 + (mi % 5) * 0.0125; }
+
   function reihen(){
     var monate = monatsliste(), out = [];
     MARKEN.forEach(function(m, mi){
-      /* Eine ruhige Welle je Marke statt eines Zufallsgangs. Der Zufallsgang liess sechs Punkte
-         zappeln, und das sah nach Rauschen aus, nicht nach einer Messreihe. Eine Sinuswelle ueber
-         etwa zwei Drittel einer Periode (0.85 rad je Schritt bei sechs Schritten) gibt genau einen
-         Bogen -- ein Chart mit zwei vollen Wellen braucht mindestens ein Dutzend Punkte, und die
-         haetten die Monatsnamen auf der Achse gekostet.
-         Die Phase versetzt jede Marke, damit die Linien nicht im Gleichschritt laufen; der kleine
-         Trend haelt die Reihenfolge in der Tabelle stabil. */
-      var phase = mi * 1.05;
+      var a = amplitude(mi) * m.basis;
       monate.forEach(function(tag, ti){
-        var welle = 1.9 * Math.sin(phase + ti * 0.85);
-        var trend = (3 - mi) * 0.42 * ti;
-        var wert = m.basis + welle + trend;
+        /* Das kleine Wackeln obendrauf nimmt den Linien das Gleichgeschaltete: ohne es liefen alle
+           fuenf exakt parallel, und das sieht gezeichnet aus. 6% der Amplitude, abwechselnd nach
+           oben und unten je Marke und Monat -- klein genug, um den Rhythmus nicht zu stoeren. */
+        var wackeln = a * 0.06 * (((mi + ti) % 3) - 1);
+        var wert = m.basis + VERLAUF[ti % VERLAUF.length] * a + wackeln;
         out.push({ company_id: m.id, day: tag, visibility_pct: Math.max(0, Math.round(wert * 10) / 10) });
       });
     });

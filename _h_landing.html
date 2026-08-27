@@ -75,27 +75,33 @@ window.addEventListener("error", function(e){
 });
 
 (function(){
-  var files = ["core.css", "sidebar.css", "page-headers/dashboard-page-header.css",
-               "visibility-chart.css", "topcitations-dashboard.css", "quick-actions.css",
-               "landing-hero.css",
-               "core.js", "sidebar.js", "page-headers/dashboard-page-header.js",
-               "visibility-chart.js", "topcitations-dashboard.js", "quick-actions.js",
-               "landing-hero.js"];
-  var texts = {};
-  Promise.all(files.map(function(f){
-    return fetch(f + "?nocache=" + Math.random(), { cache: "no-store" })
-      .then(function(res){ return res.text(); }).then(function(t){ texts[f] = t; });
-  })).then(function(){
-    files.forEach(function(f){
-      var el = document.createElement(/\.css$/.test(f) ? "style" : "script");
-      el.textContent = texts[f];
-      document.head.appendChild(el);
+  /* Die Dateiliste wird NICHT hier gepflegt, sondern aus landing-boot.js gelesen. Genau diese
+     Doppelpflege hat eine Runde gekostet: Quick Actions kam in den Lader, das Harness kannte die
+     Datei nicht, und die Palette stand ohne CSS da -- ein Fehler im Messaufbau, der wie ein Fehler
+     im Produkt aussah.
+     Alles per fetch mit no-store und inline eingesetzt; ein blanker src hat in dieser Sitzung
+     mehrfach eine alte Datei geladen. */
+  function hol(f){ return fetch(f + "?nocache=" + Math.random(), { cache: "no-store" })
+                     .then(function(r){ return r.text(); }); }
+  hol("landing-boot.js").then(function(boot){
+    var files = [];
+    boot.replace(/\bcss\("([^"]+)"\)/g, function(_, f){ files.push(f); return ""; });
+    boot.replace(/\bjs\("([^"]+)"\)/g,  function(_, f){ files.push(f); return ""; });
+    window.__geladen = { aus_boot: files.length };
+    var texts = {};
+    return Promise.all(files.map(function(f){
+      return hol(f).then(function(t){ texts[f] = t; });
+    })).then(function(){
+      files.forEach(function(f){
+        var el = document.createElement(/\.css$/.test(f) ? "style" : "script");
+        el.textContent = texts[f];
+        document.head.appendChild(el);
+      });
+      window.__geladen.dateien = files;
+      window.__geladen.core_js = (texts["core.js"] || "").length;
+      window.__geladen.hero_css = (texts["landing-hero.css"] || "").length;
+      setTimeout(messen, 1800);
     });
-    window.__geladen = { core_js: texts["core.js"].length,
-                         hero_js: texts["landing-hero.js"].length,
-                         hero_css: texts["landing-hero.css"].length,
-                         markup_da: texts["landing-hero.js"].indexOf("usn-root") > 0 };
-    setTimeout(messen, 1500);
   });
 })();
 </script>

@@ -24,10 +24,11 @@
      Die Werte sind die hellen Werte aus core (--vc-bg, --vc-heading-bg, --vc-text, --vc-muted,
      --vc-sk). Aendert sich dort die helle Palette, gehoert sie hier nachgezogen. */
   --ulh-grund: #ffffff;
-  /* 15% dunkler als die Flaeche der Seitenleiste (#f5f5f5 = 245 -> 245 x 0.85 = 208). Vorher war
-     die Blende derselbe Ton wie die Leiste, und damit war der Rahmen dort, wo die Leiste anliegt,
-     gar nicht zu sehen. */
-  --ulh-blende: #d0d0d0;
+  /* Die Blende. Derselbe Ton wie die Leiste (#f5f5f5) machte den Rahmen dort unsichtbar, wo die
+     Leiste anliegt; 15% dunkler (#d0d0d0 = 208) war zu viel und sah nach einem grauen Balken aus.
+     Jetzt #e8e8e8 = 232, also 5% dunkler als die Leiste -- und es ist --vc-sk, der Skelettgrau-Ton
+     des Hauses, nicht eine dritte selbst gemischte Stufe. */
+  --ulh-blende: #e8e8e8;
   --ulh-schirm: #ffffff;
   --ulh-text: #1f1f1b;
   --ulh-muted: #6f737c;
@@ -122,12 +123,14 @@
    Blende und Schirm nehmen --ulh-blende und --ulh-schirm: dasselbe Verhaeltnis wie in der Vorlage.
    Deckend und nicht mit Alpha, weil die Seite darunter weiss ist. */
 .ulh-frame {
-  /* 3/4 der Breite, hoechstens 1440 -- das Mass der Vorlage (w-2/3, lg:w-3/4, max-w-1440). Bei
-     1440px Fensterbreite sind das 1080px, also genau die Groesse, die dort gemessen wurde.
-     Kurz stand hier width: 100%. Das war der falsche Schluss aus der Meldung "zu klein": zu klein
-     war die WURZEL, weil sie in einem Flex-Eltern schrumpfte (siehe oben), nicht der Rahmen. Mit
-     einer Wurzel, die ihren Platz wirklich fuellt, ergeben 3/4 wieder das Mass der Vorlage. */
-  width: min(75%, 1440px);
+  /* Volle Breite des Platzes, aber hoechstens 1200. Der dritte Versuch, und diesmal aus dem Grund
+     heraus: 100% war zu breit, 75% zu schmal -- und ein PROZENTWERT ist hier ueberhaupt der falsche
+     Hebel. In Framer sitzt die Sektion in einem Abschnitt, dessen Breite ich nicht kenne; 75% davon
+     sind auf einer schmalen Seite winzig und auf einer breiten riesig. Ein Deckel in Pixeln ist von
+     der Umgebung unabhaengig: schmaler Abschnitt -> ausgefuellt, breiter -> 1200 und mittig.
+     1200 statt der 1080 der Vorlage, weil attio.com mit 1080 auf einer 1440er Seite gemessen ist,
+     die Sektion hier aber in einem Abschnitt ohne dieses Umfeld steht. */
+  width: min(100%, 1200px);
   margin: 0 auto;
   border-radius: 16px;
   padding: 0 6px 6px;

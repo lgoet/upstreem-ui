@@ -1,5 +1,25 @@
-<meta charset="utf-8">
-<title>landing hero am Pin PIN_HIER (genau das Framer-Schnipsel)</title>
+#!/usr/bin/env python3
+"""Baut _h_landing_pin.html aus framer/landing_hero.html.
+
+WARUM ein Skript und kein Kopieren von Hand: das Harness soll GENAU das pruefen, was in Framer
+steht. Beim letzten Mal wurde nur der Pin darin ersetzt, das Schnipsel selbst aber nicht neu
+uebernommen -- das Harness lud daraufhin die alte Dateiliste und zeigte eine Quick-Actions-Palette
+ohne CSS. Der Fehler steckte im Messaufbau, nicht im Produkt, und hat eine Runde gekostet.
+
+Aufruf nach jeder Aenderung am Schnipsel:
+    python3 .landing_pin_harness.py
+"""
+import re
+import sys
+
+schnipsel = open("framer/landing_hero.html").read()
+pin = re.search(r'data-cdn-pin="([^"]*)"', schnipsel)
+if not pin:
+    print("ABBRUCH -- kein data-cdn-pin im Schnipsel")
+    sys.exit(1)
+
+KOPF = '''<meta charset="utf-8">
+<title>landing hero am Pin %s (genau das Framer-Schnipsel)</title>
 <!-- ERZEUGT von .landing_pin_harness.py -- nicht von Hand aendern, sonst weicht der Messaufbau
      wieder von dem ab, was in Framer steht.
      Wozu: pruefen, ob das, was in Framer eingesetzt wird, am PIN wirklich laeuft -- also gegen
@@ -9,41 +29,9 @@
      white-space:pre-wrap;font:10px/1.4 ui-monospace,monospace}</style>
 <body>
 <pre id="out">laedt vom CDN</pre>
-<!-- ============================================================================
-     upstreem — Hero-Sektion. In Framer als Embed/Code-Element einfuegen, EINMAL.
+''' % pin.group(1)
 
-     HIER, und nur hier, steht der Pin. Neuer Commit? Diese eine Zeichenkette tauschen,
-     sonst nichts -- und das gilt jetzt WIRKLICH: die Liste der Dateien steht nicht mehr
-     in diesem Schnipsel, sondern in landing-boot.js, und die kommt aus demselben Pin.
-     Vorher hing sie hier, und als Quick Actions dazukam, fehlte in Framer die Zeile
-     dafuer: das Markup der Palette war da, ihre CSS nicht.
-
-     Leer oder "CDN_PIN" laedt @main -- fuer die oeffentliche Seite bitte nicht: @main
-     aendert sich mit jedem Push, und dann aendert sich die Seite ohne dein Zutun.
-     ============================================================================ -->
-<div class="ulh-root" data-cdn-pin="PIN_HIER"></div>
-
-<script>
-(function(){
-  var el = document.querySelector(".ulh-root");
-  var v = el && el.getAttribute("data-cdn-pin");
-  var pin = (!v || v === "PIN_HIER" || v === "CDN_PIN") ? "main" : v;
-  var s = document.createElement("script");
-  s.src = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + pin + "/landing-boot.js";
-  s.async = false;
-  document.head.appendChild(s);
-})();
-</script>
-
-<!-- Was hier NICHT steht: das Dashboard. Das baut landing-hero.js aus den ECHTEN Komponenten
-     der App -- Seitenleiste, Quick Actions, Dashboard-Seitenkopf, Visibility-Chart,
-     Top-Citations-Dashboard, mit deren echter CSS.
-
-     Die Sektion ist immer HELL, unabhaengig vom Thema der App. Die Zahlen im Fenster sind
-     Demodaten, die Marken darin erfunden (Kestrel, Vantage, Halden, Nimbus, Lumen).
-     Auf Schirmen unter 900px erscheint das Fenster nicht -- dort waere die Schrift darin
-     unlesbar klein; die Ueberschrift traegt die Sektion dann allein. -->
-<script>
+FUSS = '''<script>
 function messen(){
   var r = document.querySelector(".ulh-root");
   var v = r.querySelector(".ulh-view"), f = r.querySelector(".ulh-frame");
@@ -80,3 +68,7 @@ window.addEventListener("error", function(e){
 });
 setTimeout(messen, 6000);
 </script>
+'''
+
+open("_h_landing_pin.html", "w").write(KOPF + schnipsel + FUSS)
+print("_h_landing_pin.html neu gebaut, Pin %s" % pin.group(1))

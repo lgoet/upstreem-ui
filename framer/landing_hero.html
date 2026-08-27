@@ -2,74 +2,33 @@
      upstreem — Hero-Sektion. In Framer als Embed/Code-Element einfuegen, EINMAL.
 
      HIER, und nur hier, steht der Pin. Neuer Commit? Diese eine Zeichenkette tauschen,
-     sonst nichts. Leer oder "CDN_PIN" laedt @main -- fuer die oeffentliche Seite bitte
-     nicht: @main aendert sich mit jedem Push, und dann aendert sich die Seite ohne dein
-     Zutun.
+     sonst nichts -- und das gilt jetzt WIRKLICH: die Liste der Dateien steht nicht mehr
+     in diesem Schnipsel, sondern in landing-boot.js, und die kommt aus demselben Pin.
+     Vorher hing sie hier, und als Quick Actions dazukam, fehlte in Framer die Zeile
+     dafuer: das Markup der Palette war da, ihre CSS nicht.
+
+     Leer oder "CDN_PIN" laedt @main -- fuer die oeffentliche Seite bitte nicht: @main
+     aendert sich mit jedem Push, und dann aendert sich die Seite ohne dein Zutun.
      ============================================================================ -->
-<div class="ulh-root" data-cdn-pin="f82aab4"></div>
-
-<!-- Was hier NICHT steht: das Dashboard. Das baut landing-hero.js aus den ECHTEN Komponenten
-     der App -- Seitenleiste, Dashboard-Seitenkopf, Visibility-Chart, Top-Citations-Dashboard,
-     mit deren echter CSS. Dieses Schnipsel muss deshalb nicht angefasst werden, wenn sich die
-     App aendert; ein neuer Pin genuegt.
-
-     Die Sektion ist immer HELL, unabhaengig vom Thema der App. Die Zahlen im Fenster sind
-     Demodaten, die Marken darin erfunden (Kestrel, Vantage, Halden, Lumen, Orbit).
-     Auf Schirmen unter 900px erscheint das Fenster nicht -- dort waere die Schrift darin
-     unlesbar klein; die Ueberschrift traegt die Sektion dann allein. -->
+<div class="ulh-root" data-cdn-pin="PIN_HIER"></div>
 
 <script>
 (function(){
-  /* Den Pin aus dem Wurzelelement lesen und nicht aus document.currentScript: in Framer landet
-     dieses Schnipsel in einem eigenen Rahmen, und currentScript ist dort je nach Einbauart nicht
-     das, was man erwartet. Ueber die Klasse findet es sich immer. */
-  function pin(){
-    var el = document.querySelector(".ulh-root");
-    var v = el && el.getAttribute("data-cdn-pin");
-    return (!v || v === "CDN_PIN") ? "main" : v;
-  }
-  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + pin() + "/";
-
-  /* Einmal pro Dateiname, nicht pro URL -- dieselbe Buchfuehrung wie in den Bubble-Ladern. Auf der
-     Landingpage gibt es zwar nur eine Sektion, aber Framer baut ein Embed bei jeder Navigation neu
-     ein, und ohne die Sperre haengen nach ein paar Seitenwechseln zwoelf Kopien im Kopf. */
-  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
-  function once(url, make){
-    var name = url.slice(url.lastIndexOf("/") + 1);
-    if (L[name]) return;
-    L[name] = url; make(url);
-  }
-  function css(f){
-    once(base + f, function(u){
-      var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u;
-      document.head.appendChild(l);
-    });
-  }
-  /* async = false ist PFLICHT und keine Feinheit: ein per createElement eingehaengtes Skript laeuft
-     sonst, sobald es da ist, und dann kann visibility-chart.js vor core.js starten und findet
-     window.UpstreemCore nicht. Mit async = false halten die Skripte ihre Reihenfolge. */
-  function js(f){
-    once(base + f, function(u){
-      var s = document.createElement("script"); s.src = u; s.async = false;
-      document.head.appendChild(s);
-    });
-  }
-
-  css("core.css");
-  css("sidebar.css");
-  css("page-headers/dashboard-page-header.css");
-  css("visibility-chart.css");
-  css("topcitations-dashboard.css");
-  css("quick-actions.css");
-  css("landing-hero.css");
-
-  js("core.js");
-  js("sidebar.js");
-  js("page-headers/dashboard-page-header.js");
-  js("visibility-chart.js");
-  js("topcitations-dashboard.js");
-  js("quick-actions.js");
-  /* Zuletzt: diese Datei ruft die Setter der anderen. */
-  js("landing-hero.js");
+  var el = document.querySelector(".ulh-root");
+  var v = el && el.getAttribute("data-cdn-pin");
+  var pin = (!v || v === "PIN_HIER" || v === "CDN_PIN") ? "main" : v;
+  var s = document.createElement("script");
+  s.src = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + pin + "/landing-boot.js";
+  s.async = false;
+  document.head.appendChild(s);
 })();
 </script>
+
+<!-- Was hier NICHT steht: das Dashboard. Das baut landing-hero.js aus den ECHTEN Komponenten
+     der App -- Seitenleiste, Quick Actions, Dashboard-Seitenkopf, Visibility-Chart,
+     Top-Citations-Dashboard, mit deren echter CSS.
+
+     Die Sektion ist immer HELL, unabhaengig vom Thema der App. Die Zahlen im Fenster sind
+     Demodaten, die Marken darin erfunden (Kestrel, Vantage, Halden, Nimbus, Lumen).
+     Auf Schirmen unter 900px erscheint das Fenster nicht -- dort waere die Schrift darin
+     unlesbar klein; die Ueberschrift traegt die Sektion dann allein. -->
