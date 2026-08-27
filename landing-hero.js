@@ -362,7 +362,11 @@
   function ohneTipps(root){
     var view = root.querySelector(".ulh-view");
     if (!view) return;
-    ["data-tip", "data-tiplabel"].forEach(function(attr){
+    /* data-explain gehoert dazu: daran haengt das Erklaerungs-Popover von core, und die Zeile mit
+       den Datenpunkten unter jeder Antwort traegt es (am-evidence, data-explain="evidence"). Ohne
+       diese Zeile erschien beim Ueberfahren ein Kasten mit einer Erklaerung, die auf der
+       Landingpage niemandem hilft. */
+    ["data-tip", "data-tiplabel", "data-explain"].forEach(function(attr){
       var treffer = view.querySelectorAll("[" + attr + "]");
       for (var i = 0; i < treffer.length; i++) treffer[i].removeAttribute(attr);
     });
@@ -556,11 +560,11 @@
      dass man beim Zaehlen mitlesen kann.
      WANDER_DAUER gilt fuer das Verschieben der Zeilen -- in der Tabelle und im Tooltip. Eine Zeile,
      die eine ganze Sekunde braucht, um zwei Plaetze weit zu rutschen, wirkt schwerfaellig; eine
-     zaehlende Zahl braucht die Zeit dagegen. 930, 700 und 620 waren alle drei zu traege -- jetzt
-     480ms. Die Zeilen stehen damit fast eine halbe Sekunde, bevor die Zahlen und die Linien fertig
-     sind, und genau so ist es gewollt. */
+     zaehlende Zahl braucht die Zeit dagegen. 930, 700, 620 und 480 waren der Reihe nach alle zu
+     traege -- jetzt 400ms. Die Zeilen stehen damit eine halbe Sekunde, bevor die Zahlen und die
+     Linien fertig sind, und genau so ist es gewollt. */
   var SZENE_DAUER = 930;
-  var WANDER_DAUER = 480;
+  var WANDER_DAUER = 400;
   /* Der Zeitpunkt, an dem die Platzziffer springt -- die halbe Strecke DER WANDERUNG, ausgedrueckt
      in der Zeit des Zaehlwerks, weil die Ziffer aus dem Zaehlwerk gesetzt wird. Seit die zwei
      Dauern auseinanderliegen, waeren 0.5 des Zaehlwerks zwei Drittel der Wanderung. */
@@ -953,27 +957,72 @@
   var MIRA_WARTEN = 6000;        /* nach dem Ende des Erscheinens */
   var MIRA_FRAGE = "Create an AI Visibility Report for Q3 2026";
   var MIRA_ZEICHEN_MS = 34;      /* je Zeichen -- 43 Zeichen ergeben rund 1.5 Sekunden */
-  var MIRA_PAUSE_MS = 420;       /* zwischen dem letzten Zeichen und dem Abschicken */
-  var MIRA_DENKT_MS = 2000;
+  /* Zwei Sekunden zwischen dem letzten Zeichen und dem Abschicken: die Frage soll gelesen werden
+     koennen, bevor sie weg ist. */
+  var MIRA_PAUSE_MS = 2000;
+  var MIRA_DENKT_MS = 3000;
+  /* Die Zeit, die unter der Antwort steht. Sie hat NICHTS mit MIRA_DENKT_MS zu tun: das Denken im
+     Schaustueck dauert drei Sekunden, ein echter Report ueber ein Quartal braucht ein Vielfaches
+     davon, und die Zahl darunter soll die echte Groessenordnung nennen. */
+  var MIRA_GEDACHT_MS = 24000;
 
-  /* Ein Marken-Chip im Antworttext. Genau die Form, die Mira selbst schickt: ein span mit
-     data-mira-entity-type und der Kennung der Marke. decorateEntitySpans in ask-mira.js setzt
-     daraus den Chip mit Logo -- wir bauen den Chip also NICHT nach, wir liefern nur die Rohform,
-     die die Komponente ohnehin erwartet. */
-  function miraChip(id){
+  /* Ein Chip im Antworttext. Genau die Form, die Mira selbst schickt: ein span mit
+     data-mira-entity-type und einer Kennung. decorateEntitySpans in ask-mira.js setzt daraus den
+     Chip mit Logo -- wir bauen den Chip also NICHT nach, wir liefern nur die Rohform, die die
+     Komponente ohnehin erwartet. data-mira-entity-id fuer alle Typen, weil die Aufloesung dieses
+     Feld als erstes probiert; die typspezifischen Namen (company_id und so weiter) braucht es
+     dadurch nicht. */
+  function miraChip(art, id, text){
+    return '<span data-mira-entity-type="' + art + '" data-mira-entity-id="' + id + '">' +
+           text + '</span>';
+  }
+  function markeChip(id){
     var m = MARKEN.filter(function(x){ return x.id === id; })[0];
     if (!m) return "";
-    return '<span data-mira-entity-type="brand" data-mira-company-id="' + m.id + '">' + m.name + '</span>';
+    /* Die eigene Marke ist "brand", jede andere "competitor". Danach richtet sich der Chip: Farbe,
+       Zeichen und die Beschriftung in der Datenpunktzeile (Your Brand gegen Competitor). */
+    return miraChip(id === "ke" ? "brand" : "competitor", m.id, m.name);
   }
 
-  /* Die Belegliste, aus der die Chips ihr Logo ziehen. company_id UND entity_id gefuellt: die
-     Auflösung in ask-mira.js probiert beide Felder, und welches der Server fuellt, ist je Typ
-     verschieden -- hier stehen beide, dann trifft sie in jedem Fall. */
+  /* Die zwei Quellen, auf die die Empfehlungen zeigen. Erfundene Domains (*.example): die Aussage
+     "dort steht der Wettbewerber und du nicht" ist eine Behauptung, und unter einem echten Namen
+     waere sie eine Behauptung ueber diese Seite. Das Zeichen entsteht wie das der Marken, in einem
+     neutralen Grau. */
+  var MIRA_QUELLEN = [
+    /* Kurze Pfade mit Absicht: der Chip zeigt Domain UND Pfad, und ein langer Pfad schiebt den
+       Listenpunkt auf zwei Zeilen -- 26px, die im Fenster fehlen. */
+    { id: "u1", domain: "industryguide.example", pfad: "/ai-tools",
+      titel: "Best AI visibility tools, 2026 edition" },
+    { id: "u2", domain: "community.example", pfad: "/pricing",
+      titel: "Pricing comparison thread" }
+  ];
+  function quelleChip(i){
+    var q = MIRA_QUELLEN[i];
+    return miraChip("url", q.id, q.domain + q.pfad);
+  }
+
+  /* Die Belegliste. Aus ihr zieht jeder Chip sein Logo, und aus ihren TYPEN baut Mira die Zeile mit
+     den Datenpunkten unter der Antwort: brand -> Your Brand, competitor -> Competitor, url -> URL,
+     response -> Response. Alle vier stehen deshalb drin, und jeder wird im Text auch wirklich
+     genannt -- eine Marke in der Zeile, die im Text nicht vorkommt, waere eine Behauptung ueber
+     Daten, die die Antwort nicht benutzt. */
   function miraBelege(){
-    return MARKEN.map(function(m){
-      return { id: "ev-" + m.id, type: "brand", entity_id: m.id, company_id: m.id,
-               company_name: m.name, title: m.name, icon_url: m.logo, action: "open_brand" };
+    var aus = MARKEN.map(function(m){
+      return { id: "ev-" + m.id, type: m.id === "ke" ? "brand" : "competitor",
+               entity_id: m.id, company_id: m.id, company_name: m.name, title: m.name,
+               icon_url: m.logo, action: m.id === "ke" ? "open_brand" : "open_competitor" };
     });
+    MIRA_QUELLEN.forEach(function(q){
+      aus.push({ id: "ev-" + q.id, type: "url", entity_id: q.id, title: q.titel,
+                 url: "https://" + q.domain + q.pfad, entity_url: "https://" + q.domain + q.pfad,
+                 domain: q.domain, icon_url: zeichen(q.domain.charAt(0).toUpperCase(), "#6f737c"),
+                 action: "open_url" });
+    });
+    aus.push({ id: "ev-r1", type: "response", entity_id: "r1",
+               title: "Which AI visibility tool should we use?", subtitle: "chatgpt",
+               prompt_run_id: "r1", action: "open_response",
+               icon_url: zeichen("C", "#10a37f") });
+    return aus;
   }
 
   /* Erwaehnungen je Marke. Aus der Visibility gerechnet und nicht erfunden: 106 Nennungen je
@@ -984,19 +1033,25 @@
     return String(n).replace(/\B(?=(\d{3})+$)/g, ",");
   }
 
-  /* Die Antwort. Tabelle OBEN mit Marken und Kennzahlen, danach der Text -- so steht sie auch in
-     der App. Die Zahlen kommen aus demselben Zustand B, in den der Filterwechsel das Dashboard
+  /* Die Antwort. Aufbau wie in der App: Tabelle oben, zwei Absaetze Deutung darunter, dann eine
+     Ueberschrift und die Empfehlungen.
+     VIER Zeilen in der Tabelle und nicht sechs -- die Antwort soll ohne Scrollen in das Fenster
+     passen, und die unteren zwei Marken tragen zur Aussage nichts bei.
+     Nur Elemente, die der Sanitizer von Mira durchlaesst (h3, h4, p, ul, li, strong, em, table,
+     span mit data-mira-*). Ein img waere hier zwecklos, er faellt raus; die Logos kommen ueber die
+     Chips. Die Zahlen kommen aus demselben Zustand B, in den der Filterwechsel das Dashboard
      gebracht hat: eine Antwort mit anderen Zahlen als das Fenster darueber waere der auffaelligste
-     Widerspruch, den diese Sektion haben koennte.
-     Nur Elemente, die der Sanitizer von Mira durchlaesst (h3, h4, p, ul, li, strong, table, span
-     mit data-mira-*). Ein img waere hier zwecklos -- er faellt raus; die Logos kommen ueber die
-     Chips. */
+     Widerspruch, den diese Sektion haben koennte. */
+  var MIRA_ZEILEN = 4;
+
   function miraAntwort(){
     var tab = tabelle("b");
-    var zeilen = tab.map(function(r){
-      return '<tr><td>' + miraChip(r.company_id) + '</td>' +
+    var zeilen = tab.slice(0, MIRA_ZEILEN).map(function(r){
+      return '<tr><td>' + markeChip(r.company_id) + '</td>' +
              '<td>' + r.visibility_pct.toFixed(1) + '%</td>' +
-             '<td>' + r.avg_rank.toFixed(1) + '</td>' +
+             /* Das # vor dem Rang, in der dritten Textfarbe -- wie in der Rangspalte des
+                Dashboards. em ist der Haken dafuer, siehe landing-hero.css. */
+             '<td><em>#</em> ' + r.avg_rank.toFixed(1) + '</td>' +
              '<td>' + r.sentiment + '</td>' +
              '<td>' + miraNennungen(r.visibility_pct) + '</td></tr>';
     }).join("");
@@ -1004,22 +1059,19 @@
     return '<h3>AI Visibility Report, Q3 2026</h3>' +
       '<table><thead><tr><th>Brand</th><th>Visibility</th><th>Rank</th><th>Sentiment</th>' +
       '<th>Mentions</th></tr></thead><tbody>' + zeilen + '</tbody></table>' +
-      '<p>' + miraChip("ke") + ' closed the quarter as the most visible brand in your market, ahead of ' +
-      miraChip("va") + ' and ' + miraChip("ha") + '. Visibility grew from 24.6% to ' +
-      ke.visibility_pct.toFixed(1) + '% and the average rank moved from 2.4 to ' +
-      ke.avg_rank.toFixed(1) + '.</p>' +
-      '<h4>What moved</h4><ul>' +
-      '<li>Editorial sources are the largest single driver at <strong>31.4%</strong> of all ' +
-      'citations, up 2.1 points over the quarter.</li>' +
-      '<li>' + miraChip("ve") + ' overtook ' + miraChip("lu") + ' for fifth place, gaining 3.8 points ' +
-      'while ' + miraChip("lu") + ' lost 2.8.</li>' +
-      '<li>Sentiment for ' + miraChip("ke") + ' rose from 74 to ' + ke.sentiment +
-      ', the strongest reading in the set.</li>' +
-      '</ul><h4>Where to look next</h4><ul>' +
-      '<li>Comparison prompts still mention ' + miraChip("va") + ' more often than ' +
-      miraChip("ke") + '. That gap is the cheapest remaining win.</li>' +
-      '<li>Your own pages account for <strong>9.3%</strong> of citations. Knowledge base sources sit ' +
-      'at 11.7% and are the fastest route upward.</li>' +
+      /* ZWEI Zeilen Deutung, nicht zwei Absaetze, und danach drei kurze Empfehlungen. Der Grund ist
+         gemessen: die Antwort muss ohne Scrollen in das Fenster passen, und mit fuenf Zeilen Prosa
+         plus vier zweizeiligen Punkten waren es 340px zu viel. Kuerzer ist hier auch besser: eine
+         Antwort, die man im Vorbeigehen liest, hat drei Punkte und nicht sieben. */
+      '<p>' + markeChip("ke") + ' closed the quarter first, ahead of ' + markeChip("va") + ' and ' +
+      markeChip("ha") + ': visibility ' + ke.visibility_pct.toFixed(1) + '%, rank ' +
+      ke.avg_rank.toFixed(1) + ', sentiment ' + ke.sentiment + '. Editorial sources carry ' +
+      '<strong>31.4%</strong> of every citation, your own pages 9.3%.</p>' +
+      '<h4>What to do next</h4><ul>' +
+      '<li>' + quelleChip(0) + ' names ' + markeChip("va") + ' in every comparison answer, never you.</li>' +
+      '<li>' + quelleChip(1) + ' puts ' + markeChip("ha") + ' above you on all five pricing prompts.</li>' +
+      '<li>' + miraChip("response", "r1", "This response") + ' lists four competitors and leaves you out.</li>' +
+      '<li>Knowledge base sources sit at 11.7% of citations and are the fastest route upward.</li>' +
       '</ul>';
   }
 
@@ -1028,7 +1080,8 @@
     return [
       { id: "lh-m1", role: "user", content: MIRA_FRAGE, created_at: jetzt },
       { id: "lh-m2", role: "assistant", status: "success", created_at: jetzt,
-        content_html: miraAntwort(), evidence_items: miraBelege(), latency_ms: MIRA_DENKT_MS }
+        content_html: miraAntwort(), evidence_items: miraBelege(),
+        latency_ms: MIRA_GEDACHT_MS }
     ];
   }
 
@@ -1056,6 +1109,19 @@
     /* Der aktive Chat MUSS gesetzt sein, bevor die erste Nachricht kommt. Ohne ihn faellt Mira nach
        140ms auf den Startbildschirm zurueck (_maybeHomeIfUnknownChat) -- eine abgeschickte Frage,
        die kurz aufblitzt und dann verschwindet. Gemessen, als der Aufruf noch fehlte. */
+    /* Der Titel oben links kommt NICHT aus einem eigenen Setter: Mira sucht den aktiven Chat in der
+       Liste der frueheren Chats und nimmt dessen title (renderChatTitlebar in ask-mira.js). Ohne
+       diese Liste blieb dort das Ladeskelett stehen. titlePending muss dazu aus, sonst zeigt die
+       Zeile weiter den Lader -- auch mit vorhandenem Titel. */
+    if (window.askMiraSetPreviousChats) window.askMiraSetPreviousChats([
+      { id: "lh-chat", title: "AI Visibility Report Q3 2026", updated_at: new Date().toISOString() }
+    ]);
+    if (window.askMiraSetTitlePending) window.askMiraSetTitlePending("no");
+    /* Die Quellen-Chips sollen ihr Zeichen zeigen und nicht das allgemeine Kettensymbol: die
+       Voreinstellung fuer Zitate ist "icon", hier "favicon". Marke und Antwort stehen ohnehin auf
+       logo, werden aber mitgegeben, damit die drei Werte an einer Stelle stehen. */
+    if (window.askMiraSetSettings) window.askMiraSetSettings(
+      { brand: "logo", citation: "favicon", response: "logo" });
     if (window.askMiraSetActiveChat) window.askMiraSetActiveChat("lh-chat");
     if (ta){
       ta.value = "";

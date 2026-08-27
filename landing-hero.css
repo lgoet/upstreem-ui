@@ -386,9 +386,17 @@
    - ein border-top machte die Zeile 1px hoeher und verschoebe das ganze Raster,
    - ein eigener background muesste ueberblendet werden, und dann faerbte sich auch das Ueberfahren
      mit der Maus weich, was es nicht soll.
-   Der zweite Schatten mit 100px Spread fuellt die Kachel; der erste liegt darueber und ist die
-   Linie. Die Linie UNTEN gehoert den Zellen (.vt-td border-bottom) und liegt als Kind ohnehin ueber
-   beiden Schatten -- sie bleibt also stehen.
+   Der zweite Schatten mit 100px Spread fuellt die Kachel. Die Linie UNTEN gehoert den Zellen
+   (.vt-td border-bottom) und liegt als Kind ohnehin ueber beiden Schatten -- sie bleibt stehen.
+
+   Die Linie OBEN liegt AUSSERHALB der Zeile (0 -1px 0) und nicht innen (inset 0 1px 0), und das ist
+   der Unterschied, der als "andere Farbe" aufgefallen ist. Innen sass sie in den ersten Pixeln der
+   Zeile, waehrend der Nachbar darueber seine eigene Trennlinie in den letzten Pixeln vor der Zeile
+   hat: zwei 1px-Linien direkt untereinander, also eine 2px starke Kante -- und die liest sich als
+   dunkler, obwohl beide denselben Ton haben (gemessen rgb(231,233,236) auf beiden Seiten).
+   Aussen liegt sie GENAU auf der Linie des Nachbarn. Die wandernde Zeile hat einen eigenen
+   Stapelplatz und deckt sie dabei ab, es bleibt also eine einzige 1px-Linie -- und sobald die Zeile
+   das Raster verlassen hat, ist es ihre eigene.
    Die Ueberblendung steht auf der Grundregel, damit sie in BEIDE Richtungen laeuft: beim Anlegen
    der Klasse und beim Abfallen. box-shadow und nichts sonst -- der Hover setzt background, davon
    bleibt er unberuehrt. */
@@ -396,7 +404,7 @@
 .ulh-app .vt-row.is-wandert {
   position: relative;
   z-index: 1;
-  box-shadow: inset 0 1px 0 var(--vc-border), inset 0 0 0 100px var(--vc-bg);
+  box-shadow: 0 -1px 0 var(--vc-border), inset 0 0 0 100px var(--vc-bg);
 }
 
 /* ---------- Das Fenster ---------- */
@@ -538,6 +546,67 @@
 /* Das Panel der frueheren Chats bleibt zu und braucht seinen Knopf hier nicht -- ohne Bubble gibt
    es keine Chats, die es zeigen koennte. */
 .ulh-app .am-prev-btn { display: none; }
+
+/* Das Eingabefeld ist VOR dem Tippen vollstaendig leer. Mira laesst dort sonst Beispielfragen
+   durchlaufen -- neben einer Frage, die sich gerade selbst tippt, sind das zwei Texte, die um
+   dieselbe Zeile streiten. Der native Platzhalter ist waehrend des Durchlaufs ohnehin leer
+   (updateLoopState in ask-mira.js), es bleibt also nichts stehen. */
+.ulh-app #am-ph-loop { display: none; }
+
+/* Nach dem Abschicken faellt das Eingabefeld weg. Mira faehrt es beim ersten Satz aus der Mitte
+   nach unten (200ms, has-messages), und in genau dieser Bewegung blendet es aus: im Schaustueck
+   kann niemand etwas eingeben, und ein leeres Feld unter einer fertigen Antwort ist eine
+   Aufforderung, die ins Leere geht. Dieselbe Dauer wie die Fahrt, sonst laufen zwei Bewegungen
+   verschieden lang. */
+.ulh-app .am-composer-area { transition: opacity 200ms ease; }
+.ulh-app #ask-mira.has-messages .am-composer-area { opacity: 0; }
+
+/* Der Zurueck-Knopf in der Titelzeile: 32 -> 24px, das Zeichen darin 16 -> 14px. Beide Werte
+   zusammen, wie es §1 verlangt -- ein 16px-Zeichen in einem 24px-Knopf haette an den Rand
+   gestossen. */
+.ulh-app .am-ct-back { width: 24px; height: 24px; padding: 0; border-radius: 7px; }
+.ulh-app .am-ct-back svg { width: 14px; height: 14px; }
+
+/* Der Abstand zwischen Frage und Antwort: 38 -> 24px. Im Fenster steht genau ein Paar, und 38px
+   dazwischen lassen es wie zwei Bloecke ohne Zusammenhang aussehen. */
+.ulh-app .am-messages { gap: 24px; }
+
+/* Der Chat muss OHNE Scrollen hineinpassen, und dafuer reicht es nicht, ihn kuerzer zu texten.
+   Gemessen: 1026px Inhalt in 686px Flaeche, also 340px zu viel. Die Rechnung darunter:
+     Polster oben 25 + unten 44          -> 12 und 24, das sind 33 gespart
+     Schriftgroesse 16 -> 15px           -> rund 6 Prozent auf jeden Textblock
+     Abstaende zwischen den Bloecken     -> etwa halbiert, das sind rund 60
+     dazu ein deutlich kuerzerer Text (siehe landing-hero.js)
+   Alles zusammen, nicht einzeln: jede einzelne Massnahme haette nicht gereicht. */
+.ulh-app .am-chat { padding-top: 12px; padding-bottom: 24px; }
+.ulh-app .am-msg .am-bubble { font-size: 15px; }
+.ulh-app .am-msg .am-bubble > .am-table-scroll { margin: 10px 0 12px; }
+.ulh-app .am-msg .am-bubble > p { margin-bottom: 8px; }
+.ulh-app .am-msg .am-bubble > h3 { margin-bottom: 4px; }
+.ulh-app .am-msg .am-bubble > h4 { margin: 10px 0 4px; }
+.ulh-app .am-msg .am-bubble > ul { margin: 6px 0 8px; }
+.ulh-app .am-msg .am-bubble > .am-evidence { margin-top: 10px; }
+/* Die Knopfreihe unter jeder Nachricht (Kopieren, Export, Daumen) faellt weg. Sie steht mit
+   opacity 0 im FLUSS und kostet damit 28px je Nachricht, also 56 von den 95, die zu viel waren --
+   und benutzen kann sie hier niemand: die Buehne schluckt jeden Klick. */
+.ulh-app .am-msg-actions { display: none; }
+/* Die Zellen der Antworttabelle 9 -> 6px hoch gepolstert. Fuenf Zeilen mal zwei Seiten sind 30px,
+   und die Tabelle bleibt lesbar: 12px seitlich stehen unveraendert. */
+.ulh-app .am-msg table td,
+.ulh-app .am-msg table th { padding-top: 6px; padding-bottom: 6px; }
+
+/* Der Chat SCROLLT NICHT. Ein Schaustueck mit einer Scrollflaeche darin ist eine Einladung, die
+   niemand annehmen kann -- der Zeiger bleibt darin haengen, und die Sektion sieht kaputt aus.
+   Reicht die Hoehe nicht, wird unten abgeschnitten; die graue Blende dafuer bringt das Fenster
+   schon mit (.ulh-view::after), sie liegt ueber jeder Seite und nicht nur ueber dem Dashboard. */
+.ulh-app .am-chat { overflow: hidden; }
+
+/* Das # vor dem Rang in der Antworttabelle, in der dritten Textfarbe -- so steht es auch in der
+   Rangspalte des Dashboards.
+   em und keine eigene Klasse: der Sanitizer von Mira laesst an einem span nur seine data-mira-*
+   Attribute durch und an allem anderen KEIN class. Von den erlaubten Inline-Elementen ist em das
+   am wenigsten belegte, also ist es hier der Haken -- die Kursivstellung wird zurueckgenommen. */
+.ulh-app .am-msg table em { font-style: normal; color: var(--vc-third); }
 
 /* Fuenf Zeilen statt sieben, und die Kaesten schrumpfen mit. .vot-box steht in der App fest auf
    427px; bei fuenf Zeilen a 55px (visibility-chart.css) bleiben sonst zwei Zeilen Luft unter der
