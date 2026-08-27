@@ -26,10 +26,10 @@
   --ulh-grund: #ffffff;
   /* Die Blende. Derselbe Ton wie die Leiste (#f5f5f5) machte den Rahmen dort unsichtbar, wo die
      Leiste anliegt; 15% dunkler (#d0d0d0 = 208) war zu viel und sah nach einem grauen Balken aus.
-     #e8e8e8 (232) war noch zu dunkel, #f0f0f0 (240) richtig. Jetzt mit einem Stich desselben Blaus
-     wie der Schimmer am Chip: 8% #98CEF2 auf #f0f0f0 gerechnet ergibt #e9edf1 -- kuehl genug, dass
-     man es neben dem Weiss merkt, und weit davon entfernt, blau zu WIRKEN. */
-  --ulh-blende: #e9edf1;
+     Der Weg: #f5f5f5 unsichtbar, #d0d0d0 ein grauer Balken, #e8e8e8 zu dunkel, #e9edf1 mit Blau
+     noch zu dunkel. Jetzt #f2f5f8 -- dieselbe Mischung (8% #98CEF2), nur auf einem hellen Grau
+     statt auf #f0f0f0. Das Blau bleibt drin, der Ton ist heller. */
+  --ulh-blende: #f2f5f8;
   --ulh-schirm: #ffffff;
   --ulh-text: #1f1f1b;
   --ulh-muted: #6f737c;
@@ -109,54 +109,76 @@
   color: var(--ulh-muted);
 }
 /* ---------- Der Chip ueber der Ueberschrift ----------
-   32px hoch, Rahmen, und um ihn herum zieht ein Schimmer. Die Machart ist die aus deinem Beispiel 2:
-   EIN schmaler Streifen mit einem Verlauf, der an beiden Enden auf 0 laeuft, dreht um die Mitte des
-   Chips und wird vom overflow beschnitten -- sichtbar ist immer nur das Stueck, das gerade auf dem
-   Rand liegt. Der Kegelverlauf davor hatte eine harte Kante und sah nach einem laufenden Licht aus;
-   dieser wandert weich durch.
-   Der Streifen ist laenger als die halbe Diagonale des Chips (420 gegen etwa 130), sonst reicht er
-   in den Ecken nicht bis an den Rand. transform-origin: top center, damit er um seinen oberen Punkt
-   dreht, und der liegt in der Mitte des Chips. */
+   Das ist Beispiel 2 deiner Vorlage, Zeile fuer Zeile, nur in unseren Farben und auf 32px Hoehe:
+
+     .example-2      position: relative; overflow: hidden; display: flex; align-items: center;
+                     justify-content: center
+     .example-2 .inner  position: relative; z-index: 1; width: 100%; margin: 2px
+     .example-2::before content:""; display:block; height:300px; width:100px;
+                     background: linear-gradient(90deg, transparent 0%, GRAU 0.75 50%, transparent 100%);
+                     position:absolute; top:50%; transform-origin: top center;
+                     animation: rotate 5s linear forwards infinite
+
+   Was ich in den zwei Versuchen davor falsch hatte, und beides zusammen ist der Grund, warum es
+   nicht wie ein Rand aussah:
+     1. Der AEUSSERE Kasten hatte keine Fuellung. Damit zeigte der Ring die weisse Seite, und zu
+        sehen war kein leuchtender Rand, sondern ein blauer Fleck, der ueber Weiss wandert. In der
+        Vorlage hat die Karte einen Grund -- der Ring ist eine sichtbare Linie, und das Licht zieht
+        DURCH sie hindurch. Jetzt liegt die Randfarbe im aeusseren Kasten.
+     2. Kein left. In der Vorlage ist der Behaelter ein zentrierendes Flexfeld, und die statische
+        Lage eines absolut gesetzten Kindes ist darin die MITTE -- genau darum dreht der Streifen um
+        den Mittelpunkt. Ich hatte das mit left: 50% und einem negativen Rand nachgebaut; das ist
+        dasselbe, aber es verdeckt, woher es kommt. Jetzt steht es wie dort.
+   300px Streifenlaenge reichen: die halbe Diagonale des Chips sind etwa 126px. */
 .ulh-chip {
   position: relative;
+  overflow: hidden;
+  /* inline-flex und NICHT flex, obwohl in der Vorlage flex steht. Dort ist die Karte ein Kasten mit
+     eigener Breite; hier steht der Chip in einem Absatz, und ein blockweites Flexfeld nimmt dessen
+     ganze Breite. Gemessen war der Chip damit 732px breit -- ein riesiger grauer Balken, in dessen
+     Mitte die Textpille schwamm und um den das Licht in Zeitlupe zog. DAS war der Grund, warum es
+     immer noch falsch aussah, und nicht die Machart des Streifens. */
   display: inline-flex;
   align-items: center;
   justify-content: center;
   height: 32px;
   border-radius: 999px;
-  overflow: hidden;
-  isolation: isolate;
+  /* Der Ring. Ohne diese Fuellung gibt es keinen Rand, durch den etwas ziehen koennte. */
+  background: var(--ulh-border);
 }
 .ulh-chip::before {
   content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 90px;
-  height: 420px;
-  margin-left: -45px;
-  transform-origin: top center;
+  display: block;
   background: linear-gradient(90deg, rgba(152, 206, 242, 0) 0%,
               var(--ulh-funke) 50%, rgba(152, 206, 242, 0) 100%);
-  animation: ulhSchimmer 5s linear infinite;
+  height: 300px;
+  width: 100px;
+  position: absolute;
+  animation: ulhSchimmer 5s linear forwards infinite;
+  z-index: 0;
+  top: 50%;
+  /* left und der negative Rand muessen SEIN, obwohl die Vorlage ohne sie auskommt. Dort ist die
+     Karte etwa so breit wie der Streifen, also liegt seine statische Lage ohnehin fast in der
+     Mitte. Diese Pille ist 199px breit: ohne left sitzt der Drehpunkt bei 50px vom linken Rand,
+     der Streifen kreist um einen Punkt weit links, und auf der rechten Haelfte des Rings kommt
+     nie Licht an. Gemessen: bei 35 und 115 Grad war auf dem Ring kein Blau zu sehen.
+     -50px ist die halbe Streifenbreite, damit der Drehpunkt genau in der Mitte liegt. */
+  left: 50%;
+  margin-left: -50px;
+  transform-origin: top center;
 }
-/* Der Vertrag meldet ulhFunke als ENTFERNT -- das ist der Name der vorigen Bewegung, und die
-   Meldung ist richtig. Kein Bruch: der Name stand ausschliesslich in dieser Datei, wurde nur von
-   .ulh-chip::before benutzt und ist im Commit davor entstanden. Bubble und die App kennen ihn
-   nicht. */
-@keyframes ulhSchimmer { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes ulhSchimmer { to { transform: rotate(360deg); } }
 .ulh-chip-in {
   position: relative;
   z-index: 1;
+  margin: 1px;
   display: inline-flex;
   align-items: center;
-  margin: 1px;
   height: calc(100% - 2px);
   padding: 0 14px;
   border-radius: 999px;
-  border: 1px solid var(--ulh-border);
   background: var(--ulh-grund);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -446,6 +468,96 @@
    Wert am eigenen Element schlaegt jeden geerbten -- am Vorfahren gesetzt blieb es bei 250,
    gemessen. Die Spalte daneben misst die Breite ohnehin selbst nach. */
 .ulh-app .usn-bar { --usn-w: 234px; }
+
+/* ---------- Alle Schriften im Fenster eine Stufe kleiner ----------
+   Erzeugt aus einer Messung und nicht geschaetzt: alle Textelemente im Fenster durchgezaehlt, nach
+   ihrer wirklichen Schriftgroesse gruppiert, und jede Gruppe genau 1px kleiner. Deshalb steht hier
+   eine Liste von Klassen und keine Regel mit *: die Komponenten setzen ihre Groessen in px, es gibt
+   keinen einzigen Hebel dafuer, und eine Regel auf * traefe auch Elemente, deren Groesse von einem
+   Elternteil kommt -- die wuerden dann zweimal verkleinert.
+   Nicht dabei: .up-logo-ltr. Diese Klasse kommt im Fenster in ZWEI Groessen vor (7px und 11px), und
+   eine Regel koennte nur eine davon treffen -- die 7px waeren dann groesser geworden statt kleiner.
+   Es ist der Rueckfallbuchstabe fuer ein fehlendes Logo, und unsere Marken haben Logos.
+
+   .check_reinvention.py meldet diese Regeln als GESPRENGTES Bauteil, und die Regel dahinter ist
+   richtig: wer einen Wert eines Bauteils aendert, muss die anderen im Verhaeltnis mitziehen -- 15px
+   Text in einem Kasten fuer 13px stoesst an den Rahmen. Hier geht es aber in die ANDERE Richtung:
+   der Text wird kleiner, die Kaesten bleiben. Kleinerer Text in einem unveraenderten Kasten kann
+   nicht anstossen, er laesst nur mehr Luft. Und es gilt ausschliesslich im Schaustueck -- jede
+   dieser Regeln haengt an .ulh-app und erreicht die App nicht.
+   Die Zeilenhoehen der beiden Tabellen ziehen unten mit, das war die ausdrueckliche Ansage. */
+.ulh-app .up-ph-heading { font-size: 27px; }
+.ulh-app .n { font-size: 15px; }
+.ulh-app .up-ph-desc { font-size: 14px; }
+.ulh-app .dph-kpi-label,
+.ulh-app .dph-kpi-value,
+.ulh-app .tcd-head-count,
+.ulh-app .tcd-head-label,
+.ulh-app .tct-name,
+.ulh-app .tct-num,
+.ulh-app .tct-used,
+.ulh-app .up-num,
+.ulh-app .usn-teamname,
+.ulh-app .vot-head-count,
+.ulh-app .vot-head-label,
+.ulh-app .vot-heading,
+.ulh-app .vt-brand-name { font-size: 13px; }
+.ulh-app .up-pop-label,
+.ulh-app .up-pop-opt-l,
+.ulh-app .usn-teamrow-name,
+.ulh-app .usn-txt { font-size: 12.5px; }
+.ulh-app .mqa-trigger-label,
+.ulh-app .tct-td,
+.ulh-app .up-filter-submit,
+.ulh-app .up-ment-name,
+.ulh-app .up-sent-val,
+.ulh-app .usn-acc-name,
+.ulh-app .vt-td { font-size: 12px; }
+.ulh-app .lbl,
+.ulh-app .pph-metaname,
+.ulh-app .tcd-brand-label,
+.ulh-app .tcd-mode-btn,
+.ulh-app .tct-tag-lbl,
+.ulh-app .tct-th,
+.ulh-app .up-company-name,
+.ulh-app .up-ment-noresult,
+.ulh-app .usn-count,
+.ulh-app .usn-teamrow-dom,
+.ulh-app .vc-gran-btn,
+.ulh-app .vt-th { font-size: 11px; }
+.ulh-app .usn-acc-mail,
+.ulh-app .usn-av { font-size: 10.5px; }
+.ulh-app .up-bar-name,
+.ulh-app .up-bar-name-out,
+.ulh-app .up-bar-pct,
+.ulh-app .up-bar-pct-out,
+.ulh-app .up-filter-reset,
+.ulh-app .up-filter-title,
+.ulh-app .up-pop-action,
+.ulh-app .up-pop-head,
+.ulh-app .usn-head-lbl,
+.ulh-app .vot-filter-count { font-size: 10px; }
+.ulh-app .mqa-kbd { font-size: 9.5px; }
+
+/* Die Trendangabe: im Schritt davor von 13 auf 12, jetzt mit allen anderen auf 11. Das Zeichen
+   bleibt bei 15px -- kleiner wird der Pfeil unleserlich. */
+.ulh-app .up-trend { font-size: 11px; }
+
+/* Die Zeilen beider Tabellen 8px flacher: 55 -> 47. Die 55 stehen in visibility-chart.css und in
+   topcitations-dashboard.css, beide mit height UND flex-basis -- eines allein reicht nicht, die
+   Zeile ist ein Flex-Kind mit fester Basis. Die Luecke-Zeile im Chart geht von 50 auf 42 mit. */
+.ulh-app .vt-row { height: 47px; flex: 0 0 47px; }
+.ulh-app .vt-row.vt-gap { height: 42px; flex: 0 0 42px; }
+.ulh-app .tct-row { height: 47px; flex: 0 0 47px; }
+
+/* Die Balkenliste FUELLT den Kasten, statt mittig darin zu schweben. Die Komponente gibt ihr einen
+   automatischen Rand oben und unten (gemessen 27px und 27px), also stand sie in der Mitte.
+   Nur margin-bottom: auto haette sie nach oben geschoben und 54px Leerraum darunter gelassen --
+   gemessen. Deshalb nicht schieben, sondern verteilen: die Liste nimmt die ganze Hoehe, und die
+   sieben Zeilen teilen sie sich. Damit ist oben angesetzt und unten nichts uebrig, ohne dass hier
+   eine Hoehe geraten werden muss. */
+.ulh-app .up-bars { margin: 0; flex: 1 1 auto; }
+.ulh-app .up-bar-row { flex: 1 1 auto; }
 
 /* ---------- Schmal ---------- */
 /* Auf dem Telefon gar kein Fenster. Gemessen bei 700px Fensterbreite: das Mass faellt auf 0.50,

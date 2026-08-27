@@ -1050,6 +1050,7 @@
   "tcd-goto",
   "tcd-head",
   "tcd-head-count",
+  "tcd-head-label",
   "tcd-head-sep",
   "tcd-head-tools",
   "tcd-heading",
@@ -2596,6 +2597,7 @@
   "vot-goto",
   "vot-head",
   "vot-head-count",
+  "vot-head-label",
   "vot-head-sep",
   "vot-head-tools",
   "vot-heading",
@@ -2684,7 +2686,7 @@
   "globals": 137,
   "payloadkeys": 86,
   "dataattrs": 199,
-  "klassen": 1980,
+  "klassen": 1982,
   "keyframes": 59
  }
 }
