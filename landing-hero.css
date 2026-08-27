@@ -23,14 +23,17 @@
         Diese Sektion ist immer hell.
      Die Werte sind die hellen Werte aus core (--vc-bg, --vc-heading-bg, --vc-text, --vc-muted,
      --vc-sk). Aendert sich dort die helle Palette, gehoert sie hier nachgezogen. */
-  --ulh-grund: #ffffff;
+  /* #FFFFFFF2 statt #ffffff: Weiss bei 95% Deckkraft (F2 = 242 von 255). Damit scheint hinter der
+     Sektion der Grund der Framer-Seite um fuenf Prozent durch, und hinter dem Fenster das blaue
+     Bild. Die Vorlage macht es genauso -- ihr Fensterhintergrund steht bei 80%. */
+  --ulh-grund: #FFFFFFF2;
   /* Die Blende. Derselbe Ton wie die Leiste (#f5f5f5) machte den Rahmen dort unsichtbar, wo die
      Leiste anliegt; 15% dunkler (#d0d0d0 = 208) war zu viel und sah nach einem grauen Balken aus.
      Der Weg: #f5f5f5 unsichtbar, #d0d0d0 ein grauer Balken, #e8e8e8 zu dunkel, #e9edf1 mit Blau
      noch zu dunkel. Jetzt #f2f5f8 -- dieselbe Mischung (8% #98CEF2), nur auf einem hellen Grau
      statt auf #f0f0f0. Das Blau bleibt drin, der Ton ist heller. */
   --ulh-blende: #f2f5f8;
-  --ulh-schirm: #ffffff;
+  --ulh-schirm: #FFFFFFF2;
   --ulh-text: #1f1f1b;
   --ulh-muted: #6f737c;
   --ulh-border: #e0e2e6;
@@ -105,6 +108,8 @@
   max-width: 560px;
   margin: clamp(16px, 2.2vh, 22px) auto 0;
   font-size: clamp(15px, 1.25vw, 18px);
+  /* 500 statt der geerbten 400 -- 100 mehr, wie gewuenscht. */
+  font-weight: 500;
   line-height: 1.45;
   color: var(--ulh-muted);
 }
@@ -206,7 +211,9 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-weight: 500;
+  /* 600, also auch 100 mehr: die drei Treiber sollen weiter eine Stufe kraeftiger stehen als der
+     Satz darueber. */
+  font-weight: 600;
   color: var(--ulh-text);
 }
 .ulh-driver svg { width: 16px; height: 16px; flex: 0 0 auto; color: var(--ulh-muted); }
@@ -232,10 +239,6 @@
 .ulh-btn-sec:hover { background: #f7f7f8; }
 .ulh-btn-pri { border: 1px solid var(--ulh-text); background: var(--ulh-text); color: #ffffff; }
 .ulh-btn-pri:hover { background: #33332e; border-color: #33332e; }
-
-/* Die drei Begriffe stehen als eigene Elemente da, obwohl sie hier nur kraeftiger gesetzt sind:
-   sie sollen spaeter durchwechseln, und dann braucht jeder seinen eigenen Kasten. */
-.ulh-sub b { font-weight: 500; color: var(--ulh-text); }
 
 /* ---------- Der Hintergrund ----------
    Zwei Ebenen, beide unten verankert und nach OBEN ausblendend, beide hinter allem:
@@ -391,7 +394,9 @@
   transform-origin: top left;
   display: flex;
   align-items: stretch;
-  background: var(--ulh-schirm);
+  /* KEINE eigene Fuellung. Sie stand hier und an .ulh-main, zusammen mit der am Ausschnitt waren es
+     drei Ebenen -- bei 95% je Ebene kommt daraus praktisch deckendes Weiss, und von der
+     Durchsichtigkeit bliebe nichts. Die Fuellung liegt jetzt einmal, am Ausschnitt. */
   /* Beschneiden muss HIER passieren, nicht nur am Ausschnitt. Die Seitenleiste ist position: fixed,
      und ein fixed positioniertes Element beschneidet nur der Vorfahre, der auch sein Bezugsrahmen
      ist -- das ist dieser hier (er traegt das transform), nicht .ulh-view mit seinem overflow.
@@ -415,7 +420,6 @@
      sind in den Komponenten schon 16px, die mussten nicht angefasst werden. */
   gap: 16px;
   padding: 9px 16px 0;
-  background: var(--ulh-schirm);
 }
 /* Die Komponenten im Fenster sind Schaustuecke. Nichts darin ist anklickbar, und der Zeiger soll
    das auch nicht behaupten -- der Ablauf spaeter fuehrt die Maus selbst.
