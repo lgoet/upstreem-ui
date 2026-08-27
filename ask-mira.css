@@ -144,6 +144,20 @@
   .am-brand { display: inline-flex; align-items: center; gap: 7px; min-width: 0; }
   .am-logo-mark { width: 28px; height: 28px; flex: 0 0 auto; display: grid; place-items: center; color: var(--am-muted); transform: translateY(1px); }
   .am-logo-mark svg { width: 26px; height: 25px; fill: currentColor; }
+  /* Das Logo im Kopf ist jetzt dasselbe Symbol wie in der Leiste: Lucide galaxy. Vorher lag hier
+     ein gezeichneter Schwung aus sieben Pfaden in einem 44x43-Kasten. Groesse bleibt, wie sie war
+     (26px), nur quadratisch statt 26x25 -- der Kasten des Symbols ist quadratisch.
+     fill: none, weil UC.icon ein Strichsymbol liefert. Der gefuellte Kern traegt sein eigenes
+     fill als Attribut am Kreis und ueberlebt das Erben.
+     Das svg SETZT ask-mira.js ein und nicht die Bubble-Vorlage -- die ist nur die Vorlage fuer
+     eine Neuinstallation und erreicht ein bereits eingebautes Element nicht. Bis das JS da ist,
+     bleibt der Platz LEER statt das alte Zeichen zu zeigen und es dann zu tauschen: der Lader
+     braucht auf der echten Seite Sekunden, und ein Logo, das nach vier Sekunden ein anderes wird,
+     ist schlimmer als eine kurze Luecke. Bleibt das JS ganz aus, laesst es die Klasse weg und das
+     alte Zeichen der Vorlage wird sichtbar -- besser als ein leeres Feld. */
+  .am-logo-mark > * { display: none; }
+  .am-logo-mark.is-icon > * { display: block; }
+  .am-logo-mark.is-icon svg { width: 26px; height: 26px; fill: none; }
   .am-wordmark {
     font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
     /* 28px flat, the Page Header Kit's .up-ph-heading size -- "mira" IS this page's heading, so it

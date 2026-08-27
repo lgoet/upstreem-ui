@@ -4361,6 +4361,20 @@
     requestAnimationFrame(function(){ requestAnimationFrame(blendeFrei); });
     setTimeout(blendeFrei, 120);
   })();
+  /* Das Logo im Kopf: dasselbe Symbol wie in der Leiste. Aus demselben Grund hier gebaut wie das
+     Hintergrundbild -- die Bubble-Vorlage erreicht ein bereits eingebautes Element nicht.
+     Liefert der Kern kein galaxy (eine aeltere core.js an einem anderen Pin), bleibt die Klasse
+     aus und das gezeichnete Zeichen der Vorlage wird sichtbar. Ein leeres Feld waere die
+     schlechtere Antwort auf eine alte Datei. */
+  (function logoSetzen(){
+    var m = root.querySelector('.am-logo-mark');
+    if (!m || m.classList.contains('is-icon')) return;
+    var kern = window.UpstreemCore;
+    var svg = (kern && kern.icon) ? kern.icon('galaxy', 1.8) : '';
+    if (!svg) return;
+    m.innerHTML = svg;
+    m.classList.add('is-icon');
+  })();
   if (window.__askMiraMarket && !S.market) S.market = String(window.__askMiraMarket).toLowerCase();
   if (window.__askMiraTheme) window.askMiraSetTheme(window.__askMiraTheme);
   resolveLang();

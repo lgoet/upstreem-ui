@@ -5,8 +5,6 @@
      weil ein Versionsanhang in dieser Sitzung mehrfach an einer alten Datei vorbeigemessen hat.
      Geprueft wird: liegt die Ebene im DOM, greifen die Werte aus core.css, deckt sie nichts zu,
      geht sie bei has-messages auf 0 -- und wer setzt has-messages, die Komponente selbst. -->
-<link rel="stylesheet" href="core.css">
-<link rel="stylesheet" href="ask-mira.css">
 <body style="margin:0;font-family:system-ui,sans-serif">
 <div style="padding:8px;display:flex;gap:6px;flex-wrap:wrap;background:#eee">
   <button onclick="thema('light')">hell</button>
@@ -205,8 +203,29 @@
 
   </div>
 </div>
-<script src="core.js"></script>
-<script src="ask-mira.js"></script>
+<script>
+/* Frische BEWEISEN statt hoffen: alles per fetch mit no-store holen und inline einsetzen. Ein
+   blanker src hat hier gerade eine GECACHTE core.js geladen -- die Datei auf der Platte enthielt
+   galaxy, das geladene UC.icon kannte es nicht, und das Logo blieb leer. Dieselbe Bauart wie
+   _h_usn.html, dort aus demselben Grund. */
+(function(){
+  var files = ["core.css","ask-mira.css","core.js","ask-mira.js"];
+  var texts = {};
+  Promise.all(files.map(function(f){
+    return fetch(f + "?nocache=" + Math.random(), { cache: "no-store" })
+      .then(function(r){ return r.text(); }).then(function(t){ texts[f] = t; });
+  })).then(function(){
+    files.forEach(function(f){
+      var el = document.createElement(/\.css$/.test(f) ? "style" : "script");
+      el.textContent = texts[f];
+      document.head.appendChild(el);
+    });
+    window.__geladen = { core_js: texts["core.js"].length, mira_js: texts["ask-mira.js"].length,
+                         core_hat_galaxy: texts["core.js"].indexOf("galaxy:") >= 0 };
+    setTimeout(function(){ try { messen(); } catch(e){} }, 400);
+  });
+})();
+</script>
 <script>
 var W = document.getElementById("out");
 function root(){ return document.getElementById("ask-mira"); }
@@ -270,5 +289,4 @@ function messen(){
   W.textContent = JSON.stringify(o, null, 1);
   return o;
 }
-setTimeout(messen, 400);
 </script>
