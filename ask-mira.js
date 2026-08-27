@@ -2728,6 +2728,12 @@
     if (S.isLoading) return;
     var quote = explicit ? '' : getQuoteValue();
     if (!typed && !quote) return;
+    /* Vom Startschirm aus geht der Fokus mit dem Absenden aus dem Feld. Dort wandert der Composer
+       gleich darauf nach unten in die Chatansicht, und ein blinkender Cursor in einem Kasten, der
+       sich bewegt, sieht falsch aus -- auf dem Telefon bleibt ausserdem die Tastatur stehen und
+       verdeckt die Antwort. IN der Chatansicht bleibt der Fokus: dort will man weitertippen. */
+    var warSchonImChat = root.classList.contains('has-messages');
+    if (!warSchonImChat && elTextarea) elTextarea.blur();
     if (elSettingsPanel && elSettingsPanel.classList.contains('is-open')) toggleSettings(false);   // collapse the tray on first send
     var full = quote ? ('"' + quote + '"' + (typed ? ('\n\n' + typed) : '')) : typed;
 

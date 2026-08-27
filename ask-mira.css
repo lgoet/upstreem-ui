@@ -877,8 +877,12 @@
      --vc-hover-border, Fuellung --vt-row-hover. Vorher standen hier zwei feste Zahlen, und die
      dunkle war #2a2a2a DECKEND -- die Marke ist rgba(42,42,42,0.6), auf #121212 also etwa
      rgb(30,30,30) statt rgb(42,42,42). Genau das war als "zu hell" gemeldet. Mit den Marken
-     braucht es auch keine eigene Zeile je Thema mehr. */
-  .am-cat-card:hover { border-color: var(--vc-hover-border); background: var(--vt-row-hover); }
+     braucht es auch keine eigene Zeile je Thema mehr.
+     -solid und nicht --vt-row-hover: der Wert ohne Suffix ist rgba(42,42,42,0.6), also
+     DURCHSICHTIG. Auf dem Startschirm liegt hinter den Karten das Hintergrundbild, und beim Hover
+     schien dessen Raster durch -- die Karte verlor ihren Boden. -solid ist derselbe Ton als voller
+     Wert und liegt vier Stufen daneben (36 statt 32 im Dunkeln), was niemand sieht. */
+  .am-cat-card:hover { border-color: var(--vc-hover-border); background: var(--vt-row-hover-solid); }
   /* leading = a left-tilted little "document" tile, larger than the row so it bleeds past the bottom
      and is clipped by the card (same logic as the report cards); absolute -> no extra card height */
   .am-cat-ic {
@@ -976,14 +980,29 @@
   .am-rep-range-lbl { max-width: 132px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   .am-rep-cards { display: flex; flex-direction: column; gap: 7px; margin-top: 14px; }
+  /* .check_reinvention.py meldet diese Regel als moeglichen Nachbau von .up-seg-btn, weil sie
+     background, border, border-radius, cursor und transition zusammen setzt. Sie ist keiner: das
+     ist eine Reportkarte mit einem gekippten Dokumentbild links (76px Einzug dafuer), Titel,
+     Unterzeile und Winkelzeichen -- ein Knopf des Segmentschalters hat davon nichts. Geaendert
+     wurde hier nur die Fuellung und der Hoverzustand, und die kommen jetzt aus den Haus-Marken;
+     die Regel ist damit naeher am Haus als vorher, nicht weiter weg. */
   .am-rep-card {
     position: relative; overflow: hidden;
     display: flex; align-items: center; gap: 13px; width: 100%; text-align: left;
-    border: 1px solid var(--am-border); border-radius: 12px; background: var(--am-card);
+    border: 1px solid var(--am-border); border-radius: 12px;
+    /* --am-bg und nicht --am-card: dieselbe Fuellung wie die Kategoriekarten, also #ffffff hell und
+       #121212 dunkel. Im Dunkeln stand hier --am-card (#1b1b1b) und weiter unten ein Override auf
+       transparent -- das SAH aus wie #121212, war aber durchsichtig, und seit hinter dem
+       Startschirm das Hintergrundbild liegt, schien das Raster durch die Karte. */
+    background: var(--am-bg);
     padding: 12px 13px 12px 76px; cursor: pointer; font-family: inherit;
     transition: border-color 140ms ease, background 140ms ease;
   }
-  .am-rep-card:hover { border-color: var(--am-muted-2); background: var(--am-soft); }
+  /* Der Hoverzustand des Hauses, DECKEND. --vt-row-hover ist rgba(42,42,42,0.6) und damit
+     durchsichtig; auf einer Karte ueber dem Hintergrundbild scheint das Bild durch, und die Karte
+     verliert beim Hover ihren Boden. --vt-row-hover-solid ist derselbe Ton als voller Wert
+     (#f7f7f7 hell, #242424 dunkel) und existiert in core genau fuer diesen Fall. */
+  .am-rep-card:hover { border-color: var(--vc-hover-border); background: var(--vt-row-hover-solid); }
   /* leading element = a left-tilted little "document" card; larger than the row so it bleeds past the
      bottom edge and is clipped by the card (absolute so it never changes the card height) */
   .am-rep-ic {
@@ -1018,8 +1037,9 @@
   #ask-mira[data-theme="dark"] .am-rep-edit { background: #2a2a2a; border-color: #3a3a3a; }
   #ask-mira[data-theme="dark"] .am-rep-edit:hover { color: #ececec; border-color: #707070; background: #353638; }
   /* dark mode: report cards without background, like the category cards */
-  #ask-mira[data-theme="dark"] .am-rep-card { background: transparent; }
-  #ask-mira[data-theme="dark"] .am-rep-card:hover { background: #2a2a2a; border-color: #707070; }
+  /* Die zwei dunklen Sonderzeilen fuer die Reportkarte sind weg: --am-bg und
+     --vt-row-hover-solid drehen sich mit dem Thema, und #2a2a2a war deckend, aber zu hell --
+     dieselbe Meldung wie bei den Kategoriekarten. */
   #ask-mira[data-theme="dark"] .am-rep-ic { background: rgba(42,42,42,0.3); border-color: #3a3a3a; box-shadow: 0 1px 4px rgba(0,0,0,.28); }
   #ask-mira[data-theme="dark"] .am-rep-card:hover .am-rep-ic { background: rgba(53,54,56,0.3); color: #ececec; box-shadow: 0 3px 10px rgba(0,0,0,.38); }
 
