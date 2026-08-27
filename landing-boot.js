@@ -66,6 +66,8 @@
   css("topcitations-dashboard.css");
   css("quick-actions.css");
   css("ask-mira.css");
+  css("page-headers/prompts-page-header.css");
+  css("prompts-table.css");
   css("landing-hero.css");
 
   js("core.js");
@@ -75,6 +77,8 @@
   js("topcitations-dashboard.js");
   js("quick-actions.js");
   js("ask-mira.js");
+  js("page-headers/prompts-page-header.js");
+  js("prompts-table.js");
   /* Zuletzt: diese Datei ruft die Setter der anderen. */
   js("landing-hero.js");
 })();

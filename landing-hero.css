@@ -67,7 +67,7 @@
      sofort losgehen und lange auslaufen. .22/1/.36/1 war die erste Fassung und noch zu gleichmaessig;
      .16/1/.3/1 liegt naeher an easeOutExpo -- nach einem Drittel der Zeit sind gut 80 Prozent des
      Weges getan. --ulh-ease waere hier falsch, das ist ein ein- UND ausschleichender Verlauf. */
-  --ulh-aus: cubic-bezier(.16, 1, .3, 1);
+  --ulh-aus: cubic-bezier(.1, 1, .2, 1);
   position: relative;
   /* width: 100% ist hier PFLICHT und nicht Kosmetik. Ein Block-div fuellt seinen Eltern nur, wenn
      der ein normaler Block-Kontext ist. Steht die Sektion in einem FLEX-Eltern -- und genau so
@@ -375,8 +375,10 @@
    :not(.is-entering): waehrend des Erscheinens laeuft auf demselben Element eine animation, und die
    schlaegt jede transition. Ohne diese Bedingung sprang das Fenster in der Sekunde, in der die
    Animation endete, auf 80 Prozent. So beginnt die Verkleinerung erst danach -- und dann weich. */
-/* 1290ms, die Haelfte laenger als die 860 davor. */
-.ulh-frame { transform-origin: center center; transition: transform 1290ms var(--ulh-aus); }
+/* 1800ms. Der Reihe nach 860 -> 1290 -> 1800, und der Verlauf jedes Mal staerker ausschleifend
+   (.22/1/.36/1 -> .16/1/.3/1 -> .1/1/.2/1): nach einem Viertel der Zeit sind rund 80 Prozent des
+   Weges getan, der Rest laeuft lange aus. */
+.ulh-frame { transform-origin: center center; transition: transform 1800ms var(--ulh-aus); }
 /* Der Faktor selbst steht NICHT hier, sondern als Inline-Stil aus landing-hero.js. Hier stand er,
    mit :not(.is-entering) davor, und er hat im Betrieb nicht gegriffen -- eine Regel mehr, deren
    Zutreffen von einer zweiten Klasse und von der Spezifitaet abhaengt. Der Inline-Stil kann von
@@ -403,12 +405,16 @@
   inset: 0;
   transition: opacity 345ms var(--ulh-ease);
 }
-.ulh-seite.is-weg { opacity: 0; }
-/* Mira liegt von Anfang an im Markup, aber unsichtbar: die Komponente braucht ihre echte Groesse,
-   um sich einzurichten (Chat-Hoehe, is-compact, Scrollsperre), und display: none haette ihr eine
-   Hoehe von 0 gemeldet. */
-.ulh-mira { opacity: 0; }
+/* Mira und die Prompts-Seite liegen von Anfang an im Markup, aber unsichtbar: die Komponenten
+   brauchen ihre echte Groesse, um sich einzurichten (Chathoehe, is-compact, Scrollsperre, die
+   Spaltenanpassung der Tabelle), und display: none haette ihnen eine Hoehe von 0 gemeldet. */
+.ulh-mira, .ulh-prompts { opacity: 0; }
 .ulh-seite.is-da { opacity: 1; }
+/* is-weg NACH is-da, und das ist kein Schoenheitsfehler in der Reihenfolge: eine Seite, die schon
+   dran WAR und jetzt weg soll, traegt beide Klassen. Beide haben dieselbe Spezifitaet, also
+   entscheidet die Reihenfolge -- und stand is-da hinten, blieb Mira mit Deckkraft 1 ueber der
+   Prompts-Seite liegen. Genau so gemessen. */
+.ulh-seite.is-weg { opacity: 0; }
 .ulh-seite.is-kommt { animation: ulhRise 690ms var(--ulh-ease) backwards; }
 
 /* Die Zeilen der Markentabelle wandern beim Filterwechsel an ihren neuen Platz. Die Bewegung setzt
@@ -558,7 +564,7 @@
 /* Die Leiste bringt ihre Breite selbst mit; rechts davon der Seiteninhalt.
    min-width: 0, sonst sprengt eine breite Tabelle die Spalte. */
 .ulh-side { flex: 0 0 auto; }
-.ulh-main {
+.ulh-main, .ulh-prompts {
   flex: 1 1 auto;
   min-width: 0;
   display: flex;
@@ -583,6 +589,41 @@
 /* Die Legende unter der Linie faellt weg: im Fenster steht sie doppelt, denn die Tabelle rechts
    nennt dieselben fuenf Marken mit demselben Zeichen. */
 .ulh-app .up-legend { display: none; }
+
+/* ---------- Die Prompts-Seite im Schaustueck ----------
+   Der Kasten der Tabelle auf 12px Radius, wie die vier Kaesten des Dashboards. In der App sind es
+   16 -- dort steht die Tabelle allein auf der Seite, hier neben Kaesten mit 12. */
+.ulh-app .up-box { border-radius: 12px; }
+
+/* Und dieselbe Verkleinerung der Schriften wie im Dashboard: dort liegt jede Groesse 1px unter der
+   App, und eine zweite Seite in derselben Sektion mit den Originalgroessen liest sich als ein
+   Sprung. Gemessen und nicht geraten -- die Werte links sind die, die die Komponente wirklich
+   zeigt (up-th 12, up-heading 14, upt-prompt-text 14, upt-grp-name 13.5 und so weiter).
+   Die geteilten up-*-Klassen (up-num, up-pop-*, up-filter-*, up-trend ...) stehen schon in den
+   Gruppen weiter oben und sind hier nicht zu wiederholen. */
+.ulh-app .up-heading,
+.ulh-app .up-head-label,
+.ulh-app .up-head-count,
+.ulh-app .upt-prompt-text,
+.ulh-app .upt-grp-sidehead-lbl { font-size: 13px; }
+.ulh-app .upt-grp-name { font-size: 12.5px; }
+.ulh-app .upt-brand-toggle,
+.ulh-app .upt-brand-toggle-lbl { font-size: 12.3px; }
+.ulh-app .upt-grp-sidechip,
+.ulh-app .upt-grp-sideitem { font-size: 12px; }
+/* .up-td steht NICHT hier: es ist schon 12px und damit auf demselben Wert wie .vt-td im
+   Dashboard -- eine 11 daraus zu machen haette die Zeilentexte der zwei Seiten auseinandergebracht,
+   also genau das Gegenteil. Gemessen, nicht angenommen. */
+.ulh-app .up-th,
+.ulh-app .up-page,
+.ulh-app .up-pager-info,
+.ulh-app .up-pagesize-lbl,
+.ulh-app .up-pagesize-btn,
+.ulh-app .up-stack-more,
+.ulh-app .upt-brand-label,
+.ulh-app .upt-grp-sidecount,
+.ulh-app .upt-selcount-n,
+.ulh-app .upt-status-btn { font-size: 11px; }
 
 /* Mira zeigt auf dem Startbildschirm ihre Kategorien -- im Schaustueck nicht: dort tippt der Ablauf
    selbst eine Frage ein, und eine Wand aus Karten daneben zieht den Blick von genau dieser Bewegung

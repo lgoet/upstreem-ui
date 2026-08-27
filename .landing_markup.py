@@ -33,6 +33,9 @@ TEILE = [
     # Regeln), also bleibt die id im Markup stehen -- eine zweite Instanz auf der Seite gibt es
     # nicht, und damit ist der Singleton unproblematisch.
     ("mira", "bubble/ask_mira_bubble.html", "lh-mira"),
+    # Dritte Szene: die Prompts-Seite, Kopf und Tabelle.
+    ("pph", "page-headers/bubble/prompts_page_header_bubble.html", "lh-pph"),
+    ("upt", "bubble/prompts_table_bubble.html", "lh-upt"),
 ]
 
 # Feste Werte fuer die Platzhalter. BRAND_NAME ist eine erfundene Marke -- erfundene Zahlen unter
@@ -46,6 +49,8 @@ ERSATZ = {
     "EXPORT_INSTANCE_ID": "",
     "BRAND_NAME": "Kestrel",
     "BRAND_LOGO_URL": "",
+    # NACH BRAND_LOGO_URL, nie davor: sonst wird aus BRAND_LOGO_URL ein "_URL".
+    "BRAND_LOGO": "",
 }
 
 
