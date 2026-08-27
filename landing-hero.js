@@ -1178,6 +1178,56 @@
     return true;
   }
 
+  /* Sobald die Seite bewegt wird, geht das Fenster auf 80 Prozent zurueck; oben angekommen wird es
+     wieder gross. Die Groesse selbst steht in der CSS (.is-klein), hier steht nur, WANN.
+
+     Erkannt wird es an der LAGE der Sektion und nicht nur an window.scrollY: welches Element eine
+     Seite scrollt, entscheidet der Baukasten drumherum -- Framer haengt eine Seite mitunter in einen
+     eigenen Kasten, und dann bewegt sich window.scrollY nie. Die Ruhelage ist das Maximum aller je
+     gemessenen Oberkanten: scrollen kann die Sektion nur nach OBEN schieben, ein hoeherer Wert ist
+     also immer der unbewegte Zustand. Das korrigiert sich auch selbst, wenn der Browser beim Laden
+     eine alte Scrollposition wiederherstellt.
+     Ein Pixel Schwelle und nicht null: eine wiederhergestellte Position kommt gelegentlich als
+     halber Pixel zurueck. */
+  function scrollGroesse(root){
+    if (root.__ulhScrollAn) return;
+    root.__ulhScrollAn = true;
+    var ruhe = null, klein = null;
+    function pruefen(){
+      var oben = root.getBoundingClientRect().top;
+      if (ruhe == null || oben > ruhe) ruhe = oben;
+      var y = window.scrollY || window.pageYOffset || 0;
+      var soll = y > 1 || (ruhe - oben) > 1;
+      if (soll === klein) return;
+      klein = soll;
+      if (soll) root.classList.add("is-klein"); else root.classList.remove("is-klein");
+    }
+    pruefen();
+    /* Zwei Zuhoerer, beide passiv: window fuer den Normalfall, dazu die Einfangphase am Dokument,
+       damit auch ein eigener Scrollkasten irgendwo darueber ankommt. pruefen() vergleicht mit dem
+       letzten Stand, ein zweiter Aufruf kostet also nichts. */
+    window.addEventListener("scroll", pruefen, { passive: true });
+    document.addEventListener("scroll", pruefen, { passive: true, capture: true });
+    window.addEventListener("resize", function(){ ruhe = null; pruefen(); });
+  }
+
+  /* Das Mausrad muss durch das Fenster hindurch an die Seite. Mira haengt einen eigenen
+     Rad-Zuhoerer an ihren Chat, der die Bewegung uebernimmt und preventDefault ruft -- und zwar
+     immer, wenn der Chat mehr Inhalt hat als Hoehe. Genau das ist hier der Fall: er ist nur
+     ABGESCHNITTEN (overflow: hidden), nicht kuerzer. Ueber dem Chat liess sich die Seite deshalb
+     nicht bewegen.
+     Abgefangen wird in der EINFANGPHASE, bevor Miras Zuhoerer dran ist, und nur die Weitergabe
+     gestoppt -- KEIN preventDefault. Dann tut der Browser, was er ohne jeden Zuhoerer tun wuerde:
+     die Seite bewegen. */
+  function radDurchlassen(root){
+    var view = root.querySelector(".ulh-view");
+    if (!view || view.__ulhRad) return;
+    view.__ulhRad = true;
+    ["wheel", "touchmove"].forEach(function(art){
+      view.addEventListener(art, function(e){ e.stopPropagation(); }, true);
+    });
+  }
+
   /* ---------- Start ----------------------------------------------------------------------- */
 
   /* Warten auf die Komponenten, aber nicht endlos. Diese Datei laeuft NACH ihnen, das heisst
@@ -1197,6 +1247,8 @@
   function los(root){
     bauen(root);
     nurSchauen(root);
+    radDurchlassen(root);
+    scrollGroesse(root);
     hellHalten(root);
     ohneTipps(root);
     mass(root);

@@ -63,6 +63,9 @@
   --ulh-verhaeltnis: 0.605;
   --ulh-t: 200ms;
   --ulh-ease: cubic-bezier(.4, 0, .2, 1);
+  /* Ein ausschleichender Verlauf fuer das Kleinerwerden. --ulh-ease ist ein ein- UND ausschleichender
+     Verlauf und fuer eine Bewegung ueber fast eine Sekunde zu traege am Anfang. */
+  --ulh-aus: cubic-bezier(.22, 1, .36, 1);
   position: relative;
   /* width: 100% ist hier PFLICHT und nicht Kosmetik. Ein Block-div fuellt seinen Eltern nur, wenn
      der ein normaler Block-Kontext ist. Steht die Sektion in einem FLEX-Eltern -- und genau so
@@ -272,10 +275,13 @@
   right: 0;
   bottom: 0;
   /* Die Blende. Zwei Angaben, weil Safari die Kurzform noch mit Praefix braucht. */
-  -webkit-mask-image: linear-gradient(to bottom, transparent 26%, rgba(0,0,0,.18) 42%,
-                      rgba(0,0,0,.62) 60%, #000 78%);
-  mask-image: linear-gradient(to bottom, transparent 26%, rgba(0,0,0,.18) 42%,
-              rgba(0,0,0,.62) 60%, #000 78%);
+  /* Die Stufen liegen jetzt rund zehn Punkte hoeher als zuerst (26/42/60/78): die Grafik setzt
+     weiter oben ein und ist bei zwei Dritteln der Hoehe schon voll da. Subtil kraeftiger, ohne
+     dass sie in die Ueberschrift laeuft -- oben bleiben 16 Prozent ganz frei. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 16%, rgba(0,0,0,.18) 32%,
+                      rgba(0,0,0,.62) 50%, #000 66%);
+  mask-image: linear-gradient(to bottom, transparent 16%, rgba(0,0,0,.18) 32%,
+              rgba(0,0,0,.62) 50%, #000 66%);
 }
 /* Das blaue Bild: unten mittig, ueber die ganze Breite, und nur ein Hauch davon. Die Datei ist ein
    CorelDRAW-Export mit 12527x8769 -- also flach; auf voller Breite steht sie im unteren Drittel. */
@@ -344,6 +350,23 @@
   .ulh-root.is-entering .vot-root,
   .ulh-root.is-entering .tcd-root,
   .ulh-root .ulh-seite.is-kommt { animation: none; }
+}
+
+/* ---------- Kleiner, sobald die Seite bewegt wird ----------
+   Das ganze Fenster geht auf 80 Prozent -- WIRKLICH skaliert, nicht schmaler: Schriftgroessen,
+   Abstaende und Polster darin bleiben im Verhaeltnis genau, wie sie sind. Ein transform kann das,
+   eine Aenderung der Breite nicht (dort waeren die Schriften unveraendert gross und alles andere
+   enger).
+   transform-origin: center: der Kasten darum behaelt seine Layouthoehe, also waechst der Abstand
+   nach oben, unten, links und rechts gleichmaessig. Genau dort kommen spaeter die Nachbarn hin.
+   860ms, ein Viertel laenger als eine Stufe des Erscheinens (690), mit ausschleifendem Verlauf.
+   :not(.is-entering): waehrend des Erscheinens laeuft auf demselben Element eine animation, und die
+   schlaegt jede transition. Ohne diese Bedingung sprang das Fenster in der Sekunde, in der die
+   Animation endete, auf 80 Prozent. So beginnt die Verkleinerung erst danach -- und dann weich. */
+.ulh-frame { transform-origin: center center; transition: transform 860ms var(--ulh-aus); }
+.ulh-root.is-klein:not(.is-entering) .ulh-frame { transform: scale(.8); }
+@media (prefers-reduced-motion: reduce) {
+  .ulh-frame { transition: none; }
 }
 
 /* ---------- Die zwei Seiten im Fenster ----------
@@ -476,7 +499,12 @@
   position: relative;
   width: 100%;
   height: 0;
-  padding-bottom: calc(var(--ulh-verhaeltnis) * 100%);
+  /* 50px flacher als das Verhaeltnis ergibt. Als Abzug in Pixeln und nicht als kleineres
+     Verhaeltnis: 50px sollen 50px bleiben, egal wie breit das Fenster ist -- ein geaendertes
+     Verhaeltnis waere bei 1600px Breite ein anderer Abzug als bei 1000.
+     Was unten wegfaellt, faellt weg: das Dashboard ist ohnehin angeschnitten, und bei Mira ist
+     darunter Platz. */
+  padding-bottom: calc(var(--ulh-verhaeltnis) * 100% - 50px);
   overflow: hidden;
   /* Kleiner als der Rahmen: 12 gegen 16, gemessen an der Vorlage. Der Unterschied ist genau die
      Blende -- ein Schirm mit demselben Radius wie sein Rahmen sieht aufgeklebt aus. */
@@ -588,7 +616,7 @@
    Alles zusammen, nicht einzeln: jede einzelne Massnahme haette nicht gereicht. */
 .ulh-app .am-chat { padding-top: 12px; padding-bottom: 24px; }
 .ulh-app .am-msg .am-bubble { font-size: 15px; }
-.ulh-app .am-msg .am-bubble > .am-table-scroll { margin: 10px 0 12px; }
+.ulh-app .am-msg .am-bubble > .am-table-scroll { margin: 10px 0 24px; }
 .ulh-app .am-msg .am-bubble > p { margin-bottom: 8px; }
 .ulh-app .am-msg .am-bubble > h3 { margin-bottom: 4px; }
 .ulh-app .am-msg .am-bubble > h4 { margin: 10px 0 4px; }
@@ -607,7 +635,20 @@
    niemand annehmen kann -- der Zeiger bleibt darin haengen, und die Sektion sieht kaputt aus.
    Reicht die Hoehe nicht, wird unten abgeschnitten; die graue Blende dafuer bringt das Fenster
    schon mit (.ulh-view::after), sie liegt ueber jeder Seite und nicht nur ueber dem Dashboard. */
-.ulh-app .am-chat { overflow: hidden; }
+/* Mit der Kennung davor: #ask-mira:not(.has-messages) .am-chat setzt overflow-y: auto und hat mit
+   einer id eine hoehere Spezifitaet als .ulh-app allein -- auf dem Startbildschirm hat die Regel
+   hier also nicht gewonnen. Gemessen an der Liste der zutreffenden Regeln.
+
+   clip und NICHT hidden, und das ist der Kern: hidden macht aus dem Chat weiter eine Scrollflaeche
+   (nur eine, die der Nutzer nicht bewegen darf), und auf ihr liegt in ask-mira.css
+   "overscroll-behavior: contain !important". Damit endet jede Radbewegung ueber dem Chat DORT und
+   geht nicht an die Seite weiter -- genau der Bericht "auf dem Mira-Chat passiert beim Scrollen
+   nichts". clip erzeugt gar keine Scrollflaeche, also greift overscroll-behavior nicht mehr, und
+   das Rad landet dort, wo es hingehoert: auf der Seite.
+   Der Weg ueber ein eigenes !important waere der andere gewesen -- und der falsche: die Regel
+   drueben ist ein bewusster Schutz fuer echte Telefone, und ich haette sie mit einem zweiten
+   !important ueberschrieben, statt den Zustand herzustellen, in dem sie gar nicht zutrifft. */
+.ulh-app #ask-mira .am-chat { overflow: clip; }
 
 /* Das # vor dem Rang in der Antworttabelle, in der dritten Textfarbe -- so steht es auch in der
    Rangspalte des Dashboards.
