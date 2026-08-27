@@ -97,10 +97,13 @@
      wie eine Messreihe mit Bewegung. */
   var VERLAUF = [0, 1.0, 0.55, -0.85, -0.15, 0.95];
 
-  /* Amplitude 3% bis 8% der eigenen Basis, gestaffelt statt gewuerfelt: fuenf Marken, fuenf Stufen.
-     Gestaffelt, damit dasselbe Bild bei jedem Laden herauskommt -- ein Chart, das sich bei jedem
-     Aufruf anders bewegt, wirkt wie ein Fehler, und niemand kann sich auf einen Screenshot berufen. */
-  function amplitude(mi){ return 0.03 + (mi % 5) * 0.0125; }
+  /* Amplitude 6% bis 16% der eigenen Basis, gestaffelt statt gewuerfelt: fuenf Marken, fuenf
+     Stufen. Das Doppelte der ersten Fassung (3% bis 8%) -- die Ausschlaege waren zu klein, um als
+     Bewegung zu lesen.
+     Gestaffelt, damit dasselbe Bild bei jedem Laden herauskommt: ein Chart, das sich bei jedem
+     Aufruf anders bewegt, wirkt wie ein Fehler, und niemand kann sich auf einen Screenshot
+     berufen. */
+  function amplitude(mi){ return 0.06 + (mi % 5) * 0.025; }
 
   function reihen(){
     var monate = monatsliste(), out = [];
@@ -225,6 +228,21 @@
         e.preventDefault();
         e.stopPropagation();
       }, true);
+    });
+  }
+
+  /* Keine Tooltips. Sie haengen an data-tip (und in der Leiste an data-tiplabel), und das Kit von
+     core baut daraus ein Element AN <body> -- ausserhalb dieser Sektion, also mit einer CSS-Regel
+     von hier gar nicht erreichbar. Deshalb an der Quelle: die Attribute kommen weg, dann hat das
+     Kit nichts zu zeigen.
+     Wiederholt, weil die Komponenten ihr Markup ueber mehrere Sekunden aufbauen und die Leiste ihre
+     Zeilen bei jeder Aenderung neu schreibt -- deshalb steht der Aufruf auch in der Uhrenkette. */
+  function ohneTipps(root){
+    var view = root.querySelector(".ulh-view");
+    if (!view) return;
+    ["data-tip", "data-tiplabel"].forEach(function(attr){
+      var treffer = view.querySelectorAll("[" + attr + "]");
+      for (var i = 0; i < treffer.length; i++) treffer[i].removeAttribute(attr);
     });
   }
 
@@ -391,6 +409,7 @@
     bauen(root);
     nurSchauen(root);
     hellHalten(root);
+    ohneTipps(root);
     mass(root);
     /* KEIN MutationObserver auf data-theme. Der erste Versuch hatte einen: hellHalten schreibt die
        Attribute, die Komponenten HABEN darauf eigene Beobachter ("components read data-isdark in
@@ -405,13 +424,14 @@
        Puffer, Heartbeat --, also muss das Nachfassen so lange reichen. Kreisen kann es nicht: es
        sind feste Zeitpunkte, und hellHalten schreibt nur, wo der Wert abweicht. */
     [300, 900, 2000, 4000, 8000].forEach(function(ms){
-      setTimeout(function(){ hellHalten(root); mass(root); }, ms);
+      setTimeout(function(){ hellHalten(root); ohneTipps(root); mass(root); }, ms);
     });
     var n = 0;
     (function warte(){
       if (bereit()){
         try { fuellen(); } catch (e){ if (window.console) console.warn("[landing-hero]", e); }
         hellHalten(root);
+        ohneTipps(root);
         /* Die Leiste entsteht erst, wenn core ihre Wurzel gesehen hat -- das kann nach dem Setter
            liegen. Also nachfassen, bis sie da ist, und dann noch einmal messen. */
         (function holen(k){

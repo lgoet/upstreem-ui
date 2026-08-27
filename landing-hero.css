@@ -26,9 +26,9 @@
   --ulh-grund: #ffffff;
   /* Die Blende. Derselbe Ton wie die Leiste (#f5f5f5) machte den Rahmen dort unsichtbar, wo die
      Leiste anliegt; 15% dunkler (#d0d0d0 = 208) war zu viel und sah nach einem grauen Balken aus.
-     Jetzt #e8e8e8 = 232, also 5% dunkler als die Leiste -- und es ist --vc-sk, der Skelettgrau-Ton
-     des Hauses, nicht eine dritte selbst gemischte Stufe. */
-  --ulh-blende: #e8e8e8;
+     #e8e8e8 (232) war noch zu dunkel. Jetzt #f0f0f0 = 240, also 2% dunkler als die Leiste: gerade
+     genug, dass der Rahmen dort, wo die Leiste anliegt, noch als Kante zu sehen ist. */
+  --ulh-blende: #f0f0f0;
   --ulh-schirm: #ffffff;
   --ulh-text: #1f1f1b;
   --ulh-muted: #6f737c;
@@ -123,14 +123,14 @@
    Blende und Schirm nehmen --ulh-blende und --ulh-schirm: dasselbe Verhaeltnis wie in der Vorlage.
    Deckend und nicht mit Alpha, weil die Seite darunter weiss ist. */
 .ulh-frame {
-  /* Volle Breite des Platzes, aber hoechstens 1200. Der dritte Versuch, und diesmal aus dem Grund
-     heraus: 100% war zu breit, 75% zu schmal -- und ein PROZENTWERT ist hier ueberhaupt der falsche
-     Hebel. In Framer sitzt die Sektion in einem Abschnitt, dessen Breite ich nicht kenne; 75% davon
-     sind auf einer schmalen Seite winzig und auf einer breiten riesig. Ein Deckel in Pixeln ist von
-     der Umgebung unabhaengig: schmaler Abschnitt -> ausgefuellt, breiter -> 1200 und mittig.
-     1200 statt der 1080 der Vorlage, weil attio.com mit 1080 auf einer 1440er Seite gemessen ist,
-     die Sektion hier aber in einem Abschnitt ohne dieses Umfeld steht. */
-  width: min(100%, 1200px);
+  /* Volle Breite des Platzes, hoechstens 1440 -- DERSELBE Deckel wie in der Vorlage
+     (max-w-[1440px]). Ein PROZENTWERT ist hier der falsche Hebel: ich kenne die Breite des
+     Framer-Abschnitts nicht, und 75% davon sind auf einer schmalen Seite winzig. Der Deckel ist
+     davon unabhaengig -- schmaler Abschnitt wird ausgefuellt, breiter bei 1440 gedeckelt und
+     mittig. Attios Fenster ist auf einer 1440er Seite 1080 breit und auf einer 1920er 1440; mit
+     diesem Deckel kommt bei jeder Seite ab 1440 dasselbe heraus.
+     Vorher standen hier 1200 -- zu schmal, so gemeldet. */
+  width: min(100%, 1440px);
   margin: 0 auto;
   border-radius: 16px;
   padding: 0 6px 6px;
@@ -234,6 +234,18 @@
 .ulh-app .vot-box { height: 317px; }
 .ulh-app .vot-root.is-max .vot-box-left,
 .ulh-app .vot-root.is-max .vot-box-right { height: 317px; }
+
+/* Der Day-Knopf soll normal aussehen. Er ist gesperrt, und das ist RICHTIG: die Serie spannt sechs
+   Monate, und ueber 92 Tagen ist eine Tageskurve unlesbar (UC.granAvailability) -- in der App
+   gehoert der Knopf dann ausgegraut. Im Schaustueck erklaert das aber niemand, und ein
+   halbdurchsichtiger Knopf sieht nach einem Fehler aus. pointer-events wieder auf auto, damit er
+   sich auch unter der Maus verhaelt wie die beiden anderen; klicken kann ihn ohnehin niemand, das
+   faengt nurSchauen() ab. */
+.ulh-app .vc-gran-btn.is-disabled { opacity: 1; pointer-events: auto; }
+
+/* Kein Zahnrad fuer die Chart-Einstellungen. Es erscheint erst beim Hover ueber dem Chart und
+   verspricht damit etwas, das hier nicht geht. */
+.ulh-app .vot-scale-btn { display: none; }
 
 /* Die Leiste 16px schmaler. Die Marke muss an der LEISTE SELBST stehen und nicht am Vorfahren:
    .usn-bar traegt die Klasse .up-root, und sidebar.css setzt --usn-w genau dort auf 250px. Ein
