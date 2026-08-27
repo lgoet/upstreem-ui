@@ -32,6 +32,10 @@
   --ulh-schirm: #ffffff;
   --ulh-text: #1f1f1b;
   --ulh-muted: #6f737c;
+  --ulh-border: #e0e2e6;
+  /* Der Funke am Chip. Deine Farbe, und sie liegt in derselben Familie wie das blaue Bild im
+     Hintergrund -- das ist kein Zufall, sondern der Grund, warum beides zusammengeht. */
+  --ulh-funke: #98CEF2;
   /* Die Buehne hat eine FESTE Breite und wird als Ganzes verkleinert. Nur so sieht man die App in
      ihrem Desktop-Layout: die Komponenten messen ihre eigene Breite (clientWidth) und stapeln
      darunter um -- eine transform-Verkleinerung aendert clientWidth nicht, ein kleinerer Kasten
@@ -70,6 +74,12 @@
 .ulh-root, .ulh-root * { box-sizing: border-box; }
 
 /* ---------- Textblock ---------- */
+/* Textblock und Fenster liegen UEBER dem Hintergrund. Ohne z-index wuerde der Hintergrund sie
+   verdecken: er ist positioniert, sie sind normale Bloecke, und positionierte Elemente malen
+   spaeter. Ein negativer z-index am Hintergrund waere der andere Weg, braucht aber einen eigenen
+   Stapelkontext an der Wurzel -- so ist es weniger. */
+.ulh-text, .ulh-stage { position: relative; z-index: 1; }
+
 .ulh-text {
   max-width: 780px;
   margin: 0 auto;
@@ -96,9 +106,161 @@
   line-height: 1.45;
   color: var(--ulh-muted);
 }
+/* ---------- Der Chip ueber der Ueberschrift ----------
+   40px hoch, Rahmen, und um ihn herum laeuft ein Funke. Gemacht mit EINEM drehenden Kegelverlauf
+   hinter einem deckenden Innenteil: sichtbar bleibt nur der Ring dazwischen. Der Verlauf dreht
+   sich per transform und nicht per @property-Winkel -- die Winkelanimation braucht registrierte
+   Eigenschaften, und die kann ich hier nicht ueberall voraussetzen.
+   inset: -100% macht das drehende Feld quadratisch und viel groesser als der Chip; sonst waeren an
+   den Ecken Luecken zu sehen, wenn es sich dreht. */
+.ulh-chip {
+  position: relative;
+  display: inline-flex;
+  height: 40px;
+  padding: 1px;
+  border-radius: 999px;
+  overflow: hidden;
+  isolation: isolate;
+}
+.ulh-chip::before {
+  content: "";
+  position: absolute;
+  inset: -100%;
+  background: conic-gradient(from 0turn, transparent 0turn, var(--ulh-funke) .06turn,
+              transparent .13turn, transparent 1turn);
+  animation: ulhFunke 3.2s linear infinite;
+}
+@keyframes ulhFunke { to { transform: rotate(1turn); } }
+.ulh-chip-in {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 15px;
+  border-radius: 999px;
+  border: 1px solid var(--ulh-border);
+  background: var(--ulh-grund);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ulh-muted);
+  white-space: nowrap;
+}
+/* Wer keine Bewegung will, bekommt keine. */
+@media (prefers-reduced-motion: reduce) {
+  .ulh-chip::before { animation: none; }
+}
+.ulh-eyebrow { margin: 0 0 clamp(18px, 2.4vh, 26px); }
+
+/* ---------- Die drei Treiber unter der Unterzeile ----------
+   Eigene Zeile, damit sie zu dritt nebeneinander stehen -- der Umbruch nach "drive" steht im
+   Markup. Gleiche Abstaende ueberall: 8px zwischen Zeichen und Wort, 20px zwischen den drei. */
+.ulh-drivers {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-top: 6px;
+}
+.ulh-driver {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  color: var(--ulh-text);
+}
+.ulh-driver svg { width: 16px; height: 16px; flex: 0 0 auto; color: var(--ulh-muted); }
+
+/* ---------- Die zwei Knoepfe ----------
+   Masse an attio.com abgelesen: 36px hoch, Radius 10, 14px/500, Polster 0 12px, und zwischen den
+   beiden 10px (dort gemessen: der eine endet bei 714, der andere beginnt bei 724). */
+.ulh-cta { display: flex; justify-content: center; gap: 10px; margin-top: 30px; }
+.ulh-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+.ulh-btn-sec { border: 1px solid var(--ulh-border); background: var(--ulh-grund); color: var(--ulh-text); }
+.ulh-btn-sec:hover { background: #f7f7f8; }
+.ulh-btn-pri { border: 1px solid var(--ulh-text); background: var(--ulh-text); color: #ffffff; }
+.ulh-btn-pri:hover { background: #33332e; border-color: #33332e; }
+
 /* Die drei Begriffe stehen als eigene Elemente da, obwohl sie hier nur kraeftiger gesetzt sind:
    sie sollen spaeter durchwechseln, und dann braucht jeder seinen eigenen Kasten. */
 .ulh-sub b { font-weight: 500; color: var(--ulh-text); }
+
+/* ---------- Der Hintergrund ----------
+   Zwei Ebenen, beide unten verankert und nach OBEN ausblendend, beide hinter allem:
+     hinten   das blaue Bild (deine Datei auf Supabase), schwaecher
+     davor    dieselbe Grafik wie im Onboarding und hinter Miras Startschirm (.up-bgart-* aus core)
+   Oben ist NICHTS zu sehen: die Maske laesst die ersten 26% ganz durchsichtig und kommt bis 78%
+   langsam auf voll. 26% liegen etwa auf Hoehe des Fensteranfangs -- der Textblock bleibt also frei,
+   und das Bild beginnt genau dort, wo der Screen anfaengt. */
+.ulh-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.ulh-bg-foto, .ulh-bg-art {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* Die Blende. Zwei Angaben, weil Safari die Kurzform noch mit Praefix braucht. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 26%, rgba(0,0,0,.18) 42%,
+                      rgba(0,0,0,.62) 60%, #000 78%);
+  mask-image: linear-gradient(to bottom, transparent 26%, rgba(0,0,0,.18) 42%,
+              rgba(0,0,0,.62) 60%, #000 78%);
+}
+/* Das blaue Bild: unten mittig, ueber die ganze Breite, und nur ein Hauch davon. Die Datei ist ein
+   CorelDRAW-Export mit 12527x8769 -- also flach; auf voller Breite steht sie im unteren Drittel. */
+.ulh-bg-foto {
+  top: 0;
+  background: url("https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/slimane-kadi-M3TevYf1EKo-unsplash.svg")
+              center bottom / 100% auto no-repeat;
+  opacity: .22;
+}
+/* Die Onboarding-Grafik darueber. Sie steht in ihrer eigenen Huelle, weil die vier Ebenen aus core
+   ihre eigene Maske tragen -- eine zweite Maske am selben Element gaebe es nicht, also blendet die
+   HUELLE aus. */
+/* Die Huelle traegt die Klasse .up-root -- gesetzt im Markup, nicht hier. Damit loesen BEIDE Dinge
+   auf, die das Kit braucht: die vier Bildwerte (--up-bgart-*) und die Farben (--vc-text fuer die
+   Masken, --vc-muted fuer die Lichter). Ohne die Klasse blieb die Grafik unsichtbar: die Maske
+   sprach an, die Farbe nicht, und eine Maske ohne Farbe malt nichts.
+   Die Klasse ist hier gefahrlos, anders als an der Wurzel der Sektion: diese Huelle enthaelt nur
+   vier leere Spans und keine weitere .up-root -- genau die Verschachtelung war es, die den Renderer
+   angehalten hat. data-theme steht mit im Markup, damit die Grafik hell bleibt. */
+.ulh-bg-art { top: 0; }
+.ulh-bg-art > span { position: absolute; inset: 0; }
+
+/* ---------- Die Blende unten im Dashboardbereich ----------
+   32px, in der Farbe des Rahmens, und erst rechts der Leiste: sie soll den Inhalt ausfaden lassen,
+   nicht die Navigation. Der linke Versatz rechnet mit dem Mass, weil die Leiste im Fenster
+   verkleinert dasteht -- 234px Layout ergeben bei 0.73 rund 171px auf dem Schirm.
+   z-index: 2, weil .ulh-app positioniert ist und sonst darueber laege. */
+.ulh-view::after {
+  content: "";
+  position: absolute;
+  left: calc(234px * var(--ulh-mass, 1));
+  right: 0;
+  bottom: 0;
+  height: 32px;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(to top, var(--ulh-blende), rgba(240, 240, 240, 0));
+}
 
 /* ---------- Das Fenster ---------- */
 /* Die Buehne haengt in einem Raster mit EINER Zelle, damit der spaetere Ablauf mehrere Szenen

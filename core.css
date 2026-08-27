@@ -2830,6 +2830,15 @@
    Als Adresse im Stylesheet und nicht als eigene Datei, weil sonst eine weitere Anfrage in der
    Kette haengt: Lader-JS, dann CSS, dann Maske entdecken, dann SVG holen -- auf der echten Seite
    waren das 1-2 Sekunden, in denen das Bild nachtraeglich aufpoppte. */
+/* An .up-root und NICHT an :root. Das war ein Versuch und ein Fehler: die Werte sehen themenfrei
+   aus, aber --up-bgart-licht enthaelt color-mix(... var(--vc-muted) ...), und ein var() INNERHALB
+   einer eigenen Eigenschaft wird dort aufgeloest, wo sie DEKLARIERT ist. Auf :root ist --vc-muted
+   nicht definiert, also wurde die ganze Eigenschaft ungueltig und verworfen -- gemessen:
+   getComputedStyle(html).getPropertyValue("--up-bgart-licht") kam leer zurueck, waehrend bogen,
+   raster und marken (reine Adressen, kein var) sauber ansprachen. Die Lichter waeren damit auch im
+   Onboarding und hinter Miras Startschirm verschwunden.
+   Wer die Grafik ausserhalb einer Komponente benutzen will, gibt seiner Huelle die Klasse
+   .up-root -- so macht es die Landingpage. */
 .up-root {
   --up-bgart-licht:
     radial-gradient(ellipse 61.53% 73.26% at 94.44% 0.56%, color-mix(in srgb, var(--vc-muted) 6.160%, transparent), color-mix(in srgb, var(--vc-muted) 0%, transparent)),

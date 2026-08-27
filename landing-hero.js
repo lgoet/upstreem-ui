@@ -183,10 +183,38 @@
   function bauen(root){
     if (root.querySelector(".ulh-frame")) return;          /* schon gebaut */
     root.innerHTML =
+      /* Der Hintergrund steht als ERSTES im Markup und nicht als letztes: bei gleichem z-index
+         entscheidet die Reihenfolge, und so liegt er hinter allem, ohne dass jedes Geschwister
+         einen eigenen Wert braucht. Reihenfolge darin: blaues Bild hinten, Onboarding-Grafik
+         davor. */
+      '<div class="ulh-bg" aria-hidden="true">' +
+        '<span class="ulh-bg-foto"></span>' +
+        '<span class="up-root ulh-bg-art" data-theme="light" data-isdark="no">' +
+          '<span class="up-bgart-licht"></span>' +
+          '<span class="up-bgart-bogen"></span>' +
+          '<span class="up-bgart-raster"></span>' +
+          '<span class="up-bgart-marken"></span>' +
+        '</span>' +
+      '</div>' +
       '<div class="ulh-text">' +
-        '<h1 class="ulh-h1"><span>AI Search Analytics</span><span>Made simple</span></h1>' +
-        '<p class="ulh-sub">Track and optimize your brand’s AI search performance and drive ' +
-          '<b>Qualified Traffic</b>, <b>Leads</b>, and <b>Revenue</b>.</p>' +
+        '<p class="ulh-eyebrow">' +
+          '<span class="ulh-chip"><span class="ulh-chip-in">Get mentioned in AI search</span></span>' +
+        '</p>' +
+        '<h1 class="ulh-h1"><span>AI Search Analytics</span><span>Made simple.</span></h1>' +
+        /* Der Umbruch nach "drive" steht hier und nicht in der CSS: die drei Treiber sollen zu
+           dritt in einer Zeile stehen, und das ist eine Aussage ueber den Text, nicht ueber die
+           Breite. Die Zeichen setzt zeichenSetzen() nach, sobald core da ist. */
+        '<p class="ulh-sub">Track and optimize your brand’s AI search performance and drive' +
+          '<span class="ulh-drivers">' +
+            '<span class="ulh-driver" data-ic="chartColumnUp">Qualified Traffic</span>' +
+            '<span class="ulh-driver" data-ic="users">Leads</span>' +
+            '<span class="ulh-driver" data-ic="dollarSign">Revenue</span>' +
+          '</span>' +
+        '</p>' +
+        '<div class="ulh-cta">' +
+          '<button class="ulh-btn ulh-btn-sec" type="button">Talk to Sales</button>' +
+          '<button class="ulh-btn ulh-btn-pri" type="button">Book a Demo</button>' +
+        '</div>' +
       '</div>' +
       '<div class="ulh-stage">' +
         '<div class="ulh-frame">' +
@@ -229,6 +257,22 @@
         e.stopPropagation();
       }, true);
     });
+  }
+
+  /* Die drei Zeichen in der Treiberzeile. Aus UC.icon und nicht selbst gezeichnet -- chartColumnUp,
+     users und dollarSign stehen alle in core. Nachgesetzt und nicht beim Bauen, weil die Buehne
+     steht, bevor core geladen ist; deshalb steht der Aufruf auch in der Uhrenkette. */
+  function zeichenSetzen(root){
+    var kern = window.UpstreemCore;
+    if (!kern || !kern.icon) return;
+    var alle = root.querySelectorAll(".ulh-driver[data-ic]");
+    for (var i = 0; i < alle.length; i++){
+      var el = alle[i];
+      var svg = kern.icon(el.getAttribute("data-ic"), 1.9);
+      if (!svg) continue;
+      el.insertAdjacentHTML("afterbegin", svg);
+      el.removeAttribute("data-ic");
+    }
   }
 
   /* Keine Tooltips. Sie haengen an data-tip (und in der Leiste an data-tiplabel), und das Kit von
@@ -424,7 +468,7 @@
        Puffer, Heartbeat --, also muss das Nachfassen so lange reichen. Kreisen kann es nicht: es
        sind feste Zeitpunkte, und hellHalten schreibt nur, wo der Wert abweicht. */
     [300, 900, 2000, 4000, 8000].forEach(function(ms){
-      setTimeout(function(){ hellHalten(root); ohneTipps(root); mass(root); }, ms);
+      setTimeout(function(){ hellHalten(root); ohneTipps(root); zeichenSetzen(root); mass(root); }, ms);
     });
     var n = 0;
     (function warte(){
@@ -432,6 +476,7 @@
         try { fuellen(); } catch (e){ if (window.console) console.warn("[landing-hero]", e); }
         hellHalten(root);
         ohneTipps(root);
+        zeichenSetzen(root);
         /* Die Leiste entsteht erst, wenn core ihre Wurzel gesehen hat -- das kann nach dem Setter
            liegen. Also nachfassen, bis sie da ist, und dann noch einmal messen. */
         (function holen(k){

@@ -522,6 +522,7 @@
   "data-head",
   "data-head-top",
   "data-hl",
+  "data-ic",
   "data-id",
   "data-idx",
   "data-instance",
@@ -2657,6 +2658,7 @@
   "udtSubOut",
   "uex-spin",
   "uhmpop",
+  "ulhFunke",
   "unc-in",
   "unc-out",
   "uoCardIn",
@@ -2681,8 +2683,8 @@
   "fnattrs": 80,
   "globals": 137,
   "payloadkeys": 86,
-  "dataattrs": 198,
+  "dataattrs": 199,
   "klassen": 1980,
-  "keyframes": 58
+  "keyframes": 59
  }
 }
