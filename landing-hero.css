@@ -428,13 +428,20 @@
 .ulh-root .ulh-prompts.is-kommt .up-ph-root { animation: ulhRise 520ms var(--ulh-ease) backwards; }
 .ulh-root .ulh-prompts.is-kommt .upt-grp-sidepanel { animation: ulhRise 520ms var(--ulh-ease) 140ms backwards; }
 .ulh-root .ulh-prompts.is-kommt .up-box { animation: ulhRise 520ms var(--ulh-ease) 300ms backwards; }
-/* Die Zeilen: eine nach der anderen, 42ms auseinander. Der Zaehler steht als --ulh-i an der Zeile
+/* Die Zeilen: eine nach der anderen, 55ms auseinander. Der Zaehler steht als --ulh-i an der Zeile
    und wird von landing-hero.js gesetzt, sobald die Zeilen wirklich da sind -- eine Regel mit
    nth-child fuer fuenfzehn Zeilen waere dasselbe in laenger und ginge bei einer anderen
-   Seitengroesse schief. */
+   Seitengroesse schief.
+   Der Koerper der Tabelle bleibt VERSTECKT, bis die Staffelung anfaengt. Das ist der Punkt, an dem
+   es vorher nicht zu sehen war: der Kasten drumherum blendet selbst von 0 auf 1 auf, und ein
+   Auftritt einzelner Zeilen INNERHALB einer Flaeche, die als Ganzes aufblendet, ist keiner --
+   man sieht nur den Kasten kommen. Jetzt kommt der Kasten leer, und die Zeilen fallen danach
+   einzeln ein. visibility und nicht opacity: der Platz bleibt stehen, die Tabelle springt nicht. */
+.ulh-root .ulh-prompts.is-kommt .up-tbody { visibility: hidden; }
+.ulh-root .ulh-prompts.is-zeilen .up-tbody { visibility: visible; }
 .ulh-root .ulh-prompts.is-zeilen .up-tbody .up-row {
-  animation: ulhRise 380ms var(--ulh-ease) backwards;
-  animation-delay: calc(var(--ulh-i, 0) * 42ms);
+  animation: ulhRise 420ms var(--ulh-ease) backwards;
+  animation-delay: calc(var(--ulh-i, 0) * 55ms);
 }
 @media (prefers-reduced-motion: reduce) {
   .ulh-root .ulh-prompts.is-kommt .up-ph-root,
@@ -688,6 +695,11 @@
 .ulh-app .up-row:hover .upt-check:not(.is-checked) { border-color: var(--vc-border); }
 .ulh-app .upt-check:hover:not(.is-checked) { border-color: var(--vc-third); }
 
+/* Die Eintraege der Seitenleiste 2px flacher und die vier Gruppen 2px enger beieinander -- im
+   Fenster steht die Leiste ganz, und die zwei Pixel je Zeile sind am Ende eine Zeile mehr Platz. */
+.ulh-app .usn-item { height: 34px; }
+.ulh-app .usn-block + .usn-block { margin-top: 30px; }
+
 /* Die ausgewaehlte Zeile in der Seitenleiste etwas heller: 7 Prozent Textfarbe waren im
    Schaustueck neben dem fast weissen Grund ein deutlicher Kasten. */
 .ulh-app .usn-bar { --usn-sel: color-mix(in srgb, var(--vc-text) 4.5%, transparent); }
@@ -717,7 +729,10 @@
 /* Der Klick auf den Sendeknopf. Kein Zeiger im Bild, aber die Bewegung, die ein Klick macht:
    Hoverfarbe, kurz 2px kleiner, dann zurueck. .am-send:active gibt es schon (scale .95) -- das
    greift nur bei einem echten Zeigerdruck, den es hier nicht gibt. */
-.ulh-app .am-send { transition: transform 120ms cubic-bezier(.34,1.56,.64,1), background 120ms ease; }
+/* Langsamer und in beide Richtungen weich: 260ms mit ein- UND ausschleifendem Verlauf
+   (cubic-bezier .4/0/.2/1). Die federnde Kurve davor war kurz und hart -- bei 120ms sieht man von
+   einer Feder nichts ausser dem Ruck. */
+.ulh-app .am-send { transition: transform 260ms cubic-bezier(.4, 0, .2, 1), background 260ms cubic-bezier(.4, 0, .2, 1); }
 .ulh-app .am-send.is-klick { transform: scale(.9); background: #585855; }
 
 /* Das Eingabefeld faehrt beim Abschicken nach unten UND blendet dabei aus -- aber erst auf der

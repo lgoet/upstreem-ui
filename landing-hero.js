@@ -493,6 +493,19 @@
       /* Offen und nicht als Schiene: die Beschriftungen sind der halbe Wiedererkennungswert. */
       if (window.setSidebarOpen) window.setSidebarOpen(ID.usn, "yes");
       if (window.setSidebarReady) window.setSidebarReady(ID.usn);
+      /* Der Pinned-Block. Er entsteht nur, wenn etwas angeheftet ist -- eine Ueberschrift ohne
+         Inhalt liesse die Leiste unfertig aussehen -- also hier zwei Pins: die eigene Marke und
+         ihre Domain. NACH setSidebarTeams, weil der Speicher der Pins die Team-Id im Schluessel
+         traegt; davor gaebe es keinen, in den geschrieben werden koennte.
+         Zwei verschiedene Toene: die Marke in ihrem eigenen Blau, die Domain in einem gedeckten
+         Gruen aus derselben Reihe -- zwei gleich blaue Quadrate untereinander lesen sich als eine
+         Wiederholung und nicht als zwei Dinge. */
+      if (window.upstreemPinToSidebar){
+        window.upstreemPinToSidebar({ type: "domain", id: "kestrel.example",
+          label: "kestrel.example", logo: zeichen("K", "#9DC3A3") });
+        window.upstreemPinToSidebar({ type: "brand", id: "ke",
+          label: "Kestrel", logo: MARKEN[0].logo });
+      }
     }
 
     if (window.setDashboardPageHeaderKpis){
@@ -1183,12 +1196,14 @@
        erst nach 240ms weg. Eine Regel fuer die Deckkraft verliert gegen diesen Inline-Stil -- das
        Feld waere ohne Ueberblendung verschwunden, mitten in der Fahrt.
        Also die eigene Ueberblendung an denselben Inline-Stil anhaengen, ein Bild spaeter, wenn
-       Miras Schreibvorgang durch ist. 150ms Verzoegerung auf 160ms Lauf: die erste Haelfte der
-       Fahrt sieht man ganz, unten angekommen ist es weg. */
+       Miras Schreibvorgang durch ist. 95ms Verzoegerung auf 110ms Lauf gegen eine Fahrt von 200:
+       die erste Haelfte sieht man ganz, und unten angekommen IST es weg. Vorher endete das
+       Ausblenden bei 310ms, also nach der Fahrt -- dann sieht man das Feld unten ankommen und erst
+       danach verschwinden, und die Fahrt selbst geht in dem Verschwinden unter. */
     var flaeche = root.querySelector(".am-composer-area");
     if (flaeche) requestAnimationFrame(function(){
       var vorher = flaeche.style.transition;
-      flaeche.style.transition = (vorher ? vorher + ", " : "") + "opacity 160ms ease 150ms";
+      flaeche.style.transition = (vorher ? vorher + ", " : "") + "opacity 110ms ease 95ms";
       flaeche.style.opacity = "0";
     });
     /* Erst die Nachricht, dann das Laden: askMiraSetMessages stellt den Ladezustand selbst auf den
@@ -1601,13 +1616,28 @@
     if (root.__ulhPromptsAn) return;
     root.__ulhPromptsAn = true;
     root.__ulhPrompts = function(){ return promptsSzene(root); };
-    var n = 0;
+    var n = 0, hatGetippt = false;
     (function warten(){
       var am = root.querySelector("#ask-mira");
-      var fertig = am && am.querySelectorAll(".am-msg").length >= 2 && !am.querySelector(".am-msg.am-typing");
-      if (fertig){ setTimeout(function(){ promptsSzene(root); }, PROMPTS_WARTEN); return; }
-      /* Zwei Minuten Geduld, dann nicht mehr -- in einem verdeckten Tab sind alle Uhren auf eine
-         Sekunde gedrosselt, und die Mira-Szene braucht dort ein Vielfaches ihrer Zeit. */
+      /* Das Tippen muss ANGEFANGEN und geendet haben. Nur "keine Nachricht tippt gerade" reichte
+         nicht und war der Fehler: zwischen dem Setzen der Liste und dem Beginn des Tippens liegen
+         ein paar Frames (askMiraTypeLastAnswer fasst in 70ms-Schritten nach), und wer in dieses
+         Fenster hineinmisst, sieht zwei Nachrichten und kein Tippen -- die Uhr lief also ab dem
+         ABSCHICKEN und nicht ab der fertigen Antwort. Genau so kurz war der Schritt.
+         am-is-typing steht an Miras Wurzel, am-typing an der Nachricht; beides zaehlt. */
+      var tippt = !!(am && (am.classList.contains("am-is-typing") ||
+                            am.querySelector(".am-msg.am-typing")));
+      if (tippt) hatGetippt = true;
+      var zwei = am && am.querySelectorAll(".am-msg").length >= 2;
+      if (zwei && hatGetippt && !tippt){
+        setTimeout(function(){ promptsSzene(root); }, PROMPTS_WARTEN);
+        return;
+      }
+      /* Rueckhalt: faengt das Tippen nie an (eine Antwort ohne Text, ein Fehler im Kit), soll der
+         Ablauf trotzdem weitergehen -- nach 30 Sekunden mit zwei Nachrichten reicht es.
+         Und zwei Minuten Geduld insgesamt: in einem verdeckten Tab sind alle Uhren auf eine
+         Sekunde gedrosselt, dort braucht die Mira-Szene ein Vielfaches ihrer Zeit. */
+      if (zwei && n > 214){ setTimeout(function(){ promptsSzene(root); }, PROMPTS_WARTEN); return; }
       if (++n < 900) setTimeout(warten, 140);
     })();
   }
@@ -1620,7 +1650,12 @@
      stuenden die Zeilen schon fertig da, bevor sie hereinkommen.
      Die Uhr am Ende raeumt auf: bliebe is-zeilen stehen, liefe jede spaetere Bewegung in der
      Tabelle gegen eine noch gesetzte animation. */
-  var ZEILEN_LAUF = 380, ZEILEN_STUFE = 42;
+  var ZEILEN_LAUF = 420, ZEILEN_STUFE = 55;
+  /* Erst wenn der Kasten der Tabelle STEHT. Er selbst kommt mit 300ms Verzoegerung und laeuft 520,
+     ist also bei 820 da. Fangen die Zeilen vorher an, laufen sie innerhalb einer Flaeche, die als
+     Ganzes aufblendet -- und dann sieht man nur den Kasten kommen, nicht die Zeilen. Genau das war
+     der Bericht. */
+  var ZEILEN_START = 760;
 
   function zeilenAnsetzen(root, seite){
     var n = 0;
@@ -1642,7 +1677,10 @@
         for (var j = 0; j < zeilen.length; j++) zeilen[j].style.removeProperty("--ulh-i");
       }, ZEILEN_LAUF + zeilen.length * ZEILEN_STUFE + 200);
     }
-    versuch();
+    /* Die Zeilen stehen schon im DOM, wenn dieser Aufruf kommt -- gewartet wird nicht auf sie,
+       sondern auf den Kasten. Der Koerper der Tabelle ist bis dahin versteckt (is-kommt in der
+       CSS), es blitzt also nichts auf. */
+    setTimeout(versuch, ZEILEN_START);
   }
 
   function promptsSzene(root){
@@ -1661,6 +1699,9 @@
       seite.classList.add("is-kommt");
       /* Laenger stehen lassen als bei Mira: hier haengen vier gestaffelte Auftritte daran, der
          letzte startet bei 300ms und laeuft 520 -- also 820 plus Reserve. */
+      /* is-kommt haelt den Tabellenkoerper versteckt, bis is-zeilen uebernimmt (ZEILEN_START).
+         Es muss also LAENGER stehen als dieser Start, sonst waeren die Zeilen zwischendurch
+         sichtbar und wuerden gleich danach wieder verschwinden. */
       setTimeout(function(){ seite.classList.remove("is-kommt"); }, 1000);
       hellHalten(root);
       promptsFuellen(root);
