@@ -1,0 +1,205 @@
+<meta charset="utf-8">
+<title>Mira: Tooltips, Untermenue, Rollknopf</title>
+<!-- Wozu: die vier Meldungen zu Mira MESSEN.
+     1 Der runde Chevron-Knopf wird im Dunkeln beim Ueberfahren durchsichtig.
+     2 Das Erklaerungs-Popover an der Datenpunktzeile sitzt viel zu weit rechts, kippt nicht nach
+       oben und blitzt beim Verschwinden auf.
+     3 Zwei Tooltips je Knopf in der Aktionsreihe (Export, Kopieren, Daumen).
+     4 Das Untermenue "Move to Project" hat keinen Rahmen.
+
+     Das Markup wird aus der Bubble-Vorlage GEHOLT und nicht abgeschrieben: abgeschriebenes Markup
+     weicht ab dem ersten Umbau ab, und dann messe ich eine Oberflaeche, die es nicht mehr gibt.
+     Alles per fetch mit no-store; ein blanker src hat in dieser Sitzung mehrfach eine alte Datei
+     geladen. -->
+<style>
+  body { margin: 0; font: 12px ui-monospace, monospace; background: #0f0f0f; color: #ddd; }
+  #bar { padding: 8px; background: #222; display: flex; gap: 6px; flex-wrap: wrap;
+         position: sticky; top: 0; z-index: 2147483647; }
+  #out { font: 11px/1.5 ui-monospace, monospace; background: #1a1a1a; padding: 8px; margin: 0;
+         white-space: pre-wrap; max-height: 240px; overflow: auto; }
+  #host { width: 1180px; height: 720px; margin: 12px auto; }
+</style>
+<body>
+<div id="bar">
+  <button onclick="zeigen(thema('dark'))">DUNKEL</button>
+  <button onclick="zeigen(thema('light'))">HELL</button>
+  <button onclick="zeigen(rollknopf())">1 ROLLKNOPF</button>
+  <button onclick="zeigen(erklaerer())">2 ERKLAERER</button>
+  <button onclick="zeigen(aktionstipps())">3 AKTIONSTIPPS</button>
+  <button onclick="untermenue()">4 UNTERMENUE</button>
+</div>
+<pre id="out">laedt</pre>
+<div id="host"></div>
+
+<script>
+function A(){ return document.querySelector("#ask-mira"); }
+function zeigen(o){ document.getElementById("out").textContent = JSON.stringify(o, null, 1); return o; }
+
+function thema(t){
+  var r = A();
+  r.setAttribute("data-theme", t);
+  r.setAttribute("data-isdark", t === "dark" ? "yes" : "no");
+  if (window.askMiraSetTheme) window.askMiraSetTheme(t);
+  return { thema: t };
+}
+
+/* 1 -- der runde Knopf ueber dem Eingabefeld. Der Hoverzustand ist per Maus nicht ansteuerbar
+   (querySelectorAll(":hover") ist in diesem Fenster immer leer), also wird die Regel selbst
+   gelesen: welche Farbe steht in .am-scroll-bottom:hover, und ist sie deckend? */
+function rollknopf(){
+  var b = A().querySelector(".am-scroll-bottom");
+  var regel = null;
+  [].forEach.call(document.styleSheets, function(ss){
+    try { [].forEach.call(ss.cssRules, function(c){
+      if (c.selectorText && /am-scroll-bottom:hover/.test(c.selectorText)) regel = c.style.cssText;
+    }); } catch(e){}
+  });
+  function aufloesen(wert){
+    var d = document.createElement("div");
+    d.style.color = wert; A().appendChild(d);
+    var c = getComputedStyle(d).color; d.remove(); return c;
+  }
+  var m = regel && regel.match(/background(?:-color)?:\s*([^;]+)/);
+  return { knopf_da: !!b, regel: regel,
+           grund_ruhe: b ? getComputedStyle(b).backgroundColor : null,
+           grund_hover: m ? aufloesen(m[1].trim()) : null,
+           deckend: m ? (aufloesen(m[1].trim()).indexOf("rgba") < 0) : null };
+}
+
+/* 2 -- das Erklaerungs-Popover. Gemessen wird, wo es LANDET: die Mitte der Karte gegen die Mitte
+   der Datenpunktzeile. Sitzt sie weit rechts, ist der Ausloeser breiter als sein Inhalt. */
+function erklaerer(){
+  var r = A();
+  var reihe = r.querySelector(".am-evidence");
+  if (!reihe) return { fehler: "keine Datenpunktzeile -- erst Nachrichten setzen" };
+  var karten = document.querySelectorAll(".up-explain");
+  var ev = new MouseEvent("mouseover", { bubbles: true });
+  reihe.dispatchEvent(ev);
+  var karte = null;
+  [].forEach.call(document.querySelectorAll(".up-explain"), function(k){
+    if (k.classList.contains("is-on")) karte = k;
+  });
+  var rr = reihe.getBoundingClientRect();
+  var pillen = [].slice.call(reihe.querySelectorAll(".am-ev-pill"));
+  var pl = pillen.length ? pillen[0].getBoundingClientRect().left : rr.left;
+  var pr = pillen.length ? pillen[pillen.length - 1].getBoundingClientRect().right : rr.right;
+  var o = {
+    karten_im_dokument: karten.length,
+    reihe: Math.round(rr.left) + ".." + Math.round(rr.right) + " (Mitte " + Math.round(rr.left + rr.width / 2) + ")",
+    reihe_breite: getComputedStyle(reihe).width,
+    pillen: Math.round(pl) + ".." + Math.round(pr) + " (Mitte " + Math.round((pl + pr) / 2) + ")",
+    karte: null, versatz_zu_pillen: null, gekippt: null
+  };
+  if (karte){
+    var kr = karte.getBoundingClientRect();
+    o.karte = Math.round(kr.left) + ".." + Math.round(kr.right) + " oben " + Math.round(kr.top) +
+              " (Mitte " + Math.round(kr.left + kr.width / 2) + ")";
+    o.versatz_zu_pillen = Math.round((kr.left + kr.width / 2) - (pl + pr) / 2);
+    o.gekippt = karte.classList.contains("is-flipped");
+    o.unter_der_reihe = Math.round(kr.top - rr.bottom);
+  }
+  return o;
+}
+
+/* 3 -- die Knopfreihe. Der CSS-Tooltip war ein ::after mit content: attr(data-tip); gemessen wird,
+   ob es ihn noch gibt. Der Chip von core haengt am body und ist EINER fuer alle. */
+function aktionstipps(){
+  var b = A().querySelector(".am-act-btn[data-tip]");
+  if (!b) return { fehler: "keine Aktionsknoepfe -- erst Nachrichten setzen" };
+  var nach = getComputedStyle(b, "::after");
+  var regeln = [];
+  [].forEach.call(document.styleSheets, function(ss){
+    try { [].forEach.call(ss.cssRules, function(c){
+      if (c.selectorText && /am-act-btn\[data-tip\]/.test(c.selectorText)) regeln.push(c.selectorText);
+    }); } catch(e){}
+  });
+  return { css_tooltip_regeln: regeln, pseudo_inhalt: nach.content,
+           chips_am_body: document.querySelectorAll("body > .up-tip").length,
+           knoepfe: A().querySelectorAll(".am-act-btn[data-tip]").length };
+}
+
+/* 4 -- das Untermenue. Erst das Menue oeffnen (Klick auf den Chevron der Titelzeile), dann die
+   Zeile "Move to Project" ueberfahren, dann messen. */
+function untermenue(){
+  var chev = A().querySelector("#am-ct-chev");
+  if (!chev) return zeigen({ fehler: "kein Chevron" });
+  chev.click();
+  setTimeout(function(){
+    var menu = document.querySelector("#am-chat-menu");
+    var wrap = menu && menu.querySelector(".am-cm-sub");
+    if (!wrap) return zeigen({ fehler: "kein .am-cm-sub im Menue", menu: !!menu,
+                               inhalt: menu ? menu.innerHTML.slice(0, 200) : null });
+    wrap.dispatchEvent(new MouseEvent("mouseover", { bubbles: true }));
+    var sub = wrap.querySelector(".am-cm-submenu");
+    var cs = sub ? getComputedStyle(sub) : null;
+    zeigen({
+      menue_elter: menu.parentNode.id || menu.parentNode.className,
+      menue_rahmen: getComputedStyle(menu).border,
+      untermenue_da: !!sub,
+      rahmen: cs ? cs.border : null,
+      rahmenstil: cs ? (cs.borderTopStyle + " " + cs.borderTopWidth + " " + cs.borderTopColor) : null,
+      am_border_am_untermenue: cs ? getComputedStyle(sub).getPropertyValue("--am-border") : null,
+      am_border_am_menue: getComputedStyle(menu).getPropertyValue("--am-border"),
+      deckkraft: cs ? cs.opacity : null,
+      lage: sub ? (Math.round(sub.getBoundingClientRect().left) + ".." + Math.round(sub.getBoundingClientRect().right)) : null,
+      flip: wrap.className
+    });
+  }, 120);
+}
+
+window.addEventListener("error", function(e){
+  window.__fehler = (window.__fehler || []).concat([String(e.message).slice(0, 160)]);
+});
+
+(function(){
+  function hol(f){ return fetch(f + "?nocache=" + Math.random(), { cache: "no-store" })
+                     .then(function(r){ return r.text(); }); }
+  /* Dieselben Anker wie .landing_markup.py: die erste Zeile, die mit <div class="up-root beginnt,
+     bis zum letzten </div> vor dem <script> des Laders. */
+  function markup(s){
+    var m = s.match(/^<div class="up-root[^\n]*$/m);
+    if (!m) return null;
+    var rest = s.slice(s.indexOf(m[0]));
+    var e = rest.search(/<\/div>\s*(?=<script|<link|$)/);
+    return (e >= 0 ? rest.slice(0, e + 6) : rest)
+      .replace(/data-cdn-pin="CDN_PIN"/, 'data-cdn-pin=""')
+      .replace(/data-isdark="IS_DARK"/, 'data-isdark="yes"')
+      .replace(/data-instance="ROOTID_\[dynamic id\]"/, 'data-instance="hm"');
+  }
+  Promise.all(["core.css", "ask-mira.css", "core.js", "ask-mira.js", "bubble/ask_mira_bubble.html"]
+    .map(hol)).then(function(t){
+    var st1 = document.createElement("style"); st1.textContent = t[0]; document.head.appendChild(st1);
+    var st2 = document.createElement("style"); st2.textContent = t[1]; document.head.appendChild(st2);
+    var mk = markup(t[4]);
+    if (!mk){ zeigen({ fehler: "kein Markup in der Vorlage gefunden" }); return; }
+    document.getElementById("host").innerHTML = mk;
+    var s1 = document.createElement("script"); s1.textContent = t[2]; document.head.appendChild(s1);
+    var s2 = document.createElement("script"); s2.textContent = t[3]; document.head.appendChild(s2);
+    setTimeout(function(){
+      window.askMiraSetPreviousChats([{ id: "c1", title: "AI Visibility Report Q3 2026", updated_at: new Date().toISOString() }]);
+      window.askMiraSetProjects([{ id: "p1", title: "Q3 Reporting" }, { id: "p2", title: "Competitors" }]);
+      window.askMiraSetTitlePending("no");
+      window.askMiraSetActiveChat("c1");
+      window.askMiraSetMessages([
+        { id: "m1", role: "user", content: "Create an AI Visibility Report for Q3 2026", created_at: new Date().toISOString() },
+        { id: "m2", role: "assistant", status: "success", created_at: new Date().toISOString(),
+          latency_ms: 24000,
+          content_html: '<h3>AI Visibility Report</h3><p>Kestrel closed the quarter first, ahead of ' +
+            '<span data-mira-entity-type="brand" data-mira-entity-id="ke">Kestrel</span> and ' +
+            '<span data-mira-entity-type="competitor" data-mira-entity-id="va">Vantage</span>. ' +
+            'See <span data-mira-entity-type="url" data-mira-entity-id="u1">industryguide.example/ai-tools</span>.</p>',
+          evidence_items: [
+            { id: "e1", type: "brand", entity_id: "ke", company_name: "Kestrel", title: "Kestrel" },
+            { id: "e2", type: "competitor", entity_id: "va", company_name: "Vantage", title: "Vantage" },
+            { id: "e3", type: "url", entity_id: "u1", title: "AI tools", domain: "industryguide.example" },
+            { id: "e4", type: "response", entity_id: "r1", title: "A response", subtitle: "chatgpt" }
+          ] }
+      ]);
+      setTimeout(function(){ zeigen({ bereit: true, thema: A().getAttribute("data-theme"),
+        nachrichten: A().querySelectorAll(".am-msg").length,
+        datenpunkte: A().querySelectorAll(".am-ev-pill").length,
+        fehler: window.__fehler || null }); }, 900);
+    }, 400);
+  });
+})();
+</script>

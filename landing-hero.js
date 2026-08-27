@@ -922,7 +922,10 @@
     }
 
     zustand = "b";
-    chartWandern(root, reihen("b"), SZENE_DAUER);
+    /* Die Linien wandern so lange wie die Zeilen daneben, nicht so lange wie die Zahlen zaehlen.
+       Vorher lief das Chart auf SZENE_DAUER (930ms), waehrend die Tabelle nach 400 stand -- zwei
+       Bewegungen, die im selben Augenblick beginnen und sichtbar verschieden lang dauern. */
+    chartWandern(root, reihen("b"), WANDER_DAUER);
     reihenWandern(root, ordnung, WANDER_DAUER);
     tippNachziehen(tipp, werk, WANDER_DAUER);
     werk.lauf(function(){

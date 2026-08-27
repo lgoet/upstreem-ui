@@ -558,7 +558,15 @@
    kann niemand etwas eingeben, und ein leeres Feld unter einer fertigen Antwort ist eine
    Aufforderung, die ins Leere geht. Dieselbe Dauer wie die Fahrt, sonst laufen zwei Bewegungen
    verschieden lang. */
-.ulh-app .am-composer-area { transition: opacity 200ms ease; }
+/* Der ganze Ablauf beim Abschicken um die Haelfte langsamer: der Kopf schrumpft, die Titelzeile
+   kommt, das Eingabefeld faehrt nach unten und blendet aus. In der App sind das 200ms, hier 300 --
+   im Schaustueck sieht man diesem Wechsel zu, in der App will man ihn hinter sich haben.
+   Alle Teile derselben Bewegung zusammen, sonst laufen sie auseinander: der Kopf traegt die Hoehe,
+   die Schale das untere Polster, das Feld die Deckkraft, und die neue Nachricht ihren Auftritt. */
+.ulh-app #ask-mira .am-hero { transition: height 300ms ease, min-height 300ms ease, padding 300ms ease; }
+.ulh-app .am-composer-shell { transition: background 300ms ease, padding-bottom 450ms cubic-bezier(.4,0,.2,1); }
+.ulh-app .am-msg { animation-duration: 420ms; }
+.ulh-app .am-composer-area { transition: opacity 300ms ease; }
 .ulh-app #ask-mira.has-messages .am-composer-area { opacity: 0; }
 
 /* Der Zurueck-Knopf in der Titelzeile: 32 -> 24px, das Zeichen darin 16 -> 14px. Beide Werte
@@ -626,25 +634,16 @@
    12 -> 8, und die Schrift geht ueber die Schriftgruppen von 12 auf 11. Nicht auf drei Stellen
    proportional, aber alle drei Masse zusammen und nur im Schaustueck: die Regel haengt an
    .ulh-app. */
-/* Die Flaeche des Umschalters: #f5f5f5 bei 60% Deckkraft. Vorher stand er ganz ohne Grund da, und
-   damit war nicht mehr zu sehen, dass die drei Knoepfe zusammengehoeren; bei 30% war die Gruppe
-   auf dem fast weissen Grund des Schaustuecks noch immer kaum zu erkennen. */
-.ulh-app .vc-gran { height: 26px; background: rgba(245, 245, 245, .6); }
-.ulh-app .vc-gran-btn { height: 26px; padding: 0 8px; border-color: transparent; }
-.ulh-app .vc-gran-btn.is-active { border-color: var(--vc-border); box-shadow: 0 1px 2px rgba(11, 13, 24, .06); }
-/* Derselbe Zuschnitt fuer den Doughnut/Balken-Schalter. Nur .tcl-seg und nicht .up-seg-btn: die
-   Klasse teilt sich core mit mehreren Komponenten, und der Domains/URLs-Schalter daneben soll
-   bleiben, wie er ist. */
-.ulh-app .tcl-seg { height: 26px; background: rgba(245, 245, 245, .6); }
-.ulh-app .tcl-seg-btn { height: 26px; padding: 0 8px; border-color: transparent; }
-/* Ein leichter Rahmen um das aktive Segment, in beiden Umschaltern: --vc-border ist im
-   Schaustueck #e7e9ec, also der um ein Viertel zurueckgenommene Ton -- sichtbar als Kante, ohne
-   die Fassung der App zu haben (dort ist es --vc-switch-border, #e0e2e6). */
-.ulh-app .tcl-seg-btn.is-active { border-color: var(--vc-border); box-shadow: 0 1px 2px rgba(11, 13, 24, .06); }
-/* Die Zeichen darin ziehen mit: die Pille geht von 32 auf 26, das ist Faktor 0.81, und 16px waeren
-   in einer 26px-Pille dieselbe Enge, gegen die §1 warnt. Streng gerechnet kaemen 13 heraus -- bei
-   13px sind Doughnut und Balken kaum noch zu unterscheiden, deshalb 14. */
-.ulh-app .tcl-seg-btn svg { width: 14px; height: 14px; }
+/* Die Fassung der beiden Umschalter -- 26px hoch, Polster 8, leisere Flaeche, Zeichen 14px, oben
+   ausgerichtet -- ist hier entstanden und steht jetzt in core: die App zeigt sie ueberall so. Hier
+   bleibt nur, was im Schaustueck wirklich abweicht.
+   Der Schatten unter dem aktiven Segment ist WEG, auch hier: er war eine Zutat aus dieser Sektion,
+   und die App hat ihn nie gehabt. Ein Segment, das sich schon durch weisse Fuellung und Kante
+   abhebt, braucht keinen dritten Hinweis. */
+/* Nur der Rahmen um das aktive Segment: --vc-border ist im Schaustueck #e7e9ec, also der um ein
+   Viertel zurueckgenommene Ton, waehrend die App --vc-switch-border (#e0e2e6) zeigt. */
+.ulh-app .vc-gran-btn.is-active,
+.ulh-app .tcl-seg-btn.is-active { border-color: var(--vc-border); }
 
 /* Der Day-Knopf soll normal aussehen. Er ist gesperrt, und das ist RICHTIG: die Serie spannt sechs
    Monate, und ueber 92 Tagen ist eine Tageskurve unlesbar (UC.granAvailability) -- in der App

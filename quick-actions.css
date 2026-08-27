@@ -252,7 +252,13 @@
 
 /* ---------- scroll body ---------- */
 /* only the result list scrolls — the search bar above and the actions block below stay put */
-.mqa-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y !important; padding: 6px 6px 0; }
+  /* scrollbar-gutter: stable -- die Rinne wird IMMER reserviert, nicht erst wenn die Leiste
+     auftaucht. Unter Windows nimmt eine klassische Leiste rund 15px, und ohne diese Zeile
+     ruckt der ganze Inhalt um 15px, sobald er einmal ueber die Hoehe hinauswaechst (ein
+     aufgeklappter Abschnitt, eine Liste, die laenger wird). Auf macOS liegt die Leiste ueber
+     dem Inhalt, dort aendert die Zeile nichts. Gleiche Ursache wie die versetzten
+     Spaltentitel in Performance Detail, nur ohne Tabellenkopf daneben. */
+.mqa-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y !important; padding: 6px 6px 0; scrollbar-gutter: stable; }
 .mqa-modal:not(.has-results) .mqa-scroll { display: none; }   /* nothing above -> no empty gap */
 /* Oben 18 statt 6: die Trenner sind weg, den Abstand macht jetzt der Abstand -- zweimal
    nachgeschaerft, auf Ansage. Unten und an den Seiten bleibt es bei 6, sonst waechst das Panel

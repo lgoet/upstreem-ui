@@ -129,7 +129,13 @@
 .uca-head .up-popup-close svg { width: 18px; height: 18px; }
 
 /* ---------- Koerper ---------- */
-.uca-body { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; padding: 22px 22px 12px; }
+  /* scrollbar-gutter: stable -- die Rinne wird IMMER reserviert, nicht erst wenn die Leiste
+     auftaucht. Unter Windows nimmt eine klassische Leiste rund 15px, und ohne diese Zeile
+     ruckt der ganze Inhalt um 15px, sobald er einmal ueber die Hoehe hinauswaechst (ein
+     aufgeklappter Abschnitt, eine Liste, die laenger wird). Auf macOS liegt die Leiste ueber
+     dem Inhalt, dort aendert die Zeile nichts. Gleiche Ursache wie die versetzten
+     Spaltentitel in Performance Detail, nur ohne Tabellenkopf daneben. */
+.uca-body { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; padding: 22px 22px 12px; scrollbar-gutter: stable; }
 .uca-body::-webkit-scrollbar { width: 10px; }
 .uca-body::-webkit-scrollbar-thumb { background: var(--vc-border); border-radius: 999px; border: 3px solid var(--vc-bg); }
 

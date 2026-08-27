@@ -285,23 +285,13 @@
     display: inline-flex; align-items: center; justify-content: center;
     transition: background 140ms ease, color 140ms ease;
   }
-  /* hover tooltip (below the button, near-instant) */
-  .am-act-btn[data-tip]::after {
-    content: attr(data-tip);
-    position: absolute; top: calc(100% + 7px); left: 50%;
-    transform: translateX(-50%) translateY(-3px);
-    background: var(--am-text); color: var(--am-bg);
-    font-size: 11px; font-weight: 500; line-height: 1; white-space: nowrap;
-    padding: 5px 8px; border-radius: 6px;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.14);
-    opacity: 0; pointer-events: none; z-index: 30;
-    transition: opacity 100ms ease, transform 100ms ease;
-  }
-  .am-act-btn[data-tip]:hover::after {
-    opacity: 1; transform: translateX(-50%) translateY(0);
-    transition-delay: 40ms;
-  }
-  @media (hover: none) { .am-act-btn[data-tip]::after { display: none; } }
+  /* HIER STAND EIN ZWEITER TOOLTIP. Ein reiner CSS-Tooltip auf ::after, aus der Zeit vor dem
+     gemeinsamen Chip von core -- und seit die Komponente UC.makeTooltips(root) aufruft, erschienen
+     bei jedem dieser Knoepfe ZWEI: dieser sofort (40ms Verzoegerung), der Chip von core nach 400ms
+     daneben. Genau das war der Bericht.
+     Der CSS-Tooltip ist der falsche von beiden: er kennt keinen Rand des Fensters, kippt nicht nach
+     oben, wenn unten kein Platz ist, und sieht anders aus als jeder andere Tooltip der App. Er ist
+     weg; data-tip an den Knoepfen bleibt, das ist der Haken fuer den Chip von core. */
   /* export-pending spinner (shown instead of the download icon while a PDF export is running) */
   .am-act-spinner {
     width: 14px; height: 14px; border-radius: 999px; display: inline-block;
@@ -528,7 +518,14 @@
   }
 
   /* Evidence — subtle source row (ChatGPT/Grok style), only the icon is colored */
-  .am-evidence { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+  /* width: fit-content ist keine Kosmetik. Die Zeile ist der Ausloeser des Erklaerungs-Popovers
+     (data-explain="evidence"), und UC.makeExplain setzt die Karte auf die MITTE des Ausloesers.
+     Als Blockelement war die Zeile so breit wie die Antwort -- gemessen 782px, waehrend die Pillen
+     darin nur 378px einnahmen -- und die Karte landete dadurch 125px rechts neben den Pillen.
+     Genau das war "es spawnt viel zu weit rechts". Mit fit-content umschliesst die Zeile ihre
+     Pillen, die Karte sitzt darueber, und das Ueberfahren loest nur noch dort aus und nicht auf der
+     leeren Flaeche daneben. max-width, damit eine lange Zeile weiter umbricht. */
+  .am-evidence { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; width: fit-content; max-width: 100%; }
   /* when evidence chips are present, double the gap to the hover action bar (6px flex gap + 6px = 12px) */
   .am-msg-main:has(.am-evidence) .am-msg-actions { margin-top: 6px; }
   .am-ev-pill {
@@ -1084,7 +1081,11 @@
     z-index: 6;
   }
   .am-scroll-bottom.is-visible { opacity: 1; pointer-events: auto; transform: translate(-50%, -4px); }
-  .am-scroll-bottom:hover { background: var(--am-soft); border-color: #6f6f6f; }
+  /* --vt-row-hover-solid und NICHT --am-soft: --am-soft ist --vc-heading-bg, und das ist im Dunkeln
+     rgba(42,42,42,0.6) -- also durchsichtig. Der runde Knopf schwebt ueber dem Chat, und beim
+     Ueberfahren schien der Text darunter durch ihn hindurch. --vt-row-hover-solid ist das
+     deckende Paar aus core, genau fuer diesen Fall (#f7f7f7 hell, #242424 dunkel). */
+  .am-scroll-bottom:hover { background: var(--vt-row-hover-solid, var(--am-soft)); border-color: var(--vc-hover-border, #6f6f6f); }
   .am-scroll-bottom svg { width: 17px; height: 17px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
   /* "new message" state -> the button stretches into a labelled pill */
   .am-scroll-label { display: none; font-size: 12.5px; font-weight: 600; line-height: 1; }
@@ -1554,16 +1555,25 @@
   /* submenu */
   .am-cm-sub { position: relative; }
   .am-cm-submenu {
-    position: absolute; top: -6px; right: calc(100% + 6px); min-width: 188px; max-width: 230px;
+    /* 13px und nicht 6: die 100% beziehen sich auf die ZEILE, und zwischen ihrer Kante und der
+       Kante des Menues liegen noch dessen 6px Polster plus 1px Rahmen. Mit 6px sass das Untermenue
+       damit genau auf dem Menue -- gemessen eine Ueberlappung von 1px, also keine Luecke, kein
+       Schatten dazwischen und ein Rahmen in #e0e2e6, der auf der weissen Nachbarkarte nicht zu
+       sehen ist. Genau das war "dieses Dropdown hat keine border": der Rahmen war da, aber die
+       beiden Karten klebten aneinander und lasen sich als eine Form.
+       6 + 6 + 1 = 13 ergibt echte 6px Luft zur Menuekante. */
+    position: absolute; top: -6px; right: calc(100% + 13px); min-width: 188px; max-width: 230px;
     background: var(--am-card); border: 1px solid var(--am-border); border-radius: 14px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.14); padding: 6px;
     opacity: 0; transform: translateX(4px) scale(0.985); pointer-events: none;
     transition: opacity 110ms ease, transform 110ms ease; z-index: 2;
   }
   .am-cm-sub:hover .am-cm-submenu, .am-cm-submenu:hover { opacity: 1; transform: translateX(0) scale(1); pointer-events: auto; }
-  .am-cm-submenu::before { content: ""; position: absolute; top: 0; right: -12px; width: 12px; height: 100%; }
-  .am-cm-sub.flip-right .am-cm-submenu { right: auto; left: calc(100% + 6px); transform: translateX(-4px) scale(0.985); }
-  .am-cm-sub.flip-right .am-cm-submenu::before { right: auto; left: -12px; }
+  /* Die Bruecke fuer die Maus muss die Luecke ganz ueberdecken, sonst schliesst das Untermenue auf
+     dem Weg dorthin. Mit der Luecke von 6 auf 13px waechst sie mit. */
+  .am-cm-submenu::before { content: ""; position: absolute; top: 0; right: -15px; width: 15px; height: 100%; }
+  .am-cm-sub.flip-right .am-cm-submenu { right: auto; left: calc(100% + 13px); transform: translateX(-4px) scale(0.985); }
+  .am-cm-sub.flip-right .am-cm-submenu::before { right: auto; left: -15px; }
   .am-cm-sub.flip-right:hover .am-cm-submenu { transform: translateX(0) scale(1); }
   .am-cm-empty { padding: 6px 9px; font-size: 12.5px; color: var(--am-muted-2); }
 

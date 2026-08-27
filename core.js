@@ -1669,8 +1669,21 @@
        weiterhin den Viewport, solange auf dem Weg dorthin kein transform steht -- die Positions-
        rechnung unten bleibt also unveraendert. */
     (cfg.mount || document.body).appendChild(el);
-    var openFor = null;
-    function hide(){ el.classList.remove("is-on"); openFor = null; }
+    var openFor = null, aufraeumT = null;
+    /* Beim Verschwinden bleibt die Karte stehen, wo sie war, und blendet aus (140ms, siehe
+       .up-explain). is-flipped darf dabei NICHT sofort fallen: die Klasse setzt die Spitze von oben
+       nach unten um, und waehrend die Karte noch sichtbar ist, sieht man diesen Wechsel als
+       Aufblitzen an der falschen Kante. Also erst nach dem Ausblenden aufraeumen -- und der Timer
+       wird beim naechsten Zeigen abgebrochen, sonst raeumt er in eine schon wieder offene Karte. */
+    function hide(){
+      el.classList.remove("is-on");
+      openFor = null;
+      clearTimeout(aufraeumT);
+      aufraeumT = setTimeout(function(){
+        if (el.classList.contains("is-on")) return;
+        el.classList.remove("is-flipped");
+      }, 200);
+    }
     function show(trigger){
       var key = trigger.getAttribute("data-explain");
       /* the trigger goes along as a second argument so a consumer can build a preview from THIS
@@ -1679,8 +1692,14 @@
          it. */
       var html = cfg.html ? cfg.html(key, trigger) : "";
       if (!html) return;
+      clearTimeout(aufraeumT);
       el.innerHTML = html;
       el.setAttribute("data-theme", (cfg.getIsDark && cfg.getIsDark()) ? "dark" : "light");
+      /* Waehrend des Messens unsichtbar. Die Karte wird zum Messen kurz auf 0,0 gesetzt, und wenn
+         der Browser dazwischen einen Frame zeichnet -- was er tut, sobald eine Ueberblendung von
+         einem vorigen Verschwinden noch laeuft -- blitzt sie an der falschen Stelle auf. visibility
+         nimmt sie fuer diesen Augenblick vollstaendig aus dem Bild, ohne die Masse zu aendern. */
+      el.style.visibility = "hidden";
       el.classList.add("is-on");
       el.classList.remove("is-flipped");
       el.style.left = "0px"; el.style.top = "0px";
@@ -1699,6 +1718,7 @@
       el.style.top = top + "px";
       /* the caret follows the icon, not the box, because the box was clamped to the viewport */
       el.style.setProperty("--up-caret", Math.round(r.left + r.width / 2 - left) + "px");
+      el.style.visibility = "";
       openFor = trigger;
     }
     root.addEventListener("mouseover", function(e){
@@ -2965,6 +2985,29 @@
       for (j = 0; j < soll.length; j++) box.appendChild(soll[j]);
     }
   }
+  /* Die Breite der KLASSISCHEN Bildlaufleiste, einmal gemessen und als --up-sbw an <html>.
+     Auf macOS ist sie 0 -- die Leiste liegt ueber dem Inhalt und nimmt keinen Platz. Unter Windows
+     sind es rund 15px, und genau die sind das Problem: eine Tabelle, deren Kopf AUSSERHALB der
+     scrollenden Flaeche steht, verliert im Koerper 15px Breite, der Kopf nicht. Die Spalten passen
+     dann nicht mehr zueinander -- gemeldet aus Performance Detail, Abschnitt Variations.
+     Gemessen und nicht geraten: eine CSS-Konstante dafuer gibt es nicht. Der Wert steht an <html>
+     und nicht an einer .up-root, damit ihn jede Komponente und jedes Portal sieht.
+     Beim Zoomen aendert sich der Wert, deshalb noch einmal bei resize. */
+  function stampScrollbarWidth(){
+    try {
+      var probe = document.createElement("div");
+      probe.style.cssText = "position:absolute;top:-9999px;left:-9999px;width:100px;height:100px;" +
+                            "overflow-y:scroll;visibility:hidden";
+      document.body.appendChild(probe);
+      var w = probe.offsetWidth - probe.clientWidth;
+      probe.parentNode.removeChild(probe);
+      document.documentElement.style.setProperty("--up-sbw", (w > 0 ? w : 0) + "px");
+    } catch (e){}
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", stampScrollbarWidth);
+  else stampScrollbarWidth();
+  window.addEventListener("resize", stampScrollbarWidth);
+
   /* Beim Laden und danach: Bubble baut Elemente in Schueben und spaeter erneut auf. */
   function toolbarLauf(){ stampToolbarIcons(); orderToolbars(); }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function(){ toolbarLauf(); });

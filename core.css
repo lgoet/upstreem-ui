@@ -20,6 +20,11 @@
       --up-dd-radius: 14px; --up-dd-pad: 8px; --up-dd-gap: 6px;
       --up-dd-shadow: 0 10px 28px rgba(0,0,0,.14);
       --vc-switch-bg: #f5f5f5; --vc-switch-border: #e0e2e6; --vc-third: #9e9e9e;
+      /* Die Flaeche der Umschalter (Day/Week/Month und die Bild-Umschalter) ist LEISER als
+         --vc-switch-bg: #f5f5f5 bei 60 Prozent. Der Umschalter soll als Gruppe erkennbar sein und
+         nicht als Kasten auf der Karte. Eigener Name und nicht --vc-switch-bg geaendert: dieser Ton
+         haengt auch an Chips und Hoverzustaenden, und die sollen bleiben, wie sie sind. */
+      --vc-switch-soft: rgba(245,245,245,0.6);
       /* Die Flaeche eines Eingabefelds, SOLIDE. Es gab sie bisher nur als 60%-Variante
          (--vc-switch-bg im Dunkeln, --up-sel-bg, --vt-row-hover) -- und wo ein Chip auf einer Karte
          liegt, die selbst schon getoent ist, addieren sich zwei Halbtransparenzen zu einem dritten
@@ -100,6 +105,9 @@
       --up-menu-bg: #151515; --up-sel-bg: rgba(42,42,42,0.60); --up-menu-border: #454545;
       --up-dd-shadow: 0 10px 28px rgba(0,0,0,.32);
       --vc-switch-bg: rgba(42,42,42,0.6); --vc-switch-border: #353535; --vc-third: #808080;
+      /* Im Dunkeln ist die Flaeche schon durchsichtig, also unveraendert -- ein zweites Mal 60
+         Prozent darauf und man saehe sie nicht mehr. */
+      --vc-switch-soft: rgba(42,42,42,0.6);
       --vc-field: #2a2a2a;
       --vt-head-bg: #121212; --vt-logo-bg: #e0e0e0; --vt-row-hover: rgba(42,42,42,0.6);
       --vt-row-hover-solid: #242424;
@@ -426,7 +434,16 @@
     .up-vartable .up-row { cursor: default; }
     /* Sieben Zeilen ganz, die achte angeschnitten: 7.5 x 55px. Daran sieht man, dass es
        weitergeht -- ein sauberer Schnitt sieht aus wie das Ende der Liste. */
-    .up-vbody { max-height: 412.5px; overflow-y: auto; overscroll-behavior: contain; }
+    /* scrollbar-gutter: stable UND das gleiche Polster am Kopf -- beides zusammen, sonst stimmt einer
+   der beiden Faelle nicht:
+   - Ohne stable reserviert der Koerper die Leiste nur, WENN er scrollt. Eine kurze Liste haette
+     dann ein Polster am Kopf, dem im Koerper nichts entspricht.
+   - Ohne das Polster am Kopf verliert der Koerper unter Windows rund 15px Inhaltsbreite und der
+     Kopf nicht. Genau das war die Meldung aus Performance Detail: die Spaltentitel standen versetzt
+     zu den Spalten darunter.
+   --up-sbw misst core.js einmal beim Start; auf macOS ist es 0, dort aendert sich also nichts. */
+.up-vbody { max-height: 412.5px; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
+.up-vartable .up-thead.up-vrow { padding-right: var(--up-sbw, 0px); }
     /* Die drei Zellbreiten. Der Name nimmt den Rest, die beiden Zahlenspalten stehen fest --
        sonst schiebt ein langer Variantenname die rechte Spalte aus der Tabelle heraus.
        min-width:0 am Namen, sonst weigert sich die Flex-Box zu schrumpfen und die Zeile laeuft
@@ -1114,8 +1131,15 @@
     /* Granularity switcher (Day/Week/Month). Lives here because visibility-chart AND
        brands-overview both show it; the vc- prefix is kept rather than renamed because it is in
        already-deployed visibility-chart markup (same reasoning as .vot-scale-btn above). */
-.vc-gran { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-bg); border-radius: 8px; border: 0; height: 32px; flex: 0 0 auto; }
-    .vc-gran-btn { height: 32px; padding: 0 12px; border: 1px solid transparent; border-radius: 8px; background: transparent;
+    /* 26px hoch und nicht 32, Polster 8 statt 12, Flaeche --vc-switch-soft: die Fassung, die in der
+       Hero-Sektion der Landingpage entstanden ist und von dort uebernommen wurde. Alle drei Masse
+       zusammen (STYLEGUIDE 1) -- eine 32er-Pille mit 8px Polster waere zu weit, eine 26er mit 12px
+       zu eng. Die Schrift bleibt bei 12px/500: die 11px im Schaustueck kommen aus dessen eigener
+       Verkleinerung ALLER Schriften, nicht aus dem Bauteil.
+       align-self: flex-start, damit der Umschalter oben in seinem Kasten sitzt und nicht mittig --
+       neben einer Ueberschrift mit Unterzeile sass er sonst auf halber Hoehe. */
+.vc-gran { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-soft); border-radius: 8px; border: 0; height: 26px; flex: 0 0 auto; align-self: flex-start; }
+    .vc-gran-btn { height: 26px; padding: 0 8px; border: 1px solid transparent; border-radius: 8px; background: transparent;
       color: var(--vc-muted); cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1;
       display: inline-flex; align-items: center; justify-content: center; }
     .vc-gran-btn:hover { color: var(--vc-text); }
@@ -1845,16 +1869,19 @@
    "almost" it: components add .up-seg/.up-seg-btn, they do not restate the rules.
    NOTE this is a different control from .up-dense — that one is the full-width label switcher
    inside the Table Settings popover. */
-.up-seg, .cc-seg, .ubo-seg, .tcl-seg { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-bg); border-radius: 8px; border: 0; height: 32px; flex: 0 0 auto; }
+/* Dieselbe Fassung wie beim Day/Week/Month-Umschalter darueber: 26px hoch, Polster 8, leisere
+   Flaeche, oben ausgerichtet. Die Zeichen ziehen mit auf 14px -- 16px in einer 26er-Pille waeren
+   dieselbe Enge, gegen die STYLEGUIDE 1 warnt. */
+.up-seg, .cc-seg, .ubo-seg, .tcl-seg { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-soft); border-radius: 8px; border: 0; height: 26px; flex: 0 0 auto; align-self: flex-start; }
 /* gap + type spec: this control was lifted from an ICON-ONLY switcher, so a button carrying an icon
    AND a label had its two children touching, and its text fell back to whatever the page inherited.
    Both are set here rather than per component -- gap is a no-op on the single-child icon variants
    that already use this, and the type matches .vc-gran-btn, the app's other labelled switcher
    (STYLEGUIDE §2: switcher label 12px/500). */
-.up-seg-btn, .cc-seg-btn, .ubo-seg-btn, .tcl-seg-btn { height: 32px; padding: 0 10px; border: 1px solid transparent; border-radius: 8px; background: transparent;
+.up-seg-btn, .cc-seg-btn, .ubo-seg-btn, .tcl-seg-btn { height: 26px; padding: 0 8px; border: 1px solid transparent; border-radius: 8px; background: transparent;
   color: var(--vc-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
   gap: 7px; font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1; }
-.up-seg-btn svg, .cc-seg-btn svg, .ubo-seg-btn svg, .tcl-seg-btn svg { width: 16px; height: 16px; color: var(--vc-muted); display: block; }
+.up-seg-btn svg, .cc-seg-btn svg, .ubo-seg-btn svg, .tcl-seg-btn svg { width: 14px; height: 14px; color: var(--vc-muted); display: block; }
 .up-seg-btn:hover, .up-seg-btn:hover svg,
 .cc-seg-btn:hover, .cc-seg-btn:hover svg,
 .ubo-seg-btn:hover, .ubo-seg-btn:hover svg,

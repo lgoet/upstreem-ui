@@ -606,7 +606,13 @@
   border-bottom: 1px solid var(--vc-border);
   display: flex; align-items: center; gap: 8px;
 }
-.upr-side-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 8px; }
+  /* scrollbar-gutter: stable -- die Rinne wird IMMER reserviert, nicht erst wenn die Leiste
+     auftaucht. Unter Windows nimmt eine klassische Leiste rund 15px, und ohne diese Zeile
+     ruckt der ganze Inhalt um 15px, sobald er einmal ueber die Hoehe hinauswaechst (ein
+     aufgeklappter Abschnitt, eine Liste, die laenger wird). Auf macOS liegt die Leiste ueber
+     dem Inhalt, dort aendert die Zeile nichts. Gleiche Ursache wie die versetzten
+     Spaltentitel in Performance Detail, nur ohne Tabellenkopf daneben. */
+.upr-side-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 8px; scrollbar-gutter: stable; }
 .upr-side-body::-webkit-scrollbar { width: 8px; }
 .upr-side-body::-webkit-scrollbar-thumb { background: var(--vc-border); border-radius: 999px; }
 .upr-history-item {
