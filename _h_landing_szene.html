@@ -1,0 +1,234 @@
+<meta charset="utf-8">
+<title>landing hero: Erscheinen und Filterwechsel</title>
+<!-- Wozu: die sieben Aenderungen dieser Runde MESSEN, nicht ansehen.
+     1 Polster oben 1px, 2 gestaffeltes Erscheinen, 3 Umschalterflaeche 60%, 4 Chipring halbiert
+     und Chiptext 11.5px, 5 der Filterwechsel nach drei Sekunden, 6 das # auf 11px,
+     7 der Doughnut/Balken-Schalter wie der D/W/M-Schalter.
+
+     Eigener Dateiname und nicht _h_landing.html mit neuem ?v=: ein Versionsanhang hat in dieser
+     Sitzung mehrfach nicht gewirkt, ein neuer Name wirkt immer.
+     Die Dateiliste kommt aus landing-boot.js -- keine zweite Liste, die veralten kann. -->
+<style>
+  body { margin: 0; font: 12px ui-monospace, monospace; background: #fff; }
+  #bar { padding: 8px; background: #eee; display: flex; gap: 6px; flex-wrap: wrap;
+         position: sticky; top: 0; z-index: 99999; }
+  #out { font: 11px/1.5 ui-monospace, monospace; background: #f6f6f6; padding: 8px; margin: 0;
+         white-space: pre-wrap; max-height: 300px; overflow: auto; }
+</style>
+<body>
+<div id="bar">
+  <button onclick="zeigen(frische())">FRISCHE</button>
+  <button onclick="zeigen(masse())">MASSE</button>
+  <button onclick="zeigen(erscheinenMessen())">ERSCHEINEN</button>
+  <button onclick="szeneMessen()">SZENE</button>
+  <button onclick="zeigen(bild())">ZUSTAND</button>
+  <button onclick="zeigen(verlauf())">VERLAUF</button>
+</div>
+<pre id="out">laedt</pre>
+
+<div class="ulh-root" data-cdn-pin=""></div>
+
+<script>
+function W(){ return document.querySelector(".ulh-root"); }
+function zeigen(o){ document.getElementById("out").textContent = JSON.stringify(o, null, 1); return o; }
+function cs(sel, prop){
+  var e = W().querySelector(sel);
+  return e ? getComputedStyle(e).getPropertyValue(prop).trim() : null;
+}
+
+/* Ohne diesen Beweis ist jeder weitere Messwert wertlos: steht die neue Regel im geladenen
+   Stylesheet, und ist der neue JS-Zweig da? Am Ergebnis geprueft, das es vorher NICHT gab. */
+function frische(){
+  function regel(text){
+    return [].some.call(document.styleSheets, function(ss){
+      try { return [].some.call(ss.cssRules, function(r){
+        return (r.cssText || "").indexOf(text) >= 0; }); } catch(e){ return false; }
+    });
+  }
+  return {
+    css_hash11: regel("up-hash"),
+    css_rise: regel("ulhRise"),
+    css_seg: regel("tcl-seg"),
+    js_szene: typeof (W() || {}).__ulhSzene,
+    fehler: window.__fehler || null
+  };
+}
+
+function masse(){
+  var chip = W().querySelector(".ulh-chip");
+  var hash = W().querySelector(".ulh-app .up-hash");
+  return {
+    polster_oben_main: cs(".ulh-main", "padding-top"),
+    gran_bg: cs(".ulh-app .vc-gran", "background-color"),
+    gran_hoehe: cs(".ulh-app .vc-gran", "height"),
+    seg_bg: cs(".ulh-app .tcl-seg", "background-color"),
+    seg_hoehe: cs(".ulh-app .tcl-seg", "height"),
+    seg_btn_hoehe: cs(".ulh-app .tcl-seg-btn", "height"),
+    chip_ring: chip ? getComputedStyle(chip).backgroundColor : null,
+    chip_breite: chip ? Math.round(chip.getBoundingClientRect().width) : null,
+    chip_text_groesse: cs(".ulh-chip-in", "font-size"),
+    hash: hash ? [hash.getBoundingClientRect().width.toFixed(2),
+                  hash.getBoundingClientRect().height.toFixed(2)] : null,
+    hash_css: hash ? getComputedStyle(hash).width + " x " + getComputedStyle(hash).height : null
+  };
+}
+
+/* Die Animationen LAUFEN in diesem Fenster nicht. Messbar ist trotzdem, ob die richtige Animation
+   mit der richtigen Verzoegerung an der richtigen Stelle haengt -- und das ist die Behauptung. */
+function erscheinenMessen(){
+  var r = W();
+  r.classList.add("is-entering");                    /* faellt im Betrieb nach 1100ms ab */
+  function a(sel){
+    var e = r.querySelector(sel);
+    if (!e) return null;
+    var s = getComputedStyle(e);
+    return s.animationName + " " + s.animationDuration + " " + s.animationDelay + " " + s.animationFillMode;
+  }
+  var o = {
+    is_shown: r.classList.contains("is-shown"),
+    stage_deckkraft: cs(".ulh-stage", "opacity"),
+    rahmen: a(".ulh-frame"),
+    seitenkopf: a(".dph-root"),
+    chart: a(".vot-root"),
+    zitate: a(".tcd-root")
+  };
+  r.classList.remove("is-entering");
+  return o;
+}
+
+/* Der Zustand der Tabelle, der Kopfzeile und der Linien -- in genau der Form, in der er sich
+   vorher und nachher vergleichen laesst. */
+function bild(){
+  var r = W();
+  var zeilen = [].slice.call(r.querySelectorAll(".vot-unit-right .vt-row")).map(function(z){
+    function t(sel){ var e = z.querySelector(sel); return e ? e.textContent.trim() : null; }
+    var punkt = z.querySelector(".vt-td-sentiment .up-sent-dot");
+    return {
+      id: z.getAttribute("data-id"),
+      idx: t(".vt-td-idx"),
+      name: t(".vt-brand-name"),
+      vis: t(".vt-td-visibility .up-num"),
+      visT: t(".vt-td-visibility .up-trend"),
+      rank: t(".vt-td-ranking .up-num"),
+      rankT: t(".vt-td-ranking .up-trend"),
+      sent: t(".vt-td-sentiment .up-sent-val"),
+      sentT: t(".vt-td-sentiment .up-trend"),
+      punkt: punkt ? punkt.style.background : null,
+      tf: z.style.transform || "",
+      tr: z.style.transition || ""
+    };
+  });
+  var kpis = [].slice.call(r.querySelectorAll(".dph-kpis .dph-kpi")).map(function(k){
+    var v = k.querySelector(".dph-kpi-value"), t = k.querySelector(".up-trend");
+    return (v ? v.textContent.trim() : "?") + " / " + (t ? t.textContent.trim() : "-");
+  });
+  var lein = r.querySelector(".up-line-canvas");
+  var chart = lein && window.Chart && window.Chart.getChart ? window.Chart.getChart(lein) : null;
+  var linien = null, ymax = null, hoechster = null;
+  if (chart){
+    linien = chart.data.datasets.map(function(d){
+      return d.__id + ":" + d.data.map(function(v){ return Number(v).toFixed(1); }).join(",");
+    });
+    ymax = chart.scales && chart.scales.y ? Number(chart.scales.y.max).toFixed(2) : null;
+    hoechster = 0;
+    chart.data.datasets.forEach(function(d){ d.data.forEach(function(v){ if (v > hoechster) hoechster = v; }); });
+    hoechster = hoechster.toFixed(1);
+  }
+  return {
+    reihenfolge: zeilen.map(function(z){ return z.idx + z.id; }).join(" "),
+    zeilen: zeilen, kpis: kpis, linien: linien,
+    y_achse_max: ymax, hoechster_wert: hoechster,
+    tipp_offen: !!(chart && chart.tooltip && chart.tooltip.getActiveElements &&
+                   chart.tooltip.getActiveElements().length)
+  };
+}
+
+/* Drei Aufnahmen: vorher, unmittelbar nach dem Ausloesen (da muss die Umsortierung schon im DOM
+   stehen und die Zeilen per transform noch an der ALTEN Stelle haengen -- der Invert-Schritt), und
+   nach dem Ende. Die mittlere Aufnahme ist der Beweis, dass es eine Wanderung gibt und nicht nur
+   ein Umschreiben. */
+function szeneMessen(){
+  var r = W();
+  var o = { vor: bild() };
+  var ok = r.__ulhSzene ? r.__ulhSzene() : "keine Handhabe";
+  o.ausgeloest = ok;
+  o.sofort = bild();
+  setTimeout(function(){
+    o.nach_1200 = bild();
+    o.zweiter_versuch = r.__ulhSzene ? r.__ulhSzene() : null;   /* muss false sein: nur einmal */
+    zeigen(o);
+  }, 1200);
+  zeigen(o);
+}
+
+/* Der Mitschnitt laeuft VOM START an. Beim ersten Versuch habe ich ihn per Hand nach dem Laden
+   gestartet -- da war der Wechsel schon vorbei, und die erste Aufnahme zeigte bereits den
+   Endzustand. Ein Messfehler, der wie "es gibt keine Bewegung" aussah. */
+window.__log = [];
+window.__t0 = performance.now();
+window.__iv = setInterval(function(){
+  var r = W(); if (!r) return;
+  var zs = [].slice.call(r.querySelectorAll(".vot-unit-right .vt-row"));
+  if (!zs.length) return;
+  var ke = zs.filter(function(z){ return z.getAttribute("data-id") === "ke"; })[0];
+  var lein = r.querySelector(".up-line-canvas");
+  var ch = lein && window.Chart && window.Chart.getChart ? window.Chart.getChart(lein) : null;
+  var kd = null, pix = null;
+  if (ch) ch.data.datasets.forEach(function(d, i){
+    if (d.__id !== "ke") return;
+    kd = Number(d.data[0]).toFixed(2);
+    var m = ch.getDatasetMeta(i);
+    if (m && m.data && m.data[0]) pix = m.data[0].y.toFixed(1);
+  });
+  window.__log.push({
+    ms: Math.round(performance.now() - window.__t0),
+    ord: zs.map(function(z){ return z.getAttribute("data-id"); }).join(""),
+    idx: zs.map(function(z){ var e = z.querySelector(".vt-td-idx"); return e ? e.textContent.trim() : "?"; }).join(""),
+    keVis: ke ? (ke.querySelector(".vt-td-visibility .up-num") || {}).textContent : null,
+    keRank: ke ? (ke.querySelector(".vt-td-ranking .up-num") || {}).textContent : null,
+    keSent: ke ? (ke.querySelector(".vt-td-sentiment .up-sent-val") || {}).textContent : null,
+    kpi: (function(){ var v = r.querySelector(".dph-kpis .dph-kpi .dph-kpi-value"); return v ? v.textContent : null; })(),
+    keTf: ke ? (ke.style.transform || "") : "",
+    /* Der GERECHNETE transform. Der Inline-Stil steht sofort auf 0 -- ob die Zeile dorthin
+       GLEITET, steht nur hier: laeuft die Transition, liefert getComputedStyle die Matrix des
+       Zwischenstands. Steht hier "none" oder sofort die Endmatrix, gleitet nichts. */
+    keTfC: ke ? getComputedStyle(ke).transform : "",
+    dsKe0: kd, pixKe0: pix
+  });
+  if (window.__log.length > 220) clearInterval(window.__iv);
+}, 40);
+
+/* Der Mitschnitt, auf das Wesentliche gekuerzt: die Aufnahmen um die erste Aenderung herum. */
+function verlauf(){
+  var L = window.__log, i0 = -1;
+  for (var i = 1; i < L.length; i++) if (L[i].ord !== L[0].ord || L[i].keVis !== L[0].keVis){ i0 = i; break; }
+  return { aufnahmen: L.length, erste: L[0], wechsel_bei_ms: i0 >= 0 ? L[i0].ms : null,
+           fenster: i0 >= 0 ? L.slice(i0 - 1, i0 + 17) : [], letzte: L[L.length - 1] };
+}
+
+window.addEventListener("error", function(e){
+  window.__fehler = (window.__fehler || []).concat([String(e.message).slice(0, 160)]);
+});
+
+(function(){
+  function hol(f){ return fetch(f + "?nocache=" + Math.random(), { cache: "no-store" })
+                     .then(function(r){ return r.text(); }); }
+  hol("landing-boot.js").then(function(boot){
+    var files = [];
+    boot.replace(/\bcss\("([^"]+)"\)/g, function(_, f){ files.push(f); return ""; });
+    boot.replace(/\bjs\("([^"]+)"\)/g,  function(_, f){ files.push(f); return ""; });
+    var texts = {};
+    return Promise.all(files.map(function(f){
+      return hol(f).then(function(t){ texts[f] = t; });
+    })).then(function(){
+      files.forEach(function(f){
+        var el = document.createElement(/\.css$/.test(f) ? "style" : "script");
+        el.textContent = texts[f];
+        document.head.appendChild(el);
+      });
+      window.__geladen = files;
+      setTimeout(function(){ zeigen({ geladen: files.length, frische: frische(), masse: masse() }); }, 2200);
+    });
+  });
+})();
+</script>

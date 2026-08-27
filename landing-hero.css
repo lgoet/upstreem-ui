@@ -149,7 +149,7 @@
   height: 32px;
   border-radius: 999px;
   /* Der Ring. Ohne diese Fuellung gibt es keinen Rand, durch den etwas ziehen koennte. */
-  background: var(--ulh-border);
+  background: var(--ulh-chip-ring, var(--ulh-border));
 }
 .ulh-chip::before {
   content: "";
@@ -190,7 +190,7 @@
   padding: 0 14px;
   border-radius: 999px;
   background: var(--ulh-grund);
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 600;
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -311,6 +311,38 @@
   background: linear-gradient(to top, var(--ulh-blende), rgba(240, 240, 240, 0));
 }
 
+/* ---------- Das Erscheinen ----------
+   Dieselbe Machart wie im Onboarding (uob-rise): von unten heraufziehen und dabei aufblenden, in
+   Stufen. Die Reihenfolge ist die gewuenschte -- erst der Rahmen samt Leiste, dann der Seitenkopf,
+   dann Chart und Marken, dann der Zitatteil.
+   backwards als fill: damit ist ein Teil VOR seiner Verzoegerung unsichtbar. Ohne das blitzten alle
+   vier gleichzeitig auf und sprangen dann zurueck.
+   Zwei Klassen und nicht eine: is-shown macht das Fenster ueberhaupt sichtbar und BLEIBT,
+   is-entering traegt die Animationen und faellt nach dem letzten Durchlauf ab. Bliebe sie stehen,
+   liefe jede spaetere Bewegung im Fenster gegen eine noch gesetzte animation -- genau davor warnt
+   der Kommentar im Onboarding. */
+@keyframes ulhRise {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: none; }
+}
+.ulh-stage { opacity: 0; }
+.ulh-root.is-shown .ulh-stage { opacity: 1; }
+.ulh-root.is-entering .ulh-frame  { animation: ulhRise 460ms var(--ulh-ease) backwards; }
+.ulh-root.is-entering .dph-root   { animation: ulhRise 460ms var(--ulh-ease) 160ms backwards; }
+.ulh-root.is-entering .vot-root   { animation: ulhRise 460ms var(--ulh-ease) 320ms backwards; }
+.ulh-root.is-entering .tcd-root   { animation: ulhRise 460ms var(--ulh-ease) 480ms backwards; }
+@media (prefers-reduced-motion: reduce) {
+  .ulh-root.is-entering .ulh-frame,
+  .ulh-root.is-entering .dph-root,
+  .ulh-root.is-entering .vot-root,
+  .ulh-root.is-entering .tcd-root { animation: none; }
+}
+
+/* Die Zeilen der Markentabelle wandern beim Filterwechsel an ihren neuen Platz. Die Bewegung setzt
+   landing-hero.js als Inline-Stil (FLIP: erst messen, dann umsortieren, dann von der alten Lage
+   zurueckfahren) -- hier steht nur, dass eine wandernde Zeile ueber ihrem Nachbarn liegt. */
+.ulh-app .vt-row.is-wandert { position: relative; z-index: 1; }
+
 /* ---------- Das Fenster ---------- */
 /* Die Buehne haengt in einem Raster mit EINER Zelle, damit der spaetere Ablauf mehrere Szenen
    uebereinander legen kann, ohne dass die Hoehe springt. */
@@ -426,7 +458,7 @@
      INNERHALB der Bloecke (zwischen Chart und Tabelle, zwischen Chart und Liste bei den Zitaten)
      sind in den Komponenten schon 16px, die mussten nicht angefasst werden. */
   gap: 16px;
-  padding: 3px 16px 0;
+  padding: 1px 16px 0;
 }
 /* Die Komponenten im Fenster sind Schaustuecke. Nichts darin ist anklickbar, und der Zeiger soll
    das auch nicht behaupten -- der Ablauf spaeter fuehrt die Maus selbst.
@@ -461,11 +493,22 @@
    12 -> 8, und die Schrift geht ueber die Schriftgruppen von 12 auf 11. Nicht auf drei Stellen
    proportional, aber alle drei Masse zusammen und nur im Schaustueck: die Regel haengt an
    .ulh-app. */
-/* Die Flaeche des Umschalters: #f5f5f5 bei 30% Deckkraft. Vorher stand er ganz ohne Grund da, und
-   damit war nicht mehr zu sehen, dass die drei Knoepfe zusammengehoeren. */
-.ulh-app .vc-gran { height: 26px; background: rgba(245, 245, 245, .3); }
+/* Die Flaeche des Umschalters: #f5f5f5 bei 60% Deckkraft. Vorher stand er ganz ohne Grund da, und
+   damit war nicht mehr zu sehen, dass die drei Knoepfe zusammengehoeren; bei 30% war die Gruppe
+   auf dem fast weissen Grund des Schaustuecks noch immer kaum zu erkennen. */
+.ulh-app .vc-gran { height: 26px; background: rgba(245, 245, 245, .6); }
 .ulh-app .vc-gran-btn { height: 26px; padding: 0 8px; border-color: transparent; }
 .ulh-app .vc-gran-btn.is-active { border-color: transparent; box-shadow: 0 1px 2px rgba(11, 13, 24, .06); }
+/* Derselbe Zuschnitt fuer den Doughnut/Balken-Schalter. Nur .tcl-seg und nicht .up-seg-btn: die
+   Klasse teilt sich core mit mehreren Komponenten, und der Domains/URLs-Schalter daneben soll
+   bleiben, wie er ist. */
+.ulh-app .tcl-seg { height: 26px; background: rgba(245, 245, 245, .6); }
+.ulh-app .tcl-seg-btn { height: 26px; padding: 0 8px; border-color: transparent; }
+.ulh-app .tcl-seg-btn.is-active { border-color: transparent; box-shadow: 0 1px 2px rgba(11, 13, 24, .06); }
+/* Die Zeichen darin ziehen mit: die Pille geht von 32 auf 26, das ist Faktor 0.81, und 16px waeren
+   in einer 26px-Pille dieselbe Enge, gegen die §1 warnt. Streng gerechnet kaemen 13 heraus -- bei
+   13px sind Doughnut und Balken kaum noch zu unterscheiden, deshalb 14. */
+.ulh-app .tcl-seg-btn svg { width: 14px; height: 14px; }
 
 /* Der Day-Knopf soll normal aussehen. Er ist gesperrt, und das ist RICHTIG: die Serie spannt sechs
    Monate, und ueber 92 Tagen ist eine Tageskurve unlesbar (UC.granAvailability) -- in der App
@@ -520,6 +563,10 @@
    geerbten -- dieselbe Falle wie bei --usn-w. Der Chip und die Knoepfe oben ziehen mit. */
 .ulh-app .up-root { --vc-border: #e7e9ec; }
 .ulh-root { --ulh-border: #e7e9ec; }
+/* Der Ring um den Chip nur halb so kraeftig wie die uebrigen Rahmen: #e7e9ec liegt 24 Stufen unter
+   Weiss, die Haelfte sind 12 -- also #f3f4f6. Der Funke bleibt, wie er ist; er zieht jetzt durch
+   einen leiseren Ring. */
+.ulh-root { --ulh-chip-ring: #f3f4f6; }
 
 /* Zwischen Chart und Tabelle 8px statt 16. Beide Bloecke sind eine Reihe aus zwei Einheiten, und
    die 16px stehen in den Komponenten (.vot-root und .tcd-root). Der Abstand ZWISCHEN den Bloecken
@@ -604,6 +651,13 @@
 .ulh-app .up-pop-head,
 
 .ulh-app .vot-filter-count { font-size: 10px; }
+
+/* Das # in den Spaltenueberschriften eine Stufe kleiner: 12 -> 11px, in BEIDEN Tabellen.
+   Nicht .up-hash: das ist das Zeichen in der RANGZELLE der Zeilen (gemessen -- alle sechs Treffer
+   sassen in .up-rank-group). Das Zeichen der Ueberschrift ist ein blankes svg in .vt-th-idx bzw.
+   .tct-th-idx, und dort steht die Groesse. */
+.ulh-app .vt-th-idx svg,
+.ulh-app .tct-th-idx svg { width: 11px; height: 11px; }
 
 /* Die Trendangabe: im Schritt davor von 13 auf 12, jetzt mit allen anderen auf 11. Das Zeichen
    bleibt bei 15px -- kleiner wird der Pfeil unleserlich. */

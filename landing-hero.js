@@ -42,13 +42,33 @@
      weil die Buehne fest ist -- kuerzt die Top-Brands-Tabelle "Northwind" auf "Northwi...".
      Kuerzere Namen sind der billigere Hebel als eine breitere Buehne, denn die Buehnenbreite
      steuert auch die Schriftgroesse im Fenster. */
+  /* Jede Marke hat ZWEI Zustaende. A ist der Anfang, B der Stand nach dem Filterwechsel drei
+     Sekunden spaeter. Die eigene Marke (Kestrel) startet auf Platz 3 und geht auf 1 -- aufwaerts,
+     nicht abwaerts, das war die Ansage. Platz 5 und 6 tauschen (Lumen und Verity).
+     Die VORZEICHEN der Trendwerte sind in A und B gleich. Das ist Absicht: so muss beim Wechsel nur
+     die Zahl zaehlen, und Farbe und Pfeilrichtung des Trendzeichens bleiben, wie sie sind -- ein
+     Umschlagen mitten in der Bewegung waere ein Sprung, den kein Zaehlen glaettet. Verity war der
+     Fall, der das erzwungen hat: es steigt von Platz 6 auf 5, also steht auch im Zustand A schon
+     ein kleines Plus davor und nicht das Minus, das dort zuerst stand. */
   var MARKEN = [
-    { id: "ke", name: "Kestrel", farbe: "#1f6feb", basis: 34.2 },
-    { id: "va", name: "Vantage", farbe: "#8957e5", basis: 28.6 },
-    { id: "ha", name: "Halden",  farbe: "#1a7f5a", basis: 22.1 },
-    { id: "ni", name: "Nimbus",  farbe: "#0e7490", basis: 17.4 },
-    { id: "lu", name: "Lumen",   farbe: "#b3541e", basis: 13.2 },
-    { id: "ve", name: "Verity",  farbe: "#be185d", basis: 9.6 }
+    { id: "ke", name: "Kestrel", farbe: "#1f6feb",
+      a: { vis: 24.6, rank: 2.4, sent: 74, visD: 2.1, rankD: -0.3, sentD: 1.4 },
+      b: { vis: 38.9, rank: 1.1, sent: 79, visD: 5.8, rankD: -1.3, sentD: 3.1 } },
+    { id: "va", name: "Vantage", farbe: "#8957e5",
+      a: { vis: 34.8, rank: 1.3, sent: 76, visD: 1.4, rankD: -0.1, sentD: 0.6 },
+      b: { vis: 32.1, rank: 1.9, sent: 75, visD: 0.7, rankD: -0.4, sentD: 0.2 } },
+    { id: "ha", name: "Halden",  farbe: "#1a7f5a",
+      a: { vis: 30.2, rank: 2.1, sent: 71, visD: 1.9, rankD: -0.2, sentD: 2.1 },
+      b: { vis: 27.4, rank: 2.6, sent: 70, visD: 1.1, rankD: -0.5, sentD: 1.4 } },
+    { id: "ni", name: "Nimbus",  farbe: "#0e7490",
+      a: { vis: 19.4, rank: 3.4, sent: 68, visD: -1.1, rankD: 0.4, sentD: -1.6 },
+      b: { vis: 18.2, rank: 3.7, sent: 67, visD: -0.6, rankD: 0.2, sentD: -0.8 } },
+    { id: "lu", name: "Lumen",   farbe: "#b3541e",
+      a: { vis: 14.1, rank: 4.2, sent: 66, visD: -0.8, rankD: 0.3, sentD: 0.9 },
+      b: { vis: 11.3, rank: 5.1, sent: 63, visD: -1.9, rankD: 0.7, sentD: 0.4 } },
+    { id: "ve", name: "Verity",  farbe: "#be185d",
+      a: { vis: 9.8,  rank: 5.3, sent: 63, visD: 0.6,  rankD: -0.1, sentD: 0.5 },
+      b: { vis: 13.6, rank: 4.4, sent: 66, visD: 1.7,  rankD: -0.6, sentD: 1.2 } }
   ];
 
   /* Ein Zeichen je Marke, erzeugt: abgerundetes Quadrat in der Markenfarbe mit dem Anfangs-
@@ -106,16 +126,15 @@
      berufen. */
   function amplitude(mi){ return 0.06 + (mi % 5) * 0.025; }
 
-  function reihen(){
+  function reihen(z){
     var monate = monatsliste(), out = [];
     MARKEN.forEach(function(m, mi){
-      var a = amplitude(mi) * m.basis;
+      var basis = m[z].vis;
+      var a = amplitude(mi) * basis;
+      var phase = mi * 1.05;
       monate.forEach(function(tag, ti){
-        /* Das kleine Wackeln obendrauf nimmt den Linien das Gleichgeschaltete: ohne es liefen alle
-           fuenf exakt parallel, und das sieht gezeichnet aus. 6% der Amplitude, abwechselnd nach
-           oben und unten je Marke und Monat -- klein genug, um den Rhythmus nicht zu stoeren. */
         var wackeln = a * 0.06 * (((mi + ti) % 3) - 1);
-        var wert = m.basis + VERLAUF[ti % VERLAUF.length] * a + wackeln;
+        var wert = basis + VERLAUF[ti % VERLAUF.length] * a + wackeln;
         out.push({ company_id: m.id, day: tag, visibility_pct: Math.max(0, Math.round(wert * 10) / 10) });
       });
     });
@@ -126,27 +145,20 @@
      Kennzahlen. Gerechnet und nicht erfunden, damit Kurve und Zahlen zusammenpassen: eine
      steigende Linie neben einem fallenden Pfeil ist genau die Art Widerspruch, die einem
      aufmerksamen Betrachter auffaellt. */
-  function punkt(serie, id, index){
-    var w = serie.filter(function(p){ return p.company_id === id; });
-    var p = w[index < 0 ? w.length + index : index];
-    return p ? p.visibility_pct : 0;
-  }
-
-  function tabelle(serie){
-    return MARKEN.map(function(m, i){
-      var jetzt = punkt(serie, m.id, -1);
-      var davor = punkt(serie, m.id, -2);
-      var rang = 1 + i * 0.8 + (i === 0 ? 0 : 0.3);
-      return {
-        company_id: m.id, name: m.name, logo_url: m.logo, position: i + 1,
-        visibility_pct: Math.round(jetzt * 10) / 10,
-        visibility_delta_pct: Math.round((jetzt - davor) * 10) / 10,
-        avg_rank: Math.round(rang * 10) / 10,
-        avg_rank_delta: [-0.3, 0.2, -0.1, 0.4, 0.1, -0.2][i],
-        sentiment: [79, 74, 71, 68, 66, 63][i],
-        sentiment_delta: [1.4, -0.8, 2.1, -1.6, 0.9, 0.5][i]
-      };
-    });
+  /* Die Tabelle sortiert sich nach Visibility, absteigend -- die Platzziffer ist die Reihenfolge und
+     keine eigene Angabe. Damit ergibt sich der Platzwechsel aus den Zahlen und nicht aus einer
+     zweiten Liste, die dazu passen muss. */
+  function tabelle(z){
+    return MARKEN.slice().sort(function(x, y){ return y[z].vis - x[z].vis; })
+      .map(function(m, i){
+        var d = m[z];
+        return {
+          company_id: m.id, name: m.name, logo_url: m.logo, position: i + 1,
+          visibility_pct: d.vis, visibility_delta_pct: d.visD,
+          avg_rank: d.rank, avg_rank_delta: d.rankD,
+          sentiment: d.sent, sentiment_delta: d.sentD
+        };
+      });
   }
 
   /* Erfundene Quellen. Keine echten Domains: die Anteile hier sind Demozahlen, und unter einem
@@ -407,9 +419,11 @@
   /* ---------- Daten hineingeben ----------------------------------------------------------- */
 
   function fuellen(){
-    var serie = reihen();
-    var tab = tabelle(serie);
-    var eigene = tab[0];
+    var serie = reihen("a");
+    var tab = tabelle("a");
+    /* Die eigene Marke ist Kestrel und steht im Zustand A auf Platz 3 -- nicht tab[0]. Der
+       Seitenkopf zeigt IHRE Zahlen, nicht die des Ersten. */
+    var eigene = tab.filter(function(r){ return r.company_id === "ke"; })[0] || tab[0];
 
     if (window.setSidebarTeams){
       /* Acht Teams. Nur das erste ist zu sehen (es ist das aktive) -- die anderen sieben zaehlen im
@@ -455,9 +469,9 @@
       window.renderVisibilityChart({
         instanceId: ID.vot,
         series: serie,
-        companies: MARKEN.map(function(m, i){
+        companies: MARKEN.map(function(m){
           return { company_id: m.id, name: m.name, color: m.farbe, favicon_url: m.logo,
-                   visibility_window_pct: tab[i].visibility_pct };
+                   visibility_window_pct: m.a.vis };
         }),
         filterCompanies: MARKEN.map(function(m){
           return { company_id: m.id, name: m.name, color: m.farbe, favicon_url: m.logo };
@@ -495,6 +509,237 @@
         brandMentioned: ""
       });
     }
+  }
+
+  /* ---------- Der Filterwechsel ---------------------------------------------------------- */
+
+  /* Drei Sekunden nachdem das Dashboard fertig steht, wechselt es EINMAL von Zustand A auf B -- wie
+     ein Filterwechsel in der App: Kestrel steigt von Platz 3 auf 1, Lumen und Verity tauschen 5 und
+     6, alle sechs Linien im Chart fahren auf ihre neuen Werte, und jede Zahl zaehlt dorthin.
+     Einmal und nicht im Kreis: eine Sektion, die sich alle drei Sekunden umsortiert, liest sich als
+     Fehler und nicht als Funktion. Eine Folge mehrerer Szenen ist Schritt 2 der Landingpage.
+
+     Der Wechsel laeuft NICHT ueber renderVisibilityChart. Das waere der kurze Weg und der falsche:
+     der Setter schreibt die Tabelle als innerHTML neu -- dann gibt es keine Zeilen mehr, die
+     wandern koennten -- und build() im Kit ruft destroy(), dann spielt die Eingangsanimation des
+     Charts von vorn. Also von Hand: Chart.js bekommt neue Zahlen in seine Datensaetze und
+     interpoliert sie mit seinen eigenen 600ms, die Zeilen wandern per FLIP, die Zahlen zaehlen. */
+
+  var SZENE_WARTEN = 3000;      /* nach dem fertigen Dashboard, nicht nach dem Skriptstart */
+  var SZENE_DAUER = 620;        /* Wanderung und Zaehlung; Chart.js animiert daneben mit 600 */
+  var zustand = "a";
+
+  /* Die Formate sind die der Komponenten und nicht neu erfunden -- sonst zaehlt eine Zelle in einer
+     anderen Genauigkeit hoch, als sie danach anzeigt, und der letzte Schritt ist ein Sprung.
+     Visibility-Zelle: UC.fmtPct ohne Stellen. Rang: UC.fmt1, eine Stelle. Sentiment: ganze Zahl.
+     Trendzeichen: |d|, denn UC.trendChip zeigt den Absolutwert und traegt die Richtung im Pfeil. */
+  function ganz(v){ return String(Math.round(v)); }
+  function ganzProz(v){ return String(Math.round(v)) + "%"; }
+  function eine(v){ return (Math.round(v * 10) / 10).toFixed(1); }
+  function proz(v){ var k = window.UpstreemCore; return k ? k.fmtPct(v) : ganzProz(v); }
+
+  /* Die Zahl im Trendzeichen ist ein TEXTKNOTEN hinter dem Pfeil-SVG (UC.trendChip: Icon + Text).
+     Also den Knoten holen und nicht das Element beschreiben -- textContent auf dem Element haette
+     den Pfeil mitgeloescht. */
+  function trendText(chip){
+    if (!chip) return null;
+    var k = chip.lastChild;
+    return (k && k.nodeType === 3) ? k : null;
+  }
+
+  /* Ein GEMEINSAMES Zaehlwerk fuer alle Zahlen des Wechsels: eine Schleife, nicht eine je Zahl.
+     Zwanzig eigene rAF-Ketten laufen auseinander, und dann steht die Kopfzeile schon auf dem
+     Endwert, waehrend die Tabelle noch unterwegs ist.
+     Die Zeit kommt aus dem rAF-Argument und nicht aus einem Frame-Zaehler: ein gedrosselter Tab
+     liefert weniger Frames, die Dauer soll aber dieselbe bleiben. */
+  function zaehlwerk(dauer){
+    var auftraege = [];
+    return {
+      /* el darf ein Element ODER ein Textknoten sein -- textContent schreibt auf beidem. */
+      zahl: function(el, von, bis, form){
+        if (!el) return;
+        var a = Number(von), b = Number(bis);
+        if (!isFinite(a) || !isFinite(b)) return;
+        auftraege.push(function(e){ el.textContent = form(a + (b - a) * e); });
+      },
+      /* Alles, was keine Zahl in einem Knoten ist: der Punkt des Sentiment-Zeichens wechselt die
+         Farbe, die Platzziffer springt. Bekommt beide Zeiten -- e ist gekruemmt, t linear. */
+      frei: function(fn){ if (fn) auftraege.push(fn); },
+      lauf: function(fertig){
+        var start = null, fertigGemeldet = false;
+        function abschluss(){
+          if (fertigGemeldet) return;
+          fertigGemeldet = true;
+          auftraege.forEach(function(f){ f(1, 1); });
+          if (fertig) fertig();
+        }
+        function schritt(jetzt){
+          if (fertigGemeldet) return;
+          if (start == null) start = jetzt;
+          var t = Math.min(1, (jetzt - start) / dauer);
+          /* easeOutQuart -- dieselbe Kurve, mit der Chart.js seine Datenaenderung animiert
+             (animation: easeOutQuart in makeLine). Mit einer anderen Kurve zaehlten die Zahlen nach
+             einem anderen Gefuehl als die Linien daneben. */
+          var e = 1 - Math.pow(1 - t, 4);
+          auftraege.forEach(function(f){ f(e, t); });
+          if (t < 1) requestAnimationFrame(schritt); else abschluss();
+        }
+        requestAnimationFrame(schritt);
+        /* Rueckhalt. In einem verdeckten Tab feuert rAF gar nicht -- ohne diese Uhr blieben die
+           Zahlen auf dem Anfangswert stehen, waehrend die Zeilen schon umsortiert sind: Platz 1 mit
+           den Werten von Platz 3. Die Uhr laeuft auch verdeckt, gedrosselt, aber sie laeuft. */
+        setTimeout(abschluss, dauer + 200);
+      }
+    };
+  }
+
+  /* FLIP: First, Last, Invert, Play. Erst die alten Lagen messen, dann umsortieren, dann jede Zeile
+     per transform an ihre alte Stelle zurueckstellen und von dort auf 0 fahren lassen.
+     offsetTop und NICHT getBoundingClientRect: die Buehne steht unter transform: scale, und
+     getBoundingClientRect liefert die verkleinerten Masse -- eine Wanderung von 47 Layoutpixeln
+     kaeme als 33 heraus, und die Zeilen sprangen um den Rest. offsetTop ist die Lage im Layout,
+     also in genau der Einheit, in der auch das transform rechnet. */
+  function reihenWandern(root, ordnung, dauer){
+    var tbody = root.querySelector(".vot-unit-right .vt-tbody");
+    if (!tbody) return null;
+    var vorher = {};
+    [].slice.call(tbody.querySelectorAll(".vt-row")).forEach(function(z){
+      vorher[z.getAttribute("data-id")] = { el: z, oben: z.offsetTop };
+    });
+    var reihe = ordnung.map(function(id){ return vorher[id]; }).filter(Boolean);
+    /* Passt die Ordnung nicht auf die Zeilen, wird NICHTS angefasst. Eine halb umsortierte Tabelle
+       waere schlimmer als eine unveraenderte. */
+    if (reihe.length !== ordnung.length) return null;
+    reihe.forEach(function(r){ tbody.appendChild(r.el); });
+    reihe.forEach(function(r){
+      var weg = r.oben - r.el.offsetTop;
+      if (!weg) return;
+      r.el.classList.add("is-wandert");
+      r.el.style.transition = "none";
+      r.el.style.transform = "translateY(" + weg + "px)";
+    });
+    /* Ein Lesen erzwingt das Layout mit dem gesetzten transform. Ohne diese Zeile fasst der Browser
+       beide Zuweisungen zu einem Stil zusammen, und es gibt nichts zu ueberblenden. */
+    void tbody.offsetHeight;
+    requestAnimationFrame(function(){
+      reihe.forEach(function(r){
+        r.el.style.transition = "transform " + dauer + "ms cubic-bezier(.22,1,.36,1)";
+        r.el.style.transform = "translateY(0)";
+      });
+    });
+    /* Aufraeumen. Der Inline-Stil darf nicht stehenbleiben: jede spaetere Bewegung der Zeile liefe
+       sonst gegen ein transform von hier. Die Uhr raeumt auch dann auf, wenn rAF nie gefeuert hat
+       -- dann springt die Zeile an ihren Platz, statt dort zu bleiben, wo sie vorher stand. */
+    setTimeout(function(){
+      reihe.forEach(function(r){
+        r.el.style.transition = "";
+        r.el.style.transform = "";
+        r.el.classList.remove("is-wandert");
+      });
+    }, dauer + 120);
+    return reihe;
+  }
+
+  /* Die Linien. Zugeordnet ueber __id und nicht ueber den Index: die Datensaetze liegen in der
+     Reihenfolge, in der UC.buildLineDatasets sie gebaut hat, und __id ist die einzige Stelle, an
+     der die Marke steht. Ein Zuordnen ueber die Position haette die Werte von Kestrel auf die Linie
+     von Vantage geschrieben. */
+  function chartWandern(root, serie){
+    var leinwand = root.querySelector(".up-line-canvas");
+    if (!leinwand || !window.Chart || !window.Chart.getChart) return false;
+    var chart = window.Chart.getChart(leinwand);
+    if (!chart || !chart.data || !chart.data.datasets) return false;
+    var nach = {};
+    serie.forEach(function(p){
+      (nach[p.company_id] || (nach[p.company_id] = [])).push(p.visibility_pct);
+    });
+    var etwas = false;
+    chart.data.datasets.forEach(function(d){
+      var neu = nach[d.__id];
+      if (!neu || !d.data || neu.length !== d.data.length) return;
+      d.data = neu.slice();
+      etwas = true;
+    });
+    if (!etwas) return false;
+    /* chart.update() und nicht update("none"): das Kit hat 600ms easeOutQuart eingestellt, und
+       Chart.js interpoliert eine geaenderte Datenreihe von sich aus. Die y-Achse bleibt, wie sie
+       ist -- ihr Maximum entsteht in build() aus dem hoechsten Wert mal 1.15, und der hoechste Wert
+       des Zustands B liegt darunter. Gemessen und nicht angenommen: nichts wird abgeschnitten. */
+    try { chart.update(); } catch (e){ return false; }
+    return true;
+  }
+
+  function szene(root){
+    if (zustand !== "a") return false;
+    var kern = window.UpstreemCore;
+    if (!kern) return false;
+    var alt = {}, neu = {}, ordnung = [];
+    tabelle("a").forEach(function(r){ alt[r.company_id] = r; });
+    tabelle("b").forEach(function(r){ neu[r.company_id] = r; ordnung.push(r.company_id); });
+
+    var werk = zaehlwerk(SZENE_DAUER);
+
+    /* Die sechs Zeilen: sechs Zahlen und ein Farbpunkt je Zeile. forEach und keine for-Schleife --
+       Farbpunkt und Platzziffer brauchen einen Abschluss ueber die Zeile, und mit var haette der
+       die LETZTE Zeile festgehalten. */
+    [].slice.call(root.querySelectorAll(".vot-unit-right .vt-row")).forEach(function(z){
+      var id = z.getAttribute("data-id"), a = alt[id], b = neu[id];
+      if (!a || !b) return;
+      werk.zahl(z.querySelector(".vt-td-visibility .up-num"), a.visibility_pct, b.visibility_pct, proz);
+      werk.zahl(trendText(z.querySelector(".vt-td-visibility .up-trend")),
+                Math.abs(a.visibility_delta_pct), Math.abs(b.visibility_delta_pct), ganzProz);
+      werk.zahl(z.querySelector(".vt-td-ranking .up-num"), a.avg_rank, b.avg_rank, eine);
+      werk.zahl(trendText(z.querySelector(".vt-td-ranking .up-trend")),
+                Math.abs(a.avg_rank_delta), Math.abs(b.avg_rank_delta), eine);
+      werk.zahl(z.querySelector(".vt-td-sentiment .up-sent-val"), a.sentiment, b.sentiment, ganz);
+      werk.zahl(trendText(z.querySelector(".vt-td-sentiment .up-trend")),
+                Math.abs(a.sentiment_delta), Math.abs(b.sentiment_delta), eine);
+      /* Der Punkt vor der Sentiment-Note faerbt sich nach der Note (UC.sentColor, Stufen bei 25,
+         40, 60 und 75). Kestrel geht von 74 auf 79 und Vantage von 76 auf 75 -- beide ueberschreiten
+         die 75. Aus dem laufenden Wert gerechnet und nicht am Ende gesetzt: so wechselt die Farbe
+         genau in dem Augenblick, in dem die Zahl die Stufe erreicht. */
+      var punkt = z.querySelector(".vt-td-sentiment .up-sent-dot");
+      if (punkt) werk.frei(function(e){
+        punkt.style.background = kern.sentColor(a.sentiment + (b.sentiment - a.sentiment) * e);
+      });
+      /* Die Platzziffer ist eine Ordnungszahl -- eine 2.4 unterwegs waere ein Fehler und kein
+         Zaehlen. Also springt sie, und zwar auf der halben Strecke: vorher stimmte sie zur alten
+         Lage der Zeile, nachher zur neuen. t und nicht e -- die Kurve ist zur halben Zeit schon bei
+         94%, die Ziffer waere praktisch sofort gesprungen. */
+      var idx = z.querySelector(".vt-td-idx");
+      if (idx) werk.frei(function(e, t){
+        var soll = String((t >= 0.5 ? b : a).position);
+        if (idx.textContent !== soll) idx.textContent = soll;
+      });
+    });
+
+    /* Die Kennzahlen im Seitenkopf gehoeren Kestrel und nicht dem Ersten der Tabelle. Reihenfolge
+       im Markup: Visibility, Ranking, Sentiment (dashboard-page-header.js, setKpis).
+       Von Hand und nicht ueber setDashboardPageHeaderKpis: der Setter schreibt die Zeile als
+       innerHTML neu, und dann springen die drei Zahlen statt zu zaehlen. */
+    var kea = alt["ke"], keb = neu["ke"];
+    var kpis = root.querySelectorAll(".dph-kpis .dph-kpi");
+    if (kea && keb && kpis.length === 3){
+      [ { wert: "visibility_pct", delta: "visibility_delta_pct", fw: ganzProz, fd: ganzProz },
+        { wert: "avg_rank",       delta: "avg_rank_delta",       fw: eine,     fd: eine },
+        { wert: "sentiment",      delta: "sentiment_delta",      fw: ganz,     fd: ganz }
+      ].forEach(function(w, i){
+        werk.zahl(kpis[i].querySelector(".dph-kpi-value"), kea[w.wert], keb[w.wert], w.fw);
+        werk.zahl(trendText(kpis[i].querySelector(".up-trend")),
+                  Math.abs(kea[w.delta]), Math.abs(keb[w.delta]), w.fd);
+      });
+    }
+
+    zustand = "b";
+    chartWandern(root, reihen("b"));
+    reihenWandern(root, ordnung, SZENE_DAUER);
+    werk.lauf(function(){
+      /* Danach den Tooltip wieder anstecken: chart.update() raeumt die gesetzten Punkte ab, und
+         ohne diesen Griff stuende das Chart nach der Szene ohne den dauerhaft offenen Kasten da. */
+      ohneTipps(root);
+      tippZeigen(root);
+    });
+    return true;
   }
 
   /* ---------- Start ----------------------------------------------------------------------- */
@@ -554,6 +799,8 @@
         /* Nach dem Fuellen noch einmal messen: die Tabellen bringen ihre Hoehe erst mit den
            Daten, und die Buehne muss den Ausschnitt danach immer noch fuellen. */
         mass(root);
+        erscheinen(root);
+        szeneAnsetzen(root);
         return;
       }
       if (++n > VERSUCHE){
@@ -570,6 +817,42 @@
       try { new ResizeObserver(function(){ mass(root); }).observe(root); } catch (e){}
     }
     window.addEventListener("resize", function(){ mass(root); });
+  }
+
+  /* Das Erscheinen anstossen. is-shown BLEIBT und macht das Fenster ueberhaupt sichtbar,
+     is-entering traegt die vier gestaffelten Animationen und faellt danach ab -- bliebe sie stehen,
+     liefe jede spaetere Bewegung im Fenster gegen eine noch gesetzte animation.
+     1100ms als Abfallzeit: die letzte Stufe startet bei 480ms und laeuft 460ms (siehe
+     landing-hero.css), das sind 940 -- mit Reserve fuer einen Frame Verzug beim Klassenwechsel. */
+  function erscheinen(root){
+    if (root.__ulhErschienen) return;
+    root.__ulhErschienen = true;
+    root.classList.add("is-shown");
+    root.classList.add("is-entering");
+    setTimeout(function(){ root.classList.remove("is-entering"); }, 1100);
+  }
+
+  /* Die Szene startet erst, wenn das Dashboard WIRKLICH steht: Chart.js kommt vom CDN, und drei
+     Sekunden reichen dafuer nicht immer. Waere sie vorher gelaufen, haetten sich die Zeilen
+     umsortiert und die Linien nicht -- derselbe Widerspruch wie eine steigende Linie neben einem
+     fallenden Pfeil, nur groesser. Zwei Bedingungen, weil beide Teile mitmuessen: eine lebende
+     Chart-Instanz und die volle Zahl an Zeilen in der Tabelle. */
+  function szeneAnsetzen(root){
+    if (root.__ulhSzeneAn) return;
+    root.__ulhSzeneAn = true;
+    /* Als Handhabe nach draussen, nicht als Debug-Ausgabe: die Szenenfolge (Schritt 2 der
+       Landingpage) soll den Wechsel selbst ausloesen koennen, statt auf die Uhr zu warten -- und
+       genau darueber laesst er sich auch messen, ohne drei Sekunden zu warten. */
+    root.__ulhSzene = function(){ return szene(root); };
+    (function warten(k){
+      var leinwand = root.querySelector(".up-line-canvas");
+      var lebt = leinwand && window.Chart && window.Chart.getChart && window.Chart.getChart(leinwand);
+      if (lebt && root.querySelectorAll(".vot-unit-right .vt-row").length === MARKEN.length){
+        setTimeout(function(){ szene(root); }, SZENE_WARTEN);
+        return;
+      }
+      if (k < 80) setTimeout(function(){ warten(k + 1); }, 125);
+    })(0);
   }
 
   function start(){
