@@ -26,6 +26,9 @@ TEILE = [
     ("dph", "page-headers/bubble/dashboard_page_header_bubble.html", "lh-dph"),
     ("vot", "bubble/visibility_chart_bubble.html", "lh-vot"),
     ("tcd", "bubble/topcitations_dashboard_bubble.html", "lh-tcd"),
+    # Quick Actions traegt keine data-instance -- die Kennung unten wird also nicht gesetzt und
+    # steht nur da, damit die Zeile dieselbe Form hat wie die anderen.
+    ("mqa", "bubble/quick_actions_bubble.html", "lh-mqa"),
 ]
 
 # Feste Werte fuer die Platzhalter. BRAND_NAME ist eine erfundene Marke -- erfundene Zahlen unter
@@ -45,6 +48,11 @@ ERSATZ = {
 def markup(pfad):
     s = open(pfad).read()
     m = re.search(r'^<div class="up-root[^\n]*$', s, re.M)
+    if not m:
+        # Quick Actions ist der eine Sonderfall: ein Seiten-Singleton mit einer Kennung statt einer
+        # up-root-Klasse (STYLEGUIDE 12). Deshalb hier ein zweiter Anker und nicht ein Sonderweg
+        # am Aufrufort.
+        m = re.search(r'^<div id="mira-quick-actions"[^\n]*$', s, re.M)
     if not m:
         return None
     rest = s[m.start():]

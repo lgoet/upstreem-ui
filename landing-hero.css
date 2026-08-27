@@ -24,7 +24,10 @@
      Die Werte sind die hellen Werte aus core (--vc-bg, --vc-heading-bg, --vc-text, --vc-muted,
      --vc-sk). Aendert sich dort die helle Palette, gehoert sie hier nachgezogen. */
   --ulh-grund: #ffffff;
-  --ulh-blende: #f5f5f5;
+  /* 15% dunkler als die Flaeche der Seitenleiste (#f5f5f5 = 245 -> 245 x 0.85 = 208). Vorher war
+     die Blende derselbe Ton wie die Leiste, und damit war der Rahmen dort, wo die Leiste anliegt,
+     gar nicht zu sehen. */
+  --ulh-blende: #d0d0d0;
   --ulh-schirm: #ffffff;
   --ulh-text: #1f1f1b;
   --ulh-muted: #6f737c;
@@ -204,7 +207,7 @@
   display: flex;
   flex-direction: column;
   gap: 18px;
-  padding: 18px 22px 0;
+  padding: 9px 22px 0;
   background: var(--ulh-schirm);
 }
 /* Die Komponenten im Fenster sind Schaustuecke. Nichts darin ist anklickbar, und der Zeiger soll
@@ -212,6 +215,28 @@
    Der Zeiger bleibt trotzdem stehen: pointer-events: none an der Buehne wuerde auch die
    Tooltips der spaeteren Szenen verhindern, die ueber echte Hover-Zustaende laufen. */
 .ulh-app * { cursor: default; }
+
+/* ---------- Was im Fenster anders steht als in der App --------------------------------------
+   Diese vier Regeln fassen fremde Komponenten an, und das braucht eine Begruendung. Sie aendern
+   nichts an deren Bauteilen, sondern nur, was das SCHAUSTUECK zeigt -- gebunden an .ulh-app, also
+   ausschliesslich hier und niemals in der App. */
+
+/* Die Legende unter der Linie faellt weg: im Fenster steht sie doppelt, denn die Tabelle rechts
+   nennt dieselben fuenf Marken mit demselben Zeichen. */
+.ulh-app .up-legend { display: none; }
+
+/* Fuenf Zeilen statt sieben, und die Kaesten schrumpfen mit. .vot-box steht in der App fest auf
+   427px; bei fuenf Zeilen a 55px (visibility-chart.css) bleiben sonst zwei Zeilen Luft unter der
+   Tabelle stehen. 427 - 2 x 55 = 317. */
+.ulh-app .vot-box { height: 317px; }
+.ulh-app .vot-root.is-max .vot-box-left,
+.ulh-app .vot-root.is-max .vot-box-right { height: 317px; }
+
+/* Die Leiste 16px schmaler. Die Marke muss an der LEISTE SELBST stehen und nicht am Vorfahren:
+   .usn-bar traegt die Klasse .up-root, und sidebar.css setzt --usn-w genau dort auf 250px. Ein
+   Wert am eigenen Element schlaegt jeden geerbten -- am Vorfahren gesetzt blieb es bei 250,
+   gemessen. Die Spalte daneben misst die Breite ohnehin selbst nach. */
+.ulh-app .usn-bar { --usn-w: 234px; }
 
 /* ---------- Schmal ---------- */
 /* Auf dem Telefon gar kein Fenster. Gemessen bei 700px Fensterbreite: das Mass faellt auf 0.50,

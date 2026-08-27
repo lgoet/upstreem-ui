@@ -76,9 +76,11 @@ window.addEventListener("error", function(e){
 
 (function(){
   var files = ["core.css", "sidebar.css", "page-headers/dashboard-page-header.css",
-               "visibility-chart.css", "topcitations-dashboard.css", "landing-hero.css",
+               "visibility-chart.css", "topcitations-dashboard.css", "quick-actions.css",
+               "landing-hero.css",
                "core.js", "sidebar.js", "page-headers/dashboard-page-header.js",
-               "visibility-chart.js", "topcitations-dashboard.js", "landing-hero.js"];
+               "visibility-chart.js", "topcitations-dashboard.js", "quick-actions.js",
+               "landing-hero.js"];
   var texts = {};
   Promise.all(files.map(function(f){
     return fetch(f + "?nocache=" + Math.random(), { cache: "no-store" })
