@@ -81,6 +81,11 @@ for schluessel, pfad, kennung in TEILE:
     m = m.replace('data-instance="ROOTID_[dynamic id]"', 'data-instance="%s"' % kennung)
     for k, v in ERSATZ.items():
         m = m.replace(k, v)
+    # Kein Sticky im Fenster. Der Kopf der Tabelle wuerde sich an den Ausschnitt haengen und ueber
+    # dem Seitenkopf stehen -- gemeldet als "da ist ein weisses Element drueber". Ein Fenster, das
+    # nicht scrollt, braucht keinen mitfahrenden Kopf. data-sticky VOR data-sticky-top eingesetzt,
+    # damit das Attribut auch dann steht, wenn die Vorlage nur den Versatz mitbringt.
+    m = m.replace('data-sticky-top=', 'data-sticky="no" data-sticky-top=')
     # Die Rueckwege nach Bubble fallen weg. Auch mehrzeilig eingerueckt geschrieben, deshalb der
     # Blick auf das ganze Attribut samt fuehrendem Leerraum.
     m = re.sub(r'\s*data-[a-z0-9-]+-fn="bubble_fn_[^"]*"', "", m)

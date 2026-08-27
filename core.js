@@ -4497,6 +4497,17 @@
         if (zuletzt && (jetzt - zuletzt) < 16){ el = el.parentElement; continue; }
         UNCLIP_GESEHEN.set(el, jetzt);
       }
+      /* data-up-keepclip: DIESER Zuschnitt ist gewollt und bleibt, und darueber wird auch nichts
+         mehr angefasst.
+         Diesen Durchlauf gibt es, um die Gruppencontainer von Bubble zu entklammern: die
+         beschneiden ohne eigenen Grund und schneiden Sticky-Koepfe und Dropdowns ab. Es gibt aber
+         Hosts, deren Beschnitt die AUSSAGE ist -- die Hero-Sektion der Landingpage zeigt die App in
+         einem Fenster, und die Kante dieses Fensters ist der ganze Sinn. Dort hat dieser Durchlauf
+         den Beschnitt weggenommen, und die Tabelle lief unter dem Fenster weiter ins Nichts.
+         Ein Attribut und keine Heuristik: ob ein Beschnitt gewollt ist, laesst sich nicht messen.
+         Wer es setzt, sagt zu, dass in diesem Kasten genug Platz fuer Menues und Koepfe ist -- in
+         einem Fenster, das die App in Originalgroesse zeigt, ist er das. */
+      if (el.hasAttribute("data-up-keepclip")) break;
       var cs; try { cs = window.getComputedStyle(el); } catch(e){ break; }
       var oy = cs.overflowY;
       /* The real scroll container: leave it alone, everything above it is none of our business.

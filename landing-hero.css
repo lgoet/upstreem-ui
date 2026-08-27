@@ -594,6 +594,19 @@
    Der Kasten der Tabelle auf 12px Radius, wie die vier Kaesten des Dashboards. In der App sind es
    16 -- dort steht die Tabelle allein auf der Seite, hier neben Kaesten mit 12. */
 .ulh-app .up-box { border-radius: 12px; }
+/* Die Gruppenliste links auch auf 12px -- sie ist der zweite Kasten derselben Ansicht. Mit
+   .up-root davor, weil die 16px aus .up-root.is-grouped .upt-grp-sidepanel kommen und eine Klasse
+   mehr tragen als .ulh-app allein. */
+.ulh-app .up-root .upt-grp-sidepanel,
+.ulh-app .up-root .upt-grp-sidelist { border-radius: 12px; }
+
+/* Und sie ist schmaler als in der App: max(256px, 20%) ergibt hier 256, und dann bleiben der
+   Tabelle 898px -- zu wenig fuer Prompt, Visibility, Rank, Sentiment, Brand Mentions UND Market
+   (zusammen 934 an ihren Mindestbreiten). Die Spaltenanpassung der Komponente laesst dann Market
+   fallen. 208px reichen fuer die vier Gruppennamen und geben der Tabelle 946.
+   Das ist kein Streit mit der Komponente, sondern der Ausgleich fuer die Buehne: sie ist 1428
+   breit, ein echter Schreibtisch ist breiter, und dort passen alle Spalten ohne Zutun. */
+.ulh-app .up-root.is-grouped.is-groups-wide .upt-grp-sidepanel { width: 208px; }
 
 /* Und dieselbe Verkleinerung der Schriften wie im Dashboard: dort liegt jede Groesse 1px unter der
    App, und eine zweite Seite in derselben Sektion mit den Originalgroessen liest sich als ein
