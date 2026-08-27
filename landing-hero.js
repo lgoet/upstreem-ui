@@ -547,10 +547,11 @@
      dass man beim Zaehlen mitlesen kann.
      WANDER_DAUER gilt fuer das Verschieben der Zeilen -- in der Tabelle und im Tooltip. Eine Zeile,
      die eine ganze Sekunde braucht, um zwei Plaetze weit zu rutschen, wirkt schwerfaellig; eine
-     zaehlende Zahl braucht die Zeit dagegen. 700ms: knapp ueber den 620 vom Anfang, deutlich unter
-     den 930. */
+     zaehlende Zahl braucht die Zeit dagegen. Also zurueck auf die 620 vom Anfang, ueber 700 hinweg
+     -- beide Zwischenschritte waren zu traege. Die Zeilen stehen damit rund 300ms, bevor die Zahlen
+     und die Linien fertig sind, und genau so ist es gewollt. */
   var SZENE_DAUER = 930;
-  var WANDER_DAUER = 700;
+  var WANDER_DAUER = 620;
   /* Der Zeitpunkt, an dem die Platzziffer springt -- die halbe Strecke DER WANDERUNG, ausgedrueckt
      in der Zeit des Zaehlwerks, weil die Ziffer aus dem Zaehlwerk gesetzt wird. Seit die zwei
      Dauern auseinanderliegen, waeren 0.5 des Zaehlwerks zwei Drittel der Wanderung. */
