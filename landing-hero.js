@@ -32,7 +32,8 @@
     dph: "<div class=\"up-root up-ph-root dph-root\" data-instance=\"lh-dph\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Kestrel\" data-brand-logo=\"\"><div class=\"up-ph-top\"><div class=\"up-ph-left\"><div class=\"up-ph-meta\"><img class=\"up-ph-metalogo\" alt=\"\" style=\"display:none\"/><span class=\"up-ph-metatxt\"><span class=\"pph-metaname\"></span></span></div><h1 class=\"up-ph-heading\">Dashboard</h1><p class=\"up-ph-desc\">Monitor your AI visibility, performance, and latest developments</p></div><div class=\"dph-topright\"><!-- dashboard-page-header.js fills this in on setDashboardPageHeaderKpis(). --><div class=\"dph-kpis\"></div><div class=\"dph-tools\"><button class=\"dph-docsbtn\" type=\"button\" data-tip=\"Open Documentation\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 5v16\" /><path d=\"M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z\" /></svg><span>Docs</span></button><button class=\"dph-refreshbtn up-ph-iconbtn\" type=\"button\" aria-label=\"Refresh\" data-tip=\"Refresh Data\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8\" /><path d=\"M21 3v5h-5\" /><path d=\"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16\" /><path d=\"M8 16H3v5\" /></svg></button></div></div></div></div>",
     vot: "<div class=\"up-root vot-root\" data-instance=\"lh-vot\" data-cdn-pin=\"\" data-isdark=\"no\" data-export-instance=\"\" data-processing=\"no\" data-processing2=\"no\"><div class=\"vot-unit vot-unit-left\"><div class=\"vot-head\"><div class=\"vot-heading\">Visibility over Time</div><div class=\"vot-head-tools\"><div class=\"vc-gran\" role=\"tablist\" aria-label=\"Granularity\"><button class=\"vc-gran-btn is-active\" data-gran=\"day\" type=\"button\" role=\"tab\">Day</button><button class=\"vc-gran-btn\" data-gran=\"week\" type=\"button\" role=\"tab\">Week</button><button class=\"vc-gran-btn\" data-gran=\"month\" type=\"button\" role=\"tab\">Month</button></div><button class=\"vot-maximize vot-max-top vot-iconbtn\" type=\"button\" data-tip=\"Minimize\" aria-label=\"Minimize\"><svg class=\"ic-max\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M15 3h6v6\"/><path d=\"m21 3-7 7\"/><path d=\"m3 21 7-7\"/><path d=\"M9 21H3v-6\"/></svg><svg class=\"ic-min\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m14 10 7-7\"/><path d=\"M20 10h-6V4\"/><path d=\"m3 21 7-7\"/><path d=\"M4 14h6v6\"/></svg></button></div></div><div class=\"vot-box vot-box-left\"><div class=\"vot-panel-body\"><button class=\"vot-scale-btn\" type=\"button\" data-tip=\"Chart Settings\" aria-label=\"Chart Settings\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg></button><div class=\"up-line-wrap\"><canvas class=\"up-line-canvas\"></canvas></div><div class=\"up-legend\"></div></div></div></div><div class=\"vot-unit vot-unit-right\"><div class=\"vot-head\"><div class=\"vot-heading vot-heading-right\"><span class=\"vot-head-label\">Top Brands</span><span class=\"vot-head-sep\"></span><span class=\"vot-head-count\"></span></div><div class=\"vot-head-tools\"><div class=\"vot-sort\"><button class=\"vot-sort-btn vot-iconbtn\" type=\"button\" data-tip=\"Sort\" aria-label=\"Sort\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 16 4 4 4-4\"/><path d=\"M7 20V4\"/><path d=\"m21 8-4-4-4 4\"/><path d=\"M17 4v16\"/></svg></button><div class=\"up-sort-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"vot-filter\"><button class=\"vot-filter-btn vot-iconbtn\" type=\"button\" data-tip=\"Filter brands\" aria-label=\"Filter\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M14 17H5\"/><path d=\"M19 7h-9\"/><circle cx=\"17\" cy=\"17\" r=\"3\"/><circle cx=\"7\" cy=\"7\" r=\"3\"/></svg><span class=\"vot-filter-badge\"></span></button><div class=\"up-ment-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><button class=\"vot-export vot-iconbtn\" type=\"button\" data-tip=\"Export\" aria-label=\"Export\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 15V3\" /><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /><path d=\"m7 10 5 5 5-5\" /></svg></button><button class=\"vot-maximize vot-max-right vot-iconbtn\" type=\"button\" data-tip=\"Maximize\" aria-label=\"Maximize\"><svg class=\"ic-max\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M15 3h6v6\"/><path d=\"m21 3-7 7\"/><path d=\"m3 21 7-7\"/><path d=\"M9 21H3v-6\"/></svg><svg class=\"ic-min\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m14 10 7-7\"/><path d=\"M20 10h-6V4\"/><path d=\"m3 21 7-7\"/><path d=\"M4 14h6v6\"/></svg></button><button class=\"vot-goto vot-iconbtn\" type=\"button\" data-tip=\"Open\" aria-label=\"Open\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7 7h10v10\" /><path d=\"M7 17 17 7\" /></svg></button></div></div><div class=\"vot-box vot-box-right\"><div class=\"vt-table\"></div></div></div></div>",
     tcd: "<div class=\"up-root tcd-root\" data-instance=\"lh-tcd\" data-cdn-pin=\"\" data-isdark=\"no\" data-export-instance=\"\" data-processing=\"no\" data-processing2=\"no\"><div class=\"tcd-unit tcd-unit-left\"><div class=\"tcd-head\"><div class=\"tcd-mode\" role=\"tablist\" aria-label=\"Mode\"><button class=\"tcd-mode-btn is-active\" data-mode=\"domain\" type=\"button\" role=\"tab\">Domains</button><button class=\"tcd-mode-btn\" data-mode=\"url\" type=\"button\" role=\"tab\">URLs</button></div><div class=\"tcd-head-tools\"><div class=\"tcl-seg\" role=\"tablist\" aria-label=\"Chart type\"><button class=\"tcl-seg-btn is-active\" data-chart=\"doughnut\" role=\"tab\" aria-selected=\"true\" data-tip=\"Doughnut\" aria-label=\"Doughnut\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 12c.552 0 1.005-.449.95-.998a10 10 0 0 0-8.953-8.951c-.55-.055-.998.398-.998.95v8a1 1 0 0 0 1 1z\" /><path d=\"M21.21 15.89A10 10 0 1 1 8 2.83\" /></svg></button><button class=\"tcl-seg-btn\" data-chart=\"bar\" role=\"tab\" aria-selected=\"false\" data-tip=\"Bars\" aria-label=\"Bars\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3v16a2 2 0 0 0 2 2h16\"/><rect x=\"7\" y=\"13\" width=\"9\" height=\"4\" rx=\"1\"/><rect x=\"7\" y=\"5\" width=\"12\" height=\"4\" rx=\"1\"/></svg></button></div></div></div><div class=\"tcd-box\"><div class=\"tcd-panel-body\"><div class=\"tcl-top-total\"><span class=\"n\">0</span><span class=\"lbl\">Citations</span></div><div class=\"up-donut-body\"></div></div></div></div><div class=\"tcd-unit tcd-unit-right\"><div class=\"tcd-head\"><div class=\"tcd-heading tcd-heading-right\"><span class=\"tcd-head-label\">Top Domains</span><span class=\"tcd-head-sep\"></span><span class=\"tcd-head-count\"></span></div><div class=\"tcd-head-tools\"><button class=\"tcd-brand-toggle\" type=\"button\" data-tip=\"Filter for your brand mentions\"><span class=\"tcd-brand-toggle-lbl\"><img class=\"tcd-brand-logo\" src=\"\" style=\"display:none\"/><span class=\"tcd-brand-label\"></span></span><span class=\"tcd-brand-check\"><svg class=\"tcd-brand-check-yes\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6 9 17l-5-5\" /></svg><svg class=\"tcd-brand-check-no\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14\" /></svg></span></button><div class=\"tcd-filter\"><button class=\"tcd-filter-btn tcd-iconbtn\" type=\"button\" data-tip=\"Filter\" aria-label=\"Filter\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M14 17H5\"/><path d=\"M19 7h-9\"/><circle cx=\"17\" cy=\"17\" r=\"3\"/><circle cx=\"7\" cy=\"7\" r=\"3\"/></svg><span class=\"tcd-filter-badge\"></span></button><div class=\"up-filter-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><button class=\"tcd-export tcd-iconbtn\" type=\"button\" data-tip=\"Export\" aria-label=\"Export\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 15V3\" /><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /><path d=\"m7 10 5 5 5-5\" /></svg></button><button class=\"tcd-goto tcd-iconbtn\" type=\"button\" data-tip=\"Open\" aria-label=\"Open\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7 7h10v10\" /><path d=\"M7 17 17 7\" /></svg></button></div></div><div class=\"tcd-box\"><div class=\"tct-table\"></div></div></div></div>",
-    mqa: "<div id=\"mira-quick-actions\" data-theme=\"light\" data-team=\"\" data-cdn-pin=\"\" data-export-instance=\"\"><button class=\"mqa-trigger\" type=\"button\" aria-label=\"Open quick actions\"><svg class=\"mqa-trigger-ic\" viewBox=\"0 0 24 24\"><path d=\"m21 21-4.34-4.34\"/><circle cx=\"11\" cy=\"11\" r=\"8\"/></svg><span class=\"mqa-trigger-label\">Quick Actions</span><span class=\"mqa-kbd\" data-kbd>\u2318K</span></button><div class=\"mqa-overlay\" role=\"presentation\" aria-hidden=\"true\"><div class=\"mqa-modal\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Quick actions\"><div class=\"mqa-search\"><svg class=\"mqa-search-ic\" viewBox=\"0 0 24 24\"><path d=\"m21 21-4.34-4.34\"/><circle cx=\"11\" cy=\"11\" r=\"8\"/></svg><span class=\"mqa-chips\" id=\"mqa-chips\"></span><span class=\"mqa-inputwrap\"><input class=\"mqa-input\" type=\"text\" autocomplete=\"off\" spellcheck=\"false\" placeholder=\"\" aria-label=\"Search\" /><span class=\"mqa-ph\" id=\"mqa-ph\" aria-hidden=\"true\">Search brands, domains, URLs, prompts\u2026</span></span><span class=\"mqa-ph-cmd\" id=\"mqa-ph-cmd\" aria-hidden=\"true\">/ for filters</span><span class=\"mqa-kbd mqa-esc\" id=\"mqa-esc\">esc</span><button class=\"mqa-fav is-hidden\" type=\"button\" id=\"mqa-fav\" aria-pressed=\"false\" aria-label=\"Save as Favorite\"><svg viewBox=\"0 0 24 24\"><path d=\"M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z\" /></svg></button><button class=\"mqa-clear is-hidden\" type=\"button\" id=\"mqa-clear\" aria-label=\"Reset search\"><svg viewBox=\"0 0 24 24\"><path d=\"M10 11v6\" /><path d=\"M14 11v6\" /><path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6\" /><path d=\"M3 6h18\" /><path d=\"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\" /></svg></button></div><button class=\"mqa-entercta is-hidden\" type=\"button\" id=\"mqa-entercta\"> Press <span class=\"mqa-kbd\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20 4v7a4 4 0 0 1-4 4H4\" /><path d=\"m9 10-5 5 5 5\" /></svg>Enter</span> to search </button><div class=\"mqa-scroll\"><div class=\"mqa-results\" aria-live=\"polite\"></div></div><div class=\"mqa-recent-wrap\" id=\"mqa-recent\"></div><div class=\"mqa-actions-wrap\"></div></div></div></div>"
+    mqa: "<div id=\"mira-quick-actions\" data-theme=\"light\" data-team=\"\" data-cdn-pin=\"\" data-export-instance=\"\"><button class=\"mqa-trigger\" type=\"button\" aria-label=\"Open quick actions\"><svg class=\"mqa-trigger-ic\" viewBox=\"0 0 24 24\"><path d=\"m21 21-4.34-4.34\"/><circle cx=\"11\" cy=\"11\" r=\"8\"/></svg><span class=\"mqa-trigger-label\">Quick Actions</span><span class=\"mqa-kbd\" data-kbd>\u2318K</span></button><div class=\"mqa-overlay\" role=\"presentation\" aria-hidden=\"true\"><div class=\"mqa-modal\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Quick actions\"><div class=\"mqa-search\"><svg class=\"mqa-search-ic\" viewBox=\"0 0 24 24\"><path d=\"m21 21-4.34-4.34\"/><circle cx=\"11\" cy=\"11\" r=\"8\"/></svg><span class=\"mqa-chips\" id=\"mqa-chips\"></span><span class=\"mqa-inputwrap\"><input class=\"mqa-input\" type=\"text\" autocomplete=\"off\" spellcheck=\"false\" placeholder=\"\" aria-label=\"Search\" /><span class=\"mqa-ph\" id=\"mqa-ph\" aria-hidden=\"true\">Search brands, domains, URLs, prompts\u2026</span></span><span class=\"mqa-ph-cmd\" id=\"mqa-ph-cmd\" aria-hidden=\"true\">/ for filters</span><span class=\"mqa-kbd mqa-esc\" id=\"mqa-esc\">esc</span><button class=\"mqa-fav is-hidden\" type=\"button\" id=\"mqa-fav\" aria-pressed=\"false\" aria-label=\"Save as Favorite\"><svg viewBox=\"0 0 24 24\"><path d=\"M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z\" /></svg></button><button class=\"mqa-clear is-hidden\" type=\"button\" id=\"mqa-clear\" aria-label=\"Reset search\"><svg viewBox=\"0 0 24 24\"><path d=\"M10 11v6\" /><path d=\"M14 11v6\" /><path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6\" /><path d=\"M3 6h18\" /><path d=\"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\" /></svg></button></div><button class=\"mqa-entercta is-hidden\" type=\"button\" id=\"mqa-entercta\"> Press <span class=\"mqa-kbd\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20 4v7a4 4 0 0 1-4 4H4\" /><path d=\"m9 10-5 5 5 5\" /></svg>Enter</span> to search </button><div class=\"mqa-scroll\"><div class=\"mqa-results\" aria-live=\"polite\"></div></div><div class=\"mqa-recent-wrap\" id=\"mqa-recent\"></div><div class=\"mqa-actions-wrap\"></div></div></div></div>",
+    mira: "<div class=\"up-root am-root\" id=\"ask-mira\" data-instance=\"lh-mira\" data-cdn-pin=\"\" data-isdark=\"no\"><div class=\"am-shell\"><!-- ===================== HERO ===================== --><header class=\"am-hero\"><div class=\"am-hero-inner\"><div class=\"am-hero-text\"><div class=\"am-title-row\"><span class=\"am-brand\"><span class=\"am-logo-mark\" aria-hidden=\"true\"></span><span class=\"am-wordmark\">mira</span></span><span class=\"am-status-pill\" id=\"am-status-pill\"><span class=\"am-status-dot\"></span><span id=\"am-status-text\">Ready</span></span></div><p class=\"am-subline\">Chat with your AI Search data.</p></div><div class=\"am-chat-titlebar\" id=\"am-chat-titlebar\" aria-hidden=\"true\"><button class=\"am-ct-back\" id=\"am-ct-back\" type=\"button\" aria-label=\"Back to start\" data-tip=\"Back to start\"><svg viewBox=\"0 0 24 24\"><path d=\"m12 19-7-7 7-7\" /><path d=\"M19 12H5\" /></svg></button><button class=\"am-ct-name\" id=\"am-ct-name\" type=\"button\" data-tip=\"Rename chat\"><span class=\"am-ct-text\" id=\"am-ct-text\"></span><span class=\"am-ct-skeleton\" id=\"am-ct-skeleton\" aria-hidden=\"true\"></span></button><button class=\"am-ct-chev\" id=\"am-ct-chev\" type=\"button\" aria-label=\"Chat options\" aria-haspopup=\"menu\"><svg viewBox=\"0 0 24 24\"><path d=\"m6 9 6 6 6-6\" /></svg></button><input class=\"am-ct-input\" id=\"am-ct-input\" type=\"text\" maxlength=\"120\" aria-label=\"Chat name\"><span class=\"am-ct-edit-actions\" id=\"am-ct-edit-actions\"><button class=\"am-ct-mini\" id=\"am-ct-save\" type=\"button\" data-tip=\"Save\"><svg viewBox=\"0 0 24 24\"><path d=\"M20 6 9 17l-5-5\" /></svg></button><button class=\"am-ct-mini\" id=\"am-ct-discard\" type=\"button\" data-tip=\"Discard\"><svg viewBox=\"0 0 24 24\"><path d=\"M18 6 6 18\" /><path d=\"m6 6 12 12\" /></svg></button></span></div><button class=\"am-ghost-btn am-prev-btn\" type=\"button\" id=\"am-open-prev\"><svg viewBox=\"0 0 24 24\" class=\"am-ic\"><path d=\"M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719\" /></svg><span class=\"am-prev-label-full\">All Chats</span><span class=\"am-prev-label-short\">Chats</span></button></div></header><!-- ===================== CHAT VIEW ===================== --><main class=\"am-chat\" id=\"am-chat\"><div class=\"am-messages\" id=\"am-messages\"></div><!-- Suggested questions (shown when empty) --><div class=\"am-suggested\" id=\"am-suggested\"><div class=\"am-welcome\"><h2 class=\"am-welcome-title\" id=\"am-welcome-title\">How can I help you today?</h2></div><p class=\"am-suggested-label\" id=\"am-suggested-label\">Try asking</p><div class=\"am-suggested-grid\" id=\"am-suggested-grid\"></div><div class=\"am-quick\" id=\"am-quick\" aria-label=\"Quick actions\"></div></div></main><!-- ===================== COMPOSER ===================== --><footer class=\"am-composer-area\"><button class=\"am-scroll-bottom\" type=\"button\" id=\"am-scroll-bottom\" aria-label=\"Scroll to latest\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\" /></svg></button><div class=\"am-composer-shell\" id=\"am-composer-shell\"><div class=\"am-composer\" id=\"am-composer\"><div class=\"am-quote-slot\" id=\"am-quote-slot\"></div><div class=\"am-input-wrap\"><textarea class=\"am-textarea\" id=\"am-textarea\" rows=\"1\" maxlength=\"2800\" placeholder=\"\"></textarea><div class=\"am-ph-loop\" id=\"am-ph-loop\" aria-hidden=\"true\"><span class=\"am-ph-text\" id=\"am-ph-text\">Ask Mira...</span></div></div><div class=\"am-actions\"><button class=\"am-icon-action\" type=\"button\" id=\"am-settings-toggle\" aria-label=\"Answer settings\" aria-expanded=\"false\"><svg viewBox=\"0 0 24 24\" class=\"am-ic am-ic-fader\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M14 17H5\"></path><path d=\"M19 7h-9\"></path><circle cx=\"17\" cy=\"17\" r=\"3\"></circle><circle cx=\"7\" cy=\"7\" r=\"3\"></circle></svg></button><button class=\"am-icon-action am-mic\" type=\"button\" id=\"am-mic\" aria-label=\"Voice input\"><svg viewBox=\"0 0 24 24\" class=\"am-ic\"><path d=\"M12 19v3\" /><path d=\"M19 10v2a7 7 0 0 1-14 0v-2\" /><rect x=\"9\" y=\"2\" width=\"6\" height=\"13\" rx=\"3\" /></svg></button><button class=\"am-send\" type=\"button\" id=\"am-send\" aria-label=\"Send message\"><svg viewBox=\"0 0 24 24\" class=\"am-ic am-ic-send\"><path d=\"m5 12 7-7 7 7\" /><path d=\"M12 19V5\" /></svg><span class=\"am-send-spinner\" aria-hidden=\"true\"></span></button></div><div class=\"am-rec\" id=\"am-rec\" aria-hidden=\"true\"><span class=\"am-rec-live\"><span class=\"am-rec-dot\"></span><span class=\"am-rec-time\" id=\"am-rec-time\">0:00</span></span><div class=\"am-rec-wave\"><canvas class=\"am-rec-canvas\" id=\"am-rec-canvas\"></canvas></div><span class=\"am-rec-spring\"></span><div class=\"am-rec-actions\"><button class=\"am-rec-btn am-rec-cancel\" type=\"button\" id=\"am-rec-cancel\" aria-label=\"Discard recording\"><svg viewBox=\"0 0 24 24\" class=\"am-ic\"><path d=\"M18 6 6 18\" /><path d=\"m6 6 12 12\" /></svg></button><button class=\"am-rec-btn am-rec-confirm\" type=\"button\" id=\"am-rec-confirm\" aria-label=\"Send recording\"><svg viewBox=\"0 0 24 24\" class=\"am-ic\"><path d=\"M20 6 9 17l-5-5\" /></svg></button></div></div></div><div class=\"am-rec-note\" id=\"am-rec-note\" role=\"status\" aria-live=\"polite\"></div><div class=\"am-settings-panel\" id=\"am-settings-panel\"><div class=\"am-settings-inner\"><div class=\"am-detail-row\"><span class=\"am-detail-label\">Answer detail</span><div class=\"am-model am-detail-dd\" id=\"am-detail\"><button class=\"am-model-btn\" type=\"button\" id=\"am-detail-btn\" aria-haspopup=\"true\" aria-expanded=\"false\" aria-label=\"Answer detail\"><span class=\"am-model-name\" id=\"am-detail-name\">Balanced</span><svg class=\"am-model-chev\" viewBox=\"0 0 24 24\" fill=\"none\"><path d=\"m6 9 6 6 6-6\" /></svg></button><div class=\"am-model-menu\" id=\"am-detail-menu\" role=\"menu\"></div></div><span class=\"am-detail-tip\">Answer detail is not supported in Mira Flash</span></div><div class=\"am-model\" id=\"am-model\"><button class=\"am-model-btn\" type=\"button\" id=\"am-model-btn\" aria-haspopup=\"true\" aria-expanded=\"false\" aria-label=\"Select model\"><span class=\"am-model-ic\" id=\"am-model-ic\"></span><span class=\"am-model-name\" id=\"am-model-name\">Mira Pro</span><svg class=\"am-model-chev\" viewBox=\"0 0 24 24\" fill=\"none\"><path d=\"m6 9 6 6 6-6\" /></svg></button><div class=\"am-model-menu\" id=\"am-model-menu\" role=\"menu\"></div></div></div></div></div><p class=\"am-hint\">Mira answers based on your selected workspace data.</p></footer><!-- ===================== PREVIOUS CHATS PANEL ===================== --><div class=\"am-prev-scrim\" id=\"am-prev-scrim\" hidden></div><aside class=\"am-prev-panel\" id=\"am-prev-panel\" aria-hidden=\"true\"><div class=\"am-prev-head\"><p class=\"am-prev-title\">Previous chats</p><button class=\"am-icon-btn\" type=\"button\" id=\"am-close-prev\" aria-label=\"Close\"><svg viewBox=\"0 0 24 24\" class=\"am-ic\"><path d=\"M18 6 6 18\"></path><path d=\"m6 6 12 12\"></path></svg></button></div><div class=\"am-prev-toolbar\"><button class=\"am-newchat\" type=\"button\" id=\"am-new-chat\"><svg viewBox=\"0 0 24 24\" class=\"am-ic\"><path d=\"M12 5v14\"></path><path d=\"M5 12h14\"></path></svg><span>New Chat</span></button><button class=\"am-settings-btn\" type=\"button\" id=\"am-settings-btn\" aria-label=\"Settings\" data-tip=\"Highlight settings\" aria-expanded=\"false\"></button></div><div class=\"am-hl-panel\" id=\"am-hl-settings-panel\"><div class=\"am-set-row\"><label class=\"am-set-label\">Brand Highlights</label><div class=\"am-dd\" id=\"am-dd-brand\" data-set=\"brand\"><button class=\"am-dd-trigger\" type=\"button\" aria-haspopup=\"listbox\" aria-expanded=\"false\"><span class=\"am-dd-value\">Logo</span><svg class=\"am-dd-chev\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\" /></svg></button><div class=\"am-dd-menu\" role=\"listbox\"><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"logo\"><span class=\"am-dd-check\"></span><span>Logo</span><span></span></button><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"icon\"><span class=\"am-dd-check\"></span><span>Icon</span><span></span></button><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"none\"><span class=\"am-dd-check\"></span><span>No Highlight</span><span></span></button></div></div></div><div class=\"am-set-row\"><label class=\"am-set-label\">Citation Highlights</label><div class=\"am-dd\" id=\"am-dd-citation\" data-set=\"citation\"><button class=\"am-dd-trigger\" type=\"button\" aria-haspopup=\"listbox\" aria-expanded=\"false\"><span class=\"am-dd-value\">Icon</span><svg class=\"am-dd-chev\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\" /></svg></button><div class=\"am-dd-menu\" role=\"listbox\"><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"icon\"><span class=\"am-dd-check\"></span><span>Icon</span><span></span></button><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"favicon\"><span class=\"am-dd-check\"></span><span>Favicon</span><span></span></button><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"none\"><span class=\"am-dd-check\"></span><span>No Highlight</span><span></span></button></div></div></div><div class=\"am-set-row\"><label class=\"am-set-label\">Response Highlights</label><div class=\"am-dd\" id=\"am-dd-response\" data-set=\"response\"><button class=\"am-dd-trigger\" type=\"button\" aria-haspopup=\"listbox\" aria-expanded=\"false\"><span class=\"am-dd-value\">Logo</span><svg class=\"am-dd-chev\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\" /></svg></button><div class=\"am-dd-menu\" role=\"listbox\"><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"logo\"><span class=\"am-dd-check\"></span><span>Logo</span><span></span></button><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"icon\"><span class=\"am-dd-check\"></span><span>Icon</span><span></span></button><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"none\"><span class=\"am-dd-check\"></span><span>No Highlight</span><span></span></button></div></div></div></div><div class=\"am-prev-list\" id=\"am-prev-list\"></div></aside></div></div>"
   };
   /* ---- MARKUP ENDE ---- */
 
@@ -236,8 +237,16 @@
                  laeuft es in der App auch. */
               (MARKUP.mqa || "") +
               '<div class="ulh-side">' + (MARKUP.usn || "") + '</div>' +
-              '<div class="ulh-main">' +
-                (MARKUP.dph || "") + (MARKUP.vot || "") + (MARKUP.tcd || "") +
+              /* Zwei Seiten UEBEREINANDER im selben Kasten, nicht nacheinander: die Sektion
+                 wechselt vom Dashboard zu Mira, und eine ausgeblendete Seite darf keinen Platz mehr
+                 brauchen. Mira steht von Anfang an im Markup -- sie richtet sich an ihrer echten
+                 Groesse ein (Chathoehe, is-compact, Scrollsperre), und mit display: none haette
+                 sie eine Hoehe von 0 gemessen. */
+              '<div class="ulh-seiten">' +
+                '<div class="ulh-seite ulh-main">' +
+                  (MARKUP.dph || "") + (MARKUP.vot || "") + (MARKUP.tcd || "") +
+                '</div>' +
+                '<div class="ulh-seite ulh-mira">' + (MARKUP.mira || "") + '</div>' +
               '</div>' +
             '</div>' +
           '</div>' +
@@ -547,11 +556,11 @@
      dass man beim Zaehlen mitlesen kann.
      WANDER_DAUER gilt fuer das Verschieben der Zeilen -- in der Tabelle und im Tooltip. Eine Zeile,
      die eine ganze Sekunde braucht, um zwei Plaetze weit zu rutschen, wirkt schwerfaellig; eine
-     zaehlende Zahl braucht die Zeit dagegen. Also zurueck auf die 620 vom Anfang, ueber 700 hinweg
-     -- beide Zwischenschritte waren zu traege. Die Zeilen stehen damit rund 300ms, bevor die Zahlen
-     und die Linien fertig sind, und genau so ist es gewollt. */
+     zaehlende Zahl braucht die Zeit dagegen. 930, 700 und 620 waren alle drei zu traege -- jetzt
+     480ms. Die Zeilen stehen damit fast eine halbe Sekunde, bevor die Zahlen und die Linien fertig
+     sind, und genau so ist es gewollt. */
   var SZENE_DAUER = 930;
-  var WANDER_DAUER = 620;
+  var WANDER_DAUER = 480;
   /* Der Zeitpunkt, an dem die Platzziffer springt -- die halbe Strecke DER WANDERUNG, ausgedrueckt
      in der Zeit des Zaehlwerks, weil die Ziffer aus dem Zaehlwerk gesetzt wird. Seit die zwei
      Dauern auseinanderliegen, waeren 0.5 des Zaehlwerks zwei Drittel der Wanderung. */
@@ -923,6 +932,183 @@
     return true;
   }
 
+  /* ---------- Zweite Szene: Mira ---------------------------------------------------------- */
+
+  /* Der Ablauf der Sektion, in Zahlen:
+       0            das Fenster erscheint in vier Stufen (CSS, ulhRise)
+       1410         das Erscheinen ist durch -- 720ms Verzoegerung der letzten Stufe plus 690ms Lauf
+       ~3200        der Filterwechsel im Dashboard (gegatet auf das fertige Chart)
+       7410         das Dashboard blendet aus, halb so lang wie eine Erscheinensstufe
+       7755         Mira kommt mit derselben Bewegung von unten herein
+       +600         die Frage wird Zeichen fuer Zeichen getippt
+       +2000        Mira denkt
+       dann         die Antwort erscheint und tippt sich selbst
+     Alles ueber Uhren und nicht ueber Scrollen: die Sektion steht am Seitenanfang und laeuft einmal
+     durch. Ob spaeter der Scrollstand die Szenen treibt, ist Schritt 3 -- dann tauscht nur der
+     Ausloeser, nicht der Ablauf. */
+  var ERSCHEINEN_MS = 1410;      /* muss zur CSS passen: 720ms Verzoegerung + 690ms Lauf */
+  /* Mira kommt als EINE Stufe herein, nicht als vier -- also nur der Lauf, ohne Verzoegerungen. */
+  var MIRA_RISE_MS = 690;
+  var AUSBLENDEN_MS = 345;       /* halb so lang wie eine Erscheinensstufe */
+  var MIRA_WARTEN = 6000;        /* nach dem Ende des Erscheinens */
+  var MIRA_FRAGE = "Create an AI Visibility Report for Q3 2026";
+  var MIRA_ZEICHEN_MS = 34;      /* je Zeichen -- 43 Zeichen ergeben rund 1.5 Sekunden */
+  var MIRA_PAUSE_MS = 420;       /* zwischen dem letzten Zeichen und dem Abschicken */
+  var MIRA_DENKT_MS = 2000;
+
+  /* Ein Marken-Chip im Antworttext. Genau die Form, die Mira selbst schickt: ein span mit
+     data-mira-entity-type und der Kennung der Marke. decorateEntitySpans in ask-mira.js setzt
+     daraus den Chip mit Logo -- wir bauen den Chip also NICHT nach, wir liefern nur die Rohform,
+     die die Komponente ohnehin erwartet. */
+  function miraChip(id){
+    var m = MARKEN.filter(function(x){ return x.id === id; })[0];
+    if (!m) return "";
+    return '<span data-mira-entity-type="brand" data-mira-company-id="' + m.id + '">' + m.name + '</span>';
+  }
+
+  /* Die Belegliste, aus der die Chips ihr Logo ziehen. company_id UND entity_id gefuellt: die
+     Auflösung in ask-mira.js probiert beide Felder, und welches der Server fuellt, ist je Typ
+     verschieden -- hier stehen beide, dann trifft sie in jedem Fall. */
+  function miraBelege(){
+    return MARKEN.map(function(m){
+      return { id: "ev-" + m.id, type: "brand", entity_id: m.id, company_id: m.id,
+               company_name: m.name, title: m.name, icon_url: m.logo, action: "open_brand" };
+    });
+  }
+
+  /* Erwaehnungen je Marke. Aus der Visibility gerechnet und nicht erfunden: 106 Nennungen je
+     Prozentpunkt ergibt Zahlen in der Groessenordnung der 15899 Zitate aus dem Dashboard, und sie
+     passen zur Reihenfolge der Tabelle. Bei jedem Laden dieselben. */
+  function miraNennungen(vis){
+    var n = Math.round(vis * 106);
+    return String(n).replace(/\B(?=(\d{3})+$)/g, ",");
+  }
+
+  /* Die Antwort. Tabelle OBEN mit Marken und Kennzahlen, danach der Text -- so steht sie auch in
+     der App. Die Zahlen kommen aus demselben Zustand B, in den der Filterwechsel das Dashboard
+     gebracht hat: eine Antwort mit anderen Zahlen als das Fenster darueber waere der auffaelligste
+     Widerspruch, den diese Sektion haben koennte.
+     Nur Elemente, die der Sanitizer von Mira durchlaesst (h3, h4, p, ul, li, strong, table, span
+     mit data-mira-*). Ein img waere hier zwecklos -- er faellt raus; die Logos kommen ueber die
+     Chips. */
+  function miraAntwort(){
+    var tab = tabelle("b");
+    var zeilen = tab.map(function(r){
+      return '<tr><td>' + miraChip(r.company_id) + '</td>' +
+             '<td>' + r.visibility_pct.toFixed(1) + '%</td>' +
+             '<td>' + r.avg_rank.toFixed(1) + '</td>' +
+             '<td>' + r.sentiment + '</td>' +
+             '<td>' + miraNennungen(r.visibility_pct) + '</td></tr>';
+    }).join("");
+    var ke = tab.filter(function(r){ return r.company_id === "ke"; })[0];
+    return '<h3>AI Visibility Report, Q3 2026</h3>' +
+      '<table><thead><tr><th>Brand</th><th>Visibility</th><th>Rank</th><th>Sentiment</th>' +
+      '<th>Mentions</th></tr></thead><tbody>' + zeilen + '</tbody></table>' +
+      '<p>' + miraChip("ke") + ' closed the quarter as the most visible brand in your market, ahead of ' +
+      miraChip("va") + ' and ' + miraChip("ha") + '. Visibility grew from 24.6% to ' +
+      ke.visibility_pct.toFixed(1) + '% and the average rank moved from 2.4 to ' +
+      ke.avg_rank.toFixed(1) + '.</p>' +
+      '<h4>What moved</h4><ul>' +
+      '<li>Editorial sources are the largest single driver at <strong>31.4%</strong> of all ' +
+      'citations, up 2.1 points over the quarter.</li>' +
+      '<li>' + miraChip("ve") + ' overtook ' + miraChip("lu") + ' for fifth place, gaining 3.8 points ' +
+      'while ' + miraChip("lu") + ' lost 2.8.</li>' +
+      '<li>Sentiment for ' + miraChip("ke") + ' rose from 74 to ' + ke.sentiment +
+      ', the strongest reading in the set.</li>' +
+      '</ul><h4>Where to look next</h4><ul>' +
+      '<li>Comparison prompts still mention ' + miraChip("va") + ' more often than ' +
+      miraChip("ke") + '. That gap is the cheapest remaining win.</li>' +
+      '<li>Your own pages account for <strong>9.3%</strong> of citations. Knowledge base sources sit ' +
+      'at 11.7% and are the fastest route upward.</li>' +
+      '</ul>';
+  }
+
+  function miraNachrichten(){
+    var jetzt = new Date().toISOString();
+    return [
+      { id: "lh-m1", role: "user", content: MIRA_FRAGE, created_at: jetzt },
+      { id: "lh-m2", role: "assistant", status: "success", created_at: jetzt,
+        content_html: miraAntwort(), evidence_items: miraBelege(), latency_ms: MIRA_DENKT_MS }
+    ];
+  }
+
+  /* Die Frage Zeichen fuer Zeichen ins Eingabefeld. Mit einem input-Ereignis je Zeichen, und das
+     ist kein Beiwerk: daran haengen in Mira das Mitwachsen des Feldes, der Sendeknopf und die
+     laufende Platzhalterzeile. Ohne das Ereignis stuende Text in einem Feld, das nicht mitwaechst,
+     neben einem grauen Knopf -- es saehe aus wie Text, den niemand abschicken kann.
+     KEIN focus und keine Tastenereignisse: die Buehne schluckt beides in der Einfangphase
+     (nurSchauen), und das Feld braucht sie auch nicht -- der Wert wird direkt gesetzt. */
+  function miraTippen(root, fertig){
+    var ta = root.querySelector("#am-textarea");
+    if (!ta){ if (fertig) fertig(); return; }
+    var i = 0;
+    (function schritt(){
+      ta.value = MIRA_FRAGE.slice(0, ++i);
+      try { ta.dispatchEvent(new Event("input", { bubbles: true })); } catch (e){}
+      if (i < MIRA_FRAGE.length) setTimeout(schritt, MIRA_ZEICHEN_MS);
+      else setTimeout(function(){ if (fertig) fertig(); }, MIRA_PAUSE_MS);
+    })();
+  }
+
+  function miraSenden(root){
+    var m = miraNachrichten();
+    var ta = root.querySelector("#am-textarea");
+    /* Der aktive Chat MUSS gesetzt sein, bevor die erste Nachricht kommt. Ohne ihn faellt Mira nach
+       140ms auf den Startbildschirm zurueck (_maybeHomeIfUnknownChat) -- eine abgeschickte Frage,
+       die kurz aufblitzt und dann verschwindet. Gemessen, als der Aufruf noch fehlte. */
+    if (window.askMiraSetActiveChat) window.askMiraSetActiveChat("lh-chat");
+    if (ta){
+      ta.value = "";
+      try { ta.dispatchEvent(new Event("input", { bubbles: true })); } catch (e){}
+    }
+    if (window.askMiraSetMessages) window.askMiraSetMessages([m[0]]);
+    /* Erst die Nachricht, dann das Laden: askMiraSetMessages stellt den Ladezustand selbst auf den
+       Stand der Liste, und der ist bei einer reinen Nutzerfrage "nicht am Laden". */
+    if (window.askMiraSetBrandLogos) window.askMiraSetBrandLogos(MARKEN.map(function(b){
+      return { logo_url: b.logo, name: b.name };
+    }));
+    if (window.askMiraSetLoading) window.askMiraSetLoading("true");
+    /* brand_overview ist der Werkzeugname, den Mira fuer genau diese Frage melden wuerde: er fuehrt
+       auf den Markenlader mit den Logos statt auf die drei Punkte. */
+    if (window.askMiraSetTool) window.askMiraSetTool("brand_overview");
+    setTimeout(function(){
+      /* expectAnswer VOR dem Nachladen, typeLastAnswer danach -- das ist der vorgesehene Weg, wenn
+         eine Antwort per kompletter Liste kommt (ask-mira.js: die Komponente kann eine neue Antwort
+         sonst nicht von einem geoeffneten Chat unterscheiden und tippt nichts). */
+      if (window.askMiraExpectAnswer) window.askMiraExpectAnswer();
+      if (window.askMiraSetMessages) window.askMiraSetMessages(m);
+      if (window.askMiraTypeLastAnswer) window.askMiraTypeLastAnswer();
+      hellHalten(root);
+      ohneTipps(root);
+    }, MIRA_DENKT_MS);
+  }
+
+  function miraSzene(root){
+    var dash = root.querySelector(".ulh-main");
+    var mira = root.querySelector(".ulh-mira");
+    if (!dash || !mira || mira.__ulhMiraAuf) return false;
+    mira.__ulhMiraAuf = true;
+    dash.classList.add("is-weg");
+    /* Der Punkt in der Leiste wandert mit. Ohne ihn stuende Mira im Fenster, waehrend die Leiste
+       weiter das Dashboard als aktiv zeigt -- der Widerspruch, an dem man sofort sieht, dass es
+       ein zusammengesetztes Bild ist. */
+    if (window.setSidebarActive) window.setSidebarActive(ID.usn, "mira");
+    setTimeout(function(){
+      mira.classList.add("is-da");
+      mira.classList.add("is-kommt");
+      setTimeout(function(){ mira.classList.remove("is-kommt"); }, MIRA_RISE_MS + 120);
+      hellHalten(root);
+      ohneTipps(root);
+      /* Erst tippen, wenn Mira STEHT. Vorher lief beides gleichzeitig -- gemessen fing die Frage
+         bei 360ms an, waehrend die Seite noch bis 1035ms heraufzog. Zwei Bewegungen uebereinander
+         lesen sich als eine unruhige. */
+      setTimeout(function(){
+        miraTippen(root, function(){ miraSenden(root); });
+      }, MIRA_RISE_MS);
+    }, AUSBLENDEN_MS);
+    return true;
+  }
+
   /* ---------- Start ----------------------------------------------------------------------- */
 
   /* Warten auf die Komponenten, aber nicht endlos. Diese Datei laeuft NACH ihnen, das heisst
@@ -982,6 +1168,7 @@
         mass(root);
         erscheinen(root);
         szeneAnsetzen(root);
+        miraAnsetzen(root);
         return;
       }
       if (++n > VERSUCHE){
@@ -1003,14 +1190,31 @@
   /* Das Erscheinen anstossen. is-shown BLEIBT und macht das Fenster ueberhaupt sichtbar,
      is-entering traegt die vier gestaffelten Animationen und faellt danach ab -- bliebe sie stehen,
      liefe jede spaetere Bewegung im Fenster gegen eine noch gesetzte animation.
-     1100ms als Abfallzeit: die letzte Stufe startet bei 480ms und laeuft 460ms (siehe
-     landing-hero.css), das sind 940 -- mit Reserve fuer einen Frame Verzug beim Klassenwechsel. */
+     Die Abfallzeit MUSS hinter dem Ende der letzten Stufe liegen: 720ms Verzoegerung plus 690ms
+     Lauf sind 1410 (siehe landing-hero.css), also 1600 mit Reserve fuer einen Frame Verzug beim
+     Klassenwechsel. Hier stand 1100 -- der Wert aus der Zeit, als eine Stufe 460ms lief. Nach der
+     Verlaengerung schnitt er die letzte Stufe 310ms vor ihrem Ende ab, und der Zitatblock sprang
+     dabei auf seinen Endzustand. Gemessen: is-entering fiel bei 1102ms ab. */
   function erscheinen(root){
     if (root.__ulhErschienen) return;
     root.__ulhErschienen = true;
     root.classList.add("is-shown");
     root.classList.add("is-entering");
-    setTimeout(function(){ root.classList.remove("is-entering"); }, 1100);
+    setTimeout(function(){ root.classList.remove("is-entering"); }, ERSCHEINEN_MS + 190);
+  }
+
+  /* Sechs Sekunden nach dem Ende des Erscheinens wechselt die Sektion auf Mira. Feste Uhr und
+     keine Kette an den Filterwechsel: der laeuft bei ~3200ms und ist bei ~4200 durch, es bleiben
+     also mehr als drei Sekunden Ruhe dazwischen. Bleibt das Chart aus (kein Chart.js vom CDN), gibt
+     es keinen Filterwechsel -- der Wechsel auf Mira soll davon aber nicht abhaengen. */
+  function miraAnsetzen(root){
+    if (root.__ulhMiraAn) return;
+    root.__ulhMiraAn = true;
+    /* Als Handhabe nach draussen, wie bei der ersten Szene: die spaetere Szenenfolge soll den
+       Wechsel selbst ausloesen koennen, und darueber laesst er sich messen, ohne acht Sekunden zu
+       warten. */
+    root.__ulhMira = function(){ return miraSzene(root); };
+    setTimeout(function(){ miraSzene(root); }, ERSCHEINEN_MS + MIRA_WARTEN);
   }
 
   /* Die Szene startet erst, wenn das Dashboard WIRKLICH steht: Chart.js kommt vom CDN, und drei

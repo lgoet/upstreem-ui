@@ -330,18 +330,46 @@
   from { opacity: 0; transform: translateY(18px); }
   to   { opacity: 1; transform: none; }
 }
+/* Alles um die Haelfte laenger: 460 -> 690ms, Verzoegerungen 160/320/480 -> 240/480/720. Das Ende
+   liegt damit bei 720 + 690 = 1410ms, und darauf ist der Ablauf in landing-hero.js bezogen. */
 .ulh-stage { opacity: 0; }
 .ulh-root.is-shown .ulh-stage { opacity: 1; }
-.ulh-root.is-entering .ulh-frame  { animation: ulhRise 460ms var(--ulh-ease) backwards; }
-.ulh-root.is-entering .dph-root   { animation: ulhRise 460ms var(--ulh-ease) 160ms backwards; }
-.ulh-root.is-entering .vot-root   { animation: ulhRise 460ms var(--ulh-ease) 320ms backwards; }
-.ulh-root.is-entering .tcd-root   { animation: ulhRise 460ms var(--ulh-ease) 480ms backwards; }
+.ulh-root.is-entering .ulh-frame  { animation: ulhRise 690ms var(--ulh-ease) backwards; }
+.ulh-root.is-entering .dph-root   { animation: ulhRise 690ms var(--ulh-ease) 240ms backwards; }
+.ulh-root.is-entering .vot-root   { animation: ulhRise 690ms var(--ulh-ease) 480ms backwards; }
+.ulh-root.is-entering .tcd-root   { animation: ulhRise 690ms var(--ulh-ease) 720ms backwards; }
 @media (prefers-reduced-motion: reduce) {
   .ulh-root.is-entering .ulh-frame,
   .ulh-root.is-entering .dph-root,
   .ulh-root.is-entering .vot-root,
-  .ulh-root.is-entering .tcd-root { animation: none; }
+  .ulh-root.is-entering .tcd-root,
+  .ulh-root .ulh-seite.is-kommt { animation: none; }
 }
+
+/* ---------- Die zwei Seiten im Fenster ----------
+   Dashboard und Mira liegen UEBEREINANDER, nicht nacheinander. Beide absolut im selben Kasten:
+   sonst nimmt die ausgeblendete Seite weiter ihren Platz ein (opacity nimmt keinen Raum weg) und
+   das Fenster waere doppelt so hoch wie sein Ausschnitt.
+   Das Ausblenden ist DOPPELT so schnell wie das Erscheinen -- 690 / 2 -- so war die Ansage. Das
+   Einblenden von Mira laeuft wieder mit der Dauer des Erscheinens und derselben Bewegung von unten,
+   damit die zweite Szene sich anfuehlt wie die erste. */
+.ulh-seiten {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.ulh-seite {
+  position: absolute;
+  inset: 0;
+  transition: opacity 345ms var(--ulh-ease);
+}
+.ulh-seite.is-weg { opacity: 0; }
+/* Mira liegt von Anfang an im Markup, aber unsichtbar: die Komponente braucht ihre echte Groesse,
+   um sich einzurichten (Chat-Hoehe, is-compact, Scrollsperre), und display: none haette ihr eine
+   Hoehe von 0 gemeldet. */
+.ulh-mira { opacity: 0; }
+.ulh-seite.is-da { opacity: 1; }
+.ulh-seite.is-kommt { animation: ulhRise 690ms var(--ulh-ease) backwards; }
 
 /* Die Zeilen der Markentabelle wandern beim Filterwechsel an ihren neuen Platz. Die Bewegung setzt
    landing-hero.js als Inline-Stil (FLIP: erst messen, dann umsortieren, dann von der alten Lage
@@ -502,6 +530,14 @@
 /* Die Legende unter der Linie faellt weg: im Fenster steht sie doppelt, denn die Tabelle rechts
    nennt dieselben fuenf Marken mit demselben Zeichen. */
 .ulh-app .up-legend { display: none; }
+
+/* Mira zeigt auf dem Startbildschirm ihre Kategorien -- im Schaustueck nicht: dort tippt der Ablauf
+   selbst eine Frage ein, und eine Wand aus Karten daneben zieht den Blick von genau dieser Bewegung
+   weg. Der Rest des Startbildschirms bleibt, wie er ist. */
+.ulh-app #am-suggested { display: none; }
+/* Das Panel der frueheren Chats bleibt zu und braucht seinen Knopf hier nicht -- ohne Bubble gibt
+   es keine Chats, die es zeigen koennte. */
+.ulh-app .am-prev-btn { display: none; }
 
 /* Fuenf Zeilen statt sieben, und die Kaesten schrumpfen mit. .vot-box steht in der App fest auf
    427px; bei fuenf Zeilen a 55px (visibility-chart.css) bleiben sonst zwei Zeilen Luft unter der

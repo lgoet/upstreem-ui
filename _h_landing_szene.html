@@ -23,6 +23,8 @@
   <button onclick="szeneMessen()">SZENE</button>
   <button onclick="zeigen(bild())">ZUSTAND</button>
   <button onclick="zeigen(verlauf())">VERLAUF</button>
+  <button onclick="zeigen(mira())">MIRA JETZT</button>
+  <button onclick="zeigen(miraBild())">MIRA ZUSTAND</button>
 </div>
 <pre id="out">laedt</pre>
 
@@ -186,6 +188,40 @@ function szeneMessen(){
     zeigen(o);
   }, 1200);
   zeigen(o);
+}
+
+/* Die zweite Szene von Hand ausloesen, statt achteinhalb Sekunden zu warten. */
+function mira(){ var r = W(); return { ausgeloest: r.__ulhMira ? r.__ulhMira() : "keine Handhabe" }; }
+
+/* Der Zustand von Mira: welche Seite sichtbar ist, was im Eingabefeld steht, welche Nachrichten
+   da sind, ob die Antwort tippt, und ob die Marken-Chips wirklich ein Logo bekommen haben. */
+function miraBild(){
+  var r = W();
+  var dash = r.querySelector(".ulh-main"), mira = r.querySelector(".ulh-mira");
+  var am = r.querySelector("#ask-mira");
+  var chips = am ? [].slice.call(am.querySelectorAll(".am-msg.is-assistant .am-logo-wrap")) : [];
+  var tab = am ? am.querySelector(".am-msg.is-assistant table") : null;
+  return {
+    dash: dash ? getComputedStyle(dash).opacity + " " + dash.className : null,
+    mira_klassen: mira ? mira.className : null,
+    mira_deckkraft: mira ? getComputedStyle(mira).opacity : null,
+    mira_animation: mira ? getComputedStyle(mira).animationName + " " + getComputedStyle(mira).animationDuration : null,
+    mira_hoehe: mira ? Math.round(mira.getBoundingClientRect().height) : null,
+    am_hoehe: am ? Math.round(am.getBoundingClientRect().height) : null,
+    leiste_aktiv: (function(){ var a = r.querySelector(".usn-item.is-active"); return a ? a.textContent.trim() : null; })(),
+    kategorien: (function(){ var k = r.querySelector("#am-suggested"); return k ? getComputedStyle(k).display : "fehlt"; })(),
+    eingabe: am ? (am.querySelector("#am-textarea") || {}).value : null,
+    nachrichten: am ? am.querySelectorAll(".am-msg").length : 0,
+    laedt: am ? !!am.querySelector(".am-msg-loading") : null,
+    tippt: am ? !!am.querySelector(".am-msg.am-typing") : null,
+    tabelle: tab ? tab.querySelectorAll("tbody tr").length + " Zeilen, " +
+                   (tab.querySelectorAll("thead th").length) + " Spalten" : "keine",
+    chips: chips.length,
+    chips_mit_logo: chips.filter(function(c){ return !!c.querySelector("img"); }).length,
+    chip_bilder: chips.slice(0, 3).map(function(c){ var i = c.querySelector("img");
+      return c.textContent.trim() + ":" + (i ? (i.getAttribute("src") || "").slice(0, 22) : "kein img"); }),
+    fehler: window.__fehler || null
+  };
 }
 
 /* Der Mitschnitt laeuft VOM START an. Beim ersten Versuch habe ich ihn per Hand nach dem Laden

@@ -758,7 +758,19 @@
   }
 
   /* ---- Inline brand/source logos: prepend a small logo before each evidence mention ---- */
-  function safeImgUrl(u){ u = String(u||'').trim(); if (/^\/\//.test(u)) u = 'https:' + u; return /^https?:\/\//i.test(u) ? u : ''; }
+  /* data:image ist ausdruecklich erlaubt, und zwar nur diese Typen. Grund: ein Aufrufer darf ein
+     erzeugtes Logo mitgeben, ohne es irgendwo hochzuladen -- die Hero-Sektion der Landingpage tut
+     genau das, ihre Markenzeichen sind erzeugte SVG. Vorher fiel jede solche Adresse still durch
+     und die Chips standen ohne Logo da.
+     Sicher ist es, weil die Adresse ausschliesslich in einem <img src> landet: ein SVG im
+     Bildkontext fuehrt kein Skript aus und laedt nichts nach. Alles andere -- javascript:, data:
+     mit fremdem Typ, blob: -- bleibt draussen. */
+  function safeImgUrl(u){
+    u = String(u||'').trim();
+    if (/^\/\//.test(u)) u = 'https:' + u;
+    if (/^data:image\/(png|jpe?g|gif|webp|avif|svg\+xml)[;,]/i.test(u)) return u;
+    return /^https?:\/\//i.test(u) ? u : '';
+  }
   function buildLogoTerms(items, raw){
     var terms = [];
     asArrayLoose(items).forEach(function(it){

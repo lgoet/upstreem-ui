@@ -65,6 +65,7 @@
   css("visibility-chart.css");
   css("topcitations-dashboard.css");
   css("quick-actions.css");
+  css("ask-mira.css");
   css("landing-hero.css");
 
   js("core.js");
@@ -73,6 +74,7 @@
   js("visibility-chart.js");
   js("topcitations-dashboard.js");
   js("quick-actions.js");
+  js("ask-mira.js");
   /* Zuletzt: diese Datei ruft die Setter der anderen. */
   js("landing-hero.js");
 })();

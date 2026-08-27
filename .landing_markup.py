@@ -29,6 +29,10 @@ TEILE = [
     # Quick Actions traegt keine data-instance -- die Kennung unten wird also nicht gesetzt und
     # steht nur da, damit die Zeile dieselbe Form hat wie die anderen.
     ("mqa", "bubble/quick_actions_bubble.html", "lh-mqa"),
+    # Mira ist die zweite Szene der Sektion. Ihre CSS haengt an der KENNUNG #ask-mira (rund 370
+    # Regeln), also bleibt die id im Markup stehen -- eine zweite Instanz auf der Seite gibt es
+    # nicht, und damit ist der Singleton unproblematisch.
+    ("mira", "bubble/ask_mira_bubble.html", "lh-mira"),
 ]
 
 # Feste Werte fuer die Platzhalter. BRAND_NAME ist eine erfundene Marke -- erfundene Zahlen unter
