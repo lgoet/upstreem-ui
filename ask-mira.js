@@ -1729,6 +1729,8 @@
   }
   function _startTyping(bub, units){
     if (!units || !units.length) return;
+    var _typeMul = parseFloat(root.getAttribute('data-typespeed'));
+    if (!isFinite(_typeMul) || _typeMul <= 0) _typeMul = 1;
     var msgEl = (bub && bub.closest) ? bub.closest('.am-msg') : null;
     if (msgEl) msgEl.classList.add('am-typing');     // hide the hover bar (copy/good/bad) until done
     _typingActive = true;
@@ -1755,7 +1757,12 @@
       else if (u.t === 'b'){ u.el.style.display = ''; void u.el.offsetWidth; u.el.classList.add('on'); var _ob = u.el.classList && u.el.classList.contains('am-oppc-btn') ? u.el : (u.el.querySelector ? u.el.querySelector('.am-oppc-btn') : null); if (_ob) _ob.classList.add('on'); }  // reveal block: take space + fade (also mark inner oppc button so the typing-guard releases it)
       else { u.el.classList.add('on'); }
       var d = u.t === 'b' ? 82 : (u.t === 'c' ? 23 : 7 + Math.random()*6.5);   // 35% faster than the original 126/36/11-21
-      setTimeout(tick, d);
+      /* data-typespeed am Root: ein Faktor auf diese Zeiten, Standard 1. Gebraucht von der
+         Hero-Sektion der Landingpage -- dort schaut man dem Tippen zu, in der App will man die
+         Antwort haben. Am Root und nicht als globale Einstellung, weil es eine Eigenschaft DIESER
+         Platzierung ist; jede Sekunde neu gelesen waere Verschwendung, also einmal je Zeichen und
+         nur, wenn das Attribut ueberhaupt da ist. */
+      setTimeout(tick, d * _typeMul);
     }
     tick();
   }

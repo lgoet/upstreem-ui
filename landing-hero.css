@@ -664,6 +664,77 @@
 .ulh-app .upt-selcount-n,
 .ulh-app .upt-status-btn { font-size: 11px; }
 
+/* Die Werkzeugleiste der Prompts-Tabelle steht OFFEN und faehrt nicht beim Ueberfahren heraus.
+   Angepinnt wird sie ueber die Einstellung (upt_tools__..., siehe landing-hero.js) -- hier faellt
+   nur der Einklapp-Knopf weg: er ist im Schaustueck ein Angebot, das niemand annehmen kann, und
+   nimmt links 32px Platz. */
+.ulh-app .up-tbcol { display: none; }
+
+/* Die Gruppenliste: Lupe und Sortierung weg -- beides Werkzeuge, die hier niemand braucht. Plus
+   und der Knopf zum Einklappen bleiben, in der dritten Textfarbe: sie sind Beiwerk und sollen
+   nicht wie die Beschriftung daneben wirken. */
+.ulh-app .upt-grp-sidesort,
+.ulh-app .upt-grp-sidesearch-btn { display: none; }
+.ulh-app .upt-grp-sideadd,
+.ulh-app .upt-grp-widebtn { color: var(--vc-third); }
+
+/* Die Liste rundet nur UNTEN. Oben sitzt der Kopf der Liste, und der Radius dort liess die grau
+   hinterlegte erste Zeile (All Prompts) an ihren oberen Ecken angeschnitten aussehen. */
+.ulh-app .up-root .upt-grp-sidelist { border-radius: 0 0 12px 12px; }
+
+/* Das Ueberfahren einer ZEILE faerbt nicht mehr das Kaestchen mit. Das ist in der App richtig --
+   dort will man wissen, dass man die Zeile auswaehlen kann --, hier ist nichts auswaehlbar, und
+   ein mitleuchtendes Kaestchen sieht nach einem Angebot aus. Auf dem Kaestchen selbst bleibt es. */
+.ulh-app .up-row:hover .upt-check:not(.is-checked) { border-color: var(--vc-border); }
+.ulh-app .upt-check:hover:not(.is-checked) { border-color: var(--vc-third); }
+
+/* Die ausgewaehlte Zeile in der Seitenleiste etwas heller: 7 Prozent Textfarbe waren im
+   Schaustueck neben dem fast weissen Grund ein deutlicher Kasten. */
+.ulh-app .usn-bar { --usn-sel: color-mix(in srgb, var(--vc-text) 4.5%, transparent); }
+
+/* ---------- Mira, Feinheiten ----------
+   Die Knopfreihe unter einer Antwort (Export, Kopieren, Daumen) steht dauerhaft da statt beim
+   Ueberfahren zu erscheinen: im Schaustueck fasst niemand die Nachricht an, und die Reihe gehoert
+   zum Bild einer fertigen Antwort. pointer-events bleibt aus -- sie ist zum Ansehen.
+   Waehrend des Tippens bleibt sie weg, das regelt ask-mira.css selbst. */
+.ulh-app .am-msg-actions { opacity: 1; transform: none; pointer-events: none; }
+
+/* Der Text in der Nutzerblase sass minimal zu hoch: bei 15px Schrift und 1.7 Zeilenhoehe traegt
+   die Blase oben und unten 12px, und der optische Schwerpunkt der Schrift liegt darueber. 1px vom
+   unteren Polster nach oben schiebt ihn auf die Mitte. */
+.ulh-app .am-msg.is-user .am-bubble { padding: 13px 15px 11px; }
+
+/* Der Fokusrahmen des Eingabefelds waehrend des Tippens. In der App entsteht er ueber
+   :focus-within -- hier wird nie etwas fokussiert (die Buehne schluckt focusin), also setzt
+   landing-hero.js die Klasse. Halb so kraeftig wie in der App: der Ring bei 50 Prozent seiner
+   Deckkraft, die Kante zur Haelfte in Richtung des normalen Rahmens gemischt. */
+.ulh-app .am-composer.is-tippt {
+  border-color: color-mix(in srgb, var(--up-focus) 50%, var(--am-border));
+  box-shadow: 0 0 0 var(--up-focus-w) color-mix(in srgb, var(--up-focus-ring) 50%, transparent),
+              var(--am-shadow-sm);
+}
+
+/* Der Klick auf den Sendeknopf. Kein Zeiger im Bild, aber die Bewegung, die ein Klick macht:
+   Hoverfarbe, kurz 2px kleiner, dann zurueck. .am-send:active gibt es schon (scale .95) -- das
+   greift nur bei einem echten Zeigerdruck, den es hier nicht gibt. */
+.ulh-app .am-send { transition: transform 120ms cubic-bezier(.34,1.56,.64,1), background 120ms ease; }
+.ulh-app .am-send.is-klick { transform: scale(.9); background: #585855; }
+
+/* Das Eingabefeld faehrt beim Abschicken nach unten UND blendet dabei aus -- aber erst auf der
+   zweiten Haelfte des Weges. Verzoegerung 150ms auf eine Fahrt von 300: die erste Haelfte sieht
+   man ganz, unten angekommen ist es weg. */
+.ulh-app .am-composer-area { transition: opacity 160ms ease 150ms; }
+
+/* Die Zeilen in Miras Antworttabelle kommen einzeln herein, wie die der Prompts-Tabelle.
+   --ulh-i setzt landing-hero.js an jeder Zeile, sobald die Antwort steht. */
+.ulh-root .ulh-mira.is-zeilen .am-msg table tbody tr {
+  animation: ulhRise 320ms var(--ulh-ease) backwards;
+  animation-delay: calc(var(--ulh-i, 0) * 60ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ulh-root .ulh-mira.is-zeilen .am-msg table tbody tr { animation: none; }
+}
+
 /* Mira zeigt auf dem Startbildschirm ihre Kategorien -- im Schaustueck nicht: dort tippt der Ablauf
    selbst eine Frage ein, und eine Wand aus Karten daneben zieht den Blick von genau dieser Bewegung
    weg. Der Rest des Startbildschirms bleibt, wie er ist. */
@@ -691,7 +762,7 @@
 .ulh-app #ask-mira .am-hero { transition: height 300ms ease, min-height 300ms ease, padding 300ms ease; }
 .ulh-app .am-composer-shell { transition: background 300ms ease, padding-bottom 450ms cubic-bezier(.4,0,.2,1); }
 .ulh-app .am-msg { animation-duration: 420ms; }
-.ulh-app .am-composer-area { transition: opacity 300ms ease; }
+
 .ulh-app #ask-mira.has-messages .am-composer-area { opacity: 0; }
 
 /* Der Zurueck-Knopf in der Titelzeile: 32 -> 24px, das Zeichen darin 16 -> 14px. Beide Werte

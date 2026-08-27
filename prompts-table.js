@@ -339,7 +339,11 @@
        longer, see UC.makeColumns' autoFit). Deliberately NOT the same as left-to-right order:
        Topics outranks Rank and Sentiment because it is the column this table is actually managed
        by, while Market/Created are reference data you can live without on a laptop screen. */
-    { key: "visibility", label: "Visibility",      w: "minmax(150px, 150px)", min: 150, prio: 70 },
+    /* Genauso breit wie Rank und Sentiment: alle drei sind eine Kennzahl in einer Zelle, und die
+       150 hier liessen die Visibility-Spalte neben den beiden 128er wie eine andere Art Spalte
+       aussehen. Deckel und Mindestbreite von Sentiment uebernommen -- Rank hat mit 90 dieselbe
+       Deckelung, nur eine tiefere Untergrenze. */
+    { key: "visibility", label: "Visibility",      w: "minmax(120px, 128px)", min: 120, prio: 70 },
     { key: "rank",       label: "Rank",            w: "minmax(90px, 128px)",  min: 90,  dropAt: "vnarrow", prio: 40 },
     { key: "sentiment",  label: "Sentiment",       w: "minmax(120px, 128px)", min: 120, dropAt: "narrow",  prio: 30 },
     /* 178px, same as urls-table's identical column: 4 × 32px avatars (−6px overlap each) plus
