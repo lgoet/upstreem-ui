@@ -408,7 +408,7 @@
 /* Mira und die Prompts-Seite liegen von Anfang an im Markup, aber unsichtbar: die Komponenten
    brauchen ihre echte Groesse, um sich einzurichten (Chathoehe, is-compact, Scrollsperre, die
    Spaltenanpassung der Tabelle), und display: none haette ihnen eine Hoehe von 0 gemeldet. */
-.ulh-mira, .ulh-prompts { opacity: 0; }
+.ulh-mira, .ulh-prompts, .ulh-chancen { opacity: 0; }
 .ulh-seite.is-da { opacity: 1; }
 /* is-weg NACH is-da, und das ist kein Schoenheitsfehler in der Reihenfolge: eine Seite, die schon
    dran WAR und jetzt weg soll, traegt beide Klassen. Beide haben dieselbe Spezifitaet, also
@@ -597,7 +597,7 @@
 /* Die Leiste bringt ihre Breite selbst mit; rechts davon der Seiteninhalt.
    min-width: 0, sonst sprengt eine breite Tabelle die Spalte. */
 .ulh-side { flex: 0 0 auto; }
-.ulh-main, .ulh-prompts {
+.ulh-main, .ulh-prompts, .ulh-chancen {
   flex: 1 1 auto;
   min-width: 0;
   display: flex;
@@ -711,6 +711,13 @@
    Waehrend des Tippens bleibt sie weg, das regelt ask-mira.css selbst. */
 .ulh-app .am-msg-actions { opacity: 1; transform: none; pointer-events: none; }
 
+/* Die Datenpunktzeile erscheint erst MIT der fertigen Antwort. Waehrend getippt wird stand sie
+   schon da -- sie haengt in .am-msg-main neben der Blase und wird vom Tippen nicht mit versteckt --
+   und las sich als Teil der Ladeanzeige: zwei farbige Chips ueber einer Antwort, die es noch nicht
+   gibt. opacity und nicht display: das Tippen setzt display an ihren Teilen selbst, und ein
+   Inline-Stil schlaegt jede Regel. */
+.ulh-app .am-msg.am-typing .am-evidence { opacity: 0; }
+
 /* Der Text in der Nutzerblase sass minimal zu hoch: bei 15px Schrift und 1.7 Zeilenhoehe traegt
    die Blase oben und unten 12px, und der optische Schwerpunkt der Schrift liegt darueber. 1px vom
    unteren Polster nach oben schiebt ihn auf die Mitte. */
@@ -749,6 +756,30 @@
 @media (prefers-reduced-motion: reduce) {
   .ulh-root .ulh-mira.is-zeilen .am-msg table tbody tr { animation: none; }
 }
+
+/* ---------- Der Auftritt des Opportunities-Bretts ----------
+   Wie bei der Prompts-Seite: die Seite selbst steigt nicht herauf, ihre Teile tun es nacheinander.
+   Erst der Seitenkopf, dann die Werkzeugleiste des Bretts, dann die vier Spalten von links nach
+   rechts. Die Karten darin kommen mit ihrer Spalte -- eine zweite Staffelung innerhalb einer
+   Spalte, die selbst noch aufblendet, waere dieselbe Falle wie bei der Prompts-Tabelle. */
+.ulh-root .ulh-chancen.is-kommt { animation: none; }
+.ulh-root .ulh-chancen.is-kommt .up-ph-root { animation: ulhRise 520ms var(--ulh-ease) backwards; }
+.ulh-root .ulh-chancen.is-kommt .uo-top { animation: ulhRise 520ms var(--ulh-ease) 140ms backwards; }
+.ulh-root .ulh-chancen.is-kommt .uo-col { animation: ulhRise 520ms var(--ulh-ease) backwards; }
+.ulh-root .ulh-chancen.is-kommt .uo-col:nth-child(1) { animation-delay: 300ms; }
+.ulh-root .ulh-chancen.is-kommt .uo-col:nth-child(2) { animation-delay: 400ms; }
+.ulh-root .ulh-chancen.is-kommt .uo-col:nth-child(3) { animation-delay: 500ms; }
+.ulh-root .ulh-chancen.is-kommt .uo-col:nth-child(4) { animation-delay: 600ms; }
+@media (prefers-reduced-motion: reduce) {
+  .ulh-root .ulh-chancen.is-kommt .up-ph-root,
+  .ulh-root .ulh-chancen.is-kommt .uo-top,
+  .ulh-root .ulh-chancen.is-kommt .uo-col { animation: none; }
+}
+
+/* Die Schublade bleibt IM Fenster: opportunities.js haengt Vorhang und Schublade bei
+   data-portal="inline" in den Root statt in den <body>, und ihr position: fixed bezieht sich damit
+   auf die Buehne (sie traegt das transform). Die Ecken der Schublade folgen dem Fenster. */
+.ulh-app .uo-modal { border-radius: 12px 0 0 12px; }
 
 /* Mira zeigt auf dem Startbildschirm ihre Kategorien -- im Schaustueck nicht: dort tippt der Ablauf
    selbst eine Frage ein, und eine Wand aus Karten daneben zieht den Blick von genau dieser Bewegung

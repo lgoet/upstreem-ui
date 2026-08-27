@@ -88,6 +88,17 @@
      it carries the open/close state classes the CSS already keys off (.uo-root.detail-open ...), so
      those selectors keep matching after the move. __uoInit marks it as already-initialised, or
      uoRun's ".uo-root" sweep would come back and try to boot the portal as a second board. */
+  /* data-portal="inline": Vorhang und Schublade bleiben, wo sie sind -- kein Umzug in den <body>
+     und nicht in die oberste Ebene des Browsers.
+     Wozu: die Hero-Sektion der Landingpage zeigt die App in einem FENSTER. Eine Schublade in der
+     obersten Ebene liegt ueber der ganzen Seite und ist von dort aus nicht mehr einzufangen -- das
+     Bild "Blick in eine laufende App" waere zerstoert. In der App bleibt der Umzug der Normalfall
+     und richtig; hier sagt der Aufrufer ausdruecklich, dass er den Rahmen selbst stellt.
+     Es genuegt, den Portal-Kasten in den Root zu haengen statt in den <body>: .uo-portal traegt
+     display: contents, erzeugt also keine Box, und die Schublade darin ist position: fixed --
+     bezogen auf den naechsten Vorfahren MIT transform, und das ist genau die Buehne des Fensters.
+     Die oberste Ebene bleibt aus, denn sie kennt keinen Bezugsrahmen ausser dem Viewport. */
+  var inlinePortal = root.getAttribute('data-portal') === 'inline';
   var portal = document.createElement('div');
   portal.className = 'up-root uo-root uo-portal';
   /* Out of the page flow INLINE, not via the stylesheet -- same reasoning as prompt-research.js's
@@ -113,7 +124,7 @@
   Array.prototype.forEach.call(document.querySelectorAll('.uo-portal'), function(p){
     if (!p.__uoOwner || !document.body.contains(p.__uoOwner)) { try { p.remove(); } catch(_){} }
   });
-  try { document.body.appendChild(portal); } catch(_){}
+  try { (inlinePortal ? root : document.body).appendChild(portal); } catch(_){}
 
   /* TOP LAYER, nicht z-index. A z-index race against the host is not winnable: this drawer sat at
      9900, and a Bubble wrapper around the component with a higher z-index (they hand those out
@@ -126,7 +137,8 @@
      also close it on every click inside the board behind it.
      Feature-detected: where showPopover does not exist the element stays exactly as it was, still
      body-mounted with its 9900/9895 pair, i.e. the previous behaviour. */
-  var canPopover = typeof portal.showPopover === "function" && typeof portal.hidePopover === "function";
+  var canPopover = !inlinePortal &&
+    typeof portal.showPopover === "function" && typeof portal.hidePopover === "function";
   if (canPopover) { try { portal.setAttribute("popover", "manual"); } catch(_){ canPopover = false; } }
   function portalShow(){ if (canPopover){ try { portal.showPopover(); } catch(_){} } }
   function portalHide(){ if (canPopover){ try { portal.hidePopover(); } catch(_){} } }
@@ -990,6 +1002,13 @@
   window.opportunitiesSetShowIgnored = function(v){ S.visible.ignored = isYesVal(v);   /* gleicher Defekt wie oben */ var row = settingsPop.querySelector('[data-board="ignored"] .up-switch'); if (row) row.classList.toggle('is-on', S.visible.ignored); render(); };
   window.opportunitiesSetVisibleBoards = function(obj){ if (obj && typeof obj === 'object'){ ['pending','in_progress','done','ignored'].forEach(function(k){ if (k in obj){ S.visible[k] = !!obj[k]; var sw = settingsPop.querySelector('[data-board="'+k+'"] .up-switch'); if (sw) sw.classList.toggle('is-on', S.visible[k]); } }); render(); } };
   window.opportunitiesSetTheme = function(t){ root.setAttribute('data-theme', String(t).toLowerCase()==='dark' ? 'dark' : 'light'); if (String(t).toLowerCase() !== 'dark') root.removeAttribute('data-theme'); portal.setAttribute('data-theme', isDark() ? 'dark' : 'light'); };
+  /* Eine Karte von aussen verschieben -- derselbe Weg, den das Ziehen und der Umschalter in der
+     Schublade nehmen, samt Ereignis nach Bubble. Gebraucht von der Hero-Sektion der Landingpage,
+     die den Zug vorfuehrt; in der App kann damit ein Workflow eine Karte umlegen, ohne die ganze
+     Liste neu zu schicken -- wovor die Vorlage ausdruecklich warnt, weil das Brett sonst sichtbar
+     unter dem Nutzer neu zeichnet.
+     statusKey ist einer von pending | in_progress | done | ignored. */
+  window.opportunitiesSetStatus = function(id, statusKey){ setStatus(String(id), String(statusKey)); };
   window.opportunitiesOpenDetail = openDetail;
   window.opportunitiesCloseDetail = closeDetail;
   window.opportunitiesGetState = function(){ return { mode: S.mode, visible: S.visible, query: S.query, count: S.items.length }; };

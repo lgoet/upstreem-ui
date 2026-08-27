@@ -68,6 +68,7 @@
   css("ask-mira.css");
   css("page-headers/prompts-page-header.css");
   css("prompts-table.css");
+  css("opportunities.css");
   css("landing-hero.css");
 
   js("core.js");
@@ -79,6 +80,8 @@
   js("ask-mira.js");
   js("page-headers/prompts-page-header.js");
   js("prompts-table.js");
+  js("page-headers/opportunities-page-header.js");
+  js("opportunities.js");
   /* Zuletzt: diese Datei ruft die Setter der anderen. */
   js("landing-hero.js");
 })();

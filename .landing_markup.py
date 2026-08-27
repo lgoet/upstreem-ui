@@ -36,6 +36,9 @@ TEILE = [
     # Dritte Szene: die Prompts-Seite, Kopf und Tabelle.
     ("pph", "page-headers/bubble/prompts_page_header_bubble.html", "lh-pph"),
     ("upt", "bubble/prompts_table_bubble.html", "lh-upt"),
+    # Vierte Szene: das Opportunities-Brett.
+    ("oph", "page-headers/bubble/opportunities_page_header_bubble.html", "lh-oph"),
+    ("uo", "bubble/opportunities_bubble.html", "lh-uo"),
 ]
 
 # Feste Werte fuer die Platzhalter. BRAND_NAME ist eine erfundene Marke -- erfundene Zahlen unter
@@ -89,6 +92,9 @@ for schluessel, pfad, kennung in TEILE:
     # Mira tippt im Schaustueck langsamer: dort schaut man dem Tippen zu, in der App will man die
     # Antwort haben. Der Faktor liegt am Root, ask-mira.js liest ihn beim Start des Tippens.
     m = m.replace('class="up-root am-root"', 'class="up-root am-root" data-typespeed="1.6"')
+    # Die Schublade der Opportunities bleibt IM Fenster. Ohne das wandert sie in die oberste Ebene
+    # des Browsers und liegt ueber der ganzen Seite -- siehe opportunities.js, data-portal.
+    m = m.replace('class="up-root uo-root"', 'class="up-root uo-root" data-portal="inline"')
     # Die Rueckwege nach Bubble fallen weg. Auch mehrzeilig eingerueckt geschrieben, deshalb der
     # Blick auf das ganze Attribut samt fuehrendem Leerraum.
     m = re.sub(r'\s*data-[a-z0-9-]+-fn="bubble_fn_[^"]*"', "", m)
