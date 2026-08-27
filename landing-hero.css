@@ -48,10 +48,22 @@
   --ulh-t: 200ms;
   --ulh-ease: cubic-bezier(.4, 0, .2, 1);
   position: relative;
+  /* width: 100% ist hier PFLICHT und nicht Kosmetik. Ein Block-div fuellt seinen Eltern nur, wenn
+     der ein normaler Block-Kontext ist. Steht die Sektion in einem FLEX-Eltern -- und genau so
+     setzt Framer seine Elemente --, ist sie ein Flex-Item mit width: auto und schrumpft auf die
+     Breite ihres Inhalts. Gemessen in _h_landing_flex.html bei einem 1440px breiten Flex-Eltern:
+     ohne diese Zeile 618px, mit ihr 1440px. Das war die Meldung "das Embed steht auf fill, die
+     Komponente ist trotzdem nur etwa 800px breit". */
+  width: 100%;
   background: var(--ulh-grund);
   font-family: Geist, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
+/* core.css setzt border-box an .up-root und deren Kinder -- diese Wurzel ist aber KEINE .up-root
+   (siehe der Absatz oben), also galt hier die Vorgabe content-box. Folge: der Rahmen mit
+   width: 100% plus 6px Polster links und rechts wurde 12px BREITER als sein Platz und stand ueber.
+   Gemessen: 1340px in einem 1325px breiten Kasten. */
+.ulh-root, .ulh-root * { box-sizing: border-box; }
 
 /* ---------- Textblock ---------- */
 .ulh-text {

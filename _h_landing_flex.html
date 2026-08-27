@@ -1,0 +1,64 @@
+<meta charset="utf-8">
+<title>landing hero in einem Flex-Eltern (der Framer-Fall)</title>
+<!-- Wozu: gemeldet ist "das Embed steht auf fill, die sichtbare Komponente ist aber nur etwa 800px
+     breit". In der CSS der Sektion gibt es keine Begrenzung -- also kommt sie von aussen. Der
+     Verdacht: das Elternelement ist ein Flex- oder Inline-Kontext. Ein Block-div darin ist ein
+     Flex-Item mit width:auto und schrumpft auf die BREITESTE MAX-CONTENT-Breite seiner Kinder, und
+     das ist .ulh-text mit max-width 780 plus 2x24 Polster = 828. Fast genau die gemeldete Zahl.
+     Dieses Harness baut den Fall nachweisbar nach: links ohne, rechts mit width:100%. -->
+<style>
+  body { margin: 0; font: 12px ui-monospace, monospace; }
+  #out { position: fixed; right: 0; top: 0; z-index: 99; background: #f6f6f6; padding: 6px;
+         white-space: pre-wrap; font: 10px/1.4 ui-monospace, monospace; max-width: 300px; }
+  /* GENAU der verdaechtige Fall: ein Flex-Eltern, so breit wie die Seite. */
+  .eltern { display: flex; width: 100%; outline: 2px dashed #c00; }
+  .flick .ulh-root { width: 100%; }
+</style>
+<body>
+<pre id="out">laedt</pre>
+
+<div class="eltern"><div class="ulh-root" data-cdn-pin="422b446" data-fall="ohne"></div></div>
+
+<script>
+function messen(){
+  var r = document.querySelector('.ulh-root');
+  var eltern = r.parentElement;
+  var text = r.querySelector('.ulh-text');
+  var rahmen = r.querySelector('.ulh-frame');
+  var o = {
+    eltern_breite: Math.round(eltern.getBoundingClientRect().width),
+    wurzel_breite: Math.round(r.getBoundingClientRect().width),
+    wurzel_width_css: getComputedStyle(r).width,
+    text_breite: text ? Math.round(text.getBoundingClientRect().width) : null,
+    rahmen_breite: rahmen ? Math.round(rahmen.getBoundingClientRect().width) : null,
+    fenster: window.innerWidth
+  };
+  document.getElementById('out').textContent = JSON.stringify(o, null, 1);
+  window.__fertig = o;
+  return o;
+}
+function flick(an){ document.body.classList.toggle('flick', !!an); setTimeout(messen, 200); }
+window.addEventListener('error', function(e){ window.__fehler = String(e.message).slice(0,90); });
+</script>
+<script>
+/* Per fetch mit no-store und inline eingesetzt. Ein blanker href hat hier gerade eine GECACHTE
+   landing-hero.css geladen: die Messung zeigte weiter 618px, obwohl die Regel auf der Platte stand.
+   Nur die Breite wird hier geprueft, deshalb reichen core und die Sektion -- die Komponenten
+   im Fenster bleiben leer, das ist Absicht. */
+(function(){
+  var files = ["core.css", "landing-hero.css", "core.js", "landing-hero.js"];
+  var texts = {};
+  Promise.all(files.map(function(f){
+    return fetch(f + "?nocache=" + Math.random(), { cache: "no-store" })
+      .then(function(r){ return r.text(); }).then(function(t){ texts[f] = t; });
+  })).then(function(){
+    files.forEach(function(f){
+      var el = document.createElement(/\.css$/.test(f) ? "style" : "script");
+      el.textContent = texts[f];
+      document.head.appendChild(el);
+    });
+    window.__geladen = { hero_css_hat_width100: texts["landing-hero.css"].indexOf("width: 100%;\n  background: var(--ulh-grund)") > 0 };
+    setTimeout(messen, 1200);
+  });
+})();
+</script>
