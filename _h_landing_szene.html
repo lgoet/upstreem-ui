@@ -69,7 +69,29 @@ function masse(){
     chip_text_groesse: cs(".ulh-chip-in", "font-size"),
     hash: hash ? [hash.getBoundingClientRect().width.toFixed(2),
                   hash.getBoundingClientRect().height.toFixed(2)] : null,
-    hash_css: hash ? getComputedStyle(hash).width + " x " + getComputedStyle(hash).height : null
+    hash_css: hash ? getComputedStyle(hash).width + " x " + getComputedStyle(hash).height : null,
+    gran_aktiv_rahmen: cs(".ulh-app .vc-gran-btn.is-active", "border-color"),
+    seg_aktiv_rahmen: cs(".ulh-app .tcl-seg-btn.is-active", "border-color"),
+    sub_farbe: cs(".ulh-sub", "color"),
+    sub_gewicht: cs(".ulh-sub", "font-weight"),
+    driver_farbe: cs(".ulh-driver", "color"),
+    driver_gewicht: cs(".ulh-driver", "font-weight"),
+    driver_icon: cs(".ulh-driver svg", "color"),
+    zeile_uebergang: cs(".ulh-app .vt-row", "transition"),
+    punkt_rand: (function(){
+      var c = W().querySelector(".up-line-canvas");
+      var ch = c && window.Chart && window.Chart.getChart ? window.Chart.getChart(c) : null;
+      if (!ch) return null;
+      var d = ch.data.datasets[0];
+      return "linie " + d.borderWidth + " punkt " + d.pointBorderWidth + " hover " + d.pointHoverBorderWidth +
+             " fuellung " + d.pointHoverBackgroundColor;
+    })(),
+    plugin_reihenfolge: (function(){
+      var c = W().querySelector(".up-line-canvas");
+      var ch = c && window.Chart && window.Chart.getChart ? window.Chart.getChart(c) : null;
+      if (!ch) return null;
+      return (ch.config.plugins || []).map(function(p){ return p.id + (p.beforeDatasetsDraw ? "/vor" : "/nach"); }).join(" ");
+    })()
   };
 }
 
@@ -134,7 +156,12 @@ function bild(){
     chart.data.datasets.forEach(function(d){ d.data.forEach(function(v){ if (v > hoechster) hoechster = v; }); });
     hoechster = hoechster.toFixed(1);
   }
+  var ttBox = r.querySelector(".up-line-tt");
+  var tt = ttBox ? [].slice.call(ttBox.querySelectorAll(".up-line-tt-row")).map(function(z){
+    return z.getAttribute("data-id") + ":" + (z.querySelector(".up-line-tt-val") || {}).textContent;
+  }) : null;
   return {
+    tooltip: tt,
     reihenfolge: zeilen.map(function(z){ return z.idx + z.id; }).join(" "),
     zeilen: zeilen, kpis: kpis, linien: linien,
     y_achse_max: ymax, hoechster_wert: hoechster,
@@ -193,7 +220,26 @@ window.__iv = setInterval(function(){
        GLEITET, steht nur hier: laeuft die Transition, liefert getComputedStyle die Matrix des
        Zwischenstands. Steht hier "none" oder sofort die Endmatrix, gleitet nichts. */
     keTfC: ke ? getComputedStyle(ke).transform : "",
-    dsKe0: kd, pixKe0: pix
+    /* Die Kachel: Fuellung und Linie oben stecken in EINEM box-shadow, dazu der Stapelplatz. */
+    keSh: ke ? (getComputedStyle(ke).boxShadow + " z" + (ke.style.zIndex || "-")) : "",
+    dsKe0: kd, pixKe0: pix,
+    /* Der Tooltip: Reihenfolge, Werte, und der GERECHNETE transform der Kestrel-Zeile -- daran
+       haengt die Behauptung "der Tooltip macht dieselbe Bewegung". */
+    tt: (function(){
+      var box = r.querySelector(".up-line-tt");
+      if (!box) return null;
+      var zs = [].slice.call(box.querySelectorAll(".up-line-tt-row"));
+      if (!zs.length) return null;
+      var ke = zs.filter(function(z){ return z.getAttribute("data-id") === "ke"; })[0];
+      return zs.map(function(z){ return z.getAttribute("data-id") + ":" +
+               (z.querySelector(".up-line-tt-val") || {}).textContent; }).join(" ") +
+             " || keTf " + (ke ? getComputedStyle(ke).transform : "-") +
+             " bg " + (ke ? (ke.style.backgroundColor || "-") : "-") +
+             " op " + box.style.opacity + "/" + (ch && ch.tooltip ? ch.tooltip.opacity : "?") +
+             " parsed " + (ch && ch.tooltip && ch.tooltip.dataPoints
+               ? ch.tooltip.dataPoints.map(function(dp){ return Number(dp.parsed.y).toFixed(1); }).join(",")
+               : "-");
+    })()
   });
   if (window.__log.length > 220) clearInterval(window.__iv);
 }, 40);

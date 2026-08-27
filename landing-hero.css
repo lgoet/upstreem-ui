@@ -36,6 +36,10 @@
   --ulh-schirm: #FFFFFFF2;
   --ulh-text: #1f1f1b;
   --ulh-muted: #6f737c;
+  /* Der Ton der Unterzeile und der drei Treiber: #6f737c um 5 Prozent in Richtung Weiss geschoben
+     (111,115,124 -> 118,122,130). Eigener Wert und nicht --ulh-muted geaendert: die Schrift im Chip
+     bleibt, wie sie ist -- sie steht auf einer fast weissen Pille und wuerde heller verschwinden. */
+  --ulh-sub: #767a82;
   --ulh-border: #e0e2e6;
   /* Der Funke am Chip. Deine Farbe, und sie liegt in derselben Familie wie das blaue Bild im
      Hintergrund -- das ist kein Zufall, sondern der Grund, warum beides zusammengeht. */
@@ -111,7 +115,7 @@
   /* 500 statt der geerbten 400 -- 100 mehr, wie gewuenscht. */
   font-weight: 500;
   line-height: 1.45;
-  color: var(--ulh-muted);
+  color: var(--ulh-sub);
 }
 /* ---------- Der Chip ueber der Ueberschrift ----------
    Das ist Beispiel 2 deiner Vorlage, Zeile fuer Zeile, nur in unseren Farben und auf 32px Hoehe:
@@ -218,12 +222,13 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  /* 600, also auch 100 mehr: die drei Treiber sollen weiter eine Stufe kraeftiger stehen als der
-     Satz darueber. */
-  font-weight: 600;
-  color: var(--ulh-text);
+  /* Gewicht und Farbe wie im Satz darueber -- die drei Treiber sind der zweite Teil DESSELBEN
+     Satzes, kein eigener Rang. Vorher standen sie auf 600 und in --ulh-text, also kraeftiger und
+     dunkler, und lasen sich dadurch wie eine Aufzaehlung fuer sich. */
+  font-weight: 500;
+  color: var(--ulh-sub);
 }
-.ulh-driver svg { width: 16px; height: 16px; flex: 0 0 auto; color: var(--ulh-muted); }
+.ulh-driver svg { width: 16px; height: 16px; flex: 0 0 auto; color: var(--ulh-sub); }
 
 /* ---------- Die zwei Knoepfe ----------
    Masse an attio.com abgelesen: 36px hoch, Radius 10, 14px/500, Polster 0 12px, und zwischen den
@@ -340,8 +345,31 @@
 
 /* Die Zeilen der Markentabelle wandern beim Filterwechsel an ihren neuen Platz. Die Bewegung setzt
    landing-hero.js als Inline-Stil (FLIP: erst messen, dann umsortieren, dann von der alten Lage
-   zurueckfahren) -- hier steht nur, dass eine wandernde Zeile ueber ihrem Nachbarn liegt. */
-.ulh-app .vt-row.is-wandert { position: relative; z-index: 1; }
+   zurueckfahren) -- hier steht, wie eine wandernde Zeile AUSSIEHT.
+
+   Sie ist eine KACHEL: Linie oben, Linie unten, deckend gefuellt. Alle drei Teile sind noetig, und
+   zwar aus einem gemessenen Grund: die Zeilen kreuzen sich unterwegs. Lumen und Verity tauschen
+   Platz 5 und 6 und stehen auf halber Strecke exakt uebereinander, Kestrel ueberlappt Vantage und
+   Halden um je 23 von 47 Pixeln. Ohne Fuellung schlagen dort zwei Zeilen durcheinander, und ohne
+   Linie oben hat die Kachel nur einen Strich unten -- den der Zellen -- und sieht aus wie ein
+   abgerissener Streifen.
+
+   Beides in EINEM box-shadow und nicht als border-top plus background:
+   - ein border-top machte die Zeile 1px hoeher und verschoebe das ganze Raster,
+   - ein eigener background muesste ueberblendet werden, und dann faerbte sich auch das Ueberfahren
+     mit der Maus weich, was es nicht soll.
+   Der zweite Schatten mit 100px Spread fuellt die Kachel; der erste liegt darueber und ist die
+   Linie. Die Linie UNTEN gehoert den Zellen (.vt-td border-bottom) und liegt als Kind ohnehin ueber
+   beiden Schatten -- sie bleibt also stehen.
+   Die Ueberblendung steht auf der Grundregel, damit sie in BEIDE Richtungen laeuft: beim Anlegen
+   der Klasse und beim Abfallen. box-shadow und nichts sonst -- der Hover setzt background, davon
+   bleibt er unberuehrt. */
+.ulh-app .vt-row { transition: box-shadow 200ms ease; }
+.ulh-app .vt-row.is-wandert {
+  position: relative;
+  z-index: 1;
+  box-shadow: inset 0 1px 0 var(--vc-border), inset 0 0 0 100px var(--vc-bg);
+}
 
 /* ---------- Das Fenster ---------- */
 /* Die Buehne haengt in einem Raster mit EINER Zelle, damit der spaetere Ablauf mehrere Szenen
@@ -498,13 +526,16 @@
    auf dem fast weissen Grund des Schaustuecks noch immer kaum zu erkennen. */
 .ulh-app .vc-gran { height: 26px; background: rgba(245, 245, 245, .6); }
 .ulh-app .vc-gran-btn { height: 26px; padding: 0 8px; border-color: transparent; }
-.ulh-app .vc-gran-btn.is-active { border-color: transparent; box-shadow: 0 1px 2px rgba(11, 13, 24, .06); }
+.ulh-app .vc-gran-btn.is-active { border-color: var(--vc-border); box-shadow: 0 1px 2px rgba(11, 13, 24, .06); }
 /* Derselbe Zuschnitt fuer den Doughnut/Balken-Schalter. Nur .tcl-seg und nicht .up-seg-btn: die
    Klasse teilt sich core mit mehreren Komponenten, und der Domains/URLs-Schalter daneben soll
    bleiben, wie er ist. */
 .ulh-app .tcl-seg { height: 26px; background: rgba(245, 245, 245, .6); }
 .ulh-app .tcl-seg-btn { height: 26px; padding: 0 8px; border-color: transparent; }
-.ulh-app .tcl-seg-btn.is-active { border-color: transparent; box-shadow: 0 1px 2px rgba(11, 13, 24, .06); }
+/* Ein leichter Rahmen um das aktive Segment, in beiden Umschaltern: --vc-border ist im
+   Schaustueck #e7e9ec, also der um ein Viertel zurueckgenommene Ton -- sichtbar als Kante, ohne
+   die Fassung der App zu haben (dort ist es --vc-switch-border, #e0e2e6). */
+.ulh-app .tcl-seg-btn.is-active { border-color: var(--vc-border); box-shadow: 0 1px 2px rgba(11, 13, 24, .06); }
 /* Die Zeichen darin ziehen mit: die Pille geht von 32 auf 26, das ist Faktor 0.81, und 16px waeren
    in einer 26px-Pille dieselbe Enge, gegen die §1 warnt. Streng gerechnet kaemen 13 heraus -- bei
    13px sind Doughnut und Balken kaum noch zu unterscheiden, deshalb 14. */

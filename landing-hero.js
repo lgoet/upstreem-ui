@@ -315,9 +315,25 @@
     });
     function setzen(){
       try {
-        chart.setActiveElements(punkte);
-        if (chart.tooltip && chart.tooltip.setActiveElements) chart.tooltip.setActiveElements(punkte, { x: 0, y: 0 });
+        if (chart.tooltip && chart.tooltip.setActiveElements){
+          /* Erst LEEREN, dann setzen. Chart.js vergleicht in setActiveElements die neuen aktiven
+             Elemente mit den bisherigen und tut nichts, wenn sie gleich sind -- und nach einem
+             Datentausch sind sie gleich, weil Chart.js dieselben Punktobjekte weiterverwendet. Der
+             Tooltip behielt dadurch seine ALTEN Zahlen: gemessen zeigte er die ganze Bewegung ueber
+             36.2, 32.0, 25.5 ..., obwohl die Datensaetze schon die neuen Werte trugen, und rechnete
+             sich erst 830ms spaeter neu. Mit dem Leerlauf davor schlaegt der Vergleich fehl und der
+             Kasten wird sofort neu gerechnet.
+             Beides im selben Durchgang, also wird zwischen den zwei Zustaenden kein Bild gezeichnet
+             -- es flackert nicht. */
+          chart.tooltip.setActiveElements([], { x: 0, y: 0 });
+          chart.tooltip.setActiveElements(punkte, { x: 0, y: 0 });
+        }
         chart.update();
+        /* Die aktiven Punkte des CHARTS erst NACH dem update, nicht davor: chart.update() raeumt
+           chart._active ab, und ohne die aktiven Punkte zeichnet Chart.js keine Hoverpunkte -- die
+           Fuehrungslinie stand allein da, ohne die weissen Kreise darauf. Mit einer Pixelprobe auf
+           der Leinwand gemessen. */
+        chart.setActiveElements(punkte);
       } catch (e){}
     }
     setzen();
@@ -526,7 +542,16 @@
      interpoliert sie mit seinen eigenen 600ms, die Zeilen wandern per FLIP, die Zahlen zaehlen. */
 
   var SZENE_WARTEN = 3000;      /* nach dem fertigen Dashboard, nicht nach dem Skriptstart */
-  var SZENE_DAUER = 620;        /* Wanderung und Zaehlung; Chart.js animiert daneben mit 600 */
+  /* 930ms fuer alles, was sich beim Wechsel bewegt: Zeilen, Linien, Tooltipzeilen, Zahlen. Vorher
+     620 -- das war zu knapp, um als Bewegung gelesen zu werden. */
+  var SZENE_DAUER = 930;
+  /* EINE Kurve fuer alles: ein sanftes Ausschleichen. Vorher zaehlten die Zahlen auf easeOutQuart,
+     und das ist ein hartes Ausschleichen -- zur halben Zeit schon bei 94 Prozent, die Zahlen standen
+     also praktisch fest, waehrend die Zeilen noch fuhren. easeOutQuad ist bei der halben Zeit bei
+     75 Prozent, und Chart.js kennt denselben Namen fuer seine Datenanimation. */
+  var WEICH = "cubic-bezier(.25,.46,.45,.94)";      /* easeOutQuad als Bezier, fuer die CSS-Seite */
+  function weich(t){ return 1 - (1 - t) * (1 - t); } /* easeOutQuad fuer das Zaehlwerk */
+  var KACHEL_MS = 200;          /* das Auf- und Abblenden von Fuellung und Linie der Kachel */
   var zustand = "a";
 
   /* Die Formate sind die der Komponenten und nicht neu erfunden -- sonst zaehlt eine Zelle in einer
@@ -537,6 +562,24 @@
   function ganzProz(v){ return String(Math.round(v)) + "%"; }
   function eine(v){ return (Math.round(v * 10) / 10).toFixed(1); }
   function proz(v){ var k = window.UpstreemCore; return k ? k.fmtPct(v) : ganzProz(v); }
+
+  /* Fuer den Tooltip des Charts: Zahl und Format aus dem TEXT lesen, statt sie festzuschreiben. Die
+     Genauigkeit des Linechart-Tooltips steht in der Chart-Konfiguration (cfg.decimals, hier 0 mit
+     Prozentzeichen) -- wer sie dort aendert, soll nicht hier nachziehen muessen. Das Drumherum
+     ("%", ein Vorzeichen, was auch kommt) bleibt so stehen, wie es dasteht. */
+  var LUECKE = " ";
+  function zahlAus(text){
+    var m = String(text == null ? "" : text).match(/-?\d+(?:\.\d+)?/);
+    return m ? parseFloat(m[0]) : null;
+  }
+  function formatWie(text){
+    var t = String(text == null ? "" : text);
+    var m = t.match(/-?\d+(?:\.(\d+))?/);
+    if (!m) return ganz;
+    var stellen = m[1] ? m[1].length : 0;
+    var rest = t.replace(m[0], LUECKE);
+    return function(v){ return rest.replace(LUECKE, Number(v).toFixed(stellen)); };
+  }
 
   /* Die Zahl im Trendzeichen ist ein TEXTKNOTEN hinter dem Pfeil-SVG (UC.trendChip: Icon + Text).
      Also den Knoten holen und nicht das Element beschreiben -- textContent auf dem Element haette
@@ -553,36 +596,44 @@
      Die Zeit kommt aus dem rAF-Argument und nicht aus einem Frame-Zaehler: ein gedrosselter Tab
      liefert weniger Frames, die Dauer soll aber dieselbe bleiben. */
   function zaehlwerk(dauer){
-    var auftraege = [];
+    var auftraege = [], laeuft = false, standE = 0, standT = 0;
+    /* Ein Auftrag darf NACHTRAEGLICH dazukommen und holt dann den Stand sofort ein. Der Tooltip des
+       Charts braucht das: seine Zeilen entstehen erst, wenn core ihn ein einziges Mal neu gebaut
+       hat, und das ist ein Frame nach dem Datentausch. Ohne das Einholen zaehlte er von vorn,
+       waehrend die Tabelle schon zur Haelfte durch ist. */
+    function dazu(f){
+      auftraege.push(f);
+      if (laeuft) f(standE, standT);
+    }
     return {
       /* el darf ein Element ODER ein Textknoten sein -- textContent schreibt auf beidem. */
       zahl: function(el, von, bis, form){
         if (!el) return;
         var a = Number(von), b = Number(bis);
         if (!isFinite(a) || !isFinite(b)) return;
-        auftraege.push(function(e){ el.textContent = form(a + (b - a) * e); });
+        dazu(function(e){ el.textContent = form(a + (b - a) * e); });
       },
       /* Alles, was keine Zahl in einem Knoten ist: der Punkt des Sentiment-Zeichens wechselt die
          Farbe, die Platzziffer springt. Bekommt beide Zeiten -- e ist gekruemmt, t linear. */
-      frei: function(fn){ if (fn) auftraege.push(fn); },
+      frei: function(fn){ if (fn) dazu(fn); },
       lauf: function(fertig){
         var start = null, fertigGemeldet = false;
+        laeuft = true;
         function abschluss(){
           if (fertigGemeldet) return;
           fertigGemeldet = true;
+          standE = 1; standT = 1;
           auftraege.forEach(function(f){ f(1, 1); });
+          laeuft = false;
           if (fertig) fertig();
         }
         function schritt(jetzt){
           if (fertigGemeldet) return;
           if (start == null) start = jetzt;
-          var t = Math.min(1, (jetzt - start) / dauer);
-          /* easeOutQuart -- dieselbe Kurve, mit der Chart.js seine Datenaenderung animiert
-             (animation: easeOutQuart in makeLine). Mit einer anderen Kurve zaehlten die Zahlen nach
-             einem anderen Gefuehl als die Linien daneben. */
-          var e = 1 - Math.pow(1 - t, 4);
-          auftraege.forEach(function(f){ f(e, t); });
-          if (t < 1) requestAnimationFrame(schritt); else abschluss();
+          standT = Math.min(1, (jetzt - start) / dauer);
+          standE = weich(standT);
+          auftraege.forEach(function(f){ f(standE, standT); });
+          if (standT < 1) requestAnimationFrame(schritt); else abschluss();
         }
         requestAnimationFrame(schritt);
         /* Rueckhalt. In einem verdeckten Tab feuert rAF gar nicht -- ohne diese Uhr blieben die
@@ -593,12 +644,60 @@
     };
   }
 
-  /* FLIP: First, Last, Invert, Play. Erst die alten Lagen messen, dann umsortieren, dann jede Zeile
-     per transform an ihre alte Stelle zurueckstellen und von dort auf 0 fahren lassen.
+  /* FLIP: First, Last, Invert, Play -- der gemeinsame Kern beider Wanderungen. Der Aufrufer hat die
+     alten Lagen gemessen und die Elemente in der neuen Ordnung eingehaengt; diese Funktion schiebt
+     jedes per transform an seine ALTE Stelle zurueck und laesst es von dort auf 0 fahren.
      offsetTop und NICHT getBoundingClientRect: die Buehne steht unter transform: scale, und
      getBoundingClientRect liefert die verkleinerten Masse -- eine Wanderung von 47 Layoutpixeln
-     kaeme als 33 heraus, und die Zeilen sprangen um den Rest. offsetTop ist die Lage im Layout,
-     also in genau der Einheit, in der auch das transform rechnet. */
+     kaeme als 33 heraus, und die Zeilen sprangen um den Rest. Gemessen bei 1024px Fensterbreite:
+     der Weg bleibt 94px, mit dem Rect waeren es 70 gewesen.
+     an/aus legen die Kachel an und ab: bei der Tabelle eine Klasse, beim Tooltip eine Fuellung. */
+  function flip(reihe, dauer, an, aus){
+    var UEBER = "box-shadow " + KACHEL_MS + "ms ease, background-color " + KACHEL_MS + "ms ease";
+    reihe.forEach(function(r){
+      r.weg = r.oben - r.el.offsetTop;
+      if (!r.weg) return;
+      r.el.style.position = "relative";
+      /* Wer nach OBEN wandert, liegt vorn. Sonst entscheidet die Reihenfolge im Markup, welche von
+         zwei sich kreuzenden Zeilen verdeckt wird, und das ist willkuerlich. */
+      r.el.style.zIndex = r.weg > 0 ? "2" : "1";
+      if (an) an(r.el);
+      /* transform 0s statt transition: none -- der Sprung an die alte Stelle muss hart sein, das
+         Aufblenden der Kachel aber nicht. Mit transition: none blitzte die Fuellung auf. */
+      r.el.style.transition = "transform 0s, " + UEBER;
+      r.el.style.transform = "translateY(" + r.weg + "px)";
+    });
+    /* Ein Lesen erzwingt das Layout mit dem gesetzten transform. Ohne diese Zeile fasst der Browser
+       beide Zuweisungen zu einem Stil zusammen, und es gibt nichts zu ueberblenden. */
+    if (reihe[0]) void reihe[0].el.offsetHeight;
+    requestAnimationFrame(function(){
+      reihe.forEach(function(r){
+        if (!r.weg) return;
+        r.el.style.transition = "transform " + dauer + "ms " + WEICH + ", " + UEBER;
+        r.el.style.transform = "translateY(0)";
+      });
+    });
+    /* Aufraeumen in ZWEI Schritten. Erst faellt die Kachel ab, und dafuer muss die Ueberblendung
+       noch stehen -- sonst springt Fuellung und Linie weg, statt zu verschwinden. Erst danach
+       kommen Ueberblendung, Lage und Stapelplatz weg.
+       Die Uhr raeumt auch dann auf, wenn rAF nie gefeuert hat: dann springt die Zeile an ihren
+       Platz, statt dort zu bleiben, wo sie vorher stand. */
+    setTimeout(function(){
+      reihe.forEach(function(r){
+        r.el.style.transition = UEBER;
+        r.el.style.transform = "";
+        if (aus) aus(r.el);
+      });
+      setTimeout(function(){
+        reihe.forEach(function(r){
+          r.el.style.transition = "";
+          r.el.style.position = "";
+          r.el.style.zIndex = "";
+        });
+      }, KACHEL_MS + 60);
+    }, dauer + 80);
+  }
+
   function reihenWandern(root, ordnung, dauer){
     var tbody = root.querySelector(".vot-unit-right .vt-tbody");
     if (!tbody) return null;
@@ -611,40 +710,87 @@
        waere schlimmer als eine unveraenderte. */
     if (reihe.length !== ordnung.length) return null;
     reihe.forEach(function(r){ tbody.appendChild(r.el); });
-    reihe.forEach(function(r){
-      var weg = r.oben - r.el.offsetTop;
-      if (!weg) return;
-      r.el.classList.add("is-wandert");
-      r.el.style.transition = "none";
-      r.el.style.transform = "translateY(" + weg + "px)";
-    });
-    /* Ein Lesen erzwingt das Layout mit dem gesetzten transform. Ohne diese Zeile fasst der Browser
-       beide Zuweisungen zu einem Stil zusammen, und es gibt nichts zu ueberblenden. */
-    void tbody.offsetHeight;
-    requestAnimationFrame(function(){
-      reihe.forEach(function(r){
-        r.el.style.transition = "transform " + dauer + "ms cubic-bezier(.22,1,.36,1)";
-        r.el.style.transform = "translateY(0)";
-      });
-    });
-    /* Aufraeumen. Der Inline-Stil darf nicht stehenbleiben: jede spaetere Bewegung der Zeile liefe
-       sonst gegen ein transform von hier. Die Uhr raeumt auch dann auf, wenn rAF nie gefeuert hat
-       -- dann springt die Zeile an ihren Platz, statt dort zu bleiben, wo sie vorher stand. */
-    setTimeout(function(){
-      reihe.forEach(function(r){
-        r.el.style.transition = "";
-        r.el.style.transform = "";
-        r.el.classList.remove("is-wandert");
-      });
-    }, dauer + 120);
+    flip(reihe, dauer,
+      function(el){ el.classList.add("is-wandert"); },
+      function(el){ el.classList.remove("is-wandert"); });
     return reihe;
+  }
+
+  /* ---- Der Tooltip des Charts ----
+     Er steht dauerhaft offen und listet dieselben sechs Marken, sortiert nach ihrem Wert am
+     gezeigten Monat. Beim Filterwechsel muss er dieselbe Bewegung machen wie die Tabelle, sonst
+     springt er mitten in einer ruhigen Verschiebung um.
+     Der Ablauf ergibt sich aus der Bauart des Tooltip-Kits in core: es baut den Kasten nur neu, wenn
+     sich seine Kennung geaendert hat, und die enthaelt die ROHWERTE. Waehrend Chart.js die Linien
+     animiert, bleiben die Rohwerte gleich -- es gibt also genau EINEN Neuaufbau, unmittelbar nach
+     dem Datentausch, und danach gehoeren die Zeilen uns: weder ein weiteres chart.update() noch das
+     Anstecken des Tooltips baut sie noch einmal.
+     Deshalb: vor dem Tausch Lagen und Werte aufnehmen, auf den Neuaufbau warten, dann wandern und
+     zaehlen lassen. Ein Zaehlen VOR dem Neuaufbau waere sinnlos, er ueberschreibt alles. */
+  function tippAufnehmen(root){
+    var box = root.querySelector(".up-line-tt");
+    if (!box) return null;
+    var zeilen = [].slice.call(box.querySelectorAll(".up-line-tt-row"));
+    if (!zeilen.length) return null;
+    var auf = { box: box, ordnung: [], lage: {}, wert: {} };
+    zeilen.forEach(function(z){
+      var id = z.getAttribute("data-id");
+      var w = z.querySelector(".up-line-tt-val");
+      auf.ordnung.push(id);
+      auf.lage[id] = z.offsetTop;
+      auf.wert[id] = w ? w.textContent : null;
+    });
+    return auf;
+  }
+
+  function tippWandern(auf, zeilen, werk, dauer){
+    /* Die Fuellung der wandernden Zeile ist der Grund des Kastens -- KEIN Rahmen, die Zeilen haben
+       keinen. Ohne Fuellung schlagen zwei Zeilen durcheinander, die sich kreuzen: Lumen und Verity
+       tauschen die Plaetze und stehen auf halber Strecke exakt uebereinander. Aus dem Kasten
+       gelesen und nicht festgeschrieben, damit es im Dunkeln stimmt (dort #121212). */
+    var innen = auf.box.firstElementChild || auf.box;
+    var grund = getComputedStyle(innen).backgroundColor;
+    var reihe = [];
+    zeilen.forEach(function(z){
+      var id = z.getAttribute("data-id");
+      if (auf.lage[id] == null) return;
+      reihe.push({ el: z, oben: auf.lage[id] });
+      var w = z.querySelector(".up-line-tt-val");
+      if (!w) return;
+      var von = zahlAus(auf.wert[id]), bis = zahlAus(w.textContent);
+      if (von == null || bis == null) return;
+      werk.zahl(w, von, bis, formatWie(w.textContent));
+    });
+    if (!reihe.length) return;
+    flip(reihe, dauer,
+      function(el){ el.style.backgroundColor = grund; },
+      function(el){ el.style.backgroundColor = ""; });
+  }
+
+  function tippNachziehen(auf, werk, dauer){
+    if (!auf) return;
+    (function warten(k){
+      var zeilen = [].slice.call(auf.box.querySelectorAll(".up-line-tt-row"));
+      /* Neu gebaut ist er, wenn Reihenfolge ODER ein Wert nicht mehr der Aufnahme entspricht.
+         Beides pruefen und nicht nur die Reihenfolge: es gibt Wechsel, bei denen sich nur Zahlen
+         aendern und die Reihenfolge bleibt. */
+      var neu = zeilen.length === auf.ordnung.length && zeilen.some(function(z, i){
+        var id = z.getAttribute("data-id");
+        var w = z.querySelector(".up-line-tt-val");
+        return id !== auf.ordnung[i] || (w && w.textContent !== auf.wert[id]);
+      });
+      if (neu){ tippWandern(auf, zeilen, werk, dauer); return; }
+      /* Dreissig Frames Geduld, dann nicht mehr. Bleibt der Neuaufbau aus, steht der Tooltip einfach
+         weiter da, wie er war -- kein Grund, dafuer irgendetwas anderes anzuhalten. */
+      if (k < 30) requestAnimationFrame(function(){ warten(k + 1); });
+    })(0);
   }
 
   /* Die Linien. Zugeordnet ueber __id und nicht ueber den Index: die Datensaetze liegen in der
      Reihenfolge, in der UC.buildLineDatasets sie gebaut hat, und __id ist die einzige Stelle, an
      der die Marke steht. Ein Zuordnen ueber die Position haette die Werte von Kestrel auf die Linie
      von Vantage geschrieben. */
-  function chartWandern(root, serie){
+  function chartWandern(root, serie, dauer){
     var leinwand = root.querySelector(".up-line-canvas");
     if (!leinwand || !window.Chart || !window.Chart.getChart) return false;
     var chart = window.Chart.getChart(leinwand);
@@ -661,11 +807,29 @@
       etwas = true;
     });
     if (!etwas) return false;
-    /* chart.update() und nicht update("none"): das Kit hat 600ms easeOutQuart eingestellt, und
-       Chart.js interpoliert eine geaenderte Datenreihe von sich aus. Die y-Achse bleibt, wie sie
-       ist -- ihr Maximum entsteht in build() aus dem hoechsten Wert mal 1.15, und der hoechste Wert
-       des Zustands B liegt darunter. Gemessen und nicht angenommen: nichts wird abgeschnitten. */
+    /* Dauer und Kurve der Linienbewegung auf die der Zeilen gestellt. Das Kit steht auf 600ms
+       easeOutQuart -- das ist die EINGANGSanimation, und die soll so bleiben; hier wird nur diese
+       eine Instanz umgestellt, und zwar erst jetzt, lange nach dem Eingang. */
+    if (chart.options && chart.options.animation){
+      chart.options.animation.duration = dauer;
+      chart.options.animation.easing = "easeOutQuad";
+    }
+    /* chart.update() und danach SOFORT das Anstecken des Tooltips wieder. Beides ist noetig, und
+       beides aus einem gemessenen Grund:
+       - chart.update() raeumt die aktiven Punkte ab, der Tooltip geht auf opacity 0 und
+         VERSCHWINDET fuer die Dauer der Animation. Genau so war es: er war die ganze Bewegung ueber
+         weg und stand am Ende mit den neuen Zahlen wieder da.
+       - Das Anstecken muss DANACH kommen und nicht davor. Chart.js merkt sich die Datenpunkte des
+         Tooltips und rechnet sie nur neu, wenn die aktiven Elemente neu gesetzt werden. Mit dem
+         Anstecken vor dem update zeigte tooltip.dataPoints die ganze Animation ueber die ALTEN
+         Werte (36.2, 32.0, 25.5 ...), und core hatte damit keinen Anlass, den Kasten neu zu bauen.
+       Die zwei update() in einem Durchgang kosten nichts: das erste hat noch kein Bild gezeichnet,
+       also faengt das zweite die Animation an derselben Stelle wieder an.
+       Chart.js interpoliert die geaenderte Datenreihe von sich aus. Die y-Achse bleibt, wie sie ist:
+       ihr Maximum entsteht in build() aus dem hoechsten Wert mal 1.15, und der hoechste Wert des
+       Zustands B liegt darunter -- gemessen 43.58 gegen 41.3, nichts wird abgeschnitten. */
     try { chart.update(); } catch (e){ return false; }
+    tippZeigen(root);
     return true;
   }
 
@@ -678,6 +842,9 @@
     tabelle("b").forEach(function(r){ neu[r.company_id] = r; ordnung.push(r.company_id); });
 
     var werk = zaehlwerk(SZENE_DAUER);
+    /* VOR dem Datentausch aufnehmen: danach hat core den Kasten schon mit den Endwerten neu
+       gebaut, und die Ausgangslage waere nicht mehr zu erfahren. */
+    var tipp = tippAufnehmen(root);
 
     /* Die sechs Zeilen: sechs Zahlen und ein Farbpunkt je Zeile. forEach und keine for-Schleife --
        Farbpunkt und Platzziffer brauchen einen Abschluss ueber die Zeile, und mit var haette der
@@ -704,8 +871,8 @@
       });
       /* Die Platzziffer ist eine Ordnungszahl -- eine 2.4 unterwegs waere ein Fehler und kein
          Zaehlen. Also springt sie, und zwar auf der halben Strecke: vorher stimmte sie zur alten
-         Lage der Zeile, nachher zur neuen. t und nicht e -- die Kurve ist zur halben Zeit schon bei
-         94%, die Ziffer waere praktisch sofort gesprungen. */
+         Lage der Zeile, nachher zur neuen. t und nicht e -- die Kurve ist zur halben Zeit bei 75
+         Prozent, die Ziffer waere zu frueh gesprungen. */
       var idx = z.querySelector(".vt-td-idx");
       if (idx) werk.frei(function(e, t){
         var soll = String((t >= 0.5 ? b : a).position);
@@ -731,11 +898,14 @@
     }
 
     zustand = "b";
-    chartWandern(root, reihen("b"));
+    chartWandern(root, reihen("b"), SZENE_DAUER);
     reihenWandern(root, ordnung, SZENE_DAUER);
+    tippNachziehen(tipp, werk, SZENE_DAUER);
     werk.lauf(function(){
       /* Danach den Tooltip wieder anstecken: chart.update() raeumt die gesetzten Punkte ab, und
-         ohne diesen Griff stuende das Chart nach der Szene ohne den dauerhaft offenen Kasten da. */
+         ohne diesen Griff stuende das Chart nach der Szene ohne den dauerhaft offenen Kasten da.
+         Das baut ihn NICHT neu -- die Kennung im Kit haengt an den Rohwerten, und die stehen seit
+         dem Tausch fest. Die gezaehlten Zahlen bleiben also stehen. */
       ohneTipps(root);
       tippZeigen(root);
     });

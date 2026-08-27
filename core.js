@@ -5121,7 +5121,10 @@
   }
 
   /* ---------- line chart ---------- */
-  var LINE_TENSION = 0.3, LINE_POINT_HOVER = 4, LINE_POINT_HIT = 6, LINE_POINT_BORDER = 1.4;
+  /* LINE_POINT_BORDER gibt es nicht mehr: der Rand eines Punktes ist jetzt genau so stark wie die
+     Linie, an der er haengt (siehe build()) -- eine feste 1.4 stand neben einer 2.125 dicken Linie
+     und sah aus wie ein anderer Strich. */
+  var LINE_TENSION = 0.3, LINE_POINT_HOVER = 4, LINE_POINT_HIT = 6;
   var X_MAX_TICKS = 7, Y_PAD = 1.15;
   /* Line width is a page-wide preference, not per-component/per-instance — one localStorage key
      read by every makeLine() chart, changeable from any of their own Chart Settings dropdowns.
@@ -5179,10 +5182,17 @@
 
   var hoverLinePlugin = {
     id: "upHoverLine",
-    afterDatasetsDraw: function(chart){
+    /* beforeDatasetsDraw und nicht afterDatasetsDraw: die Fuehrungslinie gehoert HINTER die
+       Hoverpunkte. Davor zog ein grauer Strich mitten durch den weissen Kern jedes Punktes, und
+       damit war der Kern nicht mehr weiss, sondern grau durchgestrichen.
+       x auf die halbe Pixelgrenze gerundet -- dieselbe Rechnung wie im Rasterplugin darunter, und
+       aus demselben Grund: eine 1px-Linie auf einer gebrochenen Koordinate wird ueber zwei Pixel
+       weichgezeichnet und SIEHT 2px breit aus, obwohl lineWidth 1 ist. */
+    beforeDatasetsDraw: function(chart){
       var act = chart.tooltip && chart.tooltip.getActiveElements ? chart.tooltip.getActiveElements() : [];
       if (!act || !act.length) return;
-      var x = act[0].element.x, ca = chart.chartArea, ctx = chart.ctx;
+      var ca = chart.chartArea, ctx = chart.ctx;
+      var x = Math.round(act[0].element.x) + 0.5;
       ctx.save();
       ctx.beginPath(); ctx.moveTo(x, ca.top); ctx.lineTo(x, ca.bottom);
       ctx.lineWidth = 1; ctx.strokeStyle = chart.$upHoverLineColor || "rgba(0,0,0,0.12)";
@@ -5292,10 +5302,15 @@
         var val = (einheitFn || nachkommaFn)
           ? Number(dp.parsed.y).toFixed(ttNachkomma()) + ttEinheit()
           : fmtPct(dp.parsed.y);
-        return '<div style="display:flex;align-items:center;gap:8px;margin-top:8px">' +
+        /* Klassen und data-id an den Zeilen. Keine CSS haengt daran -- die Formatierung steht
+           weiter inline. Sie sind da, damit ein Aufrufer die Zeilen von aussen ANSPRECHEN kann:
+           die Hero-Sektion der Landingpage laesst sie beim Filterwechsel wandern und ihre Zahlen
+           zaehlen, und dafuer braucht sie einen Griff, der nicht auf der Reihenfolge von
+           <span>-Kindern beruht. */
+        return '<div class="up-line-tt-row" data-id="' + esc(String(ds.__id == null ? "" : ds.__id)) + '" style="display:flex;align-items:center;gap:8px;margin-top:8px">' +
             '<span style="flex:0 0 16px;display:flex">' + icon + '</span>' +
-            '<span style="flex:1 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:' + textColor + '">' + esc(truncate(ds.label, 32)) + '</span>' +
-            '<span style="flex:0 0 auto;margin-left:77px;color:' + textColor + ';font-weight:500">' + val + '</span>' +
+            '<span class="up-line-tt-name" style="flex:1 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:' + textColor + '">' + esc(truncate(ds.label, 32)) + '</span>' +
+            '<span class="up-line-tt-val" style="flex:0 0 auto;margin-left:77px;color:' + textColor + ';font-weight:500">' + val + '</span>' +
           '</div>';
       }).join("");
       if (neuGezeichnet){
@@ -5897,7 +5912,8 @@
       ds.forEach(function(d){
         d.borderWidth = LINE_WIDTH_VALUES[getLineWidthPref()]; d.fill = false; d.cubicInterpolationMode = "monotone"; d.tension = LINE_TENSION;
         d.pointRadius = single ? 4 : 0; d.pointHoverRadius = LINE_POINT_HOVER; d.pointHitRadius = LINE_POINT_HIT;
-        d.pointBorderWidth = LINE_POINT_BORDER; d.pointBackgroundColor = single ? d.__baseColor : tc.bg;
+        d.pointBorderWidth = d.borderWidth; d.pointHoverBorderWidth = d.borderWidth;
+        d.pointBackgroundColor = single ? d.__baseColor : tc.bg;
         d.pointBorderColor = d.__baseColor; d.pointHoverBackgroundColor = tc.bg; d.pointHoverBorderColor = d.__baseColor;
         d.spanGaps = true; d.clip = 8;
       });
@@ -5908,7 +5924,10 @@
         chart = new window.Chart(ctx, {
           type: "line",
           data: { labels: labels, datasets: ds },
-          plugins: [hoverLinePlugin, dashedYGridPlugin],
+          /* Raster ZUERST. Beide zeichnen in beforeDatasetsDraw, und dort entscheidet die
+             Reihenfolge in dieser Liste: so liegt die Fuehrungslinie ueber dem gestrichelten
+             Raster und beide unter den Linien und Punkten. */
+          plugins: [dashedYGridPlugin, hoverLinePlugin],
           options: {
             responsive: true, maintainAspectRatio: false,
             animation: { duration: 600, easing: "easeOutQuart" },
