@@ -1518,6 +1518,39 @@
     })();
   }
 
+  /* Der Auftritt der Zeilen. Der Zaehler --ulh-i an jeder Zeile traegt die Staffelung; die CSS
+     rechnet daraus die Verzoegerung.
+     Erst SYNCHRON versuchen -- renderPromptsTable zeichnet die Zeilen sofort, wenn die Komponente
+     schon steht --, und nur wenn dort noch nichts ist, im Takt nachfassen. Ohne den ersten Versuch
+     waere zwischen dem Zeichnen und dem Setzen der Klasse ein Bild Zeit, und in diesem Bild
+     stuenden die Zeilen schon fertig da, bevor sie hereinkommen.
+     Die Uhr am Ende raeumt auf: bliebe is-zeilen stehen, liefe jede spaetere Bewegung in der
+     Tabelle gegen eine noch gesetzte animation. */
+  var ZEILEN_LAUF = 380, ZEILEN_STUFE = 42;
+
+  function zeilenAnsetzen(root, seite){
+    var n = 0;
+    function versuch(){
+      var zeilen = root.querySelectorAll(".ulh-prompts .up-tbody .up-row");
+      /* Auf die ECHTEN Zeilen gewartet und nicht auf die ersten, die da sind: die Tabelle zeichnet
+         beim Start ein Skelett aus sechs Zeilen, und darauf gestaffelt haette der Auftritt die
+         falschen Zeilen bewegt. Gemessen: 650ms nach dem Laden standen genau diese sechs im
+         Koerper. Nach der Geduldsfrist wird genommen, was da ist -- unsichtbare Zeilen sind
+         schlimmer als eine Staffelung auf der falschen Zahl. */
+      if (zeilen.length !== PROMPT_SEITE && n < 120){
+        n++; setTimeout(versuch, 16); return;
+      }
+      if (!zeilen.length) return;
+      for (var i = 0; i < zeilen.length; i++) zeilen[i].style.setProperty("--ulh-i", i);
+      seite.classList.add("is-zeilen");
+      setTimeout(function(){
+        seite.classList.remove("is-zeilen");
+        for (var j = 0; j < zeilen.length; j++) zeilen[j].style.removeProperty("--ulh-i");
+      }, ZEILEN_LAUF + zeilen.length * ZEILEN_STUFE + 200);
+    }
+    versuch();
+  }
+
   function promptsSzene(root){
     var mira = root.querySelector(".ulh-mira");
     var seite = root.querySelector(".ulh-prompts");
@@ -1532,9 +1565,12 @@
     setTimeout(function(){
       seite.classList.add("is-da");
       seite.classList.add("is-kommt");
-      setTimeout(function(){ seite.classList.remove("is-kommt"); }, MIRA_RISE_MS + 120);
+      /* Laenger stehen lassen als bei Mira: hier haengen vier gestaffelte Auftritte daran, der
+         letzte startet bei 300ms und laeuft 520 -- also 820 plus Reserve. */
+      setTimeout(function(){ seite.classList.remove("is-kommt"); }, 1000);
       hellHalten(root);
       promptsFuellen(root);
+      zeilenAnsetzen(root, seite);
       /* Nach dem Fuellen noch einmal: die Tabelle setzt ihre Tooltips beim Zeichnen, und die sollen
          im Schaustueck nicht erscheinen. Zweimal, weil sie ihre Zeilen in zwei Schueben baut. */
       ohneTipps(root);
