@@ -942,16 +942,66 @@
   color: var(--ulh-sub);
   max-width: 54ch;
 }
-/* Die Begriffe der App als Pillen. Sie stehen unten und tragen den Rest der Karte: sie sagen mit
-   drei Worten, was in der Komponente wirklich zu sehen ist, und sie halten die zwei Karten einer
-   Reihe auf derselben Hoehe (margin-top: auto). */
-.ulh-card-chips { margin-top: auto; padding-top: 22px; display: flex; flex-wrap: wrap; gap: 6px; }
-.ulh-card-chip {
-  display: inline-flex; align-items: center; height: 24px; padding: 0 9px;
-  border-radius: 7px; border: 1px solid var(--ulh-border);
-  font-size: 11.5px; font-weight: 500; letter-spacing: -0.005em;
-  color: var(--ulh-sub); background: var(--ulh-grund);
+/* ---- Die Vorschau in der Karte ----
+   Sie steht unten, haelt die zwei Karten einer Reihe auf derselben Hoehe (margin-top: auto) und
+   zeigt das ECHTE Bauteil, von dem die Karte spricht.
+   Der innere Kasten hat die VOLLE Groesse des Bauteils und wird als Ganzes verkleinert -- dieselbe
+   Machart wie in den Nebenfenstern oben (--ulh-fz dort, --ulh-vs hier). Damit behaelt die Vorschau
+   die Geometrie der App (45px Kopfzeile, 12px Zellenpolster) statt einer zweiten, kleineren, die
+   nirgends sonst vorkommt. Die Breite des inneren Kastens ist entsprechend groesser gerechnet,
+   damit er nach der Verkleinerung genau die Karte fuellt. */
+.ulh-vis {
+  margin-top: auto; padding-top: 26px;
+  --ulh-vs: 0.86;
+  /* Die Hoehe steht HIER und nicht am inneren Kasten: transform: scale aendert die Layouthoehe
+     nicht, der innere Kasten belegt also weiter seine unskalierten Pixel. Gemessen stand unter der
+     Tabellenvorschau dadurch 64px Luft, die niemand sehen konnte. */
+  height: var(--ulh-vh);
+  overflow: hidden;
 }
+.ulh-vis-in {
+  width: calc(100% / var(--ulh-vs));
+  transform: scale(var(--ulh-vs));
+  transform-origin: top left;
+}
+/* Die Hoehe der Vorschau steht am AUSSEREN Kasten und nicht am inneren: der innere ist skaliert,
+   seine Hoehe zaehlt fuer das Layout also nicht mehr in gezeichneten Pixeln. Ohne diese Angabe
+   waere unter jeder Vorschau der Rest ihrer unskalierten Hoehe als Leerraum stehengeblieben. */
+/* Die Werte sind GEMESSEN und nicht geschaetzt: die unskalierte Hoehe des Bauteils mal seinem
+   Massstab. Linie 195, Tabelle 290, Balkenliste 210, Chancenkarte 166 (mal 0.86 gerundet nach oben, sonst bleiben 2px stehen). Mit geschaetzten Werten
+   waren die Tabelle um 83px und die Balken um 26px angeschnitten, und unter der Chancenkarte
+   standen 76px leer.
+   Die Tabelle laeuft auf 0.78 statt 0.86: eine Zeile der App ist 72px hoch, drei davon plus
+   Kopfzeile sind 290px, und dieser Block haette die Karte sonst beherrscht statt sie zu
+   begleiten. */
+.ulh-vis-linie  { --ulh-vh: 168px; }
+.ulh-vis-zeilen { --ulh-vs: 0.78; --ulh-vh: 226px; }
+.ulh-vis-balken { --ulh-vh: 181px; }
+.ulh-vis-chance { --ulh-vh: 146px; }
+.ulh-vis-in { height: calc(var(--ulh-vh) / var(--ulh-vs)); overflow: hidden; }
+
+/* Die Linie: Beschriftung und Zahl darueber, wie im Kopf einer Kachel der App. */
+.ulh-vis-linie-kopf { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.ulh-vis-lbl { font-size: 12px; font-weight: 500; color: var(--ulh-sub); }
+.ulh-vis-wert { display: inline-flex; align-items: center; gap: 8px; }
+.ulh-vis-zahl { font-size: 19px; font-weight: 500; letter-spacing: -0.03em; color: var(--ulh-text);
+  font-variant-numeric: tabular-nums; }
+.ulh-vis-linie-flaeche { position: relative; height: 132px; margin-top: 10px; }
+.ulh-vis-canvas { display: block; width: 100%; height: 100%; }
+
+/* Die Zeilen: die Tabelle der App, ohne Rahmen um das Ganze -- der Rahmen der Karte ist schon da.
+   Der Kopf ist im Ruhezustand sticky (core), was ohne Scrollflaeche wie relative wirkt; die
+   Angabe hier nimmt ihn aus der Rechnung, damit er nicht auf einer fremden Marke haengt. */
+.ulh-vis-tab { border: 1px solid var(--ulh-border); border-radius: 12px; overflow: hidden; }
+.ulh-vis-tab .up-thead { position: static; border: 0; border-radius: 0; }
+.ulh-vis-tab .up-row { border-bottom: 1px solid var(--ulh-border); }
+.ulh-vis-tab .up-row:last-child { border-bottom: 0; }
+.ulh-vis-tab .up-td:first-child { border-left: 0; }
+.ulh-vis-prompt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Die Chance: die Karte des Bretts, hier nicht anfassbar. */
+.ulh-vis-chance .uo-card { cursor: default; }
+.ulh-vis-chance .uo-card:hover { border-color: var(--vc-border); background: var(--vc-bg); }
 
 /* Schmal: die zwei Karten einer Reihe stapeln, und die Ueberschrift darf ueber ihre 20ch hinaus.
    Dieselbe Schwelle wie beim Fenster oben (900px) -- dort endet auch die Buehne. */

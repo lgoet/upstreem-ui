@@ -346,30 +346,104 @@
      die HERKUNFT der Antwort (die Zitate). Das ist die Frage, an der sich entscheidet, was man
      ueberhaupt tun kann -- und die Karte, die die drei anderen so nicht haben. */
   var MERKMALE = [
-    { ic: "chartColumnUp", lbl: "Dashboard", breit: 40,
+    { ic: "chartColumnUp", lbl: "Dashboard", breit: 40, vis: "linie",
       h: "See your share of the answer",
       p: "Visibility, average rank and sentiment for your brand and every competitor you name, " +
-         "per model and per market, tracked day by day.",
-      chips: ["Visibility", "Rank", "Sentiment", "Share of voice"] },
-    { ic: "zap", lbl: "Prompt Insights", breit: 60,
+         "per model and per market, tracked day by day." },
+    { ic: "zap", lbl: "Prompt Insights", breit: 60, vis: "zeilen",
       h: "Every answer starts with a prompt",
       p: "Track the questions your buyers actually ask, grouped by topic and market. See which " +
          "ones name you, which name a competitor, and which name nobody yet. That last group is " +
-         "where the room is.",
-      chips: ["Topics", "Markets", "Per-prompt rank", "Brand mentions"] },
-    { ic: "globe", lbl: "Citations", breit: 60,
+         "where the room is." },
+    { ic: "globe", lbl: "Citations", breit: 60, vis: "balken",
       h: "Models do not invent answers. They cite.",
       p: "See the domains and pages the answers in your category are built from, split by type: " +
          "editorial, community, knowledge base, your own site. Where a competitor is quoted and " +
-         "you are not, you have found your next piece of work.",
-      chips: ["Editorial", "Community", "Knowledge base", "Your pages"] },
-    { ic: "listTodo", lbl: "Opportunities", breit: 40,
+         "you are not, you have found your next piece of work." },
+    { ic: "listTodo", lbl: "Opportunities", breit: 40, vis: "chance",
       h: "Every gap becomes a task",
       p: "Get listed where the category is decided. Write the page that is missing. Fix the one " +
          "that is cited but never quoted. Each with the gap in numbers, and a board to move it " +
-         "across.",
-      chips: ["Ranked by impact", "Tracked to done"] }
+         "across." }
   ];
+
+  /* ---- Die Vorschauen in den Karten ----
+     Jede Karte zeigt das Bauteil, von dem sie spricht -- und zwar das ECHTE: die Linie kommt aus
+     UC.makeLine, die Balken aus UC.makeBarList, die Zeilen sind .up-row mit --up-cols und den
+     Zellen der App (mentCell, up-sent, up-rank-group, marketChip), und die Chance ist eine
+     .uo-card. Nachgezeichnete Bildchen waeren an dem Tag falsch, an dem sich eines dieser Bauteile
+     aendert; diese hier aendern sich mit.
+     Alle vier stehen in einem Kasten, der ihre VOLLE Groesse hat und danach verkleinert wird
+     (--ulh-vs, dieselbe Machart wie in den Nebenfenstern oben): so behalten sie die Geometrie der
+     App -- 45px Kopfzeile, 12px Zellenpolster, 26px Balkenzeile -- und passen trotzdem in eine
+     Karte. Eine eigene, kleinere Geometrie waere eine zweite Wahrheit. */
+  var VIS_ZEILEN = [
+    { prompt: "Best AI visibility tools for B2B SaaS", ment: "yes", sent: 79, rank: 1.1, markt: "US" },
+    { prompt: "How much does AI search monitoring cost", ment: "no", sent: null, rank: null, markt: "US" },
+    { prompt: "Alternativen zu Vantage im Vergleich", ment: "yes", sent: 74, rank: 2.4, markt: "DE" }
+  ];
+
+  function visZeilen(){
+    var kern = window.UpstreemCore;
+    var kopf = ["Prompt", "Mentioned", "Sentiment", "Rank", "Market"];
+    /* Die Spalten stehen als --up-cols am Kasten: .up-row ist ein Raster und liest sie von dort.
+       Ohne diese Angabe erbt die Zeile die Spalten der zuletzt definierten Tabelle. */
+    var html = '<div class="ulh-vis-tab" style="--up-cols: minmax(0,1fr) 104px 104px 88px 92px;">' +
+      '<div class="up-row up-thead">' + kopf.map(function(t){
+        return '<div class="up-td">' + t + '</div>'; }).join("") + '</div>';
+    html += VIS_ZEILEN.map(function(z){
+      var sent = z.sent == null
+        ? '<span class="up-sent"><span class="up-sent-val is-empty">\u2013</span></span>'
+        : '<span class="up-sent"><span class="up-sent-dot" style="background:' +
+          (kern ? kern.sentColor(z.sent) : "#999") + '"></span>' +
+          '<span class="up-sent-val">' + z.sent + '</span></span>';
+      var rank = z.rank == null
+        ? '<span class="up-num is-empty">\u2013</span>'
+        : '<span class="up-rank-group">' + (kern ? kern.HASH_ICON : "") +
+          '<span class="up-num">' + z.rank.toFixed(1) + '</span></span>';
+      return '<div class="up-row">' +
+        '<div class="up-td"><span class="ulh-vis-prompt">' + z.prompt + '</span></div>' +
+        '<div class="up-td">' + (kern ? kern.mentCell(z.ment) : "") + '</div>' +
+        '<div class="up-td">' + sent + '</div>' +
+        '<div class="up-td">' + rank + '</div>' +
+        '<div class="up-td">' + (kern ? kern.marketChip(z.markt) : z.markt) + '</div>' +
+      '</div>';
+    }).join("");
+    return html + '</div>';
+  }
+
+  /* Die Chance: dieselbe Karte wie auf dem Brett oben, nur ohne Fusszeile und ohne Themen -- in
+     einer Vorschau zaehlt die Aussage und nicht die Vollstaendigkeit. */
+  function visChance(){
+    return '<div class="uo-card">' +
+      '<div class="uo-card-top">' +
+        '<span class="uo-eyebrow"><span>Get listed</span></span>' +
+        '<div class="uo-pot"><div class="uo-pot-bars">' +
+          '<span class="uo-pot-bar p1 is-on"></span><span class="uo-pot-bar p2 is-on"></span>' +
+          '<span class="uo-pot-bar p3 is-on"></span><span class="uo-pot-bar p4 is-on"></span>' +
+        '</div></div>' +
+      '</div>' +
+      '<h3 class="uo-card-title">Get listed on the g2.com category page for AI visibility</h3>' +
+      '<p class="uo-card-reason">Vantage and Halden hold entries there. You do not.</p>' +
+      '<div class="uo-source"><span class="up-logo-box has-img">' +
+        '<img src="' + quellzeichen("g2.com") + '" alt=""/><span class="up-logo-ltr">G</span></span>' +
+        '<div class="uo-source-meta"><span class="uo-source-title">Best AI visibility tools, 2026 edition</span>' +
+        '<span class="uo-source-domain">g2.com</span></div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function visInhalt(art){
+    if (art === "zeilen") return visZeilen();
+    if (art === "chance") return visChance();
+    if (art === "linie") return '<div class="ulh-vis-linie-kopf">' +
+        '<span class="ulh-vis-lbl">Visibility</span>' +
+        '<span class="ulh-vis-wert" data-ulh-linie-wert></span>' +
+      '</div>' +
+      '<div class="ulh-vis-linie-flaeche"><canvas class="ulh-vis-canvas"></canvas></div>';
+    /* balken: der Kasten bleibt leer, UC.makeBarList fuellt ihn, sobald core da ist. */
+    return "";
+  }
 
   var MERKMAL_H = "Know where you stand. Know what to fix.";
   var MERKMAL_SUB = "Upstreem tracks how ChatGPT, Perplexity, Gemini and AI Overviews answer the " +
@@ -384,10 +458,77 @@
       '</div>' +
       '<h3 class="ulh-card-h">' + m.h + '</h3>' +
       '<p class="ulh-card-p">' + m.p + '</p>' +
-      '<div class="ulh-card-chips">' +
-        m.chips.map(function(c){ return '<span class="ulh-card-chip">' + c + '</span>'; }).join("") +
+      '<div class="ulh-vis ulh-vis-' + m.vis + '" data-ulh-vis="' + m.vis + '">' +
+        /* up-root an der Vorschau, und das ist keine Kosmetik: die Marken der App (--vc-border,
+           --vc-text, --vt-head-bg und der ganze Rest) stehen in core.css AUSSCHLIESSLICH an
+           .up-root. Ohne diese Klasse fiel jede Farbe in den Vorschauen auf den Rueckfall zurueck
+           -- gemessen: Schrift schwarz, Zellenrahmen 0px, Kopfzeile und Balkenspur durchsichtig.
+           Ein LEERES .up-root ist dabei ungefaehrlich (die Nebenfenster oben machen es genauso);
+           gefaehrlich war die Klasse nur an der Wurzel der Sektion, die selbst Komponenten
+           enthaelt -- Begruendung am Anfang von landing-hero.css.
+           data-up-keepclip dazu: core entklammert beim Mount jedes .up-root die Vorfahrenkette,
+           und der Beschnitt hier ist gewollt (er haelt die Vorschau in der Karte). */
+        '<div class="ulh-vis-in up-root" data-theme="light" data-isdark="no" data-up-keepclip>' +
+          visInhalt(m.vis) + '</div>' +
       '</div>' +
     '</article>';
+  }
+
+  /* Die Linie in der ersten Karte und die Balken in der dritten brauchen core. Sie werden deshalb
+     wie der Doughnut im Nebenfenster erst beim Fuellen gezeichnet, nicht beim Bauen.
+     DREI Marken und nicht sechs: in einem 545px breiten Kasten sind sechs Linien ein Knaeuel. Es
+     sind die oberen drei desselben Zustands, den das Dashboard oben nach dem Filterwechsel zeigt
+     -- eine Karte mit anderen Zahlen als das Fenster darueber waere ein Widerspruch auf einer
+     Seite. */
+  var VIS_LINIE_MARKEN = ["ke", "va", "ha"];
+  /* Fuenf Zitattypen und nicht sieben: die Balkenliste steht in einer Karte und nicht auf einer
+     Seite. Es sind die oberen fuenf aus TYPEN, also dieselben Anteile wie im Zitatteil oben. */
+  var VIS_BALKEN_N = 5;
+
+  function visLinieFuellen(root){
+    var kern = window.UpstreemCore;
+    var kasten = root.querySelector('[data-ulh-vis="linie"] .ulh-vis-linie-flaeche');
+    if (!kern || !kern.makeLine || !kasten || kasten.__ulhLinie) return false;
+    var leinwand = kasten.querySelector("canvas");
+    if (!leinwand) return false;
+    var marken = MARKEN.filter(function(m){ return VIS_LINIE_MARKEN.indexOf(m.id) >= 0; });
+    var werk = kern.makeLine({
+      wrap: kasten, canvas: leinwand,
+      isDark: function(){ return false; },
+      isOwner: function(){ return true; },
+      gran: function(){ return "month"; },
+      unit: "%", decimals: 0, tipLabel: "Visibility"
+    });
+    kasten.__ulhLinie = werk;
+    var serie = reihen("b").filter(function(p){ return VIS_LINIE_MARKEN.indexOf(p.company_id) >= 0; });
+    werk.render(kern.buildLineDatasets(serie, marken.map(function(m){
+      return { company_id: m.id, name: m.name, color: m.farbe, favicon_url: m.logo,
+               visibility_window_pct: m.b.vis };
+    })));
+    /* Die Zahl ueber der Linie ist die der eigenen Marke im selben Zustand, mit dem Trendzeichen
+       aus core -- dieselbe Zahl, die im Seitenkopf des Dashboards oben steht. */
+    var wert = root.querySelector("[data-ulh-linie-wert]");
+    var ke = MARKEN[0];
+    if (wert) wert.innerHTML = '<span class="ulh-vis-zahl">' + eine(ke.b.vis) + '%</span>' +
+      (kern.trendChip ? kern.trendChip(ke.b.visD, { suffix: "%", decimals: true }) : "");
+    return true;
+  }
+
+  function visBalkenFuellen(root){
+    var kern = window.UpstreemCore;
+    var kasten = root.querySelector('[data-ulh-vis="balken"] .ulh-vis-in');
+    if (!kern || !kern.makeBarList || !kasten || kasten.__ulhBalken) return false;
+    var werk = kern.makeBarList({
+      mount: kasten,
+      isDark: function(){ return false; },
+      /* Beschriftungsspalte an: in einer Karte dieser Breite ist Platz dafuer, und der Name
+         ausserhalb des Balkens bleibt lesbar, auch wo der Balken kurz ist. */
+      labelCol: function(){ return true; },
+      fmt: function(v){ return kern.fmtPct(v); }
+    });
+    kasten.__ulhBalken = werk;
+    werk.render(kern.prepTypeData("citation", TYPEN.slice(0, VIS_BALKEN_N), false));
+    return true;
   }
 
   function merkmale(){
@@ -1002,6 +1143,9 @@
        nur einen Koerper; die Antwortkarte ist eine echte Komponente mit eigenem Setter. */
     donutFuellenSpaeter();
     antwortFuellen();
+    /* Die zwei Vorschauen im Abschnitt darunter, die aus core kommen. */
+    (function(){ var w = document.querySelector(".ulh-root");
+      if (!w) return; visLinieFuellen(w); visBalkenFuellen(w); })();
 
     if (window.renderTopCitations){
       window.renderTopCitations({
