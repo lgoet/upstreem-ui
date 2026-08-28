@@ -337,13 +337,18 @@
      Gefuehrt wird sie von HIER aus, ueber ihre eigenen Setter im Fenster des iframes -- genau die
      Folge, die auch die Mira-Szene im Hero benutzt: tippen, Knopf druecken, Nachricht setzen,
      Werkzeuge melden, Antwort nachschieben, tippen lassen. Nichts davon ist nachgebaut. */
+  /* Die drei Karten beantworten eine einzige Frage: wozu ein Agent, wenn es Dashboards gibt.
+     Also nicht, was Mira technisch tut, sondern was der Unterschied ist -- fragen statt suchen,
+     nachpruefbar statt behauptet, Entscheidung statt Diagramm. */
   var MSC_KARTEN = [
-    { ic: "telescope", t: "It digs for the reason.",
-      s: "From a number to its cause: which prompts, which models, which pages." },
-    { ic: "listTodo", t: "Ends in a next step.",
-      s: "Not just what happened, but what to change, where, and why it matters." },
-    { ic: "sparkle", t: "Your data is already there.",
-      s: "Every brand, prompt, market and source you track. No setup, no uploads." }
+    { ic: "zap", t: "Ask instead of digging.",
+      s: "No filters to set, no dashboards to assemble. Ask in plain words and get the answer " +
+         "with the numbers behind it." },
+    { ic: "telescope", t: "It shows its work.",
+      s: "Every claim carries the prompt, the model and the page it came from. Open any of them " +
+         "and check it yourself." },
+    { ic: "listTodo", t: "It ends in a decision.",
+      s: "Not a chart to interpret: the next step, what it is worth, and where to start." }
   ];
 
   /* Die drei Faelle. Sie zeigen, was eine Antwort ENTHAELT und nicht, wie lang sie sein kann:
@@ -354,7 +359,8 @@
   function mscFaelle(){
     return [
       { q: "What are people saying about Kestrel right now?",
-        werkzeuge: ["brand_overview", "response_mentions", "source_mentions_overview"],
+        titel: "Sentiment, last 30 days",
+        werkzeuge: ["brand_overview", "source_mentions_overview"],
         dauer: 14000,
         html: '<p>' + markeChip("ke") + ' sits at <strong>79 / 100</strong> sentiment over the last ' +
           '30 days, up 3.1 points. The praise is consistent:</p>' +
@@ -365,6 +371,7 @@
           '.</p>' },
 
       { q: "What should I fix first this week?",
+        titel: "This week's priorities",
         werkzeuge: ["prompt_insights", "source_recommendations"],
         dauer: 21000,
         html: '<p>Three things, highest lift first:</p><ul>' +
@@ -375,19 +382,34 @@
           '<p>Estimated lift: <strong>+5 to 8 points</strong> in 30 days.</p>' },
 
       { q: "Which sources decide who gets named?",
-        werkzeuge: ["citation_overview", "url_detail", "response_mentions"],
+        titel: "Sources behind the answers",
+        werkzeuge: ["citation_overview", "response_mentions"],
         dauer: 18000,
-        html: '<table><thead><tr><th>Source</th><th>Share</th><th>Names</th></tr></thead><tbody>' +
+        /* Der Satz steht VOR der Tabelle und nicht dahinter: eine Zeile statt zwei, und die
+           Antwort passt damit in die Chatflaeche. Nach der Tabelle brauchte er zwei Zeilen. */
+        html: '<p>Two pages decide most of it, and neither is yours:</p>' +
+          '<table><thead><tr><th>Source</th><th>Share</th><th>Names</th></tr></thead><tbody>' +
           '<tr><td>' + quelleChip(0) + '</td><td>31.4%</td><td>' + markeChip("va") + '</td></tr>' +
           '<tr><td>' + quelleChip(1) + '</td><td>18.2%</td><td>' + markeChip("ha") + '</td></tr>' +
-          '</tbody></table>' +
-          '<p>' + markeChip("ke") + ' appears in neither - that is the gap.</p>' }
+          '</tbody></table>' }
     ];
   }
+
+  var MSC_CHIP = "Agentic AEO";
+  var MSC_H = "An analyst, not a dashboard";
+  var MSC_SUB = "Ask in your own words and Mira does the work: it reads your prompts, responses " +
+    "and sources, shows where every number comes from, and says what to do next.";
 
   function msc(){
     return '<section class="ulh-msc">' +
       '<div class="ulh-spur">' +
+        /* Derselbe Kopf wie ueber den Karten -- gleiche Klassen, gleiche Masse, gleiche Farben.
+           Ein zweiter Kopf mit eigenen Werten waere derselbe Kopf, nur ein bisschen anders. */
+        '<div class="ulh-feat-kopf ulh-msc-kopf">' +
+          '<span class="ulh-feat-chip">' + MSC_CHIP + '</span>' +
+          '<h2 class="ulh-feat-h">' + MSC_H + '</h2>' +
+          '<p class="ulh-feat-sub">' + MSC_SUB + '</p>' +
+        '</div>' +
         /* Derselbe Kasten und dieselben Karten wie im Block darueber -- Bauteile verwenden, nicht
            nachbauen. Neu ist allein die Aufteilung 20 zu 80. */
         '<div class="ulh-cards-box ulh-msc-box">' +
@@ -435,6 +457,29 @@
         '#ask-mira{height:100vh;}' +
         /* Der Knopf "All Chats" fuehrt in eine Liste, die es hier nicht gibt. */
         '#am-open-prev{display:none;}' +
+        /* Der Startbildschirm ist NUR Kopf und Eingabefeld: keine Kategorien, kein Hinweis
+           darunter. Beides gehoert in die App, wo man damit weiterklickt -- hier ist es Text, den
+           niemand braucht, und er nimmt die Ruhe aus dem Bild. */
+        '#am-suggested{display:none;}' +
+        '.am-hint{display:none;}' +
+        /* KEIN Scrollen in der Komponente: die Seite scrollt, das Bauteil nicht. Das Nachfuehren
+           an das Ende der Antwort macht Mira selbst ueber scrollTop, und das geht auch bei
+           overflow: hidden. */
+        '.am-chat{overflow:hidden;}' +
+        /* Die Zeile mit Kopieren, Daumen und Export steht in der App erst beim Ueberfahren der
+           Nachricht da. Hier faehrt niemand darueber, also steht sie immer -- sonst fehlt sie in
+           der Vorfuehrung ganz. */
+        '.am-msg-actions{opacity:1;transform:none;pointer-events:auto;}' +
+        '.am-msg.am-typing .am-msg-actions{opacity:0;}' +
+        /* Fokusrahmen und Knopfdruck: dieselben zwei Regeln, die im Hero-Fenster stehen
+           (landing-hero.css). Sie muessen hier NOCH EINMAL stehen, weil das iframe landing-hero.css
+           nicht laedt -- es laedt nur core.css und ask-mira.css. */
+        '.am-composer.is-tippt{border-color:color-mix(in srgb,var(--up-focus) 50%,var(--am-border));' +
+        'box-shadow:0 0 0 var(--up-focus-w) color-mix(in srgb,var(--up-focus-ring) 50%,transparent),' +
+        'var(--am-shadow-sm);}' +
+        '.am-send{transition:transform 260ms cubic-bezier(.4,0,.2,1),' +
+        'background 260ms cubic-bezier(.4,0,.2,1);}' +
+        '.am-send.is-klick{transform:scale(.9);background:#585855;}' +
       '</style></head><body>' + (MARKUP.mira || "") +
       '<script src="' + basis + 'core.js"><\/script>' +
       '<script src="' + basis + 'ask-mira.js"><\/script>' +
@@ -449,6 +494,15 @@
            pointer-events: none am Rahmen haette auch das Hovern mitgenommen. */
         'document.addEventListener("click",function(e){e.preventDefault();e.stopPropagation();},true);' +
         'document.addEventListener("keydown",function(e){e.preventDefault();e.stopPropagation();},true);' +
+        /* KEINE Tooltips, nirgends -- dieselbe Regel wie im Hero-Fenster (ohneTipps). Die
+           Attribute kommen mit jeder neuen Nachricht nach, deshalb ein Beobachter und nicht ein
+           einmaliger Durchgang. data-explain gehoert dazu: daran haengt die Erklaerkarte von core,
+           und die Belegzeile unter jeder Antwort traegt es. */
+        '(function(){var A=["data-tip","data-tiplabel","data-explain"];' +
+        'function weg(){for(var i=0;i<A.length;i++){var t=document.querySelectorAll("["+A[i]+"]");' +
+        'for(var k=0;k<t.length;k++)t[k].removeAttribute(A[i]);}}weg();' +
+        'new MutationObserver(weg).observe(document.documentElement,' +
+        '{childList:true,subtree:true,attributes:true,attributeFilter:A});})();' +
       '<\/script></body></html>';
   }
 
@@ -456,7 +510,17 @@
      gerichtet -- und mit einer Pause am Ende, nach der der naechste Fall beginnt. */
   var MSC_ZEICHEN_MS = 32;     /* Tippgeschwindigkeit -- wie im Hero */
   var MSC_PAUSE_MS   = 700;    /* zwischen fertig getippt und Knopfdruck */
-  var MSC_DENKT_MS   = 3200;   /* Ladezeit; die Werkzeuge kommen darin gestaffelt */
+  /* Ein Schritt nach dem anderen, und jeder sichtbar: 1600ms je Werkzeug. Vorher lagen sie so
+     dicht, dass der erste noch lief, waehrend die restlichen schon dastanden -- man sah kein
+     Arbeiten, sondern eine Liste, die auf einmal da war. Die Ladezeit ergibt sich daraus und ist
+     keine eigene Zahl: so viele Schritte, so lange dauert es (plus ein Nachlauf, damit der letzte
+     Schritt nicht im selben Moment fertig wird, in dem die Antwort kommt). */
+  /* ZWEI Werkzeuge je Fall und nicht drei. Nicht aus Ungeduld: das Arbeitsprotokoll misst 150px
+     bei drei Zeilen, und die fehlen unten an der Antwort -- die Karte soll auf ein 13-Zoll-Notebook
+     passen. Zwei Werkzeuge plus die Denkzeile sind drei Zeilen, und das liest sich immer noch als
+     Arbeit, der man zusieht. */
+  var MSC_SCHRITT_MS = 1600;
+  var MSC_NACHLAUF_MS = 1400;
   var MSC_HALTEN_MS  = 7600;   /* wie lange die fertige Antwort steht */
   var MSC_LEER_MS    = 900;    /* Ruhe auf dem Startbildschirm vor der naechsten Frage */
 
@@ -465,6 +529,14 @@
     try { w = fr.contentWindow; d = fr.contentDocument; } catch (e){ return; }
     if (!w || !d) return;
     var faelle = mscFaelle(), i = 0;
+    /* Laufnummer. Jeder Durchgang bekommt eine, und jeder Zeitgeber prueft vor dem Zuschlagen, ob
+       seine noch die aktuelle ist. Ohne sie treffen zwei Durchgaenge aufeinander, sobald einer von
+       aussen angestossen wird (die Handhabe unten) oder das Fenster zwischendurch drosselt: dann
+       leert der alte Durchgang den Chat, waehrend der neue schon schreibt. */
+    var lauf = 0;
+    function planen(meine, fn, ms){
+      setTimeout(function(){ if (meine === lauf) fn(); }, ms);
+    }
 
     function tippEreignis(el){
       try { el.dispatchEvent(new w.Event("input", { bubbles: true })); } catch (e){}
@@ -485,30 +557,34 @@
     /* Zeichen fuer Zeichen, mit einem input-Ereignis je Zeichen: daran haengen das Mitwachsen des
        Feldes, der Sendeknopf und die laufende Platzhalterzeile. Ohne das Ereignis stuende Text in
        einem Feld, das nicht mitwaechst, neben einem grauen Knopf. */
-    function tippen(text, fertig){
+    function tippen(meine, text, fertig){
       var ta = d.querySelector("#am-textarea");
       if (!ta){ fertig(); return; }
       var komposer = d.querySelector(".am-composer");
       if (komposer) komposer.classList.add("is-tippt");
       var k = 0;
       (function schritt(){
+        if (meine !== lauf) return;
         ta.value = text.slice(0, ++k);
         tippEreignis(ta);
         if (k < text.length) setTimeout(schritt, MSC_ZEICHEN_MS);
-        else setTimeout(fertig, MSC_PAUSE_MS);
+        else planen(meine, fertig, MSC_PAUSE_MS);
       })();
     }
 
     /* Der Knopf federt, bevor die Nachricht rausgeht -- sonst erscheint die Frage aus dem Nichts,
        waehrend der Knopf daneben unberuehrt dasteht. */
-    function klicken(fertig){
+    function klicken(meine, fertig){
       var knopf = d.querySelector("#am-send");
       if (!knopf){ fertig(); return; }
       knopf.classList.add("is-klick");
-      setTimeout(function(){ knopf.classList.remove("is-klick"); setTimeout(fertig, 110); }, 130);
+      planen(meine, function(){
+        knopf.classList.remove("is-klick");
+        planen(meine, fertig, 110);
+      }, 130);
     }
 
-    function fall(f){
+    function fall(meine, f){
       var jetzt = new Date().toISOString();
       var frage = { id: "msc-q", role: "user", content: f.q, created_at: jetzt };
       var antwort = { id: "msc-a", role: "assistant", status: "success", created_at: jetzt,
@@ -518,7 +594,7 @@
          140ms auf den Startbildschirm zurueck (_maybeHomeIfUnknownChat). Der Titel oben kommt aus
          der Liste der frueheren Chats, nicht aus einem eigenen Setter. */
       if (w.askMiraSetPreviousChats) w.askMiraSetPreviousChats([
-        { id: "msc-chat", title: "Working with Mira", updated_at: jetzt }]);
+        { id: "msc-chat", title: f.titel, updated_at: jetzt }]);
       if (w.askMiraSetTitlePending) w.askMiraSetTitlePending("no");
       if (w.askMiraSetSettings) w.askMiraSetSettings(
         { brand: "logo", citation: "favicon", response: "logo" });
@@ -533,33 +609,57 @@
          Arbeitsprotokoll, eine Zeile je Schritt. Alle auf einmal waeren drei Zeilen in einem Bild
          und keine Arbeit, der man zusieht. */
       f.werkzeuge.forEach(function(name, k){
-        setTimeout(function(){
+        planen(meine, function(){
           if (w.askMiraSetTool) w.askMiraSetTool(name);
-        }, Math.round(MSC_DENKT_MS * (k / (f.werkzeuge.length + 0.4))));
+        }, k * MSC_SCHRITT_MS);
       });
+      var denkt = f.werkzeuge.length * MSC_SCHRITT_MS + MSC_NACHLAUF_MS;
 
-      setTimeout(function(){
+      planen(meine, function(){
         /* expectAnswer VOR dem Nachladen, typeLastAnswer danach -- der vorgesehene Weg, wenn eine
            Antwort als komplette Liste kommt: sonst kann die Komponente sie nicht von einem
            geoeffneten Chat unterscheiden und tippt nichts. */
         if (w.askMiraExpectAnswer) w.askMiraExpectAnswer();
         if (w.askMiraSetMessages) w.askMiraSetMessages([frage, antwort]);
         if (w.askMiraTypeLastAnswer) w.askMiraTypeLastAnswer();
-        setTimeout(naechster, MSC_HALTEN_MS);
-      }, MSC_DENKT_MS);
+        obenHalten(meine);
+        planen(meine, naechster, MSC_HALTEN_MS);
+      }, denkt);
+    }
+
+    /* Frage OBEN, Antwort darunter -- und beides zu sehen.
+       Die App macht es anders, und aus gutem Grund: sie heftet die neue Nachricht an den oberen
+       Rand und RESERVIERT den Platz darunter (ask-mira.js, _pinSendScroll setzt minHeight an der
+       Nachrichtenliste), damit der Ladezustand und spaeter die Antwort gleich an ihrer endgueltigen
+       Stelle stehen. Wer die Frage wiedersehen will, scrollt hoch.
+       Hier kann niemand hochscrollen -- die Komponente scrollt nicht --, und die Frage gehoert zur
+       Vorfuehrung. Also nehmen wir die Reservierung zurueck (dieselbe Inline-Angabe, nur auf 0) und
+       halten den Ausschnitt oben. Ein paar Sekunden lang, weil Mira waehrend des Tippens mehrfach
+       nachfuehrt. */
+    function obenHalten(meine){
+      var chat = d.querySelector(".am-chat"), liste = d.querySelector(".am-messages");
+      var n = 0;
+      (function halt(){
+        if (meine !== lauf) return;
+        if (liste) liste.style.minHeight = "0px";
+        if (chat) chat.scrollTop = 0;
+        if (n++ < 24) setTimeout(halt, 250);
+      })();
     }
 
     function naechster(){
+      var meine = ++lauf;
       leeren();
-      setTimeout(function(){
+      planen(meine, function(){
         var f = faelle[i % faelle.length]; i++;
-        tippen(f.q, function(){ klicken(function(){ fall(f); }); });
+        tippen(meine, f.q, function(){ klicken(meine, function(){ fall(meine, f); }); });
       }, MSC_LEER_MS);
     }
 
     /* Handhabe zum Nachsehen: einen Fall sofort zeigen, ohne das Tippen abzuwarten. Sie schreibt
        nichts, was der Lauf nicht ohnehin schriebe -- sie ueberspringt nur die Eingabe. */
-    fr.__ulhFall = function(k){ leeren(); fall(faelle[k % faelle.length]); };
+    fr.__ulhFall = function(k){ var meine = ++lauf; leeren(); fall(meine, faelle[k % faelle.length]); };
+    fr.__ulhFaelle = faelle;     /* zum Nachmessen: die Antworten ohne Lauf und ohne Tippen setzen */
 
     /* Erst anfangen, wenn die Komponente im iframe wirklich steht. */
     var versuche = 0;
@@ -707,8 +807,8 @@
   var ORBIT_R = [66, 102, 138];
 
   var MERKMAL_CHIP = "Platform";
-  var MERKMAL_H = "What Upstreem shows you";
-  var MERKMAL_SUB = "AI assistants answer your buyers’ questions every day. Upstreem tracks " +
+  var MERKMAL_H = "What upstreem shows you";
+  var MERKMAL_SUB = "AI assistants answer your buyers’ questions every day. upstreem tracks " +
     "what they say about your brand, which sources those answers come from, and what to change " +
     "so you show up more often.";
 
@@ -1480,8 +1580,8 @@
                     "2026-08-16", "2026-08-17", "2026-08-18"];
   var QUELL_SEITEN = [
     { p: "/categories/ai-visibility", t: "Best AI Visibility Software in 2026 | G2", b: 6.2 },
-    { p: "/products/upstreem/reviews", t: "Upstreem Reviews 2026: Details, Pricing & Features | G2", b: 4.4 },
-    { p: "/compare/upstreem-vs-vantage", t: "Compare Upstreem vs Vantage 2026 | G2", b: 3.1 },
+    { p: "/products/upstreem/reviews", t: "upstreem Reviews 2026: Details, Pricing & Features | G2", b: 4.4 },
+    { p: "/compare/upstreem-vs-vantage", t: "Compare upstreem vs Vantage 2026 | G2", b: 3.1 },
     { p: "/categories/seo-tools", t: "Best SEO Tools in 2026 | G2", b: 2.3 },
     { p: "/grid/ai-search-monitoring", t: "G2 Grid for AI Search Monitoring | G2", b: 1.6 }
   ];

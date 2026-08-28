@@ -1083,16 +1083,18 @@
 .ulh-quell-kopf::after {
   content: ""; position: absolute; z-index: 0; pointer-events: none;
   left: 0; right: 0;
-  top: calc(-1 * var(--ulh-quell-luft));
-  /* Es endet an der UNTERKANTE DER UEBERSCHRIFT und nicht am Kasten: gerechnet als Hoehe des
-     Knopfes (36) plus seiner Luft nach oben -- das ist genau das Stueck des Kopfes, das unter der
-     Ueberschrift liegt. Damit steht das Muster hinter der Ueberschrift und nicht auf dem Weg zum
-     Kasten. */
-  bottom: calc(36px + var(--ulh-quell-ctaluft));
+  /* Es beginnt UNTEN, direkt ueber dem Kasten, und laeuft nach oben aus -- an der Unterkante der
+     Ueberschrift ist nichts mehr zu sehen. Andersherum, oben angefangen und nach unten staerker,
+     lief es hinter der Ueberschrift durch: die Striche kamen aus dem Text und endeten im Nichts.
+     Die Hoehe ist die Strecke zwischen beidem: das Stueck Kopf unter der Ueberschrift (Knopf plus
+     seine Luft) und der Abstand zum Kasten. */
+  top: auto;
+  height: calc(36px + var(--ulh-quell-ctaluft) + var(--ulh-quell-abstand));
+  bottom: calc(-1 * var(--ulh-quell-abstand));
   background-image: repeating-linear-gradient(to right,
     var(--ulh-schiene) 0 1px, rgba(237, 237, 240, 0) 1px 8px);
-  -webkit-mask-image: linear-gradient(to bottom, transparent var(--ulh-quell-frei), #000 100%);
-          mask-image: linear-gradient(to bottom, transparent var(--ulh-quell-frei), #000 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 100%);
+          mask-image: linear-gradient(to bottom, transparent 0%, #000 100%);
 }
 .ulh-quell-kopf { display: flex; flex-direction: column; align-items: center; text-align: center; }
 /* Breiter als der Chip darueber vermuten laesst: mit 22ch stand der Satz bei 46px Schrift in
@@ -2044,6 +2046,10 @@
    uebereinander (20 Prozent), rechts Mira (80). Die Zahlen stehen als Flexanteil, wie bei den
    Karten oben (--ulh-w dort).
    HELL, nicht dunkel: die Sektion gehoert zur Seite und nicht zu einem eigenen Kapitel. */
+/* Der Kopf steht wie der ueber den Karten: linksbuendig, Chip, Ueberschrift, Satz -- dieselben
+   Klassen und damit dieselben Masse. Die Sektion traegt Luft nach oben und unten wie die
+   Kartensektion. */
+.ulh-msc { padding: clamp(64px, 9vh, 110px) 0 clamp(72px, 10vh, 120px); }
 .ulh-msc-row { align-items: stretch; }
 .ulh-msc-links { display: flex; flex-direction: column; gap: 4px; flex: 20 1 0; min-width: 0; }
 /* Die drei Karten teilen sich die Hoehe der Reihe. flex-basis 0 und gleiches Wachstum: sonst
@@ -2069,18 +2075,22 @@
    Ausschnitt schneidet die Ecken der Komponente auf den Radius der Karte zurueck. */
 .ulh-msc-rechts { flex: 80 1 0; min-width: 0; padding: 0; overflow: hidden; }
 /* Ein iframe hat immer die Hoehe, die man ihm gibt -- der Inhalt kann sie nicht setzen. 760px ist
-   GEMESSEN und nicht gewaehlt: die laengste der drei Antworten (die Quellentabelle) braucht 592px
-   Chatflaeche, wenn sie fertig getippt ist. Bei 840px Rahmenhoehe bleiben nach Kopfzeile (111) und
-   Eingabefeld (125) genau 604 uebrig. Bei 620 fehlten 192px, und die Antwort haette gescrollt --
-   in einer Vorfuehrung sieht das aus wie eine Antwort, die abgeschnitten ist.
-   Gemessen wird ERST, wenn das Tippen durch ist: waehrend der Antwort baut Mira ihre Bloecke
-   nacheinander ein, und jeder Zwischenstand ist kleiner. Genau daran waren zwei Messungen davor
-   zu klein. */
-.ulh-msc-rahmen { display: block; width: 100%; height: 840px; border: 0; background: #ffffff; }
+   Die Hoehe ist GERECHNET und nicht gewaehlt, damit die Karte auf ein 13-Zoll-Notebook passt.
+   Gemessen am laengsten der drei Faelle (Quellentabelle): Frage 85, Antwort 186, Arbeitsprotokoll
+   119, Abstaende rund 20 -- zusammen 410. Rahmen minus Kopfzeile (111) und Eingabefeld (125) muss
+   also mindestens 410 ergeben: 660 laesst 449, also 39px Luft.
+   Zwei Fallen stecken in dieser Messung, beide erlebt:
+   - Gemessen wird ERST, wenn das Tippen durch ist. Waehrend der Antwort baut Mira ihre Bloecke
+     nacheinander ein, und jeder Zwischenstand ist kleiner.
+   - Die Reservierung unter der letzten Nachricht muss RAUS. Mira legt sie an, damit die neue Frage
+     oben steht und die Antwort gleich an ihrer endgueltigen Stelle landet (_pinSendScroll);
+     landing-hero.js nimmt sie hier zurueck (obenHalten). Ohne das ist jede Zahl um eine halbe
+     Chathoehe zu gross -- daran waren drei Messungen zu gross. */
+.ulh-msc-rahmen { display: block; width: 100%; height: 660px; border: 0; background: #ffffff; }
 @media (max-width: 900px) {
   /* Untereinander -- die Reihe bricht schon durch .ulh-cards-row um; hier stehen nur die drei
      Karten wieder NEBENeinander, denn 20 Prozent von wenig ist nichts. */
   .ulh-msc-links { flex-direction: row; flex: 0 0 auto; }
   .ulh-msc-t { padding-top: 20px; }
-  .ulh-msc-rahmen { height: 660px; }
+  .ulh-msc-rahmen { height: 600px; }
 }
