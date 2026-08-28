@@ -2,17 +2,46 @@
 <body style="font:13px ui-monospace,monospace;padding:16px">
 <pre id="out">laeuft</pre>
 <script>
+/* Waermt einen Pin und prueft ihn -- BEIDE Fassungen jeder Datei.
+   Warum beide: jsDelivr minifiziert auf Anfrage, und die erste Anfrage nach .min kommt, WAEHREND
+   der Minifizierer noch arbeitet -- die Antwort ist dann 404. Gemessen an responses-table.min.css:
+   erster Abruf 404 mit 0 Bytes, wenige Minuten spaeter 200 mit 9251 Bytes. Das Preload-Snippet
+   faellt in diesem Fall auf die rohe Datei zurueck (geprueft), aber gewaermt sein sollen trotzdem
+   beide -- sonst zahlt der erste Nutzer den kalten Abruf.
+   Der rohe Abruf hat eine eigene Falle: jsDelivr merkt sich einen fehlgeschlagenen GitHub-Abruf
+   pro Datei und Pin und liefert danach dauerhaft "Failed to fetch ... from GitHub" -- mit Status
+   200 und rund 54 Zeichen Text, also NICHT als 404 erkennbar. Deshalb der Textvergleich, und der
+   nur bei kurzen Antworten: ein 179-KB-Skript enthaelt "not found" in seinen eigenen Meldungen. */
 var PIN=(new URLSearchParams(location.search)).get("pin")||"bc766e2";
-var FILES=["add-brand.css", "add-brand.js", "add-prompts.css", "add-prompts.js", "ask-mira.css", "ask-mira.js", "auth-page.css", "auth-page.js", "brand-detail.css", "brand-detail.js", "brands-overview.css", "brands-overview.js", "bubble/diagnostics/_diagnose_chart_console.js", "bubble/diagnostics/_diagnose_drawer_console.js", "bubble/diagnostics/_diagnose_rpc_to_render.js", "bubble/diagnostics/_diagnose_view_console.js", "citations-combo-chart.css", "citations-combo-chart.js", "core.css", "core.js", "create-with-ai.css", "create-with-ai.js", "discover-brands.css", "discover-brands.js", "domains-table.css", "domains-table.js", "export-data.css", "export-data.js", "filters/date-range.css", "filters/date-range.js", "filters/markets-filter.css", "filters/markets-filter.js", "filters/models-filter.css", "filters/models-filter.js", "filters/topics-filter.css", "filters/topics-filter.js", "notification-card.css", "notification-card.js", "opportunities.css", "opportunities.js", "page-headers/brands-page-header.css", "page-headers/brands-page-header.js", "page-headers/citations-page-header.css", "page-headers/citations-page-header.js", "page-headers/dashboard-page-header.css", "page-headers/dashboard-page-header.js", "page-headers/opportunities-page-header.js", "page-headers/performance-page-header.js", "page-headers/prompts-page-header.css", "page-headers/prompts-page-header.js", "page-headers/settings-page-header.css", "page-headers/settings-page-header.js", "performance-detail.css", "performance-detail.js", "performance-radar.css", "performance-radar.js", "prompt-research.css", "prompt-research.js", "prompts-table.css", "prompts-table.js", "quick-actions.css", "quick-actions.js", "responses-table.css", "responses-table.js", "settings-brand.css", "settings-brand.js", "sidebar.css", "sidebar.js", "topcitations-dashboard.css", "topcitations-dashboard.js", "topics-manager.css", "topics-manager.js", "urls-table.css", "urls-table.js", "visibility-chart.css", "visibility-chart.js"], kaputt=[], ok=0, fertig=0;
+var FILES=["add-brand.css", "add-brand.js", "add-prompts.css", "add-prompts.js", "ask-mira.css", "ask-mira.js", "auth-page.css", "auth-page.js", "brand-detail.css", "brand-detail.js", "brands-overview.css", "brands-overview.js", "bubble/diagnostics/_diagnose_chart_console.js", "bubble/diagnostics/_diagnose_drawer_console.js", "bubble/diagnostics/_diagnose_rpc_to_render.js", "bubble/diagnostics/_diagnose_view_console.js", "citations-combo-chart.css", "citations-combo-chart.js", "core.css", "core.js", "create-with-ai.css", "create-with-ai.js", "discover-brands.css", "discover-brands.js", "domains-table.css", "domains-table.js", "export-data.css", "export-data.js", "filters/date-range.css", "filters/date-range.js", "filters/markets-filter.css", "filters/markets-filter.js", "filters/models-filter.css", "filters/models-filter.js", "filters/topics-filter.css", "filters/topics-filter.js", "notification-card.css", "notification-card.js", "opportunities.css", "opportunities.js", "page-headers/brands-page-header.css", "page-headers/brands-page-header.js", "page-headers/citations-page-header.css", "page-headers/citations-page-header.js", "page-headers/dashboard-page-header.css", "page-headers/dashboard-page-header.js", "page-headers/opportunities-page-header.js", "page-headers/performance-page-header.js", "page-headers/prompts-page-header.css", "page-headers/prompts-page-header.js", "page-headers/settings-page-header.css", "page-headers/settings-page-header.js", "performance-detail.css", "performance-detail.js", "performance-radar.css", "performance-radar.js", "prompt-research.css", "prompt-research.js", "prompts-table.css", "prompts-table.js", "quick-actions.css", "quick-actions.js", "responses-table.css", "responses-table.js", "settings-brand.css", "settings-brand.js", "sidebar.css", "sidebar.js", "topcitations-dashboard.css", "topcitations-dashboard.js", "topics-manager.css", "topics-manager.js", "urls-table.css", "urls-table.js", "visibility-chart.css", "visibility-chart.js"];
+var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + PIN + "/";
+var kaputt=[], minKaputt=[], ok=0, minOk=0, fertig=0, ziel=FILES.length*2, t0=performance.now();
 var out=document.getElementById("out");
+function schreiben(){
+  var s=Math.round((performance.now()-t0)/100)/10;
+  out.textContent="PIN "+PIN+"   "+s+"s\n"+fertig+"/"+ziel+
+    "\n  roh:  ok "+ok+"  KAPUTT "+kaputt.length+
+    "\n  .min: ok "+minOk+"  fehlt "+minKaputt.length+
+    (fertig===ziel ? "\n\nROH KAPUTT (blockiert die App):\n"+(kaputt.join("\n")||"(keine)")+
+                     "\n\n.min FEHLT (das Preload faellt auf roh zurueck, kostet nur Bytes):\n"+(minKaputt.join("\n")||"(keine)") : "");
+  if (fertig===ziel) window.__fertig={ok:ok, kaputt:kaputt, minOk:minOk, minKaputt:minKaputt, sekunden:s};
+}
+/* Fehlt eine .min-Fassung, wird sie zweimal nachgefragt: der 404 kommt daher, dass der
+   Minifizierer beim ERSTEN Abruf erst anfaengt. Genau dieses Nachfragen ist das Waermen. */
+function holen(url, versuche, istMin, name){
+  return fetch(url, {cache:"no-store"}).then(function(r){ return r.text().then(function(t){
+    var leer = (r.status >= 400) || (t.length < 200 && /Failed to fetch|not found/i.test(t));
+    if (leer && istMin && versuche > 0){
+      return new Promise(function(res){ setTimeout(res, 2500); })
+        .then(function(){ return holen(url, versuche-1, istMin, name); });
+    }
+    if (leer){ (istMin ? minKaputt : kaputt).push(name + (r.status>=400 ? " ("+r.status+")" : " (leer)")); }
+    else { if (istMin) minOk++; else ok++; }
+  }); }).catch(function(){ (istMin ? minKaputt : kaputt).push(name + " (fetch)"); });
+}
 FILES.forEach(function(f){
-  fetch("https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@"+PIN+"/"+f,{cache:"no-store"})
-   .then(function(r){return r.text()})
-   .then(function(t){ if(t.length<200 && /Failed to fetch|not found/i.test(t)) kaputt.push(f); else ok++; })
-   .catch(function(e){ kaputt.push(f+" (fetch)"); })
-   .then(function(){ fertig++;
-     out.textContent="PIN "+PIN+"\n"+fertig+"/"+FILES.length+"  ok "+ok+"  KAPUTT "+kaputt.length+
-       (fertig===FILES.length ? "\n\n"+kaputt.join("\n") : "");
-     if(fertig===FILES.length) window.__fertig={ok:ok,kaputt:kaputt}; });
+  var m = f.replace(/\.(js|css)$/, ".min.$1");
+  holen(base + f, 0, false, f).then(function(){ fertig++; schreiben(); });
+  holen(base + m, 2, true,  m).then(function(){ fertig++; schreiben(); });
 });
 </script>

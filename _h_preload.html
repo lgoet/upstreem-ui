@@ -1,66 +1,9 @@
-<!--
-  UPSTREEM — ASSET-PRELOAD IM SEITENKOPF
-
-  WOHIN: Bubble → Settings → SEO/metatags → "Script/meta tags in header" (bzw. das Header-Script
-  der jeweiligen Page), UNTER page_theme_preload.html. NICHT in ein HTML-Element auf der Page —
-  es muss laufen, BEVOR irgendeine Komponente im DOM auftaucht.
-
-  ── WARUM ES DAS GIBT ────────────────────────────────────────────────────────
-  Jede Komponente bringt am Fuß ihres Markups einen eigenen Loader mit, der core.css/core.js und
-  ihre eigenen Assets nachlädt. Bubble injiziert dieses Markup aber erst in dem Moment, in dem das
-  Reusable gerendert wird — also exakt WÄHREND ein Drawer aufgeht oder eine View eingeblendet wird.
-  Ein in diesem Moment eingehängtes <link rel="stylesheet"> hält das Zeichnen an, und die
-  Öffnungsanimation läuft ins Leere. Dieses Script zieht die Ladevorgänge auf den Seitenaufbau vor.
-
-  Dass das reicht, hängt an einer Eigenschaft der Komponenten: ein neu im DOM auftauchender Root
-  braucht die Scripts NICHT erneut. core.js' watchRoots-Observer plus sein 1.5s-Heartbeat finden
-  ihn und initialisieren ihn von selbst.
-
-  ── WAS SICH AM 28.08. GEÄNDERT HAT UND WARUM ────────────────────────────────
-  Vorher lud dieses Script ALLES sofort: core plus 23 Komponenten plus Chart.js, auf jeder Seite,
-  unabhängig davon, was die Seite braucht. Gemessen sind das 3.7 MB Quelltext. Das ist nicht
-  render-blockierend (media="print" unten), aber es ist Download, Parsen und Ausführen im
-  Hauptstrang, genau während die Seite aufgebaut wird — und mit offener Konsole vervielfacht sich
-  der Parse-Aufwand. Zwei Änderungen, beide gemessen:
-
-  1. MINIFIZIERTE FASSUNGEN. jsDelivr minifiziert die Dateien auf Anfrage: dieselbe URL mit
-     .min.js / .min.css. Über alle 72 Dateien sind das 3740 KB → 1584 KB, also 58% weniger
-     Zeichen; core.js allein 516 → 179 KB. Geprüft wurde jede einzelne Datei: jede minifizierte
-     JS-Datei parst (new Function über den ganzen Text), und core.min.js läuft nachweislich
-     (UpstreemCore mit seinen 215 Einträgen, UC.icon und UC.fmtPct liefern richtig).
-     GENAU EINE Ausnahme: responses-table.min.css antwortet mit 404 — der Minifizierer von
-     jsDelivr kommt mit dieser Datei nicht klar. Deshalb hat jeder Ladevorgang unten einen
-     onerror-Rückfall auf die rohe Datei. Ohne den stünde diese Komponente ungestylt da.
-
-  2. ZWEI WELLEN. Welle 1 lädt, was JEDE Seite braucht (core und die Leiste). Welle 2 lädt den
-     Rest erst, wenn der Browser nach dem load-Ereignis Luft hat (requestIdleCallback, ersatzweise
-     ein Timer). Damit liegen rund 2.8 MB nicht mehr im Weg des ersten Bildes.
-     Der Preis, offen benannt: wer in der ersten Sekunde nach dem Seitenaufbau einen Drawer
-     aufmacht, trifft dessen Dateien möglicherweise noch nicht vorgewärmt an — dann lädt der Loader
-     der Komponente sie selbst, wie vor diesem Script. Danach ist alles da.
-
-  ── DIE REGISTRY, UND WARUM SIE DIE ROHEN NAMEN TRÄGT ────────────────────────
-  window.__upAssetsLoaded ist dieselbe Liste, die die Loader in den Komponenten benutzen. Sie
-  entdoppelt nach DATEINAME. Dieses Script trägt deshalb den ROHEN Namen und die ROHE URL ein,
-  lädt aber die minifizierte Datei: der Loader in einem Element sucht "core.js" und findet genau
-  seine eigene URL vor — er lädt nichts nach und meldet auch keinen Pin-Unterschied. Kein Element
-  muss dafür angefasst werden.
-
-  ── ACHTUNG, EINZIGE FALLE ───────────────────────────────────────────────────
-  PIN unten MUSS identisch sein mit dem data-cdn-pin auf den Komponenten. Weichen sie ab, lädt
-  dieses Script Version A, die Loader der Komponenten finden ihre eigenen (anderen) URLs nicht in
-  der Registry und laden Version B zusätzlich nach — dann hast du beides doppelt und in zwei
-  Ständen. Am saubersten: beide auf dieselbe Bubble-Konstante zeigen lassen.
-
-  ── UND DAS WICHTIGSTE ZUERST ────────────────────────────────────────────────
-  Ein FRISCHER Pin ist beim ersten Abruf kalt: jsDelivr holt jede Datei dann einzeln von GitHub.
-  Gemessen an core.js: 10 051 ms kalt gegen 119 ms warm. Kein Kniff in diesem Script kann das
-  ausgleichen. Nach jedem Ausrollen einmal _h_pin_check2.html?pin=<hash> laufen lassen (76 Dateien
-  parallel, wärmt und prüft in einem) — erst dann ist ein Pin für Nutzer gedacht.
--->
+<meta charset="utf-8"><title>preload: zwei wellen</title>
+<body style="font:12px ui-monospace,monospace;padding:14px">
+<pre id="out">laeuft</pre>
 <script>
 (function(){
-  var PIN = "CDN_PIN";   // <-- exakt derselbe Wert wie data-cdn-pin auf den Komponenten
+  var PIN = "bea0d8b";   // <-- exakt derselbe Wert wie data-cdn-pin auf den Komponenten
   if (!PIN || PIN === "CDN_" + "PIN") PIN = "main";
   var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + PIN + "/";
 
@@ -200,4 +143,57 @@
   if (document.readyState === "complete") welle2Planen();
   else window.addEventListener("load", welle2Planen);
 })();
+</script>
+
+<script>
+/* Ein ELEMENT-Loader in der Fassung, die in den Bubble-Elementen steckt (unveraendert kopiert):
+   er muss core.js als schon geladen erkennen und STILL bleiben -- kein zweiter Abruf, keine
+   Warnung ueber einen anderen Pin. Genau das ist die Bedingung dafuer, dass kein Element
+   angefasst werden muss. */
+window.__warnungen = [];
+var echteWarnung = console.warn;
+console.warn = function(){ window.__warnungen.push([].join.call(arguments, " ")); echteWarnung.apply(console, arguments); };
+function elementLoaderAlt(dateien, klasse){
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@bea0d8b/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  var geladen = [];
+  function once(url, make){
+    var name = url.slice(url.lastIndexOf("/") + 1);
+    if (L[name]){
+      if (L[name] !== url && window.console) console.warn("upstreem: " + name +
+        " ist schon von einem anderen Pin geladen. Geladen bleibt " + L[name] + ", ignoriert wird " + url + ".");
+      return;
+    }
+    L[name] = url; make(url); geladen.push(name);
+  }
+  dateien.forEach(function(f){
+    if (/\.css$/.test(f)) once(base + f, function(u){ var l=document.createElement("link"); l.rel="stylesheet"; l.href=u; document.head.appendChild(l); });
+    else once(base + f, function(u){ var s=document.createElement("script"); s.src=u; s.async=false; document.head.appendChild(s); });
+  });
+  return geladen;
+}
+
+function messen(){
+  var tags = [].slice.call(document.querySelectorAll('head link[href*="upstreem-ui@"], head script[src*="upstreem-ui@"]'))
+    .map(function(e){ var u=e.href||e.src; return u.slice(u.lastIndexOf("/")+1); });
+  var min = tags.filter(function(n){ return n.indexOf(".min.") >= 0; });
+  var roh = tags.filter(function(n){ return n.indexOf(".min.") < 0; });
+  var UC = window.UpstreemCore;
+  document.getElementById("out").textContent = JSON.stringify({
+    tags_gesamt: tags.length,
+    minifiziert: min.length,
+    roh: roh,
+    registry_kern: window.__upAssetsLoaded ? window.__upAssetsLoaded["core.js"] : null,
+    kern_laeuft: !!UC,
+    kern_teile: UC ? Object.keys(UC).length : 0,
+    kern_probe: UC && UC.fmtPct ? UC.fmtPct(34.25, 1) : null,
+    warnungen: window.__warnungen,
+    nachgeladen_von_element: window.__elementHatGeladen
+  }, null, 1);
+}
+window.addEventListener("load", function(){
+  /* Der Element-Loader laeuft, wie in Bubble, NACH dem Seitenaufbau -- und vor Welle 2. */
+  setTimeout(function(){ window.__elementHatGeladen = elementLoaderAlt(["core.css","brands-overview.css","core.js","brands-overview.js"], "ubo-root"); }, 60);
+  setTimeout(messen, 6000);
+});
 </script>
