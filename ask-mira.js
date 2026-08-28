@@ -251,6 +251,7 @@
       oppExists: 'Already added',
       oppError: 'Couldn\u2019t add the opportunity. Please try again.',
       deep: 'Deep Research…',
+      runNow: 'Working for', runDone: 'Worked for', thoughtMoment: 'Thought for a moment',
       galleryBack: 'All categories',
       gallery: [
         { name: 'Optimization & Growth', subs: [
@@ -336,6 +337,7 @@
       oppExists: 'Bereits hinzugefügt',
       oppError: 'Opportunity konnte nicht hinzugefügt werden. Bitte erneut versuchen.',
       deep: 'Tiefe Suche…',
+      runNow: 'Arbeitet seit', runDone: 'Gearbeitet', thoughtMoment: 'Kurz nachgedacht',
       galleryBack: 'Alle Kategorien',
       gallery: [
         { name: 'Optimierung & Wachstum', subs: [
@@ -416,6 +418,11 @@
   }
   function thoughtHtml(m, role, isLast){
     if (role !== 'assistant' || !isLast) return '';
+    /* Gibt es aus DIESER Sitzung ein fertiges Arbeitsprotokoll, steht es statt der einzelnen Zeile
+       ueber der Antwort. Nur wenn der Lauf vorbei ist -- solange er laeuft, gehoert der Block in die
+       Ladezeile darunter, sonst stuende er zweimal im Verlauf. Der Platzhalter wird nach dem
+       innerHTML gefuellt: die Logos brauchen echte Elemente (Fehlerbehandlung am Bild). */
+    if (!RUN.live && RUN.valid && RUN.steps.length){ _runEmitted = true; return '<div class="am-run"></div>'; }
     var raw = m.latency_ms;
     if (raw == null && m.metadata && typeof m.metadata === 'object') raw = m.metadata.latency_ms;
     var ms = (typeof raw === 'number') ? raw : parseFloat(String(raw == null ? '' : raw).replace(',', '.').replace(/[^0-9.]/g, ''));
@@ -686,7 +693,7 @@
   // clamped by the browser so short messages just settle at max scroll.
   function scrollNewMessageTop(smooth){
     requestAnimationFrame(function(){
-      var msgs = elMessages.querySelectorAll('.am-msg:not(.am-msg-loading)');
+      var msgs = elMessages.querySelectorAll('.am-msg:not(.am-msg-loading):not(.am-msg-run)');
       var last = msgs.length ? msgs[msgs.length - 1] : (elMessages.lastElementChild || null);
       if (!last){ elChat.scrollTo({ top: elChat.scrollHeight, behavior: smooth ? 'smooth' : 'auto' }); return; }
       var top = last.getBoundingClientRect().top - elChat.getBoundingClientRect().top + elChat.scrollTop - 12;
@@ -698,14 +705,14 @@
   // right away and never need a second scroll.
   function _pinSendScroll(){
     requestAnimationFrame(function(){
-      var msgs = elMessages.querySelectorAll('.am-msg:not(.am-msg-loading)');
+      var msgs = elMessages.querySelectorAll('.am-msg:not(.am-msg-loading):not(.am-msg-run)');
       var last = msgs.length ? msgs[msgs.length - 1] : null;
       if (!last){ elMessages.style.minHeight = ''; elChat.scrollTo({ top: elChat.scrollHeight, behavior: 'auto' }); return; }
       elMessages.style.minHeight = '';                                   // reset before measuring
       var chatTop = elChat.getBoundingClientRect().top;
       var msgTopInContent = last.getBoundingClientRect().top - chatTop + elChat.scrollTop;
       var msgH = last.getBoundingClientRect().height;
-      var GAP = 38, LOADER_RESERVE = 165;                                // room to keep for the (tallest) tool loader
+      var GAP = 38, LOADER_RESERVE = 196;                                // Platz fuer Uhr + rund fuenf Schrittzeilen
       // pin the new message to the middle of the screen — but not so low that a tall loader would be clipped
       var fitCap = elChat.clientHeight - msgH - GAP - LOADER_RESERVE;
       var offset = Math.min(elChat.clientHeight * 0.5, Math.max(0, fitCap));
@@ -1574,8 +1581,13 @@
     }
     var ev = (role === 'assistant') ? evidenceHtml(m, poolTypes) : '';
     var extras = (role === 'assistant') ? actionButtonsHtml(m) : '';   // cards now render inline inside body
-    return '<div class="am-msg is-'+role+'" data-id="'+esc(m.id||'')+'">'+
-           '<div class="am-msg-main">'+thoughtHtml(m, role, isLastAsst)+'<div class="am-bubble">'+body+ev+extras+'</div>'+actionsHtml(m, role)+'</div></div>';
+    /* Der Kopf wird vor dem Rahmen gebaut: traegt die Nachricht das Arbeitsprotokoll, faehrt sie
+       NICHT nochmal ein (amMsgIn). Sonst spraenge der Block beim Wechsel von der Ladezeile zur
+       Antwort ein Stueck, obwohl er an derselben Stelle stehen bleiben soll. */
+    var kopf = thoughtHtml(m, role, isLastAsst);
+    var mitRun = (kopf.indexOf('am-run') >= 0) ? ' has-run' : '';
+    return '<div class="am-msg is-'+role+mitRun+'" data-id="'+esc(m.id||'')+'">'+
+           '<div class="am-msg-main">'+kopf+'<div class="am-bubble">'+body+ev+extras+'</div>'+actionsHtml(m, role)+'</div></div>';
   }
 
   /* ---- typing reveal for brand-new answers (same feel & speed as the landing-page showcase) ---- */
@@ -1785,6 +1797,7 @@
     var poolTerms = buildUnambiguousPoolTerms();   // unambiguous, current session only
     var lastAsstIdx = -1;
     for (var li = S.messages.length - 1; li >= 0; li--){ if (S.messages[li] && S.messages[li].role === 'assistant'){ lastAsstIdx = li; break; } }
+    _runEmitted = false;
     elMessages.innerHTML = S.messages.map(function(m, idx){ return messageHtml(m, poolTerms, idx === lastAsstIdx); }).join('');
     elMessages.querySelectorAll('.am-inline-logo').forEach(function(img){
       img.addEventListener('error', function(){
@@ -1795,19 +1808,17 @@
       });
     });
     if (S.isLoading){
-      if (S.toolState){
+      _updateLoadingUI();
+    } else {
+      /* Der Lauf ist fertig, die Antwort aber noch nicht da: Bubble schickt sie manchmal NACH dem
+         Ende des Ladens. Dann steht das Protokoll allein am Ende -- sonst blitzt die ganze Liste
+         fuer einen Moment weg und kaeme mit der Antwort neu. */
+      if (!_runEmitted && RUN.valid && RUN.steps.length){
         elMessages.insertAdjacentHTML('beforeend',
-          '<div class="am-msg is-assistant am-msg-loading">'+
-          '<div class="am-bubble"><div class="am-thinking is-tool"><div class="am-tload"></div></div></div></div>');
-        _tlStart();
-      } else {
-        elMessages.insertAdjacentHTML('beforeend',
-          '<div class="am-msg is-assistant am-msg-loading">'+
-          '<div class="am-bubble"><div class="am-thinking"><span class="am-dots"><span></span><span></span><span></span></span>'+
-          '<span class="am-think-loop"><span class="am-think-text">'+esc(currentThinkText())+'</span></span>'+
-          '<span class="am-deep"><span class="am-deep-ic">'+ICON.telescope+'</span><span class="am-deep-text">'+esc(L().deep)+'</span></span>'+
-          '</div></div></div>');
+          '<div class="am-msg is-assistant am-msg-run has-run"><div class="am-msg-main">'+
+          '<div class="am-run"></div></div></div>');
       }
+      runMount();
     }
 
     /* ---- decide whether the LAST message should type out ----
@@ -2347,12 +2358,13 @@
   function updateLoopText(){ if (!deepMode) setThinkText(currentThinkText()); }
   function enterDeepLoading(){
     deepMode = true;
-    var th = root.querySelector('.am-thinking'); if (th) th.classList.add('is-deep');
+    var th = root.querySelector('.am-run-step .am-think-text'); th = th ? th.closest('.am-run-step') : null;
+    if (th) th.classList.add('is-deep');
     var dt = root.querySelector('.am-deep-text'); if (dt) dt.textContent = L().deep;
   }
   function loadStart(){
     loadStop(); deepMode = false;
-    var th = root.querySelector('.am-thinking'); if (th) th.classList.remove('is-deep');
+    var th = root.querySelector('.am-run-step.is-deep'); if (th) th.classList.remove('is-deep');
     /* the first line is already shown by the render — don't immediately re-set it
        (that produced an instant text-swap animation the moment the loader appeared) */
     loadTimer = setInterval(function(){ loadIdx = nextLoadIdx(); updateLoopText(); }, 7500);
@@ -2392,18 +2404,12 @@
     sources:['Scanning the sources'],
     responses:['Reading the AI responses']
   };
-  var _STATE_LABEL = { brand:'Brand & visibility', prompts:'Prompts & topics', sources:'Sources & citations', responses:'AI responses' };
   var _STATE_EV = {
     brand:     [['brand','Your brand'], ['competitor','Competitors']],
     prompts:   [['prompt','Prompts']],
     sources:   [['domain','Domains'], ['url','URLs']],
     responses: [['response','Responses']]
   };
-  function _toolTexts(){
-    var t = _TOOL_TEXT[S.currentTool];
-    if (t && t.length) return t;
-    return _STATE_TEXT[S.toolState] || ['Working on it'];
-  }
   function _tlBrandList(){ return (S.brandLogos || []).slice(0, 20); }   // [{src,fb_src,label,color}]
   function _tlFaviconList(){ return (S.favicons || []).slice(0, 20); }   // [{src,label}]
   function _tlModelList(){
@@ -2428,138 +2434,298 @@
     } else { w.style.background = 'var(--am-soft)'; }   // placeholder chip when no asset
     return w;
   }
-  var _tlTimers = [];
-  function _tlAfter(ms, fn){ var id = setTimeout(fn, ms); _tlTimers.push(id); return id; }
-  function _tlStop(){
-    for (var i = 0; i < _tlTimers.length; i++){ clearTimeout(_tlTimers[i]); clearInterval(_tlTimers[i]); }
-    _tlTimers = [];
-  }
-  /* appear (staggered) -> hold -> disappear -> pause -> repeat; next cycle only after all are off */
-  function _tlLoopAppear(nodes, cfg){
-    var els = Array.prototype.slice.call(nodes); if (!els.length) return;
-    function run(){
-      els.forEach(function(e, i){ _tlAfter(i * cfg.stagIn, function(){ e.classList.add('on'); }); });
-      var inDone = (els.length - 1) * cfg.stagIn + cfg.trans;
-      _tlAfter(inDone + cfg.hold, function(){
-        els.forEach(function(e, i){ _tlAfter(i * cfg.stagOut, function(){ e.classList.remove('on'); }); });
-      });
-      var outDone = inDone + cfg.hold + (els.length - 1) * cfg.stagOut + cfg.trans;
-      _tlAfter(outDone + cfg.pause, run);
-    }
-    els.forEach(function(e){ e.classList.remove('on'); });
-    _tlAfter(220, run);
-  }
-  /* types the status line char by char; advances to the next line only when .next() is called */
-  function _tlTyper(el, seq){
-    if (!el || !seq || !seq.length) return { next: function(){} };
-    var k = 0;
-    function type(text){
-      text = String(text || ''); var i = 0; el.textContent = '';
-      var iv = setInterval(function(){
-        i++; el.textContent = text.slice(0, i);
-        if (i >= text.length){ clearInterval(iv); }
-      }, 52);
-      _tlTimers.push(iv);
-    }
-    type(seq[0]);
-    return { next: function(){ k = (k + 1) % seq.length; type(seq[k]); } };
-  }
   function _tlShuffle(a){ a = a.slice(); for (var i = a.length - 1; i > 0; i--){ var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
-  /* Each cycle pulls the next `count` items from a shuffled deck (advancing through ALL of them,
-     reshuffling when exhausted), rebuilds the chips, runs appear -> hold -> disappear -> pause, repeat.
-     -> over time the loader loops through every brand / domain / topic in random order. */
-  function _tlDeckLoop(host, opts){
-    var full = opts.full || [], count = Math.max(1, opts.count || 1), build = opts.build, cfg = opts.cfg;
-    var doShuffle = opts.shuffle !== false;
-    var n = full.length ? Math.min(count, full.length) : count;
-    var deck = doShuffle ? _tlShuffle(full) : full.slice(), idx = 0;
-    function nextBatch(){
-      if (!full.length){ var ph = []; for (var p = 0; p < count; p++) ph.push(null); return ph; }
-      if (deck.length - idx < n){ deck = doShuffle ? _tlShuffle(full) : full.slice(); idx = 0; }
-      var out = deck.slice(idx, idx + n); idx += n; return out;
-    }
-    function cycle(){
-      _cyc++;
-      if (opts.onCycle) { try { opts.onCycle(_cyc); } catch(e){} }
-      var items = nextBatch();
-      host.innerHTML = '';
-      var nodes = items.map(function(it){ var nd = build(it); host.appendChild(nd); return nd; });
-      nodes.forEach(function(nd, i){ _tlAfter(i * cfg.stagIn, function(){ nd.classList.add('on'); }); });
-      var inDone = (nodes.length - 1) * cfg.stagIn + cfg.trans;
-      _tlAfter(inDone + cfg.hold, function(){
-        nodes.forEach(function(nd, i){ _tlAfter(i * cfg.stagOut, function(){ nd.classList.remove('on'); }); });
-      });
-      var outDone = inDone + cfg.hold + (nodes.length - 1) * cfg.stagOut + cfg.trans;
-      _tlAfter(outDone + cfg.pause, cycle);
-    }
-    var _cyc = 0;
-    _tlAfter(180, cycle);
-  }
-  function _tlStart(){
-    _tlStop();
-    var host = root.querySelector('.am-msg-loading .am-tload'); if (!host) return;
-    var state = S.toolState; if (!state){ return; }
-    host.innerHTML = '';
-    // 3-dot loader sits above the tool loader (16px gap handled by .am-tload)
-    var dots = document.createElement('span'); dots.className = 'am-dots';
-    dots.innerHTML = '<span></span><span></span><span></span>';
-    host.appendChild(dots);
-    // everything below the dots
-    var body = document.createElement('div'); body.className = 'am-tload-body'; host.appendChild(body);
-    var viz = document.createElement('div'); viz.className = 'am-tload-viz am-tl-' + state;
-    body.appendChild(viz);
-    var txt = document.createElement('div'); txt.className = 'am-tload-text';
-    var tt = document.createElement('span'); var caret = document.createElement('span'); caret.className = 'am-tload-caret';
-    txt.appendChild(tt); txt.appendChild(caret); body.appendChild(txt);
-    // evidence chips below the loader, in the same styling as the message evidence pills
-    var ev = document.createElement('div'); ev.className = 'am-tload-ev';
-    ev.innerHTML = (_STATE_EV[state] || []).map(function(p){ return evPill(p[0], p[1]); }).join('');
-    body.appendChild(ev);
-    var typer = _tlTyper(tt, _toolTexts());
-    // advance the status line every 2 graphic loops -> text changes in sync with the logos
-    var _onCycle = function(c){ if (c > 1 && c % 2 === 1) typer.next(); };
+  /* ---------------- Arbeitsprotokoll: Uhr + Liste der Arbeitsschritte ----------------
+     Vorher zeigte der Ladezustand immer nur den EINEN Schritt, an dem Mira gerade arbeitet -- was
+     davor lief, war weg, und wie lange sie schon sucht, stand nirgends. Jetzt fuehrt die Komponente
+     Protokoll: oben die laufende Uhr, darunter je Arbeitsschritt eine Zeile. Die laufende Zeile
+     traegt einen Spinner und steht in der zweiten Textfarbe; beim Abschluss geht der Spinner weich
+     weg und der Text wechselt in die erste. So waechst waehrend der Antwort eine Liste.
 
-    // the graphic loops through ALL of the relevant items in random order, batch by batch
-    if (state === 'brand'){
-      _tlDeckLoop(viz, { full: _tlBrandList(), count: 5, onCycle: _onCycle,
-        build: function(b){ b = b || {}; return _tlChip('am-tload-logo', b.src, b.fb_src, b.label, b.color); },
-        cfg: { stagIn:200, hold:3400, stagOut:0, pause:800, trans:420 } });
-    } else if (state === 'prompts'){
-      ['82%','58%'].forEach(function(w){ var bar = document.createElement('span'); bar.className = 'am-tl-bar'; bar.style.width = w; viz.appendChild(bar); });
-      var tagsHost = document.createElement('div'); tagsHost.className = 'am-tl-tags'; viz.appendChild(tagsHost);
-      _tlDeckLoop(tagsHost, { full: _tlTopicList(), count: 3, onCycle: _onCycle,
-        build: function(tp){ tp = tp || {}; var tag = document.createElement('span'); tag.className = 'am-tl-tag';
-          var dot = document.createElement('span'); dot.className = 'am-tl-dot'; dot.style.background = tp.color || 'var(--am-muted-2)';
-          tag.appendChild(dot); tag.appendChild(document.createTextNode(tp.name || '')); return tag; },
-        cfg: { stagIn:300, hold:3600, stagOut:0, pause:800, trans:420 } });
-    } else if (state === 'sources'){
-      _tlDeckLoop(viz, { full: _tlFaviconList(), count: 6, onCycle: _onCycle,
-        build: function(s){ s = s || {}; return _tlChip('am-tload-logo', s.src, '', s.label, '#9ca3af'); },
-        cfg: { stagIn:150, hold:3400, stagOut:70, pause:800, trans:430 } });
-    } else { /* responses — fixed order, AI logos stay twice as long; text follows the loops */
-      _tlDeckLoop(viz, { full: _tlModelList(), count: 5, shuffle: false, onCycle: _onCycle,
-        build: function(m){ m = m || {}; return _tlChip('am-tload-ai', m.src, '', m.label, '#9ca3af'); },
-        cfg: { stagIn:260, hold:6800, stagOut:0, pause:800, trans:430 } });
-    }
+     Die Liste lebt NUR in dieser Sitzung und gehoert immer zur LETZTEN Antwort -- nach einem
+     Neuladen steht wieder die einzelne "Thought for"-Zeile aus latency_ms da, wie vorher. */
+  var RUN = { valid:false, live:false, startTs:0, endTs:0, steps:[] };
+  var _runClock = null;        // Intervall der Uhr
+  var _runQ = [];              // wartende Zustaende, in der Reihenfolge, in der sie kamen
+  var _runQT = null;           // Timer, der den naechsten Schritt freigibt
+  var _runStepTs = 0;          // Beginn des laufenden Schritts -- Grundlage der Mindeststandzeit
+  var _runEmitted = false;     // wurde der Block in diesem Render schon ueber eine Antwort gesetzt?
+  /* Mindeststandzeit je Schritt. Vorher waren es 5s, und wer waehrend der Sperre kam, wurde
+     VERSCHLUCKT: gemerkt wurde nur der jeweils letzte Wunsch. Jetzt wartet eine Schlange, statt zu
+     vergessen -- also darf die Zeit kurz sein, und trotzdem faellt kein Schritt aus der Liste. */
+  var _RUN_DWELL = 1500;
+  var _RUN_MOMENT = 10000;     // kuerzer gedacht -> "a moment" statt einer Zahl
+
+  function runDur(ms){
+    var s = Math.max(0, Math.round(Number(ms) / 1000));
+    if (s < 60) return s + 's';
+    var m = Math.floor(s / 60), r = s % 60;
+    return m + 'm' + (r ? ' ' + r + 's' : '');
+  }
+  function runClockText(){
+    var ms = (RUN.endTs || Date.now()) - RUN.startTs;
+    return (RUN.live ? L().runNow : L().runDone) + ' ' + runDur(ms);
+  }
+  function runClockTick(){
+    var el = root.querySelector('.am-run-clock'); if (el) el.textContent = runClockText();
+  }
+  /* Der Text eines Schritts wird EINMAL beim Anlegen gezogen und aendert sich nie wieder: die Zeile
+     steht spaeter als Protokoll da, und ein Protokoll, das sich nachtraeglich umschreibt, ist keins.
+     Schon benutzte Texte kommen nicht zweimal vor, solange die Auswahl reicht. */
+  function runStepText(kind, key){
+    var pool = (_TOOL_TEXT[key] && _TOOL_TEXT[key].length) ? _TOOL_TEXT[key] : (_STATE_TEXT[kind] || ['Working on it']);
+    var used = {}, i;
+    for (i = 0; i < RUN.steps.length; i++){ if (RUN.steps[i].text) used[RUN.steps[i].text] = 1; }
+    var frei = pool.filter(function(t){ return !used[t]; });
+    var arr = frei.length ? frei : pool;
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+  /* Die Logos vorn: eine zufaellige Auswahl, EINMAL gezogen und dann fest -- sie rotieren nicht.
+     Die Modelle bleiben in ihrer Reihenfolge, die ist eine Rangliste und keine Auswahl. */
+  function runLogos(kind){
+    if (kind === 'brand')     return _tlShuffle(_tlBrandList()).slice(0, 3);
+    if (kind === 'sources')   return _tlShuffle(_tlFaviconList()).slice(0, 3);
+    if (kind === 'responses') return _tlModelList().slice(0, 3);
+    if (kind === 'prompts')   return _tlShuffle(_tlTopicList()).slice(0, 3);
+    return [];
+  }
+  function runIconChip(name, farbe){
+    var c = document.createElement('span');
+    c.className = 'am-tload-logo am-run-ic';
+    var kern = window.UpstreemCore;
+    c.innerHTML = (kern && kern.icon) ? kern.icon(name, 1.9) : '';
+    if (farbe) c.style.color = farbe;
+    return c;
+  }
+  /* Rueckfall, wenn Bubble fuer diesen Schritt keine Logos geschickt hat: das Zeichen und die Farbe,
+     die derselbe Datentyp in der Belegzeile unter der Antwort ohnehin schon hat (EVIDENCE) -- also
+     kein neues Bildchen, sondern dasselbe wie eine Zeile tiefer. */
+  function runEvChip(kind){
+    var pair = (_STATE_EV[kind] || [])[0];
+    var def = pair ? EVIDENCE[pair[0]] : null;
+    var c = document.createElement('span');
+    c.className = 'am-tload-logo am-run-ic';
+    if (def){ c.innerHTML = def.icon; c.style.color = def.color; }
+    return c;
+  }
+  function runLead(lead, st){
+    lead.innerHTML = '';
+    if (st.kind === 'thought'){ lead.appendChild(runIconChip('blend', '')); return; }
+    var l = st.logos || [];
+    if (!l.length){ lead.appendChild(runEvChip(st.kind)); return; }
+    l.forEach(function(it, i){
+      var c;
+      if (st.kind === 'prompts'){
+        /* Ein Thema hat kein Bild, nur eine Farbe -- also ein Chip in genau dieser Farbe.
+           Dieselbe Farbe traegt der Punkt am Themen-Chip in der Antwort. */
+        c = document.createElement('span');
+        c.className = 'am-tload-logo am-run-thema';
+        c.style.background = it.color || 'var(--am-muted-2)';
+      } else if (st.kind === 'responses'){
+        c = _tlChip('am-tload-ai', it.src, '', it.label, '#9ca3af');
+      } else {
+        c = _tlChip('am-tload-logo', it.src, it.fb_src, it.label, it.color);
+      }
+      c.style.transitionDelay = (i * 70) + 'ms';       /* die drei Logos kommen nacheinander */
+      lead.appendChild(c);
+    });
+  }
+  function runThoughtLabel(st){
+    var ms = (st.endTs || Date.now()) - st.ts;
+    return (ms < _RUN_MOMENT) ? L().thoughtMoment : formatThought(ms);
   }
 
-  /* Swap ONLY the loading bubble in place — never re-render the whole chat
-     (re-rendering caused the visible "reload" / re-typing of the last answer). */
-  function _updateLoadingUI(){
-    var ex = elMessages.querySelector('.am-msg-loading'); if (ex && ex.parentNode) ex.parentNode.removeChild(ex);
-    if (!S.isLoading){ _tlStop(); return; }
-    if (S.toolState){
-      elMessages.insertAdjacentHTML('beforeend',
-        '<div class="am-msg is-assistant am-msg-loading"><div class="am-bubble"><div class="am-thinking is-tool"><div class="am-tload"></div></div></div></div>');
-      _tlStart();
+  /* ---- Eine Zeile bauen ----
+     "frisch" heisst: dieser Schritt ist gerade abgeschlossen worden. Dann wird die Zeile NICHT
+     schon fertig gebaut, sondern laufend -- und der Abgang gleich danach neu angestossen. Sonst
+     verschluckt der naechste Renderdurchgang (die Antwort kommt an) genau die Bewegung, die man
+     sehen soll: Spinner weg, Text von der zweiten in die erste Farbe. */
+  function runRow(st){
+    var frisch = !!st.endTs && (Date.now() - st.endTs) < 520;
+    var row = document.createElement('div');
+    row.className = 'am-run-step' + (st.endTs && !frisch ? ' is-done is-cold' : '');
+    var inner = document.createElement('div'); inner.className = 'am-run-inner'; row.appendChild(inner);
+    /* Der Abstand nach oben sitzt eine Ebene TIEFER als der Klipper: haengt er am Klipper selbst,
+       bleibt die zugefaltete Zeile 11px hoch und die Liste springt beim Auftritt. */
+    var line = document.createElement('div'); line.className = 'am-run-line'; inner.appendChild(line);
+    var sp = document.createElement('span'); sp.className = 'am-run-spin'; sp.setAttribute('aria-hidden', 'true');
+    sp.innerHTML = '<i></i>';                          /* innen dreht es, aussen blendet es -- sonst kaempfen Animation und Uebergang um transform */
+    line.appendChild(sp);
+    var lead = document.createElement('span'); lead.className = 'am-run-lead'; line.appendChild(lead);
+    runLead(lead, st);
+    var txt = document.createElement('span'); txt.className = 'am-run-txt';
+    if (st.kind === 'thought'){
+      /* Die Denkzeile benutzt die Lauf-Mechanik, die es schon gibt (am-think-loop/-text): der Text
+         wechselt waehrend des Denkens und am Ende auf "Thought for ..." -- mit derselben Auf-/Ab-
+         Bewegung wie vorher, statt hart umzuspringen. Der Deep-Hinweis nach 55s haengt daran mit. */
+      txt.classList.add('am-think-loop');
+      txt.innerHTML = '<span class="am-think-text"></span>' +
+        '<span class="am-deep"><span class="am-deep-ic">' + ICON.telescope + '</span>' +
+        '<span class="am-deep-text">' + esc(L().deep) + '</span></span>';
+      txt.querySelector('.am-think-text').textContent = st.endTs ? st.text : (st.text || currentThinkText());
     } else {
-      _tlStop();
-      elMessages.insertAdjacentHTML('beforeend',
-        '<div class="am-msg is-assistant am-msg-loading"><div class="am-bubble"><div class="am-thinking"><span class="am-dots"><span></span><span></span><span></span></span>'+
-        '<span class="am-think-loop"><span class="am-think-text">'+esc(currentThinkText())+'</span></span>'+
-        '<span class="am-deep"><span class="am-deep-ic">'+ICON.telescope+'</span><span class="am-deep-text">'+esc(L().deep)+'</span></span>'+
-        '</div></div></div>');
+      txt.textContent = st.text;
     }
+    line.appendChild(txt);
+    st.el = row;
+    if (frisch) setTimeout(function(){ runMarkDone(st, false); }, 30);
+    return row;
+  }
+  function runMarkDone(st, umblenden){
+    var el = st.el; if (!el) return;
+    el.classList.remove('is-cold');
+    el.classList.add('is-done');
+    if (st.kind === 'thought'){
+      el.classList.remove('is-deep');
+      if (umblenden) setThinkText(st.text);
+    }
+    /* Wenn der Spinner unsichtbar ist, hoert er auch auf zu drehen -- eine unsichtbare
+       Dauer-Animation je Zeile kostet in einer langen Liste sonst dauerhaft Rechenzeit. */
+    setTimeout(function(){ if (st.el === el) el.classList.add('is-cold'); }, 480);
+  }
+  function runReveal(st, verzug){
+    st.shown = true;
+    var el = st.el; if (!el) return;
+    void el.offsetHeight;                              /* Lage erzwingen, sonst faellt der Uebergang aus */
+    /* setTimeout und nicht requestAnimationFrame: in einem verdeckten Tab feuert rAF nie, und dann
+       stuende die Zeile fuer immer auf 0fr -- also unsichtbar. */
+    setTimeout(function(){ if (st.el) st.el.classList.add('is-in'); }, 20 + (verzug || 0));
+  }
+  /* Die Liste waechst nach unten. Wenn ihr Ende aus dem Blick rutscht, wird genau um den fehlenden
+     Betrag nachgescrollt -- nicht ans Ende des Verlaufs, denn beim Senden wird darunter Platz
+     reserviert, und "ganz nach unten" wuerde in diese Leere springen. */
+  function runFollow(){
+    var box = root.querySelector('.am-run'); if (!box) return;
+    var r = box.getBoundingClientRect(), c = elChat.getBoundingClientRect();
+    if (r.top < c.top || r.top > c.bottom) return;     /* Block nicht im Blick -> der Nutzer liest woanders */
+    var fehlt = r.bottom - c.bottom + 22;
+    if (fehlt <= 0) return;
+    elChat.scrollTo({ top: elChat.scrollTop + fehlt, behavior: 'smooth' });
+  }
+
+  /* ---- Block aufbauen ---- */
+  function runFill(box){
+    box.innerHTML = '';
+    box.classList.toggle('is-live', !!RUN.live);
+    var head = document.createElement('div'); head.className = 'am-run-head';
+    var clock = document.createElement('span'); clock.className = 'am-run-clock';
+    clock.textContent = runClockText();
+    head.appendChild(clock); box.appendChild(head);
+    var steps = document.createElement('div'); steps.className = 'am-run-steps'; box.appendChild(steps);
+    RUN.steps.forEach(function(st){
+      var row = runRow(st);
+      if (st.shown) row.classList.add('is-in');         /* war schon da -> ohne Auftritt, sonst laeuft er bei jedem Render neu */
+      steps.appendChild(row);
+      if (!st.shown) runReveal(st);
+    });
+  }
+  function runMount(){
+    var box = elMessages.querySelector('.am-run');
+    if (box) runFill(box);
+  }
+
+  /* ---- Ablauf ---- */
+  function runReset(){
+    if (_runClock){ clearInterval(_runClock); _runClock = null; }
+    if (_runQT){ clearTimeout(_runQT); _runQT = null; }
+    _runQ = [];
+  }
+  function runDrop(){
+    runReset();
+    RUN = { valid:false, live:false, startTs:0, endTs:0, steps:[] };
+  }
+  function runStart(){
+    runReset();
+    /* Die Uhr laeuft ab dem Absenden und nicht ab diesem Aufruf: dazwischen liegt der Weg durch
+       Bubble, und der gehoert zur Wartezeit, die der Nutzer erlebt. */
+    RUN = { valid:true, live:true, startTs:(_sendStartTs || Date.now()), endTs:0, steps:[] };
+    runPush('thought', '');
+    _runClock = setInterval(runClockTick, 1000);
+  }
+  function runPush(kind, key){
+    var vor = RUN.steps[RUN.steps.length - 1];
+    if (vor && !vor.endTs) runClose(vor);
+    var st = { kind: kind, tool: key || '', ts: Date.now(), endTs: 0, shown: false,
+               text: (kind === 'thought') ? '' : runStepText(kind, key),
+               logos: (kind === 'thought') ? [] : runLogos(kind), el: null };
+    RUN.steps.push(st);
+    _runStepTs = st.ts;
+    var steps = elMessages.querySelector('.am-msg-loading .am-run-steps');
+    if (steps){ steps.appendChild(runRow(st)); runReveal(st); setTimeout(runFollow, 460); }
+    return st;
+  }
+  function runClose(st){
+    if (!st || st.endTs) return;
+    st.endTs = Date.now();
+    if (st.kind === 'thought'){
+      /* Die Denkphase ist vorbei: der wandernde Text und der Deep-Hinweis hoeren auf. Ohne das
+         schreibt die Rotation nach 7,5s ihren naechsten Satz in die fertige Zeile. */
+      loadStop();
+      st.text = runThoughtLabel(st);
+    }
+    runMarkDone(st, true);
+  }
+  function runFinish(){
+    if (!RUN.live) return;
+    /* Was noch in der Schlange steht, wird nachgetragen statt weggeworfen -- sonst fehlten in der
+       fertigen Liste genau die Schritte, die kurz vor der Antwort noch kamen. */
+    while (_runQ.length){
+      var nx = _runQ.shift();
+      runClose(runPush(nx.st, nx.key));
+    }
+    var letzt = RUN.steps[RUN.steps.length - 1];
+    if (letzt) runClose(letzt);
+    RUN.live = false; RUN.endTs = Date.now();
+    runReset();
+    var box = root.querySelector('.am-run'); if (box) box.classList.remove('is-live');
+    runClockTick();
+  }
+  /* Der Typ, der zuletzt gezeigt wurde ODER schon in der Schlange steht. Kommt derselbe noch
+     einmal, aendert sich nichts: EIN Typ ergibt EINE Zeile, egal wie viele Werkzeuge dahinter
+     laufen (brand_overview nach brand_variations bleibt eine Zeile "Brand"). */
+  function runTail(){
+    if (_runQ.length) return _runQ[_runQ.length - 1].st;
+    var last = RUN.steps[RUN.steps.length - 1];
+    if (!last) return '';
+    return (last.kind === 'thought') ? '' : last.kind;
+  }
+  function runDrain(){
+    if (_runQT || !_runQ.length || !RUN.live) return;
+    var warte = Math.max(0, _RUN_DWELL - (Date.now() - _runStepTs));
+    _runQT = setTimeout(function(){
+      _runQT = null;
+      if (!RUN.live) return;
+      var nx = _runQ.shift();
+      if (nx) runPush(nx.st, nx.key);
+      runDrain();
+    }, warte);
+  }
+  /* Kommen die Logos erst NACH dem Beginn des Schritts an (askMiraSetBrandLogos/-Favicons nach
+     askMiraSetTool), traegt die laufende Zeile sie nach -- vorher stand da der Rueckfall. */
+  function runRefreshLogos(kind){
+    var st = RUN.steps[RUN.steps.length - 1];
+    if (!st || st.endTs || st.kind !== kind) return;
+    if (st.logos && st.logos.length) return;
+    st.logos = runLogos(kind);
+    if (!st.logos.length || !st.el) return;
+    var lead = st.el.querySelector('.am-run-lead');
+    if (lead) runLead(lead, st);
+  }
+
+  /* Nur die Ladezeile tauschen -- nie den ganzen Verlauf neu zeichnen
+     (das erzeugte das sichtbare "Neuladen" / Nochmal-Tippen der letzten Antwort). */
+  function _updateLoadingUI(){
+    var ex = elMessages.querySelector('.am-msg-loading');
+    if (!S.isLoading){
+      if (ex && ex.parentNode) ex.parentNode.removeChild(ex);
+      return;
+    }
+    if (!ex){
+      elMessages.insertAdjacentHTML('beforeend',
+        '<div class="am-msg is-assistant am-msg-loading"><div class="am-msg-main">' +
+        '<div class="am-run is-live"></div></div></div>');
+    }
+    runMount();
   }
 
 
@@ -2883,11 +3049,19 @@
     elStatusText.textContent = S.isLoading ? 'Analyzing your workspace' : 'Ready';
     refreshSend();
     if (S.isLoading){
-      _clearDwell(); S.toolState = ''; S.currentTool = ''; _toolStateSince = Date.now();
+      /* setLoading(true) kommt fuer DIESELBE Antwort mehrfach: askMiraSetMessages ruft es bei jedem
+         Durchlauf mit laufendem Status, askMiraAddMessage bei jeder unfertigen Antwort. Ein neuer
+         Lauf darf deshalb nur beginnen, wenn keiner laeuft -- sonst faengt die Liste jedes Mal von
+         vorn an, und alle bisherigen Schritte sind weg. */
+      if (RUN.live){ renderMessages(); return; }
+      S.toolState = ''; S.currentTool = '';
       loadIdx = Math.floor(Math.random() * ((L().loading||['']).length));   // vary the opening line, set ONCE before render (no instant swap)
-      renderMessages(); loadStart();                                        // always start with the 3-dot phase
+      runStart();                                                           // das Protokoll beginnt mit der Denkzeile
+      renderMessages(); loadStart();
     } else {
-      _clearDwell(); loadStop(); _tlStop(); S.toolState = ''; S.currentTool = ''; renderMessages(); // remove thinking row + stop tool loader
+      /* Erst abschliessen, dann zeichnen: runFinish schliesst den letzten Schritt im JETZIGEN Baum,
+         und der naechste Render setzt genau diesen Abgang fort (runRow, "frisch"). */
+      runFinish(); loadStop(); S.toolState = ''; S.currentTool = ''; renderMessages();
     }
   }
 
@@ -3402,7 +3576,7 @@
     if (typeof input === 'string'){ var p = looseJsonParse(input); arr = (p == null) ? [] : p; }
     if (arr && !Array.isArray(arr)) arr = arr.domains || arr.favicons || arr.sources || [];
     S.favicons = (Array.isArray(arr) ? arr : []).map(_normFavicon).filter(Boolean).slice(0, 20);
-    if (S.isLoading && S.toolState === 'sources') _tlStart();
+    if (S.isLoading) runRefreshLogos('sources');
   };
   // brand-logos pool (brand loader). Accepts an array / JSON string. Each item may be a
   // plain domain string, or { logo_url|logo|icon_url|src|url, domain, name|label, color }.
@@ -3425,39 +3599,22 @@
     if (typeof input === 'string'){ var p = looseJsonParse(input); arr = (p == null) ? [] : p; }
     if (arr && !Array.isArray(arr)) arr = arr.companies || arr.brands || arr.brandLogos || [];
     S.brandLogos = (Array.isArray(arr) ? arr : []).map(_normBrandLogo).filter(Boolean).slice(0, 20);
-    if (S.isLoading && S.toolState === 'brand') _tlStart();
+    if (S.isLoading) runRefreshLogos('brand');
   };
   window.askMiraSetCompanies = window.askMiraSetBrandLogos;   // alias for the "companies" payload
-  // set the currently running tool -> maps to one of the 4 loading states.
-  // Pass '' (empty) to fall back to the initial 3-dot phase.
-  var _MIN_DWELL = 5000;          // a loading state stays on screen at least this long before switching
-  var _toolStateSince = 0;
-  var _pendingTool = null;        // { key, st } — the latest requested state while we wait out the dwell
-  var _dwellTimer = null;
-  function _clearDwell(){ if (_dwellTimer){ clearTimeout(_dwellTimer); _dwellTimer = null; } _pendingTool = null; }
-  function _applyToolState(key, st){
-    _clearDwell();
-    S.currentTool = key; S.toolState = st; _toolStateSince = Date.now();
-    if (st){ loadStop(); _updateLoadingUI(); }   // tool loader (swap bubble only)
-    else   { _updateLoadingUI(); loadStart(); }  // back to the 3-dot phase
-  }
+  /* Der gerade laufende Werkzeugschritt -> einer von vier Zustaenden -> eine Zeile im Protokoll.
+     Zweimal derselbe Zustand hintereinander bleibt EINE Zeile: die laufende bleibt unveraendert
+     stehen, samt ihrem Text und ihren Logos. Erst ein anderer Zustand macht eine neue auf. */
   window.askMiraSetTool = function(tool){
     var key = String(tool == null ? '' : tool).trim().toLowerCase();
     var st = _TOOL_STATE[key] || '';
     if (!S.isLoading){ S.currentTool = key; S.toolState = st; return; }
-    var prevState = S.toolState;
-    if (st && st === prevState){                 // same overarching state -> keep the running loader; cancel any queued switch
-      S.currentTool = key; _clearDwell(); return;
-    }
-    if (!prevState){ _applyToolState(key, st); return; }   // first tool out of the 3-dot phase -> switch immediately
-    var elapsed = Date.now() - _toolStateSince;            // already in a tool state -> honour the minimum dwell time
-    if (elapsed >= _MIN_DWELL){ _applyToolState(key, st); return; }
-    _pendingTool = { key: key, st: st };                   // too soon -> remember the latest target, fire when the dwell is up
-    if (_dwellTimer) clearTimeout(_dwellTimer);
-    _dwellTimer = setTimeout(function(){
-      _dwellTimer = null;
-      if (S.isLoading && _pendingTool){ var p = _pendingTool; _pendingTool = null; _applyToolState(p.key, p.st); }
-    }, _MIN_DWELL - elapsed);
+    if (!st) return;                       // unbekannter Name: die Liste bleibt, wie sie ist
+    S.currentTool = key;
+    if (st === runTail()) return;          // derselbe Typ -> nichts aendert sich
+    S.toolState = st;
+    _runQ.push({ st: st, key: key });
+    runDrain();
   };
   window.askMiraSetFaviconsFromEl   = function(sel){ var r = _amReadEl(sel); if (r != null) window.askMiraSetFavicons(r); };
   window.askMiraSetBrandLogosFromEl = function(sel){ var r = _amReadEl(sel); if (r != null) window.askMiraSetBrandLogos(r); };
@@ -3820,7 +3977,7 @@
     var id = item.getAttribute('data-chat-id');
     var wasActive = String(S.activeChatId) === String(id);
     S.previousChats = (S.previousChats || []).filter(function(c){ return String(c.id) !== String(id); });
-    if (wasActive){ S.activeChatId = null; S.messages = []; renderMessages(); }
+    if (wasActive){ S.activeChatId = null; S.messages = []; runDrop(); renderMessages(); }
     renderPrevious();
     amFire('delete_chat', { chat_id: id }, 'delete-chat');
   }
@@ -3966,6 +4123,7 @@
     var id = item.getAttribute('data-chat-id');
     S.chatLoading = true;                              // show the chat + skeletons right away
     S.messages = [];                                   // drop the previous chat's messages so the skeleton shows
+    runDrop();                                         // anderer Chat -> das Protokoll der letzten Antwort gilt nicht mehr
     clearTimeout(_chatLoadT); _chatLoadT = setTimeout(function(){ if (S.chatLoading){ S.chatLoading = false; renderMessages(); renderChatTitlebar(); } }, 12000);
     window.askMiraSetActiveChat(id, false);
     renderMessages(); renderChatTitlebar();
@@ -4128,6 +4286,7 @@
 
   function goToStart(){
     S.activeChatId = null; S.messages = []; S.titlePending = false;
+    runDrop();
     if (S.isLoading) setLoading(false);   // stop the loader + clear its timers, else has-messages stays on via isLoading
     renderMessages();
     if (window.bubble_fn_ask_mira_new_chat) window.bubble_fn_ask_mira_new_chat();

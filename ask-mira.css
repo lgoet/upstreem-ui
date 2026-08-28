@@ -684,29 +684,21 @@
   #ask-mira .am-cta.is-secondary:hover { background: var(--am-soft); border-color: #6f6f6f; opacity: 1; }
 
   /* Thinking / loading */
-  .am-msg.is-assistant.am-msg-loading { gap: 24px; }
-  .am-msg.is-assistant.am-msg-loading .am-bubble { background: transparent; border: 0; box-shadow: none; padding: 2px 0 0; border-radius: 0; }
-  .am-thinking { display: flex; flex-direction: column; align-items: flex-start; gap: 9px; padding-bottom: 32px; }
-  .am-dots { display: inline-flex; gap: 4px; padding-left: 2px; }
-  .am-dots span {
-    width: 6px; height: 6px; border-radius: 999px; background: var(--am-muted);
-    opacity: 0.5; animation: amDot 1.2s ease-in-out infinite;
-  }
-  .am-dots span:nth-child(2) { animation-delay: 0.18s; }
-  .am-dots span:nth-child(3) { animation-delay: 0.36s; }
+  /* Waehrend des Ladens steht das Arbeitsprotokoll an genau der Stelle, an der es spaeter ueber der
+     Antwort steht: in .am-msg-main, nicht in einer Blase. Dadurch wandert beim Wechsel von der
+     Ladezeile zur Antwort nichts. */
+  .am-msg.has-run { animation: none; }
   .am-think-loop { position: relative; height: 19px; overflow: hidden; min-width: 220px; }
   .am-think-text {
     position: absolute; left: 0; top: 0; white-space: nowrap;
     font-size: 13px; color: var(--am-muted);
     transform: translateY(0); opacity: 1;
-    transition: transform 260ms cubic-bezier(0.22,1,0.36,1), opacity 210ms ease-out;
+    transition: transform 260ms cubic-bezier(0.22,1,0.36,1), opacity 210ms ease-out, color 460ms ease;
   }
   .am-think-text.is-out { transform: translateY(-95%); opacity: 0; }
   .am-think-text.is-in  { transform: translateY(95%);  opacity: 0; }
   /* deep-search hint (after ~55s) — telescope icon + shimmering text, no card/border/bg */
   .am-deep { display: none; align-items: center; gap: 6px; height: 19px; }
-  .am-thinking.is-deep .am-think-loop { display: none; }
-  .am-thinking.is-deep .am-deep { display: inline-flex; }
   .am-deep-ic { display: inline-flex; flex: 0 0 auto; color: #2384E2; }
   .am-deep-ic svg { width: 14px; height: 14px; display: block; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .am-deep-text {
@@ -721,17 +713,70 @@
   }
   @keyframes amShimmer { from { background-position: -120% 0; } to { background-position: 220% 0; } }
 
-  /* ---- tool loading states: a small graphic + a typewriter line, shown once a tool is active ---- */
-  .am-thinking.is-tool .am-think-loop,
-  .am-thinking.is-tool .am-deep { display: none !important; }
-  .am-tload { display: none; }
-  .am-thinking.is-tool .am-tload { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
-  .am-tload-body { display: flex; flex-direction: column; align-items: flex-start; gap: 13px; }
-  .am-tload-viz { min-height: 24px; display: flex; align-items: center; }
-  .am-tload-text { font-size: 13px; color: var(--am-muted); line-height: 1.4; min-height: 1.4em; max-width: 280px; }
-  .am-tload-caret { display: inline-block; width: 1.5px; height: 1.05em; background: var(--am-muted-2); margin-left: 2px; vertical-align: -2px; border-radius: 1px; animation: amTlBlink 1.05s step-end infinite; }
-  @keyframes amTlBlink { 0%,50%{opacity:1} 50.01%,100%{opacity:0} }
-  .am-tload-ev { display: flex; flex-wrap: wrap; gap: 6px; }
+  /* ---- Arbeitsprotokoll: Uhr, Trennlinie, Schrittliste ----------------------------------------
+     Eine Zeile besteht aus drei Teilen: dem Spinner ganz links, den Logos und dem Text. Der Spinner
+     sitzt im linken Innenabstand der Liste -- negatives margin-left in genau dessen Groesse. Dadurch
+     verschiebt sein Verschwinden NICHTS: Logos und Text stehen vorher und nachher an derselben
+     Stelle, und alle Zeilen fluchten untereinander.
+     Der Auftritt einer Zeile laeuft ueber grid-template-rows 0fr -> 1fr: die Liste waechst weich
+     mit, statt um die Zeilenhoehe zu springen. */
+  .am-run { width: 100%; max-width: min(100%, 782px); }
+  .am-run.is-live { padding-bottom: 30px; }        /* Luft unter dem Laufenden, wie beim alten Ladebild */
+  .am-run:not(.is-live) { margin-bottom: 4px; }
+  .am-run-head {
+    display: flex; align-items: center; min-height: 19px;
+    padding-bottom: 11px; border-bottom: 1px solid var(--am-border);
+  }
+  .am-run-clock { font-size: 13.5px; font-weight: 500; color: var(--am-muted); line-height: 1; }
+  .am-run-steps { display: flex; flex-direction: column; }
+  .am-run-step {
+    display: grid; grid-template-rows: 0fr; opacity: 0;
+    transition: grid-template-rows 420ms cubic-bezier(.2,.8,.3,1), opacity 320ms ease;
+  }
+  .am-run-step.is-in { grid-template-rows: 1fr; opacity: 1; }
+  /* min-height:0 und overflow:hidden sind die Bedingung dafuer, dass 0fr die Zeile wirklich zufaltet */
+  .am-run-inner { min-height: 0; overflow: hidden; }
+  .am-run-line { display: flex; align-items: center; gap: 10px; padding: 11px 0 0 24px; }
+  .am-run-spin {
+    width: 14px; height: 14px; flex: 0 0 auto; margin-left: -24px;
+    transition: opacity 320ms ease, transform 320ms cubic-bezier(.2,.8,.3,1);
+  }
+  /* Innen dreht es, aussen blendet es aus -- sonst kaempfen Drehung und Uebergang um dasselbe transform */
+  .am-run-spin i {
+    display: block; width: 100%; height: 100%; border-radius: 50%;
+    border: 1.8px solid var(--am-border); border-top-color: var(--am-muted);
+    animation: amRunSpin 720ms linear infinite;
+  }
+  @keyframes amRunSpin { to { transform: rotate(360deg); } }
+  .am-run-step.is-done .am-run-spin { opacity: 0; transform: scale(.5); }
+  /* Unsichtbar heisst auch: hoert auf zu drehen. Die Box bleibt stehen, damit nichts nachrutscht. */
+  .am-run-step.is-cold .am-run-spin { visibility: hidden; }
+  .am-run-step.is-cold .am-run-spin i { animation: none; }
+  /* Feste Breite: drei 20er-Chips mit 6px Ueberlappung sind 48px. Dadurch beginnt der Text in JEDER
+     Zeile an derselben Stelle -- auch in der Denkzeile, die nur ein Zeichen traegt. */
+  .am-run-lead { display: inline-flex; align-items: center; flex: 0 0 auto; width: 48px; }
+  .am-run-lead > * { opacity: 0; transform: translateX(7px) scale(.86); transition: opacity 340ms ease, transform 340ms cubic-bezier(.2,.8,.3,1); }
+  .am-run-step.is-in .am-run-lead > * { opacity: 1; transform: none; }
+  .am-run-lead > * + * { margin-left: -6px; }
+  /* Der 24er-Chip auf 20: Radius und Schriftgroesse im selben Verhaeltnis (8*20/24, 9.5*20/24) */
+  .am-run-lead .am-tload-logo, .am-run-lead .am-tload-ai { width: 20px; height: 20px; border-radius: 7px; font-size: 8px; }
+  .am-run-lead .am-tload-ai img { width: 20px; height: 20px; border-radius: 7px; }
+  /* Im Stapel bekommt auch das Modell-Logo den weichen Kasten der anderen Chips: ohne Rand laufen
+     zwei ueberlappende Logos ineinander, und der Stapel wird unlesbar. */
+  .am-run-lead .am-tload-ai { background: var(--am-soft); border: 1px solid var(--am-border); }
+  .am-run-lead .am-run-ic { color: var(--am-muted); }
+  .am-run-lead .am-run-thema { border-color: transparent; }
+  .am-run-ic svg { width: 13px; height: 13px; display: block; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+  .am-run-txt { font-size: 13.5px; font-weight: 500; line-height: 1.45; color: var(--am-muted); min-width: 0; transition: color 460ms ease; }
+  .am-run-step.is-done .am-run-txt { color: var(--am-text); }
+  /* Die Denkzeile traegt ihren Text ABSOLUT positioniert -- das ist die Lauf-Mechanik, mit der er
+     wechselt. Absolute Kinder tragen nichts zur Breite bei: ohne flex-grow bliebe der Kasten 0 breit,
+     und sein overflow:hidden schnitte den Text weg. Gemessen: 0px Kastenbreite, Text unsichtbar. */
+  .am-run-step .am-think-loop { flex: 1 1 auto; }
+  .am-run-step .am-think-text { font-size: inherit; font-weight: inherit; }
+  .am-run-step.is-done .am-think-text { color: var(--am-text); }
+  .am-run-step.is-deep .am-think-text { display: none; }
+  .am-run-step.is-deep .am-deep { display: inline-flex; }
   /* brand + favicon chip = exactly the inline-logo style (24px, radius 8, soft bg, border, cover) */
   .am-tload-logo { width: 24px; height: 24px; border-radius: 8px; background: var(--am-soft); border: 1px solid var(--am-border); overflow: hidden; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #fff; font-size: 9.5px; font-weight: 700; }
   .am-tload-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -742,30 +787,11 @@
   .am-tload-ai img { width: 24px; height: 24px; object-fit: contain; display: block; border-radius: 8px; }
   .am-tload-ai.is-fb { background: var(--fb,#9ca3af) !important; border-radius: 8px; }
   .am-tload-ai.is-fb img { display: none; }
-  /* brand row — soft focus glide (continuous) */
-  .am-tl-brand { display: flex; gap: 8px; }
-  .am-tl-brand .am-tload-logo { opacity: 0; transform: translateY(4px) scale(.94); transition: opacity .4s ease, transform .4s cubic-bezier(.2,.8,.3,1); }
-  .am-tl-brand .am-tload-logo.on { opacity: 1; transform: none; }
-  /* prompts — skeleton bars + topic tags */
-  .am-tl-prompts { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; width: 100%; }
-  .am-tl-prompts .am-tl-bar { height: 6px; border-radius: 4px; background: var(--am-soft-2); }
-  .am-tl-prompts .am-tl-tags { display: flex; gap: 7px; margin-top: 3px; flex-wrap: wrap; min-height: 20px; }
-  .am-tl-tag { display: inline-flex; align-items: center; gap: 6px; height: 20px; padding: 0 9px; border-radius: 7px; font-size: 11px; font-weight: 600; background: var(--am-soft); border: 1px solid var(--am-border); color: var(--am-muted); white-space: nowrap; flex: 0 0 auto; opacity: 0; transform: translateY(5px); transition: opacity .34s ease, transform .34s cubic-bezier(.2,.8,.3,1); }
-  .am-tl-tag.on { opacity: 1; transform: none; }
-  .am-tl-tag .am-tl-dot { width: 6px; height: 6px; border-radius: 50%; flex: 0 0 auto; }
-  /* sources — favicons gather into an overlapping stack */
-  .am-tl-sources { display: flex; align-items: center; }
-  .am-tl-sources .am-tload-logo { margin-left: -3px; opacity: 0; transform: translateX(8px) scale(.9); box-shadow: -3px 0 7px rgba(20,22,28,.05); transition: opacity .36s ease, transform .36s cubic-bezier(.2,.8,.3,1); }
-  .am-tl-sources .am-tload-logo:first-child { margin-left: 0; }
-  .am-tl-sources .am-tload-logo.on { opacity: 1; transform: none; }
-  #ask-mira[data-theme="dark"] .am-tl-sources .am-tload-logo { box-shadow: -3px 0 7px rgba(0,0,0,.4); }
-  /* responses — AI model logos light up one by one */
-  .am-tl-responses { display: flex; gap: 11px; }
-  .am-tl-responses .am-tload-ai { opacity: 0; transform: translateY(4px) scale(.92); transition: opacity .38s ease, transform .38s cubic-bezier(.2,.8,.3,1); }
-  .am-tl-responses .am-tload-ai.on { opacity: 1; transform: none; }
   @media (prefers-reduced-motion: reduce){
-    .am-tl-brand .am-tload-logo, .am-tl-tag, .am-tl-sources .am-tload-logo, .am-tl-responses .am-tload-ai { animation: none !important; opacity: 1 !important; transform: none !important; transition: none !important; }
-    .am-tload-caret { animation: none !important; }
+    .am-run-step, .am-run-lead > *, .am-run-spin { transition: none !important; }
+    .am-run-step { grid-template-rows: 1fr; opacity: 1; }
+    .am-run-lead > * { opacity: 1; transform: none; }
+    .am-run-spin i { animation: none !important; }
   }
 
   /* Suggested questions */
@@ -1601,7 +1627,6 @@
   @keyframes amDriftSpark { 0%,100% { transform: translate(0,0) rotate(0deg); opacity: 0.35; } 50% { transform: translate(-3px,7px) rotate(12deg); opacity: 0.65; } }
   @keyframes amDotPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(46,194,126,0.45); } 50% { box-shadow: 0 0 0 4px rgba(46,194,126,0); } }
   @keyframes amMsgIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes amDot { 0%,100% { opacity: 0.35; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-3px); } }
   @keyframes amSpin { to { transform: rotate(360deg); } }
 
   @media (prefers-reduced-motion: reduce) {
