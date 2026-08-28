@@ -424,8 +424,10 @@
      Gemessen: 5 mal 72 plus 40 Kopfzeile sind 400px Inhalt in einem 370px hohen Ausschnitt. */
   var VIS_ZEILEN = [
     { prompt: "Best AI visibility tools",         vis: 38.9, rank: 1.1,  sent: 79,   themen: [0, 3], markt: "US" },
-    { prompt: "AI search monitoring pricing",     vis: null, rank: null, sent: null, themen: [1],    markt: "US" },
-    { prompt: "Alternativen zu Vantage",          vis: 24.6, rank: 2.4,  sent: 74,   themen: [2, 4], markt: "DE" },
+    /* Die zweite Zeile ist die, die beim Ueberfahren gehoben wird -- sie traegt deshalb Zahlen.
+       Der Leerzustand steht in der dritten. */
+    { prompt: "AI search monitoring pricing",     vis: 21.4, rank: 2.8,  sent: 68,   themen: [1],    markt: "US" },
+    { prompt: "Alternativen zu Vantage",          vis: null, rank: null, sent: null, themen: [2, 4], markt: "DE" },
     { prompt: "Tools to track ChatGPT mentions",  vis: 18.2, rank: 3.2,  sent: 71,   themen: [3],    markt: "UK" },
     { prompt: "Which platform tracks Perplexity", vis: null, rank: null, sent: null, themen: [0, 1], markt: "US" }
   ];
@@ -487,12 +489,16 @@
     { dom: "wikipedia.org", share: 11.7, delta: 0.8,  seiten: 18, typ: "Knowledge_Base", gesehen: "Aug 25, 2026" },
     { dom: "reddit.com",    share: 14.1, delta: -1.3, seiten: 63, typ: "UGC_Community",  gesehen: "Aug 27, 2026", offen: true }
   ];
+  /* Volle URLs und nicht nur Pfade: aus ihnen baut core den Titel, den die App auch zeigt --
+     UC.redditTitleHtml macht daraus "r/SaaS" in der dritten Textfarbe, einen Trennstrich und den
+     Rest. Der Titel selbst ist "reddit.com", also das, was ein Scraper dort tatsaechlich findet
+     -- genau der Fall, fuer den es diese Funktion gibt. */
   var VIS_DOM_URLS = [
-    { pfad: "r/SaaS/comments/best-ai-visibility-tools", anteil: 24.6, typ: "forum", gesehen: "Aug 27, 2026" },
-    { pfad: "r/marketing/comments/how-we-track-chatgpt", anteil: 18.2, typ: "forum", gesehen: "Aug 26, 2026" },
-    { pfad: "r/SEO/comments/geo-vs-seo-2026", anteil: 12.9, typ: "forum", gesehen: "Aug 24, 2026" },
-    { pfad: "r/SaaS/comments/pricing-comparison-thread", anteil: 9.4, typ: "forum", gesehen: "Aug 22, 2026" },
-    { pfad: "r/bigseo/comments/ai-overviews-traffic", anteil: 7.1, typ: "forum", gesehen: "Aug 21, 2026" }
+    { url: "https://www.reddit.com/r/SaaS/comments/1a2b3c/best_ai_visibility_tools/", anteil: 24.6, typ: "forum", gesehen: "Aug 27, 2026" },
+    { url: "https://www.reddit.com/r/marketing/comments/2b3c4d/how_we_track_chatgpt_mentions/", anteil: 18.2, typ: "forum", gesehen: "Aug 26, 2026" },
+    { url: "https://www.reddit.com/r/SEO/comments/3c4d5e/geo_vs_seo_in_2026/", anteil: 12.9, typ: "forum", gesehen: "Aug 24, 2026" },
+    { url: "https://www.reddit.com/r/SaaS/comments/4d5e6f/pricing_comparison_thread/", anteil: 9.4, typ: "forum", gesehen: "Aug 22, 2026" },
+    { url: "https://www.reddit.com/r/bigseo/comments/5e6f7g/ai_overviews_and_traffic/", anteil: 7.1, typ: "forum", gesehen: "Aug 21, 2026" }
   ];
 
   function visDomains(){
@@ -512,7 +518,11 @@
        163. Bei 152 fehlten 11px und die Beschriftung wurde abgeschnitten (gemessen: 90 sichtbar
        von 98 noetigen). Die Domainspalte gibt den Platz her, sie hat mit Namen und Seitenknopf
        immer noch 600px. */
-    var cols = "--up-cols: minmax(0,1fr) 118px 172px 116px;";
+    /* Die Domainspalte gibt 60px ab, gleichmaessig auf die drei anderen verteilt: sie hat mit
+       Namen und Seitenknopf immer noch Platz, und Share, Type und Last Seen standen enger als
+       noetig. Type ist dabei so breit, dass die laengste Pille ("UGC / Community", 163px mit
+       allem) ganz hineinpasst. */
+    var cols = "--up-cols: minmax(0,1fr) 138px 192px 136px;";
     var html = '<div class="ulh-vis-dom" style="' + cols + '">' +
       '<div class="up-row up-thead"><div class="up-td">Domain</div>' +
       '<div class="up-td">Share</div><div class="up-td">Type</div>' +
@@ -528,7 +538,7 @@
                "da fehlen noch die chevron down bei den x pages". */
             '<button class="up-pages udt-pagesbtn' + (d.offen ? " is-open" : "") + '" type="button" tabindex="-1">' +
               '<span class="udt-pagesbtn-lbl">' + d.seiten + ' pages</span>' +
-              '<span class="ulh-vis-chev" data-ic="chevronDown" data-ic-w="2.2"></span>' +
+              '<span class="udt-chev" data-ic="chevronDown" data-ic-w="2.2"></span>' +
             '</button>' +
           '</span>' +
         '</div>' +
@@ -541,15 +551,45 @@
       /* FUENF Spalten wie in der App: Seite, Anteil an der Domain, Typ, zuletzt gesehen und der
          Pfeil. Das Raster dafuer bringt domains-table.css mit (--udt-subcols); mit drei Spalten
          standen Kopf und Zeilen in einem Raster fuer fuenf, und zwei Spalten blieben leer. */
+      /* Der Aufbau ist der der App, Element fuer Element: Werkzeugleiste, Kopfzeile, LISTE, Zeilen.
+         Die Liste als eigener Kasten ist kein Beiwerk -- ohne sie ist die erste Zeile nicht mehr
+         :first-child, ihr Rahmen oben bleibt stehen, und unter der Kopfzeile stehen zwei Linien.
+         Genau das war zu sehen.
+         Die Werkzeugleiste ist statisch: Suchfeld, Typfilter, Titel/URL-Umschalter, Schliessen --
+         dieselben Klassen wie in domains-table.js, nur ohne die Menues dahinter. */
       html += '<div class="udt-subrows"><div class="udt-sub-inner">' +
+        '<div class="udt-sub-toolbar">' +
+          '<div class="udt-sub-tools">' +
+            '<div class="udt-sub-search">' +
+              '<span class="udt-sub-search-ic" data-ic="search" data-ic-w="2"></span>' +
+              '<input class="udt-sub-search-in" type="text" placeholder="Search pages…" readonly tabindex="-1"/>' +
+            '</div>' +
+            '<div class="udt-sub-filter">' +
+              '<button class="up-filter-btn udt-sub-filterbtn" type="button" tabindex="-1">' +
+                '<span class="up-filter-btn-lbl">All URL Types</span>' +
+                '<svg class="up-filter-btn-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+                  'stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>' +
+              '</button>' +
+            '</div>' +
+            '<div class="udt-sub-dispseg" role="group">' +
+              '<button class="udt-sub-disp-btn is-active" type="button" tabindex="-1">Title</button>' +
+              '<button class="udt-sub-disp-btn" type="button" tabindex="-1">URL</button>' +
+            '</div>' +
+          '</div>' +
+          '<button class="udt-sub-closebtn" type="button" tabindex="-1" aria-label="Close">' +
+            '<span data-ic="x" data-ic-w="2.2"></span>' +
+          '</button>' +
+        '</div>' +
         '<div class="udt-sub-head"><span>Page</span><span class="udt-sub-h-num">Domain Share</span>' +
         '<span>Type</span><span>Last Seen</span><span></span></div>' +
+        '<div class="udt-sub-list">' +
         VIS_DOM_URLS.map(function(u){
+          var titel = (kern && kern.redditTitleHtml ? kern.redditTitleHtml(u.url, d.dom) : null) || u.url;
           return '<div class="udt-subrow">' +
             '<span class="udt-sub-main">' +
               '<span class="udt-sub-logo has-img"><span class="udt-sub-ltr">R</span>' +
                 '<img src="' + quellzeichen(d.dom) + '" alt=""/></span>' +
-              '<span class="udt-sub-title">' + u.pfad + '</span>' +
+              '<span class="udt-sub-title">' + titel + '</span>' +
             '</span>' +
             '<span class="udt-sub-share">' + eine(u.anteil) + '%</span>' +
             '<span class="udt-sub-type">' + tag(u.typ, "url") + '</span>' +
@@ -557,6 +597,7 @@
             '<span class="udt-sub-goto">' + (kern && kern.GOTO_SVG ? kern.GOTO_SVG : "") + '</span>' +
           '</div>';
         }).join("") +
+        '</div>' +
       '</div></div>';
     });
     return html + '</div>';
@@ -570,7 +611,8 @@
     { h: "No page of yours answers the pricing question", dom: "reddit.com", pot: 3, themen: [1] },
     { h: "Your integrations page is cited, never quoted", dom: "kestrel.example", pot: 2, themen: [2] },
     { h: "Show up in the comparison videos", dom: "youtube.com", pot: 3, themen: [3] },
-    { h: "Add your entry to the wikipedia category", dom: "wikipedia.org", pot: 2, themen: [4] }
+    { h: "Add your entry to the wikipedia category", dom: "wikipedia.org", pot: 2, themen: [4] },
+    { h: "Answer the migration question on your blog", dom: "kestrel.example", pot: 3, themen: [0] }
   ];
 
   function visChancen(){
@@ -697,18 +739,20 @@
            bleibt es an seiner Kurve, auch wenn sich Werte oder Breite aendern. */
         var hw = schild.offsetWidth / 2, hh = schild.offsetHeight;
         var bx = feld.clientWidth;
-        var punktX = x;
         x = Math.min(Math.max(x, hw + 3), bx - hw - 3);
-        /* Der Strich haengt nicht in der Mitte des Schildes, sondern UEBER DEM PUNKT. Am letzten
-           Punkt der Kurve wird das Schild nach links geschoben, damit es im Feld bleibt -- der
-           Strich blieb dabei in seiner Mitte stehen und zeigte 66px neben die Linie. Genau das war
-           die Meldung "die Linie vom own brand chip beruehrt die own line nicht". Der Versatz
-           steht als Zahl am Schild, die CSS setzt den Strich darauf. */
-        schild.style.setProperty("--ulh-strich-x", Math.round(punktX - (x - hw)) + "px");
-        /* Das Schild steht UEBER seinem Punkt, nicht darauf: auf der Linie deckt es sie zu, und
-           bei zwei Kurven, die sich naehern, deckt es auch die andere zu. Der Strich darunter
-           (im CSS) fuehrt zum Punkt zurueck -- ohne ihn schwebt es. */
-        y = Math.max(y - KRV_ABSTAND, hh + 3);
+        /* Der Strich haengt MITTIG unter dem Schild und ist immer gleich lang. Damit er auf der
+           Linie endet, richtet sich die HOEHE des Schildes nach dem Wert der Kurve an genau der
+           Stelle, an der das Schild steht -- und nicht nach dem Wert seines Punktes. Der
+           Unterschied faellt nur beim letzten Punkt auf, wo das Schild nach links geschoben wird,
+           damit es im Feld bleibt: dort lag der Strich vorher 66px neben der Linie.
+           Der Wert dazwischen wird linear genommen. Die Kurve ist leicht gerundet (tension 0.38),
+           der Fehler daraus liegt im Bereich eines Pixels. */
+        var idx = ax.getValueForPixel ? ax.getValueForPixel(x) : k.schild;
+        idx = Math.max(0, Math.min(k.werte.length - 1, idx));
+        var i0 = Math.floor(idx), i1 = Math.min(k.werte.length - 1, i0 + 1);
+        var wert = k.werte[i0] + (k.werte[i1] - k.werte[i0]) * (idx - i0);
+        /* Das Schild steht UEBER der Linie, nicht darauf: darauf deckt es sie zu. */
+        y = Math.max(ay.getPixelForValue(wert) - KRV_ABSTAND, hh + 3);
         schild.style.left = Math.round(x) + "px";
         schild.style.top = Math.round(y) + "px";
         schild.classList.add("is-da");
@@ -2161,9 +2205,12 @@
      das: drei Nebenfenster stehen links und rechts neben dem Hauptfenster, und ihr Platz entsteht
      ERST durch die Verkleinerung. Gerechnet fuer eine 1440px breite Sektion: bei 0.9 bleiben je
      Seite 72px, das Fenster der URL-Typen (372px breit) waere zu 84 Prozent abgeschnitten; bei 0.8
-     sind es 144px, und mit den 60px Ueberdeckung sind rund zwei Drittel jedes Nebenfensters zu
-     sehen. Auf einer breiteren Sektion entsprechend mehr. */
-  var KLEIN_FAKTOR = 0.8;
+     sind es 144px, und mit der Ueberdeckung sind rund zwei Drittel jedes Nebenfensters zu sehen.
+     Auf einer breiteren Sektion entsprechend mehr.
+     Jetzt 0.76, also noch fuenf Prozent staerker: das Team-Fenster und die Antwortkarte stehen
+     seit dieser Runde DIREKT neben dem Hauptfenster (4px Luft, keine Ueberdeckung mehr), und
+     dieser Platz muss von der Verkleinerung kommen. */
+  var KLEIN_FAKTOR = 0.76;
 
   function scrollGroesse(root){
     if (root.__ulhScrollAn) return;

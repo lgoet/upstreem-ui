@@ -885,14 +885,14 @@
    Die Werte der Ueberschrift sind vorgegeben: Geist, 40px, mittleres Gewicht, -0.04em, 1.1. */
 .ulh-feat { position: relative; z-index: 1; padding: clamp(72px, 11vh, 132px) 0 clamp(80px, 12vh, 144px); }
 .ulh-feat-kopf { padding: 0 24px; }
-/* Der Chip ueber der Ueberschrift. Genau die Toene des Pitch-Chips im Team-Fenster oben, und die
-   kommen aus Miras Antworten (ask-mira.css, Signal "likely"): blauer Grund bei 8.5 Prozent
-   Deckkraft, Schrift im dunkleren Blau derselben Reihe. Ein eigenes Blau waere ein zweiter blauer
-   Ton in derselben Seite. */
+/* Der Chip ueber der Ueberschrift. Eine Stufe heller als der Pitch-Chip im Team-Fenster oben
+   (#1d4ed8): dort steht er auf Weiss in einem kleinen Fenster, hier auf einer hellen Seite neben
+   einer 40px-Ueberschrift, und der dunkle Ton wirkte daneben schwer. #3b82f6 ist derselbe blaue
+   Faden, nur heller -- naeher am Blau des Bildes im Hero. */
 .ulh-feat-chip {
   display: inline-flex; align-items: center; height: 22px; padding: 0 9px;
-  border-radius: 7px; background: rgba(37, 99, 235, 0.085);
-  font-size: 11.5px; font-weight: 600; letter-spacing: .02em; color: #1d4ed8;
+  border-radius: 7px; background: rgba(59, 130, 246, 0.10);
+  font-size: 11.5px; font-weight: 600; letter-spacing: .02em; color: #3b82f6;
   margin-bottom: 18px;
 }
 .ulh-feat-h {
@@ -993,8 +993,12 @@
    hier sind so gesetzt, dass beide Reihen auf dieselbe Hoehe kommen (gemessen 428px). */
 .ulh-vis-linie   { --ulh-vs: 1;    --ulh-vh: 274px; }
 .ulh-vis-zeilen  { --ulh-vs: 0.74; --ulh-vh: 274px; }
-.ulh-vis-domains { --ulh-vs: 0.74; --ulh-vh: 298px; }
-.ulh-vis-chancen { --ulh-vs: 0.82; --ulh-vh: 250px; }
+/* Die untere Reihe ist hoeher als die obere, und das hat einen Grund und keine Symmetrie: im
+   Drilldown sollen VIER Seiten ganz zu sehen sein. Ueber ihnen stehen drei Domainzeilen, die
+   Kopfzeile, die Werkzeugleiste und die Kopfzeile des Drilldowns -- zusammen 253px, die vier
+   Zeilen kommen mit 136 dazu. Gemessen: die vierte endet bei 389. */
+.ulh-vis-domains { --ulh-vs: 0.74; --ulh-vh: 396px; }
+.ulh-vis-chancen { --ulh-vs: 0.82; --ulh-vh: 330px; }
 .ulh-vis { height: var(--ulh-vh); }
 .ulh-vis-in { height: calc(var(--ulh-vh) / var(--ulh-vs)); overflow: hidden; }
 
@@ -1014,19 +1018,18 @@
   background: #ffffff; border: 1px solid var(--ulh-border);
   box-shadow: 0 1px 2px rgba(11, 13, 24, .05), 0 8px 20px rgba(11, 13, 24, .07);
   font-size: 12.5px; line-height: 1.2;
-  transition: opacity 260ms var(--ulh-ease), filter 200ms var(--ulh-ease);
+  transition: opacity 364ms var(--ulh-aus), filter 280ms var(--ulh-aus);
   pointer-events: auto;
 }
 .ulh-krv-chip.is-da { opacity: 1; }
 /* Der Strich vom Schild zu seinem Punkt. In der Rahmenfarbe und 1px: er soll die Zuordnung
    herstellen und nicht selbst auffallen. Seine Laenge ist dieselbe Zahl, die landing-hero.js beim
    Setzen abzieht (KRV_ABSTAND) -- zwei Orte, ein Wert, deshalb steht sie in beiden Kommentaren. */
+/* Mittig unter dem Schild, senkrecht bis auf die Linie. Damit er sie trifft, richtet sich die
+   HOEHE des Schildes nach dem Wert der Kurve an dieser Stelle (landing-hero.js) -- nicht nach dem
+   Wert seines Datenpunkts. */
 .ulh-krv-chip::after {
-  content: ""; position: absolute; top: 100%; width: 1px; height: 15px;
-  /* NICHT in der Mitte des Schildes, sondern ueber dem Punkt. Am letzten Punkt der Kurve wird das
-     Schild nach links geschoben, damit es im Feld bleibt -- mit "left: 50%" zeigte der Strich
-     dann 66px daneben. Den Versatz setzt landing-hero.js beim Platzieren. */
-  left: var(--ulh-strich-x, 50%);
+  content: ""; position: absolute; top: 100%; left: 50%; width: 1px; height: 15px;
   background: var(--ulh-border);
 }
 /* Das Schild der Linie, die gerade NICHT gehoben ist, tritt mit zurueck -- sonst stuende ein
@@ -1091,10 +1094,15 @@
    rund 52px, also 52px je Seite. Ohne diesen Platz waere die Zeile am Rand der Karte abgeschnitten.
    Die Zitatkarte bekommt nichts: dort ist der aufgeklappte Drilldown das Bild, und eine gehobene
    Zeile darin waere ein zweiter Blickfang daneben. */
-.ulh-vis-zeilen .ulh-vis-in, .ulh-vis-chancen .ulh-vis-in { padding: 0 52px; box-sizing: border-box; }
+/* 68px je Seite: die Zeile waechst um 3 Prozent nach jeder Seite (rund 28px) und traegt einen
+   Schatten mit 30px Weichzeichnung -- zusammen 58. Bei 52px war der Schatten abgeschnitten, bei
+   64 blieben genau 28px und damit zwei Pixel zu wenig (gemessen). */
+.ulh-vis-zeilen .ulh-vis-in, .ulh-vis-chancen .ulh-vis-in { padding: 0 68px; box-sizing: border-box; }
+/* Alle Hervorhebungen 40 Prozent langsamer und mit Ausklang: 340 -> 476ms. --ulh-aus ist die
+   lange, weiche Kurve, mit der sich auch das Fenster oben verkleinert. */
 .ulh-vis-tab .up-row, .ulh-vis-chancen .uo-row {
-  transition: transform 340ms var(--ulh-aus), box-shadow 340ms var(--ulh-ease),
-              border-radius 340ms var(--ulh-ease);
+  transition: transform 476ms var(--ulh-aus), box-shadow 476ms var(--ulh-aus),
+              border-radius 476ms var(--ulh-aus);
 }
 /* Der eigene Hover der Bauteile faellt weg. */
 .ulh-vis .up-row:hover, .ulh-vis .uo-row:hover, .ulh-vis .udt-subrow:hover {
@@ -1103,7 +1111,7 @@
 .ulh-card:hover .ulh-vis-tab { overflow: visible; }
 .ulh-card:hover .ulh-vis-tab .up-row.is-mitte,
 .ulh-card:hover .ulh-vis-chancen .uo-row.is-mitte {
-  transform: scale(1.1);
+  transform: scale(1.06);
   border-radius: 8px;
   box-shadow: 0 12px 30px rgba(11, 13, 24, .14), 0 2px 6px rgba(11, 13, 24, .06);
   position: relative; z-index: 4;
@@ -1215,7 +1223,10 @@
    ist ADDIERT und nicht geschaetzt -- 8 Polster + 32 Suchfeld + 6 Abstand + drei Zeilen a 64 mit
    4px dazwischen + 8 Polster. Mit 250 stand die dritte Zeile 4px unter der Kante (gemessen:
    scrollHeight 200 in 196). */
-.ulh-fen-teams   { --ulh-fb: 300px; --ulh-fh: 254px; right: calc(100% - 40px); top: -50px; }
+/* Direkt NEBEN dem Hauptfenster statt darunter geschoben: die rechte Kante liegt 4px links von
+   seiner linken. Keine Ueberdeckung mehr -- dafuer steht mehr von dem Fenster ausserhalb der
+   Sektion, siehe die Verkleinerung in landing-hero.js. */
+.ulh-fen-teams   { --ulh-fb: 300px; --ulh-fh: 254px; right: calc(100% + 4px); top: -50px; }
 /* 352 x 330, also ein Zehntel groesser als die 320 x 300 davor. Die Legende hat damit mehr Platz,
    und beide Verteilungen bleiben bei DREI Reihen: die redaktionelle bricht in 3/3/2 um, die der
    Marktplaetze in 2/2/2 (ihre Beschriftungen sind laenger, "Product / Service" allein ist 114px,
@@ -1227,13 +1238,12 @@
    16px Ueberdeckung statt 8. */
 .ulh-fen-urls    { --ulh-fb: 334px; --ulh-fh: 314px; --ulh-fz: 0.8;
                    right: calc(100% - 16px); bottom: -50px; }
-/* Rechts, auf einem Viertel der Hoehe: weit oben, aber nicht an der Oberkante. Schmaler und
-   dafuer hoeher als zuerst, und nur 16px Ueberdeckung: das Fenster liegt VOR dem Hauptfenster,
-   also soll es davon so wenig wie moeglich verdecken. Die Hoehe ist die, die die Karte bei dieser
+/* Rechts, auf einem Viertel der Hoehe: weit oben, aber nicht an der Oberkante. Direkt neben dem
+   Hauptfenster, 4px Luft, keine Ueberdeckung. Die Hoehe ist die, die die Karte bei dieser
    Breite von sich aus braucht -- so muss sie nicht gestreckt werden und traegt keine Luft:
    gemessen 234px bei 272px Breite (Kopf 24, Frage 38, vier Zeilen Auszug 78, Fusszeile 28, dazu
    Polster und Abstaende), plus 28px Polster des Fensters ergibt 262. */
-.ulh-fen-antwort { --ulh-fb: 325px; --ulh-fh: 262px; left: calc(100% - 26px); top: 25%; }
+.ulh-fen-antwort { --ulh-fb: 325px; --ulh-fh: 262px; left: calc(100% + 4px); top: 25%; }
 
 /* Die Nebenfenster ragen links und rechts aus der Sektion heraus, und genau so ist es gedacht --
    ein Fenster, das am Rand angeschnitten ist, sagt "die Flaeche geht weiter". overflow-x: clip und

@@ -223,8 +223,19 @@ function klein(){
     document.head.appendChild(st);
   }
   r.classList.toggle("is-klein", an);
-  b.style.transform = an ? "scale(0.8)" : "scale(1)";
-  return { klein: an, transform: b.style.transform, hinweis: "Uebergaenge fuer die Messung aus" };
+  /* Der Faktor steht in landing-hero.js (KLEIN_FAKTOR) -- hier wird er aus der Datei gelesen,
+     damit die Messung nicht an einer zweiten, veralteten Zahl haengt. */
+  var faktor = (function(){
+     var t = (window.__geladen && document.querySelector("script")) ? null : null;
+     var q = document.querySelectorAll("style,script");
+     for (var i = 0; i < q.length; i++){
+       var m = /var KLEIN_FAKTOR = ([0-9.]+)/.exec(q[i].textContent || "");
+       if (m) return m[1];
+     }
+     return "0.76";
+  })();
+  b.style.transform = an ? ("scale(" + faktor + ")") : "scale(1)";
+  return { klein: an, transform: b.style.transform, faktor: faktor, hinweis: "Uebergaenge fuer die Messung aus" };
 }
 
 /* Die drei Nebenfenster: Groesse, Lage zu den Kanten des Hauptfensters, und wie viel von ihnen im
