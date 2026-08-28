@@ -39,6 +39,10 @@ TEILE = [
     # Vierte Szene: das Opportunities-Brett.
     ("oph", "page-headers/bubble/opportunities_page_header_bubble.html", "lh-oph"),
     ("uo", "bubble/opportunities_bubble.html", "lh-uo"),
+    # Die drei Nebenfenster, die beim Scrollen erscheinen: die Antwortkarte rechts kommt aus der
+    # Responses-Tabelle im Kartenmodus. Die zwei anderen Fenster brauchen keine Vorlage -- das
+    # Team-Dropdown und der Doughnut entstehen aus geteilten Bauteilen (sidebar.css, UC.makeTypeChart).
+    ("urt", "bubble/responses_table_bubble.html", "lh-urt"),
 ]
 
 # Feste Werte fuer die Platzhalter. BRAND_NAME ist eine erfundene Marke -- erfundene Zahlen unter
@@ -54,6 +58,11 @@ ERSATZ = {
     "BRAND_LOGO_URL": "",
     # NACH BRAND_LOGO_URL, nie davor: sonst wird aus BRAND_LOGO_URL ein "_URL".
     "BRAND_LOGO": "",
+    # Die Antwortkarte rechts ist der Kartenmodus der Responses-Tabelle. Kein Sticky (das Fenster
+    # scrollt nicht) und kein Spotlight (das ist die Marken-Rundschau der App).
+    "DEFAULT_VIEW": "cards",
+    "IS_STICKY": "no",
+    "SPOTLIGHT_MODE": "no",
 }
 
 

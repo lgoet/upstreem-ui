@@ -69,6 +69,8 @@
   css("page-headers/prompts-page-header.css");
   css("prompts-table.css");
   css("opportunities.css");
+  /* Nur fuer das kleine Fenster rechts: eine Antwortkarte. */
+  css("responses-table.css");
   css("landing-hero.css");
 
   js("core.js");
@@ -82,6 +84,7 @@
   js("prompts-table.js");
   js("page-headers/opportunities-page-header.js");
   js("opportunities.js");
+  js("responses-table.js");
   /* Zuletzt: diese Datei ruft die Setter der anderen. */
   js("landing-hero.js");
 })();

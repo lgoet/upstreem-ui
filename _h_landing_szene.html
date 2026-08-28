@@ -30,6 +30,8 @@
   <button onclick="zeigen(brettBild())">BRETT ZUSTAND</button>
   <button onclick="zeigen(zugMessen())">ZUG MESSEN</button>
   <button onclick="zeigen(neu())">NEUSTART</button>
+  <button onclick="zeigen(klein())">KLEIN AN/AUS</button>
+  <button onclick="zeigen(fenster())">FENSTER</button>
 </div>
 <pre id="out">laedt</pre>
 
@@ -202,6 +204,74 @@ function mira(){ var r = W(); return { ausgeloest: r.__ulhMira ? r.__ulhMira() :
 function prompts(){ var r = W(); return { ausgeloest: r.__ulhPrompts ? r.__ulhPrompts() : "keine Handhabe" }; }
 function chancen(){ var r = W(); return { ausgeloest: r.__ulhChancen ? r.__ulhChancen() : "keine Handhabe" }; }
 function neu(){ var r = W(); return { ausgeloest: r.__ulhNeu ? r.__ulhNeu() : "keine Handhabe" }; }
+
+/* Die Verkleinerung von Hand schalten. Sie haengt sonst am Scrollen, und im verdeckten Tab ist
+   der Takt, der sie setzt, langsam -- fuer eine Messung der drei Nebenfenster ist das der Weg.
+   Der Inline-Stil muss MIT gesetzt werden: die Klasse traegt nur den Auftritt der Nebenfenster,
+   die Groesse des Fensters schreibt landing-hero.js als Inline-Stil (Begruendung dort). */
+function klein(){
+  var r = W(), b = r.querySelector(".ulh-buehne");
+  var an = !r.classList.contains("is-klein");
+  /* Uebergaenge AUS, und zwar dauerhaft in diesem Aufbau: in einem verdeckten Tab friert jeder
+     laufende Uebergang auf seinem STARTWERT ein, und jede Messung danach misst die Lage VOR dem
+     Auftritt (gemessen: Deckkraft 0 und die 0.94-Skalierung, Minuten nach dem Umschalten). Wer
+     die Endlage messen will, muss den Uebergang wegnehmen -- nicht laenger warten. */
+  if (!document.getElementById("h-sofort")){
+    var st = document.createElement("style");
+    st.id = "h-sofort";
+    st.textContent = ".ulh-fen, .ulh-buehne { transition: none !important; }";
+    document.head.appendChild(st);
+  }
+  r.classList.toggle("is-klein", an);
+  b.style.transform = an ? "scale(0.8)" : "scale(1)";
+  return { klein: an, transform: b.style.transform, hinweis: "Uebergaenge fuer die Messung aus" };
+}
+
+/* Die drei Nebenfenster: Groesse, Lage zu den Kanten des Hauptfensters, und wie viel von ihnen im
+   Ausschnitt der Sektion steht. */
+function fenster(){
+  var r = W(), stage = r.querySelector(".ulh-stage").getBoundingClientRect();
+  var buehne = r.querySelector(".ulh-buehne").getBoundingClientRect();
+  function mess(sel){
+    var f = r.querySelector(sel); if (!f) return null;
+    var fr = f.getBoundingClientRect();
+    var links = fr.left - stage.left, rechts = fr.right - stage.left;
+    var drin = Math.max(0, Math.min(rechts, stage.width) - Math.max(links, 0));
+    var v = f.querySelector(".ulh-fen-view"), a = f.querySelector(".ulh-fen-app");
+    return {
+      schirm: v ? Math.round(v.offsetWidth) + "x" + Math.round(v.offsetHeight) : null,
+      inhalt: a ? Math.round(a.offsetWidth) + "x" + Math.round(a.offsetHeight) +
+                  " ueberlauf=" + (a.scrollHeight - a.offsetHeight) : null,
+      sichtbar: Math.round(drin) + " von " + Math.round(fr.width) +
+                " (" + Math.round(drin / fr.width * 100) + "%)",
+      zumFenster: { links: Math.round(fr.left - buehne.left), oben: Math.round(fr.top - buehne.top),
+                    rechts: Math.round(fr.right - buehne.left), unten: Math.round(fr.bottom - buehne.top) },
+      ebene: getComputedStyle(f).zIndex, deckkraft: getComputedStyle(f).opacity,
+      punkte: f.querySelectorAll(".ulh-dot").length
+    };
+  }
+  return {
+    klein: r.classList.contains("is-klein"),
+    mass: getComputedStyle(r).getPropertyValue("--ulh-mass").trim(),
+    dokBreite: document.documentElement.scrollWidth + " (Fenster " + window.innerWidth + ")",
+    teams: mess(".ulh-fen-teams"),
+    urls: mess(".ulh-fen-urls"),
+    antwort: mess(".ulh-fen-antwort"),
+    teamzeilen: [].map.call(r.querySelectorAll(".ulh-fen-teams .usn-teamrow"), function(z){
+      return (z.querySelector(".usn-teamrow-name") || {}).textContent +
+             (z.classList.contains("is-active") ? " *" : "") +
+             (z.querySelector(".ulh-teamchip") ? " [" + z.querySelector(".ulh-teamchip").textContent + "]" : ""); }),
+    donut: [].map.call(r.querySelectorAll(".ulh-fen-urls .up-donut-legend-row"), function(z){
+      return (z.querySelector(".up-donut-legend-name") || {}).textContent + " " +
+             (z.querySelector(".up-donut-legend-pct") || {}).textContent; }),
+    donutMitte: (r.querySelector(".ulh-fen-urls .up-donut-center") || {}).textContent,
+    karte: (function(k){ return k ? { hoehe: k.offsetHeight,
+        modell: (k.querySelector(".urt-model-chip") || {}).textContent,
+        marken: k.querySelectorAll(".urt-card-brands .up-stack-item").length,
+        zitate: k.querySelectorAll(".urt-card-citations .up-stack-item").length } : "keine";
+      })(r.querySelector(".ulh-fen-antwort .urt-card"))
+  };
+}
 
 /* Der Zustand des Bretts: was in welcher Spalte steht, wie die Karten liegen, was die Karten
    tragen (Themen, Prioritaet), und ob die Schublade offen ist. */

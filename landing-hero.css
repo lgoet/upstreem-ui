@@ -378,14 +378,14 @@
 /* 1800ms. Der Reihe nach 860 -> 1290 -> 1800, und der Verlauf jedes Mal staerker ausschleifend
    (.22/1/.36/1 -> .16/1/.3/1 -> .1/1/.2/1): nach einem Viertel der Zeit sind rund 80 Prozent des
    Weges getan, der Rest laeuft lange aus. */
-.ulh-frame { transform-origin: center center; transition: transform 1800ms var(--ulh-aus); }
+.ulh-buehne { transform-origin: center center; transition: transform 1800ms var(--ulh-aus); }
 /* Der Faktor selbst steht NICHT hier, sondern als Inline-Stil aus landing-hero.js. Hier stand er,
    mit :not(.is-entering) davor, und er hat im Betrieb nicht gegriffen -- eine Regel mehr, deren
    Zutreffen von einer zweiten Klasse und von der Spezifitaet abhaengt. Der Inline-Stil kann von
    nichts geschlagen werden ausser einer laufenden animation, und die ist nach 1410ms vorbei;
    der Takt in landing-hero.js schreibt ihn danach von sich aus nach. */
 @media (prefers-reduced-motion: reduce) {
-  .ulh-frame { transition: none; }
+  .ulh-buehne { transition: none; }
 }
 
 /* ---------- Die zwei Seiten im Fenster ----------
@@ -508,16 +508,26 @@
    ein Kasten mit einer Leiste obendrauf -- genau das war der Unterschied.
    Blende und Schirm nehmen --ulh-blende und --ulh-schirm: dasselbe Verhaeltnis wie in der Vorlage.
    Deckend und nicht mit Alpha, weil die Seite darunter weiss ist. */
-.ulh-frame {
+/* ---------- Die Buehne ----------
+   Sie ist genau das Hauptfenster gross und traegt die Verkleinerung beim Scrollen. Die drei
+   Nebenfenster liegen absolut darin und stehen damit fest zu seinen Kanten -- in jeder
+   Fensterbreite und in jeder Groesse. */
+.ulh-buehne { position: relative; width: min(100%, 1440px); margin: 0 auto; }
+
+.ulh-frame, .ulh-fen {
   /* Volle Breite des Platzes, hoechstens 1440 -- DERSELBE Deckel wie in der Vorlage
      (max-w-[1440px]). Ein PROZENTWERT ist hier der falsche Hebel: ich kenne die Breite des
      Framer-Abschnitts nicht, und 75% davon sind auf einer schmalen Seite winzig. Der Deckel ist
      davon unabhaengig -- schmaler Abschnitt wird ausgefuellt, breiter bei 1440 gedeckelt und
      mittig. Attios Fenster ist auf einer 1440er Seite 1080 breit und auf einer 1920er 1440; mit
      diesem Deckel kommt bei jeder Seite ab 1440 dasselbe heraus.
-     Vorher standen hier 1200 -- zu schmal, so gemeldet. */
-  width: min(100%, 1440px);
-  margin: 0 auto;
+     Vorher standen hier 1200 -- zu schmal, so gemeldet.
+     Breite und Mitte stehen jetzt an der BUEHNE: an ihr haengen auch die drei Nebenfenster, und
+     die richten sich mit left/right an den Kanten des Hauptfensters aus -- das geht nur, wenn ihr
+     gemeinsamer Bezugsrahmen genau so breit ist wie dieses Fenster. Die Breite steht deshalb
+     unten allein an .ulh-frame -- ein Nebenfenster ist so breit wie sein Schirm und nicht so
+     breit wie die Buehne (mit dem geteilten "width: 100%" waren alle drei 1440px breit,
+     gemessen). */
   border-radius: 16px;
   padding: 0 6px 6px;
   background: var(--ulh-blende);
@@ -852,6 +862,146 @@
 /* Das Anlagedatum: im Bild steht ueberall derselbe Tag (die Daten entstehen beim Laden), es
    traegt also nichts bei und kostet 32px je Karte. */
 .ulh-app .uo-card-foot { display: none; }
+
+/* ---------- Die drei Nebenfenster ----------
+   Sie erscheinen, sobald die Seite bewegt wird -- dieselbe Schwelle, die das Hauptfenster
+   verkleinert (is-klein an der Wurzel, gesetzt in landing-hero.js).
+
+   Der RAHMEN ist derselbe wie am Hauptfenster: dieselbe Blende, derselbe Radius, dieselbe
+   Punktreihe in derselben Groesse. Das ist keine Nachlaessigkeit, sondern die Regel echter
+   Fenster -- ein kleines Fenster hat keinen kleineren Rand. Deshalb steht die Blende oben in
+   einer Regel fuer .ulh-frame UND .ulh-fen, und die Punkte kommen aus derselben Funktion
+   (chrom() in landing-hero.js).
+
+   Die GROESSE steht je Fenster in zwei Zahlen: --ulh-fb und --ulh-fh sind der Schirm in
+   Basispixeln, also in derselben Einheit, in der die App im Hauptfenster rechnet. Multipliziert
+   mit --ulh-mass kommt genau die Groesse heraus, die ein Fenster dieser Groesse neben der
+   verkleinerten App haette. --ulh-fz ist eine ZWEITE, eigene Verkleinerung des Inhalts (nur der
+   Doughnut braucht sie); der Inhaltskasten wird dafuer um denselben Faktor groesser, damit der
+   Schirm weiter genau gefuellt ist. */
+.ulh-fen { position: absolute; z-index: 1; }
+/* Ein Fenster liegt VOR dem Hauptfenster, zwei dahinter. Ausdrueckliche Werte an allen drei
+   Stellen: bei gleichem z-index entschiede die Reihenfolge im Markup, und die soll hier nichts
+   bedeuten. */
+.ulh-frame { position: relative; z-index: 2; width: 100%; }
+.ulh-fen.is-vorn { z-index: 3; }
+
+.ulh-fen-view {
+  position: relative;
+  width: calc(var(--ulh-fb) * var(--ulh-mass, 1));
+  height: calc(var(--ulh-fh) * var(--ulh-mass, 1));
+  overflow: hidden;
+  /* Kleiner als der Rahmen, genau wie am Hauptfenster: 12 gegen 16. */
+  border-radius: 12px;
+  background: var(--ulh-schirm);
+}
+.ulh-fen-app {
+  position: absolute; top: 0; left: 0;
+  width: calc(var(--ulh-fb) / var(--ulh-fz, 1));
+  height: calc(var(--ulh-fh) / var(--ulh-fz, 1));
+  transform: scale(calc(var(--ulh-mass, 1) * var(--ulh-fz, 1)));
+  transform-origin: top left;
+}
+
+/* Der Auftritt: die Fenster kommen aus der Richtung, in der das Hauptfenster steht -- sie liegen
+   davor verdeckt hinter ihm und fahren heraus. Nicht von aussen herein: dann kaeme sie der Rand
+   der Sektion, an dem sie ohnehin angeschnitten sind, zuerst.
+   Der Ausklang ist der lange der Verkleinerung (--ulh-aus), damit beide Bewegungen als eine
+   gelesen werden. */
+.ulh-fen { opacity: 0; transition: opacity 700ms var(--ulh-ease), transform 1100ms var(--ulh-aus); }
+.ulh-fen-teams, .ulh-fen-urls { transform: translate(90px, 0) scale(.94); }
+.ulh-fen-antwort { transform: translate(-90px, 0) scale(.94); }
+.ulh-root.is-klein .ulh-fen { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .ulh-fen { transition: none; }
+}
+
+/* ---- Lage ----
+   Alle drei stehen an einer KANTE des Hauptfensters und schieben sich 60px darunter: "right:
+   calc(100% - 60px)" heisst, die rechte Kante des Nebenfensters liegt 60px innerhalb der linken
+   Kante des Hauptfensters. Genau diese 60px sind die Ueberdeckung, an der man sieht, dass zwei
+   Fenster uebereinander liegen. */
+/* 300x254: die Breite ist die des Panels in der App (sidebar.css: .usn-bar .usn-menu), die Hoehe
+   ist ADDIERT und nicht geschaetzt -- 8 Polster + 32 Suchfeld + 6 Abstand + drei Zeilen a 64 mit
+   4px dazwischen + 8 Polster. Mit 250 stand die dritte Zeile 4px unter der Kante (gemessen:
+   scrollHeight 200 in 196). */
+.ulh-fen-teams   { --ulh-fb: 300px; --ulh-fh: 254px; right: calc(100% - 60px); top: -50px; }
+.ulh-fen-urls    { --ulh-fb: 360px; --ulh-fh: 300px; --ulh-fz: 0.8;
+                   right: calc(100% - 60px); bottom: -50px; }
+/* Rechts, auf einem Viertel der Hoehe: weit oben, aber nicht an der Oberkante. 4:3, damit die
+   Karte darin nicht wie ein angeschnittener Ausschnitt wirkt. */
+.ulh-fen-antwort { --ulh-fb: 360px; --ulh-fh: 270px; left: calc(100% - 60px); top: 25%; }
+
+/* Die Nebenfenster ragen links und rechts aus der Sektion heraus, und genau so ist es gedacht --
+   ein Fenster, das am Rand angeschnitten ist, sagt "die Flaeche geht weiter". overflow-x: clip und
+   nicht hidden: clip erzeugt keine Scrollflaeche, es gibt also keine waagerechte Scrollleiste und
+   auch kein "overscroll-behavior" auf einer Flaeche, die niemand bewegen darf. */
+.ulh-root { overflow-x: clip; }
+
+/* ---- Erstes Fenster: das Team-Dropdown ----
+   Das Panel ist .up-filter-menu aus core. Was hier faellt, ist nur der RAHMEN des Panels: es
+   liegt nicht mehr frei ueber einer Seite, sondern ist der Inhalt eines Fensters, und ein Panel
+   mit Schatten in einem Fenster mit Schatten sind zwei Raender uebereinander. */
+.ulh-teampanel {
+  position: static; width: auto; min-width: 0; max-width: none; max-height: none; height: 100%;
+  opacity: 1; transform: none; box-shadow: none; border: 0; background: transparent;
+}
+/* Im Schaustueck tippt niemand: das Suchfeld zeigt seinen Platzhalter und faengt keinen Zeiger. */
+.ulh-fen-teams .up-ddsearch-in { pointer-events: none; }
+/* Die Liste scrollt hier nicht -- drei Zeilen stehen ganz im Fenster, und eine Scrollflaeche im
+   Schaustueck ist eine Einladung, die niemand annehmen kann. */
+.ulh-fen-teams .usn-teamlist { overflow: visible; }
+/* Der Wechsel der mittleren Zeile: die alte geht nach oben weg, die neue kommt von dort nachge-
+   ruckt. EINE Klasse fuer beide Haelften, damit die Bewegung durchlaeuft statt sich zu kreuzen. */
+.ulh-fen-teams .usn-teamrow { transition: opacity 260ms var(--ulh-ease), transform 300ms var(--ulh-ease); }
+.ulh-fen-teams .usn-teamrow.is-tausch { opacity: 0; transform: translateY(-8px); }
+/* Der Chip am dritten Team. Die Toene sind die des "likely"-Signals in Miras Antworten
+   (ask-mira.css): blauer Grund bei 8.5 Prozent Deckkraft, Text im dunkleren Blau derselben
+   Reihe. Ein eigenes Blau zu waehlen haette einen zweiten blauen Ton in die App gebracht. */
+.ulh-teamchip {
+  flex: 0 0 auto; height: 20px; padding: 0 7px; border-radius: 6px;
+  display: inline-flex; align-items: center;
+  font-size: 11px; font-weight: 600;
+  background: rgba(37, 99, 235, 0.085); color: #1d4ed8;
+}
+
+/* ---- Zweites Fenster: die URL-Typen, dunkel ----
+   Blende und Schirm werden dunkel mit. Ein heller Rahmen um einen dunklen Schirm sieht aus wie
+   ein Fehler, nicht wie ein Fenster im Dunkelmodus: bei einem echten Fenster gehoert der Rahmen
+   zum System, und das ist hier ebenfalls dunkel. Die Punkte bleiben, wie sie sind -- die sind
+   auch auf einem dunklen Mac dieselben drei Farben.
+   Der Schirmton ist der GRUND der App im Dunkeln (--up-surface: #121212), nicht der einer Karte
+   (#1b1b1b): der Doughnut steht auf der Seite und nicht in einer Kachel. */
+.ulh-fen-urls { background: #2b2b2b; }
+.ulh-fen-urls .ulh-fen-view { background: #121212; }
+.ulh-fen-urls .ulh-fen-app { display: flex; flex-direction: column; padding: 14px 16px; box-sizing: border-box; }
+/* Der Kopf ist der einer Kachel aus core (.up-head), nur ohne die Werkzeugleiste, die es hier
+   nicht gibt -- deshalb faellt auch sein unterer Abstand kleiner aus. */
+.ulh-fen-urls .up-head { padding: 0; min-height: 0; margin-bottom: 10px; }
+.ulh-fen-donut { flex: 1 1 auto; min-height: 0; display: flex; align-items: center; }
+
+/* ---- Drittes Fenster: eine Antwortkarte ----
+   Von der Komponente bleibt die KARTE. Kopf, Werkzeugleiste und Seitenzaehler sind weg: in ein
+   Fenster dieser Groesse gehoert die Karte und nicht die halbe Seite um sie herum, und anfassen
+   kann hier ohnehin niemand etwas. Die Tabellenansicht ist im Kartenmodus von sich aus weg
+   (responses-table.css: .up-root.is-cards-view .up-box). */
+.ulh-fen-antwort .up-head,
+.ulh-fen-antwort .up-foot { display: none; }
+.ulh-fen-antwort .ulh-fen-app { padding: 14px; box-sizing: border-box; }
+/* Die Karte fuellt das Fenster. In der App ist sie auf 250px gedeckelt und wird von der Zahl der
+   Karten daneben in Form gehalten; hier steht sie allein, und ein Deckel liesse unten eine Luecke
+   (gemessen: 188px Karte in 244px Platz). Das Raster darum muss die Zeile dafuer strecken --
+   sonst ist "height: 100%" die Hoehe des Inhalts und nicht die des Fensters. */
+/* Die Kette braucht eine FESTE Hoehe, sonst ist "height: 100%" am Raster die Hoehe des Inhalts:
+   eine Prozenthoehe gegen einen automatisch hohen Vorfahren rechnet auf auto zurueck. Deshalb
+   traegt auch die Wurzel der Komponente hier eine Hoehe -- gemessen blieb die Karte sonst bei
+   ihren natuerlichen 200px und liess 42px unter sich frei. */
+.ulh-fen-antwort .urt-root { height: 100%; }
+.ulh-fen-antwort .urt-cards { height: 100%; align-content: stretch; }
+.ulh-fen-antwort .urt-card { max-height: none; height: 100%; }
+/* Drei Zeilen Auszug statt zwei: der Platz, den die gestreckte Karte gewinnt, soll Text tragen
+   und nicht Luft. Die Klammer bleibt -- ein Auszug ohne Ende waere ein Textblock. */
+.ulh-fen-antwort .urt-card-preview { -webkit-line-clamp: 3; }
 
 /* Die Schublade bleibt IM Fenster: opportunities.js haengt Vorhang und Schublade bei
    data-portal="inline" in den Root statt in den <body>, und ihr position: fixed bezieht sich damit

@@ -24,7 +24,8 @@
 
   /* Feste Kennungen. Es gibt genau eine Hero-Sektion pro Seite, also braucht keine davon eine
      laufende Nummer -- und feste Namen machen die Demodaten unten lesbar. */
-  var ID = { usn: "lh-usn", dph: "lh-dph", vot: "lh-vot", tcd: "lh-tcd", upt: "lh-upt" };
+  var ID = { usn: "lh-usn", dph: "lh-dph", vot: "lh-vot", tcd: "lh-tcd", upt: "lh-upt",
+             urt: "lh-urt" };
 
   /* ---- MARKUP ANFANG (erzeugt von .landing_markup.py -- nicht von Hand aendern) ---- */
   var MARKUP = {
@@ -37,7 +38,8 @@
     pph: "<div class=\"up-root up-ph-root pph-root\" data-instance=\"lh-pph\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Kestrel\" data-brand-logo=\"\"><div class=\"up-ph-top\"><div class=\"up-ph-left\"><div class=\"up-ph-meta\"><img class=\"up-ph-metalogo\" alt=\"\" style=\"display:none\"/><span class=\"up-ph-metatxt\"><span class=\"pph-metaname\"></span> Database</span></div><h1 class=\"up-ph-heading\">Prompt Insights</h1><p class=\"up-ph-desc\">Manage Prompts, Topics and monitor latest Responses</p></div><div class=\"pph-topright\"><button class=\"up-ph-addbtn up-export\" type=\"button\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14\" /><path d=\"M12 5v14\" /></svg><span>Add <span class=\"up-ph-addbtn-full\">Prompts</span></span></button><button class=\"pph-refreshbtn up-ph-iconbtn\" type=\"button\" aria-label=\"Refresh\" data-tip=\"Refresh Data\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8\" /><path d=\"M21 3v5h-5\" /><path d=\"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16\" /><path d=\"M8 16H3v5\" /></svg></button></div></div><!-- UC.makePageNav (core.js) builds the three tab items + the sliding indicator into this on init. --><div class=\"up-ph-nav\" role=\"tablist\"></div></div>",
     upt: "<div class=\"up-root upt-root\" data-instance=\"lh-upt\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Kestrel\" data-brand-logo=\"\" data-sticky=\"no\" data-sticky-top=\"171\" data-export-instance=\"\"><div class=\"up-head\"><div class=\"up-heading\"><span class=\"up-head-label\">Prompts</span><span class=\"up-head-sep\"></span><span class=\"up-head-count\"></span><span class=\"upt-selcount\"><span class=\"upt-selcount-n\">0 selected</span><button class=\"upt-selcount-clear\" type=\"button\" aria-label=\"Clear selection\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6 6 18\" /><path d=\"m6 6 12 12\" /></svg></button></span></div><div class=\"upt-status\" role=\"tablist\" aria-label=\"Prompt status\"></div><div class=\"up-head-tools\"><button class=\"upt-brand-toggle\" type=\"button\" data-tip=\"Filter for your brand mentions\"><span class=\"upt-brand-toggle-lbl\"><img class=\"upt-brand-logo\" src=\"\" style=\"display:none\" alt=\"\"/><span class=\"upt-brand-label\"></span></span><span class=\"upt-brand-check\"><svg class=\"upt-brand-check-yes\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6 9 17l-5-5\" /></svg><svg class=\"upt-brand-check-no\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14\" /></svg></span></button><div class=\"up-sort\"><button class=\"up-sort-btn up-iconbtn\" type=\"button\" data-tip=\"Sort\" aria-label=\"Sort\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 16 4 4 4-4\"/><path d=\"M7 20V4\"/><path d=\"m21 8-4-4-4 4\"/><path d=\"M17 4v16\"/></svg></button><div class=\"up-sort-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"up-search\"><button class=\"up-search-btn up-iconbtn\" type=\"button\" data-tip=\"Search\" aria-label=\"Search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m21 21-4.34-4.34\" /><circle cx=\"11\" cy=\"11\" r=\"8\" /></svg></button><div class=\"up-search-box\"><input class=\"up-search-input\" type=\"text\" placeholder=\"Search prompts...\" autocomplete=\"off\" spellcheck=\"false\" aria-label=\"Search prompts\"/><button class=\"up-search-clear\" type=\"button\" aria-label=\"Clear search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6 6 18\" /><path d=\"m6 6 12 12\" /></svg></button></div></div><div class=\"up-cols\"><button class=\"up-cols-btn up-iconbtn\" type=\"button\" data-tip=\"Table Settings\" aria-label=\"Table settings\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg></button><span class=\"upt-cols-badge\"></span><div class=\"up-cols-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><button class=\"up-export\" type=\"button\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 15V3\" /><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /><path d=\"m7 10 5 5 5-5\" /></svg><span>Export</span></button></div></div><div class=\"up-box\"><div class=\"up-table\"><div class=\"up-thead\"><div class=\"up-th up-th-prompt is-sortable\" data-sortcol=\"prompt\"><span class=\"upt-check\" role=\"checkbox\" tabindex=\"0\" aria-checked=\"false\" data-selectall></span><span class=\"up-th-txt\">Prompt</span><span class=\"up-thsort\" data-for=\"prompt\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m18 15-6-6-6 6\" /></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\" /></svg></span><span class=\"up-grip\" data-grip=\"prompt\"></span></div><div class=\"up-th up-th-visibility is-sortable\" data-sortcol=\"visibility\"><img class=\"upt-th-brandlogo\" src=\"\" alt=\"\"/><span class=\"up-th-txt\">Visibility</span><span class=\"up-th-info\" data-explain=\"visibility\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\" /><path d=\"M12 16v-4\" /><path d=\"M12 8h.01\" /></svg></span><span class=\"up-thsort\" data-for=\"visibility\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m18 15-6-6-6 6\" /></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\" /></svg></span></div><div class=\"up-th up-th-rank is-sortable\" data-sortcol=\"rank\"><span class=\"up-th-txt\">Rank</span><span class=\"up-th-info\" data-explain=\"rank\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\" /><path d=\"M12 16v-4\" /><path d=\"M12 8h.01\" /></svg></span><span class=\"up-thsort\" data-for=\"rank\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m18 15-6-6-6 6\" /></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\" /></svg></span></div><div class=\"up-th up-th-sentiment is-sortable\" data-sortcol=\"sentiment\"><span class=\"up-th-txt\">Sentiment</span><span class=\"up-th-info\" data-explain=\"sentiment\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\" /><path d=\"M12 16v-4\" /><path d=\"M12 8h.01\" /></svg></span><span class=\"up-thsort\" data-for=\"sentiment\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m18 15-6-6-6 6\" /></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\" /></svg></span></div><div class=\"up-th up-th-brands\">Brand Mentions<span class=\"up-th-info\" data-explain=\"brands\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\" /><path d=\"M12 16v-4\" /><path d=\"M12 8h.01\" /></svg></span></div><div class=\"up-th up-th-topics\">Topics</div><div class=\"up-th up-th-market\">Market<span class=\"up-th-info\" data-explain=\"market\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\" /><path d=\"M12 16v-4\" /><path d=\"M12 8h.01\" /></svg></span></div><div class=\"up-th up-th-created is-sortable\" data-sortcol=\"created\"><span class=\"up-th-txt\">Created</span><span class=\"up-thsort\" data-for=\"created\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m18 15-6-6-6 6\" /></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\" /></svg></span></div></div><div class=\"up-tbody\"></div></div></div><div class=\"up-foot\"><div class=\"up-pagesize\"><span class=\"up-pagesize-lbl\">Rows per page</span><div class=\"up-pagesize-seg\" role=\"group\" aria-label=\"Rows per page\"></div></div><div class=\"up-pager\"></div></div></div>",
     oph: "<div class=\"up-root up-ph-root oph-root\" data-instance=\"lh-oph\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Kestrel\" data-brand-logo=\"\"><div class=\"up-ph-top\"><div class=\"up-ph-left\"><div class=\"up-ph-meta\"><img class=\"up-ph-metalogo\" alt=\"\" style=\"display:none\"/><span class=\"up-ph-metatxt\"><span class=\"pph-metaname\"></span> Workspace</span></div><h1 class=\"up-ph-heading\">Opportunities</h1><p class=\"up-ph-desc\">Manage tasks, prioritize opportunities, and track progress</p></div><button class=\"up-ph-addbtn up-export\" type=\"button\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\" /><circle cx=\"12\" cy=\"12\" r=\"6\" /><circle cx=\"12\" cy=\"12\" r=\"2\" /></svg><span>Generate<span class=\"up-ph-addbtn-full\"> new Opportunities</span></span></button></div></div>",
-    uo: "<div class=\"up-root uo-root\" data-portal=\"inline\" data-instance=\"lh-uo\" data-cdn-pin=\"\" data-isdark=\"no\" data-sticky=\"no\" data-sticky-top=\"16\"><div class=\"up-head uo-head\"><div class=\"up-heading has-count\"><span class=\"up-head-label\">Active Opportunities</span><span class=\"up-head-sep\"></span><span class=\"up-head-count uo-total\">0</span></div><div class=\"up-head-tools\"><!-- Sorter vor der Suche: dieselbe Reihenfolge wie in allen anderen Kopfzeilen. core.js ordnet die Leiste zur Laufzeit ohnehin (orderToolbars). --><div class=\"uo-popwrap\"><button class=\"uo-sort-btn up-iconbtn\" type=\"button\" data-tip=\"Sort\" aria-label=\"Sort\" aria-haspopup=\"menu\" aria-expanded=\"false\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 16 4 4 4-4\"/><path d=\"M7 20V4\"/><path d=\"m21 8-4-4-4 4\"/><path d=\"M17 4v16\"/></svg></button><div class=\"up-menu uo-sort-pop\" role=\"menu\" aria-hidden=\"true\"><div class=\"up-pop-head\">Sort by</div><div class=\"up-pop-opt is-active\" role=\"menuitem\" data-sort=\"priority\">Priority<svg class=\"up-check\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6 9 17l-5-5\" /></svg></div><div class=\"up-pop-opt\" role=\"menuitem\" data-sort=\"newest\">Newest<svg class=\"up-check\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6 9 17l-5-5\" /></svg></div><div class=\"up-pop-div\"></div><div class=\"up-pop-row uo-toggle-external\"><span class=\"up-pop-label\">External only</span><span class=\"up-switch uo-switch-external\" role=\"switch\"></span></div></div></div><div class=\"up-search\"><button class=\"up-search-btn up-iconbtn\" type=\"button\" data-tip=\"Search\" aria-label=\"Search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m21 21-4.34-4.34\" /><circle cx=\"11\" cy=\"11\" r=\"8\" /></svg></button><div class=\"up-search-box\"><input class=\"up-search-input\" type=\"text\" placeholder=\"Search opportunities...\" autocomplete=\"off\" spellcheck=\"false\" aria-label=\"Search opportunities\"/><button class=\"up-search-clear\" type=\"button\" aria-label=\"Clear search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6 6 18\" /><path d=\"m6 6 12 12\" /></svg></button></div></div><div class=\"up-seg uo-mode\" role=\"tablist\" aria-label=\"View\"><button class=\"up-seg-btn is-active\" type=\"button\" role=\"tab\" data-mode=\"board\" data-tip=\"Board view\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"18\" rx=\"1.5\"></rect><rect x=\"14\" y=\"3\" width=\"7\" height=\"11\" rx=\"1.5\"></rect></svg>Board</button><button class=\"up-seg-btn\" type=\"button\" role=\"tab\" data-mode=\"list\" data-tip=\"List view\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 5h.01\" /><path d=\"M3 12h.01\" /><path d=\"M3 19h.01\" /><path d=\"M8 5h13\" /><path d=\"M8 12h13\" /><path d=\"M8 19h13\" /></svg>List</button></div><div class=\"uo-popwrap\"><button class=\"uo-settings-btn up-iconbtn\" type=\"button\" data-tip=\"Board settings\" aria-label=\"Board settings\" aria-haspopup=\"menu\" aria-expanded=\"false\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg></button><div class=\"up-menu uo-settings-pop\" role=\"menu\" aria-hidden=\"true\"><div class=\"up-pop-head\">Lanes</div><div class=\"up-pop-row\" data-board=\"pending\"><span class=\"up-pop-label\"><span class=\"uo-col-dot\" style=\"background:#9ca3af;\"></span>Pending</span><span class=\"up-switch is-on\" role=\"switch\"></span></div><div class=\"up-pop-row\" data-board=\"in_progress\"><span class=\"up-pop-label\"><span class=\"uo-col-dot\" style=\"background:#2384E2;\"></span>In Progress</span><span class=\"up-switch is-on\" role=\"switch\"></span></div><div class=\"up-pop-row\" data-board=\"done\"><span class=\"up-pop-label\"><span class=\"uo-col-dot\" style=\"background:#15803d;\"></span>Done</span><span class=\"up-switch is-on\" role=\"switch\"></span></div><div class=\"up-pop-row\" data-board=\"ignored\"><span class=\"up-pop-label\"><span class=\"uo-col-dot\" style=\"background:#b4451f;\"></span>Ignored</span><span class=\"up-switch\" role=\"switch\"></span></div></div></div></div></div><!-- opportunities.js renders the lanes / list into this. --><div class=\"uo-stage\"></div><div class=\"uo-scrim\"></div><div class=\"uo-modal\" role=\"dialog\" aria-modal=\"true\"></div><!-- Optional: paste a JSON array here to render without a Run-JS step (useful while designing). --><script class=\"uo-data-json\" type=\"application/json\">[]</script></div>"
+    uo: "<div class=\"up-root uo-root\" data-portal=\"inline\" data-instance=\"lh-uo\" data-cdn-pin=\"\" data-isdark=\"no\" data-sticky=\"no\" data-sticky-top=\"16\"><div class=\"up-head uo-head\"><div class=\"up-heading has-count\"><span class=\"up-head-label\">Active Opportunities</span><span class=\"up-head-sep\"></span><span class=\"up-head-count uo-total\">0</span></div><div class=\"up-head-tools\"><!-- Sorter vor der Suche: dieselbe Reihenfolge wie in allen anderen Kopfzeilen. core.js ordnet die Leiste zur Laufzeit ohnehin (orderToolbars). --><div class=\"uo-popwrap\"><button class=\"uo-sort-btn up-iconbtn\" type=\"button\" data-tip=\"Sort\" aria-label=\"Sort\" aria-haspopup=\"menu\" aria-expanded=\"false\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 16 4 4 4-4\"/><path d=\"M7 20V4\"/><path d=\"m21 8-4-4-4 4\"/><path d=\"M17 4v16\"/></svg></button><div class=\"up-menu uo-sort-pop\" role=\"menu\" aria-hidden=\"true\"><div class=\"up-pop-head\">Sort by</div><div class=\"up-pop-opt is-active\" role=\"menuitem\" data-sort=\"priority\">Priority<svg class=\"up-check\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6 9 17l-5-5\" /></svg></div><div class=\"up-pop-opt\" role=\"menuitem\" data-sort=\"newest\">Newest<svg class=\"up-check\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6 9 17l-5-5\" /></svg></div><div class=\"up-pop-div\"></div><div class=\"up-pop-row uo-toggle-external\"><span class=\"up-pop-label\">External only</span><span class=\"up-switch uo-switch-external\" role=\"switch\"></span></div></div></div><div class=\"up-search\"><button class=\"up-search-btn up-iconbtn\" type=\"button\" data-tip=\"Search\" aria-label=\"Search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m21 21-4.34-4.34\" /><circle cx=\"11\" cy=\"11\" r=\"8\" /></svg></button><div class=\"up-search-box\"><input class=\"up-search-input\" type=\"text\" placeholder=\"Search opportunities...\" autocomplete=\"off\" spellcheck=\"false\" aria-label=\"Search opportunities\"/><button class=\"up-search-clear\" type=\"button\" aria-label=\"Clear search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6 6 18\" /><path d=\"m6 6 12 12\" /></svg></button></div></div><div class=\"up-seg uo-mode\" role=\"tablist\" aria-label=\"View\"><button class=\"up-seg-btn is-active\" type=\"button\" role=\"tab\" data-mode=\"board\" data-tip=\"Board view\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"18\" rx=\"1.5\"></rect><rect x=\"14\" y=\"3\" width=\"7\" height=\"11\" rx=\"1.5\"></rect></svg>Board</button><button class=\"up-seg-btn\" type=\"button\" role=\"tab\" data-mode=\"list\" data-tip=\"List view\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 5h.01\" /><path d=\"M3 12h.01\" /><path d=\"M3 19h.01\" /><path d=\"M8 5h13\" /><path d=\"M8 12h13\" /><path d=\"M8 19h13\" /></svg>List</button></div><div class=\"uo-popwrap\"><button class=\"uo-settings-btn up-iconbtn\" type=\"button\" data-tip=\"Board settings\" aria-label=\"Board settings\" aria-haspopup=\"menu\" aria-expanded=\"false\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg></button><div class=\"up-menu uo-settings-pop\" role=\"menu\" aria-hidden=\"true\"><div class=\"up-pop-head\">Lanes</div><div class=\"up-pop-row\" data-board=\"pending\"><span class=\"up-pop-label\"><span class=\"uo-col-dot\" style=\"background:#9ca3af;\"></span>Pending</span><span class=\"up-switch is-on\" role=\"switch\"></span></div><div class=\"up-pop-row\" data-board=\"in_progress\"><span class=\"up-pop-label\"><span class=\"uo-col-dot\" style=\"background:#2384E2;\"></span>In Progress</span><span class=\"up-switch is-on\" role=\"switch\"></span></div><div class=\"up-pop-row\" data-board=\"done\"><span class=\"up-pop-label\"><span class=\"uo-col-dot\" style=\"background:#15803d;\"></span>Done</span><span class=\"up-switch is-on\" role=\"switch\"></span></div><div class=\"up-pop-row\" data-board=\"ignored\"><span class=\"up-pop-label\"><span class=\"uo-col-dot\" style=\"background:#b4451f;\"></span>Ignored</span><span class=\"up-switch\" role=\"switch\"></span></div></div></div></div></div><!-- opportunities.js renders the lanes / list into this. --><div class=\"uo-stage\"></div><div class=\"uo-scrim\"></div><div class=\"uo-modal\" role=\"dialog\" aria-modal=\"true\"></div><!-- Optional: paste a JSON array here to render without a Run-JS step (useful while designing). --><script class=\"uo-data-json\" type=\"application/json\">[]</script></div>",
+    urt: "<div class=\"up-root urt-root\" data-instance=\"lh-urt\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Kestrel\" data-brand-logo=\"\" data-spotlight-mode=\"no\" data-export-instance=\"\" data-sticky=\"no\" data-sticky-top=\"171\" data-sticky=\"no\" data-default-view=\"cards\"><div class=\"up-head\"><div class=\"up-heading\"><span class=\"up-head-label\">Responses</span><span class=\"up-head-sep\"></span><span class=\"up-head-count\"></span></div><div class=\"up-head-tools\"><button class=\"urt-brand-toggle\" type=\"button\" data-tip=\"Filter for your brand mentions\"><span class=\"urt-brand-toggle-lbl\"><img class=\"urt-brand-logo\" src=\"\" style=\"display:none\" alt=\"\"/><span class=\"urt-brand-label\"></span></span><span class=\"urt-brand-check\"><svg class=\"urt-brand-check-yes\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6 9 17l-5-5\" /></svg><svg class=\"urt-brand-check-no\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 12h14\" /></svg></span></button><div class=\"up-ment\"><button class=\"up-ment-btn\" type=\"button\" data-tip=\"Filter for brand mentions\" aria-haspopup=\"menu\" aria-expanded=\"false\"><span class=\"up-ment-lbl\">All Brands</span><svg class=\"up-ment-chev\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\" /></svg><svg class=\"up-ment-clear\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6 6 18\" /><path d=\"m6 6 12 12\" /></svg></button><div class=\"up-ment-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><!-- Reihenfolge: Sorter VOR dem Fader, also von rechts gelesen der Fader vor dem Sorter. core.js ordnet die Leiste zur Laufzeit ohnehin (orderToolbars) -- hier steht sie richtig, damit eine Neuinstallation nicht erst umsortiert werden muss. --><div class=\"up-sort\"><button class=\"up-sort-btn up-iconbtn\" type=\"button\" data-tip=\"Sort\" aria-label=\"Sort\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 16 4 4 4-4\"/><path d=\"M7 20V4\"/><path d=\"m21 8-4-4-4 4\"/><path d=\"M17 4v16\"/></svg></button><div class=\"up-sort-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><!-- lucide \"settings-2\" \u2014 the SAME filter glyph visibility-chart / topcitations / combo-chart use. .up-iconbtn makes it behave like every other toolbar icon button. --><div class=\"urt-fader\"><button class=\"urt-fader-btn up-iconbtn\" type=\"button\" data-tip=\"Filter by rank &amp; sentiment\" aria-label=\"Filter by rank and sentiment\" aria-haspopup=\"menu\" aria-expanded=\"false\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M14 17H5\"/><path d=\"M19 7h-9\"/><circle cx=\"17\" cy=\"17\" r=\"3\"/><circle cx=\"7\" cy=\"7\" r=\"3\"/></svg></button><div class=\"urt-fader-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"up-search\"><button class=\"up-search-btn up-iconbtn\" type=\"button\" data-tip=\"Search\" aria-label=\"Search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m21 21-4.34-4.34\" /><circle cx=\"11\" cy=\"11\" r=\"8\" /></svg></button><div class=\"up-search-box\"><input class=\"up-search-input\" type=\"text\" placeholder=\"Search prompts...\" autocomplete=\"off\" spellcheck=\"false\" aria-label=\"Search responses\"/><button class=\"up-search-clear\" type=\"button\" aria-label=\"Clear search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6 6 18\" /><path d=\"m6 6 12 12\" /></svg></button></div></div><div class=\"up-cols\"><button class=\"up-cols-btn up-iconbtn\" type=\"button\" data-tip=\"Table Settings\" aria-label=\"Table settings\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg></button><span class=\"urt-cols-badge\"></span><div class=\"up-cols-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><!-- .up-dense / .up-dense-btn are core's segmented control \u2014 the same one the Row Height picker uses. Reused verbatim so this switcher IS the app's switcher, not a lookalike. .urt-viewswitch only overrides the width (core's is full-width for the popover). --><div class=\"up-dense urt-viewswitch\" role=\"group\" aria-label=\"View\"><button class=\"up-dense-btn up-dense-btn-icon is-active\" type=\"button\" data-view=\"table\" data-tip=\"Table view\" aria-label=\"Table view\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18\"/></svg></button><button class=\"up-dense-btn up-dense-btn-icon\" type=\"button\" data-view=\"cards\" data-tip=\"Card view\" aria-label=\"Card view\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"7\" height=\"7\" x=\"3\" y=\"3\" rx=\"1\"/><rect width=\"7\" height=\"7\" x=\"14\" y=\"3\" rx=\"1\"/><rect width=\"7\" height=\"7\" x=\"14\" y=\"14\" rx=\"1\"/><rect width=\"7\" height=\"7\" x=\"3\" y=\"14\" rx=\"1\"/></svg></button></div><button class=\"up-export\" type=\"button\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 15V3\" /><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /><path d=\"m7 10 5 5 5-5\" /></svg><span>Export</span></button></div></div><div class=\"up-box\"><div class=\"up-table\"><div class=\"up-thead\"><!-- The lead column's resize grip. Every other table has one; without it the first column simply cannot be dragged (core's resize kit binds to .up-grip). --><div class=\"up-th up-th-prompt\">Prompt<span class=\"up-grip\" data-grip=\"prompt\"></span></div><!-- \"<brand logo> mentioned?\", identical to urls-table: the logo is filled in from data-brand-logo, and without one the label falls back to \"<brand name> mentioned?\" --><div class=\"up-th up-th-mentioned\"><img class=\"up-th-brandlogo\" src=\"\" alt=\"\" style=\"display:none\"/><span class=\"up-th-mentlbl\">Mentioned?</span></div><div class=\"up-th up-th-sentiment is-sortable\" data-sortcol=\"sentiment\"><span class=\"up-th-txt\">Sentiment</span><span class=\"up-thsort\" data-for=\"sentiment\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m18 15-6-6-6 6\" /></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\" /></svg></span></div><div class=\"up-th up-th-rank is-sortable\" data-sortcol=\"rank\"><span class=\"up-th-txt\">Rank</span><span class=\"up-thsort\" data-for=\"rank\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m18 15-6-6-6 6\" /></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\" /></svg></span></div><div class=\"up-th up-th-brands\">Brand Mentions</div><div class=\"up-th up-th-citations\">Citations</div><div class=\"up-th up-th-model\">Model</div><div class=\"up-th up-th-date is-sortable\" data-sortcol=\"date\"><span class=\"up-th-txt\">Date</span><span class=\"up-thsort\" data-for=\"date\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m18 15-6-6-6 6\" /></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\" /></svg></span></div></div><div class=\"up-tbody\"></div></div></div><div class=\"urt-cards\"></div><div class=\"up-foot\"><div class=\"up-pagesize\"><span class=\"up-pagesize-lbl\">Rows per page</span><div class=\"up-pagesize-seg\" role=\"group\" aria-label=\"Rows per page\"></div></div><div class=\"up-pager\"></div></div></div>"
   };
   /* ---- MARKUP ENDE ---- */
 
@@ -262,10 +264,19 @@
          Fensters, und ohne diese zwei Marken lief die Prompts-Tabelle unter dem Fenster weiter --
          gemessen: overflow an beiden stand auf visible, obwohl in der CSS hidden steht. */
       '<div class="ulh-stage">' +
+        /* Die BUEHNE traegt die Verkleinerung beim Scrollen, nicht mehr das Fenster selbst: die
+           drei Nebenfenster muessen dieselbe Bewegung machen wie das Hauptfenster, sonst wandern
+           sie beim Scrollen relativ zu ihm. Sie ist genau so breit wie das Hauptfenster (der
+           Deckel steht jetzt hier), damit die Nebenfenster sich mit left/right/top/bottom an
+           SEINEN Kanten ausrichten koennen und nicht an der ganzen Sektion.
+           Zweiter Gewinn: die Eingangsanimation laeuft weiter auf .ulh-frame, die Verkleinerung
+           auf der Buehne -- zwei Transformationen, die sich vorher am selben Element in die Quere
+           kamen (eine laufende animation schlaegt jeden Inline-Stil). */
+        '<div class="ulh-buehne">' +
+        fensterTeams() +
+        fensterAntwort() +
         '<div class="ulh-frame">' +
-          '<div class="ulh-chrome" aria-hidden="true">' +
-            '<span class="ulh-dot"></span><span class="ulh-dot"></span><span class="ulh-dot"></span>' +
-          '</div>' +
+          chrom() +
           '<div class="ulh-view" data-up-keepclip>' +
             '<div class="ulh-app" data-up-keepclip>' +
               /* Quick Actions ist ein Seiten-Singleton und steht deshalb neben der Leiste, nicht
@@ -293,7 +304,237 @@
             '</div>' +
           '</div>' +
         '</div>' +
+        fensterUrls() +
+        '</div>' +
       '</div>';
+  }
+
+  /* Der Fensterrahmen, dreimal derselbe. Die drei Punkte sind bei einem echten Fenster in jeder
+     Groesse gleich gross -- ein kleines Fenster hat keinen kleineren Rahmen --, also stehen sie
+     hier als EIN Bauteil und nicht je Fenster neu. */
+  /* WARUM data-up-keepclip an jedem Schirm und jedem Inhaltskasten der Nebenfenster: core
+     entklammert beim Mount jeder Komponente die ganze Vorfahrenkette (unclipAncestors) und
+     schreibt overflow: visible als INLINE-Stil. Ohne die Marke lief die Kette von den Komponenten
+     in den Nebenfenstern bis zur Wurzel der Sektion durch -- gemessen: die Wurzel trug danach
+     inline "overflow: visible", und damit war auch das overflow-x: clip weg, das die Nebenfenster
+     am Rand der Sektion abschneidet UND die waagerechte Scrollleiste der Seite verhindert
+     (Dokumentbreite 1546 bei 1440 Fensterbreite). Derselbe Grund wie am Hauptfenster, nur eine
+     Ebene tiefer. */
+  function chrom(){
+    return '<div class="ulh-chrome" aria-hidden="true">' +
+      '<span class="ulh-dot"></span><span class="ulh-dot"></span><span class="ulh-dot"></span>' +
+    '</div>';
+  }
+
+  /* ---------- Erstes Nebenfenster: das Team-Dropdown -------------------------------------
+     Das Panel ist das ECHTE aus der Seitenleiste: dieselben Klassen, dieselben Regeln
+     (sidebar.css fuer .usn-teamlist/.usn-teamrow, core.css fuer .up-pop-opt, .up-ddsearch,
+     .up-logo-box, .up-check). Nachgebaut ist nichts -- sidebar.js baut dieses Markup in
+     renderTeamMenu, und die Zeilen hier sind Zeile fuer Zeile dieselben. Was fehlt, ist der
+     Fussknopf "Create a new team": im Schaustueck kann niemand ein Team anlegen, und ein Knopf,
+     der nichts tut, ist ein Versprechen.
+     Der Panel-RAHMEN faellt weg (Schatten, eigener Rand, position: absolute aus .up-filter-menu,
+     siehe landing-hero.css) -- hier ist das Fenster der Rahmen.
+
+     Die Teams sind DIESELBEN acht, die die Leiste im Hauptfenster kennt (fuellen, setSidebarTeams).
+     Eine zweite Teamliste in derselben Sektion waere der Bruch, den man zuerst sieht. */
+  var FEN_TEAM_AKTIV = 0;          /* Kestrel -- das ausgewaehlte Team, bleibt oben stehen */
+  var FEN_TEAM_FEST = 3;           /* Nimbus -- die dritte Zeile, sie traegt den Chip */
+  /* Die MITTLERE Zeile wechselt. Vier Teams, dann faengt es wieder vorn an -- also vier Runden
+     bis zum Anfang. Nicht die dritte Zeile: der Chip gehoert zu IHREM Team, und ein Chip, der
+     alle fuenf Sekunden auf ein anderes Team springt, sagt nichts mehr aus. */
+  var FEN_TEAM_WECHSEL = [1, 2, 4, 5];   /* Vantage, Halden, Lumen, Verity */
+  var FEN_TEAM_MS = 5000;
+  /* Der Wechsel selbst: die Zeile geht weg, wird ausgetauscht, kommt zurueck. Zwei Haelften einer
+     Bewegung, deshalb zwei Zahlen; die CSS traegt den Uebergang (landing-hero.css). */
+  var FEN_TEAM_AUS = 260, FEN_TEAM_AN = 300;
+
+  function teamDomain(m){ return m.name.toLowerCase() + ".example"; }
+
+  /* Eine Zeile des Panels. logo/name/domain wie in der Leiste, der Haken rechts kommt mit und ist
+     nur in der aktiven Zeile zu sehen (core.css: .up-pop-opt.is-active .up-check). */
+  function teamZeile(i, aktiv, chip){
+    var m = MARKEN[i];
+    return '<div class="up-pop-opt usn-teamrow' + (aktiv ? " is-active" : "") + '" data-team-row="' +
+        (aktiv ? "aktiv" : (chip ? "fest" : "wechsel")) + '">' +
+      '<span class="up-logo-box has-img"><img src="' + m.logo + '" alt=""/>' +
+        '<span class="up-logo-ltr">' + m.name.charAt(0) + '</span></span>' +
+      '<span class="usn-teamrow-txt">' +
+        '<span class="usn-teamrow-name">' + m.name + '</span>' +
+        '<span class="usn-teamrow-dom">' + teamDomain(m) + '</span>' +
+      '</span>' +
+      (chip ? '<span class="ulh-teamchip">' + chip + '</span>' : "") +
+      '<span class="up-check" data-ic="check" data-ic-w="2.4"></span>' +
+    '</div>';
+  }
+
+  function fensterTeams(){
+    return '<div class="ulh-fen ulh-fen-teams">' + chrom() +
+      '<div class="ulh-fen-view" data-up-keepclip>' +
+        '<div class="ulh-fen-app up-root" data-up-keepclip data-theme="light" data-isdark="no">' +
+          '<div class="up-filter-menu usn-menu is-team is-shown ulh-teampanel">' +
+            '<div class="up-ddsearch usn-ddsearch">' +
+              '<span class="up-ddsearch-ic" data-ic="search" data-ic-w="2"></span>' +
+              '<input class="up-ddsearch-in" type="text" placeholder="Search teams" readonly tabindex="-1"/>' +
+            '</div>' +
+            '<div class="usn-teamlist">' +
+              teamZeile(FEN_TEAM_AKTIV, true, null) +
+              teamZeile(FEN_TEAM_WECHSEL[0], false, null) +
+              teamZeile(FEN_TEAM_FEST, false, "Pitch") +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  /* Der Wechsel der mittleren Zeile, alle fuenf Sekunden. Kein Neuaufbau des Panels: nur DIESE
+     Zeile wird ersetzt, damit die zwei anderen nicht mitblinken. */
+  function teamsLaufen(root){
+    if (root.__ulhTeamsAn) return;
+    root.__ulhTeamsAn = true;
+    var k = 0;
+    setInterval(function(){
+      var zeile = root.querySelector('.ulh-fen-teams [data-team-row="wechsel"]');
+      if (!zeile) return;
+      k = (k + 1) % FEN_TEAM_WECHSEL.length;
+      zeile.classList.add("is-tausch");
+      setTimeout(function(){
+        var neu = teamZeile(FEN_TEAM_WECHSEL[k], false, null);
+        var huelle = document.createElement("div");
+        huelle.innerHTML = neu;
+        var frisch = huelle.firstChild;
+        frisch.classList.add("is-tausch");
+        if (zeile.parentNode) zeile.parentNode.replaceChild(frisch, zeile);
+        /* Ein Bild warten, bevor die Klasse faellt: ohne das steht das neue Element von Anfang an
+           im Endzustand und kommt ohne Bewegung. */
+        setTimeout(function(){ frisch.classList.remove("is-tausch"); }, 30);
+        zeichenSetzen(root);
+      }, FEN_TEAM_AUS);
+    }, FEN_TEAM_MS);
+  }
+
+  /* ---------- Zweites Nebenfenster: die URL-Typen im Dunkeln -----------------------------
+     Der Doughnut ist UC.makeTypeChart aus core -- dasselbe Bauteil, das im Zitatteil des
+     Dashboards steht, nur im Modus "url". Die Farben und die Beschriftungen kommen aus
+     UC.prepTypeData (URL_COLOR_DARK, URL_LABEL): erfundene Farben waeren hier eine zweite
+     Wahrheit, denn dieselben Typen haben in der App feste Toene.
+     Nachkommastellen 0, wie fuer jeden Doughnut im Zitatteil (CLAUDE.md 2b). */
+  var FEN_URL_ZITATE = 71400;
+  /* Ein Mischbild, das sich addiert: elf Typen, die oberen acht als eigene Scheiben, der Rest
+     faellt in "Other" (core: MAX_URL_SLICES = 8). */
+  var FEN_URL_TYPEN = [
+    { type: "article",         share_pct: 22.8 },
+    { type: "guide",           share_pct: 16.4 },
+    { type: "listicle",        share_pct: 12.1 },
+    { type: "comparison",      share_pct: 10.7 },
+    { type: "forum",           share_pct: 9.3 },
+    { type: "review",          share_pct: 8.2 },
+    { type: "documentation",   share_pct: 6.5 },
+    { type: "product_service", share_pct: 5.1 },
+    { type: "video",           share_pct: 4.3 },
+    { type: "social_post",     share_pct: 2.6 },
+    { type: "homepage",        share_pct: 2.0 }
+  ];
+
+  function fensterUrls(){
+    return '<div class="ulh-fen ulh-fen-urls is-vorn" data-ulh-dunkel>' + chrom() +
+      '<div class="ulh-fen-view" data-up-keepclip>' +
+        '<div class="ulh-fen-app up-root" data-up-keepclip>' +
+          /* Nur die Beschriftung, kein Zaehler daneben: die Zahl der Zitate steht schon in der
+             Mitte des Rings (71.4k Citations), und zweimal dieselbe Zahl in einem 360px-Fenster
+             liest sich als zwei verschiedene Angaben. */
+          '<div class="up-head">' +
+            '<div class="up-heading"><span class="up-head-label">URL Types</span></div>' +
+          '</div>' +
+          '<div class="ulh-fen-donut" data-ulh-donut></div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  /* fuellen() kennt die Wurzel nicht (es ruft nur Setter mit Kennungen). Der Doughnut haengt aber
+     an einem Element im Fenster, also wird er ueber die eine Wurzel der Seite gesucht. Mehrere
+     Sektionen auf einer Seite gibt es nicht -- start() baut jede fuer sich, und dieser Weg fuehrt
+     zu derselben. */
+  function donutFuellenSpaeter(){
+    var wurzel = document.querySelector(".ulh-root");
+    if (wurzel) donutFuellen(wurzel);
+  }
+
+  function donutFuellen(root){
+    var kern = window.UpstreemCore;
+    var koerper = root.querySelector("[data-ulh-donut]");
+    if (!kern || !kern.makeTypeChart || !koerper || koerper.__ulhDonut) return false;
+    var werk = kern.makeTypeChart({
+      body: koerper,
+      isDark: function(){ return true; },
+      mode: function(){ return "url"; },
+      total: function(){ return FEN_URL_ZITATE; },
+      centerLabel: "Citations",
+      decimals: 0,
+      /* Der Ring steht in einem 300px-Fenster: die Legende gehoert UNTER ihn, und genau das macht
+         is-collapsed. Die Schwelle liegt darum ueber der Fensterbreite und nicht bei den 420 aus
+         core -- gemessen wird mit getBoundingClientRect, also in der VERKLEINERTEN Groesse. */
+      collapseAt: 9999
+    });
+    koerper.__ulhDonut = werk;
+    werk.renderDonut(kern.prepTypeData("url", FEN_URL_TYPEN, true));
+    return true;
+  }
+
+  /* ---------- Drittes Nebenfenster: eine Antwortkarte ------------------------------------
+     Die echte Responses-Tabelle im Kartenmodus (data-default-view="cards" setzt
+     .landing_markup.py). Von der Komponente bleibt nur die KARTE zu sehen -- Kopf, Werkzeugleiste
+     und Seitenzaehler sind im Fenster ausgeblendet (landing-hero.css): in ein 4:3-Fenster gehoert
+     die Karte und nicht die halbe Seite um sie herum. */
+  function fensterAntwort(){
+    return '<div class="ulh-fen ulh-fen-antwort">' + chrom() +
+      '<div class="ulh-fen-view" data-up-keepclip>' +
+        '<div class="ulh-fen-app" data-up-keepclip>' + (MARKUP.urt || "") + '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function antwortFuellen(){
+    if (!window.renderResponsesTable) return false;
+    /* Das Modell zuerst: der Chip auf der Karte holt Name und Zeichen aus dieser Liste, und ohne
+       sie stuende dort der rohe Schluessel. Das Zeichen ist das echte von OpenAI (siehe
+       quellzeichen) -- ein graues C waere hier dasselbe Raten wie bei den Quellen. */
+    if (window.setResponsesTableModels) window.setResponsesTableModels(ID.urt, [
+      { key: "chatgpt", display_name: "ChatGPT", logo_url: quellzeichen("openai.com") }
+    ]);
+    if (window.setResponsesTableBrand) window.setResponsesTableBrand(ID.urt, "Kestrel", MARKEN[0].logo);
+    var vorhin = new Date(Date.now() - 3 * 3600 * 1000).toISOString();
+    window.renderResponsesTable({
+      instanceId: ID.urt,
+      totalCount: 1,
+      rows: [{
+        prompt_run_id: "lh-r1",
+        prompt_text: "Which AI visibility tool should we use to track brand mentions?",
+        /* Der Auszug nennt genau die drei Marken, die unten als Chips stehen -- eine Karte, deren
+           Text von anderen Marken spricht als ihre Chips, ist der Widerspruch, den man zuerst
+           sieht. */
+        response_preview: "For tracking brand mentions across AI answers, **Kestrel** is the " +
+          "strongest option right now: it covers every major model, reports sentiment per " +
+          "answer, and flags the sources behind each one. Vantage and Halden are close behind " +
+          "on prompt coverage",
+        model: "chatgpt",
+        run_at: vorhin,
+        user_sentiment: 82,
+        user_rank: 1,
+        has_user_brand: "yes",
+        companies_preview: MARKEN.slice(0, 3).map(function(m){
+          return { name: m.name, brand_name_raw: m.name, favicon_url: m.logo };
+        }),
+        companies_preview_totalcount: 3,
+        sources_preview: QUELLEN.slice(0, 4).map(function(q){
+          return { title: q.domain, favicon: q.logo };
+        }),
+        sources_totalcount: 4
+      }]
+    });
+    return true;
   }
 
   /* Hover ja, Klick nein. Die Knoepfe, Aufklapper und Zeilen im Fenster SOLLEN auf die Maus
@@ -306,7 +547,12 @@
      mousedown und pointerdown gehoeren dazu -- die Aufklapper der App haengen daran, nicht an
      click. Bewegungsereignisse (mouseover, mouseenter, mousemove) sind ausdruecklich NICHT dabei. */
   function nurSchauen(root){
-    var view = root.querySelector(".ulh-view");
+    /* Auch die Nebenfenster: die Antwortkarte ist ein Knopf (role="button", eigener Klick auf die
+       Zeile), und ein Klick darauf loeste in der Komponente einen Weg nach Bubble aus, den es hier
+       nicht gibt. */
+    [].slice.call(root.querySelectorAll(".ulh-view, .ulh-fen-view")).forEach(nurSchauenIn);
+  }
+  function nurSchauenIn(view){
     if (!view || view.__ulhStumm) return;
     view.__ulhStumm = true;
     ["click", "dblclick", "mousedown", "mouseup", "pointerdown", "pointerup",
@@ -324,10 +570,15 @@
   function zeichenSetzen(root){
     var kern = window.UpstreemCore;
     if (!kern || !kern.icon) return;
-    var alle = root.querySelectorAll(".ulh-driver[data-ic]");
+    /* Jedes [data-ic] im Fenster, nicht nur die drei in der Treiberzeile: die Nebenfenster
+       brauchen dieselbe Nachlieferung (Lupe im Suchfeld, Haken in der aktiven Teamzeile). Die
+       Strichstaerke steht am Element, wo sie von 1.9 abweicht -- die Zeichen der App sind
+       duenner als die grossen in der Treiberzeile. */
+    var alle = root.querySelectorAll("[data-ic]");
     for (var i = 0; i < alle.length; i++){
       var el = alle[i];
-      var svg = kern.icon(el.getAttribute("data-ic"), 1.9);
+      var stark = parseFloat(el.getAttribute("data-ic-w")) || 1.9;
+      var svg = kern.icon(el.getAttribute("data-ic"), stark);
       if (!svg) continue;
       el.insertAdjacentHTML("afterbegin", svg);
       el.removeAttribute("data-ic");
@@ -402,7 +653,13 @@
      Wiederholt, weil die Komponenten ihr Markup ueber mehrere Sekunden aufbauen und die Leiste ihre
      Zeilen bei jeder Aenderung neu schreibt -- deshalb steht der Aufruf auch in der Uhrenkette. */
   function ohneTipps(root){
-    var view = root.querySelector(".ulh-view");
+    /* Alle Schirme, nicht nur der des Hauptfensters: in den Nebenfenstern stehen dieselben
+       Bauteile mit denselben Attributen (die Antwortkarte traegt data-tip am Datum und an jedem
+       Markenzeichen). Ein Tooltip, der nur in einem der vier Fenster erscheint, waere der
+       auffaelligste Unterschied zwischen ihnen. */
+    [].slice.call(root.querySelectorAll(".ulh-view, .ulh-fen-view")).forEach(ohneTippsIn);
+  }
+  function ohneTippsIn(view){
     if (!view) return;
     /* data-explain gehoert dazu: daran haengt das Erklaerungs-Popover von core, und die Zeile mit
        den Datenpunkten unter jeder Antwort traegt es (am-evidence, data-explain="evidence"). Ohne
@@ -425,8 +682,14 @@
   function hellHalten(root){
     var alle = [root].concat([].slice.call(root.querySelectorAll(".up-root")));
     alle.forEach(function(el){
-      if (el.getAttribute("data-theme") !== "light") el.setAttribute("data-theme", "light");
-      if (el.getAttribute("data-isdark") !== "no") el.setAttribute("data-isdark", "no");
+      /* EIN Nebenfenster ist dunkel (die URL-Typen). Es traegt data-ulh-dunkel, und alles darin
+         bekommt hier das dunkle Thema statt des hellen -- derselbe Waechter, nur mit dem anderen
+         Wert. Ohne diese Abfrage haette der Waechter das Fenster im naechsten Takt wieder
+         aufgehellt, und der Doughnut haette dunkle Farben auf hellem Grund gezeichnet. */
+      var dunkel = el.closest && el.closest("[data-ulh-dunkel]");
+      var thema = dunkel ? "dark" : "light", ist = dunkel ? "yes" : "no";
+      if (el.getAttribute("data-theme") !== thema) el.setAttribute("data-theme", thema);
+      if (el.getAttribute("data-isdark") !== ist) el.setAttribute("data-isdark", ist);
     });
   }
 
@@ -569,6 +832,11 @@
         granularity: "month"
       });
     }
+
+    /* Die zwei Nebenfenster, die eigene Daten brauchen. Der Doughnut kommt aus core und braucht
+       nur einen Koerper; die Antwortkarte ist eine echte Komponente mit eigenem Setter. */
+    donutFuellenSpaeter();
+    antwortFuellen();
 
     if (window.renderTopCitations){
       window.renderTopCitations({
@@ -1347,8 +1615,14 @@
         Sektion, wenn die Seite darueber scrollt -- wohl aber der Rahmen selbst.
      4. Die Scrollposition der Fenster darueber, bis zu vier Ebenen hoch.
      3 und 4 koennen bei fremder Herkunft werfen; dann bleibt es bei 1 und 2. */
-  /* Halb so stark wie zuerst: 0.8 war ein Fuenftel kleiner, 0.9 ist ein Zehntel. */
-  var KLEIN_FAKTOR = 0.9;
+  /* Ein Fuenftel kleiner. Der Wert stand schon einmal hier, wurde dann auf 0.9 halbiert -- damals
+     war die Verkleinerung reine Bewegung, es gab nichts, was sie freilegen sollte. Jetzt gibt es
+     das: drei Nebenfenster stehen links und rechts neben dem Hauptfenster, und ihr Platz entsteht
+     ERST durch die Verkleinerung. Gerechnet fuer eine 1440px breite Sektion: bei 0.9 bleiben je
+     Seite 72px, das Fenster der URL-Typen (372px breit) waere zu 84 Prozent abgeschnitten; bei 0.8
+     sind es 144px, und mit den 60px Ueberdeckung sind rund zwei Drittel jedes Nebenfensters zu
+     sehen. Auf einer breiteren Sektion entsprechend mehr. */
+  var KLEIN_FAKTOR = 0.8;
 
   function scrollGroesse(root){
     if (root.__ulhScrollAn) return;
@@ -1388,7 +1662,10 @@
     }
 
     function anwenden(){
-      var rahmen = root.querySelector(".ulh-frame");
+      /* Die Buehne und nicht das Fenster: an ihr haengen auch die drei Nebenfenster, und die
+         muessen dieselbe Bewegung machen -- sonst wandern sie beim Scrollen relativ zum
+         Hauptfenster. */
+      var rahmen = root.querySelector(".ulh-buehne");
       if (!rahmen) return;
       var soll = bewegt();
       /* BEIDE Zustaende ausdruecklich, auch der grosse als scale(1) -- nicht der leere Wert. Eine
@@ -1409,7 +1686,7 @@
        und wie die Ruhelagen aussehen. Damit laesst sich auf einer fremden Seite in einer Zeile
        klaeren, ob die Erkennung ausfaellt oder etwas anderes -- ohne Rateschleife. */
     root.__ulhStand = function(){
-      var rahmen = root.querySelector(".ulh-frame");
+      var rahmen = root.querySelector(".ulh-buehne");
       var eltern = [];
       try {
         var w = window;
@@ -2223,6 +2500,7 @@
            Daten, und die Buehne muss den Ausschnitt danach immer noch fuellen. */
         mass(root);
         erscheinen(root);
+        teamsLaufen(root);
         szeneAnsetzen(root);
         miraAnsetzen(root);
         return;
