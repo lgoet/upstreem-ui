@@ -1030,6 +1030,9 @@
      Zahlen, die auseinanderlaufen. */
   --ulh-quell-luft: clamp(72px, 11vh, 132px);
   --ulh-quell-abstand: clamp(44px, 6vh, 76px);
+  /* Die Luft ueber und unter der Domainzeile -- EINE Zahl, weil beide gleich sein sollen:
+     16 plus 30 Prozent. */
+  --ulh-quell-kopfluft: 21px;
   padding: var(--ulh-quell-luft) 0 0;
 }
 /* Die zwei Striche hinter dem Kopf. Sie liegen genau auf den Schienen der Seite (.ulh-schienen,
@@ -1090,14 +1093,18 @@
 /* WEISS, und zwar als Zahl. --vc-bg ist die Grundfarbe der App, aber sie ist an .up-root
    gebunden, und dieser Kasten steht darueber: die Angabe war ungueltig, der Grund blieb
    durchsichtig, und durchgeschienen hat der graue Kasten darunter. Genau das war "die Komponente
-   ist grau". Dieselbe Falle steckte im Verlauf unten -- er verlief nach Nichts und blendete
-   deshalb nicht aus, die Seite hoerte einfach auf.
-   Das Polster oben ist so gross wie der Abstand zwischen Domainzeile und Karten (16px), damit
-   Oberkante, Ueberschrift und Karten gleichmaessig stehen. Links und rechts bleiben es 8px. */
+   ist grau".
+   KEINE feste Hoehe mehr: die Komponente steht ganz da, nichts wird abgeschnitten. Damit faellt
+   auch der Verlauf am unteren Rand weg -- er hatte nur die Aufgabe, einen Schnitt weich zu machen,
+   und ueber sichtbarem Inhalt wuerde er die letzte Kartenreihe aufhellen.
+   Was BLEIBT, ist der offene Fuss: kein Rahmen und kein Radius unten. Die Sektion ist die letzte
+   der Seite, und so laeuft die Flaeche unten aus, statt mit einer Kante zu enden.
+   Das Polster oben ist so gross wie der Abstand zwischen Domainzeile und Karten, damit Oberkante,
+   Ueberschrift und Karten gleichmaessig stehen. Links und rechts bleiben es 8px. */
 .ulh-quell-panel {
   border: 1px solid var(--ulh-border); border-bottom: 0;
   border-radius: 16px 16px 0 0; background: #ffffff;
-  padding: 16px 8px 0; height: 620px; overflow: hidden; position: relative;
+  padding: var(--ulh-quell-kopfluft) 8px 16px; overflow: hidden; position: relative;
 }
 /* Die Hoehe ist gemessen und nicht geschaetzt. In 1266px Breite baut die Komponente: 32 Kopfzeile,
    412 Chartkarte (mit der Legende der fuenf URLs), 299 Trichterkarte, 322 fuer die zwei Karten
@@ -1108,7 +1115,7 @@
    sitzen und nicht davon abhaengen, wie hoch die Komponente heute rechnet. */
 /* Die Zeile mit Logo und Domain: das Logo ist .up-logo-box aus core, also derselbe Kasten wie in
    jeder Tabelle der App. */
-.ulh-quell-dom { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.ulh-quell-dom { display: flex; align-items: center; gap: 12px; margin-bottom: var(--ulh-quell-kopfluft); }
 .ulh-quell-dom .up-logo-box { width: 34px; height: 34px; border-radius: 10px; }
 .ulh-quell-dom .up-logo-box img { width: 32px; height: 32px; border-radius: 9px; }
 .ulh-quell-domtxt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -1159,10 +1166,6 @@
 .ulh-quell-app .udd-legend { height: 0; margin-top: 0; overflow: hidden; }
 /* Der Anschnitt unten: eine weiche Kante statt einer harten Linie. Ohne sie endet die Seite wie
    abgeschnitten, mit ihr laeuft sie aus. */
-.ulh-quell-panel::after {
-  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 130px; pointer-events: none;
-  background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,.86) 58%, #ffffff 100%);
-}
 
 /* ---- Reihe drei: Band der Prompts und Bahnen der Modelle -------------------------------------
    Beide Vorschauen sind KEINE verkleinerten Bauteile der App, sondern eigene Bilder -- deshalb
@@ -1436,10 +1439,7 @@
   .ulh-feat-h { font-size: 32px; max-width: none; }
   .ulh-feat { padding-top: clamp(48px, 8vh, 80px); }
   /* Dieselbe Schwelle wie bei den Karten: was nebeneinander nicht mehr lesbar ist, geht
-     uebereinander. Kurve und Trichter je 400px breit waeren zwei Briefmarken.
-     Die Hoehe des Kastens bleibt: bei 620px steht die Kurve ganz da, und der Schnitt liegt im
-     Trichter genau unter seinen drei Zahlen. Mit 560px lag er MITTEN in den Zahlen -- halbe
-     Ziffern, gemessen bei 820px Fensterbreite. */
+     uebereinander. Kurve und Trichter je 400px breit waeren zwei Briefmarken. */
   .ulh-quell { --ulh-quell-luft: clamp(48px, 8vh, 80px); }
   .ulh-quell-app .udd-root { grid-template-columns: 1fr; }
 }
