@@ -423,29 +423,37 @@
      aufgeht, sagt "das ist alles" -- eine, die unten weich ausgeht, sagt "hier geht es weiter".
      Gemessen: 5 mal 72 plus 40 Kopfzeile sind 400px Inhalt in einem 370px hohen Ausschnitt. */
   var VIS_ZEILEN = [
-    { prompt: "Best AI visibility tools", themen: [0, 3], ment: "yes", sent: 79, rank: 1.1, markt: "US" },
-    { prompt: "AI search monitoring pricing", themen: [1], ment: "no", sent: null, rank: null, markt: "US" },
-    { prompt: "Alternativen zu Vantage", themen: [2, 4], ment: "yes", sent: 74, rank: 2.4, markt: "DE" },
-    { prompt: "Tools to track ChatGPT mentions", themen: [3], ment: "yes", sent: 71, rank: 3.2, markt: "UK" },
-    { prompt: "Which platform tracks Perplexity", themen: [0, 1], ment: "no", sent: null, rank: null, markt: "US" }
+    { prompt: "Best AI visibility tools",         vis: 38.9, rank: 1.1,  sent: 79,   themen: [0, 3], markt: "US" },
+    { prompt: "AI search monitoring pricing",     vis: null, rank: null, sent: null, themen: [1],    markt: "US" },
+    { prompt: "Alternativen zu Vantage",          vis: 24.6, rank: 2.4,  sent: 74,   themen: [2, 4], markt: "DE" },
+    { prompt: "Tools to track ChatGPT mentions",  vis: 18.2, rank: 3.2,  sent: 71,   themen: [3],    markt: "UK" },
+    { prompt: "Which platform tracks Perplexity", vis: null, rank: null, sent: null, themen: [0, 1], markt: "US" }
   ];
 
   function visZeilen(){
     var kern = window.UpstreemCore;
-    var kopf = ["Prompt", "Topics", "Mentioned", "Sentiment", "Rank", "Market"];
+    /* Die Reihenfolge der Spalten ist die der App: Prompt, Visibility, Rank, Sentiment, Topics,
+       Market. Visibility fehlte in der ersten Fassung ganz -- und sie ist die Zahl, um die es in
+       dieser Karte geht. Die Spalte "Mentioned" faellt dafuer weg: eine leere Visibility sagt
+       dasselbe, und sechs Spalten sind in dieser Breite die Grenze. */
+    var kopf = ["Prompt", "Visibility", "Rank", "Sentiment", "Topics", "Market"];
     /* Die Spalten stehen als --up-cols am Kasten: .up-row ist ein Raster und liest sie von dort.
        Ohne diese Angabe erbt die Zeile die Spalten der zuletzt definierten Tabelle. */
-    var html = '<div class="ulh-vis-tab" style="--up-cols: minmax(0,1.1fr) minmax(0,1.3fr) 96px 100px 82px 86px;">' +
+    /* Topics 260: zwei Chips brauchen zusammen bis zu 215px, dazu 28 Polster der Zelle. Bei 200
+       waren die Beschriftungen um 7 bis 32px abgeschnitten (gemessen). */
+    var html = '<div class="ulh-vis-tab" style="--up-cols: minmax(0,1fr) 104px 88px 104px minmax(0,260px) 92px;">' +
       '<div class="up-row up-thead">' + kopf.map(function(t){
         return '<div class="up-td">' + t + '</div>'; }).join("") + '</div>';
     html += VIS_ZEILEN.map(function(z, i){
+      var leer = '<span class="up-num is-empty">–</span>';
+      var sicht = z.vis == null ? leer
+        : '<span class="up-num">' + eine(z.vis) + '%</span>';
       var sent = z.sent == null
         ? '<span class="up-sent"><span class="up-sent-val is-empty">–</span></span>'
         : '<span class="up-sent"><span class="up-sent-dot" style="background:' +
           (kern ? kern.sentColor(z.sent) : "#999") + '"></span>' +
           '<span class="up-sent-val">' + z.sent + '</span></span>';
-      var rank = z.rank == null
-        ? '<span class="up-num is-empty">–</span>'
+      var rank = z.rank == null ? leer
         : '<span class="up-rank-group">' + (kern ? kern.HASH_ICON : "") +
           '<span class="up-num">' + z.rank.toFixed(1) + '</span></span>';
       /* Die Themenchips sind .up-topicchip aus core -- dieselben wie in der Prompts-Tabelle oben,
@@ -458,10 +466,10 @@
       }).join("");
       return '<div class="up-row' + (i === 1 ? " is-mitte" : "") + '">' +
         '<div class="up-td"><span class="ulh-vis-prompt">' + z.prompt + '</span></div>' +
-        '<div class="up-td"><span class="ulh-vis-themen">' + themen + '</span></div>' +
-        '<div class="up-td">' + (kern ? kern.mentCell(z.ment) : "") + '</div>' +
-        '<div class="up-td">' + sent + '</div>' +
+        '<div class="up-td">' + sicht + '</div>' +
         '<div class="up-td">' + rank + '</div>' +
+        '<div class="up-td">' + sent + '</div>' +
+        '<div class="up-td"><span class="ulh-vis-themen">' + themen + '</span></div>' +
         '<div class="up-td">' + (kern ? kern.marketChip(z.markt) : z.markt) + '</div>' +
       '</div>';
     }).join("");
@@ -480,11 +488,11 @@
     { dom: "reddit.com",    share: 14.1, delta: -1.3, seiten: 63, typ: "UGC_Community",  gesehen: "Aug 27, 2026", offen: true }
   ];
   var VIS_DOM_URLS = [
-    { pfad: "r/SaaS/comments/best-ai-visibility-tools", anteil: 24.6, typ: "forum" },
-    { pfad: "r/marketing/comments/how-we-track-chatgpt", anteil: 18.2, typ: "forum" },
-    { pfad: "r/SEO/comments/geo-vs-seo-2026", anteil: 12.9, typ: "forum" },
-    { pfad: "r/SaaS/comments/pricing-comparison-thread", anteil: 9.4, typ: "forum" },
-    { pfad: "r/bigseo/comments/ai-overviews-traffic", anteil: 7.1, typ: "forum" }
+    { pfad: "r/SaaS/comments/best-ai-visibility-tools", anteil: 24.6, typ: "forum", gesehen: "Aug 27, 2026" },
+    { pfad: "r/marketing/comments/how-we-track-chatgpt", anteil: 18.2, typ: "forum", gesehen: "Aug 26, 2026" },
+    { pfad: "r/SEO/comments/geo-vs-seo-2026", anteil: 12.9, typ: "forum", gesehen: "Aug 24, 2026" },
+    { pfad: "r/SaaS/comments/pricing-comparison-thread", anteil: 9.4, typ: "forum", gesehen: "Aug 22, 2026" },
+    { pfad: "r/bigseo/comments/ai-overviews-traffic", anteil: 7.1, typ: "forum", gesehen: "Aug 21, 2026" }
   ];
 
   function visDomains(){
@@ -499,7 +507,12 @@
         '<span class="tct-tag-dot" style="background:' + farbe + '"></span>' +
         '<span class="tct-tag-lbl">' + name + '</span></span>';
     }
-    var cols = "--up-cols: minmax(0,1fr) 126px 116px 118px;";
+    /* Type 172 statt 116, und das ist gerechnet: die laengste Pille ("UGC / Community") misst
+       innen 103px, dazu 20 Polster der Pille, 6 Punkt, 6 Abstand und 28 Polster der Zelle -- macht
+       163. Bei 152 fehlten 11px und die Beschriftung wurde abgeschnitten (gemessen: 90 sichtbar
+       von 98 noetigen). Die Domainspalte gibt den Platz her, sie hat mit Namen und Seitenknopf
+       immer noch 600px. */
+    var cols = "--up-cols: minmax(0,1fr) 118px 172px 116px;";
     var html = '<div class="ulh-vis-dom" style="' + cols + '">' +
       '<div class="up-row up-thead"><div class="up-td">Domain</div>' +
       '<div class="up-td">Share</div><div class="up-td">Type</div>' +
@@ -525,9 +538,12 @@
         '<div class="up-td up-td-lastseen"><span class="udt-date">' + d.gesehen + '</span></div>' +
       '</div>';
       if (!d.offen) return;
+      /* FUENF Spalten wie in der App: Seite, Anteil an der Domain, Typ, zuletzt gesehen und der
+         Pfeil. Das Raster dafuer bringt domains-table.css mit (--udt-subcols); mit drei Spalten
+         standen Kopf und Zeilen in einem Raster fuer fuenf, und zwei Spalten blieben leer. */
       html += '<div class="udt-subrows"><div class="udt-sub-inner">' +
         '<div class="udt-sub-head"><span>Page</span><span class="udt-sub-h-num">Domain Share</span>' +
-        '<span>Type</span></div>' +
+        '<span>Type</span><span>Last Seen</span><span></span></div>' +
         VIS_DOM_URLS.map(function(u){
           return '<div class="udt-subrow">' +
             '<span class="udt-sub-main">' +
@@ -537,6 +553,8 @@
             '</span>' +
             '<span class="udt-sub-share">' + eine(u.anteil) + '%</span>' +
             '<span class="udt-sub-type">' + tag(u.typ, "url") + '</span>' +
+            '<span class="udt-sub-date">' + u.gesehen + '</span>' +
+            '<span class="udt-sub-goto">' + (kern && kern.GOTO_SVG ? kern.GOTO_SVG : "") + '</span>' +
           '</div>';
         }).join("") +
       '</div></div>';
@@ -550,7 +568,7 @@
   var VIS_CHANCEN = [
     { h: "Get listed on the g2.com category page", dom: "g2.com", pot: 4, themen: [0] },
     { h: "No page of yours answers the pricing question", dom: "reddit.com", pot: 3, themen: [1] },
-    { h: "Your integrations page is cited but never quoted", dom: "kestrel.example", pot: 2, themen: [2] },
+    { h: "Your integrations page is cited, never quoted", dom: "kestrel.example", pot: 2, themen: [2] },
     { h: "Show up in the comparison videos", dom: "youtube.com", pot: 3, themen: [3] },
     { h: "Add your entry to the wikipedia category", dom: "wikipedia.org", pot: 2, themen: [4] }
   ];
@@ -679,7 +697,14 @@
            bleibt es an seiner Kurve, auch wenn sich Werte oder Breite aendern. */
         var hw = schild.offsetWidth / 2, hh = schild.offsetHeight;
         var bx = feld.clientWidth;
+        var punktX = x;
         x = Math.min(Math.max(x, hw + 3), bx - hw - 3);
+        /* Der Strich haengt nicht in der Mitte des Schildes, sondern UEBER DEM PUNKT. Am letzten
+           Punkt der Kurve wird das Schild nach links geschoben, damit es im Feld bleibt -- der
+           Strich blieb dabei in seiner Mitte stehen und zeigte 66px neben die Linie. Genau das war
+           die Meldung "die Linie vom own brand chip beruehrt die own line nicht". Der Versatz
+           steht als Zahl am Schild, die CSS setzt den Strich darauf. */
+        schild.style.setProperty("--ulh-strich-x", Math.round(punktX - (x - hw)) + "px");
         /* Das Schild steht UEBER seinem Punkt, nicht darauf: auf der Linie deckt es sie zu, und
            bei zwei Kurven, die sich naehern, deckt es auch die andere zu. Der Strich darunter
            (im CSS) fuehrt zum Punkt zurueck -- ohne ihn schwebt es. */
