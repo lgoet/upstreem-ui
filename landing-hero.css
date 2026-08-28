@@ -1005,6 +1005,83 @@
    Zeilen kommen mit 136 dazu. Gemessen: die vierte endet bei 389. */
 .ulh-vis-domains { --ulh-vs: 0.74; --ulh-vh: 396px; }
 .ulh-vis-chancen { --ulh-vs: 0.82; --ulh-vh: 330px; }
+/* ---- Reihe drei: Band der Prompts und Bahnen der Modelle -------------------------------------
+   Beide Vorschauen sind KEINE verkleinerten Bauteile der App, sondern eigene Bilder -- deshalb
+   --ulh-vs: 1. Was aus der App kommt, sind die Teile darin: der Marktchip (core.css .up-market)
+   und die Form der Karte (Radius, Rahmen, Schatten wie .ulh-vis-tab). */
+.ulh-vis-sprachen { --ulh-vs: 1; --ulh-vh: 330px; }
+.ulh-vis-modelle  { --ulh-vs: 1; --ulh-vh: 330px; }
+
+/* Das Band. overflow: hidden am Kasten, die Spur darin faehrt ueber transform -- eine Bewegung
+   ueber margin/top wuerde je Bild ein Layout ausloesen. */
+.ulh-lauf { position: relative; height: 100%; overflow: hidden; }
+.ulh-lauf-spur { display: flex; flex-direction: column; gap: 8px; will-change: transform; }
+/* Die Prompt-Karte: dieselbe Form wie die Tabellen in den anderen Vorschauen (12px Radius, der
+   Rahmen der Sektion, der flache Schatten), damit die drei Reihen eine Sprache sprechen.
+   .check_reinvention.py meldet hier eine Sentiment-Pille (.up-sent), weil border, border-radius,
+   gap und height zusammen vorkommen -- das ist ein Fehlalarm: eine 54px hohe Zeile mit Flagge,
+   Satz und Volumen ist keine 24px-Pille mit einem Wert, und sie liegt in einem Bild der
+   Landingpage, nicht in einer Tabelle der App. */
+.ulh-pk {
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 14px; height: 54px; box-sizing: border-box; flex: 0 0 auto;
+  background: var(--vc-bg); border: 1px solid var(--ulh-border); border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(11, 13, 24, .04);
+}
+.ulh-pk .up-market { flex: 0 0 auto; }
+.ulh-pk-t {
+  flex: 1 1 auto; min-width: 0;
+  font-size: 13.5px; font-weight: 400; line-height: 1.35; color: var(--ulh-text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* Das Volumen ist eine Nebenangabe: zweite Farbe, Ziffern in fester Breite, damit die Zahlen
+   untereinander stehen und nicht wandern. */
+.ulh-pk-v {
+  flex: 0 0 auto; font-size: 12.5px; font-weight: 500; color: var(--ulh-sub);
+  font-variant-numeric: tabular-nums;
+}
+/* Blende oben UND unten: ein Band, das an einer harten Kante endet, sieht aus wie eine
+   abgeschnittene Liste. Dieselbe Machart wie die Blende der anderen Vorschauen, nur zweimal --
+   und ohne den Weichzeichner: hier laeuft etwas, und Unscharfes in Bewegung flimmert. */
+.ulh-vis-sprachen::before, .ulh-vis-sprachen::after {
+  content: ""; position: absolute; left: 0; right: 0; height: 15%;
+  pointer-events: none; z-index: 3;
+}
+.ulh-vis-sprachen::before { top: 26px; background: linear-gradient(to bottom, #ffffff 12%, rgba(255,255,255,0) 100%); }
+.ulh-vis-sprachen::after  { bottom: 0;  background: linear-gradient(to top,    #ffffff 12%, rgba(255,255,255,0) 100%); }
+
+/* Die Bahnen. Der Kasten ist der Bezugsrahmen, jeder Ring liegt mittig darin und dreht als
+   Ganzes; die Zeichen drehen ihren Ring wieder heraus (landing-hero.js, orbTakt).
+   Die Ringe sind nur eine Linie -- sie sollen die Bahn andeuten, nicht Kreise zeichnen. */
+.ulh-orb { position: relative; height: 100%; }
+.ulh-orb-ring {
+  position: absolute; left: 50%; top: 50%; margin: 0; border-radius: 50%;
+  transform-origin: center center; translate: -50% -50%;
+  border: 1px solid var(--ulh-schiene);
+  will-change: transform;
+}
+.ulh-orb-chip {
+  position: absolute; width: 30px; height: 30px; border-radius: 9px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--vc-bg); border: 1px solid var(--ulh-border);
+  box-shadow: 0 2px 6px rgba(11, 13, 24, .06);
+  transform: translate(-50%, -50%);
+  box-sizing: border-box; padding: 4px;
+}
+.ulh-orb-chip img { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 5px; }
+/* Die Mitte: eine weisse Scheibe mit einem weichen Hof, damit die Marke vor den Bahnen liegt und
+   nicht zwischen ihnen. Groesser als die Chips -- sie ist der Bezugspunkt, um den alles laeuft. */
+.ulh-orb-mitte {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: 84px; height: 84px; border-radius: 50%; z-index: 2;
+  background: #ffffff; border: 1px solid var(--ulh-border);
+  box-shadow: 0 6px 22px rgba(11, 13, 24, .10), 0 0 0 10px rgba(255, 255, 255, .92);
+  display: flex; align-items: center; justify-content: center;
+}
+.ulh-orb-mitte img { width: 38px; height: 38px; display: block; }
+@media (prefers-reduced-motion: reduce){
+  .ulh-lauf-spur, .ulh-orb-ring { transform: none !important; }
+}
 .ulh-vis { height: var(--ulh-vh); }
 .ulh-vis-in { height: calc(var(--ulh-vh) / var(--ulh-vs)); overflow: hidden; }
 

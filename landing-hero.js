@@ -359,8 +359,66 @@
     { breit: 40, vis: "chancen",
       h: "Get a list of what to fix",
       p: "Upstreem turns the gaps into concrete tasks: a listing to get, a page to write, one to " +
-         "improve. Each with the numbers behind it." }
+         "improve. Each with the numbers behind it." },
+    /* Reihe drei, 50/50. Die zwei Karten beantworten die Fragen, die nach den ersten vier kommen:
+       "gilt das auch fuer meinen Markt?" und "gilt das fuer alle Modelle?". */
+    { breit: 50, vis: "sprachen",
+      h: "Monitor LLMs in any language, from any country",
+      p: "Track the questions your buyers actually ask, in their language and their market. " +
+         "Volumes and rankings are reported per market, not averaged into one number." },
+    { breit: 50, vis: "modelle",
+      h: "Daily AI response tracking across every model",
+      p: "Every prompt runs against each model, every day. You see where the answers agree, " +
+         "where they differ, and which model names you first." }
   ];
+
+  /* ---- Reihe drei, links: Prompts in fuenf Maerkten ----
+     Fuenfzehn Prompts, drei je Markt. Die Sprache ist die des Marktes und nicht Englisch mit
+     Flagge davor -- der Satz der Karte ("in any language, from any country") wird sonst von seinem
+     eigenen Bild widerlegt. Die Volumen sind Schaetzungen in der Groessenordnung, die die App
+     zeigt (est. volume, gerundet), und sie fallen mit der Spezialisierung der Frage: eine breite
+     Frage wird oefter gestellt als eine enge. */
+  var SPRACHEN = [
+    { m: "US", t: "best AI visibility tools for B2B SaaS",              v: "14.2k" },
+    { m: "DE", t: "welches Tool zeigt Markenerwähnungen in ChatGPT",    v: "4.8k" },
+    { m: "FR", t: "meilleur outil de suivi de visibilité IA",           v: "3.9k" },
+    { m: "GB", t: "how to track brand mentions in AI answers",          v: "9.6k" },
+    { m: "IT", t: "come monitorare il brand nelle risposte AI",         v: "2.4k" },
+    { m: "US", t: "how do LLMs decide which brands to recommend",       v: "8.1k" },
+    { m: "DE", t: "wie werde ich in KI-Antworten sichtbar",             v: "3.6k" },
+    { m: "FR", t: "comment être cité par ChatGPT",                      v: "2.9k" },
+    { m: "GB", t: "AI search monitoring pricing compared",              v: "5.2k" },
+    { m: "IT", t: "strumenti per la visibilità AI a confronto",         v: "1.8k" },
+    { m: "US", t: "which sources does ChatGPT cite for software",       v: "6.4k" },
+    { m: "DE", t: "KI-Sichtbarkeit messen Agentur oder Tool",           v: "2.1k" },
+    { m: "FR", t: "quelles sources citent les modèles IA",              v: "1.6k" },
+    { m: "GB", t: "share of voice across AI assistants",                v: "4.1k" },
+    { m: "IT", t: "quali fonti cita Perplexity in Italia",              v: "1.2k" }
+  ];
+
+  /* ---- Reihe drei, rechts: die Modelle auf den Umlaufbahnen ----
+     Die Zeichen sind die echten Favicons der Anbieter, ueber denselben Weg wie die Quellen
+     (quellzeichen) -- ein graues Kaestchen mit Anfangsbuchstaben waere hier dasselbe Raten.
+     Die Verteilung auf die drei Bahnen: innen zwei, mitte drei, aussen drei. Innen weniger, weil
+     dort der Umfang kleiner ist und drei Zeichen sich sonst beruehren. */
+  var ORBIT = [
+    { bahn: 0, d: "openai.com",              n: "ChatGPT" },
+    { bahn: 0, d: "claude.ai",               n: "Claude" },
+    { bahn: 1, d: "gemini.google.com",       n: "Gemini" },
+    { bahn: 1, d: "perplexity.ai",           n: "Perplexity" },
+    { bahn: 1, d: "copilot.microsoft.com",   n: "Copilot" },
+    { bahn: 2, d: "x.ai",                    n: "Grok" },
+    { bahn: 2, d: "mistral.ai",              n: "Mistral" },
+    { bahn: 2, d: "deepseek.com",            n: "DeepSeek" }
+  ];
+  /* Die Marke in der Mitte. Dieselbe Datei, die die App als Favicon im hellen Thema fuehrt --
+     dunkle Tinte auf durchsichtigem Grund, also genau richtig auf der weissen Scheibe. */
+  var ORBIT_MARKE = "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/" +
+    "BRANDSTYLES/upstreem-mark-square-1f1f1f.svg";
+  /* Radien der drei Bahnen und die Zahl der Zeichen darauf. Gemessen am Kasten der Vorschau
+     (330px hoch): die aeusserste Bahn endet 25px vor der Kante, damit ein Zeichen darauf nicht
+     angeschnitten wird. */
+  var ORBIT_R = [72, 111, 150];
 
   var MERKMAL_CHIP = "Platform";
   var MERKMAL_H = "What Upstreem shows you";
@@ -656,7 +714,32 @@
     if (art === "zeilen")  return visZeilen();
     if (art === "domains") return visDomains();
     if (art === "chancen") return visChancen();
+    if (art === "sprachen") return visSprachen();
+    if (art === "modelle")  return visModelle();
     return "";
+  }
+
+  /* ---- Vorschau: das Endlosband der Prompts ----
+     Die Huelle ist statisch, die Zeilen kommen beim Fuellen -- sie brauchen UC.marketChip fuer
+     Flagge und Kuerzel (core.css: .up-market/.up-flag/.up-market-code), und die Liste wird dort
+     ausserdem VERDOPPELT: nur mit zwei gleichen Haelften kann das Band ohne Sprung umlaufen.
+     Der Kasten traegt oben UND unten eine Blende -- ein Band, das an einer harten Kante endet,
+     sieht aus wie eine abgeschnittene Liste und nicht wie ein Lauf. */
+  function visSprachen(){
+    return '<div class="ulh-lauf" data-ulh-lauf>' +
+             '<div class="ulh-lauf-spur" data-ulh-spur></div>' +
+           '</div>';
+  }
+  /* ---- Vorschau: die Modelle auf ihren Bahnen ----
+     Drei Kreise, darauf die Zeichen der Modelle, in der Mitte die Marke. Die Bahnen drehen, die
+     Zeichen NICHT -- jedes dreht seinen Kreis wieder heraus (siehe orbTakt), sonst stehen die
+     Logos auf dem Kopf. Aufgebaut wird auch das beim Fuellen: die Lage jedes Zeichens ist
+     gerechnet (Winkel), und gerechnete Werte gehoeren nicht in eine Zeichenkette. */
+  function visModelle(){
+    return '<div class="ulh-orb" data-ulh-orb>' +
+             '<div class="ulh-orb-mitte"><img alt="" referrerpolicy="no-referrer" src="' +
+               ORBIT_MARKE + '"/></div>' +
+           '</div>';
   }
 
   function merkmalKarte(m){
@@ -677,6 +760,158 @@
           visInhalt(m.vis) + '</div>' +
       '</div>' +
     '</article>';
+  }
+
+  /* ---- Fuellung des Bandes ---- */
+  function visSprachenFuellen(root){
+    var kern = window.UpstreemCore;
+    var spur = root.querySelector("[data-ulh-spur]");
+    if (!spur || spur.__ulhVoll) return false;
+    spur.__ulhVoll = true;
+    var eine = SPRACHEN.map(function(p){
+      /* marketChip aus core statt einer eigenen Flagge: Groesse, Radius, Grund und die Schrift des
+         Kuerzels sollen die der App sein, und sie stehen dort an einem Stueck. */
+      var markt = (kern && kern.marketChip) ? kern.marketChip(p.m) : "";
+      return '<div class="ulh-pk">' +
+               markt +
+               '<span class="ulh-pk-t">' + p.t + '</span>' +
+               '<span class="ulh-pk-v">' + p.v + '</span>' +
+             '</div>';
+    }).join("");
+    /* Zweimal dieselbe Liste: das Band faehrt genau eine Haelfte weit und setzt dann zurueck --
+       an dieser Stelle steht dasselbe Bild, also sieht man den Sprung nicht. */
+    spur.innerHTML = eine + eine;
+    return true;
+  }
+
+  /* ---- Fuellung der Bahnen ---- */
+  function visModelleFuellen(root){
+    var kasten = root.querySelector("[data-ulh-orb]");
+    if (!kasten || kasten.__ulhVoll) return false;
+    kasten.__ulhVoll = true;
+    var bahnen = [[], [], []];
+    ORBIT.forEach(function(m){ bahnen[m.bahn].push(m); });
+    kasten.__ulhBahnen = bahnen.map(function(liste, i){
+      var r = ORBIT_R[i];
+      var ring = document.createElement("div");
+      ring.className = "ulh-orb-ring";
+      ring.style.width = ring.style.height = (r * 2) + "px";
+      liste.forEach(function(m, j){
+        /* Gleichmaessig verteilt und je Bahn versetzt gestartet: sonst stehen die Zeichen der drei
+           Bahnen in einer Linie, und das liest sich als Speiche statt als Umlauf. */
+        var w = (j / liste.length) * Math.PI * 2 + (i * 0.7);
+        var chip = document.createElement("span");
+        chip.className = "ulh-orb-chip";
+        chip.style.left = (r + Math.cos(w) * r) + "px";
+        chip.style.top  = (r + Math.sin(w) * r) + "px";
+        chip.innerHTML = '<img alt="' + m.n + '" referrerpolicy="no-referrer" src="' +
+          quellzeichen(m.d) + '"/>';
+        ring.appendChild(chip);
+      });
+      kasten.appendChild(ring);
+      return { el: ring, chips: [].slice.call(ring.querySelectorAll(".ulh-orb-chip")) };
+    });
+    return true;
+  }
+
+  /* ---- EIN Takt fuer beide Bilder ----
+     Warum nicht als CSS-Animation: die Geschwindigkeit soll beim Ueberfahren weich fallen und
+     danach weich zurueckkommen. Eine laufende CSS-Animation nimmt eine neue Dauer nicht weich an --
+     sie rechnet die verstrichene Zeit auf den neuen Takt um, und das Bild springt. Hier ist die
+     Geschwindigkeit ein Wert, der sich einem Ziel naehert; die Position wird aus ihr aufaddiert und
+     kann darum nie springen.
+     Ein Takt und nicht zwei: zwei rAF-Schleifen auf derselben Seite sind zwei Weckrufe je Bild.
+     Er laeuft nur, solange eines der beiden Bilder im Blick ist -- ausserhalb schlaeft er.
+
+     TEMPO_* sind Pixel bzw. Grad je Sekunde. LANGSAM ist ein Viertel: weniger sieht aus wie
+     angehalten, mehr merkt man beim Ueberfahren nicht. */
+  var TEMPO_BAND = 26, TEMPO_BAHN = 5.5, LANGSAM = 0.25;
+  var ANNAEHERUNG = 240;      /* ms bis auf ein Drittel des Unterschieds -- das ist das ease */
+
+  function ulhTakt(root){
+    if (root.__ulhTakt) return;
+    root.__ulhTakt = true;
+    var lauf = root.querySelector("[data-ulh-lauf]");
+    var orb  = root.querySelector("[data-ulh-orb]");
+    if (!lauf && !orb) return;
+    /* Bei "weniger Bewegung" bleibt alles stehen -- ein Endlosband ist genau das, was diese
+       Einstellung meint. */
+    try { if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return; }
+    catch (e){}
+
+    var ziel = { band: 1, bahn: 1 }, tempo = { band: 1, bahn: 1 };
+    var y = 0, grad = 0, vorher = 0, imBlick = true;
+
+    function hover(el, welche){
+      if (!el) return;
+      var karte = el.closest ? el.closest(".ulh-card") : null;
+      var auf = karte || el;
+      auf.addEventListener("mouseenter", function(){ ziel[welche] = LANGSAM; });
+      auf.addEventListener("mouseleave", function(){ ziel[welche] = 1; });
+    }
+    hover(lauf, "band");
+    hover(orb, "bahn");
+
+    /* Nur laufen, wenn man es sehen kann. Ohne IntersectionObserver laeuft es immer -- das ist
+       die alte Lage und nicht schlechter als vorher. */
+    if (window.IntersectionObserver){
+      var beo = new IntersectionObserver(function(e){
+        imBlick = e.some(function(x){ return x.isIntersecting; });
+      }, { rootMargin: "120px" });
+      if (lauf) beo.observe(lauf);
+      if (orb) beo.observe(orb);
+    }
+
+    /* Eine Handhabe zum NACHSEHEN und zum MESSEN, wie __ulhStand: sie gibt den Stand zurueck und
+       laesst den Takt von Hand weiterlaufen. In einem verdeckten Tab feuert requestAnimationFrame
+       nicht -- ohne diesen Weg waere die Bewegung hier nicht pruefbar, und "sieht richtig aus" ist
+       keine Messung. */
+    root.__ulhTakt3 = {
+      stand: function(){ return { tempo: { band: tempo.band, bahn: tempo.bahn },
+                                  ziel: { band: ziel.band, bahn: ziel.bahn },
+                                  y: y, grad: grad, imBlick: imBlick }; },
+      ziel: function(welche, wert){ ziel[welche] = wert; },
+      schritt: function(ms){ rechnen(ms / 1000); }
+    };
+
+    function rechnen(dt){
+      if (imBlick && dt){
+        var k = 1 - Math.exp(-(dt * 1000) / ANNAEHERUNG);
+        tempo.band += (ziel.band - tempo.band) * k;
+        tempo.bahn += (ziel.bahn - tempo.bahn) * k;
+        if (lauf){
+          var spur = lauf.querySelector("[data-ulh-spur]");
+          var halb = spur ? spur.scrollHeight / 2 : 0;
+          if (halb > 0){
+            y -= TEMPO_BAND * tempo.band * dt;
+            if (y <= -halb) y += halb;                                  /* eine Haelfte weit, dann zurueck */
+            spur.style.transform = "translate3d(0," + y.toFixed(2) + "px,0)";
+          }
+        }
+        if (orb && orb.__ulhBahnen){
+          grad += TEMPO_BAHN * tempo.bahn * dt;
+          orb.__ulhBahnen.forEach(function(b, i){
+            /* Die mittlere Bahn laeuft gegen die anderen und die aeussere langsamer: drei Kreise,
+               die im Gleichschritt drehen, sehen aus wie EIN Bild, das sich dreht. */
+            var richtung = (i === 1) ? -1 : 1;
+            var eigen = grad * richtung * (i === 2 ? 0.72 : 1);
+            b.el.style.transform = "rotate(" + eigen.toFixed(2) + "deg)";
+            for (var q = 0; q < b.chips.length; q++){
+              b.chips[q].style.transform = "translate(-50%,-50%) rotate(" + (-eigen).toFixed(2) + "deg)";
+            }
+          });
+        }
+      }
+    }
+
+    function schritt(jetzt){
+      var dt = vorher ? Math.min(0.05, (jetzt - vorher) / 1000) : 0;   /* 50ms Deckel: nach einem
+                                                                          verdeckten Tab nicht springen */
+      vorher = jetzt;
+      rechnen(dt);
+      requestAnimationFrame(schritt);
+    }
+    requestAnimationFrame(schritt);
   }
 
   /* Die zwei Kurven brauchen Chart.js und werden deshalb erst beim Fuellen gezeichnet. */
@@ -824,6 +1059,9 @@
           '<div class="ulh-cards">' +
             '<div class="ulh-cards-row">' + merkmalKarte(MERKMALE[0]) + merkmalKarte(MERKMALE[1]) + '</div>' +
             '<div class="ulh-cards-row is-unten">' + merkmalKarte(MERKMALE[2]) + merkmalKarte(MERKMALE[3]) + '</div>' +
+            /* Die dritte Reihe teilt sich 50/50 -- deshalb steht der Anteil an der Karte und nicht
+               an der Reihe (--ulh-w, siehe merkmalKarte). */
+            '<div class="ulh-cards-row">' + merkmalKarte(MERKMALE[4]) + merkmalKarte(MERKMALE[5]) + '</div>' +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -1428,7 +1666,13 @@
     antwortFuellen();
     /* Die Kurven im Abschnitt darunter. Die drei anderen Vorschauen sind statisch. */
     (function(){ var w = document.querySelector(".ulh-root");
-      if (w) visLinieFuellen(w); })();
+      if (!w) return;
+      visLinieFuellen(w);
+      /* Die dritte Reihe: Band und Bahnen werden gebaut und danach in Bewegung gesetzt. */
+      visSprachenFuellen(w);
+      visModelleFuellen(w);
+      ulhTakt(w);
+    })();
 
     if (window.renderTopCitations){
       window.renderTopCitations({

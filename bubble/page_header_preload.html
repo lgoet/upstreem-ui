@@ -248,7 +248,6 @@
      Der Vergleich laeuft ueber den Namen OHNE .min: core.js und core.min.js sind dieselbe Datei. */
   function doppelWaechter(){
     if (!window.MutationObserver) return;
-    var gemeldet = 0;
     /* Ein Knoten wird geprueft UND in ihn hinein gesehen. Bubble haengt ganze Teilbaeume auf
        einmal ein (Stack: cleanChildren / insertExpression) -- ein script als KIND eines Containers
        steht dann nicht in addedNodes, sondern darin. Genau so ist topics-manager.js durchgekommen:
@@ -263,13 +262,11 @@
           var name = u.slice(u.lastIndexOf("/") + 1).replace(".min.", ".");
           if (geladen[name]){
             if (n.parentNode) n.parentNode.removeChild(n);
-            if (!gemeldet && window.console){
-              gemeldet = 1;
-              console.warn("upstreem: doppelt eingehaengte Dateien werden entfernt (zuerst " + name +
-                "). Das Element bringt einen aelteren Loader mit, der die gemeinsame Liste nicht kennt " +
-                "-- funktioniert so, laesst sich aber sauberer loesen, indem der Loader in diesem " +
-                "Element ausgetauscht wird.");
-            }
+            /* STILL. Der Zustand ist normal und ohne Handarbeit an den betroffenen Elementen nicht
+               abstellbar -- eine Meldung bei jedem Seitenaufbau waere damit reine Debug-Ausgabe in
+               einer ausgelieferten App. Die Namen liegen auf einer Handhabe: window.__upDoppel in
+               der Konsole zeigt, welche Elemente ihre Dateien doppelt anfordern. */
+            (window.__upDoppel || (window.__upDoppel = [])).push(name);
             return;
           }
         }
