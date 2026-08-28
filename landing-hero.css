@@ -695,10 +695,20 @@
 .ulh-app .up-row:hover .upt-check:not(.is-checked) { border-color: var(--vc-border); }
 .ulh-app .upt-check:hover:not(.is-checked) { border-color: var(--vc-third); }
 
-/* Die Eintraege der Seitenleiste 2px flacher und die vier Gruppen 2px enger beieinander -- im
-   Fenster steht die Leiste ganz, und die zwei Pixel je Zeile sind am Ende eine Zeile mehr Platz. */
+/* Die Eintraege der Seitenleiste 2px flacher und die vier Gruppen enger beieinander -- im
+   Fenster steht die Leiste ganz, und die zwei Pixel je Zeile sind am Ende eine Zeile mehr Platz.
+
+   Die zweite Runde kam aus einer Messung: der Inhalt der Leiste war 594px hoch, sichtbar waren
+   561 -- der letzte Pin (kestrel.example) lag bei 560 bis 594 und damit vollstaendig unter der
+   Kante. Gescrollt wird hier nicht, also war er schlicht nicht da. Das war der Bericht "bei
+   Pinned fehlt die Domain".
+   Die 33 fehlenden Pixel kommen aus drei Stellen, keine davon aus der Zeilenhoehe: der Abstand
+   ueber der Liste (24 -> 12), der ueber den Schnellaktionen (24 -> 16) und die drei Abstaende
+   zwischen den vier Gruppen (30 -> 24). Zusammen 38px, also 5 Reserve. */
 .ulh-app .usn-item { height: 34px; }
-.ulh-app .usn-block + .usn-block { margin-top: 30px; }
+.ulh-app .usn-block + .usn-block { margin-top: 24px; }
+.ulh-app .usn-nav { margin-top: 12px; }
+.ulh-app .usn-qa:not(:empty) { margin-top: 16px; }
 
 /* Die ausgewaehlte Zeile in der Seitenleiste etwas heller: 7 Prozent Textfarbe waren im
    Schaustueck neben dem fast weissen Grund ein deutlicher Kasten. */
@@ -742,10 +752,14 @@
 .ulh-app .am-send { transition: transform 260ms cubic-bezier(.4, 0, .2, 1), background 260ms cubic-bezier(.4, 0, .2, 1); }
 .ulh-app .am-send.is-klick { transform: scale(.9); background: #585855; }
 
-/* Das Eingabefeld faehrt beim Abschicken nach unten UND blendet dabei aus -- aber erst auf der
-   zweiten Haelfte des Weges. Verzoegerung 150ms auf eine Fahrt von 300: die erste Haelfte sieht
-   man ganz, unten angekommen ist es weg. */
-.ulh-app .am-composer-area { transition: opacity 160ms ease 150ms; }
+/* Das Eingabefeld faehrt beim Abschicken nach unten -- die Fahrt selbst ist Miras eigene (FLIP,
+   200ms, ask-mira.js: setHasMessages). Gemessen: die Strecke betraegt 289px, von 400 auf 689.
+   Was hier steht, ist NUR das spaetere Ausblenden. Vorher lag es mit 95ms Verzoegerung mitten auf
+   der Fahrt -- das Feld war bei 205ms weg, also bevor es unten ankam, und genau deshalb war die
+   Bewegung nicht zu sehen ("ich sehe immernoch nicht, dass das Inputfeld nach unten slidet").
+   Jetzt bleibt es die ganze Fahrt und die Ladezeit ueber stehen, wie in der App, und geht erst
+   kurz vor der Antwort weg -- die braucht seine 125px. Den Zeitpunkt setzt landing-hero.js. */
+.ulh-app .am-composer-area { transition: opacity 260ms ease; }
 
 /* Die Zeilen in Miras Antworttabelle kommen einzeln herein, wie die der Prompts-Tabelle.
    --ulh-i setzt landing-hero.js an jeder Zeile, sobald die Antwort steht. */
@@ -755,6 +769,21 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .ulh-root .ulh-mira.is-zeilen .am-msg table tbody tr { animation: none; }
+}
+
+/* ---------- Der Auftritt des Dashboards, ab der zweiten Runde ----------
+   Beim ersten Mal steigt das Dashboard mit dem Fenster herauf (is-entering am Root, vier Stufen).
+   Im Kreislauf danach kommt es wie jede andere Seite zurueck -- und dann soll es sich genauso
+   aufbauen wie die drei Seiten nach ihm: Kopf, Chart, Zitatteil, nacheinander. Die Seite selbst
+   steigt dabei NICHT, sonst laegen zwei Bewegungen uebereinander. */
+.ulh-root .ulh-main.is-kommt { animation: none; }
+.ulh-root .ulh-main.is-kommt .dph-root { animation: ulhRise 520ms var(--ulh-ease) backwards; }
+.ulh-root .ulh-main.is-kommt .vot-root { animation: ulhRise 520ms var(--ulh-ease) 140ms backwards; }
+.ulh-root .ulh-main.is-kommt .tcd-root { animation: ulhRise 520ms var(--ulh-ease) 300ms backwards; }
+@media (prefers-reduced-motion: reduce) {
+  .ulh-root .ulh-main.is-kommt .dph-root,
+  .ulh-root .ulh-main.is-kommt .vot-root,
+  .ulh-root .ulh-main.is-kommt .tcd-root { animation: none; }
 }
 
 /* ---------- Der Auftritt des Opportunities-Bretts ----------
@@ -770,11 +799,59 @@
 .ulh-root .ulh-chancen.is-kommt .uo-col:nth-child(2) { animation-delay: 400ms; }
 .ulh-root .ulh-chancen.is-kommt .uo-col:nth-child(3) { animation-delay: 500ms; }
 .ulh-root .ulh-chancen.is-kommt .uo-col:nth-child(4) { animation-delay: 600ms; }
+/* Und dann die Karten, eine nach der anderen. Dieselbe Falle wie bei der Prompts-Tabelle: eine
+   Karte, die INNERHALB einer Spalte auftritt, die selbst noch aufblendet, tritt nicht auf -- man
+   sieht nur die Spalte kommen. Also bleiben die Karten versteckt, solange die Spalten laufen
+   (visibility, nicht opacity: die Spalte behaelt ihre Hoehe und springt nicht), und fallen danach
+   einzeln ein. Der Zaehler --ulh-i steht an der Karte und kommt aus landing-hero.js, quer ueber
+   alle Spalten in Lesereihenfolge. */
+.ulh-root .ulh-chancen.is-kommt .uo-card { visibility: hidden; }
+.ulh-root .ulh-chancen.is-karten .uo-card {
+  visibility: visible;
+  animation: ulhRise 420ms var(--ulh-ease) backwards;
+  animation-delay: calc(var(--ulh-i, 0) * 90ms);
+}
 @media (prefers-reduced-motion: reduce) {
   .ulh-root .ulh-chancen.is-kommt .up-ph-root,
   .ulh-root .ulh-chancen.is-kommt .uo-top,
-  .ulh-root .ulh-chancen.is-kommt .uo-col { animation: none; }
+  .ulh-root .ulh-chancen.is-kommt .uo-col,
+  .ulh-root .ulh-chancen.is-karten .uo-card { animation: none; }
+  .ulh-root .ulh-chancen.is-kommt .uo-card { visibility: visible; }
 }
+
+/* Eine Karte wird angefasst, bevor sie wandert. Es gibt keinen Zeiger im Bild, also traegt eine
+   Klasse den Hover -- die beiden Werte sind wortgleich die von .uo-card:hover in
+   opportunities.css. Nachgebaut ist hier nichts: dort steht der Zustand fuer eine echte Maus,
+   hier wird derselbe Zustand gesetzt, weil im Schaustueck niemand zeigen kann.
+   Der Druck ist eine zweite, eigene Bewegung: drei Prozent kleiner und zurueck, mit derselben
+   ease-in-out-Kurve wie alles andere im Fenster. transform steht deshalb in der Uebergangsliste
+   der Karte -- die Liste aus opportunities.css wird dabei vollstaendig mitgefuehrt, sonst faellt
+   der weiche Farbwechsel des Hovers weg. */
+.ulh-app .uo-card {
+  transition: border-color 140ms ease, background 140ms ease,
+              transform 170ms var(--ulh-ease);
+}
+.ulh-app .uo-card.ulh-fass { border-color: var(--vc-hover-border); background: var(--vt-row-hover); }
+.ulh-app .uo-card.ulh-druck { transform: scale(0.97); }
+
+/* ---------- Die Karten im Fenster: flacher ----------
+   Gemessen: eine Karte war 285px hoch, ueber dem Brett stehen 261px Kopf und Werkzeugleiste, und
+   im Fenster bleiben 814. Drei Karten in Pending brauchten damit 879 von 553 verfuegbaren -- die
+   dritte lag ganz unter der Kante, die zweite zur Haelfte.
+   Gekuerzt wird an den Abstaenden und an einer Zeile, die im Schaustueck nichts sagt (das
+   Anlagedatum in der Fusszeile) -- nicht an der Schrift und nicht an den Themen: die sollen
+   lesbar bleiben. Zusammen 74px je Karte, dazu einzeilige Begruendungen in landing-hero.js.
+   Die dritte Karte bleibt trotzdem angeschnitten, und das ist so gewollt: ein Brett, dessen
+   unterste Karte am Rand endet, sagt "hier geht es weiter" -- eines, das genau aufgeht, sagt
+   "das ist alles". */
+.ulh-app .uo-card { padding: 13px; }
+.ulh-app .uo-card-top { margin-bottom: 10px; }
+.ulh-app .uo-card-reason { margin-top: 6px; }
+.ulh-app .uo-source { margin-top: 12px; }
+.ulh-app .uo-tags { margin-top: 10px; }
+/* Das Anlagedatum: im Bild steht ueberall derselbe Tag (die Daten entstehen beim Laden), es
+   traegt also nichts bei und kostet 32px je Karte. */
+.ulh-app .uo-card-foot { display: none; }
 
 /* Die Schublade bleibt IM Fenster: opportunities.js haengt Vorhang und Schublade bei
    data-portal="inline" in den Root statt in den <body>, und ihr position: fixed bezieht sich damit
@@ -836,10 +913,14 @@
 .ulh-app .am-msg .am-bubble > h4 { margin: 10px 0 4px; }
 .ulh-app .am-msg .am-bubble > ul { margin: 6px 0 8px; }
 .ulh-app .am-msg .am-bubble > .am-evidence { margin-top: 10px; }
-/* Die Knopfreihe unter jeder Nachricht (Kopieren, Export, Daumen) faellt weg. Sie steht mit
-   opacity 0 im FLUSS und kostet damit 28px je Nachricht, also 56 von den 95, die zu viel waren --
-   und benutzen kann sie hier niemand: die Buehne schluckt jeden Klick. */
-.ulh-app .am-msg-actions { display: none; }
+/* Die Knopfreihe unter der ANTWORT bleibt stehen (Export, Kopieren, Daumen) -- sie gehoert zum
+   Bild einer fertigen Antwort, und der Nutzer hat sie ausdruecklich verlangt. Hier stand vorher
+   display:none fuer beide Nachrichten, um 56px zu sparen; die Regel weiter oben, die die Reihe
+   dauerhaft einblendet, konnte dagegen nichts ausrichten -- gleiche Spezifitaet, spaeter im
+   Stylesheet. Das war der Grund, warum die Knoepfe nicht zu sehen waren.
+   Unter der FRAGE faellt sie weiter weg: dort haengen dieselben 28px, und unter der eigenen
+   Frage steht in der App auch nichts, was man exportieren wollte. */
+.ulh-app .am-msg.is-user .am-msg-actions { display: none; }
 /* Die Zellen der Antworttabelle 9 -> 6px hoch gepolstert. Fuenf Zeilen mal zwei Seiten sind 30px,
    und die Tabelle bleibt lesbar: 12px seitlich stehen unveraendert. */
 .ulh-app .am-msg table td,

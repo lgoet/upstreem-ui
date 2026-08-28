@@ -475,6 +475,13 @@
       /* Beim Wechsel zwischen wide und mini muessen die Gruppenhoehen neu gesetzt werden --
          im Mini-Zustand ohne Grenze, danach wieder mit der gemessenen. */
       if (typeof hoehenSetzen === "function") setTimeout(hoehenSetzen, 0);
+      /* Im Mini-Zustand sind die Zeilen schmaler und stehen hoeher (keine Ueberschriften): die
+         Marke muss beides uebernehmen. Zweimal, wie beim Zuklappen -- die Breite der Leiste
+         faehrt 200ms. */
+      if (typeof markeSetzen === "function"){
+        setTimeout(function(){ markeSetzen(true); }, 0);
+        setTimeout(function(){ markeSetzen(true); }, 260);
+      }
       if (typeof tipsSchalten === "function") tipsSchalten();
       elToggle.hidden = hint;
       elToggle.setAttribute("aria-label", mini ? "Expand sidebar" : "Collapse sidebar");
@@ -672,9 +679,76 @@
           '<div class="usn-block-body" data-body>' + inhalt + '</div>' +
         '</div>';
       }).join("");
+      /* Die Marke wird NICHT mit innerHTML neu erzeugt: dasselbe Element wird wieder eingehaengt,
+         behaelt seine Inline-Lage und faehrt von dort zur neuen Zeile. Ein frisches Element haette
+         keine Ausgangslage und wuerde springen. Als erstes Kind, damit sie hinter den Zeilen liegt
+         (die Reihenfolge entscheidet, z-index sichert es zusaetzlich). */
+      if (!elMark){ elMark = document.createElement("span"); elMark.className = "usn-mark"; }
+      elNav.insertBefore(elMark, elNav.firstChild);
       renderChips();
       hoehenSetzen();
+      /* Beim ersten Mal OHNE Fahrt: eine Marke, die beim Aufbau der Seite von oben links
+         herangleitet, behauptet einen Wechsel, den es nicht gab. */
+      markeSetzen(!markeStand);
+      markeBeobachten();
       if (typeof tipsSchalten === "function") tipsSchalten();
+    }
+    /* ---- Die gleitende Marke ----
+       Gemessen statt gerechnet, und zwar jedes Mal: die Zeilen sind unterschiedlich hoch, ihre
+       Abstaende haengen an der Gruppe, und im Mini-Zustand sind sie schmaler. Eine Rechnung aus
+       Zeilenzahl und Hoehe waere bei der ersten Aenderung falsch.
+       offsetTop/offsetLeft und nicht getBoundingClientRect: die Leiste steht auf Seiten, die als
+       Ganzes skaliert sein koennen (die Landingpage tut es), und das Rechteck liefert dort die
+       verkleinerten Masse. Bezugsrahmen ist .usn-nav (position: relative in sidebar.css), also
+       zaehlt die Scrollposition der Liste nicht mit. */
+    var elMark = null, markeStand = false, markeRo = null, markeSchriftHaengt = false;
+    function markeSetzen(sofort){
+      if (!elMark || !elMark.parentNode) return;
+      var an = elNav.querySelector(".usn-item.is-active");
+      if (!an || !an.offsetHeight){ elMark.classList.remove("is-bereit"); return; }
+      /* Zugeklappte Gruppe: die ZEILE wird von der Gruppe beschnitten (overflow: hidden am
+         Gruppenkoerper), die Marke NICHT -- sie liegt daneben in der Liste. Ohne diese Abfrage
+         blieb der helle Balken an der Stelle stehen, an der die Zeile gerade verschwunden ist.
+         Ihre offsetHeight bleibt dabei 36: Beschneiden aendert die Layoutgroesse nicht, deshalb
+         faengt die Zeile darueber nichts ab. Ausgeblendet und nicht weggeraeumt -- die Marke
+         faehrt mit derselben Zeit aus, in der die Gruppe zufaehrt. */
+      var gruppe = an.closest ? an.closest(".usn-block") : null;
+      if (gruppe && gruppe.classList.contains("is-closed")){
+        elMark.classList.remove("is-bereit"); return;
+      }
+      if (sofort) elMark.style.transition = "none";
+      elMark.style.left = an.offsetLeft + "px";
+      elMark.style.width = an.offsetWidth + "px";
+      elMark.style.height = an.offsetHeight + "px";
+      elMark.style.transform = "translateY(" + an.offsetTop + "px)";
+      if (sofort){ void elMark.offsetHeight; elMark.style.transition = ""; }
+      elMark.classList.add("is-bereit");
+      /* Erst JETZT geben die Zeilen ihre eigene Flaeche ab (sidebar.css: .has-marke). Vorher waere
+         die aktive Zeile einen Augenblick ohne jede Flaeche. */
+      bar.classList.add("has-marke");
+      markeStand = true;
+    }
+    /* EINMAL messen reicht nicht -- dieselbe Lehre wie beim Switcher im Onboarding, hier aus zwei
+       weiteren Gruenden: eine Gruppe klappt ueber eine gefahrene max-height zu, und dabei wandert
+       jede Zeile darunter ueber 200ms an eine neue Stelle; und die Zaehler in den Zeilen kommen
+       spaeter nach und koennen eine Zeile umbrechen lassen.
+       Der Beobachter haengt an den GRUPPENKOERPERN: sie sind die Elemente, deren Hoehe sich
+       aendert. Er feuert waehrend der Fahrt in jedem Bild, und die Marke wird dann OHNE eigenen
+       Uebergang nachgesetzt -- sie folgt damit genau, statt der Bewegung nachzulaufen.
+       Kreisen kann das nicht: die Marke liegt absolut und aendert keine Groesse ausser ihrer
+       eigenen. */
+    function markeBeobachten(){
+      if (!markeSchriftHaengt && document.fonts && document.fonts.ready){
+        markeSchriftHaengt = true;
+        document.fonts.ready.then(function(){ markeSetzen(true); })["catch"](function(){});
+      }
+      if (!window.ResizeObserver) return;
+      if (markeRo) markeRo.disconnect();
+      markeRo = new ResizeObserver(function(){ markeSetzen(true); });
+      try {
+        markeRo.observe(elNav);
+        [].forEach.call(elNav.querySelectorAll("[data-body]"), function(b){ markeRo.observe(b); });
+      } catch(e){}
     }
     /* Die Hoehe wird GEMESSEN und als Zahl gesetzt: von auto auf 0 gibt es keinen Uebergang, und
        ein geschaetzter Maximalwert laesst die Gruppe erst spaet in Bewegung kommen. */
@@ -707,6 +781,13 @@
       bl.classList.toggle("is-closed", zu);
       bl.querySelector("[data-head]").setAttribute("aria-expanded", zu ? "false" : "true");
       body.style.maxHeight = zu ? "0px" : body.scrollHeight + "px";
+      /* Die Marke zieht mit: einmal jetzt (sie faehrt dann mit derselben Zeit wie die Gruppe) und
+         einmal danach, weil die Zeilen unter der Gruppe erst am Ende der Fahrt an ihrer neuen
+         Stelle stehen. Der Beobachter faengt das im laufenden Betrieb auch -- aber nur, solange
+         die Seite sichtbar ist: in einem verdeckten Tab liefert ein ResizeObserver nichts, und
+         genau dort ist es aufgefallen. */
+      markeSetzen(false);
+      setTimeout(function(){ markeSetzen(true); }, 260);
     }
     /* Die Zahl neben "Teams". Vorher stand hier eine Logo-Vorschau (UC.brandStack, drei Logos plus
        "+N") -- die Zahl sagt dasselbe in der Sprache, die die Leiste schon spricht.

@@ -295,6 +295,7 @@
   "opportunitiesSetLoading",
   "opportunitiesSetMode",
   "opportunitiesSetShowIgnored",
+  "opportunitiesSetStatus",
   "opportunitiesSetTheme",
   "opportunitiesSetVisibleBoards",
   "resetAddBrand",
@@ -1549,6 +1550,7 @@
   "uo-tag-more",
   "uo-tagmore",
   "uo-tags",
+  "uo-top",
   "uo-trend",
   "uob-add",
   "uob-back",
@@ -2316,6 +2318,7 @@
   "upt-grp-rows-",
   "upt-grp-selectall",
   "upt-grp-sent",
+  "upt-grp-sideadd",
   "upt-grp-sidechip",
   "upt-grp-sidecount",
   "upt-grp-sidehead",
@@ -2324,6 +2327,7 @@
   "upt-grp-sidelist",
   "upt-grp-sidepanel",
   "upt-grp-sidesearch-box",
+  "upt-grp-sidesearch-btn",
   "upt-grp-sidesearch-clear",
   "upt-grp-sidesearch-in",
   "upt-grp-sidesort",
@@ -2341,6 +2345,7 @@
   "upt-root",
   "upt-selcount",
   "upt-selcount-clear",
+  "upt-selcount-n",
   "upt-status",
   "upt-status-btn",
   "upt-status-tag",
@@ -2660,6 +2665,7 @@
   "udtSubOut",
   "uex-spin",
   "uhmpop",
+  "ulhRise",
   "ulhSchimmer",
   "unc-in",
   "unc-out",
@@ -2683,10 +2689,10 @@
  "_zaehlung": {
   "events": 124,
   "fnattrs": 80,
-  "globals": 137,
+  "globals": 138,
   "payloadkeys": 86,
   "dataattrs": 199,
-  "klassen": 1982,
-  "keyframes": 59
+  "klassen": 1986,
+  "keyframes": 60
  }
 }

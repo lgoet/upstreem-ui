@@ -95,6 +95,19 @@
   }
   MARKEN.forEach(function(m){ m.logo = zeichen(m.name.charAt(0), m.farbe); });
 
+  /* Das Zeichen einer ECHTEN Quelle. Die sechs Marken im Bild sind erfunden -- ihre Kaestchen mit
+     Anfangsbuchstaben stehen darueber --, die Seiten, die KI-Antworten zitieren, sind es nicht:
+     YouTube, Reddit, G2, Forbes, Wikipedia. Mit ihren richtigen Zeichen ist auf einen Blick zu
+     sehen, worum es in der Zeile geht; ein graues R fuer Reddit ist eine Behauptung, die der
+     Betrachter erst nachlesen muss.
+     Der Dienst von Google liefert das Zeichen der Domain und fuer eine unbekannte einen
+     Weltkugel-Rueckfall -- er antwortet also immer, und die Komponenten haben zusaetzlich ihr
+     eigenes onerror (opportunities.js: favHtml, topcitations-dashboard.js). Keine eigene Kopie
+     der Dateien: die waere am Tag ihrer Aufnahme richtig und danach veraltet. */
+  function quellzeichen(domain){
+    return "https://www.google.com/s2/favicons?sz=64&domain=" + encodeURIComponent(domain);
+  }
+
   /* Sechs MONATSpunkte, nicht dreissig Tagespunkte. Das Chart aggregiert nicht selbst --
      UC.buildLineDatasets nimmt die Serie, wie sie kommt --, also entscheidet die Serie die Stufe.
      Sechs Punkte im Monatsabstand ergeben eine Spanne von etwa 152 Tagen, und damit sperrt
@@ -174,20 +187,31 @@
   /* Die Zitattypen sind die ECHTEN der App -- UC.ALL_CITATION_TYPES: Editorial, UGC_Community,
      Knowledge_Base, Brand_Platform, Institutional, Competition, You. Vorher standen hier erfundene
      Namen (Review, Comparison, Owned, News); die Komponente faerbt und beschriftet aber nach dieser
-     Liste, ein unbekannter Name laeuft in den Rueckfall. Es sind genau sieben, und die sieben
-     Quellen benutzen jeden einmal.
-     Die Domains bleiben erfunden (*.example): die Anteile sind Demozahlen, und unter einem echten
-     Namen saehen sie aus wie eine Aussage ueber diese Seite. Das Zeichen davor entsteht wie das der
-     Marken, in einem neutralen Grau. */
+     Liste, ein unbekannter Name laeuft in den Rueckfall. Sechs der sieben stehen unten; nur
+     Institutional faellt weg, seit die fremden Domains echte sind (eine Universitaet oder eine
+     Behoerde mit erfundenen Zahlen daneben waere die eine Zeile, die sich als Aussage ueber diese
+     Einrichtung lesen liesse). Editorial kommt dafuer zweimal vor -- die Spalte darf sich
+     wiederholen, der Kuchen daneben zaehlt ohnehin ALLE Zitate und nicht diese sieben Zeilen. */
+  /* Die FREMDEN Quellen sind echt, die EIGENEN nicht -- und das ist nicht Zufall, sondern die
+     einzige Aufteilung, die aufgeht: forbes.com, reddit.com, wikipedia.org und g2.com zitieren
+     wirklich, und ihr Zeichen erkennt jeder. Die Zeilen mit dem Typ "You" und "Competition"
+     gehoeren dagegen den erfundenen Marken dieses Bildes (Kestrel, Vantage) -- eine echte Domain
+     daneben behauptete, das Konto gehoere dieser Firma. Sie tragen deshalb das Markenkaestchen,
+     das auch in der Markentabelle darueber steht: dieselbe Farbe, derselbe Buchstabe, und damit
+     ist die Zeile sofort der eigenen Marke zuzuordnen. */
   var QUELLEN = [
-    { domain: "industryguide.example", share_pct: 18.4, share_delta_pct: 2.1,  used_total: 2926, citation_type: "Editorial" },
-    { domain: "community.example",     share_pct: 14.1, share_delta_pct: -1.3, used_total: 2242, citation_type: "UGC_Community" },
-    { domain: "wiki.example",          share_pct: 11.7, share_delta_pct: 0.8,  used_total: 1860, citation_type: "Knowledge_Base" },
-    { domain: "kestrel.example",       share_pct: 9.3,  share_delta_pct: 3.4,  used_total: 1479, citation_type: "You" },
-    { domain: "vantage.example",       share_pct: 7.6,  share_delta_pct: -0.4, used_total: 1208, citation_type: "Competition" },
-    { domain: "docs.kestrel.example",  share_pct: 6.2,  share_delta_pct: 1.9,  used_total: 986,  citation_type: "Brand_Platform" },
-    { domain: "university.example",    share_pct: 4.8,  share_delta_pct: -0.7, used_total: 763,  citation_type: "Institutional" }
+    { domain: "forbes.com",           share_pct: 18.4, share_delta_pct: 2.1,  used_total: 2926, citation_type: "Editorial" },
+    { domain: "reddit.com",           share_pct: 14.1, share_delta_pct: -1.3, used_total: 2242, citation_type: "UGC_Community" },
+    { domain: "wikipedia.org",        share_pct: 11.7, share_delta_pct: 0.8,  used_total: 1860, citation_type: "Knowledge_Base" },
+    { domain: "kestrel.example",      share_pct: 9.3,  share_delta_pct: 3.4,  used_total: 1479, citation_type: "You",
+      logo: MARKEN[0].logo },
+    { domain: "vantage.example",      share_pct: 7.6,  share_delta_pct: -0.4, used_total: 1208, citation_type: "Competition",
+      logo: MARKEN[1].logo },
+    { domain: "docs.kestrel.example", share_pct: 6.2,  share_delta_pct: 1.9,  used_total: 986,  citation_type: "Brand_Platform",
+      logo: MARKEN[0].logo },
+    { domain: "g2.com",               share_pct: 4.8,  share_delta_pct: -0.7, used_total: 763,  citation_type: "Editorial" }
   ];
+  QUELLEN.forEach(function(q){ if (!q.logo) q.logo = quellzeichen(q.domain); });
 
   var TYPEN = [
     { type: "Editorial",      share_pct: 31.4 },
@@ -558,7 +582,7 @@
         totalCountUrl: 1893,
         citations_total: 15899,
         top_domains: QUELLEN.map(function(q){
-          return { domain: q.domain, favicon: zeichen(q.domain.charAt(0).toUpperCase(), "#6f737c"),
+          return { domain: q.domain, favicon: q.logo,
                    share_pct: q.share_pct,
                    share_delta_pct: q.share_delta_pct, used_total: q.used_total,
                    citation_type: q.citation_type };
@@ -1002,6 +1026,9 @@
      koennen, bevor sie weg ist. */
   var MIRA_PAUSE_MS = 2000;
   var MIRA_DENKT_MS = 3000;
+  /* So lange vor dem Ende des Ladens geht das Eingabefeld weg: 260ms Ausblenden plus ein Rest, in
+     dem der Platz schon frei ist, wenn die Antwort anfaengt zu wachsen. */
+  var KOMPOSER_WEG_VOR = 700;
   /* Die Zeit, die unter der Antwort steht. Sie hat NICHTS mit MIRA_DENKT_MS zu tun: das Denken im
      Schaustueck dauert drei Sekunden, ein echter Report ueber ein Quartal braucht ein Vielfaches
      davon, und die Zahl darunter soll die echte Groessenordnung nennen. */
@@ -1025,16 +1052,17 @@
     return miraChip(id === "ke" ? "brand" : "competitor", m.id, m.name);
   }
 
-  /* Die zwei Quellen, auf die die Empfehlungen zeigen. Erfundene Domains (*.example): die Aussage
-     "dort steht der Wettbewerber und du nicht" ist eine Behauptung, und unter einem echten Namen
-     waere sie eine Behauptung ueber diese Seite. Das Zeichen entsteht wie das der Marken, in einem
-     neutralen Grau. */
+  /* Die zwei Quellen, auf die die Empfehlungen zeigen -- dieselben zwei, die auch im Zitatteil des
+     Dashboards oben stehen, mit ihrem echten Zeichen (siehe quellzeichen). Die AUSSAGEN darueber
+     sind ueber die eigene Marke formuliert und nicht ueber die Seite: "deine Preisseite wird dort
+     nicht zitiert" ist eine Aussage ueber Kestrel, "die Seite verschweigt dich" waere eine ueber
+     Reddit. */
   var MIRA_QUELLEN = [
     /* Kurze Pfade mit Absicht: der Chip zeigt Domain UND Pfad, und ein langer Pfad schiebt den
        Listenpunkt auf zwei Zeilen -- 26px, die im Fenster fehlen. */
-    { id: "u1", domain: "industryguide.example", pfad: "/ai-tools",
+    { id: "u1", domain: "forbes.com", pfad: "/ai-tools",
       titel: "Best AI visibility tools, 2026 edition" },
-    { id: "u2", domain: "community.example", pfad: "/pricing",
+    { id: "u2", domain: "reddit.com", pfad: "/pricing",
       titel: "Pricing comparison thread" }
   ];
   function quelleChip(i){
@@ -1056,7 +1084,7 @@
     MIRA_QUELLEN.forEach(function(q){
       aus.push({ id: "ev-" + q.id, type: "url", entity_id: q.id, title: q.titel,
                  url: "https://" + q.domain + q.pfad, entity_url: "https://" + q.domain + q.pfad,
-                 domain: q.domain, icon_url: zeichen(q.domain.charAt(0).toUpperCase(), "#6f737c"),
+                 domain: q.domain, icon_url: quellzeichen(q.domain),
                  action: "open_url" });
     });
     aus.push({ id: "ev-r1", type: "response", entity_id: "r1",
@@ -1204,17 +1232,20 @@
        die erste Haelfte sieht man ganz, und unten angekommen IST es weg. Vorher endete das
        Ausblenden bei 310ms, also nach der Fahrt -- dann sieht man das Feld unten ankommen und erst
        danach verschwinden, und die Fahrt selbst geht in dem Verschwinden unter. */
+    /* Das Eingabefeld faehrt nach unten -- die Fahrt ist MIRAS eigene (FLIP in setHasMessages,
+       200ms), und sie ist gemessen: 289px, von 400 auf 689. Hier passiert nur das Ausblenden, und
+       zwar SPAETER.
+       Vorher lag es auf der Fahrt (95ms Verzoegerung, 110ms Lauf): das Feld war bei 205ms weg,
+       also bevor es unten ankam -- deshalb war von der Fahrt nichts zu sehen. Jetzt bleibt es die
+       ganze Fahrt UND die Ladezeit ueber stehen, genau wie in der App, wo man beim Warten weiter
+       auf sein Eingabefeld schaut. Weg muss es trotzdem: es nimmt 125px, und die braucht die
+       Antwort samt Datenpunktzeile und Knopfreihe, damit sie in den Ausschnitt passt. Also kurz
+       vor der Antwort, mit dem Uebergang aus der CSS (opacity 260ms). */
     var flaeche = root.querySelector(".am-composer-area");
-    if (flaeche) requestAnimationFrame(function(){
-      var vorher = flaeche.style.transition;
-      flaeche.style.transition = (vorher ? vorher + ", " : "") + "opacity 110ms ease 95ms";
+    if (flaeche) setTimeout(function(){
       flaeche.style.opacity = "0";
-      /* Und danach ganz weg. Nicht aus Ordnungsliebe: das Feld nimmt 125px, und die braucht der
-         Chat, damit die Antwort samt Datenpunktzeile und Knopfreihe ueberhaupt in den Ausschnitt
-         passt -- sonst endet er mitten in der Antwort, und die Knoepfe darunter sieht niemand.
-         Erst nach dem Ausblenden, damit die Fahrt nach unten vollstaendig zu sehen ist. */
-      setTimeout(function(){ flaeche.style.display = "none"; }, 420);
-    });
+      setTimeout(function(){ flaeche.style.display = "none"; }, 300);
+    }, Math.max(0, MIRA_DENKT_MS - KOMPOSER_WEG_VOR));
     /* Erst die Nachricht, dann das Laden: askMiraSetMessages stellt den Ladezustand selbst auf den
        Stand der Liste, und der ist bei einer reinen Nutzerfrage "nicht am Laden". */
     if (window.askMiraSetBrandLogos) window.askMiraSetBrandLogos(MARKEN.map(function(b){
@@ -1275,6 +1306,9 @@
        ein zusammengesetztes Bild ist. */
     if (window.setSidebarActive) window.setSidebarActive(ID.usn, "mira");
     setTimeout(function(){
+      /* is-weg mit abnehmen: es schlaegt is-da (spaeter in der CSS), und im Kreislauf kann es
+         von der Runde davor noch stehen. */
+      mira.classList.remove("is-weg");
       mira.classList.add("is-da");
       mira.classList.add("is-kommt");
       setTimeout(function(){ mira.classList.remove("is-kommt"); }, MIRA_RISE_MS + 120);
@@ -1624,7 +1658,6 @@
   function promptsAnsetzen(root){
     if (root.__ulhPromptsAn) return;
     root.__ulhPromptsAn = true;
-    root.__ulhPrompts = function(){ return promptsSzene(root); };
     var n = 0, hatGetippt = false;
     (function warten(){
       var am = root.querySelector("#ask-mira");
@@ -1704,6 +1737,7 @@
     mira.classList.add("is-weg");
     if (window.setSidebarActive) window.setSidebarActive(ID.usn, "prompts");
     setTimeout(function(){
+      seite.classList.remove("is-weg");
       seite.classList.add("is-da");
       seite.classList.add("is-kommt");
       /* Laenger stehen lassen als bei Mira: hier haengen vier gestaffelte Auftritte daran, der
@@ -1728,34 +1762,35 @@
   /* ---------- Vierte Szene: das Opportunities-Brett ---------------------------------------- */
 
   /* Die Karten. Aufbau je Zeile: Kennung, Spalte, Empfehlungstyp, Ueberschrift, Begruendung,
-     Prioritaet, Quelle (Titel, Domain, Zitattyp), Markt, Zahl der genannten Wettbewerber.
+     Prioritaet, Quelle (Titel, Domain, Zitattyp), Markt, Zahl der genannten Wettbewerber, Punktzahl.
      Die Marken darin sind DIESELBEN sechs wie im Dashboard, bei Mira und in der Prompts-Liste --
      eine vierte Markenliste in derselben Sektion waere der auffaelligste Bruch, den sie haben
-     koennte. Die Domains bleiben erfunden (*.example): die Aussage "dort steht der Wettbewerber
-     und du nicht" ist eine Behauptung, und unter einem echten Namen waere sie eine Behauptung
-     ueber diese Seite. */
+     koennte.
+
+     VIER Karten: drei in Pending, eine in In Progress, keine in Done. Das ist der Anfangszustand,
+     aus dem die Szene ihre zwei Zuege macht -- o2 wandert nach In Progress, danach o4 (die von
+     Anfang an dort stand) nach Done. Am Ende steht in jeder Spalte etwas, und man hat gesehen,
+     wie es dort hingekommen ist. Ein volles Brett mit sieben Karten konnte das nicht zeigen: mit
+     zwei Karten schon in Done sah der zweite Zug wie ein Nachschub aus.
+
+     Die Domains sind ECHT, wo die Quelle fremd ist (g2.com, reddit.com, youtube.com), und
+     erfunden, wo sie der eigenen Marke gehoert (kestrel.example) -- dieselbe Aufteilung wie im
+     Zitatteil des Dashboards, Begruendung dort. Die Ueberschriften sind dabei als AUFGABE oder
+     als Aussage ueber die eigene Marke formuliert und nicht als Aussage ueber die fremde Seite:
+     "hol dir den Eintrag dort" statt "die Seite verschweigt dich". */
   var CHANCEN = [
-    ["o1", "pending", "get_listed", "industryguide.example lists eight AI visibility tools and not you",
-     "Vantage and Halden are both named in the intro paragraph. The list is updated quarterly and ranks first for the category.",
-     "High", "Best AI visibility tools, 2026 edition", "industryguide.example", "Editorial", "US", 4],
-    ["o2", "pending", "create_matching_content", "No page of yours answers „how much does AI search monitoring cost“",
-     "The prompt runs 214 times a month and never returns one of your pages. Three competitors have a pricing explainer.",
-     "High", "Pricing comparison thread", "community.example", "UGC_Community", "US", 3],
+    ["o1", "pending", "get_listed", "Get listed on the g2.com category page for AI visibility",
+     "Vantage and Halden hold entries there. You do not.",
+     "High", "Best AI visibility tools, 2026 edition", "g2.com", "Editorial", "US", 4, 88.4],
+    ["o2", "pending", "create_matching_content", "No page of yours answers \u201ehow much does AI search monitoring cost\u201c",
+     "214 runs a month, and never one of your pages.",
+     "Medium", "Pricing comparison thread", "reddit.com", "UGC_Community", "US", 3, 61.2],
     ["o3", "pending", "improve_existing_content", "Your integrations page is cited but never quoted",
-     "Models reach the page and pick a competitor sentence instead. The page has no comparison table.",
-     "Medium", "Integrations overview", "kestrel.example", "Brand_Platform", "DE", 2],
-    ["o4", "in_progress", "build_presence", "You are missing from the two comparison threads that decide this category",
-     "Both threads rank in the top three for their prompt and mention Halden by name.",
-     "High", "Which tool do you use in 2026?", "community.example", "UGC_Community", "US", 5],
-    ["o5", "in_progress", "get_listed", "wiki.example has a category page without your entry",
-     "The page is cited in 11.7 percent of all answers in your market.",
-     "Medium", "AI search analytics, category", "wiki.example", "Knowledge_Base", "US", 3],
-    ["o6", "done", "create_matching_content", "Enterprise security page published and picked up",
-     "Cited in four of the five enterprise prompts since it went live.",
-     "Medium", "Security and compliance", "kestrel.example", "Brand_Platform", "US", 1],
-    ["o7", "done", "improve_existing_content", "Getting-started guide rewritten for the onboarding prompts",
-     "Now quoted in place of the competitor guide that held the slot.",
-     "Low", "Getting started with prompt tracking", "kestrel.example", "Brand_Platform", "DE", 1]
+     "Models reach the page and quote a competitor.",
+     "Low", "Integrations overview", "kestrel.example", "Brand_Platform", "DE", 2, 34.5],
+    ["o4", "in_progress", "build_presence", "Show up in the two comparison videos that decide this category",
+     "Both rank top three, and both of them name Halden.",
+     "High", "Which tool do you use in 2026?", "youtube.com", "UGC_Community", "US", 5, 79.1]
   ];
 
   var CHANCEN_TYP = { get_listed: "Get listed", create_matching_content: "Create matching content",
@@ -1774,12 +1809,21 @@
         priority_label: c[5],
         lead_title: c[6],
         lead_domain: c[7],
-        lead_favicon: zeichen(c[7].charAt(0).toUpperCase(), "#6f737c"),
+        /* Das Zeichen der Quelle: echt bei einer fremden Domain, das Markenkaestchen bei der
+           eigenen -- fuer kestrel.example gibt es kein echtes, die Marke ist erfunden. */
+        lead_favicon: c[7].indexOf("kestrel.example") >= 0 ? MARKEN[0].logo : quellzeichen(c[7]),
         lead_url: "https://" + c[7],
         effective_citation_type: c[8],
         market: c[9],
         source_scope: "external_only",
         competitor_count: c[10],
+        /* Die Punktzahl steht im Ausklapper neben der Bezeichnung ("High \u00b7 88.4"). Ohne sie
+           stand dort "High \u00b7 0" -- die Komponente rechnet mit 0, wenn das Feld fehlt. Sie
+           passt zu der Bezeichnung: potLevel nimmt zuerst das Wort und nur ohne Wort die Zahl
+           (hoch ab 75, mittel ab 50, niedrig ab 25), und zwei Angaben, die sich widersprechen,
+           waeren schlimmer als eine fehlende. Nach ihr sortiert das Brett auch innerhalb der
+           Spalte -- die Reihenfolge o1, o2, o3 ist also die der Zahlen. */
+        priority_score: c[11],
         /* Die Zahlen sind aus dem Platz in der Liste gerechnet und nicht gewuerfelt: dasselbe Bild
            bei jedem Laden, und sie fallen von oben nach unten, wie man es erwartet. */
         global_share_pct: Math.round((18.4 - i * 1.7) * 10) / 10,
@@ -1789,7 +1833,12 @@
         avg_competitor_conversion: Math.round((26.1 - i * 1.2) * 10) / 10,
         supporting_urls_count: 2 + (i % 3),
         created_at: new Date().toISOString(),
-        topics: [THEMEN[i % THEMEN.length]],
+        /* Zwei Themen auf der ersten und der letzten Karte, eines auf den beiden dazwischen.
+           Vier Karten mit genau einem Thema lesen sich, als koennte eine Karte nur eines
+           tragen -- sie kann mehrere, und das soll man sehen. */
+        topics: (i === 0 || i === 3)
+          ? [THEMEN[i % THEMEN.length], THEMEN[(i + 2) % THEMEN.length]]
+          : [THEMEN[i % THEMEN.length]],
         mentioned_competitors: m.map(function(b){
           return { name: b.name, company_id: b.id, favicon_url: b.logo };
         })
@@ -1813,7 +1862,17 @@
      offsetLeft/offsetTop und NICHT getBoundingClientRect: die Buehne steht unter transform: scale,
      und das Rechteck liefert die verkleinerten Masse. Gemessen im Dashboard: 94 Layoutpixel kamen
      als 70 heraus. */
-  var CHANCEN_ZUG = 620;
+  /* Der Zug selbst, langsamer als zuerst: 620 -> 800ms. Eine Karte ist ein grosses Ding und
+     wandert bis zu zwei Spalten weit -- auf 620ms sah das nach Umschalten aus, nicht nach
+     Verschieben. */
+  var CHANCEN_ZUG = 800;
+  /* Davor wird sie ANGEFASST. Es gibt keinen Zeiger im Bild, also stehen dafuer zwei Klassen
+     (landing-hero.css): erst der Hover, dann der Druck -- drei Prozent kleiner und zurueck. Erst
+     wenn die Karte wieder ihre Groesse hat, faengt der Zug an; ein Druck, der in die Wanderung
+     hineinlaeuft, waere eine Bewegung aus zwei Teilen, die sich widersprechen (die Karte wird
+     kleiner UND faehrt los). */
+  var FASS_MS = 420, DRUCK_AB = 190, DRUCK_NACH = 170;
+  var FASSEN_GESAMT = FASS_MS + DRUCK_AB + DRUCK_NACH;
 
   function kartenLagen(root){
     var lagen = {};
@@ -1856,39 +1915,111 @@
     }, CHANCEN_ZUG + 120);
   }
 
+  function karte(root, id){ return root.querySelector('.uo-card[data-id="' + id + '"]'); }
+
+  /* Anfassen, druecken, loslassen -- und DANN ziehen. fertig() laeuft, wenn die Karte ihre Groesse
+     wiederhat: der Zug darf erst danach anfangen, siehe FASS_MS. */
+  function karteFassen(root, id, fertig){
+    var k = karte(root, id);
+    if (!k){ fertig(); return; }
+    k.classList.add("ulh-fass");
+    setTimeout(function(){
+      k.classList.add("ulh-druck");
+      setTimeout(function(){
+        k.classList.remove("ulh-druck");
+        setTimeout(fertig, DRUCK_NACH);
+      }, DRUCK_AB);
+    }, FASS_MS);
+  }
+
   function karteZiehen(root, id, ziel){
     if (!window.opportunitiesSetStatus) return false;
     var lagen = kartenLagen(root);
     window.opportunitiesSetStatus(id, ziel);
     kartenWandern(root, lagen);
     ohneTipps(root);
+    /* Das Brett zeichnet beim Umsetzen NEU -- die Karte im DOM ist danach eine andere, und die
+       Hover-Klasse von vorher haengt an der alten. Also wieder ansetzen und erst am Ende der
+       Fahrt abnehmen: die Hand bleibt auf der Karte, bis sie liegt. */
+    var neu = karte(root, id);
+    if (neu) neu.classList.add("ulh-fass");
+    setTimeout(function(){
+      var k = karte(root, id);
+      if (k) k.classList.remove("ulh-fass");
+    }, CHANCEN_ZUG + 140);
     return true;
   }
 
+  /* Der ganze Zug einer Karte, von der Beruehrung bis zum Loslassen. */
+  function karteBewegen(root, id, ziel){
+    karteFassen(root, id, function(){ karteZiehen(root, id, ziel); });
+  }
+  /* So lange dauert er insgesamt -- der Ablauf unten rechnet damit. */
+  var ZUG_GESAMT = FASSEN_GESAMT + CHANCEN_ZUG + 140;
+
+  /* ---- Der Auftritt der Karten ----
+     Die Spalten kommen gestaffelt (landing-hero.css: 300/400/500ms, je 520 lang), also stehen sie
+     bei 1020. Erst DANACH fallen die Karten einzeln ein -- eine Karte, die innerhalb einer noch
+     aufblendenden Spalte auftritt, tritt nicht auf. Dieselbe Lehre wie bei den Zeilen der
+     Prompts-Tabelle, und derselbe Weg: der Zaehler --ulh-i steht an der Karte, die CSS rechnet
+     daraus die Verzoegerung. Gezaehlt wird quer ueber alle Spalten in Lesereihenfolge (das ist die
+     DOM-Reihenfolge: Spalte fuer Spalte, darin von oben nach unten). */
+  var KARTEN_START = 1060, KARTEN_STUFE = 90, KARTEN_LAUF = 420;
+
+  function kartenAnsetzen(root, seite){
+    setTimeout(function(){
+      var k = root.querySelectorAll(".uo-card");
+      if (!k.length) return;
+      for (var i = 0; i < k.length; i++) k[i].style.setProperty("--ulh-i", i);
+      seite.classList.add("is-karten");
+      /* Aufraeumen, sobald die letzte Karte steht: bliebe is-karten haengen, liefe der erste Zug
+         gegen eine noch gesetzte animation -- und eine laufende animation schlaegt jeden
+         Inline-Stil, also auch den des FLIP. */
+      setTimeout(function(){
+        seite.classList.remove("is-karten");
+        for (var j = 0; j < k.length; j++) k[j].style.removeProperty("--ulh-i");
+      }, KARTEN_LAUF + k.length * KARTEN_STUFE + 160);
+    }, KARTEN_START);
+  }
+
   /* ---- Der Ablauf der Szene ----
-     Erst steht das Brett still, dann zieht eine Karte von Pending nach In Progress, kurz darauf
-     die zweite von In Progress nach Done, und zuletzt oeffnet sich eine Karte als Schublade.
-     Die Abstaende sind so gewaehlt, dass jede Bewegung fuer sich zu sehen ist: 620ms Zug plus rund
-     eine Sekunde Ruhe, bevor die naechste anfaengt. */
-  var CHANCEN_ERST = 1500, CHANCEN_ZWEIT = 1800, CHANCEN_DETAIL = 1900;
+     Erst stehen die Karten still, dann wird eine von Pending nach In Progress gezogen, dann die,
+     die von Anfang an in In Progress stand, nach Done -- am Ende steht in jeder Spalte etwas.
+     Danach vier Sekunden Ruhe, die Karte oben links geht als Schublade auf, bleibt vier Sekunden
+     offen, schliesst sich, und die Sektion faengt wieder beim Dashboard an.
+     Die Zahlen sind Abstaende zwischen fertigen Bewegungen und keine Startzeitpunkte: ZUG_GESAMT
+     (1720ms) steckt in jedem Zug, und was hier steht, ist die RUHE danach. */
+  var CHANCEN_ERST = 2150;      /* nach dem Fuellen -- die Karten stehen bei ~1750 */
+  var CHANCEN_ZWEIT = 700;      /* Ruhe zwischen den zwei Zuegen */
+  var CHANCEN_HALT = 4000;      /* Endzustand des Bretts, bevor die Karte aufgeht */
+  var CHANCEN_OFFEN = 4000;     /* wie lange die Schublade offen bleibt */
+  var CHANCEN_ZU = 520;         /* das Zufahren der Schublade, bevor die Seite geht */
 
   function chancenAblauf(root){
-    setTimeout(function(){ karteZiehen(root, "o2", "in_progress"); }, CHANCEN_ERST);
-    setTimeout(function(){ karteZiehen(root, "o4", "done"); }, CHANCEN_ERST + CHANCEN_ZWEIT);
+    var t = CHANCEN_ERST;
+    setTimeout(function(){ karteBewegen(root, "o2", "in_progress"); }, t);
+    t += ZUG_GESAMT + CHANCEN_ZWEIT;
+    setTimeout(function(){ karteBewegen(root, "o4", "done"); }, t);
+    t += ZUG_GESAMT + CHANCEN_HALT;
     setTimeout(function(){
       if (window.opportunitiesOpenDetail) window.opportunitiesOpenDetail("o1");
       /* Die Schublade bringt ihre eigenen Tooltips mit, und die sollen im Schaustueck nicht
          erscheinen. Zweimal, weil sie ihren Inhalt in zwei Schueben baut. */
       ohneTipps(root);
       setTimeout(function(){ ohneTipps(root); hellHalten(root); }, 400);
-    }, CHANCEN_ERST + CHANCEN_ZWEIT + CHANCEN_DETAIL);
+    }, t);
+    t += CHANCEN_OFFEN;
+    setTimeout(function(){
+      if (window.opportunitiesCloseDetail) window.opportunitiesCloseDetail();
+    }, t);
+    t += CHANCEN_ZU;
+    setTimeout(function(){ neustart(root); }, t);
   }
 
   /* Der Wechsel von der Prompts-Liste auf das Brett -- derselbe Bau wie die Wechsel davor. */
   function chancenAnsetzen(root){
     if (root.__ulhChancenAn) return;
     root.__ulhChancenAn = true;
-    root.__ulhChancen = function(){ return chancenSzene(root); };
     /* Die Prompts-Liste steht STAND_MS still, nachdem ihre Zeilen eingelaufen sind. Deren Auftritt
        endet bei ZEILEN_START plus Lauf plus Staffelung -- danach beginnt die Ruhe. */
     var zeilenEnde = ZEILEN_START + ZEILEN_LAUF + PROMPT_SEITE * ZEILEN_STUFE;
@@ -1904,16 +2035,117 @@
     prompts.classList.add("is-weg");
     if (window.setSidebarActive) window.setSidebarActive(ID.usn, "opportunities");
     setTimeout(function(){
+      seite.classList.remove("is-weg");
       seite.classList.add("is-da");
       seite.classList.add("is-kommt");
-      setTimeout(function(){ seite.classList.remove("is-kommt"); }, 1200);
+      /* is-kommt haelt die Karten versteckt, bis is-karten uebernimmt (KARTEN_START). Es muss also
+         LAENGER stehen als dieser Start, sonst stehen die Karten kurz da und verschwinden wieder.
+         Derselbe Grund wie beim Tabellenkoerper der Prompts-Liste. */
+      setTimeout(function(){ seite.classList.remove("is-kommt"); }, KARTEN_START + 120);
       hellHalten(root);
       chancenFuellen();
       /* Nach dem Fuellen: die Karten tragen Tooltips, und das Brett baut sie in zwei Schueben. */
       ohneTipps(root);
       setTimeout(function(){ ohneTipps(root); hellHalten(root); }, 400);
       setTimeout(function(){ ohneTipps(root); }, 1200);
+      kartenAnsetzen(root, seite);
       chancenAblauf(root);
+    }, AUSBLENDEN_MS);
+    return true;
+  }
+
+  /* ---------- Der Kreislauf ----------------------------------------------------------------
+     Wenn die Schublade wieder zu ist, faengt die Sektion von vorn an: Brett weg, Dashboard zurueck,
+     und die drei Wechsel danach werden neu angesetzt. Eine Sektion, die nach vierzig Sekunden
+     stehenbleibt, zeigt jedem, der spaeter auf die Seite kommt, ein Standbild.
+
+     Zurueckgesetzt wird ALLES, was den ersten Durchlauf gemerkt hat -- die Wachen an den Seiten
+     (__ulh*Auf), die Wachen an der Wurzel (__ulh*An) und der Datenzustand des Dashboards. Wer eine
+     davon vergisst, bekommt keinen Fehler, sondern eine Szene, die beim zweiten Mal ausfaellt.
+     Nicht zurueckgesetzt wird, was EINMALIG ist: das Erscheinen des Fensters, der Scroll-Beobachter
+     und die Bauteile selbst. */
+  var NEUSTART_KOMMT = 1000;     /* so lange traegt die Dashboard-Seite is-kommt (drei Stufen, 300 + 520) */
+
+  function neustart(root){
+    var main = root.querySelector(".ulh-main");
+    var mira = root.querySelector(".ulh-mira");
+    var prompts = root.querySelector(".ulh-prompts");
+    var chancen = root.querySelector(".ulh-chancen");
+    if (!main || !chancen) return false;
+
+    /* 1. Das Brett geht -- wie jeder andere Wechsel. */
+    chancen.classList.remove("is-da");
+    chancen.classList.add("is-weg");
+    if (window.setSidebarActive) window.setSidebarActive(ID.usn, "dashboard");
+
+    setTimeout(function(){
+      /* 2. Jede Seite zurueck auf Anfang. is-da MIT abnehmen: eine Seite, die weg ist, ist nicht
+         mehr die aktuelle. */
+      /* NEUTRAL, nicht is-weg. Ein Zustand ohne Klasse ist fuer diese drei Seiten schon
+         unsichtbar (landing-hero.css: ".ulh-mira, .ulh-prompts, .ulh-chancen { opacity: 0 }"),
+         und is-weg waere hier ein Nachtreten mit Folgen: is-weg steht in der CSS HINTER is-da und
+         schlaegt es deshalb: eine Seite mit beiden Klassen bleibt unsichtbar. Genau das ist beim
+         ersten Bau des Kreislaufs passiert -- in der zweiten Runde blieb Mira leer, weil
+         miraSzene is-da dazusetzte, ohne das is-weg von hier abzunehmen. Gemessen an der
+         Klassenliste: "mira.is-weg.is-da" bei Deckkraft 0. */
+      [mira, prompts, chancen].forEach(function(seite){
+        if (!seite) return;
+        seite.classList.remove("is-da");
+        seite.classList.remove("is-weg");
+        seite.classList.remove("is-kommt");
+        seite.classList.remove("is-zeilen");
+        seite.classList.remove("is-karten");
+      });
+      if (mira) mira.__ulhMiraAuf = false;
+      if (prompts) prompts.__ulhPromptsAuf = false;
+      chancen.__ulhChancenAuf = false;
+      root.__ulhMiraAn = false;
+      root.__ulhSzeneAn = false;
+      root.__ulhPromptsAn = false;
+      root.__ulhChancenAn = false;
+
+      /* 3. Mira leeren. Erst der Ladezustand, dann die Liste: setHasMessages haengt an BEIDEN
+         ("S.messages.length > 0 || S.isLoading"), und mit noch stehendem Ladezustand bliebe die
+         Chatansicht offen. Das Eingabefeld bekommt seine Deckkraft und seinen Platz zurueck,
+         bevor Mira es zurueck in die Mitte faehrt -- sonst faehrt ein unsichtbares Feld. */
+      var flaeche = root.querySelector(".am-composer-area");
+      if (flaeche){ flaeche.style.display = ""; flaeche.style.opacity = ""; }
+      var komposer = root.querySelector(".am-composer");
+      if (komposer) komposer.classList.remove("is-tippt");
+      var ta = root.querySelector("#am-textarea");
+      if (ta){
+        ta.value = "";
+        try { ta.dispatchEvent(new Event("input", { bubbles: true })); } catch (e){}
+      }
+      if (window.askMiraSetLoading) window.askMiraSetLoading("false");
+      if (window.askMiraSetMessages) window.askMiraSetMessages([]);
+
+      /* 4. Das Dashboard wieder auf Zustand A -- Zahlen, Zeilen, Linien. fuellen() baut Chart und
+         Tabelle neu; der Filterwechsel darf danach wieder laufen. */
+      zustand = "a";
+      try { fuellen(); } catch (e){ if (window.console) console.warn("[landing-hero]", e); }
+
+      /* 5. Die Seite kommt zurueck, gestaffelt wie jede andere. */
+      main.classList.remove("is-weg");
+      main.classList.add("is-da");
+      main.classList.add("is-kommt");
+      setTimeout(function(){ main.classList.remove("is-kommt"); }, NEUSTART_KOMMT);
+
+      /* 6. Nachfassen wie beim ersten Aufbau: core stempelt neu eingefuegte Wurzeln mit dem
+         gerade gueltigen Thema, die Komponenten setzen ihre Tooltips beim Zeichnen, und der
+         dauerhaft offene Kasten am Chart muss wieder angesteckt werden. */
+      [80, 400, 1000, 2200].forEach(function(ms){
+        setTimeout(function(){
+          hellHalten(root); ohneTipps(root); zeichenSetzen(root);
+          schalterKuerzen(root); tippZeigen(root); mass(root);
+        }, ms);
+      });
+
+      /* 7. Und die Kette neu ansetzen. Der Filterwechsel wartet von sich aus auf ein lebendes
+         Chart; Mira haengt an einer festen Uhr, die hier nicht beim Erscheinen des Fensters
+         beginnt, sondern beim Auftritt dieser Seite. */
+      szeneAnsetzen(root);
+      miraAnsetzen(root, NEUSTART_KOMMT + MIRA_WARTEN);
     }, AUSBLENDEN_MS);
     return true;
   }
@@ -1963,6 +2195,16 @@
         schalterKuerzen(root); tippZeigen(root); mass(root);
       }, ms);
     });
+    /* Die vier Handhaben nach draussen, an einer Stelle und SOFORT. Sie standen vorher je in dem
+       Ansetzen, das sie anlegt -- und damit gab es __ulhChancen erst, nachdem die Prompts-Szene
+       gelaufen war: die vierte Szene liess sich nur messen, indem man die drei davor abwartete
+       (Mira allein braucht in einem verdeckten Tab weit ueber eine Minute). Debug ist das nicht:
+       es sind die Ausloeser, mit denen die Landingpage ihre Szenen auch selbst schalten kann. */
+    root.__ulhSzene   = function(){ return szene(root); };
+    root.__ulhMira    = function(){ return miraSzene(root); };
+    root.__ulhPrompts = function(){ return promptsSzene(root); };
+    root.__ulhChancen = function(){ return chancenSzene(root); };
+    root.__ulhNeu     = function(){ return neustart(root); };
     var n = 0;
     (function warte(){
       if (bereit()){
@@ -2021,14 +2263,14 @@
      keine Kette an den Filterwechsel: der laeuft bei ~3200ms und ist bei ~4200 durch, es bleiben
      also mehr als drei Sekunden Ruhe dazwischen. Bleibt das Chart aus (kein Chart.js vom CDN), gibt
      es keinen Filterwechsel -- der Wechsel auf Mira soll davon aber nicht abhaengen. */
-  function miraAnsetzen(root){
+  function miraAnsetzen(root, verzug){
     if (root.__ulhMiraAn) return;
     root.__ulhMiraAn = true;
-    /* Als Handhabe nach draussen, wie bei der ersten Szene: die spaetere Szenenfolge soll den
-       Wechsel selbst ausloesen koennen, und darueber laesst er sich messen, ohne acht Sekunden zu
-       warten. */
-    root.__ulhMira = function(){ return miraSzene(root); };
-    setTimeout(function(){ miraSzene(root); }, ERSCHEINEN_MS + MIRA_WARTEN);
+    /* Beim ersten Mal ab dem Ende des Erscheinens, im Kreislauf ab dem Auftritt der Seite -- die
+       Ruhe VOR dem Wechsel soll beide Male gleich lang sein, und sie faengt an, wenn das Dashboard
+       fertig dasteht. */
+    setTimeout(function(){ miraSzene(root); },
+               verzug == null ? (ERSCHEINEN_MS + MIRA_WARTEN) : verzug);
   }
 
   /* Die Szene startet erst, wenn das Dashboard WIRKLICH steht: Chart.js kommt vom CDN, und drei
@@ -2039,10 +2281,6 @@
   function szeneAnsetzen(root){
     if (root.__ulhSzeneAn) return;
     root.__ulhSzeneAn = true;
-    /* Als Handhabe nach draussen, nicht als Debug-Ausgabe: die Szenenfolge (Schritt 2 der
-       Landingpage) soll den Wechsel selbst ausloesen koennen, statt auf die Uhr zu warten -- und
-       genau darueber laesst er sich auch messen, ohne drei Sekunden zu warten. */
-    root.__ulhSzene = function(){ return szene(root); };
     (function warten(k){
       var leinwand = root.querySelector(".up-line-canvas");
       var lebt = leinwand && window.Chart && window.Chart.getChart && window.Chart.getChart(leinwand);

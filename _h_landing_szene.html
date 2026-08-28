@@ -25,6 +25,11 @@
   <button onclick="zeigen(verlauf())">VERLAUF</button>
   <button onclick="zeigen(mira())">MIRA JETZT</button>
   <button onclick="zeigen(miraBild())">MIRA ZUSTAND</button>
+  <button onclick="zeigen(prompts())">PROMPTS JETZT</button>
+  <button onclick="zeigen(chancen())">CHANCEN JETZT</button>
+  <button onclick="zeigen(brettBild())">BRETT ZUSTAND</button>
+  <button onclick="zeigen(zugMessen())">ZUG MESSEN</button>
+  <button onclick="zeigen(neu())">NEUSTART</button>
 </div>
 <pre id="out">laedt</pre>
 
@@ -192,6 +197,79 @@ function szeneMessen(){
 
 /* Die zweite Szene von Hand ausloesen, statt achteinhalb Sekunden zu warten. */
 function mira(){ var r = W(); return { ausgeloest: r.__ulhMira ? r.__ulhMira() : "keine Handhabe" }; }
+
+/* Die dritte und vierte Szene von Hand, ohne die Minuten dazwischen abzuwarten. */
+function prompts(){ var r = W(); return { ausgeloest: r.__ulhPrompts ? r.__ulhPrompts() : "keine Handhabe" }; }
+function chancen(){ var r = W(); return { ausgeloest: r.__ulhChancen ? r.__ulhChancen() : "keine Handhabe" }; }
+function neu(){ var r = W(); return { ausgeloest: r.__ulhNeu ? r.__ulhNeu() : "keine Handhabe" }; }
+
+/* Der Zustand des Bretts: was in welcher Spalte steht, wie die Karten liegen, was die Karten
+   tragen (Themen, Prioritaet), und ob die Schublade offen ist. */
+function brettBild(){
+  var r = W();
+  var seite = r.querySelector(".ulh-chancen");
+  var spalten = [].slice.call(r.querySelectorAll(".uo-col")).map(function(c){
+    var kopf = c.querySelector(".uo-col-head");
+    return {
+      kopf: kopf ? kopf.textContent.replace(/\s+/g, " ").trim() : null,
+      karten: [].slice.call(c.querySelectorAll(".uo-card")).map(function(k){
+        return { id: k.getAttribute("data-id"), x: k.offsetLeft, y: k.offsetTop,
+                 h: k.offsetHeight, i: k.style.getPropertyValue("--ulh-i"),
+                 sicht: getComputedStyle(k).visibility,
+                 klassen: k.className.replace("uo-card", "").trim(),
+                 themen: k.querySelectorAll(".up-topicchip").length,
+                 balken: k.querySelectorAll(".uo-pot-bar").length,
+                 balkenMass: (function(b){ if (!b) return null; var cs = getComputedStyle(b);
+                   return cs.width + " x " + cs.height + " r" + cs.borderTopLeftRadius; })(k.querySelector(".uo-pot-bar")),
+                 quelle: (k.querySelector(".uo-source-domain")||{}).textContent,
+                 logo: (function(i){ return i ? i.getAttribute("src").slice(0, 62) : null; })(k.querySelector(".uo-source img")) };
+      })
+    };
+  });
+  var modal = document.querySelector(".uo-modal");
+  var kpis = modal ? [].slice.call(modal.querySelectorAll(".uo-kpi")).map(function(k){
+    var cs = getComputedStyle(k);
+    return { k: (k.querySelector(".uo-kpi-label")||{}).textContent,
+             v: (k.querySelector(".uo-kpi-val")||{}).textContent,
+             disp: cs.display, rahmen: cs.borderTopWidth + "/" + cs.borderBottomWidth,
+             polster: cs.padding, radius: cs.borderTopLeftRadius,
+             wert_px: getComputedStyle(k.querySelector(".uo-kpi-val")).fontSize };
+  }) : null;
+  var meta = modal ? [].slice.call(modal.querySelectorAll(".uo-meta-item")).slice(0,1).map(function(m){
+    var cs = getComputedStyle(m);
+    return { disp: cs.display, rahmen: cs.borderTopWidth + "/" + cs.borderBottomWidth,
+             polster: cs.padding, wert_px: getComputedStyle(m.querySelector(".uo-meta-v")).fontSize };
+  }) : null;
+  return {
+    seite: seite ? seite.className.replace("ulh-seite ", "") : null,
+    spalten: spalten,
+    schublade: (function(){ var p = document.querySelector(".uo-portal");
+      return p ? p.className + " op=" + getComputedStyle(p).opacity : "keine"; })(),
+    kpis: kpis, metaErste: meta
+  };
+}
+
+/* Einen Zug messen, ohne auf die Uhr der Szene zu warten: Lage vorher, Zug ausloesen, sofort die
+   Inline-Stile lesen (im verdeckten Tab friert jeder Uebergang auf seinem Startwert ein -- genau
+   dieser Startwert IST die gemessene Strecke). */
+function zugMessen(){
+  var r = W();
+  function lagen(){ var o = {}; [].forEach.call(r.querySelectorAll(".uo-card"), function(k){
+    o[k.getAttribute("data-id")] = k.offsetLeft + "," + k.offsetTop; }); return o; }
+  var vor = lagen();
+  if (!window.opportunitiesSetStatus) return { fehler: "kein Setter" };
+  var vorher = {};
+  [].forEach.call(r.querySelectorAll(".uo-card"), function(k){
+    vorher[k.getAttribute("data-id")] = { x: k.offsetLeft, y: k.offsetTop }; });
+  window.opportunitiesSetStatus("o2", "in_progress");
+  var nach = {}, stil = {};
+  [].forEach.call(r.querySelectorAll(".uo-card"), function(k){
+    var id = k.getAttribute("data-id");
+    nach[id] = k.offsetLeft + "," + k.offsetTop;
+    stil[id] = k.getAttribute("style");
+  });
+  return { vor: vor, nach: nach, stil: stil };
+}
 
 /* Der Zustand von Mira: welche Seite sichtbar ist, was im Eingabefeld steht, welche Nachrichten
    da sind, ob die Antwort tippt, und ob die Marken-Chips wirklich ein Logo bekommen haben. */

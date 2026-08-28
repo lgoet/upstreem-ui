@@ -193,16 +193,21 @@
    ramp instead of four separate blocks. The background-position offsets below are what cut that
    one 29px-wide gradient into per-bar slices. */
 .uo-pot { display: inline-flex; align-items: center; flex: 0 0 auto; }
-.uo-pot-bars { display: flex; align-items: center; gap: 3px; }
-.uo-pot-bar { width: 5px; height: 15px; border-radius: 4px; background: var(--vc-border); }
+/* Zwanzig Prozent kleiner als zuerst, und zwar JEDER Wert im selben Verhaeltnis -- die Anzeige
+   ist ein Paket aus Balkenbreite, Hoehe, Radius, Abstand und der Breite des Farbverlaufs, der
+   darueber liegt. Nur die Hoehe zu kuerzen haette den Verlauf um die Balken herum verschoben.
+   Gerechnet: 5 -> 4, 15 -> 12, Radius 4 -> 3.2, Abstand 3 -> 2.4, und der Verlauf 4*4 + 3*2.4
+   = 23.2px statt 29. Die Versaetze sind die Startpunkte der Balken darin: i * (4 + 2.4). */
+.uo-pot-bars { display: flex; align-items: center; gap: 2.4px; }
+.uo-pot-bar { width: 4px; height: 12px; border-radius: 3.2px; background: var(--vc-border); }
 .uo-pot-bar.is-on {
   background-image: linear-gradient(90deg, var(--uo-pot-a), var(--uo-pot-b));
-  background-size: 29px 100%; background-repeat: no-repeat;
+  background-size: 23.2px 100%; background-repeat: no-repeat;
 }
 .uo-pot-bar.is-on.p1 { background-position: 0 0; }
-.uo-pot-bar.is-on.p2 { background-position: -8px 0; }
-.uo-pot-bar.is-on.p3 { background-position: -16px 0; }
-.uo-pot-bar.is-on.p4 { background-position: -24px 0; }
+.uo-pot-bar.is-on.p2 { background-position: -6.4px 0; }
+.uo-pot-bar.is-on.p3 { background-position: -12.8px 0; }
+.uo-pot-bar.is-on.p4 { background-position: -19.2px 0; }
 /* The explainer's own preview copy of the bars sits on the light panel inside the dark popover, so
    it needs the light-mode ramp regardless of the page theme.
    background-COLOR, not the `background` shorthand: the shorthand also resets background-size and
@@ -348,12 +353,23 @@
    and a dropdown's "SORT BY" read as the same class of label. */
 .uo-m-section-title { margin: 28px 0 12px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--vc-muted); }
 
-.uo-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
-.uo-kpi { border: 1px solid var(--vc-border); border-radius: 12px; background: var(--vc-bg); padding: 12px 13px; min-width: 0; }
-.uo-kpi-label { font-size: 12px; color: var(--vc-muted); font-weight: 400; display: flex; align-items: center; gap: 5px; }
-.uo-kpi-val { margin-top: 6px; font-size: 17px; font-weight: 500; letter-spacing: -0.02em; color: var(--vc-text); display: flex; align-items: center; gap: 7px; font-variant-numeric: tabular-nums; }
-.uo-kpi-val.is-pos { color: var(--vt-up); }
-.uo-kpi-val.is-neg { color: var(--vt-down); }
+/* Der Performance-Block ist DIESELBE Tabelle wie Details darunter -- Zeile fuer Zeile,
+   Beschriftung links, Wert rechts, eine Linie dazwischen. Vorher waren es fuenf gerahmte Kacheln
+   mit 17px-Zahlen: zwei verschiedene Darstellungen fuer zwei Listen, die im selben Ausklapper
+   direkt uebereinander stehen und dasselbe tun. Die Werte hier sind deshalb Punkt fuer Punkt die
+   von .uo-meta-item/.uo-meta-k/.uo-meta-v -- gleiche Polsterung, gleiche Linie, gleiche
+   Schriftgroessen. Das Markup bleibt (uo-kpi traegt den Aufhaenger fuer die Erklaerkarte). */
+.uo-kpis { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 0 18px; }
+.uo-kpi { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 9px 0; border-bottom: 1px solid var(--vc-border); min-width: 0; }
+.uo-kpi-label { font-size: 13px; color: var(--vc-muted); font-weight: 400; display: flex; align-items: center; gap: 5px; }
+.uo-kpi-val { font-size: 13px; font-weight: 500; color: var(--vc-text); display: flex; align-items: center;
+  justify-content: flex-end; gap: 7px; text-align: right; font-variant-numeric: tabular-nums; }
+/* Auch am KIND, nicht nur am Wert selbst: das Markup setzt die Klasse in einen span INNERHALB
+   des Wertes (detailHtml, "Competitor Gap"), an .uo-kpi-val steht sie nie. Die beiden Regeln
+   trafen deshalb nichts -- die Luecke stand seit dem Bau in der normalen Textfarbe da. */
+.uo-kpi-val.is-pos, .uo-kpi-val .is-pos { color: var(--vt-up); }
+.uo-kpi-val.is-neg, .uo-kpi-val .is-neg { color: var(--vt-down); }
 /* The info icon behaves exactly like a table column header's: invisible until the KPI is hovered,
    14px, third colour, no cursor change (§7C). */
 .uo-kpi-info { display: inline-flex; align-items: center; color: var(--vc-third); opacity: 0; transition: opacity 140ms ease; flex: 0 0 auto; }
@@ -418,7 +434,7 @@ button.uo-comp-more:hover { background: var(--vt-row-hover); color: var(--vc-tex
   /* Full-screen drawer on phones: a 86%-wide side panel on a 380px viewport is not a side panel. */
   .uo-modal { position: fixed; inset: 0; width: auto; border-radius: 0; }
   .uo-m-source { padding-right: 108px; }
-  .uo-meta-grid { grid-template-columns: minmax(0,1fr); }
+  .uo-meta-grid, .uo-kpis { grid-template-columns: minmax(0,1fr); }
 }
 @media (max-width: 420px) {
   .uo-card-title { font-size: 14.5px; }
