@@ -389,9 +389,15 @@
      Die ZAHLEN erzaehlen die Geschichte der Sektion: eine Marke, die seit Monat drei zulegt, und
      eine, die stehenbleibt. Kestrel geht von 18.2 auf 38.9 (dieselbe 38.9 wie im Fenster oben),
      Vantage von 34.8 auf 32.1. */
+  /* hoch: ein zusaetzlicher Versatz nach oben. Die Lage des Schildes wird aus dem Wert der Kurve
+     an seiner Stelle gerechnet, und zwar LINEAR zwischen zwei Punkten -- die gezeichnete Kurve ist
+     aber gerundet (tension 0.38) und woelbt sich auf einem steigenden Stueck nach oben. Beim
+     Schild der eigenen Marke, das auf dem steilsten Stueck sitzt, sind das rund 16px: der Strich
+     endete darunter im Leeren. Ein fester Versatz statt einer Bezier-Rechnung, weil genau eine
+     Stelle betroffen ist. */
   var KRV = [
-    { id: "va", schild: 1, werte: [26.1, 25.4, 24.8, 25.1, 24.2, 23.9] },
-    { id: "ke", schild: 5, werte: [18.2, 19.1, 22.6, 28.4, 34.2, 38.9] }
+    { id: "va", schild: 1, hoch: 0,  werte: [26.1, 25.4, 24.8, 25.1, 24.2, 23.9] },
+    { id: "ke", schild: 5, hoch: 16, werte: [18.2, 19.1, 22.6, 28.4, 34.2, 38.9] }
   ];
   var KRV_MIN = 12, KRV_MAX = 47;      /* Rand oben fuer das Schild, unten fuer die flache Kurve */
   /* Der Abstand zwischen Punkt und Schild -- der graue Strich dazwischen ist genau so lang. */
@@ -576,9 +582,12 @@
               '<button class="udt-sub-disp-btn" type="button" tabindex="-1">URL</button>' +
             '</div>' +
           '</div>' +
-          '<button class="udt-sub-closebtn" type="button" tabindex="-1" aria-label="Close">' +
-            '<span data-ic="x" data-ic-w="2.2"></span>' +
-          '</button>' +
+          /* .up-iconbtn wie in der App -- ohne die Klasse ist der Knopf ein grauer Kasten ohne
+             Groesse (gemessen 12x4px). Das Zeichen kommt DIREKT in den Knopf und nicht in einen
+             span darin: die CSS des Knopfes richtet sein svg, und mit einem span dazwischen
+             bekommt es keine Groesse. */
+          '<button class="up-iconbtn udt-sub-closebtn" type="button" tabindex="-1" aria-label="Close" ' +
+            'data-ic="x" data-ic-w="2.2"></button>' +
         '</div>' +
         '<div class="udt-sub-head"><span>Page</span><span class="udt-sub-h-num">Domain Share</span>' +
         '<span>Type</span><span>Last Seen</span><span></span></div>' +
@@ -752,7 +761,7 @@
         var i0 = Math.floor(idx), i1 = Math.min(k.werte.length - 1, i0 + 1);
         var wert = k.werte[i0] + (k.werte[i1] - k.werte[i0]) * (idx - i0);
         /* Das Schild steht UEBER der Linie, nicht darauf: darauf deckt es sie zu. */
-        y = Math.max(ay.getPixelForValue(wert) - KRV_ABSTAND, hh + 3);
+        y = Math.max(ay.getPixelForValue(wert) - KRV_ABSTAND - (k.hoch || 0), hh + 3);
         schild.style.left = Math.round(x) + "px";
         schild.style.top = Math.round(y) + "px";
         schild.classList.add("is-da");
@@ -2846,7 +2855,7 @@
      (1720ms) steckt in jedem Zug, und was hier steht, ist die RUHE danach. */
   var CHANCEN_ERST = 2150;      /* nach dem Fuellen -- die Karten stehen bei ~1750 */
   var CHANCEN_ZWEIT = 700;      /* Ruhe zwischen den zwei Zuegen */
-  var CHANCEN_HALT = 4000;      /* Endzustand des Bretts, bevor die Karte aufgeht */
+  var CHANCEN_HALT = 2000;      /* Endzustand des Bretts, bevor die Karte aufgeht */
   var CHANCEN_OFFEN = 4000;     /* wie lange die Schublade offen bleibt */
   var CHANCEN_ZU = 520;         /* das Zufahren der Schublade, bevor die Seite geht */
 
@@ -2861,6 +2870,12 @@
          im Bild und passiert nicht aus dem Nichts. */
       karteKlicken(root, "o1", function(){
         if (window.opportunitiesOpenDetail) window.opportunitiesOpenDetail("o1");
+        /* Die Hand geht von der Karte, sobald die Schublade offen ist: eine Karte, die weiter
+           angefasst aussieht, waehrend ihr Inhalt daneben offen steht, ist ein Zustand zu viel.
+           Nach dem Oeffnen gesucht, weil das Brett dabei neu zeichnet -- die Karte im DOM ist
+           danach eine andere. */
+        var k = karte(root, "o1");
+        if (k) k.classList.remove("ulh-fass");
         /* Die Schublade bringt ihre eigenen Tooltips mit, und die sollen im Schaustueck nicht
            erscheinen. Zweimal, weil sie ihren Inhalt in zwei Schueben baut. */
         ohneTipps(root);
@@ -2983,6 +2998,18 @@
          Tabelle neu; der Filterwechsel darf danach wieder laufen. */
       zustand = "a";
       try { fuellen(); } catch (e){ if (window.console) console.warn("[landing-hero]", e); }
+      /* Und die Linien AUSDRUECKLICH auf Zustand A zurueck. Ohne diese Zeile blieb das Chart ab der
+         zweiten Runde auf den Zahlen des Filterwechsels stehen, waehrend Tabelle und Kennzahlen
+         zurueckgingen -- gemessen: Tabelle "vahakeniluve" und KPI 25 Prozent (also A), das Chart
+         aber weiter ke:38.8 (also B).
+         Der Grund liegt in makeLine: es merkt sich, was zuletzt GEZEICHNET wurde, und tut nichts,
+         wenn dieselben Daten noch einmal kommen. Der Filterwechsel schreibt die Zahlen aber direkt
+         in die Datensaetze (chartWandern -- der ganze Sinn ist, dass das Chart NICHT neu gebaut
+         wird und seine Eingangsanimation nicht wiederholt), und davon erfaehrt makeLine nichts.
+         Sein Gedaechtnis steht also noch auf A, waehrend die Leinwand B zeigt: die Anfrage aus
+         fuellen() sieht fuer makeLine aus wie "schon da".
+         Deshalb hier derselbe Weg zurueck, den der Wechsel hin genommen hat, nur ohne Dauer. */
+      chartWandern(root, reihen("a"), 0);
 
       /* 5. Die Seite kommt zurueck, gestaffelt wie jede andere. */
       main.classList.remove("is-weg");

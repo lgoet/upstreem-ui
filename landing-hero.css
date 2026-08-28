@@ -1101,9 +1101,12 @@
 /* Alle Hervorhebungen 40 Prozent langsamer und mit Ausklang: 340 -> 476ms. --ulh-aus ist die
    lange, weiche Kurve, mit der sich auch das Fenster oben verkleinert. */
 .ulh-vis-tab .up-row, .ulh-vis-chancen .uo-row {
-  transition: transform 476ms var(--ulh-aus), box-shadow 476ms var(--ulh-aus),
-              border-radius 476ms var(--ulh-aus);
+  transition: transform 476ms var(--ulh-aus), box-shadow 476ms var(--ulh-aus);
 }
+/* Die gehobene Zeile bekommt KEINEN eigenen Radius. Sie nimmt den, den ihr Bauteil ohnehin hat:
+   die Chancenzeile hat 12px von sich aus, die Zeile der Tabelle hat keinen -- ihr Rahmen ist der
+   der Tabelle, und deren 12px stehen hier. */
+.ulh-card:hover .ulh-vis-tab .up-row.is-mitte { border-radius: 12px; }
 /* Der eigene Hover der Bauteile faellt weg. */
 .ulh-vis .up-row:hover, .ulh-vis .uo-row:hover, .ulh-vis .udt-subrow:hover {
   background: var(--vc-bg); border-color: var(--vc-border);
@@ -1112,7 +1115,6 @@
 .ulh-card:hover .ulh-vis-tab .up-row.is-mitte,
 .ulh-card:hover .ulh-vis-chancen .uo-row.is-mitte {
   transform: scale(1.06);
-  border-radius: 8px;
   box-shadow: 0 12px 30px rgba(11, 13, 24, .14), 0 2px 6px rgba(11, 13, 24, .06);
   position: relative; z-index: 4;
   /* Die gehobene Zeile braucht ihren eigenen Grund: sie liegt jetzt UEBER ihren Nachbarn, und
@@ -1146,6 +1148,12 @@
 
 /* ---- Karte 4: die Chancenliste ----
    .uo-row wie im Listenmodus der App. Der Kasten darum haelt nur den Abstand. */
+/* Die zwei Marken der Prioritaetsbalken. Sie stehen in opportunities.css an .up-root.uo-root --
+   und diese Klasse darf die Vorschau NICHT tragen: opportunities.js sucht sich seine Wurzeln
+   danach und wuerde hier einen zweiten Controller aufziehen. Ohne sie ist der Farbverlauf der
+   gefuellten Balken ungueltig und faellt auf "none" zurueck: gemessen standen alle vier Balken
+   grau da, obwohl drei die Klasse is-on trugen. Die Werte sind die der Komponente. */
+.ulh-vis-chancen .ulh-vis-in { --uo-pot-a: #c4c9d0; --uo-pot-b: var(--vc-text); }
 .ulh-vis-chancen .uo-list-rows { gap: 8px; }
 .ulh-vis-chancen .uo-row { cursor: default; }
 
