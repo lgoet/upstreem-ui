@@ -1,0 +1,190 @@
+<meta charset="utf-8"><title>preload: beide Loader-Generationen</title>
+<body style="font:12px ui-monospace,monospace;padding:14px">
+<pre id="out">laeuft</pre>
+<script>
+(function(){
+  var PIN = "9aaa087123d6e19634a5030532d8f5870ec6161b";
+  if (!PIN || PIN === "CDN_" + "PIN") PIN = "main";
+
+  var VORRAT = "sofort";
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + PIN + "/";
+
+  ["preconnect", "dns-prefetch"].forEach(function(rel){
+    var l = document.createElement("link");
+    l.rel = rel; l.href = "https://cdn.jsdelivr.net";
+    if (rel === "preconnect") l.crossOrigin = "anonymous";
+    document.head.appendChild(l);
+  });
+
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(rohUrl, make){
+    var name = rohUrl.slice(rohUrl.lastIndexOf("/") + 1);
+    var da = L[name] || L[rohUrl];
+    if (da){
+      if (da !== rohUrl && String(da).indexOf("http") === 0 && window.console) console.warn("upstreem: " + name +
+        " ist schon von einem anderen Pin geladen. Geladen bleibt " + da +
+        ", ignoriert wird " + rohUrl + ". Setzt alle Elemente auf denselben Pin.");
+      return;
+    }
+    L[name] = rohUrl; L[rohUrl] = rohUrl; make();
+  }
+  function minUrl(f){ return base + f.replace(/\.(js|css)$/, ".min.$1"); }
+
+  function css(f){ once(base + f, function(){
+    var l = document.createElement("link"); l.rel = "stylesheet"; l.href = minUrl(f);
+    l.media = "print";
+    var an = function(){ l.media = "all"; };
+    l.onload = an;
+    l.onerror = function(){
+      var r = document.createElement("link"); r.rel = "stylesheet"; r.href = base + f;
+      r.media = "print"; r.onload = function(){ r.media = "all"; };
+      setTimeout(function(){ r.media = "all"; }, 2000);
+      document.head.appendChild(r);
+      if (l.parentNode) l.parentNode.removeChild(l);
+    };
+    setTimeout(an, 2000);
+    document.head.appendChild(l);
+  }); }
+
+  function js(f){ once(base + f, function(){
+    var s = document.createElement("script"); s.src = minUrl(f); s.async = false;
+    s.onerror = function(){
+      var r = document.createElement("script"); r.src = base + f; r.async = false;
+      document.head.appendChild(r);
+    };
+    document.head.appendChild(s);
+  }); }
+
+  ["Topics","Markets","Brands"].forEach(function(n){
+    var q = "__up" + n + "Queue";
+    window[q] = window[q] || [];
+    if (typeof window["setUpstreem" + n] !== "function"){
+      window["setUpstreem" + n] = function(rows){ window[q].push(rows); };
+    }
+  });
+
+  window.__upstreemMarketQueue = window.__upstreemMarketQueue || [];
+  if (typeof window.setUpstreemAllMarkets !== "function"){
+    window.setUpstreemAllMarkets = function(rows){
+      window.__upstreemMarketQueue.push({ all: true, rows: rows }); return true;
+    };
+  }
+
+  css("core.css");     js("core.js");
+  css("sidebar.css");  js("sidebar.js");
+
+  function welle2(){
+    css("visibility-chart.css");        js("visibility-chart.js");
+    css("topcitations-dashboard.css");  js("topcitations-dashboard.js");
+    css("citations-combo-chart.css");   js("citations-combo-chart.js");
+    css("prompts-table.css");           js("prompts-table.js");
+    css("urls-table.css");              js("urls-table.js");
+    css("domains-table.css");           js("domains-table.js");
+    css("topics-manager.css");          js("topics-manager.js");
+    css("responses-table.css");         js("responses-table.js");
+    css("brands-overview.css");         js("brands-overview.js");
+    css("performance-radar.css");       js("performance-radar.js");
+    css("quick-actions.css");           js("quick-actions.js");
+    css("performance-detail.css");      js("performance-detail.js");
+    css("discover-brands.css");         js("discover-brands.js");
+    css("settings-brand.css");          js("settings-brand.js");
+    css("opportunities.css");           js("opportunities.js");
+    css("ask-mira.css");                js("ask-mira.js");
+    css("prompt-research.css");         js("prompt-research.js");
+    css("add-prompts.css");             js("add-prompts.js");
+    css("create-with-ai.css");          js("create-with-ai.js");
+
+    once("chartjs", function(){
+      var c = document.createElement("script");
+      c.src = "https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js";
+      c.setAttribute("data-upstreem-chartjs", "1");
+      c.async = false;
+      document.head.appendChild(c);
+    });
+  }
+  function welle2Planen(){
+    if (window.requestIdleCallback) window.requestIdleCallback(welle2, { timeout: 2500 });
+    else setTimeout(welle2, 1200);
+  }
+  if (VORRAT === "sofort") welle2();
+  else if (document.readyState === "complete") welle2Planen();
+  else window.addEventListener("load", welle2Planen);
+})();
+</script>
+<script>window.__pruefzeile = function(){ return (function(){var n=performance.getEntriesByType("navigation")[0],r=performance.getEntriesByType("resource"),u=r.filter(function(e){return e.name.indexOf("upstreem-ui@")>=0}),k=function(e){return e.name.replace(/^.*upstreem-ui@[^/]+\//,"")},kb=function(a){return Math.round(a.reduce(function(x,e){return x+(e.decodedBodySize||0)},0)/1024)},min=u.filter(function(e){return e.name.indexOf(".min.")>=0}),roh=u.filter(function(e){return e.name.indexOf(".min.")<0}),mn={};min.forEach(function(e){mn[k(e).replace(".min.",".")]=1});var dop=roh.filter(function(e){return mn[k(e)]}).map(k),pins={};u.forEach(function(e){var m=e.name.match(/upstreem-ui@([^/]+)\//);if(m)pins[m[1]]=(pins[m[1]]||0)+1});var kern=document.querySelectorAll('script[src*="/core.js"], script[src*="/core.min.js"]').length,ld=Math.round(n?n.loadEventEnd:0),B={kb:3914,load:3446,dat:77},z=[],alles=true,ok=function(b,t){z.push((b?"  OK   ":"  FEHLT")+" "+t);alles=alles&&b};ok(dop.length===0,"nichts doppelt geladen"+(dop.length?" -> "+dop.join(", "):""));ok(kern===1,"core genau einmal im Kopf ("+kern+")");ok(Object.keys(pins).length===1,"ein einziger Pin ("+Object.keys(pins).join(" + ")+")");ok(min.length>30,"minifiziert: "+min.length+" Dateien");ok(kb(u)<B.kb*0.8,"upstreem "+kb(u)+" KB gegen "+B.kb+" KB vorher");ok(ld<=B.load,"loadEventEnd "+ld+" ms gegen "+B.load+" ms vorher");var t="UPSTREEM-PRUEFUNG  "+(alles?"BESTANDEN":"NICHT BESTANDEN")+"\n"+z.join("\n")+"\n\nDateien "+u.length+" (min "+min.length+" / roh "+roh.length+"), Seite gesamt "+kb(r)+" KB\nViews "+document.querySelectorAll('[id^="view-"]').length+", Komponenten "+document.querySelectorAll(".up-root").length+", DOM-Knoten "+document.getElementsByTagName("*").length+"\nroh geblieben: "+roh.map(k).sort().join(", ");console.log(t);try{copy(t)}catch(e){}return t})(); };</script>
+
+<script>
+/* ---- Die Element-Loader in BEIDEN Generationen ----------------------------------------------
+   Das war der Fehler im ersten Kontrolltest: hier stand nur die NEUERE Fassung (entdoppelt nach
+   Dateiname), und die traf zufaellig die einzige Schluesselform, die das Snippet damals eintrug.
+   In der laufenden App sind 59 von 67 Eintraegen ganze URLs -- also die AELTERE Fassung. Beide
+   muessen null Dateien nachladen; was sie doch laden, steht unten namentlich da. */
+window.__warnungen = [];
+var echteWarnung = console.warn;
+console.warn = function(){ window.__warnungen.push([].join.call(arguments, " ")); echteWarnung.apply(console, arguments); };
+var PIN_EL = "9aaa087123d6e19634a5030532d8f5870ec6161b";
+var BASE_EL = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + PIN_EL + "/";
+
+function hole(url){
+  if (/\.css$/.test(url)){ var l=document.createElement("link"); l.rel="stylesheet"; l.href=url; document.head.appendChild(l); }
+  else { var s=document.createElement("script"); s.src=url; s.async=false; document.head.appendChild(s); }
+}
+/* ALT: Schluessel ist die ganze URL. */
+function loaderAlt(dateien){
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  var geladen = [];
+  dateien.forEach(function(f){
+    var url = BASE_EL + f;
+    if (L[url]) return;
+    L[url] = url; hole(url); geladen.push(f);
+  });
+  return geladen;
+}
+/* NEU: Schluessel ist der Dateiname. */
+function loaderNeu(dateien){
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  var geladen = [];
+  dateien.forEach(function(f){
+    var url = BASE_EL + f, name = url.slice(url.lastIndexOf("/") + 1);
+    if (L[name]){
+      if (L[name] !== url && window.console) console.warn("upstreem: " + name + " ist schon von einem anderen Pin geladen.");
+      return;
+    }
+    L[name] = url; hole(url); geladen.push(f);
+  });
+  return geladen;
+}
+
+function messen(){
+  var r = performance.getEntriesByType("resource").filter(function(e){ return e.name.indexOf("upstreem-ui@") >= 0; });
+  var kurz = function(e){ return e.name.replace(/^.*upstreem-ui@[^/]+\//, ""); };
+  var roh = r.filter(function(e){ return e.name.indexOf(".min.") < 0; });
+  var reg = window.__upAssetsLoaded || {};
+  var UC = window.UpstreemCore;
+  document.getElementById("out").textContent = JSON.stringify({
+    dateien_gesamt: r.length,
+    minifiziert: r.filter(function(e){ return e.name.indexOf(".min.") >= 0; }).length,
+    roh: roh.length,
+    roh_namen: roh.map(kurz),
+    nachgeladen_ALT: window.__altGeladen,
+    nachgeladen_NEU: window.__neuGeladen,
+    warnungen: window.__warnungen,
+    registry_schluessel: Object.keys(reg).length,
+    davon_urls: Object.keys(reg).filter(function(k){ return k.indexOf("http") === 0; }).length,
+    kern_laeuft: !!UC, kern_teile: UC ? Object.keys(UC).length : 0,
+    kern_probe: UC && UC.fmtPct ? UC.fmtPct(34.25, 1) : null,
+    kern_einmal: document.querySelectorAll('script[src*="core"]').length
+  }, null, 1);
+}
+window.addEventListener("load", function(){
+  /* Wie in Bubble: die Element-Loader laufen NACH dem Seitenaufbau. Zwei Elemente der alten
+     Generation, zwei der neuen -- alle vier fordern Dateien, die das Snippet schon geholt hat. */
+  setTimeout(function(){
+    window.__altGeladen = loaderAlt(["core.css","core.js","brands-overview.css","brands-overview.js"])
+      .concat(loaderAlt(["core.css","core.js","prompts-table.css","prompts-table.js"]));
+    window.__neuGeladen = loaderNeu(["core.css","core.js","ask-mira.css","ask-mira.js"])
+      .concat(loaderNeu(["core.css","core.js","sidebar.css","sidebar.js"]));
+  }, 60);
+  setTimeout(messen, 6000);
+});
+</script>
