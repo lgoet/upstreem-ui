@@ -1256,8 +1256,12 @@
    wenig wie moeglich davon verdecken. */
 /* Fuenf Prozent kleiner als der Stand davor (352 x 330) und acht Pixel weiter nach rechts, also
    16px Ueberdeckung statt 8. */
-.ulh-fen-urls    { --ulh-fb: 334px; --ulh-fh: 314px; --ulh-fz: 0.8;
-                   right: calc(100% - 16px); bottom: -50px; }
+/* Je Seite 5px kleiner als der Stand davor (334 x 314): die Masse gehen um 10 zurueck, und die
+   Verankerung wandert um 5 mit -- der rechte Rand liegt 5px weiter links (16 -> 11), der untere
+   5px hoeher (-50 -> -45). Nur die Masse zu kuerzen haette die Kachel an einer Ecke festgehalten
+   und sie NUR an den zwei anderen Seiten schmaler gemacht. */
+.ulh-fen-urls    { --ulh-fb: 324px; --ulh-fh: 304px; --ulh-fz: 0.8;
+                   right: calc(100% - 11px); bottom: -45px; }
 /* Rechts, auf einem Viertel der Hoehe: weit oben, aber nicht an der Oberkante. Direkt neben dem
    Hauptfenster, 4px Luft, keine Ueberdeckung. Die Hoehe ist die, die die Karte bei dieser
    Breite von sich aus braucht -- so muss sie nicht gestreckt werden und traegt keine Luft:
@@ -1336,6 +1340,13 @@
    Hoverbewegung der Scheibe (hoverOffset, hellere Farbe) BLEIBEN soll: die kommt aus derselben
    Konfiguration, und ein "tooltip: false" haette beides genommen. */
 .ulh-fen-urls .up-donut-tt { display: none; }
+/* Der Ring etwas kleiner im Durchmesser. Er kommt aus core mit width: min(75%, 220px) am
+   .up-donut-wrap (aspect-ratio 1/1 haelt ihn rund, die Hoehe folgt also von selbst -- eine
+   Breitenangabe ist hier das ganze Paket). Das SKELETT traegt in core dieselben Masse und wird
+   mitgezogen: sonst ist der Ladekreis groesser als der Ring, der ihn ersetzt, und es ruckt beim
+   ersten Zeichnen. Gilt nur in diesem Fenster, in der App bleibt der Ring, wie er ist. */
+.ulh-fen-urls .up-donut-layout.is-collapsed .up-donut-wrap,
+.ulh-fen-urls .up-donut-sk.is-collapsed .up-sk-chart { width: min(66%, 196px); }
 /* Der Wechsel der Verteilung: der Ring geht WEICH ZEICHNEN und faellt dabei etwas zusammen, und
    die neue Verteilung kommt genauso zurueck. Nur Deckkraft war zu wenig -- ein Ausblenden und ein
    Einblenden hintereinander lesen sich als zwei Schnitte, ein Unschaerfeverlauf als eine
