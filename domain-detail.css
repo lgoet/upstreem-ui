@@ -26,9 +26,19 @@
 .udd-root > [hidden] { display: none; }
 
 /* ---- Umschalter (Modus) ----------------------------------------------------------------------
-   .up-seg/.up-seg-btn kommen aus core. Hier nur der Abstand nach unten und die etwas breitere
-   Polsterung der Knoepfe -- wie in brand-detail, damit zwei Detailseiten gleich aussehen. */
-.udd-seg { margin: 0; width: fit-content; }
+   .up-seg/.up-seg-btn kommen aus core. Hier nur die etwas breitere Polsterung der Knoepfe und die
+   Hoehe -- wie in brand-detail, damit zwei Detailseiten gleich aussehen.
+   Dieser Umschalter bleibt wie der in brand-detail auf 32px, waehrend .up-seg in core auf 26
+   gegangen ist: er ist kein Werkzeug in einer Kopfzeile, sondern die Navigation dieser Seite --
+   zwei gleichwertige Ansichten, und er steht allein ueber dem Inhalt.
+   Zu .check_reinvention.py, das hier "gesprengt" meldet: die Pille wird nicht angeschnitten,
+   sondern auf ihre FRUEHERE Groesse zurueckgestellt. Hoehe und Polster stehen an Leiste UND Knopf
+   (32 und 16, die Werte, die .up-seg vor der Verkleinerung hatte), und der Radius bleibt bei 8 --
+   bei 32px war er derselbe. Es gibt also keinen Wert, der nicht mitgezogen ist. */
+/* KEIN align-self: der Schalter steht in .udd-toprow, und die zentriert ihre Kinder. In
+   brand-detail steht er allein ueber dem Inhalt, dort ist flex-start richtig -- hier waere es ein
+   Griff gegen die Zeile, in der er sitzt. */
+.udd-seg { margin: 0; width: fit-content; height: 32px; }
 .udd-seg[hidden] { display: none; }
 /* Die oberste Zeile: Umschalter links, Zahnrad rechts. Sie steht IMMER an erster Stelle (order
    -1000) und ueber beide Spalten -- das Zahnrad ist der einzige Weg zurueck zu einem ausgeblendeten
@@ -36,7 +46,7 @@
    Karte 16 gehoeren und nicht die 32 des Rasters. */
 .udd-toprow { display: flex; flex-direction: row; align-items: center;
   gap: 16px; margin-bottom: -16px; min-height: 32px; }
-.udd-seg .up-seg-btn { padding-left: 16px; padding-right: 16px; }
+.udd-seg .up-seg-btn { height: 32px; padding-left: 16px; padding-right: 16px; }
 
 /* ---- Karte -----------------------------------------------------------------------------------
    Werte 1:1 aus .ubd-card: 16px Radius wie jeder aeussere Container der App, 1px Rahmen,
