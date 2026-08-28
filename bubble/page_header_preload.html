@@ -43,12 +43,23 @@
      Erst wenn Views nur noch beim ersten Öffnen gebaut werden, ist "idle" richtig: dann braucht
      die Seite wirklich nur ihre eigenen Komponenten, und der Rest ist Vorrat für Drawer.
 
-  ── DIE REGISTRY, UND WARUM SIE DIE ROHEN NAMEN TRÄGT ────────────────────────
-  window.__upAssetsLoaded ist dieselbe Liste, die die Loader in den Komponenten benutzen. Sie
-  entdoppelt nach DATEINAME. Dieses Script trägt deshalb den ROHEN Namen und die ROHE URL ein,
-  lädt aber die minifizierte Datei: der Loader in einem Element sucht "core.js" und findet genau
-  seine eigene URL vor — er lädt nichts nach und meldet auch keinen Pin-Unterschied. Kein Element
-  muss dafür angefasst werden.
+  ── DIE REGISTRY, UND WARUM SIE ZWEI SCHLÜSSELFORMEN TRÄGT ───────────────────
+  window.__upAssetsLoaded ist dieselbe Liste, die die Loader in den Komponenten benutzen — und die
+  gibt es in ZWEI Generationen: die ältere entdoppelt nach der ganzen URL, die neuere nach dem
+  Dateinamen. In der laufenden App gemessen: 67 Einträge, davon 59 ganze URLs und 8 Dateinamen.
+  Dieses Script trägt deshalb BEIDE Formen ein und lädt die minifizierte Datei. Damit findet jeder
+  Element-Loader seinen eigenen Schlüssel vor, lädt nichts nach und meldet keinen Pin-Unterschied.
+  Kein Element muss angefasst werden.
+
+  Der erste Versuch trug nur den Dateinamen ein — und traf damit 59 von 67 Einträgen nicht. Die
+  betroffenen Elemente haben ihre rohen Dateien zusätzlich geholt: 119 Dateien statt 77, 5314 statt
+  3914 KB, core.js zweimal ausgeführt, Seitenaufbau von 3.4s auf 7.1s. Der Kontrolltest davor hatte
+  das nicht gefunden, weil im Harness nur die NEUERE Generation nachgebaut war. Jetzt stehen beide
+  darin (_h_preload.html), und beide müssen null nachladen.
+
+  WICHTIG: Der Pin hier muss ZEICHENGLEICH mit dem data-cdn-pin der Elemente sein, nicht nur
+  derselbe Commit. Die ältere Generation vergleicht ganze URLs — kurzer Hash gegen langen Hash sind
+  zwei verschiedene Schlüssel, und dann lädt sie trotzdem nach.
 
   ── ACHTUNG, EINZIGE FALLE ───────────────────────────────────────────────────
   PIN unten MUSS identisch sein mit dem data-cdn-pin auf den Komponenten. Weichen sie ab, lädt
@@ -83,18 +94,24 @@
     document.head.appendChild(l);
   });
 
-  /* Dieselbe Registry, die die Loader in den Komponenten benutzen -- mit dem ROHEN Namen und der
-     ROHEN URL als Eintrag, siehe Kopf. */
+  /* Dieselbe Registry, die die Loader in den Komponenten benutzen -- und ZWEI Schluesselformen.
+     Warum: die Loader in den eingebauten Elementen gibt es in zwei Generationen. Die aeltere
+     entdoppelt nach der GANZEN URL, die neuere nach dem DATEINAMEN. In der laufenden App gemessen:
+     67 Eintraege, davon 59 ganze URLs und 8 Dateinamen. Wer nur eine der beiden Formen eintraegt,
+     trifft die andere Generation nie -- die laedt dann ihre rohe Datei zusaetzlich. Genau das ist
+     passiert: 119 Dateien statt 77, 5314 statt 3914 KB, und core lief zweimal.
+     Deshalb wird BEIDES eingetragen, und beim Nachsehen wird BEIDES geprueft. */
   var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
   function once(rohUrl, make){
     var name = rohUrl.slice(rohUrl.lastIndexOf("/") + 1);
-    if (L[name]){
-      if (L[name] !== rohUrl && window.console) console.warn("upstreem: " + name +
-        " ist schon von einem anderen Pin geladen. Geladen bleibt " + L[name] +
+    var da = L[name] || L[rohUrl];
+    if (da){
+      if (da !== rohUrl && String(da).indexOf("http") === 0 && window.console) console.warn("upstreem: " + name +
+        " ist schon von einem anderen Pin geladen. Geladen bleibt " + da +
         ", ignoriert wird " + rohUrl + ". Setzt alle Elemente auf denselben Pin.");
       return;
     }
-    L[name] = rohUrl; make();
+    L[name] = rohUrl; L[rohUrl] = rohUrl; make();
   }
   function minUrl(f){ return base + f.replace(/\.(js|css)$/, ".min.$1"); }
 

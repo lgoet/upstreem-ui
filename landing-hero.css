@@ -39,7 +39,13 @@
      seiner eigenen Spur herausragt, ist kein Gitter. Die 48px Mindestrand halten die Schienen auf
      schmalen Seiten von der Kante weg.
      Ausgenommen sind die drei Nebenfenster: die ragen absichtlich darueber hinaus. */
-  --ulh-spur: min(100% - 48px, 1440px);
+  /* --ulh-rand: das Hauptfenster steht je Seite so weit INNERHALB der alten Spur. Es steckt in der
+     Spur selbst und nicht in einem transform am Fenster: an dieser Spur haengen auch die beiden
+     Schienen des Seitengitters und der Inhalt jeder Sektion. Wuerde nur das Fenster kleiner, stuenden
+     die Schienen 40px daneben -- genau das war der Fehler beim ersten Versuch.
+     Der Deckel geht mit: 1440 minus beide Raender. */
+  --ulh-rand: 40px;
+  --ulh-spur: min(100% - 48px - 2 * var(--ulh-rand), calc(1440px - 2 * var(--ulh-rand)));
   /* Die Linie der Schienen. Heller als der Rahmen der Karten (#e7e9ec): sie laeuft ueber die ganze
      Hoehe der Seite und wird dadurch als Flaeche wahrgenommen, nicht als Linie. */
   --ulh-schiene: #ededf0;

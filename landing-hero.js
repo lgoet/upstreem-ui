@@ -2219,19 +2219,23 @@
      Jetzt 0.76, also noch fuenf Prozent staerker: das Team-Fenster und die Antwortkarte stehen
      seit dieser Runde DIREKT neben dem Hauptfenster (4px Luft, keine Ueberdeckung mehr), und
      dieser Platz muss von der Verkleinerung kommen. */
-  var KLEIN_FAKTOR = 0.76;
-  /* Der GROSSE Zustand ist nicht mehr scale(1): das Hauptfenster steht je Seite rund 40px innerhalb
-     der Schienen des Seitengitters. Gerechnet aus der gemessenen Buehnenbreite, damit es auf jeder
-     Seitenbreite dieselben 40px sind und nicht dieselben Prozente.
-     Der KLEINE Zustand bleibt davon unberuehrt: KLEIN_FAKTOR ist ein absolutes Mass auf derselben
-     Grundbreite, also steht das gescrollte Fenster genau da, wo es vorher stand. */
-  var GROSS_RAND = 40;
-  function grossFaktor(root){
+  /* Der grosse Zustand ist wieder scale(1): das Hauptfenster ist jetzt SELBST schmaler, ueber
+     --ulh-rand in der Spur (landing-hero.css) -- und mit ihm die beiden Schienen und der Inhalt
+     jeder Sektion. Das war der Fehler im ersten Versuch: dort schrumpfte nur das Fenster ueber ein
+     transform, die Schienen blieben stehen, und dazwischen klaffte je Seite der Rand.
+
+     Der KLEINE Zustand soll dabei genau so gross bleiben wie vorher. Vorher war er 0.76 der ALTEN
+     Spur; die Spur ist jetzt um beide Raender schmaler, also braucht es denselben absoluten Wert auf
+     der neuen Breite. Gerechnet und nicht als Zahl hingeschrieben: der Rand steht in der CSS, und
+     eine zweite Wahrheit hier waere beim naechsten Wert daneben. */
+  var KLEIN_ALT = 0.76;
+  function kleinFaktor(root){
     var b = root.querySelector(".ulh-buehne");
-    var w = b ? b.offsetWidth : 0;                        /* offsetWidth: die LAYOUTbreite, ohne die eigene Verkleinerung */
-    if (!w) return 1;
-    var f = (w - GROSS_RAND * 2) / w;
-    return Math.max(0.85, Math.min(1, f));                /* auf einer sehr schmalen Seite nicht ins Nichts schrumpfen */
+    var w = b ? b.offsetWidth : 0;                        /* offsetWidth: die LAYOUTbreite, ohne eine eigene Verkleinerung */
+    if (!w) return KLEIN_ALT;
+    var rand = parseFloat(getComputedStyle(root).getPropertyValue("--ulh-rand")) || 0;
+    var f = KLEIN_ALT * (w + 2 * rand) / w;
+    return Math.min(1, f);                                /* nie hochskalieren */
   }
 
   function scrollGroesse(root){
@@ -2282,7 +2286,7 @@
          Ueberblendung von "none" auf "scale(.8)" muss ein Browser als Uebergang von der Einheits-
          matrix lesen, und das ist genau die Stelle, an der es hakt, wenn etwas hakt. Zwischen zwei
          echten Transformationen gibt es nichts zu deuten. */
-      var wunsch = soll ? "scale(" + KLEIN_FAKTOR + ")" : "scale(" + grossFaktor(root).toFixed(4) + ")";
+      var wunsch = soll ? "scale(" + kleinFaktor(root).toFixed(4) + ")" : "scale(1)";
       /* Nur schreiben, wenn sich etwas aendert -- sonst waere das ein Stilschreiben je Takt, und
          jedes davon macht das Layout schmutzig. */
       if (rahmen.style.transform !== wunsch) rahmen.style.transform = wunsch;

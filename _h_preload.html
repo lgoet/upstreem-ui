@@ -1,9 +1,9 @@
-<meta charset="utf-8"><title>preload: zwei wellen</title>
+<meta charset="utf-8"><title>preload: beide Loader-Generationen</title>
 <body style="font:12px ui-monospace,monospace;padding:14px">
 <pre id="out">laeuft</pre>
 <script>
 (function(){
-  var PIN = "bea0d8b";   // <-- exakt derselbe Wert wie data-cdn-pin auf den Komponenten
+  var PIN = "9aaa087123d6e19634a5030532d8f5870ec6161b";   // <-- exakt derselbe Wert wie data-cdn-pin auf den Komponenten
   if (!PIN || PIN === "CDN_" + "PIN") PIN = "main";
   /* "sofort": der Vorrat wird gleich mitgeladen. Richtig, solange die Seite ohnehin alle Views
      baut -- dann kommen die Dateien so oder so, und hier kommen sie minifiziert.
@@ -22,18 +22,24 @@
     document.head.appendChild(l);
   });
 
-  /* Dieselbe Registry, die die Loader in den Komponenten benutzen -- mit dem ROHEN Namen und der
-     ROHEN URL als Eintrag, siehe Kopf. */
+  /* Dieselbe Registry, die die Loader in den Komponenten benutzen -- und ZWEI Schluesselformen.
+     Warum: die Loader in den eingebauten Elementen gibt es in zwei Generationen. Die aeltere
+     entdoppelt nach der GANZEN URL, die neuere nach dem DATEINAMEN. In der laufenden App gemessen:
+     67 Eintraege, davon 59 ganze URLs und 8 Dateinamen. Wer nur eine der beiden Formen eintraegt,
+     trifft die andere Generation nie -- die laedt dann ihre rohe Datei zusaetzlich. Genau das ist
+     passiert: 119 Dateien statt 77, 5314 statt 3914 KB, und core lief zweimal.
+     Deshalb wird BEIDES eingetragen, und beim Nachsehen wird BEIDES geprueft. */
   var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
   function once(rohUrl, make){
     var name = rohUrl.slice(rohUrl.lastIndexOf("/") + 1);
-    if (L[name]){
-      if (L[name] !== rohUrl && window.console) console.warn("upstreem: " + name +
-        " ist schon von einem anderen Pin geladen. Geladen bleibt " + L[name] +
+    var da = L[name] || L[rohUrl];
+    if (da){
+      if (da !== rohUrl && String(da).indexOf("http") === 0 && window.console) console.warn("upstreem: " + name +
+        " ist schon von einem anderen Pin geladen. Geladen bleibt " + da +
         ", ignoriert wird " + rohUrl + ". Setzt alle Elemente auf denselben Pin.");
       return;
     }
-    L[name] = rohUrl; make();
+    L[name] = rohUrl; L[rohUrl] = rohUrl; make();
   }
   function minUrl(f){ return base + f.replace(/\.(js|css)$/, ".min.$1"); }
 
@@ -152,54 +158,77 @@
 </script>
 
 <script>
-/* Ein ELEMENT-Loader in der Fassung, die in den Bubble-Elementen steckt (unveraendert kopiert):
-   er muss core.js als schon geladen erkennen und STILL bleiben -- kein zweiter Abruf, keine
-   Warnung ueber einen anderen Pin. Genau das ist die Bedingung dafuer, dass kein Element
-   angefasst werden muss. */
+/* ---- Die Element-Loader in BEIDEN Generationen ----------------------------------------------
+   Das war der Fehler im ersten Kontrolltest: hier stand nur die NEUERE Fassung (entdoppelt nach
+   Dateiname), und die traf zufaellig die einzige Schluesselform, die das Snippet damals eintrug.
+   In der laufenden App sind 59 von 67 Eintraegen ganze URLs -- also die AELTERE Fassung. Beide
+   muessen null Dateien nachladen; was sie doch laden, steht unten namentlich da. */
 window.__warnungen = [];
 var echteWarnung = console.warn;
 console.warn = function(){ window.__warnungen.push([].join.call(arguments, " ")); echteWarnung.apply(console, arguments); };
-function elementLoaderAlt(dateien, klasse){
-  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@bea0d8b/";
+var PIN_EL = "9aaa087123d6e19634a5030532d8f5870ec6161b";
+var BASE_EL = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + PIN_EL + "/";
+
+function hole(url){
+  if (/\.css$/.test(url)){ var l=document.createElement("link"); l.rel="stylesheet"; l.href=url; document.head.appendChild(l); }
+  else { var s=document.createElement("script"); s.src=url; s.async=false; document.head.appendChild(s); }
+}
+/* ALT: Schluessel ist die ganze URL. */
+function loaderAlt(dateien){
   var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
   var geladen = [];
-  function once(url, make){
-    var name = url.slice(url.lastIndexOf("/") + 1);
+  dateien.forEach(function(f){
+    var url = BASE_EL + f;
+    if (L[url]) return;
+    L[url] = url; hole(url); geladen.push(f);
+  });
+  return geladen;
+}
+/* NEU: Schluessel ist der Dateiname. */
+function loaderNeu(dateien){
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  var geladen = [];
+  dateien.forEach(function(f){
+    var url = BASE_EL + f, name = url.slice(url.lastIndexOf("/") + 1);
     if (L[name]){
-      if (L[name] !== url && window.console) console.warn("upstreem: " + name +
-        " ist schon von einem anderen Pin geladen. Geladen bleibt " + L[name] + ", ignoriert wird " + url + ".");
+      if (L[name] !== url && window.console) console.warn("upstreem: " + name + " ist schon von einem anderen Pin geladen.");
       return;
     }
-    L[name] = url; make(url); geladen.push(name);
-  }
-  dateien.forEach(function(f){
-    if (/\.css$/.test(f)) once(base + f, function(u){ var l=document.createElement("link"); l.rel="stylesheet"; l.href=u; document.head.appendChild(l); });
-    else once(base + f, function(u){ var s=document.createElement("script"); s.src=u; s.async=false; document.head.appendChild(s); });
+    L[name] = url; hole(url); geladen.push(f);
   });
   return geladen;
 }
 
 function messen(){
-  var tags = [].slice.call(document.querySelectorAll('head link[href*="upstreem-ui@"], head script[src*="upstreem-ui@"]'))
-    .map(function(e){ var u=e.href||e.src; return u.slice(u.lastIndexOf("/")+1); });
-  var min = tags.filter(function(n){ return n.indexOf(".min.") >= 0; });
-  var roh = tags.filter(function(n){ return n.indexOf(".min.") < 0; });
+  var r = performance.getEntriesByType("resource").filter(function(e){ return e.name.indexOf("upstreem-ui@") >= 0; });
+  var kurz = function(e){ return e.name.replace(/^.*upstreem-ui@[^/]+\//, ""); };
+  var roh = r.filter(function(e){ return e.name.indexOf(".min.") < 0; });
+  var reg = window.__upAssetsLoaded || {};
   var UC = window.UpstreemCore;
   document.getElementById("out").textContent = JSON.stringify({
-    tags_gesamt: tags.length,
-    minifiziert: min.length,
-    roh: roh,
-    registry_kern: window.__upAssetsLoaded ? window.__upAssetsLoaded["core.js"] : null,
-    kern_laeuft: !!UC,
-    kern_teile: UC ? Object.keys(UC).length : 0,
-    kern_probe: UC && UC.fmtPct ? UC.fmtPct(34.25, 1) : null,
+    dateien_gesamt: r.length,
+    minifiziert: r.filter(function(e){ return e.name.indexOf(".min.") >= 0; }).length,
+    roh: roh.length,
+    roh_namen: roh.map(kurz),
+    nachgeladen_ALT: window.__altGeladen,
+    nachgeladen_NEU: window.__neuGeladen,
     warnungen: window.__warnungen,
-    nachgeladen_von_element: window.__elementHatGeladen
+    registry_schluessel: Object.keys(reg).length,
+    davon_urls: Object.keys(reg).filter(function(k){ return k.indexOf("http") === 0; }).length,
+    kern_laeuft: !!UC, kern_teile: UC ? Object.keys(UC).length : 0,
+    kern_probe: UC && UC.fmtPct ? UC.fmtPct(34.25, 1) : null,
+    kern_einmal: document.querySelectorAll('script[src*="core"]').length
   }, null, 1);
 }
 window.addEventListener("load", function(){
-  /* Der Element-Loader laeuft, wie in Bubble, NACH dem Seitenaufbau -- und vor Welle 2. */
-  setTimeout(function(){ window.__elementHatGeladen = elementLoaderAlt(["core.css","brands-overview.css","core.js","brands-overview.js"], "ubo-root"); }, 60);
+  /* Wie in Bubble: die Element-Loader laufen NACH dem Seitenaufbau. Zwei Elemente der alten
+     Generation, zwei der neuen -- alle vier fordern Dateien, die das Snippet schon geholt hat. */
+  setTimeout(function(){
+    window.__altGeladen = loaderAlt(["core.css","core.js","brands-overview.css","brands-overview.js"])
+      .concat(loaderAlt(["core.css","core.js","prompts-table.css","prompts-table.js"]));
+    window.__neuGeladen = loaderNeu(["core.css","core.js","ask-mira.css","ask-mira.js"])
+      .concat(loaderNeu(["core.css","core.js","sidebar.css","sidebar.js"]));
+  }, 60);
   setTimeout(messen, 6000);
 });
 </script>
