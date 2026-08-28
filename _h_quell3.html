@@ -1,0 +1,125 @@
+<meta charset="utf-8">
+<title>landing: Quellen-Sektion messen</title>
+<!-- Wozu: die zehn Punkte dieser Runde MESSEN. Neuer Dateiname statt ?v=, und die Dateien werden
+     als Text geholt und inline eingehaengt -- damit ist der gemessene Zustand garantiert der auf
+     der Platte, ohne Browser- und ohne CDN-Cache. -->
+<style>
+  body { margin: 0; font: 11px/1.5 ui-monospace, monospace; background: #fff; }
+  #out { position: fixed; right: 0; top: 0; width: 460px; max-height: 100vh; overflow: auto;
+         background: #111; color: #0f0; padding: 8px; white-space: pre-wrap; z-index: 999999; }
+</style>
+<body>
+<pre id="out">laedt</pre>
+<div class="ulh-root" data-cdn-pin=""></div>
+<script>
+window.addEventListener("error", function(e){
+  window.__fehler = (window.__fehler || []).concat([String(e.message).slice(0, 200)]);
+});
+function W(){ return document.querySelector(".ulh-root"); }
+function q(sel){ return W() ? W().querySelector(sel) : null; }
+function r(el){ if (!el) return null; var b = el.getBoundingClientRect();
+  return { x: Math.round(b.left), y: Math.round(b.top), b: Math.round(b.width), h: Math.round(b.height) }; }
+function regel(text){
+  return [].some.call(document.styleSheets, function(ss){
+    try { return [].some.call(ss.cssRules, function(k){
+      return (k.cssText || "").indexOf(text) >= 0; }); } catch(e){ return false; }
+  });
+}
+function messen(){
+  var box = q(".ulh-quell-box"), panel = q(".ulh-quell-panel"), app = q(".ulh-quell-app");
+  var root = q(".udd-root"), chart = q(".udd-chartcard"), funnel = q(".udd-funnelcard");
+  var row2 = q(".udd-row2"), typ = q(".udd-typecard"), leg = q(".udd-legend");
+  var h2 = q(".ulh-quell-h"), chip = q(".ulh-quell .ulh-chip"), chipIn = q(".ulh-quell .ulh-chip-in");
+  var tt = q(".ulh-quell-app .up-line-tt");
+  var zeile = q(".ulh-vis-tab .up-row");
+  var lein = q(".udd-canvas");
+  var ch = lein && window.Chart && window.Chart.getChart ? window.Chart.getChart(lein) : null;
+  var inhalt = root ? root.getBoundingClientRect() : null;
+  var pr = panel ? panel.getBoundingClientRect() : null;
+  var r2 = row2 ? row2.getBoundingClientRect() : null;
+  return {
+    frische: {
+      css_box: regel("ulh-quell-box"), css_weich: regel("714ms"),
+      css_chip_weg: !regel("ulh-quell-chip"), js_tipp: typeof tippSetzen === "undefined" ? "privat" : "global",
+      fehler: window.__fehler || null
+    },
+    kopf: {
+      chip_da: !!chip, chip_ring: chip ? getComputedStyle(chip).backgroundColor : null,
+      chip_hoehe: chip ? Math.round(chip.getBoundingClientRect().height) : null,
+      chip_text: chipIn ? chipIn.textContent : null,
+      chip_transform: chipIn ? getComputedStyle(chipIn).textTransform : null,
+      h2_breite: h2 ? Math.round(h2.getBoundingClientRect().width) : null,
+      h2_hoehe: h2 ? Math.round(h2.getBoundingClientRect().height) : null,
+      h2_groesse: h2 ? getComputedStyle(h2).fontSize : null,
+      h2_zeilen: h2 ? Math.round(h2.getBoundingClientRect().height / parseFloat(getComputedStyle(h2).lineHeight)) : null
+    },
+    kasten: {
+      box_polster: box ? getComputedStyle(box).padding : null,
+      box_grund: box ? getComputedStyle(box).backgroundColor : null,
+      box_radius: box ? getComputedStyle(box).borderRadius : null,
+      box_rand_unten: box ? getComputedStyle(box).borderBottomWidth : null,
+      panel_polster: panel ? getComputedStyle(panel).padding : null,
+      panel_radius: panel ? getComputedStyle(panel).borderRadius : null,
+      panel_hoehe: panel ? Math.round(pr.height) : null,
+      inhalt_hoehe: inhalt ? Math.round(inhalt.height) : null,
+      row2_beginnt_bei: (r2 && pr) ? Math.round(r2.top - pr.top) : null,
+      row2_hoehe: r2 ? Math.round(r2.height) : null,
+      angeschnitten: (r2 && pr) ? Math.round((r2.bottom) - (pr.bottom)) : null
+    },
+    raster: {
+      root_display: root ? getComputedStyle(root).display : null,
+      root_gap: root ? getComputedStyle(root).gap : null,
+      root_zeiger: root ? getComputedStyle(root).pointerEvents : null,
+      toprow: q(".udd-toprow") ? getComputedStyle(q(".udd-toprow")).display : "fehlt",
+      chart: r(chart), funnel: r(funnel), row2: r(row2),
+      luecke_waagerecht: (chart && funnel) ? Math.round(funnel.getBoundingClientRect().left - chart.getBoundingClientRect().right) : null,
+      luecke_senkrecht: (chart && row2) ? Math.round(row2.getBoundingClientRect().top - Math.max(chart.getBoundingClientRect().bottom, funnel.getBoundingClientRect().bottom)) : null,
+      row2_gap: row2 ? getComputedStyle(row2).gap : null,
+      typseg_zeiger: q(".udd-typeseg") ? getComputedStyle(q(".udd-typeseg")).pointerEvents : null,
+      legende: leg ? [getComputedStyle(leg).display, getComputedStyle(leg).height, leg.clientWidth] : null,
+      chartwrap_hoehe: q(".udd-chartwrap") ? Math.round(q(".udd-chartwrap").getBoundingClientRect().height) : null,
+      funnel_svg: r(q(".udd-fn-svg")),
+      leerraum_im_trichter: (funnel && q(".udd-fn-svg"))
+        ? Math.round(funnel.getBoundingClientRect().bottom - q(".udd-fn-svg").getBoundingClientRect().bottom) : null
+    },
+    tooltip: {
+      deckkraft: tt ? tt.style.opacity : "kein Element",
+      text: tt ? tt.textContent.replace(/\s+/g, " ").slice(0, 120) : null,
+      punkt: ch ? (function(){
+        var a = ch.tooltip && ch.tooltip.getActiveElements ? ch.tooltip.getActiveElements() : [];
+        return { reihen: ch.data.datasets.length, marken: (ch.data.labels || []).length,
+                 index: a.length ? a[0].index : null, aktive: a.length,
+                 marke: a.length ? (ch.data.labels || [])[a[0].index] : null };
+      })() : null,
+      modus: q(".udd-heading") ? q(".udd-heading").textContent : null
+    },
+    karten: {
+      uebergang: zeile ? getComputedStyle(zeile).transition : null,
+      chancen: q(".ulh-vis-chancen .uo-row") ? getComputedStyle(q(".ulh-vis-chancen .uo-row")).transition : null
+    }
+  };
+}
+(function(){
+  function hol(f){ return fetch(f + "?nocache=" + Math.random(), { cache: "no-store" })
+                     .then(function(r){ return r.text(); }); }
+  hol("landing-boot.js").then(function(boot){
+    var files = [];
+    boot.replace(/\bcss\("([^"]+)"\)/g, function(_, f){ files.push(f); return ""; });
+    boot.replace(/\bjs\("([^"]+)"\)/g,  function(_, f){ files.push(f); return ""; });
+    var texts = {};
+    return Promise.all(files.map(function(f){ return hol(f).then(function(t){ texts[f] = t; }); }))
+      .then(function(){
+        files.forEach(function(f){
+          var el = document.createElement(/\.css$/.test(f) ? "style" : "script");
+          el.textContent = texts[f];
+          document.head.appendChild(el);
+        });
+        window.__geladen = files.length;
+        setTimeout(function(){
+          window.__mass = messen();
+          document.getElementById("out").textContent = JSON.stringify(window.__mass, null, 1);
+        }, 3500);
+      });
+  });
+})();
+</script>
