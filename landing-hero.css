@@ -33,6 +33,19 @@
      noch zu dunkel, #f2f5f8 richtig hell aber zu blau, #ebecee wieder zu dunkel. Jetzt #f1f2f4:
      derselbe kleine Blauabstand (b minus r = 3), nur wieder 2.5% heller. */
   --ulh-blende: #f1f2f4;
+  /* DIE Spur der Seite. Alles richtet sich daran aus: die zwei Schienen, der Rahmen des Fensters
+     und der Inhalt jeder Sektion darunter. Eine Zahl, damit nichts auseinanderlaeuft.
+     1440 und nicht 1300: das Fenster oben ist 1440 breit (so gewuenscht), und ein Inhalt, der aus
+     seiner eigenen Spur herausragt, ist kein Gitter. Die 48px Mindestrand halten die Schienen auf
+     schmalen Seiten von der Kante weg.
+     Ausgenommen sind die drei Nebenfenster: die ragen absichtlich darueber hinaus. */
+  --ulh-spur: min(100% - 48px, 1440px);
+  /* Die Linie der Schienen. Heller als der Rahmen der Karten (#e7e9ec): sie laeuft ueber die ganze
+     Hoehe der Seite und wird dadurch als Flaeche wahrgenommen, nicht als Linie. */
+  --ulh-schiene: #ededf0;
+  /* Der Grund der Seite. Leicht off-white wie in der App, damit die Karten in reinem Weiss darauf
+     als Karten lesbar sind -- auf weissem Grund waeren sie nur ihr Rahmen. */
+  --ulh-seite: #FAFAFA;
   --ulh-schirm: #FFFFFFF2;
   --ulh-text: #1f1f1b;
   --ulh-muted: #6f737c;
@@ -512,7 +525,7 @@
    Sie ist genau das Hauptfenster gross und traegt die Verkleinerung beim Scrollen. Die drei
    Nebenfenster liegen absolut darin und stehen damit fest zu seinen Kanten -- in jeder
    Fensterbreite und in jeder Groesse. */
-.ulh-buehne { position: relative; width: min(100%, 1440px); margin: 0 auto; }
+.ulh-buehne { position: relative; width: var(--ulh-spur); margin: 0 auto; }
 
 .ulh-frame, .ulh-fen {
   /* Volle Breite des Platzes, hoechstens 1440 -- DERSELBE Deckel wie in der Vorlage
@@ -863,6 +876,91 @@
    traegt also nichts bei und kostet 32px je Karte. */
 .ulh-app .uo-card-foot { display: none; }
 
+/* ---------- Zweite Sektion: die Kernfunktionen ----------
+   Ueberschrift links und nicht mittig: der Text darueber im Hero ist mittig, weil er allein
+   steht -- hier beginnt ein Abschnitt, der gelesen wird, und der beginnt an der Kante der Spur.
+   Die Werte der Ueberschrift sind vorgegeben: Geist, 40px, mittleres Gewicht, -0.04em, 1.1. */
+.ulh-feat { position: relative; z-index: 1; padding: clamp(72px, 11vh, 132px) 0 clamp(80px, 12vh, 144px); }
+.ulh-feat-h {
+  margin: 0;
+  font-family: inherit;
+  font-size: 40px; font-weight: 500; letter-spacing: -0.04em; line-height: 1.1;
+  color: var(--ulh-text);
+  text-align: left;
+  /* Der Text steht 24px innerhalb der Schiene. Die Schiene ist eine Kante, kein Rahmen: Text, der
+     sie beruehrt, sieht nach einem Fehler aus. Derselbe Wert wie im Textblock des Hero. */
+  padding: 0 24px;
+  max-width: 20ch;
+}
+.ulh-feat-sub {
+  margin: 18px 0 0;
+  padding: 0 24px;
+  max-width: 62ch;
+  font-size: 16px; font-weight: 400; line-height: 1.55; letter-spacing: -0.01em;
+  color: var(--ulh-sub);
+}
+
+/* Zwei Reihen, je zwei Karten, 8px dazwischen -- waagerecht wie senkrecht derselbe Abstand.
+   Die Anteile stehen als Zahl an der Karte (--ulh-w: 40 oder 60) und werden hier zur Flexbasis:
+   flex-grow im Verhaeltnis 40 zu 60, flex-basis 0, damit allein das Verhaeltnis zaehlt und nicht
+   die Textmenge darin. Ein Raster koennte das nicht -- seine Spalten gelten fuer alle Zeilen. */
+.ulh-cards { margin-top: clamp(36px, 5vh, 56px); padding: 0 24px; display: flex; flex-direction: column; gap: 8px; }
+.ulh-cards-row { display: flex; gap: 8px; align-items: stretch; }
+.ulh-card {
+  flex: var(--ulh-w, 50) 1 0;
+  min-width: 0;
+  display: flex; flex-direction: column;
+  /* Reines Weiss auf dem off-white Grund der Seite, dazu Rahmen und ein Schatten, der die Karte
+     einen Millimeter anhebt und nicht mehr. Die Werte sind die der App (--vc-border) und die
+     leiseste Stufe des Fensterschattens oben. */
+  background: #ffffff;
+  border: 1px solid var(--ulh-border);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(11, 13, 24, .035), 0 6px 16px rgba(11, 13, 24, .028);
+  padding: 26px 26px 24px;
+}
+.ulh-card-top { display: flex; align-items: center; gap: 9px; }
+/* Das Zeichen sitzt in einer eigenen kleinen Platte, wie die Marken-Logos in den Tabellen der App:
+   ein Symbol ohne Platte schwebt neben der Beschriftung. */
+.ulh-card-ic {
+  width: 26px; height: 26px; flex: 0 0 26px; border-radius: 8px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--ulh-chip-ring); color: var(--ulh-text);
+}
+.ulh-card-ic svg { width: 15px; height: 15px; display: block; }
+.ulh-card-lbl { font-size: 11.5px; font-weight: 600; letter-spacing: .02em; color: var(--ulh-sub);
+  text-transform: uppercase; }
+.ulh-card-h {
+  margin: 18px 0 0;
+  font-size: 19px; font-weight: 500; letter-spacing: -0.022em; line-height: 1.25;
+  color: var(--ulh-text);
+  max-width: 26ch;
+}
+.ulh-card-p {
+  margin: 9px 0 0;
+  font-size: 14.5px; font-weight: 400; line-height: 1.55; letter-spacing: -0.005em;
+  color: var(--ulh-sub);
+  max-width: 54ch;
+}
+/* Die Begriffe der App als Pillen. Sie stehen unten und tragen den Rest der Karte: sie sagen mit
+   drei Worten, was in der Komponente wirklich zu sehen ist, und sie halten die zwei Karten einer
+   Reihe auf derselben Hoehe (margin-top: auto). */
+.ulh-card-chips { margin-top: auto; padding-top: 22px; display: flex; flex-wrap: wrap; gap: 6px; }
+.ulh-card-chip {
+  display: inline-flex; align-items: center; height: 24px; padding: 0 9px;
+  border-radius: 7px; border: 1px solid var(--ulh-border);
+  font-size: 11.5px; font-weight: 500; letter-spacing: -0.005em;
+  color: var(--ulh-sub); background: var(--ulh-grund);
+}
+
+/* Schmal: die zwei Karten einer Reihe stapeln, und die Ueberschrift darf ueber ihre 20ch hinaus.
+   Dieselbe Schwelle wie beim Fenster oben (900px) -- dort endet auch die Buehne. */
+@media (max-width: 900px) {
+  .ulh-cards-row { flex-direction: column; }
+  .ulh-feat-h { font-size: 32px; max-width: none; }
+  .ulh-feat { padding-top: clamp(48px, 8vh, 80px); }
+}
+
 /* ---------- Die drei Nebenfenster ----------
    Sie erscheinen, sobald die Seite bewegt wird -- dieselbe Schwelle, die das Hauptfenster
    verkleinert (is-klein an der Wurzel, gesetzt in landing-hero.js).
@@ -928,15 +1026,14 @@
    4px dazwischen + 8 Polster. Mit 250 stand die dritte Zeile 4px unter der Kante (gemessen:
    scrollHeight 200 in 196). */
 .ulh-fen-teams   { --ulh-fb: 300px; --ulh-fh: 254px; right: calc(100% - 40px); top: -50px; }
-/* 320 statt 360, also je Seite 20px schmaler: mit acht statt neun Punkten braucht die Legende
-   weniger Breite. Der Wert ist an den Reihen abgelesen und nicht geschaetzt -- bei 320 ist die
-   Zeile 270px breit, und damit brechen BEIDE Verteilungen sauber um: die redaktionelle in 3/3/2
-   (die letzte Reihe traegt Documentation und Other), die der Marktplaetze in 2/2/2/2. Ihre
-   Beschriftungen sind laenger ("Product / Service" allein ist 114px), deshalb dort zwei je Reihe.
-   Bei 328 fielen drei Punkte in die dritte Reihe und Other blieb allein in einer vierten.
+/* 352 x 330, also ein Zehntel groesser als die 320 x 300 davor. Die Legende hat damit mehr Platz,
+   und beide Verteilungen bleiben bei DREI Reihen: die redaktionelle bricht in 3/3/2 um, die der
+   Marktplaetze in 2/2/2 (ihre Beschriftungen sind laenger, "Product / Service" allein ist 114px,
+   also gehen dort nur zwei in eine Reihe -- deshalb hat sie auch nur fuenf benannte Typen plus
+   Rest, siehe landing-hero.js).
    Nur 8px Ueberdeckung -- dieses Fenster liegt VOR dem Hauptfenster, und was davor liegt, soll so
    wenig wie moeglich davon verdecken. */
-.ulh-fen-urls    { --ulh-fb: 320px; --ulh-fh: 300px; --ulh-fz: 0.8;
+.ulh-fen-urls    { --ulh-fb: 352px; --ulh-fh: 330px; --ulh-fz: 0.8;
                    right: calc(100% - 8px); bottom: -50px; }
 /* Rechts, auf einem Viertel der Hoehe: weit oben, aber nicht an der Oberkante. Schmaler und
    dafuer hoeher als zuerst, und nur 16px Ueberdeckung: das Fenster liegt VOR dem Hauptfenster,
@@ -944,13 +1041,32 @@
    Breite von sich aus braucht -- so muss sie nicht gestreckt werden und traegt keine Luft:
    gemessen 234px bei 272px Breite (Kopf 24, Frage 38, vier Zeilen Auszug 78, Fusszeile 28, dazu
    Polster und Abstaende), plus 28px Polster des Fensters ergibt 262. */
-.ulh-fen-antwort { --ulh-fb: 300px; --ulh-fh: 262px; left: calc(100% - 16px); top: 25%; }
+.ulh-fen-antwort { --ulh-fb: 325px; --ulh-fh: 262px; left: calc(100% - 26px); top: 25%; }
 
 /* Die Nebenfenster ragen links und rechts aus der Sektion heraus, und genau so ist es gedacht --
    ein Fenster, das am Rand angeschnitten ist, sagt "die Flaeche geht weiter". overflow-x: clip und
    nicht hidden: clip erzeugt keine Scrollflaeche, es gibt also keine waagerechte Scrollleiste und
    auch kein "overscroll-behavior" auf einer Flaeche, die niemand bewegen darf. */
-.ulh-root { overflow-x: clip; }
+.ulh-root { overflow-x: clip; background: var(--ulh-seite); }
+
+/* ---------- Das Gitter der Seite ----------
+   Zwei Linien, die von oben bis unten durchlaufen, und alles dazwischen. Ein eigenes Element und
+   keine Raender an den Sektionen: an der Beruehrung zweier Sektionen mit eigenen Raendern stuende
+   eine doppelte Linie, und ueber die ganze Hoehe durchlaufen wuerden sie ohnehin nicht.
+   inset statt Hoehe: die Wurzel waechst mit jeder Sektion, die dazukommt, und die Schienen
+   wachsen von sich aus mit. */
+.ulh-schienen {
+  position: absolute; top: 0; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: var(--ulh-spur);
+  border-left: 1px solid var(--ulh-schiene);
+  border-right: 1px solid var(--ulh-schiene);
+  pointer-events: none; z-index: 0;
+}
+/* Die Hero-Sektion ist der Bezugsrahmen ihres Hintergrundbildes. Ohne diese Zeile bezieht sich
+   dessen inset: 0 auf die Wurzel und laeuft ueber die ganze Seite. */
+.ulh-hero { position: relative; }
+/* Der Inhalt jeder Sektion steht in derselben Spur wie die Schienen. */
+.ulh-spur { width: var(--ulh-spur); margin: 0 auto; }
 
 /* ---- Erstes Fenster: das Team-Dropdown ----
    Das Panel ist .up-filter-menu aus core. Was hier faellt, ist nur der RAHMEN des Panels: es
@@ -998,10 +1114,20 @@
    Hoverbewegung der Scheibe (hoverOffset, hellere Farbe) BLEIBEN soll: die kommt aus derselben
    Konfiguration, und ein "tooltip: false" haette beides genommen. */
 .ulh-fen-urls .up-donut-tt { display: none; }
-/* Das Ueberblenden beim Wechsel der Verteilung. Der Ring zeichnet sich beim Einblenden selbst neu
-   (200ms Eingangsanimation im Kit), beides faellt also zusammen. */
-.ulh-fen-donut { transition: opacity 260ms var(--ulh-ease); }
-.ulh-fen-donut.is-wechsel { opacity: 0; }
+/* Der Wechsel der Verteilung: der Ring geht WEICH ZEICHNEN und faellt dabei etwas zusammen, und
+   die neue Verteilung kommt genauso zurueck. Nur Deckkraft war zu wenig -- ein Ausblenden und ein
+   Einblenden hintereinander lesen sich als zwei Schnitte, ein Unschaerfeverlauf als eine
+   Bewegung. Der Ring zeichnet sich beim Einblenden ausserdem selbst neu (200ms Eingangsanimation
+   im Kit), das faellt in dieselbe Bewegung.
+   Die Ruecklaufzeit ist laenger als die Hinlaufzeit (320 gegen 260ms): scharf werden darf laenger
+   dauern als unscharf werden, das ist die Richtung, in der man hinsieht. */
+.ulh-fen-donut { transition: opacity 320ms var(--ulh-ease), filter 320ms var(--ulh-ease),
+                             transform 320ms var(--ulh-ease); }
+.ulh-fen-donut.is-wechsel {
+  opacity: 0; filter: blur(7px); transform: scale(0.965);
+  transition: opacity 260ms var(--ulh-ease), filter 260ms var(--ulh-ease),
+              transform 260ms var(--ulh-ease);
+}
 
 /* ---- Drittes Fenster: eine Antwortkarte ----
    Von der Komponente bleibt die KARTE. Kopf, Werkzeugleiste und Seitenzaehler sind weg: in ein
@@ -1026,11 +1152,24 @@
    in der Hoehe bekommt, soll Text tragen und nicht Luft. Die Klammer bleibt -- ein Auszug ohne
    Ende waere ein Textblock. */
 .ulh-fen-antwort .urt-card-preview { -webkit-line-clamp: 4; }
+/* Das Zeichen des Modells oben in der Karte groesser: 18 -> 22px. Es ist das einzige Logo in
+   diesem Fenster und traegt die Aussage "diese Antwort kam von ChatGPT" -- in 18px ist sie eine
+   Fussnote. Die Plakette darum zieht mit, sonst sitzt das Bild an ihrem Rand. */
+.ulh-fen-antwort .urt-model-chip .up-ment-logo { width: 22px; height: 22px; flex: 0 0 22px; border-radius: 6px; }
+.ulh-fen-antwort .urt-model-chip .up-ment-logo img { width: 22px; height: 22px; border-radius: 6px; }
 
 /* Die Schublade bleibt IM Fenster: opportunities.js haengt Vorhang und Schublade bei
    data-portal="inline" in den Root statt in den <body>, und ihr position: fixed bezieht sich damit
    auf die Buehne (sie traegt das transform). Die Ecken der Schublade folgen dem Fenster. */
 .ulh-app .uo-modal { border-radius: 12px 0 0 12px; }
+
+/* Die vier Lichter im Hintergrundbild von Mira fallen weg. Gemeint war das unten rechts (core
+   setzt sie auf 94/74, 94/0.5, 20/85 und -3/19 Prozent) -- entfernt wird die ganze Ebene und
+   nicht ein Verlauf daraus: die vier stehen in EINER Kurzschreibweise, und drei davon hier noch
+   einmal hinzuschreiben waere eine Kopie, die am Tag der naechsten Aenderung an core auseinander
+   laeuft. Bogen, Raster und Kreuzmarken bleiben; die Lichter liegen bei 0.2 Deckkraft ueber 6
+   Prozent Alpha und tragen am wenigsten. */
+.ulh-app .am-bgart .up-bgart-licht { display: none; }
 
 /* Mira zeigt auf dem Startbildschirm ihre Kategorien -- im Schaustueck nicht: dort tippt der Ablauf
    selbst eine Frage ein, und eine Wand aus Karten daneben zieht den Blick von genau dieser Bewegung
