@@ -885,13 +885,14 @@
    Die Werte der Ueberschrift sind vorgegeben: Geist, 40px, mittleres Gewicht, -0.04em, 1.1. */
 .ulh-feat { position: relative; z-index: 1; padding: clamp(72px, 11vh, 132px) 0 clamp(80px, 12vh, 144px); }
 .ulh-feat-kopf { padding: 0 24px; }
-/* Der Chip ueber der Ueberschrift. Blau der Marke bei 30 Prozent als Grund, die Schrift im
-   dunkleren Blau derselben Reihe -- auf einem Grund dieser Saettigung braucht sie den Abstand,
-   sonst steht sie darin und nicht darauf. Dasselbe Blau wie der Pitch-Chip im Team-Fenster oben. */
+/* Der Chip ueber der Ueberschrift. Genau die Toene des Pitch-Chips im Team-Fenster oben, und die
+   kommen aus Miras Antworten (ask-mira.css, Signal "likely"): blauer Grund bei 8.5 Prozent
+   Deckkraft, Schrift im dunkleren Blau derselben Reihe. Ein eigenes Blau waere ein zweiter blauer
+   Ton in derselben Seite. */
 .ulh-feat-chip {
-  display: inline-flex; align-items: center; height: 26px; padding: 0 11px;
-  border-radius: 8px; background: rgba(37, 99, 235, 0.30);
-  font-size: 11.5px; font-weight: 600; letter-spacing: .02em; color: #1e3a8a;
+  display: inline-flex; align-items: center; height: 22px; padding: 0 9px;
+  border-radius: 7px; background: rgba(37, 99, 235, 0.085);
+  font-size: 11.5px; font-weight: 600; letter-spacing: .02em; color: #1d4ed8;
   margin-bottom: 18px;
 }
 .ulh-feat-h {
@@ -902,9 +903,9 @@
   font-size: 40px; font-weight: 500; letter-spacing: -0.04em; line-height: 1.1;
   color: var(--ulh-text);
   text-align: left;
-  /* Der Text steht 24px innerhalb der Schiene. Die Schiene ist eine Kante, kein Rahmen: Text, der
-     sie beruehrt, sieht nach einem Fehler aus. Derselbe Wert wie im Textblock des Hero. */
-  padding: 0 24px;
+  /* KEIN eigenes Polster. Hier stand noch das alte "padding: 0 24px" -- und weil der Kopf um die
+     drei Elemente dasselbe Polster schon traegt, begann der Text der Ueberschrift 24px weiter
+     rechts als Chip und Unterzeile darunter. Genau das war die gemeldete Luecke davor. */
   max-width: 20ch;
 }
 .ulh-feat-sub {
@@ -925,14 +926,14 @@
    Rahmen. */
 .ulh-cards-box {
   margin: clamp(36px, 5vh, 56px) 8px 0;
-  padding: 8px;
+  padding: 4px;
   background: var(--ulh-kasten);
   border: 1px solid var(--ulh-border);
   border-radius: 20px;
   box-shadow: 0 1px 2px rgba(11, 13, 24, .035), 0 6px 16px rgba(11, 13, 24, .028);
 }
-.ulh-cards { display: flex; flex-direction: column; gap: 8px; }
-.ulh-cards-row { display: flex; gap: 8px; align-items: stretch; }
+.ulh-cards { display: flex; flex-direction: column; gap: 4px; }
+.ulh-cards-row { display: flex; gap: 4px; align-items: stretch; }
 
 .ulh-card {
   flex: var(--ulh-w, 50) 1 0;
@@ -987,13 +988,13 @@
    seine Hoehe zaehlt fuer das Layout also nicht mehr in gezeichneten Pixeln. Ohne diese Angabe
    waere unter jeder Vorschau der Rest ihrer unskalierten Hoehe als Leerraum stehengeblieben.
    Die Werte sind gemessen (unskalierte Hoehe des Bauteils mal Massstab), nicht geschaetzt. */
-.ulh-vis-linie   { --ulh-vs: 1;    --ulh-vh: 208px; }
-.ulh-vis-zeilen  { --ulh-vs: 0.74; --ulh-vh: 210px; }
-/* Die untere Reihe traegt ein Fuenftel mehr Hoehe: in ihr stehen die zwei Vorschauen mit den
-   meisten Zeilen (Drilldown und Chancenliste). Der Wert steckt in diesen zwei Zahlen und nicht in
-   einer eigenen Regel -- eine Hoehe, ein Ort. */
-.ulh-vis-domains { --ulh-vs: 0.74; --ulh-vh: 268px; }
-.ulh-vis-chancen { --ulh-vs: 0.82; --ulh-vh: 220px; }
+/* BEIDE Reihen gleich hoch, und dazu 30px mehr als zuerst. Gerechnet und nicht geraten: die
+   Reihenhoehe entsteht aus Text plus Vorschau, und die Texte sind verschieden lang -- die Zahlen
+   hier sind so gesetzt, dass beide Reihen auf dieselbe Hoehe kommen (gemessen 428px). */
+.ulh-vis-linie   { --ulh-vs: 1;    --ulh-vh: 274px; }
+.ulh-vis-zeilen  { --ulh-vs: 0.74; --ulh-vh: 274px; }
+.ulh-vis-domains { --ulh-vs: 0.74; --ulh-vh: 298px; }
+.ulh-vis-chancen { --ulh-vs: 0.82; --ulh-vh: 250px; }
 .ulh-vis { height: var(--ulh-vh); }
 .ulh-vis-in { height: calc(var(--ulh-vh) / var(--ulh-vs)); overflow: hidden; }
 
@@ -1007,7 +1008,7 @@
 .ulh-krv { position: relative; height: 100%; }
 .ulh-krv-canvas { display: block; width: 100%; height: 100%; }
 .ulh-krv-chip {
-  position: absolute; opacity: 0; transform: translate(-50%, -50%);
+  position: absolute; opacity: 0; transform: translate(-50%, -100%);
   display: inline-flex; align-items: center; gap: 8px;
   padding: 8px 11px; border-radius: 14px; white-space: nowrap;
   background: #ffffff; border: 1px solid var(--ulh-border);
@@ -1017,6 +1018,13 @@
   pointer-events: auto;
 }
 .ulh-krv-chip.is-da { opacity: 1; }
+/* Der Strich vom Schild zu seinem Punkt. In der Rahmenfarbe und 1px: er soll die Zuordnung
+   herstellen und nicht selbst auffallen. Seine Laenge ist dieselbe Zahl, die landing-hero.js beim
+   Setzen abzieht (KRV_ABSTAND) -- zwei Orte, ein Wert, deshalb steht sie in beiden Kommentaren. */
+.ulh-krv-chip::after {
+  content: ""; position: absolute; left: 50%; top: 100%; width: 1px; height: 15px;
+  background: var(--ulh-border);
+}
 /* Das Schild der Linie, die gerade NICHT gehoben ist, tritt mit zurueck -- sonst stuende ein
    volles Schild an einer grauen Linie. */
 .ulh-krv-chip.is-aus { opacity: .45; filter: saturate(.2); }
@@ -1024,22 +1032,14 @@
 .ulh-krv-name { color: var(--ulh-text); font-weight: 400; }
 .ulh-krv-val { color: var(--ulh-text); font-weight: 500; font-variant-numeric: tabular-nums; }
 
-/* ---- Karte 2 und 3: die gekippten Tabellen ----
-   Nach hinten und nach links geneigt, wie man es von Produktseiten kennt: die Perspektive steht
-   am Rahmen, die Drehung an der Tabelle. Werte bewusst klein -- 7 Grad nach hinten und 11 zur
-   Seite lesen sich als Blickwinkel; ab etwa 15 Grad wird daraus ein Effekt, und die Schrift in den
-   Zeilen wird unscharf.
-   transform-style: preserve-3d, damit die gehobene Zeile beim Ueberfahren wirklich nach VORN
-   kommt (translateZ) und nicht nur groesser wird. */
-.ulh-vis-zeilen .ulh-vis-in,
-.ulh-vis-domains .ulh-vis-in { perspective: 1500px; perspective-origin: 60% 20%; }
+/* ---- Karte 2 und 3: die Tabellen ----
+   GERADE und nicht gekippt. Der schraege Blick war eine Runde lang drin und ist wieder heraus: er
+   macht aus einer Tabelle ein Bild von einer Tabelle -- man liest sie nicht mehr, man sieht sie
+   nur. Ohne Neigung bleibt sie lesbar, und das ist hier der Zweck. */
 .ulh-vis-tab, .ulh-vis-dom {
-  transform: rotateX(7deg) rotateY(-11deg) rotateZ(1.1deg);
-  transform-origin: 62% 0;
-  transform-style: preserve-3d;
   border: 1px solid var(--ulh-border); border-radius: 12px; overflow: hidden;
   background: var(--vc-bg);
-  box-shadow: 0 2px 6px rgba(11, 13, 24, .05), 0 18px 40px rgba(11, 13, 24, .09);
+  box-shadow: 0 1px 2px rgba(11, 13, 24, .04), 0 8px 20px rgba(11, 13, 24, .05);
 }
 /* Die Kopfzeile der Tabelle ist in der App fett und gross, weil sie dort sortierbar ist. In einer
    Vorschau ist sie eine Beschriftung: leichter, kleiner, ruhiger. */
@@ -1058,37 +1058,43 @@
 /* Der Auslauf nach unten: erst weich zeichnen, dann in den Kartengrund verlaufen. Zwei Ebenen,
    weil eine Maske BEIDES treffen wuerde -- die Unschaerfe soll von oben nach unten zunehmen, der
    Weissverlauf ebenfalls, aber sie sind zwei verschiedene Kurven.
+   Beide setzen SPAET an und bleiben leise: 26 Prozent der Hoehe, Unschaerfe 2px, und die Maske
+   laesst die oberen vier Fuenftel dieses Streifens fast unberuehrt. Vorher waren es 46 Prozent
+   und 3px -- damit war die halbe Vorschau weich, und man sah nicht mehr, was dort steht.
    backdrop-filter und nicht filter: die Zeilen selbst bleiben scharf gezeichnet, unscharf wird
    nur, was DURCH diese Flaeche zu sehen ist -- so bleibt der Rest der Vorschau unberuehrt. */
 .ulh-vis-zeilen::after, .ulh-vis-domains::after, .ulh-vis-chancen::after {
-  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 46%;
-  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
-  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 72%);
-  mask-image: linear-gradient(to bottom, transparent, #000 72%);
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 26%;
+  -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 84%);
+  mask-image: linear-gradient(to bottom, transparent, #000 84%);
   pointer-events: none; z-index: 2;
 }
 .ulh-vis-zeilen::before, .ulh-vis-domains::before, .ulh-vis-chancen::before {
-  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 42%;
-  background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, #ffffff 88%);
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 24%;
+  background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, #ffffff 92%);
   pointer-events: none; z-index: 3;
 }
 
-/* ---- Die gehobene Zeile ----
-   Beim Ueberfahren der KARTE (nicht der Zeile: die Vorschau ist zu klein, um eine Zeile sicher zu
-   treffen) kommt die mittlere Zeile nach vorn und die anderen treten zurueck. Genau das macht die
-   App beim Ueberfahren einer Zeile auch -- nur dass dort der Zeiger entscheidet, welche. */
-.ulh-vis-tab .up-row, .ulh-vis-dom .up-row, .ulh-vis-chancen .uo-row {
-  transition: opacity 240ms var(--ulh-ease), transform 320ms var(--ulh-aus),
-              box-shadow 320ms var(--ulh-ease), background 240ms var(--ulh-ease);
+/* ---- Das Heben beim Ueberfahren der Karte ----
+   KEIN Zeilen-Hover wie in der App: dort sagt die gefaerbte Zeile "die kannst du anklicken", und
+   hier kann man nichts anklicken. Was bleibt, ist ein Zeichen, dass die Karte lebt -- eine Zeile
+   aus der Mitte kommt ein wenig nach vorn, mit Schatten, ohne Farbwechsel. Die uebrigen bleiben,
+   wie sie sind: sie abzudunkeln waere derselbe Hover in Grau.
+   Die Zitatkarte bekommt nichts: dort ist der aufgeklappte Drilldown das Bild, und eine gehobene
+   Zeile darin waere ein zweiter Blickfang daneben. */
+.ulh-vis-tab .up-row, .ulh-vis-chancen .uo-row {
+  transition: transform 340ms var(--ulh-aus), box-shadow 340ms var(--ulh-ease);
 }
-.ulh-card:hover .ulh-vis-tab .up-row:not(.is-mitte):not(.up-thead),
-.ulh-card:hover .ulh-vis-dom .up-row:not(.is-mitte):not(.up-thead),
-.ulh-card:hover .ulh-vis-chancen .uo-row:not(.is-mitte) { opacity: .5; }
+/* Der eigene Hover der Bauteile faellt weg. */
+.ulh-vis .up-row:hover, .ulh-vis .uo-row:hover, .ulh-vis .udt-subrow:hover {
+  background: var(--vc-bg); border-color: var(--vc-border);
+}
 .ulh-card:hover .ulh-vis-tab .up-row.is-mitte,
 .ulh-card:hover .ulh-vis-chancen .uo-row.is-mitte {
-  background: var(--vt-row-hover);
-  transform: translateZ(26px);
-  box-shadow: 0 10px 26px rgba(11, 13, 24, .13);
+  transform: translateY(-3px) scale(1.012);
+  box-shadow: 0 8px 22px rgba(11, 13, 24, .12);
+  position: relative; z-index: 4;
 }
 
 /* ---- Karte 3: der aufgeklappte Drilldown ----
@@ -1097,6 +1103,11 @@
 .ulh-vis-dom .udt-subrows { max-height: none; }
 .ulh-vis-dom .udt-sub-inner { overflow: visible; }
 .ulh-vis-dom .udt-pagesbtn { pointer-events: none; }
+/* Das Zeichen im Seiten-Knopf: dieselbe Groesse wie in der App, und im offenen Zustand gedreht --
+   das macht dort .udt-pagesbtn.is-open selbst, hier steht nur die Groesse, weil das SVG erst
+   nachtraeglich hineinkommt. */
+.ulh-vis-chev { display: inline-flex; }
+.ulh-vis-chev svg { width: 12px; height: 12px; display: block; }
 
 /* ---- Karte 4: die Chancenliste ----
    .uo-row wie im Listenmodus der App. Der Kasten darum haelt nur den Abstand. */
@@ -1185,8 +1196,10 @@
    Rest, siehe landing-hero.js).
    Nur 8px Ueberdeckung -- dieses Fenster liegt VOR dem Hauptfenster, und was davor liegt, soll so
    wenig wie moeglich davon verdecken. */
-.ulh-fen-urls    { --ulh-fb: 352px; --ulh-fh: 330px; --ulh-fz: 0.8;
-                   right: calc(100% - 8px); bottom: -50px; }
+/* Fuenf Prozent kleiner als der Stand davor (352 x 330) und acht Pixel weiter nach rechts, also
+   16px Ueberdeckung statt 8. */
+.ulh-fen-urls    { --ulh-fb: 334px; --ulh-fh: 314px; --ulh-fz: 0.8;
+                   right: calc(100% - 16px); bottom: -50px; }
 /* Rechts, auf einem Viertel der Hoehe: weit oben, aber nicht an der Oberkante. Schmaler und
    dafuer hoeher als zuerst, und nur 16px Ueberdeckung: das Fenster liegt VOR dem Hauptfenster,
    also soll es davon so wenig wie moeglich verdecken. Die Hoehe ist die, die die Karte bei dieser

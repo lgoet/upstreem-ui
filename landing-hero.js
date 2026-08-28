@@ -390,10 +390,12 @@
      eine, die stehenbleibt. Kestrel geht von 18.2 auf 38.9 (dieselbe 38.9 wie im Fenster oben),
      Vantage von 34.8 auf 32.1. */
   var KRV = [
-    { id: "va", schild: 1, werte: [34.8, 34.1, 33.6, 33.9, 32.8, 32.1] },
+    { id: "va", schild: 1, werte: [26.1, 25.4, 24.8, 25.1, 24.2, 23.9] },
     { id: "ke", schild: 5, werte: [18.2, 19.1, 22.6, 28.4, 34.2, 38.9] }
   ];
-  var KRV_MIN = 13, KRV_MAX = 45;      /* Rand oben fuer das Schild, unten fuer die flache Kurve */
+  var KRV_MIN = 12, KRV_MAX = 47;      /* Rand oben fuer das Schild, unten fuer die flache Kurve */
+  /* Der Abstand zwischen Punkt und Schild -- der graue Strich dazwischen ist genau so lang. */
+  var KRV_ABSTAND = 15;
 
   function krvSchild(m, wert){
     return '<span class="ulh-krv-chip" data-krv="' + m.id + '">' +
@@ -417,13 +419,15 @@
      Kurze Fragen mit Absicht: die Spalte darf nicht die halbe Tabelle einnehmen, und in einer
      Vorschau liest man den Anfang. Ein bis zwei Themen je Zeile, aus derselben Themenliste wie
      die Prompts-Seite oben. */
-  /* VIER Zeilen, und die vierte wird vom Auslauf angeschnitten: eine Vorschau, die genau aufgeht,
-     sagt "das ist alles" -- eine, die unten weich ausgeht, sagt "hier geht es weiter". */
+  /* FUENF Zeilen, und die letzte wird vom Auslauf angeschnitten: eine Vorschau, die genau
+     aufgeht, sagt "das ist alles" -- eine, die unten weich ausgeht, sagt "hier geht es weiter".
+     Gemessen: 5 mal 72 plus 40 Kopfzeile sind 400px Inhalt in einem 370px hohen Ausschnitt. */
   var VIS_ZEILEN = [
     { prompt: "Best AI visibility tools", themen: [0, 3], ment: "yes", sent: 79, rank: 1.1, markt: "US" },
     { prompt: "AI search monitoring pricing", themen: [1], ment: "no", sent: null, rank: null, markt: "US" },
     { prompt: "Alternativen zu Vantage", themen: [2, 4], ment: "yes", sent: 74, rank: 2.4, markt: "DE" },
-    { prompt: "Tools to track ChatGPT mentions", themen: [3], ment: "yes", sent: 71, rank: 3.2, markt: "UK" }
+    { prompt: "Tools to track ChatGPT mentions", themen: [3], ment: "yes", sent: 71, rank: 3.2, markt: "UK" },
+    { prompt: "Which platform tracks Perplexity", themen: [0, 1], ment: "no", sent: null, rank: null, markt: "US" }
   ];
 
   function visZeilen(){
@@ -471,15 +475,16 @@
      Die Klassen sind die der Komponente; ihre CSS liegt im Lader (domains-table.css). Statisch
      und ohne ihr JS: hier klappt niemand etwas auf, es ist schon offen. */
   var VIS_DOM = [
-    { dom: "forbes.com",    share: 18.4, delta: 2.1,  seiten: 42, typ: "Editorial" },
-    { dom: "wikipedia.org", share: 11.7, delta: 0.8,  seiten: 18, typ: "Knowledge_Base" },
-    { dom: "reddit.com",    share: 14.1, delta: -1.3, seiten: 63, typ: "UGC_Community", offen: true }
+    { dom: "forbes.com",    share: 18.4, delta: 2.1,  seiten: 42, typ: "Editorial",      gesehen: "Aug 26, 2026" },
+    { dom: "wikipedia.org", share: 11.7, delta: 0.8,  seiten: 18, typ: "Knowledge_Base", gesehen: "Aug 25, 2026" },
+    { dom: "reddit.com",    share: 14.1, delta: -1.3, seiten: 63, typ: "UGC_Community",  gesehen: "Aug 27, 2026", offen: true }
   ];
   var VIS_DOM_URLS = [
     { pfad: "r/SaaS/comments/best-ai-visibility-tools", anteil: 24.6, typ: "forum" },
     { pfad: "r/marketing/comments/how-we-track-chatgpt", anteil: 18.2, typ: "forum" },
     { pfad: "r/SEO/comments/geo-vs-seo-2026", anteil: 12.9, typ: "forum" },
-    { pfad: "r/SaaS/comments/pricing-comparison-thread", anteil: 9.4, typ: "forum" }
+    { pfad: "r/SaaS/comments/pricing-comparison-thread", anteil: 9.4, typ: "forum" },
+    { pfad: "r/bigseo/comments/ai-overviews-traffic", anteil: 7.1, typ: "forum" }
   ];
 
   function visDomains(){
@@ -494,25 +499,30 @@
         '<span class="tct-tag-dot" style="background:' + farbe + '"></span>' +
         '<span class="tct-tag-lbl">' + name + '</span></span>';
     }
-    var cols = "--up-cols: minmax(0,1fr) 132px 116px;";
+    var cols = "--up-cols: minmax(0,1fr) 126px 116px 118px;";
     var html = '<div class="ulh-vis-dom" style="' + cols + '">' +
       '<div class="up-row up-thead"><div class="up-td">Domain</div>' +
-      '<div class="up-td">Share</div><div class="up-td">Type</div></div>';
+      '<div class="up-td">Share</div><div class="up-td">Type</div>' +
+      '<div class="up-td">Last Seen</div></div>';
     VIS_DOM.forEach(function(d, i){
       html += '<div class="up-row' + (d.offen ? " is-expanded" : "") + '">' +
         '<div class="up-td up-td-domain">' +
           '<span class="udt-logo-box has-img"><span class="udt-logo-ltr">' + d.dom.charAt(0).toUpperCase() + '</span>' +
             '<img src="' + quellzeichen(d.dom) + '" alt=""/></span>' +
           '<span class="udt-dom-wrap"><span class="udt-dom-title">' + d.dom + '</span>' +
+            /* Das Zeichen kommt ueber data-ic nach (zeichenSetzen), nicht ueber kern.icon: diese
+               Funktion laeuft beim BAUEN, und da ist core noch nicht sicher da -- gemeldet als
+               "da fehlen noch die chevron down bei den x pages". */
             '<button class="up-pages udt-pagesbtn' + (d.offen ? " is-open" : "") + '" type="button" tabindex="-1">' +
               '<span class="udt-pagesbtn-lbl">' + d.seiten + ' pages</span>' +
-              (kern && kern.icon ? kern.icon("chevronDown", 2.2) : "") +
+              '<span class="ulh-vis-chev" data-ic="chevronDown" data-ic-w="2.2"></span>' +
             '</button>' +
           '</span>' +
         '</div>' +
         '<div class="up-td up-td-share"><span class="udt-num">' + eine(d.share) + '%</span>' +
           (kern && kern.trendChip ? kern.trendChip(d.delta, { suffix: "%" }) : "") + '</div>' +
         '<div class="up-td up-td-type">' + tag(d.typ, "domain") + '</div>' +
+        '<div class="up-td up-td-lastseen"><span class="udt-date">' + d.gesehen + '</span></div>' +
       '</div>';
       if (!d.offen) return;
       html += '<div class="udt-subrows"><div class="udt-sub-inner">' +
@@ -541,7 +551,8 @@
     { h: "Get listed on the g2.com category page", dom: "g2.com", pot: 4, themen: [0] },
     { h: "No page of yours answers the pricing question", dom: "reddit.com", pot: 3, themen: [1] },
     { h: "Your integrations page is cited but never quoted", dom: "kestrel.example", pot: 2, themen: [2] },
-    { h: "Show up in the comparison videos", dom: "youtube.com", pot: 3, themen: [3] }
+    { h: "Show up in the comparison videos", dom: "youtube.com", pot: 3, themen: [3] },
+    { h: "Add your entry to the wikipedia category", dom: "wikipedia.org", pot: 2, themen: [4] }
   ];
 
   function visChancen(){
@@ -626,9 +637,9 @@
         labels: KRV[0].werte.map(function(_, i){ return String(i); }),
         datasets: KRV.map(function(k, i){
           return { data: k.werte, borderColor: marken[i].farbe, __farbe: marken[i].farbe,
-                   /* 1.80625 ist der dicke Wert aus core (LINE_WIDTH_VALUES.thick) -- dieselbe
-                      Staerke wie im Chart oben im Fenster. */
-                   borderWidth: 1.80625, tension: 0.38, pointRadius: 0, pointHoverRadius: 0,
+                   /* Einen Hauch dicker als der dicke Wert aus core (1.80625): die Kurve steht
+                      hier allein in einer Karte und nicht als eine von sechs in einem Chart. */
+                   borderWidth: 2.1, tension: 0.38, pointRadius: 0, pointHoverRadius: 0,
                    fill: false, cubicInterpolationMode: "default" };
         })
       },
@@ -637,10 +648,8 @@
         /* Kein Achsenkreuz und keine Legende: die Karte zeigt die BEWEGUNG, nicht die Skala. */
         scales: { x: { display: false }, y: { display: false, min: KRV_MIN, max: KRV_MAX } },
         plugins: { legend: { display: false }, tooltip: { enabled: false } },
-        /* Der Hover trifft die ganze Linie und nicht einen Punkt: gehoben wird eine Marke, nicht
-           ein Monat. */
-        interaction: { mode: "dataset", intersect: false },
-        onHover: function(e, els){ krvHeben(feld, els && els.length ? els[0].datasetIndex : -1); },
+        /* Kein Zeiger-Verhalten am Chart selbst: gehoben wird von der Karte aus (siehe unten). */
+        events: [],
         animation: { duration: 700, easing: "easeOutQuart" },
         layout: { padding: { top: 6, bottom: 4, left: 2, right: 2 } }
       }
@@ -668,10 +677,13 @@
            also ragt es um seine halbe Breite darueber hinaus -- am letzten Punkt der Kurve war das
            gemessen ein Drittel des Schildes ausserhalb. Geklemmt statt am Punkt verankert: so
            bleibt es an seiner Kurve, auch wenn sich Werte oder Breite aendern. */
-        var hw = schild.offsetWidth / 2, hh = schild.offsetHeight / 2;
-        var bx = feld.clientWidth, by = feld.clientHeight;
+        var hw = schild.offsetWidth / 2, hh = schild.offsetHeight;
+        var bx = feld.clientWidth;
         x = Math.min(Math.max(x, hw + 3), bx - hw - 3);
-        y = Math.min(Math.max(y, hh + 3), by - hh - 3);
+        /* Das Schild steht UEBER seinem Punkt, nicht darauf: auf der Linie deckt es sie zu, und
+           bei zwei Kurven, die sich naehern, deckt es auch die andere zu. Der Strich darunter
+           (im CSS) fuehrt zum Punkt zurueck -- ohne ihn schwebt es. */
+        y = Math.max(y - KRV_ABSTAND, hh + 3);
         schild.style.left = Math.round(x) + "px";
         schild.style.top = Math.round(y) + "px";
         schild.classList.add("is-da");
@@ -682,14 +694,17 @@
     if (typeof ResizeObserver !== "undefined"){
       try { new ResizeObserver(function(){ setTimeout(schilderSetzen, 40); }).observe(feld); } catch (e){}
     }
-    /* Das Schild ist der zweite Griff fuer den Hover: wer es ueberfaehrt, hebt seine Linie. */
-    KRV.forEach(function(k, i){
-      var schild = feld.querySelector('.ulh-krv-chip[data-krv="' + k.id + '"]');
-      if (!schild) return;
-      schild.addEventListener("mouseenter", function(){ krvHeben(feld, i); });
-      schild.addEventListener("mouseleave", function(){ krvHeben(feld, -1); });
-    });
-    feld.addEventListener("mouseleave", function(){ krvHeben(feld, -1); });
+    /* Gehoben wird beim Ueberfahren der KARTE und nur die eigene Marke. Zwei Aenderungen gegen
+       die erste Fassung, beide vom Nutzer: die Linie einer fremden Marke hervorzuheben sagt
+       nichts, und eine Linie in einer Vorschau genau zu treffen ist eine Zumutung -- die Karte
+       ist das Ziel, das man ohnehin trifft. */
+    var karte = feld.closest ? feld.closest(".ulh-card") : null;
+    var eigene = 0;
+    KRV.forEach(function(k, i){ if (k.id === MARKEN[0].id) eigene = i; });
+    if (karte){
+      karte.addEventListener("mouseenter", function(){ krvHeben(feld, eigene); });
+      karte.addEventListener("mouseleave", function(){ krvHeben(feld, -1); });
+    }
     return true;
   }
 
@@ -704,7 +719,7 @@
     chart.data.datasets.forEach(function(ds, i){
       var aus = welche >= 0 && i !== welche;
       ds.borderColor = aus ? grau : ds.__farbe;
-      ds.borderWidth = aus ? 1.275 : 1.80625;     /* thin/thick aus core */
+      ds.borderWidth = aus ? 1.4 : 2.1;
     });
     chart.update("none");
     KRV.forEach(function(k, i){
