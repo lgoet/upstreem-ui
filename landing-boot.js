@@ -74,6 +74,10 @@
   /* Nur fuer die Vorschau in der dritten Karte: die Domaintabelle mit ihrem Drilldown. Ihre CSS
      allein -- die Vorschau ist statisches Markup mit ihren Klassen, aufgeklappt wird dort nichts. */
   css("domains-table.css");
+  /* Die vierte Sektion zeigt eine echte Domain-Detail-Seite: hier braucht es die Komponente ganz,
+     CSS und JS -- anders als die Vorschauen in den Karten ist sie nicht statisch, sie rechnet ihre
+     Charts selbst. */
+  css("domain-detail.css");
   css("landing-hero.css");
 
   js("core.js");
@@ -88,6 +92,7 @@
   js("page-headers/opportunities-page-header.js");
   js("opportunities.js");
   js("responses-table.js");
+  js("domain-detail.js");
   /* Zuletzt: diese Datei ruft die Setter der anderen. */
   js("landing-hero.js");
 })();

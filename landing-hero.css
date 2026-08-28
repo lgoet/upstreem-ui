@@ -1005,6 +1005,88 @@
    Zeilen kommen mit 136 dazu. Gemessen: die vierte endet bei 389. */
 .ulh-vis-domains { --ulh-vs: 0.74; --ulh-vh: 396px; }
 .ulh-vis-chancen { --ulh-vs: 0.82; --ulh-vh: 330px; }
+/* ---------- Dritte Sektion: die Quellen -------------------------------------------------------
+   Der Kopf steht mittig und ist der groesste Text der Seite -- er traegt die Aussage der Sektion
+   allein, ohne Karte darum. Zwei Toene in EINEM Satz: der erste Teil dunkel, der Rest in der
+   zweiten Farbe. Das ist ein <strong> im Text und keine zwei Zeilen: es soll ein Satz bleiben,
+   der umbricht, wo der Platz endet, und nicht ein Titel mit einer Unterzeile. */
+.ulh-quell { position: relative; padding: clamp(72px, 11vh, 132px) 0 0; }
+.ulh-quell-kopf { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.ulh-quell-chip {
+  display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 999px;
+  font-size: 13px; font-weight: 500; letter-spacing: -0.01em;
+  /* Der Chip ist der einzige Farbfleck im Kopf -- dasselbe Blau, das die App fuer den
+     Deep-Hinweis benutzt (#2384E2), hier in seiner leisen Fassung. */
+  color: #2384E2; background: rgba(35, 132, 226, 0.10);
+}
+.ulh-quell-h {
+  margin: 18px 0 0; max-width: 22ch;
+  font-size: clamp(30px, 3.4vw, 46px); font-weight: 500; line-height: 1.14; letter-spacing: -0.035em;
+  color: var(--ulh-sub);
+}
+.ulh-quell-h strong { font-weight: 500; color: var(--ulh-text); }
+/* Der Knopf ist der weisse aus der Vorlage: heller Grund, feiner Rahmen, kein Schlagschatten --
+   er soll einladen und nicht rufen. Die Hoehe ist die der Knoepfe im Hero. */
+.ulh-quell-cta {
+  margin-top: clamp(22px, 3vh, 34px);
+  display: inline-flex; align-items: center; height: 44px; padding: 0 22px; border-radius: 12px;
+  background: #ffffff; border: 1px solid var(--ulh-border); color: var(--ulh-text);
+  font-size: 15px; font-weight: 500; letter-spacing: -0.01em; text-decoration: none;
+  box-shadow: 0 1px 2px rgba(11, 13, 24, .05);
+  transition: border-color 200ms var(--ulh-ease), box-shadow 200ms var(--ulh-ease),
+              transform 200ms var(--ulh-ease);
+}
+.ulh-quell-cta:hover {
+  border-color: var(--ulh-hover-border, #c9ccd4);
+  box-shadow: 0 6px 18px rgba(11, 13, 24, .10);
+  transform: translateY(-1px);
+}
+/* Der Kasten mit dem Stueck App: oben ein Rahmen wie bei einer Karte, unten OFFEN -- er wird
+   angeschnitten, und der Inhalt laeuft weiter. Deshalb kein unterer Rahmen und kein Radius unten,
+   und eine feste Hoehe: der Anschnitt ist gewollt und darf nicht davon abhaengen, wie hoch die
+   Komponente gerade rechnet. */
+.ulh-quell-panel {
+  margin-top: clamp(44px, 6vh, 76px);
+  border: 1px solid var(--ulh-border); border-bottom: 0;
+  border-radius: 20px 20px 0 0; background: var(--vc-bg);
+  box-shadow: 0 -1px 2px rgba(11, 13, 24, .03), 0 24px 60px rgba(11, 13, 24, .07);
+  padding: 22px 22px 0; height: 980px; overflow: hidden; position: relative;
+}
+/* Die Hoehe ist gemessen und nicht geschaetzt. In 1266px Breite baut die Komponente: 32 Kopfzeile,
+   412 Chartkarte (mit der Legende der fuenf URLs), 299 Trichterkarte, 322 fuer die zwei Karten
+   darunter -- zusammen 1105. Bei 980 stehen Chart mit Tooltip und Trichter ganz da, und die
+   Karten mit URL-Typen und Modellen werden auf halber Hoehe angeschnitten. Genau so ist es
+   gemeint: die Seite laeuft weiter, sie endet nicht.
+   Eine feste Zahl und kein Anteil der Inhaltshoehe: der Anschnitt soll immer an derselben Stelle
+   sitzen und nicht davon abhaengen, wie hoch die Komponente heute rechnet. */
+/* Die Zeile mit Logo und Domain: das Logo ist .up-logo-box aus core, also derselbe Kasten wie in
+   jeder Tabelle der App. */
+.ulh-quell-dom { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.ulh-quell-dom .up-logo-box { width: 34px; height: 34px; border-radius: 10px; }
+.ulh-quell-dom .up-logo-box img { width: 32px; height: 32px; border-radius: 9px; }
+.ulh-quell-domtxt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ulh-quell-domname { font-size: 17px; font-weight: 500; letter-spacing: -0.015em; color: var(--ulh-text); }
+.ulh-quell-domsub { font-size: 13px; font-weight: 400; color: var(--ulh-sub); }
+
+/* ---- Die Komponente darin enger stellen ----
+   Die App atmet, weil dort eine ganze Seite steht. Hier steht sie in einem Ausschnitt, und
+   dieselben Abstaende wirken darin leer. Kleiner werden nur ABSTAENDE und Kartenpolster -- keine
+   Schriftgroesse, keine Zeilenhoehe, kein Radius: sonst waere es nicht mehr die Komponente,
+   sondern eine zweite, die ihr aehnelt. */
+.ulh-quell-app { --udd-gap: 16px; }
+.ulh-quell-app .udd-root { gap: 16px; }
+.ulh-quell-app .udd-card { padding: 14px; }
+.ulh-quell-app .udd-toprow { margin-bottom: -8px; }
+/* Der Tooltip des Charts steht fest (landing-hero.js setzt ihn) -- er darf deshalb keine Maus
+   erwarten und nichts abfangen. */
+.ulh-quell-app .up-line-tt { pointer-events: none; }
+/* Der Anschnitt unten: eine weiche Kante statt einer harten Linie. Ohne sie endet die Seite wie
+   abgeschnitten, mit ihr laeuft sie aus. */
+.ulh-quell-panel::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 96px; pointer-events: none;
+  background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, var(--vc-bg) 88%);
+}
+
 /* ---- Reihe drei: Band der Prompts und Bahnen der Modelle -------------------------------------
    Beide Vorschauen sind KEINE verkleinerten Bauteile der App, sondern eigene Bilder -- deshalb
    --ulh-vs: 1. Was aus der App kommt, sind die Teile darin: der Marktchip (core.css .up-market)

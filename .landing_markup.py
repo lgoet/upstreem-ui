@@ -43,6 +43,10 @@ TEILE = [
     # Responses-Tabelle im Kartenmodus. Die zwei anderen Fenster brauchen keine Vorlage -- das
     # Team-Dropdown und der Doughnut entstehen aus geteilten Bauteilen (sidebar.css, UC.makeTypeChart).
     ("urt", "bubble/responses_table_bubble.html", "lh-urt"),
+    # Vierte Sektion: eine Domain-Detail-Seite als Beispiel. Ihre Vorlage ist nur die leere Wurzel --
+    # die Komponente baut alles selbst -- und genau deshalb steht sie hier: so bleiben ihre
+    # Attribute (data-brand und der Rest) in derselben Form wie in der App.
+    ("udd", "bubble/domain_detail_bubble.html", "lh-udd"),
 ]
 
 # Feste Werte fuer die Platzhalter. BRAND_NAME ist eine erfundene Marke -- erfundene Zahlen unter
@@ -79,7 +83,11 @@ def markup(pfad):
     rest = s[m.start():]
     # Bis zum letzten </div> vor dem ersten <script> oder <link> -- danach beginnt der Lader, und
     # der gehoert nicht ins Markup: hier laedt der Lader der Landingpage.
-    end = re.search(r'</div>\s*(?=<script|<link|$)', rest)
+    # Zwischen dem Markup und dem Lader darf ein KOMMENTAR stehen (domain-detail hat einen:
+    # ein Hinweis zu data-scope-fn). Ohne diesen Zusatz traf der Anker nicht, und dann kam der
+    # ganze Lader als "Markup" heraus -- erkannt daran, dass der Platzhalterwaechter danach
+    # "CDN_" meldete, das aus dem Lader stammt.
+    end = re.search(r'</div>(?=\s*(?:<!--.*?-->\s*)*(?:<script|<link|$))', rest, re.S)
     return (rest[:end.end()] if end else rest).rstrip()
 
 
