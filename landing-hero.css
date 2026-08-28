@@ -276,10 +276,19 @@
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
+  /* Der Knopf der Quellen-Sektion ist ein <a>, und der Browser unterstreicht ihn dann. Im Hero
+     sind es <button>, dort fiel es nie auf. */
+  text-decoration: none;
   transition: background 140ms ease, border-color 140ms ease;
 }
 .ulh-btn-sec { border: 1px solid var(--ulh-border); background: var(--ulh-grund); color: var(--ulh-text); }
-.ulh-btn-sec:hover { background: #f7f7f8; }
+/* Der Hover ist der aus der App (.up-btn-sec in core.css): kraeftigerer Rahmen und der Grund der
+   Kopfzeilen. Die Werte stehen als Rueckfall dabei, weil --vc-* an .up-root haengt und dieser
+   Knopf ausserhalb steht -- ohne Rueckfall waere die Regel hier ungueltig. */
+.ulh-btn-sec:hover {
+  background: var(--vc-heading-bg, #f5f5f5);
+  border-color: var(--vc-hover-border, #6f6f6f);
+}
 .ulh-btn-pri { border: 1px solid var(--ulh-text); background: var(--ulh-text); color: #ffffff; }
 .ulh-btn-pri:hover { background: #33332e; border-color: #33332e; }
 
@@ -1014,34 +1023,52 @@
    allein, ohne Karte darum. Zwei Toene in EINEM Satz: der erste Teil dunkel, der Rest in der
    zweiten Farbe. Das ist ein <strong> im Text und keine zwei Zeilen: es soll ein Satz bleiben,
    der umbricht, wo der Platz endet, und nicht ein Titel mit einer Unterzeile. */
-.ulh-quell { position: relative; padding: clamp(72px, 11vh, 132px) 0 0; }
+.ulh-quell {
+  position: relative;
+  /* Als Variablen, weil der Strich im Kopf genau diese zwei Strecken ueberbruecken muss: von der
+     Oberkante der Sektion bis zur Oberkante des Kastens. Zwei Zahlen an drei Stellen waeren drei
+     Zahlen, die auseinanderlaufen. */
+  --ulh-quell-luft: clamp(72px, 11vh, 132px);
+  --ulh-quell-abstand: clamp(44px, 6vh, 76px);
+  padding: var(--ulh-quell-luft) 0 0;
+}
+/* Die zwei Striche hinter dem Kopf. Sie liegen genau auf den Schienen der Seite (.ulh-schienen,
+   also die Kanten der Spur) und laufen von durchsichtig oben bis zur vollen Rahmenfarbe unten --
+   dort, wo der Kasten beginnt. Damit wandert der Blick die Linie hinunter in die Komponente.
+   Zwei Verlaeufe als Hintergrundbilder und keine Raender: ein Rand kann keinen Verlauf tragen.
+   Der durchsichtige Halt ist --ulh-border mit Alpha 0 und nicht "transparent" -- ausgeschrieben,
+   damit kein Browser durch ein anderes Grau blendet.
+   z-index am Kopf und an seinen Kindern, NICHT -1 am Strich: ein negativer Wert haette ihn hinter
+   den Grund der Seite gelegt (dort liegt die Fuellung von .ulh-root), und dann waere er weg. */
+.ulh-quell-kopf { position: relative; z-index: 0; }
+.ulh-quell-kopf > * { position: relative; z-index: 1; }
+.ulh-quell-kopf::before {
+  content: ""; position: absolute; z-index: 0; pointer-events: none;
+  left: 0; right: 0;
+  top: calc(-1 * var(--ulh-quell-luft));
+  bottom: calc(-1 * var(--ulh-quell-abstand));
+  background-image: linear-gradient(to bottom, rgba(231, 233, 236, 0), var(--ulh-border)),
+                    linear-gradient(to bottom, rgba(231, 233, 236, 0), var(--ulh-border));
+  background-size: 1px 100%, 1px 100%;
+  background-position: left top, right top;
+  background-repeat: no-repeat;
+}
 .ulh-quell-kopf { display: flex; flex-direction: column; align-items: center; text-align: center; }
 /* Breiter als der Chip darueber vermuten laesst: mit 22ch stand der Satz bei 46px Schrift in
    sechs Zeilen und sah gestaucht aus. Die Grenze ist jetzt in px und nicht in ch -- ch haengt an
    der Schriftgroesse, und die waechst hier mit dem Fenster: dieselbe Zahl haette bei 30px eine
    andere Breite ergeben als bei 46px. */
 .ulh-quell-h {
-  margin: 18px 0 0; max-width: min(100%, 1150px);
+  margin: 0; max-width: min(100%, 1150px);
   font-size: clamp(30px, 3.4vw, 46px); font-weight: 500; line-height: 1.14; letter-spacing: -0.035em;
   color: var(--ulh-sub);
 }
 .ulh-quell-h strong { font-weight: 500; color: var(--ulh-text); }
-/* Der Knopf ist der weisse aus der Vorlage: heller Grund, feiner Rahmen, kein Schlagschatten --
-   er soll einladen und nicht rufen. Die Hoehe ist die der Knoepfe im Hero. */
-.ulh-quell-cta {
-  margin-top: clamp(22px, 3vh, 34px);
-  display: inline-flex; align-items: center; height: 44px; padding: 0 22px; border-radius: 12px;
-  background: #ffffff; border: 1px solid var(--ulh-border); color: var(--ulh-text);
-  font-size: 15px; font-weight: 500; letter-spacing: -0.01em; text-decoration: none;
-  box-shadow: 0 1px 2px rgba(11, 13, 24, .05);
-  transition: border-color 200ms var(--ulh-ease), box-shadow 200ms var(--ulh-ease),
-              transform 200ms var(--ulh-ease);
-}
-.ulh-quell-cta:hover {
-  border-color: var(--ulh-hover-border, #c9ccd4);
-  box-shadow: 0 6px 18px rgba(11, 13, 24, .10);
-  transform: translateY(-1px);
-}
+/* Der Knopf ist der Sekundaerknopf des Hero (.ulh-btn .ulh-btn-sec), hier steht nur sein Abstand
+   nach oben. Vorher war es ein zweiter Knopf mit eigener Hoehe, eigenem Radius und eigenem Hover --
+   zwei Knoepfe derselben Rolle auf einer Seite, die sich unter der Maus verschieden verhalten. */
+.ulh-quell-cta { margin-top: clamp(22px, 3vh, 34px); }
+
 /* Der Kasten mit dem Stueck App: oben ein Rahmen wie bei einer Karte, unten OFFEN -- er wird
    angeschnitten, und der Inhalt laeuft weiter. Deshalb kein unterer Rahmen und kein Radius unten,
    und eine feste Hoehe: der Anschnitt ist gewollt und darf nicht davon abhaengen, wie hoch die
@@ -1053,17 +1080,24 @@
    Polster. Sonst laege unter der weissen Karte ein 4px grauer Streifen, und der laese sich als
    Unterkante -- genau das Gegenteil von "die Seite laeuft weiter". */
 .ulh-quell-box {
-  margin: clamp(44px, 6vh, 76px) 8px 0;
+  margin: var(--ulh-quell-abstand) 8px 0;
   padding: 4px 4px 0;
   background: var(--ulh-kasten);
   border: 1px solid var(--ulh-border); border-bottom: 0;
   border-radius: 20px 20px 0 0;
   box-shadow: 0 1px 2px rgba(11, 13, 24, .035), 0 6px 16px rgba(11, 13, 24, .028);
 }
+/* WEISS, und zwar als Zahl. --vc-bg ist die Grundfarbe der App, aber sie ist an .up-root
+   gebunden, und dieser Kasten steht darueber: die Angabe war ungueltig, der Grund blieb
+   durchsichtig, und durchgeschienen hat der graue Kasten darunter. Genau das war "die Komponente
+   ist grau". Dieselbe Falle steckte im Verlauf unten -- er verlief nach Nichts und blendete
+   deshalb nicht aus, die Seite hoerte einfach auf.
+   Das Polster oben ist so gross wie der Abstand zwischen Domainzeile und Karten (16px), damit
+   Oberkante, Ueberschrift und Karten gleichmaessig stehen. Links und rechts bleiben es 8px. */
 .ulh-quell-panel {
   border: 1px solid var(--ulh-border); border-bottom: 0;
-  border-radius: 16px 16px 0 0; background: var(--vc-bg);
-  padding: 8px 8px 0; height: 620px; overflow: hidden; position: relative;
+  border-radius: 16px 16px 0 0; background: #ffffff;
+  padding: 16px 8px 0; height: 620px; overflow: hidden; position: relative;
 }
 /* Die Hoehe ist gemessen und nicht geschaetzt. In 1266px Breite baut die Komponente: 32 Kopfzeile,
    412 Chartkarte (mit der Legende der fuenf URLs), 299 Trichterkarte, 322 fuer die zwei Karten
@@ -1074,7 +1108,7 @@
    sitzen und nicht davon abhaengen, wie hoch die Komponente heute rechnet. */
 /* Die Zeile mit Logo und Domain: das Logo ist .up-logo-box aus core, also derselbe Kasten wie in
    jeder Tabelle der App. */
-.ulh-quell-dom { display: flex; align-items: center; gap: 12px; padding: 6px 6px 0; margin-bottom: 10px; }
+.ulh-quell-dom { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
 .ulh-quell-dom .up-logo-box { width: 34px; height: 34px; border-radius: 10px; }
 .ulh-quell-dom .up-logo-box img { width: 32px; height: 32px; border-radius: 9px; }
 .ulh-quell-domtxt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -1126,8 +1160,8 @@
 /* Der Anschnitt unten: eine weiche Kante statt einer harten Linie. Ohne sie endet die Seite wie
    abgeschnitten, mit ihr laeuft sie aus. */
 .ulh-quell-panel::after {
-  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 72px; pointer-events: none;
-  background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, var(--vc-bg) 88%);
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 130px; pointer-events: none;
+  background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,.86) 58%, #ffffff 100%);
 }
 
 /* ---- Reihe drei: Band der Prompts und Bahnen der Modelle -------------------------------------
@@ -1192,8 +1226,11 @@
 /* Der Kasten der Vorschau ist --ulh-vh hoch, sichtbar sind davon 26px weniger: so viel Polsterung
    traegt .ulh-vis oben, und der Inhalt laeuft darunter durch. Fuer eine Tabelle ist das richtig
    (sie soll oben angeschnitten wirken), fuer einen Kreis nicht -- er stand unten an der Kante an.
-   Also nimmt der Kasten der Bahnen genau die sichtbare Hoehe, und die Mitte rueckt um 13px hoch. */
-.ulh-orb { position: relative; height: calc(100% - 26px); }
+   Also nimmt der Kasten der Bahnen genau die sichtbare Hoehe, und die Mitte rueckt hoch.
+   38 und nicht 26: mit 26 lagen die Zeichen der AEUSSEREN Bahn an ihrem tiefsten Punkt noch ein
+   paar Pixel unter der Kante. Der Kasten ist um 12 flacher, die Mitte damit um 6 hoeher -- und
+   6px sind genau das, was unten gefehlt hat. */
+.ulh-orb { position: relative; height: calc(100% - 38px); }
 .ulh-orb-ring {
   position: absolute; left: 50%; top: 50%; margin: 0; border-radius: 50%;
   transform-origin: center center; translate: -50% -50%;
@@ -1267,7 +1304,7 @@
    macht aus einer Tabelle ein Bild von einer Tabelle -- man liest sie nicht mehr, man sieht sie
    nur. Ohne Neigung bleibt sie lesbar, und das ist hier der Zweck. */
 .ulh-vis-tab, .ulh-vis-dom {
-  border: 1px solid var(--ulh-border); border-radius: 12px; overflow: hidden;
+  border: 1px solid var(--ulh-border); border-radius: 12px;
   background: var(--vc-bg);
   box-shadow: 0 1px 2px rgba(11, 13, 24, .04), 0 8px 20px rgba(11, 13, 24, .05);
 }
@@ -1336,7 +1373,15 @@
 .ulh-vis .up-row:hover, .ulh-vis .uo-row:hover, .ulh-vis .udt-subrow:hover {
   background: var(--vc-bg); border-color: var(--vc-border);
 }
-.ulh-card:hover .ulh-vis-tab { overflow: visible; }
+/* Die Tabelle der Prompt-Karte schneidet NICHT ab -- weder beim Heben noch beim Senken. Vorher
+   stand overflow: hidden an ihr und wurde beim Hover auf visible gestellt; overflow kennt aber
+   keinen Zwischenschritt, es springt. Beim Verlassen sprang es sofort zurueck auf hidden, und die
+   gehobene Zeile verschwand hinter der Tabellenkante, WAEHREND sie noch 714ms lang schrumpfte.
+   Die Zeile braucht die Sperre auch nicht: sie hat keinen eigenen Grund ausser beim Heben, und
+   die runden Ecken der Tabelle deckt ihre Kopfzeile mit demselben Radius ab.
+   .ulh-vis-dom behaelt die Sperre -- dort liegt ein aufgeklappter Drilldown mit Fuellung darin. */
+.ulh-vis-dom { overflow: hidden; }
+.ulh-vis-tab .up-thead { border-radius: 12px 12px 0 0; }
 .ulh-card:hover .ulh-vis-tab .up-row.is-mitte,
 .ulh-card:hover .ulh-vis-chancen .uo-row.is-mitte {
   transform: scale(1.06);
@@ -1395,7 +1440,7 @@
      Die Hoehe des Kastens bleibt: bei 620px steht die Kurve ganz da, und der Schnitt liegt im
      Trichter genau unter seinen drei Zahlen. Mit 560px lag er MITTEN in den Zahlen -- halbe
      Ziffern, gemessen bei 820px Fensterbreite. */
-  .ulh-quell { padding-top: clamp(48px, 8vh, 80px); }
+  .ulh-quell { --ulh-quell-luft: clamp(48px, 8vh, 80px); }
   .ulh-quell-app .udd-root { grid-template-columns: 1fr; }
 }
 

@@ -1097,7 +1097,7 @@
      sondern zeigt, WAS die App ueber eine Quelle weiss -- und ein erfundener Name waere hier das
      Gegenteil von dem, was gemeint ist ("die echten Quellen deines Marktes"). Die Zahlen sind
      Beispielzahlen und stehen in derselben Groessenordnung wie im Dashboard darueber. */
-  var QUELL_CHIP = "Source insights";
+  var QUELL_CHIP = "Source Insights";
   var QUELL_H1 = "Understand how sources shape answers.";
   var QUELL_H2 = "Which domains the models cite in your market, which of their pages carry the " +
     "answer, and where your brand is named in them.";
@@ -1108,12 +1108,13 @@
     return '<section class="ulh-quell">' +
       '<div class="ulh-spur">' +
         '<div class="ulh-quell-kopf">' +
-          /* Derselbe Chip wie im Hero -- Bauteil verwenden, nicht ein zweites bauen: der Ring
-             mit dem wandernden Licht ist die Handschrift dieser Seite und gehoert nicht zweimal
-             in zwei Fassungen in dieselbe Datei. */
-          '<span class="ulh-chip"><span class="ulh-chip-in">' + QUELL_CHIP + '</span></span>' +
+          /* Derselbe blaue Chip wie ueber der Ueberschrift der Karten (.ulh-feat-chip) -- eine
+             Sektion, ein Chip. Er bringt seinen Abstand nach unten selbst mit (18px). */
+          '<span class="ulh-feat-chip">' + QUELL_CHIP + '</span>' +
           '<h2 class="ulh-quell-h"><strong>' + QUELL_H1 + '</strong> ' + QUELL_H2 + '</h2>' +
-          '<a class="ulh-quell-cta" href="#" role="button">' + QUELL_CTA + '</a>' +
+          /* Derselbe Knopf wie im Hero (.ulh-btn .ulh-btn-sec) -- .ulh-quell-cta traegt nur noch
+             den Abstand nach oben und kein zweites Aussehen. */
+          '<a class="ulh-btn ulh-btn-sec ulh-quell-cta" href="#" role="button">' + QUELL_CTA + '</a>' +
         '</div>' +
         /* Der Kasten ist unten offen: er wird angeschnitten, und der Inhalt laeuft weiter. Genau
            das laesst ihn wie eine laufende Seite wirken und nicht wie ein Bildschirmfoto. */
@@ -1234,11 +1235,17 @@
           return { day: t, share_pct: Math.round((14.8 + i * 0.55 + (i % 2 ? 0.9 : -0.7)) * 100) / 100 };
         })
       },
+      /* Die Schluessel muessen aus URL_TYPE in core.js kommen -- ein Typ, den die Tabelle nicht
+         kennt, bekommt keine Farbe und wird grau ("Other"). Genau das war hier zu sehen: "product"
+         heisst dort product_service, und "uncategorized" gibt es gar nicht.
+         Die Verteilung passt zu dem, was G2 wirklich ist: Kategorieseiten (Listicle), Produkt-
+         bewertungen (Review), Vergleiche (Comparison), das Grid als Verzeichnis (Directory). */
       types_breakdown: [
-        { type: "article", share_pct: 52.4 },
-        { type: "homepage", share_pct: 24.8 },
-        { type: "product", share_pct: 15.1 },
-        { type: "uncategorized", share_pct: 7.7 }
+        { type: "listicle", share_pct: 31.5 },
+        { type: "review", share_pct: 27.8 },
+        { type: "comparison", share_pct: 18.6 },
+        { type: "directory", share_pct: 14.9 },
+        { type: "guide", share_pct: 7.2 }
       ],
       model_breakdown: [
         { model: "ChatGPT", model_share_pct: 38.2, color_lightmode: "#111827", color_darkmode: "#F3F4F6",

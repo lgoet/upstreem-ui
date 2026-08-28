@@ -93,6 +93,64 @@ function messen(){
       })() : null,
       modus: q(".udd-heading") ? q(".udd-heading").textContent : null
     },
+    runde2: {
+      chip_klasse: q(".ulh-quell-kopf .ulh-feat-chip") ? "ulh-feat-chip" : (q(".ulh-quell-kopf .ulh-chip") ? "ulh-chip (falsch)" : "keiner"),
+      chip_grund: q(".ulh-quell-kopf .ulh-feat-chip") ? getComputedStyle(q(".ulh-quell-kopf .ulh-feat-chip")).backgroundColor : null,
+      chip_hoehe: q(".ulh-quell-kopf .ulh-feat-chip") ? Math.round(q(".ulh-quell-kopf .ulh-feat-chip").getBoundingClientRect().height) : null,
+      chip_gleich_wie_karten: (function(){
+        var a = q(".ulh-feat-kopf .ulh-feat-chip"), b = q(".ulh-quell-kopf .ulh-feat-chip");
+        if (!a || !b) return "fehlt";
+        var ka = getComputedStyle(a), kb = getComputedStyle(b);
+        return ["height","padding","borderRadius","backgroundColor","color","fontSize","fontWeight","letterSpacing"]
+          .every(function(k){ return ka[k] === kb[k]; }) ? "identisch" : "verschieden";
+      })(),
+      panel_grund: panel ? getComputedStyle(panel).backgroundColor : null,
+      verlauf: panel ? getComputedStyle(panel, "::after").backgroundImage.slice(0, 110) : null,
+      /* Abstand Oberkante -> Domainzeile und Domainzeile -> erste Karte: sollen gleich sein. */
+      oben: (panel && q(".ulh-quell-dom")) ? Math.round(q(".ulh-quell-dom").getBoundingClientRect().top - panel.getBoundingClientRect().top) : null,
+      unten: (q(".ulh-quell-dom") && chart) ? Math.round(chart.getBoundingClientRect().top - q(".ulh-quell-dom").getBoundingClientRect().bottom) : null,
+      knopf: (function(){
+        var a = q(".ulh-cta .ulh-btn-sec"), b = q(".ulh-quell-cta");
+        if (!a || !b) return "fehlt";
+        var ka = getComputedStyle(a), kb = getComputedStyle(b);
+        return { gleich: ["height","padding","borderRadius","backgroundColor","borderColor","fontSize","fontWeight"]
+                   .every(function(k){ return ka[k] === kb[k]; }) ? "identisch" : "verschieden",
+                 hoehe: kb.height, radius: kb.borderRadius, schrift: kb.fontSize,
+                 hover_regel: (function(){
+                   var t = null;
+                   [].forEach.call(document.styleSheets, function(ss){
+                     try { [].forEach.call(ss.cssRules, function(k){
+                       if ((k.selectorText || "").indexOf(".ulh-btn-sec:hover") >= 0) t = k.cssText.slice(0, 150); }); } catch(e){}
+                   });
+                   return t;
+                 })() };
+      })(),
+      typen: (function(){
+        var lein = q(".udd-typebody canvas");
+        var c = lein && window.Chart && window.Chart.getChart ? window.Chart.getChart(lein) : null;
+        if (!c) return "kein Chart";
+        var ds = c.data.datasets[0];
+        return { stuecke: (c.data.labels || []).length, labels: c.data.labels,
+                 farben: ds.backgroundColor, grau: (ds.backgroundColor || []).filter(function(f){
+                   return /8c8f96|a8abb2|#9|#8c/i.test(String(f)); }).length };
+      })(),
+      tabelle: {
+        vis_tab: q(".ulh-vis-tab") ? getComputedStyle(q(".ulh-vis-tab")).overflow : null,
+        vis_dom: q(".ulh-vis-dom") ? getComputedStyle(q(".ulh-vis-dom")).overflow : null,
+        thead_radius: q(".ulh-vis-tab .up-thead") ? getComputedStyle(q(".ulh-vis-tab .up-thead")).borderRadius : null,
+        thead_grund: q(".ulh-vis-tab .up-thead") ? getComputedStyle(q(".ulh-vis-tab .up-thead")).backgroundColor : null
+      },
+      bahnen: (function(){
+        var o = q(".ulh-orb"), kasten = q(".ulh-vis-modelle");
+        if (!o || !kasten) return "fehlt";
+        var ro = o.getBoundingClientRect(), rk = kasten.getBoundingClientRect();
+        var chips = [].slice.call(o.querySelectorAll(".ulh-orb-chip"));
+        var tiefster = chips.reduce(function(m, c){ return Math.max(m, c.getBoundingClientRect().bottom); }, -1e9);
+        return { orb_hoehe: Math.round(ro.height), mitte_y: Math.round(ro.top + ro.height / 2),
+                 kasten_unten: Math.round(rk.bottom), tiefstes_zeichen: Math.round(tiefster),
+                 luft_unten: Math.round(rk.bottom - tiefster), zeichen: chips.length };
+      })()
+    },
     karten: {
       uebergang: zeile ? getComputedStyle(zeile).transition : null,
       chancen: q(".ulh-vis-chancen .uo-row") ? getComputedStyle(q(".ulh-vis-chancen .uo-row")).transition : null
