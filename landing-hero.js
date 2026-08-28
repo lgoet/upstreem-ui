@@ -321,121 +321,270 @@
       '</section>' +
       merkmale() +
       quellen() +
-      miras();
+      msc();
   }
 
-  /* ---------- Fuenfte Sektion: Mira -------------------------------------------------------
-     Diese Sektion ist DUNKEL. Nicht als Laune: Mira ist das eine Stueck der App, das nicht aus
-     Tabellen besteht, sondern aus einem Gespraech, und ein dunkler Grund trennt sie vom Rest der
-     Seite, ohne dass es dafuer eine Ueberschrift braucht. Die Farben sind die der App im dunklen
-     Thema (core.css, .up-root[data-theme="dark"]), nicht selbst gemischte.
+  /* ---------- Fuenfte Sektion: Mira bei der Arbeit ----------------------------------------
+     Links drei Karten, rechts Mira -- und rechts steht die ECHTE Komponente, nicht ihr Bild.
 
-     Der Startbildschirm steht in einem EIGENEN DOKUMENT, und das ist der Kern der Sache:
-     ask-mira ist an die Kennung #ask-mira gebunden -- 268 Regeln in ask-mira.css, 57 weitere
-     Kennungen im Markup, und ask-mira.js sucht seine Wurzel mit getElementById. Auf dieser Seite
-     ist diese eine Instanz schon vergeben: sie ist die zweite Szene des Hero-Fensters mit ihrer
-     Tippvorfuehrung. Zwei Instanzen in EINEM Dokument gibt es also nicht.
-     In einem iframe ist die Kennung wieder eindeutig, und damit laeuft hier die ECHTE Komponente
-     mit allem, was sie kann: die wechselnden Texte im Eingabefeld, die Kategorien, das Hovern,
-     der Grund. Kein Nachbau, der ab dem naechsten Umbau der App falsch waere.
-     Geladen wird es erst, wenn die Sektion in die Naehe des Bildschirms kommt -- der Seitenaufbau
-     bleibt davon unberuehrt. */
-  var MIRA_KARTEN = [
-    { ic: "sparkle", t: "It does the work.",
-      s: "Ask for a report and get the report: written, sourced and ready to send." },
-    { ic: "squareStack", t: "Your data is already there.",
-      s: "Every brand, prompt, market and source you track. No setup, no uploads." },
+     WARUM in einem eigenen Dokument: ask-mira ist an die Kennung #ask-mira gebunden. 268 Regeln in
+     ask-mira.css haengen daran, im Markup stecken 57 weitere Kennungen, und ask-mira.js sucht seine
+     Wurzel mit getElementById. Diese eine Instanz ist auf der Seite schon vergeben -- sie ist die
+     zweite Szene des Hero-Fensters. In einem iframe ist die Kennung wieder eindeutig, und damit
+     laeuft hier dieselbe Komponente, die die App zeigt: dieselbe Blase, dieselben Chips, dieselbe
+     Tabelle, dasselbe Arbeitsprotokoll beim Laden.
+
+     Gefuehrt wird sie von HIER aus, ueber ihre eigenen Setter im Fenster des iframes -- genau die
+     Folge, die auch die Mira-Szene im Hero benutzt: tippen, Knopf druecken, Nachricht setzen,
+     Werkzeuge melden, Antwort nachschieben, tippen lassen. Nichts davon ist nachgebaut. */
+  var MSC_KARTEN = [
     { ic: "telescope", t: "It digs for the reason.",
       s: "From a number to its cause: which prompts, which models, which pages." },
-    { ic: "bulb", t: "A consultant on call.",
-      s: "Ask in your own words, in your own language. Answers in seconds." },
     { ic: "listTodo", t: "Ends in a next step.",
-      s: "Not just what happened, but what to change, where, and why it matters." }
+      s: "Not just what happened, but what to change, where, and why it matters." },
+    { ic: "sparkle", t: "Your data is already there.",
+      s: "Every brand, prompt, market and source you track. No setup, no uploads." }
   ];
 
-  /* Die Adresse, aus der die Seite selbst geladen wurde -- das iframe braucht ABSOLUTE Adressen.
-     In ihm ist die Basis "about:srcdoc", und relative Pfade laufen dort ins Leere.
-     Drei Wege, in dieser Reihenfolge: das Skript, das diese Datei geladen hat (der Normalfall auf
-     der Seite), sonst irgendein Skript aus demselben Verzeichnis, sonst das Verzeichnis der Seite
-     selbst -- das ist der Fall im Messaufbau, wo die Dateien als Text eingehaengt werden und
-     ueberhaupt keine Adresse haben. */
-  function mirasBasis(){
+  /* Die drei Faelle. Sie zeigen, was eine Antwort ENTHAELT und nicht, wie lang sie sein kann:
+     ein Satz mit Sentiment-Auszeichnung, eine Liste mit Quellen- und Markenchips, eine Tabelle.
+     Der Report fehlt mit Absicht -- den zeigt das Hero-Fenster oben schon.
+     Die Werkzeuge sind die echten Namen aus ask-mira.js (_TOOL_STATE); aus ihnen baut die
+     Komponente ihr Arbeitsprotokoll waehrend des Ladens, mit Zeichen und Text je Schritt. */
+  function mscFaelle(){
+    return [
+      { q: "What are people saying about Kestrel right now?",
+        werkzeuge: ["brand_overview", "response_mentions", "source_mentions_overview"],
+        dauer: 14000,
+        html: '<p>' + markeChip("ke") + ' sits at <strong>79 / 100</strong> sentiment over the last ' +
+          '30 days, up 3.1 points. The praise is consistent:</p>' +
+          '<p><span data-mira-sentiment="positive">"Kestrel is the fastest of the three to set up, ' +
+          'and the only one that shows which page an answer came from."</span></p>' +
+          '<p>Most of it traces back to ' + quelleChip(0) + ', and ' +
+          miraChip("response", "r1", "this response") + ' names you ahead of ' + markeChip("va") +
+          '.</p>' },
+
+      { q: "What should I fix first this week?",
+        werkzeuge: ["prompt_insights", "source_recommendations"],
+        dauer: 21000,
+        html: '<p>Three things, highest lift first:</p><ul>' +
+          '<li>Get listed on ' + quelleChip(0) + ' - it decides five of your comparison prompts.</li>' +
+          '<li>Answer the pricing thread on ' + quelleChip(1) + ' - ' + markeChip("va") +
+          ' is named there, you are not.</li>' +
+          '<li>Ship a pricing page: your weakest topic at <strong>22%</strong>.</li></ul>' +
+          '<p>Estimated lift: <strong>+5 to 8 points</strong> in 30 days.</p>' },
+
+      { q: "Which sources decide who gets named?",
+        werkzeuge: ["citation_overview", "url_detail", "response_mentions"],
+        dauer: 18000,
+        html: '<table><thead><tr><th>Source</th><th>Share</th><th>Names</th></tr></thead><tbody>' +
+          '<tr><td>' + quelleChip(0) + '</td><td>31.4%</td><td>' + markeChip("va") + '</td></tr>' +
+          '<tr><td>' + quelleChip(1) + '</td><td>18.2%</td><td>' + markeChip("ha") + '</td></tr>' +
+          '</tbody></table>' +
+          '<p>' + markeChip("ke") + ' appears in neither - that is the gap.</p>' }
+    ];
+  }
+
+  function msc(){
+    return '<section class="ulh-msc">' +
+      '<div class="ulh-spur">' +
+        /* Derselbe Kasten und dieselben Karten wie im Block darueber -- Bauteile verwenden, nicht
+           nachbauen. Neu ist allein die Aufteilung 20 zu 80. */
+        '<div class="ulh-cards-box ulh-msc-box">' +
+          '<div class="ulh-cards-row ulh-msc-row">' +
+            '<div class="ulh-msc-links">' +
+              MSC_KARTEN.map(function(k){
+                return '<div class="ulh-card ulh-msc-karte">' +
+                  '<span class="ulh-msc-ic" data-ic="' + k.ic + '" data-ic-w="1.6"></span>' +
+                  '<span class="ulh-msc-t">' + k.t + '</span>' +
+                  '<span class="ulh-msc-s">' + k.s + '</span>' +
+                '</div>';
+              }).join("") +
+            '</div>' +
+            '<div class="ulh-card ulh-msc-rechts">' +
+              '<iframe class="ulh-msc-rahmen" title="Mira" scrolling="no"' +
+                ' referrerpolicy="no-referrer"></iframe>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</section>';
+  }
+
+  /* Die Adresse, aus der die Seite geladen wurde -- das iframe braucht ABSOLUTE Adressen: seine
+     eigene Basis ist "about:srcdoc", und relative Pfade laufen dort ins Leere. Drei Wege: das
+     Skript, das diese Datei geladen hat, sonst der Lader, sonst das Verzeichnis der Seite selbst
+     (der Fall im Messaufbau, wo die Dateien als Text eingehaengt werden und keine Adresse haben). */
+  function mscBasis(){
     var s = document.querySelector('script[src*="landing-hero.js"], script[src*="landing-boot.js"]');
     var src = s && s.src;
     if (src) return src.slice(0, src.lastIndexOf("/") + 1);
     return location.href.replace(/[?#].*$/, "").replace(/[^/]*$/, "");
   }
 
-  function miras(){
-    return '<section class="ulh-miras">' +
-      '<div class="ulh-miras-buehne">' +
-        '<iframe class="ulh-miras-rahmen" title="Mira" scrolling="no"' +
-          ' referrerpolicy="no-referrer"></iframe>' +
-      '</div>' +
-      '<div class="ulh-miras-karten">' +
-        MIRA_KARTEN.map(function(k){
-          return '<div class="ulh-miras-karte">' +
-            /* data-ic und kein Aufruf von core: das Markup wird gebaut, bevor core sicher da
-               ist, und ein spaeterer Durchgang setzt alle Zeichen der Seite auf einmal. */
-            '<span class="ulh-miras-ic" data-ic="' + k.ic + '" data-ic-w="1.6"></span>' +
-            '<span class="ulh-miras-t">' + k.t + '</span>' +
-            '<span class="ulh-miras-s">' + k.s + '</span>' +
-          '</div>';
-        }).join("") +
-      '</div>' +
-    '</section>';
-  }
-
-  /* Der Inhalt des iframes. srcdoc und keine eigene Datei: die Dateiliste der Seite steht in
-     landing-boot.js, und eine zweite HTML-Datei waere ein zweiter Ort, an dem ein Pin veralten
-     kann. So kommt alles aus derselben Basis wie der Rest der Seite.
-     data-isdark UND data-theme: das erste liest ask-mira.js beim Start, das zweite die CSS. */
-  function mirasSeite(){
-    var basis = mirasBasis();
-    var markup = (MARKUP.mira || "")
-      .replace('data-isdark="no"', 'data-isdark="yes" data-theme="dark"');
+  /* srcdoc und keine zweite HTML-Datei: die Dateiliste der Seite steht in landing-boot.js, und
+     eine zweite Datei waere ein zweiter Ort, an dem ein Pin veralten kann. */
+  function mscSeite(){
+    var basis = mscBasis();
     return '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
       '<meta name="viewport" content="width=device-width,initial-scale=1">' +
       '<link rel="stylesheet" href="' + basis + 'core.css">' +
       '<link rel="stylesheet" href="' + basis + 'ask-mira.css">' +
       '<style>' +
-        'html,body{margin:0;padding:0;background:#121212;overflow:hidden;}' +
+        'html,body{margin:0;padding:0;background:#ffffff;overflow:hidden;}' +
         '#ask-mira{height:100vh;}' +
-      '</style></head><body>' + markup +
+        /* Der Knopf "All Chats" fuehrt in eine Liste, die es hier nicht gibt. */
+        '#am-open-prev{display:none;}' +
+      '</style></head><body>' + (MARKUP.mira || "") +
       '<script src="' + basis + 'core.js"><\/script>' +
       '<script src="' + basis + 'ask-mira.js"><\/script>' +
       '<script>' +
-        /* Das Thema ueber den Setter und nicht ueber das Attribut: ask-mira.js NIMMT
-           data-theme beim Start wieder ab und faellt auf prefers-color-scheme zurueck --
-           gemessen: das Attribut war danach weg und die Schrift stand auf #1f1f1b, also
-           hell auf schwarz. Die Schleife, weil der Setter erst existiert, wenn
-           ask-mira.js gelaufen ist. */
+        /* HELL, und ueber den Setter: ask-mira.js nimmt data-theme beim Start ab und faellt sonst
+           auf prefers-color-scheme zurueck -- auf einem dunkel gestellten Rechner stuende hier
+           sonst eine schwarze Komponente in einer hellen Seite. Die Schleife, weil der Setter erst
+           existiert, wenn ask-mira.js gelaufen ist. */
         '(function(){var n=0;(function go(){if(window.askMiraSetTheme){' +
-        'window.askMiraSetTheme("dark");return;}if(n++<60)setTimeout(go,50);})();})();' +
+        'window.askMiraSetTheme("light");return;}if(n++<60)setTimeout(go,50);})();})();' +
+        /* Sehen ja, bedienen nein -- in der Abfangphase, bevor die Komponente es sieht. Ein
+           pointer-events: none am Rahmen haette auch das Hovern mitgenommen. */
         'document.addEventListener("click",function(e){e.preventDefault();e.stopPropagation();},true);' +
         'document.addEventListener("keydown",function(e){e.preventDefault();e.stopPropagation();},true);' +
       '<\/script></body></html>';
   }
 
-  /* Erst laden, wenn die Sektion naeher kommt. Der Beobachter nimmt einen grossen Vorlauf, damit
-     das Bild steht, bevor jemand dort ankommt. Ohne IntersectionObserver wird sofort geladen --
-     lieber ein frueher Ladevorgang als eine leere Flaeche.
-     Klicks und Tasten fangen wir IM iframe ab und nicht mit pointer-events: none am Rahmen: das
-     haette auch das Hovern mitgenommen, und genau das soll man sehen. */
-  function mirasFuellen(root){
-    var rahmen = root.querySelector(".ulh-miras-rahmen");
+  /* Die Folge je Fall. Dieselbe wie in der Mira-Szene des Hero, nur auf das Fenster des iframes
+     gerichtet -- und mit einer Pause am Ende, nach der der naechste Fall beginnt. */
+  var MSC_ZEICHEN_MS = 32;     /* Tippgeschwindigkeit -- wie im Hero */
+  var MSC_PAUSE_MS   = 700;    /* zwischen fertig getippt und Knopfdruck */
+  var MSC_DENKT_MS   = 3200;   /* Ladezeit; die Werkzeuge kommen darin gestaffelt */
+  var MSC_HALTEN_MS  = 7600;   /* wie lange die fertige Antwort steht */
+  var MSC_LEER_MS    = 900;    /* Ruhe auf dem Startbildschirm vor der naechsten Frage */
+
+  function mscLauf(fr){
+    var w, d;
+    try { w = fr.contentWindow; d = fr.contentDocument; } catch (e){ return; }
+    if (!w || !d) return;
+    var faelle = mscFaelle(), i = 0;
+
+    function tippEreignis(el){
+      try { el.dispatchEvent(new w.Event("input", { bubbles: true })); } catch (e){}
+    }
+
+    /* Zurueck auf den Startbildschirm. Erst der Ladezustand, dann die Liste: die Chatansicht haengt
+       an BEIDEN (messages.length > 0 || isLoading), und mit noch stehendem Ladezustand bliebe sie
+       offen. Genau dieselbe Reihenfolge wie im Neustart des Hero-Fensters. */
+    function leeren(){
+      var ta = d.querySelector("#am-textarea");
+      var komposer = d.querySelector(".am-composer");
+      if (komposer) komposer.classList.remove("is-tippt");
+      if (ta){ ta.value = ""; tippEreignis(ta); }
+      if (w.askMiraSetLoading) w.askMiraSetLoading("false");
+      if (w.askMiraSetMessages) w.askMiraSetMessages([]);
+    }
+
+    /* Zeichen fuer Zeichen, mit einem input-Ereignis je Zeichen: daran haengen das Mitwachsen des
+       Feldes, der Sendeknopf und die laufende Platzhalterzeile. Ohne das Ereignis stuende Text in
+       einem Feld, das nicht mitwaechst, neben einem grauen Knopf. */
+    function tippen(text, fertig){
+      var ta = d.querySelector("#am-textarea");
+      if (!ta){ fertig(); return; }
+      var komposer = d.querySelector(".am-composer");
+      if (komposer) komposer.classList.add("is-tippt");
+      var k = 0;
+      (function schritt(){
+        ta.value = text.slice(0, ++k);
+        tippEreignis(ta);
+        if (k < text.length) setTimeout(schritt, MSC_ZEICHEN_MS);
+        else setTimeout(fertig, MSC_PAUSE_MS);
+      })();
+    }
+
+    /* Der Knopf federt, bevor die Nachricht rausgeht -- sonst erscheint die Frage aus dem Nichts,
+       waehrend der Knopf daneben unberuehrt dasteht. */
+    function klicken(fertig){
+      var knopf = d.querySelector("#am-send");
+      if (!knopf){ fertig(); return; }
+      knopf.classList.add("is-klick");
+      setTimeout(function(){ knopf.classList.remove("is-klick"); setTimeout(fertig, 110); }, 130);
+    }
+
+    function fall(f){
+      var jetzt = new Date().toISOString();
+      var frage = { id: "msc-q", role: "user", content: f.q, created_at: jetzt };
+      var antwort = { id: "msc-a", role: "assistant", status: "success", created_at: jetzt,
+                      content_html: f.html, evidence_items: miraBelege(), latency_ms: f.dauer };
+
+      /* Der aktive Chat MUSS stehen, bevor die erste Nachricht kommt: ohne ihn faellt Mira nach
+         140ms auf den Startbildschirm zurueck (_maybeHomeIfUnknownChat). Der Titel oben kommt aus
+         der Liste der frueheren Chats, nicht aus einem eigenen Setter. */
+      if (w.askMiraSetPreviousChats) w.askMiraSetPreviousChats([
+        { id: "msc-chat", title: "Working with Mira", updated_at: jetzt }]);
+      if (w.askMiraSetTitlePending) w.askMiraSetTitlePending("no");
+      if (w.askMiraSetSettings) w.askMiraSetSettings(
+        { brand: "logo", citation: "favicon", response: "logo" });
+      if (w.askMiraSetActiveChat) w.askMiraSetActiveChat("msc-chat");
+      if (w.askMiraSetBrandLogos) w.askMiraSetBrandLogos(MARKEN.map(function(b){
+        return { logo_url: b.logo, name: b.name };
+      }));
+      if (w.askMiraSetMessages) w.askMiraSetMessages([frage]);
+      if (w.askMiraSetLoading) w.askMiraSetLoading("true");
+
+      /* Die Werkzeuge gestaffelt ueber die Ladezeit: daraus baut die Komponente ihr
+         Arbeitsprotokoll, eine Zeile je Schritt. Alle auf einmal waeren drei Zeilen in einem Bild
+         und keine Arbeit, der man zusieht. */
+      f.werkzeuge.forEach(function(name, k){
+        setTimeout(function(){
+          if (w.askMiraSetTool) w.askMiraSetTool(name);
+        }, Math.round(MSC_DENKT_MS * (k / (f.werkzeuge.length + 0.4))));
+      });
+
+      setTimeout(function(){
+        /* expectAnswer VOR dem Nachladen, typeLastAnswer danach -- der vorgesehene Weg, wenn eine
+           Antwort als komplette Liste kommt: sonst kann die Komponente sie nicht von einem
+           geoeffneten Chat unterscheiden und tippt nichts. */
+        if (w.askMiraExpectAnswer) w.askMiraExpectAnswer();
+        if (w.askMiraSetMessages) w.askMiraSetMessages([frage, antwort]);
+        if (w.askMiraTypeLastAnswer) w.askMiraTypeLastAnswer();
+        setTimeout(naechster, MSC_HALTEN_MS);
+      }, MSC_DENKT_MS);
+    }
+
+    function naechster(){
+      leeren();
+      setTimeout(function(){
+        var f = faelle[i % faelle.length]; i++;
+        tippen(f.q, function(){ klicken(function(){ fall(f); }); });
+      }, MSC_LEER_MS);
+    }
+
+    /* Handhabe zum Nachsehen: einen Fall sofort zeigen, ohne das Tippen abzuwarten. Sie schreibt
+       nichts, was der Lauf nicht ohnehin schriebe -- sie ueberspringt nur die Eingabe. */
+    fr.__ulhFall = function(k){ leeren(); fall(faelle[k % faelle.length]); };
+
+    /* Erst anfangen, wenn die Komponente im iframe wirklich steht. */
+    var versuche = 0;
+    (function warten(){
+      if (d.querySelector("#am-textarea") && w.askMiraSetMessages){ naechster(); return; }
+      if (versuche++ < 120) setTimeout(warten, 100);
+    })();
+  }
+
+  /* Erst laden, wenn die Sektion auf 600px herankommt -- der Seitenaufbau bleibt unberuehrt, das
+     zweite core.js laeuft erst, wenn jemand so weit gescrollt hat. */
+  function mscFuellen(root){
+    var rahmen = root.querySelector(".ulh-msc-rahmen");
     if (!rahmen || rahmen.__ulhAuf) return;
     function laden(){
       if (rahmen.__ulhAuf) return;
       rahmen.__ulhAuf = true;
-      rahmen.srcdoc = mirasSeite();
+      rahmen.addEventListener("load", function(){ mscLauf(rahmen); });
+      rahmen.srcdoc = mscSeite();
     }
-    /* Eine Handhabe zum Nachsehen und zum Messen, wie __ulhSzene. */
-    root.__ulhMiras = laden;
+    root.__ulhMsc = laden;       /* Handhabe zum Nachsehen und Messen, wie __ulhSzene */
     if (!window.IntersectionObserver){ laden(); return; }
     var beobachter = new IntersectionObserver(function(eintraege){
-      for (var i = 0; i < eintraege.length; i++){
-        if (eintraege[i].isIntersecting){ beobachter.disconnect(); laden(); return; }
+      for (var k = 0; k < eintraege.length; k++){
+        if (eintraege[k].isIntersecting){ beobachter.disconnect(); laden(); return; }
       }
     }, { rootMargin: "600px 0px" });
     beobachter.observe(rahmen);
@@ -2011,7 +2160,7 @@
       visModelleFuellen(w);
       ulhTakt(w);
       quellFuellen();
-      mirasFuellen(w);
+      mscFuellen(w);
     })();
 
     if (window.renderTopCitations){

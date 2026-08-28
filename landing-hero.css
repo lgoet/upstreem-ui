@@ -1029,7 +1029,10 @@
      Oberkante der Sektion bis zur Oberkante des Kastens. Zwei Zahlen an drei Stellen waeren drei
      Zahlen, die auseinanderlaufen. */
   --ulh-quell-luft: clamp(72px, 11vh, 132px);
-  --ulh-quell-abstand: clamp(44px, 6vh, 76px);
+  /* 50px mehr als vorher: zwischen dem Knopf und dem Kasten soll Ruhe stehen. */
+  --ulh-quell-abstand: calc(clamp(44px, 6vh, 76px) + 50px);
+  /* Die Luft ueber dem Knopf -- steht zweimal: am Knopf und in der Rechnung, wo das Muster endet. */
+  --ulh-quell-ctaluft: clamp(22px, 3vh, 34px);
   /* Die Luft ueber und unter der Domainzeile -- EINE Zahl, weil beide gleich sein sollen:
      16 plus 30 Prozent. */
   --ulh-quell-kopfluft: 21px;
@@ -1038,7 +1041,7 @@
      genau bis unter den Chip. Steht in einer Variablen, weil vier Verlaeufe denselben Wert
      brauchen. */
   --ulh-quell-frei: calc(var(--ulh-quell-luft) + 40px);
-  padding: var(--ulh-quell-luft) 0 0;
+  padding: var(--ulh-quell-luft) 0 8px;
 }
 /* Die Trennlinie unter der Sektion laeuft ueber die ganze Breite und nicht nur ueber die Spur.
    left/width in vw und nicht 100% -- 100% waere die Spur. Ein Ueberlauf entsteht dadurch nicht:
@@ -1071,20 +1074,23 @@
   background-position: left top, right top;
   background-repeat: no-repeat;
 }
-/* Und dasselbe als MUSTER zwischen den beiden: sieben weitere Striche, die Spur in acht gleiche
-   Spalten geteilt. Prozent und nicht Pixel im Raster: die Spur waechst mit dem Fenster, und mit
-   einem Pixelabstand waere die letzte Spalte immer die falsche Breite.
+/* Und dazwischen ein MUSTER aus 1px-Strichen im 8er-Raster -- demselben Raster, in dem auf dieser
+   Seite alle Abstaende stehen. Dicht genug, dass es als Flaeche liest und nicht als Linien.
    Heller als die beiden aussen (--ulh-schiene statt --ulh-border): aussen steht das Gitter der
-   Seite, innen ein Muster. Gleich stark waeren es neun gleichwertige Linien und kein Aufbau.
-   Der Verlauf steckt hier in einer Maske und nicht in der Farbe: das Muster IST schon ein Verlauf
-   (quer), und zwei Verlaeufe in einem Hintergrundbild gehen nicht. */
+   Seite, innen eine Textur. Gleich stark waere beides dasselbe und der Aufbau weg.
+   Der senkrechte Verlauf steckt in einer Maske und nicht in der Farbe: das Muster IST schon ein
+   Verlauf (quer), und ein Hintergrundbild kann nicht zwei tragen. */
 .ulh-quell-kopf::after {
   content: ""; position: absolute; z-index: 0; pointer-events: none;
   left: 0; right: 0;
   top: calc(-1 * var(--ulh-quell-luft));
-  bottom: calc(-1 * var(--ulh-quell-abstand));
+  /* Es endet an der UNTERKANTE DER UEBERSCHRIFT und nicht am Kasten: gerechnet als Hoehe des
+     Knopfes (36) plus seiner Luft nach oben -- das ist genau das Stueck des Kopfes, das unter der
+     Ueberschrift liegt. Damit steht das Muster hinter der Ueberschrift und nicht auf dem Weg zum
+     Kasten. */
+  bottom: calc(36px + var(--ulh-quell-ctaluft));
   background-image: repeating-linear-gradient(to right,
-    var(--ulh-schiene) 0 1px, rgba(237, 237, 240, 0) 1px calc(100% / 8));
+    var(--ulh-schiene) 0 1px, rgba(237, 237, 240, 0) 1px 8px);
   -webkit-mask-image: linear-gradient(to bottom, transparent var(--ulh-quell-frei), #000 100%);
           mask-image: linear-gradient(to bottom, transparent var(--ulh-quell-frei), #000 100%);
 }
@@ -1102,7 +1108,7 @@
 /* Der Knopf ist der Sekundaerknopf des Hero (.ulh-btn .ulh-btn-sec), hier steht nur sein Abstand
    nach oben. Vorher war es ein zweiter Knopf mit eigener Hoehe, eigenem Radius und eigenem Hover --
    zwei Knoepfe derselben Rolle auf einer Seite, die sich unter der Maus verschieden verhalten. */
-.ulh-quell-cta { margin-top: clamp(22px, 3vh, 34px); }
+.ulh-quell-cta { margin-top: var(--ulh-quell-ctaluft); }
 
 /* Der Kasten mit dem Stueck App: oben ein Rahmen wie bei einer Karte, unten OFFEN -- er wird
    angeschnitten, und der Inhalt laeuft weiter. Deshalb kein unterer Rahmen und kein Radius unten,
@@ -1115,7 +1121,10 @@
    Unter ihm liegen 8px Luft -- dieselben 8px, die er zu den Schienen haelt -- und darunter die
    Trennlinie ueber die ganze Breite. */
 .ulh-quell-box {
-  margin: var(--ulh-quell-abstand) 8px 8px;
+  /* Kein unterer Rand: er faellt mit dem der Sektion zusammen (margin collapsing) und landet
+     ausserhalb -- die Trennlinie lag dann direkt auf dem Kasten. Die 8px stehen jetzt als Polster
+     an der Sektion, und Polster kollabiert nicht. */
+  margin: var(--ulh-quell-abstand) 8px 0;
   padding: 4px;
   background: var(--ulh-kasten);
   border: 1px solid var(--ulh-border);
@@ -1399,12 +1408,22 @@
    nur aus -- der Anfang war der Ruck. --ulh-weich ist an beiden Enden flach, die Zeile setzt sich
    in Ruhe in Bewegung und kommt in Ruhe an. */
 .ulh-vis-tab .up-row, .ulh-vis-chancen .uo-row {
-  transition: transform 714ms var(--ulh-weich), box-shadow 714ms var(--ulh-weich);
+  transition: transform 714ms var(--ulh-weich), box-shadow 714ms var(--ulh-weich),
+              border-radius 714ms var(--ulh-weich), background-color 714ms var(--ulh-weich);
 }
+/* Der Ruhezustand der gehobenen Zeile steht AUSDRUECKLICH da, sonst gibt es nichts, wovon der
+   Uebergang ausgehen koennte: Rundung 0 und ein durchsichtiges WEISS (nicht "transparent" -- das
+   waere durchsichtiges Schwarz, und der Grund blendete durch Grau). */
+.ulh-vis-tab .up-row.is-mitte { border-radius: 0; background-color: rgba(255, 255, 255, 0); }
 /* Die gehobene Zeile bekommt KEINEN eigenen Radius. Sie nimmt den, den ihr Bauteil ohnehin hat:
    die Chancenzeile hat 12px von sich aus, die Zeile der Tabelle hat keinen -- ihr Rahmen ist der
    der Tabelle, und deren 12px stehen hier. */
 .ulh-card:hover .ulh-vis-tab .up-row.is-mitte { border-radius: 12px; }
+/* Der Grund der gehobenen Zeile: WEISS als Zahl. Vorher stand hier var(--vc-bg) -- die Farbe der
+   App, aber sie haengt an .up-root, und diese Vorschau steht darueber: die Angabe war ungueltig,
+   die Zeile blieb durchsichtig, und man sah ihre Nachbarn hindurch. Dieselbe Falle wie beim Kasten
+   der Quellen-Sektion. */
+.ulh-card:hover .ulh-vis-tab .up-row.is-mitte { background-color: #ffffff; }
 /* Der eigene Hover der Bauteile faellt weg. */
 .ulh-vis .up-row:hover, .ulh-vis .uo-row:hover, .ulh-vis .udt-subrow:hover {
   background: var(--vc-bg); border-color: var(--vc-border);
@@ -1421,15 +1440,15 @@
 .ulh-card:hover .ulh-vis-tab .up-row.is-mitte,
 .ulh-card:hover .ulh-vis-chancen .uo-row.is-mitte {
   transform: scale(1.06);
-  box-shadow: 0 12px 30px rgba(11, 13, 24, .14), 0 2px 6px rgba(11, 13, 24, .06);
+  /* Der Rahmen steckt im letzten Schatten und ist kein Rahmen: ein echter braucht Platz und
+     schoebe die Zellen der Zeile um 1px zur Seite -- ein Innenschatten nicht. Und er faehrt mit
+     derselben box-shadow-Kurve heraus wie der Schlagschatten, statt zu springen. Genau das war
+     der Rest der Hektik: Rundung, Rahmen und Grund sprangen, waehrend die Groesse fuhr. */
+  box-shadow: 0 12px 30px rgba(11, 13, 24, .14), 0 2px 6px rgba(11, 13, 24, .06),
+              inset 0 0 0 1px var(--ulh-border);
   position: relative; z-index: 4;
-  /* Die gehobene Zeile braucht ihren eigenen Grund: sie liegt jetzt UEBER ihren Nachbarn, und
-     durch eine durchsichtige Zeile saehe man deren Kanten hindurch. */
-  background: var(--vc-bg);
 }
-/* Die Zeile der Prompt-Tabelle hat in der App keinen eigenen Rahmen (die Tabelle rahmt), gehoben
-   braucht sie einen -- sonst endet sie im Nichts. */
-.ulh-card:hover .ulh-vis-tab .up-row.is-mitte { border: 1px solid var(--vc-border); }
+
 
 /* ---- Karte 3: der aufgeklappte Drilldown ----
    Die Zeile darueber traegt is-expanded (wie in der App), der Kasten darunter ist der echte
@@ -2019,70 +2038,49 @@
   .ulh-text { padding-bottom: clamp(40px, 8vh, 72px); }
 }
 
-/* ---------- Fuenfte Sektion: Mira -------------------------------------------------------------
-   Die einzige DUNKLE Sektion der Seite. Die Farben sind die der App im dunklen Thema und keine
-   selbst gemischten: Grund --up-surface (#121212), Flaeche --vc-bg (#1b1b1b), Linien --vc-border
-   (#353535), Text --vc-text (#e0e0e0), Nebentext --vc-muted (#a0a0a0). Sie stehen hier als Zahl,
-   weil diese Sektion NICHT in einer .up-root liegt und die Variablen der App dort nicht gelten --
-   dieselbe Falle, die den Kasten der Quellen-Sektion durchsichtig gemacht hat.
-
-   z-index: 1 ist Pflicht und keine Vorsicht: die Schienen der Seite (.ulh-schienen) liegen als
-   absolutes Element ueber allem, was nicht positioniert ist. Ohne diese Zeile laegen zwei helle
-   Linien quer ueber dem schwarzen Grund. */
-.ulh-miras {
-  --ulh-d-grund: #121212;
-  --ulh-d-flaeche: #1b1b1b;
-  --ulh-d-linie: #353535;
-  --ulh-d-text: #e0e0e0;
-  --ulh-d-sub: #a0a0a0;
-  position: relative; z-index: 1;
-  /* Ueber die ganze Breite und nicht nur ueber die Spur: die Flaeche ist der Bruch mit der hellen
-     Seite, und ein Bruch, der an den Schienen endet, ist ein Kasten. Ein Ueberlauf entsteht nicht,
-     weil .ulh-root waagerecht abschneidet (overflow-x: clip). */
-  width: 100vw; margin-left: calc(50% - 50vw);
-  background: var(--ulh-d-grund);
+/* ---------- Fuenfte Sektion: Mira bei der Arbeit ----------------------------------------------
+   Aufbau und Farben sind die des Kartenblocks darueber -- derselbe graue Kasten mit 4px Polster,
+   dieselben weissen Karten mit 4px dazwischen. Neu ist allein die Aufteilung: links drei Karten
+   uebereinander (20 Prozent), rechts Mira (80). Die Zahlen stehen als Flexanteil, wie bei den
+   Karten oben (--ulh-w dort).
+   HELL, nicht dunkel: die Sektion gehoert zur Seite und nicht zu einem eigenen Kapitel. */
+.ulh-msc-row { align-items: stretch; }
+.ulh-msc-links { display: flex; flex-direction: column; gap: 4px; flex: 20 1 0; min-width: 0; }
+/* Die drei Karten teilen sich die Hoehe der Reihe. flex-basis 0 und gleiches Wachstum: sonst
+   entscheidet die Textmenge, und die mittlere Karte waere die groesste. */
+.ulh-msc-karte {
+  flex: 1 1 0; min-height: 0;
+  display: flex; flex-direction: column;
+  padding: 20px 20px 18px;
 }
-/* Der Startbildschirm steht in einem eigenen Dokument (landing-hero.js, mirasSeite). Das iframe
-   traegt keine Hoehe aus dem Inhalt -- ein iframe hat immer die Hoehe, die man ihm gibt --, also
-   steht sie hier. 760px ist der Wert, bei dem der Startbildschirm ganz steht: Kopf, Kategorien und
-   das Eingabefeld darunter. */
-.ulh-miras-buehne { position: relative; height: 760px; }
-.ulh-miras-rahmen { display: block; width: 100%; height: 100%; border: 0; background: var(--ulh-d-grund); }
-/* Die Karten darunter: eine Zeile, gleiche Spalten, getrennt durch dieselben 1px, mit denen die
-   ganze Seite arbeitet. Die Linie oben trennt sie vom Startbildschirm, die Linien dazwischen
-   stehen an den Karten selbst -- ein Raster mit gap und Fuellung koennte sie nicht durchziehen. */
-.ulh-miras-karten {
-  display: grid; grid-template-columns: repeat(5, 1fr);
-  border-top: 1px solid var(--ulh-d-linie);
-  border-bottom: 1px solid var(--ulh-d-linie);
+/* Zeichen oben, Text unten -- wie in der Vorlage. Der Titel schiebt sich mit margin-top: auto nach
+   unten, damit die drei Titel nicht an unterschiedlichen Stellen haengen, wenn ein Satz umbricht. */
+.ulh-msc-ic { display: block; width: 20px; height: 20px; color: var(--ulh-sub); flex: 0 0 auto; }
+.ulh-msc-ic svg { width: 100%; height: 100%; display: block; }
+.ulh-msc-t {
+  margin-top: auto; padding-top: 26px;
+  font-size: 15px; font-weight: 500; letter-spacing: -0.012em; color: var(--ulh-text);
 }
-.ulh-miras-karte {
-  display: flex; flex-direction: column; min-width: 0;
-  padding: 26px 28px 30px;
-  border-left: 1px solid var(--ulh-d-linie);
+.ulh-msc-s {
+  margin-top: 7px;
+  font-size: 13px; font-weight: 400; line-height: 1.5; color: var(--ulh-sub);
 }
-.ulh-miras-karte:first-child { border-left: 0; }
-/* Das Zeichen steht oben, der Text unten, und dazwischen ist Luft -- so liest sich die Karte als
-   Karte und nicht als Zeile mit einem Zeichen davor. margin-top: auto am Titel statt einer festen
-   Luecke: die Karten sind gleich hoch, also stehen alle fuenf Titel auf derselben Linie, auch wenn
-   ein Untertitel einmal drei Zeilen braucht. */
-.ulh-miras-ic { display: block; width: 20px; height: 20px; color: var(--ulh-d-sub); }
-.ulh-miras-ic svg { width: 100%; height: 100%; display: block; }
-.ulh-miras-t {
-  margin-top: auto; padding-top: 76px;
-  font-size: 15.5px; font-weight: 500; letter-spacing: -0.012em; color: var(--ulh-d-text);
-}
-.ulh-miras-s {
-  margin-top: 8px; max-width: 24ch;
-  font-size: 13.5px; font-weight: 400; line-height: 1.5; color: var(--ulh-d-sub);
-}
+/* Die Karte rechts ist der Rahmen um Mira und traegt selbst keinen Inhalt: kein Polster, und der
+   Ausschnitt schneidet die Ecken der Komponente auf den Radius der Karte zurueck. */
+.ulh-msc-rechts { flex: 80 1 0; min-width: 0; padding: 0; overflow: hidden; }
+/* Ein iframe hat immer die Hoehe, die man ihm gibt -- der Inhalt kann sie nicht setzen. 760px ist
+   GEMESSEN und nicht gewaehlt: die laengste der drei Antworten (die Quellentabelle) braucht 592px
+   Chatflaeche, wenn sie fertig getippt ist. Bei 840px Rahmenhoehe bleiben nach Kopfzeile (111) und
+   Eingabefeld (125) genau 604 uebrig. Bei 620 fehlten 192px, und die Antwort haette gescrollt --
+   in einer Vorfuehrung sieht das aus wie eine Antwort, die abgeschnitten ist.
+   Gemessen wird ERST, wenn das Tippen durch ist: waehrend der Antwort baut Mira ihre Bloecke
+   nacheinander ein, und jeder Zwischenstand ist kleiner. Genau daran waren zwei Messungen davor
+   zu klein. */
+.ulh-msc-rahmen { display: block; width: 100%; height: 840px; border: 0; background: #ffffff; }
 @media (max-width: 900px) {
-  /* Fuenf Spalten sind auf einem Telefon fuenf Buchstaben nebeneinander. Zwei Spalten, und die
-     letzte Karte nimmt beide. */
-  .ulh-miras-karten { grid-template-columns: 1fr 1fr; }
-  .ulh-miras-karte:nth-child(odd) { border-left: 0; }
-  .ulh-miras-karte:nth-child(n+3) { border-top: 1px solid var(--ulh-d-linie); }
-  .ulh-miras-karte:last-child { grid-column: 1 / -1; }
-  .ulh-miras-t { padding-top: 44px; }
-  .ulh-miras-buehne { height: 620px; }
+  /* Untereinander -- die Reihe bricht schon durch .ulh-cards-row um; hier stehen nur die drei
+     Karten wieder NEBENeinander, denn 20 Prozent von wenig ist nichts. */
+  .ulh-msc-links { flex-direction: row; flex: 0 0 auto; }
+  .ulh-msc-t { padding-top: 20px; }
+  .ulh-msc-rahmen { height: 660px; }
 }
