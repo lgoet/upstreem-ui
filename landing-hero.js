@@ -1097,10 +1097,10 @@
      sondern zeigt, WAS die App ueber eine Quelle weiss -- und ein erfundener Name waere hier das
      Gegenteil von dem, was gemeint ist ("die echten Quellen deines Marktes"). Die Zahlen sind
      Beispielzahlen und stehen in derselben Groessenordnung wie im Dashboard darueber. */
-  var QUELL_CHIP = "Sources";
-  var QUELL_H1 = "Answers are built from pages.";
-  var QUELL_H2 = "See which domains the models cite in your market, which of their pages carry " +
-    "the answer, and where your brand appears in them.";
+  var QUELL_CHIP = "Source insights";
+  var QUELL_H1 = "Understand how sources shape answers.";
+  var QUELL_H2 = "Which domains the models cite in your market, which of their pages carry the " +
+    "answer, and where your brand is named in them.";
   var QUELL_CTA = "Start for free";
   var QUELL_DOMAIN = "g2.com";
 
@@ -1108,12 +1108,16 @@
     return '<section class="ulh-quell">' +
       '<div class="ulh-spur">' +
         '<div class="ulh-quell-kopf">' +
-          '<span class="ulh-quell-chip">' + QUELL_CHIP + '</span>' +
+          /* Derselbe Chip wie im Hero -- Bauteil verwenden, nicht ein zweites bauen: der Ring
+             mit dem wandernden Licht ist die Handschrift dieser Seite und gehoert nicht zweimal
+             in zwei Fassungen in dieselbe Datei. */
+          '<span class="ulh-chip"><span class="ulh-chip-in">' + QUELL_CHIP + '</span></span>' +
           '<h2 class="ulh-quell-h"><strong>' + QUELL_H1 + '</strong> ' + QUELL_H2 + '</h2>' +
           '<a class="ulh-quell-cta" href="#" role="button">' + QUELL_CTA + '</a>' +
         '</div>' +
         /* Der Kasten ist unten offen: er wird angeschnitten, und der Inhalt laeuft weiter. Genau
            das laesst ihn wie eine laufende Seite wirken und nicht wie ein Bildschirmfoto. */
+        '<div class="ulh-quell-box">' +
         '<div class="ulh-quell-panel">' +
           '<div class="ulh-quell-dom">' +
             '<span class="up-logo-box has-img">' +
@@ -1129,6 +1133,7 @@
             (MARKUP.udd || "") +
           '</div>' +
         '</div>' +
+        '</div>' +
       '</div>' +
     '</section>';
   }
@@ -1140,7 +1145,6 @@
      Citation Share zeichnen, dann umschalten, und dabei die Vorliebe des Besuchers ueberschrieben.
      "domain" ist der URL-Share-Modus (so heisst er in der Komponente). */
   function quellFuellen(){
-    var kern = window.UpstreemCore;
     window.__uddMode = window.__uddMode || {};
     window.__uddMode[ID.udd] = "domain";
     if (window.setDomainDetail) window.setDomainDetail(ID.udd, JSON.stringify(quellHaupt()));
@@ -1151,28 +1155,53 @@
        deshalb ein kurzer Nachlauf und ein zweiter Versuch, falls das Chart spaeter fertig wird. */
     var versuche = 0;
     (function tipp(){
-      var gesetzt = false;
-      try {
-        var wurzel = document.querySelector('.udd-root[data-instance="' + ID.udd + '"]');
-        /* .udd-canvas und nicht .up-line-canvas: die Domain-Detail-Seite gibt ihrer Leinwand
-           einen eigenen Namen. Mit dem falschen Namen fand die Schleife nie ein Chart und lief
-           vierzig Mal ins Leere -- gemessen, bevor der Name stimmte. */
-        var lein = wurzel && wurzel.querySelector(".udd-canvas");
-        var chart = lein && window.Chart && window.Chart.getChart ? window.Chart.getChart(lein) : null;
-        if (chart && chart.data && chart.data.datasets.length){
-          /* Der vorletzte Punkt und nicht der letzte: am rechten Rand haengt der Kasten halb
-             ausserhalb des Charts. */
-          var i = Math.max(0, (chart.data.labels || []).length - 2);
-          var aktive = chart.data.datasets.map(function(_, d){ return { datasetIndex: d, index: i }; });
-          var pos = chart.getDatasetMeta(0).data[i];
-          chart.setActiveElements(aktive);
-          chart.tooltip.setActiveElements(aktive, { x: pos ? pos.x : 0, y: pos ? pos.y : 0 });
-          chart.update("none");
-          gesetzt = true;
-        }
-      } catch (e){}
-      if (!gesetzt && versuche++ < 40) setTimeout(tipp, 150);
+      if (tippSetzen()){ tippWachen(); return; }
+      if (versuche++ < 40) setTimeout(tipp, 150);
     })();
+  }
+
+  /* Den Tooltip auf die MITTE der Reihe setzen. Zuerst stand er auf dem vorletzten Punkt, weil das
+     Chart die ganze Breite hatte und der Kasten am rechten Rand herausgehangen haette. Jetzt ist
+     das Chart halb so breit, und mittig ist die Stelle, an der der Kasten ganz im Bild steht. */
+  function uddChart(){
+    var wurzel = document.querySelector('.udd-root[data-instance="' + ID.udd + '"]');
+    /* .udd-canvas und nicht .up-line-canvas: die Domain-Detail-Seite gibt ihrer Leinwand einen
+       eigenen Namen. Mit dem falschen Namen fand die Schleife nie ein Chart und lief vierzig Mal
+       ins Leere -- gemessen, bevor der Name stimmte. */
+    var lein = wurzel && wurzel.querySelector(".udd-canvas");
+    if (!lein || !window.Chart || !window.Chart.getChart) return null;
+    return window.Chart.getChart(lein) || null;
+  }
+
+  function tippSetzen(){
+    try {
+      var chart = uddChart();
+      if (!chart || !chart.data || !chart.data.datasets.length) return false;
+      var i = Math.max(0, Math.floor(((chart.data.labels || []).length - 1) / 2));
+      var aktive = chart.data.datasets.map(function(_, d){ return { datasetIndex: d, index: i }; });
+      var pos = chart.getDatasetMeta(0).data[i];
+      chart.setActiveElements(aktive);
+      chart.tooltip.setActiveElements(aktive, { x: pos ? pos.x : 0, y: pos ? pos.y : 0 });
+      chart.update("none");
+      return true;
+    } catch (e){ return false; }
+  }
+
+  /* Er soll DAUERHAFT stehen. Baut die Komponente ihr Chart neu -- Breitenwechsel, neue Daten --,
+     sind die gesetzten Punkte weg und der Kasten verschwindet; einen Mauszeiger, der ihn
+     zurueckholt, gibt es auf einer Landingpage nicht.
+     Geprueft wird am KASTEN und nicht an den gesetzten Punkten: sichtbar oder nicht ist die Frage,
+     um die es geht, und core setzt dafuer die Deckkraft des Elements direkt (core.js, externer
+     Tooltip von makeLine). Eine Pruefung an chart.tooltip haette sich selbst nicht widerlegen
+     koennen -- fehlt die Auskunft, sieht "nicht gesetzt" wie "verschwunden" aus, und der Waechter
+     haette alle 1,5 Sekunden ein Chart neu gezeichnet, das laengst richtig stand. */
+  function tippWachen(){
+    var uhr = setInterval(function(){
+      var wurzel = document.querySelector('.udd-root[data-instance="' + ID.udd + '"]');
+      if (!wurzel){ clearInterval(uhr); return; }
+      var tt = wurzel.querySelector(".up-line-tt");
+      if (!tt || tt.style.opacity === "0" || tt.style.opacity === "") tippSetzen();
+    }, 1500);
   }
 
   /* ---- Die Daten der Beispiel-Domain ----

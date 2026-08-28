@@ -90,6 +90,10 @@
      .16/1/.3/1 liegt naeher an easeOutExpo -- nach einem Drittel der Zeit sind gut 80 Prozent des
      Weges getan. --ulh-ease waere hier falsch, das ist ein ein- UND ausschleichender Verlauf. */
   --ulh-aus: cubic-bezier(.1, 1, .2, 1);
+  /* Weich an beiden Enden (easeInOutCubic). --ulh-aus ist ein reines Ausklingen: es beginnt mit
+     voller Geschwindigkeit. Fuer etwas, das aus dem Stand losfaehrt und wieder anhaelt -- die
+     gehobene Zeile in den Karten -- braucht es eine Kurve, die auch VORNE flach ist. */
+  --ulh-weich: cubic-bezier(.65, 0, .35, 1);
   position: relative;
   /* width: 100% ist hier PFLICHT und nicht Kosmetik. Ein Block-div fuellt seinen Eltern nur, wenn
      der ein normaler Block-Kontext ist. Steht die Sektion in einem FLEX-Eltern -- und genau so
@@ -1012,15 +1016,12 @@
    der umbricht, wo der Platz endet, und nicht ein Titel mit einer Unterzeile. */
 .ulh-quell { position: relative; padding: clamp(72px, 11vh, 132px) 0 0; }
 .ulh-quell-kopf { display: flex; flex-direction: column; align-items: center; text-align: center; }
-.ulh-quell-chip {
-  display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 999px;
-  font-size: 13px; font-weight: 500; letter-spacing: -0.01em;
-  /* Der Chip ist der einzige Farbfleck im Kopf -- dasselbe Blau, das die App fuer den
-     Deep-Hinweis benutzt (#2384E2), hier in seiner leisen Fassung. */
-  color: #2384E2; background: rgba(35, 132, 226, 0.10);
-}
+/* Breiter als der Chip darueber vermuten laesst: mit 22ch stand der Satz bei 46px Schrift in
+   sechs Zeilen und sah gestaucht aus. Die Grenze ist jetzt in px und nicht in ch -- ch haengt an
+   der Schriftgroesse, und die waechst hier mit dem Fenster: dieselbe Zahl haette bei 30px eine
+   andere Breite ergeben als bei 46px. */
 .ulh-quell-h {
-  margin: 18px 0 0; max-width: 22ch;
+  margin: 18px 0 0; max-width: min(100%, 1150px);
   font-size: clamp(30px, 3.4vw, 46px); font-weight: 500; line-height: 1.14; letter-spacing: -0.035em;
   color: var(--ulh-sub);
 }
@@ -1045,12 +1046,24 @@
    angeschnitten, und der Inhalt laeuft weiter. Deshalb kein unterer Rahmen und kein Radius unten,
    und eine feste Hoehe: der Anschnitt ist gewollt und darf nicht davon abhaengen, wie hoch die
    Komponente gerade rechnet. */
-.ulh-quell-panel {
-  margin-top: clamp(44px, 6vh, 76px);
+/* Derselbe Aufbau wie bei den Karten oben: aussen der graue Kasten mit 4px Polster und 8px
+   Abstand zu den Schienen des Gitters, darin die weisse Karte. Der Unterschied ist nur, dass hier
+   EINE grosse Karte darin steht statt vier kleiner -- Abstaende und Polster sind dieselben.
+   Unten sind BEIDE offen: kein Rahmen, kein Radius, und der graue Kasten hat unten auch kein
+   Polster. Sonst laege unter der weissen Karte ein 4px grauer Streifen, und der laese sich als
+   Unterkante -- genau das Gegenteil von "die Seite laeuft weiter". */
+.ulh-quell-box {
+  margin: clamp(44px, 6vh, 76px) 8px 0;
+  padding: 4px 4px 0;
+  background: var(--ulh-kasten);
   border: 1px solid var(--ulh-border); border-bottom: 0;
-  border-radius: 20px 20px 0 0; background: var(--vc-bg);
-  box-shadow: 0 -1px 2px rgba(11, 13, 24, .03), 0 24px 60px rgba(11, 13, 24, .07);
-  padding: 22px 22px 0; height: 980px; overflow: hidden; position: relative;
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 1px 2px rgba(11, 13, 24, .035), 0 6px 16px rgba(11, 13, 24, .028);
+}
+.ulh-quell-panel {
+  border: 1px solid var(--ulh-border); border-bottom: 0;
+  border-radius: 16px 16px 0 0; background: var(--vc-bg);
+  padding: 8px 8px 0; height: 620px; overflow: hidden; position: relative;
 }
 /* Die Hoehe ist gemessen und nicht geschaetzt. In 1266px Breite baut die Komponente: 32 Kopfzeile,
    412 Chartkarte (mit der Legende der fuenf URLs), 299 Trichterkarte, 322 fuer die zwei Karten
@@ -1061,7 +1074,7 @@
    sitzen und nicht davon abhaengen, wie hoch die Komponente heute rechnet. */
 /* Die Zeile mit Logo und Domain: das Logo ist .up-logo-box aus core, also derselbe Kasten wie in
    jeder Tabelle der App. */
-.ulh-quell-dom { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.ulh-quell-dom { display: flex; align-items: center; gap: 12px; padding: 6px 6px 0; margin-bottom: 10px; }
 .ulh-quell-dom .up-logo-box { width: 34px; height: 34px; border-radius: 10px; }
 .ulh-quell-dom .up-logo-box img { width: 32px; height: 32px; border-radius: 9px; }
 .ulh-quell-domtxt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -1073,17 +1086,47 @@
    dieselben Abstaende wirken darin leer. Kleiner werden nur ABSTAENDE und Kartenpolster -- keine
    Schriftgroesse, keine Zeilenhoehe, kein Radius: sonst waere es nicht mehr die Komponente,
    sondern eine zweite, die ihr aehnelt. */
-.ulh-quell-app { --udd-gap: 16px; }
-.ulh-quell-app .udd-root { gap: 16px; }
+/* Die Sektion ist ein BILD der App und wird nicht bedient: der Umschalter der beiden unteren
+   Karten soll zu SEHEN sein, aber nichts tun. Und das gilt nicht nur fuer ihn -- ein Klick auf den
+   D/W/M-Schalter der Kurve loeste in der Komponente eine Datenanfrage aus, die auf einer
+   Landingpage niemand beantwortet: die Karte fiele in ihr Ladeskelett und blieb darin stehen.
+   Deshalb liegt die Sperre an der Wurzel und nicht an den einzelnen Schaltern. Der Tooltip steht
+   ohnehin ohne Maus (landing-hero.js setzt ihn). */
+.ulh-quell-app .udd-root { pointer-events: none; }
+/* Kurve LINKS, Trichter RECHTS, die zwei Aufschluesselungen darunter ueber die ganze Breite.
+   Ein Raster und keine Spalten am Elternteil: die Komponente ist eine Spalte aus vier Kaesten,
+   und nur zwei davon sollen sich eine Zeile teilen. */
+.ulh-quell-app .udd-root {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: stretch;
+}
+.ulh-quell-app .udd-row2 { grid-column: 1 / -1; gap: 8px; }
 .ulh-quell-app .udd-card { padding: 14px; }
-.ulh-quell-app .udd-toprow { margin-bottom: -8px; }
-/* Der Tooltip des Charts steht fest (landing-hero.js setzt ihn) -- er darf deshalb keine Maus
-   erwarten und nichts abfangen. */
-.ulh-quell-app .up-line-tt { pointer-events: none; }
+/* Kurve und Trichter teilen sich eine Zeile, und das Raster macht beide Karten gleich hoch. Der
+   Trichter ist von sich aus flacher -- gemessen blieben unter ihm 57px Luft. Statt einer gemessenen
+   Zahl waechst hier die Zeichnung selbst in den Rest der Karte: sie hat preserveAspectRatio="none"
+   (domain-detail.js) und ist genau dafuer gebaut, ihre Hoehe frei anzunehmen. Damit stimmt es auch,
+   wenn die Kurvenkarte morgen anders hoch rechnet. */
+.ulh-quell-app .udd-funnelcard { display: flex; flex-direction: column; }
+.ulh-quell-app .udd-funnel { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+/* flex-basis 0 UND height 0, mit der Eigenhoehe nur noch als Untergrenze. Mit "auto" hing die
+   Zeile in einer Rueckkopplung: die Zeichnung wuchs in die Karte, die Karte in die Rasterzeile, die
+   Zeile machte die Kurvenkarte hoeher, und die machte wieder mehr Platz fuer die Zeichnung --
+   gemessen 996px hohe Karten und eine 792px hohe Zeichnung. Mit Basis 0 zaehlt die Zeichnung fuer
+   die Eigenhoehe der Karte nicht mehr mit, nur ihre Untergrenze: die Zeilenhoehe entscheidet die
+   Kurvenkarte, und die Zeichnung nimmt, was uebrig ist. */
+.ulh-quell-app .udd-fn-svg { flex: 1 1 0; height: 0; min-height: 132px; }
+/* Die oberste Zeile faellt weg: darin stehen der Modus-Umschalter (der Modus ist hier gesetzt und
+   soll nicht wechseln) und das Zahnrad fuer die Bereiche (hier gibt es nichts einzurichten). */
+.ulh-quell-app .udd-toprow { display: none; }
+/* Keine Legende. NICHT display: none: core misst die Legendenbreite, und solange sie 0 ist,
+   versucht es alle 100ms erneut -- eine Uhr, die auf einer Landingpage bis in alle Ewigkeit
+   laeuft, ohne dass etwas dabei herauskommt (core.js, legendLayout). Mit Hoehe 0 und
+   overflow: hidden bleibt die Breite messbar, und zu sehen ist trotzdem nichts. */
+.ulh-quell-app .udd-legend { height: 0; margin-top: 0; overflow: hidden; }
 /* Der Anschnitt unten: eine weiche Kante statt einer harten Linie. Ohne sie endet die Seite wie
    abgeschnitten, mit ihr laeuft sie aus. */
 .ulh-quell-panel::after {
-  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 96px; pointer-events: none;
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 72px; pointer-events: none;
   background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, var(--vc-bg) 88%);
 }
 
@@ -1278,10 +1321,12 @@
    Schatten mit 30px Weichzeichnung -- zusammen 58. Bei 52px war der Schatten abgeschnitten, bei
    64 blieben genau 28px und damit zwei Pixel zu wenig (gemessen). */
 .ulh-vis-zeilen .ulh-vis-in, .ulh-vis-chancen .ulh-vis-in { padding: 0 68px; box-sizing: border-box; }
-/* Alle Hervorhebungen 40 Prozent langsamer und mit Ausklang: 340 -> 476ms. --ulh-aus ist die
-   lange, weiche Kurve, mit der sich auch das Fenster oben verkleinert. */
+/* Alle Hervorhebungen noch einmal halb so schnell: 476 -> 714ms. Und eine andere Kurve, denn
+   daran lag das Hektische: --ulh-aus (.1, 1, .2, 1) startet mit voller Geschwindigkeit und klingt
+   nur aus -- der Anfang war der Ruck. --ulh-weich ist an beiden Enden flach, die Zeile setzt sich
+   in Ruhe in Bewegung und kommt in Ruhe an. */
 .ulh-vis-tab .up-row, .ulh-vis-chancen .uo-row {
-  transition: transform 476ms var(--ulh-aus), box-shadow 476ms var(--ulh-aus);
+  transition: transform 714ms var(--ulh-weich), box-shadow 714ms var(--ulh-weich);
 }
 /* Die gehobene Zeile bekommt KEINEN eigenen Radius. Sie nimmt den, den ihr Bauteil ohnehin hat:
    die Chancenzeile hat 12px von sich aus, die Zeile der Tabelle hat keinen -- ihr Rahmen ist der
@@ -1345,6 +1390,13 @@
   .ulh-cards-row { flex-direction: column; }
   .ulh-feat-h { font-size: 32px; max-width: none; }
   .ulh-feat { padding-top: clamp(48px, 8vh, 80px); }
+  /* Dieselbe Schwelle wie bei den Karten: was nebeneinander nicht mehr lesbar ist, geht
+     uebereinander. Kurve und Trichter je 400px breit waeren zwei Briefmarken.
+     Die Hoehe des Kastens bleibt: bei 620px steht die Kurve ganz da, und der Schnitt liegt im
+     Trichter genau unter seinen drei Zahlen. Mit 560px lag er MITTEN in den Zahlen -- halbe
+     Ziffern, gemessen bei 820px Fensterbreite. */
+  .ulh-quell { padding-top: clamp(48px, 8vh, 80px); }
+  .ulh-quell-app .udd-root { grid-template-columns: 1fr; }
 }
 
 /* ---------- Die drei Nebenfenster ----------
