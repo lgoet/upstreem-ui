@@ -146,6 +146,11 @@
     s.onerror = function(){
       var r = document.createElement("script"); r.src = base + f; r.async = false; r.setAttribute("data-up-preload", "1");
       document.head.appendChild(r);
+      /* Den gescheiterten .min-Knoten mitnehmen -- bei CSS geschah das schon, bei JS nicht. Er
+         blieb sonst als zweiter Tag derselben Datei im Kopf stehen: ausgefuehrt wird er nicht
+         (404), aber jede Zaehlung sieht die Datei doppelt, und man sucht einen Fehler, den es
+         nicht gibt. Genau das war die letzte Meldung "topics-manager.js doppelt". */
+      if (s.parentNode) s.parentNode.removeChild(s);
     };
     document.head.appendChild(s);
   }); }
@@ -244,28 +249,39 @@
   function doppelWaechter(){
     if (!window.MutationObserver) return;
     var gemeldet = 0;
+    /* Ein Knoten wird geprueft UND in ihn hinein gesehen. Bubble haengt ganze Teilbaeume auf
+       einmal ein (Stack: cleanChildren / insertExpression) -- ein script als KIND eines Containers
+       steht dann nicht in addedNodes, sondern darin. Genau so ist topics-manager.js durchgekommen:
+       eine Datei doppelt im DOM, also zweimal ausgefuehrt. */
+    function pruefen(n){
+      if (!n || n.nodeType !== 1 || !n.getAttribute) return;
+      if (!n.getAttribute("data-up-preload")){
+        var u = null;
+        if (n.tagName === "SCRIPT") u = n.getAttribute("src");
+        else if (n.tagName === "LINK" && (n.getAttribute("rel") || "").indexOf("stylesheet") >= 0) u = n.getAttribute("href");
+        if (u && u.indexOf("upstreem-ui@") >= 0){
+          var name = u.slice(u.lastIndexOf("/") + 1).replace(".min.", ".");
+          if (geladen[name]){
+            if (n.parentNode) n.parentNode.removeChild(n);
+            if (!gemeldet && window.console){
+              gemeldet = 1;
+              console.warn("upstreem: doppelt eingehaengte Dateien werden entfernt (zuerst " + name +
+                "). Das Element bringt einen aelteren Loader mit, der die gemeinsame Liste nicht kennt " +
+                "-- funktioniert so, laesst sich aber sauberer loesen, indem der Loader in diesem " +
+                "Element ausgetauscht wird.");
+            }
+            return;
+          }
+        }
+      }
+      if (!n.querySelectorAll) return;
+      var drin = n.querySelectorAll('script[src*="upstreem-ui@"], link[href*="upstreem-ui@"]');
+      for (var q = 0; q < drin.length; q++) pruefen(drin[q]);
+    }
     new MutationObserver(function(muts){
       for (var i = 0; i < muts.length; i++){
         var neu = muts[i].addedNodes;
-        for (var j = 0; j < neu.length; j++){
-          var n = neu[j];
-          if (!n || n.nodeType !== 1 || !n.getAttribute) continue;
-          if (n.getAttribute("data-up-preload")) continue;
-          var u = null;
-          if (n.tagName === "SCRIPT") u = n.getAttribute("src");
-          else if (n.tagName === "LINK" && (n.getAttribute("rel") || "").indexOf("stylesheet") >= 0) u = n.getAttribute("href");
-          if (!u || u.indexOf("upstreem-ui@") < 0) continue;
-          var name = u.slice(u.lastIndexOf("/") + 1).replace(".min.", ".");
-          if (!geladen[name]) continue;
-          if (n.parentNode) n.parentNode.removeChild(n);
-          if (!gemeldet && window.console){
-            gemeldet = 1;
-            console.warn("upstreem: doppelt eingehaengte Dateien werden entfernt (zuerst " + name +
-              "). Das Element bringt einen aelteren Loader mit, der die gemeinsame Liste nicht kennt " +
-              "-- funktioniert so, laesst sich aber sauberer loesen, indem der Loader in diesem " +
-              "Element ausgetauscht wird.");
-          }
-        }
+        for (var j = 0; j < neu.length; j++) pruefen(neu[j]);
       }
     }).observe(document.documentElement, { childList: true, subtree: true });
   }

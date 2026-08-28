@@ -1,11 +1,10 @@
-<meta charset="utf-8"><title>preload: kein Flash, kein Doppel</title>
+<meta charset="utf-8"><title>preload: Teilbaum-Einhaengung</title>
 <body style="font:12px ui-monospace,monospace;padding:14px">
 <pre id="out">laeuft</pre>
-<div class="up-root" data-theme="light" style="padding:8px"><div class="up-head"><div class="up-title">Probe</div></div></div>
 <script>window.__warn=[]; var w=console.warn; console.warn=function(){window.__warn.push([].join.call(arguments," ")); w.apply(console,arguments);};</script>
 <script>
 (function(){
-  var PIN = "4ae5e05bd61702e1ac09558c497f06a3fcacce27";
+  var PIN = "e966e982e199d52034078d998a23f371683c795e";
   if (!PIN || PIN === "CDN_" + "PIN") PIN = "main";
 
   var VORRAT = "sofort";
@@ -50,6 +49,8 @@
     s.onerror = function(){
       var r = document.createElement("script"); r.src = base + f; r.async = false; r.setAttribute("data-up-preload", "1");
       document.head.appendChild(r);
+
+      if (s.parentNode) s.parentNode.removeChild(s);
     };
     document.head.appendChild(s);
   }); }
@@ -105,28 +106,36 @@
   function doppelWaechter(){
     if (!window.MutationObserver) return;
     var gemeldet = 0;
+
+    function pruefen(n){
+      if (!n || n.nodeType !== 1 || !n.getAttribute) return;
+      if (!n.getAttribute("data-up-preload")){
+        var u = null;
+        if (n.tagName === "SCRIPT") u = n.getAttribute("src");
+        else if (n.tagName === "LINK" && (n.getAttribute("rel") || "").indexOf("stylesheet") >= 0) u = n.getAttribute("href");
+        if (u && u.indexOf("upstreem-ui@") >= 0){
+          var name = u.slice(u.lastIndexOf("/") + 1).replace(".min.", ".");
+          if (geladen[name]){
+            if (n.parentNode) n.parentNode.removeChild(n);
+            if (!gemeldet && window.console){
+              gemeldet = 1;
+              console.warn("upstreem: doppelt eingehaengte Dateien werden entfernt (zuerst " + name +
+                "). Das Element bringt einen aelteren Loader mit, der die gemeinsame Liste nicht kennt " +
+                "-- funktioniert so, laesst sich aber sauberer loesen, indem der Loader in diesem " +
+                "Element ausgetauscht wird.");
+            }
+            return;
+          }
+        }
+      }
+      if (!n.querySelectorAll) return;
+      var drin = n.querySelectorAll('script[src*="upstreem-ui@"], link[href*="upstreem-ui@"]');
+      for (var q = 0; q < drin.length; q++) pruefen(drin[q]);
+    }
     new MutationObserver(function(muts){
       for (var i = 0; i < muts.length; i++){
         var neu = muts[i].addedNodes;
-        for (var j = 0; j < neu.length; j++){
-          var n = neu[j];
-          if (!n || n.nodeType !== 1 || !n.getAttribute) continue;
-          if (n.getAttribute("data-up-preload")) continue;
-          var u = null;
-          if (n.tagName === "SCRIPT") u = n.getAttribute("src");
-          else if (n.tagName === "LINK" && (n.getAttribute("rel") || "").indexOf("stylesheet") >= 0) u = n.getAttribute("href");
-          if (!u || u.indexOf("upstreem-ui@") < 0) continue;
-          var name = u.slice(u.lastIndexOf("/") + 1).replace(".min.", ".");
-          if (!geladen[name]) continue;
-          if (n.parentNode) n.parentNode.removeChild(n);
-          if (!gemeldet && window.console){
-            gemeldet = 1;
-            console.warn("upstreem: doppelt eingehaengte Dateien werden entfernt (zuerst " + name +
-              "). Das Element bringt einen aelteren Loader mit, der die gemeinsame Liste nicht kennt " +
-              "-- funktioniert so, laesst sich aber sauberer loesen, indem der Loader in diesem " +
-              "Element ausgetauscht wird.");
-          }
-        }
+        for (var j = 0; j < neu.length; j++) pruefen(neu[j]);
       }
     }).observe(document.documentElement, { childList: true, subtree: true });
   }
@@ -164,33 +173,51 @@
 </script>
 
 <script>
-var BASE_EL = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@4ae5e05bd61702e1ac09558c497f06a3fcacce27/";
-function loaderOhneListe(dateien){
-  dateien.forEach(function(f){
-    var url = BASE_EL + f;
-    if (/\.css$/.test(f)){ var l=document.createElement("link"); l.rel="stylesheet"; l.href=url; document.head.appendChild(l); }
-    else { var s=document.createElement("script"); s.src=url; s.async=false; document.head.appendChild(s); }
-  });
+var BASE_EL = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@e966e982e199d52034078d998a23f371683c795e/";
+/* DREI Wege, wie eine Datei ankommt -- alle drei muessen abgefangen werden:
+   1. direkt an den Kopf gehaengt (alte Loader-Generation)
+   2. als KIND eines Containers, der als GANZES eingehaengt wird (Bubbles insertExpression)
+   3. tief in einem Teilbaum */
+function direkt(f){ var s=document.createElement("script"); s.src=BASE_EL+f; s.async=false; document.head.appendChild(s); }
+function alsKind(f){
+  var box=document.createElement("div");
+  var s=document.createElement("script"); s.src=BASE_EL+f; s.async=false; box.appendChild(s);
+  document.body.appendChild(box);
+}
+function tief(f){
+  var a=document.createElement("div"), b=document.createElement("div"), c=document.createElement("span");
+  var s=document.createElement("script"); s.src=BASE_EL+f; s.async=false;
+  c.appendChild(s); b.appendChild(c); a.appendChild(b); document.body.appendChild(a);
 }
 window.addEventListener("load", function(){
-  setTimeout(function(){
-    loaderOhneListe(["core.css","core.js","topics-manager.css","topics-manager.js"]);
-    loaderOhneListe(["core.css","core.js","urls-table.css","urls-table.js"]);
-  }, 60);
+  setTimeout(function(){ direkt("core.js"); alsKind("topics-manager.js"); tief("urls-table.js"); alsKind("core.css"); }, 60);
+  window.__gesehen = [];
+  new MutationObserver(function(m){
+    for (var i=0;i<m.length;i++) for (var j=0;j<m[i].addedNodes.length;j++){
+      var n=m[i].addedNodes[j];
+      if (!n || n.nodeType!==1) continue;
+      var u = n.tagName==="SCRIPT" ? n.getAttribute("src") : (n.tagName==="LINK" ? n.getAttribute("href") : null);
+      if (u && u.indexOf("upstreem-ui@")>=0) window.__gesehen.push("direkt " + u.slice(u.lastIndexOf("/")+1));
+      else if (n.querySelectorAll){
+        var d=n.querySelectorAll('script[src*="upstreem-ui@"], link[href*="upstreem-ui@"]');
+        for (var q=0;q<d.length;q++){ var v=d[q].getAttribute("src")||d[q].getAttribute("href"); window.__gesehen.push("im Teilbaum " + v.slice(v.lastIndexOf("/")+1)); }
+        if (!d.length && n.tagName === "DIV") window.__gesehen.push("Container ohne Treffer: " + (n.innerHTML||"").slice(0,60));
+      }
+    }
+  }).observe(document.documentElement, { childList: true, subtree: true });
   setTimeout(function(){
     var tags=[].slice.call(document.querySelectorAll('script[src*="upstreem-ui@"], link[href*="upstreem-ui@"]'));
-    var kurz=function(e){ var u=e.src||e.href; return u.replace(/^.*upstreem-ui@[^/]+\//,""); };
-    var z={}; tags.forEach(function(e){ var k=kurz(e).replace(".min.","."); z[k]=(z[k]||0)+1; });
-    var blaetter=[].slice.call(document.querySelectorAll('link[href*="upstreem-ui@"]'));
+    var kurz=function(e){ var u=e.src||e.href; return u.replace(/^.*upstreem-ui@[^/]+\//,"").replace(".min.","."); };
+    var z={}; tags.forEach(function(e){ var k=kurz(e); z[k]=(z[k]||0)+1; });
     var UC=window.UpstreemCore;
     document.getElementById("out").textContent = JSON.stringify({
       tags: tags.length,
       mehrfach_im_dom: Object.keys(z).filter(function(k){ return z[k]>1; }),
-      core_tags: tags.filter(function(e){ return /^core\./.test(kurz(e)) || /^core\.min\./.test(kurz(e)); }).map(kurz),
-      blaetter_media: blaetter.map(function(l){ return l.media || "(leer)"; }).filter(function(v,i,a){ return a.indexOf(v)===i; }),
-      blaetter_wirksam: blaetter.filter(function(l){ return l.sheet; }).length + "/" + blaetter.length,
-      kern_laeuft: !!UC, kern_teile: UC?Object.keys(UC).length:0,
-      warnungen: window.__warn
+      topics_manager_tags: tags.filter(function(e){ return kurz(e).indexOf("topics-manager.js")===0; }).length,
+      urls_table_tags: tags.filter(function(e){ return kurz(e).indexOf("urls-table.js")===0; }).length,
+      core_tags: tags.filter(function(e){ return /^core\./.test(kurz(e)); }).length,
+      kern_teile: UC?Object.keys(UC).length:0,
+      warnungen: window.__warn.length, gesehen: window.__gesehen
     }, null, 1);
   }, 7000);
 });
