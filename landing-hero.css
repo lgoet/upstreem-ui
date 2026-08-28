@@ -1033,8 +1033,21 @@
   /* Die Luft ueber und unter der Domainzeile -- EINE Zahl, weil beide gleich sein sollen:
      16 plus 30 Prozent. */
   --ulh-quell-kopfluft: 21px;
+  /* Bis hierher ist von den Strichen NICHTS zu sehen. Gerechnet und nicht geschaetzt: die Luft
+     ueber der Sektion plus die Hoehe des Chips (22) plus sein Abstand nach unten (18) -- also
+     genau bis unter den Chip. Steht in einer Variablen, weil vier Verlaeufe denselben Wert
+     brauchen. */
+  --ulh-quell-frei: calc(var(--ulh-quell-luft) + 40px);
   padding: var(--ulh-quell-luft) 0 0;
 }
+/* Die Trennlinie unter der Sektion laeuft ueber die ganze Breite und nicht nur ueber die Spur.
+   left/width in vw und nicht 100% -- 100% waere die Spur. Ein Ueberlauf entsteht dadurch nicht:
+   .ulh-root schneidet waagerecht ab (overflow-x: clip). */
+.ulh-quell::after {
+  content: ""; position: absolute; left: 50%; bottom: 0; width: 100vw; height: 1px;
+  transform: translateX(-50%); background: var(--ulh-border); pointer-events: none;
+}
+
 /* Die zwei Striche hinter dem Kopf. Sie liegen genau auf den Schienen der Seite (.ulh-schienen,
    also die Kanten der Spur) und laufen von durchsichtig oben bis zur vollen Rahmenfarbe unten --
    dort, wo der Kasten beginnt. Damit wandert der Blick die Linie hinunter in die Komponente.
@@ -1050,11 +1063,30 @@
   left: 0; right: 0;
   top: calc(-1 * var(--ulh-quell-luft));
   bottom: calc(-1 * var(--ulh-quell-abstand));
-  background-image: linear-gradient(to bottom, rgba(231, 233, 236, 0), var(--ulh-border)),
-                    linear-gradient(to bottom, rgba(231, 233, 236, 0), var(--ulh-border));
+  background-image: linear-gradient(to bottom, rgba(231, 233, 236, 0) var(--ulh-quell-frei),
+                      var(--ulh-border) 100%),
+                    linear-gradient(to bottom, rgba(231, 233, 236, 0) var(--ulh-quell-frei),
+                      var(--ulh-border) 100%);
   background-size: 1px 100%, 1px 100%;
   background-position: left top, right top;
   background-repeat: no-repeat;
+}
+/* Und dasselbe als MUSTER zwischen den beiden: sieben weitere Striche, die Spur in acht gleiche
+   Spalten geteilt. Prozent und nicht Pixel im Raster: die Spur waechst mit dem Fenster, und mit
+   einem Pixelabstand waere die letzte Spalte immer die falsche Breite.
+   Heller als die beiden aussen (--ulh-schiene statt --ulh-border): aussen steht das Gitter der
+   Seite, innen ein Muster. Gleich stark waeren es neun gleichwertige Linien und kein Aufbau.
+   Der Verlauf steckt hier in einer Maske und nicht in der Farbe: das Muster IST schon ein Verlauf
+   (quer), und zwei Verlaeufe in einem Hintergrundbild gehen nicht. */
+.ulh-quell-kopf::after {
+  content: ""; position: absolute; z-index: 0; pointer-events: none;
+  left: 0; right: 0;
+  top: calc(-1 * var(--ulh-quell-luft));
+  bottom: calc(-1 * var(--ulh-quell-abstand));
+  background-image: repeating-linear-gradient(to right,
+    var(--ulh-schiene) 0 1px, rgba(237, 237, 240, 0) 1px calc(100% / 8));
+  -webkit-mask-image: linear-gradient(to bottom, transparent var(--ulh-quell-frei), #000 100%);
+          mask-image: linear-gradient(to bottom, transparent var(--ulh-quell-frei), #000 100%);
 }
 .ulh-quell-kopf { display: flex; flex-direction: column; align-items: center; text-align: center; }
 /* Breiter als der Chip darueber vermuten laesst: mit 22ch stand der Satz bei 46px Schrift in
@@ -1079,15 +1111,15 @@
 /* Derselbe Aufbau wie bei den Karten oben: aussen der graue Kasten mit 4px Polster und 8px
    Abstand zu den Schienen des Gitters, darin die weisse Karte. Der Unterschied ist nur, dass hier
    EINE grosse Karte darin steht statt vier kleiner -- Abstaende und Polster sind dieselben.
-   Unten sind BEIDE offen: kein Rahmen, kein Radius, und der graue Kasten hat unten auch kein
-   Polster. Sonst laege unter der weissen Karte ein 4px grauer Streifen, und der laese sich als
-   Unterkante -- genau das Gegenteil von "die Seite laeuft weiter". */
+   Der Kasten ist rundum geschlossen: die Komponente steht ganz da, also endet auch der Rahmen.
+   Unter ihm liegen 8px Luft -- dieselben 8px, die er zu den Schienen haelt -- und darunter die
+   Trennlinie ueber die ganze Breite. */
 .ulh-quell-box {
-  margin: var(--ulh-quell-abstand) 8px 0;
-  padding: 4px 4px 0;
+  margin: var(--ulh-quell-abstand) 8px 8px;
+  padding: 4px;
   background: var(--ulh-kasten);
-  border: 1px solid var(--ulh-border); border-bottom: 0;
-  border-radius: 20px 20px 0 0;
+  border: 1px solid var(--ulh-border);
+  border-radius: 20px;
   box-shadow: 0 1px 2px rgba(11, 13, 24, .035), 0 6px 16px rgba(11, 13, 24, .028);
 }
 /* WEISS, und zwar als Zahl. --vc-bg ist die Grundfarbe der App, aber sie ist an .up-root
@@ -1097,14 +1129,12 @@
    KEINE feste Hoehe mehr: die Komponente steht ganz da, nichts wird abgeschnitten. Damit faellt
    auch der Verlauf am unteren Rand weg -- er hatte nur die Aufgabe, einen Schnitt weich zu machen,
    und ueber sichtbarem Inhalt wuerde er die letzte Kartenreihe aufhellen.
-   Was BLEIBT, ist der offene Fuss: kein Rahmen und kein Radius unten. Die Sektion ist die letzte
-   der Seite, und so laeuft die Flaeche unten aus, statt mit einer Kante zu enden.
    Das Polster oben ist so gross wie der Abstand zwischen Domainzeile und Karten, damit Oberkante,
    Ueberschrift und Karten gleichmaessig stehen. Links und rechts bleiben es 8px. */
 .ulh-quell-panel {
-  border: 1px solid var(--ulh-border); border-bottom: 0;
-  border-radius: 16px 16px 0 0; background: #ffffff;
-  padding: var(--ulh-quell-kopfluft) 8px 16px; overflow: hidden; position: relative;
+  border: 1px solid var(--ulh-border);
+  border-radius: 16px; background: #ffffff;
+  padding: var(--ulh-quell-kopfluft) 8px 8px; overflow: hidden; position: relative;
 }
 /* Die Hoehe ist gemessen und nicht geschaetzt. In 1266px Breite baut die Komponente: 32 Kopfzeile,
    412 Chartkarte (mit der Legende der fuenf URLs), 299 Trichterkarte, 322 fuer die zwei Karten
@@ -1140,7 +1170,10 @@
 .ulh-quell-app .udd-root {
   display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: stretch;
 }
-.ulh-quell-app .udd-row2 { grid-column: 1 / -1; gap: 8px; }
+/* 50-50 statt 1.15 zu 1: in der App ist die Typkarte breiter, weil dort neben dem Ring die
+   Legende mit Prozenten steht und rechts nur vier Balken. Hier stehen beide fuer sich, und
+   ungleiche Haelften lesen sich als Versehen. */
+.ulh-quell-app .udd-row2 { grid-column: 1 / -1; gap: 8px; grid-template-columns: 1fr 1fr; }
 .ulh-quell-app .udd-card { padding: 14px; }
 /* Kurve und Trichter teilen sich eine Zeile, und das Raster macht beide Karten gleich hoch. Der
    Trichter ist von sich aus flacher -- gemessen blieben unter ihm 57px Luft. Statt einer gemessenen
