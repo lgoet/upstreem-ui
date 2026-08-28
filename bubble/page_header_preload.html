@@ -116,24 +116,26 @@
   }
   function minUrl(f){ return base + f.replace(/\.(js|css)$/, ".min.$1"); }
 
-  /* CSS: media="print" nimmt das Blatt aus der Bildschirm-Auswertung, es laedt also ohne das
-     Zeichnen anzuhalten; onload schaltet auf "all". Der Timer ist die Absicherung -- feuert onload
-     nicht, waere das Blatt dauerhaft nur fuer den Druck gueltig und die Komponente stuende
-     ungestylt da. Der Rueckfall auf die rohe Datei ist fuer responses-table.min.css, das einzige
-     404 unter 72 Dateien. */
+  /* CSS BLOCKIEREND, ohne den media="print"-Trick.
+     Der Trick stand hier, damit zwanzig Stylesheets das erste Zeichnen nicht anhalten. Er ist
+     falsch geworden, sobald der Waechter unten die blockierenden <link>s der Elemente entfernt:
+     dann gilt fuer einen Moment KEIN Stylesheet, und der Browser malt die Komponenten roh. Genau
+     so gemeldet -- unformatierter Inhalt fuer ein paar Millisekunden, und das Export-Popup kurz
+     sichtbar (es ist nur durch seine CSS verborgen).
+     Blockierend ist ausserdem das Verhalten, das die App vorher hatte: die Element-Loader haengten
+     gewoehnliche Stylesheets ein. Neu ist nur, dass es minifiziert und frueh passiert statt roh und
+     erst beim Bau des Elements.
+     Der Rueckfall bleibt: fehlt die minifizierte Fassung (jsDelivr minifiziert auf Anfrage und
+     antwortet bis dahin mit 404), kommt die rohe. */
   function css(f){ once(base + f, function(){
-    var l = document.createElement("link"); l.rel = "stylesheet"; l.href = minUrl(f); l.setAttribute("data-up-preload", "1");
-    l.media = "print";
-    var an = function(){ l.media = "all"; };
-    l.onload = an;
+    var l = document.createElement("link"); l.rel = "stylesheet"; l.href = minUrl(f);
+    l.setAttribute("data-up-preload", "1");
     l.onerror = function(){
-      var r = document.createElement("link"); r.rel = "stylesheet"; r.href = base + f; r.setAttribute("data-up-preload", "1");
-      r.media = "print"; r.onload = function(){ r.media = "all"; };
-      setTimeout(function(){ r.media = "all"; }, 2000);
+      var r = document.createElement("link"); r.rel = "stylesheet"; r.href = base + f;
+      r.setAttribute("data-up-preload", "1");
       document.head.appendChild(r);
       if (l.parentNode) l.parentNode.removeChild(l);
     };
-    setTimeout(an, 2000);
     document.head.appendChild(l);
   }); }
   /* async=false haelt die Reihenfolge der eingehaengten Skripte ein -- die Komponenten brauchen

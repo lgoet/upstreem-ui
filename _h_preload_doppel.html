@@ -1,11 +1,11 @@
-<meta charset="utf-8"><title>preload: Waechter gegen Doppel-Laden</title>
+<meta charset="utf-8"><title>preload: kein Flash, kein Doppel</title>
 <body style="font:12px ui-monospace,monospace;padding:14px">
 <pre id="out">laeuft</pre>
-<script>window.__coreLaeufe = 0; window.__warn = [];
-var w = console.warn; console.warn = function(){ window.__warn.push([].join.call(arguments," ")); w.apply(console, arguments); };</script>
+<div class="up-root" data-theme="light" style="padding:8px"><div class="up-head"><div class="up-title">Probe</div></div></div>
+<script>window.__warn=[]; var w=console.warn; console.warn=function(){window.__warn.push([].join.call(arguments," ")); w.apply(console,arguments);};</script>
 <script>
 (function(){
-  var PIN = "72384a39e0c828355090096ebd0ea50b28959ef9";
+  var PIN = "4ae5e05bd61702e1ac09558c497f06a3fcacce27";
   if (!PIN || PIN === "CDN_" + "PIN") PIN = "main";
 
   var VORRAT = "sofort";
@@ -34,18 +34,14 @@ var w = console.warn; console.warn = function(){ window.__warn.push([].join.call
   function minUrl(f){ return base + f.replace(/\.(js|css)$/, ".min.$1"); }
 
   function css(f){ once(base + f, function(){
-    var l = document.createElement("link"); l.rel = "stylesheet"; l.href = minUrl(f); l.setAttribute("data-up-preload", "1");
-    l.media = "print";
-    var an = function(){ l.media = "all"; };
-    l.onload = an;
+    var l = document.createElement("link"); l.rel = "stylesheet"; l.href = minUrl(f);
+    l.setAttribute("data-up-preload", "1");
     l.onerror = function(){
-      var r = document.createElement("link"); r.rel = "stylesheet"; r.href = base + f; r.setAttribute("data-up-preload", "1");
-      r.media = "print"; r.onload = function(){ r.media = "all"; };
-      setTimeout(function(){ r.media = "all"; }, 2000);
+      var r = document.createElement("link"); r.rel = "stylesheet"; r.href = base + f;
+      r.setAttribute("data-up-preload", "1");
       document.head.appendChild(r);
       if (l.parentNode) l.parentNode.removeChild(l);
     };
-    setTimeout(an, 2000);
     document.head.appendChild(l);
   }); }
 
@@ -168,10 +164,7 @@ var w = console.warn; console.warn = function(){ window.__warn.push([].join.call
 </script>
 
 <script>
-var PIN_EL = "72384a39e0c828355090096ebd0ea50b28959ef9";
-var BASE_EL = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + PIN_EL + "/";
-/* Generation NULL: kennt keine gemeinsame Liste, haengt einfach an. Genau das tun die Elemente,
-   die in der App 20 core-Tags erzeugt haben. */
+var BASE_EL = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@4ae5e05bd61702e1ac09558c497f06a3fcacce27/";
 function loaderOhneListe(dateien){
   dateien.forEach(function(f){
     var url = BASE_EL + f;
@@ -183,22 +176,20 @@ window.addEventListener("load", function(){
   setTimeout(function(){
     loaderOhneListe(["core.css","core.js","topics-manager.css","topics-manager.js"]);
     loaderOhneListe(["core.css","core.js","urls-table.css","urls-table.js"]);
-    loaderOhneListe(["core.css","core.js","settings-brand.css","settings-brand.js"]);
   }, 60);
   setTimeout(function(){
-    var tags = [].slice.call(document.querySelectorAll('script[src*="upstreem-ui@"], link[href*="upstreem-ui@"]'));
-    var kurz = function(e){ var u=e.src||e.href; return u.replace(/^.*upstreem-ui@[^/]+\//,""); };
-    var zaehl = {}; tags.forEach(function(e){ var k=kurz(e).replace(".min.","."); zaehl[k]=(zaehl[k]||0)+1; });
-    var mehrfach = Object.keys(zaehl).filter(function(k){ return zaehl[k] > 1; });
-    var r = performance.getEntriesByType("resource").filter(function(e){ return e.name.indexOf("upstreem-ui@")>=0; });
-    var UC = window.UpstreemCore;
+    var tags=[].slice.call(document.querySelectorAll('script[src*="upstreem-ui@"], link[href*="upstreem-ui@"]'));
+    var kurz=function(e){ var u=e.src||e.href; return u.replace(/^.*upstreem-ui@[^/]+\//,""); };
+    var z={}; tags.forEach(function(e){ var k=kurz(e).replace(".min.","."); z[k]=(z[k]||0)+1; });
+    var blaetter=[].slice.call(document.querySelectorAll('link[href*="upstreem-ui@"]'));
+    var UC=window.UpstreemCore;
     document.getElementById("out").textContent = JSON.stringify({
-      tags_im_kopf: tags.length,
-      mehrfach_im_kopf: mehrfach,
-      core_tags: tags.filter(function(e){ return kurz(e).indexOf("core.") === 0 || kurz(e).indexOf("core.min.") === 0; }).map(kurz),
-      abrufe: r.length,
-      abrufe_roh: r.filter(function(e){ return e.name.indexOf(".min.") < 0; }).map(function(e){ return e.name.replace(/^.*upstreem-ui@[^/]+\//,""); }),
-      kern_laeuft: !!UC, kern_teile: UC ? Object.keys(UC).length : 0,
+      tags: tags.length,
+      mehrfach_im_dom: Object.keys(z).filter(function(k){ return z[k]>1; }),
+      core_tags: tags.filter(function(e){ return /^core\./.test(kurz(e)) || /^core\.min\./.test(kurz(e)); }).map(kurz),
+      blaetter_media: blaetter.map(function(l){ return l.media || "(leer)"; }).filter(function(v,i,a){ return a.indexOf(v)===i; }),
+      blaetter_wirksam: blaetter.filter(function(l){ return l.sheet; }).length + "/" + blaetter.length,
+      kern_laeuft: !!UC, kern_teile: UC?Object.keys(UC).length:0,
       warnungen: window.__warn
     }, null, 1);
   }, 7000);
