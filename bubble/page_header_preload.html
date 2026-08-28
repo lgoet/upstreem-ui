@@ -32,12 +32,16 @@
      jsDelivr kommt mit dieser Datei nicht klar. Deshalb hat jeder Ladevorgang unten einen
      onerror-Rückfall auf die rohe Datei. Ohne den stünde diese Komponente ungestylt da.
 
-  2. ZWEI WELLEN. Welle 1 lädt, was JEDE Seite braucht (core und die Leiste). Welle 2 lädt den
-     Rest erst, wenn der Browser nach dem load-Ereignis Luft hat (requestIdleCallback, ersatzweise
-     ein Timer). Damit liegen rund 2.8 MB nicht mehr im Weg des ersten Bildes.
-     Der Preis, offen benannt: wer in der ersten Sekunde nach dem Seitenaufbau einen Drawer
-     aufmacht, trifft dessen Dateien möglicherweise noch nicht vorgewärmt an — dann lädt der Loader
-     der Komponente sie selbst, wie vor diesem Script. Danach ist alles da.
+  2. ZWEI WELLEN, MIT EINEM SCHALTER. Welle 1 lädt sofort, Welle 2 erst wenn der Browser nach dem
+     load-Ereignis Luft hat. WAS in Welle 2 gehört, hängt an einer Eigenschaft der Seite, und die
+     ist gemessen: solange das View-System alle Views beim Seitenaufbau baut, holen deren
+     Element-Loader ihre Dateien noch VOR dem load-Ereignis — eine Welle 2 käme dann zu spät, der
+     Loader war schneller und hat die rohe Datei geholt. Gemessen in der laufenden App: 77 Dateien,
+     3914 KB, davon 3914 KB vor load; 10 Views gebaut, 135 Komponenten, 23604 DOM-Knoten.
+     Deshalb steht VORRAT unten auf "sofort": dann liegt alles im Vorlauf und wird minifiziert
+     geholt, statt roh von den Element-Loadern. 3914 KB werden damit rund 1640 KB.
+     Erst wenn Views nur noch beim ersten Öffnen gebaut werden, ist "idle" richtig: dann braucht
+     die Seite wirklich nur ihre eigenen Komponenten, und der Rest ist Vorrat für Drawer.
 
   ── DIE REGISTRY, UND WARUM SIE DIE ROHEN NAMEN TRÄGT ────────────────────────
   window.__upAssetsLoaded ist dieselbe Liste, die die Loader in den Komponenten benutzen. Sie
@@ -62,6 +66,11 @@
 (function(){
   var PIN = "CDN_PIN";   // <-- exakt derselbe Wert wie data-cdn-pin auf den Komponenten
   if (!PIN || PIN === "CDN_" + "PIN") PIN = "main";
+  /* "sofort": der Vorrat wird gleich mitgeladen. Richtig, solange die Seite ohnehin alle Views
+     baut -- dann kommen die Dateien so oder so, und hier kommen sie minifiziert.
+     "idle": der Vorrat wartet auf den Leerlauf nach dem load-Ereignis. Richtig, sobald eine Seite
+     nur noch ihre eigenen Komponenten baut. */
+  var VORRAT = "sofort";
   var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + PIN + "/";
 
   /* Die Verbindung zum CDN vorbereiten, bevor die erste Datei angefragt wird: DNS, TCP und TLS
@@ -157,8 +166,8 @@
   css("core.css");     js("core.js");
   css("sidebar.css");  js("sidebar.js");
 
-  /* ── WELLE 2: der Vorrat für Drawer und Views ──────────────────────────────
-     Erst wenn der Browser nach dem load-Ereignis Luft hat. requestIdleCallback mit Frist, damit es
+  /* ── WELLE 2: der Vorrat ───────────────────────────────────────────────────
+     Wann sie laeuft, entscheidet VORRAT oben. Bei "idle" requestIdleCallback mit Frist, damit es
      auch auf einer dauerbeschaeftigten Seite laeuft; ohne die Funktion ein Timer. */
   function welle2(){
     css("visibility-chart.css");        js("visibility-chart.js");
@@ -197,7 +206,8 @@
     if (window.requestIdleCallback) window.requestIdleCallback(welle2, { timeout: 2500 });
     else setTimeout(welle2, 1200);
   }
-  if (document.readyState === "complete") welle2Planen();
+  if (VORRAT === "sofort") welle2();
+  else if (document.readyState === "complete") welle2Planen();
   else window.addEventListener("load", welle2Planen);
 })();
 </script>

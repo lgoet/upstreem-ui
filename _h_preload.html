@@ -5,6 +5,11 @@
 (function(){
   var PIN = "bea0d8b";   // <-- exakt derselbe Wert wie data-cdn-pin auf den Komponenten
   if (!PIN || PIN === "CDN_" + "PIN") PIN = "main";
+  /* "sofort": der Vorrat wird gleich mitgeladen. Richtig, solange die Seite ohnehin alle Views
+     baut -- dann kommen die Dateien so oder so, und hier kommen sie minifiziert.
+     "idle": der Vorrat wartet auf den Leerlauf nach dem load-Ereignis. Richtig, sobald eine Seite
+     nur noch ihre eigenen Komponenten baut. */
+  var VORRAT = "sofort";
   var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + PIN + "/";
 
   /* Die Verbindung zum CDN vorbereiten, bevor die erste Datei angefragt wird: DNS, TCP und TLS
@@ -100,8 +105,8 @@
   css("core.css");     js("core.js");
   css("sidebar.css");  js("sidebar.js");
 
-  /* ── WELLE 2: der Vorrat für Drawer und Views ──────────────────────────────
-     Erst wenn der Browser nach dem load-Ereignis Luft hat. requestIdleCallback mit Frist, damit es
+  /* ── WELLE 2: der Vorrat ───────────────────────────────────────────────────
+     Wann sie laeuft, entscheidet VORRAT oben. Bei "idle" requestIdleCallback mit Frist, damit es
      auch auf einer dauerbeschaeftigten Seite laeuft; ohne die Funktion ein Timer. */
   function welle2(){
     css("visibility-chart.css");        js("visibility-chart.js");
@@ -140,7 +145,8 @@
     if (window.requestIdleCallback) window.requestIdleCallback(welle2, { timeout: 2500 });
     else setTimeout(welle2, 1200);
   }
-  if (document.readyState === "complete") welle2Planen();
+  if (VORRAT === "sofort") welle2();
+  else if (document.readyState === "complete") welle2Planen();
   else window.addEventListener("load", welle2Planen);
 })();
 </script>
