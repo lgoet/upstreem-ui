@@ -1,0 +1,164 @@
+<meta charset="utf-8"><title>preload: Pin-Waechter</title>
+<body style="font:12px ui-monospace,monospace;padding:14px">
+<pre id="out">laeuft</pre>
+<script>
+/* Fehler MITSCHREIBEN, bevor das Snippet laeuft. Der Waechter meldet ueber console.error. */
+window.__fehler = [];
+var echt = console.error;
+console.error = function(){ window.__fehler.push([].join.call(arguments, " ")); echt.apply(console, arguments); };
+</script>
+<script>
+(function(){
+  var PIN = "7acb26c2a80cba6e56304a4cdfc7b81d2730bc75";
+  if (!PIN || PIN === "CDN_" + "PIN") PIN = "main";
+
+  var VORRAT = "sofort";
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + PIN + "/";
+
+  ["preconnect", "dns-prefetch"].forEach(function(rel){
+    var l = document.createElement("link");
+    l.rel = rel; l.href = "https://cdn.jsdelivr.net";
+    if (rel === "preconnect") l.crossOrigin = "anonymous";
+    document.head.appendChild(l);
+  });
+
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(rohUrl, make){
+    var name = rohUrl.slice(rohUrl.lastIndexOf("/") + 1);
+    var da = L[name] || L[rohUrl];
+    if (da){
+      if (da !== rohUrl && String(da).indexOf("http") === 0 && window.console) console.warn("upstreem: " + name +
+        " ist schon von einem anderen Pin geladen. Geladen bleibt " + da +
+        ", ignoriert wird " + rohUrl + ". Setzt alle Elemente auf denselben Pin.");
+      return;
+    }
+    L[name] = rohUrl; L[rohUrl] = rohUrl; make();
+  }
+  function minUrl(f){ return base + f.replace(/\.(js|css)$/, ".min.$1"); }
+
+  function css(f){ once(base + f, function(){
+    var l = document.createElement("link"); l.rel = "stylesheet"; l.href = minUrl(f);
+    l.media = "print";
+    var an = function(){ l.media = "all"; };
+    l.onload = an;
+    l.onerror = function(){
+      var r = document.createElement("link"); r.rel = "stylesheet"; r.href = base + f;
+      r.media = "print"; r.onload = function(){ r.media = "all"; };
+      setTimeout(function(){ r.media = "all"; }, 2000);
+      document.head.appendChild(r);
+      if (l.parentNode) l.parentNode.removeChild(l);
+    };
+    setTimeout(an, 2000);
+    document.head.appendChild(l);
+  }); }
+
+  function js(f){ once(base + f, function(){
+    var s = document.createElement("script"); s.src = minUrl(f); s.async = false;
+    s.onerror = function(){
+      var r = document.createElement("script"); r.src = base + f; r.async = false;
+      document.head.appendChild(r);
+    };
+    document.head.appendChild(s);
+  }); }
+
+  ["Topics","Markets","Brands"].forEach(function(n){
+    var q = "__up" + n + "Queue";
+    window[q] = window[q] || [];
+    if (typeof window["setUpstreem" + n] !== "function"){
+      window["setUpstreem" + n] = function(rows){ window[q].push(rows); };
+    }
+  });
+
+  window.__upstreemMarketQueue = window.__upstreemMarketQueue || [];
+  if (typeof window.setUpstreemAllMarkets !== "function"){
+    window.setUpstreemAllMarkets = function(rows){
+      window.__upstreemMarketQueue.push({ all: true, rows: rows }); return true;
+    };
+  }
+
+  css("core.css");     js("core.js");
+  css("sidebar.css");  js("sidebar.js");
+
+  function welle2(){
+    css("visibility-chart.css");        js("visibility-chart.js");
+    css("topcitations-dashboard.css");  js("topcitations-dashboard.js");
+    css("citations-combo-chart.css");   js("citations-combo-chart.js");
+    css("prompts-table.css");           js("prompts-table.js");
+    css("urls-table.css");              js("urls-table.js");
+    css("domains-table.css");           js("domains-table.js");
+    css("topics-manager.css");          js("topics-manager.js");
+    css("responses-table.css");         js("responses-table.js");
+    css("brands-overview.css");         js("brands-overview.js");
+    css("performance-radar.css");       js("performance-radar.js");
+    css("quick-actions.css");           js("quick-actions.js");
+    css("performance-detail.css");      js("performance-detail.js");
+    css("discover-brands.css");         js("discover-brands.js");
+    css("settings-brand.css");          js("settings-brand.js");
+    css("opportunities.css");           js("opportunities.js");
+    css("ask-mira.css");                js("ask-mira.js");
+    css("prompt-research.css");         js("prompt-research.js");
+    css("add-prompts.css");             js("add-prompts.js");
+    css("create-with-ai.css");          js("create-with-ai.js");
+
+    once("chartjs", function(){
+      var c = document.createElement("script");
+      c.src = "https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js";
+      c.setAttribute("data-upstreem-chartjs", "1");
+      c.async = false;
+      document.head.appendChild(c);
+    });
+  }
+
+  function pinWaechter(){
+    var versuche = 0;
+    (function schauen(){
+      var els = document.querySelectorAll("[data-cdn-pin]");
+      for (var i = 0; i < els.length; i++){
+        var p = (els[i].getAttribute("data-cdn-pin") || "").trim();
+        if (!p || p === "CDN_" + "PIN") continue;
+        if (p === PIN) return;
+        if (window.console) console.error("upstreem: Der Pin im Header-Snippet (" + PIN +
+          ") ist nicht derselbe wie am Element \"" + (els[i].className || els[i].id) + "\" (" + p +
+          "). Solange sie sich unterscheiden, laedt ein Teil der Elemente seine Dateien ZUSAETZLICH " +
+          "-- doppelte Dateien, doppeltes core, langsamer Seitenaufbau. Beide auf dieselbe " +
+          "Zeichenfolge setzen (nicht nur denselben Commit: kurzer und langer Hash sind zwei URLs).");
+        return;
+      }
+      if (++versuche < 20) setTimeout(schauen, 500);
+    })();
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", pinWaechter);
+  else pinWaechter();
+
+  function welle2Planen(){
+    if (window.requestIdleCallback) window.requestIdleCallback(welle2, { timeout: 2500 });
+    else setTimeout(welle2, 1200);
+  }
+  if (VORRAT === "sofort") welle2();
+  else if (document.readyState === "complete") welle2Planen();
+  else window.addEventListener("load", welle2Planen);
+})();
+</script>
+
+<script>
+/* Zwei Faelle ueber die Adresse: ?pin=gleich setzt den Pin des Snippets an das Element, alles
+   andere einen fremden. Das Element kommt VERZOEGERT ins DOM -- wie in Bubble, wo die Elemente
+   erst nach dem Seitenaufbau gebaut werden. Genau das muss der Waechter abwarten koennen. */
+var GLEICH = "7acb26c2a80cba6e56304a4cdfc7b81d2730bc75";
+var FREMD  = "9aaa087123d6e19634a5030532d8f5870ec6161b";
+var wunsch = (new URLSearchParams(location.search)).get("pin") === "gleich" ? GLEICH : FREMD;
+setTimeout(function(){
+  var d = document.createElement("div");
+  d.className = "up-root ubo-root";
+  d.setAttribute("data-cdn-pin", wunsch);
+  document.body.appendChild(d);
+}, 2800);
+setTimeout(function(){
+  document.getElementById("out").textContent = JSON.stringify({
+    element_pin: wunsch,
+    snippet_pin: GLEICH,
+    erwartet: wunsch === GLEICH ? "keine Meldung" : "eine Fehlermeldung",
+    fehler: window.__fehler
+  }, null, 1);
+}, 6000);
+</script>

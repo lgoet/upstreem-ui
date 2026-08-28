@@ -1,0 +1,206 @@
+<meta charset="utf-8"><title>preload: Waechter gegen Doppel-Laden</title>
+<body style="font:12px ui-monospace,monospace;padding:14px">
+<pre id="out">laeuft</pre>
+<script>window.__coreLaeufe = 0; window.__warn = [];
+var w = console.warn; console.warn = function(){ window.__warn.push([].join.call(arguments," ")); w.apply(console, arguments); };</script>
+<script>
+(function(){
+  var PIN = "72384a39e0c828355090096ebd0ea50b28959ef9";
+  if (!PIN || PIN === "CDN_" + "PIN") PIN = "main";
+
+  var VORRAT = "sofort";
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + PIN + "/";
+
+  ["preconnect", "dns-prefetch"].forEach(function(rel){
+    var l = document.createElement("link");
+    l.rel = rel; l.href = "https://cdn.jsdelivr.net";
+    if (rel === "preconnect") l.crossOrigin = "anonymous";
+    document.head.appendChild(l);
+  });
+
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  var geladen = {};
+  function once(rohUrl, make){
+    var name = rohUrl.slice(rohUrl.lastIndexOf("/") + 1);
+    var da = L[name] || L[rohUrl];
+    if (da){
+      if (da !== rohUrl && String(da).indexOf("http") === 0 && window.console) console.warn("upstreem: " + name +
+        " ist schon von einem anderen Pin geladen. Geladen bleibt " + da +
+        ", ignoriert wird " + rohUrl + ". Setzt alle Elemente auf denselben Pin.");
+      return;
+    }
+    L[name] = rohUrl; L[rohUrl] = rohUrl; geladen[name] = true; make();
+  }
+  function minUrl(f){ return base + f.replace(/\.(js|css)$/, ".min.$1"); }
+
+  function css(f){ once(base + f, function(){
+    var l = document.createElement("link"); l.rel = "stylesheet"; l.href = minUrl(f); l.setAttribute("data-up-preload", "1");
+    l.media = "print";
+    var an = function(){ l.media = "all"; };
+    l.onload = an;
+    l.onerror = function(){
+      var r = document.createElement("link"); r.rel = "stylesheet"; r.href = base + f; r.setAttribute("data-up-preload", "1");
+      r.media = "print"; r.onload = function(){ r.media = "all"; };
+      setTimeout(function(){ r.media = "all"; }, 2000);
+      document.head.appendChild(r);
+      if (l.parentNode) l.parentNode.removeChild(l);
+    };
+    setTimeout(an, 2000);
+    document.head.appendChild(l);
+  }); }
+
+  function js(f){ once(base + f, function(){
+    var s = document.createElement("script"); s.src = minUrl(f); s.async = false; s.setAttribute("data-up-preload", "1");
+    s.onerror = function(){
+      var r = document.createElement("script"); r.src = base + f; r.async = false; r.setAttribute("data-up-preload", "1");
+      document.head.appendChild(r);
+    };
+    document.head.appendChild(s);
+  }); }
+
+  ["Topics","Markets","Brands"].forEach(function(n){
+    var q = "__up" + n + "Queue";
+    window[q] = window[q] || [];
+    if (typeof window["setUpstreem" + n] !== "function"){
+      window["setUpstreem" + n] = function(rows){ window[q].push(rows); };
+    }
+  });
+
+  window.__upstreemMarketQueue = window.__upstreemMarketQueue || [];
+  if (typeof window.setUpstreemAllMarkets !== "function"){
+    window.setUpstreemAllMarkets = function(rows){
+      window.__upstreemMarketQueue.push({ all: true, rows: rows }); return true;
+    };
+  }
+
+  css("core.css");     js("core.js");
+  css("sidebar.css");  js("sidebar.js");
+
+  function welle2(){
+    css("visibility-chart.css");        js("visibility-chart.js");
+    css("topcitations-dashboard.css");  js("topcitations-dashboard.js");
+    css("citations-combo-chart.css");   js("citations-combo-chart.js");
+    css("prompts-table.css");           js("prompts-table.js");
+    css("urls-table.css");              js("urls-table.js");
+    css("domains-table.css");           js("domains-table.js");
+    css("topics-manager.css");          js("topics-manager.js");
+    css("responses-table.css");         js("responses-table.js");
+    css("brands-overview.css");         js("brands-overview.js");
+    css("performance-radar.css");       js("performance-radar.js");
+    css("quick-actions.css");           js("quick-actions.js");
+    css("performance-detail.css");      js("performance-detail.js");
+    css("discover-brands.css");         js("discover-brands.js");
+    css("settings-brand.css");          js("settings-brand.js");
+    css("opportunities.css");           js("opportunities.js");
+    css("ask-mira.css");                js("ask-mira.js");
+    css("prompt-research.css");         js("prompt-research.js");
+    css("add-prompts.css");             js("add-prompts.js");
+    css("create-with-ai.css");          js("create-with-ai.js");
+
+    once("chartjs", function(){
+      var c = document.createElement("script");
+      c.src = "https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js";
+      c.setAttribute("data-upstreem-chartjs", "1");
+      c.async = false;
+      document.head.appendChild(c);
+    });
+  }
+
+  function doppelWaechter(){
+    if (!window.MutationObserver) return;
+    var gemeldet = 0;
+    new MutationObserver(function(muts){
+      for (var i = 0; i < muts.length; i++){
+        var neu = muts[i].addedNodes;
+        for (var j = 0; j < neu.length; j++){
+          var n = neu[j];
+          if (!n || n.nodeType !== 1 || !n.getAttribute) continue;
+          if (n.getAttribute("data-up-preload")) continue;
+          var u = null;
+          if (n.tagName === "SCRIPT") u = n.getAttribute("src");
+          else if (n.tagName === "LINK" && (n.getAttribute("rel") || "").indexOf("stylesheet") >= 0) u = n.getAttribute("href");
+          if (!u || u.indexOf("upstreem-ui@") < 0) continue;
+          var name = u.slice(u.lastIndexOf("/") + 1).replace(".min.", ".");
+          if (!geladen[name]) continue;
+          if (n.parentNode) n.parentNode.removeChild(n);
+          if (!gemeldet && window.console){
+            gemeldet = 1;
+            console.warn("upstreem: doppelt eingehaengte Dateien werden entfernt (zuerst " + name +
+              "). Das Element bringt einen aelteren Loader mit, der die gemeinsame Liste nicht kennt " +
+              "-- funktioniert so, laesst sich aber sauberer loesen, indem der Loader in diesem " +
+              "Element ausgetauscht wird.");
+          }
+        }
+      }
+    }).observe(document.documentElement, { childList: true, subtree: true });
+  }
+  doppelWaechter();
+
+  function pinWaechter(){
+    var versuche = 0;
+    (function schauen(){
+      var els = document.querySelectorAll("[data-cdn-pin]");
+      for (var i = 0; i < els.length; i++){
+        var p = (els[i].getAttribute("data-cdn-pin") || "").trim();
+        if (!p || p === "CDN_" + "PIN") continue;
+        if (p === PIN) return;
+        if (window.console) console.error("upstreem: Der Pin im Header-Snippet (" + PIN +
+          ") ist nicht derselbe wie am Element \"" + (els[i].className || els[i].id) + "\" (" + p +
+          "). Solange sie sich unterscheiden, laedt ein Teil der Elemente seine Dateien ZUSAETZLICH " +
+          "-- doppelte Dateien, doppeltes core, langsamer Seitenaufbau. Beide auf dieselbe " +
+          "Zeichenfolge setzen (nicht nur denselben Commit: kurzer und langer Hash sind zwei URLs).");
+        return;
+      }
+      if (++versuche < 20) setTimeout(schauen, 500);
+    })();
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", pinWaechter);
+  else pinWaechter();
+
+  function welle2Planen(){
+    if (window.requestIdleCallback) window.requestIdleCallback(welle2, { timeout: 2500 });
+    else setTimeout(welle2, 1200);
+  }
+  if (VORRAT === "sofort") welle2();
+  else if (document.readyState === "complete") welle2Planen();
+  else window.addEventListener("load", welle2Planen);
+})();
+</script>
+
+<script>
+var PIN_EL = "72384a39e0c828355090096ebd0ea50b28959ef9";
+var BASE_EL = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + PIN_EL + "/";
+/* Generation NULL: kennt keine gemeinsame Liste, haengt einfach an. Genau das tun die Elemente,
+   die in der App 20 core-Tags erzeugt haben. */
+function loaderOhneListe(dateien){
+  dateien.forEach(function(f){
+    var url = BASE_EL + f;
+    if (/\.css$/.test(f)){ var l=document.createElement("link"); l.rel="stylesheet"; l.href=url; document.head.appendChild(l); }
+    else { var s=document.createElement("script"); s.src=url; s.async=false; document.head.appendChild(s); }
+  });
+}
+window.addEventListener("load", function(){
+  setTimeout(function(){
+    loaderOhneListe(["core.css","core.js","topics-manager.css","topics-manager.js"]);
+    loaderOhneListe(["core.css","core.js","urls-table.css","urls-table.js"]);
+    loaderOhneListe(["core.css","core.js","settings-brand.css","settings-brand.js"]);
+  }, 60);
+  setTimeout(function(){
+    var tags = [].slice.call(document.querySelectorAll('script[src*="upstreem-ui@"], link[href*="upstreem-ui@"]'));
+    var kurz = function(e){ var u=e.src||e.href; return u.replace(/^.*upstreem-ui@[^/]+\//,""); };
+    var zaehl = {}; tags.forEach(function(e){ var k=kurz(e).replace(".min.","."); zaehl[k]=(zaehl[k]||0)+1; });
+    var mehrfach = Object.keys(zaehl).filter(function(k){ return zaehl[k] > 1; });
+    var r = performance.getEntriesByType("resource").filter(function(e){ return e.name.indexOf("upstreem-ui@")>=0; });
+    var UC = window.UpstreemCore;
+    document.getElementById("out").textContent = JSON.stringify({
+      tags_im_kopf: tags.length,
+      mehrfach_im_kopf: mehrfach,
+      core_tags: tags.filter(function(e){ return kurz(e).indexOf("core.") === 0 || kurz(e).indexOf("core.min.") === 0; }).map(kurz),
+      abrufe: r.length,
+      abrufe_roh: r.filter(function(e){ return e.name.indexOf(".min.") < 0; }).map(function(e){ return e.name.replace(/^.*upstreem-ui@[^/]+\//,""); }),
+      kern_laeuft: !!UC, kern_teile: UC ? Object.keys(UC).length : 0,
+      warnungen: window.__warn
+    }, null, 1);
+  }, 7000);
+});
+</script>

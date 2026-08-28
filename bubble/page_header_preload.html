@@ -102,6 +102,7 @@
      passiert: 119 Dateien statt 77, 5314 statt 3914 KB, und core lief zweimal.
      Deshalb wird BEIDES eingetragen, und beim Nachsehen wird BEIDES geprueft. */
   var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  var geladen = {};                                  /* Dateinamen, die DIESES Snippet geholt hat */
   function once(rohUrl, make){
     var name = rohUrl.slice(rohUrl.lastIndexOf("/") + 1);
     var da = L[name] || L[rohUrl];
@@ -111,7 +112,7 @@
         ", ignoriert wird " + rohUrl + ". Setzt alle Elemente auf denselben Pin.");
       return;
     }
-    L[name] = rohUrl; L[rohUrl] = rohUrl; make();
+    L[name] = rohUrl; L[rohUrl] = rohUrl; geladen[name] = true; make();
   }
   function minUrl(f){ return base + f.replace(/\.(js|css)$/, ".min.$1"); }
 
@@ -121,12 +122,12 @@
      ungestylt da. Der Rueckfall auf die rohe Datei ist fuer responses-table.min.css, das einzige
      404 unter 72 Dateien. */
   function css(f){ once(base + f, function(){
-    var l = document.createElement("link"); l.rel = "stylesheet"; l.href = minUrl(f);
+    var l = document.createElement("link"); l.rel = "stylesheet"; l.href = minUrl(f); l.setAttribute("data-up-preload", "1");
     l.media = "print";
     var an = function(){ l.media = "all"; };
     l.onload = an;
     l.onerror = function(){
-      var r = document.createElement("link"); r.rel = "stylesheet"; r.href = base + f;
+      var r = document.createElement("link"); r.rel = "stylesheet"; r.href = base + f; r.setAttribute("data-up-preload", "1");
       r.media = "print"; r.onload = function(){ r.media = "all"; };
       setTimeout(function(){ r.media = "all"; }, 2000);
       document.head.appendChild(r);
@@ -139,9 +140,9 @@
      core.js vor ihrem eigenen. Der Rueckfall wird sofort im Fehlerfall eingehaengt, also lange
      bevor Bubble das erste Element baut; die Reihenfolge bleibt damit gewahrt. */
   function js(f){ once(base + f, function(){
-    var s = document.createElement("script"); s.src = minUrl(f); s.async = false;
+    var s = document.createElement("script"); s.src = minUrl(f); s.async = false; s.setAttribute("data-up-preload", "1");
     s.onerror = function(){
-      var r = document.createElement("script"); r.src = base + f; r.async = false;
+      var r = document.createElement("script"); r.src = base + f; r.async = false; r.setAttribute("data-up-preload", "1");
       document.head.appendChild(r);
     };
     document.head.appendChild(s);
@@ -219,6 +220,76 @@
       document.head.appendChild(c);
     });
   }
+  /* ---- Waechter fuer den Pin ----
+     Zweimal hat genau das hier Zeit gekostet: Snippet und Elemente standen auf verschiedenen Pins.
+     Die neuere Loader-Generation meldet das von sich aus, die aeltere nicht -- sie vergleicht ganze
+     URLs, und zwei Pins sind zwei Schluessel, also laedt sie ihre rohen Dateien ZUSAETZLICH. Das
+     sieht man nur an der Ladezeit, nirgends steht ein Fehler.
+     Der Waechter sucht das erste Element mit data-cdn-pin und vergleicht. Er wartet dafuer: Bubble
+     baut die Elemente spaet (in der laufenden App bei rund 2.8s), ein einmaliger Blick nach dem
+     Seitenaufbau findet noch keines. Zwanzig Versuche im Halbsekundenabstand, dann Ruhe. */
+  /* ---- Waechter gegen doppelte Dateien ----
+     Die Registry reicht nicht. Gemessen in der laufenden App: bei EINEM Pin und sauber
+     eingetragenen Schluesseln standen trotzdem 20 core-Script-Tags im Kopf und sieben Komponenten
+     doppelt. Es gibt also Elemente, deren Loader window.__upAssetsLoaded gar nicht benutzt -- von
+     aussen ist an deren Buchfuehrung nicht heranzukommen.
+     Also nicht mehr ueber die Buchfuehrung, sondern ueber das Ergebnis: was dieses Snippet schon
+     geholt hat, darf kein zweites Mal in den Kopf. Der Beobachter faengt jeden neu eingehaengten
+     script/link auf eine upstreem-Datei ab, deren Namen wir schon haben, und nimmt ihn wieder
+     heraus -- das geschieht im Mikrotask direkt nach dem Einhaengen, also lange bevor die Datei
+     vom Netz zurueck ist und ausgefuehrt wird. Eigene Knoten tragen data-up-preload und bleiben.
+     Der Vergleich laeuft ueber den Namen OHNE .min: core.js und core.min.js sind dieselbe Datei. */
+  function doppelWaechter(){
+    if (!window.MutationObserver) return;
+    var gemeldet = 0;
+    new MutationObserver(function(muts){
+      for (var i = 0; i < muts.length; i++){
+        var neu = muts[i].addedNodes;
+        for (var j = 0; j < neu.length; j++){
+          var n = neu[j];
+          if (!n || n.nodeType !== 1 || !n.getAttribute) continue;
+          if (n.getAttribute("data-up-preload")) continue;
+          var u = null;
+          if (n.tagName === "SCRIPT") u = n.getAttribute("src");
+          else if (n.tagName === "LINK" && (n.getAttribute("rel") || "").indexOf("stylesheet") >= 0) u = n.getAttribute("href");
+          if (!u || u.indexOf("upstreem-ui@") < 0) continue;
+          var name = u.slice(u.lastIndexOf("/") + 1).replace(".min.", ".");
+          if (!geladen[name]) continue;
+          if (n.parentNode) n.parentNode.removeChild(n);
+          if (!gemeldet && window.console){
+            gemeldet = 1;
+            console.warn("upstreem: doppelt eingehaengte Dateien werden entfernt (zuerst " + name +
+              "). Das Element bringt einen aelteren Loader mit, der die gemeinsame Liste nicht kennt " +
+              "-- funktioniert so, laesst sich aber sauberer loesen, indem der Loader in diesem " +
+              "Element ausgetauscht wird.");
+          }
+        }
+      }
+    }).observe(document.documentElement, { childList: true, subtree: true });
+  }
+  doppelWaechter();
+
+  function pinWaechter(){
+    var versuche = 0;
+    (function schauen(){
+      var els = document.querySelectorAll("[data-cdn-pin]");
+      for (var i = 0; i < els.length; i++){
+        var p = (els[i].getAttribute("data-cdn-pin") || "").trim();
+        if (!p || p === "CDN_" + "PIN") continue;
+        if (p === PIN) return;                       /* passt -- nichts weiter zu tun */
+        if (window.console) console.error("upstreem: Der Pin im Header-Snippet (" + PIN +
+          ") ist nicht derselbe wie am Element \"" + (els[i].className || els[i].id) + "\" (" + p +
+          "). Solange sie sich unterscheiden, laedt ein Teil der Elemente seine Dateien ZUSAETZLICH " +
+          "-- doppelte Dateien, doppeltes core, langsamer Seitenaufbau. Beide auf dieselbe " +
+          "Zeichenfolge setzen (nicht nur denselben Commit: kurzer und langer Hash sind zwei URLs).");
+        return;
+      }
+      if (++versuche < 20) setTimeout(schauen, 500);
+    })();
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", pinWaechter);
+  else pinWaechter();
+
   function welle2Planen(){
     if (window.requestIdleCallback) window.requestIdleCallback(welle2, { timeout: 2500 });
     else setTimeout(welle2, 1200);
