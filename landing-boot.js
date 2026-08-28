@@ -71,6 +71,9 @@
   css("opportunities.css");
   /* Nur fuer das kleine Fenster rechts: eine Antwortkarte. */
   css("responses-table.css");
+  /* Nur fuer die Vorschau in der dritten Karte: die Domaintabelle mit ihrem Drilldown. Ihre CSS
+     allein -- die Vorschau ist statisches Markup mit ihren Klassen, aufgeklappt wird dort nichts. */
+  css("domains-table.css");
   css("landing-hero.css");
 
   js("core.js");

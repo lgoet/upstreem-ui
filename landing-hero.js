@@ -325,84 +325,136 @@
      WAS hier steht und warum genau das -- die Sektion beantwortet die vier Fragen, mit denen
      jemand auf diese Seite kommt, in der Reihenfolge, in der er sie stellt:
 
-       1. "Wo stehe ich?"            -> Sichtbarkeit, Platz, Stimmung, je Modell und Markt
-       2. "Woraus entsteht das?"     -> die Prompts, die in meinem Markt gestellt werden
+       1. "Wo stehe ich?"             -> Sichtbarkeit ueber die Zeit, gegen die Wettbewerber
+       2. "Woraus entsteht das?"      -> die Fragen, die in meinem Markt gestellt werden
        3. "Warum steht da der andere?"-> die Quellen, aus denen die Antworten gebaut sind
-       4. "Was tue ich jetzt?"       -> die Aufgaben, die daraus folgen
+       4. "Was tue ich jetzt?"        -> die Aufgaben, die daraus folgen
 
      Das ist bewusst dieselbe Reihenfolge wie die vier Seiten der App und wie die vier Szenen im
      Fenster darueber (Dashboard, Prompt Insights, Citations, Opportunities). Wer die Sektion
-     liest und dann oben hinsieht, erkennt jede Karte wieder.
+     liest und dann oben hinsieht, erkennt jede Karte wieder. Mira fehlt mit Absicht: der Agent
+     wird weiter unten getrennt vorgestellt.
 
-     Mira fehlt hier mit Absicht: der Agent wird weiter unten getrennt vorgestellt.
+     Die TEXTE sind Beschreibungen und keine Werbung. Der erste Entwurf hiess "Know where you
+     stand. Know what to fix." und die Karten dazu "See your share of the answer" -- das liest
+     sich als Slogan und nicht als Erklaerung. Jetzt sagt jede Zeile, was die App zeigt, in
+     Worten, die auch in der App stehen.
 
-     Angesehen habe ich dafuer, wie es die Naechstliegenden machen -- Peec AI ("AI search
-     analytics for marketing teams", Karten in der Reihenfolge Prompts, Marken, Modelle, Quellen,
-     Handeln), Profound (drei Saeulen Monitor / Create / Operate) und Otterly (drei Bloecke:
-     Prompt Research, Analytics, Optimization). Alle drei fuehren mit der MESSUNG und enden mit
-     dem HANDELN, und alle drei nennen die Modelle beim Namen. Uebernommen ist davon der Bau, kein
-     Satz: die Texte hier beschreiben, was diese App wirklich zeigt.
-     Der Unterschied, den unsere Reihenfolge betont: zwischen Messung und Handeln steht bei uns
-     die HERKUNFT der Antwort (die Zitate). Das ist die Frage, an der sich entscheidet, was man
-     ueberhaupt tun kann -- und die Karte, die die drei anderen so nicht haben. */
+     Angesehen habe ich, wie es die Naechstliegenden machen: Peec AI, Profound und Otterly fuehren
+     alle drei mit der MESSUNG und enden mit dem HANDELN, und alle drei nennen die Modelle beim
+     Namen. Uebernommen ist davon der Bau, kein Satz. */
   var MERKMALE = [
-    { ic: "chartColumnUp", lbl: "Dashboard", breit: 40, vis: "linie",
-      h: "See your share of the answer",
-      p: "Visibility, average rank and sentiment for your brand and every competitor you name, " +
-         "per model and per market, tracked day by day." },
-    { ic: "zap", lbl: "Prompt Insights", breit: 60, vis: "zeilen",
-      h: "Every answer starts with a prompt",
-      p: "Track the questions your buyers actually ask, grouped by topic and market. See which " +
-         "ones name you, which name a competitor, and which name nobody yet. That last group is " +
-         "where the room is." },
-    { ic: "globe", lbl: "Citations", breit: 60, vis: "balken",
-      h: "Models do not invent answers. They cite.",
-      p: "See the domains and pages the answers in your category are built from, split by type: " +
-         "editorial, community, knowledge base, your own site. Where a competitor is quoted and " +
-         "you are not, you have found your next piece of work." },
-    { ic: "listTodo", lbl: "Opportunities", breit: 40, vis: "chance",
-      h: "Every gap becomes a task",
-      p: "Get listed where the category is decided. Write the page that is missing. Fix the one " +
-         "that is cited but never quoted. Each with the gap in numbers, and a board to move it " +
-         "across." }
+    { breit: 40, vis: "linie",
+      h: "Track your visibility over time",
+      p: "See how often each model names your brand, in which position, and with what sentiment. " +
+         "Side by side with the competitors you track." },
+    { breit: 60, vis: "zeilen",
+      h: "See which questions you show up for",
+      p: "Every answer starts with a question someone asked. Track the ones that matter in your " +
+         "market, grouped by topic, and see where you are named and where you are not." },
+    { breit: 60, vis: "domains",
+      h: "Find the sources behind the answers",
+      p: "Answers are built from pages. See which domains get cited in your category, and open " +
+         "one to see the exact pages behind it." },
+    { breit: 40, vis: "chancen",
+      h: "Get a list of what to fix",
+      p: "Upstreem turns the gaps into concrete tasks: a listing to get, a page to write, one to " +
+         "improve. Each with the numbers behind it." }
   ];
 
+  var MERKMAL_CHIP = "Platform";
+  var MERKMAL_H = "What Upstreem shows you";
+  var MERKMAL_SUB = "AI assistants answer your buyers’ questions every day. Upstreem tracks " +
+    "what they say about your brand, which sources those answers come from, and what to change " +
+    "so you show up more often.";
+
   /* ---- Die Vorschauen in den Karten ----
-     Jede Karte zeigt das Bauteil, von dem sie spricht -- und zwar das ECHTE: die Linie kommt aus
-     UC.makeLine, die Balken aus UC.makeBarList, die Zeilen sind .up-row mit --up-cols und den
-     Zellen der App (mentCell, up-sent, up-rank-group, marketChip), und die Chance ist eine
-     .uo-card. Nachgezeichnete Bildchen waeren an dem Tag falsch, an dem sich eines dieser Bauteile
-     aendert; diese hier aendern sich mit.
-     Alle vier stehen in einem Kasten, der ihre VOLLE Groesse hat und danach verkleinert wird
+     Jede Karte zeigt das Bauteil, von dem sie spricht -- und zwar das ECHTE: die Zeilen sind
+     .up-row mit --up-cols und den Zellen der App, die Domaintabelle samt aufgeklapptem Drilldown
+     ist die aus domains-table, und die Chancen sind .uo-row im Listenmodus. Nachgezeichnete
+     Bildchen waeren an dem Tag falsch, an dem sich eines dieser Bauteile aendert; diese hier
+     aendern sich mit.
+     Alle stehen in einem Kasten, der ihre VOLLE Groesse hat und danach verkleinert wird
      (--ulh-vs, dieselbe Machart wie in den Nebenfenstern oben): so behalten sie die Geometrie der
-     App -- 45px Kopfzeile, 12px Zellenpolster, 26px Balkenzeile -- und passen trotzdem in eine
-     Karte. Eine eigene, kleinere Geometrie waere eine zweite Wahrheit. */
+     App und passen trotzdem in eine Karte. */
+
+  /* ---- Karte 1: zwei Kurven ----
+     Kein Achsenkreuz, keine Legende, keine Ueberschrift -- nur die zwei Linien und an jeder ein
+     Schild mit Marke und Wert. Deshalb NICHT UC.makeLine: dessen ganze Arbeit sind Achsen, Legende
+     und der gemeinsame Tooltip, und drei davon abzuschalten waere mehr Eingriff als ein eigener,
+     kleiner Aufruf von Chart.js -- der Werkzeugkasten, auf dem makeLine selbst sitzt.
+     Was aus der App kommt: die Markenfarben, die Linienstaerke (1.80625, der dicke Wert aus core),
+     die Rundung der Kurve und die Form der Schilder (Werte aus dem Tooltip in core.js: Radius 16,
+     13px, 10/12 Polster, 16px Logo).
+     Die ZAHLEN erzaehlen die Geschichte der Sektion: eine Marke, die seit Monat drei zulegt, und
+     eine, die stehenbleibt. Kestrel geht von 18.2 auf 38.9 (dieselbe 38.9 wie im Fenster oben),
+     Vantage von 34.8 auf 32.1. */
+  var KRV = [
+    { id: "va", schild: 1, werte: [34.8, 34.1, 33.6, 33.9, 32.8, 32.1] },
+    { id: "ke", schild: 5, werte: [18.2, 19.1, 22.6, 28.4, 34.2, 38.9] }
+  ];
+  var KRV_MIN = 13, KRV_MAX = 45;      /* Rand oben fuer das Schild, unten fuer die flache Kurve */
+
+  function krvSchild(m, wert){
+    return '<span class="ulh-krv-chip" data-krv="' + m.id + '">' +
+      '<img class="ulh-krv-logo" src="' + m.logo + '" alt=""/>' +
+      '<span class="ulh-krv-name">' + m.name + '</span>' +
+      '<span class="ulh-krv-val">' + eine(wert) + '%</span>' +
+    '</span>';
+  }
+
+  function visLinie(){
+    return '<div class="ulh-krv">' +
+      '<canvas class="ulh-krv-canvas"></canvas>' +
+      KRV.map(function(k){
+        var m = MARKEN.filter(function(x){ return x.id === k.id; })[0];
+        return m ? krvSchild(m, k.werte[k.schild]) : "";
+      }).join("") +
+    '</div>';
+  }
+
+  /* ---- Karte 2: drei Zeilen der Prompt-Tabelle ----
+     Kurze Fragen mit Absicht: die Spalte darf nicht die halbe Tabelle einnehmen, und in einer
+     Vorschau liest man den Anfang. Ein bis zwei Themen je Zeile, aus derselben Themenliste wie
+     die Prompts-Seite oben. */
+  /* VIER Zeilen, und die vierte wird vom Auslauf angeschnitten: eine Vorschau, die genau aufgeht,
+     sagt "das ist alles" -- eine, die unten weich ausgeht, sagt "hier geht es weiter". */
   var VIS_ZEILEN = [
-    { prompt: "Best AI visibility tools for B2B SaaS", ment: "yes", sent: 79, rank: 1.1, markt: "US" },
-    { prompt: "How much does AI search monitoring cost", ment: "no", sent: null, rank: null, markt: "US" },
-    { prompt: "Alternativen zu Vantage im Vergleich", ment: "yes", sent: 74, rank: 2.4, markt: "DE" }
+    { prompt: "Best AI visibility tools", themen: [0, 3], ment: "yes", sent: 79, rank: 1.1, markt: "US" },
+    { prompt: "AI search monitoring pricing", themen: [1], ment: "no", sent: null, rank: null, markt: "US" },
+    { prompt: "Alternativen zu Vantage", themen: [2, 4], ment: "yes", sent: 74, rank: 2.4, markt: "DE" },
+    { prompt: "Tools to track ChatGPT mentions", themen: [3], ment: "yes", sent: 71, rank: 3.2, markt: "UK" }
   ];
 
   function visZeilen(){
     var kern = window.UpstreemCore;
-    var kopf = ["Prompt", "Mentioned", "Sentiment", "Rank", "Market"];
+    var kopf = ["Prompt", "Topics", "Mentioned", "Sentiment", "Rank", "Market"];
     /* Die Spalten stehen als --up-cols am Kasten: .up-row ist ein Raster und liest sie von dort.
        Ohne diese Angabe erbt die Zeile die Spalten der zuletzt definierten Tabelle. */
-    var html = '<div class="ulh-vis-tab" style="--up-cols: minmax(0,1fr) 104px 104px 88px 92px;">' +
+    var html = '<div class="ulh-vis-tab" style="--up-cols: minmax(0,1.1fr) minmax(0,1.3fr) 96px 100px 82px 86px;">' +
       '<div class="up-row up-thead">' + kopf.map(function(t){
         return '<div class="up-td">' + t + '</div>'; }).join("") + '</div>';
-    html += VIS_ZEILEN.map(function(z){
+    html += VIS_ZEILEN.map(function(z, i){
       var sent = z.sent == null
-        ? '<span class="up-sent"><span class="up-sent-val is-empty">\u2013</span></span>'
+        ? '<span class="up-sent"><span class="up-sent-val is-empty">–</span></span>'
         : '<span class="up-sent"><span class="up-sent-dot" style="background:' +
           (kern ? kern.sentColor(z.sent) : "#999") + '"></span>' +
           '<span class="up-sent-val">' + z.sent + '</span></span>';
       var rank = z.rank == null
-        ? '<span class="up-num is-empty">\u2013</span>'
+        ? '<span class="up-num is-empty">–</span>'
         : '<span class="up-rank-group">' + (kern ? kern.HASH_ICON : "") +
           '<span class="up-num">' + z.rank.toFixed(1) + '</span></span>';
-      return '<div class="up-row">' +
+      /* Die Themenchips sind .up-topicchip aus core -- dieselben wie in der Prompts-Tabelle oben,
+         gefaerbt aus derselben Themenliste. */
+      var themen = z.themen.map(function(ti){
+        var t = THEMEN[ti % THEMEN.length];
+        return '<span class="up-topicchip" style="--ust-tag-color:' + (t.hex_light || "#6b7280") + ';">' +
+          (t.emoji ? '<span class="up-topicchip-e">' + t.emoji + '</span>' : "") +
+          '<span class="up-topicchip-lbl">' + t.name + '</span></span>';
+      }).join("");
+      return '<div class="up-row' + (i === 1 ? " is-mitte" : "") + '">' +
         '<div class="up-td"><span class="ulh-vis-prompt">' + z.prompt + '</span></div>' +
+        '<div class="up-td"><span class="ulh-vis-themen">' + themen + '</span></div>' +
         '<div class="up-td">' + (kern ? kern.mentCell(z.ment) : "") + '</div>' +
         '<div class="up-td">' + sent + '</div>' +
         '<div class="up-td">' + rank + '</div>' +
@@ -412,50 +464,123 @@
     return html + '</div>';
   }
 
-  /* Die Chance: dieselbe Karte wie auf dem Brett oben, nur ohne Fusszeile und ohne Themen -- in
-     einer Vorschau zaehlt die Aussage und nicht die Vollstaendigkeit. */
-  function visChance(){
-    return '<div class="uo-card">' +
-      '<div class="uo-card-top">' +
-        '<span class="uo-eyebrow"><span>Get listed</span></span>' +
-        '<div class="uo-pot"><div class="uo-pot-bars">' +
-          '<span class="uo-pot-bar p1 is-on"></span><span class="uo-pot-bar p2 is-on"></span>' +
-          '<span class="uo-pot-bar p3 is-on"></span><span class="uo-pot-bar p4 is-on"></span>' +
-        '</div></div>' +
-      '</div>' +
-      '<h3 class="uo-card-title">Get listed on the g2.com category page for AI visibility</h3>' +
-      '<p class="uo-card-reason">Vantage and Halden hold entries there. You do not.</p>' +
-      '<div class="uo-source"><span class="up-logo-box has-img">' +
-        '<img src="' + quellzeichen("g2.com") + '" alt=""/><span class="up-logo-ltr">G</span></span>' +
-        '<div class="uo-source-meta"><span class="uo-source-title">Best AI visibility tools, 2026 edition</span>' +
-        '<span class="uo-source-domain">g2.com</span></div>' +
-      '</div>' +
-    '</div>';
+  /* ---- Karte 3: die Domaintabelle mit aufgeklapptem Drilldown ----
+     Drei Domainzeilen, die dritte offen: darunter die Seiten dieser Domain, wie in der App
+     (domains-table.js, subrowHtml). Reddit als offene Zeile, weil ihre Pfade auf einen Blick
+     sagen, was eine Seite ist -- r/SaaS, ein Threadtitel, ein Kommentar.
+     Die Klassen sind die der Komponente; ihre CSS liegt im Lader (domains-table.css). Statisch
+     und ohne ihr JS: hier klappt niemand etwas auf, es ist schon offen. */
+  var VIS_DOM = [
+    { dom: "forbes.com",    share: 18.4, delta: 2.1,  seiten: 42, typ: "Editorial" },
+    { dom: "wikipedia.org", share: 11.7, delta: 0.8,  seiten: 18, typ: "Knowledge_Base" },
+    { dom: "reddit.com",    share: 14.1, delta: -1.3, seiten: 63, typ: "UGC_Community", offen: true }
+  ];
+  var VIS_DOM_URLS = [
+    { pfad: "r/SaaS/comments/best-ai-visibility-tools", anteil: 24.6, typ: "forum" },
+    { pfad: "r/marketing/comments/how-we-track-chatgpt", anteil: 18.2, typ: "forum" },
+    { pfad: "r/SEO/comments/geo-vs-seo-2026", anteil: 12.9, typ: "forum" },
+    { pfad: "r/SaaS/comments/pricing-comparison-thread", anteil: 9.4, typ: "forum" }
+  ];
+
+  function visDomains(){
+    var kern = window.UpstreemCore;
+    function tag(typ, modus){
+      if (!kern || !kern.typeColor) return "";
+      var farbe = kern.typeColor(typ, modus, false);
+      var name = modus === "url" ? (kern.URL_LABEL[typ] || typ) : kern.citeName(typ);
+      /* Dieselbe Pille wie in der Zitattabelle: Punkt in der Typfarbe, Grund derselbe Ton mit
+         wenig Deckkraft. Die Werte kommen aus core (typeColor), nicht von hier. */
+      return '<span class="tct-tag" style="background:' + farbe + '1f;color:' + farbe + '">' +
+        '<span class="tct-tag-dot" style="background:' + farbe + '"></span>' +
+        '<span class="tct-tag-lbl">' + name + '</span></span>';
+    }
+    var cols = "--up-cols: minmax(0,1fr) 132px 116px;";
+    var html = '<div class="ulh-vis-dom" style="' + cols + '">' +
+      '<div class="up-row up-thead"><div class="up-td">Domain</div>' +
+      '<div class="up-td">Share</div><div class="up-td">Type</div></div>';
+    VIS_DOM.forEach(function(d, i){
+      html += '<div class="up-row' + (d.offen ? " is-expanded" : "") + '">' +
+        '<div class="up-td up-td-domain">' +
+          '<span class="udt-logo-box has-img"><span class="udt-logo-ltr">' + d.dom.charAt(0).toUpperCase() + '</span>' +
+            '<img src="' + quellzeichen(d.dom) + '" alt=""/></span>' +
+          '<span class="udt-dom-wrap"><span class="udt-dom-title">' + d.dom + '</span>' +
+            '<button class="up-pages udt-pagesbtn' + (d.offen ? " is-open" : "") + '" type="button" tabindex="-1">' +
+              '<span class="udt-pagesbtn-lbl">' + d.seiten + ' pages</span>' +
+              (kern && kern.icon ? kern.icon("chevronDown", 2.2) : "") +
+            '</button>' +
+          '</span>' +
+        '</div>' +
+        '<div class="up-td up-td-share"><span class="udt-num">' + eine(d.share) + '%</span>' +
+          (kern && kern.trendChip ? kern.trendChip(d.delta, { suffix: "%" }) : "") + '</div>' +
+        '<div class="up-td up-td-type">' + tag(d.typ, "domain") + '</div>' +
+      '</div>';
+      if (!d.offen) return;
+      html += '<div class="udt-subrows"><div class="udt-sub-inner">' +
+        '<div class="udt-sub-head"><span>Page</span><span class="udt-sub-h-num">Domain Share</span>' +
+        '<span>Type</span></div>' +
+        VIS_DOM_URLS.map(function(u){
+          return '<div class="udt-subrow">' +
+            '<span class="udt-sub-main">' +
+              '<span class="udt-sub-logo has-img"><span class="udt-sub-ltr">R</span>' +
+                '<img src="' + quellzeichen(d.dom) + '" alt=""/></span>' +
+              '<span class="udt-sub-title">' + u.pfad + '</span>' +
+            '</span>' +
+            '<span class="udt-sub-share">' + eine(u.anteil) + '%</span>' +
+            '<span class="udt-sub-type">' + tag(u.typ, "url") + '</span>' +
+          '</div>';
+        }).join("") +
+      '</div></div>';
+    });
+    return html + '</div>';
+  }
+
+  /* ---- Karte 4: drei Chancen im Listenmodus ----
+     .uo-row wie in der App, wenn das Brett auf Liste steht. Die mittlere traegt is-mitte: beim
+     Ueberfahren der Karte kommt sie nach vorn und die zwei anderen treten zurueck. */
+  var VIS_CHANCEN = [
+    { h: "Get listed on the g2.com category page", dom: "g2.com", pot: 4, themen: [0] },
+    { h: "No page of yours answers the pricing question", dom: "reddit.com", pot: 3, themen: [1] },
+    { h: "Your integrations page is cited but never quoted", dom: "kestrel.example", pot: 2, themen: [2] },
+    { h: "Show up in the comparison videos", dom: "youtube.com", pot: 3, themen: [3] }
+  ];
+
+  function visChancen(){
+    var kern = window.UpstreemCore;
+    return '<div class="ulh-vis-chancen"><div class="uo-list-rows">' +
+      VIS_CHANCEN.map(function(c, i){
+        var logo = c.dom.indexOf("kestrel.example") >= 0 ? MARKEN[0].logo : quellzeichen(c.dom);
+        var bars = "";
+        for (var b = 1; b <= 4; b++) bars += '<span class="uo-pot-bar p' + b + (b <= c.pot ? " is-on" : "") + '"></span>';
+        var themen = c.themen.map(function(ti){
+          var t = THEMEN[ti % THEMEN.length];
+          return '<span class="up-topicchip" style="--ust-tag-color:' + (t.hex_light || "#6b7280") + ';">' +
+            (t.emoji ? '<span class="up-topicchip-e">' + t.emoji + '</span>' : "") +
+            '<span class="up-topicchip-lbl">' + t.name + '</span></span>';
+        }).join("");
+        return '<div class="uo-row' + (i === 1 ? " is-mitte" : "") + '">' +
+          '<div class="uo-row-main">' +
+            '<span class="uo-row-title">' + c.h + '</span>' +
+            '<span class="uo-row-sub"><span class="up-logo-box has-img"><img src="' + logo + '" alt=""/>' +
+              '<span class="up-logo-ltr">' + c.dom.charAt(0).toUpperCase() + '</span></span>' +
+              '<span class="uo-row-domain">' + c.dom + '</span></span>' +
+          '</div>' +
+          '<div class="uo-row-right"><span class="uo-row-tags">' + themen + '</span>' +
+            '<div class="uo-pot"><div class="uo-pot-bars">' + bars + '</div></div></div>' +
+        '</div>';
+      }).join("") +
+    '</div></div>';
   }
 
   function visInhalt(art){
-    if (art === "zeilen") return visZeilen();
-    if (art === "chance") return visChance();
-    if (art === "linie") return '<div class="ulh-vis-linie-kopf">' +
-        '<span class="ulh-vis-lbl">Visibility</span>' +
-        '<span class="ulh-vis-wert" data-ulh-linie-wert></span>' +
-      '</div>' +
-      '<div class="ulh-vis-linie-flaeche"><canvas class="ulh-vis-canvas"></canvas></div>';
-    /* balken: der Kasten bleibt leer, UC.makeBarList fuellt ihn, sobald core da ist. */
+    if (art === "linie")   return visLinie();
+    if (art === "zeilen")  return visZeilen();
+    if (art === "domains") return visDomains();
+    if (art === "chancen") return visChancen();
     return "";
   }
 
-  var MERKMAL_H = "Know where you stand. Know what to fix.";
-  var MERKMAL_SUB = "Upstreem tracks how ChatGPT, Perplexity, Gemini and AI Overviews answer the " +
-    "questions your buyers ask. Then it shows you which sources those answers are built from, " +
-    "and what to change to be named.";
-
   function merkmalKarte(m){
     return '<article class="ulh-card" style="--ulh-w:' + m.breit + '">' +
-      '<div class="ulh-card-top">' +
-        '<span class="ulh-card-ic" data-ic="' + m.ic + '" data-ic-w="1.75"></span>' +
-        '<span class="ulh-card-lbl">' + m.lbl + '</span>' +
-      '</div>' +
       '<h3 class="ulh-card-h">' + m.h + '</h3>' +
       '<p class="ulh-card-p">' + m.p + '</p>' +
       '<div class="ulh-vis ulh-vis-' + m.vis + '" data-ulh-vis="' + m.vis + '">' +
@@ -474,74 +599,139 @@
     '</article>';
   }
 
-  /* Die Linie in der ersten Karte und die Balken in der dritten brauchen core. Sie werden deshalb
-     wie der Doughnut im Nebenfenster erst beim Fuellen gezeichnet, nicht beim Bauen.
-     DREI Marken und nicht sechs: in einem 545px breiten Kasten sind sechs Linien ein Knaeuel. Es
-     sind die oberen drei desselben Zustands, den das Dashboard oben nach dem Filterwechsel zeigt
-     -- eine Karte mit anderen Zahlen als das Fenster darueber waere ein Widerspruch auf einer
-     Seite. */
-  var VIS_LINIE_MARKEN = ["ke", "va", "ha"];
-  /* Fuenf Zitattypen und nicht sieben: die Balkenliste steht in einer Karte und nicht auf einer
-     Seite. Es sind die oberen fuenf aus TYPEN, also dieselben Anteile wie im Zitatteil oben. */
-  var VIS_BALKEN_N = 5;
-
+  /* Die zwei Kurven brauchen Chart.js und werden deshalb erst beim Fuellen gezeichnet. */
   function visLinieFuellen(root){
     var kern = window.UpstreemCore;
-    var kasten = root.querySelector('[data-ulh-vis="linie"] .ulh-vis-linie-flaeche');
-    if (!kern || !kern.makeLine || !kasten || kasten.__ulhLinie) return false;
-    var leinwand = kasten.querySelector("canvas");
+    var feld = root.querySelector(".ulh-krv");
+    if (!feld || feld.__ulhKrv || !kern) return false;
+    var leinwand = feld.querySelector("canvas");
     if (!leinwand) return false;
-    var marken = MARKEN.filter(function(m){ return VIS_LINIE_MARKEN.indexOf(m.id) >= 0; });
-    var werk = kern.makeLine({
-      wrap: kasten, canvas: leinwand,
-      isDark: function(){ return false; },
-      isOwner: function(){ return true; },
-      gran: function(){ return "month"; },
-      unit: "%", decimals: 0, tipLabel: "Visibility"
-    });
-    kasten.__ulhLinie = werk;
-    var serie = reihen("b").filter(function(p){ return VIS_LINIE_MARKEN.indexOf(p.company_id) >= 0; });
-    werk.render(kern.buildLineDatasets(serie, marken.map(function(m){
-      return { company_id: m.id, name: m.name, color: m.farbe, favicon_url: m.logo,
-               visibility_window_pct: m.b.vis };
-    })));
-    /* Die Zahl ueber der Linie ist die der eigenen Marke im selben Zustand, mit dem Trendzeichen
-       aus core -- dieselbe Zahl, die im Seitenkopf des Dashboards oben steht. */
-    var wert = root.querySelector("[data-ulh-linie-wert]");
-    var ke = MARKEN[0];
-    if (wert) wert.innerHTML = '<span class="ulh-vis-zahl">' + eine(ke.b.vis) + '%</span>' +
-      (kern.trendChip ? kern.trendChip(ke.b.visD, { suffix: "%", decimals: true }) : "");
+    feld.__ulhKrv = true;
+    /* Chart.js kommt vom CDN und ist beim Fuellen noch nicht sicher da -- bereit() fragt es nicht
+       ab. Erst hat diese Funktion deshalb bei fehlendem window.Chart aufgegeben und wurde nie
+       wieder gerufen: gemessen stand die Karte ohne Kurve da (kein Chart, keine Schilder).
+       loadChartJs ist derselbe Lader, den auch makeLine und makeTypeChart benutzen. */
+    kern.loadChartJs().then(function(){ krvZeichnen(feld, leinwand); })["catch"](function(){});
     return true;
   }
 
-  function visBalkenFuellen(root){
-    var kern = window.UpstreemCore;
-    var kasten = root.querySelector('[data-ulh-vis="balken"] .ulh-vis-in');
-    if (!kern || !kern.makeBarList || !kasten || kasten.__ulhBalken) return false;
-    var werk = kern.makeBarList({
-      mount: kasten,
-      isDark: function(){ return false; },
-      /* Beschriftungsspalte an: in einer Karte dieser Breite ist Platz dafuer, und der Name
-         ausserhalb des Balkens bleibt lesbar, auch wo der Balken kurz ist. */
-      labelCol: function(){ return true; },
-      fmt: function(v){ return kern.fmtPct(v); }
+  function krvZeichnen(feld, leinwand){
+    if (!window.Chart) return false;
+    var marken = KRV.map(function(k){
+      return MARKEN.filter(function(x){ return x.id === k.id; })[0];
     });
-    kasten.__ulhBalken = werk;
-    werk.render(kern.prepTypeData("citation", TYPEN.slice(0, VIS_BALKEN_N), false));
+    var chart = new window.Chart(leinwand.getContext("2d"), {
+      type: "line",
+      data: {
+        labels: KRV[0].werte.map(function(_, i){ return String(i); }),
+        datasets: KRV.map(function(k, i){
+          return { data: k.werte, borderColor: marken[i].farbe, __farbe: marken[i].farbe,
+                   /* 1.80625 ist der dicke Wert aus core (LINE_WIDTH_VALUES.thick) -- dieselbe
+                      Staerke wie im Chart oben im Fenster. */
+                   borderWidth: 1.80625, tension: 0.38, pointRadius: 0, pointHoverRadius: 0,
+                   fill: false, cubicInterpolationMode: "default" };
+        })
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        /* Kein Achsenkreuz und keine Legende: die Karte zeigt die BEWEGUNG, nicht die Skala. */
+        scales: { x: { display: false }, y: { display: false, min: KRV_MIN, max: KRV_MAX } },
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        /* Der Hover trifft die ganze Linie und nicht einen Punkt: gehoben wird eine Marke, nicht
+           ein Monat. */
+        interaction: { mode: "dataset", intersect: false },
+        onHover: function(e, els){ krvHeben(feld, els && els.length ? els[0].datasetIndex : -1); },
+        animation: { duration: 700, easing: "easeOutQuart" },
+        layout: { padding: { top: 6, bottom: 4, left: 2, right: 2 } }
+      }
+    });
+    feld.__ulhChart = chart;
+    /* Die Schilder sitzen auf ihrem Punkt. Chart.js kennt seine Punktkoordinaten erst nach dem
+       ersten Zeichnen, also danach setzen -- und bei jeder Groessenaenderung neu. */
+    function schilderSetzen(){
+      /* resize() VOR dem Messen: Chart.js richtet sich sonst nach der Groesse, die die Leinwand
+         beim Anlegen hatte, und passt sie erst nach, wenn sein ResizeObserver feuert.
+         Die Lage kommt aus den ACHSEN und nicht aus den gezeichneten Punkten. Das ist der
+         Unterschied zwischen "geht immer" und "geht meistens": ein Punkt-Element steht bis zum
+         Ende der Eingangsanimation an seiner Startlage, und die Animation haengt an
+         requestAnimationFrame. Gemessen in einem verdeckten Tab, wo rAF nie feuert: ALLE Punkte
+         lagen auf y = 204, also auf der Grundlinie, obwohl die Achse fuer 38.9 Prozent 44px
+         ausrechnet. Aus der Achse gerechnet stimmt die Lage im ersten Bild. */
+      try { chart.resize(); } catch (e){}
+      var ax = chart.scales.x, ay = chart.scales.y;
+      if (!ax || !ay) return;
+      KRV.forEach(function(k, i){
+        var schild = feld.querySelector('.ulh-krv-chip[data-krv="' + k.id + '"]');
+        if (!schild) return;
+        var x = ax.getPixelForValue(k.schild), y = ay.getPixelForValue(k.werte[k.schild]);
+        /* In das Feld hineinschieben. Das Schild sitzt mittig auf seinem Punkt (translate -50%),
+           also ragt es um seine halbe Breite darueber hinaus -- am letzten Punkt der Kurve war das
+           gemessen ein Drittel des Schildes ausserhalb. Geklemmt statt am Punkt verankert: so
+           bleibt es an seiner Kurve, auch wenn sich Werte oder Breite aendern. */
+        var hw = schild.offsetWidth / 2, hh = schild.offsetHeight / 2;
+        var bx = feld.clientWidth, by = feld.clientHeight;
+        x = Math.min(Math.max(x, hw + 3), bx - hw - 3);
+        y = Math.min(Math.max(y, hh + 3), by - hh - 3);
+        schild.style.left = Math.round(x) + "px";
+        schild.style.top = Math.round(y) + "px";
+        schild.classList.add("is-da");
+      });
+    }
+    setTimeout(schilderSetzen, 60);
+    setTimeout(schilderSetzen, 760);
+    if (typeof ResizeObserver !== "undefined"){
+      try { new ResizeObserver(function(){ setTimeout(schilderSetzen, 40); }).observe(feld); } catch (e){}
+    }
+    /* Das Schild ist der zweite Griff fuer den Hover: wer es ueberfaehrt, hebt seine Linie. */
+    KRV.forEach(function(k, i){
+      var schild = feld.querySelector('.ulh-krv-chip[data-krv="' + k.id + '"]');
+      if (!schild) return;
+      schild.addEventListener("mouseenter", function(){ krvHeben(feld, i); });
+      schild.addEventListener("mouseleave", function(){ krvHeben(feld, -1); });
+    });
+    feld.addEventListener("mouseleave", function(){ krvHeben(feld, -1); });
     return true;
+  }
+
+  /* Eine Linie heben heisst: die ANDERE tritt zurueck. Genau so macht es die App, wenn man in der
+     Legende eine Marke ueberfaehrt -- die uebrigen gehen ins Grau, statt dass die gewaehlte
+     aufleuchtet. Grau kommt aus core (CHART_OTHER_LIGHT). */
+  function krvHeben(feld, welche){
+    var chart = feld.__ulhChart;
+    var kern = window.UpstreemCore;
+    if (!chart) return;
+    var grau = (kern && kern.CHART_OTHER_LIGHT) || "#8c8f96";
+    chart.data.datasets.forEach(function(ds, i){
+      var aus = welche >= 0 && i !== welche;
+      ds.borderColor = aus ? grau : ds.__farbe;
+      ds.borderWidth = aus ? 1.275 : 1.80625;     /* thin/thick aus core */
+    });
+    chart.update("none");
+    KRV.forEach(function(k, i){
+      var schild = feld.querySelector('.ulh-krv-chip[data-krv="' + k.id + '"]');
+      if (schild) schild.classList.toggle("is-aus", welche >= 0 && i !== welche);
+    });
   }
 
   function merkmale(){
     /* Zwei Reihen und kein Raster: die obere Reihe teilt sich 40/60, die untere 60/40, und ein
        CSS-Raster kann seine Spalten nicht je Zeile anders legen. Zwei Flexzeilen koennen es, und
-       der Anteil steht als Zahl an der Karte (--ulh-w). */
+       der Anteil steht als Zahl an der Karte (--ulh-w).
+       Um die vier Karten liegt ein KASTEN: er traegt den off-white Grund, auf dem die Karten in
+       reinem Weiss erst als Karten lesbar sind, und er haelt 8px Abstand zu den Schienen des
+       Gitters -- die Karten beruehren die Kante der Seite damit nie. */
     return '<section class="ulh-feat">' +
       '<div class="ulh-spur">' +
-        '<h2 class="ulh-feat-h">' + MERKMAL_H + '</h2>' +
-        '<p class="ulh-feat-sub">' + MERKMAL_SUB + '</p>' +
-        '<div class="ulh-cards">' +
-          '<div class="ulh-cards-row">' + merkmalKarte(MERKMALE[0]) + merkmalKarte(MERKMALE[1]) + '</div>' +
-          '<div class="ulh-cards-row">' + merkmalKarte(MERKMALE[2]) + merkmalKarte(MERKMALE[3]) + '</div>' +
+        '<div class="ulh-feat-kopf">' +
+          '<span class="ulh-feat-chip">' + MERKMAL_CHIP + '</span>' +
+          '<h2 class="ulh-feat-h">' + MERKMAL_H + '</h2>' +
+          '<p class="ulh-feat-sub">' + MERKMAL_SUB + '</p>' +
+        '</div>' +
+        '<div class="ulh-cards-box">' +
+          '<div class="ulh-cards">' +
+            '<div class="ulh-cards-row">' + merkmalKarte(MERKMALE[0]) + merkmalKarte(MERKMALE[1]) + '</div>' +
+            '<div class="ulh-cards-row is-unten">' + merkmalKarte(MERKMALE[2]) + merkmalKarte(MERKMALE[3]) + '</div>' +
+          '</div>' +
         '</div>' +
       '</div>' +
     '</section>';
@@ -1143,9 +1333,9 @@
        nur einen Koerper; die Antwortkarte ist eine echte Komponente mit eigenem Setter. */
     donutFuellenSpaeter();
     antwortFuellen();
-    /* Die zwei Vorschauen im Abschnitt darunter, die aus core kommen. */
+    /* Die Kurven im Abschnitt darunter. Die drei anderen Vorschauen sind statisch. */
     (function(){ var w = document.querySelector(".ulh-root");
-      if (!w) return; visLinieFuellen(w); visBalkenFuellen(w); })();
+      if (w) visLinieFuellen(w); })();
 
     if (window.renderTopCitations){
       window.renderTopCitations({

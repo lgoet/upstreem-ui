@@ -43,9 +43,12 @@
   /* Die Linie der Schienen. Heller als der Rahmen der Karten (#e7e9ec): sie laeuft ueber die ganze
      Hoehe der Seite und wird dadurch als Flaeche wahrgenommen, nicht als Linie. */
   --ulh-schiene: #ededf0;
-  /* Der Grund der Seite. Leicht off-white wie in der App, damit die Karten in reinem Weiss darauf
-     als Karten lesbar sind -- auf weissem Grund waeren sie nur ihr Rahmen. */
-  --ulh-seite: #FAFAFA;
+  /* Der Grund der Seite bleibt das 95%-Weiss, das die Sektion von Anfang an hatte -- durch die
+     fuenf Prozent scheint der Grund der Framer-Seite durch, und genau das war so gewollt.
+     Off-white ist stattdessen der KASTEN um die vier Karten: dort, und nur dort, braucht es
+     einen dunkleren Grund, damit die Karten in reinem Weiss als Karten lesbar sind. */
+  --ulh-seite: var(--ulh-grund);
+  --ulh-kasten: #F6F6F7;
   --ulh-schirm: #FFFFFFF2;
   --ulh-text: #1f1f1b;
   --ulh-muted: #6f737c;
@@ -881,9 +884,21 @@
    steht -- hier beginnt ein Abschnitt, der gelesen wird, und der beginnt an der Kante der Spur.
    Die Werte der Ueberschrift sind vorgegeben: Geist, 40px, mittleres Gewicht, -0.04em, 1.1. */
 .ulh-feat { position: relative; z-index: 1; padding: clamp(72px, 11vh, 132px) 0 clamp(80px, 12vh, 144px); }
+.ulh-feat-kopf { padding: 0 24px; }
+/* Der Chip ueber der Ueberschrift. Blau der Marke bei 30 Prozent als Grund, die Schrift im
+   dunkleren Blau derselben Reihe -- auf einem Grund dieser Saettigung braucht sie den Abstand,
+   sonst steht sie darin und nicht darauf. Dasselbe Blau wie der Pitch-Chip im Team-Fenster oben. */
+.ulh-feat-chip {
+  display: inline-flex; align-items: center; height: 26px; padding: 0 11px;
+  border-radius: 8px; background: rgba(37, 99, 235, 0.30);
+  font-size: 11.5px; font-weight: 600; letter-spacing: .02em; color: #1e3a8a;
+  margin-bottom: 18px;
+}
 .ulh-feat-h {
   margin: 0;
   font-family: inherit;
+  /* Der Kopf traegt das Polster jetzt selbst (ulh-feat-kopf) -- hier waere es zweimal. */
+  padding: 0;
   font-size: 40px; font-weight: 500; letter-spacing: -0.04em; line-height: 1.1;
   color: var(--ulh-text);
   text-align: left;
@@ -894,7 +909,7 @@
 }
 .ulh-feat-sub {
   margin: 18px 0 0;
-  padding: 0 24px;
+  padding: 0;
   max-width: 62ch;
   font-size: 16px; font-weight: 400; line-height: 1.55; letter-spacing: -0.01em;
   color: var(--ulh-sub);
@@ -904,8 +919,21 @@
    Die Anteile stehen als Zahl an der Karte (--ulh-w: 40 oder 60) und werden hier zur Flexbasis:
    flex-grow im Verhaeltnis 40 zu 60, flex-basis 0, damit allein das Verhaeltnis zaehlt und nicht
    die Textmenge darin. Ein Raster koennte das nicht -- seine Spalten gelten fuer alle Zeilen. */
-.ulh-cards { margin-top: clamp(36px, 5vh, 56px); padding: 0 24px; display: flex; flex-direction: column; gap: 8px; }
+/* Der Kasten um die vier Karten: 8px Polster ringsum, 8px Abstand zu den Schienen des Gitters,
+   off-white, mit Rahmen und demselben leisen Schatten wie die Karten darin. Er ist der Grund, auf
+   dem die Karten ueberhaupt als Karten lesbar sind -- reines Weiss auf 95%-Weiss waere nur ein
+   Rahmen. */
+.ulh-cards-box {
+  margin: clamp(36px, 5vh, 56px) 8px 0;
+  padding: 8px;
+  background: var(--ulh-kasten);
+  border: 1px solid var(--ulh-border);
+  border-radius: 20px;
+  box-shadow: 0 1px 2px rgba(11, 13, 24, .035), 0 6px 16px rgba(11, 13, 24, .028);
+}
+.ulh-cards { display: flex; flex-direction: column; gap: 8px; }
 .ulh-cards-row { display: flex; gap: 8px; align-items: stretch; }
+
 .ulh-card {
   flex: var(--ulh-w, 50) 1 0;
   min-width: 0;
@@ -919,19 +947,10 @@
   box-shadow: 0 1px 2px rgba(11, 13, 24, .035), 0 6px 16px rgba(11, 13, 24, .028);
   padding: 26px 26px 24px;
 }
-.ulh-card-top { display: flex; align-items: center; gap: 9px; }
-/* Das Zeichen sitzt in einer eigenen kleinen Platte, wie die Marken-Logos in den Tabellen der App:
-   ein Symbol ohne Platte schwebt neben der Beschriftung. */
-.ulh-card-ic {
-  width: 26px; height: 26px; flex: 0 0 26px; border-radius: 8px;
-  display: inline-flex; align-items: center; justify-content: center;
-  background: var(--ulh-chip-ring); color: var(--ulh-text);
-}
-.ulh-card-ic svg { width: 15px; height: 15px; display: block; }
-.ulh-card-lbl { font-size: 11.5px; font-weight: 600; letter-spacing: .02em; color: var(--ulh-sub);
-  text-transform: uppercase; }
+/* Die Karte beginnt mit der Ueberschrift. Vorher stand darueber eine Zeile aus Zeichen und
+   Beschriftung -- zwei Etiketten vor dem Satz, den sie erklaeren sollten. */
 .ulh-card-h {
-  margin: 18px 0 0;
+  margin: 0;
   font-size: 19px; font-weight: 500; letter-spacing: -0.022em; line-height: 1.25;
   color: var(--ulh-text);
   max-width: 26ch;
@@ -953,10 +972,10 @@
 .ulh-vis {
   margin-top: auto; padding-top: 26px;
   --ulh-vs: 0.86;
-  /* Die Hoehe steht HIER und nicht am inneren Kasten: transform: scale aendert die Layouthoehe
-     nicht, der innere Kasten belegt also weiter seine unskalierten Pixel. Gemessen stand unter der
-     Tabellenvorschau dadurch 64px Luft, die niemand sehen konnte. */
-  height: var(--ulh-vh);
+  position: relative;
+  /* Die Hoehe steht am AEUSSEREN Kasten und nicht am inneren: transform: scale aendert die
+     Layouthoehe nicht, der innere Kasten belegt also weiter seine unskalierten Pixel. Gemessen
+     stand unter der Tabellenvorschau dadurch 64px Luft, die niemand sehen konnte. */
   overflow: hidden;
 }
 .ulh-vis-in {
@@ -966,42 +985,125 @@
 }
 /* Die Hoehe der Vorschau steht am AUSSEREN Kasten und nicht am inneren: der innere ist skaliert,
    seine Hoehe zaehlt fuer das Layout also nicht mehr in gezeichneten Pixeln. Ohne diese Angabe
-   waere unter jeder Vorschau der Rest ihrer unskalierten Hoehe als Leerraum stehengeblieben. */
-/* Die Werte sind GEMESSEN und nicht geschaetzt: die unskalierte Hoehe des Bauteils mal seinem
-   Massstab. Linie 195, Tabelle 290, Balkenliste 210, Chancenkarte 166 (mal 0.86 gerundet nach oben, sonst bleiben 2px stehen). Mit geschaetzten Werten
-   waren die Tabelle um 83px und die Balken um 26px angeschnitten, und unter der Chancenkarte
-   standen 76px leer.
-   Die Tabelle laeuft auf 0.78 statt 0.86: eine Zeile der App ist 72px hoch, drei davon plus
-   Kopfzeile sind 290px, und dieser Block haette die Karte sonst beherrscht statt sie zu
-   begleiten. */
-.ulh-vis-linie  { --ulh-vh: 168px; }
-.ulh-vis-zeilen { --ulh-vs: 0.78; --ulh-vh: 226px; }
-.ulh-vis-balken { --ulh-vh: 181px; }
-.ulh-vis-chance { --ulh-vh: 146px; }
+   waere unter jeder Vorschau der Rest ihrer unskalierten Hoehe als Leerraum stehengeblieben.
+   Die Werte sind gemessen (unskalierte Hoehe des Bauteils mal Massstab), nicht geschaetzt. */
+.ulh-vis-linie   { --ulh-vs: 1;    --ulh-vh: 208px; }
+.ulh-vis-zeilen  { --ulh-vs: 0.74; --ulh-vh: 210px; }
+/* Die untere Reihe traegt ein Fuenftel mehr Hoehe: in ihr stehen die zwei Vorschauen mit den
+   meisten Zeilen (Drilldown und Chancenliste). Der Wert steckt in diesen zwei Zahlen und nicht in
+   einer eigenen Regel -- eine Hoehe, ein Ort. */
+.ulh-vis-domains { --ulh-vs: 0.74; --ulh-vh: 268px; }
+.ulh-vis-chancen { --ulh-vs: 0.82; --ulh-vh: 220px; }
+.ulh-vis { height: var(--ulh-vh); }
 .ulh-vis-in { height: calc(var(--ulh-vh) / var(--ulh-vs)); overflow: hidden; }
 
-/* Die Linie: Beschriftung und Zahl darueber, wie im Kopf einer Kachel der App. */
-.ulh-vis-linie-kopf { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-.ulh-vis-lbl { font-size: 12px; font-weight: 500; color: var(--ulh-sub); }
-.ulh-vis-wert { display: inline-flex; align-items: center; gap: 8px; }
-.ulh-vis-zahl { font-size: 19px; font-weight: 500; letter-spacing: -0.03em; color: var(--ulh-text);
-  font-variant-numeric: tabular-nums; }
-.ulh-vis-linie-flaeche { position: relative; height: 132px; margin-top: 10px; }
-.ulh-vis-canvas { display: block; width: 100%; height: 100%; }
+/* ---- Karte 1: die zwei Kurven ----
+   Kein Achsenkreuz, keine Legende: das Feld ist die Kurve. An jeder Linie haengt ein Schild mit
+   Marke und Wert -- gebaut wie der Tooltip des Charts in der App (Radius 16, 13px, 10/12 Polster,
+   16px Logo, derselbe Schatten), nur ohne Datum und mit einer einzigen Marke darin.
+   Die Schilder liegen absolut auf ihrem Punkt; die Koordinaten setzt landing-hero.js, sobald
+   Chart.js gezeichnet hat. Bis dahin sind sie unsichtbar (is-da), sonst saessen sie einen
+   Augenblick in der linken oberen Ecke. */
+.ulh-krv { position: relative; height: 100%; }
+.ulh-krv-canvas { display: block; width: 100%; height: 100%; }
+.ulh-krv-chip {
+  position: absolute; opacity: 0; transform: translate(-50%, -50%);
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 11px; border-radius: 14px; white-space: nowrap;
+  background: #ffffff; border: 1px solid var(--ulh-border);
+  box-shadow: 0 1px 2px rgba(11, 13, 24, .05), 0 8px 20px rgba(11, 13, 24, .07);
+  font-size: 12.5px; line-height: 1.2;
+  transition: opacity 260ms var(--ulh-ease), filter 200ms var(--ulh-ease);
+  pointer-events: auto;
+}
+.ulh-krv-chip.is-da { opacity: 1; }
+/* Das Schild der Linie, die gerade NICHT gehoben ist, tritt mit zurueck -- sonst stuende ein
+   volles Schild an einer grauen Linie. */
+.ulh-krv-chip.is-aus { opacity: .45; filter: saturate(.2); }
+.ulh-krv-logo { width: 16px; height: 16px; border-radius: 4px; display: block; object-fit: cover; }
+.ulh-krv-name { color: var(--ulh-text); font-weight: 400; }
+.ulh-krv-val { color: var(--ulh-text); font-weight: 500; font-variant-numeric: tabular-nums; }
 
-/* Die Zeilen: die Tabelle der App, ohne Rahmen um das Ganze -- der Rahmen der Karte ist schon da.
-   Der Kopf ist im Ruhezustand sticky (core), was ohne Scrollflaeche wie relative wirkt; die
-   Angabe hier nimmt ihn aus der Rechnung, damit er nicht auf einer fremden Marke haengt. */
-.ulh-vis-tab { border: 1px solid var(--ulh-border); border-radius: 12px; overflow: hidden; }
-.ulh-vis-tab .up-thead { position: static; border: 0; border-radius: 0; }
-.ulh-vis-tab .up-row { border-bottom: 1px solid var(--ulh-border); }
-.ulh-vis-tab .up-row:last-child { border-bottom: 0; }
-.ulh-vis-tab .up-td:first-child { border-left: 0; }
+/* ---- Karte 2 und 3: die gekippten Tabellen ----
+   Nach hinten und nach links geneigt, wie man es von Produktseiten kennt: die Perspektive steht
+   am Rahmen, die Drehung an der Tabelle. Werte bewusst klein -- 7 Grad nach hinten und 11 zur
+   Seite lesen sich als Blickwinkel; ab etwa 15 Grad wird daraus ein Effekt, und die Schrift in den
+   Zeilen wird unscharf.
+   transform-style: preserve-3d, damit die gehobene Zeile beim Ueberfahren wirklich nach VORN
+   kommt (translateZ) und nicht nur groesser wird. */
+.ulh-vis-zeilen .ulh-vis-in,
+.ulh-vis-domains .ulh-vis-in { perspective: 1500px; perspective-origin: 60% 20%; }
+.ulh-vis-tab, .ulh-vis-dom {
+  transform: rotateX(7deg) rotateY(-11deg) rotateZ(1.1deg);
+  transform-origin: 62% 0;
+  transform-style: preserve-3d;
+  border: 1px solid var(--ulh-border); border-radius: 12px; overflow: hidden;
+  background: var(--vc-bg);
+  box-shadow: 0 2px 6px rgba(11, 13, 24, .05), 0 18px 40px rgba(11, 13, 24, .09);
+}
+/* Die Kopfzeile der Tabelle ist in der App fett und gross, weil sie dort sortierbar ist. In einer
+   Vorschau ist sie eine Beschriftung: leichter, kleiner, ruhiger. */
+.ulh-vis-tab .up-thead, .ulh-vis-dom .up-thead {
+  position: static; border: 0; border-radius: 0;
+  font-size: 11px; font-weight: 500; letter-spacing: .01em; color: var(--vc-muted);
+  height: 40px; flex: 0 0 40px; text-transform: none;
+}
+.ulh-vis-tab .up-thead .up-td, .ulh-vis-dom .up-thead .up-td { font-weight: 500; }
+.ulh-vis-tab .up-row, .ulh-vis-dom .up-row { border-bottom: 1px solid var(--ulh-border); }
+.ulh-vis-tab .up-row:last-child, .ulh-vis-dom .up-row:last-child { border-bottom: 0; }
+.ulh-vis-tab .up-td:first-child, .ulh-vis-dom .up-td:first-child { border-left: 0; }
 .ulh-vis-prompt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ulh-vis-themen { display: flex; gap: 5px; min-width: 0; overflow: hidden; }
 
-/* Die Chance: die Karte des Bretts, hier nicht anfassbar. */
-.ulh-vis-chance .uo-card { cursor: default; }
-.ulh-vis-chance .uo-card:hover { border-color: var(--vc-border); background: var(--vc-bg); }
+/* Der Auslauf nach unten: erst weich zeichnen, dann in den Kartengrund verlaufen. Zwei Ebenen,
+   weil eine Maske BEIDES treffen wuerde -- die Unschaerfe soll von oben nach unten zunehmen, der
+   Weissverlauf ebenfalls, aber sie sind zwei verschiedene Kurven.
+   backdrop-filter und nicht filter: die Zeilen selbst bleiben scharf gezeichnet, unscharf wird
+   nur, was DURCH diese Flaeche zu sehen ist -- so bleibt der Rest der Vorschau unberuehrt. */
+.ulh-vis-zeilen::after, .ulh-vis-domains::after, .ulh-vis-chancen::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 46%;
+  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 72%);
+  mask-image: linear-gradient(to bottom, transparent, #000 72%);
+  pointer-events: none; z-index: 2;
+}
+.ulh-vis-zeilen::before, .ulh-vis-domains::before, .ulh-vis-chancen::before {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 42%;
+  background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, #ffffff 88%);
+  pointer-events: none; z-index: 3;
+}
+
+/* ---- Die gehobene Zeile ----
+   Beim Ueberfahren der KARTE (nicht der Zeile: die Vorschau ist zu klein, um eine Zeile sicher zu
+   treffen) kommt die mittlere Zeile nach vorn und die anderen treten zurueck. Genau das macht die
+   App beim Ueberfahren einer Zeile auch -- nur dass dort der Zeiger entscheidet, welche. */
+.ulh-vis-tab .up-row, .ulh-vis-dom .up-row, .ulh-vis-chancen .uo-row {
+  transition: opacity 240ms var(--ulh-ease), transform 320ms var(--ulh-aus),
+              box-shadow 320ms var(--ulh-ease), background 240ms var(--ulh-ease);
+}
+.ulh-card:hover .ulh-vis-tab .up-row:not(.is-mitte):not(.up-thead),
+.ulh-card:hover .ulh-vis-dom .up-row:not(.is-mitte):not(.up-thead),
+.ulh-card:hover .ulh-vis-chancen .uo-row:not(.is-mitte) { opacity: .5; }
+.ulh-card:hover .ulh-vis-tab .up-row.is-mitte,
+.ulh-card:hover .ulh-vis-chancen .uo-row.is-mitte {
+  background: var(--vt-row-hover);
+  transform: translateZ(26px);
+  box-shadow: 0 10px 26px rgba(11, 13, 24, .13);
+}
+
+/* ---- Karte 3: der aufgeklappte Drilldown ----
+   Die Zeile darueber traegt is-expanded (wie in der App), der Kasten darunter ist der echte
+   .udt-subrows. Er bekommt hier keine eigene Hoehenanimation -- er ist von Anfang an offen. */
+.ulh-vis-dom .udt-subrows { max-height: none; }
+.ulh-vis-dom .udt-sub-inner { overflow: visible; }
+.ulh-vis-dom .udt-pagesbtn { pointer-events: none; }
+
+/* ---- Karte 4: die Chancenliste ----
+   .uo-row wie im Listenmodus der App. Der Kasten darum haelt nur den Abstand. */
+.ulh-vis-chancen .uo-list-rows { gap: 8px; }
+.ulh-vis-chancen .uo-row { cursor: default; }
+
+
 
 /* Schmal: die zwei Karten einer Reihe stapeln, und die Ueberschrift darf ueber ihre 20ch hinaus.
    Dieselbe Schwelle wie beim Fenster oben (900px) -- dort endet auch die Buehne. */
