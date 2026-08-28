@@ -320,7 +320,125 @@
       '</div>' +
       '</section>' +
       merkmale() +
-      quellen();
+      quellen() +
+      miras();
+  }
+
+  /* ---------- Fuenfte Sektion: Mira -------------------------------------------------------
+     Diese Sektion ist DUNKEL. Nicht als Laune: Mira ist das eine Stueck der App, das nicht aus
+     Tabellen besteht, sondern aus einem Gespraech, und ein dunkler Grund trennt sie vom Rest der
+     Seite, ohne dass es dafuer eine Ueberschrift braucht. Die Farben sind die der App im dunklen
+     Thema (core.css, .up-root[data-theme="dark"]), nicht selbst gemischte.
+
+     Der Startbildschirm steht in einem EIGENEN DOKUMENT, und das ist der Kern der Sache:
+     ask-mira ist an die Kennung #ask-mira gebunden -- 268 Regeln in ask-mira.css, 57 weitere
+     Kennungen im Markup, und ask-mira.js sucht seine Wurzel mit getElementById. Auf dieser Seite
+     ist diese eine Instanz schon vergeben: sie ist die zweite Szene des Hero-Fensters mit ihrer
+     Tippvorfuehrung. Zwei Instanzen in EINEM Dokument gibt es also nicht.
+     In einem iframe ist die Kennung wieder eindeutig, und damit laeuft hier die ECHTE Komponente
+     mit allem, was sie kann: die wechselnden Texte im Eingabefeld, die Kategorien, das Hovern,
+     der Grund. Kein Nachbau, der ab dem naechsten Umbau der App falsch waere.
+     Geladen wird es erst, wenn die Sektion in die Naehe des Bildschirms kommt -- der Seitenaufbau
+     bleibt davon unberuehrt. */
+  var MIRA_KARTEN = [
+    { ic: "sparkle", t: "It does the work.",
+      s: "Ask for a report and get the report: written, sourced and ready to send." },
+    { ic: "squareStack", t: "Your data is already there.",
+      s: "Every brand, prompt, market and source you track. No setup, no uploads." },
+    { ic: "telescope", t: "It digs for the reason.",
+      s: "From a number to its cause: which prompts, which models, which pages." },
+    { ic: "bulb", t: "A consultant on call.",
+      s: "Ask in your own words, in your own language. Answers in seconds." },
+    { ic: "listTodo", t: "Ends in a next step.",
+      s: "Not just what happened, but what to change, where, and why it matters." }
+  ];
+
+  /* Die Adresse, aus der die Seite selbst geladen wurde -- das iframe braucht ABSOLUTE Adressen.
+     In ihm ist die Basis "about:srcdoc", und relative Pfade laufen dort ins Leere.
+     Drei Wege, in dieser Reihenfolge: das Skript, das diese Datei geladen hat (der Normalfall auf
+     der Seite), sonst irgendein Skript aus demselben Verzeichnis, sonst das Verzeichnis der Seite
+     selbst -- das ist der Fall im Messaufbau, wo die Dateien als Text eingehaengt werden und
+     ueberhaupt keine Adresse haben. */
+  function mirasBasis(){
+    var s = document.querySelector('script[src*="landing-hero.js"], script[src*="landing-boot.js"]');
+    var src = s && s.src;
+    if (src) return src.slice(0, src.lastIndexOf("/") + 1);
+    return location.href.replace(/[?#].*$/, "").replace(/[^/]*$/, "");
+  }
+
+  function miras(){
+    return '<section class="ulh-miras">' +
+      '<div class="ulh-miras-buehne">' +
+        '<iframe class="ulh-miras-rahmen" title="Mira" scrolling="no"' +
+          ' referrerpolicy="no-referrer"></iframe>' +
+      '</div>' +
+      '<div class="ulh-miras-karten">' +
+        MIRA_KARTEN.map(function(k){
+          return '<div class="ulh-miras-karte">' +
+            /* data-ic und kein Aufruf von core: das Markup wird gebaut, bevor core sicher da
+               ist, und ein spaeterer Durchgang setzt alle Zeichen der Seite auf einmal. */
+            '<span class="ulh-miras-ic" data-ic="' + k.ic + '" data-ic-w="1.6"></span>' +
+            '<span class="ulh-miras-t">' + k.t + '</span>' +
+            '<span class="ulh-miras-s">' + k.s + '</span>' +
+          '</div>';
+        }).join("") +
+      '</div>' +
+    '</section>';
+  }
+
+  /* Der Inhalt des iframes. srcdoc und keine eigene Datei: die Dateiliste der Seite steht in
+     landing-boot.js, und eine zweite HTML-Datei waere ein zweiter Ort, an dem ein Pin veralten
+     kann. So kommt alles aus derselben Basis wie der Rest der Seite.
+     data-isdark UND data-theme: das erste liest ask-mira.js beim Start, das zweite die CSS. */
+  function mirasSeite(){
+    var basis = mirasBasis();
+    var markup = (MARKUP.mira || "")
+      .replace('data-isdark="no"', 'data-isdark="yes" data-theme="dark"');
+    return '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
+      '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+      '<link rel="stylesheet" href="' + basis + 'core.css">' +
+      '<link rel="stylesheet" href="' + basis + 'ask-mira.css">' +
+      '<style>' +
+        'html,body{margin:0;padding:0;background:#121212;overflow:hidden;}' +
+        '#ask-mira{height:100vh;}' +
+      '</style></head><body>' + markup +
+      '<script src="' + basis + 'core.js"><\/script>' +
+      '<script src="' + basis + 'ask-mira.js"><\/script>' +
+      '<script>' +
+        /* Das Thema ueber den Setter und nicht ueber das Attribut: ask-mira.js NIMMT
+           data-theme beim Start wieder ab und faellt auf prefers-color-scheme zurueck --
+           gemessen: das Attribut war danach weg und die Schrift stand auf #1f1f1b, also
+           hell auf schwarz. Die Schleife, weil der Setter erst existiert, wenn
+           ask-mira.js gelaufen ist. */
+        '(function(){var n=0;(function go(){if(window.askMiraSetTheme){' +
+        'window.askMiraSetTheme("dark");return;}if(n++<60)setTimeout(go,50);})();})();' +
+        'document.addEventListener("click",function(e){e.preventDefault();e.stopPropagation();},true);' +
+        'document.addEventListener("keydown",function(e){e.preventDefault();e.stopPropagation();},true);' +
+      '<\/script></body></html>';
+  }
+
+  /* Erst laden, wenn die Sektion naeher kommt. Der Beobachter nimmt einen grossen Vorlauf, damit
+     das Bild steht, bevor jemand dort ankommt. Ohne IntersectionObserver wird sofort geladen --
+     lieber ein frueher Ladevorgang als eine leere Flaeche.
+     Klicks und Tasten fangen wir IM iframe ab und nicht mit pointer-events: none am Rahmen: das
+     haette auch das Hovern mitgenommen, und genau das soll man sehen. */
+  function mirasFuellen(root){
+    var rahmen = root.querySelector(".ulh-miras-rahmen");
+    if (!rahmen || rahmen.__ulhAuf) return;
+    function laden(){
+      if (rahmen.__ulhAuf) return;
+      rahmen.__ulhAuf = true;
+      rahmen.srcdoc = mirasSeite();
+    }
+    /* Eine Handhabe zum Nachsehen und zum Messen, wie __ulhSzene. */
+    root.__ulhMiras = laden;
+    if (!window.IntersectionObserver){ laden(); return; }
+    var beobachter = new IntersectionObserver(function(eintraege){
+      for (var i = 0; i < eintraege.length; i++){
+        if (eintraege[i].isIntersecting){ beobachter.disconnect(); laden(); return; }
+      }
+    }, { rootMargin: "600px 0px" });
+    beobachter.observe(rahmen);
   }
 
   /* ---------- Zweite Sektion: die Kernfunktionen ------------------------------------------
@@ -1893,6 +2011,7 @@
       visModelleFuellen(w);
       ulhTakt(w);
       quellFuellen();
+      mirasFuellen(w);
     })();
 
     if (window.renderTopCitations){

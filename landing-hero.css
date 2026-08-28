@@ -2018,3 +2018,71 @@
   .ulh-stage { display: none; }
   .ulh-text { padding-bottom: clamp(40px, 8vh, 72px); }
 }
+
+/* ---------- Fuenfte Sektion: Mira -------------------------------------------------------------
+   Die einzige DUNKLE Sektion der Seite. Die Farben sind die der App im dunklen Thema und keine
+   selbst gemischten: Grund --up-surface (#121212), Flaeche --vc-bg (#1b1b1b), Linien --vc-border
+   (#353535), Text --vc-text (#e0e0e0), Nebentext --vc-muted (#a0a0a0). Sie stehen hier als Zahl,
+   weil diese Sektion NICHT in einer .up-root liegt und die Variablen der App dort nicht gelten --
+   dieselbe Falle, die den Kasten der Quellen-Sektion durchsichtig gemacht hat.
+
+   z-index: 1 ist Pflicht und keine Vorsicht: die Schienen der Seite (.ulh-schienen) liegen als
+   absolutes Element ueber allem, was nicht positioniert ist. Ohne diese Zeile laegen zwei helle
+   Linien quer ueber dem schwarzen Grund. */
+.ulh-miras {
+  --ulh-d-grund: #121212;
+  --ulh-d-flaeche: #1b1b1b;
+  --ulh-d-linie: #353535;
+  --ulh-d-text: #e0e0e0;
+  --ulh-d-sub: #a0a0a0;
+  position: relative; z-index: 1;
+  /* Ueber die ganze Breite und nicht nur ueber die Spur: die Flaeche ist der Bruch mit der hellen
+     Seite, und ein Bruch, der an den Schienen endet, ist ein Kasten. Ein Ueberlauf entsteht nicht,
+     weil .ulh-root waagerecht abschneidet (overflow-x: clip). */
+  width: 100vw; margin-left: calc(50% - 50vw);
+  background: var(--ulh-d-grund);
+}
+/* Der Startbildschirm steht in einem eigenen Dokument (landing-hero.js, mirasSeite). Das iframe
+   traegt keine Hoehe aus dem Inhalt -- ein iframe hat immer die Hoehe, die man ihm gibt --, also
+   steht sie hier. 760px ist der Wert, bei dem der Startbildschirm ganz steht: Kopf, Kategorien und
+   das Eingabefeld darunter. */
+.ulh-miras-buehne { position: relative; height: 760px; }
+.ulh-miras-rahmen { display: block; width: 100%; height: 100%; border: 0; background: var(--ulh-d-grund); }
+/* Die Karten darunter: eine Zeile, gleiche Spalten, getrennt durch dieselben 1px, mit denen die
+   ganze Seite arbeitet. Die Linie oben trennt sie vom Startbildschirm, die Linien dazwischen
+   stehen an den Karten selbst -- ein Raster mit gap und Fuellung koennte sie nicht durchziehen. */
+.ulh-miras-karten {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  border-top: 1px solid var(--ulh-d-linie);
+  border-bottom: 1px solid var(--ulh-d-linie);
+}
+.ulh-miras-karte {
+  display: flex; flex-direction: column; min-width: 0;
+  padding: 26px 28px 30px;
+  border-left: 1px solid var(--ulh-d-linie);
+}
+.ulh-miras-karte:first-child { border-left: 0; }
+/* Das Zeichen steht oben, der Text unten, und dazwischen ist Luft -- so liest sich die Karte als
+   Karte und nicht als Zeile mit einem Zeichen davor. margin-top: auto am Titel statt einer festen
+   Luecke: die Karten sind gleich hoch, also stehen alle fuenf Titel auf derselben Linie, auch wenn
+   ein Untertitel einmal drei Zeilen braucht. */
+.ulh-miras-ic { display: block; width: 20px; height: 20px; color: var(--ulh-d-sub); }
+.ulh-miras-ic svg { width: 100%; height: 100%; display: block; }
+.ulh-miras-t {
+  margin-top: auto; padding-top: 76px;
+  font-size: 15.5px; font-weight: 500; letter-spacing: -0.012em; color: var(--ulh-d-text);
+}
+.ulh-miras-s {
+  margin-top: 8px; max-width: 24ch;
+  font-size: 13.5px; font-weight: 400; line-height: 1.5; color: var(--ulh-d-sub);
+}
+@media (max-width: 900px) {
+  /* Fuenf Spalten sind auf einem Telefon fuenf Buchstaben nebeneinander. Zwei Spalten, und die
+     letzte Karte nimmt beide. */
+  .ulh-miras-karten { grid-template-columns: 1fr 1fr; }
+  .ulh-miras-karte:nth-child(odd) { border-left: 0; }
+  .ulh-miras-karte:nth-child(n+3) { border-top: 1px solid var(--ulh-d-linie); }
+  .ulh-miras-karte:last-child { grid-column: 1 / -1; }
+  .ulh-miras-t { padding-top: 44px; }
+  .ulh-miras-buehne { height: 620px; }
+}
