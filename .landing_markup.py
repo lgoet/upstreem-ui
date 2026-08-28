@@ -87,7 +87,15 @@ def markup(pfad):
     # ein Hinweis zu data-scope-fn). Ohne diesen Zusatz traf der Anker nicht, und dann kam der
     # ganze Lader als "Markup" heraus -- erkannt daran, dass der Platzhalterwaechter danach
     # "CDN_" meldete, das aus dem Lader stammt.
-    end = re.search(r'</div>(?=\s*(?:<!--.*?-->\s*)*(?:<script|<link|$))', rest, re.S)
+    # Ein Kommentar endet an SEINEM ersten "-->" und nicht an irgendeinem spaeteren. Mit
+    # ".*?" tat er das nicht: das Muster darf lazy sein und trotzdem beliebig weit greifen, wenn
+    # der Gesamtausdruck es sonst nicht schafft -- und mit re.S auch ueber Zeilen hinweg. Bei
+    # opportunities hat es damit den Kommentar vor .uo-stage bis zum Kommentar vor dem
+    # <script class="uo-data-json"> gedehnt und dabei die Buehne, den Vorhang und die Schublade
+    # mitgefressen: das extrahierte Markup endete am Einstellungsmenue, .uo-stage fehlte, und
+    # opportunities.js lief beim Zeichnen des Bretts in ein null.innerHTML. Genau daran blieb das
+    # Fenster der Landingpage mit einem leeren Brett stehen.
+    end = re.search(r'</div>(?=\s*(?:<!--(?:(?!-->).)*?-->\s*)*(?:<script|<link|$))', rest, re.S)
     return (rest[:end.end()] if end else rest).rstrip()
 
 
