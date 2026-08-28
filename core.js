@@ -7904,6 +7904,9 @@
               '<path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
     /* blend und telescope, beide aus Lucide wie alles hier: blend traegt Mira (Seitenleiste und
        Wortmarke), telescope die Prompt Research. */
+    /* lucide "scan": vier Ecken eines Rahmens. Dasselbe Zeichen fuehrt der Prompts-Seitenkopf
+       fuer den Abschnitt Responses -- Miras Arbeitsprotokoll benutzt es fuer denselben Schritt. */
+    scan: '<path d="M8 3H5a2 2 0 0 0-2 2v3"/> <path d="M21 8V5a2 2 0 0 0-2-2h-3"/> <path d="M3 16v3a2 2 0 0 0 2 2h3"/> <path d="M16 21h3a2 2 0 0 0 2-2v-3"/>',
     blend:    '<circle cx="9" cy="9" r="7"/><circle cx="15" cy="15" r="7"/>',
     telescope: '<path d="m10.065 12.493-6.18 1.318a.934.934 0 0 1-1.108-.702l-.537-2.15a1.07 1.07 0 0 1 .691-1.265l13.504-4.44"/>' +
               '<path d="m13.56 11.747 4.332-.924"/><path d="m16 21-3.105-6.21"/>' +

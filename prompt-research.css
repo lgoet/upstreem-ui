@@ -207,6 +207,12 @@
 .upr-composer-area { width: min(100%, 820px); margin-top: clamp(48px, 7vw, 78px); position: relative; }
 /* Grey tray wrapping composer + settings, so the settings panel reads as part of the same object */
 .upr-composer-shell { width: 100%; background: var(--vc-heading-bg); border-radius: 24px; transition: background 200ms ease; }
+/* Im Dunkeln dieselben zwei Flaechen wie Miras Eingabefeld: die Schale #1e1e1e, das Feld darin die
+   Flaechenfarbe der Seite (--up-surface, #121212). Vorher lag hier --vc-heading-bg ueber --vc-bg,
+   also zwei Grautoene eine Stufe heller -- dasselbe Feld sah in den zwei Komponenten verschieden
+   aus. Hell bleibt es, wie es ist. */
+.up-root[data-theme="dark"].upr-root .upr-composer-shell { background: #1e1e1e; }
+.up-root[data-theme="dark"].upr-root .upr-composer { background: var(--up-surface); }
 .upr-composer {
   width: 100%; min-height: 130px;
   border: 1px solid var(--vc-border); border-radius: 24px; background: var(--vc-bg);

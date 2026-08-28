@@ -402,19 +402,17 @@
   var lang = 'en';
   function L(){ return STR[lang] || STR.en; }
   function resolveLang(){ lang = (String(S.market||'').toLowerCase() === 'de') ? 'de' : 'en'; }
-  // "Thought for"-Label (wie ChatGPT), lokalisiert, aus latency_ms
+  /* EINE Schreibweise fuer jede Dauer in dieser Komponente: die Uhr des Arbeitsprotokolls, die
+     Denkzeile und die Zeile ueber alten Antworten. Vorher stand ueber einer geladenen Antwort
+     "Nachgedacht fuer 2 Minuten 58 Sekunden" und ueber einer frischen "Gearbeitet 2m 58s".
+     Die Sekunden fallen auch bei Minuten NIE weg -- sonst liest sich 3m wie gerundet. */
+  function runDauer(ms){
+    var s = Math.max(0, Math.round(Number(ms) / 1000));
+    if (s < 60) return s + 's';
+    return Math.floor(s / 60) + 'm ' + (s % 60) + 's';
+  }
   function formatThought(ms){
-    var totalSec = Math.max(1, Math.round(Number(ms) / 1000));
-    if (lang === 'de'){
-      if (totalSec < 60) return 'Nachgedacht für ' + totalSec + ' Sekunde' + (totalSec === 1 ? '' : 'n');
-      var m = Math.floor(totalSec / 60), s = totalSec % 60;
-      var out = 'Nachgedacht für ' + m + ' Minute' + (m === 1 ? '' : 'n');
-      if (s) out += ' ' + s + ' Sekunde' + (s === 1 ? '' : 'n');
-      return out;
-    }
-    if (totalSec < 60) return 'Thought for ' + totalSec + 's';
-    var mm = Math.floor(totalSec / 60), ss = totalSec % 60;
-    return 'Thought for ' + mm + 'm' + (ss ? ' ' + ss + 's' : '');
+    return (lang === 'de' ? 'Nachgedacht ' : 'Thought for ') + runDauer(ms);
   }
   function thoughtHtml(m, role, isLast){
     if (role !== 'assistant' || !isLast) return '';
@@ -427,8 +425,10 @@
     if (raw == null && m.metadata && typeof m.metadata === 'object') raw = m.metadata.latency_ms;
     var ms = (typeof raw === 'number') ? raw : parseFloat(String(raw == null ? '' : raw).replace(',', '.').replace(/[^0-9.]/g, ''));
     if (!isFinite(ms) || ms <= 0) return '';
-    return '<div class="am-thought"><span>' + esc(formatThought(ms)) + '</span>' +
-           '<svg class="am-thought-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg></div>';
+    /* Ohne Protokoll (Neuladen, alter Chat) steht dieselbe Uhr da wie mit -- gleiche Schrift,
+       gleiche Farbe, gleicher Wortlaut, nur ohne Trennlinie und ohne Schritte. */
+    return '<div class="am-run is-bare"><div class="am-run-head"><span class="am-run-clock">' +
+           esc(L().runDone + ' ' + runDauer(ms)) + '</span></div></div>';
   }
 
   /* ---------------- Helpers ---------------- */
@@ -2404,12 +2404,6 @@
     sources:['Scanning the sources'],
     responses:['Reading the AI responses']
   };
-  var _STATE_EV = {
-    brand:     [['brand','Your brand'], ['competitor','Competitors']],
-    prompts:   [['prompt','Prompts']],
-    sources:   [['domain','Domains'], ['url','URLs']],
-    responses: [['response','Responses']]
-  };
   function _tlBrandList(){ return (S.brandLogos || []).slice(0, 20); }   // [{src,fb_src,label,color}]
   function _tlFaviconList(){ return (S.favicons || []).slice(0, 20); }   // [{src,label}]
   function _tlModelList(){
@@ -2456,15 +2450,9 @@
   var _RUN_DWELL = 1500;
   var _RUN_MOMENT = 10000;     // kuerzer gedacht -> "a moment" statt einer Zahl
 
-  function runDur(ms){
-    var s = Math.max(0, Math.round(Number(ms) / 1000));
-    if (s < 60) return s + 's';
-    var m = Math.floor(s / 60), r = s % 60;
-    return m + 'm' + (r ? ' ' + r + 's' : '');
-  }
   function runClockText(){
-    var ms = (RUN.endTs || Date.now()) - RUN.startTs;
-    return (RUN.live ? L().runNow : L().runDone) + ' ' + runDur(ms);
+    var ms = RUN.startTs ? ((RUN.endTs || Date.now()) - RUN.startTs) : 0;
+    return (RUN.live ? L().runNow : L().runDone) + ' ' + runDauer(ms);
   }
   function runClockTick(){
     var el = root.querySelector('.am-run-clock'); if (el) el.textContent = runClockText();
@@ -2486,46 +2474,37 @@
     if (kind === 'brand')     return _tlShuffle(_tlBrandList()).slice(0, 3);
     if (kind === 'sources')   return _tlShuffle(_tlFaviconList()).slice(0, 3);
     if (kind === 'responses') return _tlModelList().slice(0, 3);
-    if (kind === 'prompts')   return _tlShuffle(_tlTopicList()).slice(0, 3);
+    /* Prompts tragen KEINE Chips: ein Thema hat kein Logo, und drei Farbflecken haben nichts
+       gesagt ausser "hier waeren Chips". Das Zeichen vor dem Text sagt den Schritt. */
     return [];
   }
-  function runIconChip(name, farbe){
-    var c = document.createElement('span');
-    c.className = 'am-tload-logo am-run-ic';
+  /* Das Zeichen vor dem Text -- dasselbe, das der Punkt in der Seitenleiste traegt (Brands,
+     Prompt Insights, Citations); Responses nimmt das des Prompts-Seitenkopfs. Kein Kasten
+     darum, zweite Textfarbe: es beschriftet die Zeile, es ist kein Chip. */
+  var _RUN_IC = { brand:'squareStack', prompts:'zap', sources:'globe', responses:'scan' };
+  function runZeichen(st){
     var kern = window.UpstreemCore;
-    c.innerHTML = (kern && kern.icon) ? kern.icon(name, 1.9) : '';
-    if (farbe) c.style.color = farbe;
-    return c;
-  }
-  /* Rueckfall, wenn Bubble fuer diesen Schritt keine Logos geschickt hat: das Zeichen und die Farbe,
-     die derselbe Datentyp in der Belegzeile unter der Antwort ohnehin schon hat (EVIDENCE) -- also
-     kein neues Bildchen, sondern dasselbe wie eine Zeile tiefer. */
-  function runEvChip(kind){
-    var pair = (_STATE_EV[kind] || [])[0];
-    var def = pair ? EVIDENCE[pair[0]] : null;
-    var c = document.createElement('span');
-    c.className = 'am-tload-logo am-run-ic';
-    if (def){ c.innerHTML = def.icon; c.style.color = def.color; }
-    return c;
+    var el = document.createElement('span');
+    if (st.kind === 'thought'){
+      /* Die Denkzeile ist Mira selbst: der Kasten in der ersten Textfarbe, das Zeichen darin in
+         der ersten Textfarbe des ANDEREN Themas -- also immer der kraeftigste Gegensatz, den das
+         Thema hat, und in beiden Themen derselbe Eindruck. */
+      el.className = 'am-run-ic is-mira';
+      el.innerHTML = (kern && kern.icon) ? kern.icon('blend', 2) : '';
+      return el;
+    }
+    el.className = 'am-run-ic';
+    el.innerHTML = (kern && kern.icon) ? kern.icon(_RUN_IC[st.kind] || 'zap', 2) : '';
+    return el;
   }
   function runLead(lead, st){
     lead.innerHTML = '';
-    if (st.kind === 'thought'){ lead.appendChild(runIconChip('blend', '')); return; }
     var l = st.logos || [];
-    if (!l.length){ lead.appendChild(runEvChip(st.kind)); return; }
+    if (!l.length) return;                             /* keine Logos -> keine leeren Kaesten */
     l.forEach(function(it, i){
-      var c;
-      if (st.kind === 'prompts'){
-        /* Ein Thema hat kein Bild, nur eine Farbe -- also ein Chip in genau dieser Farbe.
-           Dieselbe Farbe traegt der Punkt am Themen-Chip in der Antwort. */
-        c = document.createElement('span');
-        c.className = 'am-tload-logo am-run-thema';
-        c.style.background = it.color || 'var(--am-muted-2)';
-      } else if (st.kind === 'responses'){
-        c = _tlChip('am-tload-ai', it.src, '', it.label, '#9ca3af');
-      } else {
-        c = _tlChip('am-tload-logo', it.src, it.fb_src, it.label, it.color);
-      }
+      var c = (st.kind === 'responses')
+        ? _tlChip('am-tload-ai', it.src, '', it.label, '#9ca3af')
+        : _tlChip('am-tload-logo', it.src, it.fb_src, it.label, it.color);
       c.style.transitionDelay = (i * 70) + 'ms';       /* die drei Logos kommen nacheinander */
       lead.appendChild(c);
     });
@@ -2551,8 +2530,7 @@
     var sp = document.createElement('span'); sp.className = 'am-run-spin'; sp.setAttribute('aria-hidden', 'true');
     sp.innerHTML = '<i></i>';                          /* innen dreht es, aussen blendet es -- sonst kaempfen Animation und Uebergang um transform */
     line.appendChild(sp);
-    var lead = document.createElement('span'); lead.className = 'am-run-lead'; line.appendChild(lead);
-    runLead(lead, st);
+    line.appendChild(runZeichen(st));
     var txt = document.createElement('span'); txt.className = 'am-run-txt';
     if (st.kind === 'thought'){
       /* Die Denkzeile benutzt die Lauf-Mechanik, die es schon gibt (am-think-loop/-text): der Text
@@ -2567,6 +2545,10 @@
       txt.textContent = st.text;
     }
     line.appendChild(txt);
+    /* Die Logos stehen HINTER dem Text: vorne sagt das Zeichen, worum es geht, hinten zeigen die
+       Chips, an welchen Daten gerade gearbeitet wird. */
+    var lead = document.createElement('span'); lead.className = 'am-run-lead'; line.appendChild(lead);
+    runLead(lead, st);
     st.el = row;
     if (frisch) setTimeout(function(){ runMarkDone(st, false); }, 30);
     return row;
@@ -2620,7 +2602,10 @@
     });
   }
   function runMount(){
-    var box = elMessages.querySelector('.am-run');
+    /* :not(.is-bare) -- die nackte Uhr ueber einer GELADENEN Antwort ist fertiges Markup und kein
+       Platzhalter. Ohne die Ausnahme hat runFill sie ueberschrieben und die Uhr des leeren Laufs
+       hineingeschrieben (gemessen: "Worked for 29798674m 59s", die Zeit seit 1970). */
+    var box = elMessages.querySelector('.am-run:not(.is-bare)');
     if (box) runFill(box);
   }
 

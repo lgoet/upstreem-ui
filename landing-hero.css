@@ -1218,6 +1218,12 @@
 .ulh-fen-teams, .ulh-fen-urls { transform: translate(90px, 0) scale(.94); }
 .ulh-fen-antwort { transform: translate(-90px, 0) scale(.94); }
 .ulh-root.is-klein .ulh-fen { opacity: 1; transform: none; }
+/* Sie kommen NACHEINANDER und nicht zu dritt: erst atmet die Verkleinerung durch, dann Teams, dann
+   die Antwortkarte, dann die URL-Typen. Die Verzoegerung steht nur am Kommen -- beim Zurueckscrollen
+   sollen sie zugleich verschwinden, sonst haengt eines hinter dem wieder wachsenden Fenster fest. */
+.ulh-root.is-klein .ulh-fen-teams   { transition-delay: 260ms; }
+.ulh-root.is-klein .ulh-fen-antwort { transition-delay: 580ms; }
+.ulh-root.is-klein .ulh-fen-urls    { transition-delay: 900ms; }
 @media (prefers-reduced-motion: reduce) {
   .ulh-fen { transition: none; }
 }

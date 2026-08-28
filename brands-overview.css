@@ -19,6 +19,16 @@
 .ubo-heading { font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.2;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ubo-head-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; flex: 0 0 auto; }
+/* Reihenfolge in der Kopfzeile ueber flex order und NICHT ueber das Markup: das Markup steckt im
+   Bubble-Element, eine Vorlagenaenderung erreicht ein eingebautes Element nicht. Ganz rechts das
+   Auge, davor der Fader (die Markenauswahl), davor die Schalter -- von denen hoechstens zwei
+   gleichzeitig sichtbar sind (Granularitaet ODER Achse, dazu die Chartform). */
+.ubo-head-tools > * { order: 1; }
+.ubo-head-tools > .ubo-filter { order: 2; }
+.ubo-head-tools > .ubo-hide { order: 3; }
+/* Der Granularitaetsschalter steht in dieser Kopfzeile mittig -- sie ist einzeilig. Im Visibility
+   Chart bleibt .vc-gran oben buendig, dort ist der Kopf mehrzeilig (core.css). */
+.ubo-head-tools .vc-gran { align-self: center; }
 
 /* heading + total count (Top Brands • 42) — same idiom as every other table header in the app */
 .ubo-heading-table { display: flex; align-items: center; }

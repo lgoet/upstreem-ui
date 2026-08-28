@@ -228,6 +228,17 @@
     });
   })();
 
+  /* Das Zeichen in der Kugel oben in der Mitte: lucide "telescope", dasselbe, das Prompt Research
+     jetzt in der Seitenleiste und im Seitenkopf traegt. Vorher stand hier lucide "scan-search" --
+     das war das letzte Zeichen der alten Familie. Getauscht wird im JS und nicht nur in der
+     Vorlage: eine Vorlagenaenderung erreicht ein schon eingebautes Bubble-Element nicht. */
+  (function fernrohrSetzen(){
+    var orb = root.querySelector('.upr-research-orb');
+    if (!orb || !UC || !UC.icon) return;
+    var svg = UC.icon('telescope', 2);
+    if (svg) orb.innerHTML = svg;
+  })();
+
   var openHistoryButton   = root.querySelector('#upr-open-history');
   var closeHistoryButton  = root.querySelector('#upr-close-history');
   var openHistoryResultsButton = root.querySelector('#upr-open-history-results');

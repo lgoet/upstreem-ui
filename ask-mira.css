@@ -714,19 +714,26 @@
   @keyframes amShimmer { from { background-position: -120% 0; } to { background-position: 220% 0; } }
 
   /* ---- Arbeitsprotokoll: Uhr, Trennlinie, Schrittliste ----------------------------------------
-     Eine Zeile besteht aus drei Teilen: dem Spinner ganz links, den Logos und dem Text. Der Spinner
-     sitzt im linken Innenabstand der Liste -- negatives margin-left in genau dessen Groesse. Dadurch
-     verschiebt sein Verschwinden NICHTS: Logos und Text stehen vorher und nachher an derselben
-     Stelle, und alle Zeilen fluchten untereinander.
+     Eine Zeile: Spinner, Zeichen, Text, dahinter die Logos. Solange der Schritt laeuft, steht der
+     Spinner ganz links und schiebt den Rest um seine Breite nach rechts; ist der Schritt fertig,
+     faehrt seine Breite auf 0 und die Zeile rueckt nach links an den Rand der Liste. Deshalb
+     KEIN gap an der Zeile, sondern Aussenabstaende an den Teilen: ein gap bleibt auch bei Breite 0
+     stehen, und die fertige Zeile stuende 10px eingerueckt.
      Der Auftritt einer Zeile laeuft ueber grid-template-rows 0fr -> 1fr: die Liste waechst weich
      mit, statt um die Zeilenhoehe zu springen. */
   .am-run { width: 100%; max-width: min(100%, 782px); }
   .am-run.is-live { padding-bottom: 30px; }        /* Luft unter dem Laufenden, wie beim alten Ladebild */
-  .am-run:not(.is-live) { margin-bottom: 4px; }
+  /* Nach der Antwort doppelt so viel Luft nach unten wie zuvor (mit .am-msg-main gap: 6px -> 20px):
+     die Liste ist ein eigener Block und soll nicht am Text der Antwort kleben. */
+  .am-run:not(.is-live) { margin-bottom: 14px; }
   .am-run-head {
     display: flex; align-items: center; min-height: 19px;
     padding-bottom: 11px; border-bottom: 1px solid var(--am-border);
   }
+  /* Ohne Schritte (Neuladen, alter Chat) bleibt nur die Uhr -- eine Trennlinie ohne Liste darunter
+     waere ein Strich um nichts. */
+  .am-run.is-bare .am-run-head { border-bottom: 0; padding-bottom: 0; }
+  .am-run.is-bare { margin-bottom: 9px; }
   .am-run-clock { font-size: 13.5px; font-weight: 500; color: var(--am-muted); line-height: 1; }
   .am-run-steps { display: flex; flex-direction: column; }
   .am-run-step {
@@ -736,37 +743,40 @@
   .am-run-step.is-in { grid-template-rows: 1fr; opacity: 1; }
   /* min-height:0 und overflow:hidden sind die Bedingung dafuer, dass 0fr die Zeile wirklich zufaltet */
   .am-run-inner { min-height: 0; overflow: hidden; }
-  .am-run-line { display: flex; align-items: center; gap: 10px; padding: 11px 0 0 24px; }
+  .am-run-line { display: flex; align-items: center; padding-top: 11px; min-width: 0; }
   .am-run-spin {
-    width: 14px; height: 14px; flex: 0 0 auto; margin-left: -24px;
-    transition: opacity 320ms ease, transform 320ms cubic-bezier(.2,.8,.3,1);
+    width: 14px; height: 14px; flex: 0 0 auto; margin-right: 10px;
+    transition: opacity 320ms ease, transform 320ms cubic-bezier(.2,.8,.3,1),
+                width 380ms cubic-bezier(.2,.8,.3,1), margin-right 380ms cubic-bezier(.2,.8,.3,1);
   }
   /* Innen dreht es, aussen blendet es aus -- sonst kaempfen Drehung und Uebergang um dasselbe transform */
   .am-run-spin i {
-    display: block; width: 100%; height: 100%; border-radius: 50%;
+    display: block; width: 14px; height: 14px; border-radius: 50%;
     border: 1.8px solid var(--am-border); border-top-color: var(--am-muted);
     animation: amRunSpin 720ms linear infinite;
   }
   @keyframes amRunSpin { to { transform: rotate(360deg); } }
-  .am-run-step.is-done .am-run-spin { opacity: 0; transform: scale(.5); }
-  /* Unsichtbar heisst auch: hoert auf zu drehen. Die Box bleibt stehen, damit nichts nachrutscht. */
+  /* Fertig: der Spinner geht weg UND gibt seinen Platz ab -- Zeichen, Text und Chips ruecken in
+     einer Bewegung nach links an den Rand. */
+  .am-run-step.is-done .am-run-spin { opacity: 0; transform: scale(.5); width: 0; margin-right: 0; }
   .am-run-step.is-cold .am-run-spin { visibility: hidden; }
   .am-run-step.is-cold .am-run-spin i { animation: none; }
-  /* Feste Breite: drei 20er-Chips mit 6px Ueberlappung sind 48px. Dadurch beginnt der Text in JEDER
-     Zeile an derselben Stelle -- auch in der Denkzeile, die nur ein Zeichen traegt. */
-  .am-run-lead { display: inline-flex; align-items: center; flex: 0 0 auto; width: 48px; }
-  .am-run-lead > * { opacity: 0; transform: translateX(7px) scale(.86); transition: opacity 340ms ease, transform 340ms cubic-bezier(.2,.8,.3,1); }
-  .am-run-step.is-in .am-run-lead > * { opacity: 1; transform: none; }
-  .am-run-lead > * + * { margin-left: -6px; }
-  /* Der 24er-Chip auf 20: Radius und Schriftgroesse im selben Verhaeltnis (8*20/24, 9.5*20/24) */
-  .am-run-lead .am-tload-logo, .am-run-lead .am-tload-ai { width: 20px; height: 20px; border-radius: 7px; font-size: 8px; }
-  .am-run-lead .am-tload-ai img { width: 20px; height: 20px; border-radius: 7px; }
-  /* Im Stapel bekommt auch das Modell-Logo den weichen Kasten der anderen Chips: ohne Rand laufen
-     zwei ueberlappende Logos ineinander, und der Stapel wird unlesbar. */
-  .am-run-lead .am-tload-ai { background: var(--am-soft); border: 1px solid var(--am-border); }
-  .am-run-lead .am-run-ic { color: var(--am-muted); }
-  .am-run-lead .am-run-thema { border-color: transparent; }
-  .am-run-ic svg { width: 13px; height: 13px; display: block; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+  /* Das Zeichen der Zeile: ohne Kasten, zweite Textfarbe, feste Breite -- dadurch beginnt der Text
+     in JEDER Zeile an derselben Stelle. */
+  .am-run-ic {
+    width: 20px; height: 20px; flex: 0 0 auto; margin-right: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--am-muted-2); transition: color 460ms ease;
+  }
+  .am-run-ic svg { width: 15px; height: 15px; display: block; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .am-run-step.is-done .am-run-ic { color: var(--am-muted); }
+  /* Mira selbst: Kasten in der ersten Textfarbe, Zeichen darin in der Flaechenfarbe -- also in
+     beiden Themen der kraeftigste Gegensatz, den das Thema hat. */
+  .am-run-ic.is-mira {
+    border-radius: 7px; background: var(--am-text); color: var(--am-bg);
+  }
+  .am-run-ic.is-mira svg { width: 12px; height: 12px; }
+  .am-run-step.is-done .am-run-ic.is-mira { color: var(--am-bg); }
   .am-run-txt { font-size: 13.5px; font-weight: 500; line-height: 1.45; color: var(--am-muted); min-width: 0; transition: color 460ms ease; }
   .am-run-step.is-done .am-run-txt { color: var(--am-text); }
   /* Die Denkzeile traegt ihren Text ABSOLUT positioniert -- das ist die Lauf-Mechanik, mit der er
@@ -777,6 +787,30 @@
   .am-run-step.is-done .am-think-text { color: var(--am-text); }
   .am-run-step.is-deep .am-think-text { display: none; }
   .am-run-step.is-deep .am-deep { display: inline-flex; }
+  /* Die Logos hinter dem Text: mit Abstand zwischen den Chips, wie jeder andere Chip-Satz im Haus,
+     nicht als Stapel. */
+  .am-run-lead { display: inline-flex; align-items: center; flex: 0 0 auto; gap: 8px; margin-left: 14px; }
+  .am-run-lead > * { opacity: 0; transform: translateX(7px) scale(.86); transition: opacity 340ms ease, transform 340ms cubic-bezier(.2,.8,.3,1); }
+  .am-run-step.is-in .am-run-lead > * { opacity: 1; transform: none; }
+  /* Der 24er-Favicon-Kasten des Hauses (.up-logo-box) auf 20px: helle Platte --vt-logo-bg, 1px
+     Polster, Radius und Bildmasse im selben Verhaeltnis (8*20/24, 22*20/24, 7*20/24). Ohne die
+     Platte verschwanden dunkle Logos im Dunkeln -- deshalb ist sie appweit hell, in BEIDEN Themen. */
+  .am-run-lead .am-tload-logo, .am-run-lead .am-tload-ai {
+    width: 20px; height: 20px; border-radius: 7px; font-size: 8px;
+    background: var(--vt-logo-bg); border: 1px solid var(--am-border); padding: 1px;
+  }
+  .am-run-lead .am-tload-logo img, .am-run-lead .am-tload-ai img {
+    width: 100%; height: 100%; border-radius: 6px; object-fit: contain;
+  }
+  .up-root[data-theme="dark"] .am-run-lead .am-tload-logo,
+  .up-root[data-theme="dark"] .am-run-lead .am-tload-ai { border-color: transparent; background-clip: padding-box; }
+  @media (prefers-reduced-motion: reduce){
+    .am-run-step, .am-run-lead > *, .am-run-spin, .am-run-ic, .am-run-txt { transition: none !important; }
+    .am-run-step { grid-template-rows: 1fr; opacity: 1; }
+    .am-run-lead > * { opacity: 1; transform: none; }
+    .am-run-spin i { animation: none !important; }
+  }
+
   /* brand + favicon chip = exactly the inline-logo style (24px, radius 8, soft bg, border, cover) */
   .am-tload-logo { width: 24px; height: 24px; border-radius: 8px; background: var(--am-soft); border: 1px solid var(--am-border); overflow: hidden; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #fff; font-size: 9.5px; font-weight: 700; }
   .am-tload-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }

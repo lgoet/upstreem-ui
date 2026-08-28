@@ -854,7 +854,6 @@
   "am-run-spin",
   "am-run-step",
   "am-run-steps",
-  "am-run-thema",
   "am-run-txt",
   "am-rv-b",
   "am-rv-w",
@@ -2691,7 +2690,7 @@
   "globals": 138,
   "payloadkeys": 86,
   "dataattrs": 199,
-  "klassen": 1986,
+  "klassen": 1985,
   "keyframes": 59
  }
 }

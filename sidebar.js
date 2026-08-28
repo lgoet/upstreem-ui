@@ -672,6 +672,20 @@
       markeBeobachten();
       if (typeof tipsSchalten === "function") tipsSchalten();
     }
+    /* Nur die Markierung umsetzen -- KEIN Neuaufbau der Liste.
+       Vorher lief bei jedem Klick renderNav(): innerHTML der ganzen Navigation neu, jede Zeile mit
+       ihrem svg, dazu hoehenSetzen (liest je Gruppe scrollHeight und schreibt max-height, also ein
+       erzwungenes Layout je Gruppe) und ein frischer ResizeObserver. Das lief VOR dem Event an
+       Bubble, und genau so lange stand der Seitenwechsel. Hier bleibt: eine Klasse umsetzen und die
+       Marke messen. Die Zeilen selbst aendern sich beim Wechsel des Punktes ja nicht. */
+    function aktivMarkieren(){
+      aktivPruefen();
+      [].forEach.call(elNav.querySelectorAll(".usn-item"), function(b){
+        var an = state.enthuellt && b.getAttribute("data-nav-key") === state.aktiv;
+        b.classList.toggle("is-active", an);
+      });
+      markeSetzen(false);
+    }
     /* ---- Die gleitende Marke ----
        Gemessen statt gerechnet, und zwar jedes Mal: die Zeilen sind unterschiedlich hoch, ihre
        Abstaende haengen an der Gruppe, und im Mini-Zustand sind sie schmaler. Eine Rechnung aus
@@ -680,7 +694,7 @@
        Ganzes skaliert sein koennen (die Landingpage tut es), und das Rechteck liefert dort die
        verkleinerten Masse. Bezugsrahmen ist .usn-nav (position: relative in sidebar.css), also
        zaehlt die Scrollposition der Liste nicht mit. */
-    var elMark = null, markeStand = false, markeRo = null, markeSchriftHaengt = false;
+    var elMark = null, markeStand = false, markeRo = null, markeSchriftHaengt = false, markeSig = "";
     function markeSetzen(sofort){
       if (!elMark || !elMark.parentNode) return;
       var an = elNav.querySelector(".usn-item.is-active");
@@ -695,11 +709,18 @@
       if (gruppe && gruppe.classList.contains("is-closed")){
         elMark.classList.remove("is-bereit"); return;
       }
+      /* Erst messen, dann vergleichen: der Beobachter feuert auch, wenn sich an der Zeile nichts
+         geaendert hat (eine Gruppe darunter faehrt zu). Ein Schreiben ohne Aenderung macht das
+         Layout trotzdem schmutzig. */
+      var l = an.offsetLeft, w = an.offsetWidth, h = an.offsetHeight, y = an.offsetTop;
+      var sig = l + ":" + w + ":" + h + ":" + y;
+      if (sig === markeSig && elMark.classList.contains("is-bereit")) return;
+      markeSig = sig;
       if (sofort) elMark.style.transition = "none";
-      elMark.style.left = an.offsetLeft + "px";
-      elMark.style.width = an.offsetWidth + "px";
-      elMark.style.height = an.offsetHeight + "px";
-      elMark.style.transform = "translateY(" + an.offsetTop + "px)";
+      elMark.style.left = l + "px";
+      elMark.style.width = w + "px";
+      elMark.style.height = h + "px";
+      elMark.style.transform = "translateY(" + y + "px)";
       if (sofort){ void elMark.offsetHeight; elMark.style.transition = ""; }
       elMark.classList.add("is-bereit");
       /* Erst JETZT geben die Zeilen ihre eigene Flaeche ab (sidebar.css: .has-marke). Vorher waere
@@ -723,7 +744,15 @@
       }
       if (!window.ResizeObserver) return;
       if (markeRo) markeRo.disconnect();
-      markeRo = new ResizeObserver(function(){ markeSetzen(true); });
+      /* Der Beobachter feuert waehrend jeder Fahrt in jedem Bild -- und markeSetzen LIEST dabei
+         Layoutwerte (offsetTop/Left/Height). Ein Lesen im Beobachter-Rueckruf erzwingt einen
+         weiteren Layoutdurchgang, und das mitten in dem Moment, in dem die neue Seite gezeichnet
+         wird. Also je Bild hoechstens einmal, ueber requestAnimationFrame gebuendelt. */
+      var warte = 0;
+      markeRo = new ResizeObserver(function(){
+        if (warte) return;
+        warte = requestAnimationFrame(function(){ warte = 0; markeSetzen(true); });
+      });
       try {
         markeRo.observe(elNav);
         [].forEach.call(elNav.querySelectorAll("[data-body]"), function(b){ markeRo.observe(b); });
@@ -970,12 +999,16 @@
       var nb = t.closest("[data-nav-key]");
       if (nb){
         var k = nb.getAttribute("data-nav-key");
-        state.aktiv = k; renderNav();
+        /* ZUERST das Event: daran haengt der Seitenwechsel in Bubble, und alles, was davor laeuft,
+           verzoegert ihn um genau seine eigene Dauer. Das Bild danach ist billig (eine Klasse, eine
+           Messung) und im selben Tick fertig -- der Nutzer sieht die Markierung trotzdem sofort. */
+        fire("data-nav-fn", "usnNav", { key: k });
+        state.aktiv = k;
+        aktivMarkieren();
         menuZu();
         /* Auf dem Telefon faehrt die Leiste nach der Wahl wieder ein -- sonst steht der Nutzer
            vor der Seite, die er gerade geoeffnet hat, und sieht sie nicht. */
         if (state.klasse === "hint"){ state.offen = false; anwenden(); }
-        fire("data-nav-fn", "usnNav", { key: k });
         return;
       }
     });
@@ -1460,7 +1493,10 @@
       setLoading: function(v){ ladenSetzen(isYes(v)); return true; },
       setActive: function(k){
         state.aktiv = aktivNorm(k) || "dashboard";
-        renderNav(); return true;
+        /* Auch hier reicht die Markierung: die Liste selbst haengt nicht am aktiven Punkt. Beim
+           allerersten Aufruf steht sie noch nicht -- dann baut renderNav sie. */
+        if (elNav.querySelector(".usn-item")) aktivMarkieren(); else renderNav();
+        return true;
       },
       setCount: function(n){
         state.count = (n == null || n === "") ? "" : String(n);
