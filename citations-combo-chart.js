@@ -96,7 +96,7 @@
      Turns the Bubble payload into the {labels, datasets} UC.makeLine expects. This is genuinely
      per component: visibility-chart keys on company_id with a fixed palette, this one keys on
      domain or url depending on dataMode and derives its colours from the entry's TYPE. */
-  function buildLineDatasets(series, meta, dataMode, isDark, farbSchema){
+  function buildLineDatasets(series, meta, dataMode, isDark){
     series = Array.isArray(series) ? series : [];
     meta = Array.isArray(meta) ? meta : [];
     var metaMap = {}, metaMapNorm = {};
@@ -163,36 +163,15 @@
     ids.sort(function(a,b){ return (metaMap[b].global_share||0) - (metaMap[a].global_share||0); });
     ids = ids.slice(0, 7);
     var colorForId = {};
-    /* Markenfarben, in dieser Reihenfolge:
-         1. brand_hex aus dem Payload -- exakt, kein Netz, gewinnt immer
-         2. die dominierende Farbe des Favicons, sofern schon im Zwischenspeicher
-         3. die Typfarbe, solange (2) noch laeuft oder es keine gibt
-       Was fehlt, wird in fehlendeFarben gesammelt; der Aufrufer holt es nach und zeichnet noch
-       einmal. Deshalb der synchrone Blick in den Zwischenspeicher und kein Warten hier: eine
-       Zeichnung, die auf das Netz wartet, laesst das Chart leer stehen. */
-    var fehlende = [];
+    /* NUR Typfarben. Vorher gab es davor zwei Stufen: brand_hex aus dem Payload und die
+       dominierende Farbe des Favicons. Die zweite ist heraus, und mit ihr die Einstellung
+       "Series Color" -- sie hat je Domain ein Bild geladen, es dekodiert und 4096 Pixel gelesen,
+       und das im Hauptstrang der Seite. Bei sieben Reihen war das siebenmal, dazu ein zweiter
+       Zeichendurchgang, sobald die Farben da waren. Der erste hat brand_hex mitgenommen: es kam
+       nur ueber denselben Schalter zum Tragen.
+       Was bleibt, ist die Familienfarbe des Zitattyps mit einer Helligkeitsstaffel innerhalb der
+       Familie -- dieselbe Sprache, die der Doughnut daneben spricht. */
     var offen = ids;
-    if (farbSchema === "brand"){
-      offen = [];
-      ids.forEach(function(id){
-        var m = metaMap[id];
-        var quelle = (m && m.domain) || id;
-        var eigen = String((m && m.brand_hex) || "").trim();
-        if (eigen){
-          if (eigen.charAt(0) !== "#") eigen = "#" + eigen;
-          if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(eigen)){
-            colorForId[id] = UC.readableHex ? UC.readableHex(eigen.toLowerCase(), isDark) : eigen.toLowerCase();
-            return;
-          }
-        }
-        var zwischen = UC.faviconColorCached ? UC.faviconColorCached(quelle) : null;
-        if (zwischen) { colorForId[id] = UC.readableHex ? UC.readableHex(zwischen, isDark) : zwischen; return; }
-        /* undefined heisst "noch nie gefragt" -- dann nachholen. null heisst "gefragt, es gibt
-           keine": dann bleibt es bei der Typfarbe und es wird nicht wieder gefragt. */
-        if (zwischen === undefined) fehlende.push(quelle);
-        offen.push(id);
-      });
-    }
     /* group ids by their family colour, then spread a shade ramp inside each group */
     var groups = {};
     offen.forEach(function(id){
@@ -215,7 +194,7 @@
         borderColor: col
       };
     });
-    return { labels: labels, datasets: datasets, fehlendeFarben: fehlende };
+    return { labels: labels, datasets: datasets };
   }
 
   /* ================= controller ================= */
@@ -241,16 +220,6 @@
     try { savedMode = UC.prefGet ? UC.prefGet(UC.prefKey("cc_chart_mode__" + instanceId))
                                  : window.localStorage.getItem("cc_chart_mode__" + instanceId); } catch(e){}
     var startMode = (savedMode === "bar" || savedMode === "doughnut") ? savedMode : "doughnut";
-    /* Das Farbschema der Linien. "brand" ist jetzt die Vorgabe: die Hausfarbe der Domain
-       unterscheidet zwei Linien auf einen Blick, waehrend "type" innerhalb einer Familie nur
-       ueber die Helligkeit staffelt -- bei drei Domains desselben Typs liegen die Toene dann
-       dicht beieinander. "type" bleibt waehlbar und gewinnt, wenn es ausdruecklich gespeichert
-       ist; nur wer noch nie gewaehlt hat, bekommt die neue Vorgabe. */
-    var FARB_KEY = "cc_line_colors__";
-    var savedFarb = null;
-    try { savedFarb = UC.prefGet ? UC.prefGet(UC.prefKey(FARB_KEY + instanceId)) : null; } catch(e){}
-    var startFarb = savedFarb === "type" ? "type" : "brand";
-
     var isDark = isYes(root.getAttribute("data-isdark"));
     if (isDark){ root.setAttribute("data-theme","dark"); donutRoot.setAttribute("data-theme","dark"); } else { root.removeAttribute("data-theme"); donutRoot.removeAttribute("data-theme"); }
     /* OR two independent loading signals (data-processing/data-processing2), same convention as
@@ -267,7 +236,7 @@
     var LOADING_EXPLICIT = (window.__ccLoadingExplicit = window.__ccLoadingExplicit || {});
 
     var state = {
-      chartMode: startMode, dataMode: "domain", colorScheme: startFarb,
+      chartMode: startMode, dataMode: "domain",
       total: 0, prepped: [],
       loading: LOADING_EXPLICIT[instanceId]
         ? !!(window.__ccCache && window.__ccCache[instanceId] && window.__ccCache[instanceId].loading)
@@ -391,7 +360,7 @@
       /* the per-series filter is this component's own feature — the kit only ever sees the
          datasets that should actually be drawn */
       var built = buildLineDatasets(state.series, state.dataMode === "url" ? state.meta.urls : state.meta.domains,
-                                    state.dataMode, isDark, state.colorScheme);
+                                    state.dataMode, isDark);
       /* Same debug stash as root.__ccLastParams above, but the resolved side: what dataMode and
          meta array this actually used, and the id/label buildLineDatasets produced for each
          series — so a "still shows urls" report can be diagnosed from one console read instead of
@@ -406,43 +375,6 @@
          als die Farben geaendert hat. */
       if (nurFarben && line.updateColors) line.updateColors({ labels: built.labels, datasets: visible });
       else line.render({ labels: built.labels, datasets: visible });
-      farbenNachholen(built.fehlendeFarben);
-    }
-    /* Die Favicon-Farben, die beim Zeichnen noch nicht im Zwischenspeicher lagen. Nachgeholt und
-       DANN einmal neu gezeichnet -- nicht je Farbe einmal: sieben Reihen waeren sonst sieben
-       Neuzeichnungen, und jede setzt die Eingangsanimation der Linien neu an.
-       Wer nichts liefert, bleibt bei seiner Typfarbe; der Zwischenspeicher merkt sich das als null,
-       also wird nicht bei jedem Zeichnen erneut gefragt. */
-    var farbenLaufen = false;
-    function farbenNachholen(liste){
-      if (!liste || !liste.length || farbenLaufen) return;
-      if (!UC.faviconColor) return;
-      farbenLaufen = true;
-      /* In den Leerlauf verschoben, nicht sofort: sieben Bildabrufe plus siebenmal Pixel lesen
-         landeten direkt im Fenster der Seitenwechsel-Animation, und die wurde hakelig. Gemeldet auf
-         der Citations-Seite, und die Rechnung stimmt -- ein Bild dekodieren und 4096 Pixel wiegen
-         ist Arbeit im Hauptstrang.
-         requestIdleCallback mit Frist: gibt es die Funktion nicht (Safari), tut ein setTimeout
-         dasselbe grob genug. Die Farben sind kein Zustand, auf den jemand wartet -- bis sie da
-         sind, steht die Reihe in ihrer Typfarbe. */
-      var starten = function(fn){
-        if (window.requestIdleCallback) window.requestIdleCallback(fn, { timeout: 1500 });
-        else setTimeout(fn, 400);
-      };
-      starten(function(){ farbenHolen(liste); });
-    }
-    function farbenHolen(liste){
-      var offen = liste.length, etwasNeu = false;
-      liste.forEach(function(quelle){
-        UC.faviconColor(quelle, function(hex){
-          if (hex) etwasNeu = true;
-          if (--offen > 0) return;
-          farbenLaufen = false;
-          /* Nur neu zeichnen, wenn wirklich eine Farbe dazugekommen ist und der Nutzer noch im
-             Markenschema steht -- er kann in der Zwischenzeit zurueckgeschaltet haben. */
-          if (etwasNeu && state.colorScheme === "brand" && isOwner()) renderLineSide(true);
-        });
-      });
     }
     function render(){
       if (!isOwner()) return;
@@ -531,32 +463,16 @@
           populateSettingsMenu();
           return;
         }
-        var cs = e.target.closest("[data-colorscheme]");
-        if (cs){
-          var neu = cs.getAttribute("data-colorscheme");
-          if (neu === state.colorScheme) return;
-          state.colorScheme = neu;
-          try { UC.prefSet && UC.prefSet(UC.prefKey(FARB_KEY + instanceId), neu); } catch(err){}
-          populateSettingsMenu();
-          render();
-        }
       });
       document.body.appendChild(settingsMenu);
       return settingsMenu;
     }
     function populateSettingsMenu(){
       if (!settingsMenu) return;
-      /* Zwei Knoepfe wie beim Linienbreiten-Umschalter darunter -- dasselbe Bauteil (.up-dense),
-         damit ein Menue nicht zwei Bauarten hat. */
-      var s = state.colorScheme;
+      /* Nur noch die Linienbreite. Der Abschnitt "Series Color" ist heraus: die Wahl gab es allein,
+         um die Farbe aus dem Favicon zu holen, und die ist mit ihrer Rechnung im Hauptstrang
+         weggefallen. */
       settingsMenu.innerHTML = '<div class="up-pop-head">Chart Settings</div>' +
-        '<div class="up-pop-sub">Series Color</div>' +
-        '<div class="up-dense">' +
-          '<button class="up-dense-btn' + (s === "type" ? " is-active" : "") + '" type="button"' +
-            ' data-colorscheme="type">By type</button>' +
-          '<button class="up-dense-btn' + (s === "brand" ? " is-active" : "") + '" type="button"' +
-            ' data-colorscheme="brand">Brand color</button>' +
-        '</div>' +
         UC.lineWidthSectionHtml();
     }
     function positionSettingsMenu(){

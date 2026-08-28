@@ -70,8 +70,12 @@
       { key: "performance",   label: "Performance",     icon: "chartColumnUp" },
       { key: "opportunities", label: "Opportunities",   icon: "listTodo" },
       /* Schluessel "research", nicht "prompt-research" -- siehe AKTIV_SYNONYM weiter unten. */
-      { key: "research",      label: "Prompt Research", icon: "textSearch" },
-      { key: "mira",          label: "Mira",            icon: "mira" }
+      { key: "research",      label: "Prompt Research", icon: "telescope" },
+      /* blend statt der Bilddatei: Mira traegt jetzt dasselbe Zeichen wie ihre Wortmarke in der
+         Komponente selbst, und es kommt wie jedes andere aus UC.icon. Damit faellt der Sonderweg
+         ueber ein Bild von Bubbles CDN weg -- mit ihm die zwei Helligkeitsfilter, die noetig
+         waren, weil ein fremdes SVG sich nicht einfaerben laesst. */
+      { key: "mira",          label: "Mira",            icon: "blend" }
     ]},
     { head: "Organisation", items: [
       { key: "teams",    label: "Teams",    icon: "folders", chips: true },
@@ -185,34 +189,11 @@
       var v = root.getAttribute(n);
       return (v == null || v === "" || /^[A-Z_]{3,}$/.test(v)) ? (f || "") : v;
     }
-    /* Das Ueberschreibbild von Mira, oder leer. An EINER Stelle, weil zwei Aufrufer dieselbe
-       Antwort brauchen: ic() entscheidet, was gezeichnet wird, und der Bau der Zeile entscheidet,
-       ob has-mira gesetzt wird. Standen die beiden Abfragen getrennt, koennte die Klasse das
-       Symbol ausblenden, obwohl gar kein Bild darueber liegt. */
-    function miraBild(){
-      /* Das Thema haengt an der Leiste (.usn-bar[data-theme]), nicht an der Wurzel -- so stand es
-         auch vorher hier. Der Wachhund davor, weil bar erst weiter unten entsteht: gerufen wird
-         diese Funktion nur beim Zeichnen, aber eine hochgezogene Variable ist bis dahin
-         undefiniert und ein Zugriff darauf riss frueher schon Leisten mit. */
-      var dunkel = !!bar && bar.getAttribute("data-theme") === "dark";
-      return url(attr(dunkel ? "data-mira-icon-dark" : "data-mira-icon", ""));
-    }
+    /* Mira traegt jetzt ein Zeichen wie jeder andere Punkt (blend, siehe BLOECKE). Hier stand
+       davor ein Sonderweg: ein Bild von Bubbles CDN ueber einem Symbol, dazu zwei Helligkeits-
+       filter in der CSS, weil ein fremdes SVG sich weder faerben noch als Maske verwenden laesst
+       (kein CORS-Header). Der ganze Weg ist mit dem Wechsel auf blend hinfaellig. */
     function ic(name){
-      if (name === "mira"){
-        var q = miraBild();
-        if (!q) return UC.icon("galaxy", 1.8);
-        /* Der Sonderweg: galaxy liegt darunter, das Bild darueber und blendet es aus. Faellt das
-           Bild aus, nimmt es sich samt der Klasse weg und das Symbol wird sichtbar -- ein leerer
-           Platz neben einem Menuepunkt sieht aus, als fehle etwas. Gleiche Bauart wie
-           .up-logo-box mit has-img.
-           Bild und nicht Maske: als Maske haette es die Farbe der Zeile getragen, aber eine Datei
-           auf Bubbles CDN kommt ohne CORS-Header, und ein fremdes SVG wird als mask-image
-           verworfen. Gegenprobe mit derselben Maske als data:-URL: die malt. Den Ton macht
-           deshalb ein brightness-Filter in der CSS. */
-        return UC.icon("galaxy", 1.8) +
-          '<img class="usn-mira" src="' + esc(q) + '" alt="" ' +
-          'onerror="this.parentNode.classList.remove(\'has-mira\');this.remove()"/>';
-      }
       return UC.icon(name, 1.8);
     }
     /* .up-logo-box aus core: ein Element, Buchstabe darunter, Bild darueber. Faellt das Bild
@@ -654,9 +635,7 @@
       return '<button class="usn-item' + ((state.enthuellt && it.key === state.aktiv) ? " is-active" : "") + '" ' +
         'type="button" data-nav-key="' + esc(it.key) + '" data-tiplabel="' + esc(it.label) + '" ' +
         'data-tip-place="right">' +
-        /* has-mira blendet das Symbol darunter aus. Das darf nur passieren, wenn wirklich ein
-           Bild darueber liegt -- sonst waere der Platz leer. */
-        '<span class="usn-ic' + (it.icon === "mira" && miraBild() ? " has-mira" : "") + '">' + ic(it.icon) + '</span>' +
+        '<span class="usn-ic">' + ic(it.icon) + '</span>' +
         '<span class="usn-txt">' + esc(it.label) + '</span>' + extra + '</button>';
     }
     function renderNav(){

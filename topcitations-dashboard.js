@@ -411,7 +411,7 @@
         var hoverTitle = isUrl && r.title && r.url && r.title !== r.url ? r.url : "";
         var favicon = r.favicon || r.logo || "";
         var logo = favicon
-          ? '<span class="up-logo-box has-img"><img src="' + esc(favicon) + '" onerror="this.style.visibility=\'hidden\'"/></span>'
+          ? '<span class="up-logo-box up-fav has-img"><img src="' + esc(favicon) + '" onerror="this.parentNode.classList.remove(\'has-img\'); this.remove()"/></span>'
           : '<span class="up-logo-box"></span>';
         var typeRawKey = isUrl ? r.url_type : r.citation_type;
         var tagMode = isUrl ? "url" : "domain";

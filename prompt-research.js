@@ -201,13 +201,24 @@
      Bubble HTML element the user pasted once, so a change in bubble/prompt_research_bubble.html
      only reaches a FRESH install. From JS the CDN pin alone carries it. Idempotent by nature. */
   (function(){
-    // feather message-circle (round) -- the round speech bubble, not the square message-square
-    var CHAT_ICON = '<path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719" />';
+    /* Die Seitenleiste aus core (panelLeft), GESPIEGELT: die Liste der Recherchen faehrt von
+       rechts herein, die Leiste der App von links. Dasselbe Zeichen fuer dieselbe Sache, nur zur
+       richtigen Seite gedreht. Vorher stand hier die runde Sprechblase -- die sagt "Chat" und
+       nicht "Liste, die von der Seite kommt". */
+    /* Die FORMEN aus core, nicht aus einer Kopie: icon() liefert ein ganzes svg, gebraucht wird
+       hier nur sein Inhalt (das svg der Vorlage bleibt stehen, es traegt Groesse und Strichbreite
+       aus der CSS des Knopfes). */
+    var LEISTE = (function(){
+      if (!UC || !UC.icon) return "";
+      var h = document.createElement('div');
+      h.innerHTML = UC.icon('panelLeft', 2);
+      return h.firstChild ? h.firstChild.innerHTML : "";
+    })();
     ['#upr-open-history', '#upr-open-history-results'].forEach(function(sel){
       var btn = root.querySelector(sel);
       if (!btn) return;
       var svg = btn.querySelector('svg');
-      if (svg) svg.innerHTML = CHAT_ICON;
+      if (svg && LEISTE){ svg.innerHTML = LEISTE; svg.classList.add('upr-leiste-ic'); }
       /* Only the text node carries the label -- replacing it directly leaves the <svg> alone,
          which innerHTML/textContent on the button would not. */
       for (var i = 0; i < btn.childNodes.length; i++){

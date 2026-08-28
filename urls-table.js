@@ -295,7 +295,7 @@
                      : ((r.global_share_pct != null) ? r.global_share_pct : r.share_pct);
       return '<div class="up-row" data-url="' + esc(url) + '" tabindex="0" role="button">' +
         '<div class="up-td uut-td-domain">' +
-          '<span class="uut-logo-box' + (fav ? " has-img" : "") + '">' +
+          '<span class="uut-logo-box up-fav' + (fav ? " has-img" : "") + '">' +
             '<span class="uut-logo-ltr">' + esc(initial) + '</span>' +
             (fav ? '<img src="' + esc(fav) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
                    ' onerror="this.parentNode.classList.remove(\'has-img\'); this.remove()"/>' : "") +

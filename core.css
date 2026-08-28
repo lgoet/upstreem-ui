@@ -6,6 +6,10 @@
 @import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap");
 
 .up-root {
+      /* Die Form des Globus als Maske -- EINMAL, damit sie nicht in jeder Regel steht. Dieselben
+         Pfade wie UC.icon("globe"): Kreis, Meridian, Aequator. Gebraucht vom Rueckfall der
+         Favicon-Kaesten (.up-fav weiter unten). */
+      --up-globus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20'/%3E%3Cpath d='M2 12h20'/%3E%3C/svg%3E");
       --vc-text: #1f1f1b; --vc-muted: #6f737c; --vc-border: #e0e2e6;
       --vc-bg: #ffffff; --vc-heading-bg: #f5f5f5; --vc-sk: #e8e8e8; --up-surface: #ffffff;
       /* One dropdown panel colour and one selected-row colour for the WHOLE app. Every component
@@ -1771,6 +1775,29 @@
 .up-logo-ltr { font-size: 11px; font-weight: 600; color: var(--vc-muted); line-height: 1; text-transform: uppercase; }
 .up-logo-box.has-img .up-logo-ltr { display: none; }
 
+    /* ---------- Globus statt Buchstabe, wo das Bild ein FAVICON war ----------
+       Ein Favicon, das nicht laedt, hinterliess den Anfangsbuchstaben der Domain -- ein "R" fuer
+       reddit.com sagt nichts, und bei einer Subdomain ist es schlicht falsch. Fuer Seiten steht
+       deshalb ein Globus da, genau wie im Onboarding.
+       Bei MARKEN bleibt der Buchstabe: dort ist er die Marke, und "K" fuer Kestrel ist eine
+       Aussage. Deshalb ein eigener Aufhaenger (.up-fav) an den Kaesten, die eine Seite zeigen,
+       und keine Aenderung an .up-logo-box selbst.
+       Maske und keine Bilddatei: so traegt der Globus die Textfarbe seiner Umgebung und stimmt in
+       beiden Themen. */
+    .up-fav:not(.has-img) .up-logo-ltr,
+    .up-fav:not(.has-img) .up-stack-ltr,
+    .up-fav:not(.has-img) .udt-logo-ltr,
+    .up-fav:not(.has-img) .udt-sub-ltr,
+    .up-fav:not(.has-img) .uut-logo-ltr { display: none; }
+    .up-fav:not(.has-img)::after {
+      content: ""; position: absolute; left: 50%; top: 50%;
+      width: 62%; height: 62%; transform: translate(-50%, -50%);
+      background: var(--vc-third);
+      -webkit-mask: var(--up-globus) center / contain no-repeat;
+      mask: var(--up-globus) center / contain no-repeat;
+      pointer-events: none;
+    }
+
 /* ---------- Zeilen-Affordanz: Pfeil, der nach einer Verweildauer zur Aktion wird ----------
    Die Bauart kommt aus domains-table ("Show Pages") und steht jetzt hier, weil brands-overview
    mit seinem Edit-Knopf genau dasselbe braucht -- Buchstabe fuer Buchstabe dieselben Zeiten,
@@ -1872,7 +1899,13 @@
 /* Dieselbe Fassung wie beim Day/Week/Month-Umschalter darueber: 26px hoch, Polster 8, leisere
    Flaeche, oben ausgerichtet. Die Zeichen ziehen mit auf 14px -- 16px in einer 26er-Pille waeren
    dieselbe Enge, gegen die STYLEGUIDE 1 warnt. */
-.up-seg, .cc-seg, .ubo-seg, .tcl-seg { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-soft); border-radius: 8px; border: 0; height: 26px; flex: 0 0 auto; align-self: flex-start; }
+/* align-self: center -- die kleinen Umschalter stehen MITTIG in ihrer Zeile. Bei 26px Hoehe neben
+   einer 32px-Zeile sah oben buendig aus wie verrutscht.
+   Zwei bleiben oben buendig, und beide aus demselben Grund: sie stehen nicht in einer Zeile mit
+   Knoepfen, sondern in der oberen Ecke einer Kachel, deren Kopf mehrzeilig ist -- .vc-gran im
+   Visibility-Chart und .tcl-seg im Zitatteil. Ihre Ausnahme steht unten. */
+.up-seg, .cc-seg, .ubo-seg, .tcl-seg { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-soft); border-radius: 8px; border: 0; height: 26px; flex: 0 0 auto; align-self: center; }
+.tcl-seg { align-self: flex-start; }
 /* gap + type spec: this control was lifted from an ICON-ONLY switcher, so a button carrying an icon
    AND a label had its two children touching, and its text fell back to whatever the page inherited.
    Both are set here rather than per component -- gap is a no-op on the single-child icon variants

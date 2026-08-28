@@ -193,9 +193,10 @@
    the same kind of control as the row-height switch. No margin-left tuning needed here any more:
    it is just another child of .up-head-tools now, spaced by that container's own flex gap like
    every other toolbar icon. */
-.upt-status { display: inline-flex; align-items: center; gap: 0; height: 32px;
-  padding: 0; background: var(--vc-switch-bg); border-radius: 8px; flex: 0 0 auto; }
-.upt-status-btn { height: 32px; padding: 0 10px; border: 1px solid transparent; border-radius: 8px;
+/* Wie die uebrigen kleinen Umschalter: 26px, weicher Grund, mittig in der Zeile. */
+.upt-status { display: inline-flex; align-items: center; gap: 0; height: 26px;
+  padding: 0; background: var(--vc-switch-soft); border-radius: 8px; flex: 0 0 auto; align-self: center; }
+.upt-status-btn { height: 26px; padding: 0 8px; border: 1px solid transparent; border-radius: 8px;
   background: transparent; color: var(--vc-muted); cursor: pointer; font-family: inherit;
   font-size: 12px; font-weight: 500; line-height: 1; white-space: nowrap;
   display: inline-flex; align-items: center; gap: 6px; }

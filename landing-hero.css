@@ -1414,8 +1414,9 @@
 /* Der Zurueck-Knopf in der Titelzeile: 32 -> 24px, das Zeichen darin 16 -> 14px. Beide Werte
    zusammen, wie es §1 verlangt -- ein 16px-Zeichen in einem 24px-Knopf haette an den Rand
    gestossen. */
-.ulh-app .am-ct-back { width: 24px; height: 24px; padding: 0; border-radius: 7px; }
-.ulh-app .am-ct-back svg { width: 14px; height: 14px; }
+/* Der Knopf ist jetzt in der App selbst 24x24 (ask-mira.css) -- die Sonderregel hier ist damit
+   hinfaellig. Was bleibt, waere ein zweiter Ort mit denselben Zahlen, und der laeuft beim
+   naechsten Mal auseinander. */
 
 /* Der Abstand zwischen Frage und Antwort: 38 -> 24px. Im Fenster steht genau ein Paar, und 38px
    dazwischen lassen es wie zwei Bloecke ohne Zusammenhang aussehen. */

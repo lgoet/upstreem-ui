@@ -301,7 +301,7 @@
         : '<span class="up-pages">' + fmtTotal(pages || 0) + " pages" + '</span>';
       return '<div class="up-row' + (isOpen ? " is-expanded" : "") + '" data-domain="' + esc(dom) + '" tabindex="0" role="button">' +
         '<div class="up-td up-td-domain">' +
-          '<span class="udt-logo-box' + (fav ? " has-img" : "") + '">' +
+          '<span class="udt-logo-box up-fav' + (fav ? " has-img" : "") + '">' +
             '<span class="udt-logo-ltr">' + esc(initial) + '</span>' +
             (fav ? '<img src="' + esc(fav) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
                    ' onerror="this.parentNode.classList.remove(\'has-img\'); this.remove()"/>' : "") +
@@ -556,7 +556,7 @@
       if (titleHtml == null) titleHtml = highlight(shown, state.subQuery);
       return '<div class="udt-subrow" data-suburl="' + esc(url) + '" tabindex="0" role="button">' +
         '<span class="udt-sub-main">' +
-          '<span class="udt-sub-logo' + (fav ? " has-img" : "") + '">' +
+          '<span class="udt-sub-logo up-fav' + (fav ? " has-img" : "") + '">' +
             '<span class="udt-sub-ltr">' + esc(initial) + '</span>' +
             (fav ? '<img src="' + esc(fav) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
                    ' onerror="this.parentNode.classList.remove(\'has-img\'); this.remove()"/>' : "") +

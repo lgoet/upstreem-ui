@@ -711,3 +711,8 @@
 .up-explain .upr-vol-demo .upr-volume-seg.is-filled { background: #9fd25d; }
 .up-explain[data-theme="dark"] .upr-vol-demo .upr-volume-seg { background: #303030; }
 .up-explain[data-theme="dark"] .upr-vol-demo .upr-volume-seg.is-filled { background: #9fd25d; }
+
+/* Das Zeichen in den zwei Knoepfen "Previous Researches" ist die Seitenleiste aus core, gespiegelt:
+   die Liste faehrt von RECHTS herein, die Leiste der App von links. Gedreht und nicht als zweite
+   Zeichnung, damit es dasselbe Zeichen bleibt. */
+.upr-leiste-ic { transform: scaleX(-1); }

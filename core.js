@@ -1541,6 +1541,10 @@
        column wants the untouched brand_name_raw the RPC sends alongside name, not the (possibly
        normalized) display name. Defaults to "name" so every other consumer is unaffected. */
     var tipKey = opts.tipKey || "name";
+    /* opts.fav: dieser Stapel zeigt SEITEN und keine Marken. Faellt dann ein Favicon aus, steht
+       ein Globus statt des Anfangsbuchstabens da -- bei einer Domain sagt der Buchstabe nichts.
+       Die Regel dazu steht in core.css (.up-fav). */
+    var favGlobus = !!opts.fav;
     var list = Array.isArray(mentions) ? mentions : [];
     /* Ein Minus-Icon statt eines Bindestrichs: derselbe Strich, aber als Zeichen und nicht als
        Schriftzeichen, das je nach Schriftart anders lang ist. Lucide minus, wie ueberall. */
@@ -1573,7 +1577,7 @@
       /* is-last marks the final CHIP (a "+N" badge may follow it, so :last-child will not do).
          The left-spread hover rules need to target it, and CSS forbids :has() inside :has() —
          which is what an inline "item not followed by another item" selector would require. */
-      return '<span class="up-stack-item' + (logo ? " has-img" : "") + (mi === last ? " is-last" : "") +
+      return '<span class="up-stack-item' + (favGlobus ? " up-fav" : "") + (logo ? " has-img" : "") + (mi === last ? " is-last" : "") +
              '" data-brandtip="' + esc(tip) + '">' +
                '<span class="up-stack-vis">' +
                  '<span class="up-stack-ltr">' + esc(initial) + '</span>' +
@@ -7898,6 +7902,14 @@
     zap:      '<path d="M15.914 4a1.5 1.5 0 0 0-2.474-1.561l-9 9A1.5 1.5 0 0 0 5.5 14h4.002a.5.5 0 0 1 .471.666L8.086 20a1.5 1.5 0 0 0 2.475 1.56l9-9A1.5 1.5 0 0 0 18.5 10h-3.997a.5.5 0 0 1-.472-.667z"/>',
     globe:    '<circle cx="12" cy="12" r="10"/>' +
               '<path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
+    /* blend und telescope, beide aus Lucide wie alles hier: blend traegt Mira (Seitenleiste und
+       Wortmarke), telescope die Prompt Research. */
+    blend:    '<circle cx="9" cy="9" r="7"/><circle cx="15" cy="15" r="7"/>',
+    telescope: '<path d="m10.065 12.493-6.18 1.318a.934.934 0 0 1-1.108-.702l-.537-2.15a1.07 1.07 0 0 1 .691-1.265l13.504-4.44"/>' +
+              '<path d="m13.56 11.747 4.332-.924"/><path d="m16 21-3.105-6.21"/>' +
+              '<path d="M16.485 5.94a2 2 0 0 1 1.455-2.425l1.09-.272a1 1 0 0 1 1.212.727l1.515 6.06a1 1 0 0 1-.727 1.213l-1.09.272a2 2 0 0 1-2.425-1.455z"/>' +
+              '<path d="m6.158 8.633 1.114 4.456"/><path d="m8 21 3.105-6.21"/>' +
+              '<circle cx="12" cy="13" r="2"/>',
     copy:     '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>' +
               '<path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
     /* Lucide chart-pie: der Doughnut-Knopf des Umschalters. Stand bisher als rohes SVG im

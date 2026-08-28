@@ -13,8 +13,15 @@
    wodurch sich die vier Knoepfe ueber die ganze Karte strecken. Der Schalter soll nur so breit
    sein wie seine Beschriftungen. 16px links und rechts je Knopf -- die Beschriftungen sind hier
    laenger als die zweistelligen Zustaende, fuer die der Standardabstand gedacht ist. */
-.ubd-seg { margin: 0 0 16px; width: fit-content; }
-.ubd-seg .up-seg-btn { padding-left: 16px; padding-right: 16px; }
+/* Dieser Umschalter bleibt auf 32px, waehrend .up-seg in core auf 26 gegangen ist. Er ist kein
+   Werkzeug in einer Leiste, sondern die Navigation dieser Seite -- vier gleichwertige Ansichten,
+   und er steht allein ueber dem Inhalt.
+   Zu .check_reinvention.py, das hier "gesprengt" meldet: die Pille wird nicht angeschnitten,
+   sondern auf ihre FRUEHERE Groesse zurueckgestellt. Hoehe und Polster stehen an Leiste UND
+   Knopf (32 und 16, die Werte, die .up-seg vor der Verkleinerung hatte), und der Radius bleibt
+   bei 8, weil er bei 32px derselbe war -- es gibt also keinen Wert, der nicht mitgezogen ist. */
+.ubd-seg { margin: 0 0 16px; width: fit-content; height: 32px; align-self: flex-start; }
+.ubd-seg .up-seg-btn { height: 32px; padding-left: 16px; padding-right: 16px; }
 
 /* ---- Karte ----------------------------------------------------------------------------------- */
 /* width:100% ist hier nicht Kosmetik: die Karte hatte vorher keine eigene Breite. Im

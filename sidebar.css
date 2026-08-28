@@ -362,37 +362,11 @@
 .usn-ic { position: relative; width: 22px; height: 22px; flex: 0 0 22px; color: var(--vc-muted);
   display: inline-flex; align-items: center; justify-content: center; }
 .usn-ic svg { width: 17px; height: 17px; display: block; }
-/* Mira ist eine Wortmarke: die Maske liegt UEBER dem Rueckfall-Symbol, nicht daneben, und
-   verdeckt es. has-mira kommt erst, wenn die Datei geladen ist (miraLaden in sidebar.js) --
-   bleibt sie aus, steht der Stern weiter da. */
-/* Die Wortmarke ist ein Bild mit eigener Farbe: hell #1f1f1f, dunkel #e0e0e0. Das sind genau die
-   Werte von --vc-text -- also der Ton der AKTIVEN Zeile. Ihre Nachbarn im Ruhezustand tragen
-   --vc-muted, und deshalb stand die Marke im Dunkelmodus heller als alles um sie herum. Das war
-   der gemeldete Farbfehler; die Zuordnung hell/dunkel war richtig.
-   Eine Maske waere der saubere Weg gewesen (dann traegt die Marke currentColor wie jedes Symbol),
-   geht hier aber nicht: die Datei liegt auf Bubbles CDN ohne CORS-Header, und ein fremdes SVG wird
-   als mask-image verworfen. Gemessen: die Stelle blieb leer, waehrend dieselbe Maske als
-   data:-URL malt -- also die Herkunft, nicht die Syntax.
-   Bleibt brightness. Die Faktoren sind gerechnet, weil die Datei genau einen Grauwert traegt:
-     hell    31 (#1f1f1f)  ->  111 (--vc-muted #6f737c):  111/31  = 3.58
-     dunkel  224 (#e0e0e0) ->  160 (--vc-muted #a0a0a0):  160/224 = 0.714
-   In der aktiven Zeile KEIN Filter: dort ist der Zielton --vc-text, und den traegt die Datei schon.
-   17px mittig in der 22px-Spalte, wie das Symbol darunter. */
-.usn-mira { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-  width: 17px; height: 17px; display: block; object-fit: contain; filter: brightness(3.58); }
-/* Die dunkle Datei ist NICHT dieselbe Zeichnung in anderer Farbe: sie liegt auf einer 56x56-
-   Flaeche mit translate(6 6.5), die helle auf 44x43 ohne Rand. In derselben 17px-Box mit
-   object-fit: contain erscheint die dunkle damit nur 44/56 = 78.6% so gross -- gemessen an den
-   viewBox-Werten beider Dateien, das war die Meldung "im Dunkeln kleiner".
-   56/44 = 1.273 gleicht genau diesen Rand aus. Die Zeichnung sitzt in beiden Dateien mittig
-   (6 + 22 = 28 = die Mitte von 56), deshalb genuegt Skalieren, ohne zu verschieben.
-   Sauberer waere eine dunkle Datei ohne Rand -- dann faellt diese Zeile ersatzlos weg. */
-.usn-bar[data-theme="dark"] .usn-mira {
-  filter: brightness(0.714);
-  transform: translate(-50%, -50%) scale(1.273);
-}
-.usn-item.is-active .usn-mira { filter: none; }
-.usn-ic.has-mira svg { visibility: hidden; }
+/* Mira traegt jetzt dasselbe Zeichen wie jeder andere Punkt (blend aus UC.icon). Hier standen
+   davor rund 25 Zeilen fuer einen Sonderweg: eine Bilddatei von Bubbles CDN ueber dem Symbol, dazu
+   zwei gerechnete Helligkeitsfilter (3.58 hell, 0.714 dunkel) und eine Groessenkorrektur von
+   1.273, weil die dunkle Datei auf einer groesseren Flaeche lag. Alles davon war noetig, WEIL es
+   ein fremdes Bild war -- ein Zeichen aus core traegt currentColor und braucht nichts davon. */
 .usn-item.is-active .usn-ic { color: var(--vc-text); }
 .usn-txt { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Hier stand eine optische Korrektur von 1px nach unten. Sie galt fuer die Feather-Icons; mit

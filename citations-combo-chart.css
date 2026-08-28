@@ -116,8 +116,10 @@
 .combo-filter-empty { padding: 10px; font-size: 12px; color: var(--vc-muted); text-align: center; }
 
 /* ---------- granularity switcher (day / week / month) ---------- */
-.cc-gran { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-bg); border-radius: 8px; border: 0; height: 32px; flex: 0 0 auto; }
-.cc-gran-btn { height: 32px; padding: 0 12px; border: 1px solid transparent; border-radius: 8px; background: transparent;
+/* Dieselbe Groesse wie die uebrigen kleinen Umschalter der App: 26px, 8px Polster, der weiche
+   Grund. Vorher 32px -- er stand als einziger in seiner Zeile eine Stufe groesser da. */
+.cc-gran { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-soft); border-radius: 8px; border: 0; height: 26px; flex: 0 0 auto; align-self: center; }
+.cc-gran-btn { height: 26px; padding: 0 8px; border: 1px solid transparent; border-radius: 8px; background: transparent;
   color: var(--vc-muted); cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1;
   display: inline-flex; align-items: center; justify-content: center; }
 .cc-gran-btn:hover { color: var(--vc-text); }

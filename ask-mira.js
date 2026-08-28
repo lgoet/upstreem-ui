@@ -4391,11 +4391,27 @@
      Liefert der Kern kein galaxy (eine aeltere core.js an einem anderen Pin), bleibt die Klasse
      aus und das gezeichnete Zeichen der Vorlage wird sichtbar. Ein leeres Feld waere die
      schlechtere Antwort auf eine alte Datei. */
+  /* Das Zeichen im Knopf "All Chats": die Seitenleiste aus core, gespiegelt. Ausgetauscht wird es
+     hier und nicht in der Vorlage, weil eine Aenderung an der Vorlage ein bereits eingebautes
+     Element nicht erreicht -- derselbe Grund wie beim Logo darunter. */
+  (function chatlisteZeichen(){
+    var b = root.querySelector('.am-prev-btn');
+    var kern = window.UpstreemCore;
+    if (!b || !kern || !kern.icon) return;
+    var alt = b.querySelector('svg');
+    if (!alt) return;
+    var huelle = document.createElement('div');
+    huelle.innerHTML = kern.icon('panelLeft', 2);
+    var neu = huelle.firstChild;
+    if (!neu) return;
+    neu.setAttribute('class', 'am-ic am-prev-ic');
+    alt.parentNode.replaceChild(neu, alt);
+  })();
   (function logoSetzen(){
     var m = root.querySelector('.am-logo-mark');
     if (!m || m.classList.contains('is-icon')) return;
     var kern = window.UpstreemCore;
-    var svg = (kern && kern.icon) ? kern.icon('galaxy', 1.8) : '';
+    var svg = (kern && kern.icon) ? kern.icon('blend', 1.8) : '';
     if (!svg) return;
     m.innerHTML = svg;
     m.classList.add('is-icon');

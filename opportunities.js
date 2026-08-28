@@ -190,8 +190,8 @@
   function favHtml(url, name){
     var initials = String(name||'?').trim().charAt(0).toUpperCase() || '?';
     var ltr = '<span class="up-logo-ltr">'+esc(initials)+'</span>';
-    if (!url) return '<span class="up-logo-box">'+ltr+'</span>';
-    return '<span class="up-logo-box has-img"><img src="'+esc(url)+'" alt="" referrerpolicy="no-referrer" loading="lazy" ' +
+    if (!url) return '<span class="up-logo-box up-fav">'+ltr+'</span>';
+    return '<span class="up-logo-box up-fav has-img"><img src="'+esc(url)+'" alt="" referrerpolicy="no-referrer" loading="lazy" ' +
            'onerror="this.remove();this.parentNode.classList.remove(\'has-img\')">'+ltr+'</span>';
   }
   /* Every one of these is worth doing -- the bars rank them, they do not grade them. The old set

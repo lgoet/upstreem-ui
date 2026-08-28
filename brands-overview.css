@@ -60,8 +60,9 @@
 .ubo-yaxis { display: none; align-items: center; }
 .ubo-root.is-landscape .ubo-yaxis { display: inline-flex; }
 .ubo-root.is-landscape .ubo-scale-btn { display: none; }
-.ubo-yaxis { padding: 0; gap: 0; background: var(--vc-switch-bg); border-radius: 10px; }
-.ubo-yaxis-btn { height: 32px; padding: 0 12px; border: 1px solid transparent; border-radius: 8px;
+/* Wie die uebrigen kleinen Umschalter: 26px, Radius 8, weicher Grund, mittig in der Zeile. */
+.ubo-yaxis { padding: 0; gap: 0; background: var(--vc-switch-soft); border-radius: 8px; height: 26px; align-self: center; }
+.ubo-yaxis-btn { height: 26px; padding: 0 8px; border: 1px solid transparent; border-radius: 8px;
   background: transparent; color: var(--vc-muted); font-family: inherit; font-size: 12px; font-weight: 500;
   cursor: pointer; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; }
 .ubo-yaxis-btn:hover { color: var(--vc-text); }

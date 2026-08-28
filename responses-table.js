@@ -359,7 +359,9 @@
       var mapped = (Array.isArray(sources) ? sources : []).map(function(s){
         return { name: s && s.title, favicon: s && s.favicon };
       });
-      return brandStack(mapped, total, spreadLeft ? { max: 5, spread: "left" } : { max: 5 });
+      /* fav: die Chips dieser Spalte sind Seiten und keine Marken -- faellt ein Favicon aus, steht
+         ein Globus statt des Anfangsbuchstabens da. */
+      return brandStack(mapped, total, spreadLeft ? { max: 5, spread: "left", fav: true } : { max: 5, fav: true });
     }
     /* Defensive on the ENTRY, not just the key: a malformed models list (a hole, a null, a bare
        string) must degrade to "unknown model, show the raw key" — never throw. This runs inside
