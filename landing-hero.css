@@ -747,11 +747,15 @@
    561 -- der letzte Pin (kestrel.example) lag bei 560 bis 594 und damit vollstaendig unter der
    Kante. Gescrollt wird hier nicht, also war er schlicht nicht da. Das war der Bericht "bei
    Pinned fehlt die Domain".
-   Die 33 fehlenden Pixel kommen aus drei Stellen, keine davon aus der Zeilenhoehe: der Abstand
-   ueber der Liste (24 -> 12), der ueber den Schnellaktionen (24 -> 16) und die drei Abstaende
-   zwischen den vier Gruppen (30 -> 24). Zusammen 38px, also 5 Reserve. */
+   Die fehlenden Pixel kommen aus Abstaenden, keiner aus der Zeilenhoehe: der Abstand ueber der
+   Liste (24 -> 12), der ueber den Schnellaktionen (24 -> 16), die drei zwischen den vier Gruppen
+   (32 -> 10) und die Unterkante der vier Gruppenbeschriftungen (6 -> 2).
+   Zweite Runde: mit 24px Gruppenabstand fehlten wieder 52px -- die Liste ist seither gewachsen.
+   Jetzt 10px zwischen den Gruppen (42) und 4px je Beschriftung (16), zusammen 58, also 6 Reserve.
+   Gemessen wird an der Liste selbst: scrollHeight darf clientHeight nicht ueberschreiten. */
 .ulh-app .usn-item { height: 34px; }
-.ulh-app .usn-block + .usn-block { margin-top: 24px; }
+.ulh-app .usn-block + .usn-block { margin-top: 10px; }
+.ulh-app .usn-head { padding-bottom: 2px; }
 .ulh-app .usn-nav { margin-top: 12px; }
 .ulh-app .usn-qa:not(:empty) { margin-top: 16px; }
 
@@ -1089,8 +1093,11 @@
      Die Hoehe ist die Strecke zwischen beidem: das Stueck Kopf unter der Ueberschrift (Knopf plus
      seine Luft) und der Abstand zum Kasten. */
   top: auto;
-  height: calc(36px + var(--ulh-quell-ctaluft) + var(--ulh-quell-abstand));
-  bottom: calc(-1 * var(--ulh-quell-abstand));
+  /* 16px TIEFER als die Oberkante des Kastens: dessen Ecken sind rund, und ein Muster, das an der
+     geraden Kante endet, ist neben den Ecken nicht mehr da. So laeuft es hinter der Rundung
+     weiter. Und 50px hoeher als vorher, damit es frueher anfaengt auszulaufen. */
+  height: calc(36px + var(--ulh-quell-ctaluft) + var(--ulh-quell-abstand) + 66px);
+  bottom: calc(-1 * var(--ulh-quell-abstand) - 16px);
   background-image: repeating-linear-gradient(to right,
     var(--ulh-schiene) 0 1px, rgba(237, 237, 240, 0) 1px 8px);
   -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 100%);
@@ -1106,7 +1113,15 @@
   font-size: clamp(30px, 3.4vw, 46px); font-weight: 500; line-height: 1.14; letter-spacing: -0.035em;
   color: var(--ulh-sub);
 }
-.ulh-quell-h strong { font-weight: 500; color: var(--ulh-text); }
+/* Die Ueberschrift steht in der zweiten Farbe und wandert beim Scrollen von vorne nach hinten in
+   die erste. Jedes Wort traegt seinen eigenen Stand als --t (0 bis 1), landing-hero.js rechnet ihn
+   aus der Lage im Fenster. color-mix und keine zwei Klassen: so gibt es Zwischenwerte, und die
+   Front liest sich als Verlauf statt als Reihe von Schaltern.
+   Kein Uebergang an der Farbe: der Stand kommt aus dem Scrollen und ist schon stufenlos -- ein
+   zusaetzlicher Uebergang wuerde ihm hinterherlaufen. */
+.ulh-qw { color: color-mix(in srgb, var(--ulh-text) calc(var(--t, 0) * 100%), var(--ulh-sub)); }
+/* Wer keine Bewegung will, bekommt die Ueberschrift fertig. */
+@media (prefers-reduced-motion: reduce) { .ulh-qw { color: var(--ulh-text); } }
 /* Der Knopf ist der Sekundaerknopf des Hero (.ulh-btn .ulh-btn-sec), hier steht nur sein Abstand
    nach oben. Vorher war es ein zweiter Knopf mit eigener Hoehe, eigenem Radius und eigenem Hover --
    zwei Knoepfe derselben Rolle auf einer Seite, die sich unter der Maus verschieden verhalten. */
@@ -2049,8 +2064,22 @@
 /* Der Kopf steht wie der ueber den Karten: linksbuendig, Chip, Ueberschrift, Satz -- dieselben
    Klassen und damit dieselben Masse. Die Sektion traegt Luft nach oben und unten wie die
    Kartensektion. */
-.ulh-msc { padding: clamp(64px, 9vh, 110px) 0 clamp(72px, 10vh, 120px); }
+/* Der Abstand nach oben ist derselbe wie zwischen dem Kartenblock und den Quellen: dort sind es
+   das untere Polster der Kartensektion plus das obere der Quellen. Hier bringt die Quellensektion
+   nur 8px mit (die Trennlinie sitzt an ihrer Unterkante), also stehen die restlichen hier. */
+.ulh-msc {
+  padding: calc(clamp(80px, 12vh, 144px) + clamp(72px, 11vh, 132px) - 8px) 0 clamp(72px, 10vh, 120px);
+}
 .ulh-msc-row { align-items: stretch; }
+/* Zwei Linien ueber die ganze Breite, je 8px vom Kasten entfernt -- dieselbe Machart wie die
+   Trennlinie unter den Quellen: vw statt Prozent, denn Prozent waere die Spur. */
+.ulh-msc-box { position: relative; }
+.ulh-msc-box::before, .ulh-msc-box::after {
+  content: ""; position: absolute; left: 50%; width: 100vw; height: 1px;
+  transform: translateX(-50%); background: var(--ulh-border); pointer-events: none;
+}
+.ulh-msc-box::before { top: -9px; }
+.ulh-msc-box::after { bottom: -9px; }
 .ulh-msc-links { display: flex; flex-direction: column; gap: 4px; flex: 20 1 0; min-width: 0; }
 /* Die drei Karten teilen sich die Hoehe der Reihe. flex-basis 0 und gleiches Wachstum: sonst
    entscheidet die Textmenge, und die mittlere Karte waere die groesste. */

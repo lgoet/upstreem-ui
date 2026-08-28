@@ -366,9 +366,8 @@
           '30 days, up 3.1 points. The praise is consistent:</p>' +
           '<p><span data-mira-sentiment="positive">"Kestrel is the fastest of the three to set up, ' +
           'and the only one that shows which page an answer came from."</span></p>' +
-          '<p>Most of it traces back to ' + quelleChip(0) + ', and ' +
-          miraChip("response", "r1", "this response") + ' names you ahead of ' + markeChip("va") +
-          '.</p>' },
+          '<p>The quote is from ' + miraChip("response", "r1", "ChatGPT, Aug 24") +
+          '; most of the positive mentions trace back to ' + quelleChip(0) + '.</p>' },
 
       { q: "What should I fix first this week?",
         titel: "This week's priorities",
@@ -462,10 +461,26 @@
            niemand braucht, und er nimmt die Ruhe aus dem Bild. */
         '#am-suggested{display:none;}' +
         '.am-hint{display:none;}' +
+        /* Der Kopf ist hier eine Signatur und keine Statuszeile: kleiner Schriftzug, kein
+           Bereitschaftszeichen, kein Untertitel. In der App sagen die beiden etwas (laeuft gerade
+           etwas? worueber rede ich hier?) -- in einer Vorfuehrung sagen sie nichts. */
+        '.am-status-pill{display:none;}' +
+        '.am-subline{display:none;}' +
+        '.am-wordmark{font-size:19px;}' +
+        '.am-logo-mark{width:18px;height:17px;}' +
+        '.am-logo-mark svg{width:17px;height:16px;}' +
+        /* Weniger Luft zwischen Frage und Arbeitsprotokoll, mehr zwischen Protokoll und Antwort:
+           das Protokoll gehoert zur Frage (es ist die Arbeit daran) und nicht zur Antwort. */
+        '.am-messages{gap:24px;}' +
+        '.am-run:not(.is-live){margin-bottom:24px;}' +
         /* KEIN Scrollen in der Komponente: die Seite scrollt, das Bauteil nicht. Das Nachfuehren
            an das Ende der Antwort macht Mira selbst ueber scrollTop, und das geht auch bei
            overflow: hidden. */
-        '.am-chat{overflow:hidden;}' +
+        /* Zwei Kennungen, damit es ueber die Spezifitaet gewinnt und nicht ueber die Reihenfolge:
+           ask-mira.css setzt overflow-y: auto ueber "#ask-mira:not(.has-messages) .am-chat", und
+           eine Klasse allein verliert dagegen. Gemessen: mit .am-chat stand overflow weiter auf
+           auto. */
+        '#ask-mira #am-chat{overflow:hidden;}' +
         /* Die Zeile mit Kopieren, Daumen und Export steht in der App erst beim Ueberfahren der
            Nachricht da. Hier faehrt niemand darueber, also steht sie immer -- sonst fehlt sie in
            der Vorfuehrung ganz. */
@@ -498,6 +513,18 @@
            Attribute kommen mit jeder neuen Nachricht nach, deshalb ein Beobachter und nicht ein
            einmaliger Durchgang. data-explain gehoert dazu: daran haengt die Erklaerkarte von core,
            und die Belegzeile unter jeder Antwort traegt es. */
+        /* Die Reservierung unter der letzten Nachricht sofort zuruecknehmen, nicht in einer
+           Schleife. Mira legt sie beim Abschicken an (_pinSendScroll), damit die Frage oben steht
+           und die Antwort gleich an ihrer endgueltigen Stelle landet -- ein Verhalten fuer einen
+           Chat, in dem man scrollen kann. Hier kann man das nicht, und die Reservierung machte den
+           Ausschnitt scrollbar: das war das Zucken beim Eintreffen der Antwort und der Grund,
+           warum das Rad ueber der Komponente die Seite nicht mehr bewegte.
+           Ein Beobachter und keine Uhr: er greift im selben Bild, in dem die Angabe gesetzt wird.
+           Eine Uhr alle 250ms war der zweite Teil des Zuckens. */
+        '(function(){function fest(){var l=document.querySelector(".am-messages");' +
+        'if(l&&l.style.minHeight&&l.style.minHeight!=="0px")l.style.minHeight="0px";}' +
+        'new MutationObserver(fest).observe(document.documentElement,' +
+        '{subtree:true,attributes:true,attributeFilter:["style"]});fest();})();' +
         '(function(){var A=["data-tip","data-tiplabel","data-explain"];' +
         'function weg(){for(var i=0;i<A.length;i++){var t=document.querySelectorAll("["+A[i]+"]");' +
         'for(var k=0;k<t.length;k++)t[k].removeAttribute(A[i]);}}weg();' +
@@ -546,6 +573,10 @@
        an BEIDEN (messages.length > 0 || isLoading), und mit noch stehendem Ladezustand bliebe sie
        offen. Genau dieselbe Reihenfolge wie im Neustart des Hero-Fensters. */
     function leeren(){
+      /* Das Eingabefeld kommt zurueck, BEVOR Mira es in die Mitte faehrt -- sonst faehrt ein
+         unsichtbares Feld. Dieselbe Reihenfolge wie im Neustart des Hero-Fensters. */
+      var flaeche = d.querySelector(".am-composer-area");
+      if (flaeche){ flaeche.style.display = ""; flaeche.style.opacity = ""; }
       var ta = d.querySelector("#am-textarea");
       var komposer = d.querySelector(".am-composer");
       if (komposer) komposer.classList.remove("is-tippt");
@@ -604,6 +635,16 @@
       }));
       if (w.askMiraSetMessages) w.askMiraSetMessages([frage]);
       if (w.askMiraSetLoading) w.askMiraSetLoading("true");
+      /* Das Eingabefeld geht, kurz bevor die Antwort kommt -- wie im Hero-Fenster. Es hat seine
+         Arbeit getan, und die 125px, die es haelt, braucht die Antwort. Ausblenden und danach aus
+         dem Fluss nehmen, damit die Antwort nicht in einen Sprung hineinlaeuft. */
+      planen(meine, function(){
+        var flaeche = d.querySelector(".am-composer-area");
+        if (!flaeche) return;
+        flaeche.style.transition = "opacity 260ms ease";
+        flaeche.style.opacity = "0";
+        planen(meine, function(){ flaeche.style.display = "none"; }, 300);
+      }, Math.max(0, f.werkzeuge.length * MSC_SCHRITT_MS + MSC_NACHLAUF_MS - 700));
 
       /* Die Werkzeuge gestaffelt ueber die Ladezeit: daraus baut die Komponente ihr
          Arbeitsprotokoll, eine Zeile je Schritt. Alle auf einmal waeren drei Zeilen in einem Bild
@@ -638,13 +679,14 @@
        nachfuehrt. */
     function obenHalten(meine){
       var chat = d.querySelector(".am-chat"), liste = d.querySelector(".am-messages");
-      var n = 0;
-      (function halt(){
+      if (liste) liste.style.minHeight = "0px";
+      /* Einmal, im naechsten Bild. Ohne Reservierung ist der Inhalt kuerzer als der Ausschnitt,
+         also bleibt es danach von selbst oben -- eine Uhr, die alle 250ms nachschiebt, war
+         genau das Zucken, das hier weg soll. */
+      requestAnimationFrame(function(){
         if (meine !== lauf) return;
-        if (liste) liste.style.minHeight = "0px";
         if (chat) chat.scrollTop = 0;
-        if (n++ < 24) setTimeout(halt, 250);
-      })();
+      });
     }
 
     function naechster(){
@@ -1471,6 +1513,61 @@
   var QUELL_CTA = "Start for free";
   var QUELL_DOMAIN = "g2.com";
 
+  /* Jedes Wort einzeln, damit die Farbe von vorne durchlaufen kann. Woerter und nicht Buchstaben:
+     bei 24 Woertern liegen zwischen zwei Schritten rund 12px Text -- das liest sich als Verlauf,
+     und es sind 24 Elemente statt 150. */
+  function quellWorte(){
+    return (QUELL_H1 + " " + QUELL_H2).split(/\s+/).map(function(w){
+      return '<span class="ulh-qw">' + w + '</span>';
+    }).join(" ");
+  }
+
+  /* Der Stand je Wort, gerechnet aus der Lage der Ueberschrift im Fenster. Kommt sie von unten
+     herein, ist alles zweite Farbe; steht sie in der Mitte, ist fast alles erste; etwas weiter
+     ist alles erste.
+     Ein rAF-Lauf und keine Scroll-Ereignisse: die Sektion steht in Framer in einem eigenen Rahmen,
+     und dort kommt beim Scrollen der Seite kein einziges scroll-Ereignis an (derselbe Grund, aus
+     dem das Fenster oben seine Lage misst statt auf Ereignisse zu warten). Der Lauf laeuft nur,
+     solange die Ueberschrift in der Naehe ist -- dafuer der Beobachter. */
+  function quellSchrift(root){
+    var h = root.querySelector(".ulh-quell-h");
+    if (!h) return;
+    var worte = h.querySelectorAll(".ulh-qw");
+    if (!worte.length) return;
+    var ruhig = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (ruhig){
+      for (var k = 0; k < worte.length; k++) worte[k].style.setProperty("--t", "1");
+      return;
+    }
+    var nah = false, laeuft = false;
+    function takt(){
+      laeuft = false;
+      var r = h.getBoundingClientRect();
+      var hoehe = window.innerHeight || document.documentElement.clientHeight || 800;
+      /* 0, wenn die Oberkante noch bei 92 Prozent der Fensterhoehe steht; 1, wenn sie 40 Prozent
+         darueber hinaus gewandert ist -- also etwa in der Mitte des Fensters. */
+      var p = (hoehe * 0.92 - r.top) / (hoehe * 0.52);
+      p = p < 0 ? 0 : (p > 1 ? 1 : p);
+      var n = worte.length;
+      for (var i = 0; i < n; i++){
+        /* Die Front ist drei Woerter breit: waehrend eines fertig wird, faengt das naechste an.
+           Ein Wort nach dem anderen ganz oder gar nicht waere eine Reihe von Schaltern. */
+        var t = p * (n + 3) - i;
+        t = t < 0 ? 0 : (t > 1 ? 1 : t);
+        worte[i].style.setProperty("--t", t.toFixed(3));
+      }
+      if (nah) anstossen();
+    }
+    function anstossen(){ if (laeuft) return; laeuft = true; requestAnimationFrame(takt); }
+    if (window.IntersectionObserver){
+      new IntersectionObserver(function(eintraege){
+        nah = eintraege[0].isIntersecting;
+        if (nah) anstossen();
+      }, { rootMargin: "300px 0px" }).observe(h);
+    } else { nah = true; anstossen(); }
+    takt();
+  }
+
   function quellen(){
     return '<section class="ulh-quell">' +
       '<div class="ulh-spur">' +
@@ -1478,7 +1575,7 @@
           /* Derselbe blaue Chip wie ueber der Ueberschrift der Karten (.ulh-feat-chip) -- eine
              Sektion, ein Chip. Er bringt seinen Abstand nach unten selbst mit (18px). */
           '<span class="ulh-feat-chip">' + QUELL_CHIP + '</span>' +
-          '<h2 class="ulh-quell-h"><strong>' + QUELL_H1 + '</strong> ' + QUELL_H2 + '</h2>' +
+          '<h2 class="ulh-quell-h">' + quellWorte() + '</h2>' +
           /* Derselbe Knopf wie im Hero (.ulh-btn .ulh-btn-sec) -- .ulh-quell-cta traegt nur noch
              den Abstand nach oben und kein zweites Aussehen. */
           '<a class="ulh-btn ulh-btn-sec ulh-quell-cta" href="#" role="button">' + QUELL_CTA + '</a>' +
@@ -2260,6 +2357,7 @@
       visModelleFuellen(w);
       ulhTakt(w);
       quellFuellen();
+      quellSchrift(w);
       mscFuellen(w);
     })();
 
