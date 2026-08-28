@@ -420,22 +420,59 @@
      UC.prepTypeData (URL_COLOR_DARK, URL_LABEL): erfundene Farben waeren hier eine zweite
      Wahrheit, denn dieselben Typen haben in der App feste Toene.
      Nachkommastellen 0, wie fuer jeden Doughnut im Zitatteil (CLAUDE.md 2b). */
-  var FEN_URL_ZITATE = 71400;
-  /* Ein Mischbild, das sich addiert: elf Typen, die oberen acht als eigene Scheiben, der Rest
-     faellt in "Other" (core: MAX_URL_SLICES = 8). */
-  var FEN_URL_TYPEN = [
-    { type: "article",         share_pct: 22.8 },
-    { type: "guide",           share_pct: 16.4 },
-    { type: "listicle",        share_pct: 12.1 },
-    { type: "comparison",      share_pct: 10.7 },
-    { type: "forum",           share_pct: 9.3 },
-    { type: "review",          share_pct: 8.2 },
-    { type: "documentation",   share_pct: 6.5 },
-    { type: "product_service", share_pct: 5.1 },
-    { type: "video",           share_pct: 4.3 },
-    { type: "social_post",     share_pct: 2.6 },
-    { type: "homepage",        share_pct: 2.0 }
+  /* ZWEI Verteilungen, und sie erzaehlen dieselbe Geschichte aus zwei Blickwinkeln: einmal eine
+     Marke, deren Zitate aus redaktionellen Seiten kommen (Artikel, Ratgeber, Listen), einmal eine,
+     die vor allem ueber Marktplaetze und ihre eigenen Produktseiten zitiert wird. So sieht man an
+     einem Fenster, dass die Verteilung eine AUSSAGE ist und nicht Dekoration.
+     Sieben benannte Typen und der graue Rest -- acht Punkte, die in drei Reihen zu 3/3/2 umbrechen.
+     Vorher waren es neun und die letzte Reihe war voll; jetzt steht sie fuer sich.
+     Der Rest ist die SUMME der uebrigen Typen und keine erfundene Zahl: beide Spalten ergeben 100. */
+  var FEN_URL_STAND = [
+    { zitate: 71400, rest: 14.0, typen: [
+      { type: "article",       share_pct: 22.8 },
+      { type: "guide",         share_pct: 16.4 },
+      { type: "listicle",      share_pct: 12.1 },
+      { type: "comparison",    share_pct: 10.7 },
+      { type: "forum",         share_pct: 9.3 },
+      { type: "review",        share_pct: 8.2 },
+      { type: "documentation", share_pct: 6.5 }
+    ]},
+    { zitate: 54100, rest: 11.1, typen: [
+      { type: "marketplace",     share_pct: 21.4 },
+      { type: "homepage",        share_pct: 18.9 },
+      { type: "product_service", share_pct: 16.2 },
+      { type: "company_info",    share_pct: 11.3 },
+      { type: "comparison",      share_pct: 8.6 },
+      { type: "review",          share_pct: 7.1 },
+      { type: "documentation",   share_pct: 5.4 }
+    ]}
   ];
+  var FEN_URL_MS = 7000;
+  /* Das Ausblenden vor dem Wechsel und das Einblenden danach. Der Ring zeichnet sich beim
+     Einblenden selbst neu (core: 200ms Eingangsanimation des Doughnuts), also faellt beides
+     zusammen und liest sich als eine Bewegung. */
+  var FEN_URL_AUS = 260, FEN_URL_AN = 320;
+  var fenUrlIndex = 0;
+
+  /* core nennt die zusammengefasste Scheibe "Other" und faerbt sie grau. Als ausdruecklich
+     mitgegebener Typ heisst dieselbe Scheibe "Uncategorized" (URL_LABEL) -- gleiche Farbe,
+     anderer Name. Hier ist es der REST einer Verteilung und nicht ein Typ fuer sich, also gilt
+     der erste Name. Die Farbe bleibt die von core (beide Wege ergeben #a0a0a0 im Dunkeln). */
+  function urlScheiben(kern, stand){
+    /* Die sieben benannten Typen laufen durch prepTypeData -- Reihenfolge (absteigend), Farben und
+       Beschriftungen kommen damit vollstaendig aus core.
+       Der graue Rest wird DANACH angehaengt und nicht mitgegeben: prepTypeData sortiert nach
+       Anteil, und mit 14 Prozent stand der Rest damit an dritter Stelle mitten in der Legende.
+       Er gehoert ans Ende, so wie ihn core selbst setzt, wenn ER die Scheiben zusammenfasst.
+       Farbe aus demselben Weg (ein Aufruf mit genau diesem Typ), Name wie im Fall der
+       Zusammenfassung: "Other" und nicht "Uncategorized" -- hier ist es der Rest einer Verteilung
+       und kein Typ fuer sich. */
+    var d = kern.prepTypeData("url", stand.typen, true);
+    var rest = kern.prepTypeData("url", [{ type: "other", share_pct: stand.rest }], true)[0];
+    rest.name = "Other";
+    d.push(rest);
+    return d;
+  }
 
   function fensterUrls(){
     return '<div class="ulh-fen ulh-fen-urls is-vorn" data-ulh-dunkel>' + chrom() +
@@ -470,7 +507,7 @@
       body: koerper,
       isDark: function(){ return true; },
       mode: function(){ return "url"; },
-      total: function(){ return FEN_URL_ZITATE; },
+      total: function(){ return FEN_URL_STAND[fenUrlIndex].zitate; },
       centerLabel: "Citations",
       decimals: 0,
       /* Der Ring steht in einem 300px-Fenster: die Legende gehoert UNTER ihn, und genau das macht
@@ -479,8 +516,31 @@
       collapseAt: 9999
     });
     koerper.__ulhDonut = werk;
-    werk.renderDonut(kern.prepTypeData("url", FEN_URL_TYPEN, true));
+    werk.renderDonut(urlScheiben(kern, FEN_URL_STAND[fenUrlIndex]));
     return true;
+  }
+
+  /* Der Wechsel der Verteilung, alle sieben Sekunden und im Kreis: raus, neu zeichnen, rein.
+     Nicht die Datensaetze des Charts von Hand umschreiben -- dann waeren die Hoverfarben die der
+     alten Scheiben (core rechnet sie beim Zeichnen aus brighten/darken, und die zwei Funktionen
+     gibt es nur dort). renderDonut baut Legende UND Ring richtig neu; das Ueberblenden darum
+     macht daraus eine Bewegung statt eines Sprungs. */
+  function donutLaufen(root){
+    if (root.__ulhDonutAn) return;
+    root.__ulhDonutAn = true;
+    setInterval(function(){
+      var kern = window.UpstreemCore;
+      var koerper = root.querySelector("[data-ulh-donut]");
+      if (!kern || !koerper || !koerper.__ulhDonut) return;
+      koerper.classList.add("is-wechsel");
+      setTimeout(function(){
+        fenUrlIndex = (fenUrlIndex + 1) % FEN_URL_STAND.length;
+        koerper.__ulhDonut.renderDonut(urlScheiben(kern, FEN_URL_STAND[fenUrlIndex]));
+        /* Der Kopf des Fensters nennt keine Zahl (die steht in der Mitte des Rings), es gibt hier
+           also nichts weiter nachzuziehen. */
+        koerper.classList.remove("is-wechsel");
+      }, FEN_URL_AUS);
+    }, FEN_URL_MS);
   }
 
   /* ---------- Drittes Nebenfenster: eine Antwortkarte ------------------------------------
@@ -489,7 +549,9 @@
      und Seitenzaehler sind im Fenster ausgeblendet (landing-hero.css): in ein 4:3-Fenster gehoert
      die Karte und nicht die halbe Seite um sie herum. */
   function fensterAntwort(){
-    return '<div class="ulh-fen ulh-fen-antwort">' + chrom() +
+    /* is-vorn: dieses Fenster liegt VOR dem Hauptfenster, wie das der URL-Typen. Deshalb ueberdeckt
+       es davon auch nur 16px -- was davor liegt, nimmt weg. */
+    return '<div class="ulh-fen ulh-fen-antwort is-vorn">' + chrom() +
       '<div class="ulh-fen-view" data-up-keepclip>' +
         '<div class="ulh-fen-app" data-up-keepclip>' + (MARKUP.urt || "") + '</div>' +
       '</div>' +
@@ -2501,6 +2563,7 @@
         mass(root);
         erscheinen(root);
         teamsLaufen(root);
+        donutLaufen(root);
         szeneAnsetzen(root);
         miraAnsetzen(root);
         return;

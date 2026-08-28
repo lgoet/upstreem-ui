@@ -885,6 +885,8 @@
    bedeuten. */
 .ulh-frame { position: relative; z-index: 2; width: 100%; }
 .ulh-fen.is-vorn { z-index: 3; }
+/* Zwei Fenster liegen davor. Sie ueberdecken das Hauptfenster deshalb nur um 8 und 16px -- was
+   vor etwas liegt, soll so wenig wie moeglich davon wegnehmen. */
 
 .ulh-fen-view {
   position: relative;
@@ -925,12 +927,24 @@
    ist ADDIERT und nicht geschaetzt -- 8 Polster + 32 Suchfeld + 6 Abstand + drei Zeilen a 64 mit
    4px dazwischen + 8 Polster. Mit 250 stand die dritte Zeile 4px unter der Kante (gemessen:
    scrollHeight 200 in 196). */
-.ulh-fen-teams   { --ulh-fb: 300px; --ulh-fh: 254px; right: calc(100% - 60px); top: -50px; }
-.ulh-fen-urls    { --ulh-fb: 360px; --ulh-fh: 300px; --ulh-fz: 0.8;
-                   right: calc(100% - 60px); bottom: -50px; }
-/* Rechts, auf einem Viertel der Hoehe: weit oben, aber nicht an der Oberkante. 4:3, damit die
-   Karte darin nicht wie ein angeschnittener Ausschnitt wirkt. */
-.ulh-fen-antwort { --ulh-fb: 360px; --ulh-fh: 270px; left: calc(100% - 60px); top: 25%; }
+.ulh-fen-teams   { --ulh-fb: 300px; --ulh-fh: 254px; right: calc(100% - 40px); top: -50px; }
+/* 320 statt 360, also je Seite 20px schmaler: mit acht statt neun Punkten braucht die Legende
+   weniger Breite. Der Wert ist an den Reihen abgelesen und nicht geschaetzt -- bei 320 ist die
+   Zeile 270px breit, und damit brechen BEIDE Verteilungen sauber um: die redaktionelle in 3/3/2
+   (die letzte Reihe traegt Documentation und Other), die der Marktplaetze in 2/2/2/2. Ihre
+   Beschriftungen sind laenger ("Product / Service" allein ist 114px), deshalb dort zwei je Reihe.
+   Bei 328 fielen drei Punkte in die dritte Reihe und Other blieb allein in einer vierten.
+   Nur 8px Ueberdeckung -- dieses Fenster liegt VOR dem Hauptfenster, und was davor liegt, soll so
+   wenig wie moeglich davon verdecken. */
+.ulh-fen-urls    { --ulh-fb: 320px; --ulh-fh: 300px; --ulh-fz: 0.8;
+                   right: calc(100% - 8px); bottom: -50px; }
+/* Rechts, auf einem Viertel der Hoehe: weit oben, aber nicht an der Oberkante. Schmaler und
+   dafuer hoeher als zuerst, und nur 16px Ueberdeckung: das Fenster liegt VOR dem Hauptfenster,
+   also soll es davon so wenig wie moeglich verdecken. Die Hoehe ist die, die die Karte bei dieser
+   Breite von sich aus braucht -- so muss sie nicht gestreckt werden und traegt keine Luft:
+   gemessen 234px bei 272px Breite (Kopf 24, Frage 38, vier Zeilen Auszug 78, Fusszeile 28, dazu
+   Polster und Abstaende), plus 28px Polster des Fensters ergibt 262. */
+.ulh-fen-antwort { --ulh-fb: 300px; --ulh-fh: 262px; left: calc(100% - 16px); top: 25%; }
 
 /* Die Nebenfenster ragen links und rechts aus der Sektion heraus, und genau so ist es gedacht --
    ein Fenster, das am Rand angeschnitten ist, sagt "die Flaeche geht weiter". overflow-x: clip und
@@ -979,6 +993,15 @@
    nicht gibt -- deshalb faellt auch sein unterer Abstand kleiner aus. */
 .ulh-fen-urls .up-head { padding: 0; min-height: 0; margin-bottom: 10px; }
 .ulh-fen-donut { flex: 1 1 auto; min-height: 0; display: flex; align-items: center; }
+/* KEIN Tooltip an diesem Chart. Der Kasten von core haengt an .up-donut-tt und wird von Chart.js
+   als "external tooltip" gerufen -- ausgeschaltet wird er hier und nicht an der Instanz, weil die
+   Hoverbewegung der Scheibe (hoverOffset, hellere Farbe) BLEIBEN soll: die kommt aus derselben
+   Konfiguration, und ein "tooltip: false" haette beides genommen. */
+.ulh-fen-urls .up-donut-tt { display: none; }
+/* Das Ueberblenden beim Wechsel der Verteilung. Der Ring zeichnet sich beim Einblenden selbst neu
+   (200ms Eingangsanimation im Kit), beides faellt also zusammen. */
+.ulh-fen-donut { transition: opacity 260ms var(--ulh-ease); }
+.ulh-fen-donut.is-wechsel { opacity: 0; }
 
 /* ---- Drittes Fenster: eine Antwortkarte ----
    Von der Komponente bleibt die KARTE. Kopf, Werkzeugleiste und Seitenzaehler sind weg: in ein
@@ -999,9 +1022,10 @@
 .ulh-fen-antwort .urt-root { height: 100%; }
 .ulh-fen-antwort .urt-cards { height: 100%; align-content: stretch; }
 .ulh-fen-antwort .urt-card { max-height: none; height: 100%; }
-/* Drei Zeilen Auszug statt zwei: der Platz, den die gestreckte Karte gewinnt, soll Text tragen
-   und nicht Luft. Die Klammer bleibt -- ein Auszug ohne Ende waere ein Textblock. */
-.ulh-fen-antwort .urt-card-preview { -webkit-line-clamp: 3; }
+/* Vier Zeilen Auszug statt zwei: das Fenster ist schmaler geworden, und der Platz, den es dafuer
+   in der Hoehe bekommt, soll Text tragen und nicht Luft. Die Klammer bleibt -- ein Auszug ohne
+   Ende waere ein Textblock. */
+.ulh-fen-antwort .urt-card-preview { -webkit-line-clamp: 4; }
 
 /* Die Schublade bleibt IM Fenster: opportunities.js haengt Vorhang und Schublade bei
    data-portal="inline" in den Root statt in den <body>, und ihr position: fixed bezieht sich damit
@@ -1060,9 +1084,13 @@
 .ulh-app .am-msg .am-bubble > .am-table-scroll { margin: 10px 0 24px; }
 .ulh-app .am-msg .am-bubble > p { margin-bottom: 8px; }
 .ulh-app .am-msg .am-bubble > h3 { margin-bottom: 4px; }
-.ulh-app .am-msg .am-bubble > h4 { margin: 10px 0 4px; }
+/* Mehr Luft VOR der Ueberschrift der Empfehlungen: sie beginnt einen neuen Abschnitt der
+   Antwort, und 10px lasen sich als Abstand innerhalb des Textes. */
+.ulh-app .am-msg .am-bubble > h4 { margin: 20px 0 4px; }
 .ulh-app .am-msg .am-bubble > ul { margin: 6px 0 8px; }
-.ulh-app .am-msg .am-bubble > .am-evidence { margin-top: 10px; }
+/* Eine Leerzeile mehr zwischen dem Ende der Antwort und der Zeile mit den Datenpunkten: die
+   Zeile gehoert nicht mehr zum Text, sie sagt, woraus er entstanden ist. */
+.ulh-app .am-msg .am-bubble > .am-evidence { margin-top: 28px; }
 /* Die Knopfreihe unter der ANTWORT bleibt stehen (Export, Kopieren, Daumen) -- sie gehoert zum
    Bild einer fertigen Antwort, und der Nutzer hat sie ausdruecklich verlangt. Hier stand vorher
    display:none fuer beide Nachrichten, um 56px zu sparen; die Regel weiter oben, die die Reihe
