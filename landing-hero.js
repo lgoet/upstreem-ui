@@ -367,7 +367,7 @@
       p: "Track the questions your buyers actually ask, in their language and their market. " +
          "Volumes and rankings are reported per market, not averaged into one number." },
     { breit: 50, vis: "modelle",
-      h: "Daily AI response tracking across every model",
+      h: "Daily AI response tracking across multiple models",
       p: "Every prompt runs against each model, every day. You see where the answers agree, " +
          "where they differ, and which model names you first." }
   ];
@@ -378,23 +378,39 @@
      eigenen Bild widerlegt. Die Volumen sind Schaetzungen in der Groessenordnung, die die App
      zeigt (est. volume, gerundet), und sie fallen mit der Spezialisierung der Frage: eine breite
      Frage wird oefter gestellt als eine enge. */
+  /* v ist das geschaetzte Volumen als Wert von 0 bis 100 -- dasselbe Feld, das Prompt Research
+     bekommt (estimated_volume), und dargestellt wird es genauso: als vierstufiger Balken, nicht als
+     Zahl. Die Stufen dort: bis 25 eine, bis 50 zwei, bis 75 drei, darueber vier. */
   var SPRACHEN = [
-    { m: "US", t: "best AI visibility tools for B2B SaaS",              v: "14.2k" },
-    { m: "DE", t: "welches Tool zeigt Markenerwähnungen in ChatGPT",    v: "4.8k" },
-    { m: "FR", t: "meilleur outil de suivi de visibilité IA",           v: "3.9k" },
-    { m: "GB", t: "how to track brand mentions in AI answers",          v: "9.6k" },
-    { m: "IT", t: "come monitorare il brand nelle risposte AI",         v: "2.4k" },
-    { m: "US", t: "how do LLMs decide which brands to recommend",       v: "8.1k" },
-    { m: "DE", t: "wie werde ich in KI-Antworten sichtbar",             v: "3.6k" },
-    { m: "FR", t: "comment être cité par ChatGPT",                      v: "2.9k" },
-    { m: "GB", t: "AI search monitoring pricing compared",              v: "5.2k" },
-    { m: "IT", t: "strumenti per la visibilità AI a confronto",         v: "1.8k" },
-    { m: "US", t: "which sources does ChatGPT cite for software",       v: "6.4k" },
-    { m: "DE", t: "KI-Sichtbarkeit messen Agentur oder Tool",           v: "2.1k" },
-    { m: "FR", t: "quelles sources citent les modèles IA",              v: "1.6k" },
-    { m: "GB", t: "share of voice across AI assistants",                v: "4.1k" },
-    { m: "IT", t: "quali fonti cita Perplexity in Italia",              v: "1.2k" }
+    { m: "US", t: "best AI visibility tools for B2B SaaS",              v: 88 },
+    { m: "DE", t: "welches Tool zeigt Markenerwähnungen in ChatGPT",    v: 47 },
+    { m: "FR", t: "meilleur outil de suivi de visibilité IA",           v: 39 },
+    { m: "GB", t: "how to track brand mentions in AI answers",          v: 74 },
+    { m: "IT", t: "come monitorare il brand nelle risposte AI",         v: 24 },
+    { m: "US", t: "how do LLMs decide which brands to recommend",       v: 68 },
+    { m: "DE", t: "wie werde ich in KI-Antworten sichtbar",             v: 36 },
+    { m: "FR", t: "comment être cité par ChatGPT",                      v: 29 },
+    { m: "GB", t: "AI search monitoring pricing compared",              v: 52 },
+    { m: "IT", t: "strumenti per la visibilità AI a confronto",         v: 18 },
+    { m: "US", t: "which sources does ChatGPT cite for software",       v: 61 },
+    { m: "DE", t: "KI-Sichtbarkeit messen Agentur oder Tool",           v: 21 },
+    { m: "FR", t: "quelles sources citent les modèles IA",              v: 16 },
+    { m: "GB", t: "share of voice across AI assistants",                v: 44 },
+    { m: "IT", t: "quali fonti cita Perplexity in Italia",              v: 12 }
   ];
+  /* Der Balken aus Prompt Research, Zeile fuer Zeile derselbe (renderVolume dort): vier Felder,
+     gefuellt bis zur Stufe, und die Farbe traegt die Stufe. Nachgebaut ist er hier nur, WEIL die
+     Landingpage prompt-research.css nicht laedt -- die vier Regeln dafuer stehen in
+     landing-hero.css, mit denselben Werten und demselben Kommentar zur Herkunft. Ein Tooltip
+     gehoert nicht dazu: in einem Schaustueck zeigt nichts einen Hinweis. */
+  function volumenStufe(v){ return v <= 25 ? 1 : (v <= 50 ? 2 : (v <= 75 ? 3 : 4)); }
+  function volumenBalken(v){
+    var stufe = volumenStufe(v), aus = "";
+    for (var i = 1; i <= 4; i++){
+      aus += '<span class="upr-volume-seg' + (i <= stufe ? " is-filled level-" + stufe : "") + '"></span>';
+    }
+    return '<span class="upr-volume-wrap"><span class="upr-volume-track">' + aus + '</span></span>';
+  }
 
   /* ---- Reihe drei, rechts: die Modelle auf den Umlaufbahnen ----
      Die Zeichen sind die echten Favicons der Anbieter, ueber denselben Weg wie die Quellen
@@ -415,10 +431,11 @@
      dunkle Tinte auf durchsichtigem Grund, also genau richtig auf der weissen Scheibe. */
   var ORBIT_MARKE = "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/" +
     "BRANDSTYLES/upstreem-mark-square-1f1f1f.svg";
-  /* Radien der drei Bahnen und die Zahl der Zeichen darauf. Gemessen am Kasten der Vorschau
-     (330px hoch): die aeusserste Bahn endet 25px vor der Kante, damit ein Zeichen darauf nicht
-     angeschnitten wird. */
-  var ORBIT_R = [72, 111, 150];
+  /* Radien der drei Bahnen. Der Kasten der Vorschau ist 330px hoch, SICHTBAR sind davon 304 -- die
+     oberen 26 sind die Polsterung, unter der der Inhalt durchlaeuft (siehe .ulh-vis). Die aeussere
+     Bahn hat mit 138 also 276 Durchmesser und steht in den 304 mit 14px Luft nach oben und unten.
+     Mit 150 stand sie unten an der Kante an und wurde angeschnitten -- so gemeldet. */
+  var ORBIT_R = [66, 102, 138];
 
   var MERKMAL_CHIP = "Platform";
   var MERKMAL_H = "What Upstreem shows you";
@@ -775,7 +792,7 @@
       return '<div class="ulh-pk">' +
                markt +
                '<span class="ulh-pk-t">' + p.t + '</span>' +
-               '<span class="ulh-pk-v">' + p.v + '</span>' +
+               volumenBalken(p.v) +
              '</div>';
     }).join("");
     /* Zweimal dieselbe Liste: das Band faehrt genau eine Haelfte weit und setzt dann zurueck --
@@ -825,7 +842,7 @@
 
      TEMPO_* sind Pixel bzw. Grad je Sekunde. LANGSAM ist ein Viertel: weniger sieht aus wie
      angehalten, mehr merkt man beim Ueberfahren nicht. */
-  var TEMPO_BAND = 26, TEMPO_BAHN = 5.5, LANGSAM = 0.25;
+  var TEMPO_BAND = 26, TEMPO_BAHN = 8.25, LANGSAM = 0.25;   /* die Bahnen um die Haelfte schneller als zuerst */
   var ANNAEHERUNG = 240;      /* ms bis auf ein Drittel des Unterschieds -- das ist das ease */
 
   function ulhTakt(root){

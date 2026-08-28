@@ -1029,16 +1029,27 @@
   box-shadow: 0 1px 2px rgba(11, 13, 24, .04);
 }
 .ulh-pk .up-market { flex: 0 0 auto; }
+/* Nur die Flagge, kein Kuerzel dahinter: in der App steht der Code neben der Flagge, weil dort in
+   einer Spalte alle Maerkte untereinander stehen und die Flaggen sich aehneln. Hier steht je Zeile
+   EINE Flagge neben einem Satz in genau dieser Sprache -- der Code sagt dann nichts mehr dazu.
+   Ausgeblendet und nicht weggelassen: der Chip bleibt der aus core (UC.marketChip). */
+.ulh-pk .up-market-code { display: none; }
+/* Der Volumenbalken aus Prompt Research (renderVolume dort), Werte 1:1 -- 58x6, vier Felder, 3px
+   dazwischen, und die Farbe traegt die Stufe. Hier und nicht von dort geerbt, WEIL die Landingpage
+   prompt-research.css nicht laedt; weichen die Werte dort einmal ab, muessen sie hier mit. */
+.ulh-pk .upr-volume-wrap { width: 58px; flex: 0 0 auto; display: block; }
+.ulh-pk .upr-volume-track {
+  width: 58px; height: 6px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px;
+}
+.ulh-pk .upr-volume-seg { border-radius: 2px; background: #e8eaee; }
+.ulh-pk .upr-volume-seg.is-filled.level-1 { background: #d2865d; }
+.ulh-pk .upr-volume-seg.is-filled.level-2 { background: #d9b85d; }
+.ulh-pk .upr-volume-seg.is-filled.level-3 { background: #9fd25d; }
+.ulh-pk .upr-volume-seg.is-filled.level-4 { background: #60d25d; }
 .ulh-pk-t {
   flex: 1 1 auto; min-width: 0;
-  font-size: 13.5px; font-weight: 400; line-height: 1.35; color: var(--ulh-text);
+  font-size: 14.5px; font-weight: 500; line-height: 1.35; color: var(--ulh-text);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-/* Das Volumen ist eine Nebenangabe: zweite Farbe, Ziffern in fester Breite, damit die Zahlen
-   untereinander stehen und nicht wandern. */
-.ulh-pk-v {
-  flex: 0 0 auto; font-size: 12.5px; font-weight: 500; color: var(--ulh-sub);
-  font-variant-numeric: tabular-nums;
 }
 /* Blende oben UND unten: ein Band, das an einer harten Kante endet, sieht aus wie eine
    abgeschnittene Liste. Dieselbe Machart wie die Blende der anderen Vorschauen, nur zweimal --
@@ -1053,7 +1064,11 @@
 /* Die Bahnen. Der Kasten ist der Bezugsrahmen, jeder Ring liegt mittig darin und dreht als
    Ganzes; die Zeichen drehen ihren Ring wieder heraus (landing-hero.js, orbTakt).
    Die Ringe sind nur eine Linie -- sie sollen die Bahn andeuten, nicht Kreise zeichnen. */
-.ulh-orb { position: relative; height: 100%; }
+/* Der Kasten der Vorschau ist --ulh-vh hoch, sichtbar sind davon 26px weniger: so viel Polsterung
+   traegt .ulh-vis oben, und der Inhalt laeuft darunter durch. Fuer eine Tabelle ist das richtig
+   (sie soll oben angeschnitten wirken), fuer einen Kreis nicht -- er stand unten an der Kante an.
+   Also nimmt der Kasten der Bahnen genau die sichtbare Hoehe, und die Mitte rueckt um 13px hoch. */
+.ulh-orb { position: relative; height: calc(100% - 26px); }
 .ulh-orb-ring {
   position: absolute; left: 50%; top: 50%; margin: 0; border-radius: 50%;
   transform-origin: center center; translate: -50% -50%;
