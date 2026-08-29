@@ -497,7 +497,9 @@
      nicht als weitere Ueberschrift: er soll wie eine Stimme klingen und nicht wie die Seite.
      Der Grund traegt dasselbe 8er-Raster wie die Seite, hier als Punkte statt Striche -- eine
      Flaeche, kein Gitter, damit der Satz allein steht. */
-  var STIMME = "See what AI answers say about you.";
+  /* Der Umbruch steht IM Satz und nicht im Zufall der Breite: "See what AI answers" ist die
+     Frage, "say about you." die Pointe. */
+  var STIMME = "See what AI answers<br>say about you.";
   var STIMME_SUB = "Connect your brand, pick the prompts that matter, and watch the answers as " +
     "they change. The first report takes minutes.";
   var STIMME_CTA = "Start for free";
@@ -531,8 +533,8 @@
       { t: "Documentation", h: "https://docs.upstreem.ai/welcome" }
     ]},
     { t: "Legal", e: [
-      { t: "Terms", h: "https://upstreem.ai/terms" },
-      { t: "Privacy policy", h: "https://upstreem.ai/privacy" },
+      { t: "Terms of service", h: "https://upstreem.ai/terms-of-service" },
+      { t: "Privacy policy", h: "https://upstreem.ai/privacy-policy" },
       { t: "Imprint", h: "https://upstreem.ai/imprint" }
     ]}
   ];
@@ -838,7 +840,7 @@
                 '</div>';
               }).join("") +
             '</div>' +
-            '<div class="ulh-card ulh-msc-rechts ulh-auf" style="--auf:1">' +
+            '<div class="ulh-card ulh-msc-rechts ulh-auf ulh-auf-gross" style="--auf:1">' +
               '<iframe class="ulh-msc-rahmen" title="Mira" scrolling="no"' +
                 ' referrerpolicy="no-referrer"></iframe>' +
             '</div>' +
@@ -2016,6 +2018,11 @@
        erreicht hat -- also kurz nachdem es unten hereinkommt. Frueher waere es unsichtbar
        animiert, spaeter erschiene es erst, wenn man es schon liest. */
     var SCHWELLE = 0.88;
+    /* Grosse Bloecke spaeter. Bei 88 Prozent Fensterhoehe faengt die Bewegung an, sobald die
+       OBERKANTE hereinkommt -- bei einem 750px hohen Kasten ist sie damit vorbei, bevor man ihn
+       ueberhaupt ansieht. Solche Bloecke tragen .ulh-auf-gross und starten erst, wenn sie ein
+       gutes Stueck im Bild stehen. */
+    var SCHWELLE_GROSS = 0.62;
     var bilder = 0;
     function alleSofort(){
       stuecke.forEach(function(el){ el.classList.add("is-da"); });
@@ -2033,7 +2040,8 @@
       bilder++;
       for (var i = stuecke.length - 1; i >= 0; i--){
         var l = lage(stuecke[i]);
-        if (l.oben < l.hoehe * SCHWELLE){
+        var g = stuecke[i].classList.contains("ulh-auf-gross") ? SCHWELLE_GROSS : SCHWELLE;
+        if (l.oben < l.hoehe * g){
           stuecke[i].classList.add("is-da");
           stuecke.splice(i, 1);
         }
@@ -2084,7 +2092,7 @@
         '</div>' +
         /* Der Kasten ist unten offen: er wird angeschnitten, und der Inhalt laeuft weiter. Genau
            das laesst ihn wie eine laufende Seite wirken und nicht wie ein Bildschirmfoto. */
-        '<div class="ulh-quell-box ulh-auf">' +
+        '<div class="ulh-quell-box ulh-auf ulh-auf-gross">' +
         '<div class="ulh-quell-panel">' +
           '<div class="ulh-quell-dom">' +
             '<span class="up-logo-box has-img">' +

@@ -1519,7 +1519,10 @@
 .ulh-vis-dom .udt-pagesbtn { pointer-events: none; }
 /* Flachere Zeilen als in der App (72 -> 56px): in einer Vorschau zaehlt, WIE VIELE Zeilen man
    sieht, nicht wie luftig eine einzelne steht. */
-.ulh-vis-dom .up-row { height: 56px; }
+/* NICHT die Kopfzeile: sie traegt in dieser Tabelle dieselbe Klasse wie eine Datenzeile, und mit
+   56px war sie 16px hoeher als die der Prompt-Tabelle daneben -- gemessen 56 gegen 40. Der
+   Ausschluss loest das ueber die Spezifitaet und nicht ueber die Reihenfolge. */
+.ulh-vis-dom .up-row:not(.up-thead) { height: 56px; }
 /* Name und Seitenknopf NEBENEINANDER statt uebereinander -- in der App stehen sie gestapelt, weil
    dort eine Zeile 72px hoch ist und der Knopf darunter Platz hat. Hier ist die Zeile flacher, und
    nebeneinander mit Abstand liest sich beides in einer Zeile. */
@@ -2390,7 +2393,12 @@
   /* Luft ueber und unter der Sektion: sie steht zwischen zwei waagerechten Linien, und die sollen
      als eigener Abschnitt lesbar sein und nicht als Fortsetzung der Zahlen darueber. */
   margin: clamp(72px, 9vh, 120px) 0;
-  padding: clamp(84px, 12vh, 148px) 0;
+  /* Eng: die zwei Linien sollen den Inhalt umschliessen und nicht ein leeres Band einrahmen. */
+  padding: 40px 0;
+  /* Der weisse Grund gehoert dazu und ist nicht Kosmetik: die zwei senkrechten Schienen der Seite
+     laufen ueber die ganze Hoehe, und ohne eine deckende Flaeche stehen sie mitten in dieser
+     Sektion. Sie soll aber allein stehen -- nur die zwei waagerechten Linien. */
+  background-color: #ffffff;
   background-image: radial-gradient(circle, var(--ulh-schiene) 1px, transparent 1px);
   background-size: 8px 8px;
   border-top: 1px solid var(--ulh-border);
@@ -2400,8 +2408,8 @@
    ein Kasten, den jemand vergessen hat. */
 .ulh-stimme::before {
   content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(to bottom, #ffffff 0%, rgba(255,255,255,0) 22%,
-              rgba(255,255,255,0) 78%, #ffffff 100%);
+  background: linear-gradient(to bottom, #ffffff 0%, rgba(255,255,255,0) 30%,
+              rgba(255,255,255,0) 70%, #ffffff 100%);
 }
 .ulh-stimme-in { position: relative; display: flex; flex-direction: column; align-items: center;
   text-align: center; }
