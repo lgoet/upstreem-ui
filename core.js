@@ -3155,6 +3155,95 @@
   window.addEventListener("resize", function(){ sicher("segLauf", segLauf); }, { passive: true });
   document.addEventListener("click", function(){ setTimeout(function(){ sicher("segLauf", segLauf); }, 0); }, true);
 
+  /* ---- Globus statt Loch: EIN Zuhoerer fuer alle Favicons der App -----------------------------
+     Favicons kommen von fremden Diensten, und die antworten regelmaessig mit 404 oder ohne
+     CORS-Kopf -- im Log eines Nutzers gleich reihenweise (gstatic faviconV2, google.com/s2).
+     Bisher trug jede Aufrufstelle ihren eigenen Rueckfall im onerror-Attribut, und die zwei
+     Bauarten liefen auseinander: die einen nahmen has-img ab, dann zeigte der Kasten seinen
+     Buchstaben oder (bei .up-fav) den Globus; die anderen setzten visibility auf hidden und
+     liessen ein Loch in der Groesse des Bildes stehen.
+
+     Ein Zuhoerer am Dokument statt eines Attributs je Stelle: neue Komponenten bekommen den
+     Rueckfall damit von selbst, und keine kann ihn vergessen. In der EINFANGPHASE, weil das
+     error-Ereignis eines Bildes nicht aufsteigt.
+
+     Die Arbeit liegt in einem setTimeout(0) und nicht direkt im Zuhoerer: die alten
+     onerror-Attribute laufen in der Zielphase, also NACH diesem Zuhoerer. Wer das Bild vorher
+     aus dem DOM nimmt, laesst dort ein this.parentNode auf null laufen -- eine neue Fehlerzeile
+     in der Konsole, statt einer weniger. Nach dem Zug ist das Feld frei, und ein von dort
+     gesetztes visibility:hidden wird gleich mit zurueckgenommen. */
+  var FAV_DIENST = /gstatic\.com\/faviconV2|google\.com\/s2\/favicons|wsrv\.nl\/\?url=/i;
+  var FAV_KASTEN = ".up-fav, .up-logo-box, .up-stack-item, .up-ment-logo, .uhm-logo, .uab-fav";
+  var FAV_KLASSE = { "up-company-favicon": 1, "combo-filter-favicon": 1, "up-ment-logo": 1,
+                     "usn-fav": 1, "uca-src-fav": 1 };
+  /* Ein Kasten zeigt schon von sich aus etwas, wenn er einen Buchstaben traegt oder wenn er ein
+     .up-fav ist (dessen ::after IST der Globus). Nur wer beides nicht hat, braucht die Marke. */
+  var FAV_BUCHSTABE = ".up-logo-ltr, .up-stack-ltr, .udt-logo-ltr, .udt-sub-ltr, .uut-logo-ltr";
+
+  function istFavicon(img){
+    var src = img.getAttribute("src") || "";
+    if (FAV_DIENST.test(src)) return true;
+    var k = img.className;
+    if (typeof k === "string"){
+      var teile = k.split(/\s+/);
+      for (var i = 0; i < teile.length; i++) if (FAV_KLASSE[teile[i]]) return true;
+    }
+    return !!(img.parentNode && img.closest && img.closest(FAV_KASTEN));
+  }
+
+  function faviconRueckfall(img){
+    if (!img || !img.parentNode) return;
+    var kasten = img.closest(FAV_KASTEN);
+    if (kasten){
+      /* Der Weg, den die Tabellen schon gehen: has-img ab, Bild weg. Danach steht dort der
+         Buchstabe der Marke -- oder, an einem .up-fav, der Globus aus der CSS. */
+      kasten.classList.remove("has-img");
+      if (kasten.style && kasten.style.visibility === "hidden") kasten.style.visibility = "";
+      if (img.parentNode) img.parentNode.removeChild(img);
+      var zeigtSchon = kasten.classList.contains("up-fav") || kasten.querySelector(FAV_BUCHSTABE);
+      if (!zeigtSchon) kasten.classList.add("up-globus-an");
+      return;
+    }
+    /* Ohne Kasten: der Globus tritt AN DIE STELLE des Bildes und in seiner Groesse -- sonst
+       rutscht die Zeile, in der er stand, beim Fehlschlag zusammen. */
+    var b = parseFloat(img.getAttribute("width")) || img.clientWidth || 16;
+    var h = parseFloat(img.getAttribute("height")) || img.clientHeight || b;
+    var span = document.createElement("span");
+    span.className = "up-globus-frei";
+    span.style.width = b + "px";
+    span.style.height = h + "px";
+    if (img.style && img.style.borderRadius) span.style.borderRadius = img.style.borderRadius;
+    img.parentNode.replaceChild(span, img);
+  }
+
+  document.addEventListener("error", function(e){
+    var el = e && e.target;
+    if (!el || el.tagName !== "IMG" || el.__upFavWeg) return;
+    if (!istFavicon(el)) return;
+    el.__upFavWeg = 1;                       /* ein Bild, ein Rueckfall */
+    setTimeout(function(){ sicher("faviconRueckfall", function(){ faviconRueckfall(el); }); }, 0);
+  }, true);
+
+  /* Und einmal nachsehen, was schon vorbei war. Ein Bild, das scheitert, BEVOR core geladen ist,
+     hat sein error-Ereignis nie an diesen Zuhoerer geschickt -- gemessen an einer Seite, deren
+     Markup vor dem Skript stand: kein einziger Rueckfall. In Bubble zeichnen die Komponenten zwar
+     erst nach core, aber genau darauf will man sich nicht verlassen.
+     complete && naturalWidth === 0 ist der fertig gescheiterte Ladeversuch: waehrend des Ladens
+     ist complete false, bei Erfolg ist naturalWidth groesser null. */
+  function faviconNachsehen(){
+    var bilder = document.images || [];
+    for (var i = bilder.length - 1; i >= 0; i--){
+      var b = bilder[i];
+      if (!b || b.__upFavWeg || !b.complete || b.naturalWidth !== 0) continue;
+      if (!b.getAttribute("src") || !istFavicon(b)) continue;
+      b.__upFavWeg = 1;
+      sicher("faviconNachsehen", (function(bild){ return function(){ faviconRueckfall(bild); }; })(b));
+    }
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", faviconNachsehen);
+  else faviconNachsehen();
+  window.addEventListener("load", faviconNachsehen);
+
   /* Jeder Teil fuer sich. Vorher lag alles in einem Zug: stolperte einer, liefen die uebrigen
      nicht mehr -- und weil dieser Lauf auch aus dem Beobachter kommt, waere danach jeder weitere
      Lauf betroffen gewesen. Ein Stolperer darf nie mehr mitreissen als sich selbst. */
@@ -5564,7 +5653,7 @@
       var rows = !neuGezeichnet ? "" : dps.map(function(dp){
         var ds = dp.dataset;
         var icon = ds.__favicon
-          ? '<img src="' + esc(ds.__favicon) + '" width="16" height="16" style="border-radius:4px;display:block;object-fit:cover" onerror="this.style.visibility=\'hidden\'"/>'
+          ? '<img src="' + esc(ds.__favicon) + '" width="16" height="16" style="border-radius:4px;display:block;object-fit:cover"/>'
           : '<span style="width:16px;height:16px;border-radius:4px;background:' + ds.__baseColor + ';display:block"></span>';
         /* HIER steht der Wert des Linechart-Tooltips -- nicht in makeDonutTooltip, wo ich ihn
            zuerst gesucht habe. fmtPct haengt fest ein Prozentzeichen an; Rang und Sentiment
@@ -5639,12 +5728,13 @@
   function legItemHtml(c, measure){
     /* OHNE favicon_url gibt es weder das Bild noch seinen Platz. Vorher stand hier ein
        unsichtbarer 16px-Platzhalter plus ein zweiter 8px-Abstand -- zwischen Punkt und Name
-       klaffte damit ein 32px-Loch, das aussah, als fehle ein Bild. Der Platzhalter schuetzte nur
-       den Fall "Bild bricht beim LADEN weg" (onerror laesst deshalb weiter die Breite stehen,
-       visibility statt display); eine Legende, die von vornherein ohne Bilder gebaut wird,
-       braucht ihn nicht. */
+       klaffte damit ein 32px-Loch, das aussah, als fehle ein Bild. Eine Legende, die von
+       vornherein ohne Bilder gebaut wird, braucht ihn nicht.
+       Der Fall "Bild bricht beim LADEN weg" gehoert nicht mehr hierher: der Zuhoerer in core
+       setzt dort einen Globus in derselben Groesse an die Stelle des Bildes, die Breite bleibt
+       also ohne einen eigenen Platzhalter erhalten. */
     var fav = c.favicon_url
-      ? '<img class="up-company-favicon" src="' + esc(legNormalizeUrl(c.favicon_url)) + '" alt="" onerror="this.style.visibility=\'hidden\'">' +
+      ? '<img class="up-company-favicon" src="' + esc(legNormalizeUrl(c.favicon_url)) + '" alt="">' +
         '<span class="up-company-inner-gap"></span>'
       : '';
     return '<div class="up-company-item' + (measure ? " up-measure-item" : "") + '" data-company-id="' + esc(c.company_id) + '">' +

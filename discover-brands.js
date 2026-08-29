@@ -429,8 +429,7 @@
           '<div class="up-td up-td-brand">' +
             '<span class="up-logo-box' + (r.favicon ? " has-img" : "") + '">' +
               (r.favicon
-                ? '<img src="' + esc(r.favicon) + '" alt="" loading="lazy" referrerpolicy="no-referrer" ' +
-                  'onerror="this.style.visibility=\'hidden\'" />'
+                ? '<img src="' + esc(r.favicon) + '" alt="" loading="lazy" referrerpolicy="no-referrer" />'
                 : initials(r.name)) +
             "</span>" +
             '<span class="udb-name" title="' + esc(r.name) + '">' + esc(r.name) + "</span>" +

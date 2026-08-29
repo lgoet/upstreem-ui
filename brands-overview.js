@@ -406,7 +406,7 @@
       el.innerHTML =
         '<div class="ubo-mxtip-head">' +
           '<span class="up-logo-box' + (pt.logo_url ? " has-img" : "") + '">' +
-            (pt.logo_url ? '<img src="' + esc(pt.logo_url) + '" alt="" onerror="this.style.visibility=\'hidden\'"/>' : "") +
+            (pt.logo_url ? '<img src="' + esc(pt.logo_url) + '" alt=""/>' : "") +
           '</span>' +
           '<span class="ubo-mxtip-name">' + esc(pt.name || "") + '</span>' +
         '</div>' +
@@ -971,7 +971,7 @@
     }
     function logoHtml(url){
       return url
-        ? '<span class="up-logo-box has-img"><img src="' + esc(url) + '" onerror="this.style.visibility=\'hidden\'"/></span>'
+        ? '<span class="up-logo-box has-img"><img src="' + esc(url) + '"/></span>'
         : '<span class="up-logo-box"></span>';
     }
     function actionsCell(){
@@ -1291,7 +1291,7 @@
         var nm = String(c.name || id);
         var fav = c.favicon_url || c.logo_url || c.favicon || "";
         var logo = fav
-          ? '<span class="up-ment-logo"><img src="' + esc(fav) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.style.visibility=\'hidden\'"/></span>'
+          ? '<span class="up-ment-logo"><img src="' + esc(fav) + '" alt="" loading="lazy" referrerpolicy="no-referrer"/></span>'
           : '<span class="up-ment-logo" style="background:' + esc(c.color || "#9e9e9e") + '"></span>';
         return '<div class="up-filter-item' + (checked ? " is-checked" : "") + (disabled ? " is-disabled" : "") +
           '" data-id="' + esc(id) + '" data-name="' + esc(nm.toLowerCase()) + '" title="' + esc(nm) + '">' +

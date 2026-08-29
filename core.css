@@ -5,11 +5,16 @@
 
 @import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap");
 
-.up-root {
-      /* Die Form des Globus als Maske -- EINMAL, damit sie nicht in jeder Regel steht. Dieselben
-         Pfade wie UC.icon("globe"): Kreis, Meridian, Aequator. Gebraucht vom Rueckfall der
-         Favicon-Kaesten (.up-fav weiter unten). */
+/* Die Form des Globus als Maske -- EINMAL, damit sie nicht in jeder Regel steht. Dieselben Pfade
+   wie UC.icon("globe"): Kreis, Meridian, Aequator. Gebraucht vom Rueckfall der Favicon-Kaesten
+   (.up-fav weiter unten) und vom freistehenden Globus (.up-globus-frei).
+   An :root und nicht an .up-root: der Rueckfall trifft auch Bilder in Karten, die am <body>
+   haengen (Tooltips, Menues) -- dort loest eine Variable von .up-root nicht auf, und eine Maske
+   mit unaufloesbarem Wert waere kein Globus, sondern ein volles Rechteck. */
+:root {
       --up-globus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20'/%3E%3Cpath d='M2 12h20'/%3E%3C/svg%3E");
+}
+.up-root {
       --vc-text: #1f1f1b; --vc-muted: #6f737c; --vc-border: #e0e2e6;
       --vc-bg: #ffffff; --vc-heading-bg: #f5f5f5; --vc-sk: #e8e8e8; --up-surface: #ffffff;
       /* One dropdown panel colour and one selected-row colour for the WHOLE app. Every component
@@ -1811,6 +1816,32 @@
       content: ""; position: absolute; left: 50%; top: 50%;
       width: 62%; height: 62%; transform: translate(-50%, -50%);
       background: var(--vc-third);
+      -webkit-mask: var(--up-globus) center / contain no-repeat;
+      mask: var(--up-globus) center / contain no-repeat;
+      pointer-events: none;
+    }
+
+    /* ---------- Globus, wo ein Favicon gescheitert ist ----------
+       Zwei Faelle, beide bedient vom Zuhoerer in core.js (faviconRueckfall):
+       .up-globus-an   an einem Kasten, der das Bild getragen hat und sonst nichts anzeigen wuerde
+                       -- der Kasten behaelt seine Groesse, der Globus sitzt darin.
+       .up-globus-frei anstelle eines Bildes, das ohne Kasten in einer Zeile stand (Tooltip,
+                       Legende, Filterzeile). Die Groesse setzt der Zuhoerer aus dem Bild, das
+                       dort stand -- sonst rutscht die Zeile beim Fehlschlag.
+       Farbe aus --vc-third mit festem Rueckfall: diese Marken koennen ausserhalb von .up-root
+       stehen. */
+    .up-globus-an { position: relative; }
+    .up-globus-an::after {
+      content: ""; position: absolute; left: 50%; top: 50%;
+      width: 62%; height: 62%; transform: translate(-50%, -50%);
+      background: var(--vc-third, #9e9e9e);
+      -webkit-mask: var(--up-globus) center / contain no-repeat;
+      mask: var(--up-globus) center / contain no-repeat;
+      pointer-events: none;
+    }
+    .up-globus-frei {
+      display: inline-block; flex: 0 0 auto; vertical-align: middle;
+      background: var(--vc-third, #9e9e9e);
       -webkit-mask: var(--up-globus) center / contain no-repeat;
       mask: var(--up-globus) center / contain no-repeat;
       pointer-events: none;

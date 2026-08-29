@@ -1,0 +1,43 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Globus-Rueckfall fuer gescheiterte Favicons</title>
+<link rel="stylesheet" href="core.css">
+<style>
+  body { font: 13px Geist, system-ui, sans-serif; padding: 20px; }
+  .fall { display: flex; align-items: center; gap: 12px; margin: 14px 0; }
+  .fall b { width: 240px; font-weight: 500; }
+</style>
+<div class="up-root" id="wurzel">
+  <div class="fall"><b>1 .up-logo-box.up-fav (Seite)</b>
+    <span class="up-logo-box up-fav has-img" id="f1"><img src="kaputt/wsrv.nl/?url=a"><span class="up-logo-ltr">R</span></span></div>
+  <div class="fall"><b>2 .up-logo-box mit Buchstabe (Marke)</b>
+    <span class="up-logo-box has-img" id="f2"><img src="kaputt/b.png"><span class="up-logo-ltr">K</span></span></div>
+  <div class="fall"><b>3 .up-logo-box ohne Buchstabe</b>
+    <span class="up-logo-box has-img" id="f3"><img src="kaputt/c.png"></span></div>
+  <div class="fall"><b>4 freies Favicon 16x16</b>
+    <img class="up-company-favicon" id="f4" src="kaputt/d.png" width="16" height="16" alt=""></div>
+  <div class="fall"><b>5 .up-ment-logo</b>
+    <span class="up-ment-logo" id="f5"><img src="kaputt/wsrv.nl/?url=e" alt=""></span></div>
+  <div class="fall"><b>6 Gegenprobe: kein Favicon</b>
+    <img id="f6" src="kaputt/kein-favicon.png" width="24" height="24" alt=""></div>
+</div>
+<pre id="out" style="background:#111;color:#eee;padding:10px;white-space:pre-wrap"></pre>
+<script src="core.js"></script>
+<script>
+setTimeout(function(){
+  function z(id){
+    var e = document.getElementById(id);
+    if (!e) return id + ": weg";
+    var kind = e.tagName === "IMG" ? "IMG" : (e.querySelector("img") ? "hat img" : "ohne img");
+    var g = e.classList.contains("up-globus-frei") ? "FREI" : "-";
+    return id + ": <" + e.tagName.toLowerCase() + " class=\"" + e.className + "\"> " + kind + " globus-frei:" + g;
+  }
+  var fall4 = document.querySelector(".fall:nth-of-type(4) .up-globus-frei");
+  var fall6 = document.getElementById("f6");
+  document.getElementById("out").textContent = [
+    z("f1"), z("f2"), z("f3"), z("f5"),
+    "f4 ersetzt durch: " + (fall4 ? fall4.className + " " + fall4.style.width + "x" + fall4.style.height : "NICHT ersetzt"),
+    "f6 (Gegenprobe, darf nicht angefasst sein): " + (fall6 ? "noch da, class=\"" + fall6.className + "\"" : "WEG - falsch")
+  ].join("\n");
+}, 900);
+</script>

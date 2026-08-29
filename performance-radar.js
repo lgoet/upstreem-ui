@@ -267,7 +267,7 @@
     el.innerHTML =
       '<div class="uhm-tip-head">' +
         '<span class="up-logo-box' + (company.logo ? " has-img" : "") + '">' +
-          (company.logo ? '<img src="' + esc(company.logo) + '" alt="" referrerpolicy="no-referrer" onerror="this.style.visibility=\'hidden\'"/>'
+          (company.logo ? '<img src="' + esc(company.logo) + '" alt="" referrerpolicy="no-referrer"/>'
                         : '<span class="up-logo-ltr">' + esc((company.name || "?").charAt(0)) + '</span>') +
         '</span>' +
         '<span class="uhm-tip-name">' + esc(company.name || "") + '</span>' +
@@ -959,7 +959,7 @@
         function(c){
           var initial = esc((c.name || "?").charAt(0));
           return '<span class="up-ment-logo">' +
-                   (c.logo ? '<img src="' + esc(c.logo) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.style.visibility=\'hidden\'"/>'
+                   (c.logo ? '<img src="' + esc(c.logo) + '" alt="" loading="lazy" referrerpolicy="no-referrer"/>'
                            : '<span class="uhm-pick-ltr">' + initial + '</span>') +
                  '</span><span class="up-ment-name">' + esc(c.name) + '</span>';
         });

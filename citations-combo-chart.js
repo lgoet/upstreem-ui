@@ -571,7 +571,7 @@
       var items = datasets.map(function(ds){
         var checked = !hiddenSeries[ds.__id];
         var icon = ds.__favicon
-          ? '<img class="combo-filter-favicon" src="' + esc(ds.__favicon) + '" onerror="this.style.visibility=\'hidden\'"/>'
+          ? '<img class="combo-filter-favicon" src="' + esc(ds.__favicon) + '"/>'
           : '<span class="combo-filter-dot" style="background:' + ds.__baseColor + '"></span>';
         return '<div class="combo-filter-item ' + (checked ? "is-checked" : "") + '" data-id="' + esc(String(ds.__id)) + '" style="--cc-fltclr:' + ds.__baseColor + '" title="' + esc(ds.label) + '">' +
           '<span class="combo-filter-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5" /></svg></span>' +

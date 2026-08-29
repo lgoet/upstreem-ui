@@ -278,7 +278,7 @@
         var isLast = (i === rows.length - 1);
         var gap = (isLast && pos != null && pos > 7) ? " vt-gap" : "";
         var logo = r.logo_url
-          ? '<span class="up-logo-box has-img"><img src="' + esc(r.logo_url) + '" onerror="this.style.visibility=\'hidden\'"/></span>'
+          ? '<span class="up-logo-box has-img"><img src="' + esc(r.logo_url) + '"/></span>'
           : '<span class="up-logo-box"></span>';
         var visNull = (r.visibility_pct == null || r.visibility_pct === "");
         var vis = '<span class="up-num' + (visNull ? " is-empty" : "") + '">' + (visNull ? "–" : UC.fmtPct(r.visibility_pct)) + '</span>' + trendChip(r.visibility_delta_pct, false, false, "%");
@@ -580,7 +580,7 @@
         var nm = String(c.name || id);
         var fav = c.favicon_url || c.logo_url || c.favicon || c.logo || "";
         var logo = fav
-          ? '<span class="up-ment-logo"><img src="' + esc(fav) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.style.visibility=\'hidden\'"/></span>'
+          ? '<span class="up-ment-logo"><img src="' + esc(fav) + '" alt="" loading="lazy" referrerpolicy="no-referrer"/></span>'
           : '<span class="up-ment-logo" style="background:' + esc(c.color || "#9e9e9e") + '"></span>';
         return '<div class="up-filter-item' + (checked ? " is-checked" : "") + (disabled ? " is-disabled" : "") + '" data-id="' + esc(id) + '" data-name="' + esc(nm.toLowerCase()) + '" title="' + esc(nm) + '">' +
           '<span class="up-filter-check">' + CHECK_SVG + '</span>' +
