@@ -3063,7 +3063,7 @@
 
   /* ---- Der gleitende Umschalter --------------------------------------------------------------
      Jeder Umschalter der App bekommt einen Streifen, der unter den Knoepfen an die aktive Stufe
-     faehrt (CSS: .up-seg-ind). Hier steht nur das Messen: wo steht die aktive Stufe, wie breit
+     faehrt (CSS: das ::before der Umschalter). Hier steht nur das Messen: wo steht die aktive Stufe, wie breit
      und wie hoch ist sie.
      Die Stufen werden ueber "button" gefunden und nicht ueber ihre Klassen: die zehn Umschalter
      der App nennen ihre Knoepfe zehnmal anders (.up-seg-btn, .vc-gran-btn, .up-pagesize-btn,
@@ -3079,106 +3079,37 @@
                   " .upt-status, .udt-sub-dispseg, .uap-tabs";
 
   function segMessen(box){
-    var ind = box.__upSegInd;
-    if (!ind){
-      ind = document.createElement("span");
-      ind.className = "up-seg-ind";
-      ind.setAttribute("aria-hidden", "true");
-      box.__upSegInd = ind;
-    }
-    /* Baut die Komponente ihr Markup neu (innerHTML), faellt der Streifen mit heraus. Dann wird
-       DASSELBE Element wieder eingehaengt und kein frisches gebaut -- es behaelt seine Inline-Lage
-       und sein is-bereit, und die naechste Messung FAEHRT von dort zur neuen Stufe. Ein frisches
-       Element haette keine Ausgangslage: es wuerde springen, und genau so sah es aus, als gaebe es
-       den Uebergang gar nicht. Dieselbe Lehre wie bei der Marke in der Seitenleiste. */
-    if (ind.parentNode !== box){
-      box.insertBefore(ind, box.firstChild);
-      /* Und einmal Layout erzwingen, BEVOR die neuen Werte kommen. Ein Element, das gerade wieder
-         eingehaengt wurde, hat noch keinen berechneten Stand: Einhaengen und neue Lage im selben
-         Zug landen in EINEM Stildurchgang, und dann gibt es nichts, wovon der Uebergang ausgehen
-         koennte -- der Streifen springt. Mit dem erzwungenen Durchgang ist die alte Lage der
-         Ausgangswert, und er faehrt. */
-      void ind.offsetWidth;
-    }
     var aktiv = box.querySelector("button.is-active");
-    if (!aktiv){
-      /* Keine aktive Stufe. Der Streifen bleibt STEHEN, wo er ist, und wird nur ausgeblendet,
-         solange er noch nie gemessen wurde. Ihn hier auf unsichtbar zu setzen war ein Fehler mit
-         Folgen: viele Komponenten bauen beim Umschalten ihre Kopfzeile neu, und fuer einen
-         Augenblick gibt es dann keine aktive Stufe -- der Streifen verlor sein is-bereit, die
-         naechste Messung galt als die erste und lief OHNE Uebergang. Genau das war der Grund,
-         warum nirgends etwas glitt. */
-      if (!ind.__upGemessen) ind.classList.remove("is-bereit");
-      return;
-    }
+    if (!aktiv) return;
     var b = aktiv.offsetWidth, h = aktiv.offsetHeight;
     /* Breite 0 heisst: der Umschalter ist gerade nicht sichtbar (ein Popover, das noch zu ist).
        Dann NICHT messen -- eine 0 wuerde den Streifen auf null ziehen, und beim Oeffnen faehrt er
        aus dem Nichts. Der naechste Lauf misst ihn, sobald er wirklich da ist. */
     if (!b) return;
-    var t = "translate(" + aktiv.offsetLeft + "px," + aktiv.offsetTop + "px)";
-    /* Das ERSTE Mal ohne Fahrt: ein Streifen, der beim Aufbau der Seite aus der Breite 0 an der
-       linken Kante herauswaechst, behauptet einen Wechsel, den es nicht gab. Danach faehrt er.
-       Gemerkt wird das am Element selbst und NICHT an is-bereit: die Klasse kann zwischendurch
-       fallen (siehe oben), und dann waere jeder Wechsel wieder ein "erstes Mal". */
-    var erst = !ind.__upGemessen;
-    if (erst) ind.style.transition = "none";
-    /* Nur schreiben, was sich geaendert hat: jedes Schreiben ist eine Mutation, und der Beobachter
-       unten haengt an genau diesem Element. */
-    if (ind.style.transform !== t) ind.style.transform = t;
-    if (ind.style.width !== b + "px") ind.style.width = b + "px";
-    if (ind.style.height !== h + "px") ind.style.height = h + "px";
-    if (erst){
-      void ind.offsetWidth;
-      ind.style.transition = "";
-      ind.__upGemessen = true;
-    }
-    /* is-bereit ist eine Klassenaenderung IM Kasten -- und der Beobachter oben hoert auf Klassen.
-       Nur setzen, wenn sie fehlt: dann gibt es genau einen zusaetzlichen Durchlauf und keinen
-       zweiten, denn beim naechsten Mal steht sie schon da. */
-    if (!ind.classList.contains("is-bereit")) ind.classList.add("is-bereit");
+    /* VIER ZAHLEN, sonst nichts. Kein Element, kein Einhaengen, kein Umbau -- der Streifen ist ein
+       ::before und existiert im DOM gar nicht. Deshalb kann diese Funktion auch nichts ausloesen,
+       was ein fremder Beobachter (Bubble) als Aenderung an seinem Baum sieht. */
+    var x = aktiv.offsetLeft + "px", y = aktiv.offsetTop + "px";
+    var st = box.style;
+    if (st.getPropertyValue("--up-seg-x") !== x) st.setProperty("--up-seg-x", x);
+    if (st.getPropertyValue("--up-seg-y") !== y) st.setProperty("--up-seg-y", y);
+    if (st.getPropertyValue("--up-seg-w") !== b + "px") st.setProperty("--up-seg-w", b + "px");
+    if (st.getPropertyValue("--up-seg-h") !== h + "px") st.setProperty("--up-seg-h", h + "px");
+    /* Die Klasse ZULETZT und nur einmal: sie schaltet Sichtbarkeit und Fahrt frei. Steht sie schon
+       vor der ersten Messung da, faehrt der Streifen beim ersten Bild aus der linken Ecke heran. */
+    if (!box.classList.contains("is-gleitend")) box.classList.add("is-gleitend");
   }
 
-  /* Die Schriften kommen SPAETER als das erste Bild, und mit ihnen werden alle Beschriftungen
-     anders breit -- der Streifen stuende dann hinter dem falschen Knopf. Genau so gemeldet am
-     24.08. am Umschalter im Onboarding ("B2B ist selected, aber der weisse Hintergrund ist hinter
-     B2X"), und es trat "ab und an" auf: naemlich dann, wenn die Schrift nicht schon im
-     Zwischenspeicher lag. Einmal fuer die ganze Seite, nicht je Umschalter. */
-  var SEG_SCHRIFT = false;
-
+  /* KEINE Beobachter mehr an fremden Kaesten. Die erste Fassung hing an jedem Umschalter einen
+     MutationObserver und an jedem Knopf einen ResizeObserver -- auf einer Bubble-Seite sind das
+     hunderte, und jede Regung der Seite lief durch sie hindurch. Gebraucht werden sie auch nicht:
+     die aktive Stufe wechselt durch einen KLICK, und danach laeuft der Lauf ohnehin (der Zuhoerer
+     am Dokument, ein paar Zeilen weiter unten). Dazu die festen Zeitpunkte nach dem Laden, das
+     Ende der Schriften und jede Groessenaenderung des Fensters.
+     Was core auf einer fremden Seite hinterlaesst, ist damit: vier Eigenschaften und eine Klasse
+     an den Umschaltern. Kein Knoten, kein Beobachter. */
   function segEinrichten(box){
-    /* Nichts anfassen, was gerade nicht im Dokument steht: Bubble baut Gruppen zusammen und haengt
-       sie erst danach ein. Ein Streifen in einem losgeloesten Baum waere Arbeit fuer nichts -- und
-       die Messung darin liefert ohnehin nur Nullen. */
     if (!box.isConnected) return;
-    if (!box.__upSeg){
-      box.__upSeg = true;
-      /* Der Beobachter sitzt an der Kiste selbst und nicht am Dokument: die aktive Stufe wechselt
-         ueber eine Klasse, und wer darauf dokumentweit lauscht, laeuft bei jeder Regung der Seite
-         mit. So laeuft er nur, wenn sich in diesem Umschalter etwas tut. */
-      /* NUR auf Klassen hoeren, NICHT auf childList. Der Streifen wird von segMessen selbst
-         eingehaengt -- mit childList wuerde dieser Beobachter also auf die eigene Arbeit
-         antworten. Ein Umschalter, der sein Markup neu baut, bekommt seinen Streifen beim
-         naechsten Lauf zurueck (der Beobachter am Dokument sieht die neuen Knoten ohnehin).
-         Die aktive Stufe wechselt ueber eine KLASSE, und Klassen schreibt hier niemand ausser den
-         Komponenten selbst: der Weg bleibt damit in eine Richtung. */
-      if (window.MutationObserver){
-        new MutationObserver(function(){ segMessen(box); })
-          .observe(box, { subtree: true, attributes: true, attributeFilter: ["class"] });
-      }
-      /* HIER STAND EIN ResizeObserver AUF JEDEM KNOPF -- und der hat auf der echten Seite die
-         ganze App stillgelegt. Nachgewiesen am 29.08.: mit window.__upOhneStreifen laedt sie, ohne
-         ihn nicht.
-         Der Weg dorthin: segMessen haengt den Streifen als erstes Kind IN die Kiste. Das ist eine
-         Aenderung im Layout der Kiste, und die Knoepfe darin koennen dabei um Bruchteile eines
-         Pixels wandern -- der Beobachter feuert, segMessen laeuft, haengt wieder ein, misst wieder.
-         Auf einer Seite mit ein paar Umschaltern faellt das nicht auf; auf einer Bubble-Seite mit
-         zehn Views, 135 Komponenten und 23604 Knoten laeuft der Hauptstrang damit voll, und die
-         Seite wird nie fertig gezeichnet. Kein Fehler in der Konsole, nur eine Seite, die steht.
-         Die Lehre aus dem Onboarding -- nach dem Laden der Schriften noch einmal messen -- bleibt
-         erhalten, aber ueber document.fonts.ready statt ueber einen Beobachter, der jede Regung
-         mitnimmt. Groessenaenderungen des Fensters deckt der resize-Zuhoerer ab. */
-    }
     if (!SEG_SCHRIFT && document.fonts && document.fonts.ready){
       SEG_SCHRIFT = true;
       document.fonts.ready.then(function(){ segLauf(); })["catch"](function(){});
@@ -3196,6 +3127,10 @@
      Bruchteile einer Millisekunde, 1500ms sind also nur erreichbar, wenn etwas grundlegend
      falsch laeuft. */
   var SEG_KONTO = 0, SEG_AUS = false, SEG_GRENZE = 1500;
+  /* Die Schriften kommen SPAETER als das erste Bild, und mit ihnen werden alle Beschriftungen
+     anders breit -- der Streifen stuende dann hinter dem falschen Knopf. Genau so gemeldet am
+     24.08. am Umschalter im Onboarding. Einmal fuer die ganze Seite, nicht je Umschalter. */
+  var SEG_SCHRIFT = false;
 
   function segLauf(wurzel){
     if (SEG_AUS || window.__upOhneToolbar || window.__upOhneStreifen) return;

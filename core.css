@@ -1919,37 +1919,53 @@
 .tcl-seg { align-self: flex-start; }
 
 /* ---- Der gleitende Umschalter --------------------------------------------------------------
-   Die aktive Stufe wird nicht mehr umgefaerbt, sie FAEHRT: ein Streifen liegt unter den Knoepfen
-   und zieht in 200ms an die neue Stelle. Dasselbe Bild, das der Umschalter im Onboarding schon
-   hatte (.uob-bseg-ind) -- hier fuer JEDEN Umschalter der App, gross wie klein, und deshalb in
-   core statt zum sechsten Mal in einer Komponente.
-   Der Streifen wird von core.js eingehaengt und gemessen (segLauf). Er traegt genau die Flaeche,
-   die die aktive Stufe vorher selbst trug: weiss mit dem Schalterrahmen, im Dunkeln #121212.
-   Die Stufe selbst gibt ihre Flaeche ab, SOBALD der Streifen da ist -- ueber den
-   Geschwisterselektor .up-seg-ind ~ button.is-active. Ohne Streifen (kein JS, alte Seite) bleibt
-   alles wie vorher; es gibt also keinen Zustand ohne sichtbare Auswahl. */
+   Die aktive Stufe wird nicht umgefaerbt, sie FAEHRT: ein Streifen liegt unter den Knoepfen und
+   zieht in 200ms an die neue Stelle. Dasselbe Bild, das der Umschalter im Onboarding schon hatte.
+
+   Der Streifen ist ein ::before und KEIN eingehaengtes Element -- und das ist der Kern dieser
+   Fassung. Die erste hat einen span in den Umschalter gehaengt, und genau daran ist am 29.08. eine
+   ganze Bubble-App stillgestanden: die Umschalter stehen dort im Markup der HTML-Elemente, Bubble
+   setzt dieses Markup beim Zeichnen ueber jQuery.html() immer wieder neu, und ein fremder Knoten
+   darin fuehrt zu einer Schleife, aus der die Seite nicht mehr herauskommt. In der Konsole war
+   kein Fehler zu sehen -- nur eine Seite, die nie fertig wurde, und dieselbe Ladewarnung dreimal
+   hintereinander aus drei verschiedenen Skripten, also dasselbe Element dreimal neu gezeichnet.
+   Ein Pseudo-Element gibt es im DOM nicht. Es kann von niemandem gesehen, geerbt oder
+   wegdiffed werden. core setzt nur noch vier Zahlen als Eigenschaften an den Kasten. */
 .up-seg, .cc-seg, .ubo-seg, .tcl-seg, .vc-gran, .cc-gran, .up-pagesize-seg, .up-filter-dim,
 .up-dense, .tcd-mode, .uca-format-seg, .ubo-yaxis, .upt-status, .udt-sub-dispseg,
 .uap-tabs { position: relative; }
-.up-seg-ind {
-  position: absolute; left: 0; top: 0; width: 0; height: 100%; z-index: 0; box-sizing: border-box;
+.up-seg::before, .cc-seg::before, .ubo-seg::before, .tcl-seg::before, .vc-gran::before,
+.cc-gran::before, .up-pagesize-seg::before, .up-filter-dim::before, .up-dense::before,
+.tcd-mode::before, .uca-format-seg::before, .ubo-yaxis::before, .upt-status::before,
+.udt-sub-dispseg::before, .uap-tabs::before {
+  content: ""; position: absolute; left: 0; top: 0; z-index: 0; box-sizing: border-box;
+  width: var(--up-seg-w, 0); height: var(--up-seg-h, 100%);
+  transform: translate(var(--up-seg-x, 0), var(--up-seg-y, 0));
   border-radius: 8px; background: #ffffff; border: 1px solid var(--vc-switch-border);
   opacity: 0; pointer-events: none;
-  transition: transform 200ms ease, width 200ms ease, height 200ms ease, opacity 160ms ease;
 }
-/* Vor der ersten Messung unsichtbar: sonst liegt der Streifen einen Frame lang mit Breite 0 links,
-   waehrend eine Stufe schon dunkel ist. is-bereit setzt core.js, sobald es gemessen hat. */
-.up-seg-ind.is-bereit { opacity: 1; }
-[data-theme="dark"] .up-seg-ind { background: #121212; border-color: #353535; }
+/* Sichtbar und beweglich erst, wenn core gemessen hat. Die Deckkraft faehrt NICHT mit: sonst
+   blendet der Streifen beim ersten Bild aus der Breite 0 heran, und das behauptet einen Wechsel,
+   den es nicht gab. */
+.is-gleitend::before { opacity: 1; }
+.is-gleitend::before { transition: transform 200ms ease, width 200ms ease, height 200ms ease; }
+[data-theme="dark"] .up-seg::before, [data-theme="dark"] .cc-seg::before,
+[data-theme="dark"] .ubo-seg::before, [data-theme="dark"] .tcl-seg::before,
+[data-theme="dark"] .vc-gran::before, [data-theme="dark"] .cc-gran::before,
+[data-theme="dark"] .up-pagesize-seg::before, [data-theme="dark"] .up-filter-dim::before,
+[data-theme="dark"] .up-dense::before, [data-theme="dark"] .tcd-mode::before,
+[data-theme="dark"] .uca-format-seg::before, [data-theme="dark"] .ubo-yaxis::before,
+[data-theme="dark"] .upt-status::before, [data-theme="dark"] .udt-sub-dispseg::before,
+[data-theme="dark"] .uap-tabs::before { background: #121212; border-color: #353535; }
 /* Die Knoepfe stehen ueber dem Streifen. */
-.up-seg-ind ~ button { position: relative; z-index: 1; }
-/* Drei Stufen der Spezifitaet, weil die Aktivregeln der Bauteile in drei Stufen stehen:
-   .up-seg-btn.is-active (0,2,0), [data-theme="dark"] ... (0,3,0) und
-   .up-root[data-theme="dark"] .vc-gran-btn.is-active (0,4,0). Ueber die Spezifitaet gewonnen,
-   nicht ueber die Ladereihenfolge. */
-.up-seg-ind ~ button.is-active,
-[data-theme="dark"] .up-seg-ind ~ button.is-active,
-.up-root[data-theme="dark"] .up-seg-ind ~ button.is-active {
+.is-gleitend > button { position: relative; z-index: 1; }
+/* Und die aktive Stufe gibt ihre eigene Flaeche ab, SOBALD der Streifen misst. Drei Stufen der
+   Spezifitaet, weil die Aktivregeln der Bauteile in drei Stufen stehen: .up-seg-btn.is-active
+   (0,2,0), [data-theme="dark"] ... (0,3,0) und .up-root[data-theme="dark"] .vc-gran-btn.is-active
+   (0,4,0). Ueber die Spezifitaet gewonnen, nicht ueber die Ladereihenfolge. */
+.is-gleitend > button.is-active,
+[data-theme="dark"] .is-gleitend > button.is-active,
+.up-root[data-theme="dark"] .is-gleitend > button.is-active {
   background: transparent; border-color: transparent;
 }
 /* KEINE Ausnahme fuer prefers-reduced-motion. Sie stand hier und war der wahrscheinlichste Grund
