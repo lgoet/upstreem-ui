@@ -47,6 +47,9 @@ TEILE = [
     # die Komponente baut alles selbst -- und genau deshalb steht sie hier: so bleiben ihre
     # Attribute (data-brand und der Rest) in derselben Form wie in der App.
     ("udd", "bubble/domain_detail_bubble.html", "lh-udd"),
+    # Fuenfte Szene: die Performance-Seite, Kopf und Heatmap.
+    ("hph", "page-headers/bubble/performance_page_header_bubble.html", "lh-hph"),
+    ("uhm", "bubble/performance_radar_bubble.html", "lh-uhm"),
 ]
 
 # Feste Werte fuer die Platzhalter. BRAND_NAME ist eine erfundene Marke -- erfundene Zahlen unter

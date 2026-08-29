@@ -78,6 +78,7 @@
      CSS und JS -- anders als die Vorschauen in den Karten ist sie nicht statisch, sie rechnet ihre
      Charts selbst. */
   css("domain-detail.css");
+  css("performance-radar.css");
   css("landing-hero.css");
 
   js("core.js");
@@ -92,6 +93,8 @@
   js("page-headers/opportunities-page-header.js");
   js("opportunities.js");
   js("responses-table.js");
+  js("page-headers/performance-page-header.js");
+  js("performance-radar.js");
   js("domain-detail.js");
   /* Zuletzt: diese Datei ruft die Setter der anderen. */
   js("landing-hero.js");

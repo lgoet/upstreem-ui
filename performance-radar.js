@@ -45,6 +45,7 @@
   if (!window.__uhmBootStubbed){
     window.__uhmBootStubbed = true;
     ["renderPerformanceRadar", "setPerformanceRadarLoading", "resetPerformanceRadar",
+     "setPerformanceRadarWeights", "setPerformanceRadarMetric",
      "renderFestivalHeatmap", "destroyHeatmapTooltip"].forEach(function(n){
       window[n] = function(){ __uhmBootQueue.push([n, arguments]); };
     });
@@ -1536,6 +1537,14 @@
         syncPickBtn();
         if (typeof toolGroup !== "undefined" && toolGroup) toolGroup.sync();
       },
+      /* Von aussen schaltbar, damit nicht jeder Aufrufer das Menue oeffnen und eine Zeile darin
+         anklicken muss. Gebraucht von der Landingpage, die die Heatmap vorfuehrt -- und in Bubble
+         der Weg, den Balken fuer eine Platzierung von vornherein anzuschalten. */
+      setWeights: function(on){ setWeights(!!on); },
+      /* Die Metrik von aussen, OHNE das Ereignis an Bubble: ein Setter ist keine Klickantwort, und
+         ein Workflow, der auf uhmMetric haengt, soll nicht auf etwas reagieren, das er selbst
+         angestossen hat. Gebraucht von der Landingpage, die die zweite Ansicht vorfuehrt. */
+      setMetric: function(m){ setMetric(m, false); },
       destroyTip: killTip,
       root: root,
       instanceId: instanceId
@@ -1584,6 +1593,8 @@
   }
   function apiSetLoading(id, v){ ctrlsFor(id || "default").forEach(function(c){ c.setLoading(isYesLoose(v)); }); }
   function apiReset(id){ ctrlsFor(id || "default").forEach(function(c){ c.reset(); }); }
+  function apiSetWeights(id, v){ ctrlsFor(id || "default").forEach(function(c){ c.setWeights(isYesLoose(v)); }); }
+  function apiSetMetric(id, v){ ctrlsFor(id || "default").forEach(function(c){ c.setMetric(String(v == null ? "" : v)); }); }
   function apiDestroyTip(id){
     /* The legacy contract is "kill the tooltip", full stop — it is one shared element, so the id
        only decides which root we bother to look up, not which chip dies. */
@@ -1611,6 +1622,8 @@
       renderPerformanceRadar: apiRender,
       setPerformanceRadarLoading: apiSetLoading,
       resetPerformanceRadar: apiReset,
+      setPerformanceRadarWeights: apiSetWeights,
+      setPerformanceRadarMetric: apiSetMetric,
       /* Legacy, un-suffixed. The suffixed twins are installed by registerLegacyAliases(). */
       renderFestivalHeatmap: apiRender,
       destroyHeatmapTooltip: function(id){ apiDestroyTip(id); }

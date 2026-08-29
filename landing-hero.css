@@ -455,7 +455,7 @@
 /* Mira und die Prompts-Seite liegen von Anfang an im Markup, aber unsichtbar: die Komponenten
    brauchen ihre echte Groesse, um sich einzurichten (Chathoehe, is-compact, Scrollsperre, die
    Spaltenanpassung der Tabelle), und display: none haette ihnen eine Hoehe von 0 gemeldet. */
-.ulh-mira, .ulh-prompts, .ulh-chancen { opacity: 0; }
+.ulh-mira, .ulh-prompts, .ulh-chancen, .ulh-perf { opacity: 0; }
 .ulh-seite.is-da { opacity: 1; }
 /* is-weg NACH is-da, und das ist kein Schoenheitsfehler in der Reihenfolge: eine Seite, die schon
    dran WAR und jetzt weg soll, traegt beide Klassen. Beide haben dieselbe Spezifitaet, also
@@ -463,6 +463,14 @@
    Prompts-Seite liegen. Genau so gemessen. */
 .ulh-seite.is-weg { opacity: 0; }
 .ulh-seite.is-kommt { animation: ulhRise 690ms var(--ulh-ease) backwards; }
+
+/* Die Karte der Heatmap (performance-radar.css: .uhm-tip) haengt an <body>, nicht in der Buehne --
+   in der App ist das richtig, denn sie muss ueber den Rand der Seite hinausragen duerfen. Hier
+   stuende sie damit in voller Groesse neben einer verkleinerten Oberflaeche.
+   scale und nicht transform: die Komponente schreibt transform selbst (translate3d, jedes Bild
+   waehrend der Fahrt), und die zwei wuerden sich gegenseitig ueberschreiben. Die unabhaengige
+   scale-Eigenschaft laeuft daneben. Ursprung oben links, weil dort ihr Anker sitzt. */
+.uhm-tip { scale: var(--ulh-mass, 1); transform-origin: 0 0; }
 
 /* ---------- Der Auftritt der Prompts-Seite ----------
    Sie steigt NICHT als Ganzes herauf -- ihre Teile tun es nacheinander: erst der Seitenkopf, dann
@@ -654,7 +662,7 @@
 /* Die Leiste bringt ihre Breite selbst mit; rechts davon der Seiteninhalt.
    min-width: 0, sonst sprengt eine breite Tabelle die Spalte. */
 .ulh-side { flex: 0 0 auto; }
-.ulh-main, .ulh-prompts, .ulh-chancen {
+.ulh-main, .ulh-prompts, .ulh-chancen, .ulh-perf {
   flex: 1 1 auto;
   min-width: 0;
   display: flex;
