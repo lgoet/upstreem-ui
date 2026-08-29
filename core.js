@@ -3133,6 +3133,9 @@
       ind.style.transition = "";
       ind.__upGemessen = true;
     }
+    /* is-bereit ist eine Klassenaenderung IM Kasten -- und der Beobachter oben hoert auf Klassen.
+       Nur setzen, wenn sie fehlt: dann gibt es genau einen zusaetzlichen Durchlauf und keinen
+       zweiten, denn beim naechsten Mal steht sie schon da. */
     if (!ind.classList.contains("is-bereit")) ind.classList.add("is-bereit");
   }
 
@@ -3153,21 +3156,28 @@
       /* Der Beobachter sitzt an der Kiste selbst und nicht am Dokument: die aktive Stufe wechselt
          ueber eine Klasse, und wer darauf dokumentweit lauscht, laeuft bei jeder Regung der Seite
          mit. So laeuft er nur, wenn sich in diesem Umschalter etwas tut. */
+      /* NUR auf Klassen hoeren, NICHT auf childList. Der Streifen wird von segMessen selbst
+         eingehaengt -- mit childList wuerde dieser Beobachter also auf die eigene Arbeit
+         antworten. Ein Umschalter, der sein Markup neu baut, bekommt seinen Streifen beim
+         naechsten Lauf zurueck (der Beobachter am Dokument sieht die neuen Knoten ohnehin).
+         Die aktive Stufe wechselt ueber eine KLASSE, und Klassen schreibt hier niemand ausser den
+         Komponenten selbst: der Weg bleibt damit in eine Richtung. */
       if (window.MutationObserver){
         new MutationObserver(function(){ segMessen(box); })
-          .observe(box, { subtree: true, childList: true, attributes: true, attributeFilter: ["class"] });
+          .observe(box, { subtree: true, attributes: true, attributeFilter: ["class"] });
       }
-      /* Beobachtet werden die KNOEPFE, nicht die Kiste um sie herum: eine Kiste, die 100% breit
-         ist, aendert ihre Groesse nie -- ein Beobachter auf ihr feuert also genau dann nicht, wenn
-         es darauf ankaeme. Dieselbe Lehre wie im Onboarding. */
-      if (window.ResizeObserver){
-        box.__upSegRo = new ResizeObserver(function(){ segMessen(box); });
-      }
-    }
-    if (box.__upSegRo){
-      /* Bei jedem Lauf neu anmelden: ein Umschalter, der sein Markup neu gebaut hat, hat neue
-         Knoepfe. Ein zweites observe auf dasselbe Element tut nichts. */
-      try { [].forEach.call(box.querySelectorAll("button"), function(b){ box.__upSegRo.observe(b); }); } catch(e){}
+      /* HIER STAND EIN ResizeObserver AUF JEDEM KNOPF -- und der hat auf der echten Seite die
+         ganze App stillgelegt. Nachgewiesen am 29.08.: mit window.__upOhneStreifen laedt sie, ohne
+         ihn nicht.
+         Der Weg dorthin: segMessen haengt den Streifen als erstes Kind IN die Kiste. Das ist eine
+         Aenderung im Layout der Kiste, und die Knoepfe darin koennen dabei um Bruchteile eines
+         Pixels wandern -- der Beobachter feuert, segMessen laeuft, haengt wieder ein, misst wieder.
+         Auf einer Seite mit ein paar Umschaltern faellt das nicht auf; auf einer Bubble-Seite mit
+         zehn Views, 135 Komponenten und 23604 Knoten laeuft der Hauptstrang damit voll, und die
+         Seite wird nie fertig gezeichnet. Kein Fehler in der Konsole, nur eine Seite, die steht.
+         Die Lehre aus dem Onboarding -- nach dem Laden der Schriften noch einmal messen -- bleibt
+         erhalten, aber ueber document.fonts.ready statt ueber einen Beobachter, der jede Regung
+         mitnimmt. Groessenaenderungen des Fensters deckt der resize-Zuhoerer ab. */
     }
     if (!SEG_SCHRIFT && document.fonts && document.fonts.ready){
       SEG_SCHRIFT = true;
@@ -3176,11 +3186,32 @@
     segMessen(box);
   }
 
+  /* ---- Die Notbremse ---------------------------------------------------------------------------
+     Der Streifen ist eine Verzierung. Er darf eine Seite niemals aufhalten -- und am 29.08. hat
+     genau das eine ganze App stillgelegt: auf einer Bubble-Seite mit zehn Views und 23604 Knoten
+     lief der Hauptstrang voll, und sie wurde nie fertig gezeichnet. Kein Fehler, nur Stillstand.
+     Deshalb ein Zeitkonto ueber alle Laeufe zusammen. Ist es aufgebraucht, schaltet sich der
+     Streifen ab und meldet das einmal. Was dann fehlt, ist eine Bewegung; was bleibt, ist eine
+     benutzbare Seite. Die Grenze ist grosszuegig: ein Lauf kostet auf einer normalen Seite
+     Bruchteile einer Millisekunde, 1500ms sind also nur erreichbar, wenn etwas grundlegend
+     falsch laeuft. */
+  var SEG_KONTO = 0, SEG_AUS = false, SEG_GRENZE = 1500;
+
   function segLauf(wurzel){
-    if (window.__upOhneToolbar || window.__upOhneStreifen) return;
+    if (SEG_AUS || window.__upOhneToolbar || window.__upOhneStreifen) return;
     var ziel = wurzel || document, els;
+    var t0 = (window.performance && performance.now) ? performance.now() : 0;
     try { els = ziel.querySelectorAll(SEG_BOXEN); } catch(e){ return; }
     for (var i = 0; i < els.length; i++) segEinrichten(els[i]);
+    if (t0){
+      SEG_KONTO += performance.now() - t0;
+      if (SEG_KONTO > SEG_GRENZE){
+        SEG_AUS = true;
+        if (window.console) console.warn("[UpstreemCore] Der gleitende Streifen der Umschalter ist " +
+          "abgeschaltet: er hat zusammen mehr als " + SEG_GRENZE + "ms gebraucht. Die Seite laeuft " +
+          "weiter, die Umschalter springen nur statt zu fahren.");
+      }
+    }
   }
 
   /* Zwei Anlaesse ausser dem Lauf der Toolbar: eine andere Fensterbreite aendert die Breite der
