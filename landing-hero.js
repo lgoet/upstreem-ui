@@ -391,9 +391,11 @@
             ' rel="noopener">Pricing</a>' +
         '</nav>' +
         '<div class="ulh-nav-rechts">' +
-          '<a class="ulh-btn ulh-btn-sec"' +
+          /* Anmelden und Registrieren gehen in einen NEUEN Tab: die Seite ist die Werbung, die
+             App ist die Arbeit -- wer sich anmeldet, soll die Seite nicht verlieren. */
+          '<a class="ulh-btn ulh-btn-sec" target="_blank" rel="noopener"' +
             ' href="https://app.upstreem.ai/signup?mode=login">Log in</a>' +
-          '<a class="ulh-btn ulh-btn-pri"' +
+          '<a class="ulh-btn ulh-btn-pri" target="_blank" rel="noopener"' +
             ' href="https://app.upstreem.ai/signup">Start for free</a>' +
         '</div>' +
         '<div class="ulh-nav-pop" aria-hidden="true">' +
@@ -518,7 +520,8 @@
         '<h2 class="ulh-stimme-satz ulh-auf">' + STIMME + '</h2>' +
         '<p class="ulh-stimme-sub ulh-auf" style="--auf:1">' + STIMME_SUB + '</p>' +
         '<div class="ulh-stimme-knoepfe ulh-auf" style="--auf:2">' +
-          '<a class="ulh-btn ulh-btn-pri" href="https://app.upstreem.ai/signup">' + STIMME_CTA + '</a>' +
+          '<a class="ulh-btn ulh-btn-pri" target="_blank" rel="noopener"' +
+            ' href="https://app.upstreem.ai/signup">' + STIMME_CTA + '</a>' +
           '<a class="ulh-btn ulh-btn-sec" href="https://upstreem.ai/contact">' + STIMME_CTA2 + '</a>' +
         '</div>' +
       '</div>' +
