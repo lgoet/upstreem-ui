@@ -494,13 +494,17 @@
 
     function renderKpis() {
       elKpis.innerHTML = KPIS.map(function (k) {
+        /* Ueberschrift ZUERST, Wert darunter -- so steht es auf der Seite und so wird es
+           vorgelesen. Vorher stand der Wert oben und die Ueberschrift darunter; die Umkehr im
+           Markup und nicht per column-reverse in der CSS, damit Lesereihenfolge und Bild
+           dasselbe sagen. */
         return '<div class="uud-kpi">' +
-                 '<span class="uud-kpi-val">' + kpiWert(k) + '</span>' +
                  '<span class="uud-kpi-lbl">' + esc(k.label) +
                    /* Das Symbol kommt aus UC.icon wie ueberall -- nie selbst gezeichnet. */
                    '<span class="up-th-info uud-info" data-explain="' + esc(k.key) + '">' +
                      UC.icon("info", 2) + '</span>' +
                  '</span>' +
+                 '<span class="uud-kpi-val">' + kpiWert(k) + '</span>' +
                '</div>';
       }).join("");
     }

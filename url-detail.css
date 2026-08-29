@@ -7,11 +7,18 @@
    Was hier NICHT steht, weil es in core steht: .up-card, .up-tag, .up-entchip, .up-logo-box,
    .up-th-info, .up-explain, .up-bars, .up-dash, .up-rank-group. */
 
-/* 44px zwischen den Abschnitten, nicht die 32 der Karten-Seiten. Ohne Rahmen muss der Abstand die
-   Trennung allein tragen -- bei 32 lasen KPI-Leiste und Mentions als ein Block. Der Abstand
+/* Eine Linie zwischen den Abschnitten, und der Abstand darf dafuer kleiner werden. Vorher trug
+   der Abstand die Trennung allein und brauchte dafuer 44px (bei 32 lasen KPI-Leiste und Mentions
+   als ein Block). Jetzt trennt die Linie, und 24px darueber wie darunter reichen -- der Abstand
    INNERHALB eines Abschnitts (Ueberschrift zu Inhalt) bleibt bei 16, damit der Unterschied
-   zwischen "gehoert zusammen" und "ist etwas Neues" deutlich bleibt. */
-.uud-root { display: flex; flex-direction: column; gap: 44px; width: 100%; }
+   zwischen "gehoert zusammen" und "ist etwas Neues" deutlich bleibt.
+   Die Linie haengt am FOLGENDEN Abschnitt und nicht am vorigen: so tragen ausgeblendete
+   Abschnitte am Ende keine Linie ins Leere, und der erste Abschnitt (die KPI-Leiste, immer da)
+   bekommt keine ueber sich. */
+.uud-root { display: flex; flex-direction: column; gap: 0; width: 100%; }
+.uud-root > * + * {
+  margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--vc-border);
+}
 .uud-root > * { min-width: 0; }
 /* Ein ausgeblendeter Bereich traegt das hidden-Attribut, und das wirkt nur ueber display:none aus
    dem Browser-Stylesheet -- jede eigene display-Regel schlaegt es. Dieselbe Falle wie in
@@ -24,8 +31,9 @@
 .uud-sect { width: 100%; box-sizing: border-box; }
 
 /* ---- KPI-Leiste ------------------------------------------------------------------------------
-   Wert oben, Ueberschrift darunter, beides MITTIG -- die Anordnung des bisherigen Typ-Elements,
-   damit die Leiste sich nicht neu erklaeren muss.
+   Ueberschrift oben, Wert darunter, beides LINKS -- eine Leiste, die an der linken Kante des
+   Abschnitts beginnt wie jede Ueberschrift darunter. Mittig ausgerichtet stand jede Spalte auf
+   einer eigenen unsichtbaren Achse, und die Leiste hatte damit sieben Kanten statt einer.
    auto-fit statt einer festen Spaltenzahl: sechs Felder passen auf einem breiten Schirm in eine
    Zeile und brechen darunter von selbst. 120px, gemessen und nicht geraten: bei 860px Wurzel --
    der Breite im Drawer -- bleiben nach fuenf Luecken 748px fuer sechs Spalten, also 124 je
@@ -39,32 +47,30 @@
      6*120 + 5*16 = 800, 3*120 + 2*16 = 392. */
   grid-template-columns: repeat(6, 1fr);
 }
-.uud-kpi { display: flex; flex-direction: column; gap: 6px; align-items: center; min-width: 0; }
+.uud-kpi { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; min-width: 0; }
 /* 28px: die Hoehe von .up-tag (24) plus Luft, damit eine Zeile mit Chip und eine mit Zahl gleich
    hoch sind und die Ueberschriften darunter auf einer Linie stehen. */
-.uud-kpi-val { display: flex; align-items: center; justify-content: center;
+.uud-kpi-val { display: flex; align-items: center; justify-content: flex-start;
   min-height: 28px; min-width: 0; max-width: 100%; }
 .uud-kpi-num { font-size: 15px; font-weight: 500; color: var(--vc-text); font-variant-numeric: tabular-nums; }
 /* Die Raute steht in der dritten Farbe und zwei Punkt kleiner als die Zahl daneben: sie ist die
    Einheit, nicht der Wert. Farbe kommt aus core (.up-hash), hier nur die Groesse -- 15 - 2 = 13. */
 .uud-rank .up-hash { width: 13px; height: 13px; }
 .uud-kpi-lbl {
-  display: inline-flex; align-items: center; justify-content: center;
+  display: inline-flex; align-items: center; justify-content: flex-start;
   font-size: 12px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase;
-  color: var(--vc-third); white-space: nowrap; text-align: center;
+  color: var(--vc-third); white-space: nowrap; text-align: left;
 }
 /* Das Info-Symbol ist .up-th-info aus core. Zwei Dinge muessen anders sein, genau wie in
    domain-detail: core schiebt es mit margin-left:auto ans Ende einer Kopfzelle, hier soll es
    NEBEN der Ueberschrift stehen; und core deckt es bei .up-th:hover auf, ein .up-th gibt es hier
    nicht. 6px Abstand, weil es sonst am Wort klebt -- ohne die Regel erbt es das auto und steht
    ohne jede Luecke. Groesse, Farbe und Uebergang bleiben unveraendert aus core. */
-/* Das Info-Symbol steht AUSSERHALB des Textflusses. Zwei Anlaeufe davor waren falsch: im Fluss
-   zentriert die Zeile "Wort + Luecke + Symbol", und das Wort rutscht nach links; mit einer
-   Polsterung links wird die BOX symmetrisch, aber gemessen stand der Text danach 11px rechts vom
-   Wert -- das Symbol traegt 14px plus 8px Rand, die Polsterung 22px, und die Rechnung ging trotzdem
-   nicht auf, weil die Zeile shrink-to-fit ist.
-   Absolut gesetzt traegt das Symbol gar keine Breite mehr. Damit ist die Ueberschrift NUR ihr Text,
-   und der zentriert sich exakt unter dem Wert -- Chip wie Zahl. 8px Abstand rechts vom Wort. */
+/* Das Info-Symbol steht AUSSERHALB des Textflusses: absolut gesetzt traegt es keine Breite, und
+   die Ueberschrift ist damit nur ihr Text. Das war noetig, solange Wert und Ueberschrift mittig
+   standen (im Fluss zentrierte sich "Wort + Luecke + Symbol", und das Wort rutschte nach links).
+   Linksbuendig braeuchte es das nicht mehr -- es bleibt trotzdem so: die Breite der Spalte soll
+   der WERT bestimmen, nicht ein Symbol, das nur beim Ueberfahren sichtbar ist. */
 .uud-kpi-lbl { position: relative; }
 .uud-info {
   position: absolute; left: calc(100% + 8px); top: 50%; transform: translateY(-50%);
