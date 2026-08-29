@@ -84,22 +84,34 @@ def markup(pfad):
     if not m:
         return None
     rest = s[m.start():]
-    # Bis zum letzten </div> vor dem ersten <script> oder <link> -- danach beginnt der Lader, und
-    # der gehoert nicht ins Markup: hier laedt der Lader der Landingpage.
-    # Zwischen dem Markup und dem Lader darf ein KOMMENTAR stehen (domain-detail hat einen:
-    # ein Hinweis zu data-scope-fn). Ohne diesen Zusatz traf der Anker nicht, und dann kam der
-    # ganze Lader als "Markup" heraus -- erkannt daran, dass der Platzhalterwaechter danach
-    # "CDN_" meldete, das aus dem Lader stammt.
-    # Ein Kommentar endet an SEINEM ersten "-->" und nicht an irgendeinem spaeteren. Mit
-    # ".*?" tat er das nicht: das Muster darf lazy sein und trotzdem beliebig weit greifen, wenn
-    # der Gesamtausdruck es sonst nicht schafft -- und mit re.S auch ueber Zeilen hinweg. Bei
-    # opportunities hat es damit den Kommentar vor .uo-stage bis zum Kommentar vor dem
-    # <script class="uo-data-json"> gedehnt und dabei die Buehne, den Vorhang und die Schublade
-    # mitgefressen: das extrahierte Markup endete am Einstellungsmenue, .uo-stage fehlte, und
-    # opportunities.js lief beim Zeichnen des Bretts in ein null.innerHTML. Genau daran blieb das
-    # Fenster der Landingpage mit einem leeren Brett stehen.
-    end = re.search(r'</div>(?=\s*(?:<!--(?:(?!-->).)*?-->\s*)*(?:<script|<link|$))', rest, re.S)
-    return (rest[:end.end()] if end else rest).rstrip()
+    # Bis zum SCHLIESSENDEN </div> der Wurzel -- GEZAEHLT und nicht geraten.
+    #
+    # Vorher stand hier ein Anker: "das erste </div>, hinter dem ein <script> oder <link> kommt".
+    # Der ist zweimal danebengegangen, beide Male bei opportunities, und beide Male sah es aus wie
+    # ein Fehler an ganz anderer Stelle:
+    #   - einmal fraß eine Kommentarregel mit re.S die halbe Vorlage (.uo-stage fehlte, das Brett
+    #     blieb leer),
+    #   - und einmal endete das Markup EINEN Tag zu frueh, weil die Vorlage mitten im Markup ein
+    #     <script class="uo-data-json"> hat. Das Ergebnis war eine Wurzel mit 24 offenen und 23
+    #     geschlossenen div: alles, was in landing-hero.js DANACH kam, landete darin. Genau so ist
+    #     die Performance-Seite in der Chancen-Seite gelandet und mit ihrer Deckkraft 0 unsichtbar
+    #     geworden -- gemeldet als "das Performance-Chart laedt ueberhaupt nicht, alles weiss".
+    # Zaehlen kann das nicht passieren: Kommentare und <script>-Bloecke werden uebersprungen (in
+    # beiden stehen in diesen Vorlagen Beispiel-Markups), und geschnitten wird an dem </div>, das
+    # die Wurzel wieder schliesst.
+    muster = re.compile(r"<!--(?:(?!-->).)*?-->|<script\b[^>]*>.*?</script>|<(/?)div\b", re.S)
+    tiefe = 0
+    for t in muster.finditer(rest):
+        ganz = t.group(0)
+        if ganz.startswith("<!--") or ganz.startswith("<script"):
+            continue
+        if t.group(1):
+            tiefe -= 1
+            if tiefe == 0:
+                return rest[:t.end() + len("iv>")].rstrip()
+        else:
+            tiefe += 1
+    return rest.rstrip()
 
 
 bloecke = {}

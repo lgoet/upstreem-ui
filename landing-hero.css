@@ -464,13 +464,13 @@
 .ulh-seite.is-weg { opacity: 0; }
 .ulh-seite.is-kommt { animation: ulhRise 690ms var(--ulh-ease) backwards; }
 
-/* Die Karte der Heatmap (performance-radar.css: .uhm-tip) haengt an <body>, nicht in der Buehne --
-   in der App ist das richtig, denn sie muss ueber den Rand der Seite hinausragen duerfen. Hier
-   stuende sie damit in voller Groesse neben einer verkleinerten Oberflaeche.
-   scale und nicht transform: die Komponente schreibt transform selbst (translate3d, jedes Bild
-   waehrend der Fahrt), und die zwei wuerden sich gegenseitig ueberschreiben. Die unabhaengige
-   scale-Eigenschaft laeuft daneben. Ursprung oben links, weil dort ihr Anker sitzt. */
-.uhm-tip { scale: var(--ulh-mass, 1); transform-origin: 0 0; }
+/* Die Karte der Heatmap (performance-radar.css: .uhm-tip) haengt an <body> und bleibt deshalb
+   UNVERKLEINERT -- sie steht in voller Groesse neben einer verkleinerten Oberflaeche.
+   Hier stand ein Versuch, sie mit der unabhaengigen scale-Eigenschaft mitzuziehen. Er ist wieder
+   heraus, und der Grund ist lehrreich: scale wird NACH dem transform der Komponente angewandt und
+   skaliert damit auch deren Verschiebung. Die Karte stand danach bei 414,471 statt bei 670,763 --
+   also genau die Werte mal 0.6176. Eine Karte an der falschen Stelle ist schlechter als eine, die
+   eine Nummer zu gross ist. */
 
 /* ---------- Der Auftritt der Prompts-Seite ----------
    Sie steigt NICHT als Ganzes herauf -- ihre Teile tun es nacheinander: erst der Seitenkopf, dann
