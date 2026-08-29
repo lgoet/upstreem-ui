@@ -524,30 +524,33 @@
 .upr-root.is-running .upr-content { opacity: 0; transform: translateY(-8px) scale(0.985); pointer-events: none; filter: blur(3px); }
 .upr-root.is-running .upr-loading-stage { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
 .upr-loading-inner { width: min(100%, 620px); display: flex; flex-direction: column; align-items: center; text-align: center; position: relative; }
-.upr-loader-mark { width: 154px; height: 154px; position: relative; display: grid; place-items: center; margin-bottom: 24px; }
-.upr-loader-core {
-  width: 68px; height: 68px; border-radius: 22px;
+
+/* ---------- Das Ladebild: dieselbe Form wie der zweite Ladeschirm des Onboardings ----------
+   Kachel, Name, Unterzeile, Balken, Satz, Marken. Alle Werte aus onboarding-page.css uebernommen
+   (uob-load.is-compact / uob-load-name / uob-load-dom / uob-bar) und nicht neu erfunden: derselbe
+   Vorgang soll in beiden Teilen der App gleich aussehen. */
+.upr-l2-mark {
+  width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center;
   background: linear-gradient(180deg, var(--vc-bg), var(--vc-heading-bg));
-  border: 1px solid var(--vc-border);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 18px 54px rgba(31,31,27,0.10);
-  display: grid; place-items: center; position: relative; z-index: 3; color: var(--vc-text);
-  animation: uprCoreFloat 3.2s ease-in-out infinite;
+  border: 1px solid var(--vc-border); color: var(--vc-text);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
 }
-.upr-loader-core::before { content: ""; position: absolute; inset: 9px; border-radius: 16px; border: 1px solid var(--vc-border); }
-.upr-loader-core svg { width: 22px; height: 22px; display: block; }
-.upr-loader-ring { position: absolute; inset: 19px; border-radius: 999px; border: 1px solid var(--vc-border); }
-.upr-loader-ring.r1 { animation: uprRingPulse 2.8s ease-in-out infinite; }
-.upr-loader-ring.r2 { inset: 4px; animation: uprRingPulse 3.7s ease-in-out infinite reverse; }
-@keyframes uprCoreFloat { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-4px) scale(1.018); } }
-@keyframes uprRingPulse { 0%, 100% { transform: scale(0.96); opacity: 0.42; } 50% { transform: scale(1.04); opacity: 0.84; } }
-/* The loader stage stays in the DOM at opacity 0 so it can fade in, which means its three infinite
-   animations would otherwise keep the compositor busy for the whole life of the page — felt as
-   stutter while scrolling the start screen. Stop them whenever the loader is not actually up. */
-.upr-root:not(.is-running) .upr-loader-core,
-.upr-root:not(.is-running) .upr-loader-ring { animation: none; }
-.upr-tload { display: flex; flex-direction: column; align-items: center; gap: 13px; width: min(100%, 300px); margin-top: 6px; }
-.upr-tl-bars { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; }
-.upr-tl-bar { height: 6px; border-radius: 4px; background: var(--vc-sk); }
+.upr-l2-mark svg { width: 30px; height: 30px; display: block; }
+.upr-l2-name { margin-top: 14px; max-width: 100%; font-size: 18px; font-weight: 600; color: var(--vc-text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.upr-l2-sub { margin-top: 3px; max-width: 100%; font-size: 13px; color: var(--vc-third);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.upr-bar {
+  margin-top: clamp(20px, 3.4vh, 30px); width: 100%; max-width: 320px;
+  height: 3px; border-radius: 999px; background: var(--vc-sk); overflow: hidden;
+}
+.upr-bar-fill { display: block; height: 100%; width: 0; border-radius: 999px; background: var(--vc-text);
+  transition: width 620ms linear; }
+.upr-loading-inner .upr-tl-tags { margin-top: 14px; }
+/* Der schwebende Kasten zwischen zwei pulsenden Ringen ist weg, mit ihm die zwei Skelettbalken:
+   drei Dauerbewegungen, die nichts ueber den Stand sagten, und drei Endlosanimationen, die den
+   Compositor auch dann beschaeftigt haben, wenn die Buehne unsichtbar dalag. An ihrer Stelle
+   steht jetzt der Balken, der etwas aussagt. */
 .upr-tl-tags { display: flex; gap: 7px; flex-wrap: wrap; justify-content: center; align-items: flex-start; width: 100%; min-height: 24px; }
 .upr-tl-tags.is-loop { flex-wrap: nowrap; overflow: hidden; }
 .upr-tl-tag {
@@ -681,8 +684,12 @@
   .upr-box .up-th:last-child, .upr-box .up-td:last-child { padding-left: 8px; padding-right: 8px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .upr-float-point, .upr-float-spark, .upr-loader-core, .upr-loader-ring,
+  /* .upr-loader-core und .upr-loader-ring standen hier, solange der schwebende Kasten das
+     Ladebild war. Der Balken faehrt statt zu pulsen -- er BLEIBT auch bei reduzierter Bewegung,
+     denn er ist der Stand und keine Zierde; nur seine Fahrt wird abgestellt. */
+  .upr-float-point, .upr-float-spark,
   .upr-skeleton-chip, .upr-start-btn.is-running svg { animation: none; }
+  .upr-bar-fill { transition: none; }
 }
 
 

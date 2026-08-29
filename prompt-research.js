@@ -239,6 +239,33 @@
     if (svg) orb.innerHTML = svg;
   })();
 
+  /* Das Ladebild: dasselbe Bild wie im ZWEITEN Ladeschirm des Onboardings (uob-load.is-compact) --
+     Kachel, Name, Unterzeile, Balken, Satz, Marken. Die Werte sind von dort uebernommen und nicht
+     nachempfunden: Kachel 44px mit Radius 13, Zeichen 30px, Name 18px/600, Unterzeile 13px,
+     Balken 3px hoch und hoechstens 320 breit.
+     Vorher schwebte hier ein Kasten zwischen zwei pulsenden Ringen ueber zwei Skelettbalken --
+     drei Bewegungen, die nichts ueber den Stand sagten.
+     Gebaut wird im JS und nicht nur in der Vorlage: eine Vorlagenaenderung erreicht ein schon
+     eingebautes Bubble-Element nicht. Die zwei Anker der Animation (#upr-tl-tags und
+     #upr-think-text) stehen wieder drin, damit startLoaderAnim unveraendert weiterlaeuft. */
+  (function ladebildSetzen(){
+    var innen = root.querySelector('.upr-loading-inner');
+    if (!innen) return;
+    var zeichen = (UC && UC.icon) ? UC.icon('telescope', 2) : '';
+    innen.innerHTML =
+      '<div class="upr-l2-mark">' + zeichen + '</div>' +
+      '<div class="upr-l2-name" id="upr-l2-name">Prompt research</div>' +
+      '<div class="upr-l2-sub" id="upr-l2-sub"></div>' +
+      '<div class="upr-bar"><span class="upr-bar-fill" id="upr-bar"></span></div>' +
+      /* Der Satz steht hier als fester Text und nicht als LOADER_PHRASES[0]: die Liste wird
+         weiter unten in der Datei angelegt und ist an dieser Stelle noch undefined -- var wird
+         hochgezogen, sein Wert nicht. Die Schleife setzt den Satz ohnehin neu, sobald sie
+         laeuft; das hier ist nur, was ohne laufende Recherche dasteht. */
+      '<div class="upr-think-loop"><span class="upr-think-text" id="upr-think-text">' +
+        'Understanding your intent…</span></div>' +
+      '<div class="upr-tl-tags" id="upr-tl-tags"></div>';
+  })();
+
   var openHistoryButton   = root.querySelector('#upr-open-history');
   var closeHistoryButton  = root.querySelector('#upr-close-history');
   var openHistoryResultsButton = root.querySelector('#upr-open-history-results');
@@ -470,14 +497,52 @@
     }, 2800);
     _uprLoadTimers.push(iv);
   }
+  /* Der Balken. Das Onboarding faehrt seinen aus echten Serverphasen; hier gibt es keine, also
+     laeuft er auf einer abflachenden Kurve gegen 92 Prozent und springt erst auf 100, wenn die
+     Ergebnisse da sind. Nie von selbst auf 100: ein voller Balken, unter dem sich weiter etwas
+     dreht, ist eine Luege ueber den Stand.
+     620ms Takt, weil die CSS genau so lange auf eine neue Breite faehrt (uebernommen aus
+     onboarding-page.css: .uob-bar-fill transition width 620ms linear) -- ein schnellerer Takt
+     wuerde jede Fahrt abschneiden, ein langsamerer liesse den Balken stehen. */
+  var BALKEN_TAKT = 620, BALKEN_ZIEL = 92, BALKEN_HALB = 26000;
+  function balkenStarten(){
+    var el = root.querySelector('#upr-bar');
+    if (!el) return;
+    var t0 = Date.now();
+    el.style.width = '0%';
+    var iv = setInterval(function(){
+      var t = Date.now() - t0;
+      el.style.width = (BALKEN_ZIEL * (1 - Math.exp(-t / BALKEN_HALB))).toFixed(1) + '%';
+    }, BALKEN_TAKT);
+    _uprLoadTimers.push(iv);
+  }
+  function balkenVoll(){
+    var el = root.querySelector('#upr-bar');
+    if (el) el.style.width = '100%';
+  }
+  /* Kachelzeile des Ladebilds: was gesucht wird, und wo. Ohne Schlagworte bleibt der Name die
+     Ueberschrift der Seite -- behauptet wird nichts, was nicht dasteht. */
+  function ladebildFuellen(){
+    var name = root.querySelector('#upr-l2-name');
+    var sub  = root.querySelector('#upr-l2-sub');
+    var kws = (currentResearchMeta && Array.isArray(currentResearchMeta.keywords)) ? currentResearchMeta.keywords : [];
+    if (name) name.textContent = kws.length ? kws.slice(0, 3).join(', ') : 'Prompt research';
+    if (sub){
+      var m = currentResearchMeta && (currentResearchMeta.market_name || currentResearchMeta.market);
+      sub.textContent = m ? String(m) : '';
+      sub.style.display = m ? '' : 'none';
+    }
+  }
   function startLoaderAnim(){
     stopLoaderAnim();
     var host = root.querySelector('#upr-tl-tags');
     var textEl = root.querySelector('#upr-think-text');
+    ladebildFuellen();
+    balkenStarten();
     if (host){ var sel = _uprSelectedTags(); if (sel.length) _uprRevealOnce(host, sel); else _uprLoopTags(host, _uprPoolTags(), 3); }
     if (textEl) _uprLoopText(textEl, LOADER_PHRASES);
   }
-  function stopLoaderAnim(){ _uprClearLoad(); }
+  function stopLoaderAnim(){ _uprClearLoad(); balkenVoll(); }
 
   /* ---------- research state ---------- */
   function setResearchState(nextState){
