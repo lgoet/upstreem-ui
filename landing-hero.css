@@ -757,6 +757,13 @@
    Gemessen wird an der Liste selbst: scrollHeight darf clientHeight nicht ueberschreiten. */
 .ulh-app .usn-item { height: 34px; }
 .ulh-app .usn-block + .usn-block { margin-top: 14px; }
+/* Der Vorhang der Chancen-Schublade blendet nur das BRETT ab, nicht die Seitenleiste. In der App
+   ist er "position: fixed; inset: 0" und deckt das ganze Fenster -- dort ist das richtig, denn dort
+   IST das Fenster die Seite. Hier steht die App in einem Bild, und eine weichgezeichnete Navigation
+   sieht aus, als waere sie kaputt. 185px sind gemessen: die Leiste ist 180 breit und sitzt 5px
+   innerhalb der Buehne, und die Buehne ist der Bezugsrahmen des Vorhangs (sie traegt das
+   transform). */
+.ulh-app .uo-scrim { left: 185px; }
 .ulh-app .usn-head { padding-bottom: 2px; }
 .ulh-app .usn-nav { margin-top: 12px; }
 .ulh-app .usn-qa:not(:empty) { margin-top: 16px; }
@@ -1121,6 +1128,30 @@
    Front liest sich als Verlauf statt als Reihe von Schaltern.
    Kein Uebergang an der Farbe: der Stand kommt aus dem Scrollen und ist schon stufenlos -- ein
    zusaetzlicher Uebergang wuerde ihm hinterherlaufen. */
+/* ---------- Auftritte beim Scrollen ----------------------------------------------------------
+   Jedes Stueck der Seite ausser der Ueberschrift des Hero kommt leicht von unten herein, sobald es
+   hochgescrollt wird. Die Klasse setzt landing-hero.js (auftritte), sobald die Oberkante 88 Prozent
+   der Fensterhoehe erreicht hat -- gerechnet aus der ECHTEN Lage, siehe dort.
+   Der Versatz steht als --auf am Element: Geschwister kommen nacheinander, nicht im Block. */
+/* Die Bewegung laeuft ueber translate und NICHT ueber transform. Der Unterschied ist hier kein
+   Geschmack: mehrere dieser Stuecke tragen schon ein eigenes transform (der Quellenhinweis wird
+   damit zentriert, die Marken auf der Kurve damit auf ihren Punkt gerueckt), und ein zweites
+   transform an derselben Stelle loescht das erste. Gemessen: der Hinweis stand 720px zu weit
+   rechts, weil translateX(-50%) verloren ging. translate ist eine eigene Eigenschaft und kommt
+   dem transform nicht in die Quere. */
+.ulh-auf {
+  opacity: 0; translate: 0 16px;
+  transition: opacity 760ms var(--ulh-weich), translate 760ms var(--ulh-weich);
+  transition-delay: calc(var(--auf, 0) * 90ms);
+  will-change: opacity, translate;
+}
+.ulh-auf.is-da { opacity: 1; translate: none; }
+/* Wer keine Bewegung will, bekommt die Seite fertig -- landing-hero.js setzt is-da dann sofort,
+   und diese Regel nimmt auch den Uebergang heraus. */
+@media (prefers-reduced-motion: reduce) {
+  .ulh-auf { transition: none; }
+}
+
 .ulh-qwort { white-space: nowrap; }
 .ulh-qw { color: color-mix(in srgb, var(--ulh-text) calc(var(--t, 0) * 100%), var(--ulh-sub)); }
 /* Wer keine Bewegung will, bekommt die Ueberschrift fertig. */
@@ -2140,14 +2171,28 @@
 }
 /* Der Grund: ueber die ganze Breite und hinter allem. Die Kurve steigt nach rechts, also steht der
    Text links -- unter ihm ist die Flaeche flach und der Text bleibt lesbar. */
+/* Die Kurve steht in der SPUR und nicht ueber die ganze Seite: sie ist Inhalt der Sektion und
+   nicht ihr Grund. Ueber die ganze Breite lag ihr Anfang ausserhalb des Gitters, und die erste
+   Marke stand neben allem anderen. */
 .ulh-geo-bild {
-  position: absolute; left: 50%; bottom: 0; width: 100vw; height: 62%;
+  position: absolute; left: 50%; bottom: clamp(120px, 16vh, 180px); width: var(--ulh-spur);
+  height: 46%;
   transform: translateX(-50%); pointer-events: none; z-index: 0;
 }
+/* Zwei Linien ueber die ganze Breite, oben und unten an der Sektion -- dieselbe Machart wie um den
+   Mira-Kasten (vw statt Prozent, denn Prozent waere die Spur). */
+.ulh-geo::before, .ulh-geo::after {
+  content: ""; position: absolute; left: 50%; width: 100vw; height: 1px;
+  transform: translateX(-50%); background: var(--ulh-border); pointer-events: none;
+}
+.ulh-geo::before { top: 0; }
+.ulh-geo::after { bottom: 0; }
 .ulh-geo-svg { display: block; width: 100%; height: 100%; }
 .ulh-geo-linie { fill: none; stroke: #2563eb; stroke-width: 1.6; vector-effect: non-scaling-stroke; }
 /* Schraffur statt Fuellung: eine Flaeche legt sich als Block hinter die Zahlen, Striche nicht. */
 .ulh-geo-flaeche { fill: url(#ulhGeoRaster); }
+/* Der Abstand ist der der ganzen Seite: 8px. Er steht im SVG (pattern width) und hier nur die
+   Farbe. */
 .ulh-geo-raster { stroke: rgba(37, 99, 235, .18); stroke-width: 1; }
 .ulh-geo-mark {
   stroke: var(--ulh-border); stroke-width: 1; vector-effect: non-scaling-stroke;
@@ -2159,19 +2204,37 @@
    Der Punkt liegt auf der Linie, der Text darunter: nach oben waere er im Weg der Kurve. */
 .ulh-geo-mk {
   position: absolute; transform: translate(-4px, 4px);
+  display: flex; flex-direction: column; align-items: flex-start;
   font-size: 11.5px; line-height: 1.35; white-space: nowrap;
 }
+/* Die tiefe Marke haengt am OBEREN Rand (top statt bottom), damit ihr Punkt auf der Kurve sitzt
+   und der Text darunter Platz hat. */
+.ulh-geo-mk.is-unter { transform: translate(-4px, -4px); }
+/* Der Punkt sitzt auf der Kurve und atmet. Zwei Ringe, versetzt: einer traegt die Farbe, der
+   zweite laeuft als Welle nach aussen -- ein Punkt, der nur die Groesse aendert, wirkt wie ein
+   Fehler in der Zeichnung. */
 .ulh-geo-mk-punkt {
-  display: block; width: 7px; height: 7px; border-radius: 999px; background: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, .14);
+  position: relative; display: block; width: 8px; height: 8px; border-radius: 999px;
+  background: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, .14);
 }
+.ulh-geo-mk-punkt::after {
+  content: ""; position: absolute; inset: 0; border-radius: 999px;
+  border: 1px solid #2563eb; animation: ulhGeoPuls 2600ms var(--ulh-weich) infinite;
+}
+@keyframes ulhGeoPuls {
+  0%   { transform: scale(1);   opacity: .55; }
+  70%  { transform: scale(3.2); opacity: 0; }
+  100% { transform: scale(3.2); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .ulh-geo-mk-punkt::after { animation: none; } }
 /* Ein weicher weisser Hof statt einer Plakette: die Beschriftung liegt auf der Schraffur und
    stellenweise auf der Linie selbst, und ohne ihn liest sie sich schlecht. Eine Plakette waere ein
    Kasten mehr im Bild. */
 .ulh-geo-mk-txt {
-  display: flex; flex-direction: column; gap: 1px; margin-top: 10px;
+  display: flex; flex-direction: column; gap: 1px; margin-bottom: 10px;
   text-shadow: 0 0 5px #fff, 0 0 5px #fff, 0 0 10px #fff;
 }
+.ulh-geo-mk.is-unter .ulh-geo-mk-txt { margin-bottom: 0; margin-top: 10px; }
 .ulh-geo-mk-t { font-weight: 500; color: var(--ulh-text); }
 .ulh-geo-mk-s { color: var(--ulh-sub); }
 .ulh-geo-in { position: relative; z-index: 1; }
@@ -2184,6 +2247,7 @@
    kein Kasten -- die Zahl soll stehen, nicht in einer Karte sitzen. */
 .ulh-geo-kpis {
   margin-top: clamp(34px, 5vh, 54px);
+  margin-bottom: clamp(56px, 8vh, 96px);
   display: grid; grid-template-columns: repeat(2, minmax(0, 250px)); gap: 26px 40px;
 }
 .ulh-geo-kpi {
@@ -2195,10 +2259,12 @@
 /* Die Quelle steht IM BILD und nicht in einer Fussnote, die man aufklappen muss: eine Zahl ohne
    Herkunft ist auf einer Landingpage eine Behauptung. Kleiner als die Beschriftung, damit sie den
    Satz nicht ueberdeckt, aber lesbar. */
-.ulh-geo-q { margin-top: 2px; font-size: 11.5px; font-weight: 400; color: var(--ulh-muted, #9aa0a6); }
+.ulh-geo-q { margin-top: 2px; font-size: 11.5px; font-weight: 400; color: var(--ulh-muted); }
 .ulh-geo-fuss {
-  margin: clamp(30px, 4vh, 46px) 0 0; max-width: 62ch;
-  font-size: 11.5px; line-height: 1.5; color: var(--ulh-muted, #9aa0a6);
+  position: absolute; left: calc(50% - var(--ulh-spur) / 2); bottom: clamp(30px, 4vh, 46px);
+  width: var(--ulh-spur);
+  margin: 0; max-width: none;
+  font-size: 11.5px; line-height: 1.5; color: var(--ulh-muted);
 }
 @media (max-width: 900px) {
   .ulh-geo-kpis { grid-template-columns: 1fr; gap: 20px; }

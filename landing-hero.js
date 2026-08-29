@@ -347,9 +347,10 @@
      Jahre aus OFFIZIELLEN Ansagen desselben Anbieters besteht -- 100 Mio. (Nov 2023), 200 (Aug
      2024), 300 (Dez 2024), 400 (Feb 2025), 700 (Aug 2025), 800 (Okt 2025), 900 (Feb 2026). Eine
      zusammengesuchte Marktschaetzung waere eine Kurve aus fremden Annahmen.
-     Die zwei Marken darauf sind datierte Ereignisse und keine Deutungen: die Freigabe der AI
-     Overviews fuer alle in den USA (Google I/O, Mai 2024) und der weltweite Start des AI Mode
-     (Oktober 2025, ebenfalls aus Pichais Bemerkungen). */
+     Die drei Marken darauf sind datierte Ereignisse und keine Deutungen: die Freigabe der AI
+     Overviews fuer alle in den USA (Google I/O, Mai 2024), die Oeffnung des AI Mode fuer alle in
+     den USA (Google I/O, Mai 2025) und sein weltweiter Start (Oktober 2025, aus Pichais
+     Bemerkungen zum Quartalsbericht). Alle drei stehen auf blog.google. */
   var GEO_CHIP = "Why now";
   var GEO_H1 = "Search moved.";
   var GEO_H2 = "Your buyers ask an assistant, and it answers from pages it picked.";
@@ -365,6 +366,7 @@
   var GEO_PUNKTE = [[0, 100], [9, 200], [13, 300], [15, 400], [21, 700], [23, 800], [27, 900]];
   var GEO_MARKEN = [
     { x: 6,  t: "May 2024", s: "AI Overviews for everyone in the US" },
+    { x: 18, t: "May 2025", s: "AI Mode opens to the US" },
     { x: 23, t: "Oct 2025", s: "AI Mode goes global" }
   ];
   var GEO_QUELLE = "Weekly ChatGPT users, from OpenAI's own announcements (Nov 2023 to Feb 2026).";
@@ -402,8 +404,8 @@
     }).join("");
     return '<svg class="ulh-geo-svg" viewBox="0 0 ' + B + ' ' + H + '" preserveAspectRatio="none" ' +
       'aria-hidden="true" focusable="false">' +
-      '<defs><pattern id="ulhGeoRaster" width="7" height="7" patternUnits="userSpaceOnUse">' +
-        '<line x1="0" y1="0" x2="0" y2="7" class="ulh-geo-raster"/></pattern></defs>' +
+      '<defs><pattern id="ulhGeoRaster" width="8" height="8" patternUnits="userSpaceOnUse">' +
+        '<line x1="0" y1="0" x2="0" y2="8" class="ulh-geo-raster"/></pattern></defs>' +
       /* Die Flaeche unter der Kurve ist schraffiert und nicht gefuellt: gefuellt legt sie sich als
          Block hinter die Zahlen, schraffiert bleibt der Text lesbar. */
       '<path class="ulh-geo-flaeche" d="' + d + 'L' + B + ' ' + H + 'L0 ' + H + 'Z"/>' +
@@ -437,14 +439,23 @@
   }
 
   function geoMarkenHtml(){
-    return GEO_MARKEN.map(function(m){
-      return '<span class="ulh-geo-mk" style="left:' + (m.x / 27 * 100).toFixed(2) + '%;bottom:' +
-        (geoY(m.x) * 100).toFixed(2) + '%">' +
-        '<span class="ulh-geo-mk-punkt"></span>' +
-        '<span class="ulh-geo-mk-txt">' +
+    return GEO_MARKEN.map(function(m, k){
+      var y = geoY(m.x);
+      /* Der Text steht UEBER dem Punkt -- unter der Kurve liegt die Schraffur, darin ginge er
+         unter. Nur ganz links liegt die Kurve so tief, dass "darueber" mitten in den Zahlen
+         landet: dort geht der Text unter den Punkt. Die Grenze ist gemessen und nicht geraten --
+         unter 35 Prozent Kurvenhoehe ueberschnitt die erste Marke den Quellenhinweis. */
+      var unten = y < 0.35;
+      var punkt = '<span class="ulh-geo-mk-punkt"></span>';
+      var txt = '<span class="ulh-geo-mk-txt">' +
           '<span class="ulh-geo-mk-t">' + m.t + '</span>' +
           '<span class="ulh-geo-mk-s">' + m.s + '</span>' +
-        '</span>' +
+        '</span>';
+      return '<span class="ulh-geo-mk ulh-auf' + (unten ? ' is-unter' : '') +
+        '" style="left:' + (m.x / 27 * 100).toFixed(2) + '%;' +
+        (unten ? 'top:' + ((1 - y) * 100).toFixed(2) + '%' : 'bottom:' + (y * 100).toFixed(2) + '%') +
+        ';--auf:' + (k + 2) + '">' +
+        (unten ? punkt + txt : txt + punkt) +
       '</span>';
     }).join("");
   }
@@ -453,22 +464,25 @@
     return '<section class="ulh-geo">' +
       '<div class="ulh-geo-bild">' + geoChart() + geoMarkenHtml() + '</div>' +
       '<div class="ulh-spur ulh-geo-in">' +
-        '<div class="ulh-feat-kopf ulh-geo-kopf">' +
+        '<div class="ulh-feat-kopf ulh-geo-kopf ulh-auf">' +
           '<span class="ulh-feat-chip">' + GEO_CHIP + '</span>' +
           '<h2 class="ulh-feat-h ulh-geo-h">' + GEO_H1 +
             '<span class="ulh-geo-h2"> ' + GEO_H2 + '</span></h2>' +
         '</div>' +
         '<div class="ulh-geo-kpis">' +
-          GEO_KPIS.map(function(k){
-            return '<div class="ulh-geo-kpi">' +
+          GEO_KPIS.map(function(k, i){
+            return '<div class="ulh-geo-kpi ulh-auf" style="--auf:' + i + '">' +
               '<span class="ulh-geo-v">' + k.v + '</span>' +
               '<span class="ulh-geo-l">' + k.l + '</span>' +
               '<span class="ulh-geo-q">' + k.q + '</span>' +
             '</div>';
           }).join("") +
         '</div>' +
-        '<p class="ulh-geo-fuss">' + GEO_QUELLE + '</p>' +
       '</div>' +
+      /* Der Quellenhinweis steht GANZ unten in der Sektion und nicht unter den Zahlen: dort lag er
+         in der Beschriftung der ersten Marke -- die Kurve ist links tief, und ihre Marke braucht
+         genau diesen Platz. */
+      '<p class="ulh-geo-fuss ulh-auf" style="--auf:4">' + GEO_QUELLE + '</p>' +
     '</section>';
   }
 
@@ -552,7 +566,7 @@
       '<div class="ulh-spur">' +
         /* Derselbe Kopf wie ueber den Karten -- gleiche Klassen, gleiche Masse, gleiche Farben.
            Ein zweiter Kopf mit eigenen Werten waere derselbe Kopf, nur ein bisschen anders. */
-        '<div class="ulh-feat-kopf ulh-msc-kopf">' +
+        '<div class="ulh-feat-kopf ulh-msc-kopf ulh-auf">' +
           '<span class="ulh-feat-chip">' + MSC_CHIP + '</span>' +
           '<h2 class="ulh-feat-h">' + MSC_H + '</h2>' +
           '<p class="ulh-feat-sub">' + MSC_SUB + '</p>' +
@@ -562,15 +576,15 @@
         '<div class="ulh-cards-box ulh-msc-box">' +
           '<div class="ulh-cards-row ulh-msc-row">' +
             '<div class="ulh-msc-links">' +
-              MSC_KARTEN.map(function(k){
-                return '<div class="ulh-card ulh-msc-karte">' +
+              MSC_KARTEN.map(function(k, i){
+                return '<div class="ulh-card ulh-msc-karte ulh-auf" style="--auf:' + i + '">' +
                   '<span class="ulh-msc-ic" data-ic="' + k.ic + '" data-ic-w="1.6"></span>' +
                   '<span class="ulh-msc-t">' + k.t + '</span>' +
                   '<span class="ulh-msc-s">' + k.s + '</span>' +
                 '</div>';
               }).join("") +
             '</div>' +
-            '<div class="ulh-card ulh-msc-rechts">' +
+            '<div class="ulh-card ulh-msc-rechts ulh-auf" style="--auf:1">' +
               '<iframe class="ulh-msc-rahmen" title="Mira" scrolling="no"' +
                 ' referrerpolicy="no-referrer"></iframe>' +
             '</div>' +
@@ -633,6 +647,14 @@
            eine Klasse allein verliert dagegen. Gemessen: mit .am-chat stand overflow weiter auf
            auto. */
         '#ask-mira #am-chat{overflow:hidden;}' +
+        /* Und der Chat nimmt gar keine Zeigerereignisse mehr an. Das Abfangen des Rades allein
+           reichte nicht: ask-mira haengt ZWEI Radgriffe an (einen davon in der Einfangphase am
+           Root), und wer darauf setzt, dass die eigene Reihenfolge gewinnt, hat eine Wette und
+           keine Loesung. Ohne Zeigerereignisse landet das Rad am Dokument, das nicht scrollen kann
+           -- und der Browser reicht es an die Seite darueber weiter.
+           Was dabei verloren geht, ist das Hovern IN der Antwort (Chips, Knopfreihe). Auf dem
+           Startbildschirm und am Eingabefeld bleibt es, und die stehen ausserhalb des Chats. */
+        '#ask-mira #am-chat{pointer-events:none;}' +
         /* Die Zeile mit Kopieren, Daumen und Export steht in der App erst beim Ueberfahren der
            Nachricht da. Hier faehrt niemand darueber, also steht sie immer -- sonst fehlt sie in
            der Vorfuehrung ganz. */
@@ -1334,8 +1356,8 @@
            '</div>';
   }
 
-  function merkmalKarte(m){
-    return '<article class="ulh-card" style="--ulh-w:' + m.breit + '">' +
+  function merkmalKarte(m, i){
+    return '<article class="ulh-card ulh-auf" style="--ulh-w:' + m.breit + ';--auf:' + (i || 0) + '">' +
       '<h3 class="ulh-card-h">' + m.h + '</h3>' +
       '<p class="ulh-card-p">' + m.p + '</p>' +
       '<div class="ulh-vis ulh-vis-' + m.vis + '" data-ulh-vis="' + m.vis + '">' +
@@ -1642,18 +1664,18 @@
        Gitters -- die Karten beruehren die Kante der Seite damit nie. */
     return '<section class="ulh-feat">' +
       '<div class="ulh-spur">' +
-        '<div class="ulh-feat-kopf">' +
+        '<div class="ulh-feat-kopf ulh-auf">' +
           '<span class="ulh-feat-chip">' + MERKMAL_CHIP + '</span>' +
           '<h2 class="ulh-feat-h">' + MERKMAL_H + '</h2>' +
           '<p class="ulh-feat-sub">' + MERKMAL_SUB + '</p>' +
         '</div>' +
         '<div class="ulh-cards-box">' +
           '<div class="ulh-cards">' +
-            '<div class="ulh-cards-row">' + merkmalKarte(MERKMALE[0]) + merkmalKarte(MERKMALE[1]) + '</div>' +
-            '<div class="ulh-cards-row is-unten">' + merkmalKarte(MERKMALE[2]) + merkmalKarte(MERKMALE[3]) + '</div>' +
+            '<div class="ulh-cards-row">' + merkmalKarte(MERKMALE[0], 0) + merkmalKarte(MERKMALE[1], 1) + '</div>' +
+            '<div class="ulh-cards-row is-unten">' + merkmalKarte(MERKMALE[2], 0) + merkmalKarte(MERKMALE[3], 1) + '</div>' +
             /* Die dritte Reihe teilt sich 50/50 -- deshalb steht der Anteil an der Karte und nicht
                an der Reihe (--ulh-w, siehe merkmalKarte). */
-            '<div class="ulh-cards-row">' + merkmalKarte(MERKMALE[4]) + merkmalKarte(MERKMALE[5]) + '</div>' +
+            '<div class="ulh-cards-row">' + merkmalKarte(MERKMALE[4], 0) + merkmalKarte(MERKMALE[5], 1) + '</div>' +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -1689,51 +1711,99 @@
     }).join(" ");
   }
 
-  /* Der Stand je Wort, gerechnet aus der Lage der Ueberschrift im Fenster. Kommt sie von unten
-     herein, ist alles zweite Farbe; steht sie in der Mitte, ist fast alles erste; etwas weiter
-     ist alles erste.
-     Ein rAF-Lauf und keine Scroll-Ereignisse: die Sektion steht in Framer in einem eigenen Rahmen,
-     und dort kommt beim Scrollen der Seite kein einziges scroll-Ereignis an (derselbe Grund, aus
-     dem das Fenster oben seine Lage misst statt auf Ereignisse zu warten). Der Lauf laeuft nur,
-     solange die Ueberschrift in der Naehe ist -- dafuer der Beobachter. */
-  function quellSchrift(root){
-    var h = root.querySelector(".ulh-quell-h");
-    if (!h) return;
-    var worte = h.querySelectorAll(".ulh-qw");
-    if (!worte.length) return;
+  /* ---------- Wo steht ein Element WIRKLICH auf dem Bildschirm? -----------------------------
+     Das ist die Frage, an der der Scrolleffekt zuerst gescheitert ist. Auf einer gewoehnlichen
+     Seite beantwortet sie getBoundingClientRect: die Lage im Fenster, und die wandert beim
+     Scrollen. In Framer steckt diese Sektion aber in einem EIGENEN RAHMEN, und darin bewegt sich
+     nichts: der Rahmen ist so hoch wie sein Inhalt, das Fenster darin scrollt nie, und jede
+     Elementlage bleibt konstant. Der Effekt fror deshalb auf dem Stand ein, den die Seite beim
+     Aufbau gerade hatte -- gemeldet als "da ist einfach ein Verlauf mitten im Satz".
+     Was sich sehr wohl bewegt, ist der RAHMEN im Fenster darueber. Also: Lage des Rahmens plus
+     Lage im Rahmen, und die Fensterhoehe des Elternfensters. Dieselbe Ueberlegung, aus der das
+     Hauptfenster oben seine vier Erkennungswege hat.
+     Faellt der Zugriff aus (fremde Herkunft), bleibt es bei der eigenen Lage -- dann steht der
+     Effekt still, statt falsch zu laufen. */
+  function lage(el){
+    var r = el.getBoundingClientRect();
+    var oben = r.top;
+    var hoehe = window.innerHeight || document.documentElement.clientHeight || 800;
+    try {
+      var rahmen = window.frameElement;
+      if (rahmen){
+        var rr = rahmen.getBoundingClientRect();
+        var aussen = rahmen.ownerDocument && rahmen.ownerDocument.defaultView;
+        oben = rr.top + r.top;
+        if (aussen && aussen.innerHeight) hoehe = aussen.innerHeight;
+      }
+    } catch (e){}
+    return { oben: oben, hoehe: hoehe, hoch: r.height };
+  }
+
+  /* ---------- Auftritte beim Scrollen -------------------------------------------------------
+     Jedes Stueck der Seite ausser der Ueberschrift des Hero kommt herein, sobald es hochgescrollt
+     wird: leicht von unten, weich, und Geschwister versetzt. Die Verzoegerung steht als --auf am
+     Element, die Kurve in der CSS.
+     EINE Schleife fuer alles, und keine Scroll-Ereignisse: im Rahmen von Framer feuert beim
+     Scrollen der Seite kein einziges scroll-Ereignis, und ein IntersectionObserver haette dort
+     alles auf einmal als sichtbar gemeldet (der Rahmen ist so hoch wie sein Inhalt). Die Schleife
+     misst stattdessen jedes Bild die echte Lage (siehe lage). Sie haelt sich klein: erledigte
+     Stuecke fallen aus der Liste, und wenn nichts mehr aussteht, bleibt nur die Ueberschrift. */
+  function auftritte(root){
     var ruhig = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var stuecke = [].slice.call(root.querySelectorAll(".ulh-auf"));
+    var h = root.querySelector(".ulh-quell-h");
+    var buchstaben = h ? [].slice.call(h.querySelectorAll(".ulh-qw")) : [];
     if (ruhig){
-      for (var k = 0; k < worte.length; k++) worte[k].style.setProperty("--t", "1");
+      stuecke.forEach(function(el){ el.classList.add("is-da"); });
+      buchstaben.forEach(function(b){ b.style.setProperty("--t", "1"); });
       return;
     }
-    var nah = false, laeuft = false;
-    function takt(){
-      laeuft = false;
-      var r = h.getBoundingClientRect();
-      var hoehe = window.innerHeight || document.documentElement.clientHeight || 800;
-      /* 0, wenn die Oberkante noch bei 92 Prozent der Fensterhoehe steht; 1, wenn sie 40 Prozent
-         darueber hinaus gewandert ist -- also etwa in der Mitte des Fensters. */
-      var p = (hoehe * 0.92 - r.top) / (hoehe * 0.52);
-      p = p < 0 ? 0 : (p > 1 ? 1 : p);
-      var n = worte.length;
-      for (var i = 0; i < n; i++){
-        /* Die Front ist zwoelf Buchstaben breit -- etwa zwei Woerter. Ein Buchstabe nach dem
-           anderen ganz oder gar nicht waere ein Flimmern; so wandert eine weiche Kante durch den
-           Satz. */
-        var t = (p * (n + 12) - i) / 12;
-        t = t < 0 ? 0 : (t > 1 ? 1 : t);
-        worte[i].style.setProperty("--t", t.toFixed(3));
-      }
-      if (nah) anstossen();
+    /* Die Schwelle: ein Stueck ist "da", sobald seine Oberkante 88 Prozent der Fensterhoehe
+       erreicht hat -- also kurz nachdem es unten hereinkommt. Frueher waere es unsichtbar
+       animiert, spaeter erschiene es erst, wenn man es schon liest. */
+    var SCHWELLE = 0.88;
+    var bilder = 0;
+    function alleSofort(){
+      stuecke.forEach(function(el){ el.classList.add("is-da"); });
+      stuecke.length = 0;
+      buchstaben.forEach(function(b){ b.style.setProperty("--t", "1"); });
+      buchstaben.length = 0;
     }
-    function anstossen(){ if (laeuft) return; laeuft = true; requestAnimationFrame(takt); }
-    if (window.IntersectionObserver){
-      new IntersectionObserver(function(eintraege){
-        nah = eintraege[0].isIntersecting;
-        if (nah) anstossen();
-      }, { rootMargin: "300px 0px" }).observe(h);
-    } else { nah = true; anstossen(); }
-    takt();
+    /* Sicherung: laeuft kein einziges Bild, ist die Seite LEER -- die Stuecke stehen ja auf
+       Deckkraft 0 und warten auf ihre Klasse. Genau das kann passieren, wenn der Browser die
+       Seite in einem Zustand aufbaut, in dem er keine Bilder zeichnet (verdeckter Tab, Aufnahme,
+       Druckansicht). Nach drei Sekunden ohne ein einziges Bild ist alles da, ohne Bewegung.
+       Kommt spaeter doch ein Bild, laeuft die Schleife weiter -- sie hat dann nichts mehr zu tun. */
+    setTimeout(function(){ if (!bilder) alleSofort(); }, 3000);
+    (function takt(){
+      bilder++;
+      for (var i = stuecke.length - 1; i >= 0; i--){
+        var l = lage(stuecke[i]);
+        if (l.oben < l.hoehe * SCHWELLE){
+          stuecke[i].classList.add("is-da");
+          stuecke.splice(i, 1);
+        }
+      }
+      if (buchstaben.length && h) schriftTakt(h, buchstaben);
+      requestAnimationFrame(takt);
+    })();
+  }
+
+  /* Der Stand je Buchstabe, gerechnet aus der echten Lage der Ueberschrift. */
+  function schriftTakt(h, buchstaben){
+    var l = lage(h);
+    /* 0, wenn die Oberkante noch bei 92 Prozent der Fensterhoehe steht; 1, wenn sie 52 Prozent
+       weiter gewandert ist -- also etwa in der Mitte des Fensters. */
+    var p = (l.hoehe * 0.92 - l.oben) / (l.hoehe * 0.52);
+    p = p < 0 ? 0 : (p > 1 ? 1 : p);
+    var n = buchstaben.length;
+    for (var i = 0; i < n; i++){
+      /* Die Front ist zwoelf Buchstaben breit -- etwa zwei Woerter. Ein Buchstabe nach dem anderen
+         ganz oder gar nicht waere ein Flimmern; so wandert eine weiche Kante durch den Satz. */
+      var t = (p * (n + 12) - i) / 12;
+      t = t < 0 ? 0 : (t > 1 ? 1 : t);
+      buchstaben[i].style.setProperty("--t", t.toFixed(3));
+    }
   }
 
   function quellen(){
@@ -1742,15 +1812,15 @@
         '<div class="ulh-quell-kopf">' +
           /* Derselbe blaue Chip wie ueber der Ueberschrift der Karten (.ulh-feat-chip) -- eine
              Sektion, ein Chip. Er bringt seinen Abstand nach unten selbst mit (18px). */
-          '<span class="ulh-feat-chip">' + QUELL_CHIP + '</span>' +
+          '<span class="ulh-feat-chip ulh-auf">' + QUELL_CHIP + '</span>' +
           '<h2 class="ulh-quell-h">' + quellWorte() + '</h2>' +
           /* Derselbe Knopf wie im Hero (.ulh-btn .ulh-btn-sec) -- .ulh-quell-cta traegt nur noch
              den Abstand nach oben und kein zweites Aussehen. */
-          '<a class="ulh-btn ulh-btn-sec ulh-quell-cta" href="#" role="button">' + QUELL_CTA + '</a>' +
+          '<a class="ulh-btn ulh-btn-sec ulh-quell-cta ulh-auf" href="#" role="button">' + QUELL_CTA + '</a>' +
         '</div>' +
         /* Der Kasten ist unten offen: er wird angeschnitten, und der Inhalt laeuft weiter. Genau
            das laesst ihn wie eine laufende Seite wirken und nicht wie ein Bildschirmfoto. */
-        '<div class="ulh-quell-box">' +
+        '<div class="ulh-quell-box ulh-auf">' +
         '<div class="ulh-quell-panel">' +
           '<div class="ulh-quell-dom">' +
             '<span class="up-logo-box has-img">' +
@@ -2525,7 +2595,7 @@
       visModelleFuellen(w);
       ulhTakt(w);
       quellFuellen();
-      quellSchrift(w);
+      auftritte(w);
       mscFuellen(w);
     })();
 
