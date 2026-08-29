@@ -2499,10 +2499,13 @@
   border-right: 1px solid var(--ulh-schiene);
 }
 /* Eine Datei, kein Zeichen mit Text daneben: die Wortmarke bringt Zeichen und Wort in den
-   offiziellen Abstaenden mit. Hoehe 28 statt der 24 des alten Zeichens -- das Zeichen fuellt in
-   der Wortmarke rund 85 Prozent der Hoehe, bei 28 steht es also wieder bei 24. */
+   offiziellen Abstaenden mit.
+   20px und nicht 28: die 28 kamen aus der Rechnung "das Zeichen darin soll so gross bleiben wie
+   das einzelne vorher" -- damit stand die Marke aber breiter im Kopf als die ganze Navigation
+   daneben. 30 Prozent kleiner, also 20; das Zeichen darin misst dann 17px. Im Fuss bleibt es bei
+   den 31, dort traegt die Marke die Spalte. */
 .ulh-nav-logo { display: inline-flex; align-items: center; text-decoration: none; }
-.ulh-nav-logo img { display: block; height: 28px; width: auto; }
+.ulh-nav-logo img { display: block; height: 20px; width: auto; }
 /* Die Mitte ist wirklich die Mitte: absolut gesetzt, damit die Punkte nicht wandern, wenn links
    oder rechts etwas laenger wird. */
 .ulh-nav-mitte {

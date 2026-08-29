@@ -440,7 +440,7 @@
     return '<header class="ulh-nav">' +
       '<div class="ulh-spur ulh-nav-in">' +
         '<a class="ulh-nav-logo" href="https://upstreem.ai" aria-label="upstreem">' +
-          '<img src="' + WORTMARKE + '" alt="upstreem" width="197" height="28"/>' +
+          '<img src="' + WORTMARKE + '" alt="upstreem" width="141" height="20"/>' +
         '</a>' +
         '<nav class="ulh-nav-mitte">' +
           NAV_PUNKTE.map(function(p){
@@ -1366,11 +1366,9 @@
   /* Die Wortmarke als EINE Datei: Zeichen und Wort in den offiziellen Abstaenden. Vorher stand in
      Kopf und Fuss das quadratische Zeichen und daneben das Wort als Text -- zwei Dinge, deren
      Verhaeltnis zueinander von der Schriftgroesse abhing und mit der offiziellen Marke nur
-     ungefaehr uebereinstimmte. Gemessen am geladenen Bild: 761x108, also 7.046:1 -- die Breiten in
-     den Attributen stehen deshalb bei 197 und 218 und nicht bei den 183/203, die aus dem viewBox
-     folgen wuerden. Sie halten nur den Platz bis zum Laden; die Groesse setzt die CSS.
-     Die Hoehen sind so gewaehlt, dass das Zeichen darin so gross bleibt wie das einzelne vorher:
-     es fuellt 92 der 108 Einheiten, also rund 85 Prozent. */
+     ungefaehr uebereinstimmte. Gemessen am geladenen Bild: 761x108, also 7.046:1 -- daraus die
+     Breiten in den Attributen (141 zu 20 im Kopf, 218 zu 31 im Fuss). Sie halten nur den Platz
+     bis zum Laden; die Groesse setzt die CSS. */
   var WORTMARKE = "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/" +
     "BRANDSTYLES/upstreem-lockup-1f1f1f.svg";
   /* Radien der drei Bahnen. Der Kasten der Vorschau ist 330px hoch, SICHTBAR sind davon 304 -- die
