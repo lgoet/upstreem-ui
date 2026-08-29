@@ -435,8 +435,13 @@
          also hat sie eine Groesse -- auch die unsichtbare. */
       pop.style.width = karte.offsetWidth + "px";
       pop.style.height = karte.offsetHeight + "px";
-      /* Die Lage folgt dem Punkt, bleibt aber in der Spur. */
-      var innen = root.querySelector(".ulh-nav-in").getBoundingClientRect();
+      /* Die Lage folgt dem Punkt, bleibt aber in der Spur.
+         Gesucht wird an der LEISTE und nicht an der Wurzel: haengt sie in der Seite darueber
+         (leisteAuslagern), steht sie nicht mehr in der Wurzel -- die Suche fand dann nichts, und
+         das Menue blieb zu, obwohl es seine Groesse schon gesetzt hatte. Genau so gemessen. */
+      var flaeche = nav.querySelector(".ulh-nav-in");
+      if (!flaeche) return;
+      var innen = flaeche.getBoundingClientRect();
       var r = knopf.getBoundingClientRect();
       var x = r.left - innen.left - 20;
       var max = innen.width - karte.offsetWidth;
@@ -2051,6 +2056,55 @@
     })();
   }
 
+  /* ---------- Die Leiste in die Seite DARUEBER haengen -------------------------------------
+     Steckt die Sektion in einem Embed-Rahmen, kann sie von innen nicht kleben: sticky kennt nur
+     seinen eigenen Scrollkasten, und der Rahmen scrollt nie -- er ist so hoch wie sein Inhalt.
+     Nachfuehren aus JavaScript sieht man (ein Bild Verzoegerung, gemeldet als "zieht komisch
+     nach"). Es bleibt genau ein Weg, der NATIV ist: das Element muss in dem Dokument stehen, das
+     wirklich scrollt.
+
+     Was dabei mitgeht und warum es sicher ist: die CSS der Sektion. Sie wird als dasselbe
+     link-Tag in den Kopf der Seite darueber gehaengt -- dieselbe Adresse, also derselbe Pin.
+     landing-hero.css enthaelt KEINEN einzigen Selektor ohne .ulh-Praefix (nachgezaehlt: null),
+     kann die Seite darueber also nicht umgestalten. Die Leiste selbst haengt in einem Kasten mit
+     der Klasse .ulh-root, weil ihre Masse und Farben aus dessen Variablen kommen; .ulh-nav-host
+     nimmt diesem Kasten seinen Grund und seinen Ausschnitt wieder ab.
+
+     Bei fremder Herkunft faellt alles aus (der Zugriff wirft) -- dann bleibt es bei sticky im CSS.
+     Und wer das nicht will, nimmt data-nav-host="no" an die Wurzel: dann bleibt die Leiste, wo
+     sie ist. */
+  function leisteAuslagern(root){
+    if (root.getAttribute("data-nav-host") === "no") return;
+    var nav = root.querySelector(".ulh-nav");
+    if (!nav) return;
+    var rahmen, aussen;
+    try { rahmen = window.frameElement; } catch (e){ return; }
+    if (!rahmen) return;                       /* keine Einbettung: sticky reicht */
+    try { aussen = rahmen.ownerDocument; } catch (e){ return; }
+    if (!aussen || !aussen.body) return;
+    /* Schon da -- zweites Embed auf derselben Seite oder ein Neuaufbau. */
+    if (aussen.getElementById("ulh-nav-host")) return;
+
+    try {
+      var quelle = document.querySelector('link[rel="stylesheet"][href*="landing-hero.css"]');
+      if (quelle && !aussen.querySelector('link[href="' + quelle.href + '"]')){
+        var l = aussen.createElement("link");
+        l.rel = "stylesheet"; l.href = quelle.href;
+        aussen.head.appendChild(l);
+      }
+      var host = aussen.createElement("div");
+      host.id = "ulh-nav-host";
+      host.className = "ulh-root ulh-nav-host";
+      host.appendChild(nav);
+      aussen.body.appendChild(host);
+      /* Verschwindet das Embed (Seitenwechsel im Baukasten), verschwindet auch die Leiste --
+         sonst bliebe sie als Rest in einer Seite stehen, die sie nicht mehr kennt. */
+      window.addEventListener("pagehide", function(){
+        try { host.parentNode.removeChild(host); } catch (e){}
+      });
+    } catch (e){ /* fremde Herkunft: die Leiste bleibt, wo sie ist */ }
+  }
+
   /* WARUM die Leiste hier NICHT nachgefuehrt wird, obwohl sie in einem Rahmen nicht klebt:
      Ich hatte sie ein Bild pro Frame nachgeschoben -- gemessen am Rahmen im Fenster darueber. Das
      funktioniert, aber es SIEHT falsch aus: jede Bewegung aus JavaScript kommt ein Bild nach dem
@@ -2919,6 +2973,7 @@
       quellFuellen();
       auftritte(w);
       navLauf(w);
+      leisteAuslagern(w);
       mscFuellen(w);
     })();
 

@@ -2307,6 +2307,16 @@
   transition: background 200ms var(--ulh-ease);
 }
 .ulh-nav.is-offen { background: rgba(255, 255, 255, .94); }
+/* Der Kasten, in dem die Leiste steht, wenn sie in der Seite DARUEBER haengt (landing-hero.js,
+   leisteAuslagern). Er traegt .ulh-root, weil die Masse und Farben der Leiste aus dessen Variablen
+   kommen -- und diese Regel nimmt ihm alles andere wieder ab: keinen Grund, keinen Ausschnitt,
+   keine Hoehe. Fixiert und ganz oben, denn das ist der Sinn der Uebung. */
+.ulh-nav-host {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 2147483000;
+  background: none; overflow: visible; width: auto; min-height: 0;
+}
+/* Dort drin braucht die Leiste kein sticky mehr -- der Kasten ist schon fixiert. */
+.ulh-nav-host .ulh-nav { position: static; }
 /* Die zwei senkrechten Schienen der Seite laufen durch die Leiste weiter. Sie kommen hier aus
    eigenen Raendern und nicht aus .ulh-schienen: die Leiste hat einen eigenen Grund und liegt
    darueber, die durchlaufenden Schienen waeren also verdeckt. */

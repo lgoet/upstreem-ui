@@ -1,0 +1,37 @@
+<meta charset="utf-8">
+<title>landing in einem Embed-Rahmen</title>
+<!-- Wozu: die Leiste MUSS in einem Rahmen kleben, und das laesst sich nur in einem Rahmen messen.
+     Der Aufbau ist der von Framer: ein Embed, so hoch wie sein Inhalt, in einer Seite, die
+     scrollt. Darin scrollt das innere Fenster nie -- deshalb kann sticky dort nichts halten. -->
+<style>
+  html, body { margin: 0; padding: 0; background: #fff; }
+  #kopf { height: 240px; background: #f2f2f4; display: grid; place-items: center;
+          font: 14px ui-monospace, monospace; color: #666; }
+  #fuss { height: 900px; background: #f2f2f4; }
+  iframe { display: block; width: 100%; border: 0; }
+  #out { position: fixed; right: 8px; top: 8px; z-index: 99; background: #111; color: #0f0;
+         font: 11px/1.4 ui-monospace, monospace; padding: 8px; white-space: pre-wrap; max-width: 380px; }
+</style>
+<pre id="out">laedt</pre>
+<div id="kopf">Seite darueber (wie eine Framer-Seite)</div>
+<iframe id="embed" src="_h_frame_inner.html" height="9000" scrolling="no"></iframe>
+<div id="fuss"></div>
+<script>
+function messen(){
+  var host = document.getElementById("ulh-nav-host");
+  var nav = host ? host.querySelector(".ulh-nav") : null;
+  var r = nav ? nav.getBoundingClientRect() : null;
+  return {
+    host_da: !!host,
+    host_position: host ? getComputedStyle(host).position : null,
+    nav_oben: r ? Math.round(r.top) : null,
+    nav_hoch: r ? Math.round(r.height) : null,
+    css_im_eltern: !!document.querySelector('link[href*="landing-hero.css"]'),
+    scrollY: Math.round(window.scrollY),
+    im_rahmen_noch: !!document.getElementById("embed").contentDocument.querySelector(".ulh-root .ulh-nav")
+  };
+}
+function zeigen(){ document.getElementById("out").textContent = JSON.stringify(messen(), null, 1); }
+setTimeout(zeigen, 4000);
+window.addEventListener("scroll", function(){ zeigen(); }, { passive: true });
+</script>
