@@ -1,0 +1,29 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Globus: Platzhalter und selbst entferntes Bild</title>
+<link rel="stylesheet" href="core.css?v=g2">
+<style>body{font:12px monospace;background:#fff;padding:14px;display:flex;gap:22px;align-items:flex-start}
+ .up-fav{width:28px;height:28px}</style>
+<div class="up-root" data-isdark="no" id="w">
+  <!-- 1: Domain ohne Favicon -> Google liefert 200 + 16px Platzhalter -->
+  <span class="up-fav has-img" id="a"><img src="https://www.google.com/s2/favicons?domain=y-im.de&sz=128" alt="" referrerpolicy="no-referrer"></span>
+  <!-- 2: echtes Favicon, muss bleiben -->
+  <span class="up-fav has-img" id="b"><img src="https://www.google.com/s2/favicons?domain=stripe.com&sz=128" alt="" referrerpolicy="no-referrer"></span>
+  <!-- 3: Fehlschlag UND ein eigenes onerror, das das Bild sofort entfernt (Markup der Komponenten) -->
+  <span class="up-fav has-img" id="c"><img src="https://127.0.0.1:9/nichts.png?sz=128" alt="" referrerpolicy="no-referrer"
+        onerror="this.parentNode.classList.remove('has-img'); this.remove()"></span>
+</div>
+<pre id="out" style="background:#111;color:#eee;padding:10px;white-space:pre-wrap"></pre>
+<script src="core.js?v=g2"></script>
+<script>
+setTimeout(function(){
+  function s(id){
+    var el = document.getElementById(id);
+    return { globus: el.classList.contains("up-globus-an"), hasImg: el.classList.contains("has-img"),
+             bildDa: !!el.querySelector("img") };
+  }
+  document.getElementById("out").textContent = JSON.stringify({
+    ohneFavicon_y_im_de: s("a"), echtesFavicon_stripe: s("b"), fehlschlagMitEigenemOnerror: s("c")
+  }, null, 1);
+}, 2500);
+</script>

@@ -1,0 +1,27 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Was liefert Google fuer Domains ohne Favicon?</title>
+<pre id="out" style="background:#111;color:#eee;padding:10px;font:12px monospace;white-space:pre-wrap">…</pre>
+<script>
+var domains = ["y-im.de","odv.de","derprozessmeister.de","stripe.com","google.com","github.com","sac-hub.com","leeup.de"];
+var ergebnis = [];
+var offen = domains.length;
+domains.forEach(function(d){
+  var img = new Image();
+  img.referrerPolicy = "no-referrer";
+  img.onload = function(){
+    ergebnis.push({ domain: d, breite: img.naturalWidth, hoehe: img.naturalHeight, zustand: "geladen" });
+    if (!--offen) fertig();
+  };
+  img.onerror = function(){
+    ergebnis.push({ domain: d, breite: 0, hoehe: 0, zustand: "fehler" });
+    if (!--offen) fertig();
+  };
+  img.src = "https://www.google.com/s2/favicons?domain=" + d + "&sz=128";
+});
+function fertig(){
+  ergebnis.sort(function(a,b){ return a.breite - b.breite; });
+  document.getElementById("out").textContent = JSON.stringify(ergebnis, null, 1);
+}
+setTimeout(function(){ if (offen) fertig(); }, 6000);
+</script>

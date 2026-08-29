@@ -3271,21 +3271,27 @@
     return !!(img.parentNode && img.closest && img.closest(FAV_KASTEN));
   }
 
-  function faviconRueckfall(img){
-    if (!img || !img.parentNode) return;
-    var kasten = img.closest(FAV_KASTEN);
+  /* kastenVorher: Komponenten tragen an ihren Bildern ein eigenes onerror, das das Bild sofort
+     aus dem Dokument nimmt. Lief das zuerst, fand der Rueckfall hier nur noch ein elternloses
+     Bild und stieg aus -- kein Globus, obwohl genau dafuer alles da ist. Deshalb merkt sich der
+     Zuhoerer den Kasten, solange das Bild noch haengt, und gibt ihn mit. */
+  function faviconRueckfall(img, kastenVorher){
+    var kasten = kastenVorher || (img && img.closest ? img.closest(FAV_KASTEN) : null);
+    if (!img && !kasten) return;
     if (kasten){
       /* Der Weg, den die Tabellen schon gehen: has-img ab, Bild weg. Danach steht dort der
          Buchstabe der Marke -- oder, an einem .up-fav, der Globus aus der CSS. */
       kasten.classList.remove("has-img");
       if (kasten.style && kasten.style.visibility === "hidden") kasten.style.visibility = "";
-      if (img.parentNode) img.parentNode.removeChild(img);
+      if (img && img.parentNode) img.parentNode.removeChild(img);
       var zeigtSchon = kasten.classList.contains("up-fav") || kasten.querySelector(FAV_BUCHSTABE);
       if (!zeigtSchon) kasten.classList.add("up-globus-an");
       return;
     }
     /* Ohne Kasten: der Globus tritt AN DIE STELLE des Bildes und in seiner Groesse -- sonst
-       rutscht die Zeile, in der er stand, beim Fehlschlag zusammen. */
+       rutscht die Zeile, in der er stand, beim Fehlschlag zusammen. Dafuer muss das Bild aber
+       noch da sein; hat es sich selbst schon entfernt, gibt es keine Stelle mehr. */
+    if (!img || !img.parentNode) return;
     var b = parseFloat(img.getAttribute("width")) || img.clientWidth || 16;
     var h = parseFloat(img.getAttribute("height")) || img.clientHeight || b;
     var span = document.createElement("span");
@@ -3296,12 +3302,34 @@
     img.parentNode.replaceChild(span, img);
   }
 
+  /* Google antwortet fuer eine Domain OHNE Favicon nicht mit einem Fehler, sondern mit Status 200
+     und seinem eigenen Globus -- 16x16, in der App auf 20 bis 40px hochgezogen, und genau das ist
+     das verpixelte Bild, das statt unseres Globus dastand. Gemessen an y-im.de, odv.de,
+     derprozessmeister.de, sac-hub.com und leeup.de: alle fuenf liefern auf sz=128 sechzehn Pixel,
+     waehrend github 32 und stripe 128 liefert. Wer also 128 anfragt und 16 bekommt, hat den
+     Platzhalter bekommen. Die Regel greift nur dann: fragt eine Stelle 16 an, sind 16 richtig. */
+  function favPlatzhalter(img){
+    var m = /[?&](?:sz|size)=(\d+)/.exec(img.getAttribute("src") || "");
+    var wunsch = m ? parseInt(m[1], 10) : 0;
+    return wunsch >= 32 && img.naturalWidth > 0 && img.naturalWidth <= 16;
+  }
+
   document.addEventListener("error", function(e){
     var el = e && e.target;
     if (!el || el.tagName !== "IMG" || el.__upFavWeg) return;
     if (!istFavicon(el)) return;
     el.__upFavWeg = 1;                       /* ein Bild, ein Rueckfall */
-    setTimeout(function(){ sicher("faviconRueckfall", function(){ faviconRueckfall(el); }); }, 0);
+    var kasten = el.closest ? el.closest(FAV_KASTEN) : null;   /* jetzt merken: gleich ist es weg */
+    setTimeout(function(){ sicher("faviconRueckfall", function(){ faviconRueckfall(el, kasten); }); }, 0);
+  }, true);
+
+  document.addEventListener("load", function(e){
+    var el = e && e.target;
+    if (!el || el.tagName !== "IMG" || el.__upFavWeg) return;
+    if (!istFavicon(el) || !favPlatzhalter(el)) return;
+    el.__upFavWeg = 1;
+    var kasten = el.closest ? el.closest(FAV_KASTEN) : null;
+    sicher("faviconPlatzhalter", function(){ faviconRueckfall(el, kasten); });
   }, true);
 
   /* Und einmal nachsehen, was schon vorbei war. Ein Bild, das scheitert, BEVOR core geladen ist,
@@ -3314,10 +3342,12 @@
     var bilder = document.images || [];
     for (var i = bilder.length - 1; i >= 0; i--){
       var b = bilder[i];
-      if (!b || b.__upFavWeg || !b.complete || b.naturalWidth !== 0) continue;
+      if (!b || b.__upFavWeg || !b.complete) continue;
+      if (b.naturalWidth !== 0 && !favPlatzhalter(b)) continue;
       if (!b.getAttribute("src") || !istFavicon(b)) continue;
       b.__upFavWeg = 1;
-      sicher("faviconNachsehen", (function(bild){ return function(){ faviconRueckfall(bild); }; })(b));
+      var kn = b.closest ? b.closest(FAV_KASTEN) : null;
+      sicher("faviconNachsehen", (function(bild, kk){ return function(){ faviconRueckfall(bild, kk); }; })(b, kn));
     }
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", faviconNachsehen);

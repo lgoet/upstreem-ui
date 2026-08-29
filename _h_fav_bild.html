@@ -1,0 +1,16 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Wie sehen die 16px-Antworten aus?</title>
+<style>
+ body { font: 12px monospace; background:#fff; display:flex; gap:18px; padding:14px; }
+ figure { margin:0; text-align:center; }
+ img { width:64px; height:64px; image-rendering: pixelated; border:1px solid #ddd; }
+</style>
+<div id="w"></div>
+<script>
+["y-im.de","odv.de","leeup.de","sac-hub.com","github.com","stripe.com"].forEach(function(d){
+  var f = document.createElement("figure");
+  f.innerHTML = '<img referrerpolicy="no-referrer" src="https://www.google.com/s2/favicons?domain=' + d + '&sz=128"><figcaption>' + d + '</figcaption>';
+  document.getElementById("w").appendChild(f);
+});
+</script>
