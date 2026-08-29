@@ -1485,10 +1485,24 @@
    daran lag das Hektische: --ulh-aus (.1, 1, .2, 1) startet mit voller Geschwindigkeit und klingt
    nur aus -- der Anfang war der Ruck. --ulh-weich ist an beiden Enden flach, die Zeile setzt sich
    in Ruhe in Bewegung und kommt in Ruhe an. */
-/* KEINE Hervorhebung mehr beim Ueberfahren der Karten. Die gehobene Zeile war eine Runde lang
-   drin, mit Groesse, Rundung, Rahmen und Grund im Uebergang -- und sie hat mehr Unruhe gebracht,
-   als sie gezeigt hat: eine Vorschau ist ein Bild und keine Tabelle, die man bedient.
-   Der eigene Hover der Bauteile faellt weiterhin weg, aus demselben Grund. */
+.ulh-vis-tab .up-row, .ulh-vis-chancen .uo-row {
+  transition: transform 714ms var(--ulh-weich), box-shadow 714ms var(--ulh-weich),
+              border-radius 714ms var(--ulh-weich), background-color 714ms var(--ulh-weich);
+}
+/* Der Ruhezustand der gehobenen Zeile steht AUSDRUECKLICH da, sonst gibt es nichts, wovon der
+   Uebergang ausgehen koennte: Rundung 0 und ein durchsichtiges WEISS (nicht "transparent" -- das
+   waere durchsichtiges Schwarz, und der Grund blendete durch Grau). */
+.ulh-vis-tab .up-row.is-mitte { border-radius: 0; background-color: rgba(255, 255, 255, 0); }
+/* Die gehobene Zeile bekommt KEINEN eigenen Radius. Sie nimmt den, den ihr Bauteil ohnehin hat:
+   die Chancenzeile hat 12px von sich aus, die Zeile der Tabelle hat keinen -- ihr Rahmen ist der
+   der Tabelle, und deren 12px stehen hier. */
+.ulh-card:hover .ulh-vis-tab .up-row.is-mitte { border-radius: 12px; }
+/* Der Grund der gehobenen Zeile: WEISS als Zahl. Vorher stand hier var(--vc-bg) -- die Farbe der
+   App, aber sie haengt an .up-root, und diese Vorschau steht darueber: die Angabe war ungueltig,
+   die Zeile blieb durchsichtig, und man sah ihre Nachbarn hindurch. Dieselbe Falle wie beim Kasten
+   der Quellen-Sektion. */
+.ulh-card:hover .ulh-vis-tab .up-row.is-mitte { background-color: #ffffff; }
+/* Der eigene Hover der Bauteile faellt weg. */
 .ulh-vis .up-row:hover, .ulh-vis .uo-row:hover, .ulh-vis .udt-subrow:hover {
   background: var(--vc-bg); border-color: var(--vc-border);
 }
@@ -1501,6 +1515,17 @@
    .ulh-vis-dom behaelt die Sperre -- dort liegt ein aufgeklappter Drilldown mit Fuellung darin. */
 .ulh-vis-dom { overflow: hidden; }
 .ulh-vis-tab .up-thead { border-radius: 12px 12px 0 0; }
+.ulh-card:hover .ulh-vis-tab .up-row.is-mitte,
+.ulh-card:hover .ulh-vis-chancen .uo-row.is-mitte {
+  transform: scale(1.06);
+  /* Der Rahmen steckt im letzten Schatten und ist kein Rahmen: ein echter braucht Platz und
+     schoebe die Zellen der Zeile um 1px zur Seite -- ein Innenschatten nicht. Und er faehrt mit
+     derselben box-shadow-Kurve heraus wie der Schlagschatten, statt zu springen. Genau das war
+     der Rest der Hektik: Rundung, Rahmen und Grund sprangen, waehrend die Groesse fuhr. */
+  box-shadow: 0 12px 30px rgba(11, 13, 24, .14), 0 2px 6px rgba(11, 13, 24, .06),
+              inset 0 0 0 1px var(--ulh-border);
+  position: relative; z-index: 4;
+}
 
 
 
@@ -1551,6 +1576,17 @@
      uebereinander. Kurve und Trichter je 400px breit waeren zwei Briefmarken. */
   .ulh-quell { --ulh-quell-luft: clamp(48px, 8vh, 80px); }
   .ulh-quell-app .udd-root { grid-template-columns: 1fr; }
+  /* NUR hier faellt die gehobene Zeile weg, auf dem breiten Schirm bleibt sie. Zwei Gruende: die
+     Karte ist auf schmalen Schirmen selbst angeschnitten, die gehobene Zeile faehrt also aus ihr
+     heraus statt in ihr zu stehen -- und auf einem Touchgeraet bleibt der Hover nach dem Tippen
+     haengen, die Zeile stuende dann dauerhaft gross da.
+     Mit .ulh-root davor, damit die Regel ueber die Spezifitaet gewinnt und nicht darueber, dass
+     sie weiter unten steht. Alle vier Werte zusammen, sonst faehrt die Zeile nur halb zurueck. */
+  .ulh-root .ulh-card:hover .ulh-vis-tab .up-row.is-mitte,
+  .ulh-root .ulh-card:hover .ulh-vis-chancen .uo-row.is-mitte {
+    transform: none; box-shadow: none; border-radius: 0;
+    background-color: rgba(255, 255, 255, 0);
+  }
 }
 
 /* ---------- Die drei Nebenfenster ----------
