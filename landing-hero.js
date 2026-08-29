@@ -4062,7 +4062,10 @@
     { id: "t4", name: "Integrations",    emoji: "🔌", hex_light: "#8957e5", hex_dark: "#b79af0" },
     { id: "t5", name: "Enterprise",      emoji: "🏢", hex_light: "#0e7490", hex_dark: "#6bb6c9" },
     { id: "t6", name: "Reporting",       emoji: "📊", hex_light: "#be185d", hex_dark: "#e78bb0" },
-    { id: "t7", name: "Getting Started", emoji: "🚀", hex_light: "#6f737c", hex_dark: "#a8adb6" }
+    { id: "t7", name: "Getting Started", emoji: "🚀", hex_light: "#6f737c", hex_dark: "#a8adb6" },
+    /* Das achte Thema gibt es, seit die Matrix acht Zeilen zeigt. Es steht auch den anderen
+       Vorschauen zur Verfuegung -- die nehmen sich ihre Themen vom Anfang der Liste. */
+    { id: "t8", name: "Migration",      emoji: "🧳", hex_light: "#a16207", hex_dark: "#d9b45f" }
   ];
 
   /* Die eigenen Gruppierungen. NUR diese werden gezeigt (Modus "custom"), keine automatischen
@@ -4621,7 +4624,7 @@
      Sichtbarkeit einer Marke ist ihr Wert aus dem Dashboard, je Thema um einen festen Faktor
      verschoben. So passen die Zahlen hier zu den Zahlen zwei Szenen vorher -- eine Marke, die im
      Chart vorn liegt, liegt es auch in der Matrix. */
-  var PERF_THEMEN = 5, PERF_MARKEN = 5;
+  var PERF_THEMEN = 8, PERF_MARKEN = 5;
   /* Ein Faktor je Thema und Marke. Er macht aus fuenf gleichen Zeilen ein Bild mit Staerken und
      Luecken -- und genau das ist der Zweck der Matrix. Kestrel (erste Spalte) ist bei Pricing und
      AI Search Tools stark und bei Enterprise schwach; das ist die Geschichte, die die Sektion
@@ -4631,7 +4634,10 @@
     [0.90, 1.20, 0.85, 1.15, 1.25],
     [1.05, 0.80, 1.10, 0.90, 1.00],
     [0.70, 1.05, 0.75, 1.30, 0.95],
-    [0.85, 0.90, 1.20, 0.70, 1.15]
+    [0.85, 0.90, 1.20, 0.70, 1.15],
+    [1.15, 0.75, 0.95, 1.05, 0.80],
+    [0.95, 1.30, 1.05, 0.85, 0.70],
+    [0.60, 1.10, 0.90, 1.20, 1.05]
   ];
 
   function perfZellen(){
@@ -4731,6 +4737,31 @@
   }
 
   var PERF_STAND_MS = 3000;      /* so lange steht jede der zwei Ansichten (Vorgabe) */
+  var PERF_ABGANG_MS = 300;      /* der Weg hinaus zwischen den zwei Ansichten */
+
+  /* Den Auftritt starten -- oder neu starten. Eine laufende Animation faengt nicht von selbst
+     wieder an, wenn man dieselbe Klasse noch einmal setzt: sie muss ab, ein Layout dazwischen,
+     dann wieder dran. */
+  function perfAuftritt(root){
+    [".uhm-root", ".pfph-root"].forEach(function(sel){
+      var el = root.querySelector(".ulh-perf " + sel);
+      if (!el) return;
+      el.classList.remove("is-auftritt");
+      void el.offsetWidth;
+      el.classList.add("is-auftritt");
+    });
+  }
+
+  /* Warten, bis die Matrix ihre Zellen gezeichnet hat, und ERST DANN auftreten lassen. Vorher
+     faehrt eine leere Flaeche herauf, und das sieht aus wie gar keine Bewegung. */
+  function perfWennGezeichnet(root, dann){
+    var n = 0;
+    (function schauen(){
+      if (root.querySelector(".ulh-perf .uhm-cell:not(.is-sk)")){ dann(); return; }
+      if (++n < 60) setTimeout(schauen, 80);
+      else dann();                       /* nach 5s trotzdem: lieber ohne Zellen als gar nicht */
+    })();
+  }
 
   /* Der Wechsel auf die zweite Ansicht: Sentiment UND die Balken, die zeigen, auf wie vielen
      Erwaehnungen ein Wert beruht. Beides ueber die Wege der Komponente -- der Klick auf den
@@ -4742,11 +4773,21 @@
        (nurSchauen), damit im Schaustueck nichts bedienbar ist -- der Klick kam also nie an, die
        Matrix blieb auf Sichtbarkeit stehen, und nur die Balken schalteten sich an. Gemessen.
        Beide Setter gehen deshalb ueber die API der Komponente. */
-    if (window.setPerformanceRadarMetric) window.setPerformanceRadarMetric(ID.uhm, "sentiment");
-    if (window.setPerformanceRadarWeights) window.setPerformanceRadarWeights(ID.uhm, "yes");
-    /* Nach dem Wechsel steht der Tooltip auf einer Zelle, die neu gezeichnet wurde -- also noch
-       einmal anstossen, sonst haengt er an einem Element, das es nicht mehr gibt. */
-    [260, 700].forEach(function(ms){ setTimeout(function(){ perfTipp(root); }, ms); });
+    var karte = root.querySelector(".ulh-perf .uhm-root");
+    /* Erst geht sie -- samt Karte. Ein Umschalten unter der stehenden Matrix waere ein Wechsel der
+       Zahlen, kein Wechsel der Ansicht; gefragt war das zweite. */
+    if (window.destroyHeatmapTooltip) window.destroyHeatmapTooltip(ID.uhm);
+    if (karte) karte.classList.add("is-geht");
+    setTimeout(function(){
+      if (window.setPerformanceRadarMetric) window.setPerformanceRadarMetric(ID.uhm, "sentiment");
+      if (window.setPerformanceRadarWeights) window.setPerformanceRadarWeights(ID.uhm, "yes");
+      if (karte) karte.classList.remove("is-geht");
+      /* Und wieder herein, mit den neuen Zahlen und den Balken. */
+      perfWennGezeichnet(root, function(){
+        perfAuftritt(root);
+        [400, 800].forEach(function(ms){ setTimeout(function(){ perfTipp(root); }, ms); });
+      });
+    }, PERF_ABGANG_MS);
     return true;
   }
 
@@ -4766,22 +4807,21 @@
     setTimeout(function(){
       seite.classList.remove("is-weg");
       seite.classList.add("is-da");
-      seite.classList.add("is-kommt");
-      setTimeout(function(){ seite.classList.remove("is-kommt"); }, 420);
       hellHalten(root);
       perfFuellen();
       ohneTipps(root);
       setTimeout(function(){ ohneTipps(root); hellHalten(root); }, 400);
-      /* Die Matrix baut ihre Zellen nach dem Setter in einem eigenen Durchgang -- erst danach
-         gibt es eine mittlere Zelle, an der der Tooltip haengen kann. Dreimal angestossen und
-         nicht einmal: nach dem Fuellen laufen noch das Nachziehen des Themas und das Abraeumen
-         der Bauteil-Tooltips, und irgendwo dazwischen verlor die Karte ihr is-on. Gemessen: beim
-         ersten Anstoss stand sie da, eine Sekunde spaeter nicht mehr. Ein zweiter und dritter
-         Anstoss kostet nichts -- die Komponente baut die Karte nur neu, wenn sich die Zelle
-         geaendert hat. */
-      [620, 1000, 1700].forEach(function(ms){ setTimeout(function(){ perfTipp(root); }, ms); });
-      setTimeout(function(){ perfZweiteAnsicht(root); }, 620 + PERF_STAND_MS);
-      setTimeout(function(){ neustart(root); }, 620 + PERF_STAND_MS * 2);
+      /* Der Auftritt kommt NACH dem Zeichnen, nicht mit dem Einblenden der Seite: die Komponente
+         braucht nach dem Setter einen eigenen Durchgang, und bis dahin waere die Flaeche leer. */
+      perfWennGezeichnet(root, function(){
+        perfAuftritt(root);
+        /* Die Karte danach, und zweimal: nach dem Fuellen laufen noch das Nachziehen des Themas
+           und das Abraeumen der Bauteil-Tooltips, und dazwischen verlor sie ihr is-on. */
+        [500, 900].forEach(function(ms){ setTimeout(function(){ perfTipp(root); }, ms); });
+        setTimeout(function(){ perfZweiteAnsicht(root); }, PERF_STAND_MS);
+        setTimeout(function(){ neustart(root); },
+                   PERF_STAND_MS + PERF_ABGANG_MS + PERF_STAND_MS);
+      });
     }, AUSBLENDEN_MS);
     return true;
   }

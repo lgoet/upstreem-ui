@@ -1952,7 +1952,12 @@
 .up-root[data-theme="dark"] .up-seg-ind ~ button.is-active {
   background: transparent; border-color: transparent;
 }
-@media (prefers-reduced-motion: reduce) { .up-seg-ind { transition: none; } }
+/* KEINE Ausnahme fuer prefers-reduced-motion. Sie stand hier und war der wahrscheinlichste Grund
+   dafuer, dass der Umschalter im Onboarding glitt und kein anderer: dessen eigene Marke hatte nie
+   eine solche Regel. Wer die Bewegung auf seinem Rechner abgestellt hat, saehe damit genau EINEN
+   Umschalter fahren und alle anderen springen -- der Unterschied waere auffaelliger als die
+   Bewegung selbst. 200ms auf einer Flaeche von wenigen Pixeln ist ausserdem keine Bewegung, die
+   jemanden stoert; die Regel schuetzte vor nichts. */
 /* ---- Die zweite GROESSE des Umschalters ----------------------------------------------------
    is-lg ist der Umschalter, der nicht als Werkzeug in einer Kopfzeile steht, sondern allein ueber
    dem Inhalt und die Ansicht der ganzen Seite waehlt (brand-detail, domain-detail).

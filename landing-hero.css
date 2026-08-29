@@ -362,12 +362,15 @@
 /* ---------- Die Blende unten im Dashboardbereich ----------
    32px, in der Farbe des Rahmens, und erst rechts der Leiste: sie soll den Inhalt ausfaden lassen,
    nicht die Navigation. Der linke Versatz rechnet mit dem Mass, weil die Leiste im Fenster
-   verkleinert dasteht -- 234px Layout ergeben bei 0.73 rund 171px auf dem Schirm.
+   verkleinert dasteht -- 218px Layout ergeben bei 0.73 rund 159px auf dem Schirm.
+   218 und nicht mehr 234: die Leiste ist seit der Umstellung auf 224px schmaler, und die Blende
+   soll frueher anfangen als deren Kante -- so verlaeuft sie unter dem Inhalt und nicht erst
+   daneben. Die 16px Unterschied sind die Ansage.
    z-index: 2, weil .ulh-app positioniert ist und sonst darueber laege. */
 .ulh-view::after {
   content: "";
   position: absolute;
-  left: calc(234px * var(--ulh-mass, 1));
+  left: calc(218px * var(--ulh-mass, 1));
   right: 0;
   bottom: 0;
   height: 32px;
@@ -375,7 +378,7 @@
   pointer-events: none;
   background: linear-gradient(to top, var(--ulh-blende), rgba(240, 240, 240, 0));
 }
-/* Die Blende beginnt bei 234px mal Massstab -- der Breite der AUSGEKLAPPTEN Leiste. Klappt die
+/* Die Blende beginnt bei 218px mal Massstab, also kurz vor der Kante der ausgeklappten Leiste. Klappt die
    Leiste auf die Zeichenschiene zusammen (is-mini, von sidebar.js nach der Fensterbreite gesetzt),
    faellt die Blende ganz weg: sie soll den Uebergang zum Fensterrand weich machen, und auf einem
    schmalen Schirm ist von diesem Rand ohnehin nichts mehr zu sehen. */
@@ -471,6 +474,24 @@
    skaliert damit auch deren Verschiebung. Die Karte stand danach bei 414,471 statt bei 670,763 --
    also genau die Werte mal 0.6176. Eine Karte an der falschen Stelle ist schlechter als eine, die
    eine Nummer zu gross ist. */
+
+/* ---------- Der Auftritt der Performance-Seite ----------
+   Die Matrix tritt AUF wie in der App: von unten herauf und dabei aufblendend, dieselbe Bewegung
+   (ulhRise), die auch die Seiten und die Karten benutzen.
+   Warum eine eigene Klasse und nicht is-kommt an der Seite: die Komponente zeichnet ihre Zellen
+   ERST, wenn die Daten da sind -- also nach dem Auftritt der Seite. Eine Bewegung auf einer noch
+   leeren Flaeche sieht aus wie gar keine, und genau so war es gemeldet. Jetzt wird gewartet, bis
+   die Zellen stehen, und dann faehrt die fertige Matrix herauf.
+   Auch der Seitenkopf zieht mit: er gehoert zum selben Bild. */
+.ulh-perf .uhm-root.is-auftritt,
+.ulh-perf .pfph-root.is-auftritt { animation: ulhRise 690ms var(--ulh-ease) backwards; }
+/* Und der Abgang zwischen den zwei Ansichten: erst weg, dann kommt sie als Sentiment mit
+   Gewichtsbalken zurueck. Kuerzer als der Auftritt -- ein Abgang, der so lange braucht wie ein
+   Auftritt, wirkt wie ein Fehler. */
+.ulh-perf .uhm-root {
+  transition: opacity 260ms var(--ulh-ease), translate 260ms var(--ulh-ease);
+}
+.ulh-perf .uhm-root.is-geht { opacity: 0; translate: 0 12px; }
 
 /* ---------- Der Auftritt der Prompts-Seite ----------
    Sie steigt NICHT als Ganzes herauf -- ihre Teile tun es nacheinander: erst der Seitenkopf, dann
