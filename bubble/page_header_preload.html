@@ -127,6 +127,19 @@
      erst beim Bau des Elements.
      Der Rueckfall bleibt: fehlt die minifizierte Fassung (jsDelivr minifiziert auf Anfrage und
      antwortet bis dahin mit 404), kommt die rohe. */
+  /* Dieselben zwei Lader, aber ohne den Umweg ueber die minifizierte Fassung. Siehe die
+     Begruendung bei core weiter unten. */
+  function cssRoh(f){ once(base + f, function(){
+    var l = document.createElement("link"); l.rel = "stylesheet"; l.href = base + f;
+    l.setAttribute("data-up-preload", "1");
+    document.head.appendChild(l);
+  }); }
+  function jsRoh(f){ once(base + f, function(){
+    var s = document.createElement("script"); s.src = base + f; s.async = false;
+    s.setAttribute("data-up-preload", "1");
+    document.head.appendChild(s);
+  }); }
+
   function css(f){ once(base + f, function(){
     var l = document.createElement("link"); l.rel = "stylesheet"; l.href = minUrl(f);
     l.setAttribute("data-up-preload", "1");
@@ -188,7 +201,16 @@
      core zuerst, dann die Leiste -- sie steht auf jeder Seite und ihr Loader wuerde sie sonst
      ungekuerzt holen. Wer die Hauptseite noch schneller haben will, traegt HIER die zwei bis drei
      Komponenten ein, die auf ihr wirklich sichtbar sind; alles andere gehoert in Welle 2. */
-  css("core.css");     js("core.js");
+  /* core NICHT minifiziert. Das ist bewusst teurer und der Grund ist eine Stoerung vom 29.08.:
+     jsDelivr minifiziert auf Anfrage und merkt sich einen fehlgeschlagenen Versuch PRO DATEI UND
+     PRO COMMIT -- an diesem Tag antwortete core.min.js am produktiven Pin ploetzlich mit 404,
+     Stunden nach dem Ausrollen. Der Rueckfall unten haengt die rohe Datei zwar nach, aber er
+     haengt sie ANS ENDE: async=false haelt die Reihenfolge des Einhaengens ein, und damit lief
+     core nach sidebar und nach den Komponenten. Die brauchen es aber vorher -- die App stand.
+     Fuer die eine Datei, ohne die gar nichts geht, ist der sichere Weg deshalb der rohe. Rund
+     350 KB mehr beim ersten Laden, danach aus dem Zwischenspeicher; alle anderen Dateien bleiben
+     minifiziert, denn ihr Ausfall trifft nur sie selbst. */
+  cssRoh("core.css");  jsRoh("core.js");
   css("sidebar.css");  js("sidebar.js");
 
   /* ── WELLE 2: der Vorrat ───────────────────────────────────────────────────
