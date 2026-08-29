@@ -177,12 +177,13 @@
 /* Nie umbrechen, nie herausragen: schrumpfen und mit Auslassungspunkten enden. min-width: 0
    ist dafuer Pflicht -- ein Flex-Kind schrumpft sonst nicht unter seine Inhaltsbreite, und der
    Name schoebe den Doppelpfeil aus der Leiste heraus. */
-/* 500, wieder zurueck von 600: als Kopf gelesen war er in 600 zu schwer fuer eine Leiste, in der
-   sonst nichts fett steht. Die Staerke war einmal hoch und einmal wieder runter -- der Wert hier
-   ist der gepruefte. */
+/* 550: eine halbe Stufe ueber den Navigationspunkten darunter. 600 war als einziger Fettdruck der
+   Leiste zu schwer, 500 machte den Kopf nicht als Kopf kenntlich. Der Zwischenwert steht nur zur
+   Verfuegung, weil core die Schrift als variable Datei ueber den Bereich 400..600 laedt -- mit
+   einzelnen Staerken faende der Browser hier die 600. */
 .usn-teamname {
   flex: 0 1 auto; min-width: 0; margin-left: 10px;
-  font-size: 14px; font-weight: 500; line-height: 1.2;
+  font-size: 14px; font-weight: 550; line-height: 1.2;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 /* 12px vom Namen, damit der Doppelpfeil zum Namen gehoert und nicht zum Rand. */

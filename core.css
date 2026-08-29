@@ -3,7 +3,12 @@
    Enthält: Tokens+Farben, Icon-Buttons, Switcher, Dropdowns/Portal, Tooltips,
    Skeleton, Suche, Sticky-Header-Mechanik, generische Tabellenstruktur. */
 
-@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap");
+/* Der ganze Bereich 400..600 statt drei einzelner Staerken: Google liefert dafuer die
+   VARIABLE Schnittdatei, und damit sind Zwischenwerte wie 550 wirklich verfuegbar. Mit einer
+   Liste einzelner Staerken faellt jeder Zwischenwert auf die naechste vorhandene zurueck --
+   550 waere dann 600, und eine halbe Stufe liesse sich gar nicht setzen. 400, 500 und 600
+   liegen im Bereich und aendern sich nicht. */
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400..600&display=swap");
 
 /* Die Form des Globus als Maske -- EINMAL, damit sie nicht in jeder Regel steht. Dieselben Pfade
    wie UC.icon("globe"): Kreis, Meridian, Aequator. Gebraucht vom Rueckfall der Favicon-Kaesten
