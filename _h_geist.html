@@ -1,0 +1,27 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Geist: Liste gegen Bereich</title>
+<style>body{font:13px system-ui;padding:16px}iframe{width:420px;height:120px;border:1px solid #ddd}</style>
+<iframe id="a" srcdoc='<style>@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap");
+ body{font-family:Geist;margin:8px}
+ span{white-space:nowrap}</style>
+ <div><span id="w500" style="font-weight:500;font-size:13.5px">Dashboard</span></div>
+ <div><span id="w600" style="font-weight:600;font-size:13.5px">Dashboard</span></div>'></iframe>
+<iframe id="b" srcdoc='<style>@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400..600&display=swap");
+ body{font-family:Geist;margin:8px}
+ span{white-space:nowrap}</style>
+ <div><span id="w500" style="font-weight:500;font-size:13.5px">Dashboard</span></div>
+ <div><span id="w600" style="font-weight:600;font-size:13.5px">Dashboard</span></div>'></iframe>
+<pre id="out">…</pre>
+<script>
+setTimeout(function(){
+  function mess(id){
+    var d = document.getElementById(id).contentDocument;
+    function b(s){ var e=d.getElementById(s); return e ? +e.getBoundingClientRect().width.toFixed(2) : -1; }
+    return { w500: b("w500"), w600: b("w600") };
+  }
+  document.getElementById("out").textContent =
+    "Liste  (400;500;600): " + JSON.stringify(mess("a")) + "\n" +
+    "Bereich (400..600)   : " + JSON.stringify(mess("b"));
+}, 2500);
+</script>

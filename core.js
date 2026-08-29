@@ -3078,43 +3078,62 @@
                   " .up-filter-dim, .up-dense, .tcd-mode, .uca-format-seg, .ubo-yaxis," +
                   " .upt-status, .udt-sub-dispseg, .uap-tabs";
 
-  function segMessen(box){
+  /* ZWEI Durchgaenge, und das ist der Punkt: erst wird an ALLEN Umschaltern gelesen, dann an
+     allen geschrieben. Vorher lag beides ineinander -- lesen an Kasten A, schreiben an A, lesen
+     an B -- und jedes Lesen nach einem Schreiben zwingt den Browser, das Layout neu zu rechnen.
+     Bei zehn Umschaltern sind das zehn erzwungene Umbrueche je Lauf, und der Lauf haengt an jedem
+     Klick und an jeder Mutation. Genau diese Meldung stand reihenweise in der Konsole eines
+     Nutzers ("Forced reflow while executing JavaScript took 186ms"). Getrennt bleibt EIN Umbruch
+     je Lauf uebrig. */
+  function segLesen(box){
+    if (!box.isConnected) return null;
     var aktiv = box.querySelector("button.is-active");
-    if (!aktiv) return;
+    if (!aktiv) return null;
     var b = aktiv.offsetWidth, h = aktiv.offsetHeight;
     /* Breite 0 heisst: der Umschalter ist gerade nicht sichtbar (ein Popover, das noch zu ist).
        Dann NICHT messen -- eine 0 wuerde den Streifen auf null ziehen, und beim Oeffnen faehrt er
        aus dem Nichts. Der naechste Lauf misst ihn, sobald er wirklich da ist. */
-    if (!b) return;
+    if (!b) return null;
+    return { box: box, x: aktiv.offsetLeft + "px", y: aktiv.offsetTop + "px",
+             w: b + "px", h: h + "px",
+             idx: Array.prototype.indexOf.call(box.children, aktiv) };
+  }
+
+  function segSchreiben(m){
+    var box = m.box;
+    /* GEFAHREN wird nur bei einem echten Wechsel des aktiven Knopfes. Jede andere Messung springt.
+       Der Fall, der es gezeigt hat: in einem Filtermenue wird beim Klick auf einen Typ das ganze
+       Menue neu gezeichnet. Der Umschalter darin ist danach ein NEUES Element ohne Streifenwerte,
+       also Breite 0 in der linken Ecke -- und die erste Messung setzte Werte UND Klasse in einem
+       Zug. Ein Uebergang startet nach dem Zustand NACH der Aenderung, und der trug die Fahrt
+       bereits: der Streifen fuhr aus dem Nichts auf. Genau das war gemeldet.
+       Dasselbe gilt fuer jede Verschiebung, die nicht vom Nutzer kommt (eine Werkzeugleiste, die
+       enger wird, ein Menue, das aufgeht): der Streifen soll dem Knopf folgen, nicht wandern.
+       Der Vergleich laeuft ueber die POSITION des aktiven Knopfes und nicht ueber das Element:
+       nach einem Neuaufbau sind alle Knoepfe neue Elemente, die Stelle des aktiven bleibt aber
+       dieselbe. */
+    var stand = box.classList.contains("is-gleitend");
+    var gleiten = stand && box.__upSegIdx !== m.idx;
+    box.__upSegIdx = m.idx;
+    if (!gleiten) box.classList.add("is-sofort");
     /* VIER ZAHLEN, sonst nichts. Kein Element, kein Einhaengen, kein Umbau -- der Streifen ist ein
        ::before und existiert im DOM gar nicht. Deshalb kann diese Funktion auch nichts ausloesen,
        was ein fremder Beobachter (Bubble) als Aenderung an seinem Baum sieht. */
-    var x = aktiv.offsetLeft + "px", y = aktiv.offsetTop + "px";
     var st = box.style;
-    if (st.getPropertyValue("--up-seg-x") !== x) st.setProperty("--up-seg-x", x);
-    if (st.getPropertyValue("--up-seg-y") !== y) st.setProperty("--up-seg-y", y);
-    if (st.getPropertyValue("--up-seg-w") !== b + "px") st.setProperty("--up-seg-w", b + "px");
-    if (st.getPropertyValue("--up-seg-h") !== h + "px") st.setProperty("--up-seg-h", h + "px");
+    if (st.getPropertyValue("--up-seg-x") !== m.x) st.setProperty("--up-seg-x", m.x);
+    if (st.getPropertyValue("--up-seg-y") !== m.y) st.setProperty("--up-seg-y", m.y);
+    if (st.getPropertyValue("--up-seg-w") !== m.w) st.setProperty("--up-seg-w", m.w);
+    if (st.getPropertyValue("--up-seg-h") !== m.h) st.setProperty("--up-seg-h", m.h);
     /* Die Klasse ZULETZT und nur einmal: sie schaltet Sichtbarkeit und Fahrt frei. Steht sie schon
        vor der ersten Messung da, faehrt der Streifen beim ersten Bild aus der linken Ecke heran. */
-    if (!box.classList.contains("is-gleitend")) box.classList.add("is-gleitend");
+    if (!stand) box.classList.add("is-gleitend");
+    return !gleiten;                       /* diese Box wartet noch auf das Abnehmen von is-sofort */
   }
 
-  /* KEINE Beobachter mehr an fremden Kaesten. Die erste Fassung hing an jedem Umschalter einen
-     MutationObserver und an jedem Knopf einen ResizeObserver -- auf einer Bubble-Seite sind das
-     hunderte, und jede Regung der Seite lief durch sie hindurch. Gebraucht werden sie auch nicht:
-     die aktive Stufe wechselt durch einen KLICK, und danach laeuft der Lauf ohnehin (der Zuhoerer
-     am Dokument, ein paar Zeilen weiter unten). Dazu die festen Zeitpunkte nach dem Laden, das
-     Ende der Schriften und jede Groessenaenderung des Fensters.
-     Was core auf einer fremden Seite hinterlaesst, ist damit: vier Eigenschaften und eine Klasse
-     an den Umschaltern. Kein Knoten, kein Beobachter. */
-  function segEinrichten(box){
-    if (!box.isConnected) return;
-    if (!SEG_SCHRIFT && document.fonts && document.fonts.ready){
-      SEG_SCHRIFT = true;
-      document.fonts.ready.then(function(){ segLauf(); })["catch"](function(){});
-    }
-    segMessen(box);
+  function segSchriftUhr(){
+    if (SEG_SCHRIFT || !document.fonts || !document.fonts.ready) return;
+    SEG_SCHRIFT = true;
+    document.fonts.ready.then(function(){ segLauf(); })["catch"](function(){});
   }
 
   /* ---- Die Notbremse ---------------------------------------------------------------------------
@@ -3137,7 +3156,23 @@
     var ziel = wurzel || document, els;
     var t0 = (window.performance && performance.now) ? performance.now() : 0;
     try { els = ziel.querySelectorAll(SEG_BOXEN); } catch(e){ return; }
-    for (var i = 0; i < els.length; i++) segEinrichten(els[i]);
+    segSchriftUhr();
+    var messwerte = [], i;
+    for (i = 0; i < els.length; i++){                    /* 1. nur lesen */
+      var m = segLesen(els[i]);
+      if (m) messwerte.push(m);
+    }
+    var wartend = [];
+    for (i = 0; i < messwerte.length; i++){               /* 2. nur schreiben */
+      if (segSchreiben(messwerte[i])) wartend.push(messwerte[i].box);
+    }
+    /* 3. EIN erzwungener Umbruch fuer alle zusammen: er legt die neuen Werte ohne Fahrt fest.
+       Erst danach darf die Fahrt wieder gelten. Ohne ihn nimmt der Browser beide Aenderungen
+       zusammen und animiert doch. */
+    if (wartend.length){
+      void document.body.offsetWidth;
+      for (i = 0; i < wartend.length; i++) wartend[i].classList.remove("is-sofort");
+    }
     if (t0){
       SEG_KONTO += performance.now() - t0;
       if (SEG_KONTO > SEG_GRENZE){

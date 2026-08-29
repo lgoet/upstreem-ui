@@ -1992,6 +1992,11 @@
    den es nicht gab. */
 .is-gleitend::before { opacity: 1; }
 .is-gleitend::before { transition: transform 200ms ease, width 200ms ease, height 200ms ease; }
+/* Ein Schreibvorgang OHNE Fahrt. Gesetzt von segMessen fuer alles, was kein echter Wechsel des
+   aktiven Knopfes ist: die erste Messung nach einem Neuaufbau, eine engere Werkzeugleiste, ein
+   Menue, das aufgeht. Zwei Klassen gegen eine, also ueber die Spezifitaet und nicht ueber die
+   Reihenfolge gewonnen. */
+.is-gleitend.is-sofort::before { transition: none; }
 [data-theme="dark"] .up-seg::before, [data-theme="dark"] .cc-seg::before,
 [data-theme="dark"] .ubo-seg::before, [data-theme="dark"] .tcl-seg::before,
 [data-theme="dark"] .vc-gran::before, [data-theme="dark"] .cc-gran::before,
