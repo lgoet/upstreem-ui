@@ -397,11 +397,6 @@
   function geoChart(){
     var B = 1000, H = 420;
     var d = geoPfad(GEO_PUNKTE, B, H);
-    var marken = GEO_MARKEN.map(function(m){
-      var x = m.x / 27 * B;
-      return '<line class="ulh-geo-mark" x1="' + x.toFixed(1) + '" y1="0" x2="' + x.toFixed(1) +
-             '" y2="' + H + '"/>';
-    }).join("");
     return '<svg class="ulh-geo-svg" viewBox="0 0 ' + B + ' ' + H + '" preserveAspectRatio="none" ' +
       'aria-hidden="true" focusable="false">' +
       '<defs><pattern id="ulhGeoRaster" width="8" height="8" patternUnits="userSpaceOnUse">' +
@@ -409,7 +404,6 @@
       /* Die Flaeche unter der Kurve ist schraffiert und nicht gefuellt: gefuellt legt sie sich als
          Block hinter die Zahlen, schraffiert bleibt der Text lesbar. */
       '<path class="ulh-geo-flaeche" d="' + d + 'L' + B + ' ' + H + 'L0 ' + H + 'Z"/>' +
-      marken +
       '<path class="ulh-geo-linie" d="' + d + '"/>' +
     '</svg>';
   }
@@ -441,28 +435,27 @@
   function geoMarkenHtml(){
     return GEO_MARKEN.map(function(m, k){
       var y = geoY(m.x);
-      /* Der Text steht UEBER dem Punkt -- unter der Kurve liegt die Schraffur, darin ginge er
-         unter. Nur ganz links liegt die Kurve so tief, dass "darueber" mitten in den Zahlen
-         landet: dort geht der Text unter den Punkt. Die Grenze ist gemessen und nicht geraten --
-         unter 35 Prozent Kurvenhoehe ueberschnitt die erste Marke den Quellenhinweis. */
-      var unten = y < 0.35;
-      var punkt = '<span class="ulh-geo-mk-punkt"></span>';
-      var txt = '<span class="ulh-geo-mk-txt">' +
+      var links = (m.x / 27 * 100).toFixed(2) + '%';
+      /* Zwei Teile, weil sie an verschiedenen Kanten haengen: die gestrichelte Linie steht am
+         BODEN des Charts und ist so hoch wie der Punkt plus 64px -- deshalb sind alle drei
+         verschieden lang. Marke und Beschriftung haengen am Punkt selbst.
+         64px ist der Abstand, den die Beschriftung von der Kurve haelt: darunter lief sie durch
+         die Schraffur, und an der tiefen ersten Marke sogar unter die Linie. */
+      return '<span class="ulh-geo-mk-linie" style="left:' + links +
+        ';height:calc(' + (y * 100).toFixed(2) + '% + 64px)"></span>' +
+        '<span class="ulh-geo-mk ulh-auf" style="left:' + links +
+        ';bottom:' + (y * 100).toFixed(2) + '%;--auf:' + (k + 2) + '">' +
+        '<span class="ulh-geo-mk-txt">' +
           '<span class="ulh-geo-mk-t">' + m.t + '</span>' +
           '<span class="ulh-geo-mk-s">' + m.s + '</span>' +
-        '</span>';
-      return '<span class="ulh-geo-mk ulh-auf' + (unten ? ' is-unter' : '') +
-        '" style="left:' + (m.x / 27 * 100).toFixed(2) + '%;' +
-        (unten ? 'top:' + ((1 - y) * 100).toFixed(2) + '%' : 'bottom:' + (y * 100).toFixed(2) + '%') +
-        ';--auf:' + (k + 2) + '">' +
-        (unten ? punkt + txt : txt + punkt) +
+        '</span>' +
+        '<span class="ulh-geo-mk-punkt"></span>' +
       '</span>';
     }).join("");
   }
 
   function geo(){
     return '<section class="ulh-geo">' +
-      '<div class="ulh-geo-bild">' + geoChart() + geoMarkenHtml() + '</div>' +
       '<div class="ulh-spur ulh-geo-in">' +
         '<div class="ulh-feat-kopf ulh-geo-kopf ulh-auf">' +
           '<span class="ulh-feat-chip">' + GEO_CHIP + '</span>' +
@@ -478,11 +471,14 @@
             '</div>';
           }).join("") +
         '</div>' +
+        /* Der Quellenhinweis steht UEBER der Kurve und nicht darunter: unter ihr endet die
+           Sektion buendig mit der Schraffur, dort ist kein Platz mehr. */
+        '<p class="ulh-geo-fuss ulh-auf" style="--auf:4">' + GEO_QUELLE + '</p>' +
       '</div>' +
-      /* Der Quellenhinweis steht GANZ unten in der Sektion und nicht unter den Zahlen: dort lag er
-         in der Beschriftung der ersten Marke -- die Kurve ist links tief, und ihre Marke braucht
-         genau diesen Platz. */
-      '<p class="ulh-geo-fuss ulh-auf" style="--auf:4">' + GEO_QUELLE + '</p>' +
+      /* Die Kurve steht im Fluss und nicht absolut: so ist der Abstand zu den Zahlen eine Zahl
+         und keine Rechnung aus zwei Kanten, und ihr unteres Ende liegt genau auf der Linie, die
+         die Sektion abschliesst. */
+      '<div class="ulh-geo-bild">' + geoChart() + geoMarkenHtml() + '</div>' +
     '</section>';
   }
 

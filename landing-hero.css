@@ -62,6 +62,10 @@
      (111,115,124 -> 118,122,130). Eigener Wert und nicht --ulh-muted geaendert: die Schrift im Chip
      bleibt, wie sie ist -- sie steht auf einer fast weissen Pille und wuerde heller verschwinden. */
   --ulh-sub: #767a82;
+  /* Die dritte Farbe der App (--vc-third im hellen Thema). Sie ist heller als die zweite, und
+     genau darum steht die Ueberschrift der Quellen darin, bevor sie durchlaeuft: der Weg zur
+     ersten Farbe ist damit weiter und der Effekt deutlicher zu sehen. */
+  --ulh-third: #9e9e9e;
   --ulh-border: #e0e2e6;
   /* Der Funke am Chip. Deine Farbe, und sie liegt in derselben Familie wie das blaue Bild im
      Hintergrund -- das ist kein Zufall, sondern der Grund, warum beides zusammengeht. */
@@ -94,6 +98,9 @@
      voller Geschwindigkeit. Fuer etwas, das aus dem Stand losfaehrt und wieder anhaelt -- die
      gehobene Zeile in den Karten -- braucht es eine Kurve, die auch VORNE flach ist. */
   --ulh-weich: cubic-bezier(.65, 0, .35, 1);
+  /* Schnell an, lang aus. Fuer Stuecke, die von unten hereinkommen: sie sollen sofort da sein und
+     dann ausrollen -- eine symmetrische Kurve wirkt dabei zaeh. */
+  --ulh-gleit: cubic-bezier(.16, 1, .3, 1);
   position: relative;
   /* width: 100% ist hier PFLICHT und nicht Kosmetik. Ein Block-div fuellt seinen Eltern nur, wenn
      der ein normaler Block-Kontext ist. Steht die Sektion in einem FLEX-Eltern -- und genau so
@@ -1140,9 +1147,12 @@
    rechts, weil translateX(-50%) verloren ging. translate ist eine eigene Eigenschaft und kommt
    dem transform nicht in die Quere. */
 .ulh-auf {
-  opacity: 0; translate: 0 16px;
-  transition: opacity 760ms var(--ulh-weich), translate 760ms var(--ulh-weich);
-  transition-delay: calc(var(--auf, 0) * 90ms);
+  opacity: 0; translate: 0 28px;
+  /* Weiter und laenger als zuerst (16px/760ms), und mit einer Kurve, die vorne schnell ist und
+     lange ausklingt -- das ist die Bewegung, die man von grossen Seiten kennt: das Stueck schiebt
+     sich herein und kommt zur Ruhe, statt gleichmaessig zu fahren. */
+  transition: opacity 900ms var(--ulh-gleit), translate 1000ms var(--ulh-gleit);
+  transition-delay: calc(var(--auf, 0) * 110ms);
   will-change: opacity, translate;
 }
 .ulh-auf.is-da { opacity: 1; translate: none; }
@@ -1153,7 +1163,7 @@
 }
 
 .ulh-qwort { white-space: nowrap; }
-.ulh-qw { color: color-mix(in srgb, var(--ulh-text) calc(var(--t, 0) * 100%), var(--ulh-sub)); }
+.ulh-qw { color: color-mix(in srgb, var(--ulh-text) calc(var(--t, 0) * 100%), var(--ulh-third)); }
 /* Wer keine Bewegung will, bekommt die Ueberschrift fertig. */
 @media (prefers-reduced-motion: reduce) { .ulh-qw { color: var(--ulh-text); } }
 /* Der Knopf ist der Sekundaerknopf des Hero (.ulh-btn .ulh-btn-sec), hier steht nur sein Abstand
@@ -2164,20 +2174,21 @@
    nur eine, und die leiseste: das Blau des Chips, stark verduennt. */
 .ulh-geo {
   position: relative; z-index: 1;
-  /* Unten viel Luft: die Kurve liegt am linken Rand tief, und die Marke darauf braucht Platz fuer
-     ihre zwei Zeilen. Mit dem kleineren Polster stand sie im Quellenhinweis unter den Zahlen. */
-  padding: clamp(80px, 11vh, 132px) 0 clamp(120px, 16vh, 180px);
+  /* Unten KEIN Polster: die Schraffur soll genau auf der Linie enden, die die Sektion
+     abschliesst -- ein Streifen Weiss darunter laesst das Chart schweben. */
+  padding: clamp(80px, 11vh, 132px) 0 0;
   overflow: hidden;
 }
 /* Der Grund: ueber die ganze Breite und hinter allem. Die Kurve steigt nach rechts, also steht der
    Text links -- unter ihm ist die Flaeche flach und der Text bleibt lesbar. */
 /* Die Kurve steht in der SPUR und nicht ueber die ganze Seite: sie ist Inhalt der Sektion und
    nicht ihr Grund. Ueber die ganze Breite lag ihr Anfang ausserhalb des Gitters, und die erste
-   Marke stand neben allem anderen. */
+   Marke stand neben allem anderen.
+   Und sie steht im FLUSS: der Abstand zu den Zahlen ist damit eine Zahl (150px) und keine Rechnung
+   aus zwei Kanten, und ihr Boden liegt auf der Abschlusslinie der Sektion. */
 .ulh-geo-bild {
-  position: absolute; left: 50%; bottom: clamp(120px, 16vh, 180px); width: var(--ulh-spur);
-  height: 46%;
-  transform: translateX(-50%); pointer-events: none; z-index: 0;
+  position: relative; width: var(--ulh-spur); margin: 150px auto 0; height: 300px;
+  pointer-events: none; z-index: 0;
 }
 /* Zwei Linien ueber die ganze Breite, oben und unten an der Sektion -- dieselbe Machart wie um den
    Mira-Kasten (vw statt Prozent, denn Prozent waere die Spur). */
@@ -2194,9 +2205,15 @@
 /* Der Abstand ist der der ganzen Seite: 8px. Er steht im SVG (pattern width) und hier nur die
    Farbe. */
 .ulh-geo-raster { stroke: rgba(37, 99, 235, .18); stroke-width: 1; }
-.ulh-geo-mark {
-  stroke: var(--ulh-border); stroke-width: 1; vector-effect: non-scaling-stroke;
-  stroke-dasharray: 3 4;
+/* Die gestrichelte Linie steht als eigenes Element und nicht im SVG: das SVG wird mit
+   preserveAspectRatio="none" gestreckt, und darin waeren weder die 64px noch das Strichmuster
+   verlaesslich. So ist beides in echten Pixeln. */
+.ulh-geo-mk-linie {
+  position: absolute; bottom: 0; width: 0;
+  /* Blau und nicht in der Rahmenfarbe: die Linie gehoert zum Punkt, den sie traegt, und in Grau
+     verschwand sie in der Schraffur, die dieselbe Helligkeit hat. */
+  border-left: 1px dashed rgba(37, 99, 235, .32);
+  transform: translateX(-0.5px); pointer-events: none;
 }
 /* Die zwei Marken sitzen AUF der Kurve: die Lage kommt aus landing-hero.js (geoY tastet das
    Kurvenstueck ab). Sie stehen ausserhalb des SVG, damit die Schrift nicht mitverzerrt wird --
@@ -2207,9 +2224,7 @@
   display: flex; flex-direction: column; align-items: flex-start;
   font-size: 11.5px; line-height: 1.35; white-space: nowrap;
 }
-/* Die tiefe Marke haengt am OBEREN Rand (top statt bottom), damit ihr Punkt auf der Kurve sitzt
-   und der Text darunter Platz hat. */
-.ulh-geo-mk.is-unter { transform: translate(-4px, -4px); }
+
 /* Der Punkt sitzt auf der Kurve und atmet. Zwei Ringe, versetzt: einer traegt die Farbe, der
    zweite laeuft als Welle nach aussen -- ein Punkt, der nur die Groesse aendert, wirkt wie ein
    Fehler in der Zeichnung. */
@@ -2230,11 +2245,12 @@
 /* Ein weicher weisser Hof statt einer Plakette: die Beschriftung liegt auf der Schraffur und
    stellenweise auf der Linie selbst, und ohne ihn liest sie sich schlecht. Eine Plakette waere ein
    Kasten mehr im Bild. */
+/* 64px ueber dem Punkt -- so weit, dass die Beschriftung ueber der Kurve UND ueber ihrer
+   Schraffur steht. Darunter lief sie an der tiefen ersten Marke sogar unter die Linie. */
 .ulh-geo-mk-txt {
-  display: flex; flex-direction: column; gap: 1px; margin-bottom: 10px;
+  display: flex; flex-direction: column; gap: 1px; margin-bottom: 64px;
   text-shadow: 0 0 5px #fff, 0 0 5px #fff, 0 0 10px #fff;
 }
-.ulh-geo-mk.is-unter .ulh-geo-mk-txt { margin-bottom: 0; margin-top: 10px; }
 .ulh-geo-mk-t { font-weight: 500; color: var(--ulh-text); }
 .ulh-geo-mk-s { color: var(--ulh-sub); }
 .ulh-geo-in { position: relative; z-index: 1; }
@@ -2247,7 +2263,7 @@
    kein Kasten -- die Zahl soll stehen, nicht in einer Karte sitzen. */
 .ulh-geo-kpis {
   margin-top: clamp(34px, 5vh, 54px);
-  margin-bottom: clamp(56px, 8vh, 96px);
+  margin-bottom: 22px;
   display: grid; grid-template-columns: repeat(2, minmax(0, 250px)); gap: 26px 40px;
 }
 .ulh-geo-kpi {
@@ -2261,9 +2277,7 @@
    Satz nicht ueberdeckt, aber lesbar. */
 .ulh-geo-q { margin-top: 2px; font-size: 11.5px; font-weight: 400; color: var(--ulh-muted); }
 .ulh-geo-fuss {
-  position: absolute; left: calc(50% - var(--ulh-spur) / 2); bottom: clamp(30px, 4vh, 46px);
-  width: var(--ulh-spur);
-  margin: 0; max-width: none;
+  margin: 0; max-width: 62ch;
   font-size: 11.5px; line-height: 1.5; color: var(--ulh-muted);
 }
 @media (max-width: 900px) {
