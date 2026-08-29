@@ -3144,6 +3144,10 @@
   var SEG_SCHRIFT = false;
 
   function segEinrichten(box){
+    /* Nichts anfassen, was gerade nicht im Dokument steht: Bubble baut Gruppen zusammen und haengt
+       sie erst danach ein. Ein Streifen in einem losgeloesten Baum waere Arbeit fuer nichts -- und
+       die Messung darin liefert ohnehin nur Nullen. */
+    if (!box.isConnected) return;
     if (!box.__upSeg){
       box.__upSeg = true;
       /* Der Beobachter sitzt an der Kiste selbst und nicht am Dokument: die aktive Stufe wechselt
@@ -3184,7 +3188,23 @@
   window.addEventListener("resize", function(){ segLauf(); }, { passive: true });
   document.addEventListener("click", function(){ setTimeout(function(){ segLauf(); }, 0); }, true);
 
-  function toolbarLauf(){ stampToolbarIcons(); stampGran(); orderToolbars(); segLauf(); }
+  /* Jeder Teil fuer sich. Vorher lag alles in einem Zug: stolperte einer, liefen die uebrigen
+     nicht mehr -- und weil dieser Lauf auch aus dem Beobachter kommt, waere danach jeder weitere
+     Lauf betroffen gewesen. Ein Stolperer darf nie mehr mitreissen als sich selbst. */
+  function sicher(name, fn){
+    try { fn(); }
+    catch(e){ if (window.console) console.warn("[UpstreemCore] " + name + " uebersprungen:", e && e.message); }
+  }
+  function toolbarLauf(){
+    sicher("stampToolbarIcons", stampToolbarIcons);
+    sicher("stampGran", stampGran);
+    sicher("orderToolbars", orderToolbars);
+    /* segLauf haengt Elemente EIN und liest Layoutwerte. Beides gehoert nicht in denselben
+       Augenblick, in dem die Seite gerade gezeichnet wird -- Bubble baut seine Gruppen ueber
+       jQuery.html(), und ein fremder Knoten, der mitten in diesem Durchgang dazukommt, trifft auf
+       eine Buchfuehrung, die gerade laeuft. Deshalb erst im naechsten Zug. */
+    setTimeout(function(){ sicher("segLauf", segLauf); }, 0);
+  }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function(){ toolbarLauf(); });
   else toolbarLauf();
   [60, 250, 700, 1500, 3000].forEach(function(ms){ setTimeout(function(){ toolbarLauf(); }, ms); });
