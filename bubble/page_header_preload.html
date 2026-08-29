@@ -107,7 +107,7 @@
     var name = rohUrl.slice(rohUrl.lastIndexOf("/") + 1);
     var da = L[name] || L[rohUrl];
     if (da){
-      if (da !== rohUrl && String(da).indexOf("http") === 0 && window.console) console.warn("upstreem: " + name +
+      if (da !== rohUrl && !gleicherPin(pinAus(da), pinAus(rohUrl)) && String(da).indexOf("http") === 0 && window.console) console.warn("upstreem: " + name +
         " ist schon von einem anderen Pin geladen. Geladen bleibt " + da +
         ", ignoriert wird " + rohUrl + ". Setzt alle Elemente auf denselben Pin.");
       return;
@@ -115,6 +115,18 @@
     L[name] = rohUrl; L[rohUrl] = rohUrl; geladen[name] = true; make();
   }
   function minUrl(f){ return base + f.replace(/\.(js|css)$/, ".min.$1"); }
+
+  /* Kurzer und langer Commit-Hash zeigen auf denselben Stand. Wer im Kopf "25e367f" stehen hat und
+     am Element den vollen Hash, hatte bisher bei jeder Datei eine Warnung und dazu den Pin-Waechter
+     im Log -- geladen wurde trotzdem nur einmal, es war reiner Laerm. Beides ist derselbe Commit,
+     wenn der kuerzere Anfang des laengeren ist und beide Hexzahlen sind (>= 7 Zeichen). */
+  function gleicherPin(a, b){
+    a = String(a || ""); b = String(b || "");
+    if (a === b) return true;
+    if (!/^[0-9a-f]{7,40}$/.test(a) || !/^[0-9a-f]{7,40}$/.test(b)) return false;
+    return a.indexOf(b) === 0 || b.indexOf(a) === 0;
+  }
+  function pinAus(u){ var m = /upstreem-ui@([^\/]+)\//.exec(String(u || "")); return m ? m[1] : ""; }
 
   /* CSS BLOCKIEREND, ohne den media="print"-Trick.
      Der Trick stand hier, damit zwanzig Stylesheets das erste Zeichnen nicht anhalten. Er ist
@@ -221,8 +233,8 @@
      sobald die echte Funktion da ist (frueheNachholen) -- in der Reihenfolge, in der sie kamen.
      Nur Namen, die es noch nicht gibt: was schon steht, wird nie ueberschrieben. */
   var UP_API = [
-    "askMiraActionFn","askMiraAddMessage","askMiraClearInput","askMiraExpectAnswer",
-    "askMiraGetState","askMiraOpportunityResult","askMiraRejectVoice","askMiraResolveVoice",
+    "askMiraAddMessage","askMiraClearInput","askMiraExpectAnswer","askMiraGetState",
+    "askMiraOpportunityResult","askMiraRejectVoice","askMiraResolveVoice",
     "askMiraSetActiveChat","askMiraSetBrandLogos","askMiraSetBrandLogosFromEl",
     "askMiraSetCompanies","askMiraSetExportPending","askMiraSetExtras","askMiraSetFavicons",
     "askMiraSetFaviconsFromEl","askMiraSetLoading","askMiraSetMarket","askMiraSetMessages",
@@ -230,26 +242,21 @@
     "askMiraSetPreviousChatsFromEl","askMiraSetProjects","askMiraSetProjectsFromEl",
     "askMiraSetSettings","askMiraSetTheme","askMiraSetTitlePending",
     "askMiraSetTitlePendingFromEl","askMiraSetTool","askMiraSetToolFromEl","askMiraSetTopics",
-    "askMiraSetTopicsFromEl","askMiraSetTranscript","askMiraState","askMiraTypeLastAnswer",
-    "askMiraVoiceCancel","closeAddBrand","closeAddPrompts","createWithAi","openAddBrand",
-    "openAddPrompts","resetAddBrand","resetAddPrompts","resetMarketsFilter","resetModelsFilter",
-    "resetPromptsTable","resetTopicsFilter","resetUpstreemDateRangePicker","setAddPromptsTheme",
-    "setDateRangePreset","setDateRangeTheme","setMarketsFilterMarkets","setMarketsFilterMode",
-    "setMarketsFilterSelected","setMarketsFilterTheme","setModelsFilterMode",
-    "setModelsFilterModels","setModelsFilterSelected","setModelsFilterTheme",
-    "setTopicsFilterMode","setTopicsFilterSelected","setTopicsFilterTheme",
-    "setTopicsFilterTopics","setUpstreemAllMarkets","setUpstreemBrands",
-    "setUpstreemDefaultMarket","setUpstreemMarkets","setUpstreemModels","setUpstreemTeam",
-    "setUpstreemTheme","setUpstreemTopics","upstreemBrandsChanged","upstreemExportClose",
-    "upstreemExportOpen","upstreemExportResolve","upstreemExportSetContext",
-    "upstreemMarketsChanged","upstreemPinToSidebar","upstreemPromptResearch","upstreemSetTheme",
-    "upstreemSignal","upstreemTopicsChanged","upstreemTrace"
+    "askMiraSetTopicsFromEl","askMiraSetTranscript","askMiraTypeLastAnswer",
+    "askMiraVoiceCancel","closeAddBrand","closeAddPrompts","openAddBrand","openAddPrompts",
+    "resetAddBrand","resetAddPrompts","setAddPromptsTheme","setUpstreemAllMarkets",
+    "setUpstreemBrands","setUpstreemDefaultMarket","setUpstreemMarkets","setUpstreemModels",
+    "setUpstreemTeam","setUpstreemTheme","setUpstreemTopics","upstreemBrandsChanged",
+    "upstreemExportClose","upstreemExportOpen","upstreemExportResolve",
+    "upstreemExportSetContext","upstreemMarketsChanged","upstreemPinToSidebar",
+    "upstreemSetTheme","upstreemSignal","upstreemTopicsChanged","upstreemTrace"
   ];
   window.__upFrueh = window.__upFrueh || [];
   UP_API.forEach(function(n){
     if (typeof window[n] === "function") return;
     var f = function(){ window.__upFrueh.push([n, [].slice.call(arguments)]); };
     f.__upShim = 1;
+    f.__amStub = true;
     window[n] = f;
   });
 
@@ -356,7 +363,7 @@
       for (var i = 0; i < els.length; i++){
         var p = (els[i].getAttribute("data-cdn-pin") || "").trim();
         if (!p || p === "CDN_" + "PIN") continue;
-        if (p === PIN) return;                       /* passt -- nichts weiter zu tun */
+        if (gleicherPin(p, PIN)) return;                       /* passt -- nichts weiter zu tun */
         if (window.console) console.error("upstreem: Der Pin im Header-Snippet (" + PIN +
           ") ist nicht derselbe wie am Element \"" + (els[i].className || els[i].id) + "\" (" + p +
           "). Solange sie sich unterscheiden, laedt ein Teil der Elemente seine Dateien ZUSAETZLICH " +

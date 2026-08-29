@@ -1,31 +1,30 @@
 <!doctype html>
 <meta charset="utf-8">
-<title>Frueh gerufene Setter: Auffangnetz</title>
+<title>Auffangnetz: Zustandsobjekte bleiben unangetastet</title>
 <link rel="stylesheet" href="core.css">
 <div class="up-root" id="wurzel" data-isdark="no"></div>
 <pre id="out" style="background:#111;color:#eee;padding:10px;white-space:pre-wrap">…</pre>
 <script>
-/* Der Kopf der Seite: dieselben zwei Bloecke wie in page_header_preload.html. */
-var UP_API = ["setUpstreemTheme","setTopicsFilterSelected","setUpstreemDefaultMarket","gibtsNicht"];
+var UP_API = ["setUpstreemTheme","askMiraSetTheme"];
 window.__upFrueh = [];
 UP_API.forEach(function(n){
   if (typeof window[n] === "function") return;
   var f = function(){ window.__upFrueh.push([n, [].slice.call(arguments)]); };
-  f.__upShim = 1; window[n] = f;
+  f.__upShim = 1; f.__amStub = true; window[n] = f;
 });
-/* Und jetzt der Bubble-Workflow, VOR core: frueher haette das geworfen. */
-var frueherFehler = null;
-try { setUpstreemTheme("dark"); setTopicsFilterSelected("x", "a,b"); gibtsNicht(1); }
-catch(e){ frueherFehler = String(e); }
-var vorCore = { fehler: frueherFehler, warteschlange: window.__upFrueh.length };
+var fehler = null;
+try { setUpstreemTheme("dark"); askMiraSetTheme("dark"); } catch(e){ fehler = String(e); }
+var vor = { fehler: fehler, warteschlange: window.__upFrueh.length,
+            askMiraStateIstShim: typeof window.askMiraState === "function",
+            createWithAiIstShim: typeof window.createWithAi === "function",
+            promptResearchIstShim: typeof window.upstreemPromptResearch === "function" };
 </script>
 <script src="core.js"></script>
 <script>
 setTimeout(function(){
-  var r = document.getElementById("wurzel");
   document.getElementById("out").textContent =
-    "vor core:  " + JSON.stringify(vorCore) + "\n" +
-    "nach core: Thema am Root = " + (r.getAttribute("data-theme") || "(keins)") +
-    " | Rest in der Warteschlange = " + JSON.stringify(window.__upFrueh);
+    "vor core:  " + JSON.stringify(vor, null, 1) + "\n" +
+    "nach core: Thema = " + (document.getElementById("wurzel").getAttribute("data-theme") || "(keins)") +
+    " | Rest: " + JSON.stringify(window.__upFrueh.map(function(e){ return e[0]; }));
 }, 900);
 </script>
