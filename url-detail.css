@@ -9,7 +9,7 @@
 
 /* Eine Linie zwischen den Abschnitten, und der Abstand darf dafuer kleiner werden. Vorher trug
    der Abstand die Trennung allein und brauchte dafuer 44px (bei 32 lasen KPI-Leiste und Mentions
-   als ein Block). Jetzt trennt die Linie, und 24px darueber wie darunter reichen -- der Abstand
+   als ein Block). Jetzt trennt die Linie, und 32px darueber wie darunter geben ihr Luft -- der Abstand
    INNERHALB eines Abschnitts (Ueberschrift zu Inhalt) bleibt bei 16, damit der Unterschied
    zwischen "gehoert zusammen" und "ist etwas Neues" deutlich bleibt.
    Die Linie haengt am FOLGENDEN Abschnitt und nicht am vorigen: so tragen ausgeblendete
@@ -17,7 +17,7 @@
    bekommt keine ueber sich. */
 .uud-root { display: flex; flex-direction: column; gap: 0; width: 100%; }
 .uud-root > * + * {
-  margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--vc-border);
+  margin-top: 32px; padding-top: 32px; border-top: 1px solid var(--vc-border);
 }
 .uud-root > * { min-width: 0; }
 /* Ein ausgeblendeter Bereich traegt das hidden-Attribut, und das wirkt nur ueber display:none aus
