@@ -1,0 +1,31 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Frueh gerufene Setter: Auffangnetz</title>
+<link rel="stylesheet" href="core.css">
+<div class="up-root" id="wurzel" data-isdark="no"></div>
+<pre id="out" style="background:#111;color:#eee;padding:10px;white-space:pre-wrap">…</pre>
+<script>
+/* Der Kopf der Seite: dieselben zwei Bloecke wie in page_header_preload.html. */
+var UP_API = ["setUpstreemTheme","setTopicsFilterSelected","setUpstreemDefaultMarket","gibtsNicht"];
+window.__upFrueh = [];
+UP_API.forEach(function(n){
+  if (typeof window[n] === "function") return;
+  var f = function(){ window.__upFrueh.push([n, [].slice.call(arguments)]); };
+  f.__upShim = 1; window[n] = f;
+});
+/* Und jetzt der Bubble-Workflow, VOR core: frueher haette das geworfen. */
+var frueherFehler = null;
+try { setUpstreemTheme("dark"); setTopicsFilterSelected("x", "a,b"); gibtsNicht(1); }
+catch(e){ frueherFehler = String(e); }
+var vorCore = { fehler: frueherFehler, warteschlange: window.__upFrueh.length };
+</script>
+<script src="core.js"></script>
+<script>
+setTimeout(function(){
+  var r = document.getElementById("wurzel");
+  document.getElementById("out").textContent =
+    "vor core:  " + JSON.stringify(vorCore) + "\n" +
+    "nach core: Thema am Root = " + (r.getAttribute("data-theme") || "(keins)") +
+    " | Rest in der Warteschlange = " + JSON.stringify(window.__upFrueh);
+}, 900);
+</script>

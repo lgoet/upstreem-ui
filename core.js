@@ -3354,8 +3354,28 @@
        eine Buchfuehrung, die gerade laeuft. Deshalb erst im naechsten Zug. */
     setTimeout(function(){ sicher("segLauf", segLauf); }, 0);
   }
+  /* Die Aufrufe, die kamen, bevor es die Funktionen gab. Der Kopf der Seite legt sie in
+     window.__upFrueh (siehe bubble/page_header_preload.html); hier werden sie abgearbeitet, sobald
+     die echte Funktion steht. Mehrfach, weil die Komponenten zu verschiedenen Zeiten ankommen --
+     was bis zuletzt keine echte Funktion hat, faellt still weg: eine Fehlermeldung dafuer waere
+     eine ueber eine Komponente, die auf dieser Seite gar nicht steht. */
+  function frueheNachholen(){
+    var q = window.__upFrueh;
+    if (!q || !q.length) return;
+    var rest = [];
+    for (var i = 0; i < q.length; i++){
+      var name = q[i][0], args = q[i][1], fn = window[name];
+      if (typeof fn === "function" && !fn.__upShim){
+        (function(f, a, n){ sicher(n, function(){ f.apply(window, a); }); })(fn, args, name);
+      } else rest.push(q[i]);
+    }
+    window.__upFrueh = rest;
+  }
+
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function(){ toolbarLauf(); });
   else toolbarLauf();
+  frueheNachholen();
+  [60, 250, 700, 1500, 3000].forEach(function(ms){ setTimeout(frueheNachholen, ms); });
   [60, 250, 700, 1500, 3000].forEach(function(ms){ setTimeout(function(){ toolbarLauf(); }, ms); });
   /* ── Der Beobachter, und warum er so aussieht ─────────────────────────────────────────────
      Hier stand ein MutationObserver auf document.documentElement mit childList+subtree, der bei

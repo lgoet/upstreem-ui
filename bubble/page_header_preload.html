@@ -210,6 +210,49 @@
      Fuer die eine Datei, ohne die gar nichts geht, ist der sichere Weg deshalb der rohe. Rund
      350 KB mehr beim ersten Laden, danach aus dem Zwischenspeicher; alle anderen Dateien bleiben
      minifiziert, denn ihr Ausfall trifft nur sie selbst. */
+  /* ── Frueh gerufene Setter auffangen ───────────────────────────────────────
+     Bubble startet seine Workflows, sobald die Seite steht -- unsere Dateien liegen dann oft noch
+     im Netz. Der Aufruf trifft auf nichts, und in der Konsole steht "setUpstreemDefaultMarket is
+     not defined" oder "window.askMiraSetTheme is not a function". Die Komponenten haben dafuer
+     jede ihre eigene Warteschlange, aber die entsteht erst mit ihrer Datei; davor gibt es gar
+     nichts, an dem sie haengen koennte.
+     Deshalb hier, im Kopf der Seite und vor jedem Nachladen: jeder oeffentliche Name bekommt eine
+     Platzhalterfunktion, die den Aufruf samt Argumenten in eine Liste legt. core arbeitet sie ab,
+     sobald die echte Funktion da ist (frueheNachholen) -- in der Reihenfolge, in der sie kamen.
+     Nur Namen, die es noch nicht gibt: was schon steht, wird nie ueberschrieben. */
+  var UP_API = [
+    "askMiraActionFn","askMiraAddMessage","askMiraClearInput","askMiraExpectAnswer",
+    "askMiraGetState","askMiraOpportunityResult","askMiraRejectVoice","askMiraResolveVoice",
+    "askMiraSetActiveChat","askMiraSetBrandLogos","askMiraSetBrandLogosFromEl",
+    "askMiraSetCompanies","askMiraSetExportPending","askMiraSetExtras","askMiraSetFavicons",
+    "askMiraSetFaviconsFromEl","askMiraSetLoading","askMiraSetMarket","askMiraSetMessages",
+    "askMiraSetMessagesFromEl","askMiraSetModels","askMiraSetPreviousChats",
+    "askMiraSetPreviousChatsFromEl","askMiraSetProjects","askMiraSetProjectsFromEl",
+    "askMiraSetSettings","askMiraSetTheme","askMiraSetTitlePending",
+    "askMiraSetTitlePendingFromEl","askMiraSetTool","askMiraSetToolFromEl","askMiraSetTopics",
+    "askMiraSetTopicsFromEl","askMiraSetTranscript","askMiraState","askMiraTypeLastAnswer",
+    "askMiraVoiceCancel","closeAddBrand","closeAddPrompts","createWithAi","openAddBrand",
+    "openAddPrompts","resetAddBrand","resetAddPrompts","resetMarketsFilter","resetModelsFilter",
+    "resetPromptsTable","resetTopicsFilter","resetUpstreemDateRangePicker","setAddPromptsTheme",
+    "setDateRangePreset","setDateRangeTheme","setMarketsFilterMarkets","setMarketsFilterMode",
+    "setMarketsFilterSelected","setMarketsFilterTheme","setModelsFilterMode",
+    "setModelsFilterModels","setModelsFilterSelected","setModelsFilterTheme",
+    "setTopicsFilterMode","setTopicsFilterSelected","setTopicsFilterTheme",
+    "setTopicsFilterTopics","setUpstreemAllMarkets","setUpstreemBrands",
+    "setUpstreemDefaultMarket","setUpstreemMarkets","setUpstreemModels","setUpstreemTeam",
+    "setUpstreemTheme","setUpstreemTopics","upstreemBrandsChanged","upstreemExportClose",
+    "upstreemExportOpen","upstreemExportResolve","upstreemExportSetContext",
+    "upstreemMarketsChanged","upstreemPinToSidebar","upstreemPromptResearch","upstreemSetTheme",
+    "upstreemSignal","upstreemTopicsChanged","upstreemTrace"
+  ];
+  window.__upFrueh = window.__upFrueh || [];
+  UP_API.forEach(function(n){
+    if (typeof window[n] === "function") return;
+    var f = function(){ window.__upFrueh.push([n, [].slice.call(arguments)]); };
+    f.__upShim = 1;
+    window[n] = f;
+  });
+
   cssRoh("core.css");  jsRoh("core.js");
   css("sidebar.css");  js("sidebar.js");
 
