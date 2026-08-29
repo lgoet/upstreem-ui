@@ -475,6 +475,21 @@
    also genau die Werte mal 0.6176. Eine Karte an der falschen Stelle ist schlechter als eine, die
    eine Nummer zu gross ist. */
 
+/* Die Detailkarte des Chancen-Bretts scrollt im Fenster NICHT. Sie ist ein Bild, und ein Bild,
+   das man scrollen muesste, zeigt seinen Inhalt nicht -- man saehe die Haelfte.
+   Weg faellt dafuer der Block "Mentioned competitors": er ist der laengste Teil der Karte, steht
+   ganz unten und ist der einzige, der ohne den Rest fuer sich stehen kann. Seine Ueberschrift
+   geht mit -- ueber :has(+ ...), weil sie im Markup VOR der Liste steht und CSS sonst keinen Weg
+   rueckwaerts hat. */
+.ulh-app .uo-m-body { overflow-y: hidden; }
+.ulh-app .uo-comp-list { display: none; }
+.ulh-app .uo-m-section-title:has(+ .uo-comp-list) { display: none; }
+/* Und der Themenblock. Ohne ihn blieben 31px zu viel -- gemessen 575 Inhalt auf 544 Platz.
+   Er ist der Block, der am wenigsten fehlt: dieselben Themenchips stehen auf der Karte im Brett
+   dahinter, und die Karte hier soll die Zahlen zeigen, die es dort NICHT gibt. */
+.ulh-app .uo-tags { display: none; }
+.ulh-app .uo-m-section-title:has(+ .uo-tags) { display: none; }
+
 /* ---------- Der Auftritt der Performance-Seite ----------
    Die Matrix tritt AUF wie in der App: von unten herauf und dabei aufblendend, dieselbe Bewegung
    (ulhRise), die auch die Seiten und die Karten benutzen.
@@ -1402,6 +1417,10 @@
 }
 .ulh-orb-chip {
   position: absolute; width: 30px; height: 30px; border-radius: 9px;
+  /* Die Zeichen drehen in JEDEM Bild ihren Ring wieder heraus. Ohne diese Ankuendigung entscheidet
+     der Browser bei jedem Bild neu, ob er dafuer eine eigene Ebene anlegt -- und auf langsameren
+     Rechnern zeigt sich das als Zittern. Gemeldet fuer Windows. */
+  will-change: transform;
   display: inline-flex; align-items: center; justify-content: center;
   background: var(--vc-bg); border: 1px solid var(--ulh-border);
   box-shadow: 0 2px 6px rgba(11, 13, 24, .06);

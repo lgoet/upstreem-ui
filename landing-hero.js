@@ -1797,6 +1797,9 @@
 
     var ziel = { band: 1, bahn: 1 }, tempo = { band: 1, bahn: 1 };
     var y = 0, grad = 0, vorher = 0, imBlick = true;
+    /* Gemerkt statt in jedem Bild gesucht und gemessen -- siehe die Begruendung in rechnen(). */
+    var spur = null, halb = 0;
+    window.addEventListener("resize", function(){ halb = 0; }, { passive: true });
 
     function hover(el, welche){
       if (!el) return;
@@ -1836,8 +1839,15 @@
         tempo.band += (ziel.band - tempo.band) * k;
         tempo.bahn += (ziel.bahn - tempo.bahn) * k;
         if (lauf){
-          var spur = lauf.querySelector("[data-ulh-spur]");
-          var halb = spur ? spur.scrollHeight / 2 : 0;
+          /* Spur und Hoehe stehen AUSSERHALB der Schleife. Vorher wurde in jedem Bild
+             querySelector gerufen UND scrollHeight gelesen -- ein erzwungener Layoutdurchgang je
+             Bild, mitten in einer Bewegung, die genau davon glatt sein muss. Auf einem schnellen
+             Rechner faellt das nicht auf, auf einem langsameren zittert das Band. Gemeldet fuer
+             Windows.
+             Die Hoehe aendert sich nur, wenn die Karte ihre Breite aendert (Umbruch der Zeilen);
+             dafuer gibt es den Zaehler unten. */
+          if (!spur || !spur.isConnected){ spur = lauf.querySelector("[data-ulh-spur]"); halb = 0; }
+          if (spur && !halb) halb = spur.scrollHeight / 2;
           if (halb > 0){
             y -= TEMPO_BAND * tempo.band * dt;
             if (y <= -halb) y += halb;                                  /* eine Haelfte weit, dann zurueck */
