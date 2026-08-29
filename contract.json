@@ -541,6 +541,7 @@
   "data-markets-fn",
   "data-max-span-months",
   "data-mchart",
+  "data-menue",
   "data-metric",
   "data-min-date",
   "data-mode",
@@ -550,6 +551,7 @@
   "data-models-fn",
   "data-n",
   "data-name",
+  "data-nav-host",
   "data-nav-key",
   "data-newtopic",
   "data-newtopic-fn",
@@ -629,12 +631,14 @@
   "data-up-ic",
   "data-up-lifted",
   "data-up-noescape",
+  "data-up-preload",
   "data-up-unclipped",
   "data-url",
   "data-val",
   "data-view",
   "data-viewed",
-  "data-yaxis"
+  "data-yaxis",
+  "data-ziel"
  ],
  "klassen": [
   "am-act-btn",
@@ -2663,6 +2667,7 @@
   "udtSubOut",
   "uex-spin",
   "uhmpop",
+  "ulhGeoPuls",
   "ulhRise",
   "ulhSchimmer",
   "unc-in",
@@ -2689,8 +2694,8 @@
   "fnattrs": 80,
   "globals": 138,
   "payloadkeys": 86,
-  "dataattrs": 199,
+  "dataattrs": 203,
   "klassen": 1985,
-  "keyframes": 59
+  "keyframes": 60
  }
 }

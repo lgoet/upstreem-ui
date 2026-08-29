@@ -228,25 +228,44 @@
 
   /* ---------- Buehne bauen ---------------------------------------------------------------- */
 
-  /* Die Prompts-Liste steht im LISTENmodus und nicht in der breiten Gruppenansicht. Der Modus ist
-     eine Ansichtsvorliebe und liegt in der Ablage; die Tabelle liest sie EINMAL beim Start
-     (readGroupsWide in prompts-table.js, Voreinstellung "ja"). Deshalb wird sie hier geschrieben,
-     bevor das Markup steht: die Wurzel der Tabelle gibt es dann noch nicht, die Komponente bootet
-     also erst danach und liest den Wert, der hier steht.
-     Ein Klick auf den Umschalter waere der andere Weg -- aber die Buehne schluckt Klicks in der
-     Einfangphase, und ein Klick, den man erst durchlassen muss, ist keine Einstellung. */
+  /* Die Prompts-Liste steht im LISTENmodus. Und der heisst in dieser Komponente groupsWide = JA:
+     "Defaults to List Mode (wide)" steht so im Quelltext von prompts-table.js. Der Name meint die
+     breite Ansicht MIT Gruppenliste an der Seite -- also die Liste. Ausgeschaltet zeigt die
+     Tabelle die gestapelten Gruppenkoepfe, und genau das war das gemeldete "alles im Widemode".
+     Ich hatte "no" geschrieben und damit das Gegenteil eingestellt.
+     Der Modus ist eine Ansichtsvorliebe und liegt in der Ablage; die Tabelle liest sie EINMAL beim
+     Start (readGroupsWide). Deshalb wird sie hier geschrieben, bevor das Markup steht: die Wurzel
+     der Tabelle gibt es dann noch nicht, die Komponente bootet also danach und liest diesen Wert.
+     Geschrieben wird er AUSDRUECKLICH und nicht der Voreinstellung ueberlassen -- wer die Seite
+     mit dem falschen Wert schon einmal geladen hat, hat ihn in seiner Ablage stehen.
+     Ein Klick auf den Umschalter waere der andere Weg, aber die Buehne schluckt Klicks in der
+     Einfangphase. */
   function listenmodusSetzen(){
     try {
       var k = "upt_groupswide__" + ID.upt;
       var kern = window.UpstreemCore;
-      if (kern && kern.prefSet && kern.prefKey) kern.prefSet(kern.prefKey(k), "no");
-      else window.localStorage.setItem(k, "no");
+      if (kern && kern.prefSet && kern.prefKey) kern.prefSet(kern.prefKey(k), "yes");
+      else window.localStorage.setItem(k, "yes");
     } catch (e){}
+  }
+
+  /* Das helle Thema auf dem Weg, den die App selbst benutzt. hellHalten stempelt nur Attribute --
+     ein Chart, das schon gezeichnet ist, hat seine Farben aber im Bild und rechnet sie nicht neu.
+     setUpstreemTheme sagt allen Bauteilen Bescheid, die sich dafuer angemeldet haben (onTheme in
+     core.js), und die zeichnen daraufhin neu. Genau daran lag es, dass die vier Charts der
+     Domain-Detail-Sektion in dunklen Farben standen, obwohl an ihrer Wurzel "light" stand:
+     gezeichnet wurden sie, bevor das Attribut da war, und niemand hat es ihnen danach gesagt.
+     Danach kommt hellHalten und setzt data-theme AUSDRUECKLICH auf "light" -- core nimmt es fuer
+     hell naemlich weg, und ohne das Attribut gilt wieder, was der Rechner des Besuchers
+     eingestellt hat. */
+  function themaHell(){
+    try { if (window.setUpstreemTheme) window.setUpstreemTheme("light"); } catch (e){}
   }
 
   function bauen(root){
     if (root.querySelector(".ulh-frame")) return;          /* schon gebaut */
     listenmodusSetzen();
+    themaHell();
     root.innerHTML =
       /* Die zwei Schienen. Sie laufen ueber die GANZE Seite und nicht je Sektion: die Seite hat
          eine Spur, und alles darin richtet sich an derselben Kante aus -- der Rahmen des Fensters
@@ -2201,6 +2220,11 @@
      Citation Share zeichnen, dann umschalten, und dabei die Vorliebe des Besuchers ueberschrieben.
      "domain" ist der URL-Share-Modus (so heisst er in der Komponente). */
   function quellFuellen(){
+    /* Erst das Thema, dann die Daten: die Charts nehmen ihre Farben beim Zeichnen, und das
+       passiert im selben Zug wie das Setzen der Daten. */
+    themaHell();
+    var wurzel0 = document.querySelector(".ulh-root");
+    if (wurzel0) hellHalten(wurzel0);
     window.__uddMode = window.__uddMode || {};
     window.__uddMode[ID.udd] = "domain";
     if (window.setDomainDetail) window.setDomainDetail(ID.udd, JSON.stringify(quellHaupt()));

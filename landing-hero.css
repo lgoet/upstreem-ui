@@ -780,6 +780,10 @@
    innerhalb der Buehne, und die Buehne ist der Bezugsrahmen des Vorhangs (sie traegt das
    transform). */
 .ulh-app .uo-scrim { left: 185px; }
+/* Das Brett steht buendig mit allem anderen im Fenster. In der App traegt seine Wurzel 16px
+   Polster links und rechts; der Seitenkopf darueber und die Prompts-Tabelle haben keines, und
+   damit begann das Brett 16px weiter rechts als alles andere -- gemessen 319 gegen 303. */
+.ulh-app .uo-root { padding-left: 0; padding-right: 0; }
 /* 2px mehr zwischen der Gruppenbeschriftung und ihrer ersten Zeile. */
 .ulh-app .usn-head { padding-bottom: 4px; }
 /* Der Kasten der Schnellaktionen 30px hoch und 24px Luft darunter: er ist ein Knopf und keine
@@ -1993,9 +1997,9 @@
    .usn-bar traegt die Klasse .up-root, und sidebar.css setzt --usn-w genau dort auf 250px. Ein
    Wert am eigenen Element schlaegt jeden geerbten -- am Vorfahren gesetzt blieb es bei 250,
    gemessen. Die Spalte daneben misst die Breite ohnehin selbst nach. */
-/* 228 statt 234, und 14px Polster statt 16: die Leiste gibt zusammen 6px ab, und die bekommt der
+/* 224 statt 234, und 12px Polster statt 16: die Leiste gibt zusammen 10px ab, und die bekommt der
    Bereich rechts -- er richtet sich an ihrer Breite aus. */
-.ulh-app .usn-bar { --usn-w: 228px; padding-left: 14px; padding-right: 14px; }
+.ulh-app .usn-bar { --usn-w: 224px; padding-left: 12px; padding-right: 12px; }
 
 /* ---------- Alle Schriften im Fenster eine Stufe kleiner ----------
    Erzeugt aus einer Messung und nicht geschaetzt: alle Textelemente im Fenster durchgezaehlt, nach
