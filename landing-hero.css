@@ -755,7 +755,7 @@
    Kante. Gescrollt wird hier nicht, also war er schlicht nicht da. Das war der Bericht "bei
    Pinned fehlt die Domain".
    Die Abstaende sind gegenueber der App veraendert, die Zeilenhoehe NICHT: der Abstand ueber der
-   Liste (24 -> 22), der ueber den Schnellaktionen (24 -> 16), die drei zwischen den vier Gruppen
+   Liste (24 -> 24, also wie in der App), der ueber den Schnellaktionen (24 -> 16), die drei zwischen den vier Gruppen
    (32 -> 16) und die Unterkante der vier Gruppenbeschriftungen (6 -> 4).
    Gemessen wird an der Liste selbst: scrollHeight gegen clientHeight. Passt sie nicht mehr, fehlt
    unten die gepinnte Domain -- dann muss die Luft woanders herkommen oder das Fenster hoeher
@@ -775,10 +775,10 @@
 .ulh-app .uo-scrim { left: 185px; }
 /* 2px mehr zwischen der Gruppenbeschriftung und ihrer ersten Zeile. */
 .ulh-app .usn-head { padding-bottom: 4px; }
-/* Der Kasten der Schnellaktionen 30px hoch und 22px Luft darunter: er ist ein Knopf und keine
+/* Der Kasten der Schnellaktionen 30px hoch und 24px Luft darunter: er ist ein Knopf und keine
    Zeile der Liste, und mit demselben Abstand wie zwischen zwei Zeilen las er sich als eine. */
 .ulh-app .usn-qa > * { height: 30px; }
-.ulh-app .usn-nav { margin-top: 22px; }
+.ulh-app .usn-nav { margin-top: 24px; }
 .ulh-app .usn-qa:not(:empty) { margin-top: 16px; }
 
 /* Die ausgewaehlte Zeile in der Seitenleiste etwas heller: 7 Prozent Textfarbe waren im
