@@ -2981,6 +2981,39 @@
     }
   }
 
+  /* ---- Womit verkleinert wird: transform oder zoom ------------------------------------------
+     Beides sieht gleich aus und misst gleich -- geprueft am laufenden Fenster: Rechteck 682,
+     offsetWidth 1104, Klassen der Tabelle identisch. Der Unterschied liegt im ZEICHNEN:
+
+       transform  zeichnet die App in voller Groesse und verkleinert das BILD. Eine 1px-Linie wird
+                  dabei zu 0.62 Bildpunkten. Auf einem Schirm mit doppelter Aufloesung sind das
+                  immer noch 1.24 Geraetepixel und es faellt nicht auf; auf einem gewoehnlichen
+                  Windows-Schirm (ein Geraetepixel je CSS-Pixel) verteilt der Browser die Linie auf
+                  zwei und sie wird unscharf und wirkt dicker. Genau das war gemeldet.
+       zoom       verkleinert im LAYOUT. Rahmen werden dabei auf ganze Geraetepixel gelegt, statt
+                  ein fertiges Bild zu strecken.
+
+     Warum nicht ueberall zoom: auf den Schirmen, auf denen es heute gut aussieht, ist transform
+     der Zustand, der hier gemessen und ueber Wochen geprueft ist. Umgestellt wird deshalb nur
+     dort, wo das Problem entsteht -- unter anderthalb Geraetepixeln je CSS-Pixel.
+     Ein frueherer Kommentar in der CSS sagte, zoom loese die schmalen Fassungen der Bauteile aus.
+     Das war einmal so; heute liefert Chrome fuer beide Wege dieselben Rechtecke, und die Messung
+     oben zeigt es. */
+  function verkleinerungSetzen(root, m){
+    var app = root.querySelector(".ulh-app");
+    if (!app) return;
+    var dpr = window.devicePixelRatio || 1;
+    var mitZoom = dpr < 1.5;
+    root.classList.toggle("is-zoom", mitZoom);
+    if (mitZoom){
+      app.style.transform = "none";
+      app.style.zoom = m.toFixed(4);
+    } else {
+      app.style.zoom = "";
+      app.style.transform = "";           /* dann gilt wieder die Regel aus der CSS */
+    }
+  }
+
   /* Die Verkleinerung. Gerechnet aus der WIRKLICHEN Breite des Ausschnitts, nicht aus der des
      Fensters: das Fenster traegt den Rahmen, der Ausschnitt ist der Platz darin. */
   function mass(root){
@@ -3000,6 +3033,7 @@
     root.style.setProperty("--ulh-buehne-ist", soll + "px");
     var m = b / soll;
     root.style.setProperty("--ulh-mass", m.toFixed(4));
+    verkleinerungSetzen(root, m);
     /* Und derselbe Wert an <html>, fuer alles, was ausserhalb der Buehne haengt und ihren Massstab
        trotzdem kennen muss. */
     try { document.documentElement.style.setProperty("--ulh-mass", m.toFixed(4)); } catch (e){}

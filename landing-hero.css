@@ -714,6 +714,15 @@
   overflow: hidden;
   border-radius: calc(12px / var(--ulh-mass, 1));
 }
+/* Mit zoom (siehe landing-hero.js, verkleinerungSetzen) wird die Rundung schon im Layout
+   verkleinert -- sie darf dann NICHT noch einmal hochgerechnet werden, sonst ist sie innen
+   groesser als aussen.
+   contain ist dort PFLICHT und keine Feinheit: ein transform macht sein Element zum Bezugsrahmen
+   fuer alles, was darin position: fixed traegt -- zoom tut das nicht. Ohne contain sprang die
+   Seitenleiste aus dem Fenster heraus und legte sich ueber dessen Titelzeile; gemessen 64,557
+   statt 70,589, also 6px links und 32px ueber der Fensterkante. layout stellt den Bezugsrahmen
+   wieder her, paint beschneidet wie vorher das transform. */
+.ulh-root.is-zoom .ulh-app { border-radius: 12px; contain: layout paint; }
 /* Die Leiste bringt ihre Breite selbst mit; rechts davon der Seiteninhalt.
    min-width: 0, sonst sprengt eine breite Tabelle die Spalte. */
 .ulh-side { flex: 0 0 auto; }
@@ -1707,6 +1716,14 @@
   height: calc(var(--ulh-fh) / var(--ulh-fz, 1));
   transform: scale(calc(var(--ulh-mass, 1) * var(--ulh-fz, 1)));
   transform-origin: top left;
+}
+/* Auf Schirmen ohne doppelte Aufloesung dieselbe Umstellung wie im Hauptfenster: verkleinert wird
+   im Layout, damit die Haarlinien auf ganzen Geraetepixeln liegen. Gerade hier faellt es auf --
+   in diesen kleinen Fenstern stehen die kleinen Umschalter. Die zwei Massstaebe multiplizieren
+   sich: der der Buehne und der des Fensters. Kein contain noetig, weil hier nichts fixed steht. */
+.ulh-root.is-zoom .ulh-fen-app {
+  transform: none;
+  zoom: calc(var(--ulh-mass, 1) * var(--ulh-fz, 1));
 }
 
 /* Der Auftritt: die Fenster kommen aus der Richtung, in der das Hauptfenster steht -- sie liegen
