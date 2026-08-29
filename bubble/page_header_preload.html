@@ -126,7 +126,9 @@
     if (!/^[0-9a-f]{7,40}$/.test(a) || !/^[0-9a-f]{7,40}$/.test(b)) return false;
     return a.indexOf(b) === 0 || b.indexOf(a) === 0;
   }
-  function pinAus(u){ var m = /upstreem-ui@([^\/]+)\//.exec(String(u || "")); return m ? m[1] : ""; }
+  var PIN_RE = new RegExp("upstreem-ui@([^/]+)/");   /* als Zeichenkette gebaut: ein Regex-Literal
+     mit Schraegstrich darin sieht fuer jeden Kommentar-Entferner wie ein Zeilenkommentar aus. */
+  function pinAus(u){ var m = PIN_RE.exec(String(u || "")); return m ? m[1] : ""; }
 
   /* CSS BLOCKIEREND, ohne den media="print"-Trick.
      Der Trick stand hier, damit zwanzig Stylesheets das erste Zeichnen nicht anhalten. Er ist
