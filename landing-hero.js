@@ -2922,6 +2922,38 @@
     return true;
   }
 
+  /* Auf schmalen Schirmen steht die Leiste im Fenster EINGEKLAPPT. Ausgeklappt nimmt sie von 390px
+     Schirmbreite 224 weg -- vom Inhalt der App bliebe ein Streifen, und genau darum geht es in
+     diesem Fenster.
+     Warum nicht sidebar.js entscheiden lassen: das tut es nach der FENSTERbreite, und seine
+     Antwort waere hier "hint" -- ganz weg, erreichbar ueber einen Knopf, den leisteHolen entfernt
+     hat. Also setzen wir es selbst.
+     Und zwar bei jeder Aenderung an der Klasse: sidebar.js schreibt sie beim Umbauen neu, und ein
+     einmaliges Setzen waere danach wieder ueberschrieben. Geschrieben wird nur, was fehlt --
+     sonst triebe der Beobachter sich selbst an. */
+  var LEISTE_MINI_AB = 900;
+  function leisteMiniHalten(root){
+    var bar = root.querySelector(".usn-bar");
+    if (!bar || bar.__ulhMini) return;
+    bar.__ulhMini = true;
+    function setzen(){
+      var breite = window.innerWidth || document.documentElement.clientWidth || 0;
+      if (breite > LEISTE_MINI_AB) return;                 /* breiter Schirm: sidebar.js entscheidet */
+      if (!bar.classList.contains("is-mini")) bar.classList.add("is-mini");
+      if (bar.classList.contains("is-hidden")) bar.classList.remove("is-hidden");
+    }
+    setzen();
+    window.addEventListener("resize", setzen, { passive: true });
+    if (window.MutationObserver){
+      var laeuft = false;
+      new MutationObserver(function(){
+        if (laeuft) return;
+        laeuft = true;
+        requestAnimationFrame(function(){ laeuft = false; setzen(); });
+      }).observe(bar, { attributes: true, attributeFilter: ["class"] });
+    }
+  }
+
   /* Die Verkleinerung. Gerechnet aus der WIRKLICHEN Breite des Ausschnitts, nicht aus der des
      Fensters: das Fenster traegt den Rahmen, der Ausschnitt ist der Platz darin. */
   function mass(root){
@@ -4763,7 +4795,7 @@
         /* Die Leiste entsteht erst, wenn core ihre Wurzel gesehen hat -- das kann nach dem Setter
            liegen. Also nachfassen, bis sie da ist, und dann noch einmal messen. */
         (function holen(k){
-          if (leisteHolen(root)){ mass(root); return; }
+          if (leisteHolen(root)){ leisteMiniHalten(root); mass(root); return; }
           if (k < 40) setTimeout(function(){ holen(k + 1); }, 100);
         })(0);
         /* Nach dem Fuellen noch einmal messen: die Tabellen bringen ihre Hoehe erst mit den

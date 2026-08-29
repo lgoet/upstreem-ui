@@ -2570,8 +2570,10 @@
      rechts angeschnitten. */
   .ulh-vis-in { width: 760px; }
   /* Die Prompt-Tabelle etwas breiter als die anderen: ihre erste Spalte traegt den ganzen Satz,
-     und der ist auf einem schmalen Schirm das einzige, was zaehlt. */
-  .ulh-vis-zeilen .ulh-vis-in { width: 880px; }
+     und der ist auf einem schmalen Schirm das einzige, was zaehlt.
+     830 statt 880: die Prompt-Spalte ist die einzige mit 1fr, alle anderen haben feste Breiten --
+     die 50px gehen also genau von ihr ab. */
+  .ulh-vis-zeilen .ulh-vis-in { width: 830px; }
   /* Und OHNE das seitliche Polster. Auf breiten Schirmen ruecken die zwei Vorschauen damit in die
      Mitte der Karte; hier schob es die erste Spalte aus dem Ausschnitt -- gemessen begann der
      Prompt-Text bei 116px statt an der Kante, und genau das war "die Spalte Prompt ist weg". Die
@@ -2591,6 +2593,54 @@
   /* Die Legende eines echten Charts bleibt: core blendet sie unter 500px FENSTERbreite aus -- in
      der App richtig, denn dort steht sie unter einem Chart, das die ganze Seite fuellt. */
   .ulh-vis .up-legend.is-hidden { display: block; }
+
+  /* Die Kurve zeichnet auf eine Leinwand mit FESTER Breite -- gemessen 278px in einem 356px
+     breiten Kasten, also links angeschlagen mit einer Luecke rechts. Auf einer 332px breiten
+     Karte faellt das auf. Auto-Raender stellen sie in die Mitte. */
+  .ulh-vis-linie .ulh-krv-canvas { margin-left: auto; margin-right: auto; }
+
+  /* ---- Das Chancen-Brett ----
+     Es laeuft hier NICHT rechts hinaus wie die Tabellen daneben, sondern passt ganz in die Karte.
+     Grund: die Zeile besteht aus Titel, Domain und dem Prioritaetswert, und der Wert stand bei
+     574px Zeilenbreite in einer 278px breiten Karte ausserhalb des Bildes -- die Zeile zeigte
+     also genau das nicht, worum es in ihr geht. Eine Tabelle abzuschneiden ist ehrlich, eine
+     dreiteilige Zeile um ihren dritten Teil zu bringen nicht. */
+  .ulh-vis-chancen .ulh-vis-in { width: 100%; }
+  /* Titel oben ueber beide Spalten, darunter Domain links und Wert rechts, beide auf einer Linie.
+     display: contents an den zwei Zwischenkaesten, damit ihre Kinder Zellen DIESES Rasters werden
+     -- ohne das Markup anzufassen, das dieselbe Zeile in der App baut. */
+  .ulh-vis-chancen .uo-row { row-gap: 6px; column-gap: 12px; padding: 10px 12px; border-radius: 10px; }
+  .ulh-vis-chancen .uo-row-main, .ulh-vis-chancen .uo-row-right { display: contents; }
+  .ulh-vis-chancen .uo-row-title { grid-column: 1 / -1; font-size: 12.5px; }
+  .ulh-vis-chancen .uo-row-sub { grid-column: 1; }
+  .ulh-vis-chancen .uo-row-domain { font-size: 11px; }
+  .ulh-vis-chancen .uo-row-sub .up-logo-box { width: 16px; height: 16px; border-radius: 4.5px; }
+  .ulh-vis-chancen .uo-row-sub .up-logo-box img { width: 14px; height: 14px; border-radius: 3.5px; }
+  .ulh-vis-chancen .uo-pot { grid-column: 2; justify-self: end; align-self: center; }
+  /* Die Themenchips fallen weg. Sie sind der vierte Teil der Zeile, und zu dritt auf einer
+     332px-Karte bliebe fuer Domain und Wert nichts uebrig -- gefragt war die Zeile mit genau
+     diesen beiden. */
+  .ulh-vis-chancen .uo-row-tags { display: none; }
+  .ulh-vis-chancen .uo-list-rows { gap: 16px; }
+
+  /* ---- Mira ----
+     Die drei Karten untereinander: nebeneinander sind sie je 108px breit, und darin steht ein
+     Zweizeiler als Wortsalat. */
+  .ulh-msc-links { flex-direction: column; }
+  /* Und das Fenster hoeher. 600px reichten fuer die Eingabe und den Anfang der Antwort; die
+     Bauteile darunter standen halb im Bild. */
+  .ulh-msc-rahmen { height: 820px; }
+
+  /* ---- Die Quellen-Sektion ----
+     Der Ring 15% kleiner: beide Zahlen der Regel aus core mal 0.85 (75% -> 63.75%, 220 -> 187),
+     damit er auf jeder Breite dasselbe Verhaeltnis behaelt statt an einer Stelle zu springen. */
+  .ulh-quell-app .up-donut-layout.is-collapsed .up-donut-wrap,
+  .ulh-quell-app .up-donut-sk.is-collapsed .up-sk-chart { width: min(63.75%, 187px); }
+  /* Und derselbe Faktor auf den NICHT eingeklappten Fall: der gilt, sobald die Legende wieder
+     neben dem Ring steht (gemessen ab 620px Rahmenbreite), und dort stand er sonst weiter auf
+     seinen vollen 200px. 52% -> 44.2%, 200 -> 170. */
+  .ulh-quell-app .up-donut-wrap,
+  .ulh-quell-app .up-donut-sk .up-sk-chart { width: min(44.2%, 170px); }
 
   .ulh-nav-in { gap: 12px; }
   .ulh-nav-rechts .ulh-btn { padding: 0 10px; }
