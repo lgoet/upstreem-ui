@@ -422,6 +422,14 @@
       offen = k;
       var karte = karten[k];
       if (!karte) return;
+      /* Beim ERSTEN Oeffnen springt das Panel an seine Stelle, ohne Uebergang: sonst faehrt es von
+         der linken Kante (Lage 0) herueber, waehrend es aufblendet -- gemeldet als "es fliegt von
+         oben links herein". Von da an sind Lage und Groesse Uebergaenge, denn dann WANDERT es
+         wirklich von einem Punkt zum naechsten.
+         Der Sprung braucht ein erzwungenes Neuberechnen dazwischen, sonst fasst der Browser beide
+         Schreibvorgaenge zu einem zusammen und der Uebergang laeuft doch. */
+      var zu = !pop.classList.contains("is-offen");
+      if (zu) pop.style.transition = "none";
       for (var name in karten) karten[name].classList.toggle("is-da", name === k);
       /* Die Groesse KOMMT VOM INHALT und wird nicht geschaetzt: die Karte steht schon im Panel,
          also hat sie eine Groesse -- auch die unsichtbare. */
@@ -435,6 +443,10 @@
       if (x > max) x = max;
       if (x < 0) x = 0;
       pop.style.transform = "translateX(" + Math.round(x) + "px)";
+      if (zu){
+        void pop.offsetWidth;               /* Neuberechnen erzwingen */
+        pop.style.transition = "";
+      }
       pop.classList.add("is-offen");
       nav.classList.add("is-offen");
     }
@@ -2027,31 +2039,19 @@
         }
       }
       if (buchstaben.length && h) schriftTakt(h, buchstaben);
-      leisteKleben(root);
       requestAnimationFrame(takt);
     })();
   }
 
-  /* Die Leiste klebt oben -- und zwar auch dann, wenn die Sektion in einem Rahmen steckt.
-     position: sticky reicht dafuer nicht: es kennt nur den eigenen Scrollkasten, und in einem
-     Embed-Rahmen scrollt der nie (der Rahmen ist so hoch wie sein Inhalt). Genau daran klebte
-     nichts.
-     Also dasselbe wie beim Scrolleffekt: gemessen wird der RAHMEN im Fenster darueber. Ist er
-     hochgewandert, faehrt die Leiste um denselben Betrag mit -- und hoert auf, wenn unten die
-     Sektion endet, damit sie nicht in den Fuss laeuft.
-     Ohne Rahmen macht sticky die Arbeit, dann passiert hier nichts. */
-  function leisteKleben(root){
-    var nav = root.querySelector(".ulh-nav");
-    if (!nav) return;
-    var rahmen = null;
-    try { rahmen = window.frameElement; } catch (e){ return; }
-    if (!rahmen) return;
-    var oben = rahmen.getBoundingClientRect().top;
-    var y = oben < 0 ? -oben : 0;
-    var grenze = root.getBoundingClientRect().height - nav.offsetHeight;
-    if (y > grenze) y = grenze;
-    nav.style.transform = y ? "translateY(" + Math.round(y) + "px)" : "";
-  }
+  /* WARUM die Leiste hier NICHT nachgefuehrt wird, obwohl sie in einem Rahmen nicht klebt:
+     Ich hatte sie ein Bild pro Frame nachgeschoben -- gemessen am Rahmen im Fenster darueber. Das
+     funktioniert, aber es SIEHT falsch aus: jede Bewegung aus JavaScript kommt ein Bild nach dem
+     Scrollen an, und genau das liest sich als Nachziehen. Eine Leiste, die der Seite hinterherlaeuft,
+     ist schlechter als eine, die einfach oben stehen bleibt.
+     Sticky im CSS bleibt: auf einer gewoehnlichen Seite klebt die Leiste damit sauber und ohne
+     einen Takt (gemessen: nach 1200px Scrollen steht sie weiter bei 0). In einem Embed-Rahmen kann
+     das niemand von innen leisten -- dort scrollt dieses Fenster nicht, und eine echte, ruckelfreie
+     Leiste gehoert in den Baukasten, der die Seite baut. */
 
   /* Der Stand je Buchstabe, gerechnet aus der echten Lage der Ueberschrift. */
   function schriftTakt(h, buchstaben){
