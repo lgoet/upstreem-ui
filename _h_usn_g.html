@@ -1,0 +1,45 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Sidebar: Unterlaengen und Auswahlfarbe</title>
+<link rel="stylesheet" href="core.css">
+<link rel="stylesheet" href="sidebar.css">
+<style>
+  body { margin: 0; font-family: Geist, system-ui, sans-serif; }
+  .buehne { display: flex; gap: 24px; padding: 16px; }
+  .buehne > div { width: 260px; }
+</style>
+<div class="buehne">
+  <div class="up-root usn-bar" id="hell" data-isdark="no">
+    <div class="usn-nav">
+      <button class="usn-item" type="button"><span class="usn-ic"></span><span class="usn-txt">Dashboard</span></button>
+      <button class="usn-item is-active" type="button"><span class="usn-ic"></span><span class="usn-txt">Prompt Insights</span></button>
+      <button class="usn-item" type="button"><span class="usn-ic"></span><span class="usn-txt">Citations</span></button>
+    </div>
+  </div>
+  <div class="up-root usn-bar" id="dunkel" data-isdark="yes" style="background:#1b1b1b">
+    <div class="usn-nav">
+      <button class="usn-item is-active" type="button"><span class="usn-ic"></span><span class="usn-txt">Prompt Insights</span></button>
+    </div>
+  </div>
+</div>
+<pre id="out" style="background:#111;color:#eee;padding:10px;white-space:pre-wrap;font:12px monospace">…</pre>
+<script>
+function tiefe(sp){
+  /* Wie weit reicht die Tinte des Textes unter die Unterkante des beschneidenden Kastens? */
+  var r = document.createRange(); r.selectNodeContents(sp);
+  var tinte = r.getBoundingClientRect(), kasten = sp.getBoundingClientRect();
+  return { kastenHoehe: +kasten.height.toFixed(2), tinteHoehe: +tinte.height.toFixed(2),
+           ueberstandUnten: +(tinte.bottom - kasten.bottom).toFixed(2),
+           scroll: sp.scrollHeight, client: sp.clientHeight,
+           zeilenhoehe: getComputedStyle(sp).lineHeight };
+}
+setTimeout(function(){
+  var akt = document.querySelector("#hell .usn-item.is-active");
+  document.getElementById("out").textContent = JSON.stringify({
+    promptInsights: tiefe(akt.querySelector(".usn-txt")),
+    gewichtAktiv: getComputedStyle(akt).fontWeight,
+    flaecheHell: getComputedStyle(akt).backgroundColor,
+    flaecheDunkel: getComputedStyle(document.querySelector("#dunkel .usn-item.is-active")).backgroundColor
+  }, null, 1);
+}, 400);
+</script>

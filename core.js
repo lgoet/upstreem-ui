@@ -5169,13 +5169,29 @@
     for (var e = 0; e < G.watchers.length; e++){
       if (G.watchers[e].selector === rootSelector) return;   // already registered by some core.js execution
     }
-    G.watchers.push({ selector: rootSelector, onFound: onRootsFound });
+    /* Der Stand beim Anmelden wird gleich mitgeschrieben: sonst sieht der erste Lauf des
+       Auffangnetzes bei jeder Wurzel eine "Aenderung" gegen undefined und weckt einmal alle. */
+    var da = document.getElementsByClassName(rootSelector);
+    G.watchers.push({ selector: rootSelector, onFound: onRootsFound,
+                      _n: da.length, _erste: da.length ? da[0] : null,
+                      _letzte: da.length ? da[da.length - 1] : null });
 
+    /* Frueher lief bei JEDER Aenderung im Dokument JEDE Komponente an: eine Zeile, die in der
+       Sidebar aufklappt, liess Ask Mira, alle Tabellen und alle Charts ihr initAll fahren. Auf
+       einer Seite mit 19 Komponenten sind das 19 Durchgaenge pro Bild -- genau die 120-180ms,
+       die Chrome als "requestAnimationFrame handler took" und "Forced reflow" meldet.
+       Jetzt merkt sich der Beobachter, WELCHE Wurzel aufgetaucht ist, und weckt nur die. */
     function runAll(){
-      G.pending = false;
-      for (var k = 0; k < G.watchers.length; k++){ try { G.watchers[k].onFound(); } catch(e){} }
+      var heiss = G.hot; G.hot = null; G.pending = false;
+      for (var k = 0; k < G.watchers.length; k++){
+        var w = G.watchers[k];
+        if (heiss && !heiss[w.selector]) continue;
+        try { w.onFound(); } catch(e){}
+      }
     }
-    function scheduleAll(){
+    function scheduleAll(sel){
+      if (sel){ (G.hot || (G.hot = {}))[sel] = true; }
+      else G.hot = null;                       /* ohne Angabe: alle, wie bisher */
       if (G.pending) return;
       G.pending = true;
       if (window.requestAnimationFrame) window.requestAnimationFrame(runAll); else setTimeout(runAll, 16);
@@ -5190,18 +5206,37 @@
             if (n.nodeType !== 1) continue;
             for (var w = 0; w < G.watchers.length; w++){
               var sel = G.watchers[w].selector;
-              /* first relevant node anywhere in the batch → schedule one coalesced pass and stop
-                 scanning; the per-component initAll each pass runs is itself cheap + idempotent. */
+              /* Schon vorgemerkt? Dann kostet dieser Knoten fuer diese Wurzel nichts mehr -- das
+                 querySelector darunter ist der teure Teil, und in einem Schwung (Bubble zeichnet
+                 einen ganzen Teilbaum) faellt es damit nach dem ersten Treffer weg. */
+              if (G.hot && G.hot[sel]) continue;
               if ((n.classList && n.classList.contains(sel)) ||
-                  (n.querySelector && n.querySelector("." + sel))){ scheduleAll(); return; }
+                  (n.querySelector && n.querySelector("." + sel))) scheduleAll(sel);
             }
           }
         }
       });
       G.obs.observe(document.body, { childList: true, subtree: true });
     }
+    /* Das Auffangnetz fuer alles, was der Beobachter nicht sieht. Es lief bisher alle 1,5s ueber
+       ALLE Komponenten -- dauerhaft, auch auf einer Seite, auf der sich nichts mehr ruehrt.
+       Jetzt schaut es erst nach, ob sich fuer eine Wurzel ueberhaupt etwas geaendert hat: Anzahl,
+       erstes und letztes Element. Ein Neuaufbau durch Bubble tauscht die Knoten aus, also faellt
+       er hier auf, auch wenn die Anzahl gleich bleibt. Nur wer sich geaendert hat, laeuft an. */
     if (!G.iv){
-      G.iv = setInterval(runAll, 1500);
+      G.iv = setInterval(function(){
+        var heiss = null;
+        for (var k = 0; k < G.watchers.length; k++){
+          var w = G.watchers[k];
+          var els = document.getElementsByClassName(w.selector);
+          var n = els.length, erste = n ? els[0] : null, letzte = n ? els[n - 1] : null;
+          if (n !== w._n || erste !== w._erste || letzte !== w._letzte){
+            w._n = n; w._erste = erste; w._letzte = letzte;
+            (heiss || (heiss = {}))[w.selector] = true;
+          }
+        }
+        if (heiss){ G.hot = heiss; runAll(); }
+      }, 1500);
     }
   }
 

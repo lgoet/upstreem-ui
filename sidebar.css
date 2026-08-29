@@ -72,13 +72,17 @@
      und nicht als Hexwert gesetzt, damit er dem Thema folgt.
      Im Dunkeln bleibt es bei --up-sel-bg (siehe unten): dort ist heller richtig. */
   --usn-sel: color-mix(in srgb, var(--vc-text) 7%, transparent);
+  /* Die AKTIVE Zeile hat einen eigenen Wert, weil sie nicht dasselbe leisten muss wie der
+     Hover: sie steht dauerhaft da. 7% waren dafuer zu kraeftig -- 5% von #1f1f1b auf #f5f5f5
+     ergeben rund #eaeae9. Der Hover bleibt bei seinen 7%, sonst verschwindet er ganz. */
+  --usn-akt: color-mix(in srgb, var(--vc-text) 5%, transparent);
   font-family: inherit;
   -webkit-font-smoothing: antialiased;
   box-sizing: border-box;
 }
 .usn-bar *, .usn-bar *::before, .usn-bar *::after { box-sizing: border-box; }
 .usn-bar[data-theme="dark"], .usn-fab[data-theme="dark"], .usn-scrim[data-theme="dark"] {
-  --usn-bg: #1b1b1b; --usn-sel: var(--up-sel-bg);
+  --usn-bg: #1b1b1b; --usn-sel: var(--up-sel-bg); --usn-akt: var(--up-sel-bg);
 }
 
 /* ---------- die Leiste ---------- */
@@ -326,10 +330,10 @@
    deckend. Damit bleibt "worauf zeige ich" und "wo bin ich" unterscheidbar, ohne einen
    zweiten Ton zu erfinden. */
 .usn-item:hover { background: color-mix(in srgb, var(--usn-sel) 50%, transparent); }
-.usn-item.is-active:hover { background: var(--usn-sel); }
+.usn-item.is-active:hover { background: var(--usn-akt); }
 /* Der aktive Punkt traegt Flaeche UND Gewicht -- Farbe allein reicht nicht, wenn jemand sie
    nicht unterscheiden kann. */
-.usn-item.is-active { background: var(--usn-sel); font-weight: 600; }
+.usn-item.is-active { background: var(--usn-akt); font-weight: 550; }
 /* Die Icon-Spalte ist 22px breit, das Symbol darin bleibt 17px und sitzt mittig. 22, weil in
    derselben Spalte auch die Marken-Logos der angehefteten Zeilen stehen -- und die brauchen die
    Platte und den Rand aus den Tabellen, sonst sehen sie anders aus als dort. Eine gemeinsame
@@ -344,7 +348,8 @@
    1.273, weil die dunkle Datei auf einer groesseren Flaeche lag. Alles davon war noetig, WEIL es
    ein fremdes Bild war -- ein Zeichen aus core traegt currentColor und braucht nichts davon. */
 .usn-item.is-active .usn-ic { color: var(--vc-text); }
-.usn-txt { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.usn-txt { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  line-height: 20px; }
 /* Hier stand eine optische Korrektur von 1px nach unten. Sie galt fuer die Feather-Icons; mit
    den Lucide-Formen ist die Zeile damit zu tief, also wieder auf die geometrische Mitte. Der
    Wert bleibt als Stellschraube stehen -- er ist Augenmass, keine Messung. */

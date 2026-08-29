@@ -1,0 +1,39 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>watchRoots: wer laeuft bei einer Aenderung an?</title>
+<link rel="stylesheet" href="core.css">
+<div id="buehne"></div>
+<pre id="out" style="background:#111;color:#eee;padding:10px;white-space:pre-wrap;font:12px monospace">…</pre>
+<script>
+/* Der Messplatz laeuft in einem verdeckten Fenster, dort feuert requestAnimationFrame nicht --
+   ohne diesen Ersatz misst man das Fenster und nicht den Code. Der Zweig ist im Original
+   vorgesehen (else setTimeout), er buendelt genauso. */
+window.requestAnimationFrame = function(fn){ return setTimeout(fn, 0); };
+var ALT = /alt=1/.test(location.search);
+document.write('<scr' + 'ipt src="' + (ALT ? '_h_core_alt.js' : 'core.js') + '?v=4"></scr' + 'ipt>');
+</script>
+<script>
+var UC = window.UpstreemCore;
+var zaehler = {}, namen = [];
+for (var i = 0; i < 12; i++) namen.push("k" + i + "-root");
+namen.forEach(function(n){ zaehler[n] = 0; UC.watchRoots(n, function(){ zaehler[n]++; }); });
+function summe(){ var s = 0; for (var k in zaehler) s += zaehler[k]; return s; }
+function nullen(){ for (var k in zaehler) zaehler[k] = 0; }
+
+setTimeout(function(){
+  nullen();
+  var d = document.createElement("div"); d.className = "k7-root";
+  document.getElementById("buehne").appendChild(d);
+  setTimeout(function(){
+    var nachEinfuegen = { gesamt: summe(), betroffene: zaehler["k7-root"], unbeteiligte: summe() - zaehler["k7-root"] };
+    nullen();
+    setTimeout(function(){
+      document.getElementById("out").textContent = JSON.stringify({
+        fassung: ALT ? "ALT (vor der Aenderung)" : "NEU",
+        nachEinfuegen: nachEinfuegen,
+        inVierSekundenOhneAenderung: summe()
+      }, null, 1);
+    }, 4000);
+  }, 300);
+}, 800);
+</script>

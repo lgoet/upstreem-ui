@@ -1,0 +1,44 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Performance Radar: Schimmer in den Zellen</title>
+<link rel="stylesheet" href="core.css">
+<link rel="stylesheet" href="performance-radar.css?v=schimmer1">
+<style>
+  body { margin:0; font-family: Geist, system-ui, sans-serif; display:flex; gap:20px; padding:16px; }
+  .feld { width: 520px; padding: 12px; border-radius: 14px; }
+  .hell { background: #fff; } .dunkel { background: #131313; }
+</style>
+<div class="feld hell"><div class="up-root uhm-root" id="a" data-instance="a" data-isdark="no"><div class="up-head"><div class="up-heading">Performance Chart</div><div class="up-head-tools"><div class="uhm-metric up-seg" role="tablist"><button class="up-seg-btn is-active" data-metric="visibility" type="button" role="tab">Visibility</button><button class="up-seg-btn" data-metric="rank" type="button" role="tab">Ranking</button><button class="up-seg-btn" data-metric="sentiment" type="button" role="tab">Sentiment</button></div></div></div><div class="uhm-box"><div class="uhm-scroll"><div class="uhm-grid"></div></div></div></div></div>
+<div class="feld dunkel"><div class="up-root uhm-root" id="b" data-instance="b" data-isdark="yes"><div class="up-head"><div class="up-heading">Performance Chart</div><div class="up-head-tools"><div class="uhm-metric up-seg" role="tablist"><button class="up-seg-btn is-active" data-metric="visibility" type="button" role="tab">Visibility</button><button class="up-seg-btn" data-metric="rank" type="button" role="tab">Ranking</button><button class="up-seg-btn" data-metric="sentiment" type="button" role="tab">Sentiment</button></div></div></div><div class="uhm-box"><div class="uhm-scroll"><div class="uhm-grid"></div></div></div></div></div>
+<pre id="out" style="position:fixed;bottom:0;left:0;right:0;background:#111;color:#eee;padding:8px;font:11px monospace;margin:0">…</pre>
+<script src="core.js"></script>
+<script src="performance-radar.js"></script>
+<script>
+var firmen = [{company_id:"1",name:"Alpha"},{company_id:"2",name:"Beta"},{company_id:"3",name:"Gamma"}];
+var themen = [{id:"7",name:"Pricing"},{id:"8",name:"Support"},{id:"9",name:"Security"}];
+var zellen = [];
+themen.forEach(function(t,i){ firmen.forEach(function(c,j){
+  zellen.push({ company_id:c.company_id, topic_id:t.id, visibility_pct: 12 + i*22 + j*15 });
+}); });
+setTimeout(function(){
+  ["a","b"].forEach(function(id){
+    var fn = window["renderFestivalHeatmap_" + id];
+    if (fn) fn({ cells: zellen, companies: firmen, topics: themen });
+  });
+  setTimeout(function(){
+    var z = document.querySelector("#a .uhm-cell:not(.is-empty):not(.is-sk)");
+    var zd = document.querySelector("#b .uhm-cell:not(.is-empty):not(.is-sk)");
+    var leer = document.querySelector("#a .uhm-cell.is-empty");
+    var regel = [].some.call(document.styleSheets, function(ss){
+      try { return [].some.call(ss.cssRules, function(r){ return (r.cssText||"").indexOf("inset 0 10px 12px -8px") >= 0; }); } catch(e){ return false; }
+    });
+    document.getElementById("out").textContent = JSON.stringify({
+      regelImStylesheet: regel,
+      zellenGezeichnet: document.querySelectorAll(".uhm-cell").length,
+      schattenHell: z ? getComputedStyle(z).boxShadow : "(keine Zelle)",
+      schattenDunkel: zd ? getComputedStyle(zd).boxShadow : "(keine Zelle)",
+      schattenLeer: leer ? getComputedStyle(leer).boxShadow : "(keine leere Zelle)"
+    });
+  }, 700);
+}, 500);
+</script>

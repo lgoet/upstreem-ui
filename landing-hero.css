@@ -523,15 +523,8 @@
    und ohne hover kein Aufhellen einzelner Zellen. Nur das Raster, nicht der Kopf der Karte: der
    Umschalter darin gehoert zum Bild. */
 .ulh-perf .uhm-scroll { pointer-events: none; }
-/* Ein leichter Schimmer in den Zellen statt einer flachen Flaeche. Als INNERER Schatten und nicht
-   als background-image: die Farbe kommt aus der Komponente als inline "background:" -- eine
-   Kurzschreibweise, die jedes background-image aus einer Regel hier ueberschreiben wuerde.
-   Der innere Schatten liegt ausserdem UNTER dem Text (Malreihenfolge: Grund, innerer Schatten,
-   Rahmen, Inhalt), ein Overlay laege darueber und truebte die Zahlen. */
-.ulh-perf .uhm-cell {
-  box-shadow: inset 0 10px 12px -8px rgba(255,255,255,0.30),
-              inset 0 -10px 12px -8px rgba(0,0,0,0.07);
-}
+/* Der Schimmer in den Zellen steht jetzt in performance-radar.css und gilt damit ueberall --
+   hier stand er zuerst, aber er gehoert der Komponente, nicht dieser Seite. */
 /* Die Themen links: ein farbiger Punkt und der Name in der Textfarbe -- kein Chip, kein Emoji.
    Der Chip aus core (.up-topicchip) bleibt das Markup, hier wird nur sein Aussehen fuer diese
    eine Stelle umgestellt: seine Farbe steckt in --ust-tag-color und wird zum Punkt. */
