@@ -1123,6 +1123,13 @@
     /* .up-dense-btn.is-active's own dark override above is scoped to .up-root — this menu lives
        outside it, so the Line Width switch needs its own copy of the same colors. */
     .up-scale-menu[data-theme="dark"] .up-dense-btn.is-active { background: #121212; border-color: #353535; }
+    /* Und aus demselben Grund der Knopf des Schalters: seine dunklen Farben haengen an
+       .up-root[data-theme="dark"], und dieses Menue haengt am <body>. Ohne die zwei Zeilen bliebe
+       der Knopf im Dunklen weiss -- auf der hellen Bahn des eingeschalteten Zustands ist er dann
+       nicht mehr zu sehen. Die Bahn selbst zieht von allein mit, sie liest --vc-border und
+       --vc-text, und die stehen oben im Menue. */
+    .up-scale-menu[data-theme="dark"] .up-switch::after { background: #e0e0e0; }
+    .up-scale-menu[data-theme="dark"] .up-switch.is-on::after { background: #1f1f1b; }
     @media (prefers-reduced-motion: reduce){ .up-scale-menu { transition-duration: 1ms; } }
     .up-scale-menu * { box-sizing: border-box; }
 

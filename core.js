@@ -5390,6 +5390,21 @@
        so changing it from one chart's settings menu is felt everywhere without a page reload. */
     try { window.dispatchEvent(new CustomEvent("up-linewidth-change", { detail: { value: v } })); } catch(e){}
   }
+  /* Legende unter dem Chart: an oder aus, seitenweit, nach demselben Muster wie die Linienstaerke
+     darueber -- ein Schluessel in der Ablage, den jedes makeLine() liest, umschaltbar aus jedem
+     Chart-Settings-Menue. Die Vorgabe ist AN, in der Ablage steht deshalb nur das Abwaehlen: ein
+     fehlender oder unlesbarer Schluessel faellt hier auf "an" zurueck. */
+  var LEGEND_KEY = "up_legend_pref";
+  function getLegendPref(){
+    try { return window.localStorage.getItem(LEGEND_KEY) === "off" ? "off" : "on"; }
+    catch(e){ return "on"; }
+  }
+  function setLegendPref(v){
+    v = v === "off" ? "off" : "on";
+    try { window.localStorage.setItem(LEGEND_KEY, v); } catch(e){}
+    try { window.dispatchEvent(new CustomEvent("up-legend-change", { detail: { value: v } })); } catch(e){}
+  }
+
   /* Colour scale — page-wide, exactly like the line width above and for the same reason: the
      Chart Settings menu is one setting the user thinks of as "how MY charts look", not as a
      property of the one chart whose gear they happened to click. It used to be per instanceId in
@@ -5421,6 +5436,18 @@
       '<div class="up-dense">' +
         '<button class="up-dense-btn' + (pref === "thin" ? " is-active" : "") + '" type="button" data-linewidth="thin">' + LW_THIN_SVG + 'Thin</button>' +
         '<button class="up-dense-btn' + (pref === "thick" ? " is-active" : "") + '" type="button" data-linewidth="thick">' + LW_THICK_SVG + 'Thick</button>' +
+      '</div>';
+  }
+
+  /* Die Zeile im Chart-Settings-Menue. .up-pop-row / .up-pop-label / .up-switch sind die
+     Haus-Bauteile fuer genau so eine Zeile (dieselben wie im Einstellungsmenue der Matrix) --
+     hier steht kein eigenes Aussehen, nur der Zustand. */
+  function legendSectionHtml(){
+    var an = getLegendPref() === "on";
+    return '<div class="up-pop-div"></div>' +
+      '<div class="up-pop-row" data-legend role="button" tabindex="0" aria-pressed="' + (an ? "true" : "false") + '">' +
+        '<span class="up-pop-label">Show Legend</span>' +
+        '<span class="up-switch' + (an ? " is-on" : "") + '"></span>' +
       '</div>';
   }
 
@@ -5910,6 +5937,13 @@
           populate();
           return;
         }
+        /* Genauso global und genauso sofort wie die Linienstaerke: jedes gezeichnete Linienchart
+           auf der Seite hoert auf up-legend-change und blendet seine Legende mit. */
+        if (e.target.closest("[data-legend]")){
+          setLegendPref(getLegendPref() === "on" ? "off" : "on");
+          populate();
+          return;
+        }
       });
       document.body.appendChild(menu);
       return menu;
@@ -5929,7 +5963,8 @@
             swatches(def.colors) +
           '</div>';
       }).join("");
-      menu.innerHTML = '<div class="up-pop-head">Chart Settings</div>' + rows + lineWidthSectionHtml();
+      menu.innerHTML = '<div class="up-pop-head">Chart Settings</div>' + rows +
+                       lineWidthSectionHtml() + legendSectionHtml();
     }
     function reposition(){
       if (!menu) return;
@@ -6034,6 +6069,12 @@
       if (!isOwner() || !chart || !lastBuilt) return;
       build(lastBuilt);
     });
+    /* Die Legende braucht KEIN Neuzeichnen des Charts -- sie ist ein eigenes Element unter dem
+       Canvas. legendLayout() reicht: es blendet aus oder rechnet die Zeilen neu. */
+    window.addEventListener("up-legend-change", function(){
+      if (!isOwner()) return;
+      legendLayout();
+    });
     /* Dasselbe beim Themenwechsel, und aus demselben Grund: die Farben von Linie, Punkten, Achsen
        und Raster entstehen in build() aus themeColors(), also aus isDark() -- ohne einen Anlass
        zum Neuzeichnen bleiben sie stehen, waehrend die Karte ringsum ueber CSS laengst gewechselt
@@ -6071,6 +6112,10 @@
 
     function legendLayout(){
       if (!legendEl) return;
+      /* Abgewaehlt: nur verstecken, NICHT leeren. Das Geruest (die Messkopien) bleibt stehen,
+         damit das Wiedereinschalten ohne neuen Datensatz auskommt -- sonst braeuchte es einen
+         render() aus Bubble, nur weil jemand einen Schalter umgelegt hat. */
+      if (getLegendPref() === "off"){ legendEl.classList.add("is-hidden"); return; }
       if (getPageWidth() < 500){ legendEl.classList.add("is-hidden"); return; }
       legendEl.classList.remove("is-hidden");
       var rowsC = legendEl.querySelector(".up-company-rows");
@@ -9203,6 +9248,9 @@
     makeScaleMenu: makeScaleMenu,
     getLineWidthPref: getLineWidthPref,
     setLineWidthPref: setLineWidthPref,
+    getLegendPref: getLegendPref,
+    setLegendPref: setLegendPref,
+    legendSectionHtml: legendSectionHtml,
     lineWidthSectionHtml: lineWidthSectionHtml,
     getColorScalePref: getColorScalePref, setColorScalePref: setColorScalePref
   };
